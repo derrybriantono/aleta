@@ -3,7 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
-  BUNYI_KEHADIRAN,
+  bacaBunyiKehadiran,
   muatKehadiran,
   simpanKehadiran,
   type MasukanKehadiran,
@@ -39,7 +39,10 @@ export async function GET(request: NextRequest) {
     const sidangKe = Number(getSearchParam(request, "sidangKe") ?? "0") || 0;
 
     const kehadiran = await muatKehadiran(db, perkaraId, sidangKe);
-    return ok({ ada: Boolean(kehadiran), kehadiran, bunyi: BUNYI_KEHADIRAN });
+    // Bunyi yang berlaku dari tipe keluaran (bas.kehadiran.bunyi). Tak
+    // terbaca = BUNYI_KEHADIRAN dengan kabarnya, tidak pernah 500.
+    const { bunyi, kabar } = await bacaBunyiKehadiran(db);
+    return ok({ ada: Boolean(kehadiran), kehadiran, bunyi, ...(kabar.length ? { kabarBunyi: kabar } : {}) });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

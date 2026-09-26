@@ -28,23 +28,31 @@ const konten = baca("ekstensi-sipp/konten.js");
 const abt = baca("ekstensi-sipp/abt.js");
 const gerbang = baca("manajemen_surat/src/server/modules/aleta-bot/whatsapp-gateway-client.ts");
 
-/** Angka tetapan dari sumbernya - bukan diketik ulang di sini. */
+/**
+ * Angka tetapan dari sumbernya - bukan diketik ulang di sini. Pemisah angka
+ * ("150_000") ikut dikenali: menulis ulang tetapan dengan pemisah tidak boleh
+ * membuat penjaga ini gagal dengan "tidak ketemu".
+ */
 function angka(isi: string, nama: string): number {
-  const cocok = new RegExp(`const ${nama} = (\\d+);`).exec(isi);
+  const cocok = new RegExp(`const ${nama} = (\\d[\\d_]*);`).exec(isi);
   expect(cocok, `tetapan ${nama} tidak ketemu`).toBeTruthy();
-  return Number(cocok![1]);
+  return Number(cocok![1].replace(/_/g, ""));
 }
 
-/** Batas waktu gerbang saat menulis putusan ke SIPP. */
+/**
+ * Batas waktu gerbang saat menulis putusan ke SIPP. Nilainya juga diukur
+ * dengan MENJALANKAN gatewayUnggahPutusanSipp di soffice-singgah-sejajar.test.ts
+ * (fetch ditiru, jam tiruan: batal tepat pada 120.000 ms).
+ */
 function batasGerbang(): number {
   const i = gerbang.indexOf("export async function gatewayUnggahPutusanSipp(");
   expect(i).toBeGreaterThan(-1);
   // Sampai penutup fungsi yang SEBENARNYA - "\n}\n". Memotong pada "\n}" saja
   // berhenti di penutup tipe literal di dalamnya, jauh sebelum timeoutMs.
   const blok = gerbang.slice(i, gerbang.indexOf("\n}\n", i));
-  const cocok = /timeoutMs:\s*(\d+)/.exec(blok);
+  const cocok = /timeoutMs:\s*(\d[\d_]*)/.exec(blok);
   expect(cocok, "timeoutMs gerbang tidak ketemu").toBeTruthy();
-  return Number(cocok![1]);
+  return Number(cocok![1].replace(/_/g, ""));
 }
 
 describe("butir 2 - batas waktu MENAIK dari dalam ke luar", () => {
@@ -94,9 +102,18 @@ describe("butir 2 - batas waktu MENAIK dari dalam ke luar", () => {
 
   it("sebabnya TERTULIS, supaya angkanya tidak dipulangkan saat merapikan", () => {
     const i = konten.indexOf("const BATAS_UNGGAH_SIPP_MS");
-    const catatan = konten.slice(Math.max(0, i - 1800), i);
-    expect(catatan).toContain("60000");
+    const catatan = konten.slice(Math.max(0, i - 2400), i);
+    // Batas gerbang yang BERLAKU (sejak 25 September 2026, kontrak K6:
+    // 120 detik) harus tertulis di catatannya - bukan angka lama yang sudah
+    // tidak berlaku. Dahulu penjaga ini menuntut "60000".
+    expect(catatan).toContain(`gerbang ${batasGerbang() / 1000} detik`);
     expect(catatan.toLowerCase()).toContain("menaik dari dalam ke luar");
+  });
+
+  it("urutan K6 utuh: gerbang 120 dtk, dan kedua batas ekstensi 150 dtk", () => {
+    expect(batasGerbang()).toBe(120000);
+    expect(angka(konten, "BATAS_UNGGAH_SIPP_MS")).toBeGreaterThanOrEqual(150000);
+    expect(angka(abt, "BATAS_UNGGAH_MASSAL_MS")).toBeGreaterThanOrEqual(150000);
   });
 });
 

@@ -45,6 +45,10 @@ function periksa(nama, benar) {
 }
 
 const runJs = fs.readFileSync(pathx.resolve(__dirname, "..", "tools", "ecourt-bridge", "run.js"), "utf8");
+const scraperJs = fs.readFileSync(
+  pathx.resolve(__dirname, "..", "tools", "ecourt-bridge", "scraper.js"),
+  "utf8"
+);
 const B = scraper.BASE_URL;
 
 console.log("\n== Membaca penanda dokumen dari halaman ==");
@@ -132,7 +136,24 @@ console.log("\n== Pengurai alamat dari jawaban ==");
   const luar = "https://jahat.example/storage/berkas.pdf";
   periksa("pola memang cocok pada alamat luar", pola.test(luar));
   periksa("alamat luar ditolak oleh penjagaan", !luar.startsWith(B));
-  periksa("penjagaan alamat luar ada di kode", /alamat_berkas_di_luar_ecourt/.test(runJs));
+  // ------------------------------------------------------------------
+  // PENJAGAANNYA DICARI DI BERKAS TEMPAT IA SEBENARNYA TINGGAL
+  // ------------------------------------------------------------------
+  //
+  // Sampai 25 Sep 2026 baris ini menyisir run.js, sedangkan penjagaannya sudah
+  // lama pindah ke scraper.js bersama seluruh penggalian alamat - sengaja,
+  // supaya dapat diuji tanpa peramban. Akibatnya penjaga ini MERAH terus tanpa
+  // ada yang rusak, dan merah yang selalu merah berhenti dibaca orang.
+  //
+  // Diganti, bukan dilonggarkan: yang dituntut sekarang TIGA hal, bukan satu -
+  // alasannya ada, pemeriksa asalnya ada, dan run.js benar-benar menyerahkan
+  // penggaliannya ke scraper alih-alih menggali sendiri tanpa penjagaan.
+  periksa("penjagaan alamat luar ada di kode", /alamat_berkas_di_luar_ecourt/.test(scraperJs));
+  periksa("penjagaannya memakai pemeriksa asal alamat", /function diDalamEcourt\(/.test(scraperJs));
+  periksa(
+    "run.js menyerahkan penggalian alamat ke scraper, tidak menggali sendiri",
+    /scraper\.alamatBerkasDariJawabanViewDoc\(/.test(runJs)
+  );
 }
 
 console.log("\n== Pesan galat melaporkan apa yang diterima ==");

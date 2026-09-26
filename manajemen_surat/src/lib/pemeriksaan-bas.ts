@@ -26,6 +26,8 @@
  * salah akan ditinggalkan, dan yang ditinggalkan tidak memeriksa apa pun.
  */
 
+import { PENANDA_SAKSI, sebutanSaksi, type PihakSaksi } from "@/lib/keterangan-abt";
+
 export type TingkatTemuan = "halangan" | "peringatan" | "catatan";
 
 export type Temuan = {
@@ -38,6 +40,8 @@ export type Temuan = {
 
 export type LembarRingkas = {
   saksiKe: number;
+  /** Pihak yang mengajukan saksi - tanpa ini dibaca saksi Penggugat. */
+  pihak?: PihakSaksi;
   saksiNama: string;
   saksiUmur: string;
   saksiAgama: string;
@@ -67,11 +71,24 @@ export type BahanPeriksa = {
   selisih: Array<{ hal: string; keterangan: string }>;
 };
 
-/** Penanda tempat tanya-jawab tiap saksi - dari abt_variabel, bukan karangan. */
-const PENANDA_TANYA_JAWAB: Record<string, number> = { "5058": 1, "5059": 2 };
+type LetakSaksi = { pihak: PihakSaksi; ke: number };
 
-/** Penanda sumpah saksi, yang lafalnya bergantung agama saksi. */
-const PENANDA_SUMPAH: Record<string, number> = { "7029": 1, "7030": 2 };
+/**
+ * Penanda tempat tanya-jawab dan sumpah tiap saksi - DITURUNKAN dari
+ * PENANDA_SAKSI (keterangan-abt.ts), satu tabel yang dicocokkan dengan
+ * abt_variabel dan blangko BAS nyata. Dahulu di sini hanya 5058/5059 dan
+ * 7029/7030, sehingga blangko saksi Tergugat (6120/6121, sumpah 7031/7032)
+ * dan saksi ketiga/keempat (5060/6122/6124, sumpah 7038/7039) tidak pernah
+ * dihitung menuntut saksi.
+ */
+const PENANDA_TANYA_JAWAB: Record<string, LetakSaksi> = {};
+const PENANDA_SUMPAH: Record<string, LetakSaksi> = {};
+for (const pihak of ["P", "T"] as const) {
+  for (const [ke, penanda] of Object.entries(PENANDA_SAKSI[pihak])) {
+    for (const noVar of penanda.tanyaJawab) PENANDA_TANYA_JAWAB[noVar] = { pihak, ke: Number(ke) };
+    PENANDA_SUMPAH[penanda.sumpah] = { pihak, ke: Number(ke) };
+  }
+}
 
 function namaAtauNomor(noVar: string, nama: Record<string, string>): string {
   const terbaca = String(nama[noVar] ?? "").trim();
@@ -84,14 +101,19 @@ function namaAtauNomor(noVar: string, nama: Record<string, string>): string {
  * Dua sumber, dan yang terbesar yang dipakai: nama berkasnya sendiri sering
  * menyebut "(3 Saksi)", dan isinya menyediakan tempat tanya-jawab per saksi.
  * Mengambil yang terkecil berarti kekurangan saksi lolos tanpa disebut.
+ *
+ * Dari penanda: saksi terjauh pihak Penggugat DITAMBAH saksi terjauh pihak
+ * Tergugat - blangko "P & T Hadir, bukti P & T" (5058, 5059, 6120, 6121)
+ * menuntut empat saksi, bukan dua.
  */
 export function saksiDituntut(namaBlangko: string, penandaBlangko: string[]): number {
   const dariNama = namaBlangko.match(/\((\d+)\s*saksi\)/i);
-  const dariPenanda = penandaBlangko.reduce(
-    (paling, noVar) => Math.max(paling, PENANDA_TANYA_JAWAB[noVar] ?? 0),
-    0
-  );
-  return Math.max(dariNama ? Number(dariNama[1]) : 0, dariPenanda);
+  const terjauh: Record<PihakSaksi, number> = { P: 0, T: 0 };
+  for (const noVar of penandaBlangko) {
+    const letak = PENANDA_TANYA_JAWAB[noVar];
+    if (letak) terjauh[letak.pihak] = Math.max(terjauh[letak.pihak], letak.ke);
+  }
+  return Math.max(dariNama ? Number(dariNama[1]) : 0, terjauh.P + terjauh.T);
 }
 
 /**
@@ -121,6 +143,8 @@ export function periksaKesiapan(bahan: BahanPeriksa): Temuan[] {
 
   for (const item of lembar) {
     if (item.jumlahTerjawab === 0) continue;
+    const pihak: PihakSaksi = item.pihak === "T" ? "T" : "P";
+    const sebutan = sebutanSaksi(pihak, item.saksiKe);
 
     const kurang: string[] = [];
     if (!item.saksiNama) kurang.push("nama");
@@ -130,19 +154,21 @@ export function periksaKesiapan(bahan: BahanPeriksa): Temuan[] {
     if (kurang.length > 0) {
       temuan.push({
         tingkat: "halangan",
-        hal: `Jati diri saksi ke-${item.saksiKe} belum lengkap`,
+        hal: `Jati diri ${sebutan} belum lengkap`,
         keterangan: `Belum terisi: ${kurang.join(", ")}.`,
-        tindakan: "Lengkapi pada lembar tanya-jawab saksi ke-" + item.saksiKe + ".",
+        tindakan: `Lengkapi pada lembar tanya-jawab ${sebutan}.`,
       });
     }
 
     // Lafal sumpah mengikuti agama saksi. Blangko yang memuat penanda sumpah
     // tetapi agamanya kosong akan dicetak dengan sumpah yang belum dipilih.
-    const penandaSumpah = Object.entries(PENANDA_SUMPAH).find(([, ke]) => ke === item.saksiKe)?.[0];
+    const penandaSumpah = Object.entries(PENANDA_SUMPAH).find(
+      ([, letak]) => letak.pihak === pihak && letak.ke === item.saksiKe
+    )?.[0];
     if (penandaSumpah && bahan.penandaBlangko.includes(penandaSumpah) && !item.saksiAgama) {
       temuan.push({
         tingkat: "peringatan",
-        hal: `Lafal sumpah saksi ke-${item.saksiKe} belum dapat ditentukan`,
+        hal: `Lafal sumpah ${sebutan} belum dapat ditentukan`,
         keterangan: "Blangko ini memuat sumpah saksi, dan lafalnya mengikuti agama saksi yang belum terisi.",
         tindakan: "Isi agama saksi pada lembarnya.",
       });
@@ -151,7 +177,7 @@ export function periksaKesiapan(bahan: BahanPeriksa): Temuan[] {
     if (item.jumlahTerjawab < item.jumlahPertanyaan) {
       temuan.push({
         tingkat: "peringatan",
-        hal: `Pertanyaan saksi ke-${item.saksiKe} belum semua terjawab`,
+        hal: `Pertanyaan ${sebutan} belum semua terjawab`,
         keterangan: `${item.jumlahTerjawab} dari ${item.jumlahPertanyaan} pertanyaan sudah dijawab.`,
         tindakan: "Lanjutkan pengisian lembarnya, atau abaikan bila pertanyaan itu memang tidak diajukan.",
       });

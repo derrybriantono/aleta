@@ -38,7 +38,14 @@ const db = require("../db_config");
 const botDb = require("./botDbService");
 const logService = require("./logService");
 const ecourtStoreService = require("./ecourtStoreService");
-const ecourtDocumentService = require("./ecourtDocumentService");
+// Satu definisi lampiran e-Court untuk dua pemakai, supaya layar hakim dan
+// pesan WhatsApp tidak pernah lagi menjawab berbeda untuk dokumen yang sama.
+// ecourtDocumentService sudah tidak di-require di sini: satu-satunya
+// pemakaiannya adalah pickBestAttachment atas kolom cermin, dan itu kini di
+// dalam lampiranDokumen yang membaca tabel berkas. Arahnya satu jalan -
+// verifikasi -> pekerja, pekerja tidak pernah memanggil berkas ini - jadi
+// tidak ada lingkaran require.
+const ecourtNotificationWorker = require("./ecourtNotificationWorker");
 const { cleanText, normalizeCaseNumber } = require("./ecourtTextService");
 const { normalizeLegacyEmployeeName } = require("./employeeNameUtil");
 const { normalizeIndonesianPhoneNumber } = require("../utils/phoneFormatter");
@@ -441,6 +448,51 @@ function identifyJudgeByName(namaLengkap, runtimeConfig = readRuntimeConfig()) {
 }
 
 /**
+ * Keadaan berkas per document_key untuk sekumpulan baris dokumen.
+ *
+ * Memanggil sumber tunggal ecourtStoreService.keadaanBerkasPerkara() satu kali
+ * per NOMOR PERKARA yang berbeda - bukan per dokumen - karena satu perkara
+ * biasanya menyumbang beberapa dokumen ke daftar yang sama. Untuk batas 50
+ * baris, jumlah kuerinya paling banyak 50 dan pada praktiknya jauh di bawah
+ * itu.
+ *
+ * Yang belum dapat dibedakan di sini: catatan berkas yang TIDAK TERBACA.
+ * keadaanBerkasPerkara menelan galat SELECT-nya sendiri dan memulangkan Map
+ * kosong, yang sama bentuknya dengan perkara tanpa berkas. Yang tertangkap di
+ * sini hanya kegagalan yang sampai melempar, dan itu dicatat.
+ */
+async function keadaanBerkasPerDokumen(barisDokumen) {
+  const peta = new Map();
+  const nomorPerkara = [
+    ...new Set(
+      (Array.isArray(barisDokumen) ? barisDokumen : [])
+        .map((baris) => normalizeCaseNumber(baris.nomor_perkara))
+        .filter(Boolean)
+    ),
+  ];
+
+  for (const nomor of nomorPerkara) {
+    try {
+      const keadaan = await ecourtStoreService.keadaanBerkasPerkara(nomor);
+      for (const [documentKey, isi] of keadaan) peta.set(documentKey, isi);
+    } catch (error) {
+      void logService.logSystemEvent({
+        eventType: "ecourt_berkas_tidak_terbaca",
+        severity: "error",
+        message: "Keadaan berkas e-Court tidak terbaca untuk daftar verifikasi hakim; barisnya tetap ditampilkan tanpa penanda berkas.",
+        metadata: {
+          jalur: "ecourtVerificationService.keadaanBerkasPerDokumen",
+          nomorPerkara: nomor,
+          errorMessage: String(error.message || error),
+        },
+      });
+    }
+  }
+
+  return peta;
+}
+
+/**
  * Daftar dokumen menunggu untuk hakim yang membuka portal.
  *
  * @returns {Promise<{ ok: boolean, alasan: string, hakim: object|null, dokumen: Array }>}
@@ -458,6 +510,7 @@ async function listForPortal(namaLengkap, { limit = 50, runtimeConfig = readRunt
   }
 
   const dokumen = await listPendingForJudge(hakim, { limit });
+  const keadaanBerkas = await keadaanBerkasPerDokumen(dokumen);
   return {
     ok: true,
     alasan: "",
@@ -470,7 +523,16 @@ async function listForPortal(namaLengkap, { limit = 50, runtimeConfig = readRunt
       diunggahPada: item.diunggah_pada,
       agenda: item.agenda,
       batasUnggahTeks: item.batas_unggah_teks,
-      adaBerkas: Boolean(item.berkas_pdf || item.berkas_word),
+      // Sumbernya sama dengan layar arsip portal: keadaanBerkasPerkara, yang
+      // membuktikan ke cakram. Kolom cermin - terisi 23 pdf dan 8 word dari
+      // 394 dokumen - membuat layar verifikasi majelis menyatakan "tanpa
+      // berkas" untuk dokumen yang berkasnya ada, dan hakim memutuskan tanpa
+      // membacanya.
+      adaBerkas: Boolean(
+        keadaanBerkas.get(String(item.document_key || "")) &&
+          (keadaanBerkas.get(String(item.document_key || "")).pdf ||
+            keadaanBerkas.get(String(item.document_key || "")).word)
+      ),
       sumberUrl: item.sumber_url,
     })),
   };
@@ -654,10 +716,13 @@ async function handleMessage({ senderNumber, text, runtimeConfig = readRuntimeCo
       return { reply: "Anda tidak tercatat sebagai majelis pada perkara tersebut, sehingga dokumennya tidak dapat diverifikasi dari sini." };
     }
 
-    const berkas = ecourtDocumentService.pickBestAttachment({
-      berkasPdf: dokumen.berkas_pdf,
-      berkasWord: dokumen.berkas_word,
-    });
+    // Lampiran dibaca dari aleta_bot_ecourt_files, bukan dari kolom cermin
+    // berkas_pdf/berkas_word yang hanya terisi 23 pdf dan 8 word dari 394
+    // dokumen. Dengan cermin, hakim menerima "berkasnya belum dapat
+    // dilampirkan" lalu memutuskan atas dokumen yang tidak pernah dibacanya,
+    // padahal berkasnya ada di cakram. Definisinya satu, di
+    // ecourtNotificationWorker.lampiranDokumen.
+    const berkas = await ecourtNotificationWorker.lampiranDokumen(documentKey);
 
     setSession(chatId, { tahap: "putuskan", documentKey });
 

@@ -142,6 +142,70 @@ function collectValidNumbers(rows) {
 }
 
 /**
+ * ============================================================================
+ * LAMPIRAN DIAMBIL DARI TABEL BERKAS, BUKAN DARI KOLOM CERMIN
+ * ============================================================================
+ *
+ * `berkas_pdf`/`berkas_word` pada tabel dokumen hanya CERMIN: recordFile
+ * keluar lebih awal dengan { sudahAda: true } untuk berkas yang sidik jarinya
+ * sama tanpa menyentuhnya, dan retensi me-NULL-kannya walau salinan lain masih
+ * hidup. Terukur: dari 394 dokumen, cerminnya terisi 23 pdf dan 8 word,
+ * sementara aleta_bot_ecourt_files mencatat 400 berkas.
+ *
+ * Akibatnya pemberitahuan e-Court terkirim TANPA lampiran untuk ratusan
+ * dokumen yang berkasnya sebenarnya ada di cakram - pihaknya menerima kabar
+ * tanpa berkas yang justru jadi isi kabarnya. Karena itu jalurnya dibaca dari
+ * aleta_bot_ecourt_files, sumber yang sama dengan layar arsip portal dan panel
+ * ekstensi SIPP.
+ *
+ * Satu definisi untuk dua pemakai: pekerja ini dan ecourtVerificationService
+ * (lampiran WhatsApp hakim). Arahnya satu jalan - verifikasi memanggil pekerja,
+ * pekerja tidak memanggil verifikasi - jadi tidak ada lingkaran require.
+ *
+ * @returns {Promise<{ ok: boolean, reason?: string, absolutePath?: string, fileName?: string, size?: number, jenis?: string }>}
+ */
+async function lampiranDokumen(documentKey) {
+  const kunci = String(documentKey || "");
+  if (!kunci) return { ok: false, reason: "document_key kosong." };
+
+  let berkas;
+  try {
+    berkas = await ecourtStoreService.listFiles(kunci);
+  } catch (error) {
+    // Catatan berkas tidak terbaca BUKAN "tidak ada berkas". Tanpa baris ini,
+    // pesan terkirim tanpa lampiran dan metadata hanya menyebut lampirannya
+    // tidak tersedia - tanpa menyebut bahwa sebabnya basis data bot.
+    void logService.logSystemEvent({
+      eventType: "ecourt_berkas_tidak_terbaca",
+      severity: "error",
+      message: "Catatan berkas e-Court tidak terbaca saat lampiran disiapkan; pesan dilanjutkan tanpa lampiran.",
+      metadata: { jalur: "ecourtNotificationWorker.lampiranDokumen", documentKey: kunci, errorMessage: String(error.message || error) },
+    });
+    return { ok: false, reason: `catatan_berkas_tidak_terbaca: ${error.message}` };
+  }
+
+  // listFiles TIDAK menyaring dihapus_retensi, dan urutannya terbaru lebih
+  // dulu. Satu salinan yang sudah dihapus retensi karena itu dapat berdiri di
+  // depan salinan lama yang masih utuh - dan pickBestAttachment hanya menguji
+  // SATU calon per format. Jadi yang diserahkan adalah salinan terbaru yang
+  // masih terbukti ada di cakram; bila tidak ada satu pun, yang terbaru tetap
+  // diserahkan supaya alasan gagalnya datang dari pemeriksa yang sama.
+  const jalur = (jenis) =>
+    (Array.isArray(berkas) ? berkas : [])
+      .filter((b) => String(b.format || "").toLowerCase() === jenis)
+      .map((b) => b.jalur_berkas)
+      .filter(Boolean);
+
+  const pilih = (daftar) =>
+    daftar.find((j) => ecourtDocumentService.describeEcourtDocument(j).ok) || daftar[0] || null;
+
+  return ecourtDocumentService.pickBestAttachment({
+    berkasPdf: pilih(jalur("pdf")),
+    berkasWord: pilih(jalur("word")),
+  });
+}
+
+/**
  * Memproses satu dokumen.
  *
  * @returns {Promise<{ status: string, alasan?: string, terkirim?: number }>}
@@ -173,10 +237,7 @@ async function processDocument(dokumen, { runtimeConfig, dryRun }) {
     return { status: "dilewati", alasan: "tidak_ada_nomor_pihak_tujuan" };
   }
 
-  const lampiran = ecourtDocumentService.pickBestAttachment({
-    berkasPdf: dokumen.berkas_pdf,
-    berkasWord: dokumen.berkas_word,
-  });
+  const lampiran = await lampiranDokumen(documentKey);
 
   let terkirim = 0;
   let menungguVerifikasi = 0;
@@ -372,6 +433,7 @@ module.exports = {
   collectValidNumbers,
   fetchCaseParties,
   filterByRole,
+  lampiranDokumen,
   processDocument,
   runOnce,
 };

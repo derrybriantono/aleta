@@ -154,16 +154,69 @@ describe("butir 20 - penarikan e-Court", () => {
   });
 
   it("dan tidak ikut dihitung sebagai galat penarikan", () => {
-    const i = tarik.indexOf("const tetap = ");
-    const blok = tarik.slice(i, i + 500);
-    // Di dalam cabang 404 tidak boleh ada penambahan jumlahGalat.
-    const cabang = blok.slice(blok.indexOf("if (tetap) {"), blok.indexOf("continue;"));
+    // ======================================================================
+    // JENDELA TETAP 500 HURUF PERNAH MENELAN SELURUH CABANGNYA
+    // ======================================================================
+    //
+    // Bentuk lama memotong 500 huruf dari "const tetap = " lalu mencari
+    // "continue;" DI DALAM potongan itu. Begitu satu komentar ditambahkan ke
+    // dalam cabang 404 - 25 Sep 2026, saat penandanya mulai ditulis ke basis
+    // data - "continue;" jatuh di luar jendela, indexOf memulangkan -1, cabang
+    // menjadi teks KOSONG, dan expect("").not.toContain(...) tetap hijau.
+    // Penjaganya berhenti menjaga tanpa satu pun tanda.
+    //
+    // Penggantinya lebih ketat, bukan lebih longgar: batasnya dicari dari
+    // seluruh berkas (bukan dari jendela), panjangnya ditagih supaya cabang
+    // kosong menggagalkan uji, dan satu tuntutan baru ditambahkan.
+    const mulai = tarik.indexOf("if (tetap) {");
+    expect(mulai).toBeGreaterThan(-1);
+    const cabang = tarik.slice(mulai, tarik.indexOf("continue;", mulai));
+    expect(cabang.length).toBeGreaterThan(40);
     expect(cabang).not.toContain("ringkasan.jumlahGalat += 1");
+    // "tidak diulang" harus tertulis di basis data, bukan hanya di log: tanpa
+    // penanda, dokumennya tetap tanpa berkas, perkaranya tidak pernah terhitung
+    // lengkap, dan halamannya dibuka ulang tiap putaran selamanya.
+    expect(cabang).toContain("tidakTersediaPadaDokumen = true");
   });
 
+  it("penandanya hanya dipasang bila TIDAK ada kegagalan sebab lain", () => {
+    // "404 pada PDF, jaringan putus pada Word" tidak boleh ditandai tidak
+    // tersedia - yang Word masih mungkin berhasil besok.
+    const mulai = tarik.indexOf("if (adaYangBerhasil) {");
+    expect(mulai).toBeGreaterThan(-1);
+    const tutup = tarik.slice(mulai, mulai + 1200);
+    expect(tutup).toContain("tidakTersediaPadaDokumen && !adaGagalLain");
+    expect(tutup).toContain("lupakanTidakTersedia({ documentKey })");
+  });
+
+  /**
+   * ==========================================================================
+   * TEKS YANG DIPAKU BERGESER 25 SEP 2026 - BUKAN DILONGGARKAN
+   * ==========================================================================
+   *
+   * Pengurutan giliran dipindahkan dari dalam utama() ke fungsi susunGiliran()
+   * yang diekspor run.js, sebab cacat "lapis 0 tidak dapat pensiun" hanya
+   * muncul pada penekanan KEDUA dan tidak ada penyisiran teks yang dapat
+   * melihatnya. Akibat pemindahan itu `args.hanyaBelumAda` menjadi parameter
+   * `hanyaBelumAda`, BATAS_TERBARU menjadi parameter `batasTerbaru` yang
+   * bawaannya BATAS_TERBARU, dan daftarnya bernama `daftar`.
+   *
+   * Perilaku yang dijaga di sini TIDAK berubah, dan kini dijaga pula oleh uji
+   * yang MENJALANKAN susunGiliran di penarikan-belum-ada.test.ts.
+   */
   it("200 perkara terbaru didahulukan, giliran tetap berlaku di dalamnya", () => {
     expect(tarik).toContain("const BATAS_TERBARU =");
-    expect(tarik).toContain("perluDiperiksa.sort((a, b) => lapis(a) - lapis(b) || kapan(a) - kapan(b));");
+    expect(tarik).toContain("daftar.sort((a, b) => lapis(a) - lapis(b) || kapan(a) - kapan(b));");
+  });
+
+  it("lapis 0 hanya hidup pada mode belum-ada - aturan 200 terbaru tidak dicabut", () => {
+    expect(tarik).toContain("hanyaBelumAda && belumPernah(url)");
+    // Putaran terjadwal tetap memulai dari lapis 200-terbaru.
+    const i = tarik.indexOf("const lapis = (url) =>");
+    expect(i).toBeGreaterThan(-1);
+    expect(tarik.slice(i, i + 320)).toContain("< batasTerbaru");
+    // Dan bawaan parameternya tetap BATAS_TERBARU, bukan angka lepas.
+    expect(tarik).toContain("batasTerbaru = BATAS_TERBARU");
   });
 
   it("sesi yang habis TIDAK dicoba lagi - itulah yang membuat akun ditandai", () => {

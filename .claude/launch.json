@@ -2,6 +2,25 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "portal-aleta-lokal",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-File",
+        "D:/aleta-dev/kerja/jalankan-portal-lokal.ps1"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "sipp-abt-php56",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-File",
+        "D:/sipp-server/jalankan-sipp.ps1"
+      ],
+      "port": 8056,
+      "url": "http://127.0.0.1:8056"
+    },
+    {
       "name": "portal-aleta",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
@@ -70,6 +89,14 @@
         "D:/aleta-dev/kerja/pratinjau-aleta"
       ],
       "port": 8097
+    },
+    {
+      "name": "kemajuan-aleta",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "D:/aleta-dev/kerja/kemajuan/server.js"
+      ],
+      "port": 8787
     },
     {
       "name": "uji-peta-titik",

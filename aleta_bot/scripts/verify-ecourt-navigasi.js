@@ -213,8 +213,25 @@ console.log("\n== Perkara lengkap tidak dibuka lagi ==");
   // Dokumen yang belum diverifikasi majelis masih dapat diganti pihak dengan
   // unggahan baru berjudul sama. Melewatinya berarti melewatkan perbaikan itu.
   periksa("perkara dengan dokumen belum diverifikasi tidak dilewati", /menunggu === 0/.test(fungsi));
-  periksa("perkara tanpa catatan tidak dilewati", /jumlah === 0\) return false/.test(fungsi));
-  periksa("hanya berkas yang benar-benar ada dihitung", /jalur_berkas IS NOT NULL/.test(fungsi));
+  // Nilai yang dipaku diperbarui 25 September 2026: ruasnya berganti nama dari
+  // `jumlah` menjadi `dokumen` ketika kedua definisi "kekurangan berkas"
+  // disatukan. Yang dijaga tetap sama - tidak adanya CATATAN bukan bukti tidak
+  // adanya dokumen, jadi perkara tanpa catatan tidak boleh dinyatakan lengkap.
+  periksa(
+    "perkara tanpa catatan tidak dilewati",
+    /k\.dokumen === 0\) return false/.test(fungsi)
+  );
+  // Disisir atas SELURUH berkas, bukan atas potongan perkaraSudahLengkap.
+  //
+  // Sebelum ini polanya diperiksa atas potongan antara perkaraSudahLengkap dan
+  // needsRecheck, padahal SQL-nya sudah pindah ke ringkasKekuranganBerkas -
+  // yang kebetulan JUGA duduk di dalam potongan itu. Pemeriksaannya karena itu
+  // hijau tanpa benar-benar memeriksa fungsi yang dimaksud: hijau palsu.
+  periksa(
+    "hanya berkas yang benar-benar ada dihitung",
+    /jalur_berkas IS NOT NULL AND jalur_berkas <> ''/.test(store) &&
+      /const peta = await ringkasKekuranganBerkas\(\[nomor\]\)/.test(fungsi)
+  );
 }
 
 console.log(`\nLulus: ${lulus}, Gagal: ${gagal}`);

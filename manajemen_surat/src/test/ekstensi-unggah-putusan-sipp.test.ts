@@ -108,12 +108,17 @@ describe("baris yang ditulis ke SIPP", () => {
     expect(bot).toContain("dirput_perkara");
   });
 
-  it("audit trail ditulis, TANPA satu kata pun tentang ALETA", () => {
-    // sys_audittrail catatan milik SIPP, dibaca petugas SIPP - dan tidak ada
-    // satu pun baris SIPP yang menyebut alat yang dipakai mengetiknya.
+  it("audit trail ditulis JUJUR: lewat ALETA, tidak menyamar sebagai borang SIPP", () => {
+    // DIUBAH 25 September 2026 atas keputusan orkestrator: catatan audit
+    // perkara adalah alat pertanggungjawaban, jadi baris yang ditulis bot
+    // menyebut ALETA sebagai caranya dan tidak menyalin teks borang SIPP -
+    // baik nama tingkap lama "Kelola Dokumen Elektronik (E-Doc)" maupun bentuk
+    // add_audittrail "UPLOAD E-DOCS PUTUSAN AKHIR". Penjaga yang MENJALANKAN
+    // layanannya ada di unggah-audit-sipp.test.ts; di sini hanya sisa teksnya.
     expect(bot).toContain("INSERT INTO sys_audittrail");
-    expect(bot).not.toContain("[ALETA]");
-    expect(bot).toContain("Kelola Dokumen Elektronik (E-Doc)");
+    expect(bot).toContain('const FORMNAME_ALETA = "ALETA - Unggah Dokumen Putusan";');
+    expect(bot).not.toMatch(/=\s*["'`]UPLOAD E-DOCS PUTUSAN AKHIR["'`]/);
+    expect(bot).not.toContain("Kelola Dokumen Elektronik (E-Doc)");
   });
 
   it("anonimisasi selalu published, putusan akhir tidak", () => {

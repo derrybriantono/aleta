@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type { AletaDatabase } from "@/server/db/client";
+import { untukPortal } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 
 /**
  * KEHADIRAN SIDANG - siapa hadir, apa agendanya, apa hasilnya.
@@ -46,6 +47,37 @@ export const BUNYI_KEHADIRAN = [
   "tidak hadir dan tidak pula menyuruh orang lain sebagai wakil/kuasanya",
   "tidak hadir tanpa alasan yang sah",
 ];
+
+const DAFTAR_BUNYI = "bas.kehadiran.bunyi" as const;
+
+/**
+ * Bunyi kehadiran yang BERLAKU: daftar efektif bas.kehadiran.bunyi dari tipe
+ * keluaran (kontrak K3) - bawaan di atas yang tidak dimatikan satker, ditambah
+ * tambahan yang disahkan, dalam urutan daftar efektifnya.
+ *
+ * BUNYI_KEHADIRAN tetap sumber nilai bawaan (cermin CERMIN_PORTAL disalin
+ * darinya dan diuji deep-equal). Bila daftarnya tidak terkirim (cermin belum
+ * dirangkai) atau basis data tidak dapat dibaca, yang dipakai BUNYI_KEHADIRAN
+ * dengan kabar "memakai bawaan" - galatnya dicatat, tidak ditelan, dan tidak
+ * pernah menggagalkan pembacaan kehadiran.
+ */
+export async function bacaBunyiKehadiran(db: AletaDatabase): Promise<{ bunyi: string[]; kabar: string[] }> {
+  try {
+    const hasil = await untukPortal(db, [DAFTAR_BUNYI]);
+    const daftar = hasil.daftar[DAFTAR_BUNYI];
+    if (!Array.isArray(daftar)) {
+      return { bunyi: [...BUNYI_KEHADIRAN], kabar: [...hasil.kabar, "Daftar bunyi kehadiran tidak terkirim - memakai bawaan."] };
+    }
+    // Urutan daftar efektif dipakai apa adanya: bawaan dalam urutan aslinya,
+    // lalu tambahan. Mengurutkan ulang menurut 'urutan' mencampur keduanya.
+    const bunyi = daftar.map((e) => teks(e.nilai)).filter(Boolean);
+    return { bunyi, kabar: hasil.kabar };
+  } catch (galat) {
+    console.error("[BAS KEHADIRAN] Tipe keluaran tidak terbaca; memakai bawaan kode.", galat);
+    const pesan = galat instanceof Error ? galat.message : String(galat);
+    return { bunyi: [...BUNYI_KEHADIRAN], kabar: [`Tipe keluaran tidak terbaca - memakai bawaan: ${pesan}`] };
+  }
+}
 
 function teks(nilai: unknown): string {
   return String(nilai ?? "").trim();

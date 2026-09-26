@@ -195,8 +195,82 @@ async function dokumenRefId(perkaraId, jenis) {
   return Number((Array.isArray(baris) && baris[0] && baris[0].ref) || 0);
 }
 
-/** Baris audit SIPP - tanpa satu kata pun tentang ALETA. Lihat penetapanTulisService. */
-function barisAudit({ username, tabel, formulir, aksi, perkaraId, ip, saat }) {
+/**
+ * ============================================================================
+ * BARIS AUDIT: JUJUR - PETUGAS, WAKTU, DAN ALAMATNYA SUNGGUHAN, CARANYA ALETA
+ * ============================================================================
+ *
+ * Catatan audit perkara adalah alat pertanggungjawaban. Setiap tulisan ALETA
+ * ke SIPP dicatat SATU baris sys_audittrail - kolom e-Doc pada
+ * perkara_putusan, baris dirput_dokumen, dan antrean dirput_antrian - dan
+ * isinya apa yang sungguh terjadi:
+ *
+ *   username     akun SIPP petugas yang memicu unggahan
+ *   datetime     waktu baris itu ditulis (jam dibaca saat menulis)
+ *   ipaddress    alamat peramban petugas yang diteruskan portal; kosong bila
+ *                tidak diteruskan atau bukan IPv4 - tidak pernah dikarang
+ *   formname     "ALETA - Unggah Dokumen Putusan": tulisannya datang lewat
+ *                ALETA, bukan lewat borang SIPP
+ *   action       perintah yang sungguh dijalankan: UPDATE atau INSERT
+ *   title        tabel dan perkaranya, dengan kata "lewat ALETA"
+ *   description  kolom dan nilai yang ditulis, ditutup kalimat yang menyebut
+ *                ALETA dan akun petugasnya
+ *
+ * Bentuknya sah menurut struktur tabel audit SIPP - title paling panjang 250
+ * huruf, description berupa HTML yang dapat ditampilkan layar Audit Trail
+ * SIPP - tetapi TIDAK menyalin judul maupun deskripsi borang SIPP. Percobaan
+ * 25 September 2026 untuk menyalin bentuk fileupload_m::add_audittrail
+ * (formname "UPLOAD E-DOCS PUTUSAN AKHIR", tanpa baris audit dirput) DIBATALKAN
+ * atas keputusan orkestrator: hasil otomatis yang ketepatannya belum sempurna
+ * tidak boleh tampak tak terbedakan dari kerja petugas di SIPP.
+ */
+const FORMNAME_ALETA = "ALETA - Unggah Dokumen Putusan";
+
+/**
+ * Nilai di description di-escape: layar Audit Trail SIPP menampilkannya
+ * sebagai HTML, dan jalur maupun nama akun datang dari luar berkas ini.
+ */
+function lolosHtml(nilai) {
+  return String(nilai === undefined || nilai === null ? "" : nilai)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Alamat untuk kolom ipaddress (varchar(15)): hanya IPv4 yang sah. Alamat lain
+ * DIKOSONGKAN, bukan dipotong - IPv6 yang terpotong pada huruf ke-15 menjadi
+ * alamat lain yang keliru.
+ */
+function ipAudit(ip) {
+  const bersih = String(ip || "").trim().replace(/^::ffff:/, "");
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(bersih)) return "";
+  return bersih.split(".").every((x) => Number(x) <= 255) ? bersih : "";
+}
+
+/** Kolom dan nilai yang ditulis, lalu siapa dan lewat apa. */
+function deskripsiAudit(rincian, username) {
+  let isi = '<table border="1" cellspacing="0" cellpadding="1"><tr><th>Kolom</th><th>Nilai</th></tr>';
+  for (const [kolom, nilai] of Object.entries(rincian || {})) {
+    isi += `<tr><td>${lolosHtml(kolom)}</td><td>${lolosHtml(nilai)}</td></tr>`;
+  }
+  isi += "</table>";
+  // Nama pemicunya datang dari sesi yang menekan tombol - akun SIPP pada panel
+  // SIPP, nama lengkap sesi ABT pada putusan massal ABT - jadi disebut
+  // "pengguna", bukan "akun SIPP". Bila kosong, kekosongannya DITULIS: audit
+  // yang jujur tidak boleh terbaca seolah pelakunya sengaja tidak disebut.
+  const akun = String(username || "").trim();
+  return (
+    `${isi}<br>Ditulis otomatis oleh ALETA (unggah dokumen putusan), bukan lewat borang SIPP` +
+    (akun
+      ? `, atas perintah pengguna <b>${lolosHtml(akun)}</b>.`
+      : ", pemicunya TIDAK DIKETAHUI (nama pengguna tidak terkirim bersama permintaan).")
+  );
+}
+
+/** Satu baris audit untuk satu tulisan ALETA ke SIPP. Lihat catatan di atas. */
+function barisAudit({ username, tabel, aksi, perkaraId, rincian, ip, saat }) {
   const idPerkara = Number(perkaraId || 0);
   const kunci = idPerkara > 0 ? ` dengan Primary Key [perkara_id=${idPerkara}]` : "";
   return {
@@ -205,15 +279,37 @@ function barisAudit({ username, tabel, formulir, aksi, perkaraId, ip, saat }) {
       "VALUES (?,?,?,?,?,?,?,?)",
     params: [
       saat,
-      String(ip || "").slice(0, 15),
+      ipAudit(ip),
       String(username || "").slice(0, 30),
       tabel,
-      formulir,
+      FORMNAME_ALETA,
       aksi,
-      `${aksi} table <b>${tabel}</b> dari halaman <b>${formulir}</b>${kunci}`,
-      `${aksi} table <b>${tabel}</b> dari halaman <b>${formulir}</b>${kunci}`,
+      `${aksi} table <b>${tabel}</b> lewat <b>ALETA</b>${kunci}`.slice(0, 250),
+      deskripsiAudit(rincian, username),
     ],
   };
+}
+
+/**
+ * Konversi ke PDF yang DIMULAI SEKARANG dan ditunggu nanti.
+ *
+ * Putusan dan anonimisasinya diubah BERSAMAAN (profil soffice sudah terpisah
+ * per folder sekali pakai), lalu ditulis berurutan menurut slotnya - putusan
+ * dahulu - sehingga urutan hasil dan baris auditnya tetap. Waktu dinding dua
+ * konversi menjadi yang terlama di antara keduanya, bukan jumlahnya.
+ *
+ * .catch() wajib: bila berkas pertama gagal ditulis, janji berkas kedua
+ * ditinggalkan tanpa ditunggu, dan penolakan yang tak tertangani mematikan
+ * proses Node. dokumenKePdf sendiri tidak melempar; ini penjaga bila kelak
+ * berubah.
+ */
+function mulaiUbahKePdf(isi) {
+  const bentuk = abtCetakService.kenaliDokumen(isi);
+  if (!bentuk || bentuk === "pdf") return null;
+  return abtCetakService.dokumenKePdf(isi).catch((galat) => ({
+    ok: false,
+    alasan: String((galat && galat.message) || galat).slice(0, 200),
+  }));
 }
 
 /**
@@ -224,7 +320,20 @@ function barisAudit({ username, tabel, formulir, aksi, perkaraId, ip, saat }) {
  * berkas tanpa baris hanya menjadi berkas yang tidak terpakai, dan itu jauh
  * lebih ringan.
  */
-async function unggahSatu({ perkaraId, nomorPerkara, jenis, pdf, tanggalPutusan, olehUsername, ip, saat }) {
+async function unggahSatu({
+  perkaraId,
+  nomorPerkara,
+  jenis,
+  pdf,
+  tanggalPutusan,
+  olehUsername,
+  ip,
+  // Konversi yang sudah dimulai pemanggil bersamaan dengan berkas lainnya
+  // (mulaiUbahKePdf). Tanpa itu konversinya dimulai di sini.
+  ubahan = null,
+  // Jam dinding. Dapat ditiru uji; di produksi selalu waktu sungguhan.
+  jam = () => new Date(),
+}) {
   const kolom = KOLOM_DOK[jenis];
   if (!kolom) return { jenis, ok: false, alasan: "jenis_tidak_didukung" };
   if (!pdf || !pdf.length) return { jenis, ok: false, alasan: "berkas_kosong" };
@@ -261,7 +370,7 @@ async function unggahSatu({ perkaraId, nomorPerkara, jenis, pdf, tanggalPutusan,
   let pdfTerbit = bentuk === "pdf" ? pdf : null;
   let sebabTanpaPdf = "";
   if (!pdfTerbit) {
-    const ubah = await abtCetakService.dokumenKePdf(pdf);
+    const ubah = await (ubahan || abtCetakService.dokumenKePdf(pdf));
     if (ubah.ok && ubah.pdf) pdfTerbit = ubah.pdf;
     else sebabTanpaPdf = ubah.alasan || "Pengubahan ke PDF gagal tanpa keterangan.";
   }
@@ -320,6 +429,17 @@ async function unggahSatu({ perkaraId, nomorPerkara, jenis, pdf, tanggalPutusan,
     };
   }
 
+  // ==========================================================================
+  // WAKTU AUDIT = WAKTU TULISAN ITU SUNGGUH TERJADI
+  // ==========================================================================
+  //
+  // Dahulu satu 'saat' dibuat di awal permintaan dan dipakai semua tulisan,
+  // padahal berkas kedua baru ditulis sesudah konversinya selesai - dapat
+  // puluhan detik kemudian - sehingga cap waktunya menyatakan saat yang
+  // keliru. Kini jam dibaca tepat sebelum tiap tulisan. Tidak digeser dan
+  // tidak dikarang: bila dua tulisan terjadi pada detik yang sama, itulah yang
+  // tercatat.
+  const saat = jam();
   const waktu = waktuMysql(saat);
   const tabelDisentuh = [];
 
@@ -327,26 +447,16 @@ async function unggahSatu({ perkaraId, nomorPerkara, jenis, pdf, tanggalPutusan,
   // Jalur ASLI - inilah e-Doc, dan SIPP menyimpannya apa adanya.
   await runQuery(`UPDATE perkara_putusan SET ${kolom} = ? WHERE perkara_id = ?`, [relatifAsli, perkaraId]);
   tabelDisentuh.push("perkara_putusan");
-  await runQuery(
-    barisAudit({
-      username: olehUsername,
-      tabel: "perkara_putusan",
-      formulir: "Kelola Dokumen Elektronik (E-Doc)",
-      aksi: "UPDATE",
-      perkaraId,
-      ip,
-      saat: waktu,
-    }).sql,
-    barisAudit({
-      username: olehUsername,
-      tabel: "perkara_putusan",
-      formulir: "Kelola Dokumen Elektronik (E-Doc)",
-      aksi: "UPDATE",
-      perkaraId,
-      ip,
-      saat: waktu,
-    }).params
-  );
+  const audit = barisAudit({
+    username: olehUsername,
+    tabel: "perkara_putusan",
+    aksi: "UPDATE",
+    perkaraId,
+    rincian: { [kolom]: relatifAsli },
+    ip,
+    saat: waktu,
+  });
+  await runQuery(audit.sql, audit.params);
 
   // ==========================================================================
   // 2. dirput_dokumen - HANYA PDF, DAN DITUNDA BILA PDF-NYA BELUM ADA
@@ -418,14 +528,22 @@ async function unggahSatu({ perkaraId, nomorPerkara, jenis, pdf, tanggalPutusan,
     );
   }
   tabelDisentuh.push("dirput_dokumen");
+  // Tulisan ini pun diaudit: yang menulis baris Direktori Putusan adalah
+  // ALETA, dan jejaknya tidak dibuang hanya karena SIPP sendiri tidak
+  // mengaudit langkah yang sama.
   const auditDirput = barisAudit({
     username: olehUsername,
     tabel: "dirput_dokumen",
-    formulir: "Kelola Dokumen Elektronik (E-Doc)",
     aksi: idLama ? "UPDATE" : "INSERT",
     perkaraId,
+    rincian: {
+      dokumen_ref_id: ref,
+      filename: path.basename(relatifPdf),
+      path_filename: relatifPdf,
+      published,
+    },
     ip,
-    saat: waktu,
+    saat: waktuMysql(jam()),
   });
   await runQuery(auditDirput.sql, auditDirput.params);
 
@@ -443,7 +561,11 @@ async function unggahSatu({ perkaraId, nomorPerkara, jenis, pdf, tanggalPutusan,
 }
 
 /**
- * Mengunggah putusan akhir dan anonimisasinya sekaligus.
+ * Mengunggah putusan akhir, anonimisasinya, atau keduanya.
+ *
+ * Satu slot saja sah: anonimisasi sering baru siap sesudah putusannya
+ * terunggah, dan berkas yang keliru cukup diganti satu tanpa mengirim ulang
+ * pasangannya.
  *
  * Antrean Direktori Putusan ditulis SEKALI di akhir, bukan sekali per berkas:
  * insert_antrian_upload milik SIPP menaruh satu baris per unggahan, dan dua
@@ -456,7 +578,8 @@ async function unggahPutusan({
   pdfAnonimisasi,
   olehUsername,
   ip = "",
-  saat = new Date(),
+  // Jam dinding, dibaca PER BERKAS saat berkas itu ditulis (lihat unggahSatu).
+  jam = () => new Date(),
 }) {
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0) return { ok: false, alasan: "perkara_tidak_sah" };
@@ -490,6 +613,11 @@ async function unggahPutusan({
         )}`
       : String(tanggalPutusan).slice(0, 10);
 
+  // Kedua konversi dimulai SEKARANG, bersamaan; penulisannya tetap berurutan
+  // (putusan dahulu). Lihat mulaiUbahKePdf.
+  const ubahPutusan = pdfPutusan ? mulaiUbahKePdf(pdfPutusan) : null;
+  const ubahAnonimisasi = pdfAnonimisasi ? mulaiUbahKePdf(pdfAnonimisasi) : null;
+
   const hasil = [];
   if (pdfPutusan) {
     hasil.push(
@@ -501,7 +629,8 @@ async function unggahPutusan({
         tanggalPutusan: tanggalIso,
         olehUsername,
         ip,
-        saat,
+        ubahan: ubahPutusan,
+        jam,
       })
     );
   }
@@ -515,7 +644,8 @@ async function unggahPutusan({
         tanggalPutusan: tanggalIso,
         olehUsername,
         ip,
-        saat,
+        ubahan: ubahAnonimisasi,
+        jam,
       })
     );
   }
@@ -530,18 +660,21 @@ async function unggahPutusan({
       [id]
     ).catch(() => []);
     if (!(Array.isArray(menunggu) && menunggu.length > 0)) {
+      // tgl_masuk = waktu baris ini ditulis, seperti insert_antrian_upload.
+      const tglMasuk = waktuMysql(jam());
       await runQuery(
         `INSERT INTO dirput_antrian (perkara_id, status, keterangan, tgl_masuk) VALUES (?, 0, NULL, ?)`,
-        [id, waktuMysql(saat)]
+        [id, tglMasuk]
       );
+      // Diaudit seperti tulisan ALETA lainnya - lihat catatan barisAudit.
       const auditAntrean = barisAudit({
         username: olehUsername,
         tabel: "dirput_antrian",
-        formulir: "Kelola Dokumen Elektronik (E-Doc)",
         aksi: "INSERT",
         perkaraId: id,
+        rincian: { status: 0, tgl_masuk: tglMasuk },
         ip,
-        saat: waktuMysql(saat),
+        saat: tglMasuk,
       });
       await runQuery(auditAntrean.sql, auditAntrean.params);
       antrean = true;
@@ -561,6 +694,7 @@ module.exports = {
   namaBerkas,
   jalurRelatif,
   dokumenRefId,
+  barisAudit,
   unggahSatu,
   unggahPutusan,
 };

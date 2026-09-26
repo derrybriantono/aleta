@@ -440,6 +440,131 @@ async function utama() {
     periksa("run.js tidak berjalan saat sekadar di-require", /require\.main === module/.test(sumber));
   }
 
+  // ======================================================================
+  // SATU SUMBER KEBENARAN UNTUK "DOKUMEN INI PUNYA BERKASNYA?"
+  // ======================================================================
+  //
+  // Pertanyaan ini pernah dijawab lima potong kode dengan definisi berbeda,
+  // dan akibatnya terasa langsung di layar: tombol Tarik ditawarkan untuk
+  // perkara yang jembatan anggap lengkap lalu dilewati diam-diam, dan tombol
+  // ZIP disembunyikan untuk perkara yang berkasnya utuh. Yang dijaga di sini
+  // BUKAN adanya fungsi barunya - itu lulus walau tidak ada yang memanggilnya -
+  // melainkan hilangnya pembaca cermin dari jalur-jalur yang dulu memakainya.
+  {
+    console.log("\n== Satu sumber kebenaran: cermin berhenti dibaca ==");
+    const fs = require("fs");
+    const path = require("path");
+    const toko = fs.readFileSync(
+      path.resolve(__dirname, "..", "services", "ecourtStoreService.js"),
+      "utf8"
+    );
+    const konteks = fs.readFileSync(
+      path.resolve(__dirname, "..", "services", "sippKonteksService.js"),
+      "utf8"
+    );
+
+    periksa(
+      "daftarArsipPerkara tidak lagi menghitung dari kolom cermin",
+      !/berkas_pdf IS NOT NULL|berkas_word IS NOT NULL/.test(toko)
+    );
+    periksa(
+      "saringan belum-lengkap memakai tabel berkas",
+      // Nilai yang dipaku DIPERBAIKI 25 Sep 2026, bukan dilonggarkan.
+      //
+      // Pemeriksaan ini ditulis pada batch yang sama dengan kodenya, dan
+      // polanya TIDAK PERNAH cocok - baik atas kode HEAD maupun atas kode
+      // sesudah disunting (diukur keduanya). Jadi ia bukan penjaga yang patah,
+      // melainkan penjaga yang lahir merah dan menuduh hal yang salah.
+      //
+      // Yang harus dijaga: saringan "hanya yang belum lengkap" dihitung dari
+      // TABEL BERKAS, bukan dari kolom cermin berkas_pdf/berkas_word yang
+      // terisi 23 dari 394 dokumen. Sejak kedua definisinya disatukan, itu
+      // berarti satu sumber dan satu ekspresi yang dipakai kedua kueri.
+      /SUMBER_SUDAH_BERBERKAS\s*=[\s\S]{0,240}aleta_bot_ecourt_files/.test(toko) &&
+        /const kurang = ekspresiTanpaBerkas\("k"\)/.test(toko) &&
+        /HAVING SUM\(\$\{kurang\}\) > 0/.test(toko) &&
+        // Ekspresi PENGHITUNGNYA sendiri tidak boleh menyebut kolom cermin.
+        // Kolom cerminnya masih DITULIS di tempat lain - itu tidak dilarang;
+        // yang dilarang MEMBACANYA untuk menjawab "ada berkasnya?".
+        !/berkas_pdf|berkas_word/.test(
+          (toko.match(/function ekspresiTanpaBerkas[\s\S]{0,400}?\n\}/) || [""])[0]
+        )
+    );
+    periksa(
+      "hitungannya membuktikan ke cakram sesudah barisnya terpotong",
+      /keadaanBerkasBanyakPerkara\(/.test(toko) && /adaPdfCakram/.test(toko)
+    );
+    periksa(
+      "rincian memanggil sumber tunggal, bukan menyusun sendiri",
+      /const berkasPerDokumen = await keadaanBerkasPerkara\(/.test(toko)
+    );
+    periksa(
+      "ekstensi tidak lagi memakai cermin sebagai cadangan",
+      !/adaBerkas\.has\([^)]*\) \|\| Boolean\(row\.berkas_/.test(konteks)
+    );
+    periksa(
+      "perkaraSudahLengkap menolak jalur berkas kosong",
+      /jalur_berkas IS NOT NULL AND jalur_berkas <> ''/.test(toko)
+    );
+    // Nomor perkara disimpan rapat oleh recordDocument. Mencarinya renggang
+    // membuat dokumennya hilang dari layar tanpa satu galat pun.
+    periksa(
+      "pencarian rincian memakai normalizeCaseNumber, bukan cleanText",
+      /const nomorPerkara = normalizeCaseNumber\(nomorPerkaraMentah\)/.test(toko)
+    );
+    periksa(
+      "perkaraSudahLengkap memakai normalizeCaseNumber",
+      !/const nomor = String\(nomorPerkara \|\| ""\)\.trim\(\)/.test(toko)
+    );
+  }
+
+  // ======================================================================
+  // 404 DICATAT DI BASIS DATA, BUKAN HANYA DI LOG
+  // ======================================================================
+  {
+    console.log("\n== Dokumen yang e-Court sendiri tidak sediakan ==");
+    const fs = require("fs");
+    const path = require("path");
+    const toko = fs.readFileSync(
+      path.resolve(__dirname, "..", "services", "ecourtStoreService.js"),
+      "utf8"
+    );
+    const tarik = fs.readFileSync(
+      path.resolve(__dirname, "..", "tools", "ecourt-bridge", "run.js"),
+      "utf8"
+    );
+
+    periksa("kolom penanda dipasang", /"tidak_tersedia_pada"/.test(toko));
+    periksa("ada cara menandainya", /async function tandaiTidakTersedia\(/.test(toko));
+    periksa("ada cara melupakannya", /async function lupakanTidakTersedia\(/.test(toko));
+    // Yang paling mudah salah: menandai dokumen yang 404 pada PDF tetapi
+    // jaringannya putus pada Word. Yang Word masih mungkin berhasil besok.
+    const mulai = tarik.indexOf("if (adaYangBerhasil) {");
+    const tutup = mulai > -1 ? tarik.slice(mulai, mulai + 1200) : "";
+    periksa("blok penutup gelung berkas ketemu", tutup.length > 200);
+    periksa(
+      "hanya ditandai bila TIDAK ada kegagalan sebab lain",
+      /tidakTersediaPadaDokumen && !adaGagalLain/.test(tutup)
+    );
+    periksa(
+      "berhasil sekali menghapus penandanya",
+      /lupakanTidakTersedia\(\{ documentKey \}\)/.test(tutup)
+    );
+    periksa(
+      "dokumen tidak-tersedia tidak ikut dihitung belum-ada",
+      // Nilai yang dipaku DIPERBAIKI 25 Sep 2026, bukan dilonggarkan.
+      //
+      // Bentuk lama `tidak_tersedia_pada IS NULL` membuang dokumen
+      // tidak-tersedia SELAMANYA - itulah sebab layar berkata "Lengkap"
+      // sementara jembatan membukanya terus tiap putaran. Kini jedanya HABIS:
+      // yang masih di dalam jeda tidak dihitung kurang, yang sudah lewat
+      // dihitung kurang lagi. Harinya diikat sebagai parameter, tidak pernah
+      // disisipkan sebagai teks.
+      /tidak_tersedia_pada IS NOT NULL[\s\S]{0,80}DATE_SUB\(NOW\(\), INTERVAL \? DAY\)/.test(toko) &&
+        /AND NOT \$\{EKSPRESI_DALAM_JEDA\}/.test(toko)
+    );
+  }
+
   console.log(`\nLulus: ${lulus}, Gagal: ${gagal}`);
   if (gagal > 0) {
     console.log("ADA PERIKSAAN YANG GAGAL.");

@@ -221,11 +221,21 @@ describe("tangga ditulis sekali di bot", () => {
     expect(blok).toContain("penilaianSippService.hitungWaktuPutus(");
     expect(blok).toContain("waktuPutusSk:");
     expect(blok).toContain("hariKotor:");
-    // Pengecualian ghaib TIDAK dipotong di Antrian (tinjauan 24 Sep 2026):
-    // memotongnya menyembunyikan perkara yang sudah lewat lima bulan SEMA.
-    expect(blok).toContain("perkaraGhaib: false,");
+    // Kelonggaran SK DIPOTONG dari hariBersih (permintaan pengguna 24 Sep
+    // 2026 petang) - tetapi TIDAK dari sisaHari terhadap SEMA 2/2014.
+    // Tinjauan pagi itu menemukan akibat memotong keduanya: perkara 163 hari
+    // tampil "43 hari, sisa 107", dan kewajiban lapornya hilang dari layar.
+    expect(blok).toContain("perkaraGhaib: Boolean(ghaib),");
+    expect(blok).toContain("kelonggaran:");
+    expect(blok).toContain(
+      "const hariSema = waktuPutus ? waktuPutus.kotor - waktuPutus.mediasi : null;"
+    );
+    expect(blok).toContain("sisaHari: hariSema === null ? null : AMBANG_DURASI_HARI - hariSema,");
+    expect(blok).not.toContain("AMBANG_DURASI_HARI - hariBersih");
+    // Penciri ghaib TIDAK ditulis dua kali - dibaca dari layanan tahapan,
+    // penciri yang sama dengan layar Status Perkara.
+    expect(blok).toContain("sippTahapanService.penandaGhaibBanyakPerkara(");
     expect(blok).not.toContain("JARAK_PHS_GHAIB_HARI");
-    expect(blok).not.toContain("kelonggaran:");
     expect(blok).not.toContain("FROM perkara_penetapan");
     // Hitungan lama: tanpa hari pendaftaran, tanpa tangga SK.
     expect(blok).not.toContain("Math.max(0, hariTotal - hariMediasi)");
@@ -258,6 +268,20 @@ describe("penciri ghaib SK dipakai dari satu tempat", () => {
   it("sippTahapanService memakai JARAK_PHS_GHAIB_HARI, bukan angka 120 sendiri", () => {
     expect(berkasTahapan).not.toContain("jarak >= 120)");
     expect(berkasTahapan).toContain("jarak >= penilaianSippService.JARAK_PHS_GHAIB_HARI");
+    // Satu penciri, dua layar. penandaPerkara TIDAK boleh menulis sumbernya
+    // sendiri lagi - ia memanggil fungsi yang sama dengan Antrian Sidang.
+    // Sampai 24 September 2026 keduanya berbeda, dan 65, 76, serta
+    // 158/Pdt.G/2025 berselisih antar-layar karenanya.
+    const blokPenanda = berkasTahapan.slice(
+      berkasTahapan.indexOf("async function penandaPerkara("),
+      berkasTahapan.indexOf("async function pihakPerkara(")
+    );
+    expect(blokPenanda).toContain("penandaGhaibBanyakPerkara(");
+    expect(blokPenanda).not.toContain("FROM perkara_pihak2 p");
+    // Ambangnya disebut SEKALI di seluruh berkas - dua sebutan berarti dua
+    // cabang yang suatu hari berselisih diam-diam.
+    expect(berkasTahapan.match(/JARAK_PHS_GHAIB_HARI/g) ?? []).toHaveLength(1);
+    expect(berkasTahapan).toContain("  penandaGhaibBanyakPerkara,");
   });
 });
 
@@ -316,6 +340,14 @@ function muatJadwal(
     }),
   });
 
+  // sippTahapanService IKUT dibuang dari cache. durasiBanyakPerkara kini
+  // membaca penciri ghaib lewat layanan itu, dan layanan itu menyimpan db
+  // palsu milik pemanggilan PERTAMA di dalam closure-nya. Tanpa baris ini,
+  // pemanggilan kedua memakai `jawab` milik pemanggilan pertama dan ujinya
+  // merah tanpa sebab yang terlihat.
+  delete (require_.cache as Record<string, unknown>)[
+    require_.resolve(path.join(akarBot, "services/sippTahapanService"))
+  ];
   delete (require_.cache as Record<string, unknown>)[jalurLayanan];
   const layanan = require_(jalurLayanan) as {
     durasiBanyakPerkara: (id: number[]) => Promise<Record<string, Record<string, unknown>>>;
@@ -326,8 +358,106 @@ function muatJadwal(
   return { layanan, kueri };
 }
 
+/**
+ * sippTahapanService dengan basis data dan pembaca skema palsu - untuk menguji
+ * penciri ghaib bersamanya langsung, bukan lewat Antrian Sidang.
+ */
+function muatTahapan(
+  jawab: (sql: string) => unknown[],
+  {
+    tabel = ["perkara_pihak2", "perkara_penetapan", "pihak"],
+    kolom = { pihakGhaib: "ghaib", tanggalPhs: "penetapan_hari_sidang", sidangPertama: "sidang_pertama" },
+  }: { tabel?: string[]; kolom?: Record<string, string> } = {}
+) {
+  const Module = require_("module") as unknown as new (id: string) => {
+    filename: string;
+    loaded: boolean;
+    exports: unknown;
+  };
+  const jalurDb = require_.resolve(path.join(akarBot, "db_config"));
+  const jalurSkema = require_.resolve(path.join(akarBot, "services/sippSkemaService"));
+  const jalurTahapan = require_.resolve(path.join(akarBot, "services/sippTahapanService"));
+  const kueri: Catatan[] = [];
+
+  const pasang = (jalur: string, isi: unknown) => {
+    const m = new Module(jalur);
+    m.filename = jalur;
+    m.loaded = true;
+    m.exports = isi;
+    (require_.cache as Record<string, unknown>)[jalur] = m;
+  };
+
+  pasang(jalurDb, {
+    query: (sql: string, params: unknown[], balik: (g: unknown, h: unknown) => void) => {
+      kueri.push({ sql: String(sql), params });
+      try {
+        balik(null, jawab(String(sql)));
+      } catch (galat) {
+        balik(galat, null);
+      }
+    },
+  });
+  pasang(jalurSkema, {
+    tabelAda: async (t: string) => tabel.includes(t),
+    kolomAda: async () => false,
+    kolomTabel: async () => new Set<string>(),
+    pilihKolom: async (_t: string, calon: string[]) => calon[0] ?? "",
+    kolomTerpilih: async () => kolom,
+  });
+
+  delete (require_.cache as Record<string, unknown>)[jalurTahapan];
+  const layanan = require_(jalurTahapan) as {
+    penandaGhaibBanyakPerkara: (
+      id: number[],
+      pilihan?: { tanggal?: Record<string, { tanggalPhs: string; sidangPertama: string }> }
+    ) => Promise<Record<string, { ghaib: boolean; sumber: string[]; jarakPhsHari: number | null }>>;
+  };
+  return { layanan, kueri };
+}
+
+describe("penciri ghaib bersama: empat sumber, satu jawaban", () => {
+  it("penanda perkara_pihak2.ghaib menandai perkara yang jarak PHS-nya 119 hari", async () => {
+    // Inilah 158/Pdt.G/2025 - jarak PHS 119 hari, sehari di bawah ambang SK,
+    // tetapi pihaknya bertanda ghaib di SIPP. Sampai 24 September 2026
+    // Antrian Sidang menjawab "bukan ghaib" untuk perkara ini sedangkan
+    // Status Perkara menjawab "ghaib". Terukur bersama 65 dan 76/Pdt.G/2025.
+    const { layanan } = muatTahapan((sql) => {
+      if (sql.includes("FROM perkara_pihak2 k")) return [{ perkaraId: 8540 }];
+      if (sql.includes("FROM perkara_penetapan pp")) {
+        return [{ perkaraId: 8540, tanggalPhs: "2026-01-05", sidangPertama: "2026-05-04" }];
+      }
+      return [];
+    });
+    const peta = await layanan.penandaGhaibBanyakPerkara([8540]);
+    expect(peta["8540"]).toMatchObject({ ghaib: true, jarakPhsHari: null });
+    expect(peta["8540"].sumber).toContain("penanda ghaib pada pihak tergugat/termohon");
+  });
+
+  it("perkara tanpa satu pun sumber TIDAK punya kunci sama sekali", async () => {
+    const { layanan } = muatTahapan((sql) =>
+      sql.includes("FROM perkara_penetapan pp")
+        ? [{ perkaraId: 7, tanggalPhs: "2026-01-05", sidangPertama: "2026-05-04" }]
+        : []
+    );
+    const peta = await layanan.penandaGhaibBanyakPerkara([7]);
+    expect(peta).toEqual({});
+  });
+
+  it("peta tanggal dari pemanggil menggantikan kueri penetapan", async () => {
+    // Layar Status Perkara sudah membaca kedua tanggalnya; menanyakannya lagi
+    // berarti kueri kedua untuk jawaban yang sama.
+    const { layanan, kueri } = muatTahapan(() => []);
+    const peta = await layanan.penandaGhaibBanyakPerkara([3], {
+      tanggal: { "3": { tanggalPhs: "2026-01-05", sidangPertama: "2026-05-10" } },
+    });
+    expect(peta["3"]).toMatchObject({ ghaib: true, jarakPhsHari: 125 });
+    expect(peta["3"].sumber).toContain("jarak PHS ke sidang pertama 125 hari");
+    expect(kueri.some((k) => k.sql.includes("FROM perkara_penetapan pp"))).toBe(false);
+  });
+});
+
 describe("durasi yang dikirim bot membawa nilai SK dengan nama ruas yang dibaca portal", () => {
-  it("hariKotor dan waktuPutusSk - dan perkara ghaib TIDAK dipotong 120 hari", async () => {
+  it("kelonggaran ghaib dipotong dari hariBersih, TIDAK dari sisa SEMA", async () => {
     const { layanan, kueri } = muatJadwal((sql) => {
       if (sql.includes("FROM perkara p") && sql.includes("tanggal_pendaftaran")) {
         return [
@@ -359,15 +489,123 @@ describe("durasi yang dikirim bot membawa nilai SK dengan nama ruas yang dibaca 
     });
     expect(pitaWaktuPutus((hasil["1"].waktuPutusSk as { nilai: number }).nilai)?.warna).toBe("kuning");
 
-    // Perkara ghaib (PHS ke sidang pertama 125 hari): hari ke-160, merah, dan
-    // SISA TERHADAP SEMA NEGATIF - kewajiban lapor lima bulan tidak hilang.
-    // Rancangan yang memotong ghaib menampilkan "40 hari, sisa 110".
-    expect(hasil["2"]).toMatchObject({ hariKotor: 160, hariBersih: 160, sisaHari: -10, waktuPutusSk: { nilai: 0 } });
-    expect(hasil["2"]).not.toHaveProperty("kelonggaran");
-    expect(hasil["3"]).toMatchObject({ hariKotor: 160, hariBersih: 160, waktuPutusSk: { nilai: 0 } });
+    // Perkara ghaib (PHS ke sidang pertama 125 hari), hari ke-160:
+    // hariBersih 40 dan nilai 5 (hijau) - kelonggaran SK 120 hari, diminta
+    // pengguna 24 September 2026 petang.
+    //
+    // TETAPI sisaHari TETAP -10: batas lima bulan SEMA 2/2014 tidak mengenal
+    // kelonggaran itu, dan kewajiban lapornya tidak boleh hilang. Inilah
+    // temuan tinjauan 24 September 2026 yang dijaga di sini - rancangan pagi
+    // itu memotong keduanya dan menampilkan "40 hari, sisa 110".
+    expect(hasil["2"]).toMatchObject({
+      hariKotor: 160,
+      hariSema: 160,
+      hariBersih: 40,
+      sisaHari: -10,
+      waktuPutusSk: { nilai: 5 },
+      kelonggaran: { hari: 120, hariMentah: 120, sebab: "perkara ghaib", jarakPhsHari: 125 },
+    });
+    // Jarak PHS 119 hari: BUKAN ghaib - tidak ada kelonggaran sama sekali.
+    expect(hasil["3"]).toMatchObject({
+      hariKotor: 160,
+      hariBersih: 160,
+      sisaHari: -10,
+      kelonggaran: null,
+      waktuPutusSk: { nilai: 0 },
+    });
+    // Perkara biasa tidak ikut kena ruas kelonggaran.
+    expect(hasil["1"]).toMatchObject({ kelonggaran: null, hariSema: 91 });
 
-    // Tidak ada kueri penetapan lagi - satu kueri lebih ringan tiap muatan.
-    expect(kueri.some((k) => k.sql.includes("FROM perkara_penetapan pp"))).toBe(false);
+    // Penciri dibaca SEKALI lewat layanan tahapan, bukan ditulis ulang di
+    // sini - dan karena itu kueri penetapannya tepat satu, bukan satu per
+    // perkara.
+    expect(kueri.filter((k) => k.sql.includes("FROM perkara_penetapan pp"))).toHaveLength(1);
+  });
+
+  it("ghaib muda: hariSema terkirim, supaya lencana tidak sendirian bertuliskan 1 hari", async () => {
+    // Penjepitan di hitungWaktuPutus (potongan <= kotor - mediasi - 1) membuat
+    // perkara ghaib yang berumur di bawah 121 hari selalu berhariBersih 1.
+    // Terukur 24 September 2026: 12 dari 13 perkara ghaib yang belum putus di
+    // sipp_donggala berada di keadaan itu - 37 sampai 114 hari, semuanya
+    // "1 hari". Tanpa ruas hariSema, layar tidak punya angka kedua untuk
+    // ditulis dan barisnya tampak rusak.
+    const { layanan } = muatJadwal((sql) => {
+      if (sql.includes("FROM perkara p") && sql.includes("tanggal_pendaftaran")) {
+        // Didaftarkan 2026-01-01, diputus 2026-03-15: hari ke-74.
+        return [{ perkaraId: 5, tanggalDaftar: "2026-01-01", tanggalPutusan: "2026-03-15" }];
+      }
+      if (sql.includes("FROM perkara_penetapan pp")) {
+        return [{ perkaraId: 5, tanggalPhs: "2026-01-05", sidangPertama: "2026-05-10" }];
+      }
+      return [];
+    });
+    const hasil = await layanan.durasiBanyakPerkara([5]);
+    expect(hasil["5"]).toMatchObject({
+      hariKotor: 74,
+      hariSema: 74,
+      hariBersih: 1,
+      sisaHari: 76,
+      // Dijepit: 120 hari tidak muat pada perkara 74 hari.
+      kelonggaran: { hari: 73, hariMentah: 120, sebab: "perkara ghaib" },
+    });
+  });
+
+  it("sisaHari SEMA KEBAL terhadap kelonggaran ghaib", async () => {
+    // Penjaga NILAI, bukan teks. Seandainya uji ini ada pada 24 September
+    // 2026 pagi, ia akan menahan rancangan yang memotong ghaib dari sisaHari
+    // sebelum tinjauan menemukannya pada perkara 232/Pdt.G/2026.
+    const selisih = [0, 45, 89, 90, 119, 120, 149, 150, 400];
+    const tanggalDari = (tambah: number) => {
+      const t = new Date(Date.UTC(2026, 0, 1) + tambah * 24 * 60 * 60 * 1000);
+      return t.toISOString().slice(0, 10);
+    };
+
+    for (const jarakHari of selisih) {
+      const putus = tanggalDari(jarakHari);
+      const ragam: Record<string, number | null> = {};
+      for (const ghaib of [true, false]) {
+        const { layanan } = muatJadwal((sql) => {
+          if (sql.includes("FROM perkara p") && sql.includes("tanggal_pendaftaran")) {
+            return [{ perkaraId: 9, tanggalDaftar: "2026-01-01", tanggalPutusan: putus }];
+          }
+          if (sql.includes("FROM perkara_penetapan pp")) {
+            // 125 hari = ghaib menurut SK; 119 hari = bukan.
+            return [
+              {
+                perkaraId: 9,
+                tanggalPhs: "2026-01-05",
+                sidangPertama: ghaib ? "2026-05-10" : "2026-05-04",
+              },
+            ];
+          }
+          return [];
+        });
+        const hasil = await layanan.durasiBanyakPerkara([9]);
+        ragam[String(ghaib)] = hasil["9"].sisaHari as number | null;
+      }
+      expect([jarakHari, ragam.true]).toEqual([jarakHari, ragam.false]);
+    }
+  });
+
+  it("gagal-tertutup: penciri ghaib yang melempar galat berarti TANPA kelonggaran", async () => {
+    // Arahnya disengaja. Gagal ke arah kelonggaran berarti menghijaukan
+    // perkara yang sudah lewat lima bulan - kewajiban lapor SEMA hilang
+    // justru ketika basis datanya sedang bermasalah.
+    const { layanan } = muatJadwal((sql) => {
+      if (sql.includes("FROM perkara p") && sql.includes("tanggal_pendaftaran")) {
+        return [{ perkaraId: 6, tanggalDaftar: "2026-01-01", tanggalPutusan: "2026-06-09" }];
+      }
+      if (sql.includes("FROM perkara_penetapan pp")) throw new Error("penetapan tidak terbaca");
+      return [];
+    });
+    const hasil = await layanan.durasiBanyakPerkara([6]);
+    expect(hasil["6"]).toMatchObject({
+      hariKotor: 160,
+      hariBersih: 160,
+      hariSema: 160,
+      sisaHari: -10,
+      kelonggaran: null,
+    });
   });
 
   it("perkara berjalan: sisa hari di pita ikut dikirim", async () => {

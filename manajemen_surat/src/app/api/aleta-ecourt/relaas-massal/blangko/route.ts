@@ -1,0 +1,319 @@
+import { type NextRequest } from "next/server";
+
+import { getDatabase } from "@/server/db/client";
+import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
+import { resolveActorUserId } from "@/server/shared/auth";
+import { getSearchParam } from "@/server/shared/request";
+import { ok } from "@/server/shared/http";
+import {
+  BLANGKO_RELAAS,
+  SET_BLANGKO,
+  blangkoRelaas,
+  jalurBlangkoRelaas,
+  pihakDipanggil,
+  type KeadaanRelaas,
+  type PihakDipanggil,
+} from "@/lib/pohon-blangko";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * ============================================================================
+ * KATALOG BLANGKO RELAAS - SATU SUMBER UNTUK LAYAR DAN EKSTENSI
+ * ============================================================================
+ *
+ * Ekstensi Chrome tidak dapat mengimpor TypeScript, jadi tanpa rute ini ia
+ * harus MENYALIN nama berkas blangko ke dalam konten.js. Nama-nama itu tidak
+ * dapat disalin dengan aman:
+ *
+ *   '[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan) .rtf'
+ *                                                       ^ SATU SPASI
+ *
+ * Spasi itu tidak terlihat pada daftar folder mana pun, dan blangko yang
+ * namanya kehilangan spasi itu tidak akan pernah ketemu - TANPA satu pun
+ * galat, sebab "blangko tidak ada" adalah jawaban yang sah bagi pencari
+ * berkas. Karena itu nama berkasnya hanya ditulis SEKALI, di
+ * src/lib/pohon-blangko.ts, dan rute ini memulangkannya apa adanya.
+ *
+ * ============================================================================
+ * ATURAN PIHAKNYA IKUT DIPULANGKAN, BUKAN DITINGGAL DI SISI PEMANGGIL
+ * ============================================================================
+ *
+ * Yang menentukan blangko bukan hanya keadaan perkaranya, melainkan juga PIHAK
+ * mana yang dipanggil - dan pihaknya diturunkan dari sandi dihadiri_oleh SIPP.
+ * Sandi itu sudah punya penerjemah tunggal, pihakDipanggil(), dan rute ini
+ * membukanya lewat ?dihadiriOleh= supaya ekstensi tidak menuliskan tabel
+ * sandinya sendiri. Dua tabel sandi yang sedikit berbeda adalah cara paling
+ * mudah mencetak panggilan untuk orang yang salah.
+ *
+ * ============================================================================
+ * KEWENANGANNYA "panel" - SAMA DENGAN LAYAR RELAAS MASSAL
+ * ============================================================================
+ *
+ * Bukan kapabilitas baru: menambah kunci ke KAPABILITAS_EKSTENSI membuat kunci
+ * itu mati bawaannya bagi tiap peran, sehingga panel yang baru dibangun tampak
+ * rusak bagi juru sita sampai ada administrator yang menyalakannya satu per
+ * satu. "panel" bawaannya menyala bagi seluruh PERAN_PEMEGANG_PERKARA, dan
+ * "jurusita" ada di dalam daftar itu. Alasan lengkapnya di route.ts induknya.
+ *
+ * ============================================================================
+ * PEMERIKSAAN KE FOLDER ABT - DAN TIGA JAWABAN, BUKAN DUA
+ * ============================================================================
+ *
+ * Katalog di atas adalah daftar yang DIHARAPKAN ada. Yang benar-benar ada di
+ * folder ABT peladen hanya dapat dijawab dengan membacanya, lewat
+ * blangko.katalog seperti src/app/api/aleta-ecourt/bas/blangko/route.ts dan
+ * .../blangko/pohon/route.ts. Karena itu tiap blangko punya TIGA keadaan, bukan
+ * dua:
+ *
+ *   adaDiAbt = true    terbaca di folder, namanya persis sama
+ *   adaDiAbt = false   folder terbaca, namanya TIDAK ada di dalamnya
+ *   adaDiAbt = null    foldernya sendiri belum terbaca - belum terukur
+ *
+ * Menjatuhkan yang ketiga ke false berarti layar berkata "blangkonya hilang"
+ * padahal yang terjadi bot tidak dapat dihubungi; menjatuhkannya ke true
+ * berarti layar menjanjikan berkas yang belum pernah dilihat siapa pun.
+ * Terbukti di mesin setempat 25 September 2026: folder ABT tidak ada di sini
+ * sama sekali (blangko.katalog menjawab "Folder blangko tidak ditemukan."),
+ * jadi cabang null itu memang cabang yang jalan, bukan kehati-hatian teoretis.
+ *
+ * Kegagalan membaca folder TIDAK menggagalkan seluruh rute: katalognya sendiri
+ * tetap sah sebab ia datang dari TypeScript, bukan dari peladen. Yang gagal
+ * disebut gagal pada abt.sebab, dan tidak dikosongkan diam-diam.
+ */
+
+/** Keenam sandi keadaan - dibaca dari katalognya, bukan ditulis ulang. */
+const KEADAAN_DIKENAL = BLANGKO_RELAAS.map((x) => x.keadaan);
+
+/**
+ * "tidak-perlu" ikut dikenal: itu jawaban SIPP untuk sandi 1 (Semua Pihak),
+ * bukan ketiadaan jawaban. Menolaknya sebagai "tidak dikenal" berarti rute ini
+ * menolak keluaran penerjemah sandinya sendiri.
+ */
+const PIHAK_DIKENAL: PihakDipanggil[] = ["keduanya", "pertama", "kedua", "tidak-perlu", "tidak-diketahui"];
+
+/**
+ * Sebab penerjemahan satu sandi kehadiran - artinya dibaca dari BORANG SIPP
+ * (application/views/perkara_tab/jadwal_sidang_p_edit.php, <select
+ * name="dihadiri_oleh">), bukan dari komentar kolom yang memang kosong.
+ */
+function sebabSandi(sandi: string, pihak: PihakDipanggil): string {
+  if (pihak === "tidak-perlu") {
+    return (
+      `Sandi kehadiran "${sandi}" = Semua Pihak hadir (borang SIPP jadwal_sidang_p_edit.php). ` +
+      "Yang hadir diperintahkan datang lagi di muka sidang, jadi tidak dipanggil dengan relaas."
+    );
+  }
+  if (pihak !== "tidak-diketahui") return "";
+  if (!sandi.trim() || Number(sandi) === 0) {
+    return "Kehadiran sidang tidak tercatat di SIPP. Tanyakan kepada juru sitanya; jangan ditebak.";
+  }
+  return (
+    `Sandi kehadiran "${sandi}" pada borang SIPP berarti kombinasi dengan pihak intervensi atau ` +
+    "turut tergugat, atau sebagian pihak saja - tidak dapat dipetakan ke satu blangko tanpa " +
+    "melihat perkaranya. Tanyakan kepada juru sitanya; jangan ditebak."
+  );
+}
+
+type BlangkoTerdaftar = {
+  keadaan: KeadaanRelaas;
+  /** APA ADANYA - termasuk spasi sebelum ".rtf" pada blangko sidang lanjutan. */
+  berkas: string;
+  label: string;
+  pihak: PihakDipanggil;
+  keterangan: string;
+  /** Jalur relatif di dalam akar blangko, dari jalurBlangkoRelaas(). */
+  jalur: string;
+  /** true/false HANYA bila folder ABT terbaca; null bila belum terukur. */
+  adaDiAbt: boolean | null;
+};
+
+/**
+ * Folder relaas diambil dari SET_BLANGKO, bukan ditulis "derry_briantono/Relaas".
+ *
+ * Nama yang ditulis di dua tempat adalah nama yang kelak berselisih, dan yang
+ * berselisih di sini tidak menimbulkan galat - hanya folder kosong yang terbaca
+ * sebagai "tidak ada blangko relaas".
+ */
+function setRelaas() {
+  return SET_BLANGKO.find((x) => x.jenis === "relaas") ?? null;
+}
+
+/** Sebab pemilihan blangko - keputusannya disebut, bukan disembunyikan. */
+function sebabPilihan(keadaan: KeadaanRelaas, pihak: PihakDipanggil, terpilih: string) {
+  if (keadaan === "sidang-ditunda" && (pihak === "keduanya" || pihak === "pertama")) {
+    return (
+      "Sidang yang ditunda dengan Pihak Pertama ikut dipanggil memakai blangko sidang " +
+      "pertama - bukan karena ia sidang pertama, melainkan karena hanya blangko itu yang " +
+      "memuat dua pihak sekaligus."
+    );
+  }
+  if (pihak === "tidak-diketahui" && keadaan === "sidang-ditunda") {
+    return (
+      "Pihak yang dipanggil belum diketahui, jadi yang dipulangkan blangko bawaan keadaan " +
+      "ini (untuk Pihak Kedua). Periksa dahulu kehadiran sidang sebelumnya - terukur 1.354 " +
+      "dari 20.109 baris jadwal sidang tidak mencatat kehadirannya."
+    );
+  }
+  return `Blangko tunggal untuk keadaan "${keadaan}": ${terpilih}`;
+}
+
+export async function GET(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
+  try {
+    db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
+    await pastikanKapabilitas(db, actorUserId, "panel");
+
+    const keadaanMinta = String(getSearchParam(request, "keadaan") ?? "").trim();
+    const pihakMinta = String(getSearchParam(request, "pihak") ?? "").trim();
+    const dihadiriMinta = String(getSearchParam(request, "dihadiriOleh") ?? "").trim();
+    // Pemeriksaan folder ABT menyala bawaannya - itulah yang menangkap nama
+    // berkas yang berselisih. Dapat dimatikan dengan ?periksaAbt=0 oleh
+    // pemanggil yang hanya butuh daftarnya.
+    const periksaAbt = String(getSearchParam(request, "periksaAbt") ?? "1").trim() !== "0";
+
+    // Ruas yang salah bentuk DITOLAK, bukan diganti nilai bawaan. Mengganti
+    // keadaan yang salah tulis dengan "sidang-pertama" berarti memulangkan
+    // blangko yang tidak diminta siapa pun, dengan tampilan yang meyakinkan.
+    if (keadaanMinta && !KEADAAN_DIKENAL.includes(keadaanMinta as KeadaanRelaas)) {
+      return Response.json(
+        {
+          ok: false,
+          alasan: `Keadaan "${keadaanMinta}" tidak dikenal.`,
+          keadaanDikenal: KEADAAN_DIKENAL,
+        },
+        { status: 400 }
+      );
+    }
+    if (pihakMinta && !PIHAK_DIKENAL.includes(pihakMinta as PihakDipanggil)) {
+      return Response.json(
+        {
+          ok: false,
+          alasan: `Pihak "${pihakMinta}" tidak dikenal.`,
+          pihakDikenal: PIHAK_DIKENAL,
+        },
+        { status: 400 }
+      );
+    }
+
+    const set = setRelaas();
+    const folder = set?.folder ?? "";
+
+    // ---- Folder ABT: dibaca sekali, hasilnya dipakai seluruh baris ----------
+    let abtTerbaca = false;
+    let abtSebab = periksaAbt
+      ? ""
+      : "Tidak diperiksa - pemanggil meminta ?periksaAbt=0, jadi keberadaan berkasnya belum terukur.";
+    let berkasDiAbt: string[] | null = null;
+
+    if (periksaAbt && folder) {
+      const katalog = await callAletaBotSippBridge("blangko.katalog", { folder });
+      if (!katalog.ok) {
+        // Sebab dari jembatan apa adanya - "bot tidak merespons" dan "folder
+        // tidak ada" menuntut tindakan yang berbeda.
+        abtSebab = String(katalog.error ?? "Katalog blangko tidak terbaca.");
+      } else {
+        const data = (katalog.data ?? {}) as {
+          ada?: boolean;
+          sebab?: string;
+          blangko?: Array<{ berkas?: string }>;
+        };
+        const daftar = Array.isArray(data.blangko)
+          ? data.blangko.map((x) => String(x?.berkas ?? "")).filter(Boolean)
+          : [];
+        if (data.ada && daftar.length > 0) {
+          abtTerbaca = true;
+          berkasDiAbt = daftar;
+        } else {
+          abtSebab = String(data.sebab ?? "") || "Folder blangko relaas terbaca tetapi kosong.";
+        }
+      }
+    } else if (periksaAbt && !folder) {
+      abtSebab = 'Set blangko berjenis "relaas" tidak ada di SET_BLANGKO - foldernya tidak diketahui.';
+    }
+
+    const blangko: BlangkoTerdaftar[] = BLANGKO_RELAAS.map((x) => ({
+      keadaan: x.keadaan,
+      berkas: x.berkas,
+      label: x.label,
+      pihak: x.pihak,
+      keterangan: x.keterangan,
+      jalur: jalurBlangkoRelaas(x.berkas),
+      // Perbandingan PERSIS, termasuk spasinya. Menormalkan spasi di sini akan
+      // menyembunyikan justru selisih yang rute ini dibangun untuk menangkap.
+      adaDiAbt: berkasDiAbt ? berkasDiAbt.includes(x.berkas) : null,
+    }));
+
+    const tidakDitemukan = berkasDiAbt
+      ? blangko.filter((x) => x.adaDiAbt === false).map((x) => x.berkas)
+      : null;
+
+    // ---- Satu pilihan, bila keadaannya disebut ------------------------------
+    const pihakPilihan: PihakDipanggil = pihakMinta
+      ? (pihakMinta as PihakDipanggil)
+      : dihadiriMinta
+        ? pihakDipanggil(dihadiriMinta)
+        : "tidak-diketahui";
+
+    const terpilih = keadaanMinta ? blangkoRelaas(keadaanMinta as KeadaanRelaas, pihakPilihan) : null;
+
+    const pilihan = keadaanMinta
+      ? {
+          keadaan: keadaanMinta,
+          pihak: pihakPilihan,
+          ada: Boolean(terpilih),
+          berkas: terpilih?.berkas ?? "",
+          jalur: terpilih ? jalurBlangkoRelaas(terpilih.berkas) : "",
+          label: terpilih?.label ?? "",
+          adaDiAbt: terpilih
+            ? (blangko.find((x) => x.berkas === terpilih.berkas)?.adaDiAbt ?? null)
+            : null,
+          sebab: terpilih
+            ? sebabPilihan(keadaanMinta as KeadaanRelaas, pihakPilihan, terpilih.berkas)
+            : pihakPilihan === "tidak-perlu"
+              ? "Semua pihak hadir - tidak ada yang dipanggil maupun diberi tahu, jadi tidak ada blangko."
+              : `Keadaan "${keadaanMinta}" tidak punya blangko terdaftar di BLANGKO_RELAAS.`,
+        }
+      : null;
+
+    // ---- Penerjemahan sandi kehadiran, bila diminta -------------------------
+    const sandi = dihadiriMinta
+      ? {
+          dihadiriOleh: dihadiriMinta,
+          pihak: pihakDipanggil(dihadiriMinta),
+          sebab: sebabSandi(dihadiriMinta, pihakDipanggil(dihadiriMinta)),
+        }
+      : null;
+
+    return ok({
+      set: set ? { id: set.id, nama: set.nama, folder: set.folder } : null,
+      folder,
+      jumlah: blangko.length,
+      keadaanDikenal: KEADAAN_DIKENAL,
+      pihakDikenal: PIHAK_DIKENAL,
+      blangko,
+      abt: {
+        diperiksa: periksaAbt,
+        terbaca: abtTerbaca,
+        sebab: abtSebab,
+        jumlahDiFolder: berkasDiAbt ? berkasDiAbt.length : null,
+        tidakDitemukan,
+      },
+      pilihan,
+      sandi,
+    });
+  } catch (error) {
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "RELAAS_MASSAL_BLANGKO_FAILED",
+      feature: "aleta_ecourt",
+      entityId: "relaas-massal-blangko",
+    });
+  }
+}

@@ -25,8 +25,37 @@
 const crypto = require("crypto");
 
 const botDb = require("./botDbService");
+const logService = require("./logService");
 const { cleanText, normalizeCaseNumber } = require("./ecourtTextService");
 const ecourtDocumentService = require("./ecourtDocumentService");
+
+/**
+ * Membaca tabel berkas, dan MENCATAT bila kueri itu gagal.
+ *
+ * Dipakai kedua fungsi sumber-tunggal keadaan berkas. Keduanya dahulu berakhir
+ * `.catch(() => [])`, sehingga satu nama kolom yang salah memulangkan "tidak
+ * ada berkas" untuk seluruh perkara tanpa satu baris log - pola yang sama yang
+ * menyembunyikan perkara_efiling.perkara_id selama berbulan-bulan.
+ *
+ * Galatnya dicatat lalu DILEMPARKAN ULANG. Pemanggil yang punya cadangan jujur
+ * menangkapnya sendiri; yang tidak punya wajib gagal terlihat.
+ */
+async function bacaBerkasAtauCatat(sql, params, konteks = {}) {
+  try {
+    const rows = await botDb.query(sql, params);
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    const sebab = error && error.message ? error.message : String(error);
+    void logService.logSystemEvent({
+      eventType: "ecourt_keadaan_berkas_gagal",
+      severity: "error",
+      message:
+        "Tabel berkas e-Court tidak terbaca; keadaan berkas TIDAK boleh dibaca sebagai 'tidak ada'.",
+      metadata: { ...konteks, kode: (error && error.code) || "", sebab },
+    });
+    throw error;
+  }
+}
 
 let schemaReady = false;
 let schemaPromise = null;
@@ -250,6 +279,31 @@ async function ensureSchema() {
       "aleta_bot_ecourt_documents",
       "gagal_terakhir",
       "DATETIME NULL"
+    );
+
+    // ------------------------------------------------------------------
+    // 404 BUKAN KEGAGALAN KITA, DAN BUKAN PULA KEADAAN SEMENTARA
+    // ------------------------------------------------------------------
+    //
+    // gagal_beruntun mengurus dokumen yang GAGAL kita ambil: tiga kali gagal,
+    // istirahat sehari, lalu dicoba lagi. Itu benar untuk jaringan yang putus
+    // dan untuk alamat yang belum dikenali bentuknya.
+    //
+    // 404 lain sama sekali. e-Court MENJAWAB, dan jawabannya "berkas ini tidak
+    // saya sediakan" - untuk KTP hampir selalu begitu, dan tetap begitu tiap
+    // kali ditanya. Diukur 23 Sep 2026: 145 dari 168 galat penarikan berbunyi
+    // HTTP 404. Selama jawabannya tidak dicatat, dokumen itu tidak pernah punya
+    // baris berkas, perkaranya tidak pernah terhitung lengkap, dan halamannya
+    // dibuka ulang setiap putaran - selamanya.
+    await botDb.addColumnIfMissing(
+      "aleta_bot_ecourt_documents",
+      "tidak_tersedia_pada",
+      "DATETIME NULL"
+    );
+    await botDb.addColumnIfMissing(
+      "aleta_bot_ecourt_documents",
+      "tidak_tersedia_sebab",
+      "VARCHAR(191) NOT NULL DEFAULT ''"
     );
 
     schemaReady = true;
@@ -718,6 +772,65 @@ async function resetGagalBerkas(documentKey) {
 }
 
 /**
+ * ============================================================================
+ * DOKUMEN YANG e-COURT SENDIRI TIDAK MENYEDIAKAN BERKASNYA
+ * ============================================================================
+ *
+ * Berapa lama penandanya berlaku sebelum ditanyakan sekali lagi. Bukan
+ * selamanya: e-Court dapat mengunggah berkasnya kapan saja tanpa memberi tahu
+ * siapa pun, dan berkas yang dibutuhkan hakim tidak boleh menjadi berkas yang
+ * tidak pernah ditanyakan lagi. Tiga puluh hari berarti satu dokumen ditanyakan
+ * dua belas kali setahun, bukan dua ratus kali - dengan putaran dua jam sekali,
+ * pukul 07-17, itulah selisihnya.
+ */
+const TIDAK_TERSEDIA_JEDA_HARI = Number(
+  process.env.ALETA_BOT_ECOURT_TIDAK_TERSEDIA_JEDA_HARI || 30
+);
+
+/**
+ * Menandai dokumen yang e-Court sendiri tidak menyediakan berkasnya.
+ *
+ * gagal_beruntun sengaja dinolkan bersamaan: ini BUKAN kegagalan yang perlu
+ * dihitung, dan membiarkannya menumpuk membuat dokumen itu terbaca sebagai
+ * masalah penarikan di layar admin - padahal tidak ada yang dapat diperbaiki.
+ */
+async function tandaiTidakTersedia(documentKey, sebab) {
+  await ensureSchema();
+  await botDb
+    .query(
+      `UPDATE aleta_bot_ecourt_documents
+          SET tidak_tersedia_pada = ?, tidak_tersedia_sebab = ?,
+              gagal_beruntun = 0, gagal_sebab = '', gagal_terakhir = NULL
+        WHERE document_key = ?`,
+      [botDb.toMysqlDate(new Date()), cleanText(sebab).slice(0, 191), String(documentKey || "")]
+    )
+    .catch(() => {});
+}
+
+/**
+ * Melupakan penandanya supaya dicoba lagi.
+ *
+ * Dipanggil dua kali: otomatis ketika berkasnya ternyata berhasil diambil, dan
+ * atas permintaan petugas dari layar - sebab petugas kadang TAHU berkasnya baru
+ * diunggah, dan menunggu tiga puluh hari tidak masuk akal.
+ */
+async function lupakanTidakTersedia({ documentKey = "", semua = false } = {}) {
+  await ensureSchema();
+  if (!semua && !documentKey) return { diubah: 0 };
+  const hasil = await botDb.query(
+    semua
+      ? `UPDATE aleta_bot_ecourt_documents
+            SET tidak_tersedia_pada = NULL, tidak_tersedia_sebab = ''
+          WHERE tidak_tersedia_pada IS NOT NULL`
+      : `UPDATE aleta_bot_ecourt_documents
+            SET tidak_tersedia_pada = NULL, tidak_tersedia_sebab = ''
+          WHERE document_key = ?`,
+    semua ? [] : [String(documentKey)]
+  );
+  return { diubah: Number(hasil && hasil.affectedRows) || 0 };
+}
+
+/**
  * Apakah dokumen ini sedang diistirahatkan?
  *
  * Gagal-TERBUKA: bila catatannya tidak terbaca, jawabannya TIDAK dikarantina.
@@ -873,7 +986,144 @@ async function listFiles(documentKey) {
   return Array.isArray(rows) ? rows : [];
 }
 
+/**
+ * ============================================================================
+ * SATU-SATUNYA JAWABAN ATAS "DOKUMEN INI PUNYA BERKASNYA?"
+ * ============================================================================
+ *
+ * Sampai 25 Sep 2026 pertanyaan ini dijawab LIMA potong kode dengan definisi
+ * berbeda: rincianArsipPerkara (files + bukti cakram), sippKonteksService.
+ * dokumenPerkara (files ATAU cermin), daftarArsipPerkara (cermin saja, dan
+ * `IS NOT NULL` menghitung string kosong sebagai "ada"), kendaliBerkasService.
+ * inventarisAleta (cermin saja tetapi string kosong dihitung kosong), dan
+ * getBerkas (files dulu, cermin cadangan). Akibatnya satu dokumen yang sama
+ * dinyatakan ADA di ekstensi SIPP dan TIDAK ADA di portal, tombol Tarik
+ * ditawarkan untuk perkara yang jembatan anggap sudah lengkap lalu dilewati
+ * diam-diam, dan tombol ZIP disembunyikan untuk perkara yang berkasnya utuh.
+ *
+ * Kolom cermin berkas_pdf/berkas_word TIDAK dipakai di sini. Ia hanya terisi
+ * saat satu berkas BARU tersimpan - recordFile keluar lebih awal dengan
+ * { sudahAda: true } untuk berkas yang sidik jarinya sama, tanpa menyentuh
+ * cermin - dan di-NULL-kan saat retensi walau sidik jari lain masih hidup.
+ * Terukur di peladen: 394 dokumen, cermin terisi 23 pdf dan 8 word, sementara
+ * aleta_bot_ecourt_files mencatat 400 berkas.
+ *
+ * Yang dipulangkan per document_key:
+ *   pdf / word : nama berkas bila TERCATAT dan TERBACA di cakram
+ *   hilang     : berapa berkas tercatat tetapi lenyap dari cakram
+ *   retensi    : berapa berkas sengaja dihapus karena masa simpan
+ *
+ * "hilang" dan "retensi" sengaja dipisah: yang pertama harus ditarik ulang,
+ * yang kedua TIDAK boleh ditarik ulang.
+ *
+ * ============================================================================
+ * "TIDAK TERBACA" BUKAN "TIDAK ADA"
+ * ============================================================================
+ *
+ * Sampai 25 Sep 2026 kueri di bawah berakhir `.catch(() => [])` - persis pola
+ * yang menyembunyikan kolom perkara_efiling.perkara_id yang tidak ada selama
+ * berbulan-bulan. Terukur dengan membuat botDb.query melempar: fungsi ini
+ * memulangkan Map berukuran 0, dan pemanggilnya membacanya sebagai "tidak ada
+ * berkas". Satu nama kolom yang salah karena itu melenyapkan SELURUH tombol
+ * unduh dari Status Perkara, Antrian Sidang, dan Kendali Berkas - beserta
+ * tombol ZIP-nya - tanpa satu baris log.
+ *
+ * Kini galatnya DICATAT lalu DILEMPARKAN ULANG. Melemparkan, bukan memulangkan
+ * peta kosong: pemanggil yang punya cadangan yang jujur boleh menangkapnya
+ * (lihat daftarArsipPerkara, yang turun ke angka TERCATAT), dan yang tidak
+ * punya cadangan lebih baik menampilkan galat daripada berbohong "tidak ada".
+ */
+async function keadaanBerkasPerkara(nomorPerkaraMentah) {
+  await ensureSchema();
+  const peta = new Map();
+  const nomorPerkara = normalizeCaseNumber(nomorPerkaraMentah);
+  if (!nomorPerkara) return peta;
 
+  const rows = await bacaBerkasAtauCatat(
+    `SELECT document_key AS documentKey, format, jalur_berkas AS jalur,
+            dihapus_retensi AS dihapusRetensi
+       FROM aleta_bot_ecourt_files
+      WHERE nomor_perkara = ?`,
+    [nomorPerkara],
+    { fungsi: "keadaanBerkasPerkara", nomorPerkara }
+  );
+
+  for (const berkas of Array.isArray(rows) ? rows : []) {
+    const kunci = cleanText(berkas.documentKey);
+    const jenis = cleanText(berkas.format).toLowerCase();
+    if (!kunci || (jenis !== "pdf" && jenis !== "word")) continue;
+
+    const catatan = peta.get(kunci) || { pdf: null, word: null, hilang: 0, retensi: 0 };
+    if (berkas.dihapusRetensi) {
+      catatan.retensi += 1;
+    } else {
+      const periksa = ecourtDocumentService.describeEcourtDocument(berkas.jalur);
+      if (periksa.ok) catatan[jenis] = periksa.fileName;
+      else catatan.hilang += 1;
+    }
+    peta.set(kunci, catatan);
+  }
+
+  return peta;
+}
+
+/**
+ * Jawaban yang sama untuk sekumpulan perkara sekaligus - dipakai TABEL.
+ *
+ * Bedanya dengan ringkasKekuranganBerkas di bawah hanya satu, tetapi menentukan:
+ * yang ini MEMBUKTIKAN ke cakram, satu panggilan sistem berkas per berkas.
+ * Itu benar untuk paling banyak 500 baris yang digambar satu layar, dan salah
+ * untuk ribuan perkara yang disaring penarik sebelum satu halaman pun dibuka.
+ */
+async function keadaanBerkasBanyakPerkara(daftarNomor = []) {
+  await ensureSchema();
+  const hasil = new Map();
+  const bersih = [...new Set((daftarNomor || []).map(normalizeCaseNumber).filter(Boolean))];
+  if (bersih.length === 0) return hasil;
+
+  for (const nomor of bersih) {
+    hasil.set(nomor, { adaPdf: 0, adaWord: 0, hilang: 0, retensi: 0 });
+  }
+
+  // Dipotong 200 supaya daftar IN tidak melewati batas paket MySQL.
+  for (let i = 0; i < bersih.length; i += 200) {
+    const kelompok = bersih.slice(i, i + 200);
+    const isian = kelompok.map(() => "?").join(", ");
+    // Dicatat lalu dilemparkan ulang, tidak ditelan - lihat catatan panjang
+    // pada keadaanBerkasPerkara. Peta yang dipulangkan di sini sudah berisi
+    // nol untuk seluruh perkara, sehingga galat yang ditelan dahulu terbaca
+    // sebagai "semua perkara tidak punya berkas" - jawaban paling meyakinkan
+    // dan paling salah yang dapat diberikan.
+    const rows = await bacaBerkasAtauCatat(
+      `SELECT nomor_perkara AS nomorPerkara, format, jalur_berkas AS jalur,
+              dihapus_retensi AS dihapusRetensi
+         FROM aleta_bot_ecourt_files
+        WHERE nomor_perkara IN (${isian})`,
+      kelompok,
+      { fungsi: "keadaanBerkasBanyakPerkara", jumlahPerkara: kelompok.length }
+    );
+
+    for (const berkas of Array.isArray(rows) ? rows : []) {
+      const ringkas = hasil.get(normalizeCaseNumber(berkas.nomorPerkara));
+      if (!ringkas) continue;
+      const jenis = cleanText(berkas.format).toLowerCase();
+
+      if (berkas.dihapusRetensi) {
+        ringkas.retensi += 1;
+        continue;
+      }
+      const periksa = ecourtDocumentService.describeEcourtDocument(berkas.jalur);
+      if (!periksa.ok) {
+        ringkas.hilang += 1;
+        continue;
+      }
+      if (jenis === "pdf") ringkas.adaPdf += 1;
+      if (jenis === "word") ringkas.adaWord += 1;
+    }
+  }
+
+  return hasil;
+}
 
 /**
  * Daftar perkara beserta keadaan berkasnya - satu baris per perkara.
@@ -889,19 +1139,205 @@ async function listFiles(documentKey) {
  *
  * Rincian dokumennya baru dibuka ketika satu perkara dipilih.
  */
-const URUTAN_ARSIP = {
-  terbaru: "MAX(terakhir_terlihat) DESC",
-  terlama: "MAX(terakhir_terlihat) ASC",
-  perkara: "nomor_perkara ASC",
-  belumTerbanyak: "tanpaBerkas DESC, MAX(terakhir_terlihat) DESC",
-  dokumenTerbanyak: "dokumen DESC, MAX(terakhir_terlihat) DESC",
-  menungguTerbanyak: "menungguMajelis DESC, MAX(terakhir_terlihat) DESC",
+/**
+ * ============================================================================
+ * NOMOR REGISTER e-COURT - SATU TULISAN, DIPAKAI DI SELECT DAN DI ORDER BY
+ * ============================================================================
+ *
+ * Kolom "Register e-Court" MEMATIKAN panel Kendali Berkas sampai 25 Sep 2026.
+ * susunUrutan menaruh ALIAS AGREGAT di dalam ekspresi bendera-kosong, dan
+ * MariaDB menolaknya. Terukur atas skema aleta_bot setempat (10.4.28), tabel
+ * ada tetapi 0 baris - galatnya galat PENGURAIAN, jadi ia menyala walau
+ * tabelnya kosong:
+ *
+ *   ORDER BY dokumen DESC, nomorRegister ASC                     -> LOLOS
+ *   ORDER BY (nomorRegister IS NULL OR nomorRegister = '') ASC   -> ERROR 1247
+ *       (42S22) Reference 'nomorRegister' not supported (reference to group function)
+ *   ORDER BY (MAX(nomor_register) IS NULL OR MAX(...) = '') ASC  -> LOLOS
+ *
+ * Artinya alias agregat boleh menjadi SELURUH ruas ORDER BY tetapi tidak boleh
+ * berada DI DALAM ekspresi. Bendera "kosong selalu di bawah" adalah ekspresi,
+ * jadi kunci "register" harus memakai ekspresi agregatnya sendiri.
+ *
+ * Diukur atas ketujuh kunci KOLOM_URUT_ARSIP, dua arah masing-masing: hanya
+ * "register" yang melempar, 12 dari 14 panggilan lolos. Enam kunci lain aman
+ * sebab bagiannya menjadi SELURUH ruas - lihat uji arsip-berkas-urut.test.ts
+ * yang kini benar-benar MENJALANKAN keempat belas kueri itu.
+ *
+ * Ditulis SEKALI di sini karena dipakai dua tempat - SELECT dan ORDER BY.
+ * Dua tulisan terpisah berarti kolomnya dapat diurut menurut nilai yang bukan
+ * nilai yang digambar, dan pergeseran itu tidak menghasilkan satu galat pun.
+ */
+const EKSPRESI_REGISTER = "MAX(COALESCE(NULLIF(d.nomor_register, ''), d.registrasi_ecourt))";
+
+/**
+ * ============================================================================
+ * SATU ARTI UNTUK "DOKUMEN INI KEKURANGAN BERKAS"
+ * ============================================================================
+ *
+ * Sampai 25 Sep 2026 ada DUA arti yang berselisih. daftarArsipPerkara (tabel
+ * Kendali Berkas) dan ringkasKekuranganBerkas (yang dipakai perkaraSudahLengkap
+ * dan penyaring jembatan) menjawab angka berbeda untuk BARIS YANG SAMA.
+ * Terukur atas baris semaian di aleta_bot setempat:
+ *
+ *   dokumen tanpa berkas, tidak_tersedia_pada 60 hari lalu:
+ *       daftarArsipPerkara tanpaBerkas=0   ringkasKekuranganBerkas tanpaBerkas=1
+ *   dokumen dengan dihapus_retensi TERISI sementara jalur_berkas masih terisi:
+ *       daftarArsipPerkara tanpaBerkas=1   ringkasKekuranganBerkas tanpaBerkas=0
+ *
+ * Akibat selisih pertama: layar berkata "Lengkap" sementara jembatan membuka
+ * perkaranya terus tiap putaran, sebab jeda 30 harinya sudah lewat dan e-Court
+ * memang patut ditanya sekali lagi.
+ *
+ * Dan KEDUANYA salah untuk berkas yang dihapus masa simpan. Pembersih retensi
+ * (ecourtArsipService.js:356) menyetel jalur_berkas = '' BERSAMAAN dengan
+ * dihapus_retensi, sehingga saringan lama `jalur_berkas <> ''` membuang
+ * barisnya dan dokumennya terbaca "belum ada" - kebalikan dari yang dikatakan
+ * komentar ringkasKekuranganBerkas sendiri. Terukur: dokumen retensi murni
+ * menghasilkan tanpaBerkas=1 di KEDUA fungsi, dan perkaraSudahLengkap=false.
+ * Rantainya: ecourtSasaranService menjadikannya sasaran "berkas_belum_ada",
+ * run.js mengunduh isinya, lalu menolak menulisnya karena dihapusKarenaRetensi
+ * - bytenya diunduh ulang dari server Mahkamah Agung lalu dibuang, selamanya.
+ *
+ * ARTI YANG DIPILIH: dokumen kekurangan berkas bila TIDAK ADA satu pun baris
+ * berkas yang (i) jalurnya terisi atau (ii) sengaja dihapus masa simpan, DAN
+ * dokumen itu tidak sedang dalam jeda "e-Court menjawab tidak menyediakannya".
+ *
+ * Dua sebabnya:
+ *   - berkas retensi TIDAK boleh ditarik ulang, jadi menyebutnya kurang berarti
+ *     meminta pekerjaan yang kodenya sendiri menolak mengerjakan;
+ *   - jeda tidak_tersedia memang harus HABIS. Yang tidak pernah kedaluwarsa
+ *     bukan lagi jeda, melainkan penghapusan - dan berkas yang dibutuhkan hakim
+ *     tidak boleh menjadi berkas yang tidak pernah ditanyakan lagi.
+ */
+const SUMBER_SUDAH_BERBERKAS = `
+         SELECT DISTINCT document_key
+           FROM aleta_bot_ecourt_files
+          WHERE (jalur_berkas IS NOT NULL AND jalur_berkas <> '')
+             OR dihapus_retensi IS NOT NULL`;
+
+/**
+ * Dokumen yang e-Court jawab tidak menyediakannya, dan jedanya BELUM habis.
+ * Satu tanda `?` - jumlah harinya selalu diikat sebagai parameter, tidak pernah
+ * disisipkan sebagai teks.
+ */
+const EKSPRESI_DALAM_JEDA = `(d.tidak_tersedia_pada IS NOT NULL
+                        AND d.tidak_tersedia_pada >= DATE_SUB(NOW(), INTERVAL ? DAY))`;
+
+/**
+ * Satu-satunya ekspresi "dokumen ini kekurangan berkas".
+ * `alias` adalah nama LEFT JOIN atas SUMBER_SUDAH_BERBERKAS di kueri pemanggil.
+ */
+function ekspresiTanpaBerkas(alias) {
+  return `CASE WHEN ${alias}.document_key IS NULL
+                AND NOT ${EKSPRESI_DALAM_JEDA}
+               THEN 1 ELSE 0 END`;
+}
+
+/**
+ * ============================================================================
+ * KOLOM YANG DAPAT DIURUTKAN - NILAINYA, BUKAN TULISANNYA
+ * ============================================================================
+ *
+ * Kepala kolom Kendali Berkas menekan salah satu kunci di bawah. Yang mengurut
+ * PELADEN, bukan peramban: jawabannya dipotong (paling banyak 500 baris), dan
+ * mengurut di peramban berarti mengurut potongannya - "belum ada terbanyak"
+ * akan menunjuk yang terbanyak DI ANTARA YANG TERBAWA.
+ *
+ * NOMOR PERKARA DIURUT SEBAGAI ANGKA, DAN TAHUNNYA LEBIH DULU
+ * --------------------------------------------------------------------------
+ * "ORDER BY nomor_perkara" - yang dipakai sebelum ini - mengurut menurut huruf.
+ * Diukur atas 10.120 perkara SIPP PA Donggala:
+ *
+ *     1/Pdt.G/2026, 10/Pdt.G/2026, 100/, 101/, ... , 109/, 11/, 110/ ...
+ *
+ * Perkara 2 berada 99 baris di bawah perkara 1, dan panitera yang mencari
+ * perkara 419 menyusurinya satu per satu. Tahunnya pun tidak dipedulikan:
+ * 10/Pdt.G/2016 mendahului 9/Pdt.G/2026.
+ *
+ * Karena itu yang diurut TAHUN lalu NOMOR URUT, keduanya sebagai angka. Tahun
+ * diambil dari ruas KETIGA - bukan "dua dari belakang" - supaya tetap benar
+ * bila suatu hari nomornya tersimpan tanpa ekor "/PA.Dgl". Diperiksa atas
+ * seluruh 10.120 nomor: 10.120 terbaca tahunnya, 10.120 terbaca nomor urutnya
+ * (terbesar 833), dan tidak satu pun bernomor kurang dari 4 ruas.
+ */
+const KOLOM_URUT_ARSIP = {
+  perkara: {
+    bagian: [
+      "CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(d.nomor_perkara, '/', 3), '/', -1) AS UNSIGNED)",
+      "CAST(SUBSTRING_INDEX(d.nomor_perkara, '/', 1) AS UNSIGNED)",
+    ],
+  },
+  // Ekspresi agregatnya, BUKAN alias "nomorRegister": bendera kosong adalah
+  // ekspresi, dan alias agregat di dalam ekspresi menjawab ERROR 1247.
+  register: { bagian: [EKSPRESI_REGISTER], teks: true },
+  dokumen: { bagian: ["dokumen"] },
+  berkasAda: { bagian: ["berkasAda"] },
+  belumAda: { bagian: ["tanpaBerkas"] },
+  keadaan: { bagian: ["menungguMajelis"] },
+  terakhir: { bagian: ["MAX(d.terakhir_terlihat)"] },
 };
+
+/**
+ * Nama urutan LAMA dari <select> yang sudah ditiadakan.
+ *
+ * Dipetakan, bukan diabaikan: bot dan portal tidak selalu dipasang pada detik
+ * yang sama, dan satu tab yang tertinggal terbuka semalaman masih mengirim
+ * "terlama". Tanpa peta ini ia diam-diam berubah arti menjadi "terbaru" -
+ * urutan yang persis terbalik dari yang diminta.
+ */
+const URUTAN_LAMA = {
+  terbaru: { kunci: "terakhir", arah: "turun" },
+  terlama: { kunci: "terakhir", arah: "naik" },
+  perkara: { kunci: "perkara", arah: "naik" },
+  belumTerbanyak: { kunci: "belumAda", arah: "turun" },
+  dokumenTerbanyak: { kunci: "dokumen", arah: "turun" },
+  menungguTerbanyak: { kunci: "keadaan", arah: "turun" },
+};
+
+/**
+ * Menyusun ORDER BY dari kunci dan arah.
+ *
+ * Tidak satu huruf pun dari pemanggil masuk ke SQL: kuncinya dicari di daftar
+ * tetap di atas, dan arahnya hanya dapat menjadi ASC atau DESC. ORDER BY tidak
+ * dapat dijadikan parameter kueri, sehingga menyusunnya dari teks yang dikirim
+ * pemanggil membuka jalan penyisipan SQL.
+ *
+ * Yang KOSONG selalu di bawah, berapa pun arahnya - kaidah yang sama dengan
+ * tabel-kendali di portal. MySQL menaruh NULL dan teks kosong di PUNCAK saat
+ * menaik; tanpa bendera kosong, mengurut Register e-Court menaik menumpuk baris
+ * tanpa register di atas, dan yang dicari justru yang terisi.
+ *
+ * BENDERA KOSONG MENUNTUT EKSPRESI, DAN ALIAS AGREGAT TIDAK BOLEH DI DALAMNYA.
+ * Kolom ber-`teks: true` karena itu WAJIB menuliskan ekspresi agregatnya
+ * sendiri di `bagian`, bukan alias SELECT-nya - lihat EKSPRESI_REGISTER dan
+ * ERROR 1247 yang terukur di sana. Kolom tanpa `teks` bebas memakai alias,
+ * sebab bagiannya menjadi SELURUH ruas ORDER BY.
+ *
+ * Pengikat terakhirnya nomor perkara, SELALU. Dua baris yang nilainya sama pada
+ * daftar berbatas harus muncul pada urutan yang sama tiap kali dimuat - tanpa
+ * itu menekan "Perbarui Data" mengacak barisnya sendiri, dan yang ada di baris
+ * ke-500 berpindah masuk-keluar tanpa sebab.
+ */
+function susunUrutan(kunci, arah) {
+  const kolom = KOLOM_URUT_ARSIP[String(kunci)] || KOLOM_URUT_ARSIP.terakhir;
+  const arahSql = String(arah) === "naik" ? "ASC" : "DESC";
+
+  const bagian = [];
+  for (const nilai of kolom.bagian) {
+    if (kolom.teks) bagian.push(`(${nilai} IS NULL OR ${nilai} = '') ASC`);
+    bagian.push(`${nilai} ${arahSql}`);
+  }
+  bagian.push("d.nomor_perkara ASC");
+  return bagian.join(", ");
+}
 
 async function daftarArsipPerkara({
   cari = "",
   hanyaBelumLengkap = false,
-  urutkan = "terbaru",
+  urutkan = "terakhir",
+  // Kosong berarti "nama urutan lama" - lihat URUTAN_LAMA.
+  arah = "",
   batas = 100,
   mulai = 0,
 } = {}) {
@@ -914,77 +1350,186 @@ async function daftarArsipPerkara({
   if (kataCari) {
     // Nomor perkara maupun nomor register - petugas menghafal yang pertama,
     // e-Court memakai yang kedua, dan memaksa salah satunya hanya menyusahkan.
-    syarat.push("(nomor_perkara LIKE ? OR nomor_register LIKE ? OR registrasi_ecourt LIKE ?)");
+    syarat.push("(d.nomor_perkara LIKE ? OR d.nomor_register LIKE ? OR d.registrasi_ecourt LIKE ?)");
     nilai.push(`%${kataCari}%`, `%${kataCari}%`, `%${kataCari}%`);
   }
 
   const where = syarat.length > 0 ? `WHERE ${syarat.join(" AND ")}` : "";
 
-  // Perkara yang berkasnya belum lengkap disaring SETELAH pengelompokan -
-  // kelengkapan adalah sifat perkara, bukan sifat satu dokumen.
-  // Urutan dipilih dari daftar TETAP, tidak pernah disusun dari masukan.
-  // Nilai ORDER BY tidak dapat dijadikan parameter kueri, sehingga menyusunnya
-  // dari teks yang dikirim pemanggil membuka jalan penyisipan SQL.
-  const urutan = URUTAN_ARSIP[String(urutkan)] || URUTAN_ARSIP.terbaru;
+  // Urutan dipilih dari daftar TETAP, tidak pernah disusun dari masukan - lihat
+  // susunUrutan. Pemanggil lama yang belum mengirim `arah` diterjemahkan dari
+  // nama urutannya, bukan dijatuhkan ke bawaan.
+  const lama = !String(arah) ? URUTAN_LAMA[String(urutkan)] : null;
+  const urutan = lama ? susunUrutan(lama.kunci, lama.arah) : susunUrutan(urutkan, arah);
 
-  const having = hanyaBelumLengkap
-    ? "HAVING SUM(CASE WHEN berkas_pdf IS NULL AND berkas_word IS NULL THEN 1 ELSE 0 END) > 0"
-    : "";
+  // --------------------------------------------------------------------
+  // ADA-TIDAKNYA BERKAS DIBACA DARI CATATAN BERKAS, BUKAN DARI CERMIN
+  //
+  // Kolom cermin berkas_pdf/berkas_word di tabel dokumen BASI - terukur 23 dan
+  // 8 terisi dari 394 dokumen, sementara aleta_bot_ecourt_files mencatat
+  // seluruh 400 berkas. rincianArsipPerkara sudah pindah ke files sejak lama;
+  // tabel utama ini tertinggal, sehingga barisnya berkata "belum ada" untuk
+  // perkara yang rinciannya menawarkan tombol unduh.
+  //
+  // "Belum ada" TIDAK lagi disusun di sini. Ia memakai ekspresiTanpaBerkas -
+  // ekspresi yang sama yang dipakai ringkasKekuranganBerkas, karena itu pula
+  // yang dipakai jembatan memutuskan perkara mana yang dibuka. Sebelumnya
+  // keduanya berselisih: dokumen ber-tidak_tersedia_pada 60 hari lalu terhitung
+  // 0 di sini dan 1 di sana, sehingga layar berkata "Lengkap" sementara
+  // jembatan membukanya terus tiap putaran. Lihat catatan panjang pada
+  // SUMBER_SUDAH_BERBERKAS beserta angka ukurnya.
+  //
+  // Jumlah dokumen ber-tidak_tersedia_pada tetap dilaporkan tersendiri lewat
+  // kolom tidakTersedia - dipisahkan, bukan disembunyikan.
+  //
+  // Yang dihitung di sini TERCATAT, bukan terbukti ada di cakram. Pembuktian ke
+  // cakram dikerjakan keadaanBerkasBanyakPerkara di bawah, sesudah barisnya
+  // terpotong - untuk 500 baris itu ratusan panggilan stat(), bukan ribuan
+  // seperti bila dikerjakan atas seluruh arsip.
+  // --------------------------------------------------------------------
+  const kurang = ekspresiTanpaBerkas("k");
+
+  const having = hanyaBelumLengkap ? `HAVING SUM(${kurang}) > 0` : "";
+
+  // b menjawab "berkas mana yang dapat DIUNDUH" - karena itu berkas retensi
+  // dibuang di sini: jalurnya sudah kosong dan tidak boleh ditarik ulang.
+  // k menjawab "dokumen ini masih kekurangan berkas?" - pertanyaan lain, dan
+  // di sana berkas retensi justru terhitung SUDAH ada.
+  const sumberBerkas = `
+       LEFT JOIN (
+         SELECT document_key,
+                SUM(CASE WHEN LOWER(format) = 'pdf'  AND jalur_berkas <> '' THEN 1 ELSE 0 END) AS adaPdf,
+                SUM(CASE WHEN LOWER(format) = 'word' AND jalur_berkas <> '' THEN 1 ELSE 0 END) AS adaWord
+           FROM aleta_bot_ecourt_files
+          WHERE dihapus_retensi IS NULL
+          GROUP BY document_key
+       ) b ON b.document_key = d.document_key
+       LEFT JOIN (${SUMBER_SUDAH_BERBERKAS}
+       ) k ON k.document_key = d.document_key`;
+
+  // Urutan parameter mengikuti urutan tanda `?` MUNCUL di dalam SQL:
+  // SUM(kurang) di SELECT, lalu syarat WHERE, lalu SUM(kurang) di HAVING,
+  // lalu LIMIT/OFFSET. Salah urut di sini membuat jeda hari menjadi kata cari.
+  const nilaiBaris = [
+    TIDAK_TERSEDIA_JEDA_HARI,
+    ...nilai,
+    ...(having ? [TIDAK_TERSEDIA_JEDA_HARI] : []),
+    Math.min(Math.max(Number(batas) || 100, 1), 500),
+    Math.max(Number(mulai) || 0, 0),
+  ];
 
   const rows = await botDb.query(
-    `SELECT nomor_perkara AS nomorPerkara,
-            MAX(perkara_id) AS perkaraId,
-            MAX(COALESCE(NULLIF(nomor_register, ''), registrasi_ecourt)) AS nomorRegister,
+    `SELECT d.nomor_perkara AS nomorPerkara,
+            MAX(d.perkara_id) AS perkaraId,
+            ${EKSPRESI_REGISTER} AS nomorRegister,
             COUNT(*) AS dokumen,
-            SUM(CASE WHEN berkas_pdf IS NOT NULL THEN 1 ELSE 0 END) AS adaPdf,
-            SUM(CASE WHEN berkas_word IS NOT NULL THEN 1 ELSE 0 END) AS adaWord,
-            SUM(CASE WHEN berkas_pdf IS NULL AND berkas_word IS NULL THEN 1 ELSE 0 END) AS tanpaBerkas,
-            SUM(CASE WHEN status_verifikasi = 'belum' THEN 1 ELSE 0 END) AS menungguMajelis,
-            SUM(CASE WHEN status_verifikasi = 'valid' THEN 1 ELSE 0 END) AS sudahValid,
-            SUM(CASE WHEN status_verifikasi = 'tidak_perlu' THEN 1 ELSE 0 END) AS berkasPendaftaran,
+            SUM(CASE WHEN COALESCE(b.adaPdf, 0) > 0 THEN 1 ELSE 0 END) AS adaPdf,
+            SUM(CASE WHEN COALESCE(b.adaWord, 0) > 0 THEN 1 ELSE 0 END) AS adaWord,
+            -- Yang digambar kolom "Berkas ada" adalah jumlah keduanya, dan yang
+            -- diurut harus jumlah itu pula. Dokumen yang punya PDF dan Word
+            -- sekaligus memang terhitung dua kali - itu hitungan BERKAS, bukan
+            -- hitungan dokumen, dan kolomnya memang bernama demikian.
+            SUM(CASE WHEN COALESCE(b.adaPdf, 0) > 0 THEN 1 ELSE 0 END)
+              + SUM(CASE WHEN COALESCE(b.adaWord, 0) > 0 THEN 1 ELSE 0 END) AS berkasAda,
+            SUM(${kurang}) AS tanpaBerkas,
+            -- SELURUH dokumen yang pernah dijawab "tidak saya sediakan", jedanya
+            -- habis atau belum. Sengaja BEDA dari ruas senama pada
+            -- ringkasKekuranganBerkas, yang hanya menghitung yang masih dalam
+            -- jeda: yang ini dibaca panitera sebagai "berapa yang e-Court tolak",
+            -- yang itu dibaca jembatan sebagai "berapa yang belum waktunya
+            -- ditanya lagi". Nama sama, pertanyaan lain - jangan disatukan
+            -- tanpa mengubah kedua pemakainya.
+            SUM(CASE WHEN d.tidak_tersedia_pada IS NOT NULL THEN 1 ELSE 0 END) AS tidakTersedia,
+            SUM(CASE WHEN d.status_verifikasi = 'belum' THEN 1 ELSE 0 END) AS menungguMajelis,
+            SUM(CASE WHEN d.status_verifikasi = 'valid' THEN 1 ELSE 0 END) AS sudahValid,
+            SUM(CASE WHEN d.status_verifikasi = 'tidak_perlu' THEN 1 ELSE 0 END) AS berkasPendaftaran,
             -- Berkas yang sengaja dihapus karena masa simpan. Dipisahkan dari
             -- "belum ada": yang ini TIDAK perlu ditarik ulang.
             (SELECT COUNT(*) FROM aleta_bot_ecourt_files rf
-              WHERE rf.nomor_perkara = aleta_bot_ecourt_documents.nomor_perkara
+              WHERE rf.nomor_perkara = d.nomor_perkara
                 AND rf.dihapus_retensi IS NOT NULL) AS dihapusRetensi,
-            MAX(terakhir_terlihat) AS terakhirTerlihat
-       FROM aleta_bot_ecourt_documents
+            MAX(d.terakhir_terlihat) AS terakhirTerlihat
+       FROM aleta_bot_ecourt_documents d
+       ${sumberBerkas}
        ${where}
-      GROUP BY nomor_perkara
+      GROUP BY d.nomor_perkara
       ${having}
       ORDER BY ${urutan}
       LIMIT ? OFFSET ?`,
-    [...nilai, Math.min(Math.max(Number(batas) || 100, 1), 500), Math.max(Number(mulai) || 0, 0)]
+    nilaiBaris
   );
 
   const total = await botDb.query(
     `SELECT COUNT(*) AS jumlah FROM (
-       SELECT nomor_perkara
-         FROM aleta_bot_ecourt_documents
+       SELECT d.nomor_perkara
+         FROM aleta_bot_ecourt_documents d
+         ${sumberBerkas}
          ${where}
-        GROUP BY nomor_perkara
+        GROUP BY d.nomor_perkara
         ${having}
      ) AS t`,
-    nilai
+    // Kueri ini tidak punya SUM(kurang) di SELECT-nya, jadi tanda `?` untuk
+    // jeda hari hanya ada bila HAVING dipakai.
+    [...nilai, ...(having ? [TIDAK_TERSEDIA_JEDA_HARI] : [])]
   );
+
+  // Catatan berkas saja tidak cukup: arsip pernah lenyap seluruhnya karena
+  // volume Docker belum di-mount, dan barisnya tetap ada. Tombol Tarik dan
+  // tombol ZIP di layar digantungkan pada angka ini, jadi angkanya harus
+  // menyatakan berkas yang benar-benar dapat dibuka.
+  //
+  // BILA PEMBUKTIAN ITU SENDIRI TIDAK TERBACA, jangan menjawab nol. Nol di sini
+  // berarti "tidak satu perkara pun punya berkas", dan layar menyembunyikan
+  // SELURUH tombol unduh dan ZIP karenanya - dari satu kueri yang gagal.
+  // Cadangannya angka TERCATAT: lebih longgar daripada bukti cakram, tetapi ia
+  // jujur tentang apa yang diketahui. Galatnya sudah dicatat di dalam
+  // keadaanBerkasBanyakPerkara; di sini hanya ditandai supaya "berkas hilang"
+  // tidak ikut dikarang.
+  let cakram = new Map();
+  let cakramTerbaca = true;
+  try {
+    cakram = await keadaanBerkasBanyakPerkara(
+      (Array.isArray(rows) ? rows : []).map((row) => row.nomorPerkara)
+    );
+  } catch {
+    cakramTerbaca = false;
+  }
+  const kosong = { adaPdf: 0, adaWord: 0, hilang: 0, retensi: 0 };
 
   return {
     diperiksaPada: new Date().toISOString(),
     total: Number(total && total[0] && total[0].jumlah) || 0,
-    perkara: (Array.isArray(rows) ? rows : []).map((row) => ({
-      nomorPerkara: cleanText(row.nomorPerkara),
-      perkaraId: row.perkaraId ? String(row.perkaraId) : "",
-      nomorRegister: cleanText(row.nomorRegister),
-      dokumen: Number(row.dokumen) || 0,
-      adaPdf: Number(row.adaPdf) || 0,
-      adaWord: Number(row.adaWord) || 0,
-      tanpaBerkas: Number(row.tanpaBerkas) || 0,
-      menungguMajelis: Number(row.menungguMajelis) || 0,
-      sudahValid: Number(row.sudahValid) || 0,
-      berkasPendaftaran: Number(row.berkasPendaftaran) || 0,
-      dihapusRetensi: Number(row.dihapusRetensi) || 0,
-      terakhirTerlihat: botDb.fromMysqlDate(row.terakhirTerlihat),
-    })),
+    perkara: (Array.isArray(rows) ? rows : []).map((row) => {
+      const bukti = cakramTerbaca
+        ? cakram.get(normalizeCaseNumber(row.nomorPerkara)) || kosong
+        : {
+            adaPdf: Number(row.adaPdf) || 0,
+            adaWord: Number(row.adaWord) || 0,
+            hilang: 0,
+            retensi: Number(row.dihapusRetensi) || 0,
+          };
+      return {
+        nomorPerkara: cleanText(row.nomorPerkara),
+        perkaraId: row.perkaraId ? String(row.perkaraId) : "",
+        nomorRegister: cleanText(row.nomorRegister),
+        dokumen: Number(row.dokumen) || 0,
+        adaPdf: Number(row.adaPdf) || 0,
+        adaWord: Number(row.adaWord) || 0,
+        berkasAda: Number(row.berkasAda) || 0,
+        tanpaBerkas: Number(row.tanpaBerkas) || 0,
+        tidakTersedia: Number(row.tidakTersedia) || 0,
+        /** Berkas yang benar-benar terbaca di cakram, bukan sekadar tercatat. */
+        adaPdfCakram: bukti.adaPdf,
+        adaWordCakram: bukti.adaWord,
+        /** Tercatat pernah diunduh tetapi lenyap dari cakram - perlu ditarik ulang. */
+        berkasHilang: bukti.hilang,
+        menungguMajelis: Number(row.menungguMajelis) || 0,
+        sudahValid: Number(row.sudahValid) || 0,
+        berkasPendaftaran: Number(row.berkasPendaftaran) || 0,
+        dihapusRetensi: Number(row.dihapusRetensi) || 0,
+        terakhirTerlihat: botDb.fromMysqlDate(row.terakhirTerlihat),
+      };
+    }),
   };
 }
 
@@ -998,7 +1543,11 @@ async function daftarArsipPerkara({
 async function rincianArsipPerkara(nomorPerkaraMentah) {
   await ensureSchema();
 
-  const nomorPerkara = cleanText(nomorPerkaraMentah);
+  // normalizeCaseNumber, bukan cleanText: barisnya disimpan dengan nomor yang
+  // spasi di sekitar garis miringnya sudah dirapatkan (recordDocument), dan
+  // mencarinya dengan cleanText membuat "620 / Pdt.G / 2025 / PA.Dgl" tidak
+  // pernah ketemu - tanpa satu galat pun, hanya layar yang kosong.
+  const nomorPerkara = normalizeCaseNumber(nomorPerkaraMentah);
   if (!nomorPerkara) return { nomorPerkara: "", dokumen: [] };
 
   const rows = await botDb.query(
@@ -1014,9 +1563,8 @@ async function rincianArsipPerkara(nomorPerkaraMentah) {
             d.berkas_word AS berkasWord,
             d.diberitahukan_pada AS diberitahukanPada,
             d.terakhir_terlihat AS terakhirTerlihat,
-            (SELECT COUNT(*) FROM aleta_bot_ecourt_files f
-              WHERE f.document_key = d.document_key
-                AND f.dihapus_retensi IS NOT NULL) AS dihapusRetensi,
+            d.tidak_tersedia_pada AS tidakTersediaPada,
+            d.tidak_tersedia_sebab AS tidakTersediaSebab,
             (SELECT SUM(f.ukuran_byte) FROM aleta_bot_ecourt_files f
               WHERE f.document_key = d.document_key) AS ukuranByte
        FROM aleta_bot_ecourt_documents d
@@ -1045,38 +1593,23 @@ async function rincianArsipPerkara(nomorPerkaraMentah) {
    * Karena itu dua-duanya: TERCATAT dan TERBACA DI DISK. Yang tercatat tapi
    * hilang dilaporkan lewat `berkasHilang`, supaya keadaannya kelihatan
    * alih-alih tampak seperti dokumen yang memang belum pernah diunduh.
+   *
+   * Sejak 25 Sep 2026 hitungannya TIDAK lagi disusun di sini: ia dipindahkan ke
+   * keadaanBerkasPerkara supaya tabel, rincian, dan penarik menjawab dari satu
+   * potong kode yang sama. Lihat catatan panjang di sana.
    */
-  const daftarBerkas = await botDb
-    .query(
-      `SELECT document_key AS documentKey, format, jalur_berkas AS jalur
-         FROM aleta_bot_ecourt_files
-        WHERE nomor_perkara = ? AND dihapus_retensi IS NULL`,
-      [nomorPerkara]
-    )
-    .catch(() => []);
-
-  const berkasPerDokumen = new Map();
-  for (const berkas of Array.isArray(daftarBerkas) ? daftarBerkas : []) {
-    const kunci = cleanText(berkas.documentKey);
-    const jenis = cleanText(berkas.format).toLowerCase();
-    if (!kunci || (jenis !== "pdf" && jenis !== "word")) continue;
-
-    const periksa = ecourtDocumentService.describeEcourtDocument(berkas.jalur);
-    const catatan = berkasPerDokumen.get(kunci) || {
-      pdf: null,
-      word: null,
-      hilang: 0,
-    };
-    if (periksa.ok) catatan[jenis] = periksa.fileName;
-    else catatan.hilang += 1;
-    berkasPerDokumen.set(kunci, catatan);
-  }
+  const berkasPerDokumen = await keadaanBerkasPerkara(nomorPerkara);
 
   return {
     nomorPerkara,
     dokumen: (Array.isArray(rows) ? rows : []).map((row) => {
       const kunci = cleanText(row.documentKey);
-      const catatan = berkasPerDokumen.get(kunci) || { pdf: null, word: null, hilang: 0 };
+      const catatan = berkasPerDokumen.get(kunci) || {
+        pdf: null,
+        word: null,
+        hilang: 0,
+        retensi: 0,
+      };
       return {
         documentKey: kunci,
         judulDokumen: cleanText(row.judulDokumen),
@@ -1095,7 +1628,10 @@ async function rincianArsipPerkara(nomorPerkaraMentah) {
         /** Tercatat pernah diunduh, tetapi berkasnya tidak ada lagi di disk. */
         berkasHilang: catatan.hilang,
         ukuranByte: Number(row.ukuranByte) || 0,
-        dihapusRetensi: Number(row.dihapusRetensi) > 0,
+        dihapusRetensi: catatan.retensi > 0,
+        /** e-Court sendiri menjawab 404 - menariknya tidak mungkin berhasil. */
+        tidakTersediaPada: botDb.fromMysqlDate(row.tidakTersediaPada),
+        tidakTersediaSebab: cleanText(row.tidakTersediaSebab),
         diberitahukanPada: botDb.fromMysqlDate(row.diberitahukanPada),
         terakhirTerlihat: botDb.fromMysqlDate(row.terakhirTerlihat),
       };
@@ -1131,33 +1667,106 @@ async function rincianArsipPerkara(nomorPerkaraMentah) {
 async function perkaraSudahLengkap(nomorPerkara) {
   await ensureSchema();
 
-  const nomor = String(nomorPerkara || "").trim();
+  // normalizeCaseNumber, bukan String().trim(): nomornya disimpan rapat oleh
+  // recordDocument, dan mencarinya renggang tidak pernah ketemu - perkara yang
+  // sudah lengkap lalu terbaca "belum pernah tercatat" dan dibuka ulang terus.
+  const nomor = normalizeCaseNumber(nomorPerkara);
   if (!nomor) return false;
 
-  const rows = await botDb.query(
-    `SELECT
-        COUNT(*) AS jumlah,
-        SUM(CASE WHEN d.status_verifikasi = 'belum' THEN 1 ELSE 0 END) AS menunggu,
-        SUM(CASE WHEN f.document_key IS NULL THEN 1 ELSE 0 END) AS tanpaBerkas
-       FROM aleta_bot_ecourt_documents d
-       LEFT JOIN (
-         SELECT DISTINCT document_key FROM aleta_bot_ecourt_files WHERE jalur_berkas IS NOT NULL
-       ) f ON f.document_key = d.document_key
-      WHERE d.nomor_perkara = ?`,
-    [nomor]
-  );
-
-  const baris = rows && rows[0];
-  if (!baris) return false;
-
-  const jumlah = Number(baris.jumlah) || 0;
-  const menunggu = Number(baris.menunggu) || 0;
-  const tanpaBerkas = Number(baris.tanpaBerkas) || 0;
+  const peta = await ringkasKekuranganBerkas([nomor]);
+  const k = peta.get(nomor);
 
   // Belum pernah tercatat: tidak adanya catatan bukan bukti tidak adanya dokumen.
-  if (jumlah === 0) return false;
+  if (!k || k.dokumen === 0) return false;
 
-  return tanpaBerkas === 0 && menunggu === 0;
+  return k.tanpaBerkas === 0 && k.menunggu === 0;
+}
+
+/**
+ * Keadaan berkas BANYAK perkara sekaligus - satu kueri, bukan satu per perkara.
+ *
+ * ============================================================================
+ * SATU KUERI, DAN DUA UKURAN "LENGKAP"
+ * ============================================================================
+ *
+ * perkaraSudahLengkap dulu dipanggil di dalam gelung penarik, satu kueri tiap
+ * tautan. Selama acuannya 200 perkara itu tidak terasa; begitu acuannya
+ * dilebarkan ke seluruh arsip e-Court - 2.527 perkara pada sipp_donggala,
+ * 24 Sep 2026 - itu menjadi 2.527 kueri berurutan sebelum satu halaman pun
+ * dibuka, dan tidak satu barisnya pun berbeda dari yang dapat dijawab satu
+ * kueri berkelompok.
+ *
+ * Yang dipulangkan sengaja ANGKA MENTAH, bukan kesimpulan "lengkap".
+ * Penariknya yang memutuskan, sebab ada dua ukuran yang sama-sama benar untuk
+ * pertanyaan yang berbeda:
+ *
+ *   tanpaBerkas === 0                    -> tidak ada lagi yang dapat diunduh
+ *   tanpaBerkas === 0 && menunggu === 0  -> dan majelisnya sudah memeriksa
+ *
+ * Ukuran kedua itu tentang VERIFIKASI, bukan tentang berkas. Memakainya sebagai
+ * syarat penarikan berarti membuka ulang perkara yang berkasnya sudah utuh
+ * hanya karena majelisnya belum sempat memverifikasi - dan needsRecheck akan
+ * menolak mengunduh apa pun dari kunjungan itu.
+ *
+ * TIGA HAL YANG DIHITUNG "SUDAH ADA" WALAU BERKASNYA TIDAK DI CAKRAM
+ *   - berkas yang dihapus karena masa simpan: ia memang sengaja tidak ada, dan
+ *     menyebutnya kurang berarti menariknya kembali - persis yang dilarang;
+ *   - dokumen yang e-Court jawab 404 dan masih dalam jeda TIDAK_TERSEDIA;
+ *   - berkas yang tercatat tetapi lenyap dari cakram TIDAK diperiksa di sini.
+ *     Membuktikan ke cakram untuk ribuan perkara berarti ribuan panggilan
+ *     stat() sebelum satu halaman pun dibuka. Pembuktian itu pekerjaan
+ *     keadaanBerkasBanyakPerkara, yang hanya menyentuh baris yang digambar.
+ *
+ * Butir pertama sampai 25 Sep 2026 hanya TERTULIS, tidak terjadi. Saringan
+ * lamanya `WHERE jalur_berkas IS NOT NULL AND jalur_berkas <> ''` membuang baris
+ * retensi - pembersihnya mengosongkan jalur BERSAMAAN dengan menandainya -
+ * sehingga dokumen retensi murni terukur tanpaBerkas=1 dan perkaranya ditarik
+ * ulang selamanya. Kini kedua fungsi memakai SUMBER_SUDAH_BERBERKAS yang sama.
+ */
+async function ringkasKekuranganBerkas(daftarNomor = []) {
+  await ensureSchema();
+
+  const peta = new Map();
+  const bersih = [...new Set((daftarNomor || []).map(normalizeCaseNumber).filter(Boolean))];
+  if (bersih.length === 0) return peta;
+
+  // Dipotong 200 supaya daftar IN tidak melewati batas paket MySQL.
+  for (let i = 0; i < bersih.length; i += 200) {
+    const kelompok = bersih.slice(i, i + 200);
+    const isian = kelompok.map(() => "?").join(", ");
+    const rows = await botDb.query(
+      `SELECT d.nomor_perkara AS nomorPerkara,
+              COUNT(*) AS dokumen,
+              SUM(CASE WHEN k.document_key IS NOT NULL THEN 1 ELSE 0 END) AS berkasAda,
+              -- Hanya yang jedanya BELUM habis - lihat catatan pada ruas senama
+              -- di daftarArsipPerkara, yang sengaja menghitung seluruhnya.
+              SUM(CASE WHEN ${EKSPRESI_DALAM_JEDA} THEN 1 ELSE 0 END) AS tidakTersedia,
+              SUM(${ekspresiTanpaBerkas("k")}) AS tanpaBerkas,
+              SUM(CASE WHEN d.status_verifikasi = 'belum' THEN 1 ELSE 0 END) AS menunggu,
+              MAX(d.terakhir_terlihat) AS terakhir
+         FROM aleta_bot_ecourt_documents d
+         LEFT JOIN (${SUMBER_SUDAH_BERBERKAS}
+         ) k ON k.document_key = d.document_key
+        WHERE d.nomor_perkara IN (${isian})
+        GROUP BY d.nomor_perkara`,
+      [TIDAK_TERSEDIA_JEDA_HARI, TIDAK_TERSEDIA_JEDA_HARI, ...kelompok]
+    );
+
+    for (const row of Array.isArray(rows) ? rows : []) {
+      peta.set(normalizeCaseNumber(row.nomorPerkara), {
+        dokumen: Number(row.dokumen) || 0,
+        berkasAda: Number(row.berkasAda) || 0,
+        tanpaBerkas: Number(row.tanpaBerkas) || 0,
+        tidakTersedia: Number(row.tidakTersedia) || 0,
+        menunggu: Number(row.menunggu) || 0,
+        terakhirTerlihat: botDb.fromMysqlDate(row.terakhir),
+      });
+    }
+  }
+
+  // Perkara yang TIDAK punya baris sama sekali sengaja tidak masuk peta - itulah
+  // "belum pernah ditarik", dan ketiadaannya memang jawabannya.
+  return peta;
 }
 
 /**
@@ -1324,6 +1933,17 @@ module.exports = {
   VERIFICATION_STATUSES,
   GAGAL_AMBANG,
   GAGAL_JEDA_JAM,
+  TIDAK_TERSEDIA_JEDA_HARI,
+  // Diekspor supaya uji dapat MENJALANKAN kueri untuk setiap kunci kepala kolom,
+  // bukan menyapu teksnya. Delapan belas uji penyapu teks lulus semua selama
+  // kunci "register" melempar ERROR 1247 di peladen.
+  KOLOM_URUT_ARSIP,
+  susunUrutan,
+  tandaiTidakTersedia,
+  lupakanTidakTersedia,
+  keadaanBerkasPerkara,
+  keadaanBerkasBanyakPerkara,
+  ringkasKekuranganBerkas,
   berkasDikarantina,
   buildDocumentKey,
   catatGagalBerkas,

@@ -1,14 +1,21 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
+  kenaliBentuk,
+  periksaBerkasUnggahSipp,
+  type SlotUnggahSipp,
+} from "@/server/modules/aleta-ecourt/unggah-naskah-putusan";
+import {
   gatewayUnggahPutusanSipp,
+  getGatewaySippKonteks,
   getGatewayStatusPerkara,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { alamatIpPeramban } from "@/server/shared/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +40,24 @@ const BATAS_SATU_BERKAS = 10 * 1024 * 1024;
  *
  * Portal tidak menyentuh SIPP sendiri; seluruhnya lewat gerbang bot, tempat
  * satu-satunya sambungan ke basis data SIPP berada.
+ *
+ * ============================================================================
+ * SATU ATAU DUA SLOT, DAN ISINYA DIPERIKSA SEBELUM APA PUN DITULIS
+ * ============================================================================
+ *
+ * Putusan saja, anonimisasi saja, atau keduanya - anonimisasi sering baru
+ * siap sesudah putusannya terunggah, dan berkas yang keliru cukup diganti
+ * satu tanpa mengirim ulang pasangannya. Isi RTF diperiksa di sini (periksaBerkasUnggahSipp): naskah yang bukan
+ * putusan, nomor isi yang berbeda, dan slot anonimisasi yang masih memuat
+ * nama inti pihak ditolak 409 beserta kalimatnya, SEBELUM gerbang dipanggil.
+ * PDF/DOCX/DOC hanya diberi peringatan.
+ *
+ * Alamat IP peramban petugas diteruskan ke bot supaya baris audit yang
+ * ditulis ALETA mencatat dari mana perintahnya datang - bukan kosong.
+ * Alamatnya dibaca alamatIpPeramban: entri TERAKHIR X-Forwarded-For (yang
+ * ditulis Apache), lalu X-Real-IP. Entri PERTAMA sengaja tidak dipakai -
+ * peramban dapat mengarangnya, dan alamat karangan pada catatan audit lebih
+ * buruk daripada alamat kosong.
  */
 export async function POST(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -71,8 +96,45 @@ export async function POST(request: NextRequest) {
     // perjalanan yang sudah pasti gagal.
     if (!nomorPerkara) return ok({ ok: false, sebab: "Nomor perkara belum disebut." });
 
-    if (!perkaraId) {
-      const status = await getGatewayStatusPerkara(nomorPerkara);
+    // Berkas dibaca LEBIH DULU daripada gerbang ditanya: ukurannya diperiksa
+    // di sini tanpa perjalanan ke bot, dan bentuknya menentukan apakah nama
+    // pihak perlu ditanyakan sama sekali.
+    const bacaBerkas = async (nama: SlotUnggahSipp): Promise<Uint8Array | null> => {
+      const berkas = formulir.get(nama);
+      if (!(berkas instanceof File) || berkas.size === 0) return null;
+      if (berkas.size > BATAS_SATU_BERKAS) {
+        throw new Error(
+          `Ukuran ${nama} melampaui ${Math.round(BATAS_SATU_BERKAS / 1024 / 1024)} MB. Putusan yang sebesar itu hampir pasti hasil pindaian, bukan PDF teks.`
+        );
+      }
+      return new Uint8Array(await berkas.arrayBuffer());
+    };
+
+    const berkas: Array<{ slot: SlotUnggahSipp; bita: Uint8Array }> = [];
+    try {
+      for (const slot of ["putusan", "anonimisasi"] as const) {
+        const bita = await bacaBerkas(slot);
+        if (bita) berkas.push({ slot, bita });
+      }
+    } catch (galat) {
+      return ok({ ok: false, sebab: String((galat as Error).message) });
+    }
+
+    // Satu slot saja sah: putusan saja, atau anonimisasi saja.
+    if (berkas.length === 0) {
+      return ok({ ok: false, sebab: "Belum ada berkas yang dipilih." });
+    }
+
+    // Nama pihak hanya dibutuhkan bila ada RTF yang dapat dibaca isinya. Ia
+    // ditanyakan BERSAMAAN dengan perkara_id - dua bacaan yang tidak saling
+    // menunggu tidak perlu dijalankan berurutan.
+    const adaRtf = berkas.some((b) => kenaliBentuk(b.bita) === "rtf");
+    const [status, konteks] = await Promise.all([
+      perkaraId ? Promise.resolve(null) : getGatewayStatusPerkara(nomorPerkara),
+      adaRtf ? getGatewaySippKonteks(nomorPerkara) : Promise.resolve(null),
+    ]);
+
+    if (status) {
       // Bot yang mati DIBEDAKAN dari perkara yang tidak ada. Menyamakan
       // keduanya mengirim petugas memeriksa nomor perkaranya - yang sudah
       // benar - sementara yang perlu diperiksa sambungan botnya.
@@ -93,45 +155,61 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const bacaBerkas = async (nama: string): Promise<string> => {
-      const berkas = formulir.get(nama);
-      if (!(berkas instanceof File) || berkas.size === 0) return "";
-      if (berkas.size > BATAS_SATU_BERKAS) {
-        throw new Error(
-          `Ukuran ${nama} melampaui ${Math.round(BATAS_SATU_BERKAS / 1024 / 1024)} MB. Putusan yang sebesar itu hampir pasti hasil pindaian, bukan PDF teks.`
-        );
+    // Kuasa hukum TIDAK dipakai sebagai penanda: nama advokat lazim tetap
+    // tertulis pada putusan anonimisasi. Yang disamarkan nama para pihak.
+    let namaPihak: string[] | null = null;
+    let sebabPihak = "";
+    if (konteks) {
+      if (konteks.ok) {
+        namaPihak = (konteks.data?.nomorPihak ?? [])
+          .filter((satu) => satu.jenis !== "kuasa")
+          .map((satu) => satu.nama);
+      } else {
+        sebabPihak = konteks.error || "SIPP tidak terbaca.";
       }
-      return Buffer.from(await berkas.arrayBuffer()).toString("base64");
-    };
-
-    let putusanBase64 = "";
-    let anonimisasiBase64 = "";
-    try {
-      putusanBase64 = await bacaBerkas("putusan");
-      anonimisasiBase64 = await bacaBerkas("anonimisasi");
-    } catch (galat) {
-      return ok({ ok: false, sebab: String((galat as Error).message) });
     }
 
-    if (!putusanBase64 && !anonimisasiBase64) {
-      return ok({ ok: false, sebab: "Belum ada berkas yang dipilih." });
+    const periksa = periksaBerkasUnggahSipp({ nomorPerkara, berkas, namaPihak, sebabPihak });
+    if (periksa.tolak) {
+      // 409: isinya bertentangan dengan perkara yang dituju. Bentuk badannya
+      // memuat `data` seperti jawaban lain rute ini (ekstensi membaca
+      // luar.data), dan `error.message` seperti galat portal lainnya.
+      return NextResponse.json(
+        {
+          ok: false,
+          error: { message: periksa.tolak.sebab },
+          data: { ok: false, ...periksa.tolak, peringatan: periksa.peringatan },
+        },
+        { status: 409 }
+      );
     }
 
+    const bitaSlot = (slot: SlotUnggahSipp) => berkas.find((b) => b.slot === slot)?.bita;
+    const putusan = bitaSlot("putusan");
+    const anonimisasi = bitaSlot("anonimisasi");
     const hasil = await gatewayUnggahPutusanSipp({
       perkaraId,
       nomorPerkara,
-      putusanBase64,
-      anonimisasiBase64,
-      // Akun SIPP yang sedang membuka halamannya - yang tercatat di audit trail
-      // SIPP adalah dia, bukan akun ALETA. Yang menekan tombolnya orang yang
-      // sedang masuk SIPP di layar itu.
+      ...(putusan ? { putusanBase64: Buffer.from(putusan).toString("base64") } : {}),
+      ...(anonimisasi ? { anonimisasiBase64: Buffer.from(anonimisasi).toString("base64") } : {}),
+      // Akun SIPP yang sedang membuka halamannya - yang tercatat sebagai
+      // pelaku di audit trail SIPP adalah dia, sebab yang menekan tombolnya
+      // orang yang sedang masuk SIPP di layar itu. Bahwa tulisannya lewat
+      // ALETA disebut bot pada judul dan deskripsi baris auditnya.
       olehUsername,
+      // Alamat peramban petugas itu, untuk kolom ipaddress baris audit SIPP.
+      // Kosong bila tidak ada alamat IPv4 yang sah - tidak pernah dikarang.
+      ip: alamatIpPeramban(request),
     });
 
     if (!hasil.ok) {
-      return ok({ ok: false, sebab: hasil.error || "ALETA Bot belum dapat dihubungi." });
+      return ok({
+        ok: false,
+        sebab: hasil.error || "ALETA Bot belum dapat dihubungi.",
+        peringatan: periksa.peringatan,
+      });
     }
-    return ok(hasil.data);
+    return ok({ ...hasil.data, nomorIsi: periksa.nomorIsi, peringatan: periksa.peringatan });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

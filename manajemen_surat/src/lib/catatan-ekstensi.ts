@@ -57,6 +57,22 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.168.0",
+    dirilis: "2026-09-26T13:30:00+08:00",
+    judul: "Cetak relaas dari Antrian Sidang, unggah putusan yang membaca jawaban SIPP, dan daftar keluaran dari portal",
+    butir: [
+      "CETAK RELAAS MASSAL. Tombol Cetak relaas di Antrian Sidang ALETA menyerahkan daftar dokumennya ke ekstensi lewat jembatan halaman yang hanya menerima pesan dari portal itu sendiri. Ekstensi memanen tautan blangko dari ABT (token folder dan berkasnya terenkripsi sehingga tidak dapat disusun sendiri), mengambil RTF, meminta PDF dari ALETA, lalu mengunduhnya ke folder 'ALETA relaas <tanggal>/<juru sita>'. Kemajuannya disimpan di chrome.storage.session sehingga pekerja latar yang mati di tengah putaran tidak mencetak ganda. Jarak antardokumen 2-5 detik untuk beban peladen ABT.",
+      "Bila ABT menolak hak akses untuk seluruh blangko, putaran berhenti di dokumen pertama dan menyebut apa yang harus diatur di ABT - bukan menjalani 33 dokumen yang semuanya ditolak. Tombol Perbarui dan Muat ulang ekstensi memperingatkan dulu bila putaran sedang berjalan.",
+      "UNGGAH PUTUSAN: nomor perkara dibaca dari nama berkas dalam empat bentuk nyata (6.450 dari 8.614 nama, dulu 0); berkas anonim, BAS, dan PDF/DOC tidak ikut kiriman massal; bukti tersimpan dibaca dari jawaban SIPP sendiri sehingga penolakan tampil dalam 300 ms, bukan sesudah 10 detik jajak; tombol yang disembunyikan SIPP tidak pernah ditekan. Putusan dan anonimisasi dikirim berurutan tanpa jeda tiruan.",
+      "ANTREAN PUTUSAN MASSAL TIDAK LAGI MENEKAN SIMPAN bila ada medan yang gagal terisi - janji yang sejak 1.162.0 hanya tertulis di komentar. Medan tambahan satker dari portal juga menahan Simpan otomatis: diisikan, lalu Simpan diserahkan ke petugas.",
+      "KARTU MEDAN PILIHAN PUTUSAN OTOMATIS muncul lagi pada borang yang baru dibuka. Sejak 2.32.0 kurung tutup yang salah letak membuat kartu seperti faktor cerai hanya tergambar bila petugas sudah memilih status yang berbeda dari usulan ALETA - sehingga medan-medan itu tidak pernah terisi.",
+      "DAFTAR KELUARAN DARI PORTAL: medan borang putusan, peta blangko, padanan jenis perkara, dan pilihan alasan saksi kini dibaca dari pengaturan Tipe keluaran di portal dan disinggahkan menurut versinya. Bila portal tidak terjangkau, ekstensi memakai daftar tertanam yang sama persis dengan sebelumnya.",
+      "PANEL ABT: tombol 'Input ke ABT' hanya pada blangko cerai; usulan berkeyakinan 'ragu' tidak tercentang sendiri; bunyi upaya damai yang ragu ditampilkan sebagai pilihan wajib; saksi ketiga/keempat dan saksi Tergugat didukung; putusan massal ABT 2 permintaan per perkara (dulu 5) dan mengirim RTF; penolakan 409 disebut sebabnya.",
+      "\"BERKAS BELUM TERSIMPAN\" DIPAKAI UNTUK DUA KEADAAN YANG BERBEDA, dan satu di antaranya menyuruh panitera menagih pihak atas berkas yang mungkin sudah lama ada. Kueri catatan berkas di bot dahulu menelan galatnya sendiri, sehingga kegagalan membaca catatan jatuh menjadi \"tidak ada berkas\" - keadaan yang tidak dapat dibedakan panitera dari arsip yang memang kosong, dan tidak ada satu baris log yang menyebut sebabnya. Sejak versi ini bot menandainya tersendiri dan panel ALETA di dalam SIPP menuliskannya apa adanya: \"catatan berkasnya tidak terbaca - bukan berarti tidak ada\". Yang tidak diketahui disebut tidak diketahui.",
+      "TIGA KEADAAN, TIGA KALIMAT. Dokumen tanpa tombol unduh sekarang dibedakan: belum pernah diunggah pihak (tagih pihaknya), tercatat ada tetapi berkasnya lenyap dari arsip (tarik ulang dari e-Court, jangan tagih siapa pun), dan catatannya tidak terbaca (periksa sambungannya). Ketiganya menuntut perbuatan yang berbeda, dan sebelum ini ketiganya berbunyi sama.",
+    ],
+  },
+  {
     versi: "1.166.0",
     dirilis: "2026-09-23T15:40:00+08:00",
     judul: "Saklar centang yang tercentang tetapi tidak menyala",

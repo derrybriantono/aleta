@@ -1,11 +1,12 @@
 import { type NextRequest } from "next/server";
 
 import { susunIsianPutusanSipp, type PihakPerkara } from "@/lib/isian-putusan-sipp";
-import { usulkanMedanPutusan, type MedanPilihan } from "@/lib/usulan-medan-putusan";
+import { saringMedanPilihan, usulkanMedanPutusan, type TipeUsulanMedan } from "@/lib/usulan-medan-putusan";
 import { pecahNaskahPutusan } from "@/lib/susunan-putusan";
 import { readJsonBody } from "@/server/shared/request";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { untukPortal } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { getGatewaySippKonteks } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -14,6 +15,36 @@ import { ok } from "@/server/shared/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Daftar tipe keluaran yang dibaca usulkanMedanPutusan (opsi.tipe). */
+const DAFTAR_TIPE_PUTUSAN = ["putusan.sumber-hukum.sebutan", "putusan.bawaan-medan"] as const;
+
+/**
+ * Daftar efektif (kontrak K3) untuk borang putusan, APA ADANYA dari
+ * untukPortal - termasuk bila tabelnya tak terbaca dan untukPortal sendiri
+ * sudah jatuh ke cermin kode.
+ *
+ * Galat yang lolos dari untukPortal (basis data tidak dapat dipakai sama
+ * sekali) TIDAK menggagalkan usulan: tipe dikosongkan, usulkanMedanPutusan
+ * memakai konstantanya, dan sebabnya dipulangkan sebagai kabar. Galatnya
+ * dicatat, tidak ditelan.
+ */
+async function bacaTipePutusan(
+  db: Awaited<ReturnType<typeof getDatabase>>
+): Promise<{ tipe: TipeUsulanMedan | null; kabar: string[] }> {
+  try {
+    const hasil = await untukPortal(db, DAFTAR_TIPE_PUTUSAN);
+    const tipe: TipeUsulanMedan = {};
+    for (const kunci of DAFTAR_TIPE_PUTUSAN) {
+      if (Array.isArray(hasil.daftar[kunci])) tipe[kunci] = hasil.daftar[kunci];
+    }
+    return { tipe, kabar: hasil.kabar };
+  } catch (galat) {
+    console.error("[ISIAN SIPP] Tipe keluaran tidak terbaca; memakai bawaan kode.", galat);
+    const pesan = galat instanceof Error ? galat.message : String(galat);
+    return { tipe: null, kabar: [`Tipe keluaran tidak terbaca - memakai bawaan: ${pesan}`] };
+  }
+}
 
 /**
  * Usulan isian borang Putusan Akhir SIPP.
@@ -135,7 +166,8 @@ export async function GET(request: NextRequest) {
 /**
  * Usulan untuk MEDAN PILIHAN pada borang yang sama.
  *
- *   POST { nomorPerkara, medan: [{ kunci, label, pilihan: [{nilai, label}] }] }
+ *   POST { nomorPerkara, jenisPerkara?,
+ *          medan: [{ kunci, label, pilihan: [{nilai, label}], banyak?, terpilih? }] }
  *
  * ============================================================================
  * DAFTAR PILIHANNYA DIKIRIM HALAMAN, BUKAN DISIMPAN DI SINI
@@ -152,9 +184,21 @@ export async function GET(request: NextRequest) {
  * dihafal portal: SIPP boleh menambah, menghapus, atau menomori ulang
  * daftarnya tanpa satu baris pun di sini berubah.
  *
- * Yang dicari di dalam naskah hanya PERTIMBANGAN dan DUDUK PERKARA - di
- * situlah faktanya diuraikan. Amar berisi hukumannya, bukan sebabnya, dan
- * mencarinya di sana hanya menambah salah tangkap.
+ * ============================================================================
+ * DUA MASUKAN YANG TERPISAH: DASAR DAN AMAR
+ * ============================================================================
+ *
+ * Fakta medan pilihan - faktor, nusyuz, qobla, alasan - dicari di
+ * PERTIMBANGAN dan DUDUK PERKARA: di situlah faktanya diuraikan. Amar berisi
+ * hukumannya, bukan sebabnya, dan mencari fakta di sana hanya menambah salah
+ * tangkap.
+ *
+ * Tetapi Status Putusan dan Verstek justru dinyatakan AMAR, dan dari
+ * pertimbangan keduanya salah berpola: "permohonan pencabutan ... dapat
+ * dikabulkan" terbaca Dikabulkan. Karena itu amar draf dikirim sebagai
+ * masukan TERPISAH (opsi.amar) - tidak digabung ke dasar - dan hanya dibaca
+ * untuk kedua medan itu. Diukur atas 1.633 putusan 2025-2026: status dari
+ * pertimbangan 1.382 sama dengan isian petugas, dari amar 1.598.
  */
 export async function POST(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -166,11 +210,11 @@ export async function POST(request: NextRequest) {
 
     const badan = await readJsonBody<{
       nomorPerkara?: string;
-      medan?: MedanPilihan[];
+      medan?: unknown;
       jenisPerkara?: string;
     }>(request);
     const nomorPerkara = String(badan?.nomorPerkara ?? "").trim();
-    const medan = Array.isArray(badan?.medan) ? badan.medan : [];
+    const medan = saringMedanPilihan(badan?.medan);
 
     if (!nomorPerkara) return ok({ ada: false, sebab: "Nomor perkara belum disebut." });
     if (medan.length === 0) return ok({ ada: false, sebab: "Tidak ada medan pilihan yang perlu diusulkan." });
@@ -194,6 +238,8 @@ export async function POST(request: NextRequest) {
 
     const bagian = pecahNaskahPutusan(baris.naskah);
     const dasar = [bagian.pertimbangan ?? "", bagian.dudukPerkara ?? ""].filter(Boolean).join("\n\n");
+    // Amar draf - TERPISAH dari dasar, lihat catatan di atas POST.
+    const amar = bagian.amar ?? "";
 
     // Jenis perkaranya menentukan bawaan sebagian medan - Keadaan Isteri
     // "Suci" pada cerai gugat, "Tidak diketahui" pada cerai talak. Dikirim
@@ -202,11 +248,18 @@ export async function POST(request: NextRequest) {
     // penantian pada tiap pembacaan.
     const jenisPerkara = String(badan?.jenisPerkara ?? "").trim();
 
+    // Sebutan sumber hukum dan bawaan medan milik satker (tipe keluaran).
+    // Tak terbaca = konstanta kode, dengan kabarnya - tidak pernah 500.
+    const { tipe, kabar } = await bacaTipePutusan(db);
+
     return ok({
       ada: true,
       versi: baris.versi,
       keadaan: baris.keadaan,
-      usulan: usulkanMedanPutusan(dasar, medan, jenisPerkara),
+      usulan: usulkanMedanPutusan(dasar, medan, { jenisPerkara, amar, tipe }),
+      // Hanya muncul bila ada yang perlu dikatakan, supaya jawaban pada
+      // keadaan biasa sama persis dengan sebelum daftar ini disambung.
+      ...(kabar.length ? { kabarTipeKeluaran: kabar } : {}),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

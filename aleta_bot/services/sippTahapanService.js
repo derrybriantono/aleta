@@ -1679,6 +1679,160 @@ async function mafqudPerkara(perkaraId) {
   };
 }
 /**
+ * ============================================================================
+ * PENCIRI GHAIB UNTUK BANYAK PERKARA - SATU DEFINISI, DUA LAYAR
+ * ============================================================================
+ *
+ * penandaPerkara di bawah menjawab SATU perkara dengan empat kueri. Antrian
+ * Sidang membutuhkan jawabannya untuk sampai 500 perkara tiap muatan layar,
+ * dan menanyakannya satu per satu berarti dua ribu kueri per halaman.
+ *
+ * Yang dijaga di sini BUKAN kecepatan melainkan KESAMAAN. Sampai 24 September
+ * 2026 Antrian Sidang memakai penciri SK saja (jarak PHS ke sidang pertama
+ * >= 120 hari) sedangkan layar Status Perkara memakai empat sumber, sehingga
+ * dua layar ALETA menyatakan keadaan yang BERBEDA untuk perkara yang sama -
+ * terukur pada 65/Pdt.G/2025, 76/Pdt.G/2025, dan 158/Pdt.G/2025.
+ *
+ * Diukur di sipp_donggala 24 September 2026 atas 1.759 perkara terdaftar sejak
+ * 1 Januari 2025: penciri SK 61 perkara, penanda perkara_pihak2.ghaib 27, kata
+ * ghaib pada alamat/keterangan pihak 65; gabungan keempatnya 66. Lima perkara
+ * berada DI LUAR penciri SK dengan jarak 112-119 hari - sehari dua di bawah
+ * ambang - dan tak satu pun dari kelimanya melewati 150 hari, jadi memperluas
+ * penciri tidak menyembunyikan kewajiban lapor siapa pun. v_perkara pada SIPP
+ * satker ini tidak punya kolom ghaib sama sekali, jadi sumber kedua diam
+ * dengan sendirinya lewat kolomTerpilih().
+ *
+ * GAGAL-TERTUTUP: kueri yang gagal memulangkan himpunan kosong, yang berarti
+ * TIDAK ghaib, yang berarti TIDAK ada kelonggaran. Arahnya disengaja - gagal
+ * ke arah kelonggaran berarti menghijaukan perkara yang sudah lewat lima
+ * bulan, dan itu menyembunyikan kewajiban lapor SEMA 2/2014.
+ *
+ * @param {Array<number|string>} daftarPerkaraId - paling banyak 500 dipakai
+ * @param {{tanggal?: Record<string, {tanggalPhs: string, sidangPertama: string}>}} pilihan
+ * @returns {Promise<Record<string, {ghaib: true, sumber: string[], jarakPhsHari: number|null}>>}
+ *          hanya perkara yang GHAIB yang punya kunci; sisanya tidak ada.
+ */
+async function penandaGhaibBanyakPerkara(daftarPerkaraId = [], { tanggal = null } = {}) {
+  const id = [
+    ...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0)),
+  ].slice(0, 500);
+  const hasil = {};
+  if (id.length === 0) return hasil;
+  const isian = id.map(() => "?").join(", ");
+  const kolom = await sippSkemaService.kolomTerpilih().catch(() => ({}));
+
+  const tandai = (perkaraId, sebutan, jarakPhsHari = null) => {
+    const kunci = String(perkaraId);
+    if (!hasil[kunci]) hasil[kunci] = { ghaib: true, sumber: [], jarakPhsHari: null };
+    if (!hasil[kunci].sumber.includes(sebutan)) hasil[kunci].sumber.push(sebutan);
+    if (jarakPhsHari !== null) hasil[kunci].jarakPhsHari = jarakPhsHari;
+  };
+
+  // Penciri SK-nya ditulis SEKALI, di sini. Dua pemanggil - peta tanggal yang
+  // sudah dibaca pemanggil, dan kueri perkara_penetapan - memakai jalan yang
+  // sama supaya ambangnya tidak pernah bercabang.
+  const cocokJarakPhs = (perkaraId, dari, ke) => {
+    const jarak = selisihHari(dari, ke);
+    if (jarak !== null && jarak >= penilaianSippService.JARAK_PHS_GHAIB_HARI) {
+      tandai(perkaraId, `jarak PHS ke sidang pertama ${jarak} hari`, jarak);
+    }
+  };
+
+  // 1. Penanda pada pihaknya - sumber paling tegas: yang ghaib adalah
+  //    PIHAKNYA, dan SIPP menandainya sendiri di perkara_pihak2.ghaib.
+  if (kolom.pihakGhaib && (await sippSkemaService.tabelAda("perkara_pihak2"))) {
+    const rows = await runQuery(
+      `SELECT DISTINCT k.perkara_id AS perkaraId
+         FROM perkara_pihak2 k
+        WHERE k.perkara_id IN (${isian}) AND k.${kolom.pihakGhaib} = 1`,
+      id
+    ).catch(() => []);
+    for (const baris of rows) tandai(baris.perkaraId, "penanda ghaib pada pihak tergugat/termohon");
+  }
+
+  // 2. Penanda pada v_perkara, bila SIPP versi ini menyediakannya.
+  if (kolom.vGhaib && (await sippSkemaService.tabelAda("v_perkara"))) {
+    const rows = await runQuery(
+      `SELECT v.perkara_id AS perkaraId, v.${kolom.vGhaib} AS ghaib
+         FROM v_perkara v WHERE v.perkara_id IN (${isian})`,
+      id
+    ).catch(() => []);
+    for (const baris of rows) {
+      const nilai = cleanText(baris.ghaib).toLowerCase();
+      if (nilai && nilai !== "0" && nilai !== "n" && nilai !== "tidak") {
+        tandai(baris.perkaraId, `penanda ${kolom.vGhaib} pada v_perkara`);
+      }
+    }
+  }
+
+  // 3. Jarak PHS ke sidang pertama - penciri yang dipakai SK sendiri.
+  //    Pemanggil yang SUDAH membaca kedua tanggalnya mengirimkannya lewat
+  //    `tanggal`, supaya layar Status Perkara tidak membayar kueri kedua dan
+  //    hasilnya persis sama dengan sebelum penyatuan ini.
+  const perluKueriPenetapan = id.some((x) => !tanggal || !tanggal[String(x)]);
+  if (tanggal) {
+    for (const satu of id) {
+      const t = tanggal[String(satu)];
+      if (t) cocokJarakPhs(satu, t.tanggalPhs, t.sidangPertama);
+    }
+  }
+  if (
+    perluKueriPenetapan &&
+    kolom.tanggalPhs &&
+    kolom.sidangPertama &&
+    (await sippSkemaService.tabelAda("perkara_penetapan"))
+  ) {
+    const rows = await runQuery(
+      `SELECT pp.perkara_id AS perkaraId,
+              pp.${kolom.tanggalPhs} AS tanggalPhs,
+              pp.${kolom.sidangPertama} AS sidangPertama
+         FROM perkara_penetapan pp
+        WHERE pp.perkara_id IN (${isian})`,
+      id
+    ).catch(() => []);
+    for (const baris of rows) {
+      if (tanggal && tanggal[String(baris.perkaraId)]) continue;
+      cocokJarakPhs(baris.perkaraId, isoTanggal(baris.tanggalPhs), isoTanggal(baris.sidangPertama));
+    }
+  }
+
+  // 4. Kata ghaib pada alamat atau keterangan pihak - dibaca dari tabel pihak
+  //    lewat perkara_pihak1..5, sumber yang sama dengan pihakPerkara().
+  //    REGEXP-nya tanpa indeks; diukur di sipp_donggala kueri ini kembali
+  //    seketika untuk 500 perkara_id, tetapi inilah kueri pertama yang akan
+  //    melambat bila satker lain jauh lebih besar.
+  if (await sippSkemaService.tabelAda("pihak")) {
+    const kolomAlamat = await sippSkemaService.pilihKolom("pihak", [
+      "alamat",
+      "alamat_lengkap",
+      "tempat_tinggal",
+    ]);
+    const kolomKeterangan = await sippSkemaService.pilihKolom("pihak", ["keterangan", "catatan"]);
+    const medan = [kolomAlamat, kolomKeterangan].filter(Boolean);
+    const cabang = [];
+    for (let nomor = 1; nomor <= 5; nomor += 1) {
+      if (await sippSkemaService.tabelAda(`perkara_pihak${nomor}`)) {
+        cabang.push(
+          `SELECT perkara_id, pihak_id FROM perkara_pihak${nomor} WHERE perkara_id IN (${isian})`
+        );
+      }
+    }
+    if (medan.length > 0 && cabang.length > 0) {
+      const rows = await runQuery(
+        `SELECT DISTINCT k.perkara_id AS perkaraId
+           FROM (${cabang.join(" UNION ALL ")}) k
+           JOIN pihak p ON p.id = k.pihak_id
+          WHERE ${medan.map((m) => `p.${m} REGEXP 'ghaib|gaib'`).join(" OR ")}`,
+        cabang.flatMap(() => id)
+      ).catch(() => []);
+      for (const baris of rows) tandai(baris.perkaraId, "kata ghaib pada keterangan pihak");
+    }
+  }
+
+  return hasil;
+}
+
+/**
  * Penanda perkara: ghaib, dan pihak berstatus PNS/TNI/POLRI/BUMN.
  *
  * ============================================================================
@@ -1697,14 +1851,14 @@ async function mafqudPerkara(perkaraId) {
  * laporan.
  *
  * ============================================================================
- * GHAIB DIKENALI DARI TIGA ARAH
+ * GHAIB DIKENALI DARI EMPAT ARAH - TETAPI TIDAK DI SINI
  * ============================================================================
  *
- *   1. kolom penanda pada v_perkara, bila ada
- *   2. jarak PHS ke sidang pertama >= 120 hari - inilah yang dipakai SK
- *      sendiri sebagai penciri ("terindikasi dengan jarak waktu penetapan hari
- *      sidang ke sidang pertama >=120 hari")
- *   3. kata ghaib pada alamat atau keterangan pihak
+ * Keempat sumbernya (penanda perkara_pihak2.ghaib, kolom ghaib pada v_perkara,
+ * jarak PHS ke sidang pertama >= 120 hari, dan kata ghaib pada alamat atau
+ * keterangan pihak) ditulis SEKALI di penandaGhaibBanyakPerkara di atas, dan
+ * fungsi ini meminjamnya. Dua penciri untuk satu pertanyaan pernah membuat dua
+ * layar ALETA menyatakan keadaan yang berbeda pada perkara yang sama.
  *
  * Yang ditemukan disebutkan sumbernya, supaya panitera dapat menilai sendiri
  * apakah penandanya masuk akal - bukan menerimanya begitu saja.
@@ -1713,51 +1867,25 @@ async function penandaPerkara(perkaraId, { tanggalPhs = "", sidangPertama = "" }
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0) return { ghaib: null, instansi: [], sumber: [] };
 
-  const kolom = await sippSkemaService.kolomTerpilih();
+  // Penciri ghaib TIDAK ditulis ulang di sini - lihat penandaGhaibBanyakPerkara
+  // di atas, yang juga dipakai Antrian Sidang. Peta tanggalnya tetap dikirim
+  // walau isinya kosong, supaya pemanggil yang tidak membawa tanggal PHS
+  // (sippKonteksService untuk ekstensi) tetap berperilaku persis seperti
+  // sebelum penyatuan ini: jarak null, jadi sumber ketiga diam.
   const sumber = [];
-  let ghaib = false;
+  const petaGhaib = await penandaGhaibBanyakPerkara([id], {
+    tanggal: { [String(id)]: { tanggalPhs, sidangPertama } },
+  });
+  const tanda = petaGhaib[String(id)] || null;
+  const ghaib = Boolean(tanda);
+  if (tanda) sumber.push(...tanda.sumber);
 
-  // 1. Penanda pada pihaknya - inilah sumber yang paling tegas. Yang ghaib
-  //    adalah PIHAKNYA, dan SIPP menandainya di perkara_pihak2.ghaib.
-  if (kolom.pihakGhaib && (await sippSkemaService.tabelAda("perkara_pihak2"))) {
-    const rows = await runQuery(
-      `SELECT COUNT(*) AS jumlah FROM perkara_pihak2 p
-        WHERE p.perkara_id = ? AND p.${kolom.pihakGhaib} = 1`,
-      [id]
-    ).catch(() => []);
-    if (Number(rows[0] && rows[0].jumlah) > 0) {
-      ghaib = true;
-      sumber.push("penanda ghaib pada pihak tergugat/termohon");
-    }
-  }
-
-  // 2. Penanda pada v_perkara, bila SIPP versi ini menyediakannya.
-  if (!ghaib && kolom.vGhaib && (await sippSkemaService.tabelAda("v_perkara"))) {
-    const rows = await runQuery(
-      `SELECT v.${kolom.vGhaib} AS ghaib FROM v_perkara v WHERE v.perkara_id = ? LIMIT 1`,
-      [id]
-    ).catch(() => []);
-    const nilai = rows[0] ? cleanText(rows[0].ghaib).toLowerCase() : "";
-    if (nilai && nilai !== "0" && nilai !== "n" && nilai !== "tidak") {
-      ghaib = true;
-      sumber.push(`penanda ${kolom.vGhaib} pada v_perkara`);
-    }
-  }
-
-  // 3. Jarak PHS ke sidang pertama - penciri yang dipakai SK sendiri.
+  // Ketiganya tetap dibutuhkan di bawah: `pihak` untuk penanda instansi,
+  // `kolom` dan `jarak` untuk memutuskan apakah jawabannya boleh "tidak ghaib"
+  // atau harus null - "belum dapat dinilai".
+  const kolom = await sippSkemaService.kolomTerpilih();
   const jarak = selisihHari(tanggalPhs, sidangPertama);
-  if (jarak !== null && jarak >= penilaianSippService.JARAK_PHS_GHAIB_HARI) {
-    ghaib = true;
-    sumber.push(`jarak PHS ke sidang pertama ${jarak} hari`);
-  }
-
-  // 4. Kata ghaib pada keterangan pihak.
   const pihak = await pihakPerkara(id);
-  const adaKataGhaib = pihak.baris.some((x) => /ghaib|gaib/i.test(`${x.alamat} ${x.keterangan}`));
-  if (adaKataGhaib) {
-    ghaib = true;
-    sumber.push("kata ghaib pada keterangan pihak");
-  }
 
   // --- pihak berstatus instansi -------------------------------------------
   //
@@ -3262,6 +3390,7 @@ module.exports = {
   mediatorPerkara,
   mediasiLengkapPerkara,
   pemberitahuanPerkara,
+  penandaGhaibBanyakPerkara,
   penandaPerkara,
   pihakPerkara,
   saksiLengkapPerkaraBaru,

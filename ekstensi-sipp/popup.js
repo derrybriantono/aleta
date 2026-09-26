@@ -176,11 +176,12 @@ function kabarPerbarui(teks) {
   perbaruiKabar.hidden = false;
 }
 
-async function mintaKeLatar(jenis) {
+async function mintaKeLatar(jenis, paksa) {
   if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
     return { ok: false, pesan: "Jendela ini tidak berjalan sebagai ekstensi." };
   }
   try {
+    if (paksa) return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis, paksa: true });
     return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis });
   } catch (galat) {
     // Ekstensi sedang dimuat ulang - konteksnya mati sebelum jawabannya
@@ -197,13 +198,29 @@ if (perbaruiVersi && typeof chrome !== "undefined" && chrome.runtime && chrome.r
   }
 }
 
+// Putaran cetak relaas yang belum selesai HILANG bila ekstensi dimuat ulang;
+// latar.js menahannya dan menjawab "putaran-relaas-berjalan". Tekanan KEDUA
+// pada tombol yang sama baru memaksa - sama dengan panel ALETA.
+let paksaPerbarui = false;
+let paksaMuatUlang = false;
+
 if (tombolPerbarui) {
+  const labelPerbarui = tombolPerbarui.textContent;
   tombolPerbarui.addEventListener("click", async () => {
     tombolPerbarui.disabled = true;
     kabarPerbarui("Menanyakan pembaruan kepada Chrome…");
 
-    const jawab = await mintaKeLatar("perbarui");
+    const jawab = paksaPerbarui ? await mintaKeLatar("perbarui", true) : await mintaKeLatar("perbarui");
     kabarPerbarui((jawab && jawab.pesan) || "Tidak ada jawaban dari ekstensi.");
+
+    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+      paksaPerbarui = true;
+      tombolPerbarui.textContent = "Tetap perbarui - putaran cetak hilang";
+      tombolPerbarui.disabled = false;
+      return;
+    }
+    paksaPerbarui = false;
+    tombolPerbarui.textContent = labelPerbarui;
 
     if (jawab && jawab.ok && jawab.keadaan === "dipasang") return;
 
@@ -214,10 +231,20 @@ if (tombolPerbarui) {
 }
 
 if (tombolMuatUlangEkstensi) {
+  const labelMuatUlang = tombolMuatUlangEkstensi.textContent;
   tombolMuatUlangEkstensi.addEventListener("click", async () => {
     tombolMuatUlangEkstensi.disabled = true;
     kabarPerbarui("Memuat ulang ekstensi dari berkasnya…");
-    const jawab = await mintaKeLatar("muat-ulang");
+    const jawab = await mintaKeLatar("muat-ulang", paksaMuatUlang);
+    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+      kabarPerbarui(jawab.pesan || "Putaran cetak relaas belum selesai.");
+      paksaMuatUlang = true;
+      tombolMuatUlangEkstensi.textContent = "Tetap muat ulang - putaran cetak hilang";
+      tombolMuatUlangEkstensi.disabled = false;
+      return;
+    }
+    paksaMuatUlang = false;
+    tombolMuatUlangEkstensi.textContent = labelMuatUlang;
     kabarPerbarui(
       (jawab && jawab.pesan) ||
         "Ekstensi sedang dimuat ulang. Muat ulang halaman SIPP yang terbuka sebentar lagi."

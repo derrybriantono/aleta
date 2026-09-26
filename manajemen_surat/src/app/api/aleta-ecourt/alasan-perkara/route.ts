@@ -3,10 +3,11 @@ import { type NextRequest } from "next/server";
 import { usulkanAlasanPerkara, susunTeksAlasan } from "@/lib/alasan-perkara-sipp";
 import { petikDataNikah } from "@/lib/data-nikah-sipp";
 import { usulkanObyekSengketa, type UsulanObyek } from "@/lib/obyek-sengketa-sipp";
-import { type MedanPilihan } from "@/lib/usulan-medan-putusan";
+import { saringMedanPilihan, type TipeUsulanMedan } from "@/lib/usulan-medan-putusan";
 import { getDatabase } from "@/server/db/client";
 import { getGatewaySippObyekSengketa } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { untukPortal } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { readJsonBody } from "@/server/shared/request";
@@ -53,6 +54,34 @@ const BATAS_TEKS = 200_000;
 /** Layar Data Umum tidak pernah menampilkan sebanyak ini medan alasan. */
 const BATAS_MEDAN = 20;
 
+/**
+ * Daftar tipe keluaran yang dibaca mesin usulan yang sama dengan borang
+ * putusan (usulkanMedanPutusan lewat usulkanAlasanPerkara).
+ */
+const DAFTAR_TIPE_PUTUSAN = ["putusan.sumber-hukum.sebutan", "putusan.bawaan-medan"] as const;
+
+/**
+ * Daftar efektif APA ADANYA dari untukPortal. Galat yang lolos darinya tidak
+ * menggagalkan usulan: tipe dikosongkan (konstanta kode yang berlaku) dan
+ * sebabnya dipulangkan sebagai kabar - dicatat, tidak ditelan.
+ */
+async function bacaTipePutusan(
+  db: Awaited<ReturnType<typeof getDatabase>>
+): Promise<{ tipe: TipeUsulanMedan | null; kabar: string[] }> {
+  try {
+    const hasil = await untukPortal(db, DAFTAR_TIPE_PUTUSAN);
+    const tipe: TipeUsulanMedan = {};
+    for (const kunci of DAFTAR_TIPE_PUTUSAN) {
+      if (Array.isArray(hasil.daftar[kunci])) tipe[kunci] = hasil.daftar[kunci];
+    }
+    return { tipe, kabar: hasil.kabar };
+  } catch (galat) {
+    console.error("[ALASAN PERKARA] Tipe keluaran tidak terbaca; memakai bawaan kode.", galat);
+    const pesan = galat instanceof Error ? galat.message : String(galat);
+    return { tipe: null, kabar: [`Tipe keluaran tidak terbaca - memakai bawaan: ${pesan}`] };
+  }
+}
+
 export async function POST(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
@@ -66,7 +95,7 @@ export async function POST(request: NextRequest) {
     const badan = await readJsonBody<{
       nomorPerkara?: string;
       teks?: { posita?: string; petitum?: string };
-      medan?: MedanPilihan[];
+      medan?: unknown;
       /** Halaman menampilkan kotak Obyek Sengketa - kebiasaan satker diminta. */
       mintaObyek?: boolean;
       /**
@@ -78,16 +107,10 @@ export async function POST(request: NextRequest) {
       asalPosita?: string;
     }>(request);
 
-    const medanMentah = Array.isArray(badan?.medan) ? badan.medan : [];
-
-    const medan: MedanPilihan[] = medanMentah.slice(0, BATAS_MEDAN).map((satu) => ({
-      kunci: String(satu?.kunci ?? ""),
-      label: String(satu?.label ?? ""),
-      pilihan: (Array.isArray(satu?.pilihan) ? satu.pilihan : []).map((x) => ({
-        nilai: String(x?.nilai ?? ""),
-        label: String(x?.label ?? ""),
-      })),
-    }));
+    // Nilai yang SUDAH terpilih di layar (terpilih, kontrak K9) ikut diterima:
+    // alasan yang sudah dipilih petugas didahulukan, kecuali naskah tegas
+    // menyebut yang lain - lihat hormatiTerpilih.
+    const medan = saringMedanPilihan(badan?.medan, { medan: BATAS_MEDAN });
 
     const teks = {
       posita: String(badan?.teks?.posita ?? "").slice(0, BATAS_TEKS),
@@ -135,11 +158,16 @@ export async function POST(request: NextRequest) {
         : { total: 0, yakin: false, usulan: [], jenisPerkara: "", sebab: jawab.error || "SIPP tidak terbaca." };
     }
 
+    // Tipe keluaran hanya dibaca bila ada medan yang akan diusulkan.
+    const { tipe, kabar } = medan.length > 0 ? await bacaTipePutusan(db) : { tipe: null, kabar: [] as string[] };
+
     return ok({
       ada: true,
       nomorPerkara,
       panjangTeks: dasar.length,
-      usulan: medan.length > 0 ? usulkanAlasanPerkara(teks, medan) : [],
+      usulan: medan.length > 0 ? usulkanAlasanPerkara(teks, medan, { tipe }) : [],
+      // Hanya muncul bila ada yang perlu dikatakan - lihat rute isian-sipp.
+      ...(kabar.length ? { kabarTipeKeluaran: kabar } : {}),
       nikah: petikDataNikah(String(badan?.teks?.posita ?? "").slice(0, BATAS_TEKS)),
       obyekSengketa,
       asalPosita: String(badan?.asalPosita ?? "").slice(0, 160),

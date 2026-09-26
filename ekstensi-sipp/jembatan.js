@@ -431,24 +431,193 @@
   }
 
   /**
+   * Apakah tombol ini sungguh TAMPAK bagi petugas.
+   *
+   * ==========================================================================
+   * SIPP MENYEMBUNYIKAN, BUKAN MENGHAPUS
+   * ==========================================================================
+   *
+   * Borang SIPP menyembunyikan tombol dengan jQuery .hide() - display:none,
+   * elemennya TETAP di DOM. #simpan pada borang E-Doc, misalnya, tersembunyi
+   * sampai berkasnya dipilih. Sampai 25 September 2026 jembatan hanya
+   * memeriksa ada dan disabled, sehingga tombol yang tidak ditawarkan halaman
+   * kepada petugas tetap dapat ditekan dari sini.
+   *
+   * Tiga pemeriksaan, masing-masing menangkap bentuk sembunyi yang lain:
+   *   - display:none pada tombol atau salah satu leluhurnya (.hide()),
+   *   - tanpa kotak tata letak: offsetParent null DAN getClientRects kosong
+   *     (position:fixed sah ber-offsetParent null, tetapi tetap berkotak),
+   *   - visibility hidden/collapse.
+   */
+  function tombolTampak(elemen) {
+    const gayaDari = (simpul) => {
+      try {
+        return window.getComputedStyle(simpul);
+      } catch (galat) {
+        return null;
+      }
+    };
+    for (let simpul = elemen; simpul && simpul.nodeType === 1; simpul = simpul.parentElement) {
+      const gaya = gayaDari(simpul);
+      if (gaya && gaya.display === "none") return false;
+    }
+    const gaya = gayaDari(elemen);
+    if (gaya && (gaya.visibility === "hidden" || gaya.visibility === "collapse")) return false;
+    return Boolean(elemen.offsetParent !== null || elemen.getClientRects().length);
+  }
+
+  /**
+   * ==========================================================================
+   * JAWABAN SIPP SENDIRI SEBAGAI BUKTI SIMPAN
+   * ==========================================================================
+   *
+   * Borang Putusan Akhir dikirim SubmitHandling (resources/js/jquery-sipp.js):
+   * $.ajax POST ke alamat action borang, yang menjawab {st, msg} - st 0 berarti
+   * ditolak pengesahan ("Amar Putusan Tidak Boleh kurang dari 50 Karakter",
+   * "Sumber Hukum Belum Dipilih", ...), st 1 berarti tersimpan. Pesan itu lalu
+   * ditulis ke #pesan-container di dalam #popup_msg.
+   *
+   * Sampai 25 September 2026 jawaban itu tidak didengar sama sekali: ekstensi
+   * menjajak basis data sepuluh kali sedetik sekali, lalu menyerah dengan
+   * pesan umum - sementara sebab yang sebenarnya sudah tertulis di layar.
+   *
+   * Dua telinga; yang lebih dulu mendengar yang dipakai:
+   *   1. ajaxComplete jQuery halaman untuk alamat action borang - {st, msg} utuh;
+   *   2. #pesan-container yang terisi pesan BARU - bunyinya saja, tanpa st.
+   * Jawabannya diteruskan lewat postMessage yang sama dengan jawaban jembatan
+   * lain, bertanda id bukti yang dikirim pemintanya.
+   *
+   * Yang tidak terdengar dalam BATAS_DENGAR_SIMPAN_MS dilepas; pemintanya
+   * punya batasnya sendiri dan kembali ke jajak basis data. Pesannya
+   * diteruskan sebagai TEKS, bukan HTML - dibaca DOMParser yang tidak
+   * menjalankan apa pun.
+   */
+  const BATAS_DENGAR_SIMPAN_MS = 60000;
+
+  function alamatBaku(alamat) {
+    try {
+      const url = new URL(String(alamat || ""), location.href);
+      return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
+    } catch (galat) {
+      return "";
+    }
+  }
+
+  function teksDariHtml(html) {
+    const mentah = String(html === null || html === undefined ? "" : html);
+    try {
+      const dokumen = new DOMParser().parseFromString(`<div>${mentah}</div>`, "text/html");
+      for (const br of Array.from(dokumen.querySelectorAll("br"))) br.replaceWith(" ");
+      return String(dokumen.body.textContent || "").replace(/\s+/g, " ").trim().slice(0, 400);
+    } catch (galat) {
+      return mentah.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400);
+    }
+  }
+
+  function jawabanJson(xhr) {
+    if (xhr && xhr.responseJSON && typeof xhr.responseJSON === "object") return xhr.responseJSON;
+    try {
+      const isi = JSON.parse(String((xhr && xhr.responseText) || ""));
+      return isi && typeof isi === "object" ? isi : null;
+    } catch (galat) {
+      return null;
+    }
+  }
+
+  function dengarJawabanSimpan(borang, id) {
+    const alamat = alamatBaku(borang.getAttribute("action") || "");
+    const jq = typeof window.jQuery === "function" ? window.jQuery : null;
+    // jQuery lama milik sebagian halaman SIPP belum punya .on - .bind ada di semua versi.
+    const pasang = jq && typeof jq.fn.on === "function" ? "on" : "bind";
+    const lepasDari = jq && typeof jq.fn.off === "function" ? "off" : "unbind";
+    const wadahAwal = document.querySelector("#pesan-container");
+    const pesanSebelum = wadahAwal ? String(wadahAwal.innerHTML || "") : null;
+    let terkirim = false;
+    let selesai = false;
+
+    const kabarkan = (isi) => {
+      if (selesai) return;
+      selesai = true;
+      lepas();
+      window.postMessage({ sumber: TANDA_JAWAB, id, jenis: "bukti-simpan", ...isi }, "*");
+    };
+    const padaKirim = (_peristiwa, _xhr, opsi) => {
+      if (alamat && alamatBaku(opsi && opsi.url) === alamat) terkirim = true;
+    };
+    const padaSelesai = (_peristiwa, xhr, opsi) => {
+      if (!alamat || alamatBaku(opsi && opsi.url) !== alamat) return;
+      const isi = jawabanJson(xhr);
+      const st = isi ? Number(isi.st) : NaN;
+      kabarkan({
+        asal: "ajax",
+        st: st === 0 || st === 1 ? st : null,
+        pesan: isi ? teksDariHtml(isi.msg) : teksDariHtml(xhr && xhr.responseText).slice(0, 300),
+        status: Number((xhr && xhr.status) || 0),
+      });
+    };
+    if (jq) {
+      jq(document)[pasang]("ajaxSend", padaKirim);
+      jq(document)[pasang]("ajaxComplete", padaSelesai);
+    }
+    const pengamat = setInterval(() => {
+      const wadah = document.querySelector("#pesan-container");
+      if (!wadah) return;
+      const html = String(wadah.innerHTML || "");
+      if (!html.trim() || html === pesanSebelum) return;
+      kabarkan({ asal: "popup", st: null, pesan: teksDariHtml(html) });
+    }, 250);
+    const jam = setTimeout(lepas, BATAS_DENGAR_SIMPAN_MS);
+
+    function lepas() {
+      if (jq) {
+        jq(document)[lepasDari]("ajaxSend", padaKirim);
+        jq(document)[lepasDari]("ajaxComplete", padaSelesai);
+      }
+      clearInterval(pengamat);
+      clearTimeout(jam);
+    }
+
+    return {
+      lepas,
+      // Dibaca SESUDAH tombol ditekan: ajaxSend jQuery lahir serempak di dalam
+      // penekanan itu, jadi "tanpa-kiriman" berarti borangnya memang tidak
+      // dikirim - konfirmasi SIPP dibatalkan, atau pengirimnya gagal.
+      keadaan: () => (!jq ? "tanpa-jquery" : terkirim ? "terkirim" : "tanpa-kiriman"),
+    };
+  }
+
+  /**
    * Menekan satu tombol.
    *
    * Dipakai hanya bila penyimpanan otomatis dinyalakan di pengaturan ALETA -
    * dan bawaannya mati. Jembatan tidak memeriksa setelan itu sendiri; ia hanya
    * mengerjakan yang diminta. Yang memeriksanya server, sebelum permintaan ini
    * pernah dikirim.
+   *
+   * Tombol yang tidak tampak TIDAK ditekan (lihat tombolTampak). Bila pemintanya
+   * menyertakan bukti {borang, id}, tombolnya harus milik borang itu, dan
+   * jawaban SIPP atas kiriman borangnya diteruskan dengan id itu.
    */
-  function tekanTombol(penunjuk) {
+  function tekanTombol(penunjuk, bukti) {
     const elemen = cariElemen(penunjuk);
     if (!elemen) return { ok: false, alasan: "tombol_tidak_ketemu", penunjuk };
+    if (!tombolTampak(elemen)) return { ok: false, alasan: "tombol_tidak_tampak", penunjuk };
     if (elemen.disabled) return { ok: false, alasan: "tombol_mati", penunjuk };
+
+    let telinga = null;
+    if (bukti && typeof bukti === "object") {
+      const borang = cariElemen(bukti.borang);
+      if (!borang || !borang.contains(elemen)) return { ok: false, alasan: "tombol_di_luar_borang", penunjuk };
+      telinga = dengarJawabanSimpan(borang, String(bukti.id || ""));
+    }
 
     try {
       elemen.click();
-      return { ok: true };
     } catch (galat) {
+      if (telinga) telinga.lepas();
       return { ok: false, alasan: String(galat.message || galat).slice(0, 200) };
     }
+    return telinga ? { ok: true, bukti: telinga.keadaan() } : { ok: true };
   }
 
   window.addEventListener("message", (peristiwa) => {
@@ -469,7 +638,7 @@
     } else if (pesan.jenis === "isi") {
       jawab = isiMedan(pesan.penunjuk, pesan.jenisMedan, pesan.nilai);
     } else if (pesan.jenis === "tekan") {
-      jawab = tekanTombol(pesan.penunjuk);
+      jawab = tekanTombol(pesan.penunjuk, pesan.bukti);
     } else {
       jawab = { ok: false, alasan: "permintaan_tidak_dikenali" };
     }

@@ -30,6 +30,7 @@
 const fs = require("fs");
 
 const botDb = require("./botDbService");
+const logService = require("./logService");
 const ecourtDocumentService = require("./ecourtDocumentService");
 const { normalizeCaseNumber, cleanText } = require("./ecourtTextService");
 const ecourtStoreService = require("./ecourtStoreService");
@@ -122,14 +123,53 @@ async function dokumenPerkara(nomorPerkara) {
    * karena volume Docker belum di-mount adalah keadaan yang pernah terjadi di
    * sini, dan ia harus kelihatan.
    */
-  const berkasRows = await botDb
-    .query(
+  /**
+   * ==========================================================================
+   * KUERINYA GAGAL BUKAN BERARTI BERKASNYA TIDAK ADA
+   * ==========================================================================
+   *
+   * Sebelum ini kueri ini memakai `.catch(() => [])`. Selama cermin
+   * berkas_pdf/berkas_word masih dipakai sebagai cadangan, kegagalannya masih
+   * tertutup sebagian. Sejak cadangan itu dibuang, adaPdf/adaWord SEMATA-MATA
+   * bergantung pada baris di sini - jadi satu kueri gagal menyembunyikan
+   * SELURUH tombol unduh dan menuliskan "berkas belum tersimpan" di layar
+   * SIPP. Panitera tidak punya cara membedakannya dari arsip yang memang
+   * kosong, dan tidak ada satu baris log pun yang menyebut sebabnya.
+   *
+   * Karena itu galatnya dicatat dan dibedakan: `berkasTidakTerbaca` menandai
+   * "tidak tahu", bukan "tidak ada", dan adaPdf/adaWord dipulangkan null -
+   * bukan false - supaya tidak ada yang menyimpulkan arsipnya kosong dari
+   * keadaan yang sebenarnya tidak terbaca.
+   *
+   * TIDAK memanggil ecourtStoreService.keadaanBerkasPerkara() di sini justru
+   * karena hal ini: fungsi itu menelan galat SELECT-nya sendiri dengan
+   * `.catch(() => [])` lalu memulangkan Map kosong, yang tidak dapat
+   * dibedakan dari perkara tanpa berkas. Begitu ia memulangkan penanda
+   * keterbacaan (atau melempar), kueri di bawah harus diganti panggilan itu.
+   */
+  let berkasRows = [];
+  let berkasTerbaca = true;
+  try {
+    berkasRows = await botDb.query(
       `SELECT document_key, format, jalur_berkas
          FROM aleta_bot_ecourt_files
         WHERE nomor_perkara = ? AND dihapus_retensi IS NULL`,
       [nomorPerkara]
-    )
-    .catch(() => []);
+    );
+  } catch (galat) {
+    berkasTerbaca = false;
+    void logService.logSystemEvent({
+      eventType: "ecourt_berkas_tidak_terbaca",
+      severity: "error",
+      message:
+        "Catatan berkas e-Court tidak terbaca; keadaan berkas pada panel SIPP ditandai tidak diketahui, bukan tidak ada.",
+      metadata: {
+        jalur: "sippKonteksService.dokumenPerkara",
+        nomorPerkara,
+        errorMessage: String((galat && galat.message) || galat),
+      },
+    });
+  }
 
   const adaBerkas = new Map();
   const hilangBerkas = new Map();
@@ -159,9 +199,27 @@ async function dokumenPerkara(nomorPerkara) {
     diunggahPada: row.diunggah_pada,
     batasUnggahTeks: row.batas_unggah_teks || "",
     sisaHari: sisaHari(row.batas_unggah),
-    // Tabel berkas lebih dulu, cermin jadi cadangan - lihat catatan di atas.
-    adaPdf: adaBerkas.has(`${row.document_key}|pdf`) || Boolean(row.berkas_pdf),
-    adaWord: adaBerkas.has(`${row.document_key}|word`) || Boolean(row.berkas_word),
+    // Cermin TIDAK lagi dipakai sebagai cadangan. Ia membuat ekstensi
+    // menyalakan tombol unduh untuk berkas yang sudah lenyap dari cakram -
+    // sementara portal, yang membuktikan ke cakram, menyembunyikannya. Satu
+    // dokumen dengan dua jawaban, dan yang longgar menjanjikan unduhan yang
+    // pasti gagal. Yang tercatat tetapi hilang tetap kelihatan lewat
+    // berkasHilang di bawah, jadi tidak ada keterangan yang hilang.
+    // null = TIDAK DIKETAHUI (catatan berkasnya tidak terbaca), false = tidak
+    // ada. Keduanya sama-sama tidak memunculkan tombol unduh - tombol yang
+    // dijanjikan harus benar-benar dapat diunduh - tetapi hanya yang pertama
+    // boleh disebut "tidak ada berkas" kepada panitera.
+    adaPdf: berkasTerbaca ? adaBerkas.has(`${row.document_key}|pdf`) : null,
+    adaWord: berkasTerbaca ? adaBerkas.has(`${row.document_key}|word`) : null,
+    /**
+     * Catatan berkasnya tidak terbaca sama sekali - kuerinya gagal.
+     *
+     * Dipisah dari berkasHilang di bawah karena tindakannya berbeda lagi:
+     * yang ini menyuruh orang memeriksa basis data bot, bukan arsipnya dan
+     * bukan pihaknya. Tanpa penanda ini, satu kueri gagal tampil sebagai
+     * "berkas belum tersimpan" untuk seluruh dokumen perkara itu.
+     */
+    berkasTidakTerbaca: !berkasTerbaca,
     /**
      * Tercatat pernah diunduh, tetapi berkasnya TIDAK ADA di cakram.
      *
@@ -759,17 +817,43 @@ async function getBerkas(documentKey, format = "pdf") {
    * kesalahannya.
    *
    * Jadi tabel berkas dibaca lebih dulu, cerminnya jadi cadangan.
+   *
+   * ==========================================================================
+   * DAN KUERINYA GAGAL TIDAK BOLEH MENJADI "berkas_belum_tersimpan"
+   * ==========================================================================
+   *
+   * Sebelum ini kueri ini memakai `.catch(() => [])`. Baris kosong lalu
+   * menjatuhkan jawaban ke cermin - yang terisi pada 23 dari 394 dokumen -
+   * lalu ke alasan "berkas_belum_tersimpan", yang dikirim apa adanya ke
+   * ekstensi oleh routes/internalGatewayRoutes.js (GET /sipp/berkas, 404).
+   * Kalimat itu BOHONG ketika sebabnya kuerinya gagal, dan tidak ada log yang
+   * membetulkannya. Jadi kegagalannya dicatat dan dipulangkan dengan alasan
+   * tersendiri, tanpa mampir ke cermin.
    */
-  const barisBerkas = await botDb
-    .query(
+  let barisBerkas = [];
+  try {
+    barisBerkas = await botDb.query(
       `SELECT jalur_berkas AS jalur
          FROM aleta_bot_ecourt_files
         WHERE document_key = ? AND format = ? AND dihapus_retensi IS NULL
         ORDER BY diunduh_pada DESC
         LIMIT 1`,
       [kunci, jenis]
-    )
-    .catch(() => []);
+    );
+  } catch (galat) {
+    void logService.logSystemEvent({
+      eventType: "ecourt_berkas_tidak_terbaca",
+      severity: "error",
+      message: "Catatan berkas e-Court tidak terbaca saat unduhan diminta; permintaannya ditolak dengan sebab yang jujur.",
+      metadata: {
+        jalur: "sippKonteksService.getBerkas",
+        documentKey: kunci,
+        format: jenis,
+        errorMessage: String((galat && galat.message) || galat),
+      },
+    });
+    return { ok: false, alasan: "catatan_berkas_tidak_terbaca" };
+  }
 
   const jalur = (Array.isArray(barisBerkas) && barisBerkas[0] && barisBerkas[0].jalur) || baris.jalur;
   if (!jalur) return { ok: false, alasan: "berkas_belum_tersimpan" };

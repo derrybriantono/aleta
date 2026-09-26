@@ -291,6 +291,24 @@ describe("modus keterangan saksi", () => {
     expect(jawab(h.saksi1, "5")).toBe("sudah cukup;");
     expect(jawab(h.saksi2, "5")).toBe("sudah cukup;");
   });
+
+  // 25 September 2026 (t2-ragam-bas-bot): delapan pembuka lama SENGAJA
+  // dibuang - 0 kali dipakai saksi manusia di 65.858 jawaban aps_badilag
+  // Donggala. 'Iya, ' yang terpenting: replace_ket_saksi ABT membuang 'ya, '
+  // sehingga putusan tercetak "Bahwa ipenyebabnya ..." (34 kali). Uji di atas
+  // tidak dilemahkan: semuanya menuntut makna, bukan bunyi pembuka.
+  it("pembuka yang tidak dipakai manusia tidak pernah muncul, pada nomor perkara mana pun", () => {
+    const DIBUANG = /^(Benar|Betul|Sepanjang saya tahu|Yang saya alami|Seingat saya|Sejauh yang saya tahu|Menurut yang saya lihat|Iya),/;
+    for (let i = 1; i <= 60; i++) {
+      const h = usulan.susunKeteranganSaksiSdg({
+        templat: TEMPLAT,
+        alasan: ["judi", "mabuk"],
+        nomorPerkara: `${i}/Pdt.G/2025/PA.Dgl`,
+        kodeKumpulan: "04",
+      });
+      for (const b of [...h.saksi1, ...h.saksi2]) expect(b.jawab, b.jawab).not.toMatch(DIBUANG);
+    }
+  });
 });
 
 describe("templat tanya-jawab ABT: dua bentuk, satu pembaca", () => {
@@ -374,7 +392,11 @@ describe("panel ABT menawarkan modusnya", () => {
   });
 
   it("pilihannya dikirim ke bot bersama sebutan pihak yang TIDAK tertukar", () => {
-    expect(abt).toContain("modus: bacaModus(),");
+    // Sejak panel melayani N saksi (t3-ekstensi-abt-bas, 26 Sep 2026) modus
+    // tiap saksi dikirim sebagai saksi[] lewat susunMuatanSdg; muatannya
+    // diuji dengan MENJALANKAN panel di ekstensi-sdg-muatan-dan-jeda.test.ts.
+    expect(abt).toContain("saksi: kendaliModus.map((k) => ({");
+    expect(abt).toContain("const muatan = susunMuatanSdg({");
 
     // ======================================================================
     // PENJAGA INI DULU MENGUNCI CACATNYA
@@ -398,7 +420,9 @@ describe("panel ABT menawarkan modusnya", () => {
 
     // Sebutannya ikut dikirim apa adanya, supaya arti kodenya tidak perlu
     // ditafsirkan di seberang sama sekali.
-    expect(abt).toContain("sumberNama: sebutanSumber(");
+    // Pembentuknya kini fungsi tingkat atas sebutanSumberSdg (dipanggil
+    // susunMuatanSdg), supaya dapat diuji langsung untuk ketiga pencerita.
+    expect(abt).toContain("sumberNama: sebutanSumberSdg(");
   });
 
   it("di halaman tanya-jawab, halaman dimuat ulang HANYA bila seluruhnya tersimpan", () => {

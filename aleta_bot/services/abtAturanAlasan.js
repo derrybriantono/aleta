@@ -109,7 +109,12 @@ const HURUF = [
       },
     ],
     ciri: ["zina", "mabuk", "pemabok", "pemabuk", "pemadat", "judi", "penjudi", "sabu", "narkoba"],
-    syarat: "",
+    // Syaratnya ada di bunyi huruf itu sendiri: "yang sukar disembuhkan".
+    // Dahulu kosong, dan ekstensi mencentang sendiri huruf yang syaratnya
+    // kosong - keputusan pengguna 11 menuntut TIDAK satu huruf pun
+    // tercentang otomatis.
+    syarat:
+      "menuntut perbuatan yang SUKAR DISEMBUHKAN - periksa apakah keterangan saksi menunjukkan kebiasaan, bukan kejadian sekali",
   },
   {
     huruf: "B",
@@ -284,7 +289,10 @@ const HURUF = [
       },
     ],
     ciri: ["perselisihan", "pertengkaran", "tidak rukun", "tidak harmonis"],
-    syarat: "",
+    // Seperti huruf A: syaratnya ada di bunyinya sendiri, dan syarat yang
+    // kosong membuat ekstensi mencentangnya sendiri.
+    syarat:
+      "menuntut perselisihan yang TERUS-MENERUS dan TIDAK ADA HARAPAN akan hidup rukun lagi - periksa keduanya dari keterangan saksi",
   },
   /**
    * ==========================================================================
@@ -378,4 +386,66 @@ function belumSiap() {
   return HURUF.filter((h) => !h.siap).map((h) => ({ huruf: h.huruf, sebab: h.syarat }));
 }
 
-module.exports = { HURUF, usulkan, belumSiap, SUMBER_PP_9_1975, SUMBER_KHI };
+/** Ciri (kunci CIRI_ALASAN) yang menunjuk huruf A pada blangko [01]. */
+const CIRI_HURUF_A = ["zina", "mabuk", "judi", "obat terlarang"];
+/** Ciri yang menunjuk huruf tanpa cabang di blangko [01] - tidak diusulkan. */
+const CIRI_HURUF_TANPA_CABANG = {
+  C: "salah satu pihak menjalani pidana penjara",
+  D: "kekerasan dalam rumah tangga",
+  E: "cacat badan atau penyakit",
+};
+const SEBAB_TANPA_CABANG =
+  "blangko [01] belum punya cabang untuk huruf ini - 8503 yang berisinya membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan";
+
+/**
+ * ============================================================================
+ * HURUF UNTUK BLANGKO [01] - DARI CIRI YANG SUDAH DISARING, BUKAN DARI KATA
+ * ============================================================================
+ *
+ * usulkan() di atas menyalakan huruf dari potongan kata atas GABUNGAN
+ * keterangan kedua saksi. Terukur atas 318 perkara yang 8503-nya diisi
+ * manusia: hanya 27 yang usulannya sama persis dengan pilihan manusia.
+ *   - B menyala pada kata "meninggalkan": 311 usulan, 94 dipilih manusia;
+ *   - D menyala pada "memukul": 95 usulan, 0 dipilih - dan blangko [01]
+ *     tidak punya cabang D sama sekali.
+ *
+ * Keputusan pengguna 11, yang dijalankan fungsi ini:
+ *   F  bila ada perselisihan (disebut saksi mana pun);
+ *   B  HANYA bila lama pisah >= 24 bulan (syarat 2 tahun berturut-turut);
+ *   A  HANYA dari ciri yang dikuatkan kedua saksi: zina, mabuk, judi, obat;
+ *   H  dari ciri murtad yang dikuatkan kedua saksi (blangko [01] mengenalnya);
+ *   C, D, E TIDAK diusulkan untuk blangko [01] - kueri 4020/8521/8522/8528/
+ *      8530-nya tidak punya cabangnya, dan huruf itu mencetak "TIDAK BENAR
+ *      QUERY NYA" ke putusan. Cirinya tidak dibuang diam-diam: ia dipulangkan
+ *      pada `tidakDiusulkan` beserta sebabnya.
+ * Tidak satu pun dicentang otomatis (centangOtomatis: false, dan tiap huruf
+ * membawa syarat - ekstensi hanya mencentang sendiri huruf tanpa syarat).
+ *
+ * @param {{ciriSaksi1: string[], ciriSaksi2: string[], ciri: string[], lamaPisahBulan: number|null}} bahan
+ *   ciri = alasan yang dikuatkan kedua saksi DAN didalilkan (hasil saringan 5227)
+ * @returns {{huruf: object[], tidakDiusulkan: {huruf, ciri, sebab}[]}}
+ */
+function usulkanUntukBlangko01(bahan) {
+  const b = bahan || {};
+  const ciri = Array.isArray(b.ciri) ? b.ciri : [];
+  const gabungan = [...(b.ciriSaksi1 || []), ...(b.ciriSaksi2 || [])];
+  const lama = Number.isFinite(b.lamaPisahBulan) ? b.lamaPisahBulan : null;
+  const huruf = [];
+  const tambah = (kode, pemicu) => {
+    const h = HURUF.find((x) => x.huruf === kode);
+    if (!h || !h.siap) return;
+    huruf.push({ huruf: h.huruf, dasar: h.dasar, pemicu, syarat: h.syarat, centangOtomatis: false });
+  };
+  const pemicuA = ciri.filter((c) => CIRI_HURUF_A.includes(c));
+  if (pemicuA.length) tambah("A", pemicuA);
+  if (lama !== null && lama >= 24) tambah("B", [`lama pisah ${lama} bulan`]);
+  if (gabungan.includes("perselisihan terus-menerus")) tambah("F", ["perselisihan terus-menerus"]);
+  if (ciri.includes("murtad/pindah agama")) tambah("H", ["murtad/pindah agama"]);
+
+  const tidakDiusulkan = Object.entries(CIRI_HURUF_TANPA_CABANG)
+    .filter(([, nama]) => ciri.includes(nama))
+    .map(([kode, nama]) => ({ huruf: kode, ciri: nama, sebab: SEBAB_TANPA_CABANG }));
+  return { huruf, tidakDiusulkan };
+}
+
+module.exports = { HURUF, usulkan, belumSiap, usulkanUntukBlangko01, SUMBER_PP_9_1975, SUMBER_KHI };

@@ -91,9 +91,42 @@ export type HasilPecah = {
   perabotDibuang: number;
 };
 
+/**
+ * Bentuk rapat sebuah baris: spasi dan titik dibuang, huruf dibesarkan.
+ *
+ * ============================================================================
+ * TITIK DUA DI UJUNG JUDUL IKUT DIBUANG
+ * ============================================================================
+ *
+ * "MENGADILI:" dan "MENETAPKAN :" adalah gaya templat satker, bukan salah
+ * ketik. Diukur atas 39 e-Doc PA Donggala yang sudah diterima SIPP: amar
+ * KOSONG pada 18 di antaranya (12 "MENGADILI:", 6 "MENETAPKAN:") karena judul
+ * bertitik dua tidak pernah sama-persis dengan "MENGADILI". Hanya titik dua di
+ * UJUNG yang dibuang - kalimat "Menimbang, bahwa ... sebagai berikut:" tetap
+ * bukan judul, sebab perbandingannya tetap sama-persis.
+ */
 function rapat(baris: string): string {
-  return baris.replace(/[\s.]+/g, "").toUpperCase();
+  return baris.replace(/[\s.]+/g, "").replace(/:+$/, "").toUpperCase();
 }
+
+/**
+ * ============================================================================
+ * KALIMAT PENUTUP DICARI SESUDAH AMAR
+ * ============================================================================
+ *
+ * Pola lama hanya mengenal "Demikian diputuskan/ditetapkan/dibacakan". Pada 5
+ * dari 39 e-Doc penutupnya berbunyi lain - "Demikianlah penetapan ini
+ * dijatuhkan", "Demikian dalam rapat musyawarah" - sehingga amar menyeret
+ * rincian biaya, meterai, dan tanda tangan sampai ujung naskah.
+ *
+ * Pola yang lebih luas HANYA dicari sesudah jangkar amar. Di duduk perkara
+ * ada kalimat seperti "Demikian Duplik Tergugat..." (546/Pdt.G/2024) yang
+ * akan tertangkap bila pencarian dimulai dari awal naskah. Bila pola luas
+ * tidak ketemu, pola lama dipakai persis seperti sebelumnya.
+ */
+const POLA_PENUTUP_LAMA = /^demikian\s+(diputuskan|ditetapkan|dibacakan)/i;
+const POLA_PENUTUP_SESUDAH_AMAR =
+  /^demikian(lah)?\b.{0,60}\b(diputuskan|dijatuhkan|ditetapkan|dibacakan|musyawarah)/i;
 
 function perabot(baris: string): boolean {
   const bersih = baris.trim();
@@ -139,7 +172,15 @@ export function pecahNaskahResmi(naskah: string): HasilPecah {
 
   // Penutup dikenali dari "Demikian diputuskan/ditetapkan" - kalimat yang
   // dalam naskah putusan hanya pernah muncul sekali, tepat sesudah amar.
-  const iPenutup = baris.findIndex((satu) => /^demikian\s+(diputuskan|ditetapkan|dibacakan)/i.test(satu));
+  // Bentuk yang lebih luas dicari lebih dulu, dan HANYA sesudah jangkar amar;
+  // lihat catatan pada POLA_PENUTUP_SESUDAH_AMAR.
+  const letakAmar = letak.amar;
+  const iPenutupSesudahAmar =
+    letakAmar !== undefined
+      ? baris.findIndex((satu, i) => i > letakAmar && POLA_PENUTUP_SESUDAH_AMAR.test(satu))
+      : -1;
+  const iPenutup =
+    iPenutupSesudahAmar >= 0 ? iPenutupSesudahAmar : baris.findIndex((satu) => POLA_PENUTUP_LAMA.test(satu));
 
   const potong = (dari: number, sampai: number): string =>
     baris
@@ -216,4 +257,205 @@ export function pecahNaskahResmi(naskah: string): HasilPecah {
   }
 
   return { bagian, halangan, perabotDibuang };
+}
+
+/**
+ * ============================================================================
+ * NOMOR PERKARA DIBACA DARI ISI NASKAH, BUKAN DARI NAMA BERKASNYA
+ * ============================================================================
+ *
+ * Nama berkas ditulis siapa saja dan mudah tertukar; isi naskah menyebut
+ * nomornya sendiri di kepala dan di perabot tiap halaman. Diukur atas 197
+ * naskah sungguhan (39 e-Doc PA Donggala + 158 naskah ABT 2026): nomor di
+ * isi sama dengan nomor pada nama berkas pada 197 dari 197.
+ *
+ * Polanya DIBATASI "Pdt.". Pola umum meleset pada 1 dari 197: ia memilih
+ * nomor akta cerai "453/AC/2025/PA.Dgl" yang kebetulan paling sering disebut.
+ *
+ * ============================================================================
+ * NOMOR KEPALA LEBIH DULU, NOMOR TERBANYAK SEBAGAI CADANGAN
+ * ============================================================================
+ *
+ * Diukur atas 987 RTF putusan bernama-nomor di folder unduhan (PA Donggala,
+ * PA Bungku, dan satker lain):
+ *
+ *   nomor terbanyak, pola ketat          963 sama, 17 beda, 7 kosong
+ *   nomor KEPALA dulu, pola longgar      977 sama,  5 beda, 5 kosong
+ *
+ * Nomor terbanyak saja keliru pada putusan seperti 153/Pdt.G/2018/PA.Buk -
+ * kepalanya "Nomor 153/...", tetapi nomor perkara lain disebut tiga kali di
+ * duduk perkara. Pola ketat tidak mengenal "PA Buk" (spasi, bukan titik) yang
+ * dipakai templat lama (0002/Pdt.G/2016, 274/Pdt.P/2018). Kelima "kosong"
+ * sisanya bukan putusan (pembetulan akta cerai, berkas kunci Word "~$").
+ */
+const POLA_NOMOR_ISI =
+  /\b(\d{1,5}\s*\/\s*Pdt\.\s*[A-Za-z]{1,3}(?:\.[A-Za-z]{1,3})?\s*\/\s*\d{4}\s*\/\s*[A-Za-z]{2,4}[.\s]\s*[A-Za-z]{2,6})\b/gi;
+
+/**
+ * Bentuk baku untuk MEMBANDINGKAN nomor: tanpa spasi dan titik, tanpa nol di
+ * depan, huruf kecil - "0002/Pdt.G/2016/PA Buk" sama dengan
+ * "2/Pdt.G/2016/PA.Buk".
+ */
+export function bakuNomorPerkara(nomor: string): string {
+  return String(nomor ?? "")
+    .replace(/[\s.]+/g, "")
+    .replace(/^0+(?=\d)/, "")
+    .toLowerCase();
+}
+
+/** Dua nomor perkara menunjuk perkara yang sama. Nomor kosong tidak pernah sama. */
+export function samaNomorPerkara(a: string, b: string): boolean {
+  const x = bakuNomorPerkara(a);
+  return x !== "" && x === bakuNomorPerkara(b);
+}
+
+export type NomorDariIsi = {
+  /** Nomor kepala bila ada, bila tidak nomor terbanyak; kosong bila tidak ada sama sekali. */
+  nomor: string;
+  /** Berapa kali `nomor` disebut di seluruh naskah. */
+  kali: number;
+  /** Nomor pada baris "Nomor ..." di kepala naskah (dua belas baris pertama). */
+  kepala: string;
+  /** Nomor yang paling sering disebut; pada jumlah sama, yang lebih dulu disebut. */
+  terbanyak: string;
+  /** Paling banyak lima calon, terbanyak lebih dulu - untuk pesan kepada petugas. */
+  calon: Array<{ nomor: string; kali: number }>;
+};
+
+/** Ejaan nomor dirapikan seperlunya: spasi berlebih dibuang, "PA Buk" tetap terbaca. */
+function rapikanNomor(nomor: string): string {
+  return nomor.replace(/\s*\/\s*/g, "/").replace(/\s+/g, " ").trim();
+}
+
+export function nomorPerkaraDariIsi(naskah: string): NomorDariIsi {
+  const teks = String(naskah ?? "");
+  const hitung = new Map<string, { nomor: string; kali: number }>();
+  for (const cocok of teks.matchAll(POLA_NOMOR_ISI)) {
+    const kunci = bakuNomorPerkara(cocok[1]);
+    const ada = hitung.get(kunci);
+    if (ada) ada.kali += 1;
+    else hitung.set(kunci, { nomor: rapikanNomor(cocok[1]), kali: 1 });
+  }
+  // sort stabil: pada jumlah yang sama, yang lebih dulu disebut menang.
+  const calon = [...hitung.values()].sort((a, b) => b.kali - a.kali);
+  const terbanyak = calon[0]?.nomor ?? "";
+
+  // Kepala: baris "Nomor ..." di antara dua belas baris pertama yang berisi.
+  let kepala = "";
+  const awal = teks
+    .split(/\r?\n/)
+    .map((b) => b.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  for (const baris of awal) {
+    if (!/^nomor\b/i.test(baris)) continue;
+    const cocok = new RegExp(POLA_NOMOR_ISI.source, "i").exec(baris);
+    if (cocok) {
+      kepala = rapikanNomor(cocok[1]);
+      break;
+    }
+  }
+
+  const nomor = kepala || terbanyak;
+  const kali = nomor ? (hitung.get(bakuNomorPerkara(nomor))?.kali ?? 0) : 0;
+  return { nomor, kali, kepala, terbanyak, calon: calon.slice(0, 5) };
+}
+
+/**
+ * Isi naskah menunjuk perkara `nomorTujuan`: nomor kepalanya ATAU nomor
+ * terbanyaknya sama dengan nomor itu. Keduanya sekaligus berbeda berarti
+ * naskahnya milik perkara lain - pada 987 putusan terukur, yang tertolak
+ * begini semuanya berkas yang kepala dan isinya sama-sama menyebut perkara
+ * lain.
+ */
+export function isiMenunjukPerkara(dariIsi: NomorDariIsi, nomorTujuan: string): boolean {
+  return samaNomorPerkara(dariIsi.kepala, nomorTujuan) || samaNomorPerkara(dariIsi.terbanyak, nomorTujuan);
+}
+
+/**
+ * ============================================================================
+ * NASKAH YANG JELAS BUKAN PUTUSAN: BERITA ACARA, PENETAPAN HARI SIDANG, RELAAS
+ * ============================================================================
+ *
+ * Di folder unduhan petugas, berkas bernomor perkara yang BUKAN putusan jauh
+ * lebih banyak daripada putusannya: 1.092 BAS, 291 PHS/PMH/PPP/PJS, 128 relaas.
+ * Semuanya RTF dan semuanya memuat nomor perkara yang benar, jadi pemeriksaan
+ * nomor tidak menahannya.
+ *
+ * Pemotong naskah pun tidak menahannya. Penetapan Hari Sidang memuat
+ * "MENETAPKAN", jadi amarnya terpotong ("Menetapkan hari sidang pertama...")
+ * dan tersimpan sebagai draf putusan yang kelak diisikan ke borang SIPP.
+ *
+ * Pengenalnya dari JUDUL dan susunan naskah, diukur atas RTF sungguhan:
+ *
+ *   BERITA ACARA   judul "BERITA ACARA ..." pada tiga baris pertama
+ *                  (1.057 dari 1.062 berkas bernama BAS)
+ *   RELAAS         judul "RELAAS ..." pada sepuluh baris pertama - relaas
+ *                  sering didahului kop surat
+ *   PENETAPAN      berjudul "PENETAPAN" tetapi TANPA irah-irah, tanpa judul
+ *   PENGELOLAAN    DUDUK PERKARA, tanpa judul PERTIMBANGAN HUKUM, dan
+ *                  BERDIKTUM "MENETAPKAN". PHS tidak pernah memuat irah-irah
+ *                  (0 dari 238), sedangkan putusan dan penetapan akhir wajib
+ *                  memuatnya (Pasal 2 UU 48/2009). Yang menyebut "hari
+ *                  sidang" disebut Penetapan Hari Sidang; selebihnya
+ *                  penetapan majelis/penunjukan.
+ *
+ * Yang tidak dikenali dipulangkan null - pengenal ini hanya MENAHAN yang
+ * pasti bukan putusan, dan tidak pernah menebak jenis naskah yang lain.
+ */
+export type NaskahBukanPutusan = {
+  jenis: "berita-acara" | "relaas" | "penetapan-hari-sidang" | "penetapan-pengelolaan";
+  /** Nama jenisnya untuk kalimat kepada petugas. */
+  nama: string;
+  /** Baris judul sebagaimana tertulis di naskah. */
+  judul: string;
+};
+
+const RAPAT_JUDUL_PENETAPAN = new Set(["PENETAPAN", "SALINANPENETAPAN"]);
+
+export function kenaliNaskahBukanPutusan(naskah: string): NaskahBukanPutusan | null {
+  const baris = String(naskah ?? "")
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((b) => b.trim())
+    .filter((b) => b && !perabot(b));
+  const kepala = baris.slice(0, 10);
+
+  const iBeritaAcara = kepala.slice(0, 3).findIndex((b) => rapat(b).startsWith("BERITAACARA"));
+  if (iBeritaAcara >= 0) {
+    return { jenis: "berita-acara", nama: "Berita Acara", judul: kepala[iBeritaAcara] };
+  }
+
+  const iRelaas = kepala.findIndex((b) => rapat(b).startsWith("RELAAS"));
+  if (iRelaas >= 0) return { jenis: "relaas", nama: "Relaas", judul: kepala[iRelaas] };
+
+  const judulPenetapan = kepala
+    .slice(0, 3)
+    .find((b) => RAPAT_JUDUL_PENETAPAN.has(rapat(b)) || rapat(b).startsWith("PENETAPANHARISIDANG"));
+  if (!judulPenetapan) return null;
+
+  const adaIrah = baris.some((b) => rapat(b).startsWith("DEMIKEADILAN"));
+  const rapatJangkar = new Set(
+    JANGKAR.filter((j) => j.kunci === "dudukPerkara" || j.kunci === "pertimbangan").flatMap((j) => j.rapat)
+  );
+  const adaJangkarPutusan = baris.some((b) => rapatJangkar.has(rapat(b)));
+  if (adaIrah || adaJangkarPutusan) return null;
+
+  // Penetapan pengelolaan perkara selalu berdiktum "MENETAPKAN" - menetapkan
+  // hari sidang, atau menunjuk majelis, panitera, dan jurusita. Penetapan
+  // tanpa diktum itu tidak dapat dipastikan jenisnya, jadi TIDAK ditahan.
+  // Diukur: satu-satunya berkas bernama putusan yang dahulu tertahan sebagai
+  // PHS (0149/Pdt.G/2018/PA.Kng) adalah catatan pencabutan "sebelum hari
+  // sidang ditetapkan" - tanpa diktum, dan bukan PHS.
+  const adaDiktum = baris.some((b) => rapat(b).startsWith("MENETAPKAN"));
+  if (!adaDiktum) return null;
+
+  const hariSidang = rapat(judulPenetapan).startsWith("PENETAPANHARISIDANG") || /hari\s+sidang/i.test(baris.join(" "));
+  return hariSidang
+    ? { jenis: "penetapan-hari-sidang", nama: "Penetapan Hari Sidang", judul: judulPenetapan }
+    : {
+        jenis: "penetapan-pengelolaan",
+        nama: "penetapan pengelolaan perkara (penunjukan majelis, panitera, atau jurusita)",
+        judul: judulPenetapan,
+      };
 }

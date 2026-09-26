@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { tanggalHariPanjang, tanggalRingkas } from "@/lib/tanggal-indonesia";
 import type { PerjalananSidang, TitikPerjalanan } from "@/lib/perjalanan-sidang";
 import type { PitaWaktuPutus } from "@/lib/pita-waktu-putus";
 
@@ -472,31 +473,10 @@ const WARNA_PITA: Record<NadaPita, { latar: string; garis: string; teks: string;
   },
 };
 
-const BULAN_PENDEK = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-const BULAN_UTUH = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-
-/** "2026-08-12" -> "12 Agu", atau "12 Agu '26" bila tahunnya perlu disebut. */
-function tanggalRingkas(iso: string, denganTahun: boolean) {
-  const cocok = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (!cocok) return iso;
-  const dasar = `${Number(cocok[3])} ${BULAN_PENDEK[Number(cocok[2]) - 1] ?? cocok[2]}`;
-  return denganTahun ? `${dasar} '${cocok[1].slice(2)}` : dasar;
-}
-
-/** "2026-08-12" -> "12 Agustus 2026". */
-function tanggalUtuh(iso: string) {
-  const cocok = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (!cocok) return iso;
-  return `${Number(cocok[3])} ${BULAN_UTUH[Number(cocok[2]) - 1] ?? cocok[2]} ${cocok[1]}`;
-}
-
 /** Rincian satu sidang - untuk tooltip dan baris rincian di bawah gambar. */
 function rincianTitik(t: TitikPerjalanan): string[] {
   return [
-    `Sidang ke-${t.ke} · ${tanggalUtuh(t.tanggal)}${t.hariPutus ? " · hari putusan" : ""}${
+    `Sidang ke-${t.ke} · ${tanggalHariPanjang(t.tanggal)}${t.hariPutus ? " · hari putusan" : ""}${
       t.akanDatang ? " · belum berlangsung" : ""
     }`,
     `Agenda: ${t.agenda || "tanpa agenda"}`,
@@ -543,6 +523,7 @@ export function DiagramPerjalananSidang({
   pita,
   judul,
   hariIniDihitung = null,
+  ghaib = false,
 }: {
   perjalanan: PerjalananSidang;
   /** Urut naik. Di atas pita terakhir: merah. */
@@ -550,6 +531,15 @@ export function DiagramPerjalananSidang({
   judul?: string;
   /** Umur perkara HARI INI dalam hari yang dihitung; null bila sudah putus. */
   hariIniDihitung?: number | null;
+  /**
+   * Perkara ghaib - status.penanda.ghaib di layar Status Perkara.
+   *
+   * Hanya menyalakan satu kalimat catatan; garis, titik, dan pita TIDAK
+   * berubah. Lihat catatan berkelonggaran di bawah: inilah satu-satunya tempat
+   * yang menerangkan mengapa grafik ini dan lencana Antrian Sidang dapat
+   * berselisih sampai 120 hari untuk perkara yang sama.
+   */
+  ghaib?: boolean;
 }) {
   const { titik } = perjalanan;
   const cukup = titik.length >= 3;
@@ -685,6 +675,31 @@ export function DiagramPerjalananSidang({
     perjalanan.tanpaTanggal > 0
       ? `${perjalanan.tanpaTanggal} sidang dengan tanggal tak terbaca atau sebelum pendaftaran tidak digambar.`
       : "",
+    // ========================================================================
+    // SELISIH 120 HARI ANTAR-LAYAR DITERANGKAN DI SINI, SEKALI
+    // ========================================================================
+    //
+    // Perkara ghaib punya DUA angka umur yang keduanya benar, dan layar yang
+    // berbeda memajang angka yang berbeda:
+    //
+    //   grafik ini          hari kalender di luar mediasi - cara SEMA 2/2014
+    //   lencana Antrian     angka itu DIKURANGI kelonggaran 120 hari SK
+    //                       048/2024 Tabel 2 nomor 1
+    //
+    // Terukur di sipp_donggala 25 September 2026: dari 13 perkara ghaib yang
+    // belum putus, 12 lencananya berbunyi "1 hari" karena potongannya dijepit -
+    // 322/Pdt.G/2026 berjalan 115 hari dan berbunyi "1 hari · dari 115".
+    // Panitera yang menyandingkan grafik ini dengan lencana itu melihat 115
+    // lawan 1 tanpa satu pun kalimat yang menerangkannya.
+    //
+    // Garisnya SENGAJA tidak dipotong: kelonggaran SK memotong penilaian
+    // KINERJA majelis, sedangkan grafik ini menggambar jalannya perkara. Batas
+    // lima bulan SEMA 2/2014 - pita oranye teratas - juga tidak mengenal
+    // kelonggaran itu, jadi memotong garisnya akan membuat kewajiban lapor
+    // majelis hilang dari gambar.
+    ghaib
+      ? "Perkara ghaib: garis ini hari kalender di luar mediasi, dengan cara batas lima bulan SEMA 2/2014 - TIDAK dipotong. Kelonggaran 120 hari SK Dirjen Badilag 048/2024 Tabel 2 nomor 1 hanya memotong penilaian kinerja waktu putus, bukan garis ini; karena itu lencana umur di Antrian Sidang dapat berbunyi jauh lebih rendah daripada titik terakhir di sini."
+      : "",
   ].filter(Boolean);
 
   const terpilih = pilihan !== null && pilihan < n ? titik[pilihan] : null;
@@ -746,7 +761,7 @@ export function DiagramPerjalananSidang({
                 mediasi pada Kalender perkara. */}
             {arsir.map((r) => (
               <g key={`mediasi-${r.mulai}`}>
-                <title>{`Mediasi ${tanggalUtuh(r.mulai)} sampai ${tanggalUtuh(r.selesai)}${
+                <title>{`Mediasi ${tanggalHariPanjang(r.mulai)} sampai ${tanggalHariPanjang(r.selesai)}${
                   r.tanpaLaporan ? " (belum ada laporan mediator)" : ""
                 } - ${r.hari} hari, tidak dihitung (PERMA 1/2016 Pasal 24)`}</title>
                 <rect x={r.x1} y={ATAS} width={r.x2 - r.x1} height={TINGGI} className="fill-teal-500/15 dark:fill-teal-400/15" />
@@ -793,7 +808,7 @@ export function DiagramPerjalananSidang({
               const d = `M ${xTitik[j].toFixed(1)} ${y(s.hari).toFixed(1)} L ${xTitik[j + 1].toFixed(1)} ${y(t.hari).toFixed(1)}`;
               return (
                 <g key={`ruas-${t.kunci}`}>
-                  <title>{`+${t.jeda ?? "?"} hari: sidang ke-${s.ke} (${tanggalUtuh(s.tanggal)}) ke sidang ke-${t.ke} (${tanggalUtuh(t.tanggal)})${
+                  <title>{`+${t.jeda ?? "?"} hari: sidang ke-${s.ke} (${tanggalHariPanjang(s.tanggal)}) ke sidang ke-${t.ke} (${tanggalHariPanjang(t.tanggal)})${
                     s.alasanTunda ? `\nDitunda: ${s.alasanTunda}` : ""
                   }`}</title>
                   <path d={d} className="fill-none stroke-transparent" strokeWidth="12" />

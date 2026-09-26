@@ -51,6 +51,41 @@ const RUAS_BUNGKUS = new Set(["ok", "data", "error", "status", "json", "then", "
  */
 const DIKECUALIKAN = new Set([path.join("server", "shared", "ekstensi-berkas.ts")]);
 
+/**
+ * Rute portal yang SENGAJA menjawab tanpa bungkus, beserta sebabnya dan berkas
+ * rutenya. Pengecualian ini per ALAMAT, bukan per berkas layar: layar yang sama
+ * tetap disapu untuk rute lain yang dipanggilnya.
+ *
+ * /api/aleta-ecourt/tipe-keluaran - kontrak K4 (enam-butir/kontrak.txt)
+ *   menetapkan bentuknya {ok, daftar} untuk GET dan {ok, butir} atau
+ *   {ok:false, alasan:[...]} untuk POST, dijawab 400 dengan SELURUH alasan
+ *   supaya layar menampilkannya satu per satu. ok() tidak dapat membawa
+ *   penolakan isi semacam itu tanpa mengubah kontraknya. Bentuk tanpa bungkus
+ *   itu dibuktikan saat berjalan oleh tipe-keluaran-rute.test.ts (r.isi.daftar,
+ *   r.isi.alasan dibaca langsung dari jawaban rute sungguhan).
+ *
+ * Pengecualian ini dijaga dari dua arah oleh uji di bawah: bila rutenya kelak
+ * memakai ok(), pengecualiannya harus dicabut - kalau tidak, layar membaca
+ * bungkus dan penyapu ini diam.
+ */
+const RUTE_TANPA_BUNGKUS: ReadonlyArray<{ alamat: string; rute: string; sebab: string }> = [
+  {
+    alamat: "/api/aleta-ecourt/tipe-keluaran",
+    rute: path.join("app", "api", "aleta-ecourt", "tipe-keluaran", "route.ts"),
+    sebab: "kontrak K4: {ok, daftar} / {ok:false, alasan} tanpa bungkus",
+  },
+];
+
+/** Alamat pengambilan menyebut rute tanpa bungkus PERSIS (bukan awalan rute lain). */
+function alamatTanpaBungkus(alamat: string): boolean {
+  return RUTE_TANPA_BUNGKUS.some((r) => {
+    const i = alamat.indexOf(r.alamat);
+    if (i < 0) return false;
+    const sesudah = alamat.charAt(i + r.alamat.length);
+    return sesudah === "?" || sesudah === "`" || sesudah === '"' || sesudah === "'" || sesudah === "";
+  });
+}
+
 function berkasSumber(dir: string): string[] {
   const hasil: string[] = [];
   for (const nama of readdirSync(dir)) {
@@ -98,6 +133,7 @@ function sapu(): Pelanggaran[] {
       const pengambilan = baris.slice(Math.max(0, i - 6), i + 1).join(" ");
       const alamat = pengambilan.match(/fetch\(\s*([^)]*)/)?.[1] ?? "";
       if (alamat && !alamat.includes("/api/")) continue;
+      if (alamat && alamatTanpaBungkus(alamat)) continue;
 
       // Bentuk (await x.json())?.data - dibuka di baris yang sama.
       if (/\.json\(\)\s*\)?\s*\??\.\s*data\b/.test(baris[i])) continue;
@@ -173,6 +209,24 @@ describe("jawaban portal selalu dibuka bungkusnya", () => {
       .join("\n");
 
     expect(laporan, laporan || "bersih").toBe("");
+  });
+
+  it("rute yang dikecualikan memang menjawab tanpa bungkus", () => {
+    // Pengecualian yang basi lebih berbahaya daripada tidak ada pengecualian:
+    // bila rutenya kelak dibungkus ok(), layar yang dikecualikan membaca
+    // bungkus dan penyapu di atas tidak lagi menegurnya.
+    for (const r of RUTE_TANPA_BUNGKUS) {
+      const isi = readFileSync(path.join(akar, r.rute), "utf8");
+      expect(isi, `${r.rute} (${r.sebab}) kini memakai ok(); cabut pengecualiannya`).not.toMatch(/\bok\(/);
+      expect(isi, `${r.rute} (${r.sebab})`).toMatch(/NextResponse\.json\(/);
+    }
+    // Pengecualiannya persis, bukan awalan: rute lain yang namanya berawalan
+    // sama, dan rute baca ekstensi, tetap disapu.
+    expect(alamatTanpaBungkus('apiPath("/api/aleta-ecourt/tipe-keluaran"')).toBe(true);
+    expect(alamatTanpaBungkus("apiPath(`/api/aleta-ecourt/tipe-keluaran?golongan=${g}`")).toBe(true);
+    expect(alamatTanpaBungkus('apiPath("/api/aleta-ecourt/ekstensi/tipe-keluaran"')).toBe(false);
+    expect(alamatTanpaBungkus('apiPath("/api/aleta-ecourt/tipe-keluaran-lain"')).toBe(false);
+    expect(alamatTanpaBungkus('apiPath("/api/aleta-ecourt/tipe-keluaran/x"')).toBe(false);
   });
 
   it("penyapunya benar-benar menemukan sesuatu bila ada", () => {

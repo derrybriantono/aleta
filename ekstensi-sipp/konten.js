@@ -133,8 +133,14 @@ const BATAS_UNGGAH_NASKAH_MS = 45000;
  * ekstensi. Yang di luar menyerah lebih dahulu meninggalkan pekerjaan setengah
  * jalan tanpa ada yang tahu hasilnya - dan itu keadaan yang paling sulit
  * diperbaiki, sebab tidak ada yang tahu apa yang sudah tertulis.
+ *
+ * Sejak 25 September 2026 (kontrak K6): bot 90 detik per konversi, dua
+ * konversi sejajar; gerbang 120 detik (dahulu 60000); ekstensi 150 detik.
+ * Putusan dan anonimisasi kini dikirim dalam DUA permintaan berurutan -
+ * anonimisasi langsung sesudah jawaban atas putusannya - jadi tiap
+ * permintaan membawa satu berkas, dan satu konversi, saja.
  */
-const BATAS_UNGGAH_SIPP_MS = 90000;
+const BATAS_UNGGAH_SIPP_MS = 150000;
 const ALETA_API_ALASAN_PERKARA = "/aleta/api/aleta-ecourt/alasan-perkara";
 const PENANDA = "aleta-panel-sipp";
 
@@ -1005,25 +1011,6 @@ async function ambilUsulanPenunjukan(nomor, pilihanMajelis, andaian) {
   }
   return data;
 }
-
-/**
- * ============================================================================
- * NAMA KOLOM YANG DIKENAL ALETA
- * ============================================================================
- *
- * Kunci di sini BUKAN nama kolom di SIPP - ia nama perannya menurut ALETA.
- * Peta kolom di pengaturanlah yang menghubungkan keduanya, dan itu sebabnya
- * daftar ini tetap sama walau formulir SIPP berganti bentuk.
- *
- * "simpan" berbeda dari yang lain: ia tombol, bukan isian. Ia hanya dipakai
- * bila penyimpanan otomatis dinyalakan di pengaturan - dan bawaannya mati.
- */
-const MEDAN_DIKENAL = {
-  pmh: ["tanggal_penetapan", "nomor_sk", "hakim_ketua", "hakim_anggota_1", "hakim_anggota_2"],
-  ppp: ["tanggal_penetapan", "nomor_sk", "panitera"],
-  pjs: ["tanggal_penetapan", "nomor_sk", "jurusita"],
-  phs: ["tanggal_penetapan", "tanggal_sidang"],
-};
 
 /**
  * Nilai yang hendak diisikan untuk satu formulir, disusun dari usulannya.
@@ -4928,21 +4915,22 @@ function perkaraIdDariHalaman() {
 
 /**
  * ============================================================================
- * MENGUNGGAH PUTUSAN AKHIR DAN ANONIMISASINYA SEKALIGUS
+ * MENGUNGGAH PUTUSAN AKHIR DAN ANONIMISASINYA - SATU PEMILIH, DUA KIRIMAN
  * ============================================================================
  *
  * Keduanya diunggah lewat tingkap "Kelola Dokumen Elektronik (E-Doc)" SIPP,
  * satu per satu: dua kali buka tingkap, dua kali pilih berkas, dua kali
- * tunggu - padahal keduanya berasal dari naskah yang sama dan dikerjakan
- * pada menit yang sama.
+ * tunggu - padahal keduanya berasal dari naskah yang sama.
  *
- * Yang ditulis di sini meniru SIPP apa adanya - nama berkas, letak folder
- * menurut tanggal putusan, baris dirput_dokumen, dan antrean Direktori
- * Putusan. Lihat putusanUnggahService.js di bot untuk sumber tiap aturannya.
+ * Sejak 25 September 2026 keduanya dipilih dalam SATU pemilih dan dipasangkan
+ * menurut nomor perkara dan nama berkasnya, lalu dikirim BERURUTAN dalam dua
+ * permintaan: putusan lebih dahulu, anonimisasi langsung sesudah jawaban atas
+ * putusannya tiba - tanpa jeda di antaranya. Lihat unggahBerpasangan.
  *
- * PDF SAJA. SIPP menerima .doc lalu mengubahnya lewat soffice; ALETA tidak
- * menjalankan pengubah itu, sebab pengubahan yang gagal separuh
- * meninggalkan berkas rusak yang barisnya sudah terlanjur tercatat.
+ * Yang ditulis mengikuti STRUKTUR SIPP - nama berkas, letak folder menurut
+ * tanggal putusan, baris dirput_dokumen, dan antrean Direktori Putusan -
+ * supaya SIPP dan Direktori Putusan dapat membacanya. Lihat
+ * putusanUnggahService.js di bot untuk sumber tiap aturannya.
  */
 /**
  * ============================================================================
@@ -4991,6 +4979,149 @@ function pesanGagalUnggah(b) {
   return `${kode.replace(/_/g, " ")}${b && b.pesan ? ` — ${b.pesan}` : ""}`;
 }
 
+/** Nama yang menandai berkas anonimisasi: "anonim…", "…_putusan_anonimisasi", atau "anom" berdiri sendiri. */
+function namaBerkasAnonim(nama) {
+  return /anonim|(?:^|[^a-z])anom(?:[^a-z]|$)/i.test(String(nama || ""));
+}
+
+/**
+ * Berkas-berkas dari SATU pemilih menjadi calon putusan dan calon
+ * anonimisasi untuk perkara halaman ini.
+ *
+ * Yang ditolak disebut sebabnya dan tidak dikirim: bentuk selain
+ * RTF/DOC/DOCX/PDF, berkas yang namanya menyebut perkara LAIN, dan berkas yang
+ * namanya menyebut BAS, PHS/PMH/PPP/PJS, relaas, sampul, akta, atau petitum.
+ * Lebih dari satu calon untuk satu slot tidak diputuskan di sini - petugas
+ * yang memilih.
+ *
+ * @returns {{putusan: object[], anonimisasi: object[], ditolak: object[]}}
+ */
+function pasangkanBerkasUnggah(daftar, nomorHalaman) {
+  // Bentuk yang memang tidak dapat dipakai - gambar hasil pindai, misalnya -
+  // tetap ditolak di sini, supaya tidak menunggu unggahan yang pasti ditolak.
+  const BENTUK_DITERIMA = /\.(rtf|doc|docx|pdf)$/i;
+  const hasil = { putusan: [], anonimisasi: [], ditolak: [] };
+  const halaman = String(nomorHalaman || "").trim().toLowerCase();
+  for (const berkas of Array.from(daftar || [])) {
+    const nama = String((berkas && berkas.name) || "");
+    const nomor = nomorDariNamaBerkas(nama);
+    let sebab = "";
+    if (!BENTUK_DITERIMA.test(nama)) sebab = "bukan naskah putusan yang dapat diunggah - yang diterima RTF, DOC, DOCX, atau PDF";
+    else if (nomor && halaman && nomor.toLowerCase() !== halaman) sebab = `berkas perkara lain (${nomor})`;
+    else sebab = tandaBukanNaskahPutusan(nama);
+    if (sebab) hasil.ditolak.push({ berkas, nama, nomor, sebab });
+    else (namaBerkasAnonim(nama) ? hasil.anonimisasi : hasil.putusan).push({ berkas, nama, nomor });
+  }
+  return hasil;
+}
+
+/**
+ * Satu kiriman ke rute unggah-sipp - satu-satunya tempat unggahan e-Doc
+ * dikirim dari halaman SIPP. Jawaban yang menolak (mis. 409: slot anonim yang
+ * masih memuat nama pihak) dibaca kalimatnya, bukan hanya kodenya.
+ */
+async function kirimBadanUnggahSipp(badan) {
+  const respons = await alatAmbil(
+    ALETA_API_UNGGAH_SIPP,
+    { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_SIPP_MS },
+    "Mengunggah putusan ke SIPP"
+  );
+  let luar = null;
+  let galatBaca = null;
+  try {
+    luar = await respons.json();
+  } catch (galat) {
+    galatBaca = galat;
+  }
+  const jawab = luar && luar.data ? luar.data : luar;
+  if (!respons.ok) {
+    const kalimat =
+      respons.status !== 401 && respons.status !== 403 && jawab
+        ? jawab.sebab || jawab.pesan || jawab.alasan || jawab.error || ""
+        : "";
+    throw new Error(kalimat ? String(kalimat) : alatPesanGagal(null, respons.status, "Mengunggah putusan ke SIPP"));
+  }
+  if (!jawab) {
+    throw new Error(`Jawaban ALETA atas unggahan tidak terbaca: ${String((galatBaca && galatBaca.message) || "kosong")}.`);
+  }
+  return jawab;
+}
+
+/**
+ * ============================================================================
+ * PUTUSAN LEBIH DAHULU, ANONIMISASI LANGSUNG SESUDAHNYA
+ * ============================================================================
+ *
+ * Dua permintaan BERURUTAN, satu berkas per permintaan. Anonimisasi dikirim
+ * begitu jawaban atas putusannya tiba - tanpa jeda di antaranya. Yang
+ * diperlukan urutannya, bukan waktunya:
+ *   - anonimisasi tanpa putusannya tidak berarti apa-apa. Bila putusannya
+ *     GAGAL, anonimisasinya TIDAK dikirim, dan petugas memilihnya ulang
+ *     sesudah putusannya masuk;
+ *   - satu berkas per permintaan membuat batas 150 detik (K6) berlaku untuk
+ *     satu konversi, dan tiap berkas dilaporkan sendiri.
+ *
+ * @param {{nomorPerkara: string, putusan?: File|null, anonimisasi?: File|null}} pasangan
+ * @param {{kirim: Function, laporkan: Function, kabar: HTMLElement}} alat
+ * @returns {Promise<{adaYangMasuk: boolean, gagal: string}>}
+ */
+async function unggahBerpasangan(pasangan, alat) {
+  const { kirim, laporkan, kabar } = alat;
+  const hasil = { adaYangMasuk: false, gagal: "" };
+
+  // Satu kiriman. Jawaban yang menolak, dan jawaban yang tidak memasukkan satu
+  // berkas pun, sama-sama gagal - beserta sebab yang dapat dibaca petugas.
+  const kirimSatu = async (jenis, berkas) => {
+    let jawab = null;
+    let gagal = "";
+    try {
+      jawab = await kirim(jenis, berkas);
+    } catch (galat) {
+      gagal = String((galat && galat.message) || galat);
+    }
+    const masuk = Boolean(jawab && jawab.ok && laporkan(jawab));
+    if (!gagal && (!jawab || !jawab.ok)) {
+      gagal = (jawab && (jawab.sebab || jawab.pesan || jawab.alasan)) || "Unggahannya tidak dapat dikerjakan.";
+    }
+    if (!gagal && !masuk) {
+      gagal = (jawab.berkas || []).map((b) => pesanGagalUnggah(b)).join("; ") || "berkasnya tidak masuk.";
+    }
+    return { jawab, masuk, gagal };
+  };
+  const bunyiAntrean = (jawab) => (jawab && jawab.antrean ? ", dan perkara ini masuk antrean Direktori Putusan" : "");
+
+  let bunyi = "";
+  if (pasangan.putusan) {
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "Mengunggah putusan akhir…";
+    const putusan = await kirimSatu("putusan", pasangan.putusan);
+    hasil.adaYangMasuk = putusan.masuk;
+    if (putusan.gagal) {
+      hasil.gagal = putusan.gagal;
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent =
+        `Putusan akhir: ${putusan.gagal}` +
+        (pasangan.anonimisasi ? " Anonimisasi TIDAK dikirim - pilih ulang sesudah putusannya masuk." : "");
+      return hasil;
+    }
+    bunyi = `Putusan akhir terunggah${bunyiAntrean(putusan.jawab)}.`;
+    kabar.textContent = bunyi;
+  }
+  if (!pasangan.anonimisasi) return hasil;
+
+  kabar.textContent = `${bunyi} Mengunggah anonimisasi…`.trim();
+  const anonim = await kirimSatu("anonimisasi", pasangan.anonimisasi);
+  hasil.adaYangMasuk = anonim.masuk || hasil.adaYangMasuk;
+  if (anonim.gagal) {
+    hasil.gagal = anonim.gagal;
+    kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+    kabar.textContent = `${bunyi} Anonimisasi: ${anonim.gagal}`.trim();
+    return hasil;
+  }
+  kabar.textContent = `${bunyi} Anonimisasi terunggah${bunyi ? "" : bunyiAntrean(anonim.jawab)}.`.trim();
+  return hasil;
+}
+
 function bagianUnggahPutusanSipp(nomorPerkara) {
   const kotak = bagian("Unggah putusan ke SIPP", "unggahPutusanSipp", true);
   const isi = kotak.isi;
@@ -4999,127 +5130,45 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
     buatElemen(
       "div",
       "aleta-tetap-sebab aleta-remeh",
-      "Putusan akhir dan anonimisasinya diunggah sekaligus - berkas, kolom dokumen, " +
-        "baris Direktori Putusan, dan antreannya. RTF, DOC, DOCX, atau PDF; " +
-        "yang bukan PDF diubah ALETA menjadi PDF untuk Direktori Putusan, dan " +
-        "naskah aslinya tetap tersimpan sebagai e-Doc."
+      "Putusan akhir dan anonimisasinya diunggah sekaligus dari SATU pemilih - dipasangkan menurut " +
+        "nomor perkara dan nama berkasnya. Putusan dikirim lebih dahulu; anonimisasi langsung menyusul " +
+        "sesudah putusannya masuk, dan tidak dikirim bila putusannya gagal. RTF, DOC, DOCX, atau PDF; " +
+        "yang bukan PDF diubah ALETA menjadi PDF untuk Direktori Putusan, dan naskah aslinya tetap " +
+        "tersimpan sebagai e-Doc."
     )
   );
 
-  const pilihBerkas = (label, keterangan) => {
-    const baris = buatElemen("div", "aleta-unggah-sipp-baris");
-    baris.appendChild(buatElemen("div", "aleta-unggah-sipp-label", label));
-    // "aleta-remeh": keterangan tetap tiap pemilih berkas ("Tersimpan di
-    // resources/file/doc menurut tanggal putusannya."). Isinya tidak pernah
-    // berubah dan tidak pernah memuat pesan galat, jadi ia boleh ikut
-    // disembunyikan saat panel ringkas dinyalakan.
-    if (keterangan) baris.appendChild(buatElemen("div", "aleta-tetap-sebab", keterangan));
-    const pemilih = document.createElement("input");
-    pemilih.type = "file";
-    // Keempat bentuk yang sungguh dipakai satker. Diukur pada kolom
-    // perkara_putusan.amar_putusan_dok, 9.903 nilai terisi: .rtf 8.686
-    // (87,7%), .docx 458, .doc 442, .pdf 315 (3,2%) - jadi PDF justru yang
-    // paling jarang, dan menyaring ke PDF saja menyembunyikan hampir seluruh
-    // naskah yang sah dari pemilih berkasnya.
-    pemilih.accept = ".rtf,.doc,.docx,.pdf";
-    pemilih.className = "aleta-berkas";
-    baris.appendChild(pemilih);
-    isi.appendChild(baris);
-    return pemilih;
-  };
+  // SATU pemilih untuk keduanya. Keempat bentuk yang sungguh dipakai satker
+  // (perkara_putusan.amar_putusan_dok, 9.903 nilai): .rtf 87,7%, .docx 458,
+  // .doc 442, .pdf 3,2% - menyaring ke PDF saja menyembunyikan hampir semuanya.
+  const pemilih = document.createElement("input");
+  pemilih.type = "file";
+  pemilih.multiple = true;
+  pemilih.accept = ".rtf,.doc,.docx,.pdf";
+  pemilih.className = "aleta-berkas";
+  isi.appendChild(pemilih);
 
-  const pilihPutusan = pilihBerkas("Putusan akhir", "Tersimpan di resources/file/doc menurut tanggal putusannya.");
-  const pilihAnonim = pilihBerkas(
-    "Putusan anonimisasi",
-    "Tersimpan di resources/file/anonimisasi. Inilah yang terbit di Direktori Putusan."
-  );
-
+  const daftarPasangan = buatElemen("div", "aleta-massal-daftar");
   const tombol = buatElemen("button", "aleta-permintaan-tombol", "Unggah ke SIPP");
   tombol.type = "button";
+  tombol.disabled = true;
   const kabar = buatElemen("div", "aleta-abt-kabar");
-  isi.appendChild(tombol);
-  isi.appendChild(kabar);
+  for (const el of [daftarPasangan, tombol, kabar]) isi.appendChild(el);
 
-  tombol.addEventListener("click", async () => {
-    const berkasPutusan = pilihPutusan.files && pilihPutusan.files[0];
-    const berkasAnonim = pilihAnonim.files && pilihAnonim.files[0];
-    if (!berkasPutusan && !berkasAnonim) {
-      kabar.className = "aleta-abt-kabar";
-      kabar.textContent = "Belum ada berkas yang dipilih.";
-      return;
-    }
+  // Satu berkas, satu permintaan. Akun SIPP yang sedang membuka halaman ini
+  // yang tercatat di SIPP - bukan akun ALETA.
+  const kirim = (jenis, berkas) => {
+    const badan = new FormData();
+    badan.append("perkaraId", perkaraIdDariHalaman());
+    badan.append("nomorPerkara", nomorPerkara || "");
+    badan.append("olehUsername", namaPenggunaSipp() || "");
+    badan.append(jenis, berkas);
+    return kirimBadanUnggahSipp(badan);
+  };
 
-    // ====================================================================
-    // YANG DITOLAK HANYA BENTUK YANG MEMANG TIDAK DAPAT DIPAKAI
-    // ====================================================================
-    //
-    // Sampai 1.163.1 apa pun yang bukan PDF ditolak di sini, dengan alasan
-    // "yang terbit di Direktori Putusan harus PDF dan ALETA tidak
-    // mengubahnya sendiri". Kedua bagian alasan itu salah, dan salahnya
-    // terukur:
-    //
-    //   - Yang tersimpan sebagai e-Doc di satker hampir seluruhnya BUKAN
-    //     PDF: .rtf 8.686 dari 9.903 (87,7%), .pdf hanya 315 (3,2%).
-    //   - ALETA sudah lama punya pengubahnya - abtCetakService - dan bot
-    //     kini memakainya: naskah asli disimpan sebagai e-Doc, PDF hasil
-    //     konversinya yang masuk Direktori Putusan. Persis cara SIPP.
-    //
-    // Yang tersisa di sini hanya saringan bentuk yang memang tidak dapat
-    // dipakai sama sekali - gambar hasil pindai, misalnya - supaya orangnya
-    // tidak menunggu unggahan yang sudah pasti ditolak bot.
-    const BENTUK_DITERIMA = /\.(rtf|doc|docx|pdf)$/i;
-    const bentukAsing = [
-      { berkas: berkasPutusan, judul: "Putusan akhir" },
-      { berkas: berkasAnonim, judul: "Putusan anonimisasi" },
-    ].filter((x) => x.berkas && !BENTUK_DITERIMA.test(String(x.berkas.name || "")));
-    if (bentukAsing.length > 0) {
-      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent =
-        `${bentukAsing.map((x) => `${x.judul} (${x.berkas.name})`).join(" dan ")} bukan naskah ` +
-        "putusan. Yang diterima RTF, DOC, DOCX, atau PDF.";
-      return;
-    }
-
-    tombol.disabled = true;
-    kabar.className = "aleta-abt-kabar";
-    kabar.textContent = "Mengunggah…";
-
-    let jawab;
-    try {
-      const badan = new FormData();
-      badan.append("perkaraId", perkaraIdDariHalaman());
-      badan.append("nomorPerkara", nomorPerkara || "");
-      badan.append("olehUsername", namaPenggunaSipp() || "");
-      if (berkasPutusan) badan.append("putusan", berkasPutusan);
-      if (berkasAnonim) badan.append("anonimisasi", berkasAnonim);
-      const respons = await alatAmbil(
-        ALETA_API_UNGGAH_SIPP,
-        { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_SIPP_MS },
-        "Mengunggah putusan ke SIPP"
-      );
-      if (!respons.ok) {
-        throw new Error(alatPesanGagal(null, respons.status, "Mengunggah putusan ke SIPP"));
-      }
-      const luar = await respons.json();
-      jawab = luar && luar.data ? luar.data : luar;
-    } catch (galat) {
-      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent = String((galat && galat.message) || galat);
-      tombol.disabled = false;
-      return;
-    }
-
-    tombol.disabled = false;
-    if (!jawab || !jawab.ok) {
-      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent =
-        (jawab && (jawab.sebab || jawab.pesan || jawab.alasan)) ||
-        "Unggahannya tidak dapat dikerjakan.";
-      return;
-    }
-
-    // Tiap berkas dilaporkan sendiri-sendiri. Satu yang gagal di antara dua
-    // bukan "gagal" - yang satunya sudah benar-benar tertulis ke SIPP.
+  // Tiap berkas dilaporkan sendiri. Satu yang gagal di antara dua bukan
+  // "gagal" - yang satunya sudah benar-benar tertulis ke SIPP.
+  const laporkan = (jawab) => {
     const rinci = buatElemen("div", "aleta-unggah-rinci");
     for (const b of jawab.berkas || []) {
       const baris = buatElemen("div", "aleta-unggah-baris");
@@ -5127,38 +5176,116 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
         buatElemen("span", "aleta-unggah-judul", b.jenis === "anonimisasi" ? "Anonimisasi" : "Putusan akhir")
       );
       baris.appendChild(
-        buatElemen(
-          "span",
-          b.ok ? "aleta-unggah-jumlah" : "aleta-unggah-kosong",
-          b.ok ? b.jalur : pesanGagalUnggah(b)
-        )
+        buatElemen("span", b.ok ? "aleta-unggah-jumlah" : "aleta-unggah-kosong", b.ok ? b.jalur : pesanGagalUnggah(b))
       );
       rinci.appendChild(baris);
     }
-    kabar.textContent = jawab.antrean
-      ? "Terunggah, dan perkara ini masuk antrean Direktori Putusan."
-      : "Terunggah. Perkara ini sudah ada di antrean Direktori Putusan sebelumnya.";
-    isi.appendChild(rinci);
-
-    // ======================================================================
-    // HALAMAN PERKARA DIBUKA KEMBALI - DAN HANYA BILA ADA YANG SUNGGUH MASUK
-    // ======================================================================
-    //
-    // Kolom dokumen pada borang putusan baru memperlihatkan berkasnya sesudah
-    // halaman dibaca ulang; tanpa itu petugas melihat kolom kosong tepat
-    // sesudah diberi tahu berkasnya terunggah, dan menduga unggahannya gagal.
-    //
-    // muatUlangHalamanPerkara, BUKAN location.reload(): halaman borang SIPP
-    // dibuka lewat sesi kilat, dan memuat ulangnya mendaratkan petugas di
-    // dasbor - jauh dari perkara yang sedang dikerjakannya.
-    //
-    // Tidak dijalankan bila tidak satu berkas pun masuk: memuat ulang halaman
-    // hanya akan menghapus pesan yang menerangkan kenapa ia gagal.
-    const adaYangMasuk = (jawab.berkas || []).some((b) => b.ok);
-    if (adaYangMasuk) {
-      kabar.textContent += " Halaman perkara dibuka kembali…";
-      setTimeout(muatUlangHalamanPerkara, 1500);
+    for (const peringatan of [].concat(jawab.peringatan || [])) {
+      rinci.appendChild(buatElemen("div", "aleta-unggah-kosong", String(peringatan)));
     }
+    isi.appendChild(rinci);
+    const adaYangMasuk = (jawab.berkas || []).some((b) => b.ok);
+    return adaYangMasuk;
+  };
+
+  // Halaman perkara dibuka kembali HANYA bila ada yang sungguh masuk, dan
+  // sesudah kedua kiriman tuntas - memuat ulang di tengahnya memutus kiriman
+  // anonimisasi. Lewat alamat masuk perkara: memuat ulang apa adanya mendarat
+  // di dasbor.
+  const bukaKembali = () => {
+    kabar.textContent += " Halaman perkara dibuka kembali…";
+    setTimeout(muatUlangHalamanPerkara, 1500);
+  };
+
+  let pasangan = { putusan: [], anonimisasi: [], ditolak: [] };
+  const terpilih = { putusan: null, anonimisasi: null };
+
+  const gambarPasangan = () => {
+    daftarPasangan.textContent = "";
+    for (const [slot, judul] of [
+      ["putusan", "Putusan akhir"],
+      ["anonimisasi", "Anonimisasi"],
+    ]) {
+      const calon = pasangan[slot];
+      const baris = buatElemen("div", "aleta-massal-baris");
+      baris.appendChild(buatElemen("span", "aleta-massal-nomor", judul));
+      if (calon.length <= 1) {
+        const teks = calon.length === 0
+          ? "tidak dipilih"
+          : `${calon[0].nama}${calon[0].nomor ? "" : " - nomor perkara tidak terbaca dari namanya"}`;
+        const tanda = buatElemen("span", "aleta-massal-keadaan", teks);
+        if (calon.length === 1) tanda.classList.add("aleta-lencana-aman");
+        baris.appendChild(tanda);
+      } else {
+        // Lebih dari satu berkas untuk slot yang sama: petugas yang memilih,
+        // bukan "yang terakhir menang".
+        const pilih = document.createElement("select");
+        pilih.className = "aleta-massal-pilih-berkas";
+        const kosong = document.createElement("option");
+        kosong.value = "";
+        kosong.textContent = `${calon.length} berkas - pilih satu`;
+        pilih.appendChild(kosong);
+        calon.forEach((c, i) => {
+          const opsi = document.createElement("option");
+          opsi.value = String(i);
+          opsi.textContent = c.nama;
+          pilih.appendChild(opsi);
+        });
+        pilih.value = terpilih[slot] ? String(calon.indexOf(terpilih[slot])) : "";
+        pilih.addEventListener("change", () => {
+          terpilih[slot] = pilih.value === "" ? null : calon[Number(pilih.value)];
+          tombol.disabled = !terpilih.putusan && !terpilih.anonimisasi;
+        });
+        baris.appendChild(pilih);
+      }
+      daftarPasangan.appendChild(baris);
+    }
+    for (const t of pasangan.ditolak) {
+      const baris = buatElemen("div", "aleta-massal-baris");
+      baris.appendChild(buatElemen("span", "aleta-massal-nomor", t.nama));
+      baris.appendChild(buatElemen("span", "aleta-massal-keadaan aleta-lencana-mendesak", `${t.sebab} - tidak dikirim`));
+      daftarPasangan.appendChild(baris);
+    }
+    tombol.disabled = !terpilih.putusan && !terpilih.anonimisasi;
+  };
+
+  pemilih.addEventListener("change", () => {
+    pasangan = pasangkanBerkasUnggah(Array.from(pemilih.files || []), nomorPerkara);
+    terpilih.putusan = pasangan.putusan.length === 1 ? pasangan.putusan[0] : null;
+    terpilih.anonimisasi = pasangan.anonimisasi.length === 1 ? pasangan.anonimisasi[0] : null;
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "";
+    gambarPasangan();
+  });
+
+  tombol.addEventListener("click", async () => {
+    if (!terpilih.putusan && !terpilih.anonimisasi) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent = "Belum ada berkas yang dipilih.";
+      return;
+    }
+    tombol.disabled = true;
+    pemilih.disabled = true;
+    let hasil = { adaYangMasuk: false, gagal: "" };
+    try {
+      hasil = await unggahBerpasangan(
+        {
+          nomorPerkara: nomorPerkara || "",
+          putusan: terpilih.putusan ? terpilih.putusan.berkas : null,
+          anonimisasi: terpilih.anonimisasi ? terpilih.anonimisasi.berkas : null,
+        },
+        { kirim, laporkan, kabar }
+      );
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+    } finally {
+      tombol.disabled = false;
+      pemilih.disabled = false;
+    }
+    // Pesan kegagalan dibiarkan terbaca: memuat ulang halaman akan menghapus
+    // satu-satunya keterangan kenapa ia gagal.
+    if (hasil.adaYangMasuk && !hasil.gagal) bukaKembali();
   });
 
   return kotak;
@@ -5183,21 +5310,117 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
  * Karena itu yang ditanya SIPP sendiri, lewat ALETA: sudahkah perkara ini
  * punya baris putusan, dan berubahkah tanggalnya. Dibaca SEBELUM menekan dan
  * dibaca lagi sesudahnya - selisih itulah buktinya.
+ *
+ * Sejak 25 September 2026 JAWABAN SIPP atas kiriman borangnya ikut didengar
+ * (jembatan.js, dengarJawabanSimpan): st 0 berarti ditolak pengesahan, dan
+ * pesan SIPP-nya ditampilkan SEKETIKA - tanpa sepuluh detik jajak yang dulu
+ * berakhir dengan pesan umum. st 1 membuat jajak basis data dimulai seketika,
+ * tanpa tidur sedetik di awal. Tanpa jawaban, jajak lama tetap berjalan.
  */
 
 /**
  * Tombol Simpan pada borang putusan SIPP.
  *
- * Tiga penunjuk, dicoba berurutan. Yang pertama paling tepat; dua sisanya
- * menjaga bila SIPP satker lain menamainya berbeda. Tidak ada yang menebak
- * dari tulisan tombolnya - "Simpan" juga nama tombol pada belasan borang lain
- * di halaman yang sama.
+ * Dua penunjuk, keduanya DI DALAM #frm_putusan. Penunjuk cadangan "#simpan"
+ * tanpa lingkup dibuang pada 25 September 2026: id itu dipakai 323 view SIPP,
+ * dan pada halaman yang memuat dua borang ia menunjuk Simpan milik borang
+ * lain. Tidak ada yang menebak dari tulisan tombolnya - "Simpan" juga nama
+ * tombol pada belasan borang lain di halaman yang sama.
  */
 const PENUNJUK_SIMPAN_PUTUSAN = [
   "#frm_putusan #simpan",
   "#frm_putusan input[type='submit']",
-  "#simpan",
 ];
+
+/**
+ * Berapa lama jawaban SIPP ditunggu sesudah borangnya TERKIRIM. Lewat dari
+ * ini, jajak basis data yang lama berjalan - jawaban yang tiba belakangan
+ * tetap dibaca di sela jajak itu.
+ */
+const BATAS_JAWABAN_SIMPAN_MS = 20000;
+let nomorBuktiSimpan = 0;
+
+/**
+ * Telinga untuk SATU penekanan Simpan: menunggu jawaban SIPP yang diteruskan
+ * jembatan (jenis "bukti-simpan") dengan id miliknya sendiri. Dipasang
+ * SEBELUM tombol ditekan, supaya jawaban yang tiba cepat tidak terlewat.
+ */
+function dengarBuktiSimpan() {
+  nomorBuktiSimpan += 1;
+  const id = `aleta-bukti-${Date.now()}-${nomorBuktiSimpan}`;
+  let jawaban = null;
+  let penunggu = null;
+  const dengar = (peristiwa) => {
+    if (peristiwa.source !== window) return;
+    const isi = peristiwa.data;
+    if (!isi || isi.sumber !== "aleta-jembatan-jawab" || isi.id !== id || isi.jenis !== "bukti-simpan") return;
+    window.removeEventListener("message", dengar);
+    jawaban = {
+      asal: String(isi.asal || ""),
+      st: isi.st === 0 || isi.st === 1 ? isi.st : null,
+      pesan: String(isi.pesan || "").slice(0, 400),
+    };
+    if (penunggu) penunggu(jawaban);
+  };
+  window.addEventListener("message", dengar);
+  return {
+    id,
+    jawaban: () => jawaban,
+    tunggu(batasMs) {
+      if (jawaban) return Promise.resolve(jawaban);
+      return new Promise((selesai) => {
+        const jam = setTimeout(() => {
+          penunggu = null;
+          selesai(null);
+        }, batasMs);
+        penunggu = (isi) => {
+          clearTimeout(jam);
+          penunggu = null;
+          selesai(isi);
+        };
+      });
+    },
+    lepas: () => window.removeEventListener("message", dengar),
+  };
+}
+
+/**
+ * Menekan Simpan borang putusan, dengan telinga bukti terpasang.
+ *
+ * Penunjuk berikutnya dicoba HANYA bila tombolnya tidak ada. Tombol yang ada
+ * tetapi tersembunyi, mati, di luar borang, ditahan mode kering, atau yang
+ * jawabannya belum tiba TIDAK dicari lewat penunjuk lain: kedua penunjuk
+ * dapat menunjuk tombol yang SAMA, dan menekannya lagi berarti mengirim
+ * borangnya dua kali.
+ */
+async function tekanSimpanPutusan(idBukti) {
+  let ditekan = { ok: false, alasan: "tombol_tidak_ketemu" };
+  for (const penunjuk of PENUNJUK_SIMPAN_PUTUSAN) {
+    ditekan =
+      (await kirimKeJembatan({ jenis: "tekan", penunjuk, bukti: { borang: "#frm_putusan", id: idBukti } })) ||
+      { ok: false, alasan: "jembatan_tidak_menjawab" };
+    if (ditekan.ok || ditekan.alasan !== "tombol_tidak_ketemu") break;
+  }
+  return ditekan;
+}
+
+/** Kalimat untuk tombol Simpan yang TIDAK ditekan - sebabnya disebut apa adanya. */
+function bunyiSimpanTidakDitekan(ditekan) {
+  const alasan = String((ditekan && ditekan.alasan) || "");
+  const awal = "Isiannya sudah masuk borang, tetapi ";
+  if (alasan === "tombol_tidak_ketemu") {
+    return `${awal}tombol Simpan SIPP tidak ditemukan di halaman ini - tekan Simpan sendiri.`;
+  }
+  if (alasan === "tombol_tidak_tampak") {
+    return `${awal}tombol Simpan SIPP sedang disembunyikan halaman, jadi TIDAK ditekan. Periksa borangnya, lalu tekan Simpan sendiri bila memang sudah waktunya.`;
+  }
+  if (alasan === "tombol_mati") return `${awal}tombol Simpan SIPP sedang mati - tekan Simpan sendiri bila sudah menyala.`;
+  if (alasan === "tombol_di_luar_borang") {
+    return `${awal}tombol yang ditemukan bukan milik borang Putusan Akhir, jadi TIDAK ditekan - tekan Simpan sendiri.`;
+  }
+  if (alasan === "mode_kering") return `${awal}mode kering aktif: Simpan ditahan, SIPP tidak menyimpan apa pun.`;
+  return `${awal}tombol Simpan tidak dapat ditekan (${alasan || "tanpa alasan"}) - tekan Simpan sendiri.`;
+}
 
 /** Keadaan putusan yang SEGAR - tanpa simpanan, sebab inilah yang dibandingkan. */
 async function bacaPutusanSegar(nomorPerkara) {
@@ -5235,48 +5458,81 @@ function samaPutusan(a, b) {
  * Menekan Simpan, menunggu SIPP benar-benar mencatatnya, lalu membuka kembali
  * halaman perkaranya.
  *
- * @returns {Promise<{ok: boolean, bunyi: string}>}
+ * Urutan bukti: (1) jawaban SIPP sendiri - st 0 selesai seketika dengan
+ * pesannya, tanpa satu pun jajak; (2) basis data - dengan jawaban, jajak
+ * pertama SEKETIKA; tanpa jawaban, jajak lama sedetik sekali.
+ *
+ * @returns {Promise<{ok: boolean, bunyi: string, pesanSipp?: string}>}
  */
 async function simpanPutusanLaluBuka(nomorPerkara, kabar) {
   const sebelum = await bacaPutusanSegar(nomorPerkara);
-
-  let ditekan = null;
-  for (const penunjuk of PENUNJUK_SIMPAN_PUTUSAN) {
-    ditekan = await kirimKeJembatan({ jenis: "tekan", penunjuk });
-    if (ditekan && ditekan.ok) break;
-  }
-  if (!ditekan || !ditekan.ok) {
-    return {
-      ok: false,
-      bunyi:
-        "Isiannya sudah masuk borang, tetapi tombol Simpan SIPP tidak ditemukan di halaman ini - " +
-        "tekan Simpan sendiri.",
-    };
+  const telinga = dengarBuktiSimpan();
+  const ditekan = await tekanSimpanPutusan(telinga.id);
+  const belumTerjawab = ditekan.alasan === "jembatan_tidak_menjawab";
+  if (!ditekan.ok && !belumTerjawab) {
+    telinga.lepas();
+    return { ok: false, bunyi: bunyiSimpanTidakDitekan(ditekan) };
   }
 
-  // SubmitHandling mengirim lewat AJAX; tidak ada satu pun peristiwa yang
-  // dapat ditunggu dari luar. Yang ditunggu karena itu AKIBATNYA di basis
-  // data - sepuluh kali, sedetik sekali.
-  if (kabar) kabar.textContent = "Simpan ditekan - menunggu SIPP mencatatnya…";
+  if (kabar) kabar.textContent = "Simpan ditekan - menunggu jawaban SIPP…";
+  const mulaiTunggu = Date.now();
+  const terkirim = belumTerjawab || ditekan.bukti === "terkirim";
+  let jawaban = terkirim ? await telinga.tunggu(BATAS_JAWABAN_SIMPAN_MS) : null;
   for (let ke = 0; ke < 10; ke += 1) {
-    await new Promise((selesai) => setTimeout(selesai, 1000));
+    jawaban = jawaban || telinga.jawaban();
+    if (jawaban && jawaban.st === 0) break;
+    if (ke > 0 || !jawaban) await new Promise((selesai) => setTimeout(selesai, 1000));
     const sesudah = await bacaPutusanSegar(nomorPerkara);
     if (!sesudah) continue;
     // Berubah berarti tersimpan. Perkara yang belum pernah diputus berubah
     // dari sudahPutus=false; yang diperbaiki berubah tanggal atau statusnya.
-    if (!samaPutusan(sebelum, sesudah) || (!sebelum && sesudah.sudahPutus)) {
-      if (kabar) kabar.textContent = "Tersimpan di SIPP. Halaman perkara dibuka kembali…";
+    const berubah = !samaPutusan(sebelum, sesudah) || (!sebelum && sesudah.sudahPutus);
+    // SIPP menjawab tersimpan atas perkara yang SUDAH putus, dan tanggal serta
+    // statusnya memang tidak berubah: yang disimpan ulang naskahnya, yang
+    // tidak terbaca dari keadaan putusan. Jawaban SIPP itulah buktinya.
+    const simpanUlang = !berubah && jawaban && jawaban.st === 1 && sebelum && sebelum.sudahPutus;
+    if (berubah || simpanUlang) {
+      telinga.lepas();
+      const bunyi = berubah
+        ? "Tersimpan di SIPP."
+        : `Tersimpan di SIPP (${jawaban.pesan || "SIPP menjawab berhasil"}); tanggal dan status putusannya memang tidak berubah.`;
+      if (kabar) kabar.textContent = `${bunyi} Halaman perkara dibuka kembali…`;
       setTimeout(muatUlangHalamanPerkara, 900);
-      return { ok: true, bunyi: "Tersimpan di SIPP." };
+      return { ok: true, bunyi, pesanSipp: jawaban ? jawaban.pesan : "" };
     }
   }
+  telinga.lepas();
+  jawaban = jawaban || telinga.jawaban();
 
+  const jagaIsian = " Halaman TIDAK dimuat ulang supaya isian yang sudah masuk tidak hilang.";
+  if (jawaban && jawaban.st === 0) {
+    const pesan = String(jawaban.pesan || "tanpa keterangan").replace(/[.\s]+$/, "");
+    return {
+      ok: false,
+      bunyi: `SIPP menolak menyimpan: ${pesan}.${jagaIsian}`,
+      pesanSipp: jawaban.pesan,
+    };
+  }
+  const tambahan = jawaban
+    ? ` SIPP menjawab: "${jawaban.pesan || "(tanpa pesan)"}".`
+    : ditekan.bukti === "tanpa-kiriman"
+      ? " Tidak ada kiriman borang yang teramati sesudah Simpan ditekan - konfirmasi SIPP mungkin dibatalkan."
+      : "";
+  // Jembatan yang tidak menjawab tidak berarti Simpan sudah ditekan - dan
+  // tidak juga berarti belum: konfirmasi SIPP yang masih terbuka menahan
+  // jawabannya. Yang tidak diketahui disebut tidak diketahui.
+  const awal = belumTerjawab
+    ? "Permintaan menekan Simpan tidak dijawab halaman, dan"
+    : "Simpan sudah ditekan, tetapi";
+  const lama = Math.max(1, Math.round((Date.now() - mulaiTunggu) / 1000));
   return {
     ok: false,
     bunyi:
-      "Simpan sudah ditekan, tetapi sesudah sepuluh detik SIPP belum mencatat perubahan apa pun. " +
-      "Periksa borangnya - biasanya ada isian wajib yang ditolak SIPP. Halaman TIDAK dimuat ulang " +
-      "supaya isian yang sudah masuk tidak hilang.",
+      `${awal} sesudah ${lama} detik SIPP belum mencatat perubahan apa pun.` +
+      tambahan +
+      " Periksa borangnya - biasanya ada isian wajib yang ditolak SIPP." +
+      jagaIsian,
+    pesanSipp: jawaban ? jawaban.pesan : "",
   };
 }
 
@@ -5461,7 +5717,8 @@ function bagianIsiPutusan(nomorPerkara) {
       "Pertimbangan Hukum, Amar, dan Amar Anonim ke formulir di halaman ini. Sesudah " +
       "SELURUH yang dicentang terisi, Simpan ditekan sendiri dan halaman perkara dibuka " +
       "kembali - tetapi hanya setelah SIPP terbukti mencatatnya. Satu isian gagal berarti " +
-      "Simpan tidak ditekan sama sekali."
+      "Simpan tidak ditekan sama sekali. Borang yang memuat medan tambahan satker diisi, " +
+      "tetapi Simpan-nya Anda tekan sendiri."
   );
   isi.appendChild(terang);
 
@@ -5728,10 +5985,57 @@ function bagianIsiPutusan(nomorPerkara) {
    */
   const MEDAN_PINTU = ['select[name="status_putusan"]', 'select[name="qobla"]'];
 
+  // ==========================================================================
+  // DAFTAR MEDAN DARI PORTAL (putusan.medan-borang), CADANGANNYA TERTANAM
+  // ==========================================================================
+  //
+  // Satker dapat menambah medan borang atau mematikan medan bawaan lewat
+  // Pengaturan tipe keluaran. Daftar yang berlaku dibaca lewat
+  // alatTipeKeluaran (singgahan, portal, singgahan lama, tertanam) sekali per
+  // tekan tombol. Tabel kosong berarti portal menjawab cermin, dan portal
+  // mati berarti tertanam - keduanya persis CALON_MEDAN_PANEL, urutan dan isi.
+  //
+  // Medan yang asalnya 'tambahan' ditandai. Ia tetap dibaca, diusulkan, dan
+  // dapat diisikan, tetapi Simpan TIDAK ditekan sendiri selama satu saja di
+  // antaranya tampak di borang: penunjuknya disahkan di portal, bukan diuji
+  // di SIPP satker ini, jadi yang menilai borangnya sudah utuh adalah petugas.
+  let medanBorangBerlaku = null;
+  async function muatMedanBorang() {
+    if (medanBorangBerlaku) return medanBorangBerlaku;
+    const tertanam = () =>
+      CALON_MEDAN_PANEL.map((c, urutan) => {
+        const data = { penunjuk: c.penunjuk };
+        if (c.banyak) data.banyak = true;
+        if (MEDAN_PINTU.includes(c.penunjuk)) data.pintu = true;
+        return { kunci: "putusan-akhir", nilai: c.label, data, urutan, asal: "bawaan", sidik: "" };
+      });
+    try {
+      const hasil = await alatTipeKeluaran("putusan.medan-borang", { tertanam });
+      const daftar = hasil.entri.map((e) => ({
+        penunjuk: e.data.penunjuk,
+        label: e.nilai,
+        banyak: Boolean(e.data.banyak),
+        tambahan: e.asal === "tambahan",
+      }));
+      if (daftar.length === 0) {
+        // Daftar kosong bukan borang tanpa medan - lebih mungkin seluruhnya
+        // terbuang penyaring. Disebut di konsol, lalu dipakai yang tertanam.
+        console.warn(`[ALETA] Medan borang putusan dari ${hasil.asal} kosong; dipakai daftar tertanam.`);
+      } else {
+        medanBorangBerlaku = daftar;
+        return daftar;
+      }
+    } catch (galat) {
+      console.warn("[ALETA] Medan borang putusan tidak terbaca; dipakai daftar tertanam:", galat);
+    }
+    medanBorangBerlaku = CALON_MEDAN_PANEL.map((c) => ({ ...c, banyak: Boolean(c.banyak), tambahan: false }));
+    return medanBorangBerlaku;
+  }
+
   /** Membaca seluruh medan yang SEDANG tampak, beserta pilihannya. */
   async function bacaMedanTampak() {
     const hasil = [];
-    for (const calon of CALON_MEDAN_PANEL) {
+    for (const calon of await muatMedanBorang()) {
       const jawabPilihan = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
       if (!jawabPilihan || !jawabPilihan.ok || !jawabPilihan.tampak) continue;
       const pilihan = (jawabPilihan.pilihan || []).map((x) => ({ nilai: x.nilai, label: x.label }));
@@ -5741,7 +6045,10 @@ function bagianIsiPutusan(nomorPerkara) {
         label: calon.label,
         pilihan,
         banyak: Boolean(calon.banyak),
+        tambahan: Boolean(calon.tambahan),
         nilaiSekarang: jawabPilihan.nilaiSekarang || "",
+        // Yang SUDAH terpilih di halaman ikut dikirim (K9) - lihat nilaiTerpilihMedan.
+        terpilih: nilaiTerpilihMedan(jawabPilihan, Boolean(calon.banyak)),
       });
     }
     return hasil;
@@ -5756,16 +6063,7 @@ function bagianIsiPutusan(nomorPerkara) {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          nomorPerkara: nomorPerkara || "",
-          jenisPerkara: jenisPerkara || "",
-          medan: daftar.map((x) => ({
-            kunci: x.kunci,
-            label: x.label,
-            pilihan: x.pilihan,
-            banyak: x.banyak,
-          })),
-        }),
+        body: JSON.stringify(muatanUsulanMedan(nomorPerkara, jenisPerkara, daftar)),
       },
       "Menyusun usulan pilihan"
     );
@@ -5777,7 +6075,7 @@ function bagianIsiPutusan(nomorPerkara) {
 
   async function hitungMedanTampak() {
     let jumlah = 0;
-    for (const calon of CALON_MEDAN_PANEL) {
+    for (const calon of await muatMedanBorang()) {
       const jawab = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
       if (jawab && jawab.ok && jawab.tampak && (jawab.pilihan || []).length > 0) jumlah += 1;
     }
@@ -5790,6 +6088,10 @@ function bagianIsiPutusan(nomorPerkara) {
 
   tombol.addEventListener("click", async () => {
     tombol.disabled = true;
+    // Daftar medan dibaca ulang tiap tekan - tanpa permintaan bila versinya
+    // sama dengan singgahan - supaya tambahan yang baru disahkan ikut tanpa
+    // memuat ulang halaman.
+    medanBorangBerlaku = null;
     wadah.textContent = "";
     kabar.className = "aleta-abt-kabar";
     kabar.textContent = "Membaca draf putusan…";
@@ -6028,7 +6330,20 @@ function bagianIsiPutusan(nomorPerkara) {
             "Periksa mana yang benar sebelum menyimpan. Praperiksa di atas dijalankan atas pilihan yang SEKARANG ada di borang."
         )
       );
+    }
 
+    // ======================================================================
+    // KARTU MEDAN DIGAMBAR SELALU, BUKAN HANYA BILA ADA SELISIH PINTU
+    // ======================================================================
+    //
+    // Sejak 2.32.0 (7019909) blok selisih pintu di atas disisipkan tepat di
+    // atas bagian ini, dan kurung penutupnya menelan kartu medan: kartu dan
+    // kabar gagal-usulan hanya digambar bila petugas SUDAH memilih pintu yang
+    // berbeda dengan usulan ALETA. Pada borang yang baru dibuka tidak ada satu
+    // kartu pun - faktor perceraian dan kawan-kawannya dibaca, diusulkan, lalu
+    // tidak pernah ditawarkan. Dijaga ekstensi-medan-putusan-tipe.test.ts,
+    // yang menjalankan bagian ini.
+    {
       // Usulannya sudah tersusun pada putaran buka-pintu di atas; yang
       // gagal disebutkan di sini, satu kali.
       if (gagalUsulan) {
@@ -6062,6 +6377,9 @@ function bagianIsiPutusan(nomorPerkara) {
             ? { kelas: "aleta-tanda-hijau", teks: "disebut naskah" }
             : { kelas: "aleta-tanda-kuning", teks: "mendekati" };
         kepala.appendChild(buatElemen("span", `aleta-tanda ${nada.kelas}`, nada.teks));
+        if (medan.tambahan) {
+          kepala.appendChild(buatElemen("span", "aleta-tanda aleta-tanda-abu", "tambahan satker"));
+        }
         kartu.appendChild(kepala);
 
         const sanding = buatElemen("div", "aleta-abt-sanding");
@@ -6316,6 +6634,21 @@ function bagianIsiPutusan(nomorPerkara) {
         );
         return;
       }
+      // Medan tambahan satker yang tampak di borang - dicentang atau tidak -
+      // menyerahkan Simpan kepada petugas. Syarat Simpan otomatis untuk medan
+      // bawaan di atas tidak berubah.
+      const medanTambahan = medanTampak.filter((x) => x.tambahan).map((x) => x.label);
+      if (medanTambahan.length > 0) {
+        hasilTerap.textContent +=
+          ` Simpan TIDAK ditekan: borang memuat medan tambahan satker (${medanTambahan.join(", ")}) - ` +
+          "periksa borangnya, lalu tekan Simpan SIPP sendiri.";
+        alatCatat(
+          "isi-putusan",
+          `${nomorPerkara}: medan tambahan ${medanTambahan.join(", ")} - Simpan diserahkan ke petugas`,
+          ""
+        );
+        return;
+      }
       terap.disabled = true;
       const hasilSimpan = await simpanPutusanLaluBuka(nomorPerkara, hasilTerap);
       terap.disabled = false;
@@ -6329,6 +6662,65 @@ function bagianIsiPutusan(nomorPerkara) {
   });
 
   return kotak;
+}
+
+/**
+ * ============================================================================
+ * YANG SUDAH TERPILIH DI HALAMAN IKUT DIKIRIM (KONTRAK K9)
+ * ============================================================================
+ *
+ * Sampai 25 September 2026 portal hanya menerima daftar pilihan tiap medan,
+ * tanpa tahu mana yang SUDAH dipilih petugas. Alasan dispensasi yang sudah
+ * dipilih di halaman karena itu diusulkan ulang dari nol, dan cocok 0 dari 22
+ * dengan isian manusia.
+ *
+ * Isian bawaan SIPP bukan pilihan, dan bentuknya tiga (edit_putusan_akhir.php):
+ * nilai -1 ("Pilih Status", "Pilih Faktor", "Pilih Salah Satu"), nilai kosong
+ * ("Pilih Keadaan Istri"), dan nilai 0 bertulisan "- Pilih -" atau
+ * "Referensi belum ada" pada alasan dispensasi. Nilai 0 pada qobla justru SAH
+ * ("Qobla Dukhul") - jadi yang menentukan tulisannya, bukan angkanya.
+ *
+ * Medan bernilai banyak (kotak centang sumber hukum) memulangkan daftar; yang
+ * lain satu nilai. Yang belum terpilih memulangkan undefined, dan ruasnya
+ * tidak ikut dikirim sama sekali.
+ */
+function nilaiTerpilihMedan(jawabPilihan, banyak) {
+  const pilihan = (jawabPilihan && jawabPilihan.pilihan) || [];
+  const isianBawaan = (x) => {
+    const nilai = String(x && x.nilai !== undefined && x.nilai !== null ? x.nilai : "").trim();
+    const label = String((x && x.label) || "").trim();
+    return nilai === "" || nilai === "-1" || /^-?\s*pilih\b/i.test(label) || /^referensi belum ada$/i.test(label);
+  };
+  if (banyak) {
+    const semua = pilihan.filter((x) => x && x.terpilih && !isianBawaan(x)).map((x) => String(x.nilai));
+    return semua.length > 0 ? semua : undefined;
+  }
+  const sekarang = String(
+    jawabPilihan && jawabPilihan.nilaiSekarang !== undefined && jawabPilihan.nilaiSekarang !== null
+      ? jawabPilihan.nilaiSekarang
+      : ""
+  ).trim();
+  if (!sekarang) return undefined;
+  const opsi = pilihan.find((x) => String(x && x.nilai) === sekarang) || { nilai: sekarang, label: "" };
+  return isianBawaan(opsi) ? undefined : sekarang;
+}
+
+/** Muatan POST isian-sipp untuk usulan medan pilihan - satu tempat, dapat diuji. */
+function muatanUsulanMedan(nomorPerkara, jenisPerkara, daftar) {
+  return {
+    nomorPerkara: nomorPerkara || "",
+    jenisPerkara: jenisPerkara || "",
+    medan: (daftar || []).map((x) => {
+      const butir = {
+        kunci: x.kunci,
+        label: x.label,
+        pilihan: x.pilihan,
+        banyak: x.banyak,
+      };
+      if (x.terpilih !== undefined) butir.terpilih = x.terpilih;
+      return butir;
+    }),
+  };
 }
 
 /**
@@ -9613,13 +10005,23 @@ function susunPanel(konteks) {
         // menyuruh memeriksa arsipnya, yang lain menyuruh pihak mengunggah.
         // Arsip e-Court pernah lenyap seluruhnya di sini karena volume Docker
         // belum di-mount, dan lenyapnya tidak berbunyi apa pun.
+        // Sejak 25 September 2026 ada keadaan KETIGA, dan ia yang paling
+        // menyesatkan bila disamakan: catatan berkasnya TIDAK TERBACA.
+        //
+        // Dahulu kegagalan kueri catatan berkas ditelan `.catch(() => [])`,
+        // sehingga adaPdf/adaWord jatuh ke salah dan ekstensi menulis "berkas
+        // belum tersimpan" - kalimat yang menyuruh panitera menagih pihak atas
+        // berkas yang mungkin sudah lama ada. Sekarang bot menandainya
+        // berkasTidakTerbaca, dan yang tidak diketahui disebut tidak diketahui.
         tombolBerkas.appendChild(
           buatElemen(
             "span",
             "aleta-berkas-kosong",
-            d.berkasHilang
-              ? "tercatat ada, berkasnya hilang dari arsip"
-              : "berkas belum tersimpan"
+            d.berkasTidakTerbaca
+              ? "catatan berkasnya tidak terbaca - bukan berarti tidak ada"
+              : d.berkasHilang
+                ? "tercatat ada, berkasnya hilang dari arsip"
+                : "berkas belum tersimpan"
           )
         );
       }
@@ -11657,6 +12059,10 @@ async function muatPenggunaAleta() {
     if (!respons.ok) return null;
     const luar = await respons.json();
     const isi = luar && luar.data ? luar.data : luar;
+    // Versi tipe keluaran yang berlaku (16 hex, atau null bila tabelnya tak
+    // terbaca). Dengannya alatTipeKeluaran memakai singgahan tanpa bertanya
+    // ke portal selama versinya sama. Portal lama tanpa ruas ini: dibiarkan.
+    if (isi && Object.prototype.hasOwnProperty.call(isi, "versiTipe")) alatSetelVersiTipe(isi.versiTipe);
     if (isi && isi.nama) {
       penggunaTerakhir = { nama: isi.nama, peran: isi.peran || "" };
       if (isi.kapabilitas) kapabilitasTerakhir = isi.kapabilitas;
@@ -12561,12 +12967,30 @@ async function bagianAntreanSipp(nomorHalaman) {
   const isi = kotak.isi;
   const h = alatAntreanRingkas(antrean);
 
+  // "Tertahan" punya dua sebab yang ditangani petugas secara berbeda:
+  // praperiksa menahan karena fakta SIPP bertentangan dengan draf, sedangkan
+  // gagal-isi menahan karena medan borang tidak terisi sehingga Simpan tidak
+  // ditekan. Sampai 26 September 2026 keduanya terhitung "ditahan
+  // praperiksa". Butir tanpa sebabTahan berasal dari praperiksa - satu-satunya
+  // penahan sebelum ruas itu lahir. Sebab yang belum bernama tetap dihitung
+  // dan disebut apa adanya, tidak dibuang dari ringkasan.
+  const tahan = { praperiksa: 0 };
+  for (const b of antrean.butir) {
+    if (b.keadaan !== "tertahan") continue;
+    const sebab = b.sebabTahan || "praperiksa";
+    tahan[sebab] = (tahan[sebab] || 0) + 1;
+  }
+  const namaSebabTahan = { praperiksa: "ditahan praperiksa", "gagal-isi": "tertahan karena medan gagal terisi" };
+  const teksTahan = Object.keys(tahan)
+    .map((sebab) => `${tahan[sebab]} ${namaSebabTahan[sebab] || `tertahan (${sebab})`}`)
+    .join(", ");
+
   isi.appendChild(
     buatElemen(
       "div",
       "aleta-tetap-sebab",
       `Antrean dari ${antrean.tahap === "sipp" ? "tahap ABT" : "jadwal sidang"} — ` +
-        `${h.selesai} selesai, ${h.menunggu + h.jalan} menunggu, ${h.gagal} gagal, ${h.tertahan || 0} ditahan praperiksa. ` +
+        `${h.selesai} selesai, ${h.menunggu + h.jalan} menunggu, ${h.gagal} gagal, ${teksTahan}. ` +
         `Mode: ${antrean.modus === "otomatis" ? "otomatis" : "manual (berhenti tiap perkara)"}.`
     )
   );
@@ -12709,6 +13133,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   const raporAgen = await praperiksaSebelumMengisi(butir.nomor, kabar);
   if (raporAgen && raporAgen.hentikan) {
     butir.keadaan = "tertahan";
+    butir.sebabTahan = "praperiksa";
     butir.catatan = `ditahan praperiksa: ${ringkasHentikan(raporAgen)}`;
     await alatSimpanAntrean(antrean);
     if (kabar) {
@@ -12745,6 +13170,68 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     const hasil = await kirimKeJembatan({ jenis: "isi", penunjuk, jenisMedan: "kaya", nilai: teks });
     if (hasil && hasil.ok) terisi += 1;
     else gagal.push(`${penunjuk}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+  }
+
+  // 3b. Yang gagal terisi MENAHAN Simpan - janji komentar di atas.
+  //
+  // Sampai 26 September 2026 janji itu hanya tertulis: `gagal` diisi lalu
+  // tidak pernah dibaca, dan Simpan tetap ditekan atas borang yang belum
+  // utuh. Panel satu perkara sudah menahannya sejak 1.123.0 ("Simpan TIDAK
+  // ditekan selama masih ada yang gagal"); antrean massal kini sama.
+  // Perkaranya ditandai tertahan beserta medan yang gagal, dan antrean
+  // berlanjut ke perkara berikutnya tanpa menyimpan borang setengah terisi.
+  // sebabTahan membedakannya dari tahanan praperiksa di ringkasan antrean.
+  // Dijaga ekstensi-antrean-sipp-gagal-isi.test.ts, yang menjalankan fungsi
+  // ini - penjaga teks yang lama tetap hijau walau blok ini dibuang.
+  if (gagal.length > 0) {
+    butir.keadaan = "tertahan";
+    butir.sebabTahan = "gagal-isi";
+    butir.catatan = `Simpan tidak ditekan - gagal terisi: ${gagal.join("; ")}`;
+    await alatSimpanAntrean(antrean);
+    if (kabar) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Periksa borangnya, lalu Simpan sendiri bila sudah benar.`;
+    }
+    alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+
+  // 3c. Medan tambahan satker menahan Simpan - aturan yang sama dengan panel
+  // satu perkara (bagianIsiPutusan). Yang dihitung hanya entri
+  // putusan.medan-borang berasal 'tambahan' yang TAMPAK dan berpilihan di
+  // borang ini - penyaring yang sama dengan bacaMedanTampak. Antrean tidak
+  // mengisi medan pilihan sama sekali, jadi medan tambahan yang tampak berarti
+  // borang yang belum dinilai utuh oleh siapa pun. Cadangan tertanam sengaja
+  // kosong: yang dicari hanya tambahan, dan portal mati berarti tidak ada
+  // tambahan yang diketahui - perilaku sebelum daftar ini ada. Pemeriksaan
+  // yang sendiri gagal MENAHAN, tidak diloloskan diam-diam.
+  const medanTambahan = [];
+  let galatTambahan = "";
+  try {
+    const daftarMedan = await alatTipeKeluaran("putusan.medan-borang", { tertanam: [] });
+    for (const e of daftarMedan.entri) {
+      if (e.asal !== "tambahan") continue;
+      const jawab = await kirimKeJembatan({ jenis: "pilihan", penunjuk: e.data.penunjuk });
+      if (jawab && jawab.ok && jawab.tampak && (jawab.pilihan || []).length > 0) medanTambahan.push(e.nilai);
+    }
+  } catch (galat) {
+    galatTambahan = String((galat && galat.message) || galat);
+  }
+  if (medanTambahan.length > 0 || galatTambahan) {
+    butir.keadaan = "tertahan";
+    butir.sebabTahan = "medan-tambahan";
+    butir.catatan = galatTambahan
+      ? `Simpan tidak ditekan - medan tambahan satker tidak dapat diperiksa: ${galatTambahan}`
+      : `Simpan tidak ditekan - borang memuat medan tambahan satker: ${medanTambahan.join(", ")}`;
+    await alatSimpanAntrean(antrean);
+    if (kabar) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Isi medannya, periksa borangnya, lalu Simpan sendiri.`;
+    }
+    alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
+    if (tombol) tombol.disabled = false;
+    return;
   }
 
   // 4. Simpan, dibuktikan dari SIPP.
@@ -12813,6 +13300,126 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
  * drafnya sudah tersimpan, dan yang mengisi borang berikutnya akan membacanya
  * sebagai naskah yang sah.
  */
+
+/**
+ * ============================================================================
+ * NOMOR PERKARA DARI NAMA BERKAS - EMPAT BENTUK YANG SUNGGUH ADA
+ * ============================================================================
+ *
+ * Nama berkas tidak pernah memuat garis miring - Windows menolaknya - jadi
+ * pola bergaris miring yang dahulu satu-satunya dipakai di sini cocok 0 dari
+ * 8.614 nama dokumen nyata di folder unduhan petugas (diukur 25 September
+ * 2026), termasuk 0 dari nama buatan ALETA sendiri. Yang sungguh ada:
+ *
+ *   100_Pdt.G_2026_PA.Dgl - [01] ....rtf       unduhan ALETA/ABT/Chrome (4.337)
+ *   ..._OK_299_Pdt_G_2021_PA_Buk_.rtf           blangko lama bergaris bawah (970)
+ *   PA.Dgl_2025_Pdt.G_637_putusan_akhir.rtf     e-Doc SIPP, nomornya terbalik (469)
+ *   putusan_17_pdt.g_2021_pa.sgta_2021....pdf   unduhan Direktori Putusan MA (166)
+ *
+ * Bentuk bergaris miring tetap dikenali - nama yang disusun di luar Windows
+ * masih dapat memuatnya.
+ *
+ * Nol di depan nomor DIPERTAHANKAN: SIPP sendiri menyimpan perkara 2015
+ * sebagai "0001/Pdt.G/2015/PA.Buk" (323 nomor di PA Bungku, 607 di PA
+ * Donggala). Membuangnya menanyakan perkara yang tidak ada.
+ *
+ * Nama yang memuat dua nomor BERBEDA tidak ditebak - dipulangkan kosong.
+ * Begitu pula berkas kunci Word ("~$6_Pdt.P_..."): Word menimpa DUA huruf
+ * pertama nama aslinya, jadi nomornya terpotong ("106" menjadi "6").
+ */
+function nomorDariNamaBerkas(nama) {
+  const teks = String(nama || "");
+  if (/^~\$/.test(teks)) return "";
+  const temu = new Set();
+  // "pdt.g.s" -> "Pdt.G.S": bagian satu huruf ditulis besar, sisanya Kapital.
+  const jenisBaku = (jenis) =>
+    String(jenis)
+      .split(/[._]/)
+      .filter(Boolean)
+      .map((b) => (b.length === 1 ? b.toUpperCase() : b[0].toUpperCase() + b.slice(1).toLowerCase()))
+      .join(".");
+  for (const m of teks.matchAll(/(?:^|[^\d])(\d{1,5})_(Pdt(?:\.[A-Za-z]{1,3}){1,2})_(\d{4})_(PA\.[A-Za-z]{2,5})(?![A-Za-z])/g)) {
+    temu.add(`${m[1]}/${m[2]}/${m[3]}/${m[4]}`);
+  }
+  for (const m of teks.matchAll(/(?:^|[^A-Za-z])(PA\.[A-Za-z]{2,5})_(\d{4})_(Pdt(?:\.[A-Za-z]{1,3}){1,2})_(\d{1,5})(?!\d)/g)) {
+    temu.add(`${m[4]}/${m[3]}/${m[2]}/${m[1]}`);
+  }
+  for (const m of teks.matchAll(/(?:^|[^\d])(\d{1,5})_Pdt_([A-Z][a-z]{0,2}(?:_[A-Z])?)_(\d{4})_PA_([A-Za-z]{2,5})(?![A-Za-z])/g)) {
+    temu.add(`${m[1]}/Pdt.${jenisBaku(m[2])}/${m[3]}/PA.${m[4]}`);
+  }
+  for (const m of teks.matchAll(/putusan_(\d{1,5})_pdt((?:\.[a-z]{1,3}){1,2})_(\d{4})_pa\.([a-z]{2,5})_\d{8}/gi)) {
+    temu.add(`${m[1]}/${jenisBaku(`pdt${m[2]}`)}/${m[3]}/PA.${jenisBaku(m[4])}`);
+  }
+  // Bentuk lama bergaris miring. POLA_PERKARA berbendera /g dan MENGINGAT
+  // posisinya di antara pemanggilan - lastIndex disetel ulang lebih dulu.
+  POLA_PERKARA.lastIndex = 0;
+  let cocok;
+  while ((cocok = POLA_PERKARA.exec(teks)) !== null) temu.add(cocok[1]);
+  return temu.size === 1 ? [...temu][0] : "";
+}
+
+/**
+ * Nama yang menandai berkas BUKAN naskah putusan - ditandai dan tidak
+ * dikirim, beserta sebabnya. Kata-katanya diukur atas nama nyata di folder
+ * unduhan petugas: "mediasi", "gugatan", "ikrar", dan "kuasa" SENGAJA tidak
+ * ada di sini, sebab keempatnya juga muncul pada nama blangko putusan yang
+ * sah ("[98] [Cabut] ... Setelah Mediasi", "CT Ikrar Talak", "Kabul F Kuasa P").
+ * Anonimisasi dikenali terpisah (namaBerkasAnonim) - ia punya slotnya sendiri
+ * pada unggah e-Doc.
+ */
+function tandaBukanNaskahPutusan(nama) {
+  const teks = String(nama || "");
+  if (/^~\$/.test(teks)) return "berkas kunci sementara Word (~$), bukan naskah";
+  if (/(?:^|[^A-Za-z0-9])(?:BAS|berita[\s_.-]*acara)(?=[^A-Za-z0-9]|$)/i.test(teks)) return "berita acara sidang (BAS)";
+  if (
+    /(?:^|[^A-Za-z0-9])(?:PHS|PMH|PPP|PJS)(?=[^A-Za-z0-9]|$)/i.test(teks) ||
+    /penunjukan|penetapan[\s_.-]*(?:hari|majelis)/i.test(teks)
+  ) {
+    return "penetapan hari sidang, majelis, atau penunjukan (PHS/PMH/PPP/PJS)";
+  }
+  if (/rela{1,2}s(?![a-z])|panggilan|pemberitahuan/i.test(teks)) return "relaas";
+  if (/sampul/i.test(teks)) return "sampul berkas";
+  if (/akta/i.test(teks)) return "akta";
+  if (/petitum/i.test(teks)) return "petitum";
+  if (/laporan[\s_.-]*mediasi|kesepakatan[\s_.-]*(?:mediasi|perdamaian)|pernyataan[\s_.-]*(?:para[\s_.-]*)?(?:pihak|mediasi)/i.test(teks)) {
+    return "dokumen mediasi";
+  }
+  // e-Doc SIPP yang bukan putusan: PA.Buk_2020_Pdt.G_142_petitum, _bas_2, _penetapan_ikrar.
+  const edoc = /(?:^|[^A-Za-z])PA\.[A-Za-z]{2,5}_\d{4}_Pdt(?:\.[A-Za-z]{1,3}){1,2}_\d{1,5}_([A-Za-z][A-Za-z_]*)/.exec(teks);
+  if (edoc && !/^putusan/i.test(edoc[1])) return `e-Doc SIPP berjenis "${edoc[1].replace(/_+$/, "")}", bukan putusan`;
+  return "";
+}
+
+/**
+ * Memilah berkas putusan massal: yang dapat dikirim, yang ditandai beserta
+ * sebabnya, dan nomor yang punya lebih dari satu naskah (ganda = jumlahnya).
+ *
+ * Yang dibaca rute unggah-naskah hanya RTF dan TXT. PDF/DOC/DOCX dahulu
+ * diterima pemilih, dikirim utuh, lalu ditolak rutenya - 1.243 nama yang
+ * nomornya terbaca di folder unduhan petugas berbentuk itu (diukur 26
+ * September 2026). Sekarang ditandai sebelum dikirim.
+ */
+function pilahBerkasMassal(daftar, bacaNomor) {
+  const hasil = Array.from(daftar || []).map((berkas) => {
+    const nama = String((berkas && berkas.name) || "");
+    const nomor = bacaNomor(nama);
+    let tolak = "";
+    if (!/\.(rtf|txt)$/i.test(nama)) {
+      const akhiran = (/\.([A-Za-z0-9]{1,5})$/.exec(nama) || [])[1];
+      tolak = `${akhiran ? `.${akhiran.toLowerCase()}` : "berkas tanpa akhiran"} tidak dibaca unggah naskah - hanya RTF atau TXT`;
+    } else if (namaBerkasAnonim(nama)) {
+      tolak = "anonimisasi - yang dikirim naskah putusan aslinya";
+    } else {
+      tolak = tandaBukanNaskahPutusan(nama);
+    }
+    return { berkas, nama, nomor, tolak, ganda: 0 };
+  });
+  const perNomor = new Map();
+  for (const p of hasil) if (p.nomor && !p.tolak) perNomor.set(p.nomor, (perNomor.get(p.nomor) || 0) + 1);
+  for (const p of hasil) if (p.nomor && !p.tolak && perNomor.get(p.nomor) > 1) p.ganda = perNomor.get(p.nomor);
+  return hasil;
+}
+
 function bagianMassalBerkas(isi) {
   const kotak = buatElemen("div", "aleta-tetap-bagian");
   kotak.appendChild(buatElemen("div", "aleta-tetap-judul", "Putusan massal - dari berkas"));
@@ -12820,15 +13427,17 @@ function bagianMassalBerkas(isi) {
     buatElemen(
       "div",
       "aleta-tetap-sebab aleta-remeh",
-      "Pilih beberapa naskah putusan sekaligus. Nomor perkaranya dibaca dari NAMA berkas, " +
-        "diperlihatkan untuk diperiksa, lalu tiap naskah disimpan sebagai draf dan masuk antrean."
+      "Pilih beberapa naskah putusan RTF sekaligus. Nomor perkaranya dibaca dari NAMA berkas, " +
+        "diperlihatkan untuk diperiksa, lalu tiap naskah disimpan sebagai draf dan masuk antrean. " +
+        "Anonimisasi, BAS, PHS/PMH/PPP/PJS, relaas, sampul, dan akta ditandai dan tidak dikirim."
     )
   );
 
   const pemilih = document.createElement("input");
   pemilih.type = "file";
   pemilih.multiple = true;
-  pemilih.accept = ".rtf,.doc,.docx,.pdf";
+  // Selaras dengan rute unggah-naskah, yang hanya membaca RTF dan TXT.
+  pemilih.accept = ".rtf,.txt";
   pemilih.className = "aleta-berkas";
   kotak.appendChild(pemilih);
 
@@ -12843,54 +13452,76 @@ function bagianMassalBerkas(isi) {
   const kabar = buatElemen("div", "aleta-abt-kabar");
   kotak.appendChild(kabar);
 
-  /** Berkas beserta nomor perkara yang terbaca dari namanya. */
+  /** Berkas beserta nomor perkara yang terbaca dari namanya (pilahBerkasMassal). */
   let pasangan = [];
+  /** Nomor yang punya lebih dari satu naskah -> naskah yang DIPILIH petugas. */
+  const pilihanGanda = new Map();
 
   /**
-   * Nomor perkara dari nama berkas.
+   * Nomor perkara dari nama berkas (empat bentuk nyata - nomorDariNamaBerkas),
+   * lalu diperiksa sekali lagi dengan POLA_PERKARA, pola nomor perkara yang
+   * dipakai seluruh ekstensi: nomor susunan ulang yang tidak berbentuk nomor
+   * SIPP lebih baik dilewati daripada dikirim.
    *
    * POLA_PERKARA berbendera /g, dan RegExp berbendera g MENGINGAT posisinya di
    * antara pemanggilan. Tanpa menyetel lastIndex, berkas kedua dicari mulai
    * dari tempat berkas pertama berhenti - dan nomor yang ada tidak ketemu.
-   * Jebakan yang sama sudah tercatat di pemakaian POLA_PERKARA yang lain.
    */
   function nomorDariNama(nama) {
+    const nomor = nomorDariNamaBerkas(nama);
+    if (!nomor) return "";
     POLA_PERKARA.lastIndex = 0;
-    const cocok = POLA_PERKARA.exec(String(nama || ""));
-    return cocok ? cocok[1] : "";
+    const cocok = POLA_PERKARA.exec(nomor);
+    return cocok && cocok[1] === nomor ? nomor : "";
   }
+
+  const dikirim = (p) => Boolean(p.nomor) && !p.tolak && (!p.ganda || pilihanGanda.get(p.nomor) === p);
 
   function gambarDaftar() {
     daftar.textContent = "";
     let cocok = 0;
     for (const p of pasangan) {
-      const baris = buatElemen("div", "aleta-massal-baris");
+      const baris = buatElemen(p.ganda ? "label" : "div", "aleta-massal-baris");
+      // Lebih dari satu naskah untuk satu nomor: petugas yang memilih - bukan
+      // "yang terakhir menurut abjad", yang benar 2 dari 8 kali.
+      if (p.ganda) {
+        const pilih = document.createElement("input");
+        pilih.type = "radio";
+        pilih.name = `aleta-massal-ganda-${p.nomor}`;
+        pilih.checked = pilihanGanda.get(p.nomor) === p;
+        pilih.addEventListener("change", () => {
+          pilihanGanda.set(p.nomor, p);
+          gambarDaftar();
+        });
+        baris.appendChild(pilih);
+      }
       baris.appendChild(buatElemen("span", "aleta-massal-nomor", p.berkas.name));
-      const tanda = buatElemen(
-        "span",
-        "aleta-massal-keadaan",
-        p.nomor || "nomor perkara tidak terbaca dari namanya - dilewati"
-      );
-      tanda.classList.add(p.nomor ? "aleta-lencana-aman" : "aleta-lencana-mendesak");
+      const teks = !p.nomor
+        ? `${p.tolak ? `${p.tolak}; ` : ""}nomor perkara tidak terbaca dari namanya - dilewati`
+        : p.tolak
+          ? `${p.nomor} · ${p.tolak} - tidak dikirim`
+          : p.ganda && !dikirim(p)
+            ? `${p.nomor} · ${p.ganda} naskah untuk nomor ini - pilih satu`
+            : p.nomor;
+      const tanda = buatElemen("span", "aleta-massal-keadaan", teks);
+      tanda.classList.add(dikirim(p) ? "aleta-lencana-aman" : "aleta-lencana-mendesak");
       baris.appendChild(tanda);
       daftar.appendChild(baris);
-      if (p.nomor) cocok += 1;
+      if (dikirim(p)) cocok += 1;
     }
     tombol.disabled = cocok === 0;
     kabar.className = "aleta-abt-kabar";
-    kabar.textContent = `${pasangan.length} berkas dipilih; ${cocok} terbaca nomornya.`;
+    kabar.textContent = `${pasangan.length} berkas dipilih; ${cocok} akan dikirim.`;
   }
 
   pemilih.addEventListener("change", () => {
-    pasangan = Array.from(pemilih.files || []).map((berkas) => ({
-      berkas,
-      nomor: nomorDariNama(berkas.name),
-    }));
+    pilihanGanda.clear();
+    pasangan = pilahBerkasMassal(pemilih.files || [], nomorDariNama);
     gambarDaftar();
   });
 
   tombol.addEventListener("click", async () => {
-    const dikerjakan = pasangan.filter((p) => p.nomor);
+    const dikerjakan = pasangan.filter((p) => p.nomor).filter(dikirim);
     if (dikerjakan.length === 0) return;
     tombol.disabled = true;
     pemilih.disabled = true;

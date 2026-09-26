@@ -320,7 +320,9 @@ describe("dua cacat yang dilaporkan dari layar", () => {
     // kalimat bersamaan bunyi sebagai milik saksi 1.
     const isi = layanan();
     expect(isi).toContain("function sumberBerpasangan(");
-    expect(isi).toContain("sumberBerpasangan(ciri, b1, b2)");
+    // Argumen keempat (25 September 2026): daftar ciri yang berlaku untuk
+    // permintaan ini - dari pengaturan portal, atau CIRI_ALASAN.
+    expect(isi).toContain("sumberBerpasangan(ciri, b1, b2, daftarCiri.daftar)");
     expect(isi).not.toContain("b1.includes(kalimat) ? 1 : 2");
   });
 

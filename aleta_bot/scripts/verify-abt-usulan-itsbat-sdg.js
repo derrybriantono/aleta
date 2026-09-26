@@ -102,8 +102,17 @@ const sdg = A.susunKeteranganSaksiSdg({
 periksa("tersusun", sdg.ok === true);
 periksa("alasan dibaca dari posita", sdg.asalAlasan === "posita" && sdg.alasan.join("|") === "perselisihan terus-menerus|tidak memberi nafkah|mabuk", sdg.alasan.join("|"));
 periksa("jumlah baris sama dengan templat", sdg.saksi1.length === 5 && sdg.saksi2.length === 5);
-periksa("tidak ada jawaban yang identik kata demi kata", sdg.identik === 0, `identik ${sdg.identik}`);
-periksa("jawaban penyebab memuat alasan yang didalilkan saja", /tidak memberi nafkah/.test(sdg.saksi1[1].jawab) && /mabuk/.test(sdg.saksi2[1].jawab) && !/\.{3}/.test(sdg.saksi1[1].jawab));
+// Baris yang masih harus DIPILIH petugas (perluDiisi, mis. "(melihat/mendengar)")
+// belum berupa jawaban - ia sama pada kedua saksi sampai dipilih. Sejak ragam
+// Tahap 2 membuang pembuka tak-manusia, baris itu tidak lagi "dibedakan" oleh
+// pembuka yang dikarang. Jawaban yang SUDAH berbunyi tetap tidak boleh identik.
+const nomorPilihan = new Set(sdg.perluDiisi.map((x) => x.no));
+const identikTerisi = sdg.saksi1.filter(
+  (b, i) => !nomorPilihan.has(b.no) && sdg.saksi2[i] && b.jawab === sdg.saksi2[i].jawab && !/^(sudah|cukup|tidak ada)/i.test(b.jawab)
+).length;
+periksa("tidak ada jawaban terisi yang identik kata demi kata", identikTerisi === 0, `identik ${identikTerisi} (seluruhnya ${sdg.identik}, termasuk baris pilihan)`);
+// "tidak menafkahi" adalah frasa setara (abtKalimatBaku frasaSetara, dari korpus BAS petugas).
+periksa("jawaban penyebab memuat alasan yang didalilkan saja", /tidak (memberi nafkah|menafkahi)/.test(sdg.saksi1[1].jawab) && /mabuk/.test(sdg.saksi2[1].jawab) && !/\.{3}/.test(sdg.saksi1[1].jawab));
 periksa("kalimat penutup tidak diberi pembuka", sdg.saksi1[4].jawab === "Sudah cukup;" && sdg.saksi2[4].jawab === "Sudah cukup;");
 periksa("titik-titik templat ditandai perlu diisi", sdg.perluDiisi.length === 1 && sdg.perluDiisi[0].no === "12", JSON.stringify(sdg.perluDiisi));
 periksa("substansi lama pisah tetap 4 bulan pada keduanya", /4 bulan/.test(sdg.saksi1[2].jawab) && /4 bulan/.test(sdg.saksi2[2].jawab));

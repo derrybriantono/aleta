@@ -1,6 +1,23 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+/**
+ * CATATAN 25 SEPTEMBER 2026 - BENTUK TANGGAL YANG DIPAKU BERUBAH
+ *
+ * Butir 1 permintaan pengguna menyeragamkan tanggal layar e-Court menjadi
+ * DD-MM-YYYY beserta nama harinya (src/lib/tanggal-indonesia.ts). Delapan uji
+ * di berkas ini karena itu patah - bukan karena fungsinya rusak, melainkan
+ * karena bentuk yang dipakunya sudah bukan bentuk yang digambar.
+ *
+ * Yang diubah HANYA nilai yang dipaku. Tidak satu regex pun dilonggarkan: ^ dan
+ * kurungnya tetap di tempat yang sama, sebab justru ketatnya itulah yang
+ * membuat uji ini menangkap perubahan bentuk hari ini.
+ *
+ * Judul bulan kalender ("September 2026", "Agustus 2026") TETAP berhuruf dan
+ * tidak boleh diubah - itu judul bulan, bukan tanggal, dan tidak ada nama hari
+ * yang masuk akal padanya.
+ */
+
 import {
   KalenderPerkara,
   RelaasPanggilan,
@@ -375,7 +392,7 @@ describe("kalender perkara digambar", () => {
     // Rentangnya memuat rencana Court Calendar yang harinya belum tiba -
     // 1 Desember 2026. Menghentikannya pada peristiwa yang sudah terjadi
     // menyembunyikan bahwa perkara ini masih punya agenda di depan.
-    expect(screen.getByText(/Perkara ini berjalan 1 Juli 2026 – 1 Desember 2026/)).toBeTruthy();
+    expect(screen.getByText(/Perkara ini berjalan Rabu, 01-07-2026 – Selasa, 01-12-2026/)).toBeTruthy();
   });
 
   it("keterangan warna hanya memuat jenis yang ada pada bulan itu", () => {
@@ -389,12 +406,12 @@ describe("kalender perkara digambar", () => {
 
   it("menekan tanggal membuka peristiwanya; menekannya lagi menutupnya", () => {
     render(<KalenderPerkara status={status()} />);
-    const tombol = screen.getByLabelText(/^9 September 2026:/);
+    const tombol = screen.getByLabelText(/^Rabu, 09-09-2026:/);
     fireEvent.click(tombol);
-    expect(screen.getByText(/Rab, 9 September 2026/)).toBeTruthy();
+    expect(screen.getByText(/Rabu, 09-09-2026/)).toBeTruthy();
     expect(screen.getByText("Pembacaan Putusan")).toBeTruthy();
     fireEvent.click(tombol);
-    expect(screen.queryByText(/Rab, 9 September 2026/)).toBeNull();
+    expect(screen.queryByText(/Rabu, 09-09-2026/)).toBeNull();
   });
 
   it("membuka perkara lain di komponen yang sama menyetel ulang bulan dan pilihannya", () => {
@@ -404,8 +421,16 @@ describe("kalender perkara digambar", () => {
     const { rerender } = render(<KalenderPerkara status={status()} />);
     fireEvent.click(screen.getByLabelText("Bulan sebelumnya"));
     expect(screen.getByText("Agustus 2026")).toBeTruthy();
-    fireEvent.click(screen.getByLabelText(/^5 Agustus 2026:/));
-    expect(screen.getByText(/Rab, 5 Agustus 2026/)).toBeTruthy();
+    fireEvent.click(screen.getByLabelText(/^Rabu, 05-08-2026:/));
+    // Kepala panelnya ditunjuk menurut JENIS ELEMENNYA, bukan dengan pola yang
+    // dilonggarkan. Sejak bentuk tanggalnya seragam, kepala panel hari terpilih
+    // dan satu baris peristiwa di dalamnya memuat teks yang sama persis - dua
+    // elemen, satu tulisan - dan itu memang akibat yang dikehendaki butir 1.
+    // Yang dimaksud uji ini kepalanya, dan kepalanya satu-satunya <p>.
+    const kepalaHari = screen
+      .getAllByText("Rabu, 05-08-2026")
+      .filter((e) => e.tagName === "P");
+    expect(kepalaHari, "kepala panel hari terpilih tidak tergambar").toHaveLength(1);
 
     const lain = status({
       identitas: { ...status().identitas, nomorPerkara: "124/Pdt.G/2026/PA.Dgl" },
@@ -414,12 +439,21 @@ describe("kalender perkara digambar", () => {
     // Bulan awal perkara yang baru - bukan Agustus yang tadi dibuka.
     expect(screen.getByText("September 2026")).toBeTruthy();
     expect(screen.queryByText("Agustus 2026")).toBeNull();
-    expect(screen.queryByText(/Rab, 5 Agustus 2026/)).toBeNull();
+    // Yang harus lenyap KEPALA PANEL hari terpilih, bukan setiap kemunculan
+    // tanggal itu di layar: bagian Court Calendar SIPP di bawahnya juga
+    // menuliskannya (satu <span> per baris rencana) dan ia memang TIDAK disetel
+    // ulang - ia mendaftar rencana perkaranya, bukan pilihan penggunanya.
+    // Sebelum bentuk tanggalnya seragam, kedua tempat itu menuliskannya dengan
+    // bentuk yang berbeda sehingga pola apa pun hanya menjaring satu; sekarang
+    // keduanya sama, dan itu justru yang diminta butir 1.
+    expect(
+      screen.queryAllByText("Rabu, 05-08-2026").filter((e) => e.tagName === "P")
+    ).toHaveLength(0);
   });
 
   it("tanggal tanpa peristiwa tidak membuka apa pun", () => {
     render(<KalenderPerkara status={status()} />);
-    fireEvent.click(screen.getByLabelText(/^2 September 2026: tanpa peristiwa/));
+    fireEvent.click(screen.getByLabelText(/^Rabu, 02-09-2026: tanpa peristiwa/));
     expect(screen.getByText(/Tekan satu tanggal untuk membaca peristiwanya/)).toBeTruthy();
   });
 
@@ -509,9 +543,9 @@ describe("relaas panggilan digambar runut per sidang", () => {
     const kepala = screen.getAllByText(/^Sidang ke-\d+ ·/).map((x) => x.textContent ?? "");
     expect(kepala).toHaveLength(2);
     expect(kepala[0]).toContain("Sidang ke-1");
-    expect(kepala[0]).toContain("5 Agustus 2026");
+    expect(kepala[0]).toContain("Rabu, 05-08-2026");
     expect(kepala[1]).toContain("Sidang ke-2");
-    expect(kepala[1]).toContain("9 September 2026");
+    expect(kepala[1]).toContain("Rabu, 09-09-2026");
   });
 
   it("relaas masuk ke kelompok sidangnya sendiri, bukan sekadar berkelompok", () => {
@@ -533,7 +567,7 @@ describe("relaas panggilan digambar runut per sidang", () => {
 
   it("jejak pos, retur, dan hasil relaas ikut tergambar", () => {
     render(<RelaasPanggilan status={status()} />);
-    expect(screen.getByText(/dikirim pos 2026-07-25 · resi RESI-77/)).toBeTruthy();
+    expect(screen.getByText(/dikirim pos Sab, 25-07-2026 · resi RESI-77/)).toBeTruthy();
     expect(screen.getByText("surat RETUR")).toBeTruthy();
     expect(screen.getByText("Disampaikan lewat Kepala Desa")).toBeTruthy();
     expect(screen.getByText("bertemu orangnya")).toBeTruthy();
@@ -607,7 +641,7 @@ describe("relaas panggilan digambar runut per sidang", () => {
     expect(screen.queryByText(/^dipakai /)).toBeNull();
     expect(screen.getByText("1 saluran belum pasti")).toBeTruthy();
     // Sidang yang dinilai disebut tanggalnya.
-    expect(screen.getByText(/\(9 September 2026\), menurut/)).toBeTruthy();
+    expect(screen.getByText(/\(Rabu, 09-09-2026\), menurut/)).toBeTruthy();
   });
 
   it("bot lama tanpa ruas saluran: tidak ada lencana atau catatan tambahan", () => {
@@ -659,8 +693,8 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
         }}
       />
     );
-    expect(screen.getByText(/^Sidang · .*1 Oktober 2026/)).toBeTruthy();
-    expect(screen.queryByText(/^Sidang ke-\d+ · .*1 Oktober 2026/)).toBeNull();
+    expect(screen.getByText(/^Sidang · .*Kamis, 01-10-2026/)).toBeTruthy();
+    expect(screen.queryByText(/^Sidang ke-\d+ · .*Kamis, 01-10-2026/)).toBeNull();
   });
 
   it("dua sidang pada hari yang sama: kedua nomornya disebut, bukan ditebak salah satunya", () => {

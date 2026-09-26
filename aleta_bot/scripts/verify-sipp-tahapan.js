@@ -686,6 +686,156 @@ async function utama() {
   cek("minutasi hari ke-3 bernilai 3", poinMinutasi(3), 3);
 
   // -------------------------------------------------------------------------
+  console.log("Penciri ghaib bersama - satu definisi untuk dua layar");
+  // -------------------------------------------------------------------------
+  //
+  // Sampai 24 September 2026 Antrian Sidang memakai penciri SK saja (jarak PHS
+  // ke sidang pertama >= 120 hari) sedangkan Status Perkara memakai empat
+  // sumber, sehingga dua layar ALETA menyatakan keadaan yang BERBEDA untuk
+  // perkara yang sama - terukur pada 65, 76, dan 158/Pdt.G/2025. Sejak
+  // kelonggaran 120 hari dipotong juga di Antrian, selisih itu bukan lagi
+  // sekadar penanda melainkan angka hari yang tercetak, jadi penciri yang
+  // dipakai keduanya diuji di sini.
+  {
+    const kolomGhaib = {
+      perkara: ["perkara_id", "nomor_perkara", "tanggal_pendaftaran"],
+      perkara_penetapan: ["id", "perkara_id", "penetapan_hari_sidang", "sidang_pertama"],
+      perkara_pihak1: ["perkara_id", "pihak_id"],
+      perkara_pihak2: ["perkara_id", "pihak_id", "ghaib"],
+      pihak: ["id", "nama", "alamat", "keterangan", "pekerjaan"],
+    };
+
+    // Penanda pihak menang walau jarak PHS-nya 119 hari - sehari di bawah
+    // ambang SK. Inilah 158/Pdt.G/2025.
+    const dbPenanda = muatDengan(
+      buatDbTiruan({
+        kolom: kolomGhaib,
+        baris: {
+          "FROM perkara_pihak2 k": [{ perkaraId: 8540 }],
+          "FROM perkara_penetapan pp": [
+            { perkaraId: 8540, tanggalPhs: "2026-01-05", sidangPertama: "2026-05-04" },
+          ],
+        },
+      })
+    );
+    dbPenanda.skema.lupakan();
+    const petaPenanda = await dbPenanda.tahapan.penandaGhaibBanyakPerkara([8540]);
+    cek("penanda pihak: ghaib walau jarak PHS 119 hari", Boolean(petaPenanda["8540"]), true);
+    cek(
+      "penanda pihak: sumbernya disebut",
+      petaPenanda["8540"].sumber,
+      ["penanda ghaib pada pihak tergugat/termohon"]
+    );
+    cek("penanda pihak: jarak PHS tidak diisi", petaPenanda["8540"].jarakPhsHari, null);
+
+    // Penciri SK murni - jarak 125 hari, tanpa penanda apa pun.
+    const dbJarak = muatDengan(
+      buatDbTiruan({
+        kolom: kolomGhaib,
+        baris: {
+          "FROM perkara_penetapan pp": [
+            { perkaraId: 8699, tanggalPhs: "2026-01-05", sidangPertama: "2026-05-10" },
+            // Jarak 119 hari: BUKAN ghaib. Ambangnya ">=", bukan ">".
+            { perkaraId: 8700, tanggalPhs: "2026-01-05", sidangPertama: "2026-05-04" },
+          ],
+        },
+      })
+    );
+    dbJarak.skema.lupakan();
+    const petaJarak = await dbJarak.tahapan.penandaGhaibBanyakPerkara([8699, 8700]);
+    cek("jarak PHS 125 hari: ghaib, jaraknya ikut dipulangkan", petaJarak["8699"].jarakPhsHari, 125);
+    cek("jarak PHS 119 hari: tidak punya kunci sama sekali", petaJarak["8700"], undefined);
+
+    // Kata ghaib pada alamat pihak - sumber yang sudah dipakai Status Perkara
+    // hari ini. Ia TEKS BEBAS, jadi penciri terluas dari keempatnya: diukur
+    // 65 perkara di sipp_donggala, terhadap 61 dari penciri SK.
+    const dbKata = muatDengan(
+      buatDbTiruan({
+        kolom: kolomGhaib,
+        baris: { "JOIN pihak p ON p.id = k.pihak_id": [{ perkaraId: 8552 }] },
+      })
+    );
+    dbKata.skema.lupakan();
+    const petaKata = await dbKata.tahapan.penandaGhaibBanyakPerkara([8552]);
+    cek("kata ghaib pada pihak: ghaib", petaKata["8552"].sumber, [
+      "kata ghaib pada keterangan pihak",
+    ]);
+
+    // Pemanggil yang SUDAH membaca kedua tanggalnya tidak membayar kueri
+    // kedua - dan jawabannya persis sama.
+    const tiruanPeta = buatDbTiruan({ kolom: kolomGhaib });
+    const dbPeta = muatDengan(tiruanPeta);
+    dbPeta.skema.lupakan();
+    const petaTanggal = await dbPeta.tahapan.penandaGhaibBanyakPerkara([3], {
+      tanggal: { 3: { tanggalPhs: "2026-01-05", sidangPertama: "2026-05-10" } },
+    });
+    cek("peta tanggal pemanggil: jarak 125 hari terbaca", petaTanggal["3"].jarakPhsHari, 125);
+    cek(
+      "peta tanggal pemanggil: kueri penetapan TIDAK dijalankan",
+      tiruanPeta.direkam.some((x) => String(x.sql).includes("FROM perkara_penetapan pp")),
+      false
+    );
+
+    // GAGAL-TERTUTUP. Kueri yang gagal berarti TIDAK ghaib, berarti TANPA
+    // kelonggaran. Arahnya disengaja: gagal ke arah kelonggaran berarti
+    // menghijaukan perkara yang sudah lewat lima bulan justru ketika basis
+    // datanya sedang bermasalah.
+    const dbRusak = muatDengan({
+      query(sql, params, callback) {
+        if (/information_schema/i.test(sql)) {
+          const hasil = [];
+          for (const [tabel, daftar] of Object.entries(kolomGhaib)) {
+            for (const nama of daftar) hasil.push({ tabel, kolom: nama });
+          }
+          return callback(null, hasil);
+        }
+        return callback(new Error("SIPP tidak terbaca"), null);
+      },
+    });
+    dbRusak.skema.lupakan();
+    const petaRusak = await dbRusak.tahapan.penandaGhaibBanyakPerkara([8540]);
+    cek("seluruh kueri gagal: TIDAK ghaib, bukan ghaib diam-diam", petaRusak, {});
+
+    // penandaPerkara meminjam penciri yang sama - jawabannya tidak berubah
+    // oleh penyatuan ini.
+    const dbSatu = muatDengan(
+      buatDbTiruan({
+        kolom: kolomGhaib,
+        baris: { "FROM perkara_pihak2 k": [{ perkaraId: 4211 }] },
+      })
+    );
+    dbSatu.skema.lupakan();
+    const penanda = await dbSatu.tahapan.penandaPerkara(4211, {
+      tanggalPhs: "2026-01-05",
+      sidangPertama: "2026-05-04",
+    });
+    cek("penandaPerkara tetap menjawab ghaib lewat penciri bersama", penanda.ghaib, true);
+    cek("penandaPerkara tetap menyebut sumbernya", penanda.sumberGhaib, [
+      "penanda ghaib pada pihak tergugat/termohon",
+    ]);
+
+    // Batas 500 perkara tiap muatan layar - Antrian Sidang mengirim sebanyak
+    // itu, dan kueri IN yang tak berbatas pernah menjatuhkan koneksi.
+    const tiruanBanyak = buatDbTiruan({ kolom: kolomGhaib });
+    const dbBanyak = muatDengan(tiruanBanyak);
+    dbBanyak.skema.lupakan();
+    // 600 perkara, dua di antaranya kembar dan satu tidak sah - yang dipakai
+    // 500 perkara_id yang berbeda.
+    const banyak = Array.from({ length: 600 }, (_, i) => i + 1).concat([1, 2, 0, -5]);
+    await dbBanyak.tahapan.penandaGhaibBanyakPerkara(banyak);
+    const kueriPenetapan = tiruanBanyak.direkam.filter((x) =>
+      String(x.sql).includes("FROM perkara_penetapan pp")
+    );
+    cek("daftar 600 perkara: satu kueri penetapan, bukan enam ratus", kueriPenetapan.length, 1);
+    cek("daftar 600 perkara: dijepit 500 isian", kueriPenetapan[0].params.length, 500);
+    cek(
+      "daftar kosong dijawab peta kosong tanpa kueri",
+      await dbBanyak.tahapan.penandaGhaibBanyakPerkara([]),
+      {}
+    );
+  }
+
+  // -------------------------------------------------------------------------
   console.log("Nilai relaas - empat jalan, dicoba berurutan");
   // -------------------------------------------------------------------------
 

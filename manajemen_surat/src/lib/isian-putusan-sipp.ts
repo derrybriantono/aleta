@@ -28,8 +28,13 @@ import { pecahNaskahPutusan } from "@/lib/susunan-putusan";
  * dan berkas ini hanya menyebut NAMANYA. Menghafal nomornya di sini berarti
  * menebak apa yang sudah diketahui halamannya.
  *
- * Tombol Simpan tidak pernah ditekan. Yang disusun di sini usulan isian;
- * yang menandatangani putusan tetap manusia.
+ * Berkas ini sendiri tidak menekan apa pun - ia hanya menyusun usulan isian.
+ * Tetapi yang MEMAKAINYA menekan: Putusan otomatis di ekstensi (konten.js,
+ * bagianIsiPutusan) menekan tombol Simpan SIPP sendiri sesudah semua isian
+ * yang dicentang terisi dan praperiksa tidak menahan, dan antrean putusan
+ * massal menekannya untuk tiap perkara yang tidak ditahan praperiksa. Catatan
+ * yang dipulangkan di bawah mengatakan itu apa adanya - catatan lama yang
+ * berbunyi "Simpan tidak ditekan ALETA" keliru sejak Simpan otomatis dibuka.
  */
 
 export type PihakPerkara = {
@@ -100,7 +105,136 @@ function lolos(teks: string): string {
 }
 
 /**
- * Mengganti nama para pihak dengan sebutan acaranya.
+ * ============================================================================
+ * BENTUK SAMARAN - DIUKUR DARI AMAR ANONIM SATKER, BUKAN DIKARANG
+ * ============================================================================
+ *
+ * Diukur atas 462 amar anonim 2025-2026 yang disimpan petugas PA Donggala di
+ * perkara_putusan_anonim:
+ *
+ *   isi kurung sesudah sebutan   "( xxx )" - x kecil - 324 dari 621 kurung;
+ *                                sebutannya sendiri "( Tergugat )" 134;
+ *                                "( XXX )" 28; sisanya 135 nama atau
+ *                                keterangan yang memang tidak disamarkan.
+ *                                (Dihitung ulang 26 Sep 2026 dengan pola
+ *                                POLA_KURUNG_SESUDAH_SEBUTAN di bawah.)
+ *   nama di luar kurung          "xxx" tanpa kurung ("bernama xxx" 19 kali);
+ *                                "( xxx )" di luar kurung tidak pernah.
+ *
+ * Panjang deret x pada kurung berbeda-beda (3 x paling sering: 112 kali), dan
+ * tidak ada aturan yang dapat dibaca darinya - jadi yang dipakai tiga.
+ */
+export const SAMARAN_KURUNG = "( xxx )";
+export const SAMARAN_NAMA = "xxx";
+
+/** Sebutan pihak diikuti kurung: "Tergugat ( Moh. Alwi bin Wahidin )". */
+const POLA_KURUNG_SESUDAH_SEBUTAN =
+  /\b((?:para\s+)?(?:Penggugat|Tergugat|Pemohon|Termohon)(?:\s+(?:Konvensi|Rekonvensi|I{1,3}|IV))?)\s*\(\s*([^()]{1,160}?)\s*\)/gi;
+
+/** Isi kurung yang memang NAMA - bukan sebutan, nomor, atau keterangan. */
+function isiKurungBerupaNama(isi: string): boolean {
+  const teks = bersih(isi);
+  if (!teks) return false;
+  if (/^x+$/i.test(teks.replace(/\s+/g, ""))) return false;
+  if (/\d/.test(teks)) return false;
+  if (/^(?:para\s+)?(?:pihak|penggugat|tergugat|pemohon|termohon|kuasa|turut)\b/i.test(teks)) return false;
+  if (/\b(?:selanjutnya|disebut|dahulu|semula|sekarang)\b/i.test(teks)) return false;
+  return /[A-Z]/.test(teks);
+}
+
+/** Satu kata nama: berawal huruf besar, boleh bertitik atau berapostrof. */
+const KATA_NAMA = String.raw`[A-Z][A-Za-z'’\`.\-]*`;
+const POLA_BIN_BINTI = new RegExp(
+  String.raw`((?:${KATA_NAMA}\s+){0,2}${KATA_NAMA})\s+(bin|binti|Bin|Binti|BIN|BINTI)\s+(${KATA_NAMA}(?:\s+${KATA_NAMA}){0,2}(?:\s+alias\s+${KATA_NAMA}(?:\s+${KATA_NAMA}){0,2})?)`,
+  "g"
+);
+
+/**
+ * Kata berhuruf besar yang BUKAN bagian nama: kata kerja amar, sebutan, dan
+ * keterangan tempat. Dibuang dari tepi nama sebelum disamarkan.
+ */
+const BUKAN_NAMA = new Set([
+  "menetapkan", "menyatakan", "menghukum", "memberi", "memberikan", "mengabulkan", "membebankan",
+  "memerintahkan", "menjatuhkan", "mengizinkan", "menolak", "mengadili", "penggugat", "tergugat",
+  "pemohon", "termohon", "para", "anak", "almarhum", "almarhumah", "alm", "alm.", "ahli", "waris",
+  "saudara", "sdr", "sdr.", "bapak", "ibu", "nama", "bernama", "kepada", "dari", "dengan", "dan",
+  "terhadap", "antara", "hak", "asuh", "laki-laki", "perempuan", "umur", "lahir", "tanggal", "desa",
+  "kelurahan", "kecamatan", "kabupaten", "kota", "provinsi", "sulawesi", "tengah", "donggala",
+  "pengadilan", "agama", "kantor", "urusan", "kua", "nomor", "pasal", "rp", "konvensi", "rekonvensi",
+  "i", "ii", "iii", "iv", "dalam", "pokok", "perkara", "eksepsi",
+]);
+const SEBUTAN_ACARA = /^(?:penggugat|tergugat|pemohon|termohon)$/i;
+/** Angka Romawi yang dipakai sebagai akhiran sebutan ("Pemohon II"), huruf besar persis. */
+const ROMAWI = /^(?:I|II|III|IV)$/;
+
+/**
+ * Menyamarkan "Nama bin/binti Nama" yang tersisa sesudah nama pihak diganti.
+ *
+ * Nama di depan bin/binti yang sudah berupa sebutan ("Pemohon bin BAHRI" -
+ * pihak yang namanya di SIPP ditulis tanpa bin) cukup dibuang bin-nya: orang
+ * itu sudah tersamar oleh sebutannya. Selebihnya - nama anak, almarhum, ahli
+ * waris - diganti SAMARAN_NAMA.
+ */
+function samarkanBinBinti(teks: string, diganti: Array<{ nama: string; menjadi: string }>): string {
+  return teks.replace(POLA_BIN_BINTI, (cocok: string, depan: string, bin: string, belakang: string) => {
+    const kataDepan = depan.split(/\s+/);
+    // Kata bukan-nama di tepi kiri tetap tertulis.
+    let awalNama = 0;
+    while (awalNama < kataDepan.length && BUKAN_NAMA.has(kataDepan[awalNama].toLowerCase())) awalNama += 1;
+    const tetapDepan = kataDepan.slice(0, awalNama);
+    const namaDepan = kataDepan.slice(awalNama);
+    // Nama sesudah bin berhenti pada kata bukan-nama pertama.
+    //
+    // Angka Romawi dikecualikan di sini: sesudah bin/binti ia bukan akhiran
+    // sebutan ("Pemohon I") melainkan awal nama Bali - "binti I Ketut ...".
+    // Tanpa pengecualian ini, "Komang ... binti I Ketut ... alias I KT ..."
+    // lolos utuh ke amar anonim (terukur pada satu amar 2026).
+    const kataBelakang = belakang.split(/\s+/);
+    let akhirNama = 0;
+    while (
+      akhirNama < kataBelakang.length &&
+      (ROMAWI.test(kataBelakang[akhirNama]) || !BUKAN_NAMA.has(kataBelakang[akhirNama].toLowerCase()))
+    ) {
+      akhirNama += 1;
+    }
+    // "Zea binti Pemohon": ayahnya pihak yang sudah tersamar, tetapi nama
+    // anaknya tidak - seluruh sebutan anak itu yang disamarkan, beserta
+    // akhiran Romawinya ("binti Pemohon II").
+    if (akhirNama === 0 && SEBUTAN_ACARA.test(kataBelakang[0]) && namaDepan.length > 0) {
+      akhirNama = kataBelakang.length > 1 && ROMAWI.test(kataBelakang[1]) ? 2 : 1;
+    }
+    if (akhirNama === 0) return cocok;
+    const sisaBelakang = kataBelakang.slice(akhirNama).join(" ");
+    const namaBelakang = kataBelakang.slice(0, akhirNama).join(" ");
+    const ekor = sisaBelakang ? ` ${sisaBelakang}` : "";
+
+    const sebutanDiDepan = tetapDepan.length > 0 && SEBUTAN_ACARA.test(tetapDepan[tetapDepan.length - 1]);
+    if (namaDepan.length === 0 && sebutanDiDepan) {
+      diganti.push({ nama: `${bin} ${namaBelakang}`, menjadi: "(dibuang)" });
+      return `${tetapDepan.join(" ")}${ekor}`;
+    }
+    if (namaDepan.length === 0) return cocok;
+    const nama = `${namaDepan.join(" ")} ${bin} ${namaBelakang}`;
+    diganti.push({ nama, menjadi: SAMARAN_NAMA });
+    return `${tetapDepan.length ? `${tetapDepan.join(" ")} ` : ""}${SAMARAN_NAMA}${ekor}`;
+  });
+}
+
+/**
+ * Mengganti nama para pihak dengan sebutan acaranya, lalu menyamarkan nama
+ * yang tersisa dalam bentuk yang dipakai satker.
+ *
+ * ============================================================================
+ * TIGA LANGKAH, URUTANNYA MENENTUKAN
+ * ============================================================================
+ *
+ *   1. Isi kurung sesudah sebutan menjadi "( xxx )" - dikerjakan PERTAMA,
+ *      atas nama aslinya. Dikerjakan sesudah nama pihak diganti, isinya
+ *      menjadi "Tergugat ( Tergugat )" atau - bila nama di SIPP ditulis tanpa
+ *      bin - "Pemohon ( Pemohon bin BAHRI )": 6 dari 105 amar anonim 2026
+ *      membocorkan nama ayah persis begitu.
+ *   2. Nama pihak yang diketahui dari SIPP diganti sebutan acaranya.
+ *   3. "Nama bin/binti Nama" yang masih tersisa disamarkan.
  *
  * ============================================================================
  * YANG PANJANG LEBIH DULU
@@ -115,11 +249,11 @@ function lolos(teks: string): string {
  * INI BUKAN JAMINAN
  * ============================================================================
  *
- * Yang diganti hanya nama yang DIKETAHUI dari SIPP. Nama saksi, nama anak,
- * alamat, dan nomor identitas yang kebetulan tertulis di dalam amar tidak
- * ikut tersamar. Karena itu hasilnya selalu disertai catatan, dan petugas
- * tetap membacanya sebelum menekan Simpan. Menyebutnya "sudah anonim" tanpa
- * dibaca manusia adalah cara paling rapi untuk menerbitkan nama orang.
+ * Nama tanpa bin/binti di luar kurung - nama anak sesudah "bernama", nama
+ * saksi - alamat, dan nomor identitas tidak ikut tersamar. Karena itu hasilnya
+ * selalu disertai catatan, dan petugas tetap membacanya. Menyebutnya "sudah
+ * anonim" tanpa dibaca manusia adalah cara paling rapi untuk menerbitkan nama
+ * orang.
  */
 export function anonimkanAmar(
   amar: string,
@@ -134,9 +268,16 @@ export function anonimkanAmar(
     .filter((satu) => satu.nama.length >= 3)
     .sort((a, b) => b.nama.length - a.nama.length);
 
-  let hasil = teks;
   const diganti: Array<{ nama: string; menjadi: string }> = [];
 
+  // 1. Isi kurung sesudah sebutan.
+  let hasil = teks.replace(POLA_KURUNG_SESUDAH_SEBUTAN, (cocok: string, sebutan: string, isi: string) => {
+    if (!isiKurungBerupaNama(isi)) return cocok;
+    diganti.push({ nama: bersih(isi), menjadi: SAMARAN_KURUNG });
+    return `${sebutan} ${SAMARAN_KURUNG}`;
+  });
+
+  // 2. Nama pihak yang diketahui dari SIPP.
   for (const satu of daftar) {
     const menjadi = sebutanPihak(satu.pihakKe, jenisPerkara, satu.jenis);
     // Batas kata di kedua ujung: tanpa itu, nama yang kebetulan menjadi
@@ -147,6 +288,9 @@ export function anonimkanAmar(
     hasil = hasil.replace(pola, (_cocok, depan) => `${depan}${menjadi}`);
     diganti.push({ nama: satu.nama, menjadi });
   }
+
+  // 3. "Nama bin/binti Nama" yang tersisa.
+  hasil = samarkanBinBinti(hasil, diganti);
 
   return { teks: hasil, diganti };
 }
@@ -241,17 +385,28 @@ export function susunIsianPutusanSipp(masukan: {
     );
   }
 
+  const namaPihak = diganti.filter((x) => x.menjadi !== SAMARAN_KURUNG && x.menjadi !== SAMARAN_NAMA && x.menjadi !== "(dibuang)");
+  const samaran = diganti.length - namaPihak.length;
   if (amar && diganti.length === 0) {
     catatan.push(
       "Tidak satu pun nama pihak ditemukan di dalam amar, jadi amar anonim sama dengan amarnya. Periksa sendiri sebelum menyimpan."
     );
   } else if (diganti.length > 0) {
     catatan.push(
-      `Amar anonim disusun dengan mengganti ${diganti.length} nama pihak menjadi sebutan acaranya. Nama saksi, nama anak, alamat, dan nomor identitas TIDAK ikut tersamar - bacalah sebelum menyimpan.`
+      `Amar anonim disusun dengan mengganti ${namaPihak.length} nama pihak menjadi sebutan acaranya` +
+        (samaran > 0
+          ? ` dan menyamarkan ${samaran} nama lain (isi kurung sesudah sebutan menjadi "${SAMARAN_KURUNG}", nama ber-bin/binti menjadi "${SAMARAN_NAMA}" - bentuk yang paling sering dipakai petugas satker)`
+          : "") +
+        ". Nama tanpa bin/binti di luar kurung - nama saksi, nama anak sesudah \"bernama\" - alamat, dan nomor identitas TIDAK ikut tersamar - bacalah sebelum menyimpan."
     );
   }
 
-  catatan.push("Tombol Simpan di SIPP tidak ditekan ALETA. Periksa seluruh isian, lalu simpan sendiri.");
+  // Jujur tentang Simpan: yang memakai isian ini MENEKAN Simpan sendiri.
+  catatan.push(
+    "Putusan otomatis MENEKAN tombol Simpan SIPP sendiri bila semua isian yang dicentang terisi dan praperiksa tidak menahan; " +
+      "antrean putusan massal menekannya untuk tiap perkara yang tidak ditahan praperiksa. " +
+      "Bila praperiksa menahan dan Anda memilih tetap mengisi, Simpan tidak ditekan ALETA. Periksa seluruh isian sebelum menekan Isikan."
+  );
 
   return {
     // Pertimbangan hukum adalah rangkaian alinea "Menimbang, bahwa ..." yang

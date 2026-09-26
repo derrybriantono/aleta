@@ -54,7 +54,18 @@ export async function GET(request: NextRequest) {
     const jawabanTersimpan: Record<number, string> = {};
     for (const baris of tersimpan?.baris ?? []) jawabanTersimpan[baris.urutan] = baris.jawaban;
 
-    const lembar = await susunLembarTanyaJawab({ perkaraId, kode, nomorPerkara, jawabanTersimpan });
+    // saksiKe dan kumpulan ikut: jawaban contoh diragamkan PER SAKSI, dan
+    // pihak saksinya (Penggugat/Tergugat) dibaca dari kumpulan pertanyaannya.
+    const namaKumpulan = String(getSearchParam(request, "namaKumpulan") ?? "").trim();
+    const lembar = await susunLembarTanyaJawab({
+      perkaraId,
+      kode,
+      nomorPerkara,
+      jawabanTersimpan,
+      saksiKe,
+      namaKumpulan: namaKumpulan || tersimpan?.namaKumpulan || "",
+      db,
+    });
 
     // Keterangan yang SUDAH terekam di ABT untuk saksi ini, sebagai rujukan.
     //

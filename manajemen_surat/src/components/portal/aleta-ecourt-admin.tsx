@@ -30,6 +30,7 @@ import { AletaEcourtPanggilanPengaturan } from "@/components/portal/aleta-ecourt
 import { AletaEcourtPenarikan } from "@/components/portal/aleta-ecourt-penarikan";
 import { AletaEcourtSkMajelis } from "@/components/portal/aleta-ecourt-sk-majelis";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
+import { AletaEcourtTipeKeluaran } from "@/components/portal/aleta-ecourt-tipe-keluaran";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -342,6 +343,9 @@ export function AletaEcourtAdmin() {
             dibaca tanpa mengetahui kewenangan perannya tidak punya arti -
             "boleh" hanya bermakna sebagai selisih terhadap sesuatu. */}
         <AletaEcourtAksesPengguna />
+        {/* Sesudah kewenangan: siapa memakai ekstensi dibaca lebih dulu,
+            baru kalimat dan penunjuk yang dikeluarkannya. */}
+        <AletaEcourtTipeKeluaran />
       </div>
 
       <AletaBotEcourtPengaturan />

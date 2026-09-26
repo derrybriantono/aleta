@@ -198,10 +198,15 @@ describe("lembar menjadi penanda blangko", () => {
   });
 
   it("saksi ketiga tidak menumpang tempat milik saksi lain", async () => {
-    // Blangko hanya menyediakan dua tempat. Menaruh saksi ketiga di salah
-    // satunya akan menghasilkan BAS yang menyebut keterangan orang yang keliru.
+    // Diubah t3-bas-portal-ragam (26 September 2026): premis lama "blangko
+    // hanya menyediakan dua tempat" ternyata keliru - abt_variabel punya
+    // #6132#-#6137# dan #5060#/#6122# untuk saksi ketiga, dan blangko
+    // "(3 Saksi)" memakainya. Yang tetap dijaga: saksi ketiga TIDAK menumpang
+    // tempat saksi pertama/kedua, dan saksi tanpa tempat tidak mengisi apa pun.
     const peta = penandaDariLembar([lembarUji(3, "Orang Ketiga")]);
-    expect(peta.size).toBe(0);
+    expect(peta.get("6132")?.nilai).toBe("Orang Ketiga");
+    for (const milikLain of ["1197", "1203", "5058", "5059"]) expect(peta.has(milikLain)).toBe(false);
+    expect(penandaDariLembar([lembarUji(5, "Orang Kelima")]).size).toBe(0);
   });
 
   it("lembar tanpa jawaban tidak mengisi penanda tanya-jawab", async () => {

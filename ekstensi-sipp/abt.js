@@ -61,6 +61,34 @@ const VARIABEL_SASARAN = [
   "0156",
 ];
 
+/**
+ * ============================================================================
+ * TOMBOL "INPUT KE ABT" HANYA PADA BLANGKO YANG MEMUAT VARIABEL CERAI
+ * ============================================================================
+ *
+ * Tombol itu menurunkan tujuh variabel dari keterangan saksi, dan ketujuhnya
+ * variabel blangko cerai: sejak kapan tidak rukun (0222), sejak kapan pisah
+ * (0246), lama pisah (9944), yang meninggalkan (7035), upaya damai (1268),
+ * alasan (5227), dan huruf alasan (8503).
+ *
+ * Dahulu ia tergambar di SETIAP blangko - termasuk dispensasi kawin dan itsbat
+ * nikah, yang tidak memuat satu pun dari ketujuhnya. Menekannya di sana
+ * menarik keterangan saksi ke bot lalu menjawab "tidak satu pun variabel itu
+ * ada di blangko yang sedang dibuka": satu tombol yang menyerupai pekerjaan
+ * dan tidak mengerjakan apa pun.
+ *
+ * Yang menentukan variabel yang SUNGGUH tergambar di halaman (barisVariabel),
+ * bukan nama blangkonya - nama blangko berubah menurut satker, variabelnya
+ * tidak.
+ */
+const VARIABEL_CERAI_SAKSI = ["0222", "0246", "9944", "7035", "1268", "5227", "8503"];
+
+/** Blangko yang dibuka memuat sekurang-kurangnya satu variabel cerai? */
+function blangkoMemuatVariabelCerai(petaVariabel) {
+  if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
+  return VARIABEL_CERAI_SAKSI.some((kode) => petaVariabel.has(kode));
+}
+
 /** Keterangan saksi - sumber bagi enam variabel pertama. */
 const VAR_SAKSI_1 = "2021";
 const VAR_SAKSI_2 = "2022";
@@ -899,6 +927,105 @@ async function ambilTanyaJawab(kode) {
 }
 
 /**
+ * ============================================================================
+ * KETERANGAN SAKSI DIBACA MENTAH UNTUK "INPUT KE ABT"
+ * ============================================================================
+ *
+ * Yang tergambar di baris 2021/2022 sudah melewati replace_ket_saksi
+ * (Abt_model::list_keterangan): str_ireplace 'saya' -> 'saksi', 'ya, ' -> '',
+ * dan sebutan pihak dikapitalkan - DI MANA PUN letaknya, juga di tengah kata.
+ * "anaknya, dan" menjadi "anakndan", "sayang" menjadi "saksing". Diukur atas
+ * keterangan saksi PA Donggala (1.119 perkara, 32.100 baris): 635 baris rusak
+ * begitu, dan kalimat sumber usulan berbeda pada 961 perkara - walau nilai
+ * usulannya sendiri sama pada 1.119 dari 1.119.
+ *
+ * Titik baca ABT yang TIDAK melewati replace_ket_saksi ada satu: penyunting
+ * tanya-jawab (tanyajawab_perkara_edit -> views/abt/load_tanyajawab.php,
+ * ajax_data = GetKeteranganPihak apa adanya, lihat ambilTanyaJawab). Rutenya
+ * hanya memakai c (perkara), d (urutan sidang), dan no_var - sehingga ia
+ * terbaca juga pada blangko cerai yang TIDAK menggambar 2021/2022 ([01ab],
+ * [01a], [02]), yang sampai kini menjawab "masih kosong di halaman ini" walau
+ * keterangannya ada di ABT.
+ *
+ * Bentuknya disusun seperti list_keterangan - "-   Bahwa " + lcfirst(jawaban)
+ * per baris, jawaban kosong dilewati, lalu dibaca seperti innerText - supaya
+ * pemecah butir bot melihat bentuk yang sama. Hanya replace_ket_saksi yang
+ * tidak diterapkan.
+ */
+function teksSaksiMentah(baris) {
+  const html = (Array.isArray(baris) ? baris : [])
+    .map((b) => String((b && b.jawaban) || ""))
+    // list_keterangan: if($value->jawaban) - "" dan "0" dilewati PHP.
+    .filter((j) => j !== "" && j !== "0")
+    .map((j) => `-   Bahwa ${j.charAt(0).toLowerCase()}${j.slice(1)}<br>\n`)
+    .join("");
+  return html
+    .replace(/\r?\n/g, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;/g, "'")
+    .replace(/&amp;/gi, "&")
+    .replace(/[ \t]+/g, " ")
+    .split("\n")
+    .map((x) => x.trim())
+    .join("\n")
+    .trim();
+}
+
+/** Banyaknya butir "- Bahwa" dalam satu keterangan. */
+function jumlahButirSaksi(teks) {
+  return (String(teks || "").match(/^-\s*Bahwa\b/gim) || []).length;
+}
+
+/**
+ * Keterangan kedua saksi untuk usulan: mentah dari penyunting tanya-jawab bila
+ * terbaca, teks layar bila tidak - dan yang mana yang dipakai DISEBUT.
+ *
+ * Baris 2021/2022 yang tergambar dan KOSONG berarti ABT tidak punya satu pun
+ * jawaban saksi itu di sidang mana pun (list_keterangan membaca seluruh
+ * sidang), sehingga tidak ada yang perlu ditanyakan lagi. Penyunting membaca
+ * SATU sidang; bila layar memuat lebih banyak butir - keterangan tersebar di
+ * lebih dari satu sidang - teks layar yang dipakai, dan hal itu disebut.
+ *
+ * @param peta barisVariabel() halaman ini
+ * @returns {Promise<{teks1: string, teks2: string, catatan: string[]}>}
+ */
+async function bacaKeteranganSaksiUsulan(peta) {
+  const hasil = { teks1: "", teks2: "", catatan: [] };
+  const daftarKode = [VAR_SAKSI_1, VAR_SAKSI_2];
+  for (let i = 0; i < daftarKode.length; i += 1) {
+    const kode = daftarKode[i];
+    const kunci = `teks${i + 1}`;
+    const baris = peta && typeof peta.get === "function" ? peta.get(kode) : null;
+    const layar = baris ? String(baris.selNilai.innerText || "") : "";
+    if (baris && !layar.trim()) continue;
+    try {
+      const { baris: daftar } = await ambilTanyaJawab(kode);
+      const mentah = teksSaksiMentah(daftar);
+      if (layar.trim() && jumlahButirSaksi(mentah) < jumlahButirSaksi(layar)) {
+        hasil[kunci] = layar;
+        hasil.catatan.push(`saksi ${i + 1} dibaca dari layar - keterangannya tersebar di lebih dari satu sidang`);
+      } else {
+        hasil[kunci] = mentah;
+      }
+    } catch (galat) {
+      const pesan = String((galat && galat.message) || galat);
+      if (layar.trim()) {
+        hasil[kunci] = layar;
+        hasil.catatan.push(`saksi ${i + 1} dibaca dari layar - bacaan mentah gagal: ${pesan}`);
+      } else {
+        hasil.catatan.push(`saksi ${i + 1} tidak terbaca: ${pesan}`);
+      }
+    }
+  }
+  return hasil;
+}
+
+/**
  * Membersihkan jawaban saksi, lalu menyimpannya kembali lewat rute ABT.
  *
  * Yang dibuang kalimat penutup yang tidak menambah satu fakta pun - lihat
@@ -1679,6 +1806,11 @@ const NADA_KEYAKINAN = {
   pasti: { kelas: "aleta-tanda-hijau", teks: "kedua saksi sama" },
   cukup: { kelas: "aleta-tanda-kuning", teks: "satu saksi" },
   bentrok: { kelas: "aleta-tanda-merah", teks: "saksi berselisih" },
+  // Usulan yang bot sendiri ragukan: 0222 dari dalil posita yang belum
+  // dikuatkan saksi, 1268 bila saksi berkata belum pernah ada upaya damai,
+  // 5227 dengan ciri yang frasanya belum ada. Sebelum ini ia jatuh ke
+  // "tidak ditemukan" - lencana yang menyangkal nilai di sebelahnya.
+  ragu: { kelas: "aleta-tanda-kuning", teks: "ragu — periksa dulu" },
   kosong: { kelas: "aleta-tanda-abu", teks: "tidak ditemukan" },
   tidak_ada_sumber: { kelas: "aleta-tanda-abu", teks: "tidak ada sumbernya" },
 };
@@ -1698,14 +1830,22 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   centang.type = "checkbox";
   centang.className = "aleta-abt-centang";
   // Hanya yang benar-benar punya nilai DAN tidak bentrok yang dicentang
-  // sendiri. Yang berselisih justru yang paling perlu dibaca manusia.
-  centang.checked = Boolean(u.nilai) && u.keyakinan !== "bentrok";
+  // sendiri. Yang berselisih justru yang paling perlu dibaca manusia - dan
+  // yang "ragu" pun tidak: nilai yang bot sendiri ragukan (mis. 0222 dari
+  // posita) masuk ke blangko hanya bila petugas mencentangnya.
+  centang.checked = Boolean(u.nilai) && u.keyakinan !== "bentrok" && u.keyakinan !== "ragu";
   centang.disabled = !u.nilai;
   kepala.appendChild(centang);
   kepala.appendChild(buatElemen("span", "aleta-abt-kode", u.kode));
   kepala.appendChild(buatElemen("span", "aleta-abt-nama", u.nama));
 
-  const nada = NADA_KEYAKINAN[u.keyakinan] || NADA_KEYAKINAN.kosong;
+  // Usulan dari posita (itsbat, perkara lain) berkeyakinan "cukup" - tetapi
+  // "satu saksi" di sebelah kalimat posita menyebut sumber yang tidak ada.
+  const dariPosita = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber.every((s) => s && s.asal === "posita");
+  const nada =
+    dariPosita && u.keyakinan === "cukup"
+      ? { kelas: "aleta-tanda-kuning", teks: "dari posita" }
+      : NADA_KEYAKINAN[u.keyakinan] || NADA_KEYAKINAN.kosong;
   const lencana = buatElemen("span", `aleta-tanda ${nada.kelas}`, nada.teks);
   kepala.appendChild(lencana);
   kartu.appendChild(kepala);
@@ -1842,6 +1982,55 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   kartu.appendChild(sanding);
   segarkanTampilan();
 
+  // ==========================================================================
+  // BUNYI YANG HARUS DIPILIH PETUGAS (pilihan[] dari bot)
+  // ==========================================================================
+  //
+  // 1268 bila saksi berkata "belum/tidak pernah ada upaya damai": bot SENGAJA
+  // tidak mengisi nilainya (keputusan pengguna 8) dan menawarkan dua bunyi -
+  // bunyi baku "tidak berhasil" dan bunyi "belum ada upaya". Sampai kini
+  // pilihan itu dikirim bot tetapi tidak tergambar, sehingga kartu itu hanya
+  // berbunyi "(kosong)" dan petugas mengetik ulang kalimat yang sudah ada.
+  //
+  // Digambar sebagai pilihan tanpa bawaan: tidak satu pun terpilih, dan
+  // centangnya mati sampai petugas memilih. Memilih adalah tindakan petugas,
+  // jadi centangnya menyala sesudah itu - sama dengan mengetik sendiri.
+  let bunyiDipilih = "";
+  const daftarBunyi = (Array.isArray(u.pilihan) ? u.pilihan : [])
+    .map((p, i) =>
+      p && typeof p === "object"
+        ? { keadaan: String(p.keadaan || `pilihan ${i + 1}`), nilai: String(p.nilai || "") }
+        : { keadaan: `pilihan ${i + 1}`, nilai: String(p || "") }
+    )
+    .filter((p) => p.nilai);
+  if (daftarBunyi.length) {
+    const barisPilih = buatElemen("label", "aleta-abt-pilih-bunyi");
+    barisPilih.appendChild(buatElemen("span", "aleta-abt-label", "pilih bunyi"));
+    const pilihBunyi = document.createElement("select");
+    pilihBunyi.className = "aleta-sdg-pilih aleta-abt-pilihan-bunyi";
+    const kosong = document.createElement("option");
+    kosong.value = "";
+    kosong.textContent = "— wajib dipilih petugas —";
+    pilihBunyi.appendChild(kosong);
+    daftarBunyi.forEach((p, i) => {
+      const o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = `${p.keadaan}: ${p.nilai}`;
+      pilihBunyi.appendChild(o);
+    });
+    pilihBunyi.value = "";
+    pilihBunyi.addEventListener("change", () => {
+      const p = daftarBunyi[Number(pilihBunyi.value)];
+      bunyiDipilih = p ? p.keadaan : "";
+      nilaiTerkini = p ? p.nilai : "";
+      disunting = false;
+      segarkanTampilan();
+      if (nilaiTerkini) centang.checked = true;
+    });
+    barisPilih.appendChild(pilihBunyi);
+    kartu.appendChild(barisPilih);
+  }
+
   if (u.bentrok) {
     kartu.appendChild(
       buatElemen(
@@ -1870,8 +2059,81 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     centang,
     nilai: () => nilaiTerkini,
     disunting: () => disunting,
+    bunyiDipilih: () => bunyiDipilih,
   });
   return kartu;
+}
+
+/**
+ * ============================================================================
+ * TERAPKAN YANG DICENTANG - SATU PER SATU, BERURUTAN
+ * ============================================================================
+ *
+ * Tiap variabel dikirim SESUDAH yang sebelumnya dijawab ABT: satu permintaan
+ * edit_data dalam satu waktu, sehingga satu tombol tidak menumpuk permintaan
+ * ke ABT. Tidak ada jeda buatan di antaranya - tunggu yang tidak berguna bagi
+ * petugas maupun bagi peladen hanya memperlambat.
+ *
+ * Satu variabel yang ditolak tidak menghentikan sisanya; penolakannya disebut
+ * satu per satu. Riwayat dicatat per variabel, dengan pembedaan antara usulan
+ * mesin dan yang disunting petugas.
+ *
+ * @param dipilih  butir kartu usulan: {usulan, centang, nilai(), disunting()}
+ * @param jatiDiri {perkaraId, perkTemp}
+ * @param lapor    (teks) => void - kemajuan untuk petugas
+ * @returns {Promise<{berhasil: number, gagal: string[]}>}
+ */
+async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor) {
+  const kabar = typeof lapor === "function" ? lapor : () => {};
+  const ringkasan = { berhasil: 0, gagal: [] };
+
+  for (let i = 0; i < dipilih.length; i += 1) {
+    const x = dipilih[i];
+    kabar(`Menyimpan ${x.usulan.nama} (${i + 1} dari ${dipilih.length})…`);
+    try {
+      const nilaiDipakai = x.nilai();
+      const sebelum = (barisVariabel().get(x.usulan.kode) || {}).nilai || "";
+      const hasil = await simpanVariabel(x.usulan.kode, nilaiDipakai, jatiDiri);
+      if (hasil.ok) {
+        ringkasan.berhasil += 1;
+        // Riwayat menyebut SUNTINGANNYA. Tanpa itu, kalimat yang ditulis
+        // petugas sendiri tercatat seolah-olah usulan mesin - dan yang
+        // membacanya kelak tidak dapat membedakan mana yang diperiksa
+        // manusia dan mana yang lolos begitu saja.
+        const asalUsulan =
+          x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
+            ? `usulan dari posita permohonan (${x.usulan.keyakinan})`
+            : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
+            ? `usulan dari keterangan saksi (${x.usulan.keyakinan})`
+            : `usulan dari SIPP (${x.usulan.keyakinan})`;
+        const bunyi = typeof x.bunyiDipilih === "function" ? x.bunyiDipilih() : "";
+        void catatRiwayat({
+          perkaraId: jatiDiri.perkaraId,
+          kode: x.usulan.kode,
+          nama: x.usulan.nama,
+          sebelum,
+          sesudah: nilaiDipakai,
+          cara: bunyi && !x.disunting()
+            ? `bunyi "${bunyi}" dipilih petugas dari pilihan ALETA (${x.usulan.keyakinan})`
+            : x.disunting()
+            ? x.usulan.nilai
+              ? `${asalUsulan}, disunting petugas sebelum disimpan`
+              : "diketik petugas di panel ALETA"
+            : asalUsulan,
+          pada: new Date().toISOString(),
+        });
+        const item = barisVariabel().get(x.usulan.kode);
+        if (item) item.selNilai.textContent = nilaiDipakai;
+        x.centang.checked = false;
+        x.centang.disabled = true;
+      } else {
+        ringkasan.gagal.push(`${x.usulan.kode}: ${hasil.pesan}`);
+      }
+    } catch (galat) {
+      ringkasan.gagal.push(`${x.usulan.kode}: ${String((galat && galat.message) || galat)}`);
+    }
+  }
+  return ringkasan;
 }
 
 /**
@@ -2277,6 +2539,245 @@ const DAFTAR_ALASAN_SDG = [
   "murtad/pindah agama",
 ];
 
+/**
+ * ============================================================================
+ * PILIHAN ALASAN SAKSI - DARI PORTAL, DENGAN CADANGAN SEMBILAN TERTANAM
+ * ============================================================================
+ *
+ * Daftar bas.saksi.alasan-pilihan dapat ditambah admin di portal (zina,
+ * pidana penjara, cacat badan, pelanggaran taklik talak - ciri yang bot sudah
+ * kenal). DAFTAR_ALASAN_SDG di atas tetap cadangan terakhir: portal mati dan
+ * singgahan kosong berarti perilakunya sama persis dengan sebelum portal ada.
+ * Nilainya dicerminkan portal (bawaan-ekstensi.ts) - jangan disunting tanpa
+ * menyunting cerminnya.
+ *
+ * Yang dikirim ke bot KUNCI cirinya; labelnya hanya untuk dibaca petugas.
+ *
+ * @returns {Promise<{pilihan: {kunci: string, label: string}[], asal: string}>}
+ */
+async function muatAlasanSdg() {
+  const tertanam = DAFTAR_ALASAN_SDG.map((a, urutan) => ({ kunci: a, nilai: a, data: {}, urutan, asal: "bawaan", sidik: "" }));
+  const hasil = await alatTipeKeluaran("bas.saksi.alasan-pilihan", { tertanam });
+  const pilihan = [];
+  const sudah = new Set();
+  for (const e of hasil.entri) {
+    const kunci = String(e.kunci || "").trim();
+    if (!kunci || sudah.has(kunci)) continue;
+    sudah.add(kunci);
+    pilihan.push({ kunci, label: String(e.nilai || "").trim() || kunci });
+  }
+  return { pilihan, asal: hasil.asal };
+}
+
+/**
+ * ============================================================================
+ * VARIABEL TANYA-JAWAB TIAP SAKSI - DIBACA DARI aps_badilag.abt_variabel
+ * ============================================================================
+ *
+ * Diverifikasi 26 September 2026 dengan SELECT atas abt_variabel (data_type
+ * tanya_jawab) dan variabel referensinya:
+ *
+ *   2021  Keterangan Saksi 1 P   referensi 1197  saksi_pihak_ke=1 limit 0,1
+ *   2022  Keterangan Saksi 2 P   referensi 1203  saksi_pihak_ke=1 limit 1,1
+ *   2031  Keterangan Saksi 3 P   referensi 6132  saksi_pihak_ke=1 limit 2,1
+ *   6124  TanyaJwb Saksi 4 P     referensi 6144  saksi_pihak_ke=1 limit 3,2
+ *   2023  Keterangan Saksi 1 T   referensi 6100  saksi_pihak_ke=2 limit 0,1
+ *   2024  Keterangan Saksi 2 T   referensi 6106  saksi_pihak_ke=2 limit 1,1
+ *   2032  Keterangan Saksi 3 T   referensi 6138  saksi_pihak_ke=2 limit 2,1
+ *
+ * Rute penyunting ABT (tanyajawab_perkara_edit) menemukan saksinya lewat
+ * NAMA dari variabel referensi itu (GetIdPerkaraPihak), jadi no_var inilah
+ * yang menentukan baris saksi mana yang dihapus lalu ditulis ulang.
+ *
+ * Saksi ke-4 P tidak punya variabel 20xx; yang ada 6124 "TanyaJwb Saksi 4 P"
+ * (referensinya 6144 = "Nama Saksi 4 P", yang limit 3,2-nya diambil baris
+ * pertamanya oleh data_variabel_detil). Karena itu ia dilayani.
+ *
+ * YANG SENGAJA TIDAK DIPAKAI: 6122 "TanyaJwb Saksi 3 T" - referensinya 6132,
+ * nama saksi 3 PENGGUGAT. Menyimpan lewat variabel itu akan menimpa
+ * keterangan saksi yang salah. Saksi 3 T memakai 2032.
+ *
+ * Bot melayani sampai 4 saksi P dan 2 saksi T; 2032 dicatat untuk
+ * kelengkapan pemetaan, tidak ditawarkan di borang.
+ */
+const VAR_SAKSI_TANYA_JAWAB = Object.freeze({
+  P: Object.freeze(["2021", "2022", "2031", "6124"]),
+  T: Object.freeze(["2023", "2024", "2032"]),
+});
+
+/** Variabel nama tiap saksi (referensi di atas) - dipakai menebak jumlah saksi dari blangko. */
+const VAR_NAMA_SAKSI = Object.freeze({
+  P: Object.freeze(["1197", "1203", "6132", "6144"]),
+  T: Object.freeze(["6100", "6106", "6138"]),
+});
+
+/** Batas saksi per pihak yang dilayani penyusun bot (K6, keputusan 15). */
+const BATAS_SAKSI_SDG = Object.freeze({ P: 4, T: 2 });
+
+/** Variabel tanya-jawab saksi ke-`ke` pihak `pihak` ('P'|'T'), atau "" bila tidak ada. */
+function variabelSaksiSdg(pihak, ke) {
+  const daftar = VAR_SAKSI_TANYA_JAWAB[pihak === "T" ? "T" : "P"];
+  const n = Number(ke);
+  return Number.isInteger(n) && n >= 1 && n <= daftar.length ? daftar[n - 1] : "";
+}
+
+/**
+ * Sebutan pihak yang bercerita kepada saksi, dari sebutan blangko ini sendiri.
+ * pelaku = 0047 = Tergugat/Termohon; lawan = 0046 = Penggugat/Pemohon.
+ */
+function sebutanSumberSdg(kode, pelaku, lawan) {
+  if (kode === "keluarga") return "keluarga mereka";
+  if (kode === "tergugat") return String(pelaku || "").trim() || "Tergugat";
+  return String(lawan || "").trim() || "Penggugat";
+}
+
+/**
+ * Nama jenis perkara SIPP (perkara.jenis_perkara_nama, variabel 0048) -> id.
+ * Dibaca 26 September 2026 dengan SELECT DISTINCT atas sipp_donggala dan
+ * sipp. Bentuk bersyarat (data.syarat.jenisPerkaraId) dan perkara lain
+ * (abtUsulanLainService.kenaliJenis) membandingkan ID, bukan nama.
+ */
+const ID_JENIS_PERKARA_SIPP = Object.freeze({
+  "izin poligami": "341",
+  "pencegahan perkawinan": "342",
+  "penolakan perkawinan": "343",
+  "pembatalan perkawinan": "344",
+  "cerai talak": "346",
+  "cerai gugat": "347",
+  "harta bersama": "348",
+  "penguasaan anak": "349",
+  "pengesahan anak": "352",
+  perwalian: "354",
+  "asal usul anak": "358",
+  "istbat nikah": "360",
+  "pengesahan perkawinan/istbat nikah": "360",
+  "dispensasi kawin": "362",
+  "wali adhol": "363",
+  kewarisan: "364",
+  wasiat: "365",
+  wakaf: "367",
+  "lain-lain": "369",
+  "lain-lain *)": "369",
+  "ekonomi syariah": "370",
+  "p3hp/penetapan ahli waris": "371",
+});
+
+/** Id jenis perkara SIPP dari namanya; nama apa adanya bila tidak dikenal. */
+function idJenisPerkaraSipp(nama) {
+  const bersih = String(nama || "").replace(/\s+/g, " ").trim();
+  return ID_JENIS_PERKARA_SIPP[bersih.toLowerCase()] || bersih;
+}
+
+/** alur_perkara_id SIPP dari nomor perkara: 15 gugatan, 16 permohonan, 17 gugatan sederhana. */
+function idAlurPerkaraSipp(nomor) {
+  const teks = String(nomor || "");
+  if (/Pdt\.G\.S\b/i.test(teks)) return "17";
+  if (/Pdt\.G\b/i.test(teks)) return "15";
+  if (/Pdt\.P\b/i.test(teks)) return "16";
+  return "";
+}
+
+/**
+ * Muatan permintaan 'saksi-sdg' (K6). Fungsi murni - diuji langsung.
+ *
+ *   saksi  [{pihak 'P'|'T', ke, modus, sumber, alasan[]}] dalam urutan borang
+ *
+ * sumberNama selalu ikut, untuk ketiga pilihan pencerita: sebutan yang
+ * sungguh tertulis di blangko ini, supaya bot tidak menafsirkan kode.
+ * modus.saksi1/saksi2 tetap dikirim untuk bot lama yang belum mengenal saksi[].
+ */
+function susunMuatanSdg(o) {
+  const r = o && typeof o === "object" ? o : {};
+  const saksi = (Array.isArray(r.saksi) ? r.saksi : []).map((s) => ({
+    ke: Number(s.ke),
+    pihak: s.pihak === "T" ? "T" : "P",
+    modus: String(s.modus || "sama"),
+    sumber: String(s.sumber || "penggugat"),
+    sumberNama: sebutanSumberSdg(String(s.sumber || "penggugat"), r.pelaku, r.lawan),
+    alasan: Array.isArray(s.alasan) ? s.alasan.map(String) : [],
+  }));
+  const polos = (s) => (s ? { modus: s.modus, sumber: s.sumber, sumberNama: s.sumberNama, alasan: s.alasan } : undefined);
+  const saksiP = saksi.filter((s) => s.pihak === "P");
+  return {
+    nomorPerkara: String(r.nomorPerkara || ""),
+    sumber: "saksi-sdg",
+    templat: Array.isArray(r.templat) ? r.templat : [],
+    kodeKumpulan: String(r.kodeKumpulan || ""),
+    jenisPerkara: String(r.jenisPerkara || ""),
+    alur: String(r.alur || ""),
+    alasan: Array.isArray(r.alasan) ? r.alasan : [],
+    posita: String(r.posita || ""),
+    pelaku: String(r.pelaku || ""),
+    lawan: String(r.lawan || ""),
+    modus: { saksi1: polos(saksiP[0] || saksi[0]), saksi2: polos(saksiP[1] || saksi[1]) },
+    saksi,
+  };
+}
+
+/**
+ * Templat MENTAH - sebelum variabelnya diganti ABT - dari penyunting templat
+ * ABT (GET tanyajawab_template_edit?kode=..., tanpa aksi: hanya membaca).
+ * load_template memberikan jawaban yang sudah terganti ("ibu kandung /
+ * tetangga"); hanya dari bentuk mentahnya ("#1241# / #1242#") bot tahu
+ * dengan pasti bahwa satu jawaban itu milik DUA saksi.
+ *
+ * Kode '#<id>' (salinan keterangan saksi lain) tidak punya templat mentah.
+ *
+ * @returns {Promise<Map<string, string>>} nomor urut -> jawaban mentah
+ */
+async function muatTemplatMentahAbt(kodeKumpulan) {
+  const kode = String(kodeKumpulan || "");
+  if (!kode || kode.startsWith("#")) return new Map();
+  const respons = await fetch(`${asalAbt()}/tanyajawab_template_edit?kode=${encodeURIComponent(kode)}`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
+  const teks = await respons.text();
+  const cocok = teks.match(/var\s+ajax_data\s*=\s*([[{][\s\S]*?[\]}])\s*(?:\r?\n|;)/);
+  if (!cocok) throw new Error("templat mentah tidak terbaca dari halaman ABT");
+  let urai;
+  try {
+    urai = JSON.parse(cocok[1]);
+  } catch {
+    throw new Error("templat mentah tidak dapat diurai");
+  }
+  const baris = Array.isArray(urai) ? urai : urai && typeof urai === "object" ? Object.values(urai) : [];
+  const peta = new Map();
+  baris.forEach((b, i) => {
+    const no = String((b && b.urutan_pertanyaan) || i + 1);
+    peta.set(no, String((b && b.jawaban) || ""));
+  });
+  return peta;
+}
+
+/**
+ * ============================================================================
+ * PERKARA LAIN - VARIABEL YANG LULUS GERBANG UKUR
+ * ============================================================================
+ *
+ * Cermin abtUsulanLainService.VARIABEL_SIAP (26 September 2026: dispensasi
+ * kawin 0606, 0600, 0607, 0601, 3333; perwalian, asal usul, dan harta bersama
+ * belum punya satu pun). Ujinya membandingkan keduanya: bila bot menambah
+ * variabel siap, uji merah sampai cermin ini ikut.
+ *
+ * Tombol "Isi dari posita permohonan" untuk perkara lain hanya tergambar pada
+ * blangko yang memuat salah satunya - tombol yang ditekan lalu menjawab
+ * "belum ada aturan" lebih buruk daripada tombol yang tidak ada.
+ */
+const VARIABEL_SIAP_POSITA_LAIN = Object.freeze({
+  "dispensasi-kawin": Object.freeze(["0606", "0600", "0607", "0601", "3333"]),
+  perwalian: Object.freeze([]),
+  "asal-usul": Object.freeze([]),
+  "harta-bersama": Object.freeze([]),
+});
+
+/** Blangko ini memuat sekurang-kurangnya satu variabel perkara lain yang siap? */
+function blangkoMemuatVariabelSiapLain(petaVariabel) {
+  if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
+  return Object.values(VARIABEL_SIAP_POSITA_LAIN).some((daftar) => daftar.some((k) => petaVariabel.has(k)));
+}
+
 /** Daftar templat yang ditawarkan ABT pada halaman penyunting keterangan saksi 1. */
 async function daftarTemplatAbt(urutan) {
   const respons = await fetch(alamatTanyaJawab(VAR_SAKSI_1, false, urutan), {
@@ -2458,6 +2959,7 @@ function susunPanelAbt(jatiDiri) {
     ["aleta-tanda-hijau", "pasti — kedua saksi sama"],
     ["aleta-tanda-kuning", "cukup — satu saksi saja"],
     ["aleta-tanda-merah", "bentrok — saksi berselisih"],
+    ["aleta-tanda-kuning", "ragu — tidak dicentang sendiri"],
   ]) {
     petunjuk.appendChild(buatElemen("span", `aleta-tanda ${kelas}`, teks));
   }
@@ -2472,13 +2974,27 @@ function susunPanelAbt(jatiDiri) {
   tombolSipp.type = "button";
   const tombolSaksi = buatElemen("button", "aleta-permintaan-tombol", "Input ke ABT");
   tombolSaksi.type = "button";
+  // Hanya pada blangko yang memuat variabel cerai - lihat VARIABEL_CERAI_SAKSI.
+  tombolSaksi.hidden = !blangkoMemuatVariabelCerai(petaAwal);
   const tombolItsbat = buatElemen("button", "aleta-permintaan-tombol", "Isi dari posita permohonan");
   tombolItsbat.type = "button";
   tombolItsbat.title = "Tanggal dan tempat nikah, wali, saksi nikah, mahar, status, umur, dan anak - dibaca dari posita.";
   tombolItsbat.hidden = !(petaAwal.has("5197") || petaAwal.has("8087"));
+  // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
+  // hanya pada blangko yang memuat variabel yang lulus gerbang ukur.
+  const tombolPositaLain = buatElemen("button", "aleta-permintaan-tombol", "Isi dari posita permohonan");
+  tombolPositaLain.type = "button";
+  tombolPositaLain.hidden = !blangkoMemuatVariabelSiapLain(petaAwal);
+  if (!tombolPositaLain.hidden && !tombolItsbat.hidden) tombolPositaLain.textContent = "Isi dari posita permohonan (perkara lain)";
+  tombolPositaLain.title =
+    "Variabel perkara lain yang lulus gerbang ukur (presisi ≥ 0,9 atas isian manusia) - dibaca dari posita. " +
+    "Tidak satu pun tersimpan sebelum dicentang dan diterapkan.";
   const tombolSdg = buatElemen("button", "aleta-permintaan-tombol", "Susun keterangan saksi 1 & 2");
   tombolSdg.type = "button";
-  tombolSdg.title = "Dua keterangan dari satu templat ABT: substansi sama, kalimat berbeda.";
+  // Tulisannya tetap "saksi 1 & 2" - pintasan Alt+Enter di kaki panel
+  // mencocokkan tulisan itu. Borangnya melayani sampai 4 saksi P dan 2 saksi T.
+  tombolSdg.title =
+    "Keterangan saksi dari satu templat ABT (sampai 4 saksi Penggugat dan 2 saksi Tergugat): substansi sama, kalimat berbeda.";
   tombolSdg.hidden = !petaAwal.has(VAR_SAKSI_1);
 
   // ==========================================================================
@@ -2497,6 +3013,7 @@ function susunPanelAbt(jatiDiri) {
     tombolSipp.hidden = true;
     tombolSaksi.hidden = true;
     tombolItsbat.hidden = true;
+    tombolPositaLain.hidden = true;
     tombolSdg.hidden = false;
     const saksiKe = saksiKeberapa();
     tombolSdg.title =
@@ -2506,6 +3023,7 @@ function susunPanelAbt(jatiDiri) {
   tombolBaris.appendChild(tombolSipp);
   tombolBaris.appendChild(tombolSaksi);
   tombolBaris.appendChild(tombolItsbat);
+  tombolBaris.appendChild(tombolPositaLain);
   tombolBaris.appendChild(tombolSdg);
   isi.appendChild(tombolBaris);
 
@@ -2919,6 +3437,10 @@ function susunPanelAbt(jatiDiri) {
       // keduanya fakta yang dibuktikan di persidangan, bukan kesimpulan dari
       // kata kunci yang muncul di keterangan saksi.
       centang.checked = !h.syarat;
+      // Huruf yang bot tandai centangOtomatis: false (huruf alasan blangko
+      // [01], keputusan 11) juga tidak - tanpa ini penanda itu dikirim bot dan
+      // tidak dibaca siapa pun.
+      if (h.centangOtomatis === false) centang.checked = false;
       kepalaHuruf.appendChild(centang);
       kepalaHuruf.appendChild(buatElemen("span", "aleta-abt-huruf-nama", `Huruf ${h.huruf}`));
       kepalaHuruf.appendChild(
@@ -3461,7 +3983,7 @@ function susunPanelAbt(jatiDiri) {
     // Menawarkan tombol lalu menolaknya sesudah ditekan terbaca sebagai
     // kerusakan, bukan sebagai pembatasan yang disengaja.
     if (!bolehAbt("blangko-abt")) {
-      for (const tombol of [tombolSipp, tombolSaksi, tombolItsbat, tombolSdg]) tombol.hidden = true;
+      for (const tombol of [tombolSipp, tombolSaksi, tombolItsbat, tombolPositaLain, tombolSdg]) tombol.hidden = true;
       kabar.textContent =
         "Peran Anda tidak diberi akses panel blangko ABT. Panel ini hanya menampilkan keterangan.";
     }
@@ -3525,51 +4047,21 @@ function susunPanelAbt(jatiDiri) {
         return;
       }
       terap.disabled = true;
-      let berhasil = 0;
-      const gagal = [];
-      for (const x of dipilih) {
-        hasilTerap.textContent = `Menyimpan ${x.usulan.nama}…`;
-        try {
-          const nilaiDipakai = x.nilai();
-          const sebelum = (barisVariabel().get(x.usulan.kode) || {}).nilai || "";
-          const hasil = await simpanVariabel(x.usulan.kode, nilaiDipakai, jatiDiri);
-          if (hasil.ok) {
-            berhasil += 1;
-            // Riwayat menyebut SUNTINGANNYA. Tanpa itu, kalimat yang ditulis
-            // petugas sendiri tercatat seolah-olah usulan mesin - dan yang
-            // membacanya kelak tidak dapat membedakan mana yang diperiksa
-            // manusia dan mana yang lolos begitu saja.
-            const asalUsulan =
-              x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
-                ? `usulan dari posita permohonan (${x.usulan.keyakinan})`
-                : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
-                ? `usulan dari keterangan saksi (${x.usulan.keyakinan})`
-                : `usulan dari SIPP (${x.usulan.keyakinan})`;
-            void catatRiwayat({
-              perkaraId: jatiDiri.perkaraId,
-              kode: x.usulan.kode,
-              nama: x.usulan.nama,
-              sebelum,
-              sesudah: nilaiDipakai,
-              cara: x.disunting()
-                ? x.usulan.nilai
-                  ? `${asalUsulan}, disunting petugas sebelum disimpan`
-                  : "diketik petugas di panel ALETA"
-                : asalUsulan,
-              pada: new Date().toISOString(),
-            });
-            const item = barisVariabel().get(x.usulan.kode);
-            if (item) item.selNilai.textContent = nilaiDipakai;
-            x.centang.checked = false;
-            x.centang.disabled = true;
-          } else {
-            gagal.push(`${x.usulan.kode}: ${hasil.pesan}`);
-          }
-        } catch (galat) {
-          gagal.push(`${x.usulan.kode}: ${String((galat && galat.message) || galat)}`);
-        }
+      hasilTerap.className = "aleta-abt-kabar";
+      let ringkasan = null;
+      try {
+        ringkasan = await terapkanUsulanBerurutan(dipilih, jatiDiri, (teks) => {
+          hasilTerap.textContent = teks;
+        });
+      } catch (galat) {
+        // Tidak ditelan: penerapan yang terhenti di tengah disebut.
+        hasilTerap.className = "aleta-abt-kabar aleta-abt-gagal";
+        hasilTerap.textContent = `Penerapan terhenti: ${String((galat && galat.message) || galat)}`;
+      } finally {
+        terap.disabled = false;
       }
-      terap.disabled = false;
+      if (!ringkasan) return;
+      const { berhasil, gagal } = ringkasan;
       hasilTerap.className = gagal.length ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
       hasilTerap.textContent = gagal.length
         ? `${berhasil} tersimpan, ${gagal.length} gagal — ${gagal.join("; ")}`
@@ -3606,10 +4098,17 @@ function susunPanelAbt(jatiDiri) {
     kabar.textContent = "Membaca keterangan saksi…";
     try {
       const peta = barisVariabel();
-      const teks1 = peta.get(VAR_SAKSI_1) ? peta.get(VAR_SAKSI_1).selNilai.innerText : "";
-      const teks2 = peta.get(VAR_SAKSI_2) ? peta.get(VAR_SAKSI_2).selNilai.innerText : "";
+      // Mentah dari penyunting tanya-jawab ABT, bukan teks layar yang sudah
+      // melewati replace_ket_saksi - lihat bacaKeteranganSaksiUsulan.
+      const bacaan = await bacaKeteranganSaksiUsulan(peta);
+      const teks1 = bacaan.teks1;
+      const teks2 = bacaan.teks2;
       if (!teks1.trim() && !teks2.trim()) {
-        throw new Error("Keterangan saksi 1 dan saksi 2 masih kosong di halaman ini.");
+        throw new Error(
+          bacaan.catatan.length
+            ? `Keterangan saksi tidak terbaca - ${bacaan.catatan.join("; ")}.`
+            : "Keterangan saksi 1 dan saksi 2 masih kosong di halaman ini."
+        );
       }
       const isiJawaban = await mintaUsulan({
         nomorPerkara: nomorPerkaraAbt(),
@@ -3629,7 +4128,9 @@ function susunPanelAbt(jatiDiri) {
       });
       const saksi = isiJawaban.saksi || {};
       kabar.textContent =
-        `Terbaca ${saksi.butir?.saksi1 || 0} butir dari saksi 1 dan ${saksi.butir?.saksi2 || 0} dari saksi 2.`;
+        `Terbaca ${saksi.butir?.saksi1 || 0} butir dari saksi 1 dan ${saksi.butir?.saksi2 || 0} dari saksi 2` +
+        (bacaan.catatan.length ? ` (${bacaan.catatan.join("; ")})` : "") +
+        ".";
       gambarSelisih(saksi.selisih || []);
       gambarSepihak(saksi);
       gambarHuruf(saksi.huruf || [], saksi.hurufBelumSiap || []);
@@ -3661,6 +4162,11 @@ function susunPanelAbt(jatiDiri) {
         nomorPerkara: nomorPerkaraAbt(),
         sumber: "itsbat",
         posita,
+        // Sebutan PEMOHON = 0046. Dahulu hanya `pelaku` (0047 = Termohon)
+        // yang dikirim, dan bot memakainya sebagai sebutan pemohon - label
+        // usulannya "Status Termohon sebelum nikah". `pelaku` tetap dikirim
+        // untuk bot lama yang belum membaca `pemohon`.
+        pemohon: nilaiVariabel(VAR_PIHAK_LAWAN),
         pelaku: nilaiVariabel(VAR_PIHAK_PELAKU),
       });
       const itsbat = isiJawaban.itsbat || {};
@@ -3680,10 +4186,78 @@ function susunPanelAbt(jatiDiri) {
 
   /**
    * ==========================================================================
+   * ISI DARI POSITA PERMOHONAN - PERKARA LAIN (sumber 'posita-lain')
+   * ==========================================================================
+   *
+   * Hanya variabel yang lulus gerbang ukur yang diusulkan bot; yang belum
+   * disebut beserta angkanya, bukan disembunyikan. Penerapannya lewat
+   * "Terapkan yang dicentang" yang sama: berurutan, satu edit_data sesudah
+   * yang sebelumnya dijawab ABT, tanpa jeda buatan.
+   */
+  tombolPositaLain.addEventListener("click", async () => {
+    tombolPositaLain.disabled = true;
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "Membaca posita permohonan…";
+    try {
+      const peta = barisVariabel();
+      const posita = peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "";
+      if (!posita.trim()) {
+        throw new Error("Posita permohonan masih kosong di halaman ini. Ambil positanya lebih dulu.");
+      }
+      const nomor = nomorPerkaraAbt();
+      const isiJawaban = await mintaUsulan({
+        nomorPerkara: nomor,
+        sumber: "posita-lain",
+        posita,
+        // Id SIPP bila namanya dikenal - kenaliJenis bot mencocokkan id lebih
+        // dulu; nama apa adanya tetap dikenali lewat polanya.
+        jenisPerkara: idJenisPerkaraSipp(nilaiVariabel(VAR_JENIS_PERKARA) || sebutJenisPerkara(nomor)),
+        alur: idAlurPerkaraSipp(nomor),
+        pemohon: nilaiVariabel(VAR_PIHAK_LAWAN),
+        pelaku: nilaiVariabel(VAR_PIHAK_PELAKU),
+        lawan: nilaiVariabel(VAR_PIHAK_LAWAN),
+      });
+      const lain = isiJawaban.positaLain || {};
+      if (lain.ok === false) {
+        const sebab = {
+          jenis_perkara_tidak_dilayani: "Jenis perkara ini belum dilayani pengisian dari posita.",
+          posita_kosong: "Posita permohonan kosong.",
+        };
+        throw new Error(sebab[lain.alasan] || lain.alasan || "Posita tidak dapat dibaca.");
+      }
+      if (!lain.ok) throw new Error("ALETA Bot belum mengenal pengisian perkara lain dari posita.");
+      const belum = (lain.belumSiap || []).map((b) => `${b.kode} (${b.alasan})`);
+      kabar.textContent =
+        [lain.catatan || "", belum.length ? `Belum lulus gerbang ukur, tidak diusulkan: ${belum.join(", ")}.` : ""]
+          .filter(Boolean)
+          .join(" ");
+      gambarSelisih([]);
+      gambarSepihak(null);
+      gambarHuruf([], []);
+      gambarUsulan(lain.usulan || []);
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+    } finally {
+      tombolPositaLain.disabled = false;
+    }
+  });
+
+  /**
+   * ==========================================================================
    * SUSUN KETERANGAN DUA SAKSI
    * ==========================================================================
    */
-  function gambarPratinjauSdg(hasil, urutan, templat, sudahAda) {
+  /**
+   * Pratinjau keterangan N saksi.
+   *
+   *   hasil      jawaban bot (saksiSdg): saksi[] {ke, pihak, jawaban[{no, tanya,
+   *              jawab, perluDiisi, pilihan?, varian{indeks,n,habis}}]}, dan
+   *              saksi1/saksi2 untuk bot lama
+   *   kolomSaksi [{pihak, ke, kode}] dari borang, dalam urutan yang sama dengan
+   *              saksi[] yang dikirim - kode = variabel tanya-jawab tujuan
+   */
+  function gambarPratinjauSdg(hasil, urutan, templat, sudahAda, kolomSaksi) {
     const kotak = buatElemen("div", "aleta-sdg-hasil");
 
     const ringkas = [];
@@ -3694,11 +4268,34 @@ function susunPanelAbt(jatiDiri) {
       );
     }
     if (hasil.catatan) ringkas.push(hasil.catatan);
-    if (hasil.identik) ringkas.push(`${hasil.identik} jawaban masih sama persis pada kedua saksi - ubah salah satunya.`);
+    if (hasil.identik) ringkas.push(`${hasil.identik} jawaban masih sama persis pada saksi 1 dan saksi 2 - ubah salah satunya.`);
     kotak.appendChild(buatElemen("div", "aleta-abt-catatan", ringkas.join(" ")));
 
     const perlu = new Set((hasil.perluDiisi || []).map((x) => String(x.no)));
     const diisiGugatan = new Set((hasil.terisiDariPosita || []).map((x) => String(x.no)));
+
+    // ========================================================================
+    // SATU KOLOM PER SAKSI - SAMPAI EMPAT SAKSI P DAN DUA SAKSI T
+    // ========================================================================
+    //
+    // Bot mengirim saksi[] (K6). Bot lama hanya mengirim saksi1/saksi2; saat
+    // itu hanya dua kolom pertama yang terisi, dan itu disebut.
+    const dariBot = Array.isArray(hasil.saksi) && hasil.saksi.length
+      ? hasil.saksi.map((s) => s.jawaban || [])
+      : [hasil.saksi1 || [], hasil.saksi2 || []];
+    const daftarKolom = (kolomSaksi && kolomSaksi.length ? kolomSaksi : [
+      { pihak: "P", ke: 1, kode: VAR_SAKSI_1 },
+      { pihak: "P", ke: 2, kode: VAR_SAKSI_2 },
+    ]).slice(0, Math.max(1, dariBot.length));
+    if (dariBot.length < (kolomSaksi || []).length) {
+      kotak.appendChild(
+        buatElemen(
+          "div",
+          "aleta-abt-catatan aleta-abt-gagal",
+          `ALETA Bot hanya menyusun ${dariBot.length} dari ${kolomSaksi.length} saksi yang diminta - bot belum mengenal saksi ke-3 dan seterusnya.`
+        )
+      );
+    }
 
     // ========================================================================
     // KETERANGANNYA DAPAT DIGESER, DISALIN, DITAMBAH, DAN DIHAPUS
@@ -3717,11 +4314,30 @@ function susunPanelAbt(jatiDiri) {
     // MENYEBERANG = DISISIPKAN, bukan menimpa. Diputuskan pengguna 16
     // September 2026: jawaban yang dipindahkan ke saksi seberang menjadi
     // baris TAMBAHAN di sana. Menimpa akan menghapus keterangan yang sudah
-    // benar tanpa dapat dibatalkan.
-    const dataSaksi = [
-      (hasil.saksi1 || []).map((b) => ({ no: String(b.no), tanya: b.tanya, jawab: b.jawab })),
-      (hasil.saksi2 || []).map((b) => ({ no: String(b.no), tanya: b.tanya, jawab: b.jawab })),
-    ];
+    // benar tanpa dapat dibatalkan. Dengan lebih dari dua saksi, "seberang"
+    // adalah saksi BERIKUTNYA (saksi terakhir menyeberang ke saksi pertama).
+    //
+    // JAWABAN BERPILIHAN (pilihan[] dua atau lebih - pilihan berlawanan dari
+    // templat, atau hubungan saksi yang templatnya menyebut dua orang) harus
+    // DIPILIH petugas sebelum keterangan dapat disimpan. Menyimpan kedua
+    // kemungkinan sekaligus membuat saksi menyatakan dua hal yang berlawanan.
+    const dataSaksi = dariBot.slice(0, daftarKolom.length).map((daftar) =>
+      daftar.map((b) => {
+        const pilihan = Array.isArray(b.pilihan) ? b.pilihan.map(String).filter(Boolean) : [];
+        const varian = b.varian && typeof b.varian === "object" ? b.varian : null;
+        return {
+          no: String(b.no),
+          tanya: b.tanya,
+          jawab: b.jawab,
+          pilihan: pilihan.length >= 2 ? pilihan : null,
+          dipilih: false,
+          habis: Boolean(varian && varian.habis),
+          nVarian: varian ? Number(varian.n) || 1 : 0,
+        };
+      })
+    );
+    const namaKolom = (k) => `Saksi ${daftarKolom[k].ke} ${daftarKolom[k].pihak}`;
+    const seberang = (k) => (k + 1) % dataSaksi.length;
 
     const dua = buatElemen("div", "aleta-sdg-dua");
     // Dipegang tetap: penyimpan di bawah menutupnya dalam closure, jadi
@@ -3736,7 +4352,7 @@ function susunPanelAbt(jatiDiri) {
     // duduk di dalamnya akan lenyap pada penggeseran pertama.
     const bilahTata = buatElemen("div", "aleta-sdg-tata");
     bilahTata.appendChild(
-      buatElemen("span", "aleta-abt-label", "Keterangan dua saksi")
+      buatElemen("span", "aleta-abt-label", `Keterangan ${dataSaksi.length} saksi`)
     );
     const tombolTata = buatElemen("button", "aleta-sdg-tata-tombol");
     tombolTata.type = "button";
@@ -3750,8 +4366,8 @@ function susunPanelAbt(jatiDiri) {
       // membacanya menekannya dua kali lalu menyerah.
       tombolTata.textContent = tumpuk ? "⬍ Jadikan berdampingan" : "⬌ Jadikan atas-bawah";
       tombolTata.title = tumpuk
-        ? "Sekarang atas-bawah. Tekan untuk menjajarkan saksi 1 dan saksi 2 berdampingan."
-        : "Sekarang berdampingan. Tekan untuk menumpuk saksi 1 di atas saksi 2 - berguna pada panel sempit.";
+        ? "Sekarang atas-bawah. Tekan untuk menjajarkan keterangan para saksi berdampingan."
+        : "Sekarang berdampingan. Tekan untuk menumpuk keterangan saksi satu di atas yang lain - berguna pada panel sempit.";
       tombolTata.setAttribute("aria-pressed", tumpuk ? "true" : "false");
     }
 
@@ -3761,8 +4377,34 @@ function susunPanelAbt(jatiDiri) {
     });
     bilahTata.appendChild(tombolTata);
     segarkanTata();
-    const kolomIsian = [[], []];
+    const kolomIsian = dataSaksi.map(() => []);
     let sedangDiseret = null;
+
+    const simpan = buatElemen("button", "aleta-permintaan-tombol", "");
+    simpan.type = "button";
+    const kabarPilih = buatElemen("div", "aleta-abt-catatan aleta-sdg-kabar-pilih");
+
+    /** Jawaban berpilihan yang belum dipilih - penyimpanan tertahan selama ada. */
+    function belumDipilih() {
+      const belum = [];
+      dataSaksi.forEach((daftar, k) => {
+        daftar.forEach((b, i) => {
+          if (b.pilihan && !b.dipilih) belum.push(`${namaKolom(k)} no. ${i + 1}`);
+        });
+      });
+      return belum;
+    }
+
+    function segarkanSimpan() {
+      const belum = belumDipilih();
+      simpan.disabled = belum.length > 0 || sedangMenyimpan;
+      simpan.textContent = `Simpan keterangan ${dataSaksi.length} saksi ke ABT (sidang ke-${urutan})`;
+      kabarPilih.hidden = belum.length === 0;
+      kabarPilih.textContent = belum.length
+        ? `${belum.length} jawaban berpilihan belum dipilih (${belum.join(", ")}). Simpan tertahan sampai semuanya dipilih.`
+        : "";
+    }
+    let sedangMenyimpan = false;
 
     function pindahkan(dariKolom, dariIndeks, keKolom, keIndeks) {
       const [butir] = dataSaksi[dariKolom].splice(dariIndeks, 1);
@@ -3774,10 +4416,11 @@ function susunPanelAbt(jatiDiri) {
 
     function gambarKolom() {
       dua.textContent = "";
-      for (const nomorSaksi of [1, 2]) {
-        const k = nomorSaksi - 1;
+      for (let k = 0; k < dataSaksi.length; k += 1) {
+        const sb = seberang(k);
         const kolom = buatElemen("div", "aleta-sdg-kolom");
-        const kepala = buatElemen("div", "aleta-sdg-judul", `Saksi ${nomorSaksi}`);
+        const kepala = buatElemen("div", "aleta-sdg-judul", namaKolom(k));
+        kepala.title = `Disimpan ke variabel ${daftarKolom[k].kode}.`;
         kepala.appendChild(
           buatElemen("span", "aleta-sdg-jumlah", `${dataSaksi[k].length} keterangan`)
         );
@@ -3785,7 +4428,11 @@ function susunPanelAbt(jatiDiri) {
         kolomIsian[k].length = 0;
 
         dataSaksi[k].forEach((b, i) => {
-          const tanda = perlu.has(b.no) ? " aleta-sdg-perlu" : diisiGugatan.has(b.no) ? " aleta-sdg-dari-gugatan" : "";
+          const tanda = perlu.has(b.no) || (b.pilihan && !b.dipilih)
+            ? " aleta-sdg-perlu"
+            : diisiGugatan.has(b.no)
+              ? " aleta-sdg-dari-gugatan"
+              : "";
           const baris = buatElemen("div", `aleta-sdg-baris${tanda}`);
           baris.draggable = true;
 
@@ -3809,17 +4456,29 @@ function susunPanelAbt(jatiDiri) {
           };
           tombol("↑", "Naikkan", () => i > 0 && pindahkan(k, i, k, i - 1));
           tombol("↓", "Turunkan", () => i < dataSaksi[k].length - 1 && pindahkan(k, i, k, i + 1));
-          tombol("⇄", `Pindahkan ke Saksi ${nomorSaksi === 1 ? 2 : 1} - disisipkan sebagai baris tambahan`, () =>
-            pindahkan(k, i, 1 - k, dataSaksi[1 - k].length)
-          );
-          tombol("⧉", `Salin ke Saksi ${nomorSaksi === 1 ? 2 : 1} - yang ini tetap di tempatnya`, () => {
-            dataSaksi[1 - k].push({ no: b.no, tanya: b.tanya, jawab: b.jawab });
-            gambarKolom();
-          });
+          if (dataSaksi.length > 1) {
+            tombol("⇄", `Pindahkan ke ${namaKolom(sb)} - disisipkan sebagai baris tambahan`, () =>
+              pindahkan(k, i, sb, dataSaksi[sb].length)
+            );
+            tombol("⧉", `Salin ke ${namaKolom(sb)} - yang ini tetap di tempatnya`, () => {
+              dataSaksi[sb].push({ ...b, no: b.no, tanya: b.tanya, jawab: b.jawab });
+              gambarKolom();
+            });
+          }
           tombol("✕", "Hapus keterangan ini", () => {
             dataSaksi[k].splice(i, 1);
             gambarKolom();
           });
+          if (b.habis) {
+            // Bank kalimat pertanyaan ini lebih sedikit dari jumlah saksi:
+            // bentuk kalimat dapat berulang antar saksi. Disebut, bukan
+            // disembunyikan - petugas yang memutuskan perlu tidaknya diubah.
+            const habis = buatElemen("span", "aleta-tanda aleta-tanda-kuning aleta-sdg-varian-habis", "varian habis");
+            habis.title =
+              `Bank kalimat pertanyaan ini hanya punya ${b.nVarian || 1} bentuk untuk ${dataSaksi.length} saksi - ` +
+              "kalimatnya dapat sama dengan saksi lain. Ubah bila perlu.";
+            alat.appendChild(habis);
+          }
           baris.appendChild(alat);
 
           const jawab = document.createElement("textarea");
@@ -3829,7 +4488,50 @@ function susunPanelAbt(jatiDiri) {
           jawab.addEventListener("input", () => {
             b.jawab = jawab.value;
           });
-          if (perlu.has(b.no)) {
+
+          if (b.pilihan) {
+            // Pilihan tanpa bawaan: tidak satu pun terpilih sampai petugas
+            // memilih. "Tulis sendiri" memakai isi kotak apa adanya.
+            const pilih = document.createElement("select");
+            pilih.className = "aleta-sdg-pilih aleta-sdg-pilihan";
+            pilih.title = "Jawaban templat ini berpilihan - pilih yang sesuai keterangan saksi sebelum disimpan.";
+            const kosong = document.createElement("option");
+            kosong.value = "";
+            kosong.textContent = "— pilih jawaban saksi —";
+            pilih.appendChild(kosong);
+            b.pilihan.forEach((p, n) => {
+              const o = document.createElement("option");
+              o.value = String(n);
+              o.textContent = p;
+              pilih.appendChild(o);
+            });
+            const sendiri = document.createElement("option");
+            sendiri.value = "sendiri";
+            sendiri.textContent = "Tulis sendiri di kotak di bawah";
+            pilih.appendChild(sendiri);
+            pilih.value = b.dipilih ? (b.pilihanKe === undefined ? "sendiri" : String(b.pilihanKe)) : "";
+            pilih.addEventListener("change", () => {
+              if (pilih.value === "") {
+                b.dipilih = false;
+                b.pilihanKe = undefined;
+              } else if (pilih.value === "sendiri") {
+                b.dipilih = true;
+                b.pilihanKe = undefined;
+              } else {
+                b.dipilih = true;
+                b.pilihanKe = Number(pilih.value);
+                b.jawab = b.pilihan[b.pilihanKe];
+                jawab.value = b.jawab;
+              }
+              baris.classList.toggle("aleta-sdg-perlu", !b.dipilih || perlu.has(b.no));
+              segarkanSimpan();
+            });
+            baris.appendChild(pilih);
+          }
+
+          if (b.pilihan && !b.dipilih) {
+            jawab.title = "Jawaban berpilihan - pilih salah satu di atas sebelum disimpan.";
+          } else if (perlu.has(b.no)) {
             jawab.title =
               "Jawaban templat ini masih memuat titik-titik dan tidak terbaca dari gugatan; lengkapi dari keterangan saksi yang sesungguhnya.";
           } else if (diisiGugatan.has(b.no)) {
@@ -3881,33 +4583,30 @@ function susunPanelAbt(jatiDiri) {
         const tambah = buatElemen("button", "aleta-sdg-tambah", "+ Tambah keterangan");
         tambah.type = "button";
         tambah.addEventListener("click", () => {
-          dataSaksi[k].push({ no: `t${dataSaksi[k].length + 1}`, tanya: "Pertanyaan baru", jawab: "" });
+          dataSaksi[k].push({ no: `t${dataSaksi[k].length + 1}`, tanya: "Pertanyaan baru", jawab: "", pilihan: null, dipilih: false, habis: false, nVarian: 0 });
           gambarKolom();
         });
         kolom.appendChild(tambah);
         dua.appendChild(kolom);
       }
+      segarkanSimpan();
     }
 
     gambarKolom();
+    const adaHabis = dataSaksi.some((d) => d.some((b) => b.habis));
     kotak.appendChild(
       buatElemen(
         "div",
         "aleta-abt-catatan",
-        "Seret ⠿ untuk memindahkan - ke atas, ke bawah, atau ke kolom saksi seberang " +
+        "Seret ⠿ untuk memindahkan - ke atas, ke bawah, atau ke kolom saksi lain " +
           "(di sana ia disisipkan sebagai baris tambahan). ⧉ menyalin tanpa memindahkan, " +
-          "✕ menghapus. Pertanyaannya sendiri boleh disunting. Nomornya dihitung ulang saat disimpan."
+          "✕ menghapus. Pertanyaannya sendiri boleh disunting. Nomornya dihitung ulang saat disimpan." +
+          (adaHabis ? " Tanda 'varian habis': bentuk kalimat pertanyaan itu lebih sedikit dari jumlah saksi." : "")
       )
     );
     kotak.appendChild(bilahTata);
     kotak.appendChild(dua);
 
-    const simpan = buatElemen(
-      "button",
-      "aleta-permintaan-tombol",
-      `Simpan keterangan saksi 1 dan 2 ke ABT (sidang ke-${urutan})`
-    );
-    simpan.type = "button";
     const hasilSimpan = buatElemen("div", "aleta-abt-kabar");
     if (sudahAda) {
       kotak.appendChild(
@@ -3918,45 +4617,68 @@ function susunPanelAbt(jatiDiri) {
         )
       );
     }
+    kotak.appendChild(kabarPilih);
     kotak.appendChild(simpan);
     kotak.appendChild(hasilSimpan);
+    segarkanSimpan();
 
+    // ========================================================================
+    // DISIMPAN BERURUTAN, TANPA JEDA TIRUAN
+    // ========================================================================
+    //
+    // Satu saksi sesudah yang sebelumnya dijawab ABT - satu permintaan simpan
+    // dalam satu waktu. Tidak ada tunggu buatan di antaranya: ALETA tidak
+    // meniru irama manusia (keputusan 25 September 2026), dan catatan
+    // diinput_oleh ABT tetap menyebut akun petugas yang menekan tombol ini.
     simpan.addEventListener("click", async () => {
+      const belum = belumDipilih();
+      if (belum.length) {
+        segarkanSimpan();
+        return;
+      }
+      sedangMenyimpan = true;
       simpan.disabled = true;
       hasilSimpan.className = "aleta-abt-kabar";
       const gagal = [];
       let tersimpan = 0;
-      for (const [i, kodeVar] of [VAR_SAKSI_1, VAR_SAKSI_2].entries()) {
+      for (let i = 0; i < dataSaksi.length; i += 1) {
+        const kodeVar = daftarKolom[i].kode;
+        const nama = namaKolom(i);
+        if (!kodeVar) {
+          gagal.push(`${nama}: tidak ada variabel tanya-jawab untuknya di ABT`);
+          continue;
+        }
         const baris = kolomIsian[i]
           .map((x, n) => ({ no: String(n + 1), tanya: x.tanya, jawab: x.jawab.value.trim() }))
           .filter((x) => x.jawab);
-        hasilSimpan.textContent = `Menyimpan keterangan saksi ${i + 1}…`;
+        hasilSimpan.textContent = `Menyimpan keterangan ${nama} (${i + 1} dari ${dataSaksi.length})…`;
         try {
           const sebelum = nilaiVariabel(kodeVar);
           const r = await kirimTanyaJawab(kodeVar, urutan, baris);
           if (!r.ok) {
-            gagal.push(`saksi ${i + 1}: ${r.pesan}`);
+            gagal.push(`${nama}: ${r.pesan}`);
             continue;
           }
           tersimpan += 1;
           void catatRiwayat({
             perkaraId: jatiDiri.perkaraId,
             kode: kodeVar,
-            nama: `Keterangan saksi ${i + 1}`,
+            nama: `Keterangan ${nama}`,
             sebelum,
             sesudah: `${baris.length} tanya-jawab dari templat ${templat}`,
-            cara: `disusun ALETA dari templat ${templat}` + (hasil.asalAlasan === "posita" ? " (sama dengan gugatan)" : ""),
+            cara: `disusun ALETA dari templat ${templat}, diperiksa dan disimpan petugas` + (hasil.asalAlasan === "posita" ? " (sama dengan gugatan)" : ""),
             pada: new Date().toISOString(),
           });
         } catch (galat) {
-          gagal.push(`saksi ${i + 1}: ${String((galat && galat.message) || galat)}`);
+          gagal.push(`${nama}: ${String((galat && galat.message) || galat)}`);
         }
       }
-      simpan.disabled = false;
+      sedangMenyimpan = false;
+      segarkanSimpan();
       hasilSimpan.className = gagal.length ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
       hasilSimpan.textContent = gagal.length
         ? `${tersimpan} tersimpan, ${gagal.length} gagal — ${gagal.join("; ")}`
-        : "Keterangan kedua saksi tersimpan di ABT. Muat ulang halaman supaya isi variabel keterangan saksi ikut berubah.";
+        : `Keterangan ${tersimpan} saksi tersimpan di ABT. Muat ulang halaman supaya isi variabel keterangan saksi ikut berubah.`;
 
       // Di halaman penyunting tanya-jawab, barisnya sendiri yang berubah -
       // dan yang membacanya sedang memandang baris itu. Dimuat ulang begitu
@@ -3971,9 +4693,13 @@ function susunPanelAbt(jatiDiri) {
     return kotak;
   }
 
-  function gambarFormSdg(daftarTemplat, urutanAwal, sudahAda) {
+  function gambarFormSdg(daftarTemplat, urutanAwal, sudahAda, alasanSdg) {
     wadahUsulan.textContent = "";
     const form = buatElemen("div", "aleta-sdg-form");
+    const pilihanAlasan =
+      alasanSdg && Array.isArray(alasanSdg.pilihan) && alasanSdg.pilihan.length
+        ? alasanSdg.pilihan
+        : DAFTAR_ALASAN_SDG.map((a) => ({ kunci: a, label: a }));
 
     const barisTemplat = buatElemen("label", "aleta-sdg-ruas");
     barisTemplat.appendChild(buatElemen("span", "aleta-abt-label", "Templat pertanyaan"));
@@ -4001,6 +4727,43 @@ function susunPanelAbt(jatiDiri) {
     barisSidang.appendChild(isiSidang);
     form.appendChild(barisSidang);
 
+    // ======================================================================
+    // BANYAK SAKSI - DARI NAMA SAKSI YANG TERCANTUM DI BLANGKO
+    // ======================================================================
+    //
+    // Nama saksi ke-n tiap pihak adalah variabel referensi tanya-jawabnya
+    // (VAR_NAMA_SAKSI). Yang terisi di blangko ini menjadi jumlah bawaan;
+    // bila tidak satu pun tergambar, bawaannya dua saksi Penggugat seperti
+    // semula. Menyimpan untuk saksi yang belum terdaftar di SIPP ditolak ABT
+    // sendiri, dan penolakannya disebut per saksi.
+    const petaHalaman = barisVariabel();
+    const terdaftar = (pihak) =>
+      VAR_NAMA_SAKSI[pihak].filter((kode) => petaHalaman.has(kode) && keadaanNilai(nilaiVariabel(kode)) === "terisi").length;
+    const adaNamaDiHalaman = (pihak) => VAR_NAMA_SAKSI[pihak].some((kode) => petaHalaman.has(kode));
+    const bawaanP = adaNamaDiHalaman("P") ? Math.min(BATAS_SAKSI_SDG.P, Math.max(1, terdaftar("P"))) : 2;
+    const bawaanT = adaNamaDiHalaman("T") ? Math.min(BATAS_SAKSI_SDG.T, terdaftar("T")) : 0;
+
+    const barisJumlah = buatElemen("div", "aleta-sdg-ruas aleta-sdg-jumlah-saksi");
+    const pilihJumlah = (label, dari, sampai, nilai) => {
+      const l = buatElemen("label", "aleta-sdg-ruas");
+      l.appendChild(buatElemen("span", "aleta-abt-label", label));
+      const s = document.createElement("select");
+      s.className = "aleta-sdg-pilih";
+      for (let n = dari; n <= sampai; n += 1) {
+        const o = document.createElement("option");
+        o.value = String(n);
+        o.textContent = String(n);
+        s.appendChild(o);
+      }
+      s.value = String(nilai);
+      l.appendChild(s);
+      barisJumlah.appendChild(l);
+      return s;
+    };
+    const jumlahP = pilihJumlah(`Saksi ${nilaiVariabel(VAR_PIHAK_LAWAN) || "Penggugat"}`, 1, BATAS_SAKSI_SDG.P, bawaanP);
+    const jumlahT = pilihJumlah(`Saksi ${nilaiVariabel(VAR_PIHAK_PELAKU) || "Tergugat"}`, 0, BATAS_SAKSI_SDG.T, bawaanT);
+    form.appendChild(barisJumlah);
+
     const barisSdg = buatElemen("label", "aleta-sdg-ruas aleta-sdg-centang");
     const centangSdg = document.createElement("input");
     centangSdg.type = "checkbox";
@@ -4010,7 +4773,7 @@ function susunPanelAbt(jatiDiri) {
     form.appendChild(barisSdg);
 
     // ======================================================================
-    // MODUS TIAP SAKSI - DUA SAKSI JARANG TAHU HAL YANG SAMA
+    // MODUS TIAP SAKSI - SAKSI JARANG TAHU HAL YANG SAMA
     // ======================================================================
     //
     // Tetangga melihat pertengkarannya tetapi tidak tahu sebabnya; orang tua
@@ -4040,92 +4803,99 @@ function susunPanelAbt(jatiDiri) {
     // tempat yang memperlihatkan pertukarannya.
     //
     // Sejak 23 September 2026 kodenya menyebut pihaknya langsung, dan nama
-    // sebutannya ikut dikirim apa adanya (sumberNama) supaya bot tidak perlu
-    // menafsirkan kode sama sekali.
+    // sebutannya ikut dikirim apa adanya (sumberNama, lihat susunMuatanSdg)
+    // supaya bot tidak perlu menafsirkan kode sama sekali.
     const DAFTAR_SUMBER = [
       ["penggugat", "Penggugat/Pemohon"],
       ["tergugat", "Tergugat/Termohon"],
       ["keluarga", "keluarga"],
     ];
-    const kendaliModus = [];
-    for (const nomorSaksi of [1, 2]) {
-      const baris = buatElemen("div", "aleta-sdg-modus");
-      baris.appendChild(buatElemen("span", "aleta-abt-label", `Saksi ${nomorSaksi}`));
-      const pilihModus = document.createElement("select");
-      pilihModus.className = "aleta-sdg-pilih";
-      for (const [nilai, nama] of DAFTAR_MODUS) {
-        const o = document.createElement("option");
-        o.value = nilai;
-        o.textContent = nama;
-        pilihModus.appendChild(o);
-      }
-      // Bawaan: saksi 1 tahu semuanya, saksi 2 hanya sebagian - bentuk yang
-      // paling sering ditemui, dan yang paling sukar dipatahkan.
-      pilihModus.value = nomorSaksi === 1 ? "sama" : "sebagian";
-      baris.appendChild(pilihModus);
+    const wadahModus = buatElemen("div", "aleta-sdg-daftar-modus");
+    form.appendChild(wadahModus);
+    let kendaliModus = [];
 
-      const pilihSumber = document.createElement("select");
-      pilihSumber.className = "aleta-sdg-pilih";
-      pilihSumber.title = "Siapa yang bercerita kepada saksi ini";
-      for (const [nilai, nama] of DAFTAR_SUMBER) {
-        const o = document.createElement("option");
-        o.value = nilai;
-        o.textContent = `cerita dari ${nama}`;
-        pilihSumber.appendChild(o);
-      }
-      pilihSumber.hidden = pilihModus.value !== "dari-cerita";
-      baris.appendChild(pilihSumber);
+    /** Baris modus untuk tiap saksi, digambar ulang tiap jumlahnya berubah. */
+    function gambarModus() {
+      // Pilihan yang sudah dibuat dipertahankan per saksi.
+      const lama = new Map(kendaliModus.map((k) => [`${k.pihak}${k.ke}`, k]));
+      wadahModus.textContent = "";
+      kendaliModus = [];
+      const daftar = [];
+      for (let ke = 1; ke <= Number(jumlahP.value); ke += 1) daftar.push({ pihak: "P", ke });
+      for (let ke = 1; ke <= Number(jumlahT.value); ke += 1) daftar.push({ pihak: "T", ke });
+      daftar.forEach(({ pihak, ke }, urut) => {
+        const sebelum = lama.get(`${pihak}${ke}`);
+        const baris = buatElemen("div", "aleta-sdg-modus");
+        const kode = variabelSaksiSdg(pihak, ke);
+        const label = buatElemen("span", "aleta-abt-label", `Saksi ${ke} ${pihak}`);
+        label.title = `Disimpan ke variabel ${kode}.`;
+        baris.appendChild(label);
+        const pilihModus = document.createElement("select");
+        pilihModus.className = "aleta-sdg-pilih";
+        for (const [nilai, nama] of DAFTAR_MODUS) {
+          const o = document.createElement("option");
+          o.value = nilai;
+          o.textContent = nama;
+          pilihModus.appendChild(o);
+        }
+        // Bawaan: saksi pertama tahu semuanya, yang lain hanya sebagian -
+        // bentuk yang paling sering ditemui, dan yang paling sukar dipatahkan.
+        pilihModus.value = sebelum ? sebelum.pilihModus.value : urut === 0 ? "sama" : "sebagian";
+        baris.appendChild(pilihModus);
 
-      // Alasan yang diketahui saksi ini - hanya bila "sebagian".
-      const kotakSebagian = buatElemen("div", "aleta-sdg-alasan aleta-sdg-alasan-saksi");
-      const centangSebagian = [];
-      for (const a of DAFTAR_ALASAN_SDG) {
-        const label = buatElemen("label", "aleta-sdg-centang");
-        const c = document.createElement("input");
-        c.type = "checkbox";
-        c.value = a;
-        label.appendChild(c);
-        label.appendChild(document.createTextNode(` ${a}`));
-        kotakSebagian.appendChild(label);
-        centangSebagian.push(c);
-      }
-      kotakSebagian.hidden = pilihModus.value !== "sebagian";
-      baris.appendChild(kotakSebagian);
-
-      pilihModus.addEventListener("change", () => {
+        const pilihSumber = document.createElement("select");
+        pilihSumber.className = "aleta-sdg-pilih";
+        pilihSumber.title = "Siapa yang bercerita kepada saksi ini";
+        for (const [nilai, nama] of DAFTAR_SUMBER) {
+          const o = document.createElement("option");
+          o.value = nilai;
+          o.textContent = `cerita dari ${nama}`;
+          pilihSumber.appendChild(o);
+        }
+        if (sebelum) pilihSumber.value = sebelum.pilihSumber.value;
         pilihSumber.hidden = pilihModus.value !== "dari-cerita";
+        baris.appendChild(pilihSumber);
+
+        // Alasan yang diketahui saksi ini - hanya bila "sebagian".
+        const kotakSebagian = buatElemen("div", "aleta-sdg-alasan aleta-sdg-alasan-saksi");
+        const centangSebagian = [];
+        const tercentangLama = new Set(sebelum ? sebelum.centangSebagian.filter((c) => c.checked).map((c) => c.value) : []);
+        for (const a of pilihanAlasan) {
+          const labelAlasan = buatElemen("label", "aleta-sdg-centang");
+          const c = document.createElement("input");
+          c.type = "checkbox";
+          c.value = a.kunci;
+          c.checked = tercentangLama.has(a.kunci);
+          labelAlasan.appendChild(c);
+          labelAlasan.appendChild(document.createTextNode(` ${a.label}`));
+          kotakSebagian.appendChild(labelAlasan);
+          centangSebagian.push(c);
+        }
         kotakSebagian.hidden = pilihModus.value !== "sebagian";
+        baris.appendChild(kotakSebagian);
+
+        pilihModus.addEventListener("change", () => {
+          pilihSumber.hidden = pilihModus.value !== "dari-cerita";
+          kotakSebagian.hidden = pilihModus.value !== "sebagian";
+        });
+        wadahModus.appendChild(baris);
+        kendaliModus.push({ pihak, ke, kode, pilihModus, pilihSumber, centangSebagian });
       });
-      form.appendChild(baris);
-      kendaliModus.push({ pilihModus, pilihSumber, centangSebagian });
     }
-    // Sebutan yang sungguh dipilih, dibaca dari blangko ini juga. Dikirim apa
-    // adanya supaya artinya tidak bergantung pada tafsiran kode di seberang.
-    const sebutanSumber = (kode) => {
-      if (kode === "keluarga") return "keluarga mereka";
-      if (kode === "tergugat") return nilaiVariabel(VAR_PIHAK_PELAKU) || "Tergugat";
-      return nilaiVariabel(VAR_PIHAK_LAWAN) || "Penggugat";
-    };
-    const bacaModus = () => {
-      const satu = (k) => ({
-        modus: k.pilihModus.value,
-        sumber: k.pilihSumber.value,
-        sumberNama: sebutanSumber(k.pilihSumber.value),
-        alasan: k.centangSebagian.filter((c) => c.checked).map((c) => c.value),
-      });
-      return { saksi1: satu(kendaliModus[0]), saksi2: satu(kendaliModus[1]) };
-    };
+    jumlahP.addEventListener("change", gambarModus);
+    jumlahT.addEventListener("change", gambarModus);
+    gambarModus();
 
     const kotakAlasan = buatElemen("div", "aleta-sdg-alasan");
     kotakAlasan.appendChild(buatElemen("div", "aleta-abt-label", "Atau pilih alasan yang diterangkan saksi"));
     const centangAlasan = [];
-    for (const a of DAFTAR_ALASAN_SDG) {
+    for (const a of pilihanAlasan) {
       const label = buatElemen("label", "aleta-sdg-centang");
       const c = document.createElement("input");
       c.type = "checkbox";
-      c.value = a;
+      c.value = a.kunci;
       label.appendChild(c);
-      label.appendChild(document.createTextNode(` ${a}`));
+      label.appendChild(document.createTextNode(` ${a.label}`));
       kotakAlasan.appendChild(label);
       centangAlasan.push(c);
     }
@@ -4135,7 +4905,7 @@ function susunPanelAbt(jatiDiri) {
     });
     form.appendChild(kotakAlasan);
 
-    const susun = buatElemen("button", "aleta-permintaan-tombol", "Susun keterangan kedua saksi");
+    const susun = buatElemen("button", "aleta-permintaan-tombol", "Susun keterangan para saksi");
     susun.type = "button";
     form.appendChild(susun);
     const kabarForm = buatElemen("div", "aleta-abt-kabar");
@@ -4159,12 +4929,37 @@ function susunPanelAbt(jatiDiri) {
         if (!centangSdg.checked && !alasan.length) {
           throw new Error("Pilih sekurang-kurangnya satu alasan, atau centang “sama dengan gugatan”.");
         }
-        kabarForm.textContent = "Menyusun dua keterangan…";
+        const pilihanTemplat = daftarTemplat.find((t) => t.nilai === kodeTemplat);
+        // Kode kumpulan templat - "A1", "04", "IN1" - ikut menentukan varian
+        // kalimat (pemilih ragam K7b). Salinan keterangan saksi lain ('#')
+        // memakai nilainya sendiri.
+        const kodeKumpulan = pilihanTemplat && pilihanTemplat.kode && pilihanTemplat.kode !== "#" ? pilihanTemplat.kode : kodeTemplat;
+
+        // Templat mentah: hanya dari situ hubungan dua saksi ("#1241# /
+        // #1242#") dikenali dengan pasti. Gagal membacanya tidak menghentikan
+        // penyusunan - bot lalu menebak dari teks terganti - tetapi disebut.
+        const catatanMentah = [];
+        let mentah = new Map();
+        try {
+          mentah = await muatTemplatMentahAbt(kodeTemplat);
+        } catch (galat) {
+          catatanMentah.push(
+            `Templat mentah tidak terbaca (${String((galat && galat.message) || galat)}) - hubungan saksi ditebak dari teks templat.`
+          );
+        }
+        const templatDenganMentah = templat.map((b) => (mentah.has(b.no) ? { ...b, jawabMentah: mentah.get(b.no) } : b));
+
+        kabarForm.textContent = `Menyusun keterangan ${kendaliModus.length} saksi…`;
         const peta = barisVariabel();
-        const isiJawaban = await mintaUsulan({
-          nomorPerkara: nomorPerkaraAbt(),
-          sumber: "saksi-sdg",
-          templat,
+        const nomor = nomorPerkaraAbt();
+        const muatan = susunMuatanSdg({
+          nomorPerkara: nomor,
+          templat: templatDenganMentah,
+          kodeKumpulan,
+          // Id SIPP (syarat bentuk bergender data.syarat.jenisPerkaraId) dan
+          // alur_perkara_id - bukan nama, bukan "Gugatan".
+          jenisPerkara: idJenisPerkaraSipp(nilaiVariabel(VAR_JENIS_PERKARA) || sebutJenisPerkara(nomor)),
+          alur: idAlurPerkaraSipp(nomor),
           alasan,
           posita: centangSdg.checked && peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "",
           // ================================================================
@@ -4185,19 +4980,33 @@ function susunPanelAbt(jatiDiri) {
           // supaya tidak ada tempat kedua yang dapat tertukar lagi.
           pelaku: (peta.get(VAR_PIHAK_PELAKU) || {}).nilai || "",
           lawan: (peta.get(VAR_PIHAK_LAWAN) || {}).nilai || "",
-          modus: bacaModus(),
+          saksi: kendaliModus.map((k) => ({
+            pihak: k.pihak,
+            ke: kendaliModus.indexOf(k) + 1,
+            modus: k.pilihModus.value,
+            sumber: k.pilihSumber.value,
+            alasan: k.centangSebagian.filter((c) => c.checked).map((c) => c.value),
+          })),
         });
+        const isiJawaban = await mintaUsulan(muatan);
         const hasil = isiJawaban.saksiSdg || {};
         if (hasil.ok === false) throw new Error(hasil.alasan === "templat_kosong" ? "Templat kosong." : "Keterangan tidak tersusun.");
+        const kabarAkhir = [...catatanMentah];
         if (centangSdg.checked && !(hasil.alasan || []).length) {
-          kabarForm.textContent =
-            "Tidak satu pun alasan terbaca dari posita; jawaban tentang penyebab diambil apa adanya dari templat.";
-        } else {
-          kabarForm.textContent = "";
+          kabarAkhir.push("Tidak satu pun alasan terbaca dari posita; jawaban tentang penyebab diambil apa adanya dari templat.");
         }
-        const pilihanTemplat = daftarTemplat.find((t) => t.nilai === kodeTemplat);
+        if (Array.isArray(isiJawaban.saksiDitolak) && isiJawaban.saksiDitolak.length) {
+          kabarAkhir.push(`${isiJawaban.saksiDitolak.length} saksi ditolak penyaring: ${isiJawaban.saksiDitolak.map((x) => x.alasan).join(", ")}.`);
+        }
+        kabarForm.textContent = kabarAkhir.join(" ");
         wadahPratinjau.appendChild(
-          gambarPratinjauSdg(hasil, urutan, pilihanTemplat ? pilihanTemplat.kode : kodeTemplat, urutan === String(urutanAwal) ? sudahAda : 0)
+          gambarPratinjauSdg(
+            hasil,
+            urutan,
+            pilihanTemplat ? pilihanTemplat.kode : kodeTemplat,
+            urutan === String(urutanAwal) ? sudahAda : 0,
+            kendaliModus.map((k) => ({ pihak: k.pihak, ke: k.ke, kode: k.kode }))
+          )
         );
       } catch (galat) {
         kabarForm.className = "aleta-abt-kabar aleta-abt-gagal";
@@ -4232,10 +5041,24 @@ function susunPanelAbt(jatiDiri) {
       gambarSelisih([]);
       gambarSepihak(null);
       gambarHuruf([], []);
-      gambarFormSdg(daftarTemplat, urutan, sudahAda);
-      kabar.textContent = sudahAda
-        ? `Sidang ke-${urutan} sudah memuat ${sudahAda} tanya-jawab saksi 1; menyimpan akan menimpanya.`
-        : `Belum ada keterangan saksi tersimpan; akan disimpan pada sidang ke-${urutan}.`;
+      // Pilihan alasan dari portal (bas.saksi.alasan-pilihan); sembilan
+      // tertanam bila portal dan singgahan tidak menjawab. Gagal membacanya
+      // tidak menghentikan borang - tetapi disebut.
+      let alasanSdg = null;
+      let catatanAlasan = "";
+      try {
+        alasanSdg = await muatAlasanSdg();
+        if (alasanSdg.asal !== "portal") {
+          catatanAlasan = ` Pilihan alasan dari ${alasanSdg.asal === "singgahan" ? "salinan terakhir portal" : "daftar tertanam"}.`;
+        }
+      } catch (galat) {
+        catatanAlasan = ` Pilihan alasan portal tidak terbaca (${String((galat && galat.message) || galat)}); dipakai daftar tertanam.`;
+      }
+      gambarFormSdg(daftarTemplat, urutan, sudahAda, alasanSdg);
+      kabar.textContent =
+        (sudahAda
+          ? `Sidang ke-${urutan} sudah memuat ${sudahAda} tanya-jawab saksi 1; menyimpan akan menimpanya.`
+          : `Belum ada keterangan saksi tersimpan; akan disimpan pada sidang ke-${urutan}.`) + catatanAlasan;
     } catch (galat) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = String((galat && galat.message) || galat);
@@ -4488,14 +5311,21 @@ const jeda = setInterval(() => {
  * blangko (a/b) dirender ABT, dan hanya dari halaman ini token itu dapat
  * dibaca tanpa menebak.
  *
- * Alurnya per perkara, berurutan, dengan jeda:
+ * Alurnya per perkara, berurutan:
  *
- *   RTF     GET  abt/preview?a=&b=&c=<perkara_id>     - ABT mengisi blangko
- *   draf    POST /putusan/unggah-naskah                - ALETA memotong amar
- *   PDF     POST /aleta-bot/abt/pdf                    - bot (soffice)
- *   anonim  POST abt/main/anonim                       - ABT menyamarkan nama
- *   PDF²    POST /aleta-bot/abt/pdf                    - anonim menjadi PDF
- *   SIPP    POST /putusan/unggah-sipp   (bila diminta) - berkas + kolom dokumen
+ *   RTF     GET  abt/preview?a=&b=&c=<perkara_id>         - ABT mengisi blangko
+ *   draf    POST /putusan/unggah-naskah                    - ALETA memotong amar
+ *   anonim  POST abt/main/anonim   (bila diunggah/diunduh) - ABT menyamarkan nama
+ *   PDF     POST /aleta-bot/abt/pdf (hanya bila diunduh)   - bot (soffice)
+ *   SIPP    POST /putusan/unggah-sipp   (bila diminta)     - RTF putusan dan RTF
+ *           anonimisasinya dalam satu kiriman
+ *
+ * TIDAK ADA LAGI KERJA YANG HASILNYA DIBUANG. Sampai 1.167 setelan bawaannya
+ * (unggah mati) tetap membuat PDF, anonim, dan PDF anonim - tiga dari lima
+ * permintaan per perkara - lalu tidak memakai satu pun, sementara ringkasannya
+ * berbunyi "PDF ok · anonim ok". Dan unggah ke SIPP menuntut PDF, padahal
+ * 87,7% e-Doc satker berbentuk RTF dan rute unggah-sipp menerima RTF:
+ * mematikan PDF membuat unggahannya dilewati ("tidak ada PDF").
  *
  * Satu perkara gagal TIDAK menghentikan sisanya: tiap perkara berdiri
  * sendiri, dan yang gagal dicatat sebabnya di neraca. Ini beda dengan
@@ -4509,14 +5339,17 @@ const KUNCI_POSISI_MASSAL_ABT = "posisiPanelAbtMassal";
 const ALETA_API_UNGGAH_NASKAH_ABT = "/aleta/api/aleta-ecourt/putusan/unggah-naskah";
 const ALETA_API_UNGGAH_SIPP_ABT = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
 /**
- * Harus LEBIH LAMA daripada batas gerbangnya (timeoutMs 60000 pada
+ * Harus LEBIH LAMA daripada batas gerbangnya (timeoutMs pada
  * gatewayUnggahPutusanSipp). Dahulu persis sama - tanpa selisih sama sekali -
  * sehingga keduanya menyerah pada saat yang sama, dan yang membatalkan lebih
  * dahulu meninggalkan berkas yang sudah tertulis tanpa barisnya.
  *
- * Urutannya harus menaik dari dalam ke luar: bot, gerbang, lalu ekstensi.
+ * Urutannya harus menaik dari dalam ke luar (K6): bot 90 detik per konversi,
+ * gerbang 120 detik, lalu ekstensi 150 detik. RTF yang kini dikirim apa adanya
+ * diubah bot sendiri bila perlu - karena itu gerbangnya dinaikkan, dan batas
+ * di sini harus tetap di luarnya.
  */
-const BATAS_UNGGAH_MASSAL_MS = 90000;
+const BATAS_UNGGAH_MASSAL_MS = 150000;
 
 /** Halaman daftar blangko ABT: ada bilah kelompok di kiri dan kartu berkas di kanan. */
 function halamanBerandaAbt() {
@@ -5120,8 +5953,11 @@ function bagianMassalAbt(keadaan) {
   const daftar = buatElemen("div", "aleta-massal-daftar");
   kotak.appendChild(daftar);
 
-  // Pilihan pekerjaan - semuanya menyala kecuali unggah ke SIPP, yang
-  // MENULIS ke berkas perkara sungguhan dan karena itu diminta secara sadar.
+  // Pilihan pekerjaan. Unggah ke SIPP MENULIS ke berkas perkara sungguhan dan
+  // karena itu diminta secara sadar; unduh menaruh berkas di komputer ini dan
+  // juga dinyalakan sendiri. PDF dan anonimisasi hanya DIBUAT bila ada yang
+  // memakainya - diunduh atau diunggah - dan yang tidak dibuat disebut apa
+  // adanya di ringkasan, bukan dilaporkan "ok".
   const pilihan = buatElemen("div", "aleta-massal-pilihan");
   const saklar = (label, kunci, bawaan, judul) => {
     const l = buatElemen("label", "aleta-massal-baris");
@@ -5140,9 +5976,33 @@ function bagianMassalAbt(keadaan) {
     return c;
   };
   const cDraf = saklar("Simpan draf ke ALETA", "draf", true, "Amar dan pertimbangan dipotong dari RTF, menjadi draf yang diisikan panel SIPP.");
-  const cPdf = saklar("Buat PDF", "pdf", true, "Lewat bot ALETA (soffice). Di komputer tanpa soffice langkah ini gagal dan dicatat.");
-  const cAnonim = saklar("Anonimisasi", "anonim", true, "ABT menyamarkan nama pihak; hasilnya RTF, lalu PDF.");
-  const cUnggah = saklar("Unggah dokumen ke SIPP", "unggah", false, "PDF putusan dan anonimisasinya ditulis ke berkas perkara SIPP. Dinyalakan sendiri.");
+  const cAnonim = saklar(
+    "Anonimisasi",
+    "anonim",
+    true,
+    "ABT menyamarkan nama pihak (RTF). Dibuat hanya bila diunggah ke SIPP atau diunduh."
+  );
+  const cUnduh = saklar(
+    "Unduh berkas ke komputer",
+    "unduh",
+    false,
+    "RTF putusan, PDF-nya, dan anonimisasinya diunduh ke folder unduhan. Dinyalakan sendiri."
+  );
+  const cPdf = saklar(
+    "PDF ikut diunduh",
+    "pdf",
+    true,
+    "Lewat bot ALETA (soffice), hanya untuk unduhan - SIPP menerima RTF apa adanya."
+  );
+  const cUnggah = saklar("Unggah dokumen ke SIPP", "unggah", false, "RTF putusan dan anonimisasinya ditulis ke berkas perkara SIPP dalam satu kiriman. Dinyalakan sendiri.");
+  /** Pilihan yang berlaku SEKARANG - dibaca saat diperiksa dan saat dijalankan. */
+  const opsiMassal = () => ({
+    draf: cDraf.checked,
+    pdf: cPdf.checked,
+    anonim: cAnonim.checked,
+    unduh: cUnduh.checked,
+    unggah: cUnggah.checked,
+  });
   kotak.appendChild(pilihan);
 
   const aksi = buatElemen("div", "aleta-abt-aksi");
@@ -5442,7 +6302,7 @@ function bagianMassalAbt(keadaan) {
           "span",
           "aleta-perkakas-nilai",
           alatBlangkoLengkap(peta)
-            ? `${peta.berkas} → RTF${cDraf.checked ? " → draf" : ""}${cPdf.checked ? " → PDF" : ""}${cAnonim.checked ? " → anonim" : ""}${cUnggah.checked ? " → SIPP" : ""}`
+            ? `${peta.berkas} → ${rantaiMassalAbt(opsiMassal())}`
             : `DILEWATI: blangko untuk "${s.jenis}" belum dipetakan`
         )
       );
@@ -5477,7 +6337,11 @@ function bagianMassalAbt(keadaan) {
   });
 
   tombolHenti.addEventListener("click", () => {
-    keadaan.berhenti = true;
+    // Perkara yang sedang dikerjakan diselesaikan, lalu tidak ada perkara
+    // berikutnya - lihat jalankanMassalAbt. Sinyal inilah satu-satunya
+    // penanda berhenti; bendera keadaan.berhenti yang dahulu dibaca
+    // lingkarannya sudah tidak dibaca siapa pun.
+    if (keadaan.pembatal) keadaan.pembatal.abort();
     tombolHenti.textContent = "Menghentikan sesudah perkara ini…";
   });
 
@@ -5488,8 +6352,8 @@ function bagianMassalAbt(keadaan) {
     if (!sudahDiperiksa) return;
     const dipilih = yangDicentang().filter((s) => alatBlangkoLengkap(petaUntuk(s)));
     if (dipilih.length === 0) return;
-    keadaan.berhenti = false;
     keadaan.sedangJalan = true;
+    keadaan.pembatal = new AbortController();
     tombolJalan.disabled = true;
     tombolRencana.disabled = true;
     tombolHenti.hidden = false;
@@ -5505,37 +6369,54 @@ function bagianMassalAbt(keadaan) {
     await alatSimpanAntrean(antrean);
     alatCatat("massal", `putusan massal ABT dimulai: ${dipilih.length} perkara, sidang ${keadaan.tanggal}`, "");
 
-    const opsi = { draf: cDraf.checked, pdf: cPdf.checked, anonim: cAnonim.checked, unggah: cUnggah.checked };
+    const opsi = opsiMassal();
     const olehUsername = namaPenggunaAbt();
 
-    for (const butir of antrean.butir) {
-      if (keadaan.berhenti) {
-        butir.keadaan = "dilewati";
-        butir.catatan = "dihentikan";
-        continue;
+    // Satu baris neraca per perkara, dibuat saat perkara itu mulai disentuh -
+    // persiapannya dapat berjalan di dalam jeda sesudah perkara sebelumnya.
+    const barisNeraca = new Map();
+    const barisUntuk = (butir) => {
+      let b = barisNeraca.get(butir.nomor);
+      if (!b) {
+        const el = buatElemen("div", "aleta-perkakas-baris");
+        el.appendChild(buatElemen("span", "aleta-perkakas-nama", butir.nomor));
+        const nilai = buatElemen("span", "aleta-perkakas-nilai", "menunggu…");
+        el.appendChild(nilai);
+        neraca.appendChild(el);
+        b = { el, nilai };
+        barisNeraca.set(butir.nomor, b);
       }
-      butir.keadaan = "jalan";
-      await alatSimpanAntrean(antrean);
-      const baris = buatElemen("div", "aleta-perkakas-baris");
-      baris.appendChild(buatElemen("span", "aleta-perkakas-nama", butir.nomor));
-      const nilai = buatElemen("span", "aleta-perkakas-nilai", "mengambil RTF…");
-      baris.appendChild(nilai);
-      neraca.appendChild(baris);
+      return b;
+    };
 
-      const peta = petaUntuk(butir);
-      const hasil = await kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, (teks) => {
-        nilai.textContent = teks;
+    try {
+      await jalankanMassalAbt(antrean.butir, {
+        opsi,
+        olehUsername,
+        petaUntuk,
+        sinyalBatal: keadaan.pembatal.signal,
+        laporButir: (butir, teks) => {
+          barisUntuk(butir).nilai.textContent = teks;
+        },
+        // Antrean disimpan tiap langkah: keadaannya tetap terbaca walau
+        // panelnya dimuat ulang di tengah jalan.
+        sesudahLangkah: () => alatSimpanAntrean(antrean),
+        sesudahButir: async (butir) => {
+          const b = barisUntuk(butir);
+          b.el.classList.add(butir.keadaan === "selesai" ? "aleta-perkakas-baik" : "aleta-perkakas-buruk");
+          b.nilai.textContent = butir.catatan;
+          const tanda = centangPer.get(butir.nomor);
+          if (tanda) tanda.tanda.textContent = butir.keadaan === "selesai" ? "selesai" : butir.keadaan === "gagal" ? "gagal" : "dilewati";
+          await alatSimpanAntrean(antrean);
+        },
       });
-      butir.keadaan = hasil.ok ? "selesai" : "gagal";
-      butir.catatan = hasil.ringkas;
-      butir.dokumen = hasil.dokumen;
-      baris.classList.add(hasil.ok ? "aleta-perkakas-baik" : "aleta-perkakas-buruk");
-      nilai.textContent = hasil.ringkas;
-      const tanda = centangPer.get(butir.nomor);
-      if (tanda) tanda.tanda.textContent = hasil.ok ? "selesai" : "gagal";
-      await alatSimpanAntrean(antrean);
-      await alatJeda(ALAT_JEDA_MASSAL_MS);
+    } catch (galat) {
+      // Tidak ditelan: yang terhenti di tengah disebut di neraca dan di kotak hitam.
+      const pesan = String((galat && galat.message) || galat);
+      neraca.appendChild(buatElemen("div", "aleta-tetap-sebab aleta-lencana-mendesak", `Putusan massal terhenti: ${pesan}`));
+      alatCatat("massal-galat", `putusan massal ABT terhenti: ${pesan}`, "");
     }
+    await alatSimpanAntrean(antrean);
 
     const h = alatAntreanRingkas(antrean);
     neraca.appendChild(
@@ -5590,6 +6471,7 @@ function bagianMassalAbt(keadaan) {
     }
 
     keadaan.sedangJalan = false;
+    keadaan.pembatal = null;
     tombolHenti.hidden = true;
     tombolRencana.disabled = false;
     // Rencananya habis terpakai: menekan Jalankan sekali lagi akan mengulang
@@ -5610,11 +6492,13 @@ function bagianMassalAbt(keadaan) {
 }
 
 /**
- * Satu perkara, enam langkah, tiap langkah dicatat sendiri.
+ * Satu perkara, tiap langkah dicatat sendiri.
  *
- * Pulang dengan ringkasan yang menyebut apa yang jadi dan apa yang tidak -
- * "RTF ok · draf v3 · PDF ok · anonim gagal: ABT menjawab 500" - bukan
- * sekadar berhasil/gagal.
+ * Pulang dengan ringkasan yang menyebut apa yang jadi, apa yang tidak, dan apa
+ * yang TIDAK DIBUAT - "RTF ok · draf v3 · PDF & anonim tidak dibuat (tidak
+ * diunduh maupun diunggah)" atau "RTF ok · draf v3 · anonim ok · SIPP ok
+ * (putusan + anonimisasi)" - bukan sekadar berhasil/gagal, dan bukan "ok"
+ * untuk berkas yang tidak pernah dipakai.
  */
 
 /**
@@ -5629,9 +6513,10 @@ function bagianMassalAbt(keadaan) {
  * yang lambat laun berbeda - dan yang berbeda diam-diam adalah yang menulis ke
  * SIPP.
  *
- * Empat centangnya sama dengan yang di panel massal, dan bawaannya pun sama:
- * draf, PDF, anonim, unggah. Yang membuka satu perkara di ABT hampir selalu
- * hendak mengerjakan keempatnya - dan yang tidak, tinggal mematikannya.
+ * Centangnya sama artinya dengan yang di panel massal: draf, anonimisasi,
+ * unggah, dan unduh. Bawaannya draf, anonim, dan unggah menyala - yang
+ * membuka satu perkara di ABT hampir selalu hendak mengunggahnya - sedangkan
+ * unduh mati. PDF hanya dibuat untuk unduhan: SIPP menerima RTF apa adanya.
  */
 function bagianUnggahSatuAbt(isi) {
   const jatiDiri = jatiDiriPerkara();
@@ -5649,7 +6534,7 @@ function bagianUnggahSatuAbt(isi) {
       "div",
       "aleta-abt-catatan",
       nomor
-        ? `${nomor} - RTF diambil dari blangko ABT, diubah ke PDF, lalu diunggah beserta anonimisasinya.`
+        ? `${nomor} - RTF diambil dari blangko ABT, lalu diunggah apa adanya beserta anonimisasinya.`
         : "Nomor perkaranya tidak terbaca dari kepala halaman; unggahannya tetap memakai perkara yang sedang dibuka."
     )
   );
@@ -5709,9 +6594,9 @@ function bagianUnggahSatuAbt(isi) {
     pilihan[kunci] = kotakCentang;
   };
   centang("draf", "Simpan draf ke ALETA", true);
-  centang("pdf", "Buat PDF putusan", true);
-  centang("anonim", "Buat PDF anonimisasi", true);
-  centang("unggah", "Unggah ke SIPP", true);
+  centang("anonim", "Anonimisasi", true);
+  centang("unggah", "Unggah ke SIPP (putusan dan anonimisasinya)", true);
+  centang("unduh", "Unduh RTF, PDF, dan anonim ke komputer", false);
 
   const tombol = buatElemen("button", "aleta-abt-tombol", "Kerjakan perkara ini");
   tombol.type = "button";
@@ -5740,9 +6625,11 @@ function bagianUnggahSatuAbt(isi) {
       const butir = { nomor: nomor || "", perkaraId: jatiDiri.perkaraId, jenis };
       const opsi = {
         draf: pilihan.draf.checked,
-        pdf: pilihan.pdf.checked,
         anonim: pilihan.anonim.checked,
         unggah: pilihan.unggah.checked,
+        unduh: pilihan.unduh.checked,
+        // PDF hanya untuk unduhan - SIPP menerima RTF apa adanya.
+        pdf: pilihan.unduh.checked,
       };
       const hasil = await kerjakanSatuPerkaraAbt(
         butir,
@@ -5767,24 +6654,70 @@ function bagianUnggahSatuAbt(isi) {
   return kotak;
 }
 
-async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
-  const dokumen = { rtf: "", draf: "", pdf: "", anonim: "", anonimPdf: "", unggah: "" };
+/**
+ * ============================================================================
+ * RANTAI PEKERJAAN SATU PERKARA - DISEBUT SEPERTI YANG SUNGGUH DIKERJAKAN
+ * ============================================================================
+ *
+ * PDF dan anonimisasi hanya dibuat bila ada yang memakainya. Rencana yang
+ * menyebut "→ PDF → anonim" padahal hasilnya dibuang adalah rencana yang
+ * berbohong - dan itulah yang terjadi sampai 1.167 pada setelan bawaan.
+ */
+
+/** Anonimisasi dipakai hanya bila diunggah ke SIPP atau diunduh. */
+function anonimDipakaiAbt(opsi) {
+  const o = opsi || {};
+  return Boolean(o.anonim) && (Boolean(o.unggah) || Boolean(o.unduh));
+}
+
+function rantaiMassalAbt(opsi) {
+  const o = opsi || {};
+  const pakaiAnonim = anonimDipakaiAbt(o);
+  const rantai = ["RTF"];
+  if (o.draf) rantai.push("draf");
+  if (pakaiAnonim) rantai.push("anonim");
+  if (o.unduh) rantai.push(`unduh (RTF${o.pdf ? ", PDF" : ""}${pakaiAnonim ? ", anonim" : ""})`);
+  if (o.unggah) rantai.push(pakaiAnonim ? "SIPP (putusan + anonimisasi)" : "SIPP (putusan)");
+  return rantai.join(" → ");
+}
+
+/**
+ * ============================================================================
+ * PERSIAPAN SATU PERKARA - SEMUA YANG TIDAK MENULIS KE SIPP
+ * ============================================================================
+ *
+ *   RTF     GET  abt/preview                    selalu
+ *   draf    POST /putusan/unggah-naskah         bila dicentang
+ *   anonim  POST abt/main/anonim                bila diunggah ATAU diunduh
+ *   PDF     POST /aleta-bot/abt/pdf             hanya bila diunduh
+ *   unduh   berkas ke folder unduhan            bila dicentang
+ *
+ * Dipisah dari unggahannya supaya persiapan perkara berikutnya dapat
+ * dikerjakan SELAMA jeda sesudah perkara ini - lihat jalankanMassalAbt.
+ *
+ * Yang tidak dibuat DISEBUT di ringkasan, bukan dilaporkan "ok".
+ */
+async function siapkanPerkaraAbt(butir, peta, opsi, lapor) {
+  const o = opsi || {};
+  const kabar = typeof lapor === "function" ? lapor : () => {};
+  const dokumen = { rtf: "", draf: "", anonim: "", pdf: "", unduh: "", unggah: "" };
   const ringkas = [];
   const namaDasar = String(butir.nomor || "putusan").replace(/[\\/:*?"<>|]+/g, "_");
+  const siap = { butir, dokumen, ringkas, namaDasar, isiRtf: null, isiAnonim: null, ok: false };
 
   // 1. RTF dari ABT
-  let isiRtf = null;
   try {
     const alamat = alatAlamatPreviewAbt(asalAbt(), peta, butir.perkaraId);
     if (!alamat) throw new Error("blangko belum dipetakan");
-    lapor("mengambil RTF dari ABT…");
+    kabar("mengambil RTF dari ABT…");
     const respons = await fetch(alamat, { credentials: "include", cache: "no-store" });
     if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
-    isiRtf = await respons.arrayBuffer();
+    const isiRtf = await respons.arrayBuffer();
     const awal = new TextDecoder("latin1").decode(new Uint8Array(isiRtf).subarray(0, 5));
     if (!awal.startsWith("{\\rtf")) {
       throw new Error("ABT tidak mengembalikan RTF - token blangko tidak sah atau sesi ABT habis");
     }
+    siap.isiRtf = isiRtf;
     dokumen.rtf = "ok";
     ringkas.push("RTF ok");
     alatCatat("massal", `${butir.nomor}: RTF ${isiRtf.byteLength} bita`, "");
@@ -5792,15 +6725,16 @@ async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
     dokumen.rtf = `gagal: ${String((galat && galat.message) || galat)}`;
     ringkas.push(dokumen.rtf.replace("gagal", "RTF gagal"));
     alatCatat("massal-galat", `${butir.nomor}: ${dokumen.rtf}`, "");
-    return { ok: false, ringkas: ringkas.join(" · "), dokumen };
+    return siap;
   }
+  siap.ok = true;
 
   // 2. Draf ke ALETA
-  if (opsi.draf) {
+  if (o.draf) {
     try {
-      lapor("menyimpan draf ke ALETA…");
+      kabar("menyimpan draf ke ALETA…");
       const badan = new FormData();
-      badan.append("berkas", new Blob([isiRtf], { type: "application/rtf" }), `${namaDasar}.rtf`);
+      badan.append("berkas", new Blob([siap.isiRtf], { type: "application/rtf" }), `${namaDasar}.rtf`);
       badan.append("nomorPerkara", butir.nomor);
       badan.append("perkaraId", butir.perkaraId);
       const respons = await alatAmbil(
@@ -5821,30 +6755,15 @@ async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
     }
   }
 
-  // 3. PDF putusan
-  let pdfPutusan = null;
-  if (opsi.pdf) {
+  // 3. Anonimisasi lewat ABT - hanya bila ada yang memakainya
+  const pakaiAnonim = anonimDipakaiAbt(o);
+  if (pakaiAnonim) {
     try {
-      lapor("mengubah menjadi PDF…");
-      pdfPutusan = await ubahKePdf(isiRtf);
-      dokumen.pdf = "ok";
-      ringkas.push("PDF ok");
-    } catch (galat) {
-      dokumen.pdf = `gagal: ${String((galat && galat.message) || galat)}`;
-      ringkas.push(`PDF ${dokumen.pdf}`);
-      alatCatat("massal-galat", `${butir.nomor}: PDF ${dokumen.pdf}`, "");
-    }
-  }
-
-  // 4. Anonimisasi lewat ABT, 5. PDF-nya
-  let pdfAnonim = null;
-  if (opsi.anonim) {
-    try {
-      lapor("meminta ABT menganonimkan…");
+      kabar("meminta ABT menganonimkan…");
       const borang = new FormData();
       borang.set("perkara_id", butir.perkaraId);
       borang.set("perkara_no", butir.nomor);
-      borang.set("file_putusan", new Blob([isiRtf], { type: "application/rtf" }), `${namaDasar}.rtf`);
+      borang.set("file_putusan", new Blob([siap.isiRtf], { type: "application/rtf" }), `${namaDasar}.rtf`);
       const respons = await fetch(`${asalAbt()}/main/anonim`, {
         method: "POST",
         credentials: "include",
@@ -5859,62 +6778,317 @@ async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
         const pesan = teks.match(/Proses Anonim Gagal[^<]*/i);
         throw new Error(pesan ? pesan[0].slice(0, 120) : "ABT tidak mengembalikan RTF");
       }
+      siap.isiAnonim = isi;
       dokumen.anonim = "ok";
       ringkas.push("anonim ok");
-      if (opsi.pdf) {
-        lapor("mengubah anonim menjadi PDF…");
-        pdfAnonim = await ubahKePdf(isi);
-        dokumen.anonimPdf = "ok";
-      }
     } catch (galat) {
       const pesan = String((galat && galat.message) || galat);
-      if (!dokumen.anonim) {
-        dokumen.anonim = `gagal: ${pesan}`;
-        ringkas.push(`anonim gagal: ${pesan}`);
-      } else {
-        dokumen.anonimPdf = `gagal: ${pesan}`;
-        ringkas.push(`PDF anonim gagal: ${pesan}`);
-      }
+      dokumen.anonim = `gagal: ${pesan}`;
+      ringkas.push(`anonim gagal: ${pesan}`);
       alatCatat("massal-galat", `${butir.nomor}: anonim ${pesan}`, "");
     }
   }
 
-  // 6. Unggah ke SIPP - hanya bila diminta, dan hanya bila ada yang diunggah
-  if (opsi.unggah) {
-    if (!pdfPutusan && !pdfAnonim) {
-      dokumen.unggah = "dilewati: tidak ada PDF";
-      ringkas.push("SIPP dilewati (tidak ada PDF)");
-    } else {
-      try {
-        lapor("mengunggah ke SIPP…");
-        const badan = new FormData();
-        badan.append("perkaraId", butir.perkaraId);
-        badan.append("nomorPerkara", butir.nomor);
-        badan.append("olehUsername", olehUsername || "");
-        if (pdfPutusan) badan.append("putusan", pdfPutusan, `${namaDasar}.pdf`);
-        if (pdfAnonim) badan.append("anonimisasi", pdfAnonim, `${namaDasar} - anonim.pdf`);
-        const respons = await alatAmbil(
-          ALETA_API_UNGGAH_SIPP_ABT,
-          { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_MASSAL_MS },
-          "Mengunggah putusan ke SIPP"
-        );
-        if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Mengunggah putusan ke SIPP"));
-        const luar = await respons.json();
-        const jawab = luar && luar.data ? luar.data : luar;
-        if (!jawab || !jawab.ok) throw new Error((jawab && (jawab.sebab || jawab.pesan || jawab.alasan)) || "ditolak");
-        dokumen.unggah = "ok";
-        ringkas.push("SIPP ok");
-        alatCatatTindakan({ jenis: "unggah-sipp", penunjuk: butir.nomor, label: `unggah dokumen ${butir.nomor}`, nilaiBaru: "(diunggah)", dapatPulih: false });
-      } catch (galat) {
-        dokumen.unggah = `gagal: ${String((galat && galat.message) || galat)}`;
-        ringkas.push(`SIPP ${dokumen.unggah}`);
-        alatCatat("massal-galat", `${butir.nomor}: unggah ${dokumen.unggah}`, "");
-      }
+  // 4. PDF - hanya untuk diunduh; SIPP menerima RTF apa adanya
+  let pdfPutusan = null;
+  const pakaiPdf = Boolean(o.pdf) && Boolean(o.unduh);
+  if (pakaiPdf) {
+    try {
+      kabar("mengubah menjadi PDF…");
+      pdfPutusan = await ubahKePdf(siap.isiRtf);
+      dokumen.pdf = "ok";
+      ringkas.push("PDF ok");
+    } catch (galat) {
+      dokumen.pdf = `gagal: ${String((galat && galat.message) || galat)}`;
+      ringkas.push(`PDF ${dokumen.pdf}`);
+      alatCatat("massal-galat", `${butir.nomor}: PDF ${dokumen.pdf}`, "");
     }
   }
 
-  const ok = dokumen.rtf === "ok" && !/gagal/.test(ringkas.join(" "));
-  return { ok, ringkas: ringkas.join(" · "), dokumen };
+  // 5. Unduh - hasil yang memang diminta
+  if (o.unduh) {
+    let n = 0;
+    try {
+      kabar("mengunduh berkas…");
+      await unduhBlob(new Blob([siap.isiRtf], { type: "application/rtf" }), namaBerkas(butir.nomor, "rtf", "putusan"));
+      n += 1;
+      if (pdfPutusan) {
+        await unduhBlob(pdfPutusan, namaBerkas(butir.nomor, "pdf", "putusan"));
+        n += 1;
+      }
+      if (siap.isiAnonim) {
+        await unduhBlob(new Blob([siap.isiAnonim], { type: "application/rtf" }), namaBerkas(butir.nomor, "rtf", "anonimisasi"));
+        n += 1;
+      }
+      dokumen.unduh = `${n} berkas`;
+      ringkas.push(`${n} berkas diunduh`);
+    } catch (galat) {
+      dokumen.unduh = `gagal sesudah ${n} berkas: ${String((galat && galat.message) || galat)}`;
+      ringkas.push(`unduh ${dokumen.unduh}`);
+      alatCatat("massal-galat", `${butir.nomor}: unduh ${dokumen.unduh}`, "");
+    }
+  }
+
+  // Yang dicentang tetapi tidak dibuat karena tidak ada yang memakainya. PDF
+  // hanya disebut bila tidak diunggah: bila diunggah, SIPP menerima RTF dan
+  // PDF memang bagian dari unduhan saja.
+  const tidakDibuat = [];
+  if (o.pdf && !pakaiPdf && !o.unggah) tidakDibuat.push("PDF");
+  if (o.anonim && !pakaiAnonim) tidakDibuat.push("anonim");
+  if (tidakDibuat.length) ringkas.push(`${tidakDibuat.join(" & ")} tidak dibuat (tidak diunduh maupun diunggah)`);
+  return siap;
+}
+
+/**
+ * Tulisan ke SIPP untuk satu perkara: RTF putusan dan - bila dibuat - RTF
+ * anonimisasinya, dalam SATU permintaan. Berkasnya RTF apa adanya: 87,7% e-Doc
+ * satker berbentuk RTF, rute unggah-sipp memeriksa isinya, dan bot yang
+ * mengubahnya bila perlu (keputusan 16). PDF buatan ekstensi tidak lagi
+ * menjadi syarat - dahulu mematikan PDF membuat unggahannya dilewati.
+ *
+ * PENOLAKAN YANG MENYEBUT SLOT ANONIMISASI. Rute unggah-sipp memeriksa isi
+ * tiap slot SEBELUM menulis apa pun, dan menolak SELURUH kiriman (409) bila
+ * satu slot bermasalah - misalnya anonim ABT yang masih memuat nama pihak.
+ * Penolakan itu tidak boleh ikut menahan putusan yang sah: bila slot yang
+ * ditolak adalah anonimisasi, putusan dikirim ulang SENDIRIAN (kiriman yang
+ * ditolak belum menulis apa pun, jadi tidak ada yang terulang), dan anonimnya
+ * disebut TIDAK diunggah beserta sebab dari rute - perkaranya tetap tercatat
+ * gagal supaya petugas menyamarkan dan mengunggah anonimnya sendiri.
+ *
+ * @returns {Promise<boolean>} true bila putusannya masuk
+ */
+async function unggahBerkasAbt(siap, olehUsername, lapor) {
+  const kabar = typeof lapor === "function" ? lapor : () => {};
+  const b = siap.butir;
+  const denganAnonim = Boolean(siap.isiAnonim);
+  const isinya = denganAnonim ? "putusan + anonimisasi" : "putusan";
+  try {
+    kabar(`mengunggah ${isinya} ke SIPP…`);
+    let hasil = await kirimUnggahSippAbt(siap, olehUsername, denganAnonim);
+    if (!hasil.ok && denganAnonim && hasil.tolak && hasil.tolak.slot === "anonimisasi") {
+      const alasan = hasil.tolak.alasan ? ` (${String(hasil.tolak.alasan).replace(/_/g, " ")})` : "";
+      siap.ringkas.push(`kiriman putusan + anonimisasi ditolak rute${alasan}: ${hasil.sebab}`);
+      alatCatat("massal-galat", `${b.nomor}: anonimisasi ditolak rute${alasan}: ${hasil.sebab}`, "");
+      kabar("anonimisasi ditolak - mengunggah putusan sendirian ke SIPP…");
+      hasil = await kirimUnggahSippAbt(siap, olehUsername, false);
+      if (!hasil.ok) throw new Error(hasil.sebab);
+      siap.dokumen.unggah = `putusan ok; anonimisasi gagal: ditolak rute${alasan}`;
+      siap.ringkas.push("SIPP ok (putusan, dikirim ulang tanpa anonimisasi)");
+      siap.ringkas.push("anonimisasi gagal: TIDAK diunggah - samarkan lalu unggah sendiri");
+      alatCatatTindakan({
+        jenis: "unggah-sipp",
+        penunjuk: b.nomor,
+        label: `unggah putusan ${b.nomor}`,
+        nilaiBaru: "(diunggah)",
+        dapatPulih: false,
+      });
+      return true;
+    }
+    if (!hasil.ok) throw new Error(hasil.sebab);
+    siap.dokumen.unggah = "ok";
+    siap.ringkas.push(`SIPP ok (${isinya})`);
+    alatCatatTindakan({
+      jenis: "unggah-sipp",
+      penunjuk: b.nomor,
+      label: `unggah ${isinya} ${b.nomor}`,
+      nilaiBaru: "(diunggah)",
+      dapatPulih: false,
+    });
+    return true;
+  } catch (galat) {
+    siap.dokumen.unggah = `gagal: ${String((galat && galat.message) || galat)}`;
+    siap.ringkas.push(`SIPP ${siap.dokumen.unggah}`);
+    alatCatat("massal-galat", `${b.nomor}: unggah ${siap.dokumen.unggah}`, "");
+    return false;
+  }
+}
+
+/**
+ * Satu kiriman ke rute unggah-sipp. Jawaban yang menolak dibaca KALIMATNYA
+ * (data.sebab, lalu error.message) - bukan hanya angka statusnya - kecuali
+ * 401/403, yang kalimat bakunya lebih berguna daripada badan halaman masuk.
+ *
+ * @returns {Promise<{ok: true, jawab: object} | {ok: false, sebab: string, tolak: object|null}>}
+ *   tolak = badan data penolakan 409 rute ({alasan, slot, sebab, nama}) bila ada
+ */
+async function kirimUnggahSippAbt(siap, olehUsername, denganAnonim) {
+  const b = siap.butir;
+  const badan = new FormData();
+  badan.append("perkaraId", b.perkaraId);
+  badan.append("nomorPerkara", b.nomor);
+  badan.append("olehUsername", olehUsername || "");
+  badan.append("putusan", new Blob([siap.isiRtf], { type: "application/rtf" }), `${siap.namaDasar}.rtf`);
+  if (denganAnonim) {
+    badan.append("anonimisasi", new Blob([siap.isiAnonim], { type: "application/rtf" }), `${siap.namaDasar} - anonim.rtf`);
+  }
+  const respons = await alatAmbil(
+    ALETA_API_UNGGAH_SIPP_ABT,
+    { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_MASSAL_MS },
+    "Mengunggah putusan ke SIPP"
+  );
+  let luar = null;
+  let galatBaca = null;
+  try {
+    luar = await respons.json();
+  } catch (galat) {
+    galatBaca = galat;
+  }
+  const jawab = luar && luar.data ? luar.data : luar;
+  if (!respons.ok) {
+    const bolehBaca = respons.status !== 401 && respons.status !== 403;
+    const pesanGalat = luar && luar.error && typeof luar.error === "object" ? luar.error.message : luar && luar.error;
+    const kalimat = bolehBaca ? (jawab && (jawab.sebab || jawab.pesan)) || pesanGalat || "" : "";
+    const tolak = bolehBaca && jawab && typeof jawab === "object" && jawab.slot ? jawab : null;
+    return {
+      ok: false,
+      sebab: kalimat ? String(kalimat) : alatPesanGagal(null, respons.status, "Mengunggah putusan ke SIPP"),
+      tolak,
+    };
+  }
+  if (!jawab) {
+    return {
+      ok: false,
+      sebab: `Jawaban ALETA atas unggahan tidak terbaca: ${String((galatBaca && galatBaca.message) || "kosong")}.`,
+      tolak: null,
+    };
+  }
+  if (!jawab.ok) return { ok: false, sebab: String(jawab.sebab || jawab.pesan || jawab.alasan || "ditolak"), tolak: null };
+  return { ok: true, jawab };
+}
+
+/** Ringkasan satu perkara: berhasil bila RTF ada dan tidak satu langkah pun gagal. */
+function hasilPerkaraAbt(siap) {
+  const ringkas = siap.ringkas.join(" · ");
+  return { ok: Boolean(siap.ok) && !/gagal/.test(ringkas), ringkas, dokumen: siap.dokumen };
+}
+
+/**
+ * ============================================================================
+ * MENJALANKAN PUTUSAN MASSAL ABT - PERSIAPAN DI DALAM JEDA YANG SUDAH ADA
+ * ============================================================================
+ *
+ * Perkara dikerjakan satu per satu, dan di antara dua perkara tetap ada jeda
+ * ALAT_JEDA_MASSAL_MS - gunanya memberi napas peladen di antara dua tulisan
+ * ke SIPP. Yang berubah: jeda itu tidak lagi menjadi tunggu yang sia-sia.
+ *
+ *   dahulu    RTF(i) → … → SIPP(i) → jeda → RTF(i+1) → … → SIPP(n) → jeda
+ *   sekarang  RTF(i) → … → SIPP(i) → [jeda ∥ persiapan(i+1)] → SIPP(i+1) → …
+ *
+ * Persiapan perkara berikutnya (pratinjau ABT, draf, anonim ABT - tidak satu
+ * pun menulis ke SIPP) berjalan BERSAMAAN dengan jeda itu. Dua tulisan ke SIPP
+ * tetap berselang sekurang-kurangnya ALAT_JEDA_MASSAL_MS, permintaan ke ABT
+ * tetap satu per satu (persiapan i+1 baru dimulai sesudah tulisan i rampung),
+ * dan tidak ada jeda sesudah perkara terakhir.
+ *
+ * Hentikan berarti "sesudah perkara ini": persiapan yang sudah berjalan di
+ * dalam jeda ditunggu dan DISEBUT - drafnya mungkin sudah tersimpan - tetapi
+ * tidak diunggah; sisanya dilewati.
+ *
+ * @param daftar  butir antrean (dimutasi: keadaan, catatan, dokumen)
+ * @param alat    {opsi, olehUsername, petaUntuk, sinyalBatal, laporButir,
+ *                 sesudahLangkah, sesudahButir}
+ */
+async function jalankanMassalAbt(daftar, alat) {
+  const a = alat || {};
+  const opsi = a.opsi || {};
+  const { petaUntuk } = a;
+  const laporButir = typeof a.laporButir === "function" ? a.laporButir : () => {};
+  const sesudahLangkah = typeof a.sesudahLangkah === "function" ? a.sesudahLangkah : async () => {};
+  const sesudahButir = typeof a.sesudahButir === "function" ? a.sesudahButir : async () => {};
+  const berhenti = () => Boolean(a.sinyalBatal && a.sinyalBatal.aborted);
+  /** Persiapan perkara berikutnya yang sudah berjalan di dalam jeda: {butir, janji}. */
+  let berikut = null;
+
+  // Tidak pernah menolak: persiapan yang berjalan di dalam jeda baru ditunggu
+  // belakangan, dan penolakan yang belum ditunggu terbaca sebagai galat liar.
+  // Galatnya tidak ditelan - ia menjadi kegagalan perkara itu, tersebut di
+  // ringkasannya dan di kotak hitam.
+  const siapkan = async (butir) => {
+    try {
+      // Blangko khusus perkara ini bila dipilih, bukan pemetaan jenisnya.
+      const peta = petaUntuk(butir);
+      return await siapkanPerkaraAbt(butir, peta, opsi, (teks) => laporButir(butir, teks));
+    } catch (galat) {
+      const pesan = String((galat && galat.message) || galat);
+      alatCatat("massal-galat", `${butir.nomor}: persiapan terhenti: ${pesan}`, "");
+      return {
+        butir,
+        dokumen: { rtf: `gagal: ${pesan}` },
+        ringkas: [`persiapan gagal: ${pesan}`],
+        namaDasar: "",
+        isiRtf: null,
+        isiAnonim: null,
+        ok: false,
+      };
+    }
+  };
+
+  for (let i = 0; i < daftar.length; i += 1) {
+    const butir = daftar[i];
+
+    if (berhenti()) {
+      if (berikut && berikut.butir === butir) {
+        // Persiapannya sudah berjalan di dalam jeda: ditunggu, lalu DISEBUT.
+        // Tanpa unggah, persiapan itulah seluruh pekerjaannya - perkara ini
+        // memang sudah selesai dikerjakan.
+        const siapSisa = await berikut.janji;
+        berikut = null;
+        const hasilSisa = hasilPerkaraAbt(siapSisa);
+        if (opsi.unggah) {
+          butir.keadaan = "dilewati";
+          butir.catatan = `dihentikan sesudah persiapan, belum diunggah: ${hasilSisa.ringkas}`;
+        } else {
+          butir.keadaan = hasilSisa.ok ? "selesai" : "gagal";
+          butir.catatan = hasilSisa.ringkas;
+        }
+        butir.dokumen = hasilSisa.dokumen;
+        await sesudahButir(butir, siapSisa);
+        i += 1;
+      }
+      for (const lewat of daftar.slice(i)) {
+        lewat.keadaan = "dilewati";
+        lewat.catatan = "dihentikan";
+      }
+      await sesudahLangkah(butir);
+      break;
+    }
+
+    butir.keadaan = "jalan";
+    await sesudahLangkah(butir);
+    let siap;
+    if (berikut && berikut.butir === butir) {
+      siap = await berikut.janji;
+      berikut = null;
+    } else {
+      siap = await siapkan(butir);
+    }
+    if (opsi.unggah && siap.ok) await unggahBerkasAbt(siap, a.olehUsername, (teks) => laporButir(butir, teks));
+
+    const hasil = hasilPerkaraAbt(siap);
+    butir.keadaan = hasil.ok ? "selesai" : "gagal";
+    butir.catatan = hasil.ringkas;
+    butir.dokumen = hasil.dokumen;
+    await sesudahButir(butir, siap);
+
+    // Tidak ada jeda sesudah perkara terakhir, dan tidak ada sesudah Hentikan.
+    if (i >= daftar.length - 1 || berhenti()) continue;
+    // Jeda yang sudah ada - napas peladen di antara dua tulisan ke SIPP - dan
+    // persiapan perkara berikutnya berjalan BERSAMAAN di dalamnya.
+    const lanjut = daftar[i + 1];
+    berikut = { butir: lanjut, janji: siapkan(lanjut) };
+    await alatJeda(ALAT_JEDA_MASSAL_MS);
+  }
+}
+
+/**
+ * Satu perkara, dari halaman perkara ABT: persiapan, lalu - bila diminta -
+ * RTF putusan dan anonimisasinya ke SIPP dalam satu kiriman.
+ */
+async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
+  const o = opsi || {};
+  const siap = await siapkanPerkaraAbt(butir, peta, o, lapor);
+  if (siap.ok && o.unggah) await unggahBerkasAbt(siap, olehUsername, lapor);
+  return hasilPerkaraAbt(siap);
 }
 
 /** RTF -> PDF lewat bot ALETA. Pulang Blob PDF, atau melempar sebabnya. */

@@ -3,17 +3,25 @@
 import { BlangkoMandiri } from "@/components/portal/blangko-mandiri";
 import { AccessDeniedCard } from "@/components/portal/shared";
 import { usePortal } from "@/lib/app-state";
+import { getEffectiveRoleId } from "@/lib/permissions";
 
 /**
  * Layar kemandirian blangko.
  *
- * Memakai kewenangan "aleta-ecourt-admin" yang sudah ada, bukan mendaftarkan
- * aplikasi baru: menyalin kamus, mempelajari korpus, dan menggeser saklar
- * periksa mengenai SELURUH pengadilan - persis lingkup kewenangan itu.
+ * Menyalin kamus, mempelajari korpus, dan menggeser saklar periksa mengenai
+ * SELURUH pengadilan, jadi yang boleh membukanya sama dengan halaman admin
+ * ALETA E-Court: Super Admin dan Admin, menurut peran berlakunya.
+ *
+ * Sebelumnya halaman ini memeriksa id "aleta-ecourt-admin" di
+ * accessiblePortalApps - padahal id itu hanya ada di larik modules, tidak
+ * pernah di portalApps, sehingga halamannya menolak siapa pun termasuk Super
+ * Admin (diukur: false untuk keduanya). Kesalahan yang sama sudah pernah
+ * diperbaiki di /admin/aleta-ecourt.
  */
 export default function BlangkoMandiriPage() {
-  const { accessiblePortalApps } = usePortal();
-  const boleh = accessiblePortalApps.some((app) => app.id === "aleta-ecourt-admin");
+  const { currentUser } = usePortal();
+  const roleId = getEffectiveRoleId(currentUser);
+  const boleh = roleId === "super-admin" || roleId === "admin";
 
   if (!boleh) {
     return <AccessDeniedCard />;

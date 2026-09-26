@@ -945,15 +945,25 @@ async function analisaPanggilan(id) {
     [id]
   );
 
+  // Arti tiap sandi diambil dari KOMENTAR KOLOM ket_temu pada SIPP, bukan dari
+  // tebakan. Bunyi komentar itu apa adanya:
+  //   "Y / T, E=Elektonik, S=surat tercatat, W=Web/Papan Pengumuman Pengadilan,
+  //    P=papan pengumuman pemda, M=media massa cetak/elektornik, R=radio"
+  //
+  // Lima di antaranya dahulu salah di peta ini, dan yang paling merugikan
+  // S: "gagal" - 1.431 perkara yang dipanggil lewat surat tercatat dilaporkan
+  // sebagai pemanggilan gagal, padahal 829 di antaranya ber-status_pos = 1
+  // alias berhasil. Arti T dikuatkan teks hasilnya sendiri di sipp_donggala:
+  // "tidak bertemu dengan tergugat" 257 baris.
   const CARA = {
     Y: "bertemu langsung",
-    S: "gagal",
-    T: "lewat kantor desa",
+    S: "surat tercatat",
+    T: "tidak bertemu, diteruskan lewat pemerintah desa",
     E: "elektronik ke kuasa",
-    R: "panggilan RRI",
-    M: "radiogram RRI",
-    W: "website dan pengumuman",
-    P: "papan pengumuman",
+    R: "radio",
+    M: "media massa cetak/elektronik",
+    W: "web/papan pengumuman pengadilan",
+    P: "papan pengumuman pemerintah daerah",
   };
 
   const baris = rows.map((row) => {

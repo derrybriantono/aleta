@@ -2,11 +2,23 @@
 
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 
 import { AletaAnalisaPerkara } from "@/components/portal/aleta-analisa-perkara";
+// Tampilan hasil pencarian (Detail, Daftar, Kotak, Kelompok), urutannya, dan
+// lembar cetaknya hidup di berkas sendiri - lihat kepala berkas itu.
+import {
+  BilahPanelKecil,
+  HasilPencarianPerkara,
+  bacaTampilanTersimpan,
+  simpanTampilan,
+  tandaiTakTerbaca,
+  type BarisHasil,
+  type TampilanHasil,
+  type Urutan,
+} from "@/components/portal/status-perkara-hasil";
 // Sepuluh bentuk sajian yang sudah dibangun untuk e-Audit dipakai APA ADANYA.
 // Menulis penggambar kedua berarti dua aturan yang sama-sama bekerja, lalu pada
 // suatu hari menggambar angka yang sama dengan bentuk yang berbeda - dan yang
@@ -23,6 +35,7 @@ import {
 } from "@/components/portal/bentuk-sajian";
 import { AletaPromptPutusan } from "@/components/portal/aleta-prompt-putusan";
 import { NomorSidang, TombolUnduh } from "@/components/portal/aleta-ecourt-sidang";
+import { TombolUnduhZip } from "@/components/portal/tombol-unduh-zip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +47,23 @@ import {
 } from "@/components/portal/identitas-pihak";
 import { usePortal } from "@/lib/app-state";
 import { AMBANG_HARI_SEMA, ringkasStatus } from "@/lib/ringkas-status";
+import {
+  BULAN_PANJANG,
+  HARI_PENDEK,
+  tanggalDMY,
+  tanggalHariPanjang,
+  tanggalHariPendek,
+} from "@/lib/tanggal-indonesia";
+import {
+  DASAR_BAWAAN,
+  PERIODE_BAWAAN,
+  PERIODE_TAG,
+  kelasNada,
+  periodeButuhTanggal,
+  type DasarTanggalTag,
+  type KelompokTag,
+  type TagPerkara,
+} from "@/lib/tag-perkara";
 import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
 import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
 import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
@@ -62,6 +92,10 @@ type Saringan = {
   jenisPerkara: string;
   status: string;
   tahun: string;
+  // Rentang tanggal PENDAFTARAN. Bot dan rute portal sudah lama menerimanya
+  // (sejak/sampai), tetapi layar ini tidak pernah menyediakan kotaknya.
+  sejak: string;
+  sampai: string;
   alurPerkaraId: number;
   namaPihak: string;
   petugas: string;
@@ -87,6 +121,8 @@ const SARINGAN_KOSONG: Saringan = {
   jenisPerkara: "",
   status: "",
   tahun: "",
+  sejak: "",
+  sampai: "",
   alurPerkaraId: 0,
   namaPihak: "",
   petugas: "",
@@ -113,7 +149,15 @@ const SARINGAN_KOSONG: Saringan = {
  */
 const PILIHAN_RELAAS = [
   { kunci: "retur", label: "Relaas retur" },
-  { kunci: "gagal", label: "Pemanggilan gagal" },
+  // "Dipanggil lewat surat tercatat", BUKAN "Pemanggilan gagal".
+  //
+  // Kuncinya menjaring ket_temu = 'S', dan komentar kolom SIPP sendiri
+  // menyebut S = surat tercatat. Terukur di sipp_donggala 25 September 2026:
+  // 1.431 perkara bersandi S, dan 829 di antaranya ber-status_pos = 1 yang
+  // berarti BERHASIL. Label lama karena itu melaporkan 1.431 pemanggilan gagal
+  // yang tidak pernah gagal - angka tunggakan yang dikarang. Yang sungguh gagal
+  // dijaring kunci "retur" (relaas dikembalikan): 180 perkara.
+  { kunci: "surat_tercatat", label: "Dipanggil lewat surat tercatat" },
   { kunci: "ghaib", label: "Dipanggil sebagai ghaib" },
   { kunci: "bertemu", label: "Bertemu langsung" },
   { kunci: "tanpa_relaas", label: "Belum ada relaas" },
@@ -156,26 +200,173 @@ const PILIHAN_ALUR = [
   { id: 17, label: "Gugatan Sederhana (Pdt.G.S)" },
   { id: 122, label: "Jinayah (JN)" },
 ];
-type Ditemukan = {
-  perkaraId: string;
-  nomorPerkara: string;
-  jenisPerkara: string;
-  tanggalDaftar: string;
-  sudahPutus: boolean;
-  tanggalPutusan: string;
-  tanggalMinutasi?: string;
-  tanggalBht?: string;
-  statusPutusan?: string;
-  /**
-   * Mengapa perkara ini muncul.
-   *
-   * Saat yang dicari nama juru sita, alamat desa, atau sebuah kalimat di
-   * pertimbangan hukum, tidak satu pun keterangan lain di kartu ini
-   * menyebut kata yang diketik - dan daftar berisi dua puluh nomor perkara
-   * tidak dapat dibedakan satu sama lain.
-   */
-  cocok?: Array<{ medan: string; nilai: string }>;
-};
+/**
+ * Satu baris hasil pencarian. Definisinya - beserta ruas kontrak 25 September
+ * 2026 (pihak, kuasa, petugas, tahapan, sidang, umur, e-Court, akta cerai) -
+ * hidup di status-perkara-hasil.tsx, di samping tampilan yang memakainya.
+ */
+type Ditemukan = BarisHasil;
+
+/** Baris pertama yang diminta tiap pencarian - sama dengan sebelum butir 7. */
+const BATAS_AWAL = 100;
+/** Tambahan tiap "Muat lebih banyak". */
+const BATAS_TAMBAH = 100;
+/**
+ * Pagu seluruh baris yang dapat dimuat - sama dengan pagu `batas` di bot
+ * (kontrak 25 September 2026). Lewat dari itu jawabannya persempit pencarian,
+ * bukan tabel lima ribu baris di peramban.
+ */
+const PAGU_MUAT = 500;
+
+/**
+ * Tiga keadaan panel Tag dan Saringan lain (butir 9, 25 September 2026).
+ *
+ *   tertutup  tidak tampak sama sekali
+ *   terbuka   panel utuh
+ *   kecil     satu baris ringkas: apa yang sedang berlaku, dan "Buka lagi"
+ *
+ * Panel yang mengecil sendiri sesudah hasilnya datang memberi ruang bagi
+ * hasilnya - tanpa menyembunyikan MENGAPA hasilnya seperti itu.
+ */
+type KeadaanPanel = "tertutup" | "terbuka" | "kecil";
+
+/** Nama tiap saringan untuk ringkasan panel kecil dan lembar cetak. */
+const LABEL_SARINGAN: Array<[Exclude<keyof Saringan, "cari">, string]> = [
+  ["namaPihak", "Nama pihak"],
+  ["jenisPerkara", "Jenis perkara"],
+  ["status", "Keadaan"],
+  ["alurPerkaraId", "Alur"],
+  ["tahun", "Tahun pendaftaran"],
+  ["sejak", "Didaftarkan sejak"],
+  ["sampai", "Didaftarkan sampai"],
+  ["petugas", "Petugas"],
+  ["hakim", "Hakim"],
+  ["panitera", "Panitera pengganti"],
+  ["jurusita", "Juru sita"],
+  ["alamatPihak", "Alamat pihak"],
+  ["kua", "KUA"],
+  ["pertimbangan", "Isi pertimbangan"],
+  ["amar", "Isi amar"],
+  ["statusPutusan", "Jenis putusan"],
+  ["verstek", "Verstek"],
+  ["relaas", "Relaas"],
+  ["putusSejak", "Putus sejak"],
+  ["putusSampai", "Putus sampai"],
+  ["umur", "Umur perkara"],
+  ["ecourt", "Cara pendaftaran"],
+];
+
+/**
+ * Saringan yang sedang aktif, dengan nilai yang terbaca orang - label pilihan,
+ * bukan kuncinya; tanggal lewat lib/tanggal-indonesia, bukan ISO.
+ */
+function ringkasSaringan(saringan: Saringan): Array<{ kunci: string; label: string; nilai: string }> {
+  const hasil: Array<{ kunci: string; label: string; nilai: string }> = [];
+  for (const [kunci, label] of LABEL_SARINGAN) {
+    if (kunci === "alurPerkaraId") {
+      const id = Number(saringan.alurPerkaraId) || 0;
+      if (id > 0) hasil.push({ kunci, label, nilai: PILIHAN_ALUR.find((x) => x.id === id)?.label ?? String(id) });
+      continue;
+    }
+    const teks = String(saringan[kunci] ?? "").trim();
+    if (!teks) continue;
+    let nilai = `“${teks}”`;
+    if (kunci === "status") nilai = PILIHAN_STATUS.find((x) => x.kunci === teks)?.label ?? teks;
+    else if (kunci === "relaas") nilai = PILIHAN_RELAAS.find((x) => x.kunci === teks)?.label ?? teks;
+    else if (kunci === "umur") nilai = PILIHAN_UMUR.find((x) => x.kunci === teks)?.label ?? teks;
+    else if (kunci === "verstek") nilai = teks === "ya" ? "putusan verstek" : "bukan verstek";
+    else if (kunci === "ecourt") nilai = teks === "ya" ? "lewat e-Court" : "didaftarkan di meja";
+    else if (kunci === "sejak" || kunci === "sampai" || kunci === "putusSejak" || kunci === "putusSampai") {
+      nilai = tanggalDMY(teks, teks);
+    } else if (kunci === "tahun" || kunci === "statusPutusan") nilai = teks;
+    hasil.push({ kunci, label, nilai });
+  }
+  return hasil;
+}
+
+/**
+ * Apakah dua isian Saringan lain sama - kata cari di luarnya. Dipakai bilah
+ * ringkas untuk mengatakan bahwa isian di panel sudah berubah dan BELUM
+ * dicari (telaah 26 September 2026).
+ */
+function samaSaringan(a: Saringan, b: Saringan): boolean {
+  return (Object.keys(SARINGAN_KOSONG) as Array<keyof Saringan>)
+    .filter((k) => k !== "cari")
+    .every((k) => String(a[k] ?? "").trim() === String(b[k] ?? "").trim());
+}
+
+/** Tag dan rentang waktu sebagaimana DIKIRIM pada satu pencarian. */
+type LingkupTag = { tag: string[]; dasar: string; periode: string; dari: string; sampai: string; acuan: string };
+
+/**
+ * Apakah dua lingkup tag menanyakan hal yang sama. Dasar tanggal dan acuan
+ * hanya berarti bila ada tag atau periode - pencarian tanpa keduanya tidak
+ * mengirimnya sama sekali (lihat jalankanCari).
+ */
+function samaLingkupTag(a: LingkupTag, b: LingkupTag): boolean {
+  if ([...a.tag].sort().join(",") !== [...b.tag].sort().join(",") || a.periode !== b.periode) return false;
+  if (a.tag.length === 0 && a.periode === PERIODE_BAWAAN) return true;
+  if (a.dasar !== b.dasar) return false;
+  if (periodeButuhTanggal(a.periode)) return a.dari === b.dari && a.sampai === b.sampai;
+  if (a.periode === PERIODE_BAWAAN) return true;
+  return (a.acuan || "") === (b.acuan || "");
+}
+
+/** Nama tag untuk dibaca orang; kuncinya hanya bila katalognya belum ada. */
+function labelTag(katalog: KatalogTag | null, kunci: string): string {
+  return katalog?.tag.find((x) => x.kunci === kunci)?.label ?? kunci;
+}
+
+/** "triwulan ini (acuan hari ini), menurut tanggal didaftarkan". */
+function kalimatRentang(
+  katalog: KatalogTag | null,
+  dasar: string,
+  periode: string,
+  dari: string,
+  sampai: string,
+  acuan: string
+): string {
+  const labelDasar = (katalog?.dasar ?? []).find((x) => x.kunci === dasar)?.label ?? dasar;
+  const labelPeriode = PERIODE_TAG.find((x) => x.nilai === periode)?.label ?? periode;
+  let rentang: string;
+  if (periode === PERIODE_BAWAAN) rentang = "seluruh register";
+  else if (periodeButuhTanggal(periode)) rentang = `${tanggalDMY(dari, "—")} s.d. ${tanggalDMY(sampai, "—")}`;
+  else rentang = `${labelPeriode.toLowerCase()} (acuan ${acuan ? tanggalDMY(acuan, acuan) : "hari ini"})`;
+  return `${rentang}, menurut tanggal ${labelDasar.toLowerCase()}`;
+}
+
+/**
+ * Kriteria pencarian sebagai kalimat - dicetak di kepala lembar hasil.
+ *
+ * Disusun SAAT pencarian dijalankan, dari nilai yang dikirim, bukan dari isian
+ * layar ketika tombol cetak ditekan: isian boleh sudah disunting sesudahnya,
+ * dan lembar yang menyebut kriteria yang tidak menghasilkan daftarnya berbohong.
+ */
+function susunKriteria(p: {
+  kata: string;
+  saringan: Saringan;
+  tag: string[];
+  katalog: KatalogTag | null;
+  dasar: string;
+  periode: string;
+  dari: string;
+  sampai: string;
+  acuan: string;
+}): string[] {
+  const kalimat: string[] = [];
+  if (p.kata) kalimat.push(`Kata cari: “${p.kata}”.`);
+  const aktif = ringkasSaringan(p.saringan);
+  if (aktif.length > 0) {
+    kalimat.push(`Saringan: ${aktif.map((x) => `${x.label.toLowerCase()} ${x.nilai}`).join("; ")}.`);
+  }
+  if (p.tag.length > 0) {
+    kalimat.push(`Tag: ${p.tag.map((k) => labelTag(p.katalog, k)).join(" DAN ")}.`);
+  }
+  if (p.tag.length > 0 || p.periode !== PERIODE_BAWAAN) {
+    kalimat.push(`Rentang waktu: ${kalimatRentang(p.katalog, p.dasar, p.periode, p.dari, p.sampai, p.acuan)}.`);
+  }
+  return kalimat;
+}
 
 type ButirNilai = {
   kunci: string;
@@ -852,12 +1043,123 @@ function ringkasPihak(pihak: Array<{ jenis: string; adaNomor: boolean }>) {
 export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: string } = {}) {
   const [cari, setCari] = useState(nomorAwal);
   const [saringan, setSaringan] = useState<Saringan>(SARINGAN_KOSONG);
-  const [saringanTampil, setSaringanTampil] = useState(false);
+  const [keadaanSaringan, setKeadaanSaringan] = useState<KeadaanPanel>("tertutup");
+  const saringanTampil = keadaanSaringan === "terbuka";
+  const saringanAktif = useMemo(() => ringkasSaringan(saringan), [saringan]);
   const [hasilCari, setHasilCari] = useState<Ditemukan[]>([]);
   const [status, setStatus] = useState<Status | null>(null);
   const [memuat, setMemuat] = useState(false);
   const [galat, setGalat] = useState("");
   const [pesan, setPesan] = useState("");
+
+  // ======================================================================
+  // HASIL: HALAMAN, TAMPILAN, URUTAN (butir 7 dan 8, 25 September 2026)
+  // ======================================================================
+  //
+  // Kueri pencarian terakhir disimpan TANPA batas dan lewati, supaya "Muat
+  // lebih banyak" meneruskan pertanyaan yang sama persis - bukan pertanyaan
+  // yang disusun ulang dari isian yang barangkali sudah disunting.
+  const [adaLagi, setAdaLagi] = useState(false);
+  const [memuatLagi, setMemuatLagi] = useState(false);
+  const [kueriHasil, setKueriHasil] = useState("");
+  const [nomorHasil, setNomorHasil] = useState(0);
+  const [kriteriaHasil, setKriteriaHasil] = useState<string[]>([]);
+  // Saringan dan lingkup tag yang SUNGGUH dikirim pada pencarian yang sedang
+  // tampil. Bilah ringkas digambar dari sini, bukan dari isian panel: isian
+  // boleh sudah disunting sesudahnya tanpa dicari, dan bilah yang menyebut
+  // isian yang belum pernah dicari menjelaskan daftar yang bukan miliknya
+  // (telaah 26 September 2026 - "Budi" di bilah, daftar masih "Rahmat").
+  const [saringanDicari, setSaringanDicari] = useState<Saringan | null>(null);
+  const [tagDicari, setTagDicari] = useState<LingkupTag | null>(null);
+  // Bagian keterangan yang gagal dibaca bot (kiriman `ruasTakTerbaca`) TIDAK
+  // disimpan di sini: ia ditempelkan ke tiap baris halamannya lewat
+  // tandaiTakTerbaca(), sehingga halaman yang gagal tidak menandai halaman
+  // lain yang terbaca utuh.
+  //
+  // Lapis kata bebas yang menjawab: "dalam" berarti nomor, jenis, pihak, dan
+  // kuasa tidak cocok sama sekali, dan yang tampil ketemu di alamat, KUA,
+  // petugas, agenda sidang, pertimbangan, atau amar.
+  const [lapisHasil, setLapisHasil] = useState("");
+  // Pilihan tampilan diingat per peramban; urutannya bertahan antar pencarian
+  // selama layar ini terbuka.
+  const [tampilanHasil, setTampilanHasil] = useState<TampilanHasil>(bacaTampilanTersimpan);
+  const [urutHasil, setUrutHasil] = useState<Urutan>(null);
+  const { institutionIdentity } = usePortal();
+
+  // ======================================================================
+  // PANEL YANG MENGECIL SENDIRI (butir 9)
+  // ======================================================================
+  //
+  // Penghitung sentuhan tiap panel. Nilainya dicatat saat pencarian mulai;
+  // bila sesudah itu penggunanya masih mengetik atau memilih di dalam panel,
+  // penghitungnya bergeser dan panelnya TIDAK dikecilkan ketika jawaban
+  // datang. Panel yang menghilang di tengah orang mengetik lebih buruk daripada
+  // panel yang tidak pernah mengecil.
+  const sentuhTag = useRef(0);
+  const sentuhSaringan = useRef(0);
+  const panelTag = useRef<HTMLDivElement>(null);
+  const panelSaringan = useRef<HTMLDivElement>(null);
+  const [fokusRingkas, setFokusRingkas] = useState<"tag" | "saringan" | null>(null);
+  // ======================================================================
+  // PANEL TIDAK MENGECIL DI BAWAH PENUNJUK
+  // ======================================================================
+  //
+  // Telaah 26 September 2026: pengguna menekan tag, lalu selagi menunggu
+  // menggulir panel dengan roda tetikus dan menunjuk chip lain untuk membaca
+  // judulnya - menimbang tag kedua. Jawaban datang, panel diganti bilah
+  // ringkas, dan chip yang sedang ditunjuk lenyap dari bawah penunjuk.
+  //
+  // Dua aturan menutupnya: roda tetikus di dalam panel dihitung sentuhan
+  // (masih menelusuri - tidak dikecilkan), dan bila penunjuk tetikus sedang
+  // berada DI ATAS panel ketika jawaban datang, pengecilannya DITUNDA sampai
+  // penunjuk keluar - selama tidak ada sentuhan baru dan pencariannya masih
+  // yang sama. Sentuhan jari tidak menunda: sesudah jari diangkat, penunjuknya
+  // tidak lagi "di atas" apa pun.
+  const penunjukDi = useRef<{ tag: boolean; saringan: boolean }>({ tag: false, saringan: false });
+  const tundaKecil = useRef<{
+    tag: { sentuh: number; putaran: number } | null;
+    saringan: { sentuh: number; putaran: number } | null;
+  }>({ tag: null, saringan: null });
+
+  // ======================================================================
+  // TAG PERKARA (diminta pengguna 25 September 2026)
+  // ======================================================================
+  //
+  // Katalognya TIDAK disalin ke berkas ini - datang utuh dari bot beserta
+  // jumlah tiap tag. Dua daftar yang harus dijaga selaras adalah cara paling
+  // pasti membuat layar menyimpang diam-diam ketika tagnya bertambah.
+  const [keadaanTag, setKeadaanTag] = useState<KeadaanPanel>("tertutup");
+  // Katalog dan angkanya dijaga selama panelnya HIDUP - terbuka maupun
+  // dikecilkan. "Buka lagi" karena itu tidak menghitung ulang 88 tag (6,6 detik
+  // terukur); yang menghitung ulang hanya perubahan lingkup waktunya.
+  const tagTampil = keadaanTag !== "tertutup";
+  const tagTerbuka = keadaanTag === "terbuka";
+  const [tagPilih, setTagPilih] = useState<string[]>([]);
+  const [dasarTag, setDasarTag] = useState(DASAR_BAWAAN);
+  const [periodeTag, setPeriodeTag] = useState<string>(PERIODE_BAWAAN);
+  const [dariTag, setDariTag] = useState("");
+  const [sampaiTag, setSampaiTag] = useState("");
+  // Kosong berarti hari ini. Disimpan sebagai teks, bukan sebagai Date, supaya
+  // tidak ada zona waktu yang ikut campur - lihat kepala lib/tanggal-indonesia.
+  const [acuanTag, setAcuanTag] = useState("");
+  // Kotak saring nama tag. Sejak katalognya 88 tag dalam 12 kelompok, memindai
+  // seluruhnya dengan mata lebih lambat daripada mengetik tiga huruf.
+  const [cariTag, setCariTag] = useState("");
+  // Nomor putaran pencarian. Sejak menekan tag langsung mencari, dua pencarian
+  // dapat berjalan bersusulan - dan yang LEBIH LAMBAT dapat mendarat terakhir,
+  // sehingga layar menampilkan hasil tag yang sudah dilepas. Terukur: satu tag
+  // 3,5 sampai 10 detik, jadi susulan itu bukan kemungkinan teoretis.
+  const putaranCari = useRef(0);
+  const [katalogTag, setKatalogTag] = useState<KatalogTag | null>(null);
+  const [memuatTag, setMemuatTag] = useState(false);
+  const [galatTag, setGalatTag] = useState("");
+  // Berapa yang SUNGGUH cocok dengan tagnya, terlepas dari berapa baris yang
+  // muat ditampilkan - dan tag mana yang daftarnya terpotong di bot.
+  const [ringkasTag, setRingkasTag] = useState<{
+    jumlah: number | null;
+    dipotong: string[];
+    batasId: number | null;
+  }>({ jumlah: null, dipotong: [], batasId: null });
 
   const buka = useCallback(async (nomorPerkara: string) => {
     setMemuat(true);
@@ -902,7 +1204,171 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     return () => window.clearTimeout(timer);
   }, [nomorAwal, buka]);
 
-  const jalankanCari = useCallback(async () => {
+  // ======================================================================
+  // KATALOGNYA DIJEMPUT LEBIH DAHULU - TANPA MENYENTUH SIPP
+  // ======================================================================
+  //
+  // Nama tag, kelompok, nada, dan penjelasannya tetapan yang dibekukan di bot;
+  // tidak ada satu kueri pun di baliknya. Jumlahnya yang mahal: terukur 6,6
+  // detik untuk 88 tag pada lingkup "Seluruhnya".
+  //
+  // Karena itu panel berdiri SEKETIKA dengan seluruh chipnya - bertanda "…"
+  // pada tempat angkanya - lalu angkanya menyusul. Panel yang diam enam
+  // setengah detik sebelum satu nama pun terlihat akan dianggap rusak.
+  useEffect(() => {
+    if (!tagTampil) return;
+    // Sekali saja seumur panel: katalognya tidak berubah karena lingkup waktu.
+    if (katalogTag) return;
+
+    let dibatalkan = false;
+    const pembatal = new AbortController();
+    void (async () => {
+      try {
+        const jawaban = await fetch(
+          apiPath("/api/aleta-ecourt/status-perkara/tag?katalogSaja=1"),
+          { cache: "no-store", signal: pembatal.signal }
+        );
+        const isi = await jawaban.json();
+        if (dibatalkan) return;
+        if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal membaca daftar tag."));
+        const data = (isi?.data ?? isi) as KatalogTag & { available?: boolean; message?: string };
+        if (!data?.available) return;
+        setKatalogTag({
+          // null, BUKAN {}: belum dihitung berbeda dari sudah dihitung dan
+          // hasilnya kosong. Chip yang belum berangka tidak boleh dimatikan.
+          jumlah: null,
+          lingkup: null,
+          tag: data.tag ?? [],
+          kelompok: data.kelompok ?? [],
+          dasar: data.dasar ?? [],
+          batasId: data.batasId ?? null,
+        });
+      } catch {
+        // Diam: penjemput angka di bawah ini akan melaporkan galatnya, dan dua
+        // pesan galat untuk satu sebab membuat panel tampak rusak dua kali.
+      }
+    })();
+
+    return () => {
+      dibatalkan = true;
+      pembatal.abort();
+    };
+  }, [tagTampil, katalogTag]);
+
+  // Angkanya dijemput ulang tiap LINGKUP WAKTU berubah - bukan tiap tag
+  // ditekan. Angkanya sengaja tidak menyusut mengikuti tag yang menyala: bila
+  // ikut menyusut, menyalakan satu tag membuat tag lain terbaca nol dan tidak
+  // ada cara menduga mana yang masih masuk akal ditekan berikutnya.
+  useEffect(() => {
+    if (!tagTampil) return;
+    if (periodeButuhTanggal(periodeTag) && (!dariTag || !sampaiTag)) return;
+
+    let dibatalkan = false;
+    const pembatal = new AbortController();
+    const kueri = new URLSearchParams({
+      dasarTanggal: dasarTag,
+      periode: periodeTag,
+      acuan: acuanTag || hariIniIso(),
+    });
+    if (periodeButuhTanggal(periodeTag)) {
+      kueri.set("tagDari", dariTag);
+      kueri.set("tagSampai", sampaiTag);
+    }
+
+    // Keadaan disetel DI DALAM kerjanya, bukan di badan efek: setState yang
+    // dipanggil serentak di badan efek memicu gambar-ulang berantai, dan
+    // eslint react-hooks menolaknya. Di sini ia juga lebih benar - penanda
+    // "sedang menghitung" menyala bersama permintaannya, bukan sebelum.
+    void (async () => {
+      setMemuatTag(true);
+      setGalatTag("");
+      try {
+        const jawaban = await fetch(
+          apiPath(`/api/aleta-ecourt/status-perkara/tag?${kueri.toString()}`),
+          { cache: "no-store", signal: pembatal.signal }
+        );
+        const isi = await jawaban.json();
+        if (dibatalkan) return;
+        if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal membaca daftar tag."));
+        const data = (isi?.data ?? isi) as KatalogTag & { available?: boolean; message?: string };
+        if (!data?.available) {
+          setGalatTag(String(data?.message || "ALETA Bot belum dapat dihubungi."));
+          return;
+        }
+        setKatalogTag({
+          jumlah: data.jumlah ?? {},
+          lingkup: data.lingkup ?? null,
+          tag: data.tag ?? [],
+          kelompok: data.kelompok ?? [],
+          dasar: data.dasar ?? [],
+          batasId: data.batasId ?? null,
+        });
+      } catch (kesalahan) {
+        if (dibatalkan) return;
+        // Pembatalan BUKAN kegagalan. Menampilkannya sebagai galat membuat
+        // layar berkedip merah tiap kali penggunanya mengganti pilihan.
+        if (kesalahan instanceof DOMException && kesalahan.name === "AbortError") return;
+        setGalatTag(
+          kesalahan instanceof Error ? kesalahan.message : "Gagal membaca daftar tag."
+        );
+      } finally {
+        if (!dibatalkan) setMemuatTag(false);
+      }
+    })();
+
+    return () => {
+      dibatalkan = true;
+      pembatal.abort();
+    };
+  }, [tagTampil, dasarTag, periodeTag, dariTag, sampaiTag, acuanTag]);
+
+  /**
+   * Mengecilkan satu panel. Bila fokus papan ketik berada di dalamnya, fokus
+   * dipindahkan ke "Buka lagi" (lihat BilahPanelKecil) - bukan jatuh ke body.
+   */
+  const kecilkanPanel = useCallback((panel: "tag" | "saringan") => {
+    const wadah = panel === "tag" ? panelTag.current : panelSaringan.current;
+    const fokus = typeof document === "undefined" ? null : document.activeElement;
+    if (wadah && fokus && wadah.contains(fokus)) setFokusRingkas(panel);
+    if (panel === "tag") setKeadaanTag((k) => (k === "terbuka" ? "kecil" : k));
+    else setKeadaanSaringan((k) => (k === "terbuka" ? "kecil" : k));
+  }, []);
+
+  /**
+   * Jawaban datang dan panel ini layak mengecil: seketika, atau DITUNDA bila
+   * penunjuk tetikus sedang di atasnya - lihat penunjukDi.
+   */
+  const kecilkanAtauTunda = useCallback(
+    (panel: "tag" | "saringan", putaran: number) => {
+      if (penunjukDi.current[panel]) {
+        const sentuh = panel === "tag" ? sentuhTag.current : sentuhSaringan.current;
+        tundaKecil.current[panel] = { sentuh, putaran };
+        return;
+      }
+      kecilkanPanel(panel);
+    },
+    [kecilkanPanel]
+  );
+
+  /** Penunjuk keluar dari panel: pengecilan yang ditunda dijalankan - bila masih berlaku. */
+  const keluarDariPanel = useCallback(
+    (panel: "tag" | "saringan") => {
+      penunjukDi.current[panel] = false;
+      const tunda = tundaKecil.current[panel];
+      tundaKecil.current[panel] = null;
+      if (!tunda) return;
+      const sentuh = panel === "tag" ? sentuhTag.current : sentuhSaringan.current;
+      // Disentuh lagi sesudah jawaban datang, atau pencarian lain sudah
+      // dimulai: penggunanya masih bekerja di panel - pengecilannya batal.
+      if (tunda.sentuh !== sentuh || tunda.putaran !== putaranCari.current) return;
+      kecilkanPanel(panel);
+    },
+    [kecilkanPanel]
+  );
+  const keluarPanelTag = useCallback(() => keluarDariPanel("tag"), [keluarDariPanel]);
+  const keluarPanelSaringan = useCallback(() => keluarDariPanel("saringan"), [keluarDariPanel]);
+
+  const jalankanCari = useCallback(async (tagTimpa?: string[]) => {
     const kata = cari.trim();
 
     // Pencarian berjalan bila ADA salah satu isian. Menuntut kata cari membuat
@@ -913,6 +1379,8 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     if (saringan.jenisPerkara.trim()) kueri.set("jenisPerkara", saringan.jenisPerkara.trim());
     if (saringan.status) kueri.set("status", saringan.status);
     if (saringan.tahun.trim()) kueri.set("tahun", saringan.tahun.trim());
+    if (saringan.sejak.trim()) kueri.set("sejak", saringan.sejak.trim());
+    if (saringan.sampai.trim()) kueri.set("sampai", saringan.sampai.trim());
     if (saringan.alurPerkaraId > 0) kueri.set("alurPerkaraId", String(saringan.alurPerkaraId));
     if (saringan.namaPihak.trim()) kueri.set("namaPihak", saringan.namaPihak.trim());
     if (saringan.petugas.trim()) kueri.set("petugas", saringan.petugas.trim());
@@ -930,15 +1398,64 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     if (saringan.putusSampai.trim()) kueri.set("putusSampai", saringan.putusSampai.trim());
     if (saringan.umur.trim()) kueri.set("umur", saringan.umur.trim());
     if (saringan.ecourt.trim()) kueri.set("ecourt", saringan.ecourt.trim());
-    kueri.set("batas", "100");
+
+    // Tag dan lingkup waktunya. Keduanya hanya dikirim bila memang dipakai -
+    // kalau selalu dikirim, pemeriksaan "tidak ada satu pun syarat" di bawah
+    // akan selalu lolos dan menekan Cari dengan layar kosong menarik seluruh
+    // register.
+    const tagDipilih = (tagTimpa ?? tagPilih).filter(Boolean);
+    if (tagDipilih.length > 0) kueri.set("tag", tagDipilih.join(","));
+    if (tagDipilih.length > 0 || periodeTag !== PERIODE_BAWAAN) {
+      kueri.set("dasarTanggal", dasarTag);
+      kueri.set("periode", periodeTag);
+      // Tanggal acuan yang SAMA dengan yang dipakai menghitung chipnya. Dulu di
+      // sini selalu hari ini: dengan acuan 15-05-2026, chip "Triwulan ini"
+      // menghitung triwulan II, tetapi menekannya mencari triwulan III - dua
+      // pertanyaan berbeda di balik satu tag, tanpa satu pun tanda.
+      kueri.set("acuan", acuanTag || hariIniIso());
+      if (periodeButuhTanggal(periodeTag)) {
+        if (!dariTag || !sampaiTag) {
+          setPesan("Isi kedua tanggal pada saringan tag, atau pilih periode yang lain.");
+          return;
+        }
+        kueri.set("tagDari", dariTag);
+        kueri.set("tagSampai", sampaiTag);
+      }
+    }
+
+    kueri.set("batas", String(BATAS_AWAL));
 
     // Hanya batas yang terisi berarti tidak ada satu pun syarat.
     if ([...kueri.keys()].length <= 1) {
+      // Hasil lama DIBUANG, tidak dibiarkan. Sesudah syarat terakhir dilepas -
+      // mis. chip tag terakhir dihapus dari bilah ringkas - daftar yang tersisa
+      // bukan lagi jawaban atas pertanyaan apa pun yang tampak di layar.
+      putaranCari.current += 1;
+      tundaKecil.current = { tag: null, saringan: null };
+      setHasilCari([]);
+      setSaringanDicari(null);
+      setTagDicari(null);
+      setAdaLagi(false);
+      setLapisHasil("");
+      setMemuat(false);
+      setMemuatLagi(false);
+      setRingkasTag({ jumlah: null, dipotong: [], batasId: null });
       setPesan("Isi sekurangnya satu kotak pencarian atau satu saringan.");
       return;
     }
 
+    const putaran = putaranCari.current + 1;
+    putaranCari.current = putaran;
+    // Pengecilan yang ditunda milik pencarian sebelumnya - pencarian ini
+    // memutuskannya sendiri ketika jawabannya datang.
+    tundaKecil.current = { tag: null, saringan: null };
+    // Sentuhan yang SUDAH terjadi saat pencarian mulai - termasuk tekanan
+    // chip atau Enter yang memulainya. Yang terjadi sesudahnya berarti
+    // penggunanya masih bekerja di panel itu.
+    const sentuhAwal = { tag: sentuhTag.current, saringan: sentuhSaringan.current };
+
     setMemuat(true);
+    setMemuatLagi(false);
     setGalat("");
     setPesan("");
     setStatus(null);
@@ -948,6 +1465,8 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         { cache: "no-store" }
       );
       const isi = await jawaban.json();
+      // Jawaban dari putaran yang sudah ditinggalkan DIBUANG, bukan digambar.
+      if (putaranCari.current !== putaran) return;
       if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal mencari perkara."));
 
       const data = isi?.data ?? isi;
@@ -956,8 +1475,66 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         return;
       }
 
-      const daftar = (data.perkara ?? []) as Ditemukan[];
+      // Tiap baris membawa bagian yang gagal dibaca pada halamannya - selnya
+      // lalu tertulis "tak terbaca", bukan nilai "tidak ada" pengisi bot.
+      const daftar = tandaiTakTerbaca((data.perkara ?? []) as Ditemukan[], data.ruasTakTerbaca);
       setHasilCari(daftar);
+      // adaLagi dari bot. Bot versi lama tidak mengirimnya - maka halaman yang
+      // penuh sampai batasnya DIANGGAP mungkin bersambung, dan "Muat lebih
+      // banyak" yang tidak mendatangkan baris baru mengatakannya terus terang.
+      setAdaLagi(typeof data.adaLagi === "boolean" ? data.adaLagi : daftar.length >= BATAS_AWAL);
+      setLapisHasil(typeof data.lapis === "string" ? data.lapis : "");
+      const kueriSimpan = new URLSearchParams(kueri);
+      kueriSimpan.delete("batas");
+      setKueriHasil(kueriSimpan.toString());
+      setNomorHasil(putaran);
+      setSaringanDicari(saringan);
+      setTagDicari({
+        tag: tagDipilih,
+        dasar: dasarTag,
+        periode: periodeTag,
+        dari: dariTag,
+        sampai: sampaiTag,
+        acuan: acuanTag,
+      });
+      setKriteriaHasil(
+        susunKriteria({
+          kata,
+          saringan,
+          tag: tagDipilih,
+          katalog: katalogTag,
+          dasar: dasarTag,
+          periode: periodeTag,
+          dari: dariTag,
+          sampai: sampaiTag,
+          acuan: acuanTag,
+        })
+      );
+      setRingkasTag({
+        jumlah: typeof data.jumlahTag === "number" ? data.jumlahTag : null,
+        dipotong: Array.isArray(data.tagDipotong) ? (data.tagDipotong as string[]) : [],
+        batasId: typeof data.batasId === "number" ? data.batasId : null,
+      });
+
+      // Butir 9: panel yang syaratnya sudah dijawab MENGECIL, memberi ruang
+      // bagi hasilnya. Hanya bila ada hasil - pencarian yang kosong justru
+      // menuntut syaratnya diubah, dan panel yang mengecil saat itu menghalangi.
+      // Hanya bila penggunanya tidak menyentuh panel itu lagi sejak pencarian
+      // mulai - lihat sentuhTag - dan tidak di bawah penunjuk tetikus yang
+      // masih berada di atas panel (lihat penunjukDi): yang itu ditunda.
+      if (daftar.length > 0) {
+        const tagMenyaring = tagDipilih.length > 0 || periodeTag !== PERIODE_BAWAAN;
+        if (tagMenyaring && sentuhTag.current === sentuhAwal.tag && panelTag.current) {
+          kecilkanAtauTunda("tag", putaran);
+        }
+        if (
+          ringkasSaringan(saringan).length > 0 &&
+          sentuhSaringan.current === sentuhAwal.saringan &&
+          panelSaringan.current
+        ) {
+          kecilkanAtauTunda("saringan", putaran);
+        }
+      }
 
       if (daftar.length === 0) {
         setPesan("Tidak ada perkara yang cocok dengan pencarian ini.");
@@ -966,11 +1543,181 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         await buka(daftar[0].nomorPerkara);
       }
     } catch (kesalahan) {
+      if (putaranCari.current !== putaran) return;
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal mencari perkara.");
     } finally {
-      setMemuat(false);
+      if (putaranCari.current === putaran) setMemuat(false);
     }
-  }, [cari, saringan, buka]);
+  }, [cari, saringan, tagPilih, dasarTag, periodeTag, dariTag, sampaiTag, acuanTag, katalogTag, buka, kecilkanAtauTunda]);
+
+  /**
+   * Halaman berikutnya dari pencarian yang SAMA.
+   *
+   * @param semua sekaligus sampai pagu PAGU_MUAT, bukan seratus berikutnya.
+   */
+  const muatLagi = useCallback(
+    async (semua: boolean) => {
+      if (!kueriHasil) return;
+      const sudah = hasilCari.length;
+      const sisaPagu = PAGU_MUAT - sudah;
+      if (sisaPagu <= 0) return;
+
+      const kueri = new URLSearchParams(kueriHasil);
+      kueri.set("batas", String(semua ? sisaPagu : Math.min(BATAS_TAMBAH, sisaPagu)));
+      kueri.set("lewati", String(sudah));
+
+      // Terikat pada putaran pencarian yang sedang tampil: bila pencarian baru
+      // dimulai selagi ini berjalan, jawabannya dibuang - menempelkannya akan
+      // mencampur dua pertanyaan dalam satu daftar.
+      const putaran = putaranCari.current;
+      setMemuatLagi(true);
+      setGalat("");
+      setPesan("");
+      try {
+        const jawaban = await fetch(
+          apiPath(`/api/aleta-ecourt/status-perkara?${kueri.toString()}`),
+          { cache: "no-store" }
+        );
+        const isi = await jawaban.json();
+        if (putaranCari.current !== putaran) return;
+        if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal memuat perkara berikutnya."));
+
+        const data = isi?.data ?? isi;
+        if (!data?.available) {
+          setGalat(String(data?.message || "ALETA Bot belum dapat dihubungi."));
+          return;
+        }
+
+        // Yang sudah ada tidak digandakan. Bot versi lama tidak mengenal
+        // `lewati` dan memulangkan halaman pertama lagi - tanpa penyaring ini
+        // daftar yang sama akan tertempel dua kali tanpa satu tanda.
+        //
+        // Yang gagal dibaca pada halaman INI ditandai pada baris halaman ini
+        // saja - halaman sebelumnya yang terbaca utuh tidak ikut ditandai.
+        const baru = tandaiTakTerbaca((data.perkara ?? []) as Ditemukan[], data.ruasTakTerbaca);
+        const dikenal = new Set(hasilCari.map((x) => x.perkaraId || x.nomorPerkara));
+        const tambahan = baru.filter((x) => !dikenal.has(x.perkaraId || x.nomorPerkara));
+        setHasilCari([...hasilCari, ...tambahan]);
+
+        if (typeof data.adaLagi === "boolean") {
+          setAdaLagi(data.adaLagi);
+        } else {
+          setAdaLagi(false);
+          setPesan(
+            tambahan.length === 0
+              ? "ALETA Bot versi ini belum dapat memuat halaman berikutnya — tidak ada perkara baru yang datang. Persempit pencarian untuk melihat sisanya."
+              : `${tambahan.length} perkara lagi dimuat. ALETA Bot versi ini tidak menyebut apakah masih ada sisanya.`
+          );
+        }
+      } catch (kesalahan) {
+        if (putaranCari.current !== putaran) return;
+        setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal memuat perkara berikutnya.");
+      } finally {
+        if (putaranCari.current === putaran) setMemuatLagi(false);
+      }
+    },
+    [kueriHasil, hasilCari]
+  );
+
+  const salinNomor = useCallback(async (baris: Ditemukan[]) => {
+    // Nomor disalin dalam urutan dan saringan yang SEDANG TAMPIL - yang
+    // disalin harus sama dengan yang dibaca.
+    const teks = baris.map((x) => x.nomorPerkara).join("\n");
+    if (!teks) return;
+    try {
+      await navigator.clipboard.writeText(teks);
+      setPesan(`${baris.length} nomor perkara disalin.`);
+    } catch {
+      // Papan salin ditolak peramban - lazim pada sambungan bukan HTTPS.
+      // Disebutkan apa adanya; diam berarti penggunanya menempel yang lama.
+      setPesan("Peramban menolak menyalin. Sorot daftarnya lalu salin sendiri.");
+    }
+  }, []);
+
+  /** Menyalakan atau melepas satu tag - dari panel. */
+  const pilihTag = (kunci: string) => {
+    // Sekali tekan, nomornya keluar - tanpa tombol kedua.
+    const berikut = tagPilih.includes(kunci)
+      ? tagPilih.filter((x) => x !== kunci)
+      : [...tagPilih, kunci];
+    setTagPilih(berikut);
+    void jalankanCari(berikut);
+  };
+
+  /**
+   * Melepas satu tag dari BILAH RINGKAS. Chip bilah digambar dari tag yang
+   * dicari (tagDicari), jadi tombolnya selalu MELEPAS - tidak pernah
+   * menyalakan tag yang kebetulan sudah dilepas di panel tanpa dicari.
+   */
+  const lepasTag = (kunci: string) => {
+    const berikut = tagPilih.filter((x) => x !== kunci);
+    setTagPilih(berikut);
+    void jalankanCari(berikut);
+  };
+
+  // Tiap sentuhan di dalam panel menggeser penghitungnya - lihat sentuhTag.
+  // Roda tetikus ikut dihitung dan penunjuk di atas panel dicatat - lihat
+  // penunjukDi. Jari tidak "berada di atas" apa pun: hanya tetikus dan pena
+  // yang dicatat.
+  const sentuhPanelTag = {
+    onPointerDownCapture: () => {
+      sentuhTag.current += 1;
+    },
+    onKeyDownCapture: () => {
+      sentuhTag.current += 1;
+    },
+    onChangeCapture: () => {
+      sentuhTag.current += 1;
+    },
+    onWheelCapture: () => {
+      sentuhTag.current += 1;
+    },
+    onPointerEnter: (peristiwa: React.PointerEvent) => {
+      if (peristiwa.pointerType !== "touch") penunjukDi.current.tag = true;
+    },
+    onPointerLeave: keluarPanelTag,
+  };
+  const sentuhPanelSaringan = {
+    onPointerDownCapture: () => {
+      sentuhSaringan.current += 1;
+    },
+    onKeyDownCapture: () => {
+      sentuhSaringan.current += 1;
+    },
+    onChangeCapture: () => {
+      sentuhSaringan.current += 1;
+    },
+    onWheelCapture: () => {
+      sentuhSaringan.current += 1;
+    },
+    onPointerEnter: (peristiwa: React.PointerEvent) => {
+      if (peristiwa.pointerType !== "touch") penunjukDi.current.saringan = true;
+    },
+    onPointerLeave: keluarPanelSaringan,
+  };
+
+  const tagBerlaku = tagPilih.length > 0 || periodeTag !== PERIODE_BAWAAN;
+
+  // Bilah ringkas: yang MENGHASILKAN daftar (yang dicari), dan apakah isian
+  // panel sudah berubah sejak itu. Sebelum ada pencarian, isian panel sendiri
+  // yang disebut - dan selalu "belum dicari".
+  const lingkupTagSekarang: LingkupTag = {
+    tag: tagPilih,
+    dasar: dasarTag,
+    periode: periodeTag,
+    dari: dariTag,
+    sampai: sampaiTag,
+    acuan: acuanTag,
+  };
+  const tagBilah = tagDicari ?? lingkupTagSekarang;
+  const tagBelumDicari = tagDicari ? !samaLingkupTag(tagDicari, lingkupTagSekarang) : tagBerlaku;
+  const saringanBilah = saringanDicari ? ringkasSaringan(saringanDicari) : saringanAktif;
+  const saringanBelumDicari = saringanDicari ? !samaSaringan(saringanDicari, saringan) : saringanAktif.length > 0;
+  // Panel yang disembunyikan tetap meninggalkan bilah bila isiannya ADA atau
+  // daftar yang tampil dihasilkan dengan isian - mengosongkan isian tanpa
+  // mencari tidak boleh menyembunyikan mengapa daftarnya seperti itu.
+  const saringanPerluBilah = saringanAktif.length > 0 || saringanBilah.length > 0;
+  const tagPerluBilah = tagBerlaku || tagBilah.tag.length > 0 || tagBilah.periode !== PERIODE_BAWAAN;
 
 
   return (
@@ -999,16 +1746,22 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
 
       <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
         <div className="flex flex-wrap items-end gap-2">
-          <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+          {/* Selebar baris di ponsel, 18rem mulai sm. "w-72 max-w-full" saja
+              TIDAK cukup: lebar tetap 288 px ikut dihitung sebagai lebar
+              minimum kartu, dan pada 320 px halaman bergulir mendatar 8 px
+              (terukur pada replika). Lebar persen pada kotak isian tidak
+              dihitung ke lebar minimum itu. */}
+          <label className="flex w-full min-w-0 flex-col gap-0.5 text-[11px] font-medium sm:w-auto">
             Nomor perkara
             <Input
-              placeholder="419, 419/Pdt.G/2026/PA.Dgl, atau nama pihak"
+              placeholder="419, nama pihak, kuasa, NIK, akta cerai…"
+              aria-describedby="keterangan-cari-status-perkara"
               value={cari}
               onChange={(peristiwa) => setCari(peristiwa.target.value)}
               onKeyDown={(peristiwa) => {
                 if (peristiwa.key === "Enter") void jalankanCari();
               }}
-              className="w-72"
+              className="w-full max-w-full sm:w-72"
             />
           </label>
           <Button size="sm" disabled={memuat} onClick={() => void jalankanCari()}>
@@ -1017,9 +1770,29 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setSaringanTampil((sebelumnya) => !sebelumnya)}
+            aria-expanded={saringanTampil}
+            onClick={() =>
+              setKeadaanSaringan((k) =>
+                k === "terbuka" ? (saringanPerluBilah ? "kecil" : "tertutup") : "terbuka"
+              )
+            }
           >
             {saringanTampil ? "Sembunyikan saringan" : "Saringan lain"}
+            {saringanAktif.length > 0 ? ` (${saringanAktif.length})` : ""}
+          </Button>
+          {/* Tag: pertanyaan yang sudah disusun, lengkap dengan jumlahnya.
+              Bedanya dengan Saringan lain - saringan menuntut orang tahu APA
+              yang harus diketik; tag menyebutkan pertanyaannya sendiri. */}
+          <Button
+            size="sm"
+            variant={tagPilih.length > 0 ? "default" : "outline"}
+            aria-expanded={tagTerbuka}
+            onClick={() =>
+              setKeadaanTag((k) => (k === "terbuka" ? (tagPerluBilah ? "kecil" : "tertutup") : "terbuka"))
+            }
+          >
+            {tagTerbuka ? "Sembunyikan tag" : "Tag & rentang waktu"}
+            {tagPilih.length > 0 ? ` (${tagPilih.length})` : ""}
           </Button>
           {saringanTampil ? (
             <Button size="sm" variant="ghost" onClick={() => setSaringan(SARINGAN_KOSONG)}>
@@ -1027,6 +1800,166 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
             </Button>
           ) : null}
         </div>
+
+        {/* Butir 8: APA SAJA yang dijangkau kata bebas, dikatakan di tempat
+            orang mengetik. Tanpa kalimat ini tidak ada yang akan mencoba
+            mengetik nomor akta cerai atau nama kuasa ke kotak "Nomor perkara". */}
+        {/* Daftarnya mengikuti cabang kata bebas di bot (cariPerkaraHalaman di
+            sippStatusPerkaraService.js: nomor urut tepat, angka panjang,
+            bergaris miring, KOSAKATA_CARI/KOSAKATA_PINJAM, lalu SYARAT_CEPAT
+            dan SYARAT_DALAM), bukan keinginan layar: yang disebut di sini dan
+            tidak dicari bot adalah janji palsu.
+
+            Lapis dalam HANYA berjalan bila lapis cepat tidak menemukan apa
+            pun - itu dikatakan, sebab nama hakim yang kebetulan juga nama
+            pihak akan menjawab dengan perkara pihaknya. */}
+        <div className="space-y-0.5 text-[11px] leading-snug text-muted-foreground">
+          {/* Ringkas: kalimat ini SELALU tampak, juga di ponsel di atas hasil.
+              Rinciannya di bawah, dapat dibuka. */}
+          <p id="keterangan-cari-status-perkara">
+            Kata bebas mencari nomor perkara, nama pihak, kuasa hukum, NIK/telepon, nomor akta cerai/akta nikah,
+            nomor banding/kasasi/PK, dan kata keadaan (verstek, ghaib, retur, e-court) — bila tidak ada yang cocok,
+            diperdalam ke alamat, KUA, petugas, agenda sidang, pertimbangan, dan amar.
+          </p>
+          <details>
+            <summary className="w-fit cursor-pointer select-none font-medium text-foreground/80 hover:text-foreground">
+              Cara kata bebas dibaca
+            </summary>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              <li>Angka 1–5 digit dicari sebagai nomor urut perkara, persis: “41” tidak memunculkan 410 sampai 419.</li>
+              <li>
+                Angka yang lebih panjang dicari sebagai NIK atau telepon pihak dan nomor kutipan akta nikah — sebagian
+                nomornya pun cukup. Di “cocok karena” NIK dan telepon disamarkan: hanya angka yang Anda ketik yang
+                tampak.
+              </li>
+              <li>
+                Nomor bergaris miring dicocokkan lebih dahulu ke nomor perkara. Hanya bila tidak ada satu pun nomor
+                perkara yang cocok, barulah dicari di nomor akta cerai, nomor perkara atau putusan banding/kasasi/PK, dan
+                nomor akta nikah bentuk lama — jadi “/2019” menampilkan perkara 2019 saja, dan “376/AC/2026” menemukan
+                akta cerainya.
+              </li>
+              <li>
+                Kata keadaan dikenali bila diketik utuh: verstek, bukan verstek, banding, kasasi, PK, peninjauan
+                kembali, upaya hukum, retur, gagal panggil, surat tercatat, ghaib, belum ada relaas, e-court, lewat 3
+                bulan, lewat 5 bulan.
+              </li>
+              <li>
+                Kata lain dicari lebih dahulu di nomor perkara, jenis perkara, nama pihak, dan nama kuasa hukum. Bila
+                tidak ada satu pun yang cocok, barulah diperdalam ke alamat pihak, KUA tempat nikah, nama
+                hakim/panitera/juru sita, agenda sidang, serta isi pertimbangan dan amar.
+              </li>
+              <li>Tiap hasil menyebut di mana katanya ditemukan (“cocok karena”).</li>
+            </ul>
+          </details>
+        </div>
+
+        {keadaanTag === "terbuka" ? (
+          <div
+            ref={panelTag}
+            {...sentuhPanelTag}
+            className="motion-safe:animate-in motion-safe:fade-in-0 motion-reduce:animate-none"
+          >
+            <PanelTagPerkara
+              katalog={katalogTag}
+              memuat={memuatTag}
+              galat={galatTag}
+              dipilih={tagPilih}
+              dasar={dasarTag}
+              periode={periodeTag}
+              dari={dariTag}
+              sampai={sampaiTag}
+              onUbahDasar={setDasarTag}
+              onUbahPeriode={setPeriodeTag}
+              onUbahDari={setDariTag}
+              onUbahSampai={setSampaiTag}
+              acuan={acuanTag}
+              onUbahAcuan={setAcuanTag}
+              cari={cariTag}
+              onUbahCari={setCariTag}
+              onPilih={pilihTag}
+              onKosongkan={() => {
+                setTagPilih([]);
+                setRingkasTag({ jumlah: null, dipotong: [], batasId: null });
+              }}
+              onJalankan={() => void jalankanCari()}
+              sedangMencari={memuat}
+            />
+          </div>
+        ) : keadaanTag === "kecil" ? (
+          <BilahPanelKecil
+            judul="Tag & rentang waktu"
+            fokusAwal={fokusRingkas === "tag"}
+            onBukaLagi={() => {
+              setFokusRingkas(null);
+              setKeadaanTag("terbuka");
+            }}
+            onTutup={() => {
+              setFokusRingkas(null);
+              setKeadaanTag("tertutup");
+            }}
+          >
+            {/* Yang tertulis di sini yang MENGHASILKAN daftar di bawah
+                (tagBilah = yang dicari), bukan isian panel saat ini. */}
+            {tagBilah.tag.length === 0 ? (
+              <span className="text-xs text-muted-foreground">Tidak ada tag yang menyala.</span>
+            ) : (
+              tagBilah.tag.map((kunci) => {
+                const tag = katalogTag?.tag.find((x) => x.kunci === kunci);
+                const nama = labelTag(katalogTag, kunci);
+                return (
+                  <span
+                    key={kunci}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs",
+                      kelasNada(tag?.nada ?? "netral", true)
+                    )}
+                  >
+                    {nama}
+                    <button
+                      type="button"
+                      aria-label={`Lepas tag ${nama}`}
+                      disabled={memuat}
+                      onClick={() => lepasTag(kunci)}
+                      className="rounded-full p-0.5 hover:bg-foreground/10 disabled:opacity-50"
+                    >
+                      <X className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </span>
+                );
+              })
+            )}
+            {tagBilah.tag.length > 1 ? <span className="text-xs text-muted-foreground">digabung DAN</span> : null}
+            <span className="text-xs text-muted-foreground">
+              ·{" "}
+              {kalimatRentang(
+                katalogTag,
+                tagBilah.dasar,
+                tagBilah.periode,
+                tagBilah.dari,
+                tagBilah.sampai,
+                tagBilah.acuan
+              )}
+            </span>
+            {tagBelumDicari ? (
+              <span data-bagian="belum-dicari" className="w-full text-xs text-amber-700 dark:text-amber-300">
+                {memuat
+                  ? "Sedang mencari dengan pilihan terbaru…"
+                  : `Pilihan di panel sudah diubah dan belum dicari (${
+                      lingkupTagSekarang.tag.length > 0
+                        ? `${lingkupTagSekarang.tag.map((k) => labelTag(katalogTag, k)).join(" DAN ")}, `
+                        : ""
+                    }${kalimatRentang(
+                      katalogTag,
+                      dasarTag,
+                      periodeTag,
+                      dariTag,
+                      sampaiTag,
+                      acuanTag
+                    )}) — tekan Cari untuk memakainya.`}
+              </span>
+            ) : null}
+          </BilahPanelKecil>
+        ) : null}
 
         {/* ==================================================================
             SARINGAN LAIN
@@ -1039,7 +1972,11 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
             Seluruh saringan boleh dipakai TANPA nomor perkara - itulah cara
             menjawab "cerai gugat 2025 yang belum putus ada berapa". */}
         {saringanTampil ? (
-          <div className="grid gap-2 rounded-lg border bg-muted/20 p-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div
+            ref={panelSaringan}
+            {...sentuhPanelSaringan}
+            className="grid gap-2 rounded-lg border bg-muted/20 p-3 sm:grid-cols-2 xl:grid-cols-4 motion-safe:animate-in motion-safe:fade-in-0 motion-reduce:animate-none"
+          >
             <label className="flex flex-col gap-1 text-sm font-medium">
               Nama pihak
               <Input
@@ -1108,6 +2045,26 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void jalankanCari();
                 }}
+              />
+            </label>
+
+            {/* Rentang tanggal PENDAFTARAN - bot sudah lama menerimanya,
+                layar ini yang belum pernah menyediakan kotaknya. */}
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Didaftarkan sejak
+              <Input
+                type="date"
+                value={saringan.sejak}
+                onChange={(e) => setSaringan((x) => ({ ...x, sejak: e.target.value }))}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-sm font-medium">
+              Didaftarkan sampai
+              <Input
+                type="date"
+                value={saringan.sampai}
+                onChange={(e) => setSaringan((x) => ({ ...x, sampai: e.target.value }))}
               />
             </label>
 
@@ -1325,6 +2282,45 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
               />
             </label>
           </div>
+        ) : keadaanSaringan === "kecil" ? (
+          <BilahPanelKecil
+            judul="Saringan lain"
+            fokusAwal={fokusRingkas === "saringan"}
+            onBukaLagi={() => {
+              setFokusRingkas(null);
+              setKeadaanSaringan("terbuka");
+            }}
+            onTutup={() => {
+              setFokusRingkas(null);
+              setKeadaanSaringan("tertutup");
+            }}
+          >
+            {/* Saringan yang MENGHASILKAN daftar di bawah (saringanBilah =
+                yang dicari), bukan isian panel saat ini. */}
+            {saringanBilah.length === 0 ? (
+              <span className="text-xs text-muted-foreground">Tidak ada saringan yang aktif.</span>
+            ) : (
+              <>
+                <span className="text-xs font-medium">{saringanBilah.length} saringan aktif</span>
+                {saringanBilah.map((x) => (
+                  <span key={x.kunci} className="max-w-full break-words rounded-full border bg-card px-2 py-0.5 text-xs">
+                    {x.label}: {x.nilai}
+                  </span>
+                ))}
+              </>
+            )}
+            {saringanBelumDicari ? (
+              <span data-bagian="belum-dicari" className="w-full text-xs text-amber-700 dark:text-amber-300">
+                {memuat
+                  ? "Sedang mencari dengan isian terbaru…"
+                  : saringanAktif.length > 0
+                    ? `Isian di panel sudah diubah dan belum dicari (${saringanAktif
+                        .map((x) => `${x.label}: ${x.nilai}`)
+                        .join("; ")}) — tekan Cari untuk memakainya.`
+                    : "Isian di panel sudah dikosongkan dan belum dicari — tekan Cari untuk memakainya."}
+              </span>
+            ) : null}
+          </BilahPanelKecil>
         ) : null}
 
         {galat ? (
@@ -1334,46 +2330,70 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         ) : null}
         {pesan ? <p className="text-sm text-muted-foreground">{pesan}</p> : null}
 
-        {/* Daftar pilihan hanya muncul bila memang ada lebih dari satu. */}
-        {hasilCari.length > 1 && !status ? (
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">
-              {hasilCari.length} perkara cocok — pilih salah satu:
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {hasilCari.map((item) => (
-                <button
-                  key={item.nomorPerkara}
-                  type="button"
-                  onClick={() => void buka(item.nomorPerkara)}
-                  className="rounded-lg border bg-card p-3 text-left transition hover:border-primary/50 hover:bg-muted/50"
-                >
-                  <p className="font-medium">{item.nomorPerkara}</p>
-                  <p className="text-sm text-muted-foreground">{item.jenisPerkara}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Daftar {item.tanggalDaftar || "—"}
-                    {item.sudahPutus ? ` · putus ${item.tanggalPutusan}` : " · belum putus"}
-                  </p>
+        {/* Batas baris TIDAK boleh memotong dalam diam.
 
-                  {/* APA yang cocok, bukan sekadar bahwa ia cocok.
+            Pencarian dipagari 100 baris. Tanpa angka sesungguhnya, tag "ghaib"
+            terbaca 100 perkara padahal 67 - atau terbaca 100 padahal 4.113,
+            dan yang membacanya menyimpulkan pekerjaannya tinggal seratus. */}
+        {!status && ringkasTag.jumlah !== null && ringkasTag.jumlah > hasilCari.length ? (
+          <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+            {ringkasTag.jumlah.toLocaleString("id-ID")} perkara cocok dengan tag ini; yang
+            ditampilkan {hasilCari.length.toLocaleString("id-ID")} teratas.{" "}
+            {/* Pada pagu, tombol "Muat lebih banyak" sudah tidak ada - kalimat
+                yang tetap menyuruh menekannya menunjuk tombol yang hilang. */}
+            {hasilCari.length < PAGU_MUAT
+              ? `Muat lebih banyak di bawah daftar (sampai ${PAGU_MUAT.toLocaleString("id-ID")}), atau persempit dengan rentang waktu atau tag lain.`
+              : `Pagu ${PAGU_MUAT.toLocaleString("id-ID")} perkara sudah termuat — persempit dengan rentang waktu atau tag lain untuk melihat sisanya.`}
+          </p>
+        ) : null}
+        {!status && ringkasTag.dipotong.length > 0 ? (
+          <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800 dark:text-rose-200">
+            {/* Pagunya DIKIRIM bot, tidak ditulis di sini. Angka yang ditulis
+                keras di layar akan berbohong pada hari pagunya diubah - dan itu
+                sudah terjadi: peringatan ini pernah menyebut 3.000 sesudah
+                pagunya dinaikkan menjadi 20.000. */}
+            Tag {ringkasTag.dipotong.join(", ")} cocok pada lebih dari{" "}
+            {(ringkasTag.batasId ?? 0).toLocaleString("id-ID")} perkara. Yang dihitung hanya
+            sebanyak itu, yang TERBARU — perkara lama tidak ikut terbawa, dan angka irisan
+            beberapa tag menjadi lebih kecil daripada yang sesungguhnya. Pilih rentang waktu
+            supaya jawabannya utuh.
+          </p>
+        ) : null}
 
-                      Tanpa ini, mencari nama juru sita menghasilkan dua
-                      puluh kartu yang tidak satu pun menyebut nama itu -
-                      dan satu-satunya cara memastikan adalah membuka
-                      perkaranya satu per satu. */}
-                  {item.cocok && item.cocok.length > 0 ? (
-                    <div className="mt-2 space-y-1 border-t pt-2">
-                      {item.cocok.map((satu) => (
-                        <p key={satu.medan} className="text-xs leading-snug">
-                          <span className="font-medium text-muted-foreground">{satu.medan}: </span>
-                          <span className="text-foreground">{satu.nilai}</span>
-                        </p>
-                      ))}
-                    </div>
-                  ) : null}
-                </button>
-              ))}
-            </div>
+        {/* Daftar pilihan hanya muncul bila memang ada lebih dari satu.
+
+            DISEMBUNYIKAN, tidak dilepas, selagi satu perkara dibuka: tombol
+            "Kembali" lalu mendarat pada tampilan, urutan, saringan, dan
+            kelompok yang terlipat persis seperti ditinggalkan. key berganti
+            hanya pada pencarian BARU - "Muat lebih banyak" tidak menyetel
+            ulang apa pun. */}
+        {hasilCari.length > 1 ? (
+          <div hidden={Boolean(status)}>
+            <HasilPencarianPerkara
+              key={nomorHasil}
+              hasil={hasilCari}
+              tampilan={tampilanHasil}
+              onUbahTampilan={(tampilan) => {
+                setTampilanHasil(tampilan);
+                simpanTampilan(tampilan);
+              }}
+              urut={urutHasil}
+              onUbahUrut={setUrutHasil}
+              onBuka={(nomorPerkara) => void buka(nomorPerkara)}
+              adaLagi={adaLagi}
+              memuatLagi={memuatLagi}
+              onMuatLagi={() => void muatLagi(false)}
+              onMuatSemua={() => void muatLagi(true)}
+              paguMuat={PAGU_MUAT}
+              kriteria={kriteriaHasil}
+              namaPengadilan={institutionIdentity.courtName || "PENGADILAN AGAMA"}
+              lapis={lapisHasil}
+              aksi={(barisTampil) => (
+                <Button size="sm" variant="ghost" onClick={() => void salinNomor(barisTampil)}>
+                  Salin daftar nomor
+                </Button>
+              )}
+            />
           </div>
         ) : null}
 
@@ -1382,6 +2402,279 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+/** Katalog tag beserta jumlahnya, sebagaimana dikirim bot. */
+type KatalogTag = {
+  /**
+   * null berarti BELUM DIHITUNG - berbeda dari {} yang berarti sudah dihitung
+   * dan hasilnya kosong. Chip yang belum berangka digambar "…" dan TIDAK
+   * dimatikan; chip yang sudah dihitung dan bernilai nol dimatikan.
+   */
+  jumlah: Record<string, number> | null;
+  lingkup: { dari: string; sampai: string; perkara: number } | null;
+  tag: TagPerkara[];
+  kelompok: KelompokTag[];
+  dasar: DasarTanggalTag[];
+  batasId?: number | null;
+};
+
+/**
+ * Panel tag perkara.
+ *
+ * ==========================================================================
+ * JUMLAHNYA DITULIS SEBELUM DITEKAN
+ * ==========================================================================
+ *
+ * Tiap tag membawa angkanya sendiri. Itu yang membedakannya dari saringan:
+ * "Putus, belum BHT 240" sudah menjawab sebelum ditekan, sedangkan kotak
+ * saringan baru menjawab sesudah diisi dengan benar.
+ *
+ * Tag bernilai nol tetap DITAMPILKAN, hanya diredupkan dan dimatikan. Membuang
+ * yang nol membuat daftarnya berubah-ubah tiap rentang waktu diganti, dan
+ * petugas kehilangan jejak tag yang kemarin ada.
+ *
+ * Beberapa tag yang menyala digabung dengan DAN, bukan ATAU: "belum putus DAN
+ * ghaib" adalah pertanyaan pengawasan yang nyata; gabungan ATAU hampir tidak
+ * pernah ditanyakan.
+ */
+export function PanelTagPerkara({
+  katalog,
+  memuat,
+  galat,
+  dipilih,
+  dasar,
+  periode,
+  dari,
+  sampai,
+  onUbahDasar,
+  onUbahPeriode,
+  onUbahDari,
+  onUbahSampai,
+  acuan,
+  onUbahAcuan,
+  cari,
+  onUbahCari,
+  onPilih,
+  onKosongkan,
+  onJalankan,
+  sedangMencari,
+}: {
+  katalog: KatalogTag | null;
+  memuat: boolean;
+  galat: string;
+  dipilih: string[];
+  dasar: string;
+  periode: string;
+  dari: string;
+  sampai: string;
+  onUbahDasar: (nilai: string) => void;
+  onUbahPeriode: (nilai: string) => void;
+  onUbahDari: (nilai: string) => void;
+  onUbahSampai: (nilai: string) => void;
+  acuan: string;
+  onUbahAcuan: (nilai: string) => void;
+  cari: string;
+  onUbahCari: (nilai: string) => void;
+  onPilih: (kunci: string) => void;
+  onKosongkan: () => void;
+  onJalankan: () => void;
+  sedangMencari: boolean;
+}) {
+  const kelompok = katalog?.kelompok ?? [];
+  const jumlah = katalog?.jumlah ?? null;
+  const lingkup = katalog?.lingkup ?? null;
+
+  // Kotak saring dicocokkan ke LABEL dan PENJELASAN, bukan ke kuncinya: kunci
+  // tag tidak pernah terbaca pengguna, sedangkan penjelasannya memuat kata
+  // yang dicari orang ("BHT", "ikrar", "panjar") yang belum tentu ada di label.
+  const kataCari = cari.trim().toLowerCase();
+  const tag = (katalog?.tag ?? []).filter(
+    (x) =>
+      kataCari === "" ||
+      x.label.toLowerCase().includes(kataCari) ||
+      x.judul.toLowerCase().includes(kataCari)
+  );
+  const semuaTag = katalog?.tag.length ?? 0;
+
+  return (
+    <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+          Tanggal yang dihitung
+          <select
+            value={dasar}
+            onChange={(e) => onUbahDasar(e.target.value)}
+            className="h-9 rounded-md border bg-card px-2 text-sm"
+          >
+            {(katalog?.dasar ?? [{ kunci: DASAR_BAWAAN, label: "Didaftarkan" }]).map((x) => (
+              <option key={x.kunci} value={x.kunci}>
+                {x.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+          Rentang waktu
+          <select
+            value={periode}
+            onChange={(e) => onUbahPeriode(e.target.value)}
+            className="h-9 rounded-md border bg-card px-2 text-sm"
+          >
+            {PERIODE_TAG.map((x) => (
+              <option key={x.nilai} value={x.nilai}>
+                {x.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {periodeButuhTanggal(periode) ? (
+          <>
+            <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+              Dari
+              <Input
+                type="date"
+                value={dari}
+                onChange={(e) => onUbahDari(e.target.value)}
+                className="w-40"
+              />
+            </label>
+            <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+              Sampai
+              <Input
+                type="date"
+                value={sampai}
+                onChange={(e) => onUbahSampai(e.target.value)}
+                className="w-40"
+              />
+            </label>
+          </>
+        ) : null}
+        {/* Tanggal acuan: yang menentukan arti "triwulan ini", "bulan ini", dan
+            "tahun ini". Kosong berarti hari ini.
+
+            Tanpa kotak ini, "triwulan" hanya pernah berarti triwulan yang
+            sedang BERJALAN - sedangkan laporan triwulanan yang sesungguhnya
+            selalu tentang triwulan yang sudah lewat, dan satu-satunya jalan ke
+            sana adalah mengetik dua tanggal sendiri. */}
+        {periode !== "total" && !periodeButuhTanggal(periode) ? (
+          <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+            Tanggal acuan
+            <Input
+              type="date"
+              value={acuan}
+              onChange={(e) => onUbahAcuan(e.target.value)}
+              className="w-40"
+              title="Kosong berarti hari ini. Isi tanggal di dalam triwulan, bulan, atau tahun yang ingin dilihat."
+            />
+          </label>
+        ) : null}
+        {/* Rentang waktu BOLEH berdiri sendiri tanpa satu tag pun - pengguna
+            menyebutnya sebagai permintaan tersendiri ("dan juga tanggalnya hari
+            ini atau antara tanggal atau ..."). Jalurnya pun cepat: terukur lewat
+            cariPerkara sungguhan, dasar putus + triwulan 148 ms, dasar daftar +
+            bulan 9 ms, dasar BHT + tahun 14 ms. */}
+        {/* Kotak saring: 88 tag dalam 12 kelompok terlalu banyak untuk
+            dipindai dengan mata, dan mengetik tiga huruf lebih cepat. */}
+        <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+          Saring nama tag
+          <Input
+            placeholder="mis. BHT, ikrar, panjar"
+            value={cari}
+            onChange={(e) => onUbahCari(e.target.value)}
+            className="w-44"
+          />
+        </label>
+        <Button
+          size="sm"
+          disabled={sedangMencari || (dipilih.length === 0 && periode === "total")}
+          onClick={onJalankan}
+        >
+          Tampilkan hasil
+        </Button>
+        {dipilih.length > 0 ? (
+          <Button size="sm" variant="ghost" onClick={onKosongkan}>
+            Lepas semua tag
+          </Button>
+        ) : null}
+      </div>
+
+      {/* Lingkup yang sedang dihitung ditulis apa adanya. Tanpa ini, "Triwulan
+          ini" adalah janji yang tidak dapat diperiksa siapa pun. */}
+      <p className="text-xs text-muted-foreground">
+        {memuat ? (
+          "Menghitung tag…"
+        ) : lingkup ? (
+          <>
+            Dihitung atas{" "}
+            {lingkup.dari && lingkup.sampai
+              ? `${tanggalDMY(lingkup.dari, lingkup.dari)} s.d. ${tanggalDMY(lingkup.sampai, lingkup.sampai)}`
+              : "seluruh register"}{" "}
+            — {Number(lingkup.perkara || 0).toLocaleString("id-ID")} perkara.
+            {dipilih.length > 1 ? " Beberapa tag digabung dengan DAN." : ""}
+          </>
+        ) : (
+          "Belum ada angka."
+        )}
+      </p>
+
+      {galat ? <p className="text-sm text-rose-600 dark:text-rose-300">{galat}</p> : null}
+
+      {kataCari !== "" ? (
+        <p className="text-xs text-muted-foreground">
+          {tag.length} dari {semuaTag} tag cocok dengan &quot;{cari.trim()}&quot;. Tag yang
+          sedang menyala tetap berlaku walau tidak tampil di sini.
+        </p>
+      ) : null}
+
+      {kelompok.map((satu) => {
+        const anggota = tag.filter((x) => x.kelompok === satu.kunci);
+        if (anggota.length === 0) return null;
+        return (
+          <div key={satu.kunci} className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {satu.label}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {anggota.map((x) => {
+                // BELUM DIHITUNG dibedakan dari NOL. Yang belum dihitung tetap
+                // dapat ditekan - pencariannya tidak menunggu angkanya - dan
+                // digambar "…"; yang sudah dihitung dan nol dimatikan.
+                const belumDihitung = jumlah === null;
+                const n = belumDihitung ? null : Number(jumlah[x.kunci] ?? 0);
+                const hidup = dipilih.includes(x.kunci);
+                const kosong = n === 0 && !hidup;
+                return (
+                  <button
+                    key={x.kunci}
+                    type="button"
+                    title={
+                      belumDihitung
+                        ? `${x.judul} (jumlahnya sedang dihitung)`
+                        : `${x.judul} (${Number(n).toLocaleString("id-ID")} perkara)`
+                    }
+                    disabled={kosong}
+                    onClick={() => onPilih(x.kunci)}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-xs transition",
+                      kosong
+                        ? "cursor-not-allowed border-border/60 text-muted-foreground/50"
+                        : kelasNada(x.nada, hidup)
+                    )}
+                  >
+                    {x.label}{" "}
+                    <span className="font-semibold tabular-nums">
+                      {belumDihitung ? "…" : Number(n).toLocaleString("id-ID")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1463,16 +2756,39 @@ function IsiStatus({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+      {/* items-start, bukan items-baseline: tombol unduh membawa pilihan
+          arsip fisik di bawahnya, dan garis alas akan menggantungnya. */}
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="text-lg font-semibold">{status.identitas.nomorPerkara}</h3>
           <p className="text-sm text-muted-foreground">
             {status.identitas.jenisPerkaraLengkap || status.identitas.jenisPerkara}
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={onKembali}>
-          Cari perkara lain
-        </Button>
+        {/* ==============================================================
+            SELURUH PERKARA DALAM SATU BERKAS
+            ==============================================================
+
+            Berdiri di KEPALA layar, bukan di bagian Berkas yang berada pada
+            urutan ketujuh belas dari dua puluh enam. Yang datang untuk
+            membawa perkaranya keluar - banding, pemeriksaan pengawas, serah
+            terima pemegang perkara - datang untuk itu saja, dan menyuruhnya
+            menggulung melewati enam belas bagian lebih dulu berarti
+            tombolnya tidak akan ditemukan.
+
+            Yang turun bukan hanya berkasnya: seluruh keterangan perkara ikut
+            sebagai JSON dan CSV, sebab yang dikirim ke banding dan yang
+            diperiksa pengawas adalah keduanya. */}
+        <div className="flex flex-wrap items-start gap-2">
+          <TombolUnduhZip
+            nomorPerkara={status.identitas.nomorPerkara}
+            isi="lengkap"
+            label="Unduh seluruh perkara"
+          />
+          <Button size="sm" variant="outline" onClick={onKembali}>
+            Cari perkara lain
+          </Button>
+        </div>
       </div>
 
       {/* ==================================================================
@@ -1503,7 +2819,9 @@ function IsiStatus({
             jadwal sidang. */}
         {status.putusan?.sudahPutus ? (
           <>
-            <Badge variant="outline">Putus {status.putusan.tanggalPutusan}</Badge>
+            <Badge variant="outline">
+              Putus {tanggalHariPendek(status.putusan.tanggalPutusan, status.putusan.tanggalPutusan)}
+            </Badge>
             {status.putusan.statusPutusan ? (
               <Badge variant={warnaStatusPutusan(status.putusan.statusPutusan)}>
                 {status.putusan.statusPutusan}
@@ -2039,7 +3357,7 @@ function IsiStatus({
                       {baris.penggantian
                         .map((x) =>
                           `${x.nama || "tanpa nama"}${x.masihAktif ? "" : " (diganti"}${
-                            !x.masihAktif && x.tanggalTidakAktif ? ` ${x.tanggalTidakAktif}` : ""
+                            !x.masihAktif && x.tanggalTidakAktif ? ` ${tanggalHariPendek(x.tanggalTidakAktif, x.tanggalTidakAktif)}` : ""
                           }${x.masihAktif ? "" : ")"}`
                         )
                         .join(", ")}
@@ -2112,11 +3430,15 @@ function IsiStatus({
             <div className="mb-2 flex flex-wrap gap-2 text-sm">
               {sidangBerikut ? (
                 <Badge variant="default">
-                  Sidang berikut: {sidangBerikut.tanggalSidang} {sidangBerikut.jamSidang} —{" "}
+                  Sidang berikut: {tanggalHariPendek(sidangBerikut.tanggalSidang, sidangBerikut.tanggalSidang)}{" "}
+                  {sidangBerikut.jamSidang} —{" "}
                   {sidangBerikut.agenda || "tanpa agenda"}
                 </Badge>
               ) : sidangTerakhir ? (
-                <Badge variant="muted">Sidang terakhir: {sidangTerakhir.tanggalSidang}</Badge>
+                <Badge variant="muted">
+                  Sidang terakhir:{" "}
+                  {tanggalHariPendek(sidangTerakhir.tanggalSidang, sidangTerakhir.tanggalSidang)}
+                </Badge>
               ) : null}
             </div>
 
@@ -2127,7 +3449,9 @@ function IsiStatus({
                       2026, sama dengan panel Rincian di Antrian Sidang. Angkanya
                       kolom urutan SIPP, bukan nomor baris daftar ini. */}
                   <NomorSidang urutan={sidang.urutanSidang} />
-                  <span className="font-medium">{sidang.tanggalSidang}</span>
+                  <span className="font-medium">
+                    {tanggalHariPendek(sidang.tanggalSidang, sidang.tanggalSidang)}
+                  </span>
                   {sidang.jamSidang ? (
                     <span className="text-sm tabular-nums text-muted-foreground">{sidang.jamSidang}</span>
                   ) : null}
@@ -2208,6 +3532,17 @@ function IsiStatus({
                     perjalanan={perjalanan}
                     judul="Umur perkara pada tiap sidang"
                     hariIniDihitung={status.umur.sudahPutus ? null : status.umur.hariBersih}
+                    /* Perkara ghaib punya DUA angka umur yang keduanya benar,
+                       dan satu-satunya yang menerangkan selisihnya adalah
+                       catatan grafik ini.
+
+                       Terukur di sipp_donggala 25 September 2026 atas 13 perkara
+                       ghaib yang belum putus: 322/Pdt.G/2026 terbaca "1 hari" di
+                       Antrian Sidang dan 115 hari di sini. Tanpa satu kalimat
+                       penjelasan, salah satu layar akan dianggap rusak - garis
+                       ini memang TIDAK dipotong, sebab batas lima bulan SEMA
+                       2/2014 tidak mengenal kelonggaran perkara khusus. */
+                    ghaib={status.penanda?.ghaib === true}
                     pita={[
                       { sampai: 90, singkat: "3 bln", label: "3 bulan - SK Dirjen Badilag 048/2024", nada: "hijau" },
                       { sampai: 120, singkat: "4 bln", label: "4 bulan - SK Dirjen Badilag 048/2024", nada: "kuning" },
@@ -2336,24 +3671,34 @@ function IsiStatus({
                   ) : null}
                   <div>
                     <dt className="inline text-muted-foreground">Penetapan mediator: </dt>
-                    <dd className="inline">{baris.tanggalPenetapan || "—"}</dd>
+                    <dd className="inline">
+                      {tanggalHariPendek(baris.tanggalPenetapan, baris.tanggalPenetapan || "—")}
+                    </dd>
                   </div>
                   <div>
                     <dt className="inline text-muted-foreground">Mulai: </dt>
-                    <dd className="inline">{baris.tanggalMulai || "—"}</dd>
+                    <dd className="inline">
+                      {tanggalHariPendek(baris.tanggalMulai, baris.tanggalMulai || "—")}
+                    </dd>
                   </div>
                   <div>
                     <dt className="inline text-muted-foreground">Selesai: </dt>
-                    <dd className="inline">{baris.tanggalSelesai || "—"}</dd>
+                    <dd className="inline">
+                      {tanggalHariPendek(baris.tanggalSelesai, baris.tanggalSelesai || "—")}
+                    </dd>
                   </div>
                   <div>
                     <dt className="inline text-muted-foreground">Laporan mediator: </dt>
-                    <dd className="inline">{baris.tanggalLaporan || "—"}</dd>
+                    <dd className="inline">
+                      {tanggalHariPendek(baris.tanggalLaporan, baris.tanggalLaporan || "—")}
+                    </dd>
                   </div>
                   {baris.tanggalKesepakatan ? (
                     <div>
                       <dt className="inline text-muted-foreground">Kesepakatan perdamaian: </dt>
-                      <dd className="inline">{baris.tanggalKesepakatan}</dd>
+                      <dd className="inline">
+                        {tanggalHariPendek(baris.tanggalKesepakatan, baris.tanggalKesepakatan)}
+                      </dd>
                     </div>
                   ) : null}
                   {baris.jumlahPertemuan !== null ? (
@@ -2417,7 +3762,7 @@ function IsiStatus({
             <ul className="space-y-0.5 text-sm text-muted-foreground">
               {status.mediasi.jadwal.map((x, urutan) => (
                 <li key={`${x.tanggal}-${urutan}`}>
-                  {x.tanggal}
+                  {tanggalHariPendek(x.tanggal, x.tanggal)}
                   {x.jam ? ` ${x.jam}` : ""}
                   {x.sampaiJam ? `-${x.sampaiJam}` : ""}
                   {x.tempat ? ` — ${x.tempat}` : ""}
@@ -2511,7 +3856,12 @@ function IsiStatus({
           <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <dt className="text-xs text-muted-foreground">Tanggal putusan</dt>
-              <dd className="font-medium">{status.putusanLengkap.tanggalPutusan || "—"}</dd>
+              <dd className="font-medium">
+                {tanggalHariPanjang(
+                  status.putusanLengkap.tanggalPutusan,
+                  status.putusanLengkap.tanggalPutusan || "—"
+                )}
+              </dd>
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Status putusan</dt>
@@ -2879,7 +4229,7 @@ function IsiStatus({
                         : upaya.gugur
                           ? "gugur"
                           : upaya.tanggalPutusan
-                            ? `diputus ${upaya.tanggalPutusan}`
+                            ? `diputus ${tanggalHariPendek(upaya.tanggalPutusan, upaya.tanggalPutusan)}`
                             : upaya.keterangan.keadaan || "belum diputus"}
                       {dapatDibaca > 0 ? ` \u00b7 ${sudah}/${dapatDibaca} tahap` : ""}
                     </span>
@@ -2925,7 +4275,7 @@ function IsiStatus({
                           {tahap.label}
                         </span>
                         {tahap.tanggal ? (
-                          <span className="shrink-0 tabular-nums">{tahap.tanggal}</span>
+                          <span className="shrink-0">{tanggalHariPendek(tahap.tanggal, tahap.tanggal)}</span>
                         ) : tahap.adaKolom ? (
                           <span className="shrink-0 text-sm text-amber-700 dark:text-amber-400">
                             belum
@@ -3140,7 +4490,7 @@ function IsiStatus({
                   <span className="font-medium">{x.nomor || "tanpa nomor box"}</span>
                   <span className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>
-                      diinput {x.tanggalInput || "—"}
+                      diinput {tanggalHariPendek(x.tanggalInput, x.tanggalInput || "—")}
                       {x.oleh ? ` oleh ${x.oleh}` : ""}
                     </span>
                     {/* ====================================================
@@ -3212,7 +4562,7 @@ function IsiStatus({
 
                 {x.tanggalMasuk || x.penerima ? (
                   <p className="mt-0.5 text-sm text-muted-foreground">
-                    {x.tanggalMasuk ? `Masuk arsip ${x.tanggalMasuk}` : ""}
+                    {x.tanggalMasuk ? `Masuk arsip ${tanggalHariPendek(x.tanggalMasuk, x.tanggalMasuk)}` : ""}
                     {x.penerima ? ` \u00b7 diterima ${x.penerima}` : ""}
                     {x.lengkap === false ? " \u00b7 berkas dinyatakan belum lengkap" : ""}
                   </p>
@@ -3224,7 +4574,9 @@ function IsiStatus({
                   <p className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                     Sedang dipinjam
                     {x.pinjam.peminjam ? ` oleh ${x.pinjam.peminjam}` : ""}
-                    {x.pinjam.tanggalPinjam ? ` sejak ${x.pinjam.tanggalPinjam}` : ""}
+                    {x.pinjam.tanggalPinjam
+                      ? ` sejak ${tanggalHariPendek(x.pinjam.tanggalPinjam, x.pinjam.tanggalPinjam)}`
+                      : ""}
                     {". Berkasnya tidak ada di raknya."}
                   </p>
                 ) : null}
@@ -3314,7 +4666,8 @@ function IsiStatus({
                   <li key={`masuk-${urutan}`} className="flex flex-wrap gap-x-2">
                     <span className="font-medium">{x.asal || "tanpa keterangan asal"}</span>
                     <span className="text-muted-foreground">
-                      diunggah {x.tanggalDiunggah || "—"}, diterima {x.tanggalDiterima || "—"}
+                      diunggah {tanggalHariPendek(x.tanggalDiunggah, x.tanggalDiunggah || "—")},
+                      diterima {tanggalHariPendek(x.tanggalDiterima, x.tanggalDiterima || "—")}
                       {x.hariSampaiTerima !== null ? ` (${x.hariSampaiTerima} hari)` : ""}
                     </span>
                   </li>
@@ -3333,8 +4686,10 @@ function IsiStatus({
                   <li key={`keluar-${urutan}`} className="flex flex-wrap gap-x-2">
                     <span className="font-medium">{x.tujuan || "tanpa keterangan tujuan"}</span>
                     <span className="text-muted-foreground">
-                      dimohon {x.tanggalPermohonan || "—"}
-                      {x.tanggalSidang ? `, untuk sidang ${x.tanggalSidang}` : ""}
+                      dimohon {tanggalHariPendek(x.tanggalPermohonan, x.tanggalPermohonan || "—")}
+                      {x.tanggalSidang
+                        ? `, untuk sidang ${tanggalHariPendek(x.tanggalSidang, x.tanggalSidang)}`
+                        : ""}
                       {x.hariSebelumSidang !== null ? ` (${x.hariSebelumSidang} hari sebelumnya)` : ""}
                     </span>
                     {/* SK III.3: kurang dari 6 hari sebelum sidang mengurangi
@@ -3347,7 +4702,8 @@ function IsiStatus({
                     ) : null}
                     {x.pelaksanaan && x.pelaksanaan.tanggalRelaas ? (
                       <span className="w-full text-muted-foreground">
-                        relaas {x.pelaksanaan.tanggalRelaas}
+                        relaas{" "}
+                        {tanggalHariPendek(x.pelaksanaan.tanggalRelaas, x.pelaksanaan.tanggalRelaas)}
                         {x.pelaksanaan.jurusita ? ` oleh ${x.pelaksanaan.jurusita}` : ""}
                       </span>
                     ) : null}
@@ -3374,6 +4730,13 @@ function IsiStatus({
             Susunannya disamakan dengan layar jadwal sidang supaya yang
             dicari ada di tempat yang sama pada kedua layar. */}
         <Bagian judul="Berkas" kunci="berkas">
+          {/* Tombolnya TIDAK diulang di sini. Dua tombol yang mengerjakan hal
+              yang sama membuat yang satu tampak berbeda dari yang lain, dan
+              yang pertama ditekan belum tentu yang dimaksud. */}
+          <p className="mb-2 text-xs text-muted-foreground">
+            Seluruh berkas di bawah ini beserta data perkaranya dapat diunduh sekaligus lewat tombol{" "}
+            <strong>Unduh seluruh perkara</strong> di kepala layar.
+          </p>
           <div className="space-y-3">
             {/* --- Gugatan / permohonan --- */}
             <div>
@@ -3439,7 +4802,7 @@ function IsiStatus({
                           sidang dan dengan daftar BAS di Antrian Sidang. */}
                       <NomorSidang urutan={sidang.urutanSidang} />
                       <span className="min-w-0 flex-1 truncate">
-                        {sidang.tanggalSidang}
+                        {tanggalHariPendek(sidang.tanggalSidang, sidang.tanggalSidang)}
                         <span className="ml-1 text-sm text-muted-foreground">
                           {sidang.agenda || "tanpa agenda"}
                         </span>
@@ -3559,7 +4922,9 @@ function IsiStatus({
                 {status.biaya.rincian.map((x, urutan) => (
                   <li key={`biaya-${urutan}`} className="flex justify-between gap-2 text-sm">
                     <span className="min-w-0 flex-1">
-                      <span className="text-muted-foreground">{x.tanggal || "—"} </span>
+                      <span className="text-muted-foreground">
+                        {tanggalHariPendek(x.tanggal, x.tanggal || "—")}{" "}
+                      </span>
                       {x.uraian || (x.jenis === "masuk" ? "Penerimaan" : "Pengeluaran")}
                     </span>
                     <span
@@ -4014,32 +5379,12 @@ function IsiStatus({
  * bukan label yang ditempel di atas titik: pada perkara dengan sepuluh sidang
  * label yang ditempel akan saling menimpa sampai tidak terbaca satu pun.
  */
-const NAMA_HARI_PENDEK = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-const NAMA_BULAN_PANJANG = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-
 /** Hari ini menurut jam peramban, dalam YYYY-MM-DD. */
 function hariIniIso() {
   const waktu = new Date();
   const bulan = String(waktu.getMonth() + 1).padStart(2, "0");
   const hari = String(waktu.getDate()).padStart(2, "0");
   return `${waktu.getFullYear()}-${bulan}-${hari}`;
-}
-
-/** "2026-09-14" -> "14 September 2026". Yang tidak sah dipulangkan apa adanya. */
-function tanggalPanjang(iso: string) {
-  const cocok = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
-  if (!cocok) return String(iso || "");
-  return `${Number(cocok[3])} ${NAMA_BULAN_PANJANG[Number(cocok[2]) - 1]} ${cocok[1]}`;
-}
-
-/** Nama hari untuk YYYY-MM-DD, atau kosong. */
-function namaHariIso(iso: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
-  const [tahun, bulan, hari] = iso.split("-").map(Number);
-  return NAMA_HARI_PENDEK[new Date(tahun, bulan - 1, hari).getDay()];
 }
 
 // ===========================================================================
@@ -4240,7 +5585,7 @@ export function susunPeristiwa(status: Status): PeristiwaKalender[] {
       rincian: [
         relaas.peran,
         relaas.jurusitaNama ? `jurusita ${relaas.jurusitaNama}` : "",
-        relaas.tanggalSidang ? `untuk sidang ${relaas.tanggalSidang}` : "",
+        relaas.tanggalSidang ? `untuk sidang ${tanggalHariPendek(relaas.tanggalSidang, relaas.tanggalSidang)}` : "",
         relaas.caraRelaas?.cara || (relaas.bertemu ? "bertemu orangnya" : ""),
         relaas.retur ? "surat RETUR" : "",
       ]
@@ -4377,7 +5722,7 @@ export function KalenderPerkara({ status }: { status: Status }) {
             ‹
           </Button>
           <span className="min-w-[9rem] text-center text-sm font-semibold">
-            {NAMA_BULAN_PANJANG[nomorBulan - 1]} {tahun}
+            {BULAN_PANJANG[nomorBulan - 1]} {tahun}
           </span>
           <Button size="sm" variant="outline" onClick={() => geser(1)} aria-label="Bulan berikutnya">
             ›
@@ -4389,12 +5734,12 @@ export function KalenderPerkara({ status }: { status: Status }) {
           ) : null}
         </div>
         <p className="text-sm text-muted-foreground">
-          Perkara ini berjalan {tanggalPanjang(awalPerkara)} – {tanggalPanjang(akhirPerkara)}
+          Perkara ini berjalan {tanggalHariPanjang(awalPerkara)} – {tanggalHariPanjang(akhirPerkara)}
         </p>
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center text-sm">
-        {NAMA_HARI_PENDEK.map((nama) => (
+        {HARI_PENDEK.map((nama) => (
           <div key={nama} className="py-1 font-medium text-muted-foreground">
             {nama}
           </div>
@@ -4424,7 +5769,7 @@ export function KalenderPerkara({ status }: { status: Status }) {
                 isi.length > 0 ? "bg-muted/50 hover:bg-muted" : "hover:bg-muted/30",
                 akhirPekan && isi.length === 0 ? "text-muted-foreground" : ""
               )}
-              aria-label={`${tanggalPanjang(tanggal)}: ${
+              aria-label={`${tanggalHariPanjang(tanggal)}: ${
                 isi.length === 0 ? "tanpa peristiwa" : isi.map((x) => x.judul).join(", ")
               }`}
             >
@@ -4485,7 +5830,7 @@ export function KalenderPerkara({ status }: { status: Status }) {
       {dipilih ? (
         <div className="rounded-md border bg-muted/40 p-2">
           <p className="mb-1 text-sm font-semibold">
-            {namaHariIso(dipilih)}, {tanggalPanjang(dipilih)}
+            {tanggalHariPanjang(dipilih)}
           </p>
           <ul className="space-y-1 text-sm">
             {isiDipilih.map((satu, ke) => (
@@ -4635,7 +5980,7 @@ function CourtCalendarSipp({ status }: { status: Status }) {
                 dihitung SESUDAH .sort() di atas. Bukan nomor sidang: rencana
                 dan sidang tidak selalu sama banyak. */}
             <NomorSidang urutan={ke + 1} sebutan="Rencana" />
-            <span className="font-medium">{tanggalPanjang(baris.tanggal)}</span>
+            <span className="font-medium">{tanggalHariPanjang(baris.tanggal)}</span>
             {baris.jam ? <span className="text-muted-foreground">{baris.jam}</span> : null}
             <span>{baris.agenda || "tanpa agenda"}</span>
             {baris.keterangan ? (
@@ -4795,7 +6140,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                 ? "sidang terakhir yang punya relaas"
                 : "sidang terakhir yang tercatat - belum ada relaas untuk sidang itu"}
             </strong>
-            {panggilan?.tanggalSidang ? ` (${tanggalPanjang(panggilan.tanggalSidang)})` : ""}, menurut
+            {panggilan?.tanggalSidang ? ` (${tanggalHariPanjang(panggilan.tanggalSidang)})` : ""}, menurut
             jalur yang SEHARUSNYA dipakai
             {panggilan?.lewatEcourt ? " (perkara e-Court)" : " (perkara biasa)"} - bukan jalur yang
             terlanjur dipakai. Alat bantu, bukan penetapan sah tidaknya panggilan.
@@ -4827,7 +6172,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                 <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b pb-1">
                   <span className="text-sm font-semibold">
                     {nomor.length > 0 ? `Sidang ke-${nomor.join(" & ke-")}` : "Sidang"} ·{" "}
-                    {namaHariIso(tanggal)}, {tanggalPanjang(tanggal)}
+                    {tanggalHariPanjang(tanggal)}
                   </span>
                   {sidang?.agenda ? (
                     <span className="text-xs text-muted-foreground">{sidang.agenda}</span>
@@ -4906,7 +6251,9 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                     <td className="px-2 py-1.5">
                       {pihak.sudahDikirim ? (
                         <>
-                          <Badge variant="success">{pihak.tanggalPanggilan}</Badge>
+                          <Badge variant="success">
+                            {tanggalHariPendek(pihak.tanggalPanggilan, pihak.tanggalPanggilan)}
+                          </Badge>
                           {pihak.noResiPos ? (
                             <div className="mt-0.5 text-sm text-muted-foreground">
                               resi {pihak.noResiPos}
@@ -5014,7 +6361,7 @@ function BarisRelaas({
 
       {relaas.tanggalRelaas ? (
         <span className="text-sm">
-          relaas {relaas.tanggalRelaas}
+          relaas {tanggalHariPendek(relaas.tanggalRelaas, relaas.tanggalRelaas)}
           {jarakHari === null ? null : (
             <span className="text-muted-foreground">
               {" "}
@@ -5069,7 +6416,7 @@ function BarisRelaas({
 
       {relaas.tanggalKirimPos ? (
         <span className="text-xs text-muted-foreground">
-          dikirim pos {relaas.tanggalKirimPos}
+          dikirim pos {tanggalHariPendek(relaas.tanggalKirimPos, relaas.tanggalKirimPos)}
           {relaas.noResiPos ? ` · resi ${relaas.noResiPos}` : ""}
         </span>
       ) : null}
@@ -5144,13 +6491,13 @@ function GarisWaktu({
               warna[satu.jenis] || "bg-slate-400"
             )}
             style={{ left: `${persen(satu.hariKe)}%` }}
-            title={`${satu.label} — ${satu.tanggal} (hari ke-${satu.hariKe})`}
+            title={`${satu.label} — ${tanggalHariPanjang(satu.tanggal, satu.tanggal)} (hari ke-${satu.hariKe})`}
           />
         ))}
       </div>
 
       <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-        <span>{garisWaktu.mulai}</span>
+        <span>{tanggalHariPendek(garisWaktu.mulai, garisWaktu.mulai)}</span>
         <span>
           {garisWaktu.totalHari} hari
           {garisWaktu.ambangTampak ? ` · ambang ${garisWaktu.ambangHari} hari` : ""}
@@ -5166,7 +6513,7 @@ function GarisWaktu({
             />
             <span className="font-medium">{satu.label}</span>
             <span className="text-muted-foreground">
-              {satu.tanggal} · hari ke-{satu.hariKe}
+              {tanggalHariPendek(satu.tanggal, satu.tanggal)} · hari ke-{satu.hariKe}
             </span>
           </li>
         ))}
@@ -5196,7 +6543,7 @@ function JedaSidang({ jeda }: { jeda: NonNullable<Status["analisa"]>["jedaSidang
       {jeda.baris.map((satu, urutan) => (
         <div key={`jeda-${urutan}`} className="flex flex-wrap items-center gap-2 text-sm">
           <span className="min-w-[9rem] text-sm text-muted-foreground">
-            {satu.dari} → {satu.ke}
+            {tanggalHariPendek(satu.dari, satu.dari)} → {tanggalHariPendek(satu.ke, satu.ke)}
           </span>
           <div className="h-2 min-w-[6rem] flex-1 overflow-hidden rounded-full bg-muted">
             <div
@@ -5242,7 +6589,8 @@ function KetepatanInput({
           <span className="min-w-[9rem] flex-1">
             <span className="font-medium">{satu.label}</span>{" "}
             <span className="text-xs text-muted-foreground">
-              {satu.tanggal} → {satu.diinput}
+              {tanggalHariPendek(satu.tanggal, satu.tanggal)} →{" "}
+              {tanggalHariPendek(satu.diinput, satu.diinput)}
             </span>
           </span>
           <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">

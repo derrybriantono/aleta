@@ -4,10 +4,10 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { rakitBerkasPerkara } from "@/server/modules/aleta-ecourt/berkas-perkara";
 import { petaPenanda } from "@/server/modules/aleta-ecourt/bas-tanya-jawab";
-import { penandaDariLembar, semuaLembar } from "@/server/modules/aleta-ecourt/bas-lembar";
+import { penandaDariLembar, pihakLembar, saksiBerlembar, semuaLembar } from "@/server/modules/aleta-ecourt/bas-lembar";
 import { penandaDariSidang, sidangKe, susunRangkaian } from "@/lib/rangkaian-sidang";
 import { muatKehadiran, penandaDariKehadiran } from "@/server/modules/aleta-ecourt/bas-kehadiran";
-import { bacaSaksiAbt, penandaDariAbt } from "@/lib/keterangan-abt";
+import { bacaSaksiAbt, kunciSaksi, letakSaksiAbt, penandaDariAbt } from "@/lib/keterangan-abt";
 import { cariPedoman, kataKunciBlangko } from "@/server/modules/aleta-ecourt/pustaka-pedoman";
 import { periksaKesiapan, ringkasPemeriksaan, type LembarRingkas } from "@/lib/pemeriksaan-bas";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     for (const [noVar] of penandaDariSidang(sidang)) terisi.add(noVar);
     for (const [noVar] of penandaDariKehadiran(kehadiran)) terisi.add(noVar);
 
-    const punyaLembar = new Set(lembar.filter((item) => item.baris.some((b) => b.jawaban)).map((item) => item.saksiKe));
+    const punyaLembar = saksiBerlembar(lembar);
     const saksiAbt = bacaSaksiAbt(isiBerkas.pemeriksaanSaksi.nilai);
     for (const [noVar] of penandaDariAbt(saksiAbt, punyaLembar)) terisi.add(noVar);
 
@@ -94,9 +94,17 @@ export async function GET(request: NextRequest) {
     // sudah diperiksa, hanya belum lewat ALETA. Tidak menghitungnya berarti
     // pemeriksaan menuntut pengetikan ulang atas keterangan yang sudah tercatat.
     const dariAbt: LembarRingkas[] = saksiAbt
-      .filter((item) => !punyaLembar.has(item.saksiKe) && item.tanyaJawab.some((b) => b.jawaban))
+      .filter((item) => {
+        // Saksi urutan 3+ tanpa pihak dari jembatan tetap DIHITUNG sudah
+        // diperiksa, walau letaknya di blangko tidak dipastikan (penandaDariAbt
+        // tidak menaruhnya) - penanda tanya-jawabnya akan tetap tersisa dan
+        // disebut sendiri oleh pemeriksaan.
+        const letak = letakSaksiAbt(item);
+        return !(letak && punyaLembar.has(kunciSaksi(letak.pihak, letak.ke))) && item.tanyaJawab.some((b) => b.jawaban);
+      })
       .map((item) => ({
-        saksiKe: item.saksiKe,
+        saksiKe: letakSaksiAbt(item)?.ke ?? item.saksiKe,
+        pihak: letakSaksiAbt(item)?.pihak ?? "P",
         // Jati dirinya tidak tercatat di ABT - hanya tanya-jawabnya. Dikosongkan
         // supaya pemeriksaan tetap menyebutnya perlu dilengkapi, bukan dianggap
         // sudah ada.
@@ -109,6 +117,7 @@ export async function GET(request: NextRequest) {
 
     const ringkasLembar: LembarRingkas[] = lembar.map((item) => ({
       saksiKe: item.saksiKe,
+      pihak: pihakLembar(item),
       saksiNama: item.saksi.nama,
       saksiUmur: item.saksi.umur,
       saksiAgama: item.saksi.agama,

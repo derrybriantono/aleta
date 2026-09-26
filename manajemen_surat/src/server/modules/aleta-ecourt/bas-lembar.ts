@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type { AletaDatabase } from "@/server/db/client";
+import { kunciSaksi, penandaSaksi, pihakKumpulan, sebutanSaksi, type PihakSaksi } from "@/lib/keterangan-abt";
 import {
   batalkanAccKarenaBerubah,
   keadaanAcc,
@@ -416,19 +417,37 @@ export async function semuaLembar(db: AletaDatabase, perkaraId: string): Promise
  * ============================================================================
  *
  * Blangko BAS menyediakan tempat terpisah untuk tiap saksi, dan abt_variabel
- * menyatakan nomornya: #1197# sampai #1202# jati diri saksi pertama, #5058#
- * tanya-jawabnya; #1203# sampai #1208# dan #5059# untuk saksi kedua.
+ * menyatakan nomornya (tabel lengkapnya PENANDA_SAKSI di keterangan-abt.ts):
+ * #1197#-#1202# jati diri saksi pertama dan #5058# tanya-jawabnya, #1203#-
+ * #1208# dan #5059# saksi kedua, #6132#-#6137# dan #5060#/#6122# saksi
+ * ketiga, #6144#... dan #6124# saksi keempat, lalu #6100#... #6120# dan
+ * #6106#... #6121# untuk dua saksi Tergugat.
  *
- * Hanya dua saksi yang dipetakan karena hanya dua yang disediakan blangkonya.
- * Lembar saksi ketiga dan seterusnya tetap tersimpan dan tetap terbaca di
- * layar - yang tidak ada adalah tempatnya di blangko ini, dan itu keadaan
- * blangkonya, bukan sesuatu yang boleh ditambal dengan menaruhnya di tempat
- * milik saksi lain.
+ * Pihak saksinya dibaca dari KUMPULAN pertanyaannya (A2/A2a "Saksi T" =
+ * saksi Tergugat). Sebelum ini lembar saksi Tergugat ke-1 mendarat di tempat
+ * saksi Penggugat ke-1 dan menimpanya.
+ *
+ * Saksi yang tidak disediakan tempatnya (saksi Penggugat ke-5, saksi Tergugat
+ * ke-3) tetap tersimpan dan tetap terbaca di layar - yang tidak ada adalah
+ * tempatnya di blangko, dan itu keadaan blangkonya, bukan sesuatu yang boleh
+ * ditambal dengan menaruhnya di tempat milik saksi lain.
  */
-const PENANDA_SAKSI: Record<number, { nama: string; umur: string; agama: string; pendidikan: string; pekerjaan: string; alamat: string; tanyaJawab: string }> = {
-  1: { nama: "1197", umur: "1198", agama: "1199", pendidikan: "1200", pekerjaan: "1201", alamat: "1202", tanyaJawab: "5058" },
-  2: { nama: "1203", umur: "1204", agama: "1205", pendidikan: "1206", pekerjaan: "1207", alamat: "1208", tanyaJawab: "5059" },
-};
+/** Pihak saksi sebuah lembar - dari kumpulan pertanyaannya. */
+export function pihakLembar(lembar: Pick<Lembar, "kodeKumpulan" | "namaKumpulan">): PihakSaksi {
+  return pihakKumpulan(lembar.kodeKumpulan, lembar.namaKumpulan);
+}
+
+/**
+ * Saksi yang SUDAH punya lembar berjawaban di ALETA, berkunci "P1"/"T2"
+ * (kunciSaksi) - rekaman ABT untuk saksi itu tidak dipakai lagi. Dikunci
+ * pihak+urutan, bukan urutan saja: lembar saksi Tergugat ke-1 tidak boleh
+ * menyingkirkan rekaman saksi Penggugat ke-1.
+ */
+export function saksiBerlembar(lembar: Lembar[]): Set<string> {
+  return new Set(
+    lembar.filter((item) => item.baris.some((b) => b.jawaban)).map((item) => kunciSaksi(pihakLembar(item), item.saksiKe))
+  );
+}
 
 export function penandaDariLembar(lembar: Lembar[]): Map<string, { nilai: string; asal: string }> {
   const peta = new Map<string, { nilai: string; asal: string }>();
@@ -437,10 +456,11 @@ export function penandaDariLembar(lembar: Lembar[]): Map<string, { nilai: string
   };
 
   for (const item of lembar) {
-    const penanda = PENANDA_SAKSI[item.saksiKe];
+    const pihak = pihakLembar(item);
+    const penanda = penandaSaksi(pihak, item.saksiKe);
     if (!penanda) continue;
 
-    const asal = `ALETA - lembar BAS ${item.kodeKumpulan} saksi ke-${item.saksiKe}`;
+    const asal = `ALETA - lembar BAS ${item.kodeKumpulan} ${sebutanSaksi(pihak, item.saksiKe)}`;
     pasang(penanda.nama, item.saksi.nama, asal);
     pasang(penanda.umur, item.saksi.umur, asal);
     pasang(penanda.agama, item.saksi.agama, asal);
@@ -449,7 +469,9 @@ export function penandaDariLembar(lembar: Lembar[]): Map<string, { nilai: string
     pasang(penanda.alamat, item.saksi.alamat, asal);
 
     const terjawab = item.baris.filter((baris) => baris.jawaban);
-    if (terjawab.length > 0) pasang(penanda.tanyaJawab, tanyaJawabKeTeks(terjawab), asal);
+    if (terjawab.length > 0) {
+      for (const noVar of penanda.tanyaJawab) pasang(noVar, tanyaJawabKeTeks(terjawab), asal);
+    }
   }
 
   return peta;

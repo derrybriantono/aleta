@@ -3,12 +3,13 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { getGatewayAbtUsulan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { kapabilitasPengguna, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { untukBot } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { ApiError } from "@/server/shared/errors";
 import { ok } from "@/server/shared/http";
-import { readJsonBody } from "@/server/shared/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,26 +44,113 @@ export const dynamic = "force-dynamic";
  */
 const BATAS_TEKS = 20000;
 
+/**
+ * Batas muatan permintaan (kontrak K6). Diperiksa atas badan mentah SEBELUM
+ * diurai dan sebelum bot dipanggil - yang lebih besar dijawab 413. Templat 27
+ * kumpulan ABT, dua keterangan saksi, dan posita sungguhan jauh di bawahnya.
+ */
+const BATAS_MUATAN = 64 * 1024;
+const BATAS_SAKSI = 6;
+
+type BadanUsulan = {
+  nomorPerkara?: unknown;
+  sumber?: unknown;
+  saksi1?: unknown;
+  saksi2?: unknown;
+  tanggalSidang?: unknown;
+  pelaku?: unknown;
+  lawan?: unknown;
+  posita?: unknown;
+  pemohon?: unknown;
+  pemohon2?: unknown;
+  templat?: unknown;
+  alasan?: unknown;
+  modus?: unknown;
+  kodeKumpulan?: unknown;
+  jenisPerkara?: unknown;
+  alur?: unknown;
+  saksi?: unknown;
+};
+
+/** Modus satu saksi - dibatasi bentuknya di sini, dan disaring sekali lagi di bot. */
+function saringModus(x: unknown) {
+  const r = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+  return {
+    modus: String(r.modus || "").slice(0, 20),
+    sumber: String(r.sumber || "").slice(0, 20),
+    // Sebutan pihak yang bercerita, dikirim ekstensi apa adanya. Dahulu
+    // dibuang di sini, dan bot jatuh ke tafsiran kodenya: "cerita dari
+    // Penggugat" tercetak "Tergugat bercerita".
+    sumberNama: String(r.sumberNama || "").slice(0, 40),
+    alasan: Array.isArray(r.alasan) ? (r.alasan as unknown[]).map((a) => String(a).slice(0, 80)).slice(0, 12) : [],
+  };
+}
+
+/** Saksi N (K6) - sampai enam. Pihak dan urutannya diperiksa ketat di bot. */
+function saringSaksi(x: unknown) {
+  if (!Array.isArray(x)) return undefined;
+  return (x as unknown[]).slice(0, BATAS_SAKSI).map((s) => {
+    const r = (s && typeof s === "object" ? s : {}) as Record<string, unknown>;
+    return {
+      ke: Number(r.ke) || 0,
+      pihak: String(r.pihak || "").slice(0, 1).toUpperCase(),
+      ...saringModus(r),
+    };
+  });
+}
+
+function pesanGalat(galat: unknown) {
+  return galat instanceof Error ? galat.message : String(galat);
+}
+
+/**
+ * Pengaturan tipe keluaran untuk bot (K6), dari basis data portal.
+ *
+ * Yang dikirim hanya bila tabelnya SUNGGUH terbaca. Bila tidak - galat, atau
+ * tabel tak terbaca sehingga yang ada hanya cermin kode - tidak ada yang
+ * dikirim, bot memakai konstanta tertanamnya, dan sebabnya ikut dijawab
+ * sebagai kabar. Keluarannya sama; yang berbeda hanya asalnya, dan asal itu
+ * disebut jujur.
+ */
+async function tipeKeluaranBot(db: Awaited<ReturnType<typeof getDatabase>>) {
+  try {
+    const efektif = await untukBot(db);
+    if (efektif.asal !== "basis-data") {
+      return { tipeKeluaran: undefined, kabar: efektif.kabar };
+    }
+    return { tipeKeluaran: { versi: efektif.versi, daftar: efektif.daftar }, kabar: efektif.kabar };
+  } catch (galat) {
+    console.error("[ABT USULAN] Pengaturan tipe keluaran tidak terbaca; bot memakai kalimat tertanam.", galat);
+    return {
+      tipeKeluaran: undefined,
+      kabar: [`Pengaturan tipe keluaran tidak terbaca - bot memakai kalimat tertanam: ${pesanGalat(galat)}`],
+    };
+  }
+}
+
 export async function POST(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    const body = await readJsonBody<{
-      nomorPerkara?: unknown;
-      sumber?: unknown;
-      saksi1?: unknown;
-      saksi2?: unknown;
-      tanggalSidang?: unknown;
-      pelaku?: unknown;
-      lawan?: unknown;
-      posita?: unknown;
-      pemohon2?: unknown;
-      templat?: unknown;
-      alasan?: unknown;
-  modus?: unknown;
-    }>(request).catch(() => ({}) as Record<string, unknown>);
+    const mentah = await request.text();
+    const ukuran = Buffer.byteLength(mentah, "utf8");
+    if (ukuran > BATAS_MUATAN) {
+      throw new ApiError(
+        413,
+        `Muatan permintaan ${Math.ceil(ukuran / 1024)} KB melebihi batas ${BATAS_MUATAN / 1024} KB - tidak diteruskan ke ALETA Bot.`
+      );
+    }
+    // Badan yang bukan JSON dijawab 400 dengan sebabnya - bukan diperlakukan
+    // diam-diam sebagai permintaan kosong.
+    let urai: unknown;
+    try {
+      urai = JSON.parse(mentah || "{}");
+    } catch {
+      throw new ApiError(400, "Badan permintaan usulan ABT bukan JSON yang sah.");
+    }
+    const body: BadanUsulan = urai && typeof urai === "object" && !Array.isArray(urai) ? (urai as BadanUsulan) : {};
 
     const sumberMinta = String(body.sumber || "semua");
 
@@ -106,11 +194,13 @@ export async function POST(request: NextRequest) {
       return ok({ available: false, message: "Nomor perkara tidak terbaca dari halaman ABT." });
     }
 
-    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg"] as const;
+    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain"] as const;
     type Sumber = (typeof SUMBER_DIKENAL)[number] | "semua";
     const sumber: Sumber = (SUMBER_DIKENAL as readonly string[]).includes(sumberMinta)
       ? (sumberMinta as Sumber)
       : "semua";
+
+    const tipe = await tipeKeluaranBot(db);
 
     const hasil = await getGatewayAbtUsulan({
       nomorPerkara,
@@ -137,24 +227,28 @@ export async function POST(request: NextRequest) {
       // Diteruskan sebagai teks untuk dicocokkan kata kuncinya saja; tidak
       // disimpan di mana pun pada jalur ini.
       posita: String(body.posita || "").slice(0, BATAS_TEKS),
+      // Sebutan pemohon (variabel 0046). Itsbat dahulu memakai `pelaku`
+      // (0047 = Termohon) sebagai sebutan pemohon, sehingga labelnya
+      // "Status Termohon sebelum nikah".
+      pemohon: String(body.pemohon || "").slice(0, 40),
       pemohon2: String(body.pemohon2 || "").slice(0, 40),
+      // Kode kumpulan templat dan jenis perkara - penentu varian kalimat dan
+      // penentu aturan perkara lain.
+      kodeKumpulan: String(body.kodeKumpulan || "").slice(0, 20),
+      jenisPerkara: String(body.jenisPerkara || "").slice(0, 80),
+      // Alur perkara - syarat bentuk bergender (data.syarat.alur).
+      alur: String(body.alur || "").slice(0, 20),
       // Modus keterangan tiap saksi - dibatasi bentuknya di sini, dan disaring
       // sekali lagi di bot. Dua pagar untuk masukan yang datang dari peramban.
       modus:
         body.modus && typeof body.modus === "object"
           ? (() => {
               const m = body.modus as Record<string, unknown>;
-              const satu = (x: unknown) => {
-                const r = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
-                return {
-                  modus: String(r.modus || "").slice(0, 20),
-                  sumber: String(r.sumber || "").slice(0, 20),
-                  alasan: Array.isArray(r.alasan) ? (r.alasan as unknown[]).map((a) => String(a).slice(0, 80)).slice(0, 12) : [],
-                };
-              };
-              return { saksi1: satu(m.saksi1), saksi2: satu(m.saksi2) };
+              return { saksi1: saringModus(m.saksi1), saksi2: saringModus(m.saksi2) };
             })()
           : undefined,
+      saksi: saringSaksi(body.saksi),
+      tipeKeluaran: tipe.tipeKeluaran,
       // Templat tanya-jawab, diambil ekstensi dari halaman penyunting ABT
       // (POST load_template) - ALETA tetap tidak membaca basis data ABT.
       // Dibatasi enam puluh baris dan panjang tiap ruasnya, sebab ia masukan.
@@ -165,6 +259,12 @@ export async function POST(request: NextRequest) {
               no: String(r.no || "").slice(0, 4),
               tanya: String(r.tanya || "").slice(0, 600),
               jawab: String(r.jawab || "").slice(0, 2000),
+              // Jawaban templat sebelum variabelnya diganti ABT ("#1241# / #1242#").
+              // Tanpa ruas ini bot hanya dapat MENEBAK hubungan dua saksi dari
+              // teks yang sudah terganti. Dahulu dibuang di sini tanpa bunyi.
+              ...(r.jawabMentah !== undefined && r.jawabMentah !== null
+                ? { jawabMentah: String(r.jawabMentah).slice(0, 2000) }
+                : {}),
             };
           })
         : undefined,
@@ -180,7 +280,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Asal pengaturan yang SUNGGUH dipakai: 'portal' hanya bila bot
+    // mengakui menerimanya. Bot lama mengabaikan tipeKeluaran tanpa bunyi -
+    // dan itu harus terlihat, bukan dilaporkan sebagai 'portal'.
+    const diterima = Boolean(tipe.tipeKeluaran) && hasil.data?.tipeKeluaranDiterima === true;
+    const kabar = [...tipe.kabar];
+    if (tipe.tipeKeluaran && !diterima) {
+      kabar.push("ALETA Bot belum mengenal pengaturan tipe keluaran - kalimat tertanam yang dipakai.");
+    }
+    const ditolak = hasil.data?.tipeKeluaranDitolak ?? [];
+    if (ditolak.length) {
+      kabar.push(`${ditolak.length} entri pengaturan tipe keluaran ditolak penyaring bot dan tidak dipakai.`);
+    }
+
     return ok({
+      tipeKeluaranAsal: diterima ? ("portal" as const) : ("tertanam" as const),
+      tipeKeluaranVersi: diterima && tipe.tipeKeluaran ? tipe.tipeKeluaran.versi : null,
+      tipeKeluaranDitolak: ditolak,
+      saksiDitolak: hasil.data?.saksiDitolak ?? [],
+      kabar,
+      positaLain: hasil.data?.positaLain ?? null,
       available: true,
       message: "",
       // Diteruskan utuh, bukan disusun ulang medan demi medan. Rute massal

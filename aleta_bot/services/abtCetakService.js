@@ -52,8 +52,43 @@ const path = require("node:path");
 /** Putusan terpanjang belasan halaman; ini jauh di atasnya. */
 const BATAS_BYTE = 20 * 1024 * 1024;
 
-/** soffice yang menggantung tidak boleh menahan permintaan selamanya. */
+/**
+ * soffice yang menggantung tidak boleh menahan permintaan selamanya.
+ *
+ * Batas ini PER KONVERSI. Urutan batas unggah putusan (kontrak K6) harus
+ * menaik dari dalam ke luar: bot < gerbang 120 dtk < ekstensi 150 dtk. Dua
+ * berkas diubah BERSAMAAN (putusanUnggahService), jadi yang dijumlahkan
+ * hanya satu periksa mesin (BATAS_PERIKSA_MESIN_MS) dan satu konversi:
+ * 20 + 90 = 110 dtk, masih di bawah 120 dtk gerbang.
+ */
 const BATAS_WAKTU_MS = 90_000;
+
+/**
+ * Batas untuk "soffice --version" saja. Jawabannya normalnya di bawah dua
+ * detik; dahulu ia memakai batas konversi 90 dtk, sehingga satu permintaan
+ * dapat menunggu 90 + 90 dtk - jauh melewati gerbang.
+ */
+const BATAS_PERIKSA_MESIN_MS = 20_000;
+
+/**
+ * ============================================================================
+ * HASIL PERIKSA MESIN DISINGGAHKAN, PALING LAMA LIMA MENIT
+ * ============================================================================
+ *
+ * Tiap konversi dahulu menjalankan DUA proses: "soffice --version" lalu
+ * konversinya. Satu unggahan dua RTF = empat proses soffice, dua di antaranya
+ * hanya untuk bertanya hal yang sama. Kini jawabannya disimpan paling lama
+ * lima menit, dan pemeriksaan yang berjalan bersamaan berbagi SATU proses.
+ *
+ * Yang disinggahkan hanya jawaban yang pasti: "ada" (beserta versinya) dan
+ * "tidak ada" (ENOENT - soffice tidak terpasang; memasangnya menuntut
+ * container dibangun ulang, yang mengosongkan singgahan ini). Kegagalan lain
+ * - habis waktu karena mesin sedang sibuk - TIDAK disinggahkan: satu
+ * perlambatan sesaat tidak boleh menolak konversi selama lima menit.
+ */
+const MASA_SINGGAH_MESIN_MS = 5 * 60_000;
+let singgahanMesin = null; // { hasil, pada }
+let periksaMesinBerjalan = null; // Promise yang sedang ditunggu bersama
 
 /**
  * Jalur soffice.
@@ -77,20 +112,52 @@ function jalankan(perintah, argumen, opsi) {
   });
 }
 
-/** Apakah soffice benar-benar ada dan dapat dijalankan? */
-async function periksaMesin() {
+/** Menjalankan "soffice --version" sekarang juga, tanpa singgahan. */
+async function periksaMesinSekarang() {
   try {
-    const { keluaran } = await jalankan(SOFFICE, ["--version"]);
-    return { ada: true, versi: keluaran.split("\n")[0].trim() };
+    const { keluaran } = await jalankan(SOFFICE, ["--version"], { timeout: BATAS_PERIKSA_MESIN_MS });
+    return { hasil: { ada: true, versi: keluaran.split("\n")[0].trim() }, pasti: true };
   } catch (galat) {
+    const tidakTerpasang = galat.code === "ENOENT";
     return {
-      ada: false,
-      sebab:
-        galat.code === "ENOENT"
+      hasil: {
+        ada: false,
+        sebab: tidakTerpasang
           ? `${SOFFICE} tidak ada di dalam container bot. PDF tidak dapat diterbitkan sampai LibreOffice terpasang di sana.`
           : String(galat.message || galat).slice(0, 200),
+      },
+      pasti: tidakTerpasang,
     };
   }
+}
+
+/**
+ * Apakah soffice benar-benar ada dan dapat dijalankan?
+ *
+ * Dijawab dari singgahan bila umurnya di bawah lima menit; bila ada
+ * pemeriksaan yang sedang berjalan, jawabannya ditunggu bersama. Lihat
+ * catatan MASA_SINGGAH_MESIN_MS.
+ */
+async function periksaMesin() {
+  const kini = Date.now();
+  if (
+    singgahanMesin &&
+    kini >= singgahanMesin.pada &&
+    kini - singgahanMesin.pada < MASA_SINGGAH_MESIN_MS
+  ) {
+    return { ...singgahanMesin.hasil };
+  }
+  if (!periksaMesinBerjalan) {
+    periksaMesinBerjalan = periksaMesinSekarang()
+      .then(({ hasil, pasti }) => {
+        singgahanMesin = pasti ? { hasil, pada: Date.now() } : null;
+        return hasil;
+      })
+      .finally(() => {
+        periksaMesinBerjalan = null;
+      });
+  }
+  return { ...(await periksaMesinBerjalan) };
 }
 
 /**
@@ -283,4 +350,13 @@ async function dokumenKePdf(isi) {
   }
 }
 
-module.exports = { rtfKePdf, dokumenKePdf, kenaliDokumen, periksaMesin, BATAS_BYTE };
+module.exports = {
+  rtfKePdf,
+  dokumenKePdf,
+  kenaliDokumen,
+  periksaMesin,
+  BATAS_BYTE,
+  BATAS_WAKTU_MS,
+  BATAS_PERIKSA_MESIN_MS,
+  MASA_SINGGAH_MESIN_MS,
+};

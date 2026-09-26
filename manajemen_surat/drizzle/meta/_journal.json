@@ -351,6 +351,13 @@
       "when": 1789471201001,
       "tag": "0049_antrian_publik",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1789557601001,
+      "tag": "0050_aleta_tipe_keluaran",
+      "breakpoints": true
     }
   ]
 }

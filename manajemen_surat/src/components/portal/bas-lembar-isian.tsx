@@ -88,7 +88,18 @@ type Lembar = {
   rekamanAbt?: RekamanAbt;
   /** Apakah yang membuka layar ini boleh meng-acc. Keputusan gambar, bukan penjagaan. */
   bolehAcc?: boolean;
+  /** Pihak saksi menurut kumpulan pertanyaannya - 'T' untuk kumpulan saksi Tergugat. */
+  pihakSaksi?: "P" | "T";
+  /** Asal bank ragam contoh, dan kabar bila pengaturannya tidak terbaca. */
+  ragam?: { asal: string; versi: string; dilepas: number; kabar: string[] };
 };
+
+/**
+ * Tempat saksi di blangko BAS (abt_variabel): empat saksi Penggugat dan dua
+ * saksi Tergugat. Disalin dari PENANDA_SAKSI keterangan-abt.ts sebagai angka
+ * saja - cukup untuk memberi tahu, bukan untuk mengisi.
+ */
+const TEMPAT_SAKSI_BLANGKO: Record<"P" | "T", number> = { P: 4, T: 2 };
 
 type KeadaanAcc = "belum-selesai" | "menunggu-acc" | "dikembalikan" | "diacc";
 
@@ -168,7 +179,11 @@ export function LembarIsian({
     if (!perkaraId || !kode) return;
     let batal = false;
     const kendali = new AbortController();
-    const alamat = `/api/aleta-ecourt/bas/tanya-jawab?perkaraId=${encodeURIComponent(perkaraId)}&kode=${encodeURIComponent(kode)}&saksiKe=${saksiKe}`;
+    // saksiKe menentukan bentuk jawaban contoh ("Pakai contoh") untuk saksi
+    // ini; nomor dan nama kumpulan ikut supaya pihak saksinya terbaca.
+    const alamat =
+      `/api/aleta-ecourt/bas/tanya-jawab?perkaraId=${encodeURIComponent(perkaraId)}&kode=${encodeURIComponent(kode)}` +
+      `&saksiKe=${saksiKe}&nomor=${encodeURIComponent(nomorPerkara)}&namaKumpulan=${encodeURIComponent(namaKumpulan)}`;
 
     fetch(apiPath(alamat), { cache: "no-store", signal: kendali.signal })
       .then((jawabanRute) => jawabanRute.json())
@@ -196,7 +211,7 @@ export function LembarIsian({
       batal = true;
       kendali.abort();
     };
-  }, [kunci, perkaraId, kode, saksiKe]);
+  }, [kunci, perkaraId, kode, saksiKe, nomorPerkara, namaKumpulan]);
 
   const simpan = useCallback(
     async (keadaan: "draf" | "selesai") => {
@@ -337,12 +352,23 @@ export function LembarIsian({
           <p className="text-xs text-amber-600 dark:text-amber-400">Ada perubahan yang belum disimpan.</p>
         ) : null}
         {pesan ? <p className="text-xs text-amber-600 dark:text-amber-400">{pesan}</p> : null}
-        {saksiKe > 2 ? (
+        {saksiKe > TEMPAT_SAKSI_BLANGKO[lembar.pihakSaksi === "T" ? "T" : "P"] ? (
           <p className="text-xs text-muted-foreground">
-            Blangko BAS hanya menyediakan tempat untuk dua saksi. Lembar ini tetap tersimpan dan terbaca, tetapi
+            Blangko BAS menyediakan tempat untuk {TEMPAT_SAKSI_BLANGKO[lembar.pihakSaksi === "T" ? "T" : "P"]} saksi{" "}
+            {lembar.pihakSaksi === "T" ? "Tergugat" : "Penggugat"}. Lembar ini tetap tersimpan dan terbaca, tetapi
             belum ada tempatnya pada naskah yang diunduh.
           </p>
         ) : null}
+        <p className="text-xs text-muted-foreground">
+          Jawaban contoh disusun untuk saksi ke-{saksiKe}
+          {lembar.pihakSaksi === "T" ? " pihak Tergugat" : ""} dan hanya masuk bila Anda menekan &quot;Pakai
+          contoh&quot;. Bacalah dan sesuaikan dengan keterangan saksi yang sesungguhnya.
+        </p>
+        {(lembar.ragam?.kabar ?? []).map((kabar) => (
+          <p key={kabar} className="text-xs text-amber-600 dark:text-amber-400">
+            {kabar}
+          </p>
+        ))}
       </CardHeader>
 
       <CardContent className="space-y-6">

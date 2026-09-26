@@ -45,8 +45,16 @@ export type SetBlangko = {
   id: string;
   nama: string;
   folder: string;
-  /** BAS dijenjangkan menurut nomor sidang; putusan menurut skenario akhirnya. */
-  jenis: "bas" | "putusan";
+  /**
+   * BAS dijenjangkan menurut nomor sidang; putusan menurut skenario akhirnya.
+   *
+   * "relaas" TIDAK dijenjangkan sama sekali - hanya enam blangko, dan yang
+   * memilihnya bukan jenjang pertanyaan melainkan KEADAAN perkaranya: sidang
+   * pertama, sidang yang ditunda, atau putusan yang harus diberitahukan. Karena
+   * itu ia tidak pernah melewati jenjangkan() maupun labelBlangko(), dan kedua
+   * fungsi itu tetap menerima dua jenis saja.
+   */
+  jenis: "bas" | "putusan" | "relaas";
   /** Kata kunci jenis perkara SIPP yang cocok dengan set ini. */
   untuk: string[];
 };
@@ -62,6 +70,16 @@ const AKAR = "derry_briantono";
  * dibaca.
  */
 export const SET_BLANGKO: SetBlangko[] = [
+  {
+    // Berlaku untuk SELURUH jenis perkara - `untuk: []` berarti tanpa
+    // penyaringan jenis perkara, sebab setiap perkara dipanggil dan setiap
+    // putusan yang pihaknya tidak hadir harus diberitahukan.
+    id: "relaas-jurusita",
+    nama: "Relaas Juru Sita",
+    folder: `${AKAR}/Relaas`,
+    jenis: "relaas",
+    untuk: [],
+  },
   {
     id: "bas-verstek",
     nama: "BAS Verstek Perceraian",
@@ -148,10 +166,238 @@ export const SET_BLANGKO: SetBlangko[] = [
  * yang tidak lazim, dan set yang disembunyikan berarti panitera harus keluar
  * dari ALETA untuk mengambilnya - lalu tidak kembali.
  */
-export function setUntukPerkara(jenisPerkara: string): Array<SetBlangko & { cocok: boolean }> {
+
+// ===========================================================================
+// RELAAS JURU SITA - ENAM BLANGKO, DAN YANG MEMILIHNYA KEADAAN PERKARA
+// ===========================================================================
+//
+// Diminta pengguna 25 September 2026: mendeteksi di SIPP panggilan untuk
+// SIDANG PERTAMA, SIDANG YANG DITUNDA, dan PEMBERITAHUAN PUTUSAN, lalu
+// mengambil blangkonya dari ABT.
+//
+// ===========================================================================
+// NAMA BERKASNYA DIAMBIL BYTE PER BYTE, BUKAN DITULIS DARI DAFTAR YANG TERLIHAT
+// ===========================================================================
+//
+// `[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan) .rtf` punya SATU SPASI
+// sebelum `.rtf`. Ia tidak terlihat pada daftar folder mana pun, dan menyalin
+// nama itu dari tampilan menghasilkan pencarian yang tidak pernah ketemu -
+// tanpa satu pun galat, sebab "blangko tidak ada" adalah jawaban yang sah.
+// Nama di bawah dibaca dengan os.listdir lalu dicetak sebagai repr.
+//
+// ===========================================================================
+// PIHAK MANA YANG DIPANGGIL - DARI dihadiri_oleh, BUKAN DARI TEBAKAN
+// ===========================================================================
+//
+// Sidang yang ditunda tidak memanggil semua orang lagi: yang dipanggil justru
+// yang TIDAK hadir. Arti sandinya dibaca dari BORANG SIPP SENDIRI -
+// application/views/perkara_tab/jadwal_sidang_p_edit.php, <select
+// name="dihadiri_oleh"> - bukan dari tafsiran ALETA:
+//
+//   1  Semua Pihak             -> TIDAK dipanggil ("tidak-perlu")
+//   2  <Pihak Pertama> Saja    -> panggil PIHAK KEDUA
+//   3  <Pihak Kedua> Saja      -> panggil PIHAK PERTAMA
+//   4  Para Pihak Tidak Hadir  -> panggil KEDUANYA
+//   5, 7, 8, 9, 13, 14, 15     kombinasi dengan Intervensi / Turut Tergugat
+//   10, 11                     Sebagian Penggugat / Sebagian Tergugat
+//
+// Yang hadir di persidangan diperintahkan datang lagi DI MUKA SIDANG, jadi
+// tidak dipanggil dengan relaas. Sampai 25 September 2026 sandi 1 di sini
+// dijawab "tidak diketahui" - dan itu 7.486 dari 20.109 baris jadwal sidang
+// yang disodorkan kepada juru sita sebagai pertanyaan, padahal SIPP sudah
+// menjawabnya.
+//
+// Terukur di sipp_donggala 25 September 2026 atas 20.109 baris jadwal sidang:
+// nilai 2 sebanyak 10.041, nilai 1 sebanyak 7.486, KOSONG 1.354, nilai 4
+// sebanyak 1.055, nilai 3 sebanyak 169, dan nilai 10 sebanyak 4.
+//
+// PERHATIAN pada yang KOSONG. notifikasi.js menjatuhkan 1, kosong, dan 10 ke
+// satu golongan "semua". Untuk memberi tahu itu tidak merugikan; untuk
+// MEMANGGIL ia merugikan - 1.354 baris yang kehadirannya tidak tercatat akan
+// terbaca "semua hadir" lalu tidak dipanggil sama sekali. Karena itu di sini
+// kosong dijawab "tidak diketahui", dan yang tidak diketahui DITANYAKAN kepada
+// juru sitanya, tidak diputuskan sendiri. Begitu pula 5 sampai 15: pihak ketiga
+// atau "sebagian" tidak dapat dipetakan ke satu blangko tanpa melihat
+// perkaranya.
+export type KeadaanRelaas =
+  | "sidang-pertama"
+  | "sidang-ditunda"
+  | "pemberitahuan-putusan"
+  | "ikrar-talak"
+  | "delegasi"
+  | "amplop";
+
+/**
+ * "tidak-perlu" BUKAN "tidak-diketahui": yang pertama jawaban SIPP (semua pihak
+ * hadir, jadi tidak ada yang dipanggil), yang kedua ketiadaan jawaban (yang
+ * harus ditanyakan). Menyatukan keduanya membuat juru sita ditanya tentang
+ * 7.486 sidang yang jawabannya sudah tercatat.
+ */
+export type PihakDipanggil = "keduanya" | "pertama" | "kedua" | "tidak-perlu" | "tidak-diketahui";
+
+export type BlangkoRelaas = {
+  keadaan: KeadaanRelaas;
+  /** Nama berkas APA ADANYA di folder ABT - termasuk spasi yang tak terlihat. */
+  berkas: string;
+  label: string;
+  /** Pihak yang blangko ini tujukan; "keduanya" berarti satu berkas dua pihak. */
+  pihak: PihakDipanggil;
+  keterangan: string;
+};
+
+const FOLDER_RELAAS = `${AKAR}/Relaas`;
+
+export const BLANGKO_RELAAS: BlangkoRelaas[] = [
+  {
+    keadaan: "sidang-pertama",
+    berkas: "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf",
+    label: "Panggilan sidang pertama (P dan T)",
+    pihak: "keduanya",
+    keterangan:
+      "Sidang pertama memanggil kedua pihak sekaligus - belum ada yang pernah hadir, jadi tidak ada yang dapat dikecualikan.",
+  },
+  {
+    keadaan: "sidang-ditunda",
+    berkas: "[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan) .rtf",
+    label: "Panggilan sidang lanjutan (T)",
+    pihak: "kedua",
+    keterangan:
+      "Sidang yang ditunda memanggil yang TIDAK hadir. Blangko ini untuk Pihak Kedua; bila yang tidak hadir Pihak Pertama, atau keduanya, blangko sidang pertama yang dipakai sebab ia memuat kedua pihak.",
+  },
+  {
+    keadaan: "pemberitahuan-putusan",
+    berkas: "[JS] 2. Relaas Pemberitahuan Putusan.rtf",
+    label: "Pemberitahuan isi putusan",
+    pihak: "tidak-diketahui",
+    keterangan:
+      "Pihaknya ditentukan baris pemberitahuannya sendiri (kolom pihak dan pihak_id), bukan oleh blangkonya.",
+  },
+  {
+    keadaan: "ikrar-talak",
+    berkas: "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf",
+    label: "Panggilan ikrar talak (P dan T)",
+    pihak: "keduanya",
+    keterangan:
+      "Dipakai bila jadwal sidangnya berpenanda ikrar_talak = 'Y' - terukur 1.024 dari 20.109 baris jadwal.",
+  },
+  {
+    keadaan: "delegasi",
+    berkas: "[JS] 3.a. Permohonan Bantuan Panggilan Delegasi.rtf",
+    label: "Permohonan bantuan panggilan (delegasi)",
+    pihak: "tidak-diketahui",
+    keterangan:
+      "Bukan relaas, melainkan surat ke pengadilan lain - dipakai bila pihaknya di luar wilayah. Yang menilai orang, bukan aturan: alamat di luar wilayah tidak selalu berarti delegasi.",
+  },
+  {
+    keadaan: "amplop",
+    berkas: "[JS] --AMPLOP PANGGILAN SURAT TERCATAT--.rtf",
+    label: "Amplop panggilan surat tercatat",
+    pihak: "tidak-diketahui",
+    keterangan:
+      "Pendamping panggilan yang dikirim lewat pos tercatat - terukur 3.104 baris relaas bersandi S pada 1.431 perkara.",
+  },
+];
+
+/**
+ * Sandi kehadiran SIPP -> pihak yang harus dipanggil pada sidang berikutnya.
+ *
+ * 1 (Semua Pihak) dijawab "tidak-perlu" - itu jawaban SIPP, lihat kepala
+ * bagian ini. Kosong dan sandi yang tidak dikenal dijawab "tidak-diketahui"
+ * DENGAN SENGAJA. Menjatuhkannya ke "keduanya" akan mencetak panggilan yang
+ * tidak diperlukan; menjatuhkannya ke "tidak-perlu" akan MELEWATKAN panggilan
+ * yang diperlukan. Keduanya salah, dan yang benar menanyakannya kepada juru
+ * sita. Kosong tidak memerlukan cabang sendiri: Number(null) dan Number("")
+ * sama-sama 0, dan 0 bukan sandi borang mana pun.
+ */
+export function pihakDipanggil(dihadiriOleh: unknown): PihakDipanggil {
+  const n = Number(dihadiriOleh);
+  if (n === 1) return "tidak-perlu";
+  if (n === 4) return "keduanya";
+  if (n === 3) return "pertama";
+  if (n === 2) return "kedua";
+  return "tidak-diketahui";
+}
+
+/**
+ * Blangko untuk satu keadaan, beserta pihak yang dipanggilnya.
+ *
+ * Sidang yang ditunda dengan KEDUA pihak tidak hadir memakai blangko sidang
+ * pertama - bukan karena ia sidang pertama, melainkan karena hanya blangko itu
+ * yang memuat dua pihak sekaligus. Itu keputusan, dan karena itu ditulis di
+ * sini alih-alih disembunyikan di dalam gelung pencetak.
+ */
+export function blangkoRelaas(
+  keadaan: KeadaanRelaas,
+  pihak: PihakDipanggil = "tidak-diketahui"
+): BlangkoRelaas | null {
+  // Semua pihak hadir: tidak ada yang dipanggil ulang dan tidak ada yang perlu
+  // diberi tahu isi putusan yang dibacakan di hadapannya. Sidang pertama dan
+  // ikrar talak TIDAK tunduk pada aturan ini - blangkonya selalu dua pihak,
+  // dan kehadiran yang dibaca untuknya milik sidang yang belum terjadi.
+  if (pihak === "tidak-perlu" && (keadaan === "sidang-ditunda" || keadaan === "pemberitahuan-putusan")) {
+    return null;
+  }
+  if (keadaan === "sidang-ditunda" && (pihak === "keduanya" || pihak === "pertama")) {
+    return BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-pertama") ?? null;
+  }
+  return BLANGKO_RELAAS.find((x) => x.keadaan === keadaan) ?? null;
+}
+
+/**
+ * Golongan yang dikirim bot -> keadaan blangko.
+ *
+ * Bot membedakan "sidang-ditunda" (sidang yang ditunda) dari "sidang-lanjutan"
+ * (sidang bernomor lebih dari satu yang tidak berpenanda ditunda). Bagi juru
+ * sita keduanya SATU pekerjaan - memanggil untuk sidang berikutnya yang bukan
+ * sidang pertama - dan ABT hanya punya satu blangko untuknya, yang judulnya
+ * pun "(Sidang Lanjutan)". Sebelum pemetaan ini 16 dari 156 baris hidup tidak
+ * mendapat blangko sama sekali.
+ *
+ * Golongan yang tidak dikenal dijawab null, bukan ditebak.
+ */
+export function keadaanUntukGolongan(golongan: unknown): KeadaanRelaas | null {
+  switch (String(golongan ?? "")) {
+    case "sidang-pertama":
+      return "sidang-pertama";
+    case "sidang-ditunda":
+    case "sidang-lanjutan":
+      return "sidang-ditunda";
+    case "ikrar-talak":
+      return "ikrar-talak";
+    case "pemberitahuan-putusan":
+      return "pemberitahuan-putusan";
+    default:
+      return null;
+  }
+}
+
+/** Jalur penuh blangko relaas di dalam folder ABT. */
+export function jalurBlangkoRelaas(berkas: string): string {
+  return `${FOLDER_RELAAS}/${berkas}`;
+}
+
+/** Set yang memang dijenjangkan - relaas tidak termasuk. */
+export type SetBerjenjang = Omit<SetBlangko, "jenis"> & { jenis: "bas" | "putusan" };
+
+/**
+ * Set untuk satu jenis perkara.
+ *
+ * SET RELAAS DIKECUALIKAN DENGAN SENGAJA. Ia bukan dipilih menurut JENIS
+ * perkara melainkan menurut KEADAANNYA - sidang pertama, sidang yang ditunda,
+ * atau putusan yang harus diberitahukan - dan ia punya panelnya sendiri. Kalau
+ * ia ikut di sini, pemilih BAS akan menawarkan blangko yang pertanyaan
+ * penjenjangnya tidak berlaku sama sekali.
+ *
+ * Tipe pulangnya ikut MENYEMPIT, sehingga jenjangkan() dan labelBlangko() tidak
+ * dapat dipanggil atas set relaas walau seseorang lupa menyaringnya - tsc yang
+ * menahannya, bukan kewaspadaan.
+ */
+export function setUntukPerkara(jenisPerkara: string): Array<SetBerjenjang & { cocok: boolean }> {
   const jenis = String(jenisPerkara || "").toLowerCase();
 
-  const dinilai = SET_BLANGKO.map((set) => ({
+  const dinilai = SET_BLANGKO.filter(
+    (set): set is SetBerjenjang => set.jenis !== "relaas"
+  ).map((set) => ({
     ...set,
     cocok: Boolean(jenis) && set.untuk.some((kata) => jenis.includes(kata)),
   }));

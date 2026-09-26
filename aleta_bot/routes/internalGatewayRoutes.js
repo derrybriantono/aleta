@@ -33,9 +33,11 @@ const abtUsulanService = require("../services/abtUsulanService");
 const abtCetakService = require("../services/abtCetakService");
 const sippPositaService = require("../services/sippPositaService");
 const ecourtSchedulerService = require("../services/ecourtSchedulerService");
+const ecourtSasaranService = require("../services/ecourtSasaranService");
 const sippJadwalSidangService = require("../services/sippJadwalSidangService");
 const kesiapanSidangService = require("../services/kesiapanSidangService");
 const sippStatusPerkaraService = require("../services/sippStatusPerkaraService");
+const tagPerkaraService = require("../services/tagPerkaraService");
 const putusanUnggahService = require("../services/putusanUnggahService");
 const kendaliBerkasService = require("../services/kendaliBerkasService");
 const putusanEcourtService = require("../services/putusanEcourtService");
@@ -75,6 +77,7 @@ const penilaianKonseptorService = require("../services/penilaianKonseptorService
 const petaPerkaraService = require("../services/petaPerkaraService");
 const identitasPihakService = require("../services/identitasPihakService");
 const lapisanPetaService = require("../services/lapisanPetaService");
+const relaasMassalService = require("../services/relaasMassalService");
 const promptPutusanService = require("../services/promptPutusanService");
 // Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
@@ -1984,6 +1987,38 @@ router.get("/sipp/konteks", requireInternalToken, async (req, res) => {
  * Baca saja. Ejaan dipulangkan apa adanya beserta jumlahnya; yang
  * menggabungkan variannya adalah portal, di tempat yang dapat diuji.
  */
+/**
+ * ============================================================================
+ * GERBANG UKUR DAFTAR DETEKSI (K13) - HANYA MEMBACA SIPP
+ * ============================================================================
+ *
+ * {jenis:'ciri', calon[], dasar?[], benih?}  ciriDariKalimat tanpa/dengan calon
+ *                                            atas posita cerai 2024+;
+ * {jenis:'sebutan', batas?}                  sampel 300 putusan terbaru;
+ * {jenis:'padanan', nama}                    nama ada di jenis_perkara_nama?
+ *
+ * Tidak menulis apa pun; hasil_ukur disimpan portal. Masukan yang salah 400,
+ * tabel yang tidak terbaca 500 dengan namanya - bukan jawaban kosong.
+ */
+const ukurTipeService = require("../services/ukurTipeService");
+
+router.post("/sipp/ukur-tipe", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body && typeof req.body === "object" ? req.body : {};
+    const hasil = await ukurTipeService.ukur({
+      jenis: String(badan.jenis || ""),
+      calon: Array.isArray(badan.calon) ? badan.calon.slice(0, 20) : [],
+      dasar: Array.isArray(badan.dasar) ? badan.dasar.slice(0, 400) : null,
+      benih: String(badan.benih || "").slice(0, 200),
+      batas: badan.batas,
+      nama: String(badan.nama || "").slice(0, 120),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.get("/sipp/obyek-sengketa/kebiasaan", requireInternalToken, async (req, res) => {
   try {
     const hasil = await obyekSengketaService.kebiasaan(String(req.query.nomor || ""));
@@ -2049,7 +2084,11 @@ router.get("/ecourt/arsip/perkara", requireInternalToken, async (req, res) => {
     const hasil = await ecourtStoreService.daftarArsipPerkara({
       cari: String(req.query.cari || ""),
       hanyaBelumLengkap: String(req.query.belumLengkap || "") === "1",
-      urutkan: String(req.query.urutkan || "terbaru"),
+      urutkan: String(req.query.urutkan || "terakhir"),
+      // Arah dikirim terpisah dari kuncinya. Kosong berarti pemanggil lama yang
+      // masih memakai nama urutan gabungan ("terlama", "belumTerbanyak") -
+      // diterjemahkan di layanan lewat URUTAN_LAMA, bukan di sini.
+      arah: String(req.query.arah || ""),
       batas: Number(req.query.batas) || 100,
       mulai: Number(req.query.mulai) || 0,
     });
@@ -2080,6 +2119,205 @@ router.post("/sipp/ringkasan-massal", requireInternalToken, async (req, res) => 
   }
 });
 
+// ============================================================================
+// PENYARING MASUKAN /abt/usulan (kontrak K6)
+// ============================================================================
+//
+// Semua yang dibaca rute /abt/usulan adalah masukan dari peramban yang
+// diteruskan portal. Portal sudah menyaringnya sekali; di sini disaring lagi,
+// sebab rute internal ini dapat dipanggil selain lewat portal. Dua pagar.
+//
+// Yang ditolak TIDAK dibuang diam-diam: disebut pada jawaban
+// (tipeKeluaranDitolak, saksiDitolak) beserta sebabnya.
+
+// Diambil di sini, bukan di kepala berkas: hunk rute ini milik satu pekerjaan,
+// dan kepala berkas disunting putaran lain.
+const abtUsulanLainService = require("../services/abtUsulanLainService");
+
+/** Modus satu saksi. Sebutan pencerita (sumberNama) ikut diteruskan. */
+function saringModusAbt(m) {
+  const r = m && typeof m === "object" ? m : {};
+  return {
+    modus: String(r.modus || "").slice(0, 20),
+    sumber: String(r.sumber || "").slice(0, 20),
+    // ========================================================================
+    // SEBUTAN PENCERITA - DAHULU DIBUANG DI SINI
+    // ========================================================================
+    //
+    // Ekstensi mengirim sebutan pihak yang bercerita apa adanya ("Penggugat",
+    // "Tergugat", "keluarga mereka") supaya bot tidak menafsirkan kodenya.
+    // Penyaring ini dahulu hanya meloloskan modus/sumber/alasan, sehingga
+    // sebutan itu hilang dan bot jatuh ke tafsiran kode: pilihan "cerita
+    // dari Penggugat" menjadi "Tergugat bercerita" di berita acara.
+    sumberNama: String(r.sumberNama || "").replace(/\s+/g, " ").trim().slice(0, 40),
+    alasan: Array.isArray(r.alasan) ? r.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
+  };
+}
+
+/**
+ * Kode pencerita penggugat/tergugat tanpa sebutan (ekstensi yang tidak
+ * mengirim sumberNama) diterjemahkan di sini dengan sebutan halaman itu
+ * sendiri. pelaku = 0047 = Tergugat/Termohon; lawan = 0046 =
+ * Penggugat/Pemohon. Kode lama "pelaku"/"lawan" dibiarkan kepada layanan -
+ * artinya bagi ekstensi lama memang terbalik, dan layanan sudah menanganinya.
+ */
+function lengkapiSumberNamaAbt(m, pelaku, lawan) {
+  if (m.sumberNama) return m;
+  if (m.sumber === "penggugat") return { ...m, sumberNama: lawan || "Penggugat" };
+  if (m.sumber === "tergugat") return { ...m, sumberNama: pelaku || "Tergugat" };
+  return m;
+}
+
+const BATAS_SAKSI_ABT = 6;
+
+/** Daftar saksi N (kontrak K6): {ke, pihak 'P'|'T', modus, sumber, sumberNama, alasan}. */
+function saringSaksiAbt(masuk, pelaku, lawan) {
+  if (!Array.isArray(masuk)) return { saksi: [], ditolak: [] };
+  const saksi = [];
+  const ditolak = [];
+  masuk.forEach((s, indeks) => {
+    const r = s && typeof s === "object" ? s : {};
+    const pihak = String(r.pihak || "").toUpperCase();
+    const ke = Number(r.ke);
+    if (pihak !== "P" && pihak !== "T") {
+      ditolak.push({ indeks, alasan: "pihak_bukan_P_atau_T" });
+      return;
+    }
+    if (!Number.isInteger(ke) || ke < 1 || ke > BATAS_SAKSI_ABT) {
+      ditolak.push({ indeks, alasan: `ke_di_luar_1_sampai_${BATAS_SAKSI_ABT}` });
+      return;
+    }
+    if (saksi.length >= BATAS_SAKSI_ABT) {
+      ditolak.push({ indeks, alasan: `lebih_dari_${BATAS_SAKSI_ABT}_saksi` });
+      return;
+    }
+    saksi.push({ ke, pihak, ...lengkapiSumberNamaAbt(saringModusAbt(r), pelaku, lawan) });
+  });
+  return { saksi, ditolak };
+}
+
+/**
+ * Penanda yang sah per daftar tipe keluaran yang dipakai bot - sama dengan
+ * `penanda` registri portal (src/lib/tipe-keluaran/kontrak.ts, DAFTAR_TIPE);
+ * ujinya membandingkan keduanya. Daftar di luar peta ini ditolak.
+ *
+ * Untuk 'bentuk', #dddd# yang sah hanya #0046#, #0047#, dan yang ada di
+ * bentuk dasarnya - templat ABT yang dikirim bersama permintaan ini. Varian
+ * tidak boleh memunculkan sebutan yang tidak pernah ada di templatnya.
+ */
+const PENANDA_TIPE_BOT = Object.freeze({
+  "bas.saksi.pembuka": Object.freeze([]),
+  "bas.saksi.ragam-kata": Object.freeze([]),
+  "bas.saksi.jawaban-modus": Object.freeze(["{sumber}", "{daftar}", "{isi}"]),
+  "bas.saksi.bentuk": Object.freeze(["{slot}", "#0046#", "#0047#"]),
+  "bas.saksi.profil": Object.freeze([]),
+  "bersama.alasan.frasa": Object.freeze(["{pelaku}", "{lawan}"]),
+  "putusan.alasan.ciri": Object.freeze([]),
+  "putusan.upaya-damai.bunyi": Object.freeze(["{pelaku}", "{lawan}"]),
+});
+const BATAS_ENTRI_TIPE_ABT = 200;
+const BATAS_TEKS_TIPE_ABT = 400;
+const BATAS_DATA_TIPE_ABT = 4000;
+
+/** Sebab sebuah teks entri ditolak, atau "". */
+function periksaTeksTipeAbt(teks, sah) {
+  if (teks.length > BATAS_TEKS_TIPE_ABT) return `lebih_dari_${BATAS_TEKS_TIPE_ABT}_huruf`;
+  if (teks.includes("${")) return "memuat_${";
+  if (teks.includes("<")) return "memuat_<";
+  if (/[\r\n]/.test(teks)) return "memuat_ganti_baris";
+  if (sah) {
+    for (const p of teks.match(/\{[^{}]*\}|#\d{4}#/g) || []) {
+      if (!sah.has(p)) return `penanda_asing:${p.slice(0, 40)}`;
+    }
+    if (/[{}]/.test(teks.replace(/\{[^{}]*\}/g, ""))) return "kurung_kurawal_lepas";
+  }
+  return "";
+}
+
+/** Seluruh string di dalam data, sedalam apa pun. */
+function stringDiDalamTipeAbt(nilai, keluar) {
+  if (typeof nilai === "string") keluar.push(nilai);
+  else if (Array.isArray(nilai)) for (const x of nilai) stringDiDalamTipeAbt(x, keluar);
+  else if (nilai && typeof nilai === "object") for (const x of Object.values(nilai)) stringDiDalamTipeAbt(x, keluar);
+  return keluar;
+}
+
+function periksaEntriTipeAbt(e, sah) {
+  if (!e || typeof e !== "object" || Array.isArray(e)) return "bukan_objek";
+  const salahKunci = periksaTeksTipeAbt(String(e.kunci === undefined || e.kunci === null ? "" : e.kunci), null);
+  if (salahKunci) return `kunci_${salahKunci}`;
+  const salahNilai = periksaTeksTipeAbt(String(e.nilai === undefined || e.nilai === null ? "" : e.nilai), sah);
+  if (salahNilai) return `nilai_${salahNilai}`;
+  if (e.data !== undefined && e.data !== null) {
+    if (typeof e.data !== "object" || Array.isArray(e.data)) return "data_bukan_objek";
+    let panjang = 0;
+    try {
+      panjang = JSON.stringify(e.data).length;
+    } catch (_galat) {
+      return "data_tidak_dapat_dibaca";
+    }
+    if (panjang > BATAS_DATA_TIPE_ABT) return `data_lebih_dari_${BATAS_DATA_TIPE_ABT}_huruf`;
+    for (const s of stringDiDalamTipeAbt(e.data, [])) {
+      const salah = periksaTeksTipeAbt(s, sah);
+      if (salah) return `data_${salah}`;
+    }
+  }
+  return "";
+}
+
+/**
+ * Menyaring tipeKeluaran kiriman portal (K6). Tanpa tipeKeluaran, atau bila
+ * sebuah daftar tidak ada, pemakainya memakai konstanta tertanam.
+ *
+ * @returns {{tipeKeluaran: object|undefined, ditolak: {daftar, kunci, alasan, jumlah?}[]}}
+ */
+function saringTipeKeluaranAbt(tipe, templat) {
+  const ditolak = [];
+  if (tipe === undefined || tipe === null) return { tipeKeluaran: undefined, ditolak };
+  if (typeof tipe !== "object" || !tipe.daftar || typeof tipe.daftar !== "object" || Array.isArray(tipe.daftar)) {
+    ditolak.push({ daftar: "", kunci: "", alasan: "bentuk_tipeKeluaran_tidak_dikenal" });
+    return { tipeKeluaran: undefined, ditolak };
+  }
+  const penandaDasar = new Set();
+  for (const b of Array.isArray(templat) ? templat : []) {
+    const r = b && typeof b === "object" ? b : {};
+    for (const p of `${String(r.tanya || "")} ${String(r.jawab || "")}`.match(/#\d{4}#/g) || []) penandaDasar.add(p);
+  }
+  const daftar = {};
+  for (const [kunciDaftar, mentah] of Object.entries(tipe.daftar)) {
+    if (!Object.prototype.hasOwnProperty.call(PENANDA_TIPE_BOT, kunciDaftar)) {
+      ditolak.push({ daftar: String(kunciDaftar).slice(0, 80), kunci: "", alasan: "daftar_tidak_dikenal" });
+      continue;
+    }
+    if (!Array.isArray(mentah)) {
+      ditolak.push({ daftar: kunciDaftar, kunci: "", alasan: "daftar_bukan_larik" });
+      continue;
+    }
+    const sah = new Set(PENANDA_TIPE_BOT[kunciDaftar]);
+    if (kunciDaftar === "bas.saksi.bentuk") for (const p of penandaDasar) sah.add(p);
+    const bersih = [];
+    mentah.slice(0, BATAS_ENTRI_TIPE_ABT).forEach((e) => {
+      const alasan = periksaEntriTipeAbt(e, sah);
+      if (!alasan) {
+        bersih.push(e);
+        return;
+      }
+      const kunci = e && typeof e === "object" ? String(e.kunci === undefined || e.kunci === null ? "" : e.kunci) : "";
+      ditolak.push({ daftar: kunciDaftar, kunci: kunci.slice(0, 80), alasan });
+    });
+    if (mentah.length > BATAS_ENTRI_TIPE_ABT) {
+      ditolak.push({
+        daftar: kunciDaftar,
+        kunci: "",
+        alasan: `lebih_dari_${BATAS_ENTRI_TIPE_ABT}_entri`,
+        jumlah: mentah.length - BATAS_ENTRI_TIPE_ABT,
+      });
+    }
+    daftar[kunciDaftar] = bersih;
+  }
+  return { tipeKeluaran: { versi: String(tipe.versi || "").slice(0, 32), daftar }, ditolak };
+}
+
 /**
  * Usulan isian untuk blangko ABT.
  *
@@ -2091,8 +2329,25 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
   try {
     const nomorPerkara = String(req.body?.nomorPerkara || "");
     const sumber = String(req.body?.sumber || "semua");
+    const pelaku = String(req.body?.pelaku || "").slice(0, 40);
+    const lawan = String(req.body?.lawan || "").slice(0, 40);
+    const templatMasuk = Array.isArray(req.body?.templat) ? req.body.templat.slice(0, 60) : [];
 
-    const jawaban = { ok: true, sipp: null, saksi: null, itsbat: null, saksiSdg: null };
+    // Pengaturan tipe keluaran dari portal (K6), disaring sebelum sampai ke
+    // penyusun mana pun. Tanpa itu penyusun memakai konstanta tertanam.
+    const tipe = saringTipeKeluaranAbt(req.body?.tipeKeluaran, templatMasuk);
+
+    const jawaban = {
+      ok: true,
+      sipp: null,
+      saksi: null,
+      itsbat: null,
+      saksiSdg: null,
+      positaLain: null,
+      // Yang dipakai penyusun, bukan yang diminta: portal menyebut asalnya
+      // 'portal' hanya bila bot sungguh menerimanya.
+      tipeKeluaranDiterima: Boolean(tipe.tipeKeluaran),
+    };
 
     if (sumber === "semua" || sumber === "sipp") {
       jawaban.sipp = await abtUsulanService.dariSipp(nomorPerkara).catch((galat) => ({
@@ -2106,8 +2361,27 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     // basis data aps_badilag: aturan "ALETA tidak membaca aps_badilag" tetap.
     if (sumber === "itsbat") {
       jawaban.itsbat = abtUsulanService.dariPositaItsbat(String(req.body?.posita || ""), {
-        pemohon: String(req.body?.pelaku || ""),
+        // Sebutan pemohon = variabel 0046. Dahulu yang dipakai `pelaku`
+        // (0047 = Termohon), sehingga labelnya "Status Termohon sebelum
+        // nikah". `pelaku` tinggal cadangan bagi ekstensi yang belum
+        // mengirim `pemohon`.
+        pemohon: String(req.body?.pemohon || req.body?.pelaku || "").slice(0, 40),
         pemohon2: String(req.body?.pemohon2 || ""),
+      });
+    }
+    // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
+    // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.
+    if (sumber === "posita-lain") {
+      jawaban.positaLain = abtUsulanLainService.dariPositaLain(String(req.body?.posita || ""), {
+        jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+        alur: String(req.body?.alur || "").slice(0, 20),
+        sebutan: {
+          pelaku,
+          lawan,
+          pemohon: String(req.body?.pemohon || "").slice(0, 40),
+          pemohon2: String(req.body?.pemohon2 || "").slice(0, 40),
+        },
+        tipeKeluaran: tipe.tipeKeluaran,
       });
     }
     // Keterangan saksi SDG - disusun dari templat pertanyaan yang ekstensi
@@ -2118,21 +2392,26 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       // "dari-cerita" - beserta alasan pilihannya dan siapa yang bercerita.
       // Disaring per medan: ia masukan dari peramban.
       const modusMasuk = req.body?.modus && typeof req.body.modus === "object" ? req.body.modus : {};
-      const saringModus = (m) => {
-        const r = m && typeof m === "object" ? m : {};
-        return {
-          modus: String(r.modus || "").slice(0, 20),
-          sumber: String(r.sumber || "").slice(0, 20),
-          alasan: Array.isArray(r.alasan) ? r.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
-        };
-      };
+      const modusSaksi = (m) => lengkapiSumberNamaAbt(saringModusAbt(m), pelaku, lawan);
+      const saksiMasuk = saringSaksiAbt(req.body?.saksi, pelaku, lawan);
+      if (saksiMasuk.ditolak.length) jawaban.saksiDitolak = saksiMasuk.ditolak;
       jawaban.saksiSdg = abtUsulanService.susunKeteranganSaksiSdg({
-        templat: Array.isArray(req.body?.templat) ? req.body.templat.slice(0, 60) : [],
+        templat: templatMasuk,
         alasan: Array.isArray(req.body?.alasan) ? req.body.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
         posita: String(req.body?.posita || ""),
-        pelaku: String(req.body?.pelaku || "").slice(0, 40),
-        lawan: String(req.body?.lawan || "").slice(0, 40),
-        modus: { saksi1: saringModus(modusMasuk.saksi1), saksi2: saringModus(modusMasuk.saksi2) },
+        pelaku,
+        lawan,
+        // Nomor perkara dan kode kumpulan templat menentukan varian kalimat
+        // (pemilih ragam K7b) - cetak ulang perkara yang sama tetap sama.
+        nomorPerkara: nomorPerkara.slice(0, 80),
+        kodeKumpulan: String(req.body?.kodeKumpulan || "").slice(0, 20),
+        // Syarat bentuk bergender (data.syarat.jenisPerkaraId/alur). Tanpa
+        // keduanya bentuk bersyarat yang disahkan admin tidak pernah cocok.
+        jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+        alur: String(req.body?.alur || "").slice(0, 20),
+        modus: { saksi1: modusSaksi(modusMasuk.saksi1), saksi2: modusSaksi(modusMasuk.saksi2) },
+        ...(saksiMasuk.saksi.length ? { saksi: saksiMasuk.saksi } : {}),
+        ...(tipe.tipeKeluaran ? { tipeKeluaran: tipe.tipeKeluaran } : {}),
       });
     }
     if (sumber === "semua" || sumber === "saksi") {
@@ -2146,8 +2425,18 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         },
         // Gugatannya - dipakai menyaring alasan yang tidak pernah
         // didalilkan. Boleh kosong; saringannya lalu tidak berlaku.
-        String(req.body?.posita || "")
+        String(req.body?.posita || ""),
+        tipe.tipeKeluaran ? { tipeKeluaran: tipe.tipeKeluaran } : undefined
       );
+    }
+
+    // Entri pengaturan yang ditolak - oleh penyaring di atas maupun oleh
+    // penyusunnya sendiri - disebut dalam satu daftar, bukan ditelan.
+    const ditolakLayanan = [jawaban.saksi, jawaban.saksiSdg, jawaban.positaLain].flatMap((h) =>
+      h && Array.isArray(h.tipeKeluaranDitolak) ? h.tipeKeluaranDitolak : []
+    );
+    if (tipe.ditolak.length || ditolakLayanan.length) {
+      jawaban.tipeKeluaranDitolak = [...tipe.ditolak, ...ditolakLayanan];
     }
 
     res.json(jawaban);
@@ -2708,8 +2997,66 @@ router.post("/ecourt/panggilan/pengaturan", requireInternalToken, (req, res) => 
 /** Mencari perkara dari potongan nomor - menerima angka saja. */
 router.get("/sipp/status-perkara/cari", requireInternalToken, async (req, res) => {
   try {
-    const hasil = await sippStatusPerkaraService.cariPerkara(String(req.query.cari || ""), {
+    // ======================================================================
+    // TAG DIJEMPUT LEBIH DULU, LALU DIKIRIM SEBAGAI DAFTAR ID
+    // ======================================================================
+    //
+    // Terukur atas tag ghaib (67 perkara): syaratnya ditempel sebagai EXISTS
+    // ke dalam kueri cariPerkara 2,98 detik; daftar idnya dijemput dulu lalu
+    // dipakai sebagai IN 0,44 detik. Sebabnya tabel turunan yang harus
+    // disusun utuh ketika syaratnya jarang.
+    //
+    // Beberapa tag digabung dengan DAN, yaitu IRISAN daftar idnya: "belum
+    // putus DAN ghaib" adalah pertanyaan pengawasan yang nyata, sedangkan
+    // gabungan ATAU hampir tidak pernah ditanyakan.
+    //
+    // Kunci yang tidak ada di katalog DIBUANG - tidak ada satu pun potongan
+    // SQL yang datang dari peramban.
+    const kunciTag = String(req.query.tag || "")
+      .split(",")
+      .map((x) => x.trim())
+      // Object.hasOwn, BUKAN kebenaran TAG[x]. TAG adalah objek biasa yang
+      // dibekukan, jadi TAG["toString"] dan TAG["constructor"] bernilai benar -
+      // kunci itu lolos penyaring lalu melempar TypeError di idPerkaraTag
+      // (tag.tabel undefined), dan rute menjawab 500. Bukan lubang keamanan:
+      // tidak ada satu potongan SQL yang lolos. Tetapi penyaring katalog yang
+      // seharusnya TERTUTUP ternyata berlubang, dan ?tag=toString memulangkan
+      // 500 alih-alih hasil tanpa tag.
+      .filter((x) => Object.hasOwn(tagPerkaraService.TAG, x))
+      .slice(0, 8);
+    // tagDari/tagSampai, BUKAN dari/sampai: `sampai` pada rute yang sama sudah
+    // dipakai saringan tanggal pendaftaran. Satu nama untuk dua arti akan
+    // membuat tanggal panel tag ikut memotong pendaftaran tanpa satu pun galat.
+    const lingkupTag = {
+      dasar: String(req.query.dasarTanggal || "daftar"),
+      periode: String(req.query.periode || "total"),
+      acuan: String(req.query.acuan || ""),
+      dari: String(req.query.tagDari || ""),
+      sampai: String(req.query.tagSampai || ""),
+    };
+    const rentangTag = tagPerkaraService.rentang(
+      lingkupTag.periode,
+      lingkupTag.acuan,
+      lingkupTag.dari,
+      lingkupTag.sampai
+    );
+
+    let idTag = null;
+    // Tag yang daftarnya mentok di BATAS_ID. Itu berarti perkara TERTUA yang
+    // cocok tidak ikut terbawa - dan tanpa disebutkan, layar akan tampak
+    // menjawab pertanyaan yang sebenarnya hanya dijawab sebagian.
+    const tagDipotong = [];
+    for (const kunci of kunciTag) {
+      const daftar = await tagPerkaraService.idPerkaraTag(kunci, lingkupTag);
+      if (daftar.length >= tagPerkaraService.BATAS_ID) tagDipotong.push(kunci);
+      idTag = idTag === null ? daftar : idTag.filter((x) => daftar.includes(x));
+      if (idTag.length === 0) break;
+    }
+
+    // Berhalaman: batas (bawaan 25, pagu 500 dijaga layanan) dan lewati.
+    const halaman = await sippStatusPerkaraService.cariPerkaraHalaman(String(req.query.cari || ""), {
       batas: Number(req.query.batas) || 25,
+      lewati: Number(req.query.lewati) || 0,
       jenisPerkara: String(req.query.jenisPerkara || ""),
       status: String(req.query.status || ""),
       tahun: String(req.query.tahun || ""),
@@ -2732,10 +3079,40 @@ router.get("/sipp/status-perkara/cari", requireInternalToken, async (req, res) =
       putusSampai: String(req.query.putusSampai || ""),
       umur: String(req.query.umur || ""),
       ecourt: String(req.query.ecourt || ""),
+      idTag,
+      // Rentang waktunya tetap menyaring walau tidak ada tag yang menyala -
+      // "diputus triwulan ini" adalah pertanyaan yang utuh dengan sendirinya.
+      lingkupTanggal: tagPerkaraService.syaratLingkup(
+        lingkupTag.dasar,
+        rentangTag.dari,
+        rentangTag.sampai
+      ),
     });
     res.json({
       ok: true,
-      perkara: hasil,
+      perkara: halaman.perkara,
+      // Masih ada baris sesudah halaman ini - layar meminta berikutnya
+      // dengan lewati = lewati + batas.
+      adaLagi: halaman.adaLagi,
+      lewati: halaman.lewati,
+      batas: halaman.batas,
+      lapis: halaman.lapis,
+      // Bagian yang gagal dibaca dari SIPP. Kosong berarti seluruh ruas
+      // terbaca; berisi berarti kolom kosong itu BELUM TENTU memang kosong.
+      ruasTakTerbaca: halaman.ruasTakTerbaca,
+      tagDipakai: kunciTag,
+      // Berapa perkara yang SUNGGUH cocok dengan tagnya, terlepas dari berapa
+      // baris yang muat ditampilkan. Tanpa angka ini, batas baris membuat
+      // "ghaib" tampak 25 perkara padahal 67.
+      jumlahTag: Array.isArray(idTag) ? idTag.length : null,
+      tagDipotong,
+      // Pagunya ikut dikirim supaya layar tidak menuliskan angkanya sendiri.
+      // Sebelumnya layar mencetak "3.000" sebagai teks, dan ketika pagunya
+      // dinaikkan ke 20.000 peringatannya berbohong tentang angka yang
+      // dipotong - tepat jenis penyimpangan yang membuat katalog tag ini
+      // dikirim dari bot alih-alih disalin.
+      batasId: tagPerkaraService.BATAS_ID,
+      lingkupTag: rentangTag,
       // Pilihan saringan dikirim bersama hasilnya supaya layar tidak perlu
       // menyalin ulang daftar yang sama - dan tidak dapat menyimpang darinya.
       pilihanStatus: sippStatusPerkaraService.STATUS_PENCARIAN,
@@ -2744,6 +3121,70 @@ router.get("/sipp/status-perkara/cari", requireInternalToken, async (req, res) =
       pilihanUmur: sippStatusPerkaraService.UMUR_PENCARIAN,
       pilihanPutusan: sippStatusPerkaraService.PUTUSAN_PENCARIAN,
     });
+  } catch (error) {
+    // Habis waktu (juga saat menjemput daftar tag di atas) dikatakan dalam
+    // bahasa orangnya, bukan "Query inactivity timeout" - lihat
+    // galatPencarian() di layanannya. Galat lain diteruskan apa adanya.
+    res.status(500).json({ ok: false, error: sippStatusPerkaraService.pesanGalatPencarian(error) });
+  }
+});
+
+/**
+ * Jumlah tiap tag pada layar awal Status Perkara.
+ *
+ * Terpisah dari pencariannya dengan sengaja: angkanya dihitung atas LINGKUP
+ * RENTANG WAKTU saja, tidak pernah atas hasil yang sudah tersaring tag lain.
+ * Aturan yang sama sudah berlaku pada kotak keadaan Jadwal Sidang - kalau
+ * angkanya ikut menyusut, menyalakan satu tag membuat tag lain tampak nol dan
+ * mustahil dilepas kembali.
+ */
+router.get("/sipp/status-perkara/tag", requireInternalToken, async (req, res) => {
+  try {
+    // ======================================================================
+    // KATALOGNYA DAPAT DIJAWAB TANPA MENYENTUH SIPP
+    // ======================================================================
+    //
+    // Nama tag, kelompoknya, nadanya, dan penjelasannya adalah tetapan yang
+    // dibekukan di berkas layanan - tidak ada satu kueri pun di baliknya.
+    // Jumlahnya yang mahal: terukur 6,6 detik untuk 88 tag pada lingkup
+    // "Seluruhnya", sebab sembilan belas kueri harus menyisir tabel anaknya.
+    //
+    // Karena itu keduanya dapat diminta terpisah, dan layar meminta katalognya
+    // lebih dahulu supaya panel berdiri SEKETIKA dengan nama-nama tagnya, lalu
+    // angkanya menyusul. Panel yang diam enam setengah detik akan dianggap
+    // rusak sebelum satu angka pun terlihat.
+    const katalog = {
+      tag: Object.entries(tagPerkaraService.TAG).map(([kunci, x]) => ({
+        kunci,
+        label: x.label,
+        kelompok: x.kelompok,
+        nada: x.nada,
+        judul: x.judul,
+      })),
+      kelompok: tagPerkaraService.KELOMPOK_TAG,
+      dasar: Object.entries(tagPerkaraService.DASAR_TANGGAL).map(([kunci, x]) => ({
+        kunci,
+        label: x.label,
+      })),
+      batasId: tagPerkaraService.BATAS_ID,
+    };
+
+    if (String(req.query.katalogSaja || "") === "1") {
+      res.json({ ok: true, katalogSaja: true, jumlah: null, lingkup: null, ...katalog });
+      return;
+    }
+
+    const hasil = await tagPerkaraService.hitungSemua({
+      dasar: String(req.query.dasarTanggal || "daftar"),
+      periode: String(req.query.periode || "total"),
+      acuan: String(req.query.acuan || ""),
+      dari: String(req.query.tagDari || ""),
+      sampai: String(req.query.tagSampai || ""),
+    });
+    // Katalognya tetap ikut dikirim bersama angkanya - layar yang dibuka ulang
+    // tidak perlu dua permintaan, dan yang memakai rute ini dari luar layar
+    // tetap mendapat keduanya sekaligus.
+    res.json({ ok: true, ...hasil, ...katalog });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -2976,6 +3417,90 @@ router.get("/sipp/sebaran-jurusita", requireInternalToken, async (req, res) => {
     );
     const hasil = await lapisanPetaService.sebaranJurusita(dari, sampai);
     res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * CETAK MASSAL RELAAS - SATU TANGGAL, PER JURU SITA
+ * ============================================================================
+ *
+ * Dua jenis dokumen sekaligus - relaas panggilan sidang dan pemberitahuan
+ * putusan - dikelompokkan per juru sita, supaya satu lembar cetak memuat
+ * SELURUH yang harus dikerjakan orang itu pada hari itu.
+ *
+ * `tanggal` kosong berarti hari ini menurut zona pengadilan (Asia/Makassar),
+ * dan zonanya ditentukan di layanan, bukan mengikuti zona mesin: hasil yang
+ * berpindah hari pukul empat sore tidak menimbulkan galat - hanya daftar yang
+ * salah hari.
+ *
+ * Tanggal yang bentuknya bukan YYYY-MM-DD dijawab 400, tidak diperbaiki
+ * diam-diam. Tanggal yang benar tetapi tidak ada isinya dijawab 200 dengan
+ * daftar kosong beserta sebabnya pada `catatan` - hari tanpa panggilan memang
+ * ada, dan itu bukan kegagalan.
+ *
+ * ============================================================================
+ * SEJAK 25 SEPTEMBER 2026: DUA BELAHAN, DAN PEMANGGIL WAJIB MEMBEDAKANNYA
+ * ============================================================================
+ *
+ * Tiap baris membawa `sudahAdaRelaas`, dan artinya menentukan gunanya:
+ *
+ *   true    relaas atau pemberitahuan yang SUDAH tercatat pada tanggal itu -
+ *           rekap, untuk dicetak ulang;
+ *   false   sidang atau putusan yang jatuh pada tanggal itu tetapi relaasnya
+ *           BELUM ada - pekerjaan yang belum dikerjakan.
+ *
+ * `ringkas.relaas` dan `ringkas.pemberitahuan` menghitung belahan pertama saja,
+ * `ringkas.belumAdaRelaas` belahan kedua, dan ketiganya berjumlah sama dengan
+ * seluruh barisnya. Karena itu "tanggal ini kosong" TIDAK boleh diputuskan dari
+ * dua angka pertama saja: 22 September 2026 terukur relaas 0 dan pemberitahuan 0
+ * sementara 26 baris pekerjaan menunggu di hari yang sama (27 sebelum sandi 1
+ * "Semua Pihak" dibaca "tidak-perlu"; yang dihadiri semua pihak dihitung pada
+ * `ringkas.tidakPerlu`, bukan menjadi baris).
+ *
+ * Tiap baris juga membawa `golongan` (sidang-pertama, sidang-ditunda,
+ * sidang-lanjutan, ikrar-talak, pemberitahuan-putusan, atau "" bila sidangnya
+ * tidak terbaca), `urutanSidang`, `dihadiriOleh` apa adanya, dan
+ * `pihakDipanggil`. Sebab tiap keputusan itu ada di relaasMassalService.
+ */
+router.get("/sipp/relaas-massal", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await relaasMassalService.relaasMassal(String(req.query.tanggal || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    // Kegagalan TIDAK diubah menjadi daftar kosong. Lembar cetak yang kosong
+    // karena kueri gagal tidak dapat dibedakan dari hari yang memang lengang,
+    // dan juru sita akan membaca "tidak ada panggilan hari ini".
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * ANTRIAN CETAK RELAAS HARIAN - DOKUMEN YANG LAHIR PADA HARI MENCETAK
+ * ============================================================================
+ *
+ * Dipakai tombol cetak relaas di antrian ALETA Sidang (tab Jadwal Sidang
+ * ALETA e-Court). BUKAN rekap seperti /sipp/relaas-massal: "hari itu" di sini
+ * hari juru sita MENCETAK - perkara yang didaftarkan atau ditetapkan hari
+ * sidangnya hari itu, sidang hari itu yang ditunda, jadwal yang diinput hari
+ * itu, dan putusan hari itu. Aturan tiap jalan masuk dan ukurannya ada di
+ * relaasMassalService.relaasCetakHarian.
+ *
+ * `tanggal` kosong = hari ini zona Asia/Makassar; bentuk lain atau tanggal
+ * yang tidak ada di kalender -> 400, tidak diperbaiki diam-diam. Kueri yang
+ * gagal -> 500 beserta sebabnya, BUKAN antrian kosong: antrian kosong karena
+ * galat terbaca "hari ini tidak ada yang harus dicetak".
+ *
+ * Rute ini hanya MEMBACA SIPP. Tidak ada yang ditulis ke doc_relaas, edoc_pbt,
+ * atau tabel SIPP lain.
+ */
+router.get("/sipp/relaas-cetak", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await relaasMassalService.relaasCetakHarian(String(req.query.tanggal || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -4144,6 +4669,54 @@ router.post("/ecourt/penarikan/perkara", requireInternalToken, (req, res) => {
       olehSiapa: String(req.body?.olehSiapa || ""),
     });
     res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Berapa perkara yang berkasnya belum ada - TANPA menyentuh e-Court.
+ *
+ * Hanya membaca SIPP dan basis data bot, jadi boleh dipanggil sesering apa pun
+ * termasuk ketika sesi e-Court sedang habis. Tidak memulai apa pun.
+ */
+router.get("/ecourt/penarikan/sasaran", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtSasaranService.hitungSasaran({
+      contoh: Number(req.query?.contoh) || 20,
+    });
+    res.status(hasil.ok ? 200 : 503).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Menarik HANYA perkara yang berkasnya belum ada. */
+router.post("/ecourt/penarikan/belum-ada", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtSchedulerService.mulaiPenarikanBelumAda({
+      maksPerkara: Number(req.body?.maksPerkara) || ecourtSchedulerService.MAKS_BELUM_ADA,
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Melupakan penanda "tidak tersedia" supaya ditanyakan sekali lagi.
+ *
+ * Petugas kadang TAHU berkasnya baru diunggah, dan menunggu tiga puluh hari
+ * tidak masuk akal.
+ */
+router.post("/ecourt/penarikan/coba-tidak-tersedia", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtStoreService.lupakanTidakTersedia({
+      documentKey: String(req.body?.documentKey || ""),
+      semua: req.body?.semua === true,
+    });
+    res.json({ ok: true, ...hasil });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

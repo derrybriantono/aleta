@@ -37,6 +37,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
+// Satu definisi saja untuk pengutipan CSV - penyusun ZIP berkas perkara
+// menulis delapan belas tabel dengan aturan kutip yang sama, dan ia rute
+// peladen yang tidak boleh mengimpor komponen "use client".
+import { ruasCsv } from "@/lib/csv";
 
 type Jejak = {
   id: number;
@@ -65,21 +69,18 @@ const NAMA_JENIS: Record<string, string> = {
 };
 
 /**
- * Satu ruas CSV.
+ * Cap waktu jejak penetapan - cap waktu SUNGGUHAN, jadi jamnya ditulis.
  *
- * Nomor perkara memuat garis miring dan koma tidak pernah muncul di dalamnya -
- * tetapi keterangan gagal bisa memuat keduanya, dan satu koma yang tidak
- * dikutip menggeser seluruh kolom di kanannya tanpa ada yang menyadarinya
- * sampai berkasnya dibaca orang lain.
+ * Opsinya dipaku seperti aleta-ecourt-penarikan.tsx: toLocaleString TANPA opsi
+ * memakai bentuk bawaan mesin, dan bentuk bawaan Node di peladen tidak sama
+ * dengan bentuk bawaan peramban. Dua lukisan yang teksnya berbeda membuat React
+ * membuang lukisan peladen dan mencatat hydration mismatch.
  */
-function ruasCsv(nilai: string | number | boolean): string {
-  const teks = String(nilai ?? "");
-  return /[",\n;]/.test(teks) ? `"${teks.replace(/"/g, '""')}"` : teks;
-}
-
 function waktuTerbaca(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("id-ID");
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "medium" });
 }
 
 export function AletaEcourtRiwayat() {

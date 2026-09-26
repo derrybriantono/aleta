@@ -3,6 +3,59 @@ import { seedJlfVariableCatalog } from "@/server/modules/judicia/legal-form/seed
 
 const ensuredAletaSchemaDatabases = new WeakSet<AletaDatabase>();
 
+/**
+ * Tipe keluaran - cermin PERSIS dari drizzle/0050_aleta_tipe_keluaran.sql.
+ *
+ * Ditulis sebagai konstanta tersendiri (bukan langsung di dalam larik di bawah)
+ * supaya penjaga tipe-keluaran-skema.test.ts dapat membandingkan DDL yang
+ * SUNGGUH dijalankan ensureAletaSchema dengan isi berkas migrasinya. pg-mem dan
+ * mode cadangan tidak pernah menjalankan drizzle/*.sql - tanpa cermin ini tabel
+ * tipe keluaran tidak ada di sana, dan pembacanya jatuh ke cermin kode tanpa
+ * seorang pun tahu sebabnya. Harus dideklarasikan SEBELUM schemaStatements.
+ */
+export const DDL_TIPE_KELUARAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_tipe_keluaran (
+  id TEXT PRIMARY KEY,
+  golongan TEXT NOT NULL CHECK (golongan IN ('bas', 'putusan', 'bersama')),
+  daftar TEXT NOT NULL,
+  kunci TEXT NOT NULL DEFAULT '',
+  nilai TEXT NOT NULL,
+  data TEXT NOT NULL DEFAULT '{}',
+  asal TEXT NOT NULL CHECK (asal IN ('bawaan', 'tambahan')),
+  sidik TEXT NOT NULL,
+  aktif INTEGER NOT NULL DEFAULT 1,
+  keadaan TEXT NOT NULL CHECK (keadaan IN ('usulan', 'disahkan', 'ditolak', 'diganti')),
+  urutan INTEGER NOT NULL DEFAULT 0,
+  versi INTEGER NOT NULL DEFAULT 1,
+  menggantikan_id TEXT,
+  alasan TEXT NOT NULL DEFAULT '',
+  hasil_ukur TEXT,
+  dibuat_oleh TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL,
+  disahkan_oleh TEXT,
+  atas_perintah TEXT,
+  disahkan_at TEXT,
+  diubah_at TEXT NOT NULL,
+  UNIQUE (daftar, sidik)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_tipe_keluaran_riwayat (
+  id TEXT PRIMARY KEY,
+  butir_id TEXT NOT NULL,
+  tindakan TEXT NOT NULL CHECK (tindakan IN ('benih', 'usul', 'sahkan', 'tolak', 'matikan', 'nyalakan', 'ganti', 'ukur', 'yatim')),
+  dari TEXT,
+  ke TEXT,
+  alasan TEXT NOT NULL DEFAULT '',
+  oleh TEXT NOT NULL,
+  pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_tipe_keluaran_daftar ON aleta_tipe_keluaran (golongan, daftar, keadaan, aktif)`,
+    `CREATE INDEX IF NOT EXISTS idx_tipe_keluaran_riwayat_butir ON aleta_tipe_keluaran_riwayat (butir_id, pada)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -979,6 +1032,9 @@ const schemaStatements = [
   `INSERT INTO aleta_antrian_publik (id, aktif, tampil_json, judul, catatan, diperbarui_pada)
    VALUES (1, TRUE, '{}', '', '', '')
    ON CONFLICT (id) DO NOTHING`,
+  // Tipe keluaran (0050). Benihnya TIDAK ditulis di sini: pastikanBenih di
+  // modules/aleta-ecourt/tipe-keluaran.ts mengisinya dari cermin kode.
+  ...DDL_TIPE_KELUARAN.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -2917,6 +2973,7 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_blangko_terbit_waktu ON aleta_blangko_terbit(pada)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_saklar_periksa_golongan ON aleta_saklar_periksa(golongan)`,
   `CREATE INDEX IF NOT EXISTS idx_saklar_riwayat_golongan ON aleta_saklar_riwayat(golongan, pada)`,
+  ...DDL_TIPE_KELUARAN.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

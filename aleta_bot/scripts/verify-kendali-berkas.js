@@ -347,8 +347,60 @@ cek(
   [...blokSipp, ...blokBot].some((x) => /\\x24\{[^}]*(nomor|perkara|sejak|sampai|tanggal)/i.test(x)),
   false
 );
+// ==========================================================================
+// PENANDA e-COURT: TABEL PEMETAAN, DAN KEGAGALANNYA TIDAK DITELAN
+// ==========================================================================
+//
+// Fixture di atas MEMBERI nilai lewatEcourt: true dan tidak pernah menjalankan
+// kuerinya - itulah sebabnya kolom perkara_efiling.perkara_id yang tidak ada
+// dapat hidup berbulan-bulan tanpa ketahuan. Penjaganya memberi nilai itu,
+// bukan menagihnya. Tiga pemeriksaan di bawah menagih kodenya.
+console.log("\nPenanda e-Court");
+cek(
+  "perkaraLewatEcourt memakai tabel pemetaan perkara_efiling_id",
+  /FROM perkara_efiling_id/.test(sumber),
+  true
+);
+// Komentar dibuang lebih dulu. Catatan di atas perkaraLewatEcourt sengaja
+// MENGUTIP kueri lamanya beserta galat 1054-nya - itu keterangan yang berharga,
+// dan penjaga yang menyisir teks mentah akan mengira kutipan itu kode hidup.
+const sumberKode = sumber.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+cek(
+  "tidak lagi membaca perkara_efiling langsung (kolom perkara_id-nya tidak ada)",
+  /FROM perkara_efiling\s+e\b/.test(sumberKode),
+  false
+);
+cek(
+  "kegagalan penanda e-Court dicatat, tidak ditelan .catch(() => new Set())",
+  /perkaraLewatEcourt\([\s\S]{0,80}\)\.catch\(\(\) => new Set\(\)\)/.test(sumber),
+  false
+);
+cek(
+  "sebab kegagalannya dicatat sebagai peristiwa sistem",
+  /kendali_berkas_lewat_ecourt_gagal/.test(sumber),
+  true
+);
+cek(
+  "aturan belum-pernah-ditarik hanya untuk perkara e-Court",
+  /perkara\.lewatEcourt && dariSipp\.dokumen > 0 && aleta\.dokumen === 0/.test(sumber),
+  true
+);
+// Dua layar tidak boleh menjawab berbeda untuk perkara yang sama: inventaris
+// ini dan daftarArsipPerkara sama-sama harus membaca TABEL BERKAS, bukan
+// kolom cermin yang terisi 23 dari 394 dokumen.
+cek(
+  "belum-terunduh dihitung dari tabel berkas, bukan dari kolom cermin",
+  /NOT EXISTS \(\s*\n?\s*SELECT 1 FROM aleta_bot_ecourt_files/.test(sumber),
+  true
+);
+cek(
+  "cermin berkas_pdf/berkas_word tidak lagi menentukan belum-terunduh",
+  /d\.berkas_pdf IS NULL OR d\.berkas_pdf = ''/.test(sumber),
+  false
+);
+
 // Pemeriksaan diri: pastikan skrip ini benar-benar menguji sesuatu.
-if (jumlah < 35) {
+if (jumlah < 42) {
   gagal += 1;
   console.log(`  GAGAL: skrip hanya menjalankan ${jumlah} pemeriksaan - ada yang tidak berjalan.`);
 }

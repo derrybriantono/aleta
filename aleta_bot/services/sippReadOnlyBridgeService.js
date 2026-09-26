@@ -1267,7 +1267,13 @@ async function getEStatusCandidates(params = {}) {
  */
 async function listEcourtCases(params = {}) {
   const connectionKey = normalizeConnectionKey(params.connectionKey);
-  const limit = Math.min(Math.max(Number(params.limit) || 200, 1), 2000);
+  // Batas atas dinaikkan dari 2.000 ke 5.000: diukur pada sipp_donggala
+  // 24 Sep 2026 ada 2.527 perkara e-Court unik (COUNT(DISTINCT perkara_id)
+  // FROM perkara_efiling_id), jadi 2.000 memotong 527 perkara paling lama -
+  // persis perkara yang arsipnya paling mungkin belum pernah ditarik.
+  // Kuerinya tetap satu, tetap terindeks, dan tetap hanya membaca SIPP
+  // setempat: tidak ada satu permintaan pun ke server Mahkamah Agung.
+  const limit = Math.min(Math.max(Number(params.limit) || 200, 1), 5000);
 
   // Menyaring perkara lama: menarik ulang perkara bertahun lalu hanya
   // membebani server Mahkamah Agung tanpa menemukan dokumen baru.
@@ -1317,7 +1323,22 @@ async function listEcourtCases(params = {}) {
       nomorPerkara: safeString(row.nomorPerkara),
       efilingId: safeString(row.efilingId),
       nomorRegister: safeString(row.nomorRegister),
-      tanggalPendaftaran: safeString(row.tanggalPendaftaran).slice(0, 10),
+      // dateString, BUKAN safeString(...).slice(0, 10).
+      //
+      // Kolom SIPP-nya bertipe DATE, dan penggerak mysql memulangkannya sebagai
+      // objek Date - bukan teks. String(Date) berbunyi
+      // "Tue Sep 08 2026 00:00:00 GMT+0800 (...)", jadi memotongnya pada aksara
+      // ke-10 menghasilkan "Tue Sep 08": TAHUNNYA HILANG, dan hasilnya bukan
+      // tanggal yang dapat diurai siapa pun.
+      //
+      // Terukur 25 September 2026: rusak pada SELURUH 2.527 perkara e-Court -
+      // contoh 564/Pdt.G/2026/PA.Dgl memulangkan "Tue Sep 08". Lebih berbahaya
+      // daripada kosong, sebab petugas membaca "Sep 08" sebagai tahun ini.
+      //
+      // dateString sudah dipakai benar pada baris 1136 di berkas yang sama;
+      // ia menerima Date maupun teks, menolak 0000-00-00, dan memakai komponen
+      // waktu SETEMPAT sehingga tanggalnya tidak bergeser sehari.
+      tanggalPendaftaran: dateString(row.tanggalPendaftaran) || "",
       statusPendaftaran: safeString(row.statusPendaftaran),
       sudahDibayar: safeString(row.statusPembayaran) === "1",
       // Nomor perkara versi e-Court, untuk dibandingkan dengan versi SIPP.

@@ -1,5 +1,15 @@
+import type { AletaDatabase } from "@/server/db/client";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { rakitBerkasPerkara, type BerkasPerkara } from "@/server/modules/aleta-ecourt/berkas-perkara";
+import { untukPortal } from "@/server/modules/aleta-ecourt/tipe-keluaran";
+import { pihakKumpulan, type PihakSaksi } from "@/lib/keterangan-abt";
+import {
+  DAFTAR_RAGAM_PORTAL,
+  ragamkanJawabanContoh,
+  susunBankRagam,
+  type BankRagam,
+  type VarianRagam,
+} from "@/lib/tipe-keluaran/ragam-jawaban";
 
 /**
  * ALAT BANTU TULIS BAS - mengisi tanya-jawab ABT dari berkas perkara.
@@ -47,8 +57,16 @@ export type PenandaKosong = {
 export type BarisTanyaJawab = {
   urutan: number;
   pertanyaan: string;
-  /** Bunyi jawaban contoh dari ABT - bantuan mengetik, bukan jawaban saksi. */
+  /**
+   * Jawaban contoh UNTUK SAKSI INI - bantuan mengetik, bukan jawaban saksi.
+   * Bentuknya dipilih per saksi dari ragam yang berbukti (lihat
+   * ragamkanContoh); maknanya sama dengan contoh ABT.
+   */
   jawabanBawaan: string;
+  /** Contoh ABT apa adanya (penanda sudah diisi), sebelum diragamkan. */
+  jawabanAbt?: string;
+  /** Bentuk ke berapa dari berapa; `habis` = bentuknya sama dengan saksi sebelumnya. */
+  varian?: VarianRagam;
   /** Jawaban yang benar-benar sudah disimpan panitera. Kosong bila belum. */
   jawaban: string;
   /** Penanda yang masih tersisa pada baris ini setelah pengisian. */
@@ -68,6 +86,15 @@ export type LembarTanyaJawab = {
   terisi: PenandaTerisi[];
   kosong: PenandaKosong[];
   halangan: string[];
+  /** Saksi yang dilayani lembar ini - pihaknya dibaca dari kumpulan pertanyaan. */
+  saksiKe?: number;
+  pihakSaksi?: PihakSaksi;
+  /**
+   * Asal bank ragam contoh: 'portal' (pengaturan tipe keluaran) atau
+   * 'tertanam' (cermin bawaan), versinya, dan kabar bila pengaturan tidak
+   * terbaca - disebut, tidak ditelan.
+   */
+  ragam?: { asal: "portal" | "tertanam"; versi: string; dilepas: number; kabar: string[] };
 };
 
 const POLA_PENANDA = /#(\d{3,5})#/g;
@@ -356,6 +383,135 @@ function penandaDalam(teks: string): string[] {
 }
 
 /**
+ * Bank ragam untuk lembar portal: cermin bawaan + tambahan yang DISAHKAN
+ * (untukPortal). Tabel yang tidak terbaca sudah dijatuhkan ke cermin oleh
+ * untukPortal sendiri, dengan kabar; galat lain di sini juga jatuh ke cermin -
+ * contoh tetap tersedia - tetapi galatnya dicatat dan disebut di kabar.
+ */
+export async function bankRagamPortal(db: AletaDatabase | null | undefined): Promise<{ bank: BankRagam; kabar: string[] }> {
+  if (!db) return { bank: susunBankRagam(null), kabar: [] };
+  try {
+    const efektif = await untukPortal(db, DAFTAR_RAGAM_PORTAL);
+    const kabar = [...efektif.kabar];
+    const bank = susunBankRagam(efektif.asal === "basis-data" ? efektif.daftar : null, efektif.versi);
+    for (const t of bank.ditolak) kabar.push(`Ragam ${t.daftar} "${t.kunci}" tidak dipakai: ${t.alasan}.`);
+    return { bank, kabar };
+  } catch (galat) {
+    console.error("[BAS TANYA-JAWAB] Pengaturan ragam tidak terbaca; memakai bawaan.", galat);
+    const pesan = galat instanceof Error ? galat.message : String(galat);
+    return { bank: susunBankRagam(null), kabar: [`Pengaturan ragam tidak terbaca - memakai bawaan: ${pesan}`] };
+  }
+}
+
+/**
+ * Nama jenis perkara SIPP (perkara.jenis_perkara_nama) -> id.
+ *
+ * CERMIN ID_JENIS_PERKARA_SIPP di ekstensi-sipp/abt.js. Bentuk bersyarat
+ * (data.syarat.jenisPerkaraId) membandingkan ID, dan ekstensi mengirim ID ke
+ * bot; portal harus mengirim bentuk yang sama ke pemilih, atau bentuk
+ * bersyarat dipakai bot tetapi tidak pernah di "Pakai contoh". Kesamaan
+ * kedua peta dijaga bas-pakai-contoh-ragam.test.ts.
+ */
+export const ID_JENIS_PERKARA_SIPP: Readonly<Record<string, string>> = Object.freeze({
+  "izin poligami": "341",
+  "pencegahan perkawinan": "342",
+  "penolakan perkawinan": "343",
+  "pembatalan perkawinan": "344",
+  "cerai talak": "346",
+  "cerai gugat": "347",
+  "harta bersama": "348",
+  "penguasaan anak": "349",
+  "pengesahan anak": "352",
+  perwalian: "354",
+  "asal usul anak": "358",
+  "istbat nikah": "360",
+  "pengesahan perkawinan/istbat nikah": "360",
+  "dispensasi kawin": "362",
+  "wali adhol": "363",
+  kewarisan: "364",
+  wasiat: "365",
+  wakaf: "367",
+  "lain-lain": "369",
+  "lain-lain *)": "369",
+  "ekonomi syariah": "370",
+  "p3hp/penetapan ahli waris": "371",
+});
+
+/** Id jenis perkara SIPP dari namanya; nama apa adanya bila tidak dikenal (sama dengan ekstensi). */
+export function idJenisPerkaraSipp(nama: unknown): string {
+  const bersih = String(nama ?? "").replace(/\s+/g, " ").trim();
+  return ID_JENIS_PERKARA_SIPP[bersih.toLowerCase()] || bersih;
+}
+
+/** alur_perkara_id SIPP dari nomor perkara: 15 gugatan, 16 permohonan, 17 gugatan sederhana (sama dengan ekstensi). */
+export function idAlurPerkaraSipp(nomor: unknown): string {
+  const teks = String(nomor ?? "");
+  if (/Pdt\.G\.S\b/i.test(teks)) return "17";
+  if (/Pdt\.G\b/i.test(teks)) return "15";
+  if (/Pdt\.P\b/i.test(teks)) return "16";
+  return "";
+}
+
+export type KonteksContoh = {
+  nomorPerkara: string;
+  kodeKumpulan: string;
+  saksiKe: number;
+  pihakSaksi: PihakSaksi;
+  /** Sebutan #0047# dan #0046# sebagaimana diisi petaPenanda. */
+  pelaku: string;
+  lawan: string;
+  /** Id jenis perkara SIPP dan alur_perkara_id - syarat bentuk bersyarat, bentuknya sama dengan kiriman ekstensi. */
+  jenisPerkara: string;
+  alur: string;
+  bank: BankRagam;
+};
+
+/**
+ * Jawaban contoh untuk SATU saksi.
+ *
+ * ============================================================================
+ * DUA SAKSI TIDAK DIBERI CONTOH YANG SAMA PERSIS
+ * ============================================================================
+ *
+ * Sebelum ini "Pakai contoh" menuang kalimat ABT yang sama kata demi kata ke
+ * lembar saksi pertama dan kedua - pada pertanyaan pokok (kenal, tempat
+ * tinggal, penyebab, pisah, upaya damai) 100% identik. Di BAS manusia dua
+ * saksi hampir tidak pernah berkata sama persis pada pertanyaan itu, dan BAS
+ * yang dua keterangannya kembar dibaca sebagai salinan.
+ *
+ * Kini bentuknya dipilih per saksi dari bank BENTUK yang ditambang dari BAS
+ * manusia (atau RAGAM_KATA sebagai cadangan), lewat pemilih K7b yang SAMA
+ * dengan bot, dan tiap bentuk harus lolos periksaInvarian - makna, sebutan,
+ * angka, titik-titik, dan negasi tidak bergeser. Pertanyaan rumusan mengikuti
+ * profil manusia (umumnya tetap sama). Lafal sumpah dan identitas tidak
+ * disentuh. Contohnya tetap CONTOH: masuk hanya bila panitera menekan
+ * "Pakai contoh", dan panitera tetap membaca dan memperbaikinya.
+ */
+export function ragamkanContoh(
+  item: { pertanyaan: string; jawabanBawaan: string },
+  pertanyaan: string,
+  jawabanTerisi: string,
+  konteks: KonteksContoh
+): { jawaban: string; varian: VarianRagam; dilepas: number } {
+  const hasil = ragamkanJawabanContoh({
+    tanya: pertanyaan,
+    jawab: jawabanTerisi,
+    jawabMentah: item.jawabanBawaan,
+    nomorPerkara: konteks.nomorPerkara,
+    kodeKumpulan: konteks.kodeKumpulan,
+    ke: konteks.saksiKe,
+    pihakSaksi: konteks.pihakSaksi,
+    jumlahSaksi: konteks.saksiKe,
+    pelaku: konteks.pelaku,
+    lawan: konteks.lawan,
+    jenisPerkara: konteks.jenisPerkara,
+    alur: konteks.alur,
+    bank: konteks.bank,
+  });
+  return { jawaban: hasil.jawab, varian: hasil.varian, dilepas: hasil.dilepas };
+}
+
+/**
  * Menyusun lembar tanya-jawab untuk satu perkara.
  *
  * Berkas perkara dan kumpulan pertanyaan diambil BERSAMAAN - keduanya tidak
@@ -366,6 +522,12 @@ export async function susunLembarTanyaJawab(args: {
   perkaraId: string;
   kode: string;
   nomorPerkara?: string;
+  /** Urutan saksi di pihaknya (1-4 Penggugat, 1-2 Tergugat) - memilih bentuk contohnya. */
+  saksiKe?: number;
+  /** Nama kumpulan dari katalog - menentukan pihak saksi bersama kodenya. */
+  namaKumpulan?: string;
+  /** Basis data portal, untuk tambahan ragam yang disahkan. Tanpa ini: bawaan. */
+  db?: AletaDatabase | null;
   /**
    * Jawaban yang sudah tersimpan, berkunci urutan pertanyaan.
    *
@@ -404,9 +566,13 @@ export async function susunLembarTanyaJawab(args: {
     variabel?: Array<{ noVar: string; nama: string; jenis: string }>;
   };
 
-  const [berkas, kumpulan] = await Promise.all([
+  const saksiKe = Math.max(1, Math.floor(Number(args.saksiKe) || 1));
+  const pihakSaksi = pihakKumpulan(kode, args.namaKumpulan);
+
+  const [berkas, kumpulan, ragamBank] = await Promise.all([
     rakitBerkasPerkara(perkaraId, args.nomorPerkara ?? ""),
     callAletaBotSippBridge<JawabanTanyaJawab>("abt.tanyaJawab", { kode }),
+    bankRagamPortal(args.db),
   ]);
 
   const halangan = [...berkas.halangan];
@@ -422,15 +588,37 @@ export async function susunLembarTanyaJawab(args: {
   const namaVariabel = new Map((kumpulan.data.variabel ?? []).map((v) => [v.noVar, v.nama]));
 
   const tersimpan = args.jawabanTersimpan ?? {};
+  // Nomor dari berkas yang dirakit, bukan dari alamat: benih ragam harus
+  // sama untuk perkara yang sama, dari halaman mana pun lembar dibuka.
+  const nomorKonteks = berkas.nomorPerkara || String(args.nomorPerkara ?? "");
+  const identitasPerkara = (berkas.identitas.nilai ?? {}) as Record<string, unknown>;
+  const konteks: KonteksContoh = {
+    nomorPerkara: nomorKonteks,
+    // Id, bukan nama - sama dengan yang dikirim ekstensi ke bot, supaya
+    // bentuk bersyarat terpilih sama di portal dan di ekstensi.
+    jenisPerkara: idJenisPerkaraSipp(identitasPerkara.jenisPerkara),
+    alur: idAlurPerkaraSipp(nomorKonteks),
+    kodeKumpulan: kode,
+    saksiKe,
+    pihakSaksi,
+    pelaku: peta.get("0047")?.nilai ?? "",
+    lawan: peta.get("0046")?.nilai ?? "",
+    bank: ragamBank.bank,
+  };
+  let dilepas = 0;
   const baris: BarisTanyaJawab[] = (kumpulan.data.pertanyaan ?? []).map((item) => {
     const pertanyaan = isiPenanda(item.pertanyaan, peta);
-    const jawabanBawaan = isiPenanda(item.jawabanBawaan, peta);
+    const jawabanAbt = isiPenanda(item.jawabanBawaan, peta);
+    const contoh = ragamkanContoh(item, pertanyaan, jawabanAbt, konteks);
+    dilepas += contoh.dilepas;
     return {
       urutan: item.urutan,
       pertanyaan,
-      jawabanBawaan,
+      jawabanBawaan: contoh.jawaban,
+      jawabanAbt,
+      varian: contoh.varian,
       jawaban: String(tersimpan[item.urutan] ?? "").trim(),
-      penandaTersisa: [...new Set([...penandaDalam(pertanyaan), ...penandaDalam(jawabanBawaan)])],
+      penandaTersisa: [...new Set([...penandaDalam(pertanyaan), ...penandaDalam(contoh.jawaban)])],
     };
   });
 
@@ -460,6 +648,9 @@ export async function susunLembarTanyaJawab(args: {
     terisi: terisi.filter((item) => tersediaDipakai(item.noVar, kumpulan.data?.variabel)),
     kosong,
     halangan,
+    saksiKe,
+    pihakSaksi,
+    ragam: { asal: ragamBank.bank.asal, versi: ragamBank.bank.versi, dilepas, kabar: ragamBank.kabar },
   };
 }
 

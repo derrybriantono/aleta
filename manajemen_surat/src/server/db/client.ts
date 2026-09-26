@@ -231,7 +231,20 @@ const globalForAleta = globalThis as unknown as {
 };
 
 const IN_MEMORY_SNAPSHOT_PATH = path.join(process.cwd(), "data", "dev-fallback-db.json");
-const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
+/**
+ * Tabel yang ditulis ke cetakan JSON saat Postgres mati dan dipulihkan saat
+ * mulai ulang - DALAM URUTAN INI. Urutan menghormati kunci asing: tabel yang
+ * dirujuk berdiri lebih dulu (users sebelum aleta_antrian_publik), sebab
+ * pemulihan menyisipkan baris satu per satu dan pg-mem menegakkan kunci asing.
+ *
+ * Tabel yang TIDAK tercantum di sini kehilangan seluruh barisnya pada setiap
+ * mulai ulang mode cadangan - tanpa satu pun pesan. Terukur 25 September 2026:
+ * aleta_keterangan_perkara tersisa 0 baris, aleta_isian_perkara (terdaftar)
+ * tersisa 1. Penjaga tabel-cadangan-terdaftar.test.ts menuntut setiap tabel
+ * yang dibuat ensureAletaSchema tercantum di sini ATAU di
+ * TABEL_TANPA_CADANGAN_INGATAN beserta alasannya.
+ */
+export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "roles",
   "positions",
   "users",
@@ -308,6 +321,16 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_putusan_draf_nilai",
   "aleta_sipp_borang_medan",
   "aleta_sipp_penunjukan_log",
+  // 25 September 2026: lima tabel ALETA yang terukur tidak ikut cadangan, dan
+  // dua tabel tipe keluaran (0050). aleta_antrian_publik merujuk users(id) -
+  // users sudah berdiri di atas.
+  "aleta_abt_riwayat",
+  "aleta_konseptor_sementara",
+  "aleta_keterangan_perkara",
+  "aleta_rekam_antrian",
+  "aleta_antrian_publik",
+  "aleta_tipe_keluaran",
+  "aleta_tipe_keluaran_riwayat",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",
@@ -394,6 +417,66 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "sessions",
   "verifications",
 ] as const;
+
+/**
+ * Tabel yang SENGAJA atau (belum) tidak ikut cetakan JSON - masing-masing
+ * dengan alasannya. Daftar ini ada supaya lubangnya TERLIHAT: tabel baru yang
+ * lupa didaftarkan membuat tabel-cadangan-terdaftar.test.ts merah, dan satu-
+ * satunya jalan menghijaukannya tanpa mendaftarkan adalah menulis alasannya di
+ * sini, di depan mata peninjau.
+ *
+ * "Utang lama" berarti tabel itu sudah tidak ikut cadangan sebelum penjaga ini
+ * ada (terukur 25 September 2026) dan BELUM ditimbang - bukan dinyatakan aman.
+ * Barisnya hilang pada mulai ulang mode cadangan.
+ */
+const UTANG_LAMA =
+  "Utang lama: tidak ikut cadangan sejak sebelum penjaga ini ada; barisnya hilang saat mulai ulang mode cadangan. Belum ditimbang, bukan dinyatakan aman.";
+const KATALOG_JLF =
+  "Katalog JLF disemai ulang dari kode pada setiap boot (jlfSeedStatements / seedJlfVariableCatalog); isi tangan di tabel ini belum ikut cadangan.";
+export const TABEL_TANPA_CADANGAN_INGATAN: Readonly<Record<string, string>> = {
+  aleta_sipp_legacy_feature_catalog: UTANG_LAMA,
+  aleta_sipp_monitoring_categories: UTANG_LAMA,
+  aleta_sipp_monitoring_exports: UTANG_LAMA,
+  aleta_sipp_monitoring_indicator_mappings: UTANG_LAMA,
+  aleta_sipp_monitoring_indicators: UTANG_LAMA,
+  aleta_sipp_monitoring_jobs: UTANG_LAMA,
+  aleta_sipp_monitoring_manual_inputs: UTANG_LAMA,
+  aleta_sipp_monitoring_result_items: UTANG_LAMA,
+  aleta_sipp_monitoring_results: UTANG_LAMA,
+  aleta_sipp_monitoring_runs: UTANG_LAMA,
+  aleta_sipp_monitoring_sources: UTANG_LAMA,
+  assistant_judge_settings: UTANG_LAMA,
+  hr_public_submissions: UTANG_LAMA,
+  password_reset_requests: UTANG_LAMA,
+  jlf_categories: KATALOG_JLF,
+  jlf_settings: KATALOG_JLF,
+  jlf_regulation_types: KATALOG_JLF,
+  jlf_regulation_topics: KATALOG_JLF,
+  jlf_variables: KATALOG_JLF,
+  jlf_ai_logs: UTANG_LAMA,
+  jlf_ai_prompts: UTANG_LAMA,
+  jlf_audit_logs: UTANG_LAMA,
+  jlf_document_validation_logs: UTANG_LAMA,
+  jlf_document_variables_snapshot: UTANG_LAMA,
+  jlf_generated_documents: UTANG_LAMA,
+  jlf_legal_analysis_sessions: UTANG_LAMA,
+  jlf_legal_analysis_sources: UTANG_LAMA,
+  jlf_manual_values: UTANG_LAMA,
+  jlf_regulation_sections: UTANG_LAMA,
+  jlf_regulation_topic_links: UTANG_LAMA,
+  jlf_regulation_versions: UTANG_LAMA,
+  jlf_regulations: UTANG_LAMA,
+  jlf_sipp_account_links: UTANG_LAMA,
+  jlf_sipp_role_mappings: UTANG_LAMA,
+  jlf_sipp_user_snapshots: UTANG_LAMA,
+  jlf_template_regulations: UTANG_LAMA,
+  jlf_template_variables: UTANG_LAMA,
+  jlf_template_versions: UTANG_LAMA,
+  jlf_templates: UTANG_LAMA,
+  jlf_variable_regulations: UTANG_LAMA,
+  jlf_whatsapp_notification_logs: UTANG_LAMA,
+  jlf_whatsapp_notification_templates: UTANG_LAMA,
+};
 
 let singletonDatabasePromise = globalForAleta.singletonDatabasePromise;
 let sharedPool = globalForAleta.sharedPool;
@@ -719,7 +802,41 @@ async function restoreInMemorySnapshot(
         continue;
       }
 
-      await restoreRows(tableName, snapshot.tables[tableName] ?? []);
+      // ======================================================================
+      // BARIS YANG SUDAH DITANAM SKEMA DIGANTI ISI CETAKAN, TIDAK DIGANDAKAN
+      // ======================================================================
+      //
+      // Pemulihan berjalan SESUDAH ensureAletaSchema, dan skema menanam baris
+      // bawaan untuk sebagian tabel - baris tunggal aleta_antrian_publik (id 1).
+      // Menyisipkan baris cetakan di atasnya menabrak kunci utama, dan tabrakan
+      // itu menggagalkan SELURUH pemulihan: cetakan dianggap rusak, baseline
+      // disusun ulang, lalu cetakan lama ditimpa - semua isian saat Postgres
+      // mati lenyap karena satu tabel. Cetakan adalah keadaan terakhir yang
+      // sesungguhnya, maka isinya yang menang.
+      //
+      // Yang diganti HANYA baris yang id-nya juga ada di cetakan. Baris tanaman
+      // skema yang lebih baru dari cetakan (id-nya belum ada di sana) tetap
+      // tinggal - kalau ikut dibuang, ia tidak akan pernah muncul selama
+      // portal berjalan di mode cadangan. Terukur 26 September 2026: dari 168
+      // tabel terdaftar, hanya aleta_antrian_publik yang berisi sesudah skema.
+      const barisCetakan = snapshot.tables[tableName] ?? [];
+      const barisSkema = barisCetakan.length > 0 ? existingTable.find() : [];
+      if (barisSkema.length > 0) {
+        const berId = barisSkema.every((b) => b.id !== undefined) && barisCetakan.every((b) => b.id !== undefined);
+        if (berId) {
+          const idCetakan = new Set(barisCetakan.map((b) => String(reviveSnapshotValue(b.id))));
+          for (const b of barisSkema) {
+            if (!idCetakan.has(String(b.id))) continue;
+            await db.prepare(`DELETE FROM ${quoteIdentifier(tableName)} WHERE id = ?`).run(b.id as SqlInputValue);
+          }
+        } else {
+          // Tabel tanpa kolom id: kunci utamanya tidak dapat dibaca dari sini,
+          // maka seluruh isinya diganti cetakan.
+          await db.prepare(`DELETE FROM ${quoteIdentifier(tableName)}`).run();
+        }
+      }
+
+      await restoreRows(tableName, barisCetakan);
     }
 
     return true;

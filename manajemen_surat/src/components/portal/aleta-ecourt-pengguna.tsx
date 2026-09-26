@@ -113,6 +113,11 @@ export function AletaEcourtPengguna() {
   // (sekali saja, lalu tidak dibuka lagi) dan memeriksa keadaan berkas
   // (berulang, setiap hari). Menumpuk keduanya dalam satu halaman panjang
   // membuat yang sering dipakai selalu berada di bawah yang jarang dipakai.
+  // Juru sita melihat tombol Cetak relaas di Jadwal Sidang; admin dan super
+  // admin ikut melihatnya - diminta pengguna 25 September 2026, "keliatan juga
+  // di superadmin dan admin". BUKAN tab tersendiri: "jangan buat tab baru di
+  // aleta e-court, cukup tambahkan tombol cetak relaas di antrian aleta sidang".
+  const bolehRelaasMassal = peran === "jurusita" || bolehMengatur;
   const [menu, setMenu] = useState<
     "dasbor" | "sidang" | "mediasi" | "status" | "berkas" | "riwayat" | "ttd" | "ekstensi"
   >("dasbor");
@@ -313,11 +318,17 @@ export function AletaEcourtPengguna() {
 
       <div
         className={cn(
-          "grid gap-4 transition-all duration-300",
+          // grid-cols-1 = minmax(0,1fr). Tanpa kolom eksplisit, di bawah lg
+          // kolomnya selebar isi terlebar - deret menu yang dapat digeser -
+          // dan seluruh kartu e-Court melebar 1.036 px di layar ponsel,
+          // memotong tabel Detail dan tombol Cetak Status Perkara (terukur
+          // 26 September 2026 pada 320/375/768 px).
+          "grid grid-cols-1 gap-4 transition-all duration-300",
           // Sidebar dipersempit dari 264px menjadi 216px: menunya bernama
           // pendek dan tidak pernah memakai selebar itu, sedangkan jadwal
           // sidang di sebelahnya punya sepuluh kolom yang selalu kurang ruang.
-          sidebarCiut ? "lg:grid-cols-[68px_1fr]" : "lg:grid-cols-[216px_1fr]"
+          // Kolom isi minmax(0,1fr): 1fr biasa berbatas bawah selebar isinya.
+          sidebarCiut ? "lg:grid-cols-[68px_minmax(0,1fr)]" : "lg:grid-cols-[216px_minmax(0,1fr)]"
         )}
       >
         {/* Sidebar ini mengikuti sidebar utama ALETA - lihat portal-shell-v2.
@@ -355,7 +366,7 @@ export function AletaEcourtPengguna() {
         <nav
           aria-label="Menu ALETA e-Court"
           className={cn(
-            "flex h-fit flex-col gap-3 rounded-[2rem] border border-primary/20 bg-[linear-gradient(180deg,rgba(5,20,34,0.98),rgba(8,38,58,0.96))] text-slate-100 shadow-panel backdrop-blur transition-all duration-300",
+            "flex h-fit min-w-0 flex-col gap-3 rounded-[2rem] border border-primary/20 bg-[linear-gradient(180deg,rgba(5,20,34,0.98),rgba(8,38,58,0.96))] text-slate-100 shadow-panel backdrop-blur transition-all duration-300",
             // ============================================================
             // overflow-y-auto SENDIRIAN MEMBUAT BILAH GULIR MENDATAR
             // ============================================================
@@ -544,7 +555,7 @@ export function AletaEcourtPengguna() {
           </div>
         </nav>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {menu === "sidang" ? (
             <AletaEcourtSidang
               onBukaStatus={(nomorPerkara) => {
@@ -558,6 +569,9 @@ export function AletaEcourtPengguna() {
               onBukaTunda={({ sidangId }) => {
                 window.location.assign(withBasePath(`/sidang-tunda/${encodeURIComponent(sidangId)}`));
               }}
+              // Tombol Cetak relaas - panggilan sidang dan pemberitahuan
+              // putusan yang lahir pada hari itu, dicetak lewat ekstensi.
+              bolehCetakRelaas={bolehRelaasMassal}
             />
           ) : null}
 

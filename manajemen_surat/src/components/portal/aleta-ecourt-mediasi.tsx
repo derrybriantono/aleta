@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
+import { tanggalHariPendek } from "@/lib/tanggal-indonesia";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { ChevronDown, ChevronUp, Filter, X } from "lucide-react";
 
@@ -977,7 +978,9 @@ export function AletaEcourtMediasi({
                         <div className="text-xs text-muted-foreground">s.d. {baris.sampaiJam}</div>
                       ) : null}
                       {baris.tanggal !== dari ? (
-                        <div className="text-xs text-muted-foreground">{baris.tanggal}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {tanggalHariPendek(baris.tanggal, baris.tanggal)}
+                        </div>
                       ) : null}
                       {baris.ditunda ? (
                         <div className="mt-1">
@@ -1041,12 +1044,13 @@ export function AletaEcourtMediasi({
                       <KeteranganTenggang baris={baris} />
                       {baris.tenggatPerma && !baris.selesai ? (
                         <div className="mt-0.5 text-muted-foreground">
-                          batas {baris.tenggatPerma}
+                          batas {tanggalHariPendek(baris.tenggatPerma, baris.tenggatPerma)}
                         </div>
                       ) : null}
                       {baris.laporanMediator ? (
                         <div className="mt-0.5 text-muted-foreground">
-                          laporan {baris.laporanMediator}
+                          laporan{" "}
+                          {tanggalHariPendek(baris.laporanMediator, baris.laporanMediator)}
                         </div>
                       ) : null}
                     </td>

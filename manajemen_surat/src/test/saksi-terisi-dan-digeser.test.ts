@@ -168,7 +168,10 @@ describe("butir 1b - modus saksi yang hanya tahu pisahnya", () => {
       modus: { saksi1: { modus: "tahu-pisah" }, saksi2: { modus: "sama" } },
     });
     const jawabNo = (n: string) => hasil.saksi1.find((b: { no: string }) => b.no === n).jawab;
-    expect(jawabNo("1")).toMatch(/tidak (mengetahui|pernah mengetahui)/i);
+    // Bank 'penyebab|tahu-pisah' punya tiga bentuk setara; pemilih berbenih
+    // (t2-ragam-bas-bot) dapat memilih "perselisihan mereka tidak saya
+    // ketahui". Yang dituntut MAKNANYA: saksi tidak tahu pertengkarannya.
+    expect(jawabNo("1")).toMatch(/tidak (mengetahui|pernah mengetahui|saya ketahui)/i);
     expect(jawabNo("2")).toMatch(/(tidak|belum) pernah (melihat|menyaksikan)/i);
   });
 
@@ -208,7 +211,11 @@ describe("butir 2 - baris keterangan dapat digeser, disalin, ditambah, dihapus",
     const isi = badan();
     expect(isi).toContain("function pindahkan(dariKolom, dariIndeks, keKolom, keIndeks)");
     expect(isi).toContain("dataSaksi[keKolom].splice(batas, 0, butir);");
-    expect(isi).toContain("pindahkan(k, i, 1 - k, dataSaksi[1 - k].length)");
+    // Sejak panel melayani sampai enam saksi (t3-ekstensi-abt-bas, 26 Sep
+    // 2026) "seberang" adalah saksi BERIKUTNYA, bukan 1 - k. Perilakunya diuji
+    // dengan menjalankan panel di ekstensi-sdg-muatan-dan-jeda.test.ts.
+    expect(isi).toContain("const seberang = (k) => (k + 1) % dataSaksi.length;");
+    expect(isi).toContain("pindahkan(k, i, sb, dataSaksi[sb].length)");
   });
 
   it("naik, turun, salin, hapus, dan tambah semuanya ada", () => {
@@ -224,7 +231,8 @@ describe("butir 2 - baris keterangan dapat digeser, disalin, ditambah, dihapus",
   it("salin TIDAK memindahkan - yang disalin tetap di tempatnya", () => {
     const isi = badan();
     const mulai = isi.indexOf('tombol("⧉"');
-    expect(isi.slice(mulai, mulai + 300)).toContain("dataSaksi[1 - k].push({");
+    // Saksi tujuan = saksi berikutnya (lihat uji di atas), bukan lagi 1 - k.
+    expect(isi.slice(mulai, mulai + 300)).toContain("dataSaksi[sb].push({");
     expect(isi.slice(mulai, mulai + 300)).not.toContain("splice(i, 1)");
   });
 
@@ -243,7 +251,8 @@ describe("butir 2 - baris keterangan dapat digeser, disalin, ditambah, dihapus",
     // wadahnya - kalau tidak, menyimpan sesudah menggeser akan menyimpan
     // susunan yang lama.
     const isi = badan();
-    expect(isi).toContain("const kolomIsian = [[], []];");
+    // Satu wadah per saksi (sampai enam), tetap dibuat sekali di luar gambarKolom.
+    expect(isi).toContain("const kolomIsian = dataSaksi.map(() => []);");
     expect(isi).toContain("kolomIsian[k].length = 0;");
     // Dan nomornya dihitung ulang menurut posisi saat disimpan.
     expect(isi).toContain("no: String(n + 1)");

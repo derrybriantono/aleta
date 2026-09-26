@@ -58,6 +58,70 @@ type Pantau = {
   nomorAdminTerisi: boolean;
 };
 
+/**
+ * Sasaran penarikan, dihitung TANPA menyentuh e-Court.
+ *
+ * Ketiga golongannya harus berjumlah persis totalEcourtSipp; selisihGolongan
+ * menyebut selisihnya bila ada, alih-alih membiarkan angka yang salah tampil
+ * dengan wajah meyakinkan.
+ */
+type Sasaran = {
+  diperiksaPada: string;
+  totalEcourtSipp: number;
+  belumPernahDitarik: number;
+  /** Bagian belumPernahDitarik yang halamannya sudah dibuka dan memang nol dokumen. */
+  dikunjungiTetapiKosong?: number;
+  berkasKurang: number;
+  lengkap: number;
+  dokumenKurang: number;
+  dokumenTidakTersedia: number;
+  jumlahSasaran: number;
+  selisihGolongan: number;
+  perkiraanMenit: number;
+  perkiraanMenitMin?: number;
+  perkiraanMenitMaks?: number;
+  /** Bahan taksiran waktu, supaya angkanya dapat diperiksa alih-alih dipercaya. */
+  taksiran?: {
+    menitKerja: number;
+    menitHalaman: number;
+    menitBerkas: number;
+    jumlahIstirahat: number;
+    istirahatMenitMin: number;
+    istirahatMenitMaks: number;
+    istirahatTiapPerkara: number;
+    dokumenDitaksir: number;
+    rerataDokumenPerPerkara: number;
+    rerataTerukur: boolean;
+    perkaraTerukur: number;
+  };
+  /** Jatah satu penekanan menurut BOT - bukan angka yang ditulis keras di sini. */
+  maksSekaliTarik?: number;
+  contoh: Array<{ nomorPerkara: string; sebab: string; kurang: number }>;
+};
+
+/**
+ * Jatah satu penekanan bila sasarannya belum dihitung.
+ *
+ * ============================================================================
+ * CADANGAN, BUKAN SUMBER
+ * ============================================================================
+ *
+ * Sampai 25 Sep 2026 angka inilah yang SELALU dikirim ke bot, sehingga
+ * MAKS_BELUM_ADA di ecourtSchedulerService tidak pernah terpakai dari jalur
+ * portal dan menaikkan ALETA_BOT_ECOURT_MAKS_BELUM_ADA di peladen tidak
+ * mengubah apa pun. Sekarang yang dipakai adalah sasaran.maksSekaliTarik -
+ * dibaca di proses bot, tempat env-nya memang hidup - dan angka di bawah hanya
+ * dipakai ketika sasarannya belum pernah dihitung.
+ */
+const MAKS_SEKALI_TARIK_CADANGAN = 120;
+
+/** Sebab satu perkara menjadi sasaran, dalam bahasa yang dapat dibaca petugas. */
+const SEBAB_SASARAN: Record<string, string> = {
+  belum_pernah_ditarik: "belum pernah ditarik",
+  dibuka_tetapi_kosong: "sudah dibuka, dokumennya belum ada di e-Court",
+  berkas_belum_ada: "berkasnya belum lengkap",
+};
+
 type HasilAudit = {
   diperiksa: number;
   utuh: number;
@@ -91,6 +155,8 @@ export function AletaEcourtPenarikan() {
   const [sibuk, setSibuk] = useState(false);
   const [pantau, setPantau] = useState<Pantau | null>(null);
   const [audit, setAudit] = useState<HasilAudit | null>(null);
+  const [sasaran, setSasaran] = useState<Sasaran | null>(null);
+  const [menghitungSasaran, setMenghitungSasaran] = useState(false);
 
   const [dipantau, setDipantau] = useState("");
   const [isiLog, setIsiLog] = useState("");
@@ -128,6 +194,41 @@ export function AletaEcourtPenarikan() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [muatDaftar]);
+
+  /**
+   * Uji kering: menghitung sasaran sebelum apa pun dijalankan.
+   *
+   * ========================================================================
+   * TIDAK MENYENTUH e-COURT SAMA SEKALI
+   * ========================================================================
+   *
+   * Hanya SELECT ke SIPP dan ke basis data bot - tidak ada peramban yang
+   * dibuka, tidak ada sesi yang dipakai. Boleh ditekan sesering apa pun,
+   * termasuk ketika sesi e-Court sedang habis.
+   *
+   * Pola dua tekanan ini sama dengan pendaftaran antrian sidang dan penetapan
+   * massal ekstensi: periksa dulu, baru jalankan. Sebabnya satu penarikan
+   * mengunci seluruh jalur penarikan lain dan dapat berjam-jam - menekannya
+   * tanpa tahu berapa sasarannya berarti menahan pekerjaan orang lain untuk
+   * hasil yang tidak diketahui.
+   */
+  const periksaSasaran = useCallback(async () => {
+    setMenghitungSasaran(true);
+    setGalat("");
+    try {
+      const jawaban = await fetch(apiPath("/api/aleta-ecourt/penarikan?bagian=sasaran"), {
+        cache: "no-store",
+      });
+      const isi = await jawaban.json();
+      const data = isi?.data ?? isi;
+      if (!data?.available) throw new Error(String(data?.message || "Sasaran tidak terbaca."));
+      setSasaran((data.sasaran ?? null) as Sasaran | null);
+    } catch (kesalahan) {
+      setGalat(kesalahan instanceof Error ? kesalahan.message : "Sasaran tidak terbaca.");
+    } finally {
+      setMenghitungSasaran(false);
+    }
+  }, []);
 
   /** Membuka satu log untuk dipantau, dari potongan terakhirnya. */
   const mulaiPantau = useCallback((nama: string) => {
@@ -235,6 +336,21 @@ export function AletaEcourtPenarikan() {
             );
           } else if (tindakan === "pantau-simpan") {
             setPesan("Pengaturan pemantau sesi disimpan.");
+          } else if (tindakan === "belum-ada") {
+            setPesan(
+              // Jatah yang DISEBUT di sini adalah jatah yang benar-benar
+              // dipakai bot (hasil.maksPerkara), bukan yang diminta layar.
+              `Penarikan sasaran dimulai di latar belakang (jatah ${
+                Number(data?.maksPerkara) || MAKS_SEKALI_TARIK_CADANGAN
+              } perkara). Kemajuannya muncul di bawah.`
+            );
+          } else if (tindakan === "coba-tidak-tersedia") {
+            setPesan(
+              `${Number(data?.diubah) || 0} dokumen dilupakan penandanya; akan ditanyakan lagi pada penarikan berikutnya.`
+            );
+            // Angka sasaran ikut berubah karenanya - dihitung ulang supaya
+            // yang tergambar bukan angka sebelum tombol ini ditekan.
+            void periksaSasaran();
           } else {
             setPesan(
               tindakan === "hentikan"
@@ -252,11 +368,30 @@ export function AletaEcourtPenarikan() {
         setSibuk(false);
       }
     },
-    [muatDaftar, mulaiPantau]
+    [muatDaftar, mulaiPantau, periksaSasaran]
   );
 
   const sedangJalan = Boolean(keadaan?.sedangJalan);
   const adaPenarikanLain = Boolean(keadaan?.adaPenarikanLain);
+
+  // Jatah satu penekanan menurut BOT. Angka cadangan hanya dipakai sebelum
+  // sasarannya dihitung - lihat MAKS_SEKALI_TARIK_CADANGAN di atas.
+  const jatahSekaliTarik = Number(sasaran?.maksSekaliTarik) || MAKS_SEKALI_TARIK_CADANGAN;
+
+  /**
+   * Di luar jam kerja penjadwal?
+   *
+   * jalankanSatuPutaran TIDAK memeriksa jam kerja - hanya detak() penjadwal
+   * yang memeriksanya. Tombol ini akan lebih sering ditekan daripada "Unduh
+   * semua", jadi risiko menghantam server Mahkamah Agung pukul 23.00 naik.
+   * TIDAK dilarang - ada keadaan yang menuntutnya - tetapi tidak pula didiamkan.
+   */
+  const diLuarJamKerja = (() => {
+    const sekarang = new Date();
+    const jam = sekarang.getHours();
+    const hari = sekarang.getDay();
+    return hari === 0 || hari === 6 || jam < 7 || jam >= 17;
+  })();
 
   return (
     <Card>
@@ -294,7 +429,10 @@ export function AletaEcourtPenarikan() {
               disabled={sibuk || sedangJalan || adaPenarikanLain}
               onClick={() => void kirim("menyeluruh")}
             >
-              Unduh semua berkas belum lengkap
+              {/* Tidak lagi menjanjikan "semua". Acuannya perkara setahun
+                  terakhir, dan yang benar-benar seluruh arsip ada di panel
+                  "Tarik yang belum ada saja" di bawah. */}
+              Unduh berkas belum lengkap (acuan setahun terakhir)
             </Button>
           ) : null}
 
@@ -330,6 +468,213 @@ export function AletaEcourtPenarikan() {
             Terakhir: {keadaan.terakhirCatatan}
             {keadaan.terakhirSelesai ? ` (${waktuTerbaca(keadaan.terakhirSelesai)})` : ""}
           </p>
+        ) : null}
+
+        {/* --- Tarik yang belum ada saja --- */}
+        {bolehMenarikSemua ? (
+          <div className="space-y-2 rounded-md border p-3">
+            <h4 className="text-sm font-semibold">Tarik yang belum ada saja</h4>
+            <p className="text-xs text-muted-foreground">
+              Menyusun sasaran dari SELURUH perkara e-Court menurut SIPP, bukan hanya perkara setahun
+              terakhir: perkara yang arsipnya masih kosong didahulukan, lalu perkara yang sebagian
+              berkasnya belum tersimpan. Perkara yang berkasnya sudah utuh tidak dibuka sama sekali
+              &mdash; termasuk yang dokumennya masih menunggu verifikasi majelis, sebab membukanya
+              tidak akan menghasilkan satu berkas pun.
+            </p>
+            {/* ================================================================
+                DUA BATAS YANG HARUS DISEBUT DI LAYAR, BUKAN DI KOMENTAR KODE
+                ================================================================
+
+                Keduanya sebelumnya hanya tertulis pada komentar layanan, dan
+                akibatnya sama: petugas menekan tombol berulang-ulang untuk sisa
+                yang mustahil dikerjakan, lalu menyimpulkan panelnya rusak -
+                padahal panelnya benar.
+
+                (1) "utuh" di sini berarti utuh menurut CATATAN. Berkas yang
+                    tercatat tetapi lenyap dari cakram tidak masuk sasaran, dan
+                    itu bukan kemungkinan teoretis: seluruh arsip pernah lenyap
+                    karena volume Docker belum di-mount. Yang membuktikan ke
+                    cakram adalah "Pemeriksaan keutuhan arsip" di bawah.
+                (2) jumlah sasaran adalah batas ATAS. Perkara yang ada di acuan
+                    SIPP tetapi tidak muncul pada sapuan daftar e-Court tidak
+                    akan pernah masuk tautan, jadi ia tetap terhitung sasaran
+                    pada setiap penghitungan tanpa pernah dapat ditarik. */}
+            <p className="text-xs text-muted-foreground">
+              Dua hal yang perlu diketahui sebelum angkanya dipercaya. Pertama, &quot;sudah
+              utuh&quot; di sini berarti utuh menurut CATATAN, bukan menurut cakram: berkas yang
+              tercatat tetapi hilang dari disk tidak akan masuk sasaran &mdash; yang membuktikannya
+              ke disk adalah <strong>Pemeriksaan keutuhan arsip</strong> di bawah. Kedua, jumlah
+              sasaran adalah batas <strong>atas</strong>: perkara yang tercatat di SIPP tetapi tidak
+              muncul pada daftar e-Court tidak akan pernah terbuka, sehingga ia tetap terhitung
+              sasaran pada setiap penghitungan. Angka yang tidak turun-turun karena itu belum tentu
+              berarti panel ini rusak.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={menghitungSasaran}
+                onClick={() => void periksaSasaran()}
+              >
+                {menghitungSasaran ? "Menghitung…" : "Hitung sasaran"}
+              </Button>
+
+              {/* Tombol menjalankan HANYA muncul sesudah sasarannya terlihat.
+                  Penarikan mengunci seluruh jalur penarikan lain dan dapat
+                  berjam-jam; menekannya tanpa tahu berapa sasarannya berarti
+                  menahan pekerjaan orang lain untuk hasil yang tidak diketahui. */}
+              {sasaran && sasaran.jumlahSasaran > 0 ? (
+                <Button
+                  size="sm"
+                  disabled={sibuk || sedangJalan || adaPenarikanLain}
+                  onClick={() => void kirim("belum-ada", { maksPerkara: jatahSekaliTarik })}
+                >
+                  Tarik {Math.min(sasaran.jumlahSasaran, jatahSekaliTarik)} perkara sekarang
+                </Button>
+              ) : null}
+            </div>
+
+            {sasaran ? (
+              <div className="space-y-1 text-xs">
+                <p>
+                  <strong>{sasaran.jumlahSasaran}</strong> perkara jadi sasaran dari{" "}
+                  {sasaran.totalEcourtSipp} perkara e-Court menurut SIPP &middot;{" "}
+                  {sasaran.belumPernahDitarik} belum pernah ditarik &middot; {sasaran.berkasKurang}{" "}
+                  berkasnya belum lengkap ({sasaran.dokumenKurang} dokumen) &middot; {sasaran.lengkap}{" "}
+                  sudah lengkap dan tidak akan dibuka.
+                </p>
+
+                {/* Sisa yang TIDAK akan berkurang dengan menekan tombol: halamannya
+                    sudah dibuka dan dokumennya memang belum ada di e-Court.
+                    Tanpa angka ini, sasaran yang tidak turun-turun terbaca
+                    sebagai panel yang rusak. */}
+                {Number(sasaran.dikunjungiTetapiKosong) > 0 ? (
+                  <p className="text-muted-foreground">
+                    {sasaran.dikunjungiTetapiKosong} di antaranya sudah pernah dibuka dan memang
+                    belum memuat satu dokumen pun di e-Court. Perkara itu tetap terhitung sasaran
+                    sampai dokumennya terbit, tetapi membukanya lagi tidak akan menghasilkan berkas
+                    &mdash; penariknya menaruhnya di urutan paling belakang.
+                  </p>
+                ) : null}
+
+                {/* Satu angka bila batas bawah dan atasnya sama (istirahat
+                    tetap 2 menit sejak 26 Sep 2026), rentang bila bot lama
+                    masih mengirim 1-3 menit. Bahan taksirannya ikut ditulis
+                    supaya dapat diperiksa. */}
+                <p className="text-muted-foreground">
+                  Perkiraan{" "}
+                  <strong>
+                    {(sasaran.perkiraanMenitMin ?? sasaran.perkiraanMenit) ===
+                    (sasaran.perkiraanMenitMaks ?? sasaran.perkiraanMenit)
+                      ? `${sasaran.perkiraanMenitMin ?? sasaran.perkiraanMenit} menit`
+                      : `${sasaran.perkiraanMenitMin ?? sasaran.perkiraanMenit}–${sasaran.perkiraanMenitMaks ?? sasaran.perkiraanMenit} menit`}
+                  </strong>{" "}
+                  untuk seluruh sasaran
+                  {sasaran.taksiran ? (
+                    <>
+                      {" "}
+                      ({sasaran.taksiran.menitHalaman} menit membuka halaman +{" "}
+                      {sasaran.taksiran.menitBerkas} menit mengunduh{" "}
+                      {sasaran.taksiran.dokumenDitaksir} dokumen +{" "}
+                      {sasaran.taksiran.jumlahIstirahat} istirahat @{" "}
+                      {sasaran.taksiran.istirahatMenitMin === sasaran.taksiran.istirahatMenitMaks
+                        ? sasaran.taksiran.istirahatMenitMin
+                        : `${sasaran.taksiran.istirahatMenitMin}–${sasaran.taksiran.istirahatMenitMaks}`}{" "}
+                      menit)
+                    </>
+                  ) : null}
+                  . Satu penekanan mengerjakan paling banyak {jatahSekaliTarik} perkara, sisanya pada
+                  penekanan berikutnya. Penariknya beristirahat sejenak tiap{" "}
+                  {sasaran.taksiran?.istirahatTiapPerkara ?? 40} perkara untuk menjaga beban
+                  peladen e-Court.
+                </p>
+
+                {/* Taksiran berkas bertumpu pada rata-rata dokumen per perkara.
+                    Bila tidak ada satu baris dokumen pun untuk diukur, angka
+                    cadangan yang dipakai - dan itu harus dikatakan, bukan
+                    ditampilkan seolah hasil ukur. */}
+                {sasaran.taksiran && !sasaran.taksiran.rerataTerukur ? (
+                  <p className="text-amber-700 dark:text-amber-400">
+                    Belum ada satu baris dokumen pun untuk mengukur rata-rata dokumen per perkara,
+                    jadi bagian &quot;mengunduh dokumen&quot; memakai angka cadangan{" "}
+                    {sasaran.taksiran.rerataDokumenPerPerkara} dokumen per perkara. Sesudah
+                    penarikan pertama, angkanya dihitung dari data sendiri.
+                  </p>
+                ) : null}
+                {/* Disebut supaya angka "belum ada" tidak terbaca sebagai
+                    pekerjaan tertunda yang tidak pernah berkurang. */}
+                {sasaran.dokumenTidakTersedia > 0 ? (
+                  <p className="text-muted-foreground">
+                    {sasaran.dokumenTidakTersedia} dokumen ditandai tidak disediakan e-Court (404) dan
+                    tidak ditanyakan lagi selama 30 hari.{" "}
+                    <button
+                      type="button"
+                      className="underline"
+                      disabled={sibuk}
+                      onClick={() => void kirim("coba-tidak-tersedia")}
+                    >
+                      tanyakan sekali lagi
+                    </button>
+                  </p>
+                ) : null}
+                {/* Nol berarti tiap perkara masuk tepat satu golongan. Selain
+                    nol berarti ada yang luput, dan itu cacat - bukan angka yang
+                    perlu ditafsirkan sendiri oleh yang membacanya. */}
+                {sasaran.selisihGolongan !== 0 ? (
+                  <p className="text-rose-700 dark:text-rose-400">
+                    {Math.abs(sasaran.selisihGolongan)} perkara tidak masuk satu pun golongan di atas.
+                    Angka sasaran ini belum dapat dipercaya penuh &mdash; laporkan ke pengelola.
+                  </p>
+                ) : null}
+                {diLuarJamKerja ? (
+                  <p className="text-amber-700 dark:text-amber-400">
+                    Di luar jam kerja penjadwal (Senin&ndash;Jumat 07.00&ndash;17.00). Penarikan tetap
+                    dapat dijalankan, tetapi bebannya ke server Mahkamah Agung berada di luar pola jam
+                    kerja pengadilan.
+                  </p>
+                ) : null}
+
+                {/* ============================================================
+                    YANG MEMBEDAKAN KENDALI DARI TOMBOL
+                    ============================================================
+
+                    hitungSasaran memulangkan 20 nomor perkara beserta sebabnya
+                    sejak awal, tetapi sampai 25 Sep 2026 tidak ada satu baris
+                    JSX pun yang membacanya. Yang diminta pengguna adalah
+                    KENDALI, dan yang membedakan kendali dari tombol adalah
+                    dapat melihat apa yang akan dikerjakan sebelum mengerjakannya.
+
+                    Contoh, bukan seluruh daftar: memuat ribuan nomor ke peramban
+                    tidak menambah satu keputusan pun yang dapat diambil. */}
+                {sasaran.contoh.length > 0 ? (
+                  <details className="rounded-md border bg-muted/30 p-2">
+                    <summary className="cursor-pointer font-medium">
+                      Lihat {sasaran.contoh.length} contoh perkara yang akan dibuka
+                      {sasaran.jumlahSasaran > sasaran.contoh.length
+                        ? ` (dari ${sasaran.jumlahSasaran})`
+                        : ""}
+                    </summary>
+                    <ul className="mt-2 max-h-48 space-y-0.5 overflow-auto">
+                      {sasaran.contoh.map((baris, urutan) => (
+                        <li key={`${baris.nomorPerkara}-${urutan}`}>
+                          <span className="font-medium">{baris.nomorPerkara}</span>{" "}
+                          <span className="text-muted-foreground">
+                            &mdash; {SEBAB_SASARAN[baris.sebab] || baris.sebab.replace(/_/g, " ")}
+                            {baris.kurang > 0 ? `, ${baris.kurang} dokumen` : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-muted-foreground">
+                      Urutan di daftar ini mengikuti urutan SIPP (terbaru lebih dulu), bukan urutan
+                      penarikan: penariknya mendahulukan perkara yang paling lama tidak dibuka.
+                    </p>
+                  </details>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         {/* --- Pemantau sesi e-Court --- */}

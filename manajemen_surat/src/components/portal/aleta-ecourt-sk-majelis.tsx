@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
+import { tanggalPanjang } from "@/lib/tanggal-indonesia";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 /**
@@ -169,7 +170,10 @@ export function AletaEcourtSkMajelis() {
           <CardTitle>SK susunan majelis hakim dan panitera sidang</CardTitle>
           <CardDescription>
             {skBerlaku?.nomor
-              ? `Nilai awalnya dari SK Nomor ${skBerlaku.nomor} tanggal ${skBerlaku.tanggal}. `
+              ? `Nilai awalnya dari SK Nomor ${skBerlaku.nomor} tanggal ${tanggalPanjang(
+                  skBerlaku.tanggal,
+                  skBerlaku.tanggal
+                )}. `
               : ""}
             Yang tersimpan di sini menang atas susunan yang disimpulkan dari pemakaian di SIPP:
             majelis yang ada di SK muncul lebih dahulu pada panel penetapan, beserta kodenya.

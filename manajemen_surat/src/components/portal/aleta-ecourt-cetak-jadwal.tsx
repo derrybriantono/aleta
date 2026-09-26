@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 
+import { tanggalPanjangDenganHari } from "@/lib/tanggal-indonesia";
+
 /**
  * Lembar cetak jadwal sidang.
  *
@@ -101,7 +103,7 @@ export function AletaEcourtCetakJadwal({
           {namaPengadilan}
         </h2>
         <p style={{ margin: "6px 0 0", fontSize: "10pt", textAlign: "center" }}>
-          {dari === sampai ? tanggalPanjang(dari) : `${tanggalPanjang(dari)} s.d. ${tanggalPanjang(sampai)}`}
+          {dari === sampai ? tanggalPanjangDenganHari(dari) : `${tanggalPanjangDenganHari(dari)} s.d. ${tanggalPanjangDenganHari(sampai)}`}
           {" · "}
           {sidang.length} perkara
         </p>
@@ -304,13 +306,3 @@ function sel(tambahan: React.CSSProperties = {}): React.CSSProperties {
   };
 }
 
-const NAMA_BULAN_PANJANG = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-
-function tanggalPanjang(tanggalIso: string) {
-  const [tahun, bulan, hari] = String(tanggalIso || "").split("-").map((x) => Number(x));
-  if (!tahun || !bulan || !hari) return tanggalIso;
-  return `${hari} ${NAMA_BULAN_PANJANG[bulan - 1]} ${tahun}`;
-}

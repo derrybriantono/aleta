@@ -45,6 +45,15 @@ const analisaPerkaraService = require("./analisaPerkaraService");
 const penilaianSippService = require("./penilaianSippService");
 const sippTahapanService = require("./sippTahapanService");
 const putusanEcourtService = require("./putusanEcourtService");
+// Sebutan para pihak punya SATU sumber - kembaran lib/sebutan-pihak.ts yang
+// dijaga uji pembanding. Tidak ada pola sebutan baru yang ditulis di sini.
+const sebutanPihakService = require("./sebutanPihakService");
+// Tanggal hari ini menurut zona PENGADILAN, bukan zona mesin.
+const { tanggalHariIni } = require("./periodePenilaianService");
+// Pengenal galat habis waktu dan batas waktunya - satu sumber dengan penjaga
+// kueri di db_config, bukan pola kedua yang ditulis ulang di sini.
+const queryMetricsService = require("./queryMetricsService");
+const queryGuardService = require("./queryGuardService");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -103,10 +112,23 @@ function selisihHari(dari, sampai) {
  * Karena itu satu kotak menerima semuanya, dan bentuk masukannya dikenali
  * sendiri:
  *
- *   angka saja        -> nomor urut perkara, cocok persis
- *   ada garis miring  -> sepotong nomor perkara
- *   selain itu        -> dicoba pada nomor perkara, jenis perkara, DAN nama
- *                        pihak sekaligus
+ *   angka 1-5 digit   -> nomor urut perkara, cocok persis
+ *   angka 6+ digit    -> nomor identitas (NIK) atau telepon pihak, dan nomor
+ *                        kutipan akta nikah bentuk baru (16 digit)
+ *   ada garis miring  -> sepotong nomor perkara lebih dahulu; HANYA bila tidak
+ *                        satu pun nomor perkara cocok, barulah nomor akta
+ *                        cerai, nomor perkara/putusan banding, kasasi, PK, dan
+ *                        nomor kutipan akta nikah bentuk lama ("008/01/III/2018")
+ *                        - sebabnya di cabang "nomor" cariHalamanInti()
+ *   selain itu        -> dicoba pada nomor perkara, jenis perkara, nama
+ *                        pihak, DAN nama kuasa hukum sekaligus; bila kosong,
+ *                        diperdalam sampai alamat, KUA, pertimbangan, amar,
+ *                        petugas, dan agenda sidang
+ *
+ * Perluasan 25 September 2026 (butir 8 permintaan pengguna) - sebelum itu
+ * nomor akta cerai dicari sebagai nomor perkara dan selalu nihil, NIK dicari
+ * sebagai nomor urut dan selalu nihil, dan nama kuasa hukum tidak dijangkau
+ * sama sekali.
  *
  * ============================================================================
  * SARINGAN MEMPERSEMPIT, BUKAN MENGGANTIKAN
@@ -128,33 +150,78 @@ function selisihHari(dari, sampai) {
 /**
  * Keadaan relaas, sebagai daftar tertutup.
  *
- * ket_temu bukan "bertemu atau tidak" melainkan CARA pemanggilannya - dibaca
- * dari SIPP yang berjalan:
+ * ket_temu bukan "bertemu atau tidak" melainkan CARA pemanggilannya. Artinya
+ * TIDAK ditebak dari teks bebas yang menyertainya, melainkan diambil dari
+ * komentar kolom ket_temu pada skema SIPP - satu-satunya definisi resmi yang
+ * ada. Dibaca apa adanya dari information_schema salinan satker:
  *
- *   Y  bertemu langsung          S  gagal
- *   T  lewat kantor desa         E  elektronik ke kuasa hukum
- *   R  panggilan RRI             M  radiogram RRI
- *   W  website dan pengumuman    P  papan pengumuman
+ *   Y  bertemu                   T  tidak bertemu
+ *   S  SURAT TERCATAT (pos)      E  elektronik
+ *   R  radio                     M  media massa cetak/elektronik
+ *   W  web/papan pengumuman      P  papan pengumuman pemda
+ *      pengadilan
  *
  * Empat yang terakhir adalah cara memanggil pihak yang tidak diketahui
  * keberadaannya - itulah yang dimaksud "ghaib".
+ *
+ * ==========================================================================
+ * S ADALAH SALURAN, BUKAN KEGAGALAN
+ * ==========================================================================
+ *
+ * Sandi S pernah dibaca di sini sebagai "gagal". Itu salah, dan salahnya
+ * besar. Terukur di salinan satker 25 September 2026:
+ *
+ *   ket_temu = 'S'                    3.104 baris / 1.431 perkara
+ *     di antaranya status_pos = 1     1.603 baris /   829 perkara
+ *     (komentar kolom status_pos: "1. Berhasil 2.tidak berhasil")
+ *     di antaranya status_pos = 2       177 baris
+ *
+ * Keterangan hasilnya pun berbunyi terkirim, bukan gagal: "telah diterima
+ * langsung oleh pihak penerima" 70 baris, "DITERIMA LANGSUNG OLEH PIHAK
+ * PENERIMA" 67, "Diterima yang bersangkutan" 49, "Diterima orang serumah"
+ * 49. Membaca S sebagai gagal karena itu mengarang 1.431 perkara tunggakan
+ * panggilan dari perkara yang justru BERHASIL dipanggil lewat pos.
+ *
+ * Kegagalan yang sungguhan ada di tempat lain, dan sudah punya kuncinya:
+ * status_pos = 2, yaitu relaas yang dikembalikan - 177 baris / 147 perkara,
+ * dan `retur` di bawah sudah menjaringnya (216 baris / 180 perkara bersama
+ * ket_hasil_relaas yang menyebut retur). Tidak ada sandi ket_temu yang
+ * berarti "pemanggilan gagal"; yang paling dekat, T, berarti juru sita tidak
+ * bertemu orangnya lalu MENERUSKAN relaas lewat pemerintah desa - 2.667
+ * baris yang keterangannya berbunyi "tidak bertemu dengan tergugat ...
+ * selanjutnya panggilan ini saya serahkan kepada Kantor Desa" - sehingga
+ * panggilannya sah, bukan gagal.
  */
 const RELAAS_SYARAT = {
   retur:
     `EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r
               WHERE r.perkara_id = p.perkara_id
                 AND (r.ket_hasil_relaas LIKE '%retur%' OR r.status_pos = 2))`,
-  gagal:
+  // Dipanggil lewat surat tercatat - saluran, bukan hasil. Kuncinya dulu
+  // bernama `gagal`; sebabnya di blok penjelasan di atas.
+  surat_tercatat:
     "EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r WHERE r.perkara_id = p.perkara_id AND r.ket_temu = 'S')",
   ghaib:
     `EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r
               WHERE r.perkara_id = p.perkara_id AND r.ket_temu IN ('R', 'M', 'W', 'P'))`,
   bertemu:
     "EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r WHERE r.perkara_id = p.perkara_id AND r.ket_temu = 'Y')",
-  // Belum ada satu pun relaas tercatat - beda dengan relaas yang gagal.
+  // Belum ada satu pun relaas tercatat - beda dengan relaas yang dikembalikan.
   tanpa_relaas:
     "NOT EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r WHERE r.perkara_id = p.perkara_id)",
 };
+
+/**
+ * Kunci lama yang masih mungkin dikirim layar yang belum diperbarui.
+ *
+ * Tanpa peta ini, layar yang masih mengirim relaas=gagal kehilangan
+ * saringannya TANPA GALAT - hasilnya seluruh register, dan itu cacat yang
+ * sama jenisnya dengan yang sedang dibetulkan. Diarahkan ke `retur`, yaitu
+ * kegagalan yang sungguhan, bukan ke `surat_tercatat`: orang yang memilih
+ * "Pemanggilan gagal" menanyakan relaas yang tidak sampai, dan jawaban yang
+ * benar untuk pertanyaan itu 180 perkara - bukan 1.431.
+ */
+const RELAAS_KUNCI_LAMA = { gagal: "retur" };
 
 /**
  * Membuang apostrof dari sebuah kolom sebelum dicocokkan.
@@ -171,6 +238,125 @@ function tanpaApostrof(kolom) {
 /** Kata carinya diperlakukan sama dengan kolomnya. */
 function bersihApostrof(teks) {
   return String(teks || "").replace(/[\u2019'`\u00b4]/g, "");
+}
+
+/**
+ * ============================================================================
+ * TABEL PIHAK DISEBUT SATU PER SATU, BUKAN LEWAT v_pihak_perkara
+ * ============================================================================
+ *
+ * v_pihak_perkara adalah UNION berpembeda atas tabel-tabel di bawah, dan
+ * MariaDB harus MEMBENTUKNYA UTUH lebih dahulu - termasuk subkueri
+ * status_pihak untuk tiap baris - sebelum saringan apa pun berlaku. Terukur
+ * atas sipp_donggala 25 September 2026: mencari "419" (nomor urut, empat
+ * perkara) memakan 11,9 detik hanya karena keterangan kecocokannya menanyai
+ * view itu dengan LIKE '%419%'; mencari nama pihak 19,8 detik; dan lapis
+ * dalam melewati batas 15 detik penjaga kueri sehingga pencariannya GAGAL.
+ *
+ * Daftarnya PERSIS tabel yang dihimpun view itu, dibaca dari definisinya di
+ * sipp_donggala: pihak1 sampai pihak5 dan pihak korban. Menjangkau lebih
+ * sedikit akan diam-diam menghilangkan perkara yang dulu ketemu - dan itulah
+ * sebabnya kesetaraan himpunannya diukur (lihat laporan pengukuran) sebelum
+ * view ini ditinggalkan di berkas ini.
+ */
+const TABEL_PIHAK = Object.freeze([
+  "perkara_pihak1",
+  "perkara_pihak2",
+  "perkara_pihak3",
+  "perkara_pihak4",
+  "perkara_pihak5",
+  "perkara_pihak_korban",
+]);
+
+/** Kolom pihak yang boleh dicocokkan - daftar tertutup, bukan dari peramban. */
+const KOLOM_PIHAK = Object.freeze({ nama: "nama", alamat: "alamat" });
+
+/**
+ * Syarat "ada pihak yang kolomnya cocok" - satu EXISTS per tabel pihak.
+ *
+ * Tiap kolom memakan SATU tanda tanya per tabel; pemanggil memasang nilainya
+ * lewat nilaiPihak() dengan urutan yang sama.
+ */
+function syaratPihak(kolom) {
+  const daftarKolom = kolom.map((k) => KOLOM_PIHAK[k]).filter(Boolean);
+  return (
+    "(" +
+    TABEL_PIHAK.map(
+      (tabel, i) =>
+        `EXISTS (SELECT 1 FROM ${tabel} ph${i}
+                  WHERE ph${i}.perkara_id = p.perkara_id
+                    AND (${daftarKolom.map((k) => `ph${i}.${k} LIKE ?`).join(" OR ")}))`
+    ).join("\n          OR ") +
+    ")"
+  );
+}
+
+/** Nilai isian untuk syaratPihak(): tiap tabel, tiap kolom, nilai yang sama. */
+function nilaiPihak(suka, jumlahKolom = 1) {
+  const hasil = [];
+  for (let i = 0; i < TABEL_PIHAK.length; i += 1) {
+    for (let k = 0; k < jumlahKolom; k += 1) hasil.push(suka);
+  }
+  return hasil;
+}
+
+/**
+ * Syarat "ada pihak yang NIK-nya atau teleponnya cocok".
+ *
+ * Nomor identitas tidak tersimpan pada perkara_pihakN, melainkan pada tabel
+ * induk `pihak` - dijembatani lewat pihak_id. Kolomnya memang bernama
+ * nomor_indentitas (salah eja di skema SIPP, bukan di sini).
+ */
+function syaratIdentitasPihak() {
+  return (
+    "(" +
+    TABEL_PIHAK.map(
+      (tabel, i) =>
+        `EXISTS (SELECT 1 FROM ${tabel} pi${i}
+                   JOIN pihak id${i} ON id${i}.id = pi${i}.pihak_id
+                  WHERE pi${i}.perkara_id = p.perkara_id
+                    AND (id${i}.nomor_indentitas LIKE ? OR id${i}.telepon LIKE ?))`
+    ).join("\n          OR ") +
+    ")"
+  );
+}
+
+/** Pagu pihak yang dijemput lebih dahulu untuk pencarian NIK/telepon. */
+const PAGU_PIHAK_IDENTITAS = 2000;
+
+/**
+ * Batas panjang nomor urut perkara.
+ *
+ * Nomor urut tertinggi di satker 833 (terukur 25 September 2026); lima digit
+ * memberi ruang 99.999 perkara setahun. Angka yang lebih panjang tidak
+ * mungkin nomor urut - NIK 16 digit, nomor kutipan akta nikah bentuk baru 16
+ * digit, telepon 10-13 digit - dan sebelum perluasan ini semuanya dicari
+ * sebagai nomor urut lalu nihil tanpa penjelasan.
+ */
+const PANJANG_NOMOR_URUT = 5;
+
+/**
+ * Pagu baris per halaman.
+ *
+ * Dinaikkan dari 200 ke 500 atas permintaan tampilan daftar/rinci (butir 7).
+ * Lebih dari itu tidak lagi dibaca orang - dipakai `lewati` untuk halaman
+ * berikutnya.
+ */
+const PAGU_BARIS = 500;
+
+/**
+ * Mencatat bagian yang gagal dibaca, TIDAK menelannya.
+ *
+ * Hasil pencariannya tetap dikembalikan - keterangan tambahan yang hilang
+ * tidak boleh menghilangkan perkara yang sudah ketemu - tetapi galatnya
+ * masuk log dan namanya dikirim ke layar lewat `ruasTakTerbaca`. Tanpa itu,
+ * kolom kuasa yang kosong karena tabelnya tak terbaca tidak dapat dibedakan
+ * dari perkara yang memang tanpa kuasa.
+ */
+function catatTakTerbaca(daftar, nama, error) {
+  const pesan = String((error && error.message) || error || "").slice(0, 200);
+  console.warn(`[sippStatusPerkara] ${nama} tidak terbaca: ${pesan}`);
+  if (Array.isArray(daftar) && !daftar.includes(nama)) daftar.push(nama);
 }
 
 /**
@@ -204,7 +390,11 @@ const KOSAKATA_CARI = {
 /** Kunci kosakata yang meminjam daftar tertutup yang sudah ada. */
 const KOSAKATA_PINJAM = [
   ["retur", "Relaas retur", () => RELAAS_SYARAT.retur],
-  ["gagal panggil", "Pemanggilan gagal", () => RELAAS_SYARAT.gagal],
+  // "gagal panggil" diarahkan ke relaas yang DIKEMBALIKAN, bukan ke sandi S.
+  // Dulu kata ini memulangkan 1.431 perkara yang dipanggil lewat surat
+  // tercatat - 829 di antaranya ber-status_pos = 1, alias berhasil.
+  ["gagal panggil", "Relaas dikembalikan", () => RELAAS_SYARAT.retur],
+  ["surat tercatat", "Dipanggil lewat surat tercatat", () => RELAAS_SYARAT.surat_tercatat],
   ["ghaib", "Dipanggil sebagai ghaib", () => RELAAS_SYARAT.ghaib],
   ["belum ada relaas", "Belum ada relaas", () => RELAAS_SYARAT.tanpa_relaas],
   ["e-court", "Perkara e-Court", () => ECOURT_SYARAT.ya],
@@ -247,7 +437,9 @@ const UMUR_PENCARIAN = [
 /** Kunci relaas yang diterima, untuk ditampilkan di layar. */
 const RELAAS_PENCARIAN = [
   { kunci: "retur", label: "Relaas retur" },
-  { kunci: "gagal", label: "Pemanggilan gagal" },
+  // Bukan lagi "Pemanggilan gagal": sandi yang disaringnya berarti SURAT
+  // TERCATAT, dan 829 dari 1.431 perkaranya berhasil diterima.
+  { kunci: "surat_tercatat", label: "Dipanggil lewat surat tercatat" },
   { kunci: "ghaib", label: "Dipanggil sebagai ghaib" },
   { kunci: "bertemu", label: "Bertemu langsung" },
   { kunci: "tanpa_relaas", label: "Belum ada relaas" },
@@ -285,6 +477,37 @@ function penggalan(teks, kata, lebar = 70) {
 }
 
 /**
+ * NIK atau telepon untuk keterangan "cocok karena": yang tampak HANYA angka
+ * yang diketik petugas sendiri, sisanya disamarkan "*".
+ *
+ * ============================================================================
+ * SEBABNYA
+ * ============================================================================
+ *
+ * Kata bebas enam digit ke atas dicocokkan SEBAGIAN ke NIK dan telepon. Enam
+ * digit pertama NIK adalah kode wilayah: terukur 26 September 2026 atas
+ * sipp_donggala, "720325" memulangkan 100 perkara (dan masih ada lagi) dengan
+ * 95 NIK enam belas digit UTUH milik 88 orang di keterangan cocoknya - ikut ke
+ * "Muat semua" (500) dan ke lembar cetak. Itu bertentangan dengan aturan yang
+ * sudah berlaku di ALETA: identitasPihakService menyamarkan NIK dan telepon
+ * di PELADEN, bukan di layar.
+ *
+ * Yang dibiarkan tampak justru yang diketik, bukan empat depan dan tiga
+ * belakang seperti identitasPihakService.samarkan: angka yang diketik sudah
+ * diketahui pengetiknya, jadi menampakkannya tidak membuka apa pun - dan
+ * itulah yang menjelaskan MENGAPA perkara itu muncul. Angka di luarnya milik
+ * orang lain yang kebetulan berawalan sama.
+ */
+function samarkanKecualiDiketik(nomor, diketik) {
+  const teks = cleanText(nomor);
+  if (!teks) return "";
+  const kata = cleanText(diketik);
+  const posisi = kata ? teks.indexOf(kata) : -1;
+  if (posisi < 0) return "*".repeat(teks.length);
+  return "*".repeat(posisi) + kata + "*".repeat(teks.length - posisi - kata.length);
+}
+
+/**
  * ============================================================================
  * MENJELASKAN MENGAPA SEBUAH PERKARA MUNCUL
  * ============================================================================
@@ -299,7 +522,7 @@ function penggalan(teks, kata, lebar = 70) {
  * dikembalikan - satu kueri untuk tiap jenis keterangan, bukan satu kueri
  * untuk tiap baris.
  */
-async function lampirkanCocok(hasil, kriteria) {
+async function lampirkanCocok(hasil, kriteria, takTerbaca = []) {
   const daftarId = hasil.map((x) => x.perkaraId).filter(Boolean);
   if (daftarId.length === 0) return;
 
@@ -315,56 +538,210 @@ async function lampirkanCocok(hasil, kriteria) {
     baris.cocok.push({ medan, nilai: String(nilaiCocok).slice(0, 200) });
   };
 
-  const jalankan = async (sql, params) => {
+  const jalankan = async (label, sql, params) => {
     try {
       return await runQuery(sql, params);
-    } catch {
+    } catch (error) {
       // SIPP versi lain bisa saja tidak punya tabelnya. Keterangan yang
-      // hilang tidak boleh menghilangkan hasil pencariannya.
+      // hilang tidak boleh menghilangkan hasil pencariannya - tetapi juga
+      // tidak boleh hilang dalam diam.
+      catatTakTerbaca(takTerbaca, `cocok:${label}`, error);
       return [];
     }
   };
 
+  /**
+   * Pihak dari keenam tabel pihak, disaring DI DALAM tiap cabang.
+   *
+   * Nilai isiannya diulang per cabang: daftar id lalu kata carinya. Kolomnya
+   * dari KOLOM_PIHAK yang tertutup.
+   */
+  const cariDiPihak = (kolom, suka) => {
+    const k = KOLOM_PIHAK[kolom];
+    const cabang = TABEL_PIHAK.map(
+      (tabel) =>
+        `SELECT t.perkara_id AS perkaraId, t.${k} AS nilai, t.nama AS nama
+           FROM ${tabel} t
+          WHERE t.perkara_id IN (${isian}) AND t.${k} LIKE ?`
+    ).join("\n         UNION ALL ");
+    const params = [];
+    for (let i = 0; i < TABEL_PIHAK.length; i += 1) params.push(...daftarId, suka);
+    return { sql: cabang, params };
+  };
+
   const kataBebas = cleanText(kriteria.kata);
-  const pihakDicari = cleanText(kriteria.namaPihak) || kataBebas;
+  const caraKata = String(kriteria.caraKata || "");
+  // Kata bebas dicocokkan ke nama pihak dan kuasa HANYA bila memang dicari
+  // sebagai teks. Dulu "419" pun ditanyakan ke nama pihak dengan LIKE
+  // '%419%' - satu kueri lagi yang tidak pernah menemukan apa pun.
+  const kataTeks = caraKata === "teks" ? kataBebas : "";
+  const pihakDicari = cleanText(kriteria.namaPihak) || kataTeks;
   // Bila pencariannya diperdalam, kata bebasnya juga berlaku untuk alamat,
-  // KUA, pertimbangan, dan amar.
+  // KUA, pertimbangan, amar, dan agenda sidang.
   const kataDalam = cleanText(kriteria.kataDalam);
 
   const pekerjaan = [];
 
   if (pihakDicari) {
+    const { sql, params } = cariDiPihak("nama", `%${pihakDicari}%`);
     pekerjaan.push(
-      jalankan(
-        `SELECT vp.perkara_id AS perkaraId, vp.nama AS nama
-           FROM v_pihak_perkara vp
-          WHERE vp.perkara_id IN (${isian}) AND vp.nama LIKE ?`,
-        [...daftarId, `%${pihakDicari}%`]
-      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Pihak", x.nama)))
+      jalankan("Pihak", `SELECT u.perkaraId, u.nama FROM (${sql}) u`, params).then((baris) =>
+        baris.forEach((x) => tambah(x.perkaraId, "Pihak", x.nama))
+      )
     );
   }
 
   if (cleanText(kriteria.alamatPihak) || kataDalam) {
     const alamat = cleanText(kriteria.alamatPihak) || kataDalam;
+    const { sql, params } = cariDiPihak("alamat", `%${alamat}%`);
+    pekerjaan.push(
+      jalankan("Alamat", `SELECT u.perkaraId, u.nilai AS alamat FROM (${sql}) u`, params).then((baris) =>
+        baris.forEach((x) => tambah(x.perkaraId, "Alamat", penggalan(x.alamat, alamat)))
+      )
+    );
+  }
+
+  // Nama kuasa hukum - dijangkau lapis cepat kata bebas sejak 25 September
+  // 2026. Seluruh kuasa yang pernah tercatat, bukan hanya yang aktif: yang
+  // mencari nama advokat ingin tahu perkara mana saja yang pernah ia pegang.
+  if (kataTeks) {
     pekerjaan.push(
       jalankan(
-        `SELECT vp.perkara_id AS perkaraId, vp.alamat AS alamat
-           FROM v_pihak_perkara vp
-          WHERE vp.perkara_id IN (${isian}) AND vp.alamat LIKE ?`,
-        [...daftarId, `%${alamat}%`]
-      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Alamat", penggalan(x.alamat, alamat))))
+        "Kuasa",
+        `SELECT k.perkara_id AS perkaraId, k.nama AS nama
+           FROM perkara_pengacara k
+          WHERE k.perkara_id IN (${isian}) AND k.nama LIKE ?`,
+        [...daftarId, `%${kataTeks}%`]
+      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Kuasa", x.nama)))
+    );
+  }
+
+  // Agenda sidang - hanya bila diperdalam, sama dengan syarat pencariannya.
+  if (kataDalam) {
+    pekerjaan.push(
+      jalankan(
+        "Agenda sidang",
+        `SELECT j.perkara_id AS perkaraId, j.agenda AS agenda
+           FROM perkara_jadwal_sidang j
+          WHERE j.perkara_id IN (${isian}) AND j.agenda LIKE ?
+          ORDER BY j.tanggal_sidang DESC`,
+        [...daftarId, `%${kataDalam}%`]
+      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Agenda sidang", x.agenda)))
+    );
+  }
+
+  // Nomor bergaris miring: nomor perkara sudah tampil di kartunya sendiri,
+  // jadi yang dijelaskan hanya nomor LAIN yang cocok - akta cerai, banding,
+  // kasasi, PK, akta nikah. Tanpa ini, petugas yang mengetik nomor akta
+  // cerai melihat perkara yang nomornya sama sekali tidak mirip.
+  //
+  // HANYA bila perkaranya memang ketemu lewat nomor lain (tahap kedua cabang
+  // "nomor"). Perkara yang ketemu lewat nomor perkaranya sendiri tidak diberi
+  // keterangan akta nikah yang kebetulan juga memuat "/2019" - keterangan itu
+  // akan menyebut alasan yang bukan alasannya.
+  const nomorLainDicari = caraKata === "nomor" && Boolean(kriteria.nomorLain);
+  if (nomorLainDicari && kataBebas) {
+    const suka = `%${kataBebas}%`;
+    pekerjaan.push(
+      jalankan(
+        "Akta cerai",
+        `SELECT ac.perkara_id AS perkaraId, ac.nomor_akta_cerai AS nomor
+           FROM perkara_akta_cerai ac
+          WHERE ac.perkara_id IN (${isian}) AND ac.nomor_akta_cerai LIKE ?`,
+        [...daftarId, suka]
+      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Akta cerai", x.nomor))),
+      jalankan(
+        "Nomor banding",
+        `SELECT b.perkara_id AS perkaraId,
+                CASE WHEN b.nomor_perkara_banding LIKE ? THEN b.nomor_perkara_banding
+                     ELSE b.nomor_putusan_banding END AS nomor
+           FROM perkara_banding b
+          WHERE b.perkara_id IN (${isian})
+            AND (b.nomor_perkara_banding LIKE ? OR b.nomor_putusan_banding LIKE ?)`,
+        [suka, ...daftarId, suka, suka]
+      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Nomor banding", x.nomor))),
+      jalankan(
+        "Nomor kasasi",
+        `SELECT k.perkara_id AS perkaraId,
+                CASE WHEN k.nomor_perkara_kasasi LIKE ? THEN k.nomor_perkara_kasasi
+                     ELSE k.nomor_putusan_kasasi END AS nomor
+           FROM perkara_kasasi k
+          WHERE k.perkara_id IN (${isian})
+            AND (k.nomor_perkara_kasasi LIKE ? OR k.nomor_putusan_kasasi LIKE ?)`,
+        [suka, ...daftarId, suka, suka]
+      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Nomor kasasi", x.nomor))),
+      jalankan(
+        "Nomor PK",
+        `SELECT q.perkara_id AS perkaraId,
+                CASE WHEN q.nomor_perkara_pk LIKE ? THEN q.nomor_perkara_pk
+                     ELSE q.nomor_putusan_pk END AS nomor
+           FROM perkara_pk q
+          WHERE q.perkara_id IN (${isian})
+            AND (q.nomor_perkara_pk LIKE ? OR q.nomor_putusan_pk LIKE ?)`,
+        [suka, ...daftarId, suka, suka]
+      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Nomor PK", x.nomor)))
+    );
+  }
+
+  // Nomor kutipan akta nikah: bentuk lama bergaris miring, bentuk baru 16
+  // digit - jadi dijelaskan pada kedua cara itu.
+  if ((nomorLainDicari || caraKata === "identitas") && kataBebas) {
+    pekerjaan.push(
+      jalankan(
+        "Akta nikah",
+        `SELECT dn.perkara_id AS perkaraId, dn.no_kutipan_akta_nikah AS nomor
+           FROM perkara_data_pernikahan dn
+          WHERE dn.perkara_id IN (${isian}) AND dn.no_kutipan_akta_nikah LIKE ?`,
+        [...daftarId, `%${kataBebas}%`]
+      ).then((baris) => baris.forEach((x) => tambah(x.perkaraId, "Akta nikah", x.nomor)))
+    );
+  }
+
+  // NIK dan telepon pihak. Nilainya menyebut NAMA pihaknya juga - nomor enam
+  // belas digit saja tidak menjelaskan siapa yang dicari. Nomornya sendiri
+  // DISAMARKAN kecuali angka yang diketik - lihat samarkanKecualiDiketik().
+  if (caraKata === "identitas" && kataBebas) {
+    const suka = `%${kataBebas}%`;
+    const cabang = TABEL_PIHAK.map(
+      (tabel) =>
+        `SELECT t.perkara_id AS perkaraId, t.nama AS nama,
+                ip.nomor_indentitas AS nik, ip.telepon AS telepon
+           FROM ${tabel} t
+           JOIN pihak ip ON ip.id = t.pihak_id
+          WHERE t.perkara_id IN (${isian})
+            AND (ip.nomor_indentitas LIKE ? OR ip.telepon LIKE ?)`
+    ).join("\n         UNION ALL ");
+    const params = [];
+    for (let i = 0; i < TABEL_PIHAK.length; i += 1) params.push(...daftarId, suka, suka);
+    pekerjaan.push(
+      jalankan("Nomor identitas", `SELECT u.perkaraId, u.nama, u.nik, u.telepon FROM (${cabang}) u`, params).then(
+        (baris) =>
+          baris.forEach((x) => {
+            const nik = cleanText(x.nik);
+            const telepon = cleanText(x.telepon);
+            if (nik.includes(kataBebas)) {
+              tambah(x.perkaraId, "Nomor identitas", `${samarkanKecualiDiketik(nik, kataBebas)} - ${cleanText(x.nama)}`);
+            }
+            if (telepon.includes(kataBebas)) {
+              tambah(x.perkaraId, "Telepon", `${samarkanKecualiDiketik(telepon, kataBebas)} - ${cleanText(x.nama)}`);
+            }
+          })
+      )
     );
   }
 
   const jabatan = [
-    [cleanText(kriteria.hakim) || cleanText(kriteria.petugas), "perkara_hakim_pn", "hakim_nama", "Hakim"],
-    [cleanText(kriteria.panitera) || cleanText(kriteria.petugas), "perkara_panitera_pn", "panitera_nama", "Panitera Pengganti"],
-    [cleanText(kriteria.jurusita) || cleanText(kriteria.petugas), "perkara_jurusita", "jurusita_nama", "Juru Sita"],
+    // kataDalam ikut: lapis dalam menjangkau ketiga jabatan ini, dan tanpa
+    // itu perkara yang ketemu lewat nama hakim tampil tanpa satu keterangan.
+    [cleanText(kriteria.hakim) || cleanText(kriteria.petugas) || kataDalam, "perkara_hakim_pn", "hakim_nama", "Hakim"],
+    [cleanText(kriteria.panitera) || cleanText(kriteria.petugas) || kataDalam, "perkara_panitera_pn", "panitera_nama", "Panitera Pengganti"],
+    [cleanText(kriteria.jurusita) || cleanText(kriteria.petugas) || kataDalam, "perkara_jurusita", "jurusita_nama", "Juru Sita"],
   ];
   for (const [dicari, tabel, kolom, label] of jabatan) {
     if (!dicari) continue;
     pekerjaan.push(
       jalankan(
+        label,
         `SELECT t.perkara_id AS perkaraId, t.${kolom} AS nama
            FROM ${tabel} t
           WHERE t.perkara_id IN (${isian}) AND t.${kolom} LIKE ?`,
@@ -377,6 +754,7 @@ async function lampirkanCocok(hasil, kriteria) {
     const kataPtb = cleanText(kriteria.pertimbangan) || kataDalam;
     pekerjaan.push(
       jalankan(
+        "Pertimbangan",
         `SELECT ph.perkara_id AS perkaraId, ph.pertimbangan_hukum AS teks
            FROM perkara_pertimbangan_hukum ph
           WHERE ph.perkara_id IN (${isian}) AND ph.pertimbangan_hukum LIKE ?`,
@@ -389,6 +767,7 @@ async function lampirkanCocok(hasil, kriteria) {
     const kataAmar = cleanText(kriteria.amar) || kataDalam;
     pekerjaan.push(
       jalankan(
+        "Amar",
         `SELECT pu.perkara_id AS perkaraId, pu.amar_putusan AS teks
            FROM perkara_putusan pu
           WHERE pu.perkara_id IN (${isian}) AND pu.amar_putusan LIKE ?`,
@@ -401,6 +780,7 @@ async function lampirkanCocok(hasil, kriteria) {
     const kataKua = cleanText(kriteria.kua) || kataDalam;
     pekerjaan.push(
       jalankan(
+        "KUA",
         `SELECT dn.perkara_id AS perkaraId, dn.kua_tempat_nikah AS kua
            FROM perkara_data_pernikahan dn
           WHERE dn.perkara_id IN (${isian}) AND dn.kua_tempat_nikah LIKE ?`,
@@ -411,9 +791,202 @@ async function lampirkanCocok(hasil, kriteria) {
 
   await Promise.all(pekerjaan);
 }
-async function cariPerkara(kataCari, pilihan = {}) {
+
+/**
+ * Perkara yang NOMOR PERKARANYA memuat sepotong kata - dijemput lewat indeks
+ * nomor_perkara saja, tanpa menyentuh tabelnya.
+ *
+ * Syarat "p.nomor_perkara LIKE '%12/%'" yang ditempel ke kueri utama membuat
+ * MariaDB menyisir indeks tanggal_pendaftaran menurut urutan hasil sambil
+ * membaca BARIS perkara satu per satu untuk memeriksa nomornya (EXPLAIN: type
+ * index, key tanggal_pendaftaran) - untuk potongan yang jarang cocok itu
+ * berarti hampir seluruh tabel 60 MB dibaca acak dari cakram. Terukur 26
+ * September 2026 atas sipp_donggala, kueri halaman "12/": 2,6 detik; dengan
+ * daftar id yang dijemput di sini 0,7 detik (lihat PAGU_ID_NOMOR). Kueri ini
+ * hanya menyisir indeks nomor_perkara (EXPLAIN: Using index).
+ *
+ * Alias tabelnya sengaja bukan `p`: yang beralias `p` hanya kueri utama.
+ */
+async function idPerkaraBerNomor(suka) {
+  const rows = await runQuery(
+    `SELECT pn.perkara_id AS perkaraId
+       FROM perkara pn
+      WHERE pn.nomor_perkara LIKE ?`,
+    [suka]
+  );
+  return [...new Set(rows.map((r) => Number(r.perkaraId)).filter((n) => n > 0))];
+}
+
+/**
+ * Pagu daftar id nomor perkara yang dipakai sebagai IN.
+ *
+ * Di bawahnya, syarat "p.perkara_id IN (daftar)" dibaca lewat PRIMARY
+ * (range) - cepat. Mulai 1.000 unsur MariaDB mengubah daftar IN menjadi tabel
+ * turunan (in_predicate_conversion_threshold = 1000, dibaca dari salinan
+ * satker), dan tiap id dibaca acak lewat PRIMARY: lambat. Sebaliknya potongan
+ * yang cocok pada ribuan perkara tidak perlu daftar - syarat LIKE-nya sendiri
+ * cepat, sebab baris cocok segera bertemu di urutan tanggal. Terukur 26
+ * September 2026 atas sipp_donggala, kueri halaman saja (median 3 kali):
+ *
+ *   kata      id cocok   LIKE      daftar IN
+ *   "419/"         13    2.996 ms     153 ms
+ *   "33/"         106    2.412 ms     664 ms
+ *   "12/"         111    2.649 ms     738 ms
+ *   "/2021"       721      983 ms      68 ms
+ *   "2/Pdt"     1.022       67 ms   5.060 ms
+ *   "7/"        1.913      316 ms   4.749 ms
+ *   "5/"        2.215       38 ms   5.661 ms
+ *
+ * Jawaban kedua bentuk sama pada seluruh kata di atas (diperiksa).
+ */
+const PAGU_ID_NOMOR = 999;
+
+/**
+ * Perkara yang NOMOR LAINNYA cocok: akta cerai, banding, kasasi, PK, dan
+ * kutipan akta nikah. Satu kueri, lima tabel kecil, disisir sekali.
+ *
+ * Galatnya TIDAK ditelan: ini bagian dari pencarian itu sendiri, bukan
+ * keterangan tambahan - hasil tanpa bagian ini akan tampak lengkap padahal
+ * tidak.
+ */
+async function idPerkaraBerNomorLain(suka) {
+  const rows = await runQuery(
+    `SELECT u.perkaraId
+       FROM (SELECT ac.perkara_id AS perkaraId FROM perkara_akta_cerai ac
+              WHERE ac.nomor_akta_cerai LIKE ?
+             UNION SELECT bd.perkara_id FROM perkara_banding bd
+              WHERE bd.nomor_perkara_banding LIKE ? OR bd.nomor_putusan_banding LIKE ?
+             UNION SELECT ks.perkara_id FROM perkara_kasasi ks
+              WHERE ks.nomor_perkara_kasasi LIKE ? OR ks.nomor_putusan_kasasi LIKE ?
+             UNION SELECT pq.perkara_id FROM perkara_pk pq
+              WHERE pq.nomor_perkara_pk LIKE ? OR pq.nomor_putusan_pk LIKE ?
+             UNION SELECT an.perkara_id FROM perkara_data_pernikahan an
+              WHERE an.no_kutipan_akta_nikah LIKE ?) u`,
+    [suka, suka, suka, suka, suka, suka, suka, suka]
+  );
+  return [...new Set(rows.map((r) => Number(r.perkaraId)).filter((n) => n > 0))];
+}
+
+/**
+ * Perkara yang pihaknya ber-NIK/bertelepon cocok, atau yang nomor kutipan
+ * akta nikahnya cocok.
+ *
+ * Pihaknya dijemput SEKALI dari tabel induk `pihak` (terukur 0,43 detik per
+ * sisiran di salinan satker - menyambungnya ke dalam keenam EXISTS menyisirnya
+ * enam kali), lalu perkaranya dari keenam tabel pihak lewat pihak_id.
+ *
+ * Memulangkan null bila pihak yang cocok mentok di pagu - pemanggil lalu
+ * memakai bentuk sambungan yang lengkap, supaya tidak ada yang terpotong.
+ */
+async function idPerkaraBerIdentitas(suka) {
+  const idPihak = (
+    await runQuery(
+      `SELECT ip.id AS id
+         FROM pihak ip
+        WHERE ip.nomor_indentitas LIKE ? OR ip.telepon LIKE ?
+        LIMIT ${PAGU_PIHAK_IDENTITAS}`,
+      [suka, suka]
+    )
+  )
+    .map((r) => Number(r.id))
+    .filter((n) => n > 0);
+  if (idPihak.length >= PAGU_PIHAK_IDENTITAS) return null;
+
+  const idPerkara = new Set();
+  if (idPihak.length > 0) {
+    const isianPihak = idPihak.map(() => "?").join(", ");
+    const cabang = TABEL_PIHAK.map(
+      (tabel) => `SELECT t.perkara_id AS perkaraId FROM ${tabel} t WHERE t.pihak_id IN (${isianPihak})`
+    ).join("\n             UNION ");
+    const params = [];
+    for (let i = 0; i < TABEL_PIHAK.length; i += 1) params.push(...idPihak);
+    const dariPihak = await runQuery(`SELECT u.perkaraId FROM (${cabang}) u`, params);
+    for (const r of dariPihak) idPerkara.add(Number(r.perkaraId));
+  }
+
+  const dariAkta = await runQuery(
+    `SELECT an.perkara_id AS perkaraId
+       FROM perkara_data_pernikahan an
+      WHERE an.no_kutipan_akta_nikah LIKE ?`,
+    [suka]
+  );
+  for (const r of dariAkta) idPerkara.add(Number(r.perkaraId));
+
+  return [...idPerkara].filter((n) => n > 0);
+}
+
+/**
+ * ============================================================================
+ * GALAT HABIS WAKTU DIKATAKAN DALAM BAHASA ORANGNYA
+ * ============================================================================
+ *
+ * Penjaga kueri di db_config memutus kueri yang lewat batas waktunya (bawaan
+ * 15 detik), dan driver mysql melaporkannya sebagai "Query inactivity timeout"
+ * (PROTOCOL_SEQUENCE_TIMEOUT). Pesan itu dulu diteruskan apa adanya sampai ke
+ * kotak galat layar Status Perkara: terukur 26 September 2026 atas bot hidup,
+ * kata bebas "Sudarmin" 17 detik lalu layar menulis persis "Query inactivity
+ * timeout" - bahasa Inggris, dan tidak menyebut apa yang dapat dilakukan.
+ *
+ * Yang dikenali sebagai habis waktu memakai pengenal yang SAMA dengan
+ * pencatat kueri (queryMetricsService.isTimeoutError), dan angka detiknya dari
+ * pengaturan penjaga yang sedang berlaku. Galat lain diteruskan APA ADANYA -
+ * tidak ada yang ditelan. Pesan mentahnya tetap masuk log.
+ */
+const KODE_PENCARIAN_HABIS_WAKTU = "PENCARIAN_HABIS_WAKTU";
+
+function galatPencarian(error) {
+  if (!error || error.code === KODE_PENCARIAN_HABIS_WAKTU) return error;
+  if (!queryMetricsService.isTimeoutError(error)) return error;
+  const detik = Math.round(queryGuardService.getGuardConfig().timeoutMs / 1000);
+  console.warn(
+    `[sippStatusPerkara] pencarian habis waktu (${String(error.code || "")}): ${String(error.message || error).slice(0, 200)}`
+  );
+  const galat = new Error(
+    `Pencarian dihentikan karena melewati batas ${detik} detik untuk membaca SIPP. ` +
+      "Coba lagi, atau persempit dengan Saringan lain atau rentang waktu."
+  );
+  galat.code = KODE_PENCARIAN_HABIS_WAKTU;
+  galat.cause = error;
+  return galat;
+}
+
+/** Pesan galat pencarian untuk dikirim rute: habis waktu diterjemahkan. */
+function pesanGalatPencarian(error) {
+  const galat = galatPencarian(error);
+  return String((galat && galat.message) || galat || "").slice(0, 300);
+}
+
+/**
+ * Satu halaman hasil pencarian, beserta keterangan halamannya.
+ *
+ *   perkara         baris hasil, masing-masing sudah dilengkapi ruas rinci
+ *   adaLagi         masih ada baris SESUDAH halaman ini
+ *   lewati, batas   halaman yang benar-benar dipakai (sesudah dipagari)
+ *   lapis           "cepat" / "dalam" untuk kata bebas teks, "" selain itu
+ *   ruasTakTerbaca  bagian yang gagal dibaca - lihat catatTakTerbaca()
+ *
+ * cariPerkara() di bawah tetap memulangkan larik saja, supaya pemanggil lama
+ * tidak berubah. Galat habis waktu dilempar sebagai galat berbahasa Indonesia
+ * berkode PENCARIAN_HABIS_WAKTU - lihat galatPencarian().
+ */
+async function cariPerkaraHalaman(kataCari, pilihan = {}) {
+  try {
+    return await cariHalamanInti(kataCari, pilihan);
+  } catch (error) {
+    throw galatPencarian(error);
+  }
+}
+
+async function cariHalamanInti(kataCari, pilihan = {}) {
   const {
     batas = 25,
+    // Mulai dari baris ke berapa (halaman berikutnya). Urutannya tetap urutan
+    // yang sama - tanggal daftar terbaru lebih dahulu - jadi halaman tidak
+    // saling menumpuk.
+    lewati = 0,
+    // Hanya untuk uji: tanggal "hari ini" yang dipakai umur perkara dan
+    // pembagian sidang terakhir/berikut. Rute tidak pernah mengirimnya.
+    hariIni = "",
     jenisPerkara = "",
     status = "",
     tahun = "",
@@ -437,17 +1010,48 @@ async function cariPerkara(kataCari, pilihan = {}) {
     putusSampai = "",
     umur = "",
     ecourt = "",
+    // --- tag dan rentang waktu (diminta pengguna 25 September 2026) ---
+    // Daftar perkara_id yang sudah disaring tagPerkaraService. Dijemput di
+    // luar supaya kueri di bawah tidak perlu menempelkan EXISTS atas tabel
+    // yang tidak berindeks - terukur 2,98 detik menjadi 0,44 detik.
+    idTag = null,
+    // Rentang waktu dari panel tag, sudah berbentuk { sql, nilai } susunan
+    // tagPerkaraService. Nama kolomnya datang dari katalog DASAR_TANGGAL yang
+    // dibekukan di sana, tidak pernah dari peramban; tanggalnya tetap lewat
+    // tanda tanya. Dipakai supaya "diputus triwulan ini" tetap menyaring
+    // walaupun tidak ada satu pun tag yang dinyalakan.
+    lingkupTanggal = null,
   } = pilihan || {};
 
   const kata = cleanText(kataCari);
   const syarat = [];
   const nilai = [];
+  // Bagian yang gagal dibaca - dikirim ke layar, tidak ditelan.
+  const ruasTakTerbaca = [];
+
+  const batasBaris = Math.min(Math.max(Math.floor(Number(batas)) || 25, 1), PAGU_BARIS);
+  const lewatiBaris = Math.min(Math.max(Math.floor(Number(lewati)) || 0, 0), 1000000);
+  const tanggalAcuan = /^\d{4}-\d{2}-\d{2}$/.test(String(hariIni || ""))
+    ? String(hariIni)
+    : tanggalHariIni("Asia/Makassar");
+
+  const kosong = () => ({
+    perkara: [],
+    adaLagi: false,
+    lewati: lewatiBaris,
+    batas: batasBaris,
+    lapis: "",
+    ruasTakTerbaca,
+  });
 
   // Cara kata bebas dicari - ditentukan di sini, dijalankan di bawah.
-  //   ""       tidak ada kata bebas
-  //   "tepat"  nomor urut atau nomor perkara, satu kueri saja
-  //   "kosakata" kata yang berarti keadaan, bukan teks
-  //   "teks"   dicari cepat dulu, diperdalam bila kosong
+  //   ""          tidak ada kata bebas
+  //   "tepat"     nomor urut, satu kueri saja
+  //   "identitas" angka panjang: NIK/telepon pihak, akta nikah 16 digit
+  //   "nomor"     bergaris miring: nomor perkara, akta cerai, banding,
+  //               kasasi, PK, akta nikah bentuk lama
+  //   "kosakata"  kata yang berarti keadaan, bukan teks
+  //   "teks"      dicari cepat dulu, diperdalam bila kosong
   let caraKata = "";
   let labelKosakata = "";
 
@@ -456,16 +1060,82 @@ async function cariPerkara(kataCari, pilihan = {}) {
     const pinjam = KOSAKATA_PINJAM.find(([kunci]) => kunci === kataKecil);
     const langsung = KOSAKATA_CARI[kataKecil];
 
-    if (/^\d+$/.test(kata)) {
+    if (/^\d+$/.test(kata) && kata.length <= PANJANG_NOMOR_URUT) {
       // Nomor urut saja - dicocokkan persis, bukan LIKE. "41" tidak boleh
       // memunculkan perkara 410 sampai 419.
-      syarat.push("SUBSTRING_INDEX(p.nomor_perkara, '/', 1) = ?");
-      nilai.push(kata);
+      //
+      // ======================================================================
+      // RENTANG INDEKS DI DEPAN, SUPAYA INDEKS nomor_perkara TERPAKAI
+      // ======================================================================
+      //
+      // SUBSTRING_INDEX sendirian tidak dapat memakai indeks apa pun, dan
+      // rencana MariaDB atasnya menyisir SELURUH register lewat indeks
+      // tanggal_pendaftaran - tiap baris dibaca acak dari tabel perkara yang
+      // 60 MB. Terukur atas sipp_donggala 25 September 2026 (cakram HDD,
+      // kolam InnoDB 16 MB): "419" 3,4 detik; dengan rentang di depannya
+      // 0,57 detik, 13 baris yang sama.
+      //
+      // Rentangnya TIGA, bukan satu awalan "7%". Awalan itu memuat 70-79 dan
+      // 700-799 - kira-kira 260 baris menurut taksiran - sehingga MariaDB
+      // menilai lebih murah menyisir indeks tanggal sambil menunggu 26 baris
+      // cocok, padahal yang sungguh cocok hanya 20: seluruh register
+      // tersisir lagi (EXPLAIN atas "7": type index, key tanggal_pendaftaran).
+      // Ketiga rentang di bawah menaksir 21 baris, dan rencananya kembali
+      // rentang nomor_perkara.
+      //
+      // Ketiganya MENCAKUP SELURUH baris yang lolos SUBSTRING_INDEX = "7":
+      // collation SIPP mengabaikan spasi di ujung, jadi awalannya "7" disusul
+      // nol atau lebih spasi - diikuti garis miring ("7/%"), diikuti spasi
+      // ("7 %"), atau tanpa garis miring sama sekali (= "7"). Kata ini hanya
+      // angka, jadi tidak ada wildcard LIKE yang dapat ikut terbawa. Syarat
+      // SUBSTRING_INDEX TETAP dipasang, jadi jawabannya tidak berubah sedikit
+      // pun - "7 x/..." yang lolos "7 %" dibuang olehnya.
+      syarat.push(
+        `((p.nomor_perkara LIKE ? OR p.nomor_perkara LIKE ? OR p.nomor_perkara = ?)
+          AND SUBSTRING_INDEX(p.nomor_perkara, '/', 1) = ?)`
+      );
+      nilai.push(`${kata}/%`, `${kata} %`, kata, kata);
       caraKata = "tepat";
+    } else if (/^\d+$/.test(kata)) {
+      // Angka yang terlalu panjang untuk nomor urut: NIK/telepon pihak atau
+      // nomor kutipan akta nikah 16 digit. Dicocokkan sebagian (LIKE), sebab
+      // yang diingat petugas sering hanya ekor NIK-nya.
+      //
+      // Perkaranya DIJEMPUT lebih dahulu lalu dipakai sebagai daftar id -
+      // pola yang sama dengan tag. Syarat EXISTS di dalam kueri utama
+      // dievaluasi untuk tiap baris register yang disisir, dan untuk nomor
+      // yang jarang cocok itu berarti SELURUH register.
+      const suka = `%${kata}%`;
+      const idCocok = await idPerkaraBerIdentitas(suka);
+      if (idCocok === null) {
+        // Pihak yang cocok terlalu banyak untuk dijemput (sepotong NIK yang
+        // pendek) - bentuk sambungan yang lengkap dipakai. Lebih lambat,
+        // tetapi tidak ada perkara yang terpotong diam-diam.
+        syarat.push(
+          `(${syaratIdentitasPihak()}
+            OR EXISTS (SELECT 1 FROM perkara_data_pernikahan an
+                        WHERE an.perkara_id = p.perkara_id AND an.no_kutipan_akta_nikah LIKE ?))`
+        );
+        for (let i = 0; i < TABEL_PIHAK.length; i += 1) nilai.push(suka, suka);
+        nilai.push(suka);
+      } else if (idCocok.length === 0) {
+        // Tidak ada yang cocok: nol baris, dan kueri utama tidak perlu jalan.
+        return kosong();
+      } else {
+        syarat.push(`p.perkara_id IN (${idCocok.map(() => "?").join(", ")})`);
+        nilai.push(...idCocok);
+      }
+      caraKata = "identitas";
     } else if (kata.includes("/")) {
-      syarat.push("p.nomor_perkara LIKE ?");
-      nilai.push(`%${kata}%`);
-      caraKata = "tepat";
+      // Bukan hanya nomor perkara: nomor akta cerai ("376/AC/2026/PA.Dgl"),
+      // nomor banding, kasasi, PK, dan nomor kutipan akta nikah bentuk lama
+      // juga bergaris miring. Dulu semuanya dicari sebagai nomor perkara dan
+      // nihil - 4.527 perkara punya nomor akta cerai yang tidak dapat dicari.
+      //
+      // Syaratnya BELUM dipasang di sini - dipasang saat dijalankan, sebab
+      // nomor perkara dan nomor lain dicari BERTAHAP (lihat cabang "nomor" di
+      // bawah), sama seperti lapis cepat dan lapis dalam kata teks.
+      caraKata = "nomor";
     } else if (langsung) {
       syarat.push(langsung.sql);
       labelKosakata = langsung.label;
@@ -487,10 +1157,8 @@ async function cariPerkara(kataCari, pilihan = {}) {
   }
 
   if (cleanText(namaPihak)) {
-    syarat.push(
-      "EXISTS (SELECT 1 FROM v_pihak_perkara vp WHERE vp.perkara_id = p.perkara_id AND vp.nama LIKE ?)"
-    );
-    nilai.push(`%${cleanText(namaPihak)}%`);
+    syarat.push(syaratPihak(["nama"]));
+    nilai.push(...nilaiPihak(`%${cleanText(namaPihak)}%`));
   }
 
   // Petugas: hakim, panitera, atau juru sita mana pun pada perkara itu.
@@ -528,9 +1196,41 @@ async function cariPerkara(kataCari, pilihan = {}) {
   }
 
   // Jenis putusan - Dikabulkan, Ditolak, Dicabut, dan seterusnya.
+  //
+  // ==========================================================================
+  // NAMANYA DIBACA LEWAT JOIN, SAMA DENGAN KARTU HASILNYA
+  // ==========================================================================
+  //
+  // Saringan ini dulu hanya membaca pu.status_putusan_nama, dan kolom itu
+  // kosong pada 9.474 dari 9.993 baris - 94,8%, terukur di salinan satker 25
+  // September 2026. Akibatnya satu layar menjawab dua angka untuk satu
+  // pertanyaan: chip tag dan kartu hasil membaca namanya lewat JOIN,
+  // sedangkan kotak isian ini tidak.
+  //
+  //   "Dicabut"     lewat kolom nama saja  46   lewat JOIN    535
+  //   "Dikabulkan"  lewat kolom nama saja 447   lewat JOIN  8.909
+  //
+  // Kolom namanya TIDAK dibuang - ia masih terisi pada 519 baris, dan di
+  // situlah satu-satunya tempat namanya tercatat bila status_putusan_id
+  // menunjuk baris yang sudah tidak ada. Karena itu COALESCE keduanya: kolom
+  // nama lebih dahulu bila terisi, lalu nama dari JOIN.
+  //
+  // CONVERT ... USING utf8 pada KEDUA sisinya, bukan salah satu:
+  // perkara_putusan.status_putusan_nama ber-collation latin1_swedish_ci
+  // sedangkan status_putusan.nama latin1_general_ci, dan COALESCE atas
+  // campuran keduanya ditolak MariaDB dengan ERROR 1267. Galat itu
+  // menjatuhkan SELURUH kueri, bukan kolom ini saja - jadi satu saringan yang
+  // dipakai panitera akan memulangkan nol baris tanpa sebab yang terlihat.
+  // Pola yang sama sudah dipakai kartu hasil di bawah.
   if (cleanText(statusPutusan)) {
     syarat.push(
-      "EXISTS (SELECT 1 FROM perkara_putusan pu WHERE pu.perkara_id = p.perkara_id AND pu.status_putusan_nama LIKE ?)"
+      `EXISTS (SELECT 1 FROM perkara_putusan pu
+                LEFT JOIN status_putusan sp ON sp.id = pu.status_putusan_id
+               WHERE pu.perkara_id = p.perkara_id
+                 AND COALESCE(
+                       NULLIF(CONVERT(pu.status_putusan_nama USING utf8), ''),
+                       CONVERT(sp.nama USING utf8)
+                     ) LIKE ?)`
     );
     nilai.push(`%${cleanText(statusPutusan)}%`);
   }
@@ -567,10 +1267,8 @@ async function cariPerkara(kataCari, pilihan = {}) {
   // Alamat pihak - untuk pertanyaan kewilayahan: berapa perkara dari desa
   // ini, dari kecamatan ini.
   if (cleanText(alamatPihak)) {
-    syarat.push(
-      "EXISTS (SELECT 1 FROM v_pihak_perkara vp WHERE vp.perkara_id = p.perkara_id AND vp.alamat LIKE ?)"
-    );
-    nilai.push(`%${cleanText(alamatPihak)}%`);
+    syarat.push(syaratPihak(["alamat"]));
+    nilai.push(...nilaiPihak(`%${cleanText(alamatPihak)}%`));
   }
 
   // KUA tempat nikah. Dipakai saat menyiapkan pemberitahuan akta cerai ke
@@ -591,7 +1289,10 @@ async function cariPerkara(kataCari, pilihan = {}) {
   const kunciEcourt = cleanText(ecourt);
   if (kunciEcourt && ECOURT_SYARAT[kunciEcourt]) syarat.push(ECOURT_SYARAT[kunciEcourt]);
 
-  const kunciRelaas = cleanText(relaas);
+  // Kunci lama dipetakan lebih dahulu, supaya layar yang belum diperbarui
+  // tidak kehilangan saringannya dalam diam.
+  const kunciRelaasMasuk = cleanText(relaas);
+  const kunciRelaas = RELAAS_KUNCI_LAMA[kunciRelaasMasuk] || kunciRelaasMasuk;
   if (kunciRelaas && RELAAS_SYARAT[kunciRelaas]) syarat.push(RELAAS_SYARAT[kunciRelaas]);
 
   // Rentang TANGGAL PUTUSAN, terpisah dari rentang pendaftaran.
@@ -636,6 +1337,21 @@ async function cariPerkara(kataCari, pilihan = {}) {
     nilai.push(alur);
   }
 
+  // Daftar id dari tag. KOSONG berarti tidak ada yang cocok - dan itu harus
+  // memulangkan nol baris, bukan mengabaikan tagnya. Mengabaikannya akan
+  // menampilkan seluruh register seolah tagnya menyala.
+  if (Array.isArray(idTag)) {
+    if (idTag.length === 0) return kosong();
+    const isianId = idTag.map(() => "?").join(", ");
+    syarat.push(`p.perkara_id IN (${isianId})`);
+    nilai.push(...idTag.map((x) => Number(x) || 0));
+  }
+
+  if (lingkupTanggal && lingkupTanggal.sql) {
+    syarat.push(`(${lingkupTanggal.sql})`);
+    nilai.push(...(lingkupTanggal.nilai || []));
+  }
+
   // Status dibaca dari tabel putusan. Ditulis sebagai EXISTS supaya perkara
   // dengan lebih dari satu baris putusan tidak muncul berkali-kali.
   const STATUS = {
@@ -653,10 +1369,25 @@ async function cariPerkara(kataCari, pilihan = {}) {
       "EXISTS (SELECT 1 FROM perkara_putusan pu WHERE pu.perkara_id = p.perkara_id AND pu.tanggal_putusan IS NOT NULL AND pu.tanggal_bht IS NULL)",
     sudah_bht:
       "EXISTS (SELECT 1 FROM perkara_putusan pu WHERE pu.perkara_id = p.perkara_id AND pu.tanggal_bht IS NOT NULL)",
+    // ======================================================================
+    // DIBACA DARI status_putusan_id, BUKAN DARI tanggal_cabut/tanggal_gugur
+    // ======================================================================
+    //
+    // Terukur di salinan satker 25 September 2026: tanggal_cabut terisi pada
+    // 47 perkara, sedangkan status putusannya "Dicabut" pada 535 - 488
+    // perkara (91%) tidak terjaring tanpa satu pun galat. tanggal_gugur 6
+    // lawan 379.
+    //
+    // "Digugurkan" dan "Gugur" dua id berbeda dengan arti yang sama, karena
+    // itu yang dicocokkan NAMAnya di tabel status_putusan.
     cabut:
-      "EXISTS (SELECT 1 FROM perkara_putusan pu WHERE pu.perkara_id = p.perkara_id AND pu.tanggal_cabut IS NOT NULL)",
+      `EXISTS (SELECT 1 FROM perkara_putusan pu
+                JOIN status_putusan sp ON sp.id = pu.status_putusan_id
+               WHERE pu.perkara_id = p.perkara_id AND sp.nama = 'Dicabut')`,
     gugur:
-      "EXISTS (SELECT 1 FROM perkara_putusan pu WHERE pu.perkara_id = p.perkara_id AND pu.tanggal_gugur IS NOT NULL)",
+      `EXISTS (SELECT 1 FROM perkara_putusan pu
+                JOIN status_putusan sp ON sp.id = pu.status_putusan_id
+               WHERE pu.perkara_id = p.perkara_id AND sp.nama IN ('Digugurkan', 'Gugur'))`,
   };
 
   // Kunci status dicocokkan dengan daftar tertutup di atas - bukan disambung
@@ -670,9 +1401,9 @@ async function cariPerkara(kataCari, pilihan = {}) {
   // Tanpa satu pun syarat DAN tanpa kata bebas, kuerinya akan memuat seluruh
   // register. Yang keluar bukan hasil pencarian melainkan daftar acak
   // sebanyak batas - dan itu menyesatkan orang yang mengiranya hasil.
-  if (syarat.length === 0 && caraKata !== "teks") return [];
-
-  const maksBaris = Math.min(Math.max(Number(batas) || 25, 1), 200);
+  // Kata teks dan kata bergaris miring memasang syaratnya sendiri saat
+  // dijalankan, jadi keduanya tidak pernah "tanpa syarat".
+  if (syarat.length === 0 && caraKata !== "teks" && caraKata !== "nomor") return kosong();
 
   // Kuerinya ditulis harfiah di dalam runQuery, tidak disusun dari peubah.
   //
@@ -680,49 +1411,104 @@ async function cariPerkara(kataCari, pilihan = {}) {
   // dengan SELECT - penjagaan statis atas sambungan baca-saja ke basis data
   // pengadilan yang sedang dipakai. Menyusunnya dari peubah membuat penjagaan
   // itu tidak dapat lagi membacanya.
-  const jalankan = (syaratPakai, nilaiPakai) =>
+  //
+  // Satu baris lebih banyak dari batasnya diminta, supaya "masih ada lagi"
+  // diketahui tanpa kueri COUNT terpisah. Baris kelebihannya dibuang di bawah.
+  //
+  // ==========================================================================
+  // HALAMANNYA DITENTUKAN DULU, BARU DISAMBUNG KE PUTUSAN
+  // ==========================================================================
+  //
+  // Syarat, urutan, dan LIMIT/OFFSET dijalankan di tabel turunan `halaman`
+  // yang hanya memulangkan perkara_id - sama persis dengan kueri lama,
+  // termasuk urutannya - lalu barulah baris halaman itu disambung ke
+  // perkara dan ringkasan putusannya.
+  //
+  // Bentuk lama menyambung ringkasan putusan pada TIAP baris yang disisir,
+  // termasuk baris yang dilompati OFFSET: halaman kedua berisi 500 membayar
+  // 1.001 sambungan untuk 460 baris. Terukur atas sipp_donggala 26 September
+  // 2026 (HDD, kolam InnoDB 16 MB), kueri utama saja:
+  //
+  //   tahun 2025, batas 500, lewati 500     4.022 ms -> 361 ms
+  //   jenis Cerai Gugat, batas 100, lewati 200 91 ms ->  12 ms
+  //   kata "Rahmawati" (lapis cepat)         2.980 ms -> 1.909 ms
+  //   tahun 2025, batas 25, halaman pertama     12 ms ->  11 ms
+  //
+  // Seluruh syarat hanya menyebut alias `p` (dan alias subkuerinya
+  // sendiri), jadi syarat yang sama dipakai di dalam `halaman` tanpa diubah.
+  // Urutan akhirnya diulang di luar, sebab urutan tabel turunan tidak
+  // dijamin terbawa ke sambungannya.
+  const jalankan = (syaratPakai, nilaiPakai, ambil = batasBaris + 1, mulai = lewatiBaris) =>
     runQuery(
-      `SELECT p.perkara_id AS perkaraId,
-            p.nomor_perkara AS nomorPerkara,
-            p.jenis_perkara_nama AS jenisPerkara,
-            p.alur_perkara_id AS alurPerkaraId,
-            p.tanggal_pendaftaran AS tanggalDaftar,
+      `SELECT pr.perkara_id AS perkaraId,
+            pr.nomor_perkara AS nomorPerkara,
+            pr.jenis_perkara_nama AS jenisPerkara,
+            pr.alur_perkara_id AS alurPerkaraId,
+            pr.tanggal_pendaftaran AS tanggalDaftar,
             pu.tanggalPutusan AS tanggalPutusan,
             pu.tanggalMinutasi AS tanggalMinutasi,
             pu.tanggalBht AS tanggalBht,
             pu.statusPutusan AS statusPutusan
-       FROM perkara p
+       FROM (SELECT p.perkara_id, p.tanggal_pendaftaran
+               FROM perkara p
+              WHERE ${syaratPakai.join(" AND ")}
+              ORDER BY p.tanggal_pendaftaran DESC, p.perkara_id DESC
+              LIMIT ${Math.max(1, Math.floor(Number(ambil)) || 1)} OFFSET ${Math.max(0, Math.floor(Number(mulai)) || 0)}) halaman
+       JOIN perkara pr ON pr.perkara_id = halaman.perkara_id
        LEFT JOIN (
          SELECT x.perkara_id,
                 MAX(x.tanggal_putusan) AS tanggalPutusan,
                 MAX(x.tanggal_minutasi) AS tanggalMinutasi,
                 MAX(x.tanggal_bht) AS tanggalBht,
-                MAX(x.status_putusan_nama) AS statusPutusan
+                -- status_putusan_nama kosong pada 9.474 dari 9.993 baris
+                -- (94,8% terukur). Yang selalu terisi status_putusan_id.
+                --
+                -- CONVERT ... USING utf8 pada KEDUANYA, bukan pada salah
+                -- satu: perkara_putusan.status_putusan_nama ber-collation
+                -- latin1_swedish_ci sedangkan status_putusan.nama
+                -- latin1_general_ci, dan MAX() atas campuran keduanya
+                -- ditolak MariaDB dengan ERROR 1267. Cara yang sama sudah
+                -- dipakai putusanBanyakPerkara di sippJadwalSidangService,
+                -- dan galat itu pernah membuat seluruh kolom putusan kosong
+                -- tanpa sebab yang terlihat.
+                MAX(COALESCE(
+                  NULLIF(CONVERT(x.status_putusan_nama USING utf8), ''),
+                  CONVERT(sx.nama USING utf8)
+                )) AS statusPutusan
            FROM perkara_putusan x
+           LEFT JOIN status_putusan sx ON sx.id = x.status_putusan_id
           GROUP BY x.perkara_id
-       ) pu ON pu.perkara_id = p.perkara_id
-      WHERE ${syaratPakai.join(" AND ")}
-      ORDER BY p.tanggal_pendaftaran DESC, p.perkara_id DESC
-      LIMIT ${maksBaris}`,
+       ) pu ON pu.perkara_id = pr.perkara_id
+      ORDER BY halaman.tanggal_pendaftaran DESC, halaman.perkara_id DESC`,
       nilaiPakai
     );
 
-  // --- lapis cepat: nomor, jenis, nama pihak ---
+  // --- lapis cepat: nomor, jenis, nama pihak, nama kuasa hukum ---
+  //
+  // Nama pihak dicari langsung di keenam tabel pihak, bukan lewat
+  // v_pihak_perkara - sebabnya pada TABEL_PIHAK. Nama kuasa hukum masuk
+  // lapis cepat sejak 25 September 2026: nama advokat dicari sesering nama
+  // pihak di meja pelayanan, dan tabelnya kecil (878 baris di satker).
   const SYARAT_CEPAT = `(p.nomor_perkara LIKE ?
           OR p.jenis_perkara_nama LIKE ?
-          OR EXISTS (SELECT 1 FROM v_pihak_perkara vp
-                      WHERE vp.perkara_id = p.perkara_id AND vp.nama LIKE ?))`;
+          OR ${syaratPihak(["nama"])}
+          OR EXISTS (SELECT 1 FROM perkara_pengacara kh
+                      WHERE kh.perkara_id = p.perkara_id AND kh.nama LIKE ?))`;
+  const nilaiCepat = (suka) => [suka, suka, ...nilaiPihak(suka), suka];
 
   // --- lapis dalam: seluruh yang dijangkau pencarian lanjutan ---
   //
   // Apostrof dibuang dari kolom teks panjang DAN dari kata carinya. Yang
   // tertulis di SIPP "ba’da dukhul" dengan apostrof miring U+2019, sehingga
   // mengetik "bada dukhul" maupun "ba'da dukhul" sama-sama nihil tanpa ini.
+  //
+  // Agenda sidang ditambahkan 25 September 2026 ("pembuktian", "mediasi",
+  // "ikrar talak" - 19.508 dari 20.109 baris jadwal beragenda).
   const SYARAT_DALAM = `(p.nomor_perkara LIKE ?
           OR p.jenis_perkara_nama LIKE ?
-          OR EXISTS (SELECT 1 FROM v_pihak_perkara vp
-                      WHERE vp.perkara_id = p.perkara_id
-                        AND (vp.nama LIKE ? OR vp.alamat LIKE ?))
+          OR ${syaratPihak(["nama", "alamat"])}
+          OR EXISTS (SELECT 1 FROM perkara_pengacara kh
+                      WHERE kh.perkara_id = p.perkara_id AND kh.nama LIKE ?)
           OR EXISTS (SELECT 1 FROM perkara_data_pernikahan dn
                       WHERE dn.perkara_id = p.perkara_id AND dn.kua_tempat_nikah LIKE ?)
           OR EXISTS (SELECT 1 FROM perkara_pertimbangan_hukum ph
@@ -734,30 +1520,127 @@ async function cariPerkara(kataCari, pilihan = {}) {
           OR EXISTS (SELECT 1 FROM perkara_panitera_pn pp
                       WHERE pp.perkara_id = p.perkara_id AND pp.panitera_nama LIKE ?)
           OR EXISTS (SELECT 1 FROM perkara_jurusita jr
-                      WHERE jr.perkara_id = p.perkara_id AND jr.jurusita_nama LIKE ?))`;
+                      WHERE jr.perkara_id = p.perkara_id AND jr.jurusita_nama LIKE ?)
+          OR EXISTS (SELECT 1 FROM perkara_jadwal_sidang jd
+                      WHERE jd.perkara_id = p.perkara_id AND jd.agenda LIKE ?))`;
+  const nilaiDalam = (suka, sukaDalam) => [
+    suka,
+    suka,
+    ...nilaiPihak(suka, 2),
+    suka,
+    suka,
+    sukaDalam,
+    sukaDalam,
+    suka,
+    suka,
+    suka,
+    suka,
+  ];
 
   let rows;
-  let diperdalam = false;
+  let lapis = "";
+  // Benar bila perkara halaman ini ketemu lewat NOMOR LAIN (akta cerai,
+  // banding, kasasi, PK, akta nikah) - hanya saat itulah keterangan nomor
+  // lain dilampirkan.
+  let nomorLain = false;
 
-  if (caraKata === "teks") {
+  if (caraKata === "nomor") {
+    // ========================================================================
+    // NOMOR PERKARA DULU; NOMOR LAIN HANYA BILA NOMOR PERKARA KOSONG
+    // ========================================================================
+    //
+    // Nomor lain dulu digabung ke SYARAT YANG SAMA (nomor perkara ATAU id
+    // bernomor lain cocok) dan diurutkan bersama menurut tanggal daftar.
+    // Potongan nomor perkara - cara yang dianjurkan layar sendiri - lalu
+    // dibanjiri perkara lain: 5.388 nomor kutipan akta nikah bentuk lama
+    // bergaris miring ("0074/006/IV/2019"), dan pemiliknya kebanyakan perkara
+    // yang lebih baru. Terukur 26 September 2026 atas sipp_donggala, halaman
+    // pertama (100 baris):
+    //
+    //   "/2019"  kode lama 100/100 bernomor 2019   gabungan 0/100
+    //   "12/"    kode lama 100/100 bernomor "12/"  gabungan 23/100
+    //   "419/"   kode lama 13 baris                gabungan 22 (9 tambahan)
+    //
+    // Nomor perkara tidak pernah memuat "/AC/", "PTA", "K/Ag", "PK/", atau
+    // bulan Romawi akta nikah ("/IV/") - terukur 0 dari 10.120 - jadi nomor
+    // akta cerai, banding, kasasi, PK, dan akta nikah yang diketik utuh, atau
+    // sepotong yang memuat penanda itu, selalu KOSONG di tahap pertama dan
+    // dicari di tahap kedua. Nomor akta cerai, banding, dan kasasi yang
+    // tersimpan tidak satu pun merupakan potongan nomor perkara (terukur);
+    // akta nikah 16, dan keenam belasnya ISINYA nomor perkara yang salah
+    // ketik ("140/Pdt.G/2016/Pa.Dgl") - mengetiknya menemukan perkara bernomor
+    // itu. Yang kehilangan tahap kedua hanya potongan yang memang cocok dengan
+    // nomor perkara - dan untuk itu jawabannya kini SAMA dengan kode lama:
+    // himpunan, urutan, dan hitungannya.
+    //
+    // "Kosong" berarti kosong SAMA SEKALI, bukan halaman ini saja - alasannya
+    // sama dengan lapis kata teks di bawah.
     const suka = `%${kata}%`;
-    rows = await jalankan([...syarat, SYARAT_CEPAT], [...nilai, suka, suka, suka]);
+    // Nomor perkara yang cocok dijemput lebih dahulu lewat indeksnya - lihat
+    // idPerkaraBerNomor(). Tidak satu pun cocok: kueri utama tahap pertama
+    // tidak perlu jalan sama sekali.
+    const idNomor = await idPerkaraBerNomor(suka);
+    let nomorKosong = idNomor.length === 0;
+    rows = [];
+    if (!nomorKosong) {
+      const pakaiDaftar = idNomor.length <= PAGU_ID_NOMOR;
+      const syaratNomor = [
+        ...syarat,
+        pakaiDaftar ? `p.perkara_id IN (${idNomor.map(() => "?").join(", ")})` : "p.nomor_perkara LIKE ?",
+      ];
+      const nilaiNomor = [...nilai, ...(pakaiDaftar ? idNomor : [suka])];
+      rows = await jalankan(syaratNomor, nilaiNomor);
+      nomorKosong = rows.length === 0;
+      if (nomorKosong && lewatiBaris > 0) {
+        const awal = await jalankan(syaratNomor, nilaiNomor, 1, 0);
+        nomorKosong = awal.length === 0;
+      }
+    }
+    if (nomorKosong) {
+      // Dijemput lebih dahulu, bukan ditempel sebagai lima EXISTS: terukur
+      // 25 September 2026, bentuk EXISTS membuat nomor akta cerai 2,4 kali
+      // lebih lambat (3,8 detik menjadi 9,1).
+      const idLain = await idPerkaraBerNomorLain(suka);
+      if (idLain.length > 0) {
+        rows = await jalankan(
+          [...syarat, `p.perkara_id IN (${idLain.map(() => "?").join(", ")})`],
+          [...nilai, ...idLain]
+        );
+        nomorLain = true;
+      }
+    }
+  } else if (caraKata === "teks") {
+    const suka = `%${kata}%`;
+    const syaratCepat = [...syarat, SYARAT_CEPAT];
+    const nilaiCepatPakai = [...nilai, ...nilaiCepat(suka)];
+    rows = await jalankan(syaratCepat, nilaiCepatPakai);
+    lapis = "cepat";
 
     // Diperdalam HANYA bila lapis cepat kosong. Nama pihak dan nomor perkara
     // - yang dicari sembilan dari sepuluh kali - tetap secepat sebelumnya,
     // dan yang tidak ketemu di sana barulah dicari sampai ke isi
     // pertimbangan. Diukur pada SIPP yang berjalan: 0,16 detik lawan 1,39.
-    if (rows.length === 0) {
+    //
+    // "Kosong" berarti kosong SAMA SEKALI, bukan halaman ini saja yang
+    // kosong. Tanpa pemeriksaan halaman awal, meminta halaman sesudah hasil
+    // terakhir lapis cepat akan diam-diam berpindah ke lapis dalam dan
+    // menyuguhkan perkara dari himpunan yang lain sebagai "halaman berikutnya".
+    let cepatKosong = rows.length === 0;
+    if (cepatKosong && lewatiBaris > 0) {
+      const awal = await jalankan(syaratCepat, nilaiCepatPakai, 1, 0);
+      cepatKosong = awal.length === 0;
+    }
+    if (cepatKosong) {
       const sukaDalam = `%${bersihApostrof(kata)}%`;
-      rows = await jalankan(
-        [...syarat, SYARAT_DALAM],
-        [...nilai, suka, suka, suka, suka, suka, sukaDalam, sukaDalam, suka, suka, suka]
-      );
-      diperdalam = rows.length > 0;
+      rows = await jalankan([...syarat, SYARAT_DALAM], [...nilai, ...nilaiDalam(suka, sukaDalam)]);
+      lapis = "dalam";
     }
   } else {
     rows = await jalankan(syarat, nilai);
   }
+
+  const adaLagi = rows.length > batasBaris;
+  if (adaLagi) rows = rows.slice(0, batasBaris);
 
   const hasil = rows.map((row) => ({
     perkaraId: String(row.perkaraId || ""),
@@ -770,6 +1653,26 @@ async function cariPerkara(kataCari, pilihan = {}) {
     tanggalMinutasi: isoTanggal(row.tanggalMinutasi),
     tanggalBht: isoTanggal(row.tanggalBht),
     statusPutusan: cleanText(row.statusPutusan),
+    // Ruas rinci - diisi lengkapiRuas() dengan kueri kedua. Nilai awalnya
+    // "tidak ada"; bila kuerinya gagal, namanya masuk ruasTakTerbaca.
+    jenisPerkaraId: 0,
+    pihak1: "",
+    pihak2: "",
+    sebutanPihak1: "",
+    sebutanPihak2: "",
+    kuasa: "",
+    hakimKetua: "",
+    paniteraPengganti: "",
+    jurusita: "",
+    tahapan: "",
+    proses: "",
+    jumlahSidang: 0,
+    sidangTerakhir: "",
+    sidangBerikut: "",
+    umurHari: null,
+    ecourt: null,
+    nomorAktaCerai: "",
+    tanggalAktaCerai: "",
     // Diisi lampirkanCocok di bawah.
     cocok: [],
   }));
@@ -780,24 +1683,383 @@ async function cariPerkara(kataCari, pilihan = {}) {
     for (const baris of hasil) baris.cocok.push({ medan: "Keadaan", nilai: labelKosakata });
   }
 
-  await lampirkanCocok(hasil, {
-    kata,
-    // Lapis dalam menjangkau alamat, KUA, pertimbangan, dan amar - jadi
-    // keterangannya pun harus dicari di sana, kalau tidak kartunya kembali
-    // tidak menyebut apa pun yang diketik.
-    kataDalam: diperdalam ? kata : "",
-    namaPihak,
-    alamatPihak,
-    hakim,
-    panitera,
-    jurusita,
-    petugas,
-    pertimbangan,
-    amar,
-    kua,
-  });
+  await Promise.all([
+    lengkapiRuas(hasil, tanggalAcuan, ruasTakTerbaca),
+    lampirkanCocok(
+      hasil,
+      {
+        kata,
+        caraKata,
+        // Keterangan nomor lain hanya untuk perkara yang ketemu LEWAT nomor
+        // lain - lihat cabang "nomor" di atas.
+        nomorLain,
+        // Lapis dalam menjangkau alamat, KUA, pertimbangan, amar, petugas, dan
+        // agenda - jadi keterangannya pun harus dicari di sana, kalau tidak
+        // kartunya kembali tidak menyebut apa pun yang diketik.
+        kataDalam: lapis === "dalam" ? kata : "",
+        namaPihak,
+        alamatPihak,
+        hakim,
+        panitera,
+        jurusita,
+        petugas,
+        pertimbangan,
+        amar,
+        kua,
+      },
+      ruasTakTerbaca
+    ),
+  ]);
 
-  return hasil;
+  return {
+    perkara: hasil,
+    adaLagi,
+    lewati: lewatiBaris,
+    batas: batasBaris,
+    lapis,
+    ruasTakTerbaca,
+  };
+}
+
+/**
+ * Bentuk lama: larik hasil saja, halaman pertama.
+ *
+ * Dipertahankan supaya pemanggil yang sudah ada - dan verify-cari-perkara.js
+ * yang mengujinya - tidak berubah. Ruas rinci dan keterangan kecocokannya
+ * tetap ikut, sebab keduanya menempel pada tiap baris.
+ */
+async function cariPerkara(kataCari, pilihan = {}) {
+  const halaman = await cariPerkaraHalaman(kataCari, pilihan);
+  return halaman.perkara;
+}
+
+/**
+ * ============================================================================
+ * RUAS RINCI UNTUK TAMPILAN DAFTAR DAN RINCI
+ * ============================================================================
+ *
+ * Diminta pengguna 25 September 2026 (butir 7): hasil pencarian dapat dilihat
+ * sebagai kotak, daftar, dan rinci - dan tampilan rinci memuat pihak, kuasa,
+ * majelis, tahapan, sidang, umur perkara, e-Court, dan akta cerai.
+ *
+ * ============================================================================
+ * KUERI KEDUA ATAS ID HASIL, BUKAN JOIN KE KUERI PENCARIAN
+ * ============================================================================
+ *
+ * Kueri pencarian menyisir seluruh register untuk menemukan paling banyak
+ * 500 baris. Menempelkan sembilan sambungan ke sana berarti tiap baris yang
+ * DISISIR ikut menanggungnya, padahal yang ditampilkan hanya yang lolos.
+ * Di sini tiap keterangan dibaca dengan SATU kueri berindeks atas daftar
+ * perkara_id hasil - sembilan kueri untuk satu halaman, bukan sembilan per
+ * baris - dan dijalankan bersamaan.
+ *
+ * ============================================================================
+ * ARTI TIAP RUAS
+ * ============================================================================
+ *
+ *   pihak1/pihak2       nama dari perkara_pihak1/perkara_pihak2 menurut
+ *                       urutan, dipisah "; ", apa adanya. pihak2 = sisi
+ *                       Tergugat/Termohon - JANGAN tertukar (pernah dua kali).
+ *   sebutanPihak1/2     sebutanPihakService, menurut alur & jenis_perkara_id
+ *   kuasa               perkara_pengacara yang aktif, DIKELOMPOKKAN MENURUT
+ *                       SISINYA (pihak_ke): "Kuasa Penggugat: A; B; Kuasa
+ *                       Tergugat: C". Sebutannya dari sebutanPihakService
+ *                       .sebutanSatuPihak(pihak_ke, ..., "kuasa") - sumber
+ *                       yang sama dengan sebutanPihak1/2, bukan peta baru.
+ *                       Satu orang (pengacara_id) disebut sekali per sisi.
+ *   hakimKetua          penunjukan AKTIF berjabatan Hakim Ketua (1) atau
+ *                       Hakim Tunggal (3); tahapan terakhir didahulukan -
+ *                       sesudah ikrar talak majelis tahapan 18 yang aktif,
+ *                       majelis tahapan 10 dinonaktifkan SIPP (terukur)
+ *   paniteraPengganti,  penunjukan AKTIF, tahapan terakhir dahulu; satu ORANG
+ *   jurusita            (panitera_id / jurusita_id) disebut sekali, dengan
+ *                       ejaan penunjukan tahapan terakhirnya
+ *   tahapan, proses     perkara.tahapan_terakhir_text / proses_terakhir_text -
+ *                       yang dibaca daftar SIPP sendiri
+ *   jumlahSidang        sidang yang tanggalnya SEBELUM hari ini (yang sudah
+ *                       lewat) - sama dengan sidangLewat pada statusLengkap
+ *   sidangTerakhir      tanggal sidang terakhir sebelum hari ini
+ *   sidangBerikut       tanggal sidang terdekat mulai HARI INI - sidang hari
+ *                       ini belum tentu sudah berlangsung saat layar dibuka
+ *   umurHari            hari kalender sejak daftar sampai putus, atau sampai
+ *                       hari ini (zona Asia/Makassar) bila belum putus
+ *   ecourt              ada tidaknya perkara_efiling_id; null = tak terbaca
+ *   nomorAktaCerai,     perkara_akta_cerai
+ *   tanggalAktaCerai
+ */
+async function lengkapiRuas(hasil, hariIni, takTerbaca = []) {
+  const daftarId = hasil.map((x) => x.perkaraId).filter(Boolean);
+  if (daftarId.length === 0) return;
+
+  const peta = new Map(hasil.map((x) => [x.perkaraId, x]));
+  const isian = daftarId.map(() => "?").join(", ");
+  const baris = (perkaraId) => peta.get(String(perkaraId));
+
+  const baca = async (nama, sql, params) => {
+    try {
+      return { ok: true, baris: await runQuery(sql, params) };
+    } catch (error) {
+      catatTakTerbaca(takTerbaca, nama, error);
+      return { ok: false, baris: [] };
+    }
+  };
+
+  /**
+   * Nama per ORANG, menurut urutan kemunculan pertamanya.
+   *
+   * Kuncinya id orangnya (jurusita_id, panitera_id, pengacara_id), BUKAN
+   * ejaan namanya. SIPP menyimpan nama salinan pada tiap penunjukan, dan orang
+   * yang sama ditunjuk lagi pada tahapan lain dapat tertulis berbeda: terukur
+   * 26 September 2026, jurusita_id 22 aktif dua kali pada lima perkara -
+   * "Mohammad Syukri" (tahapan 10) dan "Mohammad Syukri, S.H." (tahapan 18) -
+   * sehingga kolom Juru sita menulis orang yang sama dua kali. Yang dipakai
+   * ejaan baris PERTAMA menurut ORDER BY kuerinya: tahapan terakhir.
+   *
+   * Baris tanpa id (tidak ada di salinan satker, tetapi SIPP versi lain
+   * mungkin) dikenali lewat namanya, seperti sebelumnya.
+   */
+  const unikOrang = (daftar) => {
+    const lihat = new Set();
+    const keluar = [];
+    for (const r of daftar) {
+      const bersih = cleanText(r.nama);
+      if (!bersih) continue;
+      const orang = Number(r.orang) || 0;
+      const kunci = orang > 0 ? `id:${orang}` : `nama:${bersih}`;
+      if (lihat.has(kunci)) continue;
+      lihat.add(kunci);
+      keluar.push(bersih);
+    }
+    return keluar;
+  };
+
+  // Umur tidak memerlukan kueri: tanggal daftar dan putusnya sudah ada.
+  for (const x of hasil) {
+    x.umurHari = x.tanggalDaftar ? selisihHari(x.tanggalDaftar, x.tanggalPutusan || hariIni) : null;
+  }
+
+  const [perkara, pihak, kuasa, hakim, panitera, jurusita, sidang, efiling, akta] = await Promise.all([
+    baca(
+      "perkara",
+      `SELECT pr.perkara_id AS perkaraId,
+              pr.jenis_perkara_id AS jenisPerkaraId,
+              pr.tahapan_terakhir_text AS tahapan,
+              pr.proses_terakhir_text AS proses
+         FROM perkara pr
+        WHERE pr.perkara_id IN (${isian})`,
+      daftarId
+    ),
+    // Kedua sisi dalam satu kueri, masing-masing ditandai kedudukannya.
+    baca(
+      "pihak",
+      `SELECT u.ke, u.perkaraId, u.nama
+         FROM (SELECT 1 AS ke, a.perkara_id AS perkaraId, a.nama AS nama, a.urutan AS urutan, a.id AS id
+                 FROM perkara_pihak1 a WHERE a.perkara_id IN (${isian})
+               UNION ALL
+               SELECT 2 AS ke, b.perkara_id AS perkaraId, b.nama AS nama, b.urutan AS urutan, b.id AS id
+                 FROM perkara_pihak2 b WHERE b.perkara_id IN (${isian})) u
+        ORDER BY u.perkaraId, u.ke, u.urutan, u.id`,
+      [...daftarId, ...daftarId]
+    ),
+    // Sisinya (pihak_ke) ikut dibaca: kuasa kedua pihak dulu digabung dalam
+    // satu kolom tanpa sisi, dan kuasa Tergugat/Termohon terbaca sebagai kuasa
+    // Penggugat - lihat pengisiannya di bawah.
+    baca(
+      "kuasa",
+      `SELECT k.perkara_id AS perkaraId, k.pihak_ke AS pihakKe, k.pengacara_id AS orang, k.nama AS nama
+         FROM perkara_pengacara k
+        WHERE k.perkara_id IN (${isian}) AND k.aktif = 'Y'
+        ORDER BY k.perkara_id, k.pihak_ke, k.urutan, k.id`,
+      daftarId
+    ),
+    baca(
+      "hakimKetua",
+      `SELECT hk.perkara_id AS perkaraId, hk.hakim_nama AS nama
+         FROM perkara_hakim_pn hk
+        WHERE hk.perkara_id IN (${isian}) AND hk.aktif = 'Y'
+        ORDER BY hk.perkara_id,
+                 (hk.jabatan_hakim_id IN (1, 3)) DESC,
+                 hk.tahapan_id DESC,
+                 hk.urutan ASC,
+                 hk.id ASC`,
+      daftarId
+    ),
+    baca(
+      "paniteraPengganti",
+      `SELECT pn.perkara_id AS perkaraId, pn.panitera_id AS orang, pn.panitera_nama AS nama
+         FROM perkara_panitera_pn pn
+        WHERE pn.perkara_id IN (${isian}) AND pn.aktif = 'Y'
+        ORDER BY pn.perkara_id, pn.tahapan_id DESC, pn.urutan ASC, pn.id ASC`,
+      daftarId
+    ),
+    baca(
+      "jurusita",
+      `SELECT js.perkara_id AS perkaraId, js.jurusita_id AS orang, js.jurusita_nama AS nama
+         FROM perkara_jurusita js
+        WHERE js.perkara_id IN (${isian}) AND js.aktif = 'Y'
+        ORDER BY js.perkara_id, js.tahapan_id DESC, js.urutan ASC, js.id ASC`,
+      daftarId
+    ),
+    // Tanggal acuan lewat tanda tanya, bukan CURDATE(): zona peladen
+    // basis data tidak dijamin zona pengadilan.
+    baca(
+      "sidang",
+      `SELECT j.perkara_id AS perkaraId,
+              SUM(CASE WHEN j.tanggal_sidang < ? THEN 1 ELSE 0 END) AS jumlahLewat,
+              MAX(CASE WHEN j.tanggal_sidang < ? THEN j.tanggal_sidang END) AS terakhir,
+              MIN(CASE WHEN j.tanggal_sidang >= ? THEN j.tanggal_sidang END) AS berikut
+         FROM perkara_jadwal_sidang j
+        WHERE j.perkara_id IN (${isian})
+        GROUP BY j.perkara_id`,
+      [hariIni, hariIni, hariIni, ...daftarId]
+    ),
+    baca(
+      "ecourt",
+      `SELECT k.perkara_id AS perkaraId
+         FROM perkara_efiling_id k
+        WHERE k.perkara_id IN (${isian})
+        GROUP BY k.perkara_id`,
+      daftarId
+    ),
+    baca(
+      "aktaCerai",
+      `SELECT ac.perkara_id AS perkaraId, ac.nomor_akta_cerai AS nomor, ac.tgl_akta_cerai AS tanggal
+         FROM perkara_akta_cerai ac
+        WHERE ac.perkara_id IN (${isian})`,
+      daftarId
+    ),
+  ]);
+
+  for (const r of perkara.baris) {
+    const x = baris(r.perkaraId);
+    if (!x) continue;
+    x.jenisPerkaraId = Number(r.jenisPerkaraId) || 0;
+    x.tahapan = cleanText(r.tahapan);
+    x.proses = cleanText(r.proses);
+  }
+
+  // Sebutan dihitung SESUDAH jenis_perkara_id terbaca - cerai talak dan izin
+  // poligami bernomor Pdt.G tetapi bersebutan Pemohon/Termohon, dan hanya
+  // jenis_perkara_id yang membedakannya. Bila kueri perkara gagal, sebutannya
+  // tetap disusun dari alur dan nama jenis (cadangan kata milik layanan itu).
+  for (const x of hasil) {
+    const sebutan = sebutanPihakService.sebutanPihakPerkara({
+      alurPerkaraId: x.alurPerkaraId || null,
+      jenisPerkaraId: x.jenisPerkaraId || null,
+      jenisPerkaraNama: x.jenisPerkara,
+      nomorPerkara: x.nomorPerkara,
+    });
+    x.sebutanPihak1 = sebutan.satu;
+    x.sebutanPihak2 = sebutan.dua;
+  }
+
+  const kumpul = (daftarBaris) => {
+    const himpun = new Map();
+    for (const r of daftarBaris) {
+      const kunci = String(r.perkaraId);
+      if (!himpun.has(kunci)) himpun.set(kunci, []);
+      himpun.get(kunci).push(r);
+    }
+    return himpun;
+  };
+
+  for (const [perkaraId, daftar] of kumpul(pihak.baris)) {
+    const x = baris(perkaraId);
+    if (!x) continue;
+    // Nama pihak TIDAK dibuat unik: dua orang bernama sama pada satu sisi
+    // tetap dua orang, dan ruas ini "apa adanya dari SIPP".
+    const sisi = (ke) =>
+      daftar
+        .filter((r) => Number(r.ke) === ke)
+        .map((r) => cleanText(r.nama))
+        .filter(Boolean)
+        .join("; ");
+    x.pihak1 = sisi(1);
+    x.pihak2 = sisi(2);
+  }
+
+  // ==========================================================================
+  // KUASA DISEBUT BESERTA SISINYA
+  // ==========================================================================
+  //
+  // Dulu seluruh kuasa aktif digabung "A; B" tanpa sisi. Terukur 26 September
+  // 2026 atas sipp_donggala: 28 perkara berkuasa di KEDUA sisi (mis.
+  // 120/Pdt.G/2016 tertulis "Erik Cahyono ,SH; Misbahuddin, S.H., M.H" -
+  // kuasa Pemohon dan kuasa Termohon), dan 21 perkara yang kuasanya HANYA
+  // milik pihak kedua (mis. 375/Pdt.G/2026, tiga kuasa Termohon) - di kolom
+  // yang bersebelahan dengan "Pihak pertama", pembaca lazim mengiranya kuasa
+  // Penggugat. Keliru menyebut sisi sudah dua kali terjadi di ALETA
+  // (pelaku/lawan); di sini sisinya disebut, dari sumber sebutan yang sama
+  // dengan sebutanPihak1/2.
+  //
+  // pihak_ke di satker hanya 1 atau 2 (878 baris, terukur). Nilai lain - SIPP
+  // versi lain - disebut "Kuasa" saja, TIDAK ditebak sebagai sisi pertama
+  // (sebutanSatuPihak memperlakukan selain 2 sebagai pihak pertama).
+  for (const [perkaraId, daftar] of kumpul(kuasa.baris)) {
+    const x = baris(perkaraId);
+    if (!x) continue;
+    const bahan = {
+      alurPerkaraId: x.alurPerkaraId || null,
+      jenisPerkaraId: x.jenisPerkaraId || null,
+      jenisPerkaraNama: x.jenisPerkara,
+      nomorPerkara: x.nomorPerkara,
+    };
+    const persisi = new Map([
+      [1, []],
+      [2, []],
+      [0, []],
+    ]);
+    for (const r of daftar) {
+      const ke = Number(r.pihakKe);
+      persisi.get(ke === 1 || ke === 2 ? ke : 0).push(r);
+    }
+    const bagian = [];
+    for (const [ke, isi] of persisi) {
+      const nama = unikOrang(isi);
+      if (nama.length === 0) continue;
+      const sebutan = ke === 0 ? "Kuasa" : sebutanPihakService.sebutanSatuPihak(ke, bahan, "kuasa");
+      bagian.push(`${sebutan}: ${nama.join("; ")}`);
+    }
+    x.kuasa = bagian.join("; ");
+  }
+
+  for (const [perkaraId, daftar] of kumpul(hakim.baris)) {
+    const x = baris(perkaraId);
+    // Baris pertama sudah ketua menurut ORDER BY kuerinya. Bila tidak ada
+    // yang berjabatan ketua/tunggal, yang pertama menurut urutan dipakai -
+    // sama dengan ketuaMajelisTercatat pada penunjukanService.
+    if (x) x.hakimKetua = cleanText(daftar[0] && daftar[0].nama);
+  }
+
+  for (const [perkaraId, daftar] of kumpul(panitera.baris)) {
+    const x = baris(perkaraId);
+    if (x) x.paniteraPengganti = unikOrang(daftar).join("; ");
+  }
+
+  for (const [perkaraId, daftar] of kumpul(jurusita.baris)) {
+    const x = baris(perkaraId);
+    if (x) x.jurusita = unikOrang(daftar).join("; ");
+  }
+
+  for (const r of sidang.baris) {
+    const x = baris(r.perkaraId);
+    if (!x) continue;
+    x.jumlahSidang = Number(r.jumlahLewat) || 0;
+    x.sidangTerakhir = isoTanggal(r.terakhir);
+    x.sidangBerikut = isoTanggal(r.berikut);
+  }
+
+  if (efiling.ok) {
+    const ada = new Set(efiling.baris.map((r) => String(r.perkaraId)));
+    for (const x of hasil) x.ecourt = ada.has(x.perkaraId);
+  }
+
+  for (const r of akta.baris) {
+    const x = baris(r.perkaraId);
+    if (!x) continue;
+    x.nomorAktaCerai = cleanText(r.nomor);
+    x.tanggalAktaCerai = isoTanggal(r.tanggal);
+  }
 }
 
 /** Kunci status yang diterima cariPerkara, untuk ditampilkan di layar. */
@@ -1683,10 +2945,26 @@ module.exports = {
   PUTUSAN_PENCARIAN,
   RELAAS_PENCARIAN,
   UMUR_PENCARIAN,
+  // Dibuka supaya penjaga uji dapat MEMBANDINGKANNYA dengan syarat tag
+  // tunggakan pada tagPerkaraService. Keduanya tidak dapat berbagi teks -
+  // saringan ini memakai NOT EXISTS berkorelasi sedangkan tag memakai
+  // sambungan turunan yang jauh lebih murah - tetapi JAWABANNYA wajib sama,
+  // dan yang menahannya penjaga, bukan kebetulan.
+  UMUR_SYARAT,
   STATUS_PENCARIAN,
   biayaPerkara,
   faktaPenilaianSk,
   cariPerkara,
+  cariPerkaraHalaman,
+  // Dibuka untuk penjaga uji: daftar tabel pihak yang harus dijangkau, pagu
+  // baris per halaman, dan panjang nomor urut.
+  TABEL_PIHAK,
+  PAGU_BARIS,
+  PANJANG_NOMOR_URUT,
+  // Galat habis waktu pencarian dalam bahasa orangnya - dipakai rute cari,
+  // yang juga menjemput daftar tag sebelum pencariannya sendiri.
+  KODE_PENCARIAN_HABIS_WAKTU,
+  pesanGalatPencarian,
   identitasPerkara,
   isoTanggal,
   riwayatPenundaan,

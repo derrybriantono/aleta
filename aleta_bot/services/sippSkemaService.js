@@ -103,6 +103,10 @@ const TABEL = [
   "perkara_ikrar_talak",
   "status_putusan",
   "sumber_hukum",
+  // Pertimbangan hukum putusan - dibaca gerbang ukur sebutan sumber hukum
+  // (ukurTipeService). Tanpa didaftarkan, ukurnya menjawab "tabel tidak
+  // terbaca" walau isinya ribuan baris.
+  "perkara_pertimbangan_hukum",
   "perkara_delegasi",
   "perkara_keterangan_saksi",
   // Court Calendar - RENCANA sidang yang disusun majelis di awal perkara.

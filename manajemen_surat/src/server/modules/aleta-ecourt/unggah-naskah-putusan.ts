@@ -1,7 +1,12 @@
 import type { AletaDatabase } from "@/server/db/client";
 
 import { bacaRtfDariBita, tampakRtf } from "@/lib/baca-rtf";
-import { pecahNaskahResmi } from "@/lib/naskah-putusan-resmi";
+import {
+  isiMenunjukPerkara,
+  kenaliNaskahBukanPutusan,
+  nomorPerkaraDariIsi,
+  pecahNaskahResmi,
+} from "@/lib/naskah-putusan-resmi";
 import { naskahDariKerangka, susunKerangka, type KunciBagian } from "@/lib/susunan-putusan";
 import { getGatewayStatusPerkara } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
@@ -51,7 +56,18 @@ const DITUNTUT_SIPP: KunciBagian[] = ["pertimbangan", "amar"];
 
 export type HasilUnggah = {
   ok: boolean;
+  /**
+   * Kode sebab untuk dibaca mesin (ekstensi), berdampingan dengan `sebab` yang
+   * dibaca petugas. Hanya diisi pada penolakan yang punya kodenya sendiri.
+   */
+  alasan?: "nomor_isi_berbeda" | "bukan_putusan";
   sebab?: string;
+  /**
+   * Nomor perkara yang dibaca dari ISI naskah (nomor ber-"Pdt." terbanyak).
+   * Kosong bila isinya tidak menyebut satu pun. Dipulangkan pada unggahan
+   * yang diterima maupun yang ditolak karena nomornya berbeda.
+   */
+  nomorIsi?: string;
   drafId?: string;
   versi?: number;
   /** Panjang tiap bagian, untuk diperlihatkan sebelum apa pun diisikan. */
@@ -76,8 +92,10 @@ const JUDUL: Record<KunciBagian, string> = {
  * Nama berkas dapat diubah siapa saja; kepala berkasnya tidak. Petugas yang
  * menamai PDF-nya ".rtf" akan mendapat sebab yang tepat, bukan naskah yang
  * penuh sampah.
+ *
+ * Dipakai pula rute unggah-sipp: hanya RTF yang isinya diperiksa di sana.
  */
-function kenaliBentuk(bita: Uint8Array): "rtf" | "pdf" | "docx" | "doc" | "teks" {
+export function kenaliBentuk(bita: Uint8Array): "rtf" | "pdf" | "docx" | "doc" | "teks" {
   const kepala = String.fromCharCode(...bita.subarray(0, 8));
   if (kepala.startsWith("%PDF")) return "pdf";
   if (kepala.startsWith("PK")) return "docx";
@@ -120,22 +138,10 @@ export async function unggahNaskahPutusan(
   const nomorPerkara = String(masukan.nomorPerkara ?? "").trim();
   if (!nomorPerkara) return { ok: false, sebab: "Nomor perkara belum disebut." };
 
-  // perkara_id dipakai menomori versi draf. Ekstensi mengirimkannya bila
-  // borang SIPP yang sedang terbuka memuatnya; bila tidak, ia ditanyakan ke
-  // SIPP lewat gerbang - sekali per unggahan, bukan sekali per tampilan
-  // halaman, jadi beratnya tidak pernah terasa petugas.
-  let perkaraId = String(masukan.perkaraId ?? "").trim();
-  if (!perkaraId) {
-    const status = await getGatewayStatusPerkara(nomorPerkara);
-    const identitas = (status.ok ? status.data?.identitas : null) as { perkaraId?: string } | null;
-    perkaraId = String(identitas?.perkaraId ?? "").trim();
-  }
-  if (!perkaraId) {
-    return {
-      ok: false,
-      sebab: `Nomor perkara ${nomorPerkara} tidak ditemukan di SIPP, jadi drafnya tidak dapat ditautkan ke perkara mana pun.`,
-    };
-  }
+  // Berkasnya diperiksa LEBIH DULU daripada perkaranya ditanyakan ke SIPP:
+  // penolakan karena isi (bentuk, bukan putusan, nomor berbeda) tidak butuh
+  // gerbang, dan menanyakan perkara untuk berkas yang pasti ditolak hanya
+  // menambah satu perjalanan ke bot.
   if (!masukan.bita || masukan.bita.length === 0) return { ok: false, sebab: "Berkasnya kosong." };
 
   const bentuk = kenaliBentuk(masukan.bita);
@@ -163,6 +169,64 @@ export async function unggahNaskahPutusan(
     .replace(/\u0000/g, "");
 
   if (!teks) return { ok: false, sebab: "Tidak ada teks yang dapat dibaca dari berkas ini." };
+
+  // ==========================================================================
+  // BERITA ACARA, PENETAPAN HARI SIDANG, DAN RELAAS DITOLAK DENGAN NAMANYA
+  // ==========================================================================
+  //
+  // Ketiganya memuat nomor perkara yang benar, dan PHS bahkan memuat
+  // "MENETAPKAN" sehingga amarnya terpotong. Tanpa penolakan ini naskah itu
+  // tersimpan sebagai draf putusan. Lihat kenaliNaskahBukanPutusan.
+  const bukanPutusan = kenaliNaskahBukanPutusan(teks);
+  if (bukanPutusan) {
+    return {
+      ok: false,
+      alasan: "bukan_putusan",
+      sebab:
+        `Berkas ini ${bukanPutusan.nama} - judulnya "${bukanPutusan.judul.slice(0, 80)}" - ` +
+        "bukan naskah putusan, jadi tidak dijadikan draf. Pilih berkas naskah putusannya.",
+    };
+  }
+
+  // ==========================================================================
+  // NOMOR PERKARA DARI ISI HARUS SAMA DENGAN NOMOR YANG DIMINTA
+  // ==========================================================================
+  //
+  // Nomor permintaan datang dari halaman SIPP atau dari NAMA berkas; nomor isi
+  // datang dari naskahnya sendiri (kepala "Nomor ...", atau nomor terbanyak;
+  // 197 dari 197 naskah sungguhan cocok). Bila keduanya berbeda, yang terpilih
+  // hampir pasti naskah perkara lain - dan draf itu kelak diisikan ke borang
+  // perkara INI. Isi yang tidak menyebut nomor ber-"Pdt." tidak ditolak di
+  // sini (naskah tempelan boleh tanpa kepala); nomorIsi-nya dipulangkan kosong.
+  const dariIsi = nomorPerkaraDariIsi(teks);
+  if (dariIsi.nomor && !isiMenunjukPerkara(dariIsi, nomorPerkara)) {
+    return {
+      ok: false,
+      alasan: "nomor_isi_berbeda",
+      nomorIsi: dariIsi.nomor,
+      sebab:
+        `Naskah ini menyebut nomor ${dariIsi.nomor} (${dariIsi.kali} kali), bukan ${nomorPerkara}. ` +
+        `Berkasnya kemungkinan milik perkara lain; pilih naskah perkara ${nomorPerkara}.`,
+    };
+  }
+
+  // perkara_id dipakai menomori versi draf. Ekstensi mengirimkannya bila
+  // borang SIPP yang sedang terbuka memuatnya; bila tidak, ia ditanyakan ke
+  // SIPP lewat gerbang - sekali per unggahan, bukan sekali per tampilan
+  // halaman, jadi beratnya tidak pernah terasa petugas.
+  let perkaraId = String(masukan.perkaraId ?? "").trim();
+  if (!perkaraId) {
+    const status = await getGatewayStatusPerkara(nomorPerkara);
+    const identitas = (status.ok ? status.data?.identitas : null) as { perkaraId?: string } | null;
+    perkaraId = String(identitas?.perkaraId ?? "").trim();
+  }
+  if (!perkaraId) {
+    return {
+      ok: false,
+      nomorIsi: dariIsi.nomor,
+      sebab: `Nomor perkara ${nomorPerkara} tidak ditemukan di SIPP, jadi drafnya tidak dapat ditautkan ke perkara mana pun.`,
+    };
+  }
 
   const { bagian, halangan, perabotDibuang } = pecahNaskahResmi(teks);
 
@@ -232,10 +296,11 @@ export async function unggahNaskahPutusan(
     catatan: `Naskah diterima dari berkas "${String(masukan.namaBerkas ?? "").slice(0, 120)}" (${bentuk.toUpperCase()}). Dipotong menurut judul bagiannya; tidak ada kata yang diubah.`,
   });
 
-  if (!disimpan.ok) return { ok: false, sebab: disimpan.sebab };
+  if (!disimpan.ok) return { ok: false, nomorIsi: dariIsi.nomor, sebab: disimpan.sebab };
 
   return {
     ok: true,
+    nomorIsi: dariIsi.nomor,
     drafId: disimpan.drafId,
     versi: disimpan.versi,
     perabotDibuang,
@@ -247,4 +312,194 @@ export async function unggahNaskahPutusan(
       halangan: item.halangan,
     })),
   };
+}
+
+/**
+ * ============================================================================
+ * PEMERIKSAAN BERKAS SEBELUM DIUNGGAH KE SIPP (rute unggah-sipp)
+ * ============================================================================
+ *
+ * Unggah e-Doc MENULIS ke SIPP dan tidak dapat diurungkan dari panel. Yang
+ * diperiksa di sini hanya yang dapat dibaca PASTI dari isi RTF:
+ *
+ *   1. bukan Berita Acara, Penetapan Hari Sidang, atau Relaas;
+ *   2. nomor perkara di isi sama dengan nomor perkara yang dituju;
+ *   3. slot anonimisasi TIDAK memuat nama inti pihak dari SIPP.
+ *
+ * Aturan 3 diukur atas berkas sungguhan PA Donggala: putusan asli yang salah
+ * ditaruh di slot anonimisasi tertangkap 39 dari 39; anonimisasi sungguhan
+ * lolos 13 dari 15, dan 2 yang tertahan memang masih memuat nama pihak.
+ *
+ * PDF, DOCX, dan DOC tidak dibaca isinya - pembacanya belum terukur - jadi
+ * bentuk itu hanya diberi PERINGATAN, tidak ditolak. Begitu pula bila nama
+ * pihak tidak terbaca dari SIPP: aturan slot tidak dapat dijalankan, dan itu
+ * dikatakan, bukan dianggap lolos diam-diam.
+ */
+export type SlotUnggahSipp = "putusan" | "anonimisasi";
+
+export type TolakUnggahSipp = {
+  alasan: "bukan_putusan" | "nomor_isi_berbeda" | "nomor_isi_tidak_ada" | "slot_anonim_memuat_nama";
+  slot: SlotUnggahSipp;
+  sebab: string;
+  nomorIsi?: string;
+  /** Nama inti pihak yang ditemukan di slot anonimisasi. */
+  nama?: string[];
+};
+
+export type PemeriksaanUnggahSipp = {
+  tolak: TolakUnggahSipp | null;
+  peringatan: string[];
+  /** Nomor perkara dari isi tiap slot RTF yang terbaca. */
+  nomorIsi: Partial<Record<SlotUnggahSipp, string>>;
+  /** Slot yang isinya benar-benar diperiksa (RTF yang terbaca). */
+  diperiksa: SlotUnggahSipp[];
+};
+
+const NAMA_SLOT: Record<SlotUnggahSipp, string> = {
+  putusan: "Berkas putusan",
+  anonimisasi: "Berkas anonimisasi",
+};
+
+/**
+ * Nama inti: bagian nama sebelum "bin", "binti", atau "alias". Nama ayah
+ * bukan nama pihak, dan "alias" sesudahnya sering ejaan lain dari nama yang
+ * sama - keduanya tidak dipakai sebagai penanda.
+ */
+export function namaIntiPihak(nama: string): string {
+  return String(nama ?? "")
+    .split(/\s+(?:bin|binti|alias)\s+/i)[0]
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Nama pendek (di bawah empat huruf) terlalu mudah muncul sebagai kata lain. */
+const PANJANG_NAMA_INTI_MIN = 4;
+
+/**
+ * Nama inti pihak yang TERTULIS di naskah - berbatas kata, tanpa peduli
+ * besar-kecil huruf. Berbatas kata supaya "Rina" tidak ditemukan di dalam
+ * "Marina", dan "Untung" tidak di dalam "keuntungan".
+ */
+export function namaIntiDalamNaskah(naskah: string, namaPihak: string[]): string[] {
+  const teks = String(naskah ?? "");
+  const inti = [
+    ...new Set(namaPihak.map(namaIntiPihak).filter((n) => n.length >= PANJANG_NAMA_INTI_MIN)),
+  ];
+  return inti.filter((nama) => {
+    const lolos = nama.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+");
+    return new RegExp(`(?<![\\p{L}\\p{N}])${lolos}(?![\\p{L}\\p{N}])`, "iu").test(teks);
+  });
+}
+
+export function periksaBerkasUnggahSipp(masukan: {
+  nomorPerkara: string;
+  berkas: Array<{ slot: SlotUnggahSipp; bita: Uint8Array }>;
+  /** Nama pihak dari SIPP; null berarti tidak terbaca (sebabnya di sebabPihak). */
+  namaPihak: string[] | null;
+  sebabPihak?: string;
+}): PemeriksaanUnggahSipp {
+  const peringatan: string[] = [];
+  const nomorIsi: Partial<Record<SlotUnggahSipp, string>> = {};
+  const diperiksa: SlotUnggahSipp[] = [];
+  const terbaca: Array<{ slot: SlotUnggahSipp; teks: string }> = [];
+  const selesai = (tolak: TolakUnggahSipp | null): PemeriksaanUnggahSipp => ({
+    tolak,
+    peringatan,
+    nomorIsi,
+    diperiksa,
+  });
+  const nomorPerkara = String(masukan.nomorPerkara ?? "").trim();
+
+  for (const { slot, bita } of masukan.berkas) {
+    const bentuk = kenaliBentuk(bita);
+    if (bentuk !== "rtf") {
+      peringatan.push(
+        `${NAMA_SLOT[slot]} berbentuk ${bentuk === "teks" ? "tidak dikenal" : bentuk.toUpperCase()}: ` +
+          `isinya tidak diperiksa, jadi nomor perkara${slot === "anonimisasi" ? " dan nama pihak" : ""} ` +
+          "di dalamnya belum dipastikan. Hanya RTF yang dapat dibaca isinya."
+      );
+      continue;
+    }
+
+    let teks = "";
+    try {
+      teks = bacaRtfDariBita(bita).replace(/\u0000/g, "");
+    } catch (galat) {
+      peringatan.push(
+        `${NAMA_SLOT[slot]} tidak dapat dibaca isinya (${String((galat as Error)?.message ?? galat).slice(0, 120)}), ` +
+          "jadi tidak diperiksa."
+      );
+      continue;
+    }
+    diperiksa.push(slot);
+
+    const bukan = kenaliNaskahBukanPutusan(teks);
+    if (bukan) {
+      return selesai({
+        alasan: "bukan_putusan",
+        slot,
+        sebab:
+          `${NAMA_SLOT[slot]} adalah ${bukan.nama} - judulnya "${bukan.judul.slice(0, 80)}" - bukan naskah ` +
+          "putusan. Tidak ada berkas yang dikirim ke SIPP.",
+      });
+    }
+
+    const dariIsi = nomorPerkaraDariIsi(teks);
+    nomorIsi[slot] = dariIsi.nomor;
+    if (!dariIsi.nomor) {
+      return selesai({
+        alasan: "nomor_isi_tidak_ada",
+        slot,
+        nomorIsi: "",
+        sebab:
+          `${NAMA_SLOT[slot]} tidak menyebut satu pun nomor perkara ber-"Pdt." di isinya, jadi tidak dapat ` +
+          `dipastikan milik perkara ${nomorPerkara}. Tidak ada berkas yang dikirim ke SIPP.`,
+      });
+    }
+    if (!isiMenunjukPerkara(dariIsi, nomorPerkara)) {
+      return selesai({
+        alasan: "nomor_isi_berbeda",
+        slot,
+        nomorIsi: dariIsi.nomor,
+        sebab:
+          `${NAMA_SLOT[slot]} menyebut nomor ${dariIsi.nomor} (${dariIsi.kali} kali), bukan ${nomorPerkara}. ` +
+          "Berkasnya kemungkinan milik perkara lain. Tidak ada berkas yang dikirim ke SIPP.",
+      });
+    }
+    terbaca.push({ slot, teks });
+  }
+
+  if (terbaca.length === 0) return selesai(null);
+
+  const nama = (masukan.namaPihak ?? []).filter(Boolean);
+  const adaNamaInti = nama.some((n) => namaIntiPihak(n).length >= PANJANG_NAMA_INTI_MIN);
+  if (!masukan.namaPihak || !adaNamaInti) {
+    peringatan.push(
+      `Nama pihak tidak terbaca dari SIPP${masukan.sebabPihak ? ` (${masukan.sebabPihak})` : ""}, jadi ` +
+        "kebocoran nama pada berkas anonimisasi dan tertukarnya slot belum diperiksa."
+    );
+    return selesai(null);
+  }
+
+  for (const { slot, teks } of terbaca) {
+    const temu = namaIntiDalamNaskah(teks, nama);
+    if (slot === "anonimisasi" && temu.length > 0) {
+      return selesai({
+        alasan: "slot_anonim_memuat_nama",
+        slot,
+        nama: temu,
+        sebab:
+          `Berkas anonimisasi masih memuat nama pihak: ${temu.join(", ")}. Berkas inilah yang terbit di ` +
+          "Direktori Putusan. Periksa apakah berkasnya tertukar dengan putusan asli, atau samarkan nama itu " +
+          "lebih dulu. Tidak ada berkas yang dikirim ke SIPP.",
+      });
+    }
+    if (slot === "putusan" && temu.length === 0) {
+      peringatan.push(
+        "Berkas putusan tidak memuat satu pun nama pihak dari SIPP. Periksa apakah yang terpilih justru " +
+          "berkas anonimisasinya."
+      );
+    }
+  }
+  return selesai(null);
 }

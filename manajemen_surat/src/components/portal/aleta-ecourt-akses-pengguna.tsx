@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { tanggalDMY } from "@/lib/tanggal-indonesia";
 
 /**
  * Pengecualian akses ekstensi untuk satu orang.
@@ -66,13 +67,6 @@ function keadaanSekarang(orang: Orang, kunci: Kapabilitas): Keadaan {
   const kecuali = orang.pengecualian.find((x) => x.kapabilitas === kunci && !x.kedaluwarsa);
   if (!kecuali) return "ikut";
   return kecuali.aktif ? "boleh" : "tidak";
-}
-
-function tanggalPendek(iso: string | null) {
-  if (!iso) return "";
-  const tanggal = new Date(iso);
-  if (Number.isNaN(tanggal.getTime())) return "";
-  return tanggal.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 export function AletaEcourtAksesPengguna() {
@@ -270,10 +264,15 @@ export function AletaEcourtAksesPengguna() {
                       <span className="block font-medium">{keterangan[kunci]?.label ?? kunci}</span>
                       <span className="block text-muted-foreground">
                         Perannya: {bawaanPeran ? "boleh" : "tidak boleh"}
+                        {/* tanggalDMY, bukan toLocaleDateString: pembantu lokal
+                            yang lama membaca zona mesin, sehingga peladen
+                            (TZ=UTC) dan peramban (WITA) dapat menulis tanggal
+                            yang berbeda untuk batas yang sama. tanggalDMY
+                            mengambil angkanya dari teks ISO-nya. */}
                         {kecuali?.kedaluwarsa
-                          ? ` · pengecualian lama berakhir ${tanggalPendek(kecuali.berlakuSampai)}`
+                          ? ` · pengecualian lama berakhir ${tanggalDMY(kecuali.berlakuSampai)}`
                           : kecuali?.berlakuSampai
-                            ? ` · sampai ${tanggalPendek(kecuali.berlakuSampai)}`
+                            ? ` · sampai ${tanggalDMY(kecuali.berlakuSampai)}`
                             : ""}
                         {kecuali && !kecuali.kedaluwarsa && kecuali.alasan ? ` · ${kecuali.alasan}` : ""}
                       </span>

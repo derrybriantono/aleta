@@ -4,7 +4,7 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { rakitBerkasPerkara } from "@/server/modules/aleta-ecourt/berkas-perkara";
 import { petaPenanda } from "@/server/modules/aleta-ecourt/bas-tanya-jawab";
-import { penandaDariLembar, semuaLembar } from "@/server/modules/aleta-ecourt/bas-lembar";
+import { penandaDariLembar, saksiBerlembar, semuaLembar } from "@/server/modules/aleta-ecourt/bas-lembar";
 import { penandaDariSidang, sidangKe, susunRangkaian } from "@/lib/rangkaian-sidang";
 import { muatKehadiran, penandaDariKehadiran } from "@/server/modules/aleta-ecourt/bas-kehadiran";
 import { bacaSaksiAbt, penandaDariAbt } from "@/lib/keterangan-abt";
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     // perkara yang pemeriksaannya sudah berlangsung tidak dimulai dari kosong.
     // Ia ditaruh SEBELUM lembar supaya lembar ALETA selalu menang: yang diketik
     // hari ini adalah yang benar-benar terjadi hari ini.
-    const punyaLembar = new Set(lembar.filter((item) => item.baris.some((b) => b.jawaban)).map((item) => item.saksiKe));
+    const punyaLembar = saksiBerlembar(lembar);
     const saksiAbt = bacaSaksiAbt(isiBerkas.pemeriksaanSaksi.nilai);
     for (const [noVar, item] of penandaDariAbt(saksiAbt, punyaLembar)) nilai[noVar] = item.nilai;
 

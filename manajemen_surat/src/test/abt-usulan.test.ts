@@ -410,14 +410,31 @@ describe("nomor 5 - lama pisah dihitung sampai tanggal sidang", () => {
     expect(layanan.hitungLamaPisah("bulan Mei 2026", "01/01/2026")).toBeNull();
   });
 
-  it("hasil hitungan mengalahkan yang diucapkan, dan selisihnya disebut", () => {
+  // Keputusan pengguna 9 (25 September 2026): UCAPAN SAKSI lebih dulu, supaya
+  // angka di putusan sama dengan angka di berita acara yang sama. Hitungan
+  // sampai tanggal sidang tetap disandingkan sebagai pembanding, dan hanya
+  // dipakai bila kedua saksi tidak menyebut angka. Sampai 2.35.0 kebalikannya
+  // - dan hanya 38,6% yang sama dengan isian petugas.
+  it("ucapan saksi diusulkan, hitungan disandingkan dan selisihnya disebut", () => {
     const saksi =
       "- Bahwa Penggugat dan Tergugat sudah pisah tempat tinggal sejak bulan Mei 2026, sudah sekitar 2 bulan;";
     const hasil = layanan.dariKeteranganSaksi(saksi, "", "22 September 2026");
+    const u = hasil.usulan.find((x) => x.kode === "9944") as
+      | (Usulan & { catatan?: string; dihitung?: boolean; pembanding?: { teks: string; totalBulan: number } })
+      | undefined;
+    expect(u?.nilai).toBe("2 bulan");
+    expect(u?.dihitung).toBe(false);
+    expect(u?.pembanding).toMatchObject({ teks: "4 bulan", totalBulan: 4 });
+    expect(u?.catatan).toContain("4 bulan");
+  });
+
+  it("tanpa angka dari saksi, hitungan sampai tanggal sidang yang dipakai", () => {
+    const saksi = "- Bahwa Penggugat dan Tergugat sudah pisah tempat tinggal sejak bulan Mei 2026;";
+    const hasil = layanan.dariKeteranganSaksi(saksi, "", "22 September 2026");
     const u = hasil.usulan.find((x) => x.kode === "9944");
     expect(u?.nilai).toBe("4 bulan");
-    expect(u?.catatan).toContain("2 bulan");
     expect(u?.dihitung).toBe(true);
+    expect(u?.catatan).toContain("tidak menyebut lamanya");
   });
 });
 
@@ -1623,8 +1640,27 @@ describe("ragam kalimat keterangan saksi", () => {
     expect(JSON.stringify(a.saksi2)).toBe(JSON.stringify(b.saksi2));
   });
 
-  it("dua saksi tidak menjawab sama kata demi kata", () => {
-    expect(susun({ templat, posita }).identik).toBe(0);
+  // 25 September 2026 (t2-ragam-bas-bot, keputusan pengguna 1): dua saksi
+  // berbeda bentuk SELAMA bentuknya tersedia. Dahulu keduanya "berbeda" hanya
+  // karena pembuka mesin ('Benar,' / 'Iya,' - 0 kali dipakai manusia) dipasang
+  // di depan tiap jawaban. Jawaban templat yang tidak punya satu bentuk lain
+  // pun ("Saya (melihat/mendengar) sendiri") kini boleh sama, tetapi wajib
+  // bertanda varian.habis - tidak disamarkan dengan pembuka.
+  it("dua saksi tidak menjawab sama kata demi kata selama bentuknya tersedia", () => {
+    const h = susun({ templat, posita }) as unknown as Hasil & {
+      saksi: { jawaban: { jawab: string; varian: { n: number; habis: boolean } }[] }[];
+    };
+    const [s1, s2] = h.saksi;
+    let dibandingkan = 0;
+    s1.jawaban.forEach((b, i) => {
+      if (b.varian.n >= 2) {
+        dibandingkan++;
+        expect(b.jawab, b.jawab).not.toBe(s2.jawaban[i].jawab);
+      } else if (b.jawab === s2.jawaban[i].jawab) {
+        expect(b.varian.habis, b.jawab).toBe(true);
+      }
+    });
+    expect(dibandingkan).toBeGreaterThanOrEqual(2);
   });
 
   /**

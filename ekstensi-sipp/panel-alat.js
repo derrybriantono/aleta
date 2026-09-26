@@ -3453,6 +3453,307 @@ void alatMuatRingkas();
 
 /*
  * ============================================================================
+ * TIPE KELUARAN DARI PORTAL - DENGAN SINGGAHAN, LALU TERTANAM (K7)
+ * ============================================================================
+ *
+ * Empat daftar yang dulu hanya tertanam di ekstensi (medan borang putusan,
+ * peta blangko, padanan jenis, pilihan alasan saksi) kini dapat ditambah dan
+ * dimatikan dari portal. Ekstensi membacanya lewat SATU rute
+ * (/ekstensi/tipe-keluaran), yang menjawab keempatnya sekaligus berikut
+ * versinya: 16 hex yang berubah setiap kali satu entri berubah.
+ *
+ * Urutan pakai, dan alasannya:
+ *
+ *   1. singgahan dengan versi SAMA   - 0 permintaan. Versi yang berlaku
+ *                                      diketahui dari /ekstensi/siapa
+ *                                      (alatSetelVersiTipe) atau dari jawaban
+ *                                      portal sebelumnya di halaman ini.
+ *   2. portal                        - tepat 1 permintaan, lalu disinggahkan.
+ *   3. singgahan lama                - portal gagal: tambahan yang sudah sah
+ *                                      TIDAK boleh hilang dari layar hanya
+ *                                      karena portal sedang dibangun ulang.
+ *   4. tertanam                      - konstanta di berkas ini; perilakunya
+ *                                      sama persis dengan sebelum portal ada.
+ *
+ * Setiap entri dari portal atau singgahan diperiksa LAGI di sini. Portal sudah
+ * memeriksanya waktu disahkan, tetapi singgahan dapat disunting tangan lewat
+ * penyimpanan ekstensi, dan satu penunjuk tombol Simpan yang lolos ke panel
+ * borang putusan berarti panel menekan Simpan - itu yang tidak pernah boleh
+ * terjadi. Yang dibuang disebut di konsol beserta alasannya; tidak diam.
+ */
+const ALAT_TIPE_KUNCI = "tipeKeluaran";
+const ALAT_TIPE_ALAMAT = "/aleta/api/aleta-ecourt/ekstensi/tipe-keluaran";
+const ALAT_TIPE_DAFTAR = [
+  "putusan.medan-borang",
+  "putusan.peta-blangko",
+  "putusan.padanan-jenis",
+  "bas.saksi.alasan-pilihan",
+];
+const ALAT_TIPE_POLA_VERSI = /^[0-9a-f]{16}$/;
+/** Batas bacaan: portal yang menggantung tidak boleh menahan panel sembilan detik. */
+const ALAT_TIPE_BATAS_MS = 5000;
+/** Portal yang baru saja gagal tidak ditanya lagi sebelum ini lewat. */
+const ALAT_TIPE_JEDA_GAGAL_MS = 60000;
+/** Sama dengan penyaring bot (K6): lebih dari ini bukan daftar, melainkan kekeliruan. */
+const ALAT_TIPE_MAKS_ENTRI = 200;
+const ALAT_TIPE_MAKS_NILAI = 400;
+/** Sama dengan validasi portal untuk putusan.medan-borang. */
+const ALAT_TIPE_POLA_PENUNJUK_NAMA = /^[a-z]*\[name="[A-Za-z0-9_-]+(\[\])?"\]$/;
+const ALAT_TIPE_POLA_PENUNJUK_ID = /^#[A-Za-z][\w-]*$/;
+
+/**
+ * Versi tipe keluaran yang berlaku menurut portal.
+ *   undefined = belum diketahui (tanya portal sekali)
+ *   null      = portal menyatakan tabelnya tak terbaca (jangan bertanya)
+ *   '16 hex'  = versi yang berlaku
+ */
+let alatVersiTipeKini;
+/** Waktu portal terakhir gagal menjawab, dan versi yang waktu itu dicari. */
+let alatTipeGagal = { pada: 0, versi: undefined };
+/** Permintaan yang sedang terbang - dua pemanggil sejajar berbagi satu. */
+let alatTipeTerbang = null;
+
+/** Dipanggil oleh pembaca /ekstensi/siapa dengan ruas versiTipe-nya. */
+function alatSetelVersiTipe(versi) {
+  if (versi === null) {
+    alatVersiTipeKini = null;
+    return null;
+  }
+  const v = String(versi || "").trim();
+  alatVersiTipeKini = ALAT_TIPE_POLA_VERSI.test(v) ? v : undefined;
+  return alatVersiTipeKini;
+}
+
+/** Semua teks di dalam satu nilai (nilai, data bersarang, daftar). */
+function alatTipeTeksDi(nilai, hasil) {
+  if (typeof nilai === "string") hasil.push(nilai);
+  else if (Array.isArray(nilai)) for (const x of nilai) alatTipeTeksDi(x, hasil);
+  else if (nilai && typeof nilai === "object") for (const x of Object.values(nilai)) alatTipeTeksDi(x, hasil);
+  return hasil;
+}
+
+/**
+ * Alasan satu entri ditolak, atau "" bila sah. Aturannya aturan portal yang
+ * dapat diperiksa tanpa basis data: tanpa '${', '<', baris baru; untuk medan
+ * borang, penunjuknya harus [name="..."] atau #id dan tidak pernah menunjuk
+ * tombol Simpan atau submit.
+ */
+function alatTipeAlasanTolak(daftar, e) {
+  if (!e || typeof e !== "object") return "bukan entri";
+  if (typeof e.kunci !== "string" || typeof e.nilai !== "string") return "kunci/nilai bukan teks";
+  if (e.data !== undefined && e.data !== null && (typeof e.data !== "object" || Array.isArray(e.data))) {
+    return "data bukan objek";
+  }
+  if ([...e.nilai].length > ALAT_TIPE_MAKS_NILAI) return `nilai lebih dari ${ALAT_TIPE_MAKS_NILAI} huruf`;
+  for (const teks of alatTipeTeksDi([e.kunci, e.nilai, e.data || {}], [])) {
+    if (teks.includes("${")) return "memuat '${'";
+    if (teks.includes("<")) return "memuat '<'";
+    if (/[\r\n]/.test(teks)) return "memuat baris baru";
+  }
+  const data = e.data || {};
+  if (daftar === "putusan.medan-borang") {
+    const p = data.penunjuk;
+    if (typeof p !== "string" || !p || p.length > 300) return "penunjuk kosong atau terlalu panjang";
+    if (/simpan|submit/i.test(p)) return "penunjuk tombol Simpan/submit";
+    if (!ALAT_TIPE_POLA_PENUNJUK_NAMA.test(p) && !ALAT_TIPE_POLA_PENUNJUK_ID.test(p)) return "bentuk penunjuk tidak dikenal";
+  }
+  if (daftar === "putusan.peta-blangko") {
+    if (!e.kunci || e.kunci !== e.kunci.replace(/\s+/g, " ").trim().toLowerCase()) return "kunci jenis tidak baku";
+    if (!e.nilai.trim()) return "berkas blangko kosong";
+    if (typeof data.jenisAsli !== "string" || !data.jenisAsli.trim()) return "jenisAsli kosong";
+    if (data.blangkoLain !== undefined && (!Array.isArray(data.blangkoLain) || data.blangkoLain.some((x) => typeof x !== "string" || !x))) {
+      return "blangkoLain bukan daftar teks";
+    }
+  }
+  if (daftar === "putusan.padanan-jenis" && (!e.kunci.trim() || !e.nilai.trim())) return "kunci atau nama lain kosong";
+  return "";
+}
+
+/**
+ * Entri yang lolos, dalam urutannya. Yang dibuang dilaporkan di konsol
+ * dengan alasannya - penyaring yang membuang diam-diam sama buruknya dengan
+ * entri rusak yang lolos, sebab yang kehilangan barisnya tidak tahu sebabnya.
+ */
+function alatTipeSaring(daftar, entri, asal) {
+  const masuk = Array.isArray(entri) ? entri : [];
+  const lolos = [];
+  const tolak = [];
+  for (const e of masuk) {
+    const alasan = alatTipeAlasanTolak(daftar, e);
+    if (alasan) {
+      tolak.push(`${String(e && e.nilai).slice(0, 60)} (${alasan})`);
+      continue;
+    }
+    if (lolos.length >= ALAT_TIPE_MAKS_ENTRI) {
+      tolak.push(`${e.nilai.slice(0, 60)} (melebihi ${ALAT_TIPE_MAKS_ENTRI} entri)`);
+      continue;
+    }
+    lolos.push({
+      kunci: e.kunci,
+      nilai: e.nilai,
+      data: e.data && typeof e.data === "object" ? JSON.parse(JSON.stringify(e.data)) : {},
+      urutan: Number.isFinite(Number(e.urutan)) ? Number(e.urutan) : lolos.length,
+      asal: typeof e.asal === "string" ? e.asal : "bawaan",
+      sidik: typeof e.sidik === "string" ? e.sidik : "",
+    });
+  }
+  if (tolak.length) {
+    console.warn(`[ALETA] Tipe keluaran ${daftar} (${asal}): ${tolak.length} entri dibuang - ${tolak.join("; ")}`);
+  }
+  return { entri: lolos, dibuang: tolak.length };
+}
+
+/** Entri tertanam untuk peta blangko - dibentuk dari ALAT_PETA_BAWAAN. */
+function alatTipeTertanamPeta() {
+  return Object.entries(ALAT_PETA_BAWAAN).map(([kunci, b], urutan) => {
+    const data = { jenisAsli: b.jenisAsli };
+    if (b.blangko) data.blangko = b.blangko;
+    if (b.blangkoLain) data.blangkoLain = [...b.blangkoLain];
+    if (b.catatan) data.catatan = b.catatan;
+    return { kunci, nilai: b.berkas, data, urutan, asal: "bawaan", sidik: "" };
+  });
+}
+
+/** Entri tertanam untuk padanan jenis - dibentuk dari ALAT_PADANAN_JENIS. */
+function alatTipeTertanamPadanan() {
+  const hasil = [];
+  for (const [baku, lain] of ALAT_PADANAN_JENIS) {
+    for (const nilai of lain) hasil.push({ kunci: baku, nilai, data: {}, urutan: hasil.length, asal: "bawaan", sidik: "" });
+  }
+  return hasil;
+}
+
+const ALAT_TIPE_TERTANAM = {
+  "putusan.peta-blangko": alatTipeTertanamPeta,
+  "putusan.padanan-jenis": alatTipeTertanamPadanan,
+};
+
+async function alatTipeBacaSinggahan() {
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_TIPE_KUNCI]);
+    const s = simpan && simpan[ALAT_TIPE_KUNCI];
+    if (!s || typeof s !== "object" || !s.isi || typeof s.isi !== "object") return null;
+    return s;
+  } catch (galat) {
+    console.warn("[ALETA] Singgahan tipe keluaran tidak terbaca:", galat);
+    return null;
+  }
+}
+
+async function alatTipeTulisSinggahan(versi, isi) {
+  try {
+    await chrome.storage.local.set({ [ALAT_TIPE_KUNCI]: { versi, pada: new Date().toISOString(), isi } });
+    return true;
+  } catch (galat) {
+    console.warn("[ALETA] Singgahan tipe keluaran tidak tersimpan:", galat);
+    return false;
+  }
+}
+
+/**
+ * Satu permintaan ke portal. Pulang {versi, isi} atau melempar dengan
+ * sebabnya. Jawaban 200 yang bentuknya salah dihitung GAGAL - memakainya
+ * akan menimpa singgahan yang baik dengan kekosongan.
+ */
+async function alatTipeTanyaPortal() {
+  const respons = await alatAmbil(
+    ALAT_TIPE_ALAMAT,
+    { credentials: "include", cache: "no-store", batasMs: ALAT_TIPE_BATAS_MS },
+    "Membaca tipe keluaran dari ALETA"
+  );
+  if (!respons || !respons.ok) throw new Error(`portal menjawab ${respons ? respons.status : "kosong"}`);
+  const luar = await respons.json();
+  const isi = luar && luar.ok === undefined && luar.data ? luar.data : luar;
+  if (!isi || isi.ok !== true) throw new Error("jawaban portal tidak ok");
+  const versi = String(isi.versi || "");
+  if (!ALAT_TIPE_POLA_VERSI.test(versi)) throw new Error("versi tipe keluaran tidak sah");
+  if (!isi.daftar || typeof isi.daftar !== "object") throw new Error("jawaban tanpa daftar");
+  const daftar = {};
+  for (const k of ALAT_TIPE_DAFTAR) if (Array.isArray(isi.daftar[k])) daftar[k] = isi.daftar[k];
+  return { versi, isi: daftar };
+}
+
+/**
+ * Entri efektif satu daftar untuk ekstensi.
+ *
+ *   daftar  salah satu dari empat daftar ekstensi
+ *   opsi    {versiTipe?, tertanam?}
+ *           versiTipe  versi yang berlaku (bila tidak disebut, dipakai yang
+ *                      disetel alatSetelVersiTipe atau jawaban portal terakhir)
+ *           tertanam   entri cadangan terakhir, untuk daftar yang konstantanya
+ *                      tinggal di berkas lain (konten.js, abt.js). Peta blangko
+ *                      dan padanan jenis membawa tertanamnya sendiri.
+ *
+ * Pulang {entri, asal: 'portal'|'singgahan'|'tertanam', versi, dibuang}.
+ */
+async function alatTipeKeluaran(daftar, opsi) {
+  if (!ALAT_TIPE_DAFTAR.includes(daftar)) {
+    throw new Error(`Daftar tipe keluaran "${String(daftar)}" tidak dibaca ekstensi.`);
+  }
+  const pilihan = opsi || {};
+  const sumberTertanam = pilihan.tertanam !== undefined ? pilihan.tertanam : ALAT_TIPE_TERTANAM[daftar];
+  if (sumberTertanam === undefined) {
+    // Tanpa cadangan terakhir, portal yang mati akan membuat daftar ini kosong
+    // tanpa satu pun tanda. Lebih baik pemanggilnya patah sekarang, di uji.
+    throw new Error(`Daftar "${daftar}" tidak punya tertanam - sebutkan opsi.tertanam.`);
+  }
+  const tertanam = () => {
+    const mentah = typeof sumberTertanam === "function" ? sumberTertanam() : sumberTertanam;
+    return { ...alatTipeSaring(daftar, mentah, "tertanam"), asal: "tertanam", versi: null };
+  };
+  const dariSinggahan = (s) => {
+    if (!s || !Array.isArray(s.isi[daftar])) return null;
+    return { ...alatTipeSaring(daftar, s.isi[daftar], "singgahan"), asal: "singgahan", versi: s.versi || null };
+  };
+
+  const versiDiminta = Object.prototype.hasOwnProperty.call(pilihan, "versiTipe")
+    ? pilihan.versiTipe === null
+      ? null
+      : ALAT_TIPE_POLA_VERSI.test(String(pilihan.versiTipe || ""))
+        ? String(pilihan.versiTipe)
+        : undefined
+    : alatVersiTipeKini;
+
+  const singgahan = await alatTipeBacaSinggahan();
+  // 1. Singgahan dengan versi sama - tanpa permintaan.
+  if (singgahan && versiDiminta && singgahan.versi === versiDiminta) {
+    const hasil = dariSinggahan(singgahan);
+    if (hasil) return hasil;
+  }
+
+  // 2. Portal - kecuali ia sudah menyatakan tabelnya tak terbaca, atau baru
+  //    saja gagal untuk versi yang sama.
+  const baruGagal =
+    alatTipeGagal.pada > 0 &&
+    Date.now() - alatTipeGagal.pada < ALAT_TIPE_JEDA_GAGAL_MS &&
+    alatTipeGagal.versi === versiDiminta;
+  if (versiDiminta !== null && !baruGagal) {
+    try {
+      if (!alatTipeTerbang) {
+        alatTipeTerbang = alatTipeTanyaPortal().finally(() => {
+          alatTipeTerbang = null;
+        });
+      }
+      const jawab = await alatTipeTerbang;
+      alatVersiTipeKini = jawab.versi;
+      alatTipeGagal = { pada: 0, versi: undefined };
+      await alatTipeTulisSinggahan(jawab.versi, jawab.isi);
+      if (Array.isArray(jawab.isi[daftar])) {
+        return { ...alatTipeSaring(daftar, jawab.isi[daftar], "portal"), asal: "portal", versi: jawab.versi };
+      }
+      console.warn(`[ALETA] Portal tidak mengirim daftar ${daftar}; dipakai cadangan.`);
+    } catch (galat) {
+      alatTipeGagal = { pada: Date.now(), versi: versiDiminta };
+      console.warn(`[ALETA] Tipe keluaran tidak terbaca dari portal (${String((galat && galat.message) || galat)}); dipakai cadangan.`);
+    }
+  }
+
+  // 3. Singgahan lama, 4. tertanam.
+  return dariSinggahan(singgahan) || tertanam();
+}
+
+/*
+ * ============================================================================
  * PUTUSAN MASSAL - FONDASI YANG DIPAKAI PANEL ABT DAN PANEL SIPP
  * ============================================================================
  *
@@ -3535,12 +3836,51 @@ const ALAT_PADANAN_JENIS = [
   ["wali adhal", ["wali adhol", "wali adlal"]],
 ];
 
-/** nama lain -> kunci baku. Disusun sekali; pencariannya satu langkah. */
-const ALAT_PETA_PADANAN = (() => {
+/**
+ * Padanan yang BERLAKU - mula-mula yang tertanam, lalu yang dari portal
+ * (putusan.padanan-jenis) sesudah alatMuatPadananJenis. alatKunciJenis
+ * serempak dan dipanggil di banyak tempat, jadi yang dibaca adalah salinan
+ * di memori; pembaruannya asinkron dan terjadi sebelum peta blangko dimuat.
+ */
+let alatPadananBerlaku = ALAT_PADANAN_JENIS;
+
+/** nama lain -> kunci baku. Disusun sekali tiap padanan berganti. */
+function alatSusunPetaPadanan(padanan) {
   const peta = new Map();
-  for (const [baku, lain] of ALAT_PADANAN_JENIS) for (const n of lain) peta.set(n, baku);
+  for (const [baku, lain] of padanan) for (const n of lain) peta.set(n, baku);
   return peta;
-})();
+}
+let alatPetaPadanan = alatSusunPetaPadanan(ALAT_PADANAN_JENIS);
+
+/**
+ * Entri putusan.padanan-jenis -> bentuk ALAT_PADANAN_JENIS, urutan baku
+ * menurut kemunculan pertama. Urutan jawaban portal DIPAKAI apa adanya (bawaan
+ * dulu, lalu tambahan) - portal yang menetapkannya, bukan ruas urutan.
+ */
+function alatPadananDariEntri(entri) {
+  const rapi = (x) => String(x || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const kelompok = new Map();
+  for (const e of entri) {
+    const baku = rapi(e.kunci);
+    const lain = rapi(e.nilai);
+    if (!baku || !lain || lain === baku) continue;
+    if (!kelompok.has(baku)) kelompok.set(baku, []);
+    if (!kelompok.get(baku).includes(lain)) kelompok.get(baku).push(lain);
+  }
+  return [...kelompok.entries()];
+}
+
+/**
+ * Padanan dimuat dari tipe keluaran (portal, singgahan, atau tertanam) dan
+ * dipasang untuk alatKunciJenis. Pulang {padanan, asal}.
+ */
+async function alatMuatPadananJenis(opsi) {
+  const hasil = await alatTipeKeluaran("putusan.padanan-jenis", opsi);
+  const padanan = hasil.asal === "tertanam" ? ALAT_PADANAN_JENIS : alatPadananDariEntri(hasil.entri);
+  alatPadananBerlaku = padanan;
+  alatPetaPadanan = alatSusunPetaPadanan(padanan);
+  return { padanan, asal: hasil.asal };
+}
 
 /**
  * Kunci pemetaan: nama jenis dirapikan supaya "Cerai gugat" dan "CERAI GUGAT"
@@ -3551,12 +3891,12 @@ function alatKunciJenis(jenis) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-  return ALAT_PETA_PADANAN.get(bersih) || bersih;
+  return alatPetaPadanan.get(bersih) || bersih;
 }
 
 /** Nama lain yang menunjuk kunci ini - untuk disebut di layar. */
 function alatNamaLainJenis(kunci) {
-  const baris = ALAT_PADANAN_JENIS.find(([baku]) => baku === kunci);
+  const baris = alatPadananBerlaku.find(([baku]) => baku === kunci);
   return baris ? baris[1] : [];
 }
 
@@ -3952,7 +4292,54 @@ const ALAT_PETA_BAWAAN = {
  * disentuh. Yang pernah disunting - termasuk yang sengaja dihapus lalu
  * ditandai kosong - tidak ditimpa bawaan.
  */
+/**
+ * Entri putusan.peta-blangko -> bentuk ALAT_PETA_BAWAAN. Satu jenis satu
+ * baris: bila portal mengirim dua untuk jenis yang sama (bawaan tidak
+ * dimatikan sebelum tambahannya disahkan), yang pertama dipakai dan yang
+ * kedua disebut di konsol - dua baris untuk satu jenis akan berselisih.
+ */
+function alatPetaBawaanDariEntri(entri) {
+  const hasil = {};
+  for (const e of entri) {
+    if (hasil[e.kunci]) {
+      console.warn(`[ALETA] Peta blangko: jenis "${e.kunci}" dikirim dua kali; "${e.nilai}" diabaikan.`);
+      continue;
+    }
+    const d = e.data || {};
+    hasil[e.kunci] = {
+      jenisAsli: d.jenisAsli,
+      berkas: e.nilai,
+      ...(d.blangko ? { blangko: d.blangko } : {}),
+      ...(Array.isArray(d.blangkoLain) ? { blangkoLain: [...d.blangkoLain] } : {}),
+      bawaan: true,
+      ...(d.catatan ? { catatan: d.catatan } : {}),
+    };
+  }
+  return hasil;
+}
+
+/**
+ * Bawaan peta blangko yang BERLAKU - dari portal bila ada, dan padanannya
+ * dimuat lebih dulu supaya kunci lama dipadankan dengan padanan yang sama.
+ * Pulang {bawaan, asal}. Tertanam berarti ALAT_PETA_BAWAAN itu sendiri.
+ */
+async function alatPetaBawaanBerlaku() {
+  await alatMuatPadananJenis();
+  const hasil = await alatTipeKeluaran("putusan.peta-blangko");
+  const bawaan = hasil.asal === "tertanam" ? ALAT_PETA_BAWAAN : alatPetaBawaanDariEntri(hasil.entri);
+  return { bawaan, asal: hasil.asal };
+}
+
 async function alatMuatPetaBlangkoLengkap() {
+  // ==========================================================================
+  // BAWAANNYA MILIK PORTAL, TOKENNYA MILIK PERAMBAN
+  // ==========================================================================
+  //
+  // Nama berkas, menu, dan jenis yang dipetakan diatur SEKALI di portal dan
+  // berlaku untuk setiap peramban tanpa penyuntingan satu per satu. Token a/b/d
+  // tetap per peramban di petaBlangkoPutusan: ia hasil enkripsi sesi ABT yang
+  // tidak bermakna di peramban lain, jadi tidak pernah dikirim ke portal.
+  const { bawaan: bawaanBerlaku, asal: asalBawaan } = await alatPetaBawaanBerlaku();
   const peta = await alatMuatPetaBlangko();
   let berubah = false;
 
@@ -3983,7 +4370,42 @@ async function alatMuatPetaBlangkoLengkap() {
     berubah = true;
   }
 
-  for (const [kunci, bawaan] of Object.entries(ALAT_PETA_BAWAAN)) {
+  // ==========================================================================
+  // BAWAAN YANG DIMATIKAN ATAU DIGANTI DI PORTAL IKUT DI PERAMBAN
+  // ==========================================================================
+  //
+  // HANYA bila bawaannya datang dari portal atau singgahannya. Tertanam tidak
+  // pernah menghapus atau menyetel ulang apa pun - tanpa portal, perilakunya
+  // sama dengan sebelum portal ada. Dan hanya baris bawaan: baris yang pernah
+  // disunting tangan menyatakan kehendak orang, tidak disentuh.
+  //
+  // Nama berkas dibandingkan lewat alatKunciBerkas, bukan apa adanya: pengisi
+  // token menulis nama berkas persis seperti di ABT (mis. berakhiran .RTF),
+  // dan membandingkan apa adanya akan melepas tokennya pada tiap pemuatan.
+  if (asalBawaan !== "tertanam") {
+    for (const [kunci, ada] of Object.entries(peta)) {
+      if (!ada || !ada.bawaan) continue;
+      const baru = bawaanBerlaku[kunci];
+      if (!baru) {
+        delete peta[kunci];
+        berubah = true;
+        continue;
+      }
+      if (alatKunciBerkas(ada.berkas) === alatKunciBerkas(baru.berkas)) continue;
+      peta[kunci] = {
+        ...baru,
+        ...(baru.blangko ? { blangkoDiminta: baru.blangko } : {}),
+        a: "",
+        b: "",
+        d: "",
+        catatan: `berkas disetel portal ke "${baru.berkas}" - token diambil ulang`,
+        disimpanPada: new Date().toISOString(),
+      };
+      berubah = true;
+    }
+  }
+
+  for (const [kunci, bawaan] of Object.entries(bawaanBerlaku)) {
     if (peta[kunci] === undefined) {
       peta[kunci] = { ...bawaan, disimpanPada: new Date().toISOString() };
       berubah = true;

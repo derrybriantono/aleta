@@ -244,6 +244,9 @@ function jalankanSatuPutaran({
   // seperti aleta-ecourt-unduh-latar.sh dengan MAKS=0. Bila tidak disebut,
   // batasnya mengikuti pengaturan penjadwal.
   maksPerkara = null,
+  // Menarik HANYA perkara yang berkasnya belum ada - lihat
+  // mulaiPenarikanBelumAda dan --hanya-belum-ada pada run.js.
+  hanyaBelumAda = false,
   sumber = "jadwal",
 } = {}) {
   return new Promise((selesai) => {
@@ -310,6 +313,7 @@ function jalankanSatuPutaran({
 
     const argumen = [jembatanPath(), "--terjadwal"];
     if (slotAkun) argumen.push("--akun", slotAkun);
+    if (hanyaBelumAda) argumen.push("--hanya-belum-ada");
     if (nomorPerkara) {
       argumen.push("--perkara", String(nomorPerkara));
     } else if (batas > 0) {
@@ -678,6 +682,63 @@ function mulaiPenarikanMenyeluruh({ olehSiapa = "" } = {}) {
 }
 
 /**
+ * Berapa perkara paling banyak dalam satu penekanan "tarik yang belum ada".
+ *
+ * ============================================================================
+ * BERBATAS, DAN BATASNYA DIHITUNG DARI BATAS PUTARAN
+ * ============================================================================
+ *
+ * Daftar sasaran mode belum-ada PADAT: tiap perkara di dalamnya benar-benar
+ * dibuka, sangat berbeda dengan daftar biasa yang sebagian besarnya dilewati
+ * murah. Taksirannya 8 detik per perkara ditambah 4 detik per berkas, ditambah
+ * istirahat 1-3 menit tiap 40 perkara.
+ *
+ * 120 perkara karena itu kira-kira 1,5 jam - di bawah BATAS_PUTARAN_MS yang 2
+ * jam. Dua ratus akan melewatinya, dan putaran yang dibunuh paksa memang tidak
+ * kehilangan data (yang sudah terunduh sudah tercatat) tetapi catatannya
+ * berbunyi "Dihentikan paksa" tiap kali, dan itu membingungkan orang yang
+ * menekan tombolnya. Sisanya terambil pada penekanan berikutnya.
+ */
+const MAKS_BELUM_ADA = Number(process.env.ALETA_BOT_ECOURT_MAKS_BELUM_ADA || 120);
+
+/**
+ * Menarik HANYA perkara yang berkasnya belum ada.
+ *
+ * Empat bedanya dengan mulaiPenarikanMenyeluruh: acuannya seluruh arsip e-Court
+ * menurut SIPP (2.527 perkara, bukan 200 setahun terakhir); perkara yang
+ * berkasnya utuh tidak dibuka ulang hanya karena majelisnya belum
+ * memverifikasi; perkara yang arsipnya kosong sama sekali didahulukan; dan
+ * penariknya beristirahat tiap beberapa puluh perkara.
+ *
+ * TIDAK ditunggu sampai selesai - lihat catatan pada mulaiPenarikanMenyeluruh.
+ */
+function mulaiPenarikanBelumAda({ maksPerkara = MAKS_BELUM_ADA, olehSiapa = "" } = {}) {
+  if (keadaan.sedangJalan) {
+    return { ok: false, alasan: "penarikan_sedang_berjalan", berkasLog: keadaan.berkasLog };
+  }
+  if (kunciMasihHidup()) {
+    return { ok: false, alasan: "penarikan_lain_masih_berjalan", berkasLog: "" };
+  }
+
+  const batas = Math.min(Math.max(Number(maksPerkara) || MAKS_BELUM_ADA, 1), 1000);
+
+  void logService.logSecurityEvent({
+    eventType: "ecourt_penarikan_belum_ada_dimulai",
+    severity: "warning",
+    message: "Penarikan berkas e-Court yang belum ada dimulai dari portal.",
+    metadata: { olehSiapa: String(olehSiapa || ""), maksPerkara: batas },
+  });
+
+  void jalankanSatuPutaran({
+    maksPerkara: batas,
+    hanyaBelumAda: true,
+    sumber: "portal-belum-ada",
+  });
+
+  return { ok: true, alasan: "", berkasLog: keadaan.berkasLog, maksPerkara: batas };
+}
+
+/**
  * Menarik SATU perkara sekarang juga.
  *
  * Berbeda dengan antrean titipan yang menunggu detak penjadwal berikutnya -
@@ -738,12 +799,14 @@ function hentikanPenarikan({ olehSiapa = "" } = {}) {
 
 module.exports = {
   BAWAAN,
+  MAKS_BELUM_ADA,
   berhenti,
   dalamJamKerja,
   getSettings,
   getStatus,
   hentikanPenarikan,
   jalankanSatuPutaran,
+  mulaiPenarikanBelumAda,
   mulaiPenarikanMenyeluruh,
   mulaiPenarikanPerkara,
   mulai,

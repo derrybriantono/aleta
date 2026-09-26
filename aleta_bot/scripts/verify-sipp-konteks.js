@@ -20,20 +20,62 @@
  */
 
 const fs = require("fs");
-const path = require("path");
+const os = require("os");
+const path = require("path");
+
+/**
+ * ============================================================================
+ * ARSIP TIRUAN DI CAKRAM, KARENA CERMIN SUDAH TIDAK DIPAKAI
+ * ============================================================================
+ *
+ * Dulu keberadaan berkas cukup ditandai kolom cermin berkas_pdf/berkas_word
+ * pada baris dokumen. Cermin itu sekarang TIDAK dibaca lagi - terukur hanya
+ * terisi 23 pdf dan 8 word dari 394 dokumen - sehingga jawabannya datang dari
+ * aleta_bot_ecourt_files DAN dari bukti berkasnya ada di cakram.
+ *
+ * Yang diubah di sini hanya nilai yang dipaku, bukan ketatnya: berkasnya
+ * sungguh dibuat, barisnya sungguh disemai, dan pemeriksaannya tetap menuntut
+ * kedua format terlihat. Akar arsip dipasang SEBELUM layanan dimuat karena
+ * ecourtDocumentService membacanya sekali saat dimuat.
+ */
+const AKAR_ARSIP = fs.mkdtempSync(path.join(os.tmpdir(), "aleta-konteks-"));
+process.env.ALETA_BOT_ECOURT_DOCUMENT_ROOT = AKAR_ARSIP;
+const FOLDER_ARSIP = path.join(AKAR_ARSIP, "620_Pdt_G_2025");
+fs.mkdirSync(FOLDER_ARSIP, { recursive: true });
+const BERKAS_PDF = path.join(FOLDER_ARSIP, "jawaban.pdf");
+const BERKAS_WORD = path.join(FOLDER_ARSIP, "jawaban.docx");
+fs.writeFileSync(BERKAS_PDF, "%PDF-1.4 uji");
+fs.writeFileSync(BERKAS_WORD, "dokumen uji");
+
+process.on("exit", () => {
+  try {
+    fs.rmSync(AKAR_ARSIP, { recursive: true, force: true });
+  } catch {
+    // Folder sementara; gagal membersihkannya tidak boleh mengubah hasil uji.
+  }
+});
 
 // --- Tiruan database ---
 const botDbPath = require.resolve("../services/botDbService");
 const botDbAsli = require("../services/botDbService");
 const dokumen = [];
+const berkasTersimpan = [];
 const nomorTersimpan = [];
 require.cache[botDbPath].exports = {
   ensureSchema: async () => true,
-  addColumnIfMissing: async () => true,
+  addColumnIfMissing: async () => true,
+  addIndexIfMissing: async () => true,
   toMysqlDate: (v) => new Date(v).toISOString().slice(0, 19).replace("T", " "),
   fromMysqlDate: botDbAsli.fromMysqlDate,
   query: async (sql, params = []) => {
-    if (/^\s*CREATE TABLE/i.test(sql)) return [];
+    if (/^\s*CREATE TABLE/i.test(sql)) return [];
+    if (/FROM aleta_bot_ecourt_files/i.test(sql)) {
+      let hasil = berkasTersimpan.slice();
+      if (/nomor_perkara = \?/.test(sql)) hasil = hasil.filter((b) => b.nomor_perkara === params[0]);
+      if (/document_key = \?/.test(sql)) hasil = hasil.filter((b) => b.document_key === params[0]);
+      if (/format = \?/.test(sql)) hasil = hasil.filter((b) => b.format === params[1]);
+      return hasil.map((b) => ({ ...b, jalur: b.jalur_berkas, documentKey: b.document_key }));
+    }
     if (/FROM aleta_bot_ecourt_documents/i.test(sql) && /nomor_perkara = \?/.test(sql)) {
       return dokumen.filter((d) => d.nomor_perkara === params[0]);
     }
@@ -117,6 +159,12 @@ async function utama() {
       diberitahukan_pada: null,
       alasan_tidak_diberitahukan: "",
     });
+    // Barisnya di tabel berkas, bukan cerminnya, yang menentukan tombol unduh.
+    berkasTersimpan.length = 0;
+    berkasTersimpan.push(
+      { document_key: "k1", nomor_perkara: NOMOR, format: "pdf", jalur_berkas: BERKAS_PDF },
+      { document_key: "k1", nomor_perkara: NOMOR, format: "word", jalur_berkas: BERKAS_WORD }
+    );
     sippPihak.push({ nama: "Sulastri binti Djanggola", pihak_ke: 1, jenis: "pihak", telepon: "085242120977" });
 
     const hasil = await konteksService.getKonteks(NOMOR);

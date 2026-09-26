@@ -5,12 +5,15 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { bacaPotonganLog, daftarLogPenarikan } from "@/server/modules/aleta-ecourt/log-penarikan";
 import {
+  cobaLagiGatewayTidakTersedia,
   detakGatewayPantauSesi,
   getGatewayEcourtJadwal,
   getGatewayPantauSesi,
+  getGatewaySasaranPenarikan,
   jalankanGatewayAuditArsip,
   saveGatewayPantauSesi,
   hentikanGatewayPenarikan,
+  mulaiGatewayPenarikanBelumAda,
   mulaiGatewayPenarikanMenyeluruh,
   mulaiGatewayPenarikanPerkara,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -72,6 +75,18 @@ export async function GET(request: NextRequest) {
       return ok({ available: true, potongan });
     }
 
+    // Menghitung sasaran TIDAK menyentuh e-Court dan TIDAK memulai apa pun -
+    // hanya SELECT ke SIPP dan ke basis data bot. Karena itu cukup kapabilitas
+    // panel, sama seperti membaca daftar log, dan boleh ditekan sesering apa
+    // pun termasuk ketika sesi e-Court sedang habis.
+    if (String(request.nextUrl.searchParams.get("bagian") || "") === "sasaran") {
+      const hasil = await getGatewaySasaranPenarikan(20);
+      if (!hasil.ok) {
+        return ok({ available: false, message: hasil.error || "ALETA Bot belum dapat dihubungi." });
+      }
+      return ok({ available: true, sasaran: hasil.data ?? null });
+    }
+
     const daftar = await daftarLogPenarikan(20);
     // Keduanya diminta bersamaan: satu layar, satu kali menunggu.
     const [jadwal, pantau] = await Promise.all([getGatewayEcourtJadwal(), getGatewayPantauSesi()]);
@@ -113,6 +128,7 @@ export async function POST(request: NextRequest) {
       jedaPeringatanJam?: number;
       batas?: number;
       perbaiki?: boolean;
+      maksPerkara?: number;
     }>(request).catch(
       () => ({}) as Record<string, never>
     );
@@ -196,6 +212,44 @@ export async function POST(request: NextRequest) {
 
     if (tindakan === "menyeluruh") {
       const hasil = await mulaiGatewayPenarikanMenyeluruh(actor.name);
+      if (!hasil.ok) {
+        return ok({
+          available: false,
+          ok: false,
+          message: hasil.error || "ALETA Bot belum dapat dihubungi.",
+        });
+      }
+      return ok({ available: true, ...(hasil.data ?? { ok: false }) });
+    }
+
+    if (tindakan === "belum-ada") {
+      // Jatahnya dibatasi di sini DAN di bot. Angka yang terlalu besar membuat
+      // putarannya melewati batas dua jam dan dibunuh paksa di tengah jalan -
+      // datanya tidak hilang, tetapi catatannya berbunyi "Dihentikan paksa"
+      // dan orang yang menekan tombolnya menyangka ada yang rusak.
+      //
+      // Pagu ATAS tetap dijaga di sini (1.000), tetapi TIDAK ADA lagi nilai
+      // ganti 120 buatan portal: bila layar tidak menyebut angkanya, bot yang
+      // memutuskan dari ALETA_BOT_ECOURT_MAKS_BELUM_ADA. Dengan nilai ganti di
+      // sini, menaikkan env di peladen tidak mengubah apa pun lewat jalur
+      // portal - kenopnya mati tanpa ada yang tahu.
+      const maks = Number(body.maksPerkara);
+      const hasil = await mulaiGatewayPenarikanBelumAda(
+        Number.isFinite(maks) && maks > 0 ? Math.min(Math.floor(maks), 1000) : null,
+        actor.name
+      );
+      if (!hasil.ok) {
+        return ok({
+          available: false,
+          ok: false,
+          message: hasil.error || "ALETA Bot belum dapat dihubungi.",
+        });
+      }
+      return ok({ available: true, ...(hasil.data ?? { ok: false }) });
+    }
+
+    if (tindakan === "coba-tidak-tersedia") {
+      const hasil = await cobaLagiGatewayTidakTersedia({ semua: true });
       if (!hasil.ok) {
         return ok({
           available: false,

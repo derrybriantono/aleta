@@ -179,11 +179,38 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Tulisan agenda berwarna merah pada sidang e-Litigasi - perkara e-Court yang agendanya jawaban, replik, duplik, kesimpulan, musyawarah majelis, atau pembacaan putusan/penetapan, selain sidang pertama. Aturannya sama dengan kotak e-Litigasi.",
     kelompok: "penanda",
   },
+  // ==========================================================================
+  // KETERANGAN INI TERTINGGAL SATU RILIS DI BELAKANG LENCANANYA
+  // ==========================================================================
+  //
+  // Sampai 25 September 2026 keterangannya hanya menyebut potongan mediasi.
+  // Padahal lencananya sudah tumbuh tiga bagian yang tidak disebutkannya:
+  // potongan 120 hari perkara ghaib, angka kedua "· dari N", dan lencana merah
+  // "lewat 5 bulan".
+  //
+  // Akibatnya terukur, bukan dikira. Di sipp_donggala pada 25 September 2026
+  // ada 127 perkara belum putus, 13 di antaranya ghaib - dan hitungWaktuPutus
+  // menjepit potongannya sehingga 12 dari 13 berhenti di hariBersih = 1.
+  // 322/Pdt.G/2026 berjalan 115 hari dan lencananya berbunyi "1 hari · dari
+  // 115": angkanya turun 114 hari. Seluruh 13 perkara itu TIDAK bermediasi
+  // sama sekali (0 baris perkara_mediasi), jadi "hari mediasi tidak dihitung"
+  // bukan sekadar keterangan yang kurang - ia keterangan yang MENYESATKAN,
+  // sebab ia menunjuk satu-satunya potongan yang justru nol di sana.
+  //
+  // Panitera yang membuka panel ini untuk mencari tahu mengapa layar berbunyi
+  // "1 hari" karena itu dijawab dengan aturan yang tidak dipakai pada
+  // perkaranya. Dasar hukum kedua potongan disebutkan supaya angkanya dapat
+  // ditelusuri ke sumbernya, bukan diterima begitu saja.
+  //
+  // Dijaga tampilan-antrian-sidang.test.ts, yang MENJALANKAN hitungWaktuPutus
+  // bot atas ke-13 umur yang terukur itu - bukan menyisir teks berkas ini.
+  // Tidak adanya penjaga itulah sebab keterangan ini dapat tertinggal tanpa
+  // satu pun uji merah.
   {
     kunci: "umur-perkara",
     label: "Umur perkara",
     keterangan:
-      "Lencana jumlah hari di bawah agenda - hari mediasi tidak dihitung - berwarna menurut pita Waktu Putus SK Dirjen Badilag 048/2024: hijau, kuning, oranye, merah. Rinciannya tetap ada di panel Rincian.",
+      "Lencana jumlah hari di bawah agenda, berwarna menurut pita Waktu Putus SK Dirjen Badilag 048/DJA/SK.KP3.4.3/IV/2024: hijau, kuning, oranye, merah. Hari mediasi tidak dihitung (PERMA 1/2016 Pasal 24), dan perkara ghaib dipotong 120 hari lagi sebagai kelonggaran SK 048/2024 Tabel 2 nomor 1 - potongan itulah sebabnya perkara yang berjalan 115 hari dapat berbunyi \"1 hari\". Pada baris berkelonggaran lencananya menyebut angka kedua \"· dari N\", yaitu hari di luar mediasi TANPA potongan tersebut. Mematikan saklar ini ikut menyembunyikan lencana merah \"lewat 5 bulan\" - batas lima bulan SEMA 2/2014, yang tidak mengenal kelonggaran ghaib dan menagih laporan kepada Ketua Pengadilan. Rinciannya tetap ada di panel Rincian.",
     kelompok: "penanda",
   },
   {

@@ -980,7 +980,9 @@ async function ikrarBanyakPerkara(daftarPerkaraId = []) {
  * Sejak 24 September 2026 warnanya mengikuti tangga unsur Waktu Putus Perkara
  * SK Dirjen Badilag 048/DJA/SK.KP3.4.3/IV/2024 - hari bersih dan nilainya
  * dihitung penilaianSippService.hitungWaktuPutus, bukan di berkas ini - atas
- * hari berjalan di luar mediasi, TANPA pengecualian perkara khusus.
+ * hari berjalan di luar mediasi, dengan kelonggaran perkara khusus SK
+ * (ghaib 120 hari) dipotong dari hariBersih, sedangkan sisaHari terhadap
+ * batas lima bulan SEMA 2/2014 dihitung dari hariSema, TANPA kelonggaran itu.
  */
 const AMBANG_DURASI_HARI = 150;
 
@@ -1020,21 +1022,32 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
     : [];
 
   // ==========================================================================
-  // PERKARA GHAIB SENGAJA TIDAK DIKURANGI DI SINI
+  // KELONGGARAN PERKARA GHAIB - 120 HARI, SK 048/2024 TABEL 2 NOMOR 1
   // ==========================================================================
   //
-  // SK 048/2024 Tabel 2 nomor 1 memberi perkara ghaib kelonggaran 120 hari
-  // dalam PENILAIAN waktu putus. Pengguna mendefinisikan angka di Antrian
-  // Sidang sebagai "perkara berjalan di luar hari mediasi" - dan hanya itu.
-  // Kelonggaran ghaib pernah ikut dipotong (rancangan 24 September 2026), dan
-  // tinjauan membuktikan akibatnya: perkara 232/Pdt.G/2026, berjalan 163 hari,
-  // tampil "43 hari, sisa 107" terhadap batas lima bulan SEMA 2/2014 - batas
-  // yang TIDAK mengenal kelonggaran itu, dan kewajiban lapornya tersembunyi.
+  // Diminta pengguna 24 September 2026 petang: "perkara ghaib itu dipotong 120
+  // hari dari hitungan hari perkara". Perkara ghaib memang berjalan lebih lama
+  // karena hukum acaranya sendiri - pemanggilannya lewat pengumuman, bukan
+  // relaas biasa - dan menghitungnya sebagai keterlambatan berarti menghukum
+  // majelis atas kepatuhan. Diukur di sipp_donggala: dari 66 perkara ghaib
+  // 2025-2026, 49 oranye dan 2 merah tanpa kelonggaran ini, dan SELURUHNYA
+  // hijau dengannya.
   //
-  // Karena itu angka dan warnanya di sini tidak memotong ghaib. Penilaian SK
-  // di layar Status Perkara tetap memotongnya; perkara ghaib karena itu dapat
-  // berwarna lebih buruk di sini daripada nilai SK-nya di sana, dan catatan
-  // di layar menyebutkannya.
+  // YANG TIDAK IKUT DIPOTONG: batas lima bulan SEMA 2/2014. Kelonggaran ini
+  // milik PENILAIAN KINERJA SK; SEMA tidak mengenalnya, dan majelis tetap
+  // wajib melapor kepada Ketua Pengadilan. Karena itu ruas sisaHari di bawah
+  // dihitung dari hariSema - kotor dikurangi mediasi SAJA. Rancangan
+  // 24 September pagi memotongnya juga, dan perkara 232/Pdt.G/2026 yang
+  // berjalan 163 hari tampil "43 hari, sisa 107": kewajiban lapornya hilang
+  // dari layar. Dua kewajiban berbeda, dua angka.
+  //
+  // Penciri ghaibnya dibaca sippTahapanService - penciri yang SAMA dengan
+  // layar Status Perkara, bukan penciri kedua. Sampai hari ini Antrian memakai
+  // jarak PHS saja sedangkan Status Perkara memakai empat sumber, dan ketiga
+  // perkara yang berselisih antar-layar (65, 76, dan 158/Pdt.G/2025) justru
+  // yang berada di celah itu. Gagal-tertutup: kueri yang gagal berarti tidak
+  // ghaib, berarti tanpa kelonggaran.
+  const petaGhaib = await sippTahapanService.penandaGhaibBanyakPerkara(dipakai).catch(() => ({}));
 
   const mediasiPerPerkara = {};
   for (const baris of Array.isArray(mediasiRows) ? mediasiRows : []) {
@@ -1076,10 +1089,13 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
     // pendaftaran tidak dihitung, dan perkara "90 hari" di sini bernilai 3
     // di sana.
     //
-    // Yang TIDAK sama: pengecualian perkara khusus (ghaib, mafqud, izin
-    // atasan) tidak dipotong di sini - lihat catatan ghaib di atas - dan hari
-    // mediasinya dibaca dari perkara_mediasi (dibatasi 60 hari), bukan dari
-    // view v_durasi_mediasi yang dipakai Status Perkara.
+    // Yang TIDAK sama dengan Status Perkara: hari mediasinya dibaca dari
+    // perkara_mediasi (dibatasi 60 hari), bukan dari view v_durasi_mediasi.
+    // Terukur 24 September 2026: dari 118 perkara 2025-2026 yang bermediasi,
+    // 11 berselisih antara kedua sumber. Penciri ghaibnya kini SAMA, jadi
+    // selisih yang tersisa antar-layar hanya itu - bukan lagi seluruh perkara
+    // ghaib.
+    const ghaib = petaGhaib[kunci] || null;
     const waktuPutus =
       hariTotal === null
         ? null
@@ -1087,9 +1103,13 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
             tanggalDaftar,
             tanggalPutus: sampai,
             hariMediasi,
-            perkaraGhaib: false,
+            perkaraGhaib: Boolean(ghaib),
           });
     const hariBersih = waktuPutus ? waktuPutus.bersih : null;
+    // Hari yang dihitung terhadap SEMA 2/2014: kotor dikurangi mediasi, TANPA
+    // kelonggaran SK. Inilah angka yang menentukan sisaHari - dan satu-satunya
+    // penjaga agar potongan ghaib tidak pernah menyembunyikan kewajiban lapor.
+    const hariSema = waktuPutus ? waktuPutus.kotor - waktuPutus.mediasi : null;
 
     hasil[kunci] = {
       tanggalDaftar,
@@ -1106,9 +1126,25 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
        */
       mediasiDibatasi,
       hariBersih,
+      // Kelonggaran perkara khusus yang SUDAH dipotong dari hariBersih - null
+      // bila tidak ada. Sumbernya disebutkan supaya panitera dapat menilai
+      // sendiri apakah penandanya masuk akal, bukan menerimanya begitu saja.
+      kelonggaran:
+        waktuPutus && waktuPutus.potongan.hari > 0
+          ? {
+              hari: waktuPutus.potongan.hari,
+              hariMentah: waktuPutus.potongan.hariMentah,
+              sebab: waktuPutus.potongan.sebab,
+              sumber: ghaib ? ghaib.sumber : [],
+              jarakPhsHari: ghaib ? ghaib.jarakPhsHari : null,
+            }
+          : null,
+      hariSema,
       ambangHari: AMBANG_DURASI_HARI,
-      // Sisa hari sampai batas lima bulan SEMA 2/2014. Negatif berarti lewat.
-      sisaHari: hariBersih === null ? null : AMBANG_DURASI_HARI - hariBersih,
+      // Sisa hari sampai batas lima bulan SEMA 2/2014, dihitung dari hariSema
+      // dan BUKAN dari hariBersih: SEMA tidak mengenal kelonggaran SK.
+      // Negatif berarti lewat.
+      sisaHari: hariSema === null ? null : AMBANG_DURASI_HARI - hariSema,
       // Nilai unsur waktu putus SK 048/2024. Layar hanya menerjemahkan nilai
       // ini ke warna - lihat lib/pita-waktu-putus di portal.
       waktuPutusSk: waktuPutus
@@ -2312,6 +2348,18 @@ async function petugasPerkara(perkaraId) {
 }
 
 /**
+ * Nilai kolom berkas SIPP yang benar-benar berupa jalur, bukan penanda "0"/"-".
+ *
+ * SIPP menyimpan "0" pada kolom dokumen yang kosong - bukan NULL, bukan string
+ * kosong - sehingga pemeriksaan kebenaran apa pun atasnya menjawab "ada".
+ */
+function adaJalurBerkas(nilai) {
+  const teks = cleanText(nilai);
+  if (!teks || teks === "0" || teks === "-") return false;
+  return /\.[A-Za-z0-9]{2,5}$/.test(teks);
+}
+
+/**
  * Keadaan relaas panggilan untuk satu sidang.
  *
  * Relaas dicatat per pihak per sidang. Yang dijawab di sini bukan sekadar
@@ -2420,8 +2468,29 @@ async function relaasSidang(perkaraId, sidangId) {
         : Number(row.pihakKe) === 2
           ? "Tergugat/Termohon"
           : "",
-    adaDokumen: Boolean(cleanText(row.docRelaas)),
-    adaResi: Boolean(cleanText(row.docResi)),
+    // ========================================================================
+    // "0" BUKAN JALUR BERKAS
+    // ========================================================================
+    //
+    // Diukur pada sipp_donggala 25 September 2026: 5.275 dari 8.351 baris
+    // ber-doc_resi menyimpan nilai literal "0", tersebar pada 2.818 perkara;
+    // doc_relaas hanya 8 baris. Boolean("0") bernilai TRUE, sehingga layar
+    // memasang tombol "Resi" untuk berkas yang tidak pernah ada, dan penyusun
+    // ZIP menembak 5.275 permintaan yang pasti dijawab 400 - memakan jatah
+    // waktu justru pada perkara yang berkasnya paling banyak.
+    //
+    // Yang diperiksa keberadaan TITIK: jalur berkas SIPP selalu berekstensi
+    // (resources/file/doc/2026/01/....pdf), dan yang tanpa titik tidak pernah
+    // dapat dibaca sippDocumentService. Diukur: dari seluruh baris yang bukan
+    // kosong dan bukan "0", NOL yang gagal aturan ini pada kedua kolom - jadi
+    // yang tersaring hanya penanda palsunya, bukan satu berkas pun yang nyata.
+    //
+    // Ekstensinya TIDAK ikut dibawa keluar: nama berkas yang sebenarnya sudah
+    // dikirim bot pada Content-Disposition tiap unduhan, dan itulah yang
+    // dibaca penyusun ZIP maupun tombol unduh satuan. Membawa ruas kedua yang
+    // mengatakan hal yang sama berarti dua jawaban yang suatu hari berselisih.
+    adaDokumen: adaJalurBerkas(row.docRelaas),
+    adaResi: adaJalurBerkas(row.docResi),
   }));
 }
 

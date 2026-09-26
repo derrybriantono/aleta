@@ -2,8 +2,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BLANGKO_RELAAS,
   SET_BLANGKO,
+  blangkoRelaas,
   jenjangkan,
+  keadaanUntukGolongan,
+  pihakDipanggil,
   labelBlangko,
   setPutusanUntukPerkara,
   setUntukPerkara,
@@ -124,18 +128,37 @@ describe("set menurut jenis perkara", () => {
     expect(cocok).toContain("putusan-itsbat");
   });
 
+  // Sejak 25 September 2026 set RELAAS ikut di SET_BLANGKO, dan ia dikecualikan
+  // dengan sengaja dari setUntukPerkara: relaas dipilih menurut KEADAAN perkara
+  // (sidang pertama, sidang ditunda, pemberitahuan putusan), bukan menurut jenis
+  // perkaranya, dan ia punya panelnya sendiri. Jadi patokannya bukan lagi
+  // SET_BLANGKO.length melainkan yang BERJENJANG saja - nilainya yang berubah,
+  // bukan ketatnya.
+  const SET_BERJENJANG = SET_BLANGKO.filter((set) => set.jenis !== "relaas");
+
   it("set yang tidak cocok tidak dibuang, hanya turun", () => {
     const urut = setUntukPerkara("Cerai Gugat");
     // Perkara kadang menuntut blangko yang tidak lazim. Set yang disembunyikan
     // berarti panitera keluar dari ALETA untuk mengambilnya - lalu tidak kembali.
-    expect(urut).toHaveLength(SET_BLANGKO.length);
+    expect(urut).toHaveLength(SET_BERJENJANG.length);
     expect(urut.map((set) => set.id)).toContain("putusan-dispensasi");
   });
 
-  it("jenis perkara yang tidak dikenali tetap memberi seluruh set", () => {
+  it("jenis perkara yang tidak dikenali tetap memberi seluruh set berjenjang", () => {
     const urut = setUntukPerkara("Ekonomi Syariah");
-    expect(urut).toHaveLength(SET_BLANGKO.length);
+    expect(urut).toHaveLength(SET_BERJENJANG.length);
     expect(urut.every((set) => !set.cocok)).toBe(true);
+  });
+
+  it("set relaas TIDAK ditawarkan pemilih berjenjang", () => {
+    // Kalau ia ikut, pemilih BAS akan menawarkan blangko yang pertanyaan
+    // penjenjangnya tidak berlaku sama sekali - dan panitera yang memilihnya
+    // mendapat daftar kosong tanpa keterangan.
+    for (const jenis of ["Cerai Gugat", "Cerai Talak", "Ekonomi Syariah", ""]) {
+      expect(setUntukPerkara(jenis).map((set) => set.id), jenis).not.toContain("relaas-jurusita");
+    }
+    // Tetapi ia HARUS ada di katalognya, sebab panel relaas membacanya dari sana.
+    expect(SET_BLANGKO.map((set) => set.id)).toContain("relaas-jurusita");
   });
 
   it("perkara tanpa jenis tidak menandai apa pun cocok", () => {
@@ -241,5 +264,68 @@ describe("usulan bawaan dari jenjang putusan - untuk pemetaan ekstensi", () => {
     expect(setPutusanUntukPerkara("Dispensasi Kawin").map((s) => s.id)).toContain("putusan-dispensasi");
     expect(setPutusanUntukPerkara("Itsbat Nikah").map((s) => s.id)).toContain("putusan-itsbat");
     expect(setPutusanUntukPerkara("")).toEqual([]);
+  });
+});
+
+/**
+ * Sandi kehadiran SIPP dan pemetaan golongan bot.
+ *
+ * Arti sandinya dibaca dari borang SIPP (jadwal_sidang_p_edit.php): 1 "Semua
+ * Pihak", 2 "<Pihak Pertama> Saja", 3 "<Pihak Kedua> Saja", 4 "Para Pihak
+ * Tidak Hadir". Sampai 25 September 2026 sandi 1 dijawab "tidak-diketahui" -
+ * 7.486 sidang disodorkan sebagai pertanyaan padahal SIPP sudah menjawabnya.
+ */
+describe("relaas: sandi kehadiran dan golongan", () => {
+  it("empat sandi borang SIPP", () => {
+    expect(pihakDipanggil(1)).toBe("tidak-perlu");
+    expect(pihakDipanggil("1")).toBe("tidak-perlu");
+    expect(pihakDipanggil(2)).toBe("kedua");
+    expect(pihakDipanggil(3)).toBe("pertama");
+    expect(pihakDipanggil(4)).toBe("keduanya");
+  });
+
+  it("kosong TIDAK terbaca sebagai sandi - ia jatuh ke 0, dan 0 bukan sandi borang", () => {
+    for (const kosong of [null, undefined, "", "  "]) {
+      expect(pihakDipanggil(kosong)).toBe("tidak-diketahui");
+    }
+  });
+
+  it("sandi pihak ketiga dan 'sebagian' ditanyakan, tidak dipetakan", () => {
+    for (const sandi of [0, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, "x"]) {
+      expect(pihakDipanggil(sandi)).toBe("tidak-diketahui");
+    }
+  });
+
+  it("semua hadir: sidang lanjutan dan pemberitahuan TIDAK punya blangko", () => {
+    expect(blangkoRelaas("sidang-ditunda", "tidak-perlu")).toBeNull();
+    expect(blangkoRelaas("pemberitahuan-putusan", "tidak-perlu")).toBeNull();
+  });
+
+  it("sidang pertama dan ikrar talak tetap dua pihak walau sandinya 1", () => {
+    // Kehadiran yang terbaca untuk keduanya milik sidang yang belum terjadi.
+    expect(blangkoRelaas("sidang-pertama", "tidak-perlu")?.keadaan).toBe("sidang-pertama");
+    expect(blangkoRelaas("ikrar-talak", "tidak-perlu")?.keadaan).toBe("ikrar-talak");
+  });
+
+  it("sidang ditunda memilih blangko menurut siapa yang tidak hadir", () => {
+    const pt = BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-pertama")!.berkas;
+    const t = BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-ditunda")!.berkas;
+    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(2))?.berkas).toBe(t);
+    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(3))?.berkas).toBe(pt);
+    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(4))?.berkas).toBe(pt);
+  });
+
+  it("golongan bot -> keadaan: 'sidang-lanjutan' memakai blangko sidang lanjutan", () => {
+    expect(keadaanUntukGolongan("sidang-lanjutan")).toBe("sidang-ditunda");
+    expect(keadaanUntukGolongan("sidang-ditunda")).toBe("sidang-ditunda");
+    expect(keadaanUntukGolongan("sidang-pertama")).toBe("sidang-pertama");
+    expect(keadaanUntukGolongan("ikrar-talak")).toBe("ikrar-talak");
+    expect(keadaanUntukGolongan("pemberitahuan-putusan")).toBe("pemberitahuan-putusan");
+  });
+
+  it("golongan yang tidak dikenal dijawab null, bukan ditebak", () => {
+    for (const g of ["", null, undefined, "delegasi", "amplop", "toString", "Sidang-Pertama"]) {
+      expect(keadaanUntukGolongan(g)).toBeNull();
+    }
   });
 });

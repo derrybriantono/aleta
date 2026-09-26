@@ -949,13 +949,30 @@ export type GatewaySippKonteks = {
  */
 export async function ambilBerkasGateway(
   documentKey: string,
-  format: "pdf" | "word"
+  format: "pdf" | "word",
+  /**
+   * Sinyal pembatal dari pemanggil - sama seperti ambilBerkasSippGateway.
+   *
+   * Dulu hanya sisi SIPP yang punya, dan akibatnya penyusun ZIP tidak dapat
+   * memberi batas waktu pada satu pun berkas e-Court: lingkaran e-Courtnya
+   * memanggil fungsi ini tanpa AbortController karena memang tidak ada
+   * tempatnya. Satu berkas e-Court yang menggantung karena itu menggantungkan
+   * SELURUH permintaan melewati batas 120 detik nginx, dan yang dilihat
+   * petugas bukan pesan galat melainkan unduhan yang gagal tanpa sebab.
+   *
+   * Sumber bawaan tombol Status Perkara adalah "semua", jadi jalur e-Court itu
+   * dilewati setiap kali tombolnya ditekan - bukan jalur yang jarang.
+   *
+   * Pemanggil yang tidak menyebutnya tetap berjalan seperti sebelumnya.
+   */
+  signal?: AbortSignal
 ): Promise<Response> {
   const params = new URLSearchParams({ documentKey, format });
   const token = getGatewayToken();
   return fetch(`${getGatewayBaseUrl()}/internal/aleta-bot/sipp/berkas?${params.toString()}`, {
     headers: token ? { "x-aleta-internal-token": token } : {},
     cache: "no-store",
+    signal,
   });
 }
 
@@ -1094,6 +1111,8 @@ export type HasilPenarikan = {
   ok: boolean;
   alasan?: string;
   berkasLog?: string;
+  /** Hanya pada penarikan "yang belum ada": jatah perkara putaran ini. */
+  maksPerkara?: number;
 };
 
 /**
@@ -1120,6 +1139,106 @@ export async function mulaiGatewayPenarikanPerkara(
   return gatewayFetch("/internal/aleta-bot/ecourt/penarikan/perkara", {
     method: "POST",
     body: JSON.stringify({ nomorPerkara, olehSiapa }),
+  });
+}
+
+/**
+ * Sasaran penarikan - dihitung TANPA menyentuh e-Court.
+ *
+ * Hanya membaca SIPP dan basis data bot, jadi boleh dipanggil sesering apa pun,
+ * termasuk ketika sesi e-Court sedang habis. Tidak memulai apa pun.
+ */
+export type GatewaySasaranPenarikan = {
+  diperiksaPada: string;
+  totalEcourtSipp: number;
+  belumPernahDitarik: number;
+  berkasKurang: number;
+  lengkap: number;
+  dokumenKurang: number;
+  dokumenTidakTersedia: number;
+  jumlahSasaran: number;
+  /** Nol berarti tiap perkara masuk tepat satu golongan; selain nol itu cacat. */
+  selisihGolongan: number;
+  /**
+   * Batas BAWAH rentang taksiran. Namanya dipertahankan supaya pembaca lain
+   * tidak patah, tetapi artinya kini tegas: istirahat dihitung pada panjang
+   * terpendeknya, bukan tidak dihitung sama sekali.
+   */
+  perkiraanMenit: number;
+  perkiraanMenitMin?: number;
+  perkiraanMenitMaks?: number;
+  /**
+   * Bagian dari belumPernahDitarik yang halamannya SUDAH pernah dibuka dan
+   * ternyata memang nol dokumen. Angka ini TIDAK akan berkurang berapa kali pun
+   * tombolnya ditekan - tanpa menyebutkannya, petugas menekan berulang-ulang
+   * untuk sisa yang mustahil dikerjakan lalu menyimpulkan panelnya rusak.
+   */
+  dikunjungiTetapiKosong?: number;
+  /**
+   * Jatah satu penekanan, dibaca di tempat env-nya memang hidup: proses bot.
+   * Sebelum ada ruas ini, angkanya ditulis keras di layar sehingga menaikkan
+   * ALETA_BOT_ECOURT_MAKS_BELUM_ADA di peladen tidak mengubah apa pun.
+   */
+  maksSekaliTarik?: number;
+  /**
+   * Bahan taksirannya, supaya angkanya dapat DIPERIKSA, bukan dipercaya.
+   * rerataTerukur salah berarti rata-rata dokumen per perkara belum pernah
+   * dapat diukur dan angka cadangan yang dipakai - layar wajib mengatakannya.
+   */
+  taksiran?: {
+    menitKerja: number;
+    menitHalaman: number;
+    menitBerkas: number;
+    jumlahIstirahat: number;
+    istirahatMenitMin: number;
+    istirahatMenitMaks: number;
+    istirahatTiapPerkara: number;
+    dokumenDitaksir: number;
+    rerataDokumenPerPerkara: number;
+    rerataTerukur: boolean;
+    perkaraTerukur: number;
+  };
+  contoh: Array<{ nomorPerkara: string; sebab: string; kurang: number }>;
+};
+
+export async function getGatewaySasaranPenarikan(
+  contoh = 20
+): Promise<GatewayResult<GatewaySasaranPenarikan>> {
+  return gatewayFetch(
+    `/internal/aleta-bot/ecourt/penarikan/sasaran?contoh=${encodeURIComponent(String(contoh))}`
+  );
+}
+
+/**
+ * Menarik HANYA perkara yang berkasnya belum ada.
+ *
+ * maksPerkara BOLEH tidak disebut - dan bila tidak disebut, BOT yang memutuskan
+ * dari ALETA_BOT_ECOURT_MAKS_BELUM_ADA. Sebelumnya portal memasang angkanya
+ * sendiri (120) sebagai nilai ganti, sehingga menaikkan env di peladen tidak
+ * mengubah apa pun dan yang menyetelnya menyangka jatahnya naik.
+ */
+export async function mulaiGatewayPenarikanBelumAda(
+  maksPerkara: number | null,
+  olehSiapa: string
+): Promise<GatewayResult<HasilPenarikan>> {
+  const isi: Record<string, unknown> = { olehSiapa };
+  if (typeof maksPerkara === "number" && Number.isFinite(maksPerkara) && maksPerkara > 0) {
+    isi.maksPerkara = maksPerkara;
+  }
+  return gatewayFetch("/internal/aleta-bot/ecourt/penarikan/belum-ada", {
+    method: "POST",
+    body: JSON.stringify(isi),
+  });
+}
+
+/** Melupakan penanda "tidak tersedia" supaya ditanyakan sekali lagi. */
+export async function cobaLagiGatewayTidakTersedia(muatan: {
+  documentKey?: string;
+  semua?: boolean;
+}): Promise<GatewayResult<{ ok: boolean; diubah: number }>> {
+  return gatewayFetch("/internal/aleta-bot/ecourt/penarikan/coba-tidak-tersedia", {
+    method: "POST",
+    body: JSON.stringify(muatan),
   });
 }
 
@@ -1610,16 +1729,99 @@ export type SaringanCariPerkara = {
   putusSampai?: string;
   umur?: string;
   ecourt?: string;
+  /** Baris per halaman. Bawaan bot 25, pagunya 500. */
   batas?: number;
+  /** Mulai dari baris ke berapa - halaman berikutnya = lewati + batas. */
+  lewati?: number;
+  // --- tag dan rentang waktu (diminta pengguna 25 September 2026) ---
+  // Beberapa kunci tag dipisah koma; bot menggabungkannya dengan DAN, dan
+  // membuang kunci yang tidak ada di katalognya.
+  tag?: string;
+  dasarTanggal?: string;
+  periode?: string;
+  acuan?: string;
+  // DIBERI AWALAN tag: `sampai` di atas sudah dipakai saringan tanggal
+  // PENDAFTARAN. Dua medan bernama sama akan membuat tanggal panel tag
+  // ikut memotong pendaftaran tanpa satu pun galat.
+  tagDari?: string;
+  tagSampai?: string;
+};
+
+/**
+ * Satu baris hasil pencarian perkara.
+ *
+ * Ruas di bawah garis "ruas rinci" ditambahkan 25 September 2026 untuk
+ * tampilan daftar/rinci. Seluruhnya OPSIONAL: bot versi lama tidak
+ * mengirimnya, dan layar harus tetap dapat menggambar hasil darinya.
+ * Tanggal berbentuk "YYYY-MM-DD" atau "" - tampilkan lewat tanggal-indonesia.
+ */
+export type BarisCariPerkara = {
+  perkaraId: string;
+  nomorPerkara: string;
+  jenisPerkara: string;
+  tanggalDaftar: string;
+  sudahPutus: boolean;
+  tanggalPutusan: string;
+  tanggalMinutasi?: string;
+  tanggalBht?: string;
+  statusPutusan?: string;
+  cocok?: Array<{ medan: string; nilai: string }>;
+  // --- ruas rinci ---
+  /** Nama pihak pertama dipisah "; ", apa adanya dari SIPP. */
+  pihak1?: string;
+  /** Nama pihak kedua (Tergugat/Termohon) dipisah "; ". */
+  pihak2?: string;
+  /** "Penggugat"/"Pemohon"/"Penuntut Umum" menurut alur & jenis perkara. */
+  sebutanPihak1?: string;
+  /** "Tergugat"/"Termohon"/"Terdakwa". */
+  sebutanPihak2?: string;
+  /** Kuasa hukum yang aktif, "" bila tidak ada. */
+  kuasa?: string;
+  hakimKetua?: string;
+  paniteraPengganti?: string;
+  jurusita?: string;
+  /** perkara.tahapan_terakhir_text - yang dibaca daftar SIPP sendiri. */
+  tahapan?: string;
+  /** perkara.proses_terakhir_text. */
+  proses?: string;
+  /** Sidang yang tanggalnya sebelum hari ini. */
+  jumlahSidang?: number;
+  sidangTerakhir?: string;
+  /** Sidang terdekat mulai hari ini. */
+  sidangBerikut?: string;
+  /** Hari kalender sejak daftar sampai putus atau sampai hari ini. */
+  umurHari?: number | null;
+  /** null = tidak terbaca. */
+  ecourt?: boolean | null;
+  nomorAktaCerai?: string;
+  tanggalAktaCerai?: string;
+  alurPerkaraId?: number;
+  jenisPerkaraId?: number;
 };
 
 export type HasilCariPerkara = {
   ok: boolean;
-  perkara: Array<Record<string, unknown>>;
+  perkara: BarisCariPerkara[];
+  /** Masih ada baris sesudah halaman ini. */
+  adaLagi?: boolean;
+  /** Halaman yang benar-benar dipakai bot (sesudah dipagari). */
+  lewati?: number;
+  batas?: number;
+  /** "cepat"/"dalam" untuk kata bebas teks, "" selain itu. */
+  lapis?: string;
+  /** Bagian yang gagal dibaca dari SIPP - kolomnya belum tentu kosong. */
+  ruasTakTerbaca?: string[];
   pilihanStatus?: Array<{ kunci: string; label: string }>;
   pilihanRelaas?: Array<{ kunci: string; label: string }>;
   pilihanPutusan?: string[];
   pilihanAlur?: Array<{ id: number; label: string }>;
+  tagDipakai?: string[];
+  /** Perkara yang sungguh cocok dengan tagnya, terlepas dari batas baris. */
+  jumlahTag?: number | null;
+  /** Tag yang daftar idnya mentok, jadi perkara tertua tidak ikut terbawa. */
+  tagDipotong?: string[];
+  /** Pagu daftar id yang berlaku di bot - supaya layar tidak menebaknya. */
+  batasId?: number;
 };
 
 export async function cariGatewayPerkara(
@@ -1659,8 +1861,59 @@ export async function cariGatewayPerkara(
   pasang("umur", isi.umur);
   pasang("ecourt", isi.ecourt);
   pasang("batas", isi.batas ? String(isi.batas) : "");
+  pasang("lewati", isi.lewati ? String(isi.lewati) : "");
+  pasang("tag", isi.tag);
+  pasang("dasarTanggal", isi.dasarTanggal);
+  pasang("periode", isi.periode);
+  pasang("acuan", isi.acuan);
+  pasang("tagDari", isi.tagDari);
+  pasang("tagSampai", isi.tagSampai);
 
   return gatewayFetch(`/internal/aleta-bot/sipp/status-perkara/cari?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PERAMBAN_MS,
+  });
+}
+
+/**
+ * Jumlah tiap tag pada layar awal Status Perkara.
+ *
+ * Angkanya dihitung atas LINGKUP RENTANG WAKTU saja, tidak pernah atas hasil
+ * yang sudah tersaring tag lain - kalau ikut menyusut, menyalakan satu tag
+ * membuat tag lain tampak nol dan mustahil dilepas kembali.
+ */
+export async function getGatewayTagPerkara(params: {
+  dasarTanggal?: string;
+  periode?: string;
+  acuan?: string;
+  tagDari?: string;
+  tagSampai?: string;
+  /**
+   * "1" memulangkan KATALOGNYA saja, tanpa menyentuh SIPP sama sekali.
+   *
+   * Dipakai layar untuk menggambar panelnya seketika: menghitung jumlah 88 tag
+   * memakan 6,6 detik pada lingkup "Seluruhnya" (terukur), dan panel yang diam
+   * selama itu akan dianggap rusak sebelum satu angka pun terlihat.
+   */
+  katalogSaja?: string;
+}): Promise<
+  GatewayResult<{
+    ok: boolean;
+    katalogSaja?: boolean;
+    jumlah: Record<string, number> | null;
+    lingkup: { dari: string; sampai: string; perkara: number } | null;
+    tag: Array<{ kunci: string; label: string; kelompok: string; nada: string; judul: string }>;
+    kelompok: Array<{ kunci: string; label: string }>;
+    dasar: Array<{ kunci: string; label: string }>;
+    /** Pagu daftar id; layar memakainya untuk menyebut angka yang dipotong. */
+    batasId?: number;
+  }>
+> {
+  const kueri = new URLSearchParams();
+  for (const [nama, nilai] of Object.entries(params || {})) {
+    const teks = String(nilai ?? "").trim();
+    if (teks) kueri.set(nama, teks);
+  }
+  return gatewayFetch(`/internal/aleta-bot/sipp/status-perkara/tag?${kueri.toString()}`, {
     timeoutMs: TIMEOUT_PERAMBAN_MS,
   });
 }
@@ -2186,6 +2439,262 @@ export async function getGatewaySebaranJurusita(pilihan: {
   });
 }
 
+/**
+ * Satu baris pekerjaan juru sita pada tanggal yang diminta - sepucuk relaas
+ * panggilan sidang, atau sepucuk pemberitahuan putusan.
+ */
+export type BarisRelaasMassal = {
+  jenis: "panggilan" | "pemberitahuan";
+  perkaraId: number;
+  nomorPerkara: string;
+  jenisPerkara: string;
+  pihak: string;
+  sebutanPihak: string;
+  /** Panggilan; kosong pada pemberitahuan. */
+  tanggalSidang: string;
+  /** Pemberitahuan; kosong pada panggilan. */
+  tanggalPutusan: string;
+  agenda: string;
+  /** ket_temu / ket_ketemu apa adanya - termasuk sandi yang tidak dikenal. */
+  caraSandi: string;
+  /** Arti sandinya menurut komentar kolom SIPP, disusun di bot. */
+  caraLabel: string;
+  resi: string;
+  /**
+   * Diketik string, BUKAN union "terkirim" | "kembali" | "belum".
+   *
+   * Isi tabel status_pos di SIPP bukan hanya 1 dan 2: terukur pada
+   * sipp_donggala ada baris NULL juga. Menyatakan tipenya union berarti
+   * berjanji kepada tsc bahwa nilai keempat mustahil, dan tsc lalu MENGHAPUS
+   * cabang "sandi tidak dikenal" di layar sebagai tak terjangkau - persis
+   * cabang yang dibutuhkan ketika nilai keempat sungguh datang.
+   */
+  statusPos: string;
+  /** doc_relaas / edoc_pbt terisi. */
+  adaBerkas: boolean;
+  /** "panggilan" | "penunjukan" | "tidak tercatat" - alasan yang sama seperti statusPos. */
+  sumberJurusita: string;
+  berselisih: boolean;
+  /** Diisi HANYA bila berselisih true - nama yang MEMANGGIL perkara itu. */
+  namaPanggilan: string;
+};
+
+export type JurusitaRelaasMassal = {
+  nama: string;
+  /** "" bila tidak ada. */
+  nip: string;
+  relaas: number;
+  pemberitahuan: number;
+  baris: BarisRelaasMassal[];
+};
+
+export type RelaasMassalGateway = {
+  ok: boolean;
+  tanggal: string;
+  diperiksaPada: string;
+  ringkas: {
+    relaas: number;
+    pemberitahuan: number;
+    perkara: number;
+    jurusita: number;
+    /** Baris yang juru sitanya tidak dapat ditentukan - dikumpulkan, bukan dibuang. */
+    tanpaJurusita: number;
+    /** Baris pemberitahuan yang penunjukannya berbeda dari yang memanggil. */
+    berselisih: number;
+  };
+  jurusita: JurusitaRelaasMassal[];
+  /** Kalimat tentang yang dipotong atau tidak terbaca - digambar apa adanya. */
+  catatan: string[];
+};
+
+/**
+ * Relaas panggilan sidang dan pemberitahuan putusan pada SATU tanggal,
+ * dikelompokkan per juru sita - bahan cetak massal.
+ *
+ * ============================================================================
+ * DUA TABEL, DAN HANYA SALAH SATUNYA PUNYA KOLOM JURU SITA
+ * ============================================================================
+ *
+ * perkara_pelaksanaan_relaas menyebut jurusita_id - dan itu sys_users.userid,
+ * bukan jurusita.id (dibetulkan 2.33.0; disambungkan lewat jurusita.id NOL
+ * baris menunjuk juru sita aktif, jadi sambungan itu mustahil benar).
+ * perkara_putusan_pemberitahuan_putusan TIDAK punya kolom juru sita sama
+ * sekali, sehingga namanya harus disimpulkan dari penunjukan aktif pada
+ * perkaranya - aturan yang pengguna nyatakan 25 September 2026 dan yang
+ * terukur cocok 3.082 dari 3.123 baris (98,7%).
+ *
+ * Sisa 1,3% yang berselisih tidak didiamkan: di antaranya penunjukan bernama
+ * "jsp5" dan pemanggil bernama "Super Administrator" - nama login, bukan nama
+ * orang. Menampilkannya sebagai juru sita berarti menugaskan orang yang tidak
+ * ada, jadi kedua namanya dibawa ke layar sekaligus.
+ *
+ * Batas waktu penilaian: kedua tabelnya besar (14.342 dan 4.786 baris) dan
+ * disilangkan lewat nama yang harus dinormalkan, bukan lewat id.
+ */
+export async function getGatewayRelaasMassal(pilihan: {
+  /** YYYY-MM-DD. Kosong berarti HARI INI menurut zona pengadilan, diputuskan di bot. */
+  tanggal?: string;
+}): Promise<GatewayResult<RelaasMassalGateway>> {
+  const kueri = new URLSearchParams();
+  if (pilihan.tanggal) kueri.set("tanggal", pilihan.tanggal);
+  const ruas = kueri.toString();
+  return gatewayFetch(
+    `/internal/aleta-bot/sipp/relaas-massal${ruas ? `?${ruas}` : ""}`,
+    { timeoutMs: TIMEOUT_PENILAIAN_MS }
+  );
+}
+
+/**
+ * ============================================================================
+ * CETAK RELAAS HARIAN - DOKUMEN YANG LAHIR PADA HARI MENCETAK
+ * ============================================================================
+ *
+ * Berbeda dari RelaasMassalGateway di atas, yang merekap relaas yang SUDAH
+ * tercatat di SIPP. Yang ini daftar PEKERJAAN: panggilan dan pemberitahuan
+ * yang lahir pada tanggal T - perkara yang didaftarkan atau ditetapkan hari
+ * sidangnya pada T, sidang bertanggal T yang punya sidang berikutnya, jadwal
+ * yang diinput pada T, dan putusan bertanggal T. "Hari itu" adalah hari
+ * MENCETAK, bukan hari sidangnya.
+ *
+ * golongan, sebabMasuk, dan pihakDipanggil diketik string, BUKAN union -
+ * alasan yang sama dengan statusPos di atas: menyatakannya union membuat tsc
+ * menganggap cabang "tidak dikenal" di layar tak terjangkau, persis cabang
+ * yang dibutuhkan ketika bot suatu hari mengirim nilai kelima.
+ */
+export type DokumenRelaasCetakGateway = {
+  /** `${golongan}:${perkaraId}:${d ?? 0}:${pihakKe ?? 0}` - unik dan stabil. */
+  kunci: string;
+  perkaraId: number;
+  nomorPerkara: string;
+  jenisPerkara: string;
+  alurPerkaraId: number | null;
+  jenisPerkaraId: number | null;
+  /** "sidang-pertama" | "sidang-ditunda" | "ikrar-talak" | "pemberitahuan-putusan" */
+  golongan: string;
+  /** "didaftarkan" | "ditunda" | "jadwal-baru" | "diputus" */
+  sebabMasuk: string;
+  /** Urutan sidang YANG DIPANGGIL - parameter d pratinjau ABT; null untuk pemberitahuan. */
+  d: number | null;
+  sidangId: number | string | null;
+  /** YYYY-MM-DD atau "". */
+  tanggalSidangTujuan: string;
+  /** Sidang bertanggal T yang melahirkan dokumen ini; null bila tidak ada. */
+  sidangAsalId: number | string | null;
+  /** Sandi kehadiran mentah sidang asal - kosongnya berarti. */
+  dihadiriOleh: string | number | null;
+  /** "keduanya" | "pertama" | "kedua" | "tidak-diketahui" */
+  pihakDipanggil: string;
+  /** Pemberitahuan: 1/2; null bila satu dokumen per perkara. */
+  pihakKe: number | null;
+  jurusita: {
+    nama: string;
+    nip: string;
+    /** false berarti tidak ada penunjukan aktif - nama "tidak tercatat". */
+    dariPenunjukan: boolean;
+  };
+  /** true bila sudah tercatat di SIPP; null bila tidak dapat dinilai. */
+  sudahAdaRelaas: boolean | null;
+  // ---- Ruas tambahan bot sesudah telaah 25 Sep 2026 (di luar kontrak K1;
+  // opsional supaya bot lama tetap terbaca) ----
+  /** Kalimat keadaan khusus: PHS ulang, sandi 1 yang menyebut panggilan, sidang sesudah putusan. */
+  keterangan?: string[];
+  /** perkara.proses_terakhir_* SAAT INI - yang diperiksa ABT ketika mencetak. */
+  prosesTerakhirId?: number | null;
+  prosesTerakhirNama?: string;
+  /** Pemberitahuan saja; lewat JOIN status_putusan. */
+  statusPutusanId?: number | null;
+  statusPutusanNama?: string;
+  /** Jumlah baris pihak per sisi; lain = intervensi + turut tergugat. */
+  jumlahPihak?: { pertama: number; kedua: number; lain: number } | null;
+  /** Baris pihak pada sisi yang DIPANGGIL; null bila pihaknya belum diketahui. */
+  jumlahPihakSasaran?: number | null;
+  sebutanPihak?: { pertama: string; kedua: string } | null;
+};
+
+export type TidakPerluRelaasCetak = {
+  perkaraId: number;
+  nomorPerkara: string;
+  golongan: string;
+  sidangAsalId: number | string | null;
+  /** "semua-pihak-hadir" | "sidang-tujuan-tidak-sesudah-hari-cetak" | lainnya - digambar apa adanya bila tak dikenal. */
+  sebab: string;
+  /** Tambahan: alasan penundaan / agenda / status putusan yang tercatat - supaya dapat diperiksa orang. */
+  keterangan?: string;
+};
+
+export type TertundaRelaasCetak = {
+  perkaraId: number;
+  nomorPerkara: string;
+  /** "jadwal-pertama-belum-ada" | "hasil-sidang-belum-dicatat" | lainnya yang terukur. */
+  sebab: string;
+  keterangan: string;
+};
+
+export type RelaasCetakGateway = {
+  ok: boolean;
+  tanggal: string;
+  dokumen: DokumenRelaasCetakGateway[];
+  tidakPerlu: TidakPerluRelaasCetak[];
+  tertunda: TertundaRelaasCetak[];
+  /**
+   * Tambahan di luar K1: jalan "ditunda" dari tanggal sidang terakhir sebelum
+   * T - kelompok tersendiri, TIDAK termasuk `dokumen` maupun ringkas. Tidak ada
+   * pada bot lama.
+   */
+  hariKerjaSebelumnya?: { tanggal: string; dokumen: DokumenRelaasCetakGateway[] };
+  ringkas: {
+    dokumen: number;
+    /** Keempat golongan selalu ada, walau nol. */
+    perGolongan: Record<string, number>;
+    perJurusita: Record<string, number>;
+    tidakPerlu: number;
+    tertunda: number;
+    sudahAdaRelaas: number;
+  };
+  catatan: string[];
+};
+
+/**
+ * Tambahan rute portal atas tiap dokumen - dihitung dari pohon-blangko.ts,
+ * satu-satunya tempat nama berkas blangko ditulis.
+ */
+export type PenilaianCetakRelaas = {
+  blangko: { berkas: string; label: string } | null;
+  bisaDicetak: boolean;
+  /** "" bila bisaDicetak. */
+  sebabTidakBisa: string;
+  /** Tambahan di luar K2: dapat dicetak tetapi perlu dilihat dulu (lihat nilai-cetak.ts). */
+  peringatan?: Array<{ jenis: string; teks: string; tahanPilihSemua: boolean }>;
+  ikutPilihSemua?: boolean;
+};
+
+export type DokumenRelaasCetakPortal = DokumenRelaasCetakGateway & PenilaianCetakRelaas;
+
+export type RelaasCetakPortal = Omit<RelaasCetakGateway, "dokumen" | "hariKerjaSebelumnya"> & {
+  dokumen: DokumenRelaasCetakPortal[];
+  hariKerjaSebelumnya?: { tanggal: string; dokumen: DokumenRelaasCetakPortal[] };
+};
+
+/**
+ * Dokumen relaas yang lahir pada SATU tanggal - bahan tombol Cetak relaas di
+ * Antrian Sidang.
+ *
+ * Batas waktu penilaian, sama dengan rekapnya: jadwal sidang, penetapan hari
+ * sidang, putusan, dan penunjukan juru sita disilangkan sekaligus.
+ */
+export async function getGatewayRelaasCetak(pilihan: {
+  /** YYYY-MM-DD. Kosong berarti HARI INI menurut zona pengadilan, diputuskan di bot. */
+  tanggal?: string;
+}): Promise<GatewayResult<RelaasCetakGateway>> {
+  const kueri = new URLSearchParams();
+  if (pilihan.tanggal) kueri.set("tanggal", pilihan.tanggal);
+  const ruas = kueri.toString();
+  return gatewayFetch(
+    `/internal/aleta-bot/sipp/relaas-cetak${ruas ? `?${ruas}` : ""}`,
+    { timeoutMs: TIMEOUT_PENILAIAN_MS }
+  );
+}
+
 /** Daftar perkara satu desa - dibaca ketika lingkaran peta diketuk. */
 export async function getGatewayPerkaraDesa(pilihan: {
   kelompok: string;
@@ -2421,7 +2930,16 @@ export type ArsipPerkaraBaris = {
   dokumen: number;
   adaPdf: number;
   adaWord: number;
+  /** adaPdf + adaWord, dihitung peladen supaya yang digambar = yang diurut. */
+  berkasAda: number;
   tanpaBerkas: number;
+  /** Dokumen yang e-Court sendiri menjawab 404 - tidak dihitung "belum ada". */
+  tidakTersedia: number;
+  /** Berkas yang benar-benar terbaca di cakram, bukan sekadar tercatat. */
+  adaPdfCakram: number;
+  adaWordCakram: number;
+  /** Tercatat pernah diunduh tetapi lenyap dari cakram - perlu ditarik ulang. */
+  berkasHilang: number;
   menungguMajelis: number;
   sudahValid: number;
   berkasPendaftaran: number;
@@ -2440,6 +2958,22 @@ export type ArsipDokumenBaris = {
   agenda: string;
   adaPdf: boolean;
   adaWord: boolean;
+  /**
+   * Nama berkas yang sebenarnya - tersimpan pada jalur berkas, bukan pada tabel
+   * dokumen. Kosong bila berkasnya tidak terbaca.
+   *
+   * Tipe lama tidak menyebutnya, sehingga ruas yang SUDAH melintasi jaringan
+   * berhenti di gerbang ini dan tidak pernah dapat digambar.
+   */
+  namaBerkasPdf: string;
+  namaBerkasWord: string;
+  /** Jumlah berkas yang tercatat tetapi lenyap dari cakram - ANGKA, bukan boolean. */
+  berkasHilang: number;
+  /** Berkas dokumen ini sengaja dihapus karena masa simpan. */
+  dihapusRetensi: boolean;
+  /** Kapan e-Court menjawab 404 untuk dokumen ini; null berarti tidak pernah. */
+  tidakTersediaPada: string | null;
+  tidakTersediaSebab: string;
   ukuranByte: number;
   diberitahukanPada: string | null;
   terakhirTerlihat: string | null;
@@ -2449,14 +2983,17 @@ export type ArsipDokumenBaris = {
 export async function getGatewayArsipPerkara(input: {
   cari?: string;
   belumLengkap?: boolean;
+  /** Kunci kolom - lihat KOLOM_URUT_ARSIP di ecourtStoreService bot. */
   urutkan?: string;
+  arah?: "naik" | "turun";
   batas?: number;
   mulai?: number;
 }) {
   const params = new URLSearchParams({
     cari: input.cari ?? "",
     belumLengkap: input.belumLengkap ? "1" : "0",
-    urutkan: input.urutkan ?? "terbaru",
+    urutkan: input.urutkan ?? "terakhir",
+    arah: input.arah ?? "turun",
     batas: String(input.batas ?? 100),
     mulai: String(input.mulai ?? 0),
   });
@@ -2475,9 +3012,15 @@ export async function getGatewayArsipPerkara(input: {
 export async function gatewayUnggahPutusanSipp(muatan: {
   perkaraId: string;
   nomorPerkara: string;
-  putusanBase64: string;
-  anonimisasiBase64: string;
+  /** Satu slot saja sah: putusan saja, atau anonimisasi saja. */
+  putusanBase64?: string;
+  anonimisasiBase64?: string;
   olehUsername: string;
+  /**
+   * IPv4 peramban petugas (alamatIpPeramban), untuk kolom ipaddress baris
+   * audit SIPP. Rute bot membaca badan.ip; kosong berarti tidak diketahui.
+   */
+  ip?: string;
 }) {
   return gatewayFetch<{
     ok: boolean;
@@ -2498,7 +3041,12 @@ export async function gatewayUnggahPutusanSipp(muatan: {
     // Menulis berkas ke cakram lalu empat baris ke SIPP - lebih lama daripada
     // satu bacaan, dan membatalkannya di tengah meninggalkan berkas yang sudah
     // tertulis tanpa barisnya.
-    timeoutMs: 60000,
+    //
+    // Urutan batas MENAIK dari dalam ke luar (kontrak K6): bot 90 dtk per
+    // konversi soffice (dua konversi sejajar, periksa mesin 20 dtk) < gerbang
+    // 120 dtk < ekstensi 150 dtk. Dahulu 60 dtk - lebih pendek daripada satu
+    // konversi bot, jadi gerbang dapat menyerah sementara bot masih menulis.
+    timeoutMs: 120000,
   });
 }
 
@@ -2539,18 +3087,45 @@ export async function getGatewaySippRingkasanMassal(nomorPerkara: string[]) {
  */
 export async function getGatewayAbtUsulan(muatan: {
   nomorPerkara: string;
-  sumber?: "semua" | "sipp" | "saksi" | "itsbat" | "saksi-sdg";
+  sumber?: "semua" | "sipp" | "saksi" | "itsbat" | "saksi-sdg" | "posita-lain";
   saksi1?: string;
   saksi2?: string;
   tanggalSidang?: string;
   pelaku?: string;
   lawan?: string;
+  /** Sebutan pemohon (variabel 0046) - label itsbat dan perkara lain. */
+  pemohon?: string;
   /** Sebutan pemohon kedua pada itsbat nikah dua pemohon. */
   pemohon2?: string;
+  /** Kode kumpulan templat tanya-jawab ABT - ikut menentukan varian kalimat. */
+  kodeKumpulan?: string;
+  /**
+   * Jenis perkara (id SIPP atau nama): sumber 'posita-lain', dan syarat bentuk
+   * bergender keterangan saksi (data.syarat.jenisPerkaraId).
+   */
+  jenisPerkara?: string;
+  /** Alur perkara - syarat bentuk bergender (data.syarat.alur) dan 'posita-lain'. */
+  alur?: string;
+  /** Saksi N (K6): sampai enam, berpihak P atau T. */
+  saksi?: Array<{
+    ke: number;
+    pihak: string;
+    modus: string;
+    sumber: string;
+    sumberNama: string;
+    alasan: string[];
+  }>;
+  /** Pengaturan tipe keluaran efektif dari portal (K6). Tanpa ini bot memakai konstanta tertanam. */
+  tipeKeluaran?: { versi: string; daftar: Record<string, unknown> };
   /** Gugatannya. Dipakai menyaring alasan yang tidak pernah didalilkan. */
   posita?: string;
-  /** Templat tanya-jawab ABT, diambil ekstensi lewat halaman penyunting ABT. */
-  templat?: Array<{ no: string; tanya: string; jawab: string }>;
+  /**
+   * Templat tanya-jawab ABT, diambil ekstensi lewat halaman penyunting ABT.
+   * jawabMentah = jawaban templat SEBELUM variabelnya diganti ABT
+   * ("#1241# / #1242#"): hanya dari situ hubungan dua saksi dipecah dengan
+   * pasti, bukan ditebak dari teks yang sudah terganti.
+   */
+  templat?: Array<{ no: string; tanya: string; jawab: string; jawabMentah?: string }>;
   /** Ciri alasan yang didalilkan - menyaring jawaban tentang penyebab. */
   alasan?: string[];
   /**
@@ -2558,8 +3133,8 @@ export async function getGatewayAbtUsulan(muatan: {
    * dari-cerita - beserta alasan pilihannya dan siapa yang bercerita.
    */
   modus?: {
-    saksi1?: { modus?: string; sumber?: string; alasan?: string[] };
-    saksi2?: { modus?: string; sumber?: string; alasan?: string[] };
+    saksi1?: { modus?: string; sumber?: string; sumberNama?: string; alasan?: string[] };
+    saksi2?: { modus?: string; sumber?: string; sumberNama?: string; alasan?: string[] };
   };
 }) {
   return gatewayFetch<{
@@ -2567,6 +3142,14 @@ export async function getGatewayAbtUsulan(muatan: {
     saksi: Record<string, unknown> | null;
     itsbat: Record<string, unknown> | null;
     saksiSdg: Record<string, unknown> | null;
+    /** Usulan perkara lain dari posita (sumber 'posita-lain'). */
+    positaLain?: Record<string, unknown> | null;
+    /** Bot sungguh menerima tipeKeluaran; bot lama tidak mengirim ruas ini. */
+    tipeKeluaranDiterima?: boolean;
+    /** Entri pengaturan yang ditolak penyaring bot atau penyusunnya. */
+    tipeKeluaranDitolak?: Array<{ daftar: string; kunci: string; alasan: string; jumlah?: number }>;
+    /** Saksi N yang ditolak penyaring bot. */
+    saksiDitolak?: Array<{ indeks: number; alasan: string }>;
   }>("/internal/aleta-bot/abt/usulan", {
     method: "POST",
     body: JSON.stringify(muatan),
@@ -3682,5 +4265,53 @@ export async function hapusGatewayKredensial(
   return gatewayFetch(`/internal/aleta-bot/ecourt/kredensial?${kueri.toString()}`, {
     method: "DELETE",
     body: JSON.stringify({ olehSiapa }),
+  });
+}
+
+/**
+ * Gerbang ukur daftar deteksi tipe keluaran (K13) - bot hanya MEMBACA SIPP.
+ *
+ *   ciri     {n, tangkapanTanpa, tangkapanCalon, tangkapanBaru, kalimatCocok, benih, contoh[]}
+ *   sebutan  {n, pilihan[], sampel[{perkaraId, pertimbangan, sumberHukumId}]}
+ *   padanan  {nama, adaDiSipp, jumlahPerkara, namaSipp[]}
+ *
+ * Batas waktunya batas penilaian (60 detik): ukur ciri menjalankan pencocok
+ * dua kali atas sekitar 1.820 posita, dan sampel sumber hukum memuat 300
+ * pertimbangan utuh.
+ */
+export async function gatewayUkurTipe(muatan: {
+  jenis: "ciri" | "sebutan" | "padanan";
+  calon?: Array<{ kunci: string; nilai: string; data?: Record<string, unknown> }>;
+  dasar?: Array<{ kunci: string; nilai: string; data?: Record<string, unknown> }>;
+  benih?: string;
+  batas?: number;
+  nama?: string;
+}) {
+  return gatewayFetch<{
+    ok: boolean;
+    jenis: string;
+    alasan?: string;
+    n?: number;
+    tangkapanTanpa?: number;
+    tangkapanCalon?: number;
+    tangkapanBaru?: number;
+    kalimatCocok?: number;
+    /** Kalimat cocok yang tertangkap BARU karena calon, dan berapa di antaranya jadi contoh (didahulukan). */
+    kalimatBaru?: number;
+    contohBaru?: number;
+    benih?: string;
+    contoh?: Array<{ id: string; perkaraId: string; kalimat: string; baru: boolean }>;
+    dasarAsal?: string;
+    ditolak?: Array<{ daftar: string; kunci: string; alasan: string }>;
+    pilihan?: Array<{ nilai: string; label: string }>;
+    sampel?: Array<{ perkaraId: string; pertimbangan: string; sumberHukumId: string }>;
+    nama?: string;
+    adaDiSipp?: boolean;
+    jumlahPerkara?: number;
+    namaSipp?: string[];
+  }>("/internal/aleta-bot/sipp/ukur-tipe", {
+    method: "POST",
+    body: JSON.stringify(muatan),
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
   });
 }

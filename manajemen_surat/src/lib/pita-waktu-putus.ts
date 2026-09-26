@@ -17,10 +17,22 @@
  * di sini hanya terjemahan NILAI ke warna. Menulis ulang "<= 90 hijau" di
  * peramban melahirkan aturan kedua yang suatu hari berselisih diam-diam.
  *
- * Tangganya sama, masukannya TIDAK: di Antrian Sidang yang dinilai hari di
- * luar mediasi saja, sebagaimana didefinisikan pengguna - pengecualian perkara
- * khusus (ghaib dan sejenisnya) tidak dipotong. Penilaian SK di Status Perkara
- * memotongnya, sehingga perkara ghaib dapat bernilai lebih baik di sana.
+ * Tangganya sama, dan sejak 24 September 2026 petang masukannya hampir sama
+ * pula. Penciri perkara ghaib kini ditulis SEKALI di bot
+ * (sippTahapanService.penandaGhaibBanyakPerkara) dan dipakai kedua layar,
+ * sehingga kelonggaran 120 hari SK 048/2024 dipotong di keduanya. Sebelumnya
+ * Antrian Sidang memakai jarak PHS saja sedangkan Status Perkara memakai empat
+ * sumber, dan tiga perkara (65, 76, dan 158/Pdt.G/2025) berselisih antar-layar.
+ *
+ * Yang MASIH berbeda hanya sumber hari mediasinya: Antrian membaca tabel
+ * perkara_mediasi (dibatasi 60 hari), Status Perkara membaca view
+ * v_durasi_mediasi. Terukur 24 September 2026: dari 118 perkara 2025-2026 yang
+ * bermediasi, 11 berselisih antara kedua sumber.
+ *
+ * Kelonggaran itu TIDAK dipotong dari hari yang dihitung terhadap batas lima
+ * bulan SEMA 2/2014 - bot mengirimnya terpisah sebagai hariSema. Memotongnya
+ * dari keduanya pernah membuat perkara 163 hari tampil "43 hari, sisa 107",
+ * dan kewajiban lapornya hilang dari layar.
  *
  * `rentang` hanya KETERANGAN untuk legenda; pita-waktu-putus.test.ts
  * memastikannya sama dengan tangga bot.

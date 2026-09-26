@@ -58,7 +58,10 @@ export async function GET(request: NextRequest) {
     const hasil = await getGatewayArsipPerkara({
       cari: String(request.nextUrl.searchParams.get("cari") || ""),
       belumLengkap: request.nextUrl.searchParams.get("belumLengkap") === "1",
-      urutkan: String(request.nextUrl.searchParams.get("urutkan") || "terbaru"),
+      urutkan: String(request.nextUrl.searchParams.get("urutkan") || "terakhir"),
+      // Hanya dua nilai yang boleh lewat. Arah yang tidak dikenal dijatuhkan ke
+      // "turun", bukan diteruskan apa adanya ke penyusun ORDER BY di bot.
+      arah: request.nextUrl.searchParams.get("arah") === "naik" ? "naik" : "turun",
       batas: Number(request.nextUrl.searchParams.get("batas")) || 100,
       mulai: Number(request.nextUrl.searchParams.get("mulai")) || 0,
     });

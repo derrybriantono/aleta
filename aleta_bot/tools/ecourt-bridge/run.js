@@ -37,6 +37,7 @@ const sesiEcourt = require("./sesi");
 const navigasi = require("./navigasi");
 const arsipService = require("../../services/ecourtArsipService");
 const ecourtStoreService = require("../../services/ecourtStoreService");
+const ecourtKunjunganService = require("../../services/ecourtKunjunganService");
 const putusanEcourtService = require("../../services/putusanEcourtService");
 const ecourtDocumentService = require("../../services/ecourtDocumentService");
 const berkasIntegritasService = require("../../services/berkasIntegritasService");
@@ -79,6 +80,16 @@ const PAGE_DELAY_MS = Number(process.env.ALETA_ECOURT_PAGE_DELAY_MS || 1500);
  * paling mahal bila terlambat diketahui.
  */
 const BATAS_TERBARU = Number(process.env.ALETA_ECOURT_PRIORITAS_TERBARU || 200);
+
+/**
+ * Berapa perkara sebelum penarik berhenti sejenak - lihat gelung utama.
+ *
+ * Hanya berlaku pada mode --hanya-belum-ada. Daftar sasarannya PADAT: hampir
+ * tiap perkara di dalamnya benar-benar dibuka, tidak seperti daftar biasa yang
+ * sebagian besarnya dilewati tanpa satu permintaan pun. Jumlah permintaan per
+ * jam karena itu naik walau jedanya sendiri tidak berubah satu milidetik pun.
+ */
+const ISTIRAHAT_TIAP_PERKARA = Number(process.env.ALETA_ECOURT_ISTIRAHAT_TIAP || 40);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -147,6 +158,13 @@ function parseArgs(argv) {
     perkara: "",
     // Memaksa memeriksa ulang walau berkasnya sudah lengkap.
     paksaUlang: false,
+    // Menarik HANYA perkara yang berkasnya belum ada. Empat bedanya dengan
+    // putaran biasa: acuan SIPP dibuka lebar (seluruh arsip, bukan 365 hari
+    // terakhir), perkara yang berkasnya utuh TIDAK dibuka ulang hanya karena
+    // majelisnya belum memverifikasi, perkara yang belum pernah ditarik sama
+    // sekali didahulukan, dan penariknya beristirahat tiap beberapa puluh
+    // perkara.
+    hanyaBelumAda: false,
     // Kosong berarti slot bawaan - lihat sesi.js.
     akun: "",
   };
@@ -158,6 +176,7 @@ function parseArgs(argv) {
     // register, dan memaksa satu di antaranya hanya menyusahkan.
     else if (item === "--perkara") args.perkara = String(argv[++i] || "").trim();
     else if (item === "--paksa-ulang") args.paksaUlang = true;
+    else if (item === "--hanya-belum-ada") args.hanyaBelumAda = true;
     // Slot akun e-Court. Tiap akun punya folder profil sendiri; tanpa ini,
     // seluruh akun berbagi satu profil dan saling menimpa sesinya.
     else if (item === "--akun") args.akun = String(argv[++i] || "").trim();
@@ -488,7 +507,7 @@ function kunciPerkara(nomor) {
     .replace(/[^A-Z0-9./-]/g, "");
 }
 
-async function muatAcuanSipp(maksPerkara) {
+async function muatAcuanSipp(maksPerkara, { seluruhArsip = false } = {}) {
   const kosong = {
     aktif: false,
     alasan: "",
@@ -501,8 +520,32 @@ async function muatAcuanSipp(maksPerkara) {
   };
 
   try {
+    // ==================================================================
+    // ACUAN BUKAN JATAH PUTARAN
+    // ==================================================================
+    //
+    // limitnya dulu Math.max(maksPerkara, 200), dan "penarikan menyeluruh"
+    // memanggilnya dengan maksPerkara = 0 - jadi acuannya SELALU 200, apa pun
+    // yang diminta. Acuan hanya menentukan perkara mana yang MUNGKIN dijangkau;
+    // yang membatasi beban tetap args.maksPerkara, yang memotong daftar
+    // tautannya belakangan. Menyatukan keduanya membuat perkara ke-201 tidak
+    // pernah tersentuh, dan tombol "Tarik perkara ini" untuk perkara lama
+    // selalu menjawab "tidak ada pada acuan SIPP".
+    //
+    // Melebarkan acuan TIDAK menambah satu permintaan pun ke server Mahkamah
+    // Agung: ini kueri ke SIPP setempat, dan sapuan daftar e-Court menyapu
+    // halaman yang sama banyaknya baik acuannya 200 maupun 2.527.
+    //
+    // Jendela harinya dibuka lebar HANYA pada mode belum-ada dan penarikan satu
+    // perkara. Diukur pada sipp_donggala 24 Sep 2026: 2.527 perkara e-Court,
+    // hanya 988 didaftarkan dalam 365 hari terakhir - 1.539 perkara (61%) tidak
+    // pernah masuk acuan sama sekali. Seluruh 1.539 itu sudah putus, jadi ini
+    // soal kelengkapan arsip, bukan tenggat; putaran terjadwal karena itu tetap
+    // memakai jendela pendeknya.
     const hasil = await sippReadOnlyBridgeService.safeHandleBridgeOperation("ecourt.caseList", {
-      limit: Math.max(Number(maksPerkara) || 0, 200),
+      limit: seluruhArsip ? 5000 : 2000,
+      // Tidak disebut berarti 365 hari - lihat listEcourtCases.
+      sejakHari: seluruhArsip ? 3650 : undefined,
     });
 
     if (!hasil.ok || !hasil.data) {
@@ -825,6 +868,38 @@ async function processCase(page, url, ringkasan, args, acuan) {
   // arsip meskipun catatan dokumennya satu.
   const kunciTerpakai = new Set();
 
+  // ==========================================================================
+  // KUNJUNGANNYA DICATAT SEBELUM SATU DOKUMEN PUN DIKERJAKAN
+  // ==========================================================================
+  //
+  // Satu-satunya penulis baris di aleta_bot_ecourt_documents adalah
+  // recordDocument, dan ia hanya dipanggil DI DALAM gelung di bawah. Perkara
+  // yang halamannya terbuka tetapi tidak memuat satu dokumen pun karena itu
+  // dulu tidak meninggalkan jejak apa pun: ia tetap terhitung "belum pernah
+  // ditarik" (lapis 0) dengan kapan() = 0, dan urutan di dalam lapis 0 jatuh
+  // kembali ke urutan sapuan yang sama tiap kali sebab sort JavaScript stabil.
+  //
+  // Akibatnya terukur: 2.527 perkara e-Court di sipp_donggala dengan jatah 120
+  // perkara per penekanan menuntut 22 penekanan, dan tanpa catatan ini
+  // penekanan ke-2 sampai ke-22 membuka persis 120 perkara yang SAMA - perkara
+  // ke-121 dan seterusnya tidak pernah tersentuh.
+  //
+  // Dicatat untuk SETIAP kunjungan, bukan hanya yang kosong: dokumenTerlihat
+  // yang ikut tersimpan membuat "dibuka dan memang kosong" dapat dibedakan
+  // dari "belum pernah dibuka" pada penghitungan sasaran.
+  //
+  // Gagal-terbuka: catatan giliran adalah penyempurnaan, bukan syarat. Gagal
+  // menulisnya tidak boleh menggagalkan penarikan dokumen, yang justru
+  // pekerjaan utamanya.
+  await ecourtKunjunganService
+    .catatKunjungan(detail.nomorPerkara, { dokumenTerlihat: semua.length, sumberUrl: url })
+    .catch((galat) => log(`  Catatan kunjungan gagal disimpan: ${galat.message}`));
+
+  if (semua.length === 0) {
+    log("  Halaman terbuka tetapi tidak memuat satu dokumen pun - dicatat supaya tidak dibuka terus.");
+    ringkasan.perkaraKosong = (ringkasan.perkaraKosong || 0) + 1;
+  }
+
   for (const dokumen of semua) {
     ringkasan.dokumenTerlihat += 1;
 
@@ -958,6 +1033,10 @@ async function processCase(page, url, ringkasan, args, acuan) {
       // pada salah satunya bukan berarti dokumennya tidak dapat diambil.
       let adaYangBerhasil = false;
       let sebabGagalTerakhir = "";
+      // Dibedakan supaya "404 pada PDF, jaringan putus pada Word" TIDAK
+      // ditandai tidak tersedia - yang Word masih mungkin berhasil besok.
+      let tidakTersediaPadaDokumen = false;
+      let adaGagalLain = false;
       for (const item of tautan) {
         try {
           // PDF hanya punya PENANDA, belum alamat. Alamatnya ditanyakan dulu
@@ -970,6 +1049,7 @@ async function processCase(page, url, ringkasan, args, acuan) {
               ringkasan.jumlahGalat += 1;
               ringkasan.galatTerakhir = `${dokumen.judul}: ${tukar.reason}`;
               sebabGagalTerakhir = String(tukar.reason || "alamat tidak ketemu");
+              adaGagalLain = true;
               continue;
             }
             alamatBerkas = tukar.alamat;
@@ -983,6 +1063,7 @@ async function processCase(page, url, ringkasan, args, acuan) {
             ringkasan.jumlahGalat += 1;
             ringkasan.galatTerakhir = `${dokumen.judul}: alamat berkas ${item.format} tidak diketahui`;
             sebabGagalTerakhir = `alamat berkas ${item.format} tidak diketahui`;
+            adaGagalLain = true;
             continue;
           }
 
@@ -1011,12 +1092,18 @@ async function processCase(page, url, ringkasan, args, acuan) {
               log(`    ${item.format} "${dokumen.judul}" tidak tersedia di e-Court (404) - tidak diulang.`);
               ringkasan.tidakTersedia = (ringkasan.tidakTersedia || 0) + 1;
               sebabGagalTerakhir = `berkas ${item.format} tidak disediakan e-Court`;
+              // "tidak diulang" harus tertulis di basis data, bukan hanya di
+              // log: tanpa penanda, dokumennya tetap tanpa berkas, perkaranya
+              // tidak pernah terhitung lengkap, dan halamannya dibuka ulang
+              // tiap putaran selamanya.
+              tidakTersediaPadaDokumen = true;
               continue;
             }
             log(`    Gagal unduh ${item.format} "${dokumen.judul}": ${unduh.reason}`);
             ringkasan.jumlahGalat += 1;
             ringkasan.galatTerakhir = `${dokumen.judul}: ${unduh.reason}`;
             sebabGagalTerakhir = String(unduh.reason || "gagal diunduh");
+            adaGagalLain = true;
             continue;
           }
           catatIrama(true);
@@ -1038,6 +1125,7 @@ async function processCase(page, url, ringkasan, args, acuan) {
             ringkasan.jumlahGalat += 1;
             ringkasan.galatTerakhir = `${dokumen.judul}: ${periksa.alasan}`;
             sebabGagalTerakhir = String(periksa.alasan || "isi berkas ditolak");
+            adaGagalLain = true;
             continue;
           }
 
@@ -1076,6 +1164,7 @@ async function processCase(page, url, ringkasan, args, acuan) {
           ringkasan.jumlahGalat += 1;
           ringkasan.galatTerakhir = error.message;
           sebabGagalTerakhir = String(error.message || "gagal diunduh");
+          adaGagalLain = true;
         }
         await jedaManusiawi();
       }
@@ -1085,6 +1174,16 @@ async function processCase(page, url, ringkasan, args, acuan) {
       // ke nol; gagal seluruhnya menambah hitungannya beserta sebab terakhir.
       if (adaYangBerhasil) {
         await ecourtStoreService.resetGagalBerkas(documentKey).catch(() => {});
+        // Berhasil sekarang berarti penanda lama keliru - e-Court memang dapat
+        // mengunggah berkasnya kapan saja tanpa memberi tahu siapa pun.
+        await ecourtStoreService.lupakanTidakTersedia({ documentKey }).catch(() => {});
+      } else if (tidakTersediaPadaDokumen && !adaGagalLain) {
+        // e-Court menjawab 404 untuk SETIAP bentuk yang ada tautannya. Itu
+        // jawaban, bukan kegagalan kita - dan dicatat supaya dokumennya tidak
+        // membuat perkaranya terhitung kurang selamanya.
+        await ecourtStoreService
+          .tandaiTidakTersedia(documentKey, sebabGagalTerakhir)
+          .catch(() => {});
       } else if (sebabGagalTerakhir) {
         await ecourtStoreService.catatGagalBerkas(documentKey, sebabGagalTerakhir).catch(() => {});
       }
@@ -1132,6 +1231,90 @@ async function processCase(page, url, ringkasan, args, acuan) {
       ringkasan.galatTerakhir = error.message;
     }
   }
+}
+
+/**
+ * ============================================================================
+ * GILIRAN: YANG PALING LAMA MENUNGGU DIDAHULUKAN
+ * ============================================================================
+ *
+ * Mengurutkan daftar tautan DI TEMPAT, lalu memulangkannya. Dipisahkan dari
+ * utama() supaya dapat dijalankan pengujian tanpa peramban dan tanpa basis
+ * data: cacat yang ditutup di sini - lapis 0 yang tidak dapat pensiun - hanya
+ * terlihat pada penekanan KEDUA, dan penjaga yang menyisir teks sumber tidak
+ * akan pernah melihatnya.
+ *
+ * DUA LAPIS: 200 TERBARU LEBIH DULU, GILIRAN DI DALAM TIAP LAPIS
+ *
+ * Diminta pengguna 23 September 2026: "saya ingin seluruh file bisa ditarik
+ * dari e-Court, tetapi yang paling penting dan utama yaitu 200 perkara
+ * terakhir ini".
+ *
+ * Daftar SIPP sudah terurut dari yang terbaru, tetapi pengurutan giliran
+ * MENGHAPUS urutan itu seluruhnya: perkara 2015 yang belum pernah diperiksa
+ * akan selalu mendahului perkara yang didaftarkan minggu ini, dan perkara yang
+ * tenggatnya sedang berjalan menunggu di belakang ribuan perkara lama.
+ *
+ * Keadilan giliran tidak dibuang - ia tetap berlaku DI DALAM tiap lapis,
+ * sehingga tidak ada perkara yang tidak pernah tersapu.
+ *
+ * TIGA LAPIS PADA MODE BELUM-ADA, DUA LAPIS SEPERTI DULU DI LUARNYA
+ *
+ * Lapis 0 hanya hidup pada mode belum-ada: perkara yang arsipnya KOSONG SAMA
+ * SEKALI. Bagi perkara itu ALETA tidak tahu apa pun - bukan sekadar kurang satu
+ * berkas, melainkan tidak tahu berapa dokumennya dan tidak tahu pihaknya
+ * menyetujui saluran elektronik atau tidak, padahal panggilan e-Summons disusun
+ * dari data itu. Perkara yang sudah tertarik dan tinggal kurang satu-dua berkas
+ * masih dapat dikerjakan tangan; yang kosong tidak dapat.
+ *
+ * Aturan 23 Sep 2026 - 200 terbaru didahulukan - TIDAK dicabut, hanya turun
+ * satu tingkat di dalam mode ini, dan tetap menjadi lapis pertama pada putaran
+ * terjadwal.
+ *
+ * KAPAN TERAKHIR DIBUKA DIBACA DARI DUA SUMBER
+ *
+ * Catatan dokumen lebih dipercaya bila ada - ia bukti ada dokumen yang
+ * benar-benar terbaca. Catatan kunjungan dipakai bila tidak ada, dan itulah
+ * yang membuat lapis 0 dapat pensiun: perkara yang dibuka lalu ternyata kosong
+ * kini punya waktu, sehingga penekanan berikutnya mengurutkannya di belakang
+ * perkara yang belum pernah dibuka sama sekali (yang tetap bernilai 0).
+ */
+function susunGiliran(
+  daftar,
+  { petaNomor, keadaanBerkas, terakhirDokumen, kunjungan, hanyaBelumAda, batasTerbaru = BATAS_TERBARU } = {}
+) {
+  const nomorDari = (url) => {
+    const nomor = petaNomor && petaNomor.get ? petaNomor.get(url) : "";
+    return nomor ? normalizeCaseNumber(nomor) : "";
+  };
+
+  /** Perkara yang arsipnya KOSONG SAMA SEKALI - belum pernah ditarik. */
+  const belumPernah = (url) => {
+    const nomor = nomorDari(url);
+    if (!nomor) return false;
+    const k = keadaanBerkas && keadaanBerkas.get ? keadaanBerkas.get(nomor) : null;
+    return !k || k.dokumen === 0;
+  };
+
+  const kapan = (url) => {
+    const nomor = nomorDari(url);
+    if (!nomor) return 0;
+    const dariDokumen = terakhirDokumen && terakhirDokumen.get ? terakhirDokumen.get(nomor) : 0;
+    if (dariDokumen) return Number(dariDokumen) || 0;
+    const dariKunjungan = kunjungan && kunjungan.get ? kunjungan.get(nomor) : null;
+    return dariKunjungan ? Number(dariKunjungan.waktu) || 0 : 0;
+  };
+
+  const urutanAwal = new Map(daftar.map((url, i) => [url, i]));
+  const lapis = (url) =>
+    hanyaBelumAda && belumPernah(url)
+      ? 0
+      : Number(urutanAwal.get(url) ?? 0) < batasTerbaru
+        ? 1
+        : 2;
+
+  daftar.sort((a, b) => lapis(a) - lapis(b) || kapan(a) - kapan(b));
+  return daftar;
 }
 
 async function utama() {
@@ -1197,6 +1380,10 @@ async function utama() {
     // Ketemu di e-Court tetapi belum giliran diperiksa. BUKAN selisih data.
     tertundaKarenaBatas: 0,
     perkaraDilewati: 0,
+    // Halamannya terbuka, nomor perkaranya terbaca, tetapi tidak ada satu
+    // dokumen pun di dalamnya. Dihitung terpisah supaya "120 perkara diperiksa,
+    // 0 dokumen baru" tidak terbaca sebagai kegagalan penarikan.
+    perkaraKosong: 0,
     status: "selesai",
   };
 
@@ -1240,7 +1427,13 @@ async function utama() {
 
     // Dimuat SEBELUM halaman dibaca, supaya jumlah perkara yang seharusnya
     // ada sudah diketahui bahkan bila e-Court tidak menampilkan satu pun.
-    const acuan = await muatAcuanSipp(args.maksPerkara);
+    // Perkara yang DIMINTA namanya (--perkara) juga memakai acuan lebar: daftar
+    // SIPP diurutkan dari yang terbaru, sehingga perkara lama yang justru punya
+    // dokumen persidangan selalu di luar jendela pendek - dan tombol "Tarik
+    // perkara ini" di Kendali Berkas karena itu tidak pernah berhasil untuknya.
+    const acuan = await muatAcuanSipp(args.maksPerkara, {
+      seluruhArsip: args.hanyaBelumAda || Boolean(args.perkara),
+    });
 
     log("Membuka daftar perkara...");
 
@@ -1332,6 +1525,26 @@ async function utama() {
     // seluruhnya diberikan kepada perkara yang memang perlu diperiksa, dan
     // sapuannya maju dari putaran ke putaran.
     if (!args.paksaUlang && acuan.petaNomor && acuan.petaNomor.size > 0) {
+      // ====================================================================
+      // SATU KUERI UNTUK SELURUH DAFTAR
+      // ====================================================================
+      //
+      // perkaraSudahLengkap dulu dipanggil DI DALAM gelung ini - satu kueri
+      // tiap tautan. Selama acuannya 200 perkara itu tidak terasa; pada acuan
+      // penuh 2.527 perkara itu 2.527 kueri berurutan sebelum satu halaman pun
+      // dibuka, dan tidak satu barisnya pun berbeda dari yang dapat dijawab
+      // satu kueri berkelompok.
+      const nomorSemua = tautan.map((url) => acuan.petaNomor.get(url)).filter(Boolean);
+      let keadaanBerkas = new Map();
+      try {
+        keadaanBerkas = await ecourtStoreService.ringkasKekuranganBerkas(nomorSemua);
+      } catch (error) {
+        // Gagal-terbuka: tanpa keadaan berkas, seluruh perkara diperiksa
+        // seperti dulu. Menolak menarik karena satu kueri gagal jauh lebih
+        // merugikan daripada memeriksa beberapa perkara yang sudah lengkap.
+        log(`  Keadaan berkas tidak terbaca (${error.message}); seluruh perkara diperiksa.`);
+      }
+
       const perluDiperiksa = [];
       for (const url of tautan) {
         const nomorTarget = acuan.petaNomor.get(url);
@@ -1340,12 +1553,35 @@ async function utama() {
           perluDiperiksa.push(url);
           continue;
         }
-        let lengkap = false;
-        try {
-          lengkap = await ecourtStoreService.perkaraSudahLengkap(nomorTarget);
-        } catch {
-          lengkap = false;
+        const k = keadaanBerkas.get(normalizeCaseNumber(nomorTarget));
+
+        // Belum pernah dibuka: tidak adanya catatan bukan bukti tidak adanya
+        // dokumen.
+        if (!k || k.dokumen === 0) {
+          perluDiperiksa.push(url);
+          continue;
         }
+
+        // ================================================================
+        // DUA UKURAN LENGKAP - DAN YANG DIPAKAI TERGANTUNG PERTANYAANNYA
+        // ================================================================
+        //
+        // Putaran biasa tetap memakai ukuran lama: perkara yang dokumennya
+        // masih menunggu verifikasi majelis dibuka ulang, sebab pihak kerap
+        // mengunggah perbaikan berjudul sama dan itulah dokumen yang paling
+        // mungkin berganti.
+        //
+        // Mode belum-ada memakai ukuran berkas saja. Yang diminta petugas
+        // adalah "tarik yang belum ada, jangan ambil yang sudah ada" - dan
+        // perkara yang seluruh berkasnya sudah tersimpan tidak akan memberi
+        // satu byte pun, sebab needsRecheck menolak mengunduh ulang sebelum
+        // 6 jam (belum) atau 168 jam (valid). Setiap perkara yang sedang
+        // berjalan selalu punya dokumen berstatus 'belum', jadi ukuran lama
+        // membuka ulang hampir seluruh perkara aktif tiap putaran.
+        const lengkap = args.hanyaBelumAda
+          ? k.tanpaBerkas === 0
+          : k.tanpaBerkas === 0 && k.menunggu === 0;
+
         if (lengkap) {
           ringkasan.perkaraDilewati += 1;
           continue;
@@ -1372,31 +1608,27 @@ async function utama() {
       // punya catatan - dan itulah yang paling perlu didahulukan, jadi
       // ketiadaannya dihitung sebagai menunggu paling lama.
       try {
-        const terakhir = await ecourtStoreService.terakhirDiperiksaPerkara();
-        const kapan = (url) => {
-          const nomor = acuan.petaNomor.get(url);
-          if (!nomor) return 0;
-          return terakhir.get(normalizeCaseNumber(nomor)) ?? 0;
-        };
-        // ==================================================================
-        // DUA LAPIS: 200 TERBARU LEBIH DULU, GILIRAN DI DALAM TIAP LAPIS
-        // ==================================================================
-        //
-        // Diminta pengguna 23 September 2026: "saya ingin seluruh file bisa
-        // ditarik dari e-Court, tetapi yang paling penting dan utama yaitu
-        // 200 perkara terakhir ini".
-        //
-        // Daftar SIPP sudah terurut dari yang terbaru, tetapi pengurutan
-        // giliran di bawah MENGHAPUS urutan itu seluruhnya: perkara 2015 yang
-        // belum pernah diperiksa akan selalu mendahului perkara yang
-        // didaftarkan minggu ini, dan perkara yang tenggatnya sedang berjalan
-        // menunggu di belakang ribuan perkara lama.
-        //
-        // Keadilan giliran tidak dibuang - ia tetap berlaku DI DALAM tiap
-        // lapis, sehingga tidak ada perkara yang tidak pernah tersapu.
-        const urutanAwal = new Map(perluDiperiksa.map((url, i) => [url, i]));
-        const lapis = (url) => (Number(urutanAwal.get(url) ?? 0) < BATAS_TERBARU ? 0 : 1);
-        perluDiperiksa.sort((a, b) => lapis(a) - lapis(b) || kapan(a) - kapan(b));
+        const terakhirDokumen = await ecourtStoreService.terakhirDiperiksaPerkara();
+        // Catatan kunjungan dibaca TERPISAH dari catatan dokumen, dan sebabnya
+        // terukur: sampai 25 Sep 2026 satu-satunya sumber "kapan terakhir
+        // dibuka" adalah MAX(terakhir_terlihat) pada aleta_bot_ecourt_documents,
+        // dan perkara yang dibuka tanpa menghasilkan dokumen tidak punya baris
+        // di sana - jadi kapan() memulangkan 0 untuk semuanya dan lapis 0 tidak
+        // dapat pensiun.
+        let kunjungan = new Map();
+        try {
+          kunjungan = await ecourtKunjunganService.kunjunganTerakhir();
+        } catch (error) {
+          log(`  Catatan kunjungan tidak terbaca (${error.message}); memakai catatan dokumen saja.`);
+        }
+
+        susunGiliran(perluDiperiksa, {
+          petaNomor: acuan.petaNomor,
+          keadaanBerkas,
+          terakhirDokumen,
+          kunjungan,
+          hanyaBelumAda: args.hanyaBelumAda,
+        });
       } catch (error) {
         // Urutan giliran adalah penyempurnaan, bukan syarat. Bila catatannya
         // tidak terbaca, urutan daftar SIPP dipakai apa adanya - seperti dulu.
@@ -1418,6 +1650,30 @@ async function utama() {
 
     for (const url of tautan) {
       ringkasan.perkaraDiperiksa += 1;
+
+      // ==================================================================
+      // ISTIRAHAT SETIAP BEBERAPA PULUH PERKARA
+      // ==================================================================
+      //
+      // Hanya pada mode belum-ada, dan sebabnya bukan selera. Daftar sasaran
+      // di mode itu PADAT: hampir tiap perkara di dalamnya benar-benar dibuka,
+      // tidak seperti daftar biasa yang sebagian besarnya dilewati tanpa satu
+      // permintaan pun. Jumlah permintaan per jam karena itu naik walau
+      // jedaManusiawi tidak berubah satu milidetik pun.
+      //
+      // Istirahat ini untuk BEBAN peladen e-Court: membatasi kepadatan
+      // permintaan pada penarikan panjang. Lamanya TETAP 2 menit - sejak
+      // 26 September 2026 ALETA tidak menambah pola yang tujuannya meniru
+      // kerja manusia (lihat memori tidak-menyamarkan-aleta-di-sipp-abt).
+      if (
+        args.hanyaBelumAda &&
+        ringkasan.perkaraDiperiksa > 1 &&
+        ringkasan.perkaraDiperiksa % ISTIRAHAT_TIAP_PERKARA === 0
+      ) {
+        log(`  Istirahat 120 detik sesudah ${ringkasan.perkaraDiperiksa} perkara (beban peladen e-Court).`);
+        await sleep(120000);
+      }
+
       log(`[${ringkasan.perkaraDiperiksa}/${tautan.length}] ${url.slice(0, 80)}...`);
       try {
         await processCase(page, url, ringkasan, args, acuan);
@@ -1465,6 +1721,10 @@ async function utama() {
     console.log("\n=== Ringkasan sinkronisasi ===");
     console.log(`  Perkara diperiksa : ${ringkasan.perkaraDiperiksa}`);
     console.log(`  Dokumen terlihat  : ${ringkasan.dokumenTerlihat}`);
+    if (ringkasan.perkaraKosong > 0) {
+      console.log(`  Dibuka tetapi kosong: ${ringkasan.perkaraKosong}`);
+      console.log("    (halamannya terbaca, dokumennya belum ada - dicatat, tidak akan dibuka terus)");
+    }
     console.log(`  Dokumen baru      : ${ringkasan.dokumenBaru}`);
     if (ringkasan.tertundaKarenaBatas > 0) {
       console.log(`  Ketemu di e-Court, belum giliran diperiksa: ${ringkasan.tertundaKarenaBatas}`);
@@ -1510,4 +1770,16 @@ if (require.main === module) {
   });
 }
 
-module.exports = { downloadFile, guessExtension, parseArgs, simpanBerkas };
+module.exports = {
+  downloadFile,
+  guessExtension,
+  parseArgs,
+  simpanBerkas,
+  susunGiliran,
+  // Diekspor supaya penjaga uji dapat MEMBANDINGKANNYA dengan taksiran waktu di
+  // ecourtSasaranService, bukan menyisir teksnya. Dua tempat yang menyimpan satu
+  // bilangan akan berselisih cepat atau lambat, dan yang berselisih di sini
+  // adalah angka yang dipakai memutuskan boleh-tidaknya mengunci jalur
+  // penarikan orang lain.
+  ISTIRAHAT_TIAP_PERKARA,
+};

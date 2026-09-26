@@ -50,6 +50,7 @@ const crypto = require("crypto");
 
 const sipp = require("../db_config");
 const botDb = require("./botDbService");
+const ecourtStoreService = require("./ecourtStoreService");
 const putusanEcourtService = require("./putusanEcourtService");
 const logService = require("./logService");
 const { cleanText, normalizeCaseNumber } = require("./ecourtTextService");
@@ -213,7 +214,32 @@ async function daftarPerkaraSipp({ sejak = "", sampai = "", maks = 0, hanyaEcour
   return daftar.filter((x) => lewat.has(String(x.perkaraId)));
 }
 
-/** Perkara mana saja yang terdaftar lewat e-Court. */
+/**
+ * Perkara mana saja yang terdaftar lewat e-Court.
+ *
+ * ============================================================================
+ * TABEL PEMETAAN, BUKAN TABEL PENDAFTARAN
+ * ============================================================================
+ *
+ * Kueri lama membaca `perkara_efiling.perkara_id`. Kolom itu TIDAK ADA -
+ * perkara_efiling berkunci (efiling_id, satker_id), dan kaitannya ke perkara
+ * disimpan di tabel pemetaan tersendiri, perkara_efiling_id. Dibuktikan di
+ * sipp_donggala 24 Sep 2026:
+ *
+ *   mysql> SELECT DISTINCT e.perkara_id FROM perkara_efiling e WHERE ...
+ *   ERROR 1054 (42S22): Unknown column 'e.perkara_id' in 'field list'
+ *
+ * Kuerinya karena itu melempar setiap kali dijalankan, dan galatnya ditelan
+ * .catch(() => new Set()) di jalankanSinkron - sehingga SELURUH baris kendali
+ * tersimpan dengan lewat_ecourt = 0. Layar Kendali SIPP menyatakan tidak ada
+ * satu pun perkara e-Court, sementara yang benar-benar ada 2.527 dari 10.120
+ * perkara (COUNT(DISTINCT perkara_id) FROM perkara_efiling_id, hari yang sama).
+ *
+ * perkara_efiling_id adalah pemetaan resmi SIPP dan sudah dipakai di lima
+ * layanan lain - sippStatusPerkaraService (ECOURT_SYARAT), sippJadwalSidang-
+ * Service, penilaianStatistikService, penilaianPelayananService, dan
+ * penilaianJejakKetaatanService. Kini keenamnya menjawab dari tabel yang sama.
+ */
 async function perkaraLewatEcourt(idPerkara = []) {
   const hasil = new Set();
   const bersih = [...new Set(idPerkara.map(Number).filter(Boolean))];
@@ -222,9 +248,9 @@ async function perkaraLewatEcourt(idPerkara = []) {
   for (const kelompok of potong(bersih, UKURAN_KELOMPOK)) {
     const isian = kelompok.map(() => "?").join(", ");
     const rows = await runSipp(
-      `SELECT DISTINCT e.perkara_id AS perkaraId
-         FROM perkara_efiling e
-        WHERE e.perkara_id IN (${isian})`,
+      `SELECT DISTINCT k.perkara_id AS perkaraId
+         FROM perkara_efiling_id k
+        WHERE k.perkara_id IN (${isian})`,
       kelompok
     );
     for (const row of rows) hasil.add(String(row.perkaraId));
@@ -340,6 +366,13 @@ async function inventarisSipp(idPerkara = []) {
 /** Inventaris arsip e-Court ALETA untuk sekumpulan nomor perkara. */
 async function inventarisAleta(nomorPerkara = []) {
   await ensureSchema();
+  // Skema arsip e-Court disiapkan pemiliknya, bukan di sini. Kueri di bawah
+  // membaca aleta_bot_ecourt_documents.tidak_tersedia_pada dan tabel
+  // aleta_bot_ecourt_files - keduanya lahir di ecourtStoreService. Tanpa
+  // panggilan ini, satu bot yang belum pernah menarik apa pun menjawab
+  // "kolom tidak dikenal", dan galatnya ditelan pemanggil persis seperti
+  // cacat perkara_efiling.perkara_id yang baru saja diperbaiki.
+  await ecourtStoreService.ensureSchema();
 
   const peta = {};
   const bersih = [...new Set(nomorPerkara.map(normalizeCaseNumber).filter(Boolean))];
@@ -358,8 +391,27 @@ async function inventarisAleta(nomorPerkara = []) {
       botDb.query(
         `SELECT d.nomor_perkara AS nomorPerkara,
                 COUNT(*) AS jumlah,
-                SUM(CASE WHEN (d.berkas_pdf IS NULL OR d.berkas_pdf = '')
-                          AND (d.berkas_word IS NULL OR d.berkas_word = '')
+                -- Dari tabel berkas, BUKAN dari kolom cermin berkas_pdf/
+                -- berkas_word. Cermin hanya terisi saat satu berkas BARU
+                -- tersimpan (recordFile keluar lebih awal untuk berkas yang
+                -- sudah ada) dan di-NULL-kan saat retensi walau sidik jari
+                -- lain masih hidup: terukur 23 pdf dan 8 word dari 394
+                -- dokumen, sementara aleta_bot_ecourt_files mencatat 400
+                -- berkas. Membacanya membuat "belum terunduh" di layar
+                -- Kendali SIPP hampir selalu menyebut seluruh arsip.
+                --
+                -- Dokumen yang e-Court sendiri tidak menyediakan berkasnya
+                -- tidak ikut dihitung kurang: menariknya tidak mungkin
+                -- berhasil, dan menghitungnya membuat perkaranya kurang
+                -- selamanya.
+                SUM(CASE WHEN d.tidak_tersedia_pada IS NULL
+                          AND NOT EXISTS (
+                                SELECT 1 FROM aleta_bot_ecourt_files fb
+                                 WHERE fb.document_key = d.document_key
+                                   AND fb.dihapus_retensi IS NULL
+                                   AND fb.jalur_berkas IS NOT NULL
+                                   AND fb.jalur_berkas <> ''
+                              )
                          THEN 1 ELSE 0 END) AS belumTerunduh
            FROM aleta_bot_ecourt_documents d
           WHERE d.nomor_perkara IN (${isian})
@@ -429,7 +481,13 @@ function susunKendali(perkara, dariSipp, dariAleta) {
 
   // Perkara yang punya dokumen di SIPP tetapi arsip e-Court-nya kosong sama
   // sekali - biasanya perkara yang belum pernah ditarik.
-  if (dariSipp.dokumen > 0 && aleta.dokumen === 0) {
+  //
+  // HANYA untuk perkara e-Court. Perkara biasa tidak punya arsip e-Court dan
+  // tidak akan pernah punya; menuduhnya "belum pernah ditarik" berarti menaruh
+  // pekerjaan yang tidak ada di daftar kerja panitera. Terukur di sipp_donggala
+  // 24 Sep 2026: 2.527 dari 10.120 perkara lewat e-Court, jadi tanpa penjagaan
+  // ini tiga perempat daftar kekurangannya karangan.
+  if (perkara.lewatEcourt && dariSipp.dokumen > 0 && aleta.dokumen === 0) {
     kurang.push({
       jenis: "belum_pernah_ditarik",
       jumlah: dariSipp.dokumen,
@@ -691,7 +749,24 @@ async function sinkron(pilihan = {}) {
     onKemajuan({ tahap: "mulai", ...angka, pesan: `${daftar.length} perkara akan diperiksa.` });
   }
 
-  const lewatEcourt = await perkaraLewatEcourt(daftar.map((x) => x.perkaraId)).catch(() => new Set());
+  // Gagal-TERBUKA tetap: satu kueri yang gagal tidak boleh membatalkan
+  // sinkronisasi seluruh perkara. Yang berubah adalah sebabnya DICATAT.
+  // Kegagalan yang sebelumnya diam di sini menyembunyikan kolom yang tidak ada
+  // berbulan-bulan - lewat_ecourt tersimpan 0 untuk 10.120 perkara - dan tidak
+  // ada satu angka pun di layar yang berubah karenanya.
+  let lewatEcourt = new Set();
+  let lewatEcourtGagal = "";
+  try {
+    lewatEcourt = await perkaraLewatEcourt(daftar.map((x) => x.perkaraId));
+  } catch (error) {
+    lewatEcourtGagal = `lewat_ecourt_tidak_terbaca: ${error && error.message ? error.message : error}`;
+    void logService.logSystemEvent({
+      eventType: "kendali_berkas_lewat_ecourt_gagal",
+      severity: "warning",
+      message: "Penanda e-Court tidak terbaca; seluruh baris kendali ditandai bukan e-Court.",
+      metadata: { idJalan, sumber, sebab: lewatEcourtGagal },
+    });
+  }
 
   for (const kelompok of potong(daftar, UKURAN_KELOMPOK)) {
     if (batal && batal()) {
@@ -723,6 +798,7 @@ async function sinkron(pilihan = {}) {
         dariAleta[perkara.nomorPerkara]
       );
       if (alasanGagal) baris.alasanTidakTerbaca = alasanGagal;
+      if (lewatEcourtGagal && !baris.alasanTidakTerbaca) baris.alasanTidakTerbaca = lewatEcourtGagal;
 
       try {
         await simpanKendali(baris);

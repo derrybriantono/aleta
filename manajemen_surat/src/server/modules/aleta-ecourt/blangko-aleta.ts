@@ -286,6 +286,17 @@ export async function saklarMenyala(db: AletaDatabase, golongan: string): Promis
   return angka(baris?.menyala) === 1;
 }
 
+/**
+ * Golongan yang punya saklar periksa - SAMA dengan daftar di layar Blangko
+ * Mandiri (blangko-mandiri.tsx, dijaga blangko-mandiri-penjaga.test.ts).
+ *
+ * Sebelumnya geserSaklar menerima teks apa saja: "golongan-ngawur" tercatat
+ * sebagai saklar menyala beserta riwayatnya, padahal tidak ada blangko yang
+ * pernah membacanya - pergeseran yang tampak berhasil tetapi tidak mengubah
+ * apa pun.
+ */
+export const GOLONGAN_SAKLAR = ["relaas", "bas", "putusan", "kepaniteraan", "jinayat"] as const;
+
 /** Menggeser saklar. Tiap pergeseran dicatat - tanpa jejak sama saja tidak ada. */
 export async function geserSaklar(
   db: AletaDatabase,
@@ -294,6 +305,12 @@ export async function geserSaklar(
   const golongan = teks(masukan.golongan);
   const oleh = teks(masukan.oleh);
   if (!golongan) return { ok: false, sebab: "Golongan dokumen harus disebut." };
+  if (!(GOLONGAN_SAKLAR as readonly string[]).includes(golongan)) {
+    return {
+      ok: false,
+      sebab: `Golongan '${golongan}' tidak punya saklar periksa. Pilih salah satu: ${GOLONGAN_SAKLAR.join(", ")}.`,
+    };
+  }
   if (!oleh) return { ok: false, sebab: "Pergeseran saklar harus menyebut siapa yang melakukannya." };
 
   const sekarang = new Date().toISOString();

@@ -139,6 +139,44 @@ console.log("hitungWaktuPutus - satu sumber untuk unsur SK dan warna Antrian Sid
     .poinPerkara({ tanggalDaftar: tanggal("2025-01-01"), tanggalPutus: new Date(tanggal("2025-01-01").getTime() + 200 * 86400000), perkaraGhaib: true })
     .rinci.find((x) => x.kunci === "waktuPutus").catatan;
   cek("ghaib 201 hari: catatan tanpa kata dijepit", catatanTua.includes("dikurangi 120 hari (perkara ghaib)") && !catatanTua.includes("dijepit"), true);
+
+  // =========================================================================
+  // ANGKA SEMA 2/2014 KEBAL TERHADAP KELONGGARAN SK
+  // =========================================================================
+  //
+  // Sejak 24 September 2026 petang, Antrian Sidang memotong kelonggaran ghaib
+  // dari angka hari yang tercetak (permintaan pengguna). Yang TIDAK boleh ikut
+  // dipotong adalah hari yang dihitung terhadap batas lima bulan SEMA 2/2014:
+  // kelonggaran itu milik penilaian kinerja SK, sedangkan SEMA menagih laporan
+  // dan tidak mengenal pengecualian perkara ghaib.
+  //
+  // sippJadwalSidangService menyusun angka itu sebagai kotor - mediasi dari
+  // hasil fungsi ini, jadi yang dijaga di sini: kedua ruas itu tidak boleh
+  // bergerak sedikit pun ketika kelonggaran berubah. Rancangan 24 September
+  // pagi memotong keduanya, dan perkara 232/Pdt.G/2026 yang berjalan 163 hari
+  // tampil "43 hari, sisa 107" - kewajiban lapornya hilang dari layar.
+  for (const selisih of [0, 45, 89, 90, 119, 120, 149, 150, 400]) {
+    const polos = hitung(selisih, { hariMediasi: 20 });
+    const ghaib = hitung(selisih, { hariMediasi: 20, perkaraGhaib: true });
+    const mafqud = hitung(selisih, { hariMediasi: 20, perkaraMafqud: true });
+    cek(
+      `selisih ${selisih}: kotor dan mediasi tidak digerakkan kelonggaran`,
+      [ghaib.kotor - ghaib.mediasi, mafqud.kotor - mafqud.mediasi],
+      [polos.kotor - polos.mediasi, polos.kotor - polos.mediasi]
+    );
+  }
+  // Perkara TANPA kelonggaran: potongannya nol, jadi bersih = angka SEMA.
+  const tanpa = hitung(200, { hariMediasi: 20 });
+  cek("tanpa kelonggaran: bersih sama dengan angka SEMA", [tanpa.potongan.hari, tanpa.bersih], [0, 181]);
+  // Perkara ghaib 201 hari bermediasi 20 hari: bersih 61 (hijau, nilai 5),
+  // tetapi angka SEMA-nya tetap 181 - sudah lewat 150 hari, dan lencana
+  // "lewat 5 bulan" di Antrian Sidang yang menagih laporannya.
+  const denganGhaib = hitung(200, { hariMediasi: 20, perkaraGhaib: true });
+  cek(
+    "ghaib 201 hari: bersih 61 dan nilai 5, tetapi angka SEMA tetap 181",
+    [denganGhaib.bersih, denganGhaib.nilai, denganGhaib.kotor - denganGhaib.mediasi],
+    [61, 5, 181]
+  );
 }
 
 // ---------------------------------------------------------------------------

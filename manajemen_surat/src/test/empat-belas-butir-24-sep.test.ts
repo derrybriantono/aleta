@@ -321,10 +321,12 @@ describe("butir 5 - warna umur perkara menurut SK Dirjen Badilag 048/2024", () =
     expect(blok).toContain("pitaWaktuPutus(");
     expect(blok).not.toMatch(/hariBersih\s*<=?\s*\d/);
     expect(blok).not.toContain("sisa <= 30");
-    // Warnanya dari pita SK saja - sisaHari kini hanya menentukan kalimat
-    // kewajiban lapor SEMA di tooltip, bukan kelas warna.
+    // Warna PITA tetap dari nilai SK saja. Lencana merah "lewat 5 bulan" di
+    // sebelahnya BUKAN warna pita - ia tanda kewajiban lapor SEMA, dan
+    // berdiri sebagai lencana kedua justru supaya pita hijau perkara ghaib
+    // tidak perlu dipalsukan menjadi merah.
     expect(blok).toContain("pita ? pita.kelasKotak");
-    expect(blok).not.toMatch(/sisaHari[^\n]*(border-|bg-|text-red)/);
+    expect(blok).not.toMatch(/sisaHari[^\n]*pita\.kelasKotak/);
   });
 
   it("rincian menyebut dasarnya", () => {
@@ -349,22 +351,42 @@ describe("butir 6 - lencana hari tidak menyebut mediasi, rinciannya tetap", () =
     expect(tampak).toContain('<span className="font-semibold">{durasi.hariBersih} hari</span>');
     expect(tampak).not.toContain("dipotong");
     expect(tampak).not.toContain("durasi.hariMediasi");
+    // Angka kedua HANYA pada baris berkelonggaran - 13 dari 127 perkara
+    // berjalan hari ini - bukan pada semua baris. Menampilkannya di mana-mana
+    // menggandakan lebar lencana pada 114 baris yang tidak membutuhkannya,
+    // dan itu justru yang dilarang pengguna 24 September 2026 pagi.
+    expect(tampak).toContain(
+      '{kelonggaran ? <span className="font-normal">· dari {hariSema}</span> : null}'
+    );
   });
 
   it("kewajiban lapor lima bulan dari sisa SEMA, bukan dari nilai SK", () => {
-    // Tinjauan 24 September 2026: memotong ghaib dari angka ini pernah
-    // menyembunyikan perkara 163 hari sebagai "43 hari, sisa 107".
-    expect(tubuh).toContain("durasi.sisaHari !== null && durasi.sisaHari < 0");
+    // Tinjauan 24 September 2026: memotong ghaib dari angka SEMA pernah
+    // menyembunyikan perkara 163 hari sebagai "43 hari, sisa 107". Sejak
+    // petang itu kelonggarannya DIPOTONG dari lencana (permintaan pengguna),
+    // tetapi sisaHari-nya datang dari hariSema yang TIDAK dipotong.
+    expect(tubuh).toContain(
+      "const lewatSema = !durasi.sudahPutus && durasi.sisaHari !== null && durasi.sisaHari < 0;"
+    );
+    expect(tubuh).toContain("const hariSema = durasi.hariSema ?? durasi.hariBersih;");
     expect(tubuh).not.toContain("sk?.nilai === 0");
-    expect(LAYAR).not.toContain("durasi.kelonggaran");
-    expect(LAYAR).not.toContain("Kelonggaran perkara khusus</dt>");
+    // Kewajiban lapornya tidak boleh hanya di tooltip - ia harus terlihat di
+    // BARIS, sebab baris itulah yang dipindai panitera. Terukur: tanpa
+    // lencana ini, 232/Pdt.G/2026 yang berjalan 163 hari tidak meninggalkan
+    // jejak apa pun, dan Antrian hari itu kosong dari tanda merah.
+    expect(tubuh).toContain("lewat 5 bulan");
+    expect(LAYAR).toContain("Kelonggaran perkara khusus</dt>");
+    expect(LAYAR).toContain("Dihitung untuk SEMA 2/2014</dt>");
   });
 
   it("layar tidak mengaku sama dengan penilaian SK di Status Perkara", () => {
-    // Tangganya sama, masukannya tidak: pengecualian perkara khusus tidak
-    // dipotong di sini, dan hari mediasinya dari sumber lain.
+    // Tangganya sama, masukannya hampir: sejak penciri ghaib disatukan, yang
+    // TERSISA hanya sumber hari mediasinya - terukur 11 dari 118 perkara
+    // bermediasi 2025-2026. Klaim lama ("berbeda untuk perkara ghaib") sudah
+    // tidak benar dan karena itu tidak boleh tertinggal di layar.
     expect(LAYAR).not.toContain("cara yang sama dengan\n            penilaian SK di layar Status Perkara");
-    expect(LAYAR).toContain("nilainya dapat berbeda untuk perkara ghaib");
+    expect(LAYAR).not.toContain("nilainya dapat berbeda untuk perkara ghaib");
+    expect(LAYAR).toContain("masih dapat berbeda untuk perkara yang bermediasi");
   });
 
   it("tooltip tetap menjelaskan selisihnya dengan umur di SIPP", () => {

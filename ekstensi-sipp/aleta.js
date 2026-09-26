@@ -307,11 +307,7 @@ function bagianEkstensi(siapa) {
 
   const aksi = buatElemen("div", "aleta-portal-aksi");
 
-  const tombolPerbarui = buatElemen(
-    "button",
-    "aleta-tombol",
-    tertinggal ? "Perbarui sekarang" : "Periksa pembaruan"
-  );
+  const tombolPerbarui = buatElemen("button", "aleta-tombol", tertinggal ? "Perbarui sekarang" : "Periksa pembaruan");
   tombolPerbarui.type = "button";
 
   const tombolMuatUlang = buatElemen("button", "aleta-portal-tautan", "Muat ulang ekstensi");
@@ -328,8 +324,11 @@ function bagianEkstensi(siapa) {
   }
 
   /** Mengirim satu pesan ke pekerja latar, dengan galatnya ditangkap. */
-  async function mintaKeLatar(jenis) {
+  async function mintaKeLatar(jenis, paksa) {
     try {
+      // paksa: tekanan KEDUA sesudah latar.js menahan pemuatan ulang karena
+      // putaran cetak relaas belum selesai (lihat di bawah).
+      if (paksa) return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis, paksa: true });
       return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis });
     } catch (galat) {
       // Terjadi ketika ekstensi sedang dimuat ulang - konteksnya mati sebelum
@@ -338,12 +337,30 @@ function bagianEkstensi(siapa) {
     }
   }
 
+  // Putaran cetak relaas yang belum selesai HILANG bila ekstensi dimuat ulang
+  // (chrome.storage.session dikosongkan Chrome). latar.js menahan pemuatan
+  // ulang dan menjawab "putaran-relaas-berjalan"; tekanan KEDUA pada tombol
+  // yang sama baru memaksa.
+  const LABEL_PERBARUI = tertinggal ? "Perbarui sekarang" : "Periksa pembaruan";
+  const LABEL_MUAT_ULANG = "Muat ulang ekstensi";
+  let paksaPerbarui = false;
+  let paksaMuatUlang = false;
+
   tombolPerbarui.addEventListener("click", async () => {
     tombolPerbarui.disabled = true;
     kabarkan("Menanyakan pembaruan kepada Chrome…", false);
 
-    const jawab = await mintaKeLatar("perbarui");
+    const jawab = await mintaKeLatar("perbarui", paksaPerbarui);
     kabarkan((jawab && jawab.pesan) || "Tidak ada jawaban dari ekstensi.", !(jawab && jawab.ok));
+
+    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+      paksaPerbarui = true;
+      tombolPerbarui.textContent = "Tetap perbarui - putaran cetak hilang";
+      tombolPerbarui.disabled = false;
+      return;
+    }
+    paksaPerbarui = false;
+    tombolPerbarui.textContent = LABEL_PERBARUI;
 
     if (jawab && jawab.ok && jawab.keadaan === "dipasang") {
       // Ekstensi akan mati sebentar lagi, dan skrip konten TIDAK disuntikkan
@@ -362,7 +379,16 @@ function bagianEkstensi(siapa) {
   tombolMuatUlang.addEventListener("click", async () => {
     tombolMuatUlang.disabled = true;
     kabarkan("Memuat ulang ekstensi dari berkasnya…", false);
-    const jawab = await mintaKeLatar("muat-ulang");
+    const jawab = await mintaKeLatar("muat-ulang", paksaMuatUlang);
+    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+      kabarkan(jawab.pesan || "Putaran cetak relaas belum selesai.", true);
+      paksaMuatUlang = true;
+      tombolMuatUlang.textContent = "Tetap muat ulang - putaran cetak hilang";
+      tombolMuatUlang.disabled = false;
+      return;
+    }
+    paksaMuatUlang = false;
+    tombolMuatUlang.textContent = LABEL_MUAT_ULANG;
     kabarkan(
       (jawab && jawab.pesan) || "Ekstensi sedang dimuat ulang. Muat ulang halaman ini sebentar lagi.",
       false
@@ -684,6 +710,212 @@ function tutupPanel() {
   }
   if (panel) panel.remove();
 }
+
+/**
+ * ============================================================================
+ * JEMBATAN HALAMAN <-> EKSTENSI UNTUK CETAK RELAAS MASSAL (KONTRAK K3)
+ * ============================================================================
+ *
+ * Tombol "Cetak relaas" di Antrian Sidang (ALETA e-Court, tab Jadwal Sidang)
+ * adalah kode HALAMAN - ia tidak punya chrome.runtime, sehingga tidak dapat
+ * menyuruh pekerja latar mencetak. Berkas ini skrip konten: ia berbagi DOM
+ * dengan halaman, dan ia punya chrome.runtime. Jadi ia yang menjembatani:
+ *
+ *   halaman  --window.postMessage({sumber:"aleta-portal", jenis, idPesan, muatan})-->  jembatan
+ *   jembatan --chrome.runtime.sendMessage({sumber:"aleta-panel", jenis, ...})-->       latar.js
+ *   jembatan <--jawaban-------------------------------------------------------         latar.js
+ *   halaman  <--window.postMessage({sumber:"aleta-ekstensi", balasan:idPesan, jawaban})-- jembatan
+ *
+ * KEHADIRAN diumumkan dua cara: dataset pada <html> (aletaEkstensi = versi,
+ * aletaRelaas = "1") yang dapat dibaca kapan saja - halaman React sering baru
+ * mendengar SESUDAH skrip ini berjalan - dan satu pesan "siap" untuk halaman
+ * yang sudah mendengar.
+ *
+ * YANG DITOLAK, dan kenapa ketat: pesan yang diteruskan menyuruh pekerja latar
+ * mengambil halaman ABT dengan kuki petugas dan menyimpan berkas ke cakramnya.
+ *   - e.source bukan jendela ini (bingkai lain, jendela lain)
+ *   - e.origin bukan asal halaman ini
+ *   - sumber bukan "aleta-portal" (termasuk balasan jembatan sendiri)
+ *   - jenis di luar lima jenis relaas yang dipakai dialog - dibalas galat,
+ *     TIDAK diteruskan. relaas-panen dan relaas-perkiraan (dikenal latar.js)
+ *     sengaja TIDAK dibuka dari halaman: dialog tidak memakainya, dan
+ *     relaas-panen {paksa:true} dari skrip mana pun di asal portal membuka
+ *     beranda dan halaman kelompok ABT dengan kuki petugas (telaah 25 Sep
+ *     2026: lima pesan serentak = lima panen dalam tiga detik).
+ *   - idPesan bukan string 1..64 aksara - tidak dapat dibalas, jadi diabaikan
+ * asal dan asalAbt DIHITUNG di sini dari location.origin; nilai kiriman
+ * halaman dibuang. Muatan disaring per jenis - hanya ruas yang dikenal
+ * kontrak, dengan batas panjang.
+ *
+ * TIDAK ADA PERMINTAAN YANG DIBIARKAN TANPA BALASAN. Ekstensi yang dimuat
+ * ulang meninggalkan skrip konten yatim - chrome.runtime.sendMessage
+ * melempar "Extension context invalidated" - dan pekerja yang tidak menjawab
+ * menyalakan chrome.runtime.lastError. Keduanya dibalas { ok:false, sebab }.
+ * Halaman tetap memasang batas waktunya sendiri untuk yang tidak terduga.
+ */
+const JEMBATAN_SUMBER_HALAMAN = "aleta-portal";
+const JEMBATAN_SUMBER_EKSTENSI = "aleta-ekstensi";
+const JEMBATAN_JENIS_RELAAS = [
+  "relaas-mulai",
+  "relaas-keadaan",
+  "relaas-henti",
+  "relaas-lanjut",
+  "relaas-bersihkan",
+];
+const JEMBATAN_ID_MAKS = 64;
+const JEMBATAN_DOKUMEN_MAKS = 500;
+const JEMBATAN_CARA_RTF = ["selalu", "bila-pdf-gagal", "tidak"];
+const KALIMAT_EKSTENSI_DIMUAT_ULANG =
+  "Ekstensi ALETA baru dimuat ulang atau diperbarui - muat ulang halaman ini supaya jembatannya tersambung lagi.";
+let jembatanRelaasTerpasang = false;
+
+/** asal dan asalAbt menurut halaman ini sendiri - bukan menurut kiriman halaman. */
+function jembatanAsal() {
+  const asal = location.origin;
+  return { asal, asalAbt: `${asal}/aps_badilag` };
+}
+
+/**
+ * Teks dari halaman, dipotong - TIDAK dirapikan. Nama blangko ABT memuat spasi
+ * tersembunyi sebelum ".rtf" ([JS] 1), dan pemangkasan di sini akan membuat
+ * blangkonya tidak pernah ditemukan.
+ */
+function jembatanTeks(nilai, batas) {
+  if (typeof nilai !== "string" && typeof nilai !== "number") return "";
+  return String(nilai).slice(0, batas);
+}
+
+function jembatanSaringDokumen(d) {
+  if (!d || typeof d !== "object") return null;
+  const jurusita = d.jurusita && typeof d.jurusita === "object" ? d.jurusita.nama : d.jurusita;
+  const nomorSidang = Number(d.d);
+  return {
+    kunci: jembatanTeks(d.kunci, 160),
+    perkaraId: jembatanTeks(d.perkaraId, 20),
+    nomorPerkara: jembatanTeks(d.nomorPerkara, 80),
+    golongan: jembatanTeks(d.golongan, 40),
+    label: jembatanTeks(d.label, 200),
+    d: d.d === null || d.d === undefined || !Number.isInteger(nomorSidang) || nomorSidang < 0 ? null : nomorSidang,
+    berkas: jembatanTeks(d.berkas, 200),
+    nama: jembatanTeks(d.nama, 200),
+    jurusita: jembatanTeks(jurusita, 120),
+  };
+}
+
+/** Muatan per jenis, disaring. Pulang { isi } atau { sebab } bila bentuknya tidak sah. */
+function jembatanSaringMuatan(jenis, muatan) {
+  const m = muatan && typeof muatan === "object" ? muatan : {};
+  if (jenis === "relaas-mulai") {
+    const p = m.pekerjaan;
+    if (!p || typeof p !== "object" || !Array.isArray(p.dokumen)) {
+      return { sebab: "muatan relaas-mulai tidak sah - pekerjaan.dokumen harus berupa daftar" };
+    }
+    if (p.dokumen.length > JEMBATAN_DOKUMEN_MAKS) {
+      return { sebab: `terlalu banyak dokumen dalam satu putaran (${p.dokumen.length}; paling banyak ${JEMBATAN_DOKUMEN_MAKS})` };
+    }
+    const dilewati = (Array.isArray(p.dilewati) ? p.dilewati : []).slice(0, JEMBATAN_DOKUMEN_MAKS).map((x) => ({
+      kunci: jembatanTeks(x && x.kunci, 160),
+      nomorPerkara: jembatanTeks(x && x.nomorPerkara, 80),
+      label: jembatanTeks(x && x.label, 200),
+      sebab: jembatanTeks(x && x.sebab, 300),
+    }));
+    const pekerjaan = {
+      tanggal: /^\d{4}-\d{2}-\d{2}$/.test(String(p.tanggal || "")) ? String(p.tanggal) : "",
+      dokumen: p.dokumen.map(jembatanSaringDokumen).filter(Boolean),
+      dilewati,
+      ...jembatanAsal(),
+    };
+    const cara = p.unduhRtf !== undefined ? p.unduhRtf : m.unduhRtf;
+    if (JEMBATAN_CARA_RTF.includes(cara)) pekerjaan.unduhRtf = cara;
+    const cadangan = p.rtfBilaPdfGagal !== undefined ? p.rtfBilaPdfGagal : m.rtfBilaPdfGagal;
+    if (typeof cadangan === "boolean") pekerjaan.rtfBilaPdfGagal = cadangan;
+    return { isi: { pekerjaan } };
+  }
+  return { isi: {} };
+}
+
+/** Meneruskan satu pesan ke pekerja latar; SELALU memanggil `balas` tepat sekali. */
+function jembatanTeruskan(pesan, balas) {
+  let runtime = null;
+  try {
+    runtime = chrome.runtime && chrome.runtime.id ? chrome.runtime : null;
+  } catch (galat) {
+    balas({ ok: false, sebab: `${KALIMAT_EKSTENSI_DIMUAT_ULANG} (${String((galat && galat.message) || galat)})` });
+    return;
+  }
+  if (!runtime) {
+    balas({ ok: false, sebab: KALIMAT_EKSTENSI_DIMUAT_ULANG });
+    return;
+  }
+  try {
+    runtime.sendMessage(pesan, (jawaban) => {
+      let galat = null;
+      try {
+        galat = chrome.runtime.lastError || null;
+      } catch (e) {
+        galat = e;
+      }
+      if (galat) {
+        balas({
+          ok: false,
+          sebab: `Pekerja latar ekstensi tidak menjawab: ${String(galat.message || galat)}`,
+        });
+        return;
+      }
+      if (jawaban === undefined || jawaban === null) {
+        balas({ ok: false, sebab: "Pekerja latar ekstensi tidak memulangkan jawaban apa pun." });
+        return;
+      }
+      balas(jawaban);
+    });
+  } catch (galat) {
+    balas({ ok: false, sebab: `${KALIMAT_EKSTENSI_DIMUAT_ULANG} (${String((galat && galat.message) || galat)})` });
+  }
+}
+
+function jembatanTerimaPesan(e) {
+  if (e.source !== window || e.origin !== location.origin) return;
+  const data = e.data;
+  if (!data || typeof data !== "object" || data.sumber !== JEMBATAN_SUMBER_HALAMAN) return;
+  const idPesan = data.idPesan;
+  if (typeof idPesan !== "string" || idPesan.length === 0 || idPesan.length > JEMBATAN_ID_MAKS) return;
+  let sudahDibalas = false;
+  const balas = (jawaban) => {
+    if (sudahDibalas) return;
+    sudahDibalas = true;
+    window.postMessage({ sumber: JEMBATAN_SUMBER_EKSTENSI, balasan: idPesan, jawaban }, location.origin);
+  };
+  if (!JEMBATAN_JENIS_RELAAS.includes(data.jenis)) {
+    balas({ ok: false, sebab: `jenis pesan "${String(data.jenis).slice(0, 40)}" tidak diterima jembatan relaas` });
+    return;
+  }
+  const saring = jembatanSaringMuatan(data.jenis, data.muatan);
+  if (saring.sebab) {
+    balas({ ok: false, sebab: saring.sebab });
+    return;
+  }
+  jembatanTeruskan({ sumber: "aleta-panel", jenis: data.jenis, ...saring.isi, ...jembatanAsal() }, balas);
+}
+
+function pasangJembatanRelaas() {
+  if (jembatanRelaasTerpasang) return;
+  jembatanRelaasTerpasang = true;
+  let versi = "";
+  try {
+    versi = String(chrome.runtime.getManifest().version || "");
+  } catch (galat) {
+    console.warn("ALETA: versi ekstensi tidak terbaca untuk jembatan relaas", galat);
+  }
+  const akar = document.documentElement;
+  akar.dataset.aletaEkstensi = versi;
+  akar.dataset.aletaRelaas = "1";
+  window.addEventListener("message", jembatanTerimaPesan);
+  window.postMessage({ sumber: JEMBATAN_SUMBER_EKSTENSI, jenis: "siap", versi }, location.origin);
+}
+
+// Jembatan dipasang LEBIH DAHULU dan terlepas dari panel: saklar panel yang
+// dimatikan, atau panel yang gagal dibangun, tidak boleh memutus cetak relaas.
+pasangJembatanRelaas();
 
 // Halaman portal itu sendiri - alamat yang paling pasti dari semuanya, dan
 // yang paling sering dibuka orang yang belum pernah menyentuh SIPP.
