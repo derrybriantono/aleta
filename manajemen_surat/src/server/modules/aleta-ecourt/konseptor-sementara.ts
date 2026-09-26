@@ -93,6 +93,24 @@ export async function bacaKonseptorSementara(
   return peta;
 }
 
+/**
+ * Seluruh tunjukan - untuk checklist milestone, yang bertanya "perkara mana
+ * yang ditunjuk kepada SAYA", bukan "siapa konseptor perkara ini".
+ *
+ * Tabelnya satu baris per perkara yang pernah ditunjuk, jadi membacanya utuh
+ * murah; pencocokan dengan penggunanya dikerjakan pemanggil
+ * (tunjukanMilikSaya di lib/checklist-milestone.ts).
+ */
+export async function bacaSemuaKonseptorSementara(db: AletaDatabase): Promise<KonseptorSementara[]> {
+  const baris = await db.queryAll<Record<string, unknown>>(
+    `SELECT perkara_id, nomor_perkara, nama, pengguna, catatan, ditetapkan_oleh, ditetapkan_at
+       FROM aleta_konseptor_sementara
+      ORDER BY ditetapkan_at DESC
+      LIMIT 2000`
+  );
+  return baris.map(dariBaris).filter((x) => x.perkaraId);
+}
+
 export type IsianKonseptorSementara = {
   perkaraId: string;
   nomorPerkara: string;

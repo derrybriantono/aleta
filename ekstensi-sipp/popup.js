@@ -16,6 +16,7 @@ const kotakTanda = document.getElementById("tandaiHalaman");
 const kotakSisip = document.getElementById("sisipJadwal");
 const kotakCetak = document.getElementById("cetakTigaBerkas");
 const kotakSunting = document.getElementById("suntingLangsungAbt");
+const kotakChecklist = document.getElementById("checklistMilestone");
 
 /**
  * Penyimpanan ekstensi, bila memang sedang berjalan sebagai ekstensi.
@@ -121,6 +122,10 @@ function pasangNilai(simpan) {
   // Bawaannya MATI - yang gagal dibaca tidak boleh menyalakan perilaku yang
   // mengubah berkas perkara.
   if (kotakSunting) kotakSunting.checked = simpan.suntingLangsungAbt === true;
+  // Widget checklist milestone - bawaannya MATI. Ia menambah satu kotak
+  // melayang di tiap halaman kerja; yang tidak pernah menyalakannya tidak
+  // melihat apa pun berubah.
+  if (kotakChecklist) kotakChecklist.checked = simpan.checklistMilestone === true;
 
   // Alamat portal dicatat skrip konten saat halaman SIPP dibuka. Popup
   // berjalan di origin chrome-extension://, sehingga tautan relatif di sini
@@ -139,7 +144,7 @@ function pasangNilai(simpan) {
 
 if (penyimpanan) {
   penyimpanan
-    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "asalPortal", SKALA_KUNCI])
+    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI])
     .then(pasangNilai)
     .catch(() => pasangNilai({}));
 } else {
@@ -261,6 +266,20 @@ if (kotakCetak) {
     kotakSunting.addEventListener("change", () => simpan("suntingLangsungAbt", kotakSunting.checked));
   }
 }
+if (kotakChecklist) {
+  kotakChecklist.addEventListener("change", () => simpan("checklistMilestone", kotakChecklist.checked));
+  // × di kepala widget mematikan saklar ini. Centangnya ikut lepas di sini
+  // selama jendela ini terbuka - centang yang tertinggal menyala sementara
+  // widgetnya sudah tertutup adalah saklar yang berbohong.
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local" || !ubah.checklistMilestone) return;
+      kotakChecklist.checked = ubah.checklistMilestone.newValue === true;
+    });
+  } catch {
+    /* di luar konteks ekstensi */
+  }
+}
 
 /**
  * ============================================================================
@@ -296,6 +315,12 @@ const KUNCI_LETAK_PANEL = [
   "posisiPanelAbt",
   "posisiPanelAbtMassal",
   "posisiPanelAleta",
+  // Widget checklist milestone - satu kunci per aplikasi, sama alasannya
+  // dengan panel (lihat checklist.js). Yang terciut menjadi pil ikut
+  // dibentangkan lagi.
+  "posisiChecklistSipp",
+  "posisiChecklistAbt",
+  "posisiChecklistAleta",
 ];
 const tombolReset = document.getElementById("resetPosisi");
 const kabarReset = document.getElementById("kabarReset");
@@ -317,7 +342,8 @@ if (tombolReset) {
       .remove(KUNCI_LETAK_PANEL)
       .then(() => {
         kabarkan(
-          "Posisi panel dikembalikan - SIPP, ABT, dan portal ALETA. Panel yang terciut ikut dibentangkan lagi."
+          "Posisi panel dikembalikan - SIPP, ABT, dan portal ALETA. Panel yang terciut ikut dibentangkan lagi, " +
+            "dan widget checklist kembali ke kiri bawah."
         );
       })
       .catch(() => {

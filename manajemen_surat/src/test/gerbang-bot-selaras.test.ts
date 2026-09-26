@@ -163,7 +163,7 @@ describe("portal dan bot menyebut alamat yang sama", () => {
  * dan tidak ada yang tahu sejak kapan.
  */
 describe("ekstensi memanggil rute portal yang benar-benar ada", () => {
-  const BERKAS_EKSTENSI = ["konten.js", "abt.js", "panel-alat.js", "popup.js", "tema-awal.js"];
+  const BERKAS_EKSTENSI = ["konten.js", "abt.js", "panel-alat.js", "popup.js", "tema-awal.js", "checklist.js"];
 
   /** Alamat portal yang disebut ekstensi, apa adanya dari sumbernya. */
   function alamatEkstensi(): string[] {

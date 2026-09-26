@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.37.1";
+export const APP_VERSION = "2.38.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.37.1 - Faktor Sekunder Ekonomi Menurut Praktik Satker";
+  "ALETA Judicia v2.38.0 - Checklist Milestone per Peran di Ekstensi";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,46 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.38.0",
+    title: "ALETA Judicia v2.38.0 - Checklist Milestone per Peran di Ekstensi",
+    date: "2026-09-27",
+    status: "Belum terpasang",
+    summary:
+      "Permintaan pengguna 26 September 2026: checklist pekerjaan penting tiap peran - hakim, panitera pengganti, juru sita, panitera, ketua, PTSP, dan operator - yang mengarah ke tempat mengerjakannya (contoh: hakim yang ditunjuk konseptor, termasuk konseptor sementara, diarahkan ke ABT agar putusan segera dikerjakan). Tampil sebagai widget tersendiri di ekstensi 1.170.0 dengan saklar di popup, bawaan mati. 41 jenis butir dihitung dari SIPP dan ALETA dan selesai otomatis dari data; 9 jenis yang datanya belum sahih disebut 'tidak tersedia' beserta sebabnya, bukan dikarang.",
+    added: [
+      "Rute portal /api/aleta-ecourt/checklist (dan rute bot /sipp/checklist-milestone): butir untuk pengguna yang masuk, menurut peran akun ALETA dan pemetaan akun SIPP ke hakim, panitera pengganti, dan juru sita. Pengguna berperan ganda (ketua yang juga hakim) dapat berganti peran di widget. Judul tiap jenis datang dari satu katalog; tiap butir membawa tujuan Kerjakan (ABT, SIPP, ALETA, e-Court), tenggat WITA, dan kelompok lewat/hari ini/minggu ini.",
+      "Hakim: konsep putusan yang ditugaskan (termasuk konseptor sementara), putusan yang dibacakan tetapi belum diunggah (sampai 7 hari), penetapan hakim tunggal yang dijadwalkan putus, PHS yang menunggu ditekan, dokumen e-Court menunggu verifikasi, hasil sidang belum dicatat lewat 15.00, perkara mendekati 5 bulan, mediasi mendekati 30 hari, dan sidang ikrar talak.",
+      "Panitera pengganti: BAS, hasil sidang, borang Putusan Akhir, unggah putusan, identitas saksi, dan tunggakan BAS. Juru sita: panggilan sidang pertama, perintah panggil dari sidang yang ditunda, pihak yang belum dipanggil untuk 7 hari ke depan, PBT pihak tidak hadir, relaas belum diinput, retur, dan tunggakan PBT verstek. Panitera, ketua, PTSP, dan operator: penetapan PPP/PJS/PMH, Direktori Putusan, BHT, akta cerai, arsip, 5 bulan per majelis, ikrar, panjar, pendaftaran e-Court, dan sesi e-Court.",
+      "Ukuran atas salinan data satker (sampai 10 Sep 2026): seorang hakim ketua majelis 9 butir, panitera pengganti 13, juru sita 31, panitera 213 (188 di antaranya arsip BHT), ketua 15, PTSP 33. Pada hari sidang sibuk, bilah 'selesai hari ini' terisi (panitera pengganti 32, ketua 30).",
+    ],
+    changed: [
+      "Sidang ikrar talak ditagih ke juru sita untuk memanggil suami DAN istri (Pasal 70 ayat (3) UU 7/1989), walau perkaranya sudah putus dan kedua pihak hadir pada sidang putusan. Sebelumnya 12 dari 64 sidang ikrar 2026 tanpa relaas tidak pernah ditagih.",
+      "Layanan jadwal sidang bot menerima penanda pilihan (catatGagal, wajibSemuaSisi) yang hanya dikirim checklist; bagi pemakai lain perilakunya tidak berubah.",
+    ],
+    fixed: [
+      "Kegagalan membaca SIPP tidak lagi menjadi daftar kosong yang tampak seperti 'tidak ada pekerjaan': jenis yang datanya gagal dibaca disebut di 'tidak tersedia' dan galatnya dilaporkan. Tanpa ini, satu juru sita melihat 0 butir padahal pekerjaannya 18.",
+      "Kredensial SIPP yang nonaktif, belum teruji, atau dipakai dua akun tidak lagi menautkan peran; username ganda dilaporkan kepada keduanya, bukan yang terakhir menang.",
+      "Kueri 'hakim_id IN ()' saat hakim belum tertaut (ditolak MariaDB) tidak lagi menghilangkan tunjukan konseptor dan titipan PHS tanpa jejak.",
+      "Bila baris melampaui batas, yang dibuang yang TERTUA - bukan PBT/BHT terbaru yang justru paling mendesak - dan pemotongannya disebut.",
+      "'Selesai hari ini' dihitung menurut hari WITA; titipan yang dikerjakan pukul 00.00-08.00 WITA kini terhitung.",
+    ],
+    security: [
+      "Butir hanya perkara yang ditugaskan kepada pengguna itu, singgahan jawaban berkunci pengguna dan peran, keterangan tidak memuat nama pihak, dan rute bot dilindungi token internal. Permintaan serentak yang sama dihitung sekali tanpa membagi jawaban antarpengguna.",
+    ],
+    operationalNotes: [
+      "Citra bot WAJIB dibangun ulang (rute /sipp/checklist-milestone), begitu pula portal. Tidak ada migrasi baru (nomor bebas berikutnya 0051).",
+      "Ekstensi 1.170.0: tekan Reload di chrome://extensions. Widget bawaannya mati - tiap petugas menyalakan 'Tampilkan checklist milestone' di popup.",
+      "Peran terbaca dari kredensial SIPP yang tersimpan di ALETA dan sudah teruji. Petugas yang kredensialnya belum diisi atau nonaktif mendapat kabar 'belum tertaut'.",
+    ],
+    knownLimitations: [
+      "Sembilan jenis belum dihitung karena datanya belum sahih: penyerahan PBT ke juru sita, tanggal tunda terlalu dekat, salinan TTE e-Court, majelis berhalangan, penyerahan akta, kehadiran pihak, pengingat WhatsApp pagi, cadangan, dan versi peladen.",
+      "Blangko ABT tidak dapat dibuka langsung (alamatnya disandikan ABT) dan tab SIPP yang dituju hanya disebut di petunjuk; keduanya menunggu keputusan pengguna.",
+      "Hakim anggota belum ditagih (hanya ketua majelis/hakim tunggal) - menunggu keputusan pengguna.",
+      "Panel ALETA yang lama masih tampil di layar publik portal - diajukan sebagai tugas terpisah.",
+      "Belum diuji di peramban dan SIPP peladen sungguhan.",
+    ],
+  },
   {
     version: "2.37.1",
     title: "ALETA Judicia v2.37.1 - Faktor Sekunder Ekonomi Menurut Praktik Satker",

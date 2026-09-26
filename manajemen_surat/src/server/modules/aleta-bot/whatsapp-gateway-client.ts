@@ -3412,6 +3412,44 @@ export async function getGatewayPenjagaTenggat(acuan = ""): Promise<
 }
 
 /**
+ * Fakta checklist milestone untuk satu peran - dibatasi bot pada perkara yang
+ * menyebut id pejabat pengguna. Yang menilai portal (lib/checklist-milestone).
+ */
+export async function getGatewayChecklistMilestone(masukan: {
+  peran: string;
+  acuan: string;
+  hakim?: string[];
+  panitera?: string[];
+  jurusita?: string[];
+  perkara?: string[];
+}): Promise<
+  GatewayResult<{
+    acuan: string;
+    peran: string;
+    fakta: Record<string, unknown>;
+    /** Koleksi yang gagal ("putusan") dan peta pelengkap yang gagal di dalamnya ("sidang.panggilan"). */
+    gagal: Record<string, string>;
+    /** Koleksi yang terpotong batas barisnya - kalimat siap tampil. Bot lama tidak mengirimnya. */
+    catatan?: string[];
+  }>
+> {
+  const params = new URLSearchParams({
+    peran: masukan.peran,
+    acuan: masukan.acuan,
+    hakim: (masukan.hakim ?? []).join(","),
+    panitera: (masukan.panitera ?? []).join(","),
+    jurusita: (masukan.jurusita ?? []).join(","),
+    perkara: (masukan.perkara ?? []).join(","),
+  });
+  // Peran satker membaca belasan ribu baris dalam jendelanya (diukur 4,4
+  // detik untuk panitera atas sipp_donggala); batas bawaan 8 detik terlalu
+  // rapat untuk peladen yang sedang sibuk.
+  return gatewayFetch(`/internal/aleta-bot/sipp/checklist-milestone?${params.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
+/**
  * Pendapat AI atas amar vs petitum. Bot menyamarkan nama dengan kamus pihak
  * yang DIKETAHUI SIPP lalu mengirim lewat jalur "perkara"; bila jalurnya
  * belum disetel, jawabannya { ok: false, alasan } - dan itu bukan galat.

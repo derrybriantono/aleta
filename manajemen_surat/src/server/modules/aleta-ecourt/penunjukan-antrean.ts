@@ -250,6 +250,42 @@ async function sapuKedaluwarsa(db: AletaDatabase): Promise<void> {
 }
 
 /**
+ * Titipan untuk checklist milestone - HANYA MEMBACA.
+ *
+ * Berbeda dari antreanUntukSaya, fungsi ini tidak menyapu yang kedaluwarsa:
+ * checklist dibaca ulang tiap menit oleh widget, dan menulis ke basis data
+ * pada tiap pembacaan adalah ongkos yang tidak dibayar siapa pun (lihat
+ * catatan pada antreanUntukSaya). Titipan yang sudah melewati ambang
+ * kedaluwarsa cukup TIDAK diikutkan - hasilnya sama dengan sesudah disapu.
+ *
+ * Yang dikerjakan sejak `dikerjakanSejak` ikut dipulangkan supaya checklist
+ * dapat menghitung "selesai hari ini".
+ */
+export async function bacaAntreanChecklist(
+  db: AletaDatabase,
+  jenis: string[],
+  dikerjakanSejak: string,
+  kini: Date = new Date()
+): Promise<Array<BarisAntrean & { dikerjakanAt: string }>> {
+  const daftar = jenis.filter((x) => Object.prototype.hasOwnProperty.call(JABATAN_PENETAP, x));
+  if (daftar.length === 0) return [];
+  const tanya = daftar.map(() => "?").join(", ");
+  // Ambangnya sama dengan batasKedaluwarsa(), tetapi dihitung dari `kini`
+  // pemanggil - checklist yang dihitung untuk satu saat tertentu (uji,
+  // pengukuran) tidak boleh mencampur saat itu dengan jam peladen.
+  const batas = new Date(kini.getTime() - AMBANG_KEDALUWARSA_HARI * 24 * 60 * 60 * 1000).toISOString();
+  const baris = await db
+    .prepare(
+      `SELECT ${KOLOM}, dikerjakan_at FROM aleta_sipp_penunjukan_antrean ` +
+        `WHERE jenis IN (${tanya}) AND ((keadaan = 'menunggu' AND disiapkan_at >= ?) ` +
+        "OR (keadaan = 'dikerjakan' AND dikerjakan_at >= ?)) " +
+        "ORDER BY disiapkan_at ASC LIMIT 500"
+    )
+    .all<BarisMentah & { dikerjakan_at: string | null }>(...daftar, batas, dikerjakanSejak);
+  return baris.map((b) => ({ ...rapikan(b), dikerjakanAt: String(b.dikerjakan_at ?? "") }));
+}
+
+/**
  * Yang menunggu peran ini - inilah yang membuat pejabatnya tahu ada pekerjaan
  * tanpa ada yang perlu meneleponnya.
  *

@@ -162,7 +162,8 @@ describe("berkasnya benar-benar dimuat dan ditanam", () => {
       c.matches.includes("http://192.168.10.10/aleta/*")
     );
     expect(entri).toBeTruthy();
-    expect(entri.js).toEqual(["panel-alat.js", "aleta.js"]);
+    // checklist.js - widget checklist milestone, paling belakang.
+    expect(entri.js).toEqual(["panel-alat.js", "aleta.js", "checklist.js"]);
     expect(entri.css).toEqual(["panel.css"]);
   });
 

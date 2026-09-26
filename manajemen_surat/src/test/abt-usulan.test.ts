@@ -1181,7 +1181,9 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // yang belum ada.
     const m = manifest();
     const entri = m.content_scripts.find((x) => (x.js || []).includes("abt.js"));
-    expect(entri?.js).toEqual(["panel-alat.js", "abt.js"]);
+    // checklist.js (widget checklist milestone) menyusul paling belakang -
+    // ia memakai alatAmbil dari panel-alat.js dan tidak menyentuh abt.js.
+    expect(entri?.js).toEqual(["panel-alat.js", "abt.js", "checklist.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {

@@ -986,9 +986,17 @@ async function ikrarBanyakPerkara(daftarPerkaraId = []) {
  */
 const AMBANG_DURASI_HARI = 150;
 
-async function durasiBanyakPerkara(daftarPerkaraId = []) {
+async function durasiBanyakPerkara(daftarPerkaraId = [], opsi = {}) {
   const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
   if (id.length === 0) return {};
+
+  // Kueri yang gagal di bawah tetap DITELAN - jadwal sidang tetap berguna
+  // tanpa angka umur. Tetapi pemanggil yang harus membedakan "tidak terbaca"
+  // dari "tidak ada" (checklist milestone: batas lima bulan yang dihitung
+  // tanpa hari mediasi menuduh majelis) mengirim opsi.catatGagal dan diberi
+  // tahu bagian mana yang gagal. Pemakai lain tidak mengirimnya, dan bagi
+  // mereka tidak ada yang berubah.
+  const catatGagal = typeof opsi.catatGagal === "function" ? opsi.catatGagal : () => {};
 
   const dipakai = id.slice(0, 500);
   const isian = dipakai.map(() => "?").join(", ");
@@ -1004,7 +1012,10 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
       WHERE p.perkara_id IN (${isian})
       GROUP BY p.perkara_id, p.tanggal_pendaftaran`,
     dipakai
-  ).catch(() => []);
+  ).catch((galat) => {
+    catatGagal("perkara", galat);
+    return [];
+  });
 
   const mediasiRows = adaMediasi
     ? await runQuery(
@@ -1018,7 +1029,10 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
             AND m.dimulai_mediasi IS NOT NULL
           ORDER BY m.perkara_id ASC, m.dimulai_mediasi ASC`,
         dipakai
-      ).catch(() => [])
+      ).catch((galat) => {
+        catatGagal("mediasi", galat);
+        return [];
+      })
     : [];
 
   // ==========================================================================
@@ -1960,7 +1974,12 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
     // Sisi yang wajib dipanggil menurut kehadiran sidang sebelumnya - lihat
     // catatan di kepala fungsi.
     let wajibMenurutHadir = [];
-    if (hadirSebelumnya === 1) wajibMenurutHadir = [];
+    // Sidang ikrar talak yang ditandai pemanggilnya (checklist milestone,
+    // wajibSemuaSisi): suami DAN istri dipanggil - Pasal 70 ayat (3) UU
+    // 7/1989 - berapa pun kehadiran pada sidang sebelumnya. Pemanggil lain
+    // tidak mengirim penanda ini, dan bagi mereka aturannya tidak berubah.
+    if (item.wajibSemuaSisi === true) wajibMenurutHadir = [1, 2];
+    else if (hadirSebelumnya === 1) wajibMenurutHadir = [];
     else if (hadirSebelumnya === 2) wajibMenurutHadir = [2];
     else if (hadirSebelumnya === 3) wajibMenurutHadir = [1];
     else wajibMenurutHadir = [1, 2];

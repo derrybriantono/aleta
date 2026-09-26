@@ -26,6 +26,7 @@ const sippKonteksService = require("../services/sippKonteksService");
 const obyekSengketaService = require("../services/obyekSengketaService");
 const praperiksaPutusanService = require("../services/praperiksaPutusanService");
 const penjagaTenggatService = require("../services/penjagaTenggatService");
+const checklistMilestoneService = require("../services/checklistMilestoneService");
 const penyusunPertimbanganService = require("../services/penyusunPertimbanganService");
 const arsipBertindakService = require("../services/arsipBertindakService");
 const ecourtPermintaanService = require("../services/ecourtPermintaanService");
@@ -4464,6 +4465,32 @@ router.get("/sipp/penjaga-tenggat", requireInternalToken, async (req, res) => {
   try {
     const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""));
     res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * CHECKLIST MILESTONE - FAKTANYA SAJA
+ * ============================================================================
+ *
+ * Sama dengan penjaga tenggat: rute ini tidak memutuskan apa pun. Ia
+ * memulangkan fakta SIPP untuk satu peran, dibatasi pada perkara yang
+ * menyebut id pejabat pengguna (hakim/panitera/jurusita). Portal yang
+ * menilai (src/lib/checklist-milestone.ts). Hanya membaca.
+ */
+router.get("/sipp/checklist-milestone", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await checklistMilestoneService.bacaFakta({
+      peran: String(req.query.peran || ""),
+      acuan: String(req.query.acuan || ""),
+      hakim: String(req.query.hakim || ""),
+      panitera: String(req.query.panitera || ""),
+      jurusita: String(req.query.jurusita || ""),
+      perkara: String(req.query.perkara || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

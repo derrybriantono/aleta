@@ -943,13 +943,18 @@ tr.aleta-baris-disorot > td {
  * beredar ke luar dan tidak dapat ditarik kembali.
  */
 @media print {
+  /* aleta-cm-widget / aleta-cm-kabar: checklist milestone (checklist.js). Akarnya
+   * di <html>, jadi aturan cetak halaman portal yang menyembunyikan "body > *"
+   * tidak menjangkaunya; bayangannya membawa aturan cetaknya sendiri juga. */
   #aleta-panel-sipp,
   .aleta-panel,
   .aleta-tanda,
   [class^="aleta-tanda-"],
   .aleta-identitas,
   .aleta-sisip,
-  [data-aleta-tanda] {
+  [data-aleta-tanda],
+  aleta-cm-widget,
+  aleta-cm-kabar {
     display: none !important;
   }
 

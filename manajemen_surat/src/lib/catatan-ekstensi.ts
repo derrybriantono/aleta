@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.170.0",
+    dirilis: "2026-09-27T07:00:00+08:00",
+    judul: "Checklist milestone: pekerjaan penting peran Anda dalam widget tersendiri",
+    butir: [
+      "CHECKLIST MILESTONE (baru, bawaan MATI). Saklar 'Tampilkan checklist milestone' di popup ekstensi memunculkan widget TERSENDIRI di kiri bawah halaman SIPP, ABT, dan portal ALETA - terpisah dari panel ALETA di kanan. Isinya pekerjaan penting peran Anda (hakim, panitera pengganti, juru sita, panitera, ketua, PTSP, operator), dikelompokkan Lewat tenggat, Hari ini, dan Minggu ini, dengan bilah 'Hari ini N dari M selesai'. Butir hilang sendiri saat datanya lengkap di SIPP - tidak ada centang tangan.",
+      "Tiap butir punya tombol Kerjakan: portal ALETA, e-Court (hanya https *.mahkamahagung.go.id), ABT (beranda dengan perkara sudah terpilih; blangko yang dituju disebut di petunjuk karena alamat blangko ABT disandikan), atau SIPP (halaman perkara bila pernah terlihat di peramban ini; bila belum, beranda SIPP dibuka dan nomornya disalin untuk dicari).",
+      "Widget dapat digeser (posisinya diingat per aplikasi), dikecilkan menjadi pil 'Checklist · 2 lewat · 3 hari ini', dan ditutup - menutup berarti mematikan saklarnya. Mengikuti tema panel, TIDAK ikut tercetak (Ctrl+P maupun lembar cetak portal), dan TIDAK muncul di layar publik portal: layar antrian, TV ruang tunggu, papan pintu ruang sidang, dan tautan antrian tanpa login.",
+      "Disegarkan saat muncul, tiap 5 menit, dan saat jendela kembali difokus. Kabarnya jujur: belum masuk portal, portal tidak menjawab, dan jenis yang belum dapat dihitung disebut di kaki - bukan daftar kosong yang menyesatkan. Teks dari portal selalu digambar sebagai teks, dan alamat Kerjakan yang keluar dari tujuannya ditolak.",
+      "Mematikan saklar menghapus tautan perkara SIPP yang pernah disimpan widget (paling banyak 300 pasangan nomor-alamat, tanpa nama pihak). 'Kembalikan posisi panel' di popup kini juga mengembalikan posisi widget.",
+    ],
+  },
+  {
     versi: "1.169.0",
     dirilis: "2026-09-26T17:45:00+08:00",
     judul: "Putusan massal yang sungguh tersimpan di SIPP, tujuh alasan cerai baru untuk keterangan saksi, dan sumber isian ABT yang terukur",
