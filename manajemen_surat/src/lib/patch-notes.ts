@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.38.0";
+export const APP_VERSION = "2.39.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.38.0 - Checklist Milestone per Peran di Ekstensi";
+  "ALETA Judicia v2.39.0 - Tiga Jarak Waktu Sidang, Halaman Perkara SIPP, dan Rekap Petugas";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,53 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.39.0",
+    title: "ALETA Judicia v2.39.0 - Tiga Jarak Waktu Sidang, Halaman Perkara SIPP, dan Rekap Petugas",
+    date: "2026-09-27",
+    status: "Belum terpasang",
+    summary:
+      "Sepuluh permintaan pengguna 27 September 2026. Jadwal Sidang kini menghitung tiga jarak waktu yang berdetak dan ALETA menyimpan sendiri waktu antrean yang tidak disimpan aplikasi antrean. Status Perkara mencetak dengan terbaca, membuka dan menyalin tautan HALAMAN PERKARA di SIPP, menyalin ringkasan lengkap, dan nama majelis, panitera, juru sita, serta mediator membuka rekap orangnya. Jadwal Mediasi menyebut Mediator Hakim/Non Hakim dengan benar dan menyusun para pihak utuh. Bersama ekstensi 1.171.0: tombol unduh berkas e-Court terlihat di mode terang, dan panel ALETA tidak lagi tampil di layar publik portal.",
+    added: [
+      "Jadwal Sidang - tiga jarak waktu berlabel menggantikan lencana '+X'/'→Y' yang membingungkan: TUNGGU (dari mengambil nomor antrean sampai dipanggil bersidang), DARI SEBELUMNYA (sejak perkara sebelumnya di ruang yang sama dipanggil; perkara pertama di ruangnya tertulis 'pertama', bukan nol), dan LAMA SIDANG (sampai perkara berikutnya di ruang yang sama dipanggil; yang sedang berlangsung 'berjalan', hari lampau tanpa perkara berikutnya 'tidak diketahui'). Angka yang berjalan berdetak tiap detik tanpa melukis ulang tabel, dan 'sekarang' diambil dari jam basis data antrean, bukan jam PC. Dihitung atas SELURUH perkara hari itu di ruang yang sama - bukan baris yang kebetulan tampil - dan tetangga pembandingnya disebut saat kursor diarahkan ke angka.",
+      "Buku waktu antrean milik ALETA. Aplikasi antrean hanya menyimpan hari berjalan dan menimpa jam sidang saat perkara dipanggil, sehingga waktu antrean hilang. Pencatat di bot (tiap 30 detik, Senin-Jumat 07.00-18.00 WITA) menyimpan waktu ambil nomor tiap pihak, jam jadwal asli, panggilan pertama dan terakhir, serta jumlah panggil ke tabel aleta_bot_antrian_waktu; rekaman antrean portal mendapat delapan kolom berdetik (migrasi 0051). Ketiga jarak kini tetap ada untuk hari yang sudah lewat.",
+      "Status Perkara - 'Buka SIPP' dan 'Salin tautan' menuju HALAMAN PERKARA di SIPP (pintu masuk perkara_detil_agama yang sama dengan daftar perkara SIPP), bukan beranda ALETA/SIPP. Alamatnya dibangkitkan bot persis seperti SIPP menyandikan nomor perkaranya; diuji silang dengan PHP 5.6 dan pustaka SIPP sendiri (600/600 cocok) dan atas 39 perkara nyata. Bila alamatnya tidak tersedia, sebabnya disebut dan tombolnya jujur berganti menjadi 'Buka SIPP (beranda)' dan 'Salin tautan ALETA'.",
+      "Status Perkara - 'Salin ringkasan' kini lengkap dan tetap enak ditempel ke WhatsApp: identitas perkara, para pihak beserta kuasa per kedudukan (sebutannya menurut nomor alur DAN jenis perkara), majelis, panitera pengganti, juru sita, keadaan, lama perkara, sidang, mediasi, putusan, BHT/akta cerai, biaya, nilai kelengkapan, perlu tindakan, dan alamat halaman SIPP.",
+      "Rekap petugas - nama hakim, panitera pengganti, juru sita, dan mediator (hakim maupun non hakim) di Status Perkara membuka TAB BARU berisi rekap orang itu: jumlah perkara per peran, tahun, dan jenis; keadaan proses/putus/BHT; hasil putusan; lama perkara (batas lima bulan, dikurangi mediasi) dan persentase selesai ≤150 hari; verstek; e-Court; untuk mediator hasil mediasi, lama mediasi, dan yang melewati 30 hari (PERMA 1/2016 Pasal 24); beserta daftar perkaranya. Tiap persentase menyebut pembilang dan penyebutnya; orangnya dikenali lewat peran dan ID SIPP, bukan nama. Pemeriksa perkara yang sudah putus adalah yang MENJABAT PADA HARI PUTUSAN - SIPP menonaktifkan majelis pemeriksa begitu majelis ikrar ditetapkan, dan kadang mencatat pengganti sesudah putusan - sedangkan majelis, panitera, dan juru sita ikrar talak dicatat sebagai kedudukan tersendiri.",
+    ],
+    changed: [
+      "Jadwal Mediasi - status mediator 'H' ditulis 'Mediator Hakim', selainnya 'Mediator Non Hakim', dan status yang tidak diisi 'Status mediator belum tercatat' - di sel, rincian, chip saringan, hitungan, dan pencarian. Nama mediator ganda dipecah (dulu '<br/>' tertulis mentah).",
+      "Jadwal Mediasi - di bawah nomor perkara para pihak disebut utuh dan bersusun: pihak pertama lalu pihak kedua (turut tergugat di baris sendiri), dengan sebutan menurut alur dan jenis perkara - 268 perkara cerai talak dan izin poligami yang bernomor Pdt.G bersebutan Pemohon/Termohon.",
+      "Cetak Status Perkara terbaca di tema terang MAUPUN gelap: median kontras teks pada layar bertema gelap naik dari 1,44 menjadi 8,28 (tidak satu teks aktif pun di bawah 4,5:1); lencana tetap berwarna; menu, kepala portal, dan bilah alat tidak ikut tercetak; bagian yang terciut ditandai '(terciut)'. Lembar cetak lain tidak berubah.",
+      "Identitas perkara dari bot membawa jenis_perkara_id, supaya ringkasan salin menyebut para pihak dengan pasti.",
+    ],
+    fixed: [
+      "Chip saringan Jadwal Mediasi menghitung mediator hakim sebagai 'non-hakim': aturan lama mencari KATA 'hakim' pada SANDI 'H' yang disimpan SIPP.",
+      "Tautan dari 'Salin tautan' (/aleta-ecourt?perkara=...) selalu mendarat di Dasbor karena ?perkara= tidak pernah dibaca; kini perkaranya langsung terbuka di Status Perkara.",
+      "Membuka Jadwal Sidang hari lampau menimpa rekaman antrean hari itu dengan nomor kosong.",
+      "Tombol salin di peladen satker (http, bukan konteks aman) kini memakai jalan cadangan; bila tetap gagal, teksnya ditampilkan terpilih untuk Ctrl+C.",
+      "Tombol unduh berkas e-Court di Jadwal Sidang SIPP tidak terlihat di mode terang (ekstensi 1.171.0).",
+      "Panel ALETA tampil di layar publik portal - TV ruang tunggu, layar ambil antrean, papan pintu ruang sidang, antrean tanpa login (ekstensi 1.171.0).",
+    ],
+    security: [
+      "Kunci enkripsi SIPP dibaca bot dari config SIPP lewat mount hanya-baca yang sudah ada dan TIDAK pernah dikirim ke peramban maupun dicatat; tautan hanya membuka perkara bagi yang sudah masuk SIPP. Sebelum tautan pertama, penyandi menguji dirinya sendiri - bila gagal, tidak ada tautan sama sekali, bukan tautan ke perkara lain.",
+      "Di layar publik portal, panel ALETA dan widget checklist tidak lahir dan tidak mengajukan pertanyaan 'siapa saya' yang membawa sesi petugas.",
+      "Rekap petugas memakai kewenangan yang sama dengan Status Perkara (panel) dan diperiksa sebelum alamatnya; semua kuerinya SELECT berparameter.",
+    ],
+    operationalNotes: [
+      "Migrasi 0051 (0051_rekam_antrian_detik): pasang dengan ALETA_RUN_DB_MIGRATIONS=1 lalu periksa SELECT menunggu_detik, lama_sidang_detik FROM aleta_rekam_antrian LIMIT 1.",
+      "Citra bot DAN portal wajib dibangun ulang: pencatat waktu antrean, rute /sipp/tautan-perkara, /sipp/rekap-petugas, dan identitas perkara. Periksa pencatat lewat /internal/aleta-bot/antrian/waktu/status.",
+      "Tautan halaman perkara SIPP tidak butuh env baru selama mount /usr/src/app/SIPP ada. Jangan taruh ALETA_SIPP_ENCRYPTION_KEY di .env bersama. Sesudah pasang, klik satu 'Buka SIPP'; bila SIPP satker menuntut index.php, setel ALETA_SIPP_BASE_URL=http://192.168.10.10/SIPP/index.php di portal.",
+      "Pencatat antrean dapat diatur lewat env: ALETA_ANTRIAN_WAKTU_AKTIF=0 mematikannya; ALETA_ANTRIAN_WAKTU_JEDA_MS, ALETA_ANTRIAN_WAKTU_JAM_MULAI/_SELESAI.",
+      "Ekstensi 1.171.0: tekan Reload di chrome://extensions pada tiap PC.",
+    ],
+    knownLimitations: [
+      "Pencatat antrean mengamati tiap 30 detik: dua panggilan dalam 30 detik tercatat sekali, dan hari Sabtu tidak tercatat.",
+      "Kecepatan rekap petugas baru diukur pada salinan data lokal (0,2-1,3 detik per orang), belum di peladen.",
+      "Menunggu keputusan pengguna: siapa yang boleh membuka rekap petugas, rekaman ganda orang yang sama di SIPP, dasar lama perkara, status mediator kosong pada rekap WhatsApp, dan beberapa lainnya (papan keputusan).",
+      "Belum diuji di peramban dan SIPP peladen sungguhan - halaman-halamannya menuntut login.",
+    ],
+  },
   {
     version: "2.38.0",
     title: "ALETA Judicia v2.38.0 - Checklist Milestone per Peran di Ekstensi",

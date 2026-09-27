@@ -108,6 +108,8 @@ const BERKAS = [
   "services/ecourtStoreService.js",
   "services/nomorVerificationService.js",
   "services/ecourtPermintaanService.js",
+  // Buku waktu antrian (27 September 2026) - kunci utamanya tanggal + perkara.
+  "services/antrianWaktuService.js",
 ];
 
 console.log("\n== Lebar kolom yang diindeks ==");

@@ -180,6 +180,33 @@ export function AletaEcourtPengguna() {
     return () => window.clearTimeout(timer);
   }, [muat]);
 
+  // ==========================================================================
+  // ?perkara=<nomor> MEMBUKA STATUS PERKARA ITU
+  // ==========================================================================
+  //
+  // Alamat itu disusun tombol "Salin tautan" di bilah alat Status Perkara dan
+  // oleh daftar perkara pada halaman rekap petugas - tetapi sampai 27
+  // September 2026 tidak ada yang membacanya: tautan yang disalin selalu
+  // mendarat di Dasbor, dan penerimanya harus mencari ulang nomornya sendiri.
+  //
+  // Dibaca SEKALI sesudah terpasang, bukan pada nilai awal useState: halaman
+  // ini juga digambar di peladen, dan nilai awal yang berbeda antara peladen
+  // dan peramban melahirkan salah hidrasi.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      let nomor = "";
+      try {
+        nomor = String(new URLSearchParams(window.location.search).get("perkara") ?? "").trim();
+      } catch {
+        nomor = "";
+      }
+      if (!nomor) return;
+      setPerkaraDibuka(nomor);
+      setMenu("status");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   // Dibaca sekali saat menu ekstensi dibuka, bukan saat portal dibuka.
   // Sebagian besar orang tidak pernah membuka menu ini sama sekali.
   useEffect(() => {

@@ -105,16 +105,20 @@ describe("butir 19 - jeda yang tampak bertengkar", () => {
     expect(jarakLib).toContain("export function petaTetanggaBerikut(");
   });
 
+  // Sejak 27 September 2026 lencana "+X"/"→Y" diganti tiga jarak bernama
+  // (TigaJarakSidang). Janji butir ini TETAP: tetangganya disebut - kini
+  // nomor antrian DAN nomor perkaranya - di title tiap angka. Perilakunya
+  // (title yang sungguh tergambar) dijaga tiga-jarak-sidang.test.ts; di sini
+  // hanya bahwa layar menyambungkan penyebutnya.
   it("layar menyebut nomor antrian tetangganya", () => {
-    expect(layar).toContain("nomorSebelum={nomorPerKunci[tetanggaSebelum[kunci]]}");
-    expect(layar).toContain("nomorBerikut={nomorPerKunci[tetanggaBerikut[kunci]]}");
-    expect(layar).toContain("antrian ${nomorSebelum} dipanggil");
+    expect(layar).toContain("sebutTetangga={(tetangga) => sebutTetangga(tetangga, baris.tanggalSidang)}");
+    expect(layar).toContain("`antrian ${tetangga.nomorAntrian}`");
   });
 
   it("tetangga yang TIDAK tampil dikatakan, bukan didiamkan", () => {
     // Justru keadaan itulah yang membuat dua angka yang benar terbaca
     // sebagai bertengkar.
-    expect(layar).toContain("TIDAK tampil pada daftar yang sedang disaring ini");
+    expect(layar).toContain("(perkara yang tidak tampil pada daftar ini)");
   });
 
   it("hitungannya sendiri TIDAK diubah", () => {

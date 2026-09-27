@@ -289,8 +289,9 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
   },
   {
     kunci: "jarak-sidang",
-    label: "Jeda antar sidang",
-    keterangan: "Lencana +menit dari perkara sebelumnya di ruang yang sama.",
+    label: "Tiga jarak waktu",
+    keterangan:
+      "Tunggu (ambil nomor sampai dipanggil), Dari sebelumnya (jeda dari perkara sebelumnya di ruang yang sama), dan Lama sidang (sampai perkara berikutnya di ruang itu dipanggil) di kolom Antrian, beserta legendanya di atas tabel. Yang masih berjalan berdetak tiap detik. Lencana \"menunggu lama\" punya saklarnya sendiri.",
     kelompok: "keterangan",
   },
   {

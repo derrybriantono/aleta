@@ -42,7 +42,8 @@
  *                  ada apa pun dari ALETA di halaman, termasuk widget ini.
  *
  *   TIDAK DI       halaman cetak SIPP, halaman masuk, dan layar portal yang
- *   SEMUA HALAMAN  menghadap masyarakat (POLA_HALAMAN_PUBLIK) tidak memuatnya;
+ *   SEMUA HALAMAN  menghadap masyarakat (alatHalamanPublikPortal di
+ *                  panel-alat.js, sama dengan panel ALETA) tidak memuatnya;
  *                  yang sudah tergambar tidak ikut tercetak (@media print di
  *                  bayangannya dan di blok cetak panel.css).
  *
@@ -137,16 +138,15 @@
     "/amplop",
     "/instrumen",
   ];
-  /**
-   * Layar portal yang MENGHADAP MASYARAKAT: layar sentuh ambil antrian,
+  /*
+   * Layar portal yang MENGHADAP MASYARAKAT (layar sentuh ambil antrian,
    * televisi ruang tunggu, tautan antrian tanpa login, antrian per ruang,
-   * papan pintu ruang sidang, halaman publik, dan verifikasi formulir. Widget
-   * memuat nomor perkara dan pekerjaan tertunda petugas - di layar itu ia
-   * membeberkannya ke ruang tunggu. Dijaga uji: rute tingkat atas baru di
-   * src/app harus digolongkan dulu.
+   * papan pintu ruang sidang, halaman publik, verifikasi formulir) TIDAK
+   * didaftar di sini lagi: daftarnya satu, alatHalamanPublikPortal di
+   * panel-alat.js, dan panel ALETA (aleta.js) memakai daftar yang sama.
+   * Widget memuat nomor perkara dan pekerjaan tertunda petugas - di layar
+   * itu ia membeberkannya ke ruang tunggu.
    */
-  const POLA_HALAMAN_PUBLIK =
-    /^\/aleta\/(antrian|antrian-layar|antrian-tampil|antrian-ruang|sidang-ruang|public|judicia\/legal-form\/verify)(\/|$)/;
   /** Sumber pola nomor perkara - sama dengan POLA_PERKARA di konten.js. */
   const SUMBER_POLA_NOMOR =
     "\\b(\\d{1,5}\\/[A-Za-z]{1,10}(?:\\.[A-Za-z]{1,4}){0,2}\\/\\d{4}\\/[A-Za-z]{2,4}\\.[A-Za-z]{2,6})\\b";
@@ -699,7 +699,7 @@
   function halamanTerlarang() {
     const jalur = String(location.pathname || "").toLowerCase();
     if (POLA_HALAMAN_CETAK.some((pola) => jalur.includes(pola))) return true;
-    if (POLA_HALAMAN_PUBLIK.test(jalur)) return true;
+    if (alatHalamanPublikPortal(jalur)) return true;
     // Halaman masuk (SIPP, ABT, portal) dan verifikasi dokumen publik portal:
     // tidak ada sesi untuk dibaca, dan kotak yang menutupi isian sandi hanya
     // mengganggu.

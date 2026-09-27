@@ -40,6 +40,7 @@ const humanPresenceService = require("./services/humanPresenceService");
 const ecourtDocumentService = require("./services/ecourtDocumentService");
 const ecourtNotificationWorker = require("./services/ecourtNotificationWorker");
 const kelengkapanDataService = require("./services/kelengkapanDataService");
+const antrianWaktuService = require("./services/antrianWaktuService");
 const ecourtVerificationService = require("./services/ecourtVerificationService");
 const nomorVerificationService = require("./services/nomorVerificationService");
 const ecourtSchedulerService = require("./services/ecourtSchedulerService");
@@ -1043,6 +1044,13 @@ dynamicNotificationSchedulerService.startDynamicNotificationScheduler();
 // "Kirim saat data lengkap" di portal - lihat kirimSaatLengkap pada
 // config/runtime-config.js.
 kelengkapanDataService.mulai();
+
+// Pencatat waktu antrian sidang: menyalin waktu ambil, jam jadwal asli, dan
+// waktu panggil dari aplikasi antrian - yang menimpanya sendiri - ke buku
+// waktu ALETA tiap 30 detik pada hari kerja jam kantor WITA. Hanya MEMBACA
+// aplikasi antrian, dan tidak bergantung pada WhatsApp. Dimatikan dengan
+// ALETA_ANTRIAN_WAKTU_AKTIF=0; lihat antrianWaktuService.
+antrianWaktuService.mulai();
 
 // Menilai nomor yang pesannya tidak pernah sampai, lalu menghentikannya.
 // Dijalankan sekali sehari saja: penilaiannya memang menunggu lebih dari

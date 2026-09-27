@@ -28,6 +28,15 @@ import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 import { tanggalHariPendek } from "@/lib/tanggal-indonesia";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import {
+  adaMediatorHakim,
+  adaMediatorNonHakim,
+  daftarMediator,
+  namaTiapMediator,
+  sebutanMediator,
+  statusMediatorBelumTercatat,
+} from "@/lib/sebutan-mediator";
+import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import { ChevronDown, ChevronUp, Filter, X } from "lucide-react";
 
 import {
@@ -65,8 +74,64 @@ type Mediasi = {
   tenggatPerma: string;
   sisaHariTenggat: number | null;
   lewatTenggang: boolean;
-  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
+  /** Bahan sebutan pihak; bot lama tidak mengirimnya - lihat susunanPihak. */
+  alurPerkaraId?: number | null;
+  jenisPerkaraId?: number | null;
+  pihak: {
+    /** pihak_ke 1 - Penggugat/Pemohon. */
+    penggugat: string[];
+    /** pihak_ke 2 - Tergugat/Termohon. */
+    tergugat: string[];
+    /** pihak_ke 4, dipisah bot sejak 27 Sep 2026; bot lama menaruhnya di tergugat. */
+    turutTergugat?: string[];
+    saksi?: string[];
+    lain?: string[];
+  };
 };
+
+/**
+ * ============================================================================
+ * PARA PIHAK BERSUSUN, DENGAN SEBUTAN MENURUT PERKARANYA
+ * ============================================================================
+ *
+ * Dulu satu baris "Penggugat lawan Tergugat" yang dipotong elipsis: nama
+ * lengkap tidak pernah terbaca, dan pihak kedua kerap hilang seluruhnya.
+ * Sekarang tiap sisi satu baris - pihak pertama lebih dulu - dengan seluruh
+ * namanya.
+ *
+ * Sebutannya dari sebutanPihakPerkara, SATU sumber untuk seluruh aplikasi,
+ * dengan alur_perkara_id dan jenis_perkara_id dari bot. Itu yang membuat
+ * cerai talak (346) dan izin poligami (341) bersebutan Pemohon/Termohon walau
+ * nomornya /Pdt.G/ - 268 dari 752 perkara bermediasi di sipp_donggala.
+ * Bot lama yang belum mengirim kedua angka itu membuatnya turun ke nama jenis
+ * perkara, cadangan yang sudah dijaga ejaan SIPP-nya.
+ *
+ * Nama ruasnya lurus: penggugat = pihak_ke 1, tergugat = pihak_ke 2. Tidak
+ * ada pelaku/lawan di sini - pasangan yang sudah dua kali tertukar di proyek
+ * ini.
+ */
+function susunanPihak(baris: Mediasi): Array<{ kunci: string; sebutan: string; nama: string[] }> {
+  const sebutan = sebutanPihakPerkara({
+    alurPerkaraId: baris.alurPerkaraId,
+    jenisPerkaraId: baris.jenisPerkaraId,
+    jenisPerkaraNama: baris.jenisPerkara,
+    nomorPerkara: baris.nomorPerkara,
+  });
+  return [
+    { kunci: "pihak-pertama", sebutan: sebutan.satu, nama: baris.pihak.penggugat ?? [] },
+    { kunci: "pihak-kedua", sebutan: sebutan.dua, nama: baris.pihak.tergugat ?? [] },
+    { kunci: "turut", sebutan: `Turut ${sebutan.dua}`, nama: baris.pihak.turutTergugat ?? [] },
+  ].filter((sisi) => sisi.nama.length > 0);
+}
+
+/** Seluruh nama pihak yang dapat dicari - termasuk turut tergugat. */
+function namaPihakSemua(baris: Mediasi): string[] {
+  return [
+    ...(baris.pihak.penggugat ?? []),
+    ...(baris.pihak.tergugat ?? []),
+    ...(baris.pihak.turutTergugat ?? []),
+  ];
+}
 
 /**
  * Empat kedudukan yang dicatat kehadirannya.
@@ -242,8 +307,13 @@ function RincianMediasi({ baris }: { baris: Mediasi }) {
       baris.jam ? `${baris.jam}${baris.sampaiJam ? ` s.d. ${baris.sampaiJam}` : ""}` : "—",
     ],
     ["Tempat", baris.tempat || "—"],
-    ["Mediator", baris.mediator || "—"],
-    ["Status mediator", baris.statusMediator || "—"],
+    // Nama tanpa pemisah <br/> SIPP, dan status sebagai SEBUTAN - bukan
+    // huruf H mentah. Lihat lib/sebutan-mediator.ts.
+    ["Mediator", namaTiapMediator(baris.mediator).join("; ") || "—"],
+    [
+      "Status mediator",
+      baris.mediator || baris.statusMediator ? sebutanMediator(baris.statusMediator) : "—",
+    ],
     ["Jenis mediasi", baris.jenisMediasi || "—"],
     ["Nomor SK mediator", baris.nomorSk || "—"],
     ["Tanggal penetapan mediator", baris.penetapanMediator || "belum ditetapkan"],
@@ -278,16 +348,16 @@ function RincianMediasi({ baris }: { baris: Mediasi }) {
           ))}
         </dl>
 
-        {baris.pihak.penggugat.length > 0 || baris.pihak.tergugat.length > 0 ? (
+        {/* Sebutan tiap sisi menurut perkaranya, sama dengan sel tabel -
+            bukan "Penggugat / Pemohon" yang membiarkan pembaca menebak. */}
+        {susunanPihak(baris).length > 0 ? (
           <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
-            <div>
-              <p className="text-xs text-muted-foreground">Penggugat / Pemohon</p>
-              <p className="font-medium">{baris.pihak.penggugat.join(", ") || "—"}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Tergugat / Termohon</p>
-              <p className="font-medium">{baris.pihak.tergugat.join(", ") || "—"}</p>
-            </div>
+            {susunanPihak(baris).map((sisi) => (
+              <div key={sisi.kunci}>
+                <p className="text-xs text-muted-foreground">{sisi.sebutan}</p>
+                <p className="font-medium">{sisi.nama.join("; ")}</p>
+              </div>
+            ))}
           </div>
         ) : null}
       </section>
@@ -425,7 +495,9 @@ function nilaiUrutMediasi(baris: Mediasi, kunci: string): unknown {
     case "perkara":
       return baris.nomorPerkara;
     case "mediator":
-      return baris.mediator;
+      // Namanya tanpa <br/> SIPP: mediasi bermediator dua tidak boleh
+      // terurut menurut tanda HTML-nya.
+      return namaTiapMediator(baris.mediator).join("; ");
     case "tempat":
       return baris.tempat;
     case "tenggang":
@@ -437,10 +509,15 @@ function nilaiUrutMediasi(baris: Mediasi, kunci: string): unknown {
   }
 }
 
-/** Apakah mediatornya hakim - berbeda kewenangan dan berbeda pencatatannya. */
-function mediatorHakim(baris: Mediasi) {
-  return /hakim/i.test(baris.statusMediator || "");
-}
+// ============================================================================
+// HAKIM ATAU NON HAKIM - DARI SANDI SIPP, BUKAN DARI KATA
+// ============================================================================
+//
+// Aturan lama di sini menguji /hakim/i atas status_mediator. SIPP menyimpan
+// SANDI "H", dan "H" tidak pernah memuat kata "hakim" - sehingga setiap
+// mediator hakim terhitung "non-hakim" (chip: 0 hakim, 1 non-hakim untuk
+// perkara berstatus H). Penggolongannya kini satu sumber, lib/sebutan-mediator:
+// H = Mediator Hakim, selainnya = Mediator Non Hakim, KOSONG = belum tercatat.
 
 /**
  * ============================================================================
@@ -461,6 +538,12 @@ type KeadaanMediasi = {
   nada: "bahaya" | "awas" | "aman" | "sejuk" | "netral";
   judul: string;
   cocok: (baris: Mediasi) => boolean;
+  /**
+   * Disembunyikan selama jumlahnya nol dan tidak sedang dinyalakan. Untuk
+   * keadaan yang semestinya langka - kotak nol yang selalu tampil hanya
+   * menambah deretan yang harus dilewati mata.
+   */
+  sembunyiBilaNol?: boolean;
 };
 
 const KEADAAN_MEDIASI: KeadaanMediasi[] = [
@@ -517,26 +600,42 @@ const KEADAAN_MEDIASI: KeadaanMediasi[] = [
     judul: "Laporan mediator sudah diterima - tenggangnya tidak lagi dihitung.",
     cocok: (x) => x.selesai,
   },
+  // Tiga kotak mediator memakai sebutan yang SAMA dengan sel tabel dan
+  // rincian - lib/sebutan-mediator. Mediasi bermediator dua yang campuran
+  // (H,N) terhitung di kedua kotak: memang ada hakim DAN non-hakim di sana.
   {
     kunci: "hakim-mediator",
-    label: "Hakim mediator",
+    label: "Mediator Hakim",
     nada: "sejuk",
-    judul: "Mediatornya hakim pada pengadilan ini.",
-    cocok: (x) => mediatorHakim(x),
+    judul: "Status mediator di SIPP berkode H - mediatornya hakim.",
+    cocok: (x) => adaMediatorHakim(x.statusMediator),
   },
   {
-    kunci: "mediator-luar",
-    label: "Mediator non-hakim",
+    kunci: "mediator-non-hakim",
+    label: "Mediator Non Hakim",
     nada: "sejuk",
-    judul: "Mediatornya bukan hakim - mediator bersertifikat dari luar.",
-    cocok: (x) => Boolean(x.mediator) && !mediatorHakim(x),
+    judul: "Status mediator di SIPP berkode selain H - mediatornya bukan hakim.",
+    cocok: (x) => adaMediatorNonHakim(x.statusMediator),
+  },
+  {
+    // Kosong BUKAN non-hakim: dulu kotak non-hakim menelan baris ini, sehingga
+    // mediator yang statusnya lupa diisi terlaporkan sebagai mediator luar.
+    kunci: "status-mediator-kosong",
+    label: "Status mediator belum tercatat",
+    nada: "awas",
+    judul:
+      "Mediatornya tercatat, tetapi status hakim/non hakimnya kosong di SIPP - lengkapi di SIPP. " +
+      "Tidak dihitung sebagai hakim maupun non hakim.",
+    cocok: (x) =>
+      namaTiapMediator(x.mediator).length > 0 && statusMediatorBelumTercatat(x.statusMediator),
+    sembunyiBilaNol: true,
   },
   {
     kunci: "tanpa-mediator",
     label: "Mediator belum ada",
     nada: "bahaya",
     judul: "Mediatornya belum tercatat, padahal pertemuannya sudah dijadwalkan.",
-    cocok: (x) => !x.mediator,
+    cocok: (x) => namaTiapMediator(x.mediator).length === 0,
   },
 ];
 
@@ -545,7 +644,7 @@ const MEDAN_CARI_MEDIASI = [
   { kunci: "nomor", label: "Nomor perkara", petunjuk: "506/Pdt.G/2026" },
   { kunci: "pihak", label: "Nama pihak", petunjuk: "penggugat atau tergugat" },
   { kunci: "jenis", label: "Jenis perkara", petunjuk: "Harta Bersama" },
-  { kunci: "mediator", label: "Mediator", petunjuk: "nama mediator" },
+  { kunci: "mediator", label: "Mediator", petunjuk: "nama, atau Mediator Hakim / Non Hakim" },
   { kunci: "tempat", label: "Tempat", petunjuk: "ruang mediasi" },
   { kunci: "hasil", label: "Hasil", petunjuk: "Berhasil Sebagian" },
   { kunci: "nomorSk", label: "Nomor SK penetapan", petunjuk: "nomor SK mediator" },
@@ -558,13 +657,19 @@ const MEDAN_CARI_MEDIASI = [
  * Seluruh medan digabung dengan "dan"; yang dikosongkan tidak ikut menyaring.
  */
 function cocokCariLanjutMediasi(baris: Mediasi, isian: Record<string, string>) {
-  const pihak = [...baris.pihak.penggugat, ...baris.pihak.tergugat].join(" ");
+  const pihak = namaPihakSemua(baris).join(" ");
+  // Yang dicari adalah yang TERTULIS di layar: nama tanpa <br/> dan sebutan
+  // "Mediator Hakim"/"Mediator Non Hakim" - bukan huruf H yang tidak tampak
+  // di mana pun.
+  const mediator = `${namaTiapMediator(baris.mediator).join(" ")} ${
+    baris.mediator || baris.statusMediator ? sebutanMediator(baris.statusMediator) : ""
+  }`;
 
   return (
     cocokTeks(baris.nomorPerkara, isian.nomor ?? "") &&
     cocokTeks(pihak, isian.pihak ?? "") &&
     cocokTeks(baris.jenisPerkara, isian.jenis ?? "") &&
-    cocokTeks(`${baris.mediator} ${baris.statusMediator}`, isian.mediator ?? "") &&
+    cocokTeks(mediator, isian.mediator ?? "") &&
     cocokTeks(baris.tempat, isian.tempat ?? "") &&
     cocokTeks(baris.hasilTeks, isian.hasil ?? "") &&
     cocokTeks(baris.nomorSk, isian.nomorSk ?? "") &&
@@ -578,14 +683,13 @@ function cocokCariCepatMediasi(baris: Mediasi, kata: string) {
   const semua = [
     baris.nomorPerkara,
     baris.jenisPerkara,
-    baris.mediator,
-    baris.statusMediator,
+    ...namaTiapMediator(baris.mediator),
+    baris.mediator || baris.statusMediator ? sebutanMediator(baris.statusMediator) : "",
     baris.tempat,
     baris.hasilTeks,
     baris.nomorSk,
     baris.jam,
-    ...baris.pihak.penggugat,
-    ...baris.pihak.tergugat,
+    ...namaPihakSemua(baris),
   ].join(" ");
   return cocokTeks(semua, kata);
 }
@@ -846,7 +950,15 @@ export function AletaEcourtMediasi({
             dilaporkan tiap bulan. */}
         {mediasi.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            {KEADAAN_MEDIASI.map((keadaan) => (
+            {/* Kotak yang sedang dinyalakan tidak pernah disembunyikan, walau
+                jumlahnya jatuh ke nol sesudah dimuat ulang - saringan aktif
+                yang tidak terlihat tidak dapat dilepas. */}
+            {KEADAAN_MEDIASI.filter(
+              (keadaan) =>
+                !keadaan.sembunyiBilaNol ||
+                (jumlahKeadaan[keadaan.kunci] ?? 0) > 0 ||
+                keadaanTerpilih.includes(keadaan.kunci)
+            ).map((keadaan) => (
               <ChipSaring
                 key={keadaan.kunci}
                 label={keadaan.label}
@@ -1002,16 +1114,21 @@ export function AletaEcourtMediasi({
                       ) : (
                         <span className="font-semibold">{baris.nomorPerkara}</span>
                       )}
-                      {baris.pihak.penggugat.length > 0 ? (
-                        <div
-                          className="mt-0.5 max-w-[22rem] truncate text-xs text-muted-foreground"
-                          title={[...baris.pihak.penggugat, ...baris.pihak.tergugat].join(" · ")}
-                        >
-                          {baris.pihak.penggugat[0]}
-                          {baris.pihak.tergugat.length > 0
-                            ? ` lawan ${baris.pihak.tergugat[0]}`
-                            : ""}
-                        </div>
+                      {/* Bersusun dan UTUH: satu baris per sisi, pihak pertama
+                          dulu, seluruh nama tanpa elipsis - boleh melipat
+                          baris. Dulu "A lawan B" dipotong pada 22rem, dan
+                          pihak kedua kerap tidak terbaca sama sekali. */}
+                      {susunanPihak(baris).length > 0 ? (
+                        <dl className="mt-1 max-w-[26rem] space-y-0.5 text-xs">
+                          {susunanPihak(baris).map((sisi) => (
+                            <div key={sisi.kunci} data-sisi={sisi.kunci}>
+                              <dt className="inline text-muted-foreground">{sisi.sebutan}: </dt>
+                              <dd className="inline break-words font-medium">
+                                {sisi.nama.join("; ")}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
                       ) : null}
                       <div className="mt-0.5 text-xs text-muted-foreground">
                         {baris.jenisPerkara || "—"}
@@ -1019,13 +1136,32 @@ export function AletaEcourtMediasi({
                     </td>
 
                     <td className="px-3 py-2 text-xs">
-                      <div className="font-medium">{baris.mediator || "—"}</div>
-                      {baris.statusMediator ? (
-                        <div className="text-muted-foreground">{baris.statusMediator}</div>
-                      ) : null}
+                      {/* Tiap mediator dengan sebutannya sendiri - "Mediator
+                          Hakim" / "Mediator Non Hakim", bukan huruf H mentah.
+                          Status kosong disebut belum tercatat, berwarna awas:
+                          yang harus dilengkapi SIPP-nya. */}
+                      {daftarMediator(baris.mediator, baris.statusMediator).length === 0 ? (
+                        <div className="font-medium">—</div>
+                      ) : (
+                        daftarMediator(baris.mediator, baris.statusMediator).map((orang, ke) => (
+                          <div key={`${orang.nama}-${ke}`} className={ke > 0 ? "mt-1" : undefined}>
+                            <div className="font-medium">{orang.nama || "Nama mediator belum tercatat"}</div>
+                            <div
+                              className={
+                                orang.golongan === "belum-tercatat"
+                                  ? "text-amber-700 dark:text-amber-300"
+                                  : "text-muted-foreground"
+                              }
+                            >
+                              {orang.sebutan}
+                            </div>
+                          </div>
+                        ))
+                      )}
                       {baris.penetapanMediator ? (
                         <div className="text-muted-foreground">
-                          ditetapkan {baris.penetapanMediator}
+                          ditetapkan{" "}
+                          {tanggalHariPendek(baris.penetapanMediator, baris.penetapanMediator)}
                         </div>
                       ) : null}
                       {baris.nomorSk ? (

@@ -4688,6 +4688,47 @@ function alatCatatAsalPortal() {
   }
 }
 
+/**
+ * ============================================================================
+ * LAYAR PORTAL YANG MENGHADAP MASYARAKAT - SATU DAFTAR UNTUK PANEL DAN WIDGET
+ * ============================================================================
+ *
+ * Layar sentuh ambil antrian, televisi ruang tunggu, tautan antrian tanpa
+ * login, antrian per ruang, papan pintu ruang sidang, halaman publik, dan
+ * verifikasi formulir dibuka di peramban yang SAMA dengan ekstensi petugas -
+ * sering di PC meja pelayanan yang layarnya dihadapkan ke ruang tunggu.
+ * Panel ALETA (aleta.js) memuat nama petugas, pintasan jabatannya, dan jalan
+ * kembali ke perkara yang baru dibukanya di SIPP; widget checklist
+ * (checklist.js) memuat nomor perkara dan pekerjaan tertundanya. Di layar
+ * itu keduanya membeberkan isinya kepada siapa pun yang sedang menunggu.
+ *
+ * Dahulu hanya widget yang tahu daftar ini, sedangkan panel hanya
+ * mengecualikan halaman masuk dan verifikasi dokumen - jadi panelnya tetap
+ * tergambar di televisi ruang tunggu. Daftarnya kini tinggal di sini,
+ * satu-satunya, dan keduanya bertanya ke fungsi yang sama: rute publik baru
+ * cukup ditambahkan sekali, dan tidak ada daftar kedua yang diam-diam
+ * tertinggal.
+ *
+ * Dijaga uji (ekstensi-checklist-milestone.test.ts, "layar yang menghadap
+ * masyarakat"): tiap rute tingkat atas di manajemen_surat/src/app harus
+ * digolongkan dulu, publik atau bukan, dan kedua skrip dibuktikan memakai
+ * fungsi ini, bukan salinannya.
+ *
+ * Polanya menuntut SEGMEN UTUH: /aleta/aleta-antrian - meja petugas antrian -
+ * tidak ikut, walau namanya memuat "antrian". Awalan /aleta boleh tidak ada,
+ * sama dengan cara aleta.js membaca jalurnya; jalur SIPP (/SIPP/...,
+ * /index.php/...) dan ABT (/aps_badilag/...) tidak pernah cocok, sebab segmen
+ * pertamanya lain.
+ */
+const ALAT_POLA_HALAMAN_PUBLIK =
+  /^(?:\/aleta)?\/(antrian|antrian-layar|antrian-tampil|antrian-ruang|sidang-ruang|public|judicia\/legal-form\/verify)(\/|$)/i;
+
+/** Apakah jalur ini - bawaannya halaman ini - layar portal yang menghadap masyarakat? */
+function alatHalamanPublikPortal(jalur) {
+  const isi = jalur === undefined ? location.pathname : jalur;
+  return ALAT_POLA_HALAMAN_PUBLIK.test(String(isi || ""));
+}
+
 /** Nama kelompok dirapikan untuk dibandingkan - besar-kecil dan spasi saja. */
 function alatKunciKelompok(nama) {
   return String(nama || "").replace(/\s+/g, " ").trim().toLowerCase();

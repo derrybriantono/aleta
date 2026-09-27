@@ -978,6 +978,10 @@ const schemaStatements = [
    * sini: urutan antrian, waktu pengambilan, nama petugas yang melayani, dan
    * jarak ke perkara sebelum maupun sesudahnya di ruang yang sama.
    * Lihat 0048_rekam_antrian.sql.
+   *
+   * Delapan kolom terakhir (0051): waktu lengkap berdetik menurut jam aplikasi
+   * antrian - BUKAN UTC - dan tiga jarak waktunya (menunggu, dari sidang
+   * sebelumnya, lama sidang). Lihat 0051_rekam_antrian_detik.sql.
    */
   `CREATE TABLE IF NOT EXISTS aleta_rekam_antrian (
     id TEXT PRIMARY KEY,
@@ -996,7 +1000,15 @@ const schemaStatements = [
     jarak_sebelum_menit INTEGER,
     jarak_berikut_menit INTEGER,
     pertama_direkam_at TEXT NOT NULL DEFAULT '',
-    direkam_at TEXT NOT NULL DEFAULT ''
+    direkam_at TEXT NOT NULL DEFAULT '',
+    waktu_ambil_lengkap TEXT NOT NULL DEFAULT '',
+    jam_jadwal TEXT NOT NULL DEFAULT '',
+    waktu_panggil_pertama TEXT NOT NULL DEFAULT '',
+    waktu_panggil_lengkap TEXT NOT NULL DEFAULT '',
+    jumlah_panggil INTEGER NOT NULL DEFAULT 0,
+    menunggu_detik INTEGER,
+    jarak_sebelum_detik INTEGER,
+    lama_sidang_detik INTEGER
   )`,
   `CREATE INDEX IF NOT EXISTS idx_rekam_antrian_hari
     ON aleta_rekam_antrian (tanggal_sidang, ruangan, urutan_ruang)`,
@@ -3482,6 +3494,19 @@ const migrationStatements = [
   `ALTER TABLE aleta_sipp_monitoring_manual_inputs ADD COLUMN IF NOT EXISTS reviewed_by TEXT REFERENCES users(id)`,
   `ALTER TABLE aleta_sipp_monitoring_manual_inputs ADD COLUMN IF NOT EXISTS reviewed_at TEXT`,
   `ALTER TABLE aleta_sipp_monitoring_manual_inputs ADD COLUMN IF NOT EXISTS review_notes TEXT NOT NULL DEFAULT ''`,
+  // Presisi detik dan tiga jarak waktu rekam antrian (0051). CREATE TABLE di
+  // atas sudah memuatnya untuk pemasangan baru; baris-baris ini untuk tabel
+  // yang sudah berdiri sejak 0048 - CREATE TABLE IF NOT EXISTS tidak pernah
+  // menyentuh tabel lama, dan pemasangan yang melewati berkas drizzle tetap
+  // berkata berhasil (lihat drizzle/0051_rekam_antrian_detik.sql).
+  `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS waktu_ambil_lengkap TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS jam_jadwal TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS waktu_panggil_pertama TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS waktu_panggil_lengkap TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS jumlah_panggil INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS menunggu_detik INTEGER`,
+  `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS jarak_sebelum_detik INTEGER`,
+  `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS lama_sidang_detik INTEGER`,
 ];
 
 const aletaSippSchemaStatements = [

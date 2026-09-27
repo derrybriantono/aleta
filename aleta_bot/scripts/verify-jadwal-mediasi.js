@@ -69,7 +69,12 @@ function cocokkan(sql) {
     return hasil;
   }
   if (teks.includes("FROM perkara_jadwal_mediasi j")) return jawaban.mediasi || [];
-  if (teks.includes("FROM v_pihak_perkara")) return jawaban.pihak || [];
+  // Para pihak kini dibaca langsung dari perkara_pihakN (pihakDariTabel),
+  // bukan dari view - tiruan yang hanya mengenal view menjawab kosong, dan
+  // "para pihak ikut terbaca" merah tanpa ada yang rusak di layanannya.
+  if (teks.includes("FROM v_pihak_perkara") || teks.includes("FROM perkara_pihak")) {
+    return jawaban.pihak || [];
+  }
   if (teks.includes("FROM v_durasi_mediasi")) return jawaban.durasi || [];
   return [];
 }
@@ -177,6 +182,63 @@ async function jalan() {
 
     periksa("para pihak ikut terbaca", hasil.mediasi[0].pihak.penggugat.length === 1);
     periksa("mediasi yang sudah dilaporkan ditandai selesai", hasil.mediasi[0].selesai === true);
+  }
+
+  console.log("\n== Bahan sebutan pihak dan turut tergugat ==");
+  {
+    bersihkan();
+    jawaban = {
+      mediasi: [
+        {
+          mediasiId: 88,
+          perkaraId: 7001,
+          nomorPerkara: "700/Pdt.G/2026/PA.Dgl",
+          jenisPerkara: "Cerai Talak",
+          // Cerai talak beralur GUGATAN (15) tetapi bersebutan Pemohon -
+          // hanya jenis_perkara_id 346 yang membedakannya.
+          alurPerkaraId: 15,
+          jenisPerkaraId: 346,
+          tanggal: "2026-09-28",
+          ditunda: "T",
+        },
+      ],
+      pihak: [
+        { perkaraId: 7001, pihakKe: 1, nama: "PEMOHON SATU" },
+        { perkaraId: 7001, pihakKe: 2, nama: "TERMOHON SATU" },
+        { perkaraId: 7001, pihakKe: 2, nama: "TERMOHON DUA" },
+        { perkaraId: 7001, pihakKe: 4, nama: "TURUT TERMOHON" },
+        { perkaraId: 7001, pihakKe: 5, nama: "SAKSI SATU" },
+      ],
+    };
+
+    const hasil = await layanan.daftarJadwalMediasi({ dari: "2026-09-28", sampai: "2026-09-28" });
+    const satu = hasil.mediasi[0] || {};
+    const sql = kueri.map((k) => k.sql).find((s) => s.includes("FROM perkara_jadwal_mediasi j")) || "";
+
+    periksa("kueri memilih alur_perkara_id", /p\.alur_perkara_id AS alurPerkaraId/.test(sql));
+    periksa("kueri memilih jenis_perkara_id", /p\.jenis_perkara_id AS jenisPerkaraId/.test(sql));
+    periksa("alur perkara terkirim sebagai angka", satu.alurPerkaraId === 15);
+    periksa("jenis perkara terkirim sebagai angka", satu.jenisPerkaraId === 346);
+    periksa(
+      "dua termohon terbaca, turut termohon TIDAK ikut di sisi termohon",
+      JSON.stringify(satu.pihak && satu.pihak.tergugat) === JSON.stringify(["TERMOHON SATU", "TERMOHON DUA"])
+    );
+    periksa(
+      "turut termohon dipisah sendiri",
+      JSON.stringify(satu.pihak && satu.pihak.turutTergugat) === JSON.stringify(["TURUT TERMOHON"])
+    );
+    periksa("saksi tidak ikut ke sisi mana pun", !(satu.pihak.penggugat || []).includes("SAKSI SATU"));
+
+    // Pemanggil lain (jadwal sidang, cetak, antrian, papan pintu) tetap
+    // menerima bentuk lama: turut tergugat di sisi tergugat, tanpa ruas baru.
+    bersihkan();
+    const lama = await layanan.pihakBanyakPerkara([7001]);
+    periksa(
+      "tanpa opsi, turut tergugat tetap di sisi tergugat",
+      JSON.stringify(lama["7001"] && lama["7001"].tergugat) ===
+        JSON.stringify(["TERMOHON SATU", "TERMOHON DUA", "TURUT TERMOHON"])
+    );
+    periksa("tanpa opsi, tidak ada ruas turutTergugat", !("turutTergugat" in (lama["7001"] || {})));
   }
 
   console.log("\n== Tenggang PERMA 1/2016 Pasal 24 ==");

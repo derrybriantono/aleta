@@ -139,9 +139,12 @@ describe("terpasang di bawah tombol antrian", () => {
     "utf8"
   );
 
+  // Sejak 27 September 2026 yang terpasang di sini TIGA jarak bernama
+  // (TigaJarakSidang), menggantikan lencana "+X"/"→Y" - lihat
+  // tiga-jarak-sidang.test.ts untuk perilakunya.
   it("dipakai sesudah TombolAmbilAntrian, bukan di kolom lain", () => {
     const iTombol = layar.indexOf("<TombolAmbilAntrian");
-    const iJarak = layar.indexOf("<JarakAntarSidang");
+    const iJarak = layar.indexOf("<TigaJarakSidang");
     expect(iTombol).toBeGreaterThan(-1);
     expect(iJarak).toBeGreaterThan(iTombol);
   });
@@ -149,8 +152,17 @@ describe("terpasang di bawah tombol antrian", () => {
   it("petanya dihitung SEKALI, bukan di dalam tiap baris", () => {
     // Baris yang mencari tetangganya sendiri menyapu daftar penuh untuk tiap
     // baris - pada jadwal dua puluh perkara itu empat ratus penyapuan.
-    expect(layar).toContain("const jarakAntar = useMemo(");
-    expect(layar.match(/petaJarakAntarSidang\(/g)?.length).toBe(1);
+    expect(layar).toContain("const tigaJarak = useMemo(");
+    expect(layar.match(/hitungTigaJarak\(/g)?.length).toBe(1);
+  });
+
+  it("lencana lama tidak hidup berdampingan dengan tiga jarak", () => {
+    // Dua cara menghitung jarak yang sama di satu layar adalah persis
+    // kebingungan yang dikeluhkan pengguna 27 September 2026.
+    expect(layar).not.toContain("function JarakAntarSidang(");
+    expect(layar).not.toContain("<JarakAntarSidang");
+    expect(layar).not.toContain("petaJarakAntarSidang(");
+    expect(layar).not.toContain("petaJarakBerikutSidang(");
   });
 
   it("aturan warnanya diimpor, tidak ditulis ulang di layar", () => {

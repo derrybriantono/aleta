@@ -16,6 +16,8 @@ export type CaraRelaas = {
 };
 
 import type { AletaBotSnapshot, AletaBotDeadLetter, AletaBotWorkerState } from "@/lib/aleta-bot-types";
+import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
+import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
 
 export type WhatsappRuntimeMode = "aleta_bot" | "legacy_portal" | "disabled";
@@ -1934,12 +1936,71 @@ export async function getGatewayStatusPerkara(
   });
 }
 
+/**
+ * Rekap satu petugas - dibuka dari nama hakim, panitera pengganti, juru sita,
+ * atau mediator pada layar Status Perkara. Orangnya dikenali lewat peran dan
+ * ID SIPP, tidak lewat nama; lihat src/lib/rekap-petugas.ts.
+ *
+ * Batas waktu penilaian (60 detik), bukan bawaan delapan detik. Terukur atas
+ * sipp_donggala lokal (buffer InnoDB 16 MB), lewat HTTP: hitungan pertama
+ * seorang juru sita 1,3 detik, panitera 0,8, hakim 0,3 - tetapi sebelum bot
+ * membaca tabel perkara lewat indeksnya, angka yang sama 6-10 detik saat mesin
+ * sedang sibuk, dan ruang itulah yang dijaga batas ini. Hitungan berikutnya
+ * dua menit sesudahnya dari singgahan bot, di bawah 10 milidetik.
+ */
+export async function getGatewayRekapPetugas(
+  permintaan: PermintaanRekap
+): Promise<GatewayResult<RekapPetugas>> {
+  const kueri = new URLSearchParams({ peran: permintaan.peran, id: String(permintaan.id) });
+  if (permintaan.tahun) kueri.set("tahun", permintaan.tahun);
+  if (permintaan.keadaan) kueri.set("keadaan", permintaan.keadaan);
+  if (permintaan.kedudukan) kueri.set("kedudukan", permintaan.kedudukan);
+  if (permintaan.lewati) kueri.set("lewati", String(permintaan.lewati));
+  if (permintaan.batas) kueri.set("batas", String(permintaan.batas));
+  return gatewayFetch(`/internal/aleta-bot/sipp/rekap-petugas?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
+/**
+ * Jalur halaman satu perkara di SIPP - "perkara_detil_agama/<enc>" - untuk
+ * tombol "Buka SIPP" dan "Salin tautan" di Status Perkara.
+ *
+ * Bot menjawab jalur RELATIF; alamat mutlaknya disusun portal dari
+ * ALETA_SIPP_BASE_URL (lihat modules/aleta-ecourt/sipp-tautan.ts), karena hanya
+ * portal yang tahu alamat SIPP menurut peramban petugas. Kunci SIPP yang
+ * dipakai menyusun <enc> tidak pernah meninggalkan bot.
+ *
+ * Batas waktu bawaan cukup: bot hanya membaca satu baris perkara dan satu
+ * baris sys_config, lalu menyandikan dua blok.
+ */
+export async function getGatewaySippTautanPerkara(params: {
+  perkaraId?: string;
+  nomor?: string;
+}): Promise<
+  GatewayResult<{ ok: boolean; jalur: string; pintu: string; perkaraId: string; nomorPerkara: string }>
+> {
+  const kueri = new URLSearchParams();
+  const perkaraId = String(params.perkaraId ?? "").trim();
+  const nomor = String(params.nomor ?? "").trim();
+  if (perkaraId) kueri.set("perkaraId", perkaraId);
+  if (nomor) kueri.set("nomor", nomor);
+  return gatewayFetch(`/internal/aleta-bot/sipp/tautan-perkara?${kueri.toString()}`);
+}
+
 /** Daftar sidang pada rentang tanggal, dibaca dari SIPP. */
 export async function getGatewayJadwalSidang(params: {
   dari: string;
   sampai: string;
   cari: string;
   batas: number;
+  /**
+   * Meminta waktuAntrian ikut disusun (?waktu=1). Bawaannya TIDAK: menyusunnya
+   * menembak basis data antrian dan basis data bot, dan pemanggil yang tidak
+   * memakainya - layar publik yang memuat ulang berkala - tidak boleh ikut
+   * menanggungnya. Hanya rute jadwal sidang yang memintanya.
+   */
+  waktu?: boolean;
 }): Promise<
   GatewayResult<{
     ok: boolean;
@@ -1967,6 +2028,16 @@ export async function getGatewayJadwalSidang(params: {
        */
       peta: Record<string, AntrianBarisGateway>;
     };
+    /**
+     * Waktu antrian berdetik untuk SELURUH perkara pada tanggal-tanggal yang
+     * tampil - dari buku waktu bot (hari lampau) dan aplikasi antrian (hari
+     * ini) - beserta "sekarang" menurut jam aplikasi antrian. Bahan tiga jarak
+     * waktu sidang; lihat lib/tiga-jarak-sidang.ts.
+     *
+     * Opsional: bot sebelum 27 September 2026 tidak mengirimnya, dan layar
+     * jadwal tetap berjalan tanpanya.
+     */
+    waktuAntrian?: WaktuAntrian;
   }>
 > {
   const kueri = new URLSearchParams({
@@ -1975,6 +2046,7 @@ export async function getGatewayJadwalSidang(params: {
     cari: params.cari,
     batas: String(params.batas),
   });
+  if (params.waktu === true) kueri.set("waktu", "1");
   return gatewayFetch(`/internal/aleta-bot/sipp/jadwal-sidang?${kueri.toString()}`);
 }
 
@@ -4180,7 +4252,21 @@ export type GatewayJadwalMediasi = {
   tenggatPerma: string;
   sisaHariTenggat: number | null;
   lewatTenggang: boolean;
-  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
+  /**
+   * Bahan sebutan Penggugat/Pemohon (sebutanPihakPerkara). Opsional: bot
+   * yang belum diperbarui tidak mengirimnya, dan layar lalu turun ke nama
+   * jenis perkara.
+   */
+  alurPerkaraId?: number | null;
+  jenisPerkaraId?: number | null;
+  /** turutTergugat hanya dikirim bot yang memisahkannya (pihak_ke 4). */
+  pihak: {
+    penggugat: string[];
+    tergugat: string[];
+    turutTergugat?: string[];
+    saksi?: string[];
+    lain?: string[];
+  };
 };
 
 export async function getGatewayJadwalMediasi(params: {

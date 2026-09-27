@@ -2414,8 +2414,13 @@ async function mediasiLengkapPerkara(perkaraId) {
     };
   }
 
+  // mediator_id ikut dibaca: nama mediator pada layar Status Perkara membuka
+  // rekap mediatornya LEWAT ID, bukan lewat ejaan mediator_text. Kolomnya
+  // DAFTAR ber-koma ("15,17") yang urutannya sejajar dengan nama di
+  // mediator_text dan sandi di status_mediator. Calon kolomnya sudah lama
+  // terdaftar (mediasiMediatorId), hanya belum pernah dibaca.
   const rows = await runQuery(
-    `SELECT ${MEDAN.map((x) => `m.${x.kunci} AS ${x.alias}`).join(", ")}
+    `SELECT ${MEDAN.map((x) => `m.${x.kunci} AS ${x.alias}`).join(", ")}${kolom.mediasiMediatorId ? ", m." + kolom.mediasiMediatorId + " AS mediatorIdTeks" : ""}
        FROM perkara_mediasi m WHERE m.perkara_id = ? LIMIT 20`,
     [id]
   ).catch(() => []);
@@ -2459,6 +2464,14 @@ async function mediasiLengkapPerkara(perkaraId) {
       const kodeHasil = cleanText(row.hasil);
       return {
         mediator: cleanText(row.mediator) || (dariMediator ? dariMediator.nama : ""),
+        // Id tiap mediator, sejajar dengan nama pada ruas mediator. Baris yang
+        // mediator_id-nya kosong (satu di sipp_donggala, perkara 9645)
+        // memakai id penunjukan AKTIF pada perkara_mediator - tetap id, tidak
+        // pernah dicari lewat nama.
+        mediatorIds: idMediatorMediasi(
+          row.mediatorIdTeks,
+          mediator.baris.filter((x) => x.masihAktif).map((x) => x.mediatorId)
+        ),
         statusMediator: cleanText(row.statusMediator),
         jenisPenetapan: cleanText(row.jenisMediasi),
         nomorSk: cleanText(row.nomorSk) || (dariMediator ? dariMediator.nomorSk : ""),
@@ -2487,6 +2500,27 @@ async function mediasiLengkapPerkara(perkaraId) {
   };
 }
 
+/**
+ * Id mediator satu baris mediasi, dari perkara_mediasi.mediator_id.
+ *
+ * Posisinya DIPERTAHANKAN: bagian yang tidak terbaca menjadi null, tidak
+ * dibuang - nama ke-n pada mediator_text berpasangan dengan id ke-n, dan
+ * membuang satu bagian menggeser seluruh pasangan sesudahnya ke orang lain.
+ * Bila tidak satu pun terbaca, id penunjukan aktif pada perkara_mediator
+ * dipakai sebagai cadangan.
+ */
+function idMediatorMediasi(teksId, cadangan = []) {
+  const teks = cleanText(teksId);
+  const dariBaris = teks
+    ? teks.split(",").map((bagian) => {
+        const angka = Number(String(bagian).trim());
+        return Number.isSafeInteger(angka) && angka > 0 ? angka : null;
+      })
+    : [];
+  if (dariBaris.some((x) => x !== null)) return dariBaris;
+  return (Array.isArray(cadangan) ? cadangan : []).filter((x) => Number.isSafeInteger(x) && x > 0);
+}
+
 /** Mediator yang ditetapkan pada perkara ini, beserta nomor SK-nya. */
 async function mediatorPerkara(perkaraId) {
   if (!(await sippSkemaService.tabelAda("perkara_mediator"))) {
@@ -2502,8 +2536,18 @@ async function mediatorPerkara(perkaraId) {
   if (kolom.mediatorAktif) pilihan.push(`m.${kolom.mediatorAktif} AS aktif`);
   if (kolom.mediatorKeterangan) pilihan.push(`m.${kolom.mediatorKeterangan} AS keterangan`);
 
+  // Penjaga ini diperiksa SEBELUM id ditambahkan. Id saja bukan keterangan
+  // mediator: bila id didahulukan, daftar kolomnya tidak pernah kosong dan SIPP
+  // yang nama kolomnya tidak dikenali terbaca "terbaca" dengan nama kosong -
+  // bukan penjelasan yang menunjuk apa yang harus didaftarkan.
   if (pilihan.length === 0) {
     return { terbaca: false, alasan: "Kolom mediator belum dikenali.", baris: [] };
+  }
+
+  // Id mediatornya - cadangan bagi baris perkara_mediasi yang mediator_id-nya
+  // kosong. Dibaca hanya bila kolomnya memang ada pada SIPP setempat.
+  if (await sippSkemaService.kolomAda("perkara_mediator", "mediator_id")) {
+    pilihan.unshift("m.mediator_id AS mediatorId");
   }
 
   const rows = await runQuery(
@@ -2518,6 +2562,7 @@ async function mediatorPerkara(perkaraId) {
     terbaca: true,
     alasan: "",
     baris: rows.map((row) => ({
+      mediatorId: Number.isSafeInteger(Number(row.mediatorId)) && Number(row.mediatorId) > 0 ? Number(row.mediatorId) : null,
       nama: cleanText(row.nama),
       tanggalPenetapan: isoTanggal(row.penetapan),
       nomorSk: cleanText(row.nomorSk),

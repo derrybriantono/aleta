@@ -1507,6 +1507,13 @@ async function daftarJadwalMediasi({ dari = "", sampai = "", cari = "", batas = 
     "m.perkara_id AS perkaraId",
     "p.nomor_perkara AS nomorPerkara",
     "p.jenis_perkara_nama AS jenisPerkara",
+    // Bahan sebutan Penggugat/Pemohon di layar - NOMOR, bukan kata (lihat
+    // sebutanPihakService). Terukur 27 Sep 2026 di sipp_donggala: 268 dari
+    // 752 perkara bermediasi beralur GUGATAN (15) tetapi bersebutan
+    // Pemohon/Termohon - Cerai Talak 346 (258) dan Izin Poligami 341 (10).
+    // Tanpa jenis_perkara_id, sepertiganya tertulis "Penggugat".
+    "p.alur_perkara_id AS alurPerkaraId",
+    "p.jenis_perkara_id AS jenisPerkaraId",
   ];
   if (kolom.jadwalMediasiJam) pilihan.push(`j.${kolom.jadwalMediasiJam} AS jam`);
   if (kolom.jadwalMediasiSampai) pilihan.push(`j.${kolom.jadwalMediasiSampai} AS sampai`);
@@ -1550,7 +1557,11 @@ async function daftarJadwalMediasi({ dari = "", sampai = "", cari = "", batas = 
   // Para pihak dibaca BERKELOMPOK - satu kueri untuk seluruh daftar, bukan
   // satu per baris. Layar ini memuat puluhan pertemuan pada hari yang padat.
   const idPerkara = [...new Set(rows.map((row) => Number(row.perkaraId)).filter(Boolean))];
-  const petaPihak = await pihakBanyakPerkara(idPerkara).catch(() => ({}));
+  // Turut tergugat dipisah di layar INI saja: layar mediasi menulis tiap sisi
+  // dengan sebutannya, dan turut tergugat yang tertulis "Tergugat" menyebut
+  // kedudukan yang keliru. 8 dari 752 perkara bermediasi di sipp_donggala
+  // (Kewarisan, Harta Bersama) punya turut tergugat.
+  const petaPihak = await pihakBanyakPerkara(idPerkara, { pisahkanTurut: true }).catch(() => ({}));
 
   // Lama mediasi menurut view SIPP - dipakai menghitung sisa tenggang.
   const petaDurasi = {};
@@ -1582,6 +1593,8 @@ async function daftarJadwalMediasi({ dari = "", sampai = "", cari = "", batas = 
         perkaraId: String(row.perkaraId || ""),
         nomorPerkara: cleanText(row.nomorPerkara),
         jenisPerkara: cleanText(row.jenisPerkara),
+        alurPerkaraId: Number(row.alurPerkaraId) || null,
+        jenisPerkaraId: Number(row.jenisPerkaraId) || null,
         tanggal: isoTanggal(row.tanggal),
         jam: jamRingkas(row.jam),
         sampaiJam: jamRingkas(row.sampai),
@@ -2242,8 +2255,15 @@ async function perkaraFinal(daftarNomorPerkara = []) {
  * Daftar sidang sehari dapat memuat puluhan perkara. Menanyakan pihaknya satu
  * per satu berarti puluhan perjalanan ke SIPP untuk keterangan yang dapat
  * diambil sekali jalan - dan jadwal yang lambat dimuat tidak akan dibuka orang.
+ *
+ * opsi.pisahkanTurut: turut tergugat (pihak_ke 4) ditaruh di turutTergugat,
+ * bukan di tergugat. BAWAANNYA MATI - jadwal sidang, cetak, antrian, dan
+ * papan pintu tetap menerima bentuk lama, sebab bagi mereka yang penting
+ * sisinya, dan mengubah bentuk itu diam-diam memindahkan nama dari layar
+ * yang tidak sedang diperbaiki.
  */
-async function pihakBanyakPerkara(daftarPerkaraId = []) {
+async function pihakBanyakPerkara(daftarPerkaraId = [], opsi = {}) {
+  const pisahkanTurut = opsi.pisahkanTurut === true;
   const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
   if (id.length === 0) return {};
 
@@ -2307,12 +2327,16 @@ async function pihakBanyakPerkara(daftarPerkaraId = []) {
   const hasil = {};
   for (const baris of Array.isArray(rows) ? rows : []) {
     const kunci = String(baris.perkaraId);
-    if (!hasil[kunci]) hasil[kunci] = { penggugat: [], tergugat: [], saksi: [], lain: [] };
+    if (!hasil[kunci]) {
+      hasil[kunci] = { penggugat: [], tergugat: [], saksi: [], lain: [] };
+      if (pisahkanTurut) hasil[kunci].turutTergugat = [];
+    }
     const nama = cleanText(baris.nama);
     if (!nama) continue;
 
     const kedudukan = Number(baris.pihakKe);
     if (kedudukan === 1) hasil[kunci].penggugat.push(nama);
+    else if (kedudukan === 4 && pisahkanTurut) hasil[kunci].turutTergugat.push(nama);
     // Turut tergugat ada di SISI tergugat - itulah artinya. Menaruhnya di
     // penggugat membalik kedudukannya di naskah yang dibaca para pihak.
     else if (kedudukan === 2 || kedudukan === 4) hasil[kunci].tergugat.push(nama);
@@ -2322,10 +2346,23 @@ async function pihakBanyakPerkara(daftarPerkaraId = []) {
   return hasil;
 }
 
+/**
+ * Id orang pada baris penunjukan, atau null.
+ *
+ * Ikut dikirim supaya nama di layar Status Perkara dapat membuka rekap
+ * orangnya LEWAT ID - bukan lewat ejaan namanya, yang pada SIPP berbeda-beda
+ * antar penunjukan untuk orang yang sama (lihat rekapPetugasService).
+ */
+function idOrang(nilai) {
+  const angka = Number(nilai);
+  return Number.isSafeInteger(angka) && angka > 0 ? angka : null;
+}
+
 /** Majelis hakim yang bertugas, berurut sesuai kedudukannya. */
 async function majelisPerkara(perkaraId) {
   const rows = await runQuery(
-    `SELECT hk.hakim_kode AS kode,
+    `SELECT hk.hakim_id AS id,
+            hk.hakim_kode AS kode,
             hk.hakim_nama AS nama,
             hk.jabatan_hakim_nama AS jabatan,
             hk.urutan AS urutan
@@ -2335,6 +2372,7 @@ async function majelisPerkara(perkaraId) {
     [perkaraId]
   );
   return rows.map((row) => ({
+    id: idOrang(row.id),
     kode: cleanText(row.kode),
     nama: cleanText(row.nama),
     jabatan: cleanText(row.jabatan),
@@ -2345,14 +2383,14 @@ async function majelisPerkara(perkaraId) {
 async function petugasPerkara(perkaraId) {
   const [panitera, jurusita] = await Promise.all([
     runQuery(
-      `SELECT pn.panitera_kode AS kode, pn.panitera_nama AS nama
+      `SELECT pn.panitera_id AS id, pn.panitera_kode AS kode, pn.panitera_nama AS nama
          FROM perkara_panitera_pn pn
         WHERE pn.perkara_id = ? AND pn.aktif = 'Y'
         ORDER BY pn.urutan ASC`,
       [perkaraId]
     ),
     runQuery(
-      `SELECT js.jurusita_kode AS kode, js.jurusita_nama AS nama
+      `SELECT js.jurusita_id AS id, js.jurusita_kode AS kode, js.jurusita_nama AS nama
          FROM perkara_jurusita js
         WHERE js.perkara_id = ? AND js.aktif = 'Y'
         ORDER BY js.urutan ASC`,
@@ -2361,7 +2399,9 @@ async function petugasPerkara(perkaraId) {
   ]);
 
   const rapikan = (rows) =>
-    rows.map((row) => ({ kode: cleanText(row.kode), nama: cleanText(row.nama) })).filter((x) => x.nama);
+    rows
+      .map((row) => ({ id: idOrang(row.id), kode: cleanText(row.kode), nama: cleanText(row.nama) }))
+      .filter((x) => x.nama);
 
   return { panitera: rapikan(panitera), jurusita: rapikan(jurusita) };
 }
@@ -3016,4 +3056,9 @@ module.exports = {
   saksiPerkara,
   saksiBanyakPerkara,
   ecourtBanyakPerkara,
+  // Dipinjam rekapPetugasService: arti sandi cara relaas dan selisih hari
+  // kalender dipakai APA ADANYA, tidak disalin - sandi yang pernah salah
+  // diartikan cukup dibetulkan di satu tempat.
+  caraRelaas,
+  selisihHariKalender,
 };

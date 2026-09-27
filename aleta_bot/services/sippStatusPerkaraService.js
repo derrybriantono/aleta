@@ -2151,7 +2151,15 @@ async function riwayatPenundaan(perkaraId) {
   }));
 }
 
-/** Identitas dasar satu perkara. */
+/**
+ * Identitas dasar satu perkara.
+ *
+ * jenisPerkaraId ikut dikirim sejak 2.39.0 (27 September 2026). Sebutan para
+ * pihak ditentukan NOMOR alur DAN jenis perkara (sebutan-pihak.ts), dan alur
+ * saja tidak cukup: cerai talak (346) dan izin poligami (341) beralur gugatan
+ * (15) tetapi bersebutan Pemohon/Termohon. Tanpa nomor jenis, ringkasan salin
+ * Status Perkara hanya dapat menulis sebutan ganda "Penggugat/Pemohon".
+ */
 async function identitasPerkara(nomorPerkara) {
   const rows = await runQuery(
     `SELECT p.perkara_id AS perkaraId,
@@ -2159,6 +2167,7 @@ async function identitasPerkara(nomorPerkara) {
             p.jenis_perkara_nama AS jenisPerkara,
             p.jenis_perkara_text AS jenisPerkaraLengkap,
             p.alur_perkara_id AS alurPerkaraId,
+            p.jenis_perkara_id AS jenisPerkaraId,
             p.tanggal_pendaftaran AS tanggalDaftar
        FROM perkara p
       WHERE p.nomor_perkara = ?
@@ -2176,6 +2185,7 @@ async function identitasPerkara(nomorPerkara) {
     jenisPerkara: cleanText(baris.jenisPerkara),
     jenisPerkaraLengkap: cleanText(baris.jenisPerkaraLengkap),
     alurPerkaraId: Number(baris.alurPerkaraId) || 0,
+    jenisPerkaraId: Number(baris.jenisPerkaraId) || 0,
     tanggalDaftar: isoTanggal(baris.tanggalDaftar),
   };
 }

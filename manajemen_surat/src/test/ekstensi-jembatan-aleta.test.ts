@@ -76,10 +76,12 @@ function bukaHalaman(
       onChanged: { addListener: () => {} },
     },
   };
-  // Dua fungsi panel-alat.js yang disentuh aleta.js di tingkat atas. Portal
+  // Tiga fungsi panel-alat.js yang disentuh aleta.js saat dimuat. Portal
   // menjawab 401 (belum masuk) sehingga panelnya diam - yang diuji jembatannya.
+  // Halamannya meja petugas (/aleta/aleta-ecourt), bukan layar publik.
   w.alatCatatAsalPortal = () => {};
   w.alatAmbil = async () => ({ status: 401, ok: false, json: async () => ({}) });
+  w.alatHalamanPublikPortal = () => false;
   // akhiranSumber berjalan di LINGKUP yang sama dengan aleta.js - "use strict"
   // membuat eval berlingkup sendiri, jadi fungsinya hanya terjangkau dari sana.
   w.eval(SUMBER_ALETA + akhiranSumber);

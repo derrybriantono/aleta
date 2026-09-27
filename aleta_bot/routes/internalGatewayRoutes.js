@@ -38,6 +38,7 @@ const ecourtSasaranService = require("../services/ecourtSasaranService");
 const sippJadwalSidangService = require("../services/sippJadwalSidangService");
 const kesiapanSidangService = require("../services/kesiapanSidangService");
 const sippStatusPerkaraService = require("../services/sippStatusPerkaraService");
+const sippTautanService = require("../services/sippTautanService");
 const tagPerkaraService = require("../services/tagPerkaraService");
 const putusanUnggahService = require("../services/putusanUnggahService");
 const kendaliBerkasService = require("../services/kendaliBerkasService");
@@ -72,6 +73,7 @@ const penetapanTulisService = require("../services/penetapanTulisService");
 const sidangHasilService = require("../services/sidangHasilService");
 const putusanTulisService = require("../services/putusanTulisService");
 const antrianSidangService = require("../services/antrianSidangService");
+const antrianWaktuService = require("../services/antrianWaktuService");
 const antrianSinkronService = require("../services/antrianSinkronService");
 const analisaLanjutService = require("../services/analisaLanjutService");
 const penilaianKonseptorService = require("../services/penilaianKonseptorService");
@@ -2622,17 +2624,57 @@ router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
     //
     // Karena itu kegagalannya ditelan: jadwalnya tetap terkirim, dan
     // keterangan antriannya menyebutkan sendiri kenapa ia kosong.
+    //
+    // Peta antrian dibaca PENUH sekali, lalu dipakai dua kali: disaring untuk
+    // layar (bentuk yang sama seperti sebelumnya), dan utuh untuk buku waktu
+    // antrian di bawah - yang memerlukan nomor seluruh perkara hari itu.
     const idPerkara = (hasil.sidang || []).map((baris) => baris.perkaraId);
-    const antrian = await antrianSidangService
-      .antrianUntukPerkara(idPerkara)
+    const petaPenuh = await antrianSidangService.petaAntrian().catch((galat) => ({
+      terbaca: false,
+      alasan: String(galat.message || galat).slice(0, 200),
+      peta: {},
+      tanggal: [],
+    }));
+    const antrian = antrianSidangService.saringUntukPerkara(petaPenuh, idPerkara);
+
+    // ======================================================================
+    // WAKTU ANTRIAN - TIGA JARAK WAKTU SIDANG (27 September 2026)
+    // ======================================================================
+    //
+    // Waktu ambil, jam jadwal asli, dan waktu panggil berdetik untuk SELURUH
+    // perkara pada tanggal-tanggal yang tampil - dari buku waktu ALETA untuk
+    // hari lampau, disatukan dengan pembacaan langsung untuk hari ini - beserta
+    // "sekarang" menurut jam aplikasi antrian. Portal menghitung tiga jaraknya
+    // dari sini; lihat antrianWaktuService dan lib/tiga-jarak-sidang.ts.
+    //
+    // HANYA bila diminta (?waktu=1) - temuan penelaah 27 September 2026.
+    // Menyusunnya menembak basis data antrian dan basis data bot, sedangkan
+    // rute ini juga dipanggil layar publik yang memuat ulang berkala
+    // (antrian-publik, antrian-tampil, sidang-ruang) dan membuang hasilnya.
+    // Tanpa pilihan itu jawabannya SAMA dengan sebelum 2.39: tanpa kunci
+    // waktuAntrian sama sekali.
+    //
+    // Gagalnya pun ditelan, dengan sebab yang disebutkan: jadwal tetap tampil.
+    if (String(req.query.waktu || "") !== "1") {
+      res.json({ ok: true, ...hasil, antrian });
+      return;
+    }
+    const waktuAntrian = await antrianWaktuService
+      .waktuUntukJadwal({
+        tanggal: (hasil.sidang || []).map((baris) => baris.tanggalSidang),
+        petaNomor: petaPenuh && petaPenuh.terbaca ? petaPenuh.peta : null,
+      })
       .catch((galat) => ({
         terbaca: false,
         alasan: String(galat.message || galat).slice(0, 200),
-        peta: {},
-        tanggal: [],
+        sekarang: "",
+        hariIni: "",
+        langsungTerbaca: false,
+        rekamanTerbaca: false,
+        baris: [],
       }));
 
-    res.json({ ok: true, ...hasil, antrian });
+    res.json({ ok: true, ...hasil, antrian, waktuAntrian });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -2661,6 +2703,19 @@ router.get("/antrian/sidang", requireInternalToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
+});
+
+/**
+ * Keadaan pencatat waktu antrian - menyala atau tidak, kapan terakhir
+ * membaca, dan galat terakhirnya.
+ *
+ * Hanya membaca keadaan di memori; tidak menyentuh basis data mana pun.
+ * Gunanya menjawab "pencatatnya jalan atau tidak" di peladen tanpa membuka
+ * log - pencatat yang diam-diam mati baru ketahuan saat riwayat sebuah hari
+ * ternyata kosong, dan saat itu harinya sudah lewat.
+ */
+router.get("/antrian/waktu/status", requireInternalToken, (req, res) => {
+  res.json({ ok: true, ...antrianWaktuService.status() });
 });
 
 /**
@@ -4271,6 +4326,76 @@ router.get("/sipp/status-perkara", requireInternalToken, async (req, res) => {
   try {
     const hasil = await sippStatusPerkaraService.statusLengkap(String(req.query.nomor || ""));
     res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Rekap satu petugas - hakim, panitera pengganti, juru sita, atau mediator -
+ * dibuka dari nama pada layar Status Perkara.
+ *
+ * Orangnya dikenali lewat ID SIPP (?peran=hakim&id=26), tidak pernah lewat
+ * nama; lihat rekapPetugasService. Masukan yang tidak sah ditolak 400 beserta
+ * alasannya, id yang tidak dikenal 404 - keduanya kalimat yang dapat dibaca
+ * petugas, sebab gatewayFetch portal meneruskan ruas `error` apa adanya.
+ *
+ * require diletakkan di sini, bukan di kepala berkas, mengikuti ukurTipeService
+ * dan abtUsulanLainService: layanannya hanya dipakai rute ini.
+ */
+const rekapPetugasService = require("../services/rekapPetugasService");
+router.get("/sipp/rekap-petugas", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await rekapPetugasService.rekapPetugas({
+      peran: String(req.query.peran || ""),
+      id: String(req.query.id || ""),
+      tahun: String(req.query.tahun || ""),
+      keadaan: String(req.query.keadaan || ""),
+      kedudukan: String(req.query.kedudukan || ""),
+      lewati: String(req.query.lewati || ""),
+      batas: String(req.query.batas || ""),
+    });
+    res.status(hasil.ok ? 200 : hasil.status || 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * TAUTAN KE HALAMAN PERKARA DI SIPP
+ * ============================================================================
+ *
+ * Untuk tombol "Buka SIPP" dan "Salin tautan" di Status Perkara. Jawabannya
+ * JALUR RELATIF - perkara_detil_agama/<enc> - bukan alamat mutlak: alamat SIPP
+ * menurut peramban petugas (ALETA_SIPP_BASE_URL) hanya diketahui portal,
+ * sedangkan bot melihat SIPP dari dalam container.
+ *
+ * Kunci SIPP yang dipakai menyusun <enc> tidak pernah ikut dalam jawaban -
+ * lihat sippTautanService.
+ *
+ * Kegagalan dijawab { ok:false, alasan:<kode>, message:<kalimat> }. message
+ * sengaja kalimat untuk petugas, sebab gatewayFetch portal meneruskannya
+ * apa adanya.
+ */
+router.get("/sipp/tautan-perkara", requireInternalToken, async (req, res) => {
+  // Kode HTTP menurut alasannya, supaya penolakan tetap terbaca sebagai
+  // penolakan di log akses - bukan 200 yang berisi kegagalan.
+  const STATUS_GAGAL = {
+    masukan_kosong: 400,
+    perkara_id_tidak_sah: 400,
+    perkara_tidak_ditemukan: 404,
+    nomor_tidak_cocok: 409,
+    kunci_tidak_terbaca: 503,
+    sandi_tidak_lulus_uji: 503,
+    sipp_tidak_terbaca: 503,
+  };
+  try {
+    const hasil = await sippTautanService.tautanPerkara({
+      perkaraId: req.query.perkaraId,
+      nomor: req.query.nomor,
+    });
+    res.status(hasil.ok ? 200 : STATUS_GAGAL[hasil.alasan] || 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

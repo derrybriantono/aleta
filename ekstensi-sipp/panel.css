@@ -1007,6 +1007,70 @@ tr.aleta-baris-disorot > td {
   word-break: break-word;
 }
 
+/* ─── Tombol unduh sisipan pada SIPP TERANG ──────────────────────────────────
+ *
+ * .aleta-unduh mewarnai dirinya dengan token --aleta-* - dan token itu HANYA
+ * hidup di dalam .aleta-panel. Sisipan Jadwal Sidang tidak berada di dalam
+ * panel, melainkan di sel tabel SIPP, sehingga di sini ketiga tokennya tidak
+ * terdefinisi: latar dan garis tepinya gugur menjadi tidak ada, dan tulisannya
+ * mewarisi warna sel SIPP. Terukur di Chromium atas replika baris Jadwal Sidang
+ * (CSS SIPP asli + kotak yang dibangun kotakSisipan asli), 27 Sep 2026:
+ *
+ *                          latar tombol   tulisan    kontras   garis tepi
+ *   baris genap            = sekeliling   #666666    4,89:1    tidak ada
+ *   baris ganjil           = sekeliling   #666666    3,95:1    tidak ada
+ *   baris disorot kursor   = sekeliling   #eeeeee    2,09:1    tidak ada
+ *
+ * Itulah "tombolnya tidak nampak atau putih": tidak ada bentuk tombol sama
+ * sekali, dan begitu kursor masuk ke barisnya, .cssTable tr:hover td milik
+ * SIPP memutihkan tulisannya di atas hijau #85B39E. Pada SIPP GELAP sel yang
+ * sama bertulisan terang (12,44:1), karena itu keluhannya hanya di mode terang.
+ *
+ * Diperbaiki dengan token SENDIRI, dideklarasikan pada .aleta-sisip - bukan
+ * menyalin token panel: tidak ada panel di atas sel ini yang dapat mewariskan
+ * palet, dan halaman SIPP terang tidak pernah berpalet. Aturan bercakupan
+ * data-aleta-tema-sipp hanya MERUJUK token itu (penjaga palet
+ * ekstensi-warna-super-dan-modus-saksi melarang angka warna di pemilih
+ * bertema, dan warnanya memang lebih baik tinggal di satu tempat). Hijaunya
+ * --aleta-merek tema terang panel (#1c6f46), supaya tombol ini tetap terbaca
+ * sebagai milik ALETA. Kontras terukur:
+ *
+ *   tulisan #ffffff : latar #1c6f46           6,16:1  (disorot #165838: 8,44:1)
+ *   garis #0f4a2c : sekeliling genap/ganjil    8,79:1 / 7,10:1
+ *   garis #0f4a2c : sekeliling baris disorot   4,25:1
+ *   cincin fokus #0f4a2c : sekeliling          >= 4,25:1
+ *
+ * Garis tepinya yang memikul batas bentuk tombol di baris yang disorot -
+ * latarnya sendiri hanya 2,54:1 terhadap hijau sorotan SIPP.
+ *
+ * Mode GELAP sengaja TIDAK disentuh: html:not([data-aleta-tema-sipp="gelap"])
+ * membuat ketiga aturan ini tidak pernah berlaku di sana - tokennya memang
+ * ada di kotak gelap juga, tetapi tidak dirujuk apa pun - dan ukuran ulang
+ * sesudah perbaikan menunjukkan piksel mode gelap tidak berubah satu pun.
+ * border ditulis utuh, bukan border-color saja: tanpa itu lebar dan gayanya
+ * tetap gugur bersama token yang hilang, dan garisnya tetap tidak ada. */
+.aleta-sisip {
+  --aleta-sisip-unduh-latar: #1c6f46;
+  --aleta-sisip-unduh-sorot: #165838;
+  --aleta-sisip-unduh-tulisan: #ffffff;
+  --aleta-sisip-unduh-garis: #0f4a2c;
+}
+
+html:not([data-aleta-tema-sipp="gelap"]) .aleta-sisip .aleta-unduh {
+  background: var(--aleta-sisip-unduh-latar);
+  color: var(--aleta-sisip-unduh-tulisan);
+  border: 1px solid var(--aleta-sisip-unduh-garis);
+}
+
+html:not([data-aleta-tema-sipp="gelap"]) .aleta-sisip .aleta-unduh:hover:not(:disabled) {
+  background: var(--aleta-sisip-unduh-sorot);
+}
+
+html:not([data-aleta-tema-sipp="gelap"]) .aleta-sisip .aleta-unduh:focus-visible {
+  outline: 2px solid var(--aleta-sisip-unduh-garis);
+  outline-offset: 2px;
+}
+
 /* ─── Logo di kepala panel ────────────────────────────────────────────────── */
 
 .aleta-logo {

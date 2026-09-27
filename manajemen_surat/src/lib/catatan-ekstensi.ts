@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.171.0",
+    dirilis: "2026-09-27T10:30:00+08:00",
+    judul: "Panel ALETA tidak lagi tampil di layar publik portal, dan tombol unduh berkas e-Court terlihat di mode terang",
+    butir: [
+      "PANEL ALETA DI LAYAR PUBLIK PORTAL. Layar ambil antrean, televisi ruang tunggu, tautan antrean tanpa login, antrean per ruang, papan pintu ruang sidang, halaman publik, dan verifikasi formulir sering dibuka dari peramban petugas yang memasang ekstensi. Panel ALETA dahulu hanya menahan diri di halaman masuk dan verifikasi dokumen, sehingga nama petugas, pintasan jabatannya, dan jalan kembali ke perkara yang baru dibukanya di SIPP ikut tampil di layar ruang tunggu. Kini panel tidak lahir di sana, dan pertanyaan 'siapa saya' ke portal - yang membawa sesi petugas - pun tidak diajukan. Portal yang berpindah ke layar publik tanpa memuat ulang melepas panel yang sudah ada.",
+      "Daftar layar publik kini SATU, di panel-alat.js, dan dipakai panel ALETA maupun widget checklist milestone - rute publik baru cukup ditambahkan sekali. Halaman petugas yang namanya mirip (Antrian ALETA di /aleta/aleta-antrian) tetap menampilkan keduanya.",
+      "TOMBOL UNDUH BERKAS E-COURT DI JADWAL SIDANG SIPP (mode terang). Warnanya diambil dari token yang hanya berlaku di dalam panel ALETA, sedangkan kotak berkas berada di tabel SIPP: tombolnya tanpa latar dan garis tepi, dan tulisannya ikut warna sel SIPP - abu, lalu memutih saat barisnya disorot. Kini hijau pekat ALETA bertulisan putih (kontras 6,16:1; saat disorot 8,44:1), dengan garis tepi dan cincin fokus yang terlihat. Mode gelap tidak berubah sama sekali.",
+    ],
+  },
+  {
     versi: "1.170.0",
     dirilis: "2026-09-27T07:00:00+08:00",
     judul: "Checklist milestone: pekerjaan penting peran Anda dalam widget tersendiri",

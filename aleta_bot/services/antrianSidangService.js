@@ -348,8 +348,20 @@ async function petaAntrian() {
  * disebutkan kepada siapa pun.
  */
 async function antrianUntukPerkara(daftarPerkaraId = []) {
-  const hasil = await petaAntrian();
-  if (!hasil.terbaca) return hasil;
+  return saringUntukPerkara(await petaAntrian(), daftarPerkaraId);
+}
+
+/**
+ * Menyaring hasil petaAntrian yang SUDAH dibaca - tanpa membaca ulang.
+ *
+ * Dipisah supaya rute jadwal sidang dapat membaca peta penuh SEKALI lalu
+ * memakainya dua kali: disaring untuk layar, dan utuh untuk buku waktu
+ * antrian (antrianWaktuService), yang memerlukan nomor seluruh perkara hari
+ * itu - termasuk yang tidak tampil - sebab mereka tetap menjadi tetangga
+ * dalam hitungan jarak antar sidang.
+ */
+function saringUntukPerkara(hasil, daftarPerkaraId = []) {
+  if (!hasil || !hasil.terbaca) return hasil;
 
   const diminta = new Set(daftarPerkaraId.map((x) => String(x)));
   if (diminta.size === 0) return hasil;
@@ -372,4 +384,5 @@ module.exports = {
   jamMenit,
   keadaanAntrian,
   petaAntrian,
+  saringUntukPerkara,
 };

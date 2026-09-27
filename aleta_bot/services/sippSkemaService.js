@@ -213,6 +213,11 @@ const TABEL = [
   "jenis_biaya",
   "kategori_biaya",
   "perkara_eksekusi",
+  // Rujukan mediator (35 baris di sipp_donggala): status H/N, dan hakim_id
+  // yang menautkan mediator hakim ke hakim_pn. Dibaca rekapPetugasService -
+  // tanpa didaftarkan di sini, halaman rekap mediator kehilangan nama,
+  // sebutan hakim/non hakim, dan tautan ke rekap hakimnya, tanpa satu galat.
+  "mediator",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */

@@ -1,4 +1,4 @@
-import type { BarisRekamAntrian } from "@/lib/rekam-antrian";
+import { gabungRekamLampau, type BarisRekamAntrian } from "@/lib/rekam-antrian";
 import type { AletaDatabase } from "@/server/db/client";
 
 /**
@@ -10,7 +10,7 @@ import type { AletaDatabase } from "@/server/db/client";
  * drizzle/0048_rekam_antrian.sql; penyusunan barisnya di lib/rekam-antrian.ts.
  */
 
-export type RekamAntrianTersimpan = BarisRekamAntrian & {
+export type RekamAntrianTersimpan = Omit<BarisRekamAntrian, "adaWaktu" | "bersumber"> & {
   pertamaDirekamAt: string;
   direkamAt: string;
 };
@@ -36,10 +36,34 @@ function dariBaris(row: Record<string, unknown>): RekamAntrianTersimpan {
     namaPetugas: teks(row.nama_petugas),
     jarakSebelumMenit: angka(row.jarak_sebelum_menit),
     jarakBerikutMenit: angka(row.jarak_berikut_menit),
+    waktuAmbilLengkap: teks(row.waktu_ambil_lengkap),
+    jamJadwal: teks(row.jam_jadwal),
+    waktuPanggilPertama: teks(row.waktu_panggil_pertama),
+    waktuPanggilLengkap: teks(row.waktu_panggil_lengkap),
+    jumlahPanggil: Number(row.jumlah_panggil) || 0,
+    menungguDetik: angka(row.menunggu_detik),
+    jarakSebelumDetik: angka(row.jarak_sebelum_detik),
+    lamaSidangDetik: angka(row.lama_sidang_detik),
     pertamaDirekamAt: teks(row.pertama_direkam_at),
     direkamAt: teks(row.direkam_at),
   };
 }
+
+/**
+ * Kolom 0051 pada SET pembaruan - HANYA bila waktunya terbaca pada pemuatan
+ * ini. Bila tidak, kolom-kolom itu tidak disebut sama sekali dan nilai yang
+ * sudah tersimpan tetap: bot yang sedang tidak menjawab tidak boleh
+ * menghapus jarak yang sudah tercatat dengan kosong.
+ */
+const SET_WAKTU = `,
+           waktu_ambil_lengkap = excluded.waktu_ambil_lengkap,
+           jam_jadwal = excluded.jam_jadwal,
+           waktu_panggil_pertama = excluded.waktu_panggil_pertama,
+           waktu_panggil_lengkap = excluded.waktu_panggil_lengkap,
+           jumlah_panggil = excluded.jumlah_panggil,
+           menunggu_detik = excluded.menunggu_detik,
+           jarak_sebelum_detik = excluded.jarak_sebelum_detik,
+           lama_sidang_detik = excluded.lama_sidang_detik`;
 
 /**
  * Menulis - atau memperbarui - rekaman antrian.
@@ -65,6 +89,25 @@ function dariBaris(row: Record<string, unknown>): RekamAntrianTersimpan {
  * Ia menyatakan kapan ALETA pertama kali melihat baris itu - keterangan yang
  * hilang selamanya kalau tertimpa tiap kali layar dimuat ulang, dan layar ini
  * memuat ulang sendiri secara berkala.
+ *
+ * ============================================================================
+ * KOLOM 0051 HANYA DITIMPA OLEH WAKTU YANG TERBACA
+ * ============================================================================
+ *
+ * Baris yang adaWaktu-nya false tetap ditulis - kolom lamanya berasal dari
+ * aplikasi antrian yang terbaca - tetapi delapan kolom berdetik tidak ikut
+ * disebut pada SET-nya. Lihat SET_WAKTU.
+ *
+ * ============================================================================
+ * HARI LAMPAU DIGABUNG DENGAN YANG TERSIMPAN, TIDAK DITIMPA
+ * ============================================================================
+ *
+ * Temuan penelaah 27 September 2026: pemuatan esok hari menimpa rekaman hari
+ * lampau yang benar dengan NULL. Baris bertanda `lampau` kini dibaca dulu
+ * pasangan tersimpannya, lalu digabung lewat gabungRekamLampau - yang kosong
+ * tidak menimpa yang terisi, dan panggilan tidak mundur. Hari ini tetap
+ * ditimpa apa adanya: di sana data langsung yang benar, dan "belum ada lama
+ * sidangnya" pada perkara yang dipanggil ulang memang keadaan yang baru.
  */
 export async function rekamAntrian(
   db: AletaDatabase,
@@ -75,15 +118,30 @@ export async function rekamAntrian(
   const sekarang = new Date().toISOString();
   let ditulis = 0;
   try {
-    for (const satu of baris) {
-      if (!satu.id || !satu.sidangId || !satu.tanggalSidang) continue;
+    const idLampau = [...new Set(baris.filter((b) => b.lampau && b.id).map((b) => b.id))];
+    const tersimpan = new Map<string, RekamAntrianTersimpan>();
+    for (let mulai = 0; mulai < idLampau.length; mulai += 200) {
+      const bagian = idLampau.slice(mulai, mulai + 200);
+      const rows = await db.queryAll<Record<string, unknown>>(
+        `SELECT * FROM aleta_rekam_antrian WHERE id IN (${bagian.map(() => "?").join(", ")})`,
+        bagian
+      );
+      for (const row of rows) tersimpan.set(teks(row.id), dariBaris(row));
+    }
+
+    for (const asli of baris) {
+      if (!asli.id || !asli.sidangId || !asli.tanggalSidang) continue;
+      const satu = asli.lampau ? gabungRekamLampau(tersimpan.get(asli.id), asli) : asli;
+      const adaWaktu = satu.adaWaktu === true;
       await db.run(
         `INSERT INTO aleta_rekam_antrian
            (id, tanggal_sidang, sidang_id, perkara_id, nomor_perkara, ruangan,
             nomor_antrian, urutan_ruang, waktu_ambil, jam_panggil, online, keadaan,
             nama_petugas, jarak_sebelum_menit, jarak_berikut_menit,
-            pertama_direkam_at, direkam_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            pertama_direkam_at, direkam_at,
+            waktu_ambil_lengkap, jam_jadwal, waktu_panggil_pertama, waktu_panggil_lengkap,
+            jumlah_panggil, menunggu_detik, jarak_sebelum_detik, lama_sidang_detik)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (id) DO UPDATE SET
            tanggal_sidang = excluded.tanggal_sidang,
            sidang_id = excluded.sidang_id,
@@ -99,7 +157,7 @@ export async function rekamAntrian(
            nama_petugas = excluded.nama_petugas,
            jarak_sebelum_menit = excluded.jarak_sebelum_menit,
            jarak_berikut_menit = excluded.jarak_berikut_menit,
-           direkam_at = excluded.direkam_at`,
+           direkam_at = excluded.direkam_at${adaWaktu ? SET_WAKTU : ""}`,
         [
           satu.id,
           satu.tanggalSidang,
@@ -118,6 +176,16 @@ export async function rekamAntrian(
           satu.jarakBerikutMenit,
           sekarang,
           sekarang,
+          // Baris BARU tanpa waktu terbaca mendapat bawaan kolomnya; baris
+          // lama tidak disentuh karena SET-nya tidak menyebut kolom ini.
+          adaWaktu ? satu.waktuAmbilLengkap || "" : "",
+          adaWaktu ? satu.jamJadwal || "" : "",
+          adaWaktu ? satu.waktuPanggilPertama || "" : "",
+          adaWaktu ? satu.waktuPanggilLengkap || "" : "",
+          adaWaktu ? Number(satu.jumlahPanggil) || 0 : 0,
+          adaWaktu ? satu.menungguDetik ?? null : null,
+          adaWaktu ? satu.jarakSebelumDetik ?? null : null,
+          adaWaktu ? satu.lamaSidangDetik ?? null : null,
         ]
       );
       ditulis += 1;

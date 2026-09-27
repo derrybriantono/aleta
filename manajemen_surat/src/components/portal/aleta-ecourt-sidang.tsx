@@ -53,14 +53,23 @@ import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
+import { pitaJarak, sebutanJarak } from "@/lib/jarak-antar-sidang";
 import {
-  petaJarakAntarSidang,
-  petaJarakBerikutSidang,
-  pitaJarak,
-  petaTetanggaBerikut,
-  petaTetanggaSebelum,
-  sebutanJarak,
-} from "@/lib/jarak-antar-sidang";
+  WAKTU_ANTRIAN_KOSONG,
+  bacaWaktu,
+  hitungTigaJarak,
+  kunciWaktu,
+  type BarisWaktuAntrian,
+  type Jarak,
+  type TetanggaJarak,
+  type WaktuAntrian,
+} from "@/lib/tiga-jarak-sidang";
+import {
+  LegendaTigaJarak,
+  LencanaMenungguBerjalan,
+  TigaJarakSidang,
+  type PatokanWaktu,
+} from "@/components/portal/tiga-jarak-sidang";
 import { sebabMinutasiTertahan, sudahDiminutasi } from "@/lib/sebab-minutasi-tertahan";
 import { sebabBerbauMediasi, sidangBerbauMediasi } from "@/lib/mediasi-sidang";
 import { cariHakim, hakimPersis, type Hakim } from "@/lib/cari-hakim";
@@ -2493,97 +2502,22 @@ function ukuranTerbaca(byte: number) {
  * tambahan tiap kali tanggalnya diganti - dan tanggal adalah yang paling
  * sering diganti di layar ini.
  */
-/**
- * Jarak waktu dari perkara sebelumnya di ruang yang sama.
- *
- * Diam sama sekali bila tidak ada yang dapat dihitung - perkara pertama di
- * ruangnya, atau yang belum dipanggil. Tulisan "—" pada keadaan itu
- * menyarankan ada angka yang gagal dibaca, padahal memang tidak ada
- * pertanyaannya.
- */
-/**
- * Jeda terhadap perkara sebelum dan sesudahnya di ruang yang sama.
- *
+/*
  * ============================================================================
- * DUA ARAH, DAN KEDUANYA DITANYAKAN
+ * "+X" DAN "→Y" DIGANTI TIGA JARAK BERNAMA (27 September 2026)
  * ============================================================================
  *
- * Yang ke BELAKANG (+) menjawab "sudah berapa lama sejak perkara sebelumnya
- * dipanggil" - itu yang dipakai menaksir giliran di ruang tunggu.
+ * Di sini dulu berdiri JarakAntarSidang: dua lencana tanpa nama - "+12" sejak
+ * perkara sebelumnya dipanggil, "→8" sampai perkara berikutnya dipanggil -
+ * dihitung atas baris yang SEDANG TAMPIL, dengan jam panggil sampai menitnya.
+ * Pengguna, 27 September 2026: "masih bingung dalam menghitungnya".
  *
- * Yang ke DEPAN (→) diminta pengguna 22 September 2026: "perbandingan jarak
- * antara perkara dengan perkara selanjutnya". Ia dibaca oleh orang yang
- * berbeda, untuk pekerjaan yang berbeda - yang menyusun jadwal melihat
- * sesudah perkara ini berapa lama sampai yang berikutnya duduk, dan di sanalah
- * penumpukan terlihat sebelum terjadi.
- *
- * Yang terakhir di ruangnya tidak punya jarak ke depan, dan tidak diberi nol:
- * nol berarti dipanggil bersamaan, keadaan yang sungguh terjadi dan patut
- * diwarnai merah.
+ * Gantinya TigaJarakSidang (components/portal/tiga-jarak-sidang.tsx): Tunggu,
+ * Dari sebelumnya, dan Lama sidang - bernama, berdetik, dihitung atas SELURUH
+ * perkara hari itu di ruang yang sama, dan yang masih berjalan berdetak.
+ * Keduanya sengaja tidak dibiarkan hidup berdampingan: dua cara menghitung
+ * jarak yang sama di satu layar adalah persis kebingungan yang dikeluhkan.
  */
-function JarakAntarSidang({
-  menit,
-  menitBerikut,
-  nomorSebelum,
-  nomorBerikut,
-}: {
-  menit?: number;
-  menitBerikut?: number;
-  /**
-   * Nomor antrian tetangganya, bila ia ikut tergambar.
-   *
-   * Kosong bila tetangganya TIDAK tampil - dan justru itulah keadaan yang
-   * membuat dua angka yang benar terbaca sebagai bertengkar. Karena itu
-   * ketiadaannya pun dikatakan, bukan didiamkan.
-   */
-  nomorSebelum?: number;
-  nomorBerikut?: number;
-}) {
-  const pita = pitaJarak(menit);
-  const pitaBerikut = pitaJarak(menitBerikut);
-  const adaSebelum = Boolean(pita) && menit !== undefined;
-  const adaBerikut = Boolean(pitaBerikut) && menitBerikut !== undefined;
-  if (!adaSebelum && !adaBerikut) return null;
-  return (
-    <div className="mt-1 flex flex-wrap gap-1">
-      {adaSebelum && pita ? (
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
-            pita.kelas
-          )}
-          title={
-            `Jeda ${sebutanJarak(menit as number)} sejak ` +
-            (nomorSebelum
-              ? `antrian ${nomorSebelum} dipanggil`
-              : "perkara sebelumnya di ruang yang sama dipanggil - perkara itu TIDAK tampil pada daftar yang sedang disaring ini") +
-            `. Jaraknya ke tetangga di ruang yang sama menurut jam panggil, bukan ke baris di atasnya. ` +
-            `${pita.sebutan}. Dipakai menaksir giliran berikutnya, bukan lamanya sidang ini.`
-          }
-        >
-          +{sebutanJarak(menit as number)}
-        </span>
-      ) : null}
-      {adaBerikut && pitaBerikut ? (
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full border border-dashed px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
-            pitaBerikut.kelas
-          )}
-          title={
-            `Jeda ${sebutanJarak(menitBerikut as number)} sampai ` +
-            (nomorBerikut
-              ? `antrian ${nomorBerikut} dipanggil`
-              : "perkara berikutnya di ruang yang sama dipanggil - perkara itu TIDAK tampil pada daftar yang sedang disaring ini") +
-            `. ${pitaBerikut.sebutan}.`
-          }
-        >
-          →{sebutanJarak(menitBerikut as number)}
-        </span>
-      ) : null}
-    </div>
-  );
-}
 
 /** Satu revisi keterangan - bentuknya sama dengan yang disimpan peladen. */
 type KeteranganRevisi = {
@@ -3398,12 +3332,21 @@ function SelAntrianJam({
   sidangSelesai,
   tampilMenunggu = true,
   tampilRincianAntrian = true,
+  tungguBerjalan,
+  patokan = null,
 }: {
   baris: SidangBaris;
   antrian?: AntrianBaris;
   tanggalTampil: string;
   /** Saklar "menunggu-lama" - lencana menunggu N menit. */
   tampilMenunggu?: boolean;
+  /**
+   * "Tunggu" yang sedang berjalan dari tiga jarak waktu - bila ada, lencana
+   * menunggu lama memakainya dan ikut berdetak, sehingga angkanya SAMA dengan
+   * "Tunggu" di bawahnya. Tanpanya lencana kembali ke menitMenunggu bot.
+   */
+  tungguBerjalan?: Jarak;
+  patokan?: PatokanWaktu | null;
   /** Saklar "rincian-antrian" - jam ambil tiap sisi dan nama petugas pelayanan. */
   tampilRincianAntrian?: boolean;
   /**
@@ -3418,6 +3361,7 @@ function SelAntrianJam({
   sidangSelesai: boolean;
 }) {
   const jam = baris.jamSidang || "—";
+  const lencanaBerdetak = tungguBerjalan?.keadaan === "berjalan" && Boolean(patokan);
 
   if (!antrian) {
     return (
@@ -3538,7 +3482,7 @@ function SelAntrianJam({
           layar ini - ambangnya 5/15/30/60 menit, diukur dari 10.989 jarak
           nyata. Menambah ambang keenam yang tidak diukur dari apa pun akan
           membuat dua warna berbeda untuk angka yang sama di satu layar. */}
-      {tampilMenunggu && antrian.keadaan === "menunggu" &&
+      {tampilMenunggu && antrian.keadaan === "menunggu" && !lencanaBerdetak &&
       typeof antrian.menitMenunggu === "number" &&
       antrian.menitMenunggu >= AMBANG_MENUNGGU_MENIT ? (
         <div className="mt-0.5">
@@ -3554,6 +3498,19 @@ function SelAntrianJam({
             menunggu {sebutanJarak(antrian.menitMenunggu)}
           </span>
         </div>
+      ) : null}
+      {/* Sejak 27 September 2026 lencana yang sama BERDETAK: dihitung dari
+          "Tunggu" tiga jarak waktu dengan patokan jam aplikasi antrian, dan
+          muncul pada detik ambangnya terlewati - tidak menunggu muat ulang 45
+          detik. Menit bot di atas hanya cadangan bila waktu antrian tidak
+          terkirim (bot lama), supaya angka di lencana dan di "Tunggu" tidak
+          pernah berselisih. */}
+      {tampilMenunggu && antrian.keadaan === "menunggu" && lencanaBerdetak && tungguBerjalan && patokan ? (
+        <LencanaMenungguBerjalan
+          jarak={tungguBerjalan}
+          patokan={patokan}
+          ambangMenit={AMBANG_MENUNGGU_MENIT}
+        />
       ) : null}
 
       <div className="mt-0.5 text-sm tabular-nums text-muted-foreground">{jam}</div>
@@ -4001,6 +3958,12 @@ export function AletaEcourtSidang({
     tanggal: [],
     peta: {},
   });
+  // Waktu antrian berdetik - bahan tiga jarak waktu - datang dalam permintaan
+  // yang SAMA dengan jadwal dan antriannya, dengan sebab yang sama: umur
+  // ketiganya harus sama. Patokannya "sekarang" menurut jam aplikasi antrian
+  // beserta Date.now() peramban saat diterima; lihat tiga-jarak-sidang.tsx.
+  const [waktuAntrian, setWaktuAntrian] = useState<WaktuAntrian>(WAKTU_ANTRIAN_KOSONG);
+  const [patokanWaktu, setPatokanWaktu] = useState<PatokanWaktu | null>(null);
   // Penilaian kesiapan membaca SIPP dan arsip e-Court untuk TIAP sidang -
   // beberapa kueri per perkara. Dimulai MATI supaya jadwalnya muncul seketika;
   // petugas yang memang memerlukan skornya menyalakannya sendiri.
@@ -4719,65 +4682,90 @@ export function AletaEcourtSidang({
   const sidangTampil = milikSaya.baris;
 
   /**
-   * Jarak tiap baris terhadap baris sebelumnya di ruang yang sama.
-   *
-   * Dihitung atas seluruh daftar yang sedang tampil, SEKALI - bukan di dalam
-   * tiap baris. Baris yang mencari tetangganya sendiri akan menyapu daftar
-   * penuh untuk tiap baris, dan pada jadwal dua puluh perkara itu empat ratus
-   * penyapuan untuk satu layar.
-   */
-  const bahanJarak = useMemo(
-    () =>
-      sidangTampil.map((b) => ({
-        kunci: `${b.nomorPerkara}|${b.sidangId}`,
-        ruangan: b.ruangan,
-        jamPanggil: antrianUntuk(antrian.peta, b)?.jamPanggil,
-      })),
-    [sidangTampil, antrian.peta]
-  );
-  const jarakAntar = useMemo(() => petaJarakAntarSidang(bahanJarak), [bahanJarak]);
-
-  /**
-   * Jarak tiap baris terhadap baris SESUDAHNYA di ruang yang sama.
-   *
-   * Diminta pengguna 22 September 2026. Dihitung dari bahan yang sama persis
-   * dengan jarak ke belakang - lihat deretPerRuang di @/lib/jarak-antar-sidang:
-   * dua urutan yang berlainan akan menghasilkan dua angka yang saling
-   * bertentangan pada baris yang sama.
-   */
-  const jarakBerikut = useMemo(() => petaJarakBerikutSidang(bahanJarak), [bahanJarak]);
-
-  /**
    * ==========================================================================
-   * TETANGGA MANA - SUPAYA ANGKANYA DAPAT DIPERIKSA
+   * TIGA JARAK WAKTU - DIHITUNG SEKALI, ATAS SELURUH PERKARA HARI ITU
    * ==========================================================================
    *
-   * Dilaporkan pengguna 23 September 2026: antrian 1 bertulis "→35" sedangkan
-   * antrian 2 tepat di bawahnya bertulis "+4", padahal 09:22 ke 10:01
-   * berjarak 39 menit.
+   * Diminta pengguna 27 September 2026, menggantikan lencana "+X"/"→Y" (lihat
+   * catatan di tempat JarakAntarSidang dulu berdiri).
    *
-   * Keduanya benar - ada perkara yang dipanggil 09:57 di ruang yang sama dan
-   * tidak ikut tergambar karena tabelnya sedang disaring atau diurutkan
-   * menurut hal lain. Jaraknya memang ke tetangga di ruang yang sama menurut
-   * jam panggil, bukan ke baris di atas atau di bawahnya pada tabel.
+   * Dihitung atas waktuAntrian - SELURUH perkara pada tanggal yang dibuka,
+   * dikirim bot apa adanya - bukan atas sidangTampil. Keluhan 23 September
+   * 2026 ("→35" dan "+4" yang tampak bertengkar) lahir dari tetangga yang
+   * sedang tersaring; angka yang berubah karena tabelnya disaring bukan angka
+   * tentang sidang. Tetangga yang tidak tampil tetap disebut di title.
    *
-   * Karena itu nomor antrian tetangganya ikut disebut di dalam judul
-   * penandanya. Angka yang dapat ditelusuri berhenti terbaca sebagai angka
-   * yang bertengkar.
+   * SEKALI untuk seluruh tabel, bukan di tiap baris: baris yang mencari
+   * tetangganya sendiri menyapu seluruh daftar untuk tiap baris.
+   *
+   * Tidak bergantung pada jam: yang berjalan hanya membawa waktu mulainya,
+   * dan detiknya dihitung komponen kecil yang berdetak sendiri - tabel ini
+   * tidak dilukis ulang tiap detik.
    */
-  const tetanggaSebelum = useMemo(() => petaTetanggaSebelum(bahanJarak), [bahanJarak]);
-  const tetanggaBerikut = useMemo(() => petaTetanggaBerikut(bahanJarak), [bahanJarak]);
-
-  /** Nomor antrian menurut kunci baris - dipakai menyebut tetangganya. */
-  const nomorPerKunci = useMemo(() => {
-    const peta: Record<string, number> = {};
-    for (const b of sidangTampil) {
-      const punya = antrianUntuk(antrian.peta, b);
-      const n = Number(punya?.nomor);
-      if (Number.isFinite(n) && n > 0) peta[`${b.nomorPerkara}|${b.sidangId}`] = n;
+  const bahanTigaJarak = useMemo(() => {
+    const selesai: Record<string, boolean> = {};
+    const ruangSipp: Record<string, string> = {};
+    const nomorPerkara: Record<string, string> = {};
+    for (const b of sidang) {
+      const k = kunciWaktu(b.tanggalSidang, b.perkaraId);
+      // Perkara TERAKHIR di ruangnya yang hasil sidangnya sudah dicatat tidak
+      // lagi "berjalan" - lihat hitungTigaJarak.
+      selesai[k] = sidangSelesaiHariIni(b);
+      ruangSipp[k] = b.ruangan;
+      nomorPerkara[k] = b.nomorPerkara;
     }
+    return { selesai, ruangSipp, nomorPerkara };
+  }, [sidang]);
+
+  const tigaJarak = useMemo(
+    () =>
+      hitungTigaJarak(waktuAntrian.baris, {
+        hariIni: waktuAntrian.hariIni,
+        selesai: bahanTigaJarak.selesai,
+        ruangSipp: bahanTigaJarak.ruangSipp,
+      }),
+    [waktuAntrian, bahanTigaJarak]
+  );
+
+  /** Baris waktu menurut kunciWaktu - jumlah panggilan dan nomor rekaman. */
+  const barisWaktuPerKunci = useMemo(() => {
+    const peta: Record<string, BarisWaktuAntrian> = {};
+    for (const b of waktuAntrian.baris) peta[kunciWaktu(b.tanggalSidang, b.perkaraId)] = b;
     return peta;
-  }, [sidangTampil, antrian.peta]);
+  }, [waktuAntrian]);
+
+  /**
+   * Sebutan tetangga untuk title: nomor antriannya DAN nomor perkaranya.
+   *
+   * Tetangga yang tidak ada di daftar yang dimuat - tersaring di sisi SIPP,
+   * atau tidak terjadwal di SIPP tetapi dipanggil di aplikasi antrian - tetap
+   * disebut, dengan keterangan bahwa ia tidak tampil. Justru keadaan itulah
+   * yang dulu membuat dua angka yang benar terbaca bertengkar.
+   */
+  const sebutTetangga = useCallback(
+    (tetangga: TetanggaJarak, tanggal: string) => {
+      const nomorPerkara = bahanTigaJarak.nomorPerkara[kunciWaktu(tanggal, tetangga.perkaraId)];
+      const antrianN = typeof tetangga.nomorAntrian === "number" ? `antrian ${tetangga.nomorAntrian}` : "perkara";
+      return nomorPerkara
+        ? `${antrianN} (${nomorPerkara})`
+        : `${antrianN} (perkara yang tidak tampil pada daftar ini)`;
+    },
+    [bahanTigaJarak]
+  );
+
+  /**
+   * Legenda hanya berguna bila ada angka yang dijelaskannya - baris antrian
+   * yang seluruh jaraknya kosong (belum ada yang mengambil nomor) tidak
+   * menggambar apa pun, dan tidak menyalakan legendanya.
+   */
+  const adaTigaJarak = useMemo(
+    () =>
+      sidangTampil.some((b) => {
+        const t = tigaJarak[kunciWaktu(b.tanggalSidang, b.perkaraId)];
+        return Boolean(t) && (t.tunggu.keadaan !== "kosong" || t.urutanRuang !== null);
+      }),
+    [sidangTampil, tigaJarak]
+  );
 
   /**
    * Melepas SELURUH saringan sekaligus.
@@ -4842,6 +4830,8 @@ export function AletaEcourtSidang({
         // Antrian ikut dikosongkan: nomor antrian kemarin yang tertinggal di
         // layar lebih menyesatkan daripada kolom yang kosong.
         setAntrian({ terbaca: false, alasan: "", tanggal: [], peta: {} });
+        setWaktuAntrian(WAKTU_ANTRIAN_KOSONG);
+        setPatokanWaktu(null);
         return;
       }
       setSidang(Array.isArray(data.sidang) ? data.sidang : []);
@@ -4849,6 +4839,12 @@ export function AletaEcourtSidang({
       setAntrian(
         (data.antrian ?? { terbaca: false, alasan: "", tanggal: [], peta: {} }) as KeadaanAntrian
       );
+      const waktu = (data.waktuAntrian ?? WAKTU_ANTRIAN_KOSONG) as WaktuAntrian;
+      setWaktuAntrian(waktu);
+      // Date.now() di sini hanya menandai KAPAN data diterima; yang berjalan
+      // dihitung dari beda Date.now() sesudahnya, tidak dari jam komputernya.
+      const sekarangMs = bacaWaktu(waktu.sekarang);
+      setPatokanWaktu(sekarangMs === null ? null : { sekarangMs, diterimaMs: Date.now() });
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca jadwal sidang.");
     } finally {
@@ -6324,6 +6320,14 @@ export function AletaEcourtSidang({
             Keterangannya tidak hilang: title tombol "Perkara saya" tetap
             menyebutkan apa yang sedang disaring. Yang hilang hanya barisnya. */}
 
+        {/* Legenda tiga jarak waktu - hanya bila saklarnya menyala DAN ada
+            angka yang dijelaskannya. Satu baris, bukan panel: keterangan
+            yang selalu ada tanpa angka di bawahnya menjadi perabot yang
+            dilewati (lihat catatan di atas). */}
+        {tampil(tampilan, "jarak-sidang") && adaTigaJarak ? (
+          <LegendaTigaJarak ambangTungguMenit={AMBANG_MENUNGGU_MENIT} />
+        ) : null}
+
         <div
           ref={kotakTabel}
           className={cn(
@@ -6494,6 +6498,8 @@ export function AletaEcourtSidang({
                   // catatan ruang sidang ikut bertanda walau putusannya belum
                   // dituliskan ke perkara_putusan.
                   const sidangSelesai = sidangSelesaiHariIni(baris);
+                  const kunciTiga = kunciWaktu(baris.tanggalSidang, baris.perkaraId);
+                  const tigaBaris = tigaJarak[kunciTiga];
                   return (
                     <Fragment key={kunci}>
                       {/* ==================================================
@@ -6567,6 +6573,8 @@ export function AletaEcourtSidang({
                             sidangSelesai={sidangSelesai}
                             tampilMenunggu={tampil(tampilan, "menunggu-lama")}
                             tampilRincianAntrian={tampil(tampilan, "rincian-antrian")}
+                            tungguBerjalan={tigaBaris?.tunggu}
+                            patokan={patokanWaktu}
                           />
 
                           {/* Pengambilan antrian dari sisi PETUGAS, di kolom
@@ -6586,7 +6594,8 @@ export function AletaEcourtSidang({
                           ) : null}
 
                           {/* ==============================================
-                              JARAK DARI PERKARA SEBELUMNYA
+                              TIGA JARAK WAKTU - TUNGGU, DARI SEBELUMNYA,
+                              LAMA SIDANG
                               ==============================================
 
                               Yang ditanyakan orang di ruang tunggu satu:
@@ -6595,20 +6604,27 @@ export function AletaEcourtSidang({
                               hari itu, dan jawaban itu tidak pernah benar
                               untuk perkara nomor dua belas.
 
-                              Jarak yang SUDAH terjadi hari itu menjawabnya.
-                              Warnanya menurut sebaran terukur satker - lihat
-                              @/lib/jarak-antar-sidang, termasuk keterangan
-                              apa yang tidak diukur angka itu.
+                              Jarak yang SUDAH terjadi hari itu menjawabnya -
+                              kini tiga, bernama, berdetik (27 September 2026).
+                              Warna "Dari sebelumnya" dan "Lama sidang" menurut
+                              sebaran terukur satker (@/lib/jarak-antar-sidang);
+                              warna "Tunggu" menurut AMBANG_MENUNGGU_MENIT.
 
-                              Perkara pertama di ruangnya tidak punya jarak,
-                              dan tidak diberi nol: nol berarti dipanggil
-                              bersamaan dengan yang sebelumnya. */}
+                              Perkara pertama di ruangnya tidak punya jarak
+                              sebelumnya, dan tidak diberi nol: nol berarti
+                              dipanggil bersamaan dengan yang sebelumnya. */}
                           {tampil(tampilan, "jarak-sidang") ? (
-                            <JarakAntarSidang
-                              menit={jarakAntar[kunci]}
-                              menitBerikut={jarakBerikut[kunci]}
-                              nomorSebelum={nomorPerKunci[tetanggaSebelum[kunci]]}
-                              nomorBerikut={nomorPerKunci[tetanggaBerikut[kunci]]}
+                            <TigaJarakSidang
+                              tiga={tigaBaris}
+                              baris={barisWaktuPerKunci[kunciTiga]}
+                              patokan={patokanWaktu}
+                              ambangTungguMenit={AMBANG_MENUNGGU_MENIT}
+                              sebutTetangga={(tetangga) => sebutTetangga(tetangga, baris.tanggalSidang)}
+                              nomorRekaman={
+                                antrianUntuk(antrian.peta, baris)
+                                  ? null
+                                  : barisWaktuPerKunci[kunciTiga]?.nomorAntrian ?? null
+                              }
                             />
                           ) : null}
                         </td>

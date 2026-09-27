@@ -39,8 +39,8 @@ import { ALAMAT_ALETA, KATALOG_CHECKLIST, KUNCI_PERAN, LABEL_PERAN } from "@/lib
  *   - badan jawaban basi; panen hanya selama menyala; pintu masuk SIPP sah.
  *
  * ALETA_UJI_CHECKLIST / ALETA_UJI_POPUP_JS / ALETA_UJI_POPUP_HTML /
- * ALETA_UJI_MANIFEST / ALETA_UJI_PANEL_CSS menunjuk SALINAN berkas untuk
- * pembukti gigitan.
+ * ALETA_UJI_MANIFEST / ALETA_UJI_PANEL_CSS / ALETA_UJI_ALAT (panel-alat.js) /
+ * ALETA_UJI_ALETA (aleta.js) menunjuk SALINAN berkas untuk pembukti gigitan.
  */
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
@@ -50,7 +50,9 @@ const BERKAS_POPUP_JS = process.env.ALETA_UJI_POPUP_JS || path.join(EKSTENSI, "p
 const BERKAS_POPUP_HTML = process.env.ALETA_UJI_POPUP_HTML || path.join(EKSTENSI, "popup.html");
 const BERKAS_MANIFEST = process.env.ALETA_UJI_MANIFEST || path.join(EKSTENSI, "manifest.json");
 const BERKAS_PANEL_CSS = process.env.ALETA_UJI_PANEL_CSS || path.join(EKSTENSI, "panel.css");
-const SUMBER_ALAT = baca(path.join(EKSTENSI, "panel-alat.js"));
+const SUMBER_ALAT = baca(process.env.ALETA_UJI_ALAT || path.join(EKSTENSI, "panel-alat.js"));
+/** Skrip halaman yang boleh ditukar salinannya: nama berkas -> variabel lingkungan. */
+const SALINAN_SKRIP: Record<string, string | undefined> = { "aleta.js": process.env.ALETA_UJI_ALETA };
 const SUMBER_CHECKLIST = baca(BERKAS_CHECKLIST);
 
 const API = "/aleta/api/aleta-ecourt/checklist";
@@ -251,6 +253,8 @@ type Halaman = {
   w: any;
   simpanan: Record<string, unknown>;
   minta: string[];
+  /** SELURUH alamat yang diminta halaman - termasuk "siapa saya" milik panel aleta.js. */
+  semua: string[];
   jam: Array<{ ms: number; f: () => void }>;
   setel: (isi: Record<string, unknown>) => Promise<void>;
   hapus: (kunci: string[]) => Promise<void>;
@@ -295,6 +299,12 @@ function buka(
     jawab?: Jawab;
     /** Skrip halaman yang dimuat di antara panel-alat.js dan checklist.js - urutan manifest. */
     skrip?: string[];
+    /**
+     * Kode yang dijalankan tepat SESUDAH panel-alat.js, sebelum skrip lain -
+     * untuk menukar perkakas bersama dan membuktikan skrip sesudahnya
+     * sungguh memakainya, bukan salinannya sendiri.
+     */
+    awal?: string;
   } = {}
 ): Halaman {
   const dom = jsdomBaru(`<!doctype html><html><head></head><body>${p.html ?? ""}</body></html>`, {
@@ -316,8 +326,10 @@ function buka(
     storage,
   };
   const minta: string[] = [];
+  const semua: string[] = [];
   w.fetch = (alamat: string) => {
     const url = String(alamat);
+    semua.push(url);
     if (url.includes("/ekstensi/siapa")) return Promise.resolve(tanggapan(200, SIAPA));
     if (!url.includes(API)) return Promise.resolve(tanggapan(200, { ok: true, data: {} }));
     minta.push(url);
@@ -355,13 +367,17 @@ function buka(
   w.document.addEventListener("click", (e: any) => e.preventDefault(), true);
   const ctx = dom.getInternalVMContext();
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
-  for (const nama of p.skrip ?? []) vm.runInContext(baca(path.join(EKSTENSI, nama)), ctx, { filename: nama });
+  if (p.awal) vm.runInContext(p.awal, ctx, { filename: "awal-uji.js" });
+  for (const nama of p.skrip ?? []) {
+    vm.runInContext(baca(SALINAN_SKRIP[nama] || path.join(EKSTENSI, nama)), ctx, { filename: nama });
+  }
   vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
   return {
     dom,
     w,
     simpanan,
     minta,
+    semua,
     jam,
     setel: (isi) => storage.local.set(isi),
     hapus: (kunci) => storage.local.remove(kunci),
@@ -1412,12 +1428,32 @@ describe("layar yang menghadap masyarakat", () => {
    * tunggu, layar sentuh ambil antrian, papan pintu ruang sidang, dan tautan
    * tanpa login dibuka di peramban yang sama dengan ekstensi petugas - di sana
    * widget membeberkan isinya ke ruang tunggu.
+   *
+   * Panel ALETA (aleta.js) sama bocornya: nama petugas, pintasan jabatannya,
+   * dan jalan kembali ke perkara yang baru dibukanya di SIPP. Sampai ekstensi
+   * 1.171.0 panel itu hanya mengecualikan halaman masuk dan verifikasi
+   * dokumen, sehingga tetap tergambar di televisi ruang tunggu. Kini keduanya
+   * bertanya ke SATU daftar - alatHalamanPublikPortal di panel-alat.js - dan
+   * blok ini menjaga keduanya sekaligus.
    */
   const APP = path.resolve(process.cwd(), "src/app");
   /** Rute tingkat atas di luar (portal) yang memuat halaman publik. */
   const PUBLIK = ["antrian", "antrian-layar", "antrian-tampil", "antrian-ruang", "sidang-ruang", "public", "judicia"];
   /** Rute tingkat atas lain: halaman kerja petugas, halaman masuk, atau bukan halaman. */
   const BUKAN_PUBLIK = ["(portal)", "api", "login", "pdf-viewer", "setup"];
+  /** Satu alamat nyata untuk tiap rute publik, ditambah verifikasi dokumen. */
+  const ALAMAT_PUBLIK = [
+    "/aleta/antrian",
+    "/aleta/antrian-layar",
+    "/aleta/antrian-tampil?ruang=1",
+    "/aleta/antrian-ruang",
+    "/aleta/sidang-ruang",
+    "/aleta/public/e-kepegawaian",
+    "/aleta/public/e-kepegawaian/cuti",
+    "/aleta/judicia/legal-form/verify/abc123",
+    "/aleta/verifikasi-dokumen",
+  ];
+  const panelPortal = (h: Halaman) => h.w.document.getElementById("aleta-panel-portal");
 
   it("tiap rute tingkat atas portal sudah digolongkan publik atau bukan", () => {
     const rute = readdirSync(APP, { withFileTypes: true })
@@ -1426,22 +1462,12 @@ describe("layar yang menghadap masyarakat", () => {
     expect(rute.length).toBeGreaterThan(5);
     expect(
       rute.filter((r) => !PUBLIK.includes(r) && !BUKAN_PUBLIK.includes(r)),
-      "rute baru di src/app - golongkan; bila publik, tambahkan ke POLA_HALAMAN_PUBLIK checklist.js"
+      "rute baru di src/app - golongkan; bila publik, tambahkan ke ALAT_POLA_HALAMAN_PUBLIK di panel-alat.js"
     ).toEqual([]);
   });
 
   it("layar publik: tidak ada widget dan tidak ada permintaan", async () => {
-    const alamat = [
-      "/aleta/antrian",
-      "/aleta/antrian-layar",
-      "/aleta/antrian-tampil?ruang=1",
-      "/aleta/antrian-ruang",
-      "/aleta/sidang-ruang",
-      "/aleta/public/e-kepegawaian",
-      "/aleta/public/e-kepegawaian/cuti",
-      "/aleta/judicia/legal-form/verify/abc123",
-      "/aleta/verifikasi-dokumen",
-    ];
+    const alamat = ALAMAT_PUBLIK;
     for (const r of PUBLIK) expect(alamat.some((a) => a.startsWith(`/aleta/${r}`)), `rute publik ${r} tidak diuji`).toBe(true);
     const halaman = alamat.map((a) => [a, buka({ simpanan: NYALA, alamat: `${ASAL}${a}` })] as const);
     await tunggu(120);
@@ -1468,6 +1494,70 @@ describe("layar yang menghadap masyarakat", () => {
     h.w.history.pushState({}, "", "/aleta/antrian-layar");
     jaga!.f();
     await sampai(() => !akarDari(h), "widget dilepas");
+  });
+
+  it("layar publik: panel ALETA SUNGGUHAN (aleta.js) pun tidak lahir, dan tidak bertanya 'siapa saya'", async () => {
+    // Pertanyaan "siapa saya" itu sendiri sudah membawa kuki petugas ke rute
+    // yang menjawab nama dan jabatannya - di layar publik ia tidak boleh
+    // diajukan sama sekali, bukan hanya jawabannya yang tidak digambar.
+    const halaman = ALAMAT_PUBLIK.map(
+      (a) => [a, buka({ simpanan: NYALA, alamat: `${ASAL}${a}`, skrip: ["aleta.js"] })] as const
+    );
+    await tunggu(200);
+    for (const [a, h] of halaman) {
+      expect(Boolean(panelPortal(h)), `panel ALETA di ${a}`).toBe(false);
+      expect(
+        h.semua.filter((u) => u.includes("/ekstensi/siapa")),
+        `permintaan "siapa saya" di ${a}`
+      ).toEqual([]);
+      expect(Boolean(akarDari(h)), `widget di ${a}`).toBe(false);
+    }
+  });
+
+  it("halaman petugas yang namanya mirip: panel ALETA tetap lahir", async () => {
+    // /aleta/aleta-antrian adalah meja petugas antrian, bukan layar ruang
+    // tunggu. Pola yang mencocokkan awalan kata, bukan segmen utuh, akan
+    // menghilangkan panel dari pekerjaan sehari-hari mereka.
+    for (const a of ["/aleta/aleta-antrian", "/aleta/aleta-antrian/panggil", "/aleta/aleta-ecourt"]) {
+      const h = buka({ simpanan: NYALA, alamat: `${ASAL}${a}`, skrip: ["aleta.js"] });
+      await sampai(() => panelPortal(h), `panel ALETA di ${a}`);
+    }
+  });
+
+  it("portal berpindah ke layar publik tanpa memuat ulang: panel ALETA dilepas", async () => {
+    const h = buka({ simpanan: NYALA, alamat: `${ASAL}/aleta/aleta-antrian`, skrip: ["aleta.js"] });
+    await sampai(() => panelPortal(h), "panel ALETA lahir");
+    const jaga = h.jam.find((j) => j.ms === 800);
+    expect(jaga, "penjaga perpindahan halaman aleta.js").toBeTruthy();
+    h.w.history.pushState({}, "", "/aleta/antrian-layar");
+    jaga!.f();
+    await sampai(() => !panelPortal(h), "panel ALETA dilepas");
+  });
+
+  it("satu sumber: panel dan widget sama-sama bertanya ke alatHalamanPublikPortal (panel-alat.js)", async () => {
+    // Perkakas bersama ditukar dengan yang menganggap halaman PETUGAS ini
+    // publik. Skrip yang masih menyimpan daftarnya sendiri tetap menggambar
+    // di sini - dan itulah yang ditangkap: daftar kedua yang diam-diam
+    // tertinggal saat rute publik baru ditambahkan ke yang pertama.
+    const h = buka({
+      simpanan: NYALA,
+      alamat: `${ASAL}/aleta/aleta-antrian`,
+      skrip: ["aleta.js"],
+      awal:
+        "alatHalamanPublikPortal = function (jalur) {\n" +
+        "  return /aleta-antrian/.test(String(jalur === undefined ? location.pathname : jalur));\n" +
+        "};",
+    });
+    await tunggu(200);
+    expect(Boolean(panelPortal(h)), "panel ALETA").toBe(false);
+    expect(Boolean(akarDari(h)), "widget").toBe(false);
+    expect(h.semua.filter((u) => u.includes("/ekstensi/siapa")), "siapa saya").toEqual([]);
+
+    // Kontrol: tanpa penukaran, halaman yang sama memuat keduanya - kalau
+    // tidak, dua pemeriksaan di atas tidak membuktikan apa pun.
+    const kontrol = buka({ simpanan: NYALA, alamat: `${ASAL}/aleta/aleta-antrian`, skrip: ["aleta.js"] });
+    await sampai(() => panelPortal(kontrol), "panel ALETA kontrol");
+    await siap(kontrol);
   });
 });
 

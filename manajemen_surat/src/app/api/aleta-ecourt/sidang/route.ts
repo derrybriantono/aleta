@@ -1,6 +1,8 @@
 import { type NextRequest } from "next/server";
 
 import { susunRekamAntrian } from "@/lib/rekam-antrian";
+import { hitungTigaJarak, kunciWaktu, WAKTU_ANTRIAN_KOSONG } from "@/lib/tiga-jarak-sidang";
+import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { rekamAntrian } from "@/server/modules/aleta-ecourt/rekam-antrian";
@@ -115,6 +117,11 @@ export async function GET(request: NextRequest) {
       sampai: String(request.nextUrl.searchParams.get("sampai") || ""),
       cari: String(request.nextUrl.searchParams.get("cari") || ""),
       batas: Number(request.nextUrl.searchParams.get("batas")) || 200,
+      // Hanya layar INI yang memakai waktu antrian (tiga jarak dan rekaman
+      // berdetik). Rute lain yang memanggil jadwal yang sama - termasuk layar
+      // publik yang memuat ulang berkala - tidak memintanya dan tidak
+      // menanggung kuerinya. Temuan penelaah 27 September 2026.
+      waktu: true,
     });
 
     if (!hasil.ok) {
@@ -172,20 +179,61 @@ export async function GET(request: NextRequest) {
     // catatan pelayanan.
     //
     // Gagalnya TIDAK menjatuhkan jadwalnya - lihat catatan pada rekamAntrian.
+    //
+    // ========================================================================
+    // WAKTU ANTRIAN: TIGA JARAK DIHITUNG DI SINI DENGAN FUNGSI YANG SAMA
+    // ========================================================================
+    //
+    // hitungTigaJarak dijalankan di peladen hanya untuk REKAMAN, atas baris
+    // yang sama persis dengan yang dikirim ke peramban - sehingga angka yang
+    // tersimpan adalah angka yang dilihat orang di layar. Yang masih berjalan
+    // disimpan NULL: ia belum punya angka tetap.
+    //
+    // Hari lampau yang tidak punya sumber antrian sama sekali - tidak di
+    // aplikasi antrian, tidak di buku waktu bot - TIDAK ditulis. Sampai 2.38
+    // membuka jadwal hari lampau menimpa rekaman hari itu dengan nomor kosong,
+    // sebab aplikasi antrian sudah tidak menyimpan baris hari tersebut.
     let rekam = { ditulis: 0, gagal: "" };
     const antrianData = hasil.data?.antrian;
-    if (antrianData?.terbaca && sidang.length > 0) {
+    const waktuAntrian = hasil.data?.waktuAntrian ?? WAKTU_ANTRIAN_KOSONG;
+    const langsungTerbaca = Boolean(antrianData?.terbaca);
+    if ((langsungTerbaca || waktuAntrian.terbaca) && sidang.length > 0) {
+      const hariIni = waktuAntrian.hariIni || waktuPengadilan().tanggal;
+      const ruangSipp: Record<string, string> = {};
+      for (const baris of sidang) {
+        ruangSipp[kunciWaktu(String(baris.tanggalSidang ?? ""), String(baris.perkaraId ?? ""))] = String(
+          baris.ruangan ?? ""
+        );
+      }
+      const susunan = susunRekamAntrian(
+        sidang.map((baris) => ({
+          perkaraId: String(baris.perkaraId ?? ""),
+          nomorPerkara: String(baris.nomorPerkara ?? ""),
+          sidangId: String(baris.sidangId ?? ""),
+          tanggalSidang: String(baris.tanggalSidang ?? ""),
+          ruangan: String(baris.ruangan ?? ""),
+        })),
+        antrianData?.terbaca ? antrianData.peta : undefined,
+        {
+          terbaca: waktuAntrian.terbaca,
+          baris: waktuAntrian.baris,
+          tiga: waktuAntrian.terbaca
+            ? hitungTigaJarak(waktuAntrian.baris, { hariIni, ruangSipp })
+            : {},
+          // Penentu baris hari lampau - yang hanya boleh BERTAMBAH lengkap,
+          // tidak pernah dikosongkan (lihat gabungRekamLampau).
+          hariIni,
+        }
+      );
       rekam = await rekamAntrian(
         db,
-        susunRekamAntrian(
-          sidang.map((baris) => ({
-            perkaraId: String(baris.perkaraId ?? ""),
-            nomorPerkara: String(baris.nomorPerkara ?? ""),
-            sidangId: String(baris.sidangId ?? ""),
-            tanggalSidang: String(baris.tanggalSidang ?? ""),
-            ruangan: String(baris.ruangan ?? ""),
-          })),
-          antrianData.peta
+        susunan.filter(
+          (baris) =>
+            baris.bersumber ||
+            // Hari INI tetap merekam yang belum mengambil nomor - itu
+            // keterangan, bukan ketiadaan keterangan - selama aplikasi
+            // antriannya sungguh terbaca.
+            (langsungTerbaca && baris.tanggalSidang === hariIni)
         )
       );
     }
@@ -210,6 +258,13 @@ export async function GET(request: NextRequest) {
         alasan: "bot tidak mengirimkan keterangan antrian",
         tanggal: [],
         peta: {},
+      },
+      // Bahan tiga jarak waktu di layar, apa adanya - termasuk "sekarang"
+      // menurut jam aplikasi antrian, patokan angka yang berjalan. Bot lama
+      // yang tidak mengirimnya dijawab kosong beserta sebabnya.
+      waktuAntrian: hasil.data?.waktuAntrian ?? {
+        ...WAKTU_ANTRIAN_KOSONG,
+        alasan: "bot tidak mengirimkan waktu antrian",
       },
     });
   } catch (error) {

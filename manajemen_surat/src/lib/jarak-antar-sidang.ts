@@ -54,6 +54,13 @@
  * tidak ada riwayat pemanggilan yang dapat diukur di sini. Ambang ini karena
  * itu taksiran yang beralasan, bukan sebaran jarak pemanggilan yang terukur -
  * dan bila kelak riwayat itu ada, ia harus diukur ulang.
+ *
+ * Riwayat itu MULAI ADA sejak 27 September 2026: buku waktu antrian bot
+ * (aleta_bot_antrian_waktu, lihat antrianWaktuService) menyimpan waktu
+ * panggil berdetik tiap perkara, dan rekaman portal menyimpan jaraknya
+ * (aleta_rekam_antrian.jarak_sebelum_detik). Sesudah beberapa pekan sidang,
+ * batas di bawah patut diukur ulang dari sana - pita yang sama kini dipakai
+ * "Dari sebelumnya" dan "Lama sidang" (lib/tiga-jarak-sidang.ts).
  */
 
 export type PitaJarak = "hijau" | "kuning" | "jingga" | "merah" | "merah-gelap";

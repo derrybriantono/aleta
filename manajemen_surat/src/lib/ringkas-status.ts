@@ -79,8 +79,15 @@ export type Ringkasan = {
 
 const angka = (n: number) => n.toLocaleString("id-ID");
 
-/** Sidang terdekat yang BELUM lewat, dari daftar jadwal. */
-function sidangBerikutnya(
+/**
+ * Sidang terdekat yang BELUM lewat, dari daftar jadwal.
+ *
+ * Diekspor supaya ringkasan yang DISALIN (ringkasan-salin.ts) menyebut sidang
+ * yang sama dengan kartu "Sidang berikutnya" di layar. Dua pemilih yang
+ * masing-masing menentukan "berikutnya" akan berselisih tepat pada hari
+ * sidangnya - hari ketika pertanyaan itu paling sering diajukan.
+ */
+export function sidangBerikutnya(
   jadwal: BahanRingkas["jadwal"],
   hariIni: string
 ): { tanggalSidang: string; jamSidang: string; agenda: string } | null {

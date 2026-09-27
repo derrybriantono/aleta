@@ -88,10 +88,15 @@ afterAll(async () => {
 describe("jurnal migrasi - nomor 0050 diklaim sekali, berkasnya ada", () => {
   const jurnal = JSON.parse(readFileSync(JURNAL, "utf8")) as { entries: { idx: number; tag: string }[] };
 
-  it("51 entri berurutan, yang terakhir idx 50 bertag 0050_aleta_tipe_keluaran", () => {
-    expect(jurnal.entries.length).toBe(51);
+  it("entri berurutan tanpa lubang, dan idx 50 bertag 0050_aleta_tipe_keluaran tepat sekali", () => {
+    // Sejak 0051 (rekam antrian berdetik, 27 September 2026) 0050 bukan lagi
+    // entri TERAKHIR - dan memang tidak akan pernah lagi. Yang dijaga tetap
+    // yang dulu dimaksud: nomornya diklaim sekali, pada idx yang benar, dan
+    // jurnalnya tidak berlubang. Panjang jurnal tidak dipaku: ia bertambah
+    // tiap migrasi baru, dan penjaga yang memakunya patah tanpa ada yang salah.
+    expect(jurnal.entries.length).toBeGreaterThanOrEqual(51);
     jurnal.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(jurnal.entries.at(-1)).toMatchObject({ idx: 50, tag: "0050_aleta_tipe_keluaran" });
+    expect(jurnal.entries.find((e) => e.idx === 50)).toMatchObject({ idx: 50, tag: "0050_aleta_tipe_keluaran" });
     expect(jurnal.entries.filter((e) => e.tag.startsWith("0050_"))).toHaveLength(1);
   });
 

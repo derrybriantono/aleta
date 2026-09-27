@@ -39,6 +39,12 @@
 const PENANDA_ALETA = "aleta-panel-portal";
 const KUNCI_POSISI_ALETA = "posisiPanelAleta";
 const KUNCI_RIWAYAT_SIPP = "riwayatPerkaraSipp";
+/**
+ * Halaman tanpa sesi yang dapat dibaca. Layar yang menghadap masyarakat -
+ * televisi ruang tunggu, layar ambil antrian, papan pintu ruang sidang -
+ * TIDAK didaftar di sini, melainkan di alatHalamanPublikPortal (panel-alat.js),
+ * daftar yang sama dengan yang dipakai widget checklist.
+ */
 const JALUR_TANPA_PANEL = ["/login", "/verifikasi-dokumen"];
 
 /** Awalan jalur portal - "/aleta" di peladen, kosong di pengembangan. */
@@ -645,7 +651,11 @@ async function sedangAktif() {
 
 function halamanTanpaPanel() {
   const jalur = String(location.pathname || "").replace(/^\/aleta(?=\/|$)/, "");
-  return JALUR_TANPA_PANEL.some((j) => jalur === j || jalur.startsWith(`${j}/`));
+  if (JALUR_TANPA_PANEL.some((j) => jalur === j || jalur.startsWith(`${j}/`))) return true;
+  // Layar yang menghadap masyarakat. Ditanyakan ke panel-alat.js, bukan ke
+  // daftar sendiri: dua daftar untuk satu golongan halaman pasti berselisih
+  // begitu rute publik baru ditambahkan ke salah satunya saja.
+  return alatHalamanPublikPortal(location.pathname);
 }
 
 let sedangMemasang = false;
@@ -656,7 +666,11 @@ async function pasangPortal() {
 
   if (halamanTanpaPanel()) {
     // Halaman masuk: tidak ada yang perlu dibaca, dan panel yang menutupi
-    // isian kata sandi hanya mengganggu.
+    // isian kata sandi hanya mengganggu. Layar publik: nama petugas dan
+    // perkara yang baru dibukanya tidak boleh tampil di ruang tunggu - dan
+    // "siapa saya" pun tidak ditanyakan, sebab pertanyaan itu sendiri
+    // membawa kuki petugas. Panel yang sudah ada dilepas: portal dapat
+    // berpindah ke layar publik tanpa memuat ulang.
     if (sudahAda) sudahAda.remove();
     return;
   }

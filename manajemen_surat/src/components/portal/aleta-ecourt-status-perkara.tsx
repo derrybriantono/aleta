@@ -66,6 +66,7 @@ import {
 } from "@/lib/tag-perkara";
 import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
 import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
+import { DaftarMajelisPetugas, NamaMediatorTertaut } from "@/components/portal/tautan-petugas";
 import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { apiPath, withBasePath } from "@/lib/base-path";
@@ -413,9 +414,12 @@ export type Status = {
     sebabSelesai?: string;
     hariMinutasi: number | null;
   };
-  majelis: Array<{ kode: string; nama: string; jabatan: string }>;
-  panitera: Array<{ kode: string; nama: string }>;
-  jurusita: Array<{ kode: string; nama: string }>;
+  // id = hakim_id / panitera_id / jurusita_id SIPP - kunci rekap orangnya.
+  // Boleh tidak ada: bot versi lama belum mengirimnya, dan namanya lalu tampil
+  // sebagai teks biasa, bukan tautan.
+  majelis: Array<{ id?: number | null; kode: string; nama: string; jabatan: string }>;
+  panitera: Array<{ id?: number | null; kode: string; nama: string }>;
+  jurusita: Array<{ id?: number | null; kode: string; nama: string }>;
   saksi: { ada: boolean; jumlahSaksi: number; jumlahKeterangan: number };
   pihak: Array<{ nama: string; pihakKe: number | null; jenis: string; adaNomor: boolean; nomorSamar: string }>;
   identitasPihak: {
@@ -860,6 +864,12 @@ export type Status = {
     kolomTersedia?: string[];
     baris: Array<{
       mediator: string;
+      /**
+       * mediator_id tiap nama pada `mediator`, urutannya sejajar; null bila
+       * bagian itu tidak terbaca. Boleh tidak ada - bot versi lama belum
+       * mengirimnya, dan namanya lalu tampil sebagai teks biasa.
+       */
+      mediatorIds?: Array<number | null>;
       hasil: string;
       tanggalMulai: string;
       tanggalSelesai: string;
@@ -2755,7 +2765,9 @@ function IsiStatus({
   const sidangTerakhir = status.jadwal[status.jadwal.length - 1];
 
   return (
-    <div className="space-y-3">
+    // Penanda pembungkus cetak: yang di dalamnya tercetak dengan palet kertas,
+    // yang di luarnya (navigasi, pencarian) tidak - lihat cetak-status-perkara.tsx.
+    <div className="space-y-3" data-cetak-status-perkara="">
       {/* items-start, bukan items-baseline: tombol unduh membawa pilihan
           arsip fisik di bawahnya, dan garis alas akan menggantungnya. */}
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -2779,7 +2791,7 @@ function IsiStatus({
             Yang turun bukan hanya berkasnya: seluruh keterangan perkara ikut
             sebagai JSON dan CSV, sebab yang dikirim ke banding dan yang
             diperiksa pengawas adalah keduanya. */}
-        <div className="flex flex-wrap items-start gap-2">
+        <div className="flex flex-wrap items-start gap-2 print:hidden">
           <TombolUnduhZip
             nomorPerkara={status.identitas.nomorPerkara}
             isi="lengkap"
@@ -2940,10 +2952,14 @@ function IsiStatus({
       </div>
 
       {/* Bilah alat - sepuluh pekerjaan kecil yang selama ini dikerjakan
-          tangan. Seluruhnya di peramban; tidak satu pun menyentuh peladen. */}
+          tangan. Riwayat dan sematan tidak pernah meninggalkan peramban; yang
+          ditanyakan ke peladen hanya alamat halaman perkara di SIPP. Muatan
+          status diteruskan utuh sebagai bahan ringkasan yang disalin. */}
       <AlatStatusPerkara
         nomorPerkara={status.identitas.nomorPerkara}
         jenisPerkara={status.identitas.jenisPerkara}
+        perkaraId={status.identitas.perkaraId}
+        bahan={status}
         ringkas={ringkas}
         onBuka={onBuka}
       />
@@ -3026,29 +3042,13 @@ function IsiStatus({
 
       <div className="grid gap-3 lg:grid-cols-2">
         <Bagian judul="Majelis dan petugas" kunci="majelis">
-          {status.majelis.length > 0 ? (
-            <ul className="space-y-0.5 text-sm">
-              {status.majelis.map((orang) => (
-                <li key={orang.kode + orang.nama}>
-                  <span className="font-mono text-sm">{orang.kode || "—"}</span>{" "}
-                  <span className="font-medium">{orang.nama}</span>
-                  {orang.jabatan ? (
-                    <span className="text-xs text-muted-foreground"> · {orang.jabatan}</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">Majelis belum ditetapkan.</p>
-          )}
-          <p className="mt-2 text-sm">
-            <span className="text-xs text-muted-foreground">Panitera: </span>
-            {status.panitera.map((x) => x.nama).join(", ") || "—"}
-          </p>
-          <p className="text-sm">
-            <span className="text-xs text-muted-foreground">Jurusita: </span>
-            {status.jurusita.map((x) => x.nama).join(", ") || "—"}
-          </p>
+          {/* Tiap nama membuka rekap orangnya di tab baru, lewat ID SIPP -
+              lihat tautan-petugas.tsx (butir 9 permintaan 27 September 2026). */}
+          <DaftarMajelisPetugas
+            majelis={status.majelis}
+            panitera={status.panitera}
+            jurusita={status.jurusita}
+          />
         </Bagian>
 
         {/* ==================================================================
@@ -3642,7 +3642,13 @@ function IsiStatus({
             {status.mediasi.baris.map((baris, urutan) => (
               <li key={`${baris.mediator}-${urutan}`} className="rounded-md border bg-muted/20 p-2.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium">{baris.mediator || "Mediator belum tercatat"}</span>
+                  {/* Tiap nama mediator membuka rekapnya di tab baru, lewat
+                      mediator_id - lihat tautan-petugas.tsx (butir 6). */}
+                  <NamaMediatorTertaut
+                    mediator={baris.mediator}
+                    statusMediator={baris.statusMediator}
+                    mediatorIds={baris.mediatorIds}
+                  />
                   {/* Hasil mediasi diberi warna menurut berhasil atau tidak -
                       itulah yang dicari mata saat memeriksa berkas. */}
                   {baris.hasil ? (
