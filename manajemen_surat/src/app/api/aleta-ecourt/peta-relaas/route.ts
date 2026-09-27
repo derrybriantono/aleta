@@ -53,6 +53,9 @@ export async function GET(request: NextRequest) {
       if (!kode) return ok({ available: true, ok: false, alasan: "Kode desa wajib diisi." });
       const hasil = await getGatewayPerkaraDesa({
         kelompok: String(cari.get("kelompok") || "perceraian"),
+        // Golongan bulatan yang diketuk; bot menolak yang tidak dikenalnya
+        // dan jatuh kembali ke kelompok.
+        golongan: String(cari.get("golongan") || "").slice(0, 20),
         kode,
         periode,
         acuan,

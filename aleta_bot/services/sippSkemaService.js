@@ -218,6 +218,11 @@ const TABEL = [
   // tanpa didaftarkan di sini, halaman rekap mediator kehilangan nama,
   // sebutan hakim/non hakim, dan tautan ke rekap hakimnya, tanpa satu galat.
   "mediator",
+  // Atribut perkara: penanda sidang_keliling per PERKARA (42 perkara di
+  // sipp_donggala), di samping penanda per sidang pada jadwal. Dibaca
+  // evidenSkpService untuk kolom Sidang Keliling eviden SKP - tanpa didaftarkan
+  // di sini, penandanya diam-diam dianggap tidak ada.
+  "perkara_atribut",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */

@@ -95,6 +95,13 @@ const { tanggalHariIni } = require("./periodePenilaianService");
 // Hitungan hari yang SAMA dengan penilaian SK dan layar Jadwal Sidang - berkas
 // murni tanpa basis data, jadi tidak ada kebergantungan yang melingkar.
 const { hitungWaktuPutus } = require("./penilaianSippService");
+// Siapa PEMERIKSA suatu perkara - yang menjabat pada hari putusan, bukan yang
+// aktif sekarang - diputuskan majelisPemeriksaService, satu sumber untuk rekap,
+// Status Perkara, dan eviden SKP. Berkas murni pada bagian aturannya; tidak ada
+// kebergantungan yang melingkar. Majelis dan petugas IKRAR juga diputuskan di
+// sana (ikrarLengkap: penunjukan tahapan 18, selainnya borang ikrar).
+const majelisPemeriksaService = require("./majelisPemeriksaService");
+const { tanggalSah, barisPemeriksa, barisIkrar } = majelisPemeriksaService;
 // Ambang dan aturan potongan mediasi DIPINJAM dari layar Jadwal Sidang, tidak
 // ditulis ulang: batas lima bulan pada dua layar harus satu angka dari satu
 // sumber, atau pada suatu hari rekap ini menyebut "lewat" perkara yang di
@@ -146,8 +153,9 @@ const KEDUDUKAN = Object.freeze({
  *
  * Halaman hakim ikut memuat "mediator": hakim yang juga mediator tercatat di
  * tabel mediator dengan hakim_id-nya, dan perkara yang ia mediasi termasuk
- * perkara yang berhubungan dengannya. Kedudukan ikrar talak (tahapan 18)
- * disebut sendiri - lihat kedudukanPadaPerkara.
+ * perkara yang berhubungan dengannya. Kedudukan ikrar talak (tahapan 18, atau
+ * borang ikrar bila penunjukannya tidak tercatat) disebut sendiri - lihat
+ * kedudukanPadaPerkara dan ikrarDariBorang.
  */
 const KEDUDUKAN_PER_PERAN = Object.freeze({
   hakim: Object.freeze(["ketua", "tunggal", "anggota", "hakimLain", "ikrar", "mediator"]),
@@ -218,8 +226,11 @@ const DASAR = Object.freeze({
     "hari putusan - bukan yang aktif sekarang, sebab SIPP menonaktifkan majelis pemeriksaan saat majelis " +
     "ikrar talak ditetapkan, dan pada data lama majelis ikrar dicatat sebagai pengganti sesudah putusan. " +
     "Perkara yang belum putus: penunjukan yang aktif. Majelis dan petugas ikrar talak disebut sebagai " +
-    "kedudukan tersendiri dan tidak ikut ringkasan. Yang diganti sebelum putusan, atau ditetapkan " +
-    "sesudahnya tanpa kedudukan ikrar, disebut terpisah dan tidak ikut dihitung.",
+    "kedudukan tersendiri dan tidak ikut ringkasan; sumbernya penunjukan aktif tahapan 18, dan bila " +
+    "tabel penunjukan tidak mencatat majelis/petugas ikrar perkara itu, borang penetapan ikrar talak " +
+    "SIPP (perkara_ikrar_talak) - aturan yang sama dengan Status Perkara dan eviden SKP. ID pada borang " +
+    "yang tidak dapat dipasangkan dengan namanya tidak dihitung. Yang diganti sebelum putusan, atau " +
+    "ditetapkan sesudahnya tanpa kedudukan ikrar, disebut terpisah dan tidak ikut dihitung.",
   mediasi:
     `Lama mediasi = hari sejak penetapan mediator sampai laporan mediator, sama dengan bagian Mediasi ` +
     `pada Status Perkara. Batasnya ${BATAS_MEDIASI_HARI} hari sejak penetapan (PERMA 1/2016 Pasal 24).`,
@@ -625,150 +636,44 @@ function saringDaftar(baris, pilihan) {
 // KEDUDUKAN PADA SATU PERKARA - MAJELIS PEMERIKSA, BUKAN MAJELIS IKRAR
 // ============================================================================
 //
-// SIPP MENONAKTIFKAN seluruh majelis pemeriksaan (tahapan 10) begitu majelis
-// ikrar talak (tahapan 18) ditetapkan - tanpa tanggal tidak aktif, dan
-// diganti_oleh_id tidak pernah diisi (0 baris). Terukur di sipp_donggala
-// 27 September 2026: 817 dari 829 perkara bermajelis ikrar kehilangan seluruh
-// baris aktif majelis pemeriksanya. Contoh perkara_id 385: Muh. Arasy Latif
-// ketua pemeriksa (tahapan 10, T), Ulfah ketua ikrar (tahapan 18, Y).
+// Siapa PEMERIKSA suatu perkara ditentukan majelisPemeriksaService (barisPemeriksa,
+// menjabatPadaPutusan), bukan di sini. Aturan itu dipakai juga oleh Status
+// Perkara dan eviden SKP; bila rekap menyimpan salinannya sendiri, suatu hari
+// rekap menyebut seseorang memeriksa perkara yang di layar Status Perkara
+// tertulis diperiksa orang lain. Latar dan angka terukurnya - SIPP menonaktifkan
+// majelis pemeriksaan saat majelis ikrar ditetapkan (perkara_id 385), pengganti
+// sesudah putusan (1895, 2373, 4613), baris aktif bertanggal tidak aktif (703),
+// pergantian sungguhan (10035) - ada di kepala berkas itu.
 //
-// Pada data lama majelis ikrar juga dicatat sebagai PENGGANTI di tahapan 10,
-// bertanggal, SESUDAH putusan: perkara_id 1895 putus 16 Agustus 2017, majelis
-// pemeriksanya "diganti" 6 September 2017 oleh majelis yang sama dengan
-// majelis ikrarnya. Sebagian pengganti sesudah putusan itu bahkan masih aktif
-// (perkara_id 2373, 4613). Yang aktif sekarang, maupun yang terakhir
-// ditetapkan, karena itu bukan pemeriksa. Pemeriksa perkara yang sudah putus
-// adalah yang MENJABAT PADA HARI PUTUSAN - lihat menjabatPadaPutusan.
-//
-// Membaca baris aktif saja salah alamat ke dua arah: pemeriksa sesungguhnya
-// terbaca "pernah diganti", dan ketua ikrar dikreditkan sebagai ketua majelis
-// beserta hasil putusan, lama, dan verstek perkara yang tidak pernah ia
-// periksa. Terukur atas seluruh penunjukan sipp_donggala 27 September 2026:
-// aturan aktif-saja kehilangan 346 pasangan hakim-perkara pemeriksa (236
-// perkara) dan mengkreditkan 316 pasangan (226 perkara) kepada hakim yang
-// tidak memeriksanya; pada 142 dari 813 perkara berketua ikrar, ketua ikrarnya
-// bukan ketua pemeriksanya. Panitera: 11 hilang, 18 salah kredit; juru sita:
-// 6 dan 6 - pengganti sesudah putusan dan petugas yang hanya pada ikrar.
-//
-// Pergantian SUNGGUHAN di tengah pemeriksaan tetap tertangkap: yang diganti
-// sebelum hari putusan tidak menjabat pada hari itu (misalnya perkara_id
-// 10035, "Ketua majelis sebelumnya sedang cuti").
+// Yang tetap di sini hanya yang khas rekap: kedudukan SESEORANG pada satu
+// perkara, dan himpunannya atas seluruh perkaranya.
 
-const TAHAPAN_PEMERIKSAAN = 10;
-const TAHAPAN_IKRAR = 18;
 /** Kedudukan tertinggi pada satu perkara: ketua (1) > tunggal (3) > anggota (2). */
 const TINGKAT_JABATAN = { 1: 1, 3: 2, 2: 3 };
 
-function barisAktif(b) {
-  return cleanText(b.aktif).toUpperCase() === "Y";
-}
-
-/** Tanggal yyyy-mm-dd yang sah, atau "" bila kosong, nol, atau tak terbaca. */
-function tanggalSah(nilai) {
-  const teks = String(nilai || "").slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(teks) && !teks.startsWith("0000") ? teks : "";
-}
-
-function barisBertanggal(b) {
-  return tanggalSah(b.tidakAktif) !== "";
-}
-
-/**
- * Menjabat pada hari putusan: ditetapkan paling lambat hari itu, dan belum
- * dinonaktifkan sebelum hari itu.
- *
- * Penonaktifan TANPA tanggal (oleh penetapan majelis ikrar) tidak diketahui
- * harinya, jadi tidak menggugurkan - begitulah majelis pemeriksa perkara 385
- * tetap terbaca. Baris yang masih AKTIF dianggap menjabat walau tanggal tidak
- * aktifnya terisi: terukur di sipp_donggala, baris aktif bertanggal tidak
- * aktif ada (ketiga hakim perkara_id 703), dan penanda aktif SIPP lebih
- * dipercaya daripada tanggal yang tertinggal.
- */
-function menjabatPadaPutusan(b, hariPutus) {
-  const ditetapkan = tanggalSah(b.penetapan);
-  if (!ditetapkan || ditetapkan > hariPutus) return false;
-  if (barisAktif(b)) return true;
-  const berhenti = tanggalSah(b.tidakAktif);
-  return !berhenti || berhenti >= hariPutus;
-}
-
-/** a ditetapkan lebih akhir daripada b? Penetapan, lalu id yang lebih besar. */
-function lebihAkhirDitetapkan(a, b) {
-  const pa = tanggalSah(a.penetapan);
-  const pb = tanggalSah(b.penetapan);
-  if (pa !== pb) return pa > pb;
-  return Number(a.id) > Number(b.id);
-}
-
-/**
- * a lebih akhir daripada b, bila hari putusan tidak dapat menjadi penentu?
- *
- * Yang TIDAK bertanggal-tidak-aktif didahulukan: tanggal itu penanda
- * pergantian, sedangkan penonaktifan oleh majelis ikrar tidak bertanggal.
- * Sesudah itu penetapan yang lebih akhir, lalu id yang lebih besar.
- */
-function lebihAkhir(a, b) {
-  if (barisBertanggal(a) !== barisBertanggal(b)) return !barisBertanggal(a);
-  return lebihAkhirDitetapkan(a, b);
-}
-
-/** Satu baris per kursi (urutan): yang paling akhir menurut pembanding. */
-function terakhirTiapKursi(baris, lebihAkhirDari) {
-  const perKursi = new Map();
-  for (const b of baris) {
-    const kursi = b.urutan === null || b.urutan === undefined ? "?" : String(b.urutan);
-    const lama = perKursi.get(kursi);
-    if (!lama || lebihAkhirDari(b, lama)) perKursi.set(kursi, b);
-  }
-  return [...perKursi.values()];
-}
-
-/**
- * Id baris penunjukan yang dihitung PEMERIKSA pada satu perkara.
- *
- *   - Tahapan pemeriksaan (10) perkara yang SUDAH PUTUS: tiap kursi, yang
- *     paling akhir ditetapkan di antara yang menjabat pada hari putusan.
- *     Kursi yang tidak berpejabat pada hari itu kosong - terukur: majelis
- *     yang diganti hakim tunggal sebelum putusan (perkara_id 2730).
- *   - Tahapan 10 perkara yang BELUM putus, atau yang tak satu pun barisnya
- *     menjabat pada hari putusan (tanggal penetapan yang tertulis sesudahnya):
- *     baris yang aktif. Bila tak satu pun aktif - SIPP menonaktifkannya saat
- *     majelis ikrar ditetapkan - baris terakhir tiap kursi.
- *   - Tahapan lain selain ikrar talak (verzet dan sebagainya - 13 baris pada
- *     ketiga tabel penunjukan sipp_donggala): baris yang aktif.
- */
-function barisPemeriksa(baris, putus) {
-  const pemeriksa = new Set();
-  const bukanIkrar = baris.filter((b) => Number(b.tahapan) !== TAHAPAN_IKRAR);
-  for (const b of bukanIkrar) {
-    if (Number(b.tahapan) !== TAHAPAN_PEMERIKSAAN && barisAktif(b)) pemeriksa.add(b.id);
-  }
-  const pemeriksaan = bukanIkrar.filter((b) => Number(b.tahapan) === TAHAPAN_PEMERIKSAAN);
-  const hariPutus = tanggalSah(putus);
-  const menjabat = hariPutus ? pemeriksaan.filter((b) => menjabatPadaPutusan(b, hariPutus)) : [];
-  let terpilih;
-  if (menjabat.length > 0) terpilih = terakhirTiapKursi(menjabat, lebihAkhirDitetapkan);
-  else if (pemeriksaan.some(barisAktif)) terpilih = pemeriksaan.filter(barisAktif);
-  else terpilih = terakhirTiapKursi(pemeriksaan, lebihAkhir);
-  for (const b of terpilih) pemeriksa.add(b.id);
-  return pemeriksa;
-}
-
 const KEDUDUKAN_HAKIM = { 1: "ketua", 2: "tunggal", 3: "anggota", 4: "hakimLain" };
+
+/** Kunci kedudukan ikrar talak per peran - "ikrar", "paniteraIkrar", "jurusitaIkrar". */
+function kunciIkrar(peran) {
+  return peran === "hakim" ? "ikrar" : `${peran}Ikrar`;
+}
 
 /**
  * Kedudukan seseorang pada satu perkara, dari SELURUH baris penunjukan
  * perkara itu.
  *
  * @param putus tanggal putusan perkara itu (yyyy-mm-dd), kosong bila belum.
+ * @param ikrarBorang true bila borang penetapan ikrar talak menjadikannya
+ *   majelis/petugas ikrar perkara ini (lihat ikrarDariBorang) - walau tabel
+ *   penunjukan tidak mencatatnya.
  * @returns null bila ia tidak tercatat pada perkara ini; selainnya
  *   { kedudukan: [...], diganti } - diganti bila ia tercatat tetapi tidak
- *   memeriksa dan tidak aktif pada ikrar talak: diganti sebelum putusan, atau
+ *   memeriksa dan bukan majelis/petugas ikrar: diganti sebelum putusan, atau
  *   ditetapkan sesudahnya tanpa kedudukan ikrar.
  */
-function kedudukanPadaPerkara(baris, orang, peran, putus) {
+function kedudukanPadaPerkara(baris, orang, peran, putus, ikrarBorang = false) {
   const milik = baris.filter((b) => Number(b.orang) === Number(orang));
-  if (milik.length === 0) return null;
+  if (milik.length === 0 && !ikrarBorang) return null;
   const pemeriksa = barisPemeriksa(baris, putus);
   const memeriksa = milik.filter((b) => pemeriksa.has(b.id));
   const kedudukan = [];
@@ -780,9 +685,8 @@ function kedudukanPadaPerkara(baris, orang, peran, putus) {
       kedudukan.push(peran);
     }
   }
-  if (milik.some((b) => Number(b.tahapan) === TAHAPAN_IKRAR && barisAktif(b))) {
-    kedudukan.push(peran === "hakim" ? "ikrar" : `${peran}Ikrar`);
-  }
+  const ikrar = barisIkrar(milik).length > 0 || ikrarBorang;
+  if (ikrar) kedudukan.push(kunciIkrar(peran));
   return { kedudukan, diganti: kedudukan.length === 0 };
 }
 
@@ -791,24 +695,83 @@ function kedudukanPadaPerkara(baris, orang, peran, putus) {
  * ia pernah ditunjuk lalu diganti.
  *
  * @param putusPerPerkara Map perkara_id (teks) -> tanggal putusan.
+ * @param ikrarBorang Set perkara_id (teks) yang borang ikrarnya menjadikan
+ *   orang ini majelis/petugas ikrar. Perkara yang TIDAK memuatnya pada tabel
+ *   penunjukan sama sekali ikut masuk, berkedudukan ikrar saja.
  */
-function himpunKedudukan(baris, orang, peran, putusPerPerkara) {
+function himpunKedudukan(baris, orang, peran, putusPerPerkara, ikrarBorang = new Set()) {
   const putus = putusPerPerkara instanceof Map ? putusPerPerkara : new Map();
+  const dariBorang = ikrarBorang instanceof Set ? ikrarBorang : new Set();
   const perPerkara = new Map();
   for (const b of Array.isArray(baris) ? baris : []) {
     const kunci = String(b.perkaraId);
     if (!perPerkara.has(kunci)) perPerkara.set(kunci, []);
     perPerkara.get(kunci).push(b);
   }
+  for (const perkaraId of dariBorang) {
+    if (!perPerkara.has(String(perkaraId))) perPerkara.set(String(perkaraId), []);
+  }
   const himpunan = [];
   let diganti = 0;
   for (const [perkaraId, isi] of perPerkara) {
-    const hasil = kedudukanPadaPerkara(isi, orang, peran, putus.get(perkaraId));
+    const hasil = kedudukanPadaPerkara(isi, orang, peran, putus.get(perkaraId), dariBorang.has(perkaraId));
     if (!hasil) continue;
     if (hasil.diganti) diganti += 1;
     else himpunan.push({ perkaraId, kedudukan: hasil.kedudukan });
   }
   return { himpunan, diganti };
+}
+
+/**
+ * Perkara yang BORANG penetapan ikrar talaknya menjadikan orang ini majelis
+ * atau petugas ikrar, padahal tabel penunjukan tidak mencatatnya.
+ *
+ * Diputuskan ikrarLengkap (majelisPemeriksaService) - aturan yang sama dengan
+ * Status Perkara dan eviden SKP: per peran, penunjukan aktif tahapan 18 bila
+ * ada, selainnya borang. Jadi borang TIDAK dipakai bila tabel penunjukan
+ * perkara itu mencatat majelis/petugas ikrar lain, dan id borang yang tidak
+ * dapat dipasangkan dengan namanya tidak dikreditkan kepada siapa pun.
+ *
+ * Masukan ikrarLengkap disusun di sini untuk SATU peran saja - penunjukan
+ * aktif tahapan 18 tabel peran itu dan borangnya (uraiBorangIkrar) - bukan
+ * lewat penunjukanPerkaraBanyak, yang membaca ketiga tabel penunjukan dan
+ * putusan untuk tiap perkara: terukur +1,0 detik pada hitungan pertama rekap
+ * juru sita 22 (154 perkara borang). ikrarLengkap memilih per peran, jadi
+ * tabel peran lain tidak mengubah jawabannya.
+ *
+ * @param idBorang perkara_id yang borangnya memuat id orang ini (FIND_IN_SET).
+ * @param penunjukan baris penunjukan orang ini: perkara yang sudah ia ikrari
+ *   lewat baris aktif tahapan 18 tidak perlu dibaca lagi.
+ * @returns Promise<Set<string>>
+ */
+async function ikrarDariBorang(peran, id, idBorang, penunjukan) {
+  const sudah = new Set(barisIkrar((penunjukan || []).filter((b) => Number(b.orang) === id)).map((b) => String(b.perkaraId)));
+  const calon = [...new Set((idBorang || []).map((b) => String(b.perkaraId)))].filter((p) => !sudah.has(p));
+  const hasil = new Set();
+  if (calon.length === 0) return hasil;
+  const bacaTabel = peran === "hakim" ? ikrarTabelHakim : peran === "panitera" ? ikrarTabelPanitera : ikrarTabelJurusita;
+  const [barisTabel, barisBorang] = await Promise.all([
+    perPotongan(calon, bacaTabel),
+    perPotongan(calon, (potong, isian) => majelisPemeriksaService.bacaBorangIkrar(potong, isian)),
+  ]);
+  const kunciId = { hakim: "hakimId", panitera: "paniteraId", jurusita: "jurusitaId" }[peran];
+  const tercatat = new Map();
+  for (const b of barisIkrar(barisTabel)) {
+    const kunci = String(b.perkaraId);
+    if (!tercatat.has(kunci)) tercatat.set(kunci, []);
+    tercatat.get(kunci).push({ [kunciId]: bacaId(b.orang) });
+  }
+  const borang = new Map(barisBorang.map((r) => [String(r.perkaraId), r]));
+  for (const perkaraId of calon) {
+    const entri = {
+      ikrar: { hakim: [], panitera: [], jurusita: [], [peran]: tercatat.get(perkaraId) || [] },
+      penetapanIkrar: majelisPemeriksaService.uraiBorangIkrar(borang.get(perkaraId) || null),
+    };
+    const lengkap = majelisPemeriksaService.ikrarLengkap(entri);
+    const daftar = lengkap && Array.isArray(lengkap[peran]) ? lengkap[peran] : [];
+    if (daftar.some((x) => Number(x[kunciId]) === id)) hasil.add(perkaraId);
+  }
+  return hasil;
 }
 
 // ============================================================================
@@ -921,6 +884,86 @@ async function putusanPenunjukanJurusita(id) {
       GROUP BY pu.perkara_id
       LIMIT ${BATAS_PENUNJUKAN}`,
     [id]
+  );
+}
+
+// ---- borang penetapan ikrar talak yang memuat id orang ini ----------------------
+//
+// Tabel penunjukan tidak selalu mencatat majelis dan petugas ikrar. Terukur di
+// sipp_donggala 27 September 2026, menurut ikrarLengkap: majelis ikrar pada 73
+// perkara, panitera ikrar pada 798 perkara, dan juru sita ikrar pada 829
+// perkara hanya tercatat pada borang perkara_ikrar_talak - SIPP menulis
+// panitera dan juru sita ikrar hampir selalu ke borang saja. Kolom id-nya daftar
+// ber-koma ("9,1,6"), dicocokkan dengan FIND_IN_SET - tetap lewat id, tidak
+// lewat nama; kedudukannya lalu diputuskan ikrarDariBorang.
+
+/** Kolom id borang ikrar per peran. */
+const KOLOM_BORANG_IKRAR = Object.freeze({
+  hakim: "majelis_hakim_id",
+  panitera: "panitera_pengganti_id",
+  jurusita: "jurusita_id",
+});
+
+async function borangIkrarHakim(id) {
+  return runQuery(
+    `SELECT t.perkara_id AS perkaraId
+       FROM perkara_ikrar_talak t
+      WHERE FIND_IN_SET(?, REPLACE(t.majelis_hakim_id, ' ', '')) > 0
+      LIMIT ${BATAS_PENUNJUKAN}`,
+    [id]
+  );
+}
+
+async function borangIkrarPanitera(id) {
+  return runQuery(
+    `SELECT t.perkara_id AS perkaraId
+       FROM perkara_ikrar_talak t
+      WHERE FIND_IN_SET(?, REPLACE(t.panitera_pengganti_id, ' ', '')) > 0
+      LIMIT ${BATAS_PENUNJUKAN}`,
+    [id]
+  );
+}
+
+async function borangIkrarJurusita(id) {
+  return runQuery(
+    `SELECT t.perkara_id AS perkaraId
+       FROM perkara_ikrar_talak t
+      WHERE FIND_IN_SET(?, REPLACE(t.jurusita_id, ' ', '')) > 0
+      LIMIT ${BATAS_PENUNJUKAN}`,
+    [id]
+  );
+}
+
+// ---- penunjukan tahapan 18 satu tabel atas perkara borang -----------------------
+//
+// Untuk ikrarDariBorang: apakah tabel penunjukan peran ini mencatat
+// majelis/petugas ikrar pada perkara itu - bila ya, borang tidak dipakai.
+// Keaktifannya disaring barisIkrar (majelisPemeriksaService), bukan di sini.
+
+async function ikrarTabelHakim(potong, isian) {
+  return runQuery(
+    `SELECT h.perkara_id AS perkaraId, h.tahapan_id AS tahapan, h.aktif AS aktif, h.hakim_id AS orang
+       FROM perkara_hakim_pn h
+      WHERE h.tahapan_id = 18 AND h.perkara_id IN (${isian})`,
+    potong
+  );
+}
+
+async function ikrarTabelPanitera(potong, isian) {
+  return runQuery(
+    `SELECT h.perkara_id AS perkaraId, h.tahapan_id AS tahapan, h.aktif AS aktif, h.panitera_id AS orang
+       FROM perkara_panitera_pn h
+      WHERE h.tahapan_id = 18 AND h.perkara_id IN (${isian})`,
+    potong
+  );
+}
+
+async function ikrarTabelJurusita(potong, isian) {
+  return runQuery(
+    `SELECT h.perkara_id AS perkaraId, h.tahapan_id AS tahapan, h.aktif AS aktif, h.jurusita_id AS orang
+       FROM perkara_jurusita h
+      WHERE h.tahapan_id = 18 AND h.perkara_id IN (${isian})`,
+    potong
   );
 }
 
@@ -1413,6 +1456,10 @@ async function hitungInti(peran, id, hariIni) {
     mediator: adaMediator,
     jenisPerkara: adaJenisPerkara,
   };
+  // Borang ikrar dibaca hanya bila kolom id peran ini ada - SIPP peradilan
+  // umum tidak punya tabel perkara_ikrar_talak.
+  const adaBorangIkrar =
+    peran !== "mediator" && (await sippSkemaService.kolomAda("perkara_ikrar_talak", KOLOM_BORANG_IKRAR[peran]));
 
   // Bagian yang gagal dibaca DISEBUT, tidak dijadikan nol. Nol yang lahir dari
   // kueri yang gagal terbaca sama persis dengan "memang tidak ada" - dan yang
@@ -1429,7 +1476,7 @@ async function hitungInti(peran, id, hariIni) {
   const tidakAda = Promise.resolve(null);
 
   // ---- tahap 1: yang tidak saling menunggu, bersamaan ------------------------
-  const [identitasMentah, milikHakim, penunjukan, putusanPenunjukan] = await Promise.all([
+  const [identitasMentah, milikHakim, penunjukan, putusanPenunjukan, borangIkrar] = await Promise.all([
     aman(
       "identitas",
       () =>
@@ -1465,27 +1512,51 @@ async function hitungInti(peran, id, hariIni) {
                 : putusanPenunjukanJurusita(id),
           null
         ),
+    // Borang ikrar yang memuat id orang ini - calon kedudukan ikrar yang tidak
+    // tercatat di tabel penunjukan. Lihat ikrarDariBorang.
+    adaBorangIkrar
+      ? aman(
+          "borangIkrar",
+          () =>
+            peran === "hakim" ? borangIkrarHakim(id) : peran === "panitera" ? borangIkrarPanitera(id) : borangIkrarJurusita(id),
+          null
+        )
+      : Promise.resolve([]),
   ]);
 
   // Kedudukan tiap perkara dari SELURUH penunjukannya - majelis pemeriksa pada
   // hari putusan, bukan majelis ikrar yang kebetulan masih aktif. Lihat
-  // kedudukanPadaPerkara. setPenunjukan memuat juga perkara yang hanya ia
-  // layani pada ikrar talak; relaas dan sidang dihitung atas perkara tugasan
-  // pemeriksaan saja (idTugasan).
+  // kedudukanPadaPerkara. Perkara tugasan (kedudukan utama) tidak bergantung
+  // pada borang ikrar - borang hanya menambah kedudukan ikrar - jadi relaas dan
+  // sidang atas perkara tugasan pemeriksaan (idTugasan) tidak menunggunya.
   const putusPerPerkara = new Map((putusanPenunjukan || []).map((b) => [String(b.perkaraId), tanggalSah(b.putus)]));
-  const kedudukanPerkara = penunjukan
+  const tanpaBorang = penunjukan
     ? himpunKedudukan(penunjukan, id, peran, putusPerPerkara)
     : { himpunan: [], diganti: null };
-  const setPenunjukan = kedudukanPerkara.himpunan;
-  const diganti = kedudukanPerkara.diganti;
   const utamaKunci = KEDUDUKAN_UTAMA[peran];
-  const idTugasan = setPenunjukan.filter((b) => b.kedudukan.some((k) => utamaKunci.includes(k))).map((b) => String(b.perkaraId));
+  const idTugasan = tanpaBorang.himpunan
+    .filter((b) => b.kedudukan.some((k) => utamaKunci.includes(k)))
+    .map((b) => String(b.perkaraId));
 
-  // ---- tahap 2: relaas dan sidang atas perkara tugasan; mediasi -------------
-  const [relaas, sidang] = await Promise.all([
+  // ---- tahap 2: relaas dan sidang atas perkara tugasan; ikrar dari borang ---
+  const [relaas, sidang, ikrarBorang] = await Promise.all([
     peran === "jurusita" && adaRelaas && penunjukan ? aman("relaas", () => relaasJurusita(idTugasan), null) : tidakAda,
     peran === "panitera" && adaJadwal && penunjukan ? aman("sidang", () => sidangPanitera(idTugasan, hariIni), null) : tidakAda,
+    // Penunjukan yang gagal dibaca sudah disebut; borang tidak dipakai sendirian
+    // untuk menyusun kedudukan yang separuhnya tidak terbaca.
+    penunjukan && borangIkrar && borangIkrar.length > 0
+      ? aman("borangIkrar", () => ikrarDariBorang(peran, id, borangIkrar, penunjukan), new Set())
+      : Promise.resolve(new Set()),
   ]);
+
+  // setPenunjukan memuat juga perkara yang hanya ia layani pada ikrar talak -
+  // dari tabel penunjukan maupun dari borang.
+  const kedudukanPerkara =
+    penunjukan && ikrarBorang.size > 0
+      ? himpunKedudukan(penunjukan, id, peran, putusPerPerkara, ikrarBorang)
+      : tanpaBorang;
+  const setPenunjukan = kedudukanPerkara.himpunan;
+  const diganti = kedudukanPerkara.diganti;
 
   // ---- tahap 2b: mediasi, sesudah id mediatornya diketahui --------------------
   //
@@ -1631,7 +1702,10 @@ async function hitungInti(peran, id, hariIni) {
     semua,
     pilihanTahun: [...new Set(semua.map((b) => b.tahun).filter(Boolean))].sort((a, b) => b - a),
     pilihanKedudukan: menurutPeran.map((x) => ({ kunci: x.kunci, label: x.label, jumlah: x.jumlah })),
-    terpotong: (penunjukan || []).length >= BATAS_PENUNJUKAN || setMediator.length >= BATAS_PERKARA,
+    terpotong:
+      (penunjukan || []).length >= BATAS_PENUNJUKAN ||
+      (borangIkrar || []).length >= BATAS_PENUNJUKAN ||
+      setMediator.length >= BATAS_PERKARA,
   };
 }
 
@@ -1739,6 +1813,7 @@ module.exports = {
   barisPemeriksa,
   kedudukanPadaPerkara,
   himpunKedudukan,
+  ikrarDariBorang,
   kosongkanSinggahan,
   rekapPetugas,
 };

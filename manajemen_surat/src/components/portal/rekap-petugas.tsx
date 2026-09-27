@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ExternalLink, Info } from "lucide-react";
+import { AlertTriangle, ExternalLink, FileDown, Info } from "lucide-react";
 
+import { EvidenSkpMenu } from "@/components/portal/eviden-skp-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
+import { peranEvidenSkpSah } from "@/lib/eviden-skp-unduh";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import {
   KEADAAN_SARING,
@@ -208,6 +210,13 @@ export function RekapPetugas({ peran, id }: { peran: string; id: string }) {
   // Nomor permintaan: jawaban yang datang SESUDAH saringan diganti lagi tidak
   // boleh menimpa jawaban saringan yang terbaru.
   const nomorMinta = useRef(0);
+  // Pop up Unduh eviden SKP (2.40.0) - fokus kembali ke tombolnya saat ditutup.
+  const [bukaEviden, setBukaEviden] = useState(false);
+  const tombolEviden = useRef<HTMLButtonElement>(null);
+  const tutupEviden = useCallback(() => {
+    setBukaEviden(false);
+    window.setTimeout(() => tombolEviden.current?.focus(), 0);
+  }, []);
 
   const ambil = useCallback(
     async (lewati: number) => {
@@ -320,9 +329,27 @@ export function RekapPetugas({ peran, id }: { peran: string; id: string }) {
         <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-primary sm:text-[0.72rem] sm:tracking-[0.2em]">
           ALETA e-Court · Rekap {sebutan || SEBUTAN_PERAN[peranSah]}
         </p>
-        <h1 className="font-serif text-2xl leading-tight text-foreground sm:text-[2.1rem]">
-          {identitas?.nama || (memuat ? "Memuat…" : `${SEBUTAN_PERAN[peranSah]} ${idSah}`)}
-        </h1>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="font-serif text-2xl leading-tight text-foreground sm:text-[2.1rem]">
+            {identitas?.nama || (memuat ? "Memuat…" : `${SEBUTAN_PERAN[peranSah]} ${idSah}`)}
+          </h1>
+          {/* Eviden SKP (2.40.0): sementara hakim; panitera dan juru sita menyusul. */}
+          {peranEvidenSkpSah(peranSah) ? (
+            <Button
+              ref={tombolEviden}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="print:hidden"
+              aria-haspopup="dialog"
+              aria-expanded={bukaEviden}
+              onClick={() => setBukaEviden(true)}
+            >
+              <FileDown className="h-4 w-4" aria-hidden />
+              Unduh eviden SKP
+            </Button>
+          ) : null}
+        </div>
         {identitas ? (
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="outline">{sebutan}</Badge>
@@ -832,6 +859,10 @@ export function RekapPetugas({ peran, id }: { peran: string; id: string }) {
             sebagai nol akan menyatakan orang ini tidak menangani perkara apa pun.
           </CardContent>
         </Card>
+      ) : null}
+
+      {bukaEviden && peranEvidenSkpSah(peranSah) ? (
+        <EvidenSkpMenu peran={peranSah} id={idSah} nama={identitas?.nama} onTutup={tutupEviden} />
       ) : null}
     </div>
   );

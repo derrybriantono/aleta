@@ -24,6 +24,47 @@ import {
   type PetaObjek,
   type PetaTitik,
 } from "@/lib/peta-leaflet";
+import {
+  GOLONGAN_PETA,
+  JARAK_SELIMUT_KM,
+  KELAS_PETA,
+  LABEL_KELAS,
+  PILIHAN_JENIS,
+  WARNA_KELAS,
+  ZUM_GARIS_KECAMATAN,
+  ZUM_LABEL_KECAMATAN,
+  adalahKodeDesa,
+  adalahPilihan,
+  bacaBatasKecamatan,
+  bacaPilihanTersimpan,
+  hitungGolongan,
+  hitungPilihan,
+  jariJariBulatan,
+  kelasDominan,
+  kelasGolongan,
+  kelasUntukGolongan,
+  kodeKecamatanDesa,
+  labelGolongan,
+  lapisanKecamatanTampil,
+  leluhurMenahanFixed,
+  pilihLabelTakBertabrakan,
+  pilihanAwal,
+  rekapKecamatan,
+  samakanTeksJenis,
+  selimutBerjarak,
+  simpanPilihan,
+  skalaBulatan,
+  tambahKelas,
+  tanggaUkuran,
+  titikBerat,
+  type AnakTangga,
+  type BerkasBatasKecamatan,
+  type HitungKelas,
+  type KelasPeta,
+  type LatLon,
+  type PilihanBulatan,
+  type SisaKecamatan,
+} from "@/lib/peta-perkara-ukur";
 
 /**
  * ============================================================================
@@ -67,6 +108,10 @@ import {
  * membaca LUAS lingkaran, bukan jari-jarinya: desa berperkara 100 yang
  * jari-jarinya sepuluh kali desa berperkara 1 akan terlihat seratus kali lebih
  * besar - dan itu memang seratus kali, tetapi luasnya sepuluh ribu kali.
+ *
+ * Skalanya diukur dari DATANYA - kuantil ke-95, bukan yang terbesar - supaya
+ * satu desa besar tidak mengecilkan seluruh desa lain menjadi titik. Rumus,
+ * batas, dan angka pengukurannya di `lib/peta-perkara-ukur.ts`.
  */
 
 export type TitikPerkara = {
@@ -78,6 +123,13 @@ export type TitikPerkara = {
   lelaki: number;
   perempuan: number;
   jenis: Record<string, number>;
+  /** Kelamin pihak per nama jenis - untuk bulatan jenis tunggal. */
+  jenisKelamin?: Record<string, { lelaki: number; perempuan: number }>;
+  /**
+   * Hitungan per kelas jenis (lewat jenis_perkara_id, dihitung bot). Tidak
+   * ada pada bot yang lebih tua - peta lalu hanya dapat menggambar "semua".
+   */
+  kelas?: Partial<Record<KelasPeta, HitungKelas>>;
 };
 
 type BerkasTitik = {
@@ -460,22 +512,48 @@ async function bukaBungkus<T>(balasan: Response): Promise<T> {
 export function PetaTitikPerkara({
   titik,
   tanpaKode,
-  warnaJenis,
-  penandaJenis,
+  tanpaKodeKelas,
+  tanpaKodeJenis,
+  kecamatanTanpaDesa,
+  jenisTerpilih,
+  golonganJenis,
   saringan,
 }: {
+  /**
+   * Satu baris per desa. Sejak bot membawa `kelas`, isinya SELURUH jenis
+   * perkara pada rentang itu - golongan bulatannya dipilih di layar ini.
+   */
   titik: TitikPerkara[];
   tanpaKode: number;
-  /** Warna nyata per jenis perkara - merah cerai gugat, biru cerai talak. */
-  warnaJenis: Record<string, string>;
-  /** Nama penanda ("merah"/"biru") per jenis, untuk keterangan di bawah peta. */
-  penandaJenis: Record<string, string>;
+  /** `tanpaKode` dipecah per kelas - supaya dapat disebut per golongan. */
+  tanpaKodeKelas?: Partial<Record<KelasPeta, number>>;
+  /** `tanpaKode` dipecah per NAMA jenis - untuk pilihan jenis tunggal. */
+  tanpaKodeJenis?: Record<string, number>;
+  /** Perkara yang kecamatannya berkode tetapi desanya tidak - ikut label kecamatan. */
+  kecamatanTanpaDesa?: SisaKecamatan[];
+  /**
+   * Jenis TUNGGAL yang dipilih "Jenis perkara" halaman (mis. "Kewarisan");
+   * kosong bila yang dipilih kelompok gabungan (Perceraian). Bulatan dapat
+   * menghitung TEPAT jenis ini - sama dengan tabel di bawah peta.
+   */
+  jenisTerpilih?: string;
+  /** Golongan jenis terpilih menurut bot (lewat jenis_perkara_id) - penentu warnanya. */
+  golonganJenis?: string;
   /** Saringan halaman - diteruskan apa adanya ke lapisan yang dibaca terpisah. */
   saringan: { kelompok: string; periode: string; acuan: string; dari: string; sampai: string };
 }) {
+  /**
+   * Kotak yang DIUKUR - milik React, tanpa satu kelas pun yang berubah.
+   * Unsur yang diserahkan kepada Leaflet dibuat di dalamnya lewat
+   * document.createElement; lihat keterangan LAYAR PENUH di bawah.
+   */
   const wadah = useRef<HTMLDivElement | null>(null);
   const petaRef = useRef<PetaObjek | null>(null);
   const kumpulanRef = useRef<PetaKumpulan | null>(null);
+  /** Garis batas dan label kecamatan - dua kumpulan, dua panel. */
+  const kumpulanKecRef = useRef<PetaKumpulan | null>(null);
+  const kumpulanLabelRef = useRef<PetaKumpulan | null>(null);
+  const gambarKecRef = useRef<unknown>(null);
   /** Lingkaran sisi kanan tirai, beserta penggambar tiap panel. */
   const kumpulanBRef = useRef<PetaKumpulan | null>(null);
   const gambarKiriRef = useRef<unknown>(null);
@@ -490,6 +568,66 @@ export function PetaTitikPerkara({
 
   /** Lapisan yang sedang digambar - lihat daftar LAPISAN. */
   const [lapisan, setLapisan] = useState("perkara");
+
+  /**
+   * ====================================================================
+   * GOLONGAN BULATAN - SEMUA, CERAI, DISPENSASI, ITSBAT, LAINNYA
+   * ====================================================================
+   *
+   * Diingat di peramban petugas. Mengganti "Jenis perkara" di atas halaman
+   * ikut menyetel ingatan ini (peta-perkara.tsx), sebab petanya dilahirkan
+   * ulang tiap kali datanya dibaca ulang - dan yang dibaca peta yang lahir
+   * ulang adalah ingatannya.
+   *
+   * Bot yang belum membawa `kelas` hanya dapat menjawab "semua"; pilihannya
+   * karena itu dipaksa ke sana dan pemilihnya dimatikan.
+   *
+   * --------------------------------------------------------------------
+   * TELAAH 2.40.0 - PILIHAN AWAL, DAN JENIS TUNGGAL
+   * --------------------------------------------------------------------
+   *
+   * (1) Kunjungan pertama dahulu membuka "Semua perkara" sementara menu
+   *     halaman berbunyi "Perceraian". Kini pilihan awal diturunkan dari
+   *     "Jenis perkara" bila belum ada yang diingat (pilihanAwal).
+   * (2) Jenis tunggal (Kewarisan, Harta Bersama, ...) dahulu dibulatkan ke
+   *     golongannya - bulatan dan daftar desa memuat SELURUH "lainnya",
+   *     tabel hanya jenis itu. Kini ada pilihan "jenis": tepat jenis itu,
+   *     dihitung dari rincian nama jenis tiap desa, dan daftar desanya
+   *     disaring kelompok halaman - sama dengan tabelnya.
+   */
+  const jenisTunggal = (jenisTerpilih ?? "").trim();
+  const kelasJenis = kelasUntukGolongan(golonganJenis);
+  const [pilihanSimpan, setPilihanSimpan] = useState<PilihanBulatan>(() =>
+    typeof window === "undefined" ? "semua" : pilihanAwal(bacaPilihanTersimpan(), jenisTunggal)
+  );
+  const berkelas = useMemo(() => titik.some((t) => Boolean(t.kelas)), [titik]);
+  // "jenis" tanpa jenis tunggal di halaman tidak bermakna - jatuh ke cerai.
+  // Golongan tanpa `kelas` dari bot tidak dapat dihitung - jatuh ke semua.
+  const pilihan: PilihanBulatan =
+    pilihanSimpan === PILIHAN_JENIS
+      ? jenisTunggal
+        ? PILIHAN_JENIS
+        : berkelas
+          ? "cerai"
+          : "semua"
+      : berkelas
+        ? pilihanSimpan
+        : "semua";
+  /** Nama pilihan di kalimat: jenis tunggal apa adanya, golongan huruf kecil. */
+  const namaPilihan = pilihan === PILIHAN_JENIS ? jenisTunggal : labelGolongan(pilihan).toLowerCase();
+  const akhiranPilihan = pilihan === "semua" ? "" : ` ${namaPilihan}`;
+  const pilih = useCallback((p: string) => {
+    if (!adalahPilihan(p)) return;
+    setPilihanSimpan(p);
+    simpanPilihan(p);
+  }, []);
+
+  /**
+   * Batas kecamatan RESMI (public/peta/batas-kecamatan.json), bila berkasnya
+   * ada. `null` = belum dibaca, "tidak-ada" = tidak ada atau tidak sah - peta
+   * lalu menggambar BATAS PERKIRAAN dari titik desa, dan mengatakannya.
+   */
+  const [batasResmi, setBatasResmi] = useState<BerkasBatasKecamatan | "tidak-ada" | null>(null);
 
   /**
    * ====================================================================
@@ -548,6 +686,38 @@ export function PetaTitikPerkara({
    * tidak melakukan apa-apa dan tidak ada yang tahu sebabnya. Karena itu
    * penolakannya dijatuhkan ke layar penuh SEMU - kotak berposisi tetap yang
    * menutupi jendela - yang tampak sama bagi yang memakainya.
+   *
+   * --------------------------------------------------------------------
+   * KENAPA LAYAR PENUH DAHULU KOSONG - DAN KENAPA PERBAIKAN 0801f16 MELESET
+   * --------------------------------------------------------------------
+   *
+   * Leaflet MENAMBAHKAN kelasnya sendiri ke unsur yang diserahkan kepadanya:
+   * `leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab ...`.
+   * Unsur itu dahulu <div> yang dirender React dengan
+   *
+   *     className={cn("w-full", layarPenuh ? "h-full" : "h-[26rem] sm:h-[32rem]")}
+   *
+   * Begitu layarPenuh berubah, React menulis ulang SELURUH atribut class unsur
+   * itu - dan kelas-kelas Leaflet ikut terhapus. Tanpa `.leaflet-container`,
+   * aturan leaflet.css `.leaflet-container img.leaflet-tile { max-width: none
+   * !important }` tidak berlaku lagi, dan aturan global portal
+   * `img { max-width: 100% }` mengerutkan tiap ubinan menjadi selebar INDUKNYA
+   * - panel ubinan Leaflet yang lebarnya nol. Terukur di Chromium pada halaman
+   * uji, sebelum diperbaiki:
+   *
+   *     sebelum layar penuh   .leaflet-container 1   ubinan 256 x 256
+   *     layar penuh +300 md   .leaflet-container 0   ubinan   0 x 256
+   *
+   * Bulatannya selamat (kanvas dikecualikan dari max-width di globals.css),
+   * jadi yang tampak peta gelap tanpa satu ubinan pun. Dan keluar dari layar
+   * penuh TIDAK memulihkannya: kelasnya sudah hilang, sampai halaman dimuat
+   * ulang. Perbaikan 0801f16 menambah h-screen pada kotak luarnya - kotak yang
+   * memang sudah setinggi layar karena gaya bawaan :fullscreen - dan tidak
+   * menyentuh sebab ini sama sekali.
+   *
+   * Sekarang unsur milik Leaflet dibuat lewat document.createElement di dalam
+   * `wadah`, sehingga React tidak pernah memegang atribut class-nya. Ukuran
+   * diatur kotak luar; `wadah` berkelas tetap.
    */
   const kotakPeta = useRef<HTMLDivElement | null>(null);
   const [layarPenuh, setLayarPenuh] = useState(false);
@@ -601,6 +771,29 @@ export function PetaTitikPerkara({
         setKoordinat(isi.titik || {});
       } catch (e) {
         if (hidup) setGalat(e instanceof Error ? e.message : "Berkas titik desa tidak terbaca.");
+      }
+    })();
+    return () => {
+      hidup = false;
+    };
+  }, []);
+
+  // --------------------------------------------------------------------
+  // Batas kecamatan resmi - diambil SEKALI, sama seperti titik desa. Berkas
+  // yang tidak ada (404) atau tidak sah BUKAN galat: petanya menggambar batas
+  // perkiraan dari titik desa dan menyebut bahwa itu perkiraan.
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    let hidup = true;
+    void (async () => {
+      try {
+        const jawab = await fetch(withBasePath("/peta/batas-kecamatan.json"));
+        if (!jawab.ok) throw new Error(String(jawab.status));
+        const isi = bacaBatasKecamatan(await jawab.json());
+        if (!hidup) return;
+        setBatasResmi(isi && isi.kecamatan.length > 0 ? isi : "tidak-ada");
+      } catch {
+        if (hidup) setBatasResmi("tidak-ada");
       }
     })();
     return () => {
@@ -757,6 +950,11 @@ export function PetaTitikPerkara({
           dari: saringan.dari,
           sampai: saringan.sampai,
         });
+        // Golongan bulatan yang diketuk - daftarnya harus sama isinya dengan
+        // angka pada bulatan itu. Pada jenis tunggal golongan TIDAK dikirim:
+        // bot lalu menyaring dengan kelompok halaman, persis seperti tabelnya.
+        // (Telaah 2.40.0: dahulu "lainnya" terkirim dan mendahului Kewarisan.)
+        if (pilihan !== PILIHAN_JENIS) kueri.set("golongan", pilihan);
         const jawab = await fetch(apiPath(`/api/aleta-ecourt/peta-relaas?${kueri.toString()}`), {
           cache: "no-store",
         });
@@ -772,7 +970,15 @@ export function PetaTitikPerkara({
     return () => {
       hidup = false;
     };
-  }, [desaDibuka, saringan.kelompok, saringan.periode, saringan.acuan, saringan.dari, saringan.sampai]);
+  }, [
+    desaDibuka,
+    pilihan,
+    saringan.kelompok,
+    saringan.periode,
+    saringan.acuan,
+    saringan.dari,
+    saringan.sampai,
+  ]);
 
   // --------------------------------------------------------------------
   // Peta dibuat SEKALI. Membuatnya ulang tiap kali datanya berganti berarti
@@ -781,12 +987,27 @@ export function PetaTitikPerkara({
   // --------------------------------------------------------------------
   useEffect(() => {
     let hidup = true;
+    let unsurPeta: HTMLDivElement | null = null;
     void (async () => {
       try {
         const L = await muatLeaflet();
         if (!hidup || !wadah.current || petaRef.current) return;
 
-        const peta = L.map(wadah.current, {
+        // ==================================================================
+        // UNSUR MILIK LEAFLET DIBUAT DI SINI, BUKAN DIRENDER REACT
+        // ==================================================================
+        //
+        // Leaflet menulis kelasnya sendiri ke unsur ini; React yang ikut
+        // memegangnya akan menghapus kelas itu begitu className-nya berubah -
+        // itulah layar penuh yang kosong (lihat keterangan LAYAR PENUH).
+        // Dibuat lewat DOM, unsur ini tidak punya prop React sama sekali.
+        unsurPeta = document.createElement("div");
+        unsurPeta.className = "aleta-peta-leaflet";
+        unsurPeta.style.position = "absolute";
+        unsurPeta.style.inset = "0";
+        wadah.current.appendChild(unsurPeta);
+
+        const peta = L.map(unsurPeta, {
           // Penggambar kanvas - lihat keterangan di kepala berkas.
           preferCanvas: true,
           scrollWheelZoom: false,
@@ -824,8 +1045,27 @@ export function PetaTitikPerkara({
         gambarKiriRef.current = L.canvas({ pane: "aletaKiri" });
         gambarKananRef.current = L.canvas({ pane: "aletaKanan" });
 
+        // Garis kecamatan DI BAWAH bulatan, label kecamatan DI ATASNYA - dan
+        // keduanya tidak menerima ketukan: garis dan label yang merampas
+        // penunjuk membuat bulatan di bawahnya tidak dapat diketuk.
+        peta.createPane("aletaKecamatan");
+        peta.createPane("aletaLabel");
+        const panelKec = peta.getPane("aletaKecamatan");
+        const panelLabel = peta.getPane("aletaLabel");
+        if (panelKec) {
+          panelKec.style.zIndex = "610";
+          panelKec.style.pointerEvents = "none";
+        }
+        if (panelLabel) {
+          panelLabel.style.zIndex = "635";
+          panelLabel.style.pointerEvents = "none";
+        }
+        gambarKecRef.current = L.canvas({ pane: "aletaKecamatan" });
+
         kumpulanRef.current = L.layerGroup().addTo(peta);
         kumpulanBRef.current = L.layerGroup().addTo(peta);
+        kumpulanKecRef.current = L.layerGroup().addTo(peta);
+        kumpulanLabelRef.current = L.layerGroup().addTo(peta);
         // Zum diikuti supaya penggambarnya tahu kapan berpindah dari desa ke
         // kecamatan. Dibaca dari petanya sendiri, bukan dihitung sendiri:
         // fitBounds mengubah zum tanpa ada yang menekan tombol.
@@ -847,37 +1087,97 @@ export function PetaTitikPerkara({
         petaRef.current = null;
         kumpulanRef.current = null;
         kumpulanBRef.current = null;
+        kumpulanKecRef.current = null;
+        kumpulanLabelRef.current = null;
         gambarKiriRef.current = null;
         gambarKananRef.current = null;
+        gambarKecRef.current = null;
       }
+      unsurPeta?.remove();
     };
   }, []);
 
   // --------------------------------------------------------------------
-  // Titik yang sungguh dapat digambar
+  // Hitungan tiap desa untuk PILIHAN bulatan - golongan, atau jenis tunggal
+  // halaman. Disusun sekali per pilihan, dipakai bulatan, keterangan, rekap
+  // kecamatan, dan CSV.
+  // --------------------------------------------------------------------
+  const hitunganDesa = useMemo(() => {
+    const peta = new Map<string, ReturnType<typeof hitungGolongan>>();
+    for (const t of titik) peta.set(t.kode, hitungPilihan(t, pilihan, jenisTunggal, kelasJenis));
+    return peta;
+  }, [titik, pilihan, jenisTunggal, kelasJenis]);
+
+  // --------------------------------------------------------------------
+  // Titik yang sungguh dapat digambar - desa berkoordinat yang PUNYA perkara
+  // golongan ini. Desa tanpa perkara golongan itu tidak digambar sama sekali:
+  // bulatan nol yang dijepit ke ukuran terkecil terbaca sebagai "satu".
   // --------------------------------------------------------------------
   const tergambar = useMemo(() => {
     if (!koordinat) return [];
-    const hasil: { t: TitikPerkara; pos: [number, number] }[] = [];
+    const hasil: { t: TitikPerkara; pos: [number, number]; h: ReturnType<typeof hitungGolongan> }[] = [];
     for (const t of titik) {
+      const h = hitunganDesa.get(t.kode);
+      if (!h || h.perkara <= 0) continue;
       const pos = koordinat[t.kode];
-      if (pos) hasil.push({ t, pos });
+      if (pos) hasil.push({ t, pos, h });
     }
     return hasil;
-  }, [titik, koordinat]);
+  }, [titik, koordinat, hitunganDesa]);
 
+  /** Desa BERKODE yang belum punya titik - disebut, tidak digeser. */
   const takBerkoordinat = useMemo(() => {
     if (!koordinat) return { desa: 0, perkara: 0 };
     let desa = 0;
     let perkara = 0;
     for (const t of titik) {
+      const n = hitunganDesa.get(t.kode)?.perkara ?? 0;
+      if (n <= 0 || !adalahKodeDesa(t.kode)) continue;
       if (!koordinat[t.kode]) {
         desa += 1;
-        perkara += t.perkara;
+        perkara += n;
       }
     }
     return { desa, perkara };
-  }, [titik, koordinat]);
+  }, [titik, koordinat, hitunganDesa]);
+
+  /**
+   * Perkara yang tidak menyimpan KODE desa sama sekali - kolomnya kosong, atau
+   * berisi tulisan dari era pengisian yang lama ("Ganti", bukan
+   * "72.03.08.1020"). Keduanya mustahil ditempatkan, jadi dijumlahkan menjadi
+   * satu angka untuk golongan yang dipilih.
+   */
+  const tanpaKodeTampil = useMemo(() => {
+    let n = 0;
+    if (pilihan === PILIHAN_JENIS) {
+      const kunci = samakanTeksJenis(jenisTunggal);
+      for (const [teks, x] of Object.entries(tanpaKodeJenis ?? {})) if (samakanTeksJenis(teks) === kunci) n += x;
+    } else if (tanpaKodeKelas && berkelas) {
+      for (const k of kelasGolongan(pilihan)) n += tanpaKodeKelas[k] ?? 0;
+    } else if (pilihan === "semua") {
+      n += tanpaKode;
+    }
+    for (const t of titik) {
+      if (!adalahKodeDesa(t.kode)) n += hitunganDesa.get(t.kode)?.perkara ?? 0;
+    }
+    return n;
+  }, [tanpaKode, tanpaKodeKelas, tanpaKodeJenis, berkelas, pilihan, jenisTunggal, titik, hitunganDesa]);
+
+  /** Jumlah perkara beralamat desa per pilihan - angka pada tombol pemilih. */
+  const jumlahGolongan = useMemo(() => {
+    const hasil: Record<string, number> = {};
+    for (const g of GOLONGAN_PETA) {
+      let n = 0;
+      for (const t of titik) n += hitungGolongan(t, g.kunci).perkara;
+      hasil[g.kunci] = n;
+    }
+    if (jenisTunggal) {
+      let n = 0;
+      for (const t of titik) n += hitungPilihan(t, PILIHAN_JENIS, jenisTunggal, kelasJenis).perkara;
+      hasil[PILIHAN_JENIS] = n;
+    }
+    return hasil;
+  }, [titik, jenisTunggal, kelasJenis]);
 
   /** Nilai relaas per kode desa - pencarian kunci, bukan penyisiran daftar. */
   const petaRelaas = useMemo(() => {
@@ -907,7 +1207,7 @@ export function PetaTitikPerkara({
     for (const x of tergambar) {
       const kunci = kunciKecamatan(x.t);
       const daftar = kumpul.get(kunci) ?? [];
-      daftar.push({ baris: petaLapis.get(x.t.kode), bobot: x.t.perkara });
+      daftar.push({ baris: petaLapis.get(x.t.kode), bobot: x.h.perkara });
       kumpul.set(kunci, daftar);
     }
     const hasil = new Map<string, BarisLapisan>();
@@ -970,7 +1270,7 @@ export function PetaTitikPerkara({
     for (const x of tergambar) {
       const kunci = kunciKecamatan(x.t);
       const daftar = kumpul.get(kunci) ?? [];
-      daftar.push({ baris: petaLapisB.get(x.t.kode), bobot: x.t.perkara });
+      daftar.push({ baris: petaLapisB.get(x.t.kode), bobot: x.h.perkara });
       kumpul.set(kunci, daftar);
     }
     const hasil = new Map<string, BarisLapisan>();
@@ -996,10 +1296,12 @@ export function PetaTitikPerkara({
         nama: x.t.nama,
         bawah: x.t.kecamatan || x.t.kabupaten,
         pos: x.pos,
-        perkara: x.t.perkara,
-        lelaki: x.t.lelaki,
-        perempuan: x.t.perempuan,
-        jenis: x.t.jenis,
+        perkara: x.h.perkara,
+        lelaki: x.h.lelaki,
+        perempuan: x.h.perempuan,
+        // Rincian untuk keterangan melayang, dan jumlah per kelas untuk warna.
+        jenis: x.h.rincian,
+        kelas: x.h.kelas,
         titik: x.t,
         anggota: 1,
       }));
@@ -1017,6 +1319,7 @@ export function PetaTitikPerkara({
         lelaki: number;
         perempuan: number;
         jenis: Record<string, number>;
+        kelas: Partial<Record<KelasPeta, number>>;
         anggota: number;
       }
     >();
@@ -1033,17 +1336,19 @@ export function PetaTitikPerkara({
           lelaki: 0,
           perempuan: 0,
           jenis: {},
+          kelas: {},
           anggota: 0,
         });
       }
       const k = peta.get(kunci)!;
       k.lat += x.pos[0];
       k.lon += x.pos[1];
-      k.perkara += x.t.perkara;
-      k.lelaki += x.t.lelaki;
-      k.perempuan += x.t.perempuan;
+      k.perkara += x.h.perkara;
+      k.lelaki += x.h.lelaki;
+      k.perempuan += x.h.perempuan;
       k.anggota += 1;
-      for (const [j, n] of Object.entries(x.t.jenis)) k.jenis[j] = (k.jenis[j] || 0) + n;
+      for (const [j, n] of Object.entries(x.h.rincian)) k.jenis[j] = (k.jenis[j] || 0) + n;
+      tambahKelas(k.kelas, x.h.kelas);
     }
     return [...peta.values()].map((k) => ({
       kunci: k.kunci,
@@ -1054,6 +1359,7 @@ export function PetaTitikPerkara({
       lelaki: k.lelaki,
       perempuan: k.perempuan,
       jenis: k.jenis,
+      kelas: k.kelas,
       titik: null as TitikPerkara | null,
       anggota: k.anggota,
     }));
@@ -1064,22 +1370,51 @@ export function PetaTitikPerkara({
     [digambar]
   );
 
+  /**
+   * ====================================================================
+   * SKALA BULATAN - DIUKUR DARI "SEMUA PERKARA" PADA TINGKAT YANG TAMPIL
+   * ====================================================================
+   *
+   * Acuannya jumlah SELURUH perkara tiap tempat (desa, atau kecamatan di
+   * bawah ZUM_DESA) - bukan jumlah golongan yang dipilih. Dengan begitu
+   * berpindah golongan tidak mengubah skala: dispensasi kawin yang sedikit
+   * tergambar kecil, sebagaimana mestinya. Rumus dan angka pengukurannya di
+   * lib/peta-perkara-ukur.ts.
+   */
+  const skala = useMemo(() => {
+    if (!koordinat) return skalaBulatan([]);
+    const perTempat = new Map<string, number>();
+    for (const t of titik) {
+      if (!koordinat[t.kode] || !(t.perkara > 0)) continue;
+      const kunci = zum >= ZUM_DESA ? t.kode : kunciKecamatan(t);
+      perTempat.set(kunci, (perTempat.get(kunci) ?? 0) + hitungGolongan(t, "semua").perkara);
+    }
+    return skalaBulatan([...perTempat.values()]);
+  }, [titik, koordinat, zum]);
+
   /** Jari-jari menurut AKAR jumlahnya - lihat keterangan di kepala berkas. */
-  const jariJari = useCallback(
-    (jml: number) => {
-      if (terbesar <= 0) return 4;
-      const bagian = Math.sqrt(jml) / Math.sqrt(terbesar);
-      return 3 + bagian * 15;
-    },
-    [terbesar]
-  );
+  const jariJari = useCallback((jml: number) => jariJariBulatan(jml, skala), [skala]);
+
+  /** Desa berkoordinat dengan jumlah SEMUA perkaranya - penentu pandangan awal. */
+  const dasarPandangan = useMemo(() => {
+    if (!koordinat) return [];
+    const hasil: { pos: [number, number]; perkara: number }[] = [];
+    for (const t of titik) {
+      const pos = koordinat[t.kode];
+      const n = hitungGolongan(t, "semua").perkara;
+      if (pos && n > 0) hasil.push({ pos, perkara: n });
+    }
+    return hasil;
+  }, [titik, koordinat]);
 
   /**
    * ====================================================================
    * WARNA LINGKARAN - SATU PABRIK, DUA PEMAKAI
    * ====================================================================
    *
-   *   perkara  jenis perkara yang paling banyak di tempat itu
+   *   perkara  KELAS jenis yang paling banyak di tempat itu, di dalam
+   *            golongan yang dipilih (cerai gugat merah, cerai talak biru,
+   *            dispensasi jingga, itsbat hijau, lainnya ungu - WARNA_KELAS)
    *   relaas   persentase panggilan tidak bertemu, satu rona menua
    *   lainnya  tangga yang disusun dari jangkauan lapisan itu sendiri
    *
@@ -1116,7 +1451,7 @@ export function PetaTitikPerkara({
       jang: { min: number; max: number },
       urut: string[]
     ) =>
-      (jenis: Record<string, number>, kode: string) => {
+      (kelas: Partial<Record<KelasPeta, number>>, kode: string) => {
         if (kunci !== "perkara" && kunci !== "relaas") {
           return warnaLapisan(pl.get(kode), sat, jang, urut);
         }
@@ -1130,17 +1465,12 @@ export function PetaTitikPerkara({
           return TANGGA_RELAAS[TANGGA_RELAAS.length - 1].warna;
         }
 
-        let terbanyak = "";
-        let jml = -1;
-        for (const [j, n] of Object.entries(jenis)) {
-          if (n > jml) {
-            jml = n;
-            terbanyak = j;
-          }
-        }
-        return warnaJenis[terbanyak] || "#6366f1";
+        // Kelas yang menanggung perkara terbanyak di tempat itu. Bot yang
+        // belum mengirim kelas jatuh ke nila - warna "tidak dibedakan".
+        const juara = kelasDominan(kelas);
+        return juara ? WARNA_KELAS[juara] : "#6366f1";
       },
-    [warnaJenis, petaRelaasTampil]
+    [petaRelaasTampil]
   );
 
   const warnaTitik = useMemo(
@@ -1161,7 +1491,10 @@ export function PetaTitikPerkara({
     const peta = petaRef.current;
     const kumpulan = kumpulanRef.current;
     kumpulan.clearLayers();
-    if (digambar.length === 0) return;
+    // Golongan yang kosong pada rentang ini tetap melewati bagian bawah:
+    // cincin jarak dan pandangan awal tidak bergantung pada ada-tidaknya
+    // bulatan golongan itu.
+    if (digambar.length === 0 && dasarPandangan.length === 0) return;
 
     void (async () => {
       const L = await muatLeaflet();
@@ -1169,8 +1502,9 @@ export function PetaTitikPerkara({
       // atasnya - kalau terbalik, desa kecil di tengah kota tertimbun dan
       // tidak pernah dapat diketuk.
       const urut = [...digambar].sort((a, b) => b.perkara - a.perkara);
+      const namaGolongan = akhiranPilihan;
       for (const x of urut) {
-        const warna = warnaTitik(x.jenis, x.kunci);
+        const warna = warnaTitik(x.kelas, x.kunci);
         const lingkar: PetaTitik = L.circleMarker(x.pos, {
           // Panel tersendiri supaya tirai dapat menggunting sisi ini saja.
           renderer: gambarKiriRef.current ?? undefined,
@@ -1233,7 +1567,7 @@ export function PetaTitikPerkara({
              <span>${aman(x.bawah)}${x.anggota > 1 ? ` · ${angka(x.anggota)} desa` : ""}</span>
              ${barisRelaas}
              ${barisLapis}
-             <b>${angka(x.perkara)} perkara</b>
+             <b>${angka(x.perkara)} perkara${aman(namaGolongan)}</b>
              <span>${angka(x.lelaki)} laki-laki · ${angka(x.perempuan)} perempuan</span>
              ${rincianJenis ? `<span>${rincianJenis}</span>` : ""}
              ${x.titik ? `<span>ketuk untuk daftar perkaranya</span>` : ""}
@@ -1293,18 +1627,23 @@ export function PetaTitikPerkara({
       // yang bersama-sama memuat 95% perkara. Sisanya TETAP DIGAMBAR - ia
       // hanya tidak ikut menentukan ke mana peta membuka, dan tinggal
       // diperkecil sekali untuk melihatnya.
-      const jumlahSemua = urut.reduce((n, x) => n + x.perkara, 0);
-      let inti = urut;
+      //
+      // Dihitung dari SEMUA perkara, bukan golongan yang dipilih: petugas yang
+      // kemarin memilih "Dispensasi kawin" tidak boleh membuka peta yang
+      // terpaku pada tiga desa.
+      const dasar = dasarPandangan;
+      const jumlahSemua = dasar.reduce((n, x) => n + x.perkara, 0);
+      let inti = dasar;
       if (jumlahSemua > 0) {
-        const plat = urut.reduce((n, x) => n + x.pos[0] * x.perkara, 0) / jumlahSemua;
-        const plon = urut.reduce((n, x) => n + x.pos[1] * x.perkara, 0) / jumlahSemua;
-        const berjarak = [...urut].sort(
+        const plat = dasar.reduce((n, x) => n + x.pos[0] * x.perkara, 0) / jumlahSemua;
+        const plon = dasar.reduce((n, x) => n + x.pos[1] * x.perkara, 0) / jumlahSemua;
+        const berjarak = [...dasar].sort(
           (a, b) =>
             (a.pos[0] - plat) ** 2 + (a.pos[1] - plon) ** 2 -
             ((b.pos[0] - plat) ** 2 + (b.pos[1] - plon) ** 2)
         );
         const batasJumlah = jumlahSemua * AMBANG_INTI;
-        const terpilih: typeof urut = [];
+        const terpilih: typeof dasar = [];
         let kumpul = 0;
         for (const x of berjarak) {
           terpilih.push(x);
@@ -1317,6 +1656,7 @@ export function PetaTitikPerkara({
       // tiap kali lingkarannya digambar ulang berarti peta melompat kembali ke
       // tempat asalnya setiap kali orang berpindah lapisan atau memperbesar,
       // dan itu membuatnya tidak dapat dipakai sama sekali.
+      // Tanpa satu titik pun batasnya tidak sah, dan pandangannya menunggu.
       if (!sudahDipaskan.current) {
         const batas = L.latLngBounds(inti.map((x) => x.pos));
         if (batas.isValid()) {
@@ -1328,6 +1668,8 @@ export function PetaTitikPerkara({
   }, [
     siap,
     digambar,
+    dasarPandangan,
+    akhiranPilihan,
     jariJari,
     warnaTitik,
     lapisan,
@@ -1451,10 +1793,86 @@ export function PetaTitikPerkara({
     return () => document.removeEventListener("keydown", tekan);
   }, [penuhSemu]);
 
-  // Kotaknya berganti ukuran tanpa jendela ikut berganti, jadi Leaflet tidak
-  // diberi tahu siapa pun. Tanpa ini ubinannya hanya mengisi kotak yang lama
-  // dan sisanya kelabu. Tirai ikut dipasang ulang: guntingannya dihitung
-  // dalam piksel, dan pikselnya baru saja berubah.
+  // --------------------------------------------------------------------
+  // LAYAR PENUH SEMU - leluhur yang menahan `position: fixed` dinetralkan
+  // --------------------------------------------------------------------
+  //
+  // Kartu tempat peta ini duduk memakai `backdrop-blur`, dan backdrop-filter
+  // menjadikan kartu itu BLOK PENAMPUNG bagi keturunan berposisi fixed.
+  // Terukur di Chromium, halaman uji, requestFullscreen dihapus: kotak
+  // "fixed inset-0" menempel ke kartu - bukan ke jendela - dan hanya
+  // sebagian peta yang tampak. Selama layar penuh semu, leluhur seperti itu
+  // ditandai dan gaya penahannya dilepas (lihat <style> di bawah); keluar
+  // dari layar penuh mengembalikannya. Gulir halaman di belakang dikunci.
+  useEffect(() => {
+    if (!penuhSemu || typeof document === "undefined") return;
+    const kotak = kotakPeta.current;
+    if (!kotak) return;
+    const ditandai: HTMLElement[] = [];
+    for (let el = kotak.parentElement; el && el !== document.documentElement; el = el.parentElement) {
+      const g = getComputedStyle(el);
+      const gaya = g as CSSStyleDeclaration & { webkitBackdropFilter?: string; containerType?: string };
+      if (
+        leluhurMenahanFixed({
+          transform: g.transform,
+          filter: g.filter,
+          backdropFilter: g.backdropFilter,
+          webkitBackdropFilter: gaya.webkitBackdropFilter,
+          perspective: g.perspective,
+          contain: g.contain,
+          willChange: g.willChange,
+          containerType: gaya.containerType,
+          position: g.position,
+          zIndex: g.zIndex,
+        })
+      ) {
+        el.setAttribute("data-aleta-lepas-bingkai", "");
+        ditandai.push(el);
+      }
+    }
+    const akar = document.documentElement;
+    const gulirLama = akar.style.overflow;
+    akar.style.overflow = "hidden";
+    return () => {
+      for (const el of ditandai) el.removeAttribute("data-aleta-lepas-bingkai");
+      akar.style.overflow = gulirLama;
+    };
+  }, [penuhSemu]);
+
+  // --------------------------------------------------------------------
+  // UKURAN YANG HARUS DIHITUNG ULANG
+  // --------------------------------------------------------------------
+  //
+  // Kotaknya berganti ukuran tanpa jendela ikut berganti - layar penuh semu,
+  // sisi kiri portal diciutkan, kartu melebar - jadi Leaflet tidak diberi
+  // tahu siapa pun. Tanpa ini ubinannya hanya mengisi kotak yang lama dan
+  // sisanya kelabu. Tirai ikut dipasang ulang: guntingannya dihitung dalam
+  // piksel, dan pikselnya baru saja berubah.
+  //
+  // ResizeObserver menangkap SETIAP perubahan ukuran wadah, pada saat tata
+  // letaknya sudah jadi - bukan menebak 180 md kemudian. Jeda lama tetap ada
+  // untuk peramban tanpa ResizeObserver, dan sebagai sabuk kedua sesudah
+  // layar penuh berubah; invalidateSize atas ukuran yang tidak berubah tidak
+  // melakukan apa pun.
+  useEffect(() => {
+    const peta = petaRef.current;
+    const kotak = wadah.current;
+    if (!siap || !peta || !kotak || typeof ResizeObserver === "undefined") return;
+    let bingkai = 0;
+    const pengamat = new ResizeObserver(() => {
+      cancelAnimationFrame(bingkai);
+      bingkai = requestAnimationFrame(() => {
+        peta.invalidateSize();
+        pasangTirai();
+      });
+    });
+    pengamat.observe(kotak);
+    return () => {
+      pengamat.disconnect();
+      cancelAnimationFrame(bingkai);
+    };
+  }, [siap, pasangTirai]);
+
   useEffect(() => {
     const peta = petaRef.current;
     if (!siap || !peta) return;
@@ -1492,7 +1910,7 @@ export function PetaTitikPerkara({
       // lingkaran kecil tidak tertimbun.
       const urut = [...digambar].sort((a, b) => b.perkara - a.perkara);
       for (const x of urut) {
-        const warna = warnaTitikB(x.jenis, x.kunci);
+        const warna = warnaTitikB(x.kelas, x.kunci);
         kumpulan.addLayer(
           L.circleMarker(x.pos, {
             renderer: gambarKananRef.current ?? undefined,
@@ -1546,7 +1964,7 @@ export function PetaTitikPerkara({
     const namaTerlayani = keliling
       .map((k) => k.tempat.toLowerCase())
       .join(" ");
-    const hasil = tergambar.map(({ t: desa, pos }) => {
+    const hasil = tergambar.map(({ t: desa, pos, h }) => {
       const km = jarakKm(KANTOR, pos);
       const r = petaRelaas.get(desa.kode);
       const gagal = r && r.cukup ? r.persen : 0;
@@ -1555,12 +1973,14 @@ export function PetaTitikPerkara({
         Boolean(desa.kecamatan) && namaTerlayani.includes(desa.kecamatan.toLowerCase());
       return {
         desa,
+        // Perkara GOLONGAN yang sedang tampil - usulannya mengikuti bulatannya.
+        perkara: h.perkara,
         km,
         gagal,
         terlayani,
         // Jarak dibagi sepuluh supaya angkanya terbaca; perbandingannya tidak
         // berubah karena pembaginya sama untuk semua.
-        skor: terlayani ? 0 : (desa.perkara * (km / 10) * (1 + gagal / 100)),
+        skor: terlayani ? 0 : (h.perkara * (km / 10) * (1 + gagal / 100)),
       };
     });
     return hasil
@@ -1580,13 +2000,27 @@ export function PetaTitikPerkara({
    */
   const unduhCsv = useCallback(() => {
     const judul = LAPISAN.find((x) => x.kunci === lapisan)?.label ?? lapisan;
-    const baris = [["kode", "desa", "kecamatan", "kabupaten", "perkara", judul, "keterangan"]];
-    for (const { t: desa } of tergambar) {
+    // Satu kolom per golongan, apa pun yang sedang dipilih - lembar yang
+    // diunduh untuk laporan tidak boleh bergantung pada tombol yang kebetulan
+    // tertekan.
+    const baris = [
+      [
+        "kode",
+        "desa",
+        "kecamatan",
+        "kabupaten",
+        `perkara (${namaPilihan})`,
+        ...GOLONGAN_PETA.map((g) => g.label.toLowerCase()),
+        judul,
+        "keterangan",
+      ],
+    ];
+    for (const { t: desa, h } of tergambar) {
       const dl = petaLapis.get(desa.kode);
       const dr = petaRelaas.get(desa.kode);
       const nilai =
         lapisan === "perkara"
-          ? String(desa.perkara)
+          ? String(h.perkara)
           : lapisan === "relaas"
             ? dr && dr.cukup
               ? `${dr.persen}%`
@@ -1599,7 +2033,8 @@ export function PetaTitikPerkara({
         desa.nama,
         desa.kecamatan,
         desa.kabupaten,
-        String(desa.perkara),
+        String(h.perkara),
+        ...GOLONGAN_PETA.map((g) => String(hitungGolongan(desa, g.kunci).perkara)),
         nilai,
         // Keterangan relaas disusun di sini - bentuknya "8 dari 14 relaas" -
         // sebab DesaRelaas memulangkan hitungannya, bukan kalimatnya.
@@ -1622,12 +2057,22 @@ export function PetaTitikPerkara({
     tautan.download = `peta-perkara-${lapisan}.csv`;
     tautan.click();
     URL.revokeObjectURL(alamat);
-  }, [lapisan, tergambar, petaLapis, petaRelaas]);
+  }, [lapisan, namaPilihan, tergambar, petaLapis, petaRelaas]);
 
-  const jenisTampil = useMemo(
-    () => Object.keys(penandaJenis).filter((j) => warnaJenis[j]),
-    [penandaJenis, warnaJenis]
-  );
+  /**
+   * Keterangan warna: kelas yang sungguh tergambar pada golongan ini - atau,
+   * pada jenis tunggal, jenis itu sendiri dengan warna golongannya.
+   */
+  const keteranganWarna = useMemo(() => {
+    if (pilihan === PILIHAN_JENIS) {
+      return digambar.length > 0 ? [{ kunci: PILIHAN_JENIS, warna: WARNA_KELAS[kelasJenis], label: jenisTunggal }] : [];
+    }
+    const ada = new Set<KelasPeta>();
+    for (const x of digambar) for (const k of KELAS_PETA) if ((x.kelas[k] ?? 0) > 0) ada.add(k);
+    return kelasGolongan(pilihan)
+      .filter((k) => ada.has(k))
+      .map((k) => ({ kunci: k, warna: WARNA_KELAS[k], label: LABEL_KELAS[k] }));
+  }, [digambar, pilihan, kelasJenis, jenisTunggal]);
 
   /**
    * Tangga ukuran untuk keterangan - tiga angka sungguhan, bukan lingkaran
@@ -1635,17 +2080,187 @@ export function PetaTitikPerkara({
    *
    * Dibagi empat dan enam belas, bukan dua dan empat: luas yang berbanding
    * lurus dengan jumlah berarti jari-jarinya berbanding dengan akarnya, jadi
-   * pembagian empat-lah yang menghasilkan lingkaran separuh.
+   * pembagian empat-lah yang menghasilkan lingkaran separuh. Jari-jarinya
+   * dihitung fungsi yang SAMA dengan penggambar petanya, dan yang teratas
+   * bertanda "≥" bila desa terbesar melewati ambang jepit.
    */
-  const tangga = useMemo(() => {
-    if (terbesar <= 0) return [];
-    const calon = [terbesar, Math.round(terbesar / 4), Math.round(terbesar / 16)];
-    const unik: number[] = [];
-    for (const n of calon) {
-      if (n >= 1 && !unik.includes(n)) unik.push(n);
+  const tangga = useMemo(() => tanggaUkuran(skala, terbesar), [skala, terbesar]);
+
+  /* ======================================================================
+   * LAPISAN KECAMATAN - GARIS BATAS, NAMA, DAN JUMLAH PERKARANYA
+   * ======================================================================
+   *
+   * Ambang perbesarannya di lib/peta-perkara-ukur.ts (ZUM_GARIS_KECAMATAN 9,
+   * ZUM_LABEL_KECAMATAN 10) beserta alasannya.
+   *
+   * Angka label dihitung dari SELURUH perkara kecamatan itu untuk golongan
+   * yang dipilih - termasuk desa yang belum punya titik dan baris yang hanya
+   * berkode kecamatan (rekapKecamatan). Bulatan desa hanya menggambar desa
+   * bertitik; label kecamatan tidak boleh ikut mengecil karenanya.
+   */
+  const rekapKec = useMemo(
+    () => rekapKecamatan(titik, koordinat, kecamatanTanpaDesa, pilihan, jenisTunggal),
+    [titik, koordinat, kecamatanTanpaDesa, pilihan, jenisTunggal]
+  );
+
+  /** Titik desa berkoordinat per kode kecamatan - dari berkas titik, bukan dari perkara. */
+  const titikPerKecamatan = useMemo(() => {
+    const peta = new Map<string, LatLon[]>();
+    for (const [kode, pos] of Object.entries(koordinat ?? {})) {
+      const kec = kodeKecamatanDesa(kode);
+      if (!kec) continue;
+      const daftar = peta.get(kec) ?? [];
+      daftar.push(pos);
+      peta.set(kec, daftar);
     }
-    return unik;
-  }, [terbesar]);
+    return peta;
+  }, [koordinat]);
+
+  /**
+   * Bentuk tiap kecamatan: batas RESMI bila berkas batas-kecamatan.json
+   * memuatnya, BATAS PERKIRAAN dari titik desa bila tidak. Bentuknya tidak
+   * bergantung pada golongan maupun rentang - yang berubah hanya angkanya -
+   * dan perkiraan disusun dari SELURUH titik desa kecamatan itu di berkas
+   * titik, bukan hanya desa yang kebetulan berperkara pada rentang ini.
+   */
+  const bentukKecamatan = useMemo(() => {
+    if (batasResmi === null) return null;
+    const hasil = new Map<
+      string,
+      { kode: string; nama: string; bagian: LatLon[][][] | null; label: LatLon | null; resmi: boolean }
+    >();
+    if (batasResmi !== "tidak-ada") {
+      for (const b of batasResmi.kecamatan) {
+        hasil.set(b.kode, { kode: b.kode, nama: b.nama, bagian: b.bagian, label: b.label, resmi: true });
+      }
+    }
+    for (const [kode, titikKec] of titikPerKecamatan) {
+      if (hasil.has(kode)) continue;
+      const selimut = selimutBerjarak(titikKec);
+      hasil.set(kode, {
+        kode,
+        nama: "",
+        // Kurang dari tiga titik: TANPA garis - labelnya saja, di titik desanya.
+        bagian: selimut ? [[selimut]] : null,
+        label: selimut ? titikBerat(selimut) : titikBerat(titikKec),
+        resmi: false,
+      });
+    }
+    return hasil;
+  }, [batasResmi, titikPerKecamatan]);
+
+  /** Ada-tidaknya tiap jenis garis pada peta - isi keterangan di bawahnya. */
+  const jenisGaris = useMemo(() => {
+    let resmi = 0;
+    let kira = 0;
+    for (const b of bentukKecamatan?.values() ?? []) {
+      if (!b.bagian) continue;
+      if (b.resmi) resmi += 1;
+      else kira += 1;
+    }
+    return { resmi, kira };
+  }, [bentukKecamatan]);
+
+  /**
+   * Label yang bertabrakan disembunyikan - yang perkaranya lebih sedikit
+   * mengalah. Diukur dari kotak DOM labelnya sendiri, sesudah digambar, jadi
+   * panjang nama yang berbeda-beda ikut terhitung.
+   */
+  const aturTabrakanLabel = useCallback(() => {
+    const panel = petaRef.current?.getPane("aletaLabel");
+    if (!panel) return;
+    const unsur = [...panel.querySelectorAll<HTMLElement>(".aleta-label-kec")];
+    for (const el of unsur) el.style.visibility = "";
+    const kotak = unsur.map((el, i) => {
+      const r = el.getBoundingClientRect();
+      return {
+        kunci: String(i),
+        kiri: r.left,
+        atas: r.top,
+        lebar: r.width,
+        tinggi: r.height,
+        prioritas: Number(el.dataset.prioritas || 0),
+      };
+    });
+    const boleh = pilihLabelTakBertabrakan(kotak);
+    unsur.forEach((el, i) => {
+      el.style.visibility = boleh.has(String(i)) ? "" : "hidden";
+    });
+  }, []);
+
+  useEffect(() => {
+    const peta = petaRef.current;
+    const garis = kumpulanKecRef.current;
+    const label = kumpulanLabelRef.current;
+    if (!siap || !peta || !garis || !label) return;
+    garis.clearLayers();
+    label.clearLayers();
+    const tampil = lapisanKecamatanTampil(zum);
+    if (!bentukKecamatan || !tampil.garis) return;
+
+    let hidup = true;
+    let bingkai = 0;
+    void (async () => {
+      const L = await muatLeaflet();
+      if (!hidup) return;
+      // Garis terang di atas ubinan yang dibalik gelap, garis gelap di atas
+      // ubinan terang - satu warna untuk keduanya hilang di salah satunya.
+      const warnaGaris = gelap ? "#e2e8f0" : "#1e293b";
+      for (const b of bentukKecamatan.values()) {
+        if (!b.bagian) continue;
+        garis.addLayer(
+          L.polygon(b.bagian, {
+            renderer: gambarKecRef.current ?? undefined,
+            color: warnaGaris,
+            weight: b.resmi ? 1.4 : 1.2,
+            opacity: b.resmi ? 0.75 : 0.6,
+            // Putus-putus = PERKIRAAN. Garis utuh hanya untuk batas resmi.
+            dashArray: b.resmi ? undefined : "6 5",
+            fill: false,
+            interactive: false,
+          })
+        );
+      }
+      if (!tampil.label) return;
+
+      const akhiran = akhiranPilihan;
+      for (const r of rekapKec.values()) {
+        const b = bentukKecamatan.get(r.kode);
+        if (!b || !b.label || r.perkara <= 0) continue;
+        const nama = r.nama && r.nama !== r.kode ? r.nama : b.nama || r.kode;
+        const luarTitik = r.perkaraTanpaTitik + r.perkaraTanpaDesa;
+        const html =
+          `<div class="aleta-label-kec${b.resmi ? "" : " aleta-label-kec-kira"}" data-prioritas="${r.perkara}">` +
+          `<strong>${aman(nama)}</strong>` +
+          `<span>${angka(r.perkara)} perkara${aman(akhiran)}</span>` +
+          (luarTitik > 0 ? `<em>${angka(luarTitik)} dari desa tanpa titik</em>` : "") +
+          `</div>`;
+        label.addLayer(
+          L.marker(b.label, {
+            pane: "aletaLabel",
+            interactive: false,
+            keyboard: false,
+            icon: L.divIcon({ className: "aleta-label-kec-ikon", html, iconSize: [0, 0] }),
+          })
+        );
+      }
+      bingkai = requestAnimationFrame(aturTabrakanLabel);
+    })();
+
+    return () => {
+      hidup = false;
+      cancelAnimationFrame(bingkai);
+    };
+  }, [siap, zum, bentukKecamatan, rekapKec, gelap, akhiranPilihan, aturTabrakanLabel]);
+
+  // Menggeser peta tidak mengubah jarak antarlabel, tetapi label yang tadinya
+  // di luar layar kini masuk - tabrakannya dihitung ulang sesudah geseran.
+  useEffect(() => {
+    const peta = petaRef.current;
+    if (!siap || !peta) return;
+    peta.on("moveend", aturTabrakanLabel);
+    return () => peta.off("moveend", aturTabrakanLabel);
+  }, [siap, aturTabrakanLabel]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -1688,6 +2303,52 @@ export function PetaTitikPerkara({
         .aleta-peta-gelap .leaflet-tile-pane {
           filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92);
         }
+        .aleta-peta-penuh .leaflet-container { border-radius: 0; }
+
+        /* Label kecamatan: DivIcon bertitik jangkar nol, isinya dipusatkan
+           sendiri. Tidak menerima penunjuk - bulatan di bawahnya tetap dapat
+           diketuk. */
+        .aleta-label-kec-ikon { background: transparent; border: 0; }
+        .aleta-label-kec {
+          position: absolute;
+          left: 0;
+          top: 0;
+          transform: translate(-50%, -50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          white-space: nowrap;
+          pointer-events: none;
+          padding: 2px 7px;
+          border-radius: 7px;
+          border: 1px solid hsl(var(--border) / 0.9);
+          background: hsl(var(--card) / 0.8);
+          color: hsl(var(--card-foreground));
+          box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+          font-size: 0.66rem;
+          line-height: 1.25;
+          text-align: center;
+        }
+        .aleta-label-kec strong { font-size: 0.72rem; font-weight: 600; }
+        .aleta-label-kec span { font-variant-numeric: tabular-nums; }
+        .aleta-label-kec em { font-style: normal; font-size: 0.6rem; color: hsl(var(--muted-foreground)); }
+        .aleta-label-kec-kira { border-style: dashed; }
+
+        /* Layar penuh SEMU: leluhur yang menjadi blok penampung bagi kotak
+           berposisi fixed - backdrop-blur kartu portal, transform, dsb. -
+           dilepas gaya penahannya selama layar penuh. Ditandai dan dilepas
+           oleh efek penuhSemu; lihat keterangannya. */
+        [data-aleta-lepas-bingkai] {
+          transform: none !important;
+          filter: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          perspective: none !important;
+          contain: none !important;
+          will-change: auto !important;
+          container-type: normal !important;
+          z-index: auto !important;
+        }
       `}</style>
 
       {galat ? (
@@ -1696,6 +2357,55 @@ export function PetaTitikPerkara({
           <span>
             {galat} Sebaran berjenjang di bawah tetap dapat dibaca — ia tidak bergantung pada peta.
           </span>
+        </p>
+      ) : null}
+
+      {/* ==================================================================
+          GOLONGAN BULATAN - APA YANG DIHITUNG TIAP BULATAN
+          ==================================================================
+
+          Diletakkan paling atas: pilihan ini mengubah ARTI ukuran bulatan,
+          dan ukuranlah yang dibaca orang lebih dahulu. Tiap tombol menyebut
+          jumlah perkaranya yang beralamat desa pada rentang ini, supaya
+          golongan yang kosong tidak perlu dicoba untuk diketahui kosong. */}
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Tampilan bulatan">
+        <span className="mr-1 text-xs font-medium text-muted-foreground">Bulatan menghitung</span>
+        {/* Jenis tunggal pilihan "Jenis perkara" di atas halaman - TEPAT
+            jenis itu, angkanya sama dengan tabel di bawah peta. Hanya ada
+            ketika halaman memilih satu jenis, bukan kelompok gabungan. */}
+        {jenisTunggal ? (
+          <Button
+            type="button"
+            size="sm"
+            variant={pilihan === PILIHAN_JENIS ? "default" : "outline"}
+            aria-pressed={pilihan === PILIHAN_JENIS}
+            title={`Tepat jenis yang dipilih di atas halaman: ${jenisTunggal}`}
+            onClick={() => pilih(PILIHAN_JENIS)}
+          >
+            {jenisTunggal}
+            <span className="ml-1.5 tabular-nums opacity-70">{angka(jumlahGolongan[PILIHAN_JENIS] ?? 0)}</span>
+          </Button>
+        ) : null}
+        {GOLONGAN_PETA.map((g) => (
+          <Button
+            key={g.kunci}
+            type="button"
+            size="sm"
+            variant={pilihan === g.kunci ? "default" : "outline"}
+            aria-pressed={pilihan === g.kunci}
+            disabled={!berkelas && g.kunci !== "semua"}
+            title={g.keterangan}
+            onClick={() => pilih(g.kunci)}
+          >
+            {g.label}
+            <span className="ml-1.5 tabular-nums opacity-70">{angka(jumlahGolongan[g.kunci] ?? 0)}</span>
+          </Button>
+        ))}
+      </div>
+      {!berkelas && titik.length > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Bot ALETA yang tersambung belum mengirim golongan jenis per desa — bulatan hanya dapat
+          menghitung pilihan &quot;Jenis perkara&quot; di atas halaman.
         </p>
       ) : null}
 
@@ -1848,40 +2558,75 @@ export function PetaTitikPerkara({
           "aleta-peta-wadah relative overflow-hidden rounded-[0.9rem] border border-border",
           gelap && "aleta-peta-gelap",
           // ================================================================
-          // TINGGINYA DIPASTIKAN SENDIRI, TIDAK DITITIPKAN KE PERAMBAN
+          // UKURANNYA DI KOTAK INI - BUKAN DI UNSUR MILIK LEAFLET
           // ================================================================
           //
-          // Gaya bawaan peramban untuk :fullscreen berbunyi
+          // Kelas yang berganti antara biasa dan layar penuh hanya boleh
+          // berada di kotak ini, yang tidak disentuh Leaflet. Unsur petanya
+          // sendiri dibuat lewat DOM di dalam `wadah` (lihat keterangan
+          // LAYAR PENUH): dahulu kelas tinggi berganti PADA unsur itu, dan
+          // penggantiannya menghapus `leaflet-container` - layar penuh yang
+          // kosong.
           //
-          //     position: fixed; inset: 0; width: 100%; height: 100%;
-          //
-          // tetapi gaya penulis mengalahkan gaya bawaan, dan kotak ini
-          // berkelas `relative` - sehingga posisinya kembali relative
-          // sedangkan height: 100%-nya tetap berlaku. Unsur berposisi relative
-          // masih berada di dalam alur, jadi blok penampungnya INDUKNYA yang
-          // setinggi auto - dan 100% terhadap auto memulangkan auto.
-          //
-          // Terukur di peramban pada susunan yang sama: dengan position
-          // relative, height 100% meninggalkan kotaknya pada 708 px - tidak
-          // berubah sama sekali - sedangkan 100vh memberinya 770 px.
-          //
-          // Anak di dalamnya berkelas h-full, jadi ia ikut mengerut ke nol.
-          // Peta setinggi nol tidak menggambar ubinan maupun lingkaran, dan
-          // itulah layar penuh yang kosong sama sekali.
-          //
-          // `relative` DIPERTAHANKAN: tombol keluar di dalamnya berposisi
-          // absolut terhadap kotak ini.
-          //
-          // Sudut membulat pada kotak yang menutupi seluruh layar hanya
-          // menyisakan empat serpih latar di pojoknya.
-          layarPenuh && "h-screen w-screen rounded-none bg-background",
+          // Pada layar penuh sungguhan, gaya bawaan :fullscreen peramban
+          // (position fixed, inset 0, lebar-tinggi 100% - semuanya
+          // !important) yang menentukan ukurannya. h-dvh/w-screen dipakai
+          // layar penuh SEMU, dan dvh - bukan vh - supaya bilah alamat
+          // peramban ponsel tidak menutupi tepi bawahnya.
+          layarPenuh
+            ? "aleta-peta-penuh h-dvh w-screen rounded-none border-0 bg-background"
+            : "h-[26rem] sm:h-[32rem]",
           penuhSemu && "fixed inset-0 z-[1200]"
         )}
       >
-        <div
-          ref={wadah}
-          className={cn("w-full", layarPenuh ? "h-full" : "h-[26rem] sm:h-[32rem]")}
-        />
+        {/* Kelasnya TETAP - React tidak pernah menulis ulang atribut ini, dan
+            anaknya (unsur Leaflet) dibuat lewat DOM, bukan dirender. */}
+        <div ref={wadah} className="absolute inset-0" />
+
+        {/* Pada layar penuh bilah alat di atas peta tidak ikut terbawa.
+            Pemilih golongan dan keterangan ukurannya karena itu ikut masuk -
+            tanpa keduanya, bulatan di layar penuh tidak dapat dibaca. */}
+        {layarPenuh ? (
+          <div className="absolute bottom-6 left-3 z-[1000] flex max-w-[min(26rem,calc(100%-1.5rem))] flex-col gap-1.5 rounded-lg border border-border bg-background/90 px-3 py-2 text-xs shadow-sm backdrop-blur">
+            <label className="inline-flex items-center gap-1.5 text-muted-foreground">
+              Bulatan menghitung
+              <select
+                value={pilihan}
+                onChange={(e) => pilih(e.target.value)}
+                disabled={!berkelas && !jenisTunggal}
+                className="rounded-md border border-input bg-background px-1.5 py-0.5 text-xs text-foreground"
+              >
+                {jenisTunggal ? (
+                  <option value={PILIHAN_JENIS}>
+                    {jenisTunggal} ({angka(jumlahGolongan[PILIHAN_JENIS] ?? 0)})
+                  </option>
+                ) : null}
+                {GOLONGAN_PETA.map((g) => (
+                  <option key={g.kunci} value={g.kunci} disabled={!berkelas && g.kunci !== "semua"}>
+                    {g.label} ({angka(jumlahGolongan[g.kunci] ?? 0)})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {tangga.length > 0 ? (
+              <span className="inline-flex items-end gap-2 text-muted-foreground">
+                <GambarTangga tangga={tangga} />
+                <span className="mb-0.5">{teksTangga(tangga)} perkara</span>
+              </span>
+            ) : null}
+            {jenisGaris.resmi + jenisGaris.kira > 0 ? (
+              <span className="text-muted-foreground">
+                {jenisGaris.kira > 0
+                  ? "Garis putus-putus: batas perkiraan dari titik desa — bukan batas resmi."
+                  : "Garis: batas kecamatan OpenStreetMap."}{" "}
+                {zum < ZUM_GARIS_KECAMATAN ? `Perbesar sampai ${ZUM_GARIS_KECAMATAN} untuk garis kecamatan.` : ""}
+                {zum >= ZUM_GARIS_KECAMATAN && zum < ZUM_LABEL_KECAMATAN
+                  ? `Perbesar sampai ${ZUM_LABEL_KECAMATAN} untuk nama dan jumlahnya.`
+                  : ""}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Tombolnya di dalam peta, bukan di bilah alat di atasnya: yang
             menekan layar penuh sedang melihat petanya, dan setelah penuh
@@ -1940,55 +2685,32 @@ export function PetaTitikPerkara({
             seberapa banyak. Ketiganya dihitung dengan fungsi jari-jari yang
             sama persis dengan yang menggambar petanya. */}
         {tangga.length > 0 ? (
-          <span className="inline-flex items-end gap-2">
+          <span className="inline-flex items-end gap-2" data-uji="keterangan-ukuran">
             <Maximize2 className="mb-0.5 h-3.5 w-3.5" aria-hidden />
-            <svg
-              width={tangga.reduce((n, t) => n + jariJari(t) * 2 + 8, 0)}
-              height={jariJari(tangga[0]) * 2 + 4}
-              className="overflow-visible"
-              aria-hidden
-            >
-              {tangga.reduce<{ x: number; simpul: ReactNode[] }>(
-                (kum, nilai) => {
-                  const r = jariJari(nilai);
-                  const cx = kum.x + r;
-                  kum.simpul.push(
-                    <circle
-                      key={nilai}
-                      cx={cx}
-                      cy={jariJari(tangga[0]) + 2 - 0}
-                      r={r}
-                      fill="currentColor"
-                      fillOpacity={0.18}
-                      stroke="currentColor"
-                      strokeOpacity={0.5}
-                    />
-                  );
-                  kum.x = cx + r + 8;
-                  return kum;
-                },
-                { x: 0, simpul: [] }
-              ).simpul}
-            </svg>
+            <GambarTangga tangga={tangga} />
             <span className="mb-0.5">
-              {tangga.map((t) => angka(t)).join(" · ")} perkara
+              {teksTangga(tangga)} perkara
+              {akhiranPilihan}
+              {tangga.some((t) => t.jenuh) ? ` (terbesar ${angka(terbesar)})` : ""}
             </span>
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5">
             <Maximize2 className="h-3.5 w-3.5" aria-hidden />
-            Luas lingkaran = jumlah perkara
+            {digambar.length === 0 && koordinat
+              ? `Tidak ada perkara ${namaPilihan} yang dapat digambar pada rentang ini`
+              : "Luas lingkaran = jumlah perkara"}
           </span>
         )}
         {lapisan === "perkara"
-          ? jenisTampil.map((j) => (
-              <span key={j} className="inline-flex items-center gap-1.5">
+          ? keteranganWarna.map((w) => (
+              <span key={w.kunci} className="inline-flex items-center gap-1.5">
                 <span
                   className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ background: warnaJenis[j] }}
+                  style={{ background: w.warna }}
                   aria-hidden
                 />
-                {j}
+                {w.label}
               </span>
             ))
           : (
@@ -2019,20 +2741,62 @@ export function PetaTitikPerkara({
         </span>
       </div>
 
-      {takBerkoordinat.desa > 0 || tanpaKode > 0 ? (
+      {/* ==================================================================
+          GARIS KECAMATAN - RESMI ATAU PERKIRAAN, DAN KAPAN TAMPIL
+          ==================================================================
+
+          Batas perkiraan WAJIB mengaku perkiraan di sini, bukan hanya lewat
+          garis putus-putusnya: garis putus-putus tanpa kata terbaca sebagai
+          gaya, bukan sebagai peringatan. */}
+      {jenisGaris.resmi + jenisGaris.kira > 0 ? (
+        <p
+          className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+          data-uji="keterangan-garis"
+        >
+          {jenisGaris.resmi > 0 ? (
+            <span className="inline-flex items-center gap-1.5">
+              <svg width="22" height="6" aria-hidden>
+                <line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="1.6" />
+              </svg>
+              batas kecamatan OpenStreetMap ({angka(jenisGaris.resmi)})
+            </span>
+          ) : null}
+          {jenisGaris.kira > 0 ? (
+            <span className="inline-flex items-center gap-1.5">
+              <svg width="22" height="6" aria-hidden>
+                <line x1="0" y1="3" x2="22" y2="3" stroke="currentColor" strokeWidth="1.6" strokeDasharray="5 4" />
+              </svg>
+              batas perkiraan dari titik desa — bukan batas resmi ({angka(jenisGaris.kira)} kecamatan;
+              selimut titik desa berjarak {String(JARAK_SELIMUT_KM).replace(".", ",")} km, kecamatan dengan
+              kurang dari tiga titik tanpa garis)
+            </span>
+          ) : null}
+          <span>
+            {zum < ZUM_GARIS_KECAMATAN
+              ? `Garis kecamatan tampil mulai perbesaran ${ZUM_GARIS_KECAMATAN}, nama dan jumlah perkaranya mulai ${ZUM_LABEL_KECAMATAN}.`
+              : zum < ZUM_LABEL_KECAMATAN
+                ? `Perbesar sekali lagi untuk nama kecamatan dan jumlah perkaranya.`
+                : `Label kecamatan menghitung seluruh perkara kecamatan itu, termasuk desa yang belum punya titik.`}
+          </span>
+        </p>
+      ) : null}
+
+      {takBerkoordinat.desa > 0 || tanpaKodeTampil > 0 ? (
         <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>
             {takBerkoordinat.desa > 0 ? (
               <>
                 <strong>{angka(takBerkoordinat.desa)} desa</strong> ({angka(takBerkoordinat.perkara)}{" "}
-                perkara) belum punya titik di OpenStreetMap, jadi tidak digambar.{" "}
+                perkara) belum punya titik di OpenStreetMap, jadi tidak digambar — tetapi ikut
+                terhitung pada label kecamatannya.{" "}
               </>
             ) : null}
-            {tanpaKode > 0 ? (
+            {tanpaKodeTampil > 0 ? (
               <>
-                <strong>{angka(tanpaKode)} perkara</strong> alamatnya tersimpan sebagai tulisan tanpa
-                kode wilayah — era pengisian data yang lama — sehingga tidak dapat ditempatkan.{" "}
+                <strong>{angka(tanpaKodeTampil)} perkara</strong> tidak menyimpan kode desa — kolom
+                desanya kosong, atau berisi tulisan dari era pengisian data yang lama — sehingga tidak
+                dapat ditempatkan.{" "}
               </>
             ) : null}
             Keduanya sengaja tidak digeser ke desa terdekat: peta yang terlihat lengkap tetapi
@@ -2066,7 +2830,7 @@ export function PetaTitikPerkara({
                   <tr>
                     <th className="py-1 pr-2 font-medium">Desa</th>
                     <th className="py-1 pr-2 font-medium">Kecamatan</th>
-                    <th className="py-1 pr-2 text-right font-medium">Perkara</th>
+                    <th className="py-1 pr-2 text-right font-medium">Perkara{akhiranPilihan}</th>
                     <th className="py-1 pr-2 text-right font-medium">Jarak</th>
                     <th className="py-1 text-right font-medium">Panggilan gagal</th>
                   </tr>
@@ -2076,7 +2840,7 @@ export function PetaTitikPerkara({
                     <tr key={u.desa.kode} className="border-t border-border/60">
                       <td className="py-1 pr-2 font-medium">{u.desa.nama}</td>
                       <td className="py-1 pr-2 text-muted-foreground">{u.desa.kecamatan}</td>
-                      <td className="py-1 pr-2 text-right tabular-nums">{angka(u.desa.perkara)}</td>
+                      <td className="py-1 pr-2 text-right tabular-nums">{angka(u.perkara)}</td>
                       <td className="py-1 pr-2 text-right tabular-nums">{Math.round(u.km)} km</td>
                       <td className="py-1 text-right tabular-nums">
                         {u.gagal > 0 ? `${u.gagal}%` : "—"}
@@ -2117,8 +2881,9 @@ export function PetaTitikPerkara({
               {desaDibuka.nama}
               <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                 {desaDibuka.kecamatan}
-                {desaDibuka.kabupaten ? `, ${desaDibuka.kabupaten}` : ""} · {angka(desaDibuka.perkara)}{" "}
-                perkara
+                {desaDibuka.kabupaten ? `, ${desaDibuka.kabupaten}` : ""} ·{" "}
+                {angka(hitunganDesa.get(desaDibuka.kode)?.perkara ?? 0)} perkara
+                {akhiranPilihan}
               </span>
             </p>
             <Button type="button" size="sm" variant="ghost" onClick={() => setDesaDibuka(null)}>
@@ -2131,7 +2896,7 @@ export function PetaTitikPerkara({
             <p className="text-xs text-muted-foreground">Membaca daftar perkara…</p>
           ) : (perkaraDesa ?? []).length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              Tidak ada perkara desa ini pada rentang dan jenis yang sedang dipilih.
+              Tidak ada perkara desa ini pada rentang dan golongan yang sedang dipilih.
             </p>
           ) : (
             <div className="max-h-56 overflow-y-auto">
@@ -2180,7 +2945,58 @@ export function PetaTitikPerkara({
           </span>
         </p>
       ) : null}
+      {batasResmi && batasResmi !== "tidak-ada" ? (
+        <p className="flex items-start gap-2 text-[0.7rem] text-muted-foreground">
+          <Layers className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+          <span>
+            Batas kecamatan: {batasResmi.sumber || "OpenStreetMap"}
+            {batasResmi.lisensi ? ` (${batasResmi.lisensi})` : ""}
+            {batasResmi.dibuat ? `, diambil ${batasResmi.dibuat}` : ""} — {angka(batasResmi.kecamatan.length)}{" "}
+            kecamatan, disederhanakan untuk layar. Kecamatan yang tidak ada di berkas itu digambar
+            dengan batas perkiraan dari titik desa.
+          </span>
+        </p>
+      ) : null}
     </div>
+  );
+}
+
+/** Teks keterangan ukuran: "1 · 5 · 20", yang teratas bertanda "≥" bila dijepit. */
+function teksTangga(tangga: AnakTangga[]) {
+  return tangga.map((t) => `${t.jenuh ? "≥" : ""}${angka(t.nilai)}`).join(" · ");
+}
+
+/**
+ * Bulatan keterangan ukuran - jari-jarinya dari tanggaUkuran, yaitu fungsi
+ * yang SAMA dengan penggambar peta. Didudukkan pada satu garis bawah supaya
+ * perbedaan luasnya terbaca sekilas.
+ */
+function GambarTangga({ tangga }: { tangga: AnakTangga[] }) {
+  if (tangga.length === 0) return null;
+  const rTerbesar = Math.max(...tangga.map((t) => t.r));
+  let x = 1;
+  const simpul: ReactNode[] = [];
+  for (const t of tangga) {
+    const cx = x + t.r;
+    simpul.push(
+      <circle
+        key={t.nilai}
+        cx={cx}
+        cy={rTerbesar * 2 + 1 - t.r}
+        r={t.r}
+        fill="currentColor"
+        fillOpacity={0.18}
+        stroke="currentColor"
+        strokeOpacity={0.55}
+        strokeDasharray={t.jenuh ? "3 2" : undefined}
+      />
+    );
+    x = cx + t.r + 8;
+  }
+  return (
+    <svg width={Math.ceil(x)} height={Math.ceil(rTerbesar * 2 + 2)} className="overflow-visible" aria-hidden>
+      {simpul}
+    </svg>
   );
 }
 

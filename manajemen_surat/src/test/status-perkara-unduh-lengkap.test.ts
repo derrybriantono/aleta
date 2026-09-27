@@ -411,6 +411,37 @@ describe("butir 6 - ZIP-nya dibuka, bukan kodenya dibaca", () => {
     expect(tabel[1]).toEqual(["2026-02-10", "Sidang pertama", "Pihak tidak hadir, dipanggil ulang"]);
   });
 
+  it("03 majelis-dan-petugas.csv: majelis pemeriksa, lalu majelis ikrar talak sebagai peran tersendiri", async () => {
+    // Bentuk muatan bot sejak perbaikan majelis ikrar (27 September 2026).
+    keadaan.status = {
+      ok: true,
+      data: statusPalsu({
+        sumberMajelis: "pemeriksa",
+        ikrar: {
+          majelis: [{ id: 9, kode: "H9", nama: "Ulfah", jabatan: "Hakim Ketua", sumber: "penunjukan" }],
+          panitera: [{ id: null, kode: "", nama: "Imayanti, S.H.", sumber: "penetapanIkrar" }],
+          jurusita: [{ id: 2, kode: "", nama: "Muh. Sam'an", sumber: "penetapanIkrar" }],
+        },
+      }),
+    };
+    const isi = await ambilZip("?nomor=273/Pdt.G/2026/PA.Dgl&isi=lengkap");
+    const tabel = uraiCsv(isi.get("00 Data SIPP/03 majelis-dan-petugas.csv")!.toString("utf8"));
+
+    expect(tabel.map((b) => b[0])).toEqual([
+      "peran",
+      "majelis",
+      "panitera pengganti",
+      "juru sita",
+      "majelis ikrar talak",
+      "panitera sidang ikrar talak",
+      "juru sita ikrar talak",
+    ]);
+    expect(tabel[1]).toEqual(["majelis", "H1", "Drs. H. Ahmad", "Ketua Majelis"]);
+    expect(tabel[4]).toEqual(["majelis ikrar talak", "H9", "Ulfah", "Hakim Ketua"]);
+    // Nama ber-koma tetap satu kolom.
+    expect(tabel[5]).toEqual(["panitera sidang ikrar talak", "", "Imayanti, S.H.", ""]);
+  });
+
   it("bagian yang bot pulangkan terbaca:false menghasilkan satu baris di KETERANGAN.txt", async () => {
     keadaan.status = {
       ok: true,

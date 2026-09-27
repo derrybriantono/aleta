@@ -102,6 +102,111 @@ const KELOMPOK = {
   },
 };
 
+/**
+ * ============================================================================
+ * GOLONGAN BULATAN PETA - DIBACA LEWAT jenis_perkara_id, BUKAN LEWAT NAMANYA
+ * ============================================================================
+ *
+ * Satker meminta bulatan peta dapat dipilih: seluruh perkara, cerai (talak +
+ * gugat), dispensasi kawin, itsbat nikah, dan lainnya. Penggolongannya memakai
+ * NOMOR jenis perkara, sebab namanya tidak dapat dipercaya - terukur di
+ * sipp_donggala 27 Sep 2026:
+ *
+ *     id 360   "Pengesahan Perkawinan/Istbat Nikah"   3.964 perkara
+ *              "Istbat Nikah"                            89 perkara
+ *
+ * Satu jenis, DUA ejaan pada kolom namanya - dan tak satu pun berbunyi
+ * "itsbat". Pola kata "itsbat" akan menemukan nol dari 4.053 perkara itu.
+ *
+ * Jumlah per golongan pada perkara DIPUTUS seluruh basis data (dasar peta):
+ *
+ *     cerai        5.470   (346 cerai talak + 347 cerai gugat)
+ *     itsbat       4.045   (360)
+ *     dispensasi     195   (362)
+ *     lainnya        283   (sisanya: P3HP, perwalian, kewarisan, ...)
+ *     seluruhnya   9.993
+ *
+ * Cerai dipecah dua KELAS di sini - gugat dan talak - bukan satu, sebab warna
+ * merah-biru keduanya keputusan satker (lihat penanda KELOMPOK di atas) dan
+ * layar harus tetap dapat membedakannya di dalam golongan "cerai".
+ */
+const KELAS_JENIS = Object.freeze({
+  ceraiGugat: Object.freeze([347]),
+  ceraiTalak: Object.freeze([346]),
+  dispensasi: Object.freeze([362]),
+  itsbat: Object.freeze([360]),
+});
+
+/** Urutan kelas yang dikirim ke layar; yang tidak dikenali jatuh ke "lainnya". */
+const KELAS_PETA = Object.freeze(["ceraiGugat", "ceraiTalak", "dispensasi", "itsbat", "lainnya"]);
+
+/** Golongan yang dapat dipilih layar - tiap golongan gabungan beberapa kelas. */
+const GOLONGAN_PETA = Object.freeze({
+  semua: KELAS_PETA,
+  cerai: Object.freeze(["ceraiGugat", "ceraiTalak"]),
+  dispensasi: Object.freeze(["dispensasi"]),
+  itsbat: Object.freeze(["itsbat"]),
+  lainnya: Object.freeze(["lainnya"]),
+});
+
+/** Kelas satu nomor jenis perkara. */
+function kelasJenis(jenisPerkaraId) {
+  const id = Number(jenisPerkaraId);
+  for (const kelas of Object.keys(KELAS_JENIS)) {
+    if (KELAS_JENIS[kelas].includes(id)) return kelas;
+  }
+  return "lainnya";
+}
+
+/** Golongan satu kelas - cerai gugat dan cerai talak sama-sama "cerai". */
+function golonganKelas(kelas) {
+  for (const golongan of ["cerai", "dispensasi", "itsbat"]) {
+    if (GOLONGAN_PETA[golongan].includes(kelas)) return golongan;
+  }
+  return "lainnya";
+}
+
+/**
+ * Saringan SQL satu golongan, atau null bila golongannya tidak dikenal.
+ *
+ * Dibaca lewat hasOwnProperty: nama golongan datang dari peramban, dan
+ * "constructor" pada objek biasa memulangkan fungsi - bukan "tidak ada".
+ */
+function saringGolongan(golongan, alias = "pk") {
+  const kunci = String(golongan || "");
+  if (!Object.prototype.hasOwnProperty.call(GOLONGAN_PETA, kunci)) return null;
+  if (kunci === "semua") return { sql: "1 = 1", params: [] };
+  if (kunci === "lainnya") {
+    const dikenal = Object.values(KELAS_JENIS).flat();
+    return {
+      sql: `(${alias}.jenis_perkara_id IS NULL OR ${alias}.jenis_perkara_id NOT IN (${dikenal.map(() => "?").join(",")}))`,
+      params: dikenal,
+    };
+  }
+  const id = GOLONGAN_PETA[kunci].flatMap((kelas) => KELAS_JENIS[kelas]);
+  return { sql: `${alias}.jenis_perkara_id IN (${id.map(() => "?").join(",")})`, params: id };
+}
+
+/**
+ * Cermin `saringJenis` untuk baris yang sudah di tangan.
+ *
+ * Sejak peta membawa SELURUH jenis, kuerinya tidak lagi menyaring jenis - yang
+ * menyaring daftar dan kartu kini fungsi ini. Ia harus menjawab PERSIS seperti
+ * `jenis_perkara_text IN (...)` di MySQL, dan kolasi MySQL tidak membedakan
+ * besar-kecil huruf dan mengabaikan spasi di ekor. Perbandingan polos di Node
+ * akan kehilangan "Cerai gugat" yang ditemukan MySQL tanpa berbunyi apa-apa.
+ * Kesamaannya diukur atas sipp_donggala untuk tiap kelompok di menu.
+ */
+const samakanTeksJenis = (x) => String(x === null || x === undefined ? "" : x).replace(/\s+$/, "").toLowerCase();
+
+function cocokKelompok(baris, kelompok) {
+  if (baris.jenisPerkara === null || baris.jenisPerkara === undefined) return false;
+  const teks = samakanTeksJenis(baris.jenisPerkara);
+  const kel = Object.prototype.hasOwnProperty.call(KELOMPOK, kelompok) ? KELOMPOK[kelompok] : null;
+  if (kel) return kel.jenis.some((j) => samakanTeksJenis(j) === teks);
+  return teks === samakanTeksJenis(kelompok);
+}
+
 function kueri(sql, params = []) {
   return new Promise((selesai, gagal) => {
     db.query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
@@ -175,8 +280,11 @@ function saringJenis(kelompok, alias = "pk") {
 
 /** Jenis perkara yang sungguh diputus - untuk menyusun menunya. */
 async function daftarJenis() {
+  // MIN(jenis_perkara_id) menyertakan NOMOR jenisnya - satu nama selalu satu
+  // nomor, sedangkan satu nomor dapat dua nama (360). Dari nomor itulah
+  // golongan bulatan peta untuk pilihan menu ini ditentukan.
   const baris = await kueri(
-    `SELECT p.jenis_perkara_text AS jenis, COUNT(*) AS n
+    `SELECT p.jenis_perkara_text AS jenis, MIN(p.jenis_perkara_id) AS jenisId, COUNT(*) AS n
        FROM perkara p
        JOIN perkara_putusan pp ON pp.perkara_id = p.perkara_id
       WHERE p.jenis_perkara_text IS NOT NULL AND p.jenis_perkara_text <> ''
@@ -191,11 +299,23 @@ async function daftarJenis() {
   // Perceraian di depan bila memang ada - ia hampir selalu yang terbesar, dan
   // menu yang mengurut menurut abjad menyembunyikannya di tengah.
   if (jumlahCerai > 0) {
-    menu.push({ kunci: "perceraian", nama: KELOMPOK.perceraian.nama, perkara: jumlahCerai, gabungan: true });
+    menu.push({
+      kunci: "perceraian",
+      nama: KELOMPOK.perceraian.nama,
+      perkara: jumlahCerai,
+      gabungan: true,
+      golongan: "cerai",
+    });
   }
   for (const b of baris) {
     if (cerai.has(String(b.jenis))) continue;
-    menu.push({ kunci: String(b.jenis), nama: String(b.jenis), perkara: Number(b.n), gabungan: false });
+    menu.push({
+      kunci: String(b.jenis),
+      nama: String(b.jenis),
+      perkara: Number(b.n),
+      gabungan: false,
+      golongan: golonganKelas(kelasJenis(b.jenisId)),
+    });
   }
   return menu;
 }
@@ -240,11 +360,23 @@ async function daftarJenis() {
  * Karena itu yang bukan angka dipakai sebagai NAMA apa adanya, dan singkatan
  * resminya disamakan - "Kab." menjadi "Kabupaten", "Kab" tanpa titik pun ikut.
  * Yang tidak disamakan hanya yang memang tidak dikenal.
+ *
+ * ============================================================================
+ * `kelompok` null = SELURUH JENIS, DAN ITULAH YANG DIPAKAI `hitung`
+ * ============================================================================
+ *
+ * Bulatan peta dapat dipilih golongannya di peramban - seluruh perkara, cerai,
+ * dispensasi, itsbat, lainnya - tanpa kembali ke peladen. Untuk itu barisnya
+ * harus memuat seluruh jenis. Menyaring di sini lalu meminta kueri kedua untuk
+ * peta berarti menyusun ulang tabel turunan "satu pihak per perkara" dua kali;
+ * yang dipilih satu kueri tanpa saringan jenis, lalu daftar dan kartu
+ * disaring di Node lewat `cocokKelompok`.
  */
 async function barisWilayah(kelompok, dari, sampai) {
-  const jenis = saringJenis(kelompok);
+  const jenis = kelompok === null ? null : saringJenis(kelompok);
   return kueri(
     `SELECT pk.jenis_perkara_text AS jenisPerkara,
+            pk.jenis_perkara_id   AS jenisPerkaraId,
             p.jenis_kelamin       AS kelamin,
             p.propinsi            AS kodeProvinsi,
             p.kabupaten           AS kodeKabupaten,
@@ -264,8 +396,8 @@ async function barisWilayah(kelompok, dari, sampai) {
        LEFT JOIN ref_kelurahan_new kl ON kl.kelurahan_kode = p.kelurahan
        LEFT JOIN perkara_akta_cerai ac ON ac.perkara_id = satu.perkara_id
        LEFT JOIN faktor_perceraian f ON f.id = ac.faktor_perceraian_id
-      WHERE ${jenis.sql}`,
-    [dari, sampai, ...jenis.params]
+      ${jenis ? `WHERE ${jenis.sql}` : ""}`,
+    [dari, sampai, ...(jenis ? jenis.params : [])]
   );
 }
 
@@ -393,14 +525,42 @@ function kelompokkan(baris, tingkat, induk) {
  * sebagai teks - 583 baris dari era pengisian yang lama - tidak punya tempat
  * di peta. Itu disebutkan sebagai `tanpaKode`, bukan dibulatkan ke desa
  * terdekat: yang disebut terlihat, yang dibulatkan tidak.
+ *
+ * ============================================================================
+ * TIAP DESA MEMBAWA HITUNGAN PER KELAS JENIS
+ * ============================================================================
+ *
+ * `kelas` memecah hitungan desa menurut KELAS_JENIS - cerai gugat, cerai
+ * talak, dispensasi, itsbat, lainnya - supaya layar dapat berpindah golongan
+ * bulatan tanpa kembali ke peladen. Hanya kelas yang ada yang dikirim. Rincian
+ * nama jenis hanya dibawa kelas "lainnya": di sanalah satu kelas memuat banyak
+ * jenis, dan keterangan melayangnya harus dapat menyebut yang mana.
+ *
+ * `jenisKelamin` (per NAMA jenis) dan `tanpaKodeJenis` ada untuk bulatan JENIS
+ * TUNGGAL - telaah 2.40.0: memilih Kewarisan di halaman harus membuat bulatan
+ * menghitung tepat Kewarisan, sama dengan tabelnya, bukan seluruh golongan
+ * "lainnya". Layar menjumlahkan `jenis` dengan aturan yang sama dengan
+ * cocokKelompok; kelaminnya dari sini.
  */
+function tambahKelamin(wadah, kelamin) {
+  if (kelamin === "L") wadah.lelaki += 1;
+  else if (kelamin === "P") wadah.perempuan += 1;
+}
+
 function titikDesa(baris) {
   const peta = new Map();
   let tanpaKode = 0;
+  const tanpaKodeKelas = {};
+  const tanpaKodeJenis = {};
   for (const b of baris) {
     const kode = String(b.kodeKelurahan || "").trim();
+    const kelas = kelasJenis(b.jenisPerkaraId);
+    const kelamin = String(b.kelamin || "").toUpperCase();
+    const j = String(b.jenisPerkara || "");
     if (!kode) {
       tanpaKode += 1;
+      tanpaKodeKelas[kelas] = (tanpaKodeKelas[kelas] || 0) + 1;
+      tanpaKodeJenis[j] = (tanpaKodeJenis[j] || 0) + 1;
       continue;
     }
     if (!peta.has(kode)) {
@@ -413,16 +573,77 @@ function titikDesa(baris) {
         lelaki: 0,
         perempuan: 0,
         jenis: {},
+        jenisKelamin: {},
+        kelas: {},
       });
     }
     const t = peta.get(kode);
     t.perkara += 1;
-    if (String(b.kelamin || "").toUpperCase() === "L") t.lelaki += 1;
-    else if (String(b.kelamin || "").toUpperCase() === "P") t.perempuan += 1;
+    tambahKelamin(t, kelamin);
+    t.jenis[j] = (t.jenis[j] || 0) + 1;
+    if (!t.jenisKelamin[j]) t.jenisKelamin[j] = { lelaki: 0, perempuan: 0 };
+    tambahKelamin(t.jenisKelamin[j], kelamin);
+
+    if (!t.kelas[kelas]) t.kelas[kelas] = { perkara: 0, lelaki: 0, perempuan: 0 };
+    const k = t.kelas[kelas];
+    k.perkara += 1;
+    tambahKelamin(k, kelamin);
+    if (kelas === "lainnya") {
+      if (!k.jenis) k.jenis = {};
+      k.jenis[j] = (k.jenis[j] || 0) + 1;
+    }
+  }
+  return {
+    titik: [...peta.values()].sort((a, b) => b.perkara - a.perkara),
+    tanpaKode,
+    tanpaKodeKelas,
+    tanpaKodeJenis,
+  };
+}
+
+/**
+ * ============================================================================
+ * PERKARA YANG KECAMATANNYA BERKODE TETAPI DESANYA TIDAK
+ * ============================================================================
+ *
+ * Label kecamatan di peta harus menyebut SELURUH perkara kecamatan itu, bukan
+ * hanya yang desanya berkode. Layar menjumlahkan desa-desanya sendiri; yang
+ * dikirim di sini sisanya - baris yang kecamatannya berbentuk kode
+ * ("72.03.08") sedangkan kelurahannya kosong atau berupa tulisan.
+ *
+ * Terukur pada sipp_donggala 27 Sep 2026: NOL baris seperti itu (3.043 baris
+ * berkode kecamatan, seluruhnya berkode desa, dan tak satu pun kode desanya
+ * menyimpang dari kode kecamatannya). Tetap dihitung, sebab data peladen
+ * berbeda umur dan era pengisiannya.
+ */
+const POLA_KODE_KECAMATAN = /^\d{2}\.\d{2}\.\d{2}$/;
+const POLA_KODE_DESA = /^\d{2}\.\d{2}\.\d{2}\.\d{4}$/;
+
+function kecamatanTanpaDesa(baris) {
+  const peta = new Map();
+  for (const b of baris) {
+    const kec = String(b.kodeKecamatan || "").trim();
+    const desa = String(b.kodeKelurahan || "").trim();
+    if (!POLA_KODE_KECAMATAN.test(kec) || POLA_KODE_DESA.test(desa)) continue;
+    if (!peta.has(kec)) {
+      peta.set(kec, {
+        kode: kec,
+        nama: String(b.namaKecamatan || "").trim() || kec,
+        kabupaten: String(b.namaKabupaten || "").trim(),
+        perkara: 0,
+        kelas: {},
+        jenis: {},
+      });
+    }
+    const t = peta.get(kec);
+    const kelas = kelasJenis(b.jenisPerkaraId);
     const j = String(b.jenisPerkara || "");
+    t.perkara += 1;
+    t.kelas[kelas] = (t.kelas[kelas] || 0) + 1;
+    // Rincian nama jenis - untuk label kecamatan pada bulatan jenis tunggal.
     t.jenis[j] = (t.jenis[j] || 0) + 1;
   }
-  return { titik: [...peta.values()].sort((a, b) => b.perkara - a.perkara), tanpaKode };
+  return [...peta.values()].sort((a, b) => b.perkara - a.perkara);
 }
 
 /**
@@ -541,11 +762,19 @@ async function sebaranRelaas(dari, sampai) {
  */
 const BATAS_PERKARA_DESA = 300;
 
-async function perkaraDesa(kelompok, kode, dari, sampai) {
+/**
+ * `golongan` - bila dikenal - MENGGANTIKAN `kelompok`.
+ *
+ * Bulatan yang diketuk digambar menurut golongan pilihan layar (cerai,
+ * dispensasi, itsbat, ...), jadi daftarnya harus disaring golongan yang sama.
+ * Disaring kelompok halaman, desa yang bulatannya menyebut "3 dispensasi
+ * kawin" akan membuka daftar perceraian - atau daftar kosong.
+ */
+async function perkaraDesa(kelompok, kode, dari, sampai, golongan) {
   const kodeDesa = String(kode || "").trim();
   if (!kodeDesa) return { ok: false, alasan: "kode_desa_kosong" };
 
-  const jenis = saringJenis(kelompok, "pk");
+  const jenis = saringGolongan(golongan, "pk") || saringJenis(kelompok, "pk");
   const baris = await kueri(
     `SELECT pk.nomor_perkara       AS nomorPerkara,
             pk.jenis_perkara_text  AS jenisPerkara,
@@ -619,7 +848,7 @@ async function hitung(minta = {}) {
   }
   if (dari > sampai) return { ok: false, alasan: "tanggal_awal_melewati_akhir" };
 
-  const perceraian = Boolean(KELOMPOK[kelompok]);
+  const perceraian = Object.prototype.hasOwnProperty.call(KELOMPOK, kelompok);
 
   let baris = [];
   try {
@@ -630,26 +859,36 @@ async function hitung(minta = {}) {
     // `.catch(() => [])`, dan satu kueri faktor yang keliru memulangkan daftar
     // kosong yang terbaca di layar sebagai "tidak ada faktor perceraian" -
     // kalimat yang salah, tanpa apa pun yang menyebutkan ada galat.
-    baris = await barisWilayah(kelompok, dari, sampai);
+    //
+    // SELURUH jenis (kelompok null): bulatan peta memilih golongannya sendiri
+    // di peramban. Daftar, faktor, dan kartu disaring di bawah ini.
+    baris = await barisWilayah(null, dari, sampai);
   } catch (e) {
     return { ok: false, alasan: "gagal_membaca_sipp", pesan: String((e && e.message) || e) };
   }
 
-  const daftarWilayah = kelompokkan(baris, tingkat, induk);
+  // Baris kelompok halaman - sama persis dengan yang dahulu disaring MySQL.
+  const barisKelompok = baris.filter((b) => cocokKelompok(b, kelompok));
+
+  const daftarWilayah = kelompokkan(barisKelompok, tingkat, induk);
   // Faktornya ikut baris yang sama - satu kueri, bukan dua. Kueri faktor
   // tersendiri dahulu menyusun ulang tabel turunan "satu pihak per perkara"
   // yang persis sama, dan itu saja 2,4 detik.
-  const daftarFaktor = perceraian ? kelompokkanFaktor(baris) : [];
+  const daftarFaktor = perceraian ? kelompokkanFaktor(barisKelompok) : [];
   // Titik peta dihitung dari BARIS YANG SAMA - bukan kueri kedua. Barisnya
   // sudah di tangan; mengelompokkannya sekali lagi berlangsung dalam hitungan
   // milidetik, sedangkan memintanya kembali ke MySQL berarti menyusun ulang
   // tabel turunan yang sama untuk ketiga kalinya.
+  //
+  // Titiknya dari SELURUH baris, bukan baris kelompok: tiap desa membawa
+  // hitungan per kelas jenis, dan layar yang memilih golongannya.
   const sebaranTitik = titikDesa(baris);
+  const sisaKecamatan = kecamatanTanpaDesa(baris);
 
   // Jangkauannya dihitung dari baris yang sama - tidak perlu kueri tersendiri.
-  const diputus = baris.length;
-  const beralamat = baris.filter((b) => String(b.kodeKecamatan || "").trim() !== "").length;
-  const larut = baris.filter((b) => b.namaKecamatan).length;
+  const diputus = barisKelompok.length;
+  const beralamat = barisKelompok.filter((b) => String(b.kodeKecamatan || "").trim() !== "").length;
+  const larut = barisKelompok.filter((b) => b.namaKecamatan).length;
   const terpetakan = daftarWilayah.reduce((n, x) => n + x.perkara, 0);
   const lelaki = daftarWilayah.reduce((n, x) => n + x.lelaki, 0);
   const perempuan = daftarWilayah.reduce((n, x) => n + x.perempuan, 0);
@@ -657,7 +896,7 @@ async function hitung(minta = {}) {
   // Jenis perkara yang sungguh muncul - dipakai layar menyusun penandanya
   // tanpa menebak dari kelompoknya.
   const jenisMuncul = {};
-  for (const b of baris) {
+  for (const b of barisKelompok) {
     const j = String(b.jenisPerkara || "");
     if (j) jenisMuncul[j] = (jenisMuncul[j] || 0) + 1;
   }
@@ -684,8 +923,17 @@ async function hitung(minta = {}) {
       "per kabupaten, disalin ke tiap desa di bawahnya. Titik peta karena itu diambil dari " +
       "OpenStreetMap dan dijodohkan lebih dahulu di luar portal; desa yang tidak berjodoh tidak " +
       "digambar, bukan digeser ke tempat terdekat.",
+    // Titik peta: SELURUH jenis pada rentang ini, tiap desa dengan hitungan
+    // per kelas (lihat titikDesa). `titikTanpaKode` pun seluruh jenis, dan
+    // dipecah per kelas supaya layar dapat menyebutnya per golongan.
+    titikSeluruhJenis: true,
+    kelasPeta: KELAS_PETA,
     titik: sebaranTitik.titik,
     titikTanpaKode: sebaranTitik.tanpaKode,
+    titikTanpaKodeKelas: sebaranTitik.tanpaKodeKelas,
+    // Per NAMA jenis - untuk bulatan jenis tunggal (telaah 2.40.0).
+    titikTanpaKodeJenis: sebaranTitik.tanpaKodeJenis,
+    kecamatanTanpaDesa: sisaKecamatan,
     ringkas: {
       diputus,
       beralamat,
@@ -705,6 +953,15 @@ module.exports = {
   TINGKAT,
   KELOMPOK,
   RUJUKAN,
+  // Golongan bulatan peta - dibaca lewat jenis_perkara_id.
+  KELAS_JENIS,
+  KELAS_PETA,
+  GOLONGAN_PETA,
+  kelasJenis,
+  golonganKelas,
+  saringGolongan,
+  cocokKelompok,
+  kecamatanTanpaDesa,
   rentangPeriode,
   saringJenis,
   daftarJenis,

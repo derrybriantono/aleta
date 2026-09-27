@@ -76,6 +76,10 @@ const PERKARA = {
   306: { nomor: "306/Pdt.G/2026/PA.Ctt", daftar: "2026-05-11", jenisId: 3, jenis: "Cerai Talak" },
   307: { nomor: "307/Pdt.G/2026/PA.Ctt", daftar: "2026-06-09", jenisId: 1, jenis: "Cerai Gugat" },
   308: { nomor: "308/Pdt.G/2026/PA.Ctt", daftar: "2026-07-01", jenisId: 1, jenis: "Cerai Gugat" },
+  // Majelis/petugas ikrar yang hanya tercatat di borang ikrar - lihat BORANG_IKRAR.
+  309: { nomor: "309/Pdt.G/2026/PA.Ctt", daftar: "2026-07-15", jenisId: 3, jenis: "Cerai Talak" },
+  310: { nomor: "310/Pdt.G/2026/PA.Ctt", daftar: "2026-07-16", jenisId: 3, jenis: "Cerai Talak" },
+  311: { nomor: "311/Pdt.G/2026/PA.Ctt", daftar: "2026-08-25", jenisId: 3, jenis: "Cerai Talak" },
 };
 const JENIS_PERKARA = { 1: "Cerai Gugat", 2: "Pengesahan Perkawinan/Istbat Nikah", 3: "Cerai Talak" };
 
@@ -97,6 +101,9 @@ const PUTUSAN = {
   306: { putus: "2026-06-10", bht: "2026-06-24", verstek: "T", statusId: 62 },
   307: { putus: "2026-07-20", bht: null, verstek: "T", statusId: 62 },
   308: { putus: "2026-08-10", bht: null, verstek: "T", statusId: 62 },
+  309: { putus: "2026-08-20", bht: "2026-09-03", verstek: "T", statusId: 62 },
+  310: { putus: "2026-08-25", bht: "2026-09-08", verstek: "T", statusId: 62 },
+  311: { putus: "2026-09-15", bht: null, verstek: "T", statusId: 62 },
 };
 
 const EFILING = new Set([101, 104, 105]);
@@ -116,6 +123,9 @@ const HAKIM_PN = {
   23: { kode: "", nama: "Hakim Dua Tiga", namaGelar: "Hakim Dua Tiga, S.H.", aktif: "Y" },
   24: { kode: "", nama: "Hakim Dua Empat", namaGelar: "Hakim Dua Empat, S.H.", aktif: "Y" },
   25: { kode: "", nama: "Hakim Dua Lima", namaGelar: "Hakim Dua Lima, S.H.", aktif: "Y" },
+  26: { kode: "", nama: "Hakim Dua Enam", namaGelar: "Hakim Dua Enam, S.H.", aktif: "Y" },
+  27: { kode: "", nama: "Hakim Dua Tujuh", namaGelar: "Hakim Dua Tujuh, S.H.", aktif: "Y" },
+  28: { kode: "", nama: "Hakim Dua Delapan", namaGelar: "Hakim Dua Delapan, S.H.", aktif: "Y" },
 };
 const PANITERA_PN = {
   5: { kode: "", nama: "Panitera Lima", namaGelar: "Panitera Lima, S.H.", aktif: "Y" },
@@ -224,6 +234,15 @@ const HAKIM_PERKARA = [
   // baris terakhir tiap kursi, yang tak bertanggal didahulukan.
   tunjuk(308, 24, { urutan: 1, jabatan: 1, aktif: "T", tidakAktif: "2026-08-25", penetapan: "2026-08-15" }),
   tunjuk(308, 23, { urutan: 1, jabatan: 1, aktif: "T", penetapan: "2026-08-25" }),
+
+  // 309 - seperti perkara_id 1, 4, 384 sipp_donggala: TANPA baris tahapan 18;
+  // majelis ikrarnya (27, 28) hanya tercatat di borang ikrar (BORANG_IKRAR).
+  tunjuk(309, 13, { urutan: 1, jabatan: 3, penetapan: "2026-07-20" }),
+
+  // 311 - 26 diganti 13 sebelum putusan, lalu menjadi hakim ikrar menurut
+  // borang - tanpa baris tahapan 18.
+  tunjuk(311, 26, { urutan: 1, jabatan: 3, aktif: "T", tidakAktif: "2026-09-05", penetapan: "2026-09-01" }),
+  tunjuk(311, 13, { urutan: 1, jabatan: 3, penetapan: "2026-09-05" }),
 ];
 const PANITERA_PERKARA = [
   tunjuk(101, 5),
@@ -250,6 +269,62 @@ const JURUSITA_PERKARA = [
   // SESUDAH putusan (seperti perkara_id 9143 sipp_donggala) dan masih aktif.
   tunjuk(305, 11, { aktif: "T", tidakAktif: "2026-06-05", penetapan: "2026-04-15" }),
   tunjuk(305, 12, { penetapan: "2026-06-05" }),
+];
+
+/**
+ * Borang penetapan ikrar talak (perkara_ikrar_talak), bentuk yang terukur di
+ * sipp_donggala: id ber-koma berurutan dengan nama pada teksnya. Menurut
+ * ikrarLengkap (majelisPemeriksaService), per peran: penunjukan aktif tahapan
+ * 18 bila ada, selainnya borang ini.
+ */
+const BORANG_IKRAR = [
+  // 309: tanpa tahapan 18 sama sekali - majelis, panitera, dan juru sita
+  // ikrarnya hanya di sini.
+  {
+    perkara: 309,
+    majelisId: "27,28",
+    majelisTeks: "Hakim Ketua: Hakim Dua Tujuh, S.H.</br>Hakim Anggota 1: Hakim Dua Delapan, S.H.",
+    paniteraId: "9",
+    paniteraTeks: "Panitera Pengganti: Panitera Sembilan, S.H.",
+    jurusitaId: "12",
+    jurusitaTeks: "Juru Sita Pengganti: Jurusita Dua Belas",
+  },
+  // 301: majelis ikrarnya TERCATAT di tahapan 18 (15, 16, 17) - borang yang
+  // menyebut 28 tidak dipakai untuk hakim. Paniteranya hanya di borang.
+  {
+    perkara: 301,
+    majelisId: "28,16,17",
+    majelisTeks: "Hakim Ketua: Hakim Dua Delapan</br>Hakim Anggota 1: Hakim Enam Belas</br>Hakim Anggota 2: Hakim Tujuh Belas",
+    paniteraId: "8",
+    paniteraTeks: "Panitera Pengganti: Panitera Delapan",
+    jurusitaId: null,
+    jurusitaTeks: null,
+  },
+  // 310: tiga id, dua nama - tidak dapat dipasangkan, tidak dikreditkan.
+  {
+    perkara: 310,
+    majelisId: "27,28,26",
+    majelisTeks: "Majelis Hakim : Hakim Dua Tujuh<br>Hakim Dua Delapan",
+    paniteraId: null,
+    paniteraTeks: null,
+    jurusitaId: null,
+    jurusitaTeks: null,
+  },
+  // 311: hakim tunggal ikrar 26 hanya di borang.
+  { perkara: 311, majelisId: "26", majelisTeks: "Hakim Tunggal: Hakim Dua Enam", paniteraId: null, paniteraTeks: null, jurusitaId: null, jurusitaTeks: null },
+  // 104: panitera (5) dan juru sita (9) ikrarnya TERCATAT di tahapan 18 -
+  // borang yang menyebut 7 dan 10 tidak dipakai.
+  {
+    perkara: 104,
+    majelisId: null,
+    majelisTeks: null,
+    paniteraId: "7",
+    paniteraTeks: "Panitera Pengganti: Panitera Tujuh",
+    jurusitaId: "10",
+    jurusitaTeks: "Jurusita: Jurusita Sepuluh",
+  },
+  // 302: borang dan tahapan 18 sama-sama menyebut 14 dan 16 - satu kedudukan.
+  { perkara: 302, majelisId: "14,16", majelisTeks: "Hakim Ketua: Hakim Empat Belas</br>Hakim Anggota 1: Hakim Enam Belas", paniteraId: null, paniteraTeks: null, jurusitaId: null, jurusitaTeks: null },
 ];
 
 const MEDIASI = [
@@ -329,6 +404,15 @@ function kolomBawaan() {
     perkara_hakim_pn: ["perkara_id", "hakim_id", "hakim_nama"],
     perkara_panitera_pn: ["perkara_id", "panitera_id"],
     perkara_jurusita: ["perkara_id", "jurusita_id"],
+    perkara_ikrar_talak: [
+      "perkara_id",
+      "majelis_hakim_id",
+      "majelis_hakim_text",
+      "panitera_pengganti_id",
+      "panitera_pengganti_text",
+      "jurusita_id",
+      "jurusita_text",
+    ],
     hakim_pn: ["id"],
     panitera_pn: ["id"],
     jurusita: ["id"],
@@ -449,6 +533,50 @@ function jawab(sql, params) {
   }
   if (/FROM perkara_putusan pu WHERE pu\.perkara_id IN \(SELECT x\.perkara_id FROM perkara_jurusita x WHERE x\.jurusita_id = \?\)/.test(teks)) {
     return putusanPenunjukan(JURUSITA_PERKARA);
+  }
+
+  // ---- borang ikrar yang memuat id seseorang (FIND_IN_SET atas daftar ber-koma) ----
+  const borangMemuat = (kunci) =>
+    BORANG_IKRAR.filter((b) =>
+      String(b[kunci] || "")
+        .split(",")
+        .map((x) => x.trim())
+        .includes(String(params[0]))
+    ).map((b) => ({ perkaraId: b.perkara }));
+  if (/FROM perkara_ikrar_talak t WHERE FIND_IN_SET\(\?, REPLACE\(t\.majelis_hakim_id, ' ', ''\)\) > 0/.test(teks)) {
+    return borangMemuat("majelisId");
+  }
+  if (/FROM perkara_ikrar_talak t WHERE FIND_IN_SET\(\?, REPLACE\(t\.panitera_pengganti_id, ' ', ''\)\) > 0/.test(teks)) {
+    return borangMemuat("paniteraId");
+  }
+  if (/FROM perkara_ikrar_talak t WHERE FIND_IN_SET\(\?, REPLACE\(t\.jurusita_id, ' ', ''\)\) > 0/.test(teks)) {
+    return borangMemuat("jurusitaId");
+  }
+
+  // ---- ikrarDariBorang: penunjukan tahapan 18 satu tabel, dan borangnya ----
+  //
+  // Kueri tahapan 18 dijawab dengan SELURUH baris tahapan 18 perkara itu,
+  // aktif maupun tidak - penyaringan aktifnya milik layanan (barisIkrar).
+  const dimintaPerkara = new Set(idDiminta(teks, params));
+  const barisIkrarTabel = (daftar) =>
+    daftar
+      .filter((x) => dimintaPerkara.has(x.perkara) && x.tahapan === 18)
+      .map((x) => ({ perkaraId: x.perkara, tahapan: x.tahapan, aktif: x.aktif, orang: x.orang }));
+  if (/FROM perkara_hakim_pn h WHERE h\.tahapan_id = 18 AND h\.perkara_id IN \(\?/.test(teks)) return barisIkrarTabel(HAKIM_PERKARA);
+  if (/FROM perkara_panitera_pn h WHERE h\.tahapan_id = 18 AND h\.perkara_id IN \(\?/.test(teks)) {
+    return barisIkrarTabel(PANITERA_PERKARA);
+  }
+  if (/FROM perkara_jurusita h WHERE h\.tahapan_id = 18 AND h\.perkara_id IN \(\?/.test(teks)) return barisIkrarTabel(JURUSITA_PERKARA);
+  if (/FROM perkara_ikrar_talak t WHERE t\.perkara_id IN \(\?/.test(teks)) {
+    return BORANG_IKRAR.filter((b) => dimintaPerkara.has(b.perkara)).map((b) => ({
+      perkaraId: b.perkara,
+      majelisId: b.majelisId,
+      majelisTeks: b.majelisTeks,
+      paniteraId: b.paniteraId,
+      paniteraTeks: b.paniteraTeks,
+      jurusitaId: b.jurusitaId,
+      jurusitaTeks: b.jurusitaTeks,
+    }));
   }
 
   // ---- bentuk kueri LAMA (sebelum perbaikan majelis ikrar) ----
@@ -993,6 +1121,97 @@ async function jalan() {
     const gagalPutus = await rekap({ peran: "hakim", id: "21" });
     periksa("tanggal putusan gagal dibaca: disebut di takTerbaca", gagalPutus.ok && gagalPutus.takTerbaca.some((x) => x.bagian === "tanggalPutusan"), gagalPutus.takTerbaca);
     periksa("tanggal putusan gagal dibaca: rincian perkaranya tetap terbaca", gagalPutus.perkaraTerbaca === true);
+  }
+
+  console.log("\n== Majelis dan petugas ikrar dari borang penetapan ikrar talak (perkara_ikrar_talak) ==");
+  {
+    // Aturan yang sama dengan Status Perkara dan eviden SKP (ikrarLengkap):
+    // per peran, penunjukan aktif tahapan 18 bila ada, selainnya borang ikrar.
+    // Terukur di sipp_donggala: 73 perkara bermajelis ikrar, 798 berpanitera
+    // ikrar, dan 829 berjuru sita ikrar yang hanya tercatat di borang.
+    siapkan();
+    const kd = (r) => Object.fromEntries(r.menurutPeran.map((x) => [x.kunci, x.jumlah]));
+    const kedudukanDi = (r, nomor) => {
+      const b = r.daftar.baris.find((x) => x.nomorPerkara.startsWith(nomor));
+      return b ? b.kedudukan.join() : "-";
+    };
+
+    const h27 = await rekap({ peran: "hakim", id: "27" });
+    periksa("309: ketua ikrar yang hanya tercatat di borang - kedudukan ikrar", kedudukanDi(h27, "309") === "ikrar", kd(h27));
+    periksa(
+      "hakim 27: ikrar dari borang tidak ikut ringkasan dan bukan 'pernah diganti'",
+      h27.ringkas.jumlah === 0 && h27.diganti === 0 && sama(kd(h27), { ikrar: 1 }),
+      [kd(h27), h27.ringkas.jumlah, h27.diganti]
+    );
+    periksa("310: borang yang ID-nya tidak dapat dipasangkan dengan nama tidak dikreditkan", kedudukanDi(h27, "310") === "-");
+
+    const h28 = await rekap({ peran: "hakim", id: "28" });
+    periksa(
+      "301: borang TIDAK dipakai bila penunjukan tahapan 18 mencatat majelis ikrar lain",
+      kedudukanDi(h28, "301") === "-" && sama(kd(h28), { ikrar: 1 }),
+      kd(h28)
+    );
+
+    const h26 = await rekap({ peran: "hakim", id: "26" });
+    periksa(
+      "311: hakim yang diganti sebelum putusan lalu menjadi hakim ikrar (borang) - ikrar, bukan 'pernah diganti'",
+      kedudukanDi(h26, "311") === "ikrar" && h26.diganti === 0 && h26.ringkas.jumlah === 0,
+      [kd(h26), h26.diganti]
+    );
+
+    const h14 = await rekap({ peran: "hakim", id: "14" });
+    periksa("302: ikrar dari penunjukan dan borang sekaligus tetap satu kedudukan", kedudukanDi(h14, "302") === "ketua,ikrar" && kd(h14).ikrar === 1, kd(h14));
+
+    const p8 = await rekap({ peran: "panitera", id: "8" });
+    periksa(
+      "panitera ikrar yang hanya tercatat di borang (301) - kedudukan tersendiri",
+      sama(kd(p8), { panitera: 1, paniteraIkrar: 1 }) && kedudukanDi(p8, "301") === "paniteraIkrar",
+      kd(p8)
+    );
+    periksa("panitera: ringkasan dan sidang tetap atas perkara pemeriksaan saja (305)", p8.ringkas.jumlah === 1 && p8.sidang.jumlah === 2, [p8.ringkas.jumlah, p8.sidang]);
+    const p9 = await rekap({ peran: "panitera", id: "9" });
+    periksa(
+      "panitera 9: ikrar 309 dari borang, tetap 1 diganti (305)",
+      sama(kd(p9), { paniteraIkrar: 1 }) && p9.diganti === 1 && p9.ringkas.jumlah === 0,
+      [kd(p9), p9.diganti]
+    );
+    const p7 = await rekap({ peran: "panitera", id: "7" });
+    periksa("104: borang tidak dipakai bila penunjukan tahapan 18 mencatat panitera ikrar lain", !kd(p7).paniteraIkrar && kd(p7).panitera === 2, kd(p7));
+
+    const j12 = await rekap({ peran: "jurusita", id: "12" });
+    periksa("juru sita ikrar yang hanya tercatat di borang (309); relaasnya tidak dihitung", sama(kd(j12), { jurusitaIkrar: 1 }) && j12.relaas.jumlah === 0, [kd(j12), j12.relaas]);
+    const j10 = await rekap({ peran: "jurusita", id: "10" });
+    periksa("104: borang tidak dipakai bila penunjukan tahapan 18 mencatat juru sita ikrar lain", !kd(j10).jurusitaIkrar && kd(j10).jurusita === 1, kd(j10));
+
+    periksa("keterangan dasar hitung menyebut borang perkara_ikrar_talak", /perkara_ikrar_talak/.test(h27.dasar.penugasan), h27.dasar.penugasan);
+    const kueriBorang = kueri.filter((k) => /FROM perkara_ikrar_talak t\s+WHERE FIND_IN_SET/.test(k.sql));
+    periksa(
+      "borang dicari lewat ID (FIND_IN_SET), tidak lewat nama",
+      kueriBorang.length > 0 && kueriBorang.every((k) => !/_text\s*(=|LIKE)/i.test(k.sql)),
+      kueriBorang.length
+    );
+
+    // Borang tak terbaca: DISEBUT, bukan diam-diam kembali ke penunjukan saja.
+    siapkan();
+    gagalkan = /FROM perkara_ikrar_talak t WHERE FIND_IN_SET/;
+    const gagalCari = await rekap({ peran: "hakim", id: "27" });
+    periksa("borang ikrar gagal dicari: disebut di takTerbaca", gagalCari.ok && gagalCari.takTerbaca.some((x) => x.bagian === "borangIkrar"), gagalCari.takTerbaca);
+    siapkan();
+    gagalkan = /FROM perkara_ikrar_talak t WHERE t\.perkara_id IN/;
+    const gagalBaca = await rekap({ peran: "hakim", id: "27" });
+    periksa("borang ikrar gagal dibaca: disebut di takTerbaca", gagalBaca.ok && gagalBaca.takTerbaca.some((x) => x.bagian === "borangIkrar"), gagalBaca.takTerbaca);
+
+    // SIPP tanpa tabel borang ikrar: tidak dicari, tidak disebut gagal.
+    siapkan((k) => {
+      delete k.perkara_ikrar_talak;
+    });
+    const tanpaBorang = await rekap({ peran: "hakim", id: "14" });
+    periksa(
+      "SIPP tanpa perkara_ikrar_talak: tidak ada kueri borang, tidak ada yang disebut gagal",
+      tanpaBorang.takTerbaca.length === 0 &&
+        !kueri.some((k) => /perkara_ikrar_talak/.test(k.sql) && !/information_schema/i.test(k.sql)),
+      tanpaBorang.takTerbaca
+    );
   }
 
   console.log("\n== Pembagian nol ==");

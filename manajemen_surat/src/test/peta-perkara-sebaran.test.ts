@@ -187,13 +187,23 @@ describe("titik peta - dikunci kode, dijodohkan di luar, dan yang kosong tidak d
     // desa yang tidak berjodoh di pusat kecamatannya membuat petanya terlihat
     // lengkap sambil memindahkan perkara ke desa yang bukan asalnya.
     expect(petaLayar).toContain("const pos = koordinat[t.kode];");
-    expect(petaLayar).toContain("if (pos) hasil.push({ t, pos });");
+    // Sejak golongan bulatan dapat dipilih, tiap titik membawa hitungan
+    // golongannya (`h`) - tetap HANYA desa yang punya koordinatnya sendiri.
+    expect(petaLayar).toContain("if (pos) hasil.push({ t, pos, h });");
     expect(petaLayar).toContain("takBerkoordinat");
     expect(petaLayar).toContain("tidak digeser ke desa terdekat");
   });
 
   it("jari-jari memakai AKAR jumlahnya - mata membaca luas, bukan jari-jari", () => {
-    expect(petaLayar).toContain("Math.sqrt(jml) / Math.sqrt(terbesar)");
+    // Rumusnya pindah ke lib/peta-perkara-ukur.ts dan skalanya kini diukur dari
+    // P95 data, bukan dari yang terbesar; perilakunya diuji sungguh-sungguh di
+    // peta-perkara-bulatan.test.ts. Yang dijaga di sini: layar memakai fungsi
+    // itu, dan rumus lama bertambahan 3 px (merusak kesebandingan luas) tidak
+    // kembali.
+    const ukur = baca("manajemen_surat/src/lib/peta-perkara-ukur.ts");
+    expect(ukur).toContain("skala.rAcuan * Math.sqrt(n / skala.nAcuan)");
+    expect(petaLayar).toContain("jariJariBulatan(jml, skala)");
+    expect(petaLayar).not.toContain("3 + bagian * 15");
   });
 
   it("digambar di kanvas, bukan ratusan simpul DOM", () => {
@@ -446,7 +456,8 @@ describe("lingkaran yang diketuk, dan pengelompokan per kecamatan", () => {
   it("daftar perkara satu desa dibaca saat diketuk, bukan ikut muatan peta", () => {
     // Sembilan ribu nomor perkara beserta tanggalnya berukuran ratusan
     // kilobita, dan yang dibuka orang paling banyak satu desa.
-    expect(kode).toContain("async function perkaraDesa(kelompok, kode, dari, sampai)");
+    // `golongan` - golongan bulatan yang diketuk - menggantikan kelompok bila dikenal.
+    expect(kode).toContain("async function perkaraDesa(kelompok, kode, dari, sampai, golongan)");
     expect(petaLayar).toContain("lingkar.on(\"click\", () => setDesaDibuka(milik));");
   });
 
@@ -745,8 +756,10 @@ describe("warna lapisan tidak boleh tertinggal di balik useCallback", () => {
     expect(petaLayar).toContain("const buatWarna = useCallback(");
     expect(petaLayar).toContain("function warnaLapisan(");
     // Keempat nama itu tidak boleh lagi dipeluk dari ruang lingkup luar.
+    // (Kebergantungannya kini [petaRelaasTampil] saja: warna lapisan "perkara"
+    // dibaca dari kelas jenis yang masuk lewat parameter - WARNA_KELAS tetap.)
     const iPabrik = petaLayar.indexOf("const buatWarna = useCallback(");
-    const iTutup = petaLayar.indexOf("[warnaJenis, petaRelaasTampil]", iPabrik);
+    const iTutup = petaLayar.indexOf("[petaRelaasTampil]", iPabrik);
     expect(iTutup).toBeGreaterThan(iPabrik);
     const badan = petaLayar.slice(iPabrik, iTutup);
     for (const nama of ["petaLapis", "jangkauLapis", "urutKategori"]) {

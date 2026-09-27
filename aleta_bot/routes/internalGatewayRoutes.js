@@ -79,6 +79,7 @@ const analisaLanjutService = require("../services/analisaLanjutService");
 const penilaianKonseptorService = require("../services/penilaianKonseptorService");
 const petaPerkaraService = require("../services/petaPerkaraService");
 const identitasPihakService = require("../services/identitasPihakService");
+const riwayatPihakService = require("../services/riwayatPihakService");
 const lapisanPetaService = require("../services/lapisanPetaService");
 const relaasMassalService = require("../services/relaasMassalService");
 const promptPutusanService = require("../services/promptPutusanService");
@@ -3360,6 +3361,20 @@ router.get("/sipp/identitas-pihak", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * Riwayat para pihak satu perkara - cerai berakta dan perkara lain orang yang
+ * sama (permintaan 27 September 2026).
+ *
+ * Alamatnya sendiri, dibaca hanya ketika bagian Para pihak dibuka - bukan ikut
+ * muatan Status Perkara. Aturan pengenalnya, ukurannya, dan indeks yang
+ * dipakainya ada di kepala riwayatPihakService. Status HTTP-nya dari
+ * jawabRute: masukan tidak sah 400, perkara tidak ada 404, galat SIPP 500.
+ */
+router.get("/sipp/riwayat-pihak", requireInternalToken, async (req, res) => {
+  const { status, body } = await riwayatPihakService.jawabRute(req.query || {});
+  res.status(status).json(body);
+});
+
+/**
  * Lapisan panggilan tidak bertemu per desa.
  *
  * Dihitung HANYA dari baris bersandi Y/T - sandi `ket_temu` berganti arti sejak
@@ -3399,7 +3414,9 @@ router.get("/sipp/peta-perkara/desa", requireInternalToken, async (req, res) => 
       String(req.query.kelompok || "perceraian"),
       String(req.query.kode || ""),
       dari,
-      sampai
+      sampai,
+      // Golongan bulatan yang diketuk - bila dikenal, ia menggantikan kelompok.
+      String(req.query.golongan || "")
     );
     res.status(hasil.ok ? 200 : 400).json({ ...hasil, rentang: { dari, sampai } });
   } catch (error) {
@@ -4354,6 +4371,32 @@ router.get("/sipp/rekap-petugas", requireInternalToken, async (req, res) => {
       kedudukan: String(req.query.kedudukan || ""),
       lewati: String(req.query.lewati || ""),
       batas: String(req.query.batas || ""),
+    });
+    res.status(hasil.ok ? 200 : hasil.status || 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Fakta eviden SKP satu petugas untuk satu periode (2.40.0) - bukti dukung
+ * SKP eKinerja yang diunduh dari halaman Rekap Hakim.
+ *
+ *   ?peran=hakim&id=31&tahun=2026&periode=tw2
+ *
+ * Seluruhnya FAKTA per perkara; memilih perkara per dokumen dan menghitung
+ * realisasinya dikerjakan portal (lib/eviden-skp-katalog.ts). Masukan yang
+ * tidak sah 400, id yang tidak dikenal 404, SIPP yang tidak terbaca 502 -
+ * masing-masing dengan kalimat yang diteruskan portal apa adanya.
+ */
+const evidenSkpService = require("../services/evidenSkpService");
+router.get("/sipp/eviden-skp", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await evidenSkpService.evidenSkp({
+      peran: String(req.query.peran || ""),
+      id: String(req.query.id || ""),
+      tahun: String(req.query.tahun || ""),
+      periode: String(req.query.periode || ""),
     });
     res.status(hasil.ok ? 200 : hasil.status || 400).json(hasil);
   } catch (error) {

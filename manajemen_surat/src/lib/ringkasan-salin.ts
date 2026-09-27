@@ -80,9 +80,25 @@ export type BahanRingkasanSalin = {
     sudahPutus?: boolean;
     sebabSelesai?: string;
   } | null;
-  majelis?: Array<{ nama: string; jabatan?: string }>;
-  panitera?: Array<{ nama: string }>;
-  jurusita?: Array<{ nama: string }>;
+  majelis?: Array<{ nama: string; jabatan?: string; keteranganTahapan?: string }>;
+  panitera?: Array<{ nama: string; keteranganTahapan?: string }>;
+  jurusita?: Array<{ nama: string; keteranganTahapan?: string }>;
+  /**
+   * Majelis ikrar talak, tersendiri dari majelis perkara. Dikirim bot sejak
+   * perbaikan majelis ikrar (27 September 2026); null = tidak ada ikrar.
+   */
+  ikrar?: {
+    majelis?: Array<{ nama: string; jabatan?: string }>;
+    panitera?: Array<{ nama: string }>;
+    jurusita?: Array<{ nama: string }>;
+  } | null;
+  /**
+   * "pemeriksa" bila majelis/panitera/jurusita di atas majelis PEMERIKSA.
+   * Bot lama tidak mengirimnya - dan isinya penunjukan aktif, yang pada
+   * perkara yang sudah ikrar justru majelis ikrar - jadi judulnya tidak
+   * menyebut "pemeriksa".
+   */
+  sumberMajelis?: string;
   pihak?: Array<{ nama: string; pihakKe: number | null; jenis: string }>;
   identitasPihak?: { adaKuasa?: boolean; adaKumulasi?: boolean; kumulasi?: string[] } | null;
   jadwal?: Array<{ tanggalSidang: string; jamSidang?: string; agenda?: string; ditunda?: boolean }>;
@@ -371,21 +387,49 @@ export function susunRingkasanSalin(
   }
 
   // ---- majelis dan petugas -------------------------------------------------
+  //
+  // Majelis PEMERIKSA dulu, lalu - bila ada - majelis ikrar talak sebagai
+  // kelompok tersendiri. Pesan yang diteruskan tanpa pemisah itu mengulang
+  // kekeliruan layar lama: ketua ikrar terbaca ketua majelis perkaranya.
   {
-    const baris: string[] = [];
-    for (const hakim of bahan.majelis ?? []) {
-      const n = bersih(hakim?.nama);
-      if (n) baris.push(`${bersih(hakim.jabatan) || "Hakim"}: ${n}`);
+    const akhiran = (x: { keteranganTahapan?: string } | null | undefined) =>
+      bersih(x?.keteranganTahapan) ? ` (${bersih(x?.keteranganTahapan)})` : "";
+    const barisPetugas = (
+      majelis: Array<{ nama: string; jabatan?: string; keteranganTahapan?: string }>,
+      panitera: Array<{ nama: string; keteranganTahapan?: string }>,
+      jurusita: Array<{ nama: string; keteranganTahapan?: string }>,
+      sebutanPanitera: string
+    ) => {
+      const baris: string[] = [];
+      for (const hakim of majelis) {
+        const n = bersih(hakim?.nama);
+        if (n) baris.push(`${bersih(hakim.jabatan) || "Hakim"}: ${n}${akhiran(hakim)}`);
+      }
+      for (const orang of panitera) {
+        const n = bersih(orang?.nama);
+        if (n) baris.push(`${sebutanPanitera}: ${n}${akhiran(orang)}`);
+      }
+      for (const orang of jurusita) {
+        const n = bersih(orang?.nama);
+        if (n) baris.push(`Jurusita: ${n}${akhiran(orang)}`);
+      }
+      return baris;
+    };
+    kelompok.push({
+      judul: bahan.sumberMajelis === "pemeriksa" ? "MAJELIS PEMERIKSA DAN PETUGAS" : "MAJELIS DAN PETUGAS",
+      baris: barisPetugas(bahan.majelis ?? [], bahan.panitera ?? [], bahan.jurusita ?? [], "Panitera Pengganti"),
+    });
+    if (bahan.ikrar) {
+      kelompok.push({
+        judul: "MAJELIS IKRAR TALAK",
+        baris: barisPetugas(
+          bahan.ikrar.majelis ?? [],
+          bahan.ikrar.panitera ?? [],
+          bahan.ikrar.jurusita ?? [],
+          "Panitera Sidang"
+        ),
+      });
     }
-    for (const orang of bahan.panitera ?? []) {
-      const n = bersih(orang?.nama);
-      if (n) baris.push(`Panitera Pengganti: ${n}`);
-    }
-    for (const orang of bahan.jurusita ?? []) {
-      const n = bersih(orang?.nama);
-      if (n) baris.push(`Jurusita: ${n}`);
-    }
-    kelompok.push({ judul: "MAJELIS DAN PETUGAS", baris });
   }
 
   // ---- keadaan -------------------------------------------------------------

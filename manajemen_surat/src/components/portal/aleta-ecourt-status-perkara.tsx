@@ -45,6 +45,11 @@ import {
   KartuIdentitasPihak,
   useIdentitasPihak,
 } from "@/components/portal/identitas-pihak";
+import {
+  PenandaRiwayatPihak,
+  PenyediaRiwayatPihak,
+  bolehBertanda,
+} from "@/components/portal/riwayat-pihak";
 import { usePortal } from "@/lib/app-state";
 import { AMBANG_HARI_SEMA, ringkasStatus } from "@/lib/ringkas-status";
 import {
@@ -66,7 +71,7 @@ import {
 } from "@/lib/tag-perkara";
 import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
 import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
-import { DaftarMajelisPetugas, NamaMediatorTertaut } from "@/components/portal/tautan-petugas";
+import { DaftarMajelisPetugas, NamaMediatorTertaut, type MajelisIkrar } from "@/components/portal/tautan-petugas";
 import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { apiPath, withBasePath } from "@/lib/base-path";
@@ -417,9 +422,34 @@ export type Status = {
   // id = hakim_id / panitera_id / jurusita_id SIPP - kunci rekap orangnya.
   // Boleh tidak ada: bot versi lama belum mengirimnya, dan namanya lalu tampil
   // sebagai teks biasa, bukan tautan.
-  majelis: Array<{ id?: number | null; kode: string; nama: string; jabatan: string }>;
-  panitera: Array<{ id?: number | null; kode: string; nama: string }>;
-  jurusita: Array<{ id?: number | null; kode: string; nama: string }>;
+  //
+  // Sejak perbaikan majelis ikrar (27 September 2026) ketiganya = PEMERIKSA
+  // (majelisPemeriksaService di bot): yang menjabat pada hari putusan, bukan
+  // yang aktif sekarang. keteranganTahapan terisi untuk penunjukan verzet,
+  // banding, dan seterusnya.
+  majelis: Array<{
+    id?: number | null;
+    kode: string;
+    nama: string;
+    jabatan: string;
+    kedudukan?: string;
+    tahapanId?: number | null;
+    keteranganTahapan?: string;
+  }>;
+  panitera: Array<{ id?: number | null; kode: string; nama: string; tahapanId?: number | null; keteranganTahapan?: string }>;
+  jurusita: Array<{ id?: number | null; kode: string; nama: string; tahapanId?: number | null; keteranganTahapan?: string }>;
+  /**
+   * Majelis ikrar talak - blok tersendiri, bukan majelis perkara. Per peran
+   * dari penunjukan aktif tahapan 18 atau, bila tabel penunjukan tidak
+   * mencatatnya, dari borang penetapan ikrar (sumber "penetapanIkrar").
+   * null = tidak ada ikrar; tidak ada = bot versi lama.
+   */
+  ikrar?: MajelisIkrar | null;
+  /**
+   * "pemeriksa"; "aktif" bila bot jatuh ke penunjukan aktif; "tidakTerbaca"
+   * bila penunjukan tidak terbaca sama sekali. Tidak ada = bot lama.
+   */
+  sumberMajelis?: string;
   saksi: { ada: boolean; jumlahSaksi: number; jumlahKeterangan: number };
   pihak: Array<{ nama: string; pihakKe: number | null; jenis: string; adaNomor: boolean; nomorSamar: string }>;
   identitasPihak: {
@@ -1044,6 +1074,35 @@ function ringkasPihak(pihak: Array<{ jenis: string; adaNomor: boolean }>) {
     `${pihak.length} pihak - ${rincian}` +
     (tanpaNomor > 0 ? `; ${tanpaNomor} tanpa nomor di SIPP` : "") +
     ". Terciut sebagai bawaan - nama pihak adalah data pribadi."
+  );
+}
+
+/**
+ * Teks SIPP berpemisah HTML menjadi baris-baris bersih.
+ *
+ * Borang ikrar talak menyimpan majelisnya sebagai "Hakim Ketua: Ulfah,
+ * S.Ag., M.H.</br>Hakim Anggota 1: ..." - bentuk </br> (garis miring di
+ * depan), yang tidak dikenali pemecah <br/> milik mediator. React menulis
+ * teks apa adanya, jadi dulu tanda "</br>" tercetak di bagian Ikrar talak.
+ * Tanda lain dibuang, tidak dirender.
+ */
+export function barisTeksSipp(teks: unknown): string[] {
+  return String(teks ?? "")
+    .split(/<\s*\/?\s*br\s*\/?\s*>|\r?\n/i)
+    .map((x) => x.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+/** Isi teks SIPP berpemisah sebagai baris-baris blok di dalam satu <dd>. */
+function TeksBerbaris({ teks }: { teks: string }) {
+  return (
+    <dd className="text-sm text-muted-foreground">
+      {barisTeksSipp(teks).map((baris, urutan) => (
+        <span key={`${urutan}-${baris}`} className="block">
+          {baris}
+        </span>
+      ))}
+    </dd>
   );
 }
 
@@ -3043,11 +3102,15 @@ function IsiStatus({
       <div className="grid gap-3 lg:grid-cols-2">
         <Bagian judul="Majelis dan petugas" kunci="majelis">
           {/* Tiap nama membuka rekap orangnya di tab baru, lewat ID SIPP -
-              lihat tautan-petugas.tsx (butir 9 permintaan 27 September 2026). */}
+              lihat tautan-petugas.tsx (butir 9 permintaan 27 September 2026).
+              Majelis PEMERIKSA, lalu majelis ikrar talak sebagai blok
+              tersendiri - bukan majelis ikrar yang menggantikan pemeriksa. */}
           <DaftarMajelisPetugas
             majelis={status.majelis}
             panitera={status.panitera}
             jurusita={status.jurusita}
+            ikrar={status.ikrar}
+            sumberMajelis={status.sumberMajelis}
           />
         </Bagian>
 
@@ -3108,10 +3171,18 @@ function IsiStatus({
             Lihat sebaran perkara sejenis pada Peta Perkara
           </a>
 
+          {/* Riwayat para pihak (cerai berakta, perkara terkait) dibaca oleh
+              PenyediaRiwayatPihak. Isi bagian ini baru digambar ketika
+              bagiannya dibuka, jadi pembacaannya pun baru berjalan saat itu -
+              muatan Status Perkara tidak bertambah satu kueri pun. */}
           {status.pihak.length === 0 ? (
             <p className="text-sm text-muted-foreground">Pihak belum tercatat.</p>
           ) : (
-            (() => {
+            <PenyediaRiwayatPihak
+              perkaraId={status.identitas.perkaraId}
+              nomorPerkara={status.identitas.nomorPerkara}
+            >
+            {(() => {
               /**
                * Sisi yang mengajukan tiap saksi, dari perkara_pihak5 lewat
                * saksiRinci. Daftar pihak sendiri TIDAK menyimpannya - di sana
@@ -3175,6 +3246,12 @@ function IsiStatus({
                       {orang.nama}
                     </button>
                     <span className="text-xs text-muted-foreground">{keteranganNomor}</span>
+                    {/* Penanda cerai berulang dan perkara terkait - HANYA
+                        pihak pertama/kedua. Kuasa dan saksi bukan pihak yang
+                        riwayat perkawinannya ditanyakan (riwayat-pihak.tsx). */}
+                    {bolehBertanda(orang) ? (
+                      <PenandaRiwayatPihak nama={orang.nama} pihakKe={orang.pihakKe} />
+                    ) : null}
                     {terbuka ? (
                       <KartuIdentitasPihak
                         orang={identitas.cari(orang.nama)}
@@ -3249,7 +3326,8 @@ function IsiStatus({
                   />
                 </div>
               );
-            })()
+            })()}
+            </PenyediaRiwayatPihak>
           )}
         </Bagian>
       </div>
@@ -4120,23 +4198,19 @@ function IsiStatus({
             <div>
               <dt className="text-xs text-muted-foreground">Penetapan majelis hakim</dt>
               <dd className="font-medium">{status.ikrarTalak.penetapanMajelis || "—"}</dd>
-              {status.ikrarTalak.majelis ? (
-                <dd className="text-sm text-muted-foreground">{status.ikrarTalak.majelis}</dd>
-              ) : null}
+              {/* Teks borang SIPP berpemisah </br> - dipecah per baris, bukan
+                  ditulis mentah (lihat barisTeksSipp). */}
+              {status.ikrarTalak.majelis ? <TeksBerbaris teks={status.ikrarTalak.majelis} /> : null}
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Penunjukan panitera pengganti</dt>
               <dd className="font-medium">{status.ikrarTalak.penetapanPp || "—"}</dd>
-              {status.ikrarTalak.panitera ? (
-                <dd className="text-sm text-muted-foreground">{status.ikrarTalak.panitera}</dd>
-              ) : null}
+              {status.ikrarTalak.panitera ? <TeksBerbaris teks={status.ikrarTalak.panitera} /> : null}
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Penunjukan juru sita</dt>
               <dd className="font-medium">{status.ikrarTalak.penetapanJs || "—"}</dd>
-              {status.ikrarTalak.jurusita ? (
-                <dd className="text-sm text-muted-foreground">{status.ikrarTalak.jurusita}</dd>
-              ) : null}
+              {status.ikrarTalak.jurusita ? <TeksBerbaris teks={status.ikrarTalak.jurusita} /> : null}
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Penetapan sidang ikrar talak</dt>

@@ -563,10 +563,16 @@ export async function GET(request: NextRequest) {
         ["nama", "pihak_ke", "jenis", "ada_nomor", "nomor_samar"],
         larik(s.pihak).map((x) => [x.nama, x.pihakKe, x.jenis, ya(x.adaNomor), x.nomorSamar])
       );
+      // Majelis, panitera, dan juru sita PEMERIKSA (bot sejak perbaikan
+      // majelis ikrar), lalu majelis ikrar talak sebagai peran tersendiri -
+      // bukan pengganti majelis perkara. Bot lama tidak mengirim `ikrar`.
       tulisCsv("03 majelis-dan-petugas.csv", ["peran", "kode", "nama", "jabatan"], [
         ...larik(s.majelis).map((x) => ["majelis", x.kode, x.nama, x.jabatan]),
         ...larik(s.panitera).map((x) => ["panitera pengganti", x.kode, x.nama, ""]),
         ...larik(s.jurusita).map((x) => ["juru sita", x.kode, x.nama, ""]),
+        ...larik(s.ikrar?.majelis).map((x) => ["majelis ikrar talak", x.kode, x.nama, x.jabatan]),
+        ...larik(s.ikrar?.panitera).map((x) => ["panitera sidang ikrar talak", x.kode, x.nama, ""]),
+        ...larik(s.ikrar?.jurusita).map((x) => ["juru sita ikrar talak", x.kode, x.nama, ""]),
       ]);
       tulisCsv(
         "04 tahapan.csv",

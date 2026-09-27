@@ -45,6 +45,9 @@ const analisaPerkaraService = require("./analisaPerkaraService");
 const penilaianSippService = require("./penilaianSippService");
 const sippTahapanService = require("./sippTahapanService");
 const putusanEcourtService = require("./putusanEcourtService");
+// Majelis PEMERIKSA dan majelis ikrar talak - satu sumber aturan dengan rekap
+// petugas dan eviden SKP. Lihat petugasStatusPerkara di bawah.
+const majelisPemeriksaService = require("./majelisPemeriksaService");
 // Sebutan para pihak punya SATU sumber - kembaran lib/sebutan-pihak.ts yang
 // dijaga uji pembanding. Tidak ada pola sebutan baru yang ditulis di sini.
 const sebutanPihakService = require("./sebutanPihakService");
@@ -2493,6 +2496,94 @@ function faktaPenilaianSk({ identitas, putusan, jadwal, relaas, saksi, sidangLew
 
   return fakta;
 }
+
+/**
+ * ============================================================================
+ * MAJELIS DAN PETUGAS - PEMERIKSA, BUKAN YANG AKTIF SEKARANG
+ * ============================================================================
+ *
+ * Dulu bagian ini meneruskan majelis Jadwal Sidang (majelisPerkara) - baris
+ * penunjukan yang AKTIF. SIPP menonaktifkan majelis pemeriksaan begitu majelis
+ * ikrar talak ditetapkan, jadi pada perkara cerai talak yang sudah ikrar
+ * layar ini menulis majelis IKRAR sebagai majelis perkara: perkara_id 385
+ * tertulis diketuai Ulfah (ketua ikrar), padahal yang memeriksa dan memutus
+ * Muh. Arasy Latif. Pada data lama yang seluruh barisnya T (perkara_id 1, 4,
+ * 384) layar bahkan menulis "Majelis belum ditetapkan".
+ *
+ * Sekarang majelis, panitera, dan juru sita = PEMERIKSA menurut
+ * majelisPemeriksaService - aturan yang sama dengan rekap petugas - dan
+ * majelis ikrar talak disebut tersendiri (`ikrar`), per peran dari penunjukan
+ * tahapan 18 atau, bila tabel penunjukan tidak mencatatnya, dari borang ikrar
+ * (ikrarLengkap). Majelis Jadwal Sidang TIDAK diubah: sidang ikrar memang
+ * harus menampilkan majelis ikrar yang aktif.
+ *
+ * Bentuk tiap orang sama dengan sebelumnya ({ id, kode, nama, jabatan }) -
+ * ringkasan salin, unduh lengkap, banding, dan rubrik membacanya apa adanya -
+ * ditambah kedudukan, tahapanId, keterangan tahapan (verzet, banding, ...),
+ * dan untuk ikrar `sumber`.
+ *
+ * Bila modul bersama gagal dibaca, yang tampil penunjukan AKTIF milik Jadwal
+ * Sidang, dan itu DISEBUT lewat sumberMajelis "aktif" - layar tidak
+ * menamainya majelis pemeriksa. Bila keduanya gagal: "tidakTerbaca".
+ */
+const SEBUTAN_TAHAPAN_PENUNJUKAN = Object.freeze({
+  16: "verzet",
+  20: "banding",
+  30: "kasasi",
+  40: "peninjauan kembali",
+});
+
+function keteranganTahapanPenunjukan(tahapanId) {
+  const t = Number(tahapanId);
+  if (!Number.isFinite(t) || t === majelisPemeriksaService.TAHAPAN_PEMERIKSAAN) return "";
+  if (t === majelisPemeriksaService.TAHAPAN_IKRAR) return "";
+  return SEBUTAN_TAHAPAN_PENUNJUKAN[t] || `tahapan ${t}`;
+}
+
+function petugasStatusPerkara(entri, cadangan) {
+  if (!entri || !entri.pemeriksa) {
+    // Keduanya membaca tabel penunjukan yang sama, jadi yang lazim gagal
+    // bersama - dan daftar kosong itu "tidak terbaca", bukan "belum ditetapkan".
+    if (!cadangan) return { majelis: [], panitera: [], jurusita: [], ikrar: null, sumberMajelis: "tidakTerbaca" };
+    return {
+      majelis: Array.isArray(cadangan.majelis) ? cadangan.majelis : [],
+      panitera: Array.isArray(cadangan.panitera) ? cadangan.panitera : [],
+      jurusita: Array.isArray(cadangan.jurusita) ? cadangan.jurusita : [],
+      ikrar: null,
+      sumberMajelis: "aktif",
+    };
+  }
+  const tambahan = (x) => {
+    const lain = { tahapanId: x.tahapanId || null, keteranganTahapan: keteranganTahapanPenunjukan(x.tahapanId) };
+    if (x.sumber) lain.sumber = x.sumber;
+    return lain;
+  };
+  const hakim = (x) => ({
+    id: x.hakimId || null,
+    kode: x.kode || "",
+    nama: x.nama,
+    jabatan: x.kedudukan,
+    kedudukan: x.kedudukan,
+    ...tambahan(x),
+  });
+  const panitera = (x) => ({ id: x.paniteraId || null, kode: x.kode || "", nama: x.nama, ...tambahan(x) });
+  const jurusita = (x) => ({ id: x.jurusitaId || null, kode: x.kode || "", nama: x.nama, ...tambahan(x) });
+  const ikrar = majelisPemeriksaService.ikrarLengkap(entri);
+  return {
+    majelis: entri.pemeriksa.hakim.map(hakim),
+    panitera: entri.pemeriksa.panitera.map(panitera),
+    jurusita: entri.pemeriksa.jurusita.map(jurusita),
+    ikrar: ikrar
+      ? {
+          majelis: ikrar.hakim.map(hakim),
+          panitera: ikrar.panitera.map(panitera),
+          jurusita: ikrar.jurusita.map(jurusita),
+        }
+      : null,
+    sumberMajelis: "pemeriksa",
+  };
+}
+
 /**
  * Seluruh keadaan satu perkara, dari pendaftaran sampai produk pengadilan.
  *
@@ -2530,14 +2621,20 @@ async function statusLengkap(nomorPerkaraMentah) {
   // Tahapan dan tabel pendukungnya dibaca bersamaan dengan yang lain. Tiap
   // bagian gagal sendiri-sendiri: SIPP versi lama yang tidak punya tabel
   // pemberitahuan tidak boleh mengosongkan seluruh layar.
-  const [rincian, biaya, penundaan, panggilanEcourt, dokumen, konteks] = await Promise.all([
+  const [rincian, biaya, penundaan, panggilanEcourt, dokumen, konteks, penunjukan] = await Promise.all([
     aman(() => sippJadwalSidangService.rincianSidang(nomorPerkara, 0), null),
     aman(() => biayaPerkara(identitas.perkaraId), { panjar: 0, terpakai: 0, sisa: 0 }),
     aman(() => riwayatPenundaan(identitas.perkaraId), []),
     aman(() => ecourtStoreService.bacaPanggilanPerkara(nomorPerkara), { pihak: [], panggilan: [] }),
     aman(() => ecourtStoreService.rincianArsipPerkara(nomorPerkara), { dokumen: [] }),
     aman(() => sippKonteksService.getKonteks(nomorPerkara), null),
+    // Majelis PEMERIKSA dan ikrar talak - bukan majelis aktif Jadwal Sidang.
+    aman(() => majelisPemeriksaService.penunjukanPerkaraBanyak([identitas.perkaraId]), null),
   ]);
+  const petugas = petugasStatusPerkara(
+    penunjukan instanceof Map ? penunjukan.get(String(identitas.perkaraId)) : null,
+    rincian && rincian.ok ? rincian : null
+  );
 
   const [
     tahapan,
@@ -2792,8 +2889,11 @@ async function statusLengkap(nomorPerkaraMentah) {
     // di layar. hariBerjalan tetap dikirim untuk keterangannya.
     hariBersih,
     sudahPutus: Boolean(putusan && putusan.sudahPutus),
-    majelis: rincian && rincian.ok ? rincian.majelis : [],
-    panitera: rincian && rincian.ok ? rincian.panitera : [],
+    // Daftar yang SAMA dengan yang tampil di layar - bila rubrik membaca
+    // penunjukan aktif, perkara lama yang seluruh barisnya T dinilai "majelis
+    // belum ditetapkan" sementara layarnya menyebut majelisnya.
+    majelis: petugas.majelis,
+    panitera: petugas.panitera,
     pihak: nomorPihak,
     nomorPihakBermasalah: nomorPihak.filter(
       (n) => !n.adaNomor || n.statusVerifikasi === "ditolak" || n.statusVerifikasi === "menunggu"
@@ -2866,9 +2966,15 @@ async function statusLengkap(nomorPerkaraMentah) {
       // layar memuat dua umur yang berbeda untuk perkara yang sama.
       bulanBerjalan: hariBersih === null ? null : Math.round((hariBersih / 30) * 10) / 10,
     },
-    majelis: rincian && rincian.ok ? rincian.majelis : [],
-    panitera: rincian && rincian.ok ? rincian.panitera : [],
-    jurusita: rincian && rincian.ok ? rincian.jurusita : [],
+    // Majelis, panitera, dan juru sita PEMERIKSA; majelis ikrar talak di
+    // `ikrar` - lihat petugasStatusPerkara. sumberMajelis "aktif" bila modul
+    // bersama gagal dibaca dan yang tampil penunjukan aktif Jadwal Sidang,
+    // "tidakTerbaca" bila keduanya gagal.
+    majelis: petugas.majelis,
+    panitera: petugas.panitera,
+    jurusita: petugas.jurusita,
+    ikrar: petugas.ikrar,
+    sumberMajelis: petugas.sumberMajelis,
     saksi: rincian && rincian.ok ? rincian.saksi : { ada: false, jumlahSaksi: 0, jumlahKeterangan: 0 },
     pihak: nomorPihak,
     identitasPihak: konteks && konteks.ok ? konteks.identitas : null,
@@ -2977,6 +3083,8 @@ module.exports = {
   pesanGalatPencarian,
   identitasPerkara,
   isoTanggal,
+  // Dibuka untuk uji muatan "Majelis dan petugas" tanpa basis data.
+  petugasStatusPerkara,
   riwayatPenundaan,
   selisihHari,
   statusLengkap,

@@ -73,13 +73,25 @@ function crc32(isi: Buffer): number {
 const WAKTU_DOS = 0; // 00:00:00
 const TANGGAL_DOS = ((2026 - 1980) << 9) | (1 << 5) | 1; // 1 Januari 2026
 
+/**
+ * Penanda "nama dalam UTF-8" (bit 11) - hanya untuk nama ber-huruf non-ASCII.
+ *
+ * Tanpa penanda ini pembuka ZIP membaca nama sebagai sandi DOS lama (CP437),
+ * dan nama hakim seperti "Ma’ruf" di dalam arsip eviden SKP muncul sebagai
+ * "MaΓÇÖruf". Nama ASCII sengaja TIDAK diberi penanda: arsip ekstensi yang
+ * sudah beredar tetap sama byte demi byte.
+ */
+function penandaNama(nama: Buffer): number {
+  return nama.some((bita) => bita > 0x7f) ? 0x0800 : 0;
+}
+
 function kepalaLokal(berkas: BerkasZip, crc: number): Buffer {
   const nama = Buffer.from(berkas.nama, "utf8");
   const kepala = Buffer.alloc(30);
 
   kepala.writeUInt32LE(0x04034b50, 0); // tanda kepala lokal
   kepala.writeUInt16LE(20, 4); // versi minimal
-  kepala.writeUInt16LE(0, 6); // tanpa penanda khusus
+  kepala.writeUInt16LE(penandaNama(nama), 6); // UTF-8 bila perlu
   kepala.writeUInt16LE(0, 8); // metode: simpan apa adanya
   kepala.writeUInt16LE(WAKTU_DOS, 10);
   kepala.writeUInt16LE(TANGGAL_DOS, 12);
@@ -99,7 +111,7 @@ function kepalaDaftarIsi(berkas: BerkasZip, crc: number, posisi: number): Buffer
   kepala.writeUInt32LE(0x02014b50, 0); // tanda daftar isi
   kepala.writeUInt16LE(20, 4); // dibuat oleh versi
   kepala.writeUInt16LE(20, 6); // versi minimal
-  kepala.writeUInt16LE(0, 8);
+  kepala.writeUInt16LE(penandaNama(nama), 8); // UTF-8 bila perlu
   kepala.writeUInt16LE(0, 10); // metode: simpan apa adanya
   kepala.writeUInt16LE(WAKTU_DOS, 12);
   kepala.writeUInt16LE(TANGGAL_DOS, 14);

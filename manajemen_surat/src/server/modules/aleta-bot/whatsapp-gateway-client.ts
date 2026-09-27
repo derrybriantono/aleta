@@ -16,6 +16,7 @@ export type CaraRelaas = {
 };
 
 import type { AletaBotSnapshot, AletaBotDeadLetter, AletaBotWorkerState } from "@/lib/aleta-bot-types";
+import type { DataEvidenSkp, KunciPeriodeSkp, PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
 import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
 import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
@@ -136,7 +137,22 @@ type GatewayOptions = RequestInit & {
 
 export type GatewayResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: string };
+  | {
+      ok: false;
+      error: string;
+      /**
+       * Status HTTP jawaban bot, bila bot SEMPAT menjawab. Tidak ada = bot
+       * tidak terjangkau (koneksi ditolak, habis waktu, galat jaringan).
+       */
+      status?: number;
+      /**
+       * `kode` dari badan JSON penolakan bot (mis. "perkara_tidak_ada") - hanya
+       * ada bila bot menolak dengan JSON. Halaman HTML 404 (rute belum ada di
+       * bot versi lama) tidak membawanya. Pemanggil yang perlu membedakan
+       * "ditolak" dari "tidak terjangkau" membaca ini, bukan teks galatnya.
+       */
+      kode?: string;
+    };
 
 async function gatewayFetch<T>(
   path: string,
@@ -178,6 +194,8 @@ async function gatewayFetch<T>(
       const jalurBersih = path.split("?")[0];
       return {
         ok: false,
+        // Tanpa `kode`: yang menjawab bukan rute bot yang dituju.
+        status: response.status,
         error:
           `aleta_bot menjawab dengan ${response.status === 404 ? "halaman 404" : `HTTP ${response.status}`}, ` +
           `bukan data pada ${jalurBersih}.` +
@@ -204,6 +222,11 @@ async function gatewayFetch<T>(
         // hanyalah "HTTP 400": tidak menjelaskan apa pun, dan tidak dapat
         // ditindaklanjuti. Sebabnya sudah dikirim bot, hanya tidak diambil.
         error: String(json.error ?? json.message ?? json.alasan ?? `HTTP ${response.status}`),
+        // Status dan kode penolakan ikut dipulangkan. Tanpa keduanya, "perkara
+        // tidak ada" (bot sehat, menolak) tidak dapat dibedakan pemanggil dari
+        // "bot tidak dapat dihubungi" - dan petugas memeriksa bot yang sehat.
+        status: response.status,
+        ...(typeof json.kode === "string" && json.kode ? { kode: json.kode } : {}),
       };
     }
 
@@ -224,7 +247,10 @@ async function gatewayFetch<T>(
     if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
       return {
         ok: false,
-        error: `aleta_bot tidak merespons dalam ${getGatewayTimeoutMs()}ms. Periksa status layanan.`,
+        // Batas yang SUNGGUH dipakai pemanggilan ini - bukan batas bawaan.
+        // Dulu selalu menyebut bawaan (8000 ms), padahal penilaian menunggu 60
+        // detik dan riwayat pihak 20 detik: angka di layar tidak pernah terjadi.
+        error: `aleta_bot tidak merespons dalam ${batas}ms. Periksa status layanan.`,
       };
     }
 
@@ -1963,6 +1989,29 @@ export async function getGatewayRekapPetugas(
 }
 
 /**
+ * Fakta eviden SKP satu petugas untuk satu periode - lihat
+ * aleta_bot/services/evidenSkpService.js dan src/lib/eviden-skp-tipe.ts.
+ *
+ * Batas waktu penilaian (60 detik), bukan bawaan delapan detik. Terukur atas
+ * sipp_donggala lokal (buffer InnoDB 16 MB) 27 September 2026, hakim_id 31:
+ * hitungan pertama Triwulan I 2,2-9 detik (242 perkara), Triwulan II 1,7-7
+ * detik (329), Tahun 2026 2,3-8 detik (715) - lebarnya menurut sibuknya mesin.
+ * Hitungan berikutnya dalam dua menit dari singgahan bot, seketika: menu
+ * unduhan membaca daftar dokumen lalu tiap format diunduh terpisah.
+ */
+export async function getGatewayEvidenSkp(p: {
+  peran: PeranEvidenSkp;
+  id: string;
+  tahun: number;
+  periode: KunciPeriodeSkp;
+}): Promise<GatewayResult<DataEvidenSkp>> {
+  const kueri = new URLSearchParams({ peran: p.peran, id: String(p.id), tahun: String(p.tahun), periode: p.periode });
+  return gatewayFetch(`/internal/aleta-bot/sipp/eviden-skp?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
+/**
  * Jalur halaman satu perkara di SIPP - "perkara_detil_agama/<enc>" - untuk
  * tombol "Buka SIPP" dan "Salin tautan" di Status Perkara.
  *
@@ -2419,6 +2468,26 @@ export async function getGatewayIdentitasPihak(
 }
 
 /**
+ * Riwayat para pihak satu perkara - cerai berakta dan perkara lain orang yang
+ * sama. Dibaca hanya ketika bagian Para pihak di Status Perkara dibuka.
+ *
+ * Batas 20 detik, bukan bawaan 8: pencarian NIK memindai tabel `pihak` yang
+ * kolom NIK-nya tidak berindeks. Terukur 160-390 ms dalam keadaan tunak atas
+ * sipp_donggala, tetapi sampai 4,5 detik pada mesin yang sedang dibebani -
+ * dan yang harus menyerah lebih dulu adalah batas kueri di sisi bot (15
+ * detik), supaya sebab yang sampai ke petugas adalah sebab sesungguhnya.
+ */
+export async function getGatewayRiwayatPihak(pilihan: {
+  perkaraId?: string;
+  nomorPerkara?: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams();
+  if (pilihan.perkaraId) kueri.set("perkaraId", pilihan.perkaraId);
+  if (pilihan.nomorPerkara) kueri.set("nomorPerkara", pilihan.nomorPerkara);
+  return gatewayFetch(`/internal/aleta-bot/sipp/riwayat-pihak?${kueri.toString()}`, { timeoutMs: 20_000 });
+}
+
+/**
  * Lapisan panggilan tidak bertemu per desa.
  *
  * Batas waktu penilaian: kuerinya menyisir seluruh relaas pada rentangnya, dan
@@ -2771,12 +2840,15 @@ export async function getGatewayRelaasCetak(pilihan: {
 export async function getGatewayPerkaraDesa(pilihan: {
   kelompok: string;
   kode: string;
+  /** Golongan bulatan yang diketuk (semua/cerai/dispensasi/itsbat/lainnya) - menggantikan kelompok. */
+  golongan?: string;
   periode?: string;
   acuan?: string;
   dari?: string;
   sampai?: string;
 }): Promise<GatewayResult<Record<string, unknown>>> {
   const kueri = new URLSearchParams({ kelompok: pilihan.kelompok, kode: pilihan.kode });
+  if (pilihan.golongan) kueri.set("golongan", pilihan.golongan);
   if (pilihan.periode) kueri.set("periode", pilihan.periode);
   if (pilihan.acuan) kueri.set("acuan", pilihan.acuan);
   if (pilihan.dari) kueri.set("dari", pilihan.dari);

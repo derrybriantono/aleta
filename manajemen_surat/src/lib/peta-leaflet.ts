@@ -33,6 +33,17 @@ export type PetaLeaflet = {
   ) => PetaTitik;
   /** Lingkaran berjari-jari METER - dipakai cincin jarak, bukan penanda titik. */
   circle: (posisi: [number, number], opsi?: Record<string, unknown>) => PetaTitik;
+  /**
+   * Poligon - garis batas kecamatan. Menerima [poligon][cincin][titik] untuk
+   * wilayah berpulau, atau [cincin][titik] untuk satu bagian.
+   */
+  polygon: (
+    titik: [number, number][] | [number, number][][] | [number, number][][][],
+    opsi?: Record<string, unknown>
+  ) => PetaTitik;
+  /** Penanda ber-ikon HTML - dipakai label kecamatan, tidak dapat diketuk. */
+  marker: (posisi: [number, number], opsi?: Record<string, unknown>) => PetaPenanda;
+  divIcon: (opsi?: Record<string, unknown>) => unknown;
   layerGroup: () => PetaKumpulan;
   latLngBounds: (titik: [number, number][]) => PetaBatas;
   control: { attribution: (opsi?: Record<string, unknown>) => PetaLapisan };
@@ -69,6 +80,11 @@ export type PetaTitik = {
   bindPopup: (isi: string, opsi?: Record<string, unknown>) => PetaTitik;
   setStyle: (gaya: Record<string, unknown>) => PetaTitik;
   on: (peristiwa: string, tangani: () => void) => PetaTitik;
+};
+export type PetaPenanda = {
+  addTo: (kumpulan: PetaKumpulan) => PetaPenanda;
+  /** Unsur DOM ikonnya - ada sesudah penanda ditambahkan ke peta. */
+  getElement: () => HTMLElement | undefined;
 };
 export type PetaBatas = { isValid: () => boolean };
 

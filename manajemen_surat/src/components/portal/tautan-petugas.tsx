@@ -67,7 +67,34 @@ export function TautanPetugas({
   );
 }
 
-type Orang = { id?: number | null; kode?: string; nama: string };
+/**
+ * Satu orang pada muatan bot. keteranganTahapan ("verzet", "banding", ...)
+ * hanya terisi untuk penunjukan di luar pemeriksaan dan ikrar; sumber hanya
+ * pada majelis ikrar - "penetapanIkrar" bila catatannya dari borang penetapan
+ * ikrar talak SIPP, bukan dari tabel penunjukan.
+ */
+type Orang = {
+  id?: number | null;
+  kode?: string;
+  nama: string;
+  keteranganTahapan?: string;
+  sumber?: string;
+};
+
+type Hakim = Orang & { kode?: string; jabatan?: string };
+
+/** Majelis ikrar talak sebagaimana dikirim bot (sippStatusPerkaraService). */
+export type MajelisIkrar = {
+  majelis: Hakim[];
+  panitera: Orang[];
+  jurusita: Orang[];
+};
+
+/** " (banding)" untuk penunjukan di luar pemeriksaan; kosong selainnya. */
+function akhiranTahapan(orang: Orang): string {
+  const ket = String(orang.keteranganTahapan || "").trim();
+  return ket ? ` (${ket})` : "";
+}
 
 /** Beberapa nama dipisah koma, tiap nama tautannya sendiri. */
 function NamaTertaut({ peran, orang }: { peran: PeranRekap; orang: Orang[] }) {
@@ -79,51 +106,123 @@ function NamaTertaut({ peran, orang }: { peran: PeranRekap; orang: Orang[] }) {
         <Fragment key={`${x.id ?? "tanpa-id"}-${x.nama}-${urutan}`}>
           {urutan > 0 ? ", " : null}
           <TautanPetugas peran={peran} id={x.id} nama={x.nama} />
+          {akhiranTahapan(x) ? <span className="text-xs text-muted-foreground">{akhiranTahapan(x)}</span> : null}
         </Fragment>
       ))}
     </>
   );
 }
 
+/** Daftar hakim: kode, nama tertaut, kedudukan - bentuk yang sama sejak dulu. */
+function DaftarHakim({ majelis, kosong }: { majelis: Hakim[]; kosong: string }) {
+  if (majelis.length === 0) return <p className="text-sm text-muted-foreground">{kosong}</p>;
+  return (
+    <ul className="space-y-0.5 text-sm">
+      {majelis.map((orang, urutan) => (
+        <li key={`${orang.kode ?? ""}${orang.nama}-${urutan}`}>
+          <span className="font-mono text-sm">{orang.kode || "—"}</span>{" "}
+          <TautanPetugas peran="hakim" id={orang.id} nama={orang.nama} className="font-medium" />
+          {orang.jabatan || akhiranTahapan(orang) ? (
+            <span className="text-xs text-muted-foreground">
+              {orang.jabatan ? ` · ${orang.jabatan}` : ""}
+              {akhiranTahapan(orang)}
+            </span>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function JudulKecil({ children }: { children: string }) {
+  return <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{children}</p>;
+}
+
 /**
- * Isi bagian "Majelis dan petugas" pada Status Perkara.
+ * ============================================================================
+ * ISI BAGIAN "MAJELIS DAN PETUGAS" PADA STATUS PERKARA
+ * ============================================================================
  *
- * Bentuk dan kalimatnya SAMA dengan yang digambar sebelumnya di layar itu -
- * kode hakim, nama, jabatan; "Panitera:" dan "Jurusita:" dengan tanda "—"
- * bila kosong. Yang berubah hanya: tiap nama kini tautan ke rekapnya.
+ * Tiap nama tautan ke rekapnya (lewat ID, tab baru). Bentuk tiap baris sama
+ * dengan sebelumnya - kode hakim, nama, kedudukan; tanda "—" bila kosong.
+ *
+ * MAJELIS PEMERIKSA, BUKAN MAJELIS YANG AKTIF SEKARANG. SIPP menonaktifkan
+ * majelis pemeriksaan begitu majelis ikrar talak ditetapkan, dan dulu layar
+ * ini - membaca penunjukan aktif - menulis majelis IKRAR sebagai majelis
+ * perkara (perkara_id 385: ketua pemeriksa Muh. Arasy Latif, tertulis Ulfah,
+ * ketua ikrarnya). Bot sejak perbaikan itu mengirim majelis pemeriksa beserta
+ * `sumberMajelis: "pemeriksa"`, dan majelis ikrar talak tersendiri di `ikrar`,
+ * yang digambar sebagai blok kedua.
+ *
+ * Judul "Majelis pemeriksa" hanya ditulis bila bot MENYATAKANNYA. Muatan bot
+ * versi lama (tanpa sumberMajelis) berisi penunjukan aktif - yang pada perkara
+ * yang sudah ikrar justru majelis ikrar - jadi digambar tanpa judul, seperti
+ * dulu. "aktif" (modul pemeriksa gagal dibaca di bot) disebut terang-terangan,
+ * dan "tidakTerbaca" (penunjukan tidak terbaca sama sekali) tidak ditulis
+ * "Majelis belum ditetapkan" - yang itu pernyataan tentang perkaranya.
  */
 export function DaftarMajelisPetugas({
   majelis,
   panitera,
   jurusita,
+  ikrar,
+  sumberMajelis,
 }: {
-  majelis: Array<Orang & { kode: string; jabatan: string }>;
+  majelis: Hakim[];
   panitera: Orang[];
   jurusita: Orang[];
+  /** Majelis ikrar talak; null/tidak ada = tidak ada ikrar (atau bot lama). */
+  ikrar?: MajelisIkrar | null;
+  /**
+   * "pemeriksa" menurut aturan bersama; "aktif" bila bot jatuh ke penunjukan
+   * aktif; "tidakTerbaca" bila penunjukan tidak terbaca sama sekali.
+   */
+  sumberMajelis?: string;
 }) {
+  const pemeriksa = sumberMajelis === "pemeriksa";
+  const kosongMajelis =
+    sumberMajelis === "tidakTerbaca" ? "Majelis tidak terbaca dari SIPP." : "Majelis belum ditetapkan.";
+  const dariBorang = Boolean(
+    ikrar && [...ikrar.majelis, ...ikrar.panitera, ...ikrar.jurusita].some((x) => x.sumber === "penetapanIkrar")
+  );
   return (
     <>
-      {majelis.length > 0 ? (
-        <ul className="space-y-0.5 text-sm">
-          {majelis.map((orang, urutan) => (
-            <li key={`${orang.kode}${orang.nama}-${urutan}`}>
-              <span className="font-mono text-sm">{orang.kode || "—"}</span>{" "}
-              <TautanPetugas peran="hakim" id={orang.id} nama={orang.nama} className="font-medium" />
-              {orang.jabatan ? <span className="text-xs text-muted-foreground"> · {orang.jabatan}</span> : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted-foreground">Majelis belum ditetapkan.</p>
-      )}
+      {pemeriksa ? <JudulKecil>Majelis pemeriksa</JudulKecil> : null}
+      {sumberMajelis === "aktif" ? (
+        <p className="mb-1 text-xs text-amber-700 dark:text-amber-300">
+          Majelis pemeriksa tidak terbaca — yang tampil penunjukan yang aktif sekarang, yang pada perkara cerai talak
+          sesudah ikrar dapat berupa majelis ikrar.
+        </p>
+      ) : null}
+      <DaftarHakim majelis={majelis} kosong={kosongMajelis} />
       <p className="mt-2 text-sm">
-        <span className="text-xs text-muted-foreground">Panitera: </span>
+        <span className="text-xs text-muted-foreground">{pemeriksa ? "Panitera pengganti: " : "Panitera: "}</span>
         <NamaTertaut peran="panitera" orang={panitera} />
       </p>
       <p className="text-sm">
-        <span className="text-xs text-muted-foreground">Jurusita: </span>
+        <span className="text-xs text-muted-foreground">{pemeriksa ? "Juru sita: " : "Jurusita: "}</span>
         <NamaTertaut peran="jurusita" orang={jurusita} />
       </p>
+
+      {ikrar ? (
+        <div className="mt-3 border-t border-border pt-2" data-blok="majelis-ikrar">
+          <JudulKecil>Majelis ikrar talak</JudulKecil>
+          <DaftarHakim majelis={ikrar.majelis} kosong="Majelis ikrar tidak tercatat." />
+          <p className="mt-2 text-sm">
+            <span className="text-xs text-muted-foreground">Panitera sidang: </span>
+            <NamaTertaut peran="panitera" orang={ikrar.panitera} />
+          </p>
+          <p className="text-sm">
+            <span className="text-xs text-muted-foreground">Juru sita: </span>
+            <NamaTertaut peran="jurusita" orang={ikrar.jurusita} />
+          </p>
+          {dariBorang ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Sebagian dari borang penetapan ikrar talak SIPP — tabel penunjukan tidak mencatatnya tersendiri.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </>
   );
 }

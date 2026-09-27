@@ -47,6 +47,12 @@ export type BahanRingkas = {
     hariMediasi: number;
   };
   majelis: Array<{ nama: string; jabatan: string }>;
+  /**
+   * "tidakTerbaca" bila bot tidak dapat membaca penunjukan sama sekali -
+   * daftar majelis yang kosong itu lalu BUKAN "belum ditetapkan". Boleh tidak
+   * ada (bot versi lama).
+   */
+  sumberMajelis?: string;
   panitera: Array<{ nama: string }>;
   jadwal: Array<{ tanggalSidang: string; jamSidang: string; agenda: string; ditunda: boolean }>;
   putusan: {
@@ -143,15 +149,20 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       ? "Tidak ada sidang lagi"
       : "Belum ada sidang terjadwal";
 
+  // Tidak terbaca bukan belum ditetapkan: peringatan berat atas perkara yang
+  // majelisnya ada tetapi SIPP-nya sedang tidak terbaca adalah tuduhan palsu.
+  const majelisTakTerbaca = status.majelis.length === 0 && status.sumberMajelis === "tidakTerbaca";
   const majelisKalimat =
     status.majelis.length > 0
       ? status.majelis.map((m) => m.nama).join(", ")
-      : "Majelis belum ditetapkan";
+      : majelisTakTerbaca
+        ? "Majelis tidak terbaca"
+        : "Majelis belum ditetapkan";
 
   // ---- peringatan --------------------------------------------------------
   const peringatan: Peringatan[] = [];
 
-  if (status.majelis.length === 0) {
+  if (status.majelis.length === 0 && !majelisTakTerbaca) {
     peringatan.push({
       pesan: "Majelis hakim belum ditetapkan",
       sebab: "Tanpa penetapan majelis, perkara tidak dapat dijadwalkan bersidang.",

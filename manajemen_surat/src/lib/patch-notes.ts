@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.39.0";
+export const APP_VERSION = "2.40.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.39.0 - Tiga Jarak Waktu Sidang, Halaman Perkara SIPP, dan Rekap Petugas";
+  "ALETA Judicia v2.40.0 - Eviden SKP Hakim, Majelis Ikrar, Riwayat Pihak, dan Peta Perkara";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,41 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.40.0",
+    title: "ALETA Judicia v2.40.0 - Eviden SKP Hakim, Majelis Ikrar, Riwayat Pihak, dan Peta Perkara",
+    date: "2026-09-27",
+    status: "Belum terpasang",
+    summary:
+      "Permintaan pengguna 27 September 2026. Bukti dukung SKP hakim (eKinerja) kini diunduh dari Rekap Hakim dalam PDF, Excel, dan Word langsung dari data SIPP - lengkap dengan kop dan tanda tangan (kiri hakim, kanan Ketua). Status Perkara memisahkan majelis pemeriksa dari majelis ikrar talak dan memberi penanda riwayat pada nama para pihak. Peta Perkara tidak lagi kosong saat layar penuh, bulatannya sebanding jumlah perkara, dapat dipilih per golongan, dan bergaris batas kecamatan.",
+    added: [
+      "Unduh eviden SKP hakim - tombol 'Unduh eviden SKP' di Rekap Hakim membuka pop up: periode (Triwulan I-IV atau Tahunan), tahun, tanggal tanda tangan, lalu tiap dokumen dengan tombol PDF / Excel / Word dan 'Unduh semua (ZIP)'. Dokumennya: lembar Status Perkara 25 kolom (bentuk spreadsheet SKP) dan 13 rekap bukti dukung sesuai kolom Realisasi eKinerja - Perkara, Minutasi, Musyawarah Majelis, Mediasi, Sidang Keliling, E-Court, Isbat Terpadu, Pelaksanaan Ikrar Talak, Salinan Putusan terunggah, Prodeo, Direktori Putusan MA, Selesai Prosedur dan Minutasi, Upaya Hukum. Tiap dokumen memuat kop, identitas hakim, RHK dengan realisasi Kuantitas/Kualitas/Waktu beserta dasar hitungnya, tabel perkara, dan tanda tangan kiri hakim - kanan 'Mengetahui, Ketua Pengadilan Agama Donggala'. Posbakum, SIPINTAR/Bimtek, dan Hawasbid bukan data SIPP dan tampil nonaktif.",
+      "Status Perkara, Para pihak - penanda 'cerai N×' bila orang itu bercerai lebih dari sekali (hanya perkara yang akta cerainya sudah terbit) dan 'N perkara terkait' (mis. cerai lalu harta bersama); menekan angkanya membuka daftar nomor perkara beserta dasar pencocokannya. Orang yang sama dikenali lewat pihak_id, NIK sah berpenguat, nama + tanggal lahir, atau pasangan nama - nama saja tidak pernah dipakai. Dimuat hanya saat bagian Para pihak dibuka.",
+      "Peta Perkara - pilihan tampilan bulatan: Semua perkara, Cerai, Dispensasi kawin, Itsbat nikah, Lainnya; lapisan kecamatan dengan garis batas, nama, dan jumlah perkara saat peta diperbesar (garis resmi OpenStreetMap bila ada, selebihnya batas perkiraan dari titik desa yang diberi label).",
+    ],
+    changed: [
+      "Kolom Majelis di Status Perkara kini majelis PEMERIKSA - yang menjabat pada hari putusan - dan majelis ikrar talak (hakim, panitera, juru sita ikrar) tampil sebagai blok tersendiri. SIPP menonaktifkan majelis pemeriksa begitu majelis ikrar ditetapkan, sehingga dahulu cerai talak yang sudah ikrar menampilkan majelis ikrar sebagai majelis perkara (susunan berubah pada 245 perkara). Aturan yang sama dipakai Rekap Petugas dan eviden SKP.",
+      "Bulatan Peta Perkara sebanding jumlah perkara (luas mengikuti jumlah, 4-36 px) dengan keterangan ukuran berangka.",
+    ],
+    fixed: [
+      "Peta Perkara kosong saat layar penuh: React menulis ulang kelas wadah yang juga dipakai Leaflet, sehingga ubin peta mengerut menjadi lebar 0.",
+      "Tanda </br> mentah di isian majelis bagian Ikrar talak Status Perkara.",
+      "Perkara yang majelisnya tidak terbaca tidak lagi diperingatkan 'Majelis belum ditetapkan' (11 perkara).",
+    ],
+    security: [
+      "Rute baru (eviden SKP, unduhan, riwayat pihak) memeriksa kewenangan sebelum data; NIK dan tanggal lahir tidak pernah dikirim ke peramban; pembacaan riwayat pihak dicatat di jejak audit.",
+    ],
+    operationalNotes: [
+      "Citra bot DAN portal wajib dibangun ulang (rute /sipp/eviden-skp, /sipp/riwayat-pihak, majelisPemeriksaService, golongan peta). Tidak ada migrasi baru (nomor bebas berikutnya 0052).",
+      "Kop eviden dibaca dari Identitas Instansi ALETA - isi alamat dan telepon kantor supaya lengkap. NIP Ketua di sys_config SIPP (KetuaPNNIP) hanya 17 angka; ALETA melengkapinya dari data hakim, sebaiknya dibetulkan di SIPP.",
+    ],
+    knownLimitations: [
+      "OpenStreetMap tidak punya batas kecamatan Donggala dan Sigi - wilayah sendiri memakai batas perkiraan dari titik desa.",
+      "SIPP hanya mencatat musyawarah majelis lewat agenda sidang (71 dari 683 putusan 2026); rekap musyawarah mengikuti yang tercatat.",
+      "Menunggu keputusan pengguna: rumus Kualitas tiap rekap, bunyi RHK/indikator, baris kop Ditjen/PTA, tanggal tanda tangan bawaan, dan beberapa lainnya (papan keputusan).",
+      "Belum diuji di peramban dan SIPP peladen sungguhan; berkas Word/Excel belum dibuka di Office.",
+    ],
+  },
   {
     version: "2.39.0",
     title: "ALETA Judicia v2.39.0 - Tiga Jarak Waktu Sidang, Halaman Perkara SIPP, dan Rekap Petugas",

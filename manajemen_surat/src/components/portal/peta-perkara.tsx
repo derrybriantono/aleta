@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 import { JENIS_GRAFIK, type JenisGrafik } from "@/components/portal/statistics-chart";
 import type { TitikPerkara } from "@/components/portal/peta-titik-perkara";
+import { pilihanUntukKelompok, simpanPilihan, type KelasPeta, type SisaKecamatan } from "@/lib/peta-perkara-ukur";
 
 const LazyStatisticsChart = dynamic(
   () => import("@/components/portal/statistics-chart").then((m) => m.StatisticsChart),
@@ -46,17 +47,14 @@ const LazyPetaTitik = dynamic(
 );
 
 /**
- * Warna nyata penanda jenis perkara.
+ * Warna bulatan peta tidak lagi disusun di sini.
  *
- * Dipisah dari kelas Tailwind di bawah karena peta menggambar di KANVAS -
- * kanvas tidak mengenal kelas, ia menuntut warna. Nilainya sengaja sama dengan
- * red-500 dan blue-500 supaya lingkaran di peta dan lencana di daftar terbaca
- * sebagai satu penanda yang sama, bukan dua warna yang kebetulan mirip.
+ * Sejak peta dapat memilih golongan bulatannya sendiri (semua, cerai,
+ * dispensasi, itsbat, lainnya), warnanya mengikuti KELAS jenis yang dihitung
+ * bot lewat jenis_perkara_id - WARNA_KELAS di lib/peta-perkara-ukur.ts. Cerai
+ * gugat tetap merah (#ef4444, red-500) dan cerai talak tetap biru (#3b82f6,
+ * blue-500), sama dengan lencana WARNA_PENANDA di bawah.
  */
-const WARNA_NYATA: Record<string, string> = {
-  merah: "#ef4444",
-  biru: "#3b82f6",
-};
 
 /**
  * Daftar kosong yang SATU, bukan yang baru tiap gambar ulang.
@@ -90,10 +88,19 @@ type HasilPeta = {
   rentang: { dari: string; sampai: string };
   petaGeografis: boolean;
   alasanTanpaPeta: string;
-  /** Satu baris per desa, dikunci KODE wilayah - bukan nama. Lihat titikDesa. */
+  /**
+   * Satu baris per desa, dikunci KODE wilayah - bukan nama. Lihat titikDesa.
+   * Bila `titikSeluruhJenis`, isinya SELURUH jenis perkara pada rentang itu -
+   * tidak disaring "Jenis perkara" di atas - dan tiap desa membawa `kelas`.
+   */
   titik?: TitikPerkara[];
-  /** Perkara yang alamatnya tersimpan sebagai tulisan, tanpa kode wilayah. */
+  titikSeluruhJenis?: boolean;
+  /** Perkara tanpa kode desa (kolomnya kosong atau berisi tulisan). */
   titikTanpaKode?: number;
+  titikTanpaKodeKelas?: Partial<Record<KelasPeta, number>>;
+  titikTanpaKodeJenis?: Record<string, number>;
+  /** Perkara berkode kecamatan tanpa kode desa - ikut label kecamatan di peta. */
+  kecamatanTanpaDesa?: SisaKecamatan[];
   ringkas: {
     diputus: number;
     beralamat: number;
@@ -108,7 +115,14 @@ type HasilPeta = {
   faktor: Tempat[];
 };
 
-type MenuJenis = { kunci: string; nama: string; perkara: number; gabungan: boolean };
+type MenuJenis = {
+  kunci: string;
+  nama: string;
+  perkara: number;
+  gabungan: boolean;
+  /** Golongan bulatan peta untuk pilihan ini - lewat jenis_perkara_id di bot. */
+  golongan?: string;
+};
 
 const TINGKAT: { nilai: string; label: string; anak: string }[] = [
   { nilai: "provinsi", label: "Provinsi", anak: "kabupaten" },
@@ -223,22 +237,6 @@ export function PetaPerkara() {
     [daftar]
   );
 
-  /**
-   * Warna nyata per jenis perkara, untuk lingkaran di peta.
-   *
-   * Diturunkan dari penanda yang dikirim peladen ("merah"/"biru"), bukan
-   * disusun sendiri di sini: yang menentukan cerai gugat merah dan cerai talak
-   * biru adalah satker, dan keputusan itu sudah tersimpan di satu tempat.
-   */
-  const warnaJenis = useMemo(() => {
-    const hasilWarna: Record<string, string> = {};
-    for (const [jenis, penanda] of Object.entries(hasil?.penanda ?? {})) {
-      const w = WARNA_NYATA[penanda];
-      if (w) hasilWarna[jenis] = w;
-    }
-    return hasilWarna;
-  }, [hasil?.penanda]);
-
   const tingkatIni = TINGKAT.find((t) => t.nilai === tingkat);
   const bisaTurun = Boolean(tingkatIni?.anak) && lihat === "wilayah";
 
@@ -280,6 +278,20 @@ export function PetaPerkara() {
               <NativeSelect
                 value={kelompok}
                 onChange={(e) => {
+                  // Memilih jenis perkara di sini ikut memilih bulatan peta
+                  // yang sepadan: Perceraian -> golongan cerai, satu jenis
+                  // (Kewarisan, Dispensasi Kawin, ...) -> TEPAT jenis itu.
+                  // Disimpan ke INGATAN peta, bukan diteruskan lewat prop:
+                  // petanya dilahirkan ulang sesudah data baru tiba, dan yang
+                  // dibacanya saat lahir ingatan itu. Pilihan bulatan di peta
+                  // tetap bebas diganti sesudahnya.
+                  //
+                  // Telaah 2.40.0: dahulu golongan jenis itu yang ditulis
+                  // ("lainnya" untuk Kewarisan), dan bulatannya memuat seluruh
+                  // golongan sementara tabel di bawahnya hanya Kewarisan.
+                  const m = menu.find((x) => x.kunci === e.target.value);
+                  const gabungan = m ? m.gabungan : e.target.value === "perceraian";
+                  simpanPilihan(pilihanUntukKelompok(!gabungan, m?.golongan));
                   setKelompok(e.target.value);
                   setJejak([]);
                   setTingkat("kabupaten");
@@ -476,7 +488,9 @@ export function PetaPerkara() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">Peta sebaran per desa</CardTitle>
                 <CardDescription>
-                  Satu lingkaran per desa; luasnya sebanding dengan jumlah perkara. Arahkan
+                  Satu lingkaran per desa; luasnya sebanding dengan jumlah perkara golongan yang
+                  dipilih di atas peta — semua perkara, cerai, dispensasi kawin, itsbat nikah, atau
+                  lainnya. Perbesar peta untuk garis dan jumlah perkara tiap kecamatan. Arahkan
                   penunjuk ke satu lingkaran untuk melihat rinciannya.
                 </CardDescription>
               </CardHeader>
@@ -484,8 +498,14 @@ export function PetaPerkara() {
                 <LazyPetaTitik
                   titik={hasil.titik ?? TANPA_TITIK}
                   tanpaKode={hasil.titikTanpaKode ?? 0}
-                  warnaJenis={warnaJenis}
-                  penandaJenis={hasil.penanda}
+                  tanpaKodeKelas={hasil.titikTanpaKodeKelas}
+                  tanpaKodeJenis={hasil.titikTanpaKodeJenis}
+                  kecamatanTanpaDesa={hasil.kecamatanTanpaDesa}
+                  // Jenis TUNGGAL halaman - bulatan dapat menghitung tepat
+                  // jenis itu, sama dengan tabel di bawahnya. Kosong untuk
+                  // kelompok gabungan (Perceraian).
+                  jenisTerpilih={hasil.perceraian ? "" : hasil.kelompok}
+                  golonganJenis={menu.find((m) => m.kunci === hasil.kelompok)?.golongan}
                   saringan={{
                     kelompok,
                     periode,
@@ -523,7 +543,7 @@ export function PetaPerkara() {
                   : lihat === "faktor"
                     ? "Dibaca dari akta cerai — terisi pada hampir seluruh akta yang terbit."
                     : lihat === "peta"
-                      ? "Angka yang sama dengan yang digambar di peta, dalam bentuk yang dapat dibaca berurutan — termasuk desa yang belum punya titik."
+                      ? "Mengikuti pilihan Jenis perkara di atas halaman, dalam bentuk yang dapat dibaca berurutan — termasuk desa yang belum punya titik. Bulatan peta mengikuti pilihan golongannya sendiri; angkanya sama bila golongannya sepadan."
                       : "Tingkat terakhir; tidak ada lagi di bawahnya."}
               </CardDescription>
             </CardHeader>
