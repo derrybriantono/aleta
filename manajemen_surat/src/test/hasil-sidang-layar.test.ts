@@ -102,10 +102,14 @@ describe("2. rincian tidak lagi terpotong", () => {
     expect(blok).toContain("minWidth: 0");
   });
 
-  it("pembatasan tinggi dilepas selama ada rincian terbuka", () => {
-    // 70vh + rincian yang lebih tinggi = gulir bersarang: halaman menggulung,
-    // dan di dalamnya kotak menggulung sendiri.
-    expect(antrian).toContain('dibuka\n              ? ""');
+  it("tidak ada pembatasan tinggi sama sekali - tidak ada gulir bersarang", () => {
+    // Dahulu 70vh dilepas hanya selama rincian terbuka. Sejak 28 Sep 2026
+    // batas itu dibuang seluruhnya ("ada yang terlewat di bawah footer"):
+    // tabel setinggi isinya dan halamanlah yang menggulung.
+    const i = antrian.indexOf("ref={kotakTabel}");
+    expect(i, "wadah tabel tidak ditemukan").toBeGreaterThan(-1);
+    const wadah = antrian.slice(i, antrian.indexOf(">", antrian.indexOf("className=", i)));
+    expect(wadah).not.toMatch(/max-h-|overflow-auto|overflow-y-/);
   });
 });
 

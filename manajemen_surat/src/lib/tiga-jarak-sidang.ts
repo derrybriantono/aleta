@@ -196,6 +196,26 @@ export function sebutanDurasi(detik: number): string {
   return sisa === 0 ? `${jam} jam` : `${jam} jam ${sisa} menit`;
 }
 
+/**
+ * Durasi selesai dalam bentuk RINGKAS untuk pil di kolom Antrian: "45d",
+ * "12m", "1j 19m", "2j".
+ *
+ * Diminta pengguna 28 September 2026: "1 jam 19 menit" di dalam lencana
+ * bulat melipat menjadi tiga baris dan memaksa kolom Antrian/Jam melebar.
+ * Pembulatannya SAMA dengan sebutanDurasi - ke bawah - supaya kedua bentuk
+ * tidak pernah menyebut angka yang berbeda untuk jarak yang sama. Bentuk
+ * lengkapnya tetap ada di title (sebutanDurasiLengkap).
+ */
+export function sebutanDurasiRingkas(detik: number): string {
+  const d = Math.max(0, Math.floor(detik));
+  if (d < 60) return `${d}d`;
+  const menit = Math.floor(d / 60);
+  if (menit < 60) return `${menit}m`;
+  const jam = Math.floor(menit / 60);
+  const sisa = menit % 60;
+  return sisa === 0 ? `${jam}j` : `${jam}j ${sisa}m`;
+}
+
 /** Durasi lengkap sampai detiknya - untuk title, tempat orang memeriksa. */
 export function sebutanDurasiLengkap(detik: number): string {
   const d = Math.max(0, Math.floor(detik));

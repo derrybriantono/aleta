@@ -108,7 +108,9 @@ describe("butir 5 - jarak kepala halaman ke judul jadwal", () => {
   it("padding atasnya dipangkas di kedua tempat yang menyusunnya", () => {
     // Tidak ada penjaga sama sekali sebelumnya - siapa pun dapat
     // memulangkannya ke p-4 sm:p-5 tanpa ada yang berbunyi.
-    expect(PENGGUNA).toContain('className="space-y-4 p-4 pt-1 sm:p-5 sm:pt-1"');
+    // Sejak 28 Sep 2026 padding SAMPING-nya ikut dibuang supaya menu dan
+    // kartu jadwal sejajar tepi kepala dan kaki halaman; atasnya tetap pt-1.
+    expect(PENGGUNA).toContain('className="space-y-4 px-0 pb-4 pt-1 sm:pb-5"');
   });
 });
 

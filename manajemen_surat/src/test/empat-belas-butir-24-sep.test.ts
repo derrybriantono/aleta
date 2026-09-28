@@ -213,7 +213,7 @@ describe("butir 2 & 3 - pukul 15:00:00 menurut WITA, bukan zona peramban", () =>
 function selAgenda(): string {
   const akhir = LAYAR.indexOf("<UmurPerkara durasi={baris.durasi} />");
   expect(akhir, "umur perkara di bawah agenda hilang").toBeGreaterThan(-1);
-  const awal = LAYAR.lastIndexOf('<td className="px-3 py-2 align-top text-sm">', akhir);
+  const awal = LAYAR.lastIndexOf('<td className="px-2 py-2 align-top text-sm">', akhir);
   expect(awal, "sel Agenda tidak ditemukan").toBeGreaterThan(-1);
   return LAYAR.slice(awal, akhir).replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 }

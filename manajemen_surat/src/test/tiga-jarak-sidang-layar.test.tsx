@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * AletaEcourtSidang digambar sungguhan dengan jawaban rute jadwal sidang yang
  * membawa waktuAntrian. Yang dibuktikan:
  *
- *   - tiga jarak tampil di kolom Antrian, legenda di atas tabel;
+ *   - tiga jarak tampil di kolom Antrian; legendanya DIBUANG (28 Sep 2026);
  *   - angka yang berjalan BERDETAK, sementara badan tabel TIDAK dilukis
  *     ulang: sidangSelesaiHariIni dipanggil sekali per baris tiap tabel
  *     dilukis, dan hitungannya tidak bertambah selama detiknya berjalan;
@@ -179,6 +179,24 @@ beforeEach(() => {
     vi.fn(async (alamat: string) => {
       const url = String(alamat);
       if (url.includes("/api/aleta-ecourt/sidang?")) return jawab({ ok: true, data: jawabanJadwal() });
+      if (url.includes("/api/aleta-ecourt/konseptor-sementara")) {
+        return jawab({
+          ok: true,
+          data: {
+            peta: {
+              101: {
+                perkaraId: "101",
+                nomorPerkara: "101/Pdt.G/2026/PA.Dgl",
+                nama: "Muhammad Rizky Lamarauna, S.H.I., M.H.",
+                pengguna: "",
+                catatan: "",
+                ditetapkanOleh: "Panitera",
+                ditetapkanAt: "",
+              },
+            },
+          },
+        });
+      }
       return jawab({ ok: true, data: {} });
     })
   );
@@ -199,11 +217,13 @@ describe("layar jadwal sidang - tiga jarak waktu", () => {
     await waitFor(() => expect(container.querySelector('[data-tiga-jarak$="|101"] [data-jarak="sidang"]')).toBeTruthy(), {
       timeout: 15_000,
     });
-    expect(container.querySelector("[data-legenda-tiga-jarak]")).toBeTruthy();
+    // Legenda paragraf di atas tabel dibuang atas permintaan pengguna.
+    expect(container.querySelector("[data-legenda-tiga-jarak]")).toBeNull();
+    expect(container.textContent).not.toContain("Tiga angka waktu di kolom Antrian");
 
     const sidang101 = container.querySelector('[data-tiga-jarak$="|101"] [data-jarak="sidang"]')!;
     expect(sidang101.getAttribute("data-keadaan")).toBe("selesai");
-    expect(sidang101.textContent).toContain("12 menit");
+    expect(sidang101.textContent).toContain("12m");
     // Pembandingnya perkara yang TIDAK tampil - disebut, bukan didiamkan.
     expect(sidang101.querySelector("[title]")!.getAttribute("title")).toContain(
       "antrian 2 (perkara yang tidak tampil pada daftar ini)"
@@ -234,5 +254,39 @@ describe("layar jadwal sidang - tiga jarak waktu", () => {
     expect(screen.getByText(`menunggu ${/(\d{2}:\d{2})/.exec(kemudian)![1]}`)).toBeTruthy();
     // Dan badan tabel tidak dilukis ulang sekali pun selama itu.
     expect(keadaan.lukisBaris).toBe(lukisSebelum);
+  }, 40_000);
+});
+
+describe("layar jadwal sidang - tata letak 28 September 2026", () => {
+  it("tabel tanpa batas tinggi, konseptor sementara bernama lengkap tanpa elipsis, nomor boleh patah", async () => {
+    const { AletaEcourtSidang } = await import("@/components/portal/aleta-ecourt-sidang");
+    const { container } = render(createElement(AletaEcourtSidang));
+    await waitFor(() => expect(screen.getByText("Muhammad Rizky Lamarauna, S.H.I., M.H.")).toBeTruthy(), {
+      timeout: 15_000,
+    });
+
+    // "Ada yang terlewat di bawah footer": wadahnya tidak lagi menggulir
+    // tegak sendiri - tidak ada max-h dan tidak ada overflow-auto.
+    const wadah = container.querySelector("table")!.parentElement!;
+    expect(wadah.className).not.toMatch(/max-h-|overflow-auto|overflow-y-/);
+    // Sebelum diukur (jsdom tidak punya tata letak) ia TIDAK dianggap muat:
+    // isi yang lebih lebar menggulir di dalam kartu, bukan meluber keluar.
+    expect(wadah.getAttribute("data-tabel-muat")).toBe("tidak");
+    expect(wadah.className).toMatch(/\boverflow-x-auto\b/);
+
+    // Konseptor sementara: nama lengkap, boleh melipat, tanpa truncate.
+    const nama = screen.getByText("Muhammad Rizky Lamarauna, S.H.I., M.H.");
+    const tombol = nama.closest("button")!;
+    expect(tombol.querySelector(".truncate")).toBeNull();
+    expect(tombol.className).not.toMatch(/\btruncate\b|\brounded-full\b|whitespace-nowrap/);
+    expect(tombol.textContent).toBe("konseptor sementara Muhammad Rizky Lamarauna, S.H.I., M.H.");
+
+    // Nomor perkara punya satu tempat patah sesudah "Pdt.G/", teksnya utuh.
+    // Tanpa onBukaTunda/onBukaStatus nomornya span biasa, bukan tombol.
+    const nomor = [...container.querySelectorAll("tbody td span")].find(
+      (el) => el.textContent === "101/Pdt.G/2026/PA.Dgl"
+    )!;
+    expect(nomor.querySelectorAll("wbr")).toHaveLength(1);
+    expect(nomor.textContent).toBe("101/Pdt.G/2026/PA.Dgl");
   }, 40_000);
 });

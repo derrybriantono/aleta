@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.40.0";
+export const APP_VERSION = "2.40.1";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.40.0 - Eviden SKP Hakim, Majelis Ikrar, Riwayat Pihak, dan Peta Perkara";
+  "ALETA Judicia v2.40.1 - Tata Letak Jadwal dan Antrian Sidang";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,30 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.40.1",
+    title: "ALETA Judicia v2.40.1 - Tata Letak Jadwal dan Antrian Sidang",
+    date: "2026-09-28",
+    status: "Belum terpasang",
+    summary:
+      "Permintaan pengguna 28 September 2026: layar Jadwal/Antrian Sidang selebar kepala dan kaki halaman, tanpa gulir ke samping, dan seluruh baris sidang memanjang ke bawah halaman - bukan tersembunyi di kotak bergulir.",
+    added: [],
+    changed: [
+      "Legenda 'Tiga angka waktu...' dihapus; arti tiap angka ada di keterangan saat kursor diarahkan.",
+      "Tunggu / Dari sebelumnya / Lama sidang menjadi pil kecil berlabel ('Tunggu 1j 19m', 'Dari sblm pertama', 'Lama 7m'); kolom Antrian menyempit dari 209 px menjadi 130-159 px. Detak hidup, warna ambang 40/60 menit, dan pembandingnya tetap.",
+      "Kartu jadwal sejajar tepi kepala dan kaki halaman; isi sel melipat sehingga tabel pas selebar kartu pada 1366, 1440, dan 1920 px (dahulu tabel 1.590 px menggulir ke samping).",
+      "Tombol konseptor sementara tidak lagi terpotong: nama lengkap tampil dan melipat di dalam selnya.",
+    ],
+    fixed: [
+      "Baris sidang 'terlewat di bawah footer': tabel dibatasi 70% tinggi layar dan menggulir sendiri. Kini tabel setinggi isinya, halaman yang menggulung, dan kepala kolom tetap menempel di puncak layar.",
+    ],
+    security: [],
+    operationalNotes: ["Hanya portal yang dibangun ulang; tanpa migrasi, tanpa perubahan bot dan ekstensi."],
+    knownLimitations: [
+      "Pada 1280 px dengan kedua sidebar terbuka tabel masih menggulir ke samping di dalam kartu (menciutkan sidebar membuatnya muat).",
+      "Pilihan Ringkas/Lengkap belum diingat peramban (cacat lama, belum dibetulkan).",
+    ],
+  },
   {
     version: "2.40.0",
     title: "ALETA Judicia v2.40.0 - Eviden SKP Hakim, Majelis Ikrar, Riwayat Pihak, dan Peta Perkara",

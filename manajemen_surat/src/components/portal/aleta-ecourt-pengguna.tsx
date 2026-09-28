@@ -340,7 +340,16 @@ export function AletaEcourtPengguna() {
     // layar laptop tiap seperempat layar adalah lima baris sidang yang tidak
     // terlihat. Yang dipangkas hanya ruang kosong di atas - bukan jarak antar
     // kartu di bawahnya, yang justru memisahkan bagian.
-    <div className="space-y-4 p-4 pt-1 sm:p-5 sm:pt-1">
+    //
+    // Padding SAMPING dibuang (28 September 2026). Diminta pengguna: kolom
+    // antrian sidang "sampai hampir mentok layar (mengikuti header dan footer
+    // juga lebarnya), tapi jangan terlalu mentok". p-5 membuat menu dan kartu
+    // jadwal menjorok 20 px dari tepi kepala dan kaki halaman di kedua sisi -
+    // tepinya tidak pernah sejajar, dan 40 px itu diambil dari tabel yang
+    // justru kekurangan lebar. Jarak ke tepi layar sudah diberikan bagan luar
+    // portal (px-6 dan max-w-[1600px]); menambah jarak kedua di sini hanya
+    // membuat tiga tepi yang berbeda.
+    <div className="space-y-4 px-0 pb-4 pt-1 sm:pb-5">
       {catatan ? <p className="rounded border border-border bg-muted/40 p-3 text-sm">{catatan}</p> : null}
 
       <div

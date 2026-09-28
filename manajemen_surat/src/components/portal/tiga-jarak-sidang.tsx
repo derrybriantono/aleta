@@ -8,8 +8,8 @@ import {
   jamDari,
   pitaAntarPanggilan,
   pitaTunggu,
-  sebutanDurasi,
   sebutanDurasiLengkap,
+  sebutanDurasiRingkas,
   type BarisWaktuAntrian,
   type Jarak,
   type TetanggaJarak,
@@ -92,13 +92,73 @@ export function sekarangAntrianMs(patokan: PatokanWaktu, kiniMs: number = Date.n
   return patokan.sekarangMs + (kiniMs - patokan.diterimaMs);
 }
 
-const KEPING =
-  "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums";
+/**
+ * ============================================================================
+ * TIGA PIL DALAM SATU DERET, BUKAN TIGA BARIS BERLABEL
+ * ============================================================================
+ *
+ * Diminta pengguna 28 September 2026: "kolom Tunggu, Dari sebelumnya dan Lama
+ * sidang terlalu memakan space makanya kolom antrian/jam jadi lebar". Yang
+ * lama tiga baris bertumpuk - label selebar 5,2rem di kiri, lencana di kanan -
+ * dan lencana "1 jam 19 menit" yang dapat melipat di dalam dirinya sendiri
+ * menjadi bulatan merah tiga baris.
+ *
+ * Tiga tata letak ditimbang:
+ *
+ *   (a) tiga pil kecil yang MEMBAWA labelnya sendiri - "Tunggu 1j 19m",
+ *       "Dari sblm pertama", "Lama 7m" - dalam satu deret yang boleh
+ *       melipat. Kolom selebar pil terlebar (sekitar 90 px), bukan selebar
+ *       label ditambah lencana. Warna pita meliputi seluruh pil;
+ *   (b) kisi dua kolom berlabel satu huruf (T / S / L) - paling sempit,
+ *       tetapi tiga huruf itu harus dihafal, dan legendanya justru diminta
+ *       dibuang;
+ *   (c) satu baris teks "1j19m · pertama · 7m" berwarna, label hanya di
+ *       title - paling ringkas, tetapi tidak dapat dibaca tanpa kursor, dan
+ *       "pertama" di tengah tidak menyebut PERTAMA APA.
+ *
+ * Yang dipakai (a): namanya tetap terbaca tanpa kursor, dan tiap pil tidak
+ * pernah melipat (whitespace-nowrap) - yang melipat hanya DERETNYA, di antara
+ * pil. Angka selesai memakai bentuk ringkas (sebutanDurasiRingkas); bentuk
+ * lengkapnya, arti tiap angka, jam, dan perkara pembandingnya ada di title.
+ *
+ * Legenda paragraf di atas tabel DIBUANG atas permintaan yang sama; isinya
+ * pindah ke title tiap pil (ARTI di bawah), sehingga keterangannya tetap ada
+ * tepat di tempat angkanya.
+ */
+const PIL =
+  "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums";
+const KEPING = PIL;
 const NETRAL = "border-border bg-muted/60 text-foreground";
+const REDAM = "border-border/70 bg-transparent font-normal text-muted-foreground";
 const JANGGAL =
   "border-dashed border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-400/70 dark:bg-amber-500/10 dark:text-amber-100";
 
 type Jenis = "tunggu" | "sebelum" | "sidang";
+
+/** Label pendek di dalam pil - nama lengkapnya di awal title. */
+const LABEL: Record<Jenis, { pendek: string; lengkap: string }> = {
+  tunggu: { pendek: "Tunggu", lengkap: "Tunggu" },
+  sebelum: { pendek: "Dari sblm", lengkap: "Dari sebelumnya" },
+  sidang: { pendek: "Lama", lengkap: "Lama sidang" },
+};
+
+/** Arti tiap angka - isi legenda lama, kini di title pilnya sendiri. */
+function arti(jenis: Jenis, ambangTungguMenit: number): string {
+  switch (jenis) {
+    case "tunggu":
+      return (
+        "Tunggu: sejak pihak mengambil nomor antrian sampai perkaranya dipanggil masuk " +
+        `(memerah sesudah ${ambangTungguMenit} menit).`
+      );
+    case "sebelum":
+      return (
+        "Dari sebelumnya: sejak perkara sebelumnya di ruang yang sama dipanggil sampai perkara ini " +
+        'dipanggil; perkara pertama di ruangnya tertulis "pertama".'
+      );
+    default:
+      return "Lama sidang: sejak perkara ini dipanggil sampai perkara berikutnya di ruang itu dipanggil.";
+  }
+}
 
 function kelasPita(jenis: Jenis, detik: number, ambangTungguMenit: number): string {
   const menit = detik / 60;
@@ -111,12 +171,21 @@ function TitikBerjalan() {
   return <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current motion-safe:animate-pulse" />;
 }
 
+/** Label pendek di dalam pil - lebih ringan dari angkanya. */
+function LabelPil({ jenis }: { jenis: Jenis }) {
+  return <span className="font-normal opacity-75">{LABEL[jenis].pendek}</span>;
+}
+
 /**
  * Angka yang berjalan - komponen kecil yang BERDETAK SENDIRI.
  *
  * Warnanya ikut dihitung di sini, bukan di baris induknya: "Tunggu" yang
  * melewati empat puluh menit harus memerah pada detik itu juga, bukan pada
  * muat ulang berikutnya.
+ *
+ * Kata "berjalan" tidak lagi berdiri di samping pil - ia memakan lebar yang
+ * justru diminta dihemat. Yang menandainya kini titik berdenyut dan detik yang
+ * bergerak; katanya tetap ada untuk pembaca layar (sr-only) dan di title.
  */
 function DurasiBerjalan({
   jarak,
@@ -138,19 +207,22 @@ function DurasiBerjalan({
     // Tidak ditampilkan sebagai 00:00: nol berarti "baru saja", dan itu
     // keterangan yang berbeda sama sekali.
     return (
-      <span className={cn(KEPING, JANGGAL)} title="Waktu mulainya sesudah jam aplikasi antrian sekarang - datanya bertentangan.">
+      <span
+        className={cn(PIL, JANGGAL)}
+        title={`${arti(jenis, ambangTungguMenit)}\nWaktu mulainya sesudah jam aplikasi antrian sekarang - datanya bertentangan.`}
+      >
+        <LabelPil jenis={jenis} />
         janggal
       </span>
     );
   }
   return (
-    <>
-      <span className={cn(KEPING, kelasPita(jenis, detik, ambangTungguMenit))} title={judul}>
-        <TitikBerjalan />
-        {jamBerjalan(detik)}
-      </span>
-      <span className="text-[10px] text-muted-foreground">berjalan</span>
-    </>
+    <span className={cn(PIL, kelasPita(jenis, detik, ambangTungguMenit))} title={judul}>
+      <LabelPil jenis={jenis} />
+      <TitikBerjalan />
+      {jamBerjalan(detik)}
+      <span className="sr-only"> berjalan</span>
+    </span>
   );
 }
 
@@ -200,7 +272,9 @@ function judulJarak(
   return jarak.sebab;
 }
 
-function IsiJarak({
+
+/** Satu pil: label pendek + angka (atau keadaannya), title berisi arti dan rinciannya. */
+function PilJarak({
   jenis,
   jarak,
   tiga,
@@ -217,12 +291,13 @@ function IsiJarak({
   ambangTungguMenit: number;
   sebutTetangga: (t: TetanggaJarak) => string;
 }) {
-  const judul = judulJarak(jenis, jarak, tiga, baris, sebutTetangga);
+  const judul = `${arti(jenis, ambangTungguMenit)}\n${judulJarak(jenis, jarak, tiga, baris, sebutTetangga)}`;
   switch (jarak.keadaan) {
     case "selesai":
       return (
-        <span className={cn(KEPING, kelasPita(jenis, jarak.detik ?? 0, ambangTungguMenit))} title={judul}>
-          {sebutanDurasi(jarak.detik ?? 0)}
+        <span className={cn(PIL, kelasPita(jenis, jarak.detik ?? 0, ambangTungguMenit))} title={judul}>
+          <LabelPil jenis={jenis} />
+          {sebutanDurasiRingkas(jarak.detik ?? 0)}
         </span>
       );
     case "berjalan":
@@ -236,27 +311,31 @@ function IsiJarak({
         />
       ) : (
         <span
-          className="text-[10px] italic text-muted-foreground"
+          className={cn(PIL, REDAM, "italic")}
           title={`${judul} Jam aplikasi antrian tidak terbaca, sehingga lamanya tidak dapat dihitung di sini.`}
         >
+          <LabelPil jenis={jenis} />
           berjalan
         </span>
       );
     case "janggal":
       return (
-        <span className={cn(KEPING, JANGGAL)} title={judul}>
+        <span className={cn(PIL, JANGGAL)} title={judul}>
+          <LabelPil jenis={jenis} />
           janggal
         </span>
       );
     case "tidak-diketahui":
       return (
-        <span className="text-[10px] italic text-muted-foreground" title={judul}>
+        <span className={cn(PIL, REDAM, "border-dashed italic")} title={judul}>
+          <LabelPil jenis={jenis} />
           tidak diketahui
         </span>
       );
     default:
       return (
-        <span className="text-[10px] text-muted-foreground" title={judul}>
+        <span className={cn(PIL, REDAM)} title={judul}>
+          <LabelPil jenis={jenis} />
           pertama
         </span>
       );
@@ -266,11 +345,11 @@ function IsiJarak({
 /**
  * Tiga jarak satu sidang, bernama, di bawah nomor antriannya.
  *
- * Baris yang memang tidak punya pertanyaan TIDAK digambar: yang belum
- * dipanggil tidak punya "Dari sebelumnya" dan "Lama sidang", yang belum
- * mengambil nomor tidak punya "Tunggu". Satu pengecualian: perkara PERTAMA di
- * ruangnya tetap menyebut "pertama" pada "Dari sebelumnya" - itu keterangan
- * tentang urutan, bukan kekosongan, dan bukan nol.
+ * Pil yang memang tidak punya pertanyaan TIDAK digambar: yang belum dipanggil
+ * tidak punya "Dari sebelumnya" dan "Lama sidang", yang belum mengambil nomor
+ * tidak punya "Tunggu". Satu pengecualian: perkara PERTAMA di ruangnya tetap
+ * menyebut "pertama" pada "Dari sebelumnya" - itu keterangan tentang urutan,
+ * bukan kekosongan, dan bukan nol.
  */
 export function TigaJarakSidang({
   tiga,
@@ -293,38 +372,40 @@ export function TigaJarakSidang({
   nomorRekaman?: number | null;
 }) {
   if (!tiga) return null;
-  const daftar: Array<{ jenis: Jenis; label: string; jarak: Jarak }> = [];
-  if (tiga.tunggu.keadaan !== "kosong") daftar.push({ jenis: "tunggu", label: "Tunggu", jarak: tiga.tunggu });
+  const daftar: Array<{ jenis: Jenis; jarak: Jarak }> = [];
+  if (tiga.tunggu.keadaan !== "kosong") daftar.push({ jenis: "tunggu", jarak: tiga.tunggu });
   if (tiga.dariSebelumnya.keadaan !== "kosong" || tiga.urutanRuang === 1) {
-    daftar.push({ jenis: "sebelum", label: "Dari sebelumnya", jarak: tiga.dariSebelumnya });
+    daftar.push({ jenis: "sebelum", jarak: tiga.dariSebelumnya });
   }
-  if (tiga.lamaSidang.keadaan !== "kosong") daftar.push({ jenis: "sidang", label: "Lama sidang", jarak: tiga.lamaSidang });
+  if (tiga.lamaSidang.keadaan !== "kosong") daftar.push({ jenis: "sidang", jarak: tiga.lamaSidang });
   if (daftar.length === 0) return null;
 
   return (
-    <div className="mt-1 space-y-0.5 text-[10px] leading-tight" data-tiga-jarak={tiga.kunci}>
+    <div className="mt-1 text-[10px] leading-tight" data-tiga-jarak={tiga.kunci}>
       {typeof nomorRekaman === "number" ? (
         <div
-          className="text-muted-foreground"
+          className="mb-0.5 text-muted-foreground"
           title="Nomor antrian menurut buku waktu ALETA - aplikasi antrian sudah tidak menyimpan baris hari ini."
         >
           antrian {nomorRekaman} · rekaman
         </div>
       ) : null}
-      {daftar.map(({ jenis, label, jarak }) => (
-        <div key={jenis} className="flex items-center gap-1" data-jarak={jenis} data-keadaan={jarak.keadaan}>
-          <span className="w-[5.2rem] shrink-0 text-muted-foreground">{label}</span>
-          <IsiJarak
-            jenis={jenis}
-            jarak={jarak}
-            tiga={tiga}
-            baris={baris}
-            patokan={patokan}
-            ambangTungguMenit={ambangTungguMenit}
-            sebutTetangga={sebutTetangga}
-          />
-        </div>
-      ))}
+      {/* Satu deret yang MELIPAT di antara pil, tidak di dalamnya. */}
+      <div className="flex flex-wrap gap-1" data-deret-jarak>
+        {daftar.map(({ jenis, jarak }) => (
+          <span key={jenis} className="inline-flex" data-jarak={jenis} data-keadaan={jarak.keadaan}>
+            <PilJarak
+              jenis={jenis}
+              jarak={jarak}
+              tiga={tiga}
+              baris={baris}
+              patokan={patokan}
+              ambangTungguMenit={ambangTungguMenit}
+              sebutTetangga={sebutTetangga}
+            />
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -357,25 +438,5 @@ export function LencanaMenungguBerjalan({
         menunggu {jamBerjalan(detik)}
       </span>
     </div>
-  );
-}
-
-/**
- * Keterangan singkat ketiga angka, dalam bahasa sehari-hari. Ambangnya
- * dikirim, tidak ditulis di sini - lihat pitaTunggu.
- */
-export function LegendaTigaJarak({ ambangTungguMenit }: { ambangTungguMenit: number }) {
-  return (
-    <p className="mb-2 text-[11px] leading-snug text-muted-foreground" data-legenda-tiga-jarak>
-      <span className="font-semibold text-foreground">Tiga angka waktu di kolom Antrian: </span>
-      <span className="font-semibold text-foreground">Tunggu</span> - sejak pihak mengambil nomor antrian sampai
-      perkaranya dipanggil masuk (memerah sesudah {ambangTungguMenit} menit).{" "}
-      <span className="font-semibold text-foreground">Dari sebelumnya</span> - sejak perkara sebelumnya di ruang
-      yang sama dipanggil sampai perkara ini dipanggil; perkara pertama di ruangnya tertulis &ldquo;pertama&rdquo;.{" "}
-      <span className="font-semibold text-foreground">Lama sidang</span> - sejak perkara ini dipanggil sampai
-      perkara berikutnya di ruang itu dipanggil. Angka menit:detik bertanda &ldquo;berjalan&rdquo; masih dihitung
-      menurut jam aplikasi antrian, bukan jam komputer ini. Arahkan kursor ke angkanya untuk melihat jam dan
-      perkara pembandingnya.
-    </p>
   );
 }

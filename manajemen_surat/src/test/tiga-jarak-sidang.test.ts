@@ -11,6 +11,7 @@ import {
   pitaTunggu,
   sebutanDurasi,
   sebutanDurasiLengkap,
+  sebutanDurasiRingkas,
   type BarisWaktuAntrian,
 } from "@/lib/tiga-jarak-sidang";
 
@@ -243,6 +244,19 @@ describe("bentuk tulisan dan warna", () => {
     expect(sebutanDurasi(3599)).toBe("59 menit");
     expect(sebutanDurasi(3600)).toBe("1 jam");
     expect(sebutanDurasi(3900)).toBe("1 jam 5 menit");
+  });
+
+  it("durasi ringkas untuk pil: angka yang SAMA dengan bentuk panjangnya", () => {
+    // Diminta pengguna 28 Sep 2026 - "1 jam 19 menit" melipat tiga baris.
+    expect(sebutanDurasiRingkas(45)).toBe("45d");
+    expect(sebutanDurasiRingkas(12 * 60 + 59)).toBe("12m");
+    expect(sebutanDurasiRingkas(3600)).toBe("1j");
+    expect(sebutanDurasiRingkas(79 * 60 + 30)).toBe("1j 19m");
+    expect(sebutanDurasiRingkas(-5)).toBe("0d");
+    for (const d of [0, 59, 60, 719, 3599, 3600, 3900, 4770, 7200, 9000]) {
+      const angka = (t: string) => (t.match(/\d+/g) ?? []).join(",");
+      expect(angka(sebutanDurasiRingkas(d))).toBe(angka(sebutanDurasi(d)));
+    }
   });
 
   it("durasi lengkap untuk title, sampai detiknya", () => {

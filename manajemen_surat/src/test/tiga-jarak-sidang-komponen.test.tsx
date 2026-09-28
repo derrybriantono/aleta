@@ -5,7 +5,6 @@ import { Profiler, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  LegendaTigaJarak,
   LencanaMenungguBerjalan,
   TigaJarakSidang,
   jumlahPendengarDetak,
@@ -31,7 +30,10 @@ import {
  *   - "sekarang" datang dari jam aplikasi antrian, bukan jam komputer;
  *   - lencana "menunggu lama" muncul TEPAT pada detik ambangnya terlewati;
  *   - tetangganya disebut di title, termasuk yang tidak tampil;
- *   - pengatur waktunya berhenti sendiri begitu tidak ada yang berjalan.
+ *   - pengatur waktunya berhenti sendiri begitu tidak ada yang berjalan;
+ *   - (28 Sep 2026) ketiganya tiga PIL berlabel dalam satu deret yang
+ *     melipat di antara pil, bukan di dalamnya, dan arti tiap angka - isi
+ *     legenda yang dibuang - ada di title pilnya.
  */
 
 const HARI = "2026-09-27";
@@ -176,20 +178,55 @@ describe("angka yang berjalan berdetak sendiri", () => {
 });
 
 describe("yang tergambar dan title-nya", () => {
-  it("tiga baris bernama; yang pertama di ruangnya tertulis 'pertama'", () => {
+  it("tiga pil bernama; yang pertama di ruangnya tertulis 'pertama'", () => {
     const { container } = render(
       <TigaJarakSidang tiga={TIGA[k(A)]} baris={A} patokan={patokanPada("09:30:00")} ambangTungguMenit={40} sebutTetangga={sebut} />
     );
-    expect(container.querySelector('[data-jarak="tunggu"]')!.textContent).toContain("50 menit");
-    expect(container.querySelector('[data-jarak="sebelum"]')!.textContent).toContain("pertama");
-    expect(container.querySelector('[data-jarak="sidang"]')!.textContent).toContain("12 menit");
+    // Bentuk ringkas (28 Sep 2026): label pendek di dalam pil, angka "50m".
+    expect(container.querySelector('[data-jarak="tunggu"]')!.textContent).toBe("Tunggu50m");
+    expect(container.querySelector('[data-jarak="sebelum"]')!.textContent).toBe("Dari sblmpertama");
+    expect(container.querySelector('[data-jarak="sidang"]')!.textContent).toBe("Lama12m");
+  });
+
+  it("satu deret yang melipat DI ANTARA pil - tiap pil tidak pernah melipat", () => {
+    // Keluhan pengguna 28 Sep 2026: lencana "1 jam 19 menit" melipat menjadi
+    // bulatan tiga baris, dan label selebar 5,2rem melebarkan kolom Antrian.
+    const { container } = render(
+      <TigaJarakSidang tiga={TIGA[k(A)]} baris={A} patokan={patokanPada("09:30:00")} ambangTungguMenit={40} sebutTetangga={sebut} />
+    );
+    const deret = container.querySelector("[data-deret-jarak]")!;
+    expect(deret.className).toMatch(/\bflex-wrap\b/);
+    const jarak = container.querySelectorAll("[data-jarak]");
+    expect(jarak).toHaveLength(3);
+    for (const j of jarak) {
+      expect(j.parentElement).toBe(deret);
+      const pil = j.querySelector("[title]")!;
+      expect(pil.className).toMatch(/\bwhitespace-nowrap\b/);
+      // Labelnya DI DALAM pil, bukan kolom label tersendiri di sampingnya.
+      expect(pil.contains(j.querySelector("span.font-normal"))).toBe(true);
+    }
+    expect(container.innerHTML).not.toContain("w-[5.2rem]");
+  });
+
+  it("durasi selesai yang lebih dari sejam memakai bentuk ringkas, bukan '1 jam 19 menit'", () => {
+    const P = baris({ perkaraId: "40", nomorAntrian: 1, ambilTerawal: `${HARI} 08:05:00`, panggilTerakhir: `${HARI} 09:24:00` });
+    const Q = baris({ perkaraId: "41", nomorAntrian: 2, ambilTerawal: `${HARI} 08:10:00`, panggilTerakhir: `${HARI} 09:31:00` });
+    const t = hitungTigaJarak([P, Q], { hariIni: HARI });
+    const { container } = render(
+      <TigaJarakSidang tiga={t[k(P)]} baris={P} patokan={patokanPada("09:40:00")} ambangTungguMenit={40} sebutTetangga={sebut} />
+    );
+    const tunggu = container.querySelector('[data-jarak="tunggu"] [title]')!;
+    expect(tunggu.textContent).toBe("Tunggu1j 19m");
+    // Bentuk lengkapnya tetap di title, dan warnanya pita > 60 menit.
+    expect(tunggu.getAttribute("title")).toContain("menunggu 1 jam 19 menit");
+    expect(tunggu.className).toContain("bg-red-700");
   });
 
   it("title menyebut tetangga dengan nomor antrian DAN nomor perkaranya", () => {
     render(
       <TigaJarakSidang tiga={TIGA[k(B)]} baris={B} patokan={patokanPada("09:30:00")} ambangTungguMenit={40} sebutTetangga={sebut} />
     );
-    const sebelum = screen.getByText("12 menit");
+    const sebelum = screen.getByText("12m");
     expect(sebelum.getAttribute("title")).toContain("antrian 1 (1/Pdt.G/2026/PA.Dgl)");
     expect(sebelum.getAttribute("title")).toContain("bukan baris di atasnya");
   });
@@ -199,14 +236,14 @@ describe("yang tergambar dan title-nya", () => {
       <TigaJarakSidang tiga={TIGA[k(A)]} baris={A} patokan={patokanPada("09:30:00")} ambangTungguMenit={40} sebutTetangga={sebut} />
     );
     // Tetangga A di depan adalah B - yang nomor perkaranya tidak dikenal.
-    expect(screen.getByText("12 menit").getAttribute("title")).toContain("(perkara yang tidak tampil pada daftar ini)");
+    expect(screen.getByText("12m").getAttribute("title")).toContain("(perkara yang tidak tampil pada daftar ini)");
   });
 
   it("panggilan ulang disebutkan di title Tunggu", () => {
     render(
       <TigaJarakSidang tiga={TIGA[k(B)]} baris={B} patokan={patokanPada("09:30:00")} ambangTungguMenit={40} sebutTetangga={sebut} />
     );
-    const tunggu = screen.getByText("52 menit");
+    const tunggu = screen.getByText("52m");
     expect(tunggu.getAttribute("title")).toContain("Dipanggil 2 kali");
     expect(tunggu.getAttribute("title")).toContain("09:05:00");
   });
@@ -239,11 +276,24 @@ describe("yang tergambar dan title-nya", () => {
     expect(screen.getByText("antrian 1 · rekaman")).toBeTruthy();
   });
 
-  it("legenda menyebut ketiga nama dan ambang yang dikirim", () => {
-    const { container } = render(<LegendaTigaJarak ambangTungguMenit={40} />);
-    for (const nama of ["Tunggu", "Dari sebelumnya", "Lama sidang", "sesudah 40 menit", "berjalan"]) {
-      expect(container.textContent).toContain(nama);
-    }
+  it("arti tiap angka - isi legenda yang dibuang - ada di title pilnya, dengan ambang yang dikirim", () => {
+    const { container } = render(
+      <TigaJarakSidang tiga={TIGA[k(A)]} baris={A} patokan={patokanPada("09:30:00")} ambangTungguMenit={40} sebutTetangga={sebut} />
+    );
+    const judul = (jenis: string) => container.querySelector(`[data-jarak="${jenis}"] [title]`)!.getAttribute("title")!;
+    expect(judul("tunggu")).toContain("Tunggu: sejak pihak mengambil nomor antrian");
+    expect(judul("tunggu")).toContain("sesudah 40 menit");
+    expect(judul("sebelum")).toContain("Dari sebelumnya: sejak perkara sebelumnya");
+    expect(judul("sidang")).toContain("Lama sidang: sejak perkara ini dipanggil");
+  });
+
+  it("'berjalan' tetap terbaca pembaca layar dan di title walau tidak lagi tertulis di samping pil", () => {
+    const { container } = render(
+      <TigaJarakSidang tiga={TIGA[k(B)]} baris={B} patokan={patokanPada("09:17:30")} ambangTungguMenit={40} sebutTetangga={sebut} />
+    );
+    const pil = container.querySelector('[data-jarak="sidang"] [title]')!;
+    expect(pil.querySelector(".sr-only")!.textContent).toContain("berjalan");
+    expect(pil.getAttribute("title")).toContain("masih berjalan");
   });
 });
 

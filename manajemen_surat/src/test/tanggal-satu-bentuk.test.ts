@@ -246,7 +246,7 @@ describe("butir 1 - kotak Ditunda sampai, tempat yang pengguna tunjukkan", () =>
     // Dan dari kedelapan ribu itu tidak satu pun jatuh pada akhir pekan, jadi
     // nama hari adalah satu-satunya tanda yang menampakkan salah ketik sebelum
     // hari H.
-    expect(SIDANG).toContain("tanggalHariPendek(\n                                    baris.tanggalSidangBerikut,");
+    expect(SIDANG).toContain("tanggalHariPendek(\n                                      baris.tanggalSidangBerikut,");
     expect(SIDANG).not.toContain("sampai {baris.tanggalSidangBerikut}");
   });
 
@@ -254,8 +254,14 @@ describe("butir 1 - kotak Ditunda sampai, tempat yang pengguna tunjukkan", () =>
     // "Kam, 17-09-2026" 15 aksara melawan "2026-09-17" 10 aksara, di dalam
     // kotak kuning yang sempit. Tanpa whitespace-nowrap nama harinya pindah
     // baris dan justru lebih sulit dibaca daripada ISO yang diganti.
+    //
+    // Sejak 28 Sep 2026 yang nowrap hanya TANGGALNYA, bukan "sampai
+    // <tanggal>" seluruhnya: potongan nowrap selebar 175 px itu menentukan
+    // lebar minimum kolom Perkara dan mendorong tabel melewati kartunya.
+    // Janji di atas tetap: nama hari dan tanggalnya tidak pernah terpisah.
     const i = SIDANG.indexOf("sampai{\" \"}");
     expect(i, "kalimat tundaan tidak ditemukan").toBeGreaterThan(-1);
-    expect(SIDANG.slice(Math.max(0, i - 400), i)).toContain("whitespace-nowrap");
+    const sesudah = SIDANG.slice(i, SIDANG.indexOf("tanggalHariPendek(", i));
+    expect(sesudah).toContain('<span className="whitespace-nowrap">');
   });
 });

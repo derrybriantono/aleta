@@ -65,7 +65,6 @@ import {
   type WaktuAntrian,
 } from "@/lib/tiga-jarak-sidang";
 import {
-  LegendaTigaJarak,
   LencanaMenungguBerjalan,
   TigaJarakSidang,
   type PatokanWaktu,
@@ -3045,6 +3044,21 @@ function SelKonseptorSementara({
   if (!terbuka) {
     return (
       <div className="mb-1">
+        {/* ==============================================================
+            MELIPAT DI DALAM SELNYA, NAMA TETAP LENGKAP
+            ==============================================================
+
+            Diminta pengguna 28 September 2026: "tombol konseptor sementara
+            terlalu panjang ... tapi tetap nama konseptor lengkap". Dahulu
+            satu pil rounded-full ber-truncate - pada kolom Putusan yang
+            sempit ia terpotong di tepi kanan menjadi "konseptor sementara:
+            Derry Bri…", dan nama, satu-satunya yang dicari, justru yang
+            hilang.
+
+            Kini tulisannya boleh melipat (sudut rounded-lg, sebab pil bulat
+            dua baris terbaca sebagai gelembung), dan titik dua dibuang:
+            "konseptor sementara" diredam, namanya ditebalkan - nama yang
+            terbaca lebih dulu, lengkap, tanpa elipsis. */}
         <button
           type="button"
           onClick={onBuka}
@@ -3054,16 +3068,21 @@ function SelKonseptorSementara({
               : "Tunjuk konseptor sementara - berlaku sampai SIPP punya namanya sendiri."
           }
           className={cn(
-            "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
+            "inline-flex max-w-full items-start gap-1 rounded-lg border px-2 py-0.5 text-left text-[11px] font-medium leading-snug transition",
             tunjukan?.nama
               ? "border-violet-400 bg-violet-100 text-violet-900 hover:bg-violet-200 dark:border-violet-500/60 dark:bg-violet-500/15 dark:text-violet-200 dark:hover:bg-violet-500/25"
               : "border-dashed border-muted-foreground/40 text-muted-foreground hover:border-muted-foreground hover:text-foreground"
           )}
         >
-          <PenLine className="h-3 w-3 shrink-0" aria-hidden="true" />
-          <span className="truncate">
-            {tunjukan?.nama ? `konseptor sementara: ${tunjukan.nama}` : "tunjuk konseptor"}
-          </span>
+          <PenLine className="mt-px h-3 w-3 shrink-0" aria-hidden="true" />
+          {tunjukan?.nama ? (
+            <span className="min-w-0 break-words" data-konseptor-sementara>
+              <span className="font-normal opacity-75">konseptor sementara</span>{" "}
+              <span className="font-semibold">{tunjukan.nama}</span>
+            </span>
+          ) : (
+            <span className="min-w-0">tunjuk konseptor</span>
+          )}
         </button>
       </div>
     );
@@ -3322,6 +3341,56 @@ function BorangKonseptorSementara({
         begitu SIPP punya namanya sendiri.
       </p>
     </div>
+  );
+}
+
+/**
+ * ============================================================================
+ * NOMOR PERKARA YANG BOLEH PATAH - HANYA SESUDAH JENISNYA
+ * ============================================================================
+ *
+ * "403/Pdt.G/2026/PA.Dgl" tidak punya satu pun tempat patah menurut peramban,
+ * sehingga lebar minimum kolom Perkara selalu selebar nomor itu - 173 px pada
+ * huruf tebal 0,95rem - dan pada layar 1366 px itulah yang mendorong tabel
+ * melewati kartunya (diukur 28 September 2026).
+ *
+ * <wbr> memberi SATU tempat patah, sesudah "Pdt.G/": bila kolomnya cukup lebar
+ * nomornya tetap satu baris (tabel auto memberi tiap kolom lebar isinya bila
+ * ruangnya ada), dan bila tidak, ia patah menjadi dua potong yang masing-masing
+ * masih terbaca - bukan di tengah angka atau di tengah "PA.Dgl". Teksnya tidak
+ * berubah: <wbr> bukan aksara, jadi menyalin dan mencari nomornya tetap utuh.
+ */
+/**
+ * Teks yang boleh patah SESUDAH tiap garis miring - "Penggugat/pemohon saja".
+ * Peramban tidak mematahkan kata di garis miring, sehingga "Penggugat/pemohon"
+ * menjadi satu potong selebar 140 px yang menentukan lebar minimum kolomnya.
+ */
+function PatahSesudahGaris({ teks }: { teks: string }) {
+  const bagian = String(teks ?? "").split("/");
+  return (
+    <>
+      {bagian.map((b, i) => (
+        <Fragment key={i}>
+          {i > 0 ? (
+            <>
+              /<wbr />
+            </>
+          ) : null}
+          {b}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+function NomorBolehPatah({ nomor }: { nomor: string }) {
+  const bagian = nomor.split("/");
+  if (bagian.length < 4) return <>{nomor}</>;
+  return (
+    <>
+      {bagian.slice(0, 2).join("/")}/<wbr />
+      {bagian.slice(2).join("/")}
+    </>
   );
 }
 
@@ -4197,7 +4266,9 @@ export function AletaEcourtSidang({
    *      lebar SEBESAR YANG TERLIHAT. Ia lalu tinggal diam saat tabelnya
    *      digulung ke samping, dan tidak pernah ada bagian yang keluar layar.
    *
-   *   2. TINGGI. Dari lg ke atas kotaknya dibatasi 70vh. Rincian sidang jauh
+   *   2. TINGGI. (Sudah tidak berlaku sejak 28 September 2026 - batas
+   *      tingginya dibuang seluruhnya; catatan ini disimpan sebagai riwayat.)
+   *      Dari lg ke atas kotaknya dibatasi 70vh. Rincian sidang jauh
    *      lebih tinggi daripada itu, sehingga membukanya melahirkan gulir
    *      bersarang: halaman menggulung, dan di dalamnya kotak menggulung
    *      sendiri. Pembatasan itu dilepas selama ada rincian yang terbuka -
@@ -4206,6 +4277,19 @@ export function AletaEcourtSidang({
    */
   const kotakTabel = useRef<HTMLDivElement | null>(null);
   const [lebarTampak, setLebarTampak] = useState(0);
+  /**
+   * Tabelnya MUAT di kotaknya - diukur, bukan ditebak dari lebar layar.
+   *
+   * Selama muat, kotaknya overflow-visible: tidak ada gulir samping yang
+   * perlu disediakan, dan kepala kolom (sticky top-0) menempel di puncak
+   * LAYAR saat halaman digulung - kotak yang overflow-x-auto menangkap sticky
+   * itu dan kepalanya ikut tergulung pergi. Begitu tidak muat - layar sempit,
+   * atau kedua sidebar terbuka pada 1280 px - kotaknya kembali overflow-x-auto:
+   * isi yang lebih lebar menggulir di dalam kartu, tidak meluber keluar dari
+   * kartunya. Bawaannya TIDAK muat, supaya gambar pertama sebelum diukur
+   * tidak pernah meluber.
+   */
+  const [tabelMuat, setTabelMuat] = useState(false);
 
   /**
    * Jabatan pengguna yang sedang membuka - untuk keterangan di kepala kartu.
@@ -4223,10 +4307,21 @@ export function AletaEcourtSidang({
   useEffect(() => {
     const kotak = kotakTabel.current;
     if (!kotak || typeof ResizeObserver === "undefined") return;
-    const ukur = () => setLebarTampak(kotak.clientWidth);
+    const ukur = () => {
+      setLebarTampak(kotak.clientWidth);
+      const tabel = kotak.querySelector("table");
+      // Kotak selebar nol (belum tergambar, tab tersembunyi) bukan "muat".
+      setTabelMuat(
+        tabel !== null && kotak.clientWidth > 0 && tabel.getBoundingClientRect().width <= kotak.clientWidth + 0.5
+      );
+    };
     ukur();
     const pengamat = new ResizeObserver(ukur);
     pengamat.observe(kotak);
+    // Tabelnya diamati juga: baris baru yang lebih lebar mengubah lebar
+    // tabel tanpa mengubah lebar kotaknya.
+    const tabel = kotak.querySelector("table");
+    if (tabel) pengamat.observe(tabel);
     return () => pengamat.disconnect();
   }, []);
 
@@ -4751,20 +4846,6 @@ export function AletaEcourtSidang({
         : `${antrianN} (perkara yang tidak tampil pada daftar ini)`;
     },
     [bahanTigaJarak]
-  );
-
-  /**
-   * Legenda hanya berguna bila ada angka yang dijelaskannya - baris antrian
-   * yang seluruh jaraknya kosong (belum ada yang mengambil nomor) tidak
-   * menggambar apa pun, dan tidak menyalakan legendanya.
-   */
-  const adaTigaJarak = useMemo(
-    () =>
-      sidangTampil.some((b) => {
-        const t = tigaJarak[kunciWaktu(b.tanggalSidang, b.perkaraId)];
-        return Boolean(t) && (t.tunggu.keadaan !== "kosong" || t.urutanRuang !== null);
-      }),
-    [sidangTampil, tigaJarak]
   );
 
   /**
@@ -6254,24 +6335,11 @@ export function AletaEcourtSidang({
           </div>
         ) : null}
 
-        {/* Tinggi tabel MENGIKUTI kendali yang diciutkan: ruang yang dihemat
-            di atas diberikan kepada daftar sidangnya, bukan dibiarkan kosong.
-            Itulah gunanya menciutkan - kalau tabelnya tetap setinggi semula,
-            yang didapat hanya ruang putih. */}
-        {/* ====================================================================
-            TINGGINYA BERBEDA DI LAYAR KECIL
-            ====================================================================
-
-            Di layar lebar, membatasi tinggi tabel berguna: kepala kolomnya
-            menempel dan sisa halaman tetap terlihat. Di ponsel akibatnya
-            terbalik - layarnya sendiri hanya setinggi 70vh sesudah bilah
-            peramban, sehingga tabel setinggi 70vh menyisakan jendela sempit
-            yang harus digulung di dalam halaman yang juga digulung. Dua gulir
-            bersarang adalah cara tercepat membuat orang tersesat.
-
-            Karena itu di bawah lg tabelnya dibiarkan setinggi isinya dan
-            halamanlah yang menggulung; pembatasan tinggi baru berlaku dari lg
-            ke atas. */}
+        {/* Batas tinggi 70vh/82vh dan gulir tegak di dalam kotak sudah DIBUANG
+            (28 September 2026) - lihat catatan di atas wadah tabel. Dahulu
+            batasnya hanya dari lg ke atas, sebab di ponsel gulir bersarang
+            membuat orang tersesat; kini tidak ada gulir bersarang di lebar
+            mana pun. */}
         {/* ==================================================================
             PERINGATAN KETIKA "PERKARA SAYA" TIDAK MENGENA SATU BARIS PUN
             ==================================================================
@@ -6320,36 +6388,61 @@ export function AletaEcourtSidang({
             Keterangannya tidak hilang: title tombol "Perkara saya" tetap
             menyebutkan apa yang sedang disaring. Yang hilang hanya barisnya. */}
 
-        {/* Legenda tiga jarak waktu - hanya bila saklarnya menyala DAN ada
-            angka yang dijelaskannya. Satu baris, bukan panel: keterangan
-            yang selalu ada tanpa angka di bawahnya menjadi perabot yang
-            dilewati (lihat catatan di atas). */}
-        {tampil(tampilan, "jarak-sidang") && adaTigaJarak ? (
-          <LegendaTigaJarak ambangTungguMenit={AMBANG_MENUNGGU_MENIT} />
-        ) : null}
+        {/* ==================================================================
+            LEGENDA TIGA JARAK DIBUANG - ARTINYA PINDAH KE TITLE TIAP PIL
+            ==================================================================
 
+            Diminta pengguna 28 September 2026: "hapus tulisan Tiga angka
+            waktu di kolom Antrian ...". Paragraf empat baris itu dibaca sekali
+            lalu dilewati selamanya, sambil mendorong tabelnya ke bawah. Arti
+            tiap angka kini ada di title pilnya sendiri - lihat ARTI di
+            components/portal/tiga-jarak-sidang.tsx. */}
+
+        {/* ==================================================================
+            SELEBAR KARTUNYA, TANPA GULIR SAMPING, TANPA GULIR TEGAK SENDIRI
+            ==================================================================
+
+            Diminta pengguna 28 September 2026, tiga keluhan sekaligus pada
+            layar 1920 px: tabelnya punya gulir ke samping, lencana konseptor
+            terpotong di tepi kanan, dan "ada yang terlewat di bawah footer -
+            seharusnya yang memanjang ke bawah itu antrian sidangnya".
+
+            SEBAB GULIR SAMPING: tabelnya dikunci min-w-[980px], padahal
+            kartunya hanya 956 px, dan di dalamnya nama pihak serta nama saksi
+            ber-truncate max-w-[24rem] - yang tidak pernah menyempit di dalam
+            sel tabel, sebab lebar minimum sel adalah lebar isinya yang tidak
+            dapat dipatahkan (terukur: tabel 1.590 px di kartu 956 px). Kini
+            dari xl (1280 px) ke atas batas lebarnya dilepas dan isi sel
+            MELIPAT, sehingga tabel selebar kartunya. Di bawah xl batas lama
+            tetap: kolomnya terlalu sempit untuk dilipat, dan menggulir ke
+            samping lebih terbaca daripada kolom selebar satu kata.
+
+            SEBAB "TERLEWAT DI BAWAH FOOTER": wadahnya dibatasi 70vh (82vh
+            bila kendali diciutkan) dan menggulir sendiri. Halaman berakhir
+            pada footer sementara baris-baris sidang masih tersembunyi di dalam
+            kotak - terukur 2.115 px isi di kotak setinggi 754 px. Batas itu
+            DIBUANG: tabelnya setinggi isinya, halamanlah yang menggulung, dan
+            footer selalu di bawah baris terakhir. Kepala kolom tetap menempel
+            di puncak layar selama tabelnya muat - lihat tabelMuat. Pengecualian
+            rincian terbuka (sebab (2) pada catatan lebarTampak) ikut hilang,
+            sebab tidak ada lagi batas yang perlu dilepas. */}
         <div
           ref={kotakTabel}
-          className={cn(
-            "overflow-x-auto rounded-xl border",
-            // Pembatasan tinggi dilepas selama ada rincian yang terbuka -
-            // lihat sebab (2) pada catatan lebarTampak di atas.
-            dibuka
-              ? ""
-              : kendaliCiut
-                ? "lg:max-h-[82vh] lg:overflow-auto"
-                : "lg:max-h-[70vh] lg:overflow-auto"
-          )}
+          data-tabel-muat={tabelMuat ? "ya" : "tidak"}
+          className={cn("rounded-xl border", tabelMuat ? "overflow-visible" : "overflow-x-auto")}
         >
           <table
             className={cn(
               "w-full text-sm",
               modeRingkas
-                ? "min-w-[640px] [&_.kolom-lengkap]:hidden"
-                : "min-w-[980px] [&_.hanya-ringkas]:hidden"
+                ? "min-w-[640px] xl:min-w-0 [&_.kolom-lengkap]:hidden"
+                : "min-w-[980px] xl:min-w-0 [&_.hanya-ringkas]:hidden"
             )}
           >
-            <thead className="sticky top-0 z-10 bg-muted text-left text-sm uppercase tracking-wide shadow-sm">
+            {/* Sudut atas kepala kolom ikut membulat: selama tabelnya muat,
+                wadahnya tidak lagi memotong isinya, dan latar bg-muted yang
+                bersudut siku akan menyembul keluar dari garis rounded-xl. */}
+            <thead className="sticky top-0 z-10 bg-muted text-left text-sm uppercase tracking-wide shadow-sm [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl">
               {/* Tiap kepala dapat ditekan: naik, turun, lalu kembali ke
                   urutan asal. Putaran ketiga penting - tanpa jalan kembali,
                   satu tekanan yang tidak disengaja mengunci tabelnya, dan
@@ -6387,10 +6480,10 @@ export function AletaEcourtSidang({
                 >
                   Antrian / Jam
                 </KepalaUrut>
-                <KepalaUrut kunci="perkara" urutan={urutTabel} onTekan={tekanUrut}>
+                <KepalaUrut className="px-2" kunci="perkara" urutan={urutTabel} onTekan={tekanUrut}>
                   Perkara &amp; Para Pihak
                 </KepalaUrut>
-                <KepalaUrut kunci="agenda" urutan={urutTabel} onTekan={tekanUrut}>
+                <KepalaUrut className="px-2" kunci="agenda" urutan={urutTabel} onTekan={tekanUrut}>
                   Agenda
                 </KepalaUrut>
                 {/* ==============================================================
@@ -6416,12 +6509,12 @@ export function AletaEcourtSidang({
 
                     Diurutkan menurut majelis, sebab itulah yang dicari orang
                     ketika menekan kepala kolom ini. */}
-                <KepalaUrut className="kolom-lengkap" kunci="majelis" urutan={urutTabel} onTekan={tekanUrut}>
+                <KepalaUrut className="px-2 kolom-lengkap" kunci="majelis" urutan={urutTabel} onTekan={tekanUrut}>
                   Majelis &amp; Petugas
                 </KepalaUrut>
                 <KepalaUrut
                   kunci="putusan"
-                  className="kolom-lengkap"
+                  className="px-2 kolom-lengkap"
                   urutan={urutTabel}
                   onTekan={tekanUrut}
                   judul="Urutkan menurut tanggal putusan; yang belum putus jatuh ke bawah"
@@ -6628,7 +6721,7 @@ export function AletaEcourtSidang({
                             />
                           ) : null}
                         </td>
-                        <td className="px-3 py-2 align-top">
+                        <td className="px-2 py-2 align-top">
                           {/* ==================================================
                               NOMORNYA MEMBUKA STATUS PERKARA
                               ==================================================
@@ -6653,7 +6746,7 @@ export function AletaEcourtSidang({
                               title={`Tunda atau putus sidang ${baris.nomorPerkara}`}
                               className="text-left text-[0.95rem] font-extrabold tracking-tight underline decoration-transparent underline-offset-2 transition hover:decoration-primary hover:text-primary"
                             >
-                              {baris.nomorPerkara}
+                              <NomorBolehPatah nomor={baris.nomorPerkara} />
                             </button>
                           ) : onBukaStatus ? (
                             <button
@@ -6662,11 +6755,11 @@ export function AletaEcourtSidang({
                               title={`Buka status perkara ${baris.nomorPerkara}`}
                               className="text-left text-[0.95rem] font-extrabold tracking-tight underline decoration-transparent underline-offset-2 transition hover:decoration-primary hover:text-primary"
                             >
-                              {baris.nomorPerkara}
+                              <NomorBolehPatah nomor={baris.nomorPerkara} />
                             </button>
                           ) : (
                             <span className="text-[0.95rem] font-extrabold tracking-tight">
-                              {baris.nomorPerkara}
+                              <NomorBolehPatah nomor={baris.nomorPerkara} />
                             </span>
                           )}
                           {/* ==================================================
@@ -6713,9 +6806,12 @@ export function AletaEcourtSidang({
                               kebetulan mirip.
 
                               Bila pihaknya lebih dari satu, SELURUH namanya
-                              disebut dan dipisah koma - dipotong truncate bila
-                              melebihi lebar kolom, dengan nama lengkapnya tetap
-                              terbaca pada title.
+                              disebut dan dipisah koma. Sejak 28 September 2026
+                              namanya MELIPAT, tidak lagi dipotong truncate
+                              max-w-[24rem]: truncate di dalam sel tabel tidak
+                              pernah menyempit - ia memaksa kolomnya selebar
+                              24rem dan itulah salah satu sebab tabelnya
+                              bergulir ke samping. Title-nya tetap ada.
 
                               Penanda "+2" yang sempat dipakai sudah DIHAPUS. Ia
                               menimbulkan pertanyaan alih-alih menjawabnya, dan
@@ -6727,7 +6823,7 @@ export function AletaEcourtSidang({
                             <div className="mt-0.5 space-y-0.5 text-sm text-muted-foreground">
                               {baris.pihak.penggugat.length > 0 ? (
                                 <div
-                                  className="max-w-[24rem] truncate"
+                                  className="break-words"
                                   title={baris.pihak.penggugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">P:</span>{" "}
@@ -6736,7 +6832,7 @@ export function AletaEcourtSidang({
                               ) : null}
                               {baris.pihak.tergugat.length > 0 ? (
                                 <div
-                                  className="max-w-[24rem] truncate"
+                                  className="break-words"
                                   title={baris.pihak.tergugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">T:</span>{" "}
@@ -7050,7 +7146,9 @@ export function AletaEcourtSidang({
                                 contradictoir
                               </Badge>
                             ) : tampil(tampilan, "kehadiran") && baris.dihadiriOleh ? (
-                              <Badge variant="muted">{SEBUTAN_HADIR[baris.dihadiriOleh]}</Badge>
+                              <Badge variant="muted">
+                                <PatahSesudahGaris teks={SEBUTAN_HADIR[baris.dihadiriOleh]} />
+                              </Badge>
                             ) : null}
 
                             {/* ==============================================
@@ -7104,8 +7202,10 @@ export function AletaEcourtSidang({
                           {tampil(tampilan, "saksi") &&
                           (baris.saksiPihak1 ?? 0) + (baris.saksiPihak2 ?? 0) > 0 ? (
                             <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                              {/* Melipat, bukan truncate - sebabnya sama dengan
+                                  nama pihak di atas. */}
                               {(baris.saksiPihak1 ?? 0) > 0 ? (
-                                <div className="max-w-[24rem] truncate">
+                                <div className="break-words">
                                   <span className="font-medium text-foreground/75">
                                     Saksi P ({baris.saksiPihak1}):
                                   </span>{" "}
@@ -7115,7 +7215,7 @@ export function AletaEcourtSidang({
                                 </div>
                               ) : null}
                               {(baris.saksiPihak2 ?? 0) > 0 ? (
-                                <div className="max-w-[24rem] truncate">
+                                <div className="break-words">
                                   <span className="font-medium text-foreground/75">
                                     Saksi T ({baris.saksiPihak2}):
                                   </span>{" "}
@@ -7222,12 +7322,20 @@ export function AletaEcourtSidang({
                                 Ditunda
                               </span>
                               {baris.tanggalSidangBerikut ? (
-                                <span className="whitespace-nowrap text-amber-700 dark:text-amber-300">
+                                // Hanya TANGGALNYA yang nowrap, bukan "sampai
+                                // <tanggal>" seluruhnya: satu potong nowrap
+                                // selebar 175 px itulah lebar minimum kolom
+                                // Perkara pada baris yang ditunda (diukur 28
+                                // September 2026), dan kolom itu yang
+                                // mendorong tabel melewati kartunya.
+                                <span className="text-amber-700 dark:text-amber-300">
                                   {" "}sampai{" "}
-                                  {tanggalHariPendek(
-                                    baris.tanggalSidangBerikut,
-                                    baris.tanggalSidangBerikut
-                                  )}
+                                  <span className="whitespace-nowrap">
+                                    {tanggalHariPendek(
+                                      baris.tanggalSidangBerikut,
+                                      baris.tanggalSidangBerikut
+                                    )}
+                                  </span>
                                 </span>
                               ) : null}
                               {baris.alasanDitunda ? (
@@ -7266,7 +7374,7 @@ export function AletaEcourtSidang({
                           ) : null}
                         </td>
 
-                        <td className="px-3 py-2 align-top text-sm">
+                        <td className="px-2 py-2 align-top text-sm">
                           {/* ==================================================
                               AGENDA e-LITIGASI BERTULISAN MERAH
                               ==================================================
@@ -7347,8 +7455,8 @@ export function AletaEcourtSidang({
                             jadi ia yang paling pantas menjadi baris terakhir
                             yang teredam - ada bila dicari, tidak menarik mata
                             bila tidak. */}
-                        <td className="px-3 py-2 align-top text-sm kolom-lengkap">
-                          <div className="flex items-baseline gap-1.5">
+                        <td className="px-2 py-2 align-top text-sm kolom-lengkap">
+                          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                             {/* ============================================
                                 KODE MAJELIS TIDAK BOLEH PATAH DI TANDA HUBUNG
                                 ============================================
@@ -7369,14 +7477,16 @@ export function AletaEcourtSidang({
 
                                 whitespace-nowrap menahannya tetap satu baris.
                                 Aman: kode terpanjang hanya sekitar sepuluh
-                                aksara, dan nama majelis di sebelahnya sudah
-                                dipotong dengan truncate bila ruangnya habis. */}
-                            <span className="whitespace-nowrap rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-semibold">
+                                aksara. Nama majelis di sebelahnya MELIPAT
+                                (sejak 28 September 2026, bukan truncate
+                                max-w-[18rem] lagi) - truncate di dalam sel
+                                tabel memaksa kolomnya selebar namanya. */}
+                            <span className="whitespace-nowrap rounded bg-muted px-1 py-0.5 font-mono text-xs font-semibold">
                               {baris.majelisKode || "—"}
                             </span>
                             {baris.majelisNama ? (
                               <span
-                                className="max-w-[18rem] truncate text-muted-foreground"
+                                className="min-w-0 break-words text-muted-foreground"
                                 title={baris.majelisNama}
                               >
                                 {baris.majelisNama}
@@ -7398,7 +7508,7 @@ export function AletaEcourtSidang({
                           ) : null}
                         </td>
 
-                        <td className="px-3 py-2 align-top text-sm kolom-lengkap">
+                        <td className="px-2 py-2 align-top text-sm kolom-lengkap">
                           {baris.sudahPutus ? (
                             <div className="flex flex-wrap gap-1">
                               {/* Tanggalnya sengaja tidak ikut: yang dicari di
