@@ -37,12 +37,12 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     fixed: [
       "Baris sidang 'terlewat di bawah footer': tabel dibatasi 70% tinggi layar dan menggulir sendiri. Kini tabel setinggi isinya, halaman yang menggulung, dan kepala kolom tetap menempel di puncak layar.",
+      "Pilihan Ringkas/Lengkap kini diingat peramban - dahulu nilai bawaan Lengkap tertulis sebelum pilihan lama sempat dibaca, sehingga selalu kembali ke Lengkap.",
     ],
     security: [],
     operationalNotes: ["Hanya portal yang dibangun ulang; tanpa migrasi, tanpa perubahan bot dan ekstensi."],
     knownLimitations: [
       "Pada 1280 px dengan kedua sidebar terbuka tabel masih menggulir ke samping di dalam kartu (menciutkan sidebar membuatnya muat).",
-      "Pilihan Ringkas/Lengkap belum diingat peramban (cacat lama, belum dibetulkan).",
     ],
   },
   {

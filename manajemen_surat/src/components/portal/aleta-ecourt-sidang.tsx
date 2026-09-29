@@ -4354,13 +4354,19 @@ export function AletaEcourtSidang({
     };
   }, []);
 
-  useEffect(() => {
+  // Disimpan HANYA saat pemakai memilih, bukan lewat efek atas [modeRingkas].
+  // Efek penyimpan dahulu berjalan serentak pada pemasangan pertama dan
+  // menulis bawaan "0" SEBELUM pembacaan tertunda di atas sempat membaca -
+  // simpanannya tertimpa, dan Ringkas selalu kembali ke Lengkap (28 Sep
+  // 2026). Polanya sama dengan saklar tampilan di bawah (ubahSaklar).
+  const pilihModeRingkas = useCallback((ringkas: boolean) => {
+    setModeRingkas(ringkas);
     try {
-      window.localStorage.setItem("aleta.jadwal-sidang.ringkas", modeRingkas ? "1" : "0");
+      window.localStorage.setItem("aleta.jadwal-sidang.ringkas", ringkas ? "1" : "0");
     } catch {
-      /* sama seperti di atas */
+      /* sama seperti di atas - pilihannya tetap berlaku di halaman ini */
     }
-  }, [modeRingkas]);
+  }, []);
 
   // ==========================================================================
   // SAKLAR TAMPILAN - APA YANG DIGAMBAR, DIPILIH SENDIRI OLEH PEMAKAINYA
@@ -5310,7 +5316,7 @@ export function AletaEcourtSidang({
         <div className="inline-flex overflow-hidden rounded-md border text-sm">
           <button
             type="button"
-            onClick={() => setModeRingkas(true)}
+            onClick={() => pilihModeRingkas(true)}
             className={cn(
               "px-2.5 py-1",
               modeRingkas ? "bg-primary text-primary-foreground" : "hover:bg-muted"
@@ -5320,7 +5326,7 @@ export function AletaEcourtSidang({
           </button>
           <button
             type="button"
-            onClick={() => setModeRingkas(false)}
+            onClick={() => pilihModeRingkas(false)}
             className={cn(
               "border-l px-2.5 py-1",
               modeRingkas ? "hover:bg-muted" : "bg-primary text-primary-foreground"
