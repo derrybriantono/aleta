@@ -6425,3 +6425,97 @@ html.aleta-ganti-tema *::after {
   content-visibility: auto;
   contain-intrinsic-size: auto 64px;
 }
+
+/* ==========================================================================
+   KULIT MODERN (UI BARU) DAN PITA MODE COBA - TAHAP 1, 1.172.0
+   ==========================================================================
+
+   Berlaku HANYA bila <html> membawa data-aleta-kulit="modern", yang dipasang
+   alatTandaiUji (panel-alat.js) ketika Super Admin memilih "UI Baru" di
+   popup. Dalam tampilan Lama maupun Baru atributnya tidak ada, sehingga blok
+   ini tidak menyentuh apa pun - kulit Klasik tetap persis seperti sebelumnya.
+
+   Yang diganti TOKEN, bukan aturan satu per satu: panel.css sudah seluruhnya
+   membaca --aleta-*, jadi sepuluh token ini mengubah warna semua panel di
+   SIPP, ABT, dan portal sekaligus, dan fungsi apa pun tidak ikut berubah.
+   Turunan merek (--aleta-merek-latar dan seterusnya) dihitung ulang sendiri
+   dari token yang baru.
+
+   !important DIPAKAI SENGAJA. Panel di portal ALETA menyalin palet portal ke
+   atribut style panelnya (selaraskanDenganAleta di aleta.js), dan gaya
+   sebaris mengalahkan lembar gaya apa pun kecuali yang !important. Tanpa itu
+   UI Baru tidak pernah sampai ke panel portal.
+
+   Selektornya dua tingkat lebih kuat daripada enam palet Super Admin
+   (html[...] di depan), jadi UI Baru menang atas palet yang dipilih: UI Baru
+   memang palet tersendiri. Palet pilihan tetap tersimpan dan kembali begitu
+   tampilannya dialihkan ke Lama atau Baru.
+
+   Warnanya diambil dari sistem desain usulan (uiux/_bersama/gaya-usulan.css):
+   aksen biru laut #3ec6e6, hijau beres, kuning perlu perhatian, merah
+   terlambat. Hurufnya Plus Jakarta Sans bila terpasang di komputer, lalu
+   Segoe UI - tidak ada huruf yang diunduh dari luar. */
+html[data-aleta-kulit="modern"] .aleta-panel:not([data-tema="terang"]) {
+  --aleta-latar: #111a2b !important;
+  --aleta-latar-naik: #162238 !important;
+  --aleta-garis: #24324b !important;
+  --aleta-garis-kuat: #344560 !important;
+  --aleta-tulisan: #e8eef7 !important;
+  --aleta-tulisan-lembut: #aab6c8 !important;
+  --aleta-merek: #3ec6e6 !important;
+  --aleta-aman: #34d399 !important;
+  --aleta-mendesak: #f5b83d !important;
+  --aleta-lewat: #f87171 !important;
+}
+
+html[data-aleta-kulit="modern"] .aleta-panel[data-tema="terang"] {
+  --aleta-latar: #ffffff !important;
+  --aleta-latar-naik: #f3f5f9 !important;
+  --aleta-garis: #e2e7ef !important;
+  --aleta-garis-kuat: #cdd5e1 !important;
+  --aleta-tulisan: #111827 !important;
+  --aleta-tulisan-lembut: #4b5565 !important;
+  --aleta-merek: #0b89a8 !important;
+  --aleta-aman: #047857 !important;
+  --aleta-mendesak: #b45309 !important;
+  --aleta-lewat: #b91c1c !important;
+}
+
+html[data-aleta-kulit="modern"] .aleta-panel {
+  font-family: "Plus Jakarta Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  border-radius: 12px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+html[data-aleta-kulit="modern"] .aleta-panel[data-tema="terang"] {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 12px 30px rgba(16, 24, 40, 0.14);
+}
+
+/* Mode coba: sama tujuannya dengan pita mode kering - terlihat dari seberang
+   ruangan - tetapi warnanya lain (biru laut, bukan kuning), supaya keduanya
+   tidak tertukar bila menyala bersamaan. Label kecil di pojok kiri bawah
+   halaman menyebut sebabnya dengan kata, bukan hanya dengan warna. */
+html[data-aleta-coba="ya"] .aleta-panel {
+  outline: 2px dashed #3ec6e6;
+  outline-offset: -2px;
+}
+
+html[data-aleta-kering="ya"][data-aleta-coba="ya"] .aleta-panel {
+  outline-color: #e0a52f;
+  box-shadow: 0 0 0 3px #3ec6e6, 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+html[data-aleta-coba="ya"]::after {
+  content: "Mode coba ALETA - kirim & simpan ditahan";
+  position: fixed;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2147483001;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #04212b;
+  color: #bff0fb;
+  border: 1px solid #3ec6e6;
+  font: 600 11.5px/1.5 "Segoe UI", system-ui, sans-serif;
+  pointer-events: none;
+}

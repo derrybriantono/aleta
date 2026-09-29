@@ -80,6 +80,9 @@ const BERKAS = [
   "panel.css",
   "popup.html",
   "popup.js",
+  // Daftar 120 saklar fitur ide (tahap 1, 1.172.0) - dimuat popup.html
+  // sebelum popup.js. Disusun dari berkas ide, bukan disunting tangan.
+  "daftar-fitur.js",
   "PASANG.md",
 ];
 

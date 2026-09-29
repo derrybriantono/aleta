@@ -60,8 +60,10 @@ describe("peubah warna panel", () => {
   it("garis kuat punya nilai pada kedua tema", () => {
     // Satu nilai saja tidak cukup: yang dulu bocor justru sisi gelapnya,
     // sementara sisi terangnya benar - dan karena itu tidak ketahuan.
+    // !important dilepas: kulit Modern (1.172.0) memakainya supaya menang atas
+    // token sebaris panel portal - nilainya tetap harus warna sungguhan.
     const nilai = [...tanpaCatatan().matchAll(/--aleta-garis-kuat\s*:\s*([^;]+);/gi)].map((x) =>
-      x[1].trim()
+      x[1].replace(/\s*!important\s*$/i, "").trim()
     );
     expect(nilai.length).toBeGreaterThanOrEqual(2);
     for (const x of nilai) expect(x).toMatch(/^#[0-9a-f]{3,8}$/i);

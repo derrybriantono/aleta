@@ -5419,6 +5419,7 @@ function bunyiSimpanTidakDitekan(ditekan) {
     return `${awal}tombol yang ditemukan bukan milik borang Putusan Akhir, jadi TIDAK ditekan - tekan Simpan sendiri.`;
   }
   if (alasan === "mode_kering") return `${awal}mode kering aktif: Simpan ditahan, SIPP tidak menyimpan apa pun.`;
+  if (alasan === "mode_coba") return `${awal}mode coba aktif: Simpan ditahan, SIPP tidak menyimpan apa pun.`;
   return `${awal}tombol Simpan tidak dapat ditekan (${alasan || "tanpa alasan"}) - tekan Simpan sendiri.`;
 }
 
@@ -7371,6 +7372,19 @@ async function kirimKeJembatan(pesan) {
       dapatPulih: false,
     });
     return { ok: false, alasan: "mode_kering" };
+  }
+  // Mode coba (Super Admin sedang mencoba tampilan Baru / UI Baru) menahan
+  // tombol Simpan SIPP dengan cara yang sama - lihat alatCobaAktif.
+  if (jenis === "tekan" && alatCobaAktif()) {
+    alatCatat("coba", `DITAHAN tekan ${penunjuk}`, "mode coba aktif - SIPP tidak menyimpan apa pun");
+    alatCatatTindakan({
+      jenis: "tekan-ditahan",
+      penunjuk,
+      label: `tekan ${penunjuk}`,
+      nilaiBaru: "(ditahan mode coba)",
+      dapatPulih: false,
+    });
+    return { ok: false, alasan: "mode_coba" };
   }
 
   // lamaTerbaca dibedakan dari nilaiLama yang kosong, dan bedanya menentukan.

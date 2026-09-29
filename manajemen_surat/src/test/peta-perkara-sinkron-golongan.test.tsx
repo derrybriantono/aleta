@@ -104,10 +104,16 @@ describe("Jenis perkara di halaman menyetel pilihan bulatan peta", () => {
     render(<PetaPerkara />);
     const pilih = (await screen.findByRole("option", { name: /Perwalian/ })).closest("select") as HTMLSelectElement;
     fireEvent.change(pilih, { target: { value: "Perwalian" } });
-    await waitFor(() => expect(petaDiberi.at(-1)?.saringan?.kelompok).toBe("Perwalian"));
-    const terakhir = petaDiberi.at(-1)!;
-    expect(terakhir.jenisTerpilih).toBe("Perwalian");
-    expect(terakhir.golonganJenis).toBe("lainnya");
+    // Ketiganya ditunggu BERSAMA: saringan bisa sampai satu gambar lebih dulu
+    // daripada jenis terpilih, dan di bawah beban uji penuh jarak itu cukup
+    // untuk membuat pemeriksaan sesudah waitFor membaca gambar antara
+    // (merah di uji dasar 29 Sep 2026, hijau bila dijalankan sendiri).
+    await waitFor(() => {
+      const terakhir = petaDiberi.at(-1);
+      expect(terakhir?.saringan?.kelompok).toBe("Perwalian");
+      expect(terakhir?.jenisTerpilih).toBe("Perwalian");
+      expect(terakhir?.golonganJenis).toBe("lainnya");
+    });
   });
 
   it("menu dari bot yang lebih tua (tanpa golongan): jenis tunggal tetap 'jenis'", async () => {

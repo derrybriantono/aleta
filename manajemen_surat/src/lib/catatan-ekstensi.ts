@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.172.0",
+    dirilis: "2026-09-29T16:10:00+08:00",
+    judul: "Fondasi tampilan baru: pengalih Lama / Baru / UI Baru untuk Super Admin, kulit Modern, 120 saklar fitur, dan mode coba",
+    butir: [
+      "PENGALIH TAMPILAN (khusus Super Admin, di popup). Tiga pilihan yang dapat diganti seketika: Lama (persis ekstensi sebelumnya), Baru (kulit Klasik ditambah fitur ide yang saklarnya dinyalakan), dan UI Baru (kulit Modern ditambah fitur ide yang saklarnya dinyalakan). Selama masa coba pilihannya tersimpan di PC ini saja; menerapkannya ke pegawai lain menyusul lewat portal. Pegawai selain Super Admin tidak melihat pengalihnya.",
+      "BAWAANNYA LAMA, DAN LAMA TIDAK MENGUBAH APA PUN. Tanpa sentuhan pada pengalih, tidak ada atribut baru di halaman, tidak ada permintaan yang ditahan, dan tidak ada fitur yang tampil - tampilan dan perilaku sama persis dengan 1.171.0. Syarat ini dijaga uji.",
+      "KULIT MODERN. Warna panel di SIPP, ABT, portal, widget checklist, dan popup diganti lewat token yang sama (aksen biru laut, hijau beres, kuning perlu perhatian, merah terlambat; gelap maupun terang), sudut lebih bulat, dan huruf Plus Jakarta Sans bila terpasang di komputer lalu Segoe UI - tidak ada huruf yang diunduh dari luar. Yang diganti hanya warnanya: tidak satu fungsi pun berubah. Kulit Modern mengalahkan enam palet Super Admin selama UI Baru dipilih; palet pilihan tetap tersimpan dan kembali saat beralih ke Lama atau Baru. Sebagian kecil panel yang warnanya masih tertulis tetap (belum lewat token) dirapikan pada tahap berikutnya.",
+      "120 SAKLAR FITUR IDE. Satu saklar untuk tiap ide ekstensi (30 panel SIPP, 30 panel ABT, 30 panel portal, 30 popup dan widget), dengan nomor yang sama dengan berkas ide dan sandingan. Semuanya MATI sebagai bawaan, dan dalam tampilan Lama semuanya dianggap mati apa pun isinya. Saklar belum mengubah apa pun sampai idenya dibangun pada tahapnya; ide yang masih menunggu keputusan ditandai 'perlu keputusan'. Empat yang sudah diputuskan boleh ikut: ganti peran cepat, mode layar publik, profil saklar per peran, dan widget WhatsApp.",
+      "MODE COBA. Selama tampilan Baru atau UI Baru dicoba, tindakan yang berdampak ke luar DITAHAN: tulisan ke portal ALETA (termasuk yang berujung kiriman WhatsApp), unggahan ke SIPP, simpan ke ABT, dan tombol Simpan SIPP lewat jembatan. Permintaan yang ditahan dijawab 423 'mode coba' dan tercatat DITAHAN di kotak hitam, bukan berpura-pura berhasil. Yang tetap lolos hanya bacaan dan daftar kecil yang sudah diperiksa hanya menghitung (konversi PDF, usulan blangko ABT, praperiksa putusan, ringkasan massal, bacaan tanya-jawab ABT). Panel bergaris putus-putus biru laut dan label 'Mode coba ALETA - kirim & simpan ditahan' tampil di pojok kiri bawah. Kotak 'Izinkan tindakan nyata' di popup melepas penahanan tanpa harus kembali ke Lama.",
+      "Bila tampilan uji tertinggal menyala di PC yang dipakai pegawai lain, popup mereka menyebutnya dan menyediakan tombol 'kembali ke tampilan Lama' - kembali ke Lama selalu aman karena itu keadaan bawaan.",
+    ],
+  },
+  {
     versi: "1.171.0",
     dirilis: "2026-09-27T10:30:00+08:00",
     judul: "Panel ALETA tidak lagi tampil di layar publik portal, dan tombol unduh berkas e-Court terlihat di mode terang",

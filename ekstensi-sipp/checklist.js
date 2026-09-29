@@ -299,6 +299,35 @@
       --aleta-merek: #ff7a4d;
       --aleta-aman: #b39ddb;
     }
+    /* Kulit Modern (UI Baru, tahap 1 / 1.172.0) - token yang sama dengan
+       blok KULIT MODERN di panel.css. data-kulit dipasang terapkanTema dari
+       penanda <html data-aleta-kulit>; dalam tampilan Lama atributnya tidak
+       ada, jadi dua blok ini tidak menyentuh apa pun. !important supaya
+       menang atas enam palet di atas, sama seperti di panel.css. */
+    :host([data-kulit="modern"]:not([data-tema="terang"])) {
+      --aleta-latar: #111a2b !important;
+      --aleta-latar-naik: #162238 !important;
+      --aleta-garis: #24324b !important;
+      --aleta-garis-kuat: #344560 !important;
+      --aleta-tulisan: #e8eef7 !important;
+      --aleta-tulisan-lembut: #aab6c8 !important;
+      --aleta-merek: #3ec6e6 !important;
+      --aleta-aman: #34d399 !important;
+      --aleta-mendesak: #f5b83d !important;
+      --aleta-lewat: #f87171 !important;
+    }
+    :host([data-kulit="modern"][data-tema="terang"]) {
+      --aleta-latar: #ffffff !important;
+      --aleta-latar-naik: #f3f5f9 !important;
+      --aleta-garis: #e2e7ef !important;
+      --aleta-garis-kuat: #cdd5e1 !important;
+      --aleta-tulisan: #111827 !important;
+      --aleta-tulisan-lembut: #4b5565 !important;
+      --aleta-merek: #0b89a8 !important;
+      --aleta-aman: #047857 !important;
+      --aleta-mendesak: #b45309 !important;
+      --aleta-lewat: #b91c1c !important;
+    }
 
     *, *::before, *::after { box-sizing: border-box; }
 
@@ -1482,10 +1511,22 @@
     akar.setAttribute("data-tema", keadaan.tema);
     if (keadaan.warna) akar.setAttribute("data-warna", keadaan.warna);
     else akar.removeAttribute("data-warna");
+    tandaiKulit(akar);
     // Petunjuk dua detik panel-alat.js membaca data-tema dari akar yang
     // dipasanginya - di sini wadah di dalam bayangan.
     const wadah = bayang && bayang.querySelector(".aleta-cm-wadah");
     if (wadah) wadah.setAttribute("data-tema", keadaan.tema);
+  }
+
+  /**
+   * Kulit Modern mengikuti penanda <html data-aleta-kulit="modern"> yang
+   * dipasang panel-alat.js (alatTandaiUji). Tanpa penanda itu atributnya
+   * dilepas - tampilan Lama dan Baru tetap berkulit Klasik.
+   */
+  function tandaiKulit(inang) {
+    if (!inang) return;
+    if (document.documentElement.getAttribute("data-aleta-kulit") === "modern") inang.setAttribute("data-kulit", "modern");
+    else inang.removeAttribute("data-kulit");
   }
 
   /** Dijepit ke layar, dengan ukuran yang SUDAH berlaku. */
@@ -1667,6 +1708,7 @@
     inang.style.bottom = akar ? akar.style.bottom : `${TEPI}px`;
     inang.setAttribute("data-tema", keadaan.tema);
     if (keadaan.warna) inang.setAttribute("data-warna", keadaan.warna);
+    tandaiKulit(inang);
     const b = inang.attachShadow({ mode: "open" });
     b.appendChild(el("style", "", GAYA));
     const wadah = el("div", "aleta-cm-wadah");
@@ -1928,6 +1970,8 @@
     if (document.visibilityState === "visible") saatKembali();
   });
   window.addEventListener("resize", () => terapkanPosisi());
+  // Pengalih Lama / Baru / UI Baru di popup - kulitnya ikut seketika.
+  document.addEventListener("aleta-uji-berubah", () => terapkanTema());
 
   // Portal berpindah halaman tanpa memuat ulang (Next.js): /login -> /portal
   // harus dikejar sendiri. Dan React boleh membuang simpul yang tidak

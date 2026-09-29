@@ -464,6 +464,8 @@ async function periksaAkunAleta(asal) {
     // Pemilih warna gelap hanya bagi super admin - diputuskan di sini, sesudah
     // portal menjawab siapa yang masuk. Sebelum itu barisnya tersembunyi.
     void pasangPemilihWarnaPopup(peran);
+    // Pengalih uji tampilan - juga hanya bagi super admin, diputuskan di sini.
+    void pasangUjiTampilan(peran);
 
     // Versi yang disajikan portal ikut datang pada jawaban yang sama - satu
     // permintaan, dua pertanyaan terjawab.
@@ -614,6 +616,216 @@ async function pasangPemilihWarnaPopup(peran) {
   }
   tandai(aktif);
   baris.hidden = false;
+}
+
+/**
+ * ============================================================================
+ * UJI TAMPILAN: LAMA / BARU / UI BARU (TAHAP 1, 1.172.0)
+ * ============================================================================
+ *
+ * Super Admin merasakan tiga tampilan bergantian, seketika, di semua panel:
+ *
+ *   Lama     kulit Klasik, fitur ide mati - persis ekstensi sebelumnya
+ *   Baru     kulit Klasik, fitur ide yang saklarnya dinyalakan ikut tampil
+ *   UI Baru  kulit Modern, fitur ide yang saklarnya dinyalakan ikut tampil
+ *
+ * Ketiganya disimpan di chrome.storage.local - PC ini saja - selama masa
+ * coba; panel membacanya lewat panel-alat.js (bagian 3b), yang juga
+ * menjalankan MODE COBA: selain Lama, kirim dan simpan ditahan kecuali kotak
+ * "Izinkan tindakan nyata" dicentang.
+ *
+ * Kunci dan nilainya SAMA dengan yang dibaca panel-alat.js; uji repo
+ * menjaga keduanya.
+ */
+const KUNCI_UJI_TAMPILAN = "ujiTampilan";
+const KUNCI_UJI_FITUR = "ujiFitur";
+const KUNCI_UJI_NYATA = "ujiIzinkanNyata";
+const MODE_UJI = ["lama", "baru", "ui"];
+const KET_UJI = {
+  lama: "Lama: persis ekstensi sekarang. Tidak ada yang ditahan.",
+  baru: "Baru: kulit Klasik + fitur yang saklarnya dinyalakan.",
+  ui: "UI Baru: kulit Modern + fitur yang saklarnya dinyalakan.",
+};
+const ujiKeadaan = { mode: "lama", fitur: {}, nyata: false };
+
+function bersihModeUji(x) {
+  return MODE_UJI.includes(x) ? x : "lama";
+}
+
+/** Kulit jendela ini: Modern hanya dalam "UI Baru"; selain itu atribut dilepas. */
+function terapkanKulitPopup() {
+  const akar = document.documentElement;
+  if (ujiKeadaan.mode === "ui") akar.setAttribute("data-kulit", "modern");
+  else akar.removeAttribute("data-kulit");
+}
+
+async function muatUjiPopup() {
+  if (!penyimpanan) return;
+  try {
+    const simpan = await penyimpanan.get([KUNCI_UJI_TAMPILAN, KUNCI_UJI_FITUR, KUNCI_UJI_NYATA]);
+    ujiKeadaan.mode = bersihModeUji(simpan && simpan[KUNCI_UJI_TAMPILAN]);
+    const f = simpan && simpan[KUNCI_UJI_FITUR];
+    ujiKeadaan.fitur = f && typeof f === "object" && !Array.isArray(f) ? { ...f } : {};
+    ujiKeadaan.nyata = Boolean(simpan && simpan[KUNCI_UJI_NYATA] === true);
+  } catch {
+    /* tetap "lama" */
+  }
+  terapkanKulitPopup();
+}
+
+const ujiSiap = muatUjiPopup();
+
+function daftarFiturUji() {
+  const d = globalThis.ALETA_DAFTAR_FITUR;
+  return Array.isArray(d) ? d : [];
+}
+
+function tulisKetUji() {
+  const ket = document.getElementById("ujiKet");
+  const barisNyata = document.getElementById("ujiNyataBaris");
+  const kotakNyata = document.getElementById("ujiIzinkanNyata");
+  const hitung = document.getElementById("ujiFiturHitung");
+  const lama = ujiKeadaan.mode === "lama";
+  if (ket) {
+    const coba = lama
+      ? ""
+      : ujiKeadaan.nyata
+        ? " Tindakan nyata DIIZINKAN - kirim dan simpan berlaku sungguhan."
+        : " Mode coba: kirim WhatsApp dan simpan ke SIPP/ABT/ALETA ditahan.";
+    ket.textContent = KET_UJI[ujiKeadaan.mode] + coba;
+  }
+  if (barisNyata) barisNyata.hidden = lama;
+  if (kotakNyata) kotakNyata.checked = ujiKeadaan.nyata;
+  if (hitung) {
+    const semua = daftarFiturUji();
+    const nyala = semua.filter((x) => ujiKeadaan.fitur[x.kode] === true).length;
+    hitung.textContent = `${nyala}/${semua.length} nyala${lama && nyala ? " (mati selama Lama)" : ""}`;
+  }
+  for (const b of document.querySelectorAll("[data-uji-mode]")) {
+    b.setAttribute("aria-pressed", b.getAttribute("data-uji-mode") === ujiKeadaan.mode ? "true" : "false");
+  }
+}
+
+function tulisKeadaanKotakFitur() {
+  for (const k of document.querySelectorAll("#ujiFiturDaftar input[data-kode]")) {
+    k.checked = ujiKeadaan.fitur[k.getAttribute("data-kode")] === true;
+  }
+}
+
+function simpanFiturUji() {
+  // Yang mati tidak disimpan: kunci yang tidak ada berarti bawaan (mati).
+  const bersih = {};
+  for (const [k, v] of Object.entries(ujiKeadaan.fitur)) if (v === true) bersih[k] = true;
+  ujiKeadaan.fitur = bersih;
+  if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_FITUR]: bersih });
+  tulisKeadaanKotakFitur();
+  tulisKetUji();
+}
+
+/** Seratus dua puluh saklar, disusun sekali saat laci pertama dibuka. */
+function susunDaftarFiturUji() {
+  const wadah = document.getElementById("ujiFiturDaftar");
+  if (!wadah || wadah.childElementCount > 0) return;
+  const namaBagian = globalThis.ALETA_BAGIAN_FITUR || {};
+  let bagianTerakhir = "";
+  for (const x of daftarFiturUji()) {
+    if (x.bagian !== bagianTerakhir) {
+      bagianTerakhir = x.bagian;
+      const judul = document.createElement("div");
+      judul.className = "uji-bagian-judul";
+      judul.textContent = namaBagian[x.bagian] || x.bagian;
+      wadah.appendChild(judul);
+    }
+    const baris = document.createElement("label");
+    baris.className = "uji-baris";
+    const kotak = document.createElement("input");
+    kotak.type = "checkbox";
+    kotak.id = `uji-fitur-${x.kode}`;
+    kotak.setAttribute("data-kode", x.kode);
+    kotak.addEventListener("change", () => {
+      if (kotak.checked) ujiKeadaan.fitur[x.kode] = true;
+      else delete ujiKeadaan.fitur[x.kode];
+      simpanFiturUji();
+    });
+    const teks = document.createElement("span");
+    const kode = document.createElement("span");
+    kode.className = "uji-kode";
+    kode.textContent = `${x.kode} `;
+    teks.appendChild(kode);
+    teks.appendChild(document.createTextNode(x.judul));
+    if (x.perluKeputusan) {
+      const tanda = document.createElement("span");
+      tanda.className = "uji-tanda";
+      tanda.textContent = " · perlu keputusan";
+      teks.appendChild(tanda);
+    }
+    baris.appendChild(kotak);
+    baris.appendChild(teks);
+    wadah.appendChild(baris);
+  }
+  tulisKeadaanKotakFitur();
+}
+
+async function pasangUjiTampilan(peran) {
+  const bagian = document.getElementById("bagianUji");
+  const lain = document.getElementById("ujiLainBaris");
+  if (!bagian) return;
+  await ujiSiap;
+  if (!/super/i.test(String(peran || ""))) {
+    bagian.hidden = true;
+    // Bukan super admin, tetapi tampilan uji tertinggal menyala di PC ini:
+    // disebut, dan boleh dikembalikan ke Lama - keadaan bawaan yang aman.
+    if (lain) lain.hidden = ujiKeadaan.mode === "lama";
+    const kembali = document.getElementById("ujiKembaliLama");
+    if (kembali && !kembali.dataset.terpasang) {
+      kembali.dataset.terpasang = "ya";
+      kembali.addEventListener("click", () => {
+        ujiKeadaan.mode = "lama";
+        if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_TAMPILAN]: "lama" });
+        terapkanKulitPopup();
+        if (lain) lain.hidden = true;
+      });
+    }
+    return;
+  }
+  if (lain) lain.hidden = true;
+  if (!bagian.dataset.terpasang) {
+    bagian.dataset.terpasang = "ya";
+    for (const b of bagian.querySelectorAll("[data-uji-mode]")) {
+      b.addEventListener("click", () => {
+        ujiKeadaan.mode = bersihModeUji(b.getAttribute("data-uji-mode"));
+        if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_TAMPILAN]: ujiKeadaan.mode });
+        terapkanKulitPopup();
+        tulisKetUji();
+      });
+    }
+    const kotakNyata = document.getElementById("ujiIzinkanNyata");
+    if (kotakNyata) {
+      kotakNyata.addEventListener("change", () => {
+        ujiKeadaan.nyata = kotakNyata.checked;
+        if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_NYATA]: ujiKeadaan.nyata });
+        tulisKetUji();
+      });
+    }
+    const laci = document.getElementById("ujiFiturLaci");
+    if (laci) laci.addEventListener("toggle", () => laci.open && susunDaftarFiturUji());
+    const semuaNyala = document.getElementById("ujiSemuaNyala");
+    if (semuaNyala) {
+      semuaNyala.addEventListener("click", () => {
+        for (const x of daftarFiturUji()) ujiKeadaan.fitur[x.kode] = true;
+        simpanFiturUji();
+      });
+    }
+    const semuaMati = document.getElementById("ujiSemuaMati");
+    if (semuaMati) {
+      semuaMati.addEventListener("click", () => {
+        ujiKeadaan.fitur = {};
+        simpanFiturUji();
+      });
+    }
+  }
+  tulisKetUji();
+  bagian.hidden = false;
 }
 
 const tombolTema = document.getElementById("tombolTema");

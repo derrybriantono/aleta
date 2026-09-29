@@ -2548,6 +2548,203 @@ function alatTandaiKering() {
   }
 }
 
+/* ─── 3b. UJI TAMPILAN: LAMA / BARU / UI BARU, SAKLAR FITUR, MODE COBA ─────
+ *
+ * Tahap 1 rencana "ekstensi dulu" (29 September 2026). Super Admin dapat
+ * merasakan tiga tampilan bergantian, seketika, dari popup:
+ *
+ *   lama  kulit Klasik, semua fitur ide mati  - persis ekstensi sebelumnya
+ *   baru  kulit Klasik, fitur ide yang saklarnya dinyalakan ikut tampil
+ *   ui    kulit Modern, fitur ide yang saklarnya dinyalakan ikut tampil
+ *
+ * Pilihannya disimpan di chrome.storage.local PC ini saja selama masa coba;
+ * "terapkan ke pegawai lain" menyusul lewat portal (tahap 5). Pengalihnya
+ * hanya tampil untuk Super Admin di popup - sama dengan pemilih warna.
+ *
+ * SYARAT UTAMA: selama pilihannya "lama" (bawaan, dan yang berlaku bila
+ * kuncinya tidak ada) TIDAK ADA satu pun yang berubah - tidak ada atribut di
+ * halaman, tidak ada permintaan yang ditahan, tidak ada fitur yang tampil.
+ *
+ * MODE COBA menyertai "baru" dan "ui" dengan sendirinya. Selama Super Admin
+ * mencoba, tindakan yang berdampak ke luar ditahan: kirim WhatsApp, tulis ke
+ * SIPP, ABT, dan portal ALETA. Bedanya dengan mode kering:
+ *
+ *   mode kering  menahan TULISAN ke portal ALETA dan tombol Simpan SIPP
+ *   mode coba    menahan SEMUA permintaan non-GET dari ekstensi - termasuk
+ *                simpan ABT - kecuali daftar kecil yang sudah diperiksa
+ *                hanya MEMBACA atau MENGHITUNG (ALETA_COBA_BOLEH di bawah)
+ *
+ * Arah kesalahannya dipilih sengaja: permintaan yang belum diperiksa ditahan.
+ * Fitur yang tertahan terlihat gagal dengan pesan "mode coba"; tulisan yang
+ * lolos tanpa sengaja tidak dapat ditarik kembali.
+ *
+ * Tindakan nyata dapat diizinkan lagi dengan satu kotak centang di popup
+ * ("Izinkan tindakan nyata"), tanpa harus kembali ke tampilan Lama.
+ */
+const ALAT_UJI_KUNCI_TAMPILAN = "ujiTampilan";
+const ALAT_UJI_KUNCI_FITUR = "ujiFitur";
+const ALAT_UJI_KUNCI_NYATA = "ujiIzinkanNyata";
+const ALAT_UJI_MODE = ["lama", "baru", "ui"];
+const alatUji = { mode: "lama", fitur: {}, izinkanNyata: false };
+
+/**
+ * Permintaan non-GET yang TETAP boleh selama mode coba - masing-masing sudah
+ * diperiksa rutenya hanya membaca atau menghitung, tidak menyimpan apa pun:
+ *
+ *   abt/pdf               RTF -> PDF lewat bot, hasilnya dipulangkan saja
+ *   abt/usulan            usulan isian blangko, dihitung dari SIPP
+ *   putusan/praperiksa    temuan sebelum mengisi borang putusan
+ *   sipp-konteks/massal   ringkasan beberapa perkara sekaligus
+ *   main/cari (ABT)       pencarian daftar perkara ABT
+ *   tanyajawab_perkara_edit TANPA aksi=simpan - pembacaan tanya-jawab ABT
+ *
+ * Posita SENGAJA tidak ada: salah satu jalannya merapikan posita di SIPP.
+ * Menambah baris ke sini berarti sudah membaca rutenya sampai ke ujung.
+ */
+const ALETA_COBA_BOLEH = [
+  /\/aleta\/api\/aleta-bot\/abt\/pdf(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-bot\/abt\/usulan(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-ecourt\/putusan\/praperiksa(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-bot\/sipp-konteks\/massal(?:[?#]|$)/,
+  /\/aps_badilag\/.*\/main\/cari(?:[?#]|$)/,
+];
+
+function alatUjiBersihMode(x) {
+  return ALAT_UJI_MODE.includes(x) ? x : "lama";
+}
+
+/** "lama" | "baru" | "ui" - pilihan tampilan yang sedang dicoba di PC ini. */
+function alatUjiMode() {
+  return alatUji.mode;
+}
+
+/** "klasik" | "modern" - kulit yang dipakai panel. */
+function alatKulit() {
+  return alatUji.mode === "ui" ? "modern" : "klasik";
+}
+
+/**
+ * Apakah fitur ide `kode` (mis. "sipp-5") boleh tampil?
+ * Dalam tampilan Lama selalu tidak, apa pun isi saklarnya.
+ */
+function alatFiturNyala(kode) {
+  if (alatUji.mode === "lama") return false;
+  return alatUji.fitur[String(kode || "")] === true;
+}
+
+/** Mode coba aktif: tampilan bukan Lama dan tindakan nyata tidak diizinkan. */
+function alatCobaAktif() {
+  return alatUji.mode !== "lama" && alatUji.izinkanNyata !== true;
+}
+
+/**
+ * Apakah permintaan ini harus ditahan mode coba?
+ * `cara` sudah dalam huruf besar; GET dan HEAD tidak pernah ditahan.
+ */
+function alatCobaMenahan(alamat, cara) {
+  if (!alatCobaAktif()) return false;
+  const c = String(cara || "GET").toUpperCase();
+  if (c === "GET" || c === "HEAD") return false;
+  const a = String(alamat || "");
+  if (ALETA_COBA_BOLEH.some((pola) => pola.test(a))) return false;
+  // Tanya-jawab ABT: rute yang sama untuk membaca dan menyimpan; yang
+  // menyimpan selalu membawa aksi=simpan (lihat alamatTanyaJawab di abt.js).
+  if (/\/tanyajawab_perkara_edit\?/.test(a) && !/[?&]aksi=simpan(?:&|$)/.test(a)) return false;
+  return true;
+}
+
+/** Jawaban tiruan untuk permintaan yang ditahan mode coba - 423, dengan sebabnya. */
+function alatJawabanCoba(alamat, cara) {
+  const badan = JSON.stringify({
+    ok: false,
+    alasan: "mode_coba",
+    pesan: "Mode coba aktif - Super Admin sedang mencoba tampilan baru, jadi tidak ada yang dikirim atau disimpan.",
+    yangDitahan: { cara: String(cara || "POST").toUpperCase(), alamat: String(alamat || "") },
+  });
+  return new Response(badan, {
+    status: 423,
+    statusText: "Mode coba",
+    headers: { "content-type": "application/json" },
+  });
+}
+
+/**
+ * Penanda di <html>: kulit Modern dan pita mode coba mengambil isyarat dari
+ * sini, di SIPP, ABT, dan portal sekaligus - termasuk widget checklist, yang
+ * membacanya lewat :host-context. Dalam tampilan Lama keduanya DILEPAS,
+ * sehingga halaman persis seperti sebelum fitur ini ada.
+ */
+function alatTandaiUji() {
+  try {
+    const akar = document.documentElement;
+    if (alatKulit() === "modern") akar.setAttribute("data-aleta-kulit", "modern");
+    else akar.removeAttribute("data-aleta-kulit");
+    if (alatCobaAktif()) akar.setAttribute("data-aleta-coba", "ya");
+    else akar.removeAttribute("data-aleta-coba");
+  } catch {
+    /* tanpa penanda, penahanan tetap berlaku - hanya tidak terlihat */
+  }
+}
+
+function alatUjiTerima(simpan) {
+  const s = simpan || {};
+  if (ALAT_UJI_KUNCI_TAMPILAN in s) alatUji.mode = alatUjiBersihMode(s[ALAT_UJI_KUNCI_TAMPILAN]);
+  if (ALAT_UJI_KUNCI_FITUR in s) {
+    const f = s[ALAT_UJI_KUNCI_FITUR];
+    alatUji.fitur = f && typeof f === "object" && !Array.isArray(f) ? f : {};
+  }
+  if (ALAT_UJI_KUNCI_NYATA in s) alatUji.izinkanNyata = s[ALAT_UJI_KUNCI_NYATA] === true;
+}
+
+async function alatMuatUji() {
+  try {
+    const simpan = await chrome.storage.local.get([
+      ALAT_UJI_KUNCI_TAMPILAN,
+      ALAT_UJI_KUNCI_FITUR,
+      ALAT_UJI_KUNCI_NYATA,
+    ]);
+    alatUjiTerima(simpan);
+  } catch {
+    /* penyimpanan tidak terbaca: tetap "lama" - tidak ada yang berubah */
+  }
+  alatTandaiUji();
+  // Widget checklist (Shadow DOM) mungkin sudah tergambar sebelum bacaan ini
+  // kembali. Dalam tampilan Lama tidak ada yang perlu dikabarkan.
+  if (alatUjiMode() !== "lama") alatKabarkanUji();
+  return alatUjiMode();
+}
+
+/** Peristiwa DOM untuk yang perlu menata ulang dirinya: widget checklist, dan fitur ide kelak. */
+function alatKabarkanUji() {
+  try {
+    document.dispatchEvent(new CustomEvent("aleta-uji-berubah", { detail: { mode: alatUji.mode } }));
+  } catch {
+    /* yang mendengarkan akan ikut saat halaman dimuat ulang */
+  }
+}
+
+/** Pengalih di popup berlaku seketika di semua tab yang terbuka. */
+function alatDengarkanUji() {
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local") return;
+      const kunci = [ALAT_UJI_KUNCI_TAMPILAN, ALAT_UJI_KUNCI_FITUR, ALAT_UJI_KUNCI_NYATA];
+      if (!kunci.some((k) => k in ubah)) return;
+      const baru = {};
+      for (const k of kunci) if (k in ubah) baru[k] = ubah[k].newValue;
+      const modeSebelum = alatUji.mode;
+      alatUjiTerima(baru);
+      alatTandaiUji();
+      if (modeSebelum !== alatUji.mode) {
+        alatCatat("uji", `tampilan ${modeSebelum} → ${alatUji.mode}`, alatCobaAktif() ? "mode coba aktif" : "");
+      }
+      alatKabarkanUji();
+    });
+  } catch {
+    /* tanpa pendengarnya, pilihan berlaku saat halaman dimuat ulang */
+  }
+}
+
 /**
  * ============================================================================
  * PANEL RINGKAS - KETERANGAN PANJANG DISEMBUNYIKAN, PESAN TIDAK
@@ -2741,6 +2938,10 @@ function alatPasangPemantauAmbil() {
     if (alatKeringMenahan(alamat, opsi || masukan)) {
       alatCatat("kering", `DITAHAN ${cara} ${alatRingkasAlamat(alamat)}`, "mode kering aktif");
       return alatJawabanKering(alamat, opsi || masukan);
+    }
+    if (alatCobaMenahan(alamat, cara)) {
+      alatCatat("coba", `DITAHAN ${cara} ${alatRingkasAlamat(alamat)}`, "mode coba aktif");
+      return alatJawabanCoba(alamat, cara);
     }
 
     const mulai = Date.now();
@@ -3444,6 +3645,8 @@ Portal menyajikan ${tertinggal.portal}, yang berjalan ${tertinggal.terpasang}. U
 alatPasangPemantauAmbil();
 alatDengarkanKering();
 void alatMuatKering();
+alatDengarkanUji();
+void alatMuatUji();
 // Panel ringkas dipasang di tingkat modul atas sebab yang sama: berkas ini
 // dimuat lebih dulu daripada konten.js, abt.js, dan aleta.js pada keempat
 // konteks, jadi penandanya sudah terpasang sebelum satu panel pun digambar -

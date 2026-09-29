@@ -109,6 +109,85 @@
   .titik-warna:hover { opacity: 1; transform: scale(1.15); }
   .titik-warna[aria-pressed="true"] { opacity: 1; outline: 2px solid var(--tulisan); outline-offset: 1px; }
 
+  /* Uji tampilan - Super Admin saja (tahap 1, 1.172.0). Tersembunyi bagi
+     yang lain; dalam tampilan Lama popup ini tidak berubah sedikit pun. */
+  .bagian-uji {
+    padding: 6px 16px 8px;
+    border-bottom: 1px solid var(--garis);
+    background: var(--latar-lembut);
+  }
+  .uji-kepala { display: flex; align-items: center; gap: 8px; }
+  .uji-seg {
+    display: inline-flex;
+    margin-left: auto;
+    border: 1px solid var(--garis);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .uji-seg button {
+    padding: 2px 9px;
+    border: 0;
+    background: var(--latar);
+    color: var(--tulisan-lembut);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .uji-seg button + button { border-left: 1px solid var(--garis); }
+  .uji-seg button[aria-pressed="true"] { background: var(--merek); color: var(--latar); font-weight: 700; }
+  .uji-seg button:focus-visible, .uji-kecil:focus-visible { outline: 2px solid var(--merek); outline-offset: 1px; }
+  .uji-nyata { display: flex; gap: 6px; align-items: flex-start; margin-top: 5px; font-size: 11px; cursor: pointer; }
+  .uji-nyata input { margin: 1px 0 0; accent-color: var(--merek); }
+  /* display:flex di atas mengalahkan [hidden] bawaan peramban - tanpa ini
+     kotak "Izinkan tindakan nyata" tetap tampil dalam tampilan Lama. */
+  .uji-nyata[hidden] { display: none; }
+  .uji-fitur { margin-top: 5px; font-size: 11.5px; }
+  .uji-fitur summary { cursor: pointer; color: var(--tulisan-lembut); }
+  .uji-fitur-aksi { display: flex; gap: 6px; margin: 5px 0; }
+  .uji-kecil {
+    padding: 1px 8px;
+    border: 1px solid var(--garis);
+    border-radius: 999px;
+    background: var(--latar);
+    color: var(--tulisan-lembut);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .uji-daftar { max-height: 220px; overflow-y: auto; border: 1px solid var(--garis); border-radius: 6px; background: var(--latar); }
+  .uji-bagian-judul { position: sticky; top: 0; padding: 3px 7px; font-weight: 700; font-size: 11px; background: var(--latar-lembut); border-bottom: 1px solid var(--garis); }
+  .uji-baris { display: flex; gap: 6px; align-items: flex-start; padding: 3px 7px; cursor: pointer; }
+  .uji-baris:hover { background: var(--sorot); }
+  .uji-baris input { margin: 2px 0 0; flex: none; accent-color: var(--merek); }
+  .uji-kode { font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; color: var(--tulisan-lembut); }
+  .uji-tanda { font-size: 10px; color: var(--tulisan-lembut); font-style: italic; }
+  .uji-pesan-lain { margin: 0; font-size: 11px; color: var(--tulisan-lembut); }
+
+  /* Kulit Modern (UI Baru) untuk jendela ini - token yang sama dengan blok
+     KULIT MODERN di panel.css. Hanya berlaku bila popup.js memasang
+     data-kulit="modern", yaitu ketika tampilan yang dicoba "UI Baru". */
+  :root[data-kulit="modern"][data-tema="terang"] {
+    --latar: #ffffff;
+    --latar-lembut: #f3f5f9;
+    --tulisan: #111827;
+    --tulisan-lembut: #4b5565;
+    --garis: #e2e7ef;
+    --merek: #0b89a8;
+    --sorot: #e6f5f9;
+  }
+  :root[data-kulit="modern"][data-tema="gelap"] {
+    --latar: #111a2b;
+    --latar-lembut: #162238;
+    --tulisan: #e8eef7;
+    --tulisan-lembut: #aab6c8;
+    --garis: #24324b;
+    --merek: #3ec6e6;
+    --sorot: #1d2b45;
+  }
+  :root[data-kulit="modern"] body {
+    font-family: "Plus Jakarta Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  }
+
   /* Pemetaan blangko putusan - hanya super admin. */
   .bagian-peta { padding: 8px 12px; border-top: 1px solid var(--garis); }
   .peta-judul { font-weight: 700; font-size: 12.5px; margin-bottom: 2px; }
@@ -331,6 +410,48 @@
 </div>
 
 <!-- ===================================================================
+     UJI TAMPILAN: LAMA / BARU / UI BARU - SUPER ADMIN SAJA
+     ===================================================================
+     Tahap 1 rencana "ekstensi dulu" (29 September 2026). Pilihannya
+     disimpan di PC ini saja selama masa coba. Selain Lama, mode coba ikut
+     menyala: kirim WhatsApp dan simpan ke SIPP/ABT/ALETA ditahan, kecuali
+     "Izinkan tindakan nyata" dicentang. Lihat popup.js dan panel-alat.js
+     (bagian 3b). Tersembunyi bagi yang bukan Super Admin. -->
+<div id="bagianUji" class="bagian-uji" hidden>
+  <div class="uji-kepala">
+    <span class="baris-warna-label">tampilan uji</span>
+    <span class="uji-seg" role="group" aria-label="Tampilan yang dicoba">
+      <button type="button" id="ujiLama" data-uji-mode="lama" aria-pressed="true">Lama</button>
+      <button type="button" id="ujiBaru" data-uji-mode="baru" aria-pressed="false">Baru</button>
+      <button type="button" id="ujiUi" data-uji-mode="ui" aria-pressed="false">UI Baru</button>
+    </span>
+  </div>
+  <p id="ujiKet" class="saklar-ket"></p>
+  <label class="uji-nyata" id="ujiNyataBaris" hidden>
+    <input type="checkbox" id="ujiIzinkanNyata">
+    <span>Izinkan tindakan nyata - kirim WhatsApp dan simpan ke SIPP, ABT, ALETA berlaku sungguhan</span>
+  </label>
+  <details id="ujiFiturLaci" class="uji-fitur">
+    <summary>Saklar fitur ide · <span id="ujiFiturHitung">0 nyala</span></summary>
+    <div class="uji-fitur-aksi">
+      <button type="button" id="ujiSemuaNyala" class="uji-kecil">nyalakan semua</button>
+      <button type="button" id="ujiSemuaMati" class="uji-kecil">matikan semua</button>
+    </div>
+    <div id="ujiFiturDaftar" class="uji-daftar"></div>
+  </details>
+</div>
+
+<!-- Bagi yang BUKAN Super Admin, bila Super Admin meninggalkan tampilan uji
+     menyala di PC ini: disebut, dan dapat dikembalikan ke Lama. Kembali ke
+     Lama selalu aman - itu keadaan bawaan ekstensi. -->
+<div id="ujiLainBaris" class="bagian-uji" hidden>
+  <p class="uji-pesan-lain">Tampilan uji Super Admin sedang menyala di PC ini; kirim dan simpan ditahan.</p>
+  <div class="uji-fitur-aksi">
+    <button type="button" id="ujiKembaliLama" class="uji-kecil">kembali ke tampilan Lama</button>
+  </div>
+</div>
+
+<!-- ===================================================================
      PEMETAAN BLANGKO PUTUSAN - JENIS PERKARA -> BERKAS ABT
      ===================================================================
      Disunting menurut NAMA berkas. Tokennya diambil panel ABT sendiri
@@ -503,4 +624,5 @@
   lebih dulu. SIPP tidak diubah sama sekali.
 </div>
 
+<script src="daftar-fitur.js"></script>
 <script src="popup.js"></script>
