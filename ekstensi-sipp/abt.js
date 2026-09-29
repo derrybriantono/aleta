@@ -2267,6 +2267,10 @@ function pasangPenjagaCetak(jatiDiri, lapor) {
     tautan.addEventListener(
       "click",
       (peristiwa) => {
+        // Dialog Tahap 6 (ide abt-5) sudah menanyakan hal yang sama dan
+        // petugas mengonfirmasinya - tidak ditanya dua kali. Selalu false
+        // dalam tampilan Lama.
+        if (t6LewatiPenjagaLama()) return;
         const { kurang, rusak } = periksaKelengkapan();
         if (kurang.length === 0 && rusak.length === 0) return;
 
@@ -5188,6 +5192,9 @@ async function pasang() {
   const panel = susunPanelAbt(jatiDiri);
   document.body.appendChild(panel);
   pasangPenjagaCetak(jatiDiri, panel.lapor);
+  // Tahap 6: menata panel yang sudah jadi. Dalam tampilan Lama hanya mencatat
+  // tanda tampilannya di luar DOM, lalu pulang - lihat blok TAHAP 6.
+  t6TataAman(panel, jatiDiri);
 }
 
 let saklarCetakDibaca = false;
@@ -7170,6 +7177,12 @@ async function jalankanMassalAbt(daftar, alat) {
 async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
   const o = opsi || {};
   const siap = await siapkanPerkaraAbt(butir, peta, o, lapor);
+  // Tahap 6 (ide abt-26): anonim diperiksa sebelum diunggah, dan petugas yang
+  // memutuskan. t6Aktif() lebih dahulu - dalam tampilan Lama tidak ada satu
+  // pun tunggu tambahan di jalur ini.
+  if (siap.ok && o.unggah && t6Aktif() && !(await t6PeriksaAnonimSebelumUnggah(siap, lapor))) {
+    return hasilPerkaraAbt(siap);
+  }
   if (siap.ok && o.unggah) await unggahBerkasAbt(siap, olehUsername, lapor);
   return hasilPerkaraAbt(siap);
 }
@@ -7349,4 +7362,3531 @@ function berkasDikenal(peta) {
     if (!hasil.has(k) || !hasil.get(k).a) hasil.set(k, { blangko: baris.blangko || "", berkas: baris.berkas, a: baris.a || "", b: baris.b || "", d: baris.d || "" });
   }
   return [...hasil.values()];
+}
+
+/*
+ * ============================================================================
+ * TAHAP 6 - PANEL ABT DALAM TAMPILAN BARU DAN UI BARU
+ * ============================================================================
+ *
+ * Rencana "ekstensi dulu", 29 September 2026. Sama dengan Tahap 4 di aleta.js:
+ * seluruh blok ini TAMBAHAN yang menumpang pada panel yang sudah jadi. Panel
+ * tetap disusun susunPanelAbt persis seperti sebelumnya, lalu blok ini menata
+ * dan menambahinya. Sebabnya satu: tampilan Lama harus tetap sama sampai ke
+ * DOM, permintaan, dan penyimpanannya, dan cara paling pasti untuk itu adalah
+ * tidak menyentuh jalur yang menyusunnya.
+ *
+ * Tiga pagar, ketiganya ditanyakan ke panel-alat.js (Tahap 1):
+ *
+ *   tampilan Lama     t6Tata hanya mencatat tanda tampilan (di luar DOM) lalu
+ *                     pulang - tidak ada atribut, permintaan, maupun pewaktu
+ *   ide abt-N         hanya bila alatFiturNyala("abt-N") - Baru maupun UI Baru
+ *   perbaikan D1-D15  hanya dalam UI Baru (alatKulit() === "modern"). Sepuluh
+ *                     di antaranya berwujud sama dengan satu ide (lihat
+ *                     T6_DESAIN), jadi dalam UI Baru wujud itu hadir walau
+ *                     saklar idenya mati
+ *
+ * Kait ke jalur lama hanya TIGA, dan ketiganya diam dalam tampilan Lama:
+ *
+ *   pasang()                  memanggil t6TataAman sesudah panel terpasang
+ *   penjaga CETAK lama        t6LewatiPenjagaLama() - true hanya sesaat sesudah
+ *                             petugas mengonfirmasi dialog Tahap 6 (ide abt-5)
+ *   kerjakanSatuPerkaraAbt    t6PeriksaAnonimSebelumUnggah - hanya bila t6Aktif()
+ *
+ * ============================================================================
+ * TIDAK ADA YANG DITAHAN - YANG ADA PERINGATAN DENGAN KONFIRMASI
+ * ============================================================================
+ *
+ * Diputuskan pengguna 29 September 2026: huruf G (abt-5) dan anonimisasi yang
+ * belum bersih (abt-26) tidak menahan CETAK maupun unggah. Keduanya membuka
+ * dialog yang menyebut apa yang salah dan di mana, dan tombol lanjutnya baru
+ * menyala sesudah "Sudah saya periksa" dicentang. Variabel wajib (abt-17) dan
+ * komentar hakim (abt-18) lebih ringan lagi: hanya peringatan, tanpa dialog.
+ *
+ * ============================================================================
+ * PERMINTAAN JARINGAN BLOK INI
+ * ============================================================================
+ *
+ *   GET   /aleta/api/aleta-ecourt/abt-wajib?jenis=      abt-17, saat panel lahir
+ *   GET   /aleta/api/aleta-ecourt/bas-komentar?nomor=   abt-18, saat panel lahir
+ *   PATCH /aleta/api/aleta-ecourt/bas-komentar          abt-18, tombol "Tandai selesai"
+ *   GET   /aleta/api/aleta-ecourt/templat-hukum?jenis=pasal   abt-27, saat dibuka
+ *   GET   /aleta/api/aleta-ecourt/riwayat-pihak         abt-19, saat ditekan
+ *   GET   abt/preview (tautan CETAK itu sendiri)        abt-12/24, saat ditekan
+ *   POST  abt/edit_data  lewat simpanVariabel yang sama  abt-9 dan abt-23, saat ditekan
+ *
+ * Rute yang belum ada di server (404) disebut "belum tersedia di server",
+ * dan jawaban 423 mode coba disebut apa adanya - tidak berpura-pura berhasil.
+ */
+const T6_KUNCI_SEMATAN = "abtVariabelSematan";
+const T6_KUNCI_BACA = "abtModeBaca";
+const T6_KUNCI_DRAF = "abtDrafSaksi";
+const T6_KUNCI_TEMPLAT = "abtTemplatPribadi";
+const T6_KUNCI_DITOLAK = "abtAlasanDitolak";
+const T6_API_KOMENTAR = "/aleta/api/aleta-ecourt/bas-komentar";
+const T6_API_TEMPLAT_HUKUM = "/aleta/api/aleta-ecourt/templat-hukum";
+const T6_API_WAJIB = "/aleta/api/aleta-ecourt/abt-wajib";
+const T6_API_RIWAYAT_PIHAK = "/aleta/api/aleta-ecourt/riwayat-pihak";
+const T6_DRAF_MS = 30 * 1000;
+const T6_BATAS_DRAF = 20;
+const T6_BATAS_TEMPLAT = 10;
+/**
+ * Huruf per halaman cetak - perkiraan kasar untuk kertas F4, huruf 12, spasi
+ * 1,5. Dipakai untuk "± N halaman" dan letak temuan anonimisasi; keduanya
+ * disebut PERKIRAAN di layar, sebab tata letak RTF tidak dapat diukur di sini.
+ */
+const T6_HURUF_PER_HALAMAN = 2500;
+const T6_SEMUA = Array.from({ length: 30 }, (_, i) => `abt-${i + 1}`);
+/**
+ * Ide yang wujudnya sama dengan satu perbaikan desain, dan karena itu hadir di
+ * UI Baru walau saklar idenya mati:
+ *
+ *   abt-1 D3 kalimat ramah   abt-2 D6 yang tidak berlaku   abt-3 D4 centang unggah
+ *   abt-4 D7 segmen keyakinan  abt-5 D8 pita bahaya       abt-7 D9 beda disorot
+ *   abt-8 D11 kelompok alasan  abt-10 D2 langkah 1-5      abt-11 D13 bilah kemajuan
+ *   abt-12 D12 pratinjau putusan
+ */
+const T6_DESAIN = new Set(["abt-1", "abt-2", "abt-3", "abt-4", "abt-5", "abt-7", "abt-8", "abt-10", "abt-11", "abt-12"]);
+const T6_LANGKAH = [
+  { no: 1, nama: "Isi dari SIPP", tombol: "sipp" },
+  { no: 2, nama: "Susun saksi", tombol: "sdg" },
+  { no: 3, nama: "Rapikan", tombol: "rapikan" },
+  { no: 4, nama: "Input ke ABT", tombol: "saksi" },
+  { no: 5, nama: "Kerjakan", tombol: null },
+];
+const T6_YAKIN = [
+  ["semua", "Semua", "Semua usulan"],
+  ["ragu", "Ragu", "ragu — tidak dicentang sendiri; periksa dulu"],
+  ["bentrok", "Bentrok", "bentrok — saksi berselisih"],
+  ["cukup", "Cukup", "cukup — satu saksi saja (atau dari posita)"],
+  ["pasti", "Pasti", "pasti — kedua saksi sama"],
+];
+/**
+ * Kelompok alasan (abt-8, D11). Dicocokkan dengan KATA pada labelnya, bukan
+ * dengan daftar tetap: pilihan alasan dapat ditambah admin di portal
+ * (bas.saksi.alasan-pilihan), dan yang tidak dikenal jatuh ke "Lainnya" -
+ * tidak pernah hilang.
+ */
+const T6_KELOMPOK_ALASAN = [
+  ["Perselisihan", /perselisihan|pertengkaran|cemburu|berkata kasar|cekcok/i],
+  ["Ekonomi", /nafkah|malas|pekerjaan|ekonomi|hutang|utang/i],
+  ["Perilaku", /kekerasan|temperamental|bersikap kasar|obat|judi|mabuk|pidana|penjara|zina|cacat/i],
+  ["Pihak ketiga", /pihak lain|idaman|menikah lagi|poligami|campur tangan/i],
+  ["Agama", /murtad|agama/i],
+];
+/**
+ * Tanda "G" - kata kunci alasan yang terbaca di posita (5125). PERKIRAAN dari
+ * kata, bukan pembacaan dalil: judulnya menyebut itu, supaya tidak dibaca
+ * sebagai kepastian bahwa gugatan mendalilkannya.
+ */
+const T6_KATA_GUGATAN = [
+  [/perselisihan/i, /perselisihan|pertengkaran|bertengkar|cekcok|tidak harmonis|tidak rukun/i],
+  [/kekerasan/i, /kekerasan|memukul|dipukul|menampar|menganiaya|kdrt/i],
+  [/nafkah/i, /nafkah/i],
+  [/pihak lain|idaman/i, /wanita lain|pria lain|laki-laki lain|perempuan lain|idaman lain|selingkuh/i],
+  [/cemburu/i, /cemburu/i],
+  [/obat/i, /narkoba|obat terlarang|sabu/i],
+  [/judi/i, /judi/i],
+  [/mabuk/i, /mabuk|minuman keras|miras/i],
+  [/murtad|agama/i, /murtad|pindah agama/i],
+  [/temperamental/i, /temperamen|emosi|pemarah|mudah marah/i],
+  [/berkata kasar/i, /kata-kata kasar|berkata kasar|mencaci|memaki/i],
+  [/bersikap kasar/i, /bersikap kasar|sikap kasar|kasar/i],
+  [/malas/i, /malas/i],
+  [/pekerjaan tetap/i, /pekerjaan tetap|tidak bekerja|pengangguran/i],
+  [/ekonomi/i, /ekonomi/i],
+  [/menikah lagi/i, /menikah lagi|kawin lagi|poligami/i],
+];
+/**
+ * Kelompok kata sepadan untuk pembuat varian (abt-15). Tiap kelompok berisi
+ * bunyi yang sama artinya di keterangan saksi; varian ke-n mengganti tiap
+ * bunyi dengan anggota berikutnya dalam kelompoknya. Aturan tertulis, bukan
+ * mesin bahasa: kalimat yang tidak memuat satu pun bunyi ini tidak diberi
+ * varian, dan itu disebut.
+ */
+const T6_SEPADAN = [
+  ["sering bertengkar", "kerap cekcok", "sering berselisih"],
+  ["tidak rukun", "tidak harmonis", "tidak akur"],
+  ["tidak memberi nafkah", "tidak menafkahi", "tidak memberikan nafkah"],
+  ["pisah rumah", "berpisah tempat tinggal", "tidak lagi serumah"],
+  ["melihat sendiri", "menyaksikan sendiri"],
+  ["mengetahui", "tahu"],
+  ["kurang lebih", "kira-kira", "sekitar"],
+  ["bertengkar", "berselisih", "cekcok"],
+  ["sudah", "telah"],
+  ["karena", "sebab"],
+  ["sejak", "semenjak"],
+];
+/** Pengganti karakter \'80-\'9f windows-1252 - selebihnya sama dengan kodenya. */
+const T6_CP1252 = {
+  0x80: "€", 0x82: "‚", 0x83: "ƒ", 0x84: "„", 0x85: "…", 0x86: "†", 0x87: "‡",
+  0x88: "ˆ", 0x89: "‰", 0x8a: "Š", 0x8b: "‹", 0x8c: "Œ", 0x8e: "Ž", 0x91: "‘",
+  0x92: "’", 0x93: "“", 0x94: "”", 0x95: "•", 0x96: "–", 0x97: "—", 0x98: "˜",
+  0x99: "™", 0x9a: "š", 0x9b: "›", 0x9c: "œ", 0x9e: "ž", 0x9f: "Ÿ",
+};
+/** Tujuan RTF yang bukan isi naskah - dilewati seluruh kelompoknya. */
+const T6_RTF_LEWAT = new Set([
+  "fonttbl", "colortbl", "stylesheet", "info", "pict", "object", "header", "footer", "headerl", "headerr",
+  "headerf", "footerl", "footerr", "footerf", "themedata", "colorschememapping", "latentstyles", "datastore",
+  "xmlnstbl", "listtable", "listoverridetable", "rsidtbl", "generator", "pgdsctbl", "filetbl", "revtbl",
+  "fldinst", "bkmkstart", "bkmkend", "mmathPr", "wgrffmtfilter", "pnseclvl", "shp", "nonshppict",
+]);
+
+/**
+ * Tanda tampilan yang dipakai saat panel disusun. Disimpan di luar elemennya -
+ * atribut pada panel akan mengubah DOM tampilan Lama.
+ */
+const t6TandaPanel = new WeakMap();
+/** Keadaan panel yang sedang tertata (satu halaman, satu panel). */
+let t6Keadaan = null;
+let t6PendengarTerpasang = false;
+/** Klik CETAK berikutnya sudah dikonfirmasi lewat dialog Tahap 6. */
+let t6CetakLolos = false;
+/** Penjaga CETAK lama dilewati SEKALI - dialog Tahap 6 sudah menanyakannya. */
+let t6LewatiLama = false;
+/** Tumpukan urungkan/ulangi per perkara (abt-23) - hidup selama halaman terbuka. */
+const t6Tumpukan = new Map();
+/** Kotak ketik yang terakhir disunting - sasaran "Sisipkan" (abt-27). */
+let t6KotakTerakhir = null;
+
+// ─── Pembungkus fondasi Tahap 1 ──────────────────────────────────────────────
+
+function t6Mode() {
+  try {
+    return typeof alatUjiMode === "function" ? String(alatUjiMode() || "lama") : "lama";
+  } catch {
+    return "lama";
+  }
+}
+
+function t6Aktif() {
+  return t6Mode() !== "lama";
+}
+
+function t6Modern() {
+  try {
+    return typeof alatKulit === "function" && alatKulit() === "modern";
+  } catch {
+    return false;
+  }
+}
+
+function t6Nyala(kode) {
+  try {
+    return typeof alatFiturNyala === "function" && alatFiturNyala(kode) === true;
+  } catch {
+    return false;
+  }
+}
+
+function t6Coba() {
+  try {
+    return typeof alatCobaAktif === "function" && alatCobaAktif() === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Ide menyala, ATAU perbaikan desain yang sama wujudnya dalam UI Baru. */
+function t6Pakai(k, kode) {
+  return t6Nyala(kode) || Boolean(k && k.modern && T6_DESAIN.has(kode));
+}
+
+/** Ringkasan tampilan: berubah = panel perlu disusun ulang. */
+function t6TandaTampilan() {
+  const nyala = T6_SEMUA.filter((kode) => t6Nyala(kode)).map((kode) => kode.slice(4));
+  return `${t6Mode()}|${t6Modern() ? "modern" : "klasik"}|${nyala.join(",")}`;
+}
+
+// ─── Perkakas kecil ──────────────────────────────────────────────────────────
+
+/**
+ * Setiap unsur buatan blok ini berkelas "aleta-t6". Dengan kelas itulah
+ * pengamat perubahan mengenali tulisannya sendiri dan tidak bereaksi atasnya -
+ * tanpa itu hiasan yang ditambahkan memicu hiasan berikutnya tanpa akhir.
+ */
+function t6El(tag, kelas, teks) {
+  return buatElemen(tag, `aleta-t6${kelas ? ` ${kelas}` : ""}`, teks);
+}
+
+function t6Tombol(teks, judul, kelas) {
+  const b = t6El("button", `aleta-t6-tombol${kelas ? ` ${kelas}` : ""}`, teks);
+  b.type = "button";
+  if (judul) b.title = judul;
+  return b;
+}
+
+function t6Pad(n) {
+  return String(n).padStart(2, "0");
+}
+
+/** "10.41" untuk hari ini, "28-09 14.05" untuk hari lain. */
+function t6Jam(iso, denganDetik) {
+  const t = new Date(String(iso || ""));
+  if (Number.isNaN(t.getTime())) return "";
+  const jam = `${t6Pad(t.getHours())}.${t6Pad(t.getMinutes())}${denganDetik ? `.${t6Pad(t.getSeconds())}` : ""}`;
+  if (t.toDateString() === new Date().toDateString()) return jam;
+  return `${t6Pad(t.getDate())}-${t6Pad(t.getMonth() + 1)} ${jam}`;
+}
+
+function t6Angka(n) {
+  return (Math.round(n * 10) / 10).toFixed(1).replace(".", ",").replace(/,0$/, "");
+}
+
+function t6Pendek(teks, batas) {
+  const s = String(teks || "").replace(/\s+/g, " ").trim();
+  return s.length > batas ? `${s.slice(0, batas - 1)}…` : s;
+}
+
+function t6Baku(teks) {
+  return String(teks || "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function t6Lolos(teks) {
+  return String(teks).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Pola satu kata atau frasa utuh - tidak menempel pada huruf di kiri-kanannya. */
+function t6PolaKata(teks, bendera) {
+  return new RegExp(`(^|[^\\p{L}\\p{N}])(${t6Lolos(teks)})(?=$|[^\\p{L}\\p{N}])`, `iu${bendera || ""}`);
+}
+
+function t6CatatGalat(galat, ringkas) {
+  try {
+    if (typeof alatCatat === "function") alatCatat("galat", ringkas || "Tahap 6 panel ABT", String((galat && galat.message) || galat));
+  } catch {
+    /* panel lama tetap utuh */
+  }
+}
+
+async function t6Baca(kunci) {
+  try {
+    return (await chrome.storage.local.get(kunci)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function t6Tulis(isi) {
+  try {
+    Promise.resolve(chrome.storage.local.set(isi)).catch(() => {
+      /* berlaku untuk halaman ini saja */
+    });
+  } catch {
+    /* di luar konteks ekstensi */
+  }
+}
+
+async function t6Tunggu(periksa, batasMs) {
+  const mulai = Date.now();
+  for (;;) {
+    let hasil = null;
+    try {
+      hasil = periksa();
+    } catch {
+      hasil = null;
+    }
+    if (hasil) return hasil;
+    if (Date.now() - mulai > batasMs) return null;
+    await new Promise((r) => setTimeout(r, 60));
+  }
+}
+
+/**
+ * Satu permintaan ke portal. Pulang { ok, status, data, pesan, belumAda,
+ * ditahan } dan TIDAK PERNAH melempar.
+ *
+ *   404   rutenya belum ada di server ini - disebut "belum tersedia di
+ *         server", bukan "gagal": server yang belum dipasang bukan kerusakan
+ *   423   ditahan mode coba / mode kering - kalimat penahannya disebut apa
+ *         adanya, supaya tidak ada yang mengira tulisannya sudah terkirim
+ */
+async function t6AmbilJson(jalur, keterangan, opsi) {
+  const o = { credentials: "include", cache: "no-store", ...(opsi || {}) };
+  let respons;
+  try {
+    respons = typeof alatAmbil === "function" ? await alatAmbil(jalur, o, keterangan) : await fetch(jalur, o);
+  } catch (galat) {
+    return { ok: false, status: 0, data: null, belumAda: false, ditahan: false, pesan: String((galat && galat.message) || galat) };
+  }
+  let badan = null;
+  try {
+    badan = await respons.json();
+  } catch {
+    badan = null;
+  }
+  // mode_coba, mode_kering, dan mode_latihan (Tahap 7) - ketiganya jawaban
+  // tiruan panel-alat.js, bukan jawaban server.
+  if (respons.status === 423 && badan && /^mode_/.test(String(badan.alasan || ""))) {
+    return {
+      ok: false,
+      status: 423,
+      data: null,
+      belumAda: false,
+      ditahan: true,
+      pesan: String(badan.pesan || "Ditahan - tidak ada yang dikirim."),
+    };
+  }
+  if (respons.status === 404) {
+    return { ok: false, status: 404, data: null, belumAda: true, ditahan: false, pesan: `${keterangan}: belum tersedia di server ini.` };
+  }
+  const dariServer = badan && badan.error ? String(badan.error.message || badan.error) : "";
+  if (!respons.ok || (badan && badan.ok === false)) {
+    const pesan =
+      dariServer ||
+      (typeof alatPesanGagal === "function" ? alatPesanGagal(null, respons.status, keterangan) : `${keterangan} gagal (status ${respons.status}).`);
+    return { ok: false, status: respons.status, data: null, belumAda: false, ditahan: false, pesan };
+  }
+  const data = badan && typeof badan === "object" && "data" in badan ? badan.data : badan;
+  return { ok: true, status: respons.status, data, belumAda: false, ditahan: false, pesan: "" };
+}
+
+/** Anak langsung pertama berkelas `kelas` - bukan cucu dari bagian lain. */
+function t6Anak(induk, kelas) {
+  if (!induk) return null;
+  return Array.from(induk.children).find((c) => c.classList.contains(kelas)) || null;
+}
+
+function t6Lapor(k, teks, gagal) {
+  try {
+    if (k && k.panel && typeof k.panel.lapor === "function") k.panel.lapor(teks, gagal);
+  } catch {
+    /* kabar yang tidak tertulis tidak menghentikan pekerjaannya */
+  }
+}
+
+/** Melompat ke baris variabel di halaman ABT dan menyorotnya sebentar. */
+function t6Lompat(kode) {
+  const item = barisVariabel().get(String(kode));
+  if (!item) return false;
+  try {
+    item.baris.scrollIntoView({ block: "center" });
+  } catch {
+    /* peramban lama tanpa pilihan gulir */
+  }
+  item.baris.classList.add("aleta-t6-sorot");
+  setTimeout(() => item.baris.classList.remove("aleta-t6-sorot"), 1800);
+  return true;
+}
+
+/** Kode variabel sebagai tombol lompat. */
+function t6KepingKode(kode, nama) {
+  const b = t6Tombol(nama ? `${kode} ${nama}` : String(kode), `Lompat ke baris ${kode} di blangko`, "aleta-t6-keping");
+  b.addEventListener("click", () => t6Lompat(kode));
+  return b;
+}
+
+/** Tema panel untuk unsur yang hidup di luar panel (dialog, mode sidang). */
+function t6TemaPanel() {
+  const panel = document.getElementById(PENANDA_ABT);
+  return (panel && panel.getAttribute("data-tema")) || "gelap";
+}
+
+// ─── Dialog peringatan dengan konfirmasi ─────────────────────────────────────
+
+/**
+ * Dialog yang menyebut apa yang salah, dan menunggu keputusan petugas.
+ *
+ * Tombol lanjutnya MATI sampai kotak "Sudah saya periksa" dicentang: satu
+ * tekanan Enter tidak boleh melewati peringatan yang isinya ikut tercetak ke
+ * putusan. Esc dan "Batal" selalu dapat ditekan. Pulang true bila dilanjutkan.
+ */
+function t6Dialog(o) {
+  return new Promise((selesai) => {
+    const tirai = t6El("div", "aleta-t6-tirai");
+    const kotak = t6El("div", "aleta-t6-dialog");
+    kotak.setAttribute("role", "alertdialog");
+    kotak.setAttribute("aria-modal", "true");
+    kotak.setAttribute("data-tema", t6TemaPanel());
+    kotak.appendChild(t6El("div", "aleta-t6-dialog-judul", o.judul));
+    for (const bagian of o.isi || []) {
+      if (!bagian) continue;
+      kotak.appendChild(typeof bagian === "string" ? t6El("div", "aleta-t6-dialog-teks", bagian) : bagian);
+    }
+    let centang = null;
+    if (o.centang) {
+      const label = t6El("label", "aleta-t6-dialog-centang");
+      centang = document.createElement("input");
+      centang.type = "checkbox";
+      centang.className = "aleta-t6 aleta-t6-dialog-periksa";
+      label.appendChild(centang);
+      label.appendChild(document.createTextNode(` ${o.centang}`));
+      kotak.appendChild(label);
+    }
+    const baris = t6El("div", "aleta-t6-dialog-baris");
+    const tidak = t6Tombol(o.tidak || "Batal", "", "aleta-t6-dialog-tidak");
+    const ya = t6Tombol(o.ya || "Lanjutkan", "", "aleta-t6-dialog-ya");
+    if (centang) {
+      ya.disabled = true;
+      centang.addEventListener("change", () => {
+        ya.disabled = !centang.checked;
+      });
+    }
+    baris.appendChild(tidak);
+    baris.appendChild(ya);
+    kotak.appendChild(baris);
+    tirai.appendChild(kotak);
+
+    const esc = (e) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      tutup(false);
+    };
+    function tutup(hasil) {
+      document.removeEventListener("keydown", esc, true);
+      tirai.remove();
+      selesai(hasil);
+    }
+    ya.addEventListener("click", () => {
+      if (!ya.disabled) tutup(true);
+    });
+    tidak.addEventListener("click", () => tutup(false));
+    document.addEventListener("keydown", esc, true);
+    document.body.appendChild(tirai);
+    try {
+      (centang || tidak).focus();
+    } catch {
+      /* fokus hanya kenyamanan */
+    }
+  });
+}
+
+/** Daftar butir untuk isi dialog. */
+function t6DaftarDialog(judul, butir) {
+  if (!butir.length) return null;
+  const wadah = t6El("div", "aleta-t6-dialog-daftar");
+  wadah.appendChild(t6El("div", "aleta-t6-dialog-subjudul", judul));
+  const ul = t6El("ul", "aleta-t6-dialog-ul");
+  for (const x of butir) ul.appendChild(t6El("li", "", x));
+  wadah.appendChild(ul);
+  return wadah;
+}
+
+// ─── Pendengar sekali seumur halaman ─────────────────────────────────────────
+
+/**
+ * Dipasang sekali, dan setiap pendengar memeriksa keadaannya sendiri pada saat
+ * dipanggil: dalam tampilan Lama t6Keadaan kosong, jadi semuanya pulang pada
+ * baris pertamanya dan tidak ada satu pun yang berubah.
+ */
+function t6PasangPendengar() {
+  if (t6PendengarTerpasang) return;
+  t6PendengarTerpasang = true;
+  try {
+    document.addEventListener("aleta-uji-berubah", t6SaatUjiBerubah);
+    document.addEventListener("click", t6SaatKlik, true);
+    document.addEventListener("keydown", t6SaatTombol, true);
+    document.addEventListener("focusin", t6SaatFokus, true);
+  } catch {
+    /* tampilannya berganti saat halaman dimuat ulang */
+  }
+  try {
+    chrome.storage.onChanged.addListener(t6SaatSimpanBerubah);
+  } catch {
+    /* di luar konteks ekstensi */
+  }
+}
+
+/**
+ * Tampilan atau saklar berganti dari popup: panel disusun ulang HANYA bila
+ * tandanya berubah. Peristiwa ini juga menyala dalam tampilan Lama (tampilan
+ * dari server dibaca ulang) - tandanya sama, jadi tidak ada yang terjadi.
+ */
+function t6SaatUjiBerubah() {
+  const panel = document.getElementById(PENANDA_ABT);
+  if (!panel) return;
+  if (t6TandaPanel.get(panel) === t6TandaTampilan()) return;
+  // Menyusun ulang membuang isi panel - termasuk keterangan saksi yang sedang
+  // disunting dan belum disimpan ke ABT. Selama penyunting itu terbuka,
+  // pergantiannya ditunda sampai ↻ ditekan, dan itu disebut di kotak kabar
+  // panel sendiri.
+  if (panel.querySelector(".aleta-sdg-hasil, textarea.aleta-abt-sunting-kotak")) {
+    try {
+      if (typeof panel.lapor === "function") {
+        panel.lapor("Tampilan ALETA berganti. Panel disusun ulang saat ↻ ditekan - keterangan saksi yang sedang disunting tidak dibuang.");
+      }
+    } catch {
+      /* kabar hanya pemberitahuan */
+    }
+    return;
+  }
+  t6BangunUlang();
+}
+
+function t6BangunUlang() {
+  t6Hentikan();
+  t6BersihkanHalaman();
+  const lama = document.getElementById(PENANDA_ABT);
+  if (lama) lama.remove();
+  // Sama dengan tombol segarkan di kaki panel: penandanya dipadamkan supaya
+  // pasang() benar-benar membangun ulang, bukan keluar pada baris pertamanya.
+  sudahDipasang = false;
+  void pasang();
+}
+
+/** Sisa Tahap 6 di halaman ABT sendiri (bukan di panel) dibuang. */
+function t6BersihkanHalaman() {
+  for (const el of Array.from(document.querySelectorAll(".aleta-t6-halaman, .aleta-t6-tirai, .aleta-t6-sidang"))) el.remove();
+  for (const el of Array.from(document.querySelectorAll(".aleta-t6-sorot"))) el.classList.remove("aleta-t6-sorot");
+}
+
+function t6Hentikan() {
+  const k = t6Keadaan;
+  t6Keadaan = null;
+  if (!k) return;
+  for (const p of k.pengamat) {
+    try {
+      p.disconnect();
+    } catch {
+      /* sudah lepas */
+    }
+  }
+  for (const j of k.pewaktu) {
+    clearInterval(j);
+    clearTimeout(j);
+  }
+  k.pengamat.length = 0;
+  k.pewaktu.length = 0;
+}
+
+function t6SaatFokus(e) {
+  if (!t6Keadaan) return;
+  const t = e.target;
+  if (t && t.matches && t.matches("textarea.aleta-abt-ketik, textarea.aleta-abt-sunting-kotak, textarea.aleta-sdg-jawab")) {
+    t6KotakTerakhir = t;
+  }
+}
+
+/**
+ * Klik di halaman, fase tangkap - mendahului pendengar penjaga CETAK lama yang
+ * terpasang pada tautannya sendiri.
+ */
+function t6SaatKlik(e) {
+  const k = t6Keadaan;
+  if (!k || !t6Aktif()) return;
+  const t = e.target instanceof Element ? e.target : null;
+  if (!t) return;
+
+  // abt-25: dalam mode baca, klik isi blangko tidak membuka penyunting.
+  if (k.baca && t6Nyala("abt-25") && t.closest(".aleta-abt-dapat-disunting") && !t.closest(".aleta-abt-sunting")) {
+    e.preventDefault();
+    e.stopPropagation();
+    t6Lapor(k, "Mode baca menyala - penyunting tidak dibuka. Matikan dengan ▤ di kepala panel.");
+    return;
+  }
+
+  const tautan = t.closest('a[href*="abt/preview"]');
+  if (!tautan) return;
+  if (t6CetakLolos) {
+    // Klik ulangan sesudah dialog dikonfirmasi: berjalan terus, dan penjaga
+    // lama tidak bertanya kedua kalinya atas hal yang sama.
+    t6CetakLolos = false;
+    t6LewatiLama = true;
+    setTimeout(() => {
+      t6LewatiLama = false;
+    }, 0);
+    return;
+  }
+  if (!t6Pakai(k, "abt-5")) return;
+  const rusak = t6DaftarGalat();
+  if (!rusak.length) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+  void t6KonfirmasiCetak(k, tautan, rusak);
+}
+
+/** Dipanggil penjaga CETAK lama: true = lewati, dialog Tahap 6 sudah bertanya. */
+function t6LewatiPenjagaLama() {
+  if (!t6LewatiLama) return false;
+  t6LewatiLama = false;
+  return true;
+}
+
+function t6SaatTombol(e) {
+  const k = t6Keadaan;
+  if (!k || !t6Nyala("abt-23")) return;
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const kunci = String(e.key || "").toLowerCase();
+  if (kunci !== "z" && kunci !== "y") return;
+  const s = e.target instanceof Element ? e.target : null;
+  // Di dalam kotak ketik, Ctrl+Z milik kotak itu sendiri - urungkan ketikan,
+  // bukan urungkan simpanan ke ABT.
+  if (s && (s.isContentEditable || s.closest('input, textarea, select, [contenteditable="true"]'))) return;
+  e.preventDefault();
+  const ulang = kunci === "y" || e.shiftKey;
+  void (ulang ? t6Ulangi(k) : t6Urungkan(k));
+}
+
+/**
+ * Simpanan baru di riwayat ABT milik perkara ini masuk ke tumpukan urungkan
+ * (abt-23). Yang dicatat pengurungan sendiri tidak ikut - tanpa itu satu
+ * Ctrl+Z menumpuk dirinya sendiri dan Ctrl+Z berikutnya membatalkannya.
+ */
+function t6SaatSimpanBerubah(ubah, tempat) {
+  const k = t6Keadaan;
+  if (tempat !== "local" || !k || !t6Nyala("abt-23") || !ubah || !ubah[KUNCI_RIWAYAT]) return;
+  const baru = Array.isArray(ubah[KUNCI_RIWAYAT].newValue) ? ubah[KUNCI_RIWAYAT].newValue : [];
+  const lama = Array.isArray(ubah[KUNCI_RIWAYAT].oldValue) ? ubah[KUNCI_RIWAYAT].oldValue : [];
+  const sudah = new Set(lama.map((x) => `${x && x.pada}|${x && x.kode}`));
+  const masuk = baru.filter(
+    (x) =>
+      x &&
+      !sudah.has(`${x.pada}|${x.kode}`) &&
+      String(x.perkaraId || "") === k.perkaraId &&
+      x.cara !== "diurungkan" &&
+      x.cara !== "diulang"
+  );
+  if (!masuk.length) return;
+  const t = t6TumpukanDari(k.perkaraId);
+  for (const x of masuk.reverse()) t.urung.push(x);
+  t.ulang.length = 0;
+  t6SegarkanUrung(k);
+}
+
+// ─── Penata utama ────────────────────────────────────────────────────────────
+
+/** Dipanggil pasang(). Kegagalannya tidak boleh menggagalkan panel lama. */
+function t6TataAman(panel, jatiDiri) {
+  try {
+    void t6Tata(panel, jatiDiri).catch((galat) => t6CatatGalat(galat, "Penataan panel ABT Tahap 6 gagal"));
+  } catch (galat) {
+    t6CatatGalat(galat, "Penataan panel ABT Tahap 6 gagal");
+  }
+}
+
+/**
+ * Menata panel yang SUDAH disusun jalur lama. Dalam tampilan Lama - dan dalam
+ * Baru tanpa satu saklar abt pun - hanya mencatat tanda tampilannya (di luar
+ * DOM) lalu pulang.
+ */
+async function t6Tata(panel, jatiDiri) {
+  t6PasangPendengar();
+  t6TandaPanel.set(panel, t6TandaTampilan());
+  // Panel yang disusun ulang lewat ↻ sesudah tampilan berganti: sisa Tahap 6
+  // di halaman ABT (penanda di sebelah CETAK, dialog) ikut dibuang. Dalam
+  // tampilan Lama yang tidak pernah berganti tidak ada sisa - tidak ada yang
+  // tersentuh.
+  const adaSebelumnya = Boolean(t6Keadaan);
+  t6Hentikan();
+  if (adaSebelumnya) t6BersihkanHalaman();
+  if (!t6Aktif()) return;
+  const modern = t6Modern();
+  if (!modern && !T6_SEMUA.some((kode) => t6Nyala(kode))) return;
+
+  const simpan = await t6Baca([T6_KUNCI_SEMATAN, T6_KUNCI_BACA, T6_KUNCI_DRAF, T6_KUNCI_TEMPLAT, T6_KUNCI_DITOLAK]);
+  // Panel dapat sudah diganti selagi penyimpanan dibaca.
+  if (document.getElementById(PENANDA_ABT) !== panel) return;
+
+  const isi = t6Anak(panel, "aleta-isi");
+  if (!isi) return;
+  const aksi = t6Anak(isi, "aleta-abt-aksi");
+  const daftar = Array.from(isi.children).filter((c) => c.classList.contains("aleta-abt-daftar"));
+  const tombolAksi = aksi ? Array.from(aksi.children) : [];
+  const objek = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
+  const nomor = nomorPerkaraAbt();
+  const k = {
+    panel,
+    jatiDiri: jatiDiri || { perkaraId: "", perkTemp: "" },
+    perkaraId: String((jatiDiri && jatiDiri.perkaraId) || ""),
+    nomor,
+    jenis: nilaiVariabel(VAR_JENIS_PERKARA) || sebutJenisPerkara(nomor) || "",
+    modern,
+    isi,
+    kepala: t6Anak(panel, "aleta-kepala"),
+    kaki: t6Anak(panel, "aleta-kaki"),
+    aksi,
+    kabar: t6Anak(isi, "aleta-abt-kabar"),
+    unggah: t6Anak(isi, "aleta-abt-bagian"),
+    petunjuk: t6Anak(isi, "aleta-abt-petunjuk"),
+    // Urutan pemasangan di susunPanelAbt: sipp, saksi, itsbat, perkara lain,
+    // susun saksi, riwayat, rapikan.
+    tombol: {
+      sipp: tombolAksi[0] || null,
+      saksi: tombolAksi[1] || null,
+      itsbat: tombolAksi[2] || null,
+      lain: tombolAksi[3] || null,
+      sdg: tombolAksi[4] || null,
+      riwayat: tombolAksi[5] || null,
+      rapikan: tombolAksi[6] || null,
+    },
+    wadah: { riwayat: daftar[0] || null, selisih: daftar[1] || null, sepihak: daftar[2] || null, huruf: daftar[3] || null, usulan: daftar[4] || null },
+    sematan: Array.isArray(simpan[T6_KUNCI_SEMATAN]) ? simpan[T6_KUNCI_SEMATAN].map(String) : [],
+    baca: simpan[T6_KUNCI_BACA] === true,
+    draf: objek(simpan[T6_KUNCI_DRAF]),
+    templat: objek(simpan[T6_KUNCI_TEMPLAT]),
+    ditolak: objek(simpan[T6_KUNCI_DITOLAK]),
+    pengamat: [],
+    pewaktu: [],
+    kuasa: null,
+    prodeo: null,
+    saring: "semua",
+    tampilTakBerlaku: false,
+    komentar: null,
+    wajib: null,
+    pasal: null,
+    langkah: new Map(),
+    alatTerbuka: "",
+    drafSidik: "",
+    drafPada: "",
+  };
+  t6Keadaan = k;
+  if (modern) panel.setAttribute("data-t6", "ui");
+
+  const atas = t6El("div", "aleta-t6-atas");
+  isi.insertBefore(atas, isi.firstChild);
+  k.atas = atas;
+
+  if (t6Pakai(k, "abt-5")) t6PasangPitaBahaya(k);
+  if (t6Pakai(k, "abt-11")) t6PasangKemajuan(k);
+  if (t6Nyala("abt-17")) t6PasangWajib(k);
+  if (t6Nyala("abt-18")) t6PasangKomentar(k);
+  if (t6Nyala("abt-21") || t6Nyala("abt-22")) t6PasangCari(k);
+  if (t6Nyala("abt-29")) t6PasangDrafLama(k);
+  if (t6Nyala("abt-25")) t6PasangPitaBaca(k);
+  if (t6Pakai(k, "abt-4")) t6PasangSegmen(k);
+  if (t6Pakai(k, "abt-10") && aksi) t6PasangLangkah(k);
+  if (t6Pakai(k, "abt-1") && k.kabar) t6PasangRamah(k);
+  t6PasangAlat(k);
+  t6PasangKepala(k);
+  if (k.unggah) t6TataUnggah(k);
+  t6PasangPengamat(k);
+  if (t6Nyala("abt-29")) k.pewaktu.push(setInterval(() => t6SimpanDraf(k), T6_DRAF_MS));
+  t6TerapkanBaca(k);
+
+  if (!atas.childElementCount) atas.remove();
+  t6SegarkanHalaman(k);
+}
+
+// ─── abt-5 / D8: pita bahaya galat, dan CETAK dengan konfirmasi ─────────────
+
+function t6DaftarGalat() {
+  const hasil = [];
+  for (const [kode, item] of barisVariabel()) {
+    if (keadaanNilai(item.nilai) === "galat") hasil.push({ kode, nama: item.nama });
+  }
+  return hasil;
+}
+
+/**
+ * Huruf alasan pada 8503 yang tidak punya cabang di kueri 4020 blangko ini
+ * (C, D, E, G, ...). Kosong bila 8503 bukan deretan huruf - "Fasakh" misalnya.
+ */
+function t6HurufTakBercabang() {
+  const isi = nilaiVariabel(VAR_HURUF).toUpperCase().replace(/\bDAN\b/g, "");
+  const huruf = isi.replace(/[^A-Z]/g, "");
+  if (!huruf || huruf.length > 8 || !/^[A-K]+$/.test(huruf)) return [];
+  return Array.from(new Set(huruf.split(""))).filter((h) => !URUTAN_HURUF.includes(h));
+}
+
+function t6PasangPitaBahaya(k) {
+  k.pitaBahaya = t6El("div", "aleta-t6-pita-bahaya");
+  k.pitaBahaya.setAttribute("role", "alert");
+  k.pitaBahaya.hidden = true;
+  k.atas.appendChild(k.pitaBahaya);
+}
+
+function t6SegarkanPitaBahaya(k) {
+  const pita = k.pitaBahaya;
+  if (!pita) return;
+  const rusak = t6DaftarGalat();
+  const sidik = rusak.map((x) => x.kode).join(",") + "|" + nilaiVariabel(VAR_HURUF);
+  if (pita.dataset.sidik === sidik) return;
+  pita.dataset.sidik = sidik;
+  pita.textContent = "";
+  pita.hidden = rusak.length === 0;
+  if (!rusak.length) return;
+  const takBercabang = t6HurufTakBercabang();
+  const kode = rusak.map((x) => x.kode).join(", ");
+  pita.appendChild(
+    t6El(
+      "div",
+      "aleta-t6-pita-judul",
+      takBercabang.length
+        ? `Blangko ini belum punya cabang untuk huruf ${takBercabang.join(", ")}. 8503 berisi "${nilaiVariabel(VAR_HURUF)}", sehingga ${kode} berbunyi "TIDAK BENAR QUERY NYA" - dan kalimat itu ikut tercetak ke dalam putusan.`
+        : `${rusak.length} variabel berbunyi pesan galat (${kode}) - kalimat itu ikut tercetak ke dalam putusan.`
+    )
+  );
+  const keping = t6El("div", "aleta-t6-keping-deret");
+  for (const x of rusak) keping.appendChild(t6KepingKode(x.kode, t6Pendek(x.nama, 28)));
+  pita.appendChild(keping);
+  const cara = document.createElement("details");
+  cara.className = "aleta-t6 aleta-t6-pita-cara";
+  cara.appendChild(t6El("summary", "", "Lihat cara memperbaiki"));
+  cara.appendChild(
+    t6El(
+      "div",
+      "aleta-t6-lembut",
+      takBercabang.length
+        ? "Tugas ABT satker \"enam baris huruf C/D/E/G\": tambahkan cabang huruf C, D, E, dan G ke kueri blangko [01] di ABT (sudah disiapkan, belum terpasang di satker). " +
+            "Sampai itu terpasang, isi 8503 hanya dengan A, B, F, H, AB, AF, BF, atau ABF - atau tulis pertimbangannya sendiri di variabel pertimbangan."
+        : "Variabel (OTOMATIS) disusun ABT dari kerangka fakta. Lengkapi variabel yang menyuapinya (lihat kartu huruf alasan dan variabel kerangka), lalu muat ulang halaman."
+    )
+  );
+  pita.appendChild(cara);
+  pita.appendChild(
+    t6El("div", "aleta-t6-lembut", "CETAK tidak ditahan: ia meminta konfirmasi \"Sudah saya periksa\" selama galat ini ada.")
+  );
+}
+
+async function t6KonfirmasiCetak(k, tautan, rusak) {
+  const { kurang } = periksaKelengkapan();
+  const takBercabang = t6HurufTakBercabang();
+  const wajib = t6WajibKosong(k);
+  const ya = await t6Dialog({
+    judul: "Sebelum CETAK - kalimat galat akan ikut tercetak",
+    isi: [
+      takBercabang.length
+        ? `8503 berisi huruf ${takBercabang.join(", ")} yang belum punya cabang di blangko ini.`
+        : "",
+      t6DaftarDialog(
+        `${rusak.length} variabel berbunyi pesan galat - kalimatnya ikut tercetak sebagai bagian putusan:`,
+        rusak.map((x) => `${x.kode} ${x.nama}`)
+      ),
+      t6DaftarDialog(`${kurang.length} variabel kerangka masih kosong:`, kurang),
+      wajib.length ? t6DaftarDialog(`${wajib.length} variabel wajib masih kosong:`, wajib.map((x) => `${x.kode} ${x.nama}`)) : null,
+      "Pencetakan tidak ditahan. Lanjutkan hanya bila isi putusan itu memang sudah Anda periksa.",
+    ],
+    centang: "Sudah saya periksa",
+    ya: "Tetap CETAK",
+    tidak: "Batal",
+  });
+  try {
+    if (typeof alatCatat === "function") {
+      alatCatat("abt-cetak", ya ? "CETAK dilanjutkan sesudah konfirmasi galat" : "CETAK dibatalkan di dialog galat", rusak.map((x) => x.kode).join(", "));
+    }
+  } catch {
+    /* kotak hitam hanya catatan */
+  }
+  if (!ya) return;
+  t6CetakLolos = true;
+  tautan.click();
+}
+
+// ─── abt-11 / D13: bilah kemajuan ────────────────────────────────────────────
+
+function t6PasangKemajuan(k) {
+  const kotak = t6El("div", "aleta-t6-kemajuan");
+  kotak.hidden = true;
+  const judul = t6El("div", "aleta-t6-kemajuan-judul");
+  const bilah = t6El("div", "aleta-t6-bilah");
+  const isiBilah = t6El("div", "aleta-t6-bilah-isi");
+  bilah.appendChild(isiBilah);
+  const rinci = t6El("div", "aleta-t6-lembut aleta-t6-kemajuan-rinci");
+  kotak.appendChild(judul);
+  kotak.appendChild(bilah);
+  kotak.appendChild(rinci);
+  k.atas.appendChild(kotak);
+  k.kemajuan = { kotak, judul, isiBilah, rinci };
+}
+
+function t6HitungKemajuan() {
+  let siap = 0;
+  let kosong = 0;
+  let galat = 0;
+  const peta = barisVariabel();
+  for (const item of peta.values()) {
+    const s = keadaanNilai(item.nilai);
+    if (s === "terisi") siap += 1;
+    else if (s === "galat") galat += 1;
+    else kosong += 1;
+  }
+  return { total: peta.size, siap, kosong, galat };
+}
+
+function t6SegarkanKemajuan(k) {
+  const m = k.kemajuan;
+  if (!m) return;
+  const h = t6HitungKemajuan();
+  m.kotak.hidden = h.total === 0;
+  if (!h.total) return;
+  m.judul.textContent = `${h.siap} dari ${h.total} variabel siap`;
+  m.isiBilah.style.width = `${Math.round((h.siap / h.total) * 100)}%`;
+  m.kotak.classList.toggle("aleta-t6-ada-galat", h.galat > 0);
+  const bagian = [];
+  if (h.kosong) bagian.push(`${h.kosong} kosong`);
+  if (h.galat) bagian.push(`${h.galat} berbunyi galat`);
+  const yakin = k.hitungYakin;
+  if (yakin) {
+    if (yakin.ragu) bagian.push(`${yakin.ragu} usulan ragu`);
+    if (yakin.bentrok) bagian.push(`${yakin.bentrok} usulan bentrok`);
+  }
+  m.rinci.textContent = bagian.length ? bagian.join(" · ") : "Semua variabel di blangko ini sudah berisi.";
+  m.kotak.title = "Dihitung dari baris variabel yang tergambar di halaman blangko ini. Kosong tidak selalu salah - sebagian variabel memang tidak berlaku untuk perkara tertentu.";
+}
+
+/** Disegarkan tiap kali tabel variabel di halaman berubah (lihat t6PasangPengamat). */
+function t6SegarkanHalaman(k) {
+  if (!k || t6Keadaan !== k) return;
+  t6SegarkanKemajuan(k);
+  t6SegarkanPitaBahaya(k);
+  t6SegarkanWajib(k);
+}
+
+// ─── abt-17: variabel wajib sebelum CETAK ────────────────────────────────────
+
+function t6PasangWajib(k) {
+  const kotak = t6El("div", "aleta-t6-wajib");
+  kotak.appendChild(t6El("span", "aleta-t6-lembut", "Membaca daftar variabel wajib…"));
+  k.atas.appendChild(kotak);
+  k.wajibKotak = kotak;
+  if (!k.jenis) {
+    k.wajib = { ok: false, pesan: "Jenis perkara tidak terbaca dari blangko ini - daftar variabel wajib tidak dapat dipilih.", daftar: [] };
+    t6SegarkanWajib(k);
+    return;
+  }
+  void t6AmbilJson(`${T6_API_WAJIB}?jenis=${encodeURIComponent(k.jenis)}`, "Daftar variabel wajib").then((h) => {
+    if (t6Keadaan !== k) return;
+    const data = h.data || {};
+    const daftar = h.ok && Array.isArray(data.variabel) ? data.variabel.filter((x) => x && x.aktif !== false && x.kode) : [];
+    k.wajib = { ok: h.ok, pesan: h.pesan, belumAda: h.belumAda, catatan: String(data.catatan || ""), daftar };
+    t6SegarkanWajib(k);
+  });
+}
+
+/** Variabel wajib yang tergambar di blangko ini dan masih kosong / berbunyi galat. */
+function t6WajibKosong(k) {
+  if (!k || !k.wajib || !k.wajib.ok) return [];
+  const peta = barisVariabel();
+  const hasil = [];
+  for (const v of k.wajib.daftar) {
+    const item = peta.get(String(v.kode));
+    if (!item) continue;
+    if (keadaanNilai(item.nilai) !== "terisi") hasil.push({ kode: String(v.kode), nama: item.nama || String(v.nama || "") });
+  }
+  return hasil;
+}
+
+function t6SegarkanWajib(k) {
+  const kotak = k.wajibKotak;
+  if (!kotak || !k.wajib) return;
+  const kosong = t6WajibKosong(k);
+  const sidik = `${k.wajib.ok}|${kosong.map((x) => x.kode).join(",")}`;
+  if (kotak.dataset.sidik !== sidik) {
+    kotak.dataset.sidik = sidik;
+    kotak.textContent = "";
+    kotak.classList.toggle("aleta-t6-wajib-kurang", kosong.length > 0);
+    if (!k.wajib.ok) {
+      kotak.appendChild(t6El("span", "aleta-t6-lembut", k.wajib.belumAda ? "Daftar variabel wajib belum tersedia di server." : k.wajib.pesan));
+    } else if (!k.wajib.daftar.length) {
+      // Daftar kosong BUKAN "semua terisi": jenis ini belum pernah diukur,
+      // dan kalimat server yang menyebut sebabnya dipakai apa adanya.
+      kotak.appendChild(t6El("span", "aleta-t6-lembut", k.wajib.catatan || `Belum ada variabel wajib untuk ${k.jenis}.`));
+    } else if (!kosong.length) {
+      kotak.appendChild(t6El("span", "aleta-t6-lembut", `✓ Variabel wajib untuk ${k.jenis} sudah terisi.`));
+    } else {
+      kotak.appendChild(t6El("span", "aleta-t6-wajib-judul", `Sebelum CETAK - ${kosong.length} variabel wajib masih kosong:`));
+      const deret = t6El("span", "aleta-t6-keping-deret");
+      for (const x of kosong) deret.appendChild(t6KepingKode(x.kode, t6Pendek(x.nama, 26)));
+      kotak.appendChild(deret);
+      kotak.appendChild(t6El("span", "aleta-t6-lembut", "Peringatan saja - CETAK dan \"Kerjakan perkara ini\" tidak ditahan."));
+    }
+  }
+  // Peringatan yang sama di sebelah tombol CETAK ABT dan tombol Kerjakan.
+  const judul = kosong.length ? `Variabel wajib masih kosong: ${kosong.map((x) => `${x.kode} ${x.nama}`).join("; ")}` : "";
+  for (const tautan of Array.from(document.querySelectorAll('a[href*="abt/preview"]'))) {
+    const induk = tautan.parentElement || tautan;
+    let tanda = Array.from(induk.children).find((c) => c.classList.contains("aleta-t6-wajib-cetak"));
+    if (!kosong.length) {
+      if (tanda) tanda.remove();
+      continue;
+    }
+    if (!tanda) {
+      tanda = t6El("span", "aleta-t6-halaman aleta-t6-wajib-cetak");
+      induk.insertBefore(tanda, tautan.nextSibling);
+    }
+    tanda.textContent = `⚠ ${kosong.length} wajib kosong`;
+    tanda.title = judul;
+  }
+  if (k.wajibUnggah) {
+    k.wajibUnggah.hidden = !kosong.length;
+    k.wajibUnggah.textContent = kosong.length ? `⚠ ${kosong.length} variabel wajib masih kosong (${kosong.map((x) => x.kode).join(", ")}) - tidak ditahan.` : "";
+  }
+  if (k.kakiWajib) {
+    k.kakiWajib.hidden = !kosong.length;
+    k.kakiWajib.textContent = kosong.length ? `⚠ ${kosong.length} wajib kosong` : "";
+    k.kakiWajib.title = judul;
+  }
+}
+
+// ─── abt-18: komentar hakim atas BAS (tanpa acc, tidak menahan apa pun) ─────
+
+/**
+ * Keputusan pengguna 29 September 2026: TIDAK ada acc hakim. Hakim membaca
+ * alur BAS di portal dan mengomentari bagian yang salah; di sini komentarnya
+ * tampil di tempat yang dikomentari, dan panitera pengganti dapat
+ * menandainya selesai. Tidak ada tombol yang dimatikan karena komentar.
+ */
+function t6PasangKomentar(k) {
+  const kotak = document.createElement("details");
+  kotak.className = "aleta-t6 aleta-t6-komentar";
+  const ringkas = t6El("summary", "aleta-t6-komentar-judul", "Komentar hakim - membaca…");
+  kotak.appendChild(ringkas);
+  const daftar = t6El("div", "aleta-t6-komentar-daftar");
+  kotak.appendChild(daftar);
+  k.atas.appendChild(kotak);
+  k.komentarKotak = { kotak, ringkas, daftar };
+  if (!k.nomor) {
+    k.komentar = { ok: false, pesan: "Nomor perkara tidak terbaca dari kepala halaman.", daftar: [] };
+    t6GambarKomentar(k);
+    return;
+  }
+  void t6AmbilJson(`${T6_API_KOMENTAR}?nomor=${encodeURIComponent(k.nomor)}`, "Komentar hakim").then((h) => {
+    if (t6Keadaan !== k) return;
+    const data = h.data || {};
+    k.komentar = {
+      ok: h.ok,
+      pesan: h.pesan,
+      belumAda: h.belumAda,
+      daftar: h.ok && Array.isArray(data.komentar) ? data.komentar : [],
+      saya: data.saya && typeof data.saya === "object" ? data.saya : null,
+    };
+    t6GambarKomentar(k);
+    t6HiasSemua(k);
+    t6HiasHuruf(k);
+  });
+}
+
+/**
+ * "saksi-p1:3", "saksi-T2:5", "saksi-1:3" -> { pihak, ke, no }.
+ *
+ * Tanpa huruf pihak (portal tidak tahu letak saksi itu), aturannya sama dengan
+ * letakSaksiAbt di portal: ke-1 dan ke-2 = saksi Penggugat, ke-3 dst. TIDAK
+ * ditebak (pihak null) - di data Donggala urutan ketiga ABT 37 kali saksi
+ * Tergugat, jadi menebak menempelkan komentar ke kolom yang salah.
+ */
+function t6BacaBagian(bagian) {
+  const s = String(bagian || "").replace(/\s+/g, "").toLowerCase();
+  let m = /^saksi-([pt])?(\d+):(\d+)$/.exec(s);
+  if (m) {
+    const ke = Number(m[2]);
+    const pihak = m[1] ? m[1].toUpperCase() : ke <= 2 ? "P" : null;
+    return { jenis: "saksi", pihak, ke, no: Number(m[3]) };
+  }
+  m = /^alasan:([a-z])$/.exec(s);
+  if (m) return { jenis: "alasan", huruf: m[1].toUpperCase() };
+  return { jenis: "umum" };
+}
+
+function t6LabelBagian(bagian) {
+  const b = t6BacaBagian(bagian);
+  if (b.jenis === "saksi") return b.pihak ? `Saksi ${b.ke} ${b.pihak}, pertanyaan ${b.no}` : `Saksi ke-${b.ke} (ABT), pertanyaan ${b.no}`;
+  if (b.jenis === "alasan") return `Alasan huruf ${b.huruf}`;
+  return "Umum";
+}
+
+function t6GambarKomentar(k) {
+  const w = k.komentarKotak;
+  if (!w) return;
+  const kom = k.komentar || { ok: false, daftar: [] };
+  w.daftar.textContent = "";
+  if (!kom.ok) {
+    w.ringkas.textContent = kom.belumAda ? "Komentar hakim - belum tersedia di server" : "Komentar hakim - tidak terbaca";
+    w.daftar.appendChild(t6El("div", "aleta-t6-lembut", kom.belumAda ? "Server ini belum mengenal komentar hakim atas BAS." : kom.pesan));
+    return;
+  }
+  const belum = kom.daftar.filter((x) => !x.selesai);
+  w.ringkas.textContent = kom.daftar.length
+    ? `Komentar hakim · ${belum.length} belum selesai dari ${kom.daftar.length}`
+    : "Komentar hakim · belum ada";
+  w.kotak.classList.toggle("aleta-t6-ada-komentar", belum.length > 0);
+  if (!kom.daftar.length) {
+    w.daftar.appendChild(t6El("div", "aleta-t6-lembut", "Hakim belum mengomentari BAS perkara ini. Komentar tidak pernah menahan pekerjaan."));
+    return;
+  }
+  for (const x of kom.daftar) w.daftar.appendChild(t6KartuKomentar(k, x));
+}
+
+function t6KartuKomentar(k, x) {
+  const kartu = t6El("div", `aleta-t6-komentar-kartu${x.selesai ? " aleta-t6-selesai" : ""}`);
+  const kepala = t6El("div", "aleta-t6-komentar-kepala");
+  kepala.appendChild(t6El("span", "aleta-t6-lencana aleta-t6-lencana-hakim", "komentar hakim"));
+  kepala.appendChild(t6El("span", "aleta-t6-komentar-bagian", t6LabelBagian(x.bagian)));
+  if (x.sidangKe) kepala.appendChild(t6El("span", "aleta-t6-lembut", `sidang ke-${x.sidangKe}`));
+  kartu.appendChild(kepala);
+  if (x.kutipan) kartu.appendChild(t6El("div", "aleta-t6-komentar-kutipan", `“${t6Pendek(x.kutipan, 300)}”`));
+  kartu.appendChild(t6El("div", "aleta-t6-komentar-isi", String(x.isi || "")));
+  const kaki = t6El("div", "aleta-t6-komentar-kaki");
+  const penulis = x.penulis && x.penulis.nama ? x.penulis.nama : "hakim";
+  kaki.appendChild(t6El("span", "aleta-t6-lembut", `${penulis}${x.dibuatPada ? ` · ${t6Jam(x.dibuatPada)}` : ""}`));
+  if (x.selesai) {
+    const oleh = x.diselesaikanOleh && x.diselesaikanOleh.nama ? ` oleh ${x.diselesaikanOleh.nama}` : "";
+    kaki.appendChild(t6El("span", "aleta-t6-lencana aleta-t6-lencana-aman", `✓ selesai${oleh}`));
+  }
+  // Yang boleh menandai: panitera pengganti, admin, dan penulisnya (kontrak
+  // Tahap 6-7). Server tetap memeriksa ulang; ini hanya supaya tombol yang
+  // pasti ditolak tidak ditawarkan. Server lama tanpa "saya": tombolnya ada.
+  const saya = k.komentar && k.komentar.saya;
+  const boleh = !saya || saya.bolehMenyelesaikanSemua === true || (x.penulis && String(x.penulis.id) === String(saya.id));
+  if (!boleh) {
+    kaki.appendChild(t6El("span", "aleta-t6-lembut", x.selesai ? "" : "ditandai selesai oleh panitera pengganti"));
+    kartu.appendChild(kaki);
+    return kartu;
+  }
+  const tombol = t6Tombol(x.selesai ? "Buka lagi" : "Tandai selesai", x.selesai ? "Kembalikan komentar ini menjadi belum selesai" : "Tandai komentar ini sudah dikerjakan", "aleta-t6-kecil");
+  const kabar = t6El("span", "aleta-t6-lembut");
+  tombol.addEventListener("click", async () => {
+    tombol.disabled = true;
+    kabar.textContent = "Mengirim…";
+    const h = await t6AmbilJson(T6_API_KOMENTAR, "Menandai komentar", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: x.id, selesai: !x.selesai }),
+    });
+    tombol.disabled = false;
+    if (!h.ok) {
+      kabar.className = "aleta-t6 aleta-t6-gagal";
+      kabar.textContent =
+        h.status === 403 ? "Hanya panitera pengganti, admin, atau penulisnya yang dapat menandai komentar ini." : h.pesan;
+      return;
+    }
+    const baru = h.data && h.data.komentar ? h.data.komentar : { ...x, selesai: !x.selesai };
+    if (k.komentar && Array.isArray(k.komentar.daftar)) {
+      k.komentar.daftar = k.komentar.daftar.map((y) => (y.id === x.id ? baru : y));
+    }
+    t6GambarKomentar(k);
+    t6HiasSemua(k);
+    t6HiasHuruf(k);
+  });
+  kaki.appendChild(tombol);
+  kaki.appendChild(kabar);
+  kartu.appendChild(kaki);
+  return kartu;
+}
+
+// ─── abt-21 / abt-22: cari variabel dan variabel disematkan ──────────────────
+
+function t6PasangCari(k) {
+  const kotak = t6El("div", "aleta-t6-cari");
+  if (t6Nyala("abt-21")) {
+    const masuk = document.createElement("input");
+    masuk.type = "search";
+    masuk.className = "aleta-t6 aleta-t6-cari-masuk";
+    masuk.placeholder = "Cari variabel… #0222 atau \"awal konflik\"";
+    masuk.setAttribute("aria-label", "Cari variabel di blangko ini");
+    const hasil = t6El("div", "aleta-t6-cari-hasil");
+    masuk.addEventListener("input", () => t6GambarCari(k, masuk.value, hasil));
+    masuk.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        masuk.value = "";
+        t6GambarCari(k, "", hasil);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const pertama = t6CocokVariabel(masuk.value)[0];
+        if (pertama) t6Lompat(pertama.kode);
+      }
+    });
+    kotak.appendChild(masuk);
+    kotak.appendChild(hasil);
+    k.cariHasil = hasil;
+    k.cariMasuk = masuk;
+  }
+  if (t6Nyala("abt-22")) {
+    k.sematanKotak = t6El("div", "aleta-t6-sematan");
+    kotak.appendChild(k.sematanKotak);
+    t6GambarSematan(k);
+  }
+  k.atas.appendChild(kotak);
+}
+
+function t6CocokVariabel(kata) {
+  const q = t6Baku(kata).replace(/^#/, "");
+  if (!q) return [];
+  const hasil = [];
+  for (const [kode, item] of barisVariabel()) {
+    if (kode.startsWith(q) || item.nama.toLowerCase().includes(q)) hasil.push(item);
+    if (hasil.length >= 8) break;
+  }
+  return hasil;
+}
+
+function t6GambarCari(k, kata, wadah) {
+  wadah.textContent = "";
+  const cocok = t6CocokVariabel(kata);
+  if (!kata.trim()) return;
+  if (!cocok.length) {
+    wadah.appendChild(t6El("div", "aleta-t6-lembut", "Tidak ada variabel yang cocok di blangko ini."));
+    return;
+  }
+  for (const item of cocok) {
+    const baris = t6El("div", "aleta-t6-cari-baris");
+    const lompat = t6Tombol("", `Lompat ke baris ${item.kode}`, "aleta-t6-cari-lompat");
+    lompat.appendChild(t6El("span", "aleta-t6-kode", item.kode));
+    lompat.appendChild(t6El("span", "aleta-t6-cari-nama", item.nama));
+    lompat.appendChild(t6El("span", "aleta-t6-lembut", t6Pendek(item.nilai, 60)));
+    lompat.addEventListener("click", () => t6Lompat(item.kode));
+    baris.appendChild(lompat);
+    if (t6Nyala("abt-22")) baris.appendChild(t6TombolSemat(k, item.kode));
+    if (t6Nyala("abt-9")) baris.appendChild(t6TombolRiwayatVar(k, item.kode, baris));
+    wadah.appendChild(baris);
+  }
+}
+
+function t6TombolSemat(k, kode) {
+  const b = t6Tombol("", "", "aleta-t6-bintang");
+  b.setAttribute("data-t6-kode", kode);
+  const segar = () => {
+    const ada = k.sematan.includes(kode);
+    b.textContent = ada ? "★" : "☆";
+    b.title = ada ? `Lepas sematan ${kode}` : `Sematkan ${kode} - tampil di atas panel, di peramban ini saja`;
+    b.setAttribute("aria-pressed", ada ? "true" : "false");
+  };
+  b.addEventListener("click", () => {
+    const ada = k.sematan.includes(kode);
+    k.sematan = ada ? k.sematan.filter((x) => x !== kode) : [...k.sematan, kode].slice(-20);
+    t6Tulis({ [T6_KUNCI_SEMATAN]: k.sematan });
+    t6GambarSematan(k);
+    for (const lain of Array.from(document.querySelectorAll(`.aleta-t6-bintang[data-t6-kode="${kode}"]`))) {
+      if (typeof lain.aletaSegar === "function") lain.aletaSegar();
+    }
+  });
+  b.aletaSegar = segar;
+  segar();
+  return b;
+}
+
+function t6GambarSematan(k) {
+  const w = k.sematanKotak;
+  if (!w) return;
+  w.textContent = "";
+  if (!k.sematan.length) {
+    w.appendChild(t6El("span", "aleta-t6-lembut", "Belum ada variabel disematkan - tekan ☆ di hasil cari atau di kartu usulan."));
+    return;
+  }
+  w.appendChild(t6El("span", "aleta-t6-lembut", "Disematkan:"));
+  const peta = barisVariabel();
+  for (const kode of k.sematan) {
+    const item = peta.get(kode);
+    const b = t6KepingKode(kode, item ? t6Pendek(item.nama, 24) : "");
+    b.textContent = `★ ${b.textContent}`;
+    if (!item) {
+      b.disabled = true;
+      b.title = `${kode} tidak ada di blangko ini`;
+    }
+    w.appendChild(b);
+  }
+}
+
+// ─── abt-29: draf keterangan saksi yang tersimpan sendiri ────────────────────
+
+function t6KunciDraf(k) {
+  return k.nomor || k.perkaraId || "";
+}
+
+function t6PasangDrafLama(k) {
+  const entri = k.draf[t6KunciDraf(k)];
+  if (!entri || !Array.isArray(entri.kolom) || !entri.kolom.length) return;
+  const kotak = t6El("div", "aleta-t6-draf-lama");
+  const jumlah = entri.kolom.map((c) => (Array.isArray(c.baris) ? c.baris.length : 0));
+  kotak.appendChild(
+    t6El(
+      "div",
+      "",
+      `Ada draf keterangan saksi tersimpan ${t6Jam(entri.pada)} (${entri.kolom.length} saksi, ${jumlah.join(" + ")} keterangan). ` +
+        "Buka penyunting (langkah 2 lalu \"Susun keterangan para saksi\"), kemudian tekan \"Pulihkan draf\" di atas kolom saksi."
+    )
+  );
+  const lihat = document.createElement("details");
+  lihat.className = "aleta-t6";
+  lihat.appendChild(t6El("summary", "", "Lihat isi draf"));
+  lihat.appendChild(t6El("pre", "aleta-t6-pra", t6TeksDraf(entri)));
+  kotak.appendChild(lihat);
+  const buang = t6Tombol("Buang draf", "Hapus draf perkara ini dari peramban ini", "aleta-t6-kecil");
+  buang.addEventListener("click", () => {
+    delete k.draf[t6KunciDraf(k)];
+    t6Tulis({ [T6_KUNCI_DRAF]: k.draf });
+    kotak.remove();
+  });
+  kotak.appendChild(buang);
+  k.atas.appendChild(kotak);
+  k.drafLamaKotak = kotak;
+}
+
+function t6TeksDraf(entri) {
+  return (entri.kolom || [])
+    .map((c) => `${c.judul || "Saksi"}\n${(c.baris || []).map((b, i) => `${i + 1}. ${b.tanya}\n   ${b.jawab}`).join("\n")}`)
+    .join("\n\n");
+}
+
+/** Isi penyunting keterangan saksi yang sedang terbuka, apa adanya. */
+function t6BacaPenyunting(hasil) {
+  return Array.from(hasil.querySelectorAll(".aleta-sdg-dua > .aleta-sdg-kolom")).map((kolom) => {
+    const judul = kolom.querySelector(".aleta-sdg-judul");
+    const teksJudul = judul ? String(judul.firstChild && judul.firstChild.nodeType === 3 ? judul.firstChild.textContent : judul.textContent).trim() : "";
+    return {
+      judul: teksJudul,
+      baris: Array.from(kolom.querySelectorAll(".aleta-sdg-baris")).map((b) => ({
+        tanya: String((b.querySelector(".aleta-sdg-tanya") || {}).textContent || "").trim(),
+        jawab: String((b.querySelector("textarea.aleta-sdg-jawab") || {}).value || ""),
+      })),
+    };
+  });
+}
+
+function t6SimpanDraf(k) {
+  if (t6Keadaan !== k) return;
+  const hasil = k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-hasil");
+  if (!hasil) return;
+  const kolom = t6BacaPenyunting(hasil);
+  if (!kolom.length) return;
+  const sidik = JSON.stringify(kolom);
+  if (sidik === k.drafSidik) return;
+  k.drafSidik = sidik;
+  const pada = new Date().toISOString();
+  k.draf[t6KunciDraf(k)] = { pada, kolom };
+  // Yang tertua dibuang lebih dulu - peramban ini bukan arsip.
+  const urut = Object.entries(k.draf).sort((a, b) => String(b[1] && b[1].pada).localeCompare(String(a[1] && a[1].pada)));
+  k.draf = Object.fromEntries(urut.slice(0, T6_BATAS_DRAF));
+  t6Tulis({ [T6_KUNCI_DRAF]: k.draf });
+  k.drafPada = pada;
+  for (const s of Array.from(k.panel.querySelectorAll(".aleta-t6-draf-status"))) {
+    s.textContent = `● tersimpan otomatis ${t6Jam(pada, true)} · tiap 30 detik`;
+  }
+}
+
+/** Mengisikan draf ke penyunting yang terbuka - lewat peristiwa input, sama dengan mengetik. */
+function t6PulihkanDraf(k, hasil) {
+  const entri = k.draf[t6KunciDraf(k)];
+  if (!entri) return "Tidak ada draf untuk perkara ini.";
+  const kolom = Array.from(hasil.querySelectorAll(".aleta-sdg-dua > .aleta-sdg-kolom"));
+  let terisi = 0;
+  let lebih = 0;
+  entri.kolom.forEach((c, i) => {
+    const sasaran = kolom[i];
+    const baris = sasaran ? Array.from(sasaran.querySelectorAll(".aleta-sdg-baris")) : [];
+    (c.baris || []).forEach((b, j) => {
+      const el = baris[j];
+      if (!el) {
+        lebih += 1;
+        return;
+      }
+      const tanya = el.querySelector(".aleta-sdg-tanya");
+      const jawab = el.querySelector("textarea.aleta-sdg-jawab");
+      if (tanya && b.tanya) {
+        tanya.textContent = b.tanya;
+        tanya.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      if (jawab) {
+        jawab.value = String(b.jawab || "");
+        jawab.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      terisi += 1;
+    });
+  });
+  return (
+    `${terisi} keterangan dipulihkan dari draf ${t6Jam(entri.pada)}.` +
+    (lebih ? ` ${lebih} keterangan draf tidak punya baris di penyunting - tambahkan dengan "+ Tambah keterangan".` : "") +
+    " Belum ada yang disimpan ke ABT."
+  );
+}
+
+// ─── abt-25: mode baca untuk hakim ───────────────────────────────────────────
+
+function t6PasangPitaBaca(k) {
+  k.pitaBaca = t6El("div", "aleta-t6-pita-baca", "Mode baca - tombol disembunyikan, klik isi blangko tidak membuka penyunting. Tekan ▤ di kepala panel untuk keluar.");
+  k.pitaBaca.hidden = true;
+  k.atas.appendChild(k.pitaBaca);
+}
+
+function t6TerapkanBaca(k) {
+  const nyala = t6Nyala("abt-25") && k.baca;
+  if (nyala) k.panel.setAttribute("data-t6-baca", "ya");
+  else k.panel.removeAttribute("data-t6-baca");
+  if (k.pitaBaca) k.pitaBaca.hidden = !nyala;
+  if (k.tombolBaca) {
+    k.tombolBaca.setAttribute("aria-pressed", nyala ? "true" : "false");
+    k.tombolBaca.title = nyala ? "Keluar dari mode baca" : "Mode baca - panel tanpa tombol, hanya isi dan tandanya (untuk hakim)";
+  }
+}
+
+// ─── abt-4 / D7: segmen keyakinan berangka ───────────────────────────────────
+
+function t6PasangSegmen(k) {
+  const seg = t6El("div", "aleta-t6-segmen");
+  seg.setAttribute("role", "toolbar");
+  seg.setAttribute("aria-label", "Saring usulan menurut keyakinan");
+  seg.hidden = true;
+  k.segmenTombol = new Map();
+  for (const [kunci, label, arti] of T6_YAKIN) {
+    const b = t6Tombol(label, arti, "aleta-t6-segmen-tombol");
+    b.setAttribute("data-t6-yakin", kunci);
+    b.setAttribute("aria-pressed", kunci === "semua" ? "true" : "false");
+    b.appendChild(t6El("span", "aleta-t6-segmen-angka", "0"));
+    b.addEventListener("click", () => {
+      k.saring = kunci;
+      t6TerapkanSaring(k);
+    });
+    seg.appendChild(b);
+    k.segmenTombol.set(kunci, b);
+  }
+  const takBerlaku = t6Tombol("", "", "aleta-t6-segmen-takberlaku");
+  takBerlaku.hidden = true;
+  takBerlaku.addEventListener("click", () => {
+    k.tampilTakBerlaku = !k.tampilTakBerlaku;
+    t6TerapkanSaring(k);
+  });
+  seg.appendChild(takBerlaku);
+  k.segmenTakBerlaku = takBerlaku;
+  const catatan = t6El("div", "aleta-t6-lembut aleta-t6-segmen-catatan");
+  catatan.hidden = true;
+  seg.appendChild(catatan);
+  k.segmenCatatan = catatan;
+  if (k.petunjuk) {
+    k.panel.setAttribute("data-t6-segmen", "ya");
+    k.isi.insertBefore(seg, k.petunjuk.nextSibling);
+  } else {
+    k.atas.appendChild(seg);
+  }
+  k.segmen = seg;
+}
+
+/** Keyakinan satu kartu usulan, dibaca dari lencananya (tulisan kartuUsulan). */
+function t6YakinKartu(kartu) {
+  const lencana = kartu.querySelector(".aleta-abt-kartu-kepala .aleta-tanda");
+  const teks = t6Baku(lencana && lencana.textContent);
+  if (teks === "kedua saksi sama") return "pasti";
+  if (teks === "satu saksi" || teks === "dari posita") return "cukup";
+  if (teks === "saksi berselisih") return "bentrok";
+  if (teks.startsWith("ragu")) return "ragu";
+  return "kosong";
+}
+
+function t6KartuUsulan(k) {
+  if (!k.wadah.usulan) return [];
+  return Array.from(k.wadah.usulan.children).filter((c) => c.classList.contains("aleta-abt-kartu"));
+}
+
+function t6TerapkanSaring(k) {
+  const w = k.wadah.usulan;
+  if (!w) return;
+  const kartu = t6KartuUsulan(k);
+  const hitung = { semua: kartu.length, ragu: 0, bentrok: 0, cukup: 0, pasti: 0 };
+  let takBerlaku = 0;
+  let tercentangTersembunyi = 0;
+  for (const el of kartu) {
+    const y = el.getAttribute("data-t6-yakin") || "kosong";
+    if (y in hitung && y !== "semua") hitung[y] += 1;
+    if (el.getAttribute("data-t6-tak-berlaku") === "ya") takBerlaku += 1;
+  }
+  k.hitungYakin = hitung;
+  if (k.saring !== "semua") w.setAttribute("data-t6-saring", k.saring);
+  else w.removeAttribute("data-t6-saring");
+  if (k.tampilTakBerlaku) w.setAttribute("data-t6-tampil-takberlaku", "ya");
+  else w.removeAttribute("data-t6-tampil-takberlaku");
+  for (const el of kartu) {
+    const tampak =
+      (k.saring === "semua" || el.getAttribute("data-t6-yakin") === k.saring) &&
+      (k.tampilTakBerlaku || el.getAttribute("data-t6-tak-berlaku") !== "ya");
+    const c = el.querySelector(".aleta-abt-kartu-kepala input.aleta-abt-centang");
+    if (!tampak && c && c.checked) tercentangTersembunyi += 1;
+  }
+  if (k.segmen) {
+    k.segmen.hidden = kartu.length === 0;
+    for (const [kunci, b] of k.segmenTombol) {
+      const angka = b.querySelector(".aleta-t6-segmen-angka");
+      if (angka) angka.textContent = String(hitung[kunci] || 0);
+      b.setAttribute("aria-pressed", kunci === k.saring ? "true" : "false");
+    }
+    k.segmenTakBerlaku.hidden = takBerlaku === 0;
+    k.segmenTakBerlaku.textContent = k.tampilTakBerlaku ? `Sembunyikan yang tidak berlaku (${takBerlaku})` : `Tampilkan yang tidak berlaku (${takBerlaku})`;
+    k.segmenTakBerlaku.setAttribute("aria-pressed", k.tampilTakBerlaku ? "true" : "false");
+    // Saringan hanya menyembunyikan tampilan. Yang tercentang tetapi
+    // tersembunyi TETAP ikut diterapkan - dan itu harus terbaca, bukan
+    // ditemukan sesudah tersimpan.
+    k.segmenCatatan.hidden = tercentangTersembunyi === 0;
+    k.segmenCatatan.textContent = tercentangTersembunyi
+      ? `${tercentangTersembunyi} usulan tercentang sedang tersembunyi saringan - "Terapkan yang dicentang" tetap menerapkannya.`
+      : "";
+  }
+  t6SegarkanKemajuan(k);
+}
+
+// ─── abt-10 / D2: lima tombol menjadi langkah bernomor ──────────────────────
+
+/**
+ * Langkahnya MEWAKILI tombol lama, bukan menggantikannya: tiap langkah
+ * menekan tombol lama yang sama, jadi seluruh perilakunya - pesan, penjagaan
+ * kewenangan, pintasan Alt+Enter - tetap satu jalur. Tombol lama yang
+ * diwakili disembunyikan lewat CSS dan tetap ada di DOM.
+ *
+ * Langkah 1 berkelas aleta-permintaan-tombol dan duduk paling awal di baris
+ * tindakan: Alt+P menekan tombol TAMPAK pertama di sana, dan dengan begitu
+ * Alt+P tetap berarti "isi blangko dari SIPP".
+ */
+function t6PasangLangkah(k) {
+  const baris = t6El("div", "aleta-t6-langkah");
+  baris.setAttribute("role", "list");
+  k.langkahTombol = new Map();
+  for (const l of T6_LANGKAH) {
+    const b = t6Tombol("", "", `aleta-t6-langkah-tombol${l.no === 1 ? " aleta-permintaan-tombol" : ""}`);
+    b.setAttribute("role", "listitem");
+    b.setAttribute("data-t6-langkah", String(l.no));
+    b.appendChild(t6El("span", "aleta-t6-langkah-no", String(l.no)));
+    b.appendChild(t6El("span", "aleta-t6-langkah-nama", l.nama));
+    b.appendChild(t6El("span", "aleta-t6-langkah-tanda", ""));
+    b.addEventListener("click", () => t6JalankanLangkah(k, l));
+    baris.appendChild(b);
+    k.langkahTombol.set(l.no, b);
+  }
+  k.aksi.insertBefore(baris, k.aksi.firstChild);
+  for (const l of T6_LANGKAH) {
+    const t = l.tombol ? k.tombol[l.tombol] : null;
+    if (t) t.classList.add("aleta-t6-diwakili");
+  }
+  k.panel.setAttribute("data-t6-langkah", "ya");
+  t6SegarkanLangkah(k);
+}
+
+function t6TombolLangkah(k, l) {
+  if (!l.tombol) return k.unggah ? k.unggah.querySelector("button.aleta-abt-tombol") : null;
+  return k.tombol[l.tombol];
+}
+
+function t6SegarkanLangkah(k) {
+  if (!k.langkahTombol) return;
+  let sekarangDitandai = false;
+  for (const l of T6_LANGKAH) {
+    const b = k.langkahTombol.get(l.no);
+    const t = t6TombolLangkah(k, l);
+    const ada = Boolean(t) && !t.hidden;
+    const keadaan = k.langkah.get(l.no) || "";
+    b.disabled = !ada;
+    b.classList.toggle("aleta-t6-selesai", keadaan === "selesai");
+    b.classList.toggle("aleta-t6-gagal-langkah", keadaan === "gagal");
+    b.classList.toggle("aleta-t6-jalan", keadaan === "jalan");
+    const sekarang = ada && !keadaan && !sekarangDitandai;
+    if (sekarang) sekarangDitandai = true;
+    b.classList.toggle("aleta-t6-sekarang", sekarang);
+    const tanda = b.querySelector(".aleta-t6-langkah-tanda");
+    tanda.textContent = keadaan === "selesai" ? "✓" : keadaan === "gagal" ? "✕" : keadaan === "jalan" ? "…" : sekarang ? "●" : "";
+    b.title = !ada
+      ? `${l.nama}: tidak tersedia di blangko ini (atau peran Anda tidak diberi aksesnya).`
+      : `${l.nama}${t && t.title ? ` - ${t.title}` : ""}${keadaan === "selesai" ? " (sudah dijalankan)" : keadaan === "gagal" ? " (terakhir gagal - lihat pesan)" : ""}`;
+  }
+}
+
+function t6JalankanLangkah(k, l) {
+  const t = t6TombolLangkah(k, l);
+  if (!t || t.hidden || t.disabled) return;
+  if (!l.tombol) {
+    // Langkah 5 membawa ke bagian Kerjakan, tidak menekannya: pilihannya
+    // (draf, anonim, unggah) harus terbaca sebelum tombol yang menulis ke
+    // SIPP ditekan.
+    try {
+      k.unggah.scrollIntoView({ block: "nearest" });
+    } catch {
+      /* tanpa gulir */
+    }
+    t.focus();
+    k.langkah.set(5, "selesai");
+    t6SegarkanLangkah(k);
+    return;
+  }
+  k.langkah.set(l.no, "jalan");
+  t6SegarkanLangkah(k);
+  t.click();
+  void (async () => {
+    // Selesai = tombol lamanya hidup lagi. Rapikan tidak pernah mati, jadi
+    // ia selesai begitu pratinjaunya tergambar.
+    await new Promise((r) => setTimeout(r, 50));
+    await t6Tunggu(() => !t.disabled, 120000);
+    await new Promise((r) => setTimeout(r, 80));
+    if (t6Keadaan !== k) return;
+    const gagal = Boolean(k.kabar && k.kabar.classList.contains("aleta-abt-gagal") && k.kabar.textContent.trim());
+    // Rapikan tidak menulis ke kotak kabar - pesan lama di sana bukan miliknya.
+    k.langkah.set(l.no, gagal && l.tombol !== "rapikan" ? "gagal" : "selesai");
+    t6SegarkanLangkah(k);
+  })();
+}
+
+// ─── abt-1 / D3: satu kalimat ramah + Rincian ────────────────────────────────
+
+/**
+ * Kalimat untuk petugas dari kalimat untuk pemrogram. Yang teknis TIDAK
+ * dibuang: ia tetap utuh di "Rincian" - kotak kabar lama itu sendiri,
+ * dipindah ke dalam lipatan.
+ */
+function t6KalimatRamah(teks, gagal) {
+  const s = String(teks || "").replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  let m = /^Terbaca (\d+) butir dari saksi 1 dan (\d+) dari saksi 2/.exec(s);
+  if (m) {
+    const dariLayar = /dibaca dari layar|bacaan mentah gagal/.test(s);
+    return dariLayar
+      ? `Keterangan saksi belum tersimpan per sidang di ABT - saksi 1 dan 2 dibaca dari layar (${m[1]} dan ${m[2]} butir).`
+      : `Keterangan saksi terbaca: saksi 1 ${m[1]} butir, saksi 2 ${m[2]} butir.`;
+  }
+  m = /^Kuasa aktif: (\d+)\. Prodeo: (ya|tidak)\./.exec(s);
+  if (m) {
+    const kuasa = Number(m[1]) ? `${m[1]} kuasa aktif` : "Tidak ada kuasa aktif";
+    return `${kuasa} · ${m[2] === "ya" ? "prodeo" : "bukan prodeo"}. Variabel prodeo dan fasakh diisi tangan.`;
+  }
+  m = /^Sidang ke-(\d+) sudah memuat (\d+) tanya-jawab saksi 1; menyimpan akan menimpanya\./.exec(s);
+  if (m) return `Sidang ke-${m[1]} sudah berisi keterangan saksi - menyimpan akan menimpanya.`;
+  m = /^Belum ada keterangan saksi tersimpan; akan disimpan pada sidang ke-(\d+)\./.exec(s);
+  if (m) return `Belum ada keterangan saksi; akan disimpan pada sidang ke-${m[1]}.`;
+  if (s.length <= 140) return s;
+  // Kalimat pertama saja - baik kabar biasa maupun galat.
+  const pertama = s.split(/(?<=[.;])\s+| - /)[0] || s;
+  return t6Pendek(pertama, gagal ? 180 : 140);
+}
+
+function t6PasangRamah(k) {
+  const ramah = t6El("div", "aleta-t6-ramah");
+  ramah.setAttribute("role", "status");
+  const rinci = document.createElement("details");
+  rinci.className = "aleta-t6 aleta-t6-rincian";
+  rinci.appendChild(t6El("summary", "aleta-t6-rincian-judul", "Rincian"));
+  k.isi.insertBefore(ramah, k.kabar);
+  k.isi.insertBefore(rinci, k.kabar);
+  rinci.appendChild(k.kabar);
+  k.ramah = ramah;
+  k.rincian = rinci;
+  const p = new MutationObserver(() => t6SegarkanRamah(k));
+  p.observe(k.kabar, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  k.pengamat.push(p);
+  t6SegarkanRamah(k);
+}
+
+function t6SegarkanRamah(k) {
+  if (!k.ramah) return;
+  const teks = String(k.kabar.textContent || "").trim();
+  const gagal = k.kabar.classList.contains("aleta-abt-gagal");
+  const kalimat = t6KalimatRamah(teks, gagal);
+  k.ramah.textContent = kalimat;
+  k.ramah.hidden = !teks;
+  k.ramah.classList.toggle("aleta-t6-gagal", gagal);
+  k.rincian.hidden = !teks || kalimat === teks.replace(/\s+/g, " ");
+}
+
+// ─── Bilah alat: pratinjau, konsistensi, perkara sebelumnya, dasar hukum ─────
+
+function t6PasangAlat(k) {
+  const alat = [];
+  if (t6Pakai(k, "abt-12")) {
+    alat.push(["pratinjau", "Pratinjau putusan", "Naskah seperti hasil CETAK, dibaca dari ABT tanpa mengunduh - lengkap dengan kalimat galat bila ada", (w) => t6SusunPratinjau(k, w, { naskah: true, perkiraan: t6Nyala("abt-24") })]);
+  } else if (t6Nyala("abt-24")) {
+    alat.push(["panjang", "Perkiraan panjang", "Perkiraan jumlah halaman putusan dan bagian terpanjangnya", (w) => t6SusunPratinjau(k, w, { naskah: false, perkiraan: true })]);
+  }
+  if (t6Nyala("abt-13")) alat.push(["konsistensi", "Periksa konsistensi", "Nomor perkara, nama pihak, dan tahun nikah dibandingkan antar variabel", (w) => t6SusunKonsistensi(k, w)]);
+  if (t6Nyala("abt-19")) alat.push(["sebelumnya", "Perkara sebelumnya", "Perkara lain para pihak yang sama - dibaca dari SIPP lewat ALETA saat ditekan", (w) => t6SusunPerkaraSebelumnya(k, w)]);
+  if (t6Nyala("abt-27")) alat.push(["pasal", "Saran dasar hukum", "Pasal per huruf alasan dari templat hukum ALETA - yang DRAF tidak dapat disisipkan", (w) => t6SusunSaranPasal(k, w)]);
+  if (t6Nyala("abt-30")) alat.push(["musyawarah", "Ringkasan musyawarah", "Satu halaman bahan musyawarah majelis dari yang terbaca di panel ini", (w) => t6SusunMusyawarah(k, w)]);
+  if (!alat.length) return;
+
+  const bilah = t6El("div", "aleta-t6-alat");
+  const wadah = t6El("div", "aleta-t6-wadah-alat");
+  k.alatTombol = new Map();
+  for (const [nama, label, judul, susun] of alat) {
+    const b = t6Tombol(label, judul, "aleta-t6-alat-tombol");
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => t6BukaAlat(k, nama, label, susun, wadah));
+    bilah.appendChild(b);
+    k.alatTombol.set(nama, b);
+  }
+  const sesudah = (k.rincian || k.kabar || k.aksi || null);
+  const acuan = sesudah ? sesudah.nextSibling : k.isi.firstChild;
+  k.isi.insertBefore(bilah, acuan);
+  k.isi.insertBefore(wadah, bilah.nextSibling);
+  k.wadahAlat = wadah;
+}
+
+function t6BukaAlat(k, nama, label, susun, wadah) {
+  wadah.textContent = "";
+  const tutup = k.alatTerbuka === nama;
+  k.alatTerbuka = tutup ? "" : nama;
+  for (const [n, b] of k.alatTombol) b.setAttribute("aria-pressed", n === k.alatTerbuka ? "true" : "false");
+  if (tutup) return;
+  const bagian = t6El("div", "aleta-t6-bagian");
+  bagian.setAttribute("data-t6-alat", nama);
+  const kepala = t6El("div", "aleta-t6-bagian-kepala");
+  kepala.appendChild(t6El("span", "aleta-t6-bagian-judul", label));
+  const x = t6Tombol("×", "Tutup", "aleta-t6-kecil aleta-t6-tutup");
+  x.addEventListener("click", () => t6BukaAlat(k, nama, label, susun, wadah));
+  kepala.appendChild(x);
+  bagian.appendChild(kepala);
+  const isi = t6El("div", "aleta-t6-bagian-isi");
+  bagian.appendChild(isi);
+  wadah.appendChild(bagian);
+  Promise.resolve()
+    .then(() => susun(isi))
+    .catch((galat) => {
+      isi.appendChild(t6El("div", "aleta-t6-gagal", String((galat && galat.message) || galat)));
+    });
+}
+
+// ─── Membaca RTF menjadi teks ───────────────────────────────────────────────
+
+function t6Latin1(sumber) {
+  if (typeof sumber === "string") return sumber;
+  const u = new Uint8Array(sumber);
+  let s = "";
+  for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192));
+  return s;
+}
+
+/**
+ * Teks naskah dari RTF - cukup untuk dibaca dan dicari, bukan untuk dicetak.
+ * Tabel huruf, warna, gaya, gambar, dan kepala-kaki halaman dilewati; \par
+ * menjadi baris baru; \'hh dan \uN diterjemahkan.
+ */
+function t6TeksRtf(sumber) {
+  const s = t6Latin1(sumber);
+  const tumpuk = [];
+  let lewati = false;
+  let ucLewat = 1;
+  let buang = 0;
+  let hasil = "";
+  const tulis = (teks) => {
+    if (lewati) return;
+    if (buang > 0) {
+      buang -= 1;
+      return;
+    }
+    hasil += teks;
+  };
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === "{") {
+      tumpuk.push({ lewati, ucLewat });
+      buang = 0;
+      i += 1;
+      continue;
+    }
+    if (c === "}") {
+      const atas = tumpuk.pop();
+      lewati = atas ? atas.lewati : false;
+      ucLewat = atas ? atas.ucLewat : 1;
+      buang = 0;
+      i += 1;
+      continue;
+    }
+    if (c === "\\") {
+      const n = s[i + 1];
+      if (n === "\\" || n === "{" || n === "}") {
+        tulis(n);
+        i += 2;
+        continue;
+      }
+      if (n === "'") {
+        const kode = parseInt(s.substr(i + 2, 2), 16);
+        tulis(Number.isNaN(kode) ? "" : T6_CP1252[kode] || String.fromCharCode(kode));
+        i += 4;
+        continue;
+      }
+      if (n === "*") {
+        lewati = true;
+        i += 2;
+        continue;
+      }
+      if (n === "~") {
+        tulis(" ");
+        i += 2;
+        continue;
+      }
+      if (n === "\n" || n === "\r") {
+        tulis("\n");
+        i += 2;
+        continue;
+      }
+      const m = /^([a-zA-Z]+)(-?\d+)? ?/.exec(s.slice(i + 1, i + 48));
+      if (!m) {
+        i += 2;
+        continue;
+      }
+      i += 1 + m[0].length;
+      const kata = m[1];
+      if (T6_RTF_LEWAT.has(kata)) {
+        lewati = true;
+        continue;
+      }
+      if (lewati) continue;
+      if (kata === "par" || kata === "line" || kata === "sect" || kata === "page" || kata === "row") {
+        buang = 0;
+        hasil += "\n";
+      } else if (kata === "tab" || kata === "cell") {
+        hasil += "\t";
+      } else if (kata === "uc") {
+        ucLewat = Number(m[2]) || 0;
+      } else if (kata === "u") {
+        let kode = Number(m[2]) || 0;
+        if (kode < 0) kode += 65536;
+        hasil += String.fromCharCode(kode);
+        // Karakter pengganti sesudah \uN bukan isi naskah.
+        buang = ucLewat;
+      }
+      continue;
+    }
+    if (c === "\r" || c === "\n") {
+      i += 1;
+      continue;
+    }
+    tulis(c);
+    i += 1;
+  }
+  return hasil;
+}
+
+function t6Paragraf(teks) {
+  return String(teks || "")
+    .split("\n")
+    .map((x) => x.replace(/[ \t ]+/g, " ").trim())
+    .filter(Boolean);
+}
+
+// ─── abt-12 / D12 dan abt-24: pratinjau putusan dan perkiraan panjang ───────
+
+async function t6BacaNaskahCetak() {
+  const tautan = document.querySelector('a[href*="abt/preview"]');
+  if (!tautan) throw new Error("Tautan CETAK ABT tidak ditemukan di halaman ini - naskahnya tidak dapat dibaca.");
+  const r = await fetch(tautan.href, { credentials: "include", cache: "no-store" });
+  if (!r.ok) throw new Error(`ABT menjawab ${r.status}.`);
+  const buf = await r.arrayBuffer();
+  if (!t6Latin1(new Uint8Array(buf).subarray(0, 5)).startsWith("{\\rtf")) {
+    throw new Error("ABT tidak mengembalikan RTF - sesi ABT mungkin habis. Muat ulang halaman ABT.");
+  }
+  return t6Paragraf(t6TeksRtf(buf));
+}
+
+/** Pembagian naskah menurut judul bagiannya - untuk perkiraan panjang. */
+function t6BagianNaskah(paragraf) {
+  const cari = (pola) => paragraf.findIndex((p) => pola.test(p));
+  const duduk = cari(/^(TENTANG\s+)?DUDUK\s+PERKARA/i);
+  const timbang = cari(/^(TENTANG\s+)?PERTIMBANGAN\s+HUKUM/i);
+  const adili = cari(/^M\s*E\s*N\s*G\s*A\s*D\s*I\s*L\s*I|^M\s*E\s*N\s*E\s*T\s*A\s*P\s*K\s*A\s*N/i);
+  const batas = [
+    ["Kepala dan identitas", 0],
+    ["Duduk perkara", duduk],
+    ["Pertimbangan hukum", timbang],
+    ["Amar dan penutup", adili],
+  ].filter(([, i], n) => n === 0 || i > 0);
+  return batas.map(([nama, awal], n) => {
+    const akhir = n + 1 < batas.length ? batas[n + 1][1] : paragraf.length;
+    const huruf = paragraf.slice(awal, akhir).reduce((j, p) => j + p.length, 0);
+    return { nama, huruf };
+  });
+}
+
+async function t6SusunPratinjau(k, wadah, pilih) {
+  const muat = t6El("div", "aleta-t6-lembut", "Membaca naskah dari ABT (sama dengan CETAK, tanpa mengunduh)…");
+  wadah.appendChild(muat);
+  let paragraf;
+  try {
+    paragraf = await t6BacaNaskahCetak();
+  } catch (galat) {
+    muat.className = "aleta-t6 aleta-t6-gagal";
+    muat.textContent = String((galat && galat.message) || galat);
+    return;
+  }
+  muat.remove();
+  const semua = paragraf.reduce((j, p) => j + p.length, 0);
+  const halaman = Math.max(1, semua / T6_HURUF_PER_HALAMAN);
+  if (pilih.perkiraan) {
+    const bagian = t6BagianNaskah(paragraf);
+    const terpanjang = bagian.reduce((a, b) => (b.huruf > a.huruf ? b : a), bagian[0]);
+    const kotak = t6El("div", "aleta-t6-perkiraan");
+    kotak.appendChild(t6El("strong", "", `Perkiraan ± ${Math.ceil(halaman)} halaman`));
+    kotak.appendChild(
+      t6El(
+        "div",
+        "aleta-t6-lembut",
+        bagian.map((b) => `${b.nama} ${t6Angka(b.huruf / T6_HURUF_PER_HALAMAN)}${b === terpanjang ? " (terpanjang)" : ""}`).join(" · ")
+      )
+    );
+    kotak.title = `Dihitung dari ${semua} huruf dengan ± ${T6_HURUF_PER_HALAMAN} huruf per halaman - perkiraan, bukan tata letak cetak.`;
+    wadah.appendChild(kotak);
+  }
+  if (!pilih.naskah) return;
+  const galat = paragraf.filter((p) => FRASA_GALAT.some((pola) => pola.test(p)) || /DATA_TIDAK_ADA/.test(p)).length;
+  wadah.appendChild(
+    t6El(
+      "div",
+      galat ? "aleta-t6-gagal" : "aleta-t6-lembut",
+      galat
+        ? `${galat} paragraf memuat kalimat galat atau DATA_TIDAK_ADA - disorot di bawah. Kalimat itu ikut tercetak.`
+        : `Tidak ada kalimat galat di naskah. ± ${Math.ceil(halaman)} halaman.`
+    )
+  );
+  const naskah = t6El("div", "aleta-t6-naskah");
+  const perbesar = t6Tombol("⤢ Perbesar", "Perbesar kotak pratinjau", "aleta-t6-kecil");
+  perbesar.addEventListener("click", () => {
+    const besar = naskah.classList.toggle("aleta-t6-naskah-besar");
+    perbesar.textContent = besar ? "⤡ Perkecil" : "⤢ Perbesar";
+  });
+  wadah.appendChild(perbesar);
+  let jalan = 0;
+  let halamanKe = 1;
+  const pola = /TIDAK BENAR QUERY NYA|BELUM ISI ALASAN|DATA_TIDAK_ADA/gi;
+  for (const p of paragraf.slice(0, 800)) {
+    const el = t6El("p", "aleta-t6-naskah-p");
+    let akhir = 0;
+    for (const m of p.matchAll(pola)) {
+      el.appendChild(document.createTextNode(p.slice(akhir, m.index)));
+      el.appendChild(t6El("mark", "aleta-t6-galat-sorot", m[0]));
+      akhir = m.index + m[0].length;
+    }
+    el.appendChild(document.createTextNode(p.slice(akhir)));
+    naskah.appendChild(el);
+    jalan += p.length;
+    if (jalan > halamanKe * T6_HURUF_PER_HALAMAN) {
+      halamanKe += 1;
+      naskah.appendChild(t6El("div", "aleta-t6-naskah-halaman", `— ± halaman ${halamanKe} —`));
+    }
+  }
+  if (paragraf.length > 800) naskah.appendChild(t6El("div", "aleta-t6-lembut", `… ${paragraf.length - 800} paragraf lagi tidak ditampilkan.`));
+  wadah.appendChild(naskah);
+}
+
+// ─── abt-13: pemeriksa konsistensi ──────────────────────────────────────────
+
+/** Nama dari kalimat identitas: "Sri Rahayu binti Ikhsan, NIK …" -> inti "Sri Rahayu". */
+function t6NamaDariIdentitas(teks) {
+  const lengkap = String(teks || "").split(",")[0].replace(/\s+/g, " ").trim();
+  if (!lengkap || keadaanNilai(lengkap) !== "terisi" || /\d/.test(lengkap) || lengkap.length > 80) return null;
+  const inti = lengkap.split(/\s+(?:bin|binti)\s+/i)[0].trim();
+  if (inti.length < 3) return null;
+  return { lengkap, inti };
+}
+
+/** Tahun nikah dari kalimat yang menyebut pernikahan - posita atau keterangan saksi. */
+function t6TahunNikah(teks) {
+  const kalimat = String(teks || "").split(/(?<=[.;])\s+|\n/);
+  for (const s of kalimat) {
+    if (!/menikah|pernikahan|perkawinan|melangsungkan|akad nikah/i.test(s)) continue;
+    const m = s.match(/\b(19[5-9]\d|20[0-4]\d)\b/);
+    if (m) return { tahun: m[1], kalimat: t6Pendek(s, 140) };
+  }
+  return null;
+}
+
+function t6TeksVariabel(peta, kode) {
+  const item = peta.get(kode);
+  if (!item) return "";
+  return String(item.selNilai.innerText || item.selNilai.textContent || "");
+}
+
+function t6PeriksaKonsistensi(k) {
+  const peta = barisVariabel();
+  const hasil = [];
+  const n0001 = (peta.get("0001") || {}).nilai || "";
+  if (n0001 && k.nomor) {
+    const sama = t6Baku(n0001) === t6Baku(k.nomor);
+    hasil.push({
+      cocok: sama,
+      judul: "Nomor perkara",
+      rinci: sama ? `0001 sama dengan kepala halaman (${k.nomor}).` : `0001 berisi ${n0001}, sedangkan panel bekerja untuk ${k.nomor}.`,
+      kode: "0001",
+    });
+  }
+  const amar = t6TeksVariabel(peta, "4001");
+  for (const [kode, sebut] of [
+    ["7047", nilaiVariabel(VAR_PIHAK_LAWAN) || "Penggugat"],
+    ["7048", nilaiVariabel(VAR_PIHAK_PELAKU) || "Tergugat"],
+  ]) {
+    const nama = t6NamaDariIdentitas((peta.get(kode) || {}).nilai);
+    if (!nama || !amar.trim()) continue;
+    const ada = t6PolaKata(nama.inti).test(amar);
+    hasil.push({
+      cocok: ada,
+      judul: `Nama ${sebut}`,
+      rinci: ada ? `"${nama.inti}" (${kode}) juga tertulis di amar 4001.` : `"${nama.inti}" (${kode}) tidak ditemukan di amar 4001.`,
+      kode: ada ? kode : "4001",
+    });
+  }
+  const posita = t6TahunNikah(t6TeksVariabel(peta, VAR_POSITA));
+  if (posita) {
+    for (const [kode, nama] of [
+      [VAR_SAKSI_1, "saksi 1"],
+      [VAR_SAKSI_2, "saksi 2"],
+    ]) {
+      const saksi = t6TahunNikah(t6TeksVariabel(peta, kode));
+      if (!saksi) continue;
+      const sama = saksi.tahun === posita.tahun;
+      hasil.push({
+        cocok: sama,
+        judul: `Tahun nikah: posita dan ${nama}`,
+        rinci: sama ? `Keduanya ${posita.tahun}.` : `Posita (5125) ${posita.tahun}, ${nama} (${kode}) menjawab ${saksi.tahun}: "${saksi.kalimat}"`,
+        kode,
+      });
+    }
+  }
+  return hasil;
+}
+
+function t6SusunKonsistensi(k, wadah) {
+  const hasil = t6PeriksaKonsistensi(k);
+  if (!hasil.length) {
+    wadah.appendChild(t6El("div", "aleta-t6-lembut", "Tidak ada yang dapat dibandingkan - nomor perkara, identitas pihak, amar, posita, atau keterangan saksi belum tergambar di blangko ini."));
+    return;
+  }
+  const selisih = hasil.filter((x) => !x.cocok).length;
+  wadah.appendChild(t6El("div", selisih ? "aleta-t6-gagal" : "aleta-t6-lembut", `${selisih} selisih · ${hasil.length - selisih} cocok`));
+  for (const x of hasil) {
+    const baris = t6El("div", `aleta-t6-konsisten ${x.cocok ? "aleta-t6-cocok" : "aleta-t6-selisih"}`);
+    baris.appendChild(t6El("span", "aleta-t6-titik", "●"));
+    baris.appendChild(t6El("strong", "", `${x.judul}: `));
+    baris.appendChild(t6El("span", "", x.rinci));
+    if (x.kode) baris.appendChild(t6KepingKode(x.kode));
+    wadah.appendChild(baris);
+  }
+  wadah.appendChild(t6El("div", "aleta-t6-lembut", "Dibandingkan dari isi yang tergambar di halaman ini, dengan kata dan angka - bukan pembacaan makna."));
+}
+
+// ─── abt-19: perkara sebelumnya para pihak yang sama ────────────────────────
+
+async function t6SusunPerkaraSebelumnya(k, wadah) {
+  if (!k.perkaraId && !k.nomor) {
+    wadah.appendChild(t6El("div", "aleta-t6-lembut", "Perkara halaman ini tidak terbaca."));
+    return;
+  }
+  const muat = t6El("div", "aleta-t6-lembut", "Membaca riwayat para pihak…");
+  wadah.appendChild(muat);
+  const q = new URLSearchParams();
+  if (k.perkaraId) q.set("perkaraId", k.perkaraId);
+  if (k.nomor) q.set("nomorPerkara", k.nomor);
+  const h = await t6AmbilJson(`${T6_API_RIWAYAT_PIHAK}?${q.toString()}`, "Riwayat para pihak");
+  muat.remove();
+  const data = h.data || {};
+  if (!h.ok || data.ok === false) {
+    wadah.appendChild(t6El("div", "aleta-t6-gagal", h.ok ? String(data.alasan || "Riwayat para pihak tidak terbaca.") : h.pesan));
+    return;
+  }
+  let ada = 0;
+  for (const p of Array.isArray(data.pihak) ? data.pihak : []) {
+    const lain = new Map();
+    for (const x of [...(p.cerai || []), ...(p.terkait || [])]) {
+      if (!x || x.arah === "perkara ini" || !x.nomorPerkara) continue;
+      lain.set(x.nomorPerkara, x);
+    }
+    if (!lain.size) continue;
+    ada += lain.size;
+    const blok = t6El("div", "aleta-t6-sebelumnya");
+    blok.appendChild(t6El("div", "aleta-t6-sebelumnya-judul", `${p.nama || "Pihak"}${p.kedudukan ? ` (${p.kedudukan})` : ""}`));
+    for (const x of lain.values()) {
+      const bagian = [x.nomorPerkara, x.jenisPerkara, x.keadaan];
+      if (x.tanggalPutusan) bagian.push(`putus ${x.tanggalPutusan}`);
+      if (x.aktaCerai && x.aktaCerai.nomor) bagian.push(`akta cerai ${x.aktaCerai.nomor}`);
+      const baris = t6El("div", "aleta-t6-sebelumnya-baris", bagian.filter(Boolean).join(" · "));
+      if (x.dasar && x.dasar.label) baris.appendChild(t6El("span", "aleta-t6-lencana", `dasar: ${x.dasar.label}`));
+      if (x.arah) baris.appendChild(t6El("span", "aleta-t6-lembut", ` ${x.arah}`));
+      blok.appendChild(baris);
+    }
+    wadah.appendChild(blok);
+  }
+  if (!ada) wadah.appendChild(t6El("div", "aleta-t6-lembut", "Tidak ada perkara lain dengan pihak yang sama."));
+  wadah.appendChild(t6El("div", "aleta-t6-lembut", "Dasar pencocokan disebut per perkara. Nama saja tidak pernah dipakai; pembacaan ini tercatat di jejak audit ALETA."));
+}
+
+// ─── abt-27: saran dasar hukum per huruf alasan ─────────────────────────────
+
+function t6MuatPasal(k) {
+  if (!k.pasal) {
+    k.pasal = t6AmbilJson(`${T6_API_TEMPLAT_HUKUM}?jenis=pasal`, "Templat dasar hukum").then((h) => ({
+      ok: h.ok,
+      pesan: h.pesan,
+      belumAda: h.belumAda,
+      butir: h.ok && h.data && Array.isArray(h.data.butir) ? h.data.butir.filter((b) => b && b.jenis === "pasal") : [],
+    }));
+  }
+  return k.pasal;
+}
+
+function t6HurufDari8503() {
+  const isi = nilaiVariabel(VAR_HURUF).toUpperCase().replace(/\bDAN\b/g, "");
+  const huruf = isi.replace(/[^A-Z]/g, "");
+  if (!huruf || huruf.length > 8 || !/^[A-K]+$/.test(huruf)) return [];
+  return Array.from(new Set(huruf.split("")));
+}
+
+/**
+ * Satu butir templat pasal. HANYA yang disahkan yang dapat disisipkan
+ * (kontrak Tahap 6-7): yang DRAF tampil bertanda dan tombolnya mati - dasar
+ * hukum yang belum disahkan majelis tidak boleh masuk ke naskah dengan satu
+ * klik.
+ */
+function t6KartuPasal(k, b) {
+  const kartu = t6El("div", `aleta-t6-pasal${b.disahkan ? "" : " aleta-t6-draf"}`);
+  const kepala = t6El("div", "aleta-t6-pasal-kepala");
+  kepala.appendChild(t6El("span", "aleta-t6-pasal-huruf", String(b.kunci || "").toUpperCase()));
+  kepala.appendChild(t6El("span", "aleta-t6-pasal-judul", String(b.judul || "")));
+  kepala.appendChild(
+    b.disahkan
+      ? t6El("span", "aleta-t6-lencana aleta-t6-lencana-aman", `disahkan${b.disahkanOleh && b.disahkanOleh.nama ? ` · ${b.disahkanOleh.nama}` : ""}`)
+      : t6El("span", "aleta-t6-lencana aleta-t6-lencana-draf", "DRAF - belum disahkan")
+  );
+  kartu.appendChild(kepala);
+  kartu.appendChild(t6El("div", "aleta-t6-pasal-isi", String(b.isi || "")));
+  const sisip = t6Tombol("Sisipkan", b.disahkan ? "Sisipkan ke kotak yang terakhir disunting, atau salin bila tidak ada" : "Butir DRAF tidak dapat disisipkan - sahkan dahulu di portal (Super Admin)", "aleta-t6-kecil aleta-t6-sisip");
+  sisip.disabled = !b.disahkan;
+  const kabar = t6El("span", "aleta-t6-lembut");
+  sisip.addEventListener("click", async () => {
+    if (!b.disahkan) return;
+    kabar.textContent = await t6Sisipkan(String(b.isi || ""));
+  });
+  const baris = t6El("div", "aleta-t6-pasal-kaki");
+  baris.appendChild(sisip);
+  baris.appendChild(kabar);
+  kartu.appendChild(baris);
+  return kartu;
+}
+
+async function t6Sisipkan(teks) {
+  const sasaran = t6KotakTerakhir;
+  if (sasaran && sasaran.isConnected && !sasaran.disabled && !sasaran.readOnly) {
+    const awal = typeof sasaran.selectionStart === "number" ? sasaran.selectionStart : sasaran.value.length;
+    const akhir = typeof sasaran.selectionEnd === "number" ? sasaran.selectionEnd : awal;
+    sasaran.value = `${sasaran.value.slice(0, awal)}${teks}${sasaran.value.slice(akhir)}`;
+    sasaran.dispatchEvent(new Event("input", { bubbles: true }));
+    try {
+      sasaran.focus();
+    } catch {
+      /* fokus hanya kenyamanan */
+    }
+    return "Disisipkan ke kotak yang terakhir disunting - belum tersimpan sampai kotak itu disimpan.";
+  }
+  const tersalin = typeof alatSalin === "function" ? await alatSalin(teks) : false;
+  return tersalin ? "Disalin - tempel di kotak isian pertimbangan." : "Tidak ada kotak yang sedang disunting, dan papan klip menolak. Buka penyunting variabel dahulu.";
+}
+
+async function t6SusunSaranPasal(k, wadah) {
+  const muat = t6El("div", "aleta-t6-lembut", "Membaca templat dasar hukum…");
+  wadah.appendChild(muat);
+  const h = await t6MuatPasal(k);
+  muat.remove();
+  if (!h.ok) {
+    wadah.appendChild(t6El("div", h.belumAda ? "aleta-t6-lembut" : "aleta-t6-gagal", h.belumAda ? "Templat dasar hukum belum tersedia di server." : h.pesan));
+    return;
+  }
+  const huruf = t6HurufDari8503();
+  const dipakai = huruf.length ? h.butir.filter((b) => huruf.includes(String(b.kunci || "").toUpperCase())) : h.butir;
+  wadah.appendChild(
+    t6El(
+      "div",
+      "aleta-t6-lembut",
+      huruf.length
+        ? `Untuk huruf ${huruf.join(", ")} (8503). Saran saja - yang memutus dasar hukumnya majelis.`
+        : "8503 belum berisi huruf alasan - seluruh huruf ditampilkan. Saran saja - yang memutus dasar hukumnya majelis."
+    )
+  );
+  if (!dipakai.length) {
+    wadah.appendChild(t6El("div", "aleta-t6-lembut", "Belum ada templat pasal untuk huruf itu."));
+    return;
+  }
+  for (const b of dipakai) wadah.appendChild(t6KartuPasal(k, b));
+}
+
+// ─── abt-30: ringkasan musyawarah majelis ───────────────────────────────────
+
+function t6NamaDiKelompok(wadah, nada) {
+  if (!wadah) return [];
+  const blok = wadah.querySelector(`.aleta-alasan-kelompok.aleta-alasan-${nada}`);
+  if (!blok) return [];
+  return Array.from(blok.querySelectorAll(".aleta-alasan-nama")).map((x) => String(x.textContent || "").trim());
+}
+
+function t6TeksMusyawarah(k) {
+  const peta = barisVariabel();
+  const p1 = t6NamaDariIdentitas((peta.get("7047") || {}).nilai);
+  const p2 = t6NamaDariIdentitas((peta.get("7048") || {}).nilai);
+  const baris = [];
+  baris.push("RINGKASAN BAHAN MUSYAWARAH MAJELIS");
+  baris.push(`Perkara ${k.nomor || "-"}${k.jenis ? ` · ${k.jenis}` : ""}`);
+  if (p1 || p2) baris.push(`${nilaiVariabel(VAR_PIHAK_LAWAN) || "Penggugat"}: ${p1 ? p1.lengkap : "-"} · ${nilaiVariabel(VAR_PIHAK_PELAKU) || "Tergugat"}: ${p2 ? p2.lengkap : "-"}`);
+  baris.push("");
+  const daftar = (judul, isi) => {
+    baris.push(`${judul}:`);
+    baris.push(isi.length ? isi.map((x) => `  - ${x}`).join("\n") : "  (tidak ada)");
+  };
+  const siap = t6NamaDiKelompok(k.wadah.sepihak, "siap");
+  const sepihak = t6NamaDiKelompok(k.wadah.sepihak, "sebagian");
+  const diluar = t6NamaDiKelompok(k.wadah.sepihak, "awas");
+  const belum = t6NamaDiKelompok(k.wadah.sepihak, "belum");
+  const adaAlasan = siap.length + sepihak.length + diluar.length + belum.length > 0;
+  if (adaAlasan) {
+    daftar("Alasan terbukti (kedua saksi, didalilkan)", siap);
+    daftar("Baru disebut satu saksi", sepihak);
+    daftar("Terbukti tetapi di luar gugatan - jangan dipertimbangkan", diluar);
+    daftar("Didalilkan tetapi belum terbukti - harus disinggung", belum);
+  } else {
+    baris.push("Alasan perceraian belum terbaca - tekan \"Input ke ABT\" (langkah 4) supaya keterangan saksi dianalisis.");
+  }
+  const selisih = k.wadah.selisih
+    ? Array.from(k.wadah.selisih.querySelectorAll(".aleta-abt-naskah")).map((el) => {
+        const bunyi = el.nextElementSibling && el.nextElementSibling.classList.contains("aleta-abt-bunyi") ? ` (${el.nextElementSibling.textContent.trim()})` : "";
+        return `${el.textContent.trim()}${bunyi}`;
+      })
+    : [];
+  daftar("Selisih keterangan antar saksi", selisih);
+  const fakta = t6KartuUsulan(k)
+    .filter((el) => el.getAttribute("data-t6-yakin") === "pasti")
+    .map((el) => {
+      const kode = String((el.querySelector(".aleta-abt-kode") || {}).textContent || "");
+      const nama = String((el.querySelector(".aleta-abt-nama") || {}).textContent || "");
+      const nilai = String((el.querySelector(".aleta-abt-usul .aleta-abt-isi") || {}).textContent || "");
+      return `${kode} ${nama}: ${nilai}`;
+    });
+  daftar("Fakta yang diterangkan sama oleh kedua saksi", fakta);
+  const huruf = nilaiVariabel(VAR_HURUF);
+  const alasan = nilaiVariabel("5227");
+  if (huruf) baris.push(`Huruf alasan (8503): ${huruf}`);
+  if (alasan) baris.push(`Alasan perceraian (5227): ${t6Pendek(alasan, 400)}`);
+  if (k.komentar && k.komentar.ok) {
+    const terbuka = k.komentar.daftar.filter((x) => !x.selesai);
+    if (terbuka.length) daftar("Komentar hakim yang belum selesai", terbuka.map((x) => `${t6LabelBagian(x.bagian)}: ${t6Pendek(x.isi, 160)}`));
+  }
+  baris.push("");
+  baris.push(`Disusun ALETA dari panel ABT, ${t6Jam(new Date().toISOString())}. Bahan musyawarah - bukan putusan; yang memutus majelis.`);
+  return baris.join("\n");
+}
+
+async function t6SusunMusyawarah(k, wadah) {
+  const teks = t6TeksMusyawarah(k);
+  wadah.appendChild(t6El("pre", "aleta-t6-pra aleta-t6-musyawarah", teks));
+  const salin = t6Tombol("Salin", "Salin ringkasan ke papan klip", "aleta-t6-kecil");
+  const kabar = t6El("span", "aleta-t6-lembut");
+  salin.addEventListener("click", async () => {
+    const ok = typeof alatSalin === "function" ? await alatSalin(teks) : false;
+    kabar.textContent = ok ? "Tersalin." : "Papan klip menolak - pilih teksnya lalu Ctrl+C.";
+  });
+  wadah.appendChild(salin);
+  wadah.appendChild(kabar);
+}
+
+// ─── Kepala: mode baca (abt-25), urungkan dan ulangi (abt-23) ───────────────
+
+function t6PasangKepala(k) {
+  if (!t6Nyala("abt-25") && !t6Nyala("abt-23")) return;
+  if (!k.kepala) return;
+  const grup = t6El("span", "aleta-t6-kepala-alat");
+  if (t6Nyala("abt-23")) {
+    k.tombolUrung = t6Tombol("↶", "Urungkan suntingan terakhir (Ctrl+Z)", "aleta-t6-kepala-tombol");
+    k.tombolUlang = t6Tombol("↷", "Ulangi (Ctrl+Y)", "aleta-t6-kepala-tombol");
+    k.tombolUrung.addEventListener("click", () => void t6Urungkan(k));
+    k.tombolUlang.addEventListener("click", () => void t6Ulangi(k));
+    grup.appendChild(k.tombolUrung);
+    grup.appendChild(k.tombolUlang);
+  }
+  if (t6Nyala("abt-25")) {
+    k.tombolBaca = t6Tombol("▤", "", "aleta-t6-kepala-tombol aleta-t6-tombol-baca");
+    k.tombolBaca.addEventListener("click", () => {
+      k.baca = !k.baca;
+      t6Tulis({ [T6_KUNCI_BACA]: k.baca });
+      t6TerapkanBaca(k);
+    });
+    grup.appendChild(k.tombolBaca);
+  }
+  const alatKepala = t6Anak(k.kepala, "aleta-alat-kepala");
+  if (alatKepala) alatKepala.insertBefore(grup, alatKepala.firstChild);
+  else k.kepala.appendChild(grup);
+  t6SegarkanUrung(k);
+}
+
+function t6TumpukanDari(perkaraId) {
+  if (!t6Tumpukan.has(perkaraId)) t6Tumpukan.set(perkaraId, { urung: [], ulang: [] });
+  return t6Tumpukan.get(perkaraId);
+}
+
+/**
+ * Hanya variabel data_teks/data_tanggal yang dapat ditulis ulang lewat
+ * edit_data. Posita tersimpan di SIPP, keterangan saksi di tanya-jawab ABT,
+ * dan variabel (OTOMATIS) dihitung - ketiganya punya jalurnya sendiri.
+ */
+function t6DapatDitulisUlang(kode) {
+  const k = String(kode || "");
+  if (k === VAR_POSITA || VAR_OTOMATIS.includes(k)) return false;
+  if (VAR_SAKSI_TANYA_JAWAB.P.includes(k) || VAR_SAKSI_TANYA_JAWAB.T.includes(k)) return false;
+  return /^\d{4}$/.test(k);
+}
+
+function t6NilaiSimpan(nilai) {
+  const s = String(nilai || "").trim();
+  return s === "DATA_TIDAK_ADA" || s === "(kosong)" ? "" : s;
+}
+
+/** Menulis ke ABT lewat simpanVariabel yang sama dengan sunting tangan. */
+async function t6SimpanNilai(k, kode, nilai, cara, sebelum, nama) {
+  let hasil;
+  try {
+    hasil = await simpanVariabel(kode, nilai, k.jatiDiri);
+  } catch (galat) {
+    hasil = { ok: false, pesan: String((galat && galat.message) || galat) };
+  }
+  if (!hasil.ok) {
+    // simpanVariabel hanya menyebut "ABT menjawab 423." - padahal yang
+    // menjawab penahan panel-alat.js, bukan ABT. Disebut mode mana.
+    if (/423/.test(String(hasil.pesan))) {
+      let latihan = false;
+      try {
+        latihan = typeof alatLatihanNyala === "function" && alatLatihanNyala() === true;
+      } catch {
+        latihan = false;
+      }
+      if (latihan) return { ok: false, pesan: "Ditahan mode latihan - tidak ada yang disimpan ke ABT." };
+      if (t6Coba()) return { ok: false, pesan: "Ditahan mode coba - tidak ada yang disimpan ke ABT." };
+    }
+    return hasil;
+  }
+  const item = barisVariabel().get(kode);
+  if (item) item.selNilai.textContent = nilai || "DATA_TIDAK_ADA";
+  void catatRiwayat({
+    perkaraId: k.perkaraId,
+    kode,
+    nama: nama || (item ? item.nama : ""),
+    sebelum: sebelum || "",
+    sesudah: nilai,
+    cara,
+    pada: new Date().toISOString(),
+  });
+  return hasil;
+}
+
+async function t6Urungkan(k) {
+  const t = t6TumpukanDari(k.perkaraId);
+  const e = t.urung[t.urung.length - 1];
+  if (!e) {
+    t6Lapor(k, "Tidak ada suntingan yang dapat diurungkan di halaman ini.");
+    return;
+  }
+  if (!t6DapatDitulisUlang(e.kode)) {
+    t.urung.pop();
+    t6SegarkanUrung(k);
+    t6Lapor(k, `${e.kode} tidak dapat diurungkan dari sini - pakai "Lihat riwayat perubahan".`, true);
+    return;
+  }
+  const nilai = t6NilaiSimpan(e.sebelum);
+  t6Lapor(k, `Mengurungkan ${e.kode}…`);
+  const h = await t6SimpanNilai(k, e.kode, nilai, "diurungkan", e.sesudah, e.nama);
+  if (!h.ok) {
+    t6Lapor(k, `Urungkan ${e.kode} gagal: ${h.pesan}`, true);
+    return;
+  }
+  t.urung.pop();
+  t.ulang.push(e);
+  t6SegarkanUrung(k);
+  t6Lapor(k, `${e.kode} dikembalikan ke isi sebelumnya. Ctrl+Y mengulanginya.`);
+}
+
+async function t6Ulangi(k) {
+  const t = t6TumpukanDari(k.perkaraId);
+  const e = t.ulang[t.ulang.length - 1];
+  if (!e) {
+    t6Lapor(k, "Tidak ada yang dapat diulangi.");
+    return;
+  }
+  const nilai = t6NilaiSimpan(e.sesudah);
+  t6Lapor(k, `Mengulangi ${e.kode}…`);
+  const h = await t6SimpanNilai(k, e.kode, nilai, "diulang", e.sebelum, e.nama);
+  if (!h.ok) {
+    t6Lapor(k, `Ulangi ${e.kode} gagal: ${h.pesan}`, true);
+    return;
+  }
+  t.ulang.pop();
+  t.urung.push(e);
+  t6SegarkanUrung(k);
+  t6Lapor(k, `${e.kode} diulang.`);
+}
+
+function t6SegarkanUrung(k) {
+  if (!k.tombolUrung) return;
+  const t = t6TumpukanDari(k.perkaraId);
+  const u = t.urung[t.urung.length - 1];
+  const g = t.ulang[t.ulang.length - 1];
+  k.tombolUrung.disabled = !u;
+  k.tombolUlang.disabled = !g;
+  k.tombolUrung.title = u ? `Urungkan ${u.kode} ${u.nama || ""} (Ctrl+Z) - menulis isi sebelumnya ke ABT` : "Belum ada suntingan untuk diurungkan (Ctrl+Z)";
+  k.tombolUlang.title = g ? `Ulangi ${g.kode} ${g.nama || ""} (Ctrl+Y)` : "Tidak ada yang dapat diulangi (Ctrl+Y)";
+}
+
+// ─── Bagian unggah: centang rapi (abt-3/D4), wajib (abt-17), kaki (D14) ─────
+
+function t6OpsiUnggah(k) {
+  const c = Array.from(k.unggah.querySelectorAll("label.aleta-abt-centang-baris input[type=checkbox]"));
+  // Urutan pemasangan di bagianUnggahSatuAbt: draf, anonim, unggah, unduh.
+  return { draf: Boolean(c[0] && c[0].checked), anonim: Boolean(c[1] && c[1].checked), unggah: Boolean(c[2] && c[2].checked), unduh: Boolean(c[3] && c[3].checked), centang: c };
+}
+
+function t6KalimatAkanTerjadi(o) {
+  const langkah = [];
+  if (o.draf) langkah.push("simpan draf ke ALETA");
+  const anonim = o.anonim && (o.unggah || o.unduh);
+  if (anonim) langkah.push("buat anonim");
+  if (o.unggah) langkah.push(anonim ? "unggah putusan dan anonimnya ke SIPP" : "unggah putusan ke SIPP");
+  if (o.unduh) langkah.push(`unduh RTF, PDF${anonim ? ", dan anonim" : ""}`);
+  const sisa = [];
+  if (!o.unduh) sisa.push("Tidak ada berkas yang diunduh.");
+  if (o.anonim && !anonim) sisa.push("Anonim tidak dibuat - tidak diunggah maupun diunduh.");
+  if (!langkah.length) return "Yang akan terjadi bila ditekan: hanya RTF dibaca dari ABT - tidak ada yang disimpan, diunggah, atau diunduh.";
+  return `Yang akan terjadi bila ditekan: ${langkah.join(", ")}. ${sisa.join(" ")}`.trim();
+}
+
+function t6RingkasPilihan(o) {
+  const x = [];
+  if (o.draf) x.push("Simpan draf");
+  if (o.anonim) x.push("Anonim");
+  if (o.unggah) x.push("Unggah ke SIPP");
+  if (o.unduh) x.push("Unduh");
+  return x.length ? x.join(" · ") : "tanpa pilihan";
+}
+
+function t6TataUnggah(k) {
+  const kotak = k.unggah;
+  const tombol = kotak.querySelector("button.aleta-abt-tombol");
+  const o = t6OpsiUnggah(k);
+  if (t6Pakai(k, "abt-3")) {
+    kotak.setAttribute("data-t6-susun", "ya");
+    const kalimat = t6El("div", "aleta-t6-akan-terjadi");
+    kotak.insertBefore(kalimat, tombol);
+    const segar = () => {
+      kalimat.textContent = t6KalimatAkanTerjadi(t6OpsiUnggah(k));
+    };
+    for (const c of o.centang) c.addEventListener("change", segar);
+    segar();
+  }
+  if (t6Nyala("abt-26")) {
+    kotak.insertBefore(
+      t6El("div", "aleta-t6-lembut", "Sebelum unggah, anonimnya diperiksa: NIK, nama pihak, dan alamat yang masih utuh ditunjukkan letaknya dan diminta konfirmasi."),
+      tombol
+    );
+  }
+  if (t6Nyala("abt-17")) {
+    k.wajibUnggah = t6El("div", "aleta-t6-wajib-dekat");
+    k.wajibUnggah.hidden = true;
+    kotak.insertBefore(k.wajibUnggah, tombol);
+  }
+  if (!k.modern || !tombol) return;
+  // D14 dan D4: bagian unggah pindah ke ujung isi panel ("Opsi Kerjakan"),
+  // dan tombol utamanya berdiri di kaki panel yang lengket. Tombol di kaki
+  // MENEKAN tombol lama - satu jalur kerja, satu penjagaan.
+  kotak.classList.add("aleta-t6-opsi-kerjakan");
+  k.isi.appendChild(kotak);
+  if (!k.kaki) return;
+  const utama = t6El("div", "aleta-t6-kaki-utama");
+  const ringkas = t6El("span", "aleta-t6-kaki-ringkas");
+  const opsi = t6Tombol("Opsi ▾", "Lihat pilihan Kerjakan: draf, anonim, unggah, unduh", "aleta-t6-kecil");
+  opsi.addEventListener("click", () => {
+    try {
+      kotak.scrollIntoView({ block: "nearest" });
+    } catch {
+      /* tanpa gulir */
+    }
+    const pertama = t6OpsiUnggah(k).centang[0];
+    if (pertama) pertama.focus();
+  });
+  const kerjakan = t6Tombol("Kerjakan perkara ini", "", "aleta-t6-utama");
+  kerjakan.addEventListener("click", () => {
+    if (!tombol.disabled) tombol.click();
+  });
+  k.kakiWajib = t6El("span", "aleta-t6-kaki-wajib");
+  k.kakiWajib.hidden = true;
+  const segarKaki = () => {
+    const pilihan = t6OpsiUnggah(k);
+    ringkas.textContent = t6RingkasPilihan(pilihan);
+    kerjakan.title = t6KalimatAkanTerjadi(pilihan);
+    kerjakan.disabled = tombol.disabled;
+  };
+  for (const c of o.centang) c.addEventListener("change", segarKaki);
+  const p = new MutationObserver(segarKaki);
+  p.observe(tombol, { attributes: true, attributeFilter: ["disabled"] });
+  k.pengamat.push(p);
+  segarKaki();
+  utama.appendChild(ringkas);
+  utama.appendChild(opsi);
+  utama.appendChild(k.kakiWajib);
+  utama.appendChild(kerjakan);
+  k.kaki.insertBefore(utama, k.kaki.firstChild);
+}
+
+// ─── Pengamat: hiasan mengikuti apa yang digambar jalur lama ─────────────────
+
+/**
+ * Kartu usulan, borang dan penyunting keterangan saksi, kartu alasan, dan
+ * kartu huruf digambar ulang oleh jalur lama tiap kali tombolnya ditekan -
+ * dan penyunting saksi bahkan tiap kali satu baris digeser. Hiasan Tahap 6
+ * karena itu dipasang oleh pengamat, bukan sekali: setiap gambar baru dihias
+ * lagi, dan yang sudah berhias dikenali dari tandanya.
+ *
+ * Perubahan yang seluruhnya buatan blok ini diabaikan (t6MilikSendiri) -
+ * tanpa itu hiasan memicu hiasan berikutnya tanpa akhir.
+ */
+function t6MilikSendiri(catatan) {
+  return catatan.every((r) => {
+    const t = r.target && r.target.nodeType === 1 ? r.target : r.target && r.target.parentElement;
+    if (t && t.closest && t.closest(".aleta-t6")) return true;
+    const simpul = [...Array.from(r.addedNodes || []), ...Array.from(r.removedNodes || [])];
+    return simpul.length > 0 && simpul.every((n) => n.nodeType === 1 && n.classList.contains("aleta-t6"));
+  });
+}
+
+function t6Amati(k, sasaran, pilihan, kerja, jedaMs) {
+  if (!sasaran) return;
+  let jam = 0;
+  const p = new MutationObserver((catatan) => {
+    if (t6MilikSendiri(catatan)) return;
+    clearTimeout(jam);
+    jam = setTimeout(() => {
+      if (t6Keadaan === k) kerja();
+    }, jedaMs);
+  });
+  p.observe(sasaran, pilihan);
+  k.pengamat.push(p);
+}
+
+function t6PasangPengamat(k) {
+  const daftar = { childList: true, subtree: true };
+  t6Amati(k, k.wadah.usulan, daftar, () => t6HiasSemua(k), 0);
+  t6Amati(k, k.wadah.sepihak, daftar, () => t6HiasSepihak(k), 0);
+  t6Amati(k, k.wadah.huruf, daftar, () => t6HiasHuruf(k), 0);
+  // Tabel variabel halaman ABT: kemajuan, pita galat, dan variabel wajib
+  // disegarkan sesudah sunting di tempat dan penerapan usulan.
+  const barisPertama = barisVariabel().values().next().value;
+  const tabel = barisPertama && barisPertama.baris.closest("table");
+  if (tabel) t6Amati(k, tabel, { childList: true, subtree: true, characterData: true }, () => t6SegarkanHalaman(k), 400);
+  if (k.aksi && k.langkahTombol) {
+    const p = new MutationObserver(() => t6SegarkanLangkah(k));
+    p.observe(k.aksi, { attributes: true, subtree: true, attributeFilter: ["hidden"] });
+    k.pengamat.push(p);
+  }
+  t6HiasSemua(k);
+  t6HiasSepihak(k);
+  t6HiasHuruf(k);
+}
+
+function t6HiasSemua(k) {
+  if (t6Keadaan !== k) return;
+  t6HiasUsulan(k);
+  t6HiasSdg(k);
+}
+
+// ─── Kartu usulan: keyakinan, tidak berlaku, tabel, sematan, riwayat ────────
+
+function t6KuasaProdeo(k) {
+  const m = /Kuasa aktif:\s*(\d+)\.\s*Prodeo:\s*(ya|tidak)/i.exec(String((k.kabar && k.kabar.textContent) || ""));
+  if (m) {
+    k.kuasa = Number(m[1]);
+    k.prodeo = m[2].toLowerCase() === "ya";
+  }
+}
+
+/**
+ * Kartu yang "memang tidak berlaku" (abt-2, D6): tanpa usulan, dan
+ * variabelnya milik kuasa atau prodeo pada perkara yang - menurut SIPP -
+ * tanpa kuasa atau bukan prodeo. Selama keadaan itu belum terbaca dari SIPP,
+ * tidak ada yang dilipat: melipat berdasarkan tebakan menyembunyikan
+ * variabel yang mungkin justru harus diisi.
+ */
+function t6TakBerlaku(k, kartu) {
+  if (kartu.getAttribute("data-t6-yakin") !== "kosong") return false;
+  if (!kartu.querySelector(".aleta-abt-usul .aleta-abt-isi-kosong")) return false;
+  const nama = String((kartu.querySelector(".aleta-abt-kartu-kepala .aleta-abt-nama") || {}).textContent || "");
+  if (/kuasa/i.test(nama) && k.kuasa === 0) return true;
+  if (/prodeo/i.test(nama) && k.prodeo === false) return true;
+  return false;
+}
+
+function t6HiasUsulan(k) {
+  const w = k.wadah.usulan;
+  if (!w) return;
+  const kartu = t6KartuUsulan(k);
+  if (!kartu.length) {
+    if (k.segmen) k.segmen.hidden = true;
+    return;
+  }
+  w.classList.add("aleta-t6-usulan");
+  t6KuasaProdeo(k);
+  const pakaiTakBerlaku = t6Pakai(k, "abt-2");
+  for (const el of kartu) {
+    if (!el.hasAttribute("data-t6-yakin")) el.setAttribute("data-t6-yakin", t6YakinKartu(el));
+    if (pakaiTakBerlaku && t6TakBerlaku(k, el)) el.setAttribute("data-t6-tak-berlaku", "ya");
+    if (el.hasAttribute("data-t6-hias")) continue;
+    el.setAttribute("data-t6-hias", "ya");
+    const kepala = el.querySelector(".aleta-abt-kartu-kepala");
+    const kode = String((el.querySelector(".aleta-abt-kode") || {}).textContent || "").trim();
+    if (!kepala || !kode) continue;
+    const kutipan = Array.from(el.children).filter((c) => c.classList.contains("aleta-abt-kutipan"));
+    if (k.modern && kutipan.length) {
+      // D5: kutipan sumber dilipat di baris tabel - tetap satu klik.
+      const sumber = t6Tombol(`sumber (${kutipan.length}) ▸`, "Tampilkan kalimat asal usulan ini", "aleta-t6-kecil aleta-t6-sumber");
+      sumber.addEventListener("click", () => {
+        const buka = el.toggleAttribute("data-t6-buka");
+        sumber.textContent = `sumber (${kutipan.length}) ${buka ? "▾" : "▸"}`;
+      });
+      kepala.appendChild(sumber);
+    }
+    if (t6Nyala("abt-22")) kepala.appendChild(t6TombolSemat(k, kode));
+    if (t6Nyala("abt-9")) kepala.appendChild(t6TombolRiwayatVar(k, kode, el));
+  }
+  // Baris ringkas untuk yang dilipat (abt-2) - dibuat ulang tiap gambar baru,
+  // sebab gambarUsulan mengosongkan wadahnya.
+  let lipat = Array.from(w.children).find((c) => c.classList.contains("aleta-t6-lipat-takberlaku"));
+  const takBerlaku = kartu.filter((el) => el.getAttribute("data-t6-tak-berlaku") === "ya");
+  if (pakaiTakBerlaku && takBerlaku.length) {
+    if (!lipat) {
+      lipat = t6El("div", "aleta-t6-lipat-takberlaku");
+      w.insertBefore(lipat, w.firstChild);
+    }
+    lipat.textContent = "";
+    const sebab = [];
+    if (k.kuasa === 0) sebab.push("tanpa kuasa");
+    if (k.prodeo === false) sebab.push("bukan prodeo");
+    lipat.appendChild(
+      t6El(
+        "span",
+        "",
+        `${takBerlaku.length} variabel memang tidak berlaku untuk perkara ini (${sebab.join(", ")}): ${takBerlaku
+          .map((el) => String((el.querySelector(".aleta-abt-kode") || {}).textContent || ""))
+          .join(", ")}`
+      )
+    );
+    const buka = t6Tombol(k.tampilTakBerlaku ? "sembunyikan" : "buka", "Tampilkan kartu yang dilipat", "aleta-t6-kecil");
+    buka.addEventListener("click", () => {
+      k.tampilTakBerlaku = !k.tampilTakBerlaku;
+      t6HiasUsulan(k);
+    });
+    lipat.appendChild(buka);
+  } else if (lipat) {
+    lipat.remove();
+  }
+  t6TerapkanSaring(k);
+}
+
+// ─── abt-9: riwayat per variabel dengan tombol pulihkan ─────────────────────
+
+function t6TombolRiwayatVar(k, kode, induk) {
+  const b = t6Tombol("⟲", `Riwayat ${kode} - dengan tombol pulihkan`, "aleta-t6-kecil aleta-t6-riwayat-tombol");
+  b.addEventListener("click", async () => {
+    const ada = Array.from(induk.children).find((c) => c.classList.contains("aleta-t6-riwayat-var"));
+    if (ada) {
+      ada.remove();
+      return;
+    }
+    const kotak = t6El("div", "aleta-t6-riwayat-var");
+    kotak.appendChild(t6El("div", "aleta-t6-lembut", "Membaca riwayat…"));
+    induk.appendChild(kotak);
+    await t6GambarRiwayatVar(k, kode, kotak);
+  });
+  return b;
+}
+
+async function t6GambarRiwayatVar(k, kode, kotak) {
+  let daftar = [];
+  try {
+    daftar = (await bacaRiwayat(k.perkaraId)).filter((x) => x && String(x.kode) === String(kode));
+  } catch {
+    daftar = [];
+  }
+  kotak.textContent = "";
+  kotak.appendChild(t6El("div", "aleta-t6-riwayat-judul", `Riwayat ${kode}`));
+  if (!daftar.length) {
+    kotak.appendChild(t6El("div", "aleta-t6-lembut", "Belum ada perubahan yang tercatat untuk variabel ini."));
+    return;
+  }
+  const dapat = t6DapatDitulisUlang(kode);
+  const sekarang = nilaiVariabel(kode);
+  const baris = (waktu, siapa, isi, catatan) => {
+    const el = t6El("div", "aleta-t6-riwayat-baris");
+    el.appendChild(t6El("span", "aleta-t6-lembut", `${waktu} · ${siapa} · `));
+    el.appendChild(t6El("span", "", `"${t6Pendek(isi || "(kosong)", 120)}"`));
+    if (t6Baku(isi) === t6Baku(sekarang)) {
+      el.appendChild(t6El("span", "aleta-t6-lencana", "sekarang"));
+    } else if (catatan) {
+      el.appendChild(t6El("span", "aleta-t6-lembut", ` ${catatan}`));
+    } else if (dapat) {
+      const pulih = t6Tombol("pulihkan", `Tulis isi ini kembali ke ${kode} di ABT`, "aleta-t6-kecil");
+      const kabar = t6El("span", "aleta-t6-lembut");
+      pulih.addEventListener("click", async () => {
+        pulih.disabled = true;
+        kabar.textContent = "Menyimpan…";
+        const h = await t6SimpanNilai(k, kode, t6NilaiSimpan(isi), "dipulihkan dari riwayat", sekarang, "");
+        kabar.textContent = h.ok ? "Dipulihkan." : h.pesan;
+        if (h.ok) setTimeout(() => void t6GambarRiwayatVar(k, kode, kotak), 300);
+        else pulih.disabled = false;
+      });
+      el.appendChild(pulih);
+      el.appendChild(kabar);
+    }
+    kotak.appendChild(el);
+  };
+  for (const x of daftar.slice(0, 10)) {
+    const catatan = x.dariPeladen ? (x.dipotong ? "(dicatat dari peramban lain, isinya dipotong)" : "(dicatat dari peramban lain)") : "";
+    baris(new Date(x.pada).toLocaleString("id-ID"), String(x.cara || ""), x.sesudah, catatan);
+  }
+  const tertua = daftar[Math.min(daftar.length, 10) - 1];
+  if (tertua && !tertua.dariPeladen) baris("sebelum perubahan pertama", "isi awal", tertua.sebelum, "");
+  if (!dapat) kotak.appendChild(t6El("div", "aleta-t6-lembut", `${kode} tidak dapat ditulis ulang dari sini - pakai "Lihat riwayat perubahan".`));
+}
+
+// ─── abt-6: tombol cepat untuk alasan yang belum terbukti ────────────────────
+
+function t6HiasSepihak(k) {
+  if (!t6Nyala("abt-6") || !k.wadah.sepihak) return;
+  const blok = k.wadah.sepihak.querySelector(".aleta-alasan-kelompok.aleta-alasan-belum");
+  if (!blok) return;
+  const ditolak = new Set(Array.isArray(k.ditolak[k.perkaraId]) ? k.ditolak[k.perkaraId] : []);
+  for (const butir of Array.from(blok.querySelectorAll(".aleta-alasan-butir"))) {
+    if (butir.hasAttribute("data-t6-hias")) continue;
+    butir.setAttribute("data-t6-hias", "ya");
+    const nama = String((butir.querySelector(".aleta-alasan-nama") || {}).textContent || "").trim();
+    if (!nama) continue;
+    const alat = t6El("span", "aleta-t6-alasan-alat");
+    const tanya = t6Tombol("+ pertanyaan saksi", `Buka penyunting keterangan saksi dengan alasan "${nama}" dicentang`, "aleta-t6-kecil");
+    tanya.addEventListener("click", () => void t6TambahPertanyaan(k, nama));
+    const tolak = t6Tombol("tandai ditolak + pertimbangan", `Salin kalimat pertimbangan penolakan dalil "${nama}"`, "aleta-t6-kecil");
+    tolak.addEventListener("click", () => void t6TandaiDitolak(k, nama, butir));
+    alat.appendChild(tanya);
+    alat.appendChild(tolak);
+    butir.appendChild(alat);
+    if (ditolak.has(nama)) butir.classList.add("aleta-t6-ditolak");
+  }
+}
+
+async function t6TambahPertanyaan(k, nama) {
+  let form = k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-form");
+  if (!form) {
+    if (!k.tombol.sdg || k.tombol.sdg.hidden) {
+      t6Lapor(k, "Penyusun keterangan saksi tidak tersedia di blangko ini.", true);
+      return;
+    }
+    k.tombol.sdg.click();
+    form = await t6Tunggu(() => k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-form"), 10000);
+  }
+  if (!form) {
+    t6Lapor(k, "Penyunting keterangan saksi tidak terbuka - lihat pesan di atas.", true);
+    return;
+  }
+  const sama = Array.from(form.children).find((c) => c.classList.contains("aleta-sdg-centang"));
+  const centangSama = sama && sama.querySelector("input[type=checkbox]");
+  if (centangSama && centangSama.checked) {
+    centangSama.checked = false;
+    centangSama.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  const kotak = Array.from(form.children).find((c) => c.classList.contains("aleta-sdg-alasan"));
+  const target = kotak
+    ? Array.from(kotak.querySelectorAll("input[type=checkbox]")).find(
+        (c) => t6Baku(c.value) === t6Baku(nama) || t6Baku(c.parentElement && c.parentElement.textContent) === t6Baku(nama)
+      )
+    : null;
+  if (!target) {
+    t6Lapor(k, `Alasan "${nama}" tidak ada di pilihan alasan saksi - pilih yang paling dekat.`, true);
+    if (kotak) kotak.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  if (!target.checked) {
+    target.checked = true;
+    target.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  try {
+    target.scrollIntoView({ block: "center" });
+  } catch {
+    /* tanpa gulir */
+  }
+  // Membuka penyunting mengosongkan kartu alasan (perilaku tombol lama
+  // "Susun keterangan saksi") - disebut, supaya tidak terbaca hilang.
+  t6Lapor(
+    k,
+    `Alasan "${nama}" dicentang di penyunting keterangan saksi. Tekan "Susun keterangan para saksi" bila pilihannya sudah benar. ` +
+      "Kartu alasan tertutup saat penyunting dibuka - \"Input ke ABT\" menampilkannya lagi."
+  );
+}
+
+async function t6TandaiDitolak(k, nama, butir) {
+  const pengaju = nilaiVariabel(VAR_PIHAK_LAWAN) || "Penggugat";
+  const pelaku = nilaiVariabel(VAR_PIHAK_PELAKU) || "Tergugat";
+  const kalimat =
+    `Menimbang, bahwa dalil ${pengaju} mengenai ${nama} yang dilakukan ${pelaku} tidak dikuatkan oleh keterangan dua orang saksi, ` +
+    "oleh karena itu dalil tersebut harus dinyatakan tidak terbukti dan dikesampingkan;";
+  const tersalin = typeof alatSalin === "function" ? await alatSalin(kalimat) : false;
+  const daftar = new Set(Array.isArray(k.ditolak[k.perkaraId]) ? k.ditolak[k.perkaraId] : []);
+  daftar.add(nama);
+  k.ditolak[k.perkaraId] = Array.from(daftar);
+  t6Tulis({ [T6_KUNCI_DITOLAK]: k.ditolak });
+  butir.classList.add("aleta-t6-ditolak");
+  t6Lapor(
+    k,
+    tersalin
+      ? `Kalimat pertimbangan penolakan "${nama}" disalin - tempel di variabel pertimbangan hukum lalu periksa. Tanda "ditolak" hanya tersimpan di peramban ini.`
+      : `Papan klip menolak. Kalimatnya: ${kalimat}`
+  );
+}
+
+// ─── abt-27 dan abt-18 di kartu huruf alasan ────────────────────────────────
+
+function t6HiasHuruf(k) {
+  const w = k.wadah.huruf;
+  if (!w || (!t6Nyala("abt-27") && !t6Nyala("abt-18"))) return;
+  for (const blok of Array.from(w.querySelectorAll(".aleta-abt-huruf"))) {
+    const nama = blok.querySelector(".aleta-abt-huruf-nama");
+    const m = /Huruf\s+([A-K])/i.exec(String((nama && nama.textContent) || ""));
+    if (!m) continue;
+    const huruf = m[1].toUpperCase();
+    for (const lama of Array.from(blok.children).filter((c) => c.classList.contains("aleta-t6-komentar-sisip"))) lama.remove();
+    if (t6Nyala("abt-18") && k.komentar && k.komentar.ok) {
+      const kom = k.komentar.daftar.filter((x) => {
+        const b = t6BacaBagian(x.bagian);
+        return b.jenis === "alasan" && b.huruf === huruf;
+      });
+      if (kom.length) {
+        const kotak = t6El("div", "aleta-t6-komentar-sisip");
+        for (const x of kom) kotak.appendChild(t6KartuKomentar(k, x));
+        blok.appendChild(kotak);
+      }
+    }
+    if (t6Nyala("abt-27") && !Array.from(blok.children).some((c) => c.classList.contains("aleta-t6-pasal-sisip"))) {
+      const saran = t6El("div", "aleta-t6-pasal-sisip");
+      saran.appendChild(t6El("div", "aleta-t6-lembut", "Saran dasar hukum - membaca…"));
+      blok.appendChild(saran);
+      void t6MuatPasal(k).then((h) => {
+        saran.textContent = "";
+        if (!h.ok) {
+          saran.appendChild(t6El("div", "aleta-t6-lembut", h.belumAda ? "Saran dasar hukum belum tersedia di server." : h.pesan));
+          return;
+        }
+        const cocok = h.butir.filter((b) => String(b.kunci || "").toUpperCase() === huruf);
+        if (!cocok.length) {
+          saran.appendChild(t6El("div", "aleta-t6-lembut", `Belum ada templat pasal untuk huruf ${huruf}.`));
+          return;
+        }
+        for (const b of cocok) saran.appendChild(t6KartuPasal(k, b));
+      });
+    }
+  }
+}
+
+// ─── Borang dan penyunting keterangan saksi ─────────────────────────────────
+
+function t6HiasSdg(k) {
+  const w = k.wadah.usulan;
+  if (!w) return;
+  const form = w.querySelector(".aleta-sdg-form");
+  if (form) t6HiasFormSdg(k, form);
+  for (const hasil of Array.from(w.querySelectorAll(".aleta-sdg-hasil"))) t6HiasHasilSdg(k, hasil);
+}
+
+/** Alasan yang kata kuncinya terbaca di posita - tanda "G" (perkiraan). */
+function t6DidalilkanPosita(label, posita) {
+  if (!posita) return false;
+  for (const [polaLabel, polaPosita] of T6_KATA_GUGATAN) {
+    if (polaLabel.test(label)) return polaPosita.test(posita);
+  }
+  return false;
+}
+
+/**
+ * abt-8 / D11: kotak centang alasan dikelompokkan. Labelnya DIPINDAH ke dalam
+ * kelompok - kotak centang yang sama, sehingga penyusun lama tetap membaca
+ * pilihannya lewat rujukan yang sudah dipegangnya.
+ */
+function t6KelompokkanAlasan(kotak, posita) {
+  if (kotak.hasAttribute("data-t6-kelompok")) return;
+  const label = Array.from(kotak.children).filter((c) => c.tagName === "LABEL" && c.classList.contains("aleta-sdg-centang"));
+  if (label.length < 4) return;
+  kotak.setAttribute("data-t6-kelompok", "ya");
+  const kelompok = new Map();
+  for (const [nama] of T6_KELOMPOK_ALASAN) kelompok.set(nama, []);
+  kelompok.set("Lainnya", []);
+  for (const l of label) {
+    const teks = String(l.textContent || "");
+    const cocok = T6_KELOMPOK_ALASAN.find(([, pola]) => pola.test(teks));
+    kelompok.get(cocok ? cocok[0] : "Lainnya").push(l);
+    if (t6DidalilkanPosita(teks, posita)) {
+      const g = t6El("span", "aleta-t6-tanda-g", "G");
+      g.title = "Kata kuncinya terbaca di posita (5125) - perkiraan dari kata, periksa dalilnya sendiri.";
+      l.appendChild(g);
+    }
+  }
+  for (const [nama, isi] of kelompok) {
+    if (!isi.length) continue;
+    const blok = t6El("div", "aleta-t6-kelompok-alasan");
+    blok.appendChild(t6El("div", "aleta-t6-kelompok-judul", nama));
+    const deret = t6El("div", "aleta-t6-kelompok-deret");
+    for (const l of isi) deret.appendChild(l);
+    blok.appendChild(deret);
+    kotak.appendChild(blok);
+  }
+}
+
+function t6HiasFormSdg(k, form) {
+  if (t6Pakai(k, "abt-8")) {
+    const posita = t6TeksVariabel(barisVariabel(), VAR_POSITA);
+    for (const kotak of Array.from(form.querySelectorAll(".aleta-sdg-alasan"))) t6KelompokkanAlasan(kotak, posita);
+  }
+  if (form.hasAttribute("data-t6-hias")) return;
+  form.setAttribute("data-t6-hias", "ya");
+  if (t6Nyala("abt-14")) {
+    form.insertBefore(
+      t6El(
+        "div",
+        "aleta-t6-belum-tersedia",
+        "Salin dari perkara serupa yang sudah putus: belum tersedia - server belum punya sumber keterangan saksi perkara serupa. Tidak ada yang disalin."
+      ),
+      form.firstChild
+    );
+  }
+}
+
+function t6KolomSaksi(hasil) {
+  return Array.from(hasil.querySelectorAll(".aleta-sdg-dua > .aleta-sdg-kolom")).map((kolom) => {
+    const judul = kolom.querySelector(".aleta-sdg-judul");
+    const teks = judul ? String(judul.firstChild && judul.firstChild.nodeType === 3 ? judul.firstChild.textContent : judul.textContent) : "";
+    const m = /Saksi\s+(\d+)\s+([PT])/i.exec(teks);
+    return {
+      kolom,
+      judul: teks.trim(),
+      ke: m ? Number(m[1]) : 0,
+      pihak: m ? m[2].toUpperCase() : "P",
+      baris: Array.from(kolom.querySelectorAll(".aleta-sdg-baris")),
+    };
+  });
+}
+
+function t6HiasHasilSdg(k, hasil) {
+  if (!hasil.hasAttribute("data-t6-hias")) {
+    hasil.setAttribute("data-t6-hias", "ya");
+    const alat = t6El("div", "aleta-t6-sdg-alat");
+    if (k.modern) {
+      const penuh = t6Tombol("⤢ Layar penuh", "Keterangan para saksi berdampingan di layar penuh, dengan daftar pertanyaan", "aleta-t6-kecil");
+      penuh.addEventListener("click", () => {
+        const nyala = hasil.classList.toggle("aleta-t6-penuh");
+        penuh.textContent = nyala ? "⤡ Keluar layar penuh" : "⤢ Layar penuh";
+        t6GambarNavSdg(k, hasil);
+      });
+      alat.appendChild(penuh);
+    }
+    if (t6Nyala("abt-16")) {
+      const sidang = t6Tombol("▶ Mode sidang", "Satu pertanyaan per layar, huruf besar - ketik jawaban sambil saksi berbicara", "aleta-t6-kecil");
+      sidang.addEventListener("click", () => t6MulaiModeSidang(k, hasil));
+      alat.appendChild(sidang);
+    }
+    if (t6Nyala("abt-28")) alat.appendChild(t6AlatTemplatPribadi(k, hasil));
+    if (t6Nyala("abt-29")) {
+      const status = t6El("span", "aleta-t6-lembut aleta-t6-draf-status", k.drafPada ? `● tersimpan otomatis ${t6Jam(k.drafPada, true)} · tiap 30 detik` : "● tersimpan otomatis tiap 30 detik");
+      alat.appendChild(status);
+      if (k.draf[t6KunciDraf(k)]) {
+        const pulih = t6Tombol("Pulihkan draf", "Isi penyunting ini dengan draf yang tersimpan di peramban", "aleta-t6-kecil");
+        const kabar = t6El("span", "aleta-t6-lembut");
+        pulih.addEventListener("click", () => {
+          kabar.textContent = t6PulihkanDraf(k, hasil);
+        });
+        alat.appendChild(pulih);
+        alat.appendChild(kabar);
+      }
+    }
+    if (t6Nyala("abt-20")) {
+      alat.appendChild(
+        t6El(
+          "div",
+          "aleta-t6-belum-tersedia",
+          "Kirim ke BAS SIPP: belum tersedia - ALETA belum punya jalur tulis berita acara ke SIPP yang aman. Keterangan disimpan ke ABT saja."
+        )
+      );
+    }
+    if (alat.childElementCount) {
+      const tata = hasil.querySelector(".aleta-sdg-tata");
+      hasil.insertBefore(alat, tata || hasil.firstChild);
+    }
+    if (k.modern) {
+      const nav = t6El("div", "aleta-t6-sdg-nav");
+      hasil.insertBefore(nav, hasil.firstChild);
+    }
+  }
+  t6HiasBarisSdg(k, hasil);
+}
+
+/** Daftar pertanyaan di kiri layar penuh (D9). */
+function t6GambarNavSdg(k, hasil) {
+  const nav = Array.from(hasil.children).find((c) => c.classList.contains("aleta-t6-sdg-nav"));
+  if (!nav) return;
+  nav.textContent = "";
+  if (!hasil.classList.contains("aleta-t6-penuh")) return;
+  const kolom = t6KolomSaksi(hasil);
+  const pertama = kolom[0];
+  if (!pertama) return;
+  nav.appendChild(t6El("div", "aleta-t6-nav-judul", `${pertama.baris.length} pertanyaan`));
+  pertama.baris.forEach((b, i) => {
+    const t = t6Tombol("", "Tampilkan pertanyaan ini pada semua saksi", "aleta-t6-nav-butir");
+    t.appendChild(t6El("span", "aleta-t6-kode", `${i + 1}.`));
+    t.appendChild(t6El("span", "", t6Pendek((b.querySelector(".aleta-sdg-tanya") || {}).textContent, 48)));
+    if (b.hasAttribute("data-t6-beda")) t.appendChild(t6El("span", "aleta-t6-lencana aleta-t6-lencana-beda", "beda"));
+    if (b.querySelector(".aleta-sdg-varian-habis")) t.appendChild(t6El("span", "aleta-t6-lencana", "varian habis"));
+    t.addEventListener("click", () => {
+      for (const c of t6KolomSaksi(hasil)) {
+        const sasaran = c.baris[i];
+        if (!sasaran) continue;
+        try {
+          sasaran.scrollIntoView({ block: "center" });
+        } catch {
+          /* tanpa gulir */
+        }
+        sasaran.classList.add("aleta-t6-sorot");
+        setTimeout(() => sasaran.classList.remove("aleta-t6-sorot"), 1500);
+      }
+    });
+    nav.appendChild(t);
+  });
+}
+
+function t6KataDari(teks) {
+  return String(teks || "")
+    .toLowerCase()
+    .match(/[\p{L}\p{N}]+/gu) || [];
+}
+
+/**
+ * abt-7 / D9: kata yang berbeda antara saksi dan saksi berikutnya, per nomor
+ * pertanyaan. Kotak ketik tidak dapat mewarnai sebagian isinya, jadi bedanya
+ * ditulis di bawah kotak itu sebagai deret kata bersorot.
+ */
+function t6HitungBeda(k, hasil) {
+  const kolom = t6KolomSaksi(hasil);
+  if (kolom.length < 2) return;
+  kolom.forEach((c, ci) => {
+    const lawan = kolom[(ci + 1) % kolom.length];
+    c.baris.forEach((b, i) => {
+      let garis = Array.from(b.children).find((x) => x.classList.contains("aleta-t6-beda"));
+      const jawab = b.querySelector("textarea.aleta-sdg-jawab");
+      const lawanJawab = lawan.baris[i] && lawan.baris[i].querySelector("textarea.aleta-sdg-jawab");
+      if (!jawab || !lawanJawab) {
+        if (garis) garis.remove();
+        b.removeAttribute("data-t6-beda");
+        return;
+      }
+      const kata = t6KataDari(jawab.value);
+      const kataLawan = new Set(t6KataDari(lawanJawab.value));
+      if (!garis) {
+        garis = t6El("div", "aleta-t6-beda");
+        b.appendChild(garis);
+      }
+      garis.textContent = "";
+      if (!kata.length) {
+        b.removeAttribute("data-t6-beda");
+        return;
+      }
+      if (t6Baku(jawab.value) === t6Baku(lawanJawab.value)) {
+        b.removeAttribute("data-t6-beda");
+        garis.appendChild(t6El("span", "aleta-t6-lencana aleta-t6-lencana-sama", `sama persis dengan ${lawan.judul || "saksi berikutnya"}`));
+        return;
+      }
+      const unik = Array.from(new Set(kata.filter((x) => !kataLawan.has(x))));
+      if (!unik.length) {
+        b.removeAttribute("data-t6-beda");
+        return;
+      }
+      b.setAttribute("data-t6-beda", "ya");
+      garis.appendChild(t6El("span", "aleta-t6-lembut", `beda dengan ${lawan.judul || "saksi berikutnya"}: `));
+      for (const x of unik.slice(0, 12)) garis.appendChild(t6El("mark", "aleta-t6-sorot-kata", x));
+    });
+  });
+}
+
+function t6HiasBarisSdg(k, hasil) {
+  const beda = t6Pakai(k, "abt-7");
+  const kolom = t6KolomSaksi(hasil);
+  let jam = 0;
+  const hitungNanti = () => {
+    clearTimeout(jam);
+    jam = setTimeout(() => {
+      if (t6Keadaan === k) t6HitungBeda(k, hasil);
+    }, 250);
+  };
+  for (const c of kolom) {
+    c.baris.forEach((b, i) => {
+      const baru = !b.hasAttribute("data-t6-hias");
+      b.setAttribute("data-t6-hias", "ya");
+      const jawab = b.querySelector("textarea.aleta-sdg-jawab");
+      if (baru && beda && jawab) jawab.addEventListener("input", hitungNanti);
+      if (baru && t6Pakai(k, "abt-7") && b.querySelector(".aleta-sdg-varian-habis")) {
+        b.appendChild(
+          t6El("div", "aleta-t6-lembut aleta-t6-varian-ket", "Varian habis: semua bentuk kalimat untuk pertanyaan ini sudah terpakai, jadi bunyinya dapat sama dengan saksi lain.")
+        );
+      }
+      if (baru && t6Nyala("abt-15") && jawab) b.appendChild(t6AlatVarian(jawab));
+      if (t6Nyala("abt-18")) t6LencanaKomentarBaris(k, b, c, i);
+    });
+  }
+  if (beda) t6HitungBeda(k, hasil);
+  if (hasil.classList.contains("aleta-t6-penuh")) t6GambarNavSdg(k, hasil);
+}
+
+// ─── abt-18: komentar hakim di baris keterangan saksi ───────────────────────
+
+function t6LencanaKomentarBaris(k, baris, kolom, i) {
+  // Dibuang lalu digambar ulang: komentar dapat berubah (ditandai selesai)
+  // tanpa barisnya digambar ulang.
+  for (const lama of Array.from(baris.querySelectorAll(".aleta-t6-komentar-baris"))) lama.remove();
+  if (!k.komentar || !k.komentar.ok) return;
+  const kom = k.komentar.daftar.filter((x) => {
+    const b = t6BacaBagian(x.bagian);
+    return b.jenis === "saksi" && b.pihak === kolom.pihak && b.ke === kolom.ke && b.no === i + 1;
+  });
+  if (!kom.length) return;
+  const belum = kom.filter((x) => !x.selesai).length;
+  const alat = baris.querySelector(".aleta-sdg-alat") || baris;
+  const lencana = t6Tombol(
+    belum ? `komentar hakim${kom.length > 1 ? ` (${kom.length})` : ""}` : "komentar hakim ✓",
+    kom.map((x) => `${(x.penulis && x.penulis.nama) || "hakim"}: ${x.isi}`).join("\n"),
+    `aleta-t6-lencana-hakim aleta-t6-komentar-baris${belum ? "" : " aleta-t6-selesai"}`
+  );
+  lencana.addEventListener("click", () => {
+    const ada = Array.from(baris.children).find((c) => c.classList.contains("aleta-t6-komentar-sisip"));
+    if (ada) {
+      ada.remove();
+      return;
+    }
+    const kotak = t6El("div", "aleta-t6-komentar-sisip aleta-t6-komentar-baris");
+    for (const x of kom) kotak.appendChild(t6KartuKomentar(k, x));
+    baris.appendChild(kotak);
+  });
+  alat.appendChild(lencana);
+}
+
+// ─── abt-15: pembuat varian kalimat ─────────────────────────────────────────
+
+function t6VarianKalimat(teks) {
+  const asal = String(teks || "");
+  const frasa = [];
+  for (const kelompok of T6_SEPADAN) for (const f of kelompok) frasa.push({ f, kelompok });
+  frasa.sort((a, b) => b.f.length - a.f.length);
+  const pola = new RegExp(`\\b(${frasa.map((x) => t6Lolos(x.f)).join("|")})\\b`, "gi");
+  if (!pola.test(asal)) return [];
+  const hasil = [];
+  for (let v = 1; v <= 3; v += 1) {
+    pola.lastIndex = 0;
+    const baru = asal.replace(pola, (cocok) => {
+      const x = frasa.find((y) => y.f === cocok.toLowerCase());
+      if (!x) return cocok;
+      const ganti = x.kelompok[(x.kelompok.indexOf(x.f) + v) % x.kelompok.length];
+      return cocok[0] === cocok[0].toUpperCase() ? ganti[0].toUpperCase() + ganti.slice(1) : ganti;
+    });
+    if (baru !== asal && !hasil.includes(baru)) hasil.push(baru);
+  }
+  return hasil;
+}
+
+function t6AlatVarian(jawab) {
+  const wadah = t6El("div", "aleta-t6-varian");
+  const b = t6Tombol("✎ Buat varian", "Susun kalimat lain yang sama artinya - dipilih, lalu boleh diubah", "aleta-t6-kecil");
+  const pilihan = t6El("div", "aleta-t6-varian-pilihan");
+  b.addEventListener("click", () => {
+    pilihan.textContent = "";
+    const varian = t6VarianKalimat(jawab.value);
+    if (!varian.length) {
+      pilihan.appendChild(t6El("span", "aleta-t6-lembut", "Tidak ada varian otomatis untuk kalimat ini - ubah sendiri."));
+      return;
+    }
+    for (const v of varian) {
+      const opsi = t6Tombol(`"${t6Pendek(v, 140)}"`, "Pakai kalimat ini", "aleta-t6-varian-opsi");
+      opsi.addEventListener("click", () => {
+        jawab.value = v;
+        jawab.dispatchEvent(new Event("input", { bubbles: true }));
+        pilihan.textContent = "";
+      });
+      pilihan.appendChild(opsi);
+    }
+  });
+  wadah.appendChild(b);
+  wadah.appendChild(pilihan);
+  return wadah;
+}
+
+// ─── abt-28: templat pertanyaan pribadi (di peramban ini) ────────────────────
+
+function t6AlatTemplatPribadi(k, hasil) {
+  const jenis = k.jenis || "umum";
+  const wadah = t6El("span", "aleta-t6-templat");
+  const nama = document.createElement("input");
+  nama.type = "text";
+  nama.className = "aleta-t6 aleta-t6-templat-nama";
+  nama.placeholder = "nama templat saya";
+  const simpan = t6Tombol("☆ Simpan sebagai templat saya", `Pertanyaan saksi pertama disimpan sebagai templat untuk ${jenis} - di peramban ini`, "aleta-t6-kecil");
+  const pilih = document.createElement("select");
+  pilih.className = "aleta-t6 aleta-t6-templat-pilih";
+  const pakai = t6Tombol("Pakai", "Ganti pertanyaan di penyunting dengan templat ini (jawaban tidak diubah)", "aleta-t6-kecil");
+  const kabar = t6El("span", "aleta-t6-lembut");
+  const segar = () => {
+    pilih.textContent = "";
+    const daftar = Array.isArray(k.templat[jenis]) ? k.templat[jenis] : [];
+    const kosong = document.createElement("option");
+    kosong.value = "";
+    kosong.textContent = daftar.length ? "Templat saya ▾" : "belum ada templat saya";
+    pilih.appendChild(kosong);
+    daftar.forEach((t, i) => {
+      const o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = `${t.nama} (${(t.tanya || []).length})`;
+      pilih.appendChild(o);
+    });
+    pakai.disabled = !daftar.length;
+  };
+  simpan.addEventListener("click", () => {
+    const kolom = t6KolomSaksi(hasil)[0];
+    if (!kolom) return;
+    const tanya = kolom.baris.map((b) => String((b.querySelector(".aleta-sdg-tanya") || {}).textContent || "").trim()).filter(Boolean);
+    if (!tanya.length) {
+      kabar.textContent = "Tidak ada pertanyaan untuk disimpan.";
+      return;
+    }
+    const daftar = Array.isArray(k.templat[jenis]) ? k.templat[jenis] : [];
+    const namaTemplat = nama.value.trim() || `Templat ${t6Jam(new Date().toISOString())}`;
+    k.templat[jenis] = [{ nama: namaTemplat, dibuat: new Date().toISOString(), tanya }, ...daftar.filter((t) => t.nama !== namaTemplat)].slice(0, T6_BATAS_TEMPLAT);
+    t6Tulis({ [T6_KUNCI_TEMPLAT]: k.templat });
+    nama.value = "";
+    kabar.textContent = `Tersimpan: "${namaTemplat}" (${tanya.length} pertanyaan) untuk ${jenis}, di peramban ini.`;
+    segar();
+  });
+  pakai.addEventListener("click", () => {
+    const daftar = Array.isArray(k.templat[jenis]) ? k.templat[jenis] : [];
+    const t = daftar[Number(pilih.value)];
+    if (!t) {
+      kabar.textContent = "Pilih templatnya dahulu.";
+      return;
+    }
+    let diganti = 0;
+    let kurang = 0;
+    for (const c of t6KolomSaksi(hasil)) {
+      t.tanya.forEach((q, i) => {
+        const b = c.baris[i];
+        if (!b) {
+          kurang += 1;
+          return;
+        }
+        const el = b.querySelector(".aleta-sdg-tanya");
+        if (!el) return;
+        el.textContent = q;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        diganti += 1;
+      });
+    }
+    kabar.textContent =
+      `${diganti} pertanyaan diganti dari "${t.nama}". Jawaban tidak diubah.` +
+      (kurang ? ` ${kurang} pertanyaan templat tidak punya baris - tambahkan dengan "+ Tambah keterangan".` : "");
+  });
+  segar();
+  wadah.appendChild(nama);
+  wadah.appendChild(simpan);
+  wadah.appendChild(pilih);
+  wadah.appendChild(pakai);
+  wadah.appendChild(kabar);
+  return wadah;
+}
+
+// ─── abt-16: mode sidang ────────────────────────────────────────────────────
+
+/**
+ * Satu pertanyaan per layar, huruf besar. Kotaknya TERIKAT ke kotak jawaban
+ * penyunting: tiap ketikan diteruskan lewat peristiwa input yang sama dengan
+ * mengetik langsung, jadi yang tersimpan ke ABT tetap lewat tombol simpan
+ * penyunting - mode ini tidak menyimpan apa pun sendiri.
+ */
+function t6MulaiModeSidang(k, hasil) {
+  for (const lama of Array.from(document.querySelectorAll(".aleta-t6-sidang"))) lama.remove();
+  const layar = t6El("div", "aleta-t6-sidang");
+  layar.setAttribute("data-tema", t6TemaPanel());
+  layar.setAttribute("role", "dialog");
+  layar.setAttribute("aria-label", "Mode sidang");
+  const kepala = t6El("div", "aleta-t6-sidang-kepala");
+  const pilihSaksi = document.createElement("select");
+  pilihSaksi.className = "aleta-t6 aleta-t6-sidang-saksi";
+  t6KolomSaksi(hasil).forEach((c, i) => {
+    const o = document.createElement("option");
+    o.value = String(i);
+    o.textContent = c.judul || `Saksi ${i + 1}`;
+    pilihSaksi.appendChild(o);
+  });
+  const posisi = t6El("span", "aleta-t6-sidang-posisi");
+  const tutup = t6Tombol("Selesai", "Keluar dari mode sidang (Esc)", "aleta-t6-kecil");
+  kepala.appendChild(t6El("strong", "", "Mode sidang"));
+  kepala.appendChild(pilihSaksi);
+  kepala.appendChild(posisi);
+  kepala.appendChild(tutup);
+  const tanya = t6El("div", "aleta-t6-sidang-tanya");
+  const jawab = document.createElement("textarea");
+  jawab.className = "aleta-t6 aleta-t6-sidang-jawab";
+  jawab.rows = 5;
+  const kaki = t6El("div", "aleta-t6-sidang-kaki");
+  const mundur = t6Tombol("‹ Sebelumnya", "", "");
+  const maju = t6Tombol("Berikutnya ›", "Ctrl+Enter", "aleta-t6-utama");
+  kaki.appendChild(mundur);
+  kaki.appendChild(t6El("span", "aleta-t6-lembut", "Tersimpan ke penyunting saat mengetik - simpan ke ABT tetap lewat tombol simpan penyunting."));
+  kaki.appendChild(maju);
+  layar.appendChild(kepala);
+  layar.appendChild(tanya);
+  layar.appendChild(jawab);
+  layar.appendChild(kaki);
+
+  let ke = 0;
+  const barisSekarang = () => {
+    const c = t6KolomSaksi(hasil)[Number(pilihSaksi.value) || 0];
+    return { c, b: c ? c.baris[ke] : null };
+  };
+  const gambar = () => {
+    const { c, b } = barisSekarang();
+    const n = c ? c.baris.length : 0;
+    ke = Math.max(0, Math.min(ke, Math.max(0, n - 1)));
+    posisi.textContent = n ? `pertanyaan ${ke + 1} dari ${n}` : "tidak ada pertanyaan";
+    tanya.textContent = b ? String((b.querySelector(".aleta-sdg-tanya") || {}).textContent || "") : "";
+    const asli = b && b.querySelector("textarea.aleta-sdg-jawab");
+    jawab.value = asli ? asli.value : "";
+    jawab.disabled = !asli;
+    mundur.disabled = ke <= 0;
+    maju.disabled = ke >= n - 1;
+    try {
+      jawab.focus();
+    } catch {
+      /* fokus hanya kenyamanan */
+    }
+  };
+  jawab.addEventListener("input", () => {
+    const { b } = barisSekarang();
+    const asli = b && b.querySelector("textarea.aleta-sdg-jawab");
+    if (!asli) return;
+    asli.value = jawab.value;
+    asli.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  const tombol = (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      selesai();
+    } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (!maju.disabled) {
+        ke += 1;
+        gambar();
+      }
+    }
+  };
+  function selesai() {
+    document.removeEventListener("keydown", tombol, true);
+    layar.remove();
+  }
+  mundur.addEventListener("click", () => {
+    ke -= 1;
+    gambar();
+  });
+  maju.addEventListener("click", () => {
+    ke += 1;
+    gambar();
+  });
+  pilihSaksi.addEventListener("change", gambar);
+  tutup.addEventListener("click", selesai);
+  document.addEventListener("keydown", tombol, true);
+  document.body.appendChild(layar);
+  gambar();
+}
+
+// ─── abt-26: pemeriksa anonimisasi sebelum unggah ───────────────────────────
+
+/** Nama pihak, NIK, dan alamat yang tergambar di blangko - bahan pemeriksaan. */
+function t6DataPribadi() {
+  const peta = barisVariabel();
+  const nama = new Map();
+  const alamat = new Map();
+  const tambahNama = (teks, dari) => {
+    const s = String(teks || "").replace(/\s+/g, " ").trim();
+    if (s.length >= 3 && !nama.has(s.toLowerCase())) nama.set(s.toLowerCase(), { teks: s, dari });
+  };
+  for (const kode of ["7047", "7048"]) {
+    const item = peta.get(kode);
+    if (!item || keadaanNilai(item.nilai) !== "terisi") continue;
+    const n = t6NamaDariIdentitas(item.nilai);
+    if (n) tambahNama(n.inti, kode);
+    const pola = /\b(Desa|Kelurahan|Dusun|Jalan|Jl\.|Lorong|Kampung|Perumahan|Kompleks)\s+([A-Z][A-Za-z'.-]+(?:\s+[A-Z][A-Za-z'.-]+){0,2})/g;
+    for (const m of item.nilai.matchAll(pola)) {
+      const tempat = m[2].replace(/[.,]+$/, "");
+      if (tempat.length >= 3 && !alamat.has(tempat.toLowerCase())) alamat.set(tempat.toLowerCase(), { teks: tempat, dari: `${kode} (${m[1]})` });
+    }
+  }
+  // Nama pihak pada blangko permohonan (lihat "sebutan bukan nama pihak").
+  for (const kode of ["0098", "0102", "0012", "0015"]) {
+    const item = peta.get(kode);
+    if (!item || keadaanNilai(item.nilai) !== "terisi" || /\d/.test(item.nilai) || item.nilai.length > 60) continue;
+    tambahNama(item.nilai.split(/\s+(?:bin|binti)\s+/i)[0], kode);
+  }
+  return { nama: Array.from(nama.values()), alamat: Array.from(alamat.values()) };
+}
+
+/**
+ * Data pribadi yang masih utuh di teks anonim - beserta letaknya: paragraf
+ * ke berapa, perkiraan halaman, dan potongan kalimat di sekitarnya.
+ */
+function t6PeriksaAnonim(teks, data) {
+  const paragraf = t6Paragraf(teks);
+  const temuan = [];
+  let jalan = 0;
+  const catat = (jenis, kata, p, i, indeks, dari) => {
+    const awal = Math.max(0, indeks - 50);
+    temuan.push({
+      jenis,
+      kata,
+      dari,
+      paragraf: i + 1,
+      halaman: Math.floor((jalan + indeks) / T6_HURUF_PER_HALAMAN) + 1,
+      konteks: `${awal > 0 ? "…" : ""}${p.slice(awal, indeks + kata.length + 50)}${indeks + kata.length + 50 < p.length ? "…" : ""}`,
+    });
+  };
+  paragraf.forEach((p, i) => {
+    for (const m of p.matchAll(/(?<!\d)\d{16}(?!\d)/g)) catat("NIK", m[0], p, i, m.index, "");
+    for (const n of data.nama) {
+      const m = t6PolaKata(n.teks).exec(p);
+      if (m) catat("nama pihak", m[2], p, i, m.index + m[1].length, n.dari);
+    }
+    for (const a of data.alamat) {
+      const m = t6PolaKata(a.teks).exec(p);
+      if (m) catat("alamat", m[2], p, i, m.index + m[1].length, a.dari);
+    }
+    jalan += p.length;
+  });
+  return { temuan, diperiksa: { nama: data.nama.length, alamat: data.alamat.length } };
+}
+
+/**
+ * Dipanggil kerjakanSatuPerkaraAbt SEBELUM unggah - hanya bila t6Aktif().
+ * Pulang true bila unggah boleh berjalan: anonimnya bersih, tidak ada anonim
+ * yang diunggah, saklarnya mati, atau petugas mengonfirmasi sesudah membaca
+ * letak temuannya. Keputusan pengguna: peringatan dengan konfirmasi, bukan
+ * penahanan.
+ */
+async function t6PeriksaAnonimSebelumUnggah(siap, lapor) {
+  if (!t6Nyala("abt-26") || !siap || !siap.isiAnonim) return true;
+  const kabar = typeof lapor === "function" ? lapor : () => {};
+  kabar("memeriksa anonimisasi sebelum unggah…");
+  let hasil;
+  try {
+    hasil = t6PeriksaAnonim(t6TeksRtf(siap.isiAnonim), t6DataPribadi());
+  } catch (galat) {
+    hasil = { temuan: [], galat: String((galat && galat.message) || galat), diperiksa: { nama: 0, alamat: 0 } };
+  }
+  const ringkasJenis = (jenis) => hasil.temuan.filter((x) => x.jenis === jenis).length;
+  if (!hasil.galat && !hasil.temuan.length) {
+    siap.ringkas.push(`anonim diperiksa: NIK, ${hasil.diperiksa.nama} nama, ${hasil.diperiksa.alamat} alamat tersamar`);
+    return true;
+  }
+  const daftar = hasil.temuan.slice(0, 12).map((x) => `${x.jenis} "${x.kata}"${x.dari ? ` (dari ${x.dari})` : ""} - paragraf ${x.paragraf}, ± halaman ${x.halaman}: ${x.konteks}`);
+  const ya = await t6Dialog({
+    judul: "Pemeriksaan anonim sebelum unggah ke SIPP",
+    isi: [
+      hasil.galat
+        ? `Anonim tidak dapat diperiksa (${hasil.galat}). Periksa berkas anonimnya sendiri sebelum melanjutkan.`
+        : `${ringkasJenis("NIK") ? `⚠ ${ringkasJenis("NIK")} NIK utuh` : "✓ NIK tersamar"} · ${ringkasJenis("nama pihak") ? `⚠ ${ringkasJenis("nama pihak")} nama pihak utuh` : "✓ nama pihak tersamar"} · ${ringkasJenis("alamat") ? `⚠ ${ringkasJenis("alamat")} alamat utuh` : "✓ alamat tersamar"}`,
+      t6DaftarDialog("Masih utuh di berkas anonim:", daftar),
+      hasil.temuan.length > 12 ? `… dan ${hasil.temuan.length - 12} lagi.` : "",
+      "ALETA tidak mengubah berkas anonim ABT. Bila dibatalkan: samarkan di ABT, lalu tekan \"Kerjakan perkara ini\" lagi.",
+    ],
+    centang: "Sudah saya periksa",
+    ya: "Tetap unggah ke SIPP",
+    tidak: "Batalkan unggah",
+  });
+  siap.ringkas.push(
+    ya
+      ? `anonim: ${hasil.temuan.length} data pribadi masih utuh - tetap diunggah atas konfirmasi petugas`
+      : `unggah ke SIPP dibatalkan petugas: ${hasil.temuan.length} data pribadi masih utuh di anonim`
+  );
+  try {
+    if (typeof alatCatat === "function") alatCatat("abt-anonim", ya ? "unggah dilanjutkan sesudah konfirmasi anonim" : "unggah dibatalkan di pemeriksaan anonim", `${hasil.temuan.length} temuan`);
+  } catch {
+    /* kotak hitam hanya catatan */
+  }
+  return ya;
 }

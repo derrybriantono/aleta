@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.174.0",
+    dirilis: "2026-09-30T02:30:00+08:00",
+    judul: "Panel ABT dan panel SIPP versi baru (tahap 6-7), mode latihan, dan komentar hakim atas BAS",
+    butir: [
+      "SEMUANYA BERGERBANG, seperti 1.173.x: dalam tampilan Lama panel ABT dan panel SIPP tetap persis seperti sebelumnya (dibuktikan uji perbandingan dengan versi sebelumnya - termasuk urutan pesan ke SIPP). Perbaikan desain hanya di UI Baru; ide fitur di Baru dan UI Baru bila saklarnya menyala. Tidak ada jalur tulis SIPP baru.",
+      "MODE LATIHAN (Super Admin & Admin menyalakannya dari popup). Semua tombol berjalan seperti biasa, tetapi TIDAK ADA yang ditulis ke SIPP maupun ALETA: tombol Simpan SIPP tidak ditekan, isian blangko SIPP tidak diisikan, dan semua kiriman ke portal ditahan. Yang akan ditulis ditampilkan di kotak 'LATIHAN: yang akan ditulis', dengan pita LATIHAN di panel. Berlaku di semua tampilan, bawaannya mati.",
+      "PANEL SIPP (tahap 7). UI Baru: panel berlabuh di kanan (SIPP menyempit, tidak tertutup) dengan lebar yang dapat diatur, kepala satu baris dengan menu ⋯ (tombol lama dipindah utuh ke sana), tab Penetapan/Berkas/Perkara/Putusan berlencana, kartu 'Langkah berikutnya', ringkasan keputusan penetapan dengan 'Tinjau & ubah pilihan', bilah bawah yang menekan tombol Tetapkan asli, 'Batalkan SELURUH penetapan' pindah ke Zona berbahaya dan menuntut nomor perkara diketik, penyunting teks kaya dengan 'Lihat kode', kartu praperiksa bertingkat, Penilaian SK ringkas, cari (Ctrl+K), dan daftar pintasan. Peta kolom blangko pindah ke menu Super Admin. Ide yang dapat dinyalakan antara lain pengingat tenggat (batas hari sama dengan Penilaian SK), antrean 'perkara berikutnya', templat pertimbangan per status (hanya yang disahkan), komentar hakim (baca saja), dan laporkan masalah ke Masukan portal.",
+      "PANEL ABT (tahap 6). UI Baru: panel lebih lebar, langkah 1-5, bilah 'x dari y variabel siap', segmen keyakinan Semua/Ragu/Bentrok/Cukup/Pasti, baris variabel berbentuk tabel, penyunting keterangan saksi layar penuh, dan tombol utama di kaki yang lengket. Ide yang dapat dinyalakan antara lain: kalimat status ramah (rincian teknis tetap ada), pita huruf G dengan CETAK berkonfirmasi, pemeriksa anonimisasi sebelum unggah (berkonfirmasi), daftar variabel wajib sebelum CETAK (peringatan), pratinjau naskah, pemeriksa konsistensi, sorot beda antar saksi, riwayat per variabel dengan pulihkan, urungkan/ulangi, mode sidang, draf keterangan saksi tersimpan otomatis, saran pasal per huruf alasan (hanya yang disahkan dapat disisipkan), dan komentar hakim di baris pertanyaan saksi.",
+      "KOMENTAR HAKIM ATAS BAS (server, migrasi 0053). Tanpa acc: hakim membaca alur BAS dan keterangan saksi perkara di portal (/aleta/bas/komentar, dari Status Perkara dan Alat Bantu Tulis BAS) dan mengomentari bagian yang salah; panitera pengganti melihatnya di panel ABT dan menandainya selesai. Komentar tidak pernah menahan pekerjaan.",
+      "TEMPLAT & DASAR HUKUM, VARIABEL WAJIB (server, migrasi 0053). Templat pertimbangan (gugur, dicabut, verstek, tidak diterima) dan pasal per huruf alasan dibuat sebagai DRAF - belum disahkan - sampai Super Admin mengesahkannya di Integrasi e-Court. Variabel wajib ABT diukur dari putusan yang sudah diterima (tombol Ukur ulang) dan dapat diubah Super Admin.",
+      "Ditunda: salin keterangan saksi dari perkara serupa dan kirim keterangan saksi ke BAS SIPP (belum ada sumber data / jalur tulis yang aman), sisa panjar & tarif radius (menunggu SK), beban hakim dan giliran juru sita berbentuk bilah (datanya belum terstruktur).",
+    ],
+  },
+  {
     versi: "1.173.1",
     dirilis: "2026-09-29T23:00:00+08:00",
     judul: "Popup, widget, dan panel portal versi baru (tahap 2-4), tampilan dapat diterapkan admin ke pegawai lain (tahap 5), dan istilah server/blangko",

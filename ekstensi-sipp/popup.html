@@ -687,6 +687,26 @@
   </details>
 </div>
 
+<!-- ===================================================================
+     MODE LATIHAN (ide sipp-28) - SUPER ADMIN DAN ADMIN SAJA
+     ===================================================================
+     Keputusan pengguna 29 September 2026. Saklar keselamatan untuk
+     melatih petugas baru di SIPP sungguhan: semua tombol panel berjalan,
+     tetapi tidak ada yang ditulis ke SIPP maupun ALETA. Berlaku di semua
+     tampilan (Lama juga), MATI sebagai bawaan. Lihat panel-alat.js bagian
+     3d. Tersembunyi bagi peran lain; bila menyala, peran lain hanya
+     melihat kabarnya (tidak dapat mematikannya). -->
+<div id="bagianLatihan" class="bagian-uji" hidden>
+  <label class="uji-nyata">
+    <input type="checkbox" id="modeLatihan">
+    <span>Mode latihan - tombol berjalan, tetapi tidak ada yang ditulis ke SIPP maupun ALETA</span>
+  </label>
+  <p id="latihanKet" class="saklar-ket"></p>
+</div>
+<div id="latihanLainBaris" class="bagian-uji" hidden>
+  <p class="uji-pesan-lain">Mode latihan menyala di PC ini: tidak ada yang ditulis ke SIPP maupun ALETA. Hanya Admin atau Super Admin yang dapat mematikannya.</p>
+</div>
+
 <!-- Bagi yang BUKAN Super Admin, bila Super Admin meninggalkan tampilan uji
      menyala di PC ini: disebut, dan dapat dikembalikan ke Lama. Kembali ke
      Lama selalu aman - itu keadaan bawaan ekstensi. -->

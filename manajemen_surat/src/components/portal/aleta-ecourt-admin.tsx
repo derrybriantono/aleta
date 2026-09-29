@@ -31,6 +31,8 @@ import { AletaEcourtPenarikan } from "@/components/portal/aleta-ecourt-penarikan
 import { AletaEcourtSkMajelis } from "@/components/portal/aleta-ecourt-sk-majelis";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-tampilan-ekstensi";
+import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templat-hukum";
+import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
 import { AletaEcourtTipeKeluaran } from "@/components/portal/aleta-ecourt-tipe-keluaran";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -351,6 +353,12 @@ export function AletaEcourtAdmin() {
         {/* Sesudah kewenangan: siapa memakai ekstensi dibaca lebih dulu,
             baru kalimat dan penunjuk yang dikeluarkannya. */}
         <AletaEcourtTipeKeluaran />
+        {/* Tahap 6-7: dua daftar yang dibaca ekstensi dan disahkan/diubah
+            Super Admin. Keduanya sesudah tipe keluaran: sama-sama "kalimat dan
+            penunjuk yang dikeluarkan ekstensi". Jangkar #templat-hukum dan
+            #abt-wajib. */}
+        <AletaEcourtTemplatHukum />
+        <AletaEcourtAbtWajib />
       </div>
 
       <AletaBotEcourtPengaturan />

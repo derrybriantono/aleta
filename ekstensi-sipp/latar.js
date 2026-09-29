@@ -2395,7 +2395,7 @@ void angkaIkonPerbarui();
 // Hanya berjalan bila popup-7 berlaku (tampilan Baru / UI Baru, uji lokal
 // ATAU diterapkan admin). Setelan pribadi bukan tindakan keluar: tidak
 // menyentuh SIPP, ABT, maupun WhatsApp, jadi mode coba tidak menahannya.
-const SINKRON_TANDA_KUNCI = ["tandaChecklist", "asalPortal", "ujiTampilan", "ujiFitur", "tampilanServer", "aktif", "sinkronTandaMeta"];
+const SINKRON_TANDA_KUNCI = ["tandaChecklist", "asalPortal", "ujiTampilan", "ujiFitur", "tampilanServer", "aktif", "sinkronTandaMeta", "modeLatihan"];
 const SINKRON_TANDA_SETELAN = "checklist.tanda";
 const SINKRON_TANDA_TARIK_MS = 10 * 60 * 1000;
 let sinkronTandaAntrean = Promise.resolve();
@@ -2457,6 +2457,9 @@ async function sinkronTandaSekali(alasan) {
     return;
   }
   if (s.aktif === false) return;
+  // Mode latihan (Super Admin/Admin, tahap 7): tidak ada yang ditulis ke
+  // server - termasuk setelan pribadi. Tanda tetap di peramban.
+  if (s.modeLatihan === true) return;
   const b = tampilanBerlakuLatar(s);
   if (b.mode === "lama" || b.fitur["popup-7"] !== true) return;
   const asal = String(s.asalPortal || "").replace(/\/+$/, "");

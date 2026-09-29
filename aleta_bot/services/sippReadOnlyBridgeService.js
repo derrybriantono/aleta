@@ -1937,6 +1937,186 @@ ORDER BY v.${quoteIdentifier("no_var")}`;
 }
 
 /**
+ * Menghitung variabel ABT yang terisi pada perkara yang sudah diputus - murni,
+ * tanpa basis data, supaya dapat diuji dengan baris buatan.
+ *
+ * ============================================================================
+ * PENYEBUTNYA "SEJAK VARIABEL ITU MULAI DIPAKAI", BUKAN SELURUH SEJARAH
+ * ============================================================================
+ *
+ * Variabel ABT bertambah dari tahun ke tahun. Menghitung persen terisi atas
+ * seluruh putusan sejak 2018 membuat variabel yang baru dipakai dua tahun
+ * terakhir tampak "jarang diisi" padahal selalu diisi sejak ada. Maka per
+ * (jenis perkara, variabel), penyebutnya perkara jenis itu yang diputus pada
+ * atau sesudah tanggal putusan PERTAMA yang mengisi variabel itu.
+ *
+ * Terukur atas salinan Donggala (aps_badilag x sipp_donggala, 14 Sep 2026):
+ * Cerai Gugat 1214 "Alat-alat bukti" 1609/1643 (97,9%); Istbat Nikah 5105,
+ * 5197, 8087, 1001-1003, 1046, 0650, 0651 di atas 94%. Variabel alur baru
+ * (7035, 9944, 8503) berkisar 50% - tidak lolos ambang 90% portal.
+ *
+ * dasar: [{ perkara_id, jenis, tgl }]  - perkara diputus yang punya isian ABT
+ * isi:   [{ perkara_id, no_var }]      - isian ABT yang tidak kosong
+ * nama:  [{ no_var, nama }]            - abt_variabel
+ */
+function hitungVariabelTerisi({ dasar = [], isi = [], nama = [], batasBawah = 0.5, minimalPerkara = 10 } = {}) {
+  const kodeVar = (nilai) => {
+    const t = safeString(nilai);
+    return /^\d{1,5}$/.test(t) ? t.padStart(4, "0") : "";
+  };
+
+  const perkara = new Map();
+  for (const baris of Array.isArray(dasar) ? dasar : []) {
+    const id = safeString(baris.perkara_id);
+    const jenis = safeString(baris.jenis);
+    const tgl = safeString(dateString(baris.tgl)).slice(0, 10);
+    if (!id || !jenis || !/^\d{4}-\d{2}-\d{2}$/.test(tgl)) continue;
+    const lama = perkara.get(id);
+    if (!lama || tgl < lama.tgl) perkara.set(id, { jenis, tgl });
+  }
+
+  const tanggalPerJenis = new Map();
+  for (const { jenis, tgl } of perkara.values()) {
+    if (!tanggalPerJenis.has(jenis)) tanggalPerJenis.set(jenis, []);
+    tanggalPerJenis.get(jenis).push(tgl);
+  }
+  for (const daftar of tanggalPerJenis.values()) daftar.sort();
+
+  const perVar = new Map();
+  for (const baris of Array.isArray(isi) ? isi : []) {
+    const p = perkara.get(safeString(baris.perkara_id));
+    const kode = kodeVar(baris.no_var);
+    if (!p || !kode) continue;
+    const kunci = `${p.jenis}\u0000${kode}`;
+    if (!perVar.has(kunci)) perVar.set(kunci, { jenis: p.jenis, kode, perkara: new Set(), mulai: p.tgl });
+    const v = perVar.get(kunci);
+    v.perkara.add(safeString(baris.perkara_id));
+    if (p.tgl < v.mulai) v.mulai = p.tgl;
+  }
+
+  const namaVar = new Map();
+  for (const baris of Array.isArray(nama) ? nama : []) {
+    const kode = kodeVar(baris.no_var);
+    if (kode) namaVar.set(kode, safeString(baris.nama));
+  }
+
+  // Banyaknya tanggal >= mulai pada daftar terurut - pencarian biner.
+  const sejak = (daftar, mulai) => {
+    let kiri = 0;
+    let kanan = daftar.length;
+    while (kiri < kanan) {
+      const tengah = (kiri + kanan) >> 1;
+      if (daftar[tengah] < mulai) kiri = tengah + 1;
+      else kanan = tengah;
+    }
+    return daftar.length - kiri;
+  };
+
+  const hasil = new Map();
+  for (const v of perVar.values()) {
+    const n = sejak(tanggalPerJenis.get(v.jenis) || [], v.mulai);
+    const terisi = v.perkara.size;
+    if (n < minimalPerkara || terisi / n < batasBawah) continue;
+    if (!hasil.has(v.jenis)) {
+      hasil.set(v.jenis, { jenis: v.jenis, jumlahPerkara: (tanggalPerJenis.get(v.jenis) || []).length, variabel: [] });
+    }
+    hasil.get(v.jenis).variabel.push({
+      noVar: v.kode,
+      nama: namaVar.get(v.kode) || "",
+      jumlahPerkara: n,
+      jumlahTerisi: terisi,
+      mulai: v.mulai,
+    });
+  }
+
+  const jenis = [...hasil.values()].sort((a, b) => b.jumlahPerkara - a.jumlahPerkara || a.jenis.localeCompare(b.jenis));
+  for (const j of jenis) {
+    j.variabel.sort(
+      (a, b) => b.jumlahTerisi / b.jumlahPerkara - a.jumlahTerisi / a.jumlahPerkara || a.noVar.localeCompare(b.noVar)
+    );
+  }
+  return { jumlahPerkaraDasar: perkara.size, jenis };
+}
+
+/**
+ * Ukur variabel ABT yang selalu terisi per jenis perkara - dasar daftar
+ * "variabel wajib sebelum CETAK" di portal (peringatan, tidak menahan).
+ *
+ * HANYA SELECT, empat kueri tanpa satu pun masukan pemanggil di dalamnya
+ * (ambang ikut sebagai angka yang dijepit, bukan sebagai teks SQL). Isian
+ * yang hanya "-", "." atau "..." dihitung kosong: itu tanda "belum diisi"
+ * yang dicetak ABT, bukan isian.
+ *
+ * Yang dihitung hanya perkara yang PUNYA isian ABT: perkara yang tidak pernah
+ * dibuat di ABT bukan bukti bahwa sebuah variabel tidak wajib.
+ */
+async function ukurVariabelTerisi(params = {}) {
+  const connectionKey = normalizeConnectionKey(params.connectionKey);
+  const skema = await cariSkemaAbt(connectionKey);
+  if (!skema) return { ada: false, sebab: "Basis data APS Badilag tidak ditemukan.", jenis: [] };
+
+  const jepit = (nilai, bawah, atas, bawaan) => {
+    const n = Number(nilai);
+    return Number.isFinite(n) ? Math.min(atas, Math.max(bawah, n)) : bawaan;
+  };
+  const batasBawah = jepit(params.batasBawah, 0.1, 1, 0.5);
+  const minimalPerkara = Math.round(jepit(params.minimalPerkara, 1, 1000, 10));
+  const s = quoteIdentifier(skema);
+
+  try {
+    const dasar = await runReadOnly(
+      connectionKey,
+      `SELECT p.${quoteIdentifier("perkara_id")} AS perkara_id,
+       p.${quoteIdentifier("jenis_perkara_nama")} AS jenis,
+       MIN(pp.${quoteIdentifier("tanggal_putusan")}) AS tgl
+FROM ${quoteIdentifier("perkara")} p
+JOIN ${quoteIdentifier("perkara_putusan")} pp ON pp.${quoteIdentifier("perkara_id")} = p.${quoteIdentifier("perkara_id")}
+WHERE pp.${quoteIdentifier("tanggal_putusan")} IS NOT NULL
+  AND p.${quoteIdentifier("perkara_id")} IN (SELECT t.${quoteIdentifier("perkara_id")} FROM ${s}.${quoteIdentifier("abt_data_teks")} t)
+GROUP BY p.${quoteIdentifier("perkara_id")}, p.${quoteIdentifier("jenis_perkara_nama")}`,
+      []
+    );
+    const isiTeks = await runReadOnly(
+      connectionKey,
+      `SELECT t.${quoteIdentifier("perkara_id")} AS perkara_id, t.${quoteIdentifier("no_var")} AS no_var
+FROM ${s}.${quoteIdentifier("abt_data_teks")} t
+WHERE t.${quoteIdentifier("data")} IS NOT NULL AND TRIM(t.${quoteIdentifier("data")}) NOT IN ('', '-', '.', '...')`,
+      []
+    );
+    const isiTanggal = await runReadOnly(
+      connectionKey,
+      `SELECT t.${quoteIdentifier("perkara_id")} AS perkara_id, t.${quoteIdentifier("no_var")} AS no_var
+FROM ${s}.${quoteIdentifier("abt_data_tanggal")} t
+WHERE t.${quoteIdentifier("data")} IS NOT NULL AND t.${quoteIdentifier("data")} > '1900-01-01'`,
+      []
+    );
+    const nama = await runReadOnly(
+      connectionKey,
+      `SELECT v.${quoteIdentifier("no_var")} AS no_var, v.${quoteIdentifier("nama")} AS nama FROM ${s}.${quoteIdentifier("abt_variabel")} v`,
+      []
+    );
+
+    const hitung = hitungVariabelTerisi({
+      dasar,
+      isi: [...(Array.isArray(isiTeks) ? isiTeks : []), ...(Array.isArray(isiTanggal) ? isiTanggal : [])],
+      nama,
+      batasBawah,
+      minimalPerkara,
+    });
+    return {
+      ada: true,
+      sumber: `${skema}.abt_data_teks + abt_data_tanggal x perkara_putusan`,
+      diukurPada: new Date().toISOString(),
+      batasBawah,
+      minimalPerkara,
+      ...hitung,
+    };
+  } catch (error) {
+    return { ada: false, sebab: externalDbService.sanitizeError(error), jenis: [] };
+  }
+}
+
+/**
  * Katalog blangko BAS dan putusan dari APS Badilag.
  *
  * ============================================================================
@@ -2539,6 +2719,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "blangko.katalog": getKatalogBlangko,
     "abt.namaVariabel": getNamaVariabel,
     "abt.semuaVariabel": getSemuaVariabel,
+    "abt.ukurVariabelTerisi": ukurVariabelTerisi,
     "ecourt.dokumenPerkara": getDokumenECourt,
     "blangko.baca": bacaBlangko,
     "blangko.isi": isiBlangko,
@@ -2590,4 +2771,6 @@ module.exports = {
   // Dibuka agar dapat dibuktikan sendiri terhadap PHP SIPP tanpa menyentuh
   // basis data - lihat scripts/verify-sidik-sandi.js.
   sidikSandiSipp,
+  // Dibuka untuk uji hitungan variabel wajib ABT tanpa basis data.
+  hitungVariabelTerisi,
 };

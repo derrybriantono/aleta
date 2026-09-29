@@ -309,7 +309,12 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // sekaligus harus tahu berkas MANA yang gagal.
     // (27 sejak 1.144.0: daftar ruangan sidang ikut lewat alatAmbil, supaya
     // gagalnya berbunyi sama dengan permintaan lain yang dilihat petugas.
-    expect(lewatAlat).toBe(29);
+    // 31 sejak Tahap 7 (panel SIPP Baru / UI Baru, 29 September 2026): dua
+    // lagi, keduanya hanya di luar tampilan Lama - t7AmbilJson (satu pintu
+    // bacaan GET templat pertimbangan, komentar hakim atas BAS, checklist;
+    // 404 berbunyi "belum tersedia di server") dan Laporkan masalah (sipp-30),
+    // yang gagalnya harus menyebut sebabnya, termasuk "ditahan mode latihan".
+    expect(lewatAlat).toBe(31);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

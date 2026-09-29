@@ -526,6 +526,8 @@ async function periksaAkunAleta(asal) {
     void pasangPemilihWarnaPopup(peran);
     // Pengalih uji tampilan - juga hanya bagi super admin, diputuskan di sini.
     void pasangUjiTampilan(peran);
+    // Mode latihan (sipp-28) - Super Admin DAN Admin, diputuskan di sini pula.
+    void pasangModeLatihan(peran);
 
     // Versi yang disajikan portal ikut datang pada jawaban yang sama - satu
     // permintaan, dua pertanyaan terjawab.
@@ -914,6 +916,76 @@ async function pasangUjiTampilan(peran) {
   tulisKetUji();
   bagian.hidden = false;
 }
+
+/**
+ * ============================================================================
+ * MODE LATIHAN (IDE sipp-28, TAHAP 7) - SUPER ADMIN DAN ADMIN SAJA
+ * ============================================================================
+ *
+ * Keputusan pengguna 29 September 2026: yang menyalakan dan mematikannya
+ * hanya Super Admin dan Admin. Kuncinya "modeLatihan" di chrome.storage.local
+ * - SAMA dengan yang dibaca panel-alat.js (bagian 3d), dan tab yang terbuka
+ * ikut seketika lewat onChanged.
+ *
+ * Peran dikenali dengan aturan yang sama dengan chip peran panel
+ * (alatKelasPeran): "super" lalu "admin". Peran lain tidak melihat saklarnya
+ * sama sekali; bila latihan sedang menyala di PC ini, mereka hanya membaca
+ * kabarnya - saklar keselamatan tidak boleh dimatikan oleh yang sedang
+ * dilatih.
+ *
+ * Dipanggil dua kali: sekali saat jendela dibuka (peran belum diketahui -
+ * hanya kabar bila menyala), sekali lagi sesudah portal menjawab siapa yang
+ * masuk. Selama mati dan bukan admin, jendela ini persis seperti sebelumnya.
+ */
+const KUNCI_MODE_LATIHAN = "modeLatihan";
+/** Jawaban portal yang datang lebih dulu tidak boleh ditimpa panggilan pembuka. */
+let latihanPeranDiketahui = false;
+
+function peranBolehLatihan(peran) {
+  const p = String(peran || "").toLowerCase();
+  return /super/.test(p) || /admin/.test(p);
+}
+
+async function pasangModeLatihan(peran) {
+  const bagian = document.getElementById("bagianLatihan");
+  const lain = document.getElementById("latihanLainBaris");
+  const kotak = document.getElementById("modeLatihan");
+  const ket = document.getElementById("latihanKet");
+  if (!bagian || !kotak) return;
+  if (peran) latihanPeranDiketahui = true;
+  let nyala = false;
+  try {
+    const simpan = penyimpanan ? await penyimpanan.get([KUNCI_MODE_LATIHAN]) : {};
+    nyala = Boolean(simpan && simpan[KUNCI_MODE_LATIHAN] === true);
+  } catch {
+    nyala = false;
+  }
+  if (!peran && latihanPeranDiketahui) return;
+  if (!peranBolehLatihan(peran)) {
+    bagian.hidden = true;
+    if (lain) lain.hidden = !nyala;
+    return;
+  }
+  if (lain) lain.hidden = true;
+  const tulisKet = () => {
+    if (!ket) return;
+    ket.textContent = kotak.checked
+      ? "MENYALA: medan blangko SIPP tidak diisi, Simpan tidak ditekan, dan tidak ada yang dikirim ke ALETA. Yang akan ditulis tampil di catatan latihan."
+      : "Mati (bawaan). Nyalakan saat melatih petugas baru di SIPP sungguhan.";
+  };
+  kotak.checked = nyala;
+  if (!bagian.dataset.terpasang) {
+    bagian.dataset.terpasang = "ya";
+    kotak.addEventListener("change", () => {
+      if (penyimpanan) void penyimpanan.set({ [KUNCI_MODE_LATIHAN]: kotak.checked === true });
+      tulisKet();
+    });
+  }
+  tulisKet();
+  bagian.hidden = false;
+}
+
+void pasangModeLatihan("");
 
 const tombolTema = document.getElementById("tombolTema");
 let temaPopup = "ikut";

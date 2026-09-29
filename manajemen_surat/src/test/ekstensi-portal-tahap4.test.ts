@@ -668,8 +668,14 @@ describe("isi ide per bagian", () => {
 // ============================================================================
 describe("panel.css: blok Tahap 4 seluruhnya bersyarat", () => {
   const i = GAYA.indexOf("PANEL PORTAL - TAHAP 4");
+  // Berakhir di blok bertanda berikutnya ("... TAHAP 6 (MULAI)", "... TAHAP 7
+  // (MULAI)") - blok itu milik panel lain dan dijaga ujinya sendiri
+  // (ekstensi-sipp-tahap7.test.ts untuk panel SIPP). Tanpa penanda sesudahnya,
+  // blok ini sampai akhir berkas seperti semula.
+  const berikut = GAYA.slice(i).search(/TAHAP \d+ \(MULAI\)/);
+  const ujung = berikut > 0 ? GAYA.lastIndexOf("/*", i + berikut) : GAYA.length;
   // Dipotong dari pembuka komentar judulnya, supaya komentar itu ikut terbuang.
-  const blok = GAYA.slice(GAYA.lastIndexOf("/*", i)).replace(/\/\*[\s\S]*?\*\//g, "");
+  const blok = GAYA.slice(GAYA.lastIndexOf("/*", i), ujung).replace(/\/\*[\s\S]*?\*\//g, "");
 
   it("blok bertanda ada di akhir berkas", () => {
     expect(i).toBeGreaterThan(0);

@@ -89,6 +89,69 @@ export const DDL_EKSTENSI_TAMPILAN = {
   indeks: [],
 } as const;
 
+/**
+ * Komentar hakim atas BAS, templat pertimbangan & dasar hukum, dan variabel
+ * wajib ABT - cermin PERSIS dari drizzle/0053_aleta_bas_komentar_templat_abt_wajib.sql.
+ *
+ * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
+ * menjalankan drizzle/*.sql, dan penjaga komentar-templat-wajib-skema.test.ts
+ * membandingkan konstanta ini dengan isi berkasnya. Benih templat TIDAK
+ * ditulis di sini: pastikanBenihTemplat di modules/aleta-ecourt/templat-hukum.ts
+ * menanamnya dari src/lib/templat-hukum.ts.
+ */
+export const DDL_KOMENTAR_TEMPLAT_WAJIB = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_bas_komentar (
+  id TEXT PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL,
+  perkara_id TEXT,
+  sidang_ke INTEGER,
+  bagian TEXT NOT NULL,
+  kutipan TEXT NOT NULL DEFAULT '',
+  isi TEXT NOT NULL,
+  penulis_id TEXT NOT NULL,
+  dibuat_pada TEXT NOT NULL,
+  selesai SMALLINT NOT NULL DEFAULT 0 CHECK (selesai IN (0, 1)),
+  diselesaikan_oleh TEXT NOT NULL DEFAULT '',
+  diselesaikan_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_templat_hukum (
+  id TEXT PRIMARY KEY,
+  jenis TEXT NOT NULL CHECK (jenis IN ('pertimbangan', 'pasal')),
+  kunci TEXT NOT NULL,
+  judul TEXT NOT NULL,
+  isi TEXT NOT NULL,
+  benih SMALLINT NOT NULL DEFAULT 0 CHECK (benih IN (0, 1)),
+  disahkan_oleh TEXT NOT NULL DEFAULT '',
+  disahkan_pada TEXT NOT NULL DEFAULT '',
+  dihapus_pada TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL,
+  dibuat_pada TEXT NOT NULL,
+  diubah_oleh TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_abt_variabel_wajib (
+  jenis TEXT NOT NULL,
+  kode TEXT NOT NULL,
+  jenis_nama TEXT NOT NULL DEFAULT '',
+  nama TEXT NOT NULL DEFAULT '',
+  sumber TEXT NOT NULL CHECK (sumber IN ('ukur', 'admin')),
+  jumlah_perkara INTEGER,
+  jumlah_terisi INTEGER,
+  aktif SMALLINT NOT NULL DEFAULT 1 CHECK (aktif IN (0, 1)),
+  ditetapkan_admin SMALLINT NOT NULL DEFAULT 0 CHECK (ditetapkan_admin IN (0, 1)),
+  diukur_pada TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL,
+  PRIMARY KEY (jenis, kode)
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_bas_komentar_nomor ON aleta_bas_komentar(nomor_perkara, dibuat_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_templat_hukum_jenis ON aleta_templat_hukum(jenis, kunci)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1082,6 +1145,8 @@ const schemaStatements = [
   ...DDL_TIPE_KELUARAN.tabel,
   // Tampilan ekstensi yang diterapkan dan setelan pribadi ekstensi (0052).
   ...DDL_EKSTENSI_TAMPILAN.tabel,
+  // Komentar hakim atas BAS, templat hukum, variabel wajib ABT (0053).
+  ...DDL_KOMENTAR_TEMPLAT_WAJIB.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3021,6 +3086,7 @@ const indexStatements = [
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_saklar_periksa_golongan ON aleta_saklar_periksa(golongan)`,
   `CREATE INDEX IF NOT EXISTS idx_saklar_riwayat_golongan ON aleta_saklar_riwayat(golongan, pada)`,
   ...DDL_TIPE_KELUARAN.indeks,
+  ...DDL_KOMENTAR_TEMPLAT_WAJIB.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

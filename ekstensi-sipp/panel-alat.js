@@ -2629,6 +2629,15 @@ const ALETA_COBA_BOLEH = [
   // Setelan PRIBADI (tahap 5): urutan pintasan, tanda checklist - tidak
   // mengirim apa pun ke luar dan tidak menyentuh SIPP, ABT, maupun WhatsApp.
   /\/aleta\/api\/aleta-ecourt\/ekstensi\/setelan(?:[?#]|$)/,
+  // Menandai komentar hakim atas BAS "selesai" (tahap 6-7): catatan internal
+  // antar-petugas, tidak menyentuh SIPP, ABT, maupun WhatsApp.
+  /\/aleta\/api\/aleta-ecourt\/bas-komentar(?:[?#]|$)/,
+  // Laporkan masalah (ide sipp-30, tahap 7): satu baris feedback_requests
+  // plus audit portal - dibaca admin di menu Masukan Pengguna. Tidak mengirim
+  // WhatsApp, tidak menyentuh SIPP maupun ABT. Justru selama mencoba tampilan
+  // baru Super Admin paling perlu melaporkan yang janggal. Mode LATIHAN tetap
+  // menahannya: di sana tidak satu pun catatan ALETA boleh lahir.
+  /\/aleta\/api\/feedback(?:[?#]|$)/,
 ];
 
 function alatUjiBersihMode(x) {
@@ -2898,6 +2907,308 @@ function alatDengarkanSenyap() {
   }
 }
 
+/* ─── 3d. MODE LATIHAN (ide sipp-28) ─────────────────────────────────────────
+ *
+ * Saklar keselamatan milik Super Admin dan Admin (keputusan pengguna 29
+ * September 2026), dinyalakan dari popup. Untuk melatih petugas baru di SIPP
+ * yang SUNGGUHAN: semua tombol panel berjalan seperti biasa, tetapi tidak ada
+ * satu pun yang ditulis ke SIPP maupun ke ALETA - dan yang AKAN ditulis
+ * diperlihatkan di layar ("LATIHAN: yang akan ditulis ...").
+ *
+ * Bedanya dengan dua penahan yang sudah ada:
+ *
+ *   mode kering   menahan tulisan ke /aleta/api dan tombol Simpan SIPP;
+ *                 medan blangko SIPP TETAP diisi, supaya isiannya dapat
+ *                 diperiksa di layar
+ *   mode coba     menyertai tampilan uji Super Admin; menahan non-GET kecuali
+ *                 ALETA_COBA_BOLEH, termasuk setelan pribadi dan Masukan
+ *   mode latihan  menahan SEMUA non-GET kecuali daftar hitung/baca yang lebih
+ *                 sempit lagi (ALETA_LATIHAN_BOLEH), tombol Simpan SIPP, DAN
+ *                 pengisian medan blangko SIPP ("isi" jembatan - lihat
+ *                 kirimKeJembatan di konten.js)
+ *
+ * Pengisian medan ikut ditahan, dan itu sengaja berbeda dengan mode kering.
+ * Yang dilatih petugas baru; kebiasaan pertama petugas baru sesudah borang
+ * terisi adalah menekan Simpan milik SIPP sendiri - tombol halaman yang TIDAK
+ * dapat ditahan ekstensi. Borang yang terisi di bawah tanda "latihan" adalah
+ * senjata terkokang. Yang ingin melihat isiannya di layar memakai mode kering.
+ *
+ * Arah kesalahannya sama dengan mode coba: yang belum diperiksa ditahan.
+ * Permintaan yang ditahan dijawab 423 dengan alasan "mode_latihan" - panel
+ * menampilkan kalimatnya - dan dicatat di kotak "Catatan latihan" bersama
+ * ringkasan badannya.
+ *
+ * Bawaannya MATI, dan selama mati tidak ada yang berubah: tidak ada atribut,
+ * tidak ada kotak, tidak ada permintaan yang ditahan. Berlaku di SEMUA
+ * tampilan (Lama juga) - ia saklar keselamatan, bukan fitur tampilan uji.
+ */
+const ALAT_LATIHAN_KUNCI = "modeLatihan";
+const ALAT_LATIHAN_MAKS = 30;
+let alatLatihanNyalaKini = false;
+/** Sebabnya sama dengan alatKeringDisetel - pilihan di halaman ini menang atas bacaan yang masih di jalan. */
+let alatLatihanDisetel = false;
+/** Sudahkah penyimpanan terbaca sekali? Sebelum itu tulisan MENUNGGU bacaannya. */
+let alatLatihanTerbaca = false;
+let alatLatihanSiap = null;
+/** Hanya di memori: badan permintaan dapat memuat nama pihak, dan tidak perlu bertahan. */
+const alatLatihanCatatan = [];
+
+/**
+ * Non-GET yang TETAP boleh selama latihan: ALETA_COBA_BOLEH dikurangi yang
+ * menyimpan catatan di ALETA (setelan pribadi, Masukan). Masing-masing hanya
+ * membaca atau menghitung - lihat catatan ALETA_COBA_BOLEH.
+ */
+const ALETA_LATIHAN_BOLEH = [
+  /\/aleta\/api\/aleta-bot\/abt\/pdf(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-bot\/abt\/usulan(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-ecourt\/putusan\/praperiksa(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-bot\/sipp-konteks\/massal(?:[?#]|$)/,
+  /\/aps_badilag\/.*\/main\/cari(?:[?#]|$)/,
+];
+
+/** Sebutan manusiawi untuk rute yang paling sering ditahan. */
+const ALAT_LATIHAN_SEBUTAN = [
+  [/\/penunjukan\/tulis(?:[?#]|$)/, "Menuliskan penetapan ke SIPP"],
+  [/\/penunjukan\/hapus-semua(?:[?#]|$)/, "Membatalkan SELURUH penetapan di SIPP"],
+  [/\/penunjukan\/hapus(?:[?#]|$)/, "Membatalkan penetapan di SIPP"],
+  [/\/penunjukan\/catat(?:[?#]|$)/, "Mencatat isian blangko di ALETA"],
+  [/\/penunjukan\/antrean(?:[?#]|$)/, "Meneruskan penetapan ke pejabat"],
+  [/\/putusan\/unggah-sipp(?:[?#]|$)/, "Mengunggah putusan ke SIPP"],
+  [/\/putusan\/unggah-naskah(?:[?#]|$)/, "Mengunggah naskah putusan ke ALETA"],
+  [/\/putusan\/isian-sipp(?:[?#]|$)/, "Menyusun usulan isian putusan"],
+  [/\/aleta\/api\/feedback(?:[?#]|$)/, "Mengirim laporan masalah ke Masukan ALETA"],
+  [/\/aps_badilag\//, "Menyimpan ke ABT"],
+];
+
+function alatLatihanNyala() {
+  return alatLatihanNyalaKini === true;
+}
+
+async function alatMuatLatihan() {
+  let terbaca = false;
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_LATIHAN_KUNCI]);
+    terbaca = simpan[ALAT_LATIHAN_KUNCI] === true;
+  } catch {
+    terbaca = false;
+  }
+  alatLatihanTerbaca = true;
+  if (alatLatihanDisetel) return alatLatihanNyalaKini;
+  alatLatihanNyalaKini = terbaca;
+  alatTandaiLatihan();
+  return alatLatihanNyalaKini;
+}
+
+function alatDengarkanLatihan() {
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local" || !ubah[ALAT_LATIHAN_KUNCI]) return;
+      const sebelum = alatLatihanNyalaKini;
+      alatLatihanNyalaKini = ubah[ALAT_LATIHAN_KUNCI].newValue === true;
+      alatLatihanDisetel = true;
+      alatLatihanTerbaca = true;
+      if (sebelum !== alatLatihanNyalaKini) {
+        alatCatat("latihan", alatLatihanNyalaKini ? "mode latihan DINYALAKAN" : "mode latihan dimatikan", "");
+      }
+      alatTandaiLatihan();
+    });
+  } catch {
+    /* tanpa pendengarnya, pilihan berlaku saat halaman dimuat ulang */
+  }
+}
+
+/**
+ * Penanda <html data-aleta-latihan="ya"> - pita panel dan label halaman
+ * mengambil isyarat dari sini. Dilepas seluruhnya saat mati, bersama kotak
+ * catatannya: halaman kembali persis seperti sebelum latihan.
+ */
+function alatTandaiLatihan() {
+  try {
+    const akar = document.documentElement;
+    if (alatLatihanNyalaKini) akar.setAttribute("data-aleta-latihan", "ya");
+    else akar.removeAttribute("data-aleta-latihan");
+    if (!alatLatihanNyalaKini) {
+      const kotak = document.getElementById("aleta-latihan-kotak");
+      if (kotak) kotak.remove();
+      alatLatihanCatatan.length = 0;
+    }
+  } catch {
+    /* tanpa penanda, penahanan tetap berlaku - hanya tidak terlihat */
+  }
+  try {
+    document.dispatchEvent(new CustomEvent("aleta-latihan-berubah", { detail: { nyala: alatLatihanNyalaKini } }));
+  } catch {
+    /* yang mendengarkan akan ikut saat halaman dimuat ulang */
+  }
+}
+
+/** Apakah permintaan ini harus ditahan mode latihan? GET dan HEAD tidak pernah. */
+function alatLatihanMenahan(alamat, cara) {
+  if (!alatLatihanNyala()) return false;
+  const c = String(cara || "GET").toUpperCase();
+  if (c === "GET" || c === "HEAD") return false;
+  const a = String(alamat || "");
+  if (ALETA_LATIHAN_BOLEH.some((pola) => pola.test(a))) return false;
+  // Tanya-jawab ABT: bacaannya sama rutenya dengan simpanannya (lihat
+  // alatCobaMenahan) - yang tanpa aksi=simpan hanya membaca.
+  if (/\/tanyajawab_perkara_edit\?/.test(a) && !/[?&]aksi=simpan(?:&|$)/.test(a)) return false;
+  return true;
+}
+
+function alatLatihanSebutan(alamat) {
+  const a = String(alamat || "");
+  for (const [pola, sebutan] of ALAT_LATIHAN_SEBUTAN) if (pola.test(a)) return sebutan;
+  return "Menulis ke server";
+}
+
+/**
+ * Ringkasan badan permintaan untuk dibaca manusia: "kunci: nilai" paling
+ * banyak delapan, nilai dipotong. Berkas disebut namanya, tidak dibaca.
+ */
+function alatLatihanRingkasBadan(badan) {
+  const potong = (x) => {
+    const s = typeof x === "string" ? x : JSON.stringify(x);
+    const t = String(s === undefined ? "" : s).replace(/\s+/g, " ").trim();
+    return t.length > 80 ? `${t.slice(0, 80)}…` : t;
+  };
+  try {
+    if (badan === undefined || badan === null || badan === "") return "";
+    if (typeof FormData !== "undefined" && badan instanceof FormData) {
+      const baris = [];
+      for (const [k, v] of badan.entries()) {
+        baris.push(`${k}: ${v && typeof v === "object" && "name" in v ? `berkas ${v.name}` : potong(v)}`);
+        if (baris.length >= 8) break;
+      }
+      return baris.join(" · ");
+    }
+    if (typeof badan === "string") {
+      let isi = null;
+      try {
+        isi = JSON.parse(badan);
+      } catch {
+        isi = null;
+      }
+      if (isi && typeof isi === "object" && !Array.isArray(isi)) {
+        return Object.entries(isi)
+          .slice(0, 8)
+          .map(([k, v]) => `${k}: ${potong(v)}`)
+          .join(" · ");
+      }
+      return potong(badan);
+    }
+    return `(${Object.prototype.toString.call(badan).slice(8, -1)})`;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Satu tindakan yang ditahan latihan: dicatat, ditampilkan, dan dikabarkan.
+ * `butir` = { jenis: "kirim"|"tekan"|"isi", sebutan, rinci }.
+ */
+function alatCatatLatihan(butir) {
+  const b = {
+    jenis: String((butir && butir.jenis) || "kirim"),
+    sebutan: String((butir && butir.sebutan) || ""),
+    rinci: String((butir && butir.rinci) || ""),
+    waktu: Date.now(),
+  };
+  alatLatihanCatatan.push(b);
+  while (alatLatihanCatatan.length > ALAT_LATIHAN_MAKS) alatLatihanCatatan.shift();
+  alatCatat("latihan", `LATIHAN ${b.jenis}: ${b.sebutan}`, b.rinci.slice(0, 200));
+  alatGambarLatihan();
+  try {
+    document.dispatchEvent(new CustomEvent("aleta-latihan-tertahan", { detail: { ...b } }));
+  } catch {
+    /* kotaknya sudah tergambar */
+  }
+}
+
+function alatLatihanDaftar() {
+  return alatLatihanCatatan.map((x) => ({ ...x }));
+}
+
+/** Jawaban tiruan untuk permintaan yang ditahan latihan - 423, dengan sebabnya. */
+function alatJawabanLatihan(alamat, cara, sebutan) {
+  const badan = JSON.stringify({
+    ok: false,
+    alasan: "mode_latihan",
+    pesan: `LATIHAN: ${sebutan} tidak dikirim - mode latihan menyala, tidak ada yang ditulis ke SIPP maupun ALETA.`,
+    // Kontrak jawaban portal ({ error: { message } }) ikut diisi, supaya
+    // pemanggil yang hanya membaca bentuk itu pun menyebut sebabnya.
+    error: { message: `LATIHAN: ${sebutan} tidak dikirim (mode latihan).` },
+    yangDitahan: { cara: String(cara || "POST").toUpperCase(), alamat: String(alamat || "") },
+  });
+  return new Response(badan, {
+    status: 423,
+    statusText: "Mode latihan",
+    headers: { "content-type": "application/json" },
+  });
+}
+
+/**
+ * Kotak "Catatan latihan": daftar yang AKAN ditulis seandainya latihan mati.
+ * Ditempel ke <html>, bukan ke <body> - pengamat DOM panel SIPP mendengarkan
+ * <body>, dan kotak yang tumbuh di sana akan memicu penyegaran panel.
+ */
+function alatGambarLatihan() {
+  if (!alatLatihanNyala()) return;
+  try {
+    let kotak = document.getElementById("aleta-latihan-kotak");
+    if (!kotak) {
+      kotak = document.createElement("section");
+      kotak.id = "aleta-latihan-kotak";
+      kotak.className = "aleta-latihan-kotak";
+      kotak.setAttribute("role", "log");
+      kotak.setAttribute("aria-label", "Catatan latihan ALETA");
+      document.documentElement.appendChild(kotak);
+    }
+    kotak.hidden = false;
+    kotak.textContent = "";
+    const kepala = alatEl("div", "aleta-latihan-kepala");
+    kepala.appendChild(alatEl("strong", "", "LATIHAN: yang akan ditulis"));
+    kepala.appendChild(alatEl("span", "aleta-latihan-hitung", `${alatLatihanCatatan.length} ditahan`));
+    const kosongkan = alatEl("button", "aleta-latihan-tombol", "kosongkan");
+    kosongkan.type = "button";
+    kosongkan.addEventListener("click", () => {
+      alatLatihanCatatan.length = 0;
+      kotak.remove();
+    });
+    const tutup = alatEl("button", "aleta-latihan-tombol", "×");
+    tutup.type = "button";
+    tutup.title = "Sembunyikan catatan ini - muncul lagi pada tindakan berikutnya";
+    tutup.addEventListener("click", () => {
+      kotak.hidden = true;
+    });
+    kepala.appendChild(kosongkan);
+    kepala.appendChild(tutup);
+    kotak.appendChild(kepala);
+    kotak.appendChild(
+      alatEl(
+        "div",
+        "aleta-latihan-ket",
+        "Tidak ada yang ditulis ke SIPP maupun ALETA. Medan blangko SIPP tidak diisi dan tombol Simpan tidak ditekan."
+      )
+    );
+    const daftar = alatEl("ol", "aleta-latihan-daftar");
+    for (const b of alatLatihanCatatan.slice().reverse()) {
+      const li = alatEl("li", `aleta-latihan-butir aleta-latihan-${b.jenis}`);
+      li.appendChild(alatEl("span", "aleta-latihan-sebutan", b.sebutan));
+      if (b.rinci) li.appendChild(alatEl("span", "aleta-latihan-rinci", b.rinci));
+      daftar.appendChild(li);
+    }
+    kotak.appendChild(daftar);
+  } catch {
+    /* catatan tetap ada di kotak hitam */
+  }
+}
+
+// Dipasang saat berkas dimuat, sebelum konten.js, abt.js, dan aleta.js -
+// sama dengan mode kering. alatLatihanSiap ditunggu pemantau permintaan untuk
+// tulisan yang berangkat sebelum bacaan pertama kembali.
+alatDengarkanLatihan();
+alatLatihanSiap = alatMuatLatihan();
+
 /** Peristiwa DOM untuk yang perlu menata ulang dirinya: widget checklist, dan fitur ide kelak. */
 function alatKabarkanUji() {
   try {
@@ -3119,6 +3430,23 @@ function alatPasangPemantauAmbil() {
     const alamat = typeof masukan === "string" ? masukan : (masukan && masukan.url) || String(masukan);
     const cara = String((opsi && opsi.method) || (masukan && masukan.method) || "GET").toUpperCase();
 
+    // Mode latihan lebih dulu daripada kering dan coba: ia yang paling ketat,
+    // dan yang ditahannya harus tercatat di kotak "yang akan ditulis" walau
+    // penahan lain ikut menyala. Tulisan yang berangkat sebelum saklarnya
+    // sempat terbaca MENUNGGU bacaannya - latihan yang menyala tidak boleh
+    // kalah balapan dengan tekanan pertama sesudah halaman dimuat.
+    if (cara !== "GET" && cara !== "HEAD") {
+      if (!alatLatihanTerbaca && alatLatihanSiap) await alatLatihanSiap;
+      if (alatLatihanMenahan(alamat, cara)) {
+        const sebutan = alatLatihanSebutan(alamat);
+        alatCatatLatihan({
+          jenis: "kirim",
+          sebutan: `${sebutan} - ${cara} ${alatRingkasAlamat(alamat)}`,
+          rinci: alatLatihanRingkasBadan((opsi && opsi.body) || undefined),
+        });
+        return alatJawabanLatihan(alamat, cara, sebutan);
+      }
+    }
     if (alatKeringMenahan(alamat, opsi || masukan)) {
       alatCatat("kering", `DITAHAN ${cara} ${alatRingkasAlamat(alamat)}`, "mode kering aktif");
       return alatJawabanKering(alamat, opsi || masukan);

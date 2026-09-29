@@ -263,6 +263,15 @@ describe("sinkron tanda Selesai/Tunda (latar.js)", () => {
     expect(g.lokal).toEqual({});
   });
 
+  it("mode latihan (tahap 7): sinkron tanda tidak menulis apa pun ke server", () => {
+    const badan = latar.slice(latar.indexOf("async function sinkronTandaSekali("));
+    const fungsi = badan.slice(0, badan.indexOf("\n}\n"));
+    const tahan = fungsi.indexOf("if (s.modeLatihan === true) return;");
+    expect(tahan).toBeGreaterThan(0);
+    expect(tahan).toBeLessThan(fungsi.indexOf("await fetch("));
+    expect(latar).toContain('"sinkronTandaMeta", "modeLatihan"];');
+  });
+
   it("hanya berjalan dalam tampilan yang berlaku: uji lokal atau diterapkan admin", () => {
     expect(f.tampilanBerlakuLatar({}).mode).toBe("lama");
     expect(f.tampilanBerlakuLatar({ ujiTampilan: "baru", ujiFitur: { "popup-7": true } }).fitur["popup-7"]).toBe(true);

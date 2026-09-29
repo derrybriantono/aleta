@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { apiPath } from "@/lib/base-path";
+import { apiPath, withBasePath } from "@/lib/base-path";
 
 /**
  * Alat Bantu Tulis BAS - layar panitera.
@@ -185,6 +185,19 @@ export function BasPanitera() {
         eyebrow="Kepaniteraan"
         title="Alat Bantu Tulis BAS"
         description="Buka perkaranya, lalu pilih pemeriksaan yang berlangsung hari ini. Nama para pihak dan keterangan yang sudah ada di SIPP terisi sendiri."
+        actions={
+          // Jalan ke layar hakim: membaca alur BAS dan memberi komentar per
+          // keterangan saksi. Membawa nomor perkara yang sedang terbuka supaya
+          // hakim dan panitera melihat perkara yang sama tanpa mengetik ulang.
+          <a
+            href={withBasePath(
+              "/bas/komentar" + (berkas?.nomorPerkara ? "?nomor=" + encodeURIComponent(berkas.nomorPerkara) : "")
+            )}
+            className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm transition hover:bg-muted/50"
+          >
+            Baca BAS & komentar hakim
+          </a>
+        }
       />
 
       <Card>

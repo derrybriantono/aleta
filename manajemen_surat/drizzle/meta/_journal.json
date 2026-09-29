@@ -372,6 +372,13 @@
       "when": 1789730401001,
       "tag": "0052_aleta_ekstensi_tampilan",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1789816801001,
+      "tag": "0053_aleta_bas_komentar_templat_abt_wajib",
+      "breakpoints": true
     }
   ]
 }

@@ -335,6 +335,11 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // setelan pribadi ekstensi. Tanpa kunci asing - urutannya bebas.
   "aleta_ekstensi_tampilan",
   "aleta_ekstensi_setelan",
+  // 29 September 2026 (0053): komentar hakim atas BAS, templat pertimbangan &
+  // dasar hukum, variabel wajib ABT. Tanpa kunci asing - urutannya bebas.
+  "aleta_bas_komentar",
+  "aleta_templat_hukum",
+  "aleta_abt_variabel_wajib",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

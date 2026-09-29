@@ -643,7 +643,7 @@ async function t4AmbilJson(jalur, keterangan) {
     } catch {
       badan = null;
     }
-    if (respons.status === 423 && badan && (badan.alasan === "mode_coba" || badan.alasan === "mode_kering")) {
+    if (respons.status === 423 && badan && (badan.alasan === "mode_coba" || badan.alasan === "mode_kering" || badan.alasan === "mode_latihan")) {
       return { ok: false, status: 423, data: null, pesan: String(badan.pesan || "Permintaan ditahan mode coba.") };
     }
     if (!respons.ok) {

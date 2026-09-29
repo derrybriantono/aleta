@@ -3877,6 +3877,19 @@ function IsiStatus({
             : ""
         }
       >
+        {/* Jalan ke layar hakim: keterangan saksi dibaca utuh di sana dan tiap
+            keterangan yang salah dapat dikomentari. Ditaruh di bagian Saksi,
+            bukan di menu samping, sebab pertanyaan "apa kata saksinya" muncul
+            saat seseorang sedang menatap perkara ini. Komentar tidak menahan
+            apa pun - tidak ada acc di jalan ini. */}
+        {status.identitas.nomorPerkara ? (
+          <a
+            href={withBasePath("/bas/komentar?nomor=" + encodeURIComponent(status.identitas.nomorPerkara))}
+            className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-foreground transition hover:bg-muted/50"
+          >
+            Baca BAS & keterangan saksi - komentar hakim
+          </a>
+        ) : null}
         {!status.saksiRinci.terbaca ? (
           <p className="text-sm text-amber-700 dark:text-amber-300">{status.saksiRinci.alasan}</p>
         ) : status.saksiRinci.baris.length === 0 ? (
