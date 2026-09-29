@@ -563,7 +563,7 @@ export function AletaEcourtArsipBerkas({
             di-mount. */}
         <p className="rounded bg-muted/50 p-2.5 text-xs text-muted-foreground">
           Kolom &quot;Berkas ada&quot; dan &quot;Belum ada&quot; dihitung dari catatan berkas, sedangkan
-          lencana &quot;berkas hilang&quot; dan tombol ZIP dibuktikan ke cakram peladen. Bila keduanya
+          lencana &quot;berkas hilang&quot; dan tombol ZIP dibuktikan ke cakram server. Bila keduanya
           berselisih, yang benar adalah lencananya &mdash; catatan dapat tertinggal ketika berkasnya
           lenyap dari cakram.
         </p>

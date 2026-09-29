@@ -1127,7 +1127,7 @@ function usulanStatusDariAmar(dasar: UsulanMedan, medan: MedanPilihan, amar: str
       tegas: false,
       alasan: saingan.length
         ? `Amar menyatakan gugur. SIPP membedakan "${utama?.label}" dan "${lain?.label}", dan bunyi amarnya sama untuk keduanya - pilih sendiri.`
-        : `Amar menyatakan gugur; borang hanya menawarkan "${pilih.label}".`,
+        : `Amar menyatakan gugur; blangko hanya menawarkan "${pilih.label}".`,
     };
   }
 
@@ -1337,7 +1337,7 @@ export function usulkanMedanPutusan(
     const penanda = PENANDA_MEDAN.find((x) => x.medan.test(satu.label));
     if (!teks.trim() && !adaAmar) return { ...dasar, alasan: "Naskah putusan belum ada isinya." };
     if (kandidat.length === 0 && !penanda) {
-      return { ...dasar, alasan: "Borang tidak menawarkan pilihan apa pun." };
+      return { ...dasar, alasan: "Blangko tidak menawarkan pilihan apa pun." };
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -1426,7 +1426,7 @@ export function usulkanMedanPutusan(
       if (!pilih) {
         return {
           ...dasar,
-          alasan: `Borang tidak menawarkan jawaban yang dicari untuk ${satu.label}.`,
+          alasan: `Blangko tidak menawarkan jawaban yang dicari untuk ${satu.label}.`,
         };
       }
       return {

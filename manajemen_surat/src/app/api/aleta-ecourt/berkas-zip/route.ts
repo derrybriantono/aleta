@@ -1395,7 +1395,7 @@ export async function GET(request: NextRequest) {
           ? ["Seluruh bagian data SIPP terbaca; tabel yang kosong memang tidak berisi data.", ""]
           : []),
       "Berkas e-Court yang belum tersimpan dapat ditarik dari menu Kendali Berkas di ALETA.",
-      "Berkas SIPP yang tidak terbaca berarti berkasnya tidak ada di cakram peladen,",
+      "Berkas SIPP yang tidak terbaca berarti berkasnya tidak ada di cakram server,",
       "walaupun barisnya tercatat di basis data.",
       "",
       "PERHATIAN: arsip ini memuat identitas para pihak, alamat pada resi pos, dan",

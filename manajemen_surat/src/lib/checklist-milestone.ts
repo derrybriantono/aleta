@@ -1004,7 +1004,7 @@ const ATURAN: Record<string, (b: BahanAturan) => HasilJenis> = {
         perkaraId: s.perkaraId,
         nomorPerkara: s.nomorPerkara,
         tenggat: { tanggal: s.tanggalSidang },
-        keterangan: `Sidang ${tglPendek(s.tanggalSidang)} tercatat "${hasilSidangPutusan(s.ditunda, s.alasanDitunda)}", tetapi borang Putusan Akhir belum berisi tanggal putusan.`,
+        keterangan: `Sidang ${tglPendek(s.tanggalSidang)} tercatat "${hasilSidangPutusan(s.ditunda, s.alasanDitunda)}", tetapi blangko Putusan Akhir belum berisi tanggal putusan.`,
       });
     }
     return { calon, selesaiHariIni };

@@ -77,7 +77,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "OpenStreetMap tidak punya batas kecamatan Donggala dan Sigi - wilayah sendiri memakai batas perkiraan dari titik desa.",
       "SIPP hanya mencatat musyawarah majelis lewat agenda sidang (71 dari 683 putusan 2026); rekap musyawarah mengikuti yang tercatat.",
       "Menunggu keputusan pengguna: rumus Kualitas tiap rekap, bunyi RHK/indikator, baris kop Ditjen/PTA, tanggal tanda tangan bawaan, dan beberapa lainnya (papan keputusan).",
-      "Belum diuji di peramban dan SIPP peladen sungguhan; berkas Word/Excel belum dibuka di Office.",
+      "Belum diuji di peramban dan SIPP server sungguhan; berkas Word/Excel belum dibuka di Office.",
     ],
   },
   {
@@ -104,7 +104,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Chip saringan Jadwal Mediasi menghitung mediator hakim sebagai 'non-hakim': aturan lama mencari KATA 'hakim' pada SANDI 'H' yang disimpan SIPP.",
       "Tautan dari 'Salin tautan' (/aleta-ecourt?perkara=...) selalu mendarat di Dasbor karena ?perkara= tidak pernah dibaca; kini perkaranya langsung terbuka di Status Perkara.",
       "Membuka Jadwal Sidang hari lampau menimpa rekaman antrean hari itu dengan nomor kosong.",
-      "Tombol salin di peladen satker (http, bukan konteks aman) kini memakai jalan cadangan; bila tetap gagal, teksnya ditampilkan terpilih untuk Ctrl+C.",
+      "Tombol salin di server satker (http, bukan konteks aman) kini memakai jalan cadangan; bila tetap gagal, teksnya ditampilkan terpilih untuk Ctrl+C.",
       "Tombol unduh berkas e-Court di Jadwal Sidang SIPP tidak terlihat di mode terang (ekstensi 1.171.0).",
       "Panel ALETA tampil di layar publik portal - TV ruang tunggu, layar ambil antrean, papan pintu ruang sidang, antrean tanpa login (ekstensi 1.171.0).",
     ],
@@ -122,9 +122,9 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     knownLimitations: [
       "Pencatat antrean mengamati tiap 30 detik: dua panggilan dalam 30 detik tercatat sekali, dan hari Sabtu tidak tercatat.",
-      "Kecepatan rekap petugas baru diukur pada salinan data lokal (0,2-1,3 detik per orang), belum di peladen.",
+      "Kecepatan rekap petugas baru diukur pada salinan data lokal (0,2-1,3 detik per orang), belum di server.",
       "Menunggu keputusan pengguna: siapa yang boleh membuka rekap petugas, rekaman ganda orang yang sama di SIPP, dasar lama perkara, status mediator kosong pada rekap WhatsApp, dan beberapa lainnya (papan keputusan).",
-      "Belum diuji di peramban dan SIPP peladen sungguhan - halaman-halamannya menuntut login.",
+      "Belum diuji di peramban dan SIPP server sungguhan - halaman-halamannya menuntut login.",
     ],
   },
   {
@@ -137,7 +137,7 @@ export const PATCH_NOTES: PatchNote[] = [
     added: [
       "Rute portal /api/aleta-ecourt/checklist (dan rute bot /sipp/checklist-milestone): butir untuk pengguna yang masuk, menurut peran akun ALETA dan pemetaan akun SIPP ke hakim, panitera pengganti, dan juru sita. Pengguna berperan ganda (ketua yang juga hakim) dapat berganti peran di widget. Judul tiap jenis datang dari satu katalog; tiap butir membawa tujuan Kerjakan (ABT, SIPP, ALETA, e-Court), tenggat WITA, dan kelompok lewat/hari ini/minggu ini.",
       "Hakim: konsep putusan yang ditugaskan (termasuk konseptor sementara), putusan yang dibacakan tetapi belum diunggah (sampai 7 hari), penetapan hakim tunggal yang dijadwalkan putus, PHS yang menunggu ditekan, dokumen e-Court menunggu verifikasi, hasil sidang belum dicatat lewat 15.00, perkara mendekati 5 bulan, mediasi mendekati 30 hari, dan sidang ikrar talak.",
-      "Panitera pengganti: BAS, hasil sidang, borang Putusan Akhir, unggah putusan, identitas saksi, dan tunggakan BAS. Juru sita: panggilan sidang pertama, perintah panggil dari sidang yang ditunda, pihak yang belum dipanggil untuk 7 hari ke depan, PBT pihak tidak hadir, relaas belum diinput, retur, dan tunggakan PBT verstek. Panitera, ketua, PTSP, dan operator: penetapan PPP/PJS/PMH, Direktori Putusan, BHT, akta cerai, arsip, 5 bulan per majelis, ikrar, panjar, pendaftaran e-Court, dan sesi e-Court.",
+      "Panitera pengganti: BAS, hasil sidang, blangko Putusan Akhir, unggah putusan, identitas saksi, dan tunggakan BAS. Juru sita: panggilan sidang pertama, perintah panggil dari sidang yang ditunda, pihak yang belum dipanggil untuk 7 hari ke depan, PBT pihak tidak hadir, relaas belum diinput, retur, dan tunggakan PBT verstek. Panitera, ketua, PTSP, dan operator: penetapan PPP/PJS/PMH, Direktori Putusan, BHT, akta cerai, arsip, 5 bulan per majelis, ikrar, panjar, pendaftaran e-Court, dan sesi e-Court.",
       "Ukuran atas salinan data satker (sampai 10 Sep 2026): seorang hakim ketua majelis 9 butir, panitera pengganti 13, juru sita 31, panitera 213 (188 di antaranya arsip BHT), ketua 15, PTSP 33. Pada hari sidang sibuk, bilah 'selesai hari ini' terisi (panitera pengganti 32, ketua 30).",
     ],
     changed: [
@@ -160,11 +160,11 @@ export const PATCH_NOTES: PatchNote[] = [
       "Peran terbaca dari kredensial SIPP yang tersimpan di ALETA dan sudah teruji. Petugas yang kredensialnya belum diisi atau nonaktif mendapat kabar 'belum tertaut'.",
     ],
     knownLimitations: [
-      "Sembilan jenis belum dihitung karena datanya belum sahih: penyerahan PBT ke juru sita, tanggal tunda terlalu dekat, salinan TTE e-Court, majelis berhalangan, penyerahan akta, kehadiran pihak, pengingat WhatsApp pagi, cadangan, dan versi peladen.",
+      "Sembilan jenis belum dihitung karena datanya belum sahih: penyerahan PBT ke juru sita, tanggal tunda terlalu dekat, salinan TTE e-Court, majelis berhalangan, penyerahan akta, kehadiran pihak, pengingat WhatsApp pagi, cadangan, dan versi server.",
       "Blangko ABT tidak dapat dibuka langsung (alamatnya disandikan ABT) dan tab SIPP yang dituju hanya disebut di petunjuk; keduanya menunggu keputusan pengguna.",
       "Hakim anggota belum ditagih (hanya ketua majelis/hakim tunggal) - menunggu keputusan pengguna.",
       "Panel ALETA yang lama masih tampil di layar publik portal - diajukan sebagai tugas terpisah.",
-      "Belum diuji di peramban dan SIPP peladen sungguhan.",
+      "Belum diuji di peramban dan SIPP server sungguhan.",
     ],
   },
   {
@@ -176,7 +176,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Keputusan pengguna 26 September 2026 atas dua pertanyaan terbuka 2.37.0: perkara yang pertimbangannya menyebut masalah ekonomi berpokok Perselisihan dengan Ekonomi sebagai faktor SEKUNDER (praktik satker sejak 556/Pdt.G/2025), dan bunyi nafkah kedua saksi SDG tetap satu.",
     added: [],
     changed: [
-      "Borang Putusan Akhir: bila kalimat fakta pertimbangan menyebut masalah/faktor/persoalan ekonomi dan pokoknya Perselisihan, faktor sekunder diusulkan Ekonomi. Sebelumnya Ekonomi kalah hitungan oleh 'pisah rumah' (Meninggalkan) yang disebut di hampir tiap putusan cerai - hanya 7 dari 31 putusan bermasalah ekonomi bersekunder Ekonomi. Diukur atas 960 putusan cerai dikabulkan: pokok tetap 582 benar; sekunder 116 → 117 benar (78/Pdt.G/2026 dan 21/Pdt.G/2026 kini sesuai petugas; 259/Pdt.G/2026 yang petugasnya memilih Meninggalkan kini berbeda). Keempat putusan 2026 yang petugasnya memilih Ekonomi sekunder kini diusulkan benar.",
+      "Blangko Putusan Akhir: bila kalimat fakta pertimbangan menyebut masalah/faktor/persoalan ekonomi dan pokoknya Perselisihan, faktor sekunder diusulkan Ekonomi. Sebelumnya Ekonomi kalah hitungan oleh 'pisah rumah' (Meninggalkan) yang disebut di hampir tiap putusan cerai - hanya 7 dari 31 putusan bermasalah ekonomi bersekunder Ekonomi. Diukur atas 960 putusan cerai dikabulkan: pokok tetap 582 benar; sekunder 116 → 117 benar (78/Pdt.G/2026 dan 21/Pdt.G/2026 kini sesuai petugas; 259/Pdt.G/2026 yang petugasnya memilih Meninggalkan kini berbeda). Keempat putusan 2026 yang petugasnya memilih Ekonomi sekunder kini diusulkan benar.",
       "Pokok yang bukan Perselisihan (misalnya huruf (b) dengan kepergian dua tahun) tidak berubah: sekundernya tetap Perselisihan. Masalah ekonomi yang hanya ada di kutipan pasal tidak dihitung.",
       "Bunyi nafkah dua saksi SDG tetap 'melalaikan kewajiban nafkah lahir' untuk keduanya (keputusan pengguna), supaya derajat faktanya sama.",
     ],
@@ -191,12 +191,12 @@ export const PATCH_NOTES: PatchNote[] = [
     date: "2026-09-26",
     status: "Belum terpasang",
     summary:
-      "Penguatan otomatisasi putusan atas permintaan pengguna 26 September 2026: penyebab perceraian dari keterangan saksi ABT, keadaan istri dan nusyuz yang tetap bawaan kecuali disebut tegas di pertimbangan hukum, mode massal yang berfungsi, perkara lain menurut deteksi posita blangko ABT, alasan baru di kalimat BAS, dan dua saksi yang berbeda bunyi tetapi sama faktanya. Temuan terbesarnya: putusan massal SIPP TIDAK PERNAH dapat menyimpan satu perkara pun - pilihan wajib borang tidak pernah diisi - dan borang Putusan Akhir SIPP yang baru dibuka sudah memilih 'Qobla Dukhul' sendiri. Pemeriksa mandiri juga menangkap, sebelum rilis, aturan keadaan istri yang akan menjawab 'pasti Hamil' dari kehamilan yang sudah lewat.",
+      "Penguatan otomatisasi putusan atas permintaan pengguna 26 September 2026: penyebab perceraian dari keterangan saksi ABT, keadaan istri dan nusyuz yang tetap bawaan kecuali disebut tegas di pertimbangan hukum, mode massal yang berfungsi, perkara lain menurut deteksi posita blangko ABT, alasan baru di kalimat BAS, dan dua saksi yang berbeda bunyi tetapi sama faktanya. Temuan terbesarnya: putusan massal SIPP TIDAK PERNAH dapat menyimpan satu perkara pun - pilihan wajib blangko tidak pernah diisi - dan blangko Putusan Akhir SIPP yang baru dibuka sudah memilih 'Qobla Dukhul' sendiri. Pemeriksa mandiri juga menangkap, sebelum rilis, aturan keadaan istri yang akan menjawab 'pasti Hamil' dari kehamilan yang sudah lewat.",
     added: [
       "ALASAN CERAI DARI KETERANGAN SAKSI ABT, diukur atas 1.498 perkara cerai berputusan 2024-2026 yang keterangan saksinya ada di ABT, dan tiap bentuk dibaca atas kalimat BAS petugas (benar sedikitnya 9 dari 10): temperamen kini juga 'suka/cepat/gampang marah' dan 'mudah emosi' (333 → 338 perkara), malas bekerja juga 'tidak mau bekerja' (131 → 150), kekerasan juga bentuk pasif - dipukul, ditampar, dicekik, ditendang, dijambak (456 → 460). Kata yang terlalu sering salah ditolak: 'marah' telanjang (5/10), 'pukul' (jam), 'wil' (tertangkap di 'wilayah'), 'curiga', 'menjalin hubungan' (termasuk 'hubungan suami istri').",
       "Alasan baru yang diucapkan saksi SDG: menikah lagi, masalah ekonomi (129 perkara), dan tidak memiliki pekerjaan tetap (14). Tiga lagi hanya dideteksi, belum diucapkan: campur tangan keluarga (44), tidak menghargai (44), keluar malam (41). 'Menikah lagi dengan wanita lain' tidak lagi dibaca sebagai selingkuh.",
       "Tujuh alasan dapat dipilih petugas di panel SDG ABT (dulu sembilan, kini enam belas): temperamental, berkata kasar, bersikap kasar, malas bekerja, tidak memiliki pekerjaan tetap, masalah ekonomi, menikah lagi - masing-masing berbunyi kalimat dari BAS petugas, dan penjaga uji menjalankan bot untuk tiap pilihan sehingga label mentah tidak dapat tercetak.",
-      "PUTUSAN MASSAL SIPP BERFUNGSI (ekstensi 1.169.0): pilihan wajib borang diisi dari usulan ALETA dengan urutan pintu panel satu perkara; yang tidak dapat dipastikan menahan perkara dengan sebabnya; praperiksa memeriksa nilai yang benar-benar akan disimpan; tiap pilihan yang diisikan dicatat per perkara, dan yang dari bawaan ditandai 'diisi bawaan - periksa'.",
+      "PUTUSAN MASSAL SIPP BERFUNGSI (ekstensi 1.169.0): pilihan wajib blangko diisi dari usulan ALETA dengan urutan pintu panel satu perkara; yang tidak dapat dipastikan menahan perkara dengan sebabnya; praperiksa memeriksa nilai yang benar-benar akan disimpan; tiap pilihan yang diisikan dicatat per perkara, dan yang dari bawaan ditandai 'diisi bawaan - periksa'.",
       "DISPENSASI KAWIN mengusulkan KUA yang menolak (5178): ALETA 17 benar dari 18 atas isian petugas, sedangkan bawaan ABT #10103# 0 dari 7 pada perkara yang sama - bawaannya membawa sisa kalimat posita ('…, namun ditolak dengan alasan …') ke kalimat blangko yang sudah menyebut penolakannya. Variabel 3333 tidak lagi diusulkan: ia tidak ada di satu pun dari 908 berkas blangko, dan maknanya terbukti sama dengan 5178.",
       "Keputusan sumber isian per variabel, bukan 'jangan usulkan yang ditangani ABT': bawaan ABT dari kueri Anda (#101xx#) hanyalah isian awal kotak popup yang tersimpan bila kotaknya dibuka dan disimpan, dan mutunya berbeda per variabel. Yang lebih tepat pada perkara yang sama yang dipakai; yang diserahkan ke ABT disebut di panel sebagai 'ABT menawarkan isian bawaan … periksa sebelum menyimpan'.",
     ],
@@ -208,7 +208,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     fixed: [
       "PUTUSAN MASSAL SIPP TIDAK PERNAH MENYIMPAN. Antrean hanya mengisi naskah lalu menekan Simpan, dan SIPP selalu menolak dengan 'Sumber Hukum Belum Dipilih'. Lima cacat lain ikut terbukti dan dibetulkan: satu perkara dapat disimpan dua kali, perkara yang terputus di tengah dikerjakan ulang sendiri, satu galat membuat antrean macet, 'Akhiri antrean' tidak menghentikan (perkara berikutnya tetap disimpan), dan antrean dari berkas mengaku 'draf' sementara menekan Simpan sendiri.",
-      "BORANG PUTUSAN AKHIR SIPP MEMILIH 'QOBLA DUKHUL' SENDIRI: kolomnya diisi dari akta cerai yang belum ada sebelum putusan, dan di PHP NULL == 0. Nilai itu (dan Verstek 'Tidak') tidak lagi dianggap pilihan petugas di antrean maupun di panel satu perkara, sehingga usulan ALETA tidak lagi membeonya.",
+      "BLANGKO PUTUSAN AKHIR SIPP MEMILIH 'QOBLA DUKHUL' SENDIRI: kolomnya diisi dari akta cerai yang belum ada sebelum putusan, dan di PHP NULL == 0. Nilai itu (dan Verstek 'Tidak') tidak lagi dianggap pilihan petugas di antrean maupun di panel satu perkara, sehingga usulan ALETA tidak lagi membeonya.",
       "Keadaan istri 'pasti Hamil' yang akan lahir dari kehamilan lampau ('meninggalkan Penggugat dalam keadaan hamil' tahun 2018), kehamilan orang lain, 'tidak dalam keadaan hamil', dan 'petitum masih mengandung kekaburan' - ditangkap pemeriksa sebelum rilis. Usulan pasti baru yang salah atas pertimbangan, posita, dan BAS: 0 (sebelumnya 11 perkara, 9 salah).",
       "'Menikah lagi' hanya bila Tergugat/Termohon sungguh sudah menikah lagi: niat, izin, ancaman, suruhan, 'tidak jadi', dan perkawinan Penggugat/Pemohon ditolak (31 kalimat dari 896). Sebelumnya posita cerai talak 'Pemohon sudah menikah lagi' menjadi keterangan saksi 'Termohon telah menikah lagi'.",
       "'Emosional' dan 'tersulut emosi' di gugatan ('kedekatan emosional', 'hubungan emosional memudar') tidak lagi dijadikan watak temperamental di keterangan saksi SDG; keduanya tetap dibaca untuk deteksi keterangan saksi BAS.",
@@ -240,10 +240,10 @@ export const PATCH_NOTES: PatchNote[] = [
       "Tujuh permintaan pengguna: bentuk tanggal 07-10-2026 beserta nama harinya di seluruh layar e-Court, potongan 120 hari perkara ghaib yang dikembalikan, sinkronisasi e-Court yang diperiksa ke lima layar sekaligus, pengurutan Kendali Berkas, penarikan yang hanya mengambil yang belum ada, unduhan seluruh data SIPP beserta berkasnya, dan menu Tag berisi 53 pertanyaan pengawasan yang masing-masing membawa jumlahnya sendiri. Yang terbesar bukan salah satunya: penjaga uji yang hanya menyisir teks sumber ternyata HIJAU atas kode yang melempar galat - tiga kali dalam satu batch, termasuk satu kolom pengurutan yang MENGOSONGKAN tabel Kendali Berkas sementara 18 ujinya lulus.",
     added: [
       "TOMBOL \"CETAK RELAAS\" DI ANTRIAN SIDANG (tab Jadwal Sidang) untuk juru sita, admin, dan super admin - tanpa tab baru. Daftar kerja HARI ITU disusun dari SIPP: panggilan sidang pertama untuk perkara yang baru didaftarkan (1.753 dari 1.759 perkara sejak 2025 ditetapkan hari sidangnya pada hari pendaftaran), panggilan sidang berikutnya untuk sidang yang ditunda, dan pemberitahuan untuk putusan yang dibacakan. Blangkonya diambil dari ABT folder derry_briantono, lalu ekstensi mengunduh RTF dan PDF per juru sita. Tidak ada yang diunggah ke SIPP.",
-      "ARTI SANDI KEHADIRAN SIDANG dibaca dari borang SIPP sendiri (jadwal_sidang_p_edit.php): 1 = Semua Pihak hadir (tidak dipanggil), 2/3 = pihak pertama/kedua saja, 4 = tidak ada yang hadir. Sebelumnya sandi 1 dijawab 'tidak diketahui' - 7.486 sidang disodorkan sebagai pertanyaan. Sandi 1 yang alasan tundanya berbunyi 'Panggil ...' tetap dijadikan panggilan (88/Pdt.G/2026), karena 'Semua Pihak' adalah pilihan pertama borang tanpa pilihan kosong.",
+      "ARTI SANDI KEHADIRAN SIDANG dibaca dari blangko SIPP sendiri (jadwal_sidang_p_edit.php): 1 = Semua Pihak hadir (tidak dipanggil), 2/3 = pihak pertama/kedua saja, 4 = tidak ada yang hadir. Sebelumnya sandi 1 dijawab 'tidak diketahui' - 7.486 sidang disodorkan sebagai pertanyaan. Sandi 1 yang alasan tundanya berbunyi 'Panggil ...' tetap dijadikan panggilan (88/Pdt.G/2026), karena 'Semua Pihak' adalah pilihan pertama blangko tanpa pilihan kosong.",
       "STATUS PERKARA: hasil pencarian kini punya empat tampilan - Detail (tabel), Daftar, Kotak, Kelompok - dengan kepala kolom yang dapat diklik untuk mengurutkan, tabel yang bergulir di dalam kotaknya sendiri (terukur pas di 320/375/768/1280 px), tombol Cetak A4 mendatar yang mengikuti urutan dan saringan, serta panel Tag dan Saringan lain yang mengecil sendiri sesudah hasilnya datang.",
       "Pencarian Status Perkara diperluas ke kuasa hukum, NIK/telepon pihak, akta cerai, nomor banding/kasasi/PK, akta nikah, dan agenda sidang - tiap hasil menyebut di bagian mana katanya cocok. Setiap baris membawa 19 keterangan (pihak dan sebutannya, majelis, tahapan, sidang terakhir/berikut, umur perkara, akta cerai, e-Court). Cari nomor '419' dari 3,5 detik menjadi 0,2 detik; memuat 500 perkara dari 8-16 detik menjadi 0,9 detik.",
-      "Status putusan di borang Putusan Akhir kini dibaca dari kata kerja AMAR, bukan dari pertimbangan. Sebabnya, pertimbangan seperti 'pencabutan … dapat dikabulkan' dulu menjadi 'Dikabulkan'. Ketepatan atas 1.633 putusan 2025-2026 PA Donggala naik dari 1.382 (84,6%) menjadi 1.598 (97,9%) dengan 0 regresi. Gugur vs Digugurkan kini ditanyakan (71 perkara).",
+      "Status putusan di blangko Putusan Akhir kini dibaca dari kata kerja AMAR, bukan dari pertimbangan. Sebabnya, pertimbangan seperti 'pencabutan … dapat dikabulkan' dulu menjadi 'Dikabulkan'. Ketepatan atas 1.633 putusan 2025-2026 PA Donggala naik dari 1.382 (84,6%) menjadi 1.598 (97,9%) dengan 0 regresi. Gugur vs Digugurkan kini ditanyakan (71 perkara).",
       "Verstek naik dari 1.513 menjadi 1.537/1.633 (regresi 4 = 0,24%). Usulan qobla yang 'pasti' tetapi salah turun dari 4 menjadi 0 (benar 949/950).",
       "Faktor penyebab perceraian: bawaannya kini 'Perselisihan dan Pertengkaran' seperti di halaman SIPP, kecuali pertimbangan tegas menyebut dasar lain. Pokok benar naik dari 310 menjadi 582/960 dan sekunder dari 51 menjadi 115/252. Karena bawaan ini, 79 perkara yang dulu benar kini salah (8,23%) dan 30 pada sekunder (11,9%). Sebagian besar kini berkeyakinan 'bentrok' dan dipilih petugas; yang tercentang sendiri dengan nilai salah tinggal 140 (dulu 160) dan 59 pada sekunder (dulu 182).",
       "Alasan dispensasi kawin kini mengikuti nilai yang sudah terpilih di halaman: 22/22 (dulu 0/22). Alasan isbat di Data Umum 396/403 (dulu 2/403). Keadaan istri dan nusyuz tidak pernah lagi 'pasti' tanpa frasa tegas.",
@@ -256,7 +256,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Perkara lain: dispensasi kawin kini punya 5 variabel yang diusulkan dari posita (lolos gerbang presisi ≥0,9, n ≥10), lewat tombol 'Isi dari posita permohonan' di 6 blangko DK. Perwalian belum (data manusia ≤7 per variabel).",
       "Unggah putusan: pemotong naskah RTF kini mencari penutup sesudah amar. Amar cocok atas 39 e-Doc diterima SIPP naik dari 15 menjadi 36 (+3 mirip, kosong 18 → 0) dan pertimbangan dari 16 menjadi 30. Naskah ABT 0 berubah, dan e-Doc PA Bungku 0 turun kelas (53 naik).",
       "Unggah putusan menolak dengan jelas: nomor di isi berbeda dari nomor permintaan (197/197 sama pada naskah sungguhan), slot anonimisasi yang masih memuat nama pihak (putusan asli di slot anonim tertangkap 39/39; anonim sungguhan lolos 13/15), serta BAS/PHS/relaas yang diunggah sebagai putusan.",
-      "Jejak audit unggahan kini jujur: formname 'ALETA - Unggah Dokumen Putusan', judul menyebut 'lewat ALETA', pelaku petugas, dan IP peramban sungguhan (dulu kosong pada 100%). Cap waktu diambil per tulisan. ALETA tidak meniru borang SIPP.",
+      "Jejak audit unggahan kini jujur: formname 'ALETA - Unggah Dokumen Putusan', judul menyebut 'lewat ALETA', pelaku petugas, dan IP peramban sungguhan (dulu kosong pada 100%). Cap waktu diambil per tulisan. ALETA tidak meniru blangko SIPP.",
       "Konversi RTF (soffice): hasil periksa mesin disinggahkan 5 menit dan dua konversi berjalan sejajar. Dua RTF kini 2 proses (dulu 4), atau 3 saat singgahan dingin. Batas bot 110 dtk < gerbang 120 dtk < ekstensi 150 dtk.",
       "Ekstensi: nomor perkara dibaca dari nama berkas dalam 4 bentuk nyata. Atas 8.614 nama, 6.450 terbaca (dulu 0) dan 0 salah nomor. Berkas anonim, BAS, dan PDF/DOC tidak lagi ikut kiriman massal (0/909, 0/1.092, 0/1.451).",
       "Ekstensi: bukti simpan kini membaca jawaban SIPP sendiri. Bila SIPP menolak, pesannya tampil dalam 300 ms (dulu 10 dtk jajak dengan pesan umum). Bila berhasil, jajak basis data mulai seketika. Tombol yang disembunyikan SIPP (.hide) tidak pernah ditekan.",
@@ -270,7 +270,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Saksi ketiga/keempat dan saksi Tergugat didukung: sampai 4 saksi Penggugat dan 2 saksi Tergugat. Variabel ABT diverifikasi 7/7 dari abt_variabel, dan penanda di lembar BAS portal terisi 2.473/2.473 (dulu 2.224). Saksi disimpan berurutan tanpa jeda buatan.",
       "Lembar BAS portal 'Pakai contoh': saksi 1 dan saksi 2 tidak lagi identik pada pertanyaan pokok (100% → 8,9%). Hasilnya stabil pada cetak ulang (5.400/5.400) dan sama dengan bot untuk bentuk bersyarat.",
       "Pengaturan baru 'Tipe keluaran ekstensi' (Admin ALETA, di bawah Pengaturan ekstensi, tab Berita Acara Sidang dan Putusan). Admin mengusulkan tambahan kalimat/medan; Super Admin mengesahkan dengan 'atas perintah' ketua/wakil/hakim. Bawaan terkunci dan hanya dapat dimatikan/diganti, dan tidak ada tombol hapus. Daftar deteksi hanya dapat disahkan sesudah lulus ukur atas data SIPP satker. Pratinjau BAS menampilkan hasil 2-4 saksi sebelum disahkan.",
-      "Tabel tipe keluaran yang kosong atau tak terbaca menghasilkan perilaku sama persis dengan sebelumnya: borang 1.633/1.633, Data Umum 436/436, deteksi saksi 1.119/1.119, BAS 162/162, dan medan ekstensi 12/12. Medan tambahan satker diusulkan, tetapi Simpan diserahkan ke petugas.",
+      "Tabel tipe keluaran yang kosong atau tak terbaca menghasilkan perilaku sama persis dengan sebelumnya: blangko 1.633/1.633, Data Umum 436/436, deteksi saksi 1.119/1.119, BAS 162/162, dan medan ekstensi 12/12. Medan tambahan satker diusulkan, tetapi Simpan diserahkan ke petugas.",
       "Peta blangko putusan kini dapat ditambah dari portal (misalnya Perwalian): cakupan 4 → 5 jenis (95,8% → 97,1% perkara sejak 2025), tanpa menyunting tiap peramban.",
       "Basis data: migrasi 0050_aleta_tipe_keluaran (2 tabel). Sesudah pasang, periksa SELECT count(*) FROM aleta_tipe_keluaran. Benih (250 baris) ditanam pada baca pertama. Nomor migrasi bebas berikutnya 0051.",
       "Halaman /admin/blangko-mandiri kini terbuka untuk Super Admin dan Admin (dulu tertutup bagi keduanya).",
@@ -278,8 +278,8 @@ export const PATCH_NOTES: PatchNote[] = [
       "Tag yang menjawab pertanyaan pengawasan yang selama ini tidak dapat ditanyakan sama sekali: tunggakan lewat tiga bulan dan lewat lima bulan SEMA 2/2014, perkara mandek (belum putus dan tidak ada sidang berikutnya) 101, sudah putus tetapi belum masuk arsip 5.716, cerai sudah BHT tetapi akta belum terbit 753, akta cerai belum diterima pihak kedua 3.370, cerai talak BHT tetapi ikrar belum dilaksanakan 219, ditunjuk lewat Smart Majelis 915, dan sisa panjar belum nol 135 yang 21 di antaranya perkaranya sudah diputus - yaitu uang yang harus dikembalikan kepada pihak.",
       "Sepuluh keranjang tahapan terakhir dan tujuh belas jenis perkara, masing-masing berjumlah TEPAT 10.120 - sama dengan seluruh register. Dua invarian itu dapat diperiksa siapa pun, dan itulah gunanya: katalog lama hanya memuat lima dari sepuluh keranjang tahapan dan MELEWATKAN \"Putusan\" yang memuat 54% register, sementara tidak ada satu pun cara memeriksanya. Kelompok jenis perkara juga menyelesaikan satu cacat data: jenis_perkara_id 360 memuat dua ejaan pada nama perkaranya - \"Pengesahan Perkawinan/Istbat Nikah\" 3.964 baris dan \"Istbat Nikah\" 89 baris - sehingga mengetiknya di kotak saringan mustahil benar, sedangkan satu tag menjaring keduanya.",
       "Unduhan satu perkara seutuhnya dari layar Status Perkara: perkara.json beserta 26 tabel CSV, ditambah berkas PDF/Word/RTF dari SIPP maupun e-Court dalam satu ZIP. Riwayat penundaan sidang termasuk di dalamnya - pertanyaan yang selalu datang ketika berkas dikirim ke banding, dan jawabannya sebelum ini hanya ada di dalam JSON yang tidak dibaca panitera mana pun. Bagian yang tidak dapat dibaca DISEBUTKAN di KETERANGAN.txt beserta sebabnya, tidak lagi keluar sebagai CSV berkepala tanpa baris yang tak terbedakan dari data yang memang kosong.",
-      "Pengurutan tujuh kolom pada Kendali Berkas e-Court, dikerjakan PELADEN bukan peramban: \"belum ada terbanyak\" menunjuk yang terbanyak di seluruh arsip, bukan yang terbanyak di antara 500 baris yang kebetulan terbawa. Nomor perkara diurut sebagai ANGKA dengan tahun lebih dahulu, dan tanggal diurut sebagai tanggal - sehingga pergantian bentuk tanggal menjadi DD-MM-YYYY tidak dapat merusak urutannya.",
-      "Penarikan e-Court yang MEMFOKUSKAN pada yang belum ada: perkara yang berkasnya sudah utuh tidak dibuka sama sekali, dua puluh contoh perkara sasaran digambar beserta sebabnya, dan taksiran waktunya berupa rentang yang sudah memuat istirahat 1-3 menit tiap 40 perkara. Jatah satu penekanan datang dari bot, bukan dari angka yang ditulis keras di layar - jadi menaikkan ALETA_BOT_ECOURT_MAKS_BELUM_ADA di peladen sekarang benar-benar berpengaruh.",
+      "Pengurutan tujuh kolom pada Kendali Berkas e-Court, dikerjakan SERVER bukan peramban: \"belum ada terbanyak\" menunjuk yang terbanyak di seluruh arsip, bukan yang terbanyak di antara 500 baris yang kebetulan terbawa. Nomor perkara diurut sebagai ANGKA dengan tahun lebih dahulu, dan tanggal diurut sebagai tanggal - sehingga pergantian bentuk tanggal menjadi DD-MM-YYYY tidak dapat merusak urutannya.",
+      "Penarikan e-Court yang MEMFOKUSKAN pada yang belum ada: perkara yang berkasnya sudah utuh tidak dibuka sama sekali, dua puluh contoh perkara sasaran digambar beserta sebabnya, dan taksiran waktunya berupa rentang yang sudah memuat istirahat 1-3 menit tiap 40 perkara. Jatah satu penekanan datang dari bot, bukan dari angka yang ditulis keras di layar - jadi menaikkan ALETA_BOT_ECOURT_MAKS_BELUM_ADA di server sekarang benar-benar berpengaruh.",
       "Layar Admin Integrasi e-Court akhirnya menjawab \"apakah sinkronisasinya lengkap?\": cakupan penarikan beserta penyebutnya (2.527 perkara e-Court SIPP), riwayat sepuluh putaran jembatan terakhir, ringkasan berkas dan byte arsip dengan byte aktif dipisah dari yang sudah dibuang masa simpan, jumlah panggilan elektronik dan persetujuan pihak, serta kartu Keadaan Pendaftaran e-Court yang memakai tiga medan yang selama ini dibaca lalu dibuang.",
       "Perkara yang nomornya BERSELISIH antara SIPP dan e-Court dipampangkan merah di layar Admin Integrasi. Terukur 2 dari 2.529, dan keduanya BERTUKAR: perkara 61/Pdt.G/2020 tercatat 63/Pdt.G/2020 di e-Court dan sebaliknya. Menarik dokumen dengan nomor yang salah membuat berkas perkara 61 mendarat di perkara 63.",
     ],
@@ -306,7 +306,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "ANGKA \"PERKARA COCOK\" SALAH 27% KETIKA DUA TAG PADAT DIGABUNG. Irisannya dihitung dari daftar id yang dipagari 3.000, jadi dua daftar yang terpotong menghasilkan irisan yang terpotong dua kali: verstek dan sudah-diarsipkan memulangkan 1.680 padahal sesungguhnya 2.302 - 622 perkara hilang, dan angka itulah yang digambar layar. Pagunya diukur ulang dan alasan lamanya ternyata salah: daftar 9.993 id justru TERMURAH (88 ms) dibandingkan 3.000 id (847 ms). Sesudah pagunya dinaikkan, irisan yang sama memulangkan 2.302 - sama persis dengan COUNT langsung di SQL.",
       "DUA TAG AKTA CERAI BERJANJI \"akta sudah terbit\" TETAPI TIDAK PERNAH MEMERIKSA TANGGALNYA, sehingga 80 baris akta yang belum pernah diterbitkan dilaporkan sebagai akta yang sudah terbit dan belum diambil - yang mengejarnya akan mencari berkas yang tidak ada. Keduanya berkurang tepat 80, dan ke-80 itu tidak hilang: diberi tagnya sendiri di kelompok Mutu data. Sekalian, tag \"Sandi relaas tak dikenal\" ternyata MEMAAFKAN sandi N yang justru tidak ada di komentar kolom SIPP - sandi yang seharusnya ia temukan; 12 menjadi 22.",
       "PERMINTAAN PENGHITUNGAN TAG YANG TIDAK PERNAH DIBATALKAN. Mengganti dua pemilih pada panel - dua klik biasa - menjalankan 38 kueri berat serentak di SIPP, sementara kolam sambungan bot hanya 10; sisanya mengantre, termasuk kueri petugas lain. Sekarang permintaan yang ditinggalkan benar-benar dibatalkan, dan jawaban yang lambat tidak lagi menimpa hasil yang baru.",
-      "TANGGAL MURNI DICETAK DENGAN JAM KARANGAN pada Kendali Berkas: \"7 Okt 2026, 00.00\" bila dilukis peladen dan \"7 Okt 2026, 08.00\" bila dilukis peramban - dan karena kedua lukisan berbeda teksnya, React membatalkan lukisan peladen sehingga layar berkedip. Jam 00.00 itu karangan bentuk penyimpanan, bukan data SIPP.",
+      "TANGGAL MURNI DICETAK DENGAN JAM KARANGAN pada Kendali Berkas: \"7 Okt 2026, 00.00\" bila dilukis server dan \"7 Okt 2026, 08.00\" bila dilukis peramban - dan karena kedua lukisan berbeda teksnya, React membatalkan lukisan server sehingga layar berkedip. Jam 00.00 itu karangan bentuk penyimpanan, bukan data SIPP.",
     ],
     security: [
       "Tidak ada satu potongan SQL pun yang datang dari peramban pada menu tag yang baru: katalognya TERTUTUP di bot, kunci yang tidak ada di dalamnya dibuang dengan Object.hasOwn, jumlah tag sekali kirim dipagari delapan, dan tanggalnya selalu diikat sebagai parameter - dasar tanggal yang tidak dikenal jatuh ke tanggal pendaftaran, bukan menjadi teks SQL.",
@@ -316,7 +316,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "MIGRASI 0050_aleta_tipe_keluaran (dua tabel). aleta-update.sh melewati migrasi tanpa ALETA_RUN_DB_MIGRATIONS=1 tetapi ensureAletaSchema membuat tabelnya saat boot; sesudah pasang periksa SELECT count(*) FROM aleta_tipe_keluaran. Nomor migrasi bebas berikutnya 0051.",
       "PENGATURAN ABT DI SATKER (keputusan pengguna): menu blangko 'Blangko Derry' (abt_menu 900) hanya mengizinkan grup 1|10|20 - juru sita (600) dan koordinator delegasi (650) ditolak ABT untuk SELURUH blangko relaas. Blangko ikrar [JS] 4 berada di menu relaas yang hanya menerima proses 80-220, sehingga ikrar ditolak; naikkan rentangnya atau pindahkan blangko ke menu 25.",
       "Cetak relaas memerlukan citra bot yang dibangun ulang (rute /sipp/relaas-cetak) dan ekstensi 1.168.0. Uji manual wajib: masuk ABT sebagai juru sita lalu cetak dua dokumen dari Antrian Sidang.",
-      "SEJAK VERSI INI ALETA TIDAK MENAMBAH POLA YANG MENIRU KERJA MANUSIA di SIPP, ABT, atau e-Court: jeda tiruan manusia dibuang, jeda yang tersisa punya guna sendiri (beban peladen), dan baris audit unggahan menyebut ALETA beserta pengguna dan IP yang sebenarnya.",
+      "SEJAK VERSI INI ALETA TIDAK MENAMBAH POLA YANG MENIRU KERJA MANUSIA di SIPP, ABT, atau e-Court: jeda tiruan manusia dibuang, jeda yang tersisa punya guna sendiri (beban server), dan baris audit unggahan menyebut ALETA beserta pengguna dan IP yang sebenarnya.",
       "Tabel baru aleta_bot_ecourt_kunjungan dibuat SENDIRI saat pertama kali dipakai - tidak ada migrasi yang perlu dijalankan tangan, sama seperti aleta_bot_ecourt_putusan. Ia mencatat perkara e-Court yang halamannya sudah dibuka beserta jumlah dokumen yang terlihat, dan itulah yang membuat giliran penarikan dapat berputar.",
       "Layar Admin Integrasi e-Court menambah kira-kira 2,7 detik pada pemuatannya, sebab pertanyaan \"apakah lengkap\" tidak dapat dijawab tanpa penyebutnya dan penyebutnya harus dibaca dari SIPP. Sengaja TIDAK disinggahkan: angka basi yang tampil sebagai angka sekarang justru cacat yang sedang dibetulkan. Seluruhnya dibungkus penahan galat, jadi SIPP yang lambat atau mati tidak mengosongkan angka di sebelahnya.",
       "Ekstensi SIPP naik ke 1.168.0 pada rilis yang sama (1.167.0 tidak pernah dirilis sendiri). Ekstensi unpacked tidak memperbarui dirinya - tekan Reload pada chrome://extensions sesudah berkasnya disalin.",
@@ -354,7 +354,7 @@ export const PATCH_NOTES: PatchNote[] = [
       {
         title: "Bentuk tanggal: mengapa nama harinya dihitung tanpa zona waktu",
         items: [
-          "Halaman pertama dilukis PELADEN di dalam Docker dengan zona UTC, lalu dilukis ulang PERAMBAN dengan zona WITA. new Date(\"2026-10-07\") dibaca sebagai tengah malam UTC, dan nama harinya menurut zona mesin - jadi kedua lukisan dapat menyebut nama hari yang berbeda untuk tanggal yang sama, dan React membuang lukisan peladennya.",
+          "Halaman pertama dilukis SERVER di dalam Docker dengan zona UTC, lalu dilukis ulang PERAMBAN dengan zona WITA. new Date(\"2026-10-07\") dibaca sebagai tengah malam UTC, dan nama harinya menurut zona mesin - jadi kedua lukisan dapat menyebut nama hari yang berbeda untuk tanggal yang sama, dan React membuang lukisan servernya.",
           "Karena itu pustaka tanggalnya tidak menyentuh zona sama sekali: angkanya diambil dari teksnya, harinya dihitung dengan Date.UTC dan getUTCDay - jawaban yang sama di mesin mana pun. Pertanyaan yang MEMANG butuh zona (\"sekarang tanggal berapa di Donggala\") tetap dijawab pustaka waktu pengadilan.",
           "SIPP menyimpan tanggal kosong sebagai 0000-00-00 - terukur 1 dari 20.109 baris jadwal sidang. Tanggal itu DITOLAK, bukan diterjemahkan menjadi \"30 November -1\" yang terbaca seolah data sungguhan.",
           "Sebelas ruas yang tertinggal ISO dibungkus pada putaran kedua, dan empat di antaranya berdampingan dengan ruas yang sudah dibungkus - panel Mediasi membaca \"Laporan mediator: 2026-09-08\" tepat di atas \"Kesepakatan perdamaian: Sel, 08-09-2026\" pada 210 perkara. Itu lebih buruk daripada sebelum butir ini dikerjakan, dan penyisir ISO sekarang menahannya.",
@@ -430,7 +430,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     fixed: [
       "SEBELAS PENURUN SEBUTAN PARA PIHAK disatukan menjadi satu sumber. Diukur atas seluruh 10.120 perkara satker, dibandingkan dengan kueri ABT sendiri: kelengkapanDataService salah pada 5.254 (51,9%), caseDirectoryService 5.581 (55,1%), penyusunPertimbangan 4.415 (43,6%), isian-putusan-sipp 3.999 (39,5%), jlf-variable-resolver 1.178 (11,6%). Aturan baru: 0 dari 10.120. Sebab utamanya sepele dan tidak pernah tertangkap uji - SIPP menulis \"Istbat Nikah\" sedangkan seluruh pola ALETA menulis \"itsbat\", dan 3.972 perkara luput karena satu huruf.",
-      "UNGGAH PUTUSAN YANG BERHENTI PADA \"akar_sipp_belum_disetel\". Diukur di peladen dan ditemukan DUA halangan: pengaturan folder SIPP bernilai null, dan folder itu terpasang hanya-baca sehingga menyetelnya saja hanya memindahkan galatnya satu langkah. Kini folder SIPP punya cadangan dari mount yang memang sudah ada, keadaan hanya-baca dibedakan dari belum-disetel, dan dua folder putusan dibuka untuk ditulis di docker-compose.",
+      "UNGGAH PUTUSAN YANG BERHENTI PADA \"akar_sipp_belum_disetel\". Diukur di server dan ditemukan DUA halangan: pengaturan folder SIPP bernilai null, dan folder itu terpasang hanya-baca sehingga menyetelnya saja hanya memindahkan galatnya satu langkah. Kini folder SIPP punya cadangan dari mount yang memang sudah ada, keadaan hanya-baca dibedakan dari belum-disetel, dan dua folder putusan dibuka untuk ditulis di docker-compose.",
       "TANGGAL SIDANG TIAP DOKUMEN e-COURT tidak pernah terisi, dan agenda seluruh dokumen satu perkara berisi agenda TERAKHIR perkara itu. Halaman e-Court sebenarnya menuliskan tanggalnya dengan jelas per blok agenda; yang hilang penyambungnya. Sinkronisasi juga berhenti MENGOSONGKAN kembali tanggal yang sudah benar.",
       "PENETAPAN IKRAR TALAK tidak pernah dapat diunduh: kuerinya mencari kolom \"id\" pada perkara_ikrar_talak, dan tabel itu tidak punya kolom bernama begitu - kunci utamanya perkara_id. Kegagalannya ditelan .catch(), jadi tombolnya hanya tidak pernah muncul.",
       "Nama juru sita pada peta relaas salah pada 61,6% baris yang bernama, dan dua juru sita tersibuk tidak pernah muncul sama sekali.",
@@ -443,7 +443,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     operationalNotes: [
       "Migrasi 0049_antrian_publik menambahkan tabel pengaturan layar antrian tanpa login, dengan satu baris bawaan yang seluruh ruasnya menyala.",
-      "docker-compose.yml berubah dan TIDAK dikirim skrip pemasangan - dua mount baru harus dipasang di peladen secara terpisah, lalu container bot dijalankan ulang.",
+      "docker-compose.yml berubah dan TIDAK dikirim skrip pemasangan - dua mount baru harus dipasang di server secara terpisah, lalu container bot dijalankan ulang.",
       "Berkas e-Court lama belum bertanggal sidang. Jalankan scripts/isi-tanggal-sidang-dokumen.js untuk mengisinya dari SIPP; tanpa --tulis ia hanya melapor, dan --periksa membuktikan anggapannya.",
     ],
     knownLimitations: [
@@ -494,7 +494,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     knownLimitations: [
       "TOMBOL \"DAFTARKAN KE ANTRIAN\" TIDAK DIHAPUS, dan sengaja. Diminta pengguna memeriksa apakah ia berguna; jawabannya tidak dapat diukur dari sini - basis data aplikasi antrian (sipp_turunan_antrian) hanya hidup di jaringan satker dan tidak ada di salinan lokal. Yang diketahui: tombol itu satu-satunya jalur ALETA menulis ke aplikasi antrian, rancangannya berpihak pada tidak menulis (uji kering sebagai bawaan, hanya menambah, tidak menyentuh kolom milik mesin antrian), dan layar sendiri menunjukkan 24 dari 27 perkara sudah mengambil nomor. Yang belum diketahui: siapa yang mendaftarkan ke-24 itu. Bila aplikasi antrian menariknya sendiri dari SIPP, tombol ini memang tidak berguna - dan itu satu pertanyaan yang menjawab seluruhnya.",
-      "PEMISAHAN e-DOC DAN DIREKTORI PUTUSAN BELUM DICOBA DI SIPP SUNGGUHAN - peladen sedang tidak tersambung saat perbaikan ini ditulis. Sesudah terpasang, unggah satu putusan RTF dan periksa di SIPP: kolom e-Doc harus menunjuk berkas .rtf, dan Direktori Putusan menunjuk .pdf dengan nama pokok yang sama.",
+      "PEMISAHAN e-DOC DAN DIREKTORI PUTUSAN BELUM DICOBA DI SIPP SUNGGUHAN - server sedang tidak tersambung saat perbaikan ini ditulis. Sesudah terpasang, unggah satu putusan RTF dan periksa di SIPP: kolom e-Doc harus menunjuk berkas .rtf, dan Direktori Putusan menunjuk .pdf dengan nama pokok yang sama.",
       "PENGHAPUS e-DOC MILIK SIPP hanya menghapus satu berkas. Sejak satu naskah menghasilkan dua berkas dengan nama pokok yang sama, menghapus e-Doc dari SIPP akan meninggalkan PDF-nya di cakram. Tidak berbahaya - barisnya ikut terhapus - tetapi patut diketahui.",
       "TATA LETAK BARU BELUM DILIHAT DI PERAMBAN. Layar ini menuntut sesi yang sah, dan kata sandi bukan sesuatu yang boleh saya pegang; yang diperiksa hanya tsc, eslint, dan penjaga tata letaknya. Perhatikan pada pemakaian pertama: rata-kanan kelompok tombol kepala pada layar sempit, dan naiknya deretan penanda saat baris tindakan diciutkan.",
     ],
@@ -521,7 +521,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "NAMA PETUGAS YANG MELAYANI PENGAMBILAN NOMOR kini digambar. Namanya sudah ikut terkirim dari aplikasi antrian sejak lama - tersimpan di dalam tipe, tidak pernah ditampilkan sekali pun.",
       "SATU KOTAK PENCARIAN menggantikan dua. Dulu ada \"Cari nomor perkara\" yang dikirim ke SIPP dan \"Saring di dalam hasil\" yang menyaring baris yang sudah termuat - dua kotak berbentuk sama, di layar yang sama, tanpa apa pun pada bentuknya yang memberi tahu mana yang mana. Sekarang: mengetik menyaring seketika, menekan Enter melebarkan pencarian ke SIPP. Kata kunci yang sedang berlaku di sisi SIPP disebutkan di bawah kotaknya beserta tombol melepasnya - tanpa itu, daftar yang menyusut karenanya akan disangka jadwal yang memang sepi.",
       "SAKLAR TAMPILAN BARU, dan dua di antaranya MATI sejak awal: Kolom Siap dan Catatan cara menghitung. Keduanya boleh mati sejak awal karena yang hilang bukan fakta tentang perkara, melainkan kalimat yang menerangkan cara ALETA menghitung - dan kolom Siap memang kosong sampai tombol Hitung skor ditekan. Keduanya tidak ikut dihitung pada angka \"berapa yang dimatikan\": lencana yang selalu menyala berhenti dibaca.",
-      "UNGGAH PUTUSAN UNTUK STATUS SELAIN DIKABULKAN - cabut, gugur, tidak dapat diterima, digugurkan, ditolak. SIPP menyusun halaman Putusan Akhir BERBEDA menurut statusnya; panel kini menanyakan lebih dulu bagian mana yang benar-benar ada di borang, hanya menggambar yang ada, dan menyebutkan ketiadaan yang lain beserta sebabnya.",
+      "UNGGAH PUTUSAN UNTUK STATUS SELAIN DIKABULKAN - cabut, gugur, tidak dapat diterima, digugurkan, ditolak. SIPP menyusun halaman Putusan Akhir BERBEDA menurut statusnya; panel kini menanyakan lebih dulu bagian mana yang benar-benar ada di blangko, hanya menggambar yang ada, dan menyebutkan ketiadaan yang lain beserta sebabnya.",
       "WARNA LENCANA STATUS PUTUSAN DIBEDAKAN. \"Gugur\" dan \"digugurkan\" adalah dua hal berbeda dan kini berwarna berbeda; dicabut dan dicoret punya warnanya sendiri. Satu warna untuk semua yang bukan dikabulkan membuat mata berhenti membedakannya.",
       "NOMOR SIDANG KEBERAPA pada riwayat panggilan dan seluruh jadwal sidang perkara - angka saja, di sisi kiri. Diturunkan dari jadwal perkaranya, bukan dari penomoran ulang daftar relaas: satu sidang dapat punya beberapa relaas, dan menomori relaasnya menghasilkan angka yang tidak pernah cocok dengan berkas perkara.",
       "JADWAL PERKARA YANG BERSIDANG beserta jabatan dan nama penggunanya, di kepala rincian.",
@@ -537,7 +537,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "TOMBOL PENCARIAN LANJUTAN DAN RESET pindah sejejer dengan Hitung skor, Cetak, dan Daftarkan ke antrian. Sebelumnya keduanya menempati baris tersendiri yang hanya berisi mereka berdua - satu baris penuh terpakai oleh dua tombol, dan jumlah sidang yang terlihat berkurang sebanyak itu.",
       "KOLOM \"PERAN ANDA BERHAK MELIHAT SELURUH PERKARA SATKER\" dihapus dari rincian - keterangan yang sama pada tiap baris, dibaca sekali seumur hidup.",
       "TOMBOL TUNDA DAN PUTUS pindah ke samping kanan jenis perkara.",
-      "BERKAS BUKAN PDF DITOLAK DI PANEL EKSTENSI, bukan sesudah bolak-balik ke peladen. Bot menolak apa pun yang empat bita pertamanya bukan %PDF - dikenali dari bitanya, bukan dari nama berkasnya. Atribut accept pada pemilih berkas hanya SARAN; yang memilih \"All files\" tetap dapat memilih .rtf.",
+      "BERKAS BUKAN PDF DITOLAK DI PANEL EKSTENSI, bukan sesudah bolak-balik ke server. Bot menolak apa pun yang empat bita pertamanya bukan %PDF - dikenali dari bitanya, bukan dari nama berkasnya. Atribut accept pada pemilih berkas hanya SARAN; yang memilih \"All files\" tetap dapat memilih .rtf.",
       "SAKLAR \"Sisipkan berkas ke Jadwal Sidang\" DISEBUTKAN di panel. Kemampuan menempelkan berkas ke baris Jadwal Sidang - di samping tombol Unggah BAS, dicocokkan menurut agendanya - sudah ada sejak lama, tetapi saklarnya mati sejak awal dan tidak ada satu pun tempat yang menyebutkannya. Fitur yang tidak diketahui sama dengan fitur yang tidak ada.",
     ],
     fixed: [
@@ -547,12 +547,12 @@ export const PATCH_NOTES: PatchNote[] = [
       "WARNA LENCANANYA mengikuti SAMPAI atau tidaknya, bukan mengikuti pertemuan langsung - panggilan elektronik dan relaas yang diterima orang serumah sama-sama sampai tanpa pertemuan langsung. Kedua layar yang menampilkan relaas diperbaiki bersamaan; memperbaiki satu saja membuat keduanya berselisih untuk perkara yang sama.",
       "DAFTAR HAKIM PADA TUNJUKAN KONSEPTOR TIDAK PERNAH TERISI sejak fiturnya lahir di 2.29.0. Rutenya membaca pegawai.hakim lewat cast, padahal gerbang memulangkan pembungkus { ok, data } - nilainya SELALU undefined. Gagalnya sempurna dalam diam: kotak isiannya memang dirancang tetap dapat dipakai tanpa daftar, jadi tidak ada satu pun tanda bahwa ada yang rusak.",
       "HALAMAN TERTARIK KE SAMPING KETIKA RINCIAN DIBUKA. Baris rincian membentang selebar isinya, bukan selebar layar, sehingga seluruh tabel ikut melar dan kolomnya tidak lagi sejajar. Lebarnya kini dikunci pada lebar yang sungguh tampak, dan isinya yang lebih lebar menggulir di dalam wadahnya sendiri.",
-      "UNGGAH PUTUSAN MASSAL BERHENTI PADA PERKARA CABUT DAN GUGUR. Panel mencoba mengisi Pertimbangan Hukum dan Amar Anonim yang memang TIDAK ADA di borang status itu; jembatan menjawab \"medan tidak ketemu\", panel menghitungnya sebagai gagal, dan pagar \"selama masih ada yang gagal Simpan tidak ditekan\" menghentikan seluruh pengisian - tepat pada jenis perkara yang paling sederhana dan paling banyak jumlahnya. Yang terbaca petugas hanya \"2 gagal\", tanpa satu pun keterangan bahwa bagiannya memang tidak ada.",
-      "DRAF YANG BERISI UNTUK BAGIAN YANG TIDAK ADA DI BORANG kini DITAHAN, bukan dilewati. Isi itu tidak akan pernah sampai ke SIPP; tanpa penahanan ini panel akan berkata \"tersimpan\" atas putusan yang kehilangan pertimbangannya, dan hilangnya baru ketahuan ketika salinannya dibaca orang.",
+      "UNGGAH PUTUSAN MASSAL BERHENTI PADA PERKARA CABUT DAN GUGUR. Panel mencoba mengisi Pertimbangan Hukum dan Amar Anonim yang memang TIDAK ADA di blangko status itu; jembatan menjawab \"medan tidak ketemu\", panel menghitungnya sebagai gagal, dan pagar \"selama masih ada yang gagal Simpan tidak ditekan\" menghentikan seluruh pengisian - tepat pada jenis perkara yang paling sederhana dan paling banyak jumlahnya. Yang terbaca petugas hanya \"2 gagal\", tanpa satu pun keterangan bahwa bagiannya memang tidak ada.",
+      "DRAF YANG BERISI UNTUK BAGIAN YANG TIDAK ADA DI BLANGKO kini DITAHAN, bukan dilewati. Isi itu tidak akan pernah sampai ke SIPP; tanpa penahanan ini panel akan berkata \"tersimpan\" atas putusan yang kehilangan pertimbangannya, dan hilangnya baru ketahuan ketika salinannya dibaca orang.",
       "STATUS \"TIDAK DITERIMA\" - tanpa kata \"dapat\" - tidak dikenali agen praperiksa, sehingga pemeriksaan padanan amarnya DILEWATI diam-diam tepat pada putusan yang amarnya paling mudah tertukar.",
-      "UNGGAH PUTUSAN DARI HALAMAN PERKARA AGAMA SELALU DITOLAK dengan \"perkara_id belum disebut.\" - setiap kali, tanpa kecuali. Sebabnya bukan berkas yang salah pilih: ekstensi membaca perkara_id dari medan tersembunyi di dalam borang putusan, dan medan itu TIDAK PERNAH ADA di sana. SIPP mengenali perkara pada borang Putusan Akhir lewat `enc`, nomor perkara tersandi; perkara_id hanya dipakai pada borang grasi dan peninjauan kembali. Rute saudaranya sudah lama menanyakannya sendiri ke SIPP bila kosong - hanya rute ini yang tidak pernah diberi jalan mundur yang sama.",
+      "UNGGAH PUTUSAN DARI HALAMAN PERKARA AGAMA SELALU DITOLAK dengan \"perkara_id belum disebut.\" - setiap kali, tanpa kecuali. Sebabnya bukan berkas yang salah pilih: ekstensi membaca perkara_id dari medan tersembunyi di dalam blangko putusan, dan medan itu TIDAK PERNAH ADA di sana. SIPP mengenali perkara pada blangko Putusan Akhir lewat `enc`, nomor perkara tersandi; perkara_id hanya dipakai pada blangko grasi dan peninjauan kembali. Rute saudaranya sudah lama menanyakannya sendiri ke SIPP bila kosong - hanya rute ini yang tidak pernah diberi jalan mundur yang sama.",
       "BOT YANG MATI DIBEDAKAN DARI PERKARA YANG TIDAK ADA pada pesan gagalnya. Menyamakan keduanya mengirim petugas memeriksa nomor perkaranya - yang sudah benar - sementara yang perlu diperiksa sambungan botnya.",
-      "STATUS PUTUSAN YANG SUDAH DIPILIH PETUGAS DITIMPA DIAM-DIAM oleh panel ekstensi. Yang sudah memilih \"Dicabut\" mendapati pilihannya berganti sendiri menjadi usulan ALETA - yang pada sebagian besar perkara berbunyi \"Dikabulkan\" - lalu borangnya menggambar ulang dan medan yang seharusnya tersembunyi ikut muncul. Akibatnya bukan tampilan: status putusan yang keliru tersimpan ke perkara orang, lalu mengalir ke laporan dan ke Direktori Putusan. Lebih buruk lagi, praperiksa sudah dijalankan SEBELUMNYA atas status yang lama.",
+      "STATUS PUTUSAN YANG SUDAH DIPILIH PETUGAS DITIMPA DIAM-DIAM oleh panel ekstensi. Yang sudah memilih \"Dicabut\" mendapati pilihannya berganti sendiri menjadi usulan ALETA - yang pada sebagian besar perkara berbunyi \"Dikabulkan\" - lalu blangkonya menggambar ulang dan medan yang seharusnya tersembunyi ikut muncul. Akibatnya bukan tampilan: status putusan yang keliru tersimpan ke perkara orang, lalu mengalir ke laporan dan ke Direktori Putusan. Lebih buruk lagi, praperiksa sudah dijalankan SEBELUMNYA atas status yang lama.",
       "BERKAS JAWAB-MENJAWAB E-COURT TIDAK PERNAH TERLIHAT - jawaban, replik, duplik, duplik rekonvensi, kesimpulan, fotokopi alat bukti. Semuanya sudah lama ditarik ALETA; yang membuatnya tampak tidak ada adalah tombol unduhnya yang disembunyikan. Ada tidaknya berkas dibaca dari kolom cermin yang basi - terisi pada 23 dan 8 dari 394 dokumen - sementara tabel berkasnya mencatat seluruh 400. Tidak ada satu galat pun yang berbunyi.",
       "BERKAS YANG TERCATAT ADA TETAPI HILANG DARI ARSIP kini disebut apa adanya, bukan disamakan dengan yang tidak pernah ada. Tindakannya berbeda: yang satu menyuruh memeriksa arsipnya, yang lain menyuruh pihak mengunggah. Arsip e-Court pernah lenyap seluruhnya di sini karena volume Docker belum di-mount.",
       "AGENDA REKONVENSI TERTUKAR DENGAN KONVENSINYA pada pencocokan berkas ke baris Jadwal Sidang - \"Duplik Rekonvensi\" juga cocok dengan pola duplik biasa. Tertukarnya tidak berbunyi apa pun: kotaknya tetap terisi, isinya saja milik tahapan lain.",
@@ -561,7 +561,7 @@ export const PATCH_NOTES: PatchNote[] = [
     operationalNotes: [
       "MIGRASI 0047 DAN 0048 - tabel aleta_keterangan_perkara dan aleta_rekam_antrian. Nomor Drizzle bebas berikutnya kini 0049; beri tahu sesi PC. Keduanya juga ada di jalur idempoten schema.ts, sebab basis data dalam memori dan pemasangan yang melewati migrasi mengandalkan jalur itu.",
       "PEMASANGAN WAJIB MEMBAWA ALETA_RUN_DB_MIGRATIONS=1. Tanpa itu skrip pembaruan MELEWATI migrasi dan tetap melaporkan berhasil - dan rekaman antrian akan diam-diam tidak pernah tertulis sampai ada yang memeriksanya berbulan-bulan kemudian.",
-      "REKAMAN ANTRIAN DITULIS DARI PELADEN tiap kali jadwal sidang dimuat, bukan dari peramban. Gagalnya tidak menjatuhkan jadwalnya - jumlah yang tertulis beserta sebab gagalnya ikut dipulangkan rute jadwal sidang.",
+      "REKAMAN ANTRIAN DITULIS DARI SERVER tiap kali jadwal sidang dimuat, bukan dari peramban. Gagalnya tidak menjatuhkan jadwalnya - jumlah yang tertulis beserta sebab gagalnya ikut dipulangkan rute jadwal sidang.",
       "PEMBACAAN RELAAS YANG BARU MENGUBAH APA YANG TAMPIL pada relaas yang sudah lama tersimpan - tidak ada data yang diubah, hanya cara membacanya. Relaas yang kemarin berbunyi \"tidak bertemu\" dapat berubah menjadi \"Panggilan elektronik\" atau \"Diterima orang serumah\"; itu pembetulan, bukan perubahan data.",
       "EKSTENSI PERLU DI-RELOAD di chrome://extensions sesudah rilis ini - ekstensi unpacked tidak memperbarui dirinya.",
       "BERKAS PUTUSAN YANG DIUNGGAH HARUS PDF. Yang terbit di Direktori Putusan harus PDF, dan ALETA sengaja tidak menjalankan pengubah soffice seperti SIPP - pengubahan yang gagal separuh menghasilkan berkas rusak yang sudah terlanjur publik. Simpan naskahnya sebagai PDF lebih dulu; .rtf dan .docx ditolak.",
@@ -619,7 +619,7 @@ export const PATCH_NOTES: PatchNote[] = [
     changed: [
       "TOMBOL TUNDA DAN PUTUS PINDAH KE SAMPING JENIS PERKARA, dari depan nomor perkara. Di tempat lamanya keduanya berdiri persis di titik yang paling dahulu dibaca mata, sehingga yang pertama terbaca pada tiap baris bukan perkaranya melainkan dua tombol yang bentuknya sama persis pada dua puluh tujuh baris - dan nomor perkara, satu-satunya hal yang membedakan baris, terdorong ke kanan sejauh panjang penandanya sehingga tidak lagi berbaris lurus ke bawah. Ditaruh di samping jenis perkara, bukan di ujung barisnya sendiri: jenis perkara menentukan apa yang akan dicatat - Cerai Talak yang ditunda berbeda akibatnya dari Cerai Gugat yang ditunda, sebab yang pertama masih menunggu ikrar.",
       "PEMERIKSAAN DRAF BERBARENGAN, ENAM SEKALIGUS. Dahulu berurutan; pada dua puluh perkara itu sepuluh detik menunggu sebelum satu baris pun dapat dicentang. Terbatas enam, bukan seluruhnya: dua puluh permintaan serentak ke SIPP lewat satu gerbang menukar menunggu dengan menumpuk, dan yang menumpuk menahan permintaan lain di layar yang sama.",
-      "DRAF TIDAK LAGI DITARIK DUA KALI - pemeriksaan menariknya utuh lalu membuangnya, dan pengisian borang menariknya lagi.",
+      "DRAF TIDAK LAGI DITARIK DUA KALI - pemeriksaan menariknya utuh lalu membuangnya, dan pengisian blangko menariknya lagi.",
     ],
     fixed: [
       "UNGGAH ANONIMISASI YANG \"ERROR DAN TIDAK MAU TERUPLOAD\". Batas waktu ekstensi 45 detik LEBIH PENDEK daripada batas gerbang 60 detik. Unggahan yang memakan 45 sampai 60 detik karena itu dibatalkan di layar - petugas melihat galat - sementara botnya terus bekerja dan mungkin menyelesaikannya. Komentar pada gerbang itu sendiri sudah menyebut akibatnya: meninggalkan berkas yang sudah tertulis tanpa barisnya. Anonimisasi paling sering kena karena kedua berkas dikirim dalam satu permintaan, jadi bitanya dua kali lipat.",
@@ -696,7 +696,7 @@ export const PATCH_NOTES: PatchNote[] = [
     fixed: [
       "TITIK PERKARA MUNCUL KEMBALI. globals.css memberi seluruh img, svg, video, dan canvas max-width 100% - benar bagi hampir semuanya, dan menghancurkan peta. Kanvas Leaflet duduk di dalam panel berposisi mutlak yang anak satu-satunya juga berposisi mutlak, sehingga lebar panelnya NOL; max-width 100% terhadap nol berarti nol, dan max-width mengalahkan width sebaris yang dipasang Leaflet. Terukur di peramban satker: kanvas bersimpanan 2180x1190 dengan 40.729 piksel sungguh tergambar, ditampilkan 0x595. Tingginya benar - hanya lebarnya nol, dan justru itu yang membuatnya sulit dikenali.",
       "UBINAN SELAMAT SEJAK AWAL karena leaflet.css melindunginya dengan max-width none !important - tetapi daftar itu memuat img, TIDAK memuat canvas. Karena itu petanya tampak sehat sementara seluruh lapisan vektornya hilang.",
-      "PERBAIKAN PETA DI BAWAH INI SEMULA BERNOMOR 2.28.1 dan tidak jadi dipasang karena peladen satker sedang tidak dapat dihubungi. Nomornya dilebur ke sini supaya sesi PC cukup menyelaraskan satu nomor.",
+      "PERBAIKAN PETA DI BAWAH INI SEMULA BERNOMOR 2.28.1 dan tidak jadi dipasang karena server satker sedang tidak dapat dihubungi. Nomornya dilebur ke sini supaya sesi PC cukup menyelaraskan satu nomor.",
       "LAYAR PENUH PETA TIDAK LAGI KOSONG. Kotaknya berkelas relative, dan gaya penulis mengalahkan gaya bawaan :fullscreen - sehingga posisinya kembali relative sementara height 100%-nya dihitung terhadap induk setinggi auto, yaitu mengerut. Terukur di peramban: dengan position relative, height 100% meninggalkan kotaknya pada 708 piksel sedangkan 100vh memberinya 770.",
     ],
     security: [],
@@ -779,7 +779,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "BEBAN KONSEPTOR DIHITUNG ATAS KONSEPTORNYA, BUKAN KETUA MAJELIS. Ketua majelis yang bertanggung jawab atas konsepnya, bukan yang mengerjakannya - konsep dikerjakan anggota majelis bergantian. Terukur atas 683 putusan 2026: konseptor menyebut 8 orang dan seluruh 683 putusan bertuan, sedangkan ketua majelis menyebut 13 orang yang enam di antaranya nama sama tertulis dua cara.",
       "Sumber nama konseptor dibuat SAMA PERSIS dengan Status Perkara - perkara_proses pada tahapan putusan, pencatat paling awal, nama lengkap dari sys_users. Dua layar yang menyebut nama berbeda untuk satu perkara yang sama tidak dibaca sebagai dua ukuran, melainkan sebagai satu yang keliru.",
       "Pencocokan ciri alasan dipindahkan ke PER KALIMAT. Bentuk lamanya menyambung seluruh butir lebih dahulu, sehingga \"dihukum\" di butir 2 dan \"penjara\" di butir 9 terbaca sebagai pernyataan bahwa seseorang dihukum penjara.",
-      "Peladen pengembangan memakai Turbopack dan cachenya tidak lagi dibuang tiap start. Terukur: satu proses next dev memegang 2.040 MB dan 177 detik CPU, sebab --webpack dipaksa sementara cache Turbopack justru dihapus - dua baris yang saling meniadakan.",
+      "Server pengembangan memakai Turbopack dan cachenya tidak lagi dibuang tiap start. Terukur: satu proses next dev memegang 2.040 MB dan 177 detik CPU, sebab --webpack dipaksa sementara cache Turbopack justru dihapus - dua baris yang saling meniadakan.",
     ],
     fixed: [
       "PILIHAN TEMPLAT YANG HILANG DARI DAFTAR PERIKSA. Baris \"(melihat/mendengar)\" digabung menjadi satu kalimat SESUDAH pemeriksa isian berjalan, sehingga ia lenyap dari daftar yang perlu diisi - padahal inilah butir yang menyangkut CARA saksi mengetahui peristiwanya, dan saksi yang hanya mendengar dari balik dinding tidak melihatnya. Skrip pemeriksanya kini 38 lulus 0 gagal, dari sebelumnya 37 lulus 1 gagal.",
@@ -845,7 +845,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Sisi kanan tirai tidak dapat diketuk dan tidak memunculkan keterangan melayang - keduanya tetap milik sisi kiri. Angka sisi kanan terbaca dengan menggeser tirai melewati desanya, atau dengan menukar kedua lapisan.",
       "Selama gerak zum berlangsung, garis tirai dapat sesaat tidak sejajar dengan tepi warnanya; keduanya bertemu kembali begitu geraknya selesai.",
       "Perbandingan dibatasi empat pembanding. Dengan kolom label, kolom perkara yang sedang dibuka, dan kolom selisih, empat sudah membuat tabelnya berkolom tujuh - dan tabel yang harus digulung ke samping bukan perbandingan lagi: yang dibandingkan justru dua kolom yang tidak dapat dilihat bersamaan.",
-      "Cacat warna kelabu di atas ditemukan dengan MEMBACA kode, lalu dipastikan oleh eslint yang menyebutkan tepat kelima nama kebergantungan yang hilang - bukan dengan melihat petanya di portal yang berjalan. Pemasangan di peladen tetap perlu diperiksa mata.",
+      "Cacat warna kelabu di atas ditemukan dengan MEMBACA kode, lalu dipastikan oleh eslint yang menyebutkan tepat kelima nama kebergantungan yang hilang - bukan dengan melihat petanya di portal yang berjalan. Pemasangan di server tetap perlu diperiksa mata.",
     ],
   },
   {
@@ -891,7 +891,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Waktu tiap lapisan pada data satker: perubahan 64 ms, jurusita 147 ms, berulang 226 ms, faktor 506 ms, kehadiran 845 ms, biaya 938 ms, desa tanpa perkara 2.497 ms.",
     ],
     knownLimitations: [
-      "PETANYA TIDAK DAPAT DIUNDUH SEBAGAI GAMBAR, dan itu bukan kelalaian: ubinan peta datang dari peladen lain tanpa izin lintas-asal, sehingga kanvas yang memuatnya menjadi ternoda dan peramban menolak mengubahnya menjadi berkas. Yang diberikan angkanya - CSV - dan untuk laporan, angka justru lebih berguna daripada gambar.",
+      "PETANYA TIDAK DAPAT DIUNDUH SEBAGAI GAMBAR, dan itu bukan kelalaian: ubinan peta datang dari server lain tanpa izin lintas-asal, sehingga kanvas yang memuatnya menjadi ternoda dan peramban menolak mengubahnya menjadi berkas. Yang diberikan angkanya - CSV - dan untuk laporan, angka justru lebih berguna daripada gambar.",
       "Angka panggilan gagal pada usulan sidang keliling hanya terisi bila lapisan panggilan tidak bertemu sudah dibuka sekali; ia dibaca terpisah dan tidak dibayar oleh yang tidak membukanya.",
       "Nama jurusita hanya terbaca pada 49% relaas, dan NIK hanya terisi pada 35% pihak - lapisan pihak berulang karena itu BATAS BAWAH, bukan hitungan penuh.",
       "Belum ada dua peta berdampingan untuk membandingkan dua rentang. Lapisan perubahan antar tahun menjawab pertanyaan yang sama dengan satu peta, dan itu yang dikerjakan lebih dahulu.",
@@ -914,10 +914,10 @@ export const PATCH_NOTES: PatchNote[] = [
       "PETA TITIK PER DESA di halaman Peta Perkara, sebagai tab pertama. Satu lingkaran per desa di atas peta jalan sungguhan; arahkan penunjuk untuk melihat nama desa, kecamatan, jumlah perkara, pembagian laki-laki/perempuan, dan jenis perkara terbanyak di desa itu.",
       "Warna lingkaran mengikuti jenis perkara terbanyak di desa itu - cerai gugat merah, cerai talak biru, sama dengan lencana di daftar. Warnanya diturunkan dari penanda yang sudah ditetapkan satker, bukan dipilih ulang di layar peta.",
       "Keterangan ukuran memakai ANGKA SUNGGUHAN dari data yang sedang tampil - tiga lingkaran contoh beserta jumlah perkaranya - bukan sekadar kalimat \"besar berarti banyak\".",
-      "Pilihan ubinan peta lewat NEXT_PUBLIC_PETA_UBIN, supaya satker dapat menunjuk peladen ubin di jaringan dalam bila kelak ada.",
+      "Pilihan ubinan peta lewat NEXT_PUBLIC_PETA_UBIN, supaya satker dapat menunjuk server ubin di jaringan dalam bila kelak ada.",
       "JALAN KE BEBAN KINERJA KONSEPTOR dari Status Perkara - tepat di sebelah kolom Konseptor, dan sekali lagi di kepala Analisis lanjutan. Nama konseptornya selama ini sudah ada di layar itu, tetapi penilaian bebannya ada di layar lain yang TIDAK muncul di beranda - hanya di menu samping, dan hanya untuk pimpinan serta kepaniteraan. Petugas yang membaca namanya karena itu wajar menyimpulkan penilaiannya tidak ada; itu memang yang dilaporkan satker.",
       "SEPULUH ANALISIS BARU di Status Perkara - dari 31 menjadi 41: jeda antar tahapan (di mana perkara ini berhenti lama), hari sidang dibanding pengadilan, kecepatan relaas beserta Pasal 122 HIR, kehadiran pihak tiap sidang, perkara lain dari desa yang sama, beban majelis pada bulan pendaftaran, jeda putus ke minutasi ke BHT ke akta cerai, jam sidang, ruang sidang, dan rombongan sepekan - perkara yang masuk pada pekan yang sama, pembanding yang paling adil sebab majelisnya sama-sama sibuk dan panggilan jurusitanya berebut hari yang sama.",
-      "SEPULUH ALAT BARU di kepala Status Perkara: salin ringkasan (sebagai kalimat, bukan tabel - yang ditempel ke WhatsApp kehilangan seluruh kolomnya), salin tautan perkara, cetak, buka semua bagian, tutup semua bagian, cari bagian di antara dua puluh tujuh, loncat ke bagian itu, riwayat perkara yang baru dibuka, sematkan perkara yang sedang dikerjakan, dan buka SIPP. Seluruhnya di peramban; tidak satu pun menyentuh peladen.",
+      "SEPULUH ALAT BARU di kepala Status Perkara: salin ringkasan (sebagai kalimat, bukan tabel - yang ditempel ke WhatsApp kehilangan seluruh kolomnya), salin tautan perkara, cetak, buka semua bagian, tutup semua bagian, cari bagian di antara dua puluh tujuh, loncat ke bagian itu, riwayat perkara yang baru dibuka, sematkan perkara yang sedang dikerjakan, dan buka SIPP. Seluruhnya di peramban; tidak satu pun menyentuh server.",
       "LAPISAN PANGGILAN TIDAK BERTEMU pada peta - desa mana yang relaasnya paling sering gagal. Pertanyaan jurusita yang tidak dapat dijawab peta jumlah perkara, dan yang menentukan berapa kali ia harus kembali serta desa mana yang layak diusulkan jadi tempat sidang keliling. Terukur pada data satker: Kapirowe 10 dari 10 relaas tidak bertemu, Kalora 9 dari 10, Langaleso 8 dari 11 - sementara rata-ratanya 38%.",
       "LINGKARAN PETA YANG DIKETUK MEMBUKA DAFTAR PERKARA desa itu - nomor, jenis, dan tanggal putusnya. Peta yang hanya dapat dilihat berhenti pada \"oh, banyak\"; yang dapat diketuk meneruskan ke pekerjaan. Nama pihaknya berupa INISIAL, bukan nama utuh.",
       "DIPERKECIL, PETANYA MENGELOMPOK PER KECAMATAN - bukan per petak layar. Pengelompokan menurut piksel menghasilkan satuan yang tidak berarti apa pun (\"delapan titik yang kebetulan berdekatan pada zum sembilan\"); kecamatan adalah satuan wilayah sungguhan yang langsung terbaca petugas. Titiknya pusat rata-rata desa anggotanya, bukan titik kecamatan yang dikarang.",
@@ -937,17 +937,17 @@ export const PATCH_NOTES: PatchNote[] = [
       "DUA PULUH ENAM TEMPAT DI STATUS PERKARA TIDAK TERBACA PADA TEMA GELAP. Warna Tailwind berangka besar - 700, 800, 900 - dibuat untuk latar terang; di layar petugas yang bawaannya gelap itu tulisan cokelat tua di atas latar hampir hitam, dan kotak bg-amber-50 menjadi kotak nyaris putih di tengah halaman gelap. Terukur: 19 atribut kelas amber tanpa satu pun pasangan dark:, ditambah tujuh pada lencana rubrik, rose, dan sky. Kini dijaga penjaga yang menyisir tiap atribut kelas di berkas itu.",
     ],
     security: [
-      "Pustaka petanya (Leaflet 1.9.4) dimuat dari peladen sendiri di public/vendor, bukan dari CDN. Pengadilan ini bekerja di jaringan yang tidak selalu punya jalan keluar, dan pustaka yang dipanggil dari luar membuat halaman ini gagal total di hari jaringan luar mati - gagalnya berupa layar kosong tanpa sebab yang tertulis. Cara yang sama sudah dipakai pdf.js sejak lama.",
-      "Ia juga TIDAK ditambahkan sebagai kebergantungan npm: hanya satu halaman yang memakainya, dan menambahkannya ke package.json berarti ia ikut ditimbang pada tiap build dan ikut menjadi urusan tiap `npm ci` di peladen.",
+      "Pustaka petanya (Leaflet 1.9.4) dimuat dari server sendiri di public/vendor, bukan dari CDN. Pengadilan ini bekerja di jaringan yang tidak selalu punya jalan keluar, dan pustaka yang dipanggil dari luar membuat halaman ini gagal total di hari jaringan luar mati - gagalnya berupa layar kosong tanpa sebab yang tertulis. Cara yang sama sudah dipakai pdf.js sejak lama.",
+      "Ia juga TIDAK ditambahkan sebagai kebergantungan npm: hanya satu halaman yang memakainya, dan menambahkannya ke package.json berarti ia ikut ditimbang pada tiap build dan ikut menjadi urusan tiap `npm ci` di server.",
       "Penyebutan sumber ubinan tidak dapat dimatikan dari layar - data OpenStreetMap berlisensi ODbL dan syaratnya menyebut sumber.",
-      "NIK dan nomor telepon pihak disamarkan DI PELADEN, bukan di layar - bentuknya cukup untuk mencocokkan dengan berkas di tangan, tidak cukup untuk disalin. Yang disamarkan di layar tetap melintasi jaringan dalam bentuk utuhnya dan tetap terbaca siapa pun yang membuka alat pengembang.",
+      "NIK dan nomor telepon pihak disamarkan DI SERVER, bukan di layar - bentuknya cukup untuk mencocokkan dengan berkas di tangan, tidak cukup untuk disalin. Yang disamarkan di layar tetap melintasi jaringan dalam bentuk utuhnya dan tetap terbaca siapa pun yang membuka alat pengembang.",
       "Tautan Beban Kinerja Konseptor hanya digambar bagi peran yang memang dapat membukanya, dan haknya ditanyakan ke sumber yang SAMA dengan yang menyusun menu samping - bukan dengan menyalin daftar perannya ke layar Status Perkara. Daftar peran yang disalin menyimpang diam-diam begitu satker mengubah Akses Menu, dan yang menyimpang justru tautan yang berujung penolakan.",
     ],
     operationalNotes: [
       "Tidak ada migrasi basis data. Versi ekstensi tidak berubah.",
       "KUERI ANALISIS BARU DIPERCEPAT SEBELUM DIPASANG, dan sebabnya satu: syarat yang MEMBUNGKUS kolom tanggal. DATE_FORMAT(tgl,'%Y-%m') = ? dan YEARWEEK(tgl,1) = ? memaksa MySQL menghitung fungsinya untuk setiap baris lebih dahulu, sehingga indeksnya tidak terpakai. Terukur: beban majelis 17.952 ms menjadi 94 ms, rombongan sepekan 4.345 ms menjadi 46 ms, perkara sedesa 6.657 ms menjadi 1.168 ms. Ketiganya menjawab BENAR sebelum diperbaiki - tidak ada yang akan menangkapnya selain pengukuran.",
       "Kesepuluh analisis baru hidup di berkasnya sendiri (analisaTambahanService) dan MENERIMA alatnya dari penyalur - runQuery, cleanText, median, selisihHari yang sama. Menyalinnya akan melahirkan dua median yang membulatkan berbeda, dan bedanya baru terlihat pada angka yang sudah tercetak di laporan.",
-      "Riwayat perkara dan sematan disimpan di PERAMBAN, bukan di peladen. Keduanya menyebutkan perkara mana yang dibuka seseorang; disimpan di peladen, ia menjadi catatan siapa memeriksa perkara siapa - keterangan yang tidak diminta siapa pun dan yang keberadaannya sendiri menimbulkan pertanyaan.",
+      "Riwayat perkara dan sematan disimpan di PERAMBAN, bukan di server. Keduanya menyebutkan perkara mana yang dibuka seseorang; disimpan di server, ia menjadi catatan siapa memeriksa perkara siapa - keterangan yang tidak diminta siapa pun dan yang keberadaannya sendiri menimbulkan pertanyaan.",
       "SANDI ket_temu BERGANTI ARTI, dan lapisan panggilan dibatasi karenanya. Sampai 2024 kolom itu berisi Y (bertemu) dan T (tidak bertemu); sejak 2025 hampir seluruhnya S dan E - sandi yang menandai SALURAN pengiriman, bukan hasil pertemuan. Terukur: 'T' tinggal 2 baris setahun pada 2025 dan 2026. Dihitung apa adanya, dua tahun terakhir memulangkan 0% tidak bertemu, dan angka itu terbaca sebagai pelayanan sempurna. Yang dihitung karena itu HANYA baris bersandi Y/T - 7.751 dari 14.495 - dan pembatasannya disebut di layar. Ia menyesuaikan diri sendiri: begitu satker kembali memakai Y/T, barisnya ikut terhitung tanpa kode disentuh.",
       "Desa dengan kurang dari sepuluh relaas dibiarkan KELABU di peta, tidak dipersenkan. Tiga relaas yang dua di antaranya gagal bukan \"67% gagal\" - itu kebetulan, dan mewarnainya seperti desa lain membuat kebetulan terbaca sebagai temuan.",
       "Daftar perlu tindakan sengaja dapat KOSONG. Daftar yang selalu berisi sesuatu akan diabaikan orang dalam sepekan, dan yang diabaikan sama saja dengan tidak ada.",
@@ -967,7 +967,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Analisis 'jeda sesudah putus' memberi peringatan pada jeda minutasinya sendiri: tanggal_minutasi terisi sendiri sama dengan tanggal putusan pada seluruh 683 putusan 2026. Nol hari di sana berarti kolomnya mati, bukan minutasi seketika. Jeda BHT dan akta cerai terukur sungguhan - rata 20 dan 3 hari.",
       "Analisis 'ruang sidang' menemukan satu ruangan dengan DUA EJAAN: \"Ruang Sidang 1 Dalam Gedung\" 1.353 baris dan \"Ruang Sidang Dalam Gedung 1\" 211 baris. Laporan apa pun yang mengelompokkan menurut nama ruangan menghitungnya sebagai dua ruangan - itu keadaan data SIPP, bukan sesuatu yang dapat diperbaiki dari sini.",
       "Lapisan panggilan tidak bertemu praktis hanya bercerita tentang 2019-2024. Menambah tahun berjalan menuntut satker kembali mengisi ket_temu dengan Y/T, atau arti sandi S dan E dipastikan lebih dahulu - keduanya keputusan satker, bukan keputusan alat yang menumpang membaca.",
-      "Daftar perlu tindakan memakai muatan yang sudah ada di layar. Ia karena itu tidak dapat memperingatkan hal yang tidak dikirim peladen - misalnya relaas yang kurang satu pihak, yang perlu pembacaan tersendiri.",
+      "Daftar perlu tindakan memakai muatan yang sudah ada di layar. Ia karena itu tidak dapat memperingatkan hal yang tidak dikirim server - misalnya relaas yang kurang satu pihak, yang perlu pembacaan tersendiri.",
       "Peta menggambar SELURUH rentang yang dipilih, bukan hasil penelusuran turun. Menelusuri ke satu kecamatan mengubah daftar dan grafiknya, bukan petanya.",
       "Belum ada batas wilayah yang diwarnai (choropleth) - hanya titik. Batas desa se-Sulawesi Tengah belum terpetakan lengkap di OSM, dan mewarnai batas yang setengah ada menghasilkan peta berlubang yang terbaca sebagai \"tidak ada perkara\".",
     ],
@@ -980,26 +980,26 @@ export const PATCH_NOTES: PatchNote[] = [
     summary:
       "Sepuluh perbaikan pada layar hasil sidang, seluruhnya diminta satker sesudah memakainya. " +
       "Alurnya kini ditiru dari aplikasi antrian sidang satker sendiri - dibaca dari sumbernya di " +
-      "peladen, bukan dikira-kira - sementara tampilannya tidak ditiru. Yang paling menentukan: akun " +
+      "server, bukan dikira-kira - sementara tampilannya tidak ditiru. Yang paling menentukan: akun " +
       "SIPP tidak lagi ditanyakan, dan memutus tidak lagi menuntut amar putusan.",
     added: [
-      "SATU LAYAR, SATU PILIHAN: Ditunda atau Diputus. Sidang tidak dapat ditunda DAN diputus sekaligus, dan dua borang yang berdiri berdampingan adalah undangan mengisi keduanya. Borangnya baru muncul sesudah salah satunya dipilih.",
+      "SATU LAYAR, SATU PILIHAN: Ditunda atau Diputus. Sidang tidak dapat ditunda DAN diputus sekaligus, dan dua blangko yang berdiri berdampingan adalah undangan mengisi keduanya. Blangkonya baru muncul sesudah salah satunya dipilih.",
       "TOMBOL STATUS di bawah Rincian pada Jadwal Perkara yang Bersidang. Kotak nomor perkara kini membuka hasil sidang, dan jalan ke Status Perkara ikut hilang bersamanya - hilang tanpa berbunyi apa pun, sebab tombolnya masih ada, hanya membuka tempat yang berbeda. Keduanya kini berdiri sendiri-sendiri.",
       "ALASAN PENUNDAAN DITAWARKAN - sembilan yang paling lazim, dan tetap boleh diketik sendiri. Daftar tertutup akan memaksa panitera sidang memilih alasan yang bukan alasannya, dan alasan keliru pada berkas perkara lebih buruk daripada alasan yang diketik panjang.",
-      "TANGGAL DAN JAM SIDANG BERIKUTNYA TERISI SENDIRI: dua pekan sesudah sidang ini, pukul 09:00 - kecuali agenda jawab-menjawab dan kesimpulan yang disidangkan pukul 15:00. Keduanya usulan: hari liburnya tetap diperiksa peladen, dan jam yang sudah disetel tangan tidak ditimpa ketika agendanya diketik ulang.",
-      "TANGGAL PUTUSAN BAWAANNYA HARI INI dan jenis putusannya Dikabulkan - keduanya masih dapat diganti. Borang yang dibuka pada hari putusnya menanyakan tanggal yang sudah diketahuinya sendiri.",
+      "TANGGAL DAN JAM SIDANG BERIKUTNYA TERISI SENDIRI: dua pekan sesudah sidang ini, pukul 09:00 - kecuali agenda jawab-menjawab dan kesimpulan yang disidangkan pukul 15:00. Keduanya usulan: hari liburnya tetap diperiksa server, dan jam yang sudah disetel tangan tidak ditimpa ketika agendanya diketik ulang.",
+      "TANGGAL PUTUSAN BAWAANNYA HARI INI dan jenis putusannya Dikabulkan - keduanya masih dapat diganti. Blangko yang dibuka pada hari putusnya menanyakan tanggal yang sudah diketahuinya sendiri.",
     ],
     changed: [
       "AKUN SIPP TIDAK LAGI DITANYAKAN - pada penundaan maupun putusan. Penundaan ditulis atas nama PANITERA SIDANG perkara itu dan putusannya atas nama HAKIM-nya; keduanya sudah melekat pada perkaranya sejak penetapan, dan aplikasi antrian sidang satker membacanya dari perkara_panitera_pn dan perkara_hakim_pn - tidak pernah menanyakannya. Isian itu dibuang, bukan sekadar diisi otomatis: isian yang terisi sendiri masih dapat disunting, dan yang dapat disunting akan disunting.",
-      "MEMUTUS TIDAK LAGI MENUNTUT AMAR, PERTIMBANGAN HUKUM, SUMBER HUKUM, ATAU CATATAN. Panitera sidang mencatat FAKTA bahwa hari ini perkaranya diputus; naskahnya ditulis hakim beberapa hari kemudian lewat SIPP. Aplikasi antrian satker sendiri mengisi amar dengan harfiah \"BELUM DIINPUT\" dan sumber hukumnya tetap '8,11'. Borang yang menuntut amar menahan pencatatan sampai naskahnya jadi - padahal papan antrian, laporan harian, dan akta cerai membutuhkan faktanya hari ini.",
+      "MEMUTUS TIDAK LAGI MENUNTUT AMAR, PERTIMBANGAN HUKUM, SUMBER HUKUM, ATAU CATATAN. Panitera sidang mencatat FAKTA bahwa hari ini perkaranya diputus; naskahnya ditulis hakim beberapa hari kemudian lewat SIPP. Aplikasi antrian satker sendiri mengisi amar dengan harfiah \"BELUM DIINPUT\" dan sumber hukumnya tetap '8,11'. Blangko yang menuntut amar menahan pencatatan sampai naskahnya jadi - padahal papan antrian, laporan harian, dan akta cerai membutuhkan faktanya hari ini.",
       "Putus menandai sidangnya SELESAI, bukan ditunda: ditunda = 'T', dan alasan_ditunda memuat \"putus DIKABULKAN (verstek)\". Itulah yang dibaca papan hasil sidang, dan itu pula bentuk yang ditulis aplikasi antrian.",
-      "Kehadiran pihak memakai angka SIPP yang sebenarnya - 1 semua hadir, 2 pihak pertama saja, 3 pihak kedua saja, 4 tidak hadir - dibaca dari menu.sidang.php di peladen. Pihak pertama dan kedua hanya ditawarkan pada perkara gugatan; permohonan tidak punya pihak kedua.",
+      "Kehadiran pihak memakai angka SIPP yang sebenarnya - 1 semua hadir, 2 pihak pertama saja, 3 pihak kedua saja, 4 tidak hadir - dibaca dari menu.sidang.php di server. Pihak pertama dan kedua hanya ditawarkan pada perkara gugatan; permohonan tidak punya pihak kedua.",
     ],
     fixed: [
       "RINCIAN SIDANG YANG TERPOTONG, dua sebab sekaligus. Pertama lebarnya: baris rincian adalah satu sel di dalam tabel selebar 980px yang duduk dalam kotak bergulir mendatar, sehingga isinya melebar mengikuti TABELNYA, bukan mengikuti yang terlihat - separuhnya berada di luar layar. Kini ia dipaku pada tepi kiri yang terlihat, selebar yang terlihat. Kedua tingginya: pembatasan 70vh melahirkan gulir bersarang begitu rincian dibuka, dan pembatasan itu kini dilepas selama ada rincian terbuka.",
       "Cadangan kehadiran pihak dahulu 1 - \"semua hadir\" - pada sidang yang kolomnya kosong. Kosong pada 1.373 dari 20.171 baris, dan menuliskan \"semua hadir\" di sana adalah pernyataan yang terbaca sebagai fakta persidangan. Cadangannya kini 4, sama dengan pilihan pertama aplikasi antrian.",
       "Sidang yang BELUM dicatat dahulu terbaca sebagai sudah diputus. Keduanya berbendera ditunda = 'T' - itu nilai bawaan kolomnya - dan yang memisahkannya hanya isi alasan_ditunda. Aturan pemisahnya yang sudah diukur atas 20.063 baris kini dipakai ulang, bukan ditulis lagi.",
-      "JAM YANG TERCATAT DELAPAN JAM TERLALU AWAL. Penulis hasil sidang dan penulis putusan menanyakan jam kepada container, bukan kepada basis data - dan Node di dalam container jatuh ke UTC bila env TZ tidak diset. Terukur di peladen: basis data menjawab 13:16 WITA sementara Node menjawab 05:16. Seluruh baris sys_audittrail yang ditulis ALETA karena itu tercatat delapan jam sebelum kejadiannya, berselisih dengan baris SIPP di tabel yang sama yang jamnya benar. Penulis penetapan sudah memakai jam basis data sejak lama; kedua penulis ini tertinggal, dan tertinggalnya tidak berbunyi apa pun.",
+      "JAM YANG TERCATAT DELAPAN JAM TERLALU AWAL. Penulis hasil sidang dan penulis putusan menanyakan jam kepada container, bukan kepada basis data - dan Node di dalam container jatuh ke UTC bila env TZ tidak diset. Terukur di server: basis data menjawab 13:16 WITA sementara Node menjawab 05:16. Seluruh baris sys_audittrail yang ditulis ALETA karena itu tercatat delapan jam sebelum kejadiannya, berselisih dengan baris SIPP di tabel yang sama yang jamnya benar. Penulis penetapan sudah memakai jam basis data sejak lama; kedua penulis ini tertinggal, dan tertinggalnya tidak berbunyi apa pun.",
       "Kolom sampai_jam dahulu diisi tulisan kosong pada penundaan dan cap waktu utuh pada putusan. Kolomnya TIME: yang kosong masuk sebagai 00:00:00 tanpa galat, dan cap waktu utuh dibaca sebagai bentuk 'D HH:MM:SS' yang bukan jam yang dimaksud. Keduanya kini jam saja, dari cap waktu yang sama.",
       "Tanggal sidang dikirim ke portal sebagai obyek Date, dan JSON menuliskannya dalam UTC - sidang 18 September pukul 00:00 WITA terkirim sebagai \"2026-09-17T16:00\". Layar membaca sidangnya SEHARI LEBIH AWAL, lalu menghitung usulan sidang berikutnya dari tanggal yang salah itu. Diubah menjadi tulisan di satu tempat, bukan di tiap pembacanya.",
       "ANTRIAN SIDANG TIDAK PERNAH TERGERAKKAN PADA PENUNDAAN - sebab yang sama. Tanggal yang diserahkan kepada penggerak antrian adalah obyek Date itu juga, dan pemeriksa bentuknya menolak setiap kali: layar berkata \"Antrian tidak tergerakkan: tanggal_tidak_sah\" pada penundaan yang sebenarnya berhasil. Terukur sesudah perbaikan: antriannya kini benar-benar ditandai selesai.",
@@ -1012,11 +1012,11 @@ export const PATCH_NOTES: PatchNote[] = [
     operationalNotes: [
       "Tidak ada migrasi basis data. Versi ekstensi tidak berubah.",
       "Alamat halamannya tetap /sidang-tunda meski isinya kini tunda DAN putus. Alamat itu sudah tertanam pada layar antrian dan pada tautan yang mungkin sudah dibuka orang; menggantinya demi kerapian nama menukar satu ketidaknyamanan dengan tautan yang mati.",
-      "Cetak birunya dibaca langsung dari /var/www/html/antrian/php/_fungsi.php dan menu.sidang.php di peladen - termasuk urutan langkah, nilai tetap sumber hukum, dan angka kehadiran pihak. Yang ditiru alurnya; tampilannya sengaja tidak.",
+      "Cetak birunya dibaca langsung dari /var/www/html/antrian/php/_fungsi.php dan menu.sidang.php di server - termasuk urutan langkah, nilai tetap sumber hukum, dan angka kehadiran pihak. Yang ditiru alurnya; tampilannya sengaja tidak.",
       "Berkas sidang-tunda.tsx dan sidang-putus.tsx dihapus, digantikan hasil-sidang.tsx. Penjaga yang dahulu menunjuk keduanya kini menunjuk berkas baru itu, dan tuntutan tentang akun SIPP dibalik dengan sengaja - bukan dilonggarkan.",
     ],
     knownLimitations: [
-      "Jalur HAKIM - menulis amar dan pertimbangan hukum lengkap - masih ada di peladen dan tetap berfungsi, tetapi belum punya layarnya sendiri di portal. Yang ada sekarang hanya jalur panitera sidang.",
+      "Jalur HAKIM - menulis amar dan pertimbangan hukum lengkap - masih ada di server dan tetap berfungsi, tetapi belum punya layarnya sendiri di portal. Yang ada sekarang hanya jalur panitera sidang.",
       "Jarak dua pekan adalah kebiasaan satker, bukan aturan. Ia usulan yang selalu dapat diganti, dan hari liburnya memang diperiksa - tetapi hari sidang majelisnya hanya diperingatkan, tidak ditolak.",
       "Putusan yang sudah tercatat tidak dapat disunting dari layar ini. SIPP sendiri menghapus lalu menyisipkan ulang ketika putusannya disunting - 8.220 baris DELETE pada basis data ini - dan meniru penyuntingan adalah pekerjaan yang berbeda dari mencatat putusan baru.",
     ],
@@ -1033,7 +1033,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "para pihak muncul ringkas pada Status Perkara; dan layar baru Peta Perkara menjawab dari mana " +
       "perkara datang beserta faktor perceraiannya.",
     added: [
-      "TOMBOL TAMBAH TANDA TANGAN. Sampai 2.21.0 gambar hanya dapat masuk lewat skrip pengimpor yang membaca berkas .doc satuan kerja di peladen - pejabat yang tanda tangannya tidak ada di dokumen itu tidak punya jalan sama sekali. Yang diunggah TETAP menunggu pengesahan orang kedua, dan jenis gambarnya dibaca dari bitanya sendiri: berkas bernama .png yang isinya bukan PNG akan gagal digambar pada penetapan, dan gagalnya baru terlihat di kertas.",
+      "TOMBOL TAMBAH TANDA TANGAN. Sampai 2.21.0 gambar hanya dapat masuk lewat skrip pengimpor yang membaca berkas .doc satuan kerja di server - pejabat yang tanda tangannya tidak ada di dokumen itu tidak punya jalan sama sekali. Yang diunggah TETAP menunggu pengesahan orang kedua, dan jenis gambarnya dibaca dari bitanya sendiri: berkas bernama .png yang isinya bukan PNG akan gagal digambar pada penetapan, dan gagalnya baru terlihat di kertas.",
       "TANDA TANGAN TERTAUT KE AKUN PORTAL beserta peran, jabatan, dan peran tambahannya - pada gambar baru maupun yang sudah ada. Ketiganya DISALIN saat penautan, bukan dibaca ulang kelak: yang harus terbaca pada penetapan lama adalah jabatan orang itu ketika ia menandatangani, bukan jabatannya hari ini.",
       "SUSUNAN MAJELIS PADA SK DAPAT DIIKAT KE AKUN PORTAL - hakim maupun panitera sidang, dalam satu daftar. Hanya dapat ditautkan di dalam majelis, dan itu dijamin bukan oleh larangan di layar melainkan oleh tidak adanya tempat menyimpannya: satu kolom pada baris majelis, satu-satunya alamat yang menerimanya adalah alamat simpan majelis, dan menghapus majelisnya menghapus tautannya.",
       "LAYAR PETA PERKARA: sebaran perkara dari provinsi sampai desa yang dapat ditelusuri turun, faktor perceraian dari akta cerai, dan siapa yang mengajukan - laki-laki atau perempuan. Perceraian digabung satu halaman dengan cerai gugat bertanda merah dan cerai talak biru; jenis perkara lain punya halamannya masing-masing.",
@@ -1088,7 +1088,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Palet grafik kategori diganti: yang lama gagal pengukuran chroma (#0f766e terbaca abu-abu) dan DIPUTAR, sehingga kategori ketujuh berwarna sama dengan yang pertama. Palet baru delapan slot, diperiksa pada tema terang dan gelap; yang melewati delapan dilipat menjadi Lainnya dengan jumlahnya disebut.",
     ],
     fixed: [
-      "Layar beban konseptor membaca ok langsung dari bungkus jawaban portal - selalu bernilai benar, sehingga cabang gagalnya tidak akan pernah menyala meski peladen sudah menyiapkan alasannya.",
+      "Layar beban konseptor membaca ok langsung dari bungkus jawaban portal - selalu bernilai benar, sehingga cabang gagalnya tidak akan pernah menyala meski server sudah menyiapkan alasannya.",
       "Rencana penundaan menampilkan Tue Mar 09 2027 00:00:00 GMT+0800 pada layar berbahasa Indonesia: kolom DATE dipulangkan penggerak MySQL sebagai obyek Date.",
       "Rentang bulan aktif tiap konseptor terbaca NOL untuk semua orang - sebab yang sama, dan tanpa satu pun galat berbunyi.",
     ],
@@ -1143,7 +1143,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Nama berkas hanya selengkap yang diketahui SIPP. Perkara yang belum putus tidak punya status putusan, dan namanya berhenti pada jenis perkara - itu disengaja; nama yang mengarang status lebih berbahaya daripada nama yang pendek.",
     ],
     knownLimitations: [
-      "Cetak relaas panggilan/pemberitahuan dan berita acara sidang - per perkara maupun massal - BELUM dikerjakan. Blangkonya sudah ditemukan di ABT (enam berkas relaas dan empat folder BAS, seluruhnya RTF), tetapi korpusnya belum dipelajari di peladen.",
+      "Cetak relaas panggilan/pemberitahuan dan berita acara sidang - per perkara maupun massal - BELUM dikerjakan. Blangkonya sudah ditemukan di ABT (enam berkas relaas dan empat folder BAS, seluruhnya RTF), tetapi korpusnya belum dipelajari di server.",
       "Cap waktu baris audit yang ditulis ALETA masih dapat lebih awal daripada baris bernomor id di dekatnya. Keputusannya belum diambil.",
     ],
   },
@@ -1168,11 +1168,11 @@ export const PATCH_NOTES: PatchNote[] = [
       "Batas bawah geseran rangkaian kini lantainya, bukan tengah malam. Batas lama itulah yang membiarkan rangkaian yang digeser mendarat sebelum pendaftarannya.",
     ],
     security: [
-      "Tidak ada perubahan pada APA yang ditulis ke SIPP - hanya JAM yang dicatat. Aturannya diambil dari pekerjaan pegawai sendiri: diukur pada 825 perkara 2026 di peladen, PMH selalu sesudah kasir, nol yang mendahului.",
+      "Tidak ada perubahan pada APA yang ditulis ke SIPP - hanya JAM yang dicatat. Aturannya diambil dari pekerjaan pegawai sendiri: diukur pada 825 perkara 2026 di server, PMH selalu sesudah kasir, nol yang mendahului.",
     ],
     operationalNotes: [
       "Tidak ada migrasi. Ekstensi tetap 1.155.0.",
-      "Penetapan yang sudah terlanjur tertulis dengan jam yang keliru tidak diperbaiki surut; yang tercatat di peladen hanya satu perkara dan jamnya masih sesudah pendaftarannya.",
+      "Penetapan yang sudah terlanjur tertulis dengan jam yang keliru tidak diperbaiki surut; yang tercatat di server hanya satu perkara dan jamnya masih sesudah pendaftarannya.",
       "Bukti luring verify-waktu-penetapan.js naik dari 25 ke 37 pemeriksaan - jalankan dengan docker exec aleta-bot node scripts/verify-waktu-penetapan.js.",
     ],
     knownLimitations: [
@@ -1187,13 +1187,13 @@ export const PATCH_NOTES: PatchNote[] = [
     date: "2026-09-17",
     status: "Terpasang",
     summary:
-      "Tiga perbaikan yang ditemukan dari membaca data peladen kantor, bukan dari membaca kode: riwayat " +
+      "Tiga perbaikan yang ditemukan dari membaca data server kantor, bukan dari membaca kode: riwayat " +
       "perbuatan ALETA kembali menyebut nomor perkaranya, keterangan bongkar kembali berbahasa Indonesia, " +
       "dan daftar pihak perkara dibaca dari tabelnya langsung sehingga panel ekstensi tidak lagi kehabisan " +
       "waktu sebelum sempat digambar.",
     added: [],
     changed: [
-      "Daftar pihak perkara dibaca dari perkara_pihak1..5 langsung, bukan lewat tampilan v_pihak_perkara. Terukur di basis data peladen atas satu perkara: 828 milidetik menjadi 5 milidetik, dengan hasil yang sama persis. Di salinan setempat yang lebih berat angkanya 7,48 detik menjadi 0,12 detik, dan konteks perkara seluruhnya 10,08 detik menjadi 0,88 detik.",
+      "Daftar pihak perkara dibaca dari perkara_pihak1..5 langsung, bukan lewat tampilan v_pihak_perkara. Terukur di basis data server atas satu perkara: 828 milidetik menjadi 5 milidetik, dengan hasil yang sama persis. Di salinan setempat yang lebih berat angkanya 7,48 detik menjadi 0,12 detik, dan konteks perkara seluruhnya 10,08 detik menjadi 0,88 detik.",
     ],
     fixed: [
       "Riwayat perbuatan ALETA menyimpan nomor perkara sebagai [object Object] - keenam puluh empat barisnya, sejak tabel itu dipakai. Pemanggilnya meneruskan bungkus rencana yang berisi perkaraId dan nomorPerkara, dan String() atas obyek tidak pernah melempar galat, sehingga cacatnya diam: kolom perkara_id benar, nomornya hilang. Tabel yang justru dibuat supaya perbuatan ALETA dapat ditelusuri per perkara karena itu tidak dapat ditelusuri per perkara.",
@@ -1209,7 +1209,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Enam puluh empat baris riwayat yang terlanjur tersimpan tanpa nomor perkara tidak diperbaiki surut; kolom perkara_id-nya benar, jadi penelusurannya tetap dapat dikerjakan lewat kolom itu.",
     ],
     knownLimitations: [
-      "Cap waktu baris audit yang ditulis ALETA masih disebar ke jam pagi, sehingga jamnya dapat lebih awal daripada baris bernomor id di dekatnya. Diukur atas 20.000 id audit terakhir di peladen: hanya tiga kali jam mundur, dua di antaranya milik ALETA. Hanya terlihat oleh yang membandingkan nomor baris dengan jam langsung di basis data; layar Audit Trail SIPP mengurut menurut jam. Menukarnya dengan jam sekarang menghilangkan selisih ini tetapi menimbulkan selisih lain, sebab pada pekerjaan pegawai jam perkara_proses dan jam audit selalu sama - keputusannya belum diambil.",
+      "Cap waktu baris audit yang ditulis ALETA masih disebar ke jam pagi, sehingga jamnya dapat lebih awal daripada baris bernomor id di dekatnya. Diukur atas 20.000 id audit terakhir di server: hanya tiga kali jam mundur, dua di antaranya milik ALETA. Hanya terlihat oleh yang membandingkan nomor baris dengan jam langsung di basis data; layar Audit Trail SIPP mengurut menurut jam. Menukarnya dengan jam sekarang menghilangkan selisih ini tetapi menimbulkan selisih lain, sebab pada pekerjaan pegawai jam perkara_proses dan jam audit selalu sama - keputusannya belum diambil.",
       "Keterangan Smart Majelis yang ditulis ALETA berupa satu kalimat tetap, sedangkan petugas memakai frasa pendek yang berbeda-beda. Bila ALETA dipakai rutin, kalimat tetap itu akan menumpuk.",
     ],
   },
@@ -1234,9 +1234,9 @@ export const PATCH_NOTES: PatchNote[] = [
       "Daftar Hari sidang pada papan penetapan menampilkan tanggal yang dipilih dari kalender sebagai baris tambahan paling atas, bertanda asalnya.",
     ],
     fixed: [
-      "Daftar pilihan select2 di dalam tingkap sembul SIPP - borang Data Umum di antaranya - tampil putih menyilaukan pada tema gelap, dengan kotak carinya putih di atas putih. Diukur pada replika markup SIPP: badan tingkapnya sudah gelap sejak dulu, tetapi kotak dan daftar select2 terukur rgb(255,255,255) sebab select2 menyatakan putihnya lewat nama kelas, bukan lewat gaya sebaris yang selama ini diburu.",
+      "Daftar pilihan select2 di dalam tingkap sembul SIPP - blangko Data Umum di antaranya - tampil putih menyilaukan pada tema gelap, dengan kotak carinya putih di atas putih. Diukur pada replika markup SIPP: badan tingkapnya sudah gelap sejak dulu, tetapi kotak dan daftar select2 terukur rgb(255,255,255) sebab select2 menyatakan putihnya lewat nama kelas, bukan lewat gaya sebaris yang selama ini diburu.",
       "Jendela popup ekstensi tampil putih di atas panel yang gelap, sebab bawaannya mengikuti setelan Windows sementara panel bawaannya gelap. Lihat perubahan tema di atas.",
-      "Escape dan klik ganda di luar panel tidak menciutkan panel di SIPP maupun ABT. Di SIPP keduanya memang tidak pernah terpasang - panel itu menyusun kepalanya sendiri dan tidak melewati pintu yang memasangnya. Di kedua halaman, syarat lama juga hampir selalu menahan Escape: satu klik pada kolom borang mana pun membuat fokus tinggal di isian halaman.",
+      "Escape dan klik ganda di luar panel tidak menciutkan panel di SIPP maupun ABT. Di SIPP keduanya memang tidak pernah terpasang - panel itu menyusun kepalanya sendiri dan tidak melewati pintu yang memasangnya. Di kedua halaman, syarat lama juga hampir selalu menahan Escape: satu klik pada kolom blangko mana pun membuat fokus tinggal di isian halaman.",
       "Panel yang ditutup di ABT dan di portal ALETA tidak dapat dipanggil kembali tanpa memuat ulang halaman - dan memuat ulang halaman ABT membuang isian blangko yang belum tersimpan.",
       "Tombol segarkan di kaki panel ABT menghapus panelnya untuk selamanya: ia membuang panel lalu memanggil pemasangnya, yang keluar pada baris pertama karena penanda terpasang masih menyala.",
       "Alt+A di halaman ABT menyimpan keadaan lencananya ke kunci yang tidak pernah dibaca siapa pun, sehingga panel yang diciutkan dengan pintasan itu tidak pernah pulih dan tidak terjangkau tombol Kembalikan posisi panel.",
@@ -1248,11 +1248,11 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     operationalNotes: [
       "Tidak ada migrasi. Ekstensi 1.155.0 - reload di chrome://extensions.",
-      "Pengisian otomatis Data Umum (butir 1 dari permintaan) BELUM dikerjakan: borangnya baru ada di dokumen sesudah tombol Data Umum ditekan, dan itu pekerjaan tersendiri.",
+      "Pengisian otomatis Data Umum (butir 1 dari permintaan) BELUM dikerjakan: blangkonya baru ada di dokumen sesudah tombol Data Umum ditekan, dan itu pekerjaan tersendiri.",
     ],
     knownLimitations: [
       "Tema portal hanya ikut berganti pada portal 2.20.1 ke atas. Ekstensi yang menghadap portal lama tidak rusak - permintaannya sekadar tidak ditangkap siapa pun, dan panel tetap mengikuti tema portal seperti sebelumnya.",
-      "Peta gelap select2 disusun dari borang Data Umum. Pustaka pihak ketiga lain yang menyatakan putihnya lewat nama kelas - dan bukan lewat gaya sebaris - masih akan tampil terang sampai namanya disebut juga.",
+      "Peta gelap select2 disusun dari blangko Data Umum. Pustaka pihak ketiga lain yang menyatakan putihnya lewat nama kelas - dan bukan lewat gaya sebaris - masih akan tampil terang sampai namanya disebut juga.",
     ],
   },
   {
@@ -1383,7 +1383,7 @@ export const PATCH_NOTES: PatchNote[] = [
     status: "Terpasang",
     summary:
       "Tiga hal yang diukur atas SIPP satker lalu disamakan: jam tiap langkah penetapan kini dihitung sampai detik " +
-      "(selisih nyata 60-659 detik, tidak pernah mendahului jam peladen, dan penetapan massal pagi hari tidak lagi " +
+      "(selisih nyata 60-659 detik, tidak pernah mendahului jam server, dan penetapan massal pagi hari tidak lagi " +
       "menumpuk pada satu menit); jejak Smart Majelis di Audit Trail ditulis persis seperti tangan petugas; dan pratinjau " +
       "penetapan massal memperlihatkan majelis, panitera, juru sita, dan hari sidang tiap perkara - dihitung berurutan " +
       "sehingga yang tertulis sama dengan yang tertera.",
@@ -1392,8 +1392,8 @@ export const PATCH_NOTES: PatchNote[] = [
       "Andaian antrean: usulan perkara ke-n pada pratinjau massal dihitung seolah perkara 1..n-1 sudah tertulis (bobot menurut jenis perkara, sama dengan kueri beban), sehingga giliran majelis, panitera pengganti, dan juru sita pada pratinjau sama dengan penulisannya.",
     ],
     changed: [
-      "Jam tiap langkah penetapan dihitung dalam detik: jeda PMH->PPP->PJS->PHS selalu 60-659 detik nyata (sebelumnya hanya angka menitnya yang dijaga; diukur 20-34 detik pada 3 dari 10 perkara), detiknya ikut menaik, dan tidak pernah melampaui jam peladen sampai ke detiknya (sebelumnya sampai 59 detik di masa depan pada pagi hari).",
-      "Rangkaian yang digeser mundur (pagi hari) disebar per perkara di antara 08:00 dan jam peladen - penetapan massal 25 perkara tidak lagi menaruh seluruh PHS pada menit yang sama.",
+      "Jam tiap langkah penetapan dihitung dalam detik: jeda PMH->PPP->PJS->PHS selalu 60-659 detik nyata (sebelumnya hanya angka menitnya yang dijaga; diukur 20-34 detik pada 3 dari 10 perkara), detiknya ikut menaik, dan tidak pernah melampaui jam server sampai ke detiknya (sebelumnya sampai 59 detik di masa depan pada pagi hari).",
+      "Rangkaian yang digeser mundur (pagi hari) disebar per perkara di antara 08:00 dan jam server - penetapan massal 25 perkara tidak lagi menaruh seluruh PHS pada menit yang sama.",
       "Audit PMH: ketiga baris perkara_hakim_pn berjudul 'dari halaman Smart Majelis TAMBAH PENETAPAN HAKIM/MAJELIS HAKIM' persis tulisan SIPP saat petugas memakai tombol Smart Majelis (782 dari 1.112 perkara 2026); formname dan dua baris lainnya tidak berubah.",
       "Baris perkara_smartmajelis berstatus 1 (sesuai rekomendasi) dengan majelis_id menurut ref_majelis_tetap dan kompetensi jenis perkaranya bila susunan yang ditetapkan adalah majelis SK; selain itu status 2 beserta sebabnya seperti sebelumnya. Laporan Smart Majelis SIPP tidak lagi menghitung tiap perkara ALETA sebagai penyimpangan.",
     ],
@@ -1490,7 +1490,7 @@ export const PATCH_NOTES: PatchNote[] = [
     date: "2026-09-15",
     status: "Terpasang",
     summary:
-      "Pembuktian 2.19.0 di peladen: rantai manual terbukti utuh (pilih A -> Rabu, pilih B -> Selasa), tetapi jalur otomatis " +
+      "Pembuktian 2.19.0 di server: rantai manual terbukti utuh (pilih A -> Rabu, pilih B -> Selasa), tetapi jalur otomatis " +
       "kini dikendalikan Smart Majelis SIPP yang mengusulkan trio di luar SK - kode jujur kosong, dan hari sidangnya ikut hilang.",
     added: [],
     changed: [
@@ -1515,7 +1515,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "kode ketuanya, dan pilihan manual tidak pernah menghitung ulang apa pun.",
     added: [
       "Dropdown majelis pada mode OTOMATIS. Mengganti majelis di sana mengganti hakimnya, panitera sidangnya, juru sitanya, dan hari sidangnya - dihitung ulang server, bukan ditiru di peramban.",
-      "PHS ikut ditawarkan pada Pejabat yang menetapkan. Calonnya anggota majelis perkara itu saja, ketua di depan sebagai pilihan otomatis - ketua majelis yang cuti pada hari penetapannya tidak lagi memaksa petugas kembali ke borang SIPP.",
+      "PHS ikut ditawarkan pada Pejabat yang menetapkan. Calonnya anggota majelis perkara itu saja, ketua di depan sebagai pilihan otomatis - ketua majelis yang cuti pada hari penetapannya tidak lagi memaksa petugas kembali ke blangko SIPP.",
     ],
     changed: [
       "Giliran berjalan di antara majelis SK saja. Terukur pada perkara 567: trio dadakan B,C1,C3 yang pernah dipakai 5 kali selalu menang atas ketiga majelis SK (259, 125, 60 perkara) - itulah sebab majelis Ketua tidak pernah dapat perkara dari usulan.",
@@ -1538,7 +1538,7 @@ export const PATCH_NOTES: PatchNote[] = [
     date: "2026-09-15",
     status: "Terpasang",
     summary:
-      "Verifikasi 2.18.0 di peladen menemukan kolom KUA kosong pada SELURUH ruangan sidang keliling - " +
+      "Verifikasi 2.18.0 di server menemukan kolom KUA kosong pada SELURUH ruangan sidang keliling - " +
       "tanpa satu pun galat. Sebabnya bukan pencocokan nama: tabelnya tidak terdaftar di layanan skema, " +
       "sehingga tabelAda() menjawab tidak ada. Penjaga yang dibuat untuk menutup kelas cacat itu menangkap dua lagi.",
     added: [
@@ -1635,7 +1635,7 @@ export const PATCH_NOTES: PatchNote[] = [
     added: [
       "AGEN PENJAGA TENGGAT (Tahap 3) - laporan harian WhatsApp atas tujuh tenggat: perkara lewat 5 bulan (SEMA 2/2014), ikrar talak yang gugur bila lewat 6 bulan (Pasal 70 ayat 6 UU 7/1989), akta cerai gugat sejak BHT, akta cerai talak sejak IKRAR, relaas sidang pertama, antrean Direktori Putusan yang gagal, dan putusan tanpa anonimisasi. Tiap ambangnya diukur atas data sungguhan, bukan ditebak.",
       "AGEN PENYUSUN PERTIMBANGAN (Tahap 4) - draf daftar alat bukti surat (variabel ABT 1214, pekerjaan tangan terbanyak: 2.025 pengisian). Menyusun P.1 (KTP) dan P.2 (Kutipan Akta Nikah) dari data SIPP. TIDAK PERNAH MENYIMPAN SENDIRI.",
-      "AGEN ARSIP e-COURT BERTINDAK (Tahap 5) - mencocokkan catatan arsip dengan cakram, lalu menyusun rencana penarikan ulang berkas yang hilang. Diukur di peladen: 400 tercatat, 0 ada, 400 hilang.",
+      "AGEN ARSIP e-COURT BERTINDAK (Tahap 5) - mencocokkan catatan arsip dengan cakram, lalu menyusun rencana penarikan ulang berkas yang hilang. Diukur di server: 400 tercatat, 0 ada, 400 hilang.",
     ],
     changed: [
       "Jadwal sidang 11-14 detik menjadi 138-260 ms. Sebabnya satu view: v_pihak_perkara adalah UNION berpembeda yang memaksa basis data membentuk SELURUH isinya sebelum saringan berlaku. Untuk 20 perkara: 8.563 ms lewat view, 413 ms langsung ke tabelnya - baris identik.",
@@ -1673,7 +1673,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "WARNA SATU HALAMAN DAPAT DILEPAS DARI POPUP - tombol baru di sebelah tombol kembalikan-bawaan pada kepala panel. SIPP, ABT, dan halaman ALETA kerap terbuka berdampingan di satu layar, dan yang bekerja di antaranya perlu tahu sekilas sedang menatap yang mana. Yang dilepas menyimpan warnanya atas nama panelnya sendiri dan tidak lagi tersentuh popup; keadaannya disebut pada judul tombol.",
     ],
     changed: [
-      "Lencana lingkungan \"PELADEN\" menjadi \"SERVER\".",
+      "Lencana lingkungan \"SERVER\" menjadi \"SERVER\".",
       "\"Susun rencana (kering)\" menjadi \"Periksa dulu - belum dijalankan\", dan di panel SIPP \"Periksa dulu (kering)\" menjadi \"Periksa dulu - belum ditulis\". \"Kering\" istilah pemrogram; yang menekannya panitera, dan yang perlu dijawab tombol itu hanya satu - apakah menekannya mengubah sesuatu atau tidak.",
       "Bawaan blangko dispensasi kawin menjadi \"[01] [Kabul] DK - (Anak P Cewek) Hamil\" - nama yang benar-benar ada di server. Bawaan sebelumnya nama dari ABT setempat yang sejak hari pertama ditandai \"periksa namanya di server\"; diperiksa, dan ternyata tidak ada di sana sama sekali.",
       "Yang tercentang pada putusan massal tidak hilang ketika daftarnya disaring, dan berapa yang tercentang tetapi tidak terlihat disebut di atas daftar.",
@@ -1730,7 +1730,7 @@ export const PATCH_NOTES: PatchNote[] = [
     summary:
       "Empat hari sejak 2.15.0, 69 commit, ekstensi 1.91.0 -> 1.134.0. Yang berubah bukan satu fitur melainkan arah: ALETA kini menulis putusan dan penetapan ke SIPP atas nama pejabatnya, dan karena itu ada yang MEMBACA lebih dulu sebelum menulis - praperiksa putusan yang berhenti bila bertentangan, penyamaran isi perkara yang diukur atas posita sungguhan sebelum satu kata pun keluar ke penyedia AI, dan mode kering yang membuktikan tidak ada yang tertulis. Tidak ada yang diperbaiki sendiri oleh mesin; orang yang memutuskan.",
     added: [
-      "PRAPERIKSA PUTUSAN (ekstensi 1.134.0, Tahap 2 rencana agen). Tepat sebelum borang Putusan Akhir diisi dari draf ALETA, agen membaca fakta SIPP dan mengadunya dengan draf serta isian borang: tanggal putusan harus hari sidang perkara itu (1.643 dari 1.643 putusan 2025-2026 begitu), kata kerja amar harus berpadanan dengan Status Putusan (1.642 dari 1.643 - yang satu memang keliru), nama di amar harus pihak atau anak perkara ini, majelis yang disebut naskah harus majelis yang ditetapkan, perkaranya belum putus. Yang bertentangan MENAHAN. Diukur atas 200 putusan sungguhan: satu hentikan - dan itu kesalahan data nyata di SIPP.",
+      "PRAPERIKSA PUTUSAN (ekstensi 1.134.0, Tahap 2 rencana agen). Tepat sebelum blangko Putusan Akhir diisi dari draf ALETA, agen membaca fakta SIPP dan mengadunya dengan draf serta isian blangko: tanggal putusan harus hari sidang perkara itu (1.643 dari 1.643 putusan 2025-2026 begitu), kata kerja amar harus berpadanan dengan Status Putusan (1.642 dari 1.643 - yang satu memang keliru), nama di amar harus pihak atau anak perkara ini, majelis yang disebut naskah harus majelis yang ditetapkan, perkaranya belum putus. Yang bertentangan MENAHAN. Diukur atas 200 putusan sungguhan: satu hentikan - dan itu kesalahan data nyata di SIPP.",
       "DUA JALUR AI DAN PENYAMARAN ISI PERKARA (Tahap 1). Jalur UMUM untuk pekerjaan tanpa isi perkara, jalur ISI PERKARA yang penyedianya dipilih terpisah dan MENOLAK mewarisi sambungan global. Posita, amar, dan petitum disamarkan dengan kamus pihak dan anak yang DIKETAHUI SIPP - bukan ditebak - sebelum berangkat; muatan tanpa bukti penyamaran ditolak gerbang. Diukur atas 150 posita sungguhan: 147 bersih. Keduanya diisi dari layar Pengaturan AI sebagai dua modul.",
       "PUTUSAN OTOMATIS LENGKAP. Naskah putusan RTF dari ABT diterima ALETA; pertimbangan, amar, amar anonim, dan kedelapan medan pilihan (status, verstek, faktor perceraian, qobla, nusyuz, keadaan istri, sumber hukum, dispensasi) diisi dari draf - medan tersembunyi dibuka sendiri; Simpan ditekan sendiri dan tersimpannya DIBUKTIKAN dari SIPP; putusan dan anonimisasinya diunggah ke SIPP.",
       "PUTUSAN MASSAL dari jadwal sidang: di beranda blangko ABT pilih tanggal, ALETA menyusun rencana kering per perkara (RTF, draf, PDF, anonim), lalu antrean diserahkan ke SIPP - otomatis atau berhenti tiap perkara. Pemetaan blangko menurut NAMA yang dapat disunting, bawaan cerai/itsbat/dispensasi, dan dapat diisi dari pohon blangko portal.",
@@ -1749,7 +1749,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     fixed: [
       "Penetapan berhenti di tengah jalan lalu tidak dapat dilanjutkan; kini dilanjutkan dari langkah yang tersisa, dan Riwayat Perkara yang tidak pernah ditulis kini ditulis.",
-      "Nomor perkara di halaman daftar membawa angka urutnya; radio nusyuz tidak tercentang; medan borang putusan ditunjuk lewat id yang berubah - kini lewat nama.",
+      "Nomor perkara di halaman daftar membawa angka urutnya; radio nusyuz tidak tercentang; medan blangko putusan ditunjuk lewat id yang berubah - kini lewat nama.",
       "Posita tercetak tanpa baris; SIPP membuang <br> saat mencetak, kini pemisahnya <p>.",
       "Aksara kendali liar pada tiga berkas membuat satu penjaga uji selalu lulus.",
       "Lima layanan penilaian mendaftar tanpa penjaga sehingga permintaan kedua selalu gagal; RG14/MP13/MP16 menautkan arsip lewat perkara_id yang nol.",
@@ -1757,7 +1757,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     security: [
       "Isi perkara tidak pernah keluar ke penyedia AI tanpa penyamaran yang berbukti; jalur perkara yang belum disetel berarti tidak dikirim ke mana pun.",
-      "Kunci API tidak digandakan per jalur - tetap satu, lewat env peladen.",
+      "Kunci API tidak digandakan per jalur - tetap satu, lewat env server.",
     ],
     operationalNotes: [
       "Migrasi 0039-0043 WAJIB dijalankan (ALETA_RUN_DB_MIGRATIONS=1); seluruhnya CREATE/ADD IF NOT EXISTS, aman diulang. Sesudah pasang, cocokkan jumlah drizzle.__drizzle_migrations = 44.",
@@ -1767,8 +1767,8 @@ export const PATCH_NOTES: PatchNote[] = [
       "Sahkan tanda tangan pejabat di ALETA e-Court - Tanda Tangan sebelum menerbitkan penetapan; pasangan nama-gambar tidak pernah ditebak mesin.",
     ],
     knownLimitations: [
-      "Seluruh rilis 1.92-1.134 dibangun ketika peladen mati dan hanya teruji setempat (replika statis, node:vm, basis data SIPP salinan). Jalankan `node scripts/ukur-penyamaran.js 150` di peladen sebelum mempercayai angka 147/150, dan ukur ulang praperiksa atas putusan peladen.",
-      "Putusan massal, unggah ke SIPP, dan pendapat AI belum pernah dijalankan atas perkara sungguhan di peladen - jalankan KERING dahulu pada satu perkara.",
+      "Seluruh rilis 1.92-1.134 dibangun ketika server mati dan hanya teruji setempat (replika statis, node:vm, basis data SIPP salinan). Jalankan `node scripts/ukur-penyamaran.js 150` di server sebelum mempercayai angka 147/150, dan ukur ulang praperiksa atas putusan server.",
+      "Putusan massal, unggah ke SIPP, dan pendapat AI belum pernah dijalankan atas perkara sungguhan di server - jalankan KERING dahulu pada satu perkara.",
     ],
   },
   {
@@ -1777,9 +1777,9 @@ export const PATCH_NOTES: PatchNote[] = [
     date: "2026-09-10",
     status: "Operasional",
     summary:
-      "Tombol Kerjakan pada papan penunjukan praktis tidak pernah dapat ditekan di halaman detail perkara - halaman yang paling sering dibuka - sebab ia hanya bisa mengisi BORANG SIPP, dan borang itu memang tidak ada di sana. Mesin yang menulis penetapan langsung sudah lengkap sejak lama; yang tidak pernah ada adalah jalannya ke sana.",
+      "Tombol Kerjakan pada papan penunjukan praktis tidak pernah dapat ditekan di halaman detail perkara - halaman yang paling sering dibuka - sebab ia hanya bisa mengisi BLANGKO SIPP, dan blangko itu memang tidak ada di sana. Mesin yang menulis penetapan langsung sudah lengkap sejak lama; yang tidak pernah ada adalah jalannya ke sana.",
     added: [
-      "Tetapkan lewat ALETA - PMH, PPP, PJS, dan PHS dituliskan langsung ke SIPP secara berurutan, tanpa membuka empat halaman borang dan tanpa berganti empat akun. Yang ditulis dan ke tabel mana persis sama dengan yang dituliskan SIPP ketika petugas menekan Simpan, baris sys_audittrail-nya ikut.",
+      "Tetapkan lewat ALETA - PMH, PPP, PJS, dan PHS dituliskan langsung ke SIPP secara berurutan, tanpa membuka empat halaman blangko dan tanpa berganti empat akun. Yang ditulis dan ke tabel mana persis sama dengan yang dituliskan SIPP ketika petugas menekan Simpan, baris sys_audittrail-nya ikut.",
       "Tekanan pertama KERING: rencana keempat langkah digambarkan lebih dulu - pernyataan apa, ke tabel mana, atas nama siapa - tanpa satu pun dijalankan. Menulis menuntut tekanan kedua atas rencana yang sudah terbaca.",
       "Pilihan pejabat yang menetapkan, dengan pilihan ALETA sudah tersorot dan ditandai. Yang ditawarkan hanya calon yang sah untuk langkah itu; ketua majelis sengaja tidak punya pilihan, sebab PHS ditandatangani ketua majelis perkara itu sendiri.",
     ],
@@ -1810,7 +1810,7 @@ export const PATCH_NOTES: PatchNote[] = [
     date: "2026-09-10",
     status: "Operasional",
     summary:
-      "Lima layar membaca BUNGKUS jawaban rutenya, bukan isinya - sehingga masing-masing gagal setiap kali, pada setiap perkara, tanpa satu pun galat muncul. Dua di antaranya punya uji yang hijau: pemalsu fetch-nya memalsukan bentuk yang tidak pernah dikeluarkan peladen, sehingga uji dan kode sepakat atas dunia yang tidak ada.",
+      "Lima layar membaca BUNGKUS jawaban rutenya, bukan isinya - sehingga masing-masing gagal setiap kali, pada setiap perkara, tanpa satu pun galat muncul. Dua di antaranya punya uji yang hijau: pemalsu fetch-nya memalsukan bentuk yang tidak pernah dikeluarkan server, sehingga uji dan kode sepakat atas dunia yang tidak ada.",
     added: [
       "Acc hakim atas Berita Acara Sidang - langkah yang ada di kenyataan tetapi tidak pernah ada di ALETA. Empat keadaan, dan acc BATAL sendiri begitu isinya diubah, supaya persetujuan hakim tidak melekat pada naskah yang tidak pernah dilihatnya.",
       "Rubrik penilaian perkara dapat disunting dari ALETA SIPP - bobot tiap butir, skala waktu, dan ambang predikat. Rutenya sudah lama ada di bot, tetapi tidak ada satu pun jalan dari portal menuju ke sana.",
@@ -1818,11 +1818,11 @@ export const PATCH_NOTES: PatchNote[] = [
       "Ketepatan waktu penginputan menjadi unsur penilaian: PMH, PPP, PJS, PHS, dan putusan. Yang dinilai penetapan PERTAMA; perubahan dan penetapan pengganti tidak ikut.",
       "Kotak Perlu diperiksa pada Jadwal Sidang - gabungan penanda merah saja, menjawab pertanyaan pertama tiap pagi dengan satu tekan.",
       "Titipan penetapan kedaluwarsa sendiri sesudah empat belas hari, ditandai dan bukan dihapus.",
-      "Jejak perubahan ABT kini tersimpan di peladen, bukan hanya di peramban. Salinan peramban tetap yang menggerakkan Urungkan - ia lengkap, dan tetap bekerja ketika jaringan putus.",
+      "Jejak perubahan ABT kini tersimpan di server, bukan hanya di peramban. Salinan peramban tetap yang menggerakkan Urungkan - ia lengkap, dan tetap bekerja ketika jaringan putus.",
       "Bab 1 katalog e-Audit selesai enam dari enam; keseluruhan naik dari delapan menjadi empat belas butir tersambung penuh.",
     ],
     changed: [
-      "Kegagalan menghubungi ALETA dari ekstensi kini satu kalimat yang menyebut sebabnya DAN apa yang tetap jalan tanpa peladen - tema, panel, penjaga CETAK, sunting variabel ABT, pembersih keterangan saksi, dan CETAK rtf beserta anonimnya.",
+      "Kegagalan menghubungi ALETA dari ekstensi kini satu kalimat yang menyebut sebabnya DAN apa yang tetap jalan tanpa server - tema, panel, penjaga CETAK, sunting variabel ABT, pembersih keterangan saksi, dan CETAK rtf beserta anonimnya.",
       "Halaman Ekstensi SIPP menyebutkan apa yang dikerjakan ekstensi di halaman blangko ABT. Sebelumnya seluruh keterangannya hanya berbicara tentang SIPP.",
       "Ekstensi SIPP naik ke 1.90.0.",
     ],
@@ -1835,13 +1835,13 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     security: [],
     operationalNotes: [
-      "Dipasang sesudah peladen mati semalaman. Dua puluh dua commit sekaligus - bila ada yang berulah, bandingkan dengan daftar di atas sebelum menyimpulkan.",
+      "Dipasang sesudah server mati semalaman. Dua puluh dua commit sekaligus - bila ada yang berulah, bandingkan dengan daftar di atas sebelum menyimpulkan.",
       "Versi sebelumnya yang terpasang 2.13.1. APP_VERSION di sumber selama ini tertinggal di 2.6.1 sementara nomor paket sudah sampai 2.13.1 - keduanya disamakan mulai rilis ini, supaya yang tertulis di layar sama dengan yang benar-benar terpasang.",
       "Migrasi Drizzle TIDAK bertambah. Tabel jejak ABT dan kolom acc BAS ditambahkan lewat jalur idempoten di schema.ts, yang tidak mengklaim nomor migrasi apa pun.",
       "Ambang ketepatan penginputan ditandai KEBIJAKAN, bukan peraturan: dasar peraturannya belum diperiksa terhadap naskah resmi, dan angkanya ditetapkan tanpa melihat sebaran data nyata. Wajib ditinjau ulang sesudah pengukuran pertama.",
     ],
     knownLimitations: [
-      "Tidak satu pun dari perbaikan ini teruji di layar sungguhan - peladen mati sepanjang malam pengerjaannya. Kelima layar yang diperbaiki perlu dibuka satu per satu.",
+      "Tidak satu pun dari perbaikan ini teruji di layar sungguhan - server mati sepanjang malam pengerjaannya. Kelima layar yang diperbaiki perlu dibuka satu per satu.",
       "Perubahan rubrik penilaian berlaku SURUT: seluruh perkara dinilai memakai angka yang baru. Ubah sedikit dahulu, lihat akibatnya di Status Perkara, baru tetapkan.",
       "Acc BAS belum pernah dijalankan oleh hakim sungguhan. Yang paling perlu diuji: sunting satu jawaban sesudah di-acc, lalu pastikan accnya batal sendiri.",
       "Sembilan pasang fungsi panel masih kembar antara konten.js dan panel-alat.js. Keduanya benar tetapi berbeda cara, dan penyatuannya dikerjakan tersendiri supaya dapat dinilai sendiri.",
@@ -1891,7 +1891,7 @@ export const PATCH_NOTES: PatchNote[] = [
     security: [],
     operationalNotes: [
       "Seluruh 106 baris ref_majelis_tetap ber-aktif = 0. Rasionya tetap dibaca - itu satu-satunya angka porsi yang pernah ditetapkan pengadilan ini, dan mengabaikannya berarti kembali menganggap seluruh hakim berporsi sama, yang justru diketahui tidak benar. Susunan majelisnya tetap tidak dipakai; hanya angka rasionya.",
-      "Peta kolom formulir TETAP dipakai - 35 baris pada lima formulir termasuk data-umum. Ia yang mengenali formulir SIPP mana yang sedang terbuka dan kolom mana yang diisi. Baru dapat dihapus bila jalur tulis langsung sepenuhnya menggantikan pengisian borang.",
+      "Peta kolom formulir TETAP dipakai - 35 baris pada lima formulir termasuk data-umum. Ia yang mengenali formulir SIPP mana yang sedang terbuka dan kolom mana yang diisi. Baru dapat dihapus bila jalur tulis langsung sepenuhnya menggantikan pengisian blangko.",
     ],
     knownLimitations: [
       "Rasio hakim dibaca dari baris yang tidak aktif. Bila pengadilan menyetel ulang Smart Majelis dan mengaktifkan barisnya, angka yang terbaca berubah mengikuti - dan itu memang yang dikehendaki.",
@@ -2066,7 +2066,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Suara memakai pengucap bawaan peramban. Perangkat yang belum punya paket suara bahasa Indonesia akan mengucapkan angka dengan janggal - layarnya menyebutkan hal itu apa adanya, dan paketnya harus dipasang di sistem operasinya.",
       "Panggilan petugas tidak tercatat di mana pun, sehingga tidak dapat dijawab berapa kali rohaniwan dipanggil hari itu. Mencatatnya menuntut tabel tersendiri - bukan kolom antrian, yang sudah punya artinya sendiri.",
       "Hasil sidang dikenali dari kata putus. Panitera yang menuliskan hasil tanpa kata itu tidak akan tampil hijau - menebak lebih jauh akan salah pada 7.395 baris yang berisi agenda.",
-      "Layar barunya belum dilihat langsung di peramban - tidak ada peladen uji yang berjalan.",
+      "Layar barunya belum dilihat langsung di peramban - tidak ada server uji yang berjalan.",
     ],
   },
   {
@@ -2098,7 +2098,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Ada atau tidaknya berkas pindaian TIDAK memengaruhi nilai SK Tabel 2 I.16. Yang dinilai SK di sana jeda penginputan datanya, bukan pindaiannya. Menjadikannya pengurang nilai berarti menilai pengadilan dengan aturan yang tidak ada dalam SK - bila kelak dikehendaki, yang diperlukan lebih dahulu dasar hukumnya, bukan kodenya.",
       "1.041 baris arsip dari 4.863 memang belum ada berkas pindaiannya, dan 991 di antaranya perkara 2018 sampai 2021. Layarnya menyebutkannya apa adanya, bukan menyembunyikannya.",
       "Jenis ikrar-talak ikut dihidupkan pada daftar, tetapi berkasnya bergantung kolom yang belum tentu ada pada SIPP versi ini - bila tidak ada, hasilnya 404 berkas tidak tercatat, bukan lagi 400 jenis tidak dikenali.",
-      "Layar arsip yang baru belum dilihat langsung di peramban - tidak ada peladen uji yang berjalan.",
+      "Layar arsip yang baru belum dilihat langsung di peramban - tidak ada server uji yang berjalan.",
     ],
   },
   {
@@ -2157,7 +2157,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Jeda penginputan (unsur I.3, I.5, I.7, I.9) belum diberi penjaga urutan terbalik. Diinput sebelum peristiwanya pun masih bernilai sempurna. Setelah tanggal PMH dibetulkan keadaan itu hampir hilang dengan sendirinya, tetapi penjaganya belum dipasang - dan itu keputusan tersendiri yang belum diambil.",
       "Keterangan pada v1.97.0 yang menyebut nilai tersimpan tidak dihitung ulang TIDAK berlaku - sesudah diperiksa, tidak ada nilai tersimpan sama sekali. Catatan versi lama sengaja tidak diubah agar riwayatnya tetap utuh.",
       "MS03 Riwayat Nilai Tersimpan masih berupa mesin yang belum tersambung. Selama belum tersambung, nilai laporan bulan lalu ikut berubah bila data lampaunya disunting - dan perubahan itu tidak meninggalkan jejak.",
-      "Tata letak sidebar yang menempel belum dilihat langsung di peramban - tidak ada peladen uji yang berjalan. Yang dijaga baru kelasnya, melalui uji sumber.",
+      "Tata letak sidebar yang menempel belum dilihat langsung di peramban - tidak ada server uji yang berjalan. Yang dijaga baru kelasnya, melalui uji sumber.",
     ],
   },
   {
@@ -2616,7 +2616,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     security: [
       "Nama penanda tangan putusan diambil dari akun, bukan diketik: sebelumnya siapa pun yang dapat mencapai rutenya dapat menandatangani atas nama hakim mana pun.",
-      "Menandatangani putusan menuntut peran hakim, ketua, atau wakil ketua - ditolak di peladen, bukan di layar.",
+      "Menandatangani putusan menuntut peran hakim, ketua, atau wakil ketua - ditolak di server, bukan di layar.",
       "Naskah berkas utuh terlarang keluar sebagai bawaan; pengadilan yang hendak memakai penarikan fakta harus memutuskannya sendiri, dan keputusan itu tercatat.",
     ],
     operationalNotes: [
@@ -3573,7 +3573,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Titipan kedua atas perkara dan jenis yang sama menggantikan yang pertama, bukan menumpuk - pejabatnya tidak boleh disuruh memilih di antara dua usulan tanpa tahu mana yang terbaru.",
     ],
     fixed: [
-      "Kewenangan mengisi borang tidak lagi berarti kewenangan atas keempat penetapan. Sebelumnya kode hanya tahu \"boleh mengisi borang atau tidak\" - sehingga Panitera yang diberi kewenangan itu dapat mengisi borang PMH, yang merupakan perbuatan Ketua Pengadilan. Sekarang jabatannya diperiksa per penetapan, dan diperiksa di server saat pengisiannya dicatat.",
+      "Kewenangan mengisi blangko tidak lagi berarti kewenangan atas keempat penetapan. Sebelumnya kode hanya tahu \"boleh mengisi blangko atau tidak\" - sehingga Panitera yang diberi kewenangan itu dapat mengisi blangko PMH, yang merupakan perbuatan Ketua Pengadilan. Sekarang jabatannya diperiksa per penetapan, dan diperiksa di server saat pengisiannya dicatat.",
     ],
     security: [
       "ALETA TIDAK menyimpan kredensial pejabat mana pun, dan tidak masuk SIPP atas nama siapa pun. Menyimpan kata sandi agar satu orang dapat bertindak sebagai empat pejabat akan menghapus satu-satunya hal yang membuat penetapan dapat dipertanggungjawabkan - dan itu sengaja tidak dibangun.",
@@ -3606,8 +3606,8 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     changed: [
       "Kepala panel dari enam baris menjadi dua: baris pertama tentang perkaranya, baris kedua tentang siapa yang membaca dan sejauh mana datanya. Penanda data basi TIDAK ikut dipadatkan - ia satu-satunya keterangan di kepala yang dapat membatalkan seluruh isi panel.",
-      "Menu yang perannya tidak berwenang tidak lagi digambar. Sebelumnya Penunjukan, Data Umum, dan Baca Medan Borang tetap muncul untuk semua orang dan baru menolak sesudah ditekan - tiga baris yang tidak pernah dapat dibuka juru sita maupun panitera muda. Super Admin dan Admin tetap penuh.",
-      "Baca Medan Borang dibatasi ke Super Admin dan Admin. Ia alat memetakan borang, jawabannya sama pada perkara mana pun - bukan keterangan perkara. Rencana semula memindahkannya ke popup ikon, tetapi itu menuntut izin tabs yang sengaja dihindari ekstensi ini sejak awal.",
+      "Menu yang perannya tidak berwenang tidak lagi digambar. Sebelumnya Penunjukan, Data Umum, dan Baca Medan Blangko tetap muncul untuk semua orang dan baru menolak sesudah ditekan - tiga baris yang tidak pernah dapat dibuka juru sita maupun panitera muda. Super Admin dan Admin tetap penuh.",
+      "Baca Medan Blangko dibatasi ke Super Admin dan Admin. Ia alat memetakan blangko, jawabannya sama pada perkara mana pun - bukan keterangan perkara. Rencana semula memindahkannya ke popup ikon, tetapi itu menuntut izin tabs yang sengaja dihindari ekstensi ini sejak awal.",
       "Urutan menu mengikuti perjalanan perkara - berkas masuk, perkara berjalan, perkara putus, lalu yang dikerjakan. Sebelumnya urutannya mengikuti kapan menunya dibuat.",
     ],
     fixed: [
@@ -3616,7 +3616,7 @@ export const PATCH_NOTES: PatchNote[] = [
     security: [
       "Kewenangan peran ikut dikirim rute konteks supaya menu yang mustahil dipakai tidak digambar. Ini KENYAMANAN, bukan penjagaan - tiap rute tetap memeriksa ulang kewenangannya sendiri sebelum menjawab, sebab ekstensi berjalan di peramban pengguna dan dapat diubah siapa saja yang memasangnya.",
       "Kewenangan yang belum terbaca berarti menu TETAP digambar. Menyembunyikannya saat ragu akan membuat pemasangan baru tampak kehilangan separuh fiturnya, dan yang disalahkan biasanya ekstensinya - bukan jawaban yang belum sampai.",
-      "Kelompok Kerjakan dipisah dari yang dibaca bukan demi kerapian: mencampur menu yang menampilkan keterangan dengan menu yang mengisi borang SIPP membuat tombol yang menulis duduk di antara tombol yang tidak, dan pada layar sesak itu cara termudah salah tekan.",
+      "Kelompok Kerjakan dipisah dari yang dibaca bukan demi kerapian: mencampur menu yang menampilkan keterangan dengan menu yang mengisi blangko SIPP membuat tombol yang menulis duduk di antara tombol yang tidak, dan pada layar sesak itu cara termudah salah tekan.",
     ],
     operationalNotes: [
       "Lencana untuk lima menu diambil dari SATU panggilan yang memang sudah dipakai kelimanya, dan hasilnya sudah disimpan per nomor perkara - tidak ada kueri tambahan. Yang dikerjakan hanya memajukan panggilan itu.",
@@ -3707,24 +3707,24 @@ export const PATCH_NOTES: PatchNote[] = [
   },
   {
     version: "1.56.0",
-    title: "ALETA v1.56.0 - ALETA Mulai Mengisi Borang SIPP",
+    title: "ALETA v1.56.0 - ALETA Mulai Mengisi Blangko SIPP",
     date: "2026-09-01",
     status: "Operasional",
     summary:
-      "Tombol Kerjakan dinyalakan: ALETA mengisikan usulan penunjukan ke borang SIPP, dan memetik isian Data Umum dari berkas gugatan yang diunggah. Penunjuk medannya disimpan sebagai data yang disunting dari kenyataan, bukan ditebak. Yang menekan Simpan tetap petugas - saklar penyimpanan otomatis ada, dan bawaannya mati.",
+      "Tombol Kerjakan dinyalakan: ALETA mengisikan usulan penunjukan ke blangko SIPP, dan memetik isian Data Umum dari berkas gugatan yang diunggah. Penunjuk medannya disimpan sebagai data yang disunting dari kenyataan, bukan ditebak. Yang menekan Simpan tetap petugas - saklar penyimpanan otomatis ada, dan bawaannya mati.",
     added: [
       "Pembacaan berkas gugatan .docx, .doc, .rtf, .pdf teks, dan .txt, lalu pemetikan isian Data Umum darinya: kedua pihak, umur, agama, pekerjaan, pendidikan, kedua alamat, nilai sengketa, dan petitum.",
       "Tiap petikan menyebutkan potongan kalimat ASALNYA. Gugatan ditulis manusia dan tidak ada dua yang bentuknya sama - petikan tanpa asal-usul hanya bisa dipercaya atau tidak, sedangkan yang menyebutkan barisnya bisa dicocokkan dalam dua detik.",
       "Jembatan ke dunia halaman SIPP, sehingga select2 dan CKEditor dapat diisi benar. Menyetel value pada elemen aslinya membuat tampilannya berubah tanpa nilainya ikut - dan yang tersimpan kemudian bukan yang terlihat.",
-      "Peta medan borang yang disunting dari pengaturan, dengan mode Baca Borang di ekstensi yang menyebutkan medan apa saja yang benar-benar ada di halaman beserta labelnya.",
-      "Tombol Kerjakan pada papan penunjukan. Ia mengenali borang mana yang sedang terbuka dari MEDANNYA, bukan dari alamat halaman - nama halaman SIPP berbeda antar jenis perkara dan antar versi.",
+      "Peta medan blangko yang disunting dari pengaturan, dengan mode Baca Blangko di ekstensi yang menyebutkan medan apa saja yang benar-benar ada di halaman beserta labelnya.",
+      "Tombol Kerjakan pada papan penunjukan. Ia mengenali blangko mana yang sedang terbuka dari MEDANNYA, bukan dari alamat halaman - nama halaman SIPP berbeda antar jenis perkara dan antar versi.",
       "Pemeriksaan balik sesudah Simpan: bot membaca ulang perkara_penetapan dan mencatat apakah yang diisikan benar-benar tercatat. Yang mendarat sebagian tetap tercatat sebagian, bukan dibulatkan jadi berhasil atau gagal.",
       "Catatan pengisian mencatat ASAL tiap nilai - usulan otomatis atau pilihan manual - sehingga pertanyaan seberapa sering usulannya diubah orang dapat dijawab dengan angka.",
       "Saklar penyimpanan otomatis di pengaturan. Bawaannya mati, dan hanya nilai persis \"nyala\" yang menyalakannya.",
     ],
     changed: [
       "Urutan pengisian penunjukan menjadi PMH, PPP, PJS, lalu PHS. Rencana semula mendahulukan PPP dan PJS dengan alasan keduanya paling mudah dibetulkan - itu tidak dapat dijalankan: SIPP menolak penetapan panitera pengganti dan juru sita selama majelisnya belum ditetapkan. Bukan urutan yang lebih aman, melainkan urutan yang diterima sama sekali.",
-      "Kalimat \"Tidak mengubah SIPP sama sekali\" dicabut dari keterangan ekstensi dan panduan pemasangan. ALETA kini memang mengisi borangnya - yang tetap adalah bahwa Simpan ditekan petugas.",
+      "Kalimat \"Tidak mengubah SIPP sama sekali\" dicabut dari keterangan ekstensi dan panduan pemasangan. ALETA kini memang mengisi blangkonya - yang tetap adalah bahwa Simpan ditekan petugas.",
       "Contoh tanggal sidang pada uji tidak lagi memakai perkara verzet. Verzet upaya hukum, dan memakainya sebagai contoh perkara biasa menyesatkan. Acuannya sekarang perkara 468/Pdt.G/2026 - gugatan biasa - ditambah uji sifat menyeluruh untuk seluruh gabungan hari dan tanggal daftar.",
     ],
     fixed: [
@@ -3733,7 +3733,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     security: [
       "Penunjuk medan disimpan sebagai data, bukan ditanam di kode. Nama kolom yang salah membuat kueri GAGAL dengan pesan yang menyebut kolomnya; penunjuk medan yang salah membuat pengisian mengenai medan LAIN - dan itu tidak gagal sama sekali, ia hanya salah. Selama petanya kosong, tombol Kerjakan tetap mati.",
-      "Borang yang petanya setengah jadi TIDAK dinyatakan siap. Mengisi separuh borang lalu menyerahkan sisanya ke petugas menghasilkan borang yang tidak jelas siapa yang mengisinya - lebih sulit diperiksa daripada borang yang seluruhnya diketik orang.",
+      "Blangko yang petanya setengah jadi TIDAK dinyatakan siap. Mengisi separuh blangko lalu menyerahkan sisanya ke petugas menghasilkan blangko yang tidak jelas siapa yang mengisinya - lebih sulit diperiksa daripada blangko yang seluruhnya diketik orang.",
       "Pengisian berhenti pada kegagalan PERTAMA, dan menyebutkan medan mana. Meneruskan sesudah satu medan gagal menghasilkan campuran antara yang diisi ALETA dan yang tertinggal dari isian sebelumnya.",
       "Kewenangan diperiksa lagi di server saat pengisiannya dicatat, bukan hanya sebelum tombolnya digambar. Ekstensi berjalan di peramban pengguna dan dapat diubah siapa saja yang memasangnya.",
       "Jembatan dunia utama hanya menerima pesan dari halaman itu sendiri, dan tidak memutuskan apa pun - ia hanya menyebutkan medan, mengisi satu medan, dan menekan satu tombol. Seluruh keputusan dibuat di sisi yang sudah lewat pemeriksaan kewenangan.",
@@ -3741,15 +3741,15 @@ export const PATCH_NOTES: PatchNote[] = [
       "Bot tidak terjangkau saat pemeriksaan balik TIDAK ditandai gagal. Menandainya gagal mencatat kebohongan yang lebih buruk daripada mengakui belum tahu; catatannya dibiarkan belum diperiksa.",
     ],
     operationalNotes: [
-      "Sebelum dipakai, peta medan tiap borang harus diisi lewat Pengaturan. Cara termudah: buka borangnya di SIPP, buka menu Baca medan borang ini pada panel ALETA, lalu salin penunjuknya.",
-      "Nama medan menurut ALETA - hakim_ketua, panitera, jurusita, tanggal_penetapan, tanggal_sidang, dan simpan - bukan nama medan di SIPP. Peta medanlah yang menghubungkan keduanya, dan itu sebabnya daftar ini tetap sama walau borang SIPP berganti bentuk.",
-      "Keempat penetapan ada di halaman berbeda, sehingga tombol Kerjakan hanya mengisi borang yang sedang terbuka. Papan menyebutkan urutannya bila halaman yang terbuka bukan salah satunya.",
+      "Sebelum dipakai, peta medan tiap blangko harus diisi lewat Pengaturan. Cara termudah: buka blangkonya di SIPP, buka menu Baca medan blangko ini pada panel ALETA, lalu salin penunjuknya.",
+      "Nama medan menurut ALETA - hakim_ketua, panitera, jurusita, tanggal_penetapan, tanggal_sidang, dan simpan - bukan nama medan di SIPP. Peta medanlah yang menghubungkan keduanya, dan itu sebabnya daftar ini tetap sama walau blangko SIPP berganti bentuk.",
+      "Keempat penetapan ada di halaman berbeda, sehingga tombol Kerjakan hanya mengisi blangko yang sedang terbuka. Papan menyebutkan urutannya bila halaman yang terbuka bukan salah satunya.",
       "PDF hasil pindaian tidak memuat teks sama sekali. Itu disebutkan apa adanya, bukan dilaporkan sebagai kegagalan membaca.",
       "Berkas .doc lama hanya dapat dibaca kasar, dan hasilnya ditandai begitu di papan. Menyimpan ulang sebagai .docx menghasilkan pembacaan yang bersih.",
     ],
     knownLimitations: [
       "Pilihan manual pada papan penunjukan belum ada - yang diisikan selalu usulan otomatisnya. Catatan pengisian sudah menyediakan tempat untuk membedakan keduanya.",
-      "Pengisian Data Umum masih berhenti pada penampilan petikan. Peta medan borang data-umum sudah disiapkan, tetapi pengisiannya menunggu medan borang itu dipetakan.",
+      "Pengisian Data Umum masih berhenti pada penampilan petikan. Peta medan blangko data-umum sudah disiapkan, tetapi pengisiannya menunggu medan blangko itu dipetakan.",
       "Hakim tunggal untuk isbat terpadu masih satu per satu. Pengerjaan satu blok sekaligus menyusul.",
       "Nomor SK penetapan dikosongkan sampai pengadilan menetapkan polanya.",
     ],
@@ -3782,7 +3782,7 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     security: [
       "Seluruh kueri penunjukan berupa SELECT, dan ada uji yang menjaganya tetap begitu. Nomor perkara selalu masuk sebagai parameter - ada uji yang menembakkan nomor berisi DROP TABLE dan memeriksa ia tidak pernah sampai ke teks kueri.",
-      "Papan ini TIDAK menulis apa pun ke SIPP. Tombol Kerjakan mati, dan itu bukan pekerjaan yang tertinggal: usulannya memang perlu diadu dengan penunjukan sungguhan sebelum diberi izin menyentuh borang.",
+      "Papan ini TIDAK menulis apa pun ke SIPP. Tombol Kerjakan mati, dan itu bukan pekerjaan yang tertinggal: usulannya memang perlu diadu dengan penunjukan sungguhan sebelum diberi izin menyentuh blangko.",
       "Aturan hitungan datang dari portal bersama permintaannya, dan tiap nilai diperiksa ulang di gerbang bot sebelum dipakai. Gerbangnya memang bertoken internal, tetapi angka yang salah bentuk tetap melahirkan tanggal sidang yang salah - dan tanggal sidang yang salah menyeret panggilan para pihak.",
       "Kemampuan papan dan kemampuan tombol otomatis diperiksa terpisah di server. Jawaban yang dikirim ke ekstensi kenyamanan, bukan penjagaan - ekstensi berjalan di peramban pengguna dan dapat diubah siapa saja yang memasangnya.",
       "Nilai sengketa yang belum pernah diisi TIDAK disimpulkan nol. Membacanya nol akan menyimpulkan hakim tunggal padahal belum ada yang menyatakannya - yang keluar permintaan agar nilainya diisi dulu, bukan usulan.",
@@ -3794,7 +3794,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Penunjukan tingkat pertama disaring dengan tahapan 10. Tanpa saringan itu, penunjukan banding dan kasasi ikut terhitung sebagai giliran baru.",
     ],
     knownLimitations: [
-      "Tombol Kerjakan belum menyala. Pengisian borang SIPP menyusul setelah usulannya terbukti tenang.",
+      "Tombol Kerjakan belum menyala. Pengisian blangko SIPP menyusul setelah usulannya terbukti tenang.",
       "Urutan penunjukan juru sita yang lalu tidak dapat dipulihkan - enam rumus sudah diuji dan tidak satu pun menerka lebih baik daripada tebakan acak. Yang ditegakkan giliran ke depan, dan jumlahnya akan sama dengan sendirinya dalam setahun.",
       "Hakim tunggal untuk isbat terpadu masih diusulkan satu per satu. Pengerjaan satu blok sekaligus menyusul bersama tombol Kerjakan.",
       "Nomor SK penetapan dikosongkan sampai pengadilan menetapkan polanya.",

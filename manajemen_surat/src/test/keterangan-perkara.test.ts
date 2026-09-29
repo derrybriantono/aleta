@@ -135,7 +135,7 @@ describe("layarnya - abu-abu, merah, dan tersembunyi sampai diminta", () => {
     expect(tertutup).not.toContain("terkini.isi");
   });
 
-  it("riwayatnya ditarik saat borangnya lahir, bukan saat daftar digambar", () => {
+  it("riwayatnya ditarik saat blangkonya lahir, bukan saat daftar digambar", () => {
     // Dua puluh tujuh perkara berisi sepuluh revisi berarti dua ratus tujuh
     // puluh catatan yang tidak satu pun dibaca.
     const i = layar.indexOf("function BorangKeteranganPerkara(");

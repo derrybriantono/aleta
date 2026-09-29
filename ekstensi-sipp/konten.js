@@ -4951,14 +4951,14 @@ function perkaraIdDariHalaman() {
  */
 const PESAN_GAGAL_UNGGAH = {
   akar_sipp_belum_disetel:
-    "ALETA belum tahu di folder mana SIPP menyimpan berkasnya. Minta petugas peladen " +
+    "ALETA belum tahu di folder mana SIPP menyimpan berkasnya. Minta petugas server " +
     "menyetel folder SIPP pada pengaturan ALETA.",
   akar_sipp_tidak_ada:
-    "Folder SIPP tidak terjangkau dari ALETA. Minta petugas peladen memeriksa " +
+    "Folder SIPP tidak terjangkau dari ALETA. Minta petugas server memeriksa " +
     "pemasangan folder SIPP ke ALETA.",
   akar_sipp_hanya_baca:
     "ALETA hanya diizinkan MEMBACA folder SIPP, jadi berkasnya tidak dapat disimpan. " +
-    "Minta petugas peladen memberi izin tulis pada folder putusan dan anonimisasi.",
+    "Minta petugas server memberi izin tulis pada folder putusan dan anonimisasi.",
   bentuk_tidak_dikenali:
     "Isi berkasnya bukan naskah putusan - dikenali dari isinya, bukan dari namanya. " +
     "Yang diterima RTF, DOC, DOCX, atau PDF.",
@@ -5407,16 +5407,16 @@ async function tekanSimpanPutusan(idBukti) {
 /** Kalimat untuk tombol Simpan yang TIDAK ditekan - sebabnya disebut apa adanya. */
 function bunyiSimpanTidakDitekan(ditekan) {
   const alasan = String((ditekan && ditekan.alasan) || "");
-  const awal = "Isiannya sudah masuk borang, tetapi ";
+  const awal = "Isiannya sudah masuk blangko, tetapi ";
   if (alasan === "tombol_tidak_ketemu") {
     return `${awal}tombol Simpan SIPP tidak ditemukan di halaman ini - tekan Simpan sendiri.`;
   }
   if (alasan === "tombol_tidak_tampak") {
-    return `${awal}tombol Simpan SIPP sedang disembunyikan halaman, jadi TIDAK ditekan. Periksa borangnya, lalu tekan Simpan sendiri bila memang sudah waktunya.`;
+    return `${awal}tombol Simpan SIPP sedang disembunyikan halaman, jadi TIDAK ditekan. Periksa blangkonya, lalu tekan Simpan sendiri bila memang sudah waktunya.`;
   }
   if (alasan === "tombol_mati") return `${awal}tombol Simpan SIPP sedang mati - tekan Simpan sendiri bila sudah menyala.`;
   if (alasan === "tombol_di_luar_borang") {
-    return `${awal}tombol yang ditemukan bukan milik borang Putusan Akhir, jadi TIDAK ditekan - tekan Simpan sendiri.`;
+    return `${awal}tombol yang ditemukan bukan milik blangko Putusan Akhir, jadi TIDAK ditekan - tekan Simpan sendiri.`;
   }
   if (alasan === "mode_kering") return `${awal}mode kering aktif: Simpan ditahan, SIPP tidak menyimpan apa pun.`;
   if (alasan === "mode_coba") return `${awal}mode coba aktif: Simpan ditahan, SIPP tidak menyimpan apa pun.`;
@@ -5517,7 +5517,7 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar) {
   const tambahan = jawaban
     ? ` SIPP menjawab: "${jawaban.pesan || "(tanpa pesan)"}".`
     : ditekan.bukti === "tanpa-kiriman"
-      ? " Tidak ada kiriman borang yang teramati sesudah Simpan ditekan - konfirmasi SIPP mungkin dibatalkan."
+      ? " Tidak ada kiriman blangko yang teramati sesudah Simpan ditekan - konfirmasi SIPP mungkin dibatalkan."
       : "";
   // Jembatan yang tidak menjawab tidak berarti Simpan sudah ditekan - dan
   // tidak juga berarti belum: konfirmasi SIPP yang masih terbuka menahan
@@ -5531,7 +5531,7 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar) {
     bunyi:
       `${awal} sesudah ${lama} detik SIPP belum mencatat perubahan apa pun.` +
       tambahan +
-      " Periksa borangnya - biasanya ada isian wajib yang ditolak SIPP." +
+      " Periksa blangkonya - biasanya ada isian wajib yang ditolak SIPP." +
       jagaIsian,
     pesanSipp: jawaban ? jawaban.pesan : "",
   };
@@ -5718,7 +5718,7 @@ function bagianIsiPutusan(nomorPerkara) {
       "Pertimbangan Hukum, Amar, dan Amar Anonim ke formulir di halaman ini. Sesudah " +
       "SELURUH yang dicentang terisi, Simpan ditekan sendiri dan halaman perkara dibuka " +
       "kembali - tetapi hanya setelah SIPP terbukti mencatatnya. Satu isian gagal berarti " +
-      "Simpan tidak ditekan sama sekali. Borang yang memuat medan tambahan satker diisi, " +
+      "Simpan tidak ditekan sama sekali. Blangko yang memuat medan tambahan satker diisi, " +
       "tetapi Simpan-nya Anda tekan sendiri."
   );
   isi.appendChild(terang);
@@ -6021,13 +6021,13 @@ function bagianIsiPutusan(nomorPerkara) {
       if (daftar.length === 0) {
         // Daftar kosong bukan borang tanpa medan - lebih mungkin seluruhnya
         // terbuang penyaring. Disebut di konsol, lalu dipakai yang tertanam.
-        console.warn(`[ALETA] Medan borang putusan dari ${hasil.asal} kosong; dipakai daftar tertanam.`);
+        console.warn(`[ALETA] Medan blangko putusan dari ${hasil.asal} kosong; dipakai daftar tertanam.`);
       } else {
         medanBorangBerlaku = daftar;
         return daftar;
       }
     } catch (galat) {
-      console.warn("[ALETA] Medan borang putusan tidak terbaca; dipakai daftar tertanam:", galat);
+      console.warn("[ALETA] Medan blangko putusan tidak terbaca; dipakai daftar tertanam:", galat);
     }
     medanBorangBerlaku = CALON_MEDAN_PANEL.map((c) => ({ ...c, banyak: Boolean(c.banyak), tambahan: false }));
     return medanBorangBerlaku;
@@ -6282,7 +6282,7 @@ function bagianIsiPutusan(nomorPerkara) {
               ((sekarang && sekarang.pilihan) || []).find((x) => String(x.nilai) === nilaiSekarang) ||
               {};
             bedaPintu.push(
-              `${namaPintu}: borang sudah berisi "${labelKini.label || nilaiSekarang}", ` +
+              `${namaPintu}: blangko sudah berisi "${labelKini.label || nilaiSekarang}", ` +
                 `ALETA mengusulkan "${labelUsul.label || usul.nilai}"`
             );
           }
@@ -6329,7 +6329,7 @@ function bagianIsiPutusan(nomorPerkara) {
           "div",
           "aleta-gagal",
           `Pilihan Anda dibiarkan apa adanya, tetapi ALETA membacanya lain — ${bedaPintu.join("; ")}. ` +
-            "Periksa mana yang benar sebelum menyimpan. Praperiksa di atas dijalankan atas pilihan yang SEKARANG ada di borang."
+            "Periksa mana yang benar sebelum menyimpan. Praperiksa di atas dijalankan atas pilihan yang SEKARANG ada di blangko."
         )
       );
     }
@@ -6535,7 +6535,7 @@ function bagianIsiPutusan(nomorPerkara) {
         buatElemen(
           "span",
           "",
-          "Saya sudah membaca yang menahan di atas - tetap isikan borangnya. Simpan TIDAK akan ditekan sendiri."
+          "Saya sudah membaca yang menahan di atas - tetap isikan blangkonya. Simpan TIDAK akan ditekan sendiri."
         )
       );
       wadah.appendChild(tetap);
@@ -6621,7 +6621,7 @@ function bagianIsiPutusan(nomorPerkara) {
       const tampakSesudah = await hitungMedanTampak();
       if (tampakSesudah > medanTampak.length) {
         hasilTerap.textContent =
-          `${hasilTerap.textContent} Borang memunculkan ` +
+          `${hasilTerap.textContent} Blangko memunculkan ` +
           `${tampakSesudah - medanTampak.length} pilihan baru - dibacakan ulang…`;
         tombol.click();
         return;
@@ -6650,7 +6650,7 @@ function bagianIsiPutusan(nomorPerkara) {
       if (raporAgen && raporAgen.hentikan) {
         hasilTerap.textContent +=
           " Simpan TIDAK ditekan: praperiksa menahan dan Anda memilih mengisi sendiri - " +
-          "periksa borangnya, lalu tekan Simpan SIPP sendiri.";
+          "periksa blangkonya, lalu tekan Simpan SIPP sendiri.";
         alatCatat(
           "praperiksa",
           `${nomorPerkara}: diisi meski ditahan (${ringkasHentikan(raporAgen)}) - Simpan diserahkan ke petugas`,
@@ -6664,8 +6664,8 @@ function bagianIsiPutusan(nomorPerkara) {
       const medanTambahan = medanTampak.filter((x) => x.tambahan).map((x) => x.label);
       if (medanTambahan.length > 0) {
         hasilTerap.textContent +=
-          ` Simpan TIDAK ditekan: borang memuat medan tambahan satker (${medanTambahan.join(", ")}) - ` +
-          "periksa borangnya, lalu tekan Simpan SIPP sendiri.";
+          ` Simpan TIDAK ditekan: blangko memuat medan tambahan satker (${medanTambahan.join(", ")}) - ` +
+          "periksa blangkonya, lalu tekan Simpan SIPP sendiri.";
         alatCatat(
           "isi-putusan",
           `${nomorPerkara}: medan tambahan ${medanTambahan.join(", ")} - Simpan diserahkan ke petugas`,
@@ -7472,7 +7472,7 @@ alatDaftarkanPenunjuk("Bilah atas", ["#atas"], { wajib: true });
 alatDaftarkanPenunjuk("Menu utama", ["#cssmenu"], { wajib: true });
 alatDaftarkanPenunjuk("Tab perkara", ["#usual2", ".usual"], { wajib: false, saat: "halaman detail perkara" });
 alatDaftarkanPenunjuk("Tabel detail", [".cssTable", "#tableDetilPerkara"], { wajib: false, saat: "halaman detail perkara" });
-alatDaftarkanPenunjuk("Simpan putusan", PENUNJUK_SIMPAN_PUTUSAN, { wajib: false, saat: "borang putusan" });
+alatDaftarkanPenunjuk("Simpan putusan", PENUNJUK_SIMPAN_PUTUSAN, { wajib: false, saat: "blangko putusan" });
 
 /**
  * Borang mana yang sedang terbuka di halaman ini.
@@ -10290,7 +10290,19 @@ function tombolMatikan() {
   const matikan = buatElemen("button", "aleta-matikan", "×");
   matikan.type = "button";
   matikan.title = "Matikan ALETA E-Court untuk halaman ini (dapat dinyalakan lagi dari ikon ekstensi)";
+  // UI Baru: × hanya menutup - panel menciut ke lencana, ALETA tetap aktif
+  // (lihat alatTutupHanyaMenciut di panel-alat.js). Lama dan Baru: semula.
+  matikan.addEventListener("mouseenter", () => {
+    matikan.title = alatTutupHanyaMenciut()
+      ? ALAT_JUDUL_TUTUP_BARU
+      : "Matikan ALETA E-Court untuk halaman ini (dapat dinyalakan lagi dari ikon ekstensi)";
+  });
   matikan.addEventListener("click", () => {
+    const panelIni = matikan.closest(".aleta-panel");
+    if (alatTutupHanyaMenciut() && panelIni) {
+      ciutkanKeLencana(panelIni, true);
+      return;
+    }
     try {
       void chrome.storage.local.set({ aktif: false });
     } catch {
@@ -13090,9 +13102,9 @@ async function bagianAntreanSipp(nomorHalaman) {
       "div",
       "aleta-tetap-sebab aleta-massal-simpan",
       antrean.modus === "otomatis"
-        ? "Mode otomatis: begitu borang Putusan Akhir perkara di antrean terbuka, ALETA mengisinya dari draf " +
+        ? "Mode otomatis: begitu blangko Putusan Akhir perkara di antrean terbuka, ALETA mengisinya dari draf " +
             "lalu MENEKAN SIMPAN SIPP SENDIRI - satu kali per perkara. Perkara yang tertahan tidak disimpan."
-        : "Mode manual: ALETA berhenti di tiap perkara. Tombol “Isi putusan & simpan” mengisi borang " +
+        : "Mode manual: ALETA berhenti di tiap perkara. Tombol “Isi putusan & simpan” mengisi blangko " +
             "lalu MENEKAN SIMPAN SIPP untuk perkara itu."
     )
   );
@@ -13162,7 +13174,7 @@ async function bagianAntreanSipp(nomorHalaman) {
       if (butirIni.keadaan === "jalan") {
         kabar.textContent =
           `${butirIni.nomor} tercatat sedang dikerjakan ketika halaman ini dimuat - pekerjaan sebelumnya terputus. ` +
-          "Tidak diulang sendiri: periksa borangnya, lalu tekan tombol di bawah bila memang belum tersimpan.";
+          "Tidak diulang sendiri: periksa blangkonya, lalu tekan tombol di bawah bila memang belum tersimpan.";
       } else {
         kabar.textContent = "Mode otomatis — mengisi perkara ini lalu menekan Simpan SIPP…";
         setTimeout(() => {
@@ -13180,7 +13192,7 @@ async function bagianAntreanSipp(nomorHalaman) {
         "div",
         "aleta-massal-jeda",
         adaBorang
-          ? `Perkara berikutnya di antrean: ${berikutnya.nomor}. Buka perkara itu di SIPP, lalu buka borang putusannya.`
+          ? `Perkara berikutnya di antrean: ${berikutnya.nomor}. Buka perkara itu di SIPP, lalu buka blangko putusannya.`
           : `Perkara berikutnya: ${berikutnya.nomor}. Buka perkaranya dan buka tab Putusan — ALETA akan mengisikannya${antrean.modus === "otomatis" ? " sendiri lalu menekan Simpan SIPP" : ""}.`
       )
     );
@@ -13313,7 +13325,7 @@ const NAMA_SEBAB_TAHAN = {
   praperiksa: "ditahan praperiksa",
   "pilihan-kosong": "tertahan karena pilihan wajib kosong",
   "pilihan-beda": "tertahan karena pilihan petugas berbeda",
-  pilihan: "tertahan karena pilihan borang belum pasti",
+  pilihan: "tertahan karena pilihan blangko belum pasti",
   "gagal-isi": "tertahan karena medan gagal terisi",
   "medan-tambahan": "tertahan karena medan tambahan satker",
   "antrean-diakhiri": "tertahan karena antrean diakhiri",
@@ -13585,7 +13597,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     tampakPilihan = terbaca;
     if (baru.length === 0) break;
     try {
-      if (kabar) kabar.textContent = "Menyusun usulan pilihan borang…";
+      if (kabar) kabar.textContent = "Menyusun usulan pilihan blangko…";
       const respons = await alatAmbil(
         ALETA_API_ISIAN_PUTUSAN,
         {
@@ -13616,7 +13628,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
       if (medan.terpilih !== undefined) {
         if (String(medan.terpilih) !== String(usul.nilai)) {
           bedaPilihan.push(
-            `${medan.label}: borang berisi "${labelNilai(medan, medan.terpilih)}", ` +
+            `${medan.label}: blangko berisi "${labelNilai(medan, medan.terpilih)}", ` +
               `ALETA mengusulkan "${usul.nilaiLabel || labelNilai(medan, usul.nilai)}"`
           );
         }
@@ -13651,7 +13663,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
       if (!medan.banyak && medan.terpilih !== undefined) {
         if (usul.nilai && String(medan.terpilih) !== String(usul.nilai)) {
           bedaPilihan.push(
-            `${medan.label}: borang berisi "${labelNilai(medan, medan.terpilih)}", ` +
+            `${medan.label}: blangko berisi "${labelNilai(medan, medan.terpilih)}", ` +
               `ALETA mengusulkan "${usul.nilaiLabel || labelNilai(medan, usul.nilai)}"`
           );
         }
@@ -13687,7 +13699,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
         usul && usul.keyakinan === "bentrok"
           ? "naskah menyebut lebih dari satu"
           : medan.bawaanBorang
-            ? `masih bawaan borang "${labelNilai(medan, medan.nilaiSekarang)}", tidak ada usulan ALETA`
+            ? `masih bawaan blangko "${labelNilai(medan, medan.nilaiSekarang)}", tidak ada usulan ALETA`
             : "tidak ada usulan ALETA";
       wajibKosong.push(`${medan.label} (${sebab})`);
     }
@@ -13737,7 +13749,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     await tulisButir();
     if (kabar) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Periksa borangnya, lalu Simpan sendiri bila sudah benar.`;
+      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Periksa blangkonya, lalu Simpan sendiri bila sudah benar.`;
     }
     alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
     if (tombol) tombol.disabled = false;
@@ -13765,7 +13777,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     await tulisButir();
     if (kabar) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Pilih sendiri di borang, lalu Simpan sendiri.`;
+      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Pilih sendiri di blangko, lalu Simpan sendiri.`;
     }
     alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
     if (tombol) tombol.disabled = false;
@@ -13829,11 +13841,11 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     butir.sebabTahan = "medan-tambahan";
     butir.catatan = galatTambahan
       ? `Simpan tidak ditekan - medan tambahan satker tidak dapat diperiksa: ${galatTambahan}`
-      : `Simpan tidak ditekan - borang memuat medan tambahan satker: ${medanTambahan.join(", ")}`;
+      : `Simpan tidak ditekan - blangko memuat medan tambahan satker: ${medanTambahan.join(", ")}`;
     await tulisButir();
     if (kabar) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Isi medannya, periksa borangnya, lalu Simpan sendiri.`;
+      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Isi medannya, periksa blangkonya, lalu Simpan sendiri.`;
     }
     alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
     if (tombol) tombol.disabled = false;
@@ -13862,7 +13874,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     await tulisButir();
     if (kabar) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Isian borang dibiarkan; Simpan sendiri bila memang dikehendaki.`;
+      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Isian blangko dibiarkan; Simpan sendiri bila memang dikehendaki.`;
     }
     alatCatat("massal", `${butir.nomor}: ${butir.catatan}`, "");
     if (tombol) tombol.disabled = false;
@@ -14081,10 +14093,10 @@ function bagianMassalBerkas(isi, sesudahSusun) {
     buatElemen(
       "div",
       "aleta-tetap-sebab aleta-massal-simpan",
-      "Sesudah itu antrean dijalankan di halaman tiap perkara. Otomatis: begitu borang Putusan Akhir " +
+      "Sesudah itu antrean dijalankan di halaman tiap perkara. Otomatis: begitu blangko Putusan Akhir " +
         "perkaranya dibuka, ALETA mengisinya lalu MENEKAN SIMPAN SIPP SENDIRI, satu kali per perkara. " +
         "Manual: ALETA berhenti di tiap perkara, dan tombol “Isi putusan & simpan” yang Anda tekan " +
-        "mengisi borang lalu menekan Simpan SIPP."
+        "mengisi blangko lalu menekan Simpan SIPP."
     )
   );
 
@@ -14099,7 +14111,7 @@ function bagianMassalBerkas(isi, sesudahSusun) {
   const pilihModus = document.createElement("select");
   pilihModus.className = "aleta-massal-pilih-berkas";
   for (const [nilai, label] of [
-    ["otomatis", "Otomatis — ALETA mengisi dan MENEKAN SIMPAN SIPP begitu borangnya terbuka"],
+    ["otomatis", "Otomatis — ALETA mengisi dan MENEKAN SIMPAN SIPP begitu blangkonya terbuka"],
     ["manual", "Manual — berhenti di tiap perkara; tombol ALETA mengisi lalu menekan Simpan SIPP"],
   ]) {
     const o = document.createElement("option");
@@ -14260,8 +14272,8 @@ function bagianMassalBerkas(isi, sesudahSusun) {
       (gagal ? `, ${gagal} gagal` : "") +
       `. Mode ${modus}: ` +
       (modus === "otomatis"
-        ? "ALETA menekan Simpan SIPP sendiri begitu borang Putusan Akhir tiap perkara dibuka. "
-        : "tombol ALETA di tiap perkara mengisi borang lalu menekan Simpan SIPP. ") +
+        ? "ALETA menekan Simpan SIPP sendiri begitu blangko Putusan Akhir tiap perkara dibuka. "
+        : "tombol ALETA di tiap perkara mengisi blangko lalu menekan Simpan SIPP. ") +
       `Buka perkara pertamanya - ${berhasil[0].nomor} - di SIPP; panel antrean akan menuntun sisanya.`;
     if (typeof sesudahSusun === "function") sesudahSusun();
   });
@@ -14314,7 +14326,7 @@ function bagianMassalSipp(sesudahSusun) {
   pilihModus.className = "aleta-massal-pilih-berkas";
   for (const [nilai, label] of [
     ["manual", "Manual — berhenti di tiap perkara; tombol ALETA mengisi lalu menekan Simpan SIPP"],
-    ["otomatis", "Otomatis — ALETA mengisi dan MENEKAN SIMPAN SIPP begitu borangnya terbuka"],
+    ["otomatis", "Otomatis — ALETA mengisi dan MENEKAN SIMPAN SIPP begitu blangkonya terbuka"],
   ]) {
     const o = document.createElement("option");
     o.value = nilai;

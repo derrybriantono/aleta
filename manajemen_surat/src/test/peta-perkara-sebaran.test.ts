@@ -210,7 +210,7 @@ describe("titik peta - dikunci kode, dijodohkan di luar, dan yang kosong tidak d
     expect(petaLayar).toContain("preferCanvas: true");
   });
 
-  it("pustaka petanya dimuat dari peladen sendiri, bukan dari CDN", () => {
+  it("pustaka petanya dimuat dari server sendiri, bukan dari CDN", () => {
     // Pengadilan ini bekerja di jaringan yang tidak selalu punya jalan keluar.
     expect(pemuat).toContain('withBasePath("/vendor/leaflet/leaflet.js")');
     expect(pemuat).toContain('withBasePath("/vendor/leaflet/leaflet.css")');
@@ -542,7 +542,7 @@ describe("sembilan lapisan peta, cincin jarak, dan usulan sidang keliling", () =
     .filter((b) => !/^\s*(\*|\/\/|\/\*)/.test(b))
     .join("\n");
 
-  it("kesembilan lapisan ada di peladen dan di layar", () => {
+  it("kesembilan lapisan ada di server dan di layar", () => {
     for (const kunci of ["biaya", "faktor", "kehadiran", "berulang", "perubahan", "jurusita"]) {
       expect(kodeLapisan, kunci).toContain(kunci);
       expect(petaLayar, kunci).toContain(`apa: "${kunci}"`);

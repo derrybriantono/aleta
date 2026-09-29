@@ -622,7 +622,7 @@ export function nilaiPraperiksa(
       temuan,
       "tanggal-tidak-terbaca",
       "catatan",
-      "Tanggal putusan belum terbaca dari borang",
+      "Tanggal putusan belum terbaca dari blangko",
       `Isian #tgl_putusan kosong atau bentuknya tidak dikenali ("${bersih(usulan.tanggalPutusan)}"). Kecocokan tanggal dengan jadwal sidang TIDAK diperiksa.`,
       "borang"
     );
@@ -638,7 +638,7 @@ export function nilaiPraperiksa(
         "tanggal-masa-depan",
         "hentikan",
         "Tanggal putusan di masa depan",
-        `Borang menulis ${tanggalRingkas(tanggal)}, sedangkan hari ini ${tanggalRingkas(fakta.hariIni)}. Putusan tidak dapat dijatuhkan pada hari yang belum tiba.`,
+        `Blangko menulis ${tanggalRingkas(tanggal)}, sedangkan hari ini ${tanggalRingkas(fakta.hariIni)}. Putusan tidak dapat dijatuhkan pada hari yang belum tiba.`,
         "borang"
       );
     }
@@ -658,7 +658,7 @@ export function nilaiPraperiksa(
         "tanggal-tanpa-sidang",
         "hentikan",
         "Tanggal putusan bukan hari sidang perkara ini",
-        `Borang menulis ${tanggalRingkas(tanggal)} (${namaHari(tanggal)}), tetapi tidak ada sidang perkara ini pada hari itu. Sidang terakhir tercatat ${tanggalRingkas(tanggalTerakhir)}. Seluruh 1.643 putusan 2025-2026 di SIPP ini bertanggal hari sidang - yang ini menyimpang.`,
+        `Blangko menulis ${tanggalRingkas(tanggal)} (${namaHari(tanggal)}), tetapi tidak ada sidang perkara ini pada hari itu. Sidang terakhir tercatat ${tanggalRingkas(tanggalTerakhir)}. Seluruh 1.643 putusan 2025-2026 di SIPP ini bertanggal hari sidang - yang ini menyimpang.`,
         "sipp"
       );
     } else {
@@ -678,7 +678,7 @@ export function nilaiPraperiksa(
           "tanggal-bukan-sidang-terakhir",
           "perhatian",
           "Ada sidang yang lebih baru daripada tanggal putusan",
-          `Borang menulis ${tanggalRingkas(tanggal)}, sedangkan sidang terakhir perkara ini ${tanggalRingkas(tanggalTerakhir)}. Pastikan tanggalnya bukan salah pilih.`,
+          `Blangko menulis ${tanggalRingkas(tanggal)}, sedangkan sidang terakhir perkara ini ${tanggalRingkas(tanggalTerakhir)}. Pastikan tanggalnya bukan salah pilih.`,
           "sipp"
         );
       }
@@ -698,7 +698,7 @@ export function nilaiPraperiksa(
   if (!amarKecil) {
     tambah(temuan, "amar-kosong", "catatan", "Draf tidak memuat amar", "Pemeriksaan amar - status, petitum, nama pihak - dilewati.", "draf");
   } else if (!statusKecil) {
-    tambah(temuan, "status-belum-dipilih", "catatan", "Status Putusan belum dipilih di borang", "Kecocokan kata kerja amar dengan status tidak diperiksa.", "borang");
+    tambah(temuan, "status-belum-dipilih", "catatan", "Status Putusan belum dipilih di blangko", "Kecocokan kata kerja amar dengan status tidak diperiksa.", "borang");
   } else {
     diperiksa.push("status-vs-amar");
     const harapan = HARAPAN_STATUS.find((satu) => satu.pola.test(statusKecil));
@@ -733,7 +733,7 @@ export function nilaiPraperiksa(
     if (verstek === "Y" && !amarVerstek) {
       tambah(temuan, "verstek-vs-amar", "perhatian", "Verstek dipilih, tetapi amar tidak menyebutnya", "Amar tidak memuat \"verstek\" maupun \"tidak hadir\". 871 dari 936 amar verstek menyebut salah satunya.", "borang");
     } else if (verstek === "T" && /verstek/.test(amarKecil)) {
-      tambah(temuan, "verstek-vs-amar", "perhatian", "Amar menyebut verstek, tetapi borang memilih bukan verstek", "Periksa pilihan Putusan Verstek.", "borang");
+      tambah(temuan, "verstek-vs-amar", "perhatian", "Amar menyebut verstek, tetapi blangko memilih bukan verstek", "Periksa pilihan Putusan Verstek.", "borang");
     }
   }
 

@@ -1134,13 +1134,13 @@ const SAMBUNGAN = {
     kunci: "pelaksanaanMediasiHasil",
     sifat: "sebagian",
     catatan:
-      "Kelengkapan baris mediasi terukur - 65 dari 68 lengkap sampai laporan mediatornya. Kode hasil_mediasi sudah dibaca artinya dari borang SIPP sendiri (Y1 berhasil dengan akta perdamaian, Y2 berhasil dengan pencabutan, S berhasil sebagian, T tidak berhasil, D tidak dapat dilaksanakan). Yang BELUM: MUTU mediasinya - berapa lama tiap pertemuan berlangsung dan berapa kali para pihak dipertemukan tidak tercatat di mana pun.",
+      "Kelengkapan baris mediasi terukur - 65 dari 68 lengkap sampai laporan mediatornya. Kode hasil_mediasi sudah dibaca artinya dari blangko SIPP sendiri (Y1 berhasil dengan akta perdamaian, Y2 berhasil dengan pencabutan, S berhasil sebagian, T tidak berhasil, D tidak dapat dilaksanakan). Yang BELUM: MUTU mediasinya - berapa lama tiap pertemuan berlangsung dan berapa kali para pihak dipertemukan tidak tercatat di mana pun.",
   },
   MP10: {
     kunci: "kesepakatanMediasiSelarasAmar",
     sifat: "sebagian",
     catatan:
-      "Keselarasan akhir perkara dengan kode hasil mediasi terukur - 24 dari 28 mediasi yang dicatat berhasil. Tiap kode dituntut akhir yang berbeda: Y1 akta perdamaian, Y2 pencabutan, S tidak menuntut akhir tertentu. Empat yang tertangkap seluruhnya isi kesepakatannya ketikan asal - deretan huruf tanpa makna yang diketik supaya borang mau disimpan. Yang BELUM: pembandingan ISI kesepakatan dengan isi amarnya, yang hanya dapat dilakukan manusia yang membaca keduanya.",
+      "Keselarasan akhir perkara dengan kode hasil mediasi terukur - 24 dari 28 mediasi yang dicatat berhasil. Tiap kode dituntut akhir yang berbeda: Y1 akta perdamaian, Y2 pencabutan, S tidak menuntut akhir tertentu. Empat yang tertangkap seluruhnya isi kesepakatannya ketikan asal - deretan huruf tanpa makna yang diketik supaya blangko mau disimpan. Yang BELUM: pembandingan ISI kesepakatan dengan isi amarnya, yang hanya dapat dilakukan manusia yang membaca keduanya.",
   },
   MP11: {
     kunci: "prakiraanWaktuPenyelesaian",
@@ -1580,7 +1580,7 @@ const SAMBUNGAN = {
     kunci: "ketaatanPemberitahuanIsiPutusan",
     sifat: "sebagian",
     catatan:
-      "Terukur - 285 dari 388. Kehadiran dibaca dari kolom dihadiri_oleh pada sidang terakhir, dan artinya diambil dari borang SIPP sendiri: nilai 1 berarti SEMUA PIHAK hadir. Yang BELUM: pemberitahuan kepada pihak TERTENTU - SIPP punya kolom terpisah per pihak, dan penilaian per pihak belum dibangun.",
+      "Terukur - 285 dari 388. Kehadiran dibaca dari kolom dihadiri_oleh pada sidang terakhir, dan artinya diambil dari blangko SIPP sendiri: nilai 1 berarti SEMUA PIHAK hadir. Yang BELUM: pemberitahuan kepada pihak TERTENTU - SIPP punya kolom terpisah per pihak, dan penilaian per pihak belum dibangun.",
   },
   KT17: {
     kunci: "ketaatanPublikasiDirektori",
@@ -1624,7 +1624,7 @@ const SAMBUNGAN = {
     kunci: "raporMediator",
     sifat: "sebagian",
     catatan:
-      "Tingkat keberhasilan per mediator terukur menurut mediator_id - 2 dari 4 rapornya sah, dua lainnya punya mediasi tanpa hasil tercatat. Kode hasil dibaca dari borang SIPP sendiri. Yang BELUM: bobot jenis perkara. Mediator yang seluruh perkaranya perceraian akan selalu tampak lebih buruk daripada yang kebagian sengketa waris.",
+      "Tingkat keberhasilan per mediator terukur menurut mediator_id - 2 dari 4 rapornya sah, dua lainnya punya mediasi tanpa hasil tercatat. Kode hasil dibaca dari blangko SIPP sendiri. Yang BELUM: bobot jenis perkara. Mediator yang seluruh perkaranya perceraian akan selalu tampak lebih buruk daripada yang kebagian sengketa waris.",
   },
   AP08: {
     kunci: "raporPetugasPengarsipan",

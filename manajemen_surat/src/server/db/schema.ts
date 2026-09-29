@@ -56,6 +56,39 @@ export const DDL_TIPE_KELUARAN = {
   ],
 } as const;
 
+/**
+ * Tampilan ekstensi yang diterapkan dan setelan pribadi ekstensi - cermin
+ * PERSIS dari drizzle/0052_aleta_ekstensi_tampilan.sql.
+ *
+ * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
+ * menjalankan drizzle/*.sql, dan penjaga tampilan-ekstensi-skema.test.ts
+ * membandingkan konstanta ini dengan isi berkasnya. Tanpa indeks tersendiri -
+ * kunci utama kedua tabel sudah menjadi jalan bacanya.
+ */
+export const DDL_EKSTENSI_TAMPILAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ekstensi_tampilan (
+  lingkup TEXT NOT NULL CHECK (lingkup IN ('semua', 'peran', 'pengguna')),
+  sasaran TEXT NOT NULL DEFAULT '',
+  mode TEXT NOT NULL CHECK (mode IN ('lama', 'baru', 'ui')),
+  fitur TEXT NOT NULL DEFAULT '{}',
+  catatan TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL,
+  PRIMARY KEY (lingkup, sasaran),
+  CHECK ((lingkup = 'semua' AND sasaran = '') OR (lingkup <> 'semua' AND sasaran <> ''))
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ekstensi_setelan (
+  pengguna_id TEXT NOT NULL,
+  kunci TEXT NOT NULL,
+  nilai TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL,
+  PRIMARY KEY (pengguna_id, kunci)
+)`,
+  ],
+  indeks: [],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1047,6 +1080,8 @@ const schemaStatements = [
   // Tipe keluaran (0050). Benihnya TIDAK ditulis di sini: pastikanBenih di
   // modules/aleta-ecourt/tipe-keluaran.ts mengisinya dari cermin kode.
   ...DDL_TIPE_KELUARAN.tabel,
+  // Tampilan ekstensi yang diterapkan dan setelan pribadi ekstensi (0052).
+  ...DDL_EKSTENSI_TAMPILAN.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

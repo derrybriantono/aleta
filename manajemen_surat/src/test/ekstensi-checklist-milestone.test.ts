@@ -633,7 +633,7 @@ describe("Kerjakan: alamat tiap tujuan, dari tiap halaman", () => {
     },
   ];
 
-  it("halaman SIPP peladen", async () => {
+  it("halaman SIPP server", async () => {
     const h = buka({ simpanan: { ...NYALA, riwayatPerkaraSipp: RIWAYAT } });
     await siap(h);
 

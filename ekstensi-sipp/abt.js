@@ -5160,7 +5160,7 @@ let sudahDipasang = false;
 alatDaftarkanPenunjuk("Kerangka ABT", ["#wrapper", "#content"], { wajib: true });
 alatDaftarkanPenunjuk("Menu ABT", ["#cssmenu"], { wajib: true });
 alatDaftarkanPenunjuk("Daftar blangko", [".pricing-top", ".pricing_inner_w3ls"], { wajib: false, saat: "halaman blangko" });
-alatDaftarkanPenunjuk("Borang tanya-jawab", ["#tanyajawab", "table.tabel_tanyajawab", "form"], { wajib: false, saat: "halaman tanya-jawab" });
+alatDaftarkanPenunjuk("Blangko tanya-jawab", ["#tanyajawab", "table.tabel_tanyajawab", "form"], { wajib: false, saat: "halaman tanya-jawab" });
 
 async function pasang() {
   if (sudahDipasang) return;
@@ -6502,7 +6502,7 @@ function bagianMassalAbt(keadaan) {
         buatElemen(
           "div",
           "aleta-tetap-sebab",
-          "Lanjutkan ke SIPP: isian putusan (amar, pertimbangan, status) diisikan ke borang tiap perkara. " +
+          "Lanjutkan ke SIPP: isian putusan (amar, pertimbangan, status) diisikan ke blangko tiap perkara. " +
             "Otomatis = ALETA menekan Isikan dan Simpan sendiri; Manual = berhenti di tiap perkara supaya Anda periksa dahulu."
         )
       );

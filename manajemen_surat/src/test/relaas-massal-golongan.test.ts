@@ -281,7 +281,7 @@ describe("peta sandi kehadiran - kosong bukan keduanya", () => {
     }
   });
 
-  it("sandi 1 (borang SIPP: Semua Pihak) menjadi tidak-perlu - BUKAN tidak-diketahui", () => {
+  it("sandi 1 (blangko SIPP: Semua Pihak) menjadi tidak-perlu - BUKAN tidak-diketahui", () => {
     // Semua pihak hadir -> diperintahkan datang lagi di muka sidang, tidak
     // dipanggil dengan relaas. 7.486 dari 20.109 baris bersandi 1.
     expect(layanan.pihakDipanggilDariSandi(1)).toBe("tidak-perlu");

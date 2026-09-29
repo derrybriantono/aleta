@@ -624,7 +624,7 @@ describe("sopan santun: jeda manusiawi tidak dihapus", () => {
     expect(run).toContain("ringkasan.perkaraDiperiksa % ISTIRAHAT_TIAP_PERKARA === 0");
   });
 
-  it("istirahatnya tetap 2 menit (beban peladen, bukan tiruan manusia), jeda lama tidak disentuh", () => {
+  it("istirahatnya tetap 2 menit (beban server, bukan tiruan manusia), jeda lama tidak disentuh", () => {
     expect(run).toContain("await sleep(120000);");
     expect(run, "istirahat acak tiruan manusia tidak boleh kembali").not.toContain("1 + Math.random() * 2");
     expect(run).toContain("const condong = Math.random() * Math.random();");

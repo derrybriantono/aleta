@@ -1609,7 +1609,7 @@ async function relaasMassal(tanggalDiminta = "") {
   if (tidakPerluSidang > 0 || tidakPerluPutusan > 0) {
     catatan.push(
       `${tidakPerluSidang} sidang dan ${tidakPerluPutusan} putusan pada tanggal ini dihadiri ` +
-        `SEMUA pihak (sandi 1 "Semua Pihak" pada borang SIPP), jadi tidak ada relaas maupun ` +
+        `SEMUA pihak (sandi 1 "Semua Pihak" pada blangko SIPP), jadi tidak ada relaas maupun ` +
         `pemberitahuan yang perlu dibuat untuknya dan tidak ditampilkan sebagai pekerjaan.`
     );
   }
@@ -1859,7 +1859,7 @@ function sifatSidangTujuan(b, { sandi, urutan, jaring }) {
       pihak = "tidak-diketahui";
       tanda = "sandi-1-panggil";
       keterangan.push(
-        `SIPP mencatat semua pihak hadir (sandi 1 - juga nilai bawaan borang SIPP bila isian kehadiran ` +
+        `SIPP mencatat semua pihak hadir (sandi 1 - juga nilai bawaan blangko SIPP bila isian kehadiran ` +
           `tidak disentuh), tetapi ${bukti}. Pilih pihak yang dipanggil.`
       );
     }
@@ -2764,7 +2764,7 @@ async function relaasCetakHarian(tanggalDiminta = "") {
     catatan.push(
       `${sandiSatuDitanyakan} sidang bersandi kehadiran 1 ("Semua Pihak") yang alasan penundaan atau ` +
         `agenda berikutnya menyebut panggilan - pihaknya DITANYAKAN, bukan dianggap tidak perlu. Sandi 1 ` +
-        `juga nilai bawaan borang SIPP.`
+        `juga nilai bawaan blangko SIPP.`
     );
   }
   if (sesudahPutusan > 0) {

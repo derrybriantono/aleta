@@ -218,7 +218,7 @@ describe("agregator: satu kunci banyak model, tanpa mengubah kode", () => {
 });
 
 // ============================================================================
-describe("borang dua jalur di portal - sisa Tahap 1c", () => {
+describe("blangko dua jalur di portal - sisa Tahap 1c", () => {
   const require2 = createRequire(import.meta.url);
   const fs2 = require2("node:fs") as typeof import("node:fs");
   const AKAR_PORTAL = path.resolve(__dirname, "../..");

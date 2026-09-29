@@ -133,7 +133,7 @@ export function muatLeaflet(): Promise<PetaLeaflet> {
       // janji yang gagal dan disimpan membuat halaman gagal selamanya sampai
       // dimuat ulang.
       janji = null;
-      gagal(new Error("Berkas peta tidak dapat dimuat dari peladen."));
+      gagal(new Error("Berkas peta tidak dapat dimuat dari server."));
     };
     document.body.appendChild(skrip);
   });

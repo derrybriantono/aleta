@@ -884,7 +884,7 @@ const SEBAB_AKAR = [
     temuan: "kolom ada tetapi tidak pernah diisi",
     contoh: "penerbitan salinan putusan, tanggal cabut, pendidikan pihak",
     dapatDitindak: true,
-    tindakan: "menetapkan kolom itu wajib pada borang SIPP, atau memasukkannya ke daftar periksa harian",
+    tindakan: "menetapkan kolom itu wajib pada blangko SIPP, atau memasukkannya ke daftar periksa harian",
   },
   {
     temuan: "kolom tidak ada pada SIPP",
@@ -908,7 +908,7 @@ const SEBAB_AKAR = [
     temuan: "penanda dan keadaan sesungguhnya berselisih",
     contoh: "sidang keliling tanpa tempat, prodeo dengan panjar terbayar",
     dapatDitindak: true,
-    tindakan: "memasang pemeriksaan silang pada borang SIPP sehingga keduanya tidak dapat berselisih sejak awal",
+    tindakan: "memasang pemeriksaan silang pada blangko SIPP sehingga keduanya tidak dapat berselisih sejak awal",
   },
   {
     temuan: "bobot perkara tidak tersimpan",

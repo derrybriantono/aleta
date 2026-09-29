@@ -2293,3 +2293,276 @@ lanjutkanRelaasBilaPerlu().catch((galat) => {
   // gagal dibaca. Panel yang bertanya berikutnya menerima sebab yang sama.
   console.error("ALETA relaas massal: putaran tidak dapat dilanjutkan", galat);
 });
+
+// ============================================================================
+// ANGKA TUGAS DI IKON EKSTENSI (ide popup-6, tahap 3 rencana "ekstensi dulu")
+// ============================================================================
+//
+// Widget checklist (checklist.js) menulis ringkasan kecil ke penyimpanan -
+// angkaChecklist: { belum, lewat, hariIni, sambungan, pada } - dan di sinilah
+// angka itu dipasang di ikon ALETA pada bilah Chrome, supaya tugas yang
+// terlambat terlihat dari halaman mana pun walau widgetnya diciutkan.
+//
+// Lewat penyimpanan, bukan pesan: pekerja ini mati tiap ±30 detik dan tidak
+// mengingat apa pun (lihat catatan MV3); penyimpanan ada saat ia bangun lagi.
+//
+// Syaratnya diperiksa DI SINI juga, bukan hanya dipercaya dari widget:
+// tampilan Baru / UI Baru, saklar popup-6, ALETA aktif, dan checklist
+// menyala. Kembali ke tampilan Lama, mematikan saklarnya, atau mematikan
+// checklist menghapus angkanya seketika - tidak ada angka yatim di ikon.
+// Angka yang tidak diperbarui 12 jam (tidak ada tab SIPP/ABT/portal yang
+// terbuka) juga dihapus: angka basi lebih menyesatkan daripada tanpa angka.
+const ANGKA_IKON_KUNCI = ["angkaChecklist", "ujiTampilan", "ujiFitur", "tampilanServer", "aktif", "checklistMilestone"];
+const ANGKA_IKON_BASI_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Tampilan yang berlaku - aturan sama dengan alatUjiBerlaku di panel-alat.js:
+ * uji lokal Super Admin, lalu yang diterapkan admin (tahap 5), lalu Lama.
+ * Dipakai angka ikon (popup-6) dan sinkron tanda (popup-7) di bawah.
+ */
+function tampilanBerlakuLatar(s) {
+  const mode = ["baru", "ui"].includes(s.ujiTampilan) ? s.ujiTampilan : "lama";
+  if (mode !== "lama") return { mode, fitur: s.ujiFitur && typeof s.ujiFitur === "object" ? s.ujiFitur : {} };
+  const sv = s.tampilanServer;
+  if (sv && typeof sv === "object" && sv.diterapkan === true && (sv.mode === "baru" || sv.mode === "ui")) {
+    return { mode: sv.mode, fitur: sv.fitur && typeof sv.fitur === "object" ? sv.fitur : {} };
+  }
+  return { mode: "lama", fitur: {} };
+}
+
+/** { teks, warna } untuk ikon, atau null bila tidak ada angka yang boleh tampil. */
+function angkaIkonDari(simpan) {
+  const s = simpan && typeof simpan === "object" ? simpan : {};
+  // Tampilan uji lokal ATAU yang diterapkan admin (tahap 5) - tampilanBerlakuLatar.
+  const berlaku = tampilanBerlakuLatar(s);
+  if (berlaku.mode === "lama") return null;
+  if (berlaku.fitur["popup-6"] !== true) return null;
+  if (s.aktif === false || s.checklistMilestone !== true) return null;
+  const a = s.angkaChecklist && typeof s.angkaChecklist === "object" ? s.angkaChecklist : null;
+  if (!a) return null;
+  const belum = Math.floor(Number(a.belum));
+  if (!Number.isFinite(belum) || belum <= 0) return null;
+  if (!(Date.now() - Number(a.pada || 0) < ANGKA_IKON_BASI_MS)) return null;
+  return { teks: belum > 99 ? "99+" : String(belum), warna: Number(a.lewat) > 0 ? "#c62828" : "#b45309" };
+}
+
+async function angkaIkonPerbarui() {
+  let simpan = {};
+  try {
+    simpan = await chrome.storage.local.get(ANGKA_IKON_KUNCI);
+  } catch {
+    return; // penyimpanan tidak terbaca - ikon dibiarkan seperti adanya
+  }
+  const a = angkaIkonDari(simpan);
+  try {
+    await chrome.action.setBadgeText({ text: a ? a.teks : "" });
+    if (a) await chrome.action.setBadgeBackgroundColor({ color: a.warna });
+  } catch {
+    /* ikon hanya kemudahan - tidak ada yang bergantung padanya */
+  }
+}
+
+try {
+  chrome.storage.onChanged.addListener((ubah, wilayah) => {
+    if (wilayah !== "local" || !ubah) return;
+    if (ANGKA_IKON_KUNCI.some((k) => k in ubah)) void angkaIkonPerbarui();
+  });
+} catch {
+  /* tanpa pendengar, angkanya diperbarui saat pekerja bangun berikutnya */
+}
+void angkaIkonPerbarui();
+
+// ============================================================================
+// SINKRON TANDA SELESAI / TUNDA KE SERVER (ide popup-7, tahap 5)
+// ============================================================================
+//
+// Tahap 3 menyimpan tanda Selesai/Tunda di peramban saja (keputusan pengguna:
+// "peramban dulu"). Tahap 5 menyediakan setelan pribadi di server
+// (GET/PUT /aleta/api/aleta-ecourt/ekstensi/setelan, kunci "checklist.tanda"),
+// sehingga tanda ikut ke PC lain tempat pegawai yang sama masuk.
+//
+// Dikerjakan DI SINI, bukan di widget: widget hidup di tiap tab SIPP, ABT, dan
+// portal sekaligus, dan tiga tab yang menulis setelan yang sama bersamaan
+// hanya menghasilkan 409 beruntun. Pekerja latar satu untuk seluruh peramban.
+//
+// Penggabungan tiga arah dengan ingatan kecil "sinkronTandaMeta" (daftar id
+// yang terakhir disepakati): butir yang HILANG di satu sisi sesudah
+// kesepakatan terakhir berarti dihapus di sisi itu (petugas menekan
+// "kembalikan"), bukan butir baru di sisi lain - tanpa ingatan itu butir yang
+// dikembalikan akan hidup lagi dari PC sebelah. Butir yang ada di kedua sisi:
+// yang ditandai paling akhir menang.
+//
+// Hanya berjalan bila popup-7 berlaku (tampilan Baru / UI Baru, uji lokal
+// ATAU diterapkan admin). Setelan pribadi bukan tindakan keluar: tidak
+// menyentuh SIPP, ABT, maupun WhatsApp, jadi mode coba tidak menahannya.
+const SINKRON_TANDA_KUNCI = ["tandaChecklist", "asalPortal", "ujiTampilan", "ujiFitur", "tampilanServer", "aktif", "sinkronTandaMeta"];
+const SINKRON_TANDA_SETELAN = "checklist.tanda";
+const SINKRON_TANDA_TARIK_MS = 10 * 60 * 1000;
+let sinkronTandaAntrean = Promise.resolve();
+let sinkronTandaPewaktu = 0;
+let sinkronTandaMenulisLokal = false;
+
+
+function tandaKeServer(lokal) {
+  const hasil = {};
+  for (const [id, t] of Object.entries(lokal || {})) {
+    if (!t || (t.tanda !== "selesai" && t.tanda !== "tunda")) continue;
+    hasil[id] = {
+      keadaan: t.tanda,
+      sampai: t.tanda === "tunda" && t.sampai ? new Date(Number(t.sampai)).toISOString() : null,
+      pada: new Date(Number(t.pada) || Date.now()).toISOString(),
+    };
+  }
+  return hasil;
+}
+
+function tandaDariServer(id, t, lokalLama) {
+  const lama = lokalLama || {};
+  return {
+    ...lama,
+    tanda: t.keadaan === "tunda" ? "tunda" : "selesai",
+    pada: Date.parse(t.pada) || Date.now(),
+    ...(t.keadaan === "tunda" && t.sampai ? { sampai: Date.parse(t.sampai) } : {}),
+  };
+}
+
+/** Penggabungan tiga arah; pulang { lokal, berubahLokal }. */
+function gabungTanda(lokal, server, meta) {
+  const disepakati = new Set(Array.isArray(meta && meta.ids) ? meta.ids : []);
+  const hasil = {};
+  const semua = new Set([...Object.keys(lokal), ...Object.keys(server)]);
+  for (const id of semua) {
+    const l = lokal[id];
+    const s = server[id];
+    if (l && s) {
+      const pl = Number(l.pada) || 0;
+      const ps = Date.parse(s.pada) || 0;
+      hasil[id] = ps > pl ? tandaDariServer(id, s, l) : l;
+    } else if (l) {
+      // Ada di sini saja: dihapus di server sesudah kesepakatan, atau baru di sini.
+      if (!disepakati.has(id)) hasil[id] = l;
+    } else if (s) {
+      if (!disepakati.has(id)) hasil[id] = tandaDariServer(id, s, null);
+    }
+  }
+  const berubahLokal = JSON.stringify(hasil) !== JSON.stringify(lokal);
+  return { lokal: hasil, berubahLokal };
+}
+
+async function sinkronTandaSekali(alasan) {
+  let s;
+  try {
+    s = await chrome.storage.local.get(SINKRON_TANDA_KUNCI);
+  } catch {
+    return;
+  }
+  if (s.aktif === false) return;
+  const b = tampilanBerlakuLatar(s);
+  if (b.mode === "lama" || b.fitur["popup-7"] !== true) return;
+  const asal = String(s.asalPortal || "").replace(/\/+$/, "");
+  if (!/^https?:\/\//.test(asal)) return;
+  const alamat = `${asal}/api/aleta-ecourt/ekstensi/setelan`;
+
+  for (let coba = 0; coba < 2; coba += 1) {
+    let jawab;
+    try {
+      jawab = await fetch(alamat, { credentials: "include", cache: "no-store" });
+    } catch {
+      return; // server tidak terjangkau - tanda tetap di peramban
+    }
+    if (!jawab.ok) return; // 401 belum masuk, 404 portal lama: diam
+    let setelan;
+    try {
+      const isi = await jawab.json();
+      setelan = ((isi && isi.data) || isi || {}).setelan || {};
+    } catch {
+      return;
+    }
+    const baris = setelan[SINKRON_TANDA_SETELAN] || null;
+    const server = baris && baris.nilai && typeof baris.nilai === "object" ? baris.nilai : {};
+    const lokal = s.tandaChecklist && typeof s.tandaChecklist === "object" ? s.tandaChecklist : {};
+    const g = gabungTanda(lokal, server, s.sinkronTandaMeta);
+
+    if (g.berubahLokal) {
+      sinkronTandaMenulisLokal = true;
+      try {
+        await chrome.storage.local.set({ tandaChecklist: g.lokal });
+      } catch {
+        /* dicoba lagi pada sinkron berikutnya */
+      } finally {
+        setTimeout(() => {
+          sinkronTandaMenulisLokal = false;
+        }, 500);
+      }
+    }
+    const kirim = tandaKeServer(g.lokal);
+    const samaDenganServer = JSON.stringify(Object.keys(kirim).sort()) === JSON.stringify(Object.keys(server).sort()) &&
+      Object.keys(kirim).every((id) => server[id] && server[id].keadaan === kirim[id].keadaan && (server[id].sampai || null) === kirim[id].sampai);
+    if (!samaDenganServer) {
+      let tulis;
+      try {
+        tulis = await fetch(alamat, {
+          method: "PUT",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kunci: SINKRON_TANDA_SETELAN,
+            nilai: Object.keys(kirim).length ? kirim : null,
+            jikaDiubahPada: baris ? String(baris.diubahPada || "") : "",
+          }),
+        });
+      } catch {
+        return;
+      }
+      if (tulis.status === 409 && coba === 0) {
+        // PC lain menulis di antara baca dan tulis: baca ulang, gabung lagi.
+        try {
+          s = await chrome.storage.local.get(SINKRON_TANDA_KUNCI);
+        } catch {
+          return;
+        }
+        continue;
+      }
+      if (!tulis.ok) return;
+    }
+    try {
+      await chrome.storage.local.set({ sinkronTandaMeta: { ids: Object.keys(g.lokal), pada: Date.now(), alasan: String(alasan || "") } });
+      await chrome.storage.session.set({ sinkronTandaTarikPada: Date.now() });
+    } catch {
+      /* ingatan kesepakatan hilang: penggabungan berikutnya lebih pemaaf, tidak salah */
+    }
+    return;
+  }
+}
+
+function sinkronTandaJadwalkan(alasan, jedaMs) {
+  if (sinkronTandaPewaktu) clearTimeout(sinkronTandaPewaktu);
+  sinkronTandaPewaktu = setTimeout(() => {
+    sinkronTandaPewaktu = 0;
+    sinkronTandaAntrean = sinkronTandaAntrean.then(() => sinkronTandaSekali(alasan)).catch(() => {});
+  }, jedaMs);
+}
+
+async function sinkronTandaBilaLama() {
+  try {
+    const sesi = await chrome.storage.session.get(["sinkronTandaTarikPada"]);
+    if (Date.now() - Number(sesi.sinkronTandaTarikPada || 0) < SINKRON_TANDA_TARIK_MS) return;
+  } catch {
+    /* tanpa ingatan sesi: tarik saja */
+  }
+  sinkronTandaJadwalkan("berkala", 1000);
+}
+
+try {
+  chrome.storage.onChanged.addListener((ubah, wilayah) => {
+    if (wilayah !== "local" || !ubah) return;
+    if ("tandaChecklist" in ubah && !sinkronTandaMenulisLokal) sinkronTandaJadwalkan("tanda berubah", 2000);
+    // Widget menulis angkaChecklist tiap menyegarkan diri: kesempatan menarik
+    // tanda dari PC lain, paling sering sekali per sepuluh menit.
+    else if ("angkaChecklist" in ubah || "tampilanServer" in ubah) void sinkronTandaBilaLama();
+  });
+} catch {
+  /* tanpa pendengar, tanda tetap di peramban ini */
+}
+void sinkronTandaBilaLama();

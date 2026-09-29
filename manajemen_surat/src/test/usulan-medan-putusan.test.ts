@@ -191,7 +191,7 @@ describe("keadaan yang harus dijawab apa adanya", () => {
     expect(u.alasan).toContain("belum ada isinya");
   });
 
-  it("borang tanpa pilihan memulangkan sebabnya, bukan melempar", () => {
+  it("blangko tanpa pilihan memulangkan sebabnya, bukan melempar", () => {
     const u = satu(
       usulkanMedanPutusan("Menimbang bahwa terjadi pertengkaran.", [
         { kunci: "#kosong", label: "Tanpa pilihan", pilihan: [] },

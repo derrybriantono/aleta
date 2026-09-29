@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { CATATAN_EKSTENSI } from "@/lib/catatan-ekstensi";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -94,6 +95,10 @@ export async function GET(request: NextRequest) {
         {
           ok: true,
           versi: versiSajian,
+          // Satu kalimat "yang baru" untuk popup (ide popup-10): judul catatan
+          // rilis dari versi yang disajikan, bukan entri teratas begitu saja -
+          // keduanya dapat berselisih bila catatan ditulis sebelum ditanam.
+          yangBaru: (CATATAN_EKSTENSI.find((c) => c.versi === versiSajian) || { judul: "" }).judul,
           pengguna: {
             nama: actor.name,
             peran: peran ? peran.name : String(actor.roleId || ""),

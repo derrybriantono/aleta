@@ -96,7 +96,7 @@ export const KETERANGAN_KAPABILITAS: Record<
   penunjukan: {
     label: "Papan penunjukan",
     penjelasan:
-      "Melihat usulan PMH, PPP, PJS, dan PHS di halaman SIPP, serta memilih sendiri dari daftarnya. Tidak mengisi borang tanpa ditekan.",
+      "Melihat usulan PMH, PPP, PJS, dan PHS di halaman SIPP, serta memilih sendiri dari daftarnya. Tidak mengisi blangko tanpa ditekan.",
   },
   "penunjukan-otomatis": {
     label: "Tombol otomatis penunjukan",
@@ -111,7 +111,7 @@ export const KETERANGAN_KAPABILITAS: Record<
   "data-umum": {
     label: "Data Umum dari gugatan",
     penjelasan:
-      "Membaca Data Umum perkara dari berkas gugatan e-Court, dan menyalinnya ke borang Data Umum SIPP setelah diperiksa.",
+      "Membaca Data Umum perkara dari berkas gugatan e-Court, dan menyalinnya ke blangko Data Umum SIPP setelah diperiksa.",
   },
   kerjakan: {
     label: "Tombol Kerjakan",

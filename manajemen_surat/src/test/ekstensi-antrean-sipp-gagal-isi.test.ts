@@ -322,7 +322,7 @@ describe("medan yang gagal terisi MENAHAN Simpan (blok 3b)", () => {
   // sebelum Simpan - ia harus membaca Status dan verstek yang dipilih antrean
   // sendiri (lihat 3p di jalankanSatuAntreanSipp). Yang ditahannya tetap
   // tidak disimpan; isian borangnya dibiarkan untuk diperiksa petugas.
-  it("perkara yang ditahan praperiksa: borang terisi, Simpan TIDAK ditekan, dan sebabnya praperiksa", async () => {
+  it("perkara yang ditahan praperiksa: blangko terisi, Simpan TIDAK ditekan, dan sebabnya praperiksa", async () => {
     const u = muatAntrean();
     const antrean = await u.antreanBaru([N1]);
     u.aturPraperiksa(() => ({

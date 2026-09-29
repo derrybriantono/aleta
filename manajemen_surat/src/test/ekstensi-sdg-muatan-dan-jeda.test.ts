@@ -291,7 +291,7 @@ const tombolBertulis = (w: any, teks: string) =>
 /** Tekan "Susun keterangan saksi 1 & 2", lalu "Susun keterangan para saksi"; pulang pratinjaunya. */
 async function susunSdg(w: any, sebelumSusun?: (w: any) => void) {
   (await tunggu(() => tombolBertulis(w, "Susun keterangan saksi 1 & 2"), "tombol SDG")).click();
-  const susun = await tunggu(() => tombolBertulis(w, "Susun keterangan para saksi"), "borang SDG");
+  const susun = await tunggu(() => tombolBertulis(w, "Susun keterangan para saksi"), "blangko SDG");
   if (sebelumSusun) sebelumSusun(w);
   susun.click();
   return tunggu(() => panelDari(w).querySelector(".aleta-sdg-hasil"), "pratinjau SDG");
@@ -521,7 +521,7 @@ describe("pilihan alasan SDG dari tipe keluaran", () => {
     const j = jaringan({ alasanPortal });
     const w = bukaBlangko(KODE_BLANGKO, ISI_BLANGKO, j.fetch);
     (await tunggu(() => tombolBertulis(w, "Susun keterangan saksi 1 & 2"), "tombol SDG")).click();
-    await tunggu(() => tombolBertulis(w, "Susun keterangan para saksi"), "borang SDG");
+    await tunggu(() => tombolBertulis(w, "Susun keterangan para saksi"), "blangko SDG");
     const kotak = panelDari(w).querySelector(".aleta-sdg-form > .aleta-sdg-alasan");
     return {
       kunci: (Array.from(kotak.querySelectorAll("input[type=checkbox]")) as any[]).map((c) => c.value),

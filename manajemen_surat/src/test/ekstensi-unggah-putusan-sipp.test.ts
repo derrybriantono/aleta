@@ -108,7 +108,7 @@ describe("baris yang ditulis ke SIPP", () => {
     expect(bot).toContain("dirput_perkara");
   });
 
-  it("audit trail ditulis JUJUR: lewat ALETA, tidak menyamar sebagai borang SIPP", () => {
+  it("audit trail ditulis JUJUR: lewat ALETA, tidak menyamar sebagai blangko SIPP", () => {
     // DIUBAH 25 September 2026 atas keputusan orkestrator: catatan audit
     // perkara adalah alat pertanggungjawaban, jadi baris yang ditulis bot
     // menyebut ALETA sebagai caranya dan tidak menyalin teks borang SIPP -

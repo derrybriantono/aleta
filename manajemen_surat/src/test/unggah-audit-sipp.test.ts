@@ -173,7 +173,7 @@ describe("baris audit unggah: setiap tulisan tercatat, dan caranya disebut", () 
     expect(audit.find((a) => a.tablename === "dirput_dokumen")?.action).toBe("UPDATE");
   });
 
-  it("formname, judul, dan deskripsi menyebut ALETA - tidak menyalin teks borang SIPP", async () => {
+  it("formname, judul, dan deskripsi menyebut ALETA - tidak menyalin teks blangko SIPP", async () => {
     const { layanan, kueri } = muatLayanan();
     await layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN, pdfAnonimisasi: RTF_ANONIM });
     const audit = auditDari(kueri);
@@ -183,7 +183,7 @@ describe("baris audit unggah: setiap tulisan tercatat, dan caranya disebut", () 
       expect(baris.title).toBe(`${baris.action} table <b>${baris.tablename}</b> lewat <b>ALETA</b> dengan Primary Key [perkara_id=901]`);
       expect(baris.title.length).toBeLessThanOrEqual(250);
       expect(baris.description).toContain(
-        "Ditulis otomatis oleh ALETA (unggah dokumen putusan), bukan lewat borang SIPP, atas perintah pengguna <b>petugas uji</b>."
+        "Ditulis otomatis oleh ALETA (unggah dokumen putusan), bukan lewat blangko SIPP, atas perintah pengguna <b>petugas uji</b>."
       );
       for (const teks of TEKS_BORANG_SIPP) {
         expect(Object.values(baris).some((nilai) => String(nilai).includes(teks)), teks).toBe(false);

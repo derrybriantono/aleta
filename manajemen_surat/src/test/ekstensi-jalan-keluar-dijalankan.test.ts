@@ -119,7 +119,7 @@ describe("Escape dan klik ganda di luar panel", () => {
     sasaran.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
   };
 
-  it("menciut walau fokus sedang di kolom borang HALAMAN", () => {
+  it("menciut walau fokus sedang di kolom blangko HALAMAN", () => {
     // Inilah yang dahulu gagal, dan sebabnya bukan pendengar yang hilang
     // melainkan syarat yang hampir selalu terpenuhi: SIPP dan ABT halaman
     // borang dari ujung ke ujung.

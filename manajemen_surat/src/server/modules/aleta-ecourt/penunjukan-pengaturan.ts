@@ -230,7 +230,7 @@ const KETERANGAN_ATURAN: Record<keyof AturanPenunjukan, string> = {
   penetapanBerjabatan:
     'Apakah tiap penetapan dikunci pada jabatannya. "longgar" berarti operator dapat mengerjakan keempatnya; "ketat" mengunci PMH pada Ketua, PPP dan PJS pada Panitera, PHS pada ketua majelis.',
   simpanOtomatis:
-    'Apakah ALETA ikut menekan tombol Simpan. "mati" berarti pengisian berhenti di borang yang sudah terisi, dan orang yang menekannya.',
+    'Apakah ALETA ikut menekan tombol Simpan. "mati" berarti pengisian berhenti di blangko yang sudah terisi, dan orang yang menekannya.',
 };
 
 type BarisHari = {

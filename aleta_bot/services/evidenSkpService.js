@@ -1631,13 +1631,13 @@ async function evidenSkp(masukan = {}, opsi = {}) {
   }
   if (ikrarDariBorang > 0) {
     catatanOperator.push(
-      `Majelis ikrar talak pada ${ikrarDariBorang} perkara dibaca dari borang penetapan ikrar talak SIPP ` +
+      `Majelis ikrar talak pada ${ikrarDariBorang} perkara dibaca dari blangko penetapan ikrar talak SIPP ` +
         `(perkara_ikrar_talak), sebab penunjukan majelis ikrarnya tidak tercatat.`
     );
   }
   if (ikrarTakTerpasang > 0) {
     catatanOperator.push(
-      `${ikrarTakTerpasang} perkara memuat ID hakim ini pada borang ikrar talak, tetapi borang itu tidak dapat ` +
+      `${ikrarTakTerpasang} perkara memuat ID hakim ini pada blangko ikrar talak, tetapi blangko itu tidak dapat ` +
         `memasangkan ID dengan nama majelisnya - tidak dihitung sebagai majelis ikrar.`
     );
   }

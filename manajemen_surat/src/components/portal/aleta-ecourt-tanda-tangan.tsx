@@ -239,10 +239,10 @@ export function AletaEcourtTandaTangan() {
           </Button>
           <Button type="button" size="sm" onClick={() => setBukaTambah((b) => !b)}>
             <Upload className="mr-1.5 h-3.5 w-3.5" />
-            {bukaTambah ? "Tutup borang" : "Tambah tanda tangan"}
+            {bukaTambah ? "Tutup blangko" : "Tambah tanda tangan"}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Impor gambar baru dijalankan dari peladen:{" "}
+            Impor gambar baru dijalankan dari server:{" "}
             <code className="rounded bg-muted px-1 py-0.5">
               node scripts/impor-tanda-tangan.js &quot;TTD ALL.doc&quot;
             </code>

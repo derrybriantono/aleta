@@ -86,6 +86,43 @@
  * Semua tujuan dibuka di tab baru. Tidak ada satu pun yang ditulis ke SIPP,
  * ABT, maupun ALETA dari sini: yang dikirim hanya satu GET tentang pekerjaan
  * pemanggilnya sendiri.
+ *
+ * ============================================================================
+ * TAHAP 3 RENCANA "EKSTENSI DULU" - DOK, LENCANA, DAN WIDGET KECIL
+ * ============================================================================
+ *
+ * Semuanya bertanya ke panel-alat.js (alatUjiMode, alatKulit, alatFiturNyala)
+ * sebelum tampil. Dalam tampilan Lama tidak satu pun berlaku: jalan
+ * penggambaran, penyimpanan, dan permintaannya persis seperti sebelumnya.
+ *
+ *   UI BARU (kulit Modern) - perbaikan desain D8-D11, tanpa saklar:
+ *     D8   butir menjadi kartu bertenggat (warna menurut kelompok)
+ *     D9   widget dan lencana logo duduk dalam SATU dok di kiri bawah
+ *     D10  lencana: angka tugas + cincin keadaan sambungan portal
+ *     D11  "Atur widget": pilih yang tampil, urutkan dengan diseret
+ *
+ *   BARU dan UI BARU - hanya bila saklar fiturnya menyala:
+ *     popup-6   angka belum selesai ke ikon ekstensi (lewat kunci
+ *               angkaChecklist, dibaca latar.js) dan ke lencana
+ *     popup-7   Selesai / Tunda - DISIMPAN DI PERAMBAN INI SAJA (keputusan
+ *               pengguna, dipindah ke server di tahap 5). Hanya
+ *               MENYEMBUNYIKAN butir dari daftar pemilik PC ini; data SIPP
+ *               tidak disentuh, dan butir muncul lagi saat tundanya habis
+ *     popup-8   lencana logo berkabar menggantikan pil (kulit Klasik)
+ *     popup-9   dilepas, menempel ke sudut terdekat - diingat per situs
+ *     popup-20  catatan cepat, popup-21 lama sidang, popup-22 kalender
+ *               tenggat dari checklist yang SUDAH ada - semuanya lokal
+ *     popup-23  susunan dok boleh berbeda untuk SIPP, ABT, dan portal
+ *
+ *   MENYUSUL (butuh data baru dari portal): jadwal sidang saya (popup-17),
+ *   antrean PP (popup-18), WhatsApp perlu dibalas (popup-19), dan jendela
+ *   terpisah (popup-24). Di "Atur widget" mereka DISEBUT dengan tanda
+ *   menyusul dan tidak dapat dinyalakan - bukan disembunyikan diam-diam.
+ *
+ * Semua itu duduk di dalam akar yang sama (<aleta-cm-widget>), jadi layar
+ * publik portal, halaman cetak, senyap 1 jam, dan @media print berlaku
+ * tanpa aturan tambahan. Tidak ada permintaan baru: mode coba tidak punya
+ * apa pun untuk ditahan di sini.
  */
 (function checklistMilestone() {
   // Dimuat dua kali di satu halaman berarti dua widget dan dua putaran
@@ -103,6 +140,15 @@
   const KUNCI_LIPATAN = "lipatanChecklistMilestone";
   const KUNCI_RIWAYAT_SIPP = "riwayatPerkaraSipp";
   const KUNCI_TAUTAN_SIPP = "tautanPerkaraSipp";
+  // Tahap 3 - hanya ditulis di luar tampilan Lama, dan hanya oleh fitur yang
+  // saklarnya menyala. Bentuknya disebut di tandaBersih, catatanBersih,
+  // lamaSidangBersih, susunanBersih, sudutBersih, dan tulisAngka.
+  const KUNCI_TANDA = "tandaChecklist";
+  const KUNCI_ANGKA = "angkaChecklist";
+  const KUNCI_CATATAN = "catatanCepat";
+  const KUNCI_LAMA_SIDANG = "lamaSidang";
+  const KUNCI_SUSUNAN = "susunanWidget";
+  const KUNCI_SUDUT = "sudutWidget";
 
   const ALAMAT_API = "/aleta/api/aleta-ecourt/checklist";
   const TAG_AKAR = "aleta-cm-widget";
@@ -121,6 +167,70 @@
   const AMBANG_GESER = 4;
   /** Satu tingkat DI BAWAH panel ALETA (2147483000): panel layar penuh menutupinya. */
   const Z_WIDGET = 2147482990;
+
+  /**
+   * Jawaban checklist yang lebih lama dari ini mewarnai cincin lencana oranye
+   * - ambang yang sama dengan "portal lambat" di panel-alat.js.
+   */
+  const AMBANG_LAMBAT_MS = typeof ALAT_AMBANG_LAMBAT_MS === "number" ? ALAT_AMBANG_LAMBAT_MS : 2500;
+  /** Tanda Selesai/Tunda yang diingat, paling banyak - yang tertua dibuang. */
+  const TANDA_MAKS = 500;
+  /**
+   * Tanda selesai yang butirnya TIDAK PERNAH hilang dari portal tetap
+   * kedaluwarsa sesudah ini: pekerjaan yang ditandai selesai tetapi sebulan
+   * kemudian masih dianggap belum oleh portal patut dilihat lagi.
+   */
+  const SELESAI_UMUR_MAKS_MS = 30 * 24 * 60 * 60 * 1000;
+  /** angkaChecklist ditulis ulang walau sama, sesudah selang ini - supaya latar.js tahu angkanya masih hidup. */
+  const ANGKA_SEGAR_MS = 10 * 60 * 1000;
+  const CATATAN_MAKS = 5000;
+  const CATATAN_JEDA_MS = 500;
+  const RIWAYAT_SIDANG_MAKS = 100;
+  /** Sidang yang lebih pendek dari ini salah tekan, bukan sidang - tidak ikut rata-rata. */
+  const SIDANG_MIN_MS = 60 * 1000;
+  const NAMA_SITUS = { sipp: "SIPP", abt: "ABT", portal: "portal" };
+  const DAFTAR_SUDUT = ["kiri-bawah", "kanan-bawah", "kiri-atas", "kanan-atas"];
+
+  /**
+   * Isi galeri "Atur widget". `kode` = saklar fitur di popup (daftar-fitur.js);
+   * checklist tidak punya: saklar utamanya checklistMilestone. `menyusul` =
+   * idenya sudah dicatat tetapi datanya belum dikirim portal - tampil di
+   * galeri dengan sebabnya, tidak dapat dinyalakan.
+   */
+  const WIDGET = [
+    { id: "checklist", kode: "", judul: "Checklist milestone", ket: "Tugas penting peran Anda. Saklar utamanya tetap di popup." },
+    { id: "catatan", kode: "popup-20", judul: "Catatan cepat", ket: "Tersimpan di peramban ini saja" },
+    { id: "lama-sidang", kode: "popup-21", judul: "Lama sidang", ket: "Jam sidang yang sedang berjalan" },
+    { id: "kalender", kode: "popup-22", judul: "Kalender tenggat", ket: "Dua minggu, dari checklist yang sudah ada" },
+    {
+      id: "jadwal-saya",
+      kode: "popup-17",
+      judul: "Jadwal sidang saya",
+      ket: "Sidang hari ini milik Anda",
+      menyusul: "Menunggu data jadwal sidang per petugas dari portal.",
+    },
+    {
+      id: "antrean",
+      kode: "popup-18",
+      judul: "Antrean",
+      ket: "Nomor yang sedang dipanggil",
+      menyusul: "Menunggu data antrean ruang sidang dari portal.",
+    },
+    {
+      id: "whatsapp",
+      kode: "popup-19",
+      judul: "WhatsApp perlu dibalas",
+      ket: "Pesan pihak yang belum dijawab",
+      menyusul: "Menunggu data pesan masuk dari portal, dan keputusan peran yang boleh melihatnya.",
+    },
+    {
+      id: "jendela",
+      kode: "popup-24",
+      judul: "Widget di jendela terpisah",
+      ket: "Pindahkan dok ke jendela kecil di layar kedua",
+      menyusul: "Jendela terpisah butuh halaman ekstensi sendiri - menyusul bersama widget yang memakai data portal.",
+    },
+  ];
 
   /**
    * Halaman yang tidak boleh memuat keterangan ALETA sama sekali - daftar yang
@@ -561,9 +671,305 @@
       cursor: pointer;
     }
 
+    /* ── Tahap 3: dok, lencana, dan widget kecil. Seluruh kelasnya hanya
+       dilahirkan di luar tampilan Lama, jadi aturan ini tidak menyentuh
+       widget Lama. Warna selalu lewat token, supaya enam palet, tema
+       terang, dan kulit Modern ikut dengan sendirinya. ── */
+    .aleta-cmw-dok {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      width: 348px;
+      max-width: calc(100vw - 24px);
+    }
+    .aleta-cmw-tumpuk {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 348px;
+      max-width: calc(100vw - 24px);
+      max-height: calc(100vh - 96px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    /* Di kulit Klasik checklist berdiri DI LUAR tumpukan, dengan tingginya
+       sendiri (paling tinggi min(72vh, 580px)). Tumpukan di atasnya mendapat
+       sisanya - tanpa batas ini keduanya melampaui layar dan kepala widget
+       teratas terpotong di luar jangkauan. */
+    .aleta-cmw-tumpuk-klasik {
+      margin-bottom: 8px;
+      max-height: max(120px, calc(100vh - min(72vh, 580px) - 40px));
+    }
+    .aleta-cmw-dok .aleta-cmw-tumpuk, .aleta-cmw-dok .aleta-cm, .aleta-cmw-dok .aleta-cmw-kotak { width: 100%; }
+    .aleta-cmw-kotak {
+      flex: none;
+      width: 348px;
+      max-width: calc(100vw - 24px);
+      background: var(--aleta-latar);
+      border: 1px solid var(--aleta-garis-kuat);
+      border-radius: 12px;
+      box-shadow: var(--cm-bayang);
+      overflow: hidden;
+    }
+    .aleta-cmw-kepala {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 8px 8px 12px;
+      background: var(--aleta-latar-naik);
+      border-bottom: 1px solid var(--aleta-garis);
+      font-weight: 700;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .aleta-cmw-kepala .aleta-cm-alat button { width: 26px; height: 26px; }
+    .aleta-cmw-isi { display: flex; flex-direction: column; gap: 8px; padding: 9px 12px 10px; }
+    .aleta-cmw-ket { color: var(--aleta-tulisan-lembut); font-size: calc(11px * var(--aleta-skala-huruf, 1)); }
+    .aleta-cmw-baris { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .aleta-cmw-tombol, .aleta-cm-tanda {
+      padding: 4px 9px;
+      border: 1px solid var(--aleta-garis-kuat);
+      border-radius: 7px;
+      background: var(--aleta-latar-naik);
+      color: var(--aleta-tulisan);
+      font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .aleta-cmw-tombol:hover, .aleta-cm-tanda:hover { border-color: var(--aleta-merek); }
+    .aleta-cmw-tombol:disabled { opacity: 0.5; cursor: not-allowed; }
+    .aleta-cmw-tombol-utama { background: var(--cm-merek-tombol); border-color: var(--cm-merek-garis); }
+    .aleta-cmw-tombol-kecil { padding: 2px 7px; font-size: calc(11px * var(--aleta-skala-huruf, 1)); }
+
+    /* popup-7: Selesai / Tunda */
+    .aleta-cm-butir-aksi { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .aleta-cm-butir-aksi-kecil { display: flex; gap: 4px; }
+    .aleta-cm-tanda {
+      padding: 2px 7px;
+      background: transparent;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(11px * var(--aleta-skala-huruf, 1));
+    }
+    .aleta-cm-tanda:hover { color: var(--aleta-tulisan); }
+    .aleta-cm-kaki-daftar .aleta-cm-tanda { margin-left: 6px; }
+
+    /* D8: kartu tugas bertenggat (UI Baru) */
+    .aleta-cm-butir.aleta-cm-kartu {
+      display: grid;
+      gap: 6px;
+      padding: 10px 12px;
+      border: 1px solid var(--aleta-garis);
+      border-left: 3px solid var(--aleta-garis-kuat);
+      border-radius: 10px;
+    }
+    .aleta-cm-kartu[data-nada="lewat"] { border-color: color-mix(in srgb, var(--aleta-lewat) 45%, var(--aleta-garis)); border-left-color: var(--aleta-lewat); }
+    .aleta-cm-kartu[data-nada="mendesak"] { border-left-color: var(--aleta-mendesak); }
+    .aleta-cm-kartu-atas { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .aleta-cm-kartu-atas .aleta-cm-butir-judul { flex: 1 1 auto; min-width: 0; }
+    .aleta-cm-kartu-tenggat {
+      flex: none;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .aleta-cm-kartu[data-nada="lewat"] .aleta-cm-kartu-tenggat { color: var(--aleta-lewat); }
+    .aleta-cm-kartu[data-nada="mendesak"] .aleta-cm-kartu-tenggat { color: var(--aleta-mendesak); }
+    .aleta-cm-kartu-aksi { display: flex; flex-wrap: wrap; gap: 6px; }
+    :host([data-kulit="modern"]) .aleta-cm,
+    :host([data-kulit="modern"]) .aleta-cmw-kotak { border-radius: 14px; }
+
+    /* D10 / popup-8: lencana logo - angka tugas + cincin sambungan */
+    .aleta-cmw-lencana-baris { display: flex; align-items: center; gap: 10px; max-width: 100%; }
+    .aleta-cmw-lencana {
+      position: relative;
+      flex: none;
+      width: 48px;
+      height: 48px;
+      padding: 3px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--aleta-garis-kuat);
+      box-shadow: var(--cm-bayang);
+      cursor: grab;
+      touch-action: none;
+    }
+    .aleta-cmw-lencana[data-sambungan="baik"] { background: var(--aleta-aman); }
+    .aleta-cmw-lencana[data-sambungan="lambat"],
+    .aleta-cmw-lencana[data-sambungan="belum-masuk"] { background: var(--aleta-mendesak); }
+    .aleta-cmw-lencana[data-sambungan="putus"] { background: var(--aleta-lewat); }
+    .aleta-cmw-lencana-logo {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--aleta-latar);
+      overflow: hidden;
+    }
+    .aleta-cmw-lencana-logo .aleta-cm-ikon { width: 24px; height: 24px; }
+    .aleta-cmw-lencana-angka {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--aleta-lewat);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 20px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .aleta-cmw-lencana-angka[data-nada="mendesak"] { background: var(--aleta-mendesak); color: #1a1204; }
+    .aleta-cmw-lencana-angka[data-nada="tenang"] { background: var(--aleta-garis-kuat); color: var(--aleta-tulisan); }
+    .aleta-cmw-lencana-ket {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      padding: 5px 9px;
+      border-radius: 8px;
+      background: var(--aleta-latar);
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(11px * var(--aleta-skala-huruf, 1));
+    }
+
+    /* D11 / popup-23: Atur widget */
+    .aleta-cmw-atur-daftar { list-style: none; margin: 0; padding: 0; }
+    .aleta-cmw-atur-baris { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-top: 1px solid var(--aleta-garis); }
+    .aleta-cmw-atur-baris[data-diseret="ya"] { border-radius: 8px; background: var(--aleta-latar-naik); outline: 1px solid var(--aleta-merek); }
+    .aleta-cmw-atur-baris[data-menyusul="ya"] .aleta-cmw-atur-teks b { color: var(--aleta-tulisan-lembut); }
+    .aleta-cmw-pegangan {
+      flex: none;
+      width: 16px;
+      color: var(--aleta-tulisan-lembut);
+      letter-spacing: -2px;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .aleta-cmw-atur-teks { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+    .aleta-cmw-atur-teks small { color: var(--aleta-tulisan-lembut); font-size: calc(11px * var(--aleta-skala-huruf, 1)); }
+    .aleta-cmw-geser { display: inline-flex; gap: 2px; flex: none; }
+    .aleta-cmw-geser button {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 1px solid var(--aleta-garis);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--aleta-tulisan-lembut);
+      cursor: pointer;
+    }
+    .aleta-cmw-geser button:disabled { opacity: 0.35; cursor: default; }
+    .aleta-cmw-saklar {
+      position: relative;
+      flex: none;
+      width: 36px;
+      height: 20px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: var(--aleta-garis-kuat);
+      cursor: pointer;
+    }
+    .aleta-cmw-saklar::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: left 0.15s ease;
+    }
+    .aleta-cmw-saklar[aria-checked="true"] { background: var(--aleta-merek); }
+    .aleta-cmw-saklar[aria-checked="true"]::after { left: 18px; }
+    .aleta-cmw-saklar:disabled { opacity: 0.45; cursor: not-allowed; }
+    .aleta-cmw-menyusul {
+      margin-left: 4px;
+      padding: 0 7px;
+      border: 1px solid var(--aleta-garis-kuat);
+      border-radius: 999px;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(10.5px * var(--aleta-skala-huruf, 1));
+      font-weight: 600;
+    }
+
+    /* popup-20: catatan cepat */
+    .aleta-cmw-catatan {
+      width: 100%;
+      min-height: 76px;
+      padding: 7px 9px;
+      border: 1px solid var(--aleta-garis-kuat);
+      border-radius: 8px;
+      background: var(--aleta-latar-naik);
+      color: var(--aleta-tulisan);
+      font: inherit;
+      resize: vertical;
+    }
+    .aleta-cmw-catatan:focus-visible { outline: 2px solid var(--aleta-merek); outline-offset: 1px; }
+
+    /* popup-21: lama sidang */
+    .aleta-cmw-jam {
+      font-size: calc(24px * var(--aleta-skala-huruf, 1));
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+    .aleta-cmw-jam[data-skors="ya"] { color: var(--aleta-mendesak); }
+
+    /* popup-22: kalender tenggat */
+    .aleta-cmw-kal {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 3px;
+      text-align: center;
+      font-size: calc(11px * var(--aleta-skala-huruf, 1));
+    }
+    .aleta-cmw-kal-hari { color: var(--aleta-tulisan-lembut); font-weight: 700; }
+    .aleta-cmw-kal-tgl {
+      position: relative;
+      padding: 4px 0 8px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: var(--aleta-latar-naik);
+      color: var(--aleta-tulisan);
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+    }
+    .aleta-cmw-kal-tgl[data-lalu="ya"] { opacity: 0.65; }
+    .aleta-cmw-kal-tgl[data-kini="ya"] { border-color: var(--aleta-merek); }
+    .aleta-cmw-kal-tgl[data-dipilih="ya"] { background: var(--cm-merek-tombol); }
+    .aleta-cmw-kal-tgl::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 2px;
+      width: 5px;
+      height: 5px;
+      margin-left: -2.5px;
+      border-radius: 50%;
+      background: transparent;
+    }
+    .aleta-cmw-kal-tgl[data-nada="aman"]::after { background: var(--aleta-aman); }
+    .aleta-cmw-kal-tgl[data-nada="mendesak"]::after { background: var(--aleta-mendesak); }
+    .aleta-cmw-kal-tgl[data-nada="lewat"]::after { background: var(--aleta-lewat); }
+    .aleta-cmw-kal-daftar { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .aleta-cmw-kal-daftar li { display: flex; align-items: center; gap: 8px; }
+    .aleta-cmw-kal-daftar li > span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+
     @media (prefers-reduced-motion: reduce) {
       .aleta-cm-berputar { animation: none; opacity: 0.6; }
       .aleta-cm-bilah-isi { transition: none; }
+      .aleta-cmw-saklar::after { transition: none; }
     }
 
     /* Tidak pernah ikut tercetak - widget maupun kabar tutupnya. Akarnya di
@@ -602,6 +1008,20 @@
     perluSegar: false,
     kabar: "",
     kakiTerbuka: {},
+    // ── Tahap 3 - tidak dibaca apa pun dalam tampilan Lama ──
+    /** { [id butir]: tanda } - lihat tandaBersih. */
+    tanda: {},
+    /** Keadaan sambungan dari permintaan checklist terakhir - lihat catatSambungan. */
+    sambungan: { keadaan: "", lamaMs: 0 },
+    catatan: "",
+    lamaSidang: { berjalan: null, riwayat: [] },
+    /** { semua?, sipp?, abt?, portal? } masing-masing { urutan: [], mati: [] }. */
+    susunan: {},
+    /** { sipp?, abt?, portal? } -> "kiri-bawah" | "kanan-bawah" | "kiri-atas" | "kanan-atas". */
+    sudut: {},
+    aturTerbuka: false,
+    /** Tanggal yang dipilih di kalender tenggat ("YYYY-MM-DD"), atau kosong. */
+    hariKalender: "",
   };
 
   let akar = null;
@@ -611,6 +1031,13 @@
   let jamKabarTutup = null;
   let nomorMinta = 0;
   let abaikanKlikPil = false;
+  let jamTunda = null;
+  let jamSidang = null;
+  let jamCatatan = null;
+  /** Elemen catatan dipakai ulang antar penggambaran - ketikan, kursor, dan urungkan tidak hilang. */
+  let kotakCatatan = null;
+  let angkaTertulis = "";
+  let angkaTertulisPada = 0;
 
   // ─── Pembantu kecil ────────────────────────────────────────────────────────
 
@@ -720,6 +1147,135 @@
   function lipatanBersih(x) {
     const hasil = {};
     for (const [k, v] of Object.entries(objek(x))) if (typeof v === "boolean") hasil[k] = v;
+    return hasil;
+  }
+
+  // ─── Tahap 3: gerbang tampilan uji ─────────────────────────────────────────
+  //
+  // Ditanyakan ke panel-alat.js tiap kali, bukan disalin: pengalih di popup
+  // berlaku seketika (peristiwa aleta-uji-berubah), dan panel-alat.js yang
+  // tidak termuat berarti Lama - tidak ada yang berubah.
+
+  function modeUji() {
+    try {
+      return typeof alatUjiMode === "function" ? alatUjiMode() : "lama";
+    } catch {
+      return "lama";
+    }
+  }
+
+  /** Saklar fitur ide menyala - dalam Lama selalu tidak (alatFiturNyala sendiri menjaganya). */
+  function fitur(kode) {
+    try {
+      return typeof alatFiturNyala === "function" && alatFiturNyala(kode) === true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** UI Baru: perbaikan desain D8-D11 berlaku. */
+  function modern() {
+    try {
+      return typeof alatKulit === "function" && alatKulit() === "modern";
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * tandaChecklist - tanda Selesai/Tunda di peramban ini (popup-7):
+   *   { [id butir portal]: {
+   *       tanda: "selesai" | "tunda",
+   *       pada: ms saat ditandai,
+   *       sampai: ms berakhirnya tunda (hanya "tunda"),
+   *       peran: peran checklist saat ditandai (kunci portal),
+   *       jenis: jenis butir ("hakim.konsep-putusan"),
+   *       nomor, judul: untuk daftar "disembunyikan" dan pemindahan ke server (tahap 5)
+   *   } }
+   * id butir portal = "<jenis>:<kunci calon>" (checklist-milestone.ts), jadi
+   * sudah membawa jenis dan perkaranya.
+   */
+  function tandaBersih(x) {
+    const hasil = {};
+    for (const [id, t] of Object.entries(objek(x))) {
+      if (!id || id.length > 300 || !t || typeof t !== "object") continue;
+      const tanda = t.tanda === "selesai" || t.tanda === "tunda" ? t.tanda : "";
+      const pada = Number(t.pada);
+      if (!tanda || !Number.isFinite(pada)) continue;
+      const isi = {
+        tanda,
+        pada,
+        peran: peranBersih(t.peran),
+        jenis: String(t.jenis || "").slice(0, 80),
+        nomor: String(t.nomor || "").slice(0, 60),
+        judul: String(t.judul || "").slice(0, 120),
+      };
+      if (tanda === "tunda") {
+        const sampai = Number(t.sampai);
+        if (!Number.isFinite(sampai)) continue;
+        isi.sampai = sampai;
+      }
+      hasil[id] = isi;
+    }
+    return hasil;
+  }
+
+  /** Yang terbaru saja, paling banyak TANDA_MAKS. */
+  function pangkasTanda(peta) {
+    const semua = Object.entries(peta);
+    if (semua.length <= TANDA_MAKS) return peta;
+    return Object.fromEntries(semua.sort((a, b) => b[1].pada - a[1].pada).slice(0, TANDA_MAKS));
+  }
+
+  /** catatanCepat - { teks, pada } (popup-20). Hanya teksnya yang dipakai. */
+  function catatanBersih(x) {
+    return String(objek(x).teks || "").slice(0, CATATAN_MAKS);
+  }
+
+  /**
+   * lamaSidang (popup-21):
+   *   { berjalan: { mulai, skorsSejak (0 = tidak diskors), skorsMs } | null,
+   *     riwayat: [{ mulai, selesai, lamaMs, skorsMs }] - terbaru di depan }
+   */
+  function lamaSidangBersih(x) {
+    const s = objek(x);
+    const b = objek(s.berjalan);
+    const berjalan = Number.isFinite(b.mulai)
+      ? {
+          mulai: b.mulai,
+          skorsSejak: Number.isFinite(b.skorsSejak) && b.skorsSejak > 0 ? b.skorsSejak : 0,
+          skorsMs: Number.isFinite(b.skorsMs) && b.skorsMs > 0 ? b.skorsMs : 0,
+        }
+      : null;
+    const riwayat = (Array.isArray(s.riwayat) ? s.riwayat : [])
+      .filter((r) => r && Number.isFinite(r.lamaMs) && r.lamaMs >= SIDANG_MIN_MS)
+      .slice(0, RIWAYAT_SIDANG_MAKS)
+      .map((r) => ({
+        mulai: Number(r.mulai) || 0,
+        selesai: Number(r.selesai) || 0,
+        lamaMs: r.lamaMs,
+        skorsMs: Number(r.skorsMs) || 0,
+      }));
+    return { berjalan, riwayat };
+  }
+
+  /** susunanWidget (dok UI Baru): { semua?|sipp?|abt?|portal?: { urutan: [id], mati: [id] } }. */
+  function susunanBersih(x) {
+    const dikenal = new Set(WIDGET.map((w) => w.id));
+    const satu = (s) => {
+      const o = objek(s);
+      const saring = (d) => [...new Set((Array.isArray(d) ? d : []).map(String).filter((id) => dikenal.has(id)))];
+      return { urutan: saring(o.urutan), mati: saring(o.mati) };
+    };
+    const hasil = {};
+    for (const k of ["semua", "sipp", "abt", "portal"]) if (punya(objek(x), k)) hasil[k] = satu(x[k]);
+    return hasil;
+  }
+
+  /** sudutWidget (popup-9): { sipp?, abt?, portal? } -> salah satu DAFTAR_SUDUT. */
+  function sudutBersih(x) {
+    const hasil = {};
+    for (const k of ["sipp", "abt", "portal"]) if (DAFTAR_SUDUT.includes(objek(x)[k])) hasil[k] = x[k];
     return hasil;
   }
 
@@ -1141,6 +1697,213 @@
     return new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
   }
 
+  // ─── Tahap 3: tanda Selesai / Tunda (popup-7) ──────────────────────────────
+
+  /**
+   * Tanda yang sedang BERLAKU untuk butir ini, atau null. Saklar popup-7 yang
+   * mati (dan tampilan Lama) berarti tidak ada tanda sama sekali - tandanya
+   * tidak dihapus, hanya tidak dipakai, sehingga menyalakannya lagi
+   * memulihkan daftar yang sama.
+   */
+  function tandaBerlaku(b) {
+    if (!fitur("popup-7")) return null;
+    const id = String((b && b.id) ?? "");
+    if (!id || !punya(keadaan.tanda, id)) return null;
+    const t = keadaan.tanda[id];
+    // Tunda yang sudah habis: butirnya kembali, walau tandanya belum dibersihkan.
+    if (t.tanda === "tunda" && !(t.sampai > Date.now())) return null;
+    return t;
+  }
+
+  /**
+   * Butir ringkasan portal ("<jenis>:lainnya" - "... dan 7 perkara lain")
+   * mewakili banyak perkara sekaligus; menandainya selesai menyembunyikan
+   * pekerjaan yang tidak pernah dilihat orangnya.
+   */
+  function bolehDitandai(b) {
+    const id = String((b && b.id) ?? "");
+    return Boolean(id) && !/:lainnya$/.test(id);
+  }
+
+  function butirTampil(data) {
+    return data.butir.filter((b) => !tandaBerlaku(b));
+  }
+
+  function butirTersembunyi(data) {
+    return data.butir.filter((b) => tandaBerlaku(b));
+  }
+
+  /**
+   * hitungan() dikurangi butir yang disembunyikan di peramban ini. Hitungan
+   * portal tetap hitungan penuh (portal boleh memangkas daftarnya), jadi yang
+   * dikurangkan hanya yang sungguh tersembunyi - bukan diganti hitungan daftar.
+   */
+  function hitunganTampil(data) {
+    const h = hitungan(data);
+    if (!fitur("popup-7")) return h;
+    const kurang = { lewat: 0, "hari-ini": 0, "minggu-ini": 0 };
+    for (const b of butirTersembunyi(data)) if (punya(kurang, b.kelompok)) kurang[b.kelompok] += 1;
+    return {
+      ...h,
+      lewat: Math.max(0, h.lewat - kurang.lewat),
+      hariIni: Math.max(0, h.hariIni - kurang["hari-ini"]),
+      mingguIni: Math.max(0, h.mingguIni - kurang["minggu-ini"]),
+    };
+  }
+
+  /** Jumlah yang belum selesai - angka di lencana dan di ikon ekstensi (popup-6). */
+  function angkaBelum() {
+    const data = keadaan.data;
+    if (!data) return { belum: 0, lewat: 0, hariIni: 0 };
+    const h = hitunganTampil(data);
+    const lain = butirTampil(data).filter((b) => !KELOMPOK.some((k) => k.kunci === b.kelompok)).length;
+    return { belum: h.lewat + h.hariIni + h.mingguIni + lain, lewat: h.lewat, hariIni: h.hariIni };
+  }
+
+  function awalBesok() {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1).getTime();
+  }
+
+  function tandai(b, tanda) {
+    if (!fitur("popup-7") || !bolehDitandai(b)) return;
+    const id = String(b.id);
+    const judul = String(b.judul || b.jenis || "Butir").slice(0, 120);
+    const isi = {
+      tanda,
+      pada: Date.now(),
+      peran: peranBersih((keadaan.data && keadaan.data.peranAktif) || keadaan.peran),
+      jenis: String(b.jenis || "").slice(0, 80),
+      nomor: String(objek(b.perkara).nomor || "").slice(0, 60),
+      judul,
+    };
+    // "Tunda 1 hari" = sampai besok: butirnya kembali di awal hari kerja
+    // berikutnya, bukan di tengah hari esok pada jam yang sama.
+    if (tanda === "tunda") isi.sampai = awalBesok();
+    keadaan.tanda = pangkasTanda({ ...keadaan.tanda, [id]: isi });
+    tulis({ [KUNCI_TANDA]: keadaan.tanda });
+    catat(`tanda ${tanda}`, id);
+    aturJamTunda();
+    tulisAngka();
+    kabarSingkat(
+      tanda === "selesai"
+        ? `"${judul}" ditandai selesai di peramban ini. Data SIPP tidak diubah; butirnya dapat dikembalikan dari kaki.`
+        : `"${judul}" ditunda sampai besok. Butirnya kembali sendiri.`
+    );
+  }
+
+  function lepasTanda(id) {
+    if (!punya(keadaan.tanda, id)) return;
+    const sisa = { ...keadaan.tanda };
+    delete sisa[id];
+    keadaan.tanda = sisa;
+    tulis({ [KUNCI_TANDA]: sisa });
+    aturJamTunda();
+    tulisAngka();
+    gambar();
+  }
+
+  /**
+   * Tanda yang tidak lagi berguna dibersihkan sesudah jawaban portal yang
+   * BERHASIL: tunda yang habis, selesai yang terlalu tua, dan tanda yatim -
+   * butirnya hilang sendiri dari portal (pekerjaannya memang selesai).
+   *
+   * Yatim hanya diputuskan bila tidak ada ruang ragu: jawaban tanpa bacaan
+   * yang gagal, peran yang sama dengan saat ditandai, jenisnya tidak sedang
+   * "belum dapat dihitung", dan tidak diwakili butir ringkasan
+   * ("<jenis>:lainnya" - perkaranya mungkin hanya terpangkas dari daftar).
+   */
+  function bersihkanTanda(data) {
+    if (!fitur("popup-7")) return;
+    const kini = Date.now();
+    const ada = new Set(data.butir.map((b) => String(b.id ?? "")));
+    const diringkas = new Set(
+      data.butir.filter((b) => /:lainnya$/.test(String(b.id ?? ""))).map((b) => String(b.jenis || ""))
+    );
+    const tidakTerbaca = new Set(data.jenisTidakTersedia.map((j) => String(j.jenis || "")));
+    const lengkap = data.galat.length === 0;
+    const peran = data.peranAktif;
+    const sisa = {};
+    let berubah = false;
+    for (const [id, t] of Object.entries(keadaan.tanda)) {
+      const habis = t.tanda === "tunda" ? !(t.sampai > kini) : kini - t.pada > SELESAI_UMUR_MAKS_MS;
+      const yatim =
+        lengkap && Boolean(peran) && t.peran === peran && !ada.has(id) && !diringkas.has(t.jenis) && !tidakTerbaca.has(t.jenis);
+      if (habis || yatim) berubah = true;
+      else sisa[id] = t;
+    }
+    if (!berubah) return;
+    keadaan.tanda = sisa;
+    tulis({ [KUNCI_TANDA]: sisa });
+  }
+
+  /** Dibangunkan tepat saat tunda terdekat habis - butirnya muncul lagi tanpa muat ulang. */
+  function aturJamTunda() {
+    if (jamTunda) clearTimeout(jamTunda);
+    jamTunda = null;
+    if (!fitur("popup-7") || !akar || !akar.isConnected) return;
+    const kini = Date.now();
+    let paling = Infinity;
+    for (const t of Object.values(keadaan.tanda)) if (t.tanda === "tunda" && t.sampai > kini) paling = Math.min(paling, t.sampai);
+    if (!Number.isFinite(paling)) return;
+    jamTunda = setTimeout(() => {
+      jamTunda = null;
+      gambar();
+      tulisAngka();
+      aturJamTunda();
+    }, Math.min(paling - kini + 50, 2147483000));
+  }
+
+  /**
+   * angkaChecklist (popup-6) - ringkasan untuk angka di ikon ekstensi:
+   *   { belum, lewat, hariIni, sambungan, pada }
+   * Dibaca latar.js, yang juga memeriksa sendiri tampilan dan saklarnya.
+   * Ditulis hanya bila berubah, atau sudah lama - lima tab tidak menulis
+   * angka yang sama lima kali tiap penyegaran.
+   */
+  function tulisAngka() {
+    if (!fitur("popup-6")) {
+      angkaTertulis = "";
+      return;
+    }
+    // Belum ada jawaban sama sekali (masih memuat): angka lama di ikon lebih
+    // benar daripada nol sesaat. Sesi habis (401/403) memang menulis nol.
+    if (!keadaan.data && !keadaan.galat) return;
+    const a = angkaBelum();
+    const sambungan = keadaan.sambungan.keadaan || "";
+    const jejak = `${a.belum}/${a.lewat}/${a.hariIni}/${sambungan}`;
+    const kini = Date.now();
+    if (jejak === angkaTertulis && kini - angkaTertulisPada < ANGKA_SEGAR_MS) return;
+    angkaTertulis = jejak;
+    angkaTertulisPada = kini;
+    tulis({ [KUNCI_ANGKA]: { belum: a.belum, lewat: a.lewat, hariIni: a.hariIni, sambungan, pada: kini } });
+  }
+
+  // ─── Tahap 3: keadaan sambungan (cincin lencana, D10 / popup-8) ────────────
+
+  /**
+   * Diukur dari permintaan checklist SENDIRI, bukan ditebak:
+   *   baik         2xx dalam AMBANG_LAMBAT_MS
+   *   lambat       2xx, tetapi lebih lama
+   *   belum-masuk  401/403 - portal menjawab, tetapi tidak memberi data
+   *   putus        tidak terjangkau, 404, 5xx, atau jawaban lain
+   */
+  function catatSambungan(status, lamaMs) {
+    let k = "putus";
+    if (status >= 200 && status < 300) k = lamaMs > AMBANG_LAMBAT_MS ? "lambat" : "baik";
+    else if (status === 401 || status === 403) k = "belum-masuk";
+    keadaan.sambungan = { keadaan: k, lamaMs };
+  }
+
+  function teksSambungan() {
+    const s = keadaan.sambungan;
+    if (s.keadaan === "baik") return "cincin hijau: portal tersambung";
+    if (s.keadaan === "lambat") return `cincin oranye: portal lambat (${(s.lamaMs / 1000).toFixed(1).replace(".", ",")} dtk)`;
+    if (s.keadaan === "belum-masuk") return "cincin oranye: portal menjawab, tetapi belum masuk";
+    if (s.keadaan === "putus") return "cincin merah: portal terputus";
+    return "memeriksa sambungan…";
+  }
+
   function teksTenggat(iso) {
     if (!iso) return "";
     const t = new Date(String(iso));
@@ -1166,7 +1929,7 @@
 
   function teksPil() {
     if (keadaan.data) {
-      const h = hitungan(keadaan.data);
+      const h = hitunganTampil(keadaan.data);
       return `Checklist · ${h.lewat} lewat · ${h.hariIni} hari ini`;
     }
     const g = keadaan.galat;
@@ -1226,7 +1989,15 @@
     const segar = tombol("aleta-cm-segar", "", "Segarkan sekarang", () => void segarkan(), "segar");
     segar.appendChild(el("span", keadaan.memuat ? "aleta-cm-berputar" : "", "⟳"));
     alat.appendChild(segar);
-    alat.appendChild(tombol("aleta-cm-kecilkan", "–", "Kecilkan menjadi pil", () => setelKecil(true), "kecilkan"));
+    alat.appendChild(
+      tombol(
+        "aleta-cm-kecilkan",
+        "–",
+        lencanaDipakai() ? "Ciutkan menjadi lencana" : "Kecilkan menjadi pil",
+        () => setelKecil(true),
+        "kecilkan"
+      )
+    );
     alat.appendChild(
       tombol(
         "aleta-cm-tutup",
@@ -1303,19 +2074,94 @@
   }
 
   function susunButir(b) {
+    if (modern()) return susunKartu(b);
     const li = el("li", "aleta-cm-butir");
     li.setAttribute("data-id", String(b.id ?? ""));
     if (b.jenis) li.setAttribute("data-jenis", String(b.jenis));
     const teks = el("div", "aleta-cm-butir-teks");
     teks.appendChild(el("div", "aleta-cm-butir-judul", String(b.judul || b.jenis || "Tanpa judul")));
+    const ket = susunKetButir(b);
+    if (ket.childNodes.length) teks.appendChild(ket);
+    li.appendChild(teks);
+    // popup-7 dalam kulit Klasik: Selesai dan Tunda di bawah Kerjakan, supaya
+    // judul butir tidak terjepit tiga tombol sebaris di kotak 348 piksel.
+    const tanda = susunTombolTanda(b);
+    if (tanda) {
+      const aksi = el("div", "aleta-cm-butir-aksi");
+      aksi.appendChild(susunKerjakan(b));
+      aksi.appendChild(tanda);
+      li.appendChild(aksi);
+    } else {
+      li.appendChild(susunKerjakan(b));
+    }
+    return li;
+  }
+
+  function susunKetButir(b) {
     const ket = el("div", "aleta-cm-butir-ket");
     const nomor = String(objek(b.perkara).nomor || "").trim();
     if (nomor) ket.appendChild(el("span", "aleta-cm-nomor", nomor));
     const bagian = [String(b.keterangan || "").trim(), teksTenggat(b.tenggat)].filter(Boolean);
     if (bagian.length) ket.appendChild(document.createTextNode(`${nomor ? " · " : ""}${bagian.join(" · ")}`));
-    if (ket.childNodes.length) teks.appendChild(ket);
-    li.appendChild(teks);
-    li.appendChild(susunKerjakan(b));
+    return ket;
+  }
+
+  /** Selesai dan Tunda (popup-7), atau null bila saklarnya mati / butirnya ringkasan. */
+  function susunTombolTanda(b) {
+    if (!fitur("popup-7") || !bolehDitandai(b)) return null;
+    const id = String(b.id);
+    const kotak = el("div", "aleta-cm-butir-aksi-kecil");
+    const sebab = "Hanya menyembunyikan butir ini di peramban Anda - data SIPP dan portal tidak diubah.";
+    kotak.appendChild(
+      tombol("aleta-cm-tanda aleta-cm-tanda-selesai", "✓ Selesai", `Tandai selesai. ${sebab}`, () => tandai(b, "selesai"), `selesai-${id}`)
+    );
+    kotak.appendChild(
+      tombol(
+        "aleta-cm-tanda aleta-cm-tanda-tunda",
+        "◷ Tunda",
+        `Tunda sampai besok - butirnya kembali sendiri. ${sebab}`,
+        () => tandai(b, "tunda"),
+        `tunda-${id}`
+      )
+    );
+    return kotak;
+  }
+
+  /** Tenggat pendek untuk pojok kartu: "7 hari lewat", "hari ini", "besok", "Kam 2 Okt". */
+  function tenggatRingkas(iso) {
+    if (!iso) return "";
+    const t = new Date(String(iso));
+    if (Number.isNaN(t.getTime())) return "";
+    const selisih = Math.round((awalHari(t) - awalHari(new Date())) / 86400000);
+    if (selisih < 0) return `${-selisih} hari lewat`;
+    if (selisih === 0) return "hari ini";
+    if (selisih === 1) return "besok";
+    return `${NAMA_HARI[t.getDay()]} ${t.getDate()} ${NAMA_BULAN[t.getMonth()]}`;
+  }
+
+  /**
+   * D8 (UI Baru): butir menjadi kartu bertenggat - judul dan tenggat berwarna
+   * di atas, perkara dan keterangan di tengah, tindakan di bawah. Kelas
+   * aleta-cm-butir dan tombol Kerjakan-nya tetap sama: pemilih yang sama
+   * menemukan butir yang sama di kedua kulit.
+   */
+  function susunKartu(b) {
+    const li = el("li", "aleta-cm-butir aleta-cm-kartu");
+    li.setAttribute("data-id", String(b.id ?? ""));
+    if (b.jenis) li.setAttribute("data-jenis", String(b.jenis));
+    li.setAttribute("data-nada", b.kelompok === "lewat" ? "lewat" : b.kelompok === "hari-ini" ? "mendesak" : "tenang");
+    const atas = el("div", "aleta-cm-kartu-atas");
+    atas.appendChild(el("span", "aleta-cm-butir-judul", String(b.judul || b.jenis || "Tanpa judul")));
+    const ringkas = tenggatRingkas(b.tenggat);
+    if (ringkas) atas.appendChild(el("span", "aleta-cm-kartu-tenggat", ringkas));
+    li.appendChild(atas);
+    const ket = susunKetButir(b);
+    if (ket.childNodes.length) li.appendChild(ket);
+    const aksi = el("div", "aleta-cm-kartu-aksi");
+    aksi.appendChild(susunKerjakan(b));
+    const tanda = susunTombolTanda(b);
+    if (tanda) for (const t of Array.from(tanda.childNodes)) aksi.appendChild(t);
+    li.appendChild(aksi);
     return li;
   }
 
@@ -1345,21 +2191,31 @@
   function susunIsi() {
     const isi = el("div", "aleta-cm-isi");
     const data = keadaan.data;
-    if (data.butir.length === 0) {
+    // Tanpa popup-7 (dan dalam Lama) butirTampil = data.butir, utuh.
+    const butir = butirTampil(data);
+    if (butir.length === 0) {
       const label = labelPeran(data);
-      isi.appendChild(el("div", "aleta-cm-kosong", `Tidak ada pekerjaan tertunda${label ? ` untuk ${label}` : ""}.`));
+      const sembunyi = data.butir.length - butir.length;
+      isi.appendChild(
+        el(
+          "div",
+          "aleta-cm-kosong",
+          `Tidak ada pekerjaan tertunda${label ? ` untuk ${label}` : ""}.` +
+            (sembunyi > 0 ? ` ${sembunyi} butir disembunyikan di peramban ini - lihat kaki.` : "")
+        )
+      );
       return isi;
     }
-    const h = hitungan(data);
+    const h = hitunganTampil(data);
     const jumlah = { lewat: h.lewat, "hari-ini": h.hariIni, "minggu-ini": h.mingguIni };
     for (const k of KELOMPOK) {
-      const daftar = data.butir.filter((b) => b.kelompok === k.kunci);
+      const daftar = butir.filter((b) => b.kelompok === k.kunci);
       if (daftar.length === 0 && jumlah[k.kunci] === 0) continue;
       isi.appendChild(susunKelompok(k.kunci, k.judul, daftar, jumlah[k.kunci], terbuka(k.kunci, k.bawaanTerbuka)));
     }
     // Kelompok yang tidak dikenal versi ekstensi ini tetap ditampilkan -
     // membuangnya berarti pekerjaan yang hilang tanpa jejak.
-    const lain = data.butir.filter((b) => !KELOMPOK.some((k) => k.kunci === b.kelompok));
+    const lain = butir.filter((b) => !KELOMPOK.some((k) => k.kunci === b.kelompok));
     if (lain.length) isi.appendChild(susunKelompok("lain", "Lainnya", lain, lain.length, terbuka("lain", true)));
     return isi;
   }
@@ -1399,10 +2255,44 @@
     const waktu = keadaan.data ? waktuData() : "";
     if (waktu) baris.appendChild(el("span", "aleta-cm-waktu", `Diperbarui ${waktu}`));
     baris.appendChild(el("span", "aleta-cm-catatan", "butir hilang sendiri saat datanya lengkap"));
+    // popup-9 dalam kulit Klasik; di dok UI Baru disebut di samping lencana.
+    if (sudutAktif() && !modern()) baris.appendChild(el("span", "aleta-cm-sudut", teksSudut()));
     kaki.appendChild(baris);
 
     const data = keadaan.data;
     if (!data) return kaki;
+    // popup-7: yang disembunyikan TETAP terjangkau - disebut, dan satu tekanan
+    // mengembalikannya. Tanda yang salah tekan tidak boleh berarti pekerjaan
+    // yang hilang dari pandangan sampai portal berubah.
+    const tersembunyi = butirTersembunyi(data);
+    if (tersembunyi.length) {
+      const daftar = tersembunyi.map((b) => {
+        const t = tandaBerlaku(b);
+        const id = String(b.id);
+        const li = el("li");
+        li.setAttribute("data-tersembunyi", id);
+        li.appendChild(el("strong", "", String(b.judul || b.jenis || "Butir")));
+        const nomor = String(objek(b.perkara).nomor || "").trim();
+        const keadaanTanda =
+          t.tanda === "selesai"
+            ? `ditandai selesai ${jamMenit(new Date(t.pada))}`
+            : `ditunda sampai ${NAMA_HARI[new Date(t.sampai).getDay()]} ${jamMenit(new Date(t.sampai))}`;
+        li.appendChild(document.createTextNode(`${nomor ? ` · ${nomor}` : ""} - ${keadaanTanda}`));
+        li.appendChild(
+          tombol(
+            "aleta-cm-tanda aleta-cm-kembalikan",
+            "Kembalikan",
+            "Tampilkan lagi butir ini di daftar",
+            () => lepasTanda(id),
+            `kembalikan-${id}`
+          )
+        );
+        return li;
+      });
+      kaki.appendChild(
+        lipatanKaki("tersembunyi", `${daftar.length} disembunyikan di peramban ini (selesai / tunda)`, daftar)
+      );
+    }
     // Jenis yang TIDAK dapat dihitung disebut, bukan disembunyikan: checklist
     // yang diam tentang yang tidak ia periksa terbaca sebagai "semua beres".
     if (data.jenisTidakTersedia.length) {
@@ -1450,7 +2340,7 @@
     pil.setAttribute("data-fokus", "pil");
     pil.title = "Bentangkan checklist. Geser untuk memindahkan.";
     pil.setAttribute("aria-label", `${teks}. Bentangkan checklist`);
-    const h = keadaan.data ? hitungan(keadaan.data) : null;
+    const h = keadaan.data ? hitunganTampil(keadaan.data) : null;
     pil.setAttribute("data-nada", h && h.lewat > 0 ? "lewat" : h && h.hariIni > 0 ? "mendesak" : "tenang");
     pil.addEventListener("click", () => {
       // Pil yang baru saja digeser tidak ikut terbentang.
@@ -1461,6 +2351,591 @@
       setelKecil(false);
     });
     return pil;
+  }
+
+  // ─── Tahap 3: lencana logo (D10, popup-6, popup-8) ─────────────────────────
+
+  /** Bentuk ciut widget: lencana (UI Baru, atau popup-8) - selain itu pil lama. */
+  function lencanaDipakai() {
+    return modern() || fitur("popup-8");
+  }
+
+  /**
+   * Lencana logo: angka yang belum selesai + cincin keadaan sambungan. Sama
+   * dengan pil, ia pegangan geser sekaligus tombol - yang baru saja digeser
+   * tidak ikut berganti bentuk.
+   */
+  function susunLencana(kecil) {
+    const a = angkaBelum();
+    const s = keadaan.sambungan.keadaan || "belum";
+    const t = el("button", "aleta-cmw-lencana");
+    t.type = "button";
+    t.setAttribute("data-geser", "1");
+    t.setAttribute("data-fokus", "lencana");
+    t.setAttribute("data-sambungan", s);
+    const logo = el("span", "aleta-cmw-lencana-logo");
+    logo.appendChild(susunIkon());
+    t.appendChild(logo);
+    if (keadaan.data && a.belum > 0) {
+      const n = el("b", "aleta-cmw-lencana-angka", a.belum > 99 ? "99+" : a.belum);
+      n.setAttribute("data-nada", a.lewat > 0 ? "lewat" : a.hariIni > 0 ? "mendesak" : "tenang");
+      t.appendChild(n);
+    }
+    const ringkas = keadaan.data ? `${a.belum} tugas belum selesai (${a.lewat} lewat tenggat)` : teksPil();
+    const judul = `${ringkas} · ${teksSambungan()}. ${kecil ? "Bentangkan widget" : "Ciutkan menjadi lencana"} - geser untuk memindahkan.`;
+    t.title = judul;
+    t.setAttribute("aria-label", judul);
+    t.setAttribute("aria-expanded", kecil ? "false" : "true");
+    t.addEventListener("click", () => {
+      if (abaikanKlikPil) {
+        abaikanKlikPil = false;
+        return;
+      }
+      setelKecil(!kecil);
+    });
+    return t;
+  }
+
+  // ─── Tahap 3: dok dan tumpukan widget (D9, D11, popup-20..23) ──────────────
+
+  /** Susunan dok yang berlaku di situs ini: per situs hanya bila popup-23 menyala. */
+  function kunciSusunan() {
+    return fitur("popup-23") ? JENIS : "semua";
+  }
+
+  function susunanAktif() {
+    const k = kunciSusunan();
+    const s = keadaan.susunan[k] || (k !== "semua" ? keadaan.susunan.semua : null);
+    return s || { urutan: [], mati: [] };
+  }
+
+  function simpanSusunan(isi) {
+    keadaan.susunan = { ...keadaan.susunan, [kunciSusunan()]: isi };
+    tulis({ [KUNCI_SUSUNAN]: keadaan.susunan });
+    gambar();
+  }
+
+  /** Widget yang dapat dinyalakan di tampilan ini (menyusul tidak pernah). */
+  function widgetTersedia(w) {
+    return !w.menyusul && (w.id === "checklist" || fitur(w.kode));
+  }
+
+  /** Urutan lengkap widget yang bukan "menyusul": yang disimpan dulu, sisanya urutan bawaan. */
+  function urutanWidget() {
+    const bukanMenyusul = WIDGET.filter((w) => !w.menyusul).map((w) => w.id);
+    const simpan = susunanAktif().urutan.filter((id) => bukanMenyusul.includes(id));
+    return [...new Set([...simpan, ...bukanMenyusul])];
+  }
+
+  /** Yang tampil di dok UI Baru, berurutan. */
+  function widgetTampil() {
+    const mati = new Set(susunanAktif().mati);
+    return urutanWidget().filter((id) => !mati.has(id) && widgetTersedia(WIDGET.find((w) => w.id === id)));
+  }
+
+  function susunWidget(id) {
+    if (id === "checklist") return susunPanel();
+    if (id === "catatan") return susunCatatan();
+    if (id === "lama-sidang") return susunLamaSidang();
+    if (id === "kalender") return susunKalender();
+    return null;
+  }
+
+  /**
+   * D9 (UI Baru): satu dok di kiri bawah - widget bertumpuk, lalu lencana
+   * logo di kakinya beserta keterangannya dan "Atur widget". Ciut = lencana saja.
+   */
+  function susunDok(kecil) {
+    const dok = el("div", "aleta-cmw-dok");
+    dok.setAttribute("data-dok", kecil ? "ciut" : "bentang");
+    if (!kecil) {
+      if (keadaan.aturTerbuka) {
+        dok.appendChild(susunAtur());
+      } else {
+        const tumpuk = el("div", "aleta-cmw-tumpuk");
+        for (const id of widgetTampil()) {
+          const w = susunWidget(id);
+          if (w) tumpuk.appendChild(w);
+        }
+        if (tumpuk.childNodes.length) dok.appendChild(tumpuk);
+      }
+    }
+    const baris = el("div", "aleta-cmw-lencana-baris");
+    baris.appendChild(susunLencana(kecil));
+    if (!kecil) {
+      const ket = el("div", "aleta-cmw-lencana-ket");
+      const a = angkaBelum();
+      ket.appendChild(el("span", "aleta-cmw-lencana-teks", `${keadaan.data ? `${a.belum} tugas · ` : ""}${teksSambungan()}`));
+      if (sudutAktif()) ket.appendChild(el("span", "aleta-cm-sudut", teksSudut()));
+      baris.appendChild(ket);
+      const atur = tombol(
+        "aleta-cmw-tombol aleta-cmw-atur-buka",
+        "⚙ Atur widget",
+        keadaan.aturTerbuka ? "Tutup Atur widget" : "Atur widget: pilih yang tampil dan urutannya",
+        () => bukaAtur(!keadaan.aturTerbuka),
+        "atur-buka"
+      );
+      atur.setAttribute("aria-expanded", keadaan.aturTerbuka ? "true" : "false");
+      baris.appendChild(atur);
+    }
+    dok.appendChild(baris);
+    return dok;
+  }
+
+  /**
+   * Tampilan Baru (kulit Klasik): tanpa dok dan tanpa galeri - widget kecil
+   * yang saklarnya menyala bertumpuk di atas checklist, urutan bawaan. Tanpa
+   * satu pun saklar, isinya persis jalan Lama: panel atau pil.
+   */
+  function susunTumpukKlasik(kecil) {
+    const frag = document.createDocumentFragment();
+    if (kecil) {
+      frag.appendChild(fitur("popup-8") ? susunLencana(true) : susunPil());
+      return frag;
+    }
+    const tambahan = WIDGET.filter((w) => w.id !== "checklist" && widgetTersedia(w));
+    if (tambahan.length) {
+      const tumpuk = el("div", "aleta-cmw-tumpuk aleta-cmw-tumpuk-klasik");
+      for (const w of tambahan) {
+        const isi = susunWidget(w.id);
+        if (isi) tumpuk.appendChild(isi);
+      }
+      frag.appendChild(tumpuk);
+    }
+    frag.appendChild(susunPanel());
+    return frag;
+  }
+
+  /** Kotak satu widget kecil: kepala (juga pegangan geser dok) dan isinya. */
+  function kotakWidget(id, judul) {
+    const kotak = el("section", "aleta-cmw-kotak");
+    kotak.setAttribute("data-widget-isi", id);
+    kotak.setAttribute("role", "region");
+    kotak.setAttribute("aria-label", judul);
+    const kepala = el("header", "aleta-cmw-kepala");
+    kepala.setAttribute("data-geser", "1");
+    kepala.title = `${judul}. Geser dari sini.`;
+    kepala.appendChild(el("span", "aleta-cmw-judul", judul));
+    kotak.appendChild(kepala);
+    const isi = el("div", "aleta-cmw-isi");
+    kotak.appendChild(isi);
+    return { kotak, kepala, isi };
+  }
+
+  // ─── popup-20: catatan cepat ───────────────────────────────────────────────
+
+  function susunCatatan() {
+    const w = kotakWidget("catatan", "Catatan cepat");
+    if (!kotakCatatan) {
+      kotakCatatan = el("textarea", "aleta-cmw-catatan");
+      kotakCatatan.setAttribute("data-fokus", "catatan");
+      kotakCatatan.setAttribute("aria-label", "Catatan cepat");
+      kotakCatatan.maxLength = CATATAN_MAKS;
+      kotakCatatan.placeholder = "Hal kecil yang harus diingat…";
+      kotakCatatan.addEventListener("input", () => {
+        keadaan.catatan = kotakCatatan.value.slice(0, CATATAN_MAKS);
+        if (jamCatatan) clearTimeout(jamCatatan);
+        jamCatatan = setTimeout(simpanCatatan, CATATAN_JEDA_MS);
+      });
+      kotakCatatan.addEventListener("blur", simpanCatatan);
+    }
+    if (kotakCatatan.value !== keadaan.catatan && !catatanDisunting()) kotakCatatan.value = keadaan.catatan;
+    w.isi.appendChild(kotakCatatan);
+    w.isi.appendChild(el("div", "aleta-cmw-ket", "Tersimpan di peramban ini saja - tidak dikirim ke mana pun."));
+    return w.kotak;
+  }
+
+  function catatanDisunting() {
+    return Boolean(kotakCatatan && bayang && bayang.activeElement === kotakCatatan);
+  }
+
+  function simpanCatatan() {
+    if (jamCatatan) clearTimeout(jamCatatan);
+    jamCatatan = null;
+    if (!kotakCatatan) return;
+    const teks = kotakCatatan.value.slice(0, CATATAN_MAKS);
+    keadaan.catatan = teks;
+    tulis({ [KUNCI_CATATAN]: { teks, pada: Date.now() } });
+  }
+
+  // ─── popup-21: lama sidang berjalan ────────────────────────────────────────
+
+  function lamaBerjalan(b, kini = Date.now()) {
+    if (!b) return 0;
+    const skorsKini = b.skorsSejak ? kini - b.skorsSejak : 0;
+    return Math.max(0, kini - b.mulai - b.skorsMs - skorsKini);
+  }
+
+  function formatDurasi(ms) {
+    const detik = Math.floor(ms / 1000);
+    return `${dua(Math.floor(detik / 3600))}:${dua(Math.floor((detik % 3600) / 60))}:${dua(detik % 60)}`;
+  }
+
+  /** Rata-rata HANYA dari sidang yang dicatat di peramban ini. */
+  function rataSidang() {
+    const r = keadaan.lamaSidang.riwayat;
+    if (!r.length) return null;
+    return { menit: Math.round(r.reduce((n, x) => n + x.lamaMs, 0) / r.length / 60000), jumlah: r.length };
+  }
+
+  function ubahSidang(tindakan) {
+    const kini = Date.now();
+    const s = keadaan.lamaSidang;
+    let berjalan = s.berjalan ? { ...s.berjalan } : null;
+    let riwayat = s.riwayat;
+    if (tindakan === "mulai" && !berjalan) berjalan = { mulai: kini, skorsSejak: 0, skorsMs: 0 };
+    else if (tindakan === "skors" && berjalan && !berjalan.skorsSejak) berjalan.skorsSejak = kini;
+    else if (tindakan === "lanjut" && berjalan && berjalan.skorsSejak) {
+      berjalan.skorsMs += kini - berjalan.skorsSejak;
+      berjalan.skorsSejak = 0;
+    } else if (tindakan === "selesai" && berjalan) {
+      const lamaMs = lamaBerjalan(berjalan, kini);
+      const skorsMs = berjalan.skorsMs + (berjalan.skorsSejak ? kini - berjalan.skorsSejak : 0);
+      if (lamaMs >= SIDANG_MIN_MS) {
+        riwayat = [{ mulai: berjalan.mulai, selesai: kini, lamaMs, skorsMs }, ...riwayat].slice(0, RIWAYAT_SIDANG_MAKS);
+      }
+      berjalan = null;
+    } else if (tindakan === "batal") berjalan = null;
+    else return;
+    keadaan.lamaSidang = { berjalan, riwayat };
+    tulis({ [KUNCI_LAMA_SIDANG]: keadaan.lamaSidang });
+    gambar();
+  }
+
+  function susunLamaSidang() {
+    const w = kotakWidget("lama-sidang", "Lama sidang");
+    const b = keadaan.lamaSidang.berjalan;
+    const jam = el("div", "aleta-cmw-jam", formatDurasi(lamaBerjalan(b)));
+    jam.setAttribute("role", "timer");
+    if (b && b.skorsSejak) jam.setAttribute("data-skors", "ya");
+    w.isi.appendChild(jam);
+    const ket = b
+      ? `mulai ${jamMenit(new Date(b.mulai))}${b.skorsSejak ? ` · diskors sejak ${jamMenit(new Date(b.skorsSejak))}` : ""}`
+      : "Belum ada sidang yang berjalan.";
+    w.isi.appendChild(el("div", "aleta-cmw-ket aleta-cmw-sidang-ket", ket));
+    const r = rataSidang();
+    w.isi.appendChild(
+      el(
+        "div",
+        "aleta-cmw-ket aleta-cmw-sidang-rata",
+        r
+          ? `Rata-rata ${r.menit} menit dari ${r.jumlah} sidang yang dicatat di peramban ini.`
+          : "Rata-rata muncul sesudah sidang pertama dicatat di peramban ini."
+      )
+    );
+    const baris = el("div", "aleta-cmw-baris");
+    const t = (kelas, teks, judul, tindakan) =>
+      baris.appendChild(tombol(`aleta-cmw-tombol ${kelas}`, teks, judul, () => ubahSidang(tindakan), `sidang-${tindakan}`));
+    if (!b) t("aleta-cmw-tombol-utama", "▶ Mulai", "Mulai menghitung lama sidang", "mulai");
+    else {
+      if (b.skorsSejak) t("aleta-cmw-tombol-utama", "▶ Lanjut", "Lanjutkan sidang yang diskors", "lanjut");
+      else t("", "⏸ Skors", "Skors - waktu skors tidak ikut dihitung", "skors");
+      t("aleta-cmw-tombol-utama", "■ Selesai", "Selesai - lamanya dicatat untuk rata-rata", "selesai");
+      t("", "Batal", "Batalkan tanpa mencatat", "batal");
+    }
+    w.isi.appendChild(baris);
+    return w.kotak;
+  }
+
+  /** Jam berdetak hanya selama sidangnya berjalan, tidak diskors, dan jamnya terlihat. */
+  function aturJamSidang() {
+    const b = keadaan.lamaSidang.berjalan;
+    const perlu = Boolean(bayang && bayang.querySelector(".aleta-cmw-jam") && b && !b.skorsSejak && akar && akar.isConnected);
+    if (!perlu) {
+      if (jamSidang) clearInterval(jamSidang);
+      jamSidang = null;
+      return;
+    }
+    if (jamSidang) return;
+    jamSidang = setInterval(() => {
+      const kini = keadaan.lamaSidang.berjalan;
+      if (!bayang || !kini || kini.skorsSejak) return aturJamSidang();
+      for (const j of Array.from(bayang.querySelectorAll(".aleta-cmw-jam"))) j.textContent = formatDurasi(lamaBerjalan(kini));
+    }, 1000);
+  }
+
+  // ─── popup-22: kalender tenggat dua minggu ─────────────────────────────────
+
+  function kunciTanggal(t) {
+    return `${t.getFullYear()}-${dua(t.getMonth() + 1)}-${dua(t.getDate())}`;
+  }
+
+  function teksTanggal(t) {
+    return `${NAMA_HARI[t.getDay()]} ${t.getDate()} ${NAMA_BULAN[t.getMonth()]}`;
+  }
+
+  /**
+   * Dua minggu mulai Senin minggu ini, dari tenggat butir checklist yang
+   * SUDAH diterima - tidak ada permintaan baru. Portal hanya mengirim yang
+   * lewat, hari ini, dan minggu ini, jadi minggu kedua biasanya lengang: itu
+   * disebut, bukan dibiarkan terbaca "tidak ada tenggat".
+   */
+  function susunKalender() {
+    const w = kotakWidget("kalender", "Kalender tenggat");
+    const data = keadaan.data;
+    if (!data) {
+      w.isi.appendChild(el("div", "aleta-cmw-ket", "Menunggu checklist dari portal…"));
+      return w.kotak;
+    }
+    const kini = new Date();
+    const hariIni = awalHari(kini);
+    const awal = new Date(kini.getFullYear(), kini.getMonth(), kini.getDate() - ((kini.getDay() + 6) % 7));
+    const hari = Array.from({ length: 14 }, (_, i) => new Date(awal.getFullYear(), awal.getMonth(), awal.getDate() + i));
+    const akhir = hari[13];
+    w.kepala.firstChild.textContent = `Kalender tenggat · ${teksTanggal(awal)} – ${teksTanggal(akhir)}`;
+
+    const perHari = new Map();
+    let sebelum = 0;
+    let sesudah = 0;
+    let tanpa = 0;
+    for (const b of butirTampil(data)) {
+      const t = b.tenggat ? new Date(String(b.tenggat)) : null;
+      if (!t || Number.isNaN(t.getTime())) {
+        tanpa += 1;
+        continue;
+      }
+      if (awalHari(t) < awal.getTime()) sebelum += 1;
+      else if (awalHari(t) > akhir.getTime()) sesudah += 1;
+      else {
+        const k = kunciTanggal(t);
+        perHari.set(k, [...(perHari.get(k) || []), b]);
+      }
+    }
+    if (keadaan.hariKalender && !hari.some((d) => kunciTanggal(d) === keadaan.hariKalender)) keadaan.hariKalender = "";
+
+    const kal = el("div", "aleta-cmw-kal");
+    kal.setAttribute("role", "group");
+    kal.setAttribute("aria-label", "Tenggat dua minggu");
+    for (const n of ["S", "S", "R", "K", "J", "S", "M"]) kal.appendChild(el("span", "aleta-cmw-kal-hari", n));
+    for (const d of hari) {
+      const k = kunciTanggal(d);
+      const daftar = perHari.get(k) || [];
+      const tgl = tombol(
+        "aleta-cmw-kal-tgl",
+        d.getDate(),
+        `${teksTanggal(d)}: ${daftar.length ? `${daftar.length} tenggat - ${daftar.map((b) => b.judul || b.jenis).join("; ")}` : "tidak ada tenggat"}`,
+        () => {
+          keadaan.hariKalender = keadaan.hariKalender === k ? "" : k;
+          gambar();
+        },
+        `kal-${k}`
+      );
+      tgl.setAttribute("data-tanggal", k);
+      if (d.getTime() === hariIni) tgl.setAttribute("data-kini", "ya");
+      if (d.getTime() < hariIni) tgl.setAttribute("data-lalu", "ya");
+      if (keadaan.hariKalender === k) tgl.setAttribute("data-dipilih", "ya");
+      if (daftar.length) {
+        tgl.setAttribute("data-jumlah", String(daftar.length));
+        tgl.setAttribute("data-nada", d.getTime() < hariIni ? "lewat" : d.getTime() === hariIni ? "mendesak" : "aman");
+      }
+      kal.appendChild(tgl);
+    }
+    w.isi.appendChild(kal);
+
+    if (keadaan.hariKalender) {
+      const pilihan = perHari.get(keadaan.hariKalender) || [];
+      const ul = el("ul", "aleta-cmw-kal-daftar");
+      if (!pilihan.length) ul.appendChild(el("li", "aleta-cmw-ket", "Tidak ada tenggat pada hari itu."));
+      for (const b of pilihan) {
+        const li = el("li");
+        const nomor = String(objek(b.perkara).nomor || "").trim();
+        li.appendChild(el("span", "", `${b.judul || b.jenis || "Butir"}${nomor ? ` · ${nomor}` : ""}`));
+        li.appendChild(susunKerjakan(b));
+        ul.appendChild(li);
+      }
+      w.isi.appendChild(ul);
+    }
+    const catatan = [];
+    if (sebelum) catatan.push(`${sebelum} tenggat lewat sebelum ${teksTanggal(awal)}`);
+    if (sesudah) catatan.push(`${sesudah} sesudah ${teksTanggal(akhir)}`);
+    if (tanpa) catatan.push(`${tanpa} tanpa tenggat`);
+    catatan.push("hanya tenggat yang dikirim checklist (lewat, hari ini, minggu ini)");
+    w.isi.appendChild(el("div", "aleta-cmw-ket", `${catatan.join(" · ")}.`));
+    return w.kotak;
+  }
+
+  // ─── D11 / popup-23: Atur widget ───────────────────────────────────────────
+
+  function bukaAtur(buka) {
+    keadaan.aturTerbuka = Boolean(buka) && modern();
+    gambar();
+    fokuskan(keadaan.aturTerbuka ? "atur-tutup" : "atur-buka");
+  }
+
+  function geserUrutan(id, arah) {
+    const urutan = urutanWidget();
+    const i = urutan.indexOf(id);
+    const j = i + arah;
+    if (i < 0 || j < 0 || j >= urutan.length) return;
+    [urutan[i], urutan[j]] = [urutan[j], urutan[i]];
+    simpanSusunan({ urutan, mati: susunanAktif().mati });
+  }
+
+  function alihWidget(id) {
+    const s = susunanAktif();
+    const mati = new Set(s.mati);
+    if (mati.has(id)) mati.delete(id);
+    else mati.add(id);
+    simpanSusunan({ urutan: urutanWidget(), mati: [...mati] });
+  }
+
+  /**
+   * Seret ⋮⋮ untuk mengurutkan. Barisnya dipindahkan di tempat selama diseret
+   * dan urutannya disimpan saat dilepas. Tombol ↑ ↓ di tiap baris melakukan
+   * hal yang sama untuk papan tik dan layar sentuh yang sulit menyeret.
+   * Peristiwanya tidak diteruskan ke dok - menyeret baris bukan menggeser dok.
+   */
+  function pasangSeretAtur(daftar) {
+    let seret = null;
+    daftar.addEventListener("pointerdown", (e) => {
+      const p = e.target && typeof e.target.closest === "function" ? e.target.closest(".aleta-cmw-pegangan") : null;
+      if (!p) return;
+      const baris = p.closest("[data-urut]");
+      if (!baris) return;
+      e.stopPropagation();
+      seret = { baris };
+      baris.setAttribute("data-diseret", "ya");
+      try {
+        if (e.pointerId !== undefined && typeof p.setPointerCapture === "function") p.setPointerCapture(e.pointerId);
+      } catch {
+        /* tanpa tangkapan, seret tetap berjalan selama penunjuk di atas daftar */
+      }
+    });
+    daftar.addEventListener("pointermove", (e) => {
+      if (!seret) return;
+      e.stopPropagation();
+      for (const b of Array.from(daftar.querySelectorAll("[data-urut]"))) {
+        if (b === seret.baris) continue;
+        const r = b.getBoundingClientRect();
+        if (e.clientY < r.top || e.clientY > r.bottom) continue;
+        daftar.insertBefore(seret.baris, e.clientY < r.top + r.height / 2 ? b : b.nextSibling);
+        break;
+      }
+    });
+    const lepasSeret = (e) => {
+      if (!seret) return;
+      if (e) e.stopPropagation();
+      seret.baris.removeAttribute("data-diseret");
+      seret = null;
+      const urutan = Array.from(daftar.querySelectorAll("[data-urut]")).map((b) => b.getAttribute("data-widget"));
+      simpanSusunan({ urutan, mati: susunanAktif().mati });
+    };
+    daftar.addEventListener("pointerup", lepasSeret);
+    daftar.addEventListener("pointercancel", lepasSeret);
+  }
+
+  function susunAtur() {
+    const w = kotakWidget("atur", "Atur widget");
+    w.kotak.classList.add("aleta-cmw-atur");
+    const alat = el("span", "aleta-cm-alat");
+    alat.appendChild(tombol("aleta-cmw-atur-tutup", "×", "Tutup Atur widget", () => bukaAtur(false), "atur-tutup"));
+    w.kepala.appendChild(alat);
+    w.isi.appendChild(
+      el(
+        "div",
+        "aleta-cmw-ket",
+        "Pilih yang tampil di dok. Seret ⋮⋮ (atau ↑ ↓) untuk mengubah urutan. " +
+          (fitur("popup-23")
+            ? `Susunan ini untuk ${NAMA_SITUS[JENIS]} saja - SIPP, ABT, dan portal boleh berbeda.`
+            : "Susunan yang sama berlaku di SIPP, ABT, dan portal.") +
+          " Tersimpan di peramban ini."
+      )
+    );
+    const daftar = el("ul", "aleta-cmw-atur-daftar");
+    const urutan = urutanWidget();
+    const mati = new Set(susunanAktif().mati);
+    urutan.forEach((id, i) => {
+      const wd = WIDGET.find((x) => x.id === id);
+      const tersedia = widgetTersedia(wd);
+      const li = el("li", "aleta-cmw-atur-baris");
+      li.setAttribute("data-widget", id);
+      li.setAttribute("data-urut", String(i));
+      const pegang = el("span", "aleta-cmw-pegangan", "⋮⋮");
+      pegang.setAttribute("aria-hidden", "true");
+      pegang.title = "Seret untuk mengubah urutan";
+      li.appendChild(pegang);
+      const teks = el("div", "aleta-cmw-atur-teks");
+      teks.appendChild(el("b", "", wd.judul));
+      teks.appendChild(
+        el("small", "", tersedia ? wd.ket : `${wd.ket}. Saklar fitur ${wd.kode} di popup (Uji tampilan) masih mati.`)
+      );
+      li.appendChild(teks);
+      const geser = el("span", "aleta-cmw-geser");
+      const naik = tombol("", "↑", `Naikkan ${wd.judul}`, () => geserUrutan(id, -1), `atur-naik-${id}`);
+      const turun = tombol("", "↓", `Turunkan ${wd.judul}`, () => geserUrutan(id, 1), `atur-turun-${id}`);
+      naik.disabled = i === 0;
+      turun.disabled = i === urutan.length - 1;
+      geser.appendChild(naik);
+      geser.appendChild(turun);
+      li.appendChild(geser);
+      const nyala = tersedia && !mati.has(id);
+      const saklar = tombol(
+        "aleta-cmw-saklar",
+        "",
+        tersedia ? `${nyala ? "Sembunyikan" : "Tampilkan"} ${wd.judul} di dok` : `${wd.judul}: saklar fitur ${wd.kode} masih mati`,
+        () => alihWidget(id),
+        `atur-saklar-${id}`
+      );
+      saklar.setAttribute("role", "switch");
+      saklar.setAttribute("aria-checked", nyala ? "true" : "false");
+      saklar.disabled = !tersedia;
+      li.appendChild(saklar);
+      daftar.appendChild(li);
+    });
+    // Yang menyusul DISEBUT, dengan sebabnya - tanpa pegangan, tanpa urutan,
+    // dan saklarnya tidak dapat ditekan.
+    for (const wd of WIDGET.filter((x) => x.menyusul)) {
+      const li = el("li", "aleta-cmw-atur-baris");
+      li.setAttribute("data-widget", wd.id);
+      li.setAttribute("data-menyusul", "ya");
+      li.appendChild(el("span", "aleta-cmw-pegangan", ""));
+      const teks = el("div", "aleta-cmw-atur-teks");
+      const judul = el("b", "", wd.judul);
+      judul.appendChild(el("span", "aleta-cmw-menyusul", "menyusul"));
+      teks.appendChild(judul);
+      teks.appendChild(el("small", "", wd.menyusul));
+      li.appendChild(teks);
+      const saklar = el("button", "aleta-cmw-saklar");
+      saklar.type = "button";
+      saklar.disabled = true;
+      saklar.setAttribute("role", "switch");
+      saklar.setAttribute("aria-checked", "false");
+      saklar.setAttribute("aria-label", `${wd.judul} - menyusul, belum dapat dinyalakan`);
+      saklar.title = `${wd.judul} - menyusul: ${wd.menyusul}`;
+      li.appendChild(saklar);
+      daftar.appendChild(li);
+    }
+    pasangSeretAtur(daftar);
+    w.isi.appendChild(daftar);
+    return w.kotak;
+  }
+
+  // ─── popup-9: menempel ke sudut terdekat ───────────────────────────────────
+
+  function sudutAktif() {
+    return fitur("popup-9") ? keadaan.sudut[JENIS] || "" : "";
+  }
+
+  function teksSudut() {
+    return `Menempel ${sudutAktif().replace("-", " ")} · diingat untuk ${NAMA_SITUS[JENIS]}`;
+  }
+
+  /**
+   * Sesudah digeser: menempel ke sudut layar yang paling dekat dengan titik
+   * tengah widget, dan sudutnya diingat untuk situs ini saja. Widget yang
+   * dilepas di tengah halaman tidak tertinggal menutupi tabel SIPP.
+   */
+  function tempelKeSudut() {
+    if (!akar) return;
+    const kotak = akar.getBoundingClientRect();
+    const kiri = parseFloat(akar.style.left) || 0;
+    const bawah = parseFloat(akar.style.bottom) || 0;
+    const h = kiri + (kotak.width || 0) / 2 < (window.innerWidth || 0) / 2 ? "kiri" : "kanan";
+    const v = bawah + (kotak.height || 0) / 2 < (window.innerHeight || 0) / 2 ? "bawah" : "atas";
+    keadaan.sudut = { ...keadaan.sudut, [JENIS]: `${h}-${v}` };
+    tulis({ [KUNCI_SUDUT]: keadaan.sudut });
+    terapkanPosisi();
+    gambar();
   }
 
   function kunciFokus() {
@@ -1496,12 +2971,27 @@
     const fokus = kunciFokus();
     const isiLama = wadah.querySelector(".aleta-cm-isi");
     const gulung = isiLama ? isiLama.scrollTop : 0;
+    // Catatan yang sedang diketik: kotaknya dipakai ulang, tetapi dilepas dan
+    // dipasang kembali - letak kursornya diingat dulu.
+    const pilihanCatatan = catatanDisunting() ? [kotakCatatan.selectionStart, kotakCatatan.selectionEnd] : null;
     wadah.textContent = "";
     const kecil = Boolean(keadaan.posisi && keadaan.posisi.kecil);
-    wadah.appendChild(kecil ? susunPil() : susunPanel());
+    const mode = modeUji();
+    // Lama: jalan yang sama persis seperti sebelum tahap 3.
+    if (mode === "lama") wadah.appendChild(kecil ? susunPil() : susunPanel());
+    else if (modern()) wadah.appendChild(susunDok(kecil));
+    else wadah.appendChild(susunTumpukKlasik(kecil));
     const isiBaru = wadah.querySelector(".aleta-cm-isi");
     if (isiBaru && gulung) isiBaru.scrollTop = gulung;
     fokuskan(fokus);
+    if (pilihanCatatan && catatanDisunting()) {
+      try {
+        kotakCatatan.setSelectionRange(pilihanCatatan[0], pilihanCatatan[1]);
+      } catch {
+        /* letak kursor hanya kemudahan */
+      }
+    }
+    if (mode !== "lama") aturJamSidang();
   }
 
   // ─── Tema dan posisi ───────────────────────────────────────────────────────
@@ -1547,6 +3037,16 @@
    */
   function terapkanPosisi() {
     if (!akar) return;
+    // popup-9: sudut yang diingat untuk situs ini menang atas posisi bebas.
+    const sudut = sudutAktif();
+    if (sudut) {
+      const [h, v] = sudut.split("-");
+      akar.style.left = h === "kiri" ? `${TEPI}px` : "auto";
+      akar.style.right = h === "kanan" ? `${TEPI}px` : "auto";
+      akar.style.bottom = v === "bawah" ? `${TEPI}px` : "auto";
+      akar.style.top = v === "atas" ? `${TEPI}px` : "auto";
+      return;
+    }
     const p = keadaan.posisi;
     const aman = p && Number.isFinite(p.kiri) ? jepit(p.kiri, p.bawah) : { kiri: TEPI, bawah: TEPI };
     akar.style.left = `${Math.round(aman.kiri)}px`;
@@ -1570,7 +3070,7 @@
     simpanPosisi();
     gambar();
     terapkanPosisi();
-    fokuskan(kecil ? "pil" : "kecilkan");
+    fokuskan(kecil ? (lencanaDipakai() ? "lencana" : "pil") : modern() ? "lencana" : "kecilkan");
   }
 
   function setelLipatan(kunci, buka) {
@@ -1592,13 +3092,22 @@
       if (!sasaran) return;
       const pegangan = sasaran.closest("[data-geser]");
       if (!pegangan) return;
-      if (!sasaran.closest(".aleta-cm-pil") && sasaran.closest("button, a, select, input, textarea, summary")) return;
+      // Pil dan lencana tombol SEKALIGUS pegangan; tombol lain tidak menggeser.
+      if (!sasaran.closest(".aleta-cm-pil, .aleta-cmw-lencana") && sasaran.closest("button, a, select, input, textarea, summary")) {
+        return;
+      }
       abaikanKlikPil = false;
+      // Widget yang menempel di sudut kanan atau atas (popup-9) berjangkar
+      // right/top - titik awalnya dibaca dari kotaknya, bukan dari left/bottom
+      // yang "auto". Di luar itu jalannya sama dengan sebelumnya.
+      const kiriGaya = parseFloat(akar.style.left);
+      const bawahGaya = parseFloat(akar.style.bottom);
+      const kotak = Number.isFinite(kiriGaya) && Number.isFinite(bawahGaya) ? null : akar.getBoundingClientRect();
       geser = {
         x: e.clientX,
         y: e.clientY,
-        kiri: parseFloat(akar.style.left) || 0,
-        bawah: parseFloat(akar.style.bottom) || 0,
+        kiri: kotak ? kotak.left || 0 : kiriGaya || 0,
+        bawah: kotak ? Math.max((window.innerHeight || 0) - (kotak.bottom || 0), 0) : bawahGaya || 0,
         pindah: false,
       };
       try {
@@ -1619,6 +3128,9 @@
       const aman = jepit(geser.kiri + dx, geser.bawah - dy);
       akar.style.left = `${Math.round(aman.kiri)}px`;
       akar.style.bottom = `${Math.round(aman.bawah)}px`;
+      // Lepas dari jangkar sudut (popup-9); tanpa sudut keduanya sudah "auto".
+      if (akar.style.right !== "auto") akar.style.right = "auto";
+      if (akar.style.top !== "auto") akar.style.top = "auto";
     });
     const selesai = () => {
       if (!geser) return;
@@ -1633,6 +3145,7 @@
         kecil: Boolean(keadaan.posisi && keadaan.posisi.kecil),
       };
       simpanPosisi();
+      if (fitur("popup-9")) tempelKeSudut();
     };
     wadah.addEventListener("pointerup", selesai);
     wadah.addEventListener("pointercancel", selesai);
@@ -1670,12 +3183,20 @@
     terapkanPosisi();
     gambar();
     mulaiJam();
+    aturJamTunda();
     void panenTautanSipp();
     void segarkan();
   }
 
   function lepas() {
     hentikanJam();
+    // Tahap 3: catatan yang belum sempat tersimpan ditulis sekarang; jam
+    // tunda dan jam sidang berhenti bersama widgetnya.
+    if (jamCatatan) simpanCatatan();
+    if (jamTunda) clearTimeout(jamTunda);
+    jamTunda = null;
+    if (jamSidang) clearInterval(jamSidang);
+    jamSidang = null;
     if (akar) akar.remove();
   }
 
@@ -1777,6 +3298,9 @@
     gambar();
     const ambil =
       typeof alatAmbil === "function" ? alatAmbil : (alamat, opsi) => fetch(alamat, opsi);
+    // Lama permintaan diukur untuk cincin lencana (tahap 3); dalam Lama tidak
+    // ada yang membacanya.
+    const mulaiMinta = Date.now();
     try {
       const respons = await ambil(
         alamatPermintaan(),
@@ -1784,6 +3308,7 @@
         "Membaca checklist milestone"
       );
       if (nomor !== nomorMinta) return;
+      catatSambungan(respons.status, Date.now() - mulaiMinta);
       if (respons.status === 401) {
         // Sesi yang habis: data orang yang tadi masuk tidak ditampilkan lagi.
         keadaan.data = null;
@@ -1815,17 +3340,20 @@
             keadaan.peran = "";
             hapusSimpanan(KUNCI_PERAN);
           }
+          bersihkanTanda(keadaan.data);
         }
       }
       if (keadaan.galat) catat(`gagal: ${keadaan.galat.jenis}`, keadaan.galat.pesan);
     } catch (galat) {
       if (nomor !== nomorMinta) return;
+      catatSambungan(0, Date.now() - mulaiMinta);
       keadaan.galat = { jenis: "jaringan", pesan: kalimatPertama(galat && galat.message) };
       catat("portal tidak menjawab", keadaan.galat.pesan);
     } finally {
       if (nomor === nomorMinta) {
         keadaan.memuat = false;
         gambar();
+        tulisAngka();
       }
     }
     void panenTautanSipp();
@@ -1907,8 +3435,45 @@
         // ini dari bawah tangan orang.
         if (ubah[KUNCI_POSISI] && ubah[KUNCI_POSISI].newValue === undefined) {
           keadaan.posisi = null;
+          // Sudut yang diingat (popup-9) ikut dikembalikan untuk situs ini -
+          // hanya bila memang ada, jadi yang tidak pernah mencobanya tidak
+          // melihat satu tulisan pun.
+          if (punya(keadaan.sudut, JENIS)) {
+            const sisa = { ...keadaan.sudut };
+            delete sisa[JENIS];
+            keadaan.sudut = sisa;
+            tulis({ [KUNCI_SUDUT]: sisa });
+          }
           terapkanPosisi();
           gambar();
+        }
+        // ── Tahap 3: kunci yang hanya ditulis di luar tampilan Lama ──
+        if (ubah[KUNCI_TANDA]) {
+          keadaan.tanda = tandaBersih(ubah[KUNCI_TANDA].newValue);
+          aturJamTunda();
+          tulisAngka();
+          gambar();
+        }
+        if (ubah[KUNCI_CATATAN] && !catatanDisunting()) {
+          keadaan.catatan = catatanBersih(ubah[KUNCI_CATATAN].newValue);
+          if (kotakCatatan) kotakCatatan.value = keadaan.catatan;
+        }
+        if (ubah[KUNCI_LAMA_SIDANG]) {
+          keadaan.lamaSidang = lamaSidangBersih(ubah[KUNCI_LAMA_SIDANG].newValue);
+          gambar();
+        }
+        if (ubah[KUNCI_SUSUNAN]) {
+          keadaan.susunan = susunanBersih(ubah[KUNCI_SUSUNAN].newValue);
+          gambar();
+        }
+        // Sudut situs LAIN diikuti; sudut situs ini hanya milik tab yang
+        // menggesernya - sama dengan posisi, tab lain tidak menarik widget
+        // dari bawah tangan orang.
+        if (ubah[KUNCI_SUDUT]) {
+          const baru = sudutBersih(ubah[KUNCI_SUDUT].newValue);
+          if (punya(keadaan.sudut, JENIS)) baru[JENIS] = keadaan.sudut[JENIS];
+          else delete baru[JENIS];
+          keadaan.sudut = baru;
         }
         if (ubah[KUNCI_RIWAYAT_SIPP] || ubah[KUNCI_TAUTAN_SIPP]) {
           if (ubah[KUNCI_RIWAYAT_SIPP]) keadaan.riwayatSipp = ubah[KUNCI_RIWAYAT_SIPP].newValue || [];
@@ -1941,8 +3506,19 @@
       KUNCI_LIPATAN,
       KUNCI_RIWAYAT_SIPP,
       KUNCI_TAUTAN_SIPP,
+      KUNCI_TANDA,
+      KUNCI_CATATAN,
+      KUNCI_LAMA_SIDANG,
+      KUNCI_SUSUNAN,
+      KUNCI_SUDUT,
     ]);
     const lama = (kunci) => !berubahSebelumSiap.has(kunci);
+    // Tahap 3 - dibaca selalu (murah), dipakai hanya di luar tampilan Lama.
+    if (lama(KUNCI_TANDA)) keadaan.tanda = tandaBersih(simpan[KUNCI_TANDA]);
+    if (lama(KUNCI_CATATAN)) keadaan.catatan = catatanBersih(simpan[KUNCI_CATATAN]);
+    if (lama(KUNCI_LAMA_SIDANG)) keadaan.lamaSidang = lamaSidangBersih(simpan[KUNCI_LAMA_SIDANG]);
+    if (lama(KUNCI_SUSUNAN)) keadaan.susunan = susunanBersih(simpan[KUNCI_SUSUNAN]);
+    if (lama(KUNCI_SUDUT)) keadaan.sudut = sudutBersih(simpan[KUNCI_SUDUT]);
     // Induk bawaannya MENYALA, widget ini bawaannya MATI - sama dengan popup.
     if (lama(KUNCI_INDUK)) keadaan.induk = simpan[KUNCI_INDUK] !== false;
     if (lama(KUNCI_SAKLAR)) keadaan.nyala = simpan[KUNCI_SAKLAR] === true;
@@ -1972,6 +3548,16 @@
   window.addEventListener("resize", () => terapkanPosisi());
   // Pengalih Lama / Baru / UI Baru di popup - kulitnya ikut seketika.
   document.addEventListener("aleta-uji-berubah", () => terapkanTema());
+  // ...dan susunannya: dok, lencana, tombol Selesai/Tunda, sudut, angka ikon.
+  // Kembali ke Lama menggambar ulang lewat jalan Lama, jadi tidak ada sisa.
+  document.addEventListener("aleta-uji-berubah", () => {
+    if (!modern()) keadaan.aturTerbuka = false;
+    if (!akar || !akar.isConnected) return;
+    terapkanPosisi();
+    gambar();
+    aturJamTunda();
+    tulisAngka();
+  });
 
   // Portal berpindah halaman tanpa memuat ulang (Next.js): /login -> /portal
   // harus dikejar sendiri. Dan React boleh membuang simpul yang tidak

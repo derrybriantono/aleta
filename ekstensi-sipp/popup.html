@@ -383,6 +383,252 @@
      akunnya bernama "belum diketahui". */
   .keadaan-nilai.kosong { font-weight: 400; color: var(--tulisan-lembut); }
   .keadaan-nilai.usang { color: #b3261e; }
+
+  /* ── TAHAP 2: fitur popup-N (Baru dan UI Baru) dan susunan UI Baru ───────
+   *
+   * Setiap pemilih di bawah mengenai elemen BUATAN popup.js bagian TAHAP 2
+   * (kelas tb-*), atau berada di bawah :root[data-susunan] /
+   * :root[data-kulit="modern"]. Ketiganya tidak pernah ada dalam tampilan
+   * Lama, jadi popup Lama tidak berubah satu piksel pun.
+   *
+   * [hidden] ditegaskan untuk kelas tb-* sendiri: beberapa bergaya flex, dan
+   * display milik penulis gaya mengalahkan [hidden] bawaan peramban - sebab
+   * yang sama dengan .uji-nyata[hidden] di atas. */
+  [class^="tb-"][hidden], [class*=" tb-"][hidden] { display: none !important; }
+  [data-cari-sembunyi] { display: none !important; }
+  :root[data-susunan] .saklar[hidden],
+  :root[data-susunan] .saklar-ket[hidden],
+  :root[data-susunan] .skala[hidden],
+  :root[data-susunan="ui"] .baris-warna[hidden] { display: none; }
+
+  .tb-fitur-coba { margin: 0 16px 12px; padding: 8px 10px; border: 1px dashed var(--merek); border-radius: 8px; }
+  .tb-fitur-coba-judul { font-size: 12px; margin-bottom: 4px; }
+  .tb-kartu { margin: 6px 0; padding: 8px 10px; border: 1px solid var(--garis); border-radius: 8px; background: var(--latar); font-size: 12px; }
+  .tb-kartu-kepala { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; margin-bottom: 4px; }
+  .tb-kartu-judul { font-weight: 700; font-size: 12.5px; }
+  .tb-kartu .saklar-ket { font-size: 12px; }
+  .tb-baru {
+    margin-left: 6px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--merek);
+    color: var(--latar);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: 0.04em;
+    vertical-align: 1px;
+  }
+  .tb-seg { display: flex; margin-left: 0; }
+  .tb-seg button { flex: 1; padding: 4px 6px; font-size: 12px; }
+  .tb-contoh-tema { display: inline-block; width: 12px; height: 12px; margin-right: 5px; border: 1px solid var(--garis); border-radius: 3px; vertical-align: -2px; }
+  .tb-contoh-ikut { background: linear-gradient(135deg, #ffffff 50%, #141b19 50%); }
+  .tb-contoh-gelap { background: #141b19; }
+  .tb-contoh-terang { background: #ffffff; }
+  .tb-tombol { font-size: 11.5px; }
+  .tb-tombol-utama { background: var(--merek); border-color: var(--merek); color: var(--latar); font-weight: 700; }
+  .tb-tautan { font-size: 12px; }
+  .tb-tautan.tb-mati { color: var(--tulisan-lembut); text-decoration: none; cursor: not-allowed; }
+  .tb-baris-aksi, .tb-lampu-kaki, .tb-batas-baris { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .tb-baris-aksi { margin-top: 4px; }
+
+  /* popup-2: lampu per situs */
+  .tb-lampu { margin: 0; padding: 0; list-style: none; }
+  .tb-lampu-baris { display: flex; align-items: baseline; gap: 6px; padding: 2px 0; font-size: 12px; }
+  .tb-lampu-ket { flex: 1; min-width: 0; color: var(--tulisan-lembut); overflow-wrap: anywhere; }
+  .tb-titik { flex: none; align-self: center; width: 9px; height: 9px; border-radius: 50%; background: var(--garis); }
+  .tb-titik-ok { background: #2e9d62; }
+  .tb-titik-awas { background: #d99a1e; }
+  .tb-titik-putus { background: #d4483b; }
+  .tb-titik-memuat, .tb-titik-belum { background: var(--tulisan-lembut); opacity: 0.5; }
+  .tb-perbaiki { flex: none; font-weight: 600; }
+  .tb-lampu-waktu { flex: 1; margin: 0; }
+  .tb-lampu-wadah { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--garis); }
+
+  /* popup-27: batas situs */
+  .tb-batas { margin: 6px 0; font-size: 12px; }
+  .tb-batas-teks { flex: 1; min-width: 0; }
+  .tb-batas-hasil { margin: 4px 0 0; }
+
+  /* popup-3 / D1: kelompok dan lompat */
+  .tb-kelompok { margin: 10px 0 4px; }
+  .tb-kelompok-judul { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tulisan-lembut); }
+  .tb-lompat { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+  .tb-chip { padding: 2px 10px; border: 1px solid var(--garis); border-radius: 999px; background: var(--latar-lembut); color: var(--tulisan); font: inherit; font-size: 11.5px; cursor: pointer; }
+  .tb-chip:hover { border-color: var(--merek); color: var(--merek); }
+  .tb-chip:focus-visible, .tb-info:focus-visible, .tb-cari-isi:focus-visible { outline: 2px solid var(--merek); outline-offset: 1px; }
+
+  /* popup-15: cari */
+  .tb-cari { margin: 0 0 8px; }
+  .tb-cari-isi { width: 100%; padding: 6px 9px; border: 1px solid var(--garis); border-radius: 8px; background: var(--latar); color: var(--tulisan); font: inherit; font-size: 12.5px; }
+  .tb-cari-kosong { margin: 4px 0 0; }
+
+  /* popup-1 / D2: ringkas + uraian */
+  .tb-info { margin-left: 6px; padding: 0 6px; border: 1px solid var(--garis); border-radius: 999px; background: none; color: var(--tulisan-lembut); font: inherit; font-size: 11px; font-weight: 400; cursor: pointer; }
+  .tb-info:hover { border-color: var(--merek); color: var(--merek); }
+
+  /* popup-4: penggeser dan pratinjau */
+  .tb-geser { margin-top: 8px; }
+  .tb-geser-isi { width: 100%; accent-color: var(--merek); }
+  .tb-pratinjau { margin-top: 6px; padding: 6px 8px; border: 1px solid var(--garis); border-radius: 6px; background: var(--latar-lembut); line-height: 1.35; }
+  .tb-lencana-awas { display: inline-block; padding: 0 6px; border-radius: 999px; background: #f5d58a; color: #5a3c00; font-size: 0.8em; font-weight: 700; }
+
+  /* popup-12: senyap */
+  .tb-senyap { display: grid; gap: 6px; margin: 0 0 8px; }
+  .tb-pita { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--sorot); font-size: 12px; }
+  .tb-pita-teks { flex: 1; }
+
+  /* popup-13: pilihan posisi */
+  .tb-posisi-pilih { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; font-size: 12px; }
+  .tb-cek { cursor: pointer; }
+  .tb-cek input { accent-color: var(--merek); }
+  .tb-posisi-ket { flex-basis: 100%; margin: 0; }
+
+  /* popup-16: pintasan */
+  .tb-pintasan-laci summary { cursor: pointer; color: var(--tulisan-lembut); }
+  .tb-pintasan-judul { margin-top: 6px; font-weight: 700; }
+  .tb-pintasan-baris { display: flex; gap: 8px; }
+  .tb-pintasan-baris kbd { flex: none; min-width: 66px; font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+
+  /* popup-10: versi */
+  .tb-versi-status[data-keadaan="ok"], .tb-versi-kaki[data-keadaan="ok"] { color: #2e9d62; }
+  .tb-versi-status[data-keadaan="usang"], .tb-versi-kaki[data-keadaan="usang"] { color: #d4483b; }
+  .tb-kabar { margin: 4px 0 0; }
+  .tb-baris-set { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .tb-baris-set .uji-seg { flex: 1 1 100%; margin-left: 0; }
+  .tb-seg button { white-space: nowrap; }
+
+  /* ── UI BARU (kulit Modern): D1-D15 ──────────────────────────────────── */
+  /* D15 keterbacaan: keterangan 12-13 px, nama 14 px; token Modern di atas
+     sudah berkontras cukup pada kedua tema. */
+  :root[data-kulit="modern"] body { width: 340px; font-size: 13.5px; }
+  :root[data-kulit="modern"] .saklar-ket { font-size: 12.5px; }
+  :root[data-kulit="modern"] .saklar-nama { font-size: 14px; }
+  /* Kata tebal di dalam uraian memakai kelas yang sama dengan nama saklar
+     (display:block); di UI Baru ia kembali sebaris dengan kalimatnya. */
+  :root[data-kulit="modern"] .saklar-ket .saklar-nama { display: inline; font-size: inherit; }
+  :root[data-kulit="modern"] .keadaan { font-size: 12.5px; }
+  :root[data-kulit="modern"] .kaki { margin-top: 8px; font-size: 12px; }
+  :root[data-kulit="modern"] .kepala { padding: 12px 14px; }
+  :root[data-kulit="modern"] .isi { padding: 4px 14px 12px; }
+  :root[data-kulit="modern"] .tindakan { padding: 4px 14px 12px; }
+  :root[data-kulit="modern"] .tb-info {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 700;
+    line-height: 16px;
+    vertical-align: 1px;
+  }
+
+  /* D4 + D12: saklar induk besar di kepala */
+  .tb-akun { display: block; font-size: 12px; color: var(--tulisan-lembut); }
+  .tb-induk { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .tb-induk[data-nyala="ya"] .tb-induk-teks { color: #2e9d62; }
+  .tb-induk input,
+  :root[data-kulit="modern"] .tb-kelompok label.saklar > input {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    flex: none;
+    margin: 0;
+    border-radius: 999px;
+    background: var(--garis);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .tb-induk input { width: 48px; height: 28px; }
+  :root[data-kulit="modern"] .tb-kelompok label.saklar > input { width: 36px; height: 20px; margin-top: 2px; }
+  .tb-induk input::before,
+  :root[data-kulit="modern"] .tb-kelompok label.saklar > input::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    transition: left 0.15s;
+  }
+  .tb-induk input::before { width: 22px; height: 22px; }
+  :root[data-kulit="modern"] .tb-kelompok label.saklar > input::before { width: 14px; height: 14px; }
+  .tb-induk input:checked,
+  :root[data-kulit="modern"] .tb-kelompok label.saklar > input:checked { background: var(--merek); }
+  .tb-induk input:checked::before { left: 23px; }
+  :root[data-kulit="modern"] .tb-kelompok label.saklar > input:checked::before { left: 19px; }
+  .tb-induk input:focus-visible,
+  :root[data-kulit="modern"] .tb-kelompok label.saklar > input:focus-visible { outline: 2px solid var(--merek); outline-offset: 2px; }
+  .tb-info-panel { padding: 8px 14px; border-bottom: 1px solid var(--garis); background: var(--latar-lembut); }
+  .tb-info-panel .pengantar { margin: 0 0 6px; }
+  .tb-info-panel .saklar-ket { margin: 0; }
+
+  /* D3: kartu status */
+  .tb-status { margin: 10px 14px; padding: 10px 12px; border: 1px solid var(--garis); border-radius: 12px; background: var(--latar-lembut); }
+  .tb-status[data-keadaan="ok"] { border-color: #2e9d62; }
+  .tb-status[data-keadaan="masalah"] { border-color: #d4483b; }
+  .tb-status-kepala { display: flex; align-items: center; gap: 8px; }
+  .tb-status-ikon { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--tulisan-lembut); color: #ffffff; font-weight: 800; }
+  .tb-status[data-keadaan="ok"] .tb-status-ikon { background: #2e9d62; }
+  .tb-status[data-keadaan="masalah"] .tb-status-ikon { background: #d4483b; }
+  .tb-status-judul { flex: 1; min-width: 0; }
+  .tb-status-ringkas { margin: 4px 0 0 32px; }
+  .tb-status-masalah { margin: 6px 0 0; padding-left: 50px; font-size: 12.5px; }
+  .tb-status-masalah:empty { display: none; }
+  .tb-rincian summary { margin-top: 6px; font-size: 12px; color: var(--tulisan-lembut); cursor: pointer; }
+  .tb-rincian .keadaan { margin: 6px 0 0; background: var(--latar); }
+  :root[data-kulit="modern"] .tb-batas { margin: 0 14px 8px; }
+
+  /* D1: kelompok berjudul, saklar di kanan */
+  :root[data-kulit="modern"] .tb-kelompok { margin: 10px 0; padding: 4px 12px; border: 1px solid var(--garis); border-radius: 12px; background: var(--latar); }
+  :root[data-kulit="modern"] .tb-kelompok-judul { margin: 6px 0 2px; }
+  :root[data-kulit="modern"] .tb-kelompok label.saklar {
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    margin: 0;
+    padding: 8px 0;
+    border: 0;
+    border-top: 1px solid var(--garis);
+    border-radius: 0;
+  }
+  :root[data-kulit="modern"] .tb-kelompok label.saklar:hover { background: none; }
+  :root[data-kulit="modern"] .tb-kelompok .skala,
+  :root[data-kulit="modern"] .tb-kelompok .baris-warna,
+  :root[data-kulit="modern"] .tb-kelompok .tb-baris-set { margin: 0; padding: 8px 0; border: 0; border-top: 1px solid var(--garis); border-radius: 0; background: none; }
+  :root[data-kulit="modern"] .tb-kelompok-judul + * { border-top: 0; }
+
+  /* D5: ukuran huruf A− A A+ - tombol yang sama, bentuk segmen */
+  :root[data-kulit="modern"] .skala-atur[data-ui="seg"] { gap: 0; }
+  :root[data-kulit="modern"] .skala-atur[data-ui="seg"] button {
+    width: 40px;
+    height: 30px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--garis);
+    border-radius: 0;
+    background: var(--latar);
+    color: var(--tulisan);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    opacity: 1;
+  }
+  :root[data-kulit="modern"] .skala-atur[data-ui="seg"] #skalaKurang { border-radius: 8px 0 0 8px; }
+  :root[data-kulit="modern"] .skala-atur[data-ui="seg"] #skalaTambah { border-radius: 0 8px 8px 0; }
+  /* margin-left ditulis lagi: #skalaPulih { margin-left: auto } lama menang
+     atas pemilih kelas mana pun, dan menyisakan celah di tengah segmen. */
+  :root[data-kulit="modern"] .skala-atur[data-ui="seg"] #skalaPulih { margin-left: 0; border-left: 0; border-right: 0; }
+  :root[data-kulit="modern"] .skala-atur[data-ui="seg"] #skalaPulih:disabled { background: var(--merek); color: var(--latar); cursor: default; }
+  :root[data-kulit="modern"] .skala-atur[data-ui="seg"] button:disabled:not(#skalaPulih) { opacity: 0.45; }
+  :root[data-kulit="modern"] .skala-atur[data-ui="seg"] .skala-nilai { margin-left: auto; }
+
+  /* Lainnya, tindakan, kaki (D14) */
+  .tb-lainnya { margin: 10px 0 0; }
+  .tb-lainnya > summary { font-size: 12.5px; color: var(--tulisan-lembut); cursor: pointer; }
+  .tb-lainnya .skala { margin-top: 8px; }
+  .tb-pintas-kaki { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 12px; }
+  .tb-versi-kaki { margin-left: auto; font-weight: 700; }
 </style>
 
 <div class="kepala">

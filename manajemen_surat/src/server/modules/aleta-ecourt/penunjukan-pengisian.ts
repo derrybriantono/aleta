@@ -145,7 +145,7 @@ export async function simpanMedanBorang(
     throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat mengubah peta kolom formulir.");
   }
   if (!BORANG_SAH.has(borang)) {
-    throw new ApiError(400, "Borang tidak dikenali.");
+    throw new ApiError(400, "Blangko tidak dikenali.");
   }
   if (!JENIS_SAH.has(jenis)) {
     throw new ApiError(400, "Jenis kolom tidak dikenali.");

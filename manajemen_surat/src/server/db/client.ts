@@ -331,6 +331,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_antrian_publik",
   "aleta_tipe_keluaran",
   "aleta_tipe_keluaran_riwayat",
+  // 29 September 2026 (0052): tampilan ekstensi yang diterapkan admin dan
+  // setelan pribadi ekstensi. Tanpa kunci asing - urutannya bebas.
+  "aleta_ekstensi_tampilan",
+  "aleta_ekstensi_setelan",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

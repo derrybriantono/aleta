@@ -233,7 +233,7 @@ describe("penanda dan ambangnya", () => {
     expect(screen.getByRole("button", { name: /2 perkara lain/ })).toBeTruthy();
   });
 
-  it("ditolak peladen (403): pesannya terbaca, tanpa penanda, dan dapat dicoba lagi", async () => {
+  it("ditolak server (403): pesannya terbaca, tanpa penanda, dan dapat dicoba lagi", async () => {
     let kali = 0;
     pasangFetch(() => {
       kali += 1;

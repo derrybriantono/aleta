@@ -159,19 +159,19 @@ describe("lingkungan: SIPP yang mana", () => {
     expect(l.judul).toMatch(/komputer ini/i);
   });
 
-  it("192.168.10.10 adalah peladen, dan judulnya menyebut data sungguhan", () => {
+  it("192.168.10.10 adalah server, dan judulnya menyebut data sungguhan", () => {
     const k = jalankanAlat({ inang: "192.168.10.10" });
     const l = k.alatLingkungan();
     expect(l.kunci).toBe("peladen");
     expect(l.judul).toMatch(/SUNGGUHAN/);
   });
 
-  it("alamat lain tidak dianggap aman - ia bukan peladen, bukan komputer ini", () => {
+  it("alamat lain tidak dianggap aman - ia bukan server, bukan komputer ini", () => {
     const k = jalankanAlat({ inang: "10.0.0.9" });
     expect(k.alatLingkungan().kunci).toBe("lain");
   });
 
-  it("di peladen, petugas biasa tidak melihat lencana apa pun; super admin melihat", () => {
+  it("di server, petugas biasa tidak melihat lencana apa pun; super admin melihat", () => {
     // Tulisan yang selalu ada berhenti dibaca. Yang perlu menonjol justru
     // ketika halamannya BUKAN peladen.
     const k = jalankanAlat({ inang: "192.168.10.10" });
@@ -179,7 +179,7 @@ describe("lingkungan: SIPP yang mana", () => {
     expect(k.alatLencanaLingkungan("Super Admin")).not.toBeNull();
   });
 
-  it("di luar peladen, semua peran melihatnya", () => {
+  it("di luar server, semua peran melihatnya", () => {
     const k = jalankanAlat({ inang: "127.0.0.1" });
     expect(k.alatLencanaLingkungan("Panitera Pengganti")).not.toBeNull();
     expect(k.alatLencanaLingkungan("")).not.toBeNull();

@@ -72,7 +72,7 @@ export const CERMIN_EKSTENSI = {
       nilai: "[01] [Kabul] DK - (Anak P Cewek) Hamil",
       data: {
         jenisAsli: "Dispensasi Kawin",
-        catatan: "nama dari peladen - varian cowok: [01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil",
+        catatan: "nama dari server - varian cowok: [01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil",
       },
       urutan: 3,
     },

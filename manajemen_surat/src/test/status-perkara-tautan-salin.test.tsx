@@ -58,11 +58,11 @@ describe("mintaTautanSipp - atas kontrak rute sipp-tautan", () => {
 
   it("alamat kosong beserta alasan: alasannya diteruskan kepada petugas", async () => {
     const ambil = vi.fn(async () =>
-      jawabanJson({ ok: true, data: { alamat: "", alasan: "Kunci SIPP belum terbaca di peladen." } })
+      jawabanJson({ ok: true, data: { alamat: "", alasan: "Kunci SIPP belum terbaca di server." } })
     );
     expect(await mintaTautanSipp({ perkaraId: "10049", nomorPerkara: NOMOR, ambil })).toEqual({
       keadaan: "tidak-ada",
-      alasan: "Kunci SIPP belum terbaca di peladen.",
+      alasan: "Kunci SIPP belum terbaca di server.",
     });
   });
 
@@ -84,7 +84,7 @@ describe("mintaTautanSipp - atas kontrak rute sipp-tautan", () => {
     });
   });
 
-  it("galat berbadan JSON (sesi habis): pesan peladen yang dipakai", async () => {
+  it("galat berbadan JSON (sesi habis): pesan server yang dipakai", async () => {
     const ambil = vi.fn(async () =>
       jawabanJson({ ok: false, error: { message: "Anda belum login atau sesi Anda telah berakhir." } }, 401)
     );
@@ -104,7 +104,7 @@ describe("mintaTautanSipp - atas kontrak rute sipp-tautan", () => {
     expect(alamatSippSah("https://sipp.contoh/x")).toBe("https://sipp.contoh/x");
   });
 
-  it("peladen yang diam dihentikan pada batas tunggu", async () => {
+  it("server yang diam dihentikan pada batas tunggu", async () => {
     const ambil = vi.fn(
       (_alamat: string, init?: RequestInit) =>
         new Promise<Response>((_, tolak) => {
@@ -149,7 +149,7 @@ describe("salinTeks - papan klip dan jalan cadangannya", () => {
     expect(execCommand).not.toHaveBeenCalled();
   });
 
-  it("peladen satker (tanpa navigator.clipboard): cadangan berjalan SEBELUM satu pun await", () => {
+  it("server satker (tanpa navigator.clipboard): cadangan berjalan SEBELUM satu pun await", () => {
     // Yang diperiksa: execCommand sudah terpanggil begitu salinTeks kembali,
     // SEBELUM janjinya ditunggu - masih di dalam klik yang sama. Menunggu
     // lebih dahulu membuat peramban menolak execCommand dalam diam.
@@ -325,11 +325,11 @@ describe("bilah alat Status Perkara", () => {
   it("alamat kosong beserta alasan: alasannya tampil, Buka SIPP menjadi beranda SIPP, Salin tautan jujur menyebut ALETA", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => jawabanJson({ ok: true, data: { alamat: "", alasan: "Kunci SIPP belum terbaca di peladen." } }))
+      vi.fn(async () => jawabanJson({ ok: true, data: { alamat: "", alasan: "Kunci SIPP belum terbaca di server." } }))
     );
     gambar();
 
-    expect(await screen.findByText(/Kunci SIPP belum terbaca di peladen\./)).toBeTruthy();
+    expect(await screen.findByText(/Kunci SIPP belum terbaca di server\./)).toBeTruthy();
     const beranda = screen.getByRole("link", { name: /Buka SIPP \(beranda\)/ });
     expect(beranda.getAttribute("href")).toContain("/api/external-apps/sipp/launch");
     expect(beranda.getAttribute("target")).toBe("_blank");

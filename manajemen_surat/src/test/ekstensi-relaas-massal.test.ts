@@ -168,7 +168,7 @@ describe("(a) putaran enam dokumen bertahan dari pekerja yang mati TIGA kali", (
 // dokumen, tidak ada jeda panjang, dan langkah di dalam satu dokumen 0,5-1,5
 // dtk - untuk beban peladen ABT (PHP 5.6), bukan penyamaran.
 
-describe("(b) jarak ramah peladen ABT", () => {
+describe("(b) jarak ramah server ABT", () => {
   const dunia = new Dunia(abtPalsu());
   const k = nyalakan(dunia).konteks;
 

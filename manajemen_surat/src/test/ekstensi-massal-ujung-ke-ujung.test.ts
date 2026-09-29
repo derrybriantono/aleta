@@ -810,7 +810,7 @@ describe("A. antrean otomatis atas tiga perkara: tiap perkara TERSIMPAN di SIPP"
     const butir = antreanTersimpan(simpanan)!.butir[0];
     expect(butir.keadaan).toBe("tertahan");
     expect(butir.sebabTahan).toBe("pilihan-beda");
-    expect(butir.catatan).toContain('Status Putusan: borang berisi "Ditolak", ALETA mengusulkan "Dikabulkan"');
+    expect(butir.catatan).toContain('Status Putusan: blangko berisi "Ditolak", ALETA mengusulkan "Dikabulkan"');
   });
 
   it("usulan yang bentrok tidak ditebak: pilihan wajib kosong menahan Simpan, tidak dikirim untuk ditolak SIPP", async () => {
@@ -943,7 +943,7 @@ describe("B. antrean dari berkas: modusnya dipilih, dan layar menyebut Simpan ot
 });
 
 // ===========================================================================
-describe("C. panel yang digambar ulang selagi borang terbuka: satu perkara, satu Simpan", () => {
+describe("C. panel yang digambar ulang selagi blangko terbuka: satu perkara, satu Simpan", () => {
   it("dua gambar panel beruntun di halaman yang sama -> Simpan ditekan SEKALI", async () => {
     const dunia = buatDunia(tigaPerkara());
     const simpanan: Record<string, unknown> = {};
@@ -1068,7 +1068,7 @@ describe("E. 'Lanjutkan ke SIPP' dari ABT membuka halaman tempat konten.js berja
     return String(k.hasil);
   }
 
-  it("peladen satker (192.168.10.10) dan mesin setempat (127.0.0.1:8056)", () => {
+  it("server satker (192.168.10.10) dan mesin setempat (127.0.0.1:8056)", () => {
     const kantor = alamatDari({ origin: "http://192.168.10.10", hostname: "192.168.10.10" });
     expect(dijangkauKonten(kantor)).toBe(true);
     const setempat = alamatDari({ origin: "http://127.0.0.1:8056", hostname: "127.0.0.1" });
@@ -1088,7 +1088,7 @@ describe("E. 'Lanjutkan ke SIPP' dari ABT membuka halaman tempat konten.js berja
 
 // ===========================================================================
 describe("F. aturan SIPP yang sesungguhnya: qobla, nusyuz, keadaan istri, pilihan petugas, praperiksa", () => {
-  it("SIPP tiruan sendiri: borang baru bawaan 'Qobla Dukhul', dan urutan penolakan validateInput", async () => {
+  it("SIPP tiruan sendiri: blangko baru bawaan 'Qobla Dukhul', dan urutan penolakan validateInput", async () => {
     const dunia = buatDunia(tigaPerkara());
     dunia.bukaBorang(1, N1);
     expect(dunia.borang(1)[QOBLA].nilai).toBe("0");
@@ -1131,11 +1131,11 @@ describe("F. aturan SIPP yang sesungguhnya: qobla, nusyuz, keadaan istri, piliha
     const b = butirDi(simpanan, N1);
     expect(b.keadaan).toBe("tertahan");
     expect(b.sebabTahan).toBe("pilihan-kosong");
-    expect(b.catatan).toContain(`Qobla/Ba'da Dukhul (masih bawaan borang "Qobla Dukhul", tidak ada usulan ALETA)`);
+    expect(b.catatan).toContain(`Qobla/Ba'da Dukhul (masih bawaan blangko "Qobla Dukhul", tidak ada usulan ALETA)`);
     expect(b.catatan).toContain("Status Nusyuz (tidak ada usulan ALETA)");
   });
 
-  it("qobla bentrok: Simpan TIDAK ditekan - dahulu 'Qobla Dukhul' bawaan borang tersimpan tanpa dipilih siapa pun", async () => {
+  it("qobla bentrok: Simpan TIDAK ditekan - dahulu 'Qobla Dukhul' bawaan blangko tersimpan tanpa dipilih siapa pun", async () => {
     const dunia = buatDunia(tigaPerkara(), {
       usulan: { ...USULAN_BAKU, [QOBLA]: { nilai: "1", nilaiLabel: "Ba'da Dukhul", keyakinan: "bentrok" } },
     });
@@ -1244,7 +1244,7 @@ describe("F. aturan SIPP yang sesungguhnya: qobla, nusyuz, keadaan istri, piliha
     const b = butirDi(simpanan, N1);
     expect(b.sebabTahan).toBe("pilihan-beda");
     expect(b.catatan).toContain(
-      'Faktor Penyebab Perceraian: borang berisi "Meninggalkan salah satu pihak", ALETA mengusulkan "Perselisihan dan pertengkaran terus menerus"'
+      'Faktor Penyebab Perceraian: blangko berisi "Meninggalkan salah satu pihak", ALETA mengusulkan "Perselisihan dan pertengkaran terus menerus"'
     );
   });
 
@@ -1361,7 +1361,7 @@ describe("G. keadaan bersama antrean: salinan basi tidak menimpa, satu perkara s
     ]);
   });
 
-  it("dua tab membuka borang perkara YANG SAMA (penyimpanan berlatensi, Web Locks): satu klaim, satu Simpan", async () => {
+  it("dua tab membuka blangko perkara YANG SAMA (penyimpanan berlatensi, Web Locks): satu klaim, satu Simpan", async () => {
     const dunia = buatDunia(tigaPerkara(), { usulan: USULAN_QOBLA_DUKHUL });
     const simpanan: Record<string, unknown> = {};
     await susunAntrean(dunia, simpanan, "otomatis", [N1]);

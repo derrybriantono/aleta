@@ -85,7 +85,7 @@ describe("ketika memang bertindak, ia bertindak sedikit-sedikit", () => {
     expect(r.amanDijalankan).toBe(true);
   });
 
-  it("keadaan peladen sungguhan: 400 tercatat, 0 ada, 400 hilang", () => {
+  it("keadaan server sungguhan: 400 tercatat, 0 ada, 400 hilang", () => {
     const r = rencanaPemulihan(fakta());
     expect(r.tercatat).toBe(400);
     expect(r.ada).toBe(0);

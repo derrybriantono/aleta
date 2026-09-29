@@ -388,7 +388,7 @@ describe("kewenangan dan jejak - setiap tindakan TEPAT 1 riwayat dan 1 audit", (
     const u = await usul(d(), "usr-admin", { daftar: "putusan.medan-borang", kunci: "putusan-akhir", nilai: "Status Banding", data: { penunjuk: 'select[name="status_banding"]' } });
     if (!u.ok) throw new Error(u.alasan.join("; "));
     await expect(tolak(d(), "usr-admin", { id: u.butir.id })).rejects.toMatchObject({ status: 400 });
-    const t = await selisihJejak(() => tolak(d(), "usr-admin", { id: u.butir.id, alasan: "medan ini tidak ada di borang SIPP" }));
+    const t = await selisihJejak(() => tolak(d(), "usr-admin", { id: u.butir.id, alasan: "medan ini tidak ada di blangko SIPP" }));
     expect(t.hasil).toMatchObject({ ok: true, butir: { keadaan: "ditolak" } });
     expect([t.riwayat, t.audit]).toEqual([1, 1]);
 

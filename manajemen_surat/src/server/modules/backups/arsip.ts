@@ -541,7 +541,7 @@ export async function buatArsipBasisData(db: AletaDatabase, alat?: AlatArsip): P
       "  Format kustom memungkinkan memulihkan sebagian tabel saja (--table).",
       "",
       "YANG TIDAK ADA DI SINI",
-      "  Tabel aleta_bot_* milik ALETA Bot hidup di MySQL peladen SIPP, di luar",
+      "  Tabel aleta_bot_* milik ALETA Bot hidup di MySQL server SIPP, di luar",
       "  jangkauan portal. Cadangkan dari host bot:",
       "  mysqldump --single-transaction aleta_bot > aleta_bot.sql",
     ].join("\n"),
@@ -591,6 +591,6 @@ export async function keteranganArsip() {
         ? "Program rar tidak terpasang (berbayar dan tertutup). Arsip dibuat 7-Zip LZMA2 tingkat 9 - sama kuat atau lebih kuat daripada RAR, dan dibuka WinRAR."
         : alat.xz
           ? "rar dan 7z tidak terpasang; dipakai xz (LZMA2) - pemampatan sekelas, berkas .tar.xz dibuka WinRAR maupun 7-Zip."
-          : "Tidak ada rar, 7z, maupun xz di peladen; dipakai gzip tingkat 9. Pasang p7zip-full di citra portal untuk pemampatan yang jauh lebih kuat.",
+          : "Tidak ada rar, 7z, maupun xz di server; dipakai gzip tingkat 9. Pasang p7zip-full di citra portal untuk pemampatan yang jauh lebih kuat.",
   };
 }

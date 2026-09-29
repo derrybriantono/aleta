@@ -294,7 +294,7 @@ export function validasiEntri(daftar: unknown, masukan: MasukanEntri): HasilVali
       break;
     }
     case "putusan.medan-borang": {
-      if (k !== "putusan-akhir") alasan.push("Kunci medan borang harus 'putusan-akhir'.");
+      if (k !== "putusan-akhir") alasan.push("Kunci medan blangko harus 'putusan-akhir'.");
       teksWajib("Label medan", v, alasan, 100);
       kunciDataDikenal(data, ["penunjuk", "banyak", "pintu"], alasan);
       const penunjuk = data.penunjuk;

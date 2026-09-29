@@ -343,7 +343,7 @@ describe("rute katalog blangko relaas - memilih satu blangko", () => {
     expect(empat.data.sandi?.pihak).toBe("keduanya");
   });
 
-  it("sandi 1 = Semua Pihak hadir (borang SIPP) - tidak dipanggil, dan TIDAK disebut tanpa arti", async () => {
+  it("sandi 1 = Semua Pihak hadir (blangko SIPP) - tidak dipanggil, dan TIDAK disebut tanpa arti", async () => {
     keadaan.katalog = { ok: false, error: "bot mati" };
 
     // Arti sandinya dibaca dari BORANG SIPP jadwal_sidang_p_edit.php, bukan

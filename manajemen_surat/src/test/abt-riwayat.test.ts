@@ -66,7 +66,7 @@ describe("mencatat jejak", () => {
     expect(daftar[0].dipotong).toBe(false);
   });
 
-  it("waktunya dari ekstensi, bukan dari peladen", async () => {
+  it("waktunya dari ekstensi, bukan dari server", async () => {
     // Memakai waktu peladen akan menggeser seluruh jejak yang tertahan karena
     // jaringan - dan jejak yang waktunya digeser tidak dapat disandingkan
     // dengan apa pun.
@@ -152,14 +152,14 @@ describe("ekstensi mencatat ke keduanya", () => {
     expect(iJauh).toBeGreaterThan(iLokal);
   });
 
-  it("kegagalan mengirim ke peladen DIAM", () => {
+  it("kegagalan mengirim ke server DIAM", () => {
     // Penyuntingannya sudah berhasil dan salinan lengkapnya sudah tersimpan.
     // Berteriak tentang jejak pengawasan pada saat itu hanya membuat petugas
     // menyangka suntingannya gagal.
     expect(abt()).toContain("jejak pengawasan tertinggal");
   });
 
-  it("yang dari peladen tidak diberi tombol Urungkan", () => {
+  it("yang dari server tidak diberi tombol Urungkan", () => {
     // Jejak peladen dapat terpotong. Mengembalikan dari potongan akan menimpa
     // variabelnya dengan potongan itu, dan hasilnya terlihat seperti
     // keterangan yang utuh.

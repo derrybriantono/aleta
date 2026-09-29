@@ -168,7 +168,7 @@ export function AletaPromptPutusan({ nomorPerkara }: { nomorPerkara: string }) {
       setKeadaan("siap");
     } catch (error) {
       setKeadaan("gagal");
-      setPesan(error instanceof Error ? error.message : "Gagal menghubungi peladen.");
+      setPesan(error instanceof Error ? error.message : "Gagal menghubungi server.");
     }
   }, [nomorPerkara]);
 

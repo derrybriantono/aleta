@@ -118,7 +118,7 @@ describe("DaftarMajelisPetugas: dua blok", () => {
     ]);
     expect(within(ikrar!).getByText("Imayanti, S.H.").closest("a")).toBeNull();
     expect(ikrar!.textContent).toContain("Panitera sidang:");
-    expect(ikrar!.textContent).toMatch(/borang penetapan ikrar talak/);
+    expect(ikrar!.textContent).toMatch(/blangko penetapan ikrar talak/);
 
     // Di luar blok ikrar: tidak ada Ulfah sama sekali.
     const salinan = container.cloneNode(true) as HTMLElement;
@@ -135,7 +135,7 @@ describe("DaftarMajelisPetugas: dua blok", () => {
     expect(blokIkrar(container)).toBeNull();
   });
 
-  it("ikrar seluruhnya dari penunjukan: catatan borang tidak ditulis", () => {
+  it("ikrar seluruhnya dari penunjukan: catatan blangko tidak ditulis", () => {
     const { container } = render(
       <DaftarMajelisPetugas
         {...PEMERIKSA_385}
@@ -143,7 +143,7 @@ describe("DaftarMajelisPetugas: dua blok", () => {
         sumberMajelis="pemeriksa"
       />
     );
-    expect(blokIkrar(container)!.textContent).not.toMatch(/borang/);
+    expect(blokIkrar(container)!.textContent).not.toMatch(/blangko/);
     // Panitera dan juru sita ikrar yang kosong bertanda —.
     expect(within(blokIkrar(container)!).getAllByText("—")).toHaveLength(2);
   });
@@ -305,7 +305,7 @@ describe("layar Status Perkara: majelis pemeriksa dan majelis ikrar talak", () =
     expect(within(majelis).getAllByRole("link").map(tujuan)[0]).toEqual(["hakim", "4"]);
   });
 
-  it("bagian Ikrar talak: teks borang dipecah per baris, tanda </br> tidak tertulis", async () => {
+  it("bagian Ikrar talak: teks blangko dipecah per baris, tanda </br> tidak tertulis", async () => {
     await gambarLayar(statusUji());
     const bagian = document.getElementById("bagian-ikrar");
     expect(bagian).not.toBeNull();

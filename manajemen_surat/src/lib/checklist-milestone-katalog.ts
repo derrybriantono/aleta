@@ -314,7 +314,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
   {
     kunci: "panitera-pengganti.putusan-akhir-belum-diisi",
     peran: "panitera-pengganti",
-    judul: "Isi borang Putusan Akhir di SIPP",
+    judul: "Isi blangko Putusan Akhir di SIPP",
     tersedia: true,
     masuk:
       "Sidang 60 hari terakhir pada perkara Anda yang hasilnya tertulis putus (hasilSidangPutusan: tidak ditunda, alasan memuat 'putus') tetapi perkara_putusan belum bertanggal putusan.",
@@ -824,7 +824,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     judul: "Gerbang WhatsApp dan pengingat pagi terkirim",
     tersedia: false,
     sebab:
-      "Belum dipastikan cron pengingat lama benar-benar berbunyi di peladen (dapat dilewati diam-diam oleh registry takeover atau production guard), sehingga 'tidak ada pesan terkirim' belum dapat dibedakan dari 'memang tidak dijadwalkan'.",
+      "Belum dipastikan cron pengingat lama benar-benar berbunyi di server (dapat dilewati diam-diam oleh registry takeover atau production guard), sehingga 'tidak ada pesan terkirim' belum dapat dibedakan dari 'memang tidak dijadwalkan'.",
   },
   {
     kunci: "operator.penetapan-gagal",
@@ -868,10 +868,10 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
   {
     kunci: "operator.versi-peladen",
     peran: "operator",
-    judul: "Versi peladen dan ekstensi mutakhir",
+    judul: "Versi server dan ekstensi mutakhir",
     tersedia: false,
     sebab:
-      "Peladen tidak tahu versi repo terbaru, dan versi ekstensi yang terpasang di tiap peramban tidak pernah dilaporkan ke peladen. Tidak ada pembanding yang dapat dibaca.",
+      "Server tidak tahu versi repo terbaru, dan versi ekstensi yang terpasang di tiap peramban tidak pernah dilaporkan ke server. Tidak ada pembanding yang dapat dibaca.",
   },
 ];
 

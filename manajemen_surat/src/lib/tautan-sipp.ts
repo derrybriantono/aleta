@@ -150,7 +150,7 @@ export async function mintaTautanSipp({
       // lama). Disebut begitu, bukan "gagal" yang tidak menjelaskan apa pun.
       const cadangan =
         jawaban.status === 404
-          ? "Portal ALETA di peladen ini belum dapat menyusun alamat SIPP (rute sipp-tautan belum terpasang)."
+          ? "Portal ALETA di server ini belum dapat menyusun alamat SIPP (rute sipp-tautan belum terpasang)."
           : `ALETA gagal menyusun alamat SIPP (HTTP ${jawaban.status}).`;
       return { keadaan: "gagal", alasan: pesanGalatPortal(isi, cadangan) };
     }

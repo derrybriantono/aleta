@@ -48,8 +48,8 @@ const KUNCI_BARU = [
   "rombonganSepekan",
 ];
 
-describe("kunci analisis sama di peladen dan di layar", () => {
-  it("kesepuluhnya terdaftar di peladen", () => {
+describe("kunci analisis sama di server dan di layar", () => {
+  it("kesepuluhnya terdaftar di server", () => {
     for (const kunci of KUNCI_BARU) {
       expect(layanan, kunci).toContain(`kunci: "${kunci}"`);
     }

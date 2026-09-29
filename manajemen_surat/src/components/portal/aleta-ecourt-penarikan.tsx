@@ -587,7 +587,7 @@ export function AletaEcourtPenarikan() {
                   . Satu penekanan mengerjakan paling banyak {jatahSekaliTarik} perkara, sisanya pada
                   penekanan berikutnya. Penariknya beristirahat sejenak tiap{" "}
                   {sasaran.taksiran?.istirahatTiapPerkara ?? 40} perkara untuk menjaga beban
-                  peladen e-Court.
+                  server e-Court.
                 </p>
 
                 {/* Taksiran berkas bertumpu pada rata-rata dokumen per perkara.

@@ -440,7 +440,7 @@ describe("kunci dari config SIPP", () => {
     expect(catatan).toEqual([]);
   });
 
-  it("pola rincian peladen sungguh menangkap bentuk pesan lama yang membawa jalur", () => {
+  it("pola rincian server sungguh menangkap bentuk pesan lama yang membawa jalur", () => {
     // Penjaga yang tidak dapat gagal bukan penjaga: pesan sebelum perbaikan ini
     // membawa jalur container dan nama pengaturan ke layar.
     for (const lama of [

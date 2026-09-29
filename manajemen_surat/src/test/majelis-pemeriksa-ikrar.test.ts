@@ -452,7 +452,7 @@ describe("majelisPemeriksaService.penunjukanPerkaraBanyak", () => {
     expect(ids(peta.get("9002")!.pemeriksa.hakim)).toEqual([32, 33]);
   });
 
-  it("tanpa ikrar dan tanpa borang: ikrar dan penetapanIkrar null, ikrarLengkap null", async () => {
+  it("tanpa ikrar dan tanpa blangko: ikrar dan penetapanIkrar null, ikrarLengkap null", async () => {
     keadaan.hakim.push(hk(9003, 10, 1, 3, 40, "Hakim Tunggal Saja", "Y", "2026-05-01"));
     keadaan.putusan.push({ perkaraId: 9003, putus: "2026-06-01" });
     const e = (await majelis.penunjukanPerkaraBanyak([9003])).get("9003")!;
@@ -507,8 +507,8 @@ describe("majelisPemeriksaService.penunjukanPerkaraBanyak", () => {
 // 2. BORANG IKRAR DAN ikrarLengkap
 // ===========================================================================
 
-describe("borang penetapan ikrar talak dan ikrarLengkap", () => {
-  it("385: hakim ikrar dari penunjukan tahapan 18; panitera dan juru sita dari borang", async () => {
+describe("blangko penetapan ikrar talak dan ikrarLengkap", () => {
+  it("385: hakim ikrar dari penunjukan tahapan 18; panitera dan juru sita dari blangko", async () => {
     kasus385();
     const e = (await majelis.penunjukanPerkaraBanyak([385])).get("385")!;
     expect(e.penetapanIkrar!.hakim.map((x) => [x.kedudukan, x.nama, x.hakimId])).toEqual([
@@ -530,7 +530,7 @@ describe("borang penetapan ikrar talak dan ikrarLengkap", () => {
     expect(l.jurusita.map((x) => [x.jurusitaId, x.sumber])).toEqual([[2, "penetapanIkrar"]]);
   });
 
-  it("2373: tanpa baris aktif tahapan 18, majelis ikrarnya dari borang - hakim tunggal", async () => {
+  it("2373: tanpa baris aktif tahapan 18, majelis ikrarnya dari blangko - hakim tunggal", async () => {
     kasus2373();
     const e = (await majelis.penunjukanPerkaraBanyak([2373])).get("2373")!;
     expect(e.ikrar).toBeNull();
@@ -540,7 +540,7 @@ describe("borang penetapan ikrar talak dan ikrarLengkap", () => {
     expect(l.jurusita.map((x) => [x.nama, x.jurusitaId])).toEqual([["Fachrudin", 29]]);
   });
 
-  it("borang tanpa sebutan per orang: kedudukan tidak ditebak; jumlah id yang tidak cocok: id dibuang", async () => {
+  it("blangko tanpa sebutan per orang: kedudukan tidak ditebak; jumlah id yang tidak cocok: id dibuang", async () => {
     keadaan.borang.push(
       {
         perkaraId: 412,
@@ -574,7 +574,7 @@ describe("borang penetapan ikrar talak dan ikrarLengkap", () => {
     expect(peta.get("413")!.penetapanIkrar!.hakim.map((x) => x.hakimId)).toEqual([null, null, null]);
   });
 
-  it("panitera borang berbaris dua dengan satu id: dua nama, id tidak ditempelkan ke salah satunya", async () => {
+  it("panitera blangko berbaris dua dengan satu id: dua nama, id tidak ditempelkan ke salah satunya", async () => {
     keadaan.borang.push({
       perkaraId: 414,
       majelisId: "",
@@ -591,7 +591,7 @@ describe("borang penetapan ikrar talak dan ikrarLengkap", () => {
     ]);
   });
 
-  it("SIPP tanpa tabel perkara_ikrar_talak: borang tidak dibaca, pemeriksa tetap terbaca", async () => {
+  it("SIPP tanpa tabel perkara_ikrar_talak: blangko tidak dibaca, pemeriksa tetap terbaca", async () => {
     kasus385();
     keadaan.kolomBorang = [];
     const e = (await majelis.penunjukanPerkaraBanyak([385])).get("385")!;

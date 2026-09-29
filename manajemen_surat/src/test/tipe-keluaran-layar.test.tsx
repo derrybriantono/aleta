@@ -142,7 +142,7 @@ describe("tombol sahkan hanya untuk Super Admin", () => {
     expect(screen.getByRole("button", { name: "Kirim sahkan" })).toBeDisabled();
   });
 
-  it("peran pemberi perintah di layar = PERAN_PENGACC peladen", () => {
+  it("peran pemberi perintah di layar = PERAN_PENGACC server", () => {
     expect([...PERAN_PEMBERI_PERINTAH]).toEqual([...PERAN_PENGACC]);
   });
 });

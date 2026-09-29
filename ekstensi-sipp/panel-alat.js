@@ -1600,12 +1600,21 @@ function alatTombolKepala(panel, kunci, opsi) {
     // Judulnya menyebut jalan pulangnya. Tombol tutup yang tidak mengatakan
     // cara membukanya kembali membuat orang menutupnya sekali lalu mengira
     // panelnya rusak - dan itu yang terjadi selama ini di ABT dan portal.
-    buat(
-      "aleta-matikan",
-      "×",
-      pilihan.judulTutup || "Tutup panel - nyalakan lagi dari kotak centang di ikon ALETA pada bilah ekstensi",
-      pilihan.saatTutup
-    );
+    const judulLama = pilihan.judulTutup || "Tutup panel - nyalakan lagi dari kotak centang di ikon ALETA pada bilah ekstensi";
+    const tutup = buat("aleta-matikan", "×", judulLama, () => {
+      // UI Baru: × hanya menutup (menciut ke lencana); ALETA tetap aktif, dan
+      // "Matikan ALETA" tetap di popup. Lama dan Baru: perilaku semula.
+      if (alatTutupHanyaMenciut()) {
+        alatCiutkan(panel, kunci, true);
+        return;
+      }
+      pilihan.saatTutup();
+    });
+    if (tutup && tutup.addEventListener) {
+      tutup.addEventListener("mouseenter", () => {
+        tutup.title = alatTutupHanyaMenciut() ? ALAT_JUDUL_TUTUP_BARU : judulLama;
+      });
+    }
   }
 
   return wadah;
@@ -2584,8 +2593,18 @@ function alatTandaiKering() {
 const ALAT_UJI_KUNCI_TAMPILAN = "ujiTampilan";
 const ALAT_UJI_KUNCI_FITUR = "ujiFitur";
 const ALAT_UJI_KUNCI_NYATA = "ujiIzinkanNyata";
+/**
+ * Tampilan yang DITERAPKAN admin lewat portal (tahap 5, migrasi 0052):
+ * GET /aleta/api/aleta-ecourt/ekstensi/tampilan, disinggahkan di sini supaya
+ * halaman berikutnya langsung berpakaian benar dan tab lain ikut lewat
+ * onChanged. Bentuk: { mode, fitur, diterapkan, versi, diambil }.
+ */
+const ALAT_UJI_KUNCI_SERVER = "tampilanServer";
+const ALAT_TAMPILAN_API = "/aleta/api/aleta-ecourt/ekstensi/tampilan";
+/** Satu pembacaan per lima menit cukup - SIPP memuat ulang halaman tiap klik. */
+const ALAT_TAMPILAN_JEDA_MS = 5 * 60 * 1000;
 const ALAT_UJI_MODE = ["lama", "baru", "ui"];
-const alatUji = { mode: "lama", fitur: {}, izinkanNyata: false };
+const alatUji = { mode: "lama", fitur: {}, izinkanNyata: false, server: null };
 
 /**
  * Permintaan non-GET yang TETAP boleh selama mode coba - masing-masing sudah
@@ -2607,20 +2626,40 @@ const ALETA_COBA_BOLEH = [
   /\/aleta\/api\/aleta-ecourt\/putusan\/praperiksa(?:[?#]|$)/,
   /\/aleta\/api\/aleta-bot\/sipp-konteks\/massal(?:[?#]|$)/,
   /\/aps_badilag\/.*\/main\/cari(?:[?#]|$)/,
+  // Setelan PRIBADI (tahap 5): urutan pintasan, tanda checklist - tidak
+  // mengirim apa pun ke luar dan tidak menyentuh SIPP, ABT, maupun WhatsApp.
+  /\/aleta\/api\/aleta-ecourt\/ekstensi\/setelan(?:[?#]|$)/,
 ];
 
 function alatUjiBersihMode(x) {
   return ALAT_UJI_MODE.includes(x) ? x : "lama";
 }
 
-/** "lama" | "baru" | "ui" - pilihan tampilan yang sedang dicoba di PC ini. */
+/**
+ * Tampilan yang BERLAKU di tab ini:
+ *
+ *   1. Super Admin sedang mencoba di PC ini (ujiTampilan lokal bukan Lama):
+ *      pilihannya sendiri menang, dan mode coba ikut berlaku.
+ *   2. Selain itu, tampilan yang diterapkan admin lewat portal (diterapkan
+ *      true dan bukan Lama): mode dan saklarnya dari server, TANPA mode coba -
+ *      pegawai yang diberi tampilan baru harus tetap dapat bekerja.
+ *   3. Selain itu Lama - persis ekstensi sebelumnya.
+ */
+function alatUjiBerlaku() {
+  if (alatUji.mode !== "lama") return { mode: alatUji.mode, fitur: alatUji.fitur, sumber: "coba" };
+  const s = alatUji.server;
+  if (s && s.diterapkan === true && s.mode !== "lama") return { mode: s.mode, fitur: s.fitur || {}, sumber: "server" };
+  return { mode: "lama", fitur: {}, sumber: "bawaan" };
+}
+
+/** "lama" | "baru" | "ui" - tampilan yang berlaku (lihat alatUjiBerlaku). */
 function alatUjiMode() {
-  return alatUji.mode;
+  return alatUjiBerlaku().mode;
 }
 
 /** "klasik" | "modern" - kulit yang dipakai panel. */
 function alatKulit() {
-  return alatUji.mode === "ui" ? "modern" : "klasik";
+  return alatUjiMode() === "ui" ? "modern" : "klasik";
 }
 
 /**
@@ -2628,8 +2667,9 @@ function alatKulit() {
  * Dalam tampilan Lama selalu tidak, apa pun isi saklarnya.
  */
 function alatFiturNyala(kode) {
-  if (alatUji.mode === "lama") return false;
-  return alatUji.fitur[String(kode || "")] === true;
+  const b = alatUjiBerlaku();
+  if (b.mode === "lama") return false;
+  return b.fitur[String(kode || "")] === true;
 }
 
 /** Mode coba aktif: tampilan bukan Lama dan tindakan nyata tidak diizinkan. */
@@ -2694,6 +2734,77 @@ function alatUjiTerima(simpan) {
     alatUji.fitur = f && typeof f === "object" && !Array.isArray(f) ? f : {};
   }
   if (ALAT_UJI_KUNCI_NYATA in s) alatUji.izinkanNyata = s[ALAT_UJI_KUNCI_NYATA] === true;
+  if (ALAT_UJI_KUNCI_SERVER in s) alatUji.server = alatBersihTampilanServer(s[ALAT_UJI_KUNCI_SERVER]);
+}
+
+/** Singgahan tampilan server yang rusak atau asing diperlakukan sebagai tidak ada. */
+function alatBersihTampilanServer(x) {
+  if (!x || typeof x !== "object" || Array.isArray(x)) return null;
+  const fitur = {};
+  if (x.fitur && typeof x.fitur === "object" && !Array.isArray(x.fitur)) {
+    for (const [k, v] of Object.entries(x.fitur)) if (v === true && /^[a-z]+-\d{1,2}$/.test(k)) fitur[k] = true;
+  }
+  return {
+    mode: alatUjiBersihMode(x.mode),
+    fitur,
+    diterapkan: x.diterapkan === true,
+    versi: String(x.versi || ""),
+    diambil: Number(x.diambil) || 0,
+  };
+}
+
+/**
+ * Membaca tampilan yang diterapkan admin dari portal, paling sering sekali
+ * per lima menit. 401/403 = belum masuk portal: tetap Lama (singgahan
+ * dikosongkan). Jaringan gagal atau portal lama tanpa rutenya (404): singgahan
+ * terakhir dipakai apa adanya - menebak lebih buruk daripada diam.
+ */
+async function alatSegarkanTampilanServer(paksa) {
+  const lama = alatUji.server;
+  // Layar publik portal (TV ruang tunggu, papan antrean, papan pintu): tidak
+  // satu permintaan pun atas nama petugas, dan tidak ada yang disimpan - sama
+  // dengan panel dan widget yang memang tidak lahir di sana.
+  const jalur = typeof location !== "undefined" && location ? location.pathname : "";
+  if (alatHalamanPublikPortal(jalur)) return lama;
+  if (!paksa && lama && Date.now() - lama.diambil < ALAT_TAMPILAN_JEDA_MS) return lama;
+  // Kegagalan pun dicatat waktunya. Tanpa itu portal yang belum mengenal rute
+  // ini (404 - server belum dipasang) atau server yang tidak terjangkau akan
+  // ditanya lagi pada TIAP klik SIPP, sebab SIPP memuat ulang halaman tiap klik.
+  const tetap = () => (lama ? { ...lama, diambil: Date.now() } : { mode: "lama", fitur: {}, diterapkan: false, versi: "", diambil: Date.now() });
+  let jawab;
+  let baru;
+  try {
+    jawab = await fetch(ALAT_TAMPILAN_API, { credentials: "include", cache: "no-store" });
+  } catch {
+    jawab = null;
+  }
+  if (!jawab) {
+    baru = tetap();
+  } else if (jawab.status === 401 || jawab.status === 403) {
+    baru = { mode: "lama", fitur: {}, diterapkan: false, versi: "", diambil: Date.now() };
+  } else if (jawab.ok) {
+    try {
+      const isi = await jawab.json();
+      const data = isi && isi.data ? isi.data : isi;
+      const t = (data && data.tampilan) || {};
+      baru = alatBersihTampilanServer({ ...t, versi: data && data.versi, diambil: Date.now() });
+    } catch {
+      baru = tetap();
+    }
+  } else {
+    baru = tetap();
+  }
+  alatUji.server = baru;
+  try {
+    await chrome.storage.local.set({ [ALAT_UJI_KUNCI_SERVER]: baru });
+  } catch {
+    /* berlaku untuk halaman ini saja */
+  }
+  if (!lama || lama.versi !== baru.versi || lama.mode !== baru.mode || lama.diterapkan !== baru.diterapkan) {
+    alatTandaiUji();
+    alatKabarkanUji();
+  }
+  return baru;
 }
 
 async function alatMuatUji() {
@@ -2702,6 +2813,7 @@ async function alatMuatUji() {
       ALAT_UJI_KUNCI_TAMPILAN,
       ALAT_UJI_KUNCI_FITUR,
       ALAT_UJI_KUNCI_NYATA,
+      ALAT_UJI_KUNCI_SERVER,
     ]);
     alatUjiTerima(simpan);
   } catch {
@@ -2712,6 +2824,78 @@ async function alatMuatUji() {
   // kembali. Dalam tampilan Lama tidak ada yang perlu dikabarkan.
   if (alatUjiMode() !== "lama") alatKabarkanUji();
   return alatUjiMode();
+}
+
+/**
+ * × di kepala panel (perbaikan desain popup/widget nomor 12, tahap 2).
+ *
+ * Selama ini × MEMATIKAN saklar induk - pilihan yang sengaja, sebab × yang
+ * dahulu hanya membuang panel meninggalkan orang tanpa jalan pulang sampai
+ * halamannya dimuat ulang. Dalam UI Baru × hanya MENUTUP: panel menciut ke
+ * lencana, yang selalu dapat dibentangkan lagi, dan ALETA tetap aktif.
+ * "Matikan ALETA" tetap ada di popup (saklar induk). Lama dan Baru tidak berubah.
+ */
+const ALAT_JUDUL_TUTUP_BARU = "Tutup panel (menjadi lencana) - ALETA tetap aktif. Matikan ALETA dari popup ikon ALETA.";
+
+function alatTutupHanyaMenciut() {
+  return alatKulit() === "modern";
+}
+
+/* ─── 3c. SENYAP 1 JAM (ide popup-12) ────────────────────────────────────────
+ *
+ * Satu tombol di popup menyembunyikan panel, penanda halaman, dan widget
+ * selama satu jam, lalu semuanya muncul kembali SENDIRI - tanpa harus ingat
+ * menyalakannya lagi. Yang disimpan hanya saat berakhirnya (senyapSampai,
+ * milidetik); tab lain ikut lewat chrome.storage.onChanged.
+ *
+ * Hanya menyembunyikan tampilan: tidak ada yang dimatikan, antrean yang
+ * sedang berjalan tetap berjalan. Berlaku hanya bila saklar fitur popup-12
+ * menyala (tampilan Baru / UI Baru) - dalam Lama tidak pernah.
+ */
+const ALAT_KUNCI_SENYAP = "senyapSampai";
+let alatSenyapSampai = 0;
+let alatSenyapPewaktu = 0;
+
+function alatSenyapAktif() {
+  return alatFiturNyala("popup-12") && alatSenyapSampai > Date.now();
+}
+
+function alatTandaiSenyap() {
+  try {
+    const akar = document.documentElement;
+    if (alatSenyapAktif()) akar.setAttribute("data-aleta-senyap", "ya");
+    else akar.removeAttribute("data-aleta-senyap");
+  } catch {
+    /* tanpa penanda, tampilan tidak disembunyikan */
+  }
+  if (alatSenyapPewaktu) clearTimeout(alatSenyapPewaktu);
+  alatSenyapPewaktu = 0;
+  const sisa = alatSenyapSampai - Date.now();
+  // Dibangunkan tepat saat berakhir, supaya panel muncul lagi tanpa muat ulang.
+  if (alatSenyapAktif() && sisa > 0) alatSenyapPewaktu = setTimeout(alatTandaiSenyap, Math.min(sisa + 50, 2147483000));
+}
+
+async function alatMuatSenyap() {
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_KUNCI_SENYAP]);
+    alatSenyapSampai = Number(simpan[ALAT_KUNCI_SENYAP]) || 0;
+  } catch {
+    alatSenyapSampai = 0;
+  }
+  alatTandaiSenyap();
+}
+
+function alatDengarkanSenyap() {
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local") return;
+      if (ALAT_KUNCI_SENYAP in ubah) alatSenyapSampai = Number(ubah[ALAT_KUNCI_SENYAP].newValue) || 0;
+      // Saklar fitur atau tampilan yang berganti juga menentukan senyap.
+      if (ALAT_KUNCI_SENYAP in ubah || ALAT_UJI_KUNCI_TAMPILAN in ubah || ALAT_UJI_KUNCI_FITUR in ubah || ALAT_UJI_KUNCI_SERVER in ubah) alatTandaiSenyap();
+    });
+  } catch {
+    /* berlaku saat halaman dimuat ulang */
+  }
 }
 
 /** Peristiwa DOM untuk yang perlu menata ulang dirinya: widget checklist, dan fitur ide kelak. */
@@ -2728,7 +2912,7 @@ function alatDengarkanUji() {
   try {
     chrome.storage.onChanged.addListener((ubah, tempat) => {
       if (tempat !== "local") return;
-      const kunci = [ALAT_UJI_KUNCI_TAMPILAN, ALAT_UJI_KUNCI_FITUR, ALAT_UJI_KUNCI_NYATA];
+      const kunci = [ALAT_UJI_KUNCI_TAMPILAN, ALAT_UJI_KUNCI_FITUR, ALAT_UJI_KUNCI_NYATA, ALAT_UJI_KUNCI_SERVER];
       if (!kunci.some((k) => k in ubah)) return;
       const baru = {};
       for (const k of kunci) if (k in ubah) baru[k] = ubah[k].newValue;
@@ -3646,7 +3830,12 @@ alatPasangPemantauAmbil();
 alatDengarkanKering();
 void alatMuatKering();
 alatDengarkanUji();
-void alatMuatUji();
+// Senyap dibaca SESUDAH uji tampilan: ia bergantung pada saklar fitur popup-12.
+alatDengarkanSenyap();
+void alatMuatUji()
+  .then(() => alatMuatSenyap())
+  // Sesudah singgahan terbaca: yang sudah segar tidak diminta lagi.
+  .then(() => alatSegarkanTampilanServer(false));
 // Panel ringkas dipasang di tingkat modul atas sebab yang sama: berkas ini
 // dimuat lebih dulu daripada konten.js, abt.js, dan aleta.js pada keempat
 // konteks, jadi penandanya sudah terpasang sebelum satu panel pun digambar -
@@ -4632,7 +4821,7 @@ const ALAT_PETA_BAWAAN = {
     jenisAsli: "Dispensasi Kawin",
     berkas: ALAT_BERKAS_DISPENSASI_BAWAAN,
     bawaan: true,
-    catatan: "nama dari peladen - varian cowok: [01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil",
+    catatan: "nama dari server - varian cowok: [01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil",
   },
 };
 

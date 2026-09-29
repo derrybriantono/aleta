@@ -430,7 +430,7 @@ export function nilaiBaris(baris: Baris): NilaiBaris {
       ? "Kehadiran sidang tidak tercatat di SIPP - kolom dihadiri_oleh kosong pada 1.354 dari " +
           "20.109 baris jadwal sidang. Menebaknya berarti mencetak panggilan untuk orang yang " +
           "salah, jadi yang benar menanyakannya kepada juru sitanya."
-      : `Sandi kehadiran "${String(sandiHadir)}" pada borang SIPP berarti kombinasi dengan ` +
+      : `Sandi kehadiran "${String(sandiHadir)}" pada blangko SIPP berarti kombinasi dengan ` +
           "pihak intervensi atau turut tergugat, atau sebagian pihak saja - tidak dapat " +
           "dipetakan ke satu blangko tanpa melihat perkaranya. Tanyakan kepada juru sitanya.";
   }

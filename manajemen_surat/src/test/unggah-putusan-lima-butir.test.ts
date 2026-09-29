@@ -235,7 +235,7 @@ describe("butir 5 - massal bermula dari berkas", () => {
     expect(bagian).toContain("tombol.disabled = cocok === 0;");
   });
 
-  it("dikirim BERURUTAN - tiap berkas diurai utuh di peladen", () => {
+  it("dikirim BERURUTAN - tiap berkas diurai utuh di server", () => {
     // Berbeda dari pemeriksaan draf di butir 1: yang itu bacaan ringan, yang
     // ini muatan berat. Dua puluh naskah sekaligus berarti dua puluh naskah di
     // memori peladen pada saat yang sama.

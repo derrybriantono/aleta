@@ -82,14 +82,14 @@ describe("urutan pengisian penunjukan", () => {
   });
 });
 
-describe("peta medan borang", () => {
-  it("borang tanpa peta dinyatakan belum siap", async () => {
+describe("peta medan blangko", () => {
+  it("blangko tanpa peta dinyatakan belum siap", async () => {
     const hasil = await borangSiap(db as AletaDatabase, "pmh");
     expect(hasil.siap).toBe(false);
     expect(hasil.alasan).toBe("peta_medan_belum_diisi");
   });
 
-  it("borang yang medan wajibnya belum berpenunjuk juga belum siap", async () => {
+  it("blangko yang medan wajibnya belum berpenunjuk juga belum siap", async () => {
     const admin = await buatAdmin();
     await simpanMedanBorang(db as AletaDatabase, {
       actorUserId: admin,
@@ -107,7 +107,7 @@ describe("peta medan borang", () => {
     expect(hasil.alasan).toContain("hakim_ketua");
   });
 
-  it("borang yang lengkap dinyatakan siap", async () => {
+  it("blangko yang lengkap dinyatakan siap", async () => {
     const admin = await buatAdmin();
     await simpanMedanBorang(db as AletaDatabase, {
       actorUserId: admin,
@@ -123,7 +123,7 @@ describe("peta medan borang", () => {
     expect(hasil.medan).toHaveLength(1);
   });
 
-  it("menolak borang dan jenis medan yang tidak dikenali", async () => {
+  it("menolak blangko dan jenis medan yang tidak dikenali", async () => {
     const admin = await buatAdmin();
     await expect(
       simpanMedanBorang(db as AletaDatabase, {

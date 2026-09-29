@@ -184,7 +184,7 @@ describe("butir 3 - unggah putusan yang selalu ditolak", () => {
     expect(blok).toContain("SELALU KOSONG");
     expect(blok).toContain("`enc`");
     expect(blok, "andaian lama masih tertulis").not.toContain(
-      "Borang Putusan Akhir harus membawanya"
+      "Blangko Putusan Akhir harus membawanya"
     );
   });
 });

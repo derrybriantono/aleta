@@ -65,7 +65,7 @@ describe("usulan ABT dapat disunting sebelum dimasukkan", () => {
   });
 });
 
-describe("mengisi borang putusan SIPP", () => {
+describe("mengisi blangko putusan SIPP", () => {
   const konten = baca("konten.js");
 
   it("menekan Simpan HANYA bila seluruh isian masuk", () => {
@@ -108,7 +108,7 @@ describe("mengisi borang putusan SIPP", () => {
     expect(konten).toContain('"#amar_anonim"');
   });
 
-  it("hanya digambar di halaman yang benar-benar memuat borang putusan", () => {
+  it("hanya digambar di halaman yang benar-benar memuat blangko putusan", () => {
     expect(konten).toContain('document.querySelector("#frm_putusan")');
   });
 
@@ -124,7 +124,7 @@ describe("mengisi borang putusan SIPP", () => {
     expect(konten).toContain('select[name="keadaan_istri"]');
   });
 
-  it("medannya ditunjuk lewat NAMA, bukan id - sebab id di borang itu kembar", () => {
+  it("medannya ditunjuk lewat NAMA, bukan id - sebab id di blangko itu kembar", () => {
     // Pada borang Putusan Akhir SIPP, select "status_reskom" memakai
     // id="faktor_cerai" - sama dengan select faktor perceraian.
     // querySelector("#faktor_cerai") memulangkan yang mana pun yang lebih dulu

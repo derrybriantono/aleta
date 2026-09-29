@@ -229,7 +229,7 @@ export const DAFTAR_TIPE = {
     golongan: "putusan",
     jenis: "tulis",
     pemakai: ["ekstensi"],
-    judul: "Medan borang Putusan Akhir SIPP",
+    judul: "Medan blangko Putusan Akhir SIPP",
     bentukKunci: "'putusan-akhir'",
     bentukNilai:
       "label medan; data {penunjuk <=300 huruf berbentuk [name=...] atau #id, banyak?, pintu?}; penunjuk simpan/submit ditolak",

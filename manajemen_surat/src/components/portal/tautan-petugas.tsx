@@ -218,7 +218,7 @@ export function DaftarMajelisPetugas({
           </p>
           {dariBorang ? (
             <p className="mt-1 text-xs text-muted-foreground">
-              Sebagian dari borang penetapan ikrar talak SIPP — tabel penunjukan tidak mencatatnya tersendiri.
+              Sebagian dari blangko penetapan ikrar talak SIPP — tabel penunjukan tidak mencatatnya tersendiri.
             </p>
           ) : null}
         </div>

@@ -194,7 +194,7 @@ describe("jembatan: tombol yang tidak tampak TIDAK ditekan", () => {
 describe("'#simpan' di luar #frm_putusan tidak pernah terpilih", () => {
   const LUAR = '<form id="frm_lain"><input type="submit" id="simpan" value="Simpan"></form>';
 
-  it("borang putusan tanpa tombolnya: tidak satu penunjuk pun menekan #simpan milik borang lain", () => {
+  it("blangko putusan tanpa tombolnya: tidak satu penunjuk pun menekan #simpan milik blangko lain", () => {
     const s = bukaSipp(`${LUAR}${BORANG("")}`);
     for (const penunjuk of penunjukSimpan()) {
       expect(s.w.document.querySelector(penunjuk)?.closest("form")?.id ?? "-", penunjuk).not.toBe("frm_lain");
@@ -203,13 +203,13 @@ describe("'#simpan' di luar #frm_putusan tidak pernah terpilih", () => {
     expect(s.ditekan).toEqual([]);
   });
 
-  it("tombol borang putusan tersembunyi, #simpan lain tampak: tetap tidak ada yang ditekan", () => {
+  it("tombol blangko putusan tersembunyi, #simpan lain tampak: tetap tidak ada yang ditekan", () => {
     const s = bukaSipp(`${LUAR}${BORANG('<input type="submit" id="simpan" style="display:none">')}`);
     for (const penunjuk of penunjukSimpan()) s.minta({ jenis: "tekan", penunjuk, bukti: { borang: "#frm_putusan", id: "b" } });
     expect(s.ditekan).toEqual([]);
   });
 
-  it("dengan bukti, tombol yang bukan milik borangnya ditolak", () => {
+  it("dengan bukti, tombol yang bukan milik blangkonya ditolak", () => {
     const s = bukaSipp(`${LUAR}${BORANG("")}`);
     expect(s.minta({ jenis: "tekan", penunjuk: "#simpan", bukti: { borang: "#frm_putusan", id: "b" } })).toMatchObject({
       ok: false,
@@ -219,7 +219,7 @@ describe("'#simpan' di luar #frm_putusan tidak pernah terpilih", () => {
   });
 });
 
-describe("jembatan meneruskan jawaban SIPP atas kiriman borang", () => {
+describe("jembatan meneruskan jawaban SIPP atas kiriman blangko", () => {
   const TOMBOL = BORANG('<input type="submit" id="simpan" value="Simpan">');
 
   it("st=0: pesan pengesahan SIPP diteruskan sebagai teks", async () => {
@@ -457,11 +457,11 @@ describe("simpanPutusanLaluBuka membaca jawaban SIPP (jam tiruan)", () => {
     expect(s.bacaan).toHaveLength(2);
   });
 
-  it("tanpa jawaban SIPP (borang tidak terkirim): jalur jajak lama - sedetik sekali, sepuluh kali", async () => {
+  it("tanpa jawaban SIPP (blangko tidak terkirim): jalur jajak lama - sedetik sekali, sepuluh kali", async () => {
     const s = muatSimpan({ tekan: () => ({ ok: true, bukti: "tanpa-kiriman" }), bukti: null, keadaan: () => BELUM });
     const hasil = await s.jalankan();
     expect(hasil.ok).toBe(false);
-    expect(hasil.bunyi).toMatch(/Tidak ada kiriman borang yang teramati/);
+    expect(hasil.bunyi).toMatch(/Tidak ada kiriman blangko yang teramati/);
     expect(hasil.bunyi).toMatch(/^Simpan sudah ditekan, tetapi sesudah 10 detik SIPP belum mencatat/);
     expect(s.jam.tidur1000).toHaveLength(10);
     expect(s.bacaan).toHaveLength(11);

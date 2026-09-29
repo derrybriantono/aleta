@@ -427,7 +427,7 @@ describe("1. tabel kosong atau portal mati: persis CALON_MEDAN_PANEL", () => {
     expect(pilihanDibaca(m).slice(0, 12)).toEqual(calon.map((c) => c.penunjuk));
     const diusulkan = m.muatanUsulan.flatMap((x) => x.medan).map((x) => x.kunci);
     expect(diusulkan).toEqual(calon.map((c) => c.penunjuk));
-    expect(m.peringatan.join("\n")).toMatch(/Medan borang putusan dari portal kosong; dipakai daftar tertanam/);
+    expect(m.peringatan.join("\n")).toMatch(/Medan blangko putusan dari portal kosong; dipakai daftar tertanam/);
     expect(m.simpanDitekan).toEqual(["12/Pdt.G/2026/PA.Uji"]);
     expect(hasil).toContain("Tersimpan di SIPP.");
   });
@@ -447,13 +447,13 @@ describe("2. medan tambahan satker: dibaca, diusulkan, diisikan - Simpan diserah
     expect(m.borang['select[name="jumlah_anak_asuh"]'].nilai).toBe("1");
     // Simpan TIDAK ditekan.
     expect(m.simpanDitekan).toEqual([]);
-    expect(hasil).toContain("Simpan TIDAK ditekan: borang memuat medan tambahan satker (Jumlah Anak Diasuh)");
+    expect(hasil).toContain("Simpan TIDAK ditekan: blangko memuat medan tambahan satker (Jumlah Anak Diasuh)");
     expect(m.catatan.some((c) => /medan tambahan Jumlah Anak Diasuh - Simpan diserahkan ke petugas/.test(c.ringkas))).toBe(true);
     // Kartunya bertanda.
     expect(kotak.textContent).toContain("tambahan satker");
   });
 
-  it("tambahan yang TIDAK tampak di borang ini tidak menahan: Simpan 1 kali", async () => {
+  it("tambahan yang TIDAK tampak di blangko ini tidak menahan: Simpan 1 kali", async () => {
     const borang = borangDenganAnak();
     borang['select[name="jumlah_anak_asuh"]'].tampak = false;
     const m = muat({ portal: () => jawabanPortal([TAMBAHAN_ANAK]), borang });
@@ -496,7 +496,7 @@ describe("2. medan tambahan satker: dibaca, diusulkan, diisikan - Simpan diserah
 });
 
 // ============================================================================
-describe("3. kartu medan digambar pada borang yang baru dibuka", () => {
+describe("3. kartu medan digambar pada blangko yang baru dibuka", () => {
   it("tanpa selisih pintu pun tiap medan tampak punya kartu, dan pilihannya diisikan", async () => {
     // Cacat 2.32.0: kartu hanya digambar bila petugas SUDAH memilih pintu yang
     // berbeda dengan usulan ALETA. Borang baru -> 0 kartu, 0 medan terisi.
@@ -781,7 +781,7 @@ describe("7. beda yang disengaja: pintu yang usulannya bentrok", () => {
 });
 
 // ============================================================================
-describe("8. panel satu perkara: nilai yang dipilih borang SIPP sendiri bukan pilihan petugas", () => {
+describe("8. panel satu perkara: nilai yang dipilih blangko SIPP sendiri bukan pilihan petugas", () => {
   // Borang Putusan Akhir yang baru dibuka sudah memilih "Tidak" pada Verstek
   // dan "Qobla Dukhul" pada qobla ($qobla_bada NULL, dan NULL == 0 di PHP).
   // Bila keduanya dikirim sebagai "terpilih", hormatiTerpilih portal
@@ -821,11 +821,11 @@ describe("8. panel satu perkara: nilai yang dipilih borang SIPP sendiri bukan pi
     return { verstek: dari(VERSTEK)!.terpilih, qobla: dari(QOBLA)!.terpilih };
   }
 
-  it("borang baru (Verstek 'Tidak', 'Qobla Dukhul' bawaan): keduanya TIDAK dikirim sebagai terpilih", async () => {
+  it("blangko baru (Verstek 'Tidak', 'Qobla Dukhul' bawaan): keduanya TIDAK dikirim sebagai terpilih", async () => {
     expect(await terpilihTerkirim(borangSipp("T", "0"))).toEqual({ verstek: undefined, qobla: undefined });
   });
 
-  it("kendali: pilihan yang bukan bawaan borang (Ya, Ba'da Dukhul) tetap dikirim sebagai terpilih", async () => {
+  it("kendali: pilihan yang bukan bawaan blangko (Ya, Ba'da Dukhul) tetap dikirim sebagai terpilih", async () => {
     expect(await terpilihTerkirim(borangSipp("Y", "1"))).toEqual({ verstek: "Y", qobla: "1" });
   });
 });

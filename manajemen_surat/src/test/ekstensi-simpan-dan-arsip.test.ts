@@ -46,7 +46,7 @@ describe("lebar label ikut ukuran hurufnya", () => {
   }
 });
 
-describe("borang putusan disimpan, dan tersimpannya dibuktikan", () => {
+describe("blangko putusan disimpan, dan tersimpannya dibuktikan", () => {
   it("Simpan ditekan lewat penunjuk yang pasti, bukan ditebak dari tulisannya", () => {
     // "Simpan" juga nama tombol pada belasan borang lain di halaman yang sama.
     expect(konten).toContain("const PENUNJUK_SIMPAN_PUTUSAN = [");

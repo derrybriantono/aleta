@@ -419,7 +419,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
             <span>
               Hasil sidang ini sudah tercatat di SIPP. Mencatatnya sekali lagi akan
-              melahirkan baris jadwal berganda — jadi borangnya ditutup di sini, bukan
+              melahirkan baris jadwal berganda — jadi blangkonya ditutup di sini, bukan
               dibiarkan terbuka dan ditolak belakangan.
             </span>
           </CardContent>
@@ -433,7 +433,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Hasil sidang</CardTitle>
               <CardDescription>
-                Sidang tidak dapat ditunda dan diputus sekaligus — pilih salah satu, lalu borangnya muncul.
+                Sidang tidak dapat ditunda dan diputus sekaligus — pilih salah satu, lalu blangkonya muncul.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
@@ -1091,7 +1091,7 @@ export function CatatHasilRingkas({
       {hasil && !hasil.ok ? (
         <p className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{hasil.alasan || "Permintaan ditolak peladen."}</span>
+          <span>{hasil.alasan || "Permintaan ditolak server."}</span>
         </p>
       ) : null}
 

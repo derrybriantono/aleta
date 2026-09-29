@@ -111,7 +111,7 @@ const kode = (rapor: ReturnType<typeof nilaiPraperiksa>, tingkat?: string) =>
 
 // ============================================================================
 describe("pembantu murni", () => {
-  it("tanggal borang dd/mm/yyyy dan ISO dibaca sama; yang tidak sah kosong, bukan ditebak", () => {
+  it("tanggal blangko dd/mm/yyyy dan ISO dibaca sama; yang tidak sah kosong, bukan ditebak", () => {
     expect(tanggalIso("09/09/2026")).toBe("2026-09-09");
     expect(tanggalIso("9-9-2026")).toBe("2026-09-09");
     expect(tanggalIso("2026-09-09")).toBe("2026-09-09");
@@ -425,7 +425,7 @@ describe("layanan bot: pembaca fakta yang gagal sebagian, dan pendapat yang disa
     });
   }
 
-  it("fakta dipetakan; tanggal MySQL menjadi YYYY-MM-DD menurut zona peladen; peran dari pihak_ke", async () => {
+  it("fakta dipetakan; tanggal MySQL menjadi YYYY-MM-DD menurut zona server; peran dari pihak_ke", async () => {
     const f = await svc.bacaFakta(` ${NOMOR} `, { tanggal: "2026-09-09", kueri: kueriPalsu() });
     expect(f.ok).toBe(true);
     expect(f.perkaraId).toBe(10001);
@@ -537,7 +537,7 @@ describe("sambungan: rute portal, gerbang bot, dan ekstensi", () => {
   // amar. Kini ia berjalan sesudah pilihan dan naskah diisi, sebelum Simpan.
   // Perilakunya dijaga ekstensi-massal-ujung-ke-ujung.test.ts (praperiksa
   // sungguhan atas status yang dipilih antrean); di sini letaknya.
-  it("antrean massal: praperiksa berjalan SESUDAH pilihan borang diisi dan SEBELUM Simpan", () => {
+  it("antrean massal: praperiksa berjalan SESUDAH pilihan blangko diisi dan SEBELUM Simpan", () => {
     const badan = konten.slice(konten.indexOf("async function jalankanSatuAntreanSipp("));
     const fungsi = badan.slice(0, badan.indexOf("\n}\n"));
     const letakPraperiksa = fungsi.indexOf("await praperiksaSebelumMengisi(butir.nomor, kabar)");
@@ -565,7 +565,7 @@ describe("sambungan: rute portal, gerbang bot, dan ekstensi", () => {
     expect(letakGerbang).toBeLessThan(letakSimpan);
   });
 
-  it("isian borang dibaca dari medan SIPP yang sesungguhnya - #tgl_putusan, status_putusan, verstek Y/T", () => {
+  it("isian blangko dibaca dari medan SIPP yang sesungguhnya - #tgl_putusan, status_putusan, verstek Y/T", () => {
     expect(konten).toContain('"#tgl_putusan"');
     expect(konten).toContain(`await terpilih('select[name="status_putusan"]')`);
     expect(konten).toContain('verstek.nilai === "Y" || verstek.nilai === "T"');

@@ -158,7 +158,7 @@ describe("amar anonim", () => {
   });
 });
 
-describe("usulan isian borang SIPP", () => {
+describe("usulan isian blangko SIPP", () => {
   const naskah = naskahLengkap(
     "Menimbang bahwa rumah tangga SITI AMINAH dan BUDI SANTOSO tidak dapat dirukunkan.",
     "MENGADILI:\n1. Mengabulkan gugatan SITI AMINAH;\n2. Menjatuhkan talak satu bain sughra BUDI SANTOSO."

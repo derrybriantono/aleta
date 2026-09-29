@@ -129,7 +129,7 @@ describe("lantai jam penetapan", () => {
     }
   });
 
-  it("sela tiga menit: dirapatkan, tetap menaik, tidak melampaui peladen", () => {
+  it("sela tiga menit: dirapatkan, tetap menaik, tidak melampaui server", () => {
     const w = rangkaian(10152, "2026-09-16", "2026-09-16 10:15:00", "2026-09-16 10:00:00");
     for (const satu of w) {
       expect(jam(satu) >= "10:00:00", w.join(" ")).toBe(true);

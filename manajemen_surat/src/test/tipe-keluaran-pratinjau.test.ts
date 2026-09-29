@@ -242,7 +242,7 @@ describe("penghitung identik atas fixture kecil", () => {
     expect(pratinjau.hitungIdentikAntarPerkara(bas, [s(1, "a", "q", "c"), s(2, "a", "x", "r")])).toEqual({ identik: 4, total: 6 });
   });
 
-  it("daftar yang dapat dipratinjau di layar = di peladen", async () => {
+  it("daftar yang dapat dipratinjau di layar = di server", async () => {
     const layar = await import("@/components/portal/aleta-ecourt-tipe-keluaran");
     expect([...layar.DAFTAR_DAPAT_PRATINJAU]).toEqual([...pratinjau.DAFTAR_PRATINJAU]);
   });

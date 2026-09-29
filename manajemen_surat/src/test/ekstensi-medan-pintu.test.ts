@@ -80,7 +80,7 @@ describe("medan yang tersembunyi di balik pintunya", () => {
     expect(badan).toContain("if (!adaYangDibuka) break;");
   });
 
-  it("borang diberi waktu menggambar ulang sebelum dibaca lagi", () => {
+  it("blangko diberi waktu menggambar ulang sebelum dibaca lagi", () => {
     const badan = potongFungsi(konten, "bagianIsiPutusan");
     expect(badan).toContain("await new Promise((selesai) => setTimeout(selesai, 350));");
   });
@@ -115,7 +115,7 @@ describe("medan yang tersembunyi di balik pintunya", () => {
     // pernah diadu dengan amar drafnya oleh siapa pun.
     const badan = potongFungsi(konten, "bagianIsiPutusan");
     const i = badan.indexOf("const sudahDipilihOrang =");
-    expect(i, "keadaan borang tidak diperiksa sebelum menulis").toBeGreaterThan(-1);
+    expect(i, "keadaan blangko tidak diperiksa sebelum menulis").toBeGreaterThan(-1);
 
     // "-1" adalah "Pilih Status Putusan" milik SIPP - itu BELUM dipilih.
     // Menganggapnya pilihan membuat pintunya tidak pernah terbuka.
@@ -128,7 +128,7 @@ describe("medan yang tersembunyi di balik pintunya", () => {
       badan.indexOf("continue;", badan.indexOf("if (sudahDipilihOrang) {"))
     );
     expect(cabang.length, "cabang lewati tidak ada").toBeGreaterThan(0);
-    expect(cabang, "masih menulis ke borang").not.toContain('jenis: "isi"');
+    expect(cabang, "masih menulis ke blangko").not.toContain('jenis: "isi"');
   });
 
   it("pembacaan dan permintaan usulannya satu tempat, dipakai tiap putaran", () => {

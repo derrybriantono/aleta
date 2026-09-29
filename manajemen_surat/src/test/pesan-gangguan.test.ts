@@ -29,7 +29,7 @@ describe("menggolongkan kegagalan", () => {
     expect(jenisGangguan(new Error("password authentication failed for user"))).toBe("basis-data");
   });
 
-  it("500 tanpa ciri lain berarti gangguan peladen", () => {
+  it("500 tanpa ciri lain berarti gangguan server", () => {
     expect(jenisGangguan(new Error("Internal Server Error"), 500)).toBe("peladen");
   });
 

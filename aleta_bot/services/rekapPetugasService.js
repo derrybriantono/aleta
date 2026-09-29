@@ -227,8 +227,8 @@ const DASAR = Object.freeze({
     "ikrar talak ditetapkan, dan pada data lama majelis ikrar dicatat sebagai pengganti sesudah putusan. " +
     "Perkara yang belum putus: penunjukan yang aktif. Majelis dan petugas ikrar talak disebut sebagai " +
     "kedudukan tersendiri dan tidak ikut ringkasan; sumbernya penunjukan aktif tahapan 18, dan bila " +
-    "tabel penunjukan tidak mencatat majelis/petugas ikrar perkara itu, borang penetapan ikrar talak " +
-    "SIPP (perkara_ikrar_talak) - aturan yang sama dengan Status Perkara dan eviden SKP. ID pada borang " +
+    "tabel penunjukan tidak mencatat majelis/petugas ikrar perkara itu, blangko penetapan ikrar talak " +
+    "SIPP (perkara_ikrar_talak) - aturan yang sama dengan Status Perkara dan eviden SKP. ID pada blangko " +
     "yang tidak dapat dipasangkan dengan namanya tidak dihitung. Yang diganti sebelum putusan, atau " +
     "ditetapkan sesudahnya tanpa kedudukan ikrar, disebut terpisah dan tidak ikut dihitung.",
   mediasi:

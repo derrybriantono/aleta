@@ -104,7 +104,7 @@ const PIHAK_DIKENAL: PihakDipanggil[] = ["keduanya", "pertama", "kedua", "tidak-
 function sebabSandi(sandi: string, pihak: PihakDipanggil): string {
   if (pihak === "tidak-perlu") {
     return (
-      `Sandi kehadiran "${sandi}" = Semua Pihak hadir (borang SIPP jadwal_sidang_p_edit.php). ` +
+      `Sandi kehadiran "${sandi}" = Semua Pihak hadir (blangko SIPP jadwal_sidang_p_edit.php). ` +
       "Yang hadir diperintahkan datang lagi di muka sidang, jadi tidak dipanggil dengan relaas."
     );
   }
@@ -113,7 +113,7 @@ function sebabSandi(sandi: string, pihak: PihakDipanggil): string {
     return "Kehadiran sidang tidak tercatat di SIPP. Tanyakan kepada juru sitanya; jangan ditebak.";
   }
   return (
-    `Sandi kehadiran "${sandi}" pada borang SIPP berarti kombinasi dengan pihak intervensi atau ` +
+    `Sandi kehadiran "${sandi}" pada blangko SIPP berarti kombinasi dengan pihak intervensi atau ` +
     "turut tergugat, atau sebagian pihak saja - tidak dapat dipetakan ke satu blangko tanpa " +
     "melihat perkaranya. Tanyakan kepada juru sitanya; jangan ditebak."
   );

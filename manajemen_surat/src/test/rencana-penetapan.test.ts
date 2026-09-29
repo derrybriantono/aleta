@@ -556,7 +556,7 @@ describe("gerbang kesiapan", () => {
     expect(r.halangan.join(" ")).not.toMatch(/sudarmin/i);
   });
 
-  it("peta kolom kosong untuk satu borang menghalangi", () => {
+  it("peta kolom kosong untuk satu blangko menghalangi", () => {
     const petaKurang = { ...PETA_MEDAN, pmh: [] };
     const r = rakitRencana({ nomorPerkara: "545", usulan: usulanMajelis(), petaMedan: petaKurang, akunPemetaan: AKUN_LENGKAP });
     expect(r.bisaDijalankan).toBe(false);

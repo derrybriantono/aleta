@@ -60,6 +60,7 @@ function jalankanAlat(awal: Record<string, unknown> = {}) {
   const simpanan: Record<string, unknown> = JSON.parse(JSON.stringify(awal));
   const pendengar: Array<(u: Ubah, w: string) => void> = [];
   const diminta: Array<{ alamat: string; cara: string }> = [];
+  const bacaTampilan: string[] = [];
   const akar = elemenTiruan("html");
   const k: any = {
     console,
@@ -105,6 +106,12 @@ function jalankanAlat(awal: Record<string, unknown> = {}) {
       },
     },
     fetch: async (alamat: string, opsi?: { method?: string }) => {
+      // Bacaan tampilan yang diterapkan admin (tahap 5) dicatat terpisah: ia
+      // satu-satunya permintaan tambahan dalam Lama, dan dijaga uji tersendiri.
+      if (String(alamat).includes("/api/aleta-ecourt/ekstensi/tampilan")) {
+        bacaTampilan.push(String(opsi?.method || "GET").toUpperCase());
+        return { ok: false, status: 404, statusText: "Not Found", json: async () => ({}) };
+      }
       diminta.push({ alamat: String(alamat), cara: String(opsi?.method || "GET").toUpperCase() });
       return { ok: true, status: 200, statusText: "OK", json: async () => ({ ok: true }) };
     },
@@ -139,7 +146,7 @@ function jalankanAlat(awal: Record<string, unknown> = {}) {
     }
     for (const f of pendengar) f(ubah, "local");
   };
-  return { k, akar, diminta, ubahDariPopup };
+  return { k, akar, diminta, bacaTampilan, ubahDariPopup };
 }
 
 /** Sesudah bacaan penyimpanan pertama kembali. */
@@ -178,6 +185,18 @@ describe("SYARAT SELESAI: tampilan Lama tidak mengubah apa pun", () => {
       expect(jawab.status, alamat).toBe(200);
     }
     expect(diminta.length).toBe(4);
+  });
+
+  it("dalam Lama, satu-satunya permintaan tambahan: SATU bacaan GET tampilan dari portal, paling sering 5 menit sekali", async () => {
+    // Perlu supaya tampilan yang diterapkan admin (tahap 5) sampai ke pegawai.
+    // Tidak mengubah tampilan: portal lama menjawab 404 dan semuanya tetap Lama.
+    const { k, akar, bacaTampilan } = await siap();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(bacaTampilan).toEqual(["GET"]);
+    await k.alatSegarkanTampilanServer(false);
+    expect(bacaTampilan).toEqual(["GET"]);
+    expect(k.alatUjiMode()).toBe("lama");
+    expect(akar.hasAttribute("data-aleta-kulit")).toBe(false);
   });
 
   it("dalam Lama, saklar fitur yang tersimpan menyala pun tetap dianggap mati", async () => {

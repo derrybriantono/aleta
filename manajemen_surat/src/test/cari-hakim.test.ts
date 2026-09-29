@@ -134,7 +134,7 @@ describe("hakimPersis", () => {
   });
 });
 
-describe("borangnya sungguh memakai keduanya", () => {
+describe("blangkonya sungguh memakai keduanya", () => {
   const layar = baca("manajemen_surat/src/components/portal/aleta-ecourt-sidang.tsx");
 
   it("kotaknya tetap kotak isian, BUKAN kotak pilihan", () => {

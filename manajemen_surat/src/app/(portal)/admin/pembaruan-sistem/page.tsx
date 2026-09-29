@@ -489,7 +489,7 @@ export default function SystemUpdatePage() {
           </CardTitle>
           <CardDescription>
             Untuk memasang ALETA di tempat lain atau memulihkannya utuh. Dimampatkan sekuat alat yang
-            terpasang di peladen, tanpa mengurangi satu berkas pun.
+            terpasang di server, tanpa mengurangi satu berkas pun.
             {arsip ? <span className="mt-1 block text-foreground">{arsip.catatan}</span> : null}
           </CardDescription>
         </CardHeader>
@@ -555,7 +555,7 @@ export default function SystemUpdatePage() {
           ) : (
             <p className="text-xs text-muted-foreground">
               Menyusun arsip basis data dapat memakan beberapa menit. Berkas dialirkan langsung ke peramban dan
-              tidak disimpan di peladen.
+              tidak disimpan di server.
             </p>
           )}
         </CardContent>

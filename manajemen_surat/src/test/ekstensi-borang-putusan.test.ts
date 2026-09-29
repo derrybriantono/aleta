@@ -35,8 +35,8 @@ function potongFungsi(isi: string, nama: string): string {
   return baris.slice(mulai, j + 1).join("\n");
 }
 
-describe("panel digambar ulang ketika borang SIPP muncul", () => {
-  it("penjaganya membaca borang, bukan nomor perkara saja", () => {
+describe("panel digambar ulang ketika blangko SIPP muncul", () => {
+  it("penjaganya membaca blangko, bukan nomor perkara saja", () => {
     // Inilah sebab bagian itu tidak pernah muncul: tingkap Putusan Akhir
     // terbuka pada perkara yang sama, jadi nomornya tidak berubah.
     const isi = konten();
@@ -54,7 +54,7 @@ describe("panel digambar ulang ketika borang SIPP muncul", () => {
     expect(isi).not.toContain("if (nomor === nomorTerakhir || sedangAmbil) return;");
   });
 
-  it("tandaBorang melihat kedua borang yang punya bagiannya sendiri", () => {
+  it("tandaBorang melihat kedua blangko yang punya bagiannya sendiri", () => {
     const badan = potongFungsi(konten(), "tandaBorang");
     expect(badan).toContain("#frm_putusan");
     expect(badan).toContain("#frm_data_umum");
@@ -102,7 +102,7 @@ describe("naskah putusan diterima dari berkas", () => {
     expect(isi).toContain("batasMs: BATAS_UNGGAH_NASKAH_MS,");
   });
 
-  it("perkara_id dibaca dari borang, dan kosongnya bukan kegagalan", () => {
+  it("perkara_id dibaca dari blangko, dan kosongnya bukan kegagalan", () => {
     const badan = potongFungsi(konten(), "perkaraIdDariHalaman");
     expect(badan).toContain('input[name="perkara_id"]');
     expect(badan).toContain('return medan && medan.value ? String(medan.value).trim() : "";');
@@ -206,7 +206,7 @@ describe("bilah alat CKEditor", () => {
     expect(badan).toContain("background: #141d19 !important");
   });
 
-  it("borang putusan dilingkupi ke idnya sendiri, bukan ke pembungkusnya", () => {
+  it("blangko putusan dilingkupi ke idnya sendiri, bukan ke pembungkusnya", () => {
     // Tingkapnya bukan #konten maupun .modal-content - dua tempat yang selama
     // ini menampung aturan isian. Id borangnya tidak berubah antar versi SIPP.
     const css = gaya();

@@ -276,7 +276,7 @@ describe("usulan bawaan dari jenjang putusan - untuk pemetaan ekstensi", () => {
  * 7.486 sidang disodorkan sebagai pertanyaan padahal SIPP sudah menjawabnya.
  */
 describe("relaas: sandi kehadiran dan golongan", () => {
-  it("empat sandi borang SIPP", () => {
+  it("empat sandi blangko SIPP", () => {
     expect(pihakDipanggil(1)).toBe("tidak-perlu");
     expect(pihakDipanggil("1")).toBe("tidak-perlu");
     expect(pihakDipanggil(2)).toBe("kedua");
@@ -284,7 +284,7 @@ describe("relaas: sandi kehadiran dan golongan", () => {
     expect(pihakDipanggil(4)).toBe("keduanya");
   });
 
-  it("kosong TIDAK terbaca sebagai sandi - ia jatuh ke 0, dan 0 bukan sandi borang", () => {
+  it("kosong TIDAK terbaca sebagai sandi - ia jatuh ke 0, dan 0 bukan sandi blangko", () => {
     for (const kosong of [null, undefined, "", "  "]) {
       expect(pihakDipanggil(kosong)).toBe("tidak-diketahui");
     }

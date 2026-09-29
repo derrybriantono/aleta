@@ -1187,7 +1187,7 @@ export function DaftarTidakPerlu({ baris }: { baris: TidakPerluRelaasCetak[] }) 
     <div className="space-y-2">
       {adaSandiSatu ? (
         <p className="text-xs text-muted-foreground">
-          &quot;Semua pihak hadir&quot; dibaca dari sandi kehadiran SIPP - yang juga nilai bawaan borang SIPP
+          &quot;Semua pihak hadir&quot; dibaca dari sandi kehadiran SIPP - yang juga nilai bawaan blangko SIPP
           bila isian kehadiran tidak disentuh. Sandi itu sesekali salah; periksa alasan penundaan yang
           tercatat di tiap baris.
         </p>
@@ -1636,7 +1636,7 @@ export function PanelPutaran({
       {!pekerjaan.selesai && putaran.perkiraanSisa && ringkas.menunggu > 0 ? (
         <p className="text-xs text-muted-foreground">
           Perkiraan sisa waktu: {lamaWaktu(putaran.perkiraanSisa.rendah)} sampai{" "}
-          {lamaWaktu(putaran.perkiraanSisa.tinggi)}. Antar dokumen ada jeda 2-5 detik supaya peladen ABT
+          {lamaWaktu(putaran.perkiraanSisa.tinggi)}. Antar dokumen ada jeda 2-5 detik supaya server ABT
           tidak terbebani.
           {tungguBerikut > 0 ? ` Dokumen berikutnya sekitar ${Math.ceil(tungguBerikut / 1000)} detik lagi.` : ""}
         </p>

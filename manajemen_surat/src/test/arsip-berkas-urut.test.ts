@@ -72,7 +72,7 @@ describe("butir 4 - kepala kolom Kendali Berkas", () => {
     expect(layar).not.toContain("setUrutkan");
   });
 
-  it("tiap kunci kepala kolom dikenal peladen", () => {
+  it("tiap kunci kepala kolom dikenal server", () => {
     const kunciLayar = [...layar.matchAll(/<KepalaUrut[\s\S]*?kunci="([a-zA-Z]+)"/g)].map(
       (m) => m[1]
     );

@@ -118,7 +118,7 @@ describe("id yang dikirim ke mesin tulis", () => {
   });
 });
 
-describe("pilihan tangan menang atas usulan - sama seperti jalur borang", () => {
+describe("pilihan tangan menang atas usulan - sama seperti jalur blangko", () => {
   it("panitera pengganti yang dipilih tangan yang dipakai", () => {
     expect(idUntukTulis("ppp", USULAN, { ppp: 12 })).toEqual({ petugasId: 12 });
   });
@@ -199,7 +199,7 @@ describe("penyambungan tombol ke mesin tulis", () => {
   });
 
   it("penolakan lama sudah tidak ada", () => {
-    expect(konten).not.toContain("Borang penunjukan tidak terbuka di halaman ini.");
+    expect(konten).not.toContain("Blangko penunjukan tidak terbuka di halaman ini.");
   });
 });
 

@@ -323,6 +323,9 @@ const butirKe = (i: number) => ({ nomor: `${100 + i}/Pdt.G/2026/PA.Dgl`, perkara
 function jalur(p: Permintaan[]) {
   return p
     .filter((x) => !x.alamat.includes("/abt-riwayat"))
+    // Bacaan tampilan yang diterapkan admin (panel-alat.js, tahap 5): sekali
+    // per lima menit, bukan milik perkara ini.
+    .filter((x) => !x.alamat.includes("/api/aleta-ecourt/ekstensi/tampilan"))
     .map((x) => {
       if (x.alamat.includes("/abt/preview?")) return "GET pratinjau ABT";
       if (x.alamat.endsWith("/putusan/unggah-naskah")) return "POST draf";

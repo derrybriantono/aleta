@@ -157,7 +157,7 @@ describe("ABT: kerangka di luar halaman blangko", () => {
   });
 });
 
-describe("ekstensi berjalan di SELURUH halaman ABT peladen", () => {
+describe("ekstensi berjalan di SELURUH halaman ABT server", () => {
   it("polanya /aps_badilag/*, bukan /aps_badilag/abt/*", () => {
     // Alamat ABT yang sungguhan memuat index.php di tengah -
     // /aps_badilag/index.php/abt/... - sehingga pola /aps_badilag/abt/* tidak
@@ -169,14 +169,14 @@ describe("ekstensi berjalan di SELURUH halaman ABT peladen", () => {
     expect(semua).toContain("http://192.168.10.10/aps_badilag/*");
   });
 
-  it("tema dipasang sedini mungkin di halaman ABT peladen juga", () => {
+  it("tema dipasang sedini mungkin di halaman ABT server juga", () => {
     const awal = manifest.content_scripts.find((x) => x.js.includes("tema-awal.js"));
     expect(awal?.matches).toContain("http://192.168.10.10/aps_badilag/*");
   });
 });
 
 describe("keterangan saksi dapat disusun di tempat ia dikerjakan", () => {
-  it("halaman penyunting tanya-jawab dikenali dari alamat DAN borangnya", () => {
+  it("halaman penyunting tanya-jawab dikenali dari alamat DAN blangkonya", () => {
     // Alamat dapat berubah; borang tanya-jawab beserta tabel barisnya tidak.
     expect(abt).toContain("function halamanTanyaJawab()");
     expect(abt).toContain("tanyajawab_perkara_edit");

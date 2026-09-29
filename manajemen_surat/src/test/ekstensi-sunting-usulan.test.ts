@@ -46,7 +46,7 @@ describe("usulan teks dapat disunting sebelum diisikan", () => {
 describe("pilihan dapat diganti tanpa meninggalkan panel", () => {
   const konten = baca("konten.js");
 
-  it("daftarnya berisi pilihan borang itu sendiri, bukan daftar yang dihafal", () => {
+  it("daftarnya berisi pilihan blangko itu sendiri, bukan daftar yang dihafal", () => {
     expect(konten).toContain('pilih.className = "aleta-pilih-sendiri"');
     expect(konten).toContain("for (const pil of medan.pilihan)");
   });
@@ -161,7 +161,7 @@ describe("ukuran panel bawaan", () => {
     expect(css).toContain("max-height: 66vh;");
   });
 
-  it("atapnya tetap ada - di bawah panel ada borang yang sedang diisi", () => {
+  it("atapnya tetap ada - di bawah panel ada blangko yang sedang diisi", () => {
     const konten = baca("konten.js");
     expect(konten).toContain("Math.round((window.innerHeight * 2) / 3)");
   });

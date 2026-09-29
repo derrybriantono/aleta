@@ -192,7 +192,7 @@ describe("ekstensi: pintu yang sudah dipilih petugas tidak ditimpa", () => {
     return konten.slice(i, konten.indexOf("if (!adaYangDibuka) break;", i));
   };
 
-  it("nilai yang sedang ada di borang DIBACA sebelum menulis", () => {
+  it("nilai yang sedang ada di blangko DIBACA sebelum menulis", () => {
     const blok = blokPintu();
     expect(blok).toContain("nilaiSekarang");
     expect(blok).toContain("const sudahDipilihOrang =");
@@ -212,7 +212,7 @@ describe("ekstensi: pintu yang sudah dipilih petugas tidak ditimpa", () => {
     const i = blok.indexOf("if (sudahDipilihOrang) {");
     expect(i, "cabang lewati tidak ada").toBeGreaterThan(-1);
     const cabang = blok.slice(i, blok.indexOf("continue;", i));
-    expect(cabang, "masih menulis ke borang").not.toContain('jenis: "isi"');
+    expect(cabang, "masih menulis ke blangko").not.toContain('jenis: "isi"');
   });
 
   it("selisih pendapatnya DISEBUTKAN, tidak didiamkan", () => {

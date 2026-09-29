@@ -210,7 +210,7 @@ describe("bagian Isi alasan perkara pada ekstensi", () => {
     expect(bagian).toContain("tekan Simpan sendiri");
   });
 
-  it("hanya digambar di halaman yang memang memuat borang Data Umum", () => {
+  it("hanya digambar di halaman yang memang memuat blangko Data Umum", () => {
     expect(konten).toContain('document.querySelector("#frm_data_umum")');
     expect(konten).toContain("bagianIsiAlasanPerkara(konteks.nomorPerkara)");
   });

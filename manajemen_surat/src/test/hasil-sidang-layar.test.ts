@@ -184,7 +184,7 @@ describe("5. akun SIPP tidak ditanyakan pada jalur mana pun", () => {
 });
 
 describe("6-7. bawaan yang menghemat ketukan tanpa menyesatkan", () => {
-  it("tanggal putusan bawaannya hari ini - disetel di peramban, bukan di peladen", () => {
+  it("tanggal putusan bawaannya hari ini - disetel di peramban, bukan di server", () => {
     // Peladen berjam UTC, peramban petugas berjam WITA: antara 00:00 dan 08:00
     // WITA keduanya menyebut HARI YANG BERBEDA, dan React memakai tanggal
     // peladen - yaitu kemarin.
@@ -218,7 +218,7 @@ describe("8. amar, pertimbangan, sumber hukum, catatan tidak ditanyakan", () => 
 });
 
 describe("9. ditunda dan diputus saling meniadakan", () => {
-  it("satu pilihan, bukan dua borang terbuka bersamaan", () => {
+  it("satu pilihan, bukan dua blangko terbuka bersamaan", () => {
     expect(layar).toContain('const [jalan, setJalan] = useState<"" | "tunda" | "putus">("");');
     expect(layar).toContain('{jalan === "tunda" ? (');
   });
@@ -329,7 +329,7 @@ describe("kehadiran pihak - angkanya milik SIPP, bukan urutan daftar", () => {
   });
 });
 
-describe("sidang yang sudah dicatat tidak ditawari borang - dan yang belum, ditawari", () => {
+describe("sidang yang sudah dicatat tidak ditawari blangko - dan yang belum, ditawari", () => {
   /**
    * `ditunda = 'T'` dipakai DUA keadaan yang berlawanan: sidang yang sudah
    * diputus, dan sidang yang belum disentuh sama sekali ('T' nilai bawaannya).

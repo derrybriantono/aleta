@@ -693,7 +693,7 @@ const BUTIR = [
     kode: "AP06",
     kunci: "raporMediator",
     judul: "Rapor Mediator",
-    keterangan: `Tingkat keberhasilan per mediator menurut mediator_id, dengan kode hasil dibaca dari borang SIPP sendiri. Yang dinilai bukan tinggi rendahnya angka melainkan KESAHIHAN rapornya: sekurangnya ${MINIMAL_MEDIASI} mediasi dan seluruh hasilnya tercatat. Mediator yang seluruh perkaranya perceraian akan selalu tampak lebih buruk daripada yang kebagian sengketa waris, dan itu bukan ukuran mediatornya.`,
+    keterangan: `Tingkat keberhasilan per mediator menurut mediator_id, dengan kode hasil dibaca dari blangko SIPP sendiri. Yang dinilai bukan tinggi rendahnya angka melainkan KESAHIHAN rapornya: sekurangnya ${MINIMAL_MEDIASI} mediasi dan seluruh hasilnya tercatat. Mediator yang seluruh perkaranya perceraian akan selalu tampak lebih buruk daripada yang kebagian sengketa waris, dan itu bukan ukuran mediatornya.`,
     baris: barisRaporMediator,
     pembilang: `Mediator beridentitas dengan sekurangnya ${MINIMAL_MEDIASI} mediasi yang seluruh hasilnya tercatat`,
     penyebut: "Seluruh mediator yang menangani mediasi atas perkara yang didaftarkan pada rentang ini",

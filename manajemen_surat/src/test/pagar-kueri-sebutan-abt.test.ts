@@ -103,7 +103,7 @@ describe("pagar menahan yang berbahaya", () => {
     );
   });
 
-  it("menolak yang mengubah, memindahkan, atau membaca berkas peladen", () => {
+  it("menolak yang mengubah, memindahkan, atau membaca berkas server", () => {
     for (const jahat of [
       "SELECT 1 FROM perkara INTO OUTFILE '/tmp/x'",
       "SELECT LOAD_FILE('/etc/passwd') AS data",

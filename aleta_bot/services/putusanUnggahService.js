@@ -262,7 +262,7 @@ function deskripsiAudit(rincian, username) {
   // yang jujur tidak boleh terbaca seolah pelakunya sengaja tidak disebut.
   const akun = String(username || "").trim();
   return (
-    `${isi}<br>Ditulis otomatis oleh ALETA (unggah dokumen putusan), bukan lewat borang SIPP` +
+    `${isi}<br>Ditulis otomatis oleh ALETA (unggah dokumen putusan), bukan lewat blangko SIPP` +
     (akun
       ? `, atas perintah pengguna <b>${lolosHtml(akun)}</b>.`
       : ", pemicunya TIDAK DIKETAHUI (nama pengguna tidak terkirim bersama permintaan).")

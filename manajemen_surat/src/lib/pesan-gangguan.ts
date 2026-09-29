@@ -115,13 +115,13 @@ export function pesanGangguan(galat: unknown, cadangan: string, status = 0): str
     case "tidak-terjangkau":
       return (
         "ALETA tidak dapat dihubungi dari komputer ini. Biasanya karena jaringan kantor " +
-        "sedang terputus atau peladen ALETA sedang dimatikan sementara. " +
+        "sedang terputus atau server ALETA sedang dimatikan sementara. " +
         "Ini bukan karena kata sandi Anda salah. Periksa sambungan jaringan Anda, " +
         "tunggu sebentar, lalu coba lagi - bila tetap begini, hubungi petugas TI."
       );
     case "peladen":
       return (
-        "ALETA sedang mengalami gangguan di sisi peladen. Ini bukan karena kata sandi " +
+        "ALETA sedang mengalami gangguan di sisi server. Ini bukan karena kata sandi " +
         "Anda salah. Muat ulang halaman lalu coba lagi; bila tetap begini, hubungi " +
         "petugas TI dan sebutkan jam kejadiannya."
       );

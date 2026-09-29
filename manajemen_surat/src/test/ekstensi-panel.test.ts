@@ -480,7 +480,7 @@ describe("Kerjakan paling atas, sisanya terlipat", () => {
     }
   });
 
-  it("Putusan ikut terbuka bila borang Putusan Akhir sedang di layar", () => {
+  it("Putusan ikut terbuka bila blangko Putusan Akhir sedang di layar", () => {
     // Satu-satunya kelompok yang lipatannya bergantung keadaan, dan sebabnya
     // sempit: Putusan otomatis duduk di dalamnya. Yang sedang berdiri di
     // layar Putusan Akhir tidak sedang menunggu diminta menekan satu lipatan

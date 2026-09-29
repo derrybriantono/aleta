@@ -48,7 +48,7 @@ const POSITA_ITSBAT =
   "Urusan Agama Kecamatan Dolo Tengah, Kabupaten Sigi, Provinsi Sulawesi Tengah;</p>" +
   "<p>2. Bahwa pada saat pernikahan tersebut Pemohon I berstatus Perjaka dalam usia 16 tahun;</p>";
 
-describe("tanggal Indonesia menjadi bentuk yang diminta borang", () => {
+describe("tanggal Indonesia menjadi bentuk yang diminta blangko", () => {
   it("nama bulan diterjemahkan", () => {
     expect(tanggalKeBorang("18 Juni 2020")).toBe("18/06/2020");
     expect(tanggalKeBorang("08 Februari 2017")).toBe("08/02/2017");

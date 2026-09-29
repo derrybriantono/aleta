@@ -228,8 +228,8 @@ describe("tanggal tidak pernah bocor sebagai bahasa Inggris", () => {
   });
 });
 
-describe("sidang yang sudah ditunda tidak ditawari borang", () => {
-  it("borangnya ditutup, bukan dibiarkan terbuka", () => {
+describe("sidang yang sudah ditunda tidak ditawari blangko", () => {
+  it("blangkonya ditutup, bukan dibiarkan terbuka", () => {
     expect(layar).toContain("const sudahDitunda =");
     expect(layar).toContain("melahirkan baris jadwal berganda");
   });

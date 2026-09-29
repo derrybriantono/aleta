@@ -86,7 +86,7 @@ describe("CatatHasilRingkas memakai mesin yang sama dengan Hasil Sidang", () => 
     expect(ringkas).toContain('"/api/aleta-ecourt/sidang-putus"');
   });
 
-  it("mengirim ruangId, dihadiriOleh, dan jamSekarang - seperti borang lengkapnya", () => {
+  it("mengirim ruangId, dihadiriOleh, dan jamSekarang - seperti blangko lengkapnya", () => {
     for (const ruas of ["ruangId: keadaan.ruanganId", "dihadiriOleh: dihadiri", "jamSekarang: keadaan.jamSidang"]) {
       expect(ringkas).toContain(ruas);
     }

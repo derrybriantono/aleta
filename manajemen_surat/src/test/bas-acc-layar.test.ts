@@ -38,7 +38,7 @@ describe("kewenangan acc sampai ke layar", () => {
     }
   });
 
-  it("bolehAcc BUKAN penjagaan - penjagaannya tetap di peladen", () => {
+  it("bolehAcc BUKAN penjagaan - penjagaannya tetap di server", () => {
     // Kalau kelak seseorang menyimpulkan bahwa memeriksa di layar sudah
     // cukup, penjagaan sebenarnya akan dicabut sebagai "pemeriksaan ganda".
     // Alasannya karena itu tertulis di berkas aturannya, bukan hanya di sini.

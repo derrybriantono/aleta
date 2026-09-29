@@ -177,7 +177,7 @@ describe("kewenangan di pintu rute (K4, K13)", () => {
       data: { penunjuk: 'select[name="status_banding"]' },
     });
     expect(u2.status).toBe(200);
-    catat("tolak", await denganJejak("usr-admin", { tindakan: "tolak", id: u2.isi.butir!.id, alasan: "medan ini tidak ada di borang SIPP" }));
+    catat("tolak", await denganJejak("usr-admin", { tindakan: "tolak", id: u2.isi.butir!.id, alasan: "medan ini tidak ada di blangko SIPP" }));
 
     const idReskom = await idBawaan("putusan.medan-borang", "Hasil Reskom");
     catat("matikan", await denganJejak("usr-admin", { tindakan: "matikan", id: idReskom, alasan: "reskom tidak dipakai satker" }));

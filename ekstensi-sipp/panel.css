@@ -6519,3 +6519,558 @@ html[data-aleta-coba="ya"]::after {
   font: 600 11.5px/1.5 "Segoe UI", system-ui, sans-serif;
   pointer-events: none;
 }
+
+/* Senyap 1 jam (ide popup-12, tahap 2): panel, penanda halaman, sisipan, dan
+   widget disembunyikan sampai waktunya habis; alatTandaiSenyap (panel-alat.js)
+   memasang dan melepas penandanya. Tidak ada yang dimatikan - hanya tidak
+   digambar. Penanda hanya dipasang bila saklar fitur popup-12 menyala. */
+html[data-aleta-senyap="ya"] .aleta-panel,
+html[data-aleta-senyap="ya"] [class^="aleta-tanda"],
+html[data-aleta-senyap="ya"] [class*=" aleta-tanda"],
+html[data-aleta-senyap="ya"] .aleta-sisip,
+html[data-aleta-senyap="ya"] aleta-cm-widget,
+html[data-aleta-senyap="ya"] aleta-cm-kabar {
+  display: none !important;
+}
+
+/* ==========================================================================
+   PANEL PORTAL - TAHAP 4 (rencana "ekstensi dulu", 29 September 2026)
+   ==========================================================================
+
+   Panel ekstensi di halaman portal ALETA dalam tampilan Baru dan UI Baru -
+   lihat blok TAHAP 4 di aleta.js. SELURUH aturan di sini bersyarat, dan
+   syaratnya tidak pernah terpenuhi dalam tampilan Lama:
+
+     #aleta-panel-portal[data-t4]   atribut yang dipasang t4Tata hanya di
+                                    luar Lama; kelas .aleta-t4-* pun hanya
+                                    lahir dari blok itu
+     html[data-aleta-portal-letak]  letak panel (ide portal-8, D1), dilepas
+                                    saat kembali ke Lama
+     html[data-aleta-kulit="modern"] perbaikan desain D1-D15, UI Baru saja
+
+   Warnanya token panel (--aleta-*), bukan angka: kulit Klasik, kulit Modern,
+   dan palet portal yang disalin aleta.js semuanya berlaku apa adanya. */
+
+/* hidden harus menang atas display milik aturan lama (li berdisplay flex). */
+#aleta-panel-portal[data-t4] [hidden] { display: none !important; }
+
+/* ── Unsur umum ─────────────────────────────────────────────────────────── */
+#aleta-panel-portal[data-t4] .aleta-t4-tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--aleta-merek-garis);
+  border-radius: 6px;
+  background: var(--aleta-merek-tombol);
+  color: var(--aleta-tulisan);
+  font-family: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-tombol:hover { background: var(--aleta-merek-tombol-sorot); }
+#aleta-panel-portal[data-t4] .aleta-t4-tombol:disabled { opacity: 0.55; cursor: default; }
+#aleta-panel-portal[data-t4] .aleta-t4-tombol[aria-pressed="true"] {
+  background: var(--aleta-merek);
+  color: var(--aleta-latar);
+  border-color: var(--aleta-merek);
+}
+#aleta-panel-portal[data-t4] .aleta-t4-kecil {
+  padding: 1px 7px;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-tautan {
+  color: var(--aleta-merek);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-tautan:hover { text-decoration: underline; }
+#aleta-panel-portal[data-t4] .aleta-t4-ket {
+  margin: 4px 0;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-lembut {
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-portal[data-t4] .aleta-t4-ringkas { font-weight: 600; }
+#aleta-panel-portal[data-t4] .aleta-t4-label {
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* Kabar jujur untuk ide yang datanya belum ada - redup, bergaris putus. */
+#aleta-panel-portal[data-t4] .aleta-t4-belum {
+  margin: 4px 0;
+  padding: 6px 8px;
+  border: 1px dashed var(--aleta-garis-kuat);
+  border-radius: 6px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-nomor {
+  font-family: ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-chip {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--aleta-merek-latar);
+  color: var(--aleta-merek-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+}
+
+/* Daftar berbaris: teks di kiri, tindakan di kanan, membungkus bila sempit. */
+#aleta-panel-portal[data-t4] .aleta-t4-daftar {
+  list-style: none;
+  margin: 4px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-daftar > li,
+#aleta-panel-portal[data-t4] .aleta-t4-riwayat > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-portal[data-t4] .aleta-t4-daftar > li.aleta-t4-lewat { border-left: 3px solid var(--aleta-lewat); }
+#aleta-panel-portal[data-t4] .aleta-t4-daftar > li.aleta-t4-beres { opacity: 0.75; }
+#aleta-panel-portal[data-t4] .aleta-t4-baris-teks {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  min-width: 0;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-baris-judul { font-weight: 600; }
+#aleta-panel-portal[data-t4] .aleta-t4-pihak {
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-portal[data-t4] .aleta-t4-aksi-baris,
+#aleta-panel-portal[data-t4] .aleta-t4-salin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-salin { flex-basis: 100%; }
+
+/* Kabar singkat (D14): melayang di atas kaki panel, hilang sendiri. */
+#aleta-panel-portal[data-t4] .aleta-t4-kabar {
+  margin: 0 10px 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--aleta-merek-garis);
+  background: var(--aleta-merek-latar);
+  color: var(--aleta-tulisan);
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+  flex: none;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-kabar-buruk {
+  border-color: var(--aleta-lewat);
+  border-left-width: 3px;
+}
+
+/* ── Beranda: sambungan (portal-14), tugas (11) ─────────────────────────── */
+#aleta-panel-portal[data-t4] .aleta-t4-pita {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-pita-baik { border: 1px solid var(--aleta-aman); color: var(--aleta-aman); }
+#aleta-panel-portal[data-t4] .aleta-t4-pita-awas { border: 1px solid var(--aleta-mendesak); color: var(--aleta-mendesak); }
+#aleta-panel-portal[data-t4] .aleta-t4-lampu {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-portal[data-t4] .aleta-t4-lampu > li { display: inline-flex; align-items: baseline; gap: 4px; }
+#aleta-panel-portal[data-t4] .aleta-t4-lampu-baik .aleta-t4-titik { color: var(--aleta-aman); }
+#aleta-panel-portal[data-t4] .aleta-t4-lampu-awas .aleta-t4-titik { color: var(--aleta-mendesak); }
+#aleta-panel-portal[data-t4] .aleta-t4-lampu-buruk .aleta-t4-titik { color: var(--aleta-lewat); }
+#aleta-panel-portal[data-t4] .aleta-t4-lampu-nama { font-weight: 600; }
+#aleta-panel-portal[data-t4] .aleta-t4-lampu-ket { color: var(--aleta-tulisan-lembut); }
+#aleta-panel-portal[data-t4] .aleta-t4-diagnosa .aleta-t4-lampu { flex-direction: column; }
+#aleta-panel-portal[data-t4] .aleta-t4-ubin-angka {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 4px 0;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-angka {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--aleta-latar-naik);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-tulisan-lembut);
+}
+#aleta-panel-portal[data-t4] .aleta-t4-angka strong {
+  color: var(--aleta-tulisan);
+  font-size: calc(18px * var(--aleta-skala-huruf, 1));
+  line-height: 1.2;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-angka.aleta-t4-lewat strong { color: var(--aleta-lewat); }
+#aleta-panel-portal[data-t4] .aleta-t4-angka.aleta-t4-hari-ini strong { color: var(--aleta-mendesak); }
+
+/* ── Perkara: cari (portal-13), riwayat (2, 3, 10, 22) ──────────────────── */
+#aleta-panel-portal[data-t4] .aleta-t4-cari { display: flex; gap: 6px; margin: 2px 0 6px; }
+#aleta-panel-portal[data-t4] .aleta-t4-cari-masukan,
+#aleta-panel-portal[data-t4] .aleta-t4-riwayat-cari,
+#aleta-panel-portal[data-t4] .aleta-t4-catatan-teks {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  font-family: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-portal[data-t4] .aleta-t4-riwayat-cari { margin-bottom: 6px; }
+#aleta-panel-portal[data-t4] .aleta-t4-catatan-teks { resize: vertical; }
+#aleta-panel-portal[data-t4] .aleta-t4-pin {
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--aleta-mendesak);
+  font-family: inherit;
+  font-size: calc(14px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-pilih { display: inline-block; position: relative; }
+#aleta-panel-portal[data-t4] .aleta-t4-pilih-ringkas {
+  cursor: pointer;
+  color: var(--aleta-merek);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  list-style: none;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-pilih-daftar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+}
+
+/* ── Akun: ekstensi (portal-1, 9, 29), peran (16), tampilan (8, 28) ─────── */
+#aleta-panel-portal[data-t4] .aleta-t4-terbaru {
+  margin-bottom: 4px;
+  color: var(--aleta-aman);
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-portal[data-t4] .aleta-t4-terbaru.aleta-t4-tertinggal { color: var(--aleta-mendesak); }
+#aleta-panel-portal[data-t4] .aleta-t4-catatan-pratinjau { margin-top: 6px; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+#aleta-panel-portal[data-t4] .aleta-t4-catatan-pratinjau summary { cursor: pointer; color: var(--aleta-merek); font-weight: 600; }
+#aleta-panel-portal[data-t4] .aleta-t4-diagnosa { margin-top: 8px; }
+#aleta-panel-portal[data-t4] .aleta-t4-peran,
+#aleta-panel-portal[data-t4] .aleta-t4-letak {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-publik-saklar[aria-pressed="true"] {
+  background: var(--aleta-mendesak);
+  border-color: var(--aleta-mendesak);
+  color: var(--aleta-latar);
+}
+/* Tanda layar publik: jelas dari seberang ruangan, dan menyebut sebabnya. */
+#aleta-panel-portal[data-t4] .aleta-t4-pita-publik {
+  margin: 6px 10px 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 2px solid var(--aleta-mendesak);
+  color: var(--aleta-mendesak);
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 800;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-chip-publik {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--aleta-mendesak);
+  color: var(--aleta-latar);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 800;
+}
+#aleta-panel-portal[data-t4-publik="ya"] { box-shadow: 0 0 0 3px var(--aleta-mendesak), 0 12px 32px rgba(0, 0, 0, 0.4); }
+
+/* ── Pintasan (portal-4) dan kewenangan (portal-5) ──────────────────────── */
+#aleta-panel-portal[data-t4] .aleta-t4-atur { display: inline-flex; gap: 4px; margin-left: auto; }
+#aleta-panel-portal[data-t4] .aleta-t4-sembunyi { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+#aleta-panel-portal[data-t4] .aleta-t4-kelompok-judul {
+  margin: 6px 0 2px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-kewenangan .aleta-portal-kewenangan li { flex-wrap: wrap; }
+#aleta-panel-portal[data-t4] .aleta-t4-minta { flex-basis: 100%; padding-left: 1.6em; }
+#aleta-panel-portal[data-t4] .aleta-t4-minta summary,
+#aleta-panel-portal[data-t4] .aleta-t4-lipat-kewenangan > summary {
+  cursor: pointer;
+  color: var(--aleta-merek);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-portal[data-t4] .aleta-t4-lipat-kewenangan > summary { font-weight: 700; margin-bottom: 4px; }
+
+/* ── Bantuan (portal-27), tur (portal-18), kaki ─────────────────────────── */
+#aleta-panel-portal[data-t4] .aleta-t4-bantuan,
+#aleta-panel-portal[data-t4] .aleta-t4-tur {
+  margin: 8px 10px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--aleta-merek-garis);
+  border-radius: 8px;
+  background: var(--aleta-merek-latar);
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-portal[data-t4] .aleta-t4-bantuan-judul { font-weight: 700; margin-bottom: 4px; }
+#aleta-panel-portal[data-t4] .aleta-t4-pintasan-daftar {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-pintasan-daftar li { display: contents; }
+#aleta-panel-portal[data-t4] .aleta-t4-pintasan-daftar kbd {
+  padding: 0 5px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 4px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  justify-self: start;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-tur { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+#aleta-panel-portal[data-t4] .aleta-t4-tur-teks { flex-basis: 100%; }
+#aleta-panel-portal[data-t4] .aleta-t4-sorot {
+  outline: 2px solid var(--aleta-merek);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-tanya {
+  padding: 0 7px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 999px;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+  font-family: inherit;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  cursor: pointer;
+}
+#aleta-panel-portal[data-t4] .aleta-t4-tanya[aria-pressed="true"] { border-color: var(--aleta-mendesak); color: var(--aleta-mendesak); }
+
+/* ── Kepala: ikon berlabel (portal-6), lencana server (portal-7) ────────── */
+#aleta-panel-portal[data-t4] .aleta-t4-pemisah {
+  flex: none;
+  width: 1px;
+  height: 14px;
+  margin: 0 4px;
+  background: var(--aleta-garis-kuat);
+}
+#aleta-panel-portal[data-t4] .aleta-lingkungan.aleta-t4-lencana { letter-spacing: 0.02em; font-weight: 700; }
+#aleta-panel-portal[data-t4] .aleta-lingkungan.aleta-t4-lambat { box-shadow: inset 0 0 0 1px var(--aleta-mendesak); color: var(--aleta-mendesak); }
+
+/* ── Letak panel (ide portal-8, D1) ─────────────────────────────────────────
+   Samping: <body> diberi margin kanan selebar panel, dan panel dilabuhkan
+   di tepi kanan setinggi jendela. !important sebab posisi panel ditulis
+   sebaris oleh perkakas geser. Di layar sempit (di bawah 1100px) tidak ada
+   ruang untuk dua kolom - panel kembali mengambang. */
+@media (min-width: 1100px) {
+  html[data-aleta-portal-letak="samping"] body {
+    margin-right: 400px !important;
+  }
+  html[data-aleta-portal-letak="samping"] #aleta-panel-portal:not(.aleta-panel-lencana):not(.aleta-panel-penuh) {
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: auto !important;
+    width: 400px !important;
+    height: 100vh !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+  html[data-aleta-portal-letak="samping"] #aleta-panel-portal .aleta-tarik { display: none !important; }
+}
+
+/* Mengecil sendiri: tinggal kepalanya selama menutupi tabel dan tidak
+   ditunjuk; membentang lagi begitu kursor masuk atau fokus di dalamnya. */
+html[data-aleta-portal-letak="mengecil"] #aleta-panel-portal[data-t4-menutupi="ya"]:not(:hover):not(:focus-within):not(.aleta-panel-lencana) {
+  height: 46px !important;
+  min-height: 0 !important;
+  max-height: 46px !important;
+  opacity: 0.92;
+}
+
+/* ── UI Baru (kulit Modern): D2 menu, D3 tab, D9 ubin, D11 kaki, D15 baris ── */
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-alat-kepala > .aleta-tema,
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-alat-kepala > .aleta-lipat,
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-alat-kepala > .aleta-penuh,
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-alat-kepala > .aleta-bawaan,
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-alat-kepala > .aleta-warna-lepas,
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-alat-kepala > .aleta-matikan {
+  display: none !important;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-kepala-utama {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-ikon {
+  padding: 0 7px;
+  border: 0;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(16px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-ikon:hover { color: var(--aleta-tulisan); background: var(--aleta-latar-naik); }
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-menu {
+  position: absolute;
+  top: 44px;
+  right: 8px;
+  z-index: 6;
+  width: 270px;
+  max-height: 72%;
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 10px;
+  background: var(--aleta-latar);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-menu-judul {
+  margin: 6px 6px 2px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-menu-butir {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-menu-butir:hover { background: var(--aleta-latar-naik); }
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-menu-ket {
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 500;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-menu-letak { padding: 0 6px; }
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-tabbar {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--aleta-garis);
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-tab {
+  flex: 1;
+  justify-content: center;
+  padding: 7px 4px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-tab[aria-selected="true"] {
+  border-bottom-color: var(--aleta-merek);
+  color: var(--aleta-tulisan);
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4-tab-aktif="beranda"] .aleta-isi > [data-t4-tab]:not([data-t4-tab="beranda"]):not([data-t4-tab="semua"]),
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4-tab-aktif="perkara"] .aleta-isi > [data-t4-tab]:not([data-t4-tab="perkara"]):not([data-t4-tab="semua"]),
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4-tab-aktif="pintasan"] .aleta-isi > [data-t4-tab]:not([data-t4-tab="pintasan"]):not([data-t4-tab="semua"]),
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4-tab-aktif="akun"] .aleta-isi > [data-t4-tab]:not([data-t4-tab="akun"]):not([data-t4-tab="semua"]) {
+  display: none !important;
+}
+/* D9: pintasan menjadi ubin berikon; keterangannya pindah ke title. */
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-portal-pintasan.aleta-t4-ubin {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-ubin > li {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-ubin .aleta-portal-pintasan-tautan {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 10px;
+  background: var(--aleta-latar-naik);
+  text-align: center;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-ubin .aleta-portal-pintasan-tautan:hover {
+  border-color: var(--aleta-merek);
+  text-decoration: none;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-ubin-ikon { font-size: calc(18px * var(--aleta-skala-huruf, 1)); }
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-ubin .aleta-portal-pintasan-ket { display: none; }
+/* D11: deret Alt+... di kaki diganti tombol "?"; daftarnya di kartu bantuan. */
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-kaki-pintasan { visibility: hidden; }
+/* D15: baris dan tombol dengan bidang tekan penuh. */
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-riwayat > li:hover,
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-t4-daftar > li:hover {
+  background: var(--aleta-merek-latar);
+}
+html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-portal-aksi .aleta-portal-tautan {
+  padding: 4px 10px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+}
