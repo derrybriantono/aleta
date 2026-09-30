@@ -49,6 +49,7 @@ export const KUNCI_SAKLAR_PROFIL = [
   "cetakTigaBerkas",
   "checklistMilestone",
   "suntingLangsungAbt",
+  "sembunyikanTeknis",
 ] as const;
 export type KunciSaklarProfil = (typeof KUNCI_SAKLAR_PROFIL)[number];
 
@@ -59,6 +60,7 @@ export const LABEL_SAKLAR_PROFIL: Record<KunciSaklarProfil, string> = {
   cetakTigaBerkas: "Cetak tiga berkas",
   checklistMilestone: "Checklist milestone",
   suntingLangsungAbt: "Sunting sekali klik di ABT",
+  sembunyikanTeknis: "Sembunyikan penjelasan teknis",
 };
 
 export type SaklarProfil = Partial<Record<KunciSaklarProfil, boolean>>;

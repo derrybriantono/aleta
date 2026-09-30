@@ -9137,3 +9137,321 @@ html[data-aleta-tema-sipp="gelap"] .aleta-sisip .aleta-unduh:focus-visible {
 .aleta-jurusita-putaran-teks { flex: 1 1 auto; font-size: calc(12.5px * var(--aleta-skala-huruf, 1)); }
 .aleta-jurusita [hidden] { display: none !important; }
 /* JURU SITA - PERBAIKAN 30 SEP (AKHIR) */
+
+/* === W - PERBAIKAN 30 SEP SORE === */
+/* Butir 3 / kontrak K5: "Sembunyikan penjelasan teknis" (bawaan nyala).
+ * Penandanya dipasang panel-alat.js (alatTandaiTeknis) HANYA dalam tampilan
+ * Baru dan UI Baru, jadi dalam Lama aturan ini tidak pernah berlaku.
+ * Dijangkar pada kelas berawalan .aleta- - tidak pernah menyentuh SIPP/ABT. */
+html[data-aleta-teknis="sembunyi"] .aleta-teknis {
+  display: none !important;
+}
+/* Saklar siap pasang (alatSaklarTeknis) untuk menu panel. */
+.aleta-saklar-teknis {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--aleta-tulisan);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.3;
+}
+.aleta-saklar-teknis input {
+  margin: 0;
+  accent-color: var(--aleta-merek);
+}
+/* === AKHIR W === */
+/* === S - PERBAIKAN 30 SEP SORE === */
+/* Menu per peran panel SIPP (konten.js, mpsTerapkan): kelompok, tab, dan chip
+   yang tidak ada di menu peran itu DISEMBUNYIKAN - tidak dibuang. Atributnya
+   hanya lahir di tampilan Baru & UI Baru, jadi Lama tidak tersentuh. */
+#aleta-panel-sipp [data-mps-sembunyi] { display: none !important; }
+/* Antrean putusan massal di puncak panel perkara ikut menu Putusan. */
+#aleta-panel-sipp[data-mps-tanpa-putusan] .aleta-isi > .aleta-antrean-sipp { display: none !important; }
+/* Wadah menu massal di halaman daftar perkara (BAS, Relaas & PBT, Putusan). */
+#aleta-panel-sipp .aleta-mps-massal:empty { display: none; }
+/* === AKHIR S === */
+
+/* === J - PERBAIKAN 30 SEP SORE === */
+/* Juru Sita (jurusita.js). Semua di bawah .aleta-jurusita - hanya tergambar
+ * dalam tampilan Baru dan UI Baru (jurusita.js pulang false di Lama). */
+/* ⓘ kini membuka uraiannya di baris judul, selebar satu baris penuh. */
+.aleta-jurusita-judul { flex-wrap: wrap; }
+.aleta-jurusita-judul > .aleta-jurusita-uraian { flex: 1 0 100%; }
+/* Siapa yang dipanggil ke sidang tundaan (per perkara). */
+.aleta-jurusita-petunjuk {
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-tulisan);
+  padding: 4px 8px;
+  border-left: 3px solid var(--aleta-merek);
+  background: color-mix(in srgb, var(--aleta-merek) 8%, transparent);
+  border-radius: 0 4px 4px 0;
+}
+/* Panel massal daftar perkara SIPP / beranda ABT (K3). */
+.aleta-jurusita-massal-panel { padding: 8px; }
+.aleta-jurusita-daftar-perkara {
+  display: grid;
+  gap: 6px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.aleta-jurusita-perkara {
+  display: grid;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-jurusita-perkara-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+.aleta-jurusita-perkara-nomor { font-weight: 600; }
+.aleta-jurusita-catatan {
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-mendesak);
+}
+.aleta-jurusita-kemarin > .aleta-jurusita-perkara { margin-top: 6px; }
+.aleta-jurusita-blangko { word-break: break-word; }
+.aleta-jurusita-cek-sesi { padding: 2px 8px; }
+/* === AKHIR J === */
+
+/* === M - PERBAIKAN 30 SEP SORE === */
+/* BAS massal (butir U4, kontrak K4) - basmassal.js. Hanya kelas berawalan
+ * .aleta-basmassal; bagian ini hanya lahir di tampilan Baru dan UI Baru. */
+.aleta-basmassal {
+  display: grid;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-tulisan);
+}
+.aleta-basmassal [hidden] { display: none !important; }
+.aleta-basmassal-judul { display: flex; align-items: center; gap: 6px; }
+.aleta-basmassal-judul-teks { font-weight: 600; color: var(--aleta-merek-tulisan, var(--aleta-merek)); }
+.aleta-basmassal-uraian {
+  display: grid;
+  gap: 4px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+  color: var(--aleta-tulisan-lembut);
+}
+.aleta-basmassal-baris-atas,
+.aleta-basmassal-bawah,
+.aleta-basmassal-aksi,
+.aleta-basmassal-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.aleta-basmassal-pilih,
+.aleta-basmassal-blangko {
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 4px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+.aleta-basmassal-blangko { width: 100%; }
+.aleta-basmassal-daftar { display: grid; gap: 6px; }
+.aleta-basmassal-baris {
+  display: grid;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-basmassal-kepala { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.aleta-basmassal-pilih-perkara { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.aleta-basmassal-pilih-perkara:has(input:disabled) { cursor: not-allowed; }
+.aleta-basmassal-nomor { font-weight: 600; }
+.aleta-basmassal-tanda {
+  padding: 1px 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 999px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+}
+.aleta-basmassal-tanda-baik { color: var(--aleta-aman); border-color: color-mix(in srgb, var(--aleta-aman) 45%, transparent); }
+.aleta-basmassal-tanda-belum { color: var(--aleta-mendesak); border-color: color-mix(in srgb, var(--aleta-mendesak) 45%, transparent); }
+.aleta-basmassal-tombol {
+  padding: 4px 10px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 4px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+}
+.aleta-basmassal-tombol:hover:not(:disabled) { background: var(--aleta-merek-latar, var(--aleta-latar-naik)); }
+.aleta-basmassal-tombol:disabled { opacity: 0.55; cursor: default; }
+.aleta-basmassal-tombol-utama {
+  background: var(--aleta-merek);
+  border-color: var(--aleta-merek);
+  color: #16211c;
+  font-weight: 600;
+}
+.aleta-basmassal-tombol-utama:hover:not(:disabled) { background: var(--aleta-merek); filter: brightness(1.06); }
+.aleta-basmassal-tombol-kecil { padding: 2px 8px; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-basmassal-info { padding: 0 5px; border: none; background: none; color: var(--aleta-tulisan-lembut); line-height: 1; }
+.aleta-basmassal-info[aria-expanded="true"] { color: var(--aleta-merek); }
+.aleta-basmassal-tautan {
+  color: var(--aleta-merek);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  text-decoration: underline;
+}
+.aleta-basmassal-paksa { display: inline-flex; align-items: center; gap: 4px; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-basmassal-lembut { color: var(--aleta-tulisan-lembut); font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-basmassal-salah { color: var(--aleta-lewat); }
+.aleta-basmassal-hasil { display: grid; gap: 4px; }
+.aleta-basmassal-rinci > summary {
+  cursor: pointer;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+.aleta-basmassal-daftar-temuan {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.aleta-basmassal-kabar {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.aleta-basmassal-kabar-baik { color: var(--aleta-aman); background: color-mix(in srgb, var(--aleta-aman) 12%, transparent); }
+.aleta-basmassal-kabar-peringatan { color: var(--aleta-mendesak); background: color-mix(in srgb, var(--aleta-mendesak) 12%, transparent); }
+.aleta-basmassal-kabar-salah { color: var(--aleta-lewat); background: color-mix(in srgb, var(--aleta-lewat) 12%, transparent); }
+/* === AKHIR M === */
+
+/* === T - PERBAIKAN 30 SEP SORE === */
+/* Panel ABT sederhana + menu per peran (abt.js, lapisan sore). Seluruh aturan
+ * bersyarat pada atribut/kelas yang hanya dipasang dalam tampilan Baru dan UI
+ * Baru (data-sore, .aleta-sore-*) - tampilan Lama tidak tersentuh. */
+
+/* Disembunyikan menurut peran / ⋯ - tidak dihapus dari DOM. */
+#aleta-panel-abt[data-sore] [data-sore-tampak="tidak"],
+#aleta-panel-abt-massal[data-sore] [data-sore-tampak="tidak"] {
+  display: none !important;
+}
+.aleta-sore[hidden] { display: none !important; }
+
+/* ⋯ di kepala panel dan lacinya. */
+#aleta-panel-abt[data-sore] .aleta-sore-menu-tombol {
+  padding: 0 7px;
+  min-width: 26px;
+  justify-content: center;
+  font-size: calc(15px * var(--aleta-skala-huruf, 1));
+  line-height: 1.2;
+}
+#aleta-panel-abt[data-sore] .aleta-sore-menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+}
+
+/* Bagian kerja: Isi dari SIPP & input ke ABT, Susun keterangan saksi. */
+#aleta-panel-abt[data-sore] .aleta-sore-kerja {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 6px;
+}
+#aleta-panel-abt[data-sore] .aleta-sore-kerja-kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+#aleta-panel-abt[data-sore] .aleta-sore-kerja-judul {
+  color: var(--aleta-tulisan);
+  font-size: calc(14px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+}
+#aleta-panel-abt[data-sore] .aleta-sore-status {
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+#aleta-panel-abt[data-sore] .aleta-sore-status.aleta-t6-gagal { color: var(--aleta-lewat); }
+#aleta-panel-abt[data-sore] .aleta-sore-bukan-penangan {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--aleta-garis-kuat, var(--aleta-garis));
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+}
+
+/* Butir 5: kartu alasan perceraian - kesimpulan dan sebab per huruf. */
+#aleta-panel-abt[data-sore] .aleta-sore-alasan-kepala {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#aleta-panel-abt[data-sore] .aleta-sore-simpul {
+  display: grid;
+  gap: 2px;
+  margin: 4px 0 6px;
+}
+#aleta-panel-abt[data-sore] .aleta-sore-simpul-baris {
+  padding-left: 8px;
+  border-left: 3px solid var(--aleta-garis);
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+}
+#aleta-panel-abt[data-sore] .aleta-sore-simpul-baris.aleta-sore-nada-siap { border-left-color: var(--aleta-aman); }
+#aleta-panel-abt[data-sore] .aleta-sore-simpul-baris.aleta-sore-nada-sebagian { border-left-color: var(--aleta-mendesak); }
+#aleta-panel-abt[data-sore] .aleta-sore-simpul-baris.aleta-sore-nada-awas { border-left-color: var(--aleta-lewat); }
+#aleta-panel-abt[data-sore] .aleta-sore-huruf-sebab {
+  margin-left: 6px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 400;
+}
+#aleta-panel-abt[data-sore] .aleta-abt-huruf.aleta-sore-nada-siap .aleta-sore-huruf-sebab { color: var(--aleta-aman); }
+#aleta-panel-abt[data-sore] .aleta-abt-huruf.aleta-sore-nada-awas .aleta-sore-huruf-sebab { color: var(--aleta-lewat); font-weight: 600; }
+
+/* Satu tombol tulis. */
+#aleta-panel-abt[data-sore] .aleta-sore-tindakan { margin-top: 8px; }
+
+/* Butir 2: komentar hakim yang berisi - pita kecil. */
+#aleta-panel-abt[data-sore] .aleta-t6-komentar[data-sore-pita] {
+  margin: 4px 0;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+
+/* Beranda ABT: tab menu massal. */
+#aleta-panel-abt-massal[data-sore] .aleta-sore-tab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+#aleta-panel-abt-massal[data-sore] .aleta-sore-tab-tombol[aria-selected="true"] {
+  background: var(--aleta-merek);
+  border-color: var(--aleta-merek);
+  color: var(--aleta-latar);
+}
+#aleta-panel-abt-massal[data-sore] .aleta-sore-massal { display: grid; gap: 6px; }
+/* === AKHIR T === */

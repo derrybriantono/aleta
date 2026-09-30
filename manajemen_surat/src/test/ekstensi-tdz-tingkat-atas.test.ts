@@ -68,6 +68,8 @@ const BERKAS = [
   "tema-awal.js",
   // Tab Juru Sita (perbaikan 30 Sep 2026) - skrip konten bersama SIPP dan ABT.
   "jurusita.js",
+  // BAS massal (perbaikan 30 Sep sore, U4) - skrip konten bersama SIPP dan ABT.
+  "basmassal.js",
 ];
 
 type Jebakan = {

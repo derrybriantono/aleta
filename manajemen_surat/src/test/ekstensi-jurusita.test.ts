@@ -11,7 +11,8 @@
  *
  * Yang dijaga:
  *   1. Tampilan Lama: tidak menggambar, tidak membaca, tidak mengirim apa pun.
- *   2. Hanya juru sita / panitera / admin / super admin.
+ *   2. Hanya juru sita / admin / super admin (matriks K1, perbaikan 30 Sep
+ *      sore - panitera/PP tidak lagi); peran "lain" memakai aturan lama.
  *   3. Per perkara: pesan relaas-mulai ke latar.js berbentuk kontrak mesin
  *      relaas yang sudah ada (golongan, d, berkas APA ADANYA, asal halaman).
  *   4. Pemetaan blangko: server -> simpanan -> bawaan; bawaan = pohon-blangko.ts.
@@ -235,15 +236,19 @@ describe("gerbang tampilan dan peran", () => {
     expect(h.w.aletaJurusitaBoleh("Jurusita")).toBe(false);
   });
 
-  it("hakim tidak melihat tab Juru Sita, juru sita/panitera/admin melihatnya", async () => {
+  it("hakim dan panitera tidak melihat tab Juru Sita, juru sita/admin/super admin melihatnya", async () => {
     const h = buka({ siapa: { nama: "Hakim Satu", peran: "Hakim", roleId: "hakim" } });
     await siapBaru(h);
     expect(await pasang(h)).toBe(false);
     expect(h.wadah.innerHTML).toBe("");
     expect(h.pesan).toEqual([]);
     expect(h.w.aletaJurusitaBoleh("Hakim")).toBe(false);
-    for (const peran of ["Jurusita", "Panitera Pengganti", "Admin", "Super Admin", "Panitera"]) {
+    for (const peran of ["Jurusita", "Jurusita Pengganti", "Admin", "Super Admin"]) {
       expect(h.w.aletaJurusitaBoleh(peran), peran).toBe(true);
+    }
+    // Matriks K1 (30 Sep sore): relaas/PBT bukan menu panitera/PP, ketua, hakim.
+    for (const peran of ["Panitera Pengganti", "Panitera", "Panitera Muda", "Ketua", "Wakil Ketua"]) {
+      expect(h.w.aletaJurusitaBoleh(peran), peran).toBe(false);
     }
   });
 
@@ -316,23 +321,27 @@ describe("per perkara - relaas panggilan dan PBT lewat mesin relaas latar.js", (
     expect(dok[0]).toMatchObject({ berkas: P_DAN_T, golongan: "sidang-pertama", d: 1, label: "Panggilan Penggugat dan Tergugat" });
   });
 
-  it("sidang lanjutan: Penggugat memakai P dan T, Tergugat T lanjutan - dua dokumen", async () => {
+  it("sidang lanjutan: Penggugat + Tergugat = SATU dokumen P dan T (memuat keduanya, pohon-blangko)", async () => {
+    // Sampai 30 Sep sore: dua dokumen (P dan T + T lanjutan) - panggilan
+    // Tergugat tercetak dua kali. pohon-blangko.ts: pihak keduanya pada sidang
+    // ditunda memakai blangko P dan T saja.
     const h = buka();
     await siapBaru(h);
     await pasang(h);
     await sampai(() => h.wadah.querySelector("select.aleta-jurusita-sidang"), "pilihan");
     centang(h, "p1");
     centang(h, "p2");
-    expect(tombolCetak(h).textContent).toBe("Cetak 2 dokumen");
+    expect(tombolCetak(h).textContent).toBe("Cetak");
     // Blangko yang dipakai tertulis beserta sumbernya.
     const daftar = h.wadah.querySelector(".aleta-jurusita-rinci .aleta-jurusita-daftar")!.textContent || "";
     expect(daftar).toContain(P_DAN_T);
-    expect(daftar).toContain(T_LANJUTAN);
+    expect(daftar).not.toContain(T_LANJUTAN);
     expect(daftar).toContain("bawaan ekstensi");
     tombolCetak(h).click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
-    const berkas = pesanMulai(h)[0].pekerjaan.dokumen.map((x: any) => x.berkas).sort();
-    expect(berkas).toEqual([P_DAN_T, T_LANJUTAN].sort());
+    const dok = pesanMulai(h)[0].pekerjaan.dokumen;
+    expect(dok).toHaveLength(1);
+    expect(dok[0]).toMatchObject({ berkas: P_DAN_T, golongan: "sidang-lanjutan", d: 3, label: "Panggilan Penggugat dan Tergugat" });
   });
 
   it("PBT: mati sebelum putus; sesudah putus satu dokumen pemberitahuan-putusan tanpa sidang", async () => {

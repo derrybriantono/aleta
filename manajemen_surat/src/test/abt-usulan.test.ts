@@ -1185,7 +1185,9 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // ia memakai alatAmbil dari panel-alat.js dan tidak menyentuh abt.js.
     // jurusita.js (tab Juru Sita, 30 Sep 2026) sesudah panel-alat.js dan
     // SEBELUM abt.js: abt.js memanggil aletaJurusitaPasang saat panelnya lahir.
-    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "abt.js", "checklist.js"]);
+    // basmassal.js (BAS massal, 30 Sep sore U4) sesudah jurusita.js dan
+    // SEBELUM abt.js: beranda ABT memanggil aletaBasMassalPasang.
+    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "basmassal.js", "abt.js", "checklist.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {

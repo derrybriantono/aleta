@@ -995,6 +995,19 @@
     .aleta-cm-info b { color: var(--aleta-merek); }
     .aleta-cm-info:hover span { color: var(--aleta-tulisan); text-decoration: underline; }
 
+    /* Perbaikan 30 Sep sore butir 3 (K5): penjelasan teknis tersembunyi.
+     * data-teknis dipasang pada akar hanya bila <html data-aleta-teknis>
+     * ada - panel-alat.js memasangnya hanya dalam Baru dan UI Baru. */
+    :host([data-teknis="sembunyi"]) .aleta-teknis { display: none !important; }
+    .aleta-cmw-teknis {
+      display: flex; align-items: center; gap: 8px; margin-top: 6px; padding-top: 6px;
+      border-top: 1px solid var(--aleta-garis);
+    }
+    .aleta-cmw-teknis-teks { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+    .aleta-cmw-teknis-teks b { font-weight: 600; }
+    .aleta-cmw-teknis-teks small { color: var(--aleta-tulisan-lembut); }
+    .aleta-cmw-teknis .aleta-cmw-saklar { flex: none; }
+
     /* Tidak pernah ikut tercetak - widget maupun kabar tutupnya. Akarnya di
      * <html>, di luar jangkauan aturan cetak halaman ("body > *:not(...)",
      * "body *"), jadi yang menyembunyikannya harus dibawa sendiri. Lapisan
@@ -1194,6 +1207,55 @@
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Perbaikan 30 Sep sore butir 3 (K5): menandai penjelasan teknis dengan
+   * kelas aleta-teknis - hanya di luar Lama, supaya widget Lama tetap
+   * identik sampai ke nama kelasnya. Dipulangkan elemennya sendiri.
+   */
+  function teknis(x) {
+    if (x && x.classList && modeUji() !== "lama") x.classList.add("aleta-teknis");
+    return x;
+  }
+
+  /** Nilai saklar "Sembunyikan penjelasan teknis" (bawaan nyala) - dari panel-alat.js. */
+  function saklarTeknis() {
+    try {
+      return typeof alatTeknisSaklar === "function" ? alatTeknisSaklar() !== false : true;
+    } catch {
+      return true;
+    }
+  }
+
+  /**
+   * Saklar "Sembunyikan penjelasan teknis" di widget (K5). Yang menyimpan
+   * tetap panel-alat.js (alatSetelTeknis) - satu penulis kunci
+   * sembunyikanTeknis, dan tab lain ikut lewat onChanged.
+   */
+  function susunSaklarTeknis() {
+    if (modeUji() === "lama" || typeof alatSetelTeknis !== "function") return null;
+    const nyala = saklarTeknis();
+    const baris = el("div", "aleta-cmw-teknis");
+    baris.setAttribute("data-widget-teknis", "ya");
+    const teks = el("div", "aleta-cmw-teknis-teks");
+    teks.appendChild(el("b", "", "Sembunyikan penjelasan teknis"));
+    teks.appendChild(el("small", "", "Error, peringatan, dan konfirmasi tetap tampil."));
+    baris.appendChild(teks);
+    const saklar = tombol(
+      "aleta-cmw-saklar",
+      "",
+      nyala ? "Tampilkan lagi penjelasan teknis" : "Sembunyikan penjelasan teknis",
+      () => {
+        void Promise.resolve(alatSetelTeknis(!saklarTeknis())).then(() => gambar());
+      },
+      "saklar-teknis"
+    );
+    saklar.setAttribute("role", "switch");
+    saklar.setAttribute("aria-checked", nyala ? "true" : "false");
+    saklar.setAttribute("aria-label", "Sembunyikan penjelasan teknis");
+    baris.appendChild(saklar);
+    return baris;
   }
 
   /** UI Baru: perbaikan desain D8-D11 berlaku. */
@@ -2277,10 +2339,16 @@
     const baris = el("div", "aleta-cm-kaki-baris");
     const waktu = keadaan.data ? waktuData() : "";
     if (waktu) baris.appendChild(el("span", "aleta-cm-waktu", `Diperbarui ${waktu}`));
-    baris.appendChild(el("span", "aleta-cm-catatan", "butir hilang sendiri saat datanya lengkap"));
+    baris.appendChild(teknis(el("span", "aleta-cm-catatan", "butir hilang sendiri saat datanya lengkap")));
     // popup-9 dalam kulit Klasik; di dok UI Baru disebut di samping lencana.
-    if (sudutAktif() && !modern()) baris.appendChild(el("span", "aleta-cm-sudut", teksSudut()));
+    if (sudutAktif() && !modern()) baris.appendChild(teknis(el("span", "aleta-cm-sudut", teksSudut())));
     kaki.appendChild(baris);
+    // K5: saklar penjelasan teknis - dalam Baru (kulit Klasik) di kaki
+    // checklist; dalam UI Baru di "Atur widget". Lama: tidak ada.
+    if (!modern()) {
+      const saklar = susunSaklarTeknis();
+      if (saklar) kaki.appendChild(saklar);
+    }
 
     const data = keadaan.data;
     if (!data) return kaki;
@@ -2489,7 +2557,7 @@
       const ket = el("div", "aleta-cmw-lencana-ket");
       const a = angkaBelum();
       ket.appendChild(el("span", "aleta-cmw-lencana-teks", `${keadaan.data ? `${a.belum} tugas · ` : ""}${teksSambungan()}`));
-      if (sudutAktif()) ket.appendChild(el("span", "aleta-cm-sudut", teksSudut()));
+      if (sudutAktif()) ket.appendChild(teknis(el("span", "aleta-cm-sudut", teksSudut())));
       baris.appendChild(ket);
       const atur = tombol(
         "aleta-cmw-tombol aleta-cmw-atur-buka",
@@ -2564,7 +2632,7 @@
     }
     if (kotakCatatan.value !== keadaan.catatan && !catatanDisunting()) kotakCatatan.value = keadaan.catatan;
     w.isi.appendChild(kotakCatatan);
-    w.isi.appendChild(el("div", "aleta-cmw-ket", "Tersimpan di peramban ini saja - tidak dikirim ke mana pun."));
+    w.isi.appendChild(teknis(el("div", "aleta-cmw-ket", "Tersimpan di peramban ini saja - tidak dikirim ke mana pun.")));
     return w.kotak;
   }
 
@@ -2637,15 +2705,15 @@
       : "Belum ada sidang yang berjalan.";
     w.isi.appendChild(el("div", "aleta-cmw-ket aleta-cmw-sidang-ket", ket));
     const r = rataSidang();
-    w.isi.appendChild(
-      el(
-        "div",
-        "aleta-cmw-ket aleta-cmw-sidang-rata",
-        r
-          ? `Rata-rata ${r.menit} menit dari ${r.jumlah} sidang yang dicatat di peramban ini.`
-          : "Rata-rata muncul sesudah sidang pertama dicatat di peramban ini."
-      )
+    const rata = el(
+      "div",
+      "aleta-cmw-ket aleta-cmw-sidang-rata",
+      r
+        ? `Rata-rata ${r.menit} menit dari ${r.jumlah} sidang yang dicatat di peramban ini.`
+        : "Rata-rata muncul sesudah sidang pertama dicatat di peramban ini."
     );
+    // Angka rata-ratanya hasil; kalimat "muncul sesudah…" penjelasan.
+    w.isi.appendChild(r ? rata : teknis(rata));
     const baris = el("div", "aleta-cmw-baris");
     const t = (kelas, teks, judul, tindakan) =>
       baris.appendChild(tombol(`aleta-cmw-tombol ${kelas}`, teks, judul, () => ubahSidang(tindakan), `sidang-${tindakan}`));
@@ -2772,8 +2840,16 @@
     if (sebelum) catatan.push(`${sebelum} tenggat lewat sebelum ${teksTanggal(awal)}`);
     if (sesudah) catatan.push(`${sesudah} sesudah ${teksTanggal(akhir)}`);
     if (tanpa) catatan.push(`${tanpa} tanpa tenggat`);
-    catatan.push("hanya tenggat yang dikirim checklist (lewat, hari ini, minggu ini)");
-    w.isi.appendChild(el("div", "aleta-cmw-ket", `${catatan.join(" · ")}.`));
+    // Hitungannya hasil; batas sumbernya penjelasan teknis (K5).
+    const batas = "hanya tenggat yang dikirim checklist (lewat, hari ini, minggu ini)";
+    if (modeUji() === "lama") {
+      catatan.push(batas);
+      w.isi.appendChild(el("div", "aleta-cmw-ket", `${catatan.join(" · ")}.`));
+    } else {
+      const ket = el("div", "aleta-cmw-ket", catatan.length ? `${catatan.join(" · ")}.` : "");
+      ket.appendChild(teknis(el("span", "", `${catatan.length ? " " : ""}${batas.charAt(0).toUpperCase()}${batas.slice(1)}.`)));
+      w.isi.appendChild(ket);
+    }
     return w.kotak;
   }
 
@@ -2854,7 +2930,7 @@
     alat.appendChild(tombol("aleta-cmw-atur-tutup", "×", "Tutup Atur widget", () => bukaAtur(false), "atur-tutup"));
     w.kepala.appendChild(alat);
     w.isi.appendChild(
-      el(
+      teknis(el(
         "div",
         "aleta-cmw-ket",
         "Pilih yang tampil di dok. Seret ⋮⋮ (atau ↑ ↓) untuk mengubah urutan. " +
@@ -2862,7 +2938,7 @@
             ? `Susunan ini untuk ${NAMA_SITUS[JENIS]} saja - SIPP, ABT, dan portal boleh berbeda.`
             : "Susunan yang sama berlaku di SIPP, ABT, dan portal.") +
           " Tersimpan di peramban ini."
-      )
+      ))
     );
     const daftar = el("ul", "aleta-cmw-atur-daftar");
     const urutan = urutanWidget();
@@ -2879,9 +2955,10 @@
       li.appendChild(pegang);
       const teks = el("div", "aleta-cmw-atur-teks");
       teks.appendChild(el("b", "", wd.judul));
-      teks.appendChild(
-        el("small", "", tersedia ? wd.ket : `${wd.ket}. Saklar fitur ${wd.kode} di popup (Uji tampilan) masih mati.`)
-      );
+      const kecil = el("small", "", tersedia ? wd.ket : `${wd.ket}.`);
+      // Sebab saklarnya tidak dapat ditekan - penjelasan teknis (K5).
+      if (!tersedia) kecil.appendChild(teknis(el("span", "", ` Saklar fitur ${wd.kode} di popup (Uji tampilan) masih mati.`)));
+      teks.appendChild(kecil);
       li.appendChild(teks);
       const geser = el("span", "aleta-cmw-geser");
       const naik = tombol("", "↑", `Naikkan ${wd.judul}`, () => geserUrutan(id, -1), `atur-naik-${id}`);
@@ -2916,7 +2993,7 @@
       const judul = el("b", "", wd.judul);
       judul.appendChild(el("span", "aleta-cmw-menyusul", "menyusul"));
       teks.appendChild(judul);
-      teks.appendChild(el("small", "", wd.menyusul));
+      teks.appendChild(teknis(el("small", "", wd.menyusul)));
       li.appendChild(teks);
       const saklar = el("button", "aleta-cmw-saklar");
       saklar.type = "button";
@@ -2930,6 +3007,10 @@
     }
     pasangSeretAtur(daftar);
     w.isi.appendChild(daftar);
+    // K5: saklar penjelasan teknis - di UI Baru tempatnya di sini, bersama
+    // setelan widget lainnya.
+    const saklarTeknisAtur = susunSaklarTeknis();
+    if (saklarTeknisAtur) w.isi.appendChild(saklarTeknisAtur);
     return w.kotak;
   }
 
@@ -3099,7 +3180,8 @@
       if (teks.length <= BATAS || !x.parentNode) continue;
       const ringkas =
         typeof alatRingkasPenjelasan === "function" ? alatRingkasPenjelasan(teks) : `${teks.slice(0, 64)}…`;
-      const tombol = el("button", "aleta-cm-info");
+      // Penjelasan teknis yang dilipat: ⓘ-nya ikut tersembunyi (K5).
+      const tombol = el("button", x.classList.contains("aleta-teknis") ? "aleta-cm-info aleta-teknis" : "aleta-cm-info");
       tombol.type = "button";
       tombol.setAttribute("aria-expanded", "false");
       tombol.title = "Tampilkan penjelasan lengkap";
@@ -3128,6 +3210,7 @@
     if (keadaan.warna) akar.setAttribute("data-warna", keadaan.warna);
     else akar.removeAttribute("data-warna");
     tandaiKulit(akar);
+    tandaiTeknis(akar);
     // Petunjuk dua detik panel-alat.js membaca data-tema dari akar yang
     // dipasanginya - di sini wadah di dalam bayangan.
     const wadah = bayang && bayang.querySelector(".aleta-cm-wadah");
@@ -3143,6 +3226,17 @@
     if (!inang) return;
     if (document.documentElement.getAttribute("data-aleta-kulit") === "modern") inang.setAttribute("data-kulit", "modern");
     else inang.removeAttribute("data-kulit");
+  }
+
+  /**
+   * Penjelasan teknis (K5) mengikuti <html data-aleta-teknis="sembunyi"> yang
+   * dipasang panel-alat.js (alatTandaiTeknis) - aturan panel.css tidak
+   * menembus Shadow DOM, jadi akarnya diberi tanda sendiri. Lama: tidak pernah.
+   */
+  function tandaiTeknis(inang) {
+    if (!inang) return;
+    if (document.documentElement.getAttribute("data-aleta-teknis") === "sembunyi") inang.setAttribute("data-teknis", "sembunyi");
+    else inang.removeAttribute("data-teknis");
   }
 
   /** Dijepit ke layar, dengan ukuran yang SUDAH berlaku. */
@@ -3674,6 +3768,12 @@
   window.addEventListener("resize", () => terapkanPosisi());
   // Pengalih Lama / Baru / UI Baru di popup - kulitnya ikut seketika.
   document.addEventListener("aleta-uji-berubah", () => terapkanTema());
+  // Saklar "Sembunyikan penjelasan teknis" (K5), dari popup, widget, atau
+  // tab lain: tanda akarnya dan rupa saklarnya ikut seketika.
+  document.addEventListener("aleta-teknis-berubah", () => {
+    terapkanTema();
+    if (akar && akar.isConnected && modeUji() !== "lama") gambar();
+  });
   // ...dan susunannya: dok, lencana, tombol Selesai/Tunda, sudut, angka ikon.
   // Kembali ke Lama menggambar ulang lewat jalan Lama, jadi tidak ada sisa.
   document.addEventListener("aleta-uji-berubah", () => {

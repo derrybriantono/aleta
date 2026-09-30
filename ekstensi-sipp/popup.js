@@ -1171,13 +1171,23 @@ function komponenProfilPeran() {
 }
 
 /** Keadaan yang hanya dibaca bagian ini - dimuat sekali, lalu diikuti lewat onChanged. */
-const tahap2 = { asalPortal: "", akunSipp: "", senyapSampai: 0, tandaBaru: {} };
+const tahap2 = { asalPortal: "", akunSipp: "", senyapSampai: 0, tandaBaru: {}, teknis: true };
 const tandaBaruSesiIni = new Set();
+
+/**
+ * Perbaikan 30 Sep sore butir 3 (K5): "Sembunyikan penjelasan teknis".
+ * Kuncinya sama dengan panel-alat.js (ALAT_TEKNIS_KUNCI) - popup tidak
+ * memuat berkas itu, jadi namanya ditulis ulang di sini dan dijaga uji
+ * ekstensi-teknis-tersembunyi supaya tidak berselisih. Belum pernah diatur =
+ * NYALA.
+ */
+const KUNCI_TEKNIS = "sembunyikanTeknis";
 
 async function muatTahap2() {
   if (!penyimpanan) return;
   try {
-    const s = await penyimpanan.get(["asalPortal", "akunSipp", KUNCI_SENYAP, KUNCI_TANDA_BARU]);
+    const s = await penyimpanan.get(["asalPortal", "akunSipp", KUNCI_SENYAP, KUNCI_TANDA_BARU, KUNCI_TEKNIS]);
+    tahap2.teknis = !(s && s[KUNCI_TEKNIS] === false);
     tahap2.asalPortal = String((s && s.asalPortal) || "");
     tahap2.akunSipp = String((s && s.akunSipp) || "");
     tahap2.senyapSampai = Number(s && s[KUNCI_SENYAP]) || 0;
@@ -1248,6 +1258,9 @@ function pulihkanSusunan() {
   for (const x of Array.from(document.querySelectorAll("[data-cari-sembunyi]"))) {
     x.removeAttribute("data-cari-sembunyi");
   }
+  // Penanda penjelasan teknis (K5) tidak dicatat sebagai langkah - ia
+  // dibalik saklarnya di tempat. Lama tidak pernah memilikinya.
+  document.documentElement.removeAttribute("data-aleta-teknis");
   while (susunan.langkah.length) {
     const l = susunan.langkah.pop();
     try {
@@ -1287,6 +1300,9 @@ async function terapkanSusunan() {
   atributSementara(document.documentElement, "data-susunan", mode);
   if (mode === "ui") susunUiBaru();
   else susunBaru();
+  // Perbaikan 30 Sep sore butir 3 (K5): saklar penjelasan teknis, di
+  // Baru DAN UI Baru, sesudah ukuran huruf panel.
+  pasangSaklarTeknis();
   // Butir 25: kalimat profil peran di puncak daftar saklar.
   if (profilPeranMengaturSaklar()) {
     const isi = document.querySelector(".isi");
@@ -1298,6 +1314,68 @@ async function terapkanSusunan() {
   if (mode === "ui" || fiturPopupNyala("popup-1")) lipatKetPanjang();
   simpanTandaBaru();
   segarkanSusunan();
+}
+
+// ── Perbaikan 30 Sep sore butir 3 (K5): sembunyikan penjelasan teknis ───────
+//
+// Satu saklar di popup (dan satu di widget checklist) untuk semua panel
+// ALETA: popup hanya menulis kunci sembunyikanTeknis; panel-alat.js di tiap
+// tab membacanya lewat onChanged dan memasang <html data-aleta-teknis>.
+// Jendela popup ini sendiri memasang penanda yang sama untuk keterangan
+// teknisnya (kelas aleta-teknis). Lama: tidak ada saklar, tidak ada penanda.
+
+/** Penanda di jendela popup: hanya di luar Lama dan bila saklarnya nyala. */
+function tandaiTeknisPopup() {
+  const akar = document.documentElement;
+  if (modePopupBerlaku().mode !== "lama" && tahap2.teknis) akar.setAttribute("data-aleta-teknis", "sembunyi");
+  else akar.removeAttribute("data-aleta-teknis");
+}
+
+/** Menandai elemen ASLI sebagai penjelasan teknis - dibalik saat susunan dipulihkan. */
+function tandaiTeknisSementara(el) {
+  if (!el || !el.classList || el.classList.contains("aleta-teknis")) return;
+  ubahSementara(el, "className", `${el.className} aleta-teknis`.trim());
+}
+
+function komponenTeknis() {
+  const label = buat("label", "saklar w-teknis");
+  label.id = "wTeknis";
+  label.title = "Keterangan teknis di panel, widget, dan popup disembunyikan.";
+  const kotak = buat("input");
+  kotak.type = "checkbox";
+  kotak.id = KUNCI_TEKNIS;
+  kotak.checked = tahap2.teknis;
+  const teks = buat("span");
+  teks.appendChild(buat("span", "saklar-nama", "Sembunyikan penjelasan teknis"));
+  teks.appendChild(buat("span", "saklar-ket", "Error, peringatan, dan konfirmasi tetap tampil."));
+  label.appendChild(kotak);
+  label.appendChild(teks);
+  kotak.addEventListener("change", () => {
+    tahap2.teknis = kotak.checked;
+    simpan(KUNCI_TEKNIS, kotak.checked);
+    tandaiTeknisPopup();
+  });
+  susunan.penyegar.push(() => {
+    kotak.checked = tahap2.teknis;
+  });
+  return label;
+}
+
+function pasangSaklarTeknis() {
+  // Sesudah "Ukuran huruf panel" - di mana pun kartu itu kini berada
+  // (kelompok Tampilan dalam UI Baru, atau .isi dalam Baru).
+  const skala = kartuSkalaHuruf();
+  const isi = document.querySelector(".isi");
+  if (skala && skala.parentNode) sisipkan(komponenTeknis(), skala.parentNode, skala.nextSibling);
+  else if (isi) sisipkan(komponenTeknis(), isi, null);
+  // Keterangan teknis milik popup sendiri. Pesan kabar (perbaruiKabar,
+  // kabarReset) dan kalimat profil peran TIDAK - itu hasil yang dibaca.
+  const pembaruan = kartuPembaruan();
+  if (pembaruan) tandaiTeknisSementara(pembaruan.querySelector(":scope > .saklar-ket:not([id])"));
+  if (skala) tandaiTeknisSementara(skala.querySelector(":scope > .saklar-ket"));
+  const tindakan = document.querySelector(".tindakan");
+  if (tindakan) tandaiTeknisSementara(tindakan.querySelector(":scope > .saklar-ket:not([id])"));
+  tandaiTeknisPopup();
 }
 
 // ── Butir 6 dan 26 (perbaikan 30 Sep): penjelasan panjang di balik ⓘ ───────
@@ -1332,7 +1410,9 @@ function lipatKetPanjang() {
     if (ket.querySelector("button, a[href], input, select, textarea")) continue;
     const teks = String(ket.textContent || "").replace(/\s+/g, " ").trim();
     if (teks.length <= POPUP_INFO_BATAS || !ket.parentNode) continue;
-    const ringkas = buat(ket.tagName === "P" ? "p" : "span", "saklar-ket tb-lipat", ringkasKalimatPopup(teks));
+    // Penjelasan teknis yang dilipat (K5): ringkasannya ikut teknis.
+    const kelasTeknis = ket.classList.contains("aleta-teknis") ? " aleta-teknis" : "";
+    const ringkas = buat(ket.tagName === "P" ? "p" : "span", `saklar-ket tb-lipat${kelasTeknis}`, ringkasKalimatPopup(teks));
     const buka = buat("button", "tb-info tb-lipat-tombol", "ⓘ");
     buka.type = "button";
     buka.setAttribute("aria-expanded", "false");
@@ -1672,7 +1752,7 @@ function komponenProfil() {
   }
   const ket = buat(
     "p",
-    "saklar-ket",
+    "saklar-ket aleta-teknis",
     "Menyetel lima saklar sekaligus; saklar induk tidak disentuh. Ubah satu saklar → Kustom."
   );
   k.appendChild(seg);
@@ -1962,7 +2042,7 @@ function komponenLampu(sebagaiKartu) {
   if (!sebagaiKartu) k.dataset.fitur = "popup-2";
   const daftar = buat("ul", "tb-lampu");
   const kaki = buat("div", "tb-lampu-kaki");
-  const waktu = buat("span", "saklar-ket tb-lampu-waktu");
+  const waktu = buat("span", "saklar-ket tb-lampu-waktu aleta-teknis");
   const ulang = tombolKecil("Periksa ulang", "Periksa lagi SIPP, ABT, portal, dan server");
   ulang.addEventListener("click", () => void periksaLampu(true));
   kaki.appendChild(waktu);
@@ -2138,6 +2218,8 @@ const ATURAN_PENGATURAN = {
   cetakTigaBerkas: benarSalah,
   suntingLangsungAbt: benarSalah,
   checklistMilestone: benarSalah,
+  // Perbaikan 30 Sep sore butir 3 (K5) - setelan pribadi, ikut diekspor.
+  [KUNCI_TEKNIS]: benarSalah,
   [SKALA_KUNCI]: (v) => typeof v === "number" && v >= SKALA_MIN && v <= SKALA_MAKS && v % SKALA_LANGKAH === 0,
   [KUNCI_TEMA_POPUP]: (v) => URUTAN_TEMA.includes(v),
   [KUNCI_TEMA_PANEL]: (v) => v === "terang" || v === "gelap",
@@ -2233,6 +2315,10 @@ async function terimaImporPengaturan(teks) {
   if (URUTAN_TEMA.includes(tp)) temaPopup = tp;
   temaPanelSekarang = (s && s[KUNCI_TEMA_PANEL]) === "terang" ? "terang" : "gelap";
   terapkanTemaPopup();
+  if (KUNCI_TEKNIS in diterima) {
+    tahap2.teknis = diterima[KUNCI_TEKNIS] !== false;
+    tandaiTeknisPopup();
+  }
   segarkanSusunan();
   return `Diimpor: ${jumlah} setelan.${ditolak.length ? ` Ditolak: ${ditolak.join("; ")}.` : ""}`;
 }
@@ -2270,7 +2356,7 @@ function komponenEksporImpor() {
   k.appendChild(aksi);
   k.appendChild(pilih);
   k.appendChild(
-    buat("p", "saklar-ket", "Saklar, tema, dan ukuran huruf saja - tanpa akun, sesi, posisi layar, atau data perkara.")
+    buat("p", "saklar-ket aleta-teknis", "Saklar, tema, dan ukuran huruf saja - tanpa akun, sesi, posisi layar, atau data perkara.")
   );
   k.appendChild(kabar);
   return k;
@@ -2304,7 +2390,7 @@ function komponenPintasan() {
     }
   }
   laci.appendChild(
-    buat("p", "saklar-ket", "Tidak berlaku selagi mengetik di kolom isian. Mengubah pintasan belum tersedia.")
+    buat("p", "saklar-ket aleta-teknis", "Tidak berlaku selagi mengetik di kolom isian. Mengubah pintasan belum tersedia.")
   );
   k.appendChild(laci);
   return k;
@@ -2330,7 +2416,7 @@ function susunBaru() {
     coba.id = "fiturCoba";
     const judul = buat("div", "tb-fitur-coba-judul");
     judul.appendChild(buat("b", "", "Fitur coba"));
-    judul.appendChild(buat("span", "saklar-ket", " saklar ide yang dinyalakan Super Admin"));
+    judul.appendChild(buat("span", "saklar-ket aleta-teknis", " saklar ide yang dinyalakan Super Admin"));
     coba.appendChild(judul);
     for (const x of kartu) coba.appendChild(x);
     sisipkan(coba, isi.parentNode, keadaan && keadaan.parentNode === isi.parentNode ? keadaan.nextSibling : isi);
@@ -2586,6 +2672,12 @@ try {
     }
     if (ubah.akunSipp) {
       tahap2.akunSipp = String(ubah.akunSipp.newValue || "");
+      perlu = true;
+    }
+    // Saklar penjelasan teknis diubah dari widget di tab lain (K5).
+    if (ubah[KUNCI_TEKNIS]) {
+      tahap2.teknis = ubah[KUNCI_TEKNIS].newValue !== false;
+      tandaiTeknisPopup();
       perlu = true;
     }
     // Profil peran (butir 25) tiba lewat singgahan tampilan server.

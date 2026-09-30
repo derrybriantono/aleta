@@ -11296,13 +11296,20 @@ function susunPanelDaftar(ringkasan) {
     );
   }
 
+  // Perbaikan 30 Sep sore (Baru & UI Baru): menu massal mengikuti matriks
+  // peran - lihat mpsSusunDaftar. null (Lama, peran lain) = susunan di bawah.
+  const menuMassalPeran = typeof mpsMenuDaftar === "function" ? mpsMenuDaftar() : null;
+  if (menuMassalPeran) {
+    mpsSusunDaftar(panel, isi, ringkasan, menuMassalPeran);
+  }
   // Penetapan massal hanya bagi yang memang boleh menulis penetapan - dan
   // hanya di halaman yang benar-benar daftar perkara. Menggambarnya bagi
   // yang tidak berwenang berarti menawarkan tombol yang akan menolak.
-  if (boleh("penunjukan") && boleh("kerjakan")) {
+  // Dengan matriks peran (menuMassalPeran) keduanya sudah disusun di atas.
+  if (!menuMassalPeran) if (boleh("penunjukan") && boleh("kerjakan")) {
     isi.appendChild(bagianPenetapanMassal(ringkasan));
   }
-  if (boleh("data-umum")) {
+  if (!menuMassalPeran && boleh("data-umum")) {
     // Fitur 2: antrean SIPP disusun dari tanggal sidang, tanpa lewat ABT.
     // Antrean yang baru disusun langsung tampil di panel ini - tanpa memuat
     // ulang halaman (tampilkanAntreanSipp).
@@ -11326,6 +11333,8 @@ function susunPanelDaftar(ringkasan) {
   // dua panel yang berbeda.
   pasangGeser(panel, kepala);
   pasangUbahUkuran(panel);
+  // Penjelasan teknis (butir 3 sore) - Baru & UI Baru saja; Lama tanpa jejak.
+  if (typeof a30Aktif === "function" && a30Aktif() && typeof mpsPasangTeknis === "function") mpsPasangTeknis(panel);
   return panel;
 }
 
@@ -14917,6 +14926,14 @@ function bagianMassalSipp(sesudahSusun) {
       void muat();
     });
   }
+  // Dipanggil menu per peran (Baru & UI Baru, mpsBukaBagian) bila bagian ini
+  // terbuka sebagai bawaan - tanpa ini ia terbentang tetapi kosong. Lama tidak
+  // pernah memanggilnya; hanya properti, DOM-nya tidak berubah.
+  kotak.muat = () => {
+    if (sudah) return;
+    sudah = true;
+    void muat();
+  };
   return kotak;
 }
 
@@ -15260,6 +15277,9 @@ function t7Tata(panel, konteks) {
   if (!ui && !t7AdaIde()) return;
   try {
     t7TataSungguh(panel, konteks || {}, ui);
+    // Menu per peran (30 Sep sore) sekali lagi: chip daftar isi sipp-2 dan
+    // tab lahir di t7TataSungguh. Idempoten.
+    if (typeof mpsTerapkan === "function") mpsTerapkan(panel);
   } catch (galat) {
     try {
       alatCatat("t7", "penataan panel SIPP gagal", String((galat && galat.message) || galat));
@@ -15381,14 +15401,22 @@ function t7PasangTab(k) {
   k.panel.insertBefore(bilah, k.isi);
   t7PasangPintasanTab();
 
-  // Bawaan: Putusan bila borang Putusan Akhir sedang terbuka, selain itu
-  // Penetapan. Pilihan terakhir petugas menang, bila tabnya ada.
-  const bawaan = document.querySelector("#frm_putusan") && ada.some(([x]) => x === "putusanKel") ? "putusanKel" : ada[0][0];
-  t7PilihTab(k.panel, bawaan, false);
-  void t7Baca([T7_KUNCI_TAB]).then((s) => {
-    const tersimpan = String(s[T7_KUNCI_TAB] || "");
-    if (tersimpan && tersimpan !== bawaan && !document.querySelector("#frm_putusan")) t7PilihTab(k.panel, tersimpan, false);
-  });
+  if (k.panel.mps && typeof mpsTerapkan === "function") {
+    // Perbaikan 30 Sep sore: urutan tab dan tab bawaan mengikuti menu peran
+    // (menu pertama terbuka; Putusan bila blangko Putusan Akhir terbuka). Tab
+    // tersimpan tidak dipulihkan - pengguna meminta menu pertama sebagai
+    // bawaan; memilih tab tetap tercatat seperti biasa.
+    mpsTerapkan(k.panel);
+  } else {
+    // Bawaan: Putusan bila borang Putusan Akhir sedang terbuka, selain itu
+    // Penetapan. Pilihan terakhir petugas menang, bila tabnya ada.
+    const bawaan = document.querySelector("#frm_putusan") && ada.some(([x]) => x === "putusanKel") ? "putusanKel" : ada[0][0];
+    t7PilihTab(k.panel, bawaan, false);
+    void t7Baca([T7_KUNCI_TAB]).then((s) => {
+      const tersimpan = String(s[T7_KUNCI_TAB] || "");
+      if (tersimpan && tersimpan !== bawaan && !document.querySelector("#frm_putusan")) t7PilihTab(k.panel, tersimpan, false);
+    });
+  }
 
   // Kepala kelompok dan bagian yang ditekan - oleh pintasan Alt+P, Alt+R,
   // oleh menu ⋯, atau oleh cari - memindahkan tabnya ke kelompok tempat
@@ -15474,7 +15502,8 @@ function t7PasangPintasanTab() {
 
 /** D3: pindah tab - kelompok lain disembunyikan lewat CSS, lipatannya tidak disentuh. */
 function t7PilihTab(panel, kunci, simpan) {
-  if (!panel || !panel.querySelector(`.aleta-t7-tab[data-t7-ke="${kunci}"]`)) return;
+  // Tab yang disembunyikan menu peran (data-mps-sembunyi) tidak dapat dipilih.
+  if (!panel || !panel.querySelector(`.aleta-t7-tab[data-t7-ke="${kunci}"]:not([data-mps-sembunyi])`)) return;
   panel.setAttribute("data-t7-tab", kunci);
   for (const t of Array.from(panel.querySelectorAll(".aleta-t7-tab"))) {
     t.setAttribute("aria-selected", t.getAttribute("data-t7-ke") === kunci ? "true" : "false");
@@ -15491,6 +15520,8 @@ function t7DaftarIsi(k) {
     const kel = t7Kelompok(k.isi, kunci);
     if (!kel) continue;
     const t = t7Tombol(judul, `Buka ${judul}`, "aleta-t7-chip");
+    // Kunci kelompoknya - dipakai menu per peran (mpsTerapkan) untuk mengurutkan/menyembunyikan.
+    t.setAttribute("data-t7-ke", kunci);
     const lencana = buatElemen("span", "aleta-t7-chip-lencana");
     t.appendChild(lencana);
     const segarkanLencana = () => {
@@ -17023,8 +17054,13 @@ function a30OpsiSimpanMassal(segar) {
 function a30Tata(panel, konteks, ui) {
   if (!a30Aktif() || !panel) return;
   panel.setAttribute("data-t7-a30", ui ? "ui" : "baru");
+  // Perbaikan 30 Sep sore (agen S): menu per peran. Disiapkan SEBELUM Juru
+  // Sita supaya matriks yang memutuskan tabnya; diterapkan sesudahnya.
+  if (typeof mpsSiapkan === "function") mpsSiapkan(panel, konteks || {});
   a30JuruSita(panel, konteks || {}, ui);
+  if (typeof mpsTerapkan === "function") mpsTerapkan(panel);
   a30PasangLipat(panel);
+  if (typeof mpsSegarkanDariStatus === "function") mpsSegarkanDariStatus(panel, konteks || {});
 }
 
 // ─── Butir 18: klik ganda kepala ─────────────────────────────────────────────
@@ -17075,6 +17111,8 @@ function a30LipatSatu(el) {
   tombol.title = "Penjelasan - klik untuk membuka atau menutup";
   tombol.appendChild(buatElemen("span", "aleta-a30-info-ikon", "ⓘ"));
   tombol.appendChild(buatElemen("span", "aleta-a30-info-ringkas", a30Ringkas(teks)));
+  // Penjelasan teknis (butir 3 sore): ⓘ-nya ikut tersembunyi bersamanya.
+  if (el.classList.contains("aleta-teknis")) tombol.classList.add("aleta-teknis");
   el.setAttribute("data-a30-lipat", "tutup");
   el.parentNode.insertBefore(tombol, el);
   tombol.addEventListener("click", (peristiwa) => {
@@ -17091,6 +17129,8 @@ function a30LipatSatu(el) {
  */
 function a30PasangLipat(panel) {
   const sapu = () => {
+    // Penanda teknis lebih dulu, supaya ⓘ yang lahir sesudahnya ikut tertanda.
+    if (typeof mpsTandaiTeknis === "function") mpsTandaiTeknis(panel);
     for (const el of Array.from(panel.querySelectorAll(A30_PENJELASAN))) a30LipatSatu(el);
   };
   sapu();
@@ -17131,11 +17171,20 @@ function a30BolehJuruSita() {
  */
 function a30JuruSita(panel, konteks, ui) {
   if (typeof globalThis.aletaJurusitaPasang !== "function") return;
-  if (!a30BolehJuruSita()) return;
+  // Perbaikan 30 Sep sore: bila matriks menu peran berlaku (panel.mps), menu
+  // "jurusita" di sana yang memutuskan - Super Admin & Admin SELALU mendapat
+  // tabnya. Peran lain yang lolos penyaring lama tetap dibuatkan, lalu
+  // disembunyikan mpsTerapkan bila tidak ada di menunya (tidak dibuang).
+  const menu = panel.mps && Array.isArray(panel.mps.menu) ? panel.mps.menu : null;
+  const lewatMenu = Boolean(menu && menu.includes("jurusita"));
+  if (!lewatMenu && !a30BolehJuruSita()) return;
   const isi = panel.querySelector(":scope > .aleta-isi");
   if (!isi || isi.querySelector('[data-a30-fitur="jurusita"]')) return;
   const nomor = String(konteks.nomorPerkara || "");
-  const wadahan = ui ? kelompok("Juru Sita", "juruSitaKel", false) : bagian("Juru Sita", "juruSita", true);
+  // Dengan matriks, Juru Sita di Baru juga kelompok sendiri (bukan bagian di
+  // dalam Perkara) supaya dapat diurutkan dan menjadi menu pertama juru sita.
+  const sendiri = ui || Boolean(menu);
+  const wadahan = sendiri ? kelompok("Juru Sita", "juruSitaKel", !ui) : bagian("Juru Sita", "juruSita", true);
   wadahan.setAttribute("data-a30-fitur", "jurusita");
   let dipasang = false;
   const pasang = () => {
@@ -17155,8 +17204,18 @@ function a30JuruSita(panel, konteks, ui) {
         wadahan.isi.appendChild(buatElemen("div", "aleta-gagal", `Juru Sita tidak dapat dimuat: ${String((galat && galat.message) || galat)}`));
       });
   };
-  const terbuka = () => wadahan.isi.style.display !== "none";
-  if (ui) {
+  const terbuka = () => wadahan.isi.style.display !== "none" && !wadahan.hasAttribute("data-mps-sembunyi");
+  if (sendiri && !ui) {
+    // Baru dengan matriks: kelompok berlipat. Dipasang saat pertama kali
+    // terbuka - oleh petugas, atau oleh mpsTerapkan (menu pertama juru sita).
+    isi.appendChild(wadahan);
+    new MutationObserver(() => {
+      if (terbuka()) pasang();
+    }).observe(wadahan.isi, { attributes: true, attributeFilter: ["style"] });
+    setTimeout(() => {
+      if (terbuka()) pasang();
+    }, 0);
+  } else if (ui) {
     // Dalam tab, kepala kelompok disembunyikan dan isinya selalu tampak
     // (CSS Tahap 7) - yang menentukan hanya tab yang dipilih.
     isi.appendChild(wadahan);
@@ -17181,7 +17240,7 @@ function a30LepasJuruSita(panel, wadahan) {
   const tab = panel.querySelector('.aleta-t7-tab[data-t7-ke="juruSitaKel"]');
   if (tab) tab.remove();
   if (panel.getAttribute("data-t7-tab") === "juruSitaKel") {
-    const pertama = panel.querySelector(".aleta-t7-tab");
+    const pertama = panel.querySelector(".aleta-t7-tab:not([data-mps-sembunyi])");
     if (pertama && typeof t7PilihTab === "function") t7PilihTab(panel, pertama.getAttribute("data-t7-ke"), false);
   }
 }
@@ -17756,4 +17815,438 @@ async function a30OpsiSimpanPutusan(p) {
   opsi.sesudahTersimpan = (kabar) =>
     a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: anon.berkas, kabar });
   return opsi;
+}
+
+/*
+ * ============================================================================
+ * PERBAIKAN 30 SEPTEMBER 2026 SORE - MENU PER PERAN DI PANEL SIPP (agen S)
+ * ============================================================================
+ *
+ * Pengguna menetapkan susunan menu per peran (DAFTAR "30 Sep sore" butir 1).
+ * Matriksnya SATU, di panel-alat.js (alatMenuPeran / alatGolonganPeran);
+ * berkas ini hanya menerapkannya pada panel SIPP:
+ *
+ *   di dalam perkara  kelompok Baru / tab UI Baru diurutkan kiri ke kanan
+ *                     menurut matriks, dan yang tidak ada di menu peran itu
+ *                     DISEMBUNYIKAN (atribut data-mps-sembunyi) - tidak
+ *                     dibuang: Admin dan Super Admin tetap melihat semuanya,
+ *                     dan kodenya tetap berjalan seperti biasa. Menu pertama
+ *                     menjadi bawaan yang terbuka.
+ *   daftar perkara    menu massal (penetapan, BAS, relaas & PBT, putusan)
+ *   / dashboard       mengikuti matriks halaman "daftar". Gerbang izin lama
+ *                     (boleh(...)) tetap berlaku DI ATAS matriks: matriks hanya
+ *                     mengurangi yang tampak, tidak menambah kewenangan.
+ *
+ * "Ditangani" (KONTRAK K2) dibaca dari keadaan perkara yang SUDAH diambil
+ * panel (status-perkara: majelis, panitera, juru sita pemeriksa + ikrar) dan
+ * dari jawaban sipp-konteks (hakim.bolehVerifikasi). Tidak pasti = undefined =
+ * tidak mengurangi. penunjukanLengkap dibaca dari tahapan (PMH/PPP/PJS/PHS
+ * bertanggal di perkara_penetapan) - bacaan yang sama.
+ *
+ * Peran "lain" (operator, analis, staf, ...) : alatMenuPeran memulangkan null
+ * dan panelnya persis susunan sebelum perbaikan ini.
+ *
+ * Tampilan Lama tidak pernah sampai ke sini (a30Tata dan cabang daftar
+ * dijaga a30Aktif) - DOM, permintaan, dan jembatannya tetap identik.
+ * Tidak ada jalur tulis baru; satu-satunya permintaan tambahan adalah GET
+ * status-perkara yang memang sudah diambil panel untuk lencananya - hanya
+ * dimajukan, dan disimpan bersama (ambilStatusPerkara).
+ */
+const MPS_KELOMPOK = {
+  penetapan: "kerjakan",
+  putusan: "putusanKel",
+  jurusita: "juruSitaKel",
+  berkas: "berkas",
+  perkara: "perkara",
+};
+/** Golongan yang menu perkaranya dapat berubah karena "ditangani" / penunjukan lengkap. */
+const MPS_GOLONGAN_BERSTATUS = ["ketua", "hakim", "jurusita"];
+const MPS_GELAR_DEPAN = new Set(["dr", "dra", "drs", "hj", "h", "ir", "prof", "kh", "ust", "ustadz", "ustazah"]);
+const MPS_GELAR_BELAKANG = new Set([
+  "sh", "shi", "mh", "mhi", "mag", "sag", "sy", "ssy", "lc", "ma", "mm", "se", "si", "amd", "sthi", "skom",
+  "spd", "mpd", "ssos", "msi", "mkn", "llm", "phd", "sip", "mhum", "shum", "sth", "mth", "st", "mt",
+]);
+
+/**
+ * Penjelasan TEKNIS di panel SIPP (butir 3, KONTRAK K5) - ditandai kelas
+ * aleta-teknis supaya saklar "Sembunyikan penjelasan teknis" (W) dapat
+ * menyembunyikannya. Pesan error, peringatan, kabar, dan konfirmasi TIDAK
+ * PERNAH ditandai (A30_BUKAN_PENJELASAN, dan pola teks yang sempit).
+ */
+const MPS_TEKNIS = [
+  // "diperiksa 2 menit lalu" - keterangan umur data. Yang BASI (aleta-usia-basi) peringatan, tidak ditandai.
+  [".aleta-kepala-usia", null],
+  // Penjelasan cara kerja yang memang ditandai "remeh" sejak lama.
+  [".aleta-tetap-sebab.aleta-remeh", null],
+  [".aleta-kosong-lembut", /^Tercatat di basis data ALETA/],
+  [".aleta-t7-ket.aleta-t7-lembut", /^(Hanya tersimpan di peramban|Disisipkan ke kotak|Tidak berlaku selagi|Dari checklist milestone|\d+ belum selesai dari)/],
+  [".aleta-baris-ket", /^Penandanya tertempel di bawah nomor perkara/],
+];
+
+function mpsPeran() {
+  return typeof penggunaTerakhir !== "undefined" && penggunaTerakhir && penggunaTerakhir.peran ? String(penggunaTerakhir.peran) : "";
+}
+
+function mpsSiapMatriks() {
+  return (
+    typeof a30Aktif === "function" &&
+    a30Aktif() &&
+    typeof alatMenuPeran === "function" &&
+    typeof alatGolonganPeran === "function"
+  );
+}
+
+// ─── Nama: akun ALETA / SIPP dicocokkan dengan petugas perkara ───────────────
+
+/** Inti nama tanpa gelar depan/belakang: "Dra. Hj. Munifa, S.H.I., M.H." -> ["munifa"]. */
+function mpsNamaInti(nama) {
+  const sebelumKoma = String(nama || "").split(",")[0];
+  const hasil = [];
+  for (const mentah of sebelumKoma.split(/\s+/)) {
+    if (!mentah) continue;
+    // Titik DI TENGAH kata = singkatan gelar (S.H.I, M.Ag). Titik di ujung saja
+    // (Muh., Hj.) disingkirkan dulu lalu diperiksa daftar gelar.
+    const tanpaUjung = mentah.replace(/^\.+|\.+$/g, "");
+    if (tanpaUjung.includes(".")) continue;
+    const kata = tanpaUjung.toLowerCase().replace(/[^a-zÀ-ɏ'-]/g, "");
+    if (!kata || MPS_GELAR_DEPAN.has(kata) || MPS_GELAR_BELAKANG.has(kata)) continue;
+    hasil.push(kata);
+  }
+  return hasil;
+}
+
+/**
+ * Sama orangnya? Seluruh kata inti nama yang lebih pendek ada di nama yang
+ * lebih panjang. Sengaja longgar: cocok yang keliru hanya berarti menu TIDAK
+ * dikurangi - arah kesalahan yang aman.
+ */
+function mpsNamaCocok(a, b) {
+  const x = mpsNamaInti(a);
+  const y = mpsNamaInti(b);
+  if (!x.length || !y.length) return false;
+  const [pendek, panjang] = x.length <= y.length ? [x, y] : [y, x];
+  if (pendek.join("").length < 4) return false;
+  return pendek.every((k) => panjang.includes(k));
+}
+
+/**
+ * Apakah pengguna ini majelis/PP/JS perkara ini? true | false | undefined.
+ * undefined bila tidak dapat dipastikan: nama tidak terbaca, petugas perkara
+ * tidak terbaca, atau belum ada satu pun petugas tercatat.
+ */
+function mpsDitangani(status, konteks) {
+  if (konteks && konteks.hakim && konteks.hakim.bolehVerifikasi === true) return true;
+  const saya = [
+    typeof penggunaTerakhir !== "undefined" && penggunaTerakhir ? penggunaTerakhir.nama : "",
+    typeof namaPenggunaSipp === "function" ? namaPenggunaSipp() : "",
+  ]
+    .map((x) => String(x || "").trim())
+    .filter(Boolean);
+  if (!saya.length || !status || typeof status !== "object") return undefined;
+  if (status.sumberMajelis === "tidakTerbaca") return undefined;
+  const orang = [];
+  const tambah = (daftar) => {
+    for (const x of Array.isArray(daftar) ? daftar : []) if (x && x.nama) orang.push(String(x.nama));
+  };
+  tambah(status.majelis);
+  tambah(status.panitera);
+  tambah(status.jurusita);
+  if (status.ikrar && typeof status.ikrar === "object") {
+    tambah(status.ikrar.majelis);
+    tambah(status.ikrar.panitera);
+    tambah(status.ikrar.jurusita);
+  }
+  if (!orang.length) return undefined;
+  return orang.some((o) => saya.some((s) => mpsNamaCocok(s, o)));
+}
+
+/** PMH, PPP, PJS, dan PHS sudah bertanggal? true | false | undefined (tidak terbaca). */
+function mpsPenunjukanLengkap(status) {
+  const t = status && status.tahapan;
+  if (!t || t.terbaca !== true || !Array.isArray(t.tahap)) return undefined;
+  let lengkap = true;
+  for (const kunci of ["pmh", "ppp", "pjs", "phs"]) {
+    const x = t.tahap.find((y) => y && y.kunci === kunci);
+    if (!x || x.terbaca === false) return undefined;
+    if (!x.tanggal) lengkap = false;
+  }
+  return lengkap;
+}
+
+// ─── Menu ────────────────────────────────────────────────────────────────────
+
+/**
+ * Menu SIPP di dalam perkara untuk peran yang sedang masuk, atau null (Lama,
+ * peran "lain", matriks tidak termuat). Ketua/Wakil dianggap menangani SEMUA
+ * perkara untuk Penetapan (KONTRAK K2): yang bukan majelisnya tetap melihat
+ * Penetapan selama penunjukannya belum lengkap.
+ */
+function mpsMenuPerkara(o) {
+  if (!mpsSiapMatriks()) return null;
+  const peran = mpsPeran();
+  const opsi = o || {};
+  let menu;
+  try {
+    menu = alatMenuPeran("sipp", "perkara", peran, { ditangani: opsi.ditangani, penunjukanLengkap: opsi.penunjukanLengkap });
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(menu)) return null;
+  menu = menu.slice();
+  if (opsi.ditangani === false && alatGolonganPeran(peran) === "ketua" && !menu.includes("penetapan")) {
+    let penuh = null;
+    try {
+      penuh = alatMenuPeran("sipp", "perkara", peran, { penunjukanLengkap: opsi.penunjukanLengkap });
+    } catch {
+      penuh = null;
+    }
+    if (Array.isArray(penuh) && penuh.includes("penetapan")) menu.unshift("penetapan");
+  }
+  return menu;
+}
+
+/** Menu massal halaman daftar perkara / dashboard SIPP, atau null. */
+function mpsMenuDaftar() {
+  if (!mpsSiapMatriks()) return null;
+  try {
+    const menu = alatMenuPeran("sipp", "daftar", mpsPeran());
+    return Array.isArray(menu) ? menu.slice() : null;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Panel perkara ───────────────────────────────────────────────────────────
+
+/** Menyiapkan keadaan menu panel (sebelum Juru Sita dipasang). panel.mps = null bila tidak berlaku. */
+function mpsSiapkan(panel, konteks) {
+  panel.mps = null;
+  const ditanganiAwal = konteks && konteks.hakim && konteks.hakim.bolehVerifikasi === true ? true : undefined;
+  const menu = mpsMenuPerkara({ ditangani: ditanganiAwal });
+  if (!menu) return null;
+  const golongan = alatGolonganPeran(mpsPeran());
+  panel.mps = {
+    golongan,
+    ditangani: ditanganiAwal,
+    penunjukanLengkap: undefined,
+    menu,
+    nomor: String((konteks && konteks.nomorPerkara) || ""),
+  };
+  panel.setAttribute("data-mps-peran", golongan);
+  return panel.mps;
+}
+
+function mpsSetelSembunyi(el, sembunyi) {
+  if (!el) return;
+  if (sembunyi) {
+    if (!el.hasAttribute("data-mps-sembunyi")) el.setAttribute("data-mps-sembunyi", "");
+  } else if (el.hasAttribute("data-mps-sembunyi")) {
+    el.removeAttribute("data-mps-sembunyi");
+  }
+}
+
+/** Mengurutkan anak-anak `wadah` yang terpilih menurut `urut` (kunci), tanpa menyentuh yang lain. */
+function mpsUrutkan(wadah, anak, kunciDari, urut) {
+  if (!anak.length) return;
+  const pos = (el) => {
+    const i = urut.indexOf(kunciDari(el));
+    return i === -1 ? urut.length : i;
+  };
+  const baru = anak.slice().sort((a, b) => pos(a) - pos(b));
+  if (baru.every((el, i) => el === anak[i])) return;
+  const penanda = document.createTextNode("");
+  wadah.insertBefore(penanda, anak[0]);
+  for (const el of baru) wadah.insertBefore(el, penanda);
+  penanda.remove();
+}
+
+/** Tab bawaan: Putusan bila blangko Putusan Akhir terbuka dan tabnya tampak, selain itu menu pertama. */
+function mpsTabBawaan(panel, urut) {
+  const ada = (kunci) => Boolean(panel.querySelector(`.aleta-t7-tab[data-t7-ke="${kunci}"]:not([data-mps-sembunyi])`));
+  if (document.querySelector("#frm_putusan") && urut.includes("putusanKel") && ada("putusanKel")) return "putusanKel";
+  return urut.find((k) => ada(k)) || "";
+}
+
+/**
+ * Menerapkan panel.mps ke panel: sembunyi/tampak, urutan kelompok, tab UI
+ * Baru, chip daftar isi (sipp-2), dan kelompok pertama terbuka (Baru).
+ * Boleh dipanggil berulang (menu menyusut sesudah status perkara tiba).
+ */
+function mpsTerapkan(panel) {
+  const s = panel && panel.mps;
+  if (!s) return;
+  const isi = panel.querySelector(":scope > .aleta-isi");
+  if (!isi) return;
+  const urut = s.menu.map((k) => MPS_KELOMPOK[k]).filter(Boolean);
+  const tampak = new Set(urut);
+  panel.setAttribute("data-mps-menu", s.menu.join(" "));
+  // Antrean putusan massal di puncak panel ikut menu Putusan.
+  if (s.menu.includes("putusan")) panel.removeAttribute("data-mps-tanpa-putusan");
+  else panel.setAttribute("data-mps-tanpa-putusan", "");
+
+  const kelompokSemua = Array.from(isi.querySelectorAll(":scope > .aleta-kelompok"));
+  for (const kel of kelompokSemua) mpsSetelSembunyi(kel, !tampak.has(kel.dataset.kunci));
+  mpsUrutkan(isi, kelompokSemua, (el) => el.dataset.kunci, urut);
+
+  const bilah = panel.querySelector(":scope > .aleta-t7-tabbar");
+  if (bilah) {
+    const tab = Array.from(bilah.querySelectorAll(":scope > .aleta-t7-tab"));
+    for (const t of tab) mpsSetelSembunyi(t, !tampak.has(t.getAttribute("data-t7-ke")));
+    mpsUrutkan(bilah, tab, (el) => el.getAttribute("data-t7-ke"), urut);
+    const pilihan = panel.getAttribute("data-t7-tab") || "";
+    if (!pilihan || !tampak.has(pilihan) || !panel.querySelector(`.aleta-t7-tab[data-t7-ke="${pilihan}"]`)) {
+      const bawaan = mpsTabBawaan(panel, urut);
+      if (bawaan && typeof t7PilihTab === "function") t7PilihTab(panel, bawaan, false);
+    }
+  }
+
+  const chip = panel.querySelector(".aleta-t7-daftar-isi");
+  if (chip) {
+    const semuaChip = Array.from(chip.querySelectorAll(":scope > [data-t7-ke]"));
+    for (const c of semuaChip) mpsSetelSembunyi(c, !tampak.has(c.getAttribute("data-t7-ke")));
+    mpsUrutkan(chip, semuaChip, (el) => el.getAttribute("data-t7-ke"), urut);
+  }
+
+  // Baru (kelompok berlipat): menu pertama terbuka sebagai bawaan - kecuali
+  // petugas pernah melipatnya sendiri (lipatan tersimpan menang).
+  const uiBaru = typeof t7Modern === "function" && t7Modern();
+  if (!uiBaru && !bilah) {
+    const pertama = urut.map((k) => isi.querySelector(`:scope > .aleta-kelompok[data-kunci="${k}"]`)).find(Boolean);
+    if (pertama) {
+      const kunci = pertama.dataset.kunci;
+      const tersimpan = typeof lipatanTersimpan !== "undefined" && lipatanTersimpan ? lipatanTersimpan[`kel:${kunci}`] : undefined;
+      const kepala = pertama.querySelector(":scope > .aleta-kelompok-judul");
+      const isiKel = pertama.querySelector(":scope > .aleta-kelompok-isi");
+      if (typeof tersimpan !== "boolean" && kepala && isiKel && isiKel.style.display === "none") {
+        terapkanLipatan(kepala, isiKel, false);
+      }
+    }
+  }
+}
+
+/**
+ * Menu menyusut sesudah keadaan perkara tiba: bukan majelis/PP/JS perkara ini
+ * = hanya membaca; penunjukan lengkap = Penetapan Ketua/Wakil hilang. Admin
+ * dan Panitera tidak menunggu apa pun (menunya tidak bergantung pada itu).
+ */
+function mpsSegarkanDariStatus(panel, konteks) {
+  const s = panel && panel.mps;
+  if (!s || !s.nomor || !MPS_GOLONGAN_BERSTATUS.includes(s.golongan)) return;
+  if (typeof ambilStatusPerkara !== "function") return;
+  void Promise.resolve()
+    .then(() => ambilStatusPerkara(s.nomor))
+    .then((status) => {
+      if (panel.mps !== s) return;
+      const ditangani = s.ditangani === true ? true : mpsDitangani(status, konteks);
+      const penunjukanLengkap = mpsPenunjukanLengkap(status);
+      const menu = mpsMenuPerkara({ ditangani, penunjukanLengkap });
+      if (!menu) return;
+      s.ditangani = ditangani;
+      s.penunjukanLengkap = penunjukanLengkap;
+      s.menu = menu;
+      panel.setAttribute("data-mps-ditangani", ditangani === undefined ? "?" : ditangani ? "ya" : "tidak");
+      mpsTerapkan(panel);
+    })
+    .catch(() => {
+      /* keadaan perkara tidak terbaca: menu tetap penuh untuk perannya (tidak mengurangi) */
+    });
+}
+
+// ─── Penjelasan teknis (butir 3) ─────────────────────────────────────────────
+
+function mpsTandaiTeknis(akar) {
+  if (!akar || typeof akar.querySelectorAll !== "function") return;
+  for (const [pilih, pola] of MPS_TEKNIS) {
+    for (const el of Array.from(akar.querySelectorAll(pilih))) {
+      if (el.classList.contains("aleta-teknis")) continue;
+      if (el.closest(A30_BUKAN_PENJELASAN)) continue;
+      if (pola && !pola.test(String(el.textContent || "").replace(/\s+/g, " ").trim())) continue;
+      el.classList.add("aleta-teknis");
+      // Tombol ⓘ milik penjelasan terlipat ikut: tanpa penjelasannya ia tidak berarti.
+      const info = el.previousElementSibling;
+      if (info && info.hasAttribute("data-a30-info")) info.classList.add("aleta-teknis");
+    }
+  }
+}
+
+/** Panel daftar tidak lewat a30Tata: penandanya disapu sendiri, juga isi yang lahir belakangan. */
+function mpsPasangTeknis(panel) {
+  mpsTandaiTeknis(panel);
+  let jadwal = 0;
+  new MutationObserver(() => {
+    if (jadwal) return;
+    jadwal = setTimeout(() => {
+      jadwal = 0;
+      if (panel.isConnected && a30Aktif()) mpsTandaiTeknis(panel);
+    }, 0);
+  }).observe(panel, { childList: true, subtree: true });
+}
+
+// ─── Halaman daftar perkara / dashboard ──────────────────────────────────────
+
+/** Bagian pertama terbuka sebagai bawaan (lipatan tersimpan menang); memuat isinya bila perlu. */
+function mpsBukaBagian(kotak) {
+  if (!kotak || !kotak.dataset) return;
+  const kunci = kotak.dataset.kunci || "";
+  const kepala = kotak.querySelector(":scope > .aleta-bagian-judul");
+  const isi = kotak.querySelector(":scope > .aleta-bagian-isi");
+  if (!kepala || !isi) return;
+  const tersimpan = typeof lipatanTersimpan !== "undefined" && lipatanTersimpan ? lipatanTersimpan[kunci] : undefined;
+  if (typeof tersimpan !== "boolean" && isi.style.display === "none") terapkanLipatan(kepala, isi, false);
+  if (isi.style.display !== "none" && typeof kotak.muat === "function") kotak.muat();
+}
+
+/**
+ * Menu massal menurut matriks, urut kiri->kanan = atas->bawah. BAS massal (M)
+ * dan Relaas & PBT massal (J) digambar berkasnya masing-masing ke wadah yang
+ * disiapkan di sini; bila berkasnya belum termuat, dilewati tanpa error.
+ */
+function mpsSusunDaftar(panel, isi, ringkasan, menu) {
+  panel.setAttribute("data-mps-peran", alatGolonganPeran(mpsPeran()));
+  panel.setAttribute("data-mps-menu", menu.join(" "));
+  let sudahBuka = false;
+  const bukaPertama = (kotak) => {
+    if (sudahBuka) return;
+    sudahBuka = true;
+    mpsBukaBagian(kotak);
+  };
+  for (const kunci of menu) {
+    if (kunci === "penetapan-massal") {
+      if (!(boleh("penunjukan") && boleh("kerjakan"))) continue;
+      const kotak = bagianPenetapanMassal(ringkasan);
+      kotak.setAttribute("data-mps-massal", kunci);
+      isi.appendChild(kotak);
+      bukaPertama(kotak);
+    } else if (kunci === "putusan-massal") {
+      if (!boleh("data-umum")) continue;
+      const wadah = buatElemen("div", "aleta-mps-massal");
+      wadah.setAttribute("data-mps-massal", kunci);
+      isi.appendChild(wadah);
+      const kotak = bagianMassalSipp(() => void tampilkanAntreanSipp(wadah));
+      wadah.appendChild(kotak);
+      bagianMassalBerkas(wadah, () => void tampilkanAntreanSipp(wadah));
+      void bagianAntreanSipp("").then((k) => {
+        if (k && wadah.isConnected) wadah.appendChild(k);
+      });
+      bukaPertama(kotak);
+    } else if (kunci === "bas-massal" || kunci === "relaas-pbt-massal") {
+      const pasang = kunci === "bas-massal" ? globalThis.aletaBasMassalPasang : globalThis.aletaJurusitaPasangMassal;
+      if (typeof pasang !== "function") continue;
+      const nama = kunci === "bas-massal" ? "BAS massal" : "Relaas & PBT massal";
+      const wadah = buatElemen("div", "aleta-mps-massal");
+      wadah.setAttribute("data-mps-massal", kunci);
+      isi.appendChild(wadah);
+      // Bawaan terbukanya ditentukan berkas pemiliknya (M / J).
+      sudahBuka = true;
+      Promise.resolve()
+        .then(() => pasang(wadah, { situs: "sipp" }))
+        .then((ok) => {
+          if (ok === false) wadah.remove();
+        })
+        .catch((galat) => {
+          wadah.textContent = "";
+          wadah.appendChild(buatElemen("div", "aleta-gagal", `${nama} tidak dapat dimuat: ${String((galat && galat.message) || galat)}`));
+        });
+    }
+  }
 }

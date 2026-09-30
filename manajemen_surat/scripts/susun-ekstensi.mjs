@@ -76,6 +76,10 @@ const BERKAS = [
   // bersama panel SIPP dan ABT, dimuat sesudah panel-alat.js dan sebelum
   // konten.js/abt.js; menyediakan globalThis.aletaJurusitaPasang.
   "jurusita.js",
+  // BAS massal (perbaikan 30 Sep sore, U4) - skrip konten bersama panel SIPP
+  // dan ABT, dimuat sesudah jurusita.js dan sebelum konten.js/abt.js;
+  // menyediakan globalThis.aletaBasMassalPasang.
+  "basmassal.js",
   "tema-awal.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
   // dipanggil - skrip konten tidak punya keduanya.

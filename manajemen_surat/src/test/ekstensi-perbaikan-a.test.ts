@@ -403,17 +403,24 @@ describe("butir 18: klik ganda kepala = layar penuh; sekali lagi = kembali", () 
 
 // ============================================================================
 describe("Juru Sita (butir 15): bagian di Baru, tab di UI Baru, bila jurusita.js termuat", () => {
-  it("Baru: bagian terlipat di kelompok Perkara; dibuka = jurusita.js dipanggil sekali", async () => {
+  // Disesuaikan perbaikan 30 Sep SORE (menu per peran, agen S): bila matriks
+  // peran berlaku - di sini Super Admin - Juru Sita di tampilan Baru menjadi
+  // KELOMPOK sendiri (urutan Penetapan, Putusan, Juru Sita, Berkas, Perkara),
+  // bukan bagian di dalam Perkara. Peran di luar matriks tetap memakai bagian
+  // lama. Dijaga ekstensi-menu-peran-sipp.test.ts. Perilaku yang dijaga di
+  // sini tetap: terlipat, dibuka = jurusita.js dipanggil SEKALI.
+  it("Baru: kelompok Juru Sita terlipat; dibuka = jurusita.js dipanggil sekali", async () => {
     const h = buka({ simpanan: BARU, jurusita: true });
     const panel = await siapA30(h, "baru");
-    const bag = panel.querySelector('.aleta-kelompok[data-kunci="perkara"] [data-a30-fitur="jurusita"]');
+    const bag = panel.querySelector('.aleta-kelompok[data-kunci="juruSitaKel"][data-a30-fitur="jurusita"]');
     expect(bag).not.toBeNull();
+    await tunggu(20);
     expect(h.jurusita).toEqual([]);
-    bag.querySelector(".aleta-bagian-judul").click();
+    bag.querySelector(".aleta-kelompok-judul").click();
     await sampai(() => h.jurusita.length === 1, "jurusita dipasang");
     expect(h.jurusita[0]).toMatchObject({ situs: "sipp", nomorPerkara: NOMOR });
-    bag.querySelector(".aleta-bagian-judul").click();
-    bag.querySelector(".aleta-bagian-judul").click();
+    bag.querySelector(".aleta-kelompok-judul").click();
+    bag.querySelector(".aleta-kelompok-judul").click();
     await tunggu(20);
     expect(h.jurusita.length).toBe(1);
     expect(bag.querySelector(".aleta-jurusita")).not.toBeNull();
@@ -425,12 +432,15 @@ describe("Juru Sita (butir 15): bagian di Baru, tab di UI Baru, bila jurusita.js
       const pn = panelDari(h);
       return pn && pn.getAttribute("data-t7") === "ui" && pn.querySelector('.aleta-t7-tab[data-t7-ke="juruSitaKel"]') ? pn : null;
     }, "tab Juru Sita");
+    // Urutan disesuaikan perbaikan 30 Sep SORE (menu per peran, agen S):
+    // Super Admin = Penetapan, Putusan, Juru Sita, Berkas, Perkara (matriks
+    // alatMenuPeran). Dijaga ekstensi-menu-peran-sipp.test.ts.
     expect(Array.from(panel.querySelectorAll(".aleta-t7-tab")).map((t: any) => t.getAttribute("data-t7-ke"))).toEqual([
       "kerjakan",
-      "berkas",
-      "perkara",
       "putusanKel",
       "juruSitaKel",
+      "berkas",
+      "perkara",
     ]);
     expect(h.jurusita).toEqual([]);
     panel.querySelector('.aleta-t7-tab[data-t7-ke="juruSitaKel"]').click();

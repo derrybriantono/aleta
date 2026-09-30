@@ -2303,6 +2303,119 @@ function alatKelasPeran(peran) {
 
 /*
  * ============================================================================
+ * MENU PER PERAN - SATU SUMBER UNTUK PANEL SIPP DAN ABT (perbaikan 30 Sep sore)
+ * ============================================================================
+ *
+ * Pengguna menetapkan susunan menu per peran, di dalam perkara dan di halaman
+ * daftar / beranda. Panel SIPP (konten.js), panel ABT (abt.js), dan Juru Sita
+ * (jurusita.js) membaca DARI SINI - bukan menyimpan daftar peran sendiri yang
+ * dapat berselisih.
+ *
+ * alatGolonganPeran(peran) -> "admin" | "ketua" | "hakim" | "panitera" |
+ *                             "jurusita" | "lain"
+ *   peran = nama peran portal ("Super Admin", "Wakil Ketua", "Panitera
+ *   Pengganti", "Jurusita", ...) atau id-nya ("super-admin", ...).
+ *   "lain" (operator, analis perkara, staf, ...) = susunan lama TIDAK
+ *   dikurangi: alatMenuPeran memulangkan null dan pemanggil memakai
+ *   kewenangan yang sudah ada.
+ *
+ * alatMenuPeran(situs, halaman, peran, opsi) -> string[] | null
+ *   situs   "sipp" | "abt"
+ *   halaman "perkara" (di dalam satu perkara) | "daftar" (daftar perkara SIPP
+ *           / beranda ABT)
+ *   opsi.ditangani   false = pengguna TIDAK menangani perkara ini (bukan
+ *                    majelis/PP/JS-nya). undefined = belum diketahui ->
+ *                    diperlakukan menangani (tidak mengurangi).
+ *   opsi.penunjukanLengkap  true = PMH, PPP, PJS, dan PHS sudah ada (tab
+ *                    Penetapan Ketua/Wakil disembunyikan).
+ *   Hasilnya URUTAN menu dari kiri ke kanan (menu pertama = bawaan terbuka).
+ *   null = tidak ada aturan untuk peran ini -> pemanggil memakai susunan lama.
+ *
+ * Kunci menu:
+ *   SIPP perkara : "penetapan" "putusan" "jurusita" "berkas" "perkara"
+ *   ABT perkara  : "isi-input" (Isi dari SIPP & input ke ABT) "unggah-putusan"
+ *                  "susun-saksi" "jurusita" (relaas & PBT) "semua" (admin)
+ *   daftar/beranda: "penetapan-massal" "bas-massal" "relaas-pbt-massal"
+ *                  "putusan-massal"
+ *
+ * Yang TIDAK menangani perkara ini hanya melihat Perkara dan Berkas (SIPP)
+ * atau tidak ada menu kerja (ABT) - membaca tetap boleh, mengerjakan tidak.
+ * Admin dan Super Admin selalu melihat seluruhnya.
+ */
+function alatGolonganPeran(peran) {
+  const p = String(peran || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (!p) return "lain";
+  if (/super|\badmin\b|administrator/.test(p)) return "admin";
+  // "Wakil Ketua" sudah memuat kata ketua; "wakil" saja tidak cukup - "Wakil Panitera" adalah panitera.
+  if (/\bketua\b/.test(p)) return "ketua";
+  if (/hakim/.test(p)) return "hakim";
+  if (/juru\s*sita|jurusita/.test(p)) return "jurusita";
+  if (/panitera|\bpp\b/.test(p)) return "panitera";
+  return "lain";
+}
+
+const ALAT_MENU_PERAN = {
+  sipp: {
+    perkara: {
+      admin: ["penetapan", "putusan", "jurusita", "berkas", "perkara"],
+      ketua: ["penetapan", "putusan", "berkas", "perkara"],
+      hakim: ["putusan", "berkas", "perkara"],
+      panitera: ["berkas", "perkara"],
+      jurusita: ["jurusita", "perkara", "berkas"],
+    },
+    daftar: {
+      admin: ["penetapan-massal", "bas-massal", "relaas-pbt-massal", "putusan-massal"],
+      ketua: ["penetapan-massal", "putusan-massal"],
+      hakim: ["putusan-massal"],
+      panitera: ["bas-massal"],
+      jurusita: ["relaas-pbt-massal"],
+    },
+  },
+  abt: {
+    perkara: {
+      admin: ["semua"],
+      ketua: ["isi-input", "unggah-putusan"],
+      hakim: ["isi-input", "unggah-putusan"],
+      panitera: ["susun-saksi"],
+      jurusita: ["jurusita"],
+    },
+    daftar: {
+      admin: ["putusan-massal", "bas-massal", "relaas-pbt-massal"],
+      ketua: ["putusan-massal"],
+      hakim: ["putusan-massal"],
+      panitera: ["bas-massal"],
+      jurusita: ["relaas-pbt-massal"],
+    },
+  },
+};
+
+function alatMenuPeran(situs, halaman, peran, opsi) {
+  const o = opsi && typeof opsi === "object" ? opsi : {};
+  const golongan = alatGolonganPeran(peran);
+  const tabel = ALAT_MENU_PERAN[situs] && ALAT_MENU_PERAN[situs][halaman];
+  if (!tabel || !tabel[golongan]) return null;
+  let menu = tabel[golongan].slice();
+  if (golongan === "admin") return menu;
+  if (halaman === "perkara" && o.ditangani === false) {
+    // Membaca boleh, mengerjakan tidak. KECUALI Penetapan bagi Ketua/Wakil
+    // (agen W, uji ekstensi-menu-peran): PMH/PPP/PJS/PHS justru ditetapkan
+    // SEBELUM ada majelis, jadi ketua belum pernah "menangani" perkara yang
+    // hendak ia tetapkan majelisnya - dan kontrak K2 menyebut Ketua/Wakil
+    // dianggap menangani semua perkara untuk Penetapan. Tanpa pengecualian
+    // ini tab Penetapan hilang tepat di perkara baru yang membutuhkannya.
+    menu =
+      situs === "sipp"
+        ? menu.filter((k) => k === "perkara" || k === "berkas" || (golongan === "ketua" && k === "penetapan"))
+        : [];
+  }
+  if (situs === "sipp" && halaman === "perkara" && golongan === "ketua" && o.penunjukanLengkap === true) {
+    menu = menu.filter((k) => k !== "penetapan");
+  }
+  return menu;
+}
+
+/*
+ * ============================================================================
  * PERKAKAS SUPER ADMIN - TUJUH ALAT DI SATU LACI
  * ============================================================================
  *
@@ -2753,6 +2866,9 @@ function alatTandaiUji() {
   } catch {
     /* tanpa penanda, penahanan tetap berlaku - hanya tidak terlihat */
   }
+  // Penjelasan teknis (K5) bergerbang tampilan: tiap kali tampilan berganti,
+  // penandanya ikut dipasang atau dilepas.
+  alatTandaiTeknis();
 }
 
 function alatUjiTerima(simpan) {
@@ -2979,7 +3095,17 @@ function alatAlihLayarPenuh(panel, kepala) {
 // ── Butir 25: profil saklar mengikuti peran login (K4) ───────────────────────
 
 /** Saklar yang boleh diatur profil peran. Saklar induk "aktif" SENGAJA tidak. */
-const ALAT_PROFIL_SAKLAR = ["tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "checklistMilestone", "suntingLangsungAbt"];
+const ALAT_PROFIL_SAKLAR = [
+  "tandaiHalaman",
+  "sisipJadwal",
+  "cetakTigaBerkas",
+  "checklistMilestone",
+  "suntingLangsungAbt",
+  // Perbaikan 30 Sep sore butir 3 (K5): profil peran BOLEH menetapkan keadaan
+  // awal saklar penjelasan teknis. Portal belum mengirimnya (profil-saklar.ts
+  // belum mengenal kuncinya) - sampai itu, bawaannya nyala.
+  "sembunyikanTeknis",
+];
 /** Tanda profil yang terakhir diterapkan di PC ini: "<peran>|<saklar JSON>". */
 const ALAT_PROFIL_KUNCI_DITERAPKAN = "profilSaklarDiterapkan";
 
@@ -3318,7 +3444,9 @@ function alatLipatPenjelasan(akar, pemilih, batas) {
 
     const tombol = document.createElement("button");
     tombol.type = "button";
-    tombol.className = "aleta-info-lipat";
+    // Penjelasan teknis (K5) yang dilipat: ⓘ-nya ikut teknis, supaya saklar
+    // "Sembunyikan penjelasan teknis" tidak meninggalkan ⓘ tanpa isi.
+    tombol.className = el.classList && el.classList.contains("aleta-teknis") ? "aleta-info-lipat aleta-teknis" : "aleta-info-lipat";
     tombol.setAttribute("aria-expanded", "false");
     tombol.title = "Tampilkan penjelasan lengkap";
     const ikon = document.createElement("span");
@@ -3877,6 +4005,151 @@ function alatTombolRingkas() {
     void alatSetelRingkas(!alatRingkasNyala());
   });
   return tombol;
+}
+
+/*
+ * ============================================================================
+ * SEMBUNYIKAN PENJELASAN TEKNIS (perbaikan 30 Sep sore butir 3, kontrak K5)
+ * ============================================================================
+ *
+ * Pengguna: "semua penjelasan teknis / berbahasa teknis tersembunyi" - contoh
+ * "4 variabel memang tidak berlaku untuk perkara ini (tanpa kuasa, bukan
+ * prodeo): 0132, 0156, 0661, 0663" atau "Belum ada variabel disematkan…".
+ *
+ * Berbeda dengan panel ringkas di atas (bawaan MATI, kelas .aleta-remeh):
+ * saklar ini BAWAAN NYALA, dan yang disembunyikannya hanya elemen berkelas
+ * .aleta-teknis - tiap agen menandai penjelasan teknis di berkasnya sendiri.
+ * Pesan error, peringatan yang meminta tindakan, konfirmasi, dan hasil yang
+ * harus dibaca untuk bertindak TIDAK PERNAH diberi kelas itu.
+ *
+ *   sembunyikanTeknis (chrome.storage.local)  true / false; belum pernah
+ *                                             diatur = true (nyala)
+ *   <html data-aleta-teknis="sembunyi">       dipasang HANYA bila saklar
+ *                                             nyala DAN tampilan Baru/UI Baru;
+ *                                             dalam Lama tidak pernah - Lama
+ *                                             tetap identik
+ *   peristiwa "aleta-teknis-berubah"          di document, tiap kali keadaan
+ *                                             berlaku atau saklarnya berubah;
+ *                                             detail { tersembunyi, saklar }
+ *   alatTeknisTersembunyi()                   untuk JS: apakah penjelasan
+ *                                             teknis sedang disembunyikan
+ *
+ * Aturan CSS-nya di panel.css (blok W) untuk halaman, dan di Shadow DOM
+ * widget checklist (checklist.js) untuk widget. Saklarnya di popup dan di
+ * widget; alatSaklarTeknis() menyediakan saklar siap pasang untuk panel.
+ */
+const ALAT_TEKNIS_KUNCI = "sembunyikanTeknis";
+const ALAT_TEKNIS_PERISTIWA = "aleta-teknis-berubah";
+let alatTeknisSaklarKini = true;
+/** Sebabnya sama dengan alatKeringDisetel - pilihan yang tiba selama bacaan pertama menang. */
+let alatTeknisDisetel = false;
+/** Keadaan terakhir yang dikabarkan ("tersembunyi|saklar") - peristiwa hanya saat berubah. */
+let alatTeknisDikabarkan = "false|true";
+
+/** Nilai saklar yang tersimpan (bawaan nyala), tanpa memandang tampilan. */
+function alatTeknisSaklar() {
+  try {
+    return alatTeknisSaklarKini !== false;
+  } catch {
+    return true;
+  }
+}
+
+/** Apakah penjelasan teknis sedang disembunyikan di halaman ini? Lama: tidak pernah. */
+function alatTeknisTersembunyi() {
+  try {
+    return alatTeknisSaklarKini !== false && alatUjiMode() !== "lama";
+  } catch {
+    return false;
+  }
+}
+
+function alatTandaiTeknis() {
+  try {
+    const sembunyi = alatTeknisTersembunyi();
+    const akar = document.documentElement;
+    if (sembunyi) akar.setAttribute("data-aleta-teknis", "sembunyi");
+    else akar.removeAttribute("data-aleta-teknis");
+    const saklar = alatTeknisSaklar();
+    const tanda = `${sembunyi}|${saklar}`;
+    if (tanda === alatTeknisDikabarkan) return;
+    alatTeknisDikabarkan = tanda;
+    document.dispatchEvent(new CustomEvent(ALAT_TEKNIS_PERISTIWA, { detail: { tersembunyi: sembunyi, saklar } }));
+  } catch {
+    /* dipanggil sebelum berkas ini selesai dimuat, atau tanpa dokumen - penjelasannya tetap tampil */
+  }
+}
+
+async function alatMuatTeknis() {
+  let terbaca = true;
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_TEKNIS_KUNCI]);
+    terbaca = simpan[ALAT_TEKNIS_KUNCI] !== false;
+  } catch {
+    terbaca = true;
+  }
+  if (!alatTeknisDisetel) alatTeknisSaklarKini = terbaca;
+  alatTandaiTeknis();
+  return alatTeknisSaklarKini;
+}
+
+function alatDengarkanTeknis() {
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local" || !ubah[ALAT_TEKNIS_KUNCI]) return;
+      // Kunci yang dihapus (newValue undefined) kembali ke bawaan: nyala.
+      alatTeknisSaklarKini = ubah[ALAT_TEKNIS_KUNCI].newValue !== false;
+      alatTeknisDisetel = true;
+      alatTandaiTeknis();
+    });
+  } catch {
+    /* tanpa pendengarnya, pilihannya tetap berlaku di tab tempat ia disetel */
+  }
+}
+
+async function alatSetelTeknis(nyala) {
+  alatTeknisDisetel = true;
+  alatTeknisSaklarKini = nyala !== false;
+  alatTandaiTeknis();
+  try {
+    await chrome.storage.local.set({ [ALAT_TEKNIS_KUNCI]: alatTeknisSaklarKini });
+  } catch {
+    /* berlaku untuk halaman ini saja */
+  }
+  return alatTeknisSaklarKini;
+}
+
+/**
+ * Saklar siap pasang untuk panel (mis. menu ⋯ panel ABT): kotak centang
+ * berlabel, selalu mengikuti keadaan yang tersimpan - juga bila diubah dari
+ * popup atau widget. Dalam Lama tidak ada yang dipasang: null.
+ */
+function alatSaklarTeknis() {
+  if (alatUjiMode() === "lama") return null;
+  const label = document.createElement("label");
+  label.className = "aleta-saklar-teknis";
+  label.title = "Keterangan teknis disembunyikan. Error, peringatan, dan konfirmasi tetap tampil.";
+  const kotak = document.createElement("input");
+  kotak.type = "checkbox";
+  kotak.checked = alatTeknisSaklar();
+  kotak.addEventListener("change", () => void alatSetelTeknis(kotak.checked));
+  const teks = document.createElement("span");
+  teks.textContent = "Sembunyikan penjelasan teknis";
+  label.appendChild(kotak);
+  label.appendChild(teks);
+  let pernahTerpasang = false;
+  const ikuti = () => {
+    // Pendengar dilepas sesudah saklarnya dibuang dari halaman - bukan
+    // sebelum pemanggil sempat memasangnya.
+    if (label.isConnected) pernahTerpasang = true;
+    else if (pernahTerpasang) {
+      document.removeEventListener(ALAT_TEKNIS_PERISTIWA, ikuti);
+      return;
+    }
+    kotak.checked = alatTeknisSaklar();
+  };
+  document.addEventListener(ALAT_TEKNIS_PERISTIWA, ikuti);
+  return label;
 }
 
 /**
@@ -4673,6 +4946,10 @@ void alatMuatUji()
 // dan tidak ada kedipan keterangan yang muncul lalu hilang.
 alatDengarkanRingkas();
 void alatMuatRingkas();
+// Penjelasan teknis (K5): sebab yang sama - penandanya sudah ada sebelum
+// panel pertama digambar. Gerbang tampilannya ikut alatTandaiUji.
+alatDengarkanTeknis();
+void alatMuatTeknis();
 
 /*
  * ============================================================================

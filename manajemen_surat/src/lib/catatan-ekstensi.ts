@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.176.0",
+    dirilis: "2026-09-30T17:20:00+08:00",
+    judul: "Menu panel SIPP dan ABT mengikuti peran, BAS massal, relaas & pemberitahuan massal di daftar perkara, panel ABT lebih sederhana",
+    butir: [
+      "MENU PER PERAN (tampilan Baru & UI Baru). Di dalam perkara SIPP: Ketua/Wakil - Penetapan (hanya bila PMH/PPP/PJS/PHS belum lengkap), Putusan, Berkas, Perkara; Hakim - Putusan, Berkas, Perkara; Panitera/PP - Berkas, Perkara; Jurusita - Juru Sita, Perkara, Berkas; Super Admin & Admin - seluruhnya, termasuk tab Juru Sita. Yang bukan majelis/PP/JS perkara itu hanya membaca (Perkara dan Berkas). Menu pertama terbuka sebagai bawaan. Peran lain (operator, analis perkara, staf) tetap dengan susunan lama. Menu yang tidak berlaku bagi peran itu disembunyikan, tidak dihapus.",
+      "DAFTAR PERKARA SIPP & BERANDA ABT: menu massal per peran - Penetapan massal (Ketua/Wakil), Putusan massal (Hakim, Ketua/Wakil), Berita Acara Sidang massal (Panitera/PP), Relaas & pemberitahuan putusan massal (Jurusita); Super Admin & Admin melihat semuanya. Juru sita tidak lagi melihat Putusan massal.",
+      "RELAAS & PBT MASSAL kini ada di halaman daftar perkara SIPP dan beranda ABT: pilih tanggal, 'Milik saya' atau semua juru sita, centang panggilan dan PBT per pihak, cetak sekaligus. Panggilan sidang tundaan ikut, termasuk kelompok hari kerja sebelumnya. Pada sidang tundaan yang memanggil kedua pihak kini tercetak satu dokumen P dan T (bukan dua). Pesan 'Sesi ALETA habis' hanya muncul bila sesi memang habis.",
+      "BAS MASSAL (baru, panitera sidang/PP): daftar perkara bersidang pada tanggal itu (bawaan: yang PP-nya Anda), status BAS tiap perkara, usulan blangko BAS menurut jenis perkara dan kehadiran, pratinjau isian, lalu unduh RTF beruntun untuk yang dicentang. Tidak ada yang ditulis ke SIPP maupun ABT; susun keterangan saksi tetap di panel ABT per perkara lewat 'Buka di ABT'.",
+      "PANEL ABT LEBIH SEDERHANA: Ketua/Wakil & Hakim langsung melihat 'Isi dari SIPP & input ke ABT' dan 'Unggah putusan'; Panitera/PP 'Susun keterangan saksi'; Jurusita bagian Juru Sita. Isi dari SIPP (dan susun saksi untuk PP) berjalan sendiri sampai pratinjau; satu-satunya tombol yang menulis ke ABT adalah 'Input ke ABT', dan hanya data yang terdeteksi ada yang muncul sebagai centang. Alasan perceraian diringkas di tiap huruf ('dikuatkan 2 saksi & ada di gugatan', 'baru 1 saksi', 'tidak ada di gugatan'); huruf alasan ikut tertulis bersama 'Terapkan yang dicentang'. Cari variabel, jumlah variabel siap, dan komentar hakim yang kosong pindah ke menu ⋯ (komentar yang berisi tetap tampil).",
+      "PENJELASAN TEKNIS DISEMBUNYIKAN (bawaan nyala): saklar 'Sembunyikan penjelasan teknis' di widget dan popup; kalimat teknis seperti daftar nomor variabel yang tidak berlaku disembunyikan. Error, peringatan, dan konfirmasi tetap tampil. Dapat diatur per peran lewat Profil saklar.",
+    ],
+  },
+  {
     versi: "1.175.0",
     dirilis: "2026-09-30T13:45:00+08:00",
     judul: "32 perbaikan sesudah uji 1.174.1 di SIPP/ABT sungguhan: panel lebih tenang, tab Juru Sita, putusan dari DOCX/DOC/PDF, anonimisasi otomatis, bawaan tunda, sinkron cadangan",

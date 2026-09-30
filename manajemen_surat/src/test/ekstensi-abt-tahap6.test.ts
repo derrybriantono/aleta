@@ -602,15 +602,41 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
     expect(kini.w.document.querySelector(".aleta-t6-tirai")).toBeNull();
   });
 
-  it("Baru TANPA satu saklar abt pun: DOM panel sama dengan Lama - hanya saklar yang membawa perubahan", async () => {
-    const lama = buka({ simpanan: {} });
-    const kini = buka({ simpanan: baru(["sipp-5", "portal-3"]) });
+  // Disesuaikan 30 September 2026 sore (agen T, ekstensi-abt-sederhana.test.ts):
+  // sejak perbaikan itu tampilan Baru SENGAJA mengubah panel walau tanpa satu
+  // saklar abt pun - menu ⋯, menu per peran, dan kelas aleta-teknis (butir
+  // 1-3). Penjaganya tetap sama kuat: lapisan sore dikupas (unsur .aleta-sore,
+  // atribut data-sore*, kelas aleta-teknis) dan sisanya harus SAMA PERSIS
+  // dengan Lama - jadi lapisan itulah SATU-SATUNYA perubahan. Perannya
+  // "Operator" (peran "lain" = susunan lama): tanpa pembacaan otomatis, yang
+  // dijaga uji tersendiri.
+  it("Baru TANPA satu saklar abt pun: DOM panel sama dengan Lama sesudah lapisan perbaikan 30 Sep sore dikupas", async () => {
+    const operator: Pengganti = (url, _cara, badan) =>
+      url.includes("/aleta-bot/abt/usulan") && JSON.parse(badan || "{}").sumber === "siapa"
+        ? { isi: { data: { available: true, pengguna: { nama: "Derry Briantono", peran: "Operator" }, kapabilitas: {} } } }
+        : undefined;
+    const lama = buka({ simpanan: {}, ganti: operator });
+    const kini = buka({ simpanan: baru(["sipp-5", "portal-3"]), ganti: operator });
     await Promise.all([panelLahir(lama), panelLahir(kini)]);
     await Promise.all([sampai(() => q(lama, ".aleta-id-aleta"), "pita"), sampai(() => q(kini, ".aleta-id-aleta"), "pita")]);
+    await sampai(() => panelDari(kini).getAttribute("data-sore-golongan") === "lain", "lapisan sore tertata");
     await tunggu(80);
-    expect(potret(kini)).toBe(potret(lama));
+    const kupas = (h: Halaman) => {
+      const salinan = panelDari(h).cloneNode(true);
+      for (const el of Array.from(salinan.querySelectorAll(".aleta-sore")) as any[]) el.remove();
+      for (const el of [salinan, ...Array.from(salinan.querySelectorAll("*"))] as any[]) {
+        for (const n of el.getAttributeNames()) if (n.startsWith("data-sore")) el.removeAttribute(n);
+        if (el.classList.contains("aleta-teknis")) {
+          el.classList.remove("aleta-teknis");
+          if (!el.getAttribute("class")) el.removeAttribute("class");
+        }
+      }
+      return String(salinan.outerHTML);
+    };
+    expect(potret(kini)).not.toBe(potret(lama));
+    expect(kupas(kini)).toBe(potret(lama));
     await Promise.all([isiDariSipp(lama), isiDariSipp(kini)]);
-    expect(potret(kini)).toBe(potret(lama));
+    expect(kupas(kini)).toBe(potret(lama));
     expect(mintaT6(kini)).toEqual([]);
   });
 
@@ -1295,7 +1321,15 @@ describe("jaringan: tidak ada non-GET baru selain fitur, dan semuanya tunduk mod
       await inputKeAbt(x);
     }
     await tunggu(80);
-    expect(bukanGet(h).sort()).toEqual(bukanGet(lama).sort());
+    // Disesuaikan 30 September 2026 sore (agen T): UI Baru membaca SIPP dan
+    // keterangan saksi SENDIRI saat panel terbuka (butir 4) - dua POST
+    // /abt/usulan tambahan yang hanya MENGHITUNG (ALETA_COBA_BOLEH). Yang
+    // dijaga tetap: tulisan non-GET lain sama persis dengan Lama, dan yang
+    // bertambah hanya pembacaan sumber "sipp" dan "saksi".
+    const usulan = (x: Halaman) => x.minta.filter((m) => m.cara !== "GET" && m.url.includes("/abt/usulan")).map((m) => JSON.parse(m.badan).sumber).sort();
+    const bukanUsulan = (x: Halaman) => bukanGet(x).filter((m) => !m.includes("/abt/usulan")).sort();
+    expect(bukanUsulan(h)).toEqual(bukanUsulan(lama));
+    expect(usulan(h)).toEqual([...usulan(lama), "saksi", "sipp"].sort());
   });
 
   it("pengamat hiasan tidak berputar: sesudah tenang, DOM panel tidak berubah lagi", async () => {

@@ -849,6 +849,24 @@ function t4BelumTersedia(teks) {
 }
 
 /**
+ * Perbaikan 30 Sep sore butir 3 (kontrak K5): menandai penjelasan teknis.
+ * Saklar "Sembunyikan penjelasan teknis" (bawaan nyala) menyembunyikan
+ * elemen berkelas aleta-teknis lewat panel.css. Hanya dipakai jalur t4 -
+ * panel Lama tidak disentuh. Pesan error, peringatan, dan hasil TIDAK.
+ */
+function t4Teknis(el) {
+  if (el && el.classList) el.classList.add("aleta-teknis");
+  return el;
+}
+
+/** "Belum tersedia." tetap tampil; sebab teknisnya ikut saklar K5. */
+function t4BelumTersediaRinci(rinci) {
+  const kotak = buatElemen("div", "aleta-t4-belum", "Belum tersedia.");
+  kotak.appendChild(t4Teknis(buatElemen("span", "", ` ${rinci}`)));
+  return kotak;
+}
+
+/**
  * Kabar singkat di panel (perbaikan desain D14). Satu kotak untuk seluruh
  * panel; kabar baru menggantikan yang lama, dan hilang sendiri.
  */
@@ -1417,11 +1435,11 @@ function t4BagianSidang(k) {
     const inti = t4IntiNama(k.siapa && k.siapa.nama);
     const milik = semua.filter((s) => t4SidangMilikSaya(s, inti));
     if (milik.length === 0) {
-      isi.appendChild(
-        t4Ket(
-          `Tidak ada sidang atas nama Anda hari ini (dari ${semua.length} sidang). Dicocokkan dengan nama akun ALETA terhadap majelis, panitera pengganti, dan juru sita.`
-        )
+      const ketSidang = t4Ket(`Tidak ada sidang atas nama Anda hari ini (dari ${semua.length} sidang).`);
+      ketSidang.appendChild(
+        t4Teknis(buatElemen("span", "", " Dicocokkan dengan nama akun ALETA terhadap majelis, panitera pengganti, dan juru sita."))
       );
+      isi.appendChild(ketSidang);
       return;
     }
     const selesai = milik.filter((s) => s.sudahPutus || s.ditunda || s.ikrarTercatat).length;
@@ -1482,7 +1500,7 @@ function t4BagianLonceng(k) {
     }
     isi.appendChild(daftar);
     // Jujur tentang batasnya: panel ini tidak menulis ke portal.
-    isi.appendChild(t4Ket("Tanda dibaca dicatat portal saat pemberitahuannya dibuka - panel ini hanya membaca.", "aleta-t4-lembut"));
+    isi.appendChild(t4Teknis(t4Ket("Tanda dibaca dicatat portal saat pemberitahuannya dibuka - panel ini hanya membaca.", "aleta-t4-lembut")));
   };
   k.muat.lonceng = muat;
   return kotak;
@@ -1660,8 +1678,8 @@ function t4BagianCari(k) {
 function t4BagianTulisan() {
   const { kotak, isi } = t4Bagian("Yang saya tulis ke SIPP hari ini", "portal-19", "perkara");
   isi.appendChild(
-    t4BelumTersedia(
-      "Belum tersedia. ALETA belum menyimpan catatan tulisan ke SIPP per petugas di tempat yang dapat dibaca panel - tulisannya tercatat di audit SIPP sendiri. Menunggu rute baca dari ALETA Bot."
+    t4BelumTersediaRinci(
+      "ALETA belum menyimpan catatan tulisan ke SIPP per petugas di tempat yang dapat dibaca panel - tulisannya tercatat di audit SIPP sendiri. Menunggu rute baca dari ALETA Bot."
     )
   );
   return kotak;
@@ -1672,8 +1690,8 @@ function t4BagianUnduhan(k) {
   const daftarSimpan = Array.isArray(k.unduhan) ? k.unduhan.filter((x) => x && x.nama) : [];
   if (daftarSimpan.length === 0) {
     isi.appendChild(
-      t4BelumTersedia(
-        "Belum tersedia. Pekerja latar ekstensi belum mencatat unduhannya ke penyimpanan; daftar ini terisi sendiri begitu pencatatnya dipasang."
+      t4BelumTersediaRinci(
+        "Pekerja latar ekstensi belum mencatat unduhannya ke penyimpanan; daftar ini terisi sendiri begitu pencatatnya dipasang."
       )
     );
     return kotak;
@@ -1705,8 +1723,10 @@ function t4BagianMingguIni(k) {
       );
     }
     isi.appendChild(
-      t4BelumTersedia(
-        "Grafik Senin-Jumat dan pembanding minggu lalu belum tersedia: ALETA belum menyimpan hitungan harian per petugas."
+      t4Teknis(
+        t4BelumTersedia(
+          "Grafik Senin-Jumat dan pembanding minggu lalu belum tersedia: ALETA belum menyimpan hitungan harian per petugas."
+        )
       )
     );
   };
@@ -1826,13 +1846,12 @@ async function t4GambarRiwayat(k) {
     baris = baris.slice(0, 6);
   }
   if (baris.length === 0) {
-    wadah.appendChild(
-      t4Ket(
-        kata
-          ? `"${kata}" tidak ada di riwayat peramban ini.${t4Nyala("portal-13") ? " Gunakan Cari perkara untuk mencari di SIPP." : ""}`
-          : "Perkara yang Anda buka di SIPP akan tercatat di sini, supaya dapat dibuka kembali dengan satu klik."
-      )
+    const ketRiwayat = t4Ket(
+      kata
+        ? `"${kata}" tidak ada di riwayat peramban ini.${t4Nyala("portal-13") ? " Gunakan Cari perkara untuk mencari di SIPP." : ""}`
+        : "Perkara yang Anda buka di SIPP akan tercatat di sini, supaya dapat dibuka kembali dengan satu klik."
     );
+    wadah.appendChild(kata ? ketRiwayat : t4Teknis(ketRiwayat));
     return;
   }
   const daftar = buatElemen("ul", "aleta-portal-riwayat aleta-t4-riwayat");
@@ -1935,7 +1954,7 @@ function t4TataEkstensi(k, kotakEkstensi) {
   if (t4Nyala("portal-1")) {
     const baru = t4Ket("", "aleta-t4-yang-baru");
     baru.hidden = true;
-    const diperiksa = t4Ket(`Diperiksa sendiri ${t4Jam(new Date().toISOString())} · tiap 30 menit`, "aleta-t4-lembut aleta-t4-diperiksa");
+    const diperiksa = t4Teknis(t4Ket(`Diperiksa sendiri ${t4Jam(new Date().toISOString())} · tiap 30 menit`, "aleta-t4-lembut aleta-t4-diperiksa"));
     const sesudahBaris = baris ? baris.nextSibling : null;
     isiEks.insertBefore(baru, sesudahBaris);
     isiEks.insertBefore(diperiksa, baru.nextSibling);
@@ -2052,9 +2071,11 @@ function t4BagianPeran(k) {
   const wadah = buatElemen("div", "aleta-t4-peran");
   isi.appendChild(wadah);
   isi.appendChild(
-    t4Ket(
-      "Berganti peran di sini mengganti daftar Tugas saya dan widget checklist. Menu dan kewenangan portal tetap gabungan semua peran akun Anda: portal belum menyimpan peran aktif, jadi berganti peran portal belum tersedia.",
-      "aleta-t4-lembut"
+    t4Teknis(
+      t4Ket(
+        "Berganti peran di sini mengganti daftar Tugas saya dan widget checklist. Menu dan kewenangan portal tetap gabungan semua peran akun Anda: portal belum menyimpan peran aktif, jadi berganti peran portal belum tersedia.",
+        "aleta-t4-lembut"
+      )
     )
   );
   const muat = async () => {
@@ -2319,7 +2340,7 @@ function t4KartuBantuan(k, pintasan) {
     daftar.appendChild(li);
   }
   kartu.appendChild(daftar);
-  kartu.appendChild(t4Ket("Tidak berlaku selagi mengetik di kolom isian.", "aleta-t4-lembut"));
+  kartu.appendChild(t4Teknis(t4Ket("Tidak berlaku selagi mengetik di kolom isian.", "aleta-t4-lembut")));
   if (t4Nyala("portal-18")) {
     const tur = t4Tombol("🧭 Tur singkat", "Lima langkah mengenal panel ini", "aleta-t4-kecil");
     tur.addEventListener("click", () => {
@@ -2575,6 +2596,9 @@ async function t4Tata(panel, kepala, isi, kaki, siapa, pintasan) {
  */
 function t4LipatPenjelasan(akar) {
   try {
+    if (akar && typeof akar.querySelectorAll === "function") {
+      for (const x of Array.from(akar.querySelectorAll(".aleta-kosong-lembut"))) t4Teknis(x);
+    }
     if (typeof alatLipatPenjelasan === "function") {
       alatLipatPenjelasan(akar, ".aleta-t4-ket, .aleta-kosong-lembut, .aleta-t4-belum");
     }

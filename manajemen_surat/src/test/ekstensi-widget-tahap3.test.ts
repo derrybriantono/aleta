@@ -384,7 +384,13 @@ describe("tampilan Lama IDENTIK dengan checklist.js sebelum tahap 3", () => {
     const kini = buka({ simpanan: baru([]) });
     await Promise.all([siap(lama), siap(kini)]);
     await tunggu(60);
-    expect(isiWadah(kini)).toBe(isiWadah(lama));
+    // Satu-satunya selisih yang sah: perbaikan 30 Sep sore butir 3 (K5) -
+    // saklar "Sembunyikan penjelasan teknis" di kaki dan kelas aleta-teknis
+    // pada keterangannya. Diminta pengguna untuk Baru DAN UI Baru.
+    const tanpaTeknis = (x: string) =>
+      x.replace(/<div class="aleta-cmw-teknis" data-widget-teknis="ya">[\s\S]*?<\/button><\/div>/g, "").replace(/ aleta-teknis/g, "");
+    expect(isiWadah(kini)).toContain('data-widget-teknis="ya"');
+    expect(tanpaTeknis(isiWadah(kini))).toBe(isiWadah(lama));
     q(kini, ".aleta-cm-kecilkan").click();
     q(lama, ".aleta-cm-kecilkan").click();
     await Promise.all([sampai(() => q(kini, ".aleta-cm-pil"), "pil"), sampai(() => q(lama, ".aleta-cm-pil"), "pil")]);

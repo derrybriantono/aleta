@@ -12,6 +12,11 @@
  *     -> Promise<boolean>  true bila bagian Juru Sita tergambar di `wadah`
  *   globalThis.aletaJurusitaBoleh(peran?)
  *     -> boolean           penentu cepat untuk menampilkan tabnya atau tidak
+ *   globalThis.aletaJurusitaPasangMassal(wadah, { situs: "sipp"|"abt" })
+ *     -> Promise<boolean>  panel "Relaas & pemberitahuan putusan - massal"
+ *                          yang berdiri sendiri, untuk halaman DAFTAR perkara
+ *                          SIPP dan BERANDA ABT (kontrak K3, perbaikan 30 Sep
+ *                          sore). false = ditolak (Lama / peran tidak boleh).
  *
  * ============================================================================
  * TAMPILAN LAMA TIDAK MENGGAMBAR APA PUN
@@ -19,9 +24,14 @@
  *
  * Dalam tampilan Lama pemanggilan ini pulang false SEKETIKA: tidak ada satu
  * pun elemen, atribut, permintaan jaringan, maupun pesan ke pekerja latar.
- * Yang boleh melihatnya: juru sita, panitera (termasuk PP dan panmud), admin,
- * dan super admin - menurut alatKelasPeran, sama dengan chip peran di kepala
- * panel.
+ *
+ * Yang boleh melihatnya (perbaikan 30 Sep sore, selaras matriks
+ * alatGolonganPeran/alatMenuPeran di panel-alat.js): ADMIN (Super Admin dan
+ * Admin) dan JURU SITA. Panitera, PP, panmud, ketua/wakil, dan hakim TIDAK -
+ * menurut susunan menu yang ditetapkan pengguna, relaas/PBT milik juru sita.
+ * Peran "lain" (operator, staf, analis, ...) memakai aturan lama
+ * (alatKelasPeran super/admin/panitera) - tidak dikurangi. Satu saja dari
+ * peran utama/tambahan akun yang boleh sudah cukup.
  *
  * ============================================================================
  * JALUR CETAKNYA JALUR YANG SUDAH ADA (KONTRAK K5) - TIDAK ADA YANG BARU
@@ -76,9 +86,18 @@ const JURUSITA_API_SIDANG = "/aleta/api/aleta-ecourt/sidang";
 const JURUSITA_API_CETAK = "/aleta/api/aleta-ecourt/relaas-massal/cetak";
 const JURUSITA_KUNCI_PETA = "petaBlangkoRelaasPbt";
 const JURUSITA_PENANDA = "aleta-jurusita";
-/** Kelas peran (alatKelasPeran) yang melihat tab Juru Sita. */
+/**
+ * Kelas peran (alatKelasPeran) yang melihat tab Juru Sita - kini HANYA untuk
+ * peran bergolongan "lain" menurut matriks K1 (lihat jurusitaKelasBoleh).
+ */
 const JURUSITA_KELAS_BOLEH = ["aleta-peran-super", "aleta-peran-admin", "aleta-peran-panitera"];
-/** Nilai data-peran panel (alatTandaiPeranPanel) yang setara. */
+/**
+ * Nilai data-peran panel (alatTandaiPeranPanel) - cadangan bila akun ALETA
+ * tidak terbaca dan pemanggil tidak menyebut perannya. "panitera" di sana
+ * mencakup juru sita (alatKelasPeran tidak membedakannya), jadi ia tetap
+ * diterima: tanpa akun, rute ALETA mana pun menolak, dan yang tampak hanya
+ * keterangan gagal - bukan kewenangan.
+ */
 const JURUSITA_DATA_PERAN_BOLEH = ["super", "admin", "panitera"];
 const JURUSITA_BATAS_MULAI_MS = 60000;
 const JURUSITA_BATAS_PESAN_MS = 15000;
@@ -126,8 +145,20 @@ function jurusitaModeBaru() {
   }
 }
 
+/**
+ * Satu nama/id peran boleh melihat relaas & PBT?
+ *
+ * Matriks K1 (alatGolonganPeran) lebih dahulu: admin dan juru sita boleh,
+ * golongan bernama lainnya (ketua, hakim, panitera) tidak. Peran "lain" -
+ * atau matriks yang belum termuat - jatuh ke aturan lama alatKelasPeran,
+ * supaya peran yang tidak disebut pengguna tidak kehilangan apa pun.
+ */
 function jurusitaKelasBoleh(peran) {
-  if (!peran || typeof alatKelasPeran !== "function") return false;
+  if (!peran) return false;
+  const golongan = typeof alatGolonganPeran === "function" ? alatGolonganPeran(peran) : "";
+  if (golongan === "admin" || golongan === "jurusita") return true;
+  if (golongan && golongan !== "lain") return false;
+  if (typeof alatKelasPeran !== "function") return false;
   return JURUSITA_KELAS_BOLEH.includes(alatKelasPeran(peran));
 }
 
@@ -296,6 +327,39 @@ function jurusitaGolonganSidang(sidang, rincian) {
   return Number(sidang.urutanSidang) === 1 ? "sidang-pertama" : "sidang-lanjutan";
 }
 
+/** Sebutan golongan sidang untuk petugas (U3: pertama dan tundaan disebut). */
+const JURUSITA_SEBUTAN_JENIS_SIDANG = {
+  "sidang-pertama": "sidang pertama",
+  "sidang-lanjutan": "tundaan",
+  "sidang-ditunda": "tundaan",
+  "ikrar-talak": "ikrar talak",
+  "pemberitahuan-putusan": "PBT",
+};
+
+/**
+ * Kalimat pendek: siapa yang perlu dipanggil ke sidang tundaan ke-urutan,
+ * menurut kehadiran sidang SEBELUMNYA (perkara_jadwal_sidang.dihadiri_oleh -
+ * 1 semua pihak, 2 hanya pihak pertama, 3 hanya pihak kedua, 4 tidak ada;
+ * sandi yang sama dengan pihakDipanggil di pohon-blangko.ts). Hanya
+ * memberi tahu - tidak mencentang apa pun. "" bila tidak ada yang dapat
+ * dikatakan (sidang pertama, ikrar, sandi kosong).
+ */
+function jurusitaPetunjukTundaan(jadwal, urutan, sebutan, rincian) {
+  const tujuan = (jadwal || []).find((s) => Number(s.urutanSidang) === urutan);
+  if (!tujuan || jurusitaGolonganSidang(tujuan, rincian) !== "sidang-lanjutan") return "";
+  const sebelum = (jadwal || [])
+    .filter((s) => Number(s.urutanSidang) < urutan)
+    .sort((a, b) => Number(b.urutanSidang) - Number(a.urutanSidang))[0];
+  if (!sebelum) return "";
+  const sandi = Number(sebelum.dihadiriOleh);
+  const ke = `Sidang ke-${sebelum.urutanSidang}`;
+  if (sandi === 1) return `${ke} dihadiri semua pihak - biasanya diperintahkan hadir, tanpa relaas.`;
+  if (sandi === 2) return `${ke} hanya dihadiri ${sebutan.pertama} - yang dipanggil ${sebutan.kedua}.`;
+  if (sandi === 3) return `${ke} hanya dihadiri ${sebutan.kedua} - yang dipanggil ${sebutan.pertama}.`;
+  if (sandi === 4) return `${ke} tidak dihadiri pihak - yang dipanggil ${sebutan.pertama} dan ${sebutan.kedua}.`;
+  return "";
+}
+
 function jurusitaNomorAman(nomor, perkaraId) {
   return String(nomor || `perkara ${perkaraId}`).replace(/[\\/:*?"<>|]+/g, "-").trim();
 }
@@ -304,6 +368,25 @@ function jurusitaTanggalIso(d) {
   const t = d || new Date();
   const dua = (n) => String(n).padStart(2, "0");
   return `${t.getFullYear()}-${dua(t.getMonth() + 1)}-${dua(t.getDate())}`;
+}
+
+/**
+ * Blangko "P dan T" memuat KEDUA pihak - pohon-blangko.ts (blangkoRelaas):
+ * sidang ditunda yang memanggil pihak pertama atau keduanya memakai blangko
+ * itu. Bila untuk sidang yang sama P dan T sudah akan dicetak, blangko
+ * "T (Sidang Lanjutan)" hanya menggandakan panggilan Tergugat: pihaknya
+ * digabung ke dokumen P dan T (perbaikan 30 Sep sore - sebelumnya dua
+ * dokumen). Blangko lain dari pemetaan server tidak disentuh.
+ */
+function jurusitaSatukanPdanT(calon) {
+  const pdanT = new Map();
+  for (const c of calon) {
+    if (c.jenis === "panggilan" && c.blangko && c.blangko.berkas === JURUSITA_BLANGKO_P_DAN_T) pdanT.set(`${c.golongan}|${c.d}`, c.blangko);
+  }
+  return calon.map((c) => {
+    const p = c.jenis === "panggilan" && c.blangko && c.blangko.berkas === JURUSITA_BLANGKO_T_LANJUTAN ? pdanT.get(`${c.golongan}|${c.d}`) : null;
+    return p ? { ...c, blangko: p } : c;
+  });
 }
 
 /**
@@ -355,7 +438,7 @@ function jurusitaSusunDokumen(konteks, pilihan, petaBerlaku) {
 
   // Satukan yang sama blangko dan sidangnya.
   const kelompok = new Map();
-  for (const c of calon) {
+  for (const c of jurusitaSatukanPdanT(calon)) {
     const k = `${c.golongan}|${c.d}|${c.blangko.berkas}`;
     if (!kelompok.has(k)) kelompok.set(k, { ...c, pihakSemua: [c.pihak], sisiSemua: [c.sisi] });
     else {
@@ -489,6 +572,45 @@ function jurusitaPilahMassal(dokumen, opsi) {
   return { siap, perluDilihat };
 }
 
+/**
+ * GET relaas-massal/cetak?tanggal= -> { data, sebab }. Satu tempat untuk
+ * bagian massal lama (per perkara) dan panel massal daftar/beranda.
+ */
+async function jurusitaAmbilDaftarRelaas(tanggal) {
+  try {
+    const r = await alatAmbil(
+      `${JURUSITA_API_CETAK}?tanggal=${encodeURIComponent(tanggal || "")}`,
+      { credentials: "include", cache: "no-store" },
+      "Membaca daftar relaas"
+    );
+    const luar = await r.json().catch(() => null);
+    if (!r.ok || !luar || luar.ok === false) {
+      return {
+        data: null,
+        sebab: String(
+          (luar && (luar.alasan || (luar.error && luar.error.message))) || jurusitaPesanStatus(r.status, "Membaca daftar relaas")
+        ),
+      };
+    }
+    return { data: luar.data ? luar.data : luar, sebab: "" };
+  } catch (e) {
+    return { data: null, sebab: String((e && e.message) || e) };
+  }
+}
+
+/**
+ * Kelompok "dari hari kerja sebelumnya" jawaban rute cetak - panggilan dari
+ * sidang tundaan kemarin yang jadwalnya dicatat sesudah daftar kemarin
+ * dibaca. Kunci yang sama dengan dokumen hari ini dibuang (seperti dialog
+ * portal): satu kunci satu butir.
+ */
+function jurusitaDokumenKemarin(data) {
+  const kemarin = data && data.hariKerjaSebelumnya;
+  if (!kemarin || !Array.isArray(kemarin.dokumen)) return [];
+  const hariIni = new Set((Array.isArray(data.dokumen) ? data.dokumen : []).map((d) => String((d && d.kunci) || "")));
+  return kemarin.dokumen.filter((d) => d && typeof d === "object" && !hariIni.has(String(d.kunci || "")));
+}
+
 /* ─── 5. Pekerja latar (latar.js - mesin relaas yang sudah ada) ───────────── */
 
 /** Satu pesan ke latar.js; SELALU pulang objek, tidak pernah melempar, tidak menunggu selamanya. */
@@ -572,20 +694,29 @@ function jurusitaTombol(teks, kelas, judul) {
   return b;
 }
 
-/** Judul bagian + ⓘ yang membuka uraian panjang (butir 6: penjelasan panjang dilipat). */
+/**
+ * Judul bagian + ⓘ yang membuka uraian panjang (butir 6: penjelasan panjang dilipat).
+ *
+ * K5: ⓘ dan uraiannya bertanda aleta-teknis - seluruhnya menerangkan cara
+ * kerja (ABT, PDF, pemetaan, folder unduhan), bukan pesan yang meminta
+ * tindakan. Saklar "Sembunyikan penjelasan teknis" melipatnya berdua.
+ */
 function jurusitaJudul(teks, uraian) {
   const baris = jurusitaEl("div", "aleta-jurusita-judul");
   baris.appendChild(jurusitaEl("span", "aleta-jurusita-judul-teks", teks));
   if (!uraian) return { baris, uraian: null };
-  const info = jurusitaTombol("ⓘ", "aleta-jurusita-info", "Penjelasan");
+  const info = jurusitaTombol("ⓘ", "aleta-jurusita-info aleta-teknis", "Penjelasan");
   info.setAttribute("aria-expanded", "false");
-  const isi = jurusitaEl("div", "aleta-jurusita-uraian", uraian);
+  const isi = jurusitaEl("div", "aleta-jurusita-uraian aleta-teknis", uraian);
   isi.hidden = true;
   info.addEventListener("click", () => {
     isi.hidden = !isi.hidden;
     info.setAttribute("aria-expanded", isi.hidden ? "false" : "true");
   });
   baris.appendChild(info);
+  // Uraiannya dulu tidak pernah dipasang ke halaman - ⓘ tidak membuka apa pun.
+  // Kini ikut di baris judul (panel.css blok J: melebar satu baris penuh).
+  baris.appendChild(isi);
   return { baris, uraian: isi };
 }
 
@@ -700,6 +831,18 @@ function jurusitaGambarPutaran(kotak, jawab, pantau) {
   if (p.selesai) tindak("relaas-bersihkan", "Bersihkan");
   kotak.appendChild(kepala);
   if (p.tertahan && p.tertahan.sebab) kotak.appendChild(jurusitaEl("div", "aleta-jurusita-kabar aleta-jurusita-kabar-salah", p.tertahan.sebab));
+  if (p.tertahan && p.tertahan.perluMasuk === "aleta") {
+    // Pekerja latar ditolak ALETA (401). Halaman ini bertanya sendiri, dengan
+    // sesinya sendiri, supaya kalimatnya tidak menyuruh masuk orang yang
+    // sebenarnya masih masuk (tangkapan 118-119).
+    const cek = jurusitaEl("div", "aleta-jurusita-lembut aleta-jurusita-cek-sesi");
+    cek.hidden = true;
+    kotak.appendChild(cek);
+    void jurusitaCekSesiHalaman(p.tertahan.pada).then((t) => {
+      cek.textContent = t;
+      cek.hidden = !t;
+    });
+  }
   const gagal = (p.butir || []).filter((b) => b.keadaan === "gagal" || (b.keadaan === "selesai" && b.tanpaPdf));
   const lewat = Array.isArray(p.dilewati) ? p.dilewati : [];
   if (gagal.length + lewat.length > 0) {
@@ -713,6 +856,37 @@ function jurusitaGambarPutaran(kotak, jawab, pantau) {
     kotak.appendChild(rinci);
   }
   return !p.selesai;
+}
+
+/** Satu pemeriksaan per penahanan (tertahan.pada) - pemantau menggambar ulang tiap 2,5 detik. */
+let jurusitaCekSesi = { pada: null, janji: null };
+
+/**
+ * Apakah HALAMAN INI masih masuk ALETA? GET "siapa" dengan sesi halaman (bukan
+ * simpanan jurusitaSiapa). Pulang kalimat untuk petugas, "" bila tak dapat
+ * dikatakan apa pun yang pasti.
+ */
+function jurusitaCekSesiHalaman(pada) {
+  if (jurusitaCekSesi.janji && jurusitaCekSesi.pada === pada) return jurusitaCekSesi.janji;
+  const janji = (async () => {
+    try {
+      const r = await alatAmbil(JURUSITA_API_SIAPA, { credentials: "include", cache: "no-store" }, "Memeriksa sesi ALETA");
+      if (r.status === 401) return "Halaman ini juga tidak lagi masuk ALETA - buka portal ALETA, masuk, lalu tekan Lanjutkan.";
+      if (!r.ok) return "";
+      const luar = await r.json().catch(() => null);
+      const isi = luar && luar.data ? luar.data : luar;
+      const nama = isi && isi.nama ? String(isi.nama) : "";
+      if (!nama) return "";
+      return (
+        `Halaman ini masih masuk ALETA sebagai ${nama}, jadi sesi portal belum habis - yang ditolak permintaan PDF ` +
+        "dari ekstensi. Tekan Lanjutkan; bila tertahan lagi, muat ulang halaman ini lalu Lanjutkan."
+      );
+    } catch {
+      return "";
+    }
+  })();
+  jurusitaCekSesi = { pada, janji };
+  return janji;
 }
 
 /** Memantau putaran selama bagiannya masih ada di halaman. */
@@ -801,8 +975,11 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
     for (const s of jadwal) {
       const o = document.createElement("option");
       o.value = String(s.urutanSidang);
-      const ikrar = jurusitaSidangIkrar(s, rincian) ? " · ikrar" : "";
-      o.textContent = `ke-${s.urutanSidang} · ${jurusitaTanggalPendek(s.tanggalSidang)}${s.agenda ? ` · ${String(s.agenda).slice(0, 40)}` : ""}${ikrar}`;
+      // U3: sidang pertama dan TUNDAAN sama-sama dapat dipilih - jenisnya disebut.
+      const jenis = JURUSITA_SEBUTAN_JENIS_SIDANG[jurusitaGolonganSidang(s, rincian)] || "";
+      o.textContent =
+        `ke-${s.urutanSidang} · ${jurusitaTanggalPendek(s.tanggalSidang)}${jenis ? ` · ${jenis}` : ""}` +
+        `${s.agenda ? ` · ${String(s.agenda).slice(0, 40)}` : ""}`;
       if (bawaan && s === bawaan) o.selected = true;
       pilihSidang.appendChild(o);
     }
@@ -815,6 +992,10 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
     }
     barisSidang.appendChild(pilihSidang);
     isi.appendChild(barisSidang);
+    // Siapa yang dipanggil ke sidang tundaan: dari kehadiran sidang sebelumnya.
+    const petunjuk = jurusitaEl("div", "aleta-jurusita-petunjuk");
+    petunjuk.hidden = true;
+    isi.appendChild(petunjuk);
 
     // Centang
     const tanpaSidang = jadwal.length === 0 ? "Belum ada jadwal sidang - panggilan menuntut nomor sidang." : "";
@@ -860,6 +1041,12 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
     };
     const segarkan = () => {
       const { dokumen, tanpaBlangko } = susun();
+      const t = jurusitaPetunjukTundaan(jadwal, Number(pilihSidang.value), sebutan, rincian);
+      petunjuk.textContent = t;
+      petunjuk.hidden = !t;
+      // K5: daftar blangko + sumber pemetaan = penjelasan teknis, KECUALI bila
+      // ada yang belum dipetakan (itu meminta tindakan dan tidak disembunyikan).
+      rinciBlangko.classList.toggle("aleta-teknis", tanpaBlangko.length === 0);
       daftarBlangko.textContent = "";
       for (const d of dokumen) {
         daftarBlangko.appendChild(
@@ -945,25 +1132,7 @@ function jurusitaGambarMassal(bagian, kotakPutaran, pantau) {
     muat.disabled = true;
     hasilKotak.textContent = "";
     hasilKotak.appendChild(jurusitaEl("div", "aleta-jurusita-lembut", "Membaca daftar..."));
-    let data = null;
-    let sebab = "";
-    try {
-      const r = await alatAmbil(
-        `${JURUSITA_API_CETAK}?tanggal=${encodeURIComponent(tanggal.value || "")}`,
-        { credentials: "include", cache: "no-store" },
-        "Membaca daftar relaas"
-      );
-      const luar = await r.json().catch(() => null);
-      if (!r.ok || !luar || luar.ok === false) {
-        sebab = String(
-          (luar && (luar.alasan || (luar.error && luar.error.message))) || jurusitaPesanStatus(r.status, "Membaca daftar relaas")
-        );
-      } else {
-        data = luar.data ? luar.data : luar;
-      }
-    } catch (e) {
-      sebab = String((e && e.message) || e);
-    }
+    const { data, sebab } = await jurusitaAmbilDaftarRelaas(tanggal.value);
     const peta = await jurusitaMuatPeta();
     muat.disabled = false;
     hasilKotak.textContent = "";
@@ -994,6 +1163,21 @@ function jurusitaGambarMassal(bagian, kotakPutaran, pantau) {
               (pilah.perluDilihat.length ? ` · ${pilah.perluDilihat.length} perlu dilihat` : "")
       )
     );
+    // Panggilan tundaan dari hari kerja sebelumnya (kelompok tersendiri rute
+    // cetak) tidak dicetak dari sini - disebut, supaya tidak hilang tanpa suara.
+    const kemarin = jurusitaDokumenKemarin(data).filter(
+      (d) => !hanyaSaya || jurusitaNamaCocok(String((jurusitaSiapa && jurusitaSiapa.nama) || ""), String((d.jurusita && d.jurusita.nama) || ""))
+    );
+    if (kemarin.length > 0) {
+      hasilKotak.appendChild(
+        jurusitaEl(
+          "div",
+          "aleta-jurusita-lembut",
+          `${kemarin.length} panggilan dari hari kerja sebelumnya (${jurusitaTanggalPendek(data.hariKerjaSebelumnya.tanggal)}) ` +
+            "dipilih di panel Relaas & PBT massal (daftar perkara SIPP / beranda ABT)."
+        )
+      );
+    }
     if (pilah.siap.length + pilah.perluDilihat.length > 0) {
       const rinciDaftar = jurusitaEl("details", "aleta-jurusita-rinci");
       rinciDaftar.appendChild(jurusitaEl("summary", "", "Daftar"));
@@ -1044,16 +1228,561 @@ function jurusitaGambarMassal(bagian, kotakPutaran, pantau) {
   });
 }
 
+/* ─── 6d. Panel massal - daftar perkara SIPP & beranda ABT (K3) ───────────── */
+
+/**
+ * ============================================================================
+ * RELAAS & PBT MASSAL YANG BERDIRI SENDIRI (perbaikan 30 Sep sore, U2/U3)
+ * ============================================================================
+ *
+ * Bahan: rute cetak yang SAMA dengan bagian massal lama dan dialog portal -
+ * dokumen yang LAHIR pada tanggal itu: perkara baru daftar (panggilan sidang
+ * pertama), sidang yang DITUNDA hari itu (panggilan ke sidang TUNDAAN
+ * berikutnya, d = urutan sidang tujuan), jadwal baru, dan putusan (PBT).
+ * Kelompok "dari hari kerja sebelumnya" (tundaan kemarin yang jadwalnya
+ * dicatat sesudah daftar kemarin dibaca) ikut ditampilkan terpisah dan tidak
+ * ikut "Pilih semua" - sama dengan dialog Cetak relaas portal.
+ *
+ * Per perkara ada centang Panggilan P/T dan PBT P/T. Centang PBT hanya muncul
+ * untuk pihak yang memang ada dokumennya. "Pilih semua" mencentang pihak yang
+ * menurut SIPP perlu dipanggil/diberi tahu - bukan yang sudah tercatat di
+ * SIPP, yang perlu konfirmasi, atau yang pihaknya belum diketahui (centang
+ * sendiri). Blangkonya: pemetaan server -> blangko rute (pohon-blangko.ts)
+ * -> bawaan tertanam, dengan aturan P dan T yang sama dengan per perkara.
+ *
+ * Cetaknya lewat mesin relaas latar.js yang sudah ada (relaas-mulai), dengan
+ * putaran yang dapat dihentikan dan dilanjutkan - tidak ada jalur tulis baru.
+ */
+const JURUSITA_MASSAL_PENANDA = "aleta-jurusita-massal-panel";
+
+/** Sisi (1 pertama, 2 kedua) yang dicakup nilai pihakDipanggil. */
+function jurusitaSisiPihak(pihak) {
+  const p = String(pihak || "");
+  if (p === "keduanya") return [1, 2];
+  if (p === "pertama") return [1];
+  if (p === "kedua") return [2];
+  return [];
+}
+
+function jurusitaSamaSisi(a, b) {
+  return a.length === b.length && a.every((x) => b.includes(x));
+}
+
+/** Sebutan pihak satu dokumen rute: sebutanPihak bot, cadangannya nomor & jenis perkara. */
+function jurusitaSebutanDok(dok) {
+  const s = dok && dok.sebutanPihak;
+  if (s && String(s.pertama || "").trim() && String(s.kedua || "").trim()) {
+    const mohon = /pemohon/i.test(String(s.pertama));
+    return {
+      pertama: String(s.pertama).trim(),
+      kedua: String(s.kedua).trim(),
+      k1: mohon ? "pemohon" : "penggugat",
+      k2: mohon ? "termohon" : "tergugat",
+    };
+  }
+  return jurusitaSebutan(dok && dok.nomorPerkara, dok && dok.jenisPerkara);
+}
+
+/**
+ * Keadaan satu dokumen rute bagi centangnya.
+ *   boleh      centangnya dapat dipakai
+ *   pilihPihak SIPP tidak menjawab pihaknya - juru sita mencentang sendiri
+ *   sisi       sisi yang menurut SIPP perlu (PBT: pihakKe-nya)
+ *   bawaan     sisi yang dicentang "Pilih semua" ([] = tidak ikut)
+ *   sebab      kenapa tidak dapat dicetak (boleh = false) - pesan, bukan teknis
+ *   catatan    kalimat yang harus dibaca sebelum mencetak
+ */
+function jurusitaKeadaanDok(dok, kelompok) {
+  if (!dok) return null;
+  const catatan = [];
+  if (dok.sudahAdaRelaas === true) catatan.push("sudah tercatat di SIPP");
+  for (const p of Array.isArray(dok.peringatan) ? dok.peringatan : []) {
+    if (p && p.teks) catatan.push(String(p.teks));
+  }
+  const pilihPihak =
+    dok.bisaDicetak !== true &&
+    String(dok.pihakDipanggil || "") === "tidak-diketahui" &&
+    /belum diketahui/i.test(String(dok.sebabTidakBisa || ""));
+  if (pilihPihak) catatan.push("Pihak yang dipanggil belum tercatat di SIPP - centang sendiri.");
+  const boleh = (dok.bisaDicetak === true && Boolean(dok.blangko && dok.blangko.berkas)) || pilihPihak;
+  const pbtSisi = Number(dok.pihakKe);
+  const sisi =
+    String(dok.golongan || "") === "pemberitahuan-putusan" && (pbtSisi === 1 || pbtSisi === 2)
+      ? [pbtSisi]
+      : jurusitaSisiPihak(dok.pihakDipanggil);
+  const tahan = !boleh || pilihPihak || dok.ikutPilihSemua === false || dok.sudahAdaRelaas === true || kelompok !== "hari-ini";
+  return {
+    boleh,
+    pilihPihak,
+    sisi,
+    bawaan: tahan ? [] : sisi,
+    sebab: boleh ? "" : String(dok.sebabTidakBisa || "belum dapat dicetak"),
+    catatan,
+  };
+}
+
+/** Dokumen PBT untuk satu sisi: yang pihakKe-nya sisi itu, atau yang satu per perkara (pihakKe kosong). */
+function jurusitaDokPbtSisi(daftar, sisi) {
+  const semua = Array.isArray(daftar) ? daftar : [];
+  return (
+    semua.find((d) => Number(d.pihakKe) === sisi) ||
+    semua.find((d) => !(Number(d.pihakKe) === 1 || Number(d.pihakKe) === 2) && (jurusitaSisiPihak(d.pihakDipanggil).includes(sisi) || String(d.pihakDipanggil || "") === "tidak-diketahui")) ||
+    null
+  );
+}
+
+/** Baris per perkara (satu per sidang yang dipanggil; PBT menempel di baris pertama perkaranya). */
+function jurusitaBarisMassal(dokumen, kelompok) {
+  const perPerkara = new Map();
+  for (const dok of Array.isArray(dokumen) ? dokumen : []) {
+    if (!dok || typeof dok !== "object") continue;
+    const id = String(dok.perkaraId || "");
+    if (!perPerkara.has(id)) {
+      perPerkara.set(id, {
+        perkaraId: id,
+        nomorPerkara: String(dok.nomorPerkara || ""),
+        jurusita: String((dok.jurusita && dok.jurusita.nama) || ""),
+        sebutan: jurusitaSebutanDok(dok),
+        panggilan: [],
+        pbt: [],
+      });
+    }
+    const p = perPerkara.get(id);
+    if (String(dok.golongan || "") === "pemberitahuan-putusan") p.pbt.push(dok);
+    else p.panggilan.push(dok);
+    if (!p.jurusita && dok.jurusita && dok.jurusita.nama) p.jurusita = String(dok.jurusita.nama);
+  }
+  const baris = [];
+  for (const p of perPerkara.values()) {
+    const panggilan = p.panggilan.length > 0 ? p.panggilan : [null];
+    panggilan.forEach((pg, i) => {
+      baris.push({
+        kunciBaris: `${kelompok}:${p.perkaraId}:${pg ? String(pg.kunci || pg.d || i) : "pbt"}`,
+        kelompok,
+        perkaraId: p.perkaraId,
+        nomorPerkara: p.nomorPerkara,
+        jurusita: p.jurusita,
+        sebutan: p.sebutan,
+        panggilan: pg,
+        pbt: i === 0 ? p.pbt : [],
+      });
+    });
+  }
+  // Urut nomor perkara (angka depan), lalu sidang.
+  const angka = (n) => Number((/^(\d+)/.exec(n) || [0, 0])[1]);
+  return baris.sort((a, b) => angka(a.nomorPerkara) - angka(b.nomorPerkara) || a.kunciBaris.localeCompare(b.kunciBaris));
+}
+
+/** Centang bawaan "Pilih semua" satu baris. */
+function jurusitaPilihanBawaan(baris) {
+  const pilih = { p1: false, p2: false, b1: false, b2: false };
+  const kp = jurusitaKeadaanDok(baris.panggilan, baris.kelompok);
+  if (kp) for (const s of kp.bawaan) pilih[`p${s}`] = true;
+  for (const s of [1, 2]) {
+    const k = jurusitaKeadaanDok(jurusitaDokPbtSisi(baris.pbt, s), baris.kelompok);
+    if (k && k.bawaan.includes(s)) pilih[`b${s}`] = true;
+  }
+  return pilih;
+}
+
+/** Blangko satu bagian: pemetaan server/simpanan -> blangko rute -> bawaan tertanam. */
+function jurusitaBlangkoBagian(dok, jenis, kunci, ruteBerlaku, peta) {
+  const dariPeta = jurusitaPilihBlangko(peta, jenis, kunci);
+  if (dariPeta && dariPeta.sumber !== "bawaan") return dariPeta;
+  const rute = dok && dok.blangko && dok.blangko.berkas ? String(dok.blangko.berkas) : "";
+  if (rute && ruteBerlaku) return { berkas: rute, kunci: kunci[0], sumber: "rute" };
+  return dariPeta;
+}
+
+/** Dokumen untuk satu baris massal dari centangnya - bentuk yang sama dengan per perkara. */
+function jurusitaDokumenBarisMassal(baris, pilih, peta) {
+  const seb = baris.sebutan;
+  const calon = [];
+  const tanpaBlangko = [];
+  const pg = baris.panggilan;
+  const kp = jurusitaKeadaanDok(pg, baris.kelompok);
+  const sisiP = [1, 2].filter((s) => pilih && pilih[`p${s}`]);
+  if (pg && kp && kp.boleh && sisiP.length > 0) {
+    const golongan = String(pg.golongan || "");
+    const lanjutan = golongan === "sidang-ditunda" || golongan === "sidang-lanjutan";
+    // Blangko rute untuk tundaan dihitung atas pihak SIPP - berlaku hanya bila
+    // yang dicentang sama; sidang pertama dan ikrar tidak bergantung pihak.
+    const ruteBerlaku = pg.bisaDicetak === true && (!lanjutan || jurusitaSamaSisi(sisiP, kp.sisi));
+    for (const sisi of sisiP) {
+      const kunci =
+        golongan === "ikrar-talak"
+          ? ["panggilan-ikrar"]
+          : golongan === "sidang-pertama"
+            ? ["panggilan-sidang-pertama"]
+            : jurusitaKunciPihak("panggilan", sisi, seb);
+      const blangko = jurusitaBlangkoBagian(pg, "relaas", kunci, ruteBerlaku, peta);
+      const pihak = sisi === 1 ? seb.pertama : seb.kedua;
+      if (!blangko) {
+        tanpaBlangko.push(`Panggilan ${pihak}`);
+        continue;
+      }
+      calon.push({ golongan, d: Number(pg.d), sisi, pihak, jenis: "panggilan", blangko, dok: pg });
+    }
+  }
+  for (const sisi of [1, 2].filter((s) => pilih && pilih[`b${s}`])) {
+    const dok = jurusitaDokPbtSisi(baris.pbt, sisi);
+    const k = jurusitaKeadaanDok(dok, baris.kelompok);
+    if (!dok || !k || !k.boleh) continue;
+    const blangko = jurusitaBlangkoBagian(dok, "pbt", jurusitaKunciPihak("pbt", sisi, seb), dok.bisaDicetak === true, peta);
+    const pihak = sisi === 1 ? seb.pertama : seb.kedua;
+    if (!blangko) {
+      tanpaBlangko.push(`PBT ${pihak}`);
+      continue;
+    }
+    calon.push({ golongan: "pemberitahuan-putusan", d: 0, sisi, pihak, jenis: "pbt", blangko, dok });
+  }
+
+  const kelompok = new Map();
+  for (const c of jurusitaSatukanPdanT(calon)) {
+    const k = `${c.golongan}|${c.d}|${c.blangko.berkas}`;
+    if (!kelompok.has(k)) kelompok.set(k, { ...c, pihakSemua: [c.pihak], sisiSemua: [c.sisi] });
+    else {
+      const ada = kelompok.get(k);
+      if (!ada.pihakSemua.includes(c.pihak)) ada.pihakSemua.push(c.pihak);
+      ada.sisiSemua.push(c.sisi);
+    }
+  }
+  const nomorAman = jurusitaNomorAman(baris.nomorPerkara, baris.perkaraId);
+  const dokumen = [...kelompok.values()].map((c) => {
+    const pihakTeks = c.pihakSemua.join(" dan ");
+    const bagian =
+      c.golongan === "pemberitahuan-putusan"
+        ? "pemberitahuan putusan"
+        : c.golongan === "ikrar-talak"
+          ? `panggilan ikrar talak sidang ke-${c.d}`
+          : `panggilan sidang ke-${c.d}`;
+    const sisiKunci = [...new Set(c.sisiSemua)].sort().join("");
+    const dasar = String(c.dok.kunci || `${c.golongan}:${baris.perkaraId}:${c.d}`);
+    return {
+      kunci: `${dasar}:${sisiKunci}`.slice(0, 160),
+      perkaraId: String(baris.perkaraId),
+      nomorPerkara: String(baris.nomorPerkara || ""),
+      golongan: c.golongan,
+      label: `${c.jenis === "pbt" ? "Pemberitahuan putusan" : "Panggilan"} ${pihakTeks}`.slice(0, 200),
+      d: c.d,
+      berkas: c.blangko.berkas,
+      nama: `${nomorAman} - ${bagian} ${pihakTeks}`.slice(0, JURUSITA_NAMA_MAKS),
+      jurusita: (baris.jurusita || "tidak tercatat").slice(0, 120),
+      sumberBlangko: c.blangko.sumber,
+    };
+  });
+  return { dokumen, tanpaBlangko };
+}
+
+/** Hari kerja (Senin-Jumat) sebelum tanggal ISO. */
+function jurusitaHariKerjaSebelum(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12) : new Date();
+  do {
+    d.setDate(d.getDate() - 1);
+  } while (d.getDay() === 0 || d.getDay() === 6);
+  return jurusitaTanggalIso(d);
+}
+
+/** Keterangan sidang/PBT satu baris - yang dibaca juru sita sebelum mencentang. */
+function jurusitaKeteranganBaris(baris) {
+  const bagian = [];
+  const pg = baris.panggilan;
+  if (pg) {
+    const jenis = JURUSITA_SEBUTAN_JENIS_SIDANG[String(pg.golongan || "")] || String(pg.golongan || "");
+    const tgl = pg.tanggalSidangTujuan ? ` · ${jurusitaTanggalPendek(pg.tanggalSidangTujuan)}` : "";
+    const baru = String(pg.sebabMasuk || "") === "didaftarkan" ? " · perkara baru" : "";
+    bagian.push(`Panggilan sidang ke-${pg.d}${tgl} · ${jenis}${baru}`);
+  }
+  if (baris.pbt.length > 0) {
+    const status = String((baris.pbt[0] && baris.pbt[0].statusPutusanNama) || "").trim();
+    bagian.push(`Pemberitahuan putusan${status ? ` (${status})` : ""}`);
+  }
+  return bagian.join(" · ");
+}
+
+/**
+ * Satu baris perkara: nomor, keterangan sidang, centang, catatan, blangko
+ * (teknis). ubah(kunciBaris, nilai, tercentang) dipanggil tiap centang berubah.
+ */
+function jurusitaGambarBarisMassal(baris, pilih, tampilJurusita, ubah) {
+  const el = jurusitaEl("div", "aleta-jurusita-perkara");
+  el.setAttribute("data-perkara-id", baris.perkaraId);
+  el.setAttribute("data-kelompok", baris.kelompok);
+  const kepala = jurusitaEl("div", "aleta-jurusita-perkara-kepala");
+  kepala.appendChild(jurusitaEl("span", "aleta-jurusita-perkara-nomor", baris.nomorPerkara || `perkara ${baris.perkaraId}`));
+  if (tampilJurusita) kepala.appendChild(jurusitaEl("span", "aleta-jurusita-lembut", baris.jurusita || "juru sita tidak tercatat"));
+  el.appendChild(kepala);
+  el.appendChild(jurusitaEl("div", "aleta-jurusita-lembut", jurusitaKeteranganBaris(baris)));
+
+  const kotak = jurusitaEl("div", "aleta-jurusita-centang-kotak");
+  const seb = baris.sebutan;
+  const pesan = [];
+  const pasangCentang = (nilai, label, keadaan) => {
+    const x = jurusitaCentang(label, nilai, !keadaan.boleh, keadaan.boleh ? "" : keadaan.sebab);
+    x.c.checked = Boolean(pilih[nilai]) && keadaan.boleh;
+    x.c.setAttribute("data-baris", baris.kunciBaris);
+    x.c.addEventListener("change", () => ubah(baris.kunciBaris, nilai, x.c.checked));
+    kotak.appendChild(x.l);
+  };
+  const kp = jurusitaKeadaanDok(baris.panggilan, baris.kelompok);
+  if (kp) {
+    pasangCentang("p1", `Panggilan ${seb.pertama}`, kp);
+    pasangCentang("p2", `Panggilan ${seb.kedua}`, kp);
+    if (kp.sebab) pesan.push({ teks: `Panggilan: ${kp.sebab}`, salah: true });
+    for (const c of kp.catatan) pesan.push({ teks: `Panggilan: ${c}`, salah: false });
+  }
+  const sudahDisebut = new Set();
+  for (const s of [1, 2]) {
+    const dok = jurusitaDokPbtSisi(baris.pbt, s);
+    const k = jurusitaKeadaanDok(dok, baris.kelompok);
+    if (!k) continue;
+    pasangCentang(`b${s}`, `PBT ${s === 1 ? seb.pertama : seb.kedua}`, k);
+    if (sudahDisebut.has(dok)) continue;
+    sudahDisebut.add(dok);
+    if (k.sebab) pesan.push({ teks: `PBT: ${k.sebab}`, salah: true });
+    for (const c of k.catatan) pesan.push({ teks: `PBT: ${c}`, salah: false });
+  }
+  el.appendChild(kotak);
+  for (const p of pesan) el.appendChild(jurusitaEl("div", p.salah ? "aleta-jurusita-salah" : "aleta-jurusita-catatan", p.teks));
+  // Keterangan bot (PHS ulang, sandi kehadiran...) - teknis.
+  const ket = [...(baris.panggilan && Array.isArray(baris.panggilan.keterangan) ? baris.panggilan.keterangan : [])];
+  if (ket.length > 0) el.appendChild(jurusitaEl("div", "aleta-jurusita-lembut aleta-teknis", ket.join(" ")));
+  const blangko = jurusitaEl("div", "aleta-jurusita-lembut aleta-jurusita-blangko aleta-teknis");
+  blangko.hidden = true;
+  el.appendChild(blangko);
+  return { el, blangko };
+}
+
+function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau) {
+  const isi = jurusitaEl("div", "aleta-jurusita-isi");
+  akar.appendChild(isi);
+
+  const atas = jurusitaEl("div", "aleta-jurusita-baris");
+  const tanggal = document.createElement("input");
+  tanggal.type = "date";
+  tanggal.className = "aleta-jurusita-pilih aleta-jurusita-tanggal";
+  tanggal.value = jurusitaTanggalIso();
+  tanggal.title = "Tanggal lahirnya relaas: perkara didaftarkan, sidang ditunda, atau putusan pada hari itu";
+  atas.appendChild(tanggal);
+  const hariIni = jurusitaTombol("Hari ini", "aleta-jurusita-tombol-kecil aleta-jurusita-hari-ini");
+  const sebelumnya = jurusitaTombol("Hari kerja sebelumnya", "aleta-jurusita-tombol-kecil aleta-jurusita-hari-sebelumnya");
+  atas.appendChild(hariIni);
+  atas.appendChild(sebelumnya);
+  const saring = document.createElement("select");
+  saring.className = "aleta-jurusita-pilih aleta-jurusita-saring";
+  for (const [nilai, teks] of [
+    ["saya", "Milik saya"],
+    ["semua", "Semua juru sita"],
+  ]) {
+    const o = document.createElement("option");
+    o.value = nilai;
+    o.textContent = teks;
+    saring.appendChild(o);
+  }
+  saring.value = jurusitaJurusitaSendiri(jurusitaSiapa) ? "saya" : "semua";
+  atas.appendChild(saring);
+  isi.appendChild(atas);
+
+  const hasil = jurusitaEl("div", "aleta-jurusita-hasil");
+  isi.appendChild(hasil);
+
+  let data = null;
+  let sebabGagal = "";
+  let peta = null;
+  let urutanMuat = 0;
+  /** kunciBaris -> { p1, p2, b1, b2 } - bertahan selama tanggalnya sama. */
+  const pilihan = new Map();
+
+  const muat = async () => {
+    const ke = (urutanMuat += 1);
+    hasil.textContent = "";
+    hasil.appendChild(jurusitaEl("div", "aleta-jurusita-lembut", "Membaca daftar..."));
+    const jawab = await jurusitaAmbilDaftarRelaas(tanggal.value);
+    const p = await jurusitaMuatPeta();
+    if (ke !== urutanMuat) return; // tanggal berganti selagi membaca
+    data = jawab.data && Array.isArray(jawab.data.dokumen) ? jawab.data : null;
+    sebabGagal = data ? "" : jawab.sebab || "Daftar relaas tidak terbaca.";
+    peta = p;
+    pilihan.clear();
+    gambar();
+  };
+
+  const gambar = () => {
+    hasil.textContent = "";
+    if (!data) {
+      hasil.appendChild(jurusitaEl("div", "aleta-jurusita-kabar aleta-jurusita-kabar-salah", sebabGagal));
+      return;
+    }
+    const hanyaSaya = saring.value === "saya";
+    const namaSaya = String((jurusitaSiapa && jurusitaSiapa.nama) || "");
+    const lolos = (b) => !hanyaSaya || jurusitaNamaCocok(namaSaya, b.jurusita);
+    const barisHariIni = jurusitaBarisMassal(data.dokumen, "hari-ini").filter(lolos);
+    const barisKemarin = jurusitaBarisMassal(jurusitaDokumenKemarin(data), "kemarin").filter(lolos);
+    const semuaBaris = [...barisHariIni, ...barisKemarin];
+    for (const b of semuaBaris) if (!pilihan.has(b.kunciBaris)) pilihan.set(b.kunciBaris, { p1: false, p2: false, b1: false, b2: false });
+
+    // Ringkasan: berapa perkara, panggilan (berapa tundaan), PBT.
+    const panggilan = barisHariIni.filter((b) => b.panggilan);
+    const tundaan = panggilan.filter((b) => /sidang-(ditunda|lanjutan)/.test(String(b.panggilan.golongan || ""))).length;
+    const pbt = barisHariIni.filter((b) => b.pbt.length > 0).length;
+    const perkara = new Set(barisHariIni.map((b) => b.perkaraId)).size;
+    hasil.appendChild(
+      jurusitaEl(
+        "div",
+        "aleta-jurusita-ringkas",
+        perkara === 0
+          ? `Tidak ada relaas ${hanyaSaya ? "milik Anda " : ""}pada tanggal ini.`
+          : `${perkara} perkara · ${panggilan.length} panggilan${tundaan ? ` (${tundaan} tundaan)` : ""} · ${pbt} PBT`
+      )
+    );
+
+    const barisEl = new Map();
+    const ubah = (kunciBaris, nilai, tercentang) => {
+      const p = pilihan.get(kunciBaris);
+      if (p) p[nilai] = tercentang;
+      segarkan();
+    };
+    if (barisHariIni.length > 0) {
+      const alat = jurusitaEl("div", "aleta-jurusita-baris");
+      const semua = jurusitaTombol("Pilih semua", "aleta-jurusita-tombol-kecil aleta-jurusita-pilih-semua", "Centang pihak yang menurut SIPP perlu dipanggil / diberi tahu");
+      const kosong = jurusitaTombol("Kosongkan", "aleta-jurusita-tombol-kecil aleta-jurusita-kosongkan");
+      semua.addEventListener("click", () => {
+        for (const b of barisHariIni) pilihan.set(b.kunciBaris, jurusitaPilihanBawaan(b));
+        gambar();
+      });
+      kosong.addEventListener("click", () => {
+        for (const b of semuaBaris) pilihan.set(b.kunciBaris, { p1: false, p2: false, b1: false, b2: false });
+        gambar();
+      });
+      alat.appendChild(semua);
+      alat.appendChild(kosong);
+      hasil.appendChild(alat);
+      const daftar = jurusitaEl("div", "aleta-jurusita-daftar-perkara");
+      for (const b of barisHariIni) {
+        const g = jurusitaGambarBarisMassal(b, pilihan.get(b.kunciBaris), !hanyaSaya, ubah);
+        barisEl.set(b.kunciBaris, g);
+        daftar.appendChild(g.el);
+      }
+      hasil.appendChild(daftar);
+    }
+    if (data.hariKerjaSebelumnya && barisKemarin.length > 0) {
+      const lipat = jurusitaEl("details", "aleta-jurusita-rinci aleta-jurusita-kemarin");
+      lipat.appendChild(
+        jurusitaEl(
+          "summary",
+          "",
+          `Dari hari kerja sebelumnya · ${jurusitaTanggalPendek(data.hariKerjaSebelumnya.tanggal)} (${barisKemarin.length})`
+        )
+      );
+      lipat.appendChild(
+        jurusitaEl("div", "aleta-jurusita-lembut", "Panggilan tundaan kemarin yang dicatat sesudah daftar kemarin - tidak ikut Pilih semua.")
+      );
+      for (const b of barisKemarin) {
+        const g = jurusitaGambarBarisMassal(b, pilihan.get(b.kunciBaris), !hanyaSaya, ubah);
+        barisEl.set(b.kunciBaris, g);
+        lipat.appendChild(g.el);
+      }
+      hasil.appendChild(lipat);
+    }
+    if (semuaBaris.some((b) => {
+      const kp = jurusitaKeadaanDok(b.panggilan, b.kelompok);
+      return (kp && !kp.boleh) || b.pbt.some((d) => !jurusitaKeadaanDok(d, b.kelompok).boleh);
+    })) {
+      const a = jurusitaEl("a", "aleta-jurusita-tautan", "Yang tidak dapat dicetak di sini: buka Antrian Sidang di portal");
+      a.href = `${location.origin}/aleta/aleta-ecourt`;
+      a.target = "_blank";
+      a.rel = "noopener";
+      hasil.appendChild(a);
+    }
+
+    const aksi = jurusitaEl("div", "aleta-jurusita-aksi");
+    const cetak = jurusitaTombol("Cetak", "aleta-jurusita-tombol-utama aleta-jurusita-cetak-massal", "Cetak relaas/PBT yang dicentang");
+    aksi.appendChild(cetak);
+    const kabar = jurusitaEl("div", "aleta-jurusita-kabar");
+    kabar.hidden = true;
+    hasil.appendChild(aksi);
+    hasil.appendChild(kabar);
+
+    const susunSemua = () => {
+      const dokumen = [];
+      const tanpaBlangko = [];
+      for (const b of semuaBaris) {
+        const r = jurusitaDokumenBarisMassal(b, pilihan.get(b.kunciBaris), peta);
+        dokumen.push(...r.dokumen);
+        tanpaBlangko.push(...r.tanpaBlangko.map((t) => `${b.nomorPerkara} ${t}`));
+        const g = barisEl.get(b.kunciBaris);
+        if (g) {
+          g.blangko.textContent = r.dokumen.length ? `Blangko: ${r.dokumen.map((d) => d.berkas).join("; ")}` : "";
+          g.blangko.hidden = r.dokumen.length === 0;
+        }
+      }
+      return { dokumen, tanpaBlangko };
+    };
+    const segarkan = () => {
+      const { dokumen, tanpaBlangko } = susunSemua();
+      cetak.disabled = dokumen.length === 0;
+      cetak.textContent = dokumen.length > 0 ? `Cetak ${dokumen.length} dokumen` : "Cetak";
+      if (tanpaBlangko.length > 0) jurusitaKabar(kabar, `Blangko belum dipetakan: ${tanpaBlangko.join(", ")}.`, "salah");
+      else if (kabar.classList.contains("aleta-jurusita-kabar-salah") && /^Blangko belum/.test(kabar.textContent || "")) jurusitaKabar(kabar, "", "");
+    };
+    cetak.addEventListener("click", async () => {
+      const { dokumen } = susunSemua();
+      if (dokumen.length === 0) return;
+      if (!window.confirm(`Cetak ${dokumen.length} dokumen relaas/PBT sekaligus? Berkasnya turun ke folder unduhan "ALETA relaas".`)) return;
+      cetak.disabled = true;
+      jurusitaKabar(kabar, "Mengirim ke ekstensi...", "");
+      const jawab = await jurusitaMulaiCetak(dokumen, tanggal.value || jurusitaTanggalIso());
+      const k = jurusitaKalimatJawaban(jawab, dokumen.length);
+      jurusitaKabar(kabar, k.teks, k.jenis);
+      if (jawab && jawab.kering) {
+        for (const d of dokumen) kabar.appendChild(jurusitaEl("div", "aleta-jurusita-lembut", `${d.nama} - ${d.berkas}`));
+      }
+      cetak.disabled = Boolean(jawab && jawab.ok);
+      pantau();
+    });
+    segarkan();
+  };
+
+  tanggal.addEventListener("change", () => void muat());
+  hariIni.addEventListener("click", () => {
+    tanggal.value = jurusitaTanggalIso();
+    void muat();
+  });
+  sebelumnya.addEventListener("click", () => {
+    tanggal.value = jurusitaHariKerjaSebelum(tanggal.value || jurusitaTanggalIso());
+    void muat();
+  });
+  saring.addEventListener("change", () => gambar());
+  // Pembacaan pertama diputuskan pemanggil (terbuka atau saat dibuka).
+  return muat;
+}
+
 /* ─── 7. Pintu masuk ──────────────────────────────────────────────────────── */
 
 /**
  * Boleh menampilkan tab Juru Sita? Sinkron - untuk panel yang menentukan ada
  * tidaknya tab. Tanpa peran yang disebut, memakai akun yang sudah terbaca.
+ * Dengan peran yang disebut, akun yang SUDAH terbaca ikut dihitung (peran
+ * tambahan juru sita pada akun PP, misalnya).
  */
 function aletaJurusitaBoleh(peran) {
   if (!jurusitaModeBaru()) return false;
-  if (peran) return jurusitaKelasBoleh(String(peran));
+  if (peran && jurusitaKelasBoleh(String(peran))) return true;
   return jurusitaPeranBoleh(jurusitaSiapa);
+}
+
+/**
+ * Gerbang peran bersama per perkara dan massal: akun ALETA (seluruh
+ * perannya); tanpa akun, peran yang disebut pemanggil (opsi.peran), lalu
+ * data-peran panel sebagai cadangan terakhir.
+ */
+async function jurusitaBolehPasang(wadah, o) {
+  const siapa = await jurusitaMuatSiapa();
+  if (siapa) return jurusitaPeranBoleh(siapa);
+  if (o.peran) return jurusitaKelasBoleh(String(o.peran));
+  const panel = wadah.closest ? wadah.closest("[data-peran]") : null;
+  return Boolean(panel && JURUSITA_DATA_PERAN_BOLEH.includes(panel.getAttribute("data-peran")));
 }
 
 async function aletaJurusitaPasang(wadah, opsi) {
@@ -1062,16 +1791,10 @@ async function aletaJurusitaPasang(wadah, opsi) {
   if (!wadah || typeof wadah.appendChild !== "function") return false;
   const o = opsi && typeof opsi === "object" ? opsi : {};
 
-  const siapa = await jurusitaMuatSiapa();
-  let boleh = siapa ? jurusitaPeranBoleh(siapa) : false;
-  if (!siapa) {
-    // Akun ALETA tidak terbaca: data-peran panel (alatTandaiPeranPanel) sebagai cadangan.
-    const panel = wadah.closest ? wadah.closest("[data-peran]") : null;
-    boleh = Boolean(panel && JURUSITA_DATA_PERAN_BOLEH.includes(panel.getAttribute("data-peran")));
-  }
+  const boleh = await jurusitaBolehPasang(wadah, o);
   if (!boleh || !jurusitaModeBaru()) return false;
 
-  const lama = wadah.querySelector(`:scope > .${JURUSITA_PENANDA}`);
+  const lama = wadah.querySelector(`:scope > .${JURUSITA_PENANDA}:not(.${JURUSITA_MASSAL_PENANDA})`);
   if (lama) lama.remove();
   const akar = jurusitaEl("div", JURUSITA_PENANDA);
   akar.setAttribute("data-situs", o.situs === "abt" ? "abt" : "sipp");
@@ -1096,5 +1819,66 @@ async function aletaJurusitaPasang(wadah, opsi) {
   return true;
 }
 
+/**
+ * Panel "Relaas & pemberitahuan putusan - massal" untuk halaman DAFTAR perkara
+ * SIPP dan BERANDA ABT (K3). Dipanggil panel SIPP/ABT bila alatMenuPeran(...,
+ * "daftar", ...) memuat "relaas-pbt-massal".
+ *
+ * Bawaan terbuka (kontrak S: "ditentukan berkas pemiliknya"): terbuka - dan
+ * daftarnya langsung dibaca - bagi juru sita (pekerjaan utamanya) dan di
+ * beranda ABT (panel ABT memasangnya saat tabnya dipilih). Admin di daftar
+ * perkara SIPP, yang punya empat menu massal, mendapatnya terlipat: daftar
+ * satu hari penuh dibaca saat dibuka, bukan tiap halaman daftar dimuat.
+ * opsi.terbuka true/false memaksa salah satunya.
+ */
+async function aletaJurusitaPasangMassal(wadah, opsi) {
+  // Tampilan Lama: tidak ada yang digambar, dibaca, maupun dikirim.
+  if (!jurusitaModeBaru()) return false;
+  if (!wadah || typeof wadah.appendChild !== "function") return false;
+  const o = opsi && typeof opsi === "object" ? opsi : {};
+
+  const boleh = await jurusitaBolehPasang(wadah, o);
+  if (!boleh || !jurusitaModeBaru()) return false;
+
+  const lama = wadah.querySelector(`:scope > .${JURUSITA_MASSAL_PENANDA}`);
+  if (lama) lama.remove();
+  const akar = jurusitaEl("div", `${JURUSITA_PENANDA} ${JURUSITA_MASSAL_PENANDA}`);
+  akar.setAttribute("data-situs", o.situs === "abt" ? "abt" : "sipp");
+  const lipat = jurusitaEl("details", "aleta-jurusita-massal aleta-jurusita-massal-lipat");
+  lipat.appendChild(jurusitaEl("summary", "aleta-jurusita-judul-teks", "Relaas & pemberitahuan putusan - massal"));
+  akar.appendChild(lipat);
+  const { baris: judul } = jurusitaJudul(
+    "",
+    "Daftar relaas yang lahir pada tanggal yang dipilih: panggilan sidang pertama untuk perkara yang baru " +
+      "didaftarkan, panggilan ke sidang TUNDAAN berikutnya untuk sidang yang ditunda hari itu, dan pemberitahuan " +
+      "putusan (PBT) untuk putusan hari itu - bahan yang sama dengan tombol Cetak relaas di Antrian Sidang portal. " +
+      "Tanggal sidang yang dipanggil tertulis di tiap perkara. Pilih semua mencentang pihak yang menurut SIPP perlu " +
+      "dipanggil atau diberi tahu; yang sudah tercatat di SIPP, yang perlu konfirmasi, dan yang dari hari kerja " +
+      "sebelumnya dicentang sendiri. Relaas diambil dari ABT dengan akun ABT Anda sendiri, diubah menjadi PDF oleh " +
+      'ALETA, lalu disimpan di folder unduhan "ALETA relaas/<tanggal>/<juru sita>". Tidak ada yang ditulis ke SIPP.'
+  );
+  lipat.appendChild(judul);
+  // Putaran di LUAR lipatan: yang sedang mencetak tetap tampak walau terlipat.
+  const kotakPutaran = jurusitaEl("div", "aleta-jurusita-putaran");
+  kotakPutaran.hidden = true;
+  const pantau = jurusitaPasangPantau(akar, kotakPutaran);
+  const muat = jurusitaGambarPanelMassal(lipat, kotakPutaran, pantau);
+  akar.appendChild(kotakPutaran);
+  lipat.open =
+    o.terbuka === true || (o.terbuka !== false && (o.situs === "abt" || jurusitaJurusitaSendiri(jurusitaSiapa)));
+  let dimuat = false;
+  const mulai = () => {
+    if (!lipat.open || dimuat) return;
+    dimuat = true;
+    void muat();
+  };
+  lipat.addEventListener("toggle", mulai);
+  wadah.appendChild(akar);
+  mulai();
+  void pantau();
+  return true;
+}
+
 globalThis.aletaJurusitaPasang = aletaJurusitaPasang;
 globalThis.aletaJurusitaBoleh = aletaJurusitaBoleh;
+globalThis.aletaJurusitaPasangMassal = aletaJurusitaPasangMassal;

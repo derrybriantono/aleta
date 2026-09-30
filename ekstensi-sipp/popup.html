@@ -634,6 +634,11 @@
   .tb-lainnya .skala { margin-top: 8px; }
   .tb-pintas-kaki { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 12px; }
   .tb-versi-kaki { margin-left: auto; font-weight: 700; }
+
+  /* Perbaikan 30 Sep sore butir 3 (K5): "Sembunyikan penjelasan teknis".
+     Penandanya dipasang popup.js hanya dalam Baru dan UI Baru (bawaan nyala);
+     Lama tidak pernah memilikinya. */
+  :root[data-aleta-teknis="sembunyi"] .aleta-teknis { display: none !important; }
 </style>
 
 <div class="kepala">

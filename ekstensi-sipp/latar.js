@@ -733,6 +733,12 @@ const KUNCI_TOKEN_RELAAS = "aletaTokenRelaas";
 const RELAAS_DETAK_MS = 10000;
 /** Rute PDF yang SAMA dengan putusan massal (ALETA_API_PDF di abt.js). */
 const RELAAS_API_PDF = "/aleta/api/aleta-bot/abt/pdf";
+/**
+ * "Siapa saya" portal - ditanyakan HANYA sesudah rute PDF menjawab 401, supaya
+ * kalimat "Sesi ALETA habis" dikatakan hanya bila ALETA memang tidak mengenali
+ * sesinya (perbaikan 30 Sep sore, agen J). Pembacaan saja.
+ */
+const RELAAS_API_SIAPA = "/aleta/api/aleta-ecourt/ekstensi/siapa";
 /** Paling banyak kelompok ABT yang dibuka saat mencari token. */
 const RELAAS_BATAS_KELOMPOK = 40;
 /**
@@ -1760,6 +1766,41 @@ async function buktiUnduhanRelaas(pekerjaan) {
 }
 
 const RELAAS_TAHAN_ABT = "Sesi ABT belum masuk atau sudah habis - masuk ke ABT lebih dahulu, lalu tekan Lanjutkan.";
+const RELAAS_TAHAN_SESI_HABIS = "Sesi ALETA habis - masuk ke portal ALETA lagi, lalu tekan Lanjutkan.";
+
+/**
+ * Kalimat untuk 401 dari rute PDF - JUJUR tentang apa yang diketahui.
+ *
+ * 401 berarti ALETA tidak melihat sesi pada permintaan PEKERJA INI. Itu belum
+ * tentu "sesi habis": tangkapan layar 30 Sep sore menunjukkan putaran tertahan
+ * "Sesi ALETA habis" sementara tab portal ALETA masih masuk. Karena itu rute
+ * "siapa saya" ditanyakan sekali (GET, tanpa efek), dari pekerja yang sama:
+ *   401          -> sesi memang tidak dikenali: "Sesi ALETA habis".
+ *   200          -> sesi dikenali, yang ditolak hanya permintaan PDF itu.
+ *   lainnya/gagal-> tidak dapat dipastikan; dikatakan apa adanya.
+ * perluMasuk tetap "aleta" pada ketiganya - putarannya tertahan dan Lanjutkan
+ * mencobanya lagi.
+ */
+async function relaasSebabTolakSesi(asal) {
+  let status = 0;
+  try {
+    const r = await fetch(`${asal}${RELAAS_API_SIAPA}`, { credentials: "include", cache: "no-store" });
+    status = Number(r.status) || 0;
+  } catch {
+    status = 0;
+  }
+  if (status === 401) return RELAAS_TAHAN_SESI_HABIS;
+  if (status >= 200 && status < 300) {
+    return (
+      "ALETA menolak membuat PDF (401) padahal sesi ALETA Anda masih dikenali - tekan Lanjutkan untuk mencoba lagi; " +
+      "bila tertahan lagi, keluar lalu masuk lagi di portal ALETA."
+    );
+  }
+  return (
+    `ALETA menolak membuat PDF karena sesi tidak dikenali (401); sesi tidak dapat diperiksa ulang` +
+    `${status ? ` (ALETA menjawab ${status})` : " (ALETA tidak terjangkau)"} - masuk ke portal ALETA lagi, lalu tekan Lanjutkan.`
+  );
+}
 
 /**
  * Satu dokumen: token -> buka blangko (cari) -> pilih sidang -> CETAK (RTF)
@@ -1911,7 +1952,7 @@ async function kerjakanSatuRelaas(pekerjaan, butir, catat) {
       body: JSON.stringify({ rtfBase64: relaasBase64(rtf) }),
     });
     if (r.status === 401) {
-      return { tahan: true, perluMasuk: "aleta", sebab: "Sesi ALETA habis - masuk ke portal ALETA lagi, lalu tekan Lanjutkan." };
+      return { tahan: true, perluMasuk: "aleta", sebab: await relaasSebabTolakSesi(pekerjaan.asal) };
     }
     if (r.status === 403) pdfGagal = "peran Anda tidak diberi kewenangan blangko-abt di ALETA";
     else if (!r.ok) pdfGagal = `ALETA menjawab ${r.status}`;

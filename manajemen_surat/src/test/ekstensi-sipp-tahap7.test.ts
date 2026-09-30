@@ -618,12 +618,36 @@ describe("SYARAT MUTLAK: tampilan Lama identik dengan fd9aad7", () => {
     // atribut lipatnya, dan bagian Juru Sita (data-a30-fitur). Ketiganya
     // DIBUANG di kedua sisi lewat DOM; teks penjelasannya sendiri tetap
     // dibandingkan, jadi tidak ada isi Lama yang boleh hilang atau berubah.
+    // Perbedaan DISENGAJA ketiga (perbaikan 30 Sep SORE, agen S - Baru & UI
+    // Baru, dijaga ekstensi-menu-peran-sipp.test.ts): menu per peran menandai
+    // panel (data-mps-*), mengurutkan kelompok menurut matriks peran (Super
+    // Admin: Penetapan, Putusan, Berkas, Perkara), dan memberi kelas
+    // aleta-teknis pada penjelasan teknis. Penanda dan kelasnya dibuang, dan
+    // kelompoknya dikembalikan ke urutan Lama; isi tiap kelompok tetap
+    // dibandingkan utuh.
+    const URUTAN_LAMA = ["kerjakan", "berkas", "perkara", "putusanKel"];
     const tanpaA30 = (html: string) => {
       const d = new JSDOM(`<!doctype html><body>${html}</body>`).window.document;
       for (const el of Array.from(d.querySelectorAll("[data-a30-info], [data-a30-fitur]"))) el.remove();
       for (const el of Array.from(d.querySelectorAll("[data-t7-a30], [data-a30-lipat]"))) {
         el.removeAttribute("data-t7-a30");
         el.removeAttribute("data-a30-lipat");
+      }
+      for (const el of Array.from(d.querySelectorAll("*"))) {
+        for (const nama of Array.from(el.attributes).map((a) => a.name)) if (nama.startsWith("data-mps-")) el.removeAttribute(nama);
+        if (el.classList.contains("aleta-teknis")) {
+          el.classList.remove("aleta-teknis");
+          if (!el.classList.length) el.removeAttribute("class");
+        }
+      }
+      for (const isi of Array.from(d.querySelectorAll(".aleta-isi"))) {
+        const kel = Array.from(isi.querySelectorAll(":scope > .aleta-kelompok")) as HTMLElement[];
+        if (!kel.length) continue;
+        const pos = (el: HTMLElement) => URUTAN_LAMA.indexOf(el.dataset.kunci || "");
+        const penanda = d.createTextNode("");
+        isi.insertBefore(penanda, kel[0]);
+        for (const el of kel.slice().sort((a, b) => pos(a) - pos(b))) isi.insertBefore(el, penanda);
+        penanda.remove();
       }
       return d.body.innerHTML;
     };
@@ -675,7 +699,10 @@ describe("ide sipp-N hanya bila saklarnya menyala; D1-D15 hanya UI Baru", () => 
     const panel = panelDari(h);
     expect(panel.getAttribute("data-t7")).toBe("ui");
     const tab = Array.from(panel.querySelectorAll(".aleta-t7-tab")).map((t: any) => t.getAttribute("data-t7-ke"));
-    expect(tab).toEqual(["kerjakan", "berkas", "perkara", "putusanKel"]);
+    // Urutan disesuaikan perbaikan 30 Sep SORE (menu per peran, agen S): uji
+    // ini masuk sebagai Super Admin, yang menunya Penetapan, Putusan, (Juru
+    // Sita), Berkas, Perkara. Dijaga ekstensi-menu-peran-sipp.test.ts.
+    expect(tab).toEqual(["kerjakan", "putusanKel", "berkas", "perkara"]);
     expect(panel.getAttribute("data-t7-tab")).toBe("kerjakan");
     (panel.querySelector('.aleta-t7-tab[data-t7-ke="perkara"]') as any).click();
     expect(panel.getAttribute("data-t7-tab")).toBe("perkara");
