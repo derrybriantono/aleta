@@ -122,7 +122,7 @@ export function AletaEcourtAbtWajib() {
         <CardDescription>
           Diukur dari putusan: persen perkara yang sudah diputus dan mengisi variabel itu di ABT, sejak variabel itu mulai
           dipakai. Wajib bila &ge; {persenAmbang}% dari sedikitnya {data?.ambang.minimalPerkara ?? 10} putusan. Ekstensi
-          memperingatkan bila variabel wajib masih kosong atau berbunyi galat saat CETAK.
+          memperingatkan bila variabel wajib masih kosong atau berbunyi error saat CETAK.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -1124,7 +1124,50 @@ const KUNCI_TANDA_BARU = "tandaBaruDilihat";
 /** Ide popup-N boleh tampil? Dalam Lama tidak pernah, apa pun saklarnya. */
 function fiturPopupNyala(kode) {
   const b = modePopupBerlaku();
-  return b.mode !== "lama" && b.fitur[String(kode || "")] === true;
+  const k = String(kode || "");
+  if (b.mode === "lama" || b.fitur[k] !== true) return false;
+  // Profil peran (K4, butir 25) - aturan yang sama dengan alatFiturNyala.
+  const p = profilPeranPopup();
+  if (p && p.fitur && typeof p.fitur === "object" && p.fitur[k] !== true) return false;
+  return true;
+}
+
+/**
+ * Profil saklar peran yang BERLAKU (perbaikan 30 Sep butir 25, kontrak K4):
+ * singgahan "tampilanServer" yang ditulis panel-alat.js membawa data.profil
+ * dari GET /ekstensi/tampilan. Null dalam Lama, tanpa profil (server lama,
+ * 404, belum masuk), dan bagi Super Admin/Admin (bolehUbahProfil) - mereka
+ * tetap melihat "Profil saklar" dan mengatur saklarnya sendiri.
+ */
+function profilPeranPopup() {
+  if (modePopupBerlaku().mode === "lama") return null;
+  const s = ujiKeadaan.server;
+  const p = s && s.profil;
+  if (!p || typeof p !== "object" || p.bolehUbahProfil === true) return null;
+  return p;
+}
+
+/** Profil peran mengatur saklar pegawai ini: "Profil saklar" tidak ditampilkan. */
+function profilPeranMengaturSaklar() {
+  const p = profilPeranPopup();
+  return Boolean(p && p.saklar && typeof p.saklar === "object" && Object.keys(p.saklar).length);
+}
+
+/**
+ * Pengganti kartu "Profil saklar" bagi pegawai yang saklarnya diatur profil
+ * perannya: satu kalimat yang menyebut perannya dan siapa yang mengaturnya.
+ * Saklarnya sendiri tetap di tempatnya dan tetap dapat diubah - profil hanya
+ * menetapkan keadaan awal peran itu (lihat alatTerapkanProfilSaklar).
+ */
+function komponenProfilPeran() {
+  const p = profilPeranPopup();
+  const k = buat("p", "saklar-ket tb-profil-peran");
+  k.id = "tbProfilPeran";
+  const peran = String((p && p.peran) || "").replace(/-/g, " ");
+  k.textContent =
+    `Saklar disetel menurut profil peran ${peran || "Anda"}` +
+    `${p && p.sumber === "admin" ? " yang diatur admin" : ""}. Mengubah satu saklar tetap boleh.`;
+  return k;
 }
 
 /** Keadaan yang hanya dibaca bagian ini - dimuat sekali, lalu diikuti lewat onChanged. */
@@ -1244,8 +1287,69 @@ async function terapkanSusunan() {
   atributSementara(document.documentElement, "data-susunan", mode);
   if (mode === "ui") susunUiBaru();
   else susunBaru();
+  // Butir 25: kalimat profil peran di puncak daftar saklar.
+  if (profilPeranMengaturSaklar()) {
+    const isi = document.querySelector(".isi");
+    if (isi) sisipkan(komponenProfilPeran(), isi, isi.firstChild);
+  }
+  // Butir 6/26: penjelasan panjang yang masih terbuka dilipat di balik ⓘ -
+  // UI Baru selalu (D2), Baru bila saklar popup-1 menyala: Baru tanpa satu
+  // pun saklar popup harus tetap tanpa elemen buatan (uji popup tahap 2).
+  if (mode === "ui" || fiturPopupNyala("popup-1")) lipatKetPanjang();
   simpanTandaBaru();
   segarkanSusunan();
+}
+
+// ── Butir 6 dan 26 (perbaikan 30 Sep): penjelasan panjang di balik ⓘ ───────
+
+/** Lebih panjang dari ini = dilipat. Sama dengan ALAT_INFO_BATAS panel. */
+const POPUP_INFO_BATAS = 90;
+/** Kotak kabar yang isinya berubah - bukan penjelasan, tidak pernah dilipat. */
+const POPUP_KET_HIDUP = new Set(["perbaruiKabar", "kabarReset", "ujiKet", "latihanKet", "tbProfilPeran"]);
+
+function ringkasKalimatPopup(teks) {
+  const bersih = String(teks || "").replace(/\s+/g, " ").trim();
+  const titik = bersih.search(/[.!?](\s|$)/);
+  const kalimat = titik > 0 ? bersih.slice(0, titik + 1) : bersih;
+  return kalimat.length <= 64 ? kalimat : `${kalimat.slice(0, 56).replace(/\s+\S*$/, "")}…`;
+}
+
+/**
+ * Keterangan yang lebih panjang dari POPUP_INFO_BATAS: kalimat pertamanya
+ * tetap tampil, sisanya di balik ⓘ yang dapat dibuka-tutup. Elemen ASLINYA
+ * yang disembunyikan (ubahSementara) - kembali ke Lama memulihkannya utuh.
+ * Yang sudah dilipat pasangRingkas (hidden) dan kotak kabar dilewati; yang
+ * memuat tombol, tautan, atau isian tidak pernah dilipat.
+ */
+function lipatKetPanjang() {
+  const calon = Array.from(
+    document.querySelectorAll(".isi .saklar-ket, .isi .pengantar, #fiturCoba .saklar-ket, .tindakan .saklar-ket")
+  );
+  for (const ket of calon) {
+    if (ket.hidden || POPUP_KET_HIDUP.has(ket.id) || ket.classList.contains("tb-ringkas")) continue;
+    if (ket.classList.contains("tb-lipat")) continue;
+    if (ket.parentElement && ket.parentElement.closest("[hidden], .tb-lipat")) continue;
+    if (ket.querySelector("button, a[href], input, select, textarea")) continue;
+    const teks = String(ket.textContent || "").replace(/\s+/g, " ").trim();
+    if (teks.length <= POPUP_INFO_BATAS || !ket.parentNode) continue;
+    const ringkas = buat(ket.tagName === "P" ? "p" : "span", "saklar-ket tb-lipat", ringkasKalimatPopup(teks));
+    const buka = buat("button", "tb-info tb-lipat-tombol", "ⓘ");
+    buka.type = "button";
+    buka.setAttribute("aria-expanded", "false");
+    buka.setAttribute("aria-label", "Penjelasan lengkap");
+    buka.title = "Penjelasan lengkap";
+    buka.addEventListener("click", (e) => {
+      // Tombol di dalam <label>: tanpa ini klik membalik saklarnya juga.
+      e.preventDefault();
+      e.stopPropagation();
+      const terbuka = ket.hidden;
+      ket.hidden = !terbuka;
+      buka.setAttribute("aria-expanded", terbuka ? "true" : "false");
+    });
+    ringkas.appendChild(buka);
+    sisipkan(ringkas, ket.parentNode, ket);
+    ubahSementara(ket, "hidden", true);
+  }
 }
 
 // ── Bantuan kecil ─────────────────────────────────────────────────────────────
@@ -2215,7 +2319,7 @@ function susunBaru() {
   if (fiturPopupNyala("popup-2")) kartu.push(komponenLampu(true));
   if (fiturPopupNyala("popup-27")) kartu.push(komponenBatasSitus());
   if (fiturPopupNyala("popup-10")) kartu.push(komponenVersi());
-  if (fiturPopupNyala("popup-11")) kartu.push(komponenProfil());
+  if (fiturPopupNyala("popup-11") && !profilPeranMengaturSaklar()) kartu.push(komponenProfil());
   if (fiturPopupNyala("popup-5")) kartu.push(komponenTema(true, true));
   if (fiturPopupNyala("popup-12")) kartu.push(komponenSenyap());
   if (fiturPopupNyala("popup-15")) kartu.push(komponenCari());
@@ -2441,7 +2545,7 @@ function susunUiBaru() {
 
   // Bagian atas isi: profil (popup-11), cari (popup-15), lompat (popup-3).
   const atas = [];
-  if (fiturPopupNyala("popup-11")) atas.push(komponenProfil());
+  if (fiturPopupNyala("popup-11") && !profilPeranMengaturSaklar()) atas.push(komponenProfil());
   if (fiturPopupNyala("popup-15")) atas.push(komponenCari());
   if (fiturPopupNyala("popup-3")) atas.push(komponenLompat());
   const pertama = isi.querySelector(".tb-kelompok");
@@ -2483,6 +2587,12 @@ try {
     if (ubah.akunSipp) {
       tahap2.akunSipp = String(ubah.akunSipp.newValue || "");
       perlu = true;
+    }
+    // Profil peran (butir 25) tiba lewat singgahan tampilan server.
+    if (ubah.tampilanServer) {
+      const sv = ubah.tampilanServer.newValue;
+      ujiKeadaan.server = sv && typeof sv === "object" && !Array.isArray(sv) ? sv : null;
+      jadwalkanSusunan();
     }
     // Saklar yang berubah dari tab lain (× widget, profil di popup lain)
     // menggeser profil yang cocok.

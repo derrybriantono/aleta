@@ -5408,8 +5408,17 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
     baris.appendChild(tanda);
     isi.appendChild(baris);
     slot[kunci] = { pemilih, tanda, berkas: null };
-    pemilih.addEventListener("change", () => periksaSlot(kunci));
+    pemilih.addEventListener("change", () => {
+      periksaSlot(kunci);
+      if (anonOtomatis) anonOtomatis.setel(slot.putusan && slot.putusan.berkas, slot.anonimisasi && slot.anonimisasi.berkas);
+    });
   }
+  // Butir 11 (perbaikan 30 Sep): hanya edoc putusan yang dipilih -> ALETA
+  // membuat anonimisasinya dalam BENTUK YANG SAMA (K1 ke RTF bila perlu ->
+  // anonim ABT -> K1 ke bentuk asal -> pemeriksa anonim) lalu mengunggah
+  // KEDUA slot sekaligus. Dapat dilepas centangnya: putusan saja.
+  const anonOtomatis = typeof a30BarisAnonimOtomatis === "function" ? a30BarisAnonimOtomatis() : null;
+  if (anonOtomatis) isi.appendChild(anonOtomatis.baris);
   isi.appendChild(tombol);
   isi.appendChild(kabar);
 
@@ -5431,12 +5440,27 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
 
   tombol.addEventListener("click", async () => {
     const putusan = slot.putusan.berkas;
-    const anonimisasi = slot.anonimisasi.berkas;
+    let anonimisasi = slot.anonimisasi.berkas;
     if ((!putusan && !anonimisasi) || berkasSama()) return;
     tombol.disabled = true;
     tombol.dataset.sibuk = "ya";
     slot.putusan.pemilih.disabled = true;
     slot.anonimisasi.pemilih.disabled = true;
+    if (putusan && !anonimisasi && anonOtomatis && anonOtomatis.dipakai()) {
+      // Tidak ada yang dikirim ke SIPP sebelum anonimisasinya jadi DAN lolos
+      // pemeriksa (atau dikonfirmasi petugas) - dua slot sekaligus, atau tidak sama sekali.
+      const buat = await a30SiapkanAnonimisasi({ berkas: putusan, nomorPerkara, kabar, wadahTanya: isi });
+      if (!buat.ok) {
+        kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+        kabar.textContent = buat.pesan;
+        delete tombol.dataset.sibuk;
+        slot.putusan.pemilih.disabled = false;
+        slot.anonimisasi.pemilih.disabled = false;
+        tombol.disabled = false;
+        return;
+      }
+      anonimisasi = buat.berkas;
+    }
     const badan = new FormData();
     badan.append("perkaraId", perkaraIdDariHalaman());
     badan.append("nomorPerkara", nomorPerkara || "");
@@ -5615,9 +5639,15 @@ function dengarBuktiSimpan() {
  */
 async function tekanSimpanPutusan(idBukti) {
   let ditekan = { ok: false, alasan: "tombol_tidak_ketemu" };
+  // Butir 10 (30 Sep 2026, Baru & UI Baru): konfirmasi SIPP "Apakah Anda
+  // Yakin Akan Menyimpan Data" di-OK-kan jembatan HANYA selama tekanan ALETA
+  // ini, lalu window.confirm dikembalikan (lihat jembatan.js). Lama: tanpa ruas ini.
+  const setujui = typeof a30SetujuiKonfirmasiSimpan === "function" && a30SetujuiKonfirmasiSimpan();
   for (const penunjuk of PENUNJUK_SIMPAN_PUTUSAN) {
+    const pesan = { jenis: "tekan", penunjuk, bukti: { borang: "#frm_putusan", id: idBukti } };
+    if (setujui) pesan.setujuiKonfirmasi = true;
     ditekan =
-      (await kirimKeJembatan({ jenis: "tekan", penunjuk, bukti: { borang: "#frm_putusan", id: idBukti } })) ||
+      (await kirimKeJembatan(pesan)) ||
       { ok: false, alasan: "jembatan_tidak_menjawab" };
     if (ditekan.ok || ditekan.alasan !== "tombol_tidak_ketemu") break;
   }
@@ -5689,8 +5719,12 @@ function samaPutusan(a, b) {
  *
  * @returns {Promise<{ok: boolean, bunyi: string, pesanSipp?: string}>}
  */
-async function simpanPutusanLaluBuka(nomorPerkara, kabar) {
-  const sebelum = await bacaPutusanSegar(nomorPerkara);
+async function simpanPutusanLaluBuka(nomorPerkara, kabar, opsi) {
+  // opsi hanya dikirim Baru/UI Baru (perbaikan 30 Sep, butir 10 & 19) - lihat
+  // a30OpsiSimpanPutusan. Tanpa opsi: persis semula.
+  const o = opsi || {};
+  const dibacaPemanggil = o.sebelum ? await Promise.resolve(o.sebelum).catch(() => null) : null;
+  const sebelum = dibacaPemanggil || (await bacaPutusanSegar(nomorPerkara));
   const telinga = dengarBuktiSimpan();
   const ditekan = await tekanSimpanPutusan(telinga.id);
   const belumTerjawab = ditekan.alasan === "jembatan_tidak_menjawab";
@@ -5699,14 +5733,23 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar) {
     return { ok: false, bunyi: bunyiSimpanTidakDitekan(ditekan) };
   }
 
-  if (kabar) kabar.textContent = "Simpan ditekan - menunggu jawaban SIPP…";
+  if (kabar) {
+    kabar.textContent =
+      ditekan.konfirmasi === "disetujui"
+        ? "Simpan ditekan, konfirmasi SIPP disetujui ALETA - menunggu jawaban SIPP…"
+        : "Simpan ditekan - menunggu jawaban SIPP…";
+  }
   const mulaiTunggu = Date.now();
   const terkirim = belumTerjawab || ditekan.bukti === "terkirim";
   let jawaban = terkirim ? await telinga.tunggu(BATAS_JAWABAN_SIMPAN_MS) : null;
-  for (let ke = 0; ke < 10; ke += 1) {
+  let batasPutaran = 10;
+  for (let ke = 0; ke < batasPutaran; ke += 1) {
     jawaban = jawaban || telinga.jawaban();
     if (jawaban && jawaban.st === 0) break;
-    if (ke > 0 || !jawaban) await new Promise((selesai) => setTimeout(selesai, 1000));
+    // SIPP sudah menjawab tersimpan: jajak lebih rapat, anggaran 10 detiknya sama.
+    const rapat = o.jajakCepat === true && Boolean(jawaban) && jawaban.st === 1;
+    if (rapat) batasPutaran = 25;
+    if (ke > 0 || !jawaban) await new Promise((selesai) => setTimeout(selesai, rapat ? 400 : 1000));
     const sesudah = await bacaPutusanSegar(nomorPerkara);
     if (!sesudah) continue;
     // Berubah berarti tersimpan. Perkara yang belum pernah diputus berubah
@@ -5721,6 +5764,25 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar) {
       const bunyi = berubah
         ? "Tersimpan di SIPP."
         : `Tersimpan di SIPP (${jawaban.pesan || "SIPP menjawab berhasil"}); tanggal dan status putusannya memang tidak berubah.`;
+      // Butir 19: edoc putusan + anonimisasi SESUDAH tersimpan terbukti dan
+      // SEBELUM halaman dimuat ulang. Gagal = halaman dibiarkan, sebabnya terbaca.
+      if (typeof o.sesudahTersimpan === "function") {
+        let lanjut = null;
+        try {
+          lanjut = await o.sesudahTersimpan(kabar);
+        } catch (galat) {
+          lanjut = { ok: false, bunyi: `Edoc tidak terunggah: ${String((galat && galat.message) || galat)}.` };
+        }
+        const bunyiLanjut = `${bunyi} ${(lanjut && lanjut.bunyi) || ""}`.trim();
+        if (!lanjut || !lanjut.ok) {
+          const tetap = `${bunyiLanjut} Halaman TIDAK dimuat ulang supaya keterangan ini terbaca.`;
+          if (kabar) kabar.textContent = tetap;
+          return { ok: true, bunyi: tetap, pesanSipp: jawaban ? jawaban.pesan : "" };
+        }
+        if (kabar) kabar.textContent = `${bunyiLanjut} Halaman perkara dibuka kembali…`;
+        setTimeout(muatUlangHalamanPerkara, 900);
+        return { ok: true, bunyi: bunyiLanjut, pesanSipp: jawaban ? jawaban.pesan : "" };
+      }
       if (kabar) kabar.textContent = `${bunyi} Halaman perkara dibuka kembali…`;
       setTimeout(muatUlangHalamanPerkara, 900);
       return { ok: true, bunyi, pesanSipp: jawaban ? jawaban.pesan : "" };
@@ -5971,20 +6033,33 @@ function bagianIsiPutusan(nomorPerkara) {
   // dan terkaan yang salah menyambung satu pertimbangan ke pertimbangan
   // berikutnya. Portal menolak PDF beserta sebabnya, bukan diam-diam.
   const kotakUnggah = buatElemen('div', 'aleta-unggah-naskah');
-  kotakUnggah.appendChild(
-    buatElemen(
-      "div",
-      "aleta-tetap-sebab aleta-remeh",
-      "Belum ada drafnya? Ambil dari naskah putusan yang sudah Anda tulis - berkas RTF-nya, bukan PDF."
-    )
+  // Perbaikan 30 Sep (butir 8, 10, 19) - hanya Baru & UI Baru; Lama persis semula.
+  const a30Nyala = typeof a30Aktif === "function" && a30Aktif();
+  const ajakanNaskah = buatElemen(
+    "div",
+    "aleta-tetap-sebab aleta-remeh",
+    "Belum ada drafnya? Ambil dari naskah putusan yang sudah Anda tulis - berkas RTF-nya, bukan PDF."
   );
+  if (a30Nyala) {
+    ajakanNaskah.textContent =
+      "Belum ada drafnya? Ambil dari naskah putusan yang sudah Anda tulis - RTF, DOCX, DOC, atau PDF. " +
+      "Yang bukan RTF diubah server menjadi RTF lebih dulu; PDF dapat berubah tata letaknya, jadi periksa tiap bagian.";
+  }
+  kotakUnggah.appendChild(ajakanNaskah);
   const kakiUnggah = buatElemen('div', 'aleta-tetap-kaki');
   const pemilih = document.createElement("input");
   pemilih.type = "file";
   pemilih.accept = ".rtf,.txt";
+  // Butir 8: DOCX/DOC/PDF juga diterima - diubah ke RTF lewat K1, lalu jalur yang sama.
+  if (a30Nyala) pemilih.accept = A30_TERIMA_NASKAH;
   pemilih.className = "aleta-berkas";
   kakiUnggah.appendChild(pemilih);
   kotakUnggah.appendChild(kakiUnggah);
+  // Butir 19: naskah yang dipilih di sini dapat sekaligus menjadi edoc putusan
+  // + edoc anonimisasinya sesudah putusan tersimpan (a30BarisSekaligus).
+  let naskahEdoc = null;
+  const sekaligus = a30Nyala && typeof a30BarisSekaligus === "function" ? a30BarisSekaligus() : null;
+  if (sekaligus) kotakUnggah.appendChild(sekaligus.baris);
   // Ringkasan panjang tiap bagian punya wadahnya SENDIRI, bukan wadah usulan.
   // Pembacaan usulan mengosongkan wadahnya lebih dulu, sehingga ringkasan yang
   // ditaruh di sana akan terhapus sepersekian detik sesudah ditulis - tepat
@@ -5994,14 +6069,37 @@ function bagianIsiPutusan(nomorPerkara) {
   isi.appendChild(kotakUnggah);
 
   pemilih.addEventListener('change', async () => {
-    const berkas = pemilih.files && pemilih.files[0];
-    if (!berkas) return;
+    const dipilih = pemilih.files && pemilih.files[0];
+    if (!dipilih) return;
     pemilih.disabled = true;
     tombol.disabled = true;
     wadah.textContent = "";
     wadahUnggah.textContent = "";
     kabar.className = "aleta-abt-kabar";
-    kabar.textContent = `Membaca ${berkas.name}…`;
+    kabar.textContent = `Membaca ${dipilih.name}…`;
+
+    // Butir 8 (Baru & UI Baru): DOCX/DOC/PDF diubah menjadi RTF di server
+    // (K1, konversi-naskah) lalu lewat jalur unggah-naskah yang SAMA. Lama:
+    // berkasnya dikirim apa adanya, seperti semula.
+    let berkas = dipilih;
+    let peringatanBentuk = [];
+    naskahEdoc = null;
+    if (a30Nyala && typeof a30PerluKeRtf === "function" && a30PerluKeRtf(dipilih.name)) {
+      kabar.textContent = `Mengubah ${dipilih.name} menjadi RTF…`;
+      const ubah = await a30KonversiNaskah(dipilih, "rtf");
+      if (!ubah.ok) {
+        kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+        kabar.textContent = ubah.pesan;
+        pemilih.disabled = false;
+        tombol.disabled = false;
+        pemilih.value = "";
+        return;
+      }
+      berkas = ubah.berkas;
+      peringatanBentuk = ubah.peringatan;
+      kabar.textContent = `Membaca ${dipilih.name} (sebagai RTF)…`;
+    }
+    if (a30Nyala) naskahEdoc = { asli: dipilih, rtf: /\.rtf$/i.test(berkas.name) ? berkas : null };
 
     let jawab;
     try {
@@ -6060,10 +6158,13 @@ function bagianIsiPutusan(nomorPerkara) {
     }
     wadahUnggah.textContent = '';
     wadahUnggah.appendChild(rinci);
+    // Peringatan konversi (butir 8) - PDF: tata letaknya dapat berubah.
+    for (const p of peringatanBentuk) wadahUnggah.appendChild(buatElemen("div", "aleta-tetap-awas", String(p)));
+    if (sekaligus) sekaligus.setelNaskah(naskahEdoc);
 
     kabar.className = "aleta-abt-kabar";
     kabar.textContent =
-      `Draf v${jawab.versi} tersimpan dari ${berkas.name}. ` +
+      `Draf v${jawab.versi} tersimpan dari ${dipilih.name}. ` +
       (jawab.perabotDibuang
         ? `${jawab.perabotDibuang} baris perabot halaman dibuang. `
         : "") +
@@ -6263,8 +6364,11 @@ function bagianIsiPutusan(nomorPerkara) {
   /** Membaca seluruh medan yang SEDANG tampak, beserta pilihannya. */
   async function bacaMedanTampak() {
     const hasil = [];
-    for (const calon of await muatMedanBorang()) {
-      const jawabPilihan = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
+    const semuaCalon = await muatMedanBorang();
+    const jawabanCalon = await bacaPilihanCalon(semuaCalon);
+    for (let urut = 0; urut < semuaCalon.length; urut += 1) {
+      const calon = semuaCalon[urut];
+      const jawabPilihan = jawabanCalon[urut];
       if (!jawabPilihan || !jawabPilihan.ok || !jawabPilihan.tampak) continue;
       const pilihan = (jawabPilihan.pilihan || []).map((x) => ({ nilai: x.nilai, label: x.label }));
       if (pilihan.length === 0) continue;
@@ -6304,11 +6408,23 @@ function bagianIsiPutusan(nomorPerkara) {
 
   async function hitungMedanTampak() {
     let jumlah = 0;
-    for (const calon of await muatMedanBorang()) {
-      const jawab = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
+    for (const jawab of await bacaPilihanCalon(await muatMedanBorang())) {
       if (jawab && jawab.ok && jawab.tampak && (jawab.pilihan || []).length > 0) jumlah += 1;
     }
     return jumlah;
+  }
+
+  /**
+   * Jawaban "pilihan" jembatan untuk tiap calon medan, urut seperti daftarnya.
+   * Hanya MEMBACA. Baru & UI Baru (butir 10): dikirim berbarengan - urutan
+   * pesannya ke jembatan tetap sama, yang hilang hanya tunggu bolak-balik
+   * satu per satu. Lama: berurutan seperti semula.
+   */
+  async function bacaPilihanCalon(daftarCalon) {
+    if (a30Nyala) return Promise.all(daftarCalon.map((c) => kirimKeJembatan({ jenis: "pilihan", penunjuk: c.penunjuk })));
+    const jawaban = [];
+    for (const calon of daftarCalon) jawaban.push(await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk }));
+    return jawaban;
   }
 
   // Rapor praperiksa terakhir untuk perkara ini. Dibaca lagi saat Isikan
@@ -6784,6 +6900,11 @@ function bagianIsiPutusan(nomorPerkara) {
       terap.disabled = true;
       const gagal = [];
       let berhasil = 0;
+      // Butir 10 (Baru & UI Baru): keadaan putusan SEBELUM Simpan dibaca
+      // berbarengan dengan pengisian - pengisian blangko tidak menulis apa pun
+      // ke basis data SIPP, jadi bacaannya tetap "sebelum". Satu bacaan
+      // status-perkara yang berat keluar dari jalur tunggu.
+      const sebelumA30 = a30Nyala ? bacaPutusanSegar(nomorPerkara) : null;
 
       // Medan pilihan lebih dulu. Sebagian di antaranya MENGUBAH tampilan
       // borang - memilih qobla menentukan muncul-tidaknya keadaan istri -
@@ -6901,7 +7022,24 @@ function bagianIsiPutusan(nomorPerkara) {
         return;
       }
       terap.disabled = true;
-      const hasilSimpan = await simpanPutusanLaluBuka(nomorPerkara, hasilTerap);
+      // Butir 10 & 19 (Baru & UI Baru): keadaan SEBELUM yang sudah terbaca,
+      // jajak cepat sesudah SIPP menjawab tersimpan, dan - bila dicentang -
+      // edoc putusan + anonimisasinya DISIAPKAN sebelum Simpan (konfirmasi
+      // pemeriksa anonim terjadi di sini, bukan sesudah putusannya tersimpan)
+      // lalu diunggah sesudah Simpan TERBUKTI. Lama: panggilan semula.
+      let opsiSimpanA30 = null;
+      if (a30Nyala && typeof a30OpsiSimpanPutusan === "function") {
+        opsiSimpanA30 = await a30OpsiSimpanPutusan({
+          nomorPerkara,
+          kabar: hasilTerap,
+          wadah,
+          sebelum: sebelumA30,
+          edoc: sekaligus && sekaligus.dipakai() ? naskahEdoc : null,
+        });
+      }
+      const hasilSimpan = opsiSimpanA30
+        ? await simpanPutusanLaluBuka(nomorPerkara, hasilTerap, opsiSimpanA30)
+        : await simpanPutusanLaluBuka(nomorPerkara, hasilTerap);
       terap.disabled = false;
       hasilTerap.className = hasilSimpan.ok
         ? "aleta-abt-kabar"
@@ -9701,6 +9839,13 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   // halaman - lalu berhenti memakai ekstensinya sama sekali.
   alatKepala.appendChild(tombolMatikan());
   kepala.appendChild(alatKepala);
+
+  // Klik ganda pada kepala: layar penuh, klik ganda lagi: kembali (butir 18,
+  // 30 Sep 2026). Panel ini tidak lewat alatPasangPanel, jadi dipasang di
+  // sini. Hanya Baru & UI Baru - a30KlikGandaKepala pulang seketika di Lama.
+  kepala.addEventListener("dblclick", (peristiwa) => {
+    if (typeof a30KlikGandaKepala === "function") a30KlikGandaKepala(panel, peristiwa);
+  });
 }
 /**
  * ============================================================================
@@ -13510,7 +13655,7 @@ async function jalankanAntreanSippSekali(antrean, butir, kabar, tombol, otomatis
       // sudah ditekan sebelum galatnya terjadi - itu disebut, bukan ditebak.
       const pesan = String((galat && galat.message) || galat);
       kini.keadaan = "gagal";
-      kini.catatan = `pengerjaan terhenti oleh galat: ${pesan} - periksa di SIPP apakah putusannya sudah tersimpan`;
+      kini.catatan = `pengerjaan terhenti oleh error: ${pesan} - periksa di SIPP apakah putusannya sudah tersimpan`;
       // Hanya butir ini, hanya pada antrean yang sama, dan hanya selama masih
       // dipegang halaman ini - bukan salinan utuh yang mungkin sudah basi.
       await alatUbahButirAntrean(antrean.id, kini.nomor, (b) => {
@@ -14123,8 +14268,14 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     return;
   }
 
-  // 4. Simpan, dibuktikan dari SIPP.
-  const hasilSimpan = await simpanPutusanLaluBuka(butir.nomor, kabar);
+  // 4. Simpan, dibuktikan dari SIPP. Baru & UI Baru (butir 10): keadaan
+  // "sebelum" yang dibaca di langkah 1 dipakai lagi - satu bacaan
+  // status-perkara per perkara lebih sedikit; blangko yang diisi sejak itu
+  // tidak menulis apa pun ke basis data SIPP.
+  const opsiSimpanA30 = typeof a30OpsiSimpanMassal === "function" ? a30OpsiSimpanMassal(segar) : null;
+  const hasilSimpan = opsiSimpanA30
+    ? await simpanPutusanLaluBuka(butir.nomor, kabar, opsiSimpanA30)
+    : await simpanPutusanLaluBuka(butir.nomor, kabar);
   if (hasilSimpan.ok) {
     butir.keadaan = "selesai";
     butir.catatan =
@@ -14288,12 +14439,14 @@ function tandaBukanNaskahPutusan(nama) {
  * nomornya terbaca di folder unduhan petugas berbentuk itu (diukur 26
  * September 2026). Sekarang ditandai sebelum dikirim.
  */
-function pilahBerkasMassal(daftar, bacaNomor) {
+function pilahBerkasMassal(daftar, bacaNomor, terimaBentukLain) {
   const hasil = Array.from(daftar || []).map((berkas) => {
     const nama = String((berkas && berkas.name) || "");
     const nomor = bacaNomor(nama);
     let tolak = "";
-    if (!/\.(rtf|txt)$/i.test(nama)) {
+    // terimaBentukLain (Baru & UI Baru, butir 8 perbaikan 30 Sep): DOCX/DOC/PDF
+    // diubah menjadi RTF di server sebelum dikirim - lihat bagianMassalBerkas.
+    if (!/\.(rtf|txt)$/i.test(nama) && !(terimaBentukLain === true && /\.(docx?|pdf)$/i.test(nama))) {
       const akhiran = (/\.([A-Za-z0-9]{1,5})$/.exec(nama) || [])[1];
       tolak = `${akhiran ? `.${akhiran.toLowerCase()}` : "berkas tanpa akhiran"} tidak dibaca unggah naskah - hanya RTF atau TXT`;
     } else if (namaBerkasAnonim(nama)) {
@@ -14347,6 +14500,9 @@ function bagianMassalBerkas(isi, sesudahSusun) {
   pemilih.multiple = true;
   // Selaras dengan rute unggah-naskah, yang hanya membaca RTF dan TXT.
   pemilih.accept = ".rtf,.txt";
+  // Baru & UI Baru (butir 8): DOCX/DOC/PDF juga - diubah ke RTF lewat K1 dulu.
+  const bentukLainA30 = typeof a30Aktif === "function" && a30Aktif();
+  if (bentukLainA30) pemilih.accept = A30_TERIMA_NASKAH;
   pemilih.className = "aleta-berkas";
   kotak.appendChild(pemilih);
 
@@ -14438,7 +14594,9 @@ function bagianMassalBerkas(isi, sesudahSusun) {
 
   pemilih.addEventListener("change", () => {
     pilihanGanda.clear();
-    pasangan = pilahBerkasMassal(pemilih.files || [], nomorDariNama);
+    pasangan = bentukLainA30
+      ? pilahBerkasMassal(pemilih.files || [], nomorDariNama, true)
+      : pilahBerkasMassal(pemilih.files || [], nomorDariNama);
     gambarDaftar();
   });
 
@@ -14458,8 +14616,15 @@ function bagianMassalBerkas(isi, sesudahSusun) {
       const p = dikerjakan[i];
       kabar.textContent = `Mengirim ${i + 1} dari ${dikerjakan.length}: ${p.berkas.name}…`;
       try {
+        let naskahKirim = p.berkas;
+        if (bentukLainA30 && a30PerluKeRtf(p.berkas.name)) {
+          kabar.textContent = `Mengubah ${i + 1} dari ${dikerjakan.length} menjadi RTF: ${p.berkas.name}…`;
+          const ubah = await a30KonversiNaskah(p.berkas, "rtf");
+          if (!ubah.ok) throw new Error(ubah.pesan);
+          naskahKirim = ubah.berkas;
+        }
         const badan = new FormData();
-        badan.append("berkas", p.berkas);
+        badan.append("berkas", naskahKirim);
         badan.append("nomorPerkara", p.nomor);
         // perkaraId TIDAK dikirim - ia tidak diketahui dari berkas, dan rute
         // naskah memang membolehkannya kosong. Menebaknya berarti menautkan
@@ -14820,6 +14985,9 @@ const T7_TAB = [
   ["berkas", "Berkas"],
   ["perkara", "Perkara"],
   ["putusanKel", "Putusan"],
+  // Perbaikan 30 Sep (butir 15): tab Juru Sita - kelompoknya hanya lahir di
+  // UI Baru, untuk peran yang boleh, dan bila jurusita.js termuat (a30JuruSita).
+  ["juruSitaKel", "Juru Sita"],
 ];
 const T7_LEBAR_BAWAAN = 470;
 const T7_LEBAR_MIN = 360;
@@ -15074,8 +15242,21 @@ function t7Tata(panel, konteks) {
   t7TandaPanel.set(panel, t7TandaTampilan());
   if (!t7Aktif()) return;
   const ui = t7Modern();
-  // Baru tanpa satu pun saklar sipp-N: tidak ada yang ditambahkan - panelnya
-  // sama dengan Lama, tanpa atribut sekalipun.
+  // Perbaikan 30 September 2026 (butir 6, 15, 26): berlaku di Baru DAN UI
+  // Baru tanpa saklar - penjelasan panjang dilipat di balik ⓘ, bagian/tab
+  // Juru Sita. Dijalankan SEBELUM penataan Tahap 7 supaya tab Juru Sita ikut
+  // tersusun. Lama tidak pernah sampai ke sini.
+  try {
+    if (typeof a30Tata === "function") a30Tata(panel, konteks || {}, ui);
+  } catch (galat) {
+    try {
+      alatCatat("a30", "perbaikan 30 Sep pada panel SIPP gagal", String((galat && galat.message) || galat));
+    } catch {
+      /* kotak hitam tidak tersedia */
+    }
+  }
+  // Baru tanpa satu pun saklar sipp-N: selain perbaikan 30 Sep di atas, tidak
+  // ada yang ditambahkan - panelnya sama dengan Lama.
   if (!ui && !t7AdaIde()) return;
   try {
     t7TataSungguh(panel, konteks || {}, ui);
@@ -16161,7 +16342,10 @@ function t7SusunKepala(k) {
     const el = pemilih.startsWith(":scope") ? kepala.querySelector(pemilih) : alatKepala.querySelector(pemilih);
     if (el) akun.appendChild(el);
   }
-  // Panel - tombol yang sama, diberi label.
+  // Panel - ☀ – ⛶ ↺ TETAP di kepala (butir 7, 30 Sep 2026: "buat seperti
+  // ekstensi lainnya posisi tombol" - panel ABT dan portal menaruhnya di
+  // kepala). Menu memuat WAKILnya yang berlabel: menekannya menekan tombol
+  // kepala yang sama, jadi perilakunya tidak mungkin berbeda.
   const label = [
     [".aleta-tema", "Tema terang / gelap"],
     [".aleta-lipat", "Ciutkan menjadi lencana"],
@@ -16171,9 +16355,15 @@ function t7SusunKepala(k) {
   for (const [pemilih, nama] of label) {
     const el = alatKepala.querySelector(pemilih);
     if (!el) continue;
-    const baris = buatElemen("div", "aleta-t7-menu-baris");
-    baris.appendChild(el);
+    const baris = t7Tombol("", nama, "aleta-t7-menu-item aleta-t7-menu-baris aleta-t7-menu-wakil");
+    baris.setAttribute("role", "menuitem");
+    baris.setAttribute("data-a30-wakil", pemilih.slice(1));
+    baris.appendChild(buatElemen("span", "aleta-t7-menu-ikon", String(el.textContent || "")));
     baris.appendChild(buatElemen("span", "aleta-t7-menu-label", nama));
+    baris.addEventListener("click", () => {
+      menu.hidden = true;
+      el.click();
+    });
     panelSeksi.appendChild(baris);
   }
   // Perkara ini - lompatan ke tempatnya.
@@ -16246,6 +16436,12 @@ function t7SusunKepala(k) {
     e.stopPropagation();
     menu.hidden = !menu.hidden;
     titik.setAttribute("aria-expanded", menu.hidden ? "false" : "true");
+    // Ikon wakil mengikuti tombol kepalanya (☀/☾, ⛶/⤢, –/▢).
+    for (const w of Array.from(menu.querySelectorAll("[data-a30-wakil]"))) {
+      const asli = alatKepala.querySelector(`.${w.getAttribute("data-a30-wakil")}`);
+      const ikon = w.querySelector(".aleta-t7-menu-ikon");
+      if (asli && ikon) ikon.textContent = String(asli.textContent || "");
+    }
   });
   alatKepala.insertBefore(cari, tutup || null);
   alatKepala.insertBefore(titik, tutup || null);
@@ -16740,3 +16936,824 @@ function t7UjiBerubah() {
 }
 
 document.addEventListener("aleta-uji-berubah", t7UjiBerubah);
+
+/*
+ * ============================================================================
+ * PERBAIKAN 30 SEPTEMBER 2026 - PANEL SIPP (butir 6, 7, 8, 10, 11, 18, 19, 26)
+ * ============================================================================
+ *
+ * Temuan pengguna sesudah Reload 1.174.1 di SIPP sungguhan. Semuanya hidup di
+ * tampilan Baru DAN UI Baru tanpa saklar (a30Aktif), dan tampilan Lama tetap
+ * sama sampai ke DOM, permintaan, dan pesan jembatan - uji pembanding
+ * ekstensi-sipp-tahap7.test.ts tetap berlaku.
+ *
+ *   6/26  penjelasan panjang dilipat di balik ⓘ (a30PasangLipat). Tidak ada
+ *         yang dibuang: teksnya tetap di DOM dan terbuka dengan satu klik.
+ *         Pesan error, peringatan, kabar, dan isian TIDAK dilipat.
+ *   7     ☀ – ⛶ ↺ tetap di kepala dalam UI Baru; menu ⋯ memuat wakilnya
+ *         (t7SusunKepala).
+ *   8     putusan otomatis menerima DOCX/DOC/PDF: diubah menjadi RTF lewat
+ *         K1 (POST konversi-naskah - hanya menghitung), lalu jalur unggah-
+ *         naskah yang sama. PDF diberi peringatan tata letak.
+ *   10    lebih cepat tanpa melepas pembuktian simpan: konfirmasi SIPP
+ *         di-OK-kan jembatan HANYA selama tekanan Simpan ALETA; keadaan
+ *         "sebelum" dibaca berbarengan dengan pengisian (dan dipakai ulang di
+ *         antrean massal); pembacaan medan pilihan berbarengan; jajak basis
+ *         data 400 ms sesudah SIPP menjawab tersimpan. Bukti simpan (jawaban
+ *         SIPP + selisih basis data) TIDAK berubah.
+ *   11/19 anonimisasi dibuat dalam BENTUK YANG SAMA (K2): K1 ke RTF bila perlu
+ *         -> anonim ABT (POST abt/main/anonim, sesi ABT di peramban ini) -> K1
+ *         kembali ke bentuk asal -> pemeriksa NIK/nama/alamat (peringatan +
+ *         konfirmasi) -> kedua slot diunggah SEKALIGUS lewat unggah-sipp.
+ *   18    klik ganda kepala = layar penuh; klik ganda lagi = kembali.
+ *   15    bagian (Baru) / tab (UI Baru) Juru Sita memanggil jurusita.js.
+ *
+ * TIDAK ADA JALAN TULIS SIPP BARU: tulisan tetap lewat tombol Simpan blangko
+ * (jembatan, bukti simpan) dan rute unggah-sipp yang sudah ada. Permintaan
+ * non-GET baru: K1 (menghitung) dan abt/main/anonim (jalur abt.js) - keduanya
+ * tunduk pada mode coba/kering/latihan lewat fetch yang dibungkus panel-alat.js,
+ * dan 423-nya disebut apa adanya.
+ */
+const A30_API_KONVERSI = "/aleta/api/aleta-ecourt/putusan/konversi-naskah";
+const A30_API_SIDANG = "/aleta/api/aleta-ecourt/sidang";
+const A30_TERIMA_NASKAH = ".rtf,.txt,.docx,.doc,.pdf";
+const A30_BATAS_KONVERSI_MS = 90000;
+const A30_MIME = {
+  rtf: "application/rtf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  pdf: "application/pdf",
+};
+/** Penjelasan sepanjang ini atau lebih dilipat di balik ⓘ. */
+const A30_PANJANG_LIPAT = 110;
+const A30_PENJELASAN = ".aleta-tetap-sebab, .aleta-remeh, .aleta-abt-catatan, .aleta-t7-ket";
+/** Yang BUKAN penjelasan walau panjang: pesan error, peringatan, kabar, temuan, dialog. */
+const A30_BUKAN_PENJELASAN = [
+  ".aleta-abt-kabar",
+  ".aleta-gagal",
+  ".aleta-abt-gagal",
+  ".aleta-tetap-awas",
+  ".aleta-status-dipilih-beda",
+  ".aleta-praperiksa",
+  ".aleta-t7-menu",
+  ".aleta-t7-bantuan",
+  ".aleta-jurusita",
+  ".aleta-a30-tanya",
+].join(", ");
+const A30_PERAN_JURU_SITA = /super|admin|panitera|juru\s*sita|jurusita/i;
+const A30_KLIK_GANDA_ABAIKAN = "button, a, input, select, textarea, [role='button'], .aleta-nomor-tukar, .aleta-t7-menu, .aleta-warna-pilih";
+
+function a30Aktif() {
+  return typeof t7Aktif === "function" && t7Aktif();
+}
+
+/** Dipanggil tekanSimpanPutusan: konfirmasi SIPP disetujui jembatan hanya di Baru & UI Baru. */
+function a30SetujuiKonfirmasiSimpan() {
+  return a30Aktif();
+}
+
+/** Antrean massal: keadaan "sebelum" dari langkah 1 dipakai ulang + jajak cepat. Lama: null. */
+function a30OpsiSimpanMassal(segar) {
+  if (!a30Aktif()) return null;
+  return { sebelum: segar || null, jajakCepat: true };
+}
+
+// ─── Titik sambung dari t7Tata ───────────────────────────────────────────────
+
+function a30Tata(panel, konteks, ui) {
+  if (!a30Aktif() || !panel) return;
+  panel.setAttribute("data-t7-a30", ui ? "ui" : "baru");
+  a30JuruSita(panel, konteks || {}, ui);
+  a30PasangLipat(panel);
+}
+
+// ─── Butir 18: klik ganda kepala ─────────────────────────────────────────────
+
+/**
+ * Klik ganda di kepala = tombol ⛶ yang sama: masuk layar penuh, dan klik
+ * ganda berikutnya keluar ke ukuran sebelum layar penuh (untuk panel yang
+ * belum pernah diubah ukurannya, itulah ukuran bawaan). Tombol, isian,
+ * nomor perkara (klik ganda = salin), dan menu tidak ikut.
+ */
+function a30KlikGandaKepala(panel, peristiwa) {
+  if (!a30Aktif() || !panel) return;
+  const sasaran = peristiwa && peristiwa.target;
+  if (sasaran && typeof sasaran.closest === "function" && sasaran.closest(A30_KLIK_GANDA_ABAIKAN)) return;
+  if (panel.classList.contains(KELAS_LENCANA)) return;
+  const penuh = panel.querySelector(".aleta-alat-kepala .aleta-penuh") || panel.querySelector(".aleta-penuh");
+  if (!penuh) return;
+  if (peristiwa && typeof peristiwa.preventDefault === "function") peristiwa.preventDefault();
+  penuh.click();
+  try {
+    const pilihan = typeof window.getSelection === "function" ? window.getSelection() : null;
+    if (pilihan && typeof pilihan.removeAllRanges === "function") pilihan.removeAllRanges();
+  } catch {
+    /* seleksi kata sisa klik ganda tidak mengganggu */
+  }
+}
+
+// ─── Butir 6 / 26: ⓘ untuk penjelasan panjang ────────────────────────────────
+
+function a30Ringkas(teks) {
+  const kalimat = String(teks || "").split(/(?<=[.:;?!])\s/)[0] || "";
+  if (kalimat.length <= 64) return kalimat;
+  return `${kalimat.slice(0, 60).replace(/\s+\S*$/, "")}…`;
+}
+
+function a30LipatSatu(el) {
+  if (!el || el.hasAttribute("data-a30-lipat") || !el.parentNode) return;
+  const teks = String(el.textContent || "").replace(/\s+/g, " ").trim();
+  if (teks.length < A30_PANJANG_LIPAT) return;
+  if (el.closest(A30_BUKAN_PENJELASAN)) return;
+  // Yang berisi tombol atau isian bukan penjelasan - tidak disembunyikan.
+  if (el.querySelector("button, input, select, textarea, a")) return;
+  const tombol = document.createElement("button");
+  tombol.type = "button";
+  tombol.className = "aleta-a30-info";
+  tombol.setAttribute("data-a30-info", "");
+  tombol.setAttribute("aria-expanded", "false");
+  tombol.title = "Penjelasan - klik untuk membuka atau menutup";
+  tombol.appendChild(buatElemen("span", "aleta-a30-info-ikon", "ⓘ"));
+  tombol.appendChild(buatElemen("span", "aleta-a30-info-ringkas", a30Ringkas(teks)));
+  el.setAttribute("data-a30-lipat", "tutup");
+  el.parentNode.insertBefore(tombol, el);
+  tombol.addEventListener("click", (peristiwa) => {
+    peristiwa.stopPropagation();
+    const buka = el.getAttribute("data-a30-lipat") !== "buka";
+    el.setAttribute("data-a30-lipat", buka ? "buka" : "tutup");
+    tombol.setAttribute("aria-expanded", buka ? "true" : "false");
+  });
+}
+
+/**
+ * Menyapu panel sekarang dan tiap kali isinya bertambah (bagian malas lahir
+ * belakangan). Pengamatnya milik panel - panel yang dibuang membawanya pergi.
+ */
+function a30PasangLipat(panel) {
+  const sapu = () => {
+    for (const el of Array.from(panel.querySelectorAll(A30_PENJELASAN))) a30LipatSatu(el);
+  };
+  sapu();
+  let jadwal = 0;
+  const pengamat = new MutationObserver(() => {
+    if (jadwal) return;
+    jadwal = setTimeout(() => {
+      jadwal = 0;
+      if (panel.isConnected && a30Aktif()) sapu();
+    }, 0);
+  });
+  pengamat.observe(panel, { childList: true, subtree: true });
+}
+
+// ─── Butir 15: bagian / tab Juru Sita (jurusita.js milik agen E) ─────────────
+
+/**
+ * Penentunya jurusita.js sendiri (aletaJurusitaBoleh) - bila berkas itu tidak
+ * termuat, tidak ada bagian Juru Sita sama sekali. A30_PERAN_JURU_SITA hanya
+ * penyaring awal yang sama dengan alatKelasPeran (juru sita, panitera, admin,
+ * super admin), supaya peran lain tidak pernah menanyakannya.
+ */
+function a30BolehJuruSita() {
+  const peran = typeof penggunaTerakhir !== "undefined" && penggunaTerakhir && penggunaTerakhir.peran ? String(penggunaTerakhir.peran) : "";
+  if (!peran || !A30_PERAN_JURU_SITA.test(peran)) return false;
+  if (typeof globalThis.aletaJurusitaBoleh !== "function") return false;
+  try {
+    return globalThis.aletaJurusitaBoleh(peran) === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Baru: bagian "Juru Sita" di kelompok Perkara. UI Baru: kelompok sendiri,
+ * yang menjadi tab (T7_TAB). Isinya digambar jurusita.js saat PERTAMA dibuka -
+ * membuka halaman perkara tidak membaca jadwal apa pun.
+ */
+function a30JuruSita(panel, konteks, ui) {
+  if (typeof globalThis.aletaJurusitaPasang !== "function") return;
+  if (!a30BolehJuruSita()) return;
+  const isi = panel.querySelector(":scope > .aleta-isi");
+  if (!isi || isi.querySelector('[data-a30-fitur="jurusita"]')) return;
+  const nomor = String(konteks.nomorPerkara || "");
+  const wadahan = ui ? kelompok("Juru Sita", "juruSitaKel", false) : bagian("Juru Sita", "juruSita", true);
+  wadahan.setAttribute("data-a30-fitur", "jurusita");
+  let dipasang = false;
+  const pasang = () => {
+    if (dipasang) return;
+    dipasang = true;
+    const memuat = buatElemen("div", "aleta-memuat", "Memuat Juru Sita…");
+    wadahan.isi.appendChild(memuat);
+    Promise.resolve()
+      .then(() => globalThis.aletaJurusitaPasang(wadahan.isi, { situs: "sipp", nomorPerkara: nomor, perkaraId: perkaraIdDariHalaman() }))
+      .then((ok) => {
+        memuat.remove();
+        // jurusita.js menolak (peran/tampilan): bagian atau tabnya disembunyikan.
+        if (!ok) a30LepasJuruSita(panel, wadahan);
+      })
+      .catch((galat) => {
+        memuat.remove();
+        wadahan.isi.appendChild(buatElemen("div", "aleta-gagal", `Juru Sita tidak dapat dimuat: ${String((galat && galat.message) || galat)}`));
+      });
+  };
+  const terbuka = () => wadahan.isi.style.display !== "none";
+  if (ui) {
+    // Dalam tab, kepala kelompok disembunyikan dan isinya selalu tampak
+    // (CSS Tahap 7) - yang menentukan hanya tab yang dipilih.
+    isi.appendChild(wadahan);
+    const cek = () => {
+      if (panel.getAttribute("data-t7-tab") === "juruSitaKel") pasang();
+    };
+    new MutationObserver(cek).observe(panel, { attributes: true, attributeFilter: ["data-t7-tab"] });
+    const judulKel = wadahan.querySelector(":scope > .aleta-kelompok-judul");
+    if (judulKel) judulKel.addEventListener("click", () => terbuka() && pasang());
+  } else {
+    const judul = wadahan.querySelector(":scope > .aleta-bagian-judul");
+    if (judul) judul.addEventListener("click", () => terbuka() && pasang());
+    const kel = typeof t7Kelompok === "function" ? t7Kelompok(isi, "perkara") : null;
+    (kel && kel.isi ? kel.isi : isi).appendChild(wadahan);
+    if (terbuka()) pasang();
+  }
+}
+
+/** Bagian/tab Juru Sita dilepas; tab yang sedang terpilih pindah ke tab pertama. */
+function a30LepasJuruSita(panel, wadahan) {
+  wadahan.remove();
+  const tab = panel.querySelector('.aleta-t7-tab[data-t7-ke="juruSitaKel"]');
+  if (tab) tab.remove();
+  if (panel.getAttribute("data-t7-tab") === "juruSitaKel") {
+    const pertama = panel.querySelector(".aleta-t7-tab");
+    if (pertama && typeof t7PilihTab === "function") t7PilihTab(panel, pertama.getAttribute("data-t7-ke"), false);
+  }
+}
+
+// ─── Butir 8: konversi naskah (K1) ───────────────────────────────────────────
+
+function a30Bentuk(nama) {
+  const m = /\.([A-Za-z0-9]{2,5})$/.exec(String(nama || ""));
+  return m ? m[1].toLowerCase() : "";
+}
+
+/** DOCX/DOC/PDF perlu diubah ke RTF sebelum unggah-naskah membacanya. */
+function a30PerluKeRtf(nama) {
+  return ["docx", "doc", "pdf"].includes(a30Bentuk(nama));
+}
+
+function a30GantiAkhiran(nama, ke) {
+  return `${String(nama || "naskah").replace(/\.[^.\\/]+$/, "")}.${ke}`;
+}
+
+function a30NamaAnonim(nama, ke) {
+  return `${String(nama || "putusan").replace(/\.[^.\\/]+$/, "")} - anonimisasi.${ke}`;
+}
+
+/** Kalimat untuk permintaan yang ditahan mode coba / kering / latihan (423). */
+function a30PesanDitahan(badan, apa) {
+  const alasan = String((badan && badan.alasan) || "");
+  const sebutan =
+    alasan === "mode_latihan" ? "mode latihan" : alasan === "mode_kering" ? "mode kering" : alasan === "mode_coba" ? "mode coba" : "mode uji";
+  return `${apa} ditahan ${sebutan} - tidak ada yang dikirim. ${String((badan && badan.pesan) || "").trim()}`.trim();
+}
+
+/**
+ * K1: satu berkas diubah bentuknya di server (soffice di bot). Hanya
+ * menghitung, tidak menyimpan apa pun. TIDAK PERNAH melempar.
+ * @returns {Promise<{ok: true, berkas: File, peringatan: string[]} | {ok: false, pesan: string}>}
+ */
+async function a30KonversiNaskah(berkas, ke) {
+  const nama = String((berkas && berkas.name) || "naskah");
+  const KE = String(ke || "rtf").toUpperCase();
+  const badan = new FormData();
+  badan.append("berkas", berkas, nama);
+  badan.append("ke", ke);
+  let respons;
+  try {
+    respons = await alatAmbil(
+      A30_API_KONVERSI,
+      { method: "POST", body: badan, credentials: "include", batasMs: A30_BATAS_KONVERSI_MS },
+      "Mengubah bentuk naskah"
+    );
+  } catch (galat) {
+    return { ok: false, pesan: `Mengubah ${nama} menjadi ${KE} gagal: ${String((galat && galat.message) || galat)}` };
+  }
+  let luar = null;
+  try {
+    luar = await respons.json();
+  } catch {
+    luar = null;
+  }
+  if (respons.status === 404) {
+    return {
+      ok: false,
+      pesan: `Konversi naskah belum tersedia di server - simpan ulang ${nama} sebagai ${KE} di Word, lalu pilih lagi.`,
+    };
+  }
+  if (respons.status === 423) return { ok: false, pesan: a30PesanDitahan(luar, `Mengubah ${nama} menjadi ${KE}`) };
+  if (!respons.ok) {
+    const kalimat = luar && luar.error && luar.error.message ? String(luar.error.message) : "";
+    return { ok: false, pesan: kalimat || alatPesanGagal(null, respons.status, `Mengubah ${nama} menjadi ${KE}`) };
+  }
+  const data = luar && typeof luar === "object" && "data" in luar ? luar.data : luar;
+  if (!data || !data.berkasBase64) return { ok: false, pesan: `Server tidak memulangkan berkas ${KE} hasil konversi ${nama}.` };
+  let bita;
+  try {
+    bita = Uint8Array.from(atob(String(data.berkasBase64)), (c) => c.charCodeAt(0));
+  } catch {
+    return { ok: false, pesan: `Hasil konversi ${nama} tidak terbaca (base64 rusak).` };
+  }
+  const hasil = new File([bita], String(data.namaBerkas || a30GantiAkhiran(nama, ke)), {
+    type: String(data.mime || A30_MIME[ke] || "application/octet-stream"),
+  });
+  const peringatan = [].concat(data.peringatan || []).map((x) => String(x)).filter(Boolean);
+  if (a30Bentuk(nama) === "pdf" && ke === "rtf" && peringatan.length === 0) {
+    peringatan.push("Naskah dari PDF: tata letaknya dapat berubah (baris terpotong, perabot halaman ikut). Periksa tiap bagian sebelum mengisikan.");
+  }
+  return { ok: true, berkas: hasil, peringatan };
+}
+
+// ─── Butir 11 / 19: anonimisasi dalam bentuk yang sama (K2) ──────────────────
+
+/** Teks polos dari RTF - untuk pemeriksa anonim. Tabel huruf, gaya, gambar, dan tujuan \* dilewati. */
+function a30TeksRtf(rtf) {
+  const s = String(rtf || "");
+  const LEWATI = /^(fonttbl|colortbl|stylesheet|info|pict|object|header|headerl|headerr|headerf|footer|footerl|footerr|footerf|listtable|listoverridetable|rsidtbl|generator|xmlnstbl|themedata|colorschememapping|latentstyles|datastore|pgdsctbl|filetbl|revtbl|fldinst)$/;
+  let keluar = "";
+  let aras = 0;
+  let lewatiAras = -1;
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === "{") {
+      aras += 1;
+      i += 1;
+      continue;
+    }
+    if (c === "}") {
+      if (lewatiAras === aras) lewatiAras = -1;
+      aras -= 1;
+      i += 1;
+      continue;
+    }
+    const lewati = lewatiAras !== -1;
+    if (c === "\\") {
+      const n = s[i + 1];
+      if (n === "\\" || n === "{" || n === "}") {
+        if (!lewati) keluar += n;
+        i += 2;
+        continue;
+      }
+      if (n === "'") {
+        const kode = parseInt(s.slice(i + 2, i + 4), 16);
+        if (!lewati && Number.isFinite(kode)) keluar += String.fromCharCode(kode);
+        i += 4;
+        continue;
+      }
+      if (n === "*") {
+        if (!lewati) lewatiAras = aras;
+        i += 2;
+        continue;
+      }
+      const m = /^([a-zA-Z]+)(-?\d+)? ?/.exec(s.slice(i + 1, i + 48));
+      if (!m) {
+        i += 2;
+        continue;
+      }
+      i += 1 + m[0].length;
+      if (lewati) continue;
+      const kata = m[1];
+      if (LEWATI.test(kata)) {
+        lewatiAras = aras;
+        continue;
+      }
+      if (kata === "par" || kata === "line" || kata === "sect" || kata === "page" || kata === "row") keluar += "\n";
+      else if (kata === "tab" || kata === "cell") keluar += " ";
+      else if (kata === "u" && m[2] !== undefined) {
+        let kode = Number(m[2]);
+        if (kode < 0) kode += 65536;
+        keluar += String.fromCharCode(kode);
+        // Pengganti ASCII sesudah \uN dilewati.
+        if (s[i] === "\\" && s[i + 1] === "'") i += 4;
+        else if (s[i] && s[i] !== "\\" && s[i] !== "{" && s[i] !== "}") i += 1;
+      }
+      continue;
+    }
+    if (c !== "\r" && c !== "\n" && !lewati) keluar += c;
+    i += 1;
+  }
+  return keluar;
+}
+
+/**
+ * Nama pihak dan penggalan alamat yang TERBACA di halaman SIPP ini (tabel
+ * pihak, baris label-nilai) dan di konteks ALETA. Yang tidak terbaca tidak
+ * diperiksa - dan jumlah yang diperiksa disebut di kabarnya.
+ */
+function a30DataPribadiHalaman() {
+  const nama = new Map();
+  const alamat = new Map();
+  const tambahNama = (teks, dari) => {
+    const t = String(teks || "").replace(/\s+/g, " ").trim();
+    if (t.length < 4 || t.length > 80 || /\d/.test(t) || /^(penggugat|tergugat|pemohon|termohon|nama|tidak ada)$/i.test(t)) return;
+    nama.set(t.toLowerCase(), { teks: t, dari });
+    const inti = t.split(/\s+(?:bin|binti)\s+/i)[0].trim();
+    if (inti && inti !== t && inti.length >= 4) nama.set(inti.toLowerCase(), { teks: inti, dari });
+  };
+  const tambahAlamat = (teks, dari) => {
+    for (const potong of String(teks || "").split(/[,;\n]/)) {
+      const b = potong.replace(/\s+/g, " ").trim();
+      if (b.length < 6 || b.length > 80) continue;
+      if (!/^(jl\.?|jln\.?|jalan|dusun|dsn\.?|lorong|lr\.?|rt\b|rw\b|desa|kelurahan|kel\.|btn|perumahan|perum\b|kompleks|komp\.|gang|gg\.)/i.test(b)) continue;
+      alamat.set(b.toLowerCase(), { teks: b, dari });
+    }
+  };
+  const konteks = typeof konteksTerakhir !== "undefined" && konteksTerakhir ? konteksTerakhir : null;
+  for (const o of (konteks && konteks.nomorPihak) || []) tambahNama(o && o.nama, "ALETA");
+  for (const tabel of Array.from(document.querySelectorAll("table"))) {
+    if (tabel.closest(".aleta-panel")) continue;
+    const baris = Array.from(tabel.rows || []);
+    baris.forEach((tr, i) => {
+      const sel = Array.from(tr.cells || []);
+      sel.forEach((td, j) => {
+        const judul = String(td.textContent || "").replace(/\s+/g, " ").trim();
+        const jenis = /^(penggugat|tergugat|pemohon|termohon|nama|nama lengkap)$/i.test(judul)
+          ? "nama"
+          : /^alamat\b/i.test(judul) && judul.length <= 30
+            ? "alamat"
+            : "";
+        if (!jenis) return;
+        const tambah = jenis === "nama" ? tambahNama : tambahAlamat;
+        // Baris label-nilai ("Alamat | Jl. ...") atau kolom berjudul.
+        if (sel.length === 2 && j === 0) tambah(sel[1].textContent, "SIPP");
+        else for (let k = i + 1; k < Math.min(baris.length, i + 12); k += 1) {
+          const c = baris[k].cells && baris[k].cells[j];
+          if (c) tambah(c.textContent, "SIPP");
+        }
+      });
+    });
+  }
+  return { nama: Array.from(nama.values()), alamat: Array.from(alamat.values()) };
+}
+
+function a30PolaKata(teks) {
+  const aman = String(teks).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+  return new RegExp(`(^|[^\\p{L}\\p{N}])(${aman})(?=[^\\p{L}\\p{N}]|$)`, "iu");
+}
+
+/** Data pribadi yang masih utuh di teks anonim, beserta potongan kalimat di sekitarnya. */
+function a30PeriksaAnonim(teks, data) {
+  const t = String(teks || "");
+  const temuan = [];
+  const catat = (jenis, kata, indeks, dari) => {
+    const awal = Math.max(0, indeks - 50);
+    const akhir = Math.min(t.length, indeks + kata.length + 50);
+    temuan.push({
+      jenis,
+      kata,
+      dari,
+      konteks: `${awal > 0 ? "…" : ""}${t.slice(awal, akhir).replace(/\s+/g, " ")}${akhir < t.length ? "…" : ""}`,
+    });
+  };
+  for (const m of t.matchAll(/(?<!\d)\d{16}(?!\d)/g)) catat("NIK", m[0], m.index, "");
+  for (const n of (data && data.nama) || []) {
+    const m = a30PolaKata(n.teks).exec(t);
+    if (m) catat("nama pihak", m[2], m.index + m[1].length, n.dari);
+  }
+  for (const a of (data && data.alamat) || []) {
+    const m = a30PolaKata(a.teks).exec(t);
+    if (m) catat("alamat", m[2], m.index + m[1].length, a.dari);
+  }
+  return { temuan, diperiksa: { nama: ((data && data.nama) || []).length, alamat: ((data && data.alamat) || []).length } };
+}
+
+/**
+ * Konfirmasi di dalam panel (bukan window.confirm): judul, keterangan, daftar
+ * temuan, centang "sudah saya periksa", lalu dua tombol. Pulang true/false.
+ */
+function a30Tanya(wadah, o) {
+  return new Promise((selesai) => {
+    const kartu = buatElemen("div", "aleta-a30-tanya");
+    kartu.setAttribute("role", "alertdialog");
+    kartu.appendChild(buatElemen("div", "aleta-a30-tanya-judul", o.judul || "Periksa dulu"));
+    for (const b of o.baris || []) if (b) kartu.appendChild(buatElemen("div", "aleta-a30-tanya-baris", b));
+    if (o.daftar && o.daftar.length) {
+      const ul = buatElemen("ul", "aleta-a30-tanya-daftar");
+      for (const x of o.daftar) ul.appendChild(buatElemen("li", "", x));
+      kartu.appendChild(ul);
+    }
+    const label = buatElemen("label", "aleta-a30-tanya-centang");
+    const cek = document.createElement("input");
+    cek.type = "checkbox";
+    label.append(cek, buatElemen("span", "", o.centang || "Sudah saya periksa"));
+    const ya = buatElemen("button", "aleta-permintaan-tombol aleta-a30-tanya-ya", o.ya || "Lanjutkan");
+    ya.type = "button";
+    ya.disabled = true;
+    const tidak = buatElemen("button", "aleta-permintaan-tombol aleta-a30-tanya-tidak", o.tidak || "Batalkan");
+    tidak.type = "button";
+    cek.addEventListener("change", () => {
+      ya.disabled = !cek.checked;
+    });
+    const aksi = buatElemen("div", "aleta-a30-tanya-aksi");
+    aksi.append(ya, tidak);
+    kartu.append(label, aksi);
+    const tutup = (hasil) => {
+      kartu.remove();
+      selesai(hasil);
+    };
+    ya.addEventListener("click", () => tutup(true));
+    tidak.addEventListener("click", () => tutup(false));
+    wadah.appendChild(kartu);
+    if (typeof kartu.scrollIntoView === "function") kartu.scrollIntoView({ block: "nearest" });
+  });
+}
+
+/**
+ * perkara_id yang dituntut ABT (Abt::html_anonim membaca pihaknya dari situ).
+ * Blangko SIPP jarang membawanya, jadi ALETA ditanya lewat rute sidang yang
+ * sudah ada (GET, rincian SIPP satu perkara).
+ */
+async function a30PerkaraIdUntukAbt(nomorPerkara) {
+  const dariHalaman = perkaraIdDariHalaman();
+  if (/^\d+$/.test(dariHalaman)) return dariHalaman;
+  try {
+    const r = await alatAmbil(
+      `${A30_API_SIDANG}?nomor=${encodeURIComponent(String(nomorPerkara || ""))}`,
+      { credentials: "include", cache: "no-store" },
+      "Membaca nomor induk perkara"
+    );
+    if (!r.ok) return "";
+    const luar = await r.json();
+    const isi = luar && luar.data ? luar.data : luar;
+    const id = String((isi && isi.sipp && isi.sipp.perkaraId) || "");
+    return /^\d+$/.test(id) && !/^0+$/.test(id) ? id : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Jawaban ABT adalah halaman masuk (sesi ABT tidak ada) - sama dengan relaasHalamanMasuk di latar.js. */
+function a30HalamanMasukAbt(teks, alamatAkhir) {
+  if (/\/login(?:\/|\?|#|$)/i.test(String(alamatAkhir || ""))) return true;
+  const t = String(teks || "");
+  return /login\/signin/i.test(t) || /type=["']password["']/i.test(t);
+}
+
+/**
+ * Anonim ABT atas satu RTF - jalur yang sama dengan abt.js (POST abt/main/anonim,
+ * multipart perkara_id, perkara_no, file_putusan), dengan sesi ABT petugas
+ * sendiri di peramban ini. TIDAK PERNAH melempar.
+ */
+async function a30AnonimAbt(rtf, nomorPerkara, perkaraId) {
+  const borang = new FormData();
+  borang.set("perkara_id", String(perkaraId || ""));
+  borang.set("perkara_no", String(nomorPerkara || ""));
+  borang.set("file_putusan", rtf, String((rtf && rtf.name) || "putusan.rtf"));
+  let respons;
+  try {
+    respons = await fetch(`${location.origin}/aps_badilag/abt/main/anonim`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      body: borang,
+    });
+  } catch (galat) {
+    return { ok: false, pesan: `ABT tidak terjangkau untuk anonimisasi: ${String((galat && galat.message) || galat)}` };
+  }
+  if (respons.status === 423) {
+    let badan = null;
+    try {
+      badan = await respons.json();
+    } catch {
+      badan = null;
+    }
+    return { ok: false, pesan: a30PesanDitahan(badan, "Anonimisasi ABT") };
+  }
+  if (!respons.ok) return { ok: false, pesan: `ABT menjawab ${respons.status} saat menganonimkan - anonimisasi tidak dibuat.` };
+  const bita = new Uint8Array(await respons.arrayBuffer());
+  const awal = String.fromCharCode(...Array.from(bita.subarray(0, 5)));
+  if (awal !== "{\\rtf") {
+    const teks = new TextDecoder().decode(bita);
+    if (a30HalamanMasukAbt(teks, respons.url)) {
+      return {
+        ok: false,
+        perluAbt: true,
+        pesan: "Masuk ABT dulu: anonimisasi dibuat oleh ABT dengan akun ABT Anda di peramban ini. Buka ABT di tab lain, masuk, lalu ulangi.",
+      };
+    }
+    const gagal = teks.match(/Proses Anonim Gagal[^<]*/i);
+    return { ok: false, pesan: gagal ? `ABT: ${gagal[0].slice(0, 160).trim()}` : "ABT tidak mengembalikan berkas RTF anonim - anonimisasi tidak dibuat." };
+  }
+  return { ok: true, bita, teksRtf: new TextDecoder("latin1").decode(bita) };
+}
+
+/**
+ * K2 untuk satu edoc putusan: pulang berkas anonimisasi dalam BENTUK YANG SAMA
+ * (rtf/docx/doc/pdf) sesudah lolos pemeriksa atau dikonfirmasi petugas.
+ * Tidak mengirim apa pun ke SIPP. TIDAK PERNAH melempar.
+ */
+async function a30SiapkanAnonimisasi(p) {
+  const lapor = (teks) => {
+    if (p.kabar) {
+      p.kabar.className = "aleta-abt-kabar";
+      p.kabar.textContent = teks;
+    }
+  };
+  const berkas = p.berkas;
+  const nama = String((berkas && berkas.name) || "");
+  const bentuk = a30Bentuk(nama);
+  if (!["rtf", "docx", "doc", "pdf"].includes(bentuk)) {
+    return { ok: false, pesan: `Anonimisasi otomatis hanya untuk RTF, DOCX, DOC, atau PDF - ${nama || "berkas ini"} bukan.` };
+  }
+  try {
+    let rtf = p.rtf || (bentuk === "rtf" ? berkas : null);
+    if (!rtf) {
+      lapor(`Anonimisasi 1/4: mengubah ${nama} menjadi RTF…`);
+      const u = await a30KonversiNaskah(berkas, "rtf");
+      if (!u.ok) return { ok: false, pesan: `Anonimisasi tidak dibuat: ${u.pesan}` };
+      rtf = u.berkas;
+    }
+    lapor("Anonimisasi 2/4: meminta ABT menganonimkan…");
+    const perkaraId = await a30PerkaraIdUntukAbt(p.nomorPerkara);
+    if (!perkaraId) {
+      return {
+        ok: false,
+        pesan: "Anonimisasi tidak dibuat: nomor induk perkara (perkara_id) tidak terbaca, dan ABT membutuhkannya. Coba lagi sebentar lagi.",
+      };
+    }
+    const anon = await a30AnonimAbt(rtf, p.nomorPerkara, perkaraId);
+    if (!anon.ok) return anon;
+
+    lapor("Anonimisasi 3/4: memeriksa NIK, nama pihak, dan alamat…");
+    let periksa;
+    try {
+      periksa = a30PeriksaAnonim(a30TeksRtf(anon.teksRtf), a30DataPribadiHalaman());
+    } catch (galat) {
+      periksa = { temuan: [], galat: String((galat && galat.message) || galat), diperiksa: { nama: 0, alamat: 0 } };
+    }
+    if (periksa.galat || periksa.temuan.length) {
+      const jumlah = (jenis) => periksa.temuan.filter((x) => x.jenis === jenis).length;
+      const ya = p.wadahTanya
+        ? await a30Tanya(p.wadahTanya, {
+            judul: "Pemeriksaan anonimisasi sebelum unggah ke SIPP",
+            baris: [
+              periksa.galat
+                ? `Anonimisasi tidak dapat diperiksa (${periksa.galat}). Periksa berkasnya sendiri sebelum melanjutkan.`
+                : `${jumlah("NIK") ? `⚠ ${jumlah("NIK")} NIK utuh` : "✓ NIK tersamar"} · ${
+                    jumlah("nama pihak") ? `⚠ ${jumlah("nama pihak")} nama pihak utuh` : "✓ nama pihak tersamar"
+                  } · ${jumlah("alamat") ? `⚠ ${jumlah("alamat")} alamat utuh` : "✓ alamat tersamar"}`,
+              "ALETA tidak mengubah hasil anonim ABT. Bila dibatalkan: samarkan di ABT, lalu ulangi.",
+            ],
+            daftar: periksa.temuan
+              .slice(0, 12)
+              .map((x) => `${x.jenis} "${x.kata}"${x.dari ? ` (dari ${x.dari})` : ""}: ${x.konteks}`)
+              .concat(periksa.temuan.length > 12 ? [`… dan ${periksa.temuan.length - 12} lagi.`] : []),
+            centang: "Sudah saya periksa",
+            ya: "Tetap unggah",
+            tidak: "Batalkan unggah",
+          })
+        : false;
+      try {
+        alatCatat("a30-anonim", ya ? "unggah dilanjutkan sesudah konfirmasi anonim" : "unggah dibatalkan di pemeriksaan anonim", `${periksa.temuan.length} temuan`);
+      } catch {
+        /* kotak hitam hanya catatan */
+      }
+      if (!ya) {
+        return {
+          ok: false,
+          batal: true,
+          pesan: `Unggah dibatalkan: ${periksa.temuan.length} data pribadi masih utuh di anonimisasi. Samarkan di ABT, lalu ulangi.`,
+        };
+      }
+    }
+
+    let hasil = new File([anon.bita], a30NamaAnonim(nama, "rtf"), { type: A30_MIME.rtf });
+    if (bentuk !== "rtf") {
+      lapor(`Anonimisasi 4/4: mengubah kembali menjadi ${bentuk.toUpperCase()}…`);
+      const k = await a30KonversiNaskah(hasil, bentuk);
+      if (!k.ok) return { ok: false, pesan: `Anonimisasi tidak dibuat: ${k.pesan}` };
+      hasil = new File([k.berkas], a30NamaAnonim(nama, bentuk), { type: k.berkas.type || A30_MIME[bentuk] });
+    }
+    lapor(`Anonimisasi siap: ${hasil.name}.`);
+    return { ok: true, berkas: hasil, temuan: periksa.temuan.length, diperiksa: periksa.diperiksa };
+  } catch (galat) {
+    return { ok: false, pesan: `Anonimisasi tidak dibuat: ${String((galat && galat.message) || galat)}` };
+  }
+}
+
+/** Butir 11: baris "buat anonimisasi otomatis" di bagian unggah edoc (Baru & UI Baru). */
+function a30BarisAnonimOtomatis() {
+  const baris = buatElemen("label", "aleta-a30-pilihan aleta-a30-anon-otomatis");
+  baris.setAttribute("data-a30-fitur", "anonim-otomatis");
+  baris.style.display = "none";
+  const cek = document.createElement("input");
+  cek.type = "checkbox";
+  cek.checked = true;
+  cek.className = "aleta-abt-centang";
+  const teks = buatElemen("span", "aleta-a30-pilihan-teks", "");
+  baris.append(cek, teks);
+  let aktif = false;
+  return {
+    baris,
+    centang: cek,
+    setel(putusan, anonimisasi) {
+      aktif = Boolean(putusan) && !anonimisasi;
+      baris.style.display = aktif ? "" : "none";
+      if (aktif) {
+        teks.textContent =
+          `Buat edoc anonimisasi otomatis dari edoc putusan (bentuk .${a30Bentuk(putusan.name) || "sama"}, lewat anonimisasi ABT) ` +
+          "lalu unggah keduanya sekaligus. Perlu sesi ABT di peramban ini; lepas centang untuk mengunggah putusan saja.";
+      }
+    },
+    dipakai: () => aktif && cek.checked,
+  };
+}
+
+/** Butir 19: baris "unggah juga edoc putusan + anonimisasi" di Putusan otomatis (Baru & UI Baru). */
+function a30BarisSekaligus() {
+  const baris = buatElemen("label", "aleta-a30-pilihan aleta-a30-sekaligus");
+  baris.setAttribute("data-a30-fitur", "sekaligus");
+  baris.style.display = "none";
+  const cek = document.createElement("input");
+  cek.type = "checkbox";
+  cek.checked = true;
+  cek.className = "aleta-abt-centang";
+  const teks = buatElemen("span", "aleta-a30-pilihan-teks", "");
+  baris.append(cek, teks);
+  let naskah = null;
+  return {
+    baris,
+    centang: cek,
+    setelNaskah(n) {
+      naskah = n && n.asli && ["rtf", "docx", "doc", "pdf"].includes(a30Bentuk(n.asli.name)) ? n : null;
+      baris.style.display = naskah ? "" : "none";
+      if (naskah) {
+        teks.textContent =
+          `Sekali jalan: sesudah putusan TERBUKTI tersimpan, ${naskah.asli.name} diunggah sebagai edoc putusan beserta ` +
+          `edoc anonimisasinya (dibuat otomatis, bentuk .${a30Bentuk(naskah.asli.name)}). Anonimisasi disiapkan dan diperiksa sebelum Simpan.`;
+      }
+    },
+    dipakai: () => Boolean(naskah) && cek.checked,
+  };
+}
+
+/** Kiriman edoc sesudah putusan tersimpan (butir 19) - rute unggah-sipp yang sudah ada. */
+async function a30UnggahEdoc(p) {
+  if (p.kabar) {
+    p.kabar.textContent = `Tersimpan di SIPP. Mengunggah edoc putusan${p.anonimisasi ? " dan edoc anonimisasi sekaligus" : ""}…`;
+  }
+  const badan = new FormData();
+  badan.append("perkaraId", perkaraIdDariHalaman());
+  badan.append("nomorPerkara", p.nomorPerkara || "");
+  badan.append("olehUsername", namaPenggunaSipp() || "");
+  badan.append("putusan", p.putusan);
+  if (p.anonimisasi) badan.append("anonimisasi", p.anonimisasi);
+  try {
+    const jawab = await kirimBadanUnggahSipp(badan, p.anonimisasi ? BATAS_UNGGAH_SIPP_MS * 2 : BATAS_UNGGAH_SIPP_MS);
+    if (!jawab.ok) return { ok: false, bunyi: `Edoc tidak terunggah: ${jawab.sebab || jawab.pesan || jawab.alasan || "ditolak"}.` };
+    const semua = jawab.berkas || [];
+    const gagal = semua.filter((b) => !b.ok);
+    if (!semua.length || gagal.length) {
+      const masuk = semua.filter((b) => b.ok).map((b) => (b.jenis === "anonimisasi" ? "anonimisasi" : "putusan"));
+      return {
+        ok: false,
+        bunyi: `Edoc terunggah: ${masuk.join(" dan ") || "tidak ada"}; gagal: ${gagal
+          .map((b) => `${b.jenis === "anonimisasi" ? "anonimisasi" : "putusan"} - ${pesanGagalUnggah(b)}`)
+          .join("; ") || "tidak ada jawaban per berkas"}.`,
+      };
+    }
+    return {
+      ok: true,
+      bunyi: `Edoc putusan${p.anonimisasi ? " dan edoc anonimisasi" : ""} terunggah${jawab.antrean ? ", dan perkara ini masuk antrean Direktori Putusan" : ""}.`,
+    };
+  } catch (galat) {
+    return { ok: false, bunyi: `Edoc tidak terunggah: ${String((galat && galat.message) || galat)}` };
+  }
+}
+
+/**
+ * Opsi simpanPutusanLaluBuka dari Putusan otomatis (Baru & UI Baru): keadaan
+ * sebelum yang sudah dibaca, jajak cepat, dan - bila dicentang - edoc yang
+ * DISIAPKAN sekarang (sebelum Simpan) lalu diunggah sesudah Simpan terbukti.
+ * Edoc yang gagal disiapkan TIDAK menahan Simpan putusan: sebabnya ikut
+ * bunyi akhir dan halaman dibiarkan supaya terbaca.
+ */
+async function a30OpsiSimpanPutusan(p) {
+  const opsi = { sebelum: p.sebelum || null, jajakCepat: true };
+  if (!p.edoc || !p.edoc.asli) return opsi;
+  const anon = await a30SiapkanAnonimisasi({
+    berkas: p.edoc.asli,
+    rtf: p.edoc.rtf,
+    nomorPerkara: p.nomorPerkara,
+    kabar: p.kabar,
+    wadahTanya: p.wadah,
+  });
+  if (!anon.ok) {
+    const sebab = anon.pesan;
+    opsi.sesudahTersimpan = async () => ({
+      ok: false,
+      bunyi: `Edoc TIDAK diunggah - ${sebab} Unggah lewat bagian "Unggah putusan ke SIPP" sesudah itu beres.`,
+    });
+    return opsi;
+  }
+  opsi.sesudahTersimpan = (kabar) =>
+    a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: anon.berkas, kabar });
+  return opsi;
+}

@@ -350,9 +350,131 @@ async function dokumenKePdf(isi) {
   }
 }
 
+/**
+ * ============================================================================
+ * MENGUBAH NASKAH KE BENTUK LAIN - RTF / DOCX / DOC / PDF (kontrak K1)
+ * ============================================================================
+ *
+ * Perbaikan 30 September 2026, butir 8 dan 11. Putusan otomatis menerima
+ * naskah DOCX, DOC, dan PDF (bukan hanya RTF), dan anonimisasi dibuat dalam
+ * BENTUK YANG SAMA dengan edoc putusannya. Anonimisasi ABT hanya mengenal RTF,
+ * jadi naskahnya diubah ke RTF, dianonimkan, lalu dikembalikan ke bentuk
+ * asalnya - dua kali lewat sini.
+ *
+ * Mesinnya soffice yang sama dengan dokumenKePdf: folder sekali pakai, profil
+ * tersendiri, batas 20 MB, batas waktu per konversi, hasil diperiksa dari
+ * KEPALA BERKASNYA (bukan dari kode keluar soffice).
+ *
+ * PDF sebagai ASAL tidak ditangani di sini. soffice membuka PDF dengan Draw,
+ * bukan Writer, dan hasil RTF/DOCX-nya berupa bingkai-bingkai gambar, bukan
+ * naskah. Portal mengekstrak teksnya (pdfjs) menjadi RTF lebih dulu, lalu
+ * - bila bentuk tujuannya bukan RTF - mengirim RTF itu ke sini.
+ *
+ * Hanya menghitung: tidak ada yang disimpan, tidak ada yang ditulis ke SIPP.
+ */
+const FILTER_KONVERSI = {
+  rtf: "rtf:Rich Text Format",
+  docx: "docx:MS Word 2007 XML",
+  doc: "doc:MS Word 97",
+  pdf: "pdf:writer_pdf_Export",
+};
+
+const BENTUK_TUJUAN = Object.keys(FILTER_KONVERSI);
+
+/** Argumen soffice untuk satu konversi - dipisah supaya dapat diuji tanpa soffice. */
+function argumenKonversi(ke, berkasAsal, folder) {
+  return [
+    "--headless",
+    "--norestore",
+    `-env:UserInstallation=file://${path.join(folder, "profil")}`,
+    "--convert-to",
+    FILTER_KONVERSI[ke],
+    berkasAsal,
+    "--outdir",
+    folder,
+  ];
+}
+
+/**
+ * @param {Buffer} isi isi berkas apa adanya
+ * @param {string} ke "rtf" | "docx" | "doc" | "pdf"
+ * @param {{ jalankan?: Function, periksaMesin?: Function }} [opsi] pengganti untuk uji
+ * @returns {Promise<{ok: boolean, berkas?: Buffer, bentukAsal?: string, ke?: string, alasan?: string, kode?: string}>}
+ */
+async function dokumenKeBentuk(isi, ke, opsi = {}) {
+  const tujuan = String(ke || "").toLowerCase();
+  if (!BENTUK_TUJUAN.includes(tujuan)) {
+    return { ok: false, kode: "bentuk_tujuan_tidak_dikenal", alasan: `Bentuk tujuan "${ke}" tidak dikenal - pilih rtf, docx, doc, atau pdf.` };
+  }
+  if (!Buffer.isBuffer(isi) || isi.length === 0) {
+    return { ok: false, kode: "berkas_kosong", alasan: "Berkasnya kosong." };
+  }
+  if (isi.length > BATAS_BYTE) {
+    return {
+      ok: false,
+      kode: "terlalu_besar",
+      alasan: `Berkas ${Math.round(isi.length / 1024 / 1024)} MB melewati batas ${BATAS_BYTE / 1024 / 1024} MB.`,
+    };
+  }
+
+  const bentukAsal = kenaliDokumen(isi);
+  if (!bentukAsal) {
+    return {
+      ok: false,
+      kode: "bentuk_tidak_dikenal",
+      alasan: "Isinya bukan PDF, RTF, DOC, maupun DOCX - dikenali dari kepala berkasnya.",
+    };
+  }
+  // Sudah berbentuk tujuannya: dikembalikan apa adanya, tanpa satu kesempatan
+  // gagal lagi di soffice.
+  if (bentukAsal === tujuan) return { ok: true, berkas: isi, bentukAsal, ke: tujuan };
+  if (bentukAsal === "pdf") {
+    return {
+      ok: false,
+      kode: "pdf_perlu_ekstraksi",
+      bentukAsal,
+      alasan: "PDF tidak diubah soffice - teksnya diekstrak portal lebih dulu.",
+    };
+  }
+
+  const cekMesin = opsi.periksaMesin || periksaMesin;
+  const mesin = await cekMesin();
+  if (!mesin.ada) return { ok: false, kode: "soffice_tidak_ada", bentukAsal, alasan: mesin.sebab };
+
+  const jalan = opsi.jalankan || jalankan;
+  const folder = await fs.mkdtemp(path.join(os.tmpdir(), "aleta-konversi-"));
+  const berkasAsal = path.join(folder, `naskah.${bentukAsal}`);
+  const berkasHasil = path.join(folder, `naskah.${tujuan}`);
+
+  try {
+    await fs.writeFile(berkasAsal, isi);
+    await jalan(SOFFICE, argumenKonversi(tujuan, berkasAsal, folder), { cwd: folder });
+    const hasil = await fs.readFile(berkasHasil);
+    // Diperiksa HASILNYA: kepala berkasnya harus bentuk yang diminta.
+    if (kenaliDokumen(hasil) !== tujuan) {
+      return { ok: false, kode: "hasil_bukan_bentuk_tujuan", bentukAsal, alasan: `soffice selesai tetapi hasilnya bukan ${tujuan.toUpperCase()}.` };
+    }
+    return { ok: true, berkas: hasil, bentukAsal, ke: tujuan, versiMesin: mesin.versi };
+  } catch (galat) {
+    if (galat && galat.killed) {
+      return { ok: false, kode: "waktu_habis", bentukAsal, alasan: `Konversi melewati ${BATAS_WAKTU_MS / 1000} detik dan dihentikan.` };
+    }
+    if (galat && galat.code === "ENOENT") {
+      return { ok: false, kode: "tanpa_hasil", bentukAsal, alasan: `soffice selesai tanpa menghasilkan berkas ${tujuan.toUpperCase()}.` };
+    }
+    return { ok: false, kode: "gagal", bentukAsal, alasan: String((galat && galat.message) || galat).slice(0, 200) };
+  } finally {
+    // Folder yang tertinggal berisi putusan lengkap beserta nama pihaknya.
+    await fs.rm(folder, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
 module.exports = {
   rtfKePdf,
   dokumenKePdf,
+  dokumenKeBentuk,
+  argumenKonversi,
+  FILTER_KONVERSI,
   kenaliDokumen,
   periksaMesin,
   BATAS_BYTE,

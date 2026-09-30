@@ -155,6 +155,7 @@ async function keadaanJadwal(jadwalId) {
             j.ikrar_talak   AS ikrarTalak,
             p.nomor_perkara AS nomorPerkara,
             p.alur_perkara_id AS alurPerkaraId,
+            p.jenis_perkara_id AS jenisPerkaraId,
             p.jenis_perkara_text AS jenisPerkara
        FROM perkara_jadwal_sidang j
        JOIN perkara p ON p.perkara_id = j.perkara_id
@@ -183,6 +184,70 @@ async function keadaanJadwal(jadwalId) {
   // tidak akan tahu ada yang perlu diwaspadai.
   satu.tanggalSidang = penetapan.tanggalIso(satu.tanggalSidang);
   return satu;
+}
+
+/**
+ * ============================================================================
+ * RIWAYAT SIDANG DAN MEDIASI SATU PERKARA - BAHAN BAWAAN ISIAN TUNDA
+ * ============================================================================
+ *
+ * Perbaikan 30 September 2026 (butir 14). Borang tunda di portal menyimpulkan
+ * alasan, agenda berikutnya, tanggal, dan kehadiran dari sidang-sidang
+ * sebelumnya (src/lib/bawaan-tunda.ts di portal - aturannya di sana, satu
+ * tempat, diuji dan diukur atas sipp_donggala). Di sini hanya DIBACA: seluruh
+ * baris jadwal perkaranya, dan baris mediasi terakhirnya.
+ *
+ * Hanya SELECT. Gagal membaca memulangkan null - borangnya lalu jatuh ke
+ * bawaan lama, bukan menolak dibuka.
+ */
+async function riwayatSidangPerkara(perkaraId, tanggalSidang) {
+  const id = Number(perkaraId);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  const sidang = await kueri(
+    `SELECT id AS jadwalId, tanggal_sidang AS tanggal, agenda, ditunda,
+            alasan_ditunda AS alasan, dihadiri_oleh AS dihadiriOleh, ikrar_talak AS ikrar
+       FROM perkara_jadwal_sidang
+      WHERE perkara_id = ?
+      ORDER BY tanggal_sidang ASC, id ASC`,
+    [id]
+  ).catch(() => null);
+  if (!Array.isArray(sidang)) return null;
+
+  const med = await kueri(
+    `SELECT penetapan_penunjukan_mediator AS tunjuk, dimulai_mediasi AS mulai,
+            keputusan_mediasi AS putus, hasil_mediasi AS hasil, mediasi_berhasil AS berhasil
+       FROM perkara_mediasi
+      WHERE perkara_id = ?
+      ORDER BY mediasi_id DESC
+      LIMIT 1`,
+    [id]
+  ).catch(() => []);
+
+  const tgl = penetapan.tanggalIso(tanggalSidang);
+  let mediasi = null;
+  const m = Array.isArray(med) && med[0];
+  if (m) {
+    const tunjuk = penetapan.tanggalIso(m.tunjuk) || penetapan.tanggalIso(m.mulai);
+    const putus = penetapan.tanggalIso(m.putus);
+    mediasi = {
+      ada: !tunjuk || !tgl || tunjuk <= tgl,
+      selesai: Boolean(putus) && (!tgl || putus <= tgl),
+      berhasil: /^Y/i.test(bersih(m.hasil)) || Boolean(penetapan.tanggalIso(m.berhasil)),
+    };
+  }
+
+  return {
+    sidang: sidang.map((r) => ({
+      jadwalId: Number(r.jadwalId),
+      tanggal: penetapan.tanggalIso(r.tanggal),
+      agenda: bersih(r.agenda),
+      ditunda: bersih(r.ditunda).toUpperCase() === "Y",
+      alasan: bersih(r.alasan),
+      dihadiriOleh: r.dihadiriOleh === null || r.dihadiriOleh === undefined ? null : Number(r.dihadiriOleh),
+      ikrar: bersih(r.ikrar).toUpperCase() === "Y",
+    })),
+    mediasi,
+  };
 }
 
 /** Akun pejabat yang dipakai menulis - harus benar-benar ada di SIPP. */
@@ -682,8 +747,25 @@ const PROSES_PUTUSAN = 210;
  *      Kolomnya bernama alasan ditunda, isinya hasil sidang; begitulah SIPP
  *      menyimpannya, dan menaruhnya di tempat lain membuat layar SIPP kosong.
  *   3. Tidak ada baris jadwal BARU. Perkara yang diputus tidak bersidang lagi.
+ *
+ * ============================================================================
+ * BAWAANNYA HANYA JADWAL SIDANG (perbaikan 30 Sep 2026, butir 12)
+ * ============================================================================
+ *
+ * Tombol PUTUS di Jadwal Sidang / antrian sidang cukup mencatat HASIL
+ * SIDANGNYA di perkara_jadwal_sidang (beserta baris audit jadwal itu).
+ * perkara_putusan, baris audit perkara_putusan, dan tahapan perkara TIDAK
+ * ditulis dari sini - pengguna melihat rencana "perkara_putusan INSERT ...
+ * atas nama Himawan, perkara UPDATE tahapan terakhir menjadi Putusan" dan
+ * menolaknya: putusan akhir diinput hakim/petugas lewat SIPP (atau lewat
+ * jalur putusan otomatis), bukan tercipta dari tombol antrian.
+ *
+ * Penulisan putusan lengkapnya TIDAK dihapus: `minta.tulisPutusan === true`
+ * masih menyusun ketiga langkah itu seperti sebelumnya. Tidak ada tombol
+ * jadwal sidang yang mengirimnya.
  */
 async function susunRencanaPutus(minta = {}) {
+  const tulisPutusan = minta.tulisPutusan === true;
   const keadaan = await keadaanJadwal(minta.jadwalId);
   if (!keadaan) return { ok: false, alasan: "jadwal_tidak_ketemu" };
 
@@ -717,7 +799,7 @@ async function susunRencanaPutus(minta = {}) {
   const saat = await penetapan.waktuBasisData();
   const ip = bersih(minta.ip) || "127.0.0.1";
   const andaian = [];
-  if (!akun.hakim) {
+  if (!akun.hakim && tulisPutusan) {
     andaian.push(
       "Hakim perkara ini tidak ketemu di SIPP, jadi putusannya dicatat atas nama panitera sidang. " +
         "Pada aplikasi antrian ia dicatat atas nama hakim."
@@ -784,94 +866,104 @@ async function susunRencanaPutus(minta = {}) {
     })
   );
 
-  // ---- 2. Putusannya ------------------------------------------------------
-  const nilaiPutusan = {
-    perkara_id: keadaan.perkaraId,
-    tanggal_putusan: tanggalPutus,
-    putusan_verstek: verstek,
-    sumber_hukum_id: SUMBER_HUKUM_TETAP,
-    status_putusan_id: statusId,
-    tanggal_cabut: statusId === STATUS_DICABUT ? tanggalPutus : null,
-    tanggal_gugur: statusId === STATUS_DIGUGURKAN ? tanggalPutus : null,
-    amar_putusan: AMAR_BELUM,
-    diinput_oleh: penulisPutusan.username,
-    diinput_tanggal: saat,
-  };
-  langkah.push({
-    tabel: "perkara_putusan",
-    aksi: "INSERT",
-    keterangan: `putusan ${keadaan.nomorPerkara} - ${namaStatus}${verstek === "Y" ? " (verstek)" : ""}`,
-    // ON DUPLICATE KEY UPDATE, sama seperti aplikasi antrian: memutus ulang
-    // memperbarui barisnya, bukan gagal. Perkara yang jenis putusannya
-    // dikoreksi sesudah sidang bukan hal aneh.
-    sql:
-      `INSERT INTO perkara_putusan
-         (perkara_id, tanggal_putusan, putusan_verstek, sumber_hukum_id, status_putusan_id,
-          tanggal_cabut, tanggal_gugur, amar_putusan, diinput_oleh, diinput_tanggal)
-       VALUES (?,?,?,?,?,?,?,?,?,?)
-       ON DUPLICATE KEY UPDATE
-         tanggal_putusan = VALUES(tanggal_putusan),
-         putusan_verstek = VALUES(putusan_verstek),
-         sumber_hukum_id = VALUES(sumber_hukum_id),
-         status_putusan_id = VALUES(status_putusan_id),
-         tanggal_cabut = VALUES(tanggal_cabut),
-         tanggal_gugur = VALUES(tanggal_gugur)`,
-    params: [
-      nilaiPutusan.perkara_id,
-      nilaiPutusan.tanggal_putusan,
-      nilaiPutusan.putusan_verstek,
-      nilaiPutusan.sumber_hukum_id,
-      nilaiPutusan.status_putusan_id,
-      nilaiPutusan.tanggal_cabut,
-      nilaiPutusan.tanggal_gugur,
-      nilaiPutusan.amar_putusan,
-      nilaiPutusan.diinput_oleh,
-      nilaiPutusan.diinput_tanggal,
-    ],
-  });
-  langkah.push(
-    penetapan.barisAudit({
-      username: penulisPutusan.username,
-      tabel: "perkara_putusan",
-      formulir: "TAMBAH DATA PUTUSAN AKHIR",
-      aksi: "tambah",
-      nilai: nilaiPutusan,
-      perkaraId: keadaan.perkaraId,
-      ip,
-      saat,
-      // Modul putusan SIPP memakai judul yang berbeda dari modul lain.
-      judulSendiri: `tambah Data Putusan Akhir <br />dengan perkara_id [id=${keadaan.perkaraId}]`,
-    })
-  );
+  if (!tulisPutusan) {
+    andaian.push(
+      "Hanya hasil sidang di jadwal sidang yang dicatat. Putusan akhir (perkara_putusan), audit putusannya, " +
+        "dan tahapan perkara tidak ditulis dari tombol ini - diinput lewat SIPP / putusan otomatis."
+    );
+  }
 
-  // ---- 3. Tahapan terakhir menjadi Putusan --------------------------------
-  const alur = await prosesAlur(keadaan.alurPerkaraId, PROSES_PUTUSAN);
-  langkah.push({
-    tabel: "perkara",
-    aksi: "UPDATE",
-    keterangan: `tahapan terakhir ${keadaan.nomorPerkara} menjadi Putusan`,
-    sql:
-      `UPDATE perkara
-          SET tahapan_terakhir_id = ?, tahapan_terakhir_text = ?,
-              proses_terakhir_id = ?, proses_terakhir_text = ?
-        WHERE perkara_id = ?`,
-    params: [
-      TAHAPAN_PUTUSAN,
-      (alur && alur.tahapanNama) || "Putusan",
-      PROSES_PUTUSAN,
-      (alur && alur.prosesNama) || "Putusan",
-      keadaan.perkaraId,
-    ],
-  });
+  // ---- 2. Putusannya (hanya bila diminta tegas) ---------------------------
+  if (tulisPutusan) {
+    const nilaiPutusan = {
+      perkara_id: keadaan.perkaraId,
+      tanggal_putusan: tanggalPutus,
+      putusan_verstek: verstek,
+      sumber_hukum_id: SUMBER_HUKUM_TETAP,
+      status_putusan_id: statusId,
+      tanggal_cabut: statusId === STATUS_DICABUT ? tanggalPutus : null,
+      tanggal_gugur: statusId === STATUS_DIGUGURKAN ? tanggalPutus : null,
+      amar_putusan: AMAR_BELUM,
+      diinput_oleh: penulisPutusan.username,
+      diinput_tanggal: saat,
+    };
+    langkah.push({
+      tabel: "perkara_putusan",
+      aksi: "INSERT",
+      keterangan: `putusan ${keadaan.nomorPerkara} - ${namaStatus}${verstek === "Y" ? " (verstek)" : ""}`,
+      // ON DUPLICATE KEY UPDATE, sama seperti aplikasi antrian: memutus ulang
+      // memperbarui barisnya, bukan gagal. Perkara yang jenis putusannya
+      // dikoreksi sesudah sidang bukan hal aneh.
+      sql:
+        `INSERT INTO perkara_putusan
+           (perkara_id, tanggal_putusan, putusan_verstek, sumber_hukum_id, status_putusan_id,
+            tanggal_cabut, tanggal_gugur, amar_putusan, diinput_oleh, diinput_tanggal)
+         VALUES (?,?,?,?,?,?,?,?,?,?)
+         ON DUPLICATE KEY UPDATE
+           tanggal_putusan = VALUES(tanggal_putusan),
+           putusan_verstek = VALUES(putusan_verstek),
+           sumber_hukum_id = VALUES(sumber_hukum_id),
+           status_putusan_id = VALUES(status_putusan_id),
+           tanggal_cabut = VALUES(tanggal_cabut),
+           tanggal_gugur = VALUES(tanggal_gugur)`,
+      params: [
+        nilaiPutusan.perkara_id,
+        nilaiPutusan.tanggal_putusan,
+        nilaiPutusan.putusan_verstek,
+        nilaiPutusan.sumber_hukum_id,
+        nilaiPutusan.status_putusan_id,
+        nilaiPutusan.tanggal_cabut,
+        nilaiPutusan.tanggal_gugur,
+        nilaiPutusan.amar_putusan,
+        nilaiPutusan.diinput_oleh,
+        nilaiPutusan.diinput_tanggal,
+      ],
+    });
+    langkah.push(
+      penetapan.barisAudit({
+        username: penulisPutusan.username,
+        tabel: "perkara_putusan",
+        formulir: "TAMBAH DATA PUTUSAN AKHIR",
+        aksi: "tambah",
+        nilai: nilaiPutusan,
+        perkaraId: keadaan.perkaraId,
+        ip,
+        saat,
+        // Modul putusan SIPP memakai judul yang berbeda dari modul lain.
+        judulSendiri: `tambah Data Putusan Akhir <br />dengan perkara_id [id=${keadaan.perkaraId}]`,
+      })
+    );
+
+    // ---- 3. Tahapan terakhir menjadi Putusan --------------------------------
+    const alur = await prosesAlur(keadaan.alurPerkaraId, PROSES_PUTUSAN);
+    langkah.push({
+      tabel: "perkara",
+      aksi: "UPDATE",
+      keterangan: `tahapan terakhir ${keadaan.nomorPerkara} menjadi Putusan`,
+      sql:
+        `UPDATE perkara
+            SET tahapan_terakhir_id = ?, tahapan_terakhir_text = ?,
+                proses_terakhir_id = ?, proses_terakhir_text = ?
+          WHERE perkara_id = ?`,
+      params: [
+        TAHAPAN_PUTUSAN,
+        (alur && alur.tahapanNama) || "Putusan",
+        PROSES_PUTUSAN,
+        (alur && alur.prosesNama) || "Putusan",
+        keadaan.perkaraId,
+      ],
+    });
+  }
 
   return {
     ok: true,
     jenis: "putus",
+    hanyaJadwal: !tulisPutusan,
     perkara: { perkaraId: keadaan.perkaraId, nomorPerkara: keadaan.nomorPerkara },
     atasNama: {
       username: akun.panitera.username,
       namaLengkap: akun.panitera.fullname,
-      putusanAtasNama: penulisPutusan.username,
+      putusanAtasNama: tulisPutusan ? penulisPutusan.username : undefined,
     },
     operator: bersih(minta.operator),
     saat,
@@ -917,7 +1009,7 @@ async function setelAntrian({ perkaraId, tanggalSidang, ruangId, keadaan, kering
 
   if (hasil && hasil.galat) return { ok: false, alasan: hasil.galat };
   const berubah = Number((hasil && hasil.affectedRows) || 0);
-  // Nol baris BUKAN galat: tidak semua perkara mengambil nomor antrian.
+  // Nol baris BUKAN error: tidak semua perkara mengambil nomor antrian.
   return { ok: true, kering: false, baris: berubah };
 }
 
@@ -931,6 +1023,7 @@ module.exports = {
   ANTRIAN_SKORS,
   ANTRIAN_SELESAI,
   keadaanJadwal,
+  riwayatSidangPerkara,
   akunPerkara,
   jamMenurutAgenda,
   tanggalDuaPekan,

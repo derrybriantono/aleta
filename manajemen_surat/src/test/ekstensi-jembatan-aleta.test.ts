@@ -203,7 +203,7 @@ describe("yang WAJIB ditolak tidak pernah sampai ke pekerja latar", () => {
     expect(kiriman.filter((k) => k.data.balasan !== undefined)).toEqual([]);
   });
 
-  it("jenis di luar tujuh jenis relaas - dibalas galat, TIDAK diteruskan", () => {
+  it("jenis di luar tujuh jenis relaas - dibalas error, TIDAK diteruskan", () => {
     const { w, diteruskan, kiriman } = bukaHalaman();
     for (const jenis of ["perbarui", "muat-ulang", "unduh", "relaas-apa"]) {
       dariHalaman(w, { ...sah, jenis, idPesan: `j-${jenis}` });
@@ -214,7 +214,7 @@ describe("yang WAJIB ditolak tidak pernah sampai ke pekerja latar", () => {
     expect(diteruskan).toEqual([]);
   });
 
-  it("relaas-mulai tanpa daftar dokumen - dibalas galat, TIDAK diteruskan", () => {
+  it("relaas-mulai tanpa daftar dokumen - dibalas error, TIDAK diteruskan", () => {
     const { w, diteruskan, kiriman } = bukaHalaman();
     dariHalaman(w, { sumber: "aleta-portal", jenis: "relaas-mulai", idPesan: "m0", muatan: { pekerjaan: { dokumen: "semua" } } });
     expect(diteruskan).toEqual([]);
@@ -257,7 +257,7 @@ describe("halaman TIDAK PERNAH menunggu selamanya", () => {
     expect(b.data.jawaban.sebab).toContain("Extension context invalidated.");
   });
 
-  it("pekerja yang menjawab kosong tanpa lastError pun dibalas galat, tepat SEKALI", async () => {
+  it("pekerja yang menjawab kosong tanpa lastError pun dibalas error, tepat SEKALI", async () => {
     const { w, kiriman } = bukaHalaman((_p, balik) => {
       balik(undefined);
       balik({ ok: true });

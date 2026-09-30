@@ -179,7 +179,7 @@ describe("tabel kosong: keluaran = cermin untuk 100% daftar yang bercermin", () 
     expect(sama.length / semua.length).toBe(1);
   });
 
-  it("daftar tak terdaftar adalah GALAT 400, bukan jawaban kosong", async () => {
+  it("daftar tak terdaftar adalah ERROR 400, bukan jawaban kosong", async () => {
     await expect(untukPortal(d(), ["putusan.tidak-ada"])).rejects.toMatchObject({ status: 400 });
     expect(() => validasiEntri("putusan.tidak-ada", { nilai: "x" })).toThrow(GalatDaftarTakTerdaftar);
   });
@@ -323,7 +323,7 @@ describe("validasi menolak kalimat rusak - {ok:false}, tanpa riwayat dan tanpa a
     });
   }
 
-  it("daftar tak terdaftar -> galat 400 dari usul, bukan {ok:false} dan bukan jawaban kosong", async () => {
+  it("daftar tak terdaftar -> error 400 dari usul, bukan {ok:false} dan bukan jawaban kosong", async () => {
     await expect(usul(d(), "usr-admin", { daftar: "bas.ngawur", nilai: "x" })).rejects.toMatchObject({ status: 400 });
   });
 

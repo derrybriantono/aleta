@@ -175,6 +175,9 @@ app.use("/internal/aleta-bot/abt/pdf", express.json({ limit: "28mb" }));
 // batas 1 MB di bawah - yang gagalnya berbunyi "request entity too large",
 // kalimat yang tidak menyebut berkas mana pun.
 app.use("/internal/aleta-bot/sipp/putusan-unggah", express.json({ limit: "28mb" }));
+// Konversi naskah (kontrak K1, 30 Sep 2026): satu naskah sampai 20 MB sebagai
+// base64 di dalam JSON - batas yang sama dengan jalur PDF ABT di atas.
+app.use("/internal/aleta-bot/naskah/konversi", express.json({ limit: "28mb" }));
 // Tanda tangan yang diunggah dari layar juga base64 di dalam JSON. Layanannya
 // menerima gambar sampai 8 MB, dan 8 MB menjadi ~10,7 MB sesudah base64 -
 // batas 1 MB di bawah akan menolaknya dengan "request entity too large",
@@ -4338,6 +4341,8 @@ cron.schedule(selisihHarianService.jadwalCron(), () => {
     });
 });
 
+// Sinkron & cadangan (butir 29/30, 30 Sep 2026): dump MySQL baca-saja untuk portal.
+app.use("/internal/aleta-bot/sinkron", require("./routes/sinkronRoutes"));
 app.use("/internal/aleta-bot", internalGatewayRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 

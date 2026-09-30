@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
+import { tanganiUnduhan } from "@/lib/unduh-berkas";
 import type { KunciPeriodeSkp, PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
 import {
   FORMAT_EVIDEN_SKP,
@@ -237,16 +238,12 @@ export function EvidenSkpMenu({
         const isi = (await balasan.json().catch(() => null)) as { error?: { message?: string } } | null;
         throw new Error(isi?.error?.message || `Unduhan gagal (HTTP ${balasan.status}).`);
       }
-      const berkas = await balasan.blob();
       const namaBerkas = namaDariDisposition(balasan.headers.get("content-disposition")) || "Eviden SKP";
-      const url = URL.createObjectURL(berkas);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = namaBerkas;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      // Satu penanganan bersama (butir 31, 30 Sep 2026) - badan yang diambil
+      // pengelola unduhan peramban bukan galat, dan tidak melahirkan berkas
+      // 0 bita kembar. Lihat src/lib/unduh-berkas.ts.
+      const hasil = await tanganiUnduhan(balasan, { namaCadangan: namaBerkas, nama: namaBerkas, alamat });
+      if (!hasil.ok) throw new Error(hasil.pesan);
       setKabar({ jenis: "ok", teks: `${namaBerkas} diunduh.` });
     } catch (e) {
       setKabar({ jenis: "galat", teks: e instanceof Error && e.message ? e.message : "Unduhan gagal." });

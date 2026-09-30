@@ -308,7 +308,7 @@ describe("seluruh Kelas B untuk layar perkara", () => {
     expect(daftar[0]).toBe("0600");
   });
 
-  it("kamus kosong menghasilkan daftar kosong, bukan galat", async () => {
+  it("kamus kosong menghasilkan daftar kosong, bukan error", async () => {
     const basis = await basisData();
     expect(await penandaKelasB(basis)).toEqual([]);
   });

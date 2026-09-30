@@ -988,7 +988,7 @@ describe("C. panel yang digambar ulang selagi blangko terbuka: satu perkara, sat
     expect(dunia.simpan.map((s) => [s.nomor, s.diterima])).toEqual([[N1, true]]);
   });
 
-  it("galat di tengah pengerjaan tidak ditelan: perkaranya gagal beserta sebabnya, antrean berlanjut", async () => {
+  it("error di tengah pengerjaan tidak ditelan: perkaranya gagal beserta sebabnya, antrean berlanjut", async () => {
     const dunia = buatDunia(tigaPerkara());
     const simpanan: Record<string, unknown> = {};
     const h = muatHalaman(dunia, simpanan);

@@ -340,6 +340,13 @@ export function AdminHub() {
               icon={<DatabaseBackup className="h-5 w-5 text-cyan-600" />}
               badge="Backup"
             />
+            <AdminMenuAction
+              href="/admin/sinkron-cadangan"
+              title="Sinkron & cadangan"
+              description="Cadangan otomatis ALETA, SIPP, ABT, dan antrian ke laptop dan Google Drive, serta berkas seluruh perkara ke Google Drive."
+              icon={<DatabaseBackup className="h-5 w-5 text-indigo-600" />}
+              badge="Sinkron"
+            />
           </div>
         </div>
 

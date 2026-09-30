@@ -54,6 +54,9 @@ const BATAS_SAKSI = 6;
 
 type BadanUsulan = {
   nomorPerkara?: unknown;
+  /** Butir 28: nilai variabel 1268 dan keadaan mediasi. */
+  upayaDamai?: unknown;
+  mediasi?: unknown;
   sumber?: unknown;
   saksi1?: unknown;
   saksi2?: unknown;
@@ -271,6 +274,17 @@ export async function POST(request: NextRequest) {
       alasan: Array.isArray(body.alasan)
         ? (body.alasan as unknown[]).slice(0, 12).map((x) => String(x).slice(0, 80))
         : undefined,
+      // Butir 28 (30 Sep 2026): nilai variabel 1268 (Upaya Damai Keluarga) dari
+      // halaman ABT, dan keadaan mediasi bila ekstensi mengetahuinya - sumber
+      // jawaban pertanyaan upaya rukun. Tanpa mediasi, bot membacanya dari SIPP.
+      upayaDamai: String(body.upayaDamai || "").slice(0, 600),
+      mediasi:
+        body.mediasi && typeof body.mediasi === "object"
+          ? {
+              selesai: (body.mediasi as Record<string, unknown>).selesai === true,
+              berhasil: (body.mediasi as Record<string, unknown>).berhasil === true,
+            }
+          : undefined,
     });
 
     if (!hasil.ok) {

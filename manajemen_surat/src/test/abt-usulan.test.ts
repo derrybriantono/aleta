@@ -716,7 +716,7 @@ describe("nomor 8 - penjaga sebelum CETAK", () => {
     expect(isi).toContain("function periksaKelengkapan()");
   });
 
-  it("variabel OTOMATIS yang masih berbunyi pesan galat ikut ditahan", () => {
+  it("variabel OTOMATIS yang masih berbunyi pesan error ikut ditahan", () => {
     // Ini yang paling berbahaya: bunyinya seperti pesan galat mesin, tetapi
     // ia tercetak sebagai bagian pertimbangan hukum.
     const isi = abtJs();
@@ -1183,7 +1183,9 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     const entri = m.content_scripts.find((x) => (x.js || []).includes("abt.js"));
     // checklist.js (widget checklist milestone) menyusul paling belakang -
     // ia memakai alatAmbil dari panel-alat.js dan tidak menyentuh abt.js.
-    expect(entri?.js).toEqual(["panel-alat.js", "abt.js", "checklist.js"]);
+    // jurusita.js (tab Juru Sita, 30 Sep 2026) sesudah panel-alat.js dan
+    // SEBELUM abt.js: abt.js memanggil aletaJurusitaPasang saat panelnya lahir.
+    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "abt.js", "checklist.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {

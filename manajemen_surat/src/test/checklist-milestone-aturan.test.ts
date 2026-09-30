@@ -433,7 +433,7 @@ describe("hakim", () => {
     expect(Object.fromEntries(akhir.map((b) => [b.perkara?.id, b.kelompok]))).toEqual({ a: "minggu-ini", c: "lewat" });
   });
 
-  it("lima-bulan: umur yang gagal dibaca (durasi) membuat jenisnya TIDAK TERSEDIA, bukan kosong; sebagian gagal disebut di galat", () => {
+  it("lima-bulan: umur yang gagal dibaca (durasi) membuat jenisnya TIDAK TERSEDIA, bukan kosong; sebagian gagal disebut di error", () => {
     const b = (ubah: Partial<BerjalanFakta>): BerjalanFakta => ({
       perkaraId: "a",
       nomorPerkara: "A",

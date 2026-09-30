@@ -590,7 +590,7 @@ const SEBAB_TOLAK: Record<string, string> = {
   bulan_nol_harus_lebih_besar:
     "Bulan bernilai nol harus lebih besar daripada bulan bernilai penuh. Kalau tidak, tidak ada rentang untuk nilai di antara keduanya.",
   ambang_perhatian_harus_lebih_kecil:
-    "Ambang perhatian harus lebih kecil daripada ambang baik. Kalau sama atau terbalik, golongan tengahnya tidak akan pernah terpakai - dan tidak ada galat apa pun yang muncul.",
+    "Ambang perhatian harus lebih kecil daripada ambang baik. Kalau sama atau terbalik, golongan tengahnya tidak akan pernah terpakai - dan tidak ada error apa pun yang muncul.",
 };
 
 /**

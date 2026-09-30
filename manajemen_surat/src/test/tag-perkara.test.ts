@@ -146,7 +146,7 @@ describe("butir 7 - katalog tag utuh", () => {
     }
   });
 
-  it("tidak ada galat kueri yang ditelan", () => {
+  it("tidak ada error kueri yang ditelan", () => {
     // Inilah cacat yang membuat chip "Belum ada relaas" menampilkan 10.120 -
     // SELURUH register - alih-alih 5.034, tanpa satu pesan. Untuk tag
     // "ketiadaan" bentuknya paling berbahaya: jumlahnya dihitung sebagai

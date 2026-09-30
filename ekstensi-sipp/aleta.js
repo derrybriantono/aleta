@@ -2557,8 +2557,30 @@ async function t4Tata(panel, kepala, isi, kaki, siapa, pintasan) {
 
   // Data yang dibaca dari portal - tidak ditunggu, supaya panel tidak
   // tertahan oleh bagian yang lambat.
-  for (const muat of Object.values(k.muat)) void muat();
+  //
+  // Perbaikan 30 Sep butir 6/26: penjelasan panjang dilipat di balik ⓘ -
+  // sekarang, dan lagi sesudah tiap bagian yang dimuat dari portal selesai
+  // (keterangannya baru lahir sesudah jawabannya tiba).
+  const lipat = () => t4LipatPenjelasan(isi);
+  lipat();
+  for (const muat of Object.values(k.muat)) void Promise.resolve(muat()).then(lipat, lipat);
   t4PasangPendengarPanel();
+}
+
+/**
+ * Keterangan panjang panel portal di balik ⓘ (alatLipatPenjelasan di
+ * panel-alat.js). Yang dilipat hanya keterangan murni - .aleta-t4-ket, kotak
+ * kosong, dan kabar "belum tersedia"; peringatan (.aleta-portal-awas) dan
+ * kabar hasil tombol tetap terbuka. Tanpa panel-alat.js: tidak berbuat apa pun.
+ */
+function t4LipatPenjelasan(akar) {
+  try {
+    if (typeof alatLipatPenjelasan === "function") {
+      alatLipatPenjelasan(akar, ".aleta-t4-ket, .aleta-kosong-lembut, .aleta-t4-belum");
+    }
+  } catch {
+    /* keterangan tetap terbuka - tidak ada yang hilang */
+  }
 }
 
 /** Sesudah panel masuk ke halaman: letak, pengamat, dan kabar yang tertunda. */

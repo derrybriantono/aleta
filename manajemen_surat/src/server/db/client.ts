@@ -340,6 +340,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_bas_komentar",
   "aleta_templat_hukum",
   "aleta_abt_variabel_wajib",
+  // 30 September 2026 (0054): pemetaan blangko putusan/relaas/PBT dan profil
+  // saklar per peran. Tanpa kunci asing - urutannya bebas.
+  "aleta_pemetaan_blangko",
+  "aleta_profil_saklar",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

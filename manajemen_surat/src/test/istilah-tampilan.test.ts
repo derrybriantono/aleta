@@ -19,7 +19,8 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const REPO = path.resolve(__dirname, "../../..");
-const POLA = /(^|[^A-Za-z0-9\-_/.#$:=@])(peladen|borang)(nya|mu|ku)?(?![A-Za-z0-9_\-/])/i;
+// "galat" -> "error" diminta pengguna 30 Sep 2026 ("ganti tampilan semua kalimat galat dengan error").
+const POLA = /(^|[^A-Za-z0-9\-_/.#$:=@])(peladen|borang|galat)(nya|mu|ku)?(?![A-Za-z0-9_\-/])/i;
 
 function berkasDari(dir: string, hasil: string[] = []): string[] {
   for (const b of readdirSync(dir, { withFileTypes: true })) {
@@ -36,7 +37,7 @@ function berkasDari(dir: string, hasil: string[] = []): string[] {
 
 function temuan(p: string): string[] {
   const teks = readFileSync(p, "utf8");
-  if (!/peladen|borang/i.test(teks)) return [];
+  if (!/peladen|borang|galat/i.test(teks)) return [];
   const jenis = p.endsWith(".tsx") ? ts.ScriptKind.TSX : p.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.JS;
   const sf = ts.createSourceFile(p, teks, ts.ScriptTarget.Latest, true, jenis);
   const hasil: string[] = [];
@@ -77,7 +78,7 @@ function temuan(p: string): string[] {
 }
 
 describe("istilah tampilan: server dan blangko", () => {
-  it("tidak ada tulisan tampilan yang memakai 'peladen' atau 'borang'", () => {
+  it("tidak ada tulisan tampilan yang memakai 'peladen', 'borang', atau 'galat'", () => {
     const akar = [
       path.join(REPO, "ekstensi-sipp"),
       path.join(REPO, "manajemen_surat", "src"),
@@ -100,11 +101,12 @@ describe("istilah tampilan: server dan blangko", () => {
         'const kunci = "peladen";',
         'const kelas = "aleta-borang aktif";',
         'const sql = "SELECT borang, medan FROM t";',
+        'const d = "Terjadi galat saat membaca.";',
         "// komentar peladen tidak dihitung",
       ].join("\n")
     );
     try {
-      expect(temuan(contoh).length).toBe(3);
+      expect(temuan(contoh).length).toBe(4);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

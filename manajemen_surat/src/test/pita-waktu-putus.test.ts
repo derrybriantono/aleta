@@ -587,7 +587,7 @@ describe("durasi yang dikirim bot membawa nilai SK dengan nama ruas yang dibaca 
     }
   });
 
-  it("gagal-tertutup: penciri ghaib yang melempar galat berarti TANPA kelonggaran", async () => {
+  it("gagal-tertutup: penciri ghaib yang melempar error berarti TANPA kelonggaran", async () => {
     // Arahnya disengaja. Gagal ke arah kelonggaran berarti menghijaukan
     // perkara yang sudah lewat lima bulan - kewajiban lapor SEMA hilang
     // justru ketika basis datanya sedang bermasalah.

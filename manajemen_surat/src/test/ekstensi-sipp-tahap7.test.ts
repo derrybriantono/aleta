@@ -43,7 +43,12 @@ const lama = (b: string) =>
     "\n"
   );
 const SUMBER = { alat: baca("panel-alat.js"), konten: baca("konten.js") };
-const SUMBER_LAMA = { alat: lama("panel-alat.js"), konten: lama("konten.js") };
+// Istilah tampilan "galat" -> "error" (permintaan pengguna 30 Sep 2026, berlaku di SEMUA tampilan
+// termasuk Lama) diterapkan juga ke sumber pembanding, supaya "Lama identik" tetap menjaga
+// segala hal lain. Penggantian menyeluruh aman: nama peubah yang ikut berganti berganti
+// serentak di kedua berkas pembanding.
+const tanpaGalat = (s: string) => s.replace(/galat/g, "error").replace(/Galat/g, "Error");
+const SUMBER_LAMA = { alat: tanpaGalat(lama("panel-alat.js")), konten: tanpaGalat(lama("konten.js")) };
 const GAYA = baca("panel.css");
 const POPUP_HTML = baca("popup.html");
 const POPUP_JS = baca("popup.js");
@@ -607,9 +612,28 @@ describe("SYARAT MUTLAK: tampilan Lama identik dengan fd9aad7", () => {
         /(<div class="aleta-bagian" data-kunci="unggahPutusanSipp">[\s\S]*?<div class="aleta-bagian-isi"[^>]*>)[\s\S]*?(<\/div><\/div><div class="aleta-bagian" data-kunci="putusan">)/,
         "$1$2"
       );
+    // Perbedaan DISENGAJA kedua (perbaikan 30 Sep 2026, butir 6/15/26 - berlaku
+    // di Baru DAN UI Baru tanpa saklar, dijaga ekstensi-perbaikan-a.test.ts):
+    // penanda data-t7-a30, tombol ⓘ di depan penjelasan panjang beserta
+    // atribut lipatnya, dan bagian Juru Sita (data-a30-fitur). Ketiganya
+    // DIBUANG di kedua sisi lewat DOM; teks penjelasannya sendiri tetap
+    // dibandingkan, jadi tidak ada isi Lama yang boleh hilang atau berubah.
+    const tanpaA30 = (html: string) => {
+      const d = new JSDOM(`<!doctype html><body>${html}</body>`).window.document;
+      for (const el of Array.from(d.querySelectorAll("[data-a30-info], [data-a30-fitur]"))) el.remove();
+      for (const el of Array.from(d.querySelectorAll("[data-t7-a30], [data-a30-lipat]"))) {
+        el.removeAttribute("data-t7-a30");
+        el.removeAttribute("data-a30-lipat");
+      }
+      return d.body.innerHTML;
+    };
+    const baku = (html: string) => tanpaUnggah(tanpaA30(html));
     expect(hasil.html).toContain('data-kunci="unggahPutusanSipp"');
+    expect(hasil.html).toContain('data-t7-a30="baru"');
     expect(tanpaUnggah(hasil.html)).not.toBe(hasil.html);
-    expect(tanpaUnggah(hasil.html)).toBe(tanpaUnggah(lamaKini.html));
+    expect(baku(hasil.html)).toBe(baku(lamaKini.html));
+    // Pembanding Lama tidak memuat satu pun jejak perbaikan 30 Sep.
+    expect(lamaKini.html).not.toMatch(/data-t7-a30|data-a30-/);
     expect(hasil.jembatan).toEqual(lamaKini.jembatan);
   });
 });
@@ -660,10 +684,14 @@ describe("ide sipp-N hanya bila saklarnya menyala; D1-D15 hanya UI Baru", () => 
     expect(panel.querySelector(".aleta-t7-menu")).not.toBeNull();
     expect(panel.querySelector(".aleta-t7-langkah")).not.toBeNull();
     expect(h.d.documentElement.getAttribute("data-aleta-sipp-labuh")).toBe("kanan");
-    // Tombol kepala yang lama PINDAH ke menu - elemen yang sama, bukan salinan.
+    // Disesuaikan perbaikan 30 Sep 2026 (butir 7, "buat seperti ekstensi
+    // lainnya posisi tombol"): tombol kepala yang lama TETAP di kepala - satu
+    // elemen, tidak disalin - dan menu memuat WAKIL berlabel yang menekan
+    // tombol yang sama (dijaga ekstensi-perbaikan-a.test.ts).
     const menu = panel.querySelector(".aleta-t7-menu");
     for (const k of [".aleta-tema", ".aleta-lipat", ".aleta-penuh", ".aleta-bawaan"]) {
-      expect(menu.querySelector(k), k).not.toBeNull();
+      expect(panel.querySelector(`.aleta-kepala .aleta-alat-kepala ${k}`), k).not.toBeNull();
+      expect(menu.querySelector(`[data-a30-wakil="${k.slice(1)}"]`), k).not.toBeNull();
       expect(panel.querySelectorAll(k).length, k).toBe(1);
     }
     // Ide sipp-N tetap mati dalam UI Baru tanpa saklarnya.
@@ -814,7 +842,12 @@ describe("panel.css: blok Tahap 7 seluruhnya bersyarat", () => {
 
 // ============================================================================
 describe("tidak ada jalur tulis SIPP baru", () => {
-  const blok = SUMBER.konten.slice(SUMBER.konten.indexOf("TAHAP 7 - PANEL SIPP DALAM TAMPILAN BARU"));
+  // Blok Tahap 7 berakhir di pembuka perbaikan 30 Sep 2026 (agen A), yang
+  // punya penjaganya sendiri di ekstensi-perbaikan-a.test.ts: non-GET-nya
+  // hanya K1 konversi-naskah dan anonim ABT, tanpa pesan jembatan sendiri.
+  const awalBlok = SUMBER.konten.indexOf("TAHAP 7 - PANEL SIPP DALAM TAMPILAN BARU");
+  const akhirBlok = SUMBER.konten.indexOf("PERBAIKAN 30 SEPTEMBER 2026 - PANEL SIPP", awalBlok);
+  const blok = SUMBER.konten.slice(awalBlok, akhirBlok > 0 ? akhirBlok : undefined);
 
   it("blok Tahap 7 tidak mengirim satu pun pesan ke jembatan sendiri", () => {
     expect(blok).not.toMatch(/kirimKeJembatan(Langsung)?\(/);

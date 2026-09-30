@@ -16,8 +16,9 @@ import { usulanAgendaBerikut } from "@/components/portal/hasil-sidang";
  *   1. Mesinnya tetap SATU dengan layar Hasil Sidang - alamat dan bentuk
  *      muatan yang sama. Jalan kedua yang disusun sendiri akan menyimpang
  *      diam-diam.
- *   2. Rencananya tetap ditarik lebih dahulu, dan rencana yang sudah BASI
- *      tidak boleh dapat ditulis.
+ *   2. Sejak 30 September 2026 (butir 13) borang di baris antrian menulis
+ *      LANGSUNG dalam satu tekan, lalu memperlihatkan yang tertulis; langkah
+ *      rencana tinggal di layar Hasil Sidang penuh.
  */
 
 const AKAR = process.cwd();
@@ -100,73 +101,52 @@ describe("CatatHasilRingkas memakai mesin yang sama dengan Hasil Sidang", () => 
   });
 });
 
-describe("rencana dahulu, dan rencana basi tidak dapat ditulis", () => {
+describe("langsung dieksekusi, ringkasannya sesudah menulis (butir 13, 30 Sep 2026)", () => {
+  /**
+   * Sampai 2.40.1 penjaga di sini menuntut "rencana dahulu, baru tulis".
+   * Butir 13 perbaikan 30 September 2026 membaliknya DENGAN SENGAJA: pengguna
+   * meminta tombol tunda dan putus di Jadwal Sidang langsung dieksekusi tanpa
+   * "Lihat rencana". Yang dijaga sekarang: satu tekan = satu kiriman bertanda
+   * kering:false, tidak ada tekan kedua, dan yang tertulis diperlihatkan dari
+   * jawaban server (selesai), bukan dari rencana.
+   */
   const ringkas = badan(HASIL, "export function CatatHasilRingkas(");
 
-  it("tombol tulis hanya ada sesudah rencananya di layar", () => {
-    // Bukan tombol yang dinonaktifkan - ia belum ada. Tombol tulis yang
-    // kelihatan sejak awal mengundang orang mencari cara melewati rencananya.
-    //
-    // Yang dicari panggilan kirim(false) - satu-satunya yang sungguh menulis -
-    // bukan tulisan "Tulis ke SIPP", yang juga muncul di dalam catatan
-    // penjelasnya. Penjaga yang menunjuk kalimat catatan akan tetap hijau
-    // walau tombolnya dipindahkan ke luar syaratnya.
-    // Syarat rencanaKering muncul DUA kali - sekali membungkus panel
-    // rencananya, sekali membungkus tombol tulisnya - jadi yang dicari yang
-    // TERDEKAT sebelum panggilan tulisnya, bukan yang pertama di berkas.
-    const iTulis = ringkas.indexOf("kirim(false)");
-    expect(iTulis, "panggilan kirim(false) tidak ketemu").toBeGreaterThan(-1);
-    const iSyarat = ringkas.lastIndexOf("{rencanaKering ? (", iTulis);
-    expect(iSyarat, "tombol tulis tidak berada di dalam syarat rencanaKering").toBeGreaterThan(-1);
-    // Syaratnya belum ditutup di antara keduanya - berarti tombolnya sungguh
-    // berada DI DALAM syarat itu, bukan sesudahnya.
-    expect(ringkas.slice(iSyarat, iTulis)).not.toContain(") : null}");
+  it("tidak ada lagi langkah Lihat rencana maupun kiriman kering di borang ringkas", () => {
+    expect(ringkas).not.toContain("Lihat rencana");
+    expect(ringkas).not.toContain("kirim(true)");
+    expect(ringkas).not.toContain("kering: true");
+    expect(ringkas).not.toContain("rencanaKering");
   });
 
-  it("rencana basi dikenali dari SIDIK isiannya, bukan dibersihkan belakangan", () => {
-    // Membersihkannya lewat useEffect terlambat satu gambar: di antara isian
-    // berubah dan efeknya berjalan, tombol "Tulis ke SIPP" masih terpasang
-    // memegang rencana yang sudah tidak menggambarkan isiannya - dan tekanan
-    // pada saat itu menuliskan sesuatu yang berbeda dari yang diperlihatkan.
-    expect(ringkas).toContain("const sidikIsian = JSON.stringify([");
-    expect(ringkas).toContain("sidikRencana === sidikIsian");
-    // Sidiknya disimpan hanya pada jalan kering - yaitu saat rencananya lahir.
-    expect(ringkas).toContain("if (kering) setSidikRencana(sidikIsian);");
-  });
-
-  it("SELURUH isian ikut ke dalam sidiknya", () => {
-    // Satu isian yang tertinggal dari sidik berarti mengubahnya TIDAK
-    // membasikan rencana - dan justru isian itulah yang kemudian tertulis
-    // berbeda dari yang diperlihatkan.
-    const i = ringkas.indexOf("const sidikIsian = JSON.stringify([");
-    const sidik = ringkas.slice(i, ringkas.indexOf("]);", i));
-    for (const isian of [
-      "jalan",
-      "alasanTunda",
-      "tanggalBerikut",
-      "jamBerikut",
-      "agendaBerikut",
-      "dihadiri",
-      "statusId",
-      "tanggalPutus",
-      "verstek",
-    ]) {
-      expect(sidik, `isian ${isian} tidak ikut ke dalam sidik`).toContain(isian);
-    }
-  });
-
-  it("tidak ada lagi efek yang membersihkan rencana belakangan", () => {
-    expect(ringkas).not.toContain("setHasil(null);");
-  });
-
-  it("jalan kering dan jalan tulis memakai satu fungsi kirim", () => {
-    expect(ringkas).toContain("kirim(true)");
-    expect(ringkas).toContain("kirim(false)");
+  it("satu tombol menulis langsung - kedua muatan (tunda & putus) bertanda kering:false", () => {
     expect(ringkas.match(/const kirim = useCallback\(/g)?.length).toBe(1);
+    expect(ringkas).toContain("onClick={() => void kirim()}");
+    expect(ringkas.match(/kering: false,/g)?.length).toBe(2);
+    expect(ringkas).toContain('{sibuk ? "Menulis…" : jalan === "tunda" ? "Tunda sekarang" : "Catat putus"}');
   });
 
-  it("hanya jalan tulis yang menyatakan sudah tertulis", () => {
-    expect(ringkas).toContain("if (isi.ok && kering === false) {");
+  it("tombolnya mati selama isian belum lengkap atau sedang menulis, dan tekan kedua ditolak", () => {
+    expect(ringkas).toContain("disabled={!lengkap || sibuk}");
+    expect(ringkas).toContain("if (!keadaan || sibuk || sudahTertulis) return;");
+  });
+
+  it("sesudah tertulis borangnya berganti ringkasan dari jawaban server", () => {
+    expect(ringkas).toContain("if (isi.ok && isi.kering !== true) {");
+    expect(ringkas).toContain("(hasil?.selesai ?? []).map(");
+    expect(ringkas).toContain('aria-label="Yang ditulis ke SIPP"');
+    // Ringkasan itu cabang TERSENDIRI - tidak ada tombol tulis di dalamnya.
+    const i = ringkas.indexOf("if (sudahTertulis) {");
+    const j = ringkas.indexOf("return (", ringkas.indexOf("return (", i) + 1);
+    expect(i).toBeGreaterThan(-1);
+    expect(ringkas.slice(i, j)).not.toContain("kirim(");
+  });
+
+  it("layar Hasil Sidang penuh tetap memiliki langkah rencananya", () => {
+    // Fitur lama tidak dihapus - hanya tidak dipakai tombol di baris antrian.
+    const penuh = HASIL.slice(0, HASIL.indexOf("export function CatatHasilRingkas("));
+    expect(penuh).toContain("Lihat rencananya");
+    expect(penuh).toContain("void kirim(true)");
   });
 });
 

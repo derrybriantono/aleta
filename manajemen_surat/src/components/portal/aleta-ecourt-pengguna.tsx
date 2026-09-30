@@ -827,7 +827,7 @@ export function AletaEcourtPengguna() {
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               <li>
                 <strong className="text-foreground">Penjaga CETAK</strong> — memeriksa baris
-                variabel sebelum dicetak, dan menahan yang isinya ternyata bunyi galat mesin.
+                variabel sebelum dicetak, dan menahan yang isinya ternyata bunyi error mesin.
                 Kalimat semacam itu tampak seperti keterangan dan tercetak sebagai pertimbangan
                 hukum.
               </li>
@@ -899,7 +899,7 @@ export function AletaEcourtPengguna() {
                 <li>Data Umum</li>
               </ul>
               <p className="mt-2 text-xs text-amber-900/70 dark:text-amber-200/70">
-                Keenam inilah yang memang lewat portal, dan tidak ada jalan lain. Pesan galat
+                Keenam inilah yang memang lewat portal, dan tidak ada jalan lain. Pesan error
                 ekstensi menyebutkan daftar yang sama.
               </p>
             </div>

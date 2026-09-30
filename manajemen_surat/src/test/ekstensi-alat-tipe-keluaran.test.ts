@@ -363,7 +363,7 @@ describe("3. entri rusak dibuang di klien - 0 yang sampai ke pemakai", () => {
     expect(JSON.stringify(hasil.padanan)).not.toContain("${");
   });
 
-  it("daftar tanpa tertanam dan daftar asing ditolak dengan galat, bukan dijawab kosong", async () => {
+  it("daftar tanpa tertanam dan daftar asing ditolak dengan error, bukan dijawab kosong", async () => {
     const p = peramban(portalMati);
     await expect(p.jalan('alatTipeKeluaran("putusan.medan-borang")')).rejects.toThrow(/tertanam/);
     await expect(p.jalan('alatTipeKeluaran("bas.saksi.bentuk")')).rejects.toThrow(/tidak dibaca ekstensi/);

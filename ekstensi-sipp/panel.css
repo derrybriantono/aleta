@@ -7741,6 +7741,152 @@ html[data-aleta-kulit="modern"] .aleta-t6-dialog,
 html[data-aleta-kulit="modern"] .aleta-t6-sidang {
   font-family: "Plus Jakarta Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
 }
+/* ==========================================================================
+   PERBAIKAN 30 SEPTEMBER 2026 - PANEL ABT (agen B), Baru dan UI Baru
+   Syaratnya sama dengan seluruh blok ini: unsur/atribut Tahap 6 saja.
+   ========================================================================== */
+
+/* Butir 3: yang tampak hanya langkah yang sedang dikerjakan; yang selesai
+   dan yang berikutnya terbuka lewat "lihat semua langkah". */
+#aleta-panel-abt[data-t6-langkah]:not([data-t6-langkah-semua]) .aleta-t6-langkah .aleta-t6-langkah-tombol:not(.aleta-t6-sekarang) { display: none; }
+#aleta-panel-abt .aleta-t6-langkah { align-items: center; }
+#aleta-panel-abt .aleta-t6-langkah .aleta-t6-langkah-semua,
+#aleta-panel-abt .aleta-t6-langkah .aleta-t6-langkah-lama { flex: none; }
+#aleta-panel-abt .aleta-t6-langkah .aleta-t6-langkah-lama { padding: 0 8px; }
+#aleta-panel-abt .aleta-t6-langkah-habis { color: var(--aleta-aman); font-weight: 600; }
+/* Butir 4: tombol satu per satu (Isi blangko dari SIPP, Input ke ABT,
+   Rapikan, Susun keterangan saksi) tetap terjangkau lewat ⋯. Yang hidden
+   (blangko atau peran lain) tetap tersembunyi. */
+#aleta-panel-abt[data-t6-langkah][data-t6-tombol-lama] .aleta-abt-aksi .aleta-t6-diwakili:not([hidden]) { display: inline-block !important; }
+
+/* Butir 2: penyusun keterangan saksi hanya untuk panitera sidang/PP. */
+#aleta-panel-abt[data-t6-sdg="tidak"] .aleta-sdg-form,
+#aleta-panel-abt[data-t6-sdg="tidak"] .aleta-sdg-hasil,
+#aleta-panel-abt[data-t6-sdg="tidak"] .aleta-t6-tanya-saksi { display: none !important; }
+
+/* Butir 5: variabel yang menunggu 8503 - disebut sekali, bukan sebagai error. */
+.aleta-t6-pita-tunggu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-left: 3px solid var(--aleta-garis-kuat, var(--aleta-garis));
+  border-radius: 4px;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+
+/* Butir 4: usulan "Dari SIPP" berdiri di atas usulan dari keterangan saksi. */
+.aleta-t6-usulan-judul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
+  font-weight: 700;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+}
+.aleta-t6-usulan-judul .aleta-t6-tutup { margin-left: auto; }
+.aleta-t6-usulan-sipp { margin-bottom: 8px; }
+
+/* Butir 6: penjelasan panjang dilipat di balik ⓘ. */
+#aleta-panel-abt [data-t6-info="tutup"] { display: none !important; }
+.aleta-t6-info-pita {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+.aleta-t6-info-ringkas { min-width: 0; }
+.aleta-panel .aleta-t6-info-tombol {
+  flex: none;
+  padding: 0 5px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--aleta-merek);
+  font-weight: 700;
+}
+.aleta-panel .aleta-t6-info-tombol[aria-expanded="true"] { border-color: var(--aleta-merek-garis, var(--aleta-garis)); }
+
+/* Butir 20: penyunting saksi tidak ramai - ikon baris (↑ ↓ ⇄ ⧉ ✕ ✎) muncul
+   pada baris yang disorot atau difokus; tetap ada di tempatnya. */
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-baris .aleta-sdg-tombol,
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-alat .aleta-t6-varian > .aleta-t6-tombol { opacity: 0; transition: opacity 0.15s; }
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-baris:hover .aleta-sdg-tombol,
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-baris:focus-within .aleta-sdg-tombol,
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-baris:hover .aleta-t6-varian > .aleta-t6-tombol,
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-baris:focus-within .aleta-t6-varian > .aleta-t6-tombol { opacity: 1; }
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-alat > .aleta-t6-varian { display: contents; }
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-alat .aleta-t6-varian-pilihan { flex-basis: 100%; }
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-alat .aleta-t6-varian-pilihan:empty { display: none; }
+.aleta-t6-sdg-lainnya > summary {
+  cursor: pointer;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+}
+.aleta-t6-sdg-lainnya-isi { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+
+/* Butir 21 dan 22: keterangan saksi berhuruf 15px (ikut pengali skala), dan
+   kotaknya setinggi isinya - tanpa gulir di dalamnya, tetap dapat disunting.
+   field-sizing menumbuhkannya di Chrome 123+; peramban yang lebih tua
+   diukur t6TumbuhkanKotak. */
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-jawab {
+  font-size: calc(15px * var(--aleta-skala-huruf, 1));
+  line-height: 1.5;
+  min-height: 2.6em;
+  overflow-y: hidden;
+  resize: none;
+  field-sizing: content;
+}
+#aleta-panel-abt .aleta-sdg-hasil[data-t6-hias] .aleta-sdg-tanya { font-size: calc(14px * var(--aleta-skala-huruf, 1)); }
+
+/* Butir 23: berdampingan = kisi baris-per-pertanyaan. Tiap kolom saksi
+   merentang --t6-baris baris kisi induknya (subgrid), sehingga pertanyaan
+   bernomor sama pada saksi 1 dan saksi 2 berdiri pada baris yang sama
+   setinggi yang tertinggi. Atas-bawah tidak disentuh. */
+#aleta-panel-abt .aleta-sdg-dua[data-t6-sejajar]:not(.aleta-sdg-tumpuk) { row-gap: 8px; }
+#aleta-panel-abt .aleta-sdg-dua[data-t6-sejajar]:not(.aleta-sdg-tumpuk) > .aleta-sdg-kolom {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span var(--t6-baris, 1);
+  align-content: start;
+}
+
+/* Butir 28 bagian B: jawaban yang belum terisi, dan hitungan yang siap. */
+#aleta-panel-abt .aleta-sdg-baris[data-t6-belum] .aleta-sdg-jawab {
+  border-color: var(--aleta-mendesak);
+  box-shadow: inset 3px 0 0 var(--aleta-mendesak);
+}
+.aleta-t6-belum {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+}
+.aleta-t6-lencana-belum { margin-left: 0; border-color: var(--aleta-mendesak); color: var(--aleta-mendesak); }
+.aleta-t6-sdg-siap {
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+  color: var(--aleta-aman);
+}
+.aleta-t6-sdg-siap.aleta-t6-sdg-siap-kurang { color: var(--aleta-mendesak); }
+
+/* Bagian Juru Sita (isinya dari jurusita.js). */
+.aleta-t6-jurusita {
+  margin: 6px 0;
+  padding: 4px 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+}
+.aleta-t6-jurusita-judul { cursor: pointer; font-weight: 700; font-size: calc(13px * var(--aleta-skala-huruf, 1)); }
+.aleta-t6-jurusita-isi { margin-top: 6px; }
 /* PANEL ABT - TAHAP 6 (AKHIR) */
 
 /* ==========================================================================
@@ -8444,6 +8590,87 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-tetap-sebab { color: va
   html[data-aleta-sipp-labuh="kanan"] #aleta-panel-sipp .aleta-t7-tuas:hover { background: var(--aleta-merek-garis); }
 }
 
+/* ── Perbaikan 30 Sep 2026 (agen A) - Baru & UI Baru ────────────────────────
+   #aleta-panel-sipp[data-t7-a30] hanya dipasang a30Tata di luar tampilan Lama.
+   Butir 6/26: penjelasan panjang dilipat di balik ⓘ. Butir 7: wakil tombol
+   kepala di menu ⋯. Butir 11/19: baris pilihan dan kartu konfirmasi anonim.
+   Butir 15: tab Juru Sita. */
+#aleta-panel-sipp[data-t7-a30] [data-a30-lipat="tutup"] { display: none !important; }
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-info {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  margin: 3px 0;
+  padding: 1px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+  font: inherit;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-info:hover { background: var(--aleta-latar-naik); color: var(--aleta-tulisan); }
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-info-ikon {
+  flex: none;
+  color: var(--aleta-merek);
+  font-weight: 700;
+}
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-info-ringkas {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-info[aria-expanded="true"] .aleta-a30-info-ringkas { display: none; }
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-info[aria-expanded="true"]::after {
+  content: "tutup penjelasan";
+  color: var(--aleta-tulisan-lembut);
+}
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-pilihan {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 6px 0;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+  cursor: pointer;
+}
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-pilihan input { flex: none; margin-top: 3px; }
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-tanya {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--aleta-mendesak);
+  border-radius: 8px;
+  background: var(--aleta-latar-naik);
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-tanya-judul { margin-bottom: 4px; font-weight: 700; color: var(--aleta-tulisan); }
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-tanya-baris { margin: 2px 0; }
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-tanya-daftar {
+  max-height: 180px;
+  overflow: auto;
+  margin: 4px 0;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-tanya-centang { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+#aleta-panel-sipp[data-t7-a30] .aleta-a30-tanya-aksi { display: flex; flex-wrap: wrap; gap: 6px; }
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-t7-menu-wakil { align-items: center; gap: 8px; }
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-t7-menu-ikon {
+  flex: none;
+  min-width: 18px;
+  color: var(--aleta-tulisan-lembut);
+  text-align: center;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="juruSitaKel"] .aleta-isi > .aleta-kelompok:not([data-kunci="juruSitaKel"]) {
+  display: none;
+}
+
 /* PANEL SIPP - TAHAP 7 (AKHIR) */
 
 /* ==========================================================================
@@ -8488,3 +8715,425 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-tetap-sebab { color: va
   color: var(--aleta-merek);
 }
 
+
+/* ==========================================================================
+   BERSAMA - PERBAIKAN 30 SEP (MULAI) - milik agen D (tema gelap SIPP, klik 2x kepala,
+   pita pembaruan, profil peran). Aturan tema gelap SIPP (butir 9) boleh global di bawah
+   html[data-aleta-tema-sipp="gelap"]; selebihnya bersyarat Baru/UI Baru.
+   ========================================================================== */
+
+/* --- Butir 9: kotak pesan dan dialog SIPP ikut lapisan gelap ---------------
+   Tangkapan pengguna 100: "Pesan ... tutup" lahir PUTIH dengan tulisan
+   nyaris tak terbaca. Kotaknya dibuat jquery-sipp.js langsung di <body>:
+
+     .popup > .centering > table.pesan
+       tr[style="background-color: #5FB85C"]  (kepala "Pesan" + "tutup")
+       tr > td > #popup-container / #pesan-container  (isi pesan)
+       td[style="...background-color:yellow"]         (pesan error)
+
+   .pesan{background-color:white} milik style.css SIPP tidak pernah ditimpa
+   peta gelap, sedangkan .centering di sekelilingnya sudah bertulisan terang -
+   jadilah tulisan terang di atas putih. Isinya kini di atas permukaan gelap,
+   kepalanya di atas hijau tua palet, dan pesan error di atas kuning tua.
+   Hanya di SIPP: ABT punya petanya sendiri. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] table.pesan {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border: 1px solid var(--s-garis) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] table.pesan td {
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] table.pesan tr[style*="background-color"] {
+  background-color: var(--s-hijau-tua) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] table.pesan tr[style*="background-color"] td {
+  color: var(--s-tulisan-atas) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] table.pesan td.tutup_windows {
+  background-color: var(--s-hijau) !important;
+  color: var(--s-tulisan-atas) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] table.pesan td.tutup_windows:hover {
+  background-color: var(--s-sorot-kuat) !important;
+}
+
+/* Pesan error: kuning terang SIPP menjadi kuning tua dengan tulisan kuning
+   gading - artinya (peringatan) tetap, silaunya hilang. Warna berarti, bukan
+   selera: tidak ikut palet (sama dengan .aleta-tanda-kuning gelap). */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] table.pesan td[style*="background-color:yellow"] {
+  background-color: #3a2a0b !important;
+  color: #f0cb78 !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] table.pesan :is(font[color="red"], font[color="#ff0000"]) {
+  color: #ffa79c !important;
+}
+
+/* SweetAlert2 (header.php SIPP memuatnya) - konfirmasi dan pemberitahuan
+   bergaya kartu putih. Konfirmasi confirm() bawaan peramban ("Apakah Anda
+   Yakin Akan Menyimpan Data") digambar Chrome sendiri dan tidak dapat diberi
+   gaya oleh halaman mana pun. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .swal2-popup {
+  background: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border: 1px solid var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.swal2-title, .swal2-html-container, .swal2-content, .swal2-footer) {
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.swal2-input, .swal2-textarea, .swal2-select, .swal2-file) {
+  background: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .swal2-validation-message {
+  background: var(--s-permukaan-3) !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* jQuery UI 1.8 (kalender tanggal, tingkap) dan pelengkap otomatis - latar
+   putihnya ditulis sebagai background berikut gambar, jadi yang ditimpa
+   bentuk ringkasnya, bukan background-color saja. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.ui-dialog, .ui-datepicker, .ui-widget-content, .ac_results) {
+  background: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .ui-widget-header {
+  background: var(--s-hijau-tua) !important;
+  color: var(--s-tulisan-atas) !important;
+  border-color: var(--s-garis-hijau) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.ui-state-default, .ui-widget-content .ui-state-default, .ac_results li) {
+  background: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.ui-state-hover, .ui-state-active, .ui-state-highlight, .ac_results li.ac_over) {
+  background: var(--s-sorot) !important;
+  color: var(--s-tulisan-atas) !important;
+  border-color: var(--s-garis-hijau) !important;
+}
+
+/* --- Butir 9: tulisan status dokumen di Jadwal Sidang ----------------------
+   Tangkapan pengguna 101. SIPP menulis (jadwal_sidang_v.php):
+
+     belum ada  <span style='color:red;font-weight:bold'>Dokumen Belum Ada</span>
+     sudah ada  <a target='_new' href=...><b>Unduh Dokumen BAS</b></a>
+
+   Aturan "warna sebaris diwariskan" di atas meratakan merahnya menjadi warna
+   tulisan biasa, dan tautannya ikut hijau seperti tautan lain - status
+   dokumen tidak lagi terbaca sekilas. Kini: belum ada = merah muda, sudah ada
+   = biru muda, keduanya padanan terang dari warna SIPP sendiri. Terukur pada
+   ketujuh palet (ekstensi-perbaikan-d.test.ts): >= 7,09:1 di atas tabel dan
+   >= 5,56:1 di baris yang disorot; palet pastel yang paling ketat - merah
+   #ffa79c milik peta ABT hanya 6,10:1 di sana. Pemilihnya lebih spesifik daripada aturan
+   pewarisan (satu id + tiga atribut), jadi tidak bergantung urutan berkas.
+   E-Doc lain di SIPP memakai bentuk yang sama ("E-Doc ... Belum Ada",
+   color:#DE3163 di tab banding) - ikut sekalian. */
+html[data-aleta-tema-sipp="gelap"] {
+  --s-dok-belum: #ffbcb3;
+  --s-dok-ada: #a4d3f6;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(#konten, .cssTable, .detil, #detil_page, #infoPerkara, .usual, .box, .panel, .modal-content) :is(
+  [style^="color:red"],
+  [style^="color: red"],
+  [style*=";color:red"],
+  [style*="; color:red"],
+  [style^="color:#DE3163"],
+  [style^="color:#de3163"]
+) {
+  color: var(--s-dok-belum) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(#konten, .cssTable, .detil, #detil_page, #infoPerkara, .usual, .box, .panel, .modal-content) a[target="_new"][href] {
+  color: var(--s-dok-ada) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(#konten, .cssTable, .detil, #detil_page, #infoPerkara, .usual, .box, .panel, .modal-content) a[target="_new"][href]:hover {
+  color: var(--s-tulisan) !important;
+  text-decoration: underline;
+}
+
+/* Tombol PDF/Word kotak e-Court ALETA di baris Jadwal Sidang (tangkapan 101):
+   di lapisan gelap tokennya tidak ada (bukan di dalam panel), jadi tampil
+   sebagai tulisan tebal polos. Kini berkas yang ADA bertulisan biru seperti
+   tautan dokumen SIPP di sebelahnya, dengan garis yang menandainya tombol.
+   Mode terang tidak disentuh (tombol hijau pekat, 6,16:1). */
+html[data-aleta-tema-sipp="gelap"] .aleta-sisip .aleta-unduh {
+  background: var(--s-permukaan-3);
+  color: var(--s-dok-ada);
+  border: 1px solid var(--s-garis);
+}
+
+html[data-aleta-tema-sipp="gelap"] .aleta-sisip .aleta-unduh:hover:not(:disabled) {
+  background: var(--s-sorot);
+  color: var(--s-tulisan-atas);
+}
+
+html[data-aleta-tema-sipp="gelap"] .aleta-sisip .aleta-unduh:focus-visible {
+  outline: 2px solid var(--s-dok-ada);
+  outline-offset: 2px;
+}
+
+/* --- Butir 24: pita "Pembaruan tersedia" (Baru & UI Baru) ------------------
+   Hanya lahir dalam tampilan Baru dan UI Baru (alatPasangPitaPembaruan di
+   panel-alat.js). Di atas kepala panel, selebar panel. */
+.aleta-pita-pembaruan {
+  /* Panel adalah kolom flex berisi yang bergulir; pita tidak boleh ikut
+     dipipihkan. */
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 6px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--aleta-merek-garis, #2c5a43);
+  background: var(--aleta-merek-latar, #1d3a2c);
+  color: var(--aleta-tulisan, #e6ede8);
+  font: inherit;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  text-align: left;
+  cursor: pointer;
+}
+
+.aleta-pita-pembaruan b {
+  color: var(--aleta-merek, #7fd0a6);
+}
+
+.aleta-pita-pembaruan-ket {
+  color: var(--aleta-tulisan-lembut, #a3b4ab);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-pita-pembaruan:hover:not(:disabled),
+.aleta-pita-pembaruan:focus-visible {
+  background: var(--aleta-latar-naik, #1d2925);
+  outline: none;
+}
+
+.aleta-pita-pembaruan:disabled {
+  cursor: progress;
+}
+
+.aleta-pita-pembaruan-buruk .aleta-pita-pembaruan-ket {
+  color: var(--aleta-lewat, #eb968c);
+}
+
+/* Pemberitahuan versi lama panel SIPP (periksaVersiEkstensi, konten.js)
+   berisi kabar yang sama. Selagi pita hidup, pitalah tempatnya - ia sekaligus
+   tombolnya. Dipindah, bukan dibuang: tanpa pita (Lama) kotaknya tetap. */
+.aleta-panel:has(> .aleta-pita-pembaruan) .aleta-versi-baru {
+  display: none;
+}
+
+/* --- Butir 6: penjelasan panjang di balik ⓘ (Baru & UI Baru) --------------- */
+[data-aleta-dilipat="ya"][hidden] {
+  display: none !important;
+}
+
+.aleta-info-lipat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  margin: 2px 0;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--aleta-tulisan-lembut, #a3b4ab);
+  font: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  text-align: left;
+  cursor: pointer;
+}
+
+.aleta-info-lipat-ikon {
+  flex: none;
+  color: var(--aleta-merek, #7fd0a6);
+  font-weight: 700;
+}
+
+.aleta-info-lipat-ringkas {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aleta-info-lipat:hover .aleta-info-lipat-ringkas,
+.aleta-info-lipat:focus-visible .aleta-info-lipat-ringkas {
+  color: var(--aleta-tulisan, #e6ede8);
+  text-decoration: underline;
+}
+
+.aleta-info-lipat[aria-expanded="true"] .aleta-info-lipat-ikon::after {
+  content: " tutup";
+  font-weight: 400;
+  color: var(--aleta-tulisan-lembut, #a3b4ab);
+}
+
+/* BERSAMA - PERBAIKAN 30 SEP (AKHIR) */
+
+/* ==========================================================================
+   JURU SITA - PERBAIKAN 30 SEP (MULAI) - milik agen E (tab Juru Sita). Kelasnya hanya
+   lahir di tampilan Baru/UI Baru.
+   ========================================================================== */
+.aleta-jurusita {
+  display: grid;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-tulisan);
+}
+.aleta-jurusita-bagian {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-jurusita-isi { display: grid; gap: 6px; }
+.aleta-jurusita-judul {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.aleta-jurusita-judul-teks {
+  font-weight: 600;
+  color: var(--aleta-merek-tulisan, var(--aleta-merek));
+  cursor: default;
+}
+.aleta-jurusita-massal > summary.aleta-jurusita-judul-teks { cursor: pointer; }
+.aleta-jurusita-uraian {
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+  color: var(--aleta-tulisan-lembut);
+}
+.aleta-jurusita-baris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.aleta-jurusita-pilih {
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 4px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+.aleta-jurusita-centang-kotak {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 10px;
+}
+.aleta-jurusita-centang {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.aleta-jurusita-centang:has(input:disabled) {
+  color: var(--aleta-tulisan-lembut);
+  cursor: not-allowed;
+}
+.aleta-jurusita-aksi { display: flex; gap: 6px; }
+.aleta-jurusita-tombol {
+  padding: 4px 10px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 4px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+}
+.aleta-jurusita-tombol:hover:not(:disabled) { background: var(--aleta-merek-latar, var(--aleta-latar-naik)); }
+.aleta-jurusita-tombol:disabled { opacity: 0.55; cursor: default; }
+.aleta-jurusita-tombol-utama {
+  background: var(--aleta-merek);
+  border-color: var(--aleta-merek);
+  color: #16211c;
+  font-weight: 600;
+}
+.aleta-jurusita-tombol-utama:hover:not(:disabled) { background: var(--aleta-merek); filter: brightness(1.06); }
+.aleta-jurusita-tombol-kecil { padding: 2px 8px; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-jurusita-info {
+  padding: 0 5px;
+  border: none;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+  line-height: 1;
+}
+.aleta-jurusita-info[aria-expanded="true"] { color: var(--aleta-merek); }
+.aleta-jurusita-rinci > summary {
+  cursor: pointer;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+.aleta-jurusita-daftar {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.aleta-jurusita-lembut { color: var(--aleta-tulisan-lembut); font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-jurusita-salah { color: var(--aleta-lewat); }
+.aleta-jurusita-ringkas { font-weight: 600; }
+.aleta-jurusita-tautan {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--aleta-merek);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  text-decoration: underline;
+}
+.aleta-jurusita-kabar {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.aleta-jurusita-kabar-baik { color: var(--aleta-aman); background: color-mix(in srgb, var(--aleta-aman) 12%, transparent); }
+.aleta-jurusita-kabar-peringatan { color: var(--aleta-mendesak); background: color-mix(in srgb, var(--aleta-mendesak) 12%, transparent); }
+.aleta-jurusita-kabar-salah { color: var(--aleta-lewat); background: color-mix(in srgb, var(--aleta-lewat) 12%, transparent); }
+.aleta-jurusita-putaran {
+  display: grid;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px dashed var(--aleta-merek-garis, var(--aleta-garis-kuat));
+  border-radius: 6px;
+}
+.aleta-jurusita-putaran-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.aleta-jurusita-putaran-teks { flex: 1 1 auto; font-size: calc(12.5px * var(--aleta-skala-huruf, 1)); }
+.aleta-jurusita [hidden] { display: none !important; }
+/* JURU SITA - PERBAIKAN 30 SEP (AKHIR) */

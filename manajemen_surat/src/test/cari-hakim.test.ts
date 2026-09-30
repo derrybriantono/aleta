@@ -124,7 +124,7 @@ describe("hakimPersis", () => {
     expect(hakimPersis(HAKIM, "Sudarmin H.I.M. Tang, S.H.I., M.H.")?.id).toBe(2);
   });
 
-  it("nama di luar daftar BUKAN galat - ia sah", () => {
+  it("nama di luar daftar BUKAN error - ia sah", () => {
     // Konseptor tidak selalu hakim: panitera pengganti pun menyusun naskah.
     expect(hakimPersis(HAKIM, "Munifah, S.H.")).toBeNull();
   });
@@ -184,7 +184,7 @@ describe("blangkonya sungguh memakai keduanya", () => {
 describe("rutenya tidak menjatuhkan layar ketika bot mati", () => {
   const rute = baca("manajemen_surat/src/app/api/aleta-ecourt/hakim/route.ts");
 
-  it("gagalnya bot dijawab daftar kosong, bukan galat", () => {
+  it("gagalnya bot dijawab daftar kosong, bukan error", () => {
     // Kotak isiannya harus tetap dapat dipakai ketika SIPP sedang tidak
     // terbaca - ia hanya MENOLONG mengetik.
     expect(rute).toContain("hakim: [],");

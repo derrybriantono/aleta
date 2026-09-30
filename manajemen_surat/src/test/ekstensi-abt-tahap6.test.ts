@@ -735,25 +735,33 @@ describe("ide abt-N hanya tampil bila saklarnya menyala (Baru)", () => {
     expect(q(h, ".aleta-t6-segmen-catatan").textContent).toContain("2 usulan tercentang sedang tersembunyi saringan");
   });
 
-  it("abt-10: langkah mewakili tombol lama - menekan langkah 1 menjalankan 'Isi blangko dari SIPP' dan diberi tanda selesai", async () => {
+  // Disesuaikan 30 September 2026 (perbaikan butir 2-4): lima langkah menjadi
+  // tiga - "Isi dari SIPP" dan "Input ke ABT" satu langkah dengan Rapikan di
+  // dalamnya. Penjaganya tetap sama kuat: langkah mewakili tombol lama yang
+  // tetap ada di DOM, langkah ber-aleta-permintaan-tombol duduk paling awal
+  // (Alt+P = isi dari SIPP), dan menekannya sungguh menjalankan tombol lama
+  // (permintaan "sipp" DAN "saksi") lalu bertanda selesai. Perilaku baru
+  // lainnya dijaga ekstensi-perbaikan-b.test.ts.
+  it("abt-10: langkah mewakili tombol lama - menekan langkah 'Isi dari SIPP & input ke ABT' menjalankan tombol lamanya dan diberi tanda selesai", async () => {
     const h = buka({ simpanan: baru(["abt-10"]) });
     const langkah = await sampai(() => q(h, ".aleta-t6-langkah"), "langkah");
     expect(Array.from(langkah.querySelectorAll(".aleta-t6-langkah-nama")).map((x: any) => x.textContent)).toEqual([
-      "Isi dari SIPP",
+      "Isi dari SIPP & input ke ABT",
       "Susun saksi",
-      "Rapikan",
-      "Input ke ABT",
       "Kerjakan",
     ]);
-    // Tombol lama tetap ada di DOM (disembunyikan CSS), dan langkah 1 duduk
-    // paling awal di baris tindakan - Alt+P tetap berarti "isi dari SIPP".
-    expect(tombol(h, "Isi blangko dari SIPP").classList.contains("aleta-t6-diwakili")).toBe(true);
+    // Tombol lama tetap ada di DOM (disembunyikan CSS), dan langkah gabung
+    // duduk paling awal di baris tindakan - Alt+P tetap berarti "isi dari SIPP".
+    for (const nama of ["Isi blangko dari SIPP", "Input ke ABT", "Rapikan posita & keterangan saksi", "Susun keterangan saksi 1 & 2"]) {
+      expect(tombol(h, nama).classList.contains("aleta-t6-diwakili"), nama).toBe(true);
+    }
     const pertama = q(h, ".aleta-abt-aksi .aleta-permintaan-tombol");
-    expect(pertama.getAttribute("data-t6-langkah")).toBe("1");
+    expect(pertama.getAttribute("data-t6-langkah")).toBe("gabung");
     pertama.click();
-    await sampai(() => qs(h, ".aleta-abt-kartu").length >= 5, "usulan SIPP");
-    await sampai(() => pertama.classList.contains("aleta-t6-selesai"), "langkah 1 selesai");
+    await sampai(() => pertama.classList.contains("aleta-t6-selesai"), "langkah gabung selesai", 8000);
     expect(h.minta.some((m) => m.url.includes("/abt/usulan") && m.badan.includes('"sipp"'))).toBe(true);
+    expect(h.minta.some((m) => m.url.includes("/abt/usulan") && m.badan.includes('"saksi"'))).toBe(true);
+    expect(qs(h, ".aleta-abt-kartu").length).toBeGreaterThanOrEqual(5 + 3);
   });
 
   it("abt-1: kalimat teknis menjadi satu kalimat ramah; teks aslinya tetap utuh di Rincian", async () => {
@@ -790,7 +798,7 @@ describe("ide abt-N hanya tampil bila saklarnya menyala (Baru)", () => {
     const total = Object.keys(ISI).length;
     const kosong = Object.values(ISI).filter((v) => v === "DATA_TIDAK_ADA").length;
     expect(judul.textContent).toBe(`${total - kosong - 2} dari ${total} variabel siap`);
-    expect(q(h, ".aleta-t6-kemajuan-rinci").textContent).toBe(`${kosong} kosong · 2 berbunyi galat`);
+    expect(q(h, ".aleta-t6-kemajuan-rinci").textContent).toBe(`${kosong} kosong · 2 berbunyi error`);
   });
 });
 
@@ -867,7 +875,7 @@ describe("desain D1-D15 hanya di UI Baru", () => {
 });
 
 // ============================================================================
-describe("abt-5: CETAK dengan kalimat galat = peringatan dengan konfirmasi, bukan penahanan", () => {
+describe("abt-5: CETAK dengan kalimat error = peringatan dengan konfirmasi, bukan penahanan", () => {
   it("pita merah di atas panel menyebut huruf G dan kelima kalimatnya ikut tercetak", async () => {
     const h = buka({ simpanan: baru(["abt-5"]) });
     const pita = await sampai(() => (q(h, ".aleta-t6-pita-bahaya:not([hidden])") ? q(h, ".aleta-t6-pita-bahaya") : null), "pita");
@@ -1117,10 +1125,10 @@ describe("alat baca: konsistensi (abt-13), pratinjau (abt-12/24), perkara sebelu
     ]);
   });
 
-  it("abt-12 + abt-24: naskah CETAK dibaca lewat GET preview; kalimat galat disorot; perkiraan panjang per bagian", async () => {
+  it("abt-12 + abt-24: naskah CETAK dibaca lewat GET preview; kalimat error disorot; perkiraan panjang per bagian", async () => {
     const h = buka({ simpanan: baru(["abt-12", "abt-24"]) });
     (await sampai(() => tombol(h, "Pratinjau putusan"), "alat")).click();
-    const sorot = await sampai(() => q(h, ".aleta-t6-galat-sorot"), "sorot galat");
+    const sorot = await sampai(() => q(h, ".aleta-t6-galat-sorot"), "sorot error");
     expect(sorot.textContent).toBe("TIDAK BENAR QUERY NYA");
     expect(q(h, ".aleta-t6-perkiraan").textContent).toMatch(/^Perkiraan ± 1 halaman/);
     expect(q(h, ".aleta-t6-perkiraan").textContent).toContain("Duduk perkara");

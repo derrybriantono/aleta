@@ -2321,11 +2321,25 @@ const ANGKA_IKON_BASI_MS = 12 * 60 * 60 * 1000;
  * Dipakai angka ikon (popup-6) dan sinkron tanda (popup-7) di bawah.
  */
 function tampilanBerlakuLatar(s) {
+  // Profil peran (perbaikan 30 Sep butir 25, K4): pegawai yang bukan Super
+  // Admin/Admin hanya mendapat fitur ide yang ada di profil perannya - aturan
+  // yang sama dengan alatFiturNyala (panel-alat.js) dan fiturPopupNyala.
+  // Profil tanpa daftar fitur (null) tidak menyaring apa pun. Ditulis DI
+  // DALAM fungsi ini: uji tampilan-server memotong fungsi ini sendirian.
+  const saringProfil = (berlaku) => {
+    const sv = s && s.tampilanServer;
+    const p = sv && typeof sv === "object" ? sv.profil : null;
+    if (!p || typeof p !== "object" || p.bolehUbahProfil === true) return berlaku;
+    if (!p.fitur || typeof p.fitur !== "object") return berlaku;
+    const fitur = {};
+    for (const [k, v] of Object.entries(berlaku.fitur || {})) if (v === true && p.fitur[k] === true) fitur[k] = true;
+    return { mode: berlaku.mode, fitur };
+  };
   const mode = ["baru", "ui"].includes(s.ujiTampilan) ? s.ujiTampilan : "lama";
-  if (mode !== "lama") return { mode, fitur: s.ujiFitur && typeof s.ujiFitur === "object" ? s.ujiFitur : {} };
+  if (mode !== "lama") return saringProfil({ mode, fitur: s.ujiFitur && typeof s.ujiFitur === "object" ? s.ujiFitur : {} });
   const sv = s.tampilanServer;
   if (sv && typeof sv === "object" && sv.diterapkan === true && (sv.mode === "baru" || sv.mode === "ui")) {
-    return { mode: sv.mode, fitur: sv.fitur && typeof sv.fitur === "object" ? sv.fitur : {} };
+    return saringProfil({ mode: sv.mode, fitur: sv.fitur && typeof sv.fitur === "object" ? sv.fitur : {} });
   }
   return { mode: "lama", fitur: {} };
 }

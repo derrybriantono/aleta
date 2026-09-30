@@ -477,10 +477,62 @@ export function sidangSelesaiHariIni(baris: {
   tanggalSidang?: string;
   agenda?: string;
   sidangIkrarTalak?: boolean;
+  ikrarTercatat?: boolean;
   ditunda?: boolean;
   alasanDitunda?: string;
 }): boolean {
-  return Boolean(baris.ditunda) || sudahPutusHariIni(baris);
+  return Boolean(baris.ditunda) || sudahPutusHariIni(baris) || ikrarSelesai(baris);
+}
+
+/**
+ * ============================================================================
+ * SIDANG IKRAR TALAK YANG SUDAH DILAKSANAKAN - SELESAI
+ * ============================================================================
+ *
+ * Perbaikan 30 September 2026 (butir 27). 314/Pdt.G/2026/PA.Dgl sidang ke-12
+ * "SIDANG IKRAR TALAK": antrian SIPP menulis "Hasil Sidang: TELAH IKRAR
+ * TALAK", tetapi ALETA masih memberi keping tunda|putus - sidangSelesaiHariIni
+ * hanya mengenal "ditunda" dan "putus", dan sidang ikrar SENGAJA dikecualikan
+ * dari "putus" (putusannya dijatuhkan jauh sebelumnya).
+ *
+ * Dua sumber kebenaran, diukur atas 1.024 sidang berbendera ikrar_talak = 'Y'
+ * di sipp_donggala (30 Sep 2026):
+ *
+ *   perkara_ikrar_talak.tgl_ikrar_talak = tanggal sidang ini   832 sidang
+ *     (ikrarTercatat dari bot - sippJadwalSidangService)
+ *       di antaranya alasan_ditunda "telah ikrar talak"          436
+ *                    alasan_ditunda "0" atau NULL                394
+ *   alasan_ditunda menyebut ikrar, ditunda = 'T', tanggal ikrar
+ *     belum/beda tercatat                                           5
+ *
+ * Hasil sidang yang menyebut ikrar pada sidang TIDAK ditunda (465 baris):
+ * "telah ikrar talak" 440, "ikrar talak" 21, "ikrar" 2, "Pengucapan Ikrar
+ * Talak" 1, "SIDANG IKRAR TALAK" 1. Pada sidang DITUNDA (45 baris) kalimatnya
+ * lain: "Belum Ikrar", "Pemohon tidak hadir ikrar", "tunda 6 bulan",
+ * "menunggu Pemohon ikrar", "Panggil Ikrar".
+ *
+ * Kolom hasil sidangnya saja TIDAK cukup (394 dari 832 dibiarkan "0"/NULL),
+ * dan tanggal ikrarnya saja pun tidak (petugas kadang mengisinya belakangan).
+ * Karena itu keduanya dibaca: tanggal ikrar yang sama dengan tanggal sidang,
+ * ATAU hasil sidang yang menyebut ikrar tanpa kata penunda (belum, tidak,
+ * tunda, menunggu, panggil) pada sidang yang tidak ditunda. Bendera ditunda
+ * menyingkirkan sidang ikrar yang ditunda lebih dulu.
+ */
+const POLA_IKRAR = /\bikrar\b/i;
+const POLA_IKRAR_TERTUNDA = /\b(belum|tidak|tunda|ditunda|menunggu|panggil)\b/i;
+
+export function ikrarSelesai(baris: {
+  agenda?: string;
+  sidangIkrarTalak?: boolean;
+  ikrarTercatat?: boolean;
+  ditunda?: boolean;
+  alasanDitunda?: string;
+}): boolean {
+  if (!sidangIkrar(baris)) return false;
+  if (baris.ditunda) return false;
+  if (baris.ikrarTercatat) return true;
+  const hasil = String(baris.alasanDitunda || "");
+  return POLA_IKRAR.test(hasil) && !POLA_IKRAR_TERTUNDA.test(hasil);
 }
 
 /**

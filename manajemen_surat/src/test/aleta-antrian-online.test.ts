@@ -154,7 +154,7 @@ describe("klien pemantauan antrian online", () => {
     expect(hasil.error).toBeTruthy();
   });
 
-  it("respons galat dari bot tidak dianggap berhasil", async () => {
+  it("respons error dari bot tidak dianggap berhasil", async () => {
     pasangGateway({
       status: 500,
       body: { ok: false, error: "online_queue_monitor_failed", message: "Pemantauan belum bisa dibaca." },

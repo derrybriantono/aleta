@@ -236,7 +236,7 @@ describe("kegagalan bot diteruskan dengan kode dan kalimatnya", () => {
     return String(hasil.error);
   };
 
-  it("kalimat bot untuk SIPP yang tidak terbaca tidak membawa galat MySQL mentah", () => {
+  it("kalimat bot untuk SIPP yang tidak terbaca tidak membawa error MySQL mentah", () => {
     const pesan = layananBot.kalimatGagalInti(["penunjukan majelis hakim", "putusan"]);
     expect(pesan).toMatch(/penunjukan majelis hakim, putusan/);
     expect(pesan).toMatch(/log ALETA Bot/);

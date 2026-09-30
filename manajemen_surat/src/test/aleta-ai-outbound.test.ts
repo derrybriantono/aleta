@@ -192,7 +192,7 @@ describe("penjelasan sebab kegagalan jaringan", () => {
     expect(hasil).toContain("->");
   });
 
-  it("menambahkan kode galat bila belum tersebut di pesan", () => {
+  it("menambahkan kode error bila belum tersebut di pesan", () => {
     const galat = Object.assign(new Error("connect gagal"), { code: "ECONNREFUSED" });
     expect(describeNetworkError(galat)).toBe("connect gagal (ECONNREFUSED)");
   });

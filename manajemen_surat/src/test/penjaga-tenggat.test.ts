@@ -282,7 +282,7 @@ describe("rapor - urutan dan penghitungan", () => {
     expect(rapor.hitung).toEqual({ lewat: 1, menjelang: 1, catatan: 1 });
   });
 
-  it("hari yang bersih menghasilkan rapor kosong, bukan galat", () => {
+  it("hari yang bersih menghasilkan rapor kosong, bukan error", () => {
     const rapor = nilaiTenggat({}, HARI_INI);
     expect(rapor.butir).toHaveLength(0);
     expect(rapor.hitung).toEqual({ lewat: 0, menjelang: 0, catatan: 0 });

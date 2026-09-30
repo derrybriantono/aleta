@@ -66,6 +66,8 @@ const BERKAS = [
   "jembatan.js",
   "popup.js",
   "tema-awal.js",
+  // Tab Juru Sita (perbaikan 30 Sep 2026) - skrip konten bersama SIPP dan ABT.
+  "jurusita.js",
 ];
 
 type Jebakan = {

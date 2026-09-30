@@ -168,7 +168,7 @@ describe("Chrome tidak memasang apa pun", () => {
     }
   });
 
-  it("permintaan yang ditolak Chrome tidak menjadi galat yang tidak tertangkap", async () => {
+  it("permintaan yang ditolak Chrome tidak menjadi error yang tidak tertangkap", async () => {
     vi.useFakeTimers();
     try {
       const { kirim, dicatat } = pasangLatar({ lemparPeriksa: "not allowed for unpacked" });

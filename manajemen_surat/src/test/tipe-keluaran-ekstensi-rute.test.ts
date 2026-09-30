@@ -177,7 +177,7 @@ describe("GET /api/aleta-ecourt/ekstensi/siapa memuat versiTipe (K5)", () => {
     expect(s2.isi.data.versiTipe).toBe((await tipe()).isi.versi);
   });
 
-  it("tabel tak terbaca: siapa tetap 200 dengan versiTipe null, dan galatnya tercatat", async () => {
+  it("tabel tak terbaca: siapa tetap 200 dengan versiTipe null, dan errornya tercatat", async () => {
     await siapa();
     rusakkanTabel(d());
     const galatKonsol = vi.spyOn(console, "error").mockImplementation(() => undefined);

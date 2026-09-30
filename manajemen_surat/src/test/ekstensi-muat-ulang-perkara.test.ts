@@ -100,11 +100,15 @@ describe("tidak ada lagi pemuatan ulang yang terjatuh ke dasbor", () => {
     //   6. sesudah edoc putusan dan edoc anonimisasi terunggah SEKALIGUS dari
     //      dua tempat terpisah (tampilan Baru & UI Baru, 1.174.1) - alasan
     //      yang sama dengan nomor 4
+    //   7. (perbaikan 30 Sep 2026, butir 19, Baru & UI Baru) sesudah putusan
+    //      terbukti tersimpan DAN edoc putusan + anonimisasinya terunggah dalam
+    //      satu kali kerja - cabang simpanPutusanLaluBuka yang memakai
+    //      opsi.sesudahTersimpan; bila edoc gagal, halaman TIDAK dimuat ulang
     //
-    // Keenamnya lewat muatUlangHalamanPerkara, bukan location.reload() -
+    // Ketujuhnya lewat muatUlangHalamanPerkara, bukan location.reload() -
     // halaman borang SIPP dibuka lewat sesi kilat, dan memuat ulangnya
     // mendaratkan petugas di dasbor.
-    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(6);
+    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(7);
     expect(isi.includes("setTimeout(() => location.reload()")).toBe(false);
   });
 

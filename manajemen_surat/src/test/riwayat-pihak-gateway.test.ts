@@ -52,7 +52,7 @@ describe("penolakan bot sampai ke portal beserta status dan kodenya", () => {
     expect(hasil).toEqual({ ok: false, error: "Perkara tidak ditemukan di SIPP.", status: 404, kode: "perkara_tidak_ada" });
   });
 
-  it("400 masukan tidak sah dan 500 SIPP galat membawa kodenya masing-masing", async () => {
+  it("400 masukan tidak sah dan 500 SIPP error membawa kodenya masing-masing", async () => {
     jawab(JSON.stringify({ ok: false, kode: "masukan_tidak_sah", alasan: "perkaraId atau nomorPerkara wajib diisi." }), 400);
     expect(await getGatewayRiwayatPihak({})).toMatchObject({ ok: false, status: 400, kode: "masukan_tidak_sah" });
     jawab(JSON.stringify({ ok: false, kode: "gagal_membaca_sipp", alasan: "Table 'perkara' doesn't exist" }), 500);

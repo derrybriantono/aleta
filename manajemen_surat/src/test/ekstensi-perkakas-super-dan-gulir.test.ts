@@ -446,7 +446,7 @@ describe("periksa penunjuk", () => {
     expect(k.alatPeriksaPenunjuk().length).toBe(1);
   });
 
-  it("penunjuk yang tidak sah dihitung tidak ketemu, bukan melemparkan galat", () => {
+  it("penunjuk yang tidak sah dihitung tidak ketemu, bukan melemparkan error", () => {
     // Penunjuk rusak memang cacat - tetapi laporan yang MELEDAK tidak
     // memberi tahu penunjuk mana yang rusak.
     const k = jalankanAlat();

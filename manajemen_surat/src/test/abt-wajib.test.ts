@@ -251,7 +251,7 @@ describe("rute abt-wajib (pg-mem berbenih)", () => {
     db = null;
   });
 
-  it("tanpa sesi 401; jenis belum diukur: daftar kosong dengan catatan, bukan galat", async () => {
+  it("tanpa sesi 401; jenis belum diukur: daftar kosong dengan catatan, bukan error", async () => {
     aktor = null;
     expect((await panggil("GET", { query: "jenis=Cerai%20Gugat" })).status).toBe(401);
     aktor = "usr-ppg";

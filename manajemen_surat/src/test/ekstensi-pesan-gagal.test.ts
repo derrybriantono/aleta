@@ -314,7 +314,12 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // bacaan GET templat pertimbangan, komentar hakim atas BAS, checklist;
     // 404 berbunyi "belum tersedia di server") dan Laporkan masalah (sipp-30),
     // yang gagalnya harus menyebut sebabnya, termasuk "ditahan mode latihan".
-    expect(lewatAlat).toBe(31);
+    // 33 sejak perbaikan 30 September 2026 (agen A, hanya Baru / UI Baru): K1
+    // konversi-naskah (a30KonversiNaskah - DOCX/DOC/PDF ke RTF dan kembali;
+    // 404 berbunyi "belum tersedia di server", 423 "ditahan mode coba") dan
+    // pembacaan perkara_id lewat rute sidang untuk anonim ABT
+    // (a30PerkaraIdUntukAbt). Keduanya berbicara ke petugas.
+    expect(lewatAlat).toBe(33);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU
@@ -335,6 +340,15 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // Angka ini menjaga keputusan itu tetap sadar: permintaan ALETA yang baru
     // dan mentah menaikkannya, dan penulisnya harus memilih - dilewatkan
     // alatAmbil, atau ditambahkan ke daftar di atas beserta alasannya.
-    expect(mentah).toBe(5);
+    //
+    //   anonim ABT (a30AnonimAbt, perbaikan 30 Sep 2026) - BUKAN permintaan
+    //                         ALETA: POST abt/main/anonim ke ABT dengan sesi
+    //                         ABT petugas, sama dengan abt.js. Kalimat
+    //                         alatPesanGagal ("server ALETA tidak terjangkau")
+    //                         akan keliru di sini; kegagalannya disebut sendiri
+    //                         ("Masuk ABT dulu", "ABT menjawab 500", 423 mode
+    //                         coba) dan fetch-nya tetap lewat pembungkus
+    //                         panel-alat.js (mode coba/kering/latihan).
+    expect(mentah).toBe(6);
   });
 });

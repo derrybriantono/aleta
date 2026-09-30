@@ -126,7 +126,7 @@ describe("menghitung biaya panggilan", () => {
     ).toBe(3000 + 7500);
   });
 
-  it("tarif nol menghasilkan biaya nol, bukan galat", () => {
+  it("tarif nol menghasilkan biaya nol, bukan error", () => {
     expect(
       hitungBiaya({ tokenMasuk: 1000, tokenKeluar: 1000, tarifMasukPerJuta: 0, tarifKeluarPerJuta: 0 })
     ).toBe(0);

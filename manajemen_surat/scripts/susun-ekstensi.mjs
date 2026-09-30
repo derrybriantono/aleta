@@ -72,6 +72,10 @@ const BERKAS = [
   // Widget checklist milestone - skrip konten tersendiri, terpisah dari panel
   // ALETA, dimuat di SIPP, ABT, dan portal sesudah panel-alat.js.
   "checklist.js",
+  // Tab Juru Sita (perbaikan 30 Sep 2026, butir 15-16) - skrip konten
+  // bersama panel SIPP dan ABT, dimuat sesudah panel-alat.js dan sebelum
+  // konten.js/abt.js; menyediakan globalThis.aletaJurusitaPasang.
+  "jurusita.js",
   "tema-awal.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
   // dipanggil - skrip konten tidak punya keduanya.

@@ -1571,7 +1571,7 @@ describe("teks portal digambar sebagai teks", () => {
     return { script: sr.querySelectorAll("script").length, img: img.length, b: sr.querySelectorAll("b").length };
   }
 
-  it("judul, keterangan, nomor, jenis, sebab, galat, label peran, dan nama", async () => {
+  it("judul, keterangan, nomor, jenis, sebab, error, label peran, dan nama", async () => {
     const h = buka({
       simpanan: { ...NYALA, lipatanChecklistMilestone: { lewat: true } },
       jawab: () => ({
@@ -1607,7 +1607,7 @@ describe("teks portal digambar sebagai teks", () => {
     expect(h.w.__xss).toBeUndefined();
   });
 
-  it("pesan galat 403 dan 500 dari portal", async () => {
+  it("pesan error 403 dan 500 dari portal", async () => {
     for (const status of [403, 500]) {
       const h = buka({ simpanan: NYALA, jawab: () => ({ status, isi: { error: { message: JAHAT } } }) });
       const kabar = await sampai(() => q(h, ".aleta-cm-kabar-galat"), `kabar ${status}`);

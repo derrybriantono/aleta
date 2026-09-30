@@ -253,7 +253,8 @@ describe("rute tampilan ekstensi (pg-mem berbenih)", () => {
       aktor = "usr-hakim";
       const r = await panggil("tampilan", "GET");
       expect(r.status).toBe(200);
-      expect(Object.keys(r.isi.data).sort()).toEqual(["dibuatPada", "keteranganSetelan", "setelan", "tampilan", "versi"]);
+      // "profil" ditambah kontrak K4 (30 Sep 2026) - profil saklar per peran.
+      expect(Object.keys(r.isi.data).sort()).toEqual(["dibuatPada", "keteranganSetelan", "profil", "setelan", "tampilan", "versi"]);
       expect(r.isi.data.tampilan).toMatchObject({ mode: "lama", sumber: "bawaan", diterapkan: false, fitur: {}, labelMode: "Lama" });
       expect(r.isi.data.versi).toMatch(/^[0-9a-f]{16}$/);
       expect(r.isi.data.setelan).toEqual({});

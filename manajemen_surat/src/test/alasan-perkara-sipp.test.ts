@@ -394,7 +394,7 @@ describe("kotak Obyek Sengketa - kebiasaan satker, bukan pembacaan posita", () =
     expect(rute).toContain('sebab: jawab.error || "SIPP tidak terbaca."');
   });
 
-  it("bot mendaftarkan tabelnya di layanan skema - yang tidak terdaftar dijawab tidak ada tanpa galat", () => {
+  it("bot mendaftarkan tabelnya di layanan skema - yang tidak terdaftar dijawab tidak ada tanpa error", () => {
     const skema = readFileSync(
       path.resolve(process.cwd(), "..", "aleta_bot", "services", "sippSkemaService.js"),
       "utf8"

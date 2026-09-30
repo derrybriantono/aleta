@@ -549,7 +549,7 @@ describe("jawaban rute /sipp/riwayat-pihak", () => {
     expect(catatan[0].nilai).toEqual([123456]);
   });
 
-  it("SIPP galat: 500, galatnya disebut - bukan dijadikan daftar kosong", async () => {
+  it("SIPP error: 500, errornya disebut - bukan dijadikan daftar kosong", async () => {
     jawab = () => {
       throw new Error("Table 'sipp.perkara' doesn't exist");
     };

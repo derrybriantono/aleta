@@ -59,7 +59,15 @@ describe("blangko putusan disimpan, dan tersimpannya dibuktikan", () => {
     expect(konten).toContain("async function bacaPutusanSegar(");
     expect(konten).toContain("cache: \"no-store\"");
     const badan = konten.slice(konten.indexOf("async function simpanPutusanLaluBuka("));
-    expect(badan.slice(0, 2500)).toContain("const sebelum = await bacaPutusanSegar(nomorPerkara);");
+    // Disesuaikan perbaikan 30 Sep 2026 (butir 10): keadaan SEBELUM boleh sudah
+    // dibaca pemanggil - Baru & UI Baru membacanya berbarengan dengan pengisian,
+    // dan antrean massal memakai ulang bacaan langkah 1 - dan KEDUANYA lewat
+    // bacaPutusanSegar. Tanpa itu dibaca di sini seperti semula. Penjaganya
+    // sama kuat: "sebelum" selalu bacaan SIPP segar, bukan tombol yang ditekan.
+    expect(badan.slice(0, 2500)).toContain("const sebelum = dibacaPemanggil || (await bacaPutusanSegar(nomorPerkara));");
+    expect(konten).toContain("const sebelumA30 = a30Nyala ? bacaPutusanSegar(nomorPerkara) : null;");
+    expect(konten).toContain("const segar = await bacaPutusanSegar(butir.nomor);");
+    expect(konten).toContain("return { sebelum: segar || null, jajakCepat: true };");
     expect(badan.slice(0, 2500)).toContain("samaPutusan(sebelum, sesudah)");
   });
 

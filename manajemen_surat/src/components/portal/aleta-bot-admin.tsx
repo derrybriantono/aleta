@@ -7251,7 +7251,7 @@ function KartuKirimSaatLengkap({
                     ? `Terakhir berjalan ${formatDateTime(status.terakhirJalan)} (${status.terakhirPemicu || "jadwal"}).`
                     : "Belum pernah berjalan sejak bot dinyalakan."
                   : galat ?? "Membaca keadaan pemantau..."}
-                {status?.terakhirGalat ? ` Galat terakhir: ${humanizeErrorMessage(status.terakhirGalat)}.` : ""}
+                {status?.terakhirGalat ? ` Error terakhir: ${humanizeErrorMessage(status.terakhirGalat)}.` : ""}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

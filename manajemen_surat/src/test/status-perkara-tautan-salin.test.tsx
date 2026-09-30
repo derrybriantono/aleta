@@ -84,7 +84,7 @@ describe("mintaTautanSipp - atas kontrak rute sipp-tautan", () => {
     });
   });
 
-  it("galat berbadan JSON (sesi habis): pesan server yang dipakai", async () => {
+  it("error berbadan JSON (sesi habis): pesan server yang dipakai", async () => {
     const ambil = vi.fn(async () =>
       jawabanJson({ ok: false, error: { message: "Anda belum login atau sesi Anda telah berakhir." } }, 401)
     );

@@ -152,6 +152,38 @@ export const DDL_KOMENTAR_TEMPLAT_WAJIB = {
   ],
 } as const;
 
+/**
+ * Pemetaan blangko (putusan, relaas, PBT) dan profil saklar per peran - cermin
+ * PERSIS dari drizzle/0054_aleta_pemetaan_blangko_profil_saklar.sql.
+ *
+ * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
+ * menjalankan drizzle/*.sql, dan penjaga pemetaan-profil-skema.test.ts
+ * membandingkan konstanta ini dengan isi berkasnya.
+ */
+export const DDL_PEMETAAN_PROFIL = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_pemetaan_blangko (
+  jenis TEXT NOT NULL CHECK (jenis IN ('putusan', 'relaas', 'pbt')),
+  kunci TEXT NOT NULL,
+  sebutan TEXT NOT NULL DEFAULT '',
+  nama_berkas TEXT NOT NULL,
+  catatan TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL,
+  PRIMARY KEY (jenis, kunci)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_profil_saklar (
+  peran TEXT PRIMARY KEY,
+  saklar TEXT NOT NULL DEFAULT '{}',
+  fitur TEXT,
+  catatan TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1147,6 +1179,8 @@ const schemaStatements = [
   ...DDL_EKSTENSI_TAMPILAN.tabel,
   // Komentar hakim atas BAS, templat hukum, variabel wajib ABT (0053).
   ...DDL_KOMENTAR_TEMPLAT_WAJIB.tabel,
+  // Pemetaan blangko dan profil saklar per peran (0054).
+  ...DDL_PEMETAAN_PROFIL.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

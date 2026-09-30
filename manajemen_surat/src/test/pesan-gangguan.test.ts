@@ -100,7 +100,7 @@ describe("halaman masuk benar-benar memakainya", () => {
   const login = () =>
     readFileSync(path.resolve(process.cwd(), "src/app/login/page.tsx"), "utf8").split("\r\n").join("\n");
 
-  it("penangkap galat terakhir melewatkan pesannya lewat penerjemah", () => {
+  it("penangkap error terakhir melewatkan pesannya lewat penerjemah", () => {
     // Di sinilah "Failed to fetch" dulu sampai ke layar apa adanya.
     const isi = login();
     expect(isi).toContain("setError(" + "\n        pesanGangguan(");

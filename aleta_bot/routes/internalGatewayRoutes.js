@@ -998,7 +998,13 @@ router.get("/sidang/keadaan", requireInternalToken, async (req, res) => {
       res.status(404).json({ ok: false, alasan: "jadwal_tidak_ketemu" });
       return;
     }
-    res.json({ ok: true, keadaan });
+    // Riwayat sidang dan mediasi perkaranya - bahan bawaan isian tunda
+    // (butir 14, 30 Sep 2026). null bila tidak terbaca; borangnya jatuh ke
+    // bawaan lama.
+    const riwayat = await sidangHasilService
+      .riwayatSidangPerkara(keadaan.perkaraId, keadaan.tanggalSidang)
+      .catch(() => null);
+    res.json({ ok: true, keadaan, riwayat });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -1156,6 +1162,9 @@ router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
       verstek: String(badan.verstek || ""),
       jamSekarang: String(badan.jamSekarang || ""),
       dihadiriOleh: badan.dihadiriOleh,
+      // Butir 12 (30 Sep 2026): bawaannya HANYA jadwal sidang. Putusan akhir
+      // ikut ditulis hanya bila pemanggilnya meminta tegas.
+      tulisPutusan: badan.tulisPutusan === true,
       operator,
       ip: alamatAudit(req),
     });
@@ -1213,6 +1222,7 @@ router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
       atasNama: rencana.atasNama,
       operator: rencana.operator,
       putusan: rencana.putusan,
+      hanyaJadwal: rencana.hanyaJadwal === true,
       andaian: rencana.andaian || [],
       antrian,
       rencana: kering
@@ -2403,7 +2413,22 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       const modusSaksi = (m) => lengkapiSumberNamaAbt(saringModusAbt(m), pelaku, lawan);
       const saksiMasuk = saringSaksiAbt(req.body?.saksi, pelaku, lawan);
       if (saksiMasuk.ditolak.length) jawaban.saksiDitolak = saksiMasuk.ditolak;
+      // Upaya rukun (butir 28, 30 Sep 2026): variabel 1268 dikirim ekstensi
+      // (upayaDamai); mediasi dikirim ekstensi atau dibaca dari SIPP - HANYA
+      // bila templatnya memang menanyakan upaya rukun, dan dibatasi 2,5 detik.
+      const tanyaUpaya = templatMasuk.some((b) =>
+        abtUsulanService.POLA_TANYA_UPAYA_RUKUN.test(String((b && (b.tanya || b.pertanyaan)) || ""))
+      );
+      const mediasiMasuk =
+        req.body?.mediasi && typeof req.body.mediasi === "object"
+          ? { selesai: req.body.mediasi.selesai === true, berhasil: req.body.mediasi.berhasil === true }
+          : null;
+      const mediasi =
+        mediasiMasuk ||
+        (tanyaUpaya && nomorPerkara ? await abtUsulanService.mediasiPerkara(nomorPerkara).catch(() => null) : null);
       jawaban.saksiSdg = abtUsulanService.susunKeteranganSaksiSdg({
+        upayaDamai: String(req.body?.upayaDamai || "").slice(0, 600),
+        mediasi,
         templat: templatMasuk,
         alasan: Array.isArray(req.body?.alasan) ? req.body.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
         posita: String(req.body?.posita || ""),
@@ -2480,6 +2505,43 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
       ok: true,
       pdfBase64: hasil.pdf.toString("base64"),
       byte: hasil.pdf.length,
+      versiMesin: hasil.versiMesin || "",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mengubah naskah ke bentuk lain (kontrak K1, butir 8 dan 11, 30 Sep 2026).
+ *
+ *   POST { berkasBase64, ke: "rtf" | "docx" | "doc" | "pdf" }
+ *   -> { ok, berkasBase64, bentukAsal, ke, byte, versiMesin }
+ *
+ * Hanya menghitung - tidak ada yang disimpan dan tidak ada tulisan ke SIPP.
+ * PDF sebagai asal ditolak dengan kode "pdf_perlu_ekstraksi": portal
+ * mengekstrak teksnya lebih dulu (lihat dokumenKeBentuk).
+ */
+router.post("/naskah/konversi", requireInternalToken, async (req, res) => {
+  try {
+    const base64 = String((req.body && req.body.berkasBase64) || "");
+    if (!base64) {
+      res.status(400).json({ ok: false, error: "berkasBase64 kosong." });
+      return;
+    }
+    const isi = Buffer.from(base64, "base64");
+    const hasil = await abtCetakService.dokumenKeBentuk(isi, req.body && req.body.ke);
+    if (!hasil.ok) {
+      const status = hasil.kode === "soffice_tidak_ada" ? 503 : hasil.kode === "terlalu_besar" ? 413 : 422;
+      res.status(status).json({ ok: false, error: hasil.alasan, kode: hasil.kode, bentukAsal: hasil.bentukAsal || "" });
+      return;
+    }
+    res.json({
+      ok: true,
+      berkasBase64: hasil.berkas.toString("base64"),
+      bentukAsal: hasil.bentukAsal,
+      ke: hasil.ke,
+      byte: hasil.berkas.length,
       versiMesin: hasil.versiMesin || "",
     });
   } catch (error) {

@@ -1,11 +1,11 @@
 import { type NextRequest } from "next/server";
 
-import { susunRekamAntrian } from "@/lib/rekam-antrian";
+import { lengkapiPetaDariRekam, susunRekamAntrian } from "@/lib/rekam-antrian";
 import { hitungTigaJarak, kunciWaktu, WAKTU_ANTRIAN_KOSONG } from "@/lib/tiga-jarak-sidang";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
-import { rekamAntrian } from "@/server/modules/aleta-ecourt/rekam-antrian";
+import { bacaRekamAntrian, rekamAntrian } from "@/server/modules/aleta-ecourt/rekam-antrian";
 import {
   getGatewayArsipRincian,
   getGatewayJadwalSidang,
@@ -238,6 +238,52 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // ========================================================================
+    // NOMOR ANTRIAN HARI LAMPAU DARI REKAMAN ALETA (butir 32, 30 Sep 2026)
+    // ========================================================================
+    //
+    // Aplikasi antrian hanya menyimpan hari ini; rekaman ALETA menyimpan
+    // nomor tiap sidang. Sidang tanpa baris antrian langsung pada tanggalnya
+    // diisi dari rekaman - lihat lengkapiPetaDariRekam. Gagal membaca
+    // rekaman tidak menjatuhkan jadwalnya.
+    let antrianKeluar = hasil.data?.antrian ?? {
+      terbaca: false,
+      alasan: "bot tidak mengirimkan keterangan antrian",
+      tanggal: [],
+      peta: {},
+    };
+    let dariRekam = 0;
+    const dariMinta = String(hasil.data?.dari || request.nextUrl.searchParams.get("dari") || "");
+    const sampaiMinta = String(hasil.data?.sampai || request.nextUrl.searchParams.get("sampai") || "") || dariMinta;
+    if (sidang.length > 0 && dariMinta) {
+      try {
+        const tersimpan = await bacaRekamAntrian(db, dariMinta, sampaiMinta);
+        const lengkap = lengkapiPetaDariRekam(
+          (antrianKeluar.peta ?? {}) as Record<string, { tanggalSidang?: string }>,
+          sidang.map((b) => ({
+            perkaraId: String(b.perkaraId ?? ""),
+            tanggalSidang: String(b.tanggalSidang ?? ""),
+            sidangId: String(b.sidangId ?? ""),
+          })),
+          tersimpan
+        );
+        dariRekam = lengkap.ditambah;
+        if (lengkap.ditambah > 0) {
+          antrianKeluar = {
+            ...antrianKeluar,
+            terbaca: true,
+            alasan: antrianKeluar.terbaca
+              ? antrianKeluar.alasan
+              : "nomor antrian dibaca dari rekaman ALETA - aplikasi antrian hanya menyimpan hari ini",
+            tanggal: [...new Set([...(antrianKeluar.tanggal ?? []), ...lengkap.tanggal])].sort(),
+            peta: lengkap.peta as typeof antrianKeluar.peta,
+          };
+        }
+      } catch {
+        // Rekaman tidak terbaca: kolom antrian tetap seperti jawaban bot.
+      }
+    }
+
     return ok({
       available: true,
       dari: hasil.data?.dari ?? "",
@@ -253,12 +299,7 @@ export async function GET(request: NextRequest) {
       // Diteruskan apa adanya, termasuk saat tidak terbaca. Layar jadwal yang
       // menampilkan kolom antrian kosong tanpa sebab akan disangka rusak;
       // yang menyebutkan "sambungan antrian tidak terbaca" dapat ditindaklanjuti.
-      antrian: hasil.data?.antrian ?? {
-        terbaca: false,
-        alasan: "bot tidak mengirimkan keterangan antrian",
-        tanggal: [],
-        peta: {},
-      },
+      antrian: { ...antrianKeluar, dariRekam },
       // Bahan tiga jarak waktu di layar, apa adanya - termasuk "sekarang"
       // menurut jam aplikasi antrian, patokan angka yang berjalan. Bot lama
       // yang tidak mengirimnya dijawab kosong beserta sebabnya.

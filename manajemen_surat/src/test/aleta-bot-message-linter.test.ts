@@ -187,7 +187,7 @@ describe("Sikap pemeriksa", () => {
     expect(lintTemplateBody("   ")).toEqual([]);
   });
 
-  it("masukan bukan teks tidak melempar galat", () => {
+  it("masukan bukan teks tidak melempar error", () => {
     expect(() => lintTemplateBody(null as unknown as string)).not.toThrow();
     expect(() => lintTemplateBody(undefined as unknown as string)).not.toThrow();
     expect(lintTemplateBody(null as unknown as string)).toEqual([]);

@@ -137,7 +137,7 @@ describe("menyimpan lembar", () => {
     await expect(simpanLembar(database, "uji", { ...isian([]), kode: "" })).rejects.toThrow(/belum dipilih/i);
   });
 
-  it("perkara yang belum punya lembar mengembalikan kosong, bukan galat", async () => {
+  it("perkara yang belum punya lembar mengembalikan kosong, bukan error", async () => {
     const database = await basisData();
     expect(await muatLembar(database, { perkaraId: "99999", kode: "A1a", saksiKe: 1 })).toBeNull();
     expect(await daftarLembar(database, "99999")).toEqual([]);

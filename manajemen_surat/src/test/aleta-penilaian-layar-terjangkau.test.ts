@@ -163,7 +163,7 @@ describe("layar penilaian berjenjang benar-benar terjangkau", () => {
       const isi = baca(r.berkas);
       if (!isi.includes("resolveActorUserId")) lalai.push(`${r.berkas} tidak memeriksa aktor`);
       if (!isi.includes("pastikanKapabilitas")) lalai.push(`${r.berkas} tidak memeriksa kapabilitas`);
-      if (!isi.includes("handleAdminRouteError")) lalai.push(`${r.berkas} tidak mencatat galatnya`);
+      if (!isi.includes("handleAdminRouteError")) lalai.push(`${r.berkas} tidak mencatat errornya`);
     }
     expect(lalai, lalai.join("; ")).toEqual([]);
   });

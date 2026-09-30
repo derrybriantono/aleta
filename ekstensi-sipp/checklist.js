@@ -972,6 +972,29 @@
       .aleta-cmw-saklar::after { transition: none; }
     }
 
+    /* Perbaikan 30 Sep butir 24 - pita "Pembaruan tersedia" di atas widget,
+     * dan butir 6 - penjelasan panjang di balik ⓘ. Keduanya hanya lahir dalam
+     * tampilan Baru dan UI Baru. */
+    .aleta-cm-pita {
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px;
+      width: 100%; margin: 0 0 6px; padding: 6px 10px;
+      border: 1px solid var(--cm-merek-garis); border-radius: 8px;
+      background: var(--cm-merek-latar); color: var(--aleta-tulisan);
+      box-shadow: var(--cm-bayang); text-align: left; cursor: pointer;
+    }
+    .aleta-cm-pita b { color: var(--aleta-merek); }
+    .aleta-cm-pita-ket { color: var(--aleta-tulisan-lembut); font-size: 0.92em; }
+    .aleta-cm-pita:hover:not(:disabled) { background: var(--aleta-latar-naik); }
+    .aleta-cm-pita:disabled { cursor: progress; }
+    .aleta-cm-pita[data-buruk="ya"] .aleta-cm-pita-ket { color: var(--aleta-lewat); }
+    [data-cm-dilipat="ya"][hidden] { display: none !important; }
+    .aleta-cm-info {
+      display: inline-flex; align-items: baseline; gap: 6px; margin: 2px 0; padding: 0;
+      border: 0; background: none; color: var(--aleta-tulisan-lembut); cursor: pointer; text-align: left;
+    }
+    .aleta-cm-info b { color: var(--aleta-merek); }
+    .aleta-cm-info:hover span { color: var(--aleta-tulisan); text-decoration: underline; }
+
     /* Tidak pernah ikut tercetak - widget maupun kabar tutupnya. Akarnya di
      * <html>, di luar jangkauan aturan cetak halaman ("body > *:not(...)",
      * "body *"), jadi yang menyembunyikannya harus dibawa sendiri. Lapisan
@@ -2981,6 +3004,13 @@
     if (mode === "lama") wadah.appendChild(kecil ? susunPil() : susunPanel());
     else if (modern()) wadah.appendChild(susunDok(kecil));
     else wadah.appendChild(susunTumpukKlasik(kecil));
+    // Perbaikan 30 Sep (Baru & UI Baru): pita pembaruan di atas widget
+    // (butir 24) dan penjelasan panjang di balik ⓘ (butir 6).
+    if (mode !== "lama") {
+      tanyaPembaruan();
+      if (infoPembaruan) wadah.insertBefore(susunPita(infoPembaruan), wadah.firstChild);
+      lipatPanjang(wadah);
+    }
     const isiBaru = wadah.querySelector(".aleta-cm-isi");
     if (isiBaru && gulung) isiBaru.scrollTop = gulung;
     fokuskan(fokus);
@@ -2992,6 +3022,102 @@
       }
     }
     if (mode !== "lama") aturJamSidang();
+  }
+
+  // ─── Perbaikan 30 Sep: pita pembaruan (24) dan ⓘ (6) ─────────────────────
+  //
+  // Versinya dibaca dari SINGGAHAN yang diisi panel ALETA di halaman yang
+  // sama (alatPembaruanTersedia dengan tanpaAmbil) - widget ini tidak pernah
+  // menambah permintaan sendiri. Kliknya memakai
+  // alatJalankanPembaruan yang sama dengan pita panel: minta pembaruan ke
+  // Chrome, lalu muat ulang ekstensi dan halaman. Tanpa panel-alat.js (tidak
+  // pernah terjadi di manifest ini) pitanya tidak ada.
+
+  let infoPembaruan = null;
+  let pembaruanDitanya = false;
+  let pembaruanPada = 0;
+  let paksaPembaruan = false;
+  /** Singgahan yang masih kosong dibaca lagi paling cepat semenit sekali. */
+  const JEDA_BACA_PITA_MS = 60 * 1000;
+
+  function tanyaPembaruan() {
+    if (typeof alatPembaruanTersedia !== "function") return;
+    if (pembaruanDitanya && (infoPembaruan || Date.now() - pembaruanPada < JEDA_BACA_PITA_MS)) return;
+    pembaruanDitanya = true;
+    pembaruanPada = Date.now();
+    Promise.resolve(alatPembaruanTersedia(false, { tanpaAmbil: true }))
+      .then((info) => {
+        const ada = Boolean(info && info.portal);
+        const berubah = ada !== Boolean(infoPembaruan);
+        infoPembaruan = ada ? info : null;
+        if (berubah && akar && akar.isConnected) gambar();
+      })
+      .catch(() => {
+        /* tanpa pita - widgetnya tetap utuh */
+      });
+  }
+
+  function susunPita(info) {
+    const teks =
+      typeof alatTeksPita === "function"
+        ? alatTeksPita(info)
+        : { judul: `Pembaruan tersedia ${info.portal}`, ket: "klik untuk memperbarui" };
+    const pita = el("button", "aleta-cm-pita");
+    pita.type = "button";
+    pita.setAttribute("role", "status");
+    pita.title = `Versi ${info.portal} tersedia di server; yang terpasang ${info.terpasang}. Klik: minta pembaruan ke Chrome, lalu muat ulang ekstensi dan halaman ini.`;
+    pita.appendChild(el("b", "", teks.judul));
+    const ket = el("span", "aleta-cm-pita-ket", teks.ket);
+    pita.appendChild(ket);
+    pita.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (pita.disabled || typeof alatJalankanPembaruan !== "function") return;
+      pita.disabled = true;
+      const hasil = await alatJalankanPembaruan(paksaPembaruan, (t, buruk) => {
+        ket.textContent = t;
+        if (buruk) pita.setAttribute("data-buruk", "ya");
+        else pita.removeAttribute("data-buruk");
+      });
+      paksaPembaruan = Boolean(hasil && hasil.perluPaksa);
+      if (!(hasil && hasil.selesai)) pita.disabled = false;
+    });
+    return pita;
+  }
+
+  /**
+   * Penjelasan panjang di widget (kotak kosong, alasan "menyusul" di Atur
+   * widget) dilipat di balik ⓘ - kalimat pertamanya tetap tampil. Yang
+   * memuat tombol atau tautan tidak pernah dilipat.
+   */
+  function lipatPanjang(wadah) {
+    const BATAS = 90;
+    for (const x of Array.from(wadah.querySelectorAll(".aleta-cm-kosong, .aleta-cmw-atur-teks small"))) {
+      if (x.hidden || x.hasAttribute("data-cm-dilipat")) continue;
+      if (x.querySelector("button, a[href], input, select, textarea")) continue;
+      const teks = String(x.textContent || "").replace(/\s+/g, " ").trim();
+      if (teks.length <= BATAS || !x.parentNode) continue;
+      const ringkas =
+        typeof alatRingkasPenjelasan === "function" ? alatRingkasPenjelasan(teks) : `${teks.slice(0, 64)}…`;
+      const tombol = el("button", "aleta-cm-info");
+      tombol.type = "button";
+      tombol.setAttribute("aria-expanded", "false");
+      tombol.title = "Tampilkan penjelasan lengkap";
+      tombol.appendChild(el("b", "", "ⓘ"));
+      const r = el("span", "", ringkas);
+      tombol.appendChild(r);
+      x.setAttribute("data-cm-dilipat", "ya");
+      x.hidden = true;
+      tombol.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const buka = x.hidden;
+        x.hidden = !buka;
+        r.hidden = buka;
+        tombol.setAttribute("aria-expanded", buka ? "true" : "false");
+      });
+      x.parentNode.insertBefore(tombol, x);
+    }
   }
 
   // ─── Tema dan posisi ───────────────────────────────────────────────────────
@@ -3551,6 +3677,8 @@
   // ...dan susunannya: dok, lencana, tombol Selesai/Tunda, sudut, angka ikon.
   // Kembali ke Lama menggambar ulang lewat jalan Lama, jadi tidak ada sisa.
   document.addEventListener("aleta-uji-berubah", () => {
+    // Pita pembaruan ditanyakan lagi menurut tampilan yang baru.
+    pembaruanDitanya = false;
     if (!modern()) keadaan.aturTerbuka = false;
     if (!akar || !akar.isConnected) return;
     terapkanPosisi();

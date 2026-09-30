@@ -790,7 +790,7 @@ describe("katalog dan paket", () => {
     expect(berjalan.catatan.join(" ")).toMatch(/Periode belum berakhir: keadaan tiap perkara dibaca sampai 27 September 2026/);
   });
 
-  it("paket meneruskan periode, orang, Ketua, galat, dan waktu hitung", () => {
+  it("paket meneruskan periode, orang, Ketua, error, dan waktu hitung", () => {
     const paket = susunPaketEvidenSkp(data(TW2, [], { galat: ["Jadwal sidang tidak terbaca dari SIPP: uji"] }));
     expect(paket.orang.nama).toBe("Hakim Ini, S.H.");
     expect(paket.ketua?.nip).toBe("198208312007041001");

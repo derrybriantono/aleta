@@ -2404,6 +2404,24 @@ export async function postGatewayPutusSidang(
 }
 
 /**
+ * Mengubah naskah (RTF/DOC/DOCX) ke bentuk lain lewat soffice di bot - kontrak
+ * K1 (30 Sep 2026). Hanya menghitung; tidak menyimpan apa pun. Batasnya di
+ * bawah batas ekstensi 150 dtk dan di atas batas soffice bot 90 dtk.
+ */
+export async function postGatewayKonversiNaskah(isi: {
+  berkasBase64: string;
+  ke: string;
+}): Promise<
+  GatewayResult<{ ok: boolean; berkasBase64?: string; bentukAsal?: string; ke?: string; byte?: number; error?: string; kode?: string }>
+> {
+  return gatewayFetch("/internal/aleta-bot/naskah/konversi", {
+    method: "POST",
+    body: JSON.stringify(isi),
+    timeoutMs: 120000,
+  });
+}
+
+/**
  * Status putusan yang sungguh dipakai satker - dibaca dari data, bukan daftar.
  */
 export async function getGatewayStatusPutusan(): Promise<GatewayResult<Record<string, unknown>>> {
@@ -3231,6 +3249,10 @@ export async function getGatewaySippRingkasanMassal(nomorPerkara: string[]) {
  */
 export async function getGatewayAbtUsulan(muatan: {
   nomorPerkara: string;
+  /** Nilai variabel ABT 1268 (Upaya Damai Keluarga) - butir 28. */
+  upayaDamai?: string;
+  /** Keadaan mediasi bila diketahui ekstensi - butir 28. */
+  mediasi?: { selesai: boolean; berhasil: boolean };
   sumber?: "semua" | "sipp" | "saksi" | "itsbat" | "saksi-sdg" | "posita-lain";
   saksi1?: string;
   saksi2?: string;

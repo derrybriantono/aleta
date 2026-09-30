@@ -88,7 +88,7 @@ describe("daftar yang tetap jalan tanpa ALETA", () => {
     }
   });
 
-  it("pesan galat ekstensi menyebut seluruhnya", () => {
+  it("pesan error ekstensi menyebut seluruhnya", () => {
     const isi = panelAlat();
     for (const butir of TETAP_JALAN) {
       expect(isi, butir.pesan).toContain(butir.pesan);

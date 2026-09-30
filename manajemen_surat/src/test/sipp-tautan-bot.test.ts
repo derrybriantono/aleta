@@ -671,7 +671,7 @@ describe("perkara dan pintu masuknya", () => {
     expect(catatan).toEqual([]);
   });
 
-  it("SIPP melempar: sipp_tidak_terbaca, bukan galat yang lolos", async () => {
+  it("SIPP melempar: sipp_tidak_terbaca, bukan error yang lolos", async () => {
     jawab = () => {
       throw new Error("connect ECONNREFUSED 127.0.0.1:3306");
     };

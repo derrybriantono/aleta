@@ -24,6 +24,7 @@ import {
 } from "@/lib/tampilan-ekstensi";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { bolehMenyuntingAkses } from "@/server/modules/aleta-ecourt/akses";
+import { profilUntukPengguna, type ProfilPengguna } from "@/server/modules/aleta-ecourt/profil-saklar";
 import { getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
@@ -103,7 +104,7 @@ export async function bacaPenerapan(db: AletaDatabase): Promise<PenerapanTampila
  * Sidik 16 heksa atas tampilan yang berlaku - ekstensi membandingkannya
  * dengan singgahannya untuk tahu tampilannya berubah tanpa membandingkan isi.
  */
-export function versiTampilan(t: TampilanBerlaku): string {
+export function versiTampilan(t: TampilanBerlaku, profil?: ProfilPengguna | null): string {
   const kanonik = JSON.stringify({
     mode: t.mode,
     fitur: Object.keys(t.fitur).sort(),
@@ -111,6 +112,18 @@ export function versiTampilan(t: TampilanBerlaku): string {
     sasaranSumber: t.sasaranSumber,
     diterapkan: t.diterapkan,
     diubahPada: t.diubahPada,
+    // Profil saklar per peran (K4, 30 Sep 2026) ikut: admin yang mengubah
+    // profil peran harus menggeser versi, sama seperti menerapkan tampilan.
+    ...(profil
+      ? {
+          profil: {
+            peran: profil.peran,
+            sumber: profil.sumber,
+            saklar: profil.saklar ? Object.entries(profil.saklar).sort() : null,
+            fitur: profil.fitur ? Object.keys(profil.fitur).sort() : null,
+          },
+        }
+      : {}),
   });
   return createHash("sha256").update(kanonik).digest("hex").slice(0, 16);
 }
@@ -157,19 +170,27 @@ export function keteranganSetelan() {
   };
 }
 
-/** Jawaban GET /api/aleta-ecourt/ekstensi/tampilan. */
+/**
+ * Jawaban GET /api/aleta-ecourt/ekstensi/tampilan.
+ *
+ * `profil` (kontrak K4, butir 25 perbaikan 30 Sep 2026): profil saklar peran
+ * PEMANGGILNYA - peran dibaca dari peran DAN posisi (panitera pengganti dan
+ * juru sita banyak yang berperan "staf"), lihat src/lib/profil-saklar.ts.
+ */
 export async function tampilanUntukPengguna(
   db: AletaDatabase,
-  pengguna: { id: string; roleId: string; additionalRoleIds?: string[] }
+  pengguna: { id: string; roleId: string; additionalRoleIds?: string[]; positionId?: string | null }
 ) {
   const tampilan = pecahkanTampilan(await bacaPenerapan(db), pengguna);
+  const profil = await profilUntukPengguna(db, pengguna);
   return {
     tampilan: {
       ...tampilan,
       labelMode: LABEL_MODE_TAMPILAN[tampilan.mode],
       labelSumber: labelSumber(tampilan.sumber, tampilan.sasaranSumber, namaPeran()),
     },
-    versi: versiTampilan(tampilan),
+    versi: versiTampilan(tampilan, profil),
+    profil,
     setelan: await bacaSetelanPengguna(db, pengguna.id),
     keteranganSetelan: keteranganSetelan(),
     dibuatPada: new Date().toISOString(),

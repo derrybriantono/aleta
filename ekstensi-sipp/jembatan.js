@@ -598,7 +598,61 @@
    * menyertakan bukti {borang, id}, tombolnya harus milik borang itu, dan
    * jawaban SIPP atas kiriman borangnya diteruskan dengan id itu.
    */
-  function tekanTombol(penunjuk, bukti) {
+  /**
+   * ==========================================================================
+   * KONFIRMASI SIMPAN SIPP - DI-OK-KAN HANYA SELAMA TEKANAN ALETA SENDIRI
+   * ==========================================================================
+   *
+   * Perbaikan 30 September 2026 (butir 10). SubmitHandling SIPP
+   * (resources/js/jquery-sipp.js baris 131) memanggil
+   *
+   *   confirm("Apakah Anda Yakin Akan Menyimpan Data")
+   *
+   * SERENTAK di dalam peristiwa submit - yakni di dalam elemen.click() di
+   * bawah. Selama dialog itu terbuka seluruh halaman berhenti, jawaban
+   * jembatan tertahan, dan putusan otomatis menunggu tangan petugas.
+   *
+   * window.confirm diganti HANYA untuk satu click() ini dan dikembalikan di
+   * finally - sebelum jembatan menjawab. Yang disetujui hanya kalimat itu,
+   * tepat sama; konfirmasi lain (hapus, dan seterusnya) diteruskan ke
+   * confirm asli. Tekanan tombol oleh ORANG tidak pernah lewat sini, jadi
+   * konfirmasinya tetap ditanyakan seperti biasa. Hanya dipakai bila
+   * pemintanya menyertakan setujuiKonfirmasi (konten.js, Baru & UI Baru).
+   */
+  const KONFIRMASI_SIMPAN_SIPP = "Apakah Anda Yakin Akan Menyimpan Data";
+
+  function klikDenganKonfirmasiSimpan(elemen) {
+    const asli = window.confirm;
+    let disetujui = 0;
+    const pengganti = function (pesan) {
+      if (String(pesan === undefined || pesan === null ? "" : pesan).trim() === KONFIRMASI_SIMPAN_SIPP) {
+        disetujui += 1;
+        return true;
+      }
+      return typeof asli === "function" ? asli.apply(window, arguments) : false;
+    };
+    let terpasang = false;
+    try {
+      window.confirm = pengganti;
+      terpasang = window.confirm === pengganti;
+    } catch (galat) {
+      terpasang = false;
+    }
+    try {
+      elemen.click();
+    } finally {
+      if (terpasang && window.confirm === pengganti) {
+        try {
+          window.confirm = asli;
+        } catch (galat) {
+          /* tidak dapat dikembalikan - tidak pernah terjadi pada window biasa */
+        }
+      }
+    }
+    return disetujui > 0 ? "disetujui" : terpasang ? "tidak-muncul" : "tidak-terpasang";
+  }
+
+  function tekanTombol(penunjuk, bukti, setujuiKonfirmasi) {
     const elemen = cariElemen(penunjuk);
     if (!elemen) return { ok: false, alasan: "tombol_tidak_ketemu", penunjuk };
     if (!tombolTampak(elemen)) return { ok: false, alasan: "tombol_tidak_tampak", penunjuk };
@@ -611,13 +665,17 @@
       telinga = dengarJawabanSimpan(borang, String(bukti.id || ""));
     }
 
+    let konfirmasi = "";
     try {
-      elemen.click();
+      if (setujuiKonfirmasi === true) konfirmasi = klikDenganKonfirmasiSimpan(elemen);
+      else elemen.click();
     } catch (galat) {
       if (telinga) telinga.lepas();
       return { ok: false, alasan: String(galat.message || galat).slice(0, 200) };
     }
-    return telinga ? { ok: true, bukti: telinga.keadaan() } : { ok: true };
+    const jawab = telinga ? { ok: true, bukti: telinga.keadaan() } : { ok: true };
+    if (setujuiKonfirmasi === true) jawab.konfirmasi = konfirmasi;
+    return jawab;
   }
 
   window.addEventListener("message", (peristiwa) => {
@@ -638,7 +696,7 @@
     } else if (pesan.jenis === "isi") {
       jawab = isiMedan(pesan.penunjuk, pesan.jenisMedan, pesan.nilai);
     } else if (pesan.jenis === "tekan") {
-      jawab = tekanTombol(pesan.penunjuk, pesan.bukti);
+      jawab = tekanTombol(pesan.penunjuk, pesan.bukti, pesan.setujuiKonfirmasi === true);
     } else {
       jawab = { ok: false, alasan: "permintaan_tidak_dikenali" };
     }

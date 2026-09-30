@@ -205,9 +205,9 @@ describe("antrian sidang", () => {
     expect(layanan).toContain("const ANTRIAN_SELESAI = 2;");
   });
 
-  it("nol baris bukan galat - tidak semua perkara mengambil nomor", () => {
+  it("nol baris bukan error - tidak semua perkara mengambil nomor", () => {
     const badan = potongFungsi(layanan, ["setelAntrian"]);
-    expect(badan).toContain("Nol baris BUKAN galat");
+    expect(badan).toContain("Nol baris BUKAN error");
     expect(badan).toContain("kering: true");
   });
 });

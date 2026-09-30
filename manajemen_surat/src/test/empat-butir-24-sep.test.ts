@@ -157,7 +157,7 @@ describe("butir 20 - penarikan e-Court", () => {
     expect(tarik).toContain("ringkasan.tidakTersedia");
   });
 
-  it("dan tidak ikut dihitung sebagai galat penarikan", () => {
+  it("dan tidak ikut dihitung sebagai error penarikan", () => {
     // ======================================================================
     // JENDELA TETAP 500 HURUF PERNAH MENELAN SELURUH CABANGNYA
     // ======================================================================

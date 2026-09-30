@@ -26,6 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { tanganiUnduhan } from "@/lib/unduh-berkas";
 import { formatDateTime } from "@/lib/format";
 import { tanggalHariPendek } from "@/lib/tanggal-indonesia";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
@@ -798,36 +799,14 @@ function TombolUnduh({
         cache: "no-store",
       });
 
-      const tipe = respons.headers.get("content-type") || "";
-      if (!respons.ok || tipe.includes("application/json")) {
-        const isi = await respons.json().catch(() => null);
-        setGalat(
-          pesanGalatPortal(isi, `HTTP ${respons.status}`).replace(/_/g, " ")
-        );
-        return;
-      }
-
-      const blob = await respons.blob();
-      const alamat = URL.createObjectURL(blob);
-      const tautan = document.createElement("a");
-      tautan.href = alamat;
-
-      // Nama berkas diambil dari jawaban server bila ada; kalau tidak, disusun
-      // dari kunci dokumen supaya tetap dapat dibedakan di folder Downloads.
-      const disposisi = respons.headers.get("content-disposition") || "";
-      const cocok = disposisi.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
-      tautan.download = cocok
-        ? decodeURIComponent(cocok[1])
-        : `${documentKey}.${format === "word" ? "docx" : "pdf"}`;
-
-      document.body.appendChild(tautan);
-      tautan.click();
-      tautan.remove();
-
-      // Alamat obyek TIDAK dilepas seketika. Peramban masih membaca blobnya
-      // setelah klik selesai diproses, dan melepasnya di baris yang sama
-      // membatalkan sebagian unduhan tanpa pesan apa pun.
-      window.setTimeout(() => URL.revokeObjectURL(alamat), 60000);
+      // Satu penanganan bersama (butir 31) - lihat src/lib/unduh-berkas.ts.
+      // Nama berkas dari jawaban server bila ada; kalau tidak, dari kunci
+      // dokumen supaya tetap dapat dibedakan di folder Downloads.
+      const hasil = await tanganiUnduhan(respons, {
+        namaCadangan: `${documentKey}.${format === "word" ? "docx" : "pdf"}`,
+        alamat: apiPath(`/api/aleta-ecourt/berkas?${params.toString()}`),
+      });
+      if (!hasil.ok) setGalat(hasil.pesan);
     } catch (error) {
       setGalat(error instanceof Error ? error.message : "Gagal mengunduh.");
     } finally {

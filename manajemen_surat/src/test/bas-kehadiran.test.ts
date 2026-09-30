@@ -89,7 +89,7 @@ describe("menyimpan kehadiran", () => {
     await expect(simpanKehadiran(database, "uji", { perkaraId: PERKARA, sidangKe: 0 })).rejects.toThrow(/belum ditentukan/i);
   });
 
-  it("sidang yang belum dicatat mengembalikan kosong, bukan galat", async () => {
+  it("sidang yang belum dicatat mengembalikan kosong, bukan error", async () => {
     const database = await basisData();
     expect(await muatKehadiran(database, PERKARA, 9)).toBeNull();
     expect(await semuaKehadiran(database, "99999")).toEqual([]);

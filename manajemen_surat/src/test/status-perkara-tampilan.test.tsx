@@ -1306,7 +1306,7 @@ describe("telaah 26 Sep - yang termuat tidak disebut 'cocok'", () => {
   });
 });
 
-describe("telaah 26 Sep - galat habis waktu dikatakan dalam bahasa orangnya (layar -> rute sungguhan -> bot)", () => {
+describe("telaah 26 Sep - error habis waktu dikatakan dalam bahasa orangnya (layar -> rute sungguhan -> bot)", () => {
   async function cari(kata: string) {
     render(<AletaEcourtStatusPerkara />);
     fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: kata } });
@@ -1332,7 +1332,7 @@ describe("telaah 26 Sep - galat habis waktu dikatakan dalam bahasa orangnya (lay
     expect(await screen.findByText(kalimat, {}, { timeout: RUTE_MS })).toBeTruthy();
   });
 
-  it("galat yang BUKAN habis waktu tidak disamarkan menjadi habis waktu", async () => {
+  it("error yang BUKAN habis waktu tidak disamarkan menjadi habis waktu", async () => {
     pasangFetchLewatRute(() => ({ status: 500, isi: { ok: false, error: "Table 'sipp.perkara_pk' doesn't exist" } }));
     await cari("Sudarmin");
     expect(await screen.findByText("Table 'sipp.perkara_pk' doesn't exist", {}, { timeout: RUTE_MS })).toBeTruthy();

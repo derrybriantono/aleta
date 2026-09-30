@@ -2983,6 +2983,130 @@ function pecahHubungan(jawab, mentah) {
  * Panitera tetap memilih dan memeriksa sebelum menyimpan: yang disusun di
  * sini USULAN naskah, bukan keterangan saksi.
  */
+/**
+ * ============================================================================
+ * JAWABAN YANG BELUM TERISI - TIDAK PERNAH DIPULANGKAN SEBAGAI "..." (butir 28)
+ * ============================================================================
+ *
+ * Perbaikan 30 September 2026. 459/Pdt.G/2026/PA.Dgl pertanyaan 14 "Apakah
+ * sejak ada masalah, Penggugat dan Tergugat pernah diupayakan untuk rukun
+ * kembali?" terjawab "...;" - templat 04 ABT berbunyi "Ya, #1268#;" dan
+ * variabel 1268 (Upaya Damai Keluarga) perkara itu KOSONG di ABT. Jawaban
+ * titik-titik itu lolos sebagai jawaban dan tidak terbaca sebagai kosong.
+ *
+ * Dua aturan:
+ *   1. Pertanyaan UPAYA RUKUN diisi dari data yang ada, berurutan:
+ *        a. variabel 1268 (dikirim ekstensi sebagai `upayaDamai`),
+ *        b. posita - kalimat upaya damai keluarga (upayaDamaiDari),
+ *        c. mediasi perkara di SIPP yang tidak berhasil.
+ *      Tidak ada yang dikarang: sumbernya disebut di `terisiDariData`.
+ *   2. Jawaban yang SELURUHNYA kosong, "...", "…", "_", atau variabel
+ *      templat yang tak terisi (#1268#) diganti TANDA_BELUM_TERISI - kalimat
+ *      yang jelas bagi panel dan manusia - dan ditandai perluDiisi +
+ *      belumTerisi. Titik-titik DI TENGAH kalimat ("sejak ....") tetap
+ *      seperti semula (sudah ditandai perluDiisi).
+ */
+const TANDA_BELUM_TERISI = "[BELUM TERISI - isi dari keterangan saksi]";
+
+const POLA_TANYA_UPAYA_RUKUN =
+  /(upaya|diupayakan|diusahakan|dirukunkan|merukunkan|didamaikan|mendamaikan|dinasihati|dinasehati).{0,60}(rukun|damai)|rukun\s+kembali|upaya\s+(untuk\s+)?(merukunkan|mendamaikan|perdamaian)/i;
+
+/** Jawaban yang isinya hanya pembuka dan tanda pengganti - tidak ada keterangan apa pun. */
+function jawabanKosong(teks) {
+  const inti = String(teks || "")
+    // Hanya pembuka BERKOMA ("Ya, ;") - "Ya;" atau "Sudah;" sendiri adalah
+    // jawaban yang sah dan tidak boleh terbaca kosong.
+    .replace(/^\s*(ya|iya|benar|betul)\s*,/i, "")
+    .replace(/#\d{4}#/g, "")
+    .replace(/[\s.,;:_\u2026-]+/g, "");
+  return inti === "";
+}
+
+/** Variabel templat yang belum terganti, mis. "#1268#". */
+const POLA_VARIABEL_TERSISA = /#\d{4}#/;
+
+/** "keluarga Tergugat", "keluarga kedua belah pihak", "orang tua Penggugat" - siapa yang merukunkan. */
+const POLA_PERUKUN =
+  /\b((?:pihak\s+)?keluarga(?:\s+besar)?(?:\s+(?:kedua\s+belah\s+pihak|penggugat|tergugat|pemohon|termohon|masing-masing|dari\s+kedua\s+belah\s+pihak))?(?:\s+(?:dan|dengan)\s+keluarga\s+(?:penggugat|tergugat|pemohon|termohon))?|orang\s*tua(?:\s+(?:penggugat|tergugat|pemohon|termohon|kedua\s+belah\s+pihak))?|tokoh\s+(?:masyarakat|agama)|aparat\s+desa|kepala\s+desa|pemerintah\s+desa|BP4)\b/i;
+
+function perukunDari(kalimat) {
+  const cocok = String(kalimat || "").match(POLA_PERUKUN);
+  return cocok ? cocok[1].replace(/\s+/g, " ").trim() : "";
+}
+
+/**
+ * Sumber jawaban upaya rukun untuk satu perkara.
+ * @returns {{sumber: ""|"1268"|"posita"|"mediasi", kalimat: string, perukun: string}}
+ */
+function sumberUpayaDamai({ nilai1268, posita, mediasi, pelaku, lawan }) {
+  const p1 = String(lawan || "").trim() || "Penggugat";
+  const p2 = String(pelaku || "").trim() || "Tergugat";
+  const sebut = (t) => String(t || "").replace(/#0046#/g, p1).replace(/#0047#/g, p2);
+
+  // a. Variabel 1268 - nilai ABT perkara itu sendiri. Nilai bawaan ABT membawa
+  //    "#8498#" di ekornya; variabel tersisa dibuang, sisanya dipakai bila
+  //    masih berisi keterangan.
+  const v = sebut(nilai1268)
+    .replace(/DATA_TIDAK_ADA/gi, " ")
+    .replace(/#\d{4}#/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[;.,\s]+$/, "");
+  if (v && !jawabanKosong(v) && v.length >= 8) {
+    return { sumber: "1268", kalimat: v, perukun: perukunDari(v) };
+  }
+
+  // b. Posita - kalimat upaya damai keluarga.
+  const butir = kalimatPosita(posita);
+  const u = upayaDamaiDari(butir);
+  if (u.keadaan === "belum-ada") {
+    return { sumber: "posita", kalimat: `Belum pernah ada upaya untuk merukunkan ${p1} dan ${p2}`, perukun: "" };
+  }
+  if (u.keadaan === "gagal") {
+    const perukun = perukunDari(u.kalimat);
+    return {
+      sumber: "posita",
+      kalimat: perukun
+        ? `${p1} dan ${p2} sudah pernah diupayakan untuk dirukunkan oleh ${perukun}, namun tidak berhasil`
+        : `${p1} dan ${p2} sudah pernah diupayakan untuk rukun kembali, namun tidak berhasil`,
+      perukun,
+    };
+  }
+
+  // c. Mediasi di pengadilan yang tidak berhasil (perkara_mediasi).
+  const m = mediasi && typeof mediasi === "object" ? mediasi : null;
+  if (m && m.selesai && !m.berhasil) {
+    return {
+      sumber: "mediasi",
+      kalimat: `${p1} dan ${p2} sudah diupayakan untuk rukun kembali melalui mediasi, namun tidak berhasil`,
+      perukun: "",
+    };
+  }
+  return { sumber: "", kalimat: "", perukun: "" };
+}
+
+/**
+ * Mengisi jawaban pertanyaan upaya rukun yang masih kosong/bertanda.
+ * Pulang null bila pertanyaannya bukan upaya rukun, jawabannya sudah berisi,
+ * atau tidak ada sumber.
+ */
+function isiUpayaRukun({ tanya, jawab, upaya }) {
+  if (!POLA_TANYA_UPAYA_RUKUN.test(String(tanya || ""))) return null;
+  const teks = String(jawab || "");
+  const kosong = jawabanKosong(teks);
+  const bertanda = POLA_VARIABEL_TERSISA.test(teks) || /\.{3,}|_+|\u2026/.test(teks);
+  if (!kosong && !bertanda) return null;
+  if (!upaya || !upaya.kalimat) return null;
+  const kecil = upaya.kalimat.charAt(0).toLowerCase() + upaya.kalimat.slice(1);
+  // "Ya, #1268#;" - variabelnya diganti kalimat sumbernya.
+  if (/#1268#/.test(teks)) return teks.replace(/#1268#/, kecil);
+  // "... dirukunkan oleh ...., namun tidak berhasil" - hanya slot perukunnya.
+  if (!kosong && upaya.perukun && /oleh\s*(?:\.{3,}|_+|\u2026)/i.test(teks) && !/belum pernah/i.test(teks)) {
+    return teks.replace(/(?:\.{3,}|_+|\u2026)/, upaya.perukun);
+  }
+  return upaya.kalimat;
+}
+
 function susunKeteranganSaksiSdg(opsi) {
   const o = opsi && typeof opsi === "object" ? opsi : {};
   const templat = Array.isArray(o.templat) ? o.templat : [];
@@ -3054,6 +3178,16 @@ function susunKeteranganSaksiSdg(opsi) {
 
   // Fakta gugatan - dipakai mengisi titik-titik templat. Dibaca sekali.
   const fakta = faktaDariPosita(o.posita, o.pelaku, o.lawan);
+  // Upaya rukun (butir 28): variabel 1268 -> posita -> mediasi.
+  const upaya = sumberUpayaDamai({
+    nilai1268: o.upayaDamai,
+    posita: o.posita,
+    mediasi: o.mediasi,
+    pelaku: o.pelaku,
+    lawan: o.lawan,
+  });
+  const terisiDariData = [];
+  const belumTerisi = [];
 
   let pelanggaranInvarian = 0;
   const contohPelanggaran = [];
@@ -3116,8 +3250,16 @@ function susunKeteranganSaksiSdg(opsi) {
 
       // 2. Yang masih bertitik-titik diisi dari gugatan.
       const sebelumIsi = jawab;
+      // Upaya rukun lebih dulu: ia menimbang SELURUH jawaban (termasuk
+      // pilihan templat), bukan hanya titik-titiknya.
+      const dariUpaya = dariModus ? null : isiUpayaRukun({ tanya, jawab, upaya });
+      if (dariUpaya) {
+        jawab = dariUpaya;
+        pilihan = [];
+        if (ke === 1) terisiDariData.push({ no, tanya, sumber: upaya.sumber });
+      }
       jawab = lengkapiJawabanTemplat({ tanya, jawab, fakta });
-      if (ke === 1 && jawab !== sebelumIsi) terisiDariPosita.push({ no, tanya });
+      if (ke === 1 && jawab !== sebelumIsi && !dariUpaya) terisiDariPosita.push({ no, tanya });
       if (pilihan.length) pilihan = pilihan.map((p) => akhiriJawaban(besarkanAwal(lengkapiJawabanTemplat({ tanya, jawab: p, fakta }))));
       // "Ya, " templat dilepas (pembukanya dipilih ulang menurut profil manusia),
       // kecuali pada jawaban tetap yang tidak boleh disentuh.
@@ -3167,7 +3309,16 @@ function susunKeteranganSaksiSdg(opsi) {
       // Diperiksa pada jawaban DAN dasarnya: bentuk "saya menyaksikan dan
       // mendengar" tidak lagi memuat pola pilihannya, padahal pilihan melihat/
       // mendengar itu tetap milik saksi yang sesungguhnya.
+      // Jawaban yang SELURUHNYA kosong / titik-titik / "_" / variabel templat
+      // tak terisi tidak pernah dipulangkan apa adanya (butir 28).
+      const kosongSeluruhnya = jawabanKosong(akhir) || (POLA_VARIABEL_TERSISA.test(akhir) && jawabanKosong(akhir.replace(/#\d{4}#/g, "")));
+      if (kosongSeluruhnya) {
+        akhir = TANDA_BELUM_TERISI;
+        pilihan = [];
+        if (ke === 1) belumTerisi.push({ no, tanya });
+      }
       const perlu =
+        kosongSeluruhnya ||
         [akhir, dasar].some(
           (t) => POLA_BELUM_TERISI.test(t) || PILIHAN_TEMPLAT.test(t) || POLA_PILIHAN_SEBUTAN_TEKS.test(t)
         ) ||
@@ -3175,6 +3326,7 @@ function susunKeteranganSaksiSdg(opsi) {
         hubunganTerbuka;
       if (ke === 1 && perlu) perluDiisi.push({ no, tanya });
       const butir = { no, tanya, jawab: akhir, perluDiisi: perlu, varian };
+      if (kosongSeluruhnya) butir.belumTerisi = true;
       if (pilihan.length) butir.pilihan = pilihan;
       return butir;
     });
@@ -3208,6 +3360,11 @@ function susunKeteranganSaksiSdg(opsi) {
     // Yang BERHASIL diisi dari gugatan - disebut supaya yang membacanya tahu
     // kalimat itu bukan ketikan petugas, dan memeriksanya lebih dahulu.
     terisiDariPosita,
+    // Upaya rukun yang diisi dari data (1268 / posita / mediasi) - butir 28.
+    terisiDariData,
+    // Jawaban yang tidak punya sumber sama sekali: berbunyi TANDA_BELUM_TERISI.
+    belumTerisi,
+    tandaBelumTerisi: TANDA_BELUM_TERISI,
     identik,
     alasan,
     asalAlasan,
@@ -3216,6 +3373,10 @@ function susunKeteranganSaksiSdg(opsi) {
     modus: modusDipakai,
     catatan:
       (terisiDariPosita.length ? `${terisiDariPosita.length} jawaban diisi dari gugatan - periksa dahulu. ` : "") +
+      (terisiDariData.length
+        ? `Upaya rukun diisi dari ${terisiDariData.map((x) => (x.sumber === "1268" ? "variabel 1268" : x.sumber)).join(", ")} - periksa dahulu. `
+        : "") +
+      (belumTerisi.length ? `${belumTerisi.length} jawaban belum terisi dan bertanda "${TANDA_BELUM_TERISI}". ` : "") +
       (perluDiisi.length
         ? `${perluDiisi.length} jawaban masih memuat titik-titik atau pilihan templat dan menunggu keterangan saksi yang sesungguhnya.`
         : "Seluruh jawaban tersusun; baca kembali sebelum disimpan ke ABT."),
@@ -3224,6 +3385,28 @@ function susunKeteranganSaksiSdg(opsi) {
   if (ditolak.length) hasil.tipeKeluaranDitolak = ditolak;
   if (alasanDitolak.length) hasil.alasanDitolak = alasanDitolak;
   return hasil;
+}
+
+/**
+ * Mediasi terakhir satu perkara di SIPP (hanya SELECT) - sumber ketiga
+ * jawaban upaya rukun (butir 28). null bila tidak ada / tidak terbaca.
+ * Dibatasi 2,5 detik: keterangan saksi tidak boleh tertahan karena SIPP lambat.
+ */
+async function mediasiPerkara(nomorPerkara) {
+  const nomor = String(nomorPerkara || "").trim();
+  if (!nomor) return null;
+  const kueri = runQuery(
+    `SELECT m.hasil_mediasi AS hasil, m.keputusan_mediasi AS putus, m.mediasi_berhasil AS berhasil
+       FROM perkara_mediasi m JOIN perkara p ON p.perkara_id = m.perkara_id
+      WHERE p.nomor_perkara = ? ORDER BY m.mediasi_id DESC LIMIT 1`,
+    [nomor]
+  ).catch(() => null);
+  const batas = new Promise((selesai) => setTimeout(() => selesai(null), 2500));
+  const baris = await Promise.race([kueri, batas]);
+  const m = Array.isArray(baris) && baris[0];
+  if (!m) return null;
+  const berhasil = /^Y/i.test(String(m.hasil || "")) || Boolean(m.berhasil);
+  return { selesai: Boolean(m.putus) || Boolean(m.hasil), berhasil, hasil: String(m.hasil || "") };
 }
 
 module.exports = {
@@ -3239,6 +3422,13 @@ module.exports = {
   dariSipp,
   dariPositaItsbat,
   susunKeteranganSaksiSdg,
+  // Butir 28 (30 Sep 2026) - diuji langsung.
+  sumberUpayaDamai,
+  isiUpayaRukun,
+  jawabanKosong,
+  mediasiPerkara,
+  TANDA_BELUM_TERISI,
+  POLA_TANYA_UPAYA_RUKUN,
   alasanDariPosita,
   // Ragam keterangan saksi (t2-ragam-bas-bot) - diuji langsung.
   periksaInvarian,

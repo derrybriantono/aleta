@@ -134,7 +134,7 @@ describe("rute portal /api/aleta-ecourt/riwayat-pihak", () => {
     expect(json.data).toMatchObject({ available: true, ok: false, kode: "masukan_tidak_sah" });
   });
 
-  it("SIPP galat di bot: TERJANGKAU, kodenya gagal_membaca_sipp", async () => {
+  it("SIPP error di bot: TERJANGKAU, kodenya gagal_membaca_sipp", async () => {
     keadaan.jawabanBot = { ok: false, error: "Table 'perkara' doesn't exist", status: 500, kode: "gagal_membaca_sipp" };
     const { json } = await tanya("?perkaraId=5");
     expect(json.data).toMatchObject({ available: true, ok: false, kode: "gagal_membaca_sipp" });

@@ -429,7 +429,7 @@ describe("gerbang jabatan", () => {
 });
 
 describe("nilai tersimpan yang tidak terbaca", () => {
-  it("dijawab dengan keterangan, bukan galat yang meledak", async () => {
+  it("dijawab dengan keterangan, bukan error yang meledak", async () => {
     // Terjadi secara WAJAR: kunci enkripsi diganti, atau basis data dipulihkan
     // dari cadangan lama. Sebelumnya decryptCredentialSecret melempar galat,
     // sehingga keterangan yang sudah disiapkan tidak pernah terjangkau dan

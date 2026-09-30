@@ -33,6 +33,8 @@ import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-tampilan-ekstensi";
 import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templat-hukum";
 import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
+import { AletaEcourtPemetaanBlangko } from "@/components/portal/aleta-ecourt-pemetaan-blangko";
+import { AletaEcourtProfilSaklar } from "@/components/portal/aleta-ecourt-profil-saklar";
 import { AletaEcourtTipeKeluaran } from "@/components/portal/aleta-ecourt-tipe-keluaran";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -350,6 +352,11 @@ export function AletaEcourtAdmin() {
             dulu, baru bagaimana ekstensinya TAMPIL bagi mereka. Kartunya
             membawa id="tampilan-ekstensi" sebagai jangkar tautan. */}
         <AletaEcourtTampilanEkstensi />
+        {/* Profil saklar per peran (butir 25, 30 Sep 2026) - sesudah
+            tampilan: tampilan menentukan RUPA ekstensi, profil menentukan
+            saklar dan fitur yang menyala bagi tiap peran. Jangkar
+            #profil-saklar. */}
+        <AletaEcourtProfilSaklar />
         {/* Sesudah kewenangan: siapa memakai ekstensi dibaca lebih dulu,
             baru kalimat dan penunjuk yang dikeluarkannya. */}
         <AletaEcourtTipeKeluaran />
@@ -359,6 +366,10 @@ export function AletaEcourtAdmin() {
             #abt-wajib. */}
         <AletaEcourtTemplatHukum />
         <AletaEcourtAbtWajib />
+        {/* Pemetaan blangko putusan, relaas, dan pemberitahuan putusan
+            (butir 17, 30 Sep 2026). Jangkar #pemetaan-blangko - tab Juru Sita
+            di ekstensi menautkan ke sini. */}
+        <AletaEcourtPemetaanBlangko />
       </div>
 
       <AletaBotEcourtPengaturan />

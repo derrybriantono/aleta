@@ -320,7 +320,7 @@ describe("penolakan dibedakan di layar - tindakannya berbeda", () => {
     expect(screen.getByRole("button", { name: "Coba lagi" })).toBeTruthy();
   });
 
-  it("SIPP galat: disebut SIPP-nya, dengan tombol coba lagi", async () => {
+  it("SIPP error: disebut SIPP-nya, dengan tombol coba lagi", async () => {
     pasangFetch(() =>
       jawabanJson({ ok: true, data: { available: true, ok: false, kode: "gagal_membaca_sipp", alasan: "Table 'perkara' doesn't exist" } })
     );

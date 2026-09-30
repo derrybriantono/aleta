@@ -297,7 +297,7 @@ export function AletaBotEcourtPengaturan() {
                     {item.bawaan ? (
                       <p className="rounded bg-muted/50 p-2.5 text-xs text-muted-foreground">
                         Siapa yang diberitahu tidak dapat diubah untuk jenis bawaan. Mengubahnya lewat satu klik terlalu
-                        mudah untuk kesalahan yang akibatnya tidak terlihat — tidak ada pesan galat, hanya pemberitahuan
+                        mudah untuk kesalahan yang akibatnya tidak terlihat — tidak ada pesan error, hanya pemberitahuan
                         yang berhenti atau salah tujuan.
                       </p>
                     ) : null}
@@ -434,7 +434,7 @@ export function AletaBotEcourtPengaturan() {
                         <p className="rounded bg-muted/50 p-2.5 text-xs text-muted-foreground">
                           Kapan diingatkan tidak dapat diubah untuk agenda bawaan. Mematikan pengingat H-3 pada agenda
                           yang menuntut persiapan berhari-hari membuat pihak datang tanpa saksi, dan tidak ada pesan
-                          galat yang menandakannya.
+                          error yang menandakannya.
                         </p>
                       ) : null}
 

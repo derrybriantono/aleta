@@ -142,7 +142,7 @@ describe("baris aktif yang menentukan siapa bertugas", () => {
 });
 
 describe("keadaan batas", () => {
-  it("tanpa baris sama sekali menghasilkan kosong, bukan galat", () => {
+  it("tanpa baris sama sekali menghasilkan kosong, bukan error", () => {
     expect(satukanPetugas([])).toEqual({ nama: "", kode: "" });
     expect(satukanPetugas(undefined as never)).toEqual({ nama: "", kode: "" });
   });

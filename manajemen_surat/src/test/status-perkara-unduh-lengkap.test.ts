@@ -780,7 +780,12 @@ const baca = (jalur: string) =>
   readFileSync(path.join(akar, jalur), "utf8").replace(/\r\n/g, "\n");
 
 describe("butir 6 - yang tidak dapat dibuktikan dengan memanggil rutenya", () => {
-  const zip = baca("manajemen_surat/src/app/api/aleta-ecourt/berkas-zip/route.ts");
+  // Penyusun isi ZIP dipisah ke modul bersama sejak 30 Sep 2026 (dipakai juga
+  // sinkron Drive) - penjaga membaca rute DAN modulnya.
+  const zip =
+    baca("manajemen_surat/src/app/api/aleta-ecourt/berkas-zip/route.ts") +
+    "\n" +
+    baca("manajemen_surat/src/server/modules/aleta-ecourt/susun-arsip-perkara.ts");
   const tombol = baca("manajemen_surat/src/components/portal/tombol-unduh-zip.tsx");
   const layar = baca("manajemen_surat/src/components/portal/aleta-ecourt-status-perkara.tsx");
   const bot = baca("aleta_bot/services/sippJadwalSidangService.js");
@@ -803,7 +808,7 @@ describe("butir 6 - yang tidak dapat dibuktikan dengan memanggil rutenya", () =>
     expect(lib).toContain("export function tabelCsv(");
     for (const berkas of [
       "manajemen_surat/src/components/portal/aleta-ecourt-riwayat.tsx",
-      "manajemen_surat/src/app/api/aleta-ecourt/berkas-zip/route.ts",
+      "manajemen_surat/src/server/modules/aleta-ecourt/susun-arsip-perkara.ts",
     ]) {
       expect(baca(berkas), berkas).not.toContain("function ruasCsv(");
       expect(baca(berkas), berkas).toContain('from "@/lib/csv"');

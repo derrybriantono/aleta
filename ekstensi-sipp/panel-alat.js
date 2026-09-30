@@ -361,6 +361,11 @@ function alatPanelKeluarHidup() {
  * keadaan akan saling menimpa.
  */
 function alatPasangJalanKeluar(panel, kunci, opsi) {
+  // Pita "Pembaruan tersedia" (butir 24, Baru & UI Baru) - pintu ini dilewati
+  // ketiga panel, termasuk panel SIPP yang menyusun kepalanya sendiri.
+  // Didaftarkan SEBELUM pagar di bawah: panel yang isinya disusun ulang
+  // mendapatkan pitanya lagi. Pendaftarannya idempoten.
+  if (panel && typeof alatPasangPitaPembaruan === "function") alatPasangPitaPembaruan(panel);
   if (!panel || panel.dataset.jalanKeluar === "1") return;
   panel.dataset.jalanKeluar = "1";
   alatDaftarKeluar.add({ panel, kunci: String(kunci || ""), opsi: opsi || {}, pernah: false });
@@ -1686,6 +1691,9 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   void alatMuatKering();
 
   alatPasangJalanKeluar(panel, kunci);
+  // Klik 2x kepala = layar penuh (butir 18, Baru & UI Baru). Panel SIPP
+  // memasangnya sendiri di konten.js - kepalanya disusun di sana.
+  alatPasangKlikGandaKepala(panel, kunci, kepala);
   alatNormalkanJangkar(panel);
   const posisiTersimpan = await alatMuatPosisi(kunci);
   alatTerapkanPosisi(panel, posisiTersimpan);
@@ -2638,6 +2646,11 @@ const ALETA_COBA_BOLEH = [
   // baru Super Admin paling perlu melaporkan yang janggal. Mode LATIHAN tetap
   // menahannya: di sana tidak satu pun catatan ALETA boleh lahir.
   /\/aleta\/api\/feedback(?:[?#]|$)/,
+  // Konversi naskah (K1, perbaikan 30 Sep butir 8 dan 11): RTF/DOC/DOCX/PDF
+  // diubah bentuknya lewat soffice di bot lalu DIPULANGKAN saja - tidak ada
+  // yang disimpan di ALETA, SIPP, maupun ABT. Setara abt/pdf di atas. Yang
+  // menulis (unggah-sipp) tetap ditahan; konversi hanya langkah hitungnya.
+  /\/aleta\/api\/aleta-ecourt\/putusan\/konversi-naskah(?:[?#]|$)/,
 ];
 
 function alatUjiBersihMode(x) {
@@ -2678,7 +2691,14 @@ function alatKulit() {
 function alatFiturNyala(kode) {
   const b = alatUjiBerlaku();
   if (b.mode === "lama") return false;
-  return b.fitur[String(kode || "")] === true;
+  const k = String(kode || "");
+  if (b.fitur[k] !== true) return false;
+  // Profil peran (K4, perbaikan 30 Sep butir 25): pegawai yang bukan Super
+  // Admin/Admin hanya melihat fitur ide yang ada di profil perannya. Profil
+  // tanpa daftar fitur (null) tidak menyaring apa pun.
+  const p = alatProfilPeran();
+  if (p && p.fitur && p.fitur[k] !== true) return false;
+  return true;
 }
 
 /** Mode coba aktif: tampilan bukan Lama dan tindakan nyata tidak diizinkan. */
@@ -2759,6 +2779,7 @@ function alatBersihTampilanServer(x) {
     diterapkan: x.diterapkan === true,
     versi: String(x.versi || ""),
     diambil: Number(x.diambil) || 0,
+    profil: alatBersihProfil(x.profil),
   };
 }
 
@@ -2796,7 +2817,7 @@ async function alatSegarkanTampilanServer(paksa) {
       const isi = await jawab.json();
       const data = isi && isi.data ? isi.data : isi;
       const t = (data && data.tampilan) || {};
-      baru = alatBersihTampilanServer({ ...t, versi: data && data.versi, diambil: Date.now() });
+      baru = alatBersihTampilanServer({ ...t, versi: data && data.versi, diambil: Date.now(), profil: data && data.profil });
     } catch {
       baru = tetap();
     }
@@ -2809,10 +2830,12 @@ async function alatSegarkanTampilanServer(paksa) {
   } catch {
     /* berlaku untuk halaman ini saja */
   }
-  if (!lama || lama.versi !== baru.versi || lama.mode !== baru.mode || lama.diterapkan !== baru.diterapkan) {
+  const profilBerubah = JSON.stringify((lama && lama.profil) || null) !== JSON.stringify(baru.profil || null);
+  if (!lama || lama.versi !== baru.versi || lama.mode !== baru.mode || lama.diterapkan !== baru.diterapkan || profilBerubah) {
     alatTandaiUji();
     alatKabarkanUji();
   }
+  await alatTerapkanProfilSaklar();
   return baru;
 }
 
@@ -2829,6 +2852,9 @@ async function alatMuatUji() {
     /* penyimpanan tidak terbaca: tetap "lama" - tidak ada yang berubah */
   }
   alatTandaiUji();
+  // Profil peran dari singgahan (butir 25). Tanpa profil, atau dalam Lama,
+  // tidak ada yang ditulis - lihat alatTerapkanProfilSaklar.
+  await alatTerapkanProfilSaklar();
   // Widget checklist (Shadow DOM) mungkin sudah tergambar sebelum bacaan ini
   // kembali. Dalam tampilan Lama tidak ada yang perlu dikabarkan.
   if (alatUjiMode() !== "lama") alatKabarkanUji();
@@ -2848,6 +2874,480 @@ const ALAT_JUDUL_TUTUP_BARU = "Tutup panel (menjadi lencana) - ALETA tetap aktif
 
 function alatTutupHanyaMenciut() {
   return alatKulit() === "modern";
+}
+
+/* ─── 3b-bis. BAGIAN BERSAMA PERBAIKAN 30 SEPTEMBER 2026 ─────────────────────
+ *
+ * Empat hal yang dipakai lebih dari satu panel, dan karena itu hidup di sini,
+ * bukan disalin ke konten.js, abt.js, aleta.js, dan checklist.js:
+ *
+ *   butir 18  klik 2x kepala panel = layar penuh; klik 2x lagi = ukuran
+ *             bawaan (alatPasangKlikGandaKepala)
+ *   butir 24  pita "Pembaruan tersedia" di atas panel dan widget; satu klik
+ *             meminta pembaruan lalu memuat ulang ekstensi
+ *             (alatPasangPitaPembaruan, alatJalankanPembaruan)
+ *   butir 25  profil saklar mengikuti peran login (kontrak K4) - saklar dan
+ *             fitur ide pegawai yang bukan Super Admin/Admin
+ *             (alatProfilPeran, alatTerapkanProfilSaklar)
+ *   butir 6   penjelasan panjang dilipat di balik ⓘ (alatLipatPenjelasan)
+ *
+ * Semuanya hanya hidup dalam tampilan Baru dan UI Baru. Dalam Lama tidak ada
+ * atribut, elemen, pendengar yang bertindak, maupun permintaan tambahan:
+ * gerbangnya ditanyakan SAAT bertindak (alatUjiMode), sehingga pengalih di
+ * popup berlaku seketika tanpa memuat ulang halaman.
+ */
+
+// ── Butir 18: klik ganda kepala = layar penuh ────────────────────────────────
+
+const alatKlikGandaTerpasang = new WeakSet();
+/**
+ * Yang klik gandanya BUKAN milik kepala: kendali, dan elemen yang punya klik
+ * ganda sendiri - nomor perkara di kepala SIPP (.aleta-nomor-tukar) menukar
+ * nomor perkara dengan nomor register pada klik ganda. Elemen lain yang kelak
+ * memakai klik ganda cukup diberi atribut data-aleta-klik-ganda.
+ */
+const ALAT_KLIK_GANDA_BUKAN =
+  "button, a, input, select, textarea, label, summary, [contenteditable='true'], [role='button'], .aleta-warna-pilih, .aleta-nomor-tukar, [data-aleta-klik-ganda]";
+
+/**
+ * Klik 2x pada kepala panel: layar penuh; klik 2x lagi: kembali ke ukuran
+ * sebelumnya. Yang dikerjakan SAMA PERSIS dengan tombol ⛶ panel itu - tombol
+ * aslinya yang ditekan, sehingga panel SIPP (yang menyimpan dan memulihkan
+ * letaknya sendiri di konten.js) dan panel ABT/portal (panel-alat.js) tidak
+ * punya dua jalan untuk satu keadaan.
+ *
+ * Klik ganda pada tombol, tautan, isian, atau pemilih warna di kepala TIDAK
+ * memicunya: di sana klik ganda adalah dua tekanan tombol, bukan permintaan
+ * melebarkan panel. Panel yang sedang menjadi lencana juga tidak: klik
+ * gandanya milik alatPasangLencana (membentangkan).
+ *
+ * `kepala` boleh dikosongkan - yang dipakai lalu .aleta-kepala pertama di
+ * dalam panel. `kunci` diterima supaya pemanggilnya seragam dengan fungsi
+ * panel lain; ukuran tersimpan tidak disentuh (tombol ⛶ pun tidak).
+ */
+function alatPasangKlikGandaKepala(panel, kunci, kepala) {
+  if (!panel || typeof panel.addEventListener !== "function" || alatKlikGandaTerpasang.has(panel)) return;
+  alatKlikGandaTerpasang.add(panel);
+  // Fase TANGKAP pada panel: berjalan sebelum pendengar lencana (fase
+  // gelembung) sempat membentangkan panelnya - kalau tidak, klik ganda yang
+  // membentangkan lencana langsung melebarkannya juga.
+  panel.addEventListener(
+    "dblclick",
+    (peristiwa) => {
+      if (alatUjiMode() === "lama") return;
+      if (panel.classList.contains(KELAS_LENCANA)) return;
+      const k = kepala && panel.contains(kepala) ? kepala : panel.querySelector(".aleta-kepala");
+      if (!k) return;
+      // alatPasangGeser menangkap penunjuk pada PANEL, dan tangkapan itu
+      // membelokkan dblclick ke panel. Yang sesungguhnya diketuk dicari dari
+      // titik ketukannya.
+      let sasaran = peristiwa.target;
+      if (sasaran === panel && typeof document.elementFromPoint === "function" && Number.isFinite(peristiwa.clientX)) {
+        const di = document.elementFromPoint(peristiwa.clientX, peristiwa.clientY);
+        if (di) sasaran = di;
+      }
+      if (!sasaran || !k.contains(sasaran)) return;
+      if (
+        typeof sasaran.closest === "function" &&
+        sasaran.closest(ALAT_KLIK_GANDA_BUKAN)
+      ) {
+        return;
+      }
+      alatAlihLayarPenuh(panel, k);
+      try {
+        const pilihan = window.getSelection ? window.getSelection() : null;
+        if (pilihan) pilihan.removeAllRanges();
+      } catch {
+        /* kata yang terpilih oleh klik ganda hanya kosmetik */
+      }
+    },
+    true
+  );
+}
+
+/** Menekan tombol ⛶ panel ini; tanpa tombol, kelasnya sendiri yang dibalik. */
+function alatAlihLayarPenuh(panel, kepala) {
+  const tombol = (kepala && kepala.querySelector(".aleta-penuh")) || panel.querySelector(".aleta-penuh");
+  if (tombol && typeof tombol.click === "function") {
+    tombol.click();
+    return;
+  }
+  const sedang = panel.classList.toggle("aleta-panel-penuh");
+  if (!sedang) alatJepitTinggi(panel);
+}
+
+// ── Butir 25: profil saklar mengikuti peran login (K4) ───────────────────────
+
+/** Saklar yang boleh diatur profil peran. Saklar induk "aktif" SENGAJA tidak. */
+const ALAT_PROFIL_SAKLAR = ["tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "checklistMilestone", "suntingLangsungAbt"];
+/** Tanda profil yang terakhir diterapkan di PC ini: "<peran>|<saklar JSON>". */
+const ALAT_PROFIL_KUNCI_DITERAPKAN = "profilSaklarDiterapkan";
+
+/**
+ * data.profil dari GET /ekstensi/tampilan (K4), diperiksa lagi di sini.
+ * Kunci saklar di luar ALAT_PROFIL_SAKLAR dan kode fitur yang tidak berbentuk
+ * "<tempat>-<angka>" dibuang; nilai selain boolean dibuang.
+ */
+function alatBersihProfil(x) {
+  if (!x || typeof x !== "object" || Array.isArray(x)) return null;
+  let saklar = null;
+  if (x.saklar && typeof x.saklar === "object" && !Array.isArray(x.saklar)) {
+    saklar = {};
+    for (const k of ALAT_PROFIL_SAKLAR) if (typeof x.saklar[k] === "boolean") saklar[k] = x.saklar[k];
+  }
+  let fitur = null;
+  if (x.fitur && typeof x.fitur === "object" && !Array.isArray(x.fitur)) {
+    fitur = {};
+    for (const [k, v] of Object.entries(x.fitur)) if (v === true && /^[a-z]+-\d{1,2}$/.test(k)) fitur[k] = true;
+  }
+  return {
+    peran: String(x.peran || "").slice(0, 40),
+    saklar,
+    fitur,
+    sumber: x.sumber === "admin" ? "admin" : "bawaan",
+    bolehUbahProfil: x.bolehUbahProfil === true,
+  };
+}
+
+/**
+ * Profil peran yang BERLAKU di tab ini, atau null:
+ *   - tampilan Lama: null (Lama tetap persis seperti sebelumnya);
+ *   - server tidak memberi profil (404, portal lama, belum masuk): null;
+ *   - Super Admin dan Admin (bolehUbahProfil): null - mereka tetap mengatur
+ *     saklarnya sendiri dan tetap melihat "Profil saklar" di popup.
+ */
+function alatProfilPeran() {
+  if (alatUjiBerlaku().mode === "lama") return null;
+  const s = alatUji.server;
+  const p = s && s.profil;
+  if (!p || p.bolehUbahProfil === true) return null;
+  return p;
+}
+
+/**
+ * Menyetel saklar ekstensi menurut profil peran - HANYA ketika profilnya
+ * berubah (peran lain yang masuk, atau admin mengubah isi profil), bukan pada
+ * tiap pemuatan halaman.
+ *
+ * Sebabnya: × pada widget checklist mematikan saklarnya, dan petugas boleh
+ * mematikan satu saklar untuk sementara. Profil yang ditulis ulang tiap lima
+ * menit akan menyalakannya kembali tanpa diminta - saklar yang melawan
+ * pemiliknya. Jadi profil menetapkan keadaan AWAL peran itu; perubahan
+ * pribadi sesudahnya bertahan sampai profilnya sendiri berubah.
+ *
+ * Dipulangkan true bila ada yang ditulis.
+ */
+async function alatTerapkanProfilSaklar() {
+  const p = alatProfilPeran();
+  if (!p || !p.saklar || !Object.keys(p.saklar).length) return false;
+  const tanda = `${p.peran}|${JSON.stringify(p.saklar)}`;
+  try {
+    const s = await chrome.storage.local.get([ALAT_PROFIL_KUNCI_DITERAPKAN, ...Object.keys(p.saklar)]);
+    if (s[ALAT_PROFIL_KUNCI_DITERAPKAN] === tanda) return false;
+    const tulis = { [ALAT_PROFIL_KUNCI_DITERAPKAN]: tanda };
+    for (const [k, v] of Object.entries(p.saklar)) if (s[k] !== v) tulis[k] = v;
+    await chrome.storage.local.set(tulis);
+    const diubah = Object.keys(tulis).filter((k) => k !== ALAT_PROFIL_KUNCI_DITERAPKAN);
+    alatCatat("profil", `saklar mengikuti profil ${p.peran || "peran"}`, diubah.join(", ") || "sudah sama");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── Butir 24: pita "Pembaruan tersedia" ──────────────────────────────────────
+
+/** Singgahan versi yang disajikan portal: { portal, diambil }. */
+const ALAT_PITA_KUNCI = "pitaPembaruan";
+/** SIPP memuat ulang halaman tiap klik; satu bacaan per sepuluh menit cukup. */
+const ALAT_PITA_JEDA_MS = 10 * 60 * 1000;
+const alatPitaPanel = new Set();
+let alatPitaJanji = null;
+let alatPitaPendengar = false;
+
+/** Membandingkan "1.174.1" dengan "1.175.0": positif bila a lebih baru. */
+function alatBandingVersi(a, b) {
+  const pecah = (x) => String(x || "").split(".").map((n) => Number(n) || 0);
+  const kiri = pecah(a);
+  const kanan = pecah(b);
+  for (let i = 0; i < Math.max(kiri.length, kanan.length); i += 1) {
+    const selisih = (kiri[i] || 0) - (kanan[i] || 0);
+    if (selisih !== 0) return selisih;
+  }
+  return 0;
+}
+
+/**
+ * { portal, terpasang } bila portal menyajikan versi yang LEBIH BARU daripada
+ * yang terpasang; null selainnya - termasuk portal mati, belum masuk, dan
+ * versi pengembangan yang justru lebih maju. Satu GET per sepuluh menit per
+ * PC (singgahan pitaPembaruan), dan tidak sama sekali dalam Lama atau di
+ * layar publik portal.
+ *
+ * `opsi.tanpaAmbil`: hanya membaca singgahan, berapa pun umurnya - tidak
+ * pernah bertanya ke portal. Dipakai widget checklist, yang dijanjikan tidak
+ * menambah permintaan (uji widget tahap 3); bacaannya diisi panel ALETA yang
+ * hidup di halaman yang sama.
+ */
+function alatPembaruanTersedia(paksa, opsi) {
+  if (opsi && opsi.tanpaAmbil === true) return alatHitungPembaruan(false, true);
+  if (!paksa && alatPitaJanji) return alatPitaJanji;
+  alatPitaJanji = alatHitungPembaruan(paksa, false);
+  return alatPitaJanji;
+}
+
+async function alatHitungPembaruan(paksa, tanpaAmbil) {
+  if (alatUjiMode() === "lama") return null;
+  const jalur = typeof location !== "undefined" && location ? location.pathname : "";
+  if (alatHalamanPublikPortal(jalur)) return null;
+  let terpasang = "";
+  try {
+    terpasang = String(chrome.runtime.getManifest().version || "");
+  } catch {
+    return null;
+  }
+  if (!terpasang) return null;
+  let portal = "";
+  let segar = false;
+  try {
+    const s = await chrome.storage.local.get([ALAT_PITA_KUNCI]);
+    const x = s && s[ALAT_PITA_KUNCI];
+    const umur = x && typeof x === "object" ? Date.now() - Number(x.diambil || 0) : Infinity;
+    if (x && typeof x === "object" && (tanpaAmbil || (!paksa && umur >= 0 && umur < ALAT_PITA_JEDA_MS))) {
+      portal = String(x.portal || "");
+      segar = true;
+    }
+  } catch {
+    /* tanpa singgahan: ditanyakan */
+  }
+  if (!segar && !tanpaAmbil) {
+    try {
+      const jawab = await fetch(ALAT_EKSTENSI_INFO, { credentials: "include", cache: "no-store" });
+      if (jawab.ok) {
+        const luar = await jawab.json();
+        const data = luar && luar.data ? luar.data : luar;
+        portal = String((data && data.versi) || "");
+      }
+    } catch {
+      portal = "";
+    }
+    try {
+      // Kegagalan pun disinggahkan: portal yang mati tidak ditanya lagi
+      // pada tiap klik SIPP.
+      await chrome.storage.local.set({ [ALAT_PITA_KUNCI]: { portal, diambil: Date.now() } });
+    } catch {
+      /* berlaku untuk halaman ini saja */
+    }
+  }
+  if (!/^\d+(\.\d+){1,3}$/.test(portal)) return null;
+  return alatBandingVersi(portal, terpasang) > 0 ? { portal, terpasang } : null;
+}
+
+/**
+ * Minta pembaruan ke latar.js, lalu muat ulang ekstensi - satu klik.
+ *
+ *   1. "perbarui": Chrome memeriksa updates.xml; CRX yang lebih baru
+ *      diunduh, dipasang, dan ekstensi dimuat ulang oleh latar.js.
+ *   2. Bila Chrome tidak memasang apa pun (Load unpacked, "no_update",
+ *      "ditahan"): "muat-ulang" - membaca ulang berkas dari foldernya.
+ *   3. Halaman dimuat ulang sesudahnya, sebab skrip konten TIDAK disuntikkan
+ *      ulang ke halaman yang sudah terbuka.
+ *
+ * Putaran cetak relaas yang belum selesai membuat latar.js MENAHAN pemuatan
+ * ulang; kalimatnya disampaikan dan tekanan KEDUA (paksa) baru memaksa -
+ * aturan yang sama dengan tombol di popup dan panel portal.
+ *
+ * `kabar(teks, buruk)` menampilkan keadaan. Dipulangkan { selesai, perluPaksa }.
+ */
+async function alatJalankanPembaruan(paksa, kabar) {
+  const sampaikan = typeof kabar === "function" ? kabar : () => {};
+  const kirim = async (jenis) => {
+    try {
+      const pesan = paksa ? { sumber: "aleta-panel", jenis, paksa: true } : { sumber: "aleta-panel", jenis };
+      return await chrome.runtime.sendMessage(pesan);
+    } catch {
+      // Konteks mati sebelum jawaban sampai: ekstensinya memang sedang
+      // dimuat ulang - pertanda perintahnya berjalan.
+      return { ok: true, keadaan: "konteks_mati", pesan: "Ekstensi sedang dimuat ulang." };
+    }
+  };
+  sampaikan("Menanyakan pembaruan kepada Chrome…", false);
+  let jawab = await kirim("perbarui");
+  if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+    sampaikan(`${jawab.pesan || "Putaran cetak relaas belum selesai."} Klik sekali lagi untuk tetap memperbarui.`, true);
+    return { selesai: false, perluPaksa: true };
+  }
+  const terpasang = jawab && jawab.ok && (jawab.keadaan === "dipasang" || jawab.keadaan === "konteks_mati");
+  if (!terpasang) {
+    sampaikan("Memuat ulang ekstensi dari berkasnya…", false);
+    jawab = await kirim("muat-ulang");
+    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+      sampaikan(`${jawab.pesan || "Putaran cetak relaas belum selesai."} Klik sekali lagi untuk tetap memuat ulang.`, true);
+      return { selesai: false, perluPaksa: true };
+    }
+  }
+  sampaikan(`${(jawab && jawab.pesan) || "Ekstensi sedang dimuat ulang."} Halaman ini dimuat ulang sebentar lagi.`, false);
+  setTimeout(() => {
+    try {
+      location.reload();
+    } catch {
+      /* halaman sudah berpindah */
+    }
+  }, 1500);
+  return { selesai: true, perluPaksa: false };
+}
+
+/** Isi pita: judul versi + keterangan singkat. Dipakai panel dan widget. */
+function alatTeksPita(info) {
+  return {
+    judul: `Pembaruan tersedia ${info.portal}`,
+    ket: `terpasang ${info.terpasang} · klik untuk memperbarui dan memuat ulang ekstensi`,
+  };
+}
+
+/** Membuat tombol pita untuk satu panel (elemen biasa, bukan Shadow DOM). */
+function alatBuatPita(info) {
+  const t = alatTeksPita(info);
+  const pita = document.createElement("button");
+  pita.type = "button";
+  pita.className = "aleta-pita-pembaruan";
+  pita.setAttribute("role", "status");
+  pita.title = `Versi ${info.portal} tersedia di server; yang terpasang ${info.terpasang}. Klik: minta pembaruan ke Chrome, lalu muat ulang ekstensi dan halaman ini.`;
+  const judul = document.createElement("b");
+  judul.textContent = t.judul;
+  const ket = document.createElement("span");
+  ket.className = "aleta-pita-pembaruan-ket";
+  ket.textContent = t.ket;
+  pita.appendChild(judul);
+  pita.appendChild(ket);
+  let paksa = false;
+  pita.addEventListener("click", async (peristiwa) => {
+    peristiwa.preventDefault();
+    peristiwa.stopPropagation();
+    if (pita.disabled) return;
+    pita.disabled = true;
+    const hasil = await alatJalankanPembaruan(paksa, (teks, buruk) => {
+      ket.textContent = teks;
+      pita.classList.toggle("aleta-pita-pembaruan-buruk", Boolean(buruk));
+    });
+    paksa = hasil.perluPaksa === true;
+    if (!hasil.selesai) pita.disabled = false;
+  });
+  return pita;
+}
+
+/** Menggambar atau mencabut pita di tiap panel yang terdaftar. */
+async function alatSegarkanPita() {
+  const tampil = alatUjiMode() !== "lama";
+  const info = tampil ? await alatPembaruanTersedia(false) : null;
+  for (const panel of Array.from(alatPitaPanel)) {
+    if (!panel.isConnected && panel.aletaPitaPernah) {
+      alatPitaPanel.delete(panel);
+      continue;
+    }
+    const ada = panel.querySelector(":scope > .aleta-pita-pembaruan");
+    if (!info || alatUjiMode() === "lama") {
+      if (ada) ada.remove();
+      continue;
+    }
+    if (panel.isConnected) panel.aletaPitaPernah = true;
+    if (!ada) panel.insertBefore(alatBuatPita(info), panel.firstChild);
+  }
+}
+
+/**
+ * Mendaftarkan panel untuk pita pembaruan (butir 24). Dipanggil
+ * alatPasangJalanKeluar - pintu yang dilewati panel SIPP, ABT, dan portal -
+ * jadi tidak ada panel yang perlu mengingat memanggilnya.
+ */
+function alatPasangPitaPembaruan(panel) {
+  if (!panel || typeof panel.querySelector !== "function") return;
+  alatPitaPanel.add(panel);
+  if (!alatPitaPendengar) {
+    alatPitaPendengar = true;
+    try {
+      document.addEventListener("aleta-uji-berubah", () => {
+        alatPitaJanji = null;
+        void alatSegarkanPita();
+      });
+    } catch {
+      /* pita mengikuti tampilan saat halaman dimuat ulang */
+    }
+  }
+  // Dalam Lama tidak ada permintaan dan tidak ada elemen.
+  if (alatUjiMode() === "lama") return;
+  void alatSegarkanPita();
+}
+
+// ── Butir 6: penjelasan panjang dilipat di balik ⓘ ───────────────────────────
+
+/** Keterangan yang lebih panjang dari ini dilipat (sama dengan T6_INFO_BATAS abt.js). */
+const ALAT_INFO_BATAS = 90;
+
+/** Kalimat pertama, dipotong bila terlalu panjang - ringkasan di samping ⓘ. */
+function alatRingkasPenjelasan(teks) {
+  const bersih = String(teks || "").replace(/\s+/g, " ").trim();
+  const titik = bersih.search(/[.!?](\s|$)/);
+  const kalimat = titik > 0 ? bersih.slice(0, titik + 1) : bersih;
+  return kalimat.length <= 72 ? kalimat : `${kalimat.slice(0, 64).replace(/\s+\S*$/, "")}…`;
+}
+
+/**
+ * Melipat penjelasan panjang di dalam `akar` di balik tombol ⓘ yang dapat
+ * dibuka-tutup (butir 6 dan 26: "tidak ramai, tanpa menghilangkan fitur").
+ *
+ * Yang dilipat HANYA elemen yang cocok `pemilih`, lebih panjang dari
+ * `batas` huruf, dan tidak memuat tombol, tautan, maupun isian - penjelasan
+ * murni. Yang berisi kendali tidak pernah dilipat, supaya tidak ada fitur
+ * yang tersembunyi di balik ⓘ. Isinya tidak diubah: elemen aslinya yang
+ * disembunyikan, dan ⓘ menampilkannya kembali di tempat yang sama.
+ *
+ * Dalam Lama tidak berbuat apa pun. Aman dipanggil berulang: yang sudah
+ * dilipat dilewati. Dipulangkan jumlah yang baru dilipat.
+ */
+function alatLipatPenjelasan(akar, pemilih, batas) {
+  if (!akar || typeof akar.querySelectorAll !== "function" || alatUjiMode() === "lama") return 0;
+  const ambang = Number(batas) > 0 ? Number(batas) : ALAT_INFO_BATAS;
+  let jumlah = 0;
+  for (const el of Array.from(akar.querySelectorAll(pemilih))) {
+    if (el.hidden || el.hasAttribute("data-aleta-dilipat")) continue;
+    if (el.parentElement && el.parentElement.closest("[data-aleta-dilipat]")) continue;
+    if (el.querySelector("button, a[href], input, select, textarea")) continue;
+    const teks = String(el.textContent || "").replace(/\s+/g, " ").trim();
+    if (teks.length <= ambang || !el.parentNode) continue;
+
+    const tombol = document.createElement("button");
+    tombol.type = "button";
+    tombol.className = "aleta-info-lipat";
+    tombol.setAttribute("aria-expanded", "false");
+    tombol.title = "Tampilkan penjelasan lengkap";
+    const ikon = document.createElement("span");
+    ikon.className = "aleta-info-lipat-ikon";
+    ikon.textContent = "ⓘ";
+    ikon.setAttribute("aria-hidden", "true");
+    const ringkas = document.createElement("span");
+    ringkas.className = "aleta-info-lipat-ringkas";
+    ringkas.textContent = alatRingkasPenjelasan(teks);
+    tombol.appendChild(ikon);
+    tombol.appendChild(ringkas);
+
+    el.setAttribute("data-aleta-dilipat", "ya");
+    el.hidden = true;
+    tombol.addEventListener("click", (peristiwa) => {
+      // Tombol di dalam <label> atau <summary>: tanpa ini klik membalik
+      // saklarnya atau menutup lacinya juga.
+      peristiwa.preventDefault();
+      peristiwa.stopPropagation();
+      const buka = el.hidden;
+      el.hidden = !buka;
+      ringkas.hidden = buka;
+      tombol.setAttribute("aria-expanded", buka ? "true" : "false");
+      tombol.title = buka ? "Sembunyikan penjelasan" : "Tampilkan penjelasan lengkap";
+    });
+    el.parentNode.insertBefore(tombol, el);
+    jumlah += 1;
+  }
+  return jumlah;
 }
 
 /* ─── 3c. SENYAP 1 JAM (ide popup-12) ────────────────────────────────────────
@@ -2964,6 +3464,9 @@ const ALETA_LATIHAN_BOLEH = [
   /\/aleta\/api\/aleta-ecourt\/putusan\/praperiksa(?:[?#]|$)/,
   /\/aleta\/api\/aleta-bot\/sipp-konteks\/massal(?:[?#]|$)/,
   /\/aps_badilag\/.*\/main\/cari(?:[?#]|$)/,
+  // Konversi naskah (K1) hanya menghitung - lihat ALETA_COBA_BOLEH. Unggahan
+  // hasilnya ke SIPP (unggah-sipp) tetap ditahan latihan.
+  /\/aleta\/api\/aleta-ecourt\/putusan\/konversi-naskah(?:[?#]|$)/,
 ];
 
 /** Sebutan manusiawi untuk rute yang paling sering ditahan. */
@@ -3354,7 +3857,7 @@ function alatRupaTombolRingkas(tombol) {
   tombol.textContent = nyala ? "⌄" : "⌃";
   tombol.title = nyala
     ? "Keterangan panjang sedang disembunyikan. Tekan untuk menampilkannya kembali."
-    : "Sembunyikan keterangan panjang. Tombol, isian, dan pesan galat tetap tampil.";
+    : "Sembunyikan keterangan panjang. Tombol, isian, dan pesan error tetap tampil.";
 }
 
 /**

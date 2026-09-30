@@ -368,7 +368,7 @@ describe("putusan.alasan.ciri lewat modul", () => {
     expect(await hitung("SELECT COUNT(*) AS n FROM aleta_tipe_keluaran_riwayat WHERE tindakan = 'ukur'")).toBe(1);
   });
 
-  it("galat bot tidak ditelan: 502 dengan sebabnya, tidak ada yang tersimpan", async () => {
+  it("error bot tidak ditelan: 502 dengan sebabnya, tidak ada yang tersimpan", async () => {
     const id = await usulan(CALON);
     tiruan.ukur = async () => ({ ok: false, error: "Tabel SIPP perkara tidak terbaca" });
     await expect(ukurPortal.jalankanUkur(d(), "usr-admin", { id })).rejects.toMatchObject({

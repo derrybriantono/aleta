@@ -222,7 +222,12 @@ const ISI_BLANGKO: Record<string, string> = {
   "5125": "Bahwa sejak tahun 2024 sering terjadi perselisihan karena Tergugat suka berjudi;",
 };
 
-function bukaBlangko(kode: string[], isi: Record<string, string>, fetch: (a: string, o?: any) => Promise<any>) {
+function bukaBlangko(
+  kode: string[],
+  isi: Record<string, string>,
+  fetch: (a: string, o?: any) => Promise<any>,
+  simpananAwal: Record<string, unknown> = {}
+) {
   const baris = kode
     .map(
       (k) =>
@@ -238,7 +243,7 @@ function bukaBlangko(kode: string[], isi: Record<string, string>, fetch: (a: str
   );
   halamanTerbuka.push(dom);
   const w = dom.window as any;
-  const simpanan: Record<string, unknown> = {};
+  const simpanan: Record<string, unknown> = { ...simpananAwal };
   w.chrome = {
     runtime: {
       getManifest: () => ({ version: "uji" }),
@@ -270,7 +275,7 @@ function bukaBlangko(kode: string[], isi: Record<string, string>, fetch: (a: str
     SUMBER_ALAT +
       "\n;\n" +
       SUMBER_ABT +
-      "\n;\nwindow.__uji = { susunMuatanSdg, variabelSaksiSdg, VAR_SAKSI_TANYA_JAWAB, VAR_NAMA_SAKSI };"
+      "\n;\nwindow.__uji = { susunMuatanSdg, nilaiUpayaDamai, variabelSaksiSdg, VAR_SAKSI_TANYA_JAWAB, VAR_NAMA_SAKSI };"
   );
   return w;
 }
@@ -340,6 +345,28 @@ describe("muatan saksi-sdg (susunMuatanSdg dijalankan dari abt.js)", () => {
     const bot = j.c.jawabanBot[0];
     expect(bot.saksiDitolak).toBeUndefined();
     expect(bot.saksiSdg.saksi).toHaveLength(3);
+    // Tampilan Lama (tanpa ujiTampilan): muatan persis seperti sebelumnya - tanpa upayaDamai.
+    expect("upayaDamai" in m).toBe(false);
+  });
+
+  it("butir 28 (Baru/UI Baru): nilai 1268 (Upaya Damai Keluarga) di blangko ikut dikirim sebagai upayaDamai", async () => {
+    for (const mode of ["baru", "ui"]) {
+      const j = jaringan();
+      const w = bukaBlangko(KODE_BLANGKO, { ...ISI_BLANGKO, "1268": "sudah didamaikan keluarga namun tidak berhasil" }, j.fetch, {
+        ujiTampilan: mode,
+      });
+      await susunSdg(w);
+      expect(j.c.usulan[0].upayaDamai, mode).toBe("sudah didamaikan keluarga namun tidak berhasil");
+    }
+  });
+
+  it("butir 28: DATA_TIDAK_ADA, isian tanpa huruf, dan variabel belum terganti tidak dikirim", () => {
+    const w = bukaBlangko(KODE_BLANGKO, ISI_BLANGKO, jaringan().fetch);
+    for (const kosong of ["", "DATA_TIDAK_ADA", " data_tidak_ada ", "...", "_", "#1268#", "#8498# ;"]) {
+      expect(w.__uji.nilaiUpayaDamai(kosong), JSON.stringify(kosong)).toBe("");
+      expect("upayaDamai" in w.__uji.susunMuatanSdg({ upayaDamai: kosong }), JSON.stringify(kosong)).toBe(false);
+    }
+    expect(w.__uji.susunMuatanSdg({ upayaDamai: "dirukunkan keluarga #8498#" }).upayaDamai).toBe("dirukunkan keluarga #8498#");
   });
 });
 

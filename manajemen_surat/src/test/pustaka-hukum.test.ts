@@ -316,7 +316,7 @@ describe("penautan topik", () => {
     expect(await peraturanTopik(database, "cerai-gugat")).toHaveLength(1);
   });
 
-  it("topik yang tidak dikenali mengembalikan kosong, bukan galat", async () => {
+  it("topik yang tidak dikenali mengembalikan kosong, bukan error", async () => {
     const database = await basisData();
     expect(await peraturanTopik(database, "topik-tidak-ada")).toEqual([]);
     expect(await peraturanTopik(database, "")).toEqual([]);

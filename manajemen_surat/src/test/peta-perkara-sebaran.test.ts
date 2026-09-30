@@ -279,7 +279,7 @@ describe("satu kueri, dikelompokkan di Node", () => {
     expect(layanan).toContain("0,5 detik");
   });
 
-  it("galatnya TIDAK ditelan", () => {
+  it("errornya TIDAK ditelan", () => {
     // Susunan sebelumnya membungkus tiap kueri dengan `.catch(() => [])`, dan
     // satu kueri faktor yang keliru memulangkan daftar kosong yang terbaca di
     // layar sebagai "tidak ada faktor perceraian" - kalimat yang salah.

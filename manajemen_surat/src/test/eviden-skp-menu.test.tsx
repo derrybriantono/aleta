@@ -224,7 +224,7 @@ describe("daftar dokumen", () => {
   });
 });
 
-describe("keadaan memuat dan galat yang jujur", () => {
+describe("keadaan memuat dan error yang jujur", () => {
   it("daftar gagal: kalimat rute ditampilkan, lalu Coba lagi meminta ulang", async () => {
     let gagal = true;
     const ambil = pasangFetch(() =>

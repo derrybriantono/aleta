@@ -150,8 +150,8 @@ describe("antrian digerakkan sesudahnya, dan gagalnya tidak membatalkan penundaa
     expect(potongan).not.toMatch(/antrian\.ok\s*\?\s*200/);
   });
 
-  it("layar menyebut nol baris bukan galat", () => {
-    expect(layar).toContain("Nol baris bukan galat");
+  it("layar menyebut nol baris bukan error", () => {
+    expect(layar).toContain("Nol baris bukan error");
     expect(layar).toContain("Catatannya tetap sah dan tetap tersimpan");
   });
 });

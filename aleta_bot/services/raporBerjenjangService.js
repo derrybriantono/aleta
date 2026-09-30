@@ -174,7 +174,7 @@ function berjenjang(hasilPenilaian, dimensi) {
     })(),
     catatan:
       "Rapor ini penilaian yang SAMA dengan angka pengadilan, dilihat per pelaku - bukan penilaian lain. " +
-      "Jumlah penyebut seluruh pelaku selalu sama dengan penyebut pengadilan; bila tidak, kerangkanya berhenti dengan galat.",
+      "Jumlah penyebut seluruh pelaku selalu sama dengan penyebut pengadilan; bila tidak, kerangkanya berhenti dengan error.",
   };
 }
 

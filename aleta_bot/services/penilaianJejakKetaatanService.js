@@ -315,7 +315,7 @@ async function barisCocokEcourt(rentang) {
     const sebab = [];
     if (angka(x.jumlahPihak) === 0) {
       sebab.push(
-        "terdaftar lewat e-Court tetapi tidak punya satu pun baris pihak di SIPP - penyalinannya gagal tanpa menimbulkan galat, dan perkara tanpa pihak tidak dapat dipanggil sampai hari sidang tiba"
+        "terdaftar lewat e-Court tetapi tidak punya satu pun baris pihak di SIPP - penyalinannya gagal tanpa menimbulkan error, dan perkara tanpa pihak tidak dapat dipanggil sampai hari sidang tiba"
       );
     }
     if (angka(x.jumlahEfiling) > 1) {
@@ -730,7 +730,7 @@ const BUTIR = [
     kunci: "cocokSippArsipEcourt",
     judul: "Pencocokan SIPP dengan Arsip e-Court",
     keterangan:
-      "Perkara e-Court hidup di dua tempat: tabel perkara milik SIPP dan tabel salinan dari e-Court pusat. Yang diperiksa arah yang berbahaya - perkara yang punya baris e-filing tetapi pihaknya tidak tersalin. Penyalinan yang gagal tidak menimbulkan galat apa pun; ia hanya menghasilkan perkara yang tidak dapat dipanggil, dan tidak ada yang menyadarinya sampai hari sidang.",
+      "Perkara e-Court hidup di dua tempat: tabel perkara milik SIPP dan tabel salinan dari e-Court pusat. Yang diperiksa arah yang berbahaya - perkara yang punya baris e-filing tetapi pihaknya tidak tersalin. Penyalinan yang gagal tidak menimbulkan error apa pun; ia hanya menghasilkan perkara yang tidak dapat dipanggil, dan tidak ada yang menyadarinya sampai hari sidang.",
     baris: barisCocokEcourt,
     pembilang: "Perkara e-Court yang pihaknya tersalin dan nomor e-filingnya tunggal",
     penyebut: "Seluruh perkara e-Court yang didaftarkan pada rentang ini",

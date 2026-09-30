@@ -146,6 +146,15 @@ export async function bacaPdf(jalur: string, batasHalaman = 500): Promise<IsiPdf
     return kosong(berkas, kode === "ENOENT" ? "Berkas tidak ditemukan." : "Berkas tidak terbaca.");
   }
 
+  return bacaPdfDariBita(new Uint8Array(data), berkas, batasHalaman);
+}
+
+/**
+ * Sama dengan bacaPdf, atas bita yang sudah di memori - dipakai konversi
+ * naskah PDF -> RTF (kontrak K1, 30 Sep 2026), yang tidak pernah menulis
+ * berkas unggahan ke cakram.
+ */
+export async function bacaPdfDariBita(data: Uint8Array, berkas: string, batasHalaman = 500): Promise<IsiPdf> {
   try {
     pasangRintisanPeramban();
 
@@ -155,6 +164,7 @@ export async function bacaPdf(jalur: string, batasHalaman = 500): Promise<IsiPdf
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
     const dokumen = await pdfjs.getDocument({
+      // Salinan: pdfjs memindahkan (transfer) penyangganya.
       data: new Uint8Array(data),
       // Tanpa berkas peta huruf dan tanpa pekerja: keduanya menuntut berkas
       // pendamping yang tidak ikut terpasang pada wadah, dan ketiadaannya

@@ -9,6 +9,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
 import { adaHasilSidang, hasilSidangPutusan } from "@/lib/hasil-sidang";
+import {
+  bawaanTunda,
+  pilihanTunda,
+  type BawaanTunda,
+  type MasukanBawaanTunda,
+  type MediasiRiwayat,
+  type SidangRiwayat,
+} from "@/lib/bawaan-tunda";
+import type { BahanSebutan } from "@/lib/sebutan-pihak";
 import { cn } from "@/lib/utils";
 
 /**
@@ -53,7 +62,15 @@ type KeadaanSidang = {
   urutan?: number;
   ruanganId?: number;
   dihadiriOleh?: number;
+  /** Bahan sebutan para pihak dan bendera ikrar - bot 30 Sep 2026 ke atas. */
+  alurPerkaraId?: number | null;
+  jenisPerkaraId?: number | null;
+  jenisPerkara?: string;
+  ikrarTalak?: string;
 };
+
+/** Riwayat sidang + mediasi perkara dari bot (butir 14); null = bot lama / tak terbaca. */
+type RiwayatTunda = { sidang: SidangRiwayat[]; mediasi: MediasiRiwayat } | null;
 
 type LangkahRencana = { tabel: string; aksi: string; keterangan: string };
 
@@ -68,6 +85,10 @@ type Hasil = {
   andaian?: string[];
   antrian?: { ok: boolean; kering: boolean; baris?: number; alasan?: string } | null;
   rencana?: LangkahRencana[];
+  /** Baris yang SUNGGUH tertulis - hanya pada jalan tulis (kering: false). */
+  selesai?: LangkahRencana[];
+  /** true: putus hanya menulis perkara_jadwal_sidang (butir 12). */
+  hanyaJadwal?: boolean;
 };
 
 type StatusPutusan = { id: number; nama: string; dipakai: number };
@@ -186,6 +207,40 @@ function hariIni() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+/** Bahan sebutan para pihak dari keadaan sidang - nomor lebih dulu dari kata, lihat sebutan-pihak.ts. */
+function sebutanDari(keadaan: KeadaanSidang): BahanSebutan {
+  return {
+    alurPerkaraId: keadaan.alurPerkaraId ?? null,
+    jenisPerkaraId: keadaan.jenisPerkaraId ?? null,
+    jenisPerkaraNama: keadaan.jenisPerkara ?? null,
+    nomorPerkara: keadaan.nomorPerkara,
+  };
+}
+
+function masukanBawaanTunda(keadaan: KeadaanSidang, riwayat: NonNullable<RiwayatTunda>): MasukanBawaanTunda {
+  const hadir = Number(keadaan.dihadiriOleh);
+  return {
+    jadwalId: Number(keadaan.jadwalId),
+    tanggalSidang: String(keadaan.tanggalSidang || "").slice(0, 10),
+    agenda: String(keadaan.agenda || ""),
+    dihadiriOlehSekarang: hadir >= 1 && hadir <= 4 ? hadir : null,
+    ikrar: String(keadaan.ikrarTalak || "").toUpperCase() === "Y",
+    riwayat: Array.isArray(riwayat.sidang) ? riwayat.sidang : [],
+    mediasi: riwayat.mediasi ?? null,
+    sebutan: sebutanDari(keadaan),
+  };
+}
+
+/**
+ * Usulan isian tunda dari riwayat sidang perkaranya (butir 14). null bila
+ * riwayatnya tidak terkirim (bot lama) - borangnya lalu memakai bawaan lama,
+ * bukan menebak "sidang pertama" dari riwayat kosong.
+ */
+function usulanTunda(keadaan: KeadaanSidang, riwayat: RiwayatTunda): BawaanTunda | null {
+  if (!riwayat || !Array.isArray(riwayat.sidang)) return null;
+  return bawaanTunda(masukanBawaanTunda(keadaan, riwayat));
+}
+
 /** Membuka bungkus { ok, data } - membacanya langsung selalu keliru dan tidak berbunyi. */
 async function bukaBungkus<T>(balasan: Response): Promise<T> {
   return ((await balasan.json()) as { data?: T })?.data ?? ({} as T);
@@ -233,12 +288,25 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
       const balasan = await fetch(apiPath(`/api/aleta-ecourt/sidang-tunda?jadwalId=${jadwalId}`), {
         cache: "no-store",
       });
-      const isi = await bukaBungkus<{ ok: boolean; alasan?: string; keadaan?: KeadaanSidang }>(balasan);
+      const isi = await bukaBungkus<{
+        ok: boolean;
+        alasan?: string;
+        keadaan?: KeadaanSidang;
+        riwayat?: RiwayatTunda;
+      }>(balasan);
       if (!isi.ok || !isi.keadaan) {
         setGalatMuat(isi.alasan || "Jadwal sidang tidak ditemukan.");
         return;
       }
       setKeadaan(isi.keadaan);
+      // Bawaan dari riwayat sidang perkaranya (butir 14, 30 Sep 2026) - hanya
+      // mengisi kotak yang masih kosong; semuanya tetap dapat diganti.
+      const usul = usulanTunda(isi.keadaan, isi.riwayat ?? null);
+      if (usul) {
+        setDihadiri(usul.kehadiran);
+        setAlasanTunda((lama) => lama || usul.alasan);
+        setAgendaBerikut((lama) => lama || usul.agenda);
+      }
       // Yang sudah tercatat pada barisnya dipakai kembali - tetapi hanya bila
       // angkanya salah satu dari yang berarti. Kolomnya kosong pada 1.373 dari
       // 20.171 baris, dan empat baris bernilai 10.
@@ -489,7 +557,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                         className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                       />
                       <datalist id="alasan-lazim">
-                        {ALASAN_LAZIM.map((a) => (
+                        {pilihanTunda(sebutanDari(keadaan), ALASAN_LAZIM, AGENDA_LAZIM).alasan.map((a) => (
                           <option key={a} value={a} />
                         ))}
                       </datalist>
@@ -505,7 +573,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                         className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                       />
                       <datalist id="agenda-lazim">
-                        {AGENDA_LAZIM.map((a) => (
+                        {pilihanTunda(sebutanDari(keadaan), ALASAN_LAZIM, AGENDA_LAZIM).agenda.map((a) => (
                           <option key={a} value={a} />
                         ))}
                       </datalist>
@@ -681,7 +749,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                   {hasil.antrian.ok
                     ? hasil.antrian.kering
                       ? "Antrian sidang akan ditandai selesai."
-                      : `Antrian sidang ditandai selesai (${hasil.antrian.baris ?? 0} baris). Nol baris bukan galat — tidak semua perkara mengambil nomor antrian.`
+                      : `Antrian sidang ditandai selesai (${hasil.antrian.baris ?? 0} baris). Nol baris bukan error — tidak semua perkara mengambil nomor antrian.`
                     : `Antrian tidak tergerakkan: ${hasil.antrian.alasan}. Catatannya tetap sah dan tetap tersimpan.`}
                 </span>
               </p>
@@ -725,28 +793,104 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
  * MESINNYA SATU, TEMPATNYA DUA
  * ============================================================================
  *
- * Alamat, bentuk muatan, jalan kering, dan seluruh nilai bawaannya SAMA
- * dengan layar Hasil Sidang - itu sebabnya komponen ini duduk di berkas yang
- * sama alih-alih di berkasnya sendiri. Dua jalan menulis ke SIPP yang disusun
- * terpisah akan menyimpang diam-diam: yang satu diperbaiki, yang lain tidak,
- * dan yang menyimpang adalah apa yang tertulis di berkas perkara orang.
+ * Alamat, bentuk muatan, dan seluruh nilai bawaannya SAMA dengan layar Hasil
+ * Sidang - itu sebabnya komponen ini duduk di berkas yang sama alih-alih di
+ * berkasnya sendiri. Dua jalan menulis ke SIPP yang disusun terpisah akan
+ * menyimpang diam-diam: yang satu diperbaiki, yang lain tidak, dan yang
+ * menyimpang adalah apa yang tertulis di berkas perkara orang.
  *
  * ============================================================================
- * TETAP DUA TEKAN: RENCANA DAHULU, BARU TULIS
+ * LANGSUNG DIEKSEKUSI, LALU RINGKASANNYA DIPERLIHATKAN (30 Sep 2026)
  * ============================================================================
  *
- * "Instan" di sini berarti tanpa berpindah layar - BUKAN tanpa diperiksa.
- * Rencananya tetap ditarik lebih dahulu lewat jalan kering dan diperlihatkan
- * apa adanya, sebab yang ditulis ke SIPP tercatat atas nama panitera sidang
- * perkara itu. Menghilangkan langkah itu demi satu tekan berarti menulis ke
- * berkas perkara tanpa seorang pun melihat apa yang ditulis.
+ * Butir 13 perbaikan 30 September 2026: "tidak perlu ada tombol lihat
+ * rencana pada tombol tunda dan putus di jadwal sidang, cukup langsung
+ * eksekusi saja". Dua tekan (rencana, lalu tulis) diganti SATU tekan yang
+ * menulis; yang tertulis diperlihatkan SESUDAHNYA dari jawaban server
+ * (`selesai` - baris demi baris yang sungguh tertulis), bukan dari rencana
+ * yang disusun sebelumnya. Layar Hasil Sidang penuh (/sidang-tunda/<id>)
+ * tetap memiliki langkah "Lihat rencananya" bagi yang ingin membacanya dulu.
  *
- * Jalan PUTUS memang dapat selesai dalam dua tekan: statusnya berbawaan
- * Dikabulkan - terukur 8.935 dari 9.993 putusan satker - dan tanggalnya hari
- * ini. Jalan TUNDA tidak, dan itu disengaja: alasan penundaan tidak punya
- * bawaan yang jujur. Alasan yang keliru pada berkas perkara lebih buruk
- * daripada satu tekan tambahan.
+ * Yang tetap dijaga:
+ *   - tombolnya baru hidup bila isiannya lengkap;
+ *   - satu tekan = satu kiriman (sibuk menahan tekan kedua), dan sesudah
+ *     tertulis borangnya berganti ringkasan - tidak ada tombol tulis kedua;
+ *   - putus hanya menulis perkara_jadwal_sidang (butir 12) - lihat
+ *     susunRencanaPutus di bot.
+ *
+ * Bawaan tunda (butir 14) disimpulkan dari riwayat sidang perkaranya -
+ * src/lib/bawaan-tunda.ts, aturannya diukur atas 1.737 penundaan satker.
  */
+
+/**
+ * Pilih dari daftar, atau ketik sendiri. Nilai yang tidak ada di daftar
+ * membuka kotak ketik dengan sendirinya - usulan yang dikarang aturan tetap
+ * dapat diganti, dan kalimat petugas sendiri tetap dapat ditulis.
+ */
+function PilihAtauKetik({
+  nilai,
+  onUbah,
+  pilihan,
+  label,
+  className,
+}: {
+  nilai: string;
+  onUbah: (nilai: string) => void;
+  pilihan: string[];
+  label: string;
+  className?: string;
+}) {
+  const [ketik, setKetik] = useState(false);
+  const adaDiDaftar = pilihan.includes(nilai);
+  const modeKetik = ketik || (nilai.trim() !== "" && !adaDiDaftar);
+  if (modeKetik) {
+    return (
+      <span className="flex gap-1">
+        <input
+          value={nilai}
+          onChange={(e) => onUbah(e.target.value)}
+          aria-label={label}
+          placeholder="Ketik sendiri"
+          className={cn("h-8 w-full rounded-md border bg-background px-2 text-sm", className)}
+        />
+        <button
+          type="button"
+          className="shrink-0 rounded-md border px-1.5 text-[11px] text-muted-foreground hover:bg-muted"
+          title="Kembali memilih dari daftar"
+          onClick={() => {
+            setKetik(false);
+            if (!adaDiDaftar) onUbah("");
+          }}
+        >
+          daftar
+        </button>
+      </span>
+    );
+  }
+  return (
+    <NativeSelect
+      value={nilai}
+      aria-label={label}
+      onChange={(e) => {
+        if (e.target.value === "__ketik__") {
+          setKetik(true);
+          return;
+        }
+        onUbah(e.target.value);
+      }}
+      className={cn("h-8 text-sm", className)}
+    >
+      <option value="">Pilih…</option>
+      {pilihan.map((p) => (
+        <option key={p} value={p}>
+          {p}
+        </option>
+      ))}
+      <option value="__ketik__">Lainnya - ketik sendiri…</option>
+    </NativeSelect>
+  );
+}
+
 export function CatatHasilRingkas({
   jadwalId,
   nomorPerkara,
@@ -761,6 +905,7 @@ export function CatatHasilRingkas({
   onSelesai: () => void;
 }) {
   const [keadaan, setKeadaan] = useState<KeadaanSidang | null>(null);
+  const [riwayat, setRiwayat] = useState<RiwayatTunda>(null);
   const [galatMuat, setGalatMuat] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusPutusan[]>([]);
 
@@ -769,6 +914,11 @@ export function CatatHasilRingkas({
   const [jamBerikut, setJamBerikut] = useState("09:00");
   const [agendaBerikut, setAgendaBerikut] = useState("");
   const [dihadiri, setDihadiri] = useState(KEHADIRAN_BAWAAN);
+  // Isian yang sudah disentuh tangan tidak ditimpa usulan lagi ketika
+  // kehadirannya diganti.
+  const [alasanDisentuh, setAlasanDisentuh] = useState(false);
+  const [agendaDisentuh, setAgendaDisentuh] = useState(false);
+  const [usulan, setUsulan] = useState<BawaanTunda | null>(null);
 
   // Langsung hari ini, TANPA efek - berbeda dari HasilSidang, dan sebabnya
   // ada pada tempatnya dipasang. Borang ini hanya lahir sesudah tombolnya
@@ -789,20 +939,39 @@ export function CatatHasilRingkas({
         const balasan = await fetch(apiPath(`/api/aleta-ecourt/sidang-tunda?jadwalId=${jadwalId}`), {
           cache: "no-store",
         });
-        const isi = await bukaBungkus<{ ok: boolean; alasan?: string; keadaan?: KeadaanSidang }>(balasan);
+        const isi = await bukaBungkus<{
+          ok: boolean;
+          alasan?: string;
+          keadaan?: KeadaanSidang;
+          riwayat?: RiwayatTunda;
+        }>(balasan);
         if (!isi.ok || !isi.keadaan) {
           setGalatMuat(isi.alasan || "Jadwal sidang tidak ditemukan.");
           return;
         }
         setKeadaan(isi.keadaan);
-        const sudahAda = Number(isi.keadaan.dihadiriOleh);
-        if (KEHADIRAN.some((k) => k.nilai === sudahAda)) setDihadiri(sudahAda);
+        setRiwayat(isi.riwayat ?? null);
         const tgl = String(isi.keadaan.tanggalSidang || "").slice(0, 10);
         setTanggalBerikut(tambahHari(tgl, 14));
-        const usul = usulanAgendaBerikut(isi.keadaan.agenda);
+
+        const usul = usulanTunda(isi.keadaan, isi.riwayat ?? null);
+        setUsulan(usul);
         if (usul) {
-          setAgendaBerikut(usul);
-          setJamBerikut(jamMenurutAgenda(usul));
+          // Bawaan dari riwayat sidang perkaranya (butir 14).
+          setDihadiri(usul.kehadiran);
+          setAlasanTunda(usul.alasan);
+          setAgendaBerikut(usul.agenda);
+          setJamBerikut(jamMenurutAgenda(usul.agenda));
+          if (usul.tanggal) setTanggalBerikut(usul.tanggal);
+        } else {
+          // Bot lama tanpa riwayat: bawaan sebelumnya, apa adanya.
+          const sudahAda = Number(isi.keadaan.dihadiriOleh);
+          if (KEHADIRAN.some((k) => k.nilai === sudahAda)) setDihadiri(sudahAda);
+          const usulAgenda = usulanAgendaBerikut(isi.keadaan.agenda);
+          if (usulAgenda) {
+            setAgendaBerikut(usulAgenda);
+            setJamBerikut(jamMenurutAgenda(usulAgenda));
+          }
         }
       } catch (e) {
         setGalatMuat(e instanceof Error ? e.message : "Jadwal sidang tidak dapat dibaca.");
@@ -827,22 +996,75 @@ export function CatatHasilRingkas({
     })();
   }, [jalan]);
 
-  /**
-   * ==========================================================================
-   * RENCANA BASI DIKENALI DARI SIDIK ISIANNYA, BUKAN DIBERSIHKAN BELAKANGAN
-   * ==========================================================================
-   *
-   * Rencana yang sudah ditarik menjadi BASI begitu isiannya diubah, dan tombol
-   * "Tulis ke SIPP" yang masih memegangnya akan menuliskan sesuatu yang
-   * berbeda dari yang diperlihatkan - persis kejadian yang membuat langkah
-   * rencana ini ada.
-   *
-   * Membersihkannya lewat useEffect terlambat satu gambar: di antara isian
-   * berubah dan efeknya berjalan, tombolnya masih terpasang dan masih dapat
-   * ditekan. Sidik isian menutup celah itu seluruhnya - rencananya dinilai
-   * berlaku atau tidak pada gambar yang SAMA dengan perubahannya.
-   */
-  const sidikIsian = JSON.stringify([
+  /** Kehadiran diganti: alasan & agenda yang belum disentuh ikut disusun ulang. */
+  const gantiKehadiran = useCallback(
+    (nilai: number) => {
+      setDihadiri(nilai);
+      if (!keadaan || !riwayat) return;
+      const usul = bawaanTunda(masukanBawaanTunda(keadaan, riwayat), nilai);
+      setUsulan(usul);
+      if (!alasanDisentuh) setAlasanTunda(usul.alasan);
+      if (!agendaDisentuh) {
+        setAgendaBerikut(usul.agenda);
+        setJamBerikut(jamMenurutAgenda(usul.agenda));
+      }
+    },
+    [keadaan, riwayat, alasanDisentuh, agendaDisentuh]
+  );
+
+  const pilihan = useMemo(() => pilihanTunda(keadaan ? sebutanDari(keadaan) : {}, ALASAN_LAZIM, AGENDA_LAZIM), [keadaan]);
+
+  const kirim = useCallback(async () => {
+    if (!keadaan || sibuk || sudahTertulis) return;
+    setSibuk(true);
+    try {
+      const alamat = jalan === "tunda" ? "/api/aleta-ecourt/sidang-tunda" : "/api/aleta-ecourt/sidang-putus";
+      const muatan =
+        jalan === "tunda"
+          ? {
+              jadwalId: keadaan.jadwalId,
+              perkaraId: keadaan.perkaraId,
+              alasanTunda,
+              tanggalBerikut,
+              jamBerikut,
+              jamSekarang: keadaan.jamSidang,
+              agendaBerikut,
+              dihadiriOleh: dihadiri,
+              ruangId: keadaan.ruanganId,
+              kering: false,
+            }
+          : {
+              jalur: "sidang",
+              jadwalId: keadaan.jadwalId,
+              perkaraId: keadaan.perkaraId,
+              statusPutusanId: Number(statusId),
+              tanggalPutus,
+              verstek: verstek ? "Y" : "T",
+              jamSekarang: keadaan.jamSidang,
+              dihadiriOleh: dihadiri,
+              ruangId: keadaan.ruanganId,
+              kering: false,
+            };
+      const balasan = await fetch(apiPath(alamat), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(muatan),
+      });
+      const isi = await bukaBungkus<Hasil>(balasan);
+      setHasil(isi);
+      if (isi.ok && isi.kering !== true) {
+        setSudahTertulis(true);
+        onSelesai();
+      }
+    } catch (e) {
+      setHasil({ ok: false, alasan: e instanceof Error ? e.message : "Permintaan gagal." });
+    } finally {
+      setSibuk(false);
+    }
+  }, [
+    keadaan,
+    sibuk,
+    sudahTertulis,
     jalan,
     alasanTunda,
     tanggalBerikut,
@@ -852,70 +1074,13 @@ export function CatatHasilRingkas({
     statusId,
     tanggalPutus,
     verstek,
+    onSelesai,
   ]);
-  const [sidikRencana, setSidikRencana] = useState("");
-
-  const kirim = useCallback(
-    async (kering: boolean) => {
-      if (!keadaan) return;
-      setSibuk(true);
-      try {
-        const alamat = jalan === "tunda" ? "/api/aleta-ecourt/sidang-tunda" : "/api/aleta-ecourt/sidang-putus";
-        const muatan =
-          jalan === "tunda"
-            ? {
-                jadwalId: keadaan.jadwalId,
-                perkaraId: keadaan.perkaraId,
-                alasanTunda,
-                tanggalBerikut,
-                jamBerikut,
-                jamSekarang: keadaan.jamSidang,
-                agendaBerikut,
-                dihadiriOleh: dihadiri,
-                ruangId: keadaan.ruanganId,
-                kering,
-              }
-            : {
-                jalur: "sidang",
-                jadwalId: keadaan.jadwalId,
-                perkaraId: keadaan.perkaraId,
-                statusPutusanId: Number(statusId),
-                tanggalPutus,
-                verstek: verstek ? "Y" : "T",
-                jamSekarang: keadaan.jamSidang,
-                dihadiriOleh: dihadiri,
-                ruangId: keadaan.ruanganId,
-                kering,
-              };
-        const balasan = await fetch(apiPath(alamat), {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(muatan),
-        });
-        const isi = await bukaBungkus<Hasil>(balasan);
-        setHasil(isi);
-        // Sidik isian yang MELAHIRKAN rencana ini ikut disimpan - itulah yang
-        // dibandingkan saat menilai rencananya masih menggambarkan isiannya.
-        if (kering) setSidikRencana(sidikIsian);
-        if (isi.ok && kering === false) {
-          setSudahTertulis(true);
-          onSelesai();
-        }
-      } catch (e) {
-        setHasil({ ok: false, alasan: e instanceof Error ? e.message : "Permintaan gagal." });
-      } finally {
-        setSibuk(false);
-      }
-    },
-    [keadaan, jalan, alasanTunda, tanggalBerikut, jamBerikut, agendaBerikut, dihadiri, statusId, tanggalPutus, verstek, onSelesai, sidikIsian]
-  );
 
   const lengkap =
     jalan === "tunda"
       ? Boolean(alasanTunda.trim() && tanggalBerikut && jamBerikut && agendaBerikut.trim())
       : Boolean(statusId && tanggalPutus);
-  const rencanaKering =
-    hasil?.ok === true && hasil.kering === true && sidikRencana === sidikIsian;
 
   if (galatMuat) {
     return (
@@ -937,13 +1102,41 @@ export function CatatHasilRingkas({
     return (
       <div className="flex items-start gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100">
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-        <div>
+        <div className="min-w-0">
           <p className="font-semibold">
-            {jalan === "tunda" ? "Penundaan" : "Putusan"} {nomorPerkara} tercatat di SIPP.
+            {jalan === "tunda" ? "Penundaan" : "Hasil sidang putus"} {nomorPerkara} tercatat di SIPP.
           </p>
           {hasil?.atasNama ? (
             <p className="text-xs">
-              Atas nama {hasil.atasNama.namaLengkap} ({hasil.atasNama.username}).
+              Atas nama {hasil.atasNama.namaLengkap} ({hasil.atasNama.username})
+              {hasil.sidangBerikutnya
+                ? ` · sidang berikutnya ${hasil.sidangBerikutnya.tanggal} pukul ${hasil.sidangBerikutnya.jam}`
+                : ""}
+              {hasil.putusan ? ` · ${hasil.putusan.status}${hasil.putusan.verstek ? " (verstek)" : ""}` : ""}.
+            </p>
+          ) : null}
+          {/* RINGKASAN YANG DITULIS - dari jawaban server sesudah menulis
+              (baris yang SUNGGUH tertulis), bukan dari rencana. */}
+          {(hasil?.selesai ?? []).length > 0 ? (
+            <ul className="mt-1 space-y-0.5 text-xs" aria-label="Yang ditulis ke SIPP">
+              {(hasil?.selesai ?? []).map((l, n) => (
+                <li key={`${l.tabel}-${n}`}>
+                  <span className="font-mono">{l.tabel}</span> {l.aksi} - {l.keterangan}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {(hasil?.andaian ?? []).map((a) => (
+            <p key={a} className="mt-1 flex items-start gap-1 text-xs text-amber-800 dark:text-amber-200">
+              <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>{a}</span>
+            </p>
+          ))}
+          {hasil?.antrian ? (
+            <p className="mt-1 text-xs">
+              {hasil.antrian.ok
+                ? `Antrian sidang ditandai selesai (${hasil.antrian.baris ?? 0} baris).`
+                : `Antrian tidak tergerakkan: ${hasil.antrian.alasan}.`}
             </p>
           ) : null}
         </div>
@@ -966,6 +1159,7 @@ export function CatatHasilRingkas({
           {jalan === "tunda" ? "Tunda sidang" : "Catat putusan"} {nomorPerkara}
         </span>
         <Badge variant="muted">{keadaan.agenda || "tanpa agenda"}</Badge>
+        {usulan ? <Badge variant="outline">sidang ke-{usulan.sidangKe}</Badge> : null}
         <Button size="sm" variant="ghost" className="ml-auto" onClick={onTutup}>
           Tutup
         </Button>
@@ -975,36 +1169,28 @@ export function CatatHasilRingkas({
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-xs">
             <span className="mb-0.5 block font-medium text-muted-foreground">Alasan penundaan</span>
-            <input
-              list={`alasan-ringkas-${jadwalId}`}
-              value={alasanTunda}
-              onChange={(e) => setAlasanTunda(e.target.value)}
-              placeholder="Pilih atau ketik alasannya"
-              className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            <PilihAtauKetik
+              label="Alasan penundaan"
+              nilai={alasanTunda}
+              pilihan={pilihan.alasan}
+              onUbah={(v) => {
+                setAlasanDisentuh(true);
+                setAlasanTunda(v);
+              }}
             />
-            <datalist id={`alasan-ringkas-${jadwalId}`}>
-              {ALASAN_LAZIM.map((a) => (
-                <option key={a} value={a} />
-              ))}
-            </datalist>
           </label>
           <label className="text-xs">
             <span className="mb-0.5 block font-medium text-muted-foreground">Agenda berikutnya</span>
-            <input
-              list={`agenda-ringkas-${jadwalId}`}
-              value={agendaBerikut}
-              onChange={(e) => {
-                setAgendaBerikut(e.target.value);
-                setJamBerikut(jamMenurutAgenda(e.target.value));
+            <PilihAtauKetik
+              label="Agenda sidang berikutnya"
+              nilai={agendaBerikut}
+              pilihan={pilihan.agenda}
+              onUbah={(v) => {
+                setAgendaDisentuh(true);
+                setAgendaBerikut(v);
+                setJamBerikut(jamMenurutAgenda(v));
               }}
-              placeholder="Agenda sidang berikutnya"
-              className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             />
-            <datalist id={`agenda-ringkas-${jadwalId}`}>
-              {AGENDA_LAZIM.map((a) => (
-                <option key={a} value={a} />
-              ))}
-            </datalist>
           </label>
           <label className="text-xs">
             <span className="mb-0.5 block font-medium text-muted-foreground">Tanggal berikutnya</span>
@@ -1067,7 +1253,7 @@ export function CatatHasilRingkas({
         <span className="mb-0.5 block font-medium text-muted-foreground">Kehadiran pihak</span>
         <NativeSelect
           value={String(dihadiri)}
-          onChange={(e) => setDihadiri(Number(e.target.value))}
+          onChange={(e) => gantiKehadiran(Number(e.target.value))}
           className="h-8 text-sm"
         >
           {KEHADIRAN.filter(
@@ -1080,14 +1266,27 @@ export function CatatHasilRingkas({
         </NativeSelect>
       </label>
 
-      {/* ====================================================================
-          RENCANA DAHULU - TIDAK ADA JALAN PINTAS MELEWATINYA
-          ====================================================================
+      {usulan && jalan === "tunda" ? (
+        <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
+          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+          <span>
+            Usulan dari riwayat sidang: {usulan.penjelasan}
+            {usulan.kehadiranTercatat ? " Kehadiran diambil dari yang sudah tercatat di SIPP." : ""} Semua
+            isian dapat diganti.
+          </span>
+        </p>
+      ) : null}
 
-          Tombol "Tulis ke SIPP" baru muncul sesudah rencananya ada di layar.
-          Ia bukan tombol yang dinonaktifkan - ia belum ada, sebab tombol tulis
-          yang kelihatan sejak awal mengundang orang menekannya lebih dahulu
-          dan kecewa, lalu mencari cara melewati langkah rencananya. */}
+      {jalan === "putus" ? (
+        <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
+          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+          <span>
+            Hanya hasil sidang di jadwal sidang yang dicatat. Putusan akhir, audit putusannya, dan tahapan
+            perkara tidak ditulis dari tombol ini.
+          </span>
+        </p>
+      ) : null}
+
       {hasil && !hasil.ok ? (
         <p className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -1095,51 +1294,15 @@ export function CatatHasilRingkas({
         </p>
       ) : null}
 
-      {rencanaKering ? (
-        <div className="rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-xs dark:border-sky-500/40 dark:bg-sky-500/10">
-          <p className="flex items-center gap-1.5 font-semibold text-sky-900 dark:text-sky-100">
-            <FileSearch className="h-3.5 w-3.5" aria-hidden="true" />
-            Rencana - belum ada yang tertulis
-          </p>
-          {hasil?.atasNama ? (
-            <p className="mt-0.5 text-sky-900 dark:text-sky-100">
-              Akan tercatat atas nama {hasil.atasNama.namaLengkap} ({hasil.atasNama.username}).
-            </p>
-          ) : null}
-          <ul className="mt-1 space-y-0.5 text-sky-900 dark:text-sky-100">
-            {(hasil?.rencana ?? []).map((l, n) => (
-              <li key={`${l.tabel}-${n}`}>
-                <span className="font-mono">{l.tabel}</span> {l.aksi} - {l.keterangan}
-              </li>
-            ))}
-          </ul>
-          {(hasil?.andaian ?? []).length > 0 ? (
-            <ul className="mt-1 space-y-0.5 text-amber-800 dark:text-amber-200">
-              {(hasil?.andaian ?? []).map((a, n) => (
-                <li key={`andaian-${n}`} className="flex items-start gap-1">
-                  <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-                  <span>{a}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
-
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline" disabled={!lengkap || sibuk} onClick={() => void kirim(true)}>
-          {sibuk && !rencanaKering ? "Menyusun…" : "Lihat rencana"}
+        <Button
+          size="sm"
+          className={cn(jalan === "tunda" ? "bg-amber-600 hover:bg-amber-700" : undefined)}
+          disabled={!lengkap || sibuk}
+          onClick={() => void kirim()}
+        >
+          {sibuk ? "Menulis…" : jalan === "tunda" ? "Tunda sekarang" : "Catat putus"}
         </Button>
-        {rencanaKering ? (
-          <Button
-            size="sm"
-            className={cn(jalan === "tunda" ? "bg-amber-600 hover:bg-amber-700" : undefined)}
-            disabled={sibuk}
-            onClick={() => void kirim(false)}
-          >
-            {sibuk ? "Menulis…" : "Tulis ke SIPP"}
-          </Button>
-        ) : null}
         {!lengkap ? (
           <span className="text-xs text-muted-foreground">
             {jalan === "tunda"

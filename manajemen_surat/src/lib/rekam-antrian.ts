@@ -411,3 +411,96 @@ export function gabungRekamLampau(
     lampau: true,
   };
 }
+
+/**
+ * ============================================================================
+ * NOMOR ANTRIAN HARI LAMPAU DARI REKAMAN ALETA (butir 32, 30 Sep 2026)
+ * ============================================================================
+ *
+ * Aplikasi antrian sidang (http://192.168.10.10/antrian/, bukan ALETA) hanya
+ * menyimpan antrian HARI INI. Kolom ANTRIAN / JAM di Jadwal Sidang membaca
+ * peta antrian dari sana, sehingga sesudah berganti hari nomornya hilang -
+ * padahal nomor itu SUDAH direkam ALETA tiap kali jadwal dibuka
+ * (aleta_rekam_antrian, 0048 + 0051, dan buku waktu bot sebagai cadangan).
+ *
+ * Fungsi ini mengisi peta dari rekaman untuk sidang yang TIDAK punya baris
+ * antrian langsung pada tanggalnya. Baris langsung tidak pernah ditimpa;
+ * rekaman tanpa nomor (belum ambil) tidak dipakai. Baris hasilnya bertanda
+ * `dariRekam: true` supaya layar dapat menyebut asalnya.
+ */
+export type RekamUntukPeta = {
+  tanggalSidang: string;
+  sidangId: string;
+  perkaraId: string;
+  nomorAntrian: number | null;
+  waktuAmbil: string;
+  jamPanggil: string;
+  online: boolean;
+  keadaan: string;
+  namaPetugas: string;
+};
+
+export type AntrianDariRekam = {
+  nomor: number | null;
+  tanggalSidang: string;
+  waktuAmbil: string;
+  online: boolean;
+  pihak1: string;
+  pihak2: string;
+  saksi: string;
+  keadaan: "menunggu" | "dipanggil" | "belum-ambil";
+  menitMenunggu: null;
+  jamPanggil: string;
+  noRuang: null;
+  ruanganId: null;
+  namaPetugas: string;
+  majelisKode: string;
+  dariRekam: true;
+};
+
+export function lengkapiPetaDariRekam<T extends { tanggalSidang?: string }>(
+  peta: Record<string, T | AntrianDariRekam>,
+  sidang: { perkaraId: string; tanggalSidang: string; sidangId: string }[],
+  rekam: RekamUntukPeta[]
+): { peta: Record<string, T | AntrianDariRekam>; ditambah: number; tanggal: string[] } {
+  const hasil: Record<string, T | AntrianDariRekam> = { ...peta };
+  const perKunci = new Map<string, RekamUntukPeta>();
+  for (const r of rekam) {
+    if (r.nomorAntrian === null || r.nomorAntrian === undefined) continue;
+    perKunci.set(kunciRekam(r.tanggalSidang, r.sidangId), r);
+    // Cadangan: perkara + tanggal (sidang_id yang berganti karena jadwal disusun ulang).
+    const kunciPerkara = `p:${teks(r.tanggalSidang)}|${teks(r.perkaraId)}`;
+    if (!perKunci.has(kunciPerkara)) perKunci.set(kunciPerkara, r);
+  }
+  let ditambah = 0;
+  const tanggal = new Set<string>();
+  for (const s of sidang) {
+    const kunci = teks(s.perkaraId);
+    if (!kunci || hasil[kunci]) continue;
+    const r =
+      perKunci.get(kunciRekam(s.tanggalSidang, s.sidangId)) ??
+      perKunci.get(`p:${teks(s.tanggalSidang)}|${kunci}`);
+    if (!r) continue;
+    const keadaan = teks(r.keadaan);
+    hasil[kunci] = {
+      nomor: r.nomorAntrian,
+      tanggalSidang: teks(r.tanggalSidang),
+      waktuAmbil: teks(r.waktuAmbil),
+      online: Boolean(r.online),
+      pihak1: "",
+      pihak2: "",
+      saksi: "",
+      keadaan: keadaan === "dipanggil" || keadaan === "menunggu" ? keadaan : "menunggu",
+      menitMenunggu: null,
+      jamPanggil: teks(r.jamPanggil),
+      noRuang: null,
+      ruanganId: null,
+      namaPetugas: teks(r.namaPetugas),
+      majelisKode: "",
+      dariRekam: true,
+    };
+    ditambah += 1;
+    tanggal.add(teks(r.tanggalSidang));
+  }
+  return { peta: hasil, ditambah, tanggal: [...tanggal].sort() };
+}

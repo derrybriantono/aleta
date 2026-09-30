@@ -379,6 +379,13 @@
       "when": 1789816801001,
       "tag": "0053_aleta_bas_komentar_templat_abt_wajib",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1789903201001,
+      "tag": "0054_aleta_pemetaan_blangko_profil_saklar",
+      "breakpoints": true
     }
   ]
 }

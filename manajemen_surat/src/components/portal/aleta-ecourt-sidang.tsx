@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { usePortal } from "@/lib/app-state";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { tanganiUnduhan } from "@/lib/unduh-berkas";
 import {
   CalendarDays,
   ChevronDown,
@@ -97,6 +98,7 @@ import {
   belumTundaLewatBatas,
   hariPutusan,
   hasilSidangBelumDicatat,
+  ikrarSelesai,
   kelompokAlur,
   perkaraVerzetDari,
   potensiVerstek,
@@ -2132,7 +2134,7 @@ function TombolAmbilAntrian({
  * petugas yang mencocokkan angka ini dengan umur perkara di SIPP dan mendapati
  * selisih. Tanpa itu, selisihnya tampak seperti galat hitung.
  */
-function UmurPerkara({ durasi }: { durasi: SidangBaris["durasi"] }) {
+function UmurPerkara({ durasi, telahIkrar = false }: { durasi: SidangBaris["durasi"]; telahIkrar?: boolean }) {
   if (!durasi || durasi.hariBersih === null) return null;
 
   const sk = durasi.waktuPutusSk ?? null;
@@ -2202,7 +2204,14 @@ function UmurPerkara({ durasi }: { durasi: SidangBaris["durasi"] }) {
             "1 hari" (hasil penjepitan SK) untuk perkara yang berjalan 37-114
             hari, dan layarnya tampak rusak. */}
         {kelonggaran ? <span className="font-normal">· dari {hariSema}</span> : null}
-        {durasi.sudahPutus ? <span className="font-normal">· putus</span> : null}
+        {/* Sidang ikrar talak yang sudah dilaksanakan (butir 27, 30 Sep
+            2026): perkaranya SELESAI, bukan sekadar putus - "85 hari · putus"
+            pada 314/Pdt.G/2026 terbaca seolah masih ada yang ditunggu. */}
+        {telahIkrar ? (
+          <span className="font-normal">· selesai, telah ikrar</span>
+        ) : durasi.sudahPutus ? (
+          <span className="font-normal">· putus</span>
+        ) : null}
         {/* Warna saja tidak terbaca pembaca layar maupun mata yang buta
             warna merah-hijau - sebutan pitanya ikut, tersembunyi. */}
         {pita ? <span className="sr-only">{`, waktu putus ${pita.warna}`}</span> : null}
@@ -3738,38 +3747,11 @@ export function TombolUnduh({
     setGalat("");
     try {
       const respons = await fetch(apiPath(alamat), { cache: "no-store" });
-      const tipe = respons.headers.get("content-type") || "";
-
-      // Jawaban galat berbentuk JSON tidak boleh tersimpan sebagai berkas -
-      // itulah sebab laporan "berkasnya hilang": yang terunduh bukan berkasnya.
-      if (!respons.ok || tipe.includes("application/json")) {
-        const isi = await respons.json().catch(() => null);
-        setGalat(pesanGalatPortal(isi, `HTTP ${respons.status}`).replace(/_/g, " "));
-        return;
-      }
-
-      const blob = await respons.blob();
-      if (blob.size === 0) {
-        setGalat("Berkasnya kosong di server.");
-        return;
-      }
-
-      const url = URL.createObjectURL(blob);
-      const tautan = document.createElement("a");
-      tautan.href = url;
-
-      const disposisi = respons.headers.get("content-disposition") || "";
-      const cocok = disposisi.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
-      tautan.download = cocok ? decodeURIComponent(cocok[1]) : namaCadangan;
-
-      document.body.appendChild(tautan);
-      tautan.click();
-      tautan.remove();
-
-      // Tidak dilepas seketika: peramban masih membaca blobnya setelah klik
-      // selesai diproses, dan melepasnya di baris yang sama membatalkan
-      // sebagian unduhan tanpa pesan apa pun.
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+      // Satu penanganan bersama (butir 31, 30 Sep 2026): badan 0 bita yang
+      // Content-Length-nya berisi berarti pengelola unduhan peramban sudah
+      // mengambilnya - BERHASIL, bukan "kosong di server". Lihat unduh-berkas.ts.
+      const hasil = await tanganiUnduhan(respons, { namaCadangan, alamat: apiPath(alamat) });
+      if (!hasil.ok) setGalat(hasil.pesan);
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal mengunduh.");
     } finally {
@@ -6974,6 +6956,18 @@ export function AletaEcourtSidang({
                               </span>
                               ) : null
                             )}
+                            {ikrarSelesai(baris) ? (
+                              <span
+                                className="inline-flex items-center rounded-full border border-emerald-500 bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-200"
+                                title={
+                                  baris.ikrarTercatat
+                                    ? "Ikrar talak sudah tercatat di SIPP (perkara_ikrar_talak) pada tanggal sidang ini - perkaranya selesai; tidak ada lagi yang ditunda atau diputus."
+                                    : `Hasil sidang di SIPP: "${baris.alasanDitunda}" - ikrar talak sudah dilaksanakan, perkaranya selesai.`
+                                }
+                              >
+                                Selesai · telah ikrar talak
+                              </span>
+                            ) : null}
 
                             {/* ================================================
                                 MEDIATOR - HANYA PADA SIDANG YANG BERURUSAN
@@ -7439,7 +7433,7 @@ export function AletaEcourtSidang({
                               Badilag 048/2024 - sebabnya di komponen
                               UmurPerkara. */}
                           {tampil(tampilan, "umur-perkara") ? (
-                            <UmurPerkara durasi={baris.durasi} />
+                            <UmurPerkara durasi={baris.durasi} telahIkrar={ikrarSelesai(baris)} />
                           ) : null}
 
                           {/* Keadaan putusan ikut di sini pada mode RINGKAS.

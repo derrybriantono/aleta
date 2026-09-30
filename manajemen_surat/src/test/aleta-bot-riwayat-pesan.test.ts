@@ -196,7 +196,7 @@ describe("membaca riwayat dari basis data", () => {
     expect((await baca("dateFrom=2026-09-09&dateTo=2026-09-09")).items.map((i) => i.id)).toEqual(["abnl-t2"]);
   });
 
-  it("butir menyebut penerima, kunci, dan keterangan galat yang manusiawi", async () => {
+  it("butir menyebut penerima, kunci, dan keterangan error yang manusiawi", async () => {
     const hasil = await baca("dateRange=&notificationKey=pihak-sisa-panjar");
     const butir = hasil.items[0];
     expect(butir.penerima).toBe("pihak");

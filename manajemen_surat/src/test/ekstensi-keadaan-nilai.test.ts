@@ -64,7 +64,7 @@ const keadaanNilai = ambilKeadaanNilai();
 const ISI_KOSONG_LAMA = /^(DATA_TIDAK_ADA|TIDAK BENAR QUERY NYA|BELUM ISI|-)?$/i;
 
 describe("keadaan satu nilai variabel ABT", () => {
-  it("bunyi galat ABT yang sesungguhnya digolongkan galat", () => {
+  it("bunyi error ABT yang sesungguhnya digolongkan error", () => {
     // Kalimat ini disalin dari layar ABT, bukan dikarang: itulah yang
     // dikeluarkan cabang ELSE kueri data_sql pada 4020 dan sejenisnya.
     const nyata = "TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT";
@@ -108,7 +108,7 @@ describe("keadaan satu nilai variabel ABT", () => {
 describe("pemeriksaan kelengkapan memakai keadaan itu", () => {
   const sumber = () => readFileSync(berkasAbt, "utf8");
 
-  it("galat disapu atas SELURUH baris yang tergambar", () => {
+  it("error disapu atas SELURUH baris yang tergambar", () => {
     // Dulu hanya lima nomor di VAR_OTOMATIS yang diperiksa - tambalan per
     // variabel. Variabel turunan lain yang bunyinya sedikit berbeda lolos.
     const isi = sumber();

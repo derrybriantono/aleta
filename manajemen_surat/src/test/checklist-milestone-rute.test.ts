@@ -201,7 +201,7 @@ describe("GET /api/aleta-ecourt/checklist", () => {
     expect(ke).toMatchObject({ peran: "hakim", hakim: ["26"], panitera: [], jurusita: [] });
   });
 
-  it("peran yang tidak dimiliki tidak dibuka: jatuh ke bawaan dan disebut di galat", async () => {
+  it("peran yang tidak dimiliki tidak dibuka: jatuh ke bawaan dan disebut di error", async () => {
     await kredensial("usr-ketua", "ketuasipp");
     const r = await panggil("jurusita");
     expect(r.status).toBe(200);
@@ -400,7 +400,7 @@ describe("GET /api/aleta-ecourt/checklist", () => {
     expect(butir.find((b) => b.jenis === "hakim.konsep-putusan")?.kerjakan).toEqual({ tujuan: "abt", halaman: "blangko-putusan" });
   });
 
-  it("bot mati: jawaban tetap 200, galat menyebut sebabnya, jenis SIPP tidak tersedia", async () => {
+  it("bot mati: jawaban tetap 200, error menyebut sebabnya, jenis SIPP tidak tersedia", async () => {
     await kredensial("usr-ketua", "ketuasipp");
     gerbang.mockResolvedValue({ ok: false, error: "aleta_bot tidak merespons dalam 60000ms" });
     const r = await panggil();

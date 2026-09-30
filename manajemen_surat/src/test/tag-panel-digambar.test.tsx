@@ -222,7 +222,7 @@ describe("panel tag digambar", () => {
     );
   });
 
-  it("galat dari bot digambar, tidak ditelan", () => {
+  it("error dari bot digambar, tidak ditelan", () => {
     // Sejak penghitungnya MELEMPAR alih-alih menelan galat, pesannya menyebut
     // tabel dan tag mana yang ikut hilang - dan pesan itu harus sampai ke mata.
     gambar({

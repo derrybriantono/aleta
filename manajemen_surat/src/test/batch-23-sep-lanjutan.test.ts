@@ -139,7 +139,12 @@ describe("butir 3 - sudah menunggu berapa lama", () => {
 // ===========================================================================
 
 describe("butir 4 - arsip ZIP satu tekan", () => {
-  const zip = baca("manajemen_surat/src/app/api/aleta-ecourt/berkas-zip/route.ts");
+  // Penyusun isi ZIP dipisah ke modul bersama sejak 30 Sep 2026 (dipakai juga
+  // sinkron Drive) - penjaga membaca rute DAN modulnya.
+  const zip =
+    baca("manajemen_surat/src/app/api/aleta-ecourt/berkas-zip/route.ts") +
+    "\n" +
+    baca("manajemen_surat/src/server/modules/aleta-ecourt/susun-arsip-perkara.ts");
 
   it("membaca DUA sumber, bukan e-Court saja", () => {
     expect(zip).toContain("getGatewayRincianSidang(nomor");
@@ -429,7 +434,7 @@ describe("butir 15 - durasi perkara, hari mediasi tidak dihitung", () => {
   });
 
   it("tampil di bawah agenda DAN di panel rincian", () => {
-    expect(layar).toContain("<UmurPerkara durasi={baris.durasi} />");
+    expect(layar).toContain("<UmurPerkara durasi={baris.durasi} telahIkrar={ikrarSelesai(baris)} />");
     // Sejak 24 September 2026 paling bawah panel, terciut sebagai bawaan,
     // dengan kunci baru - lihat antrian-dua-belas-butir "garis batas".
     expect(layar).toContain(

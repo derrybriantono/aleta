@@ -699,8 +699,8 @@ export function AletaBotEcourtPanel() {
                   <th className="px-3 py-2 text-right font-medium">Perkara</th>
                   <th className="px-3 py-2 text-right font-medium">Dokumen Baru</th>
                   <th className="px-3 py-2 text-right font-medium">Berkas Terunduh</th>
-                  <th className="px-3 py-2 text-right font-medium">Galat</th>
-                  <th className="px-3 py-2 font-medium">Galat Terakhir</th>
+                  <th className="px-3 py-2 text-right font-medium">Error</th>
+                  <th className="px-3 py-2 font-medium">Error Terakhir</th>
                 </tr>
               </thead>
               <tbody>

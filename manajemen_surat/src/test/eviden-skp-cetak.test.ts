@@ -157,7 +157,7 @@ describe("naskah - identitas, catatan, dan kertas", () => {
     expect(n.identitas.find((i) => i.label === "Unit Kerja")?.nilai).toBe("Pengadilan Agama Donggala");
   });
 
-  it("catatan memuat aturan periode, galat data SIPP, dan waktu baca WITA", () => {
+  it("catatan memuat aturan periode, error data SIPP, dan waktu baca WITA", () => {
     const n = naskah(paketContoh(), dokumenRekapContoh());
     expect(n.catatan[0]).toContain("Perkara masuk periode");
     expect(n.catatan).toContain("Tidak terbaca dari SIPP: Tanggal musyawarah majelis tidak tercatat di SIPP untuk 3 perkara.");

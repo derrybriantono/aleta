@@ -1023,7 +1023,7 @@ describe.skipIf(!ADA_MYSQL)("telaah 26 Sep - satu orang disebut sekali, kuasa di
   }, 300_000);
 });
 
-describe("telaah 26 Sep - galat habis waktu pencarian dikatakan dalam bahasa orangnya", () => {
+describe("telaah 26 Sep - error habis waktu pencarian dikatakan dalam bahasa orangnya", () => {
   afterEach(() => {
     suntikGalat = null;
   });
@@ -1059,7 +1059,7 @@ describe("telaah 26 Sep - galat habis waktu pencarian dikatakan dalam bahasa ora
     }
   });
 
-  it("galat yang BUKAN habis waktu diteruskan apa adanya - tidak ditelan, tidak diganti", async () => {
+  it("error yang BUKAN habis waktu diteruskan apa adanya - tidak ditelan, tidak diganti", async () => {
     const galatLain = Object.assign(new Error("Table 'sipp.perkara' doesn't exist"), { code: "ER_NO_SUCH_TABLE" });
     suntikGalat = (sql) => (/FROM perkara p\b/.test(sql) ? galatLain : null);
     const galat = await layanan.cariPerkaraHalaman("419", { batas: 25 }).then(
@@ -1153,7 +1153,7 @@ describe("rute portal meneruskan halaman dan ruas rinci", () => {
     expect(isi.data.ruasTakTerbaca).toEqual([]);
   });
 
-  it("habis waktu: pesan mentah bot lama diterjemahkan (dan dicatat), kalimat bot baru dan galat lain diteruskan apa adanya", async () => {
+  it("habis waktu: pesan mentah bot lama diterjemahkan (dan dicatat), kalimat bot baru dan error lain diteruskan apa adanya", async () => {
     const peringatan = vi.spyOn(console, "warn").mockImplementation(() => {});
     const kasus: Array<[string, string]> = [
       ["Query inactivity timeout", "diterjemahkan"],

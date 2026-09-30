@@ -805,7 +805,7 @@ describe("rute GET /api/aleta-ecourt/ekstensi-panel/*", () => {
     expect(JSON.stringify(r.isi)).not.toContain("6281234567890");
   });
 
-  it("sambungan: bot mati tetap 200 dengan keadaan 'tidak-diketahui', bukan galat", async () => {
+  it("sambungan: bot mati tetap 200 dengan keadaan 'tidak-diketahui', bukan error", async () => {
     jawabBot = async () => {
       throw new TypeError("fetch failed");
     };

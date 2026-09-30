@@ -30,7 +30,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
-import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { tanganiUnduhan } from "@/lib/unduh-berkas";
 
 /** Sumber berkas yang dikemas. Bawaannya keduanya. */
 export type SumberZip = "semua" | "sipp" | "ecourt";
@@ -74,33 +74,13 @@ export function TombolUnduhZip({
         cache: "no-store",
       });
 
-      const tipe = respons.headers.get("content-type") || "";
-      if (!respons.ok || tipe.includes("application/json")) {
-        const isi = await respons.json().catch(() => null);
-        setCatatan(pesanGalatPortal(isi, `HTTP ${respons.status}`).replace(/_/g, " "));
-        return;
-      }
-
-      const blob = await respons.blob();
-      if (blob.size === 0) {
-        setCatatan("ZIP-nya kosong.");
-        return;
-      }
-
-      const alamat = URL.createObjectURL(blob);
-      const tautan = document.createElement("a");
-      tautan.href = alamat;
-
-      const disposisi = respons.headers.get("content-disposition") || "";
-      const cocok = disposisi.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
-      tautan.download = cocok
-        ? decodeURIComponent(cocok[1])
-        : `${isi === "lengkap" ? "perkara" : "berkas"}-${nomorPerkara.replace(/[^\w.-]+/g, "-")}.zip`;
-
-      document.body.appendChild(tautan);
-      tautan.click();
-      tautan.remove();
-      window.setTimeout(() => URL.revokeObjectURL(alamat), 60000);
+      // Satu penanganan bersama (butir 31) - lihat src/lib/unduh-berkas.ts.
+      const hasil = await tanganiUnduhan(respons, {
+        namaCadangan: `${isi === "lengkap" ? "perkara" : "berkas"}-${nomorPerkara.replace(/[^\w.-]+/g, "-")}.zip`,
+        alamat: apiPath(`/api/aleta-ecourt/berkas-zip?${params.toString()}`),
+        pesanKosong: "ZIP-nya kosong.",
+      });
+      if (!hasil.ok) setCatatan(hasil.pesan);
     } catch (kesalahan) {
       setCatatan(kesalahan instanceof Error ? kesalahan.message : "Gagal mengunduh ZIP.");
     } finally {

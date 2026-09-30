@@ -72,7 +72,7 @@ function jalankan(kunci, uji) {
       kunci,
       terpenuhi: false,
       bukti: "",
-      sebab: `pemeriksaannya melempar galat: ${String((galat && galat.message) || galat).slice(0, 160)}`,
+      sebab: `pemeriksaannya melempar error: ${String((galat && galat.message) || galat).slice(0, 160)}`,
     };
   }
 }
