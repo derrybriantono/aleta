@@ -5020,10 +5020,10 @@ function pasangkanBerkasUnggah(daftar, nomorHalaman) {
  * dikirim dari halaman SIPP. Jawaban yang menolak (mis. 409: slot anonim yang
  * masih memuat nama pihak) dibaca kalimatnya, bukan hanya kodenya.
  */
-async function kirimBadanUnggahSipp(badan) {
+async function kirimBadanUnggahSipp(badan, batasMs) {
   const respons = await alatAmbil(
     ALETA_API_UNGGAH_SIPP,
-    { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_SIPP_MS },
+    { method: "POST", body: badan, credentials: "include", batasMs: batasMs || BATAS_UNGGAH_SIPP_MS },
     "Mengunggah putusan ke SIPP"
   );
   let luar = null;
@@ -5123,6 +5123,11 @@ async function unggahBerpasangan(pasangan, alat) {
 }
 
 function bagianUnggahPutusanSipp(nomorPerkara) {
+  // Tampilan Baru & UI Baru: edoc putusan dan edoc anonimisasi di tempat
+  // masing-masing, dikirim sekaligus (bagianUnggahEdocTerpisah). Lama: di bawah ini.
+  if (typeof bagianUnggahEdocTerpisah === "function" && unggahEdocTerpisahBerlaku() && !unggahEdocPakaiCaraLama) {
+    return bagianUnggahEdocTerpisah(nomorPerkara);
+  }
   const kotak = bagian("Unggah putusan ke SIPP", "unggahPutusanSipp", true);
   const isi = kotak.isi;
 
@@ -5288,7 +5293,222 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
     if (hasil.adaYangMasuk && !hasil.gagal) bukaKembali();
   });
 
+  if (typeof pasangGantiUnggahEdoc === "function") pasangGantiUnggahEdoc(kotak, nomorPerkara);
   return kotak;
+}
+
+/**
+ * ============================================================================
+ * EDOC PUTUSAN DAN EDOC ANONIMISASI - DUA TEMPAT, SATU KIRIMAN (Baru & UI Baru)
+ * ============================================================================
+ *
+ * Diminta pengguna 30 September 2026: "buatkan upload edoc putusan dan upload
+ * edoc anonimisasi secara terpisah (jadi ada tempat tiap upload) sekaligus",
+ * dan "buat hanya di ekstensi baru dan ui baru".
+ *
+ * Cara lama (tetap berlaku dalam tampilan Lama) memakai SATU pemilih dan
+ * menebak slot dari NAMA berkas: berkas anonimisasi yang namanya tidak memuat
+ * "anonim" terbaca sebagai putusan kedua, dan slot anonimisasinya kosong.
+ * Di sini tiap slot punya pemilihnya sendiri - petugas yang menentukan mana
+ * putusan dan mana anonimisasi, bukan nama berkasnya.
+ *
+ * Keduanya dikirim SEKALIGUS dalam satu kiriman ke rute unggah-sipp, yang
+ * memang menerima kedua slot bersama (jalur yang sama dipakai putusan massal
+ * ABT). Batas waktunya dua kali batas satu berkas, sebab dua naskah diubah
+ * menjadi PDF dalam satu kiriman. Boleh salah satu saja.
+ *
+ * Penjagaan yang sama dengan cara lama: bentuk selain RTF/DOC/DOCX/PDF, berkas
+ * yang namanya menyebut perkara LAIN, dan berkas yang namanya menyebut BAS,
+ * penetapan, relaas, dan seterusnya tidak dikirim. Berkas yang sama di kedua
+ * tempat ditolak. Cara lama tetap dapat dipilih dari tautan di bawahnya.
+ */
+let unggahEdocPakaiCaraLama = false;
+
+function unggahEdocTerpisahBerlaku() {
+  return typeof alatUjiMode === "function" && alatUjiMode() !== "lama";
+}
+
+function bagianUnggahEdocTerpisah(nomorPerkara) {
+  const kotak = bagian("Unggah putusan ke SIPP", "unggahPutusanSipp", true);
+  const isi = kotak.isi;
+  isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab aleta-remeh",
+      "Edoc putusan dan edoc anonimisasi punya tempat masing-masing dan dikirim SEKALIGUS ke SIPP. " +
+        "Boleh salah satu saja. RTF, DOC, DOCX, atau PDF; yang bukan PDF diubah ALETA menjadi PDF " +
+        "untuk Direktori Putusan, dan naskah aslinya tetap tersimpan sebagai e-Doc."
+    )
+  );
+
+  const slot = {};
+  const halaman = String(nomorPerkara || "").trim().toLowerCase();
+  const tombol = buatElemen("button", "aleta-permintaan-tombol", "Unggah edoc ke SIPP");
+  tombol.type = "button";
+  tombol.disabled = true;
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+
+  const berkasSama = () => {
+    const a = slot.putusan && slot.putusan.berkas;
+    const b = slot.anonimisasi && slot.anonimisasi.berkas;
+    return Boolean(a && b && a.name === b.name && a.size === b.size);
+  };
+
+  const periksaSlot = (kunci) => {
+    const s = slot[kunci];
+    const f = s.pemilih.files && s.pemilih.files[0];
+    s.berkas = null;
+    s.tanda.className = "aleta-edoc-tanda aleta-massal-keadaan";
+    if (!f) {
+      s.tanda.textContent = "belum dipilih";
+    } else {
+      const nama = String(f.name || "");
+      const nomor = nomorDariNamaBerkas(nama);
+      let sebab = "";
+      if (!/\.(rtf|doc|docx|pdf)$/i.test(nama)) sebab = "bukan naskah putusan yang dapat diunggah - yang diterima RTF, DOC, DOCX, atau PDF";
+      else if (nomor && halaman && nomor.toLowerCase() !== halaman) sebab = `berkas perkara lain (${nomor})`;
+      else sebab = tandaBukanNaskahPutusan(nama);
+      if (sebab) {
+        s.tanda.textContent = `${nama}: ${sebab} - tidak dikirim`;
+        s.tanda.classList.add("aleta-lencana-mendesak");
+      } else {
+        s.berkas = f;
+        // Nama hanya menjadi PERINGATAN di sini, bukan penentu slot.
+        const curiga = kunci === "putusan" && namaBerkasAnonim(nama) ? " - namanya seperti anonimisasi; pastikan ini putusan" : "";
+        s.tanda.textContent = `${nama}${nomor ? "" : " - nomor perkara tidak terbaca dari namanya"}${curiga}`;
+        s.tanda.classList.add(curiga ? "aleta-lencana-mendesak" : "aleta-lencana-aman");
+      }
+    }
+    const sama = berkasSama();
+    if (sama) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = "Berkas yang sama dipilih di kedua tempat - pilih anonimisasinya sendiri.";
+    } else if (kabar.classList.contains("aleta-abt-gagal") && !tombol.dataset.sibuk) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent = "";
+    }
+    tombol.disabled = sama || !((slot.putusan && slot.putusan.berkas) || (slot.anonimisasi && slot.anonimisasi.berkas));
+  };
+
+  for (const [kunci, judul] of [
+    ["putusan", "Edoc putusan"],
+    ["anonimisasi", "Edoc anonimisasi"],
+  ]) {
+    const baris = buatElemen("div", "aleta-edoc-slot");
+    baris.setAttribute("data-slot", kunci);
+    baris.appendChild(buatElemen("span", "aleta-edoc-judul", judul));
+    const pemilih = document.createElement("input");
+    pemilih.type = "file";
+    pemilih.accept = ".rtf,.doc,.docx,.pdf";
+    pemilih.className = "aleta-berkas";
+    pemilih.setAttribute("aria-label", judul);
+    pemilih.setAttribute("data-slot", kunci);
+    baris.appendChild(pemilih);
+    const tanda = buatElemen("span", "aleta-edoc-tanda aleta-massal-keadaan", "belum dipilih");
+    baris.appendChild(tanda);
+    isi.appendChild(baris);
+    slot[kunci] = { pemilih, tanda, berkas: null };
+    pemilih.addEventListener("change", () => periksaSlot(kunci));
+  }
+  isi.appendChild(tombol);
+  isi.appendChild(kabar);
+
+  const laporkan = (jawab) => {
+    const rinci = buatElemen("div", "aleta-unggah-rinci");
+    for (const b of jawab.berkas || []) {
+      const baris = buatElemen("div", "aleta-unggah-baris");
+      baris.appendChild(buatElemen("span", "aleta-unggah-judul", b.jenis === "anonimisasi" ? "Edoc anonimisasi" : "Edoc putusan"));
+      baris.appendChild(buatElemen("span", b.ok ? "aleta-unggah-jumlah" : "aleta-unggah-kosong", b.ok ? b.jalur : pesanGagalUnggah(b)));
+      rinci.appendChild(baris);
+    }
+    for (const peringatan of [].concat(jawab.peringatan || [])) {
+      rinci.appendChild(buatElemen("div", "aleta-unggah-kosong", String(peringatan)));
+    }
+    isi.appendChild(rinci);
+    const semua = jawab.berkas || [];
+    return { adaYangMasuk: semua.some((b) => b.ok), semuaMasuk: semua.length > 0 && semua.every((b) => b.ok) };
+  };
+
+  tombol.addEventListener("click", async () => {
+    const putusan = slot.putusan.berkas;
+    const anonimisasi = slot.anonimisasi.berkas;
+    if ((!putusan && !anonimisasi) || berkasSama()) return;
+    tombol.disabled = true;
+    tombol.dataset.sibuk = "ya";
+    slot.putusan.pemilih.disabled = true;
+    slot.anonimisasi.pemilih.disabled = true;
+    const badan = new FormData();
+    badan.append("perkaraId", perkaraIdDariHalaman());
+    badan.append("nomorPerkara", nomorPerkara || "");
+    badan.append("olehUsername", namaPenggunaSipp() || "");
+    if (putusan) badan.append("putusan", putusan);
+    if (anonimisasi) badan.append("anonimisasi", anonimisasi);
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent =
+      putusan && anonimisasi
+        ? "Mengunggah edoc putusan dan edoc anonimisasi sekaligus…"
+        : putusan
+          ? "Mengunggah edoc putusan…"
+          : "Mengunggah edoc anonimisasi…";
+    let hasil = { adaYangMasuk: false, semuaMasuk: false };
+    try {
+      const jawab = await kirimBadanUnggahSipp(badan, putusan && anonimisasi ? BATAS_UNGGAH_SIPP_MS * 2 : BATAS_UNGGAH_SIPP_MS);
+      if (!jawab.ok) throw new Error(jawab.sebab || jawab.pesan || jawab.alasan || "Unggahannya tidak dapat dikerjakan.");
+      hasil = laporkan(jawab);
+      if (hasil.semuaMasuk) {
+        kabar.textContent = `${putusan && anonimisasi ? "Edoc putusan dan edoc anonimisasi" : putusan ? "Edoc putusan" : "Edoc anonimisasi"} terunggah${jawab.antrean ? ", dan perkara ini masuk antrean Direktori Putusan" : ""}.`;
+      } else {
+        kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+        kabar.textContent = hasil.adaYangMasuk
+          ? "Sebagian terunggah - lihat rinciannya di bawah; pilih ulang yang gagal."
+          : "Tidak ada yang masuk - lihat sebabnya di bawah.";
+      }
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+    } finally {
+      delete tombol.dataset.sibuk;
+      slot.putusan.pemilih.disabled = false;
+      slot.anonimisasi.pemilih.disabled = false;
+      tombol.disabled = !(slot.putusan.berkas || slot.anonimisasi.berkas);
+    }
+    // Sama dengan cara lama: halaman perkara dibuka kembali hanya bila SEMUA
+    // yang dikirim masuk - pesan kegagalan dibiarkan terbaca.
+    if (hasil.semuaMasuk) {
+      kabar.textContent += " Halaman perkara dibuka kembali…";
+      setTimeout(muatUlangHalamanPerkara, 1500);
+    }
+  });
+
+  const lama = buatElemen("button", "aleta-edoc-cara-lama", "Pakai cara lama: satu pemilih untuk keduanya");
+  lama.type = "button";
+  lama.title = "Satu pemilih; putusan dan anonimisasi dipasangkan menurut nama berkasnya (berlaku sampai halaman dimuat ulang)";
+  lama.addEventListener("click", () => {
+    if (tombol.dataset.sibuk) return;
+    unggahEdocPakaiCaraLama = true;
+    kotak.replaceWith(bagianUnggahPutusanSipp(nomorPerkara));
+  });
+  isi.appendChild(lama);
+
+  pasangGantiUnggahEdoc(kotak, nomorPerkara);
+  return kotak;
+}
+
+/** Pengalih Lama / Baru / UI Baru berganti: bagian unggah disusun ulang dalam bentuk yang berlaku. */
+function pasangGantiUnggahEdoc(kotak, nomorPerkara) {
+  const bentuk = unggahEdocTerpisahBerlaku() && !unggahEdocPakaiCaraLama;
+  const dengar = () => {
+    if (!kotak.isConnected) {
+      document.removeEventListener("aleta-uji-berubah", dengar);
+      return;
+    }
+    if ((unggahEdocTerpisahBerlaku() && !unggahEdocPakaiCaraLama) === bentuk) return;
+    // Unggahan yang sedang berjalan tidak diputus.
+    if (kotak.querySelector("[data-sibuk]")) return;
+    document.removeEventListener("aleta-uji-berubah", dengar);
+    kotak.replaceWith(bagianUnggahPutusanSipp(nomorPerkara));
+  };
+  document.addEventListener("aleta-uji-berubah", dengar);
 }
 
 /**

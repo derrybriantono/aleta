@@ -597,7 +597,19 @@ describe("SYARAT MUTLAK: tampilan Lama identik dengan fd9aad7", () => {
     const lamaKini = await jalani(buka({ simpanan: { ujiTampilan: "lama" } }));
     const baru = buka({ simpanan: { ujiTampilan: "baru", ujiIzinkanNyata: true } });
     const hasil = await jalani(baru);
-    expect(hasil.html).toBe(lamaKini.html);
+    // Satu-satunya perbedaan yang DISENGAJA: isi bagian "Unggah putusan ke SIPP"
+    // - edoc putusan dan edoc anonimisasi terpisah hadir di Baru dan UI Baru
+    // tanpa saklar (permintaan pengguna 30 Sep 2026: "buat hanya di ekstensi
+    // baru dan ui baru"; dijaga ekstensi-unggah-edoc-terpisah.test.ts). Isinya
+    // dikosongkan di kedua sisi; selebihnya tetap harus sama persis.
+    const tanpaUnggah = (html: string) =>
+      html.replace(
+        /(<div class="aleta-bagian" data-kunci="unggahPutusanSipp">[\s\S]*?<div class="aleta-bagian-isi"[^>]*>)[\s\S]*?(<\/div><\/div><div class="aleta-bagian" data-kunci="putusan">)/,
+        "$1$2"
+      );
+    expect(hasil.html).toContain('data-kunci="unggahPutusanSipp"');
+    expect(tanpaUnggah(hasil.html)).not.toBe(hasil.html);
+    expect(tanpaUnggah(hasil.html)).toBe(tanpaUnggah(lamaKini.html));
     expect(hasil.jembatan).toEqual(lamaKini.jembatan);
   });
 });

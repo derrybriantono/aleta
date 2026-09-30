@@ -8445,3 +8445,46 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-tetap-sebab { color: va
 }
 
 /* PANEL SIPP - TAHAP 7 (AKHIR) */
+
+/* ==========================================================================
+   EDOC PUTUSAN & EDOC ANONIMISASI TERPISAH (30 Sep 2026)
+   Kelasnya hanya lahir di tampilan Baru dan UI Baru (bagianUnggahEdocTerpisah
+   di konten.js); dalam Lama tidak ada satu elemen pun yang memakainya.
+   ========================================================================== */
+/* Edoc putusan dan edoc anonimisasi terpisah (Baru & UI Baru, 30 Sep 2026):
+   kelas ini hanya lahir di tampilan itu (bagianUnggahEdocTerpisah). */
+.aleta-edoc-slot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-edoc-judul {
+  font-weight: 700;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-tulisan);
+}
+.aleta-edoc-tanda {
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  overflow-wrap: anywhere;
+}
+.aleta-edoc-cara-lama {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+  font: inherit;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  text-decoration: underline;
+  cursor: pointer;
+}
+.aleta-edoc-cara-lama:hover,
+.aleta-edoc-cara-lama:focus-visible {
+  color: var(--aleta-merek);
+}
+

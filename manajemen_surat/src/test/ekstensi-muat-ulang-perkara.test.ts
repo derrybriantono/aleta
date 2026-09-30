@@ -97,11 +97,14 @@ describe("tidak ada lagi pemuatan ulang yang terjatuh ke dasbor", () => {
     //      ulang, dan tanpa itu petugas melihat kolom kosong tepat sesudah
     //      diberi tahu berkasnya terunggah
     //   5. sesudah borang putusan disimpan dan SIPP terbukti mencatatnya
+    //   6. sesudah edoc putusan dan edoc anonimisasi terunggah SEKALIGUS dari
+    //      dua tempat terpisah (tampilan Baru & UI Baru, 1.174.1) - alasan
+    //      yang sama dengan nomor 4
     //
-    // Kelimanya lewat muatUlangHalamanPerkara, bukan location.reload() -
+    // Keenamnya lewat muatUlangHalamanPerkara, bukan location.reload() -
     // halaman borang SIPP dibuka lewat sesi kilat, dan memuat ulangnya
     // mendaratkan petugas di dasbor.
-    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(5);
+    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(6);
     expect(isi.includes("setTimeout(() => location.reload()")).toBe(false);
   });
 

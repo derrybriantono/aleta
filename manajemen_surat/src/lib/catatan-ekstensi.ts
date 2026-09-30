@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.174.1",
+    dirilis: "2026-09-30T06:25:00+08:00",
+    judul: "Edoc putusan dan edoc anonimisasi punya tempat unggah masing-masing, dikirim sekaligus (tampilan Baru & UI Baru)",
+    butir: [
+      "Di panel SIPP bagian Putusan > Unggah putusan ke SIPP, tampilan Baru dan UI Baru kini menyediakan DUA tempat: 'Edoc putusan' dan 'Edoc anonimisasi', masing-masing dengan pemilih berkasnya sendiri. Satu tombol 'Unggah edoc ke SIPP' mengirim keduanya SEKALIGUS dalam satu kiriman; boleh salah satu saja.",
+      "Sebabnya: cara sebelumnya memakai satu pemilih dan menebak mana anonimisasi dari NAMA berkasnya - berkas anonimisasi yang namanya tidak memuat 'anonim' terbaca sebagai putusan kedua, dan slot anonimisasinya kosong. Kini petugas yang menentukan slotnya; nama berkas hanya dipakai untuk peringatan.",
+      "Penjagaan tetap sama: bentuk selain RTF/DOC/DOCX/PDF, berkas perkara lain, dan berkas BAS/penetapan/relaas tidak dikirim; berkas yang sama di kedua tempat ditolak. Bila sebagian gagal, sebabnya disebut per berkas dan halaman tidak dimuat ulang.",
+      "Tampilan Lama tidak berubah (satu pemilih seperti sebelumnya), dan cara lama tetap dapat dipilih di Baru/UI Baru lewat 'Pakai cara lama: satu pemilih untuk keduanya'. Panel ABT memang sudah mengirim putusan dan anonimisasinya dalam satu kiriman.",
+    ],
+  },
+  {
     versi: "1.174.0",
     dirilis: "2026-09-30T02:30:00+08:00",
     judul: "Panel ABT dan panel SIPP versi baru (tahap 6-7), mode latihan, dan komentar hakim atas BAS",
