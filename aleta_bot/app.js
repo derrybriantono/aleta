@@ -183,6 +183,9 @@ app.use("/internal/aleta-bot/naskah/konversi", express.json({ limit: "28mb" }));
 // batas 1 MB di bawah akan menolaknya dengan "request entity too large",
 // kalimat yang tidak menyebut gambar mana pun dan tidak menyebut batasnya.
 app.use("/internal/aleta-bot/tanda-tangan/tambah", express.json({ limit: "12mb" }));
+// Salinan putusan untuk diunggah ke e-Court (perbaikan 1 Okt 2026, butir 16b):
+// PDF sampai 20 MB sebagai base64 di dalam JSON - batas sama dengan naskah.
+app.use("/internal/aleta-bot/ecourt-putusan/unggah", express.json({ limit: "28mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static("public"));
 
@@ -4343,6 +4346,10 @@ cron.schedule(selisihHarianService.jadwalCron(), () => {
 
 // Sinkron & cadangan (butir 29/30, 30 Sep 2026): dump MySQL baca-saja untuk portal.
 app.use("/internal/aleta-bot/sinkron", require("./routes/sinkronRoutes"));
+// Jadwal Sidang: Selesai dua arah dengan antrian, penetapan mediator, proses mediasi (perbaikan 1 Okt 2026, J1/J2/J7).
+app.use("/internal/aleta-bot/jadwal-sidang", require("./routes/jadwalSidangRoutes"));
+// Sesi e-Court pribadi dan aksi e-Court per perkara (perbaikan 1 Okt 2026, E9-E11, 16b).
+app.use("/internal/aleta-bot", require("./routes/ecourtAksiRoutes"));
 app.use("/internal/aleta-bot", internalGatewayRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 

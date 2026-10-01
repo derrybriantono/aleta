@@ -149,6 +149,18 @@
   const KUNCI_LAMA_SIDANG = "lamaSidang";
   const KUNCI_SUSUNAN = "susunanWidget";
   const KUNCI_SUDUT = "sudutWidget";
+  // Perbaikan 1 Okt butir 7 (UI Baru saja) - lihat "TATA BAGIAN WIDGET" di bawah.
+  const KUNCI_TATA = "tataWidget";
+  const KUNCI_TAMPILAN_SERVER = "tampilanServer";
+  const SETELAN_TATA = "widget.tata";
+  const ALAMAT_SETELAN = "/aleta/api/aleta-ecourt/ekstensi/setelan";
+  /** Perubahan yang beruntun (menarik ukuran, beberapa saklar) dikirim sekali. */
+  const TATA_KIRIM_JEDA_MS = 1500;
+  const TINGGI_MIN = 60;
+  const TINGGI_MAKS = 1200;
+  const TINGGI_LANGKAH = 20;
+  const LEBAR_LEPAS_MIN = 240;
+  const LEBAR_LEPAS_MAKS = 900;
 
   const ALAMAT_API = "/aleta/api/aleta-ecourt/checklist";
   const TAG_AKAR = "aleta-cm-widget";
@@ -1008,6 +1020,184 @@
     .aleta-cmw-teknis-teks small { color: var(--aleta-tulisan-lembut); }
     .aleta-cmw-teknis .aleta-cmw-saklar { flex: none; }
 
+    /* Perbaikan 1 Okt butir 1 (K2): lipat seragam - SALINAN aturan blok W1
+     * panel.css (Shadow DOM tidak mewarisi aturan halaman), dengan gerbang
+     * :host([data-kulit="modern"]) menggantikan html[data-aleta-kulit="modern"].
+     * Dijaga uji ekstensi-lipat-widget-1okt supaya keduanya tidak berselisih. */
+    .aleta-lipatan > .aleta-lipat-isi[hidden], .aleta-lipat-isi[hidden] { display: none !important; }
+    .aleta-lipatan[data-lipat-asal="kartu"][data-terbuka="tidak"] > :not(.aleta-lipat-kepala) { display: none !important; }
+    :host([data-kulit="modern"]) .aleta-lipat-kepala {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      margin: 0;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--aleta-tulisan);
+      font-family: inherit;
+      font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+      font-weight: 700;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+      text-transform: none;
+      text-align: left;
+      list-style: none;
+      cursor: pointer;
+      user-select: none;
+    }
+    :host([data-kulit="modern"]) .aleta-lipat-kepala:hover { background: var(--aleta-latar-naik); }
+    :host([data-kulit="modern"]) .aleta-lipat-kepala:focus-visible { outline: 2px solid var(--aleta-merek); outline-offset: 1px; }
+    :host([data-kulit="modern"]) .aleta-lipat-panah {
+      position: relative;
+      display: inline-block;
+      flex: 0 0 auto;
+      width: 14px;
+      height: 14px;
+      color: var(--aleta-tulisan-lembut);
+      font-size: 0 !important;
+      line-height: 0;
+      opacity: 1;
+    }
+    :host([data-kulit="modern"]) .aleta-lipat-panah::before {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 4px;
+      width: 6px;
+      height: 6px;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(-45deg);
+      transition: transform 0.15s ease;
+    }
+    :host([data-kulit="modern"]) .aleta-lipat-kepala[aria-expanded="true"] > .aleta-lipat-panah::before {
+      top: 2px;
+      transform: rotate(45deg);
+    }
+    :host([data-kulit="modern"]) .aleta-lipat-judul { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    :host([data-kulit="modern"]) .aleta-lipat-ringkas,
+    :host([data-kulit="modern"]) .aleta-lipat-lencana[hidden] { display: none; }
+    :host([data-kulit="modern"]) .aleta-lipat-lencana {
+      flex: none;
+      margin-left: auto;
+      padding: 1px 8px;
+      border-radius: 999px;
+      background: var(--aleta-latar-naik);
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(11px * var(--aleta-skala-huruf, 1));
+      font-weight: 600;
+    }
+    /* Kepala kotak widget: tombol lipat + kendali; sisa kepala tetap pegangan geser. */
+    :host([data-kulit="modern"]) .aleta-cmw-kepala { padding: 4px 6px 4px 4px; }
+    :host([data-kulit="modern"]) .aleta-cmw-kepala > .aleta-lipat-kepala,
+    :host([data-kulit="modern"]) .aleta-cm-kepala > .aleta-lipat-kepala { flex: 0 1 auto; padding: 5px 8px; }
+    :host([data-kulit="modern"]) .aleta-cm-kepala > .aleta-lipat-kepala .aleta-cm-judul { white-space: nowrap; }
+    :host([data-kulit="modern"]) .aleta-cm-kelompok > .aleta-lipat-kepala { width: 100%; padding: 8px 40px 8px 12px; border-radius: 0; }
+    .aleta-cm-badan { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+    /* Butir 7: kendali bagian, garis tarik, jendela melayang, Atur kelompok. */
+    :host([data-kulit="modern"]) .aleta-cm-kelompok { position: relative; }
+    .aleta-cmw-kel-alat { position: absolute; top: 5px; right: 8px; display: inline-flex; gap: 2px; }
+    .aleta-cmw-pisah, .aleta-cmw-gabung, .aleta-cmw-sembunyi {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(14px * var(--aleta-skala-huruf, 1));
+      line-height: 1;
+      cursor: pointer;
+    }
+    .aleta-cmw-pisah:hover, .aleta-cmw-gabung:hover, .aleta-cmw-sembunyi:hover { background: var(--aleta-latar-naik); color: var(--aleta-tulisan); }
+    .aleta-cmw-tarik {
+      position: relative;
+      flex: none;
+      height: 10px;
+      margin: 0;
+      cursor: ns-resize;
+      touch-action: none;
+      outline: none;
+    }
+    .aleta-cmw-tarik::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 3px;
+      width: 36px;
+      height: 4px;
+      margin-left: -18px;
+      border-radius: 999px;
+      background: var(--aleta-garis-kuat);
+    }
+    .aleta-cmw-tarik:hover::before, .aleta-cmw-tarik:focus-visible::before, .aleta-cmw-tarik[data-ditarik="ya"]::before { background: var(--aleta-merek); }
+    .aleta-cmw-lepasan .aleta-cmw-tarik { cursor: nwse-resize; }
+    .aleta-lipat-isi[hidden] ~ .aleta-cmw-tarik { display: none; }
+    .aleta-cmw-lepas-wadah {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+      line-height: 1.45;
+      color: var(--aleta-tulisan);
+      --cm-merek-latar: color-mix(in srgb, var(--aleta-merek) 16%, var(--aleta-latar));
+      --cm-merek-garis: color-mix(in srgb, var(--aleta-merek) 42%, var(--aleta-latar));
+      --cm-merek-tombol: color-mix(in srgb, var(--aleta-merek) 24%, var(--aleta-latar));
+      --cm-merek-tombol-sorot: color-mix(in srgb, var(--aleta-merek) 36%, var(--aleta-latar));
+      --cm-lewat-latar: color-mix(in srgb, var(--aleta-lewat) 16%, var(--aleta-latar-naik));
+      --cm-mendesak-latar: color-mix(in srgb, var(--aleta-mendesak) 16%, var(--aleta-latar-naik));
+    }
+    .aleta-cmw-lepasan {
+      position: fixed;
+      max-width: calc(100vw - 24px);
+      max-height: calc(100vh - 16px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .aleta-cmw-lepasan > .aleta-cmw-isi, .aleta-cmw-lepasan > .aleta-cm-badan { min-height: 0; overflow-y: auto; }
+    .aleta-cmw-lepasan .aleta-cmw-kepala, .aleta-cmw-lepasan .aleta-cm-kepala { cursor: move; }
+    .aleta-cmw-lepasan[data-digeser="ya"] { opacity: 0.92; }
+    .aleta-cmw-kelompok-lepas .aleta-cm-daftar { padding: 0; }
+    .aleta-cmw-bagian-lain { display: grid; gap: 4px; margin: 4px 12px 2px; }
+    .aleta-cmw-bagian-lain-baris {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+    }
+    .aleta-cmw-atur-kel { margin-top: 6px; }
+    .aleta-cmw-atur-sub {
+      margin: 4px 4px 2px;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(10.5px * var(--aleta-skala-huruf, 1));
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .aleta-cmw-atur-kel-baris { display: flex; align-items: center; gap: 8px; padding: 7px 4px 7px 28px; border-top: 1px solid var(--aleta-garis); }
+    .aleta-cmw-atur-pisah, .aleta-cmw-atur-ukuran {
+      flex: none;
+      width: 24px;
+      height: 22px;
+      padding: 0;
+      border: 1px solid var(--aleta-garis);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--aleta-tulisan-lembut);
+      cursor: pointer;
+    }
+    .aleta-cmw-atur-pisah[aria-pressed="true"] { border-color: var(--aleta-merek); color: var(--aleta-merek); }
+    .aleta-cmw-sinkron { margin-top: 6px; }
+    .aleta-cmw-sinkron[data-nada="mendesak"] { color: var(--aleta-mendesak); }
+    @media (prefers-reduced-motion: reduce) {
+      :host([data-kulit="modern"]) .aleta-lipat-panah::before { transition: none; }
+    }
+
     /* Tidak pernah ikut tercetak - widget maupun kabar tutupnya. Akarnya di
      * <html>, di luar jangkauan aturan cetak halaman ("body > *:not(...)",
      * "body *"), jadi yang menyembunyikannya harus dibawa sendiri. Lapisan
@@ -1058,6 +1248,18 @@
     aturTerbuka: false,
     /** Tanggal yang dipilih di kalender tenggat ("YYYY-MM-DD"), atau kosong. */
     hariKalender: "",
+    // ── Perbaikan 1 Okt butir 7 - hanya UI Baru ──
+    /** Lihat tataBersih. */
+    tata: {
+      bagian: {},
+      kelompok: { urutan: [], mati: [] },
+      serverPada: "",
+      diubah: 0,
+      tertunda: false,
+      lokalSaja: "",
+    },
+    /** Keadaan simpan ke server untuk Atur widget: { status, pada, pesan }. */
+    sinkronTata: { status: "", pada: 0, pesan: "" },
   };
 
   let akar = null;
@@ -2265,10 +2467,29 @@
     if (daftar.length < jumlah) kepala.appendChild(el("span", "aleta-cm-sebagian", `${daftar.length} ditampilkan`));
     kepala.addEventListener("click", () => setelLipatan(kunci, !buka));
     bagian.appendChild(kepala);
+    let ul = null;
     if (buka && daftar.length) {
-      const ul = el("ul", "aleta-cm-daftar");
+      ul = el("ul", "aleta-cm-daftar");
       for (const b of daftar) ul.appendChild(susunButir(b));
       bagian.appendChild(ul);
+    }
+    // Perbaikan 1 Okt (UI Baru): kepala berupa lipat seragam (K2), tombol ⧉
+    // memisahkan kelompok menjadi jendela melayang, dan pegangan di kakinya
+    // mengubah tinggi daftarnya.
+    if (modern() && kunci !== "lain") {
+      try {
+        if (typeof alatJadikanLipat === "function") alatJadikanLipat(bagian);
+      } catch {
+        /* rupa lama tetap */
+      }
+      const idBagian = `kel-${kunci}`;
+      const alat = el("span", "aleta-cmw-kel-alat");
+      alat.appendChild(tombol("aleta-cmw-pisah", "⧉", `Pisahkan ${judul} menjadi jendela melayang sendiri`, () => pisahkan(idBagian), `pisah-${idBagian}`));
+      bagian.appendChild(alat);
+      if (ul) {
+        terapkanTinggi(ul, tinggiBagian(idBagian));
+        pasangTarik(bagian, idBagian, ul, judul);
+      }
     }
     return bagian;
   }
@@ -2293,10 +2514,18 @@
     }
     const h = hitunganTampil(data);
     const jumlah = { lewat: h.lewat, "hari-ini": h.hariIni, "minggu-ini": h.mingguIni };
-    for (const k of KELOMPOK) {
+    // UI Baru (butir 7): urutan kelompok milik pengguna; yang disembunyikan
+    // atau dipisah ke jendela sendiri tidak digambar di sini.
+    const ui = modern();
+    for (const k of ui ? urutanKelompok() : KELOMPOK) {
+      if (ui && (kelompokMati(k.kunci) || terpisah(`kel-${k.kunci}`))) continue;
       const daftar = butir.filter((b) => b.kelompok === k.kunci);
       if (daftar.length === 0 && jumlah[k.kunci] === 0) continue;
       isi.appendChild(susunKelompok(k.kunci, k.judul, daftar, jumlah[k.kunci], terbuka(k.kunci, k.bawaanTerbuka)));
+    }
+    if (ui) {
+      const lainnya = susunCatatanKelompok(jumlah);
+      if (lainnya) isi.appendChild(lainnya);
     }
     // Kelompok yang tidak dikenal versi ekstensi ini tetap ditampilkan -
     // membuangnya berarti pekerjaan yang hilang tanpa jejak.
@@ -2410,16 +2639,36 @@
     panel.setAttribute("role", "region");
     panel.setAttribute("aria-label", "Checklist milestone");
     panel.setAttribute("aria-busy", keadaan.memuat ? "true" : "false");
-    panel.appendChild(susunKepala());
-    const kabar = susunKabar();
-    if (kabar) panel.appendChild(kabar);
-    if (keadaan.data) {
-      panel.appendChild(susunKemajuan());
-      panel.appendChild(susunIsi());
-    } else if (!keadaan.galat) {
-      panel.appendChild(el("div", "aleta-cm-memuat", "Memuat checklist…"));
+    const kepala = susunKepala();
+    panel.appendChild(kepala);
+    // UI Baru (K2): judul menjadi tombol lipat; isi panel di bawahnya ikut
+    // terlipat. Lama dan Baru: susunan lama persis.
+    let wadahIsi = panel;
+    if (modern() && typeof alatLipat === "function") {
+      const judul = kepala.querySelector(":scope > .aleta-cm-judul");
+      if (judul) {
+        const penanda = document.createComment("judul");
+        kepala.insertBefore(penanda, judul);
+        const l = alatLipat(judul, { kunci: "widget:checklist" });
+        l.kepala.setAttribute("data-fokus", "lipat-checklist");
+        l.kepala.title = "Lipat atau bentangkan Checklist milestone";
+        kepala.replaceChild(l.kepala, penanda);
+        panel.classList.add("aleta-lipatan");
+        l.isi.classList.add("aleta-cm-badan");
+        l.isi.removeAttribute("role");
+        panel.appendChild(l.isi);
+        wadahIsi = l.isi;
+      }
     }
-    panel.appendChild(susunKaki());
+    const kabar = susunKabar();
+    if (kabar) wadahIsi.appendChild(kabar);
+    if (keadaan.data) {
+      wadahIsi.appendChild(susunKemajuan());
+      wadahIsi.appendChild(susunIsi());
+    } else if (!keadaan.galat) {
+      wadahIsi.appendChild(el("div", "aleta-cm-memuat", "Memuat checklist…"));
+    }
+    wadahIsi.appendChild(susunKaki());
     return panel;
   }
 
@@ -2503,6 +2752,8 @@
   function simpanSusunan(isi) {
     keadaan.susunan = { ...keadaan.susunan, [kunciSusunan()]: isi };
     tulis({ [KUNCI_SUSUNAN]: keadaan.susunan });
+    // Butir 7: susunan dok ikut ke setelan akun di server (UI Baru).
+    if (modern()) catatTataBerubah();
     gambar();
   }
 
@@ -2545,8 +2796,13 @@
       } else {
         const tumpuk = el("div", "aleta-cmw-tumpuk");
         for (const id of widgetTampil()) {
+          // Butir 7: bagian yang dipisah tinggal di jendela melayangnya.
+          if (terpisah(id)) continue;
           const w = susunWidget(id);
-          if (w) tumpuk.appendChild(w);
+          if (w) {
+            pasangKendaliBagian(w, id, false);
+            tumpuk.appendChild(w);
+          }
         }
         if (tumpuk.childNodes.length) dok.appendChild(tumpuk);
       }
@@ -2597,19 +2853,41 @@
     return frag;
   }
 
-  /** Kotak satu widget kecil: kepala (juga pegangan geser dok) dan isinya. */
+  /**
+   * Kotak satu widget kecil: kepala (juga pegangan geser dok) dan isinya.
+   *
+   * UI Baru (perbaikan 1 Okt butir 1, K2): judulnya menjadi tombol lipat yang
+   * sama dengan panel SIPP, ABT, dan portal (alatLipat di panel-alat.js) -
+   * panah, buka/tutup diingat per bagian ("widget:<id>"). Kepala tetap
+   * pegangan geser di luar tombolnya. Atur widget tidak dilipat.
+   */
   function kotakWidget(id, judul) {
-    const kotak = el("section", "aleta-cmw-kotak");
+    const lipat = modern() && id !== "atur" && typeof alatLipat === "function";
+    let kotak;
+    let isi;
+    let tombolLipat = null;
+    const teksJudul = el("span", "aleta-cmw-judul", judul);
+    if (lipat) {
+      const l = alatLipat(teksJudul, { kunci: `widget:${id}`, kelas: "aleta-cmw-kotak" });
+      kotak = l.akar;
+      isi = l.isi;
+      isi.classList.add("aleta-cmw-isi");
+      tombolLipat = l.kepala;
+      tombolLipat.setAttribute("data-fokus", `lipat-${id}`);
+      tombolLipat.title = `Lipat atau bentangkan ${judul}`;
+    } else {
+      kotak = el("section", "aleta-cmw-kotak");
+      isi = el("div", "aleta-cmw-isi");
+    }
     kotak.setAttribute("data-widget-isi", id);
     kotak.setAttribute("role", "region");
     kotak.setAttribute("aria-label", judul);
     const kepala = el("header", "aleta-cmw-kepala");
     kepala.setAttribute("data-geser", "1");
     kepala.title = `${judul}. Geser dari sini.`;
-    kepala.appendChild(el("span", "aleta-cmw-judul", judul));
-    kotak.appendChild(kepala);
-    const isi = el("div", "aleta-cmw-isi");
-    kotak.appendChild(isi);
+    kepala.appendChild(tombolLipat || teksJudul);
+    kotak.insertBefore(kepala, kotak.firstChild);
+    if (!isi.parentNode) kotak.appendChild(isi);
     return { kotak, kepala, isi };
   }
 
@@ -2773,7 +3051,8 @@
     const awal = new Date(kini.getFullYear(), kini.getMonth(), kini.getDate() - ((kini.getDay() + 6) % 7));
     const hari = Array.from({ length: 14 }, (_, i) => new Date(awal.getFullYear(), awal.getMonth(), awal.getDate() + i));
     const akhir = hari[13];
-    w.kepala.firstChild.textContent = `Kalender tenggat · ${teksTanggal(awal)} – ${teksTanggal(akhir)}`;
+    const judulKal = w.kepala.querySelector(".aleta-cmw-judul") || w.kepala.firstChild;
+    judulKal.textContent = `Kalender tenggat · ${teksTanggal(awal)} – ${teksTanggal(akhir)}`;
 
     const perHari = new Map();
     let sebelum = 0;
@@ -2937,7 +3216,8 @@
           (fitur("popup-23")
             ? `Susunan ini untuk ${NAMA_SITUS[JENIS]} saja - SIPP, ABT, dan portal boleh berbeda.`
             : "Susunan yang sama berlaku di SIPP, ABT, dan portal.") +
-          " Tersimpan di peramban ini."
+          " ⧉ memisahkan bagian menjadi jendela melayang; tarik garis di kaki bagian untuk mengubah tingginya." +
+          " Disimpan di akun Anda di server - berlaku di PC mana pun Anda masuk - dengan cadangan di peramban ini."
       ))
     );
     const daftar = el("ul", "aleta-cmw-atur-daftar");
@@ -2968,6 +3248,22 @@
       geser.appendChild(naik);
       geser.appendChild(turun);
       li.appendChild(geser);
+      // Butir 7: pisah / gabung dan kembalikan tinggi, per bagian.
+      if (tersedia) {
+        const lepas = terpisah(id);
+        const pisah = tombol(
+          "aleta-cmw-atur-pisah",
+          lepas ? "⤓" : "⧉",
+          lepas ? `Gabungkan ${wd.judul} kembali ke dok` : `Pisahkan ${wd.judul} menjadi jendela melayang sendiri`,
+          () => (lepas ? gabungkan(id) : pisahkan(id)),
+          `atur-pisah-${id}`
+        );
+        pisah.setAttribute("aria-pressed", lepas ? "true" : "false");
+        li.appendChild(pisah);
+        if (tinggiBagian(id)) {
+          li.appendChild(tombol("aleta-cmw-atur-ukuran", "↺", `Kembalikan tinggi ${wd.judul} ke bawaan`, () => setelTinggi(id, 0), `atur-ukuran-${id}`));
+        }
+      }
       const nyala = tersedia && !mati.has(id);
       const saklar = tombol(
         "aleta-cmw-saklar",
@@ -3007,11 +3303,773 @@
     }
     pasangSeretAtur(daftar);
     w.isi.appendChild(daftar);
+    // Butir 7: kelompok di dalam checklist - urutan, sembunyi, pisah, tinggi.
+    w.isi.appendChild(susunAturKelompok());
+    w.isi.appendChild(susunKeadaanTata());
     // K5: saklar penjelasan teknis - di UI Baru tempatnya di sini, bersama
     // setelan widget lainnya.
     const saklarTeknisAtur = susunSaklarTeknis();
     if (saklarTeknisAtur) w.isi.appendChild(saklarTeknisAtur);
     return w.kotak;
+  }
+
+  // ─── Perbaikan 1 Okt butir 7: TATA BAGIAN WIDGET (UI Baru saja) ───────────
+  //
+  // Tiap bagian widget - Checklist milestone, Catatan cepat, Lama sidang,
+  // Kalender tenggat, dan kelompok di dalam checklist (Lewat tenggat, Hari
+  // ini, Minggu ini) - dapat:
+  //   disembunyikan   Atur widget (saklar), atau ⊘ di jendela melayang
+  //   diubah tinggi   tarik garis di kaki bagian; papan tik: fokus garisnya
+  //                   lalu panah atas/bawah, Home = tinggi bawaan; klik ganda
+  //                   = tinggi bawaan; Atur widget: ↺
+  //   dipindah urut   Atur widget: seret ⋮⋮ atau ↑ ↓
+  //   DIPISAH         ⧉ di kepala bagian (atau Atur widget): menjadi jendela
+  //                   melayang sendiri yang dapat digeser dari kepalanya dan
+  //                   diubah tinggi/lebarnya; ⤓ menggabungkannya lagi ke dok
+  //
+  // PENYIMPANAN
+  //   susunanWidget  (sudah ada) widget yang tampil dan urutannya di dok
+  //   tataWidget     {bagian: {id: {tinggi?, lepas?: {x, y, lebar?}}},
+  //                   kelompok: {urutan, mati}, serverPada, diubah, tertunda,
+  //                   lokalSaja}
+  //   Keduanya CADANGAN LOKAL. Yang menentukan adalah setelan AKUN di server:
+  //   PUT /aleta/api/aleta-ecourt/ekstensi/setelan, kunci "widget.tata",
+  //   nilai {susunan, bagian, kelompok}. Bacaannya menumpang singgahan
+  //   tampilan yang diambil panel-alat.js tiap lima menit (alatSetelanTersinggah)
+  //   - tidak ada permintaan baca tambahan - jadi susunan yang sama berlaku di
+  //   PC mana pun akun itu masuk. Jendela melayang disimpan dalam PECAHAN
+  //   layar (0..1): layar tiap PC berbeda ukurannya.
+  //
+  // ATURAN SINKRON (sinkronTata)
+  //   server tidak diketahui          cadangan lokal dipakai apa adanya
+  //   ada perubahan tertunda          dikirim (yang terakhir diubah menang)
+  //   server lebih baru dari yang     diambil ke cadangan lokal
+  //   terakhir disepakati
+  //   server kosong, padahal          cadangan itu milik akun lain di PC ini
+  //   cadangan pernah disepakati      -> kembali ke susunan bawaan
+  //   mode latihan / mode kering      perubahan disimpan di peramban ini saja
+  //                                   (lokalSaja) dan tidak pernah dikirim
+  //   mode coba                       setelan pribadi BOLEH (ALETA_COBA_BOLEH)
+  //   gagal / tanpa sesi              tetap tertunda; dikirim lagi pada
+  //                                   kesempatan berikutnya
+
+  let jamKirimTata = null;
+  let kirimTataBerjalan = false;
+
+  function idBagianSah() {
+    return [...WIDGET.filter((w) => !w.menyusul).map((w) => w.id), ...KELOMPOK.map((k) => `kel-${k.kunci}`)];
+  }
+
+  function judulBagian(id) {
+    const w = WIDGET.find((x) => x.id === id);
+    if (w) return w.judul;
+    const k = KELOMPOK.find((x) => `kel-${x.kunci}` === id);
+    return k ? k.judul : id;
+  }
+
+  function jepitAngka(n, min, maks) {
+    return Math.min(Math.max(n, min), maks);
+  }
+
+  function tataBersih(x) {
+    const o = objek(x);
+    const sah = new Set(idBagianSah());
+    const bagian = {};
+    for (const [id, isi] of Object.entries(objek(o.bagian))) {
+      if (!sah.has(id)) continue;
+      const b = objek(isi);
+      const hasil = {};
+      const t = Number(b.tinggi);
+      if (Number.isFinite(t) && t > 0) hasil.tinggi = Math.round(jepitAngka(t, TINGGI_MIN, TINGGI_MAKS));
+      if (b.lepas && typeof b.lepas === "object") {
+        const lx = Number(b.lepas.x);
+        const ly = Number(b.lepas.y);
+        if (Number.isFinite(lx) && Number.isFinite(ly)) {
+          hasil.lepas = { x: jepitAngka(lx, 0, 1), y: jepitAngka(ly, 0, 1) };
+          const lebar = Number(b.lepas.lebar);
+          if (Number.isFinite(lebar) && lebar > 0) hasil.lepas.lebar = Math.round(jepitAngka(lebar, LEBAR_LEPAS_MIN, LEBAR_LEPAS_MAKS));
+        }
+      }
+      if (hasil.tinggi !== undefined || hasil.lepas) bagian[id] = hasil;
+    }
+    const kunciKel = KELOMPOK.map((k) => k.kunci);
+    const kel = objek(o.kelompok);
+    const daftar = (d) => (Array.isArray(d) ? [...new Set(d.filter((k) => kunciKel.includes(k)))] : []);
+    return {
+      bagian,
+      kelompok: { urutan: daftar(kel.urutan), mati: daftar(kel.mati) },
+      serverPada: typeof o.serverPada === "string" ? o.serverPada : "",
+      diubah: Number(o.diubah) || 0,
+      tertunda: o.tertunda === true,
+      lokalSaja: typeof o.lokalSaja === "string" ? o.lokalSaja : "",
+    };
+  }
+
+  function tataBagian(id) {
+    return objek(keadaan.tata.bagian[id]);
+  }
+
+  /** Bagian ini sedang di jendela melayangnya sendiri? Hanya UI Baru. */
+  function terpisah(id) {
+    return modern() && Boolean(tataBagian(id).lepas);
+  }
+
+  function tinggiBagian(id) {
+    return modern() ? Number(tataBagian(id).tinggi) || 0 : 0;
+  }
+
+  function urutanKelompok() {
+    const urutan = [...new Set([...keadaan.tata.kelompok.urutan, ...KELOMPOK.map((k) => k.kunci)])];
+    return urutan.map((k) => KELOMPOK.find((x) => x.kunci === k)).filter(Boolean);
+  }
+
+  function kelompokMati(kunci) {
+    return modern() && keadaan.tata.kelompok.mati.includes(kunci);
+  }
+
+  /** "latihan" | "kering" | "" - perubahan yang tidak boleh dikirim ke server. */
+  function hanyaLokal() {
+    try {
+      if (typeof alatLatihanNyala === "function" && alatLatihanNyala()) return "latihan";
+    } catch {
+      /* tanpa panel-alat.js: tidak ada latihan */
+    }
+    try {
+      if (typeof alatKeringNyala === "function" && alatKeringNyala()) return "kering";
+    } catch {
+      /* tanpa panel-alat.js: tidak ada mode kering */
+    }
+    return "";
+  }
+
+  /** Mencatat bahwa tata (atau susunan dok) baru diubah pengguna di sini. */
+  function catatTataBerubah(t) {
+    const lokal = hanyaLokal();
+    keadaan.tata = { ...tataBersih(t || keadaan.tata), diubah: Date.now(), tertunda: !lokal, lokalSaja: lokal };
+    if (lokal) {
+      keadaan.sinkronTata = { status: "lokal", pada: Date.now(), pesan: lokal === "latihan" ? "mode latihan" : "mode kering" };
+    }
+    tulis({ [KUNCI_TATA]: keadaan.tata });
+    if (!lokal) jadwalkanKirimTata(TATA_KIRIM_JEDA_MS);
+  }
+
+  function ubahTata(ubah) {
+    if (!modern()) return;
+    const t = tataBersih(keadaan.tata);
+    ubah(t);
+    catatTataBerubah(t);
+    gambar();
+  }
+
+  function ubahBagian(t, id, ubah) {
+    const b = { ...objek(t.bagian[id]) };
+    ubah(b);
+    if (b.tinggi === undefined && !b.lepas) delete t.bagian[id];
+    else t.bagian[id] = b;
+  }
+
+  function setelTinggi(id, px) {
+    ubahTata((t) =>
+      ubahBagian(t, id, (b) => {
+        if (px > 0) b.tinggi = Math.round(jepitAngka(px, TINGGI_MIN, TINGGI_MAKS));
+        else delete b.tinggi;
+      })
+    );
+  }
+
+  /** Letak awal jendela melayang: bertangga, supaya yang baru tidak menutupi yang lama. */
+  function letakLepasAwal() {
+    const n = Object.values(keadaan.tata.bagian).filter((b) => b && b.lepas).length;
+    return { x: jepitAngka(0.32 + 0.03 * n, 0, 0.9), y: jepitAngka(0.12 + 0.05 * n, 0, 0.9) };
+  }
+
+  function pisahkan(id) {
+    ubahTata((t) =>
+      ubahBagian(t, id, (b) => {
+        b.lepas = letakLepasAwal();
+      })
+    );
+    fokuskanLepas(`gabung-${id}`);
+  }
+
+  function gabungkan(id) {
+    ubahTata((t) =>
+      ubahBagian(t, id, (b) => {
+        delete b.lepas;
+      })
+    );
+    fokuskan(`pisah-${id}`);
+  }
+
+  /** ⊘ di jendela melayang - tampil lagi lewat Atur widget. */
+  function sembunyikanBagian(id) {
+    if (id.startsWith("kel-")) {
+      const k = id.slice(4);
+      ubahTata((t) => {
+        if (!t.kelompok.mati.includes(k)) t.kelompok.mati.push(k);
+      });
+      return;
+    }
+    const s = susunanAktif();
+    if (!s.mati.includes(id)) simpanSusunan({ urutan: urutanWidget(), mati: [...s.mati, id] });
+  }
+
+  function alihKelompok(k) {
+    ubahTata((t) => {
+      t.kelompok.mati = t.kelompok.mati.includes(k) ? t.kelompok.mati.filter((x) => x !== k) : [...t.kelompok.mati, k];
+    });
+  }
+
+  function geserKelompok(k, arah) {
+    const urutan = urutanKelompok().map((x) => x.kunci);
+    const i = urutan.indexOf(k);
+    const j = i + arah;
+    if (i < 0 || j < 0 || j >= urutan.length) return;
+    [urutan[i], urutan[j]] = [urutan[j], urutan[i]];
+    ubahTata((t) => {
+      t.kelompok.urutan = urutan;
+    });
+  }
+
+  // ── Sinkron dengan setelan akun ──
+
+  function waktuIso(x) {
+    const t = Date.parse(String(x || ""));
+    return Number.isFinite(t) ? t : 0;
+  }
+
+  /** undefined (tidak diketahui) | null (akun ini belum punya) | {nilai, diubahPada}. */
+  function tataServer() {
+    try {
+      return typeof alatSetelanTersinggah === "function" ? alatSetelanTersinggah(SETELAN_TATA) : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  function nilaiTataServer() {
+    return { susunan: keadaan.susunan, bagian: keadaan.tata.bagian, kelompok: keadaan.tata.kelompok };
+  }
+
+  function adopsiTata(s) {
+    const n = objek(s && s.nilai);
+    keadaan.tata = {
+      ...tataBersih({ bagian: n.bagian, kelompok: n.kelompok }),
+      serverPada: s ? String(s.diubahPada || "") : "",
+      diubah: Date.now(),
+      tertunda: false,
+      lokalSaja: "",
+    };
+    keadaan.susunan = susunanBersih(n.susunan);
+    keadaan.sinkronTata = { status: s ? "diambil" : "bawaan", pada: Date.now(), pesan: "" };
+    tulis({ [KUNCI_TATA]: keadaan.tata, [KUNCI_SUSUNAN]: keadaan.susunan });
+    gambar();
+  }
+
+  function sinkronTata() {
+    if (!keadaan.siap || !modern()) return;
+    const t = keadaan.tata;
+    if (t.tertunda) {
+      // Perubahan di PC ini yang belum terkirim menang - itulah tindakan
+      // terakhir orangnya. Dicoba walau server belum terbaca: gagal berarti
+      // tetap tertunda, tidak ada yang hilang.
+      if (!jamKirimTata && document.visibilityState !== "hidden") jadwalkanKirimTata(200);
+      return;
+    }
+    const s = tataServer();
+    if (s === undefined) return;
+    if (s) {
+      if (waktuIso(s.diubahPada) > waktuIso(t.serverPada)) adopsiTata(s);
+      return;
+    }
+    if (t.serverPada && !t.lokalSaja) adopsiTata(null);
+  }
+
+  function jadwalkanKirimTata(ms) {
+    if (jamKirimTata) clearTimeout(jamKirimTata);
+    jamKirimTata = setTimeout(() => {
+      jamKirimTata = null;
+      void kirimTata();
+    }, ms);
+  }
+
+  async function kirimTata() {
+    if (!modern() || !keadaan.tata.tertunda || kirimTataBerjalan) return;
+    const lokal = hanyaLokal();
+    if (lokal) {
+      keadaan.tata = { ...keadaan.tata, tertunda: false, lokalSaja: lokal };
+      keadaan.sinkronTata = { status: "lokal", pada: Date.now(), pesan: lokal === "latihan" ? "mode latihan" : "mode kering" };
+      tulis({ [KUNCI_TATA]: keadaan.tata });
+      if (keadaan.aturTerbuka) gambar();
+      return;
+    }
+    kirimTataBerjalan = true;
+    const diubahSaatKirim = keadaan.tata.diubah;
+    const nilai = nilaiTataServer();
+    keadaan.sinkronTata = { status: "mengirim", pada: Date.now(), pesan: "" };
+    try {
+      let jawab;
+      try {
+        jawab = await fetch(ALAMAT_SETELAN, {
+          method: "PUT",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kunci: SETELAN_TATA, nilai }),
+        });
+      } catch (galat) {
+        keadaan.sinkronTata = { status: "gagal", pada: Date.now(), pesan: "server tidak terjangkau" };
+        catat("tata widget belum tersimpan di server", kalimatPertama(galat && galat.message));
+        return;
+      }
+      if (!jawab.ok) {
+        const pesan = await pesanDariJawaban(jawab);
+        if (jawab.status === 423) {
+          // Ditahan penahan panel-alat.js (latihan / kering) - tetap di peramban.
+          keadaan.tata = { ...keadaan.tata, tertunda: false, lokalSaja: "ditahan" };
+          keadaan.sinkronTata = { status: "lokal", pada: Date.now(), pesan: pesan || "ditahan" };
+          tulis({ [KUNCI_TATA]: keadaan.tata });
+        } else if (jawab.status === 400) {
+          // Ditolak server: mengirim ulang nilai yang sama tidak menolong.
+          keadaan.tata = { ...keadaan.tata, tertunda: false };
+          keadaan.sinkronTata = { status: "gagal", pada: Date.now(), pesan: pesan || "ditolak server" };
+          tulis({ [KUNCI_TATA]: keadaan.tata });
+        } else {
+          keadaan.sinkronTata = {
+            status: "gagal",
+            pada: Date.now(),
+            pesan: jawab.status === 401 ? "belum masuk portal ALETA" : `server menjawab ${jawab.status}`,
+          };
+        }
+        catat(`tata widget belum tersimpan di server (${jawab.status})`, pesan);
+        return;
+      }
+      let d = {};
+      try {
+        const isi = await jawab.json();
+        d = objek(isi && isi.data ? isi.data : isi);
+      } catch {
+        d = {};
+      }
+      const pada = String(d.diubahPada || "");
+      const masihSama = keadaan.tata.diubah === diubahSaatKirim;
+      keadaan.tata = { ...keadaan.tata, serverPada: pada || keadaan.tata.serverPada, tertunda: !masihSama, lokalSaja: "" };
+      keadaan.sinkronTata = { status: "tersimpan", pada: Date.now(), pesan: "" };
+      tulis({ [KUNCI_TATA]: keadaan.tata });
+      if (pada && typeof alatCatatSetelanTersinggah === "function") {
+        void alatCatatSetelanTersinggah(SETELAN_TATA, "nilai" in d ? d.nilai : nilai, pada);
+      }
+      if (!masihSama) jadwalkanKirimTata(TATA_KIRIM_JEDA_MS);
+    } finally {
+      kirimTataBerjalan = false;
+      if (keadaan.aturTerbuka) gambar();
+    }
+  }
+
+  // ── Kendali tiap bagian: ⧉ / ⤓ ⊘ di kepala, garis tarik di kaki ──
+
+  function jepitTinggi(px) {
+    return Math.round(jepitAngka(px, TINGGI_MIN, Math.min(TINGGI_MAKS, Math.max((window.innerHeight || TINGGI_MAKS) - 40, TINGGI_MIN))));
+  }
+
+  /** Tinggi diterapkan ke wadah gulung bagian (bukan ke kotaknya): kepala tetap terlihat. */
+  function terapkanTinggi(sasaran, px) {
+    if (!sasaran || !sasaran.style) return;
+    if (!px) {
+      for (const k of ["height", "max-height", "flex", "overflow-y"]) sasaran.style.removeProperty(k);
+      return;
+    }
+    sasaran.style.height = `${px}px`;
+    sasaran.style.maxHeight = "none";
+    sasaran.style.flex = "none";
+    sasaran.style.overflowY = "auto";
+    const panel = typeof sasaran.closest === "function" ? sasaran.closest(".aleta-cm") : null;
+    if (panel) panel.style.maxHeight = "none";
+  }
+
+  function sasaranTinggi(kotak, id) {
+    if (id === "checklist") return kotak.querySelector(".aleta-cm-isi") || kotak.querySelector(".aleta-cm-badan");
+    return kotak.querySelector(":scope > .aleta-cmw-isi") || kotak.querySelector(".aleta-cmw-isi");
+  }
+
+  /**
+   * Garis tarik di kaki bagian. Ditarik: tinggi berubah langsung, disimpan
+   * saat dilepas. Dalam jendela melayang tarikan ke samping mengubah
+   * lebarnya juga. Peristiwanya tidak diteruskan - menarik bukan menggeser dok.
+   */
+  function pasangTarik(kotak, id, sasaran, judul) {
+    if (!modern() || !kotak || !sasaran) return;
+    const t = tinggiBagian(id);
+    const garis = el("div", "aleta-cmw-tarik");
+    garis.setAttribute("role", "separator");
+    garis.setAttribute("aria-orientation", "horizontal");
+    garis.setAttribute("aria-label", `Ubah tinggi ${judul}`);
+    garis.setAttribute("aria-valuemin", String(TINGGI_MIN));
+    garis.setAttribute("aria-valuemax", String(TINGGI_MAKS));
+    if (t) garis.setAttribute("aria-valuenow", String(t));
+    garis.setAttribute("data-tarik", id);
+    garis.setAttribute("data-fokus", `tarik-${id}`);
+    garis.tabIndex = 0;
+    garis.title = `Tarik untuk mengubah tinggi ${judul}. Klik ganda atau Home: tinggi bawaan. Papan tik: panah atas/bawah.`;
+    let tarik = null;
+    garis.addEventListener("pointerdown", (e) => {
+      if (typeof e.button === "number" && e.button !== 0) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const ukur = sasaran.getBoundingClientRect();
+      const ukurKotak = kotak.getBoundingClientRect();
+      tarik = {
+        x: e.clientX,
+        y: e.clientY,
+        tinggi: tinggiBagian(id) || Math.round(ukur.height) || TINGGI_MIN,
+        lebar: Math.round(ukurKotak.width) || 0,
+        nilai: 0,
+        lebarBaru: 0,
+      };
+      garis.setAttribute("data-ditarik", "ya");
+      try {
+        if (e.pointerId !== undefined) garis.setPointerCapture(e.pointerId);
+      } catch {
+        /* tanpa tangkapan, tarikan tetap berjalan selama penunjuk di atas garis */
+      }
+    });
+    garis.addEventListener("pointermove", (e) => {
+      if (!tarik) return;
+      e.stopPropagation();
+      tarik.nilai = jepitTinggi(tarik.tinggi + (e.clientY - tarik.y));
+      terapkanTinggi(sasaran, tarik.nilai);
+      if (terpisah(id) && tarik.lebar) {
+        tarik.lebarBaru = Math.round(jepitAngka(tarik.lebar + (e.clientX - tarik.x), LEBAR_LEPAS_MIN, LEBAR_LEPAS_MAKS));
+        kotak.style.width = `${tarik.lebarBaru}px`;
+      }
+    });
+    const selesai = (e) => {
+      if (!tarik) return;
+      if (e) e.stopPropagation();
+      const x = tarik;
+      tarik = null;
+      garis.removeAttribute("data-ditarik");
+      if (!x.nilai && !x.lebarBaru) return;
+      ubahTata((tt) =>
+        ubahBagian(tt, id, (b) => {
+          if (x.nilai) b.tinggi = x.nilai;
+          if (x.lebarBaru && b.lepas) b.lepas = { ...b.lepas, lebar: x.lebarBaru };
+        })
+      );
+    };
+    garis.addEventListener("pointerup", selesai);
+    garis.addEventListener("pointercancel", selesai);
+    garis.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      setelTinggi(id, 0);
+    });
+    garis.addEventListener("keydown", (e) => {
+      const kini = tinggiBagian(id) || Math.round(sasaran.getBoundingClientRect().height) || TINGGI_MIN * 2;
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setelTinggi(id, jepitTinggi(kini + (e.key === "ArrowUp" ? -TINGGI_LANGKAH : TINGGI_LANGKAH)));
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setelTinggi(id, 0);
+      }
+    });
+    kotak.appendChild(garis);
+  }
+
+  /** Kendali kepala (⧉ di dok; ⤓ ⊘ di jendela melayang) dan garis tarik satu bagian. */
+  function pasangKendaliBagian(kotak, id, lepas) {
+    if (!modern() || !kotak) return;
+    const judul = judulBagian(id);
+    const kepala = kotak.querySelector(":scope > .aleta-cm-kepala, :scope > .aleta-cmw-kepala");
+    if (kepala) {
+      let alat = kepala.querySelector(":scope > .aleta-cm-alat");
+      if (!alat) {
+        alat = el("span", "aleta-cm-alat");
+        kepala.appendChild(alat);
+      }
+      const kendali = lepas
+        ? [
+            tombol("aleta-cmw-gabung", "⤓", `Gabungkan ${judul} kembali ke dok`, () => gabungkan(id), `gabung-${id}`),
+            tombol(
+              "aleta-cmw-sembunyi",
+              "⊘",
+              `Sembunyikan ${judul} - tampilkan lagi lewat ⚙ Atur widget`,
+              () => sembunyikanBagian(id),
+              `sembunyi-${id}`
+            ),
+          ]
+        : [tombol("aleta-cmw-pisah", "⧉", `Pisahkan ${judul} menjadi jendela melayang sendiri`, () => pisahkan(id), `pisah-${id}`)];
+      const sebelum = alat.querySelector(":scope > .aleta-cm-segar, :scope > .aleta-cm-kecilkan");
+      for (const t of kendali) alat.insertBefore(t, sebelum || null);
+    }
+    const sasaran = sasaranTinggi(kotak, id);
+    terapkanTinggi(sasaran, tinggiBagian(id));
+    pasangTarik(kotak, id, sasaran, judul);
+  }
+
+  /** Kelompok checklist di jendelanya sendiri: kartu yang sama, kepala widget. */
+  function susunKelompokLepas(k) {
+    const def = KELOMPOK.find((x) => x.kunci === k);
+    const data = keadaan.data;
+    const w = kotakWidget(`kel-${k}`, def ? def.judul : k);
+    w.kotak.classList.add(`aleta-cm-kelompok-${k}`, "aleta-cmw-kelompok-lepas");
+    if (!data) {
+      w.isi.appendChild(el("div", "aleta-cmw-ket", "Menunggu checklist dari portal…"));
+      return w.kotak;
+    }
+    const h = hitunganTampil(data);
+    const jumlah = { lewat: h.lewat, "hari-ini": h.hariIni, "minggu-ini": h.mingguIni }[k] || 0;
+    const tombolJudul = w.kepala.querySelector(".aleta-lipat-kepala") || w.kepala;
+    tombolJudul.appendChild(el("span", "aleta-cm-hitung", jumlah));
+    const daftar = butirTampil(data).filter((b) => b.kelompok === k);
+    if (!daftar.length) {
+      w.isi.appendChild(el("div", "aleta-cmw-ket", "Tidak ada pekerjaan di kelompok ini."));
+      return w.kotak;
+    }
+    const ul = el("ul", "aleta-cm-daftar");
+    for (const b of daftar) ul.appendChild(susunButir(b));
+    w.isi.appendChild(ul);
+    return w.kotak;
+  }
+
+  /** Kelompok yang DISEMBUNYIKAN tetapi berisi tugas disebut di checklist - tidak hilang diam-diam. */
+  function susunCatatanKelompok(jumlah) {
+    const kotak = el("div", "aleta-cmw-bagian-lain");
+    for (const k of KELOMPOK) {
+      const n = Number(jumlah[k.kunci]) || 0;
+      if (!kelompokMati(k.kunci) || n === 0) continue;
+      const baris = el("div", "aleta-cmw-bagian-lain-baris");
+      baris.setAttribute("data-kelompok-sembunyi", k.kunci);
+      baris.appendChild(el("span", "", `${k.judul} (${n}) disembunyikan`));
+      baris.appendChild(
+        tombol("aleta-cmw-tombol aleta-cmw-tombol-kecil", "Tampilkan", `Tampilkan lagi ${k.judul} di checklist`, () => alihKelompok(k.kunci), `kel-tampil-${k.kunci}`)
+      );
+      kotak.appendChild(baris);
+    }
+    return kotak.childNodes.length ? kotak : null;
+  }
+
+  // ── Jendela melayang ──
+
+  function idTerpisah() {
+    if (!modern()) return [];
+    const atas = widgetTampil().filter((id) => terpisah(id));
+    // Kelompok hanya bila checklistnya sendiri tampil (bukan disembunyikan dari dok).
+    const checklistAda = widgetTampil().includes("checklist");
+    const kel = checklistAda
+      ? urutanKelompok()
+          .filter((k) => !kelompokMati(k.kunci) && terpisah(`kel-${k.kunci}`))
+          .map((k) => `kel-${k.kunci}`)
+      : [];
+    return [...atas, ...kel];
+  }
+
+  function terapkanLetakLepas(kotak, id) {
+    if (!kotak || !id) return;
+    const l = objek(tataBagian(id).lepas);
+    const vw = window.innerWidth || 0;
+    const vh = window.innerHeight || 0;
+    const lebar = Math.min(Number(l.lebar) || 348, Math.max(vw - 2 * TEPI, LEBAR_LEPAS_MIN));
+    kotak.style.position = "fixed";
+    kotak.style.width = `${Math.round(lebar)}px`;
+    const kiri = jepitAngka((Number(l.x) || 0) * vw, 0, Math.max(vw - lebar, 0));
+    const atas = jepitAngka((Number(l.y) || 0) * vh, 0, Math.max(vh - 40, 0));
+    kotak.style.left = `${Math.round(kiri)}px`;
+    kotak.style.top = `${Math.round(atas)}px`;
+  }
+
+  /** Geser jendela melayang dari kepalanya; letaknya disimpan saat dilepas. */
+  function pasangGeserLepas(wadahLepas) {
+    let g = null;
+    wadahLepas.addEventListener("pointerdown", (e) => {
+      if (typeof e.button === "number" && e.button !== 0) return;
+      const t = e.target && typeof e.target.closest === "function" ? e.target : null;
+      if (!t) return;
+      const kepala = t.closest(".aleta-cm-kepala, .aleta-cmw-kepala");
+      if (!kepala || t.closest("button, a, select, input, textarea, summary")) return;
+      const kotak = kepala.closest("[data-lepasan]");
+      if (!kotak) return;
+      g = {
+        kotak,
+        id: kotak.getAttribute("data-lepasan"),
+        x: e.clientX,
+        y: e.clientY,
+        kiri: parseFloat(kotak.style.left) || 0,
+        atas: parseFloat(kotak.style.top) || 0,
+        pindah: false,
+      };
+      try {
+        if (e.pointerId !== undefined) kepala.setPointerCapture(e.pointerId);
+      } catch {
+        /* tanpa tangkapan, geser tetap berjalan selama penunjuk di atas jendela */
+      }
+    });
+    wadahLepas.addEventListener("pointermove", (e) => {
+      if (!g) return;
+      const dx = e.clientX - g.x;
+      const dy = e.clientY - g.y;
+      if (!g.pindah && Math.abs(dx) <= AMBANG_GESER && Math.abs(dy) <= AMBANG_GESER) return;
+      if (!g.pindah) g.kotak.setAttribute("data-digeser", "ya");
+      g.pindah = true;
+      const r = g.kotak.getBoundingClientRect();
+      const vw = window.innerWidth || 0;
+      const vh = window.innerHeight || 0;
+      g.kotak.style.left = `${Math.round(jepitAngka(g.kiri + dx, 0, Math.max(vw - (r.width || 0), 0)))}px`;
+      g.kotak.style.top = `${Math.round(jepitAngka(g.atas + dy, 0, Math.max(vh - 40, 0)))}px`;
+    });
+    const selesai = () => {
+      if (!g) return;
+      const x = g;
+      g = null;
+      x.kotak.removeAttribute("data-digeser");
+      if (!x.pindah) return;
+      const vw = window.innerWidth || 1;
+      const vh = window.innerHeight || 1;
+      ubahTata((t) =>
+        ubahBagian(t, x.id, (b) => {
+          b.lepas = {
+            ...objek(b.lepas),
+            x: (parseFloat(x.kotak.style.left) || 0) / vw,
+            y: (parseFloat(x.kotak.style.top) || 0) / vh,
+          };
+        })
+      );
+    };
+    wadahLepas.addEventListener("pointerup", selesai);
+    wadahLepas.addEventListener("pointercancel", selesai);
+  }
+
+  /**
+   * Wadah jendela melayang: saudara .aleta-cm-wadah di dalam bayangan yang
+   * sama (senyap, cetak, layar publik, dan tema ikut dengan sendirinya).
+   * Hanya lahir bila ada yang dipisah - dalam Lama dan Baru tidak pernah.
+   */
+  function gambarLepasan() {
+    if (!bayang) return;
+    const daftar = idTerpisah();
+    let wadahLepas = bayang.querySelector(".aleta-cmw-lepas-wadah");
+    if (!daftar.length) {
+      if (wadahLepas) wadahLepas.remove();
+      return;
+    }
+    if (!wadahLepas) {
+      wadahLepas = el("div", "aleta-cmw-lepas-wadah");
+      wadahLepas.setAttribute("data-tema", keadaan.tema);
+      bayang.appendChild(wadahLepas);
+      pasangGeserLepas(wadahLepas);
+      try {
+        if (typeof alatPasangPetunjuk === "function") alatPasangPetunjuk(wadahLepas);
+      } catch {
+        /* tanpa petunjuk, title bawaan peramban tetap ada */
+      }
+    }
+    wadahLepas.textContent = "";
+    for (const id of daftar) {
+      const kotak = id.startsWith("kel-") ? susunKelompokLepas(id.slice(4)) : susunWidget(id);
+      if (!kotak) continue;
+      kotak.classList.add("aleta-cmw-lepasan");
+      kotak.setAttribute("data-lepasan", id);
+      pasangKendaliBagian(kotak, id, true);
+      wadahLepas.appendChild(kotak);
+      terapkanLetakLepas(kotak, id);
+    }
+    lipatPanjang(wadahLepas);
+  }
+
+  function fokuskanLepas(kunci) {
+    if (!bayang) return;
+    const sasaran = bayang.querySelector(`.aleta-cmw-lepas-wadah [data-fokus="${kunci}"]`);
+    try {
+      if (sasaran) sasaran.focus({ preventScroll: true });
+    } catch {
+      /* fokus hanya kemudahan papan tik */
+    }
+  }
+
+  // ── Atur widget: kelompok checklist dan keadaan simpan ──
+
+  function susunAturKelompok() {
+    const kotak = el("div", "aleta-cmw-atur-kel");
+    kotak.appendChild(el("div", "aleta-cmw-atur-sub", "Bagian di dalam Checklist milestone"));
+    const daftar = el("ul", "aleta-cmw-atur-daftar");
+    const urutan = urutanKelompok();
+    urutan.forEach((k, i) => {
+      const id = `kel-${k.kunci}`;
+      const li = el("li", "aleta-cmw-atur-kel-baris");
+      li.setAttribute("data-kelompok-atur", k.kunci);
+      const teks = el("div", "aleta-cmw-atur-teks");
+      teks.appendChild(el("b", "", k.judul));
+      teks.appendChild(el("small", "", terpisah(id) ? "di jendela melayang" : "di dalam checklist"));
+      li.appendChild(teks);
+      const geser = el("span", "aleta-cmw-geser");
+      const naik = tombol("", "↑", `Naikkan ${k.judul}`, () => geserKelompok(k.kunci, -1), `atur-kel-naik-${k.kunci}`);
+      const turun = tombol("", "↓", `Turunkan ${k.judul}`, () => geserKelompok(k.kunci, 1), `atur-kel-turun-${k.kunci}`);
+      naik.disabled = i === 0;
+      turun.disabled = i === urutan.length - 1;
+      geser.appendChild(naik);
+      geser.appendChild(turun);
+      li.appendChild(geser);
+      const lepas = terpisah(id);
+      const pisah = tombol(
+        "aleta-cmw-atur-pisah",
+        lepas ? "⤓" : "⧉",
+        lepas ? `Gabungkan ${k.judul} kembali ke checklist` : `Pisahkan ${k.judul} menjadi jendela melayang sendiri`,
+        () => (lepas ? gabungkan(id) : pisahkan(id)),
+        `atur-pisah-${id}`
+      );
+      pisah.setAttribute("aria-pressed", lepas ? "true" : "false");
+      li.appendChild(pisah);
+      if (tinggiBagian(id)) {
+        li.appendChild(tombol("aleta-cmw-atur-ukuran", "↺", `Kembalikan tinggi ${k.judul} ke bawaan`, () => setelTinggi(id, 0), `atur-ukuran-${id}`));
+      }
+      const nyala = !kelompokMati(k.kunci);
+      const saklar = tombol(
+        "aleta-cmw-saklar",
+        "",
+        `${nyala ? "Sembunyikan" : "Tampilkan"} ${k.judul}`,
+        () => alihKelompok(k.kunci),
+        `atur-kel-saklar-${k.kunci}`
+      );
+      saklar.setAttribute("role", "switch");
+      saklar.setAttribute("aria-checked", nyala ? "true" : "false");
+      li.appendChild(saklar);
+      daftar.appendChild(li);
+    });
+    kotak.appendChild(daftar);
+    return kotak;
+  }
+
+  function susunKeadaanTata() {
+    const t = keadaan.tata;
+    const s = keadaan.sinkronTata;
+    const server = tataServer();
+    let teks;
+    let nada = "tenang";
+    if (t.lokalSaja === "latihan" || hanyaLokal() === "latihan") {
+      teks = "Mode latihan: susunan disimpan di peramban ini saja, tidak dikirim ke server.";
+      nada = "mendesak";
+    } else if (t.lokalSaja === "kering" || hanyaLokal() === "kering") {
+      teks = "Mode kering: susunan disimpan di peramban ini saja, tidak dikirim ke server.";
+      nada = "mendesak";
+    } else if (t.tertunda && s.status === "gagal") {
+      teks = `Belum tersimpan di server (${s.pesan || "gagal"}). Tersimpan di peramban ini dan dikirim lagi otomatis.`;
+      nada = "mendesak";
+    } else if (t.tertunda) {
+      teks = "Menyimpan ke akun Anda di server…";
+    } else if (s.status === "gagal") {
+      teks = `Tidak tersimpan di server: ${s.pesan || "gagal"}. Tersimpan di peramban ini.`;
+      nada = "mendesak";
+    } else if (t.serverPada) {
+      teks = "Tersimpan di akun Anda - berlaku otomatis di PC mana pun Anda masuk.";
+    } else if (server === undefined) {
+      teks = "Server belum terbaca - memakai cadangan di peramban ini.";
+    } else {
+      teks = "Belum ada susunan di akun Anda; perubahan pertama disimpan ke server.";
+    }
+    const kotak = el("div", "aleta-cmw-ket aleta-cmw-sinkron", teks);
+    kotak.setAttribute("data-nada", nada);
+    kotak.setAttribute("role", "status");
+    return kotak;
   }
 
   // ─── popup-9: menempel ke sudut terdekat ───────────────────────────────────
@@ -3092,6 +4150,9 @@
       if (infoPembaruan) wadah.insertBefore(susunPita(infoPembaruan), wadah.firstChild);
       lipatPanjang(wadah);
     }
+    // Butir 7: bagian yang dipisah digambar di jendela melayangnya sendiri
+    // (hanya UI Baru; di luar itu wadahnya dibuang bila ada).
+    gambarLepasan();
     const isiBaru = wadah.querySelector(".aleta-cm-isi");
     if (isiBaru && gulung) isiBaru.scrollTop = gulung;
     fokuskan(fokus);
@@ -3686,6 +4747,16 @@
           keadaan.susunan = susunanBersih(ubah[KUNCI_SUSUNAN].newValue);
           gambar();
         }
+        // Butir 7: tata dari tab lain, dan setelan akun dari server (lewat
+        // singgahan tampilan yang diperbarui panel-alat.js).
+        if (ubah[KUNCI_TATA]) {
+          const baru = tataBersih(ubah[KUNCI_TATA].newValue);
+          if (JSON.stringify(baru) !== JSON.stringify(keadaan.tata)) {
+            keadaan.tata = baru;
+            gambar();
+          }
+        }
+        if (ubah[KUNCI_TAMPILAN_SERVER]) setTimeout(sinkronTata, 0);
         // Sudut situs LAIN diikuti; sudut situs ini hanya milik tab yang
         // menggesernya - sama dengan posisi, tab lain tidak menarik widget
         // dari bawah tangan orang.
@@ -3731,8 +4802,10 @@
       KUNCI_LAMA_SIDANG,
       KUNCI_SUSUNAN,
       KUNCI_SUDUT,
+      KUNCI_TATA,
     ]);
     const lama = (kunci) => !berubahSebelumSiap.has(kunci);
+    if (lama(KUNCI_TATA)) keadaan.tata = tataBersih(simpan[KUNCI_TATA]);
     // Tahap 3 - dibaca selalu (murah), dipakai hanya di luar tampilan Lama.
     if (lama(KUNCI_TANDA)) keadaan.tanda = tandaBersih(simpan[KUNCI_TANDA]);
     if (lama(KUNCI_CATATAN)) keadaan.catatan = catatanBersih(simpan[KUNCI_CATATAN]);
@@ -3756,6 +4829,7 @@
     if (!keadaan.nyala && simpan[KUNCI_TAUTAN_SIPP] !== undefined) lupakanTautanSipp();
     keadaan.siap = true;
     evaluasi();
+    sinkronTata();
   }
 
   // Pendengar dipasang SEBELUM penyimpanan terbaca: saklar yang diubah
@@ -3785,6 +4859,12 @@
     gambar();
     aturJamTunda();
     tulisAngka();
+    sinkronTata();
+  });
+  // Jendela melayang tetap di dalam layar saat ukuran jendela berubah.
+  window.addEventListener("resize", () => {
+    if (!bayang || !modern()) return;
+    for (const k of Array.from(bayang.querySelectorAll("[data-lepasan]"))) terapkanLetakLepas(k, k.getAttribute("data-lepasan"));
   });
 
   // Portal berpindah halaman tanpa memuat ulang (Next.js): /login -> /portal

@@ -64,6 +64,10 @@ const BATAS_SIDANG = 300;
  * Tanggal yang tidak berbentuk YYYY-MM-DD dijawab 400, bukan diganti hari ini.
  * Bot yang tidak menjawab dijawab 502 beserta sebabnya, bukan daftar kosong -
  * daftar kosong terbaca "hari ini tidak ada sidang".
+ *
+ * Sejak perbaikan 1 Okt (K4) tiap baris membawa `pengguna` = { id, nama }
+ * panitera penggantinya, dan jawabannya `kelompokPerUser` - tetap hanya
+ * membaca, tanpa kueri tambahan.
  */
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -145,6 +149,11 @@ export async function GET(request: NextRequest) {
       tanggal,
       saringan,
       lihatSemua,
+      // KONTRAK K4 (perbaikan 1 Okt): admin yang melihat semua PP boleh
+      // dikelompokkan per PP (tiap baris membawa `pengguna`). Ekstensi
+      // menggambarnya per user hanya di UI Baru dan hanya untuk golongan admin
+      // dari peran AKTIF - petunjuk ini tidak memaksa tampilan apa pun.
+      kelompokPerUser: lihatSemua && saringan === "semua",
       nama: namaAkun,
       jumlahSemua: hasil.jumlahSemua,
       jumlahSaya: hasil.jumlahSaya,

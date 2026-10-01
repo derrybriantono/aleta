@@ -71,6 +71,7 @@ import {
 } from "@/lib/tag-perkara";
 import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
 import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
+import { EcourtAksiPerkara } from "@/components/portal/ecourt-aksi-perkara";
 import { DaftarMajelisPetugas, NamaMediatorTertaut, type MajelisIkrar } from "@/components/portal/tautan-petugas";
 import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
 import { Bagian } from "@/components/portal/bagian-ciut";
@@ -4565,6 +4566,22 @@ function IsiStatus({
           ) : null}
         </Bagian>
       ) : null}
+
+      {/* ==================================================================
+          AKSI e-COURT (perbaikan 1 Okt 2026, E9-E11; kontrak K5)
+          ==================================================================
+
+          Dokumen e-litigasi (unduh, verifikasi majelis lewat sesi e-Court
+          hakim sendiri), TTE salinan putusan oleh panitera lewat sesi
+          e-Court panitera sendiri, dan lencana belum diunggah / belum TTE.
+          Komponennya sama dengan yang dipasang di rincian Jadwal Sidang. */}
+      <Bagian judul="Aksi e-Court" kunci="ecourtAksi">
+        <EcourtAksiPerkara
+          nomorPerkara={status.identitas.nomorPerkara}
+          perkaraId={status.identitas.perkaraId}
+          konteks="status"
+        />
+      </Bagian>
 
       <Bagian
         judul="Arsip berkas"

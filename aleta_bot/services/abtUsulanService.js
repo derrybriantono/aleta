@@ -1465,6 +1465,16 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     // ditandai terpilih - lihat abtAturanAlasan.js.
     huruf: hurufBlangko.huruf,
     hurufTidakDiusulkan: hurufBlangko.tidakDiusulkan,
+    // Perbaikan 1 Okt 2026 butir 9 (panel ABT UI Baru, ⓘ "kenapa diambil"):
+    // INTI keterangan tiap saksi per ciri - kalimat pemicu yang sama dengan
+    // yang menyalakan ciri itu (kalimatPemicu), dan kalimat posita yang
+    // mendalilkannya. Ruas tambahan; ekstensi lama mengabaikannya.
+    intiCiri: [...new Set([...ciriSaksi1, ...ciriSaksi2, ...(ciriPosita || [])])].map((nama) => ({
+      ciri: nama,
+      saksi1: kalimatPemicu(b1, nama, daftarCiri.daftar),
+      saksi2: kalimatPemicu(b2, nama, daftarCiri.daftar),
+      posita: ciriPosita ? kalimatPemicu(butirPosita, nama, daftarCiri.daftar) : "",
+    })),
     hurufBelumSiap: aturanAlasan.belumSiap(),
     usulan: [
       usulan(

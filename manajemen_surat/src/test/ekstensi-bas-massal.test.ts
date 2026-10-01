@@ -239,6 +239,9 @@ describe("B. rute GET bas-massal", () => {
     expect(rute.jembatan.every((j) => j.operation === "blangko.katalog")).toBe(true);
     expect(rute.kueri.map((k) => k.params)).toEqual([["11"]]);
     expect(rute.kueri.every((k) => /^SELECT /.test(k.sql.trim()))).toBe(true);
+    // K4 (1 Okt): tiap baris membawa pemilik kerjanya; panitera tidak dikelompokkan.
+    expect(d.sidang[0].pengguna).toEqual({ id: "siti aminah", nama: "Siti Aminah, S.H." });
+    expect(d.kelompokPerUser).toBe(false);
   });
 
   it("admin: bawaan 'semua'; katalog itsbat yang tidak ada disebut sebagai sebab", async () => {
@@ -251,6 +254,11 @@ describe("B. rute GET bas-massal", () => {
     expect(d.sidang[1].blangko.usulan).toBeNull();
     expect(d.sidang[1].blangko.sebab).toMatch(/Folder blangko tidak ditemukan/);
     expect(d.katalog[ITSBAT]).toEqual({ terbaca: false, sebab: "Folder blangko tidak ditemukan." });
+    // K4 (1 Okt): admin yang melihat semua PP -> kelompokPerUser, pengguna per baris.
+    expect(d.kelompokPerUser).toBe(true);
+    expect(d.sidang.map((s: { pengguna: { id: string } }) => s.pengguna.id)).toEqual(["siti aminah", "budi santoso"]);
+    const saya = await jalankanRute("?tanggal=2026-09-30&saringan=saya");
+    expect(saya.isi.data.kelompokPerUser).toBe(false);
   });
 
   it("saringan yang diminta menang atas bawaan", async () => {

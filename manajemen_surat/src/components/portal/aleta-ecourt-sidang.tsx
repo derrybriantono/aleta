@@ -85,6 +85,22 @@ import {
   type PilihanTampilan,
 } from "@/lib/tampilan-antrian-sidang";
 import {
+  keadaanSelesai,
+  modeTampilanAktif,
+  namaBerkasRelaas,
+  namaDokumenRelaas,
+  tampilanModeLengkap,
+} from "@/lib/jadwal-sidang-1okt";
+import {
+  ProsesMediasiRincian,
+  TombolLayarPenuh,
+  TombolPilihMediator,
+  TombolSelesaiSidang,
+  useLayarPenuh,
+  useSelesaiSidang,
+} from "@/components/portal/jadwal-sidang-1okt";
+import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";
+import {
   AGENDA_ELITIGASI,
   AGENDA_MUSYAWARAH,
   KELOMPOK_ALUR,
@@ -2625,28 +2641,26 @@ function sebutWaktu(iso: string): string {
  */
 /**
  * ============================================================================
- * TOMBOL MEDIATOR - APA YANG DAPAT DIKERJAKAN HARI INI, DAN APA YANG BELUM
+ * TOMBOL MEDIATOR - KINI MEMILIH MEDIATOR (PERBAIKAN 1 OKTOBER 2026, J1)
  * ============================================================================
  *
- * Diminta pengguna 22 September 2026. Muncul hanya pada sidang yang agenda
+ * Diminta pengguna 22 September 2026; muncul hanya pada sidang yang agenda
  * atau alasan tundanya menyebut mediasi - lihat @/lib/mediasi-sidang.
  *
- * Yang ditawarkannya JUJUR terhadap kemampuan yang sungguh ada. Diperiksa di
- * seluruh repositori: tidak ada satu pun jalur yang menulis penetapan mediator
- * ke SIPP - tidak ke perkara_mediasi, tidak ke perkara_mediator, tidak ke
- * perkara_jadwal_mediasi. penetapanTulisService hanya mengenal PMH, PPP, PJS,
- * PHS, dan data umum.
+ * Sampai 1.176.0 tombol ini hanya membuka keterangan, sebab belum ada satu pun
+ * jalur yang menulis penetapan mediator ke SIPP. Pada 1 Oktober 2026 pengguna
+ * meminta memilih mediator langsung, seperti di SIPP. Jalurnya kini ada:
+ * aleta_bot/services/mediatorTulisService.js, ditulis persis seperti blangko
+ * "Penetapan Mediasi" SIPP (perkara_mediasi, perkara_mediator,
+ * perkara_data_dukung_mediasi, perkara_jadwal_mediasi, riwayat 110/120/121,
+ * tiga baris audit "Add Mediasi"), kering lebih dulu, lalu dikonfirmasi.
  *
- * Maka tombol ini TIDAK berpura-pura dapat menunjuk mediator. Ia membuka
- * keterangan mediasi yang memang sudah dibaca ALETA - di layar Status Perkara,
- * bagian Mediasi, yang sudah memuat mediator, nomor SK, tanggal penetapan,
- * tenggat 30 hari menurut PERMA, tanggal laporan, hasil, dan jadwal
- * pertemuannya - dan mengatakan apa adanya bahwa penunjukannya masih
- * dikerjakan di SIPP.
+ * Yang TETAP di SIPP dan disebut terus terang: jadwal pertemuan berikutnya,
+ * laporan mediator, dan hasil mediasi. Jalan lama ke Status Perkara bagian
+ * Mediasi tetap ada di dalam menunya.
  *
- * Menjanjikan yang belum ada lebih merugikan daripada tidak menawarkan apa
- * pun: petugas yang menekannya lalu mengira mediatornya sudah tertunjuk akan
- * berhenti mengerjakannya di SIPP.
+ * Isinya di @/components/portal/jadwal-sidang-1okt (TombolPilihMediator),
+ * dipakai juga layar Hasil Sidang - satu komponen, bukan dua salinan.
  */
 function TombolMediator({
   baris,
@@ -2655,75 +2669,17 @@ function TombolMediator({
   baris: SidangBaris;
   onBukaStatus?: (nomorPerkara: string) => void;
 }) {
-  const [terbuka, setTerbuka] = useState(false);
-  const wadah = useRef<HTMLSpanElement | null>(null);
-
-  // Menutup saat ditekan di luar - kait yang sama dengan menu Tampilan.
-  useEffect(() => {
-    if (!terbuka) return;
-    const diLuar = (peristiwa: MouseEvent) => {
-      if (wadah.current && !wadah.current.contains(peristiwa.target as Node)) setTerbuka(false);
-    };
-    document.addEventListener("mousedown", diLuar);
-    return () => document.removeEventListener("mousedown", diLuar);
-  }, [terbuka]);
-
   const sebab = sebabBerbauMediasi(baris.agenda, baris.alasanDitunda);
-
   return (
-    <span ref={wadah} className="relative ml-1 inline-flex align-middle">
-      <button
-        type="button"
-        onClick={() => setTerbuka((buka) => !buka)}
-        aria-expanded={terbuka}
-        title={`Sidang ini berurusan dengan mediasi — ${sebab || "menurut agenda atau alasan tundanya"}.`}
-        className={cn(
-          "rounded-md border px-1.5 py-0.5 text-[11px] font-semibold transition",
-          terbuka
-            ? "border-teal-600 bg-teal-600 text-white"
-            : "border-teal-600/50 text-teal-700 hover:bg-teal-600/10 dark:text-teal-300"
-        )}
-      >
-        mediator
-      </button>
-
-      {terbuka ? (
-        // bg-card, BUKAN bg-popover: token popover tidak ada pada tema ini dan
-        // menu yang memakainya tembus pandang.
-        <div className="absolute left-0 top-full z-30 mt-1 w-72 rounded-md border bg-card p-2 text-left shadow-lg">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Mediasi
-          </p>
-          {sebab ? (
-            <p className="mt-1 text-xs text-muted-foreground">Muncul karena {sebab}.</p>
-          ) : null}
-
-          {onBukaStatus ? (
-            <button
-              type="button"
-              onClick={() => {
-                setTerbuka(false);
-                onBukaStatus(baris.nomorPerkara);
-              }}
-              className="mt-2 w-full rounded-md border px-2 py-1 text-left text-xs font-medium transition hover:bg-muted"
-            >
-              Buka Status Perkara → bagian Mediasi
-              <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
-                Mediator, nomor SK, tanggal penetapan, tenggat 30 hari, laporan, hasil, dan
-                jadwal pertemuannya.
-              </span>
-            </button>
-          ) : null}
-
-          {/* Batasnya disebutkan, bukan didiamkan. Yang mengira penunjukannya
-              sudah dikerjakan ALETA akan berhenti mengerjakannya di SIPP. */}
-          <p className="mt-2 border-t pt-2 text-[11px] leading-snug text-amber-700 dark:text-amber-300">
-            Penunjukan mediator dan laporan hasilnya masih ditulis di SIPP. ALETA baru
-            membacanya — belum ada jalur yang menuliskannya.
-          </p>
-        </div>
-      ) : null}
-    </span>
+    <TombolPilihMediator
+      baris={baris}
+      sebab={sebab}
+      onBukaStatus={onBukaStatus}
+      // bg-card, BUKAN token popover: token itu tidak ada pada tema ini dan
+      // menu yang memakainya tembus pandang.
+      kelasPanel="bg-card"
+      catatan="Yang ditulis ALETA hanya penetapan mediator. Jadwal pertemuan berikutnya, laporan mediator, dan hasil mediasi masih ditulis di SIPP. ALETA baru membacanya - belum ada jalur yang menuliskannya."
+    />
   );
 }
 
@@ -4360,6 +4316,14 @@ export function AletaEcourtSidang({
   const [tampilan, setTampilan] = useState<PilihanTampilan>(() => tampilanBawaan());
   const [panelTampilan, setPanelTampilan] = useState(false);
 
+  // Layar penuh berjendela (perbaikan 1 Okt 2026, J4) - Esc keluar.
+  const [layarPenuh, setLayarPenuh] = useLayarPenuh();
+
+  // Tanda Selesai - sinkron dua arah dengan antrian sidang (J2). Dibaca
+  // ulang tiap daftar sidang dimuat ulang (45 detik), sehingga antrian yang
+  // ditandai selesai di aplikasi antrian ikut menghijau di sini.
+  const tandaSelesai = useSelesaiSidang(dari, sampai, sidang);
+
   useEffect(() => {
     let batal = false;
     void Promise.resolve().then(() => {
@@ -4387,8 +4351,11 @@ export function AletaEcourtSidang({
     });
   }, []);
 
+  // "Mode lengkap" (dulu "Nyalakan semua") - perbaikan 1 Okt 2026, J5:
+  // semua menyala KECUALI Kolom Siap dan Catatan cara menghitung. Sama
+  // dengan keadaan bawaan; lihat tampilanModeLengkap.
   const setelUlangTampilan = useCallback(() => {
-    const baru = tampilanBawaan();
+    const baru = tampilanModeLengkap();
     setTampilan(baru);
     try {
       window.localStorage.setItem(KUNCI_SIMPANAN_TAMPILAN, JSON.stringify(baru));
@@ -4409,9 +4376,9 @@ export function AletaEcourtSidang({
     }
   }, []);
 
-  const semuaSudahDisembunyikan = SAKLAR_TAMPILAN.every(
-    (x) => x.wajib || !tampil(tampilan, x.kunci)
-  );
+  // Mode yang sedang berlaku DIBACA dari centangnya (J5) - begitu satu
+  // centang diubah tangan, tombol mode tidak lagi menyala ("suai").
+  const modeTampilan = useMemo(() => modeTampilanAktif(tampilan), [tampilan]);
 
   const dimatikan = useMemo(() => jumlahDimatikan(tampilan), [tampilan]);
 
@@ -5163,7 +5130,19 @@ export function AletaEcourtSidang({
   );
 
   return (
-    <Card>
+    <Card
+      className={cn(
+        // Layar penuh BERJENDELA (J4): kartu menutupi seluruh jendela
+        // peramban - tab dan bilah peramban tetap ada. Isinya tetap sama
+        // persis, termasuk saklar Tampilan dan Ringkas/Lengkap.
+        // backdrop-blur-none: filter pada kartu menjadikannya bingkai bagi
+        // anak ber-position fixed (Kalender, dialog) - mereka akan ikut
+        // tergulung bersama isi kartu, bukan tetap di tengah jendela.
+        layarPenuh &&
+          "fixed inset-0 z-50 m-0 overflow-auto rounded-none border-0 bg-background shadow-none backdrop-blur-none dark:bg-background"
+      )}
+      data-layar-penuh={layarPenuh ? "ya" : undefined}
+    >
       {/* ==================================================================
           KEPALA SETIPIS MUNGKIN
           ==================================================================
@@ -5265,6 +5244,8 @@ export function AletaEcourtSidang({
             itu, layar yang penandanya sudah dipadamkan berbulan-bulan lalu
             terbaca sebagai layar yang memang tidak punya penanda - dan yang
             membacanya akan menyimpulkan perkaranya bersih. */}
+        <TombolLayarPenuh penuh={layarPenuh} onUbah={setLayarPenuh} />
+
         <button
           type="button"
           onClick={() => setPanelTampilan((n) => !n)}
@@ -5379,33 +5360,65 @@ export function AletaEcourtSidang({
           <div className="rounded-xl border bg-muted/20 p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold">Apa yang digambar di layar ini</p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={setelUlangTampilan}
-                  disabled={dimatikan === 0}
-                  title="Kembali ke keadaan bawaan: semuanya menyala kecuali Kolom Siap dan Catatan cara menghitung, yang bawaannya memang mati."
-                  className="rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-40"
-                >
-                  Nyalakan semua
-                </button>
-                <button
-                  type="button"
-                  onClick={sembunyikanSemuaTampilan}
-                  disabled={semuaSudahDisembunyikan}
-                  title="Mematikan seluruh saklar yang dapat dimatikan - sesudahnya centang satu per satu yang hendak dilihat. Yang bertanda tetap tidak ikut; sebabnya di bawah daftar."
-                  className="rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-40"
-                >
-                  Sembunyikan semua
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPanelTampilan(false)}
-                  className="rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                >
-                  Tutup
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setPanelTampilan(false)}
+                className="rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                Tutup
+              </button>
+            </div>
+
+            {/* ==============================================================
+                MODE DI PALING ATAS, SUB-PILIHAN DI BAWAHNYA - PERBAIKAN 1 OKT
+                ==============================================================
+
+                Diminta pengguna (J5): "Nyalakan semua" menjadi Mode lengkap,
+                "Sembunyikan semua" menjadi Mode minimalis, diletakkan DI ATAS
+                kelompok Penanda, dan memilih mode ikut mengubah centang di
+                bawahnya. Lengkap = semua kecuali Kolom Siap dan Catatan cara
+                menghitung; minimalis = semua mati (yang bertanda "tetap"
+                tetap menyala). Mode yang menyala dibaca dari centangnya -
+                mengubah satu centang menjadikannya "Suai". */}
+            <div
+              className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2"
+              role="group"
+              aria-label="Mode tampilan"
+            >
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mode</span>
+              <button
+                type="button"
+                onClick={setelUlangTampilan}
+                aria-pressed={modeTampilan === "lengkap"}
+                title="Mode lengkap (dulu: Nyalakan semua) - semua menyala kecuali Kolom Siap dan Catatan cara menghitung."
+                className={cn(
+                  "rounded-md border px-2.5 py-1 text-xs font-medium transition",
+                  modeTampilan === "lengkap"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                Mode lengkap
+              </button>
+              <button
+                type="button"
+                onClick={sembunyikanSemuaTampilan}
+                aria-pressed={modeTampilan === "minimalis"}
+                title="Mode minimalis (dulu: Sembunyikan semua) - mematikan seluruh saklar yang dapat dimatikan; sesudahnya centang satu per satu yang hendak dilihat. Yang bertanda tetap tidak ikut; sebabnya di bawah daftar."
+                className={cn(
+                  "rounded-md border px-2.5 py-1 text-xs font-medium transition",
+                  modeTampilan === "minimalis"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                Mode minimalis
+              </button>
+              {modeTampilan === "suai" ? (
+                <span className="text-xs text-muted-foreground">
+                  Suai - centangnya diatur sendiri di bawah.
+                </span>
+              ) : null}
             </div>
 
             <p className="mb-3 text-xs text-muted-foreground">
@@ -6579,6 +6592,11 @@ export function AletaEcourtSidang({
                   // catatan ruang sidang ikut bertanda walau putusannya belum
                   // dituliskan ke perkara_putusan.
                   const sidangSelesai = sidangSelesaiHariIni(baris);
+                  // Hijau baris = hasil sidang tercatat ATAU ditandai Selesai
+                  // (ALETA / antrian). sidangSelesai sendiri TIDAK diperluas:
+                  // ia juga menyembunyikan tombol tunda|putus, dan sidang yang
+                  // ditandai selesai tetap harus dapat dicatat hasilnya.
+                  const selesaiTanda = keadaanSelesai(baris, sidangSelesai, tandaSelesai.peta);
                   const kunciTiga = kunciWaktu(baris.tanggalSidang, baris.perkaraId);
                   const tigaBaris = tigaJarak[kunciTiga];
                   return (
@@ -6620,7 +6638,7 @@ export function AletaEcourtSidang({
                           // Garis kiri 4 piksel dipilih sebab ia terbaca tanpa
                           // bergantung pada warna: tebalnya sendiri sudah
                           // isyarat, dan pada tema gelap kontrasnya 9,12:1.
-                          sidangSelesai &&
+                          selesaiTanda.hijau &&
                             dibuka !== kunci &&
                             "border-l-4 border-l-emerald-500 bg-emerald-500/[0.07] dark:border-l-emerald-400"
                         )}
@@ -7283,6 +7301,17 @@ export function AletaEcourtSidang({
                                 yang tidak pernah digambar adalah saklar yang
                                 tidak mengerjakan apa pun - dan yang menekannya
                                 akan menyimpulkan seluruh panelnya rusak. */}
+                            {/* Lencana putusan e-Court belum diunggah / belum
+                                TTE - kontrak K5 (komponen milik agen E). Hanya
+                                pada perkara yang sudah putus; komponennya diam
+                                bila tidak ada yang perlu dikerjakan. */}
+                            {baris.sudahPutus || sudahPutusHariIni(baris) ? (
+                              <EcourtLencanaPutusan
+                                nomorPerkara={baris.nomorPerkara}
+                                perkaraId={baris.perkaraId}
+                                className="text-xs"
+                              />
+                            ) : null}
                             {TAMPILKAN_PUTUSAN_ECOURT &&
                             baris.putusanEcourt?.perluTindakan ? (
                               <span
@@ -7708,6 +7737,13 @@ export function AletaEcourtSidang({
                                 paling kanan bersama tombol Status di bawahnya,
                                 dan huruf yang menebal membuat seluruh tabel
                                 bergeser sedikit tiap kali rincian dibuka. */}
+                            {/* Selesai - sinkron dua arah dengan antrian sidang
+                                (perbaikan 1 Okt 2026, J2). */}
+                            <TombolSelesaiSidang
+                              baris={baris}
+                              keadaan={selesaiTanda}
+                              onBerubah={tandaSelesai.muatUlang}
+                            />
                             <button
                               type="button"
                               onClick={() => void buka(baris)}
@@ -7996,6 +8032,10 @@ function RincianSidang({
 
   const sipp = rincian.sipp;
   const identitas = rincian.identitas;
+  // Tanggal sidang yang sedang dibuka - untuk aksi e-Court (K5).
+  const tanggalSidangIni = String(
+    sipp?.jadwalPerkara?.find((x) => x.sidangId === sidangId)?.tanggalSidang ?? ""
+  ).slice(0, 10);
   // Disalin ke konstanta supaya penyempitan tipenya bertahan di dalam map -
   // TypeScript melepas penyempitan begitu masuk fungsi lain.
   const kesiapan = rincian.kesiapan;
@@ -8150,7 +8190,10 @@ function RincianSidang({
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* --- Majelis dan petugas --- */}
-        <Bagian judul="Majelis dan petugas" kunci="sidang-majelis">
+        {/* Majelis & petugas dan Identitas pihak TERLIPAT sebagai bawaan -
+            diminta pengguna 1 Okt 2026 (J6). Kuncinya tidak diganti: yang
+            pernah membukanya sendiri tetap mendapati pilihannya. */}
+        <Bagian judul="Majelis dan petugas" kunci="sidang-majelis" ciutBawaan>
           {sipp && sipp.majelis.length > 0 ? (
             <ul className="space-y-0.5 text-sm">
               {sipp.majelis.map((anggota) => (
@@ -8182,7 +8225,7 @@ function RincianSidang({
         </Bagian>
 
         {/* --- Para pihak --- */}
-        <Bagian judul="Identitas pihak" kunci="sidang-pihak">
+        <Bagian judul="Identitas pihak" kunci="sidang-pihak" ciutBawaan>
           {/* ==================================================================
               DIPISAH MENURUT KEDUDUKAN, KUASA MENEMPEL PADA YANG DIWAKILINYA
               ==================================================================
@@ -8275,6 +8318,10 @@ function RincianSidang({
           )}
         </Bagian>
       </div>
+
+      {/* Proses mediasi (J7, 1 Okt 2026) - HANYA bila perkaranya punya
+          mediasi; tanpa mediasi komponen ini tidak menggambar apa pun. */}
+      <ProsesMediasiRincian perkaraId={perkaraId} cadangan={durasi?.mediasi} />
 
       {/* ==================================================================
           RELAAS PANGGILAN - SIDANG INI LEBIH DULU, RIWAYATNYA SESUDAHNYA
@@ -8488,6 +8535,37 @@ function RincianSidang({
                   <span className="w-full text-xs text-muted-foreground">
                     {baris.ketHasilRelaas}
                     <PenandaPenerimaLawan baris={baris} pihak={rincian.pihak} />
+                  </span>
+                ) : null}
+                {/* Unduh per riwayat, bernama sesuai dokumennya (J8, 1 Okt
+                    2026) - rute dan penanganan unduhan yang SAMA dengan tabel
+                    sidang ini (TombolUnduh -> tanganiUnduhan). */}
+                {baris.adaDokumen || baris.adaResi ? (
+                  <span className="flex w-full flex-wrap gap-1">
+                    {baris.adaDokumen ? (
+                      <TombolUnduh
+                        alamat={`/api/aleta-ecourt/berkas-sipp?jenis=relaas&id=${encodeURIComponent(baris.id)}`}
+                        label={namaDokumenRelaas(baris, "relaas", urutanSidangPer.get(String(baris.sidangId || "")))}
+                        namaCadangan={namaBerkasRelaas(
+                          nomorPerkara,
+                          baris,
+                          "relaas",
+                          urutanSidangPer.get(String(baris.sidangId || ""))
+                        )}
+                      />
+                    ) : null}
+                    {baris.adaResi ? (
+                      <TombolUnduh
+                        alamat={`/api/aleta-ecourt/berkas-sipp?jenis=resi&id=${encodeURIComponent(baris.id)}`}
+                        label={namaDokumenRelaas(baris, "resi", urutanSidangPer.get(String(baris.sidangId || "")))}
+                        namaCadangan={namaBerkasRelaas(
+                          nomorPerkara,
+                          baris,
+                          "resi",
+                          urutanSidangPer.get(String(baris.sidangId || ""))
+                        )}
+                      />
+                    ) : null}
                   </span>
                 ) : null}
               </li>
@@ -9182,6 +9260,17 @@ function RincianSidang({
 
       {/* --- Berkas e-Court --- */}
       <Bagian judul="Berkas e-Court dan verifikasi majelis" kunci="sidang-ecourt-v2" ciutBawaan>
+        {/* Aksi e-Court perkara ini - kontrak K5 (komponen milik agen E):
+            unduh e-litigasi, verifikasi majelis, dan TTE putusan lewat sesi
+            e-Court akun sendiri. */}
+        <div className="mb-3">
+          <EcourtAksiPerkara
+            konteks="jadwal"
+            nomorPerkara={nomorPerkara}
+            perkaraId={perkaraId}
+            tanggalSidang={tanggalSidangIni}
+          />
+        </div>
         {rincian.pesanEcourt ? (
           <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             {rincian.pesanEcourt}

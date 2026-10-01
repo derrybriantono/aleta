@@ -17,6 +17,8 @@ import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 import { alamatIpPeramban } from "@/server/shared/request";
 
+import { selaraskanPerkaraDariId } from "../perkara-dari-id";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -69,8 +71,16 @@ export async function POST(request: NextRequest) {
 
     const formulir = await request.formData();
     let perkaraId = String(formulir.get("perkaraId") ?? "").trim();
-    const nomorPerkara = String(formulir.get("nomorPerkara") ?? "").trim();
+    let nomorPerkara = String(formulir.get("nomorPerkara") ?? "").trim();
     const olehUsername = String(formulir.get("olehUsername") ?? "").trim();
+
+    // perkara_id dari panel ABT diadu dengan nomornya, dan nomor yang tidak
+    // terbaca di ABT ditanyakan ke SIPP (perbaikan 1 Okt, butir 11) - lihat
+    // selaraskanPerkaraDariId.
+    const selaras = await selaraskanPerkaraDariId({ perkaraId, nomorPerkara });
+    if (!selaras.ok) return ok({ ok: false, alasan: selaras.alasan, sebab: selaras.sebab });
+    perkaraId = selaras.perkaraId;
+    nomorPerkara = selaras.nomorPerkara;
 
     // ========================================================================
     // perkara_id DITANYAKAN SENDIRI BILA EKSTENSI TIDAK MENYEBUTNYA

@@ -2575,6 +2575,9 @@ async function t4Tata(panel, kepala, isi, kaki, siapa, pintasan) {
   }
 
   if (modern) t4PasangTab(k, String(simpan[T4_KUNCI_TAB] || ""));
+  // Perbaikan 1 Okt butir 1 (K2): tiap bagian panel portal dapat dilipat
+  // dengan bentuk lipat yang sama dengan panel SIPP, ABT, dan widget. UI Baru saja.
+  if (modern) t4LipatSeragam(isi);
 
   // Data yang dibaca dari portal - tidak ditunggu, supaya panel tidak
   // tertahan oleh bagian yang lambat.
@@ -2586,6 +2589,35 @@ async function t4Tata(panel, kepala, isi, kaki, siapa, pintasan) {
   lipat();
   for (const muat of Object.values(k.muat)) void Promise.resolve(muat()).then(lipat, lipat);
   t4PasangPendengarPanel();
+}
+
+/**
+ * K2 (perbaikan 1 Okt butir 1): bagian panel portal (judulnya div statis)
+ * dijadikan dapat dilipat lewat alatJadikanLipat - kepala bertombol, ingat
+ * buka/tutup per bagian ("portal:<kode fitur atau judul>"). Bawaannya
+ * terbuka, jadi tidak ada isi yang tersembunyi sebelum orang memilihnya.
+ * Tanpa panel-alat.js versi ini: tidak berbuat apa pun.
+ */
+function t4LipatSeragam(isi) {
+  if (!isi || typeof alatJadikanLipat !== "function") return 0;
+  let jumlah = 0;
+  for (const kotak of Array.from(isi.children)) {
+    if (!kotak.classList || !kotak.classList.contains("aleta-bagian")) continue;
+    const judul = kotak.querySelector(":scope > .aleta-bagian-judul");
+    if (!judul) continue;
+    const nama = String(kotak.getAttribute("data-t4-fitur") || judul.textContent || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .slice(0, 60);
+    if (!nama) continue;
+    try {
+      if (alatJadikanLipat(kotak, { kunci: `portal:${nama}`, kepala: judul })) jumlah += 1;
+    } catch {
+      /* bagian ini tetap terbuka seperti sebelumnya */
+    }
+  }
+  return jumlah;
 }
 
 /**

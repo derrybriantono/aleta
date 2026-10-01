@@ -184,6 +184,38 @@ export const DDL_PEMETAAN_PROFIL = {
   indeks: [],
 } as const;
 
+/**
+ * Jejak aksi e-Court lewat sesi pribadi - cermin PERSIS dari
+ * drizzle/0055_aleta_ecourt_aksi_jejak.sql (perbaikan 1 Okt 2026, E9/E10/16b).
+ *
+ * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
+ * menjalankan drizzle/*.sql, dan penjaga ecourt-aksi-1okt.test.ts
+ * membandingkan konstanta ini dengan isi berkasnya.
+ */
+export const DDL_ECOURT_AKSI_JEJAK = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ecourt_aksi_jejak (
+  id TEXT PRIMARY KEY,
+  pengguna_id TEXT NOT NULL,
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  aksi TEXT NOT NULL CHECK (aksi IN ('sambung', 'putus', 'periksa', 'unduh', 'verifikasi', 'verifikasi_kering', 'tte', 'unggah_salinan')),
+  peran_ecourt TEXT NOT NULL DEFAULT '',
+  akun_ecourt TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sasaran TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL CHECK (hasil IN ('berhasil', 'gagal', 'ditolak')),
+  alasan TEXT NOT NULL DEFAULT '',
+  alamat_ip TEXT NOT NULL DEFAULT '',
+  lewat TEXT NOT NULL DEFAULT 'ALETA',
+  dibuat_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ecourt_aksi_jejak_pengguna ON aleta_ecourt_aksi_jejak(pengguna_id, dibuat_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_ecourt_aksi_jejak_perkara ON aleta_ecourt_aksi_jejak(nomor_perkara, dibuat_pada)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1181,6 +1213,8 @@ const schemaStatements = [
   ...DDL_KOMENTAR_TEMPLAT_WAJIB.tabel,
   // Pemetaan blangko dan profil saklar per peran (0054).
   ...DDL_PEMETAAN_PROFIL.tabel,
+  // Jejak aksi e-Court lewat sesi pribadi (0055).
+  ...DDL_ECOURT_AKSI_JEJAK.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3121,6 +3155,7 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_saklar_riwayat_golongan ON aleta_saklar_riwayat(golongan, pada)`,
   ...DDL_TIPE_KELUARAN.indeks,
   ...DDL_KOMENTAR_TEMPLAT_WAJIB.indeks,
+  ...DDL_ECOURT_AKSI_JEJAK.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

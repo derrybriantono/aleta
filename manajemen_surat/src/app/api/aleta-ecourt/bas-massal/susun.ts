@@ -104,12 +104,34 @@ export type BarisBasMassal = {
   basSipp: boolean | null;
   paniteraNama: string;
   majelisNama: string;
+  /**
+   * Pemilik kerja BAS = panitera pengganti sidang itu (KONTRAK K4, perbaikan
+   * 1 Okt). id = kunci nama (penggunaKunci) - bot jadwal tidak mengirim kode
+   * PP, jadwal SIPP hanya menyimpan namanya. Kosong bila PP belum ditunjuk.
+   */
+  pengguna: { id: string; nama: string };
   milikSaya: boolean;
   saksi: { pihak1: number; pihak2: number; nama1: string[]; nama2: string[] };
   /** null = lembar ALETA tidak terbaca. */
   lembar: RingkasLembar | null;
   blangko: { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string };
 };
+
+/**
+ * Kunci pengelompokan satu nama petugas: huruf kecil, gelar sesudah koma dan
+ * sebutan Drs./H./Hj./Ir./Prof. dibuang, tanpa tanda baca - "Siti Aminah,
+ * S.H." dan "Siti Aminah" satu kelompok. SAMA dengan basmassalKunciPengguna di
+ * ekstensi-sipp/basmassal.js (dijaga ekstensi-massal-1okt.test.ts).
+ */
+export function penggunaKunci(nama: string): string {
+  return String(nama || "")
+    .split(",")[0]
+    .toLowerCase()
+    .replace(/\b(?:drs?|dra|hj?|ir|prof)\b\.?/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 /** Batas pilihan blangko per perkara - daftar yang lebih panjang berhenti dibaca. */
 export const BATAS_PILIHAN_BLANGKO = 12;
@@ -330,6 +352,7 @@ export function susunBarisBasMassal(
       basSipp: typeof s.adaBas === "boolean" ? s.adaBas : null,
       paniteraNama,
       majelisNama: teks(s.majelisNama),
+      pengguna: { id: penggunaKunci(paniteraNama), nama: paniteraNama },
       milikSaya: Boolean(opsi.namaAkun) && namaAdaDi(opsi.namaAkun, paniteraNama),
       saksi: {
         pihak1: angka(s.saksiPihak1),

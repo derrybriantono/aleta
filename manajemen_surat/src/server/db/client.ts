@@ -344,6 +344,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // saklar per peran. Tanpa kunci asing - urutannya bebas.
   "aleta_pemetaan_blangko",
   "aleta_profil_saklar",
+  // 1 Oktober 2026 (0055): jejak aksi e-Court lewat sesi pribadi. Tanpa
+  // kunci asing - urutannya bebas.
+  "aleta_ecourt_aksi_jejak",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

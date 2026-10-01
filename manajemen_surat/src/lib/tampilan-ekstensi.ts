@@ -209,7 +209,7 @@ export const KUNCI_PENGATURAN_SINKRON = [
 
 const PENGATURAN_SINKRON = new Set<string>(KUNCI_PENGATURAN_SINKRON);
 
-export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi"] as const;
+export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata"] as const;
 export type KunciSetelan = (typeof KUNCI_SETELAN)[number];
 
 export function kunciSetelanSah(x: unknown): x is KunciSetelan {
@@ -221,6 +221,7 @@ export const BATAS_BITA_SETELAN: Record<KunciSetelan, number> = {
   "checklist.tanda": 65536,
   "pintasan.portal": 8192,
   "pengaturan.ekstensi": 16384,
+  "widget.tata": 8192,
 };
 
 export const BATAS_TANDA_CHECKLIST = 500;
@@ -315,6 +316,98 @@ function normalkanPengaturan(nilai: unknown) {
   return { nilai: hasil, dibuang };
 }
 
+// ----------------------------------------------------------------------------
+// widget.tata - tata letak widget checklist milestone (perbaikan 1 Okt butir 7)
+// ----------------------------------------------------------------------------
+//
+// Disimpan PER AKUN supaya berlaku di PC mana pun akun itu masuk:
+//   susunan   {semua?, sipp?, abt?, portal?} masing-masing {urutan, mati} -
+//             widget yang tampil dan urutannya di dok (sama dengan kunci
+//             penyimpanan ekstensi "susunanWidget")
+//   bagian    {idBagian: {tinggi?, lepas?: {x, y, lebar?}}} - tinggi dalam
+//             piksel; jendela melayang ditaruh dalam PECAHAN layar (0..1),
+//             bukan piksel, sebab layar tiap PC berbeda ukurannya
+//   kelompok  {urutan, mati} - urutan dan sembunyi kelompok checklist
+//             (lewat, hari-ini, minggu-ini)
+// Hanya selera tampilan; tidak ada isi perkara, kredensial, maupun alamat.
+export const BATAS_BAGIAN_WIDGET = 20;
+const POLA_ID_WIDGET = /^[a-z0-9-]{1,40}$/;
+const SITUS_SUSUNAN_WIDGET = ["semua", "sipp", "abt", "portal"];
+
+function daftarIdWidget(x: unknown, nama: string): string[] {
+  if (x === undefined || x === null) return [];
+  if (!Array.isArray(x)) throw new GalatSetelan(`widget.tata.${nama} harus berupa larik.`);
+  if (x.length > BATAS_BAGIAN_WIDGET) throw new GalatSetelan(`widget.tata.${nama} paling banyak ${BATAS_BAGIAN_WIDGET} butir.`);
+  const hasil: string[] = [];
+  for (const id of x) {
+    if (typeof id !== "string" || !POLA_ID_WIDGET.test(id)) throw new GalatSetelan(`Butir widget.tata.${nama} bukan id widget.`);
+    if (!hasil.includes(id)) hasil.push(id);
+  }
+  return hasil;
+}
+
+function urutanMatiWidget(x: unknown, nama: string) {
+  if (x === undefined || x === null) return { urutan: [] as string[], mati: [] as string[] };
+  if (typeof x !== "object" || Array.isArray(x)) throw new GalatSetelan(`widget.tata.${nama} harus berupa obyek {urutan, mati}.`);
+  const o = x as Record<string, unknown>;
+  return { urutan: daftarIdWidget(o.urutan, `${nama}.urutan`), mati: daftarIdWidget(o.mati, `${nama}.mati`) };
+}
+
+function angkaDalam(x: unknown, min: number, maks: number): number | null {
+  return typeof x === "number" && Number.isFinite(x) && x >= min && x <= maks ? x : null;
+}
+
+function normalkanTataWidget(nilai: unknown) {
+  if (!nilai || typeof nilai !== "object" || Array.isArray(nilai)) {
+    throw new GalatSetelan("widget.tata harus berupa obyek {susunan, bagian, kelompok}.");
+  }
+  const n = nilai as Record<string, unknown>;
+  const dibuang = Object.keys(n).filter((k) => k !== "susunan" && k !== "bagian" && k !== "kelompok");
+
+  const susunan: Record<string, { urutan: string[]; mati: string[] }> = {};
+  if (n.susunan !== undefined && n.susunan !== null) {
+    if (typeof n.susunan !== "object" || Array.isArray(n.susunan)) throw new GalatSetelan("widget.tata.susunan harus berupa obyek.");
+    for (const [situs, isi] of Object.entries(n.susunan as Record<string, unknown>)) {
+      if (!SITUS_SUSUNAN_WIDGET.includes(situs)) {
+        dibuang.push(`susunan.${situs}`);
+        continue;
+      }
+      susunan[situs] = urutanMatiWidget(isi, `susunan.${situs}`);
+    }
+  }
+
+  const bagian: Record<string, { tinggi?: number; lepas?: { x: number; y: number; lebar?: number } }> = {};
+  if (n.bagian !== undefined && n.bagian !== null) {
+    if (typeof n.bagian !== "object" || Array.isArray(n.bagian)) throw new GalatSetelan("widget.tata.bagian harus berupa obyek.");
+    const masuk = Object.entries(n.bagian as Record<string, unknown>);
+    if (masuk.length > BATAS_BAGIAN_WIDGET) throw new GalatSetelan(`widget.tata.bagian paling banyak ${BATAS_BAGIAN_WIDGET} bagian.`);
+    for (const [id, isi] of masuk) {
+      if (!POLA_ID_WIDGET.test(id)) throw new GalatSetelan("Id bagian widget.tata tidak sah.");
+      if (!isi || typeof isi !== "object" || Array.isArray(isi)) throw new GalatSetelan(`widget.tata.bagian.${id} harus berupa obyek.`);
+      const b = isi as Record<string, unknown>;
+      const hasil: { tinggi?: number; lepas?: { x: number; y: number; lebar?: number } } = {};
+      const tinggi = angkaDalam(b.tinggi, 40, 4000);
+      if (tinggi !== null) hasil.tinggi = Math.round(tinggi);
+      if (b.lepas && typeof b.lepas === "object" && !Array.isArray(b.lepas)) {
+        const l = b.lepas as Record<string, unknown>;
+        const x = angkaDalam(l.x, 0, 1);
+        const y = angkaDalam(l.y, 0, 1);
+        if (x !== null && y !== null) {
+          hasil.lepas = { x: Math.round(x * 10000) / 10000, y: Math.round(y * 10000) / 10000 };
+          const lebar = angkaDalam(l.lebar, 120, 2000);
+          if (lebar !== null) hasil.lepas.lebar = Math.round(lebar);
+        }
+      }
+      if (hasil.tinggi !== undefined || hasil.lepas) bagian[id] = hasil;
+    }
+  }
+
+  return {
+    nilai: { susunan, bagian, kelompok: urutanMatiWidget(n.kelompok, "kelompok") },
+    dibuang,
+  };
+}
+
 /**
  * Memeriksa dan menormalkan satu setelan sebelum disimpan.
  *
@@ -336,7 +429,9 @@ export function normalkanSetelan(
       ? normalkanTandaChecklist(nilai, sekarang)
       : kunci === "pintasan.portal"
         ? normalkanPintasan(nilai)
-        : normalkanPengaturan(nilai);
+        : kunci === "widget.tata"
+          ? normalkanTataWidget(nilai)
+          : normalkanPengaturan(nilai);
 
   let json: string;
   try {

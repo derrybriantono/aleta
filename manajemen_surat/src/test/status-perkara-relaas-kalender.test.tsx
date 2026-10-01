@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * CATATAN 25 SEPTEMBER 2026 - BENTUK TANGGAL YANG DIPAKU BERUBAH
@@ -382,6 +382,17 @@ describe("peristiwa kalender disusun dari muatan yang sudah ada", () => {
 
 // ===========================================================================
 describe("kalender perkara digambar", () => {
+  // Kalender membuka bulan BERJALAN bila perkara masih punya agenda di depan, jadi
+  // hasilnya bergantung pada hari ini. Uji ini ditulis 30 Sep 2026 dan merah sejak
+  // 1 Okt 2026 tanpa satu baris kode pun berubah - jamnya dikunci ke hari itu.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-30T10:00:00+08:00"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("membuka bulan peristiwa terakhir bila seluruhnya sudah lewat", () => {
     // Perkara contoh berakhir 30 September 2026 - jauh di belakang hari
     // pengujian mana pun sesudahnya. Kalender harus berdiri di sana, bukan di

@@ -184,7 +184,13 @@ describe("butir 6 - tombol ciut tiap bagian di panel Rincian", () => {
     const j = LAYAR.indexOf('<Bagian judul="Seluruh jadwal sidang perkara ini"');
     expect(i).toBeGreaterThan(-1);
     expect(j).toBeGreaterThan(i);
-    expect(LAYAR.slice(i, j)).not.toContain("ciutBawaan");
+    // Permintaan 1 Okt 2026 (J6): "Majelis dan petugas" dan "Identitas pihak" kini terlipat
+    // sebagai bawaan. Selain keduanya, yang di atas Seluruh jadwal tetap TIDAK terciut.
+    const tagAtas = LAYAR.slice(i - 400, j).match(/<Bagians[^>]*>/g) ?? [];
+    for (const t of tagAtas) {
+      if (/kunci="sidang-(majelis|pihak)"/.test(t)) expect(t, t).toContain("ciutBawaan");
+      else expect(t, t).not.toContain("ciutBawaan");
+    }
     expect(LAYAR).toContain('<Bagian judul="Seluruh jadwal sidang perkara ini" kunci="sidang-jadwal">');
   });
 

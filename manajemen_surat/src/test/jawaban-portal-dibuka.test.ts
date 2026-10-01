@@ -74,6 +74,14 @@ const RUTE_TANPA_BUNGKUS: ReadonlyArray<{ alamat: string; rute: string; sebab: s
     rute: path.join("app", "api", "aleta-ecourt", "tipe-keluaran", "route.ts"),
     sebab: "kontrak K4: {ok, daftar} / {ok:false, alasan} tanpa bungkus",
   },
+  {
+    // E9 (1 Okt 2026): jawaban suksesnya BERKAS (pdf/docx), bukan JSON, jadi tidak
+    // dapat dibungkus ok(); penolakannya {ok:false, alasan, pesan} dijawab
+    // langsung supaya layar yang sama membaca keduanya dari satu jawaban.
+    alamat: "/api/aleta-ecourt/ecourt-aksi/unduh",
+    rute: path.join("app", "api", "aleta-ecourt", "ecourt-aksi", "unduh", "route.ts"),
+    sebab: "E9: sukses = berkas biner; penolakan {ok:false, alasan, pesan} tanpa bungkus",
+  },
 ];
 
 /** Alamat pengambilan menyebut rute tanpa bungkus PERSIS (bukan awalan rute lain). */

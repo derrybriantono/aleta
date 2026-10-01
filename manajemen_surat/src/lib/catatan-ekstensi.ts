@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.177.0",
+    dirilis: "2026-10-01T21:15:00+08:00",
+    judul: "UI Baru: lipatan seragam, Putusan otomatis satu alur tanpa membuka blangko, upload putusan ke e-Court, panel ABT rapi otomatis, massal per user; Jadwal Sidang: mediator, Selesai, layar penuh, aksi e-Court",
+    butir: [
+      "SEMUA PERUBAHAN EKSTENSI KALI INI HANYA DI UI BARU. Tampilan Lama dan Baru tetap seperti 1.176.0.",
+      "LIPATAN SERAGAM: semua bagian di panel SIPP, panel ABT, panel massal, BAS massal, widget, dan panel portal memakai satu bentuk lipat yang sama, dan buka/tutupnya diingat. Bagian yang dulu tidak bisa dilipat kini bisa.",
+      "PANEL SIPP - TAB PUTUSAN: Putusan otomatis bisa dijalankan tanpa membuka blangko Putusan Akhir lebih dulu (ALETA membukanya sendiri), lalu satu alur: isi, simpan terbukti, unggah edoc putusan dan anonimisasi (dibuat bila tidak dipilih). Lebih cepat sekitar sepertiga tanpa membuang pembuktian simpan. Tombol 'Ambil usulan dari ALETA' disembunyikan karena usulan kini dibaca sendiri. 'Langkah berikutnya' menyarankan 'Buat putusan' bila sidang sudah putus tetapi putusan belum diinput. 'Perkara berikutnya' hanya untuk Super Admin dan Admin.",
+      "UPLOAD PUTUSAN KE E-COURT (baru): bagian di bawah unggah edoc ke SIPP; sebelum mengunggah selalu disebut atas nama akun e-Court siapa. Memakai sesi e-Court akun pengguna sendiri yang disambungkan di Integrasi e-Court > Sesi e-Court saya.",
+      "PANEL ABT: posita dan keterangan saksi yang dirapikan sudah masuk daftar 'Input ke ABT' tanpa klik Rapikan/Terapkan (tetap tidak ada yang ditulis sebelum Input). Huruf alasan menampilkan kesimpulan dari keterangan saksi dan posita; aturan/pasal dan alasan pemilihan di balik ⓘ. Variabel 4020, 8521, 8522, 8528, 8529, 8530 yang diisi ABT sendiri tidak lagi diperingatkan sebelum Input. 'Unggah putusan perkara ini ke SIPP' memakai blangko halaman ini dan tetap jalan walau nomor perkara tidak terbaca dari kepala halaman. Susun saksi: label sama/beda/varian diganti ⓘ, dengan tombol ganti keterangan serta urungkan/ulangi.",
+      "PUTUSAN MASSAL & BAS MASSAL: putusan massal hanya menawarkan perkara yang hari itu putus atau ditunda untuk putusan/musyawarah majelis (diukur atas 16.076 jadwal: 99% tepat). Super Admin dan Admin melihat daftar per hakim (putusan) atau per PP (BAS) dengan centang per kelompok.",
+      "WIDGET CHECKLIST: tiap bagian bisa disembunyikan, diubah tingginya, dipindah urutannya, dan dipisah menjadi jendela melayang; susunannya tersimpan per akun di server dan ikut ke PC mana pun.",
+      "JADWAL SIDANG (portal): pilih mediator langsung (juga di Hasil Sidang), tombol Selesai yang sejalan dengan antrian sidang, halaman lebih lebar di layar besar, layar penuh berjendela, Mode lengkap/Mode minimalis di puncak menu Tampilan, Majelis dan Identitas pihak terlipat sebagai bawaan, proses mediasi di rincian, tombol unduh di riwayat panggilan. Aksi e-Court di Jadwal Sidang dan Status Perkara: unduh dokumen e-litigasi dan verifikasi oleh majelis, TTE salinan putusan oleh panitera (passphrase diketik tiap kali dan tidak pernah disimpan), lencana putusan yang belum diunggah atau belum di-TTE.",
+    ],
+  },
+  {
     versi: "1.176.0",
     dirilis: "2026-09-30T17:20:00+08:00",
     judul: "Menu panel SIPP dan ABT mengikuti peran, BAS massal, relaas & pemberitahuan massal di daftar perkara, panel ABT lebih sederhana",

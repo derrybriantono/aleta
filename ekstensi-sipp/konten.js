@@ -5847,6 +5847,12 @@ const PENUNJUK_TANGGAL_PUTUSAN = ["#tgl_putusan", 'input[name="tgl_putusan"]', '
 
 /** Isian borang yang HANYA ada di halaman: tanggal putusan, status, verstek. */
 async function bacaUsulanBorangPutusan() {
+  // Perbaikan 1 Okt (S, butir 12 - UI Baru saja): ketiga bacaan berangkat
+  // bersamaan. Hanya membaca; tanggal tetap diambil dari penunjuk PERTAMA
+  // yang menjawab menurut urutan PENUNJUK_TANGGAL_PUTUSAN.
+  if (typeof s1Aktif === "function" && s1Aktif() && typeof s1BacaUsulanBorangCepat === "function") {
+    return s1BacaUsulanBorangCepat();
+  }
   let tanggalPutusan = "";
   for (const penunjuk of PENUNJUK_TANGGAL_PUTUSAN) {
     const jawab = await kirimKeJembatan({ jenis: "nilai", penunjuk });
@@ -6067,9 +6073,16 @@ function bagianIsiPutusan(nomorPerkara) {
   const wadahUnggah = buatElemen("div", "aleta-unggah-hasil");
   kotakUnggah.appendChild(wadahUnggah);
   isi.appendChild(kotakUnggah);
+  // Perbaikan 1 Okt (S, butir 4 - UI Baru saja): edoc anonimisasi yang
+  // DIPILIH petugas dipakai apa adanya; tanpa pilihan, ALETA membuatnya.
+  let anonimPilihan = null;
+  // UI Baru (butir 12): anonimisasi yang disiapkan di latar sejak naskah dibaca.
+  let anonimAwal = null;
 
-  pemilih.addEventListener('change', async () => {
-    const dipilih = pemilih.files && pemilih.files[0];
+  // Perbaikan 1 Okt (S, butir 3): pembaca naskah diberi nama supaya UI Baru
+  // dapat meneruskan naskah yang dipilih SEBELUM blangko dibuka. Isinya sama
+  // dengan pendengar change sebelumnya; Lama dan Baru tetap lewat pemilih.
+  const prosesNaskah = async (dipilih) => {
     if (!dipilih) return;
     pemilih.disabled = true;
     tombol.disabled = true;
@@ -6161,6 +6174,13 @@ function bagianIsiPutusan(nomorPerkara) {
     // Peringatan konversi (butir 8) - PDF: tata letaknya dapat berubah.
     for (const p of peringatanBentuk) wadahUnggah.appendChild(buatElemen("div", "aleta-tetap-awas", String(p)));
     if (sekaligus) sekaligus.setelNaskah(naskahEdoc);
+    // Perbaikan 1 Okt (S, butir 12 - UI Baru saja): anonimisasi edoc mulai
+    // disiapkan SEKARANG, selagi usulan dibaca dan diperiksa - bukan sesudah
+    // Isikan. Tidak ada yang dikirim ke SIPP; pemeriksanya tetap berjalan.
+    anonimAwal =
+      typeof s1Aktif === "function" && s1Aktif() && typeof s1SiapkanAnonimAwal === "function"
+        ? s1SiapkanAnonimAwal({ naskahEdoc, sekaligus, anonimPilihan, nomorPerkara, kotakUnggah })
+        : null;
 
     kabar.className = "aleta-abt-kabar";
     kabar.textContent =
@@ -6173,7 +6193,8 @@ function bagianIsiPutusan(nomorPerkara) {
     // Langsung disambung ke pembacaan usulan - yang mengunggah naskah
     // memang hendak mengisikannya, bukan hendak berhenti di sini.
     tombol.click();
-  });
+  };
+  pemilih.addEventListener("change", () => void prosesNaskah(pemilih.files && pemilih.files[0]));
 
   isi.appendChild(wadah);
 
@@ -6467,6 +6488,25 @@ function bagianIsiPutusan(nomorPerkara) {
 
     kabar.textContent = `Draf versi ${jawab.versi} (${jawab.keadaan}).`;
 
+    // Perbaikan 1 Okt (S, butir 12 - UI Baru saja): putaran PERTAMA baca medan
+    // + usulan ALETA berjalan BERSAMAAN dengan praperiksa. Keduanya hanya
+    // membaca blangko (tidak ada yang diisi sebelum praperiksa selesai), jadi
+    // praperiksa tetap menilai blangko yang belum disentuh; rapornya tetap
+    // digambar di atas dan tetap ditunggu sebelum pintu mana pun diisi.
+    const s1Cepat = typeof s1Aktif === "function" && s1Aktif();
+    const putaranAwal = s1Cepat
+      ? (async () => {
+          let terbaca = null;
+          try {
+            terbaca = await bacaMedanTampak();
+            return { terbaca, usulan: await mintaUsulanMedan(terbaca, (jawab && jawab.jenisPerkara) || "") };
+          } catch (galat) {
+            // Bacaan yang gagal diulang jalur biasa di putaran pertama.
+            return terbaca ? { terbaca, galat } : null;
+          }
+        })()
+      : null;
+
     // Praperiksa lebih dulu daripada usulan isian: yang membaca panel ini
     // harus melihat pertentangannya SEBELUM melihat tombol Isikan.
     raporAgen = await jalankanPraperiksaPanel(nomorPerkara, wadah);
@@ -6557,13 +6597,16 @@ function bagianIsiPutusan(nomorPerkara) {
     const bedaPintu = [];
 
     for (let putaran = 0; putaran < 3; putaran += 1) {
-      const terbaca = await bacaMedanTampak();
+      // UI Baru: putaran pertama sudah dibaca bersamaan dengan praperiksa.
+      const awal = putaran === 0 && putaranAwal ? await putaranAwal : null;
+      const terbaca = awal ? awal.terbaca : await bacaMedanTampak();
       const baru = terbaca.filter((x) => !medanTampak.some((y) => y.kunci === x.kunci));
       if (baru.length === 0) break;
 
       let usulanBaru = [];
       try {
-        usulanBaru = await mintaUsulanMedan(baru, jenisUntukUsulan);
+        if (awal && awal.galat) throw awal.galat;
+        usulanBaru = awal ? awal.usulan : await mintaUsulanMedan(baru, jenisUntukUsulan);
       } catch (galat) {
         gagalUsulan = String((galat && galat.message) || galat);
         medanTampak = terbaca;
@@ -6643,8 +6686,14 @@ function bagianIsiPutusan(nomorPerkara) {
       }
       if (!adaYangDibuka) break;
       // SIPP menggambar ulang bagian borangnya - diberi waktu sebentar
-      // sebelum dibaca lagi.
-      await new Promise((selesai) => setTimeout(selesai, 350));
+      // sebelum dibaca lagi. UI Baru (butir 12): berhenti menunggu begitu
+      // medan yang tampak bertambah, paling lama tetap 350 ms - putaran
+      // berikutnya membaca ulang seluruhnya seperti biasa.
+      if (s1Cepat && typeof s1TungguBerubah === "function") {
+        await s1TungguBerubah(() => hitungMedanTampak(), terbaca.length, 350);
+      } else {
+        await new Promise((selesai) => setTimeout(selesai, 350));
+      }
     }
 
     const pilihanTerap = [];
@@ -6905,6 +6954,25 @@ function bagianIsiPutusan(nomorPerkara) {
       // ke basis data SIPP, jadi bacaannya tetap "sebelum". Satu bacaan
       // status-perkara yang berat keluar dari jalur tunggu.
       const sebelumA30 = a30Nyala ? bacaPutusanSegar(nomorPerkara) : null;
+      // Perbaikan 1 Okt (S, butir 4 & 12 - UI Baru saja). Edoc yang dipakai:
+      // naskah yang diunggah di atas, beserta anonimisasi yang DIPILIH petugas
+      // bila ada. Anonimisasi yang harus DIBUAT disiapkan BERSAMAAN dengan
+      // pengisian blangko (persiapan itu tidak menulis ke SIPP), bukan sesudah
+      // seluruh isian selesai - pemeriksanya tetap berjalan sebelum Simpan.
+      const edocA30 =
+        sekaligus && sekaligus.dipakai() && naskahEdoc
+          ? s1Cepat && anonimPilihan
+            ? { ...naskahEdoc, anonim: anonimPilihan }
+            : naskahEdoc
+          : null;
+      let kabarAnon = null;
+      let opsiAwalA30 = null;
+      if (s1Cepat && a30Nyala && edocA30 && !edocA30.anonim && typeof a30OpsiSimpanPutusan === "function") {
+        kabarAnon = buatElemen("div", "aleta-abt-kabar aleta-s1-kabar-anon");
+        if (hasilTerap.parentNode) hasilTerap.parentNode.insertBefore(kabarAnon, hasilTerap.nextSibling);
+        const anonSiap = anonimAwal && anonimAwal.naskah === naskahEdoc ? anonimAwal.janji : null;
+        opsiAwalA30 = a30OpsiSimpanPutusan({ nomorPerkara, kabar: kabarAnon, wadah, sebelum: sebelumA30, edoc: edocA30, anonSiap });
+      }
 
       // Medan pilihan lebih dulu. Sebagian di antaranya MENGUBAH tampilan
       // borang - memilih qobla menentukan muncul-tidaknya keadaan istri -
@@ -6971,9 +7039,15 @@ function bagianIsiPutusan(nomorPerkara) {
         hasilTerap.textContent =
           `${hasilTerap.textContent} Blangko memunculkan ` +
           `${tampakSesudah - medanTampak.length} pilihan baru - dibacakan ulang…`;
+        if (kabarAnon) kabarAnon.remove();
         tombol.click();
         return;
       }
+      // UI Baru: Simpan tidak ditekan = anonimisasi yang sedang disiapkan
+      // tidak dipakai; kabarnya dilepas supaya tidak terbaca sebagai unggahan.
+      const lepasAnon = () => {
+        if (kabarAnon) kabarAnon.remove();
+      };
 
       // ====================================================================
       // TERSIMPAN, BUKAN SEKADAR TERISI
@@ -6993,9 +7067,11 @@ function bagianIsiPutusan(nomorPerkara) {
       // Memuat ulang lebih awal membuang isian yang belum diterima SIPP.
       if (gagal.length > 0) {
         hasilTerap.textContent += " Simpan TIDAK ditekan selama masih ada yang gagal.";
+        lepasAnon();
         return;
       }
       if (raporAgen && raporAgen.hentikan) {
+        lepasAnon();
         hasilTerap.textContent +=
           " Simpan TIDAK ditekan: praperiksa menahan dan Anda memilih mengisi sendiri - " +
           "periksa blangkonya, lalu tekan Simpan SIPP sendiri.";
@@ -7019,6 +7095,7 @@ function bagianIsiPutusan(nomorPerkara) {
           `${nomorPerkara}: medan tambahan ${medanTambahan.join(", ")} - Simpan diserahkan ke petugas`,
           ""
         );
+        lepasAnon();
         return;
       }
       terap.disabled = true;
@@ -7028,13 +7105,16 @@ function bagianIsiPutusan(nomorPerkara) {
       // pemeriksa anonim terjadi di sini, bukan sesudah putusannya tersimpan)
       // lalu diunggah sesudah Simpan TERBUKTI. Lama: panggilan semula.
       let opsiSimpanA30 = null;
-      if (a30Nyala && typeof a30OpsiSimpanPutusan === "function") {
+      if (opsiAwalA30) {
+        hasilTerap.textContent = `${hasilTerap.textContent} Menunggu anonimisasi siap…`;
+        opsiSimpanA30 = await opsiAwalA30;
+      } else if (a30Nyala && typeof a30OpsiSimpanPutusan === "function") {
         opsiSimpanA30 = await a30OpsiSimpanPutusan({
           nomorPerkara,
           kabar: hasilTerap,
           wadah,
           sebelum: sebelumA30,
-          edoc: sekaligus && sekaligus.dipakai() ? naskahEdoc : null,
+          edoc: edocA30,
         });
       }
       const hasilSimpan = opsiSimpanA30
@@ -7050,6 +7130,21 @@ function bagianIsiPutusan(nomorPerkara) {
     tombol.disabled = false;
   });
 
+  // Perbaikan 1 Okt (S, butir 2/3/4) - UI Baru saja; Lama dan Baru tidak
+  // memanggilnya (s1PasangPutusanOtomatis memeriksa tampilannya sendiri).
+  if (typeof s1PasangPutusanOtomatis === "function") {
+    s1PasangPutusanOtomatis({
+      kotak,
+      nomorPerkara,
+      tombol,
+      prosesNaskah,
+      kotakUnggah,
+      sekaligus,
+      setelAnonim: (berkas) => {
+        anonimPilihan = berkas || null;
+      },
+    });
+  }
   return kotak;
 }
 
@@ -10576,6 +10671,10 @@ function susunPanel(konteks) {
   const kelPutusan = kelompok("Putusan", "putusanKel", !adaBorangPutusan);
   if (boleh("data-umum") && adaBorangPutusan) {
     kelPutusan.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
+  } else if (boleh("data-umum") && typeof s1BagianPutusanTanpaBlangko === "function" && s1Aktif()) {
+    // Perbaikan 1 Okt (S, butir 3 - UI Baru saja): Putusan otomatis juga
+    // tersedia sebelum blangko dibuka; ALETA membuka blangkonya sendiri.
+    kelPutusan.isi.appendChild(s1BagianPutusanTanpaBlangko(konteks.nomorPerkara));
   }
   // Unggahan MENULIS ke SIPP - berkas ke cakram, empat baris ke basis
   // datanya - jadi kewenangannya "penunjukan", sama dengan menuliskan
@@ -10583,6 +10682,11 @@ function susunPanel(konteks) {
   // putusan kerap diunggah belakangan, pada hari yang lain.
   if (boleh("penunjukan")) {
     kelPutusan.isi.appendChild(bagianUnggahPutusanSipp(konteks.nomorPerkara));
+  }
+  // Perbaikan 1 Okt (S, butir 16b - UI Baru saja): Upload putusan ke e-Court,
+  // tepat di bawah unggah edoc ke SIPP. Kewenangannya diperiksa rute E.
+  if (typeof s1BagianUnggahEcourt === "function" && s1Aktif()) {
+    kelPutusan.isi.appendChild(s1BagianUnggahEcourt(konteks.nomorPerkara));
   }
   // Antrean putusan massal - bila ada, disisipkan di puncak isi supaya
   // langkah yang sedang ditunggu terbaca lebih dulu daripada perkaranya.
@@ -11335,6 +11439,8 @@ function susunPanelDaftar(ringkasan) {
   pasangUbahUkuran(panel);
   // Penjelasan teknis (butir 3 sore) - Baru & UI Baru saja; Lama tanpa jejak.
   if (typeof a30Aktif === "function" && a30Aktif() && typeof mpsPasangTeknis === "function") mpsPasangTeknis(panel);
+  // Perbaikan 1 Okt (S, butir 1) - UI Baru saja: lipat seragam panel daftar.
+  if (typeof s1TataDaftar === "function" && typeof s1Aktif === "function" && s1Aktif()) s1TataDaftar(panel);
   return panel;
 }
 
@@ -14824,8 +14930,13 @@ function bagianMassalSipp(sesudahSusun) {
     tombolSusun.disabled = true;
     kabar.className = "aleta-abt-kabar";
     kabar.textContent = `Membaca sidang ${keadaan.tanggal}…`;
+    // Perbaikan 1 Okt (S, butir 13 & 14) - UI Baru saja: jadwal dibaca utuh
+    // (alasan tunda, majelis), hanya sidang yang PUTUS atau DITUNDA UNTUK
+    // putusan/musyawarah yang ditawarkan, dan Admin melihatnya per hakim.
+    const s1Massal = typeof s1Aktif === "function" && s1Aktif() && typeof s1SidangPadaTanggal === "function";
+    let s1Lain = [];
     try {
-      keadaan.sidang = await alatSidangPadaTanggal(keadaan.tanggal);
+      keadaan.sidang = s1Massal ? await s1SidangPadaTanggal(keadaan.tanggal) : await alatSidangPadaTanggal(keadaan.tanggal);
     } catch (galat) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = String((galat && galat.message) || galat);
@@ -14835,10 +14946,25 @@ function bagianMassalSipp(sesudahSusun) {
       kabar.textContent = `Tidak ada sidang pada ${keadaan.tanggal}.`;
       return;
     }
+    if (s1Massal) {
+      const saring = s1SaringPutusanMassal(keadaan.sidang);
+      keadaan.sidang = saring.layak;
+      s1Lain = saring.lain;
+      if (keadaan.sidang.length === 0) {
+        kabar.textContent = `${s1Lain.length} perkara bersidang pada ${keadaan.tanggal}; tidak satu pun yang putus atau ditunda untuk putusan / musyawarah majelis.`;
+        daftar.appendChild(s1RingkasTidakIkut(s1Lain));
+        return;
+      }
+    }
     const belum = keadaan.sidang.filter((s) => !s.sudahPutus);
     kabar.textContent = `${keadaan.sidang.length} perkara bersidang; ${belum.length} belum putus. Memeriksa draf…`;
+    if (s1Massal) {
+      kabar.textContent =
+        `${keadaan.sidang.length} perkara putus / ditunda untuk putusan (dari ${keadaan.sidang.length + s1Lain.length} yang bersidang); ` +
+        `${belum.length} belum putus. Memeriksa draf…`;
+    }
 
-    for (const s of keadaan.sidang) {
+    const gambarBaris = (s, wadahBaris) => {
       const label = buatElemen("label", "aleta-massal-baris");
       const centang = document.createElement("input");
       centang.type = "checkbox";
@@ -14850,8 +14976,17 @@ function bagianMassalSipp(sesudahSusun) {
       const tanda = buatElemen("span", "aleta-massal-keadaan", s.sudahPutus ? "sudah putus" : "memeriksa draf…");
       if (s.sudahPutus) tanda.classList.add("aleta-lencana-aman");
       label.appendChild(tanda);
-      daftar.appendChild(label);
+      // UI Baru: sebab perkara ini ikut (putus / ditunda untuk putusan).
+      if (s1Massal && s.s1Sebab) label.appendChild(buatElemen("span", "aleta-massal-keadaan aleta-s1-sebab", s.s1Sebab));
+      (wadahBaris || daftar).appendChild(label);
       centangPer.set(s.nomor, { centang, sidang: s, tanda });
+      return centang;
+    };
+    let s1Pengendali = null;
+    if (s1Massal) {
+      s1Pengendali = s1GambarDaftarMassal(daftar, keadaan.sidang, gambarBaris, s1Lain);
+    } else {
+      for (const s of keadaan.sidang) gambarBaris(s, daftar);
     }
 
     // ========================================================================
@@ -14882,6 +15017,7 @@ function bagianMassalSipp(sesudahSusun) {
       }
     });
     kabar.textContent = `${keadaan.sidang.length} perkara bersidang; ${belum.length} belum putus; ${siap} punya draf dan dapat dicentang.`;
+    if (s1Pengendali && typeof s1Pengendali.segarkan === "function") s1Pengendali.segarkan();
     tombolSusun.disabled = siap === 0;
   }
 
@@ -15280,6 +15416,9 @@ function t7Tata(panel, konteks) {
     // Menu per peran (30 Sep sore) sekali lagi: chip daftar isi sipp-2 dan
     // tab lahir di t7TataSungguh. Idempoten.
     if (typeof mpsTerapkan === "function") mpsTerapkan(panel);
+    // Perbaikan 1 Okt (S, butir 1 & 16) - UI Baru saja: lipat seragam dan
+    // bagian di dalam tab menurut peran.
+    if (ui && typeof s1Tata === "function") s1Tata(panel, konteks || {});
   } catch (galat) {
     try {
       alatCatat("t7", "penataan panel SIPP gagal", String((galat && galat.message) || galat));
@@ -15349,8 +15488,12 @@ function t7TataSungguh(panel, konteks, ui) {
   if (t7Nyala("sipp-23") && !ui) atas.appendChild(t7Lampu(k, false));
   if (t7Nyala("sipp-16") || t7Nyala("sipp-17")) atas.appendChild(t7BarisCepat(k));
   if (t7Pakai("sipp-11", true) && !ui) atas.appendChild(t7KotakCari(k));
-  if (t7Pakai("sipp-1", true)) atas.appendChild(t7KartuLangkah(k));
-  if (t7Nyala("sipp-21")) atas.appendChild(t7KartuBerikutnya(k));
+  // Perbaikan 1 Okt (S, butir 5 dan 6) - UI Baru saja: Langkah berikutnya
+  // mengenali sidang yang sudah putus tetapi putusannya belum diinput, dan
+  // "Perkara berikutnya" (antrean checklist) hanya bagi Super Admin & Admin.
+  const s1Ui = ui && typeof s1KartuLangkah === "function";
+  if (t7Pakai("sipp-1", true)) atas.appendChild(s1Ui ? s1KartuLangkah(k) : t7KartuLangkah(k));
+  if (t7Nyala("sipp-21") && (!s1Ui || s1BolehKartuAdmin())) atas.appendChild(t7KartuBerikutnya(k));
   if (!atas.childElementCount) atas.remove();
 
   // ── Isi kelompok ────────────────────────────────────────────────────────
@@ -17797,7 +17940,17 @@ async function a30UnggahEdoc(p) {
 async function a30OpsiSimpanPutusan(p) {
   const opsi = { sebelum: p.sebelum || null, jajakCepat: true };
   if (!p.edoc || !p.edoc.asli) return opsi;
-  const anon = await a30SiapkanAnonimisasi({
+  // Perbaikan 1 Okt (S, butir 4 - hanya UI Baru yang mengisi edoc.anonim):
+  // anonimisasi yang DIPILIH petugas diunggah apa adanya, tanpa dibuat ulang.
+  if (p.edoc.anonim) {
+    const anonimDipilih = p.edoc.anonim;
+    opsi.sesudahTersimpan = (kabar) =>
+      a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: anonimDipilih, kabar });
+    return opsi;
+  }
+  // UI Baru (perbaikan 1 Okt, butir 12): anonimisasi yang sudah disiapkan di
+  // latar sejak naskah dibaca dipakai; selain itu disiapkan sekarang.
+  const anon = p.anonSiap ? await p.anonSiap : await a30SiapkanAnonimisasi({
     berkas: p.edoc.asli,
     rtf: p.edoc.rtf,
     nomorPerkara: p.nomorPerkara,
@@ -18249,4 +18402,1117 @@ function mpsSusunDaftar(panel, isi, ringkasan, menu) {
         });
     }
   }
+}
+
+/*
+ * ============================================================================
+ * PERBAIKAN 1 OKTOBER 2026 - PANEL SIPP, UI BARU SAJA (agen S)
+ * ============================================================================
+ *
+ * Pesan pengguna sesudah memakai 1.176.0 (DAFTAR "1 Okt", gerbang K1: "perbaiki
+ * fitur yang sekarang di UI BARU saja"). Seluruh blok ini hanya berjalan bila
+ * s1Aktif() - tampilan UI Baru (t7Modern). Lama dan Baru tidak memanggilnya;
+ * titik sambungnya di jalur lama selalu bertanya typeof dulu.
+ *
+ *   butir 1   lipat seragam: tiap bagian, kartu, dan kelompok panel SIPP serta
+ *             panel daftar perkara diberi bentuk lipat yang sama
+ *             (alatJadikanLipat / alatLipat milik W). Ringkasan "DAFTAR
+ *             PERKARA" yang dulu tidak dapat dilipat kini dapat dilipat.
+ *   butir 2   "Ambil usulan dari ALETA" disembunyikan. Fungsinya tidak hilang:
+ *             memilih naskah sudah menyambung ke pembacaan usulan, dan draf
+ *             ALETA yang sudah ada dimuat SENDIRI sekali ketika blangko
+ *             Putusan Akhir terbuka (s1PasangPutusanOtomatis). Tombolnya tetap
+ *             di DOM (tersembunyi) sebagai pemicu alur yang sama.
+ *   butir 3   Putusan otomatis tanpa membuka blangko lebih dulu: naskah
+ *             dipilih, "Jalankan" -> ALETA membuka tab Putusan Akhir dan
+ *             menekan "Edit Putusan Akhir" SIPP (membuka tingkap, bukan
+ *             menulis), panel digambar ulang, dan pekerjaannya dilanjutkan.
+ *   butir 4   satu alur: isi -> Simpan terbukti -> edoc putusan + edoc
+ *             anonimisasi. Anonimisasi yang dipilih petugas dipakai apa
+ *             adanya; tanpa pilihan ALETA membuatnya (jalur a30 yang ada).
+ *   butir 5   Langkah berikutnya: sidang yang PUTUS (atau ditunda untuk
+ *             putusan) sementara putusan belum diinput -> "Buat putusan".
+ *             Selama keadaan perkara dibaca kartunya berkata "memeriksa",
+ *             dan gagal baca disebut - bukan "tidak ada yang mendesak".
+ *   butir 6   "Perkara berikutnya" (antrean checklist) hanya Super Admin & Admin.
+ *   butir 12  pengisian lebih cepat tanpa membuang bukti: praperiksa dan
+ *             putaran pertama usulan medan berjalan bersamaan (keduanya hanya
+ *             membaca), jeda gambar-ulang SIPP berhenti begitu medan baru
+ *             tampak (paling lama tetap 350 ms), bacaan praperiksa serentak,
+ *             dan anonimisasi disiapkan bersamaan dengan pengisian.
+ *   butir 13  putusan massal SIPP: hanya sidang yang putus / ditunda untuk
+ *             putusan atau musyawarah (aletaMassalAlasanPutusan milik M).
+ *   butir 14  Admin: per hakim (ketua majelis), centang per kelompok
+ *             (aletaMassalGambarKelompok milik M). Hakim/Ketua: miliknya di
+ *             atas, perkara majelis lain terlipat - tidak dibuang.
+ *   butir 16  bagian di dalam tab menurut peran (S1_BAGIAN_PERAN), dan
+ *             lompatan menu ⋯ yang tujuannya ada di tab yang bukan untuk
+ *             perannya ikut disembunyikan.
+ *   butir 16b "Upload putusan ke e-Court" (K6): akun e-Court yang dipakai
+ *             disebut SEBELUM tombol dan di konfirmasi; tulis hanya atas klik
+ *             + konfirmasi; rute belum ada = "belum tersedia di server".
+ *
+ * TIDAK ADA JALUR TULIS SIPP BARU. Membuka blangko = menekan tautan yang
+ * membuka tingkap. Simpan tetap simpanPutusanLaluBuka (bukti dari SIPP), edoc
+ * tetap rute unggah-sipp. Permintaan baru: GET /aleta-ecourt/sidang?nomor=
+ * (sudah dipakai a30), GET/POST /aleta-ecourt/ecourt-putusan/* (rute E, menulis
+ * ke e-COURT - bukan SIPP - dan TIDAK masuk ALETA_COBA_BOLEH).
+ */
+const S1_TUGAS_UMUR_MS = 120000;
+const S1_API_ECOURT_AKUN = "/aleta/api/aleta-ecourt/ecourt-putusan/akun";
+const S1_API_ECOURT_UNGGAH = "/aleta/api/aleta-ecourt/ecourt-putusan/unggah";
+const S1_API_SIDANG = "/aleta/api/aleta-ecourt/sidang";
+const S1_BATAS_UNGGAH_ECOURT_MS = 120000;
+/**
+ * Bagian di dalam tab menurut golongan peran (alatGolonganPeran). Yang tidak
+ * disebut di sini mengikuti tabnya (matriks alatMenuPeran). Disembunyikan
+ * lewat atribut, tidak dibuang - Admin dan Super Admin tetap melihatnya.
+ */
+const S1_BAGIAN_PERAN = [
+  // Butir 6: antrean checklist "Perkara berikutnya" - Super Admin & Admin saja.
+  { pilih: '.aleta-t7-kartu[data-t7-fitur="sipp-21"]', untuk: ["admin"] },
+  // Komentar hakim atas BAS: yang menulis BAS (panitera) dan yang menilainya
+  // (majelis). Juru sita tidak menulis maupun menilai BAS.
+  { pilih: '.aleta-t7-kartu[data-t7-fitur="sipp-29"]', untuk: ["admin", "ketua", "hakim", "panitera", "lain"] },
+];
+/** Lompatan di menu ⋯ › Perkara ini, dengan bagian tujuannya. */
+const S1_LOMPAT_MENU = [
+  ["Riwayat ALETA (Alt+R)", "riwayatAleta"],
+  ["Data umum dari gugatan", "dataUmum"],
+  ["Batalkan penetapan terakhir…", "penunjukan"],
+];
+
+/** Pekerjaan Putusan otomatis yang menunggu blangko terbuka (butir 3). */
+let s1Tugas = null;
+/** Blangko Putusan Akhir yang usulannya sudah dimuat sendiri (butir 2). */
+const s1BorangDimuat = new WeakSet();
+/** Jadwal sidang per nomor perkara - satu bacaan per halaman (butir 5). */
+const s1JadwalPerkara = new Map();
+
+function s1Aktif() {
+  try {
+    return typeof t7Modern === "function" && t7Modern();
+  } catch {
+    return false;
+  }
+}
+
+function s1Golongan() {
+  try {
+    return typeof alatGolonganPeran === "function" ? alatGolonganPeran(mpsPeran()) : "lain";
+  } catch {
+    return "lain";
+  }
+}
+
+/** Butir 6: kartu khusus admin di dalam tab (K3). */
+function s1BolehKartuAdmin() {
+  return s1Golongan() === "admin";
+}
+
+function s1SetelSembunyi(el, sembunyi) {
+  if (!el) return;
+  if (sembunyi) {
+    if (!el.hasAttribute("data-s1-sembunyi")) el.setAttribute("data-s1-sembunyi", "");
+  } else if (el.hasAttribute("data-s1-sembunyi")) {
+    el.removeAttribute("data-s1-sembunyi");
+  }
+}
+
+const s1Jeda = (ms) => new Promise((selesai) => setTimeout(selesai, ms));
+
+/** Menunggu `cari()` memulangkan sesuatu, paling lama batasMs. */
+async function s1Tunggu(cari, batasMs, jedaMs) {
+  const mulai = Date.now();
+  for (;;) {
+    let hasil = null;
+    try {
+      hasil = cari();
+    } catch {
+      hasil = null;
+    }
+    if (hasil) return hasil;
+    if (Date.now() - mulai >= batasMs) return null;
+    await s1Jeda(jedaMs || 100);
+  }
+}
+
+/**
+ * Butir 12: menunggu borang SIPP menggambar ulang sesudah pintu diisi.
+ * Berhenti begitu jumlah medan yang tampak melampaui `awal`; bila tidak
+ * pernah bertambah, waktunya tetap sekurang-kurangnya batasMs (350 ms dulu).
+ */
+async function s1TungguBerubah(hitung, awal, batasMs) {
+  const mulai = Date.now();
+  for (;;) {
+    const sisa = batasMs - (Date.now() - mulai);
+    if (sisa <= 0) return false;
+    await s1Jeda(Math.min(70, sisa));
+    let kini = 0;
+    try {
+      kini = Number(await hitung()) || 0;
+    } catch {
+      kini = 0;
+    }
+    if (kini > awal) return true;
+  }
+}
+
+/** Butir 12: bacaan praperiksa serentak - hasilnya sama dengan bacaUsulanBorangPutusan. */
+async function s1BacaUsulanBorangCepat() {
+  const terpilih = async (penunjuk) => {
+    const jawab = await kirimKeJembatan({ jenis: "pilihan", penunjuk });
+    if (!jawab || !jawab.ok) return { nilai: "", label: "" };
+    const nilai = String(jawab.nilaiSekarang || "");
+    const pilihan = (jawab.pilihan || []).find((x) => String(x.nilai) === nilai);
+    return { nilai, label: pilihan ? String(pilihan.label || "") : "" };
+  };
+  const [tanggal, status, verstek] = await Promise.all([
+    Promise.all(PENUNJUK_TANGGAL_PUTUSAN.map((penunjuk) => kirimKeJembatan({ jenis: "nilai", penunjuk }))),
+    terpilih('select[name="status_putusan"]'),
+    terpilih('select[name="verstek"]'),
+  ]);
+  const pertama = tanggal.find((j) => j && j.ok);
+  return {
+    tanggalPutusan: pertama ? String(pertama.nilai || "") : "",
+    statusPutusan: status.nilai === "-1" ? "" : status.label,
+    verstek: verstek.nilai === "Y" || verstek.nilai === "T" ? verstek.nilai : "",
+  };
+}
+
+// ─── Butir 1: lipat seragam ──────────────────────────────────────────────────
+
+/** Satu bagian lipat baru: alatLipat (W) bila ada, <details> bila belum. */
+function s1Lipat(judul, opsi) {
+  const o = opsi || {};
+  if (typeof alatLipat === "function") {
+    try {
+      const l = alatLipat(judul, { kunci: o.kunci, terbuka: o.terbuka, kelas: o.kelas });
+      if (l && l.akar && l.isi) return l;
+    } catch {
+      /* jatuh ke details */
+    }
+  }
+  const akar = buatElemen("details", `aleta-s1-lipat${o.kelas ? ` ${o.kelas}` : ""}`);
+  if (o.kunci) akar.setAttribute("data-kunci", o.kunci);
+  akar.open = o.terbuka !== false;
+  const kepala = buatElemen("summary", "aleta-s1-lipat-kepala", judul);
+  const isi = buatElemen("div", "aleta-s1-lipat-isi");
+  akar.append(kepala, isi);
+  return { akar, kepala, isi, buka: (v) => (akar.open = v === undefined ? !akar.open : Boolean(v)), terbuka: () => akar.open };
+}
+
+/** Kunci ingat buka/tutup untuk kartu statis (yang dulu tidak dapat dilipat). */
+function s1KunciLipat(el) {
+  if (!el.classList.contains("aleta-t7-kartu")) return "";
+  const fitur = el.getAttribute("data-t7-fitur") || "";
+  const judul = el.querySelector(":scope > .aleta-t7-kartu-judul");
+  return `sipp-kartu:${fitur || String((judul && judul.textContent) || "").trim().toLowerCase()}`;
+}
+
+function s1LipatkanSemua(akar) {
+  if (typeof alatJadikanLipat !== "function" || !akar || typeof akar.querySelectorAll !== "function") return;
+  const bertab = Boolean(akar.querySelector(":scope > .aleta-t7-tabbar"));
+  for (const el of Array.from(akar.querySelectorAll(".aleta-bagian, .aleta-kelompok, .aleta-t7-kartu, details"))) {
+    if (el.__aletaLipat || el.classList.contains("aleta-lipatan")) continue;
+    // Kelompok yang menjadi tab: kepalanya disembunyikan Tahap 7 dan isinya
+    // selalu tampak - menjadikannya lipatan hanya menambah kepala kedua.
+    if (bertab && el.classList.contains("aleta-kelompok")) continue;
+    // Bagian milik berkas lain yang sudah memasang lipatnya sendiri dilewati.
+    if (el.closest(".aleta-t7-menu")) continue;
+    const kunci = s1KunciLipat(el);
+    try {
+      alatJadikanLipat(el, kunci ? { kunci } : undefined);
+    } catch {
+      /* bentuk lama tetap bekerja */
+    }
+  }
+}
+
+/** Menyapu sekarang dan tiap kali bagian malas lahir belakangan. */
+function s1PasangLipat(akar) {
+  if (!akar || akar.__s1Lipat) return;
+  akar.__s1Lipat = true;
+  s1LipatkanSemua(akar);
+  let jadwal = 0;
+  try {
+    new MutationObserver(() => {
+      if (jadwal) return;
+      jadwal = setTimeout(() => {
+        jadwal = 0;
+        if (akar.isConnected && s1Aktif()) s1LipatkanSemua(akar);
+      }, 0);
+    }).observe(akar, { childList: true, subtree: true });
+  } catch {
+    /* tanpa pengamat: bagian yang lahir belakangan tetap berbentuk lama */
+  }
+}
+
+// ─── Butir 16: bagian di dalam tab menurut peran ─────────────────────────────
+
+/** Bagian `kunci` berada di kelompok (tab) yang disembunyikan menu peran? */
+function s1TujuanTersembunyi(panel, kunci) {
+  const el = panel.querySelector(`.aleta-isi [data-kunci="${kunci}"]`);
+  if (!el) return false;
+  const kel = el.closest(".aleta-kelompok");
+  return Boolean(kel && kel.hasAttribute("data-mps-sembunyi"));
+}
+
+function s1TerapkanPeran(panel) {
+  if (!panel) return;
+  const golongan = s1Golongan();
+  panel.setAttribute("data-s1-peran", golongan);
+  for (const aturan of S1_BAGIAN_PERAN) {
+    for (const el of Array.from(panel.querySelectorAll(aturan.pilih))) s1SetelSembunyi(el, !aturan.untuk.includes(golongan));
+  }
+  const menu = panel.querySelector(".aleta-t7-menu");
+  if (!menu) return;
+  const item = Array.from(menu.querySelectorAll(".aleta-t7-menu-item"));
+  for (const [teks, kunci] of S1_LOMPAT_MENU) {
+    const tombol = item.find((b) => String(b.textContent || "").trim() === teks);
+    if (tombol) s1SetelSembunyi(tombol, s1TujuanTersembunyi(panel, kunci));
+  }
+  // Zona berbahaya memuat tombol pembongkar penetapan - ikut tab Penetapan.
+  const zona = menu.querySelector(".aleta-t7-menu-zona");
+  if (zona) s1SetelSembunyi(zona, s1TujuanTersembunyi(panel, "penunjukan"));
+}
+
+/** Titik sambung dari t7Tata (UI Baru). */
+function s1Tata(panel) {
+  if (!s1Aktif() || !panel) return;
+  panel.setAttribute("data-s1", "ui");
+  s1TerapkanPeran(panel);
+  try {
+    // Menu peran menyusut sesudah keadaan perkara tiba (mpsSegarkanDariStatus).
+    new MutationObserver(() => {
+      if (panel.isConnected) s1TerapkanPeran(panel);
+    }).observe(panel, { attributes: true, attributeFilter: ["data-mps-menu", "data-mps-ditangani"] });
+  } catch {
+    /* tanpa pengamat: keadaan saat panel tersusun yang berlaku */
+  }
+  s1PasangLipat(panel);
+}
+
+/** Titik sambung dari susunPanelDaftar (UI Baru): ringkasan daftar dapat dilipat. */
+function s1TataDaftar(panel) {
+  if (!s1Aktif() || !panel) return;
+  panel.setAttribute("data-s1", "ui");
+  const isi = panel.querySelector(":scope > .aleta-isi");
+  const judul = isi ? isi.querySelector(":scope > .aleta-bagian-judul") : null;
+  if (judul && typeof alatLipat === "function") {
+    const ringkas = [];
+    for (let el = judul.nextElementSibling; el; el = el.nextElementSibling) {
+      if (el.hasAttribute("data-kunci") || el.hasAttribute("data-mps-massal") || el.classList.contains("aleta-bagian")) break;
+      ringkas.push(el);
+    }
+    const l = s1Lipat(String(judul.textContent || "").trim(), { kunci: "sipp-daftar-ringkas", terbuka: true });
+    l.akar.setAttribute("data-s1-fitur", "daftar-ringkas");
+    isi.insertBefore(l.akar, judul);
+    for (const el of ringkas) l.isi.appendChild(el);
+    judul.remove();
+  }
+  s1PasangLipat(panel);
+}
+
+// ─── Butir 5: Langkah berikutnya ─────────────────────────────────────────────
+
+/** Jadwal sidang satu perkara (GET rute sidang yang sudah dipakai a30). Tidak pernah melempar. */
+function s1BacaJadwalPerkara(nomor) {
+  const kunci = t7KunciNomor(nomor);
+  if (s1JadwalPerkara.has(kunci)) return s1JadwalPerkara.get(kunci);
+  const janji = t7AmbilJson(`${S1_API_SIDANG}?nomor=${encodeURIComponent(String(nomor || ""))}`, "Membaca jadwal sidang perkara").then((j) => {
+    if (!j.ok) return { ok: false, pesan: j.pesan, jadwal: [] };
+    const sipp = j.data && j.data.sipp;
+    return { ok: Boolean(sipp), pesan: sipp ? "" : String((j.data && j.data.pesanSipp) || "Jadwal sidang tidak terbaca."), jadwal: (sipp && sipp.jadwalPerkara) || [] };
+  });
+  s1JadwalPerkara.set(kunci, janji);
+  return janji;
+}
+
+/** Cadangan bila basmassal.js (M) belum termuat - kata yang sama, lebih sempit. */
+function s1AlasanPutusanCadangan(s) {
+  const alasan = String((s && s.alasanDitunda) || "").toLowerCase();
+  const agenda = String((s && s.agenda) || "").toLowerCase();
+  if (/\b(?:di)?putus\b|dikabulkan|ditolak|tidak dapat diterima|dicabut|gugur|dicoret/.test(alasan)) {
+    return { layak: true, jenis: "putus", sebab: `Hasil sidang: ${s.alasanDitunda}` };
+  }
+  if (/musyawarah|pembacaan putusan|pembacaan penetapan/.test(alasan)) {
+    return { layak: true, jenis: "tunda-putusan", sebab: `Ditunda untuk: ${s.alasanDitunda}` };
+  }
+  if (!alasan.trim() && /musyawarah|pembacaan putusan|\bputus\b/.test(agenda)) {
+    return { layak: true, jenis: "agenda-putusan", sebab: `Agenda hari itu: ${s.agenda}` };
+  }
+  return { layak: false, jenis: "", sebab: "" };
+}
+
+/**
+ * Sidang TERAKHIR yang sudah berlangsung (tanggal <= hari ini) memuat putusan?
+ * Murni. Pulang { jenis: "putus"|"tunda-putusan"|"agenda-putusan", sebab,
+ * tanggal } atau null.
+ */
+function s1NilaiSidangPutus(jadwal, hariIniIso) {
+  const lewat = (Array.isArray(jadwal) ? jadwal : [])
+    .filter((s) => s && /^\d{4}-\d{2}-\d{2}/.test(String(s.tanggalSidang || "")) && String(s.tanggalSidang).slice(0, 10) <= hariIniIso)
+    .sort((a, b) => {
+      const t = String(a.tanggalSidang).localeCompare(String(b.tanggalSidang));
+      return t || (Number(a.urutanSidang) || 0) - (Number(b.urutanSidang) || 0);
+    });
+  const terakhir = lewat[lewat.length - 1];
+  if (!terakhir) return null;
+  let nilai;
+  try {
+    nilai =
+      typeof aletaMassalAlasanPutusan === "function"
+        ? aletaMassalAlasanPutusan({ ...terakhir, sudahPutus: false })
+        : s1AlasanPutusanCadangan(terakhir);
+  } catch {
+    nilai = null;
+  }
+  if (!nilai || !nilai.layak) return null;
+  return { jenis: nilai.jenis, sebab: String(nilai.sebab || ""), tanggal: String(terakhir.tanggalSidang).slice(0, 10) };
+}
+
+function s1HariIniIso() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
+/** "Buat putusan": ke tab Putusan, buka Putusan otomatis, dan arahkan ke tombolnya. */
+function s1KePutusanOtomatis(k) {
+  const panel = k && k.panel;
+  if (!panel) return false;
+  const bagianIsi = panel.querySelector('.aleta-bagian[data-kunci="isiPutusan"]');
+  if (!bagianIsi) return false;
+  t7Buka(k, "isiPutusan");
+  const sasaran =
+    bagianIsi.querySelector("[data-s1-jalankan]") || bagianIsi.querySelector('input[type="file"]') || bagianIsi;
+  if (typeof sasaran.scrollIntoView === "function") sasaran.scrollIntoView({ block: "center" });
+  if (typeof sasaran.focus === "function") {
+    try {
+      sasaran.focus();
+    } catch {
+      /* fokus hanya kenyamanan */
+    }
+  }
+  return true;
+}
+
+function s1KartuLangkah(k) {
+  const kartu = t7Kartu("Langkah berikutnya", "sipp-1");
+  kartu.classList.add("aleta-t7-langkah");
+  kartu.setAttribute("data-s1", "langkah");
+  const daftar = buatElemen("ol", "aleta-t7-langkah-daftar");
+  const kabar = t7Ket("Memeriksa keadaan perkara…", "aleta-t7-lembut aleta-s1-langkah-kabar");
+  kartu.append(daftar, kabar);
+
+  const tujuanTampak = (kunci) => !s1TujuanTersembunyi(k.panel, kunci) && Boolean(k.panel.querySelector(`[data-kunci="${kunci}"]`));
+  const gambar = (langkah, selesai) => {
+    daftar.textContent = "";
+    const pilih = langkah.slice(0, 3);
+    if (pilih.length === 0) {
+      if (selesai) daftar.appendChild(buatElemen("li", "aleta-t7-langkah-beres", "Tidak ada yang mendesak untuk perkara ini."));
+      return;
+    }
+    for (const l of pilih) {
+      const li = buatElemen("li", `aleta-t7-langkah-butir aleta-t7-nada-${l.nada}`);
+      if (l.aksi) li.setAttribute("data-s1-langkah", l.aksi);
+      li.appendChild(buatElemen("span", "aleta-t7-langkah-teks", l.teks));
+      if (l.aksi === "buat-putusan") {
+        // Hanya bagi yang memang melihat Putusan otomatis (tab Putusan).
+        if (tujuanTampak("isiPutusan")) {
+          const t = t7Tombol("Buat putusan", "Buka Putusan otomatis untuk perkara ini", "aleta-t7-kecil aleta-s1-buat-putusan");
+          t.addEventListener("click", () => s1KePutusanOtomatis(k));
+          li.appendChild(t);
+        }
+      } else if (l.kunci && tujuanTampak(l.kunci)) {
+        const buka = t7Tombol("Buka", `Buka ${l.teks}`, "aleta-t7-kecil");
+        buka.addEventListener("click", () => t7Buka(k, l.kunci));
+        li.appendChild(buka);
+      }
+      daftar.appendChild(li);
+    }
+  };
+
+  const dariKonteks = [];
+  const konteks = k.konteks || {};
+  const selisih = Array.isArray(konteks.selisih) ? konteks.selisih : [];
+  if (selisih.length > 0) {
+    dariKonteks.push({ teks: `Periksa ${selisih.length} data yang tidak cocok dengan e-Court`, nada: "lewat", kunci: "selisih" });
+  }
+  const tenggat = (Array.isArray(konteks.dokumen) ? konteks.dokumen : []).filter((d) => d.sisaHari !== null && d.sisaHari !== undefined);
+  const mepet = tenggat.sort((a, b) => Number(a.sisaHari) - Number(b.sisaHari))[0];
+  if (mepet && Number(mepet.sisaHari) <= Number(konteks.ambangMendesakHari || 3)) {
+    const sisa = Number(mepet.sisaHari);
+    dariKonteks.push({
+      teks: `Unggah ${mepet.judulDokumen || mepet.agenda || "dokumen"} ke e-Court - ${sisa < 0 ? `lewat ${Math.abs(sisa)} hari` : sisa === 0 ? "habis hari ini" : `${sisa} hari lagi`}`,
+      nada: sisa < 0 ? "lewat" : "mendesak",
+      kunci: "tenggat",
+    });
+  }
+  gambar(dariKonteks, false);
+
+  if (!k.nomor || typeof ambilStatusPerkara !== "function") {
+    kabar.textContent = k.nomor ? "" : "Nomor perkara tidak terbaca.";
+    gambar(dariKonteks, true);
+    return kartu;
+  }
+  void (async () => {
+    let status = null;
+    try {
+      status = await ambilStatusPerkara(k.nomor);
+    } catch (galat) {
+      kabar.textContent = `Keadaan perkara tidak terbaca: ${String((galat && galat.message) || galat)}`;
+      kabar.classList.add("aleta-s1-gagal");
+      gambar(dariKonteks, false);
+      return;
+    }
+    const lagi = [...dariKonteks];
+    const p = (status && status.putusan) || {};
+    const lengkap = (status && status.putusanLengkap) || {};
+    const sudahPutus = Boolean(p.sudahPutus || lengkap.tanggalPutusan);
+    if (sudahPutus && !p.tanggalMinutasi) lagi.push({ teks: "Minutasi berkas perkara", nada: "mendesak", kunci: "putusan" });
+    else if (sudahPutus && !p.tanggalBht) lagi.push({ teks: "Catat tanggal berkekuatan hukum tetap", nada: "netral", kunci: "putusan" });
+    const tahapan = status && status.tahapan && status.tahapan.terbaca ? status.tahapan.tahap || [] : null;
+    const phs = tahapan ? tahapan.find((x) => x && x.kunci === "phs") : null;
+    // Jadwal sidang hanya dibaca bila berguna: putusan belum diinput, peran
+    // ini memang membuat putusan (menu Putusan), dan sidang sudah dimulai
+    // (PHS bertanggal; tidak terbaca = dibaca saja). Satu bacaan per halaman.
+    const menuPeran = k.panel && k.panel.mps && Array.isArray(k.panel.mps.menu) ? k.panel.mps.menu : null;
+    const bacaSidang = !sudahPutus && (!menuPeran || menuPeran.includes("putusan")) && (!tahapan || !phs || Boolean(phs.tanggal));
+    if (!sudahPutus) {
+      kabar.textContent = bacaSidang ? "Membaca hasil sidang…" : "";
+      const j = bacaSidang ? await s1BacaJadwalPerkara(k.nomor) : { ok: true, jadwal: [], pesan: "" };
+      const putus = j.ok ? s1NilaiSidangPutus(j.jadwal, s1HariIniIso()) : null;
+      if (putus && putus.jenis === "putus") {
+        lagi.unshift({
+          teks: `Buat putusan - sidang ${putus.tanggal} sudah putus (${putus.sebab}), tetapi putusan belum diinput di SIPP`,
+          nada: "lewat",
+          aksi: "buat-putusan",
+        });
+      } else if (putus) {
+        lagi.unshift({
+          teks: `Siapkan putusan - ${putus.sebab} (sidang ${putus.tanggal}); putusan belum diinput di SIPP`,
+          nada: "mendesak",
+          aksi: "buat-putusan",
+        });
+      }
+      if (!j.ok && j.pesan) kabar.textContent = `Hasil sidang tidak terbaca: ${j.pesan}`;
+      else kabar.textContent = "";
+      const tahap = status && status.tahapan && status.tahapan.terbaca ? status.tahapan.tahap || [] : [];
+      const berikut = tahap.find((x) => x.terbaca && !x.tanggal);
+      if (berikut) lagi.push({ teks: `Tahap berikutnya: ${berikut.label || berikut.kunci}`, nada: "netral", kunci: "tahapan" });
+    } else {
+      kabar.textContent = "";
+    }
+    if (!kabar.textContent) kabar.remove();
+    gambar(lagi, true);
+  })();
+  return kartu;
+}
+
+// ─── Butir 2, 3, 4: Putusan otomatis ─────────────────────────────────────────
+
+function s1AmbilTugas(nomor) {
+  const t = s1Tugas;
+  if (!t) return null;
+  if (Date.now() - t.waktu > S1_TUGAS_UMUR_MS) {
+    s1Tugas = null;
+    return null;
+  }
+  if (t7KunciNomor(t.nomor) !== t7KunciNomor(nomor)) return null;
+  s1Tugas = null;
+  return t;
+}
+
+/** Antrean putusan massal SIPP sedang menunggu perkara ini? Pengisian otomatisnya yang berlaku. */
+async function s1AntreanMenunggu(nomor) {
+  if (typeof antreanSippBerjalan !== "undefined" && antreanSippBerjalan) return true;
+  try {
+    const a = typeof alatMuatAntrean === "function" ? await alatMuatAntrean() : null;
+    return Boolean(
+      a &&
+        a.tahap === "sipp" &&
+        (a.butir || []).some((b) => t7KunciNomor(b.nomor) === t7KunciNomor(nomor) && (b.keadaan === "menunggu" || b.keadaan === "jalan"))
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Membuka blangko Putusan Akhir SIPP seperti petugas: tab "Putusan Akhir"
+ * (#tabs10, dimuat SIPP lewat AJAX) lalu tautan "Edit Putusan Akhir"
+ * (popup_form add_putusan_akhir/<enc>/update). Membuka tingkap, tidak
+ * menulis apa pun. Tidak pernah melempar.
+ */
+async function s1BukaBlangkoPutusan(opsi) {
+  const o = opsi || {};
+  const batas = o.batasMs || 15000;
+  const jeda = o.jedaMs || 100;
+  if (document.querySelector("#frm_putusan")) return { ok: true, sudah: true };
+  const cariTautan = () =>
+    Array.from(document.querySelectorAll('a[onclick*="add_putusan_akhir/"]')).find((a) =>
+      /\/update['"]/.test(String(a.getAttribute("onclick") || ""))
+    ) || null;
+  let tautan = cariTautan();
+  if (!tautan) {
+    const tab = document.querySelector('a[href="#tabs10"]');
+    if (!tab) {
+      return {
+        ok: false,
+        pesan:
+          "Tab Putusan Akhir belum ada di halaman SIPP perkara ini - SIPP baru memunculkannya sesudah tahapan perkara sampai putusan. " +
+          "Catat hasil sidang putus lebih dulu, lalu jalankan lagi.",
+      };
+    }
+    tab.click();
+    tautan = await s1Tunggu(cariTautan, batas, jeda);
+    if (!tautan) {
+      return {
+        ok: false,
+        pesan:
+          "Tab Putusan Akhir terbuka, tetapi tombol Edit Putusan Akhir tidak muncul - akun SIPP ini mungkin tidak berwenang mengubah putusan. " +
+          "Buka blangkonya sendiri bila memang berwenang.",
+      };
+    }
+  }
+  tautan.click();
+  const borang = await s1Tunggu(() => document.querySelector("#frm_putusan"), batas, jeda);
+  if (!borang) {
+    return { ok: false, pesan: "Blangko Putusan Akhir tidak terbuka dalam 15 detik. Buka sendiri lewat tab Putusan Akhir › Edit Putusan Akhir." };
+  }
+  return { ok: true };
+}
+
+/**
+ * Butir 12: anonimisasi edoc disiapkan di latar begitu naskah dibaca (UI
+ * Baru). Pulang { naskah, janji } atau null. Tidak mengirim apa pun ke SIPP;
+ * dialog pemeriksanya (bila ada temuan) tampil di kotak naskah sendiri -
+ * bukan di wadah usulan yang dikosongkan tiap pembacaan ulang.
+ */
+function s1SiapkanAnonimAwal(p) {
+  if (!p || !p.naskahEdoc || !p.naskahEdoc.asli || !p.sekaligus || !p.sekaligus.dipakai() || p.anonimPilihan) return null;
+  if (typeof a30SiapkanAnonimisasi !== "function") return null;
+  const tempat = p.kotakUnggah || null;
+  let kabar = null;
+  let tanya = null;
+  if (tempat) {
+    for (const lama of Array.from(tempat.querySelectorAll(":scope > .aleta-s1-anon-awal"))) lama.remove();
+    kabar = buatElemen("div", "aleta-abt-kabar aleta-s1-anon-awal", "Anonimisasi edoc disiapkan di latar (belum ada yang dikirim ke SIPP)…");
+    tanya = buatElemen("div", "aleta-s1-anon-awal aleta-s1-anon-tanya");
+    tempat.append(kabar, tanya);
+  }
+  const janji = Promise.resolve()
+    .then(() =>
+      a30SiapkanAnonimisasi({ berkas: p.naskahEdoc.asli, rtf: p.naskahEdoc.rtf, nomorPerkara: p.nomorPerkara, kabar, wadahTanya: tanya })
+    )
+    .catch((galat) => ({ ok: false, pesan: `Anonimisasi tidak dibuat: ${String((galat && galat.message) || galat)}` }));
+  return { naskah: p.naskahEdoc, janji };
+}
+
+/** Slot berkas kecil: label, pemilih, tanda. */
+function s1SlotBerkas(judul, terima, kelas) {
+  const baris = buatElemen("div", `aleta-edoc-slot aleta-s1-slot${kelas ? ` ${kelas}` : ""}`);
+  baris.appendChild(buatElemen("span", "aleta-edoc-judul", judul));
+  const pemilih = document.createElement("input");
+  pemilih.type = "file";
+  pemilih.accept = terima;
+  pemilih.className = "aleta-berkas";
+  pemilih.setAttribute("aria-label", judul);
+  const tanda = buatElemen("span", "aleta-edoc-tanda aleta-massal-keadaan", "belum dipilih");
+  baris.append(pemilih, tanda);
+  pemilih.addEventListener("change", () => {
+    const f = pemilih.files && pemilih.files[0];
+    tanda.textContent = f ? f.name : "belum dipilih";
+  });
+  return { baris, pemilih, tanda, berkas: () => (pemilih.files && pemilih.files[0]) || null };
+}
+
+/**
+ * Butir 3: Putusan otomatis SEBELUM blangko dibuka (UI Baru). Kuncinya sama
+ * dengan bagian aslinya (isiPutusan) - lipatannya diingat bersama.
+ */
+function s1BagianPutusanTanpaBlangko(nomorPerkara) {
+  const kotak = bagian("Putusan otomatis", "isiPutusan", true);
+  kotak.setAttribute("data-s1-fitur", "putusan-tanpa-blangko");
+  const isi = kotak.isi;
+  isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab",
+      "Blangko Putusan Akhir SIPP tidak perlu dibuka lebih dulu. Pilih naskah putusan bila ada, lalu Jalankan: ALETA membuka " +
+        "blangko Putusan Akhir sendiri, membaca naskah (atau draf ALETA yang sudah ada), menjalankan praperiksa, lalu menampilkan " +
+        "isiannya untuk diperiksa. Simpan baru ditekan sesudah Anda menekan Isikan dan SELURUH isian masuk; edoc putusan dan " +
+        "anonimisasinya diunggah sesudah Simpan terbukti."
+    )
+  );
+  const naskah = s1SlotBerkas("Naskah putusan", typeof A30_TERIMA_NASKAH === "string" ? A30_TERIMA_NASKAH : ".rtf,.docx,.doc,.pdf", "aleta-s1-slot-naskah");
+  const anonim = s1SlotBerkas("Edoc anonimisasi (opsional)", ".rtf,.doc,.docx,.pdf", "aleta-s1-slot-anonim");
+  anonim.baris.title = "Kosongkan: ALETA membuat anonimisasinya dari naskah putusan (lewat anonimisasi ABT) lalu memeriksanya.";
+  const barisSekaligus = buatElemen("label", "aleta-a30-pilihan aleta-s1-sekaligus");
+  const cek = document.createElement("input");
+  cek.type = "checkbox";
+  cek.checked = true;
+  cek.className = "aleta-abt-centang";
+  barisSekaligus.append(
+    cek,
+    buatElemen(
+      "span",
+      "aleta-a30-pilihan-teks",
+      "Sekali jalan: sesudah putusan TERBUKTI tersimpan, naskah ini diunggah sebagai edoc putusan beserta edoc anonimisasinya " +
+        "(yang dipilih di atas, atau dibuat ALETA bila kosong)."
+    )
+  );
+  const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-s1-jalankan", "Jalankan putusan otomatis");
+  tombol.type = "button";
+  tombol.setAttribute("data-s1-jalankan", "");
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  isi.append(naskah.baris, anonim.baris, barisSekaligus, tombol, kabar);
+
+  tombol.addEventListener("click", async () => {
+    if (tombol.disabled) return;
+    tombol.disabled = true;
+    kabar.className = "aleta-abt-kabar";
+    const berkas = naskah.berkas();
+    s1Tugas = { nomor: nomorPerkara, berkas, anonim: anonim.berkas(), sekaligus: cek.checked, waktu: Date.now() };
+    kabar.textContent = "Membuka blangko Putusan Akhir SIPP…";
+    const hasil = await s1BukaBlangkoPutusan();
+    if (!hasil.ok) {
+      s1Tugas = null;
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = hasil.pesan;
+      tombol.disabled = false;
+      return;
+    }
+    // Panel digambar ulang begitu blangkonya lahir (tandaBorang) dan
+    // pekerjaannya dilanjutkan di sana - kotak ini ikut terbuang.
+    kabar.textContent = berkas
+      ? `Blangko terbuka - ${berkas.name} dibaca di Putusan otomatis…`
+      : "Blangko terbuka - draf ALETA dimuat di Putusan otomatis…";
+    setTimeout(() => {
+      if (!kotak.isConnected) return;
+      tombol.disabled = false;
+      kabar.textContent += " Bila panel tidak berpindah sendiri, muat ulang data perkara dari menu ⋯.";
+    }, 4000);
+  });
+  return kotak;
+}
+
+/**
+ * Titik sambung di ujung bagianIsiPutusan (blangko terbuka). UI Baru saja.
+ * p = { kotak, nomorPerkara, tombol, prosesNaskah, kotakUnggah, sekaligus, setelAnonim }
+ */
+function s1PasangPutusanOtomatis(p) {
+  if (!s1Aktif() || !p || !p.kotak || !p.tombol) return;
+  p.kotak.setAttribute("data-s1-putusan", "ui");
+  // Butir 2: tombolnya disembunyikan; ia tetap pemicu alur yang sama.
+  s1SetelSembunyi(p.tombol, true);
+  p.tombol.setAttribute("data-s1-tombol-usulan", "");
+
+  // Butir 4: anonimisasi pilihan petugas (opsional).
+  let slotAnonim = null;
+  if (p.kotakUnggah && p.sekaligus && typeof p.setelAnonim === "function") {
+    slotAnonim = s1SlotBerkas("Edoc anonimisasi (opsional)", ".rtf,.doc,.docx,.pdf", "aleta-s1-slot-anonim");
+    slotAnonim.baris.title = "Kosongkan: ALETA membuat anonimisasinya dari naskah putusan lalu memeriksanya.";
+    slotAnonim.pemilih.addEventListener("change", () => {
+      const dipilih = slotAnonim.berkas();
+      p.setelAnonim(dipilih);
+      // Anonimisasi buatan ALETA yang disiapkan di latar tidak dipakai lagi.
+      for (const k of Array.from(p.kotakUnggah.querySelectorAll(".aleta-s1-anon-awal.aleta-abt-kabar"))) {
+        if (dipilih) k.textContent = `Edoc anonimisasi pilihan Anda (${dipilih.name}) yang diunggah; anonimisasi buatan ALETA tidak dipakai.`;
+      }
+    });
+    p.kotakUnggah.insertBefore(slotAnonim.baris, p.sekaligus.baris.nextSibling);
+  }
+
+  const bukaBagian = () => {
+    const panel = p.kotak.closest(".aleta-panel");
+    if (panel && typeof bukaBagianPanel === "function") bukaBagianPanel(panel, "isiPutusan");
+  };
+
+  // Butir 3: pekerjaan yang dimulai sebelum blangko terbuka dilanjutkan.
+  const tugas = s1AmbilTugas(p.nomorPerkara);
+  if (tugas) {
+    // Blangko ini sudah dikerjakan tugasnya - gambar ulang berikutnya tidak
+    // memuat draf sendiri lagi di atasnya.
+    const borangTugas = document.querySelector("#frm_putusan");
+    if (borangTugas) s1BorangDimuat.add(borangTugas);
+    if (tugas.anonim && slotAnonim) {
+      p.setelAnonim(tugas.anonim);
+      slotAnonim.tanda.textContent = tugas.anonim.name;
+    }
+    if (tugas.sekaligus === false && p.sekaligus && p.sekaligus.centang) p.sekaligus.centang.checked = false;
+    setTimeout(() => {
+      if (!p.kotak.isConnected) {
+        // Panel digambar ulang lagi sebelum sempat mulai: serahkan ke gambar berikutnya.
+        s1Tugas = { ...tugas, waktu: Date.now() };
+        return;
+      }
+      bukaBagian();
+      if (tugas.berkas && typeof p.prosesNaskah === "function") void p.prosesNaskah(tugas.berkas);
+      else if (!p.tombol.disabled) p.tombol.click();
+    }, 0);
+    return;
+  }
+
+  // Butir 2: tanpa tombol, draf ALETA dimuat SENDIRI sekali per blangko.
+  const borang = document.querySelector("#frm_putusan");
+  if (!borang || s1BorangDimuat.has(borang)) return;
+  s1BorangDimuat.add(borang);
+  setTimeout(async () => {
+    if (!p.kotak.isConnected) {
+      s1BorangDimuat.delete(borang);
+      return;
+    }
+    // Antrean putusan massal SIPP yang menunggu perkara ini mengisinya sendiri.
+    if (await s1AntreanMenunggu(p.nomorPerkara)) return;
+    if (!p.kotak.isConnected || p.tombol.disabled) return;
+    p.tombol.click();
+  }, 700);
+}
+
+// ─── Butir 16b: Upload putusan ke e-Court (K6) ───────────────────────────────
+
+function s1AlamatIntegrasi(jawab) {
+  const dari = jawab && typeof jawab.tautanSambung === "string" ? jawab.tautanSambung : "";
+  if (dari && dari.startsWith("/aleta/")) return `${location.origin}${dari}`;
+  return `${location.origin}/aleta/admin/aleta-ecourt#sesi-ecourt-saya`;
+}
+
+function s1BagianUnggahEcourt(nomorPerkara) {
+  const kotak = bagian("Upload putusan ke e-Court", "s1UnggahEcourt", true);
+  kotak.setAttribute("data-s1-fitur", "unggah-ecourt");
+  const isi = kotak.isi;
+  const akunBaris = buatElemen("div", "aleta-s1-ecourt-akun", "Memeriksa akun e-Court yang akan dipakai…");
+  const salinanBaris = buatElemen("div", "aleta-s1-ecourt-salinan");
+  const slot = s1SlotBerkas("Salinan putusan (PDF)", ".pdf,application/pdf", "aleta-s1-slot-ecourt");
+  const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-s1-ecourt-tombol", "Upload ke e-Court");
+  tombol.type = "button";
+  tombol.disabled = true;
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  const wadahTanya = buatElemen("div", "aleta-s1-ecourt-tanya");
+  isi.append(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab aleta-remeh",
+      'Setara tombol "Upload Dokumen Salinan Putusan" di e-Court (tab Putusan › Salinan Putusan). Diunggah dengan sesi e-Court akun yang disebut di bawah.'
+    ),
+    akunBaris,
+    salinanBaris,
+    slot.baris,
+    tombol,
+    wadahTanya,
+    kabar
+  );
+
+  let akun = null;
+  let sudahMuat = false;
+  const segarkanTombol = () => {
+    tombol.disabled = !(akun && akun.tersambung !== false && slot.berkas());
+  };
+  const gambarSalinan = (s) => {
+    salinanBaris.textContent = "";
+    if (!s) return;
+    if (s.sudahDiunggah) {
+      salinanBaris.textContent = `Salinan putusan SUDAH diunggah ke e-Court${s.tanggal ? ` pada ${s.tanggal}` : ""}${s.olehNama ? ` oleh ${s.olehNama}` : ""}. Mengunggah lagi menggantinya.`;
+      salinanBaris.className = "aleta-s1-ecourt-salinan aleta-lencana-aman";
+    } else {
+      salinanBaris.textContent = "Salinan putusan BELUM diunggah ke e-Court.";
+      salinanBaris.className = "aleta-s1-ecourt-salinan aleta-lencana-mendesak";
+    }
+  };
+  const gambarBelumTersambung = (jawab, nama) => {
+    akunBaris.textContent = "";
+    akunBaris.className = "aleta-s1-ecourt-akun aleta-s1-ecourt-putus";
+    akunBaris.appendChild(
+      buatElemen(
+        "span",
+        "",
+        nama
+          ? `Sesi e-Court akun ${nama} sudah habis atau terputus - masuk lagi lewat Integrasi e-Court › sambungkan sesi. `
+          : `Belum ada sesi e-Court untuk akun ALETA Anda${jawab && jawab.alasan ? ` (${jawab.alasan})` : ""}. Sambungkan dulu lewat Integrasi e-Court › sambungkan sesi. `
+      )
+    );
+    const a = buatElemen("a", "aleta-t7-tautan", "Buka Integrasi e-Court ↗");
+    a.href = s1AlamatIntegrasi(jawab);
+    a.target = "_blank";
+    a.rel = "noopener";
+    akunBaris.appendChild(a);
+  };
+
+  const muat = async () => {
+    sudahMuat = true;
+    akunBaris.className = "aleta-s1-ecourt-akun";
+    akunBaris.textContent = "Memeriksa akun e-Court yang akan dipakai…";
+    const j = await t7AmbilJson(`${S1_API_ECOURT_AKUN}?nomor=${encodeURIComponent(String(nomorPerkara || ""))}`, "Membaca akun e-Court");
+    if (!j.ok) {
+      akunBaris.textContent = "";
+      if (j.status === 404) {
+        akunBaris.appendChild(t7BelumTersedia("Upload putusan ke e-Court belum tersedia di server."));
+      } else {
+        akunBaris.className = "aleta-s1-ecourt-akun aleta-abt-gagal";
+        akunBaris.textContent = j.pesan;
+        sudahMuat = false;
+      }
+      return;
+    }
+    const d = j.data || {};
+    akun = d.akun || null;
+    gambarSalinan(d.salinan || null);
+    if (!akun || akun.tersambung === false) {
+      gambarBelumTersambung(d, akun && akun.nama);
+      akun = null;
+    } else {
+      akunBaris.className = "aleta-s1-ecourt-akun aleta-s1-ecourt-siap";
+      akunBaris.textContent = `Akan diunggah atas nama: ${akun.nama || "(nama tidak terbaca)"}${akun.peran ? ` (${akun.peran})` : ""} di e-Court`;
+      if (akun.sumber === "bersama") akunBaris.textContent += " - sesi BERSAMA, bukan sesi pribadi Anda";
+      akunBaris.textContent += ".";
+    }
+    segarkanTombol();
+  };
+  slot.pemilih.addEventListener("change", () => {
+    const f = slot.berkas();
+    if (f && !/\.pdf$/i.test(String(f.name || ""))) {
+      slot.tanda.textContent = `${f.name}: bukan PDF - salinan putusan di e-Court berbentuk PDF`;
+      slot.pemilih.value = "";
+    }
+    segarkanTombol();
+  });
+
+  tombol.addEventListener("click", async () => {
+    const berkas = slot.berkas();
+    if (!akun || !berkas || tombol.disabled) return;
+    tombol.disabled = true;
+    const nama = `${akun.nama || "(nama tidak terbaca)"}${akun.peran ? ` (${akun.peran})` : ""}`;
+    const pertanyaan = {
+      judul: "Upload salinan putusan ke e-Court",
+      baris: [`${nomorPerkara}: ${berkas.name} akan diunggah ke e-Court ATAS NAMA ${nama}.`, "Ini menulis ke e-Court dan tercatat atas nama akun itu."],
+      centang: `Benar, unggah atas nama ${akun.nama || "akun ini"}`,
+      ya: "Upload ke e-Court",
+      tidak: "Batal",
+    };
+    const ya =
+      typeof a30Tanya === "function"
+        ? await a30Tanya(wadahTanya, pertanyaan)
+        : window.confirm(`${pertanyaan.baris.join("\n")}\n\nLanjutkan?`);
+    if (!ya) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent = "Dibatalkan - tidak ada yang dikirim ke e-Court.";
+      segarkanTombol();
+      return;
+    }
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = `Mengunggah ke e-Court atas nama ${nama}…`;
+    const badan = new FormData();
+    badan.append("nomor", String(nomorPerkara || ""));
+    badan.append("berkas", berkas, berkas.name);
+    let respons = null;
+    let luar = null;
+    try {
+      respons = await alatAmbil(
+        S1_API_ECOURT_UNGGAH,
+        { method: "POST", body: badan, credentials: "include", batasMs: S1_BATAS_UNGGAH_ECOURT_MS },
+        "Mengunggah putusan ke e-Court"
+      );
+      try {
+        luar = await respons.json();
+      } catch {
+        luar = null;
+      }
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+      segarkanTombol();
+      return;
+    }
+    const d = luar && typeof luar === "object" && "data" in luar ? luar.data : luar;
+    if (respons.status === 404) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent = "Upload putusan ke e-Court belum tersedia di server - tidak ada yang dikirim.";
+    } else if (respons.status === 423) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent =
+        typeof a30PesanDitahan === "function" ? a30PesanDitahan(luar, "Upload ke e-Court") : "Upload ke e-Court ditahan mode uji - tidak ada yang dikirim.";
+    } else if (!respons.ok || !d || d.ok === false) {
+      const kalimat =
+        (d && (d.sebab || d.pesan || d.alasan)) ||
+        (luar && luar.error && luar.error.message) ||
+        (typeof alatPesanGagal === "function" ? alatPesanGagal(null, respons.status, "Mengunggah putusan ke e-Court") : `Gagal (${respons.status}).`);
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = `Tidak terunggah ke e-Court: ${kalimat}`;
+    } else {
+      const oleh = d.akun && d.akun.nama ? `${d.akun.nama}${d.akun.peran ? ` (${d.akun.peran})` : ""}` : nama;
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent = `Terunggah ke e-Court atas nama ${oleh}.`;
+      gambarSalinan(d.salinan || { sudahDiunggah: true });
+      slot.pemilih.value = "";
+      slot.tanda.textContent = "belum dipilih";
+    }
+    segarkanTombol();
+  });
+
+  // Dimuat saat dibuka, seperti bagian malas lainnya.
+  const kepala = kotak.querySelector(".aleta-bagian-judul");
+  if (kepala) kepala.addEventListener("click", () => {
+    if (!sudahMuat && kotak.isi.style.display !== "none") void muat();
+  });
+  if (kotak.isi.style.display !== "none") setTimeout(() => void muat(), 0);
+  kotak.muat = () => {
+    if (!sudahMuat) void muat();
+  };
+  return kotak;
+}
+
+// ─── Butir 13 & 14: putusan massal SIPP ──────────────────────────────────────
+
+/** Majelis "A, S.H., M.H., B, S.Ag." -> ["A, S.H., M.H.", "B, S.Ag."]: gelar sesudah koma tetap milik orangnya. */
+function s1PecahMajelis(nama) {
+  const potong = String(nama || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+  const orang = [];
+  const gelar = (t) =>
+    /^(?:[A-Z][A-Za-z]{0,4}\.){1,4}[A-Za-z]{0,4}\.?$/.test(t) || /^(?:S\.?H\.?I?|M\.?H\.?I?|S\.?Ag|M\.?Ag|Lc|MA|M\.?A|S\.?Sy|M\.?Si|S\.?Pd|MH|SH|SHI|MHI)\.?$/i.test(t);
+  for (const t of potong) {
+    if (orang.length && gelar(t)) orang[orang.length - 1] += `, ${t}`;
+    else orang.push(t);
+  }
+  return orang;
+}
+
+function s1KetuaMajelis(nama) {
+  return s1PecahMajelis(nama)[0] || "";
+}
+
+/** Jadwal sidang satu tanggal, UTUH (alasan tunda, tanggal putusan, majelis) - satu baris per perkara. */
+async function s1SidangPadaTanggal(tanggalIso) {
+  const q = new URLSearchParams({ dari: tanggalIso, sampai: tanggalIso, batas: "300" });
+  const respons = await alatAmbil(`${S1_API_SIDANG}?${q.toString()}`, { credentials: "include", cache: "no-store" }, "Membaca jadwal sidang");
+  if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membaca jadwal sidang"));
+  const luar = await respons.json();
+  const isi = luar && luar.data ? luar.data : luar;
+  if (!isi || isi.available === false) throw new Error((isi && isi.message) || "ALETA belum dapat membaca jadwal sidang.");
+  const per = new Map();
+  for (const s of Array.isArray(isi.sidang) ? isi.sidang : []) {
+    const nomor = String(s.nomorPerkara || "");
+    if (!nomor) continue;
+    const ketua = s1KetuaMajelis(s.majelisNama);
+    const baris = {
+      nomor,
+      perkaraId: String(s.perkaraId || ""),
+      jenis: String(s.jenisPerkara || ""),
+      agenda: String(s.agenda || ""),
+      sudahPutus: Boolean(s.sudahPutus),
+      statusPutusan: String(s.statusPutusan || ""),
+      verstek: Boolean(s.verstekPutusan),
+      ditunda: Boolean(s.ditunda),
+      ikrar: Boolean(s.sidangIkrarTalak),
+      jam: String(s.jamSidang || ""),
+      alasanDitunda: String(s.alasanDitunda || ""),
+      tanggalSidang: String(s.tanggalSidang || tanggalIso).slice(0, 10),
+      tanggalPutusan: String(s.tanggalPutusan || "").slice(0, 10),
+      majelisNama: String(s.majelisNama || ""),
+      pengguna: { id: "", nama: ketua },
+    };
+    // Dua baris sidang perkara yang sama di satu hari (ditunda lalu
+    // dijadwalkan ulang): yang memuat putusan yang mewakili perkaranya.
+    const lama = per.get(nomor);
+    if (!lama || (!s1Layak(lama).layak && s1Layak(baris).layak)) per.set(nomor, baris);
+  }
+  return [...per.values()];
+}
+
+function s1Layak(s) {
+  try {
+    if (typeof aletaMassalAlasanPutusan === "function") return aletaMassalAlasanPutusan(s);
+    if (typeof aletaMassalPutusanLayak === "function") return { layak: aletaMassalPutusanLayak(s), jenis: "", sebab: "" };
+  } catch {
+    /* cadangan */
+  }
+  return s1AlasanPutusanCadangan(s);
+}
+
+/** Butir 13: { layak: [...ber-s1Sebab], lain: [...] }. */
+function s1SaringPutusanMassal(daftar) {
+  const layak = [];
+  const lain = [];
+  for (const s of Array.isArray(daftar) ? daftar : []) {
+    const n = s1Layak(s);
+    if (n && n.layak) layak.push({ ...s, s1Jenis: n.jenis || "", s1Sebab: n.sebab || "" });
+    else lain.push(s);
+  }
+  return { layak, lain };
+}
+
+/** Yang tidak ditawarkan disebut, terlipat - bukan didiamkan. */
+function s1RingkasTidakIkut(lain) {
+  const l = s1Lipat(`${lain.length} perkara bersidang lain tidak ditawarkan`, { kunci: "putusan-massal-sipp-tidak-ikut", terbuka: false });
+  l.akar.setAttribute("data-s1-fitur", "massal-tidak-ikut");
+  l.isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab aleta-remeh",
+      "Sidangnya tidak putus dan tidak ditunda untuk putusan / musyawarah majelis (menurut hasil sidang di SIPP)."
+    )
+  );
+  const ul = buatElemen("ul", "aleta-s1-tidak-ikut");
+  for (const s of lain) {
+    ul.appendChild(buatElemen("li", "", [s.nomor, s.agenda, s.alasanDitunda ? `ditunda: ${s.alasanDitunda}` : ""].filter(Boolean).join(" · ")));
+  }
+  l.isi.appendChild(ul);
+  return l.akar;
+}
+
+/**
+ * Butir 14: baris antrean digambar per user untuk Admin (M), datar untuk
+ * yang lain; Hakim/Ketua melihat perkara majelisnya di atas dan perkara
+ * majelis lain terlipat (tetap dapat dicentang). Pulang pengendali M atau null.
+ */
+function s1GambarDaftarMassal(daftar, sidang, gambarBaris, lain) {
+  const golongan = s1Golongan();
+  let tampil = sidang;
+  let lainMajelis = [];
+  if (golongan === "hakim" || golongan === "ketua") {
+    const saya = [
+      typeof penggunaTerakhir !== "undefined" && penggunaTerakhir ? penggunaTerakhir.nama : "",
+      typeof namaPenggunaSipp === "function" ? namaPenggunaSipp() : "",
+    ]
+      .map((x) => String(x || "").trim())
+      .filter(Boolean);
+    const milik = (s) => s1PecahMajelis(s.majelisNama).some((o) => saya.some((n) => mpsNamaCocok(n, o)));
+    const punyaSaya = saya.length ? sidang.filter(milik) : [];
+    if (punyaSaya.length) {
+      tampil = punyaSaya;
+      lainMajelis = sidang.filter((s) => !punyaSaya.includes(s));
+    }
+  }
+  let pengendali = null;
+  // Per user hanya bagi Super Admin & Admin (K4); peran lain tetap urutan jadwal.
+  if (golongan === "admin" && typeof aletaMassalKelompokkan === "function" && typeof aletaMassalGambarKelompok === "function") {
+    try {
+      const kelompok = aletaMassalKelompokkan(tampil, (s) => s.pengguna);
+      pengendali = aletaMassalGambarKelompok(daftar, kelompok, {
+        peran: mpsPeran(),
+        kunciLipat: "putusan-massal-sipp",
+        gambarBaris: (s, wadahIsi) => gambarBaris(s, wadahIsi),
+        labelPerkara: (s) => s.nomor,
+        judul: (pengguna, perkara) => `${pengguna.nama || "Majelis belum tercatat"} · ${perkara.length} perkara`,
+      });
+    } catch {
+      pengendali = null;
+      daftar.textContent = "";
+      for (const s of tampil) gambarBaris(s, daftar);
+    }
+  } else {
+    for (const s of tampil) gambarBaris(s, daftar);
+  }
+  if (lainMajelis.length) {
+    const l = s1Lipat(`Perkara majelis lain (${lainMajelis.length})`, { kunci: "putusan-massal-sipp-majelis-lain", terbuka: false });
+    l.akar.setAttribute("data-s1-fitur", "massal-majelis-lain");
+    daftar.appendChild(l.akar);
+    for (const s of lainMajelis) gambarBaris(s, l.isi);
+  }
+  if (lain && lain.length) daftar.appendChild(s1RingkasTidakIkut(lain));
+  return pengendali;
 }

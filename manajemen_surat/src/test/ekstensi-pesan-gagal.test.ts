@@ -319,7 +319,13 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // 404 berbunyi "belum tersedia di server", 423 "ditahan mode coba") dan
     // pembacaan perkara_id lewat rute sidang untuk anonim ABT
     // (a30PerkaraIdUntukAbt). Keduanya berbicara ke petugas.
-    expect(lewatAlat).toBe(33);
+    // 35 sejak perbaikan 1 Oktober 2026 (agen S, hanya UI Baru): jadwal sidang
+    // UTUH untuk putusan massal SIPP (s1SidangPadaTanggal - alasan tunda dan
+    // majelis, gagalnya berbunyi lewat alatPesanGagal seperti
+    // alatSidangPadaTanggal) dan Upload putusan ke e-Court (s1BagianUnggahEcourt,
+    // K6 - 404 "belum tersedia di server", 423 "ditahan mode coba", selebihnya
+    // kalimat rute atau alatPesanGagal). Keduanya berbicara ke petugas.
+    expect(lewatAlat).toBe(35);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

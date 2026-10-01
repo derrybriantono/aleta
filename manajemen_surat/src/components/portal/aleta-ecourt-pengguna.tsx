@@ -349,6 +349,28 @@ export function AletaEcourtPengguna() {
     // justru kekurangan lebar. Jarak ke tepi layar sudah diberikan bagan luar
     // portal (px-6 dan max-w-[1600px]); menambah jarak kedua di sini hanya
     // membuat tiga tepi yang berbeda.
+    //
+    // ==================================================================
+    // LEBIH LEBAR DI LAYAR LEBAR - PERBAIKAN 1 OKTOBER 2026 (J3)
+    // ==================================================================
+    //
+    // Bagan luar portal memaku isi pada max-w-[1600px]. Pada layar 1920 px
+    // itu 160 px kosong di tiap sisi sementara jadwal sidang berdesakan.
+    // Halaman ini tidak punya sidebar portal (konteks "default"), jadi
+    // pembungkus ini boleh MELEBAR keluar dari 1600 px ke kedua sisi -
+    // simetris, dengan jarak 1,5 rem ke tepi jendela, paling lebar 2400 px.
+    //
+    // Hanya margin dan lebar - BUKAN transform. transform menjadikan
+    // pembungkus bingkai bagi anak ber-position fixed: layar penuh Jadwal
+    // Sidang (J4), Kalender, dan dialog akan terkurung di dalamnya.
+    //
+    // Fit-to-size tetap: di bawah 1600 px tidak ada yang berubah, dan tabel
+    // jadwal tetap menyesuaikan lebarnya (min-w-0 pada xl) - hanya ruangnya
+    // yang bertambah.
+    <div
+      data-lebar-ecourt=""
+      className="min-[1600px]:ml-[calc(50%_-_min(50vw_-_1.5rem,_1200px))] min-[1600px]:w-[min(100vw_-_3rem,_2400px)] min-[1600px]:max-w-none"
+    >
     <div className="space-y-4 px-0 pb-4 pt-1 sm:pb-5">
       {catatan ? <p className="rounded border border-border bg-muted/40 p-3 text-sm">{catatan}</p> : null}
 
@@ -1037,6 +1059,7 @@ export function AletaEcourtPengguna() {
           ) : null}
         </div>
       </div>
+    </div>
     </div>
   );
 }

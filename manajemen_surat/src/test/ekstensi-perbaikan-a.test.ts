@@ -954,7 +954,14 @@ describe("pemeriksa anonim dan pembaca RTF", () => {
 // ============================================================================
 describe("tidak ada jalur tulis SIPP baru dari blok perbaikan 30 Sep", () => {
   const konten = KONTEN();
-  const blok = konten.slice(konten.indexOf("PERBAIKAN 30 SEPTEMBER 2026 - PANEL SIPP"));
+  // Disesuaikan perbaikan 1 Okt (agen S): blok 1 Okt ditulis SESUDAH blok ini
+  // di ujung konten.js dan membawa bacaan jembatannya sendiri (bacaan
+  // praperiksa serentak, butir 12) serta POST e-Court (K6). Potongannya
+  // diakhiri di penanda blok 1 Okt supaya uji ini tetap menjaga blok 30 Sep
+  // saja; blok 1 Okt dijaga sendiri di ekstensi-sipp-1okt.test.ts.
+  const mulaiBlok = konten.indexOf("PERBAIKAN 30 SEPTEMBER 2026 - PANEL SIPP");
+  const akhirBlok = konten.indexOf("PERBAIKAN 1 OKTOBER 2026 - PANEL SIPP");
+  const blok = konten.slice(mulaiBlok, akhirBlok > mulaiBlok ? akhirBlok : undefined);
 
   it("blok ini tidak mengirim pesan ke jembatan sendiri", () => {
     expect(blok.length).toBeGreaterThan(1000);

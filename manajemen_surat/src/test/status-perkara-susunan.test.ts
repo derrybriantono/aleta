@@ -81,6 +81,9 @@ describe("susunan bagian mengikuti jalan perkara", () => {
     "upaya",
     // sesudahnya
     "putusanEcourt",
+    // Aksi e-Court (1 Okt 2026, E9-E11): e-litigasi, verifikasi, TTE - tepat
+    // sesudah keadaan putusan e-Court yang menjadi alasannya.
+    "ecourtAksi",
     "arsip",
     "delegasi",
     "berkas",

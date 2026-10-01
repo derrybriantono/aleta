@@ -7,6 +7,8 @@ import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
+import { selaraskanPerkaraDariId } from "../perkara-dari-id";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -61,11 +63,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // perkara_id dari panel ABT diadu dengan nomornya; nomor yang tidak
+    // terbaca di ABT ditanyakan ke SIPP (perbaikan 1 Okt, butir 11).
+    const selaras = await selaraskanPerkaraDariId({
+      perkaraId: String(formulir.get("perkaraId") ?? ""),
+      nomorPerkara: String(formulir.get("nomorPerkara") ?? ""),
+    });
+    if (!selaras.ok) return ok({ ok: false, alasan: selaras.alasan, sebab: selaras.sebab });
+
     const hasil = await unggahNaskahPutusan(db, String(actorUserId ?? ""), {
       bita: new Uint8Array(await berkas.arrayBuffer()),
       namaBerkas: berkas.name,
-      perkaraId: String(formulir.get("perkaraId") ?? ""),
-      nomorPerkara: String(formulir.get("nomorPerkara") ?? ""),
+      perkaraId: selaras.perkaraId,
+      nomorPerkara: selaras.nomorPerkara,
       jenisNaskah: String(formulir.get("jenisNaskah") ?? "") || undefined,
     });
 

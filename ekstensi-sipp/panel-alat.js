@@ -2889,7 +2889,7 @@ function alatBersihTampilanServer(x) {
   if (x.fitur && typeof x.fitur === "object" && !Array.isArray(x.fitur)) {
     for (const [k, v] of Object.entries(x.fitur)) if (v === true && /^[a-z]+-\d{1,2}$/.test(k)) fitur[k] = true;
   }
-  return {
+  const hasil = {
     mode: alatUjiBersihMode(x.mode),
     fitur,
     diterapkan: x.diterapkan === true,
@@ -2897,6 +2897,87 @@ function alatBersihTampilanServer(x) {
     diambil: Number(x.diambil) || 0,
     profil: alatBersihProfil(x.profil),
   };
+  // Ruas ini hanya ada bila portal mengirim setelan pribadi - singgahan lama
+  // dan portal lama tetap berbentuk persis seperti sebelumnya.
+  const setelan = alatBersihSetelanSinggah(x.setelan);
+  if (setelan) hasil.setelan = setelan;
+  return hasil;
+}
+
+/*
+ * SETELAN PRIBADI YANG IKUT DISINGGAHKAN (perbaikan 1 Okt butir 7)
+ *
+ * GET /ekstensi/tampilan sudah memulangkan setelan pribadi pemanggilnya
+ * (aleta_ekstensi_setelan) di samping tampilannya. Kunci di daftar ini ikut
+ * disimpan di singgahan tampilanServer - TANPA permintaan tambahan - supaya
+ * widget checklist di PC mana pun memakai susunan milik AKUN yang masuk.
+ *
+ * Bentuk per kunci:
+ *   tidak ada      tidak diketahui (portal lama, belum masuk, belum terbaca)
+ *   null           portal menjawab: akun ini belum punya setelan itu
+ *   {nilai, diubahPada}
+ */
+const ALAT_SETELAN_SINGGAH = ["widget.tata"];
+
+function alatBersihSetelanSinggah(x) {
+  if (!x || typeof x !== "object" || Array.isArray(x)) return undefined;
+  const hasil = {};
+  let ada = false;
+  for (const k of ALAT_SETELAN_SINGGAH) {
+    if (!(k in x)) continue;
+    const v = x[k];
+    if (v === null) {
+      hasil[k] = null;
+      ada = true;
+    } else if (v && typeof v === "object" && "nilai" in v && typeof v.diubahPada === "string") {
+      hasil[k] = { nilai: v.nilai, diubahPada: v.diubahPada };
+      ada = true;
+    }
+  }
+  return ada ? hasil : undefined;
+}
+
+/** Dari jawaban GET tampilan: setelan yang disinggahkan, atau undefined bila portal tidak mengirim setelan. */
+function alatSetelanDariJawaban(data) {
+  const s = data && data.setelan;
+  if (!s || typeof s !== "object" || Array.isArray(s)) return undefined;
+  const hasil = {};
+  for (const k of ALAT_SETELAN_SINGGAH) {
+    const baris = s[k];
+    hasil[k] = baris && typeof baris === "object" && "nilai" in baris ? { nilai: baris.nilai, diubahPada: String(baris.diubahPada || "") } : null;
+  }
+  return hasil;
+}
+
+/** undefined (tidak diketahui) | null (akun ini belum punya) | {nilai, diubahPada}. */
+function alatSetelanTersinggah(kunci) {
+  const s = alatUji.server;
+  if (!s || !s.setelan || typeof s.setelan !== "object" || !(kunci in s.setelan)) return undefined;
+  return s.setelan[kunci];
+}
+
+/**
+ * Sesudah PUT /ekstensi/setelan berhasil: singgahan diperbarui di tempat,
+ * supaya tab lain (dan halaman berikutnya) tidak membaca nilai server yang
+ * sudah basi sebelum pembacaan lima menitan berikutnya.
+ */
+async function alatCatatSetelanTersinggah(kunci, nilai, diubahPada) {
+  if (!ALAT_SETELAN_SINGGAH.includes(kunci)) return;
+  const s = alatUji.server;
+  if (!s) return;
+  const baru = {
+    ...s,
+    setelan: {
+      ...(s.setelan || {}),
+      [kunci]: nilai === null ? null : { nilai, diubahPada: String(diubahPada || "") },
+    },
+  };
+  alatUji.server = baru;
+  try {
+    await chrome.storage.local.set({ [ALAT_UJI_KUNCI_SERVER]: baru });
+  } catch {
+    /* berlaku untuk halaman ini saja */
+  }
 }
 
 /**
@@ -2933,7 +3014,13 @@ async function alatSegarkanTampilanServer(paksa) {
       const isi = await jawab.json();
       const data = isi && isi.data ? isi.data : isi;
       const t = (data && data.tampilan) || {};
-      baru = alatBersihTampilanServer({ ...t, versi: data && data.versi, diambil: Date.now(), profil: data && data.profil });
+      baru = alatBersihTampilanServer({
+        ...t,
+        versi: data && data.versi,
+        diambil: Date.now(),
+        profil: data && data.profil,
+        setelan: alatSetelanDariJawaban(data),
+      });
     } catch {
       baru = tetap();
     }
@@ -3476,6 +3563,428 @@ function alatLipatPenjelasan(akar, pemilih, batas) {
     jumlah += 1;
   }
   return jumlah;
+}
+
+/* ─── 3b-lipat. LIPAT SERAGAM (K2, perbaikan 1 Okt butir 1) ───────────────────
+ *
+ * Pengguna 1 Okt: "semua bagian/kelompok di panel SIPP, panel ABT, panel
+ * massal, Juru Sita, BAS massal, widget memakai SATU bentuk lipat yang sama
+ * (kepala, panah, jarak, ingat buka/tutup)". Sebelumnya ada lima bentuk:
+ * bagian() konten.js (tombol + ▾/▸ teks), kelompok t6/t7, <details> jurusita
+ * dan basmassal, kelompok checklist, dan judul statis panel portal.
+ *
+ *   alatLipat(judul, {kunci, terbuka, ringkas, lencana, saatUbah, ingat, tag, kelas})
+ *     -> { akar, kepala, isi, buka(nilai?), terbuka(), setelLencana(teks, nada),
+ *          setelRingkas(teks), setelJudul(teks) }
+ *     Bagian BARU. akar = <section class="aleta-lipatan" data-kunci
+ *     data-terbuka="ya|tidak">, kepala = <button class="aleta-lipat-kepala"
+ *     aria-expanded aria-controls>, isi = <div class="aleta-lipat-isi"
+ *     role="region" aria-labelledby> (hidden saat tertutup).
+ *
+ *   alatJadikanLipat(elemen, {kunci, terbuka, kepala})
+ *     Bagian LAMA diberi rupa yang sama TANPA mengubah perilakunya:
+ *       <details>                -> summary jadi kepala; buka/tutup tetap milik
+ *                                   peramban (diingat bila ada kunci)
+ *       kepala tombol ber-aria-expanded (bagian() konten.js, kelompok(),
+ *       kelompok checklist)      -> hanya kelas; klik tetap milik pemiliknya,
+ *                                   ingatannya tetap ingatan lamanya
+ *       kepala statis (judul div, kartu t7, bagian portal)
+ *                                -> MENJADI dapat dilipat: kepala bertombol
+ *                                   (role=button, Enter/Spasi), isi
+ *                                   disembunyikan lewat CSS (anak yang
+ *                                   ditambahkan belakangan ikut tersembunyi)
+ *     Aman dipanggil berulang (yang sudah dipasang dilewati).
+ *
+ * KELAS AKAR BUKAN "aleta-lipat": nama itu sudah lama dipakai tombol "–"
+ * (ciutkan panel) di kepala panel - panel.css memberinya lebar 22 piksel dan
+ * banyak tempat mencarinya dengan panel.querySelector(".aleta-lipat").
+ * Akar bagian memakai "aleta-lipatan"; kepala dan isi tetap sesuai kontrak.
+ *
+ * Ingatan buka/tutup: chrome.storage.local "lipatTerbuka" = {kunci: boolean},
+ * paling banyak ALAT_LIPAT_MAKS kunci (yang tertua dibuang). Dibaca sekali per
+ * halaman; bagian yang lahir sebelum bacaan kembali menyesuaikan diri sesudah
+ * bacaan itu, kecuali sudah disentuh orang di halaman ini.
+ *
+ * Rupa (panel.css blok W1) hanya dalam UI Baru: html[data-aleta-kulit="modern"].
+ * Perilaku (buka/tutup) berlaku di mana pun fungsi ini dipanggil - dan yang
+ * memanggilnya hanya jalan UI Baru (K1).
+ */
+const ALAT_LIPAT_KUNCI = "lipatTerbuka";
+const ALAT_LIPAT_MAKS = 400;
+/** { kunci: boolean } atau null sebelum terbaca. */
+let alatLipatIngatan = null;
+let alatLipatJanji = null;
+let alatLipatNomor = 0;
+let alatLipatDengar = false;
+const ALAT_LIPAT_AWALAN = `aleta-lipat-${Math.random().toString(36).slice(2, 8)}`;
+
+function alatLipatBersih(x) {
+  const hasil = {};
+  if (!x || typeof x !== "object" || Array.isArray(x)) return hasil;
+  for (const [k, v] of Object.entries(x)) {
+    if (typeof v === "boolean" && k && k.length <= 160) hasil[k] = v;
+  }
+  return hasil;
+}
+
+/** Membaca ingatan buka/tutup sekali per halaman (janji yang sama untuk semua). */
+function alatMuatLipat() {
+  if (alatLipatJanji) return alatLipatJanji;
+  alatLipatJanji = (async () => {
+    let terbaca = {};
+    try {
+      const s = await chrome.storage.local.get([ALAT_LIPAT_KUNCI]);
+      terbaca = alatLipatBersih(s && s[ALAT_LIPAT_KUNCI]);
+    } catch {
+      terbaca = {};
+    }
+    // Yang sudah diubah di halaman ini selama bacaan berjalan menang.
+    alatLipatIngatan = { ...terbaca, ...(alatLipatIngatan || {}) };
+    if (!alatLipatDengar) {
+      alatLipatDengar = true;
+      try {
+        chrome.storage.onChanged.addListener((ubah, tempat) => {
+          if (tempat !== "local" || !ubah || !ubah[ALAT_LIPAT_KUNCI]) return;
+          alatLipatIngatan = alatLipatBersih(ubah[ALAT_LIPAT_KUNCI].newValue);
+        });
+      } catch {
+        /* tab lain berlaku sesudah halaman dimuat ulang */
+      }
+    }
+    return alatLipatIngatan;
+  })();
+  return alatLipatJanji;
+}
+
+/** Ingatan satu kunci: true/false, atau undefined bila belum pernah disimpan/terbaca. */
+function alatLipatDiingat(kunci) {
+  if (!kunci || !alatLipatIngatan) return undefined;
+  const v = alatLipatIngatan[kunci];
+  return typeof v === "boolean" ? v : undefined;
+}
+
+function alatSimpanLipat(kunci, terbuka) {
+  if (!kunci) return;
+  const peta = { ...(alatLipatIngatan || {}) };
+  delete peta[kunci];
+  peta[kunci] = Boolean(terbuka);
+  const kunciSemua = Object.keys(peta);
+  for (let i = 0; i < kunciSemua.length - ALAT_LIPAT_MAKS; i += 1) delete peta[kunciSemua[i]];
+  alatLipatIngatan = peta;
+  // Bacaan belum selesai: tulisannya menunggu, supaya ingatan kunci lain tidak tertimpa.
+  void Promise.resolve(alatLipatJanji || alatMuatLipat())
+    .then(() => {
+      const gabung = { ...(alatLipatIngatan || {}) };
+      return chrome.storage.local.set({ [ALAT_LIPAT_KUNCI]: gabung });
+    })
+    .catch(() => {
+      /* berlaku untuk halaman ini saja */
+    });
+}
+
+function alatLipatPanah() {
+  const panah = document.createElement("span");
+  panah.className = "aleta-lipat-panah";
+  panah.setAttribute("aria-hidden", "true");
+  return panah;
+}
+
+function alatLipatKabar(akar, kunci, terbuka, olehOrang, saatUbah) {
+  if (typeof saatUbah === "function") {
+    try {
+      saatUbah(terbuka, olehOrang);
+    } catch {
+      /* galat pemanggil tidak menghentikan lipatan */
+    }
+  }
+  try {
+    akar.dispatchEvent(new CustomEvent("aleta-lipat-berubah", { bubbles: true, detail: { kunci, terbuka, olehOrang } }));
+  } catch {
+    /* tanpa peristiwa, buka/tutup tetap berlaku */
+  }
+}
+
+/** Lencana kepala: teks pendek + nada ("lewat" | "mendesak" | "aman" | "netral"). */
+function alatLipatIsiLencana(tempat, lencana, nada) {
+  const teks = lencana && typeof lencana === "object" ? lencana.teks : lencana;
+  const n = lencana && typeof lencana === "object" ? lencana.nada : nada;
+  tempat.textContent = teks === undefined || teks === null ? "" : String(teks);
+  tempat.hidden = !tempat.textContent;
+  if (n) tempat.setAttribute("data-nada", String(n));
+  else tempat.removeAttribute("data-nada");
+}
+
+/**
+ * Bagian lipat BARU - lihat catatan di atas. `judul` boleh teks atau simpul.
+ * opsi.terbuka: bawaan bila belum pernah diingat (bawaan: terbuka).
+ * opsi.ringkas: teks pendek di kepala (mis. "3 perlu dicek"); true = rupa rapat.
+ * opsi.ingat: false = jangan ingat buka/tutup walau berkunci.
+ */
+function alatLipat(judul, opsi) {
+  const o = opsi && typeof opsi === "object" ? opsi : {};
+  const kunci = String(o.kunci || "").trim();
+  const ingat = Boolean(kunci) && o.ingat !== false;
+  alatLipatNomor += 1;
+  const idKepala = `${ALAT_LIPAT_AWALAN}-k${alatLipatNomor}`;
+  const idIsi = `${ALAT_LIPAT_AWALAN}-i${alatLipatNomor}`;
+
+  const akar = document.createElement(o.tag === "div" ? "div" : "section");
+  akar.className = `aleta-lipatan${o.kelas ? ` ${o.kelas}` : ""}`;
+  if (kunci) akar.setAttribute("data-kunci", kunci);
+  if (o.ringkas === true) akar.setAttribute("data-rapat", "ya");
+
+  const kepala = document.createElement("button");
+  kepala.type = "button";
+  kepala.className = "aleta-lipat-kepala";
+  kepala.id = idKepala;
+  kepala.setAttribute("aria-controls", idIsi);
+  kepala.appendChild(alatLipatPanah());
+  const teksJudul = document.createElement("span");
+  teksJudul.className = "aleta-lipat-judul";
+  if (judul && typeof judul === "object" && judul.nodeType) teksJudul.appendChild(judul);
+  else teksJudul.textContent = String(judul === undefined || judul === null ? "" : judul);
+  kepala.appendChild(teksJudul);
+  const ringkas = document.createElement("span");
+  ringkas.className = "aleta-lipat-ringkas";
+  ringkas.textContent = typeof o.ringkas === "string" ? o.ringkas : "";
+  ringkas.hidden = !ringkas.textContent;
+  kepala.appendChild(ringkas);
+  const lencana = document.createElement("span");
+  lencana.className = "aleta-lipat-lencana";
+  alatLipatIsiLencana(lencana, o.lencana);
+  kepala.appendChild(lencana);
+
+  const isi = document.createElement("div");
+  isi.className = "aleta-lipat-isi";
+  isi.id = idIsi;
+  isi.setAttribute("role", "region");
+  isi.setAttribute("aria-labelledby", idKepala);
+  akar.appendChild(kepala);
+  akar.appendChild(isi);
+
+  let terbukaKini = true;
+  let disentuh = false;
+  const terapkan = (nilai) => {
+    terbukaKini = Boolean(nilai);
+    kepala.setAttribute("aria-expanded", terbukaKini ? "true" : "false");
+    akar.setAttribute("data-terbuka", terbukaKini ? "ya" : "tidak");
+    isi.hidden = !terbukaKini;
+  };
+  const diingat = ingat ? alatLipatDiingat(kunci) : undefined;
+  terapkan(diingat !== undefined ? diingat : o.terbuka !== false);
+  if (ingat && !alatLipatIngatan) {
+    void alatMuatLipat().then(() => {
+      const v = alatLipatDiingat(kunci);
+      if (disentuh || v === undefined || v === terbukaKini) return;
+      terapkan(v);
+      alatLipatKabar(akar, kunci, terbukaKini, false, o.saatUbah);
+    });
+  }
+
+  const buka = (nilai) => {
+    const sasaran = nilai === undefined ? !terbukaKini : Boolean(nilai);
+    disentuh = true;
+    if (sasaran === terbukaKini) return terbukaKini;
+    terapkan(sasaran);
+    if (ingat) alatSimpanLipat(kunci, terbukaKini);
+    alatLipatKabar(akar, kunci, terbukaKini, true, o.saatUbah);
+    return terbukaKini;
+  };
+  kepala.addEventListener("click", (e) => {
+    // Kendali yang disisipkan pemanggil di kepala (tautan, isian) bukan lipatan.
+    const t = e.target;
+    if (t && t !== kepala && typeof t.closest === "function" && t.closest("a[href], input, select, textarea, [data-lipat-abaikan]")) return;
+    buka();
+  });
+
+  const pegangan = {
+    akar,
+    kepala,
+    isi,
+    buka,
+    terbuka: () => terbukaKini,
+    setelLencana: (teks, nada) => alatLipatIsiLencana(lencana, teks, nada),
+    setelRingkas: (teks) => {
+      ringkas.textContent = teks ? String(teks) : "";
+      ringkas.hidden = !ringkas.textContent;
+    },
+    setelJudul: (teks) => {
+      teksJudul.textContent = String(teks === undefined || teks === null ? "" : teks);
+    },
+  };
+  akar.__aletaLipat = pegangan;
+  return pegangan;
+}
+
+/** Anak langsung `akar` yang memuat (atau adalah) `el`. */
+function alatAnakLangsung(akar, el) {
+  let x = el;
+  while (x && x.parentElement !== akar) x = x.parentElement;
+  return x && x.parentElement === akar ? x : null;
+}
+
+/**
+ * Bagian LAMA diberi rupa lipat yang sama - lihat catatan di atas.
+ * Pulang pegangan { akar, kepala, isi, buka(nilai?), terbuka(), asal } atau
+ * null bila elemennya tidak dapat dijadikan lipatan (tanpa kepala).
+ */
+function alatJadikanLipat(el, opsi) {
+  if (!el || el.nodeType !== 1) return null;
+  if (el.__aletaLipat) return el.__aletaLipat;
+  const o = opsi && typeof opsi === "object" ? opsi : {};
+  const kunci = String(o.kunci || "").trim();
+  const anak = Array.from(el.children || []);
+
+  // 1. <details>: buka/tutup tetap milik peramban.
+  if (String(el.tagName).toUpperCase() === "DETAILS") {
+    const ringkasan = anak.find((c) => String(c.tagName).toUpperCase() === "SUMMARY") || null;
+    el.classList.add("aleta-lipatan");
+    el.setAttribute("data-lipat-asal", "details");
+    if (kunci) el.setAttribute("data-kunci", kunci);
+    if (ringkasan) {
+      ringkasan.classList.add("aleta-lipat-kepala");
+      if (!ringkasan.querySelector(":scope > .aleta-lipat-panah")) ringkasan.insertBefore(alatLipatPanah(), ringkasan.firstChild);
+    }
+    const tandai = () => el.setAttribute("data-terbuka", el.open ? "ya" : "tidak");
+    let disentuh = false;
+    if (kunci) {
+      const v = alatLipatDiingat(kunci);
+      if (v !== undefined) el.open = v;
+      else if (!alatLipatIngatan) {
+        void alatMuatLipat().then(() => {
+          const w = alatLipatDiingat(kunci);
+          if (!disentuh && w !== undefined && w !== el.open) el.open = w;
+        });
+      }
+    }
+    tandai();
+    // Peristiwa toggle juga lahir dari pemulihan di atas (asinkron) - yang
+    // disimpan hanya yang berbeda dari ingatan, jadi pemulihan tidak menulis.
+    el.addEventListener("toggle", () => {
+      tandai();
+      if (!kunci) return;
+      if (alatLipatDiingat(kunci) === el.open) return;
+      disentuh = true;
+      alatSimpanLipat(kunci, el.open);
+    });
+    const pegangan = {
+      akar: el,
+      kepala: ringkasan,
+      isi: null,
+      asal: "details",
+      buka: (nilai) => {
+        el.open = nilai === undefined ? !el.open : Boolean(nilai);
+        tandai();
+        return el.open;
+      },
+      terbuka: () => Boolean(el.open),
+    };
+    el.__aletaLipat = pegangan;
+    return pegangan;
+  }
+
+  // 2. Kepala tombol yang SUDAH melipat (aria-expanded): hanya rupa.
+  const tombolLama = anak.find(
+    (c) => String(c.tagName).toUpperCase() === "BUTTON" && c.hasAttribute("aria-expanded")
+  );
+  if (tombolLama) {
+    el.classList.add("aleta-lipatan");
+    el.setAttribute("data-lipat-asal", "tombol");
+    tombolLama.classList.add("aleta-lipat-kepala");
+    const panahLama = tombolLama.querySelector(".aleta-bagian-panah, .aleta-cm-panah, .aleta-lipat-panah");
+    if (panahLama) panahLama.classList.add("aleta-lipat-panah");
+    else tombolLama.insertBefore(alatLipatPanah(), tombolLama.firstChild);
+    const isiLama = anak.find((c) => c !== tombolLama && /(^|\s)[\w-]*-isi(\s|$)/.test(String(c.className || ""))) || null;
+    if (isiLama) isiLama.classList.add("aleta-lipat-isi");
+    const tandai = () =>
+      el.setAttribute("data-terbuka", tombolLama.getAttribute("aria-expanded") === "false" ? "tidak" : "ya");
+    tandai();
+    try {
+      new MutationObserver(tandai).observe(tombolLama, { attributes: true, attributeFilter: ["aria-expanded"] });
+    } catch {
+      /* tanpa pengamat, data-terbuka tertinggal - panah tetap ikut aria-expanded */
+    }
+    const pegangan = {
+      akar: el,
+      kepala: tombolLama,
+      isi: isiLama,
+      asal: "tombol",
+      buka: (nilai) => {
+        const kini = tombolLama.getAttribute("aria-expanded") !== "false";
+        const sasaran = nilai === undefined ? !kini : Boolean(nilai);
+        if (sasaran !== kini) tombolLama.click();
+        return tombolLama.getAttribute("aria-expanded") !== "false";
+      },
+      terbuka: () => tombolLama.getAttribute("aria-expanded") !== "false",
+    };
+    el.__aletaLipat = pegangan;
+    return pegangan;
+  }
+
+  // 3. Kepala statis: dijadikan dapat dilipat.
+  let kepala = o.kepala && o.kepala.nodeType === 1 ? alatAnakLangsung(el, o.kepala) : null;
+  if (!kepala) {
+    kepala =
+      anak.find((c) =>
+        typeof c.matches === "function" &&
+        c.matches(
+          "header, h1, h2, h3, h4, h5, h6, .aleta-bagian-judul, .aleta-t7-kartu-judul, .aleta-t6-bagian-kepala, [class*='-judul'], [class*='-kepala']"
+        )
+      ) || null;
+  }
+  if (!kepala) return null;
+  el.classList.add("aleta-lipatan");
+  el.setAttribute("data-lipat-asal", "kartu");
+  if (kunci) el.setAttribute("data-kunci", kunci);
+  kepala.classList.add("aleta-lipat-kepala");
+  if (String(kepala.tagName).toUpperCase() !== "BUTTON") {
+    kepala.setAttribute("role", "button");
+    if (!kepala.hasAttribute("tabindex")) kepala.setAttribute("tabindex", "0");
+  }
+  if (!kepala.querySelector(":scope > .aleta-lipat-panah")) kepala.insertBefore(alatLipatPanah(), kepala.firstChild);
+
+  let terbukaKini = true;
+  let disentuh = false;
+  const terapkan = (nilai) => {
+    terbukaKini = Boolean(nilai);
+    kepala.setAttribute("aria-expanded", terbukaKini ? "true" : "false");
+    el.setAttribute("data-terbuka", terbukaKini ? "ya" : "tidak");
+  };
+  const diingat = kunci ? alatLipatDiingat(kunci) : undefined;
+  terapkan(diingat !== undefined ? diingat : o.terbuka !== false);
+  if (kunci && !alatLipatIngatan) {
+    void alatMuatLipat().then(() => {
+      const v = alatLipatDiingat(kunci);
+      if (!disentuh && v !== undefined && v !== terbukaKini) terapkan(v);
+    });
+  }
+  const buka = (nilai) => {
+    const sasaran = nilai === undefined ? !terbukaKini : Boolean(nilai);
+    disentuh = true;
+    if (sasaran === terbukaKini) return terbukaKini;
+    terapkan(sasaran);
+    if (kunci) alatSimpanLipat(kunci, terbukaKini);
+    alatLipatKabar(el, kunci, terbukaKini, true, o.saatUbah);
+    return terbukaKini;
+  };
+  // Kendali milik kepala (tombol salin, ⓘ, pilihan) tetap bekerja sendiri.
+  const kendaliLain = (t) =>
+    t && t !== kepala && typeof t.closest === "function" && t.closest("button, a[href], input, select, textarea, summary, label, [data-lipat-abaikan]");
+  kepala.addEventListener("click", (e) => {
+    const k = kendaliLain(e.target);
+    if (k && kepala.contains(k)) return;
+    buka();
+  });
+  kepala.addEventListener("keydown", (e) => {
+    if (e.target !== kepala || String(kepala.tagName).toUpperCase() === "BUTTON") return;
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      buka();
+    }
+  });
+  const pegangan = { akar: el, kepala, isi: null, asal: "kartu", buka, terbuka: () => terbukaKini };
+  el.__aletaLipat = pegangan;
+  return pegangan;
 }
 
 /* ─── 3c. SENYAP 1 JAM (ide popup-12) ────────────────────────────────────────
@@ -5768,6 +6277,12 @@ async function alatSidangPadaTanggal(tanggalIso) {
       ditunda: Boolean(s.ditunda),
       ikrar: Boolean(s.sidangIkrarTalak),
       jam: String(s.jamSidang || ""),
+      // Perbaikan 1 Okt (K4, butir 13): bahan aletaMassalPutusanLayak di
+      // basmassal.js - putus / ditunda untuk putusan atau musyawarah. Ruas
+      // tambahan saja; ruas lama dan urutannya tidak berubah.
+      alasanDitunda: String(s.alasanDitunda || ""),
+      tanggalPutusan: String(s.tanggalPutusan || ""),
+      tanggalSidang: String(s.tanggalSidang || tanggalIso || ""),
     });
   }
   return [...per.values()];

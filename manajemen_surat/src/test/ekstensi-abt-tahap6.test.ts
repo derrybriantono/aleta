@@ -1327,7 +1327,17 @@ describe("jaringan: tidak ada non-GET baru selain fitur, dan semuanya tunduk mod
     // dijaga tetap: tulisan non-GET lain sama persis dengan Lama, dan yang
     // bertambah hanya pembacaan sumber "sipp" dan "saksi".
     const usulan = (x: Halaman) => x.minta.filter((m) => m.cara !== "GET" && m.url.includes("/abt/usulan")).map((m) => JSON.parse(m.badan).sumber).sort();
-    const bukanUsulan = (x: Halaman) => bukanGet(x).filter((m) => !m.includes("/abt/usulan")).sort();
+    // Disesuaikan 1 Oktober 2026 (agen A, ekstensi-abt-1okt.test.ts butir 8):
+    // UI Baru menaruh posita RAPI di daftar Input ke ABT saat panel terbuka -
+    // pratinjaunya diminta lewat uji KERING bot (POST /sipp/posita dengan
+    // ujiKering:true, sama dengan tombol Rapikan), yang tidak menulis apa pun.
+    // Penjaganya tetap: POST posita yang bertambah HANYA yang ujiKering:true
+    // dan hanya satu; tulisan non-GET lain sama persis dengan Lama.
+    const positaKering = (x: Halaman) => x.minta.filter((m) => m.cara === "POST" && m.url.includes("/sipp/posita"));
+    expect(positaKering(h).length).toBeLessThanOrEqual(1);
+    for (const m of positaKering(h)) expect(JSON.parse(m.badan).ujiKering).toBe(true);
+    expect(positaKering(lama)).toEqual([]);
+    const bukanUsulan = (x: Halaman) => bukanGet(x).filter((m) => !m.includes("/abt/usulan") && !m.includes("/sipp/posita")).sort();
     expect(bukanUsulan(h)).toEqual(bukanUsulan(lama));
     expect(usulan(h)).toEqual([...usulan(lama), "saksi", "sipp"].sort());
   });

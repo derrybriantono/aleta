@@ -58,6 +58,19 @@
  *
  * Tampilan Lama: pulang false SEKETIKA - tanpa elemen, permintaan, maupun
  * simpanan apa pun.
+ *
+ * ============================================================================
+ * PERBAIKAN 1 OKT 2026 (AGEN M) - HANYA UI BARU
+ * ============================================================================
+ *
+ *   - Fungsi bersama KONTRAK K4 (lihat bagian 1b): deteksi putusan massal,
+ *     pengelompokan per user, gambar kelompok bercentang.
+ *   - Butir 14: admin/super admin di UI Baru melihat BAS massal "Semua PP"
+ *     dikelompokkan PER PP (berlipat, centang "Kerjakan semua milik X" dan per
+ *     perkara). PP tetap melihat miliknya (bawaan "PP: saya") seperti 1.176.0.
+ *   - Butir 1: rincian "Yang perlu dilengkapi" memakai bentuk lipat seragam
+ *     (alatJadikanLipat) di UI Baru.
+ *   Tampilan Baru tetap persis 1.176.0; tidak ada jalur tulis baru.
  */
 
 const BASMASSAL_API_SIAPA = "/aleta/api/aleta-ecourt/ekstensi/siapa";
@@ -72,6 +85,15 @@ const BASMASSAL_JEDA_BERUNTUN_MS = 400;
 const BASMASSAL_GOLONGAN_BOLEH = ["admin", "panitera"];
 
 /* ─── 1. Gerbang tampilan dan peran ──────────────────────────────────────── */
+
+/** Tampilan UI Baru (K1) - satu-satunya tempat perubahan 1 Okt berlaku. */
+function basmassalModeUi() {
+  try {
+    return typeof alatUjiMode === "function" && alatUjiMode() === "ui";
+  } catch {
+    return false;
+  }
+}
 
 function basmassalModeBaru() {
   try {
@@ -114,6 +136,443 @@ async function basmassalMuatSiapa() {
     return null;
   }
 }
+
+/*
+ * ============================================================================
+ * 1b. KONTRAK K4 - PEKERJAAN MASSAL PER USER (PERBAIKAN 1 OKT 2026, AGEN M)
+ * ============================================================================
+ *
+ * Tiga fungsi GLOBAL untuk semua panel massal. basmassal.js dimuat sebelum
+ * konten.js dan abt.js (manifest), jadi keduanya dapat memakainya. Selalu
+ * periksa dulu `typeof aletaMassalPutusanLayak === "function"` dst.
+ *
+ * ── 1. aletaMassalPutusanLayak(perkara) -> boolean  (MURNI) ────────────────
+ *      aletaMassalAlasanPutusan(perkara) -> { layak, jenis, sebab }
+ *
+ *   Perkara ikut PUTUSAN MASSAL hanya bila sidang hari itu:
+ *     jenis "putus"          hasil/keterangan sidangnya menyatakan putus
+ *                            (putus, dikabulkan, ditolak, tidak dapat
+ *                            diterima, verstek, gugur, dicabut, dicoret), atau
+ *                            tanggal putusan SIPP = tanggal sidang itu;
+ *     jenis "tunda-putusan"  ditunda dengan alasan musyawarah majelis /
+ *                            pembacaan putusan / pembacaan penetapan;
+ *     jenis "agenda-putusan" hasilnya BELUM dicatat dan agenda hari itu
+ *                            musyawarah / pembacaan putusan / "putus" - yaitu
+ *                            pagi hari sebelum panitera mengisi hasil sidang.
+ *   Bukan: putusan sela, "isi putusan", "pembebanan putusan", "salinan
+ *   penetapan", penetapan hari sidang/majelis, musyawarah keluarga, dan
+ *   sidang yang ditunda dengan alasan LAIN (panggil, pembuktian, mediasi).
+ *
+ *   Bentuk masukan (semua opsional; nama ruas bot dan nama ruas
+ *   alatSidangPadaTanggal sama-sama diterima):
+ *     {
+ *       ditunda:        boolean | "Y" | "T",
+ *       alasanDitunda:  string   (atau alasan_ditunda / alasan),
+ *       agenda:         string,
+ *       keterangan:     string   (atau keteranganSidang / hasilSidang),
+ *       sudahPutus:     boolean,
+ *       tanggalPutusan: "YYYY-MM-DD",
+ *       tanggalSidang:  "YYYY-MM-DD" (atau tanggal),
+ *       ikrar:          boolean  (atau sidangIkrarTalak)
+ *     }
+ *   PENTING bagi A dan S: alatSidangPadaTanggal (panel-alat.js, milik W) per
+ *   1.176.0 belum meneruskan alasanDitunda, tanggalPutusan, dan tanggalSidang
+ *   dari jawaban /sidang - tanpa ketiganya hanya agenda yang dapat dinilai.
+ *   Baris jadwal bot (/sidang, /bas-massal) sudah membawa semuanya.
+ *
+ *   Diukur atas sipp_donggala (16.076 baris jadwal 2018 s.d. Sep 2026) - lihat
+ *   angka di ekstensi-massal-1okt.test.ts dan laporan agen M.
+ *
+ * ── 2. aletaMassalKelompokkan(daftar, kunciPengguna) ───────────────────────
+ *      -> [{ pengguna: { id, nama }, perkara: [...] }]
+ *
+ *   kunciPengguna: nama ruas (mis. "pengguna", "paniteraNama", "hakimNama")
+ *   atau fungsi (perkara) -> { id?, nama } | string. Ruas berbentuk objek
+ *   { id, nama } dipakai apa adanya. Nama yang sama dengan gelar berbeda
+ *   ("Siti Aminah" dan "Siti Aminah, S.H.") menjadi SATU kelompok. Urutan:
+ *   nama menurut abjad, yang tanpa nama paling akhir ("Belum ada nama").
+ *   Urutan perkara di dalam kelompok tidak diubah.
+ *
+ * ── 3. aletaMassalGambarKelompok(wadah, kelompok, opsi) -> pengendali ─────
+ *
+ *   opsi = {
+ *     peran:        peran AKTIF (wajib untuk tampilan per user),
+ *     kunciLipat:   awalan kunci ingat buka/tutup, mis. "putusan-massal-abt",
+ *     gambarBaris:  (perkara, wadahIsi, kelompok) -> HTMLInputElement
+ *                   | { centang: HTMLInputElement } | void
+ *                   - menggambar satu baris perkara dan memulangkan kotak
+ *                   centangnya; tanpa itu digambar baris sederhana
+ *                   (centang + labelPerkara),
+ *     labelPerkara: (perkara) -> string (bawaan nomorPerkara / nomor),
+ *     judul:        (pengguna, perkara[]) -> string (bawaan "nama · n perkara"),
+ *     terbuka:      boolean - kelompok terbuka bawaannya (bawaan true),
+ *     onCentang:    ({ pengguna, perkara, dicentang }) -> void
+ *   }
+ *
+ *   Pengelompokan per user HANYA untuk golongan "admin" (alatGolonganPeran:
+ *   Admin, Super Admin) dan HANYA di tampilan UI Baru. Selain itu daftar
+ *   digambar DATAR (tanpa kepala kelompok) dengan gambarBaris yang sama -
+ *   pemanggil cukup satu jalur. Kepala kelompok memuat centang "Kerjakan
+ *   semua milik X" (menyalakan/mematikan seluruh centang yang aktif di
+ *   kelompok itu; setengah bila sebagian) dan dapat dilipat (alatLipat milik
+ *   agen W bila ada, <details> bila belum). TIDAK ADA yang tercentang sendiri.
+ *
+ *   Pengendali: { perUser, kelompok: [{ pengguna, akar, centangKelompok,
+ *   centang[], perkara[] }], dicentang() -> perkara[], centangSemua(bool),
+ *   segarkan() }.
+ */
+
+const BASMASSAL_BUKAN_ISI = ["", "0", "-", "null", "undefined"];
+/** Hasil sidang yang menyatakan perkara diputus / diakhiri pada hari itu. */
+const BASMASSAL_POLA_HASIL = /\b(?:di)?putus\b|\bdi ?kabulkan\b|\bkabul\b|\bditolak\b|\btidak dapat diterima\b|\bverstek\b|\bgugur\b|\bdigugurkan\b|\b(?:di)?cabut\b|\bdicoret\b/;
+/** "putus" sebagai kata - di alasan tunda pun berarti hasil, bukan agenda (10 baris di data). */
+const BASMASSAL_POLA_PUTUS = /\b(?:di)?putus\b/;
+/** Musyawarah majelis beserta salah ketik yang ada di data: musywarah, musaywarah, musyawarh, musy., MMH. */
+const BASMASSAL_POLA_MUSYAWARAH = /\bmus[a-z]{0,3}w[a-z]{0,4}r[a-z]{0,3}\b|\bmusy\b|\bmmh\b|\brapat majelis\b/g;
+const BASMASSAL_POLA_KATA_PUTUSAN = /\b(?:o?putusan|penetapan|putus)\b/g;
+
+function basmassalTeksRapi(x) {
+  return String(x === null || x === undefined ? "" : x)
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function basmassalBerisi(x) {
+  return !BASMASSAL_BUKAN_ISI.includes(basmassalTeksRapi(x));
+}
+
+/** Teks menunjuk sidang putusan: musyawarah majelis, pembacaan putusan/penetapan, "putus". */
+function basmassalMenujuPutusan(teks) {
+  const t = basmassalTeksRapi(teks);
+  if (!t) return false;
+  const kata = new RegExp(BASMASSAL_POLA_KATA_PUTUSAN.source, "g");
+  let m;
+  while ((m = kata.exec(t))) {
+    const sebelum = t.slice(Math.max(0, m.index - 16), m.index);
+    const sesudah = t.slice(m.index + m[0].length, m.index + m[0].length + 28);
+    if (/^\s*sela\b/.test(sesudah)) continue;
+    if (/\b(?:isi|pembebanan|salinan|menyerahkan)\s+$/.test(sebelum)) continue;
+    if (
+      m[0] === "penetapan" &&
+      /^\s*(?:kembali\s+)?(?:hari\s+sidang|majelis|pmh|phs|ppp|pjs|juru\s*sita|panitera|mediator)\b/.test(sesudah)
+    ) {
+      continue;
+    }
+    return true;
+  }
+  const mus = new RegExp(BASMASSAL_POLA_MUSYAWARAH.source, "g");
+  while ((m = mus.exec(t))) {
+    if (/\bkeluarga\b/.test(t.slice(m.index + m[0].length, m.index + m[0].length + 32))) continue;
+    return true;
+  }
+  return false;
+}
+
+function basmassalRuas(p, nama) {
+  for (const n of nama) {
+    if (p && p[n] !== undefined && p[n] !== null) return p[n];
+  }
+  return undefined;
+}
+
+/** Penilaian lengkap - sebab ditulis supaya petugas tahu MENGAPA perkara itu ikut. */
+function aletaMassalAlasanPutusan(perkara) {
+  const p = perkara && typeof perkara === "object" ? perkara : {};
+  const d = basmassalRuas(p, ["ditunda"]);
+  const ditunda = d === true || String(d || "").toUpperCase() === "Y";
+  const alasan = String(basmassalRuas(p, ["alasanDitunda", "alasan_ditunda", "alasan"]) || "").trim();
+  const ket = String(basmassalRuas(p, ["keterangan", "keteranganSidang", "hasilSidang"]) || "").trim();
+  const agenda = String(basmassalRuas(p, ["agenda"]) || "").trim();
+  const tglSidang = String(basmassalRuas(p, ["tanggalSidang", "tanggal"]) || "").slice(0, 10);
+  const tglPutus = String(basmassalRuas(p, ["tanggalPutusan"]) || "").slice(0, 10);
+  const sudahPutus = basmassalRuas(p, ["sudahPutus"]) === true;
+  const alasanAda = basmassalBerisi(alasan);
+  const ketAda = basmassalBerisi(ket);
+  const rapi = (x) => String(x).replace(/\s+/g, " ").trim();
+
+  // 1. PUTUS hari itu.
+  if (alasanAda && (BASMASSAL_POLA_PUTUS.test(basmassalTeksRapi(alasan)) || (!ditunda && BASMASSAL_POLA_HASIL.test(basmassalTeksRapi(alasan))))) {
+    return { layak: true, jenis: "putus", sebab: `Hasil sidang: ${rapi(alasan)}` };
+  }
+  if (ketAda && BASMASSAL_POLA_HASIL.test(basmassalTeksRapi(ket))) {
+    return { layak: true, jenis: "putus", sebab: `Keterangan sidang: ${rapi(ket)}` };
+  }
+  if (sudahPutus && /^\d{4}-\d{2}-\d{2}$/.test(tglPutus) && tglPutus === tglSidang) {
+    return { layak: true, jenis: "putus", sebab: "Putusan di SIPP bertanggal hari sidang ini" };
+  }
+  // 2. DITUNDA UNTUK putusan / musyawarah majelis.
+  if (alasanAda && basmassalMenujuPutusan(alasan)) {
+    return { layak: true, jenis: "tunda-putusan", sebab: `Ditunda untuk: ${rapi(alasan)}` };
+  }
+  if (ketAda && basmassalMenujuPutusan(ket)) {
+    return { layak: true, jenis: "tunda-putusan", sebab: `Keterangan sidang: ${rapi(ket)}` };
+  }
+  // 3. Hasil belum dicatat, agenda hari itu sidang putusan. Bila hasilnya
+  //    SUDAH dicatat dengan hal lain (panggil, pembuktian...), agenda kalah.
+  if (!alasanAda && !ketAda && basmassalMenujuPutusan(agenda)) {
+    return { layak: true, jenis: "agenda-putusan", sebab: `Agenda hari itu: ${rapi(agenda)}` };
+  }
+  return { layak: false, jenis: "", sebab: "" };
+}
+
+function aletaMassalPutusanLayak(perkara) {
+  try {
+    return aletaMassalAlasanPutusan(perkara).layak === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Kunci pengelompokan nama: huruf kecil, gelar sesudah koma dibuang, tanpa tanda baca. */
+function basmassalKunciPengguna(nama) {
+  return String(nama || "")
+    .split(",")[0]
+    .toLowerCase()
+    .replace(/\b(?:drs?|dra|hj?|ir|prof)\b\.?/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function basmassalPenggunaDari(perkara, kunciPengguna) {
+  let x;
+  try {
+    x = typeof kunciPengguna === "function" ? kunciPengguna(perkara) : perkara ? perkara[kunciPengguna || "pengguna"] : undefined;
+  } catch {
+    x = undefined;
+  }
+  if (x && typeof x === "object") {
+    const nama = String(x.nama || x.name || "").trim();
+    const id = String(x.id || "").trim();
+    return { id: id || basmassalKunciPengguna(nama), nama };
+  }
+  const nama = String(x || "").trim();
+  return { id: basmassalKunciPengguna(nama), nama };
+}
+
+function aletaMassalKelompokkan(daftar, kunciPengguna) {
+  const peta = new Map();
+  for (const perkara of Array.isArray(daftar) ? daftar : []) {
+    const pengguna = basmassalPenggunaDari(perkara, kunciPengguna);
+    const kunci = pengguna.id || "";
+    if (!peta.has(kunci)) peta.set(kunci, { pengguna: { id: kunci, nama: pengguna.nama }, perkara: [] });
+    const k = peta.get(kunci);
+    // Nama terlengkap (bergelar) yang dipakai sebagai judul.
+    if (pengguna.nama.length > k.pengguna.nama.length) k.pengguna.nama = pengguna.nama;
+    k.perkara.push(perkara);
+  }
+  return [...peta.values()].sort((a, b) => {
+    if (!a.pengguna.id !== !b.pengguna.id) return a.pengguna.id ? -1 : 1;
+    return a.pengguna.nama.localeCompare(b.pengguna.nama, "id", { sensitivity: "base" });
+  });
+}
+
+/** Tampilan per user boleh? Golongan admin DAN tampilan UI Baru. */
+function basmassalPerUserBoleh(peran) {
+  try {
+    if (typeof alatUjiMode !== "function" || alatUjiMode() !== "ui") return false;
+    return typeof alatGolonganPeran === "function" && alatGolonganPeran(peran) === "admin";
+  } catch {
+    return false;
+  }
+}
+
+/** Satu bentuk lipat: alatLipat (agen W) bila ada, <details> bila belum. */
+function basmassalLipat(judul, kunci, terbuka) {
+  if (typeof alatLipat === "function") {
+    try {
+      const l = alatLipat(judul, { kunci, terbuka, kelas: "aleta-massal-kelompok" });
+      if (l && l.akar && l.kepala && l.isi) {
+        return {
+          akar: l.akar,
+          kepala: l.kepala,
+          isi: l.isi,
+          ringkas: (teks) => {
+            if (typeof l.setelRingkas === "function") l.setelRingkas(teks);
+          },
+        };
+      }
+    } catch {
+      /* jatuh ke details */
+    }
+  }
+  const akar = basmassalEl("details", "aleta-massal-kelompok aleta-massal-kelompok-lipat");
+  if (kunci) akar.setAttribute("data-kunci", kunci);
+  akar.open = terbuka !== false;
+  const kepala = basmassalEl("summary", "aleta-massal-kelompok-kepala");
+  kepala.appendChild(basmassalEl("span", "aleta-massal-kelompok-judul", judul));
+  const ringkas = basmassalEl("span", "aleta-massal-kelompok-ringkasan");
+  kepala.appendChild(ringkas);
+  const isi = basmassalEl("div", "aleta-massal-kelompok-isi");
+  akar.appendChild(kepala);
+  akar.appendChild(isi);
+  // Bentuk lipat seragam (K2) bila alatJadikanLipat sudah ada.
+  if (typeof alatJadikanLipat === "function") {
+    try {
+      alatJadikanLipat(akar, { kunci });
+    } catch {
+      /* details biasa */
+    }
+  }
+  return {
+    akar,
+    kepala,
+    isi,
+    ringkas: (teks) => {
+      ringkas.textContent = teks ? ` - ${teks}` : "";
+    },
+  };
+}
+
+function basmassalAmbilCentang(hasil) {
+  if (!hasil) return null;
+  if (hasil.tagName === "INPUT") return hasil;
+  if (hasil.centang && hasil.centang.tagName === "INPUT") return hasil.centang;
+  return null;
+}
+
+function aletaMassalGambarKelompok(wadah, kelompok, opsi) {
+  const o = opsi && typeof opsi === "object" ? opsi : {};
+  const daftarKelompok = Array.isArray(kelompok) ? kelompok : [];
+  const perUser = basmassalPerUserBoleh(o.peran);
+  const labelPerkara = (p) => {
+    try {
+      if (typeof o.labelPerkara === "function") return String(o.labelPerkara(p) || "");
+    } catch {
+      /* label bawaan */
+    }
+    return String((p && (p.nomorPerkara || p.nomor)) || "");
+  };
+  const gambarBaris = (p, isi, k) => {
+    if (typeof o.gambarBaris === "function") return basmassalAmbilCentang(o.gambarBaris(p, isi, k));
+    const label = basmassalEl("label", "aleta-massal-kelompok-perkara");
+    const c = document.createElement("input");
+    c.type = "checkbox";
+    label.appendChild(c);
+    label.appendChild(basmassalEl("span", "", ` ${labelPerkara(p)}`));
+    isi.appendChild(label);
+    return c;
+  };
+  const kabar = (pengguna, perkara, dicentang) => {
+    if (typeof o.onCentang !== "function") return;
+    try {
+      o.onCentang({ pengguna, perkara, dicentang });
+    } catch {
+      /* pemanggil */
+    }
+  };
+
+  const akarSemua = basmassalEl("div", `aleta-massal-kelompok-daftar${perUser ? " aleta-massal-per-user" : ""}`);
+  const hasil = [];
+  for (const k of daftarKelompok) {
+    const pengguna = k && k.pengguna ? k.pengguna : { id: "", nama: "" };
+    const perkara = Array.isArray(k && k.perkara) ? k.perkara : [];
+    const nama = pengguna.nama || "Belum ada nama";
+    const entri = { pengguna, akar: null, centangKelompok: null, centang: [], perkara, sedangMassal: false, ringkas: null };
+    let isi = akarSemua;
+    if (perUser) {
+      let judul = `${nama} · ${perkara.length} perkara`;
+      try {
+        if (typeof o.judul === "function") judul = String(o.judul(pengguna, perkara) || judul);
+      } catch {
+        /* judul bawaan */
+      }
+      const kunci = `${String(o.kunciLipat || "massal")}-user-${pengguna.id || "tanpa-nama"}`;
+      const lipat = basmassalLipat(judul, kunci, o.terbuka !== false);
+      lipat.akar.classList.add("aleta-massal-kelompok");
+      lipat.akar.setAttribute("data-pengguna", pengguna.id || "");
+      entri.ringkas = lipat.ringkas;
+      const pilihSemua = basmassalEl("label", "aleta-massal-kelompok-semua");
+      const cSemua = document.createElement("input");
+      cSemua.type = "checkbox";
+      cSemua.className = "aleta-massal-kelompok-centang";
+      cSemua.setAttribute("aria-label", `Kerjakan semua milik ${nama}`);
+      pilihSemua.appendChild(cSemua);
+      pilihSemua.appendChild(basmassalEl("span", "", ` Kerjakan semua milik ${nama}`));
+      lipat.isi.appendChild(pilihSemua);
+      entri.akar = lipat.akar;
+      entri.centangKelompok = cSemua;
+      isi = basmassalEl("div", "aleta-massal-kelompok-baris");
+      lipat.isi.appendChild(isi);
+      akarSemua.appendChild(lipat.akar);
+    }
+    for (const p of perkara) {
+      let c = null;
+      try {
+        c = gambarBaris(p, isi, k);
+      } catch {
+        c = null;
+      }
+      if (c) {
+        c.checked = false;
+        entri.centang.push({ perkara: p, c });
+      }
+    }
+    hasil.push(entri);
+  }
+
+  const segarkanKelompok = (entri) => {
+    if (!entri.centangKelompok) return;
+    const aktif = entri.centang.filter((x) => !x.c.disabled);
+    const nyala = aktif.filter((x) => x.c.checked).length;
+    entri.centangKelompok.disabled = aktif.length === 0;
+    entri.centangKelompok.checked = aktif.length > 0 && nyala === aktif.length;
+    entri.centangKelompok.indeterminate = nyala > 0 && nyala < aktif.length;
+    // Kelompok yang terlipat tetap memberi tahu berapa yang akan dikerjakan.
+    if (typeof entri.ringkas === "function") entri.ringkas(nyala ? `${nyala} dicentang` : "");
+  };
+  for (const entri of hasil) {
+    for (const x of entri.centang) {
+      x.c.addEventListener("change", () => {
+        segarkanKelompok(entri);
+        if (!entri.sedangMassal) kabar(entri.pengguna, [x.perkara], x.c.checked);
+      });
+    }
+    if (entri.centangKelompok) {
+      entri.centangKelompok.addEventListener("change", () => {
+        const nyala = entri.centangKelompok.checked;
+        const berubah = [];
+        entri.sedangMassal = true;
+        for (const x of entri.centang) {
+          if (x.c.disabled || x.c.checked === nyala) continue;
+          x.c.checked = nyala;
+          berubah.push(x.perkara);
+          // Pemilik baris (mis. tombol Kerjakan) ikut tahu.
+          x.c.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        entri.sedangMassal = false;
+        segarkanKelompok(entri);
+        kabar(entri.pengguna, berubah, nyala);
+      });
+    }
+    segarkanKelompok(entri);
+  }
+  if (wadah && typeof wadah.appendChild === "function") wadah.appendChild(akarSemua);
+
+  return {
+    perUser,
+    akar: akarSemua,
+    kelompok: hasil.map((e) => ({ pengguna: e.pengguna, akar: e.akar, centangKelompok: e.centangKelompok, centang: e.centang.map((x) => x.c), perkara: e.perkara })),
+    dicentang: () => hasil.flatMap((e) => e.centang.filter((x) => x.c.checked && !x.c.disabled).map((x) => x.perkara)),
+    centangSemua: (nyala) => {
+      for (const e of hasil) {
+        for (const x of e.centang) {
+          if (x.c.disabled || x.c.checked === Boolean(nyala)) continue;
+          x.c.checked = Boolean(nyala);
+          x.c.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        segarkanKelompok(e);
+      }
+    },
+    segarkan: () => hasil.forEach(segarkanKelompok),
+  };
+}
+
+globalThis.aletaMassalPutusanLayak = aletaMassalPutusanLayak;
+globalThis.aletaMassalAlasanPutusan = aletaMassalAlasanPutusan;
+globalThis.aletaMassalKelompokkan = aletaMassalKelompokkan;
+globalThis.aletaMassalGambarKelompok = aletaMassalGambarKelompok;
 
 /* ─── 2. Pembantu kecil ──────────────────────────────────────────────────── */
 
@@ -455,6 +914,14 @@ function basmassalGambarPratinjau(kotak, hasil, pilihan) {
     }
     rinci.appendChild(ul);
     kotak.appendChild(rinci);
+    // Butir 1 (1 Okt): bentuk lipat seragam - UI Baru saja (K1).
+    if (basmassalModeUi() && typeof alatJadikanLipat === "function") {
+      try {
+        alatJadikanLipat(rinci);
+      } catch {
+        /* details biasa */
+      }
+    }
   }
   kotak.appendChild(basmassalEl("div", "aleta-basmassal-lembut aleta-teknis", `Blangko: ${pilihan.berkas} (${pilihan.folder})`));
 }
@@ -741,6 +1208,7 @@ function basmassalGambar(akar, konteks) {
   let berjalan = false;
   let berhenti = false;
   konteks.segarkanAksi = () => {
+    if (konteks.kendali) konteks.kendali.segarkan();
     const dicentang = pengendali.filter((p) => p.centang.checked && !p.centang.disabled).length;
     kerjakan.disabled = berjalan || dicentang === 0;
     kerjakan.textContent = dicentang > 1 ? `Kerjakan ${dicentang} yang dicentang` : "Kerjakan yang dicentang";
@@ -751,6 +1219,7 @@ function basmassalGambar(akar, konteks) {
     muat.disabled = true;
     daftar.textContent = "";
     pengendali = [];
+    konteks.kendali = null;
     bawah.hidden = true;
     basmassalKabar(kemajuan, "", "");
     basmassalKabar(kabar, "Membaca sidang...", "");
@@ -779,7 +1248,25 @@ function basmassalGambar(akar, konteks) {
       `${sidang.length} perkara bersidang${belumSipp ? ` · ${belumSipp} BAS belum di SIPP` : ""} · ${berUsulan} blangko terusul`,
       ""
     );
-    for (const s of sidang) pengendali.push(basmassalGambarBaris(daftar, s, konteks));
+    if (d.saringan === "semua" && basmassalPerUserBoleh(konteks.peranAktif)) {
+      // Butir 14 (1 Okt): admin di UI Baru bekerja PER PP - kelompok berlipat,
+      // centang "Kerjakan semua milik X" dan centang per perkara. Nama PP ada
+      // di kepala kelompok, jadi tanda "PP:" di tiap baris tidak diulang.
+      konteks.tampilkanPp = false;
+      const kelompok = aletaMassalKelompokkan(sidang, (b) => (b && b.pengguna) || (b && b.paniteraNama) || "");
+      konteks.kendali = aletaMassalGambarKelompok(daftar, kelompok, {
+        peran: konteks.peranAktif,
+        kunciLipat: "bas-massal",
+        judul: (u, xs) => `PP: ${u.nama || "belum ditunjuk"} · ${xs.length} perkara`,
+        gambarBaris: (s, isi) => {
+          const p = basmassalGambarBaris(isi, s, konteks);
+          pengendali.push(p);
+          return p;
+        },
+      });
+    } else {
+      for (const s of sidang) pengendali.push(basmassalGambarBaris(daftar, s, konteks));
+    }
     bawah.hidden = false;
     konteks.segarkanAksi();
   };
@@ -845,11 +1332,19 @@ async function aletaBasMassalPasang(wadah, opsi) {
   const situs = o.situs === "abt" ? "abt" : "sipp";
 
   let boleh = false;
+  let peranAktif = "";
   if (typeof o.peran === "string" && o.peran.trim()) {
     boleh = basmassalPeranBoleh(situs, o.peran);
+    peranAktif = o.peran.trim();
   } else {
     const siapa = await basmassalMuatSiapa();
-    if (siapa) boleh = [siapa.peran, siapa.roleId, ...siapa.peranTambahan].some((p) => basmassalPeranBoleh(situs, p));
+    if (siapa) {
+      const semua = [siapa.peran, siapa.roleId, ...siapa.peranTambahan];
+      boleh = semua.some((p) => basmassalPeranBoleh(situs, p));
+      // Pengelompokan per PP (K4) hanya bila akun ini memang admin.
+      const admin = typeof alatGolonganPeran === "function" ? semua.find((p) => alatGolonganPeran(p) === "admin") : "";
+      peranAktif = admin || siapa.peran;
+    }
   }
   if (!boleh || !basmassalModeBaru()) return false;
 
@@ -859,7 +1354,7 @@ async function aletaBasMassalPasang(wadah, opsi) {
   if (lama) lama.remove();
   const akar = basmassalEl("div", BASMASSAL_PENANDA);
   akar.setAttribute("data-situs", situs);
-  const konteks = { token: { kelompok: {}, berkas: {} }, tampilkanPp: false, segarkanAksi: () => {} };
+  const konteks = { token: { kelompok: {}, berkas: {} }, tampilkanPp: false, segarkanAksi: () => {}, peranAktif, kendali: null };
   const tampilkan = basmassalGambar(akar, konteks);
   wadah.appendChild(akar);
   // Membaca daftar hari ini sekali (GET). Tidak ada yang tercentang sendiri.

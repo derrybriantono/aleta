@@ -604,6 +604,12 @@ function sedangMenunggu() {
 
 module.exports = {
   LOGIN_TTL_MS,
+  // Dipakai ulang oleh login sesi PRIBADI (ecourtSesiPenggunaService) supaya
+  // pengenalan formulir dan gerbang tidak ditulis dua kali. Ketiganya tidak
+  // menyentuh simpanan sandi.
+  bacaFormulirLogin,
+  bacaNamaPengguna,
+  lewatiGerbang,
   catatNamaPengguna,
   namaTersimpan,
   bersihkanSesiAktif,

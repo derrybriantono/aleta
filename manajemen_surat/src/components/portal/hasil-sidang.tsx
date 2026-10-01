@@ -18,6 +18,8 @@ import {
   type SidangRiwayat,
 } from "@/lib/bawaan-tunda";
 import type { BahanSebutan } from "@/lib/sebutan-pihak";
+import { IsianMediator } from "@/components/portal/jadwal-sidang-1okt";
+import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
 import { cn } from "@/lib/utils";
 
 /**
@@ -481,6 +483,17 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
         </CardHeader>
       </Card>
 
+      {/* ================================================================= */}
+      {/* MEDIATOR - menu yang SAMA dengan tombol mediator di Jadwal Sidang */}
+      {/* (perbaikan 1 Okt 2026, J1). Satu komponen untuk kedua layar.      */}
+      {/* ================================================================= */}
+      <KartuMediator
+        perkaraId={String(keadaan.perkaraId)}
+        nomorPerkara={keadaan.nomorPerkara}
+        tanggalSidang={String(keadaan.tanggalSidang).slice(0, 10)}
+        sebab={sebabBerbauMediasi(keadaan.agenda, String(keadaan.alasanDitunda || ""))}
+      />
+
       {sudahDitunda || sudahPutus ? (
         <Card className="border-emerald-600/40 bg-emerald-500/5">
           <CardContent className="flex items-start gap-2 py-4 text-sm">
@@ -821,6 +834,47 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
  * Bawaan tunda (butir 14) disimpulkan dari riwayat sidang perkaranya -
  * src/lib/bawaan-tunda.ts, aturannya diukur atas 1.737 penundaan satker.
  */
+
+/**
+ * Kartu mediator di layar Hasil Sidang (J1). Terlipat sebagai bawaan - tidak
+ * tiap sidang berurusan dengan mediasi - kecuali agenda atau alasan tundanya
+ * memang menyebut mediasi (aturan yang sama dengan tombol di Jadwal Sidang).
+ */
+function KartuMediator({
+  perkaraId,
+  nomorPerkara,
+  tanggalSidang,
+  sebab,
+}: {
+  perkaraId: string;
+  nomorPerkara: string;
+  tanggalSidang: string;
+  sebab: string;
+}) {
+  const [terbuka, setTerbuka] = useState(Boolean(sebab));
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-sm">Mediator</CardTitle>
+          <Button type="button" size="sm" variant="outline" aria-expanded={terbuka} onClick={() => setTerbuka((x) => !x)}>
+            {terbuka ? "Tutup" : "Pilih mediator"}
+          </Button>
+        </div>
+        <CardDescription>
+          {sebab ? `Sidang ini berurusan dengan mediasi - ${sebab}. ` : ""}
+          Penetapan mediator ditulis ke SIPP persis seperti blangko Penetapan Mediasi - diperiksa dulu, lalu
+          dikonfirmasi. Jadwal pertemuan berikutnya, laporan, dan hasil mediasi tetap diisi di SIPP.
+        </CardDescription>
+      </CardHeader>
+      {terbuka ? (
+        <CardContent>
+          <IsianMediator perkaraId={perkaraId} nomorPerkara={nomorPerkara} tanggalSidang={tanggalSidang} />
+        </CardContent>
+      ) : null}
+    </Card>
+  );
+}
 
 /**
  * Pilih dari daftar, atau ketik sendiri. Nilai yang tidak ada di daftar
