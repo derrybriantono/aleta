@@ -30,6 +30,7 @@ import {
   type PetaSelesai,
   type ProsesMediasi,
 } from "@/lib/jadwal-sidang-1okt";
+import type { PetaSkors } from "@/lib/jadwal-sidang-2okt";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,9 @@ async function bacaJson(jawaban: Response): Promise<Record<string, unknown>> {
  */
 export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) {
   const [peta, setPeta] = useState<PetaSelesai>({});
+  // Skors yang berlaku (perbaikan 2 Okt 2026, butir 10) - ikut di bacaan
+  // yang sama; bot lama yang belum mengirimnya = tidak ada skors.
+  const [skors, setSkors] = useState<PetaSkors>({});
   const [alasan, setAlasan] = useState("");
   const [versi, setVersi] = useState(0);
 
@@ -71,6 +75,7 @@ export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) 
           return;
         }
         setPeta((data.peta as PetaSelesai) ?? {});
+        setSkors((data.skors as PetaSkors) ?? {});
         setAlasan("");
       })
       .catch((galat) => {
@@ -82,7 +87,7 @@ export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) 
   }, [dari, sampai, pemicu, versi]);
 
   const muatUlang = useCallback(() => setVersi((n) => n + 1), []);
-  return { peta, alasan, muatUlang };
+  return { peta, skors, alasan, muatUlang };
 }
 
 /**

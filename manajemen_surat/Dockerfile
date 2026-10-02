@@ -84,9 +84,12 @@ FROM node:20-bookworm-slim AS runner
 # rar TIDAK dipasang: berbayar dan tertutup. Bila kelak dipasang di citra ini,
 # arsipnya otomatis menjadi .rar - alatnya diperiksa saat berjalan, bukan
 # dipatok di kode.
+# tesseract-ocr + tesseract-ocr-ind: butir 16 (2 Okt 2026) - isi data saksi dari foto
+# KTP. Dibaca DI SERVER sendiri lewat stdin (saksi-scan/ocr.ts), tidak ada berkas
+# sementara, dan foto KTP tidak dikirim ke layanan luar.
 RUN set -eux; \
   apt-get update; \
-  apt-get install -y --no-install-recommends p7zip-full xz-utils postgresql-client; \
+  apt-get install -y --no-install-recommends p7zip-full xz-utils postgresql-client tesseract-ocr tesseract-ocr-ind; \
   rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

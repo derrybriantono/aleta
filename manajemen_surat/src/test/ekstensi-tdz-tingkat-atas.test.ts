@@ -70,6 +70,8 @@ const BERKAS = [
   "jurusita.js",
   // BAS massal (perbaikan 30 Sep sore, U4) - skrip konten bersama SIPP dan ABT.
   "basmassal.js",
+  // Isi data saksi dari foto KTP (perbaikan 2 Okt 2026 butir 16) - skrip konten SIPP.
+  "saksiscan.js",
 ];
 
 type Jebakan = {

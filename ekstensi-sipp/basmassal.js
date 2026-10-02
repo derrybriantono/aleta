@@ -206,7 +206,16 @@ async function basmassalMuatSiapa() {
  *     labelPerkara: (perkara) -> string (bawaan nomorPerkara / nomor),
  *     judul:        (pengguna, perkara[]) -> string (bawaan "nama · n perkara"),
  *     terbuka:      boolean - kelompok terbuka bawaannya (bawaan true),
- *     onCentang:    ({ pengguna, perkara, dicentang }) -> void
+ *     onCentang:    ({ pengguna, perkara, dicentang }) -> void,
+ *     -- tambahan 2 Okt (agen R), semuanya opsional --
+ *     peranLipat:   tag peran di kepala tiap kelompok (butir 7), mis.
+ *                   "jurusita" / "PP" / "Hakim" - diteruskan ke alatLipat,
+ *     namaSaya:     string | string[] - butir 19: kelompok milik akun yang
+ *                   masuk TERBUKA, kelompok user lain TERTUTUP (satu
+ *                   kelompok saja selalu terbuka; ingatan buka/tutup per
+ *                   kunci tetap menang). Kelompoknya bertanda
+ *                   data-milik-saya="ya",
+ *     terbukaUntuk: (pengguna, perkara[]) -> boolean - penentu sendiri
  *   }
  *
  *   Pengelompokan per user HANYA untuk golongan "admin" (alatGolonganPeran:
@@ -218,8 +227,17 @@ async function basmassalMuatSiapa() {
  *   agen W bila ada, <details> bila belum). TIDAK ADA yang tercentang sendiri.
  *
  *   Pengendali: { perUser, kelompok: [{ pengguna, akar, centangKelompok,
- *   centang[], perkara[] }], dicentang() -> perkara[], centangSemua(bool),
- *   segarkan() }.
+ *   centang[], perkara[], milikSaya }], dicentang() -> perkara[],
+ *   centangSemua(bool), segarkan() }.
+ *
+ * ── 4. aletaMassalBarisBlangko(perkara, opsi) -> HTMLElement  (2 Okt, K3) ──
+ *
+ *   Butir 3: putusan massal memakai SATU blangko utama (dipilih di kepala
+ *   daftar); perkara yang putusannya berbeda diberi pengecualian. Baris ini
+ *   menampilkan blangko yang berlaku untuk satu perkara + tombol kecil
+ *   "Blangko berbeda…" yang membuka pemilih blangko UNTUK PERKARA ITU SAJA,
+ *   dan "Ikuti blangko utama" untuk membatalkan pengecualian. Lihat bagian
+ *   1c di bawah dan contoh di ujung KONTRAK.md perbaikan 2 Okt.
  */
 
 const BASMASSAL_BUKAN_ISI = ["", "0", "-", "null", "undefined"];
@@ -378,11 +396,15 @@ function basmassalPerUserBoleh(peran) {
   }
 }
 
-/** Satu bentuk lipat: alatLipat (agen W) bila ada, <details> bila belum. */
-function basmassalLipat(judul, kunci, terbuka) {
+/**
+ * Satu bentuk lipat: alatLipat (agen W) bila ada, <details> bila belum.
+ * `peran` (2 Okt, butir 7): tag peran di kepala (opsi `peran` alatLipat) -
+ * tanpa nilai, kepala tampak persis seperti 1 Okt.
+ */
+function basmassalLipat(judul, kunci, terbuka, peran) {
   if (typeof alatLipat === "function") {
     try {
-      const l = alatLipat(judul, { kunci, terbuka, kelas: "aleta-massal-kelompok" });
+      const l = alatLipat(judul, { kunci, terbuka, kelas: "aleta-massal-kelompok", ...(peran ? { peran } : {}) });
       if (l && l.akar && l.kepala && l.isi) {
         return {
           akar: l.akar,
@@ -410,7 +432,7 @@ function basmassalLipat(judul, kunci, terbuka) {
   // Bentuk lipat seragam (K2) bila alatJadikanLipat sudah ada.
   if (typeof alatJadikanLipat === "function") {
     try {
-      alatJadikanLipat(akar, { kunci });
+      alatJadikanLipat(akar, { kunci, ...(peran ? { peran } : {}) });
     } catch {
       /* details biasa */
     }
@@ -423,6 +445,59 @@ function basmassalLipat(judul, kunci, terbuka) {
       ringkas.textContent = teks ? ` - ${teks}` : "";
     },
   };
+}
+
+/*
+ * Butir 19 (2 Okt): bawaan buka/tutup kelompok per user. Ingatan alatLipat
+ * per kunci (orang pernah membuka/menutup) tetap menang - ini hanya bawaan.
+ *
+ *   opsi.terbuka      boolean  - seluruh kelompok (perilaku 1 Okt; tanpa
+ *                                namaSaya/terbukaUntuk bawaannya true)
+ *   opsi.namaSaya     string | string[] - nama akun yang masuk (dan nama
+ *                                lain miliknya). Kelompok yang namanya cocok
+ *                                (gelar diabaikan) TERBUKA, lainnya TERTUTUP.
+ *   opsi.terbukaUntuk (pengguna, perkara[]) -> boolean - penentu sendiri.
+ * Satu kelompok saja = seluruh daftar: selalu terbuka.
+ */
+const BASMASSAL_GELAR = new Set(["drs", "dra", "dr", "hj", "sh", "shi", "si", "mh", "ma", "mag", "ag", "se", "st", "ir", "lc", "msi", "mkn", "spdi", "sag", "sy", "ssy", "bin", "binti"]);
+
+function basmassalPotonganNama(nama) {
+  return String(nama || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter((k) => k.length > 2 && !BASMASSAL_GELAR.has(k));
+}
+
+/** Nama akun cocok dengan nama petugas - aturan namaCocokSatu (lib/perkara-sendiri.ts). */
+function basmassalNamaCocok(namaAkun, namaPetugas) {
+  const akun = basmassalPotonganNama(namaAkun);
+  const petugas = basmassalPotonganNama(namaPetugas);
+  if (akun.length === 0 || petugas.length === 0) return false;
+  const punya = new Set(petugas);
+  if (!akun.every((k) => punya.has(k))) return false;
+  if (akun.length >= 2) return true;
+  return new Set(akun).size === punya.size;
+}
+
+function basmassalMilikSaya(o, pengguna) {
+  const saya = (Array.isArray(o.namaSaya) ? o.namaSaya : [o.namaSaya]).map((x) => String(x || "").trim()).filter(Boolean);
+  if (saya.length === 0 || !pengguna || !pengguna.nama) return false;
+  return saya.some((n) => basmassalNamaCocok(n, pengguna.nama));
+}
+
+function basmassalKelompokTerbuka(o, pengguna, perkara, jumlahKelompok) {
+  if (typeof o.terbukaUntuk === "function") {
+    if (jumlahKelompok === 1) return true;
+    try {
+      return Boolean(o.terbukaUntuk(pengguna, perkara));
+    } catch {
+      return false;
+    }
+  }
+  const adaNama = (Array.isArray(o.namaSaya) ? o.namaSaya : [o.namaSaya]).some((x) => String(x || "").trim());
+  if (adaNama) return jumlahKelompok === 1 || basmassalMilikSaya(o, pengguna);
+  return o.terbuka !== false;
 }
 
 function basmassalAmbilCentang(hasil) {
@@ -469,7 +544,7 @@ function aletaMassalGambarKelompok(wadah, kelompok, opsi) {
     const pengguna = k && k.pengguna ? k.pengguna : { id: "", nama: "" };
     const perkara = Array.isArray(k && k.perkara) ? k.perkara : [];
     const nama = pengguna.nama || "Belum ada nama";
-    const entri = { pengguna, akar: null, centangKelompok: null, centang: [], perkara, sedangMassal: false, ringkas: null };
+    const entri = { pengguna, akar: null, centangKelompok: null, centang: [], perkara, sedangMassal: false, ringkas: null, milikSaya: false };
     let isi = akarSemua;
     if (perUser) {
       let judul = `${nama} · ${perkara.length} perkara`;
@@ -479,7 +554,9 @@ function aletaMassalGambarKelompok(wadah, kelompok, opsi) {
         /* judul bawaan */
       }
       const kunci = `${String(o.kunciLipat || "massal")}-user-${pengguna.id || "tanpa-nama"}`;
-      const lipat = basmassalLipat(judul, kunci, o.terbuka !== false);
+      const lipat = basmassalLipat(judul, kunci, basmassalKelompokTerbuka(o, pengguna, perkara, daftarKelompok.length), o.peranLipat);
+      entri.milikSaya = basmassalMilikSaya(o, pengguna);
+      if (entri.milikSaya) lipat.akar.setAttribute("data-milik-saya", "ya");
       lipat.akar.classList.add("aleta-massal-kelompok");
       lipat.akar.setAttribute("data-pengguna", pengguna.id || "");
       entri.ringkas = lipat.ringkas;
@@ -553,7 +630,7 @@ function aletaMassalGambarKelompok(wadah, kelompok, opsi) {
   return {
     perUser,
     akar: akarSemua,
-    kelompok: hasil.map((e) => ({ pengguna: e.pengguna, akar: e.akar, centangKelompok: e.centangKelompok, centang: e.centang.map((x) => x.c), perkara: e.perkara })),
+    kelompok: hasil.map((e) => ({ pengguna: e.pengguna, akar: e.akar, centangKelompok: e.centangKelompok, centang: e.centang.map((x) => x.c), perkara: e.perkara, milikSaya: e.milikSaya })),
     dicentang: () => hasil.flatMap((e) => e.centang.filter((x) => x.c.checked && !x.c.disabled).map((x) => x.perkara)),
     centangSemua: (nyala) => {
       for (const e of hasil) {
@@ -569,6 +646,197 @@ function aletaMassalGambarKelompok(wadah, kelompok, opsi) {
   };
 }
 
+/*
+ * ─── 1c. Pengecualian blangko per perkara (K3, perbaikan 2 Okt butir 3) ────
+ *
+ *   aletaMassalBarisBlangko(perkara, {
+ *     blangkoUtama,   blangko di kepala daftar (bawaan seluruh perkara)
+ *     daftarBlangko,  larik blangko pilihan, atau (perkara) -> larik
+ *                     (nama lain: `pilihan`; butir bernilai "" dilewati)
+ *     onPilih,        ({ perkara, blangko, bawaan, nilai, label, berkas? }) -> void
+ *     label?          nama perkara untuk aria-label (bawaan nomorPerkara/nomor)
+ *   }) -> HTMLElement div.aleta-massal-blangko-baris
+ *
+ *   Blangko boleh teks (nama berkas) atau objek { nilai|id|berkas|value,
+ *   label|nama|teks }; `blangko` di onPilih adalah objek/teks ASLI milik
+ *   pemanggil (bukan salinan), jadi pemanggil tidak perlu memetakan ulang.
+ *   bawaan true = perkara mengikuti blangko utama.
+ *
+ *   Elemen memegang pengendali di el.aletaBlangko:
+ *     pilihan()      -> { blangko, bawaan }
+ *     setelUtama(b)  blangko kepala berganti: baris yang mengikuti utama ikut
+ *                    berganti (onPilih TIDAK dipanggil - pemanggil sudah tahu),
+ *                    baris berpengecualian tetap
+ *     setelDaftar(x) ganti daftar pilihan
+ *     ulang()        batalkan pengecualian (onPilih dipanggil, bawaan true)
+ *
+ *   Murni DOM: tidak membaca jaringan, tidak menyimpan apa pun, tidak
+ *   mencentang apa pun. Gerbang tampilan (UI Baru) urusan pemanggil.
+ */
+function basmassalBlangkoRapi(b) {
+  if (b === undefined || b === null || b === "") return null;
+  if (typeof b !== "object") {
+    const t = String(b).trim();
+    return t ? { nilai: t, label: t, asli: b } : null;
+  }
+  // <option value=""> pemanggil ("ikuti blangko utama") bukan blangko - baris
+  // ini punya tombol "Ikuti blangko utama" sendiri.
+  for (const k of ["nilai", "value"]) {
+    if (Object.prototype.hasOwnProperty.call(b, k) && String(b[k] === null || b[k] === undefined ? "" : b[k]).trim() === "") return null;
+  }
+  const nilai = [b.nilai, b.id, b.berkas, b.value, b.kunci].find((x) => x !== undefined && x !== null && String(x).trim() !== "");
+  const label = [b.label, b.nama, b.teks, b.berkas].find((x) => x !== undefined && x !== null && String(x).trim() !== "");
+  if (nilai === undefined && label === undefined) return null;
+  return { nilai: String(nilai !== undefined ? nilai : label).trim(), label: String(label !== undefined ? label : nilai).trim(), asli: b };
+}
+
+function aletaMassalBarisBlangko(perkara, opsi) {
+  const o = opsi && typeof opsi === "object" ? opsi : {};
+  const nama = (() => {
+    try {
+      if (typeof o.label === "function") return String(o.label(perkara) || "");
+      if (typeof o.label === "string") return o.label;
+    } catch {
+      /* label bawaan */
+    }
+    return String((perkara && (perkara.nomorPerkara || perkara.nomor)) || "perkara ini");
+  })();
+  let utama = basmassalBlangkoRapi(o.blangkoUtama);
+  // `pilihan` = nama lain daftarBlangko (dipakai abt.js 2 Okt).
+  let sumberDaftar = o.daftarBlangko !== undefined ? o.daftarBlangko : o.pilihan;
+  let beda = null;
+  const daftar = () => {
+    let x = sumberDaftar;
+    try {
+      if (typeof x === "function") x = x(perkara);
+    } catch {
+      x = [];
+    }
+    return (Array.isArray(x) ? x : []).map(basmassalBlangkoRapi).filter(Boolean);
+  };
+
+  const akar = basmassalEl("div", "aleta-massal-blangko-baris");
+  const teks = basmassalEl("span", "aleta-massal-blangko-teks");
+  const tombolBeda = basmassalEl("button", "aleta-massal-blangko-beda", "Blangko berbeda…");
+  tombolBeda.type = "button";
+  tombolBeda.setAttribute("aria-expanded", "false");
+  const tombolUlang = basmassalEl("button", "aleta-massal-blangko-ulang", "Ikuti blangko utama");
+  tombolUlang.type = "button";
+  tombolUlang.hidden = true;
+  const pilih = document.createElement("select");
+  pilih.className = "aleta-massal-blangko-pilih";
+  pilih.setAttribute("aria-label", `Blangko untuk ${nama}`);
+  pilih.hidden = true;
+  for (const x of [teks, tombolBeda, tombolUlang, pilih]) akar.appendChild(x);
+
+  const kabar = () => {
+    if (typeof o.onPilih !== "function") return;
+    const b = beda || utama;
+    try {
+      // nilai/label/berkas ikut di permukaan: pemanggil yang membaca
+      // x.nilai atau x.berkas (bentuk <option>) juga mendapatkannya.
+      const berkas = b && b.asli && typeof b.asli === "object" && b.asli.berkas ? String(b.asli.berkas) : undefined;
+      o.onPilih({
+        perkara,
+        blangko: b ? b.asli : null,
+        bawaan: !beda,
+        nilai: b ? b.nilai : "",
+        label: b ? b.label : "",
+        ...(berkas ? { berkas } : {}),
+      });
+    } catch {
+      /* pemanggil */
+    }
+  };
+  const gambarTeks = () => {
+    akar.setAttribute("data-keadaan", beda ? "beda" : "utama");
+    if (beda) teks.textContent = `Blangko berbeda: ${beda.label}`;
+    else teks.textContent = utama ? `Blangko utama: ${utama.label}` : "Blangko utama belum dipilih";
+    teks.title = teks.textContent;
+    tombolUlang.hidden = !beda;
+    const lain = daftar().filter((b) => !utama || b.nilai !== utama.nilai);
+    tombolBeda.disabled = lain.length === 0;
+    tombolBeda.title = lain.length === 0 ? "Tidak ada blangko lain untuk dipilih" : `Pilih blangko lain untuk ${nama} saja`;
+    tombolBeda.textContent = beda ? "Ganti…" : "Blangko berbeda…";
+  };
+  const isiPilihan = () => {
+    pilih.textContent = "";
+    const kosong = document.createElement("option");
+    kosong.value = "";
+    kosong.textContent = "Pilih blangko untuk perkara ini…";
+    pilih.appendChild(kosong);
+    daftar().forEach((b, i) => {
+      const op = document.createElement("option");
+      op.value = String(i);
+      op.textContent = utama && b.nilai === utama.nilai ? `${b.label} (blangko utama)` : b.label;
+      op.title = b.label;
+      pilih.appendChild(op);
+    });
+    const ke = beda ? daftar().findIndex((b) => b.nilai === beda.nilai) : -1;
+    pilih.value = ke >= 0 ? String(ke) : "";
+  };
+  const tutupPemilih = () => {
+    pilih.hidden = true;
+    tombolBeda.setAttribute("aria-expanded", "false");
+  };
+
+  tombolBeda.addEventListener("click", () => {
+    if (pilih.hidden) {
+      isiPilihan();
+      pilih.hidden = false;
+      tombolBeda.setAttribute("aria-expanded", "true");
+      try {
+        pilih.focus();
+      } catch {
+        /* tanpa fokus */
+      }
+    } else tutupPemilih();
+  });
+  pilih.addEventListener("change", () => {
+    const b = daftar()[Number(pilih.value)];
+    if (pilih.value === "" || !b) return;
+    // Memilih blangko utama di pemilih = kembali mengikuti utama.
+    beda = utama && b.nilai === utama.nilai ? null : b;
+    tutupPemilih();
+    gambarTeks();
+    kabar();
+  });
+  pilih.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") tutupPemilih();
+  });
+  const ulang = () => {
+    if (!beda) return;
+    beda = null;
+    tutupPemilih();
+    gambarTeks();
+    kabar();
+  };
+  tombolUlang.addEventListener("click", ulang);
+
+  akar.aletaBlangko = {
+    pilihan: () => {
+      const b = beda || utama;
+      return { blangko: b ? b.asli : null, bawaan: !beda };
+    },
+    setelUtama: (b) => {
+      utama = basmassalBlangkoRapi(b);
+      // Pengecualian yang kini SAMA dengan utama tidak lagi pengecualian.
+      if (beda && utama && beda.nilai === utama.nilai) beda = null;
+      gambarTeks();
+      if (!pilih.hidden) isiPilihan();
+    },
+    setelDaftar: (x) => {
+      sumberDaftar = x;
+      gambarTeks();
+      if (!pilih.hidden) isiPilihan();
+    },
+    ulang,
+  };
+  gambarTeks();
+  return akar;
+}
+
+globalThis.aletaMassalBarisBlangko = aletaMassalBarisBlangko;
 globalThis.aletaMassalPutusanLayak = aletaMassalPutusanLayak;
 globalThis.aletaMassalAlasanPutusan = aletaMassalAlasanPutusan;
 globalThis.aletaMassalKelompokkan = aletaMassalKelompokkan;
@@ -1127,7 +1395,17 @@ function basmassalGambarBaris(daftar, baris, konteks) {
 
 function basmassalGambar(akar, konteks) {
   const judul = basmassalEl("div", "aleta-basmassal-judul");
-  judul.appendChild(basmassalEl("span", "aleta-basmassal-judul-teks", "BAS massal"));
+  const judulTeks = basmassalEl("span", "aleta-basmassal-judul-teks", "BAS massal");
+  judul.appendChild(judulTeks);
+  // Butir 7 (2 Okt, UI Baru): tag peran di samping judul - bentuk yang sama
+  // dengan kepala lipatan (alatLipatTagPeran milik W). Baru tetap 1.177.0.
+  if (basmassalModeUi() && typeof alatLipatTagPeran === "function") {
+    try {
+      alatLipatTagPeran(judul, "PP", judulTeks);
+    } catch {
+      /* tanpa tag */
+    }
+  }
   const info = basmassalTombol("ⓘ", "aleta-basmassal-info", "Penjelasan");
   info.setAttribute("aria-expanded", "false");
   judul.appendChild(info);
@@ -1253,10 +1531,19 @@ function basmassalGambar(akar, konteks) {
       // centang "Kerjakan semua milik X" dan centang per perkara. Nama PP ada
       // di kepala kelompok, jadi tanda "PP:" di tiap baris tidak diulang.
       konteks.tampilkanPp = false;
+      // Butir 19 (2 Okt): kelompok milik akun yang masuk terbuka, PP lain
+      // tertutup. Pemanggil yang menyebut peran belum membaca akunnya.
+      if (konteks.namaSaya === undefined) {
+        const siapa = await basmassalMuatSiapa();
+        konteks.namaSaya = siapa ? siapa.nama : "";
+        if (!akar.isConnected) return;
+      }
       const kelompok = aletaMassalKelompokkan(sidang, (b) => (b && b.pengguna) || (b && b.paniteraNama) || "");
       konteks.kendali = aletaMassalGambarKelompok(daftar, kelompok, {
         peran: konteks.peranAktif,
         kunciLipat: "bas-massal",
+        peranLipat: "PP",
+        namaSaya: konteks.namaSaya,
         judul: (u, xs) => `PP: ${u.nama || "belum ditunjuk"} · ${xs.length} perkara`,
         gambarBaris: (s, isi) => {
           const p = basmassalGambarBaris(isi, s, konteks);
@@ -1333,6 +1620,7 @@ async function aletaBasMassalPasang(wadah, opsi) {
 
   let boleh = false;
   let peranAktif = "";
+  let namaSaya;
   if (typeof o.peran === "string" && o.peran.trim()) {
     boleh = basmassalPeranBoleh(situs, o.peran);
     peranAktif = o.peran.trim();
@@ -1344,6 +1632,7 @@ async function aletaBasMassalPasang(wadah, opsi) {
       // Pengelompokan per PP (K4) hanya bila akun ini memang admin.
       const admin = typeof alatGolonganPeran === "function" ? semua.find((p) => alatGolonganPeran(p) === "admin") : "";
       peranAktif = admin || siapa.peran;
+      namaSaya = siapa.nama;
     }
   }
   if (!boleh || !basmassalModeBaru()) return false;
@@ -1354,7 +1643,7 @@ async function aletaBasMassalPasang(wadah, opsi) {
   if (lama) lama.remove();
   const akar = basmassalEl("div", BASMASSAL_PENANDA);
   akar.setAttribute("data-situs", situs);
-  const konteks = { token: { kelompok: {}, berkas: {} }, tampilkanPp: false, segarkanAksi: () => {}, peranAktif, kendali: null };
+  const konteks = { token: { kelompok: {}, berkas: {} }, tampilkanPp: false, segarkanAksi: () => {}, peranAktif, kendali: null, namaSaya };
   const tampilkan = basmassalGambar(akar, konteks);
   wadah.appendChild(akar);
   // Membaca daftar hari ini sekali (GET). Tidak ada yang tercentang sendiri.

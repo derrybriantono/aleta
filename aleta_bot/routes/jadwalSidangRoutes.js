@@ -12,6 +12,8 @@
  *                                 + mesin ruang tunggu bila disetel)
  *   POST /selesai                 tandai / batalkan selesai (kering bawaan)
  *   GET  /selesai/diagnosa        nilai disidang yang hidup hari ini
+ *   POST /skors                   skors / lanjutkan sidang (kering bawaan) -
+ *                                 perbaikan 2 Okt 2026, butir 10
  *   GET  /mediasi?perkaraId       proses mediasi + daftar mediator + akun
  *   POST /mediator                penetapan mediator ke SIPP (kering bawaan)
  */
@@ -97,6 +99,38 @@ router.post("/selesai", wajibToken, async (req, res) => {
       selesai: badan.selesai !== false,
       oleh: operator,
       // Kering kecuali disebut tegas sebaliknya - sama dengan penundaan.
+      kering: badan.kering !== false,
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/**
+ * Skors / lanjutkan sidang (perbaikan 2 Okt 2026, butir 10). Kering bawaan.
+ * Yang tertulis ke SIPP hanya antrian.status asli (0<->1); siapa, kapan, IP,
+ * dan "lewat ALETA" hanya di tabel ALETA aleta_bot_sidang_skors.
+ */
+router.post("/skors", wajibToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+    const hasil = await sidangSelesaiService.setelSkors({
+      perkaraId: badan.perkaraId,
+      tanggalSidang: badan.tanggalSidang,
+      nomorPerkara: badan.nomorPerkara,
+      ruangId: badan.ruangId,
+      skors: badan.skors !== false,
+      alasan: badan.alasan,
+      panggilSaatSkors: badan.panggilSaatSkors,
+      hasilSidangSelesai: badan.hasilSidangSelesai === true,
+      oleh: operator,
+      ip: alamatAudit(req),
       kering: badan.kering !== false,
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);

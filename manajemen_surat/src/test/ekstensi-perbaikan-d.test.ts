@@ -168,7 +168,15 @@ function buka(p: {
   return { w, simpanan, minta, pesan };
 }
 
-const UI = { ujiTampilan: "ui", ujiIzinkanNyata: true, aktif: true };
+// Perbaikan 2 Okt butir 4: dalam UI Baru panel ALETA (portal) bawaannya lahir
+// sebagai lencana. Uji di berkas ini menguji panel yang TERBENTANG, jadi
+// pilihan "ALETA terbuka" disimpan lebih dulu.
+const UI = {
+  ujiTampilan: "ui",
+  ujiIzinkanNyata: true,
+  aktif: true,
+  panelBawaanTampil: { aleta: true, diubahPada: "2026-10-02T00:00:00.000Z" },
+};
 const BARU = { ujiTampilan: "baru", ujiIzinkanNyata: true, aktif: true };
 const panelPortal = (h: Halaman) => h.w.document.getElementById("aleta-panel-portal") as any;
 

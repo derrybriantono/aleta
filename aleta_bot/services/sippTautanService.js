@@ -726,8 +726,41 @@ async function tautanPerkara({ perkaraId, nomor } = {}) {
   };
 }
 
+/**
+ * Nilai <option> bersandi untuk select2 SIPP - base64_encode(
+ * $this->encrypt->encode($teks)), bentuk yang dipulangkan addPihak/cariProp..
+ * cariKel dan didekode pihak_list::validateInput sebelum disimpan (perbaikan
+ * 2 Okt 2026 butir 16, sippWilayahService). Bentuknya SAMA PERSIS dengan
+ * segmen tautan, jadi penyandi, kunci, dan uji dirinya dipakai bersama -
+ * tidak ada salinan kedua sandi Rijndael di bot.
+ *
+ * Kuncinya tetap tidak pernah keluar: yang dipulangkan hanya nilai bersandi,
+ * setara dengan yang dicetak SIPP sendiri ke tiap petugas yang membuka
+ * blangko pihak.
+ */
+function nilaiPilihanSipp(teks) {
+  const t = String(teks === null || teks === undefined ? "" : teks).trim();
+  if (!t) return gagal("masukan_kosong", "Nilai yang hendak disandikan kosong.");
+  const kunci = bahanKunci();
+  if (!kunci.ok) {
+    return {
+      ok: false,
+      alasan: kunci.alasan,
+      message: "Pengaturan sandi SIPP di ALETA belum lengkap, jadi pilihan wilayah tidak dapat diisikan otomatis. Pilih wilayahnya sendiri di blangko SIPP.",
+    };
+  }
+  if (!ujiDiri()) {
+    return gagal(
+      "sandi_tidak_lulus_uji",
+      "Penyandi SIPP di ALETA tidak lulus uji diri. Pilih wilayahnya sendiri di blangko SIPP, lalu laporkan ke pengelola ALETA."
+    );
+  }
+  return { ok: true, nilai: segmenUntuk(t, kunci.bahan) };
+}
+
 module.exports = {
   tautanPerkara,
+  nilaiPilihanSipp,
   // Pola segmen dibuka supaya portal dan uji memeriksa bentuk yang sama.
   POLA_SEGMEN_AMAN,
   PINTU_MENURUT_JENIS,

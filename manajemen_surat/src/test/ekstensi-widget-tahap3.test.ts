@@ -849,7 +849,10 @@ describe("UI Baru: dok, kartu, dan Atur widget (D8-D11, popup-23)", () => {
     ]);
     const saklar = (id: string) => q(h, `[data-widget="${id}"] .aleta-cmw-saklar`);
     expect(saklar("checklist").getAttribute("aria-checked")).toBe("true");
-    expect(saklar("catatan").getAttribute("aria-checked")).toBe("true");
+    // Perbaikan 2 Okt butir 13: bawaan UI Baru hanya checklist - catatan
+    // tersedia (saklarnya dapat ditekan) tetapi tersembunyi sampai dinyalakan.
+    expect(saklar("catatan").getAttribute("aria-checked")).toBe("false");
+    expect(saklar("catatan").disabled).toBe(false);
     expect(saklar("lama-sidang").disabled).toBe(true);
     expect(q(h, '[data-widget="lama-sidang"] small').textContent).toMatch(/popup-21 .* masih mati/);
     for (const id of ["jadwal-saya", "antrean", "whatsapp", "jendela"]) {
@@ -865,7 +868,8 @@ describe("UI Baru: dok, kartu, dan Atur widget (D8-D11, popup-23)", () => {
   });
 
   it("Atur widget: saklar menyembunyikan, ↑ ↓ dan seret mengurutkan - satu susunan untuk semua situs", async () => {
-    const h = buka({ simpanan: ui(["popup-20", "popup-22"]) });
+    // Susunan "semua tampil" tersimpan (bawaan 2 Okt butir 13 = hanya checklist).
+    const h = buka({ simpanan: ui(["popup-20", "popup-22"], { susunanWidget: { semua: { urutan: [], mati: [] } } }) });
     await siapDok(h);
     const urutanDok = () => qs(h, ".aleta-cmw-tumpuk > *").map((x) => x.getAttribute("data-widget-isi") || "checklist");
     await sampai(() => urutanDok().length === 3, "tiga widget");
@@ -926,7 +930,7 @@ describe("UI Baru: dok, kartu, dan Atur widget (D8-D11, popup-23)", () => {
 // ============================================================================
 describe("batas yang tidak berubah: mode coba, akar, layar publik", () => {
   it("seluruh fitur dinyalakan dan dipakai: tidak ada satu pun permintaan selain GET", async () => {
-    const h = buka({ simpanan: ui(SEMUA_POPUP) });
+    const h = buka({ simpanan: ui(SEMUA_POPUP, { susunanWidget: { semua: { urutan: [], mati: [] } } }) });
     await siapDok(h);
     q(h, '[data-id="h1"] .aleta-cm-tanda-selesai').click();
     await sampai(() => !q(h, '[data-id="h1"]'), "selesai");

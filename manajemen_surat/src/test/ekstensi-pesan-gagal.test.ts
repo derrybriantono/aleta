@@ -325,7 +325,11 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // alatSidangPadaTanggal) dan Upload putusan ke e-Court (s1BagianUnggahEcourt,
     // K6 - 404 "belum tersedia di server", 423 "ditahan mode coba", selebihnya
     // kalimat rute atau alatPesanGagal). Keduanya berbicara ke petugas.
-    expect(lewatAlat).toBe(35);
+    // 36 sejak perbaikan 2 Oktober 2026 (agen S, hanya UI Baru - disesuaikan
+    // oleh S): Upload edoc penetapan (s2KirimEdoc, butir 17 / K6) - 404
+    // "belum tersedia di server", 423 "ditahan mode ...", selebihnya kalimat
+    // rute atau alatPesanGagal. Berbicara ke petugas.
+    expect(lewatAlat).toBe(36);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

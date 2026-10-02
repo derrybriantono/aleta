@@ -56,8 +56,36 @@
 
 const TABEL = "aleta_bot_sidang_selesai";
 
+/**
+ * ============================================================================
+ * SKORS - SIDANG BELUM SELESAI, DAPAT DILANJUTKAN (PERBAIKAN 2 OKT 2026, B10)
+ * ============================================================================
+ *
+ * Diminta pengguna: dari perkara yang SEDANG disidangkan, lompat ke perkara
+ * lain dan nyatakan sidang yang ditinggalkan BELUM SELESAI - dapat dilanjutkan
+ * nanti. Tanda Selesai yang sah tidak boleh terhapus olehnya.
+ *
+ * Catatannya di tabel ALETA sendiri (riwayat jujur: siapa, kapan, alamat IP,
+ * lewat ALETA) - satu baris per skors, tidak pernah ditimpa; melanjutkan
+ * hanya mengisi dilanjutkan_pada. Dibuat sendiri oleh layanan ini (CREATE
+ * TABLE IF NOT EXISTS) seperti aleta_bot_sidang_selesai - bukan migrasi
+ * Drizzle portal.
+ *
+ * Ke SIPP hanya nilai ASLI manageAntrian.php: antrian.status 1 (tunda_antrian
+ * = skors). Tanpa penanda ALETA apa pun (butir 14). Penulisannya BERSYARAT
+ * status: 0 -> 1 saat diskors, 1 -> 0 saat dilanjutkan - status 2 (selesai)
+ * tidak pernah tersentuh. Itu sebabnya tidak memakai setelAntrian, yang
+ * menimpa status apa pun: skors yang menimpa "selesai" justru menghapus tanda
+ * Selesai yang sah.
+ *
+ * Mesin antrian ruang tunggu TIDAK disentuh: nilai disidang untuk "skors"
+ * tidak pernah terbaca dari kodenya (lihat catatan nilai selesai di atas).
+ */
+const TABEL_SKORS = "aleta_bot_sidang_skors";
+
 /** Keadaan antrian SIPP menurut manageAntrian.php - sama dengan sidangHasilService. */
 const ANTRIAN_MENUNGGU = 0;
+const ANTRIAN_SKORS = 1;
 const ANTRIAN_SELESAI = 2;
 
 /** Nilai "dipanggil" mesin antrian ruang tunggu - sama dengan panggilanAntrianService. */
@@ -204,7 +232,198 @@ function buatLayanan(deps = {}) {
       sumber.antrianRuangTunggu.alasan = "nilai_selesai_belum_disetel";
     }
 
-    return { ok: true, dari: awal, sampai: akhir, peta, sumber };
+    // Skors yang masih berlaku (belum dilanjutkan) - peta tersendiri, tidak
+    // dicampur ke peta selesai: skors BUKAN selesai.
+    const skors = {};
+    sumber.skors = { terbaca: false, alasan: "" };
+    try {
+      await pastikanTabelSkors();
+      const baris = await kueriBot(
+        `SELECT perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
+                nomor_perkara AS nomorPerkara, oleh, alasan, panggil_saat_skors AS panggilSaatSkors,
+                DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada
+           FROM ${TABEL_SKORS}
+          WHERE tanggal_sidang BETWEEN ? AND ? AND dilanjutkan_pada IS NULL
+          ORDER BY id ASC`,
+        [awal, akhir]
+      );
+      for (const b of Array.isArray(baris) ? baris : []) {
+        if (!bersih(b.perkaraId) || !tanggalSah(b.tanggalSidang)) continue;
+        // Yang terakhir menang bila (karena balapan) ada dua yang berlaku.
+        skors[kunciSelesai(b.perkaraId, b.tanggalSidang)] = {
+          perkaraId: bersih(b.perkaraId),
+          tanggalSidang: tanggalSah(b.tanggalSidang),
+          nomorPerkara: bersih(b.nomorPerkara),
+          oleh: bersih(b.oleh),
+          alasan: bersih(b.alasan),
+          panggilSaatSkors: bersih(b.panggilSaatSkors),
+          diskorsPada: bersih(b.diskorsPada),
+        };
+      }
+      sumber.skors.terbaca = true;
+    } catch (galat) {
+      sumber.skors.alasan = sebutGalat(galat);
+    }
+
+    return { ok: true, dari: awal, sampai: akhir, peta, skors, sumber };
+  }
+
+  let tabelSkorsSiap = false;
+  async function pastikanTabelSkors() {
+    if (tabelSkorsSiap) return;
+    await kueriBot(`
+      CREATE TABLE IF NOT EXISTS ${TABEL_SKORS} (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        perkara_id VARCHAR(32) NOT NULL,
+        tanggal_sidang DATE NOT NULL,
+        nomor_perkara VARCHAR(191) NOT NULL DEFAULT '',
+        alasan VARCHAR(191) NOT NULL DEFAULT '',
+        panggil_saat_skors VARCHAR(32) NOT NULL DEFAULT '',
+        oleh VARCHAR(191) NOT NULL DEFAULT '',
+        ip VARCHAR(45) NOT NULL DEFAULT '',
+        lewat VARCHAR(32) NOT NULL DEFAULT 'ALETA',
+        diskors_pada DATETIME NOT NULL,
+        dilanjutkan_pada DATETIME NULL,
+        dilanjutkan_oleh VARCHAR(191) NOT NULL DEFAULT '',
+        dilanjutkan_ip VARCHAR(45) NOT NULL DEFAULT '',
+        PRIMARY KEY (id),
+        INDEX idx_sidang_skors_perkara (perkara_id, tanggal_sidang),
+        INDEX idx_sidang_skors_tanggal (tanggal_sidang)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    tabelSkorsSiap = true;
+  }
+
+  /**
+   * Menskors (atau melanjutkan) sidang satu perkara.
+   *
+   * MENSKORS ditolak bila sidangnya sudah selesai secara sah - hasil sidang
+   * tercatat (dikirim portal), ditandai Selesai di ALETA, atau antrian SIPP
+   * berstatus 2. Yang sah tidak dihapus; yang menekan Skors diberi tahu.
+   *
+   * Kering kecuali disebut tegas sebaliknya - sama dengan Selesai.
+   */
+  async function setelSkors({
+    perkaraId,
+    tanggalSidang,
+    nomorPerkara = "",
+    ruangId = null,
+    skors = true,
+    alasan = "",
+    panggilSaatSkors = "",
+    hasilSidangSelesai = false,
+    oleh = "",
+    ip = "",
+    kering = true,
+  } = {}) {
+    const id = bersih(perkaraId);
+    const tanggal = tanggalSah(tanggalSidang);
+    if (!/^\d{1,20}$/.test(id)) return { ok: false, alasan: "perkara_tidak_sah" };
+    if (!tanggal) return { ok: false, alasan: "tanggal_tidak_sah" };
+    const menskors = skors !== false;
+    const ruang = /^\d{1,4}$/.test(bersih(ruangId)) ? Number(bersih(ruangId)) : null;
+
+    if (menskors) {
+      if (hasilSidangSelesai === true) {
+        return { ok: false, alasan: "sudah_selesai_hasil_sidang", pesan: "Hasil sidangnya sudah tercatat di SIPP - sidang ini selesai, tidak dapat diskors." };
+      }
+      try {
+        await pastikanTabel();
+        const tanda = await kueriBot(
+          `SELECT perkara_id FROM ${TABEL} WHERE perkara_id = ? AND tanggal_sidang = ? LIMIT 1`,
+          [id, tanggal]
+        );
+        if (Array.isArray(tanda) && tanda.length > 0) {
+          return { ok: false, alasan: "sudah_ditandai_selesai", pesan: "Sidang ini sudah ditandai Selesai. Batalkan tanda Selesai lebih dulu bila memang belum selesai." };
+        }
+      } catch (galat) {
+        return { ok: false, alasan: `Catatan selesai ALETA tidak terbaca: ${sebutGalat(galat)}` };
+      }
+    }
+
+    // Keadaan antrian SIPP - dibaca, bukan ditebak. Gagal membaca tidak
+    // menahan catatan ALETA, tetapi SIPP lalu tidak disentuh sama sekali.
+    let statusSipp = [];
+    let sippTerbaca = true;
+    try {
+      const baris = await kueriSipp(
+        `SELECT status FROM antrian WHERE perkara_id = ? AND tanggal_sidang = ?${ruang ? " AND ruang_id = ?" : ""}`,
+        ruang ? [id, tanggal, ruang] : [id, tanggal]
+      );
+      statusSipp = (Array.isArray(baris) ? baris : []).map((b) => Number(b.status));
+    } catch {
+      sippTerbaca = false;
+    }
+    if (menskors && statusSipp.includes(ANTRIAN_SELESAI)) {
+      return { ok: false, alasan: "antrian_sipp_selesai", pesan: "Antrian sidang SIPP perkara ini sudah berstatus selesai - tidak diskors." };
+    }
+
+    const rencana = {
+      perkaraId: id,
+      tanggalSidang: tanggal,
+      skors: menskors,
+      aleta: menskors ? "catat skors (belum selesai)" : "tandai skors dilanjutkan",
+      antrianSipp: !sippTerbaca
+        ? "tidak disentuh (antrian SIPP tidak terbaca)"
+        : menskors
+          ? `antrian.status ${ANTRIAN_MENUNGGU} -> ${ANTRIAN_SKORS} (hanya baris berstatus ${ANTRIAN_MENUNGGU})`
+          : `antrian.status ${ANTRIAN_SKORS} -> ${ANTRIAN_MENUNGGU} (hanya baris berstatus ${ANTRIAN_SKORS})`,
+      antrianRuangTunggu: "tidak disentuh (nilai skors mesin ruang tunggu tidak diketahui)",
+    };
+    if (kering !== false) return { ok: true, kering: true, rencana };
+
+    try {
+      await pastikanTabelSkors();
+      if (menskors) {
+        const aktif = await kueriBot(
+          `SELECT id FROM ${TABEL_SKORS} WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL LIMIT 1`,
+          [id, tanggal]
+        );
+        if (!(Array.isArray(aktif) && aktif.length > 0)) {
+          await kueriBot(
+            `INSERT INTO ${TABEL_SKORS}
+               (perkara_id, tanggal_sidang, nomor_perkara, alasan, panggil_saat_skors, oleh, ip, lewat, diskors_pada)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'ALETA', NOW())`,
+            [
+              id,
+              tanggal,
+              bersih(nomorPerkara).slice(0, 191),
+              bersih(alasan).slice(0, 191),
+              bersih(panggilSaatSkors).slice(0, 32),
+              bersih(oleh).slice(0, 191),
+              bersih(ip).slice(0, 45),
+            ]
+          );
+        }
+      } else {
+        await kueriBot(
+          `UPDATE ${TABEL_SKORS} SET dilanjutkan_pada = NOW(), dilanjutkan_oleh = ?, dilanjutkan_ip = ?
+            WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL`,
+          [bersih(oleh).slice(0, 191), bersih(ip).slice(0, 45), id, tanggal]
+        );
+      }
+    } catch (galat) {
+      return { ok: false, alasan: `Catatan skors ALETA tidak tersimpan: ${sebutGalat(galat)}`, rencana };
+    }
+
+    let antrianSipp = { ok: true, dilewati: true, alasan: "antrian_sipp_tidak_terbaca" };
+    if (sippTerbaca) {
+      const dari = menskors ? ANTRIAN_MENUNGGU : ANTRIAN_SKORS;
+      const ke = menskors ? ANTRIAN_SKORS : ANTRIAN_MENUNGGU;
+      try {
+        const hasil = await kueriSipp(
+          `UPDATE antrian SET status = ?
+            WHERE perkara_id = ? AND tanggal_sidang = ? AND status = ?${ruang ? " AND ruang_id = ?" : ""}`,
+          ruang ? [ke, id, tanggal, dari, ruang] : [ke, id, tanggal, dari]
+        );
+        // Nol baris BUKAN error: tidak semua perkara punya baris antrian SIPP.
+        antrianSipp = { ok: true, baris: Number((hasil && hasil.affectedRows) || 0) };
+      } catch (galat) {
+        antrianSipp = { ok: false, alasan: sebutGalat(galat) };
+      }
+    }
+
+    return { ok: true, kering: false, rencana, skors: menskors, antrianSipp };
   }
 
   /**
@@ -322,7 +541,7 @@ function buatLayanan(deps = {}) {
     }
   }
 
-  return { petaSelesai, setelSelesai, diagnosaRuangTunggu, pastikanTabel };
+  return { petaSelesai, setelSelesai, setelSkors, diagnosaRuangTunggu, pastikanTabel, pastikanTabelSkors };
 }
 
 let bawaan = null;
@@ -333,7 +552,9 @@ function layananBawaan() {
 
 module.exports = {
   TABEL,
+  TABEL_SKORS,
   ANTRIAN_MENUNGGU,
+  ANTRIAN_SKORS,
   ANTRIAN_SELESAI,
   DISIDANG_DIPANGGIL,
   buatLayanan,
@@ -341,5 +562,6 @@ module.exports = {
   kunciSelesai,
   petaSelesai: (isi) => layananBawaan().petaSelesai(isi),
   setelSelesai: (isi) => layananBawaan().setelSelesai(isi),
+  setelSkors: (isi) => layananBawaan().setelSkors(isi),
   diagnosaRuangTunggu: () => layananBawaan().diagnosaRuangTunggu(),
 };

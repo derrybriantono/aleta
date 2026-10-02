@@ -309,7 +309,11 @@ function buka(p: Opsi = {}): Halaman {
     if (a) e.preventDefault();
   });
   if (p.sebelum) p.sebelum(w);
-  w.eval(`${SUMBER_ALAT}\n;\n${SUMBER_ABT}\n;\nwindow.__sore = typeof soreSebabHuruf === "function" ? { soreSebabHuruf, soreKesimpulan, soreBakuNamaAkun } : null;`);
+  // Disesuaikan 2 Okt (agen A, butir 14): tulisan ke ABT kini didahului
+  // alatJedaManusia (0,9-3,5 detik). Uji ini memeriksa ISI tulisan, bukan
+  // jedanya (jeda diuji di ekstensi-abt-2okt) - jeda dinolkan DI DALAM skrip
+  // yang sama (panel-alat.js "use strict": fungsinya tidak menjadi milik window).
+  w.eval(`${SUMBER_ALAT}\n;\n${SUMBER_ABT}\n;\nwindow.__sore = typeof soreSebabHuruf === "function" ? { soreSebabHuruf, soreKesimpulan, soreBakuNamaAkun } : null;\n;\n/* 2 Okt (agen A, butir 14): jeda manusia dinolkan - lihat catatan di buka() */ if (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);`);
   return { dom, w, simpanan, minta, setel: (isi) => local.set(isi) };
 }
 

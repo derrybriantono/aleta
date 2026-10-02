@@ -520,6 +520,26 @@ async function untukPejabat(namaPejabat) {
   return null;
 }
 
+/**
+ * Tanda tangan SAH milik satu akun portal (pengguna_id) - dipakai edoc
+ * penetapan (butir 17, 2 Okt 2026) untuk mendahulukan tanda tangan pengguna
+ * yang sedang login. Hanya yang disahkan; yang terbaru disahkan menang.
+ */
+async function untukPengguna(penggunaId) {
+  const id = String(penggunaId || "").trim();
+  if (!id) return null;
+  await pastikanTabel();
+  const baris = await kueri(
+    `SELECT id, nama_pejabat, jenis_berkas, isi FROM ${TABEL}
+      WHERE disahkan = 1 AND pengguna_id = ?
+      ORDER BY disahkan_pada DESC, id DESC LIMIT 1`,
+    [id.slice(0, 64)]
+  );
+  const b = Array.isArray(baris) ? baris[0] : null;
+  if (!b) return null;
+  return { id: Number(b.id), namaPejabat: String(b.nama_pejabat), jenis: String(b.jenis_berkas), isi: b.isi };
+}
+
 module.exports = {
   TABEL,
   BATAS_KECIL,
@@ -536,5 +556,6 @@ module.exports = {
   sahkan,
   hapus,
   untukPejabat,
+  untukPengguna,
   bakuNama,
 };

@@ -2574,6 +2574,9 @@ async function t4Tata(panel, kepala, isi, kaki, siapa, pintasan) {
     barisKaki.insertBefore(cepat, barisKaki.querySelector(".aleta-kaki-segar"));
   }
 
+  // Perbaikan 2 Okt butir 1 (K7): kepala dan kaki disamakan dengan panel SIPP/ABT.
+  if (modern) w2SamakanKepalaKaki(k);
+
   if (modern) t4PasangTab(k, String(simpan[T4_KUNCI_TAB] || ""));
   // Perbaikan 1 Okt butir 1 (K2): tiap bagian panel portal dapat dilipat
   // dengan bentuk lipat yang sama dengan panel SIPP, ABT, dan widget. UI Baru saja.
@@ -2592,12 +2595,67 @@ async function t4Tata(panel, kepala, isi, kaki, siapa, pintasan) {
 }
 
 /**
+ * ============================================================================
+ * PERBAIKAN 2 OKT BUTIR 1 (K7) - KEPALA DAN KAKI SAMA DENGAN PANEL SIPP/ABT
+ * ============================================================================
+ *
+ * Pengguna 2 Okt: "di ekstensi aleta pada bagian halaman aleta tidak ada logo
+ * tombol header seperti di abt dan sipp ... buat sama aleta dengan sipp dan
+ * abt (header dan footer ekstensi) seperti tata letak dan tombolnya".
+ *
+ * UI Baru 1.177.0 menyembunyikan tombol kepala (☀ – ⛶ ⟲ ×) di balik ⋯
+ * (D2), sedangkan panel SIPP dan ABT menampilkannya. Sekarang (UI Baru saja):
+ *   KEPALA  logo · ALETA · lencana server · ⌕ ⋯ · ☀ – ⛶ ⟲ × - tombol lama
+ *           TAMPIL lagi (atribut data-w2-kepala="sama", aturannya di blok W2
+ *           panel.css), ⌕ dan ⋯ pindah ke DALAM deret tombol, sebelum ☀ -
+ *           ⋯ di kiri deret seperti panel ABT. Menu ⋯ tetap memuat semuanya
+ *           (layar publik, letak panel, warna) - tidak ada yang dikurangi.
+ *   KAKI    satu baris rata kiri seperti SIPP: ˄ ? ↻ v1.x - deret Alt+...
+ *           tidak lagi memakan ruang (teksnya tetap di kartu bantuan "?" dan
+ *           di judul tombolnya), "?" pindah ke kiri bersama ˄.
+ * Lama dan Baru: fungsi ini tidak dipanggil.
+ */
+function w2SamakanKepalaKaki(k) {
+  if (!k || !k.panel) return;
+  k.panel.setAttribute("data-w2-kepala", "sama");
+  const wadah = k.kepala && k.kepala.querySelector(".aleta-alat-kepala");
+  const utama = k.kepala && k.kepala.querySelector(".aleta-t4-kepala-utama");
+  if (wadah && utama) {
+    const tema = wadah.querySelector(":scope > .aleta-tema");
+    wadah.insertBefore(utama, tema || wadah.firstChild);
+  }
+  const barisKaki = k.kaki && k.kaki.querySelector(".aleta-kaki-baris");
+  if (barisKaki) {
+    const kiri = barisKaki.querySelector(".aleta-kaki-kiri");
+    const tanya = barisKaki.querySelector(".aleta-t4-tanya");
+    if (kiri && tanya) kiri.appendChild(tanya);
+  }
+}
+
+/**
  * K2 (perbaikan 1 Okt butir 1): bagian panel portal (judulnya div statis)
  * dijadikan dapat dilipat lewat alatJadikanLipat - kepala bertombol, ingat
  * buka/tutup per bagian ("portal:<kode fitur atau judul>"). Bawaannya
  * terbuka, jadi tidak ada isi yang tersembunyi sebelum orang memilihnya.
  * Tanpa panel-alat.js versi ini: tidak berbuat apa pun.
  */
+/**
+ * Butir 19 (2 Okt) - bagian panel portal yang TERTUTUP bawaan. Yang terbuka:
+ * Sambungan (peringatan), Tugas saya hari ini, Cari perkara, Terakhir
+ * dibuka, Ekstensi, dan pintasan - bagian kerja utama tiap tab.
+ */
+const W2_PORTAL_TERTUTUP = new Set([
+  "portal-23", // Sidang saya hari ini
+  "portal-12", // Pemberitahuan
+  "portal-19", // Yang saya tulis ke SIPP hari ini
+  "portal-25", // Unduhan terakhir
+  "portal-20", // Minggu ini
+  "portal-26", // Catatan saya
+  "portal-16", // Peran
+  "tampilan-panel",
+  "kewenangan-saya-di-sipp",
+]);
+
 function t4LipatSeragam(isi) {
   if (!isi || typeof alatJadikanLipat !== "function") return 0;
   let jumlah = 0;
@@ -2612,7 +2670,10 @@ function t4LipatSeragam(isi) {
       .slice(0, 60);
     if (!nama) continue;
     try {
-      if (alatJadikanLipat(kotak, { kunci: `portal:${nama}`, kepala: judul })) jumlah += 1;
+      // Butir 19 (2 Okt): tidak semua terbuka - bagian sekunder tertutup bawaan
+      // (ingatan buka/tutup orangnya tetap menang).
+      const terbuka = !W2_PORTAL_TERTUTUP.has(nama);
+      if (alatJadikanLipat(kotak, { kunci: `portal:${nama}`, kepala: judul, terbuka })) jumlah += 1;
     } catch {
       /* bagian ini tetap terbuka seperti sebelumnya */
     }
@@ -2872,6 +2933,13 @@ async function susunPanelPortal(siapa) {
     // warna berebut satu halaman. Yang disamakan temanya, bukan petanya.
     temaHalaman: false,
     saatTutup: () => tutupPanel(),
+    // Butir 11 (2 Okt, UI Baru): klik dua kali di sudut panel. Letak "samping"
+    // (kolom kanan) dilepas lebih dahulu - panel menjadi mengambang - sebab
+    // panel berlabuh tidak dapat berdiri di sudut mana pun.
+    pindahKeSudut: (sudut) => {
+      if (typeof alatSudutTerlabuh === "function" && alatSudutTerlabuh(panel)) t4SetelLetak("mengambang");
+      alatSudutPindahkan(panel, KUNCI_POSISI_ALETA, sudut);
+    },
   });
 
   // ==========================================================================

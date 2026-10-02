@@ -3423,6 +3423,23 @@ router.get("/sipp/identitas-pihak", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * Wilayah SIPP bertingkat untuk isian pihak/saksi dari foto KTP (perbaikan
+ * 2 Okt 2026 butir 16, kontrak K5). ?induk= anak satu wilayah (kosong =
+ * provinsi), ?kode= rantai sampai satu kode. SELECT saja; nilai pilihan
+ * bersandi seperti yang dicetak SIPP - lihat kepala sippWilayahService.
+ * Layanannya dimuat di sini, bukan di kepala berkas: berkas rute ini dipakai
+ * bersama banyak fitur, dan tambahan ini cukup satu blok.
+ */
+router.get("/sipp/wilayah", requireInternalToken, async (req, res) => {
+  try {
+    const { status, body } = await require("../services/sippWilayahService").jawabRute(req.query || {});
+    res.status(status).json(body);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
  * Riwayat para pihak satu perkara - cerai berakta dan perkara lain orang yang
  * sama (permintaan 27 September 2026).
  *

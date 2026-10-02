@@ -658,9 +658,12 @@ describe("J8 - unduh per riwayat panggilan", () => {
 
 describe("J3 - kerangka ALETA e-Court lebih lebar", () => {
   it("melebar hanya di atas 1600 px, simetris, tanpa transform; pembungkus lama tetap", () => {
-    expect(PENGGUNA).toContain(
-      'className="min-[1600px]:ml-[calc(50%_-_min(50vw_-_1.5rem,_1200px))] min-[1600px]:w-[min(100vw_-_3rem,_2400px)] min-[1600px]:max-w-none"'
+    // 2 Okt 2026 (butir 12): lebar J3 kini pilihan "Lebar penuh"; bawaannya
+    // "nyaman" (1.680 px). Kelasnya pindah ke @/lib/jadwal-sidang-2okt.
+    expect(baca("manajemen_surat/src/lib/jadwal-sidang-2okt.ts")).toContain(
+      '"min-[1600px]:ml-[calc(50%_-_min(50vw_-_1.5rem,_1200px))] min-[1600px]:w-[min(100vw_-_3rem,_2400px)] min-[1600px]:max-w-none"'
     );
+    expect(PENGGUNA).toContain("<div data-lebar-ecourt={lebar} className={KELAS_LEBAR_ECOURT[lebar]}>");
     const i = PENGGUNA.indexOf("data-lebar-ecourt");
     const blok = PENGGUNA.slice(i, PENGGUNA.indexOf('<div className="space-y-4 px-0 pb-4 pt-1 sm:pb-5">', i));
     expect(blok).not.toMatch(/translate|transform/);
@@ -731,7 +734,11 @@ describe("rute portal sidang/selesai dan sidang/mediator", () => {
     const app = baca("aleta_bot/app.js");
     expect(app).toContain('app.use("/internal/aleta-bot/jadwal-sidang", require("./routes/jadwalSidangRoutes"));');
     const rute = baca("aleta_bot/routes/jadwalSidangRoutes.js");
-    expect(rute.match(/wajibToken, async/g)?.length).toBe(5);
+    // 2 Okt 2026: rute keenam POST /skors (butir 10). Yang dijaga: SETIAP
+    // rute bertoken, bukan jumlahnya.
+    const jumlahRute = rute.match(/router\.(get|post)\(/g)?.length ?? 0;
+    expect(jumlahRute).toBe(6);
+    expect(rute.match(/wajibToken, async/g)?.length).toBe(jumlahRute);
     expect(rute).toContain("kering: badan.kering !== false");
   });
 });

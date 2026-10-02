@@ -24,7 +24,9 @@
  *   3. Verifikasi: nama pengguna harus hakim terdaftar DAN duduk pada majelis
  *      perkara itu (penjagaan yang sama dengan jalur WhatsApp/portal lama).
  *   4. Satu aksi per pengguna pada satu waktu, batas aksi per jam per
- *      pengguna, batas peramban serentak - bukan jeda tiruan manusia.
+ *      pengguna, batas peramban serentak. Jeda seperti manusia di dalam
+ *      halaman (klik, isi, unggah, kirim) dikerjakan pengemudinya -
+ *      ecourtPerambanAksiService + jedaManusiaService (butir 14, 2 Okt).
  *   5. Jejak keamanan mencatat siapa, aksi apa, perkara mana, hasilnya.
  *      Passphrase dan sandi tidak pernah ikut (dijaga uji ecourt-aksi-1okt).
  */

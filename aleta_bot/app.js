@@ -186,6 +186,9 @@ app.use("/internal/aleta-bot/tanda-tangan/tambah", express.json({ limit: "12mb" 
 // Salinan putusan untuk diunggah ke e-Court (perbaikan 1 Okt 2026, butir 16b):
 // PDF sampai 20 MB sebagai base64 di dalam JSON - batas sama dengan naskah.
 app.use("/internal/aleta-bot/ecourt-putusan/unggah", express.json({ limit: "28mb" }));
+// Edoc penetapan PMH/PPP/PJS/PHS (perbaikan 2 Okt 2026, butir 17): unggahan manual
+// dan gambar cap sebagai base64 - batas sama dengan naskah.
+app.use("/internal/aleta-bot/penetapan-edoc/unggah", express.json({ limit: "28mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static("public"));
 
@@ -4350,6 +4353,8 @@ app.use("/internal/aleta-bot/sinkron", require("./routes/sinkronRoutes"));
 app.use("/internal/aleta-bot/jadwal-sidang", require("./routes/jadwalSidangRoutes"));
 // Sesi e-Court pribadi dan aksi e-Court per perkara (perbaikan 1 Okt 2026, E9-E11, 16b).
 app.use("/internal/aleta-bot", require("./routes/ecourtAksiRoutes"));
+// Edoc penetapan dari ABT, bertanda tangan dan bercap (perbaikan 2 Okt 2026, butir 17, K6).
+app.use("/internal/aleta-bot", require("./routes/penetapanEdocRoutes"));
 app.use("/internal/aleta-bot", internalGatewayRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 

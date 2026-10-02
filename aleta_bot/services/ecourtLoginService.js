@@ -112,7 +112,7 @@ function bacaFormulirLogin() {
     Array.from(document.querySelectorAll("button")).find((b) => /login|masuk/i.test(b.innerText || ""));
 
   const tandai = (el, nama) => {
-    if (el) el.setAttribute("data-aleta", nama);
+    if (el) el.setAttribute("data-pk", nama);
     return Boolean(el);
   };
 
@@ -257,8 +257,8 @@ async function mulaiLogin({ slot = "" } = {}) {
     const tersimpan = ecourtKredensialService.ambil(slot);
     if (tersimpan) {
       try {
-        await page.type('[data-aleta="email"]', tersimpan.email, { delay: 10 });
-        await page.type('[data-aleta="sandi"]', tersimpan.sandi, { delay: 10 });
+        await page.type('[data-pk="email"]', tersimpan.email, { delay: 10 });
+        await page.type('[data-pk="sandi"]', tersimpan.sandi, { delay: 10 });
         terisiOtomatis = true;
       } catch {
         // Gagal mengetik bukan alasan membatalkan login: petugas tetap dapat
@@ -361,17 +361,17 @@ async function kirimLogin({ email, sandi, captcha } = {}) {
 
   try {
     if (!sudahTerisi) {
-      await page.type('[data-aleta="email"]', String(email), { delay: 20 });
-      await page.type('[data-aleta="sandi"]', String(sandi), { delay: 20 });
+      await page.type('[data-pk="email"]', String(email), { delay: 20 });
+      await page.type('[data-pk="sandi"]', String(sandi), { delay: 20 });
     }
     if (captcha) {
-      await page.type('[data-aleta="captcha"]', String(captcha), { delay: 20 }).catch(() => {
+      await page.type('[data-pk="captcha"]', String(captcha), { delay: 20 }).catch(() => {
         /* sebagian halaman login tidak memakai captcha */
       });
     }
 
     await Promise.all([
-      page.click('[data-aleta="tombol"]'),
+      page.click('[data-pk="tombol"]'),
       page.waitForNavigation({ waitUntil: "networkidle2", timeout: 60000 }).catch(() => null),
     ]);
 

@@ -67,6 +67,7 @@ function pastikanTabel() {
       nama_pejabat VARCHAR(150) NOT NULL DEFAULT '',
       operator VARCHAR(120) NOT NULL DEFAULT '',
       ip VARCHAR(45) NOT NULL DEFAULT '',
+      lewat VARCHAR(20) NOT NULL DEFAULT 'ALETA',
       berhasil TINYINT NOT NULL DEFAULT 0,
       kering TINYINT NOT NULL DEFAULT 0,
       alasan VARCHAR(160) NOT NULL DEFAULT '',
@@ -96,7 +97,13 @@ function pastikanTabel() {
 
 /** Kolom yang disusulkan sesudah tabelnya pernah dibuat dengan bentuk lama. */
 async function lengkapiKolom() {
-  const susulan = [["nama_pejabat", "VARCHAR(150) NOT NULL DEFAULT '' AFTER akun_sipp"]];
+  const susulan = [
+    ["nama_pejabat", "VARCHAR(150) NOT NULL DEFAULT '' AFTER akun_sipp"],
+    // Butir 14 (2 Okt 2026): jejak jujur menyebut CARANYA - "lewat ALETA" -
+    // di basis data ALETA, sebab kolom audit SIPP/ABT/e-Court tidak lagi
+    // memuat penanda ALETA apa pun.
+    ["lewat", "VARCHAR(20) NOT NULL DEFAULT 'ALETA' AFTER ip"],
+  ];
   for (const [nama, bentuk] of susulan) {
     const ada = await kueri(`SHOW COLUMNS FROM ${TABEL} LIKE ?`, [nama]);
     if (Array.isArray(ada) && ada.length > 0) continue;
@@ -177,9 +184,9 @@ async function catat(jejak) {
     await kueri(
       `INSERT INTO ${TABEL}
          (waktu, aksi, jenis, perkara_id, nomor_perkara, tanggal_penetapan, akun_sipp,
-          nama_pejabat, operator, ip, berhasil, kering, alasan, jumlah_langkah,
+          nama_pejabat, operator, ip, lewat, berhasil, kering, alasan, jumlah_langkah,
           tabel_disentuh, rincian)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         waktuMysqlSekarang(),
         potong(j.aksi || "tulis", 12),
@@ -191,6 +198,8 @@ async function catat(jejak) {
         potong(j.namaPejabat, 150),
         potong(j.operator, 120),
         potong(j.ip, 45),
+        // Selalu ALETA: tabel ini hanya mencatat perbuatan ALETA.
+        "ALETA",
         j.berhasil ? 1 : 0,
         j.kering ? 1 : 0,
         potong(j.alasan, 160),
@@ -241,7 +250,7 @@ async function riwayat(saringan) {
     const batas = Math.max(1, Math.min(200, Number(s.batas) || 40));
     const baris = await kueri(
       `SELECT id, waktu, aksi, jenis, perkara_id, nomor_perkara, tanggal_penetapan,
-              akun_sipp, nama_pejabat, operator, ip, berhasil, kering, alasan,
+              akun_sipp, nama_pejabat, operator, ip, lewat, berhasil, kering, alasan,
               jumlah_langkah, tabel_disentuh
          FROM ${TABEL}
         ${syarat.length ? `WHERE ${syarat.join(" AND ")}` : ""}
@@ -268,6 +277,8 @@ async function riwayat(saringan) {
         akunSipp: String(b.akun_sipp || ""),
         namaPejabat: String(b.nama_pejabat || ""),
         operator: String(b.operator || ""),
+        ip: String(b.ip || ""),
+        lewat: String(b.lewat || "ALETA"),
         berhasil: Number(b.berhasil) === 1,
         kering: Number(b.kering) === 1,
         alasan: String(b.alasan || ""),

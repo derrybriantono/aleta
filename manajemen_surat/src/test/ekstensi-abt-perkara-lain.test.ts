@@ -212,12 +212,17 @@ function bukaBlangko(kode: string[], opsi: { nomor?: string; isi?: Record<string
       return String(this.innerHTML || "").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "");
     },
   });
+  // Disesuaikan 2 Okt (agen A, butir 14): keputusan pengguna 2 Okt MENGEMBALIKAN
+  // jeda seperti manusia sebelum tulisan ke ABT (alatJedaManusia, panel-alat.js) -
+  // membalik "tanpa jeda tiruan" 26 Sep. Jeda itu dinolkan di sini dan diuji di
+  // ekstensi-abt-2okt; uji ini tetap menjaga bahwa TIDAK ADA jeda LAIN.
   // Keduanya "use strict": yang diuji langsung diserahkan lewat __uji.
   w.eval(
     SUMBER_ALAT +
       "\n;\n" +
       SUMBER_ABT +
-      "\n;\nwindow.__uji = { VARIABEL_SIAP_POSITA_LAIN, blangkoMemuatVariabelSiapLain, kunciJenisLain, kabarPositaLain, idJenisPerkaraSipp, idAlurPerkaraSipp };"
+      "\n;\nwindow.__uji = { VARIABEL_SIAP_POSITA_LAIN, blangkoMemuatVariabelSiapLain, kunciJenisLain, kabarPositaLain, idJenisPerkaraSipp, idAlurPerkaraSipp };" +
+      '\n;\nif (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);'
   );
   return w;
 }

@@ -453,9 +453,14 @@ function buka(p: { sumber?: string; simpanan?: Record<string, unknown>; ganti?: 
     if (!e.defaultPrevented && !String(a.getAttribute("href")).startsWith("#")) navigasi.push(a.href);
     e.preventDefault();
   });
+  // Disesuaikan 2 Okt (agen A, butir 14): tulisan ke ABT kini didahului
+  // alatJedaManusia (0,9-3,5 detik). Uji ini memeriksa ISI tulisan, bukan
+  // jedanya (jeda diuji di ekstensi-abt-2okt) - jeda dinolkan DI DALAM skrip
+  // yang sama (panel-alat.js "use strict": fungsinya tidak menjadi milik window).
   w.eval(
     `${SUMBER_ALAT}\n;\n${p.sumber ?? SUMBER_ABT}\n;\nwindow.__uji = { kerjakan: typeof kerjakanSatuPerkaraAbt === "function" ? kerjakanSatuPerkaraAbt : null, ` +
-      `t6: typeof t6TeksRtf === "function" ? { t6TeksRtf, t6KalimatRamah, t6VarianKalimat, t6PeriksaAnonim, t6DataPribadi } : null };`
+      `t6: typeof t6TeksRtf === "function" ? { t6TeksRtf, t6KalimatRamah, t6VarianKalimat, t6PeriksaAnonim, t6DataPribadi } : null };` +
+      `\n;\n/* 2 Okt (agen A, butir 14): jeda manusia dinolkan - lihat catatan di buka() */ if (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);`
   );
   return { dom, w, simpanan, tulisan, minta, konfirmasi, navigasi, setel: (isi) => local.set(isi) };
 }

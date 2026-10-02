@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.178.0",
+    dirilis: "2026-10-02T07:40:00+08:00",
+    judul: "Panel lebih tertata per peran, relaas massal per juru sita, blangko pengecualian di putusan massal, isi data pihak dari foto KTP, edoc penetapan dengan cap, skors sidang",
+    butir: [
+      "TAMPILAN UI BARU: kepala dan kaki panel ALETA kini sama dengan panel SIPP dan ABT. Tiap bagian lipat diberi label peran (mis. Susun keterangan saksi = Panitera). Hanya bagian utama peran itu yang terbuka sebagai bawaan; bagian lain terlipat supaya tidak ramai. Klik dua kali di sudut panel memindahkan panel ke sudut itu (berlaku untuk ALETA, SIPP, ABT, dan widget checklist). Di popup, atur panel mana yang terbuka saat halaman dibuka: bawaannya ALETA tersembunyi, SIPP dan ABT terbuka.",
+      "WIDGET CHECKLIST: bawaannya hanya checklist milestone yang tampil; Catatan cepat, Lama sidang, dan Kalender tenggat dinyalakan dari tombol ☰ di kepala checklist.",
+      "PANEL ABT: bagian lipat yang tidak mau menutup sudah diperbaiki. Susun keterangan saksi hanya untuk panitera, panitera pengganti, dan Admin. Jawaban saksi yang belum terdeteksi dihitung dan bisa dilompati satu per satu. Perapian posita dan keterangan saksi dikerjakan di belakang tanpa kartu tambahan (tetap ikut tersimpan saat Input ke ABT).",
+      "MASSAL: relaas dan pemberitahuan putusan massal dikelompokkan per juru sita untuk Admin. Putusan massal punya blangko utama di atas, dan tiap perkara yang berbeda bisa memakai tombol 'Blangko berbeda…'; pilihan dari panel SIPP ikut dipakai di ABT.",
+      "PANEL SIPP: 'Perkara berikutnya' mengikuti peran (hakim: putusan, panitera pengganti: BAS, juru sita: relaas dan PBT); antrean Direktori Putusan tetap hanya untuk Super Admin dan Admin. Tab Penetapan punya 'Upload edoc penetapan' (PMH/PPP/PJS/PHS, boleh sebagian) yang diambil dari blangko PTSP di ABT, ditandatangani sesuai pejabatnya dan dibubuhi cap pengadilan, plus bagian upload manual. Cap diunggah sendiri di ALETA e-Court > Berkas tanda tangan > Cap pengadilan.",
+      "ISI DATA PIHAK DARI FOTO KTP (baru, untuk petugas selain hakim, panitera, dan juru sita): di blangko 'Tambah Referensi Data Pihak', foto atau teks KTP dibaca, hasilnya diperiksa petugas, lalu diisikan ke blangko. Provinsi sampai kelurahan/desa dipilih bertingkat dari data wilayah SIPP; yang tidak cocok tepat hanya ditawarkan, tidak dipilih sendiri. Foto tidak disimpan, dan Simpan SIPP tetap ditekan petugas.",
+      "TEMA GELAP SIPP: blangko di tingkap SIPP (mis. Tambah Referensi Data Pihak) kini ikut gelap dan terbaca.",
+      "JADWAL SIDANG (portal): perkara yang sedang disidangkan disorot per ruang. Tombol Skors, Lompat ke sini, dan Lanjutkan untuk berpindah perkara sementara tanpa menghapus tanda Selesai yang sah; tersedia juga di halaman Hasil Sidang. Lebar halaman ALETA e-Court dibatasi agar nyaman dibaca, dengan pilihan 'Lebar penuh' di layar besar.",
+    ],
+  },
+  {
     versi: "1.177.0",
     dirilis: "2026-10-01T21:15:00+08:00",
     judul: "UI Baru: lipatan seragam, Putusan otomatis satu alur tanpa membuka blangko, upload putusan ke e-Court, panel ABT rapi otomatis, massal per user; Jadwal Sidang: mediator, Selesai, layar penuh, aksi e-Court",

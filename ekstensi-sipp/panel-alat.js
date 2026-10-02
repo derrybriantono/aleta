@@ -369,6 +369,15 @@ function alatPasangJalanKeluar(panel, kunci, opsi) {
   if (!panel || panel.dataset.jalanKeluar === "1") return;
   panel.dataset.jalanKeluar = "1";
   alatDaftarKeluar.add({ panel, kunci: String(kunci || ""), opsi: opsi || {}, pernah: false });
+  // Perbaikan 2 Okt (UI Baru; gerbangnya ditanyakan saat bertindak): butir 11
+  // klik dua kali di sudut = pindah ke sudut itu, butir 4 panel situs yang
+  // disetel tersembunyi lahir sebagai lencana. Lihat bagian 3e.
+  if (typeof alatPasangSudut === "function") {
+    const o = opsi || {};
+    const pindah = typeof o.pindahKeSudut === "function" ? o.pindahKeSudut : panel.aletaPindahKeSudut;
+    alatPasangSudut(panel, { kunci, saatPindah: typeof pindah === "function" ? pindah : null });
+  }
+  if (typeof alatTerapkanBawaanTampil === "function") void alatTerapkanBawaanTampil(panel, kunci, opsi);
 
   if (alatKeluarTerpasang) return;
   alatKeluarTerpasang = true;
@@ -438,6 +447,9 @@ function alatPasangJalanKeluar(panel, kunci, opsi) {
     "dblclick",
     (peristiwa) => {
       if (alatTingkapHalamanTerbuka()) return;
+      // Butir 11 (2 Okt, UI Baru): klik dua kali di SUDUT panel/widget ALETA
+      // memindahkannya - bukan permintaan menyingkir bagi panel lain.
+      if (typeof alatSudutCari === "function" && alatSudutCari(peristiwa.clientX, peristiwa.clientY, ALAT_SUDUT_ZONA, 0)) return;
       for (const entri of alatPanelKeluarHidup()) {
         const panel = entri.panel;
         // Di DALAM panel, klik ganda adalah memilih kata - bukan permintaan
@@ -1690,6 +1702,9 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   alatDengarkanTemaPalet();
   void alatMuatKering();
 
+  // pindahKeSudut (butir 11, 2 Okt): pemilik panel yang punya letak berlabuh
+  // (portal "samping") melepas labuhnya sendiri sebelum pindah ke sudut.
+  if (typeof pilihan.pindahKeSudut === "function") panel.aletaPindahKeSudut = pilihan.pindahKeSudut;
   alatPasangJalanKeluar(panel, kunci);
   // Klik 2x kepala = layar penuh (butir 18, Baru & UI Baru). Panel SIPP
   // memasangnya sendiri di konten.js - kepalanya disusun di sana.
@@ -2350,7 +2365,10 @@ function alatGolonganPeran(peran) {
   if (/\bketua\b/.test(p)) return "ketua";
   if (/hakim/.test(p)) return "hakim";
   if (/juru\s*sita|jurusita/.test(p)) return "jurusita";
-  if (/panitera|\bpp\b/.test(p)) return "panitera";
+  // \bpanitera\b (2 Okt, butir 16b): "Staf Kepaniteraan" / "Kepaniteraan Hukum"
+  // BUKAN panitera - tanpa batas kata, staf unit kepaniteraan ikut golongan
+  // panitera dan kehilangan fitur peran "lain" (mis. scan KTP saksi, K5).
+  if (/\bpanitera\b|\bpp\b/.test(p)) return "panitera";
   return "lain";
 }
 
@@ -2764,6 +2782,10 @@ const ALETA_COBA_BOLEH = [
   // yang disimpan di ALETA, SIPP, maupun ABT. Setara abt/pdf di atas. Yang
   // menulis (unggah-sipp) tetap ditahan; konversi hanya langkah hitungnya.
   /\/aleta\/api\/aleta-ecourt\/putusan\/konversi-naskah(?:[?#]|$)/,
+  // Baca foto/teks KTP (perbaikan 2 Okt butir 16): hanya menghitung usulan medan
+  // dan memulangkannya - foto tidak disimpan, tidak ada yang ditulis ke mana pun.
+  // Pengisian ke blangko SIPP tetap oleh petugas, dan Simpan SIPP tetap ditahan.
+  /\/aleta\/api\/aleta-ecourt\/saksi-scan(?:[?#]|$)/,
 ];
 
 function alatUjiBersihMode(x) {
@@ -2918,12 +2940,18 @@ function alatBersihTampilanServer(x) {
  *   {nilai, diubahPada}
  */
 const ALAT_SETELAN_SINGGAH = ["widget.tata"];
+/**
+ * Perbaikan 2 Okt butir 4: kunci yang disinggahkan HANYA bila portal
+ * mengirimnya (akun sudah pernah menyimpan) - tanpa itu bentuk singgahan
+ * tetap persis seperti 1 Okt ({"widget.tata": ...} saja).
+ */
+const ALAT_SETELAN_SINGGAH_BILA_ADA = ["panel.bawaan"];
 
 function alatBersihSetelanSinggah(x) {
   if (!x || typeof x !== "object" || Array.isArray(x)) return undefined;
   const hasil = {};
   let ada = false;
-  for (const k of ALAT_SETELAN_SINGGAH) {
+  for (const k of [...ALAT_SETELAN_SINGGAH, ...ALAT_SETELAN_SINGGAH_BILA_ADA]) {
     if (!(k in x)) continue;
     const v = x[k];
     if (v === null) {
@@ -2946,6 +2974,10 @@ function alatSetelanDariJawaban(data) {
     const baris = s[k];
     hasil[k] = baris && typeof baris === "object" && "nilai" in baris ? { nilai: baris.nilai, diubahPada: String(baris.diubahPada || "") } : null;
   }
+  for (const k of ALAT_SETELAN_SINGGAH_BILA_ADA) {
+    const baris = s[k];
+    if (baris && typeof baris === "object" && "nilai" in baris) hasil[k] = { nilai: baris.nilai, diubahPada: String(baris.diubahPada || "") };
+  }
   return hasil;
 }
 
@@ -2962,7 +2994,7 @@ function alatSetelanTersinggah(kunci) {
  * sudah basi sebelum pembacaan lima menitan berikutnya.
  */
 async function alatCatatSetelanTersinggah(kunci, nilai, diubahPada) {
-  if (!ALAT_SETELAN_SINGGAH.includes(kunci)) return;
+  if (!ALAT_SETELAN_SINGGAH.includes(kunci) && !ALAT_SETELAN_SINGGAH_BILA_ADA.includes(kunci)) return;
   const s = alatUji.server;
   if (!s) return;
   const baru = {
@@ -3753,6 +3785,8 @@ function alatLipat(judul, opsi) {
   lencana.className = "aleta-lipat-lencana";
   alatLipatIsiLencana(lencana, o.lencana);
   kepala.appendChild(lencana);
+  // Butir 7 (2 Okt): tag peran di KIRI judul (sesudah panah) - lihat alatLipatTagPeran.
+  const tagPeran = alatLipatTagPeran(kepala, o.peran);
 
   const isi = document.createElement("div");
   isi.className = "aleta-lipat-isi";
@@ -3811,9 +3845,88 @@ function alatLipat(judul, opsi) {
     setelJudul: (teks) => {
       teksJudul.textContent = String(teks === undefined || teks === null ? "" : teks);
     },
+    setelPeran: (peran) => alatLipatIsiPeran(tagPeran, peran),
   };
   akar.__aletaLipat = pegangan;
   return pegangan;
+}
+
+/* ─── 3b-lipat-peran. TAG PERAN DI KEPALA LIPATAN (K2, perbaikan 2 Okt butir 7)
+ *
+ * Pengguna 2 Okt: "tulisan ROLE di samping accordion tiap bagian (mis. kiri
+ * 'Susun keterangan saksi' ada tulisan 'Panitera')". Opsi `peran` di alatLipat
+ * dan alatJadikanLipat: teks, daftar teks, atau kode golongan
+ * (admin/ketua/hakim/panitera/jurusita/pp/lain) - kode diganti sebutannya.
+ * Elemennya <span class="aleta-lipat-peran"> di KIRI judul - tepat sesudah
+ * panah ("kiri 'Susun keterangan saksi' ada tulisan 'Panitera'"); tanpa
+ * peran = elemennya hidden, jadi kepala yang tidak memakainya tampak persis
+ * seperti sebelumnya. Klik pada tag tetap melipat (tag bukan kendali).
+ * Pegangan alatLipat punya setelPeran(peran); alatJadikanLipat memanggil
+ * alatLipatTagPeran pada kepala yang ditemukannya (ketiga asal).
+ */
+const ALAT_LIPAT_SEBUTAN_PERAN = {
+  admin: "Admin",
+  "super admin": "Super Admin",
+  ketua: "Ketua",
+  hakim: "Hakim",
+  panitera: "Panitera",
+  "panitera sidang": "Panitera Sidang",
+  pp: "PP",
+  jurusita: "Juru Sita",
+  "juru sita": "Juru Sita",
+  lain: "Petugas",
+};
+
+/** Teks tag peran dari opsi `peran` (string | string[] | null) - "" bila kosong. */
+function alatLipatTeksPeran(peran) {
+  const daftar = (Array.isArray(peran) ? peran : [peran])
+    .map((p) => String(p === undefined || p === null ? "" : p).trim())
+    .filter(Boolean)
+    .map((p) => ALAT_LIPAT_SEBUTAN_PERAN[p.toLowerCase().replace(/[-_]+/g, " ")] || p);
+  const unik = [];
+  for (const p of daftar) if (!unik.includes(p)) unik.push(p);
+  return unik.join(" · ").slice(0, 80);
+}
+
+function alatLipatIsiPeran(tag, peran) {
+  if (!tag) return;
+  const teks = alatLipatTeksPeran(peran);
+  tag.textContent = teks;
+  tag.hidden = !teks;
+  if (teks) tag.title = `Bagian ini untuk: ${teks}`;
+  else tag.removeAttribute("title");
+}
+
+/**
+ * Pasang (sekali) tag peran di `kepala`: tepat sesudah panah lipat (kiri
+ * judul), atau di awal kepala bila tanpa panah. Kepala yang sudah bertag
+ * hanya diperbarui teksnya.
+ */
+function alatLipatTagPeran(kepala, peran) {
+  if (!kepala) return null;
+  let tag = kepala.querySelector(":scope > .aleta-lipat-peran");
+  if (!tag) {
+    tag = document.createElement("span");
+    tag.className = "aleta-lipat-peran";
+    tag.hidden = true;
+    const panah = kepala.querySelector(":scope > .aleta-lipat-panah");
+    kepala.insertBefore(tag, panah ? panah.nextSibling : kepala.firstChild);
+  }
+  alatLipatIsiPeran(tag, peran);
+  return tag;
+}
+
+/**
+ * Butir 19 (2 Okt) - konvensi bawaan buka/tutup: jangan semua terbuka.
+ * alatLipatBawaanTerbuka(urutanKunci, kunciUtama?) -> (kunci) => boolean:
+ * hanya kunciUtama (atau kunci PERTAMA urutan bila kunciUtama kosong/tidak
+ * ada di urutan) yang terbuka; sisanya tertutup. Ingatan orang tetap menang
+ * (alatLipat hanya memakai `terbuka` bila kunci belum pernah diingat).
+ */
+function alatLipatBawaanTerbuka(urutanKunci, kunciUtama) {
+  const urutan = (Array.isArray(urutanKunci) ? urutanKunci : []).map((k) => String(k || "")).filter(Boolean);
+  const utama = kunciUtama && urutan.includes(String(kunciUtama)) ? String(kunciUtama) : urutan[0] || "";
+  return (kunci) => Boolean(utama) && String(kunci || "") === utama;
 }
 
 /** Anak langsung `akar` yang memuat (atau adalah) `el`. */
@@ -3830,8 +3943,12 @@ function alatAnakLangsung(akar, el) {
  */
 function alatJadikanLipat(el, opsi) {
   if (!el || el.nodeType !== 1) return null;
-  if (el.__aletaLipat) return el.__aletaLipat;
   const o = opsi && typeof opsi === "object" ? opsi : {};
+  if (el.__aletaLipat) {
+    // Dipanggil ulang dengan peran: tag diperbarui, sisanya tetap.
+    if (o.peran !== undefined && el.__aletaLipat.kepala) alatLipatTagPeran(el.__aletaLipat.kepala, o.peran);
+    return el.__aletaLipat;
+  }
   const kunci = String(o.kunci || "").trim();
   const anak = Array.from(el.children || []);
 
@@ -3844,6 +3961,7 @@ function alatJadikanLipat(el, opsi) {
     if (ringkasan) {
       ringkasan.classList.add("aleta-lipat-kepala");
       if (!ringkasan.querySelector(":scope > .aleta-lipat-panah")) ringkasan.insertBefore(alatLipatPanah(), ringkasan.firstChild);
+      if (o.peran !== undefined) alatLipatTagPeran(ringkasan, o.peran);
     }
     const tandai = () => el.setAttribute("data-terbuka", el.open ? "ya" : "tidak");
     let disentuh = false;
@@ -3878,6 +3996,7 @@ function alatJadikanLipat(el, opsi) {
         return el.open;
       },
       terbuka: () => Boolean(el.open),
+      setelPeran: (p) => (ringkasan ? alatLipatTagPeran(ringkasan, p) : null),
     };
     el.__aletaLipat = pegangan;
     return pegangan;
@@ -3894,6 +4013,7 @@ function alatJadikanLipat(el, opsi) {
     const panahLama = tombolLama.querySelector(".aleta-bagian-panah, .aleta-cm-panah, .aleta-lipat-panah");
     if (panahLama) panahLama.classList.add("aleta-lipat-panah");
     else tombolLama.insertBefore(alatLipatPanah(), tombolLama.firstChild);
+    if (o.peran !== undefined) alatLipatTagPeran(tombolLama, o.peran);
     const isiLama = anak.find((c) => c !== tombolLama && /(^|\s)[\w-]*-isi(\s|$)/.test(String(c.className || ""))) || null;
     if (isiLama) isiLama.classList.add("aleta-lipat-isi");
     const tandai = () =>
@@ -3916,6 +4036,7 @@ function alatJadikanLipat(el, opsi) {
         return tombolLama.getAttribute("aria-expanded") !== "false";
       },
       terbuka: () => tombolLama.getAttribute("aria-expanded") !== "false",
+      setelPeran: (p) => alatLipatTagPeran(tombolLama, p),
     };
     el.__aletaLipat = pegangan;
     return pegangan;
@@ -3942,6 +4063,7 @@ function alatJadikanLipat(el, opsi) {
     if (!kepala.hasAttribute("tabindex")) kepala.setAttribute("tabindex", "0");
   }
   if (!kepala.querySelector(":scope > .aleta-lipat-panah")) kepala.insertBefore(alatLipatPanah(), kepala.firstChild);
+  if (o.peran !== undefined) alatLipatTagPeran(kepala, o.peran);
 
   let terbukaKini = true;
   let disentuh = false;
@@ -3982,7 +4104,15 @@ function alatJadikanLipat(el, opsi) {
       buka();
     }
   });
-  const pegangan = { akar: el, kepala, isi: null, asal: "kartu", buka, terbuka: () => terbukaKini };
+  const pegangan = {
+    akar: el,
+    kepala,
+    isi: null,
+    asal: "kartu",
+    buka,
+    terbuka: () => terbukaKini,
+    setelPeran: (p) => alatLipatTagPeran(kepala, p),
+  };
   el.__aletaLipat = pegangan;
   return pegangan;
 }
@@ -5436,6 +5566,366 @@ Portal menyajikan ${tertinggal.portal}, yang berjalan ${tertinggal.terpasang}. U
   return tombol;
 }
 
+/* ─── 3e. PERBAIKAN 2 OKT 2026 - BAWAAN TAMPIL (butir 4) DAN SUDUT (butir 11) ──
+ *
+ * Keduanya dipasang lewat alatPasangJalanKeluar - satu-satunya pintu yang
+ * dilewati KETIGA panel (portal dan ABT lewat alatPasangPanel, SIPP
+ * langsung dari konten.js). Widget checklist memakai alatPasangSudut
+ * sendiri (checklist.js). HANYA UI Baru: gerbangnya ditanyakan saat
+ * bertindak, jadi Lama dan Baru tidak berubah satu atribut pun.
+ *
+ * ── Butir 4: panel terbuka atau tersembunyi saat halaman dimuat ──────────────
+ *   Pengguna 2 Okt: "toggle hide/unhide DEFAULT per ALETA/SIPP/ABT di widget
+ *   ekstensi; bila di-hide, ekstensi itu default TIDAK terbuka". Bawaan:
+ *   ALETA tersembunyi, SIPP dan ABT terbuka. Tersembunyi = panel lahir
+ *   sebagai LENCANA (logo bulat) - satu klik membentangkannya; tidak ada
+ *   fitur yang hilang, dan saklar induk "aktif" tidak disentuh.
+ *   Disimpan:
+ *     server  setelan akun "panel.bawaan" = {aleta, sipp, abt} (PUT
+ *             /ekstensi/setelan oleh popup), disinggahkan di tampilanServer
+ *     lokal   chrome.storage.local "panelBawaanTampil" = {aleta, sipp, abt,
+ *             diubahPada} - cadangan bila server tak terjangkau
+ *   Yang lebih BARU (diubahPada) yang berlaku; tanpa keduanya = bawaan.
+ *   Diterapkan SEKALI per panel per muat halaman: panel SIPP digambar ulang
+ *   terus-menerus, dan yang sudah dibentangkan orang tidak boleh menciut lagi.
+ *
+ * ── Butir 11: klik dua kali di SUDUT panel = pindah ke sudut layar itu ──────
+ *   Zona 20 px di tiap pojok DALAM panel. Mendekat (36 px, boleh dari luar
+ *   panel 14 px) = sorot bayangan di pojok itu (.aleta-sudut-sorot). Klik
+ *   dua kali di zona = panel pindah ke pojok layar yang sama (jarak tepi 12
+ *   px) dan letaknya disimpan di kunci posisi panel itu. Klik dua kali kepala
+ *   (= layar penuh) tetap: zona sudut adalah pojok kecil, dan klik dua kali
+ *   di zona tidak diteruskan ke kepala. Tombol di pojok (×) tetap tombol.
+ *
+ *   alatPasangSudut(el, {kunci, saatPindah(sudut), wadahSorot, gerbang})
+ *     sudut = "ki-at" | "ka-at" | "ki-bw" | "ka-bw"
+ *     saatPindah  bila ada, dipanggil MENGGANTIKAN pemindahan bawaan
+ *     wadahSorot  tempat elemen sorot (bawaan: el) - widget Shadow DOM
+ *     gerbang     () => boolean tambahan (bawaan: selalu)
+ */
+const ALAT_BAWAAN_TAMPIL_KUNCI = "panelBawaanTampil";
+const ALAT_BAWAAN_TAMPIL_SETELAN = "panel.bawaan";
+const ALAT_BAWAAN_TAMPIL = { aleta: false, sipp: true, abt: true };
+const ALAT_BAWAAN_SITUS = ["aleta", "sipp", "abt"];
+/** Kunci posisi panel yang sudah diberi bawaannya di halaman ini. */
+const alatBawaanSudah = new Set();
+
+function alatBawaanTampilBersih(x) {
+  const hasil = {};
+  if (!x || typeof x !== "object" || Array.isArray(x)) return hasil;
+  for (const s of ALAT_BAWAAN_SITUS) if (typeof x[s] === "boolean") hasil[s] = x[s];
+  return hasil;
+}
+
+/**
+ * Pilihan yang berlaku dari cadangan lokal {aleta,sipp,abt,diubahPada} dan
+ * setelan akun {nilai:{...}, diubahPada}: yang lebih baru menang; ruas yang
+ * tidak disebut = bawaan. Pulang {aleta, sipp, abt, sumber}.
+ */
+function alatBawaanTampilBerlaku(lokal, server) {
+  const l = lokal && typeof lokal === "object" ? lokal : null;
+  const s = server && typeof server === "object" && server.nilai && typeof server.nilai === "object" ? server : null;
+  const waktu = (x) => {
+    const t = Date.parse(String((x && x.diubahPada) || ""));
+    return Number.isFinite(t) ? t : 0;
+  };
+  let pilih = null;
+  let sumber = "bawaan";
+  if (s && (!l || waktu(s) >= waktu(l))) {
+    pilih = alatBawaanTampilBersih(s.nilai);
+    sumber = "akun";
+  } else if (l) {
+    pilih = alatBawaanTampilBersih(l);
+    sumber = "lokal";
+  }
+  return { ...ALAT_BAWAAN_TAMPIL, ...(pilih || {}), sumber };
+}
+
+async function alatBacaBawaanTampil() {
+  let lokal = null;
+  try {
+    const s = await chrome.storage.local.get([ALAT_BAWAAN_TAMPIL_KUNCI]);
+    lokal = s && s[ALAT_BAWAAN_TAMPIL_KUNCI];
+  } catch {
+    lokal = null;
+  }
+  const server = typeof alatSetelanTersinggah === "function" ? alatSetelanTersinggah(ALAT_BAWAAN_TAMPIL_SETELAN) : undefined;
+  return alatBawaanTampilBerlaku(lokal, server);
+}
+
+/** "aleta" | "sipp" | "abt" dari kunci posisi panel, atau dari alamat halaman. */
+function alatSitusPanel(kunci) {
+  const k = String(kunci || "");
+  if (k === "posisiPanelAleta") return "aleta";
+  if (/^posisiPanelAbt/.test(k)) return "abt";
+  if (k === "posisiPanel") return "sipp";
+  try {
+    const jalur = String(location.pathname || "");
+    if (/^\/aleta(?:\/|$)/.test(jalur)) return "aleta";
+    if (/\/aps_badilag\//.test(jalur)) return "abt";
+    if (/\/SIPP(?:\/|$)/i.test(jalur)) return "sipp";
+  } catch {
+    /* tanpa alamat: tidak dikenali */
+  }
+  return "";
+}
+
+let alatUjiSiapJanji = null;
+/** Janji yang selesai sesudah tampilan (Lama/Baru/UI Baru) terbaca. */
+function alatUjiSiap() {
+  return alatUjiSiapJanji || Promise.resolve();
+}
+
+/**
+ * Butir 4: panel situs yang disetel TERSEMBUNYI lahir sebagai lencana -
+ * sekali per kunci per muat halaman, hanya UI Baru. Pulang true bila diciutkan.
+ */
+async function alatTerapkanBawaanTampil(panel, kunci, opsi) {
+  const o = opsi || {};
+  const k = String(kunci || "");
+  if (!panel || alatBawaanSudah.has(k)) return false;
+  await alatUjiSiap();
+  if (alatUjiMode() !== "ui") return false;
+  const situs = alatSitusPanel(k);
+  if (!situs) return false;
+  // Ditandai SEBELUM menunggu penyimpanan: panel SIPP yang digambar ulang
+  // selama bacaan berjalan tidak boleh ikut diciutkan dua kali.
+  if (alatBawaanSudah.has(k)) return false;
+  alatBawaanSudah.add(k);
+  const b = await alatBacaBawaanTampil();
+  if (b[situs] !== false) return false;
+  // Panel yang baru disusun kadang belum masuk halaman.
+  for (let i = 0; i < 40 && !panel.isConnected; i += 1) await alatJeda(50);
+  if (!panel.isConnected || panel.classList.contains(KELAS_LENCANA)) return false;
+  try {
+    if (typeof o.ciutkan === "function") o.ciutkan();
+    else alatCiutkan(panel, k, true);
+    panel.setAttribute("data-aleta-bawaan-tersembunyi", "ya");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── Butir 11: sudut ─────────────────────────────────────────────────────────
+
+const ALAT_SUDUT_ZONA = 20;
+const ALAT_SUDUT_DEKAT = 36;
+const ALAT_SUDUT_LUAR = 14;
+const ALAT_SUDUT_TEPI = 12;
+/** Sisi kotak sorot (px) - rupanya di blok W2 panel.css dan GAYA checklist.js. */
+const ALAT_SUDUT_SOROT = 44;
+const ALAT_SUDUT_NAMA = { "ki-at": "kiri atas", "ka-at": "kanan atas", "ki-bw": "kiri bawah", "ka-bw": "kanan bawah" };
+/** Yang bukan sudut walau di pojok: kendali tetap kendali. */
+const ALAT_SUDUT_BUKAN = "button, a[href], input, select, textarea, summary, label, [contenteditable='true']";
+const alatSudutDaftar = [];
+let alatSudutDengar = false;
+
+/** Sudut kotak terdekat dari titik (x,y) bila dalam `dekat` px (dan paling jauh `luar` px di luar kotak). */
+function alatSudutDari(kotak, x, y, dekat, luar) {
+  if (!kotak || !Number.isFinite(x) || !Number.isFinite(y)) return "";
+  // Kotak tanpa ukuran (panel belum tertata) tidak punya sudut: tanpa ini
+  // setiap klik di titik (0,0) terbaca sebagai "pojok".
+  if (!(kotak.right - kotak.left > 0) || !(kotak.bottom - kotak.top > 0)) return "";
+  const lebarLuar = Number.isFinite(luar) ? luar : 0;
+  const dKiri = x - kotak.left;
+  const dKanan = kotak.right - x;
+  const dAtas = y - kotak.top;
+  const dBawah = kotak.bottom - y;
+  const dalam = (d) => d >= -lebarLuar && d <= dekat;
+  const h = dalam(dKiri) && (!dalam(dKanan) || dKiri <= dKanan) ? "ki" : dalam(dKanan) ? "ka" : "";
+  const v = dalam(dAtas) && (!dalam(dBawah) || dAtas <= dBawah) ? "at" : dalam(dBawah) ? "bw" : "";
+  return h && v ? `${h}-${v}` : "";
+}
+
+function alatSudutTerlabuh(el) {
+  try {
+    if ((window.innerWidth || 0) < 1100) return false;
+    const akar = document.documentElement;
+    if (el.id === "aleta-panel-portal" && akar.getAttribute("data-aleta-portal-letak") === "samping") return true;
+    if (el.id === "aleta-panel-sipp" && akar.getAttribute("data-aleta-sipp-labuh") === "kanan") return true;
+  } catch {
+    /* tanpa keterangan: anggap mengambang */
+  }
+  return false;
+}
+
+function alatSudutBoleh(entri) {
+  const el = entri.el;
+  if (!el || !el.isConnected) return false;
+  if (alatUjiMode() !== "ui") return false;
+  if (el.classList && (el.classList.contains(KELAS_LENCANA) || el.classList.contains("aleta-panel-penuh"))) return false;
+  // Panel yang BERLABUH (letak samping portal, labuh kanan SIPP UI Baru; CSS
+  // !important di layar >= 1100 px) tidak dapat dipindah ke sudut - kecuali
+  // pemiliknya memberi saatPindah sendiri (yang melepas labuhnya).
+  if (!entri.saatPindah && alatSudutTerlabuh(el)) return false;
+  if (typeof entri.gerbang === "function") {
+    try {
+      if (!entri.gerbang()) return false;
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+function alatSudutSorot(entri, sudut) {
+  const wadah = entri.wadahSorot || entri.el;
+  let sorot = entri.sorot;
+  if (!sudut) {
+    if (sorot) sorot.remove();
+    entri.sorot = null;
+    entri.el.removeAttribute("data-aleta-sudut-dekat");
+    return;
+  }
+  if (!sorot || !sorot.isConnected) {
+    sorot = document.createElement("div");
+    sorot.className = "aleta-sudut-sorot";
+    sorot.setAttribute("aria-hidden", "true");
+    const ket = document.createElement("span");
+    ket.className = "aleta-sudut-ket";
+    sorot.appendChild(ket);
+    wadah.appendChild(sorot);
+    entri.sorot = sorot;
+  }
+  sorot.setAttribute("data-sudut", sudut);
+  sorot.firstChild.textContent = "2×";
+  sorot.title = `Klik dua kali: pindahkan ke ${ALAT_SUDUT_NAMA[sudut] || "sudut ini"}`;
+  // Fixed, dihitung dari kotak panel: tidak ikut tergulung isi panel.
+  const kotak = entri.el.getBoundingClientRect();
+  const U = ALAT_SUDUT_SOROT;
+  sorot.style.position = "fixed";
+  sorot.style.left = `${Math.round(sudut.startsWith("ki") ? kotak.left : kotak.right - U)}px`;
+  sorot.style.top = `${Math.round(sudut.endsWith("at") ? kotak.top : kotak.bottom - U)}px`;
+  entri.el.setAttribute("data-aleta-sudut-dekat", sudut);
+}
+
+/** Pemindahan bawaan: ke pojok layar, letak disimpan (digabung) di kunci posisi panel. */
+function alatSudutPindahkan(panel, kunci, sudut) {
+  const kotak = panel.getBoundingClientRect();
+  const lebar = kotak.width || panel.offsetWidth || 320;
+  const tinggi = kotak.height || panel.offsetHeight || 200;
+  const T = ALAT_SUDUT_TEPI;
+  const kiri = Math.max(0, sudut.startsWith("ki") ? T : (window.innerWidth || 0) - lebar - T);
+  const atas = Math.max(0, sudut.endsWith("at") ? T : (window.innerHeight || 0) - tinggi - T);
+  panel.style.left = `${Math.round(kiri)}px`;
+  panel.style.top = `${Math.round(atas)}px`;
+  panel.style.right = "auto";
+  panel.style.bottom = "auto";
+  if (kunci) {
+    void Promise.resolve()
+      .then(() => chrome.storage.local.get([kunci]))
+      .then((s) => {
+        const lama = s && s[kunci] && typeof s[kunci] === "object" ? s[kunci] : {};
+        return chrome.storage.local.set({ [kunci]: { ...lama, kiri: Math.round(kiri), atas: Math.round(atas) } });
+      })
+      .catch(() => {
+        /* berlaku untuk halaman ini saja */
+      });
+  }
+  return { kiri: Math.round(kiri), atas: Math.round(atas) };
+}
+
+function alatSudutCari(x, y, dekat, luar) {
+  for (let i = alatSudutDaftar.length - 1; i >= 0; i -= 1) {
+    const entri = alatSudutDaftar[i];
+    if (!entri.el.isConnected) {
+      if (entri.sorot) entri.sorot.remove();
+      alatSudutDaftar.splice(i, 1);
+      continue;
+    }
+    if (!alatSudutBoleh(entri)) continue;
+    const sudut = alatSudutDari(entri.el.getBoundingClientRect(), x, y, dekat, luar);
+    if (sudut) return { entri, sudut };
+  }
+  return null;
+}
+
+function alatSudutDengarDokumen() {
+  if (alatSudutDengar) return;
+  alatSudutDengar = true;
+  let bingkai = 0;
+  let titik = null;
+  const periksa = () => {
+    bingkai = 0;
+    if (!titik) return;
+    const kena = alatSudutCari(titik.x, titik.y, ALAT_SUDUT_DEKAT, ALAT_SUDUT_LUAR);
+    for (const entri of alatSudutDaftar) {
+      const sudut = kena && kena.entri === entri ? kena.sudut : "";
+      if ((entri.el.getAttribute("data-aleta-sudut-dekat") || "") !== sudut) alatSudutSorot(entri, sudut);
+    }
+  };
+  try {
+    document.addEventListener(
+      "pointermove",
+      (e) => {
+        titik = { x: e.clientX, y: e.clientY };
+        if (bingkai) return;
+        bingkai = typeof requestAnimationFrame === "function" ? requestAnimationFrame(periksa) : setTimeout(periksa, 16);
+      },
+      { passive: true, capture: true }
+    );
+  } catch {
+    /* tanpa sorot: klik dua kali di sudut tetap bekerja */
+  }
+}
+
+/** Butir 11 - lihat catatan bagian ini. Aman dipanggil berulang untuk elemen yang sama. */
+function alatPasangSudut(el, opsi) {
+  if (!el || typeof el.addEventListener !== "function") return null;
+  if (alatSudutDaftar.some((x) => x.el === el)) return el;
+  const o = opsi || {};
+  const entri = {
+    el,
+    kunci: String(o.kunci || ""),
+    saatPindah: typeof o.saatPindah === "function" ? o.saatPindah : null,
+    wadahSorot: o.wadahSorot || null,
+    gerbang: o.gerbang,
+    sorot: null,
+  };
+  alatSudutDaftar.push(entri);
+  alatSudutDengarDokumen();
+  const diZona = (e) => {
+    if (!alatSudutBoleh(entri)) return "";
+    const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+    const sasaran = path[0] && path[0].nodeType === 1 ? path[0] : e.target;
+    if (sasaran && sasaran !== el && typeof sasaran.closest === "function" && sasaran.closest(ALAT_SUDUT_BUKAN)) return "";
+    return alatSudutDari(el.getBoundingClientRect(), e.clientX, e.clientY, ALAT_SUDUT_ZONA, 0);
+  };
+  // Fase TANGKAP, didaftarkan sebelum klik dua kali kepala (alatPasangKlikGandaKepala
+  // dipasang sesudah pintu ini): sudut menang, kepala tidak ikut ke layar penuh.
+  el.addEventListener(
+    "dblclick",
+    (e) => {
+      const sudut = diZona(e);
+      if (!sudut) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+      try {
+        if (entri.saatPindah) entri.saatPindah(sudut);
+        else alatSudutPindahkan(el, entri.kunci, sudut);
+      } catch {
+        /* panel tetap di tempatnya */
+      }
+      alatSudutSorot(entri, "");
+      try {
+        el.dispatchEvent(new CustomEvent("aleta-sudut-pindah", { bubbles: true, detail: { sudut, kunci: entri.kunci } }));
+      } catch {
+        /* tanpa kabar, pemindahan tetap berlaku */
+      }
+      try {
+        const pilihan = window.getSelection ? window.getSelection() : null;
+        if (pilihan) pilihan.removeAllRanges();
+      } catch {
+        /* kosmetik */
+      }
+    },
+    true
+  );
+  return el;
+}
+
 // Pemantau dipasang saat berkas ini dimuat, bukan saat panel digambar:
 // permintaan paling awal - pembacaan konteks perkara - berangkat sebelum
 // panelnya ada, dan justru itu yang paling sering gagal.
@@ -5445,7 +5935,9 @@ void alatMuatKering();
 alatDengarkanUji();
 // Senyap dibaca SESUDAH uji tampilan: ia bergantung pada saklar fitur popup-12.
 alatDengarkanSenyap();
-void alatMuatUji()
+// alatUjiSiapJanji: bawaan tampil (butir 4, 2 Okt) menunggu tampilan terbaca.
+alatUjiSiapJanji = alatMuatUji();
+void alatUjiSiapJanji
   .then(() => alatMuatSenyap())
   // Sesudah singgahan terbaca: yang sudah segar tidak diminta lagi.
   .then(() => alatSegarkanTampilanServer(false));
@@ -6316,6 +6808,100 @@ function alatPemilihTanggal(saatUbah) {
 const ALAT_JEDA_MASSAL_MS = 1500;
 function alatJeda(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/* ─── 1a-jeda. JEDA SEPERTI MANUSIA UNTUK AKSI TULIS (K4, perbaikan 2 Okt butir 14)
+ *
+ * Keputusan pengguna 2 Okt: jeda seperti manusia DIPERTAHANKAN untuk tulisan
+ * ke SIPP/ABT/e-Court, dan ekstensi tidak mencolok di halaman sistem luar.
+ * (Audit jujur - siapa, kapan, IP, "lewat ALETA" - tetap di tabel aleta_*,
+ * bukan di kolom audit sistem luar; itu urusan jalur portal/bot, bukan jeda.)
+ *
+ *   alatJedaManusia(jenis?, opsi?) -> Promise<number>  (milidetik yang dijalani)
+ *
+ *   jenis   rentang (ms)    dipakai untuk
+ *   klik     350 -   900    menekan tombol / memilih di halaman
+ *   isi      500 -  1400    mengisi satu isian sebelum isian berikutnya
+ *   simpan   900 -  2200    sebelum mengirim satu simpanan (POST) - BAWAAN
+ *   unggah  1500 -  3500    sebelum mengunggah berkas (edoc, putusan, BAS)
+ *   pindah   800 -  1800    berpindah halaman/langkah dalam satu alur
+ *   perkara 2000 -  4500    antar dua perkara dalam pekerjaan massal
+ *   Jenis yang tidak dikenal = "simpan".
+ *
+ *   opsi.alamat  alamat tulisan; bila mode coba menahannya, tanpa jeda.
+ *   opsi.sinyal  AbortSignal - dibatalkan = jeda selesai seketika (0).
+ *   opsi.skala   pengali rentang (bawaan 1), mis. 0.5 untuk aksi sangat ringan.
+ *
+ * TANPA JEDA (seketika 0): mode kering, mode latihan, mode coba yang menahan
+ * tulisan (tanpa alamat: setiap mode coba aktif) - tidak ada yang ditulis,
+ * jadi menunggu hanya memperlambat orang yang berlatih. Juga tanpa jeda bila
+ * alatSetelJedaSkala(0) (dipakai uji).
+ *
+ * BUKAN untuk GET/baca biasa, dan bukan pengganti jeda beban yang sudah ada
+ * (alatJeda(ALAT_JEDA_MASSAL_MS) dsb. tetap seperti sebelumnya).
+ */
+const ALAT_JEDA_MANUSIA = {
+  klik: [350, 900],
+  isi: [500, 1400],
+  simpan: [900, 2200],
+  unggah: [1500, 3500],
+  pindah: [800, 1800],
+  perkara: [2000, 4500],
+};
+let alatJedaSkalaUmum = 1;
+
+/** Pengali seluruh jeda manusia (0 = tanpa jeda; uji memakainya). Pulang skala yang berlaku. */
+function alatSetelJedaSkala(n) {
+  const x = Number(n);
+  alatJedaSkalaUmum = Number.isFinite(x) && x >= 0 ? Math.min(x, 5) : 1;
+  return alatJedaSkalaUmum;
+}
+
+/** Rentang [min, maks] jenis itu (jenis tak dikenal = simpan). */
+function alatJedaManusiaRentang(jenis) {
+  const r = ALAT_JEDA_MANUSIA[String(jenis || "").toLowerCase()] || ALAT_JEDA_MANUSIA.simpan;
+  return [r[0], r[1]];
+}
+
+/** Apakah jeda dilewati: tidak ada yang sungguh ditulis. */
+function alatJedaManusiaDilewati(alamat) {
+  try {
+    if (typeof alatKeringNyala === "function" && alatKeringNyala()) return true;
+    if (typeof alatLatihanNyala === "function" && alatLatihanNyala()) return true;
+    if (alamat) {
+      if (typeof alatCobaMenahan === "function" && alatCobaMenahan(alamat, "POST")) return true;
+    } else if (typeof alatCobaAktif === "function" && alatCobaAktif()) {
+      return true;
+    }
+  } catch {
+    /* tanpa keterangan mode: jeda tetap berjalan (arah aman) */
+  }
+  return false;
+}
+
+function alatJedaManusia(jenis, opsi) {
+  const o = opsi && typeof opsi === "object" ? opsi : {};
+  if (alatJedaManusiaDilewati(o.alamat)) return Promise.resolve(0);
+  const skala = alatJedaSkalaUmum * (Number.isFinite(Number(o.skala)) && Number(o.skala) >= 0 ? Number(o.skala) : 1);
+  if (skala <= 0) return Promise.resolve(0);
+  const [min, maks] = alatJedaManusiaRentang(jenis);
+  const ms = Math.round((min + Math.random() * (maks - min)) * skala);
+  const sinyal = o.sinyal;
+  if (sinyal && sinyal.aborted) return Promise.resolve(0);
+  return new Promise((selesai) => {
+    let batal = null;
+    const t = setTimeout(() => {
+      if (sinyal && batal) sinyal.removeEventListener("abort", batal);
+      selesai(ms);
+    }, ms);
+    if (sinyal && typeof sinyal.addEventListener === "function") {
+      batal = () => {
+        clearTimeout(t);
+        selesai(0);
+      };
+      sinyal.addEventListener("abort", batal, { once: true });
+    }
+  });
 }
 
 /* ─── 1b. PEMETAAN MENURUT NAMA BERKAS, TOKEN MENYUSUL ──────────────────────

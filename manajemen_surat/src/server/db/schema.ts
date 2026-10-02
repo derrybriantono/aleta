@@ -216,6 +216,34 @@ export const DDL_ECOURT_AKSI_JEJAK = {
   ],
 } as const;
 
+/**
+ * Cap pengadilan untuk edoc penetapan - cermin PERSIS dari
+ * drizzle/0056_aleta_ecourt_cap.sql (perbaikan 2 Okt 2026, butir 17).
+ *
+ * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
+ * menjalankan drizzle/*.sql, dan penjaga backend-2okt.test.ts membandingkan
+ * konstanta ini dengan isi berkasnya.
+ */
+export const DDL_ECOURT_CAP = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ecourt_cap (
+  id TEXT PRIMARY KEY,
+  nama TEXT NOT NULL,
+  peruntukan TEXT NOT NULL CHECK (peruntukan IN ('ketua', 'panitera', 'hakim', 'umum')),
+  keterangan TEXT NOT NULL DEFAULT '',
+  jenis_berkas TEXT NOT NULL CHECK (jenis_berkas IN ('png', 'jpg')),
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  isi_base64 TEXT NOT NULL,
+  aktif INTEGER NOT NULL DEFAULT 1,
+  diunggah_oleh_id TEXT NOT NULL DEFAULT '',
+  diunggah_oleh_nama TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_ecourt_cap_peruntukan ON aleta_ecourt_cap(peruntukan, aktif)`],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1215,6 +1243,8 @@ const schemaStatements = [
   ...DDL_PEMETAAN_PROFIL.tabel,
   // Jejak aksi e-Court lewat sesi pribadi (0055).
   ...DDL_ECOURT_AKSI_JEJAK.tabel,
+  // Cap pengadilan untuk edoc penetapan (0056).
+  ...DDL_ECOURT_CAP.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3156,6 +3186,7 @@ const indexStatements = [
   ...DDL_TIPE_KELUARAN.indeks,
   ...DDL_KOMENTAR_TEMPLAT_WAJIB.indeks,
   ...DDL_ECOURT_AKSI_JEJAK.indeks,
+  ...DDL_ECOURT_CAP.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

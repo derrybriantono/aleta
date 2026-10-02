@@ -2599,6 +2599,151 @@ function komponenKakiUi() {
   return k;
 }
 
+// ── Perbaikan 2 Okt butir 4: panel terbuka/tersembunyi saat halaman dimuat ───
+//
+// Tiga saklar (ALETA, SIPP, ABT). Mati = panel situs itu lahir sebagai LENCANA
+// (logo bulat) saat halaman dibuka - satu klik membukanya; fitur tidak ada
+// yang hilang dan saklar induk tidak disentuh. Bawaan: ALETA mati, SIPP dan
+// ABT nyala. Disimpan per AKUN (setelan "panel.bawaan", PUT /ekstensi/setelan)
+// + cadangan lokal "panelBawaanTampil" {aleta,sipp,abt,diubahPada}; yang
+// lebih baru yang berlaku (sama dengan alatBawaanTampilBerlaku di
+// panel-alat.js). Mode latihan/kering: lokal saja. UI Baru saja.
+const KUNCI_BAWAAN_PANEL = "panelBawaanTampil";
+const SETELAN_BAWAAN_PANEL = "panel.bawaan";
+const BAWAAN_PANEL = { aleta: false, sipp: true, abt: true };
+const SITUS_BAWAAN_PANEL = [
+  ["aleta", "Panel ALETA (portal)"],
+  ["sipp", "Panel SIPP"],
+  ["abt", "Panel ABT"],
+];
+
+function bawaanPanelBersih(x) {
+  const hasil = {};
+  if (!x || typeof x !== "object" || Array.isArray(x)) return hasil;
+  for (const [s] of SITUS_BAWAAN_PANEL) if (typeof x[s] === "boolean") hasil[s] = x[s];
+  return hasil;
+}
+
+function bawaanPanelBerlaku(lokal, server) {
+  const waktu = (x) => {
+    const t = Date.parse(String((x && x.diubahPada) || ""));
+    return Number.isFinite(t) ? t : 0;
+  };
+  const sv = server && typeof server === "object" && server.nilai && typeof server.nilai === "object" ? server : null;
+  const lk = lokal && typeof lokal === "object" ? lokal : null;
+  if (sv && (!lk || waktu(sv) >= waktu(lk))) return { ...BAWAAN_PANEL, ...bawaanPanelBersih(sv.nilai), sumber: "akun" };
+  if (lk) return { ...BAWAAN_PANEL, ...bawaanPanelBersih(lk), sumber: "lokal" };
+  return { ...BAWAAN_PANEL, sumber: "bawaan" };
+}
+
+function bawaanPanelServer() {
+  const s = ujiKeadaan.server;
+  return s && s.setelan && typeof s.setelan === "object" ? s.setelan[SETELAN_BAWAAN_PANEL] : undefined;
+}
+
+/** Simpan lokal dulu (berlaku seketika), lalu ke akun bila boleh. Pulang kalimat keadaan. */
+async function simpanBawaanPanel(nilai) {
+  const bersih = bawaanPanelBersih(nilai);
+  const pada = new Date().toISOString();
+  if (!penyimpanan) return "Tidak tersimpan - penyimpanan ekstensi tidak tersedia.";
+  let s = {};
+  try {
+    await penyimpanan.set({ [KUNCI_BAWAAN_PANEL]: { ...bersih, diubahPada: pada } });
+    s = await penyimpanan.get(["modeLatihan", "modeKering", "asalPortal", "tampilanServer"]);
+  } catch {
+    return "Tersimpan di peramban ini saja.";
+  }
+  if (s.modeLatihan === true || s.modeKering === true) {
+    return `${s.modeLatihan === true ? "Mode latihan" : "Mode kering"}: tersimpan di peramban ini saja.`;
+  }
+  const asal = String(s.asalPortal || "");
+  if (!asal) return "Tersimpan di peramban ini; akun menyusul sesudah portal ALETA dibuka.";
+  try {
+    const r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/setelan`, {
+      method: "PUT",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kunci: SETELAN_BAWAAN_PANEL, nilai: bersih }),
+    });
+    if (!r.ok) return `Tersimpan di peramban ini; akun belum (server menjawab ${r.status}).`;
+    const isi = await r.json().catch(() => ({}));
+    const data = (isi && isi.data) || isi || {};
+    const diubahPada = String(data.diubahPada || pada);
+    // Singgahan tampilan diperbarui di tempat - tab lain dan halaman
+    // berikutnya tidak membaca nilai akun yang sudah basi.
+    const sv = s.tampilanServer && typeof s.tampilanServer === "object" ? s.tampilanServer : null;
+    if (sv) {
+      const baru = { ...sv, setelan: { ...(sv.setelan || {}), [SETELAN_BAWAAN_PANEL]: { nilai: data.nilai || bersih, diubahPada } } };
+      await penyimpanan.set({ tampilanServer: baru });
+      ujiKeadaan.server = baru;
+    }
+    return "Tersimpan di akun Anda - berlaku di PC mana pun.";
+  } catch {
+    return "Tersimpan di peramban ini; akun belum (server tidak terjangkau).";
+  }
+}
+
+function komponenBawaanPanel() {
+  const sek = buat("section", "tb-kelompok tb-bawaan-panel");
+  sek.id = "kelompok-bawaan-panel";
+  sek.dataset.kelompok = "bawaan-panel";
+  sek.appendChild(buat("h3", "tb-kelompok-judul", "Panel saat halaman dibuka"));
+  sek.appendChild(
+    buat("p", "saklar-ket", "Mati = panel lahir sebagai logo ALETA (lencana); klik logonya untuk membuka. Tidak ada fitur yang dimatikan.")
+  );
+  const kotak = {};
+  for (const [situs, nama] of SITUS_BAWAAN_PANEL) {
+    const label = buat("label", "saklar");
+    const masukan = buat("input");
+    masukan.type = "checkbox";
+    masukan.id = `bawaanPanel-${situs}`;
+    masukan.dataset.situs = situs;
+    const teks = buat("span");
+    teks.appendChild(buat("span", "saklar-nama", nama));
+    teks.appendChild(buat("span", "saklar-ket", `Bawaan: ${BAWAAN_PANEL[situs] ? "terbuka" : "tersembunyi"}`));
+    label.appendChild(masukan);
+    label.appendChild(teks);
+    sek.appendChild(label);
+    kotak[situs] = masukan;
+  }
+  const kabar = buat("p", "saklar-ket tb-bawaan-kabar");
+  kabar.id = "bawaanPanelKabar";
+  kabar.setAttribute("aria-live", "polite");
+  sek.appendChild(kabar);
+  let lokal = null;
+  const gambar = () => {
+    const b = bawaanPanelBerlaku(lokal, bawaanPanelServer());
+    for (const [situs] of SITUS_BAWAAN_PANEL) kotak[situs].checked = b[situs] !== false;
+    if (!kabar.dataset.dikabarkan) {
+      kabar.textContent =
+        b.sumber === "akun" ? "Mengikuti setelan akun Anda." : b.sumber === "lokal" ? "Mengikuti setelan peramban ini." : "Memakai bawaan.";
+    }
+  };
+  for (const [situs] of SITUS_BAWAAN_PANEL) {
+    kotak[situs].addEventListener("change", async () => {
+      const nilai = {};
+      for (const [s] of SITUS_BAWAAN_PANEL) nilai[s] = kotak[s].checked;
+      lokal = { ...nilai, diubahPada: new Date().toISOString() };
+      kabar.dataset.dikabarkan = "ya";
+      kabar.textContent = "Menyimpan…";
+      kabar.textContent = await simpanBawaanPanel(nilai);
+    });
+  }
+  if (penyimpanan) {
+    void penyimpanan
+      .get([KUNCI_BAWAAN_PANEL])
+      .then((s) => {
+        lokal = s && s[KUNCI_BAWAAN_PANEL] && typeof s[KUNCI_BAWAAN_PANEL] === "object" ? s[KUNCI_BAWAAN_PANEL] : null;
+        gambar();
+      })
+      .catch(gambar);
+  }
+  gambar();
+  susunan.penyegar.push(gambar);
+  return sek;
+}
+
 function susunUiBaru() {
   susunKepalaUi();
 
@@ -2628,6 +2773,8 @@ function susunUiBaru() {
   }
   pasangSkalaSegmen();
   if (fiturPopupNyala("popup-4")) pasangGeserSkala();
+  // Perbaikan 2 Okt butir 4: panel terbuka/tersembunyi per situs - sesudah Tampilan.
+  sisipkan(komponenBawaanPanel(), isi, wadah.tampilan ? wadah.tampilan.nextSibling : isi.querySelector(".tb-kelompok"));
 
   // Bagian atas isi: profil (popup-11), cari (popup-15), lompat (popup-3).
   const atas = [];

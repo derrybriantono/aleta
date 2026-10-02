@@ -108,16 +108,17 @@ describe("baris yang ditulis ke SIPP", () => {
     expect(bot).toContain("dirput_perkara");
   });
 
-  it("audit trail ditulis JUJUR: lewat ALETA, tidak menyamar sebagai blangko SIPP", () => {
-    // DIUBAH 25 September 2026 atas keputusan orkestrator: catatan audit
-    // perkara adalah alat pertanggungjawaban, jadi baris yang ditulis bot
-    // menyebut ALETA sebagai caranya dan tidak menyalin teks borang SIPP -
-    // baik nama tingkap lama "Kelola Dokumen Elektronik (E-Doc)" maupun bentuk
-    // add_audittrail "UPLOAD E-DOCS PUTUSAN AKHIR". Penjaga yang MENJALANKAN
-    // layanannya ada di unggah-audit-sipp.test.ts; di sini hanya sisa teksnya.
+  it("audit trail SIPP berbentuk SIPP, tanpa tanda ALETA (butir 14, 2 Okt 2026)", () => {
+    // DIUBAH 2 Oktober 2026 atas keputusan pengguna (butir 14, kontrak K4),
+    // membalik keputusan 25 September: di SIPP tidak boleh ada tanda ALETA,
+    // pelakunya petugas yang login, dan jejak jujur (siapa + waktu + IP +
+    // "lewat ALETA") pindah ke jejakAletaService. Penjaga yang MENJALANKAN
+    // layanannya ada di unggah-audit-sipp.test.ts dan backend-2okt.test.ts.
     expect(bot).toContain("INSERT INTO sys_audittrail");
-    expect(bot).toContain('const FORMNAME_ALETA = "ALETA - Unggah Dokumen Putusan";');
-    expect(bot).not.toMatch(/=\s*["'`]UPLOAD E-DOCS PUTUSAN AKHIR["'`]/);
+    expect(bot).toContain('formname: "UPLOAD E-DOCS PUTUSAN AKHIR"');
+    expect(bot).not.toContain("FORMNAME_ALETA");
+    expect(bot).not.toContain("lewat <b>ALETA");
+    expect(bot).not.toContain("Ditulis otomatis oleh ALETA");
     expect(bot).not.toContain("Kelola Dokumen Elektronik (E-Doc)");
   });
 

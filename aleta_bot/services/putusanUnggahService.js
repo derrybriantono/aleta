@@ -197,38 +197,50 @@ async function dokumenRefId(perkaraId, jenis) {
 
 /**
  * ============================================================================
- * BARIS AUDIT: JUJUR - PETUGAS, WAKTU, DAN ALAMATNYA SUNGGUHAN, CARANYA ALETA
+ * BARIS AUDIT SIPP: BENTUK SIPP SENDIRI, PELAKUNYA PETUGAS YANG LOGIN
  * ============================================================================
  *
- * Catatan audit perkara adalah alat pertanggungjawaban. Setiap tulisan ALETA
- * ke SIPP dicatat SATU baris sys_audittrail - kolom e-Doc pada
- * perkara_putusan, baris dirput_dokumen, dan antrean dirput_antrian - dan
- * isinya apa yang sungguh terjadi:
+ * Keputusan pengguna 2 Oktober 2026 (butir 14, kontrak K4) membalik keputusan
+ * orkestrator 25 September: di SIPP/ABT/e-Court TIDAK BOLEH ada tanda ALETA -
+ * baik di tampilan maupun di kolom audit/keterangan sistem mereka. Tindakan
+ * dikerjakan atas perintah petugas yang sedang login SIPP, jadi yang tercatat
+ * di sys_audittrail adalah PETUGAS ITU SENDIRI - bukan nama lain, bukan
+ * tanggal karangan - dalam bentuk yang ditulis modul unggah e-Doc SIPP:
  *
- *   username     akun SIPP petugas yang memicu unggahan
- *   datetime     waktu baris itu ditulis (jam dibaca saat menulis)
- *   ipaddress    alamat peramban petugas yang diteruskan portal; kosong bila
- *                tidak diteruskan atau bukan IPv4 - tidak pernah dikarang
- *   formname     "ALETA - Unggah Dokumen Putusan": tulisannya datang lewat
- *                ALETA, bukan lewat borang SIPP
- *   action       perintah yang sungguh dijalankan: UPDATE atau INSERT
- *   title        tabel dan perkaranya, dengan kata "lewat ALETA"
- *   description  kolom dan nilai yang ditulis, ditutup kalimat yang menyebut
- *                ALETA dan akun petugasnya
+ *   username     akun SIPP petugas yang memicu (lihat akunSippPemicu)
+ *   datetime     jam dinding saat kolom itu ditulis - tidak digeser
+ *   ipaddress    alamat peramban petugas (IPv4 sah, selain itu kosong)
+ *   formname     "UPLOAD E-DOCS PUTUSAN AKHIR" / "... PUTUSAN ANONIMISASI"
+ *   action       "UNGGAH"
+ *   title        "Unggah Dokumen Putusan Akhir <br />dengan perkara_id [id=N]"
+ *   description  tabel Nama Kolom / Nilai, seperti keteranganAudit penetapan
  *
- * Bentuknya sah menurut struktur tabel audit SIPP - title paling panjang 250
- * huruf, description berupa HTML yang dapat ditampilkan layar Audit Trail
- * SIPP - tetapi TIDAK menyalin judul maupun deskripsi borang SIPP. Percobaan
- * 25 September 2026 untuk menyalin bentuk fileupload_m::add_audittrail
- * (formname "UPLOAD E-DOCS PUTUSAN AKHIR", tanpa baris audit dirput) DIBATALKAN
- * atas keputusan orkestrator: hasil otomatis yang ketepatannya belum sempurna
- * tidak boleh tampak tak terbedakan dari kerja petugas di SIPP.
+ * Bentuk putusan akhir TERUKUR pada sys_audittrail satker (18 Sep 2026: baris
+ * 500582 "perkara_putusan UNGGAH" oleh petugas yang sama, terpisah dari baris
+ * "tambah"). Bentuk anonimisasi DISIMPULKAN dari judul tingkap SIPP
+ * (fileupload_putusan_c.php: $title = 'PUTUSAN ANONIMISASI') - pastikan pada
+ * satker sebelum dianggap pasti:
+ *
+ *   SELECT formname, action, title FROM sys_audittrail
+ *    WHERE tablename = 'perkara_putusan' AND formname LIKE 'UPLOAD E-DOCS%'
+ *    ORDER BY datetime DESC LIMIT 20;
+ *
+ * dirput_dokumen dan dirput_antrian TIDAK diberi baris audit SIPP - SIPP
+ * sendiri tidak mengaudit keduanya saat mengunggah (insert_antrian_upload,
+ * convert_insert). Tulisannya TIDAK hilang dari pertanggungjawaban: seluruh
+ * tabel yang disentuh, akun SIPP, IP, waktu, dan "lewat ALETA" tercatat utuh
+ * di aleta_bot_jejak_penetapan (jejakAletaService, layar Riwayat ALETA),
+ * termasuk unggahan yang GAGAL.
  */
-const FORMNAME_ALETA = "ALETA - Unggah Dokumen Putusan";
+const BORANG_UNGGAH = {
+  putusan: { formname: "UPLOAD E-DOCS PUTUSAN AKHIR", judul: "Unggah Dokumen Putusan Akhir" },
+  anonimisasi: { formname: "UPLOAD E-DOCS PUTUSAN ANONIMISASI", judul: "Unggah Dokumen Putusan Anonimisasi" },
+};
+const AKSI_UNGGAH = "UNGGAH";
 
 /**
  * Nilai di description di-escape: layar Audit Trail SIPP menampilkannya
- * sebagai HTML, dan jalur maupun nama akun datang dari luar berkas ini.
+ * sebagai HTML, dan jalurnya datang dari luar berkas ini.
  */
 function lolosHtml(nilai) {
   return String(nilai === undefined || nilai === null ? "" : nilai)
@@ -249,30 +261,21 @@ function ipAudit(ip) {
   return bersih.split(".").every((x) => Number(x) <= 255) ? bersih : "";
 }
 
-/** Kolom dan nilai yang ditulis, lalu siapa dan lewat apa. */
-function deskripsiAudit(rincian, username) {
-  let isi = '<table border="1" cellspacing="0" cellpadding="1"><tr><th>Kolom</th><th>Nilai</th></tr>';
-  for (const [kolom, nilai] of Object.entries(rincian || {})) {
-    isi += `<tr><td>${lolosHtml(kolom)}</td><td>${lolosHtml(nilai)}</td></tr>`;
-  }
-  isi += "</table>";
-  // Nama pemicunya datang dari sesi yang menekan tombol - akun SIPP pada panel
-  // SIPP, nama lengkap sesi ABT pada putusan massal ABT - jadi disebut
-  // "pengguna", bukan "akun SIPP". Bila kosong, kekosongannya DITULIS: audit
-  // yang jujur tidak boleh terbaca seolah pelakunya sengaja tidak disebut.
-  const akun = String(username || "").trim();
+/** Kolom dan nilai yang ditulis - bentuk tabel audit SIPP, tanpa kalimat tambahan. */
+function deskripsiAudit(rincian) {
+  const baris = Object.entries(rincian || {})
+    .map(([kolom, nilai]) => `<tr><td>${lolosHtml(kolom)}</td><td>${lolosHtml(nilai)}</td></tr>`)
+    .join("");
   return (
-    `${isi}<br>Ditulis otomatis oleh ALETA (unggah dokumen putusan), bukan lewat blangko SIPP` +
-    (akun
-      ? `, atas perintah pengguna <b>${lolosHtml(akun)}</b>.`
-      : ", pemicunya TIDAK DIKETAHUI (nama pengguna tidak terkirim bersama permintaan).")
+    `<br><table style="vertical-align:top" cellspacing="0" cellpadding="1" border="1">` +
+    `<tr><th>Nama Kolom</th><th>Nilai</th></tr>${baris}</table>`
   );
 }
 
-/** Satu baris audit untuk satu tulisan ALETA ke SIPP. Lihat catatan di atas. */
-function barisAudit({ username, tabel, aksi, perkaraId, rincian, ip, saat }) {
+/** Satu baris sys_audittrail untuk satu kolom e-Doc pada perkara_putusan. */
+function barisAudit({ username, jenis = "putusan", perkaraId, rincian, ip, saat }) {
+  const borang = BORANG_UNGGAH[jenis] || BORANG_UNGGAH.putusan;
   const idPerkara = Number(perkaraId || 0);
-  const kunci = idPerkara > 0 ? ` dengan Primary Key [perkara_id=${idPerkara}]` : "";
   return {
     sql:
       "INSERT INTO sys_audittrail (datetime, ipaddress, username, tablename, formname, action, title, description) " +
@@ -281,13 +284,49 @@ function barisAudit({ username, tabel, aksi, perkaraId, rincian, ip, saat }) {
       saat,
       ipAudit(ip),
       String(username || "").slice(0, 30),
-      tabel,
-      FORMNAME_ALETA,
-      aksi,
-      `${aksi} table <b>${tabel}</b> lewat <b>ALETA</b>${kunci}`.slice(0, 250),
-      deskripsiAudit(rincian, username),
+      "perkara_putusan",
+      borang.formname,
+      AKSI_UNGGAH,
+      `${borang.judul} <br />dengan perkara_id [id=${idPerkara}]`.slice(0, 250),
+      deskripsiAudit(rincian),
     ],
   };
+}
+
+/**
+ * Akun SIPP pemicunya - PETUGAS YANG LOGIN, dikenali di sys_users.
+ *
+ * Panel SIPP mengirim username SIPP; panel ABT mengirim nama lengkap sesi
+ * ABT. Keduanya orang yang sama, dan yang ditulis ke kolom username SIPP
+ * adalah username-nya bila ia terdaftar - persis yang ditulis SIPP bila orang
+ * itu mengunggah sendiri. Bila tidak dikenali, teks aslinya dipakai apa
+ * adanya (tidak pernah diganti nama lain), dan jejak ALETA mencatat bahwa
+ * pemetaannya tidak terjadi.
+ */
+async function akunSippPemicu(olehUsername) {
+  const teks = String(olehUsername || "").trim();
+  if (!teks) return { username: "", terpetakan: false };
+  const baris = await runQuery(
+    `SELECT username FROM sys_users WHERE username = ? OR LOWER(fullname) = LOWER(?) ORDER BY username = ? DESC LIMIT 1`,
+    [teks, teks, teks]
+  ).catch(() => []);
+  const ketemu = Array.isArray(baris) && baris[0] && String(baris[0].username || "").trim();
+  return ketemu ? { username: ketemu, terpetakan: true } : { username: teks, terpetakan: false };
+}
+
+/**
+ * Jejak ALETA - dimuat MALAS dan dapat ditiru uji: jejakAletaService membuka
+ * sambungan ke basis data internal bot, yang tidak boleh tersentuh uji.
+ */
+function catatJejakBawaan(jejak) {
+  // Uji (vitest) TIDAK PERNAH menulis ke basis data bot sungguhan - uji yang
+  // memeriksa jejak meneruskan catatJejak tiruannya sendiri.
+  if (process.env.VITEST) return Promise.resolve(false);
+  try {
+    return require("./jejakAletaService").catat(jejak);
+  } catch {
+    return Promise.resolve(false);
+  }
 }
 
 /**
@@ -449,8 +488,7 @@ async function unggahSatu({
   tabelDisentuh.push("perkara_putusan");
   const audit = barisAudit({
     username: olehUsername,
-    tabel: "perkara_putusan",
-    aksi: "UPDATE",
+    jenis,
     perkaraId,
     rincian: { [kolom]: relatifAsli },
     ip,
@@ -528,24 +566,9 @@ async function unggahSatu({
     );
   }
   tabelDisentuh.push("dirput_dokumen");
-  // Tulisan ini pun diaudit: yang menulis baris Direktori Putusan adalah
-  // ALETA, dan jejaknya tidak dibuang hanya karena SIPP sendiri tidak
-  // mengaudit langkah yang sama.
-  const auditDirput = barisAudit({
-    username: olehUsername,
-    tabel: "dirput_dokumen",
-    aksi: idLama ? "UPDATE" : "INSERT",
-    perkaraId,
-    rincian: {
-      dokumen_ref_id: ref,
-      filename: path.basename(relatifPdf),
-      path_filename: relatifPdf,
-      published,
-    },
-    ip,
-    saat: waktuMysql(jam()),
-  });
-  await runQuery(auditDirput.sql, auditDirput.params);
+  // Baris Direktori Putusan TIDAK diberi baris sys_audittrail - SIPP sendiri
+  // tidak mengauditnya (convert_insert). Tulisannya tercatat di jejak ALETA
+  // lewat `tabel` yang dipulangkan (lihat unggahPutusan).
 
   // jalur = e-Doc yang tersimpan; jalurPdf = yang terbit di Direktori Putusan.
   return {
@@ -578,12 +601,30 @@ async function unggahPutusan({
   pdfAnonimisasi,
   olehUsername,
   ip = "",
+  // Pengguna ALETA yang menekan tombolnya (bila diteruskan) - hanya untuk
+  // jejak ALETA, TIDAK PERNAH ditulis ke SIPP.
+  operator = "",
   // Jam dinding, dibaca PER BERKAS saat berkas itu ditulis (lihat unggahSatu).
   jam = () => new Date(),
+  // Pencatat jejak ALETA - ditiru uji.
+  catatJejak = catatJejakBawaan,
 }) {
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0) return { ok: false, alasan: "perkara_tidak_sah" };
   if (!pdfPutusan && !pdfAnonimisasi) return { ok: false, alasan: "tidak_ada_berkas" };
+
+  // Pelaku di SIPP = petugas yang login (butir 14). Lihat akunSippPemicu.
+  const akun = await akunSippPemicu(olehUsername);
+  const jejakDasar = {
+    aksi: "unggah",
+    jenis: "edoc_putusan",
+    perkaraId: id,
+    nomorPerkara: String(nomorPerkara || ""),
+    akunSipp: akun.username,
+    operator: String(operator || "").slice(0, 120),
+    ip: String(ip || ""),
+    kering: false,
+  };
 
   for (const tabel of ["perkara_putusan", "dirput_dokumen", "dirput_antrian", "dirput_dokumen_ref"]) {
     if (!(await sippSkemaService.tabelAda(tabel))) {
@@ -600,6 +641,9 @@ async function unggahPutusan({
   const tanggalPutusan =
     (Array.isArray(barisPutusan) && barisPutusan[0] && barisPutusan[0].tanggal_putusan) || null;
   if (!tanggalPutusan) {
+    await Promise.resolve(
+      catatJejak({ ...jejakDasar, berhasil: false, alasan: "belum_ada_putusan", langkah: [] })
+    ).catch(() => false);
     return {
       ok: false,
       alasan: "belum_ada_putusan",
@@ -627,7 +671,7 @@ async function unggahPutusan({
         jenis: "putusan",
         pdf: pdfPutusan,
         tanggalPutusan: tanggalIso,
-        olehUsername,
+        olehUsername: akun.username,
         ip,
         ubahan: ubahPutusan,
         jam,
@@ -642,7 +686,7 @@ async function unggahPutusan({
         jenis: "anonimisasi",
         pdf: pdfAnonimisasi,
         tanggalPutusan: tanggalIso,
-        olehUsername,
+        olehUsername: akun.username,
         ip,
         ubahan: ubahAnonimisasi,
         jam,
@@ -666,20 +710,44 @@ async function unggahPutusan({
         `INSERT INTO dirput_antrian (perkara_id, status, keterangan, tgl_masuk) VALUES (?, 0, NULL, ?)`,
         [id, tglMasuk]
       );
-      // Diaudit seperti tulisan ALETA lainnya - lihat catatan barisAudit.
-      const auditAntrean = barisAudit({
-        username: olehUsername,
-        tabel: "dirput_antrian",
-        aksi: "INSERT",
-        perkaraId: id,
-        rincian: { status: 0, tgl_masuk: tglMasuk },
-        ip,
-        saat: tglMasuk,
-      });
-      await runQuery(auditAntrean.sql, auditAntrean.params);
+      // Tanpa baris sys_audittrail, sama seperti insert_antrian_upload SIPP.
       antrean = true;
     }
   }
+
+  // ==========================================================================
+  // JEJAK JUJUR DI BASIS DATA ALETA - SIAPA, KAPAN, IP, LEWAT ALETA
+  // ==========================================================================
+  //
+  // Satu baris untuk seluruh permintaan, dengan SETIAP tulisan sebagai
+  // langkahnya - termasuk dirput_dokumen dan dirput_antrian yang tidak punya
+  // baris sys_audittrail, dan berkas yang gagal beserta sebabnya.
+  const langkah = [];
+  for (const h of hasil) {
+    for (const t of h.tabel || []) {
+      langkah.push({
+        tabel: t,
+        aksi: t === "perkara_putusan" ? "UPDATE" : "TULIS",
+        keterangan: `${h.jenis}: ${t === "perkara_putusan" ? h.jalur || "" : h.jalurPdf || ""}`,
+      });
+    }
+    if (!h.ok) langkah.push({ tabel: "", aksi: "GAGAL", keterangan: `${h.jenis}: ${h.alasan || "gagal"}` });
+  }
+  if (antrean) langkah.push({ tabel: "dirput_antrian", aksi: "INSERT", keterangan: "antrean Direktori Putusan" });
+  await Promise.resolve(
+    catatJejak({
+      ...jejakDasar,
+      tanggalPenetapan: tanggalIso,
+      berhasil: berhasil.length > 0,
+      alasan:
+        berhasil.length > 0
+          ? akun.terpetakan || !akun.username
+            ? ""
+            : "akun_sipp_tidak_terpetakan"
+          : (hasil[0] && hasil[0].alasan) || "gagal",
+      langkah,
+    })
+  ).catch(() => false);
 
   return {
     ok: berhasil.length > 0,
@@ -695,6 +763,8 @@ module.exports = {
   jalurRelatif,
   dokumenRefId,
   barisAudit,
+  akunSippPemicu,
+  BORANG_UNGGAH,
   unggahSatu,
   unggahPutusan,
 };

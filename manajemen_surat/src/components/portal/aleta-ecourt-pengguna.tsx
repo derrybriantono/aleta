@@ -9,7 +9,7 @@
  */
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import {
   History,
   LayoutDashboard,
   PenLine,
+  MoveHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   Puzzle,
@@ -35,6 +36,12 @@ import { usePortal } from "@/lib/app-state";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 import { getEffectiveRoleId } from "@/lib/permissions";
+import {
+  KELAS_LEBAR_ECOURT,
+  KUNCI_SIMPAN_LEBAR_ECOURT,
+  bacaLebarEcourt,
+  type LebarEcourt,
+} from "@/lib/jadwal-sidang-2okt";
 import Link from "next/link";
 
 /*
@@ -84,6 +91,42 @@ const AletaEcourtArsipBerkas = dynamic(
   { ssr: false, loading: () => <div className="min-h-[20rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
 );
 
+// ============================================================================
+// LEBAR HALAMAN - PILIHAN PER PERAMBAN (perbaikan 2 Okt 2026, butir 12)
+// ============================================================================
+
+/** Cadangan bila penyimpanan peramban tertutup - berlaku selama halaman hidup. */
+let lebarMemori: LebarEcourt = "nyaman";
+const PERISTIWA_LEBAR = "aleta-ecourt-lebar";
+
+function bacaLebarTersimpan(): LebarEcourt {
+  try {
+    const nilai = window.localStorage.getItem(KUNCI_SIMPAN_LEBAR_ECOURT);
+    return nilai === null ? lebarMemori : bacaLebarEcourt(nilai);
+  } catch {
+    return lebarMemori;
+  }
+}
+
+function simpanLebarEcourt(nilai: LebarEcourt) {
+  lebarMemori = nilai;
+  try {
+    window.localStorage.setItem(KUNCI_SIMPAN_LEBAR_ECOURT, nilai);
+  } catch {
+    // tidak diingat - tetap berlaku lewat lebarMemori
+  }
+  window.dispatchEvent(new Event(PERISTIWA_LEBAR));
+}
+
+function langgananLebarEcourt(berubah: () => void) {
+  window.addEventListener(PERISTIWA_LEBAR, berubah);
+  window.addEventListener("storage", berubah);
+  return () => {
+    window.removeEventListener(PERISTIWA_LEBAR, berubah);
+    window.removeEventListener("storage", berubah);
+  };
+}
+
 type Keadaan = {
   aktif: boolean;
   sesiBerlaku: boolean | null;
@@ -122,6 +165,15 @@ export function AletaEcourtPengguna() {
     "dasbor" | "sidang" | "mediasi" | "status" | "berkas" | "riwayat" | "ttd" | "ekstensi"
   >("dasbor");
   const [sidebarCiut, setSidebarCiut] = useState(false);
+  // Lebar halaman (butir 12, 2 Okt 2026): "nyaman" bawaan, "penuh" = lebar
+  // J3 1.177.0. Diingat per peramban; penyimpanan yang tertutup (jendela
+  // pribadi) jatuh ke bawaan tanpa error.
+  // useSyncExternalStore, bukan setState di dalam efek: server selalu
+  // menggambar "nyaman", peramban membaca simpanannya tanpa lukisan ganda.
+  const lebar = useSyncExternalStore(langgananLebarEcourt, bacaLebarTersimpan, () => "nyaman" as LebarEcourt);
+  const gantiLebar = useCallback(() => {
+    simpanLebarEcourt(lebar === "penuh" ? "nyaman" : "penuh");
+  }, [lebar]);
   const [cariMenu, setCariMenu] = useState("");
   // Nomor perkara yang diminta dibuka dari layar Jadwal Sidang. Halaman
   // induk yang berpindah menu - komponen jadwal tidak tahu menu apa saja
@@ -367,10 +419,16 @@ export function AletaEcourtPengguna() {
     // Fit-to-size tetap: di bawah 1600 px tidak ada yang berubah, dan tabel
     // jadwal tetap menyesuaikan lebarnya (min-w-0 pada xl) - hanya ruangnya
     // yang bertambah.
-    <div
-      data-lebar-ecourt=""
-      className="min-[1600px]:ml-[calc(50%_-_min(50vw_-_1.5rem,_1200px))] min-[1600px]:w-[min(100vw_-_3rem,_2400px)] min-[1600px]:max-w-none"
-    >
+    //
+    // ==================================================================
+    // LEBAR NYAMAN SEBAGAI BAWAAN - PERBAIKAN 2 OKTOBER 2026 (butir 12)
+    // ==================================================================
+    //
+    // Lebar J3 dikeluhkan terlalu lebar (1.872 px pada layar 1920). Bawaannya
+    // kini paling lebar 1.680 px - rumusnya sama, hanya batasnya - dan lebar
+    // J3 tetap dapat dipilih lewat tombol "Lebar penuh" di kaki sidebar.
+    // Lihat KELAS_LEBAR_ECOURT di @/lib/jadwal-sidang-2okt.
+    <div data-lebar-ecourt={lebar} className={KELAS_LEBAR_ECOURT[lebar]}>
     <div className="space-y-4 px-0 pb-4 pt-1 sm:pb-5">
       {catatan ? <p className="rounded border border-border bg-muted/40 p-3 text-sm">{catatan}</p> : null}
 
@@ -611,6 +669,27 @@ export function AletaEcourtPengguna() {
               </p>
             ) : null}
           </div>
+
+          {/* Lebar halaman (butir 12, 2 Okt 2026) - hanya berarti pada
+              jendela 1600 px ke atas, jadi hanya tampil di sana. */}
+          <button
+            type="button"
+            onClick={gantiLebar}
+            aria-pressed={lebar === "penuh"}
+            data-tombol-lebar-ecourt=""
+            title={
+              lebar === "penuh"
+                ? "Lebar penuh (paling lebar 2.400 px). Tekan untuk kembali ke lebar nyaman (paling lebar 1.680 px)."
+                : "Lebar nyaman (paling lebar 1.680 px). Tekan untuk lebar penuh hampir sampai tepi layar."
+            }
+            className={cn(
+              "hidden items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-xs text-slate-300 transition hover:bg-white/10 hover:text-white min-[1600px]:flex",
+              sidebarCiut ? "h-11 w-11 justify-center self-center" : "px-3 py-2"
+            )}
+          >
+            <MoveHorizontal className="h-4 w-4 shrink-0" />
+            {!sidebarCiut ? <span>{lebar === "penuh" ? "Lebar penuh" : "Lebar nyaman"}</span> : <span className="sr-only">Lebar halaman</span>}
+          </button>
         </nav>
 
         <div className="min-w-0 space-y-4">

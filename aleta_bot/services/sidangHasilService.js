@@ -457,7 +457,8 @@ async function susunRencanaTunda(minta = {}) {
   const { prosesId, perbaruiRiwayat } = prosesUntukTunda(keadaan, jenisPengadilan);
 
   const saat = await penetapan.waktuBasisData();
-  const ip = bersih(minta.ip) || "127.0.0.1";
+  // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
+  const ip = bersih(minta.ip) || "";
   const langkah = [];
 
   // ---- 1. Baris sidang hari ini: ditunda ----------------------------------
@@ -797,7 +798,8 @@ async function susunRencanaPutus(minta = {}) {
   const verstek = bersih(minta.verstek).toUpperCase() === "Y" ? "Y" : "T";
   const dihadiri = Number(minta.dihadiriOleh);
   const saat = await penetapan.waktuBasisData();
-  const ip = bersih(minta.ip) || "127.0.0.1";
+  // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
+  const ip = bersih(minta.ip) || "";
   const andaian = [];
   if (!akun.hakim && tulisPutusan) {
     andaian.push(

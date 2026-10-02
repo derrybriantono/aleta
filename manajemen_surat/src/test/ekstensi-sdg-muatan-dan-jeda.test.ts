@@ -268,6 +268,10 @@ function bukaBlangko(
       return String(this.innerHTML || "").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "");
     },
   });
+  // Disesuaikan 2 Okt (agen A, butir 14): keputusan pengguna 2 Okt MENGEMBALIKAN
+  // jeda seperti manusia sebelum tulisan ke ABT (alatJedaManusia, panel-alat.js) -
+  // membalik "tanpa jeda tiruan" 26 Sep. Jeda itu dinolkan di sini dan diuji di
+  // ekstensi-abt-2okt; uji ini tetap menjaga bahwa TIDAK ADA jeda LAIN.
   // SATU skrip, seperti satu dunia terasing Chrome. Keduanya "use strict",
   // jadi tidak satu pun deklarasinya bocor ke window: yang diuji langsung
   // diserahkan lewat __uji di akhir skrip yang sama.
@@ -275,7 +279,8 @@ function bukaBlangko(
     SUMBER_ALAT +
       "\n;\n" +
       SUMBER_ABT +
-      "\n;\nwindow.__uji = { susunMuatanSdg, nilaiUpayaDamai, variabelSaksiSdg, VAR_SAKSI_TANYA_JAWAB, VAR_NAMA_SAKSI };"
+      "\n;\nwindow.__uji = { susunMuatanSdg, nilaiUpayaDamai, variabelSaksiSdg, VAR_SAKSI_TANYA_JAWAB, VAR_NAMA_SAKSI };" +
+      '\n;\nif (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);'
   );
   return w;
 }

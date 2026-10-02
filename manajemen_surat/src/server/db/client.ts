@@ -347,6 +347,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 1 Oktober 2026 (0055): jejak aksi e-Court lewat sesi pribadi. Tanpa
   // kunci asing - urutannya bebas.
   "aleta_ecourt_aksi_jejak",
+  // 2 Oktober 2026 (0056): cap pengadilan untuk edoc penetapan. Tanpa kunci
+  // asing - urutannya bebas.
+  "aleta_ecourt_cap",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

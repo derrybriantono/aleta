@@ -538,7 +538,12 @@ describe("butir 6 & 16: bagian di dalam tab menurut peran (UI Baru)", () => {
       const pn = await siapUi(h);
       await tunggu(1200);
       expect(pn.getAttribute("data-s1-peran")).toBe(golongan);
-      const kartu = pn.querySelector('[data-t7-fitur="sipp-21"]');
+      // Disesuaikan 2 Okt (agen S, butir 15): Hakim/Ketua/PP/Juru Sita kini
+      // mendapat kartu "Perkara berikutnya" MENURUT PERANNYA
+      // (data-s2-berikutnya, diuji di ekstensi-sipp-2okt.test.ts). Yang dijaga
+      // di sini tetap sama: kartu checklist LENGKAP (antrean Direktori Putusan
+      // gagal dsb.) hanya Super Admin & Admin.
+      const kartu = pn.querySelector('[data-t7-fitur="sipp-21"]:not([data-s2-berikutnya])');
       if (bolehBerikutnya) expect(kartu && tampakDi(kartu)).toBe(true);
       else expect(Boolean(kartu && tampakDi(kartu))).toBe(false);
       // Tiap bagian yang TAMPAK harus berada di tab yang tampak bagi peran ini.
@@ -701,7 +706,10 @@ describe("butir 13 & 14: putusan massal SIPP (UI Baru)", () => {
     await siapUi(h);
     const kotak = await muatMassal(h);
     const kelompok = Array.from(kotak.querySelectorAll(".aleta-massal-kelompok[data-pengguna]")) as any[];
-    expect(kelompok.map((k) => k.textContent.match(/^[^·]+/)![0].trim())).toEqual(["Ahmad Fauzi, S.H.I.", "Munifa, S.H.", "Rahmat Hidayat, S.H."]);
+    // Disesuaikan 2 Okt (agen S, butir 7): kepala kelompok kini memuat tag
+    // peran "Hakim" di kiri judul - nama ketua majelis dibaca dari judulnya.
+    const judulKelompok = (k: any) => String((k.querySelector(".aleta-lipat-judul") || k).textContent).match(/^[^·]+/)![0].trim();
+    expect(kelompok.map(judulKelompok)).toEqual(["Ahmad Fauzi, S.H.I.", "Munifa, S.H.", "Rahmat Hidayat, S.H."]);
     expect(nomorBaris(kotak.querySelector(".aleta-massal-per-user"))).toEqual(["2/Pdt.G/2026/PA.Dgl", "1/Pdt.G/2026/PA.Dgl", "4/Pdt.G/2026/PA.Dgl"]);
     const tidakIkut = kotak.querySelector('[data-s1-fitur="massal-tidak-ikut"]');
     expect(tidakIkut.textContent).toContain("3/Pdt.G/2026/PA.Dgl");
@@ -742,7 +750,12 @@ describe("butir 13 & 14: putusan massal SIPP (UI Baru)", () => {
 // ============================================================================
 describe("tidak ada jalur tulis SIPP baru dari blok 1 Okt", () => {
   const konten = KONTEN();
-  const blok = konten.slice(konten.indexOf("PERBAIKAN 1 OKTOBER 2026 - PANEL SIPP"));
+  // Disesuaikan 2 Okt (agen S): blok 1 Okt berhenti di awal blok 2 Okt (S2),
+  // yang punya jalur tulisnya sendiri (upload edoc penetapan, rute E) dan
+  // penjaganya sendiri di ekstensi-sipp-2okt.test.ts.
+  const awal1Okt = konten.indexOf("PERBAIKAN 1 OKTOBER 2026 - PANEL SIPP");
+  const awal2Okt = konten.indexOf("PERBAIKAN 2 OKTOBER 2026 - PANEL SIPP", awal1Okt);
+  const blok = konten.slice(awal1Okt, awal2Okt > awal1Okt ? awal2Okt : undefined);
 
   it("pesan ke jembatan dari blok ini hanya BACAAN (nilai / pilihan); tidak ada postMessage sendiri", () => {
     expect(blok.length).toBeGreaterThan(5000);

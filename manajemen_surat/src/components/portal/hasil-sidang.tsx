@@ -19,6 +19,7 @@ import {
 } from "@/lib/bawaan-tunda";
 import type { BahanSebutan } from "@/lib/sebutan-pihak";
 import { IsianMediator } from "@/components/portal/jadwal-sidang-1okt";
+import { PapanRuangSidang } from "@/components/portal/jadwal-sidang-2okt";
 import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
 import { cn } from "@/lib/utils";
 
@@ -482,6 +483,17 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
           </CardDescription>
         </CardHeader>
       </Card>
+
+      {/* ================================================================= */}
+      {/* RUANG SIDANG - sedang disidangkan, skors, lompat ke perkara lain  */}
+      {/* (perbaikan 2 Okt 2026, butir 10). Hanya pada hari sidangnya.      */}
+      {/* ================================================================= */}
+      <PapanRuangSidang
+        perkaraId={String(keadaan.perkaraId)}
+        nomorPerkara={keadaan.nomorPerkara}
+        tanggalSidang={String(keadaan.tanggalSidang).slice(0, 10)}
+        hasilSidangSelesai={sudahDitunda || sudahPutus || sudahTertulis}
+      />
 
       {/* ================================================================= */}
       {/* MEDIATOR - menu yang SAMA dengan tombol mediator di Jadwal Sidang */}

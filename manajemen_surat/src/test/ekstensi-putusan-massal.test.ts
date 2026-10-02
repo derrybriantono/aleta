@@ -559,7 +559,10 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
   it("blangko KHUSUS per perkara menang atas pemetaan jenisnya - di baris, rencana, dan saat dijalankan", () => {
     const massal = abt.slice(abt.indexOf("function bagianMassalAbt("));
     const badan = massal.slice(0, massal.indexOf("\nasync function kerjakanSatuPerkaraAbt("));
-    expect(badan).toContain("const petaUntuk = (s) => pilihanPer.get(s.nomor) || keadaan.peta[alatKunciJenis(s.jenis)];");
+    // Disesuaikan 2 Okt (agen A, butir 3): "Blangko utama" (UI Baru) duduk di antara
+    // pilihan per perkara dan pemetaan jenis - pilihan per perkara TETAP menang;
+    // a2Utama null (Lama/Baru) = bentuk 1.177.0.
+    expect(badan).toContain("const petaUntuk = (s) => pilihanPer.get(s.nomor) || (a2Utama && a2Utama.peta()) || keadaan.peta[alatKunciJenis(s.jenis)];");
     expect(badan).toContain('pilih.className = "aleta-massal-pilih-berkas";');
     expect(badan).toContain(".filter((s) => alatBlangkoLengkap(petaUntuk(s)))");
     expect(badan).toContain("const peta = petaUntuk(butir);");

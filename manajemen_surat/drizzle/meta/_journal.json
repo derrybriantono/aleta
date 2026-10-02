@@ -393,6 +393,13 @@
       "when": 1789989601001,
       "tag": "0055_aleta_ecourt_aksi_jejak",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1790076001001,
+      "tag": "0056_aleta_ecourt_cap",
+      "breakpoints": true
     }
   ]
 }

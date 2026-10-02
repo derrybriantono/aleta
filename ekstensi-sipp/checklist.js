@@ -1025,6 +1025,42 @@
      * :host([data-kulit="modern"]) menggantikan html[data-aleta-kulit="modern"].
      * Dijaga uji ekstensi-lipat-widget-1okt supaya keduanya tidak berselisih. */
     .aleta-lipatan > .aleta-lipat-isi[hidden], .aleta-lipat-isi[hidden] { display: none !important; }
+    /* Perbaikan 2 Okt (agen W): tag peran (butir 7), menu bagian (butir 13),
+     * sorot sudut (butir 11) - salinan rupa blok W2 panel.css untuk Shadow DOM. */
+    .aleta-lipat-peran[hidden] { display: none !important; }
+    :host([data-kulit="modern"]) .aleta-lipat-peran {
+      flex: none; padding: 1px 7px; border: 1px solid var(--aleta-garis); border-radius: 999px;
+      background: var(--aleta-latar-naik); color: var(--aleta-tulisan-lembut);
+      font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); font-weight: 600; white-space: nowrap;
+    }
+    .aleta-cm-bagian-menu {
+      display: grid; gap: 4px; margin: 4px 8px 6px; padding: 8px 10px;
+      border: 1px solid var(--aleta-garis); border-radius: 10px; background: var(--aleta-latar-naik);
+    }
+    .aleta-cm-bagian-judul { font-weight: 700; font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); color: var(--aleta-tulisan-lembut); }
+    .aleta-cm-bagian-baris { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+    .aleta-cm-bagian-teks { flex: 1 1 auto; min-width: 0; }
+    .aleta-cm-bagian-baris .aleta-cmw-saklar { flex: none; }
+    .aleta-cm-bagian-ket { color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); }
+    .aleta-cm-bagian-kaki { display: flex; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--aleta-garis); }
+    .aleta-cm-bagian-tombol[aria-expanded="true"] { background: var(--aleta-latar-naik); color: var(--aleta-tulisan); }
+    .aleta-sudut-sorot {
+      position: fixed; z-index: 3; width: 44px; height: 44px; pointer-events: none;
+      border: 0 solid var(--aleta-merek, #3b82f6);
+      box-shadow: 0 0 18px 2px color-mix(in srgb, var(--aleta-merek, #3b82f6) 45%, transparent);
+    }
+    .aleta-sudut-sorot[data-sudut="ki-at"] { border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 10px; }
+    .aleta-sudut-sorot[data-sudut="ka-at"] { border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 10px; }
+    .aleta-sudut-sorot[data-sudut="ki-bw"] { border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 10px; }
+    .aleta-sudut-sorot[data-sudut="ka-bw"] { border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 10px; }
+    .aleta-sudut-ket {
+      position: absolute; padding: 0 4px; border-radius: 6px; background: var(--aleta-merek, #3b82f6);
+      color: #fff; font-family: system-ui, sans-serif; font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); font-weight: 700; line-height: 1.4;
+    }
+    .aleta-sudut-sorot[data-sudut$="-at"] .aleta-sudut-ket { top: 6px; }
+    .aleta-sudut-sorot[data-sudut$="-bw"] .aleta-sudut-ket { bottom: 6px; }
+    .aleta-sudut-sorot[data-sudut^="ki-"] .aleta-sudut-ket { left: 6px; }
+    .aleta-sudut-sorot[data-sudut^="ka-"] .aleta-sudut-ket { right: 6px; }
     .aleta-lipatan[data-lipat-asal="kartu"][data-terbuka="tidak"] > :not(.aleta-lipat-kepala) { display: none !important; }
     :host([data-kulit="modern"]) .aleta-lipat-kepala {
       display: flex;
@@ -1246,6 +1282,8 @@
     /** { sipp?, abt?, portal? } -> "kiri-bawah" | "kanan-bawah" | "kiri-atas" | "kanan-atas". */
     sudut: {},
     aturTerbuka: false,
+    /** Butir 13 (2 Okt): menu bagian di kepala checklist terbuka. Tidak disimpan. */
+    bagianTerbuka: false,
     /** Tanggal yang dipilih di kalender tenggat ("YYYY-MM-DD"), atau kosong. */
     hariKalender: "",
     // ── Perbaikan 1 Okt butir 7 - hanya UI Baru ──
@@ -2273,6 +2311,24 @@
     if (chip) kepala.appendChild(chip);
 
     const alat = el("span", "aleta-cm-alat");
+    // Butir 13 (2 Okt): pengaturan SEMUA bagian widget langsung dari kepala
+    // checklist - "Atur widget" lengkap tetap di kaki dok.
+    if (modern()) {
+      const bagian = tombol(
+        "aleta-cm-bagian-tombol",
+        "☰",
+        keadaan.bagianTerbuka ? "Tutup pengaturan bagian widget" : "Bagian widget: pilih yang tampil (Catatan cepat, Lama sidang, Kalender tenggat, ...)",
+        () => {
+          keadaan.bagianTerbuka = !keadaan.bagianTerbuka;
+          gambar();
+          fokuskan("bagian-tombol");
+        },
+        "bagian-tombol"
+      );
+      bagian.setAttribute("aria-expanded", keadaan.bagianTerbuka ? "true" : "false");
+      bagian.setAttribute("aria-haspopup", "true");
+      alat.appendChild(bagian);
+    }
     const segar = tombol("aleta-cm-segar", "", "Segarkan sekarang", () => void segarkan(), "segar");
     segar.appendChild(el("span", keadaan.memuat ? "aleta-cm-berputar" : "", "⟳"));
     alat.appendChild(segar);
@@ -2660,6 +2716,9 @@
         wadahIsi = l.isi;
       }
     }
+    // Butir 13: menu bagian dari tombol ☰ di kepala - tepat di bawah kepala,
+    // di luar isi yang dapat dilipat (menu tetap terlihat walau terlipat).
+    if (modern() && keadaan.bagianTerbuka) panel.insertBefore(susunMenuBagian(), kepala.nextSibling);
     const kabar = susunKabar();
     if (kabar) wadahIsi.appendChild(kabar);
     if (keadaan.data) {
@@ -2743,10 +2802,22 @@
     return fitur("popup-23") ? JENIS : "semua";
   }
 
+  /**
+   * PERBAIKAN 2 OKT BUTIR 13 (UI Baru): "bawaan hanya checklist milestone yang
+   * tampil, bagian lain (Catatan cepat, Lama sidang, Kalender tenggat, dst.)
+   * HIDE". Berlaku hanya selama BELUM ada susunan tersimpan (lokal maupun
+   * akun) - yang sudah menyimpan tatanya sendiri tetap memakai tatanya.
+   * Lama dan Baru tidak membaca susunan sama sekali.
+   */
+  function susunanBawaan() {
+    if (!modern()) return { urutan: [], mati: [] };
+    return { urutan: [], mati: WIDGET.filter((w) => w.id !== "checklist" && !w.menyusul).map((w) => w.id) };
+  }
+
   function susunanAktif() {
     const k = kunciSusunan();
     const s = keadaan.susunan[k] || (k !== "semua" ? keadaan.susunan.semua : null);
-    return s || { urutan: [], mati: [] };
+    return s || susunanBawaan();
   }
 
   function simpanSusunan(isi) {
@@ -3130,6 +3201,92 @@
       w.isi.appendChild(ket);
     }
     return w.kotak;
+  }
+
+  // ─── Perbaikan 2 Okt butir 13: menu bagian di kepala checklist ─────────────
+
+  /**
+   * Saklar tampil/sembunyi tiap bagian widget, dari kepala checklist. Satu
+   * sumber dengan "Atur widget" (alihWidget, susunanWidget, setelan akun) -
+   * yang diubah di sini terbaca di sana dan sebaliknya. Bagian yang saklar
+   * fiturnya mati atau yang menyusul DISEBUT, tidak dapat ditekan.
+   */
+  function susunMenuBagian() {
+    const menu = el("div", "aleta-cm-bagian-menu");
+    menu.setAttribute("role", "group");
+    menu.setAttribute("aria-label", "Bagian widget yang tampil");
+    menu.appendChild(el("div", "aleta-cm-bagian-judul", "Bagian yang tampil"));
+    const mati = new Set(susunanAktif().mati);
+    for (const wd of WIDGET) {
+      // Yang menyusul cukup disebut sebaris di bawah (tidak dapat dinyalakan) -
+      // tujuh saklar mati berderet hanya meramaikan kepala checklist.
+      if (wd.id === "checklist" || wd.menyusul) continue;
+      const tersedia = widgetTersedia(wd);
+      const baris = el("div", "aleta-cm-bagian-baris");
+      baris.setAttribute("data-bagian", wd.id);
+      const teks = el("span", "aleta-cm-bagian-teks", wd.judul);
+      if (wd.menyusul) teks.appendChild(el("span", "aleta-cmw-menyusul", "menyusul"));
+      baris.appendChild(teks);
+      const nyala = tersedia && !mati.has(wd.id);
+      const saklar = tombol(
+        "aleta-cmw-saklar",
+        "",
+        wd.menyusul
+          ? `${wd.judul} - menyusul: ${wd.menyusul}`
+          : tersedia
+            ? `${nyala ? "Sembunyikan" : "Tampilkan"} ${wd.judul}`
+            : `${wd.judul}: saklar fitur ${wd.kode} di popup masih mati`,
+        () => alihWidget(wd.id),
+        `bagian-saklar-${wd.id}`
+      );
+      saklar.setAttribute("role", "switch");
+      saklar.setAttribute("aria-checked", nyala ? "true" : "false");
+      saklar.disabled = !tersedia;
+      baris.appendChild(saklar);
+      menu.appendChild(baris);
+    }
+    const menyusul = WIDGET.filter((w) => w.menyusul).map((w) => w.judul);
+    if (menyusul.length) menu.appendChild(el("div", "aleta-cm-bagian-ket", `Menyusul: ${menyusul.join(", ")}.`));
+    const kaki = el("div", "aleta-cm-bagian-kaki");
+    kaki.appendChild(
+      tombol(
+        "aleta-cmw-tombol",
+        "⚙ Atur lengkap",
+        "Atur widget: urutan, pisah ke jendela, tinggi, kelompok checklist",
+        () => {
+          keadaan.bagianTerbuka = false;
+          bukaAtur(true);
+        },
+        "bagian-atur"
+      )
+    );
+    menu.appendChild(kaki);
+    return menu;
+  }
+
+  // ─── Perbaikan 2 Okt butir 11: klik dua kali di sudut widget ───────────────
+
+  /** "ki-at" (panel-alat.js) -> pindah ke sudut layar itu. */
+  function pindahKeSudutLayar(sudut) {
+    if (!akar) return;
+    const PETA = { "ki-at": "kiri-atas", "ka-at": "kanan-atas", "ki-bw": "kiri-bawah", "ka-bw": "kanan-bawah" };
+    const nama = PETA[sudut];
+    if (!nama) return;
+    if (fitur("popup-9")) {
+      keadaan.sudut = { ...keadaan.sudut, [JENIS]: nama };
+      tulis({ [KUNCI_SUDUT]: keadaan.sudut });
+      terapkanPosisi();
+      gambar();
+      return;
+    }
+    const kotak = akar.getBoundingClientRect();
+    const lebar = kotak.width || 0;
+    const tinggi = kotak.height || 0;
+    const kiri = nama.startsWith("kiri") ? TEPI : Math.max((window.innerWidth || 0) - lebar - TEPI, 0);
+    const bawah = nama.endsWith("bawah") ? TEPI : Math.max((window.innerHeight || 0) - tinggi - TEPI, 0);
+    keadaan.posisi = { kiri: Math.round(kiri), bawah: Math.round(bawah), kecil: Boolean(keadaan.posisi && keadaan.posisi.kecil) };
+    simpanPosisi();
+    terapkanPosisi();
   }
 
   // ─── D11 / popup-23: Atur widget ───────────────────────────────────────────
@@ -4447,6 +4604,18 @@
     const wadah = el("div", "aleta-cm-wadah");
     bayang.appendChild(wadah);
     pasangGeser(wadah);
+    // Butir 11 (2 Okt, UI Baru): klik dua kali di sudut = pindah ke sudut itu.
+    try {
+      if (typeof alatPasangSudut === "function") {
+        alatPasangSudut(wadah, {
+          saatPindah: pindahKeSudutLayar,
+          wadahSorot: bayang,
+          gerbang: () => modern() && !(keadaan.posisi && keadaan.posisi.kecil),
+        });
+      }
+    } catch {
+      /* tanpa sudut, geser tetap ada */
+    }
     // Petunjuk dua detik yang sama dengan panel ALETA.
     try {
       if (typeof alatPasangPetunjuk === "function") alatPasangPetunjuk(wadah);

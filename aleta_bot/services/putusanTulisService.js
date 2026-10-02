@@ -255,7 +255,8 @@ async function susunRencanaPutus(minta = {}) {
     andaian.push("Catatan putusan dikosongkan, sebagaimana sebagian besar baris buatan petugas.");
   }
 
-  const ip = bersih(minta.ip) || "127.0.0.1";
+  // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
+  const ip = bersih(minta.ip) || "";
   const saatKolom = waktuPutusan(saat);
   const langkah = [];
 

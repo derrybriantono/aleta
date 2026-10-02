@@ -2486,6 +2486,22 @@ export async function getGatewayIdentitasPihak(
 }
 
 /**
+ * Wilayah SIPP bertingkat (perbaikan 2 Okt 2026 butir 16): `induk` = anak
+ * satu wilayah (kosong = provinsi), `kode` = rantai sampai kode itu. Hanya
+ * membaca - lihat sippWilayahService di bot.
+ */
+export async function getGatewayWilayahSipp(pilihan: {
+  induk?: string;
+  kode?: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams();
+  if (pilihan.kode) kueri.set("kode", pilihan.kode);
+  else if (pilihan.induk) kueri.set("induk", pilihan.induk);
+  const tambahan = kueri.toString();
+  return gatewayFetch(`/internal/aleta-bot/sipp/wilayah${tambahan ? `?${tambahan}` : ""}`);
+}
+
+/**
  * Riwayat para pihak satu perkara - cerai berakta dan perkara lain orang yang
  * sama. Dibaca hanya ketika bagian Para pihak di Status Perkara dibuka.
  *

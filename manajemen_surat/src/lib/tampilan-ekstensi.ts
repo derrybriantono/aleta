@@ -209,7 +209,7 @@ export const KUNCI_PENGATURAN_SINKRON = [
 
 const PENGATURAN_SINKRON = new Set<string>(KUNCI_PENGATURAN_SINKRON);
 
-export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata"] as const;
+export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan"] as const;
 export type KunciSetelan = (typeof KUNCI_SETELAN)[number];
 
 export function kunciSetelanSah(x: unknown): x is KunciSetelan {
@@ -222,6 +222,7 @@ export const BATAS_BITA_SETELAN: Record<KunciSetelan, number> = {
   "pintasan.portal": 8192,
   "pengaturan.ekstensi": 16384,
   "widget.tata": 8192,
+  "panel.bawaan": 512,
 };
 
 export const BATAS_TANDA_CHECKLIST = 500;
@@ -408,6 +409,34 @@ function normalkanTataWidget(nilai: unknown) {
   };
 }
 
+// ----------------------------------------------------------------------------
+// panel.bawaan - panel terbuka/tersembunyi saat halaman dimuat (perbaikan 2 Okt butir 4)
+// ----------------------------------------------------------------------------
+//
+// {aleta?, sipp?, abt?} masing-masing boolean: true = panel di situs itu
+// terbuka saat halaman dimuat, false = lahir sebagai lencana (tetap dapat
+// dibuka). Bawaan ekstensi bila tidak disebut: aleta false, sipp & abt true.
+// Hanya selera tampilan; ruas lain dibuang dan disebut.
+export const SITUS_PANEL_BAWAAN = ["aleta", "sipp", "abt"] as const;
+
+function normalkanBawaanPanel(nilai: unknown) {
+  if (!nilai || typeof nilai !== "object" || Array.isArray(nilai)) {
+    throw new GalatSetelan("panel.bawaan harus berupa obyek {aleta, sipp, abt}.");
+  }
+  const n = nilai as Record<string, unknown>;
+  const hasil: Partial<Record<(typeof SITUS_PANEL_BAWAAN)[number], boolean>> = {};
+  const dibuang: string[] = [];
+  for (const [k, v] of Object.entries(n)) {
+    if (!(SITUS_PANEL_BAWAAN as readonly string[]).includes(k)) {
+      dibuang.push(k);
+      continue;
+    }
+    if (typeof v !== "boolean") throw new GalatSetelan(`panel.bawaan.${k} harus true atau false.`);
+    hasil[k as (typeof SITUS_PANEL_BAWAAN)[number]] = v;
+  }
+  return { nilai: hasil, dibuang };
+}
+
 /**
  * Memeriksa dan menormalkan satu setelan sebelum disimpan.
  *
@@ -431,7 +460,9 @@ export function normalkanSetelan(
         ? normalkanPintasan(nilai)
         : kunci === "widget.tata"
           ? normalkanTataWidget(nilai)
-          : normalkanPengaturan(nilai);
+          : kunci === "panel.bawaan"
+            ? normalkanBawaanPanel(nilai)
+            : normalkanPengaturan(nilai);
 
   let json: string;
   try {

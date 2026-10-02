@@ -80,6 +80,10 @@ const BERKAS = [
   // dan ABT, dimuat sesudah jurusita.js dan sebelum konten.js/abt.js;
   // menyediakan globalThis.aletaBasMassalPasang.
   "basmassal.js",
+  // Isi data saksi/pihak dari foto KTP (perbaikan 2 Okt 2026 butir 16, agen
+  // C) - skrip konten SIPP yang memasang dirinya sendiri pada blangko "Tambah
+  // Referensi Data Pihak"; dimuat sesudah basmassal.js, sebelum konten.js.
+  "saksiscan.js",
   "tema-awal.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
   // dipanggil - skrip konten tidak punya keduanya.

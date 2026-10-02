@@ -99,6 +99,18 @@ import {
   useLayarPenuh,
   useSelesaiSidang,
 } from "@/components/portal/jadwal-sidang-1okt";
+import {
+  aksiRuangSidang,
+  petaSidangBerjalan,
+  selesaiPerKunciWaktu,
+  skorsUntuk,
+} from "@/lib/jadwal-sidang-2okt";
+import {
+  LencanaDiskors,
+  LencanaSedangBerjalan,
+  RingkasRuangSidang,
+  TombolRuangSidang,
+} from "@/components/portal/jadwal-sidang-2okt";
 import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";
 import {
   AGENDA_ELITIGASI,
@@ -4777,6 +4789,45 @@ export function AletaEcourtSidang({
     [waktuAntrian, bahanTigaJarak]
   );
 
+  /**
+   * ==========================================================================
+   * SIDANG YANG SEDANG BERJALAN + SKORS (perbaikan 2 Okt 2026, butir 10)
+   * ==========================================================================
+   *
+   * Per ruang, perkara TERAKHIR yang dipanggil hari ini dan belum selesai -
+   * bahan yang sama dengan "lama sidang berjalan" di atas, ditambah tanda
+   * Selesai (J2) dan skors. Lihat @/lib/jadwal-sidang-2okt.
+   */
+  const ruangSidang = useMemo(() => {
+    const ruangSipp: Record<string, string> = {};
+    for (const b of sidang) ruangSipp[kunciWaktu(b.tanggalSidang, b.perkaraId)] = b.ruangan;
+    return petaSidangBerjalan(waktuAntrian.baris, {
+      hariIni: waktuAntrian.hariIni,
+      selesai: selesaiPerKunciWaktu(sidang, tandaSelesai.peta),
+      skors: tandaSelesai.skors,
+      ruangSipp,
+    });
+  }, [sidang, waktuAntrian, tandaSelesai.peta, tandaSelesai.skors]);
+
+  /** Keterangan perkara untuk tombol skors/lompat - nomor perkara, nomor antrian, ruang. */
+  const infoRuangSidang = useCallback(
+    (perkaraId: string) => {
+      const b = sidang.find((x) => String(x.perkaraId) === String(perkaraId));
+      const a = b ? antrianUntuk(antrian.peta, b) : undefined;
+      return { nomorPerkara: b?.nomorPerkara ?? "", nomorAntrian: a?.nomor ?? null, noRuang: a?.noRuang ?? null };
+    },
+    [sidang, antrian]
+  );
+
+  /** Perkara dapat dipanggil hari ini: punya baris antrian bertanggal hari ini. */
+  const bisaDipanggilHariIni = useCallback(
+    (b: SidangBaris) =>
+      Boolean(waktuAntrian.hariIni) &&
+      b.tanggalSidang === waktuAntrian.hariIni &&
+      Boolean(antrianUntuk(antrian.peta, b)),
+    [waktuAntrian.hariIni, antrian]
+  );
+
   /** Baris waktu menurut kunciWaktu - jumlah panggilan dan nomor rekaman. */
   const barisWaktuPerKunci = useMemo(() => {
     const peta: Record<string, BarisWaktuAntrian> = {};
@@ -6427,6 +6478,24 @@ export function AletaEcourtSidang({
             di puncak layar selama tabelnya muat - lihat tabelMuat. Pengecualian
             rincian terbuka (sebab (2) pada catatan lebarTampak) ikut hilang,
             sebab tidak ada lagi batas yang perlu dilepas. */}
+        {/* Siapa yang sedang disidangkan di tiap ruang - perbaikan 2 Okt
+            2026 (butir 10). Ditekan = menggulung ke barisnya. */}
+        <RingkasRuangSidang
+          perRuang={ruangSidang.perRuang}
+          nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
+          jumlahDiskors={
+            sidang.filter((b) =>
+              skorsUntuk(tandaSelesai.skors, b, ruangSidang.panggilPerKunci[kunciWaktu(b.tanggalSidang, b.perkaraId)])
+            ).length
+          }
+          onLihat={(k) => {
+            const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find(
+              (x) => x.dataset.kunciWaktu === k
+            );
+            el?.scrollIntoView({ block: "center", behavior: "smooth" });
+          }}
+        />
+
         <div
           ref={kotakTabel}
           data-tabel-muat={tabelMuat ? "ya" : "tidak"}
@@ -6599,6 +6668,18 @@ export function AletaEcourtSidang({
                   const selesaiTanda = keadaanSelesai(baris, sidangSelesai, tandaSelesai.peta);
                   const kunciTiga = kunciWaktu(baris.tanggalSidang, baris.perkaraId);
                   const tigaBaris = tigaJarak[kunciTiga];
+                  // Butir 10 (2 Okt 2026): sedang disidangkan / diskors.
+                  const berjalanIni = ruangSidang.berjalan[kunciTiga] ?? null;
+                  const skorsIni = skorsUntuk(tandaSelesai.skors, baris, ruangSidang.panggilPerKunci[kunciTiga]);
+                  const ruangIni = ruangSidang.ruangPerKunci[kunciTiga];
+                  const bisaDipanggilIni = bisaDipanggilHariIni(baris);
+                  const aksiRuang = aksiRuangSidang({
+                    hijau: selesaiTanda.hijau,
+                    berjalan: berjalanIni,
+                    skors: skorsIni,
+                    berjalanDiRuang: ruangIni ? ruangSidang.perRuang[ruangIni] : null,
+                    bisaDipanggil: bisaDipanggilIni,
+                  });
                   return (
                     <Fragment key={kunci}>
                       {/* ==================================================
@@ -6640,8 +6721,20 @@ export function AletaEcourtSidang({
                           // isyarat, dan pada tema gelap kontrasnya 9,12:1.
                           selesaiTanda.hijau &&
                             dibuka !== kunci &&
-                            "border-l-4 border-l-emerald-500 bg-emerald-500/[0.07] dark:border-l-emerald-400"
+                            "border-l-4 border-l-emerald-500 bg-emerald-500/[0.07] dark:border-l-emerald-400",
+                          // SEDANG DISIDANGKAN (butir 10) - garis kiri biru
+                          // dan bingkai; tidak pernah bersamaan dengan hijau
+                          // (yang selesai tidak berjalan). Tetap tampak saat
+                          // rinciannya terbuka.
+                          berjalanIni &&
+                            "border-l-4 border-l-sky-500 bg-sky-500/[0.09] outline outline-2 -outline-offset-2 outline-sky-500/50 dark:border-l-sky-400",
+                          skorsIni &&
+                            !berjalanIni &&
+                            dibuka !== kunci &&
+                            "border-l-4 border-l-amber-500 bg-amber-500/[0.06] dark:border-l-amber-400"
                         )}
+                        data-kunci-waktu={kunciTiga}
+                        data-sedang-berjalan={berjalanIni ? "ya" : undefined}
                       >
                         {/* Nomor urut, bukan nomor perkara: yang dijawab
                             adalah "hari ini ada berapa sidang". */}
@@ -6675,6 +6768,8 @@ export function AletaEcourtSidang({
                             tungguBerjalan={tigaBaris?.tunggu}
                             patokan={patokanWaktu}
                           />
+                          {berjalanIni ? <LencanaSedangBerjalan berjalan={berjalanIni} /> : null}
+                          {skorsIni && !berjalanIni ? <LencanaDiskors catatan={skorsIni} /> : null}
 
                           {/* Pengambilan antrian dari sisi PETUGAS, di kolom
                               yang memang sudah memuat nomornya. Sebelumnya
@@ -7743,6 +7838,20 @@ export function AletaEcourtSidang({
                               baris={baris}
                               keadaan={selesaiTanda}
                               onBerubah={tandaSelesai.muatUlang}
+                            />
+                            {/* Skors / Lompat ke sini / Lanjutkan - butir 10
+                                (2 Okt 2026). Tidak pernah pada baris hijau. */}
+                            <TombolRuangSidang
+                              baris={baris}
+                              aksi={aksiRuang}
+                              berjalan={berjalanIni}
+                              skors={skorsIni}
+                              bisaDipanggil={bisaDipanggilIni}
+                              info={infoRuangSidang}
+                              onBerubah={() => {
+                                tandaSelesai.muatUlang();
+                                void muatTanggal(dari, sampai, nilaiKesiapan);
+                              }}
                             />
                             <button
                               type="button"

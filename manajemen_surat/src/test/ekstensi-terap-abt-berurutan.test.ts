@@ -210,6 +210,11 @@ function muatAbt(opsi: { tolak?: Set<string>; latensiMs?: number } = {}) {
   vm.createContext(k);
   vm.runInContext(SUMBER_ALAT, k, { filename: "panel-alat.js" });
   vm.runInContext(SUMBER_ABT, k, { filename: "abt.js" });
+  // Disesuaikan 2 Okt (agen A, butir 14): keputusan pengguna 2 Okt MENGEMBALIKAN
+  // jeda seperti manusia sebelum tulisan ke ABT (alatJedaManusia, panel-alat.js) -
+  // membalik "tanpa jeda tiruan" 26 Sep. Jeda itu dinolkan di sini dan diuji di
+  // ekstensi-abt-2okt; uji ini tetap menjaga bahwa TIDAK ADA jeda LAIN.
+  vm.runInContext('if (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);', k);
   return { k, jam, simpanan, permintaan, pantau };
 }
 

@@ -1325,7 +1325,8 @@ async function susunRencanaTulis(minta) {
     // Lantai jamnya: penetapan tidak pernah mendahului Pendaftaran Perkara.
     didaftar: perkara.didaftar,
   });
-  const ip = String(minta.ip || "127.0.0.1");
+  // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
+  const ip = String(minta.ip || "");
   const langkah = [];
   // Andaian yang dipakai menyusun rencana ini - kosong pada keadaan biasa.
   // Diteruskan apa adanya ke panel supaya yang membacanya tahu rencana ini
@@ -2462,7 +2463,8 @@ async function susunRencanaHapus(minta) {
   const saat = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(minta.saat || ""))
     ? String(minta.saat)
     : await waktuBasisData();
-  const ip = String(minta.ip || "127.0.0.1");
+  // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
+  const ip = String(minta.ip || "");
   const langkah = [];
 
   // Jadwal sidang mana yang dibuat penetapan ini - dibaca dari baris yang

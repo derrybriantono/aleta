@@ -370,10 +370,14 @@ function tanggapanUji(status: number, isi: unknown) {
 }
 
 const SEMUA_WIDGET = { "popup-20": true, "popup-21": true, "popup-22": true };
+// Perbaikan 2 Okt butir 13: bawaan UI Baru kini HANYA checklist yang tampil.
+// Uji di berkas ini menguji lipat/pisah/tinggi bagian lain, jadi susunan
+// "semua tampil" disimpan lebih dulu - seperti akun yang sudah menatanya.
 const ui = (lain: Record<string, unknown> = {}) => ({
   checklistMilestone: true,
   ujiTampilan: "ui",
   ujiFitur: { ...SEMUA_WIDGET },
+  susunanWidget: { semua: { urutan: [], mati: [] } },
   ...lain,
 });
 
@@ -669,7 +673,8 @@ describe("butir 7: tersimpan per AKUN di server, berlaku di PC mana pun", () => 
       }),
     });
     await siapDok(h);
-    await sampai(() => tumpuk(h).join() === "checklist,catatan,lama-sidang,kalender", "bawaan");
+    // Bawaan sejak perbaikan 2 Okt butir 13: hanya checklist.
+    await sampai(() => tumpuk(h).join() === "checklist", "bawaan");
     expect(h.q(".aleta-cmw-lepas-wadah")).toBeNull();
     expect(tata(h).serverPada).toBe("");
     await tunggu(1700);

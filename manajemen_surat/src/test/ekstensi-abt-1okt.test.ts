@@ -331,9 +331,14 @@ function buka(p: Opsi = {}): Halaman {
     if (!e.defaultPrevented && !String(a.getAttribute("href")).startsWith("#")) navigasi.push(a.href);
     e.preventDefault();
   });
+  // Disesuaikan 2 Okt (agen A, butir 14): tulisan ke ABT kini didahului
+  // alatJedaManusia (0,9-3,5 detik). Uji ini memeriksa ISI tulisan, bukan
+  // jedanya (jeda diuji di ekstensi-abt-2okt) - jeda dinolkan DI DALAM skrip
+  // yang sama (panel-alat.js "use strict": fungsinya tidak menjadi milik window).
   w.eval(
     `${SUMBER_ALAT}\n;\n${SUMBER_ABT}\n;\nwindow.__a1 = typeof t6VarianKalimat === "function" ? { t6VarianKalimat, ` +
-      `a1KetuaMajelis: typeof a1KetuaMajelis === "function" ? a1KetuaMajelis : null, a1PutusanLayak: typeof a1PutusanLayak === "function" ? a1PutusanLayak : null } : null;`
+      `a1KetuaMajelis: typeof a1KetuaMajelis === "function" ? a1KetuaMajelis : null, a1PutusanLayak: typeof a1PutusanLayak === "function" ? a1PutusanLayak : null } : null;` +
+      `\n;\n/* 2 Okt (agen A, butir 14): jeda manusia dinolkan - lihat catatan di buka() */ if (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);`
   );
   return { dom, w, simpanan, minta, konfirmasi, navigasi };
 }
@@ -377,8 +382,10 @@ describe("butir 8: posita dan keterangan saksi RAPI langsung di daftar Input ke 
     await tunggu(100);
     expect(nonGetAbt(h)).toEqual([]);
     expect(positaPost(h)).toEqual([{ perkaraId: "10018", ujiKering: true }]);
-    // 1 usulan (0222) + 1 huruf (F) + 2 rapi.
-    expect(input.textContent).toBe("Input ke ABT (4)");
+    // 1 usulan (0222) + 1 huruf (F). Disesuaikan 2 Okt (butir 9, agen A): kartu
+    // "dirapikan" tidak lagi tampil, jadi tidak ikut angka di tombol - keduanya
+    // tetap tercentang dan tetap ditulis saat Input (diperiksa di bawah).
+    expect(input.textContent).toBe("Input ke ABT (2)");
 
     input.click();
     await sampai(() => /dirapikan/.test(kabarInput(h)?.textContent || "") && !input.disabled, "kabar input");

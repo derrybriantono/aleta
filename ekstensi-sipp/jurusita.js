@@ -137,6 +137,15 @@ let jurusitaPetaBerlaku = null;
 
 /* ─── 1. Peran dan gerbang tampilan ───────────────────────────────────────── */
 
+/** UI Baru (K1) - satu-satunya tempat perubahan 2 Okt berlaku. */
+function jurusitaModeUi() {
+  try {
+    return typeof alatUjiMode === "function" && alatUjiMode() === "ui";
+  } catch {
+    return false;
+  }
+}
+
 function jurusitaModeBaru() {
   try {
     return typeof alatUjiMode === "function" && alatUjiMode() !== "lama";
@@ -1342,6 +1351,9 @@ function jurusitaBarisMassal(dokumen, kelompok) {
         perkaraId: id,
         nomorPerkara: String(dok.nomorPerkara || ""),
         jurusita: String((dok.jurusita && dok.jurusita.nama) || ""),
+        jurusitaNip: String((dok.jurusita && dok.jurusita.nip) || "").trim(),
+        // dariPenunjukan false = bot menulis "tidak tercatat" (bukan nama orang).
+        jurusitaTercatat: Boolean(dok.jurusita && dok.jurusita.nama && dok.jurusita.dariPenunjukan !== false),
         sebutan: jurusitaSebutanDok(dok),
         panggilan: [],
         pbt: [],
@@ -1351,6 +1363,11 @@ function jurusitaBarisMassal(dokumen, kelompok) {
     if (String(dok.golongan || "") === "pemberitahuan-putusan") p.pbt.push(dok);
     else p.panggilan.push(dok);
     if (!p.jurusita && dok.jurusita && dok.jurusita.nama) p.jurusita = String(dok.jurusita.nama);
+    if (!p.jurusitaTercatat && dok.jurusita && dok.jurusita.nama && dok.jurusita.dariPenunjukan !== false) {
+      p.jurusita = String(dok.jurusita.nama);
+      p.jurusitaNip = String(dok.jurusita.nip || "").trim();
+      p.jurusitaTercatat = true;
+    }
   }
   const baris = [];
   for (const p of perPerkara.values()) {
@@ -1362,6 +1379,8 @@ function jurusitaBarisMassal(dokumen, kelompok) {
         perkaraId: p.perkaraId,
         nomorPerkara: p.nomorPerkara,
         jurusita: p.jurusita,
+        jurusitaNip: p.jurusitaNip,
+        jurusitaTercatat: p.jurusitaTercatat,
         sebutan: p.sebutan,
         panggilan: pg,
         pbt: i === 0 ? p.pbt : [],
@@ -1554,7 +1573,68 @@ function jurusitaGambarBarisMassal(baris, pilih, tampilJurusita, ubah) {
   return { el, blangko };
 }
 
-function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau) {
+/*
+ * ============================================================================
+ * RELAAS MASSAL PER JURU SITA (PERBAIKAN 2 OKT 2026, AGEN R, BUTIR 2 & 19)
+ * ============================================================================
+ *
+ * UI Baru saja (K1). Admin / Super Admin dengan saringan "Semua juru sita"
+ * melihat daftar hari itu DIKELOMPOKKAN PER JURU SITA - bentuk yang sama
+ * dengan putusan massal dan BAS massal (aletaMassalKelompokkan +
+ * aletaMassalGambarKelompok, basmassal.js): kepala berlipat bertag peran
+ * "Juru Sita", centang "Kerjakan semua milik X", dan centang per perkara.
+ * Centang per perkara = "Pilih semua" untuk perkara itu (pihak yang menurut
+ * SIPP perlu dipanggil/diberi tahu); centang pihak P/T dan PBT tetap ada di
+ * dalam baris. Perkara yang tidak punya pihak bawaan (sudah tercatat di
+ * SIPP, pihak belum diketahui, perlu konfirmasi) centang perkaranya mati -
+ * pihaknya dicentang sendiri, persis aturan "Pilih semua".
+ *
+ * Bawaan buka/tutup (butir 19): kelompok juru sita yang namanya cocok dengan
+ * akun yang masuk terbuka, juru sita lain tertutup (satu kelompok saja =
+ * terbuka). Juru sita (bukan admin) tetap melihat "Milik saya" bawaannya,
+ * dan "Semua juru sita" tetap ada - DATAR seperti 1.177.0. Tampilan Lama dan
+ * Baru tidak berubah. Kelompok "dari hari kerja sebelumnya" tetap terpisah.
+ * Pengelompokan murni tampilan: pekerjaan yang dikirim ke relaas-mulai
+ * persis sama dengan susunan datar (tidak ada jalur tulis baru).
+ */
+function jurusitaPerUserBoleh(peran) {
+  try {
+    if (typeof alatUjiMode !== "function" || alatUjiMode() !== "ui") return false;
+    if (typeof aletaMassalKelompokkan !== "function" || typeof aletaMassalGambarKelompok !== "function") return false;
+    return typeof alatGolonganPeran === "function" && alatGolonganPeran(String(peran || "")) === "admin";
+  } catch {
+    return false;
+  }
+}
+
+/** Peran AKTIF untuk pengelompokan: peran yang disebut panel (ganti peran), atau peran admin akun. */
+function jurusitaPeranAktif(o, siapa) {
+  if (o && typeof o.peran === "string" && o.peran.trim()) return o.peran.trim();
+  if (!siapa) return "";
+  const semua = [siapa.peran, siapa.roleId, ...(Array.isArray(siapa.peranTambahan) ? siapa.peranTambahan : [])].map((x) => String(x || ""));
+  const admin = typeof alatGolonganPeran === "function" ? semua.find((p) => p && alatGolonganPeran(p) === "admin") : "";
+  return admin || String(siapa.peran || "");
+}
+
+/** Centang perkara (UI Baru, per juru sita) di kepala satu baris massal. */
+function jurusitaCentangBaris(g, baris) {
+  const label = jurusitaEl("label", "aleta-jurusita-pilih-baris");
+  const c = document.createElement("input");
+  c.type = "checkbox";
+  c.className = "aleta-jurusita-centang-baris";
+  c.setAttribute("aria-label", `Pilih ${baris.nomorPerkara || `perkara ${baris.perkaraId}`}`);
+  const bawaan = jurusitaPilihanBawaan(baris);
+  c.disabled = !Object.values(bawaan).some(Boolean);
+  if (c.disabled) label.title = "Tidak ikut Pilih semua - centang pihaknya sendiri";
+  label.appendChild(c);
+  const kepala = g.el.querySelector(".aleta-jurusita-perkara-kepala");
+  if (kepala) kepala.insertBefore(label, kepala.firstChild);
+  else g.el.insertBefore(label, g.el.firstChild);
+  return { c, bawaan };
+}
+
+function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau, opsiPanel) {
+  const op = opsiPanel && typeof opsiPanel === "object" ? opsiPanel : {};
   const isi = jurusitaEl("div", "aleta-jurusita-isi");
   akar.appendChild(isi);
 
@@ -1638,9 +1718,20 @@ function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau) {
     );
 
     const barisEl = new Map();
+    /** UI Baru per juru sita: kunciBaris -> { c: centang perkara, bawaan }. */
+    const centangPerkara = new Map();
+    let kendaliKelompok = null;
+    const selaraskanPerkara = (kunciBaris) => {
+      const m = centangPerkara.get(kunciBaris);
+      if (!m) return;
+      const p = pilihan.get(kunciBaris) || {};
+      m.c.checked = Object.values(p).some(Boolean);
+      if (kendaliKelompok) kendaliKelompok.segarkan();
+    };
     const ubah = (kunciBaris, nilai, tercentang) => {
       const p = pilihan.get(kunciBaris);
       if (p) p[nilai] = tercentang;
+      selaraskanPerkara(kunciBaris);
       segarkan();
     };
     if (barisHariIni.length > 0) {
@@ -1659,10 +1750,52 @@ function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau) {
       alat.appendChild(kosong);
       hasil.appendChild(alat);
       const daftar = jurusitaEl("div", "aleta-jurusita-daftar-perkara");
-      for (const b of barisHariIni) {
-        const g = jurusitaGambarBarisMassal(b, pilihan.get(b.kunciBaris), !hanyaSaya, ubah);
-        barisEl.set(b.kunciBaris, g);
-        daftar.appendChild(g.el);
+      if (!hanyaSaya && jurusitaPerUserBoleh(op.peranAktif)) {
+        try {
+          const namaSaya = String((jurusitaSiapa && jurusitaSiapa.nama) || "");
+          const kelompok = aletaMassalKelompokkan(barisHariIni, (b) =>
+            b.jurusitaTercatat ? { id: b.jurusitaNip || "", nama: b.jurusita } : ""
+          );
+          kendaliKelompok = aletaMassalGambarKelompok(daftar, kelompok, {
+            peran: op.peranAktif,
+            kunciLipat: `relaas-massal-${op.situs === "abt" ? "abt" : "sipp"}`,
+            peranLipat: "jurusita",
+            namaSaya,
+            labelPerkara: (b) => b.nomorPerkara,
+            judul: (u, xs) => `Juru sita: ${u.nama || "belum tercatat"} · ${new Set(xs.map((b) => b.perkaraId)).size} perkara`,
+            gambarBaris: (b, wadahIsi) => {
+              const g = jurusitaGambarBarisMassal(b, pilihan.get(b.kunciBaris), false, ubah);
+              barisEl.set(b.kunciBaris, g);
+              const m = jurusitaCentangBaris(g, b);
+              centangPerkara.set(b.kunciBaris, m);
+              m.c.addEventListener("change", () => {
+                // Centang perkara = "Pilih semua" untuk perkara ini (atau kosongkan).
+                const isi = m.c.checked ? { ...m.bawaan } : { p1: false, p2: false, b1: false, b2: false };
+                pilihan.set(b.kunciBaris, isi);
+                for (const x of g.el.querySelectorAll("input[data-baris]")) {
+                  if (x.getAttribute("data-baris") !== b.kunciBaris) continue;
+                  x.checked = Boolean(isi[x.value]) && !x.disabled;
+                }
+                segarkan();
+              });
+              wadahIsi.appendChild(g.el);
+              return m.c;
+            },
+          });
+          daftar.classList.add("aleta-jurusita-per-user");
+        } catch {
+          kendaliKelompok = null;
+          centangPerkara.clear();
+          barisEl.clear();
+          daftar.textContent = "";
+        }
+      }
+      if (!kendaliKelompok) {
+        for (const b of barisHariIni) {
+          const g = jurusitaGambarBarisMassal(b, pilihan.get(b.kunciBaris), !hanyaSaya, ubah);
+          barisEl.set(b.kunciBaris, g);
+          daftar.appendChild(g.el);
+        }
       }
       hasil.appendChild(daftar);
     }
@@ -1741,6 +1874,9 @@ function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau) {
       cetak.disabled = Boolean(jawab && jawab.ok);
       pantau();
     });
+    // aletaMassalGambarKelompok memulai semua centang perkara kosong; pilihan
+    // yang sudah ada (Pilih semua, Kosongkan, saringan) diselaraskan di sini.
+    for (const k of centangPerkara.keys()) selaraskanPerkara(k);
     segarkan();
   };
 
@@ -1862,10 +1998,22 @@ async function aletaJurusitaPasangMassal(wadah, opsi) {
   const kotakPutaran = jurusitaEl("div", "aleta-jurusita-putaran");
   kotakPutaran.hidden = true;
   const pantau = jurusitaPasangPantau(akar, kotakPutaran);
-  const muat = jurusitaGambarPanelMassal(lipat, kotakPutaran, pantau);
+  const muat = jurusitaGambarPanelMassal(lipat, kotakPutaran, pantau, {
+    situs: o.situs === "abt" ? "abt" : "sipp",
+    peranAktif: jurusitaPeranAktif(o, jurusitaSiapa),
+  });
   akar.appendChild(kotakPutaran);
   lipat.open =
     o.terbuka === true || (o.terbuka !== false && (o.situs === "abt" || jurusitaJurusitaSendiri(jurusitaSiapa)));
+  // Butir 7 (2 Okt, UI Baru): rupa lipat seragam + tag peran "Juru Sita" di
+  // kepala. Tanpa kunci: bawaan buka/tutup di atas tetap penentunya.
+  if (jurusitaModeUi() && typeof alatJadikanLipat === "function") {
+    try {
+      alatJadikanLipat(lipat, { peran: "jurusita" });
+    } catch {
+      /* details biasa */
+    }
+  }
   let dimuat = false;
   const mulai = () => {
     if (!lipat.open || dimuat) return;

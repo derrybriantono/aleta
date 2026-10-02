@@ -36,6 +36,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 
+import { AletaEcourtCap } from "./aleta-ecourt-cap";
+
 /** Pengguna portal yang dapat ditautkan ke sebuah tanda tangan. */
 type PenggunaTaut = {
   id: string;
@@ -215,8 +217,11 @@ export function AletaEcourtTandaTangan() {
     setBukaTambah(false);
   }, [berkasBaru, namaBaru, jabatanBaru, tautBaru, petaPengguna, kirim]);
 
+  // Cap pengadilan (butir 17, 2 Okt 2026) tampil di bawah daftar tanda tangan -
+  // satu menu "Berkas tanda tangan" untuk keduanya.
   return (
-    <Card>
+    <div className="space-y-4">
+      <Card>
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
           Tanda tangan pejabat
@@ -537,6 +542,8 @@ export function AletaEcourtTandaTangan() {
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+      <AletaEcourtCap />
+    </div>
   );
 }
