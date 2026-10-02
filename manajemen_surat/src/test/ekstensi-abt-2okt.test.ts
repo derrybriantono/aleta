@@ -546,7 +546,7 @@ describe("butir 6: Susun keterangan saksi hanya untuk panitera / PP (Admin tetap
 describe("butir 7 dan 19: tag peran di kepala; bawaan buka/tutup menurut peran", () => {
   const peranTag = (el: any) => el.querySelector(":scope > .aleta-lipat-kepala > .aleta-lipat-peran")?.textContent || "";
 
-  it("UI Baru (Super Admin): tag Hakim / Panitera / Hakim tepat sesudah judul; Isi terbuka, Susun dan Unggah tertutup", async () => {
+  it("UI Baru (Super Admin): tag Hakim / Panitera / Hakim di KIRI judul; Isi terbuka, Susun dan Unggah tertutup", async () => {
     const h = buka({ simpanan: ui([]) });
     await selesaiIsi(h);
     await siapLipat(h);
@@ -555,7 +555,9 @@ describe("butir 7 dan 19: tag peran di kepala; bawaan buka/tutup menurut peran",
     expect(peranTag(kerja(h, "susun"))).toBe("Panitera");
     expect(peranTag(unggah)).toBe("Hakim");
     const judul = kerja(h, "susun").querySelector(".aleta-sore-kerja-judul");
-    expect(judul.nextElementSibling.classList.contains("aleta-lipat-peran")).toBe(true);
+    // Butir 5 (2 Okt sore, permintaan pengguna): label peran SELALU di kiri judul, sama dengan
+    // panel-alat.js dan konten.js - dulu tepat SESUDAH judul.
+    expect(judul.previousElementSibling.classList.contains("aleta-lipat-peran")).toBe(true);
     expect(kerja(h, "isi").getAttribute("data-terbuka")).toBe("ya");
     expect(kerja(h, "susun").getAttribute("data-terbuka")).toBe("tidak");
     expect(unggah.getAttribute("data-terbuka")).toBe("tidak");

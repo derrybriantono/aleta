@@ -134,7 +134,10 @@ describe("K3 - /api/aleta-ecourt/pemetaan-blangko", () => {
   });
 
   it("jenis tidak dikenal: 400", async () => {
-    expect((await panggil("pemetaan", "GET", { query: "jenis=bas" })).status).toBe(400);
+    // Disesuaikan perbaikan 2 Okt sore (agen P, butir 6): "bas" kini jenis SAH
+    // (tab Berita acara sidang). Jenis yang tetap tidak dikenal dipakai di sini;
+    // penyimpanan BAS tanpa migrasi dijaga pemetaan-blangko-2okt.test.ts.
+    expect((await panggil("pemetaan", "GET", { query: "jenis=sembarang" })).status).toBe(400);
   });
 
   it("GET relaas: bentuk K3 persis, dengan benih bawaan dari BLANGKO_RELAAS (permintaan agen E)", async () => {

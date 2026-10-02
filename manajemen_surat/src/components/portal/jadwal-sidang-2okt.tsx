@@ -19,7 +19,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PauseCircle, PlayCircle, RefreshCw, SkipForward } from "lucide-react";
+import { PauseCircle, PlayCircle, RefreshCw, SkipForward, Smartphone } from "lucide-react";
 
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { keadaanSelesai, type PetaSelesai } from "@/lib/jadwal-sidang-1okt";
@@ -40,6 +40,7 @@ import {
 } from "@/lib/jadwal-sidang-2okt";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { kunciWaktu, WAKTU_ANTRIAN_KOSONG, type WaktuAntrian } from "@/lib/tiga-jarak-sidang";
+import { type TandaAntrianOnline as TandaOnline } from "@/lib/tanda-antrian-online";
 import { cn } from "@/lib/utils";
 
 async function bacaJson(jawaban: Response): Promise<Record<string, unknown>> {
@@ -156,6 +157,57 @@ export function LencanaDiskors({ catatan, className }: { catatan: CatatanSkors; 
       <PauseCircle className="h-3 w-3" aria-hidden />
       diskors · belum selesai
     </span>
+  );
+}
+
+// ============================================================================
+// TANDA ANTRIAN ONLINE (perbaikan 2 Okt sore, butir 4)
+// ============================================================================
+//
+// Ikon ponsel bila nomor antriannya diambil lewat antrian online, bukan di
+// loket/anjungan. Aturan dan sumbernya di @/lib/tanda-antrian-online - di sini
+// hanya gambarnya. Mode Ringkas: ikon saja (kata "online" berkelas
+// kolom-lengkap, yang disembunyikan tabel Ringkas); keterangannya tetap utuh
+// di title dan aria-label pada kedua mode.
+
+export function TandaAntrianOnline({
+  tanda,
+  className,
+}: {
+  tanda: TandaOnline | null;
+  className?: string;
+}) {
+  if (!tanda) return null;
+  return (
+    <span
+      data-tanda-antrian-online={tanda.sisi || "ya"}
+      role="img"
+      aria-label={tanda.keterangan}
+      title={tanda.keterangan}
+      className={cn(
+        "inline-flex w-fit items-center gap-0.5 rounded-full border border-sky-400 bg-sky-100 px-1 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+        className
+      )}
+    >
+      <Smartphone className="h-3 w-3 shrink-0" aria-hidden />
+      <span className="kolom-lengkap" aria-hidden>
+        online
+      </span>
+    </span>
+  );
+}
+
+/** Satu baris keterangan di panel Rincian - kalimat utuh, bukan sekadar ikon. */
+export function TandaAntrianOnlineRincian({ tanda }: { tanda: TandaOnline | null }) {
+  if (!tanda) return null;
+  return (
+    <p
+      data-tanda-antrian-online-rincian={tanda.sisi || "ya"}
+      className="flex flex-wrap items-center gap-1.5 rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-xs text-sky-900 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200"
+    >
+      <Smartphone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span>{tanda.keterangan}</span>
+    </p>
   );
 }
 

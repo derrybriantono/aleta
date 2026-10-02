@@ -24,13 +24,14 @@ import { CERMIN_EKSTENSI } from "@/lib/tipe-keluaran/bawaan/bawaan-ekstensi";
  * dulu tidak menimpa pemetaan lokal peramban dengan tebakan.
  */
 
-export const JENIS_PEMETAAN = ["putusan", "relaas", "pbt"] as const;
+export const JENIS_PEMETAAN = ["putusan", "relaas", "pbt", "bas"] as const;
 export type JenisPemetaan = (typeof JENIS_PEMETAAN)[number];
 
 export const LABEL_JENIS_PEMETAAN: Record<JenisPemetaan, string> = {
   putusan: "Putusan",
   relaas: "Relaas panggilan",
   pbt: "Pemberitahuan putusan",
+  bas: "Berita acara sidang (BAS)",
 };
 
 /** Kunci baku per jenis, beserta sebutan bawaannya untuk layar. */
@@ -65,6 +66,9 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     { kunci: "pbt-pemohon", sebutan: "Pemberitahuan isi putusan - Pemohon" },
     { kunci: "pbt-termohon", sebutan: "Pemberitahuan isi putusan - Termohon" },
   ],
+  // Perbaikan 2 Okt sore butir 6: jenis perkara ber-set BAS x keadaan sidang.
+  // Disusun di bawah (KUNCI_BAKU_BAS) - fungsi, bukan daftar ketikan.
+  bas: [],
 };
 
 export const BATAS_BUTIR_PEMETAAN = 200;
@@ -103,7 +107,8 @@ function bersihNama(teks: unknown) {
  */
 export function normalkanKunci(jenis: JenisPemetaan, kunci: unknown): string {
   const k = rapat(kunci, 120);
-  if (jenis === "putusan") return k;
+  if (jenis === "putusan") return normalkanKunciPutusan(k);
+  if (jenis === "bas") return normalkanKunciBas(k);
   return k
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -209,6 +214,502 @@ export function bawaanPemetaan(jenis: JenisPemetaan): { kunci: string; sebutan: 
     const blangko = keadaan ? BLANGKO_RELAAS.find((b) => b.keadaan === keadaan) : undefined;
     if (!blangko) continue;
     hasil.push({ kunci, sebutan, namaBerkas: blangko.berkas, catatan: blangko.label });
+  }
+  return hasil;
+}
+
+/**
+ * ============================================================================
+ * PERBAIKAN 2 OKT SORE (AGEN P) - KUNCI YANG DIPAHAMI, BUKAN HANYA DICOCOKKAN
+ * ============================================================================
+ *
+ * Butir 2: admin menambah kunci sendiri ("relaas-panggilan-sidang-pertama-
+ * pemohon", ...). Sebelum ini ekstensi hanya mencari daftar kunci tetap, jadi
+ * kunci buatan sendiri tersimpan di server tetapi TIDAK PERNAH dipakai - tanpa
+ * satu pun tanda. Kini tiap kunci DIURAIKAN menjadi (awalan, keadaan, pihak),
+ * dan permintaan cetak memilih kunci yang paling KHUSUS yang cocok:
+ *
+ *   keadaan tepat (+4) > tanpa keadaan; pihak tepat (+2) > pihak umum
+ *   penggugat/tergugat (+1) > tanpa pihak. Seri: kunci yang lebih panjang
+ *   (lebih eksplisit), lalu abjad.
+ *
+ * "panggilan-<pihak>" tanpa keadaan = sidang LANJUTAN (arti sejak 30 Sep:
+ * sidang pertama selalu "panggilan-sidang-pertama"). Kunci yang memuat kata
+ * yang tidak dikenal ("panggilan-kuasa") TIDAK dibuang - disimpan dan tampil,
+ * tetapi ditandai "tidak dikenali" dan tidak dipilih otomatis.
+ *
+ * CERMIN: ekstensi-sipp/jurusita.js (jurusitaUraiKunci / jurusitaPilihKunci)
+ * memakai aturan yang SAMA; uji pemetaan-blangko-2okt.test.ts menjalankan
+ * keduanya atas daftar kunci yang sama dan menuntut jawaban yang sama.
+ */
+export type AwalanRelaas = "panggilan" | "pbt" | "delegasi" | "amplop";
+export type KeadaanKunci = "pertama" | "lanjutan" | "ikrar" | "";
+export type PihakKunci = "penggugat" | "tergugat" | "pemohon" | "termohon" | "";
+export type UraianKunciRelaas = { awalan: AwalanRelaas; keadaan: KeadaanKunci; pihak: PihakKunci; dikenal: boolean; asing: string[] };
+
+const KATA_PIHAK: PihakKunci[] = ["penggugat", "tergugat", "pemohon", "termohon"];
+/** Kata yang boleh ada tanpa mengubah arti kunci. */
+const KATA_DIKENAL = new Set([
+  "relaas",
+  "panggilan",
+  "sidang",
+  "pbt",
+  "pemberitahuan",
+  "putusan",
+  "isi",
+  "dan",
+  "untuk",
+  "ke",
+  "p",
+  "t",
+  "penggugat",
+  "tergugat",
+  "pemohon",
+  "termohon",
+  "delegasi",
+  "amplop",
+  "ikrar",
+  "talak",
+  "pertama",
+  "lanjutan",
+  "tundaan",
+  "ditunda",
+]);
+
+export function uraiKunciRelaas(kunci: string): UraianKunciRelaas {
+  const kata = normalkanKunci("relaas", kunci).split("-").filter(Boolean);
+  const ada = (x: string) => kata.includes(x);
+  const awalan: AwalanRelaas =
+    ada("pbt") || ada("pemberitahuan") ? "pbt" : ada("delegasi") ? "delegasi" : ada("amplop") ? "amplop" : "panggilan";
+  let keadaan: KeadaanKunci = ada("ikrar")
+    ? "ikrar"
+    : ada("pertama")
+      ? "pertama"
+      : ada("lanjutan") || ada("tundaan") || ada("ditunda")
+        ? "lanjutan"
+        : "";
+  const pihak = (KATA_PIHAK.find((p) => ada(p)) ?? "") as PihakKunci;
+  // "panggilan-<pihak>" tanpa keadaan = sidang lanjutan (arti 30 Sep).
+  if (awalan === "panggilan" && !keadaan && pihak) keadaan = "lanjutan";
+  const asing = kata.filter((k) => !KATA_DIKENAL.has(k));
+  return { awalan, keadaan: awalan === "pbt" ? "" : keadaan, pihak, dikenal: asing.length === 0 && kata.length > 0, asing };
+}
+
+export type PermintaanRelaas = { awalan: AwalanRelaas; keadaan: KeadaanKunci; khusus: PihakKunci; umum: PihakKunci };
+
+/** Nilai kecocokan satu kunci untuk satu permintaan; -1 = tidak boleh dipakai. */
+export function nilaiKunciRelaas(kunci: string, minta: PermintaanRelaas): number {
+  const u = uraiKunciRelaas(kunci);
+  if (!u.dikenal || u.awalan !== minta.awalan) return -1;
+  let nilai = 0;
+  if (u.keadaan) {
+    if (u.keadaan !== minta.keadaan) return -1;
+    nilai += 4;
+  }
+  if (u.pihak) {
+    if (u.pihak === minta.khusus) nilai += 2;
+    else if (u.pihak === minta.umum && minta.umum !== minta.khusus) nilai += 1;
+    else return -1;
+  }
+  return nilai;
+}
+
+/** Kunci terbaik dari daftar untuk permintaan ini, atau null. */
+export function pilihKunciRelaas(kunciDaftar: string[], minta: PermintaanRelaas): string | null {
+  let terbaik: { kunci: string; nilai: number } | null = null;
+  for (const kunci of kunciDaftar) {
+    const nilai = nilaiKunciRelaas(kunci, minta);
+    if (nilai < 0) continue;
+    if (
+      !terbaik ||
+      nilai > terbaik.nilai ||
+      (nilai === terbaik.nilai &&
+        (kunci.length > terbaik.kunci.length || (kunci.length === terbaik.kunci.length && kunci < terbaik.kunci)))
+    ) {
+      terbaik = { kunci, nilai };
+    }
+  }
+  return terbaik ? terbaik.kunci : null;
+}
+
+const SEBUT_KEADAAN: Record<KeadaanKunci, string> = {
+  pertama: "sidang pertama",
+  lanjutan: "sidang lanjutan (tundaan)",
+  ikrar: "sidang ikrar talak",
+  "": "",
+};
+
+const besarAwal = (x: string) => `${x[0].toUpperCase()}${x.slice(1)}`;
+
+/** Kalimat "dipakai saat ..." untuk satu kunci relaas/pbt - kolom layar admin dan laporan. */
+export function kapanDipakaiRelaas(kunci: string): { dikenal: boolean; dipakai: string } {
+  const u = uraiKunciRelaas(kunci);
+  if (!u.dikenal) {
+    return {
+      dikenal: false,
+      dipakai: `Tidak dikenali ekstensi (kata "${u.asing.join(", ") || kunci}") - disimpan, tetapi tidak dipilih otomatis.`,
+    };
+  }
+  const pihak = u.pihak
+    ? u.pihak === "penggugat" || u.pihak === "tergugat"
+      ? `${besarAwal(u.pihak)} (juga ${u.pihak === "penggugat" ? "Pemohon" : "Termohon"} bila kunci ${u.pihak === "penggugat" ? "pemohon" : "termohon"}-nya tidak diatur)`
+      : `${besarAwal(u.pihak)} (permohonan / cerai talak)`
+    : "";
+  if (u.awalan === "pbt") return { dikenal: true, dipakai: `Pemberitahuan isi putusan${pihak ? ` kepada ${pihak}` : " - pihak mana pun (cadangan)"}.` };
+  if (u.awalan === "delegasi") {
+    return { dikenal: true, dipakai: "Permohonan bantuan panggilan (delegasi) - cetak dari portal; ekstensi belum punya jalur cetak delegasi." };
+  }
+  if (u.awalan === "amplop") {
+    return { dikenal: true, dipakai: "Amplop panggilan surat tercatat - cetak dari portal; ekstensi belum punya jalur cetak amplop." };
+  }
+  const keadaan = u.keadaan ? SEBUT_KEADAAN[u.keadaan] : "sidang mana pun (cadangan terakhir)";
+  const ekor = pihak ? ` - ${pihak}` : u.keadaan === "pertama" || u.keadaan === "ikrar" ? " - P dan T" : "";
+  return { dikenal: true, dipakai: `Panggilan ${keadaan}${ekor}.` };
+}
+
+/**
+ * ============================================================================
+ * PUTUSAN PER JENIS PERKARA DAN PER STATUS PUTUSAN (BUTIR 3)
+ * ============================================================================
+ *
+ * Kunci teks, tanpa migrasi: "Cerai Gugat" (jenis saja - perilaku lama),
+ * "Cerai Gugat|Dikabulkan", "Cerai Gugat|Dikabulkan|verstek". Kosong = jatuh
+ * ke kunci yang kurang khusus: status+verstek -> status -> jenis.
+ *
+ * Daftar status DIBACA dari sipp_donggala (HANYA SELECT, 2 Okt 2026):
+ *   SELECT id, nama FROM status_putusan WHERE jenis_pengadilan = 4
+ *     AND jenis_perkara_id = 1 AND aktif = 'Y'
+ * diurutkan menurut pemakaian di perkara_putusan satker ini:
+ *   62 Dikabulkan 8.909 · 67 Dicabut 507 (+28 baris id 7 "Dicabut" peradilan
+ *   umum) · 65 Digugurkan 256 · 93 Gugur 123 · 64 Tidak Dapat Diterima 75 ·
+ *   63 Ditolak 53 · 66 Dicoret dari Register 34 · 85 Perdamaian 8 ·
+ *   92 Dismissal 0. "Verstek" BUKAN status SIPP - medan tersendiri (verstek
+ *   Y/T di blangko Putusan Akhir), jadi ia penanda tambahan di kunci.
+ */
+export const STATUS_PUTUSAN_SIPP = [
+  { id: 62, nama: "Dikabulkan" },
+  { id: 67, nama: "Dicabut" },
+  { id: 65, nama: "Digugurkan" },
+  { id: 93, nama: "Gugur" },
+  { id: 64, nama: "Tidak Dapat Diterima" },
+  { id: 63, nama: "Ditolak" },
+  { id: 66, nama: "Dicoret dari Register" },
+  { id: 85, nama: "Perdamaian" },
+  { id: 92, nama: "Dismissal" },
+] as const;
+
+/** Status yang diberi baris "(verstek)" di layar admin (yang lain tetap boleh diketik). */
+export const STATUS_BERVERSTEK = ["Dikabulkan"] as const;
+
+const PADANAN_JENIS = new Map(
+  (CERMIN_EKSTENSI["putusan.padanan-jenis"] as readonly { kunci: string; nilai: string }[]).map((e) => [e.nilai, e.kunci])
+);
+
+/** Sama dengan alatKunciJenis ekstensi (padanan TERTANAM): huruf kecil, spasi tunggal, nama lain SIPP dipadankan. */
+export function kunciJenisPerkara(jenis: unknown): string {
+  const bersih = String(jenis ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  return PADANAN_JENIS.get(bersih) ?? bersih;
+}
+
+/** "DIKABULKAN (verstek)" -> "dikabulkan". Sama dengan alatKunciStatusPutusan ekstensi. */
+export function kunciStatusPutusan(status: unknown): string {
+  return String(status ?? "")
+    .replace(/\(.*?\)/g, " ")
+    .replace(/\bverstek\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function statusBaku(status: string): string {
+  const k = kunciStatusPutusan(status);
+  const baku = STATUS_PUTUSAN_SIPP.find((s) => s.nama.toLowerCase() === k);
+  return baku ? baku.nama : rapat(status.replace(/\(.*?\)/g, " ").replace(/\bverstek\b/gi, " "), 80);
+}
+
+function normalkanKunciPutusan(k: string): string {
+  if (!k.includes("|")) return k;
+  const [jenis = "", status = "", tanda = ""] = k.split("|").map((x) => rapat(x, 80));
+  const verstek = /verstek/i.test(tanda) || /verstek/i.test(status);
+  const s = status ? statusBaku(status) : "";
+  if (!s) return jenis;
+  return verstek ? `${jenis}|${s}|verstek` : `${jenis}|${s}`;
+}
+
+export type UraianKunciPutusan = { jenis: string; status: string; verstek: boolean };
+
+export function uraiKunciPutusan(kunci: string): UraianKunciPutusan {
+  const [jenis, status, tanda] = normalkanKunciPutusan(rapat(kunci, 120)).split("|");
+  return { jenis: jenis || "", status: status || "", verstek: tanda === "verstek" };
+}
+
+/**
+ * Blangko putusan untuk satu perkara dari peta {kunci admin: nama berkas}.
+ * Pulang { kunci, namaBerkas, tingkat } atau null. Status perkara dibaca
+ * dari isian putusan SIPP / data perkara (bukan ditebak).
+ *
+ * CERMIN: ekstensi-sipp/panel-alat.js alatPetaUntukPerkara (dijaga uji).
+ */
+export function pilihBlangkoPutusan(
+  peta: Record<string, string>,
+  perkara: { jenis: string; status?: string; verstek?: boolean }
+): { kunci: string; namaBerkas: string; tingkat: "status-verstek" | "status" | "jenis" } | null {
+  const jenis = kunciJenisPerkara(perkara.jenis);
+  if (!jenis) return null;
+  const status = kunciStatusPutusan(perkara.status);
+  const verstek = Boolean(perkara.verstek) || /verstek/i.test(String(perkara.status || ""));
+  let jenisSaja: { kunci: string; namaBerkas: string } | null = null;
+  let pakaiStatus: { kunci: string; namaBerkas: string } | null = null;
+  let pakaiVerstek: { kunci: string; namaBerkas: string } | null = null;
+  for (const [kunci, namaBerkas] of Object.entries(peta)) {
+    if (!String(namaBerkas || "").trim()) continue;
+    const u = uraiKunciPutusan(kunci);
+    if (kunciJenisPerkara(u.jenis) !== jenis) continue;
+    if (!u.status) jenisSaja = { kunci, namaBerkas };
+    else if (status && kunciStatusPutusan(u.status) === status) {
+      if (u.verstek) {
+        if (verstek) pakaiVerstek = { kunci, namaBerkas };
+      } else pakaiStatus = { kunci, namaBerkas };
+    }
+  }
+  if (pakaiVerstek) return { ...pakaiVerstek, tingkat: "status-verstek" };
+  if (pakaiStatus) return { ...pakaiStatus, tingkat: "status" };
+  if (jenisSaja) return { ...jenisSaja, tingkat: "jenis" };
+  return null;
+}
+
+export function kapanDipakaiPutusan(kunci: string): { dikenal: boolean; dipakai: string } {
+  const u = uraiKunciPutusan(kunci);
+  if (!u.jenis) return { dikenal: false, dipakai: "Jenis perkara kosong - tidak dipakai." };
+  if (!u.status) return { dikenal: true, dipakai: `Putusan ${u.jenis} - status yang tidak diatur sendiri.` };
+  const dikenalStatus = STATUS_PUTUSAN_SIPP.some((s) => s.nama === u.status);
+  return {
+    dikenal: dikenalStatus,
+    dipakai: dikenalStatus
+      ? `Putusan ${u.jenis} berstatus ${u.status}${u.verstek ? " (verstek)" : ""}.`
+      : `Status "${u.status}" tidak ada di status_putusan SIPP - disimpan, tetapi tidak akan cocok.`,
+  };
+}
+
+/**
+ * ============================================================================
+ * BERITA ACARA SIDANG (BAS) - BUTIR 6 DAN 8
+ * ============================================================================
+ *
+ * Kunci "<jenis>|<sidang>|<kehadiran>":
+ *   jenis      nama jenis perkara SIPP (padanan berlaku) atau "*" (semua)
+ *   sidang     "1", "2", ... (urutan sidang), "lanjutan" (ke-2 dst.), atau
+ *              kata agenda: "mediasi", "pembuktian", "putusan", "jawaban",
+ *              "replik", "duplik", "kesimpulan"; "*" = sidang mana pun
+ *   kehadiran  "semua-hadir" | "p-hadir" | "t-hadir" | "tidak-hadir" | "*"
+ *              (dihadiri_oleh SIPP 1/2/3/4 - sandi borang
+ *              jadwal_sidang_p_edit.php)
+ *
+ * Nilai kekhususan: jenis tepat +8, sidang tepat (nomor/agenda) +4,
+ * "lanjutan" +2, kehadiran tepat +1. Tidak ada yang cocok = BAS massal
+ * memakai usulan otomatisnya dari katalog (perilaku sebelum ini).
+ *
+ * PENYIMPANAN TANPA MIGRASI: CHECK migrasi 0054 hanya menerima jenis
+ * putusan/relaas/pbt. Baris BAS disimpan berjenis 'relaas' dengan kunci
+ * berawalan "bas|" (lihat modul server) - kunci relaas biasa tidak pernah
+ * memuat "|" (normalkanKunci menggantinya dengan "-"), jadi keduanya tidak
+ * dapat bertabrakan.
+ */
+export const AWALAN_KUNCI_BAS_DB = "bas|";
+
+export const KEHADIRAN_BAS = [
+  { kode: "semua-hadir", sandi: 1, sebutan: "P & T hadir" },
+  { kode: "p-hadir", sandi: 2, sebutan: "hanya P hadir (T tidak hadir)" },
+  { kode: "t-hadir", sandi: 3, sebutan: "hanya T hadir (P tidak hadir)" },
+  { kode: "tidak-hadir", sandi: 4, sebutan: "P & T tidak hadir" },
+] as const;
+
+export const AGENDA_BAS: Record<string, RegExp> = {
+  mediasi: /mediasi/i,
+  pembuktian: /bukti|saksi/i,
+  putusan: /putus|musyawarah/i,
+  jawaban: /jawab/i,
+  replik: /replik/i,
+  duplik: /duplik/i,
+  kesimpulan: /kesimpulan/i,
+};
+
+/** Keadaan baku tab BAS per jenis perkara - urutan tampilan. */
+export const KEADAAN_BAS_BAKU = [
+  { kunci: "1|semua-hadir", sebutan: "Sidang pertama - P & T hadir" },
+  { kunci: "1|p-hadir", sebutan: "Sidang pertama - hanya P hadir (T tidak hadir)" },
+  { kunci: "1|t-hadir", sebutan: "Sidang pertama - hanya T hadir" },
+  { kunci: "1|tidak-hadir", sebutan: "Sidang pertama - P & T tidak hadir" },
+  { kunci: "lanjutan|semua-hadir", sebutan: "Sidang lanjutan - P & T hadir" },
+  { kunci: "lanjutan|p-hadir", sebutan: "Sidang lanjutan - hanya P hadir (verstek)" },
+  { kunci: "mediasi|*", sebutan: "Laporan mediasi" },
+  { kunci: "pembuktian|*", sebutan: "Pembuktian" },
+  { kunci: "putusan|*", sebutan: "Pembacaan putusan" },
+] as const;
+
+/** Jenis perkara yang punya set BAS di pohon-blangko.ts (SET_BLANGKO) - grup tab BAS. */
+export const JENIS_BAS_BAKU = ["Cerai Gugat", "Cerai Talak", "Itsbat Nikah", "Asal Usul Anak"] as const;
+
+function normalkanBagianSidang(x: string): string {
+  const k = x.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!k || k === "*" || k === "semua") return "*";
+  const angka = /^(?:sidang\s*)?(?:ke\s*-?\s*)?(\d+)$/.exec(k) || /^bas\s*(\d+)$/.exec(k);
+  if (angka) return String(Number(angka[1]));
+  if (/pertama/.test(k)) return "1";
+  if (/lanjut|tunda/.test(k)) return "lanjutan";
+  for (const nama of Object.keys(AGENDA_BAS)) if (k.includes(nama)) return nama;
+  return k.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function normalkanBagianKehadiran(x: string): string {
+  const k = x.toLowerCase().replace(/[^a-z0-9&]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!k || k === "*" || k === "semua") return "*";
+  const kode = k.replace(/\s+/g, "-");
+  if (KEHADIRAN_BAS.some((h) => h.kode === kode)) return kode;
+  if (/^(semua( pihak)? hadir|p (&|dan) t hadir|para pihak hadir)$/.test(k)) return "semua-hadir";
+  if (/^(p (&|dan) t tidak hadir|para pihak tidak hadir|tidak ada( pihak)? hadir)$/.test(k)) return "tidak-hadir";
+  if (/^(hanya )?p hadir|verstek/.test(k)) return "p-hadir";
+  if (/^(hanya )?t hadir/.test(k)) return "t-hadir";
+  return kode;
+}
+
+function normalkanKunciBas(k: string): string {
+  const [jenis = "", sidang = "", kehadiran = ""] = k.split("|").map((x) => rapat(x, 80));
+  const j = !jenis || jenis === "*" || /^semua/i.test(jenis) ? "*" : jenis;
+  return [j, normalkanBagianSidang(sidang), normalkanBagianKehadiran(kehadiran)].join("|");
+}
+
+export type UraianKunciBas = { jenis: string; sidang: string; kehadiran: string; dikenal: boolean };
+
+export function uraiKunciBas(kunci: string): UraianKunciBas {
+  const [jenis, sidang, kehadiran] = normalkanKunciBas(rapat(kunci, 120)).split("|");
+  const sidangDikenal = sidang === "*" || sidang === "lanjutan" || /^\d+$/.test(sidang) || sidang in AGENDA_BAS;
+  const hadirDikenal = kehadiran === "*" || KEHADIRAN_BAS.some((h) => h.kode === kehadiran);
+  return { jenis, sidang, kehadiran, dikenal: sidangDikenal && hadirDikenal };
+}
+
+export type SidangBas = { jenisPerkara: string; urutanSidang: number; agenda?: string; dihadiriOleh: number | null };
+
+export function nilaiKunciBas(kunci: string, s: SidangBas): number {
+  const u = uraiKunciBas(kunci);
+  if (!u.dikenal) return -1;
+  let nilai = 0;
+  if (u.jenis !== "*") {
+    if (kunciJenisPerkara(u.jenis) !== kunciJenisPerkara(s.jenisPerkara)) return -1;
+    nilai += 8;
+  }
+  if (u.sidang !== "*") {
+    if (/^\d+$/.test(u.sidang)) {
+      if (Number(u.sidang) !== Number(s.urutanSidang)) return -1;
+      nilai += 4;
+    } else if (u.sidang === "lanjutan") {
+      if (!(Number(s.urutanSidang) >= 2)) return -1;
+      nilai += 2;
+    } else {
+      if (!AGENDA_BAS[u.sidang].test(String(s.agenda || ""))) return -1;
+      nilai += 4;
+    }
+  }
+  if (u.kehadiran !== "*") {
+    const h = KEHADIRAN_BAS.find((x) => x.kode === u.kehadiran);
+    if (!h || h.sandi !== s.dihadiriOleh) return -1;
+    nilai += 1;
+  }
+  return nilai;
+}
+
+/** Blangko BAS dari peta admin untuk satu sidang, atau null (= usulan otomatis). */
+export function pilihBlangkoBasPeta(peta: Record<string, string>, s: SidangBas): { kunci: string; namaBerkas: string } | null {
+  let terbaik: { kunci: string; namaBerkas: string; nilai: number } | null = null;
+  for (const [kunci, namaBerkas] of Object.entries(peta)) {
+    if (!String(namaBerkas || "").trim()) continue;
+    const nilai = nilaiKunciBas(kunci, s);
+    if (nilai < 0) continue;
+    if (!terbaik || nilai > terbaik.nilai || (nilai === terbaik.nilai && kunci < terbaik.kunci)) terbaik = { kunci, namaBerkas, nilai };
+  }
+  return terbaik ? { kunci: terbaik.kunci, namaBerkas: terbaik.namaBerkas } : null;
+}
+
+export function kapanDipakaiBas(kunci: string): { dikenal: boolean; dipakai: string } {
+  const u = uraiKunciBas(kunci);
+  if (!u.dikenal) {
+    return { dikenal: false, dipakai: `Bagian "${u.sidang}|${u.kehadiran}" tidak dikenali - disimpan, tetapi tidak dipilih otomatis.` };
+  }
+  const jenis = u.jenis === "*" ? "semua jenis perkara" : u.jenis;
+  const sidang =
+    u.sidang === "*"
+      ? "sidang mana pun"
+      : /^\d+$/.test(u.sidang)
+        ? `sidang ke-${u.sidang}`
+        : u.sidang === "lanjutan"
+          ? "sidang ke-2 dst."
+          : `agenda ${u.sidang}`;
+  const hadir = u.kehadiran === "*" ? "" : `, ${KEHADIRAN_BAS.find((h) => h.kode === u.kehadiran)?.sebutan}`;
+  return { dikenal: true, dipakai: `BAS ${jenis} - ${sidang}${hadir}.` };
+}
+
+/** Baris baku tab BAS: tiap jenis ber-set BAS x keadaan baku. */
+export const KUNCI_BAKU_BAS: { kunci: string; sebutan: string }[] = JENIS_BAS_BAKU.flatMap((jenis) =>
+  KEADAAN_BAS_BAKU.map((k) => ({ kunci: `${jenis}|${k.kunci}`, sebutan: `${jenis} - ${k.sebutan}` }))
+);
+KUNCI_BAKU.bas.push(...KUNCI_BAKU_BAS);
+
+/** "dipakai saat" untuk kunci jenis mana pun. */
+export function kapanDipakai(jenis: JenisPemetaan, kunci: string): { dikenal: boolean; dipakai: string } {
+  if (jenis === "putusan") return kapanDipakaiPutusan(kunci);
+  if (jenis === "bas") return kapanDipakaiBas(kunci);
+  return kapanDipakaiRelaas(kunci);
+}
+
+/**
+ * Saran tab BAS dari katalog blangko yang dibaca BAS massal (bot
+ * blangko.katalog, folder set BAS pohon-blangko.ts) - benih bawaan butir 6.
+ * Murni: katalog, pemilih set, dan pembaca kehadiran dikirim pemanggil
+ * (susun.ts), supaya aturannya satu. Untuk tiap kunci baku: sidang ke-N =
+ * jenjang "BAS N", "lanjutan" = BAS 2, kehadiran dari nama blangko, agenda
+ * dari kata di keadaan/tindakan/judul/berkas.
+ */
+export type ButirKatalogBas = { berkas?: unknown; basKe?: unknown; keadaan?: unknown; tindakan?: unknown; judul?: unknown };
+
+export function saranBasDariKatalog(
+  katalog: Record<string, { terbaca: boolean; blangko: ButirKatalogBas[] } | undefined>,
+  setUntuk: (jenis: string) => { folder: string; id: string }[],
+  kehadiranDiNama: (keadaan: string) => { p: boolean | null; t: boolean | null }
+): { kunci: string; namaBerkas: string; catatan: string }[] {
+  const hasil: { kunci: string; namaBerkas: string; catatan: string }[] = [];
+  for (const { kunci } of KUNCI_BAKU_BAS) {
+    const u = uraiKunciBas(kunci);
+    // Verstek lebih dulu bila T tidak hadir, contra selain itu - urutan susun.ts.
+    const tanpaT = u.kehadiran === "p-hadir" || u.kehadiran === "tidak-hadir";
+    const urut = [...setUntuk(u.jenis)].sort((a, b) => {
+      const n = (id: string) => (id === "bas-verstek" ? (tanpaT ? 0 : 1) : id === "bas-contra" ? (tanpaT ? 1 : 0) : 2);
+      return n(a.id) - n(b.id);
+    });
+    let pilih: { berkas: string; folder: string } | null = null;
+    for (const s of urut) {
+      const k = katalog[s.folder];
+      if (!k || !k.terbaca) continue;
+      for (const item of k.blangko) {
+        const berkas = String(item.berkas ?? "").trim();
+        if (!berkas) continue;
+        const ke = Number(item.basKe) || 0;
+        const teksSemua = `${String(item.keadaan ?? "")} ${String(item.tindakan ?? "")} ${String(item.judul ?? "")} ${berkas}`;
+        if (/^\d+$/.test(u.sidang) && ke !== Number(u.sidang)) continue;
+        if (u.sidang === "lanjutan" && ke !== 2) continue;
+        if (u.sidang in AGENDA_BAS && !AGENDA_BAS[u.sidang].test(teksSemua)) continue;
+        if (u.kehadiran !== "*") {
+          const h = KEHADIRAN_BAS.find((x) => x.kode === u.kehadiran)!;
+          const harap = { p: h.sandi === 1 || h.sandi === 2, t: h.sandi === 1 || h.sandi === 3 };
+          const nama = kehadiranDiNama(String(item.keadaan ?? ""));
+          if (nama.p === null && nama.t === null) continue;
+          if ((nama.p !== null && nama.p !== harap.p) || (nama.t !== null && nama.t !== harap.t)) continue;
+        }
+        pilih = { berkas, folder: s.folder };
+        break;
+      }
+      if (pilih) break;
+    }
+    if (pilih) hasil.push({ kunci, namaBerkas: pilih.berkas, catatan: `dari katalog ${pilih.folder.split("/").pop()}` });
   }
   return hasil;
 }

@@ -6,6 +6,7 @@ import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
 import { getGatewayJadwalSidang } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { petaPemetaanBerlaku } from "@/server/modules/aleta-ecourt/pemetaan-blangko";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -64,6 +65,9 @@ const BATAS_SIDANG = 300;
  * Tanggal yang tidak berbentuk YYYY-MM-DD dijawab 400, bukan diganti hari ini.
  * Bot yang tidak menjawab dijawab 502 beserta sebabnya, bukan daftar kosong -
  * daftar kosong terbaca "hari ini tidak ada sidang".
+ *
+ * Sejak perbaikan 2 Okt sore (butir 8) usulan blangko mengikuti Pemetaan
+ * blangko > BAS bila ada kunci yang cocok (blangko.usulan.dariPemetaan).
  *
  * Sejak perbaikan 1 Okt (K4) tiap baris membawa `pengguna` = { id, nama }
  * panitera penggantinya, dan jawabannya `kelompokPerUser` - tetap hanya
@@ -143,7 +147,10 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    const hasil = susunBarisBasMassal(sidang, { namaAkun, saringan, katalog, lembar });
+    // Perbaikan 2 Okt sore (butir 8): Pemetaan blangko BAS dibaca tiap
+    // permintaan (tanpa singgahan) - perubahan admin berlaku seketika.
+    const petaBas = await petaPemetaanBerlaku(db, "bas");
+    const hasil = susunBarisBasMassal(sidang, { namaAkun, saringan, katalog, lembar, petaBas });
 
     return ok({
       tanggal,

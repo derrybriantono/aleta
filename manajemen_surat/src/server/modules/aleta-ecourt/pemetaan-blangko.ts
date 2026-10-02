@@ -1,6 +1,10 @@
 import {
+  AWALAN_KUNCI_BAS_DB,
   GalatPemetaan,
   KUNCI_BAKU,
+  STATUS_BERVERSTEK,
+  STATUS_PUTUSAN_SIPP,
+  kapanDipakai,
   LABEL_JENIS_PEMETAAN,
   bawaanPemetaan,
   bersihkanButir,
@@ -49,13 +53,31 @@ export type ButirPemetaan = {
   sumber: "admin" | "bawaan";
 };
 
+/**
+ * Perbaikan 2 Okt sore (butir 6): BAS TANPA MIGRASI. CHECK 0054 hanya
+ * menerima putusan/relaas/pbt, jadi baris BAS berjenis 'relaas' dengan kunci
+ * berawalan "bas|" - dan dibuang dari bacaan relaas. Kunci relaas biasa tidak
+ * pernah memuat "|" (normalkanKunci), jadi tidak ada yang tertukar.
+ */
+function jenisDb(jenis: JenisPemetaan): "putusan" | "relaas" | "pbt" {
+  return jenis === "bas" ? "relaas" : jenis;
+}
+
+function kunciDb(jenis: JenisPemetaan, kunci: string): string {
+  return jenis === "bas" ? `${AWALAN_KUNCI_BAS_DB}${kunci}` : kunci;
+}
+
 async function bacaButir(db: AletaDatabase, jenis: JenisPemetaan): Promise<ButirPemetaan[]> {
-  const baris = await db
+  const semua = await db
     .prepare(
       "SELECT kunci, sebutan, nama_berkas, catatan, diubah_oleh, diubah_pada FROM aleta_pemetaan_blangko " +
         "WHERE jenis = ? ORDER BY kunci ASC"
     )
-    .all<Baris>(jenis);
+    .all<Baris>(jenisDb(jenis));
+  const bas = (b: Baris) => String(b.kunci).startsWith(AWALAN_KUNCI_BAS_DB);
+  const baris = semua
+    .filter((b) => (jenis === "bas" ? bas(b) : !bas(b)))
+    .map((b) => ({ ...b, kunci: jenis === "bas" ? String(b.kunci).slice(AWALAN_KUNCI_BAS_DB.length) : String(b.kunci) }));
   return baris.map((b) => ({
     kunci: String(b.kunci),
     sebutan: String(b.sebutan || "") || sebutanBawaan(jenis, String(b.kunci)),
@@ -80,15 +102,39 @@ function gabungBawaan(jenis: JenisPemetaan, admin: ButirPemetaan[]): ButirPemeta
 }
 
 function periksaJenis(jenis: unknown): JenisPemetaan {
-  if (!jenisPemetaanSah(jenis)) throw new ApiError(400, 'jenis harus "putusan", "relaas", atau "pbt".');
+  if (!jenisPemetaanSah(jenis)) throw new ApiError(400, 'jenis harus "putusan", "relaas", "pbt", atau "bas".');
   return jenis;
 }
 
-/** Jawaban GET - bentuk kontrak K3 ditambah keterangan layar (label, kunciBaku, saran). */
-export async function bacaPemetaanBlangko(db: AletaDatabase, jenisMentah: unknown, aktor?: { roleId?: string | null }) {
+/** Saran tambahan dari luar modul (tab BAS: katalog bot) - dikirim rute. */
+export type PemuatSaran = (jenis: JenisPemetaan) => Promise<{ kunci: string; namaBerkas: string; catatan: string }[]>;
+
+/**
+ * Jawaban GET - bentuk kontrak K3 ditambah keterangan layar (label, kunciBaku,
+ * saran). Perbaikan 2 Okt sore: `kapan` = { kunci: { dikenal, dipakai } }
+ * (kapan ekstensi memakai baris itu - kunci buatan admin yang tidak dikenali
+ * ditandai, tidak dibuang), dan untuk putusan `statusPutusan` (daftar
+ * status_putusan SIPP) + `statusBerverstek`. Bentuk tiap butir TIDAK berubah.
+ */
+export async function bacaPemetaanBlangko(
+  db: AletaDatabase,
+  jenisMentah: unknown,
+  aktor?: { roleId?: string | null },
+  pemuatSaran?: PemuatSaran
+) {
   const jenis = periksaJenis(jenisMentah);
   const admin = await bacaButir(db, jenis);
   const butir = gabungBawaan(jenis, admin);
+  let saranLuar: { kunci: string; namaBerkas: string; catatan: string }[] = [];
+  if (pemuatSaran) {
+    try {
+      saranLuar = await pemuatSaran(jenis);
+    } catch {
+      saranLuar = [];
+    }
+  }
+  const kapan: Record<string, { dikenal: boolean; dipakai: string }> = {};
+  for (const b of butir) kapan[b.kunci] = kapanDipakai(jenis, b.kunci);
   const diubahPada = admin.reduce<string | null>(
     (a, b) => (b.diubahPada && (!a || b.diubahPada > a) ? b.diubahPada : a),
     null
@@ -99,8 +145,12 @@ export async function bacaPemetaanBlangko(db: AletaDatabase, jenisMentah: unknow
     diubahPada,
     label: LABEL_JENIS_PEMETAAN[jenis],
     kunciBaku: KUNCI_BAKU[jenis],
-    saran: saranPemetaan(jenis),
+    saran: [...saranPemetaan(jenis), ...saranLuar],
     bolehMengubah: aktor ? isPrivilegedAdmin(aktor as never) : false,
+    kapan,
+    ...(jenis === "putusan"
+      ? { statusPutusan: STATUS_PUTUSAN_SIPP.map((s) => s.nama), statusBerverstek: [...STATUS_BERVERSTEK] }
+      : {}),
   };
 }
 
@@ -111,7 +161,8 @@ export async function bacaPemetaanBlangko(db: AletaDatabase, jenisMentah: unknow
 export async function simpanPemetaanBlangko(
   db: AletaDatabase,
   actorUserId: string | null | undefined,
-  masukan: { jenis: unknown; butir: unknown }
+  masukan: { jenis: unknown; butir: unknown },
+  pemuatSaran?: PemuatSaran
 ) {
   const actor = await requireActorUser(db, actorUserId);
   if (!isPrivilegedAdmin(actor)) {
@@ -137,10 +188,10 @@ export async function simpanPemetaanBlangko(
             "sebutan = excluded.sebutan, nama_berkas = excluded.nama_berkas, catatan = excluded.catatan, " +
             "diubah_oleh = excluded.diubah_oleh, diubah_pada = excluded.diubah_pada"
         )
-        .run(jenis, b.kunci, b.sebutan, b.namaBerkas, b.catatan, actor.id, sekarang);
+        .run(jenisDb(jenis), kunciDb(jenis, b.kunci), b.sebutan, b.namaBerkas, b.catatan, actor.id, sekarang);
     }
     for (const kunci of bersih.hapus) {
-      await tx.prepare("DELETE FROM aleta_pemetaan_blangko WHERE jenis = ? AND kunci = ?").run(jenis, kunci);
+      await tx.prepare("DELETE FROM aleta_pemetaan_blangko WHERE jenis = ? AND kunci = ?").run(jenisDb(jenis), kunciDb(jenis, kunci));
     }
     await appendAuditLog(tx, {
       id: await nextPrefixedId(tx, "audit_logs", "adt"),
@@ -157,5 +208,19 @@ export async function simpanPemetaanBlangko(
     });
   });
 
-  return bacaPemetaanBlangko(db, jenis, actor);
+  return bacaPemetaanBlangko(db, jenis, actor, pemuatSaran);
+}
+
+/**
+ * Peta { kunci: nama berkas } yang BERLAKU untuk satu jenis (admin + bawaan) -
+ * dipakai rute lain di server (BAS massal, perbaikan 2 Okt sore butir 8).
+ * Tabel belum ada / tak terbaca = peta kosong (perilaku lama), bukan galat.
+ */
+export async function petaPemetaanBerlaku(db: AletaDatabase, jenis: JenisPemetaan): Promise<Record<string, string>> {
+  try {
+    const butir = gabungBawaan(jenis, await bacaButir(db, jenis));
+    return Object.fromEntries(butir.filter((b) => b.namaBerkas.trim()).map((b) => [b.kunci, b.namaBerkas]));
+  } catch {
+    return {};
+  }
 }

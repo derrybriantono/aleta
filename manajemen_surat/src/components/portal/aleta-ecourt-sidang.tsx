@@ -32,6 +32,7 @@ import {
   Printer,
   RotateCcw,
   SlidersHorizontal,
+  Smartphone,
   StickyNote,
   UserRound,
 } from "lucide-react";
@@ -109,8 +110,11 @@ import {
   LencanaDiskors,
   LencanaSedangBerjalan,
   RingkasRuangSidang,
+  TandaAntrianOnline,
+  TandaAntrianOnlineRincian,
   TombolRuangSidang,
 } from "@/components/portal/jadwal-sidang-2okt";
+import { tandaAntrianOnline, type TandaAntrianOnline as TandaOnline } from "@/lib/tanda-antrian-online";
 import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";
 import {
   AGENDA_ELITIGASI,
@@ -3371,13 +3375,14 @@ function NomorBolehPatah({ nomor }: { nomor: string }) {
   );
 }
 
-function SelAntrianJam({
+export function SelAntrianJam({
   baris,
   antrian,
   tanggalTampil,
   sidangSelesai,
   tampilMenunggu = true,
   tampilRincianAntrian = true,
+  tampilTandaOnline = true,
   tungguBerjalan,
   patokan = null,
 }: {
@@ -3396,6 +3401,12 @@ function SelAntrianJam({
   /** Saklar "rincian-antrian" - jam ambil tiap sisi dan nama petugas pelayanan. */
   tampilRincianAntrian?: boolean;
   /**
+   * Saklar "tanda-antrian-online" - ikon ponsel bila nomornya diambil lewat
+   * antrian online (perbaikan 2 Okt sore, butir 4). Bawaannya menyala, sama
+   * dengan tanda "online" yang sudah ada sebelumnya tanpa saklar.
+   */
+  tampilTandaOnline?: boolean;
+  /**
    * Dihitung di tingkat BARIS, bukan di sini.
    *
    * Dahulu sel ini menghitungnya sendiri - dan itu membuat penandanya tidak
@@ -3408,6 +3419,9 @@ function SelAntrianJam({
 }) {
   const jam = baris.jamSidang || "—";
   const lencanaBerdetak = tungguBerjalan?.keadaan === "berjalan" && Boolean(patokan);
+  // Satu sumber untuk ikon, keterangannya, dan sisi P/T yang bertanda - lihat
+  // @/lib/tanda-antrian-online (yang tidak pasti tidak ditebak).
+  const tandaOnline = tampilTandaOnline ? tandaAntrianOnline(antrian) : null;
 
   if (!antrian) {
     return (
@@ -3489,14 +3503,12 @@ function SelAntrianJam({
               pengambilan tercatat sebagai online. Tandanya karena itu belum
               akan muncul sampai aplikasi antrian mengisi kolom itu. Yang
               kurang datanya, bukan penandanya. */}
-          {antrian.online ? (
-            <span
-              className="rounded-full border border-sky-400 bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-sky-700 dark:bg-sky-950 dark:text-sky-300"
-              title="Antrian diambil dalam jaringan - bukan di mesin antrian ruang tunggu"
-            >
-              online
-            </span>
-          ) : null}
+          {/* Sejak 2 Okt 2026 sore (butir 4) berupa IKON ponsel + kata
+              "online" (kata itu hilang di mode Ringkas, ikonnya tidak), dengan
+              keterangan "diambil lewat antrian online" + jamnya di title dan
+              aria-label. Dapat dimatikan lewat Tampilan > "Tanda antrian
+              online"; kotak saring Antrian online tidak terpengaruh. */}
+          <TandaAntrianOnline tanda={tandaOnline} className="self-center" />
         </div>
       ) : (
         <div
@@ -3583,17 +3595,31 @@ function SelAntrianJam({
           {antrian.pihak1 ? (
             <span
               className="rounded bg-emerald-100 px-1 font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
-              title={`Penggugat/pemohon mengambil antrian pukul ${antrian.pihak1}`}
+              title={
+                tandaOnline?.sisi === "P"
+                  ? tandaOnline.keterangan
+                  : `Penggugat/pemohon mengambil antrian pukul ${antrian.pihak1}`
+              }
             >
               P {antrian.pihak1}
+              {tandaOnline?.sisi === "P" ? (
+                <Smartphone className="ml-0.5 inline h-2.5 w-2.5 align-[-1px]" aria-label="lewat antrian online" />
+              ) : null}
             </span>
           ) : null}
           {antrian.pihak2 ? (
             <span
               className="rounded bg-emerald-100 px-1 font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
-              title={`Tergugat/termohon mengambil antrian pukul ${antrian.pihak2}`}
+              title={
+                tandaOnline?.sisi === "T"
+                  ? tandaOnline.keterangan
+                  : `Tergugat/termohon mengambil antrian pukul ${antrian.pihak2}`
+              }
             >
               T {antrian.pihak2}
+              {tandaOnline?.sisi === "T" ? (
+                <Smartphone className="ml-0.5 inline h-2.5 w-2.5 align-[-1px]" aria-label="lewat antrian online" />
+              ) : null}
             </span>
           ) : null}
           {antrian.saksi ? (
@@ -6765,6 +6791,7 @@ export function AletaEcourtSidang({
                             sidangSelesai={sidangSelesai}
                             tampilMenunggu={tampil(tampilan, "menunggu-lama")}
                             tampilRincianAntrian={tampil(tampilan, "rincian-antrian")}
+                            tampilTandaOnline={tampil(tampilan, "tanda-antrian-online")}
                             tungguBerjalan={tigaBaris?.tunggu}
                             patokan={patokanWaktu}
                           />
@@ -7989,6 +8016,11 @@ export function AletaEcourtSidang({
                                   tunjukan={tunjukan[String(baris.perkaraId)]}
                                   tampilCatatanHitung={tampil(tampilan, "catatan-cara-hitung")}
                                   durasi={baris.durasi}
+                                  tandaOnline={
+                                    tampil(tampilan, "tanda-antrian-online")
+                                      ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
+                                      : null
+                                  }
                                 />
                               )}
                             </div>
@@ -8050,7 +8082,7 @@ export function AletaEcourtSidang({
 }
 
 /** Bagian rincian yang muncul saat satu sidang dibuka. */
-function RincianSidang({
+export function RincianSidang({
   rincian,
   nomorPerkara,
   perkaraId,
@@ -8058,6 +8090,7 @@ function RincianSidang({
   tunjukan,
   tampilCatatanHitung,
   durasi,
+  tandaOnline = null,
 }: {
   rincian: Rincian | null;
   nomorPerkara: string;
@@ -8077,6 +8110,11 @@ function RincianSidang({
   tunjukan?: KonseptorSementara;
   /** Catatan cara menghitung digambar atau tidak - lihat CatatanCaraHitung. */
   tampilCatatanHitung: boolean;
+  /**
+   * Tanda antrian online sidang ini (butir 4, 2 Okt sore) - sudah dihitung di
+   * baris dengan saklarnya; null = tidak online atau saklarnya mati.
+   */
+  tandaOnline?: TandaOnline | null;
 }) {
   /**
    * Urutan sidang menurut sidangId - dari jadwal perkara, bukan dari urutan
@@ -8234,6 +8272,9 @@ function RincianSidang({
           <span className="text-xs text-muted-foreground">{sipp.majelis.length} hakim</span>
         ) : null}
       </div>
+
+      {/* Asal nomor antrian - kalimat utuh di Rincian, ikon saja di baris. */}
+      <TandaAntrianOnlineRincian tanda={tandaOnline} />
 
       {identitas ? (
         <div className="flex flex-wrap gap-1">

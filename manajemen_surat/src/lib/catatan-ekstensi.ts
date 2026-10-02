@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.179.0",
+    dirilis: "2026-10-02T11:20:00+08:00",
+    judul: "Pemetaan blangko tersambung ke ekstensi dan Cetak relaas, putusan per status putusan, peta dan isian BAS untuk panitera, tanda antrian online, label peran di kiri",
+    butir: [
+      "PEMETAAN BLANGKO (Integrasi e-Court) kini menjadi sumber pertama di mana pun blangko dipilih: tab Juru Sita (per perkara dan massal), putusan massal SIPP dan ABT, unggah putusan, dan tombol Cetak relaas di Jadwal Sidang. Perubahan admin berlaku di ekstensi paling lama 1 menit, tanpa Reload. Bila server tidak terjangkau, dipakai simpanan terakhir lalu bawaan.",
+      "RELAAS DAN PEMBERITAHUAN PUTUSAN: setiap kunci yang diatur admin dipakai pada keadaannya - sidang pertama atau lanjutan, Penggugat/Tergugat atau Pemohon/Termohon, ikrar, dan PBT. Kunci yang lebih khusus menang (mis. relaas-panggilan-sidang-pertama-pemohon di atas panggilan-sidang-pertama). Kunci yang tidak dikenali tidak dibuang. Layar admin menampilkan kolom 'Dipakai saat' untuk tiap baris.",
+      "PUTUSAN PER STATUS PUTUSAN: tiap jenis perkara dapat dibuka per status (Dikabulkan, Dicabut, Digugurkan, Gugur, Tidak Dapat Diterima, Ditolak, Dicoret dari Register, Perdamaian, Dismissal; Dikabulkan juga dapat dibedakan verstek). Baris status yang kosong memakai blangko jenisnya seperti sebelumnya.",
+      "BERITA ACARA SIDANG UNTUK PANITERA: tab baru 'Berita acara sidang (BAS)' di Pemetaan blangko (per jenis perkara, sidang ke- atau agenda, dan kehadiran). Di panel ABT, blangko BAS yang terbuka mendapat 'Isi dari SIPP & input ke ABT (BAS)' untuk panitera dan panitera pengganti - data sidang, centang, satu tombol Input. BAS massal memakai peta ini.",
+      "JADWAL SIDANG: ikon ponsel 'online' bila nomor antrian diambil lewat antrian online (pendaftaran WhatsApp), dengan pihak dan jamnya bila pasti; dapat dimatikan di menu Tampilan.",
+      "LABEL PERAN pada kepala bagian lipat kini selalu di kiri judul, di panel SIPP, ABT, ALETA, dan widget.",
+    ],
+  },
+  {
     versi: "1.178.0",
     dirilis: "2026-10-02T07:40:00+08:00",
     judul: "Panel lebih tertata per peran, relaas massal per juru sita, blangko pengecualian di putusan massal, isi data pihak dari foto KTP, edoc penetapan dengan cap, skors sidang",

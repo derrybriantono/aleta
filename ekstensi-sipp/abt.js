@@ -5787,7 +5787,9 @@ function bagianPetaBlangkoAbt(keadaan) {
       if (sudah) jumlahLengkap += 1;
       if (sudah && !keadaan.petaTampilSemua) continue;
       const baris = buatElemen("div", "aleta-perkakas-baris");
-      const label = ALAT_JENIS_LAZIM.find((x) => alatKunciJenis(x) === kunci) || (keadaan.peta[kunci] && keadaan.peta[kunci].jenisAsli) || kunci;
+      const label = kunci.includes("|") && typeof alatSebutKunciPeta === "function"
+        ? alatSebutKunciPeta(kunci, keadaan.peta[kunci])
+        : ALAT_JENIS_LAZIM.find((x) => alatKunciJenis(x) === kunci) || (keadaan.peta[kunci] && keadaan.peta[kunci].jenisAsli) || kunci;
       const namaJenis = buatElemen("span", "aleta-perkakas-nama", label);
       // Nama lain yang menunjuk baris ini disebut pada judulnya. Tanpa itu,
       // yang mencari "Pengesahan Perkawinan/Istbat Nikah" - nama yang dipakai
@@ -6273,7 +6275,9 @@ function bagianMassalAbt(keadaan) {
   // untuk satu jenis perkara yang sama. Yang dipilih di baris menang atas
   // pemetaan jenisnya; yang tidak dipilih memakai pemetaan jenis.
   const pilihanPer = new Map();
-  const petaUntuk = (s) => pilihanPer.get(s.nomor) || (a2Utama && a2Utama.peta()) || keadaan.peta[alatKunciJenis(s.jenis)];
+  // Perbaikan 2 Okt sore (P, butir 3): baris pemetaan KHUSUS status putusan menang atas blangko utama.
+  const petaUntuk = (s) =>
+    pilihanPer.get(s.nomor) || p3PetaStatus(keadaan, s) || (a2Utama && a2Utama.peta()) || p3PetaJenis(keadaan, s);
 
   async function muat() {
     daftar.textContent = "";
@@ -6314,6 +6318,8 @@ function bagianMassalAbt(keadaan) {
       `${keadaan.sidang.length} perkara bersidang; ${belumPutus.length} belum putus dan ditawarkan. ` +
       "Tidak ada yang tercentang sendiri.";
     if (a1Massal) a1Massal.saatDimuat(kabar);
+    // Perbaikan 2 Okt sore (P, butir 3): status putusan yang dibaca panel SIPP.
+    keadaan.statusSipp = await p3BacaStatusSipp();
     // Perbaikan 2 Okt butir 3 (UI Baru): blangko yang dipilih di panel SIPP
     // (agen S, storage blangkoPutusanMassal) dipakai di sini juga.
     if (a2Utama) await a2PakaiBlangkoSipp(keadaan, pilihanPer, a2Utama, kabar);
@@ -6476,7 +6482,7 @@ function bagianMassalAbt(keadaan) {
           a2BarisBlangko(label, pilih, s, {
             utama: a2Utama,
             berbeda: pilihanPer.has(s.nomor),
-            utamaPerkara: (a2Utama && a2Utama.peta()) || keadaan.peta[alatKunciJenis(s.jenis)],
+            utamaPerkara: p3PetaStatus(keadaan, s) || (a2Utama && a2Utama.peta()) || p3PetaJenis(keadaan, s),
           });
         }
       }
@@ -6800,7 +6806,8 @@ function bagianUnggahSatuAbt(isi) {
     for (const k of kunci) {
       const opsi = document.createElement("option");
       opsi.value = k;
-      opsi.textContent = (peta[k] && peta[k].jenisAsli) || k;
+      opsi.textContent =
+        typeof alatSebutKunciPeta === "function" ? alatSebutKunciPeta(k, peta[k]) : (peta[k] && peta[k].jenisAsli) || k;
       pilihBlangko.appendChild(opsi);
     }
   }).then(() => {
@@ -7500,6 +7507,10 @@ async function lengkapiTokenPeta(peta, lapor) {
       ...alatRapikanBlangko({ ...hasil }),
       jenisAsli: baris.jenisAsli || kunci,
       bawaan: Boolean(baris.bawaan),
+      // Perbaikan 2 Okt sore (P): baris dari Pemetaan blangko server tetap
+      // bertanda server, dan baris status tetap menyebut statusnya.
+      ...(baris.sumber ? { sumber: baris.sumber } : {}),
+      ...(baris.statusAsli ? { statusAsli: baris.statusAsli } : {}),
       ...(diminta ? { blangkoDiminta: diminta } : {}),
       ...(baris.blangkoLain ? { blangkoLain: baris.blangkoLain } : {}),
       ...(menuLain ? { catatan: `diminta dari "${diminta}", yang ada di ABT ini "${hasil.blangko}"` } : {}),
@@ -12162,6 +12173,8 @@ async function soreTata(panel, jatiDiri) {
   sorePastikanJurusita(k);
   soreSegarkan(k);
   soreOtomatis(k);
+  // Perbaikan 2 Okt sore (P, butir 7): blangko BAS -> Isi dari SIPP & input ke ABT (BAS).
+  p7PasangBasAman(k);
 }
 
 /** Akun ALETA datang menyusul (muatPenggunaAleta dipanggil susunPanelAbt). */
@@ -14292,7 +14305,7 @@ function a2BukaBawaan(k, kunci) {
   return kunci === utama;
 }
 
-/** Tag peran tepat sesudah judul kepala (W memasangnya; cadangan bila belum ada). */
+/** Tag peran di KIRI judul, tepat sesudah panah lipat - sama dengan panel-alat.js dan konten.js (butir 5, 2 Okt sore). */
 function a2TagPeran(el, kunci) {
   const peran = A2_PERAN_BAGIAN[kunci];
   const p = el && el.__aletaLipat;
@@ -14305,7 +14318,7 @@ function a2TagPeran(el, kunci) {
     kepala.appendChild(tag);
   }
   const judul = kepala.querySelector(":scope > .aleta-sore-kerja-judul, :scope > .aleta-abt-judul, :scope > .aleta-abt-nama");
-  if (judul && judul.nextSibling !== tag) kepala.insertBefore(tag, judul.nextSibling);
+  if (judul && tag.nextSibling !== judul) kepala.insertBefore(tag, judul);
 }
 
 // ─── Butir 5: isi bagian yang tertutup benar-benar tersembunyi ──────────────
@@ -14763,4 +14776,371 @@ function a2BarisBlangko(label, pilih, s, opsi) {
   });
   label.insertBefore(tombol, pilih);
   return tombol;
+}
+
+/*
+ * ============================================================================
+ * P7 - BLANGKO BAS: "ISI DARI SIPP & INPUT KE ABT" UNTUK PANITERA SIDANG / PP
+ * (PERBAIKAN 2 OKT SORE, AGEN P, BUTIR 7) - HANYA UI BARU
+ * ============================================================================
+ *
+ * Bila blangko yang SEDANG DIBUKA adalah blangko berita acara sidang (judul
+ * <h2> views/abt/view.php memuat "BAS"/"Berita Acara", atau halaman memuat
+ * tombol validasi_bas ABT), panitera sidang / panitera / PP (menu "isi-bas",
+ * matriks alatMenuPeran) - dan Admin/Super Admin ("semua") - mendapat bagian
+ * sendiri:
+ *
+ *   1. Data sidang dari SIPP (GET /aleta-ecourt/sidang?nomor= - rute baca
+ *      yang sama dengan tab Juru Sita): tanggal, sidang ke-, agenda,
+ *      kehadiran pihak, saksi yang diajukan, majelis, PP, hasil/tunda.
+ *   2. Usulan variabel blangko ini: dari bot (POST /aleta-bot/abt/usulan
+ *      sumber "sipp" - hitungan saja, ada di ALETA_COBA_BOLEH) DITAMBAH data
+ *      sidang di atas untuk variabel yang namanya jelas menyebutnya (tanggal
+ *      sidang, sidang ke-, agenda, kehadiran, majelis, PP, alasan tunda).
+ *   3. Satu daftar centang (yang terdeteksi tercentang bila variabelnya masih
+ *      kosong; yang sudah sama tidak tampil) dan SATU tombol "Input ke ABT".
+ *
+ * TIDAK ADA YANG DITULIS sebelum tombol ditekan. Penulisnya jalur yang sudah
+ * ada: terapkanUsulanBerurutan -> simpanVariabel (edit_data ABT), tunduk pada
+ * mode coba, kering, dan latihan di panel-alat.js. Tanpa penanda ALETA di ABT
+ * (butir 14): yang ditulis hanya nilai variabelnya; riwayatnya di ALETA.
+ *
+ * "Susun keterangan saksi" milik panitera TIDAK dikurangi - bagian ini
+ * berdiri di sampingnya.
+ */
+const P7_API_SIDANG = "/aleta/api/aleta-ecourt/sidang";
+const P7_POLA_BAS = /\bBAS\b|berita\s+acara/i;
+const P7_KELAS = "aleta-p7-bas";
+/** Variabel blangko BAS -> data sidang, dari NAMA variabelnya (bukan kodenya: kode berbeda antar set). */
+const P7_POLA_VARIABEL = [
+  { kunci: "tanggal", pola: /tanggal\s+sidang|tgl\.?\s*sidang|hari\s*(,|\/|dan)?\s*tanggal\s+sidang/i },
+  { kunci: "ke", pola: /sidang\s+ke\b|sidang\s+ke-|persidangan\s+ke/i },
+  { kunci: "agenda", pola: /agenda/i },
+  { kunci: "kehadiran", pola: /kehadiran|yang\s+hadir/i },
+  { kunci: "majelis", pola: /ketua\s+majelis|majelis\s+hakim|hakim\s+tunggal/i },
+  { kunci: "pp", pola: /panitera\s+pengganti/i },
+  { kunci: "tunda", pola: /alasan\s+(penundaan|ditunda|tunda)|ditunda\s+karena/i },
+];
+
+/** Nama berkas blangko yang sedang dibuka (judul <h2> view ABT). */
+function p7NamaBlangko() {
+  const h = document.querySelector("#welcome h2, .about h2") || document.querySelector("h2");
+  return String((h && h.textContent) || "").replace(/\s+/g, " ").trim();
+}
+
+/** Blangko yang dibuka adalah blangko BAS? */
+function p7HalamanBas() {
+  if (typeof halamanBlangko === "function" && !halamanBlangko()) return false;
+  if (P7_POLA_BAS.test(p7NamaBlangko())) return true;
+  return Boolean(document.querySelector('a[onclick*="validasi_bas"]'));
+}
+
+/** Sidang ke- blangko ini: d= tautan CETAK, lalu "BAS <n>" di nama blangko; 0 = tidak terbaca. */
+function p7SidangKe() {
+  const t = document.querySelector('a[href*="abt/preview"]');
+  const d = t ? /[?&]d=(\d+)/.exec(String(t.getAttribute("href") || "")) : null;
+  if (d && Number(d[1]) > 0) return Number(d[1]);
+  const m = /\bBAS\s*(\d+)/i.exec(p7NamaBlangko());
+  return m ? Number(m[1]) : 0;
+}
+
+async function p7BacaRincian(nomor) {
+  const r = await alatAmbil(`${P7_API_SIDANG}?nomor=${encodeURIComponent(nomor)}`, { credentials: "include", cache: "no-store" }, "Membaca data sidang");
+  const luar = await r.json().catch(() => null);
+  const isi = luar && luar.data ? luar.data : luar;
+  if (!r.ok || !isi || isi.available === false || !isi.sipp) {
+    throw new Error((isi && (isi.message || isi.alasan)) || alatPesanGagal(null, r.status, "Membaca data sidang"));
+  }
+  return isi.sipp;
+}
+
+/** Sidang yang di-BAS-kan: urutan dari blangko; tanpa itu sidang terakhir yang tidak di masa depan. */
+function p7PilihSidang(rincian, ke) {
+  const jadwal = Array.isArray(rincian && rincian.jadwalPerkara) ? rincian.jadwalPerkara : [];
+  if (ke > 0) {
+    const tepat = jadwal.find((s) => Number(s.urutanSidang) === ke);
+    if (tepat) return tepat;
+  }
+  const hariIni = typeof alatTanggalIso === "function" ? alatTanggalIso(new Date()) : new Date().toISOString().slice(0, 10);
+  const lalu = jadwal.filter((s) => String(s.tanggalSidang || "").slice(0, 10) <= hariIni);
+  const urut = (lalu.length ? lalu : jadwal).slice().sort((a, b) => Number(a.urutanSidang) - Number(b.urutanSidang));
+  return urut[urut.length - 1] || null;
+}
+
+/** "Rabu, 1 Oktober 2026" dari YYYY-MM-DD. */
+function p7Tanggal(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+  if (!m) return String(iso || "");
+  const t = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12);
+  try {
+    return t.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return `${m[3]}-${m[2]}-${m[1]}`;
+  }
+}
+
+/** Data sidang yang dibaca - { kunci: { label, nilai } }; yang tidak ada tidak disebut. */
+function p7DataSidang(rincian, sidang) {
+  const data = {};
+  const pasang = (kunci, label, nilai) => {
+    const n = String(nilai || "").replace(/\s+/g, " ").trim();
+    if (n) data[kunci] = { label, nilai: n };
+  };
+  const permohonan = /\/Pdt\.P\//i.test(String((rincian && rincian.nomorPerkara) || "")) || /cerai\s+talak/i.test(String((rincian && rincian.jenisPerkara) || ""));
+  const p = permohonan ? "Pemohon" : "Penggugat";
+  const t = permohonan ? "Termohon" : "Tergugat";
+  if (sidang) {
+    pasang("tanggal", "Tanggal sidang", p7Tanggal(sidang.tanggalSidang));
+    pasang("ke", "Sidang ke-", sidang.urutanSidang ? String(sidang.urutanSidang) : "");
+    pasang("agenda", "Agenda", sidang.agenda);
+    const hadir = { 1: `${p} dan ${t} hadir`, 2: `${p} hadir, ${t} tidak hadir`, 3: `${t} hadir, ${p} tidak hadir`, 4: `${p} dan ${t} tidak hadir` }[Number(sidang.dihadiriOleh)];
+    pasang("kehadiran", "Kehadiran pihak", hadir || "");
+    pasang("tunda", "Hasil / tunda", sidang.ditunda ? `Ditunda${sidang.alasanDitunda ? ` - ${sidang.alasanDitunda}` : ""}` : "");
+  }
+  const saksi = rincian && rincian.saksi;
+  if (saksi && (Number(saksi.diajukanPihak1) || Number(saksi.diajukanPihak2))) {
+    pasang("saksi", "Saksi diajukan", `${p} ${Number(saksi.diajukanPihak1) || 0}, ${t} ${Number(saksi.diajukanPihak2) || 0}`);
+  }
+  const majelis = Array.isArray(rincian && rincian.majelis) ? rincian.majelis : [];
+  const ketua = majelis.find((m) => /ketua/i.test(String(m.jabatan || ""))) || majelis[0];
+  pasang("majelis", "Ketua majelis", ketua && ketua.nama);
+  const pp = Array.isArray(rincian && rincian.panitera) ? rincian.panitera[0] : null;
+  pasang("pp", "Panitera pengganti", pp && pp.nama);
+  return data;
+}
+
+/** Usulan dari data sidang untuk variabel yang namanya jelas menyebutnya. */
+function p7UsulanDariSidang(data, peta) {
+  const hasil = [];
+  for (const [kode, item] of peta) {
+    const cocok = P7_POLA_VARIABEL.find((x) => x.pola.test(String(item.nama || "")));
+    if (!cocok || !data[cocok.kunci]) continue;
+    hasil.push({
+      kode,
+      nama: item.nama,
+      nilai: data[cocok.kunci].nilai,
+      keyakinan: "cukup",
+      sumber: [{ asal: "sipp", keterangan: `data sidang: ${data[cocok.kunci].label}` }],
+    });
+  }
+  return hasil;
+}
+
+/** Satu daftar: bot lebih dulu, data sidang hanya untuk kode yang tidak diusulkan bot; yang sudah sama dibuang. */
+function p7GabungUsulan(dariBot, dariSidang, peta) {
+  const per = new Map();
+  for (const u of [...(dariBot || []), ...(dariSidang || [])]) {
+    if (!u || !u.kode || !peta.has(String(u.kode)) || per.has(String(u.kode))) continue;
+    if (!String(u.nilai || "").trim()) continue;
+    per.set(String(u.kode), u);
+  }
+  const rapi = (x) => String(x || "").replace(/\s+/g, " ").trim().toLowerCase();
+  return [...per.values()].filter((u) => rapi((peta.get(String(u.kode)) || {}).nilai) !== rapi(u.nilai));
+}
+
+/** Variabel masih kosong / templat? (yang demikian tercentang sendiri). */
+function p7VariabelKosong(item) {
+  const n = String((item && item.nilai) || "").trim();
+  if (!n) return true;
+  try {
+    if (typeof keadaanNilai === "function") return keadaanNilai(n) !== "terisi";
+  } catch {
+    /* cadangan di bawah */
+  }
+  return /^[-_.\s]*$|DATA_TIDAK_ADA/i.test(n);
+}
+
+function p7PasangBasAman(k) {
+  try {
+    p7PasangBas(k);
+  } catch (galat) {
+    if (typeof t6CatatGalat === "function") t6CatatGalat(galat, "Bagian BAS (Isi dari SIPP) gagal dipasang");
+  }
+}
+
+function p7PasangBas(k) {
+  if (!k || !k.isi || !t6Modern() || !p7HalamanBas() || !sorePunya(k, "isi-bas")) return;
+  for (const lama of Array.from(k.isi.querySelectorAll(`.${P7_KELAS}`))) lama.remove();
+
+  const judul = "Isi dari SIPP & input ke ABT (BAS)";
+  let akar;
+  let isi;
+  if (typeof alatLipat === "function") {
+    const l = alatLipat(judul, { kunci: "abt:isi-bas", terbuka: true, kelas: P7_KELAS, peran: "Panitera" });
+    akar = l.akar;
+    isi = l.isi;
+  } else {
+    akar = buatElemen("div", `aleta-abt-bagian ${P7_KELAS}`);
+    akar.appendChild(buatElemen("div", "aleta-abt-judul", judul));
+    isi = akar;
+  }
+  akar.setAttribute("data-p7", "bas");
+  const nama = p7NamaBlangko();
+  isi.appendChild(buatElemen("div", "aleta-p7-blangko aleta-teknis", nama ? `Blangko BAS: ${nama}` : "Blangko BAS"));
+  const dataKotak = buatElemen("dl", "aleta-p7-data");
+  const daftar = buatElemen("div", "aleta-p7-daftar");
+  const kabar = buatElemen("div", "aleta-p7-kabar");
+  kabar.setAttribute("role", "status");
+  const aksi = buatElemen("div", "aleta-p7-aksi");
+  const baca = buatElemen("button", "aleta-perkakas-aksi aleta-p7-baca", "Baca ulang");
+  baca.type = "button";
+  baca.title = "Membaca ulang data sidang SIPP dan usulan variabel - hanya membaca, tidak menyimpan apa pun ke ABT";
+  const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-p7-input", "Input ke ABT");
+  tombol.type = "button";
+  tombol.disabled = true;
+  tombol.title = "Menyimpan variabel yang dicentang ke blangko ABT ini, satu per satu";
+  aksi.append(tombol, baca);
+  isi.append(dataKotak, daftar, aksi, kabar);
+
+  const acuan = k.kerjaSusun || k.kerjaIsi || k.isi.firstChild;
+  if (acuan && acuan.parentNode === k.isi) k.isi.insertBefore(akar, acuan);
+  else k.isi.appendChild(akar);
+  k.kerjaBas = akar;
+
+  let pilih = [];
+  const segarkanTombol = () => {
+    const n = pilih.filter((x) => x.centang.checked && !x.centang.disabled).length;
+    tombol.disabled = n === 0;
+    tombol.textContent = n ? `Input ke ABT (${n})` : "Input ke ABT";
+  };
+
+  const gambar = (data, usulan, catatan) => {
+    dataKotak.textContent = "";
+    for (const { label, nilai } of Object.values(data)) {
+      dataKotak.append(buatElemen("dt", "", label), buatElemen("dd", "", nilai));
+    }
+    if (!Object.keys(data).length) dataKotak.appendChild(buatElemen("dd", "aleta-remeh", "Data sidang tidak terbaca dari SIPP."));
+    daftar.textContent = "";
+    pilih = [];
+    const peta = barisVariabel();
+    for (const u of usulan) {
+      const item = peta.get(String(u.kode));
+      const baris = buatElemen("label", "aleta-abt-centang-baris aleta-p7-baris");
+      const c = document.createElement("input");
+      c.type = "checkbox";
+      c.className = "aleta-abt-centang";
+      c.checked = p7VariabelKosong(item);
+      c.addEventListener("change", segarkanTombol);
+      baris.appendChild(c);
+      const teks = buatElemen("span", "aleta-abt-nama", `${u.nama || u.kode}: ${u.nilai}`);
+      teks.title = `Variabel ${u.kode} · sekarang: ${(item && item.nilai) || "(kosong)"}`;
+      baris.appendChild(teks);
+      daftar.appendChild(baris);
+      pilih.push({ usulan: u, centang: c, nilai: () => String(u.nilai), disunting: () => false });
+    }
+    if (!usulan.length) daftar.appendChild(buatElemen("div", "aleta-remeh", "Tidak ada data baru untuk diinput ke blangko BAS ini."));
+    if (catatan.length) daftar.appendChild(buatElemen("div", "aleta-p7-catatan aleta-teknis", catatan.join(" ")));
+    segarkanTombol();
+  };
+
+  const jalankan = async () => {
+    baca.disabled = true;
+    tombol.disabled = true;
+    kabar.className = "aleta-p7-kabar";
+    kabar.textContent = "Membaca data sidang SIPP dan usulan variabel…";
+    const nomor = nomorPerkaraAbt() || (typeof a1NomorDariVariabel === "function" ? a1NomorDariVariabel() : "");
+    const catatan = [];
+    let data = {};
+    let dariBot = [];
+    try {
+      if (!nomor) throw new Error("Nomor perkara tidak terbaca dari kepala halaman.");
+      const [rincian, bot] = await Promise.all([
+        p7BacaRincian(nomor).catch((g) => {
+          catatan.push(`Data sidang: ${String((g && g.message) || g)}.`);
+          return null;
+        }),
+        mintaUsulan({ nomorPerkara: nomor, sumber: "sipp" }).catch((g) => {
+          catatan.push(`Usulan SIPP: ${String((g && g.message) || g)}.`);
+          return null;
+        }),
+      ]);
+      if (rincian) data = p7DataSidang(rincian, p7PilihSidang(rincian, p7SidangKe()));
+      const s = bot && bot.sipp;
+      if (s && s.ok !== false && Array.isArray(s.usulan)) dariBot = s.usulan;
+      const peta = barisVariabel();
+      gambar(data, p7GabungUsulan(dariBot, p7UsulanDariSidang(data, peta), peta), catatan);
+      kabar.textContent = "";
+    } catch (galat) {
+      kabar.className = "aleta-p7-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+    } finally {
+      baca.disabled = false;
+    }
+  };
+
+  baca.addEventListener("click", () => void jalankan());
+  tombol.addEventListener("click", async () => {
+    const dipilih = pilih.filter((x) => x.centang.checked && !x.centang.disabled);
+    if (!dipilih.length) return;
+    const jatiDiri = jatiDiriPerkara();
+    if (!jatiDiri) {
+      kabar.className = "aleta-p7-kabar aleta-abt-gagal";
+      kabar.textContent = "Perkara blangko ini tidak terbaca - muat ulang halaman ABT.";
+      return;
+    }
+    tombol.disabled = true;
+    baca.disabled = true;
+    kabar.className = "aleta-p7-kabar";
+    try {
+      const h = await terapkanUsulanBerurutan(dipilih, jatiDiri, (t) => {
+        kabar.textContent = t;
+      });
+      kabar.className = h.gagal.length ? "aleta-p7-kabar aleta-abt-gagal" : "aleta-p7-kabar";
+      kabar.textContent = `${h.berhasil} variabel tersimpan ke ABT${h.gagal.length ? `; gagal: ${h.gagal.join("; ")}` : "."}`;
+    } catch (galat) {
+      kabar.className = "aleta-p7-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+    } finally {
+      baca.disabled = false;
+      segarkanTombol();
+    }
+  });
+
+  // Membaca sendiri sekali (hanya membaca). Mode kering menahan POST usulan -
+  // dijalankan lewat "Baca ulang" saja, seperti Isi dari SIPP lainnya.
+  if (soreKeringNyala()) {
+    kabar.textContent = 'Mode kering menyala - tekan "Baca ulang" untuk membaca data sidang.';
+  } else {
+    void jalankan();
+  }
+}
+
+/*
+ * ============================================================================
+ * P3 - PUTUSAN PER STATUS DI PUTUSAN MASSAL ABT (BUTIR 3)
+ * ============================================================================
+ *
+ * Status putusan perkara: dari jadwal sidang yang dibaca panel ini
+ * (s.statusPutusan / s.verstek), atau dari panel SIPP yang menyimpannya di
+ * "blangkoPutusanMassal".status = { nomor: { statusPutusan, verstek } }.
+ * Baris pemetaan KHUSUS status (bukan baris jenis) menang atas blangko utama
+ * hari itu; pilihan per perkara tetap menang atas semuanya. Berlaku di semua
+ * tampilan - yang berubah hanya blangko yang dipakai, bukan tampilannya.
+ */
+async function p3BacaStatusSipp() {
+  try {
+    const x = await chrome.storage.local.get([A2_KUNCI_BLANGKO_SIPP]);
+    const simpan = x && x[A2_KUNCI_BLANGKO_SIPP];
+    return simpan && simpan.status && typeof simpan.status === "object" ? simpan.status : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Baris pemetaan khusus status untuk perkara ini, atau null (= jenis / utama). */
+function p3PetaStatus(keadaan, s) {
+  if (!keadaan || !s || typeof alatPetaUntukPerkara !== "function") return null;
+  const st = (keadaan.statusSipp && keadaan.statusSipp[s.nomor]) || null;
+  const statusPutusan = String(s.statusPutusan || (st && st.statusPutusan) || "");
+  if (!statusPutusan) return null;
+  const h = alatPetaUntukPerkara(keadaan.peta, s.jenis, statusPutusan, Boolean(s.verstek) || Boolean(st && st.verstek));
+  return h && h.tingkat !== "jenis" && alatBlangkoTerpetakan(h.baris) ? h.baris : null;
+}
+
+/** Baris pemetaan menurut jenis + status (tanpa pilihan per perkara dan utama). */
+function p3PetaJenis(keadaan, s) {
+  if (typeof alatPetaUntukPerkara !== "function") return keadaan.peta[alatKunciJenis(s.jenis)];
+  const st = (keadaan.statusSipp && keadaan.statusSipp[s.nomor]) || null;
+  const h = alatPetaUntukPerkara(keadaan.peta, s.jenis, s.statusPutusan || (st && st.statusPutusan) || "", Boolean(s.verstek) || Boolean(st && st.verstek));
+  return h ? h.baris : undefined;
 }

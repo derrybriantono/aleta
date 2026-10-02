@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { petaPemetaanBerlaku } from "@/server/modules/aleta-ecourt/pemetaan-blangko";
 import {
   getGatewayRelaasCetak,
   type DokumenRelaasCetakGateway,
@@ -13,6 +14,7 @@ import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
 import { nilaiCetakDokumen } from "./nilai-cetak";
+import { blangkoMenurutPemetaan } from "./pemetaan-cetak";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,11 +88,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Pemetaan blangko admin (2 Okt sore, butir 1): dibaca sekali per permintaan.
+    // Tabel tak terbaca = peta kosong, jadi blangko bawaan dipakai seperti dulu.
+    const [petaRelaas, petaPbt] = await Promise.all([petaPemetaanBerlaku(db, "relaas"), petaPemetaanBerlaku(db, "pbt")]);
     const nilaiSatu = (satu: DokumenRelaasCetakGateway): DokumenRelaasCetakPortal => {
       const nilai = nilaiCetakDokumen(satu);
+      const dariPeta = nilai.blangko ? blangkoMenurutPemetaan(satu, petaRelaas, petaPbt) : null;
+      const blangko = nilai.blangko && dariPeta ? { ...nilai.blangko, berkas: dariPeta.berkas } : nilai.blangko;
       return {
         ...satu,
-        blangko: nilai.blangko,
+        blangko,
         bisaDicetak: nilai.bisaDicetak,
         sebabTidakBisa: nilai.sebabTidakBisa,
         // Tambahan di luar K2 (tidak mengubah ruas kontraknya): dokumen yang

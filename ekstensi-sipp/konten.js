@@ -20023,7 +20023,9 @@ function s2EntriBlangko(e) {
  * chrome.storage.local "blangkoPutusanMassal" untuk tahap ABT.
  */
 function s2BlangkoMassal() {
-  const k = { peta: {}, dikenal: [], utama: "", per: {}, baris: new Map() };
+  // Perbaikan 2 Okt sore (P, butir 3): status putusan tiap perkara yang tampil
+  // (dari jadwal sidang SIPP) - ikut disimpan untuk tahap ABT.
+  const k = { peta: {}, dikenal: [], utama: "", per: {}, status: {}, baris: new Map() };
   const akar = buatElemen("div", "aleta-s2-blangko-utama");
   akar.setAttribute("data-s2-fitur", "blangko-utama");
   const barisPilih = buatElemen("label", "aleta-s2-blangko-label");
@@ -20041,12 +20043,26 @@ function s2BlangkoMassal() {
   );
   akar.appendChild(ket);
 
-  /** Blangko utama untuk perkara ini: pilihan kepala, atau pemetaan jenisnya. */
-  const utamaUntuk = (s) => {
-    if (k.utama) return k.dikenal.find((e) => e.kunci === k.utama) || null;
+  /**
+   * Blangko utama untuk perkara ini: baris pemetaan KHUSUS status putusannya
+   * (Pemetaan blangko > Putusan > per status - perbaikan 2 Okt sore, butir 3),
+   * lalu pilihan kepala, lalu pemetaan jenisnya.
+   */
+  const petaPerkara = (s) => {
+    const nomor = String((s && s.nomor) || "");
+    const st = k.status[nomor] || {};
+    const status = String((s && s.statusPutusan) || st.statusPutusan || "");
+    const verstek = Boolean(s && s.verstek) || Boolean(st.verstek);
+    if (typeof alatPetaUntukPerkara === "function") return alatPetaUntukPerkara(k.peta, s && s.jenis, status, verstek);
     const jenis = typeof alatKunciJenis === "function" ? alatKunciJenis(s && s.jenis) : String((s && s.jenis) || "").toLowerCase();
-    const b = k.peta[jenis];
-    return b && b.berkas ? k.dikenal.find((e) => e.kunci === s2KunciBerkas(b.berkas)) || null : null;
+    return k.peta[jenis] ? { baris: k.peta[jenis], kunci: jenis, tingkat: "jenis" } : null;
+  };
+  const entriDari = (b) => (b && b.berkas ? k.dikenal.find((e) => e.kunci === s2KunciBerkas(b.berkas)) || null : null);
+  const utamaUntuk = (s) => {
+    const h = petaPerkara(s);
+    if (h && h.tingkat !== "jenis" && entriDari(h.baris)) return entriDari(h.baris);
+    if (k.utama) return k.dikenal.find((e) => e.kunci === k.utama) || null;
+    return h ? entriDari(h.baris) : null;
   };
   const efektif = (s) => k.per[String((s && s.nomor) || "")] || utamaUntuk(s);
   /** Bentuk yang dikenal aletaMassalBarisBlangko: nilai + label; sisanya milik ALETA. */
@@ -20054,7 +20070,9 @@ function s2BlangkoMassal() {
   const simpan = () => {
     const per = {};
     for (const [nomor, e] of Object.entries(k.per).slice(-S2_BLANGKO_MAKS)) per[nomor] = s2EntriBlangko(e);
-    t7Tulis({ [S2_KUNCI_BLANGKO_MASSAL]: { utama: k.utama, perkara: per, diubah: new Date().toISOString() } });
+    const status = {};
+    for (const [nomor, x] of Object.entries(k.status).slice(-S2_BLANGKO_MAKS)) status[nomor] = x;
+    t7Tulis({ [S2_KUNCI_BLANGKO_MASSAL]: { utama: k.utama, perkara: per, status, diubah: new Date().toISOString() } });
   };
   const segarkanSemua = () => {
     for (const f of k.baris.values()) f();
@@ -20065,6 +20083,16 @@ function s2BlangkoMassal() {
       k.peta = typeof alatMuatPetaBlangko === "function" ? (await alatMuatPetaBlangko()) || {} : {};
     } catch {
       k.peta = {};
+    }
+    // Perbaikan 2 Okt sore (P, butir 1 & 3): pemetaan PUTUSAN server (per jenis
+    // dan per status) diterapkan di atas peta peramban - di memori saja; tahap
+    // ABT menerapkannya lagi saat memuat peta lengkapnya (token diambil di sana).
+    if (typeof alatPemetaanBlangko === "function" && typeof alatTerapkanPemetaanServer === "function") {
+      try {
+        alatTerapkanPemetaanServer(k.peta, await alatPemetaanBlangko("putusan"), null);
+      } catch {
+        /* server dan simpanan tak terbaca: peta peramban apa adanya */
+      }
     }
     k.dikenal = s2BlangkoDikenal(k.peta);
     const s = await t7Baca([S2_KUNCI_BLANGKO_MASSAL]);
@@ -20147,6 +20175,7 @@ function s2BlangkoMassal() {
 
   const pasangBaris = (s, wadah) => {
     if (!s || !s.nomor || !wadah) return null;
+    if (s.statusPutusan) k.status[s.nomor] = { statusPutusan: String(s.statusPutusan), verstek: Boolean(s.verstek) };
     let el = null;
     let gambar = () => {};
     const pembantu = globalThis.aletaMassalBarisBlangko;

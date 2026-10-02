@@ -10370,3 +10370,47 @@ html[data-aleta-tema-sipp="gelap"] :is(.aleta-c2-saksi, .aleta-c2-saksi-pemicu) 
   color: var(--c2-tulisan);
 }
 /* === AKHIR C2 === */
+
+/* === O3 - PERBAIKAN 2 OKT SORE (butir 5: label peran selalu di kiri) === */
+/*
+ * Urutan di kepala lipatan UI Baru dipaksa lewat 'order', bukan diserahkan ke
+ * urutan DOM: panah (-2), tag peran (-1), lalu judul dan sisanya. Tiga berkas
+ * memasang tag (panel-alat.js, konten.js, abt.js) dan tidak boleh berselisih
+ * letak lagi. Kepala bagian kerja ABT dulu 'space-between', sehingga judul
+ * terdorong ke tengah - kini judul rata kiri dan mengisi ruang, tombol aksi
+ * (Susun, Baca ulang) tetap di kanan.
+ */
+html[data-aleta-kulit="modern"] .aleta-lipat-kepala > .aleta-lipat-panah,
+html[data-aleta-kulit="modern"] .aleta-lipat-kepala > .aleta-bagian-panah { order: -2; }
+html[data-aleta-kulit="modern"] .aleta-lipat-kepala > .aleta-lipat-peran { order: -1; flex: 0 0 auto; }
+html[data-aleta-kulit="modern"] #aleta-panel-abt[data-sore] .aleta-sore-kerja-kepala.aleta-lipat-kepala {
+  justify-content: flex-start;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-abt[data-sore] .aleta-lipat-kepala > .aleta-sore-kerja-judul {
+  flex: 1 1 auto;
+  text-align: left;
+}
+/* === AKHIR O3 === */
+
+/* === P3 - PERBAIKAN 2 OKT SORE === */
+/*
+ * Agen P: bagian "Isi dari SIPP & input ke ABT (BAS)" di panel perkara ABT
+ * (butir 7, UI Baru) dan tanda "dari Pemetaan blangko" di BAS massal (butir 8).
+ */
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-data {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 10px;
+  margin: 4px 0 6px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-data dt { color: var(--aleta-tulisan-lembut); }
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-data dd { margin: 0; overflow-wrap: anywhere; }
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-daftar { display: grid; gap: 2px; margin-bottom: 6px; }
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-baris .aleta-abt-nama { overflow-wrap: anywhere; }
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-aksi { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-blangko,
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-catatan { color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); }
+#aleta-panel-abt .aleta-p7-bas .aleta-p7-kabar:empty { display: none; }
+.aleta-basmassal-tanda.aleta-p3-dari-peta { margin-left: 6px; color: var(--aleta-aman); border-color: color-mix(in srgb, var(--aleta-aman) 45%, transparent); }
+/* === AKHIR P3 === */

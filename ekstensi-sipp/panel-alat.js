@@ -2350,6 +2350,8 @@ function alatKelasPeran(peran) {
  *   SIPP perkara : "penetapan" "putusan" "jurusita" "berkas" "perkara"
  *   ABT perkara  : "isi-input" (Isi dari SIPP & input ke ABT) "unggah-putusan"
  *                  "susun-saksi" "jurusita" (relaas & PBT) "semua" (admin)
+ *                  "isi-bas" (Isi dari SIPP & input ke ABT KHUSUS blangko BAS -
+ *                  panitera sidang/PP, perbaikan 2 Okt sore butir 7)
  *   daftar/beranda: "penetapan-massal" "bas-massal" "relaas-pbt-massal"
  *                  "putusan-massal"
  *
@@ -2394,7 +2396,7 @@ const ALAT_MENU_PERAN = {
       admin: ["semua"],
       ketua: ["isi-input", "unggah-putusan"],
       hakim: ["isi-input", "unggah-putusan"],
-      panitera: ["susun-saksi"],
+      panitera: ["susun-saksi", "isi-bas"],
       jurusita: ["jurusita"],
     },
     daftar: {
@@ -6420,6 +6422,263 @@ async function alatSimpanPetaBlangko(peta) {
   }
 }
 
+/*
+ * ============================================================================
+ * PEMBACA PEMETAAN BLANGKO SERVER - SATU UNTUK SELURUH EKSTENSI
+ * (PERBAIKAN 2 OKT SORE, AGEN P, BUTIR 1)
+ * ============================================================================
+ *
+ * Yang diatur admin di ALETA e-Court > Integrasi e-Court > Pemetaan blangko
+ * (GET /aleta/api/aleta-ecourt/pemetaan-blangko?jenis=putusan|relaas|pbt|bas)
+ * dibaca DI SINI, oleh setiap tempat yang memilih blangko: putusan massal ABT
+ * dan SIPP, unggah putusan satu perkara, relaas & PBT (jurusita.js), BAS.
+ * Sebelum ini hanya jurusita.js yang bertanya ke server - sekali per halaman -
+ * dan pemetaan PUTUSAN dari server tidak dibaca siapa pun.
+ *
+ * Urutan sumber: server -> simpanan server terakhir (chrome.storage.local,
+ * hanya bila server tidak menjawab) -> kosong (pemanggil memakai bawaannya).
+ *
+ * SINGGAHAN: ALAT_PEMETAAN_SINGGAH_MS = 60 detik, di memori halaman. Jawaban
+ * yang lebih muda dari itu dipakai tanpa bertanya lagi; sesudahnya permintaan
+ * berikutnya bertanya ke server. Jadi perubahan admin berlaku PALING LAMA 1
+ * MENIT kemudian, tanpa Reload ekstensi (dan seketika pada halaman yang baru
+ * dibuka sesudah singgahannya habis). Server yang gagal tidak diulang-ulang
+ * pada tiap pemanggilan: kegagalan juga disinggahkan 15 detik.
+ *
+ * Hanya GET - lolos mode coba, latihan, dan kering seperti bacaan lain.
+ */
+const ALAT_API_PEMETAAN_BLANGKO = "/aleta/api/aleta-ecourt/pemetaan-blangko";
+const ALAT_PEMETAAN_SINGGAH_MS = 60 * 1000;
+const ALAT_PEMETAAN_SINGGAH_GAGAL_MS = 15 * 1000;
+/** Simpanan bawaan (putusan, bas). Relaas & PBT memakai "petaBlangkoRelaasPbt" milik jurusita.js. */
+const ALAT_KUNCI_PEMETAAN_SERVER = "pemetaanBlangkoServer";
+const ALAT_JENIS_PEMETAAN = ["putusan", "relaas", "pbt", "bas"];
+/** jenis -> { hasil, waktu, gagal } */
+const alatPemetaanSinggah = new Map();
+/** jenis -> Promise yang sedang terbang (dua bagian panel = satu permintaan). */
+const alatPemetaanTerbang = new Map();
+
+/** { kunci: namaBerkas } dari butir jawaban server; butir tanpa nama dibuang, nama TIDAK dirapikan. */
+function alatPetaDariButirPemetaan(butir) {
+  const peta = {};
+  for (const b of Array.isArray(butir) ? butir : []) {
+    const kunci = String((b && b.kunci) || "").trim();
+    const nama = typeof (b && b.namaBerkas) === "string" ? b.namaBerkas : "";
+    if (kunci && nama.trim()) peta[kunci] = nama;
+  }
+  return peta;
+}
+
+/** Hanya butir yang DIATUR admin (bukan benih bawaan server). */
+function alatPetaAdminDariButir(butir) {
+  return alatPetaDariButirPemetaan((Array.isArray(butir) ? butir : []).filter((b) => b && b.sumber === "admin"));
+}
+
+async function alatTanyaPemetaanServer(jenis) {
+  try {
+    const r = await alatAmbil(
+      `${ALAT_API_PEMETAAN_BLANGKO}?jenis=${encodeURIComponent(jenis)}`,
+      { credentials: "include", cache: "no-store" },
+      "Membaca pemetaan blangko"
+    );
+    if (!r.ok) return null;
+    const luar = await r.json();
+    if (!luar || luar.ok === false) return null;
+    const isi = luar.data ? luar.data : luar;
+    if (!isi || !Array.isArray(isi.butir)) return null;
+    return {
+      peta: alatPetaDariButirPemetaan(isi.butir),
+      admin: alatPetaAdminDariButir(isi.butir),
+      diubahPada: String(isi.diubahPada || ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pemetaan satu jenis yang BERLAKU. Pulang
+ *   { jenis, peta, admin, sumber: "server"|"simpanan"|"bawaan", diubahPada, diambil }
+ * peta  = seluruh butir server (admin + benih bawaan server)
+ * admin = hanya yang diatur admin (putusan memakai ini - bawaan putusan milik ekstensi)
+ *
+ * opsi.paksa       lewati singgahan memori
+ * opsi.kunciSimpan kunci chrome.storage.local (bawaan ALAT_KUNCI_PEMETAAN_SERVER)
+ */
+async function alatPemetaanBlangko(jenis, opsi) {
+  const o = opsi || {};
+  if (!ALAT_JENIS_PEMETAAN.includes(jenis)) throw new Error(`Jenis pemetaan "${String(jenis)}" tidak dikenal.`);
+  const kunciSimpan = String(o.kunciSimpan || ALAT_KUNCI_PEMETAAN_SERVER);
+  const kunciSinggah = `${kunciSimpan}|${jenis}`;
+  const kini = Date.now();
+  const s = alatPemetaanSinggah.get(kunciSinggah);
+  if (!o.paksa && s && kini - s.waktu < (s.gagal ? ALAT_PEMETAAN_SINGGAH_GAGAL_MS : ALAT_PEMETAAN_SINGGAH_MS)) return s.hasil;
+  if (alatPemetaanTerbang.has(kunciSinggah)) return alatPemetaanTerbang.get(kunciSinggah);
+  const kerja = (async () => {
+    const server = await alatTanyaPemetaanServer(jenis);
+    let simpanan = {};
+    try {
+      const x = await chrome.storage.local.get([kunciSimpan]);
+      simpanan = x && x[kunciSimpan] && typeof x[kunciSimpan] === "object" ? x[kunciSimpan] : {};
+    } catch {
+      simpanan = {};
+    }
+    let hasil;
+    if (server) {
+      hasil = { jenis, peta: server.peta, admin: server.admin, sumber: "server", diubahPada: server.diubahPada, diambil: Date.now() };
+      try {
+        await chrome.storage.local.set({
+          [kunciSimpan]: {
+            ...simpanan,
+            [jenis]: { peta: server.peta, admin: server.admin, diubahPada: server.diubahPada, diambil: hasil.diambil },
+          },
+        });
+      } catch {
+        /* tanpa simpanan, halaman berikutnya bertanya ke server lagi */
+      }
+    } else if (simpanan[jenis] && simpanan[jenis].peta && typeof simpanan[jenis].peta === "object") {
+      const lama = simpanan[jenis];
+      hasil = {
+        jenis,
+        peta: lama.peta,
+        admin: lama.admin && typeof lama.admin === "object" ? lama.admin : lama.peta,
+        sumber: "simpanan",
+        diubahPada: String(lama.diubahPada || ""),
+        diambil: Number(lama.diambil) || 0,
+      };
+    } else {
+      hasil = { jenis, peta: {}, admin: {}, sumber: "bawaan", diubahPada: "", diambil: 0 };
+    }
+    alatPemetaanSinggah.set(kunciSinggah, { hasil, waktu: Date.now(), gagal: !server });
+    return hasil;
+  })();
+  alatPemetaanTerbang.set(kunciSinggah, kerja);
+  try {
+    return await kerja;
+  } finally {
+    alatPemetaanTerbang.delete(kunciSinggah);
+  }
+}
+
+/*
+ * ============================================================================
+ * PUTUSAN PER JENIS PERKARA DAN PER STATUS PUTUSAN (BUTIR 3)
+ * ============================================================================
+ *
+ * Kunci peta peramban (petaBlangkoPutusan): "<jenis baku>" seperti dulu,
+ * ditambah "<jenis baku>|<status>" dan "<jenis baku>|<status>|verstek" -
+ * huruf kecil (alatKunciJenis + alatKunciStatusPutusan). Kunci admin server
+ * "Cerai Gugat|Dikabulkan|verstek" dipetakan ke sana di
+ * alatTerapkanPemetaanServer. Status perkara dari isian putusan SIPP / data
+ * perkara yang sudah dibaca; kosong = blangko jenisnya (perilaku lama).
+ *
+ * CERMIN: manajemen_surat/src/lib/pemetaan-blangko.ts pilihBlangkoPutusan
+ * (uji pemetaan-blangko-2okt.test.ts menjalankan keduanya).
+ */
+function alatKunciStatusPutusan(status) {
+  return String(status || "")
+    .replace(/\(.*?\)/g, " ")
+    .replace(/\bverstek\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/** Kunci peta peramban untuk kunci admin server ("Cerai Gugat|Dikabulkan|verstek"). */
+function alatKunciPetaDariAdmin(kunciAdmin) {
+  const [jenis = "", status = "", tanda = ""] = String(kunciAdmin || "").split("|");
+  const j = alatKunciJenis(jenis);
+  const s = alatKunciStatusPutusan(status);
+  if (!j) return "";
+  if (!s) return j;
+  return /verstek/i.test(tanda) || /verstek/i.test(status) ? `${j}|${s}|verstek` : `${j}|${s}`;
+}
+
+/** Baris peta untuk satu perkara: status+verstek -> status -> jenis. Pulang { baris, kunci, tingkat } atau null. */
+function alatPetaUntukPerkara(peta, jenis, status, verstek) {
+  const p = peta && typeof peta === "object" ? peta : {};
+  const j = alatKunciJenis(jenis);
+  if (!j) return null;
+  const s = alatKunciStatusPutusan(status);
+  const v = Boolean(verstek) || /verstek/i.test(String(status || ""));
+  const ada = (k) => p[k] && alatBlangkoTerpetakan(p[k]);
+  if (s && v && ada(`${j}|${s}|verstek`)) return { baris: p[`${j}|${s}|verstek`], kunci: `${j}|${s}|verstek`, tingkat: "status-verstek" };
+  if (s && ada(`${j}|${s}`)) return { baris: p[`${j}|${s}`], kunci: `${j}|${s}`, tingkat: "status" };
+  if (p[j]) return { baris: p[j], kunci: j, tingkat: "jenis" };
+  return null;
+}
+
+/** Sebutan baris peta untuk daftar pilihan: "Cerai Gugat · Dikabulkan (verstek)". */
+function alatSebutKunciPeta(kunci, baris) {
+  const [j, s, v] = String(kunci || "").split("|");
+  const jenis = (baris && baris.jenisAsli) || j;
+  if (!s) return jenis;
+  const status = (baris && baris.statusAsli) || s;
+  return `${jenis} · ${status}${v ? " (verstek)" : ""}`;
+}
+
+/**
+ * Menerapkan pemetaan PUTUSAN server ke peta peramban (diubah di tempat).
+ * Pulang true bila ada yang berubah.
+ *
+ *   - kunci admin yang nama berkasnya berbeda dari baris peramban: baris itu
+ *     DISETEL ke nama admin dan tokennya dilepas (diambil ulang dari ABT -
+ *     token adalah enkripsi sesi ABT, tidak pernah dikirim server);
+ *   - nama sama: tokennya tetap, baris ditandai sumber "server";
+ *   - baris yang dulu datang dari server (sumber "server") tetapi kini tidak
+ *     diatur lagi: baris status dihapus, baris jenis kembali ke bawaan
+ *     ekstensi (atau dihapus bila tanpa bawaan) - HANYA bila server MENJAWAB
+ *     (simpanan lama tidak boleh menghapus apa pun) dan bawaanBerlaku dikirim
+ *     (peta lengkap ABT; panel SIPP mengirim null).
+ */
+function alatTerapkanPemetaanServer(peta, pemetaan, bawaanBerlaku) {
+  if (!pemetaan || pemetaan.sumber === "bawaan") return false;
+  const admin = pemetaan.admin && typeof pemetaan.admin === "object" ? pemetaan.admin : {};
+  let berubah = false;
+  const dariServer = new Set();
+  for (const [kunciAdmin, nama] of Object.entries(admin)) {
+    const kunci = alatKunciPetaDariAdmin(kunciAdmin);
+    if (!kunci || !String(nama || "").trim()) continue;
+    dariServer.add(kunci);
+    const [, statusAdmin = ""] = String(kunciAdmin).split("|");
+    const ada = peta[kunci];
+    const bawaan = bawaanBerlaku && bawaanBerlaku[kunci.split("|")[0]];
+    if (ada && alatKunciBerkas(ada.berkas) === alatKunciBerkas(nama)) {
+      if (ada.sumber !== "server") {
+        peta[kunci] = { ...ada, sumber: "server", bawaan: false };
+        berubah = true;
+      }
+      continue;
+    }
+    peta[kunci] = {
+      jenisAsli: (ada && ada.jenisAsli) || (bawaan && bawaan.jenisAsli) || String(kunciAdmin).split("|")[0],
+      ...(statusAdmin ? { statusAsli: statusAdmin.replace(/\s*\(.*?\)\s*/g, "").trim() } : {}),
+      berkas: String(nama),
+      ...(bawaan && bawaan.blangko ? { blangko: bawaan.blangko, blangkoDiminta: bawaan.blangko } : {}),
+      ...(bawaan && bawaan.blangkoLain ? { blangkoLain: bawaan.blangkoLain } : {}),
+      a: "",
+      b: "",
+      d: "",
+      bawaan: false,
+      sumber: "server",
+      catatan: "diatur admin di Pemetaan blangko server - token diambil ulang dari ABT",
+      disimpanPada: new Date().toISOString(),
+    };
+    berubah = true;
+  }
+  // Tanpa bawaanBerlaku (panel SIPP, peta di memori) tidak ada yang dilepas.
+  if (pemetaan.sumber === "server" && bawaanBerlaku) {
+    for (const [kunci, baris] of Object.entries(peta)) {
+      if (!baris || baris.sumber !== "server" || dariServer.has(kunci)) continue;
+      const bawaan = !kunci.includes("|") && bawaanBerlaku ? bawaanBerlaku[kunci] : null;
+      if (bawaan) peta[kunci] = { ...bawaan, disimpanPada: new Date().toISOString() };
+      else delete peta[kunci];
+      berubah = true;
+    }
+  }
+  return berubah;
+}
+
 /**
  * Satu baris pemetaan yang sah. Token a/b diperiksa bentuknya saja - keduanya
  * hasil enkripsi ABT yang hanya ABT dapat membacanya; yang dijaga di sini
@@ -7198,6 +7457,20 @@ async function alatMuatPetaBlangkoLengkap() {
       disimpanPada: new Date().toISOString(),
     };
     berubah = true;
+  }
+
+  // ==========================================================================
+  // PEMETAAN PUTUSAN SERVER MENANG (PERBAIKAN 2 OKT SORE, BUTIR 1 & 3)
+  // ==========================================================================
+  //
+  // Yang diatur admin di Pemetaan blangko > Putusan (per jenis, per status
+  // putusan) menggantikan nama berkas baris peramban - lihat
+  // alatTerapkanPemetaanServer. Singgahan 1 menit (alatPemetaanBlangko).
+  try {
+    const pemetaan = await alatPemetaanBlangko("putusan");
+    if (alatTerapkanPemetaanServer(peta, pemetaan, bawaanBerlaku)) berubah = true;
+  } catch {
+    /* server dan simpanan tak terbaca: peta peramban apa adanya */
   }
   if (berubah) await alatSimpanPetaBlangko(peta);
   return peta;

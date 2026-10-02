@@ -220,6 +220,16 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Lencana \"menunggu N menit\" di kolom Antrian bila pihaknya sudah mengambil nomor 40 menit lebih dan belum dipanggil masuk.",
     kelompok: "penanda",
   },
+  // Perbaikan 2 Okt 2026 sore (butir 4). Tanda "online" sudah ada sebelumnya
+  // TANPA saklar dan selalu tampil; kini berupa ikon ponsel dan dapat
+  // dimatikan. Bawaannya MENYALA - tidak ada yang hilang bagi pemakai lama.
+  {
+    kunci: "tanda-antrian-online",
+    label: "Tanda antrian online",
+    keterangan:
+      "Ikon ponsel di kolom Antrian/Jam (dan satu kalimat di panel Rincian) bila nomor antriannya diambil lewat antrian online, bukan di loket/anjungan. Keterangan beserta jam ambilnya ada di tooltip. Kotak saring Antrian online tidak terpengaruh.",
+    kelompok: "penanda",
+  },
   {
     kunci: "potensi-verstek",
     label: "Potensi verstek",

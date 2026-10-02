@@ -1268,6 +1268,14 @@ function basmassalGambarBaris(daftar, baris, konteks) {
   }
   pilih.disabled = b.pilihan.length === 0;
   barisBlangko.appendChild(pilih);
+  // Perbaikan 2 Okt sore (P, butir 8 - UI Baru): usulan dari Pemetaan blangko
+  // BAS server disebut asalnya. Pemilihannya sendiri dikerjakan rute
+  // bas-massal (susun.ts) di semua tampilan; Lama tidak memanggil berkas ini.
+  if (b.usulan && b.usulan.dariPemetaan && basmassalModeUi()) {
+    const tanda = basmassalTanda("dari Pemetaan blangko", "", `Diatur admin di Pemetaan blangko > BAS (kunci ${b.usulan.dariPemetaan})`);
+    tanda.classList.add("aleta-p3-dari-peta");
+    barisBlangko.appendChild(tanda);
+  }
   akar.appendChild(barisBlangko);
   if (b.sebab) akar.appendChild(basmassalEl("div", "aleta-basmassal-lembut", b.sebab));
 

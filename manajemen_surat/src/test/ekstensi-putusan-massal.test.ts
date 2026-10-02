@@ -562,7 +562,13 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
     // Disesuaikan 2 Okt (agen A, butir 3): "Blangko utama" (UI Baru) duduk di antara
     // pilihan per perkara dan pemetaan jenis - pilihan per perkara TETAP menang;
     // a2Utama null (Lama/Baru) = bentuk 1.177.0.
-    expect(badan).toContain("const petaUntuk = (s) => pilihanPer.get(s.nomor) || (a2Utama && a2Utama.peta()) || keadaan.peta[alatKunciJenis(s.jenis)];");
+    // Disesuaikan 2 Okt sore (agen P, butir 3): baris pemetaan KHUSUS status
+    // putusan (p3PetaStatus) duduk sesudah pilihan per perkara, sebelum blangko
+    // utama; baris jenis lewat p3PetaJenis (jenis + status, cadangan jenis).
+    // Pilihan per perkara TETAP menang. Perilakunya diuji pemetaan-blangko-2okt.
+    expect(badan).toContain(
+      "pilihanPer.get(s.nomor) || p3PetaStatus(keadaan, s) || (a2Utama && a2Utama.peta()) || p3PetaJenis(keadaan, s);"
+    );
     expect(badan).toContain('pilih.className = "aleta-massal-pilih-berkas";');
     expect(badan).toContain(".filter((s) => alatBlangkoLengkap(petaUntuk(s)))");
     expect(badan).toContain("const peta = petaUntuk(butir);");

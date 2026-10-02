@@ -196,7 +196,10 @@ const ABT_PERKARA: Record<string, string[]> = {
   admin: ["semua"],
   ketua: ["isi-input", "unggah-putusan"],
   hakim: ["isi-input", "unggah-putusan"],
-  panitera: ["susun-saksi"],
+  // Perbaikan 2 Okt sore (agen P, butir 7): "isi-bas" = Isi dari SIPP & input
+  // ke ABT KHUSUS blangko BAS untuk panitera/PP. "susun-saksi" tetap ada dan
+  // tetap pertama (menu pertama = bawaan terbuka).
+  panitera: ["susun-saksi", "isi-bas"],
   jurusita: ["jurusita"],
 };
 const ABT_DAFTAR: Record<string, string[]> = {

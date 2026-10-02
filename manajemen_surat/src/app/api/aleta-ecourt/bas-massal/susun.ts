@@ -31,6 +31,7 @@
  *
  * Tidak ada yang ditulis ke mana pun oleh apa pun di sini.
  */
+import { pilihBlangkoBasPeta } from "@/lib/pemetaan-blangko";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
 
@@ -81,6 +82,8 @@ export type PilihanBlangkoBas = {
   basKe: number;
   label: string;
   kehadiran: KecocokanKehadiran;
+  /** Perbaikan 2 Okt sore (butir 8): kunci Pemetaan blangko BAS yang memilihnya. Tanpa = usulan otomatis. */
+  dariPemetaan?: string;
 };
 
 export type RingkasLembar = { jumlah: number; selesai: number; draf: number };
@@ -236,7 +239,80 @@ export function pilihBlangkoBas(masukan: {
   dihadiriOleh: number | null;
   tergugatPernahHadir?: unknown;
   katalog: Record<string, KatalogFolder | undefined>;
+  /** Perbaikan 2 Okt sore (butir 8): Pemetaan blangko BAS { kunci: nama berkas } dan agenda sidang. */
+  petaBas?: Record<string, string>;
+  agenda?: string;
 }): { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string } {
+  const otomatis = pilihBlangkoBasOtomatis(masukan);
+  return terapkanPetaBas(otomatis, masukan);
+}
+
+/** Nama berkas dibandingkan: huruf kecil, spasi tunggal, tanpa .rtf - sama dengan alatKunciBerkas ekstensi. */
+function kunciBerkasBas(nama: unknown): string {
+  return teks(nama).replace(/\s+/g, " ").trim().replace(/\.rtf$/i, "").trim().toLowerCase();
+}
+
+/**
+ * ============================================================================
+ * PEMETAAN BLANGKO BAS MENANG ATAS USULAN OTOMATIS (BUTIR 8)
+ * ============================================================================
+ *
+ * Yang diatur admin di Pemetaan blangko > BAS (kunci "jenis|sidang|kehadiran",
+ * lib/pemetaan-blangko.ts) dipakai sebagai USULAN - asal berkasnya ada di
+ * katalog yang terbaca (pratinjau dan unduh menuntut foldernya). Berkas
+ * pemetaan yang tidak ada di katalog TIDAK diganti diam-diam dengan tebakan:
+ * usulannya dikosongkan dan sebabnya disebut, pilihan otomatis tetap
+ * ditawarkan. Tanpa pemetaan yang cocok: perilaku lama, tidak berubah.
+ */
+function terapkanPetaBas(
+  otomatis: { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string },
+  masukan: Parameters<typeof pilihBlangkoBas>[0]
+): { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string } {
+  if (!masukan.petaBas || Object.keys(masukan.petaBas).length === 0) return otomatis;
+  const cocok = pilihBlangkoBasPeta(masukan.petaBas, {
+    jenisPerkara: masukan.jenisPerkara,
+    urutanSidang: masukan.urutanSidang,
+    agenda: masukan.agenda,
+    dihadiriOleh: masukan.dihadiriOleh,
+  });
+  if (!cocok) return otomatis;
+  const dicari = kunciBerkasBas(cocok.namaBerkas);
+  const set = setBasUntukPerkara(masukan.jenisPerkara);
+  // Folder set jenis ini lebih dulu, lalu folder lain yang kebetulan terbaca.
+  const folder = [...new Set([...set.map((s) => s.folder), ...Object.keys(masukan.katalog)])];
+  for (const f of folder) {
+    const k = masukan.katalog[f];
+    if (!k || !k.terbaca) continue;
+    const item = k.blangko.find((b) => kunciBerkasBas(b.berkas) === dicari);
+    if (!item) continue;
+    const s = set.find((x) => x.folder === f);
+    const p: PilihanBlangkoBas = {
+      folder: f,
+      berkas: teks(item.berkas),
+      setId: s ? s.id : "",
+      setNama: s ? s.nama : f.split("/").pop() || f,
+      basKe: angka(item.basKe),
+      label: labelBlangkoBas(item),
+      kehadiran: cocokKehadiran(teks(item.keadaan), masukan.dihadiriOleh),
+      dariPemetaan: cocok.kunci,
+    };
+    const lain = otomatis.pilihan.filter((x) => !(x.folder === p.folder && kunciBerkasBas(x.berkas) === dicari));
+    return { usulan: p, pilihan: [p, ...lain].slice(0, BATAS_PILIHAN_BLANGKO), sebab: "" };
+  }
+  return {
+    usulan: null,
+    pilihan: otomatis.pilihan,
+    sebab:
+      `Pemetaan blangko BAS (${cocok.kunci}) menunjuk "${cocok.namaBerkas}", tetapi berkas itu tidak ada di katalog yang terbaca - ` +
+      "periksa namanya di Pemetaan blangko, atau pilih blangkonya sendiri.",
+  };
+}
+
+function pilihBlangkoBasOtomatis(masukan: Parameters<typeof pilihBlangkoBas>[0]): {
+  usulan: PilihanBlangkoBas | null;
+  pilihan: PilihanBlangkoBas[];
+  sebab: string;
+} {
   const set = setBasUntukPerkara(masukan.jenisPerkara);
   if (set.length === 0) {
     return {
@@ -321,6 +397,8 @@ export function susunBarisBasMassal(
     saringan: "saya" | "semua";
     katalog: Record<string, KatalogFolder | undefined>;
     lembar: Record<string, RingkasLembar | null | undefined>;
+    /** Perbaikan 2 Okt sore (butir 8): Pemetaan blangko BAS dari server. */
+    petaBas?: Record<string, string>;
   }
 ): { baris: BarisBasMassal[]; jumlahSemua: number; jumlahSaya: number } {
   const sudah = new Set<string>();
@@ -367,6 +445,8 @@ export function susunBarisBasMassal(
         dihadiriOleh,
         tergugatPernahHadir: s.panggilan?.tergugatPernahHadir,
         katalog: opsi.katalog,
+        petaBas: opsi.petaBas,
+        agenda: teks(s.agenda),
       }),
     });
   }
