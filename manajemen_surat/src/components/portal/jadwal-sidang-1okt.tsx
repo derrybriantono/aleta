@@ -30,7 +30,7 @@ import {
   type PetaSelesai,
   type ProsesMediasi,
 } from "@/lib/jadwal-sidang-1okt";
-import type { PetaSkors } from "@/lib/jadwal-sidang-2okt";
+import { DATA_BERJALAN_KOSONG, type DataBerjalan, type PetaSkors } from "@/lib/jadwal-sidang-2okt";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +59,9 @@ export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) 
   // Skors yang berlaku (perbaikan 2 Okt 2026, butir 10) - ikut di bacaan
   // yang sama; bot lama yang belum mengirimnya = tidak ada skors.
   const [skors, setSkors] = useState<PetaSkors>({});
+  // Tanda "sedang berjalan" manual + "proses sidang" mesin antrian (2 Okt 2026
+  // malam, butir 3) - bacaan yang sama; bot lama = tidak ada.
+  const [berjalan, setBerjalan] = useState<DataBerjalan>(DATA_BERJALAN_KOSONG);
   const [alasan, setAlasan] = useState("");
   const [versi, setVersi] = useState(0);
 
@@ -76,6 +79,11 @@ export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) 
         }
         setPeta((data.peta as PetaSelesai) ?? {});
         setSkors((data.skors as PetaSkors) ?? {});
+        const mentah = (data.berjalan as Partial<DataBerjalan> | undefined) ?? {};
+        setBerjalan({
+          manual: mentah.manual && typeof mentah.manual === "object" ? mentah.manual : {},
+          proses: Array.isArray(mentah.proses) ? mentah.proses : [],
+        });
         setAlasan("");
       })
       .catch((galat) => {
@@ -87,7 +95,7 @@ export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) 
   }, [dari, sampai, pemicu, versi]);
 
   const muatUlang = useCallback(() => setVersi((n) => n + 1), []);
-  return { peta, skors, alasan, muatUlang };
+  return { peta, skors, berjalan, alasan, muatUlang };
 }
 
 /**

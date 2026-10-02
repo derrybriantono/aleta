@@ -10,14 +10,22 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
 import { adaHasilSidang, hasilSidangPutusan } from "@/lib/hasil-sidang";
 import {
-  bawaanTunda,
+  dasarTanggalKosong,
+  jamSidangBerikut,
   pilihanTunda,
+  sebutanDariKeadaan,
+  tambahHari,
+  tanggalJamUntuk,
+  tundaKarenaMediasi,
+  usulanTundaSidang,
   type BawaanTunda,
-  type MasukanBawaanTunda,
+  type KontakPihak,
   type MediasiRiwayat,
+  type RencanaKalender,
   type SidangRiwayat,
 } from "@/lib/bawaan-tunda";
-import type { BahanSebutan } from "@/lib/sebutan-pihak";
+import { bacaKontakPihak, kalimatKontak } from "@/lib/jadwal-sidang-kontak";
+import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import { IsianMediator } from "@/components/portal/jadwal-sidang-1okt";
 import { PapanRuangSidang } from "@/components/portal/jadwal-sidang-2okt";
 import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
@@ -72,8 +80,18 @@ type KeadaanSidang = {
   ikrarTalak?: string;
 };
 
-/** Riwayat sidang + mediasi perkara dari bot (butir 14); null = bot lama / tak terbaca. */
-type RiwayatTunda = { sidang: SidangRiwayat[]; mediasi: MediasiRiwayat } | null;
+/**
+ * Riwayat sidang + mediasi perkara dari bot (butir 14); null = bot lama / tak
+ * terbaca. `kalender` = Court Calendar (rencana majelis), dibaca terpisah lewat
+ * bacaKalender - undefined/null = tak terbaca.
+ */
+type RiwayatTunda = {
+  sidang: SidangRiwayat[];
+  mediasi: MediasiRiwayat;
+  kalender?: RencanaKalender[] | null;
+  /** Email + persetujuan e-Court (tanpa alamat), dibaca terpisah lewat bacaKontakPihak. */
+  kontak?: KontakPihak | null;
+} | null;
 
 type LangkahRencana = { tabel: string; aksi: string; keterangan: string };
 
@@ -189,20 +207,10 @@ export function usulanAgendaBerikut(agendaSekarang: string) {
   return AGENDA_LAZIM[i + 1];
 }
 
-const AGENDA_SORE = ["jawaban", "replik", "duplik", "kesimpulan", "jawab"];
-
-function jamMenurutAgenda(agenda: string) {
-  const teks = String(agenda || "").toLowerCase();
-  return AGENDA_SORE.some((k) => teks.includes(k)) ? "15:00" : "09:00";
-}
-
-function tambahHari(iso: string, hari: number) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
-  const d = new Date(`${iso}T00:00:00`);
-  d.setDate(d.getDate() + hari);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
+// Aturan jam (jamSidangBerikut) dan tanggal (tanggalSidangBerikut, tambahHari)
+// sidang berikutnya hidup di @/lib/bawaan-tunda - SATU tempat untuk HasilSidang
+// dan CatatHasilRingkas. Tidak ada salinan di berkas ini (dijaga
+// perbaikan-2okt-malam-jadwal-sidang.test.ts).
 
 function hariIni() {
   const d = new Date();
@@ -211,42 +219,38 @@ function hariIni() {
 }
 
 /** Bahan sebutan para pihak dari keadaan sidang - nomor lebih dulu dari kata, lihat sebutan-pihak.ts. */
-function sebutanDari(keadaan: KeadaanSidang): BahanSebutan {
-  return {
-    alurPerkaraId: keadaan.alurPerkaraId ?? null,
-    jenisPerkaraId: keadaan.jenisPerkaraId ?? null,
-    jenisPerkaraNama: keadaan.jenisPerkara ?? null,
-    nomorPerkara: keadaan.nomorPerkara,
-  };
-}
-
-function masukanBawaanTunda(keadaan: KeadaanSidang, riwayat: NonNullable<RiwayatTunda>): MasukanBawaanTunda {
-  const hadir = Number(keadaan.dihadiriOleh);
-  return {
-    jadwalId: Number(keadaan.jadwalId),
-    tanggalSidang: String(keadaan.tanggalSidang || "").slice(0, 10),
-    agenda: String(keadaan.agenda || ""),
-    dihadiriOlehSekarang: hadir >= 1 && hadir <= 4 ? hadir : null,
-    ikrar: String(keadaan.ikrarTalak || "").toUpperCase() === "Y",
-    riwayat: Array.isArray(riwayat.sidang) ? riwayat.sidang : [],
-    mediasi: riwayat.mediasi ?? null,
-    sebutan: sebutanDari(keadaan),
-  };
-}
+const sebutanDari = sebutanDariKeadaan;
 
 /**
- * Usulan isian tunda dari riwayat sidang perkaranya (butir 14). null bila
+ * Usulan isian tunda dari riwayat sidang perkaranya (butir 14) - SATU pintu
+ * untuk kedua layar: usulanTundaSidang di @/lib/bawaan-tunda. null bila
  * riwayatnya tidak terkirim (bot lama) - borangnya lalu memakai bawaan lama,
  * bukan menebak "sidang pertama" dari riwayat kosong.
  */
-function usulanTunda(keadaan: KeadaanSidang, riwayat: RiwayatTunda): BawaanTunda | null {
-  if (!riwayat || !Array.isArray(riwayat.sidang)) return null;
-  return bawaanTunda(masukanBawaanTunda(keadaan, riwayat));
-}
+const usulanTunda = usulanTundaSidang;
 
 /** Membuka bungkus { ok, data } - membacanya langsung selalu keliru dan tidak berbunyi. */
 async function bukaBungkus<T>(balasan: Response): Promise<T> {
   return ((await balasan.json()) as { data?: T })?.data ?? ({} as T);
+}
+
+/**
+ * Court Calendar perkara (rencana majelis) - dibaca terpisah dari keadaan
+ * sidang supaya riwayat tetap hanya dua pembacaan SIPP. Gagal / bot lama /
+ * tabel tak terjangkau = null: tanggal sidang berikutnya jatuh ke dua pekan.
+ */
+async function bacaKalender(perkaraId: number | string): Promise<RencanaKalender[] | null> {
+  try {
+    const balasan = await fetch(
+      apiPath(`/api/aleta-ecourt/sidang/kalender?perkaraId=${encodeURIComponent(String(perkaraId))}`),
+      { cache: "no-store" }
+    );
+    const isi = await bukaBungkus<{ available?: boolean; ok?: boolean; kalender?: unknown }>(balasan);
+    if (isi.available === false || isi.ok === false || !Array.isArray(isi.kalender)) return null;
+    return (isi.kalender as RencanaKalender[]).filter((r) => r && typeof r.tanggal === "string");
+  } catch {
+    return null;
+  }
 }
 
 export function HasilSidang({ jadwalId }: { jadwalId: string }) {
@@ -262,6 +266,13 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
   const [jamBerikut, setJamBerikut] = useState("09:00");
   const [agendaBerikut, setAgendaBerikut] = useState("");
   const [dihadiri, setDihadiri] = useState(KEHADIRAN_BAWAAN);
+  // Riwayat + Court Calendar disimpan supaya usulan dapat disusun ulang ketika
+  // kehadirannya diganti; isian yang sudah disentuh tangan tidak ditimpa.
+  const [riwayat, setRiwayat] = useState<RiwayatTunda>(null);
+  const [usulan, setUsulan] = useState<BawaanTunda | null>(null);
+  const [alasanDisentuh, setAlasanDisentuh] = useState(false);
+  const [agendaDisentuh, setAgendaDisentuh] = useState(false);
+  const [tanggalDisentuh, setTanggalDisentuh] = useState(false);
 
   /**
    * Tanggal putusan - bawaannya HARI INI, tetapi disetel sesudah layarnya
@@ -302,9 +313,17 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
         return;
       }
       setKeadaan(isi.keadaan);
+      // Court Calendar dan email/persetujuan e-Court dibaca terpisah (null =
+      // tak terbaca -> dua pekan / aturan tanpa email; tidak ditebak).
+      const [kalender, kontak] = isi.riwayat
+        ? await Promise.all([bacaKalender(isi.keadaan.perkaraId), bacaKontakPihak(isi.keadaan.perkaraId)])
+        : [null, null];
+      const riw: RiwayatTunda = isi.riwayat ? { ...isi.riwayat, kalender, kontak } : null;
+      setRiwayat(riw);
       // Bawaan dari riwayat sidang perkaranya (butir 14, 30 Sep 2026) - hanya
       // mengisi kotak yang masih kosong; semuanya tetap dapat diganti.
-      const usul = usulanTunda(isi.keadaan, isi.riwayat ?? null);
+      const usul = usulanTunda(isi.keadaan, riw);
+      setUsulan(usul);
       if (usul) {
         setDihadiri(usul.kehadiran);
         setAlasanTunda((lama) => lama || usul.alasan);
@@ -316,11 +335,13 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
       const sudahAda = Number(isi.keadaan.dihadiriOleh);
       if (KEHADIRAN.some((k) => k.nilai === sudahAda)) setDihadiri(sudahAda);
 
-      // Usulan tanggal dan jam sidang berikutnya - dua pekan sesudah sidang
-      // ini, jam menurut agendanya. Keduanya USULAN: panitera sidang tetap
-      // dapat menggantinya, dan hari liburnya tetap diperiksa peladen.
+      // Usulan tanggal dan jam sidang berikutnya - aturan BERSAMA dengan
+      // CatatHasilRingkas (@/lib/bawaan-tunda): mengikuti Court Calendar bila
+      // kedua pihak pernah hadir, selain itu dua pekan; jam menurut agendanya.
+      // Keduanya USULAN: panitera sidang tetap dapat menggantinya, dan hari
+      // liburnya tetap diperiksa peladen.
       const tgl = String(isi.keadaan.tanggalSidang || "").slice(0, 10);
-      setTanggalBerikut(tambahHari(tgl, 14));
+      setTanggalBerikut(usul ? usul.tanggal : tambahHari(tgl, 14));
     } catch (e) {
       setGalatMuat(e instanceof Error ? e.message : "Jadwal sidang tidak dapat dibaca.");
     }
@@ -354,8 +375,33 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
   const [jamDisetelTangan, setJamDisetelTangan] = useState(false);
   useEffect(() => {
     if (jamDisetelTangan) return;
-    setJamBerikut(jamMenurutAgenda(agendaBerikut));
-  }, [agendaBerikut, jamDisetelTangan]);
+    setJamBerikut(jamSidangBerikut(agendaBerikut, alasanTunda));
+  }, [agendaBerikut, alasanTunda, jamDisetelTangan]);
+
+  /**
+   * Tanggal ikut alasan: ditunda karena MEDIASI = 3 minggu (mendahului Court
+   * Calendar), selain itu menurut usulan. Yang sudah disetel tangan tidak ditimpa.
+   */
+  useEffect(() => {
+    if (!keadaan || tanggalDisentuh) return;
+    const dasar = usulan?.dasar ?? dasarTanggalKosong(String(keadaan.tanggalSidang || "").slice(0, 10));
+    setTanggalBerikut(tanggalJamUntuk(dasar, alasanTunda, agendaBerikut, dihadiri).tanggal);
+  }, [keadaan, usulan, alasanTunda, agendaBerikut, dihadiri, tanggalDisentuh]);
+
+  /** Kehadiran diganti: alasan, agenda, dan tanggal yang belum disentuh tangan ikut disusun ulang. */
+  const gantiKehadiran = useCallback(
+    (nilai: number) => {
+      setDihadiri(nilai);
+      if (!keadaan || !riwayat) return;
+      const usul = usulanTunda(keadaan, riwayat, nilai);
+      setUsulan(usul);
+      if (!usul) return;
+      if (!alasanDisentuh) setAlasanTunda(usul.alasan);
+      if (!agendaDisentuh) setAgendaBerikut(usul.agenda);
+      if (!tanggalDisentuh) setTanggalBerikut(usul.tanggal);
+    },
+    [keadaan, riwayat, alasanDisentuh, agendaDisentuh, tanggalDisentuh]
+  );
 
   const kirim = useCallback(
     async (kering: boolean) => {
@@ -455,6 +501,16 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
       </Card>
     );
   }
+
+  // Sumber tanggal yang SEDANG berlaku (menurut alasan + agenda yang tampak) -
+  // diturunkan, bukan disimpan: tidak ada keadaan kedua yang dapat basi.
+  const sumberDasarTanggal = tanggalJamUntuk(
+    usulan?.dasar ?? dasarTanggalKosong(String(keadaan.tanggalSidang || "").slice(0, 10)),
+    alasanTunda,
+    agendaBerikut,
+    dihadiri
+  );
+  const sebutanKontak = sebutanPihakPerkara(sebutanDari(keadaan));
 
   return (
     <div className="flex flex-col gap-4">
@@ -577,7 +633,10 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                       <input
                         list="alasan-lazim"
                         value={alasanTunda}
-                        onChange={(e) => setAlasanTunda(e.target.value)}
+                        onChange={(e) => {
+                          setAlasanDisentuh(true);
+                          setAlasanTunda(e.target.value);
+                        }}
                         placeholder="pilih yang lazim, atau ketik sendiri"
                         className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                       />
@@ -593,7 +652,10 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                       <input
                         list="agenda-lazim"
                         value={agendaBerikut}
-                        onChange={(e) => setAgendaBerikut(e.target.value)}
+                        onChange={(e) => {
+                          setAgendaDisentuh(true);
+                          setAgendaBerikut(e.target.value);
+                        }}
                         placeholder="pilih yang lazim, atau ketik sendiri"
                         className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                       />
@@ -610,10 +672,15 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                         <input
                           type="date"
                           value={tanggalBerikut}
-                          onChange={(e) => setTanggalBerikut(e.target.value)}
+                          onChange={(e) => {
+                            setTanggalDisentuh(true);
+                            setTanggalBerikut(e.target.value);
+                          }}
                           className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                         />
-                        <span className="text-[0.7rem]">Bawaannya dua pekan sesudah sidang ini.</span>
+                        <span className="text-[0.7rem]" data-sumber-tanggal={tanggalDisentuh ? "manual" : sumberDasarTanggal.sumber}>
+                          {tanggalDisentuh ? "Tanggal diganti manual." : `Tanggal ${sumberDasarTanggal.penjelasan}`}
+                        </span>
                       </label>
                       <label className="flex min-w-[7rem] flex-1 flex-col gap-1 text-xs text-muted-foreground">
                         Jam
@@ -627,9 +694,11 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                           className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                         />
                         <span className="text-[0.7rem]">
-                          {jamMenurutAgenda(agendaBerikut) === "15:00"
-                            ? "Jawab-menjawab dan kesimpulan disidangkan sore."
-                            : "Bawaannya pukul 09:00."}
+                          {tundaKarenaMediasi(alasanTunda)
+                            ? "Tundaan mediasi: pukul 09:00."
+                            : jamSidangBerikut(agendaBerikut, alasanTunda) === "15:00"
+                              ? "Jawab-menjawab dan kesimpulan disidangkan sore (15:00)."
+                              : "Bawaannya pukul 09:00."}
                         </span>
                       </label>
                     </div>
@@ -681,7 +750,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
 
                 <label className="flex min-w-[12rem] flex-col gap-1 text-xs text-muted-foreground">
                   Kehadiran pihak
-                  <NativeSelect value={String(dihadiri)} onChange={(e) => setDihadiri(Number(e.target.value))}>
+                  <NativeSelect value={String(dihadiri)} onChange={(e) => gantiKehadiran(Number(e.target.value))}>
                     {/* Yang SUDAH tercatat pada barisnya tetap ditampilkan
                         walau perkaranya permohonan - menyembunyikannya membuat
                         kotaknya kosong, dan kotak kosong terbaca sebagai belum
@@ -695,6 +764,13 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                     ))}
                   </NativeSelect>
                 </label>
+
+                {usulan ? (
+                  <p className="flex items-start gap-2 text-xs text-muted-foreground" data-kontak-pihak="">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span>{kalimatKontak(usulan.dasar.kontak, sebutanKontak.dua, sebutanKontak.satu)}</span>
+                  </p>
+                ) : null}
 
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" disabled={!lengkap || sibuk} onClick={() => void kirim(true)}>
@@ -984,6 +1060,8 @@ export function CatatHasilRingkas({
   // kehadirannya diganti.
   const [alasanDisentuh, setAlasanDisentuh] = useState(false);
   const [agendaDisentuh, setAgendaDisentuh] = useState(false);
+  const [tanggalDisentuh, setTanggalDisentuh] = useState(false);
+  const [jamDisentuh, setJamDisentuh] = useState(false);
   const [usulan, setUsulan] = useState<BawaanTunda | null>(null);
 
   // Langsung hari ini, TANPA efek - berbeda dari HasilSidang, dan sebabnya
@@ -1016,18 +1094,27 @@ export function CatatHasilRingkas({
           return;
         }
         setKeadaan(isi.keadaan);
-        setRiwayat(isi.riwayat ?? null);
         const tgl = String(isi.keadaan.tanggalSidang || "").slice(0, 10);
         setTanggalBerikut(tambahHari(tgl, 14));
 
-        const usul = usulanTunda(isi.keadaan, isi.riwayat ?? null);
+        // Court Calendar dan email/persetujuan e-Court dibaca terpisah (null =
+        // tak terbaca -> dua pekan / aturan tanpa email; tidak ditebak).
+        const [kalender, kontak] = isi.riwayat
+          ? await Promise.all([bacaKalender(isi.keadaan.perkaraId), bacaKontakPihak(isi.keadaan.perkaraId)])
+          : [null, null];
+        const riw: RiwayatTunda = isi.riwayat ? { ...isi.riwayat, kalender, kontak } : null;
+        setRiwayat(riw);
+
+        // Aturan tanggal dan jam BERSAMA dengan layar Hasil Sidang penuh -
+        // @/lib/bawaan-tunda, bukan salinan di sini.
+        const usul = usulanTunda(isi.keadaan, riw);
         setUsulan(usul);
         if (usul) {
           // Bawaan dari riwayat sidang perkaranya (butir 14).
           setDihadiri(usul.kehadiran);
           setAlasanTunda(usul.alasan);
           setAgendaBerikut(usul.agenda);
-          setJamBerikut(jamMenurutAgenda(usul.agenda));
+          setJamBerikut(usul.jam);
           if (usul.tanggal) setTanggalBerikut(usul.tanggal);
         } else {
           // Bot lama tanpa riwayat: bawaan sebelumnya, apa adanya.
@@ -1036,7 +1123,7 @@ export function CatatHasilRingkas({
           const usulAgenda = usulanAgendaBerikut(isi.keadaan.agenda);
           if (usulAgenda) {
             setAgendaBerikut(usulAgenda);
-            setJamBerikut(jamMenurutAgenda(usulAgenda));
+            setJamBerikut(jamSidangBerikut(usulAgenda));
           }
         }
       } catch (e) {
@@ -1067,16 +1154,30 @@ export function CatatHasilRingkas({
     (nilai: number) => {
       setDihadiri(nilai);
       if (!keadaan || !riwayat) return;
-      const usul = bawaanTunda(masukanBawaanTunda(keadaan, riwayat), nilai);
+      const usul = usulanTunda(keadaan, riwayat, nilai);
       setUsulan(usul);
+      if (!usul) return;
       if (!alasanDisentuh) setAlasanTunda(usul.alasan);
       if (!agendaDisentuh) {
         setAgendaBerikut(usul.agenda);
-        setJamBerikut(jamMenurutAgenda(usul.agenda));
+        if (!jamDisentuh) setJamBerikut(usul.jam);
       }
+      // Tanggal ikut kehadiran: kedua pihak hadir -> Court Calendar.
+      if (!tanggalDisentuh) setTanggalBerikut(usul.tanggal);
     },
-    [keadaan, riwayat, alasanDisentuh, agendaDisentuh]
+    [keadaan, riwayat, alasanDisentuh, agendaDisentuh, tanggalDisentuh, jamDisentuh]
   );
+
+  // Jam dan tanggal ikut alasan + agenda yang SEDANG tampak: tundaan mediasi =
+  // 3 minggu pukul 09:00 (mendahului Court Calendar dan aturan sore). Yang
+  // sudah disetel tangan tidak ditimpa. Aturannya satu - @/lib/bawaan-tunda.
+  useEffect(() => {
+    if (!keadaan) return;
+    const dasar = usulan?.dasar ?? dasarTanggalKosong(String(keadaan.tanggalSidang || "").slice(0, 10));
+    const berikut = tanggalJamUntuk(dasar, alasanTunda, agendaBerikut, dihadiri);
+    if (!tanggalDisentuh) setTanggalBerikut(berikut.tanggal);
+    if (!jamDisentuh) setJamBerikut(berikut.jam);
+  }, [keadaan, usulan, alasanTunda, agendaBerikut, dihadiri, tanggalDisentuh, jamDisentuh]);
 
   const pilihan = useMemo(() => pilihanTunda(keadaan ? sebutanDari(keadaan) : {}, ALASAN_LAZIM, AGENDA_LAZIM), [keadaan]);
 
@@ -1213,6 +1314,14 @@ export function CatatHasilRingkas({
     );
   }
 
+  const sumberDasarTanggal = tanggalJamUntuk(
+    usulan?.dasar ?? dasarTanggalKosong(String(keadaan.tanggalSidang || "").slice(0, 10)),
+    alasanTunda,
+    agendaBerikut,
+    dihadiri
+  );
+  const sebutanKontak = sebutanPihakPerkara(sebutanDari(keadaan));
+
   return (
     <div className="space-y-2.5">
       <div className="flex flex-wrap items-center gap-2">
@@ -1254,7 +1363,7 @@ export function CatatHasilRingkas({
               onUbah={(v) => {
                 setAgendaDisentuh(true);
                 setAgendaBerikut(v);
-                setJamBerikut(jamMenurutAgenda(v));
+                if (!jamDisentuh) setJamBerikut(jamSidangBerikut(v, alasanTunda));
               }}
             />
           </label>
@@ -1263,18 +1372,38 @@ export function CatatHasilRingkas({
             <input
               type="date"
               value={tanggalBerikut}
-              onChange={(e) => setTanggalBerikut(e.target.value)}
+              onChange={(e) => {
+                setTanggalDisentuh(true);
+                setTanggalBerikut(e.target.value);
+              }}
               className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             />
+            {/* Dari mana tanggalnya - Court Calendar atau dua pekan. */}
+            <span
+              className="mt-0.5 block text-[10px] leading-tight text-muted-foreground"
+              data-sumber-tanggal={tanggalDisentuh ? "manual" : sumberDasarTanggal.sumber}
+            >
+              {tanggalDisentuh ? "Tanggal diganti manual." : `Tanggal ${sumberDasarTanggal.penjelasan}`}
+            </span>
           </label>
           <label className="text-xs">
             <span className="mb-0.5 block font-medium text-muted-foreground">Jam</span>
             <input
               type="time"
               value={jamBerikut}
-              onChange={(e) => setJamBerikut(e.target.value)}
+              onChange={(e) => {
+                setJamDisentuh(true);
+                setJamBerikut(e.target.value);
+              }}
               className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             />
+            <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">
+              {tundaKarenaMediasi(alasanTunda)
+                ? "Tundaan mediasi: 09:00."
+                : jamSidangBerikut(agendaBerikut, alasanTunda) === "15:00"
+                  ? "Jawab-menjawab dan kesimpulan: 15:00."
+                  : "Bawaan pukul 09:00."}
+            </span>
           </label>
         </div>
       ) : (
@@ -1340,6 +1469,12 @@ export function CatatHasilRingkas({
             {usulan.kehadiranTercatat ? " Kehadiran diambil dari yang sudah tercatat di SIPP." : ""} Semua
             isian dapat diganti.
           </span>
+        </p>
+      ) : null}
+      {usulan && jalan === "tunda" ? (
+        <p className="flex items-start gap-1 text-[11px] text-muted-foreground" data-kontak-pihak="">
+          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+          <span>{kalimatKontak(usulan.dasar.kontak, sebutanKontak.dua, sebutanKontak.satu)}</span>
         </p>
       ) : null}
 

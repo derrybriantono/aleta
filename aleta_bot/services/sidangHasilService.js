@@ -250,6 +250,47 @@ async function riwayatSidangPerkara(perkaraId, tanggalSidang) {
   };
 }
 
+/**
+ * ============================================================================
+ * COURT CALENDAR PERKARA - RENCANA MAJELIS, BAHAN TANGGAL SIDANG BERIKUTNYA
+ * ============================================================================
+ *
+ * Perbaikan 2 Oktober 2026 malam (butir 1). Bila KEDUA pihak pernah hadir,
+ * tanggal sidang berikutnya di borang tunda mengikuti rencana majelis di
+ * perkara_court_calendar (aturannya di portal, src/lib/bawaan-tunda.ts - satu
+ * tempat untuk Jadwal Sidang dan Hasil Sidang). Di sini hanya DIBACA: satu
+ * SELECT, dibatasi 100 baris, terpisah dari riwayatSidangPerkara supaya bacaan
+ * riwayat tetap dua kueri.
+ *
+ * Mengembalikan:
+ *   null   tidak terbaca (tabel tak terjangkau / galat) - portal jatuh ke dua pekan
+ *   []     terbaca dan memang tidak ada rencana (53% perkara 2026 - lazim, bukan cacat)
+ *   [{tanggal, jam, agenda, keterangan}]  urut tanggal
+ *
+ * Tabel perkara_court_calendar terdaftar di sippSkemaService (const TABEL).
+ */
+async function kalenderPerkara(perkaraId) {
+  const id = Number(perkaraId);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  const baris = await kueri(
+    `SELECT DATE_FORMAT(rencana_tanggal, '%Y-%m-%d') AS tanggal,
+            TIME_FORMAT(rencana_jam, '%H:%i') AS jam,
+            rencana_agenda AS agenda, keterangan
+       FROM perkara_court_calendar
+      WHERE perkara_id = ? AND rencana_tanggal IS NOT NULL
+      ORDER BY rencana_tanggal ASC, rencana_jam ASC, id ASC
+      LIMIT 100`,
+    [id]
+  ).catch(() => null);
+  if (!Array.isArray(baris)) return null;
+  return baris.map((r) => ({
+    tanggal: bersih(r.tanggal),
+    jam: bersih(r.jam),
+    agenda: bersih(r.agenda).slice(0, 500),
+    keterangan: bersih(r.keterangan).slice(0, 500),
+  }));
+}
+
 /** Akun pejabat yang dipakai menulis - harus benar-benar ada di SIPP. */
 async function akunSipp(username) {
   const nama = bersih(username);
@@ -1026,6 +1067,7 @@ module.exports = {
   ANTRIAN_SELESAI,
   keadaanJadwal,
   riwayatSidangPerkara,
+  kalenderPerkara,
   akunPerkara,
   jamMenurutAgenda,
   tanggalDuaPekan,

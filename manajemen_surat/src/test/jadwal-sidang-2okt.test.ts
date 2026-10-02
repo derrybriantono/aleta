@@ -361,8 +361,12 @@ describe("butir 10 - Jadwal Sidang dan Hasil Sidang", () => {
     expect(SIDANG).toContain("{berjalanIni ? <LencanaSedangBerjalan berjalan={berjalanIni} /> : null}");
     expect(SIDANG).toContain("<RingkasRuangSidang");
     expect(SIDANG).toContain("data-kunci-waktu={kunciTiga}");
-    const i = SIDANG.indexOf("<TombolSelesaiSidang");
-    expect(SIDANG.indexOf("<TombolRuangSidang", i)).toBeGreaterThan(i);
+    // 2 Okt 2026 malam (butir 4): kolom kanan = Rincian, Status, lalu tombol
+    // ruang sidang, dan Selesai PALING BAWAH - bukan lagi di atas keduanya.
+    const iRuang = SIDANG.indexOf("<TombolRuangSidang");
+    const iSelesai = SIDANG.indexOf("<TombolSelesaiSidang");
+    expect(iRuang).toBeGreaterThan(-1);
+    expect(iSelesai).toBeGreaterThan(iRuang);
     expect(SIDANG).toContain("hijau: selesaiTanda.hijau,");
   });
 

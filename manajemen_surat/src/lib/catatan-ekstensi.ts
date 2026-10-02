@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.180.0",
+    dirilis: "2026-10-02T21:30:00+08:00",
+    judul: "Jadwal Sidang dan Hasil Sidang: tanggal dan jam sidang berikutnya otomatis, tanda sedang berjalan manual, skors di Papan panggil",
+    butir: [
+      "RILIS INI HANYA PORTAL DAN BOT; isi ekstensi tidak berubah (versinya ikut naik).",
+      "TANGGAL SIDANG BERIKUTNYA (Jadwal Sidang dan Hasil Sidang, satu aturan yang sama): bawaannya mengikuti urutan (1) ketidakhadiran - penggugat tidak hadir 1 minggu; sudah pernah hadir semua tetapi salah satu tidak hadir 1 minggu bila tergugat punya email; tergugat tidak hadir 1 minggu bila punya email dan setuju saluran elektronik e-Court, selain itu 2 minggu; (2) tundaan karena mediasi 3 minggu; (3) rekomendasi Court Calendar; (4) dua minggu seperti sebelumnya. Sumber aturan ditulis di layar dan tanggal dapat diganti manual.",
+      "JAM SIDANG BERIKUTNYA: jawaban, replik, duplik, dan kesimpulan 15:00; pembuktian, musyawarah majelis, putusan, dan mediasi 09:00.",
+      "EMAIL DAN PERSETUJUAN E-COURT: email tergugat dan status persetujuan saluran elektroniknya dibaca dari data e-Court yang sudah ditarik, dan email penggugat dari SIPP. Rincian Jadwal Sidang menampilkan 'Panggilan elektronik' (ada/tidak dan setuju/tidak setuju/belum); alamat email tidak dikirim ke peramban. Bila datanya tidak terbaca, bawaan memakai aturan tanpa email dan sebabnya disebut.",
+      "SEDANG BERJALAN: tombol manual 'Tandai berjalan' dan 'Batalkan tanda' untuk perkara yang tidak terdeteksi dari antrian; ringkasan ruang sidang menyebut sumber tandanya. Sinkron ke mesin antrian ruang tunggu baru menyala setelah admin mengisi pengaturannya sesudah nilai status di server dipastikan.",
+      "SKORS: ringkasan ruang sidang menyebut tiap perkara yang diskors dan dapat ditekan; Papan panggil memuat Skors, Lanjutkan, dan Batalkan tanda. Perkara diskors tidak dianggap selesai.",
+      "JADWAL SIDANG: tombol Selesai kini di bawah Status, setelah Rincian dan Status.",
+    ],
+  },
+  {
     versi: "1.179.0",
     dirilis: "2026-10-02T11:20:00+08:00",
     judul: "Pemetaan blangko tersambung ke ekstensi dan Cetak relaas, putusan per status putusan, peta dan isian BAS untuk panitera, tanda antrian online, label peran di kiri",

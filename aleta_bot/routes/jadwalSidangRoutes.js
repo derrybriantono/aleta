@@ -14,6 +14,13 @@
  *   GET  /selesai/diagnosa        nilai disidang yang hidup hari ini
  *   POST /skors                   skors / lanjutkan sidang (kering bawaan) -
  *                                 perbaikan 2 Okt 2026, butir 10
+ *   POST /berjalan                tandai / batalkan tanda "sedang berjalan"
+ *                                 (kering bawaan) - 2 Okt 2026 malam, butir 3
+ *   GET  /kalender?perkaraId      Court Calendar perkara (hanya SELECT) - bahan
+ *                                 tanggal sidang berikutnya, 2 Okt 2026 malam
+ *   GET  /pihak-elektronik?perkaraId  ada/tidaknya email para pihak + persetujuan
+ *                                 e-Court (dari tabel bot - tanpa alamat email) -
+ *                                 bahan aturan ketidakhadiran, 2 Okt 2026 malam
  *   GET  /mediasi?perkaraId       proses mediasi + daftar mediator + akun
  *   POST /mediator                penetapan mediator ke SIPP (kering bawaan)
  */
@@ -23,6 +30,8 @@ const express = require("express");
 
 const { readRuntimeConfig } = require("../config/runtime-config");
 const sidangSelesaiService = require("../services/sidangSelesaiService");
+const sidangHasilService = require("../services/sidangHasilService");
+const sidangKontakService = require("../services/sidangKontakService");
 const mediatorTulisService = require("../services/mediatorTulisService");
 
 const router = express.Router();
@@ -136,6 +145,63 @@ router.post("/skors", wajibToken, async (req, res) => {
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (galat) {
     galat500(res, galat);
+  }
+});
+
+/**
+ * Tanda "sedang berjalan" manual (perbaikan 2 Okt 2026 malam, butir 3). Kering
+ * bawaan. Yang tertulis ke aplikasi antrian ruang tunggu hanya nilai asli
+ * aplikasinya (nomor ruang / NULL), dan hanya bila ALETA_ANTRIAN_DISIDANG_PROSES
+ * disetel; siapa, kapan, IP, dan "lewat ALETA" hanya di tabel ALETA
+ * aleta_bot_sidang_berjalan.
+ */
+router.post("/berjalan", wajibToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+    const hasil = await sidangSelesaiService.setelBerjalan({
+      perkaraId: badan.perkaraId,
+      tanggalSidang: badan.tanggalSidang,
+      nomorPerkara: badan.nomorPerkara,
+      ruang: badan.ruang,
+      berjalan: badan.berjalan !== false,
+      hasilSidangSelesai: badan.hasilSidangSelesai === true,
+      oleh: operator,
+      ip: alamatAudit(req),
+      kering: badan.kering !== false,
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/** Court Calendar perkara - hanya SELECT. kalender null = tidak terbaca; [] = tidak ada rencana. */
+router.get("/kalender", wajibToken, async (req, res) => {
+  try {
+    const kalender = await sidangHasilService.kalenderPerkara(req.query.perkaraId);
+    res.json({ ok: true, kalender });
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/**
+ * Email dan persetujuan saluran elektronik para pihak - bahan aturan tunda karena
+ * ketidakhadiran. Hanya membaca (SIPP SELECT + tabel bot hasil jembatan e-Court);
+ * alamat email TIDAK dikirim, hanya ada/tidaknya.
+ */
+router.get("/pihak-elektronik", wajibToken, async (req, res) => {
+  try {
+    const hasil = await sidangKontakService.kontakPerkara(req.query.perkaraId);
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch {
+    // Pesan galat sengaja tidak diteruskan: dapat membawa nilai kueri (data pribadi).
+    res.status(500).json({ ok: false, error: "kontak_pihak_tidak_terbaca" });
   }
 });
 

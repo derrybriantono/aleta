@@ -23,6 +23,21 @@
  * dari mesin antrian ruang tunggu - otomatis berjalan lagi; tidak ada dua jam
  * dari dua basis data yang dibandingkan.
  *
+ * 2 OKT 2026 MALAM (butir 2 dan 3) - penyempurnaan:
+ *
+ *   - "sedang berjalan" kini punya TIGA sumber, berurutan menurut kuatnya:
+ *       manual         tombol "Tandai sedang berjalan" (tabel ALETA)
+ *       antrian-proses "proses sidang" di mesin antrian ruang tunggu (hanya
+ *                      bila nilainya disetel - ALETA_ANTRIAN_DISIDANG_PROSES)
+ *       panggilan      turunan panggilan terakhir per ruang (bawaan semula)
+ *     Satu ruang satu sidang berjalan; sumber yang lebih kuat mengalahkan yang
+ *     lebih lemah di ruang yang sama.
+ *   - skors tidak lagi dibandingkan dengan SATU jam panggil: tiap perkara punya
+ *     daftar PENANDA MULAI (panggilan, proses, tanda manual), dan skors
+ *     berlaku selama tidak ada penanda yang lebih baru daripada saat diskors.
+ *     Itulah yang membuat skors tetap terlihat sesudah mesin antrian
+ *     dikembalikan ke "menunggu", dan berakhir begitu sidangnya dimulai lagi.
+ *
  * BUTIR 12 - LEBAR HALAMAN ALETA e-COURT
  *
  * Lihat LEBAR_ECOURT di bawah.
@@ -53,28 +68,55 @@ function rapi(nilai: unknown): string {
   return String(nilai ?? "").trim();
 }
 
+/** "YYYY-MM-DD HH:MM" - bentuk waktu yang dapat dibandingkan sebagai teks. */
+const BENTUK_WAKTU = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/;
+
+/** Penanda sudah ada pada atau sebelum saat diskors? Teks bukan-waktu hanya dibandingkan kesamaannya. */
+function penandaSudahAda(penanda: string, saatSkors: string): boolean {
+  if (BENTUK_WAKTU.test(penanda) && BENTUK_WAKTU.test(saatSkors)) return penanda <= saatSkors;
+  return penanda === saatSkors;
+}
+
 /**
- * Skors masih berlaku: ada catatannya DAN perkaranya belum dipanggil lagi
- * sesudah diskors (jam panggil terakhirnya masih sama).
+ * Skors masih berlaku: ada catatannya DAN sidangnya belum dimulai lagi sesudah
+ * diskors - tidak ada PENANDA MULAI (panggilan terakhir, proses sidang di mesin
+ * antrian, tanda manual) yang lebih baru daripada saat diskors.
+ *
+ * `penanda` boleh satu teks (jam panggil terakhir, perilaku semula) atau
+ * daftar. Tanpa penanda sama sekali: skors yang dibuat tanpa penanda
+ * (panggilSaatSkors kosong) berlaku, dan yang dibuat dengan penanda berbentuk
+ * waktu juga tetap berlaku - mesin antrian sudah dikembalikan ke "menunggu",
+ * sehingga penanda lamanya hilang, dan tidak ada yang memulai sidangnya lagi.
  */
-export function skorsBerlaku(catatan: CatatanSkors | null | undefined, panggilTerakhirSekarang: string | null | undefined): boolean {
+export function skorsBerlaku(
+  catatan: CatatanSkors | null | undefined,
+  penanda: string | readonly string[] | null | undefined
+): boolean {
   if (!catatan) return false;
-  return rapi(catatan.panggilSaatSkors) === rapi(panggilTerakhirSekarang);
+  const saat = rapi(catatan.panggilSaatSkors);
+  const daftar = (Array.isArray(penanda) ? penanda : [penanda]).map((x) => rapi(x)).filter(Boolean);
+  if (daftar.length === 0) return saat === "" || BENTUK_WAKTU.test(saat);
+  return daftar.every((m) => penandaSudahAda(m, saat));
 }
 
 /** Catatan skors untuk satu baris jadwal, atau null bila tidak ada / tidak berlaku lagi. */
 export function skorsUntuk(
   peta: PetaSkors | null | undefined,
   baris: { perkaraId: string; tanggalSidang: string },
-  panggilTerakhir: string | null | undefined
+  penanda: string | readonly string[] | null | undefined
 ): CatatanSkors | null {
   const catatan = peta?.[kunciSelesai(baris.perkaraId, baris.tanggalSidang)];
-  return catatan && skorsBerlaku(catatan, panggilTerakhir) ? catatan : null;
+  return catatan && skorsBerlaku(catatan, penanda) ? catatan : null;
 }
 
 // ============================================================================
 // SIDANG YANG SEDANG BERJALAN
 // ============================================================================
+
+/** Dari mana "sedang berjalan" diketahui - lihat kepala berkas. */
+export type SumberBerjalan = "manual" | "antrian-proses" | "panggilan";
+
+const KUAT_SUMBER: Record<SumberBerjalan, number> = { panggilan: 1, "antrian-proses": 2, manual: 3 };
 
 export type SidangBerjalan = {
   /** kunciWaktu (tanggal|perkara). */
@@ -83,10 +125,45 @@ export type SidangBerjalan = {
   tanggalSidang: string;
   /** Sebutan ruang menurut hitungTigaJarak - "Ruang 1", atau ruangan SIPP. */
   ruang: string;
-  /** Jam panggil terakhir (mulai sidangnya), apa adanya dari buku waktu. */
+  /** Saat sidangnya dimulai: penanda mulai TERBARU (panggilan, proses mesin, atau tanda manual). */
   sejak: string;
   nomorAntrian: number | null;
+  /** Kosong = panggilan (perilaku semula). */
+  sumber?: SumberBerjalan;
+  /** Siapa yang menandai - hanya sumber manual. */
+  oleh?: string;
 };
+
+/** Satu tanda "sedang berjalan" manual dari bot (aleta_bot_sidang_berjalan). */
+export type CatatanBerjalan = {
+  perkaraId: string;
+  tanggalSidang: string;
+  nomorPerkara?: string;
+  ruang?: string;
+  oleh?: string;
+  /** "YYYY-MM-DD HH:MM:SS" - saat ditandai. */
+  ditandaiPada?: string;
+};
+
+/** Kunci peta = kunciSelesai (perkaraId|tanggal) - sama dengan bot. */
+export type PetaBerjalanManual = Record<string, CatatanBerjalan>;
+
+/** Satu baris yang sedang "proses sidang" menurut mesin antrian ruang tunggu. */
+export type ProsesAntrian = {
+  perkaraId: string;
+  tanggalSidang: string;
+  noRuang: number | null;
+  /** "YYYY-MM-DD HH:MM:SS" - jam_sidang yang ditulis mesin saat PROSES. */
+  sejak: string;
+};
+
+/** Bacaan bot di `berjalan` pada GET /sidang/selesai. Bot lama = tidak ada. */
+export type DataBerjalan = {
+  manual: PetaBerjalanManual;
+  proses: ProsesAntrian[];
+};
+
+export const DATA_BERJALAN_KOSONG: DataBerjalan = { manual: {}, proses: [] };
 
 export type KeadaanRuangSidang = {
   /** kunciWaktu -> sidang yang sedang berjalan. */
@@ -97,6 +174,12 @@ export type KeadaanRuangSidang = {
   ruangPerKunci: Record<string, string>;
   /** kunciWaktu -> panggilTerakhir ("" bila belum dipanggil). */
   panggilPerKunci: Record<string, string>;
+  /**
+   * kunciWaktu -> SEMUA penanda mulai yang diketahui (panggilan, proses mesin,
+   * tanda manual). Inilah yang dipakai skorsUntuk di layar - bukan hanya
+   * panggilPerKunci.
+   */
+  penandaPerKunci: Record<string, string[]>;
 };
 
 export const RUANG_SIDANG_KOSONG: KeadaanRuangSidang = {
@@ -104,6 +187,7 @@ export const RUANG_SIDANG_KOSONG: KeadaanRuangSidang = {
   perRuang: {},
   ruangPerKunci: {},
   panggilPerKunci: {},
+  penandaPerKunci: {},
 };
 
 /**
@@ -111,6 +195,8 @@ export const RUANG_SIDANG_KOSONG: KeadaanRuangSidang = {
  *
  * @param opsi.selesai  kunciWaktu -> sudah selesai (hasil sidang ATAU ditandai Selesai)
  * @param opsi.skors    peta skors dari bot (kunciSelesai)
+ * @param opsi.berjalan tanda manual + "proses sidang" mesin antrian dari bot
+ *                      (bot lama / tidak disetel = tidak ada - perilaku semula)
  */
 export function petaSidangBerjalan(
   baris: BarisWaktuAntrian[],
@@ -119,32 +205,122 @@ export function petaSidangBerjalan(
     selesai?: Record<string, boolean>;
     skors?: PetaSkors | null;
     ruangSipp?: Record<string, string>;
+    berjalan?: DataBerjalan | null;
   }
 ): KeadaanRuangSidang {
   const daftar = Array.isArray(baris) ? baris : [];
-  if (!rapi(opsi.hariIni) || daftar.length === 0) return RUANG_SIDANG_KOSONG;
-  const tiga = hitungTigaJarak(daftar, { hariIni: opsi.hariIni, selesai: opsi.selesai, ruangSipp: opsi.ruangSipp });
-  const hasil: KeadaanRuangSidang = { berjalan: {}, perRuang: {}, ruangPerKunci: {}, panggilPerKunci: {} };
+  const hariIni = rapi(opsi.hariIni);
+  const manual = Object.values(opsi.berjalan?.manual ?? {}).filter((m) => rapi(m.tanggalSidang) === hariIni && rapi(m.perkaraId));
+  const proses = (opsi.berjalan?.proses ?? []).filter((p) => rapi(p.tanggalSidang) === hariIni && rapi(p.perkaraId));
+  if (!hariIni || (daftar.length === 0 && manual.length === 0 && proses.length === 0)) return RUANG_SIDANG_KOSONG;
+  const tiga = hitungTigaJarak(daftar, { hariIni, selesai: opsi.selesai, ruangSipp: opsi.ruangSipp });
+  const hasil: KeadaanRuangSidang = { berjalan: {}, perRuang: {}, ruangPerKunci: {}, panggilPerKunci: {}, penandaPerKunci: {} };
 
+  const tandai = (kunci: string, penanda: string) => {
+    const m = rapi(penanda);
+    if (!m) return;
+    (hasil.penandaPerKunci[kunci] ??= []).push(m);
+  };
+  const terbaru = (kunci: string) => [...(hasil.penandaPerKunci[kunci] ?? [])].sort().pop() ?? "";
+
+  type Calon = SidangBerjalan & { kuat: number };
+  const calon: Calon[] = [];
+  const barisPerKunci: Record<string, BarisWaktuAntrian> = {};
+
+  // ---- penanda dan ruang dari antrian; calon "panggilan" (perilaku semula) ----
   for (const satu of daftar) {
     const kunci = kunciWaktu(satu.tanggalSidang, satu.perkaraId);
     const t = tiga[kunci];
     if (!t || kunci in hasil.ruangPerKunci) continue;
+    barisPerKunci[kunci] = satu;
     hasil.ruangPerKunci[kunci] = t.ruang;
     hasil.panggilPerKunci[kunci] = rapi(satu.panggilTerakhir);
+    tandai(kunci, satu.panggilTerakhir);
     if (t.lamaSidang.keadaan !== "berjalan") continue;
-    if (opsi.selesai?.[kunci]) continue;
-    if (skorsUntuk(opsi.skors, satu, satu.panggilTerakhir)) continue;
-    const isi: SidangBerjalan = {
+    calon.push({
       kunci,
       perkaraId: rapi(satu.perkaraId),
       tanggalSidang: rapi(satu.tanggalSidang),
       ruang: t.ruang,
       sejak: rapi(satu.panggilTerakhir),
       nomorAntrian: typeof satu.nomorAntrian === "number" ? satu.nomorAntrian : null,
-    };
-    hasil.berjalan[kunci] = isi;
-    hasil.perRuang[t.ruang] = isi;
+      sumber: "panggilan",
+      kuat: KUAT_SUMBER.panggilan,
+    });
+  }
+
+  const ruangBaru = (kunci: string, cadangan: string[]) => {
+    const dariAntrian = hasil.ruangPerKunci[kunci];
+    if (dariAntrian) return dariAntrian;
+    const sipp = rapi(opsi.ruangSipp?.[kunci]);
+    const pilih = [...cadangan.map(rapi), sipp, "Ruang sidang"].find(Boolean) as string;
+    hasil.ruangPerKunci[kunci] = pilih;
+    return pilih;
+  };
+  const nomorDari = (kunci: string) => {
+    const n = barisPerKunci[kunci]?.nomorAntrian;
+    return typeof n === "number" ? n : null;
+  };
+
+  // ---- "proses sidang" mesin antrian dan tanda manual: penanda + calon ----
+  for (const p of proses) {
+    const kunci = kunciWaktu(p.tanggalSidang, p.perkaraId);
+    tandai(kunci, p.sejak);
+    const ruang = ruangBaru(kunci, [p.noRuang ? `Ruang ${p.noRuang}` : ""]);
+    calon.push({
+      kunci,
+      perkaraId: rapi(p.perkaraId),
+      tanggalSidang: rapi(p.tanggalSidang),
+      ruang,
+      sejak: rapi(p.sejak),
+      nomorAntrian: nomorDari(kunci),
+      sumber: "antrian-proses",
+      kuat: KUAT_SUMBER["antrian-proses"],
+    });
+  }
+  for (const m of manual) {
+    const kunci = kunciWaktu(m.tanggalSidang, m.perkaraId);
+    tandai(kunci, m.ditandaiPada ?? "");
+    const ruang = ruangBaru(kunci, [m.ruang ?? ""]);
+    calon.push({
+      kunci,
+      perkaraId: rapi(m.perkaraId),
+      tanggalSidang: rapi(m.tanggalSidang),
+      ruang,
+      sejak: rapi(m.ditandaiPada),
+      nomorAntrian: nomorDari(kunci),
+      sumber: "manual",
+      oleh: rapi(m.oleh) || undefined,
+      kuat: KUAT_SUMBER.manual,
+    });
+  }
+
+  // ---- penyaringan: selesai dan diskors tidak berjalan ----
+  const sah = calon.filter((c) => {
+    if (opsi.selesai?.[c.kunci]) return false;
+    return !skorsUntuk(opsi.skors, c, hasil.penandaPerKunci[c.kunci]);
+  });
+
+  // ---- satu ruang satu sidang: sumber lebih kuat mengalahkan yang lemah ----
+  // Yang lemah dipasang lebih dulu; yang kuat menggantikannya. "panggilan"
+  // boleh berdampingan di satu ruang (perilaku semula); proses/manual tidak -
+  // yang TERBARU di ruang itu yang menang.
+  const urut = [...sah].sort((a, b) => a.kuat - b.kuat || a.sejak.localeCompare(b.sejak));
+  const kuatRuang: Record<string, number> = {};
+  for (const c of urut) {
+    const sekarang = kuatRuang[c.ruang] ?? 0;
+    if (c.kuat > sekarang || (c.kuat === sekarang && c.kuat > KUAT_SUMBER.panggilan)) {
+      for (const [k, b] of Object.entries(hasil.berjalan)) if (b.ruang === c.ruang) delete hasil.berjalan[k];
+    }
+    kuatRuang[c.ruang] = Math.max(sekarang, c.kuat);
+    const { kuat: _kuat, ...isi } = c;
+    void _kuat;
+    // "sejak" = penanda mulai TERBARU perkara ini, supaya skors yang dibuat
+    // darinya langsung berlaku (tidak ada penanda yang lebih baru).
+    const sejak = terbaru(c.kunci) || isi.sejak;
+    const berjalan: SidangBerjalan = { ...isi, sejak };
+    hasil.berjalan[c.kunci] = berjalan;
+    hasil.perRuang[c.ruang] = berjalan;
   }
   return hasil;
 }
@@ -162,9 +338,13 @@ export type AksiRuangSidang = {
   lanjut: boolean;
   /** Sidang yang akan diskors bila lompat/lanjut ditekan. */
   asal: SidangBerjalan | null;
+  /** "Tandai sedang berjalan" - perkara lagi jalan tetapi tidak terdeteksi dari antrian. */
+  tandai?: boolean;
+  /** "Batalkan tanda" - hanya bila berjalannya dari tanda manual. */
+  batalTanda?: boolean;
 };
 
-const TANPA_AKSI: AksiRuangSidang = { skors: false, lompat: false, lanjut: false, asal: null };
+const TANPA_AKSI: AksiRuangSidang = { skors: false, lompat: false, lanjut: false, asal: null, tandai: false, batalTanda: false };
 
 /**
  * Aksi yang ditawarkan pada satu baris.
@@ -183,12 +363,26 @@ export function aksiRuangSidang(opsi: {
   berjalanDiRuang: SidangBerjalan | null | undefined;
   /** Baris ini dapat dipanggil hari ini (punya baris antrian bertanggal hari ini). */
   bisaDipanggil: boolean;
+  /** Tanggal baris ini hari ini - tanda manual hanya berlaku untuk sidang hari ini. */
+  bisaTandai?: boolean;
 }): AksiRuangSidang {
   if (opsi.hijau) return TANPA_AKSI;
-  if (opsi.berjalan) return { skors: true, lompat: false, lanjut: false, asal: null };
+  if (opsi.berjalan) {
+    return {
+      skors: true,
+      lompat: false,
+      lanjut: false,
+      asal: null,
+      tandai: false,
+      batalTanda: opsi.berjalan.sumber === "manual",
+    };
+  }
   const asal = opsi.berjalanDiRuang ?? null;
-  if (opsi.skors) return { skors: false, lompat: false, lanjut: true, asal: opsi.bisaDipanggil ? asal : null };
-  if (asal && opsi.bisaDipanggil) return { skors: false, lompat: true, lanjut: false, asal };
+  // Yang diskors dilanjutkan lewat Lanjutkan - tidak ditandai ulang.
+  if (opsi.skors) return { ...TANPA_AKSI, lanjut: true, asal: opsi.bisaDipanggil ? asal : null };
+  const lompat = Boolean(asal && opsi.bisaDipanggil);
+  const tandai = opsi.bisaTandai === true;
+  if (lompat || tandai) return { ...TANPA_AKSI, lompat, asal: lompat ? asal : null, tandai };
   return TANPA_AKSI;
 }
 
@@ -283,6 +477,8 @@ export function pesanTolakSkors(alasan: string, pesan?: string): string {
       return "Sidang ini sudah ditandai Selesai. Batalkan tanda Selesai lebih dulu bila memang belum selesai.";
     case "antrian_sipp_selesai":
       return "Antrian sidang SIPP perkara ini sudah berstatus selesai - tidak diskors.";
+    case "sedang_diskors":
+      return "Sidang ini sedang diskors - gunakan Lanjutkan, bukan Tandai sedang berjalan.";
     default:
       return alasan || "Skors belum tersimpan.";
   }
@@ -334,4 +530,65 @@ export const KUNCI_SIMPAN_LEBAR_ECOURT = "aleta-ecourt-lebar";
 
 export function bacaLebarEcourt(nilai: string | null | undefined): LebarEcourt {
   return nilai === "penuh" ? "penuh" : "nyaman";
+}
+
+// ============================================================================
+// RINGKASAN RUANG SIDANG - YANG BERJALAN DAN YANG DISKORS (2 Okt 2026 malam)
+// ============================================================================
+
+export type DiskorsRingkas = {
+  kunci: string;
+  perkaraId: string;
+  tanggalSidang: string;
+  /** Sebutan ruangnya bila diketahui. */
+  ruang: string;
+  /** Jam diskorsnya, "HH:MM". */
+  jam: string;
+  oleh: string;
+};
+
+/**
+ * Perkara yang SEDANG diskors hari ini - bahan ringkasan ruang sidang. Yang
+ * sudah selesai (hasil sidang / ditandai Selesai) tidak ikut: skors yang
+ * tertinggal di belakangnya bukan lagi sidang yang menunggu dilanjutkan.
+ */
+export function daftarDiskors(
+  sidang: Array<{ perkaraId: string; tanggalSidang: string }>,
+  skors: PetaSkors | null | undefined,
+  ruang: Pick<KeadaanRuangSidang, "penandaPerKunci" | "ruangPerKunci">,
+  selesai?: Record<string, boolean>
+): DiskorsRingkas[] {
+  const hasil: DiskorsRingkas[] = [];
+  const lihat = new Set<string>();
+  for (const b of Array.isArray(sidang) ? sidang : []) {
+    const kunci = kunciWaktu(b.tanggalSidang, b.perkaraId);
+    if (lihat.has(kunci)) continue;
+    lihat.add(kunci);
+    if (selesai?.[kunci]) continue;
+    const catatan = skorsUntuk(skors, b, ruang.penandaPerKunci?.[kunci]);
+    if (!catatan) continue;
+    hasil.push({
+      kunci,
+      perkaraId: rapi(b.perkaraId),
+      tanggalSidang: rapi(b.tanggalSidang),
+      ruang: ruang.ruangPerKunci?.[kunci] ?? "",
+      jam: jamSingkat(catatan.diskorsPada),
+      oleh: rapi(catatan.oleh),
+    });
+  }
+  return hasil.sort((a, b) => a.jam.localeCompare(b.jam) || a.perkaraId.localeCompare(b.perkaraId, "id", { numeric: true }));
+}
+
+/** Kalimat sumber "sedang berjalan" - untuk title lencana dan ringkasan. */
+export function kalimatSumberBerjalan(b: Pick<SidangBerjalan, "sumber" | "oleh" | "ruang" | "sejak">): string {
+  const jam = jamSingkat(b.sejak);
+  const sejak = jam ? ` sejak ${jam}` : "";
+  switch (b.sumber) {
+    case "manual":
+      return `Ditandai sedang berjalan oleh ${b.oleh || "petugas"} di ${b.ruang}${sejak}.`;
+    case "antrian-proses":
+      return `Berstatus proses sidang di aplikasi antrian ruang tunggu (${b.ruang})${sejak}.`;
+    default:
+      return `Perkara terakhir yang dipanggil di ${b.ruang}${sejak} dan belum selesai.`;
+  }
 }

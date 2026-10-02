@@ -102,6 +102,7 @@ import {
 } from "@/components/portal/jadwal-sidang-1okt";
 import {
   aksiRuangSidang,
+  daftarDiskors,
   petaSidangBerjalan,
   selesaiPerKunciWaktu,
   skorsUntuk,
@@ -109,6 +110,7 @@ import {
 import {
   LencanaDiskors,
   LencanaSedangBerjalan,
+  KontakPihakRincian,
   RingkasRuangSidang,
   TandaAntrianOnline,
   TandaAntrianOnlineRincian,
@@ -4832,8 +4834,17 @@ export function AletaEcourtSidang({
       selesai: selesaiPerKunciWaktu(sidang, tandaSelesai.peta),
       skors: tandaSelesai.skors,
       ruangSipp,
+      // 2 Okt 2026 malam: tanda "Tandai sedang berjalan" + proses sidang di
+      // mesin antrian (hanya bila nilainya disetel di bot).
+      berjalan: tandaSelesai.berjalan,
     });
-  }, [sidang, waktuAntrian, tandaSelesai.peta, tandaSelesai.skors]);
+  }, [sidang, waktuAntrian, tandaSelesai.peta, tandaSelesai.skors, tandaSelesai.berjalan]);
+
+  /** Perkara yang sedang diskors - disebut satu per satu di ringkasan ruang sidang. */
+  const diskorsHariIni = useMemo(
+    () => daftarDiskors(sidang, tandaSelesai.skors, ruangSidang, selesaiPerKunciWaktu(sidang, tandaSelesai.peta)),
+    [sidang, tandaSelesai.skors, tandaSelesai.peta, ruangSidang]
+  );
 
   /** Keterangan perkara untuk tombol skors/lompat - nomor perkara, nomor antrian, ruang. */
   const infoRuangSidang = useCallback(
@@ -6509,11 +6520,7 @@ export function AletaEcourtSidang({
         <RingkasRuangSidang
           perRuang={ruangSidang.perRuang}
           nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
-          jumlahDiskors={
-            sidang.filter((b) =>
-              skorsUntuk(tandaSelesai.skors, b, ruangSidang.panggilPerKunci[kunciWaktu(b.tanggalSidang, b.perkaraId)])
-            ).length
-          }
+          diskors={diskorsHariIni}
           onLihat={(k) => {
             const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find(
               (x) => x.dataset.kunciWaktu === k
@@ -6696,7 +6703,7 @@ export function AletaEcourtSidang({
                   const tigaBaris = tigaJarak[kunciTiga];
                   // Butir 10 (2 Okt 2026): sedang disidangkan / diskors.
                   const berjalanIni = ruangSidang.berjalan[kunciTiga] ?? null;
-                  const skorsIni = skorsUntuk(tandaSelesai.skors, baris, ruangSidang.panggilPerKunci[kunciTiga]);
+                  const skorsIni = skorsUntuk(tandaSelesai.skors, baris, ruangSidang.penandaPerKunci[kunciTiga]);
                   const ruangIni = ruangSidang.ruangPerKunci[kunciTiga];
                   const bisaDipanggilIni = bisaDipanggilHariIni(baris);
                   const aksiRuang = aksiRuangSidang({
@@ -6705,6 +6712,8 @@ export function AletaEcourtSidang({
                     skors: skorsIni,
                     berjalanDiRuang: ruangIni ? ruangSidang.perRuang[ruangIni] : null,
                     bisaDipanggil: bisaDipanggilIni,
+                    // Tanda manual hanya untuk sidang HARI INI.
+                    bisaTandai: Boolean(waktuAntrian.hariIni) && baris.tanggalSidang === waktuAntrian.hariIni,
                   });
                   return (
                     <Fragment key={kunci}>
@@ -7859,27 +7868,6 @@ export function AletaEcourtSidang({
                                 paling kanan bersama tombol Status di bawahnya,
                                 dan huruf yang menebal membuat seluruh tabel
                                 bergeser sedikit tiap kali rincian dibuka. */}
-                            {/* Selesai - sinkron dua arah dengan antrian sidang
-                                (perbaikan 1 Okt 2026, J2). */}
-                            <TombolSelesaiSidang
-                              baris={baris}
-                              keadaan={selesaiTanda}
-                              onBerubah={tandaSelesai.muatUlang}
-                            />
-                            {/* Skors / Lompat ke sini / Lanjutkan - butir 10
-                                (2 Okt 2026). Tidak pernah pada baris hijau. */}
-                            <TombolRuangSidang
-                              baris={baris}
-                              aksi={aksiRuang}
-                              berjalan={berjalanIni}
-                              skors={skorsIni}
-                              bisaDipanggil={bisaDipanggilIni}
-                              info={infoRuangSidang}
-                              onBerubah={() => {
-                                tandaSelesai.muatUlang();
-                                void muatTanggal(dari, sampai, nilaiKesiapan);
-                              }}
-                            />
                             <button
                               type="button"
                               onClick={() => void buka(baris)}
@@ -7929,6 +7917,35 @@ export function AletaEcourtSidang({
                                 Status
                               </button>
                             ) : null}
+
+                            {/* =============================================
+                                URUTAN KOLOM KANAN (2 Okt 2026 malam):
+                                Rincian, Status, lalu Selesai PALING BAWAH.
+                                Skors / Lompat / Lanjutkan / Tandai berjalan
+                                duduk di antara Status dan Selesai - tidak ada
+                                tombol yang hilang, hanya urutannya. */}
+                            {/* Skors / Lompat ke sini / Lanjutkan / Tandai berjalan - butir 10
+                                (2 Okt 2026). Tidak pernah pada baris hijau. */}
+                            <TombolRuangSidang
+                              baris={baris}
+                              aksi={aksiRuang}
+                              berjalan={berjalanIni}
+                              skors={skorsIni}
+                              bisaDipanggil={bisaDipanggilIni}
+                              info={infoRuangSidang}
+                              ruang={ruangIni}
+                              onBerubah={() => {
+                                tandaSelesai.muatUlang();
+                                void muatTanggal(dari, sampai, nilaiKesiapan);
+                              }}
+                            />
+                            {/* Selesai - sinkron dua arah dengan antrian sidang
+                                (perbaikan 1 Okt 2026, J2). */}
+                            <TombolSelesaiSidang
+                              baris={baris}
+                              keadaan={selesaiTanda}
+                              onBerubah={tandaSelesai.muatUlang}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -8275,6 +8292,10 @@ export function RincianSidang({
 
       {/* Asal nomor antrian - kalimat utuh di Rincian, ikon saja di baris. */}
       <TandaAntrianOnlineRincian tanda={tandaOnline} />
+
+      {/* Email dan persetujuan saluran elektronik para pihak (2 Okt 2026
+          malam, butir 1f) - bahan tanggal tunda karena ketidakhadiran. */}
+      <KontakPihakRincian perkaraId={perkaraId} nomorPerkara={nomorPerkara} />
 
       {identitas ? (
         <div className="flex flex-wrap gap-1">

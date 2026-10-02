@@ -734,10 +734,11 @@ describe("rute portal sidang/selesai dan sidang/mediator", () => {
     const app = baca("aleta_bot/app.js");
     expect(app).toContain('app.use("/internal/aleta-bot/jadwal-sidang", require("./routes/jadwalSidangRoutes"));');
     const rute = baca("aleta_bot/routes/jadwalSidangRoutes.js");
-    // 2 Okt 2026: rute keenam POST /skors (butir 10). Yang dijaga: SETIAP
-    // rute bertoken, bukan jumlahnya.
+    // 2 Okt 2026: rute keenam POST /skors (butir 10); 2 Okt malam: ketujuh
+    // POST /berjalan, kedelapan GET /kalender, kesembilan GET /pihak-elektronik.
+    // Yang dijaga: SETIAP rute bertoken, bukan jumlahnya.
     const jumlahRute = rute.match(/router\.(get|post)\(/g)?.length ?? 0;
-    expect(jumlahRute).toBe(6);
+    expect(jumlahRute).toBe(9);
     expect(rute.match(/wajibToken, async/g)?.length).toBe(jumlahRute);
     expect(rute).toContain("kering: badan.kering !== false");
   });

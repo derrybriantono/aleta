@@ -12,21 +12,30 @@
  * Aturannya di @/lib/jadwal-sidang-2okt (fungsi murni yang diuji). Berkas ini
  * hanya lencana, tombol, pelaksana langkah, dan papan untuk Hasil Sidang.
  *
- * Yang ditulis keluar ALETA hanya dua jalur yang SUDAH ada nilainya:
+ * Yang ditulis keluar ALETA hanya jalur yang SUDAH ada nilainya:
  *   - panggil  = jalur Papan panggil (disidang = 10 + jam panggil);
- *   - skors    = antrian.status SIPP asli 0<->1 (tidak pernah menyentuh 2).
+ *   - skors    = antrian.status SIPP asli 0<->1 (tidak pernah menyentuh 2);
+ *   - tandai sedang berjalan = tabel ALETA; ke mesin antrian ruang tunggu
+ *     HANYA bila nilai "proses sidang"-nya disetel (ALETA_ANTRIAN_DISIDANG_PROSES).
  * Siapa, kapan, IP, "lewat ALETA" hanya di tabel ALETA (butir 14).
+ *
+ * 2 Okt 2026 malam: tombol Tandai sedang berjalan / Batalkan tanda, ringkasan
+ * ruang memuat perkara yang diskors, dan PanelRuangPapanPanggil - skors dan
+ * lanjutkan tersedia juga di halaman tempat nomor antrian dipanggil.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PauseCircle, PlayCircle, RefreshCw, SkipForward, Smartphone } from "lucide-react";
+import { PauseCircle, PlayCircle, Radio, RefreshCw, SkipForward, Smartphone, Undo2 } from "lucide-react";
 
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { keadaanSelesai, type PetaSelesai } from "@/lib/jadwal-sidang-1okt";
 import {
+  DATA_BERJALAN_KOSONG,
   aksiRuangSidang,
+  daftarDiskors,
   jamSingkat,
   kalimatLangkah,
+  kalimatSumberBerjalan,
   pesanTolakSkors,
   petaSidangBerjalan,
   rencanaLompat,
@@ -34,11 +43,17 @@ import {
   skorsUntuk,
   type AksiRuangSidang,
   type CatatanSkors,
+  type DataBerjalan,
+  type DiskorsRingkas,
+  type KeadaanRuangSidang,
   type LangkahRuangSidang,
   type PetaSkors,
   type SidangBerjalan,
 } from "@/lib/jadwal-sidang-2okt";
+import { bacaKontakPihak, kalimatKontak } from "@/lib/jadwal-sidang-kontak";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
+import type { KontakPihak } from "@/lib/bawaan-tunda";
 import { kunciWaktu, WAKTU_ANTRIAN_KOSONG, type WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import { type TandaAntrianOnline as TandaOnline } from "@/lib/tanda-antrian-online";
 import { cn } from "@/lib/utils";
@@ -122,11 +137,13 @@ export async function jalankanLangkahRuangSidang(
 
 export function LencanaSedangBerjalan({ berjalan, className }: { berjalan: SidangBerjalan; className?: string }) {
   const jam = jamSingkat(berjalan.sejak);
+  const sumber = berjalan.sumber ?? "panggilan";
   return (
     <div
       data-sedang-berjalan=""
+      data-sumber-berjalan={sumber}
       className={cn("mt-1 flex flex-col gap-0.5", className)}
-      title={`Sedang disidangkan di ${berjalan.ruang}${jam ? ` sejak dipanggil ${jam}` : ""} - perkara terakhir yang dipanggil di ruang itu dan belum selesai.`}
+      title={`Sedang disidangkan di ${berjalan.ruang}. ${kalimatSumberBerjalan(berjalan)}`}
     >
       <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-sky-500 bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-sky-800 dark:border-sky-400 dark:text-sky-200">
         <span className="relative flex h-2 w-2" aria-hidden>
@@ -138,6 +155,7 @@ export function LencanaSedangBerjalan({ berjalan, className }: { berjalan: Sidan
       <span className="text-[10px] text-sky-800 dark:text-sky-300">
         {berjalan.ruang}
         {jam ? ` · sejak ${jam}` : ""}
+        {sumber === "manual" ? " · ditandai manual" : sumber === "antrian-proses" ? " · proses (antrian)" : ""}
       </span>
     </div>
   );
@@ -197,6 +215,45 @@ export function TandaAntrianOnline({
   );
 }
 
+// ============================================================================
+// EMAIL DAN PERSETUJUAN e-COURT DI RINCIAN (2 Okt 2026 malam, butir 1f)
+// ============================================================================
+//
+// "Email tergugat: ada · persetujuan e-Court: setuju" - bahan aturan tunda
+// karena ketidakhadiran (satu fungsi di @/lib/bawaan-tunda). Datanya dibaca
+// SAAT Rincian dibuka (satu bacaan ke bot, yang hanya membaca tabelnya sendiri
+// dan SIPP - tidak ke e-Court), bukan untuk tiap baris daftar. Alamat email
+// tidak pernah sampai ke peramban: hanya ada/tidaknya.
+
+export function KontakPihakRincian({ perkaraId, nomorPerkara }: { perkaraId: string | number; nomorPerkara: string }) {
+  const [hasil, setHasil] = useState<{ id: string; kontak: KontakPihak | null } | null>(null);
+  const id = String(perkaraId ?? "");
+
+  useEffect(() => {
+    if (!/^\d+$/.test(id)) return;
+    let batal = false;
+    void bacaKontakPihak(id).then((kontak) => {
+      if (!batal) setHasil({ id, kontak });
+    });
+    return () => {
+      batal = true;
+    };
+  }, [id]);
+
+  if (!/^\d+$/.test(id)) return null;
+  const sebutan = sebutanPihakPerkara({ nomorPerkara });
+  const siap = hasil !== null && hasil.id === id;
+  return (
+    <p
+      data-kontak-pihak-rincian=""
+      className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground"
+    >
+      <span className="font-medium text-foreground">Panggilan elektronik</span>
+      <span>{siap ? kalimatKontak(hasil.kontak, sebutan.dua, sebutan.satu) : "Membaca email dan persetujuan e-Court…"}</span>
+    </p>
+  );
+}
+
 /** Satu baris keterangan di panel Rincian - kalimat utuh, bukan sekadar ikon. */
 export function TandaAntrianOnlineRincian({ tanda }: { tanda: TandaOnline | null }) {
   if (!tanda) return null;
@@ -215,6 +272,48 @@ export function TandaAntrianOnlineRincian({ tanda }: { tanda: TandaOnline | null
 // TOMBOL SATU BARIS
 // ============================================================================
 
+/**
+ * Menandai / membatalkan tanda "sedang berjalan" manual - POST sidang/berjalan.
+ * Satu tempat untuk tombol di baris Jadwal Sidang dan di Hasil Sidang.
+ */
+export async function setelTandaBerjalan(opsi: {
+  perkaraId: string;
+  nomorPerkara: string;
+  tanggalSidang: string;
+  ruang?: string;
+  berjalan: boolean;
+}): Promise<{ ok: boolean; pesan: string }> {
+  try {
+    const data = await bacaJson(
+      await fetch(apiPath("/api/aleta-ecourt/sidang/berjalan"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          perkaraId: opsi.perkaraId,
+          nomorPerkara: opsi.nomorPerkara,
+          tanggalSidang: opsi.tanggalSidang,
+          ruang: opsi.ruang ?? "",
+          berjalan: opsi.berjalan,
+          kering: false,
+        }),
+      })
+    );
+    if (data.available === false || data.ok === false) {
+      return { ok: false, pesan: pesanTolakSkors(String(data.alasan || ""), data.pesan ? String(data.pesan) : undefined) };
+    }
+    const mesin = data.antrianRuangTunggu as { ok?: boolean; alasan?: string; baris?: number } | undefined;
+    const tambahan =
+      mesin && mesin.ok === false
+        ? ` Tersimpan di ALETA; aplikasi antrian tidak tergerakkan: ${mesin.alasan || "error"}.`
+        : mesin && mesin.alasan === "ruang_masih_ada_sidang_berproses"
+          ? " Tersimpan di ALETA; di aplikasi antrian ruang itu masih ada sidang berproses - skors dulu."
+          : "";
+    return { ok: true, pesan: `${opsi.berjalan ? "Ditandai sedang berjalan." : "Tanda dibatalkan."}${tambahan}` };
+  } catch (galat) {
+    return { ok: false, pesan: galat instanceof Error ? galat.message : "Tanda belum tersimpan." };
+  }
+}
+
 export function TombolRuangSidang({
   baris,
   aksi,
@@ -223,6 +322,7 @@ export function TombolRuangSidang({
   bisaDipanggil,
   info,
   onBerubah,
+  ruang,
 }: {
   baris: { perkaraId: string; nomorPerkara: string; tanggalSidang: string };
   aksi: AksiRuangSidang;
@@ -231,13 +331,30 @@ export function TombolRuangSidang({
   bisaDipanggil: boolean;
   info: (perkaraId: string) => InfoPerkaraRuang;
   onBerubah: (hasil: { ok: boolean; tujuan: string }) => void;
+  /** Sebutan ruang baris ini - dicatat bersama tanda manual. */
+  ruang?: string;
 }) {
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState<{ ok: boolean; teks: string } | null>(null);
 
-  if (!aksi.skors && !aksi.lompat && !aksi.lanjut) {
+  if (!aksi.skors && !aksi.lompat && !aksi.lanjut && !aksi.tandai && !aksi.batalTanda) {
     return pesan ? <span className={cn("max-w-[12rem] text-[11px]", pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600")}>{pesan.teks}</span> : null;
   }
+
+  const tandai = async (nyala: boolean) => {
+    setSibuk(true);
+    setPesan(null);
+    const hasil = await setelTandaBerjalan({
+      perkaraId: baris.perkaraId,
+      nomorPerkara: baris.nomorPerkara,
+      tanggalSidang: baris.tanggalSidang,
+      ruang,
+      berjalan: nyala,
+    });
+    setSibuk(false);
+    setPesan({ ok: hasil.ok, teks: hasil.pesan });
+    onBerubah({ ok: hasil.ok, tujuan: baris.perkaraId });
+  };
 
   const jalankan = async (langkah: LangkahRuangSidang[]) => {
     if (langkah.length === 0) return;
@@ -310,6 +427,32 @@ export function TombolRuangSidang({
           {sibuk ? "…" : "Lanjutkan"}
         </button>
       ) : null}
+      {aksi.tandai ? (
+        <button
+          type="button"
+          disabled={sibuk}
+          data-tandai-berjalan=""
+          onClick={() => void tandai(true)}
+          title="Perkara ini sedang disidangkan tetapi tidak terdeteksi dari antrian: tandai manual. Bila aplikasi antrian ruang tunggu sudah dipasangkan, statusnya ikut ke sana; bila belum, hanya tersimpan di ALETA."
+          className={cn(tombol, "border-sky-500/40 text-sky-800/90 hover:bg-sky-500/10 dark:text-sky-200")}
+        >
+          <Radio className="h-3.5 w-3.5" />
+          {sibuk ? "…" : "Tandai berjalan"}
+        </button>
+      ) : null}
+      {aksi.batalTanda ? (
+        <button
+          type="button"
+          disabled={sibuk}
+          data-batal-tanda-berjalan=""
+          onClick={() => void tandai(false)}
+          title="Batalkan tanda sedang berjalan yang dipasang manual. Riwayatnya tetap tercatat di ALETA."
+          className={cn(tombol, "text-muted-foreground hover:bg-muted")}
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+          {sibuk ? "…" : "Batalkan tanda"}
+        </button>
+      ) : null}
       {pesan ? (
         <span className={cn("max-w-[12rem] text-[11px]", pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600")}>
           {pesan.teks}
@@ -327,15 +470,20 @@ export function RingkasRuangSidang({
   perRuang,
   nomorPerkara,
   jumlahDiskors,
+  diskors,
   onLihat,
 }: {
   perRuang: Record<string, SidangBerjalan>;
   nomorPerkara: (kunci: string) => string;
-  jumlahDiskors: number;
+  /** Dipakai bila `diskors` (daftar rinci) tidak diberikan. */
+  jumlahDiskors?: number;
+  /** Perkara yang sedang diskors - disebut satu per satu, dapat ditekan. */
+  diskors?: DiskorsRingkas[];
   onLihat?: (kunci: string) => void;
 }) {
   const ruang = Object.entries(perRuang).sort(([a], [b]) => a.localeCompare(b, "id", { numeric: true }));
-  if (ruang.length === 0 && jumlahDiskors === 0) return null;
+  const banyakDiskors = diskors ? diskors.length : (jumlahDiskors ?? 0);
+  if (ruang.length === 0 && banyakDiskors === 0) return null;
   return (
     <div
       data-ringkas-ruang-sidang=""
@@ -359,17 +507,36 @@ export function RingkasRuangSidang({
           <span className="tabular-nums">{nomorPerkara(b.kunci) || `perkara ${b.perkaraId}`}</span>
           {b.nomorAntrian !== null ? <span className="text-muted-foreground">antrian {b.nomorAntrian}</span> : null}
           {jamSingkat(b.sejak) ? <span className="text-muted-foreground">sejak {jamSingkat(b.sejak)}</span> : null}
+          {b.sumber === "manual" ? <span className="text-muted-foreground">(ditandai manual)</span> : null}
         </button>
       ))}
-      {jumlahDiskors > 0 ? (
-        <span className="text-amber-800 dark:text-amber-200">{jumlahDiskors} diskors · belum selesai</span>
+      {diskors && diskors.length > 0 ? (
+        <span className="inline-flex flex-wrap items-center gap-1.5" data-ringkas-diskors="">
+          <span className="font-medium text-amber-800 dark:text-amber-200">{diskors.length} diskors · belum selesai:</span>
+          {diskors.map((d) => (
+            <button
+              key={d.kunci}
+              type="button"
+              onClick={() => onLihat?.(d.kunci)}
+              className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 bg-amber-500/10 px-1.5 py-0.5 text-left text-amber-900 transition hover:bg-amber-500/20 dark:text-amber-100"
+              title={`Tunjukkan barisnya${d.oleh ? ` - diskors oleh ${d.oleh}` : ""}. Sidangnya belum selesai dan dapat dilanjutkan.`}
+            >
+              <PauseCircle className="h-3 w-3" aria-hidden />
+              <span className="tabular-nums">{nomorPerkara(d.kunci) || `perkara ${d.perkaraId}`}</span>
+              {d.ruang ? <span className="text-amber-800/80 dark:text-amber-200/80">{d.ruang}</span> : null}
+              {d.jam ? <span className="text-amber-800/80 dark:text-amber-200/80">{d.jam}</span> : null}
+            </button>
+          ))}
+        </span>
+      ) : banyakDiskors > 0 ? (
+        <span className="text-amber-800 dark:text-amber-200">{banyakDiskors} diskors · belum selesai</span>
       ) : null}
     </div>
   );
 }
 
 // ============================================================================
-// PAPAN RUANG SIDANG DI HALAMAN HASIL SIDANG
+// DATA RUANG SIDANG SATU HARI - dipakai Hasil Sidang dan Papan panggil
 // ============================================================================
 
 type BarisJadwalRingkas = {
@@ -396,34 +563,24 @@ type DataPapan = {
   waktu: WaktuAntrian;
   selesai: PetaSelesai;
   skors: PetaSkors;
+  /** Tanda "sedang berjalan" manual + proses sidang mesin antrian (bot lama = kosong). */
+  berjalan: DataBerjalan;
 };
 
+function hariIniLokal(): string {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
 /**
- * Hasil Sidang (/sidang-tunda/<id>) - satu perkara, tetapi petugasnya duduk di
- * ruang sidang: ia perlu tahu apakah perkara ini yang sedang disidangkan,
- * menskorsnya, dan melompat ke perkara berikutnya di ruang yang sama tanpa
- * kembali ke Jadwal Sidang.
- *
- * Datanya bacaan yang SAMA dengan Jadwal Sidang (rute jadwal + peta selesai),
- * untuk tanggal sidang perkara ini saja. Hari lampau / akan datang: tidak
- * ditampilkan - tidak ada sidang yang sedang berjalan pada hari itu.
+ * Keadaan ruang sidang untuk SATU tanggal - bacaan yang SAMA dengan Jadwal
+ * Sidang (rute jadwal + peta selesai/skors/berjalan). Dipakai PapanRuangSidang
+ * (Hasil Sidang) dan PanelRuangPapanPanggil (halaman tempat nomor dipanggil).
  */
-export function PapanRuangSidang({
-  perkaraId,
-  nomorPerkara,
-  tanggalSidang,
-  hasilSidangSelesai,
-}: {
-  perkaraId: string;
-  nomorPerkara: string;
-  tanggalSidang: string;
-  hasilSidangSelesai: boolean;
-}) {
-  const tanggal = String(tanggalSidang || "").slice(0, 10);
+function useDataRuangSidang(tanggal: string) {
   const [data, setData] = useState<DataPapan | null>(null);
   const [galat, setGalat] = useState("");
   const [versi, setVersi] = useState(0);
-  const [pesanLompat, setPesanLompat] = useState("");
 
   useEffect(() => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) return;
@@ -442,12 +599,17 @@ export function PapanRuangSidang({
           return;
         }
         const antrian = (jadwal.antrian as { peta?: Record<string, AntrianRingkas> } | undefined)?.peta ?? {};
+        const mentah = (selesai.berjalan as Partial<DataBerjalan> | undefined) ?? {};
         setData({
           sidang: Array.isArray(jadwal.sidang) ? (jadwal.sidang as BarisJadwalRingkas[]) : [],
           antrian,
           waktu: (jadwal.waktuAntrian as WaktuAntrian) ?? WAKTU_ANTRIAN_KOSONG,
           selesai: (selesai.peta as PetaSelesai) ?? {},
           skors: (selesai.skors as PetaSkors) ?? {},
+          berjalan: {
+            manual: mentah.manual && typeof mentah.manual === "object" ? mentah.manual : DATA_BERJALAN_KOSONG.manual,
+            proses: Array.isArray(mentah.proses) ? mentah.proses : DATA_BERJALAN_KOSONG.proses,
+          },
         });
         setGalat("");
       })
@@ -467,24 +629,57 @@ export function PapanRuangSidang({
     const ruangSipp: Record<string, string> = {};
     for (const b of data.sidang) ruangSipp[kunciWaktu(b.tanggalSidang, b.perkaraId)] = String(b.ruangan || "");
     const selesai = selesaiPerKunciWaktu(data.sidang, data.selesai);
-    const ruang = petaSidangBerjalan(data.waktu.baris, { hariIni, selesai, skors: data.skors, ruangSipp });
+    const ruang = petaSidangBerjalan(data.waktu.baris, { hariIni, selesai, skors: data.skors, ruangSipp, berjalan: data.berjalan });
     const bisaDipanggil = (b: { perkaraId: string; tanggalSidang: string }) =>
       Boolean(hariIni) && b.tanggalSidang === hariIni && data.antrian[String(b.perkaraId)]?.tanggalSidang === b.tanggalSidang;
     return { hariIni, selesai, ruang, bisaDipanggil };
   }, [data]);
 
-  const info = useCallback(
-    (id: string): InfoPerkaraRuang => {
-      const b = data?.sidang.find((x) => String(x.perkaraId) === String(id));
-      const a = data?.antrian[String(id)];
-      return {
-        nomorPerkara: b?.nomorPerkara || (String(id) === String(perkaraId) ? nomorPerkara : ""),
-        nomorAntrian: a?.nomor ?? null,
-        noRuang: a?.noRuang ?? null,
-      };
-    },
-    [data, perkaraId, nomorPerkara]
-  );
+  return { data, galat, muatUlang, susun };
+}
+
+/** Keterangan perkara untuk tombol - dari data satu hari, dengan cadangan untuk perkara yang sedang dibuka. */
+function infoDari(data: DataPapan | null, cadangan?: { perkaraId: string; nomorPerkara: string }) {
+  return (id: string): InfoPerkaraRuang => {
+    const b = data?.sidang.find((x) => String(x.perkaraId) === String(id));
+    const a = data?.antrian[String(id)];
+    return {
+      nomorPerkara: b?.nomorPerkara || (cadangan && String(id) === String(cadangan.perkaraId) ? cadangan.nomorPerkara : ""),
+      nomorAntrian: a?.nomor ?? null,
+      noRuang: a?.noRuang ?? null,
+    };
+  };
+}
+
+// ============================================================================
+// PAPAN RUANG SIDANG DI HALAMAN HASIL SIDANG
+// ============================================================================
+
+/**
+ * Hasil Sidang (/sidang-tunda/<id>) - satu perkara, tetapi petugasnya duduk di
+ * ruang sidang: ia perlu tahu apakah perkara ini yang sedang disidangkan,
+ * menskorsnya, menandainya berjalan, dan melompat ke perkara berikutnya di
+ * ruang yang sama tanpa kembali ke Jadwal Sidang.
+ *
+ * Datanya bacaan yang SAMA dengan Jadwal Sidang (rute jadwal + peta selesai),
+ * untuk tanggal sidang perkara ini saja. Hari lampau / akan datang: tidak
+ * ditampilkan - tidak ada sidang yang sedang berjalan pada hari itu.
+ */
+export function PapanRuangSidang({
+  perkaraId,
+  nomorPerkara,
+  tanggalSidang,
+  hasilSidangSelesai,
+}: {
+  perkaraId: string;
+  nomorPerkara: string;
+  tanggalSidang: string;
+  hasilSidangSelesai: boolean;
+}) {
+  const tanggal = String(tanggalSidang || "").slice(0, 10);
+  const { data, galat, muatUlang, susun } = useDataRuangSidang(tanggal);
+  const info = useMemo(() => infoDari(data, { perkaraId, nomorPerkara }), [data, perkaraId, nomorPerkara]);
+  const [pesanLompat, setPesanLompat] = useState("");
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) return null;
   if (galat) {
@@ -507,13 +702,20 @@ export function PapanRuangSidang({
   const kunci = kunciWaktu(tanggal, perkaraId);
   const baris = { perkaraId: String(perkaraId), nomorPerkara, tanggalSidang: tanggal };
   const berjalanIni = susun.ruang.berjalan[kunci] ?? null;
-  const skorsIni = skorsUntuk(data.skors, baris, susun.ruang.panggilPerKunci[kunci]);
+  const skorsIni = skorsUntuk(data.skors, baris, susun.ruang.penandaPerKunci[kunci]);
   const ruangIni = susun.ruang.ruangPerKunci[kunci] ?? "";
   const berjalanDiRuang = ruangIni ? (susun.ruang.perRuang[ruangIni] ?? null) : null;
   const hijau =
     hasilSidangSelesai || keadaanSelesai(baris, false, data.selesai).hijau || Boolean(susun.selesai[kunci]);
   const dapatDipanggil = susun.bisaDipanggil(baris);
-  const aksi = aksiRuangSidang({ hijau, berjalan: berjalanIni, skors: skorsIni, berjalanDiRuang, bisaDipanggil: dapatDipanggil });
+  const aksi = aksiRuangSidang({
+    hijau,
+    berjalan: berjalanIni,
+    skors: skorsIni,
+    berjalanDiRuang,
+    bisaDipanggil: dapatDipanggil,
+    bisaTandai: true,
+  });
 
   // Perkara lain di ruang yang sama, hari ini, belum selesai, dapat dipanggil.
   const calon = ruangIni
@@ -532,7 +734,9 @@ export function PapanRuangSidang({
     : [];
 
   const lompatKe = async (tujuan: BarisJadwalRingkas) => {
-    const diskors = Boolean(skorsUntuk(data.skors, tujuan, susun.ruang.panggilPerKunci[kunciWaktu(tujuan.tanggalSidang, tujuan.perkaraId)]));
+    const diskors = Boolean(
+      skorsUntuk(data.skors, tujuan, susun.ruang.penandaPerKunci[kunciWaktu(tujuan.tanggalSidang, tujuan.perkaraId)])
+    );
     const langkah = rencanaLompat({ asal: berjalanDiRuang, tujuan, tujuanDiskors: diskors, bisaDipanggil: true });
     const kalimat = kalimatLangkah(langkah, (id) => info(id).nomorPerkara);
     if (!window.confirm(`${kalimat.map((k, i) => `${i + 1}. ${k}`).join("\n")}\n\nSesudahnya halaman Hasil Sidang ${tujuan.nomorPerkara} dibuka. Lanjutkan?`)) {
@@ -578,7 +782,7 @@ export function PapanRuangSidang({
         {hijau
           ? "Sidang perkara ini sudah selesai - tidak dapat diskors."
           : berjalanIni
-            ? "Perkara ini yang sedang disidangkan. Skors bila sidangnya belum selesai dan akan dilanjutkan nanti."
+            ? `Perkara ini yang sedang disidangkan (${kalimatSumberBerjalan(berjalanIni)}) Skors bila sidangnya belum selesai dan akan dilanjutkan nanti.`
             : skorsIni
               ? "Sidang perkara ini diskors dan belum selesai."
               : berjalanDiRuang
@@ -597,6 +801,7 @@ export function PapanRuangSidang({
         skors={skorsIni}
         bisaDipanggil={dapatDipanggil}
         info={info}
+        ruang={ruangIni}
         onBerubah={() => muatUlang()}
       />
 
@@ -613,7 +818,7 @@ export function PapanRuangSidang({
           <ul className="mt-1 space-y-1">
             {calon.map((b) => {
               const k = kunciWaktu(b.tanggalSidang, b.perkaraId);
-              const skorsB = skorsUntuk(data.skors, b, susun.ruang.panggilPerKunci[k]);
+              const skorsB = skorsUntuk(data.skors, b, susun.ruang.penandaPerKunci[k]);
               return (
                 <li key={k}>
                   <button
@@ -637,6 +842,146 @@ export function PapanRuangSidang({
       ) : null}
 
       {pesanLompat ? <p className="text-xs text-rose-600">{pesanLompat}</p> : null}
+    </div>
+  );
+}
+
+// ============================================================================
+// PANEL RUANG SIDANG DI HALAMAN TEMPAT NOMOR ANTRIAN DIPANGGIL (Papan panggil)
+// ============================================================================
+
+/**
+ * Skors, Lanjutkan, dan Batalkan tanda - di halaman yang dibuka petugas ruang
+ * sidang untuk MEMANGGIL nomor, bukan hanya di baris Jadwal Sidang. Sidang yang
+ * sedang berjalan di tiap ruang disebut, dapat diskors; yang diskors disebut
+ * dan dapat dilanjutkan. Perkara yang diskors TIDAK selesai (tidak hijau):
+ * tombol tunda|putus di Jadwal Sidang tetap ada, dan tanda Selesai yang sah
+ * tidak pernah tersentuh.
+ *
+ * Mandiri: membaca datanya sendiri (bacaan yang sama dengan Jadwal Sidang),
+ * sehingga halaman pemanggil cukup memasangnya tanpa membawa data lain.
+ * Hanya HARI INI - sidang hari lain tidak punya "sedang berjalan".
+ */
+export function PanelRuangPapanPanggil({ tanggal, className }: { tanggal?: string; className?: string }) {
+  const hari = tanggal || hariIniLokal();
+  const { data, galat, muatUlang, susun } = useDataRuangSidang(hari);
+  const info = useMemo(() => infoDari(data), [data]);
+
+  if (galat) {
+    return (
+      <p className={cn("rounded-md border px-3 py-2 text-xs text-muted-foreground", className)} data-panel-ruang-papan="">
+        Ruang sidang: {galat}
+      </p>
+    );
+  }
+  if (!data || !susun) {
+    return (
+      <p className={cn("rounded-md border px-3 py-2 text-xs text-muted-foreground", className)} data-panel-ruang-papan="">
+        Membaca keadaan ruang sidang…
+      </p>
+    );
+  }
+  if (!susun.hariIni || susun.hariIni !== hari) return null;
+
+  const berjalan = Object.values(susun.ruang.berjalan).sort((a, b) =>
+    a.ruang.localeCompare(b.ruang, "id", { numeric: true })
+  );
+  const diskors = daftarDiskors(data.sidang, data.skors, susun.ruang, susun.selesai);
+  const barisDari = (b: { perkaraId: string; tanggalSidang: string }) => ({
+    perkaraId: String(b.perkaraId),
+    tanggalSidang: b.tanggalSidang,
+    nomorPerkara: info(String(b.perkaraId)).nomorPerkara,
+  });
+
+  return (
+    <div
+      data-panel-ruang-papan=""
+      className={cn("space-y-2 rounded-2xl border bg-muted/10 p-4 text-sm", className)}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+          Sidang berjalan dan skors · tidak menyelesaikan perkara
+        </p>
+        <button
+          type="button"
+          onClick={muatUlang}
+          className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted"
+          title="Baca ulang keadaan ruang sidang"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> Muat ulang
+        </button>
+      </div>
+
+      {berjalan.length === 0 && diskors.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Tidak ada sidang yang sedang berjalan atau diskors hari ini.</p>
+      ) : null}
+
+      {berjalan.length > 0 ? (
+        <ul className="space-y-1.5" data-panel-berjalan="">
+          {berjalan.map((b) => {
+            const baris = barisDari(b);
+            const aksi = aksiRuangSidang({
+              hijau: false,
+              berjalan: b,
+              skors: null,
+              berjalanDiRuang: b,
+              bisaDipanggil: susun.bisaDipanggil(baris),
+            });
+            return (
+              <li key={b.kunci} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-sky-500/40 bg-sky-500/[0.06] px-3 py-2">
+                <div className="min-w-0">
+                  <p className="font-medium tabular-nums">{baris.nomorPerkara || `perkara ${b.perkaraId}`}</p>
+                  <LencanaSedangBerjalan berjalan={b} className="mt-0.5" />
+                </div>
+                <TombolRuangSidang
+                  baris={baris}
+                  aksi={aksi}
+                  berjalan={b}
+                  skors={null}
+                  bisaDipanggil={susun.bisaDipanggil(baris)}
+                  info={info}
+                  ruang={b.ruang}
+                  onBerubah={() => muatUlang()}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      {diskors.length > 0 ? (
+        <ul className="space-y-1.5" data-panel-diskors="">
+          {diskors.map((d) => {
+            const baris = barisDari(d);
+            const catatan = data.skors[`${d.perkaraId}|${d.tanggalSidang}`];
+            const aksi = aksiRuangSidang({
+              hijau: false,
+              berjalan: null,
+              skors: catatan ?? null,
+              berjalanDiRuang: d.ruang ? (susun.ruang.perRuang[d.ruang] ?? null) : null,
+              bisaDipanggil: susun.bisaDipanggil(baris),
+            });
+            return (
+              <li key={d.kunci} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/[0.06] px-3 py-2">
+                <div className="min-w-0">
+                  <p className="font-medium tabular-nums">{baris.nomorPerkara || `perkara ${d.perkaraId}`}</p>
+                  {catatan ? <LencanaDiskors catatan={catatan} className="mt-0.5" /> : null}
+                </div>
+                <TombolRuangSidang
+                  baris={baris}
+                  aksi={aksi}
+                  berjalan={null}
+                  skors={catatan ?? null}
+                  bisaDipanggil={susun.bisaDipanggil(baris)}
+                  info={info}
+                  ruang={d.ruang}
+                  onBerubah={() => muatUlang()}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 }

@@ -136,10 +136,18 @@ describe("4. tanggal dan jam sidang berikutnya terisi sendiri", () => {
     // Aturannya sama persis di dua tempat, dan memang harus: layar mengusulkan,
     // layanan memeriksa. Yang berbeda diam-diam akan menulis jam yang tidak
     // pernah dilihat panitera sidang.
-    for (const berkas of [layar, kodeLayanan]) {
-      expect(berkas).toContain('const AGENDA_SORE = ["jawaban", "replik", "duplik", "kesimpulan", "jawab"];');
-      expect(berkas).toContain('? "15:00" : "09:00"');
-    }
+    //
+    // 2 Okt 2026 malam: aturan layar pindah ke SATU fungsi bersama,
+    // jamSidangBerikut di @/lib/bawaan-tunda (dipakai Jadwal Sidang DAN Hasil
+    // Sidang - dijaga perbaikan-2okt-malam-jadwal-sidang.test.ts). Layar tidak
+    // boleh lagi memegang salinannya; layanan bot tetap memegang rumus lamanya.
+    expect(layar).not.toContain("const AGENDA_SORE");
+    expect(layar).toContain("jamSidangBerikut,");
+    const lib = baca("manajemen_surat/src/lib/bawaan-tunda.ts");
+    expect(lib).toContain('new Set<TahapAcara>(["jawaban", "replik", "duplik", "kesimpulan"])');
+    expect(lib).toContain("? JAM_SORE : JAM_PAGI");
+    expect(kodeLayanan).toContain('const AGENDA_SORE = ["jawaban", "replik", "duplik", "kesimpulan", "jawab"];');
+    expect(kodeLayanan).toContain('? "15:00" : "09:00"');
   });
 
   it("tanggal sidang dipulangkan sebagai tulisan, bukan obyek Date", () => {

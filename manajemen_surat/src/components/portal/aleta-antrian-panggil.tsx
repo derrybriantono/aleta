@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { PanelRuangPapanPanggil } from "@/components/portal/jadwal-sidang-2okt";
 import { apiPath } from "@/lib/base-path";
 import { selangPanggilan, warnaRuang } from "@/lib/antrian-tampilan";
 import { hentikanUcapan, useSuaraPanggilan } from "@/lib/suara-panggilan";
@@ -639,6 +640,9 @@ export function AletaAntrianPanggil() {
           </div>
         </div>
       ) : null}
+
+      {/* Ruang sidang (2 Okt 2026, butir 2-3): yang sedang berjalan / diskors di Papan panggil. */}
+      <PanelRuangPapanPanggil />
     </div>
   );
 }
