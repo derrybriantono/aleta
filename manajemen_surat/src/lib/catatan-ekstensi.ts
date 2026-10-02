@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.181.0",
+    dirilis: "2026-10-02T21:45:00+08:00",
+    judul: "Jadwal Sidang: kolom Antrian / Jam tidak lagi melebar dan menyempitkan Perkara & Para Pihak",
+    butir: [
+      "RILIS INI HANYA PORTAL; isi ekstensi tidak berubah (versinya ikut naik).",
+      "Kolom Antrian / Jam yang sudah terisi (nomor hijau, jam P/T, dan lencana Tunggu / Dari sebelumnya / Lama) kini dibatasi lebarnya, sehingga kolom Perkara & Para Pihak - kolom utama - tidak lagi tersempitkan. Kolom yang belum mengambil nomor tetap sesempit isinya. Lencana di dalamnya membungkus ke baris berikutnya, tidak ada yang dihapus.",
+    ],
+  },
+  {
     versi: "1.180.0",
     dirilis: "2026-10-02T21:30:00+08:00",
     judul: "Jadwal Sidang dan Hasil Sidang: tanggal dan jam sidang berikutnya otomatis, tanda sedang berjalan manual, skors di Papan panggil",

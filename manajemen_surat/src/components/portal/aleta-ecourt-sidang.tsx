@@ -6578,7 +6578,7 @@ export function AletaEcourtSidang({
                   kunci="antrian"
                   urutan={urutTabel}
                   onTekan={tekanUrut}
-                  className="px-2"
+                  className="max-w-[12rem] px-2"
                   judul="Urutkan menurut nomor antrian; yang belum mengambil dan yang tanpa antrian jatuh ke bawah"
                 >
                   Antrian / Jam
@@ -6792,7 +6792,13 @@ export function AletaEcourtSidang({
                             />
                           </td>
                         ) : null}
-                        <td className="px-2 py-2 align-top">
+                        {/* max-w-[12rem]: lencana "Tunggu / Dari sebelumnya / Lama" berada di wadah
+                            yang boleh membungkus, tetapi lebar IDEAL wadah itu = semua lencana dijajar
+                            satu baris (~330px). Tabel yang melebar otomatis membagi ruang menurut
+                            lebar ideal, jadi kolom ini yang sudah terisi merebut ruang dari "Perkara &
+                            Para Pihak" - kolom utama. Batas ini hanya mengikat yang sudah terisi: yang
+                            belum mengambil nomor tetap sesempit isinya. */}
+                        <td className="max-w-[12rem] px-2 py-2 align-top">
                           <SelAntrianJam
                             baris={baris}
                             antrian={antrianUntuk(antrian.peta, baris)}
