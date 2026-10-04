@@ -6755,6 +6755,10 @@ function bagianUnggahSatuAbt(isi) {
   // menolak - dan yang menekannya menyangka ada yang rusak.
   if (!jatiDiri || !jatiDiri.perkaraId) return null;
 
+  // 1.182.0: bagian ini mengunggah PUTUSAN. Di blangko BAS, relaas, atau
+  // pemberitahuan putusan ia tidak boleh ada - lihat a3BukanBlangkoPutusan.
+  if (a3BukanBlangkoPutusan()) return null;
+
   const kotak = buatElemen("div", "aleta-abt-bagian");
   kotak.appendChild(buatElemen("div", "aleta-abt-judul", "Unggah putusan perkara ini ke SIPP"));
   kotak.appendChild(
@@ -6844,6 +6848,11 @@ function bagianUnggahSatuAbt(isi) {
     kabar.className = "aleta-abt-kabar";
     kabar.textContent = "Menyiapkan…";
     try {
+      // Penjaga kedua (1.182.0): bagian ini sudah tidak digambar di blangko
+      // BAS/relaas, tetapi halaman ABT dapat berganti isi tanpa muat ulang.
+      if (a3BukanBlangkoPutusan()) {
+        throw new Error("Halaman ini bukan blangko putusan (BAS, relaas, atau pemberitahuan) - putusan tidak diunggah dari sini.");
+      }
       // Peta blangko dibaca SEKARANG, bukan disimpan saat panel dibangun:
       // pemetaannya dapat diubah orang di panel lain sementara halaman ini
       // terbuka, dan yang dipakai harus yang berlaku saat tombolnya ditekan.
@@ -9362,6 +9371,8 @@ async function t6JalankanLangkah(k, l) {
     // Membawa ke bagian Kerjakan, tidak menekannya: pilihannya (draf,
     // anonim, unggah) harus terbaca sebelum tombol yang menulis ke SIPP
     // ditekan.
+    // Tanpa bagian Unggah (blangko BAS/relaas, 1.182.0) langkah ini tidak punya tujuan.
+    if (!k.unggah) return;
     const t = k.unggah.querySelector("button.aleta-abt-tombol");
     try {
       k.unggah.scrollIntoView({ block: "nearest" });
@@ -14833,6 +14844,20 @@ function p7HalamanBas() {
   if (typeof halamanBlangko === "function" && !halamanBlangko()) return false;
   if (P7_POLA_BAS.test(p7NamaBlangko())) return true;
   return Boolean(document.querySelector('a[onclick*="validasi_bas"]'));
+}
+
+/**
+ * Blangko yang dibuka BUKAN blangko putusan? (BAS, relaas panggilan,
+ * pemberitahuan putusan/PBT.) Sampai 1.181.0 bagian "Unggah putusan perkara
+ * ini" dan tombol kaki "Kerjakan perkara ini" tetap tampil di sana, dan bila
+ * token blangko tidak cocok dengan pemetaan putusan, a1PilihBlangkoHalaman
+ * jatuh ke "Blangko halaman ini (dari tautan CETAK)" - satu klik mengunggah
+ * RTF BAS atau relaas sebagai putusan perkara.
+ */
+const A3_POLA_BUKAN_PUTUSAN = /\bBAS\b|berita\s+acara|relaas|panggilan|pemberitahuan|\bPBT\b/i;
+function a3BukanBlangkoPutusan() {
+  if (p7HalamanBas()) return true;
+  return A3_POLA_BUKAN_PUTUSAN.test(p7NamaBlangko());
 }
 
 /** Sidang ke- blangko ini: d= tautan CETAK, lalu "BAS <n>" di nama blangko; 0 = tidak terbaca. */

@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.182.0",
+    dirilis: "2026-10-04T11:10:00+08:00",
+    judul: "Panel ABT: bagian Unggah putusan tidak lagi tampil di blangko BAS, relaas, dan pemberitahuan",
+    butir: [
+      "PERBAIKAN. Di blangko BAS (juga relaas panggilan dan pemberitahuan putusan) bagian \"Unggah putusan perkara ini ke SIPP\" dan tombol kaki \"Kerjakan perkara ini\" tidak lagi digambar. Sebelumnya keduanya tampil di semua halaman blangko ABT, dan bila token blangko halaman tidak cocok dengan pemetaan putusan, panel memilih sendiri \"Blangko halaman ini (dari tautan CETAK)\" - satu klik mengunggah RTF BAS atau relaas ke SIPP sebagai putusan perkara.",
+      "Dikenali dari nama blangko (BAS, berita acara, relaas, panggilan, pemberitahuan, PBT) dan dari tautan validasi BAS. Ada penjaga kedua di tombolnya bila halaman ABT berganti isi tanpa muat ulang, dan langkah \"Kerjakan\" tanpa bagian Unggah tidak lagi melempar error.",
+      "Yang TIDAK berubah: blangko putusan tetap punya bagian Unggah dan tombol kaki seperti biasa; \"Isi dari SIPP & input ke ABT (BAS)\" untuk panitera dan PP di blangko BAS tetap ada.",
+    ],
+  },
+  {
     versi: "1.181.0",
     dirilis: "2026-10-02T21:45:00+08:00",
     judul: "Jadwal Sidang: kolom Antrian / Jam tidak lagi melebar dan menyempitkan Perkara & Para Pihak",
