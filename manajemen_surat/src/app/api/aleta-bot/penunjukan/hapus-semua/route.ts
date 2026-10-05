@@ -65,8 +65,10 @@ export async function POST(request: NextRequest) {
       const nama = String(masuk[jenis] ?? "").trim();
       if (nama) akunPerJenis[jenis] = nama.slice(0, 60);
     }
-    if (Object.keys(akunPerJenis).length === 0) {
-      return Response.json({ ok: false, alasan: "akun_pejabat_tidak_disebut" }, { status: 400 });
+    // Butir 39: akun SIPP petugas yang sedang masuk - yang dicatat SIPP.
+    const akunSippMasuk = String(badan.akunSippMasuk || "").trim().slice(0, 150);
+    if (Object.keys(akunPerJenis).length === 0 && !akunSippMasuk) {
+      return Response.json({ ok: false, alasan: "akun_sipp_belum_terbaca" }, { status: 400 });
     }
 
     const kering = badan.kering !== false;
@@ -74,6 +76,7 @@ export async function POST(request: NextRequest) {
     const respons = await kirimPenetapanHapusSemuaGateway({
       perkaraId,
       akunPerJenis,
+      akunSippMasuk,
       operator,
       kering,
       ip: alamatIpPeramban(request),

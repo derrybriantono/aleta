@@ -3733,6 +3733,7 @@ export async function kirimPenetapanHapusGateway(payload: {
   jenis: string;
   perkaraId: number;
   olehUsername: string;
+  akunSippMasuk?: string;
   operator: string;
   kering: boolean;
   ip?: string;
@@ -3858,6 +3859,7 @@ export async function terbitkanDokumenPenetapan(payload: {
 export async function kirimPenetapanHapusSemuaGateway(payload: {
   perkaraId: number;
   akunPerJenis: Record<string, string>;
+  akunSippMasuk?: string;
   operator: string;
   kering: boolean;
   ip?: string;

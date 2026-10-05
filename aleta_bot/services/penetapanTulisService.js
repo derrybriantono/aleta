@@ -2582,28 +2582,48 @@ async function susunRencanaHapus(minta) {
     return { ok: false, alasan: "langkah_sesudahnya_masih_ada", langkah: menghalangi };
   }
 
-  const akun = await akunSipp(minta.olehUsername);
-  if (!akun) {
-    // Nama akunnya IKUT disebutkan. Tanpa itu, yang membacanya hanya tahu
-    // "akun pejabat tidak ketemu" dan tidak punya satu pun petunjuk akun mana
-    // yang dicari - padahal yang dicari datang dari pemetaan jabatan ALETA,
-    // dan di situlah perbaikannya.
-    return {
-      ok: false,
-      alasan: "akun_pejabat_tidak_ketemu",
-      username: String(minta.olehUsername || ""),
-    };
+  // ==========================================================================
+  // MEMBONGKAR PUN ATAS NAMA PETUGAS YANG SEDANG MASUK (butir 39, 5 Okt 2026)
+  // ==========================================================================
+  //
+  // Sampai 5 Oktober pembongkaran tercatat atas nama PEJABAT penetapnya, sama
+  // seperti jalur tulis dulu. Yang dicatat SIPP kini akun petugas yang masuk
+  // SIPP dan menekan tombolnya (akunSippMasuk = nama di kepala halaman SIPP),
+  // diterjemahkan lewat akunPetugasMasuk. olehUsername (pejabat) hanya
+  // dipakai untuk uji kering pemanggil lama yang belum mengirim akun masuk -
+  // membongkar sungguhan tanpa akun masuk DITOLAK, tidak pernah jatuh ke
+  // akun pejabat.
+  const namaMasuk = cleanText(minta.akunSippMasuk);
+  let akun = null;
+  if (namaMasuk) {
+    akun = await akunPetugasMasuk(namaMasuk, String(minta.ip || ""));
+    if (akun && akun.ganda) {
+      return { ok: false, alasan: "akun_sipp_ganda", nama: namaMasuk, calon: akun.calon };
+    }
+    if (!akun) return { ok: false, alasan: "akun_sipp_tidak_ketemu", nama: namaMasuk };
+  } else if (minta.kering === true) {
+    akun = await akunSipp(minta.olehUsername);
+    if (!akun) {
+      // Nama akunnya IKUT disebutkan. Tanpa itu, yang membacanya hanya tahu
+      // "akun pejabat tidak ketemu" dan tidak punya satu pun petunjuk akun mana
+      // yang dicari.
+      return {
+        ok: false,
+        alasan: "akun_pejabat_tidak_ketemu",
+        username: String(minta.olehUsername || ""),
+      };
+    }
+  } else {
+    return { ok: false, alasan: "akun_sipp_belum_terbaca" };
   }
 
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
 
-  // Jam yang dipakai pemanggil bila ia menyusun rangkaian bongkar - lihat
-  // waktuBongkar. Tanpa itu, jam basis data sekarang - untuk bongkar satu
-  // langkah lewat tombol "Batalkan penetapan terakhir".
-  const saat = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(minta.saat || ""))
-    ? String(minta.saat)
-    : await waktuBasisData();
+  // Jam basis data SIPP SAAT INI - jam sungguhan, sama seperti jalur tulis
+  // sejak butir 39. Jam susunan (jam kiriman pemanggil, dari waktuBongkar) tidak lagi
+  // dipakai: ia memundurkan jam dan menenggelamkan barisnya di Audit Trail.
+  const saat = await waktuBasisData();
   // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
   const ip = String(minta.ip || "");
   const langkah = [];

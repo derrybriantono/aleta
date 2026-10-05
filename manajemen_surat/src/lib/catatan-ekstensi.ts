@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.184.0",
+    dirilis: "2026-10-05T18:00:00+08:00",
+    judul: "Perbaikan 5 Okt: ABT lebih cepat & hanya isian sah, tab PTSP + KTP/PDF, putusan otomatis tanpa sembul, Court Calendar otomatis, pembaruan sendiri",
+    butir: [
+      "ABT: \"Isi dari SIPP & input ke ABT\" (hakim dan BAS) hanya mengusulkan variabel data_teks/data_tanggal - Tgl Sidang, Majelis, dan sejenisnya dihitung ABT sendiri dan tidak lagi tercentang. Tanggal dikirim d/m/Y (bentuk yang diterima ABT). Input ke ABT tanpa jeda (keputusan pengguna), bacaan berjalan bersamaan - jauh lebih cepat. 0222-8503 yang tidak terdeteksi tetap punya kartu Sunting. #2222#/#0364# Tanggal KTP diusulkan dari berkas KTP e-Court (dibaca mesin, tidak dicentang sendiri). \"Susun keterangan saksi\" juga dari blangko BAS (5058).",
+      "SIPP: tab baru PTSP berisi Data Umum dari berkas gugatan (dipindah dari Penetapan; di Penetapan ada tautannya), isi para pihak ke SIPP dari gugatan, isi dari foto/PDF KTP (zona seret-lepas besar, tema UI Baru, alamat & wilayah lebih andal, rantai provinsi-kelurahan sejauh cocok, alur saksi Cari-Tambah), dan rapikan alamat pihak yang dobel/berkurung. Jendela sembul SIPP digeser agar tidak tertutup panel.",
+      "SIPP: Putusan otomatis membuka blangko lewat \"Tambah Putusan Akhir\" sendiri (putusan massal jalan), tidak macet, dan tidak lagi tertahan 5 detik per kolom. Court Calendar otomatis untuk panitera sidang: disusun dari pola perkara sejenis, dapat disunting, diinput sekaligus.",
+      "Penanda halaman daftar SIPP: \"izin atasan\" hanya perkara cerai dan poligami; \"menunggu majelis\" hanya dokumen persidangan perkara gugatan (bukan berkas pendaftaran, bukan permohonan) - satu definisi dengan ALETA e-Court dan Status Perkara.",
+      "Ekstensi memperbarui dan memuat ulang dirinya sendiri saat halaman baru dimuat (sekali per versi), lalu menulis \"ALETA diperbarui ke x\" di atas widget.",
+      "PERBAIKAN penetapan: tanggal sidang yang dipilih sendiri dari kalender (\"manual\") kini yang ditulis ke SIPP - sebelumnya diganti diam-diam oleh saran ALETA. Tanggal yang ditolak SIPP (Sabtu/Minggu, sebelum tanggal penetapan) ditolak dengan pesan, tidak diganti.",
+      "PERBAIKAN Audit Trail SIPP: PMH, Smart Majelis, PPP, PJS, PHS, sidang pertama, dan pembatalannya tercatat atas akun SIPP petugas yang sedang masuk (bukan akun pejabat), dari alamat peramban petugas, pada jam sungguhan dengan jeda antarlangkah - urutan, judul, dan isi barisnya persis seperti bila diisi lewat blangko SIPP. Pejabat penetap dan jejak lengkapnya dicatat di ALETA saja.",
+    ],
+  },
+  {
     versi: "1.183.0",
     dirilis: "2026-10-04T14:50:00+08:00",
     judul: "Panel ABT: bagian Unggah putusan dan tombol kaki \"Kerjakan perkara ini\" hanya di blangko putusan",

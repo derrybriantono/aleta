@@ -41,35 +41,39 @@ describe("PHS boleh dipilih penanda tangannya", () => {
   });
 });
 
-describe("bongkar berjeda seperti pekerjaan tangan", () => {
-  it("jam tiap langkah bongkar dihitung sekali untuk seluruh rangkaian", () => {
-    expect(tulis).toContain("async function waktuBongkar(perkaraId) {");
-    expect(gerbang).toContain("const jamBongkar = await penetapanTulisService.waktuBongkar(perkaraId);");
-    expect(gerbang).toContain("saat: jamBongkar[jenis],");
+describe("bongkar: akun petugas yang masuk, jam sungguhan, jeda sungguhan (butir 39)", () => {
+  const hapus = gerbang.slice(
+    gerbang.indexOf('router.post("/penetapan/hapus"'),
+    gerbang.indexOf('router.post("/penetapan/hapus-semua"')
+  );
+  const semua = gerbang.slice(gerbang.indexOf('router.post("/penetapan/hapus-semua"'));
+  const susun = tulis.slice(tulis.indexOf("async function susunRencanaHapus(minta) {"));
+
+  it("rangkaian bongkar tidak lagi memakai jam susunan yang dimundurkan", () => {
+    // Jam susunan menenggelamkan barisnya di Audit Trail SIPP (ORDER BY datetime).
+    expect(semua).not.toContain("waktuBongkar(");
+    expect(semua).not.toContain("saat: jamBongkar");
+    expect(susun.slice(0, 6000)).not.toContain("minta.saat");
+    expect(susun).toContain("const saat = await waktuBasisData();");
   });
 
-  it("PMH paling akhir = sekarang; tidak ada baris bertanggal masa depan", () => {
-    // Dibalik dari URUTAN_BONGKAR (phs, pjs, ppp, pmh): yang pertama dalam
-    // urutan terbalik - pmh - mendapat mundur nol.
-    expect(tulis).toContain("const dariAkhir = [...URUTAN_BONGKAR].reverse();");
-    expect(tulis).toContain("if (i > 0) mundurMenit += jedaLangkah(benih, i - 1);");
-    expect(tulis).toContain("dasar.getTime() - mundurMenit * 60000");
+  it("jeda sungguhan sebelum tiap tulisan, tidak pada uji kering", () => {
+    expect(hapus).toContain('if (!kering) await jedaManusiaService.jeda("simpan", { kering });');
+    expect(semua).toContain('if (!kering) await jedaManusiaService.jeda("simpan", { kering });');
   });
 
-  it("benihnya digeser dari jalur tulis - pola jeda yang identik pun sebuah tanda", () => {
-    expect(tulis).toContain("benihDari(Number(perkaraId) * 3 + 1)");
+  it("yang dicatat akun SIPP petugas yang masuk; tanpa itu membongkar sungguhan ditolak", () => {
+    expect(hapus).toContain('akunSippMasuk: String(badan.akunSippMasuk || ""),');
+    expect(semua).toContain("akunSippMasuk,");
+    expect(susun).toContain("akun = await akunPetugasMasuk(namaMasuk, String(minta.ip || \"\"));");
+    expect(susun).toContain('return { ok: false, alasan: "akun_sipp_belum_terbaca" };');
+    // Akun pejabat hanya untuk uji kering pemanggil lama.
+    expect(susun).toContain("} else if (minta.kering === true) {");
   });
 
-  it("susunRencanaHapus hanya menerima jam yang berbentuk sah", () => {
-    // Jam sembarang dari pemanggil tidak boleh sampai ke sys_audittrail.
-    expect(tulis).toContain("test(String(minta.saat || \"\"))");
-    expect(tulis).toContain(": await waktuBasisData();");
-  });
-
-  it("bongkar satu langkah tetap memakai jam basis data sekarang", () => {
-    // Tombol "Batalkan penetapan terakhir" tidak mengirim saat - dan memang
-    // tidak perlu: satu langkah, satu jam.
-    const potong = gerbang.slice(gerbang.indexOf('router.post("/penetapan/hapus"'), gerbang.indexOf('router.post("/penetapan/hapus-semua"'));
-    expect(potong).not.toContain("jamBongkar");
+  it("ekstensi mengirim nama akun SIPP yang masuk pada kedua jalur bongkar", () => {
+    const konten = baca("ekstensi-sipp/konten.js");
+    expect(konten).toContain("JSON.stringify({ jenis, perkaraId, olehUsername, akunSippMasuk: namaPenggunaSipp(), kering })");
+    expect(konten).toContain("JSON.stringify({ perkaraId, akunPerJenis, akunSippMasuk: namaPenggunaSipp(), kering })");
   });
 });

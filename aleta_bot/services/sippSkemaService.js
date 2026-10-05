@@ -144,6 +144,9 @@ const TABEL = [
   // tabel yang dikenali layanan skema; yang tidak tercantum di sini selalu
   // dijawab "tidak ada", tanpa galat dan tanpa peringatan.
   "ruangan_sidang",
+  // Antrian sidang SIPP - ada di DAFTAR_TABEL penulis sejak 2.21.0 (hasil
+  // sidang menyetel statusnya) tetapi tak pernah didaftarkan di sini.
+  "antrian",
   // ==========================================================================
   // ref_kua - TEMPAT SIDANG KELILING SESUNGGUHNYA DIGELAR
   // ==========================================================================

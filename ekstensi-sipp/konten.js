@@ -1676,7 +1676,8 @@ async function mintaBongkar(perkaraId, jenis, olehUsername, kering) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jenis, perkaraId, olehUsername, kering }),
+        // akunSippMasuk: akun SIPP yang sedang masuk - yang dicatat SIPP (butir 39).
+        body: JSON.stringify({ jenis, perkaraId, olehUsername, akunSippMasuk: namaPenggunaSipp(), kering }),
       },
       kering ? "Menyusun rencana pembatalan" : "Membatalkan penetapan"
     );
@@ -1702,7 +1703,7 @@ async function mintaBongkarSemua(perkaraId, akunPerJenis, kering) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ perkaraId, akunPerJenis, kering }),
+        body: JSON.stringify({ perkaraId, akunPerJenis, akunSippMasuk: namaPenggunaSipp(), kering }),
       },
       kering ? "Menyusun rencana pembatalan menyeluruh" : "Membatalkan seluruh penetapan"
     );

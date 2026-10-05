@@ -82,6 +82,8 @@ const layanan = require("../services/penetapanTulisService");
 const dasar = {
   perkaraId: 10113,
   olehUsername: "sudarmin",
+  // Butir 39: akun SIPP yang sedang masuk - yang dicatat SIPP saat membongkar.
+  akunSippMasuk: "sudarmin",
   operator: "SUPER ADMIN DERRY",
   ip: "127.0.0.1",
 };

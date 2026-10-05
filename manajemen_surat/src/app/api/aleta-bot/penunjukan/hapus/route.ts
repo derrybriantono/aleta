@@ -63,8 +63,10 @@ export async function POST(request: NextRequest) {
     }
 
     const olehUsername = String(badan.olehUsername || "").trim();
-    if (!olehUsername) {
-      return Response.json({ ok: false, alasan: "akun_pejabat_tidak_disebut" }, { status: 400 });
+    // Butir 39: akun SIPP petugas yang sedang masuk - yang dicatat SIPP.
+    const akunSippMasuk = String(badan.akunSippMasuk || "").trim().slice(0, 150);
+    if (!olehUsername && !akunSippMasuk) {
+      return Response.json({ ok: false, alasan: "akun_sipp_belum_terbaca" }, { status: 400 });
     }
 
     const kering = badan.kering !== false;
@@ -73,6 +75,7 @@ export async function POST(request: NextRequest) {
       jenis,
       perkaraId,
       olehUsername,
+      akunSippMasuk,
       operator,
       kering,
       ip: alamatIpPeramban(request),

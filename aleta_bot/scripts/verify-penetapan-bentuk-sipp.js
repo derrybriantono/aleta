@@ -111,6 +111,8 @@ const dasar = {
   perkaraId: 10119,
   tanggalPenetapan: "2026-09-15",
   olehUsername: "sudarmin",
+  // Butir 39: akun SIPP yang sedang masuk - yang dicatat SIPP saat membongkar.
+  akunSippMasuk: "sudarmin",
   operator: "SUPER ADMIN DERRY",
   ip: "192.168.9.121",
 };

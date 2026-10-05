@@ -1414,11 +1414,16 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
     }
 
     const kering = badan.kering !== false;
+    // Jeda sungguhan sebelum membongkar - jamnya diambil sesudahnya (butir 39).
+    if (!kering) await jedaManusiaService.jeda("simpan", { kering });
     const rencana = await penetapanTulisService.susunRencanaHapus({
       jenis: String(badan.jenis || ""),
       perkaraId: badan.perkaraId,
       olehUsername: String(badan.olehUsername || ""),
+      // Akun SIPP petugas yang sedang masuk - yang dicatat di sys_audittrail.
+      akunSippMasuk: String(badan.akunSippMasuk || ""),
       operator,
+      kering,
       ip: alamatAudit(req),
     });
 
@@ -1512,22 +1517,23 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
     const rantaiDibongkar = [];
     let berhentiKarena = null;
 
-    // Jam tiap langkah dihitung SEKALI untuk seluruh rangkaian: PHS paling
-    // awal, PMH paling akhir (= sekarang), berjeda 1-10 menit - seperti empat
-    // pejabat yang bekerja bergantian, bukan satu detik untuk semuanya.
-    const jamBongkar = await penetapanTulisService.waktuBongkar(perkaraId);
+    // Butir 39: tiap langkah tercatat atas akun SIPP petugas yang sedang
+    // masuk, pada jam sungguhan sesudah jeda sungguhan - bukan jam susunan
+    // waktuBongkar yang memundurkan barisnya, bukan akun pejabat.
+    const akunSippMasuk = String(badan.akunSippMasuk || "").trim();
 
     for (const jenis of penetapanTulisService.URUTAN_BONGKAR) {
       const olehUsername = String(akun[jenis] || "").trim();
 
+      if (!kering) await jedaManusiaService.jeda("simpan", { kering });
       const rencana = await penetapanTulisService.susunRencanaHapus({
         jenis,
         perkaraId,
         olehUsername,
+        akunSippMasuk,
         operator,
         ip,
         kering,
-        saat: jamBongkar[jenis],
         rantaiDibongkar: [...rantaiDibongkar],
       });
 
