@@ -4835,7 +4835,8 @@ export function AletaEcourtSidang({
       skors: tandaSelesai.skors,
       ruangSipp,
       // 2 Okt 2026 malam: tanda "Tandai sedang berjalan" + proses sidang di
-      // mesin antrian (hanya bila nilainya disetel di bot).
+      // mesin antrian (disidang = nomor ruang; bawaan bot sejak 5 Okt 2026, dan
+      // juga terbaca dari `disidang` baris waktu antrian hari ini).
       berjalan: tandaSelesai.berjalan,
     });
   }, [sidang, waktuAntrian, tandaSelesai.peta, tandaSelesai.skors, tandaSelesai.berjalan]);

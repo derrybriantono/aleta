@@ -177,12 +177,16 @@ function tiruan(jawab: (sql: string, params: unknown[]) => unknown) {
 }
 
 describe("J2 - layanan bot sidangSelesaiService (basis data tiruan)", () => {
-  it("nilai selesai mesin ruang tunggu HANYA dari lingkungan, dan bukan 10 (dipanggil)", () => {
-    expect(selesaiMod.nilaiDisidangSelesai("")).toBeNull();
-    expect(selesaiMod.nilaiDisidangSelesai(undefined)).toBeNull();
-    expect(selesaiMod.nilaiDisidangSelesai("10")).toBeNull();
-    expect(selesaiMod.nilaiDisidangSelesai("abc")).toBeNull();
+  it("nilai selesai mesin ruang tunggu: BAWAAN 10 (arti aplikasi antrian, 5 Okt 2026); lingkungan menimpa atau mematikan", () => {
+    // Sampai 1.183.0 bawaannya null (mati) dan 10 ditolak sebagai "dipanggil".
+    expect(selesaiMod.nilaiDisidangSelesai("")).toBe(10);
+    expect(selesaiMod.nilaiDisidangSelesai(undefined)).toBe(10);
+    expect(selesaiMod.nilaiDisidangSelesai("10")).toBe(10);
+    expect(selesaiMod.nilaiDisidangSelesai("abc")).toBe(10);
+    // Nomor ruang = "sedang disidang", tidak mungkin "selesai".
+    expect(selesaiMod.nilaiDisidangSelesai("3")).toBe(10);
     expect(selesaiMod.nilaiDisidangSelesai("20")).toBe(20);
+    expect(selesaiMod.nilaiDisidangSelesai("mati")).toBeNull();
   });
 
   it("peta menggabungkan catatan ALETA dan antrian SIPP status 2; ruang tunggu tidak dibaca bila tidak disetel", async () => {
@@ -196,6 +200,8 @@ describe("J2 - layanan bot sidangSelesaiService (basis data tiruan)", () => {
       kueriSipp: sipp.kueri,
       kueriRuangTunggu: ruang.kueri,
       disidangSelesai: null,
+      // Sejak 5 Okt 2026 "proses" bawaannya menyala - di sini dimatikan tegas.
+      disidangProses: null,
       setelAntrian: async () => ({ ok: true }),
     });
     const hasil = (await (L.petaSelesai as (x: unknown) => Promise<Record<string, unknown>>)({
@@ -264,8 +270,10 @@ describe("J2 - layanan bot sidangSelesaiService (basis data tiruan)", () => {
     await (L.setelSelesai as (x: unknown) => Promise<Record<string, unknown>>)({ perkaraId: "5", tanggalSidang: "2026-10-01", selesai: false, kering: false });
     expect(bot.catatan.some((c) => c.sql.startsWith("DELETE FROM aleta_bot_sidang_selesai"))).toBe(true);
     expect(setel).toHaveBeenCalledWith(expect.objectContaining({ keadaan: 0 }));
+    // Kembali MENUNGGU (NULL) - dulu ditulis 10, yang justru nilai selesai.
+    expect(ruang.catatan[0].sql).toContain("SET disidang = NULL");
     expect(ruang.catatan[0].sql).toContain("AND disidang = ?");
-    expect(ruang.catatan[0].params).toEqual([10, "5", "2026-10-01", 20]);
+    expect(ruang.catatan[0].params).toEqual(["5", "2026-10-01", 20]);
   });
 
   it("mesin ruang tunggu TIDAK disentuh bila nilai selesainya belum disetel", async () => {

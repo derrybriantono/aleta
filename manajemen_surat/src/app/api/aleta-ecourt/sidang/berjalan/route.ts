@@ -27,8 +27,8 @@ export const dynamic = "force-dynamic";
  *
  * Kewenangannya "panel", sama dengan tombol Selesai dan Skors di baris yang
  * sama. `kering: false` harus disebut tegas. Yang tertulis ke aplikasi antrian
- * ruang tunggu hanya nilai asli aplikasinya, dan hanya bila nilai "proses
- * sidang" disetel (ALETA_ANTRIAN_DISIDANG_PROSES); nama petugas, waktu, IP, dan
+ * ruang tunggu hanya nilai asli aplikasinya (nomor ruang / NULL - bawaan sejak
+ * 5 Okt 2026, kecuali ALETA_ANTRIAN_DISIDANG_PROSES=mati); nama petugas, waktu, IP, dan
  * "lewat ALETA" hanya di tabel ALETA (butir 14).
  */
 export async function POST(request: NextRequest) {

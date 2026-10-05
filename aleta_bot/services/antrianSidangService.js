@@ -46,6 +46,7 @@
 
 const externalDbService = require("./externalDbService");
 const { cleanText } = require("./ecourtTextService");
+const { angkaDisidang, keadaanDisidang, ruangDisidang, selesaiDisidang } = require("./antrianDisidang");
 
 /** Sambungan ke skema sipp_turunan_antrian. */
 const KUNCI_KONEKSI = "antrian_sidang";
@@ -216,14 +217,26 @@ function jamMenit(nilai) {
 /**
  * Keadaan satu antrian, dari kolom-kolom yang dipakai mesin antrian.
  *
- * disidang = 10 dipakai mesin antrian untuk menandai bahwa perkaranya sedang
- * atau sudah dipanggil masuk. Nilai itu dibaca apa adanya, tidak ditafsir
- * lebih jauh - yang ditampilkan hanya "sudah dipanggil" atau "menunggu".
+ * "dipanggil" = sudah dipanggil MASUK RUANG: sedang disidang (disidang = nomor
+ * ruang 1..9) ATAU sudah selesai disidang (10) - lihat antrianDisidang.js.
+ * Sampai 1.183.0 hanya 10 yang dikenali, sehingga perkara yang SEDANG di
+ * ruang sidang tetap terbaca "menunggu" dan waktu tunggunya terus berdetak.
+ * Pembedaan sedang/selesai dibawa terpisah (diRuang, selesaiDisidang) supaya
+ * pembaca lama yang hanya mengenal "dipanggil"/"menunggu" tidak berubah.
  */
 function keadaanAntrian(baris) {
-  if (Number(baris.disidang) === 10 && jamMenit(baris.jamPanggil)) return "dipanggil";
-  if (Number(baris.disidang) === 10) return "dipanggil";
+  const keadaan = keadaanDisidang(baris.disidang);
+  if (keadaan === "disidang" || keadaan === "selesai") return "dipanggil";
   return "menunggu";
+}
+
+/** Rincian disidang untuk peta antrian: nilai mentah, ruang bila sedang disidang, selesai. */
+function rincianDisidang(baris) {
+  return {
+    disidang: angkaDisidang(baris.disidang),
+    diRuang: ruangDisidang(baris.disidang),
+    selesaiDisidang: selesaiDisidang(baris.disidang),
+  };
 }
 
 /**
@@ -281,6 +294,7 @@ async function petaAntrian() {
       pihak2: jamMenit(baris.pihak2),
       saksi: jamMenit(baris.saksi),
       keadaan: keadaanAntrian(baris),
+      ...rincianDisidang(baris),
       // ====================================================================
       // BERHENTI BEGITU DIPANGGIL
       // ====================================================================
@@ -317,6 +331,9 @@ async function petaAntrian() {
       pihak2: "",
       saksi: "",
       keadaan: "belum-ambil",
+      // Tetap dibawa: perkara tanpa nomor pun dapat di-PROSES masuk ruang
+      // (mis. sidang yang para pihaknya tidak mengambil nomor).
+      ...rincianDisidang(baris),
       // Belum ada yang datang: tidak ada yang menunggu, dan itu bukan nol menit.
       menitMenunggu: null,
       jamPanggil: jamMenit(baris.jamPanggil),
@@ -383,6 +400,7 @@ module.exports = {
   antrianUntukPerkara,
   jamMenit,
   keadaanAntrian,
+  rincianDisidang,
   petaAntrian,
   saringUntukPerkara,
 };

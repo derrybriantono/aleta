@@ -1141,8 +1141,9 @@ function tiruan(jawab: (sql: string, params: unknown[]) => unknown) {
 const tulis = <T extends { sql: string }>(c: T[]): T[] => c.filter((x) => /^(INSERT|UPDATE|REPLACE|DELETE)/.test(x.sql));
 
 describe("butir 3 - nilai 'proses sidang' mesin antrian HANYA dari lingkungan", () => {
-  it("kosong / ngawur / 10 = mati; 'ruang' dan angka lain dikenali", () => {
-    for (const x of [undefined, "", "abc", "10", "-1", "12345"]) expect(selesaiMod.nilaiDisidangProses(x), String(x)).toBeNull();
+  it("kosong / ngawur / 10 = BAWAAN 'ruang' (5 Okt 2026); 'mati' mematikan; 'ruang' dan angka lain dikenali", () => {
+    for (const x of [undefined, "", "abc", "10", "-1", "12345"]) expect(selesaiMod.nilaiDisidangProses(x), String(x)).toEqual({ mode: "ruang" });
+    for (const x of ["mati", "OFF", "0"]) expect(selesaiMod.nilaiDisidangProses(x), x).toBeNull();
     expect(selesaiMod.nilaiDisidangProses("ruang")).toEqual({ mode: "ruang" });
     expect(selesaiMod.nilaiDisidangProses("RUANG ")).toEqual({ mode: "ruang" });
     expect(selesaiMod.nilaiDisidangProses("3")).toEqual({ mode: "nilai", nilai: 3 });
@@ -1218,7 +1219,9 @@ describe("butir 3 - bot setelBerjalan (basis data tiruan)", () => {
     const { L, ruang, bot } = layanan({ proses: { mode: "ruang" } });
     const hasil = await L.setelBerjalan({ ...minta, kering: false });
     expect(hasil.antrianRuangTunggu).toMatchObject({ ok: true, baris: 1 });
-    const ubah = tulis(ruang.catatan);
+    // 5 Okt 2026: sesudah menulis, layar aplikasi antrian disegarkan (sys_data_refresh) seperti sesudah PROSES di sana.
+    expect(tulis(ruang.catatan).filter((c) => c.sql.includes("sys_data_refresh"))).toHaveLength(1);
+    const ubah = tulis(ruang.catatan).filter((c) => c.sql.includes("antrian_sidang"));
     expect(ubah).toHaveLength(1);
     expect(ubah[0].sql).toBe(
       "UPDATE sipp_turunan_antrian.antrian_sidang SET disidang = ruangan_id, jam_sidang = NOW() WHERE perkara_id = ? AND tanggal_sidang = ? AND tanggal_sidang = CURDATE() AND disidang IS NULL AND ruangan_id BETWEEN 1 AND 9"
@@ -1273,7 +1276,7 @@ describe("butir 3 - bot setelBerjalan (basis data tiruan)", () => {
     expect(hasil).toMatchObject({ ok: true, berjalan: false });
     expect(aleta.bot.catatan.some((c) => c.sql.startsWith("DELETE"))).toBe(false);
     expect(aleta.bot.catatan.some((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_BERJALAN} SET dibatalkan_pada = NOW()`))).toBe(true);
-    const ubah = tulis(aleta.ruang.catatan);
+    const ubah = tulis(aleta.ruang.catatan).filter((c) => c.sql.includes("antrian_sidang"));
     expect(ubah).toHaveLength(1);
     expect(ubah[0].sql).toBe("UPDATE sipp_turunan_antrian.antrian_sidang SET disidang = NULL WHERE perkara_id = ? AND tanggal_sidang = ? AND disidang = ruangan_id AND disidang BETWEEN 1 AND 9");
 

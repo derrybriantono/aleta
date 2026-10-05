@@ -77,7 +77,7 @@ const botDb = require("./botDbService");
 const externalDbService = require("./externalDbService");
 const antrianSidangService = require("./antrianSidangService");
 const logService = require("./logService");
-const { DISIDANG_DIPANGGIL } = require("./panggilanAntrianService");
+const { angkaDisidang, keadaanDisidang } = require("./antrianDisidang");
 const { cleanText } = require("./ecourtTextService");
 
 /** Sambungan yang sama dengan pembaca antrian. */
@@ -395,16 +395,37 @@ function gabungWaktu(lama, kini, sekarang) {
   // saksi tidak ikut, sama dengan rumus antrianSidangService.
   baris.ambilTerawal = terawal(baris.ambilPihak1, baris.ambilPihak2);
 
-  const dipanggilKini = Number(baru.disidang) === DISIDANG_DIPANGGIL;
-  const waktuPanggil = dipanggilKini ? waktuPanggilDari(baru.jamSidang, baris.tanggalSidang) : "";
+  // ==========================================================================
+  // "DIPANGGIL" = MASUK RUANG (disidang 1..9), BUKAN 10
+  // ==========================================================================
+  //
+  // Aplikasi antrian menulis disidang = nomor ruang DAN jam_sidang = now() saat
+  // perkara masuk ruang; 10 berarti SELESAI dan TIDAK menyentuh jam_sidang
+  // (lihat antrianDisidang.js). Sampai 1.183.0 yang dihitung panggilan justru
+  // 10, sehingga jam masuk ruang baru tercatat sesudah sidangnya selesai -
+  // dan sidang yang sedang berjalan tidak pernah punya jam mulai.
+  //
+  // Baris 10 yang masuk-ruangnya TIDAK teramati (selang 30 detik terlewati,
+  // atau pencatat baru menyala): jam_sidang-nya masih jam masuk ruang - kecuali
+  // perkaranya langsung ditunda tanpa PROSES, yang meninggalkan jam jadwal.
+  // Karena itu jamnya dipakai hanya bila jam jadwalnya sudah tercatat dan
+  // berbeda darinya; tanpa jam jadwal tidak ada yang dapat membedakan
+  // keduanya, dan jam itu tidak dicatat sebagai panggilan.
+  const keadaanKini = keadaanDisidang(baru.disidang);
+  const jamKini = jamDariJamSidang(baru.jamSidang);
+  const jadwalLama = jamDariJamSidang(dulu.jamJadwal);
+  const masukRuangKini = keadaanKini === "disidang";
+  const masukTerlewat = keadaanKini === "selesai" && Boolean(jamKini) && Boolean(jadwalLama) && jamKini !== jadwalLama;
+  const waktuPanggil =
+    masukRuangKini || masukTerlewat ? waktuPanggilDari(baru.jamSidang, baris.tanggalSidang) : "";
   const pernahDipanggil = Boolean(waktuSah(dulu.panggilPertama) || waktuSah(dulu.panggilTerakhir));
 
-  // Jam jadwal hanya dari baris yang BELUM PERNAH teramati dipanggil. Sesudah
-  // panggilan pertama jam_sidang berisi jam panggil - menyalinnya sebagai
-  // jadwal berarti mencatat jadwal yang tidak pernah ada.
+  // Jam jadwal hanya dari baris yang masih MENUNGGU dan BELUM PERNAH teramati
+  // dipanggil. Sesudah masuk ruang jam_sidang berisi jam masuk - menyalinnya
+  // sebagai jadwal berarti mencatat jadwal yang tidak pernah ada. Baris 10 pun
+  // tidak: jam_sidang-nya mungkin jam masuk yang tidak teramati.
   baris.jamJadwal =
-    jamDariJamSidang(dulu.jamJadwal) ||
-    (!dipanggilKini && !pernahDipanggil ? jamDariJamSidang(baru.jamSidang) : "");
+    jadwalLama || (keadaanKini === "menunggu" && !pernahDipanggil ? jamKini : "");
 
   const terakhirLama = waktuSah(dulu.panggilTerakhir);
   baris.panggilPertama = waktuSah(dulu.panggilPertama) || waktuPanggil;
@@ -718,8 +739,15 @@ function status() {
 // PEMBACA UNTUK JADWAL SIDANG
 // ============================================================================
 
-function keluaran(baris, sumber) {
+/**
+ * @param disidang nilai disidang LANGSUNG dari aplikasi antrian (hanya baris
+ *   hari ini yang terbaca langsung); undefined = tidak diketahui (rekaman saja),
+ *   dan kuncinya lalu tidak dikirim - portal memakai tebakan panggilan terakhir.
+ */
+function keluaran(baris, sumber, disidang) {
+  const isiDisidang = disidang === undefined ? {} : { disidang: angkaDisidang(disidang) };
   return {
+    ...isiDisidang,
     tanggalSidang: baris.tanggalSidang,
     perkaraId: baris.perkaraId,
     nomorAntrian: baris.nomorAntrian ?? null,
@@ -805,7 +833,7 @@ async function waktuUntukJadwal({ tanggal = [], petaNomor = null } = {}) {
           { ...kini, nomorAntrian: nomorDariPeta(petaNomor, kini) },
           jam.sekarang
         );
-        perKunci.set(k, { baris, sumber: ada ? "gabungan" : "langsung" });
+        perKunci.set(k, { baris, sumber: ada ? "gabungan" : "langsung", disidang: kini.disidang });
       }
     } catch (galat) {
       hasil.langsungTerbaca = false;
@@ -816,7 +844,7 @@ async function waktuUntukJadwal({ tanggal = [], petaNomor = null } = {}) {
   hasil.terbaca = hasil.rekamanTerbaca || hasil.langsungTerbaca;
   hasil.alasan = alasan.join("; ");
   hasil.baris = [...perKunci.values()]
-    .map(({ baris, sumber }) => keluaran(baris, sumber))
+    .map(({ baris, sumber, disidang }) => keluaran(baris, sumber, disidang))
     .sort((a, b) => a.tanggalSidang.localeCompare(b.tanggalSidang) || a.perkaraId.localeCompare(b.perkaraId));
   return hasil;
 }

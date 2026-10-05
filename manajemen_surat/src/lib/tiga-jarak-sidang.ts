@@ -83,7 +83,28 @@ export type BarisWaktuAntrian = {
   online: boolean | null;
   namaPetugas: string;
   sumber: "rekaman" | "langsung" | "gabungan";
+  /**
+   * Nilai disidang aplikasi antrian SAAT INI - hanya baris hari ini yang
+   * terbaca langsung (bot 1.184+). NULL = belum/tidak di ruang, 1..9 = SEDANG
+   * disidang di ruang itu, 10 = SELESAI. Tidak ada (undefined) = tidak
+   * diketahui: rekaman saja, atau bot lama.
+   */
+  disidang?: number | null;
 };
+
+/** Nilai disidang "selesai" aplikasi antrian (tunda/putus/ikrar/Selesai Sidang). */
+export const DISIDANG_SELESAI = 10;
+
+/** Nomor ruang bila baris SEDANG disidang menurut aplikasi antrian (1..9), selain itu null. */
+export function ruangDisidang(nilai: number | null | undefined): number | null {
+  const n = Number(nilai);
+  return nilai !== null && nilai !== undefined && Number.isInteger(n) && n >= 1 && n <= 9 ? n : null;
+}
+
+/** Baris yang menurut aplikasi antrian sudah SELESAI disidang (10). */
+export function selesaiDisidang(nilai: number | null | undefined): boolean {
+  return nilai !== null && nilai !== undefined && Number(nilai) === DISIDANG_SELESAI;
+}
 
 /** Keadaan waktu antrian yang dikirim bersama jadwal sidang. */
 export type WaktuAntrian = {
@@ -441,14 +462,26 @@ export function hitungTigaJarak(
       if (i < isi.length - 1) {
         const berikut = isi[i + 1].baris;
         lamaSidang = jarakSelesai(satu.panggilTerakhir, berikut.panggilTerakhir, tetanggaDari(berikut), "");
-      } else if (iniHariIni && !opsi.selesai?.[kunci]) {
+      } else if (iniHariIni && !opsi.selesai?.[kunci] && !selesaiDisidang(satu.disidang) && satu.disidang !== null) {
+        // Keadaan langsung aplikasi antrian didahulukan bila diketahui:
+        // disidang = 10 = SELESAI (Tunda/Putus/Ikrar/Selesai Sidang), dan NULL
+        // sesudah dipanggil = sudah keluar ruang (BATAL / SKORS SIDANG). Tanpa
+        // keadaan langsung (undefined) tetap tebakan semula: yang terakhir
+        // dipanggil di ruangnya masih berjalan.
         lamaSidang = jarakBerjalan(
           satu.panggilTerakhir,
-          `Belum ada perkara berikutnya yang dipanggil di ${ruang.sebutan} - sidangnya dianggap masih berjalan.`
+          ruangDisidang(satu.disidang) !== null
+            ? `Sedang disidang di Ruang ${satu.disidang} menurut aplikasi antrian.`
+            : `Belum ada perkara berikutnya yang dipanggil di ${ruang.sebutan} - sidangnya dianggap masih berjalan.`
         );
       } else if (iniHariIni) {
+        const sebab = opsi.selesai?.[kunci]
+          ? "Hasil sidangnya sudah dicatat"
+          : selesaiDisidang(satu.disidang)
+            ? "Aplikasi antrian sudah menandainya selesai disidang"
+            : "Aplikasi antrian sudah mengeluarkannya dari ruang (batal / skors)";
         lamaSidang = jarakTakDiketahui(
-          `Hasil sidangnya sudah dicatat, tetapi belum ada perkara berikutnya yang dipanggil di ${ruang.sebutan} - jam selesainya tidak tercatat di mana pun.`,
+          `${sebab}, tetapi belum ada perkara berikutnya yang dipanggil di ${ruang.sebutan} - jam selesainya tidak tercatat di mana pun.`,
           satu.panggilTerakhir
         );
       } else {

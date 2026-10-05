@@ -179,6 +179,23 @@ async function jalan() {
   );
 
   // ==========================================================================
+  console.log("\n== Arti disidang aplikasi antrian (5 Okt 2026) ==");
+  // ==========================================================================
+  {
+    const k = layanan.keadaanAntrian;
+    periksa("NULL = menunggu", k({ disidang: null }) === "menunggu");
+    // Sampai 1.183.0 perkara yang SEDANG di ruang (1..9) tetap "menunggu".
+    periksa("nomor ruang (sedang disidang) = sudah dipanggil masuk", k({ disidang: 1 }) === "dipanggil" && k({ disidang: 3 }) === "dipanggil");
+    periksa("10 (selesai) = sudah dipanggil masuk", k({ disidang: 10 }) === "dipanggil");
+    const r1 = layanan.rincianDisidang({ disidang: 1 });
+    const r10 = layanan.rincianDisidang({ disidang: 10 });
+    periksa("rincian: sedang di Ruang 1", r1.diRuang === 1 && r1.selesaiDisidang === false);
+    periksa("rincian: 10 = selesai, tidak di ruang", r10.diRuang === null && r10.selesaiDisidang === true);
+    // Data uji ini semuanya disidang = 10 - waktu tunggunya berhenti.
+    periksa("yang sudah selesai tidak lagi dihitung menunggu", hasil.peta["10064"].menitMenunggu === null);
+  }
+
+  // ==========================================================================
   console.log("\n== Rumusnya sama dengan yang menjawab WhatsApp ==");
   // ==========================================================================
   {

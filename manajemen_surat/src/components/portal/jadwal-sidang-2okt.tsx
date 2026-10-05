@@ -13,10 +13,11 @@
  * hanya lencana, tombol, pelaksana langkah, dan papan untuk Hasil Sidang.
  *
  * Yang ditulis keluar ALETA hanya jalur yang SUDAH ada nilainya:
- *   - panggil  = jalur Papan panggil (disidang = 10 + jam panggil);
+ *   - panggil  = jalur Papan panggil = MASUK RUANG (disidang = nomor ruang +
+ *     jam_sidang, sama dengan PROSES aplikasi antrian; 10 = selesai - 5 Okt 2026);
  *   - skors    = antrian.status SIPP asli 0<->1 (tidak pernah menyentuh 2);
  *   - tandai sedang berjalan = tabel ALETA; ke mesin antrian ruang tunggu
- *     HANYA bila nilai "proses sidang"-nya disetel (ALETA_ANTRIAN_DISIDANG_PROSES).
+ *     disidang = nomor ruang (bawaan sejak 5 Okt 2026; ALETA_ANTRIAN_DISIDANG_PROSES=mati mematikan).
  * Siapa, kapan, IP, "lewat ALETA" hanya di tabel ALETA (butir 14).
  *
  * 2 Okt 2026 malam: tombol Tandai sedang berjalan / Batalkan tanda, ringkasan

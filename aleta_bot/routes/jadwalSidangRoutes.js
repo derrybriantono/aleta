@@ -151,8 +151,8 @@ router.post("/skors", wajibToken, async (req, res) => {
 /**
  * Tanda "sedang berjalan" manual (perbaikan 2 Okt 2026 malam, butir 3). Kering
  * bawaan. Yang tertulis ke aplikasi antrian ruang tunggu hanya nilai asli
- * aplikasinya (nomor ruang / NULL), dan hanya bila ALETA_ANTRIAN_DISIDANG_PROSES
- * disetel; siapa, kapan, IP, dan "lewat ALETA" hanya di tabel ALETA
+ * aplikasinya (nomor ruang / NULL) - bawaan sejak 5 Okt 2026, kecuali
+ * ALETA_ANTRIAN_DISIDANG_PROSES=mati; siapa, kapan, IP, dan "lewat ALETA" hanya di tabel ALETA
  * aleta_bot_sidang_berjalan.
  */
 router.post("/berjalan", wajibToken, async (req, res) => {

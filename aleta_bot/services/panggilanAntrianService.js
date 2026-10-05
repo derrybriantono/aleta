@@ -12,10 +12,17 @@
  * aplikasi untuk mengerjakan satu-satunya hal yang benar-benar mengubah
  * keadaan - memanggil.
  *
- * Yang ditulis PERSIS yang ditulis mesin antrian: disidang = 10 dan jam
- * panggil. Dengan begitu layar aplikasi antrian tetap benar, mesinnya tetap
- * benar, dan tidak ada dua sumber kebenaran yang berselisih. ALETA menjadi
- * pintu kedua ke pekerjaan yang sama, bukan sistem tandingan.
+ * Yang ditulis PERSIS yang ditulis tombol PROSES aplikasi antrian
+ * (_fungsi.php:934): disidang = nomor ruang (ruangan_id) dan jam_sidang =
+ * NOW() - perkara MASUK RUANG. Dengan begitu layar aplikasi antrian tetap
+ * benar, mesinnya tetap benar, dan tidak ada dua sumber kebenaran yang
+ * berselisih. ALETA menjadi pintu kedua ke pekerjaan yang sama, bukan sistem
+ * tandingan.
+ *
+ * Sampai 1.183.0 yang ditulis di sini disidang = 10 - padahal 10 di aplikasi
+ * antrian berarti SELESAI disidang (lihat antrianDisidang.js). Perkara yang
+ * dipanggil dari ALETA karena itu langsung tercatat selesai di layar antrian,
+ * dan "sedang berjalan" di Jadwal Sidang tidak pernah terdeteksi.
  *
  * ============================================================================
  * YANG TIDAK DIMILIKI APLIKASI ANTRIAN: RIWAYAT PANGGILAN
@@ -40,16 +47,35 @@ const externalDbService = require("./externalDbService");
 const logService = require("./logService");
 const { cleanText } = require("./ecourtTextService");
 
+const {
+  DISIDANG_SELESAI,
+  RUANG_TERBESAR,
+  RUANG_TERKECIL,
+  angkaDisidang,
+  ruangDisidang,
+  segarkanLayar,
+} = require("./antrianDisidang");
+
 const KUNCI_KONEKSI = "antrian_sidang";
 
 /**
- * Nilai yang dipakai mesin antrian untuk menandai "sudah dipanggil".
+ * Memanggil = MASUK RUANG, sama dengan tombol PROSES aplikasi antrian.
  *
- * Dibaca apa adanya oleh antrianSidangService, dan ditulis apa adanya di sini.
- * Nilai lain TIDAK pernah ditulis - artinya tidak diketahui, dan menebak arti
- * sebuah kode di aplikasi orang lain adalah cara tercepat merusaknya.
+ * Hanya baris hari ini yang punya ruang (ruangan_id 1..9), dan hanya yang
+ * masih menunggu (NULL) atau memang sudah di ruangnya sendiri (panggilan
+ * ulang - jam masuknya diperbarui, seperti sebelumnya). Baris yang sudah
+ * SELESAI (10) tidak pernah dikembalikan menjadi "sedang disidang".
  */
-const DISIDANG_DIPANGGIL = 10;
+const SQL_MASUK_RUANG = `UPDATE sipp_turunan_antrian.antrian_sidang
+          SET disidang = ruangan_id, jam_sidang = NOW()
+        WHERE perkara_id = ? AND tanggal_sidang = CURDATE()
+          AND ruangan_id BETWEEN ${RUANG_TERKECIL} AND ${RUANG_TERBESAR}
+          AND (disidang IS NULL OR disidang = ruangan_id)`;
+
+/** Keadaan baris hari ini - hanya dibaca bila SQL_MASUK_RUANG tidak mengenai baris. */
+const SQL_KEADAAN_HARI_INI = `SELECT disidang, ruangan_id AS ruanganId
+         FROM sipp_turunan_antrian.antrian_sidang
+        WHERE perkara_id = ? AND tanggal_sidang = CURDATE()`;
 
 /** Batas panggilan sebelum perkara patut ditunda - sesuai pesan ke para pihak. */
 const BATAS_PANGGILAN = 3;
@@ -137,7 +163,37 @@ async function riwayatPanggilan(daftarPerkaraId = [], tanggal = "") {
 }
 
 /**
- * Memanggil satu perkara.
+ * Kalimat mengapa perkara tidak masuk ruang - dari keadaan barisnya hari ini.
+ * Gagal membaca = kalimat umum "tidak punya baris", seperti semula.
+ */
+async function sebabTidakMasuk(kueri, id) {
+  const tanpaBaris =
+    "Perkara ini tidak punya baris antrian bertanggal hari ini, sehingga tidak ada yang dipanggil. Daftarkan jadwalnya ke antrian lebih dulu.";
+  let daftar = [];
+  try {
+    const hasil = await kueri(SQL_KEADAAN_HARI_INI, [id]);
+    daftar = Array.isArray(hasil) ? hasil : [];
+  } catch {
+    return tanpaBaris;
+  }
+  if (daftar.length === 0) return tanpaBaris;
+  const baris = daftar[0];
+  const disidang = angkaDisidang(baris.disidang);
+  const ruangan = angkaDisidang(baris.ruanganId ?? baris.ruanganid ?? baris.ruangan_id);
+  if (disidang === DISIDANG_SELESAI) {
+    return "Sidang perkara ini sudah SELESAI di aplikasi antrian (ditunda, diputus, ikrar, atau Selesai Sidang) - tidak dipanggil masuk ruang lagi.";
+  }
+  if (ruangDisidang(ruangan) === null) {
+    return "Perkara ini belum punya ruang sidang (1-9) di aplikasi antrian, sehingga tidak dapat dipanggil masuk ruang. Tetapkan ruangnya lebih dulu.";
+  }
+  if (ruangDisidang(disidang) !== null) {
+    return `Perkara ini sedang disidangkan di Ruang ${disidang} menurut aplikasi antrian, bukan di ruangnya (Ruang ${ruangan}).`;
+  }
+  return `Keadaan antrian perkara ini tidak dikenal (disidang = ${disidang}); tidak diubah.`;
+}
+
+/**
+ * Memanggil satu perkara MASUK RUANG.
  *
  * Dua hal terjadi: riwayatnya bertambah di ALETA, dan penanda dipanggil
  * ditulis ke aplikasi antrian supaya layar dan mesinnya ikut berubah.
@@ -161,24 +217,17 @@ async function panggil({ perkaraId, nomorPerkara = "", nomorAntrian = null, noRu
   const id = String(perkaraId || "").trim();
   if (!id) return { ok: false, alasan: "perkara_id_kosong" };
 
+  const kueri = (sql, params) => externalDbService.query(KUNCI_KONEKSI, sql, params);
+  const sebutGalat = (galat) =>
+    externalDbService.sanitizeError
+      ? String(externalDbService.sanitizeError(galat)).slice(0, 200)
+      : String(galat.message || galat).slice(0, 200);
+
   let hasilTulis;
   try {
-    hasilTulis = await externalDbService.query(
-      KUNCI_KONEKSI,
-      `UPDATE sipp_turunan_antrian.antrian_sidang
-          SET disidang = ?, jam_sidang = NOW()
-        WHERE perkara_id = ? AND tanggal_sidang = CURDATE()`,
-      [DISIDANG_DIPANGGIL, id]
-    );
+    hasilTulis = await kueri(SQL_MASUK_RUANG, [id]);
   } catch (galat) {
-    return {
-      ok: false,
-      alasan: `Aplikasi antrian tidak dapat diperbarui: ${
-        externalDbService.sanitizeError
-          ? String(externalDbService.sanitizeError(galat)).slice(0, 200)
-          : String(galat.message || galat).slice(0, 200)
-      }`,
-    };
+    return { ok: false, alasan: `Aplikasi antrian tidak dapat diperbarui: ${sebutGalat(galat)}` };
   }
 
   // UPDATE yang tidak mengenai baris apa pun BUKAN kegagalan menurut MySQL -
@@ -189,12 +238,11 @@ async function panggil({ perkaraId, nomorPerkara = "", nomorAntrian = null, noRu
   // memutuskan penundaan perkara, jadi ia tidak boleh menghitung panggilan
   // yang tidak pernah terjadi.
   if (Number(hasilTulis && hasilTulis.affectedRows) === 0) {
-    return {
-      ok: false,
-      alasan:
-        "Perkara ini tidak punya baris antrian bertanggal hari ini, sehingga tidak ada yang dipanggil. Daftarkan jadwalnya ke antrian lebih dulu.",
-    };
+    return { ok: false, alasan: await sebabTidakMasuk(kueri, id) };
   }
+
+  // Layar aplikasi antrian ikut disegarkan, seperti sesudah PROSES di sana.
+  await segarkanLayar(kueri);
 
   await ensureSchema();
   const hari = hariIni();
@@ -242,8 +290,9 @@ async function panggil({ perkaraId, nomorPerkara = "", nomorAntrian = null, noRu
 
 module.exports = {
   BATAS_PANGGILAN,
-  DISIDANG_DIPANGGIL,
   KUNCI_KONEKSI,
+  SQL_MASUK_RUANG,
+  SQL_KEADAAN_HARI_INI,
   ensureSchema,
   lupakan,
   panggil,
