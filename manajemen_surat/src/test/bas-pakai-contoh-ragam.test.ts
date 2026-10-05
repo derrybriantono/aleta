@@ -153,7 +153,9 @@ describe("saksi 1 dan saksi 2 tidak diberi contoh kembar", () => {
     }
   });
 
-  it("rumusan dan penutup mengikuti profil manusia - umumnya tetap sama", () => {
+  // Butir 27 (5 Oktober 2026, permintaan pengguna): rumusan dan penutup pun
+  // berbeda antar saksi - dahulu mengikuti profil manusia (>= 80% sama).
+  it("rumusan dan penutup: berbeda antar saksi, tanpa pembuka", () => {
     let sama = 0;
     let n = 0;
     for (const no of NOMOR) {
@@ -166,7 +168,7 @@ describe("saksi 1 dan saksi 2 tidak diberi contoh kembar", () => {
       });
     }
     expect(n).toBeGreaterThan(0);
-    expect(sama / n).toBeGreaterThanOrEqual(0.8);
+    expect(sama / n).toBeLessThanOrEqual(0.05);
   });
 
   it("lafal sumpah dan identitas tidak disentuh sama sekali", () => {

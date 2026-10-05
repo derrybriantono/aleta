@@ -136,7 +136,8 @@ const jenis = (t: string) => pemilih.kelompokTanya(t).jenis;
 describe("akibatnya pada berita acara (300 nomor perkara)", () => {
   const hasil = NOMOR.map((n) => susun(n));
 
-  it("dua saksi, pilihan sama: jawaban pokok tidak pernah identik; rumusan identik >= 80%", () => {
+  // Butir 27: rumusan pun berbeda antar saksi (dahulu >= 80% identik).
+  it("dua saksi, pilihan sama: jawaban pokok tidak pernah identik; rumusan hampir tidak pernah", () => {
     let pokok = 0;
     let pokokSama = 0;
     let rumusan = 0;
@@ -157,7 +158,7 @@ describe("akibatnya pada berita acara (300 nomor perkara)", () => {
     }
     expect(pokok).toBe(300 * 9);
     expect(pokokSama).toBe(0);
-    expect(rumusanSama / rumusan).toBeGreaterThanOrEqual(0.8);
+    expect(rumusanSama / rumusan).toBeLessThanOrEqual(0.05);
   });
 
   // Ambang 7-13% berlaku atas 27 templat ABT sungguhan (terukur 7,9% atas 100

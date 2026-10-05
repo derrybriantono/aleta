@@ -2075,7 +2075,7 @@ function bacaBankBas(opsi) {
     Object.entries(ragamBawaan.JAWABAN_MODUS).flatMap(([kunci, isi]) => isi.map((nilai) => ({ kunci, nilai }))),
     ({ kunci, nilai }) => {
       if (!KUNCI_JAWABAN_MODUS.includes(kunci)) return { alasan: "kunci_tanpa_cabang_kode" };
-      const salah = periksa(nilai, ["{sumber}", "{daftar}", "{isi}"]);
+      const salah = periksa(nilai, ["{sumber}", "{daftar}", "{isi}", "{jawab}"]);
       if (salah) return { alasan: `nilai_${salah}` };
       if (nilai.length < 20 || nilai.length > 240) return { alasan: "nilai_bukan_20_240_huruf" };
       return { entri: { kunci, nilai } };
@@ -2405,6 +2405,11 @@ function pilihPembuka(teks, jenis, benih, bank) {
   // - hurufnya TIDAK dikecilkan. Nama dan kata lain yang tak dikenal tidak.
   if (!AWAL_BOLEH_DIKECILKAN.has(kata.toLowerCase()) && !POLA_SEBUTAN_AWAL.test(kata)) return "";
   if (POLA_SUDAH_BERPEMBUKA.test(teks) || /^(sudah|cukup|tidak ada)\b/i.test(teks)) return "";
+  // Butir 27: "Ya, saya tidak menyaksikannya sendiri" dan "Sepengetahuan
+  // saya, saya tidak tahu ..." - pembuka tidak dipasang di depan jawaban yang
+  // dibuka penyangkal (jawaban modus tidak-melihat/tahu-pisah).
+  // Cerminnya di portal: ragam-jawaban.ts POLA_AWAL_MENYANGKAL.
+  if (/^(?:\S+\s+){0,2}(?:tidak|belum|bukan|tak)\b/i.test(String(teks))) return "";
   if (String(teks).split(" ").length < 3) return "";
   const u = pemilih.angka01(`${benih}|pembuka`) * 100;
   let kumulatif = 0;
@@ -2589,22 +2594,47 @@ function ragamModus(bentuk, nomorSaksi, urutan) {
 }
 
 /**
+ * Jawaban templat (sudah diisi dari gugatan) untuk dipasang di {jawab} bank
+ * modus: tanpa tanda baca akhir, tanpa pembuka "Ya, ", huruf pertama
+ * dikecilkan bila kata pertamanya boleh dikecilkan (bukan sebutan/nama).
+ * Kosong menjadi "..." - faktanya ditunggu, kalimat modusnya tetap utuh.
+ */
+function jawabDalamBingkai(jawab) {
+  let t = tanpaAkhiran(String(jawab || "")).replace(/^(ya|iya|benar|betul)\b\s*,?\s*/i, "");
+  if (!t || jawabanKosong(t)) return "...";
+  const kata = (t.match(/^[A-Za-z]+/) || [""])[0].toLowerCase();
+  if (ragamBawaan.AWAL_BOLEH_DIKECILKAN.includes(kata)) t = t.charAt(0).toLowerCase() + t.slice(1);
+  return t;
+}
+
+/**
+ * @param a.jawab       (pilihan) jawaban templat yang sudah diisi dari gugatan -
+ *                      isi penanda {jawab} pada bank waktu|... dan kehidupan|...
  * @param a.daftar      (pilihan) alasan yang sudah diucapkan (daftarUcapan);
  *                      tanpa ini alasan digabung apa adanya - bentuk lama
  * @param a.bank        (pilihan) bank jawaban-modus efektif; bawaan bila tidak ada
  * @param a.pilihBentuk (pilihan) (bentuk[], kunciBank) -> kalimat; bila tidak
  *                      ada, ragamModus lama (nomor saksi + urutan)
  */
-function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, daftar: daftarUcap, bank, pilihBentuk }) {
+function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, daftar: daftarUcap, bank, pilihBentuk, jawab }) {
   const daftar = typeof daftarUcap === "string" ? daftarUcap : (alasan || []).join(nomorSaksi === 2 ? " serta " : " dan ");
   const isi = daftar || "perselisihan yang terus-menerus";
   const sumber_ = String(sumber || "");
+  const isiJawab = jawabDalamBingkai(jawab);
   const bankEfektif = bank || ragamBawaan.JAWABAN_MODUS;
   // Bank kalimat per 'kelompok|modus'; penanda diisi. Bank yang kosong
   // (dimatikan di pengaturan) berarti modus tidak menjawab - templat bicara.
   const pilih = (kunci) => {
     const bentuk = (bankEfektif[kunci] || []).map((t) =>
-      t.split("{sumber}").join(sumber_).split("{daftar}").join(daftar).split("{isi}").join(isi)
+      t
+        .split("{sumber}")
+        .join(sumber_)
+        .split("{daftar}")
+        .join(daftar)
+        .split("{isi}")
+        .join(isi)
+        .split("{jawab}")
+        .join(isiJawab)
     );
     if (!bentuk.length) return null;
     return pilihBentuk ? pilihBentuk(bentuk, kunci) : ragamModus(bentuk, nomorSaksi, urutan);
@@ -2629,8 +2659,26 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
   if (/bagaimana .*(mengetahui|tahu)|dari mana .*(tahu|mengetahui)/i.test(tanya)) {
     if (modus === "dari-cerita") return pilih("cara-tahu|dari-cerita");
     if (modus === "tidak-melihat") return pilih("cara-tahu|tidak-melihat");
-    if (modus === "tidak-tahu") return null;
+    // Butir 27: dahulu tidak-tahu jatuh ke templat ("saya mengetahui karena
+    // ... melihat") dan tahu-pisah ke "saya melihat sendiri" - keduanya
+    // mengaku tahu penyebab yang menurut modusnya tidak diketahui.
+    if (modus === "tidak-tahu") return pilih("cara-tahu|tidak-tahu");
+    if (modus === "tahu-pisah") return pilih("cara-tahu|tahu-pisah");
     return pilih("cara-tahu|sama");
+  }
+
+  // Butir 27 - "kapan mulai terjadi perselisihan", "puncak perselisihan", dan
+  // "bagaimana kehidupan rumah tangga". Templatnya ditulis untuk saksi yang
+  // melihat sendiri; saksi yang tidak melihat menyampaikannya dari cerita,
+  // dan saksi yang hanya tahu pisahnya tidak mengetahuinya sama sekali.
+  const tanyaWaktu =
+    /kapan .*(selisih|tengkar)|(selisih|tengkar).*kapan|puncak/i.test(tanya) && !/melihat|mendengar|menyaksikan/i.test(tanya);
+  const tanyaKehidupan =
+    /(keadaan|kehidupan|kondisi) rumah tangga|bagaimana rumah tangga/i.test(tanya) && !/setelah menikah/i.test(tanya);
+  if (tanyaWaktu || tanyaKehidupan) {
+    const kelompok = tanyaWaktu ? "waktu" : "kehidupan";
+    if (modus === "tidak-melihat" || modus === "dari-cerita" || modus === "tahu-pisah") return pilih(`${kelompok}|${modus}`);
+    return null; // sama / sebagian / tidak-tahu: saksi menyaksikannya, templat tepat
   }
 
   // Saksi yang hanya tahu pisahnya: tidak satu pun pertanyaan tentang
@@ -2638,7 +2686,18 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
   if (modus === "tahu-pisah") {
     if (/penyebab|sebab|alasan/i.test(tanya)) return pilih("penyebab|tahu-pisah");
     if (/melihat|mendengar|menyaksikan|berapa kali/i.test(tanya)) return pilih("menyaksikan|tahu-pisah");
-    if (/rukun|damai|mendamaikan|sanggup/i.test(tanya)) return pilih("rukun|tahu-pisah");
+    // "Apakah saudara tahu jika ... biasa bertengkar?", "Apakah Tergugat pernah
+    // memukul ... dan suka marah-marah biasa bertengkar?" (templat A2) - dahulu
+    // dijawab "saya tahu kalau ... biasa bertengkar" (butir 27).
+    if (/tengkar|selisih|cekcok|ribut|memukul|kekerasan/i.test(tanya) && !/sanggup|rukun|damai/i.test(tanya)) {
+      return pilih("menyaksikan|tahu-pisah");
+    }
+    // "Apakah ... pernah diupayakan untuk rukun kembali?" bukan pertanyaan
+    // SANGGUP - dahulu dijawab "saya tidak sanggup mendamaikan" (butir 27).
+    // Upaya rukun dijawab dari datanya (variabel 1268, posita, mediasi).
+    if (/sanggup/i.test(tanya) || (/rukun|damai|mendamaikan/i.test(tanya) && !POLA_TANYA_UPAYA_RUKUN.test(tanya))) {
+      return pilih("rukun|tahu-pisah");
+    }
     // Pertanyaan tentang pisah rumah TIDAK dijawab di sini - itu justru yang
     // diketahui saksi ini, dan templatnya sudah tepat.
   }
@@ -3275,8 +3334,22 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
     return cocok ? cocok[1].trim() : "";
   })();
 
+  // Butir 27 - "puncak ... terjadi (pada) <waktu>": hanya waktu yang langsung
+  // menyusul kata 'terjadi' di kalimat puncak itu sendiri.
+  const puncak = (() => {
+    for (const b of butir) {
+      const m = b.match(/puncak\w*[^.;]{0,140}?\bterjadi\b/i);
+      if (!m) continue;
+      const ujung = m.index + m[0].length;
+      const w = waktuPosita(b).find((x) => x.indeks >= ujung && x.indeks - ujung <= 30);
+      if (w) return { nilai: w.nilai, kalimat: b };
+    }
+    return { nilai: "", kalimat: "" };
+  })();
+
   return {
     awalKonflik: awal.nilai,
+    puncak: puncak.nilai,
     penyebab: sebab.nilai,
     pisahSejak: sejak.nilai,
     lamaPisah,
@@ -3289,6 +3362,7 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
     // Kalimat posita asal tiap fakta - untuk diperiksa petugas, bukan dicetak.
     sumber: {
       awalKonflik: awal.kalimat,
+      puncak: puncak.kalimat,
       penyebab: sebab.kalimat,
       pisahSejak: sejak.kalimat,
       lamaPisah: lamaPisahDihitung ? sejak.kalimat : lama.kalimat,
@@ -3340,15 +3414,26 @@ function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
   };
   const depanKosong = () => hasil.slice(0, Math.max(0, hasil.search(/\.{3,}|_+/)));
 
-  if (/kapan.*(selisih|tengkar)|(selisih|tengkar).*sejak/i.test(tanya)) ganti(fakta.awalKonflik);
+  // Butir 27: "puncak perselisihan ... terjadi pada ..." (templat A1/A3) dan
+  // "sering terjadi perselisihan ..., dan kapan mulai terjadi?" - bentuk
+  // yang dahulu tidak dikenali sehingga titik-titiknya selalu tertinggal.
+  if (/puncak/i.test(tanya)) ganti(fakta.puncak);
+  else if (/kapan.*(selisih|tengkar)|(selisih|tengkar).*(sejak|kapan)/i.test(tanya)) ganti(fakta.awalKonflik);
   else if (/penyebab|\bsebab\b|apa\s+alasan/i.test(tanya) && !/bagaimana|dari\s+mana/i.test(tanya)) {
     // Butir 24 - "yang saya tahu yaitu ..." diisi penyebab yang didalilkan
     // posita (penyebabPosita); tanpa itu tetap titik-titik.
     ganti(fakta.penyebab);
   } else if (/berapa lama.*pisah|lama.*berpisah/i.test(tanya)) ganti(lamaUntuk(depanKosong()));
-  else if (/pisah|serumah/i.test(tanya)) {
-    if (fakta.pisahSejak) ganti(fakta.pisahSejak);
-    else if (fakta.lamaPisah && /\bsejak\s*(?:\.{3,}|_+)/i.test(hasil)) {
+  else if (/pisah|serumah|satu rumah|masih tinggal bersama/i.test(tanya)) {
+    if (fakta.pisahSejak) {
+      ganti(fakta.pisahSejak);
+      // "... sejak ....., kira-kira sampai sekarang sudah sekitar ........
+      // tahun/bulan" (A1/A3) - satuan pilihan diganti lama pisahnya.
+      if (fakta.lamaPisah) hasil = hasil.replace(/(?:\.{3,}|_+)\s*tahun\s*\/\s*bulan/i, fakta.lamaPisah);
+    } else if (fakta.lamaPisah && /(?:\.{3,}|_+)\s*tahun\s*\/\s*bulan/i.test(hasil)) {
+      // Templat punya tempat lamanya sendiri: "sejak ....." tetap menunggu.
+      hasil = hasil.replace(/(?:\.{3,}|_+)\s*tahun\s*\/\s*bulan/i, fakta.lamaPisah);
+    } else if (fakta.lamaPisah && /\bsejak\s*(?:\.{3,}|_+)/i.test(hasil)) {
       // Hanya lamanya yang diketahui: "sejak 2 tahun" bukan kalimat -
       // "sejak ..." menjadi "selama kurang lebih 2 tahun".
       const isi = /^kurang\s+lebih\b/i.test(lamaUntuk("")) ? lamaUntuk("") : `kurang lebih ${fakta.lamaPisah}`;
@@ -3746,6 +3831,9 @@ function susunKeteranganSaksiSdg(opsi) {
         urutan: i,
         daftar,
         bank: bank.jawabanModus,
+        // Butir 27: bank waktu|... dan kehidupan|... membingkai jawaban
+        // templat yang SUDAH diisi dari gugatan - faktanya tetap dari posita.
+        jawab: lengkapiJawabanTemplat({ tanya, jawab, fakta }),
         pilihBentuk: (bentuk, kunciBank) => {
           const indeks = indeksUntuk(`${kT}|${kunciBank}`, bentuk.length);
           varian = { indeks, n: bentuk.length, habis: bentuk.length < jumlahSaksi };

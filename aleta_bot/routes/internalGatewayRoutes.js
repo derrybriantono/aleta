@@ -2222,7 +2222,8 @@ function saringSaksiAbt(masuk, pelaku, lawan) {
 const PENANDA_TIPE_BOT = Object.freeze({
   "bas.saksi.pembuka": Object.freeze([]),
   "bas.saksi.ragam-kata": Object.freeze([]),
-  "bas.saksi.jawaban-modus": Object.freeze(["{sumber}", "{daftar}", "{isi}"]),
+  // {jawab} sejak butir 27: jawaban templat yang sudah diisi dari gugatan.
+  "bas.saksi.jawaban-modus": Object.freeze(["{sumber}", "{daftar}", "{isi}", "{jawab}"]),
   "bas.saksi.bentuk": Object.freeze(["{slot}", "#0046#", "#0047#"]),
   "bas.saksi.profil": Object.freeze([]),
   "bersama.alasan.frasa": Object.freeze(["{pelaku}", "{lawan}"]),

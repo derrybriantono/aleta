@@ -97,6 +97,31 @@ const RAGAM_KATA = [
   { kata: "saya mengenal", ganti: "saya kenal dengan", abaikanBesarKecil: true },
   { kata: "saya kenal dengan", ganti: "saya mengenal", abaikanBesarKecil: true },
   { kata: "telah", ganti: "sudah" },
+  // Butir 27 (5 Oktober 2026, permintaan pengguna): dua saksi bermodus sama
+  // tidak boleh berbunyi kata demi kata sama. Jawaban berikut tidak punya
+  // bentuk kedua di korpus manusia (Sudah cukup 4.140 dari 4.155; Saya tidak
+  // sanggup lagi 424 dari 435) - pasangan ini menjadi bentuk keduanya, tanpa
+  // mengubah kata modal/negasi (periksaInvarian).
+  { kata: "sudah cukup", ganti: "cukup sekian", abaikanBesarKecil: true },
+  { kata: "saya tidak sanggup lagi", ganti: "saya sudah tidak sanggup lagi", abaikanBesarKecil: true },
+  { kata: "perselisihan dan pertengkaran", ganti: "pertengkaran dan perselisihan", abaikanBesarKecil: true },
+  { kata: "menghadap di persidangan ini", ganti: "hadir di persidangan ini" },
+  // Templat A2/A3 (rumusan nikah dan keadaan rumah tangga) yang tidak punya
+  // bentuk kedua sama sekali. Kata modal/negasi, sebutan, dan angka tidak
+  // disentuh; yang berubah hanya cara mengatakannya.
+  { kata: "berselisih dan bertengkar", ganti: "bertengkar dan berselisih" },
+  { kata: "yang saya tahu yaitu", ganti: "yang saya ketahui adalah" },
+  { kata: "tidak ada hubungan darah", ganti: "tidak memiliki hubungan darah" },
+  { kata: "sebelum menikah", ganti: "sebelum pernikahan", abaikanBesarKecil: true },
+  { kata: "tetap rukun dan bahagia", ganti: "masih rukun dan bahagia" },
+  { kata: "saya tahu kalau", ganti: "saya mengetahui bahwa", abaikanBesarKecil: true },
+  { kata: "pernah juga", ganti: "juga pernah" },
+  { kata: "ada pihak lain", ganti: "adanya pihak lain" },
+  { kata: "yang bertindak sebagai", ganti: "yang menjadi", abaikanBesarKecil: true },
+  { kata: "berupa", ganti: "yaitu" },
+  { kata: "sewaktu", ganti: "pada saat" },
+  { kata: "sedangkan", ganti: "dan" },
+  { kata: "menikah di", ganti: "melangsungkan pernikahan di" },
 ];
 
 /**
@@ -129,46 +154,125 @@ const JAWABAN_MODUS = {
     "saya tidak pernah mengetahui mereka bertengkar, yang saya tahu keduanya sekarang sudah berpisah rumah",
     "saya tidak mengetahui adanya pertengkaran di antara mereka, yang saya ketahui hanya mereka sudah tidak tinggal serumah",
     "perselisihan mereka tidak saya ketahui, yang saya tahu hanya keduanya kini tinggal terpisah",
+    "tentang pertengkaran mereka saya tidak tahu apa-apa, yang saya ketahui keduanya sudah tidak serumah",
   ],
   "menyaksikan|tahu-pisah": [
     "saya belum pernah menyaksikan atau mendengar pertengkaran mereka",
     "saya tidak pernah melihat maupun mendengar mereka bertengkar",
     "tidak pernah sekalipun saya melihat atau mendengar mereka bertengkar",
+    "saya sama sekali tidak pernah melihat ataupun mendengar mereka bertengkar",
   ],
   "rukun|tahu-pisah": [
     "saya tidak mengetahui pokok persoalannya, sehingga saya tidak sanggup mendamaikan",
     "karena saya tidak mengetahui persoalannya, saya tidak dapat mendamaikan mereka",
     "saya tidak sanggup mendamaikan sebab persoalan mereka tidak saya ketahui",
+    "persoalan mereka tidak saya ketahui, maka saya tidak sanggup merukunkan keduanya",
   ],
   "penyebab|tidak-tahu": [
     "saya tidak tahu persis penyebabnya, saya hanya mengetahui mereka sering berselisih dan kini sudah pisah rumah",
     "saya tidak mengetahui apa penyebabnya, yang saya tahu mereka sudah tidak rukun dan sudah berpisah",
     "penyebabnya tidak saya ketahui, yang saya lihat mereka memang sering berselisih dan sekarang sudah berpisah",
+    "apa yang menjadi penyebab perselisihan mereka tidak saya ketahui, saya hanya tahu mereka sering bertengkar dan kini sudah berpisah",
   ],
   "penyebab|dari-cerita": [
     "yang saya ketahui dari cerita {sumber}, penyebabnya yaitu {isi}",
     "menurut cerita {sumber} kepada saya, penyebabnya adalah {isi}",
     "{sumber} menceritakan kepada saya bahwa penyebabnya {isi}",
+    "saya mendengar dari {sumber} sendiri bahwa yang menjadi penyebab adalah {isi}",
   ],
   "penyebab|sebagian": [
     "sepengetahuan saya penyebabnya adalah {daftar}, penyebab lainnya saya tidak mengetahui",
     "yang saya ketahui sendiri hanya {daftar}, selebihnya saya tidak tahu",
     "sebatas yang saya ketahui penyebabnya {daftar}, selain itu saya tidak dapat menerangkan",
+    "setahu saya yang menjadi penyebab adalah {daftar}, penyebab lain saya tidak tahu",
   ],
   "penyebab|sama": [
     "penyebab perselisihan dan pertengkaran mereka yang saya ketahui yaitu {daftar}",
     "penyebabnya sepengetahuan saya adalah {daftar}",
     "sepanjang yang saya ketahui, mereka berselisih karena {daftar}",
+    "yang menjadi penyebab perselisihan mereka sepengetahuan saya adalah {daftar}",
   ],
   "menyaksikan|tidak-melihat": [
     "saya tidak pernah menyaksikan langsung pertengkaran mereka",
     "saya tidak pernah melihat sendiri mereka bertengkar, saya mengetahuinya dari cerita",
     "pertengkaran itu tidak pernah saya saksikan sendiri, hanya saya dengar dari cerita",
+    "saya tidak pernah melihat sendiri mereka bertengkar, saya hanya mendengar dari cerita orang",
   ],
   "menyaksikan|tidak-tahu": [
     "saya pernah melihat mereka bertengkar beberapa kali, namun tidak tahu sebabnya",
     "saya pernah mendengar mereka bertengkar, tetapi tidak tahu apa yang dipersoalkan",
     "beberapa kali saya melihat mereka bertengkar, tetapi persoalannya tidak saya ketahui",
+    "saya beberapa kali menyaksikan mereka bertengkar, hanya saja apa yang diributkan tidak saya ketahui",
+  ],
+
+  /* ==========================================================================
+   * BUTIR 27 (5 Oktober 2026) - TIAP MODUS MENJAWAB TIAP PERTANYAAN POKOK
+   * ==========================================================================
+   *
+   * Sampai butir 27 modus hanya menjawab penyebab, cara tahu, dan berapa kali
+   * menyaksikan. Pertanyaan lain jatuh ke templat, yang ditulis untuk saksi
+   * yang MELIHAT sendiri - sehingga saksi "tidak tahu pertengkarannya, hanya
+   * tahu sudah pisah" menjawab "perselisihan ... terjadi sejak ...", "sering
+   * terjadi perselisihan", dan "saya mengetahui karena saya melihat sendiri"
+   * (10,9% jawabannya bertentangan dengan modusnya sendiri).
+   *
+   *   waktu      "Kapan mulai terjadi perselisihan ..." dan "puncak ..."
+   *   kehidupan  "Bagaimana kehidupan/keadaan rumah tangga ..."
+   *
+   * {jawab} = jawaban templat yang SUDAH diisi dari gugatan (tanggal dan
+   * fakta lain tetap datang dari posita, tidak dikarang di sini); bila
+   * faktanya tidak ada, ia tetap bertitik-titik dan ditandai perlu diisi.
+   * Tiap bank berisi >= 4 bentuk supaya empat saksi bermodus sama tetap
+   * berbeda kalimatnya. Tidak ada kalimat yang berakhiran "nya," - ABT
+   * membuang "ya, " (replace_ket_saksi).
+   */
+  "waktu|tidak-melihat": [
+    "saya tidak menyaksikannya sendiri, tetapi dari cerita yang saya dengar {jawab}",
+    "saya tidak pernah melihat sendiri pertengkaran mereka, namun dari cerita orang-orang di sekitar mereka {jawab}",
+    "hal itu tidak saya saksikan sendiri, yang saya dengar dari keluarga mereka {jawab}",
+    "saya hanya mendengar dari cerita orang lain bahwa {jawab}",
+  ],
+  "waktu|dari-cerita": [
+    "menurut cerita {sumber} kepada saya, {jawab}",
+    "{sumber} menceritakan kepada saya bahwa {jawab}",
+    "yang saya ketahui dari cerita {sumber}, {jawab}",
+    "sebagaimana diceritakan {sumber} kepada saya, {jawab}",
+  ],
+  "waktu|tahu-pisah": [
+    "saya tidak mengetahui kapan mereka mulai berselisih, yang saya tahu keduanya sekarang sudah berpisah tempat tinggal",
+    "saya tidak pernah mengetahui adanya pertengkaran di antara mereka, sehingga kapan mulainya tidak saya ketahui",
+    "kapan perselisihan itu terjadi tidak saya ketahui, yang saya ketahui hanya mereka kini tinggal terpisah",
+    "saya tidak tahu sejak kapan mereka berselisih, yang saya lihat keduanya sudah tidak tinggal serumah lagi",
+  ],
+  "kehidupan|tidak-melihat": [
+    "dari cerita yang saya dengar, {jawab}",
+    "saya tidak melihatnya sendiri, tetapi dari cerita orang-orang di sekitar mereka {jawab}",
+    "yang saya dengar dari keluarga dan tetangga mereka, {jawab}",
+    "sepanjang yang saya dengar dari cerita orang lain, {jawab}",
+  ],
+  "kehidupan|dari-cerita": [
+    "menurut cerita {sumber} kepada saya, {jawab}",
+    "{sumber} bercerita kepada saya bahwa {jawab}",
+    "dari penuturan {sumber} kepada saya, {jawab}",
+    "yang saya ketahui dari cerita {sumber}, {jawab}",
+  ],
+  "kehidupan|tahu-pisah": [
+    "yang saya ketahui sekarang mereka sudah tidak tinggal serumah lagi, sedangkan pertengkaran di antara mereka tidak saya ketahui",
+    "saya hanya mengetahui keduanya kini sudah berpisah tempat tinggal, tentang perselisihan mereka saya tidak tahu",
+    "rumah tangga mereka sekarang tidak lagi utuh karena keduanya tinggal terpisah, namun saya tidak mengetahui adanya pertengkaran",
+    "sepengetahuan saya mereka sudah tidak tinggal bersama lagi, selebihnya tentang keadaan rumah tangga mereka saya tidak mengetahui",
+  ],
+  "cara-tahu|tidak-tahu": [
+    "soal penyebab itu saya tidak tahu, yang saya ketahui hanya pertengkaran mereka karena saya pernah melihat dan mendengarnya",
+    "saya tidak mengetahui apa penyebab pertengkaran mereka, saya hanya tahu mereka bertengkar karena pernah mendengar sendiri",
+    "penyebab perselisihan itu tidak saya ketahui, yang saya ketahui sebatas pertengkaran yang pernah saya saksikan",
+    "saya tidak dapat menerangkan apa penyebab perselisihan mereka, saya hanya pernah melihat mereka bertengkar",
+  ],
+  "cara-tahu|tahu-pisah": [
+    "saya tidak mengetahui adanya perselisihan di antara mereka, yang saya ketahui hanya keduanya sudah tidak lagi tinggal serumah",
+    "saya tidak tahu tentang perselisihan mereka, yang saya ketahui hanya keduanya kini sudah tinggal terpisah",
+    "perselisihan mereka tidak pernah saya ketahui, saya hanya tahu bahwa mereka sudah tidak serumah lagi",
+    "saya tidak mengetahui penyebab maupun pertengkaran mereka, yang saya tahu sebatas keduanya sudah berpisah tempat tinggal",
   ],
 };
 
@@ -251,6 +355,25 @@ const BENTUK = [
   // anak dikaruniai (anak)
   { kunci: "anak dikaruniai", nilai: "#0046# dan #0047# sudah dikaruniai {slot}", data: { asalKorpus: { kemunculan: 2246, perkara: 1110 } } }, // dasar
   { kunci: "anak dikaruniai", nilai: "#0046# dan #0047# telah dikaruniai {slot}", data: { asalKorpus: { kemunculan: 531, perkara: 259 } } }, // sinonim sudah/telah
+  // Butir 27 (5 Oktober 2026): kelompok yang sampai kini identik antar saksi.
+  // Ditambang dengan pola utuh atas korpus yang sama (skrip
+  // D:/aleta-dev/kerja/butir24/cari27.js); sebutan pada slot dijumlahkan.
+  // siapa pergi (siapa pergi)
+  { kunci: "siapa pergi", nilai: "yang meninggalkan tempat tinggal bersama adalah {slot}", data: { asalKorpus: { kemunculan: 2020, perkara: 1091 } } }, // dasar templat A1/A3
+  { kunci: "siapa pergi", nilai: "yang meninggalkan kediaman bersama adalah {slot}", data: { asalKorpus: { kemunculan: 392, perkara: 192 } } }, // dasar templat 04
+  { kunci: "siapa pergi", nilai: "yang pergi meninggalkan tempat tinggal bersama adalah {slot}", data: { asalKorpus: { kemunculan: 43, perkara: 24 } } }, // sisip 'pergi'
+  { kunci: "siapa pergi", nilai: "{slot} yang pergi meninggalkan tempat tinggal bersama", data: { asalKorpus: { kemunculan: 40, perkara: 39 } } }, // jawaban-gema
+  // tidak ada komunikasi (komunikasi)
+  { kunci: "tidak ada komunikasi", nilai: "selama pisah antara #0046# dan #0047# sudah tidak ada komunikasi", data: { asalKorpus: { kemunculan: 2491, perkara: 1242 } } }, // dasar templat A1/A3
+  { kunci: "tidak ada komunikasi", nilai: "selama pisah #0046# dan #0047# tidak ada komunikasi lagi", data: { asalKorpus: { kemunculan: 295, perkara: 135 } } }, // dasar templat 04
+  { kunci: "tidak ada komunikasi", nilai: "setelah berpisah antara #0046# dan #0047# tidak ada lagi hubungan komunikasi", data: { asalKorpus: { kemunculan: 75, perkara: 38 } } }, // sinonim terukur
+  { kunci: "tidak ada komunikasi", nilai: "#0046# dan #0047# sudah tidak ada lagi hubungan komunikasi sampai sekarang", data: { asalKorpus: { kemunculan: 10, perkara: 6 } } }, // pindah keterangan waktu
+  // nafkah tidak diberikan (nafkah)
+  { kunci: "nafkah tidak diberikan", nilai: "#0047# sudah tidak pernah memberikan nafkah kepada #0046#", data: { asalKorpus: { kemunculan: 1943, perkara: 993 } } }, // dasar templat
+  { kunci: "nafkah tidak diberikan", nilai: "#0047# tidak pernah memberikan nafkah kepada #0046#", data: { asalKorpus: { kemunculan: 5, perkara: 4 } } }, // buang 'sudah'
+  // puncak terjadi pada (awal perselisihan)
+  { kunci: "puncak terjadi pada", nilai: "puncak perselisihan dan pertengkaran antara #0046# dan #0047# terjadi pada {slot}", data: { asalKorpus: { kemunculan: 1598, perkara: 843 } } }, // dasar templat
+  { kunci: "puncak terjadi pada", nilai: "puncak perselisihan dan pertengkaran #0046# dan #0047# terjadi pada {slot}", data: { asalKorpus: { kemunculan: 22, perkara: 11 } } }, // buang 'antara'
 ];
 
 /**
@@ -279,12 +402,16 @@ const PROFIL = [
   { kunci: "menyaksikan", data: { peluangRagam: 1, rumusan: false } },
   { kunci: "pisah", data: { peluangRagam: 1, rumusan: false } },
   { kunci: "upaya damai", data: { peluangRagam: 1, rumusan: false } },
-  { kunci: "penutup", data: { peluangRagam: 0, rumusan: true } }, // 99,9% identik, n=1.928
-  { kunci: "keberatan", data: { peluangRagam: 0.05, rumusan: true } }, // 95,1%, n=226
-  { kunci: "komunikasi", data: { peluangRagam: 0.07, rumusan: true } }, // 92,8%, n=1.592
-  { kunci: "nafkah", data: { peluangRagam: 0.08, rumusan: true } }, // 92,3%, n=1.011
-  { kunci: "kenapa cerai", data: { peluangRagam: 0.09, rumusan: true } }, // 91,2%, n=910
-  { kunci: "maksud", data: { peluangRagam: 0.12, rumusan: true } }, // 87,9%, n=1.387
+  // Butir 27 (5 Oktober 2026, permintaan pengguna): dua saksi bermodus sama
+  // tidak boleh berbunyi kata demi kata sama, termasuk pada rumusan. Peluang
+  // rumusan dinaikkan ke 1; rumusan:true tetap (tidak pernah diberi pembuka).
+  // Angka di komentar = persen identik dua saksi MANUSIA, sebagai catatan.
+  { kunci: "penutup", data: { peluangRagam: 1, rumusan: true } }, // 99,9% identik, n=1.928
+  { kunci: "keberatan", data: { peluangRagam: 1, rumusan: true } }, // 95,1%, n=226
+  { kunci: "komunikasi", data: { peluangRagam: 1, rumusan: true } }, // 92,8%, n=1.592
+  { kunci: "nafkah", data: { peluangRagam: 1, rumusan: true } }, // 92,3%, n=1.011
+  { kunci: "kenapa cerai", data: { peluangRagam: 1, rumusan: true } }, // 91,2%, n=910
+  { kunci: "maksud", data: { peluangRagam: 1, rumusan: true } }, // 87,9%, n=1.387
   // Enam kelompok "lain" di bawah dinaikkan ke 1 pada 26 September 2026
   // (permintaan pengguna 9): keterangan dua saksi harus BERBEDA susunannya
   // tetapi sama fakta hukumnya. Peluang lamanya meniru saksi manusia yang

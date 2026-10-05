@@ -116,7 +116,12 @@ periksa("tidak ada jawaban terisi yang identik kata demi kata", identikTerisi ==
 // "melalaikan kewajiban nafkah lahir" (abtKalimatBaku, catatan SETARA).
 periksa("jawaban penyebab memuat alasan yang didalilkan saja", /melalaikan kewajiban nafkah lahir/.test(sdg.saksi1[1].jawab) && /mabuk/.test(sdg.saksi2[1].jawab) && !/\.{3}/.test(sdg.saksi1[1].jawab));
 periksa("kedua saksi menyebut nafkah dengan derajat yang sama", /melalaikan kewajiban nafkah lahir/.test(sdg.saksi2[1].jawab), sdg.saksi2[1].jawab);
-periksa("kalimat penutup tidak diberi pembuka", sdg.saksi1[4].jawab === "Sudah cukup;" && sdg.saksi2[4].jawab === "Sudah cukup;");
+// Butir 27: penutup pun berbeda antar saksi ("Sudah cukup" / "Cukup sekian").
+periksa(
+  "kalimat penutup tidak diberi pembuka, dan berbeda antar saksi",
+  [sdg.saksi1[4].jawab, sdg.saksi2[4].jawab].sort().join("|") === "Cukup sekian;|Sudah cukup;",
+  `${sdg.saksi1[4].jawab} / ${sdg.saksi2[4].jawab}`
+);
 periksa("titik-titik templat ditandai perlu diisi", sdg.perluDiisi.length === 1 && sdg.perluDiisi[0].no === "12", JSON.stringify(sdg.perluDiisi));
 periksa("substansi lama pisah tetap 4 bulan pada keduanya", /4 bulan/.test(sdg.saksi1[2].jawab) && /4 bulan/.test(sdg.saksi2[2].jawab));
 periksa("tiap jawaban berakhir titik koma", [...sdg.saksi1, ...sdg.saksi2].every((b) => /;$/.test(b.jawab)));

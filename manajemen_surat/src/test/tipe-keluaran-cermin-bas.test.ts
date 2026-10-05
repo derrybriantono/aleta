@@ -116,9 +116,9 @@ describe("CERMIN_BAS_SAKSI = ragamBasBawaan.js bot", () => {
     expect(Object.keys(cermin).sort()).toEqual([...DAFTAR].sort());
   });
 
-  it("isinya sungguh ada: 4 pembuka manusia, 39 kalimat modus, bentuk dan profil tidak kosong", () => {
+  it("isinya sungguh ada: 4 pembuka manusia, 80 kalimat modus (butir 27), bentuk dan profil tidak kosong", () => {
     expect((cermin["bas.saksi.pembuka"] ?? []).map((e) => e.nilai)).toEqual(["Ya, ", "Setahu saya, ", "Sepengetahuan saya, ", "Yang saya ketahui, "]);
-    expect(cermin["bas.saksi.jawaban-modus"]).toHaveLength(39);
+    expect(cermin["bas.saksi.jawaban-modus"]).toHaveLength(80);
     expect((cermin["bas.saksi.bentuk"] ?? []).length).toBeGreaterThanOrEqual(20);
     expect((cermin["bas.saksi.profil"] ?? []).length).toBeGreaterThanOrEqual(8);
   });
@@ -155,10 +155,13 @@ describe("bas.saksi.jawaban-modus = bank yang DIJALANKAN jawabMenurutModus", () 
     penyebab: "Apa penyebab perselisihan dan pertengkaran tersebut?",
     menyaksikan: "Apakah saudara pernah melihat atau mendengar mereka bertengkar?",
     rukun: "Apakah saudara sanggup merukunkan mereka kembali?",
+    // Butir 27 - kapan mulai/puncak perselisihan dan keadaan rumah tangga.
+    waktu: "Kapan mulai terjadi perselisihan dan pertengkaran antara Penggugat dan Tergugat?",
+    kehidupan: "Bagaimana kehidupan rumah tangga Penggugat dan Tergugat?",
   };
-  const ISI = { sumber: "PENCERITA-UJI", daftar: "Tergugat bermain judi" };
+  const ISI = { sumber: "PENCERITA-UJI", daftar: "Tergugat bermain judi", jawab: "perselisihan terjadi sejak tahun 2020" };
   const isiPenanda = (s: string) =>
-    s.replaceAll("{sumber}", ISI.sumber).replaceAll("{daftar}", ISI.daftar).replaceAll("{isi}", ISI.daftar);
+    s.replaceAll("{sumber}", ISI.sumber).replaceAll("{daftar}", ISI.daftar).replaceAll("{isi}", ISI.daftar).replaceAll("{jawab}", ISI.jawab);
   const modusCermin = cermin["bas.saksi.jawaban-modus"] ?? [];
 
   it("tiap kunci: setiap modus yang dilayaninya menghasilkan bank cermin, urut demi urut", () => {
@@ -173,6 +176,7 @@ describe("bas.saksi.jawaban-modus = bank yang DIJALANKAN jawabMenurutModus", () 
             alasan: [],
             daftar: ISI.daftar,
             sumber: ISI.sumber,
+            jawab: `${ISI.jawab};`,
             nomorSaksi: 1,
             urutan,
           })
