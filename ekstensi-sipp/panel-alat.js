@@ -2377,8 +2377,13 @@ function alatGolonganPeran(peran) {
 const ALAT_MENU_PERAN = {
   sipp: {
     perkara: {
-      admin: ["penetapan", "putusan", "jurusita", "berkas", "perkara"],
-      ketua: ["penetapan", "putusan", "berkas", "perkara"],
+      // "ptsp" (perbaikan 5 Okt butir 11): tab PTSP - Data Umum dari berkas
+      // gugatan (dulu di Penetapan), saksi/pihak dari foto KTP, rapikan
+      // identitas para pihak. Ketua tetap mendapatkannya karena Data Umum
+      // dulu ada di tab Penetapannya (fitur lama tidak dikurangi). Peran
+      // "lain" (PTSP/operator) memakai susunan lama = semua tab, termasuk PTSP.
+      admin: ["penetapan", "ptsp", "putusan", "jurusita", "berkas", "perkara"],
+      ketua: ["penetapan", "putusan", "berkas", "perkara", "ptsp"],
       hakim: ["putusan", "berkas", "perkara"],
       panitera: ["berkas", "perkara"],
       jurusita: ["jurusita", "perkara", "berkas"],
@@ -2425,7 +2430,9 @@ function alatMenuPeran(situs, halaman, peran, opsi) {
     // ini tab Penetapan hilang tepat di perkara baru yang membutuhkannya.
     menu =
       situs === "sipp"
-        ? menu.filter((k) => k === "perkara" || k === "berkas" || (golongan === "ketua" && k === "penetapan"))
+        ? menu.filter(
+            (k) => k === "perkara" || k === "berkas" || (golongan === "ketua" && (k === "penetapan" || k === "ptsp"))
+          )
         : [];
   }
   if (situs === "sipp" && halaman === "perkara" && golongan === "ketua" && o.penunjukanLengkap === true) {
@@ -2788,6 +2795,10 @@ const ALETA_COBA_BOLEH = [
   // dan memulangkannya - foto tidak disimpan, tidak ada yang ditulis ke mana pun.
   // Pengisian ke blangko SIPP tetap oleh petugas, dan Simpan SIPP tetap ditahan.
   /\/aleta\/api\/aleta-ecourt\/saksi-scan(?:[?#]|$)/,
+  // Rapikan identitas para pihak (perbaikan 5 Okt butir 26): alamat dikirim,
+  // usulan rapinya DIPULANGKAN (rapikanAlamat) - tidak ada yang disimpan.
+  // Menuliskannya ke SIPP tetap lewat blangko edit pihak, Simpan oleh petugas.
+  /\/aleta\/api\/aleta-ecourt\/rapikan-alamat(?:[?#]|$)/,
 ];
 
 function alatUjiBersihMode(x) {

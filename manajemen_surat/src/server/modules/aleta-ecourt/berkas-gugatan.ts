@@ -2,6 +2,8 @@ import { inflateRawSync } from "node:zlib";
 
 import { rapikanAlamat, surelDariGugatan } from "@/lib/alamat-pihak";
 
+import { uraiPihakGugatan, type PihakGugatan } from "./pihak-gugatan";
+
 /**
  * Membaca berkas gugatan yang diunggah, dan memetik isian Data Umum darinya.
  *
@@ -436,6 +438,13 @@ export type DataUmum = {
    * membaca kalimat asalnya.
    */
   domisiliElektronik: Petikan[];
+  /**
+   * Identitas LENGKAP tiap pihak (perbaikan 5 Okt butir 28) - nama, bin/binti,
+   * TTL/umur, NIK, agama, pendidikan, pekerjaan, alamat rapi + wilayah,
+   * surel, telepon - untuk diisikan ke blangko "Tambah Referensi Data Pihak"
+   * SIPP lewat kartu KTP. Lihat pihak-gugatan.ts.
+   */
+  pihak: PihakGugatan[];
 
   // --- data pernikahan, untuk perkara perkawinan ------------------------
   tanggalMenikah: Petikan | null;
@@ -757,6 +766,7 @@ export function petikDataUmum(teksMentah: string): DataUmum {
       .slice(0, 6)
       .map((x) => ({ nilai: x.surel, asal: x.asal })),
     alamatTergugat,
+    pihak: uraiPihakGugatan(teksMentah),
 
     nilaiSengketa: petikNilaiSengketa(teks),
 

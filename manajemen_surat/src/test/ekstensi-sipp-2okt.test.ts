@@ -399,7 +399,12 @@ describe("butir 19: bawaan buka/tutup - satu bagian utama per tab", () => {
     expect(pn.querySelector('.aleta-kelompok[data-kunci="kerjakan"]').getAttribute("data-s2-utama")).toBe("penunjukan");
     expect(terbukaBagian(bagianDi(pn, "penunjukan"))).toBe(true);
     expect(terbukaBagian(bagianDi(pn, "s2EdocPenetapan"))).toBe(false);
-    expect(terbukaBagian(bagianDi(pn, "dataUmum"))).toBe(false);
+    // Perbaikan 5 Okt (butir 11): Data Umum pindah ke tab PTSP dan menjadi
+    // bagian utamanya - di Penetapan tinggal tautan, bukan bagian.
+    expect(bagianDi(pn, "dataUmum").closest(".aleta-kelompok").dataset.kunci).toBe("ptspKel");
+    expect(pn.querySelector('.aleta-kelompok[data-kunci="ptspKel"]').getAttribute("data-s2-utama")).toBe("dataUmum");
+    expect(terbukaBagian(bagianDi(pn, "dataUmum"))).toBe(true);
+    expect(pn.querySelector('.aleta-kelompok[data-kunci="kerjakan"] .aleta-p5-tautan-ptsp')).not.toBeNull();
   });
 
   it("pilihan petugas yang tersimpan menang atas bawaan", async () => {
@@ -836,7 +841,11 @@ describe("butir 14: jeda seperti manusia sebelum Simpan SIPP; tanpa jalur tulis 
 
   it("blok S2: tidak ada pesan jembatan sendiri, tidak ada postMessage, non-GET hanya ke rute unggah edoc penetapan (ALETA, bukan SIPP)", () => {
     const konten = KONTEN();
-    const blok = konten.slice(konten.indexOf("PERBAIKAN 2 OKTOBER 2026 - PANEL SIPP"));
+    // Disesuaikan 5 Okt: blok S2 berhenti di awal blok 5 Okt (tab PTSP), yang
+    // punya penjaganya sendiri di ekstensi-ptsp-5okt.test.ts.
+    const awal = konten.indexOf("PERBAIKAN 2 OKTOBER 2026 - PANEL SIPP");
+    const akhir = konten.indexOf("PERBAIKAN 5 OKTOBER 2026 - TAB PTSP", awal);
+    const blok = konten.slice(awal, akhir > awal ? akhir : undefined);
     expect(blok.length).toBeGreaterThan(5000);
     expect(blok).not.toMatch(/kirimKeJembatan(?:Langsung)?\(/);
     expect(blok).not.toMatch(/postMessage\(/);
