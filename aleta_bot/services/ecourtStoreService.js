@@ -103,10 +103,10 @@ const VERIFICATION_STATUSES = new Set(["belum", "valid", "tidak_valid", "tidak_p
  */
 const POLA_ALUR_GUGATAN = /\/Pdt\.G(?:\.S)?\//i;
 const POLA_BERKAS_PENDAFTARAN =
-  /^(?:surat\s+gugatan|dokumen\s+gugatan|gugatan|surat\s+permohonan|dokumen\s+permohonan|permohonan|surat\s+kuasa|kuasa|dokumen\s+bukti|ktp|kartu\s+tanda\s+penduduk|kartu\s+keluarga|buku\s+nikah|kutipan\s+akta)\b/i;
+  /^(?:surat\s+gugatan|dokumen\s+gugatan|gugatan|surat\s+permohonan|dokumen\s+permohonan|permohonan|surat\s+kuasa|kuasa|dokumen\s+bukti|ktp|kartu\s+tanda\s+penduduk|kartu\s+keluarga|buku\s+nikah|kutipan\s+akta|akta|bukti)\b/i;
 /** Untuk SQL MySQL (REGEXP, tanpa \b): judul berkas pendaftaran. */
 const SQL_POLA_PENDAFTARAN =
-  "^(surat gugatan|dokumen gugatan|gugatan|surat permohonan|dokumen permohonan|permohonan|surat kuasa|kuasa|dokumen bukti|ktp|kartu tanda penduduk|kartu keluarga|buku nikah|kutipan akta)";
+  "^(surat gugatan|dokumen gugatan|gugatan|surat permohonan|dokumen permohonan|permohonan|surat kuasa|kuasa|dokumen bukti|ktp|kartu tanda penduduk|kartu keluarga|buku nikah|kutipan akta|akta|bukti)";
 
 /** Alur perkara yang mengenal verifikasi majelis atas dokumen persidangan. */
 function alurMenungguMajelis(nomorPerkara) {
@@ -2004,48 +2004,7 @@ async function bacaPanggilanPerkara(nomorPerkaraMentah) {
   };
 }
 
-/**
- * ============================================================================
- * "MENUNGGU MAJELIS" - SATU DEFINISI (5 Okt 2026)
- * ============================================================================
- *
- * Dokumen yang sungguh menunggu verifikasi majelis: status_verifikasi
- * 'belum', perkaranya GUGATAN (/Pdt.G/ atau /Pdt.G.S/ - perkara permohonan
- * tidak melewati verifikasi majelis atas dokumen persidangan), dan BUKAN
- * berkas pendaftaran lama (diunggah_pada kosong dan judulnya surat gugatan,
- * permohonan, kuasa, bukti, KTP, ...). Data server 5 Okt 2026: 18 dari 26
- * dokumen 'belum' ternyata berkas pendaftaran.
- *
- * Nama dan isinya SAMA dengan definisi di branch utama (koordinator) supaya
- * dapat disatukan saat penggabungan; ditambahkan, tidak mengubah fungsi lain.
- */
-const POLA_BERKAS_PENDAFTARAN =
-  /^\s*(surat gugatan|dokumen gugatan|gugatan|surat permohonan|dokumen permohonan|permohonan|surat kuasa|kuasa|dokumen bukti|bukti|ktp|kartu tanda penduduk|kartu keluarga|buku nikah|akta)/i;
-
-const POLA_PERKARA_GUGATAN = /\/Pdt\.G(\.S)?\//i;
-
-function dokumenMenungguMajelis(d = {}) {
-  const status = String(d.statusVerifikasi ?? d.status_verifikasi ?? "").trim().toLowerCase();
-  if (status !== "belum") return false;
-  const nomor = String(d.nomorPerkara ?? d.nomor_perkara ?? "");
-  if (!POLA_PERKARA_GUGATAN.test(nomor)) return false;
-  const diunggah = d.diunggahPada ?? d.diunggah_pada ?? null;
-  const judul = String(d.judulDokumen ?? d.judul_dokumen ?? "");
-  const pendaftaran = (diunggah === null || diunggah === undefined || diunggah === "") && POLA_BERKAS_PENDAFTARAN.test(judul);
-  return !pendaftaran;
-}
-
-/** Kondisi SQL yang sama, untuk alias tabel aleta_bot_ecourt_documents. */
-function sqlMenungguMajelis(alias = "d") {
-  const a = alias ? `${alias}.` : "";
-  return `(${a}status_verifikasi = 'belum'
-    AND (${a}nomor_perkara LIKE '%/Pdt.G/%' OR ${a}nomor_perkara LIKE '%/Pdt.G.S/%')
-    AND NOT (${a}diunggah_pada IS NULL AND LOWER(TRIM(${a}judul_dokumen)) REGEXP '^(surat gugatan|dokumen gugatan|gugatan|surat permohonan|dokumen permohonan|permohonan|surat kuasa|kuasa|dokumen bukti|bukti|ktp|kartu tanda penduduk|kartu keluarga|buku nikah|akta)'))`;
-}
-
 module.exports = {
-  dokumenMenungguMajelis,
-  sqlMenungguMajelis,
   VERIFICATION_STATUSES,
   alurMenungguMajelis,
   berkasPendaftaran,

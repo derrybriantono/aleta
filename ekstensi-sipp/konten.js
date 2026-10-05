@@ -10805,7 +10805,7 @@ function barisNomorRegister(nomorRegister) {
  * permohonan tidak pernah menunggu verifikasi majelis.
  */
 const KTN_POLA_BERKAS_PENDAFTARAN =
-  /^(?:surat\s+gugatan|dokumen\s+gugatan|gugatan|surat\s+permohonan|dokumen\s+permohonan|permohonan|surat\s+kuasa|kuasa|dokumen\s+bukti|ktp|kartu\s+tanda\s+penduduk|kartu\s+keluarga|buku\s+nikah|kutipan\s+akta)\b/i;
+  /^(?:surat\s+gugatan|dokumen\s+gugatan|gugatan|surat\s+permohonan|dokumen\s+permohonan|permohonan|surat\s+kuasa|kuasa|dokumen\s+bukti|ktp|kartu\s+tanda\s+penduduk|kartu\s+keluarga|buku\s+nikah|kutipan\s+akta|akta|bukti)\b/i;
 
 function ktnDokumenMenungguMajelis(d, nomor) {
   if (!d || d.statusVerifikasi !== "belum") return false;
