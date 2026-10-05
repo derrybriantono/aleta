@@ -10809,6 +10809,8 @@ const KTN_POLA_BERKAS_PENDAFTARAN =
 
 function ktnDokumenMenungguMajelis(d, nomor) {
   if (!d || d.statusVerifikasi !== "belum") return false;
+  // Lama dan Baru-tanpa-saklar identik dengan fd9aad7 (syarat mutlak Tahap 7): bunyi lama; aturan baru di UI Baru.
+  if (typeof alatUjiMode === "function" && alatUjiMode() !== "ui") return true;
   const n = String(d.nomorPerkara || nomor || "");
   if (n && !/\/Pdt\.G(?:\.S)?\//i.test(n)) return false;
   return !(!d.diunggahPada && KTN_POLA_BERKAS_PENDAFTARAN.test(String(d.judulDokumen || "").trim()));
@@ -10817,6 +10819,13 @@ function ktnDokumenMenungguMajelis(d, nomor) {
 /** Keterangan verifikasi satu dokumen e-Court (butir 32). */
 function ktnKetVerifikasi(d, nomor) {
   if (!d) return "";
+  // Lama dan Baru-tanpa-saklar identik dengan fd9aad7 (syarat mutlak Tahap 7): bunyi lama; aturan baru di UI Baru.
+  if (typeof alatUjiMode === "function" && alatUjiMode() !== "ui") {
+    if (d.statusVerifikasi === "tidak_perlu") return "berkas pendaftaran";
+    if (d.statusVerifikasi === "valid") return "sudah diverifikasi";
+    if (d.statusVerifikasi === "tidak_valid") return "dinyatakan tidak valid";
+    return "menunggu majelis";
+  }
   if (d.statusVerifikasi === "tidak_perlu") return "berkas pendaftaran";
   if (d.statusVerifikasi === "valid") return "sudah diverifikasi";
   if (d.statusVerifikasi === "tidak_valid") return "dinyatakan tidak valid";
@@ -13157,7 +13166,11 @@ function kotakSisipan(dokumenSehari, ambangHari, sebabCocok = "") {
       }
     }
 
-    if (ktnDokumenMenungguMajelis(dokumen, typeof cariNomorPerkara === "function" ? cariNomorPerkara() : "")) {
+    const menungguMajelis =
+      typeof ktnDokumenMenungguMajelis === "function"
+        ? ktnDokumenMenungguMajelis(dokumen, typeof cariNomorPerkara === "function" ? cariNomorPerkara() : "")
+        : dokumen.statusVerifikasi === "belum";
+    if (menungguMajelis) {
       baris.appendChild(buatElemen("span", "aleta-tanda aleta-tanda-kuning", "menunggu majelis"));
     } else if (dokumen.statusVerifikasi === "valid") {
       baris.appendChild(buatElemen("span", "aleta-tanda aleta-tanda-hijau", "sudah diverifikasi"));

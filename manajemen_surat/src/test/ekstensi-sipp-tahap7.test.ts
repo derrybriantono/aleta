@@ -42,7 +42,11 @@ const lama = (b: string) =>
     /\r\n/g,
     "\n"
   );
-const SUMBER = { alat: baca("panel-alat.js"), konten: baca("konten.js") };
+const SUMBER = {
+  // ALETA_UJI_ALAT / ALETA_UJI_KONTEN hanya untuk pembukti gigitan dan pelacak selisih.
+  alat: process.env.ALETA_UJI_ALAT ? readFileSync(process.env.ALETA_UJI_ALAT, "utf8").replace(/\r\n/g, "\n") : baca("panel-alat.js"),
+  konten: process.env.ALETA_UJI_KONTEN ? readFileSync(process.env.ALETA_UJI_KONTEN, "utf8").replace(/\r\n/g, "\n") : baca("konten.js"),
+};
 // Istilah tampilan "galat" -> "error" (permintaan pengguna 30 Sep 2026, berlaku di SEMUA tampilan
 // termasuk Lama) diterapkan juga ke sumber pembanding, supaya "Lama identik" tetap menjaga
 // segala hal lain. Penggantian menyeluruh aman: nama peubah yang ikut berganti berganti

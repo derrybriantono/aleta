@@ -170,7 +170,9 @@ describe("itsbat nikah dan keterangan dua saksi", () => {
   it("tombolnya hanya digambar bila blangkonya memuat variabel sasarannya", () => {
     const isi = abt();
     expect(isi).toContain('tombolItsbat.hidden = !(petaAwal.has("5197") || petaAwal.has("8087"));');
-    expect(isi).toContain("tombolSdg.hidden = !petaAwal.has(VAR_SAKSI_1);");
+    // 1.184.0 (butir 23): juga blangko BAS (5058 TanyaJwb Saksi) - perilakunya diuji
+    // di pemetaan-blangko-2okt ("Susun keterangan saksi tersedia di halaman perkara").
+    expect(isi).toContain("tombolSdg.hidden = !a3BlangkoMemuatSaksi(petaAwal);");
   });
 
   it("templat diambil lewat halaman penyunting ABT (load_template), bukan dari basis datanya", () => {

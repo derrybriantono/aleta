@@ -359,7 +359,6 @@ async function nilaiKesiapanPerkara(
       : null;
 
   return nilaiKesiapan({
-    nomorPerkara: nomor,
     agenda,
     tanggalSidang,
     sidangId: sidangId || null,
@@ -373,6 +372,8 @@ async function nilaiKesiapanPerkara(
     dokumen: dokumen.dokumen || [],
     nomorPihak: konteks && konteks.ok ? konteks.nomorPihak : [],
     sisiWajib: keadaanSidangIni ? keadaanSidangIni.wajibDipanggil : null,
+    // Butir 32: definisi tunggal "menunggu majelis" butuh nomor perkara.
+    nomorPerkara: nomor,
   });
 }
 
