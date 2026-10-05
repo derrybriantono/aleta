@@ -28,6 +28,7 @@ import { bacaKontakPihak, kalimatKontak } from "@/lib/jadwal-sidang-kontak";
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import { IsianMediator } from "@/components/portal/jadwal-sidang-1okt";
 import { PapanRuangSidang } from "@/components/portal/jadwal-sidang-2okt";
+import { KartuPanggil } from "@/components/portal/panggil-petugas";
 import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
 import type { Ruangan } from "@/lib/ruangan-sidang";
 import {
@@ -560,6 +561,14 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
         nomorPerkara={keadaan.nomorPerkara}
         tanggalSidang={String(keadaan.tanggalSidang).slice(0, 10)}
         hasilSidangSelesai={sudahDitunda || sudahPutus || sudahTertulis}
+      />
+
+      {/* Butir 33/36 (5 Okt 2026): panggil petugas & pihak - pop-up yang sama dengan Jadwal Sidang. */}
+      <KartuPanggil
+        perkaraId={String(keadaan.perkaraId)}
+        tanggal={String(keadaan.tanggalSidang).slice(0, 10)}
+        nomorPerkara={keadaan.nomorPerkara}
+        agenda={keadaan.agenda || ""}
       />
 
       {/* ================================================================= */}

@@ -301,8 +301,16 @@ function baris(nomorPerkara: string) {
 describe("Jadwal Mediasi: gangguan jaringan", () => {
   it("data yang sudah tampil TIDAK dikosongkan; banner menghitung mundur lalu memuat lagi sendiri", async () => {
     setelTerlihat("visible");
+    // Hanya permintaan jadwal-mediasi yang dihitung: sejak butir 35 halaman ini
+    // juga membaca status mediasi (mediasi-status) - permintaan lain dijawab kosong.
     let panggilan = 0;
-    const ambil = vi.fn(async () => {
+    const ambil = vi.fn(async (alamat: unknown) => {
+      if (!String(alamat).includes("jadwal-mediasi")) {
+        return new Response(JSON.stringify({ data: { available: true, status: {} } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       panggilan += 1;
       if (panggilan === 2) throw new TypeError("Failed to fetch");
       return new Response(JSON.stringify({ data: { available: true, mediasi: [baris(`609/Pdt.G/2026/PA.Dgl`)] } }), {
@@ -310,6 +318,7 @@ describe("Jadwal Mediasi: gangguan jaringan", () => {
         headers: { "Content-Type": "application/json" },
       });
     });
+    const jadwal = () => ambil.mock.calls.filter((c) => String(c[0]).includes("jadwal-mediasi")).length;
     vi.stubGlobal("fetch", ambil);
     render(createElement(AletaEcourtMediasi));
     await waitFor(() => expect(screen.getAllByText("609/Pdt.G/2026/PA.Dgl").length).toBeGreaterThan(0), { timeout: 10000 });
@@ -323,7 +332,7 @@ describe("Jadwal Mediasi: gangguan jaringan", () => {
     expect(screen.getByRole("button", { name: /Coba sekarang/ })).toBeTruthy();
 
     // Dicoba lagi sendiri (sekitar 2 detik) dan banner hilang.
-    await waitFor(() => expect(ambil).toHaveBeenCalledTimes(3), { timeout: 8000 });
+    await waitFor(() => expect(jadwal()).toBe(3), { timeout: 8000 });
     await waitFor(() => expect(screen.queryByText(/Mencoba lagi dalam/)).toBeNull(), { timeout: 8000 });
   });
 });

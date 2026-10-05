@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
 import { useSuaraPanggilan } from "@/lib/suara-panggilan";
+import { usePengumumanSuara } from "@/lib/pengumuman-suara-layar";
 import { cn } from "@/lib/utils";
 import { KELAS_KODE_MAJELIS } from "@/lib/kode-majelis";
 
@@ -104,6 +105,8 @@ export function AletaAntrianLayar() {
   const [galat, setGalat] = useState("");
   const [suaraNyala, setSuaraNyala] = useState(false);
   const { daftar: daftarSuara, terpilih, pilih, bunyikan, didukung } = useSuaraPanggilan();
+  // Panggilan petugas dari Jadwal Sidang/Mediasi lewat pengeras suara (butir 33).
+  usePengumumanSuara({ nyala: suaraNyala, bunyikan });
   const [jam, setJam] = useState("");
 
   // Nomor yang SUDAH pernah diucapkan. Tanpa ini, tiap penyegaran akan

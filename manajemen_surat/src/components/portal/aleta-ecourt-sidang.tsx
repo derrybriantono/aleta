@@ -53,6 +53,7 @@ import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
+import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
 import { pitaJarak, sebutanJarak } from "@/lib/jarak-antar-sidang";
@@ -5725,6 +5726,9 @@ export function AletaEcourtSidang({
               ))}
             </div>
 
+            {/* Butir 37 (5 Okt 2026): saklar fitur panggil petugas & pihak - simpanan sendiri. */}
+            <SaklarPanggil className="mt-3" />
+
             <p className="mt-3 text-xs text-muted-foreground">
               {/* Daftarnya DIHITUNG dari saklar yang wajib, bukan ditulis tangan:
                   kalimat "empat penanda" sempat basi satu rilis penuh sesudah
@@ -6886,6 +6890,8 @@ export function AletaEcourtSidang({
                     // Tanda manual hanya untuk sidang HARI INI.
                     bisaTandai: Boolean(waktuAntrian.hariIni) && baris.tanggalSidang === waktuAntrian.hariIni,
                   });
+                  // Butir 33/36 (5 Okt 2026): nama petugas & pihak dapat diklik untuk dipanggil.
+                  const konteksPanggil = { perkaraId: String(baris.perkaraId), tanggal: baris.tanggalSidang.slice(0, 10), nomorPerkara: baris.nomorPerkara, ruang: baris.ruangan, agenda: baris.agenda };
                   return (
                     <Fragment key={kunci}>
                       {/* ==================================================
@@ -7143,7 +7149,7 @@ export function AletaEcourtSidang({
                                   title={baris.pihak.penggugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">P:</span>{" "}
-                                  {baris.pihak.penggugat.join(", ")}
+                                  <NamaDapatDipanggil golongan="pihak1" {...konteksPanggil}>{baris.pihak.penggugat.join(", ")}</NamaDapatDipanggil>
                                 </div>
                               ) : null}
                               {baris.pihak.tergugat.length > 0 ? (
@@ -7152,7 +7158,7 @@ export function AletaEcourtSidang({
                                   title={baris.pihak.tergugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">T:</span>{" "}
-                                  {baris.pihak.tergugat.join(", ")}
+                                  <NamaDapatDipanggil golongan="pihak2" {...konteksPanggil}>{baris.pihak.tergugat.join(", ")}</NamaDapatDipanggil>
                                 </div>
                               ) : null}
                             </div>
@@ -7348,19 +7354,21 @@ export function AletaEcourtSidang({
                             {baris.majelisKode ? (
                               <span className="whitespace-nowrap" title={baris.majelisNama}>
                                 <span className="font-medium text-foreground/70">Majelis</span>{" "}
-                                <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{baris.majelisKode}</span>
+                                <NamaDapatDipanggil golongan="majelis" {...konteksPanggil}>
+                                  <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{baris.majelisKode}</span>
+                                </NamaDapatDipanggil>
                               </span>
                             ) : null}
                             {baris.paniteraNama ? (
                               <span title={`Panitera Pengganti: ${baris.paniteraNama}`}>
                                 <span className="font-medium text-foreground/70">PP</span>{" "}
-                                {baris.paniteraNama}
+                                <NamaDapatDipanggil golongan="pp" {...konteksPanggil}>{baris.paniteraNama}</NamaDapatDipanggil>
                               </span>
                             ) : null}
                             {baris.jurusitaNama ? (
                               <span title={`Juru Sita: ${baris.jurusitaNama}`}>
                                 <span className="font-medium text-foreground/70">JS</span>{" "}
-                                {baris.jurusitaNama}
+                                <NamaDapatDipanggil golongan="js" {...konteksPanggil}>{baris.jurusitaNama}</NamaDapatDipanggil>
                               </span>
                             ) : null}
                             {/* Ruang ikut ke sini sejak kolomnya dihapus. Ia
@@ -7828,16 +7836,16 @@ export function AletaEcourtSidang({
                                 className="min-w-0 break-words text-muted-foreground"
                                 title={baris.majelisNama}
                               >
-                                {baris.majelisNama}
+                                <NamaDapatDipanggil golongan="majelis" {...konteksPanggil}>{baris.majelisNama}</NamaDapatDipanggil>
                               </span>
                             ) : null}
                           </div>
 
                           <div className="mt-0.5">
                             <span className="text-muted-foreground">PP </span>
-                            {baris.paniteraNama || "—"}
+                            {baris.paniteraNama ? <NamaDapatDipanggil golongan="pp" {...konteksPanggil}>{baris.paniteraNama}</NamaDapatDipanggil> : "—"}
                             <span className="text-muted-foreground"> · JS </span>
-                            {baris.jurusitaNama || "—"}
+                            {baris.jurusitaNama ? <NamaDapatDipanggil golongan="js" {...konteksPanggil}>{baris.jurusitaNama}</NamaDapatDipanggil> : "—"}
                           </div>
 
                           {baris.ruangan ? (

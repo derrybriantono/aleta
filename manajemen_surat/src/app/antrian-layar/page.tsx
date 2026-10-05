@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiPath } from "@/lib/base-path";
+import { usePengumumanSuara } from "@/lib/pengumuman-suara-layar";
+import { ucapkan as ucapkanKalimat } from "@/lib/suara-panggilan";
 import {
   type BarisAntrian,
   jamSekarang,
@@ -88,6 +90,8 @@ export default function AntrianLayarPage() {
   const [jam, setJam] = useState("");
   const [pesan, setPesan] = useState("");
   const [berkedip, setBerkedip] = useState(false);
+  // Panggilan petugas dari Jadwal Sidang/Mediasi lewat pengeras suara (butir 33).
+  usePengumumanSuara({ nyala: suaraNyala, bunyikan: ucapkanKalimat });
 
   const sudahDiucapkan = useRef<Set<number>>(new Set());
   const pertamaKali = useRef(true);

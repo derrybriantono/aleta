@@ -42,6 +42,8 @@ import {
   statusMediatorBelumTercatat,
 } from "@/lib/sebutan-mediator";
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
+import { NamaDapatDipanggil, PengaturanPanggil, golonganSisi } from "@/components/portal/panggil-petugas";
+import { LencanaStatusMediasi, TombolStatusMediasi, kelasBarisMediasi, useStatusMediasi } from "@/components/portal/status-mediasi";
 import { ChevronDown, ChevronUp, Filter, X } from "lucide-react";
 
 import {
@@ -744,6 +746,8 @@ export function AletaEcourtMediasi({
   // pertama: dua panel rincian sekaligus mendorong daftarnya sedemikian jauh
   // sehingga barisnya sendiri tidak lagi terlihat.
   const [dibuka, setDibuka] = useState("");
+  // Butir 35 (5 Okt 2026): sedang berjalan / selesai, tersimpan di basis data ALETA.
+  const statusMediasi = useStatusMediasi(dari, sampai, mediasi);
 
   const alihkanKeadaan = (kunci: string) =>
     setKeadaanTerpilih((sekarang) =>
@@ -899,6 +903,7 @@ export function AletaEcourtMediasi({
           layar Jadwal Sidang. Tenggangnya 30 hari sejak mediator ditetapkan &mdash; PERMA 1/2016
           Pasal 24.
         </p>
+        <PengaturanPanggil />
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -1138,7 +1143,7 @@ export function AletaEcourtMediasi({
                   const kunciBaris = `${baris.mediasiId}|${baris.tanggal}`;
                   return (
                   <Fragment key={`${kunciBaris}-${baris.jam}-${urutan}`}>
-                  <tr className="border-t align-top">
+                  <tr className={`border-t align-top ${kelasBarisMediasi(statusMediasi.peta[kunciBaris])}`}>
                     <td className="px-2 py-2 text-right text-xs tabular-nums text-muted-foreground">
                       {urutan + 1}
                     </td>
@@ -1158,6 +1163,7 @@ export function AletaEcourtMediasi({
                           <Badge variant="warning">ditunda</Badge>
                         </div>
                       ) : null}
+                      <LencanaStatusMediasi status={statusMediasi.peta[kunciBaris]} />
                     </td>
 
                     <td className="px-3 py-2">
@@ -1183,7 +1189,7 @@ export function AletaEcourtMediasi({
                             <div key={sisi.kunci} data-sisi={sisi.kunci}>
                               <dt className="inline text-muted-foreground">{sisi.sebutan}: </dt>
                               <dd className="inline break-words font-medium">
-                                {sisi.nama.join("; ")}
+                                <NamaDapatDipanggil golongan={golonganSisi(sisi.kunci)} perkaraId={String(baris.perkaraId)} tanggal={baris.tanggal} nomorPerkara={baris.nomorPerkara} ruang={baris.tempat} konteks="mediasi" mediasiId={String(baris.mediasiId)}>{sisi.nama.join("; ")}</NamaDapatDipanggil>
                               </dd>
                             </div>
                           ))}
@@ -1204,7 +1210,7 @@ export function AletaEcourtMediasi({
                       ) : (
                         daftarMediator(baris.mediator, baris.statusMediator).map((orang, ke) => (
                           <div key={`${orang.nama}-${ke}`} className={ke > 0 ? "mt-1" : undefined}>
-                            <div className="font-medium">{orang.nama || "Nama mediator belum tercatat"}</div>
+                            <div className="font-medium"><NamaDapatDipanggil golongan={orang.nama ? "mediator" : null} perkaraId={String(baris.perkaraId)} tanggal={baris.tanggal} nomorPerkara={baris.nomorPerkara} ruang={baris.tempat} konteks="mediasi" mediasiId={String(baris.mediasiId)}>{orang.nama || "Nama mediator belum tercatat"}</NamaDapatDipanggil></div>
                             <div
                               className={
                                 orang.golongan === "belum-tercatat"
@@ -1275,6 +1281,9 @@ export function AletaEcourtMediasi({
                         perkara, dan baris yang ikut menanggapi tekanan
                         membuka rincian yang tidak diminta. */}
                     <td className="px-2 py-2 text-right">
+                      <div className="mb-1">
+                        <TombolStatusMediasi baris={{ mediasiId: String(baris.mediasiId), perkaraId: String(baris.perkaraId), nomorPerkara: baris.nomorPerkara, tanggal: baris.tanggal.slice(0, 10), tempat: baris.tempat }} status={statusMediasi.peta[kunciBaris]} onBerubah={statusMediasi.muatUlang} />
+                      </div>
                       {/* Berwarna primer selama rinciannya terbuka, kembali ke
                           rupa semula begitu ditutup - rupanya sama dengan
                           tombol Rincian di Antrian Sidang, lihat catatan di
