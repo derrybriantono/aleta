@@ -545,6 +545,20 @@ router.post("/ecourt/verifikasi", requireInternalToken, async (req, res) => {
   }
 });
 
+/**
+ * Penanda verifikasi majelis untuk perkara e-Litigasi pada satu tanggal
+ * (butir 30, 5 Okt 2026). Hanya MEMBACA simpanan ALETA - tidak menarik
+ * e-Court; penarikannya oleh ecourtVerifikasiHarianService di latar.
+ */
+router.get("/ecourt/verifikasi-hari-ini", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/ecourtVerifikasiHarianService").keadaanHari(String(req.query.tanggal || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Selisih antara catatan ALETA dan status sesungguhnya di e-Court. */
 router.get("/ecourt/rekonsiliasi", requireInternalToken, async (req, res) => {
   try {

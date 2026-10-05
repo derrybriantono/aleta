@@ -1061,6 +1061,13 @@ kelengkapanDataService.mulai();
 // ALETA_ANTRIAN_WAKTU_AKTIF=0; lihat antrianWaktuService.
 antrianWaktuService.mulai();
 
+// Penanda verifikasi majelis untuk perkara e-Litigasi yang bersidang hari ini
+// (butir 30, 5 Okt 2026): satu tarikan ringan (--tanpa-unduh) tiap 15 menit,
+// berhenti sendiri bila semuanya sudah diverifikasi. Hanya menarik bila
+// penjadwal e-Court dinyalakan admin; dimatikan dengan
+// ALETA_ECOURT_VERIFIKASI_AKTIF=0. Lihat ecourtVerifikasiHarianService.
+require("./services/ecourtVerifikasiHarianService").mulai();
+
 // Menilai nomor yang pesannya tidak pernah sampai, lalu menghentikannya.
 // Dijalankan sekali sehari saja: penilaiannya memang menunggu lebih dari
 // sehari sebelum menyimpulkan, jadi memeriksanya lebih sering tidak menambah

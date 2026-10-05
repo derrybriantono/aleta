@@ -161,6 +161,12 @@ import { KELAS_KODE_MAJELIS, KELAS_LENCANA_KODE_MAJELIS } from "@/lib/kode-majel
 import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
 import { useHilangSendiri, usePesanSementara } from "@/lib/pesan-sementara";
 import { BannerGangguan } from "@/components/portal/banner-gangguan";
+import {
+  DATA_VERIFIKASI_KOSONG,
+  penandaVerifikasi,
+  type DataVerifikasi,
+  type Penanda,
+} from "@/lib/penanda-verifikasi-ecourt";
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 
 /**
@@ -2280,6 +2286,24 @@ function UmurPerkara({ durasi, telahIkrar = false }: { durasi: SidangBaris["dura
         </span>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Penanda verifikasi majelis e-Litigasi (butir 30, 5 Okt 2026) - satu lencana,
+ * tiga keadaan; keterangannya (kapan terakhir diperiksa, oleh siapa
+ * diverifikasi) di title. Lihat @/lib/penanda-verifikasi-ecourt.
+ */
+export function LencanaVerifikasiMajelis({ penanda }: { penanda: Penanda | null }) {
+  if (!penanda) return null;
+  return (
+    <span
+      data-verifikasi-majelis={penanda.keadaan}
+      className={cn("whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold", penanda.kelas)}
+      title={penanda.keterangan}
+    >
+      {penanda.label}
+    </span>
   );
 }
 
@@ -5252,6 +5276,48 @@ export function AletaEcourtSidang({
     return () => window.clearInterval(putaran);
   }, [sedangHariIni, muat]);
 
+  // ==========================================================================
+  // BUTIR 30 (5 Okt 2026) - PENANDA VERIFIKASI MAJELIS E-LITIGASI HARI INI
+  // ==========================================================================
+  // Dibaca dari SIMPANAN bot (penarikannya di latar bot tiap 15 menit, satu
+  // perkara per putaran, berhenti bila semua sudah diverifikasi) - bukan
+  // tarikan e-Court saat halaman dimuat. Disegarkan bersama jadwalnya.
+  const [verifikasi, setVerifikasi] = useState<DataVerifikasi>(DATA_VERIFIKASI_KOSONG);
+  const adaElitigasiHariIni = useMemo(
+    () => sedangHariIni && sidang.some((b) => b.lewatEcourt && /\/Pdt\.G(\.S)?\//i.test(b.nomorPerkara)),
+    [sedangHariIni, sidang]
+  );
+  useEffect(() => {
+    if (!adaElitigasiHariIni) return;
+    let batal = false;
+    const tanggal = dari;
+    void (async () => {
+      try {
+        const jawaban = await fetch(apiPath(`/api/aleta-ecourt/sidang/verifikasi-ecourt?tanggal=${encodeURIComponent(tanggal)}`), {
+          cache: "no-store",
+        });
+        const isi = (await bacaJsonAman(jawaban)) as { data?: Record<string, unknown> } & Record<string, unknown>;
+        const data = (isi?.data ?? isi) as Record<string, unknown>;
+        if (batal) return;
+        if (!jawaban.ok || data?.available === false || data?.ok === false) {
+          setVerifikasi({ ...DATA_VERIFIKASI_KOSONG, alasan: String(data?.alasan || data?.message || "bot tidak tersambung") });
+          return;
+        }
+        setVerifikasi({
+          terbaca: true,
+          tanggal: String(data.tanggal || tanggal),
+          perkara: (data.perkara ?? {}) as DataVerifikasi["perkara"],
+          penarik: data.penarik as DataVerifikasi["penarik"],
+        });
+      } catch (galat) {
+        if (!batal) setVerifikasi({ ...DATA_VERIFIKASI_KOSONG, alasan: galat instanceof Error ? galat.message : "tidak terbaca" });
+      }
+    })();
+    return () => {
+      batal = true;
+    };
+  }, [adaElitigasiHariIni, dari, sidang]);
+
   /**
    * Berpindah ke satu hari, lalu memuatnya seketika.
    *
@@ -7036,6 +7102,8 @@ export function AletaEcourtSidang({
                               itulah yang dicari mata saat menelusuri jadwal. */}
                           <span className="ml-2 inline-flex gap-1 align-middle">
                             <PenandaPanggilan panggilan={baris.panggilan} />
+                            {/* Butir 30: verifikasi majelis e-Litigasi hari ini. */}
+                            <LencanaVerifikasiMajelis penanda={penandaVerifikasi(baris, verifikasi, hariIni())} />
                           </span>
                           {/* ==================================================
                               PENGGUGAT DAN TERGUGAT DIPISAH, BUKAN "A LAWAN B"

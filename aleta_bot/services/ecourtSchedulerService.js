@@ -247,6 +247,10 @@ function jalankanSatuPutaran({
   // Menarik HANYA perkara yang berkasnya belum ada - lihat
   // mulaiPenarikanBelumAda dan --hanya-belum-ada pada run.js.
   hanyaBelumAda = false,
+  // Membaca daftar dokumen + status verifikasinya SAJA, tanpa mengunduh
+  // berkas (--tanpa-unduh pada run.js) - dipakai penarik verifikasi harian
+  // (ecourtVerifikasiHarianService, butir 30, 5 Okt 2026).
+  tanpaUnduh = false,
   sumber = "jadwal",
 } = {}) {
   return new Promise((selesai) => {
@@ -314,6 +318,7 @@ function jalankanSatuPutaran({
     const argumen = [jembatanPath(), "--terjadwal"];
     if (slotAkun) argumen.push("--akun", slotAkun);
     if (hanyaBelumAda) argumen.push("--hanya-belum-ada");
+    if (tanpaUnduh) argumen.push("--tanpa-unduh");
     if (nomorPerkara) {
       argumen.push("--perkara", String(nomorPerkara));
     } else if (batas > 0) {
