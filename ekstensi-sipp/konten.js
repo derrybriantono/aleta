@@ -19288,7 +19288,9 @@ function s1BagianUnggahEcourt(nomorPerkara) {
         "",
         nama
           ? `Sesi e-Court akun ${nama} sudah habis atau terputus - masuk lagi lewat Integrasi e-Court › sambungkan sesi. `
-          : `Belum ada sesi e-Court untuk akun ALETA Anda${jawab && jawab.alasan ? ` (${jawab.alasan})` : ""}. Sambungkan dulu lewat Integrasi e-Court › sambungkan sesi. `
+          : jawab && jawab.pesan
+            ? `${jawab.pesan} `
+            : `Belum ada sesi e-Court untuk akun ALETA Anda${jawab && jawab.alasan ? ` (${jawab.alasan})` : ""}. Sambungkan dulu lewat Integrasi e-Court › sambungkan sesi. `
       )
     );
     const a = buatElemen("a", "aleta-t7-tautan", "Buka Integrasi e-Court ↗");
@@ -19302,7 +19304,13 @@ function s1BagianUnggahEcourt(nomorPerkara) {
     sudahMuat = true;
     akunBaris.className = "aleta-s1-ecourt-akun";
     akunBaris.textContent = "Memeriksa akun e-Court yang akan dipakai…";
-    const j = await t7AmbilJson(`${S1_API_ECOURT_AKUN}?nomor=${encodeURIComponent(String(nomorPerkara || ""))}`, "Membaca akun e-Court");
+    // Butir 20: akun SIPP yang terbuka ikut dikirim supaya server dapat
+    // menolak bila ALETA di peramban ini masuk sebagai orang lain.
+    const sippTerbuka = typeof namaPenggunaSipp === "function" ? namaPenggunaSipp() || "" : "";
+    const j = await t7AmbilJson(
+      `${S1_API_ECOURT_AKUN}?nomor=${encodeURIComponent(String(nomorPerkara || ""))}&olehUsername=${encodeURIComponent(sippTerbuka)}`,
+      "Membaca akun e-Court"
+    );
     if (!j.ok) {
       akunBaris.textContent = "";
       if (j.status === 404) {
@@ -19364,6 +19372,7 @@ function s1BagianUnggahEcourt(nomorPerkara) {
     const badan = new FormData();
     badan.append("nomor", String(nomorPerkara || ""));
     badan.append("berkas", berkas, berkas.name);
+    badan.append("olehUsername", typeof namaPenggunaSipp === "function" ? namaPenggunaSipp() || "" : "");
     let respons = null;
     let luar = null;
     try {
