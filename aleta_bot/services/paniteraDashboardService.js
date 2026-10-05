@@ -66,7 +66,7 @@ async function dokumenMenungguVerifikasi({ limit = 100 } = {}) {
     `SELECT document_key, nomor_perkara, judul_dokumen, peran_pengunggah,
             diunggah_pada, batas_unggah, batas_unggah_teks, agenda
        FROM aleta_bot_ecourt_documents
-      WHERE status_verifikasi = 'belum'
+      WHERE ${ecourtStoreService.sqlMenungguMajelis()}
       ORDER BY diunggah_pada ASC
       LIMIT ${batas}`
   );

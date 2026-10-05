@@ -371,7 +371,7 @@ async function ringkasanMassal(daftarNomor, { batas = 60 } = {}) {
       botDb.query(
         `SELECT nomor_perkara AS nomorPerkara,
                 COUNT(*) AS dokumen,
-                SUM(CASE WHEN status_verifikasi = 'belum' THEN 1 ELSE 0 END) AS menungguVerifikasi,
+                SUM(CASE WHEN ${ecourtStoreService.sqlMenungguMajelis()} THEN 1 ELSE 0 END) AS menungguVerifikasi,
                 SUM(
                   CASE WHEN batas_unggah IS NOT NULL
                         AND batas_unggah < UTC_TIMESTAMP()
@@ -471,7 +471,8 @@ async function identitasMassal(nomorBersih) {
   const barisId = await aman(
     () =>
       runQuerySipp(
-        `SELECT p.perkara_id AS id, p.nomor_perkara AS nomor, p.prodeo AS prodeo
+        `SELECT p.perkara_id AS id, p.nomor_perkara AS nomor, p.prodeo AS prodeo,
+                p.jenis_perkara_id AS jenisId, p.jenis_perkara_nama AS jenisNama
            FROM perkara p WHERE p.nomor_perkara IN (${isian})`,
         nomorBersih
       ),
@@ -480,11 +481,14 @@ async function identitasMassal(nomorBersih) {
 
   const petaId = new Map();
   const hasil = {};
+  /** Butir 31: nomor perkara -> jenisnya menuntut izin atasan (perceraian/poligami). */
+  const butuhIzin = new Map();
   for (const baris of Array.isArray(barisId) ? barisId : []) {
     const id = Number(baris.id) || 0;
     const nomor = cleanText(baris.nomor);
     if (!id || !nomor) continue;
     petaId.set(id, nomor);
+    butuhIzin.set(nomor, sippTahapanService.jenisPerluIzinAtasan(baris.jenisId, baris.jenisNama));
     hasil[nomor] = {
       prodeo: String(baris.prodeo || "").trim() === "1",
       ghaib: false,
@@ -657,6 +661,10 @@ async function identitasMassal(nomorBersih) {
   tandai(ghaib, "ghaib");
   tandai(pengacara, "kuasa");
   tandai(instansi, "izinAtasan");
+  // Butir 31 (5 Okt 2026): sama dengan penandaPerkara - hanya perceraian dan poligami.
+  for (const [nomor, isi] of Object.entries(hasil)) {
+    if (isi.izinAtasan && butuhIzin.get(nomor) === false) isi.izinAtasan = false;
+  }
   tandai(lawan, "verzet");
 
   return { perkara: hasil, gagal };
@@ -756,7 +764,8 @@ async function getKonteks(nomor, { namaPembuka = "" } = {}) {
     penandaLain,
     ringkasan: {
       dokumen: dokumen.length,
-      menungguVerifikasi: dokumen.filter((d) => d.statusVerifikasi === "belum").length,
+      // Butir 32: definisi tunggal - gugatan/gugatan sederhana, bukan berkas pendaftaran.
+      menungguVerifikasi: dokumen.filter((d) => ecourtStoreService.dokumenMenungguMajelis({ ...d, nomorPerkara })).length,
       tenggatMendesak: dokumen.filter((d) => d.sisaHari !== null && d.sisaHari >= 0 && d.sisaHari <= ambang).length,
       tenggatLewat: dokumen.filter((d) => d.sisaHari !== null && d.sisaHari < 0).length,
       nomorBermasalah: nomorNya.filter(

@@ -9670,6 +9670,34 @@ function barisNomorRegister(nomorRegister) {
   return baris;
 }
 
+/**
+ * 1.184.0 (5 Okt 2026, butir 32): "menunggu majelis" hanya untuk dokumen
+ * persidangan perkara GUGATAN dan GUGATAN SEDERHANA - sama persis dengan
+ * ecourtStoreService.dokumenMenungguMajelis di bot (angka ringkasan sudah
+ * dihitung di sana). Berkas pendaftaran (tanpa tanggal unggah) dan perkara
+ * permohonan tidak pernah menunggu verifikasi majelis.
+ */
+const KTN_POLA_BERKAS_PENDAFTARAN =
+  /^(?:surat\s+gugatan|dokumen\s+gugatan|gugatan|surat\s+permohonan|dokumen\s+permohonan|permohonan|surat\s+kuasa|kuasa|dokumen\s+bukti|ktp|kartu\s+tanda\s+penduduk|kartu\s+keluarga|buku\s+nikah|kutipan\s+akta)\b/i;
+
+function ktnDokumenMenungguMajelis(d, nomor) {
+  if (!d || d.statusVerifikasi !== "belum") return false;
+  const n = String(d.nomorPerkara || nomor || "");
+  if (n && !/\/Pdt\.G(?:\.S)?\//i.test(n)) return false;
+  return !(!d.diunggahPada && KTN_POLA_BERKAS_PENDAFTARAN.test(String(d.judulDokumen || "").trim()));
+}
+
+/** Keterangan verifikasi satu dokumen e-Court (butir 32). */
+function ktnKetVerifikasi(d, nomor) {
+  if (!d) return "";
+  if (d.statusVerifikasi === "tidak_perlu") return "berkas pendaftaran";
+  if (d.statusVerifikasi === "valid") return "sudah diverifikasi";
+  if (d.statusVerifikasi === "tidak_valid") return "dinyatakan tidak valid";
+  if (ktnDokumenMenungguMajelis(d, nomor)) return "menunggu majelis";
+  if (!d.diunggahPada && KTN_POLA_BERKAS_PENDAFTARAN.test(String(d.judulDokumen || "").trim())) return "berkas pendaftaran";
+  return "";
+}
+
 /** Deretan angka keadaan perkara, hanya yang bernilai bukan nol. */
 function barisRingkasan(ringkasan) {
   const r = ringkasan || {};
@@ -10627,15 +10655,9 @@ function susunPanel(konteks) {
 
       const bagianKet = [];
       if (d.peranPengunggah) bagianKet.push(`dari ${d.peranPengunggah}`);
-      if (d.statusVerifikasi === "tidak_perlu") {
-        bagianKet.push("berkas pendaftaran");
-      } else if (d.statusVerifikasi === "valid") {
-        bagianKet.push("sudah diverifikasi");
-      } else if (d.statusVerifikasi === "tidak_valid") {
-        bagianKet.push("dinyatakan tidak valid");
-      } else {
-        bagianKet.push("menunggu majelis");
-      }
+      // Butir 32: satu definisi dengan bot - lihat ktnKetVerifikasi.
+      const ketVerifikasi = ktnKetVerifikasi(d, typeof cariNomorPerkara === "function" ? cariNomorPerkara() : "");
+      if (ketVerifikasi) bagianKet.push(ketVerifikasi);
       if (d.sudahDiberitahukan) bagianKet.push("pihak sudah diberi tahu");
       else if (d.alasanTidakDiberitahukan) {
         bagianKet.push(d.alasanTidakDiberitahukan.replace(/_/g, " "));
@@ -11984,7 +12006,7 @@ function kotakSisipan(dokumenSehari, ambangHari, sebabCocok = "") {
       }
     }
 
-    if (dokumen.statusVerifikasi === "belum") {
+    if (ktnDokumenMenungguMajelis(dokumen, typeof cariNomorPerkara === "function" ? cariNomorPerkara() : "")) {
       baris.appendChild(buatElemen("span", "aleta-tanda aleta-tanda-kuning", "menunggu majelis"));
     } else if (dokumen.statusVerifikasi === "valid") {
       baris.appendChild(buatElemen("span", "aleta-tanda aleta-tanda-hijau", "sudah diverifikasi"));

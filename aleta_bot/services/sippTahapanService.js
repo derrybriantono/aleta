@@ -1863,6 +1863,43 @@ async function penandaGhaibBanyakPerkara(daftarPerkaraId = [], { tanggal = null 
  * Yang ditemukan disebutkan sumbernya, supaya panitera dapat menilai sendiri
  * apakah penandanya masuk akal - bukan menerimanya begitu saja.
  */
+/**
+ * ============================================================================
+ * IZIN ATASAN HANYA UNTUK PERCERAIAN DAN POLIGAMI (5 Okt 2026, butir 31)
+ * ============================================================================
+ *
+ * PP 10/1983 jo. PP 45/1990 (dan aturan TNI/Polri yang serupa) mewajibkan izin
+ * atasan bagi PNS/TNI/Polri yang hendak BERCERAI atau BERISTRI LEBIH DARI
+ * SATU. Sampai 1.183.0 penanda "izin atasan" menyala pada perkara apa pun
+ * yang pihaknya PNS - termasuk itsbat nikah, dispensasi kawin, dan perwalian
+ * (halaman daftar permohonan SIPP penuh "izin atasan"), dan kelonggaran waktu
+ * penilaian ikut terpotong pada perkara yang tidak pernah menunggu izin.
+ *
+ * Kode jenis_perkara SIPP (tabel rujukan nasional): 346 Cerai Talak,
+ * 347 Cerai Gugat, 341 Izin Poligami. Nama jenis menjadi cadangan bila kode
+ * berbeda pada versi SIPP lain.
+ */
+const JENIS_PERLU_IZIN_ATASAN = new Set([341, 346, 347]);
+
+function jenisPerluIzinAtasan(jenisId, jenisNama) {
+  if (JENIS_PERLU_IZIN_ATASAN.has(Number(jenisId))) return true;
+  return /\b(cerai|talak|poligami)\b/i.test(String(jenisNama || ""));
+}
+
+/** Jenis perkara satu perkara: { id, nama } atau null bila tidak terbaca. */
+async function jenisPerkaraDari(perkaraId) {
+  try {
+    const baris = await runQuery(
+      "SELECT jenis_perkara_id AS id, jenis_perkara_nama AS nama FROM perkara WHERE perkara_id = ? LIMIT 1",
+      [Number(perkaraId)]
+    );
+    const satu = Array.isArray(baris) ? baris[0] : null;
+    return satu ? { id: Number(satu.id) || 0, nama: String(satu.nama || "") } : null;
+  } catch {
+    return null;
+  }
+}
+
 async function penandaPerkara(perkaraId, { tanggalPhs = "", sidangPertama = "" } = {}) {
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0) return { ghaib: null, instansi: [], sumber: [] };
@@ -1912,13 +1949,18 @@ async function penandaPerkara(perkaraId, { tanggalPhs = "", sidangPertama = "" }
   }
 
   const mafqud = await mafqudPerkara(id);
+  // Butir 31: izin atasan hanya bila jenis perkaranya perceraian/poligami.
+  // Jenis tidak terbaca = perilaku lama (instansi saja), supaya kegagalan
+  // membaca tidak diam-diam menghapus penanda yang benar.
+  const jenis = await jenisPerkaraDari(id);
+  const jenisButuhIzin = jenis ? jenisPerluIzinAtasan(jenis.id, jenis.nama) : true;
 
   return {
     // null berarti belum dapat dinilai - tidak satu pun sumber terbaca.
     ghaib: pihak.terbaca || kolom.pihakGhaib || kolom.vGhaib || jarak !== null ? ghaib : null,
     sumberGhaib: sumber,
     instansi,
-    perluIzinAtasan: instansi.some((x) => ["pns", "tni", "polri"].includes(x.kunci)),
+    perluIzinAtasan: jenisButuhIzin && instansi.some((x) => ["pns", "tni", "polri"].includes(x.kunci)),
     pihakTerbaca: pihak.terbaca,
     alasanPihak: pihak.alasan,
     // Mafqud tidak punya kolomnya sendiri di SIPP - yang ada pencirinya.
@@ -3391,6 +3433,7 @@ async function ikrarTalakPerkara(perkaraId) {
   };
 }
 module.exports = {
+  jenisPerluIzinAtasan,
   AMBANG_TUNDAAN_MAFQUD,
   dokumenRelaasPerkara,
   durasiMediasiPerkara,

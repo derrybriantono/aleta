@@ -82,6 +82,79 @@ let schemaPromise = null;
  */
 const VERIFICATION_STATUSES = new Set(["belum", "valid", "tidak_valid", "tidak_perlu"]);
 
+/**
+ * ============================================================================
+ * "MENUNGGU MAJELIS" - SATU DEFINISI UNTUK SEMUA LAYAR (5 Okt 2026, butir 32)
+ * ============================================================================
+ *
+ * Verifikasi majelis di e-Court hanya ada pada DOKUMEN PERSIDANGAN e-litigasi
+ * (jawaban, replik, duplik, kesimpulan, bukti persidangan) perkara GUGATAN dan
+ * GUGATAN SEDERHANA. Diukur di server 5 Okt: dari 26 dokumen berstatus
+ * "belum", 8 kesimpulan persidangan perkara gugatan (sah) dan 18 berkas
+ * PENDAFTARAN (Surat Gugatan, Dokumen Gugatan, Surat Kuasa, Dokumen Bukti,
+ * Dokumen Permohonan - tanpa tanggal unggah, tarikan 29 Agu sebelum aturan
+ * "tidak_perlu" ada). Panel SIPP, ALETA e-Court, Status Perkara, dasbor
+ * panitera, dan kesiapan sidang membaca kolom yang sama dengan cara sendiri-
+ * sendiri - dan halaman daftar PERMOHONAN pun ikut "menunggu majelis".
+ *
+ * Kini satu definisi: status "belum" + alur gugatan/gugatan sederhana + bukan
+ * berkas pendaftaran. Baris pendaftaran lama yang tertinggal "belum"
+ * dirapikan sekali ke "tidak_perlu" (rapikanStatusPendaftaranLama).
+ */
+const POLA_ALUR_GUGATAN = /\/Pdt\.G(?:\.S)?\//i;
+const POLA_BERKAS_PENDAFTARAN =
+  /^(?:surat\s+gugatan|dokumen\s+gugatan|gugatan|surat\s+permohonan|dokumen\s+permohonan|permohonan|surat\s+kuasa|kuasa|dokumen\s+bukti|ktp|kartu\s+tanda\s+penduduk|kartu\s+keluarga|buku\s+nikah|kutipan\s+akta)\b/i;
+/** Untuk SQL MySQL (REGEXP, tanpa \b): judul berkas pendaftaran. */
+const SQL_POLA_PENDAFTARAN =
+  "^(surat gugatan|dokumen gugatan|gugatan|surat permohonan|dokumen permohonan|permohonan|surat kuasa|kuasa|dokumen bukti|ktp|kartu tanda penduduk|kartu keluarga|buku nikah|kutipan akta)";
+
+/** Alur perkara yang mengenal verifikasi majelis atas dokumen persidangan. */
+function alurMenungguMajelis(nomorPerkara) {
+  return POLA_ALUR_GUGATAN.test(String(nomorPerkara || ""));
+}
+
+/** Dokumen pendaftaran (tanpa tanggal unggah persidangan) - tidak pernah diverifikasi majelis. */
+function berkasPendaftaran(judulDokumen, diunggahPada) {
+  return !diunggahPada && POLA_BERKAS_PENDAFTARAN.test(String(judulDokumen || "").trim());
+}
+
+/** Satu dokumen sungguh menunggu verifikasi majelis? */
+function dokumenMenungguMajelis(d) {
+  if (!d) return false;
+  const status = String(d.statusVerifikasi ?? d.status_verifikasi ?? "");
+  if (status !== "belum") return false;
+  if (!alurMenungguMajelis(d.nomorPerkara ?? d.nomor_perkara)) return false;
+  return !berkasPendaftaran(d.judulDokumen ?? d.judul_dokumen, d.diunggahPada ?? d.diunggah_pada);
+}
+
+/** Potongan WHERE untuk tabel aleta_bot_ecourt_documents (alias opsional). */
+function sqlMenungguMajelis(alias = "") {
+  const a = alias ? `${alias}.` : "";
+  return (
+    `(${a}status_verifikasi = 'belum'` +
+    ` AND (${a}nomor_perkara LIKE '%/Pdt.G/%' OR ${a}nomor_perkara LIKE '%/Pdt.G.S/%')` +
+    ` AND NOT (${a}diunggah_pada IS NULL AND LOWER(TRIM(${a}judul_dokumen)) REGEXP '${SQL_POLA_PENDAFTARAN}'))`
+  );
+}
+
+/**
+ * Baris berkas pendaftaran yang tersimpan "belum" sebelum aturan tidak_perlu
+ * ada. Aman diulang (idempoten); dijalankan sekali per proses sesudah skema.
+ */
+async function rapikanStatusPendaftaranLama() {
+  try {
+    await botDb.query(
+      `UPDATE aleta_bot_ecourt_documents
+          SET status_verifikasi = 'tidak_perlu'
+        WHERE status_verifikasi = 'belum'
+          AND diunggah_pada IS NULL
+          AND LOWER(TRIM(judul_dokumen)) REGEXP '${SQL_POLA_PENDAFTARAN}'`
+    );
+  } catch {
+    /* tidak mengganggu skema; pembaca tetap memakai dokumenMenungguMajelis */
+  }
+}
+
 async function ensureSchema() {
   if (schemaReady) return true;
   if (schemaPromise) return schemaPromise;
@@ -307,6 +380,8 @@ async function ensureSchema() {
     );
 
     schemaReady = true;
+    // Butir 32: status pendaftaran lama yang tertinggal "belum".
+    await rapikanStatusPendaftaranLama();
     return true;
   })().catch((error) => {
     schemaPromise = null;
@@ -1931,6 +2006,11 @@ async function bacaPanggilanPerkara(nomorPerkaraMentah) {
 
 module.exports = {
   VERIFICATION_STATUSES,
+  alurMenungguMajelis,
+  berkasPendaftaran,
+  dokumenMenungguMajelis,
+  sqlMenungguMajelis,
+  rapikanStatusPendaftaranLama,
   GAGAL_AMBANG,
   GAGAL_JEDA_JAM,
   TIDAK_TERSEDIA_JEDA_HARI,

@@ -220,7 +220,10 @@ function nilaiKesiapan(fakta = {}) {
     if (perluVerifikasi.length === 0) {
       nilai += BOBOT.verifikasi;
     } else {
-      const menunggu = perluVerifikasi.filter((d) => d.statusVerifikasi === "belum").length;
+      // Butir 32: definisi tunggal "menunggu majelis" (ecourtStoreService).
+      const menunggu = perluVerifikasi.filter((d) =>
+        ecourtStoreService.dokumenMenungguMajelis({ nomorPerkara: d.nomorPerkara || fakta.nomorPerkara, ...d })
+      ).length;
       nilai += BOBOT.verifikasi * Math.max(0, 1 - menunggu / perluVerifikasi.length);
 
       if (menunggu > 0) {
@@ -356,6 +359,7 @@ async function nilaiKesiapanPerkara(
       : null;
 
   return nilaiKesiapan({
+    nomorPerkara: nomor,
     agenda,
     tanggalSidang,
     sidangId: sidangId || null,

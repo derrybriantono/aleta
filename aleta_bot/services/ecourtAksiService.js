@@ -276,7 +276,13 @@ function buatLayanan(depsMasuk = {}) {
           padaSidangIni: Boolean(hari && tglTeks === hari),
           diunggahPada: d.diunggahPada ? new Date(d.diunggahPada).toISOString() : "",
           statusVerifikasi: d.statusVerifikasi || "belum",
-          perluVerifikasi: (d.statusVerifikasi || "belum") === "belum",
+          // Butir 32: definisi tunggal "menunggu majelis" (ecourtStoreService).
+          perluVerifikasi: require("./ecourtStoreService").dokumenMenungguMajelis({
+            statusVerifikasi: d.statusVerifikasi || "belum",
+            nomorPerkara: nomor,
+            judulDokumen: d.judulDokumen,
+            diunggahPada: d.diunggahPada,
+          }),
           adaPdf: Boolean(d.adaPdf),
           adaWord: Boolean(d.adaWord),
         };
