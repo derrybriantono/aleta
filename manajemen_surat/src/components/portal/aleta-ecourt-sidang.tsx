@@ -157,6 +157,7 @@ import {
   tanggalHariPendek,
 } from "@/lib/tanggal-indonesia";
 import { warnaStatusPutusan } from "@/lib/warna-putusan";
+import { KELAS_KODE_MAJELIS, KELAS_LENCANA_KODE_MAJELIS } from "@/lib/kode-majelis";
 
 /**
  * Dialog Cetak relaas dimuat SAAT DIBUKA, bukan bersama jadwal.
@@ -3574,6 +3575,17 @@ export function SelAntrianJam({
       ) : null}
 
       <div className="mt-0.5 text-sm tabular-nums text-muted-foreground">{jam}</div>
+
+      {/* Kode majelis menurut APLIKASI ANTRIAN (bentuk "C1|C2|C3") - butir 4,
+          5 Okt 2026. Kode SIPP-nya ada di kolom Majelis & Petugas; yang ini
+          kode yang dipakai mesin antrian memanggil, dan yang dicocokkan
+          petugas di depan ruang sidang. Ukuran relatif + nowrap: tidak melebarkan
+          kolom ini melewati max-w-[12rem]-nya. */}
+      {antrian.majelisKode ? (
+        <div className="mt-0.5 text-sm" title="Kode majelis di aplikasi antrian">
+          <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{antrian.majelisKode}</span>
+        </div>
+      ) : null}
 
       {/* ====================================================================
           SIAPA YANG SUDAH MENGAMBIL - BUKAN SEKADAR "SUDAH DIAMBIL"
@@ -7176,7 +7188,7 @@ export function AletaEcourtSidang({
                             {baris.majelisKode ? (
                               <span className="whitespace-nowrap" title={baris.majelisNama}>
                                 <span className="font-medium text-foreground/70">Majelis</span>{" "}
-                                {baris.majelisKode}
+                                <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{baris.majelisKode}</span>
                               </span>
                             ) : null}
                             {baris.paniteraNama ? (
@@ -7648,7 +7660,7 @@ export function AletaEcourtSidang({
                                 (sejak 28 September 2026, bukan truncate
                                 max-w-[18rem] lagi) - truncate di dalam sel
                                 tabel memaksa kolomnya selebar namanya. */}
-                            <span className="whitespace-nowrap rounded bg-muted px-1 py-0.5 font-mono text-xs font-semibold">
+                            <span className={KELAS_LENCANA_KODE_MAJELIS}>
                               {baris.majelisKode || "—"}
                             </span>
                             {baris.majelisNama ? (
