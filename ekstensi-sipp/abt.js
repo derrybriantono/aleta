@@ -454,6 +454,89 @@ function dapatDisimpan(tipe) {
 }
 
 /**
+ * ============================================================================
+ * 1.184.0 (5 Okt, butir 1 & 16): TIPE SELURUH VARIABEL HALAMAN SEKALI JALAN
+ * ============================================================================
+ *
+ * Panel "Isi dari SIPP & input ke ABT" (hakim) dan "... (BAS)" (panitera)
+ * sampai 1.183.0 mengusulkan variabel tanpa melihat data_type-nya: Tgl Sidang
+ * (multi_sidang), Majelis Hakim (data_sql), Ketua Majelis (data_sql) tampil
+ * tercentang padahal ABT menghitungnya sendiri - dan baru gagal saat Input,
+ * sesudah satu GET edit_data per variabel. Yang memang diisi tangan di ABT
+ * hanya data_teks dan data_tanggal.
+ *
+ * Kini tipenya dibaca SEKALI untuk seluruh halaman lewat rute kamus portal
+ * (jembatan bot -> aps_badilag.abt_variabel), mengisi tipeVariabel yang sama
+ * dengan tipeData: daftar usulan tersaring sejak awal, dan Input tidak lagi
+ * menanyakan tipe per variabel. Gagal = tipe BELUM diketahui; perilaku lama
+ * berlaku (tipeData menanyakannya saat menyimpan).
+ */
+const ALETA_API_KAMUS = "/aleta/api/aleta-ecourt/kamus";
+let tipeHalamanJanji = null;
+
+function muatTipeHalaman() {
+  const kode = [...barisVariabel().keys()].filter((x) => !tipeVariabel.has(x));
+  if (!kode.length) return Promise.resolve(true);
+  if (tipeHalamanJanji) return tipeHalamanJanji;
+  tipeHalamanJanji = (async () => {
+    let ada = false;
+    for (let i = 0; i < kode.length; i += 250) {
+      try {
+        const alamat = `${ALETA_API_KAMUS}?jenis=${encodeURIComponent(kode.slice(i, i + 250).join(","))}`;
+        const respons = await fetch(alamat, { credentials: "include", cache: "no-store" });
+        if (!respons.ok) continue;
+        const luar = await respons.json();
+        const isi = luar && luar.data ? luar.data : luar;
+        for (const [k, t] of Object.entries((isi && isi.jenis) || {})) {
+          tipeVariabel.set(String(k), String(t || ""));
+          ada = true;
+        }
+      } catch {
+        /* tipe belum diketahui - ditanyakan saat menyimpan */
+      }
+    }
+    return ada;
+  })().finally(() => {
+    tipeHalamanJanji = null;
+  });
+  return tipeHalamanJanji;
+}
+
+/** true = diisi tangan (data_teks/data_tanggal); false = dihitung ABT; null = belum diketahui. */
+function a3BolehDiisi(kode) {
+  const k = String(kode || "");
+  if (!tipeVariabel.has(k)) return null;
+  return dapatDisimpan(tipeVariabel.get(k));
+}
+
+const A3_BULAN = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+
+/**
+ * Tanggal untuk variabel data_tanggal ABT: "d/m/Y". Controller edit_data
+ * menjalankan tgl_sql() = DateTime::createFromFormat('d/m/Y', ...) - bentuk
+ * lain ("2026-10-15", "15 Oktober 2026") tersimpan RUSAK tanpa satu pesan
+ * pun. "" bila tidak terbaca (pemanggil menolak menyimpan).
+ */
+function a3TanggalAbt(nilai) {
+  const t = String(nilai || "").trim();
+  const dua = (n) => String(n).padStart(2, "0");
+  const sah = (h, b, y) => {
+    const d = new Date(Number(y), Number(b) - 1, Number(h));
+    return d.getFullYear() === Number(y) && d.getMonth() === Number(b) - 1 && d.getDate() === Number(h) ? `${dua(h)}/${dua(b)}/${y}` : "";
+  };
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T].*)?$/);
+  if (m) return sah(m[3], m[2], m[1]);
+  m = t.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$/);
+  if (m) return sah(m[1], m[2], m[3]);
+  m = t.replace(/^[A-Za-z']+,\s*/, "").match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+  if (m) {
+    const b = A3_BULAN.findIndex((x) => x.startsWith(m[2].toLowerCase().slice(0, 3)));
+    if (b >= 0) return sah(m[1], b + 1, m[3]);
+  }
+  return "";
+}
+
+/**
  * Menyimpan satu variabel.
  *
  * Jawabannya HTML, bukan JSON - ABT memang menjawab begitu. Yang dicari
@@ -470,9 +553,18 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
   const alamat =
     `${asalAbt()}/edit_data?no_var=${encodeURIComponent(kode)}` +
     `&perkara_id=${encodeURIComponent(jatiDiri.perkaraId)}&e=${encodeURIComponent(jatiDiri.perkTemp)}`;
+  // 1.184.0: data_tanggal harus "d/m/Y" (tgl_sql ABT) - selain itu tersimpan rusak.
+  let nilaiKirim = nilai;
+  if (tipe === "data_tanggal") {
+    nilaiKirim = a3TanggalAbt(nilai);
+    if (!nilaiKirim) {
+      return { ok: false, pesan: `Variabel ${kode} bertipe tanggal - "${nilai}" tidak terbaca sebagai tanggal (contoh 15/10/2026).` };
+    }
+  }
+
   const badan = new URLSearchParams();
   badan.set("aksi", "Simpan");
-  badan.set("value", nilai);
+  badan.set("value", nilaiKirim);
   badan.set("var_type", tipe);
 
   // Perbaikan 2 Okt butir 14 (global): jeda seperti manusia sebelum menulis.
@@ -901,8 +993,13 @@ async function ambilSatuTanyaJawab(kode, urutan) {
  *
  * @returns {Promise<{baris: Array, urutan: string}>}
  */
+/** 1.184.0 (butir 16): urutan sidang yang memuat keterangan saksi, per kode - pencarian 1..12 cukup sekali per halaman. */
+const a3UrutanSaksi = new Map();
+
 async function ambilTanyaJawab(kode) {
   const dicoba = [];
+  const diingat = a3UrutanSaksi.get(String(kode));
+  if (diingat) dicoba.push(diingat);
   const bawaan = ruasAlamatAbt().d;
   if (bawaan) dicoba.push(String(bawaan));
   for (let i = 1; i <= BATAS_URUTAN_SIDANG; i += 1) {
@@ -922,7 +1019,10 @@ async function ambilTanyaJawab(kode) {
       galatTerakhir = galat;
       continue;
     }
-    if (baris.length > 0) return { baris, urutan };
+    if (baris.length > 0) {
+      a3UrutanSaksi.set(String(kode), urutan);
+      return { baris, urutan };
+    }
   }
 
   if (galatTerakhir) throw galatTerakhir;
@@ -1614,7 +1714,21 @@ const ALETA_API_RIWAYAT = "/aleta/api/aleta-ecourt/abt-riwayat";
  * berhasil, salinan lengkapnya sudah tersimpan, dan berteriak tentang jejak
  * pengawasan pada saat itu hanya membuat petugas menyangka suntingannya gagal.
  */
-async function catatRiwayat(catatan) {
+/**
+ * 1.184.0 (butir 16): catatan riwayat DIANTRIKAN. Sampai 1.183.0 jeda manusia
+ * >= 0,9 detik memisahkan tiap tulisan, sehingga baca-lalu-tulis
+ * KUNCI_RIWAYAT tidak pernah bertumpuk. Tanpa jeda, dua catatan beruntun
+ * dapat membaca daftar yang sama dan yang kedua menimpa yang pertama.
+ */
+let a3AntreanRiwayat = Promise.resolve();
+
+function catatRiwayat(catatan) {
+  const jalan = a3AntreanRiwayat.then(() => catatRiwayatSatu(catatan));
+  a3AntreanRiwayat = jalan.catch(() => {});
+  return jalan;
+}
+
+async function catatRiwayatSatu(catatan) {
   try {
     const simpan = await chrome.storage.local.get([KUNCI_RIWAYAT]);
     const daftar = Array.isArray(simpan[KUNCI_RIWAYAT]) ? simpan[KUNCI_RIWAYAT] : [];
@@ -2638,6 +2752,32 @@ const VAR_NAMA_SAKSI = Object.freeze({
   T: Object.freeze(["6100", "6106", "6138"]),
 });
 
+/**
+ * 1.184.0 (5 Okt, butir 23): "Susun keterangan saksi" juga dari halaman
+ * blangko perkara ABT yang memakai variabel tanya-jawab saksi LAIN.
+ *
+ * Sampai 1.183.0 tombolnya hanya ada bila halaman memuat 2021 (Keterangan
+ * Saksi 1 P). Blangko BAS memakai 5058 "TanyaJwb Saksi 1 P" (dan 5059/5060,
+ * 6120-6122 untuk T) - petugas harus membuka penyunting tanya-jawab dulu.
+ * Padahal ABT menyimpan keterangan saksi per NAMA saksi
+ * (Abt_model::GetIdPerkaraPihak - perkara_pihak5 lewat referensi 1197),
+ * bukan per nomor variabel: 5058 dan 2021 berbagi data yang sama, jadi
+ * penyusun (yang menyimpan lewat no_var 2021) berlaku untuk keduanya.
+ */
+const A3_VAR_TANYA_JAWAB_SAKSI_LAIN = Object.freeze(["5058", "5059", "5060", "6120", "6121", "6122"]);
+
+function a3BlangkoMemuatSaksi(peta) {
+  if (!peta || typeof peta.has !== "function") return false;
+  return [VAR_SAKSI_1, VAR_SAKSI_2, ...VAR_SAKSI_TANYA_JAWAB.P, ...VAR_SAKSI_TANYA_JAWAB.T, ...A3_VAR_TANYA_JAWAB_SAKSI_LAIN, ...VAR_NAMA_SAKSI.P, ...VAR_NAMA_SAKSI.T].some((k) =>
+    peta.has(k)
+  );
+}
+
+/** Keterangan saksi 1 P yang tergambar di halaman: 2021, atau 5058 di blangko BAS. */
+function a3NilaiSaksi1() {
+  return nilaiVariabel(VAR_SAKSI_1) || nilaiVariabel("5058");
+}
+
 /** Batas saksi per pihak yang dilayani penyusun bot (K6, keputusan 15). */
 const BATAS_SAKSI_SDG = Object.freeze({ P: 4, T: 2 });
 
@@ -3381,7 +3521,8 @@ function susunPanelAbt(jatiDiri) {
   // mencocokkan tulisan itu. Borangnya melayani sampai 4 saksi P dan 2 saksi T.
   tombolSdg.title =
     "Keterangan saksi dari satu templat ABT (sampai 4 saksi Penggugat dan 2 saksi Tergugat): substansi sama, kalimat berbeda.";
-  tombolSdg.hidden = !petaAwal.has(VAR_SAKSI_1);
+  // 1.184.0 (butir 23): juga blangko BAS (5058 "TanyaJwb Saksi 1 P") - lihat a3BlangkoMemuatSaksi.
+  tombolSdg.hidden = !a3BlangkoMemuatSaksi(petaAwal);
 
   // ==========================================================================
   // DI HALAMAN TANYA-JAWAB, HANYA INILAH YANG MASUK AKAL
@@ -9290,7 +9431,7 @@ function t6PasangLangkah(k) {
   // Keterangan saksi 1 yang sudah terisi di blangko = "Susun saksi" sudah
   // dikerjakan (di sidang itu, atau oleh petugas lain). Ia tetap dapat
   // dijalankan lagi lewat "lihat semua langkah".
-  if (!k.langkah.has("sdg") && keadaanNilai(nilaiVariabel(VAR_SAKSI_1)) === "terisi") {
+  if (!k.langkah.has("sdg") && keadaanNilai(a3NilaiSaksi1()) === "terisi") {
     k.langkah.set("sdg", "selesai");
     k.langkahSebab.set("sdg", "keterangan saksi 1 sudah terisi di blangko");
   }
@@ -12394,64 +12535,87 @@ async function soreJalankanIsi(k, opsi) {
 /** Seluruh pembacaan - rute yang sama dengan tombol lama, tanpa satu tulisan pun. */
 async function soreBacaIsi(k) {
   const data = { sipp: null, saksi: null, itsbat: null, lain: null, galat: [], info: [], catatan: [] };
+  const posita = () => {
+    const peta = barisVariabel();
+    return peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "";
+  };
+  // 1.184.0 (butir 16): kelima bacaan tidak saling bergantung - dijalankan
+  // BERSAMAAN, bukan berurutan. Galat tetap disebut dalam urutan yang sama
+  // (SIPP, saksi, posita permohonan, posita perkara lain). Ikut dibaca:
+  // tipe seluruh variabel halaman (butir 1) - lihat muatTipeHalaman.
+  const galat = { sipp: "", saksi: "", itsbat: "", lain: "" };
+  const tugas = [];
+  tugas.push(muatTipeHalaman().catch(() => false));
   if (t6TombolTampak(k.tombol.sipp)) {
-    try {
-      const j = await mintaUsulan({ nomorPerkara: nomorPerkaraAbt(), sumber: "sipp" });
-      const s = j.sipp || {};
-      if (s.ok === false) throw new Error(s.alasan || "SIPP tidak menjawab.");
-      data.sipp = s;
-    } catch (galat) {
-      data.galat.push(`SIPP: ${sorePesan(galat)}`);
-    }
+    tugas.push(
+      (async () => {
+        const j = await mintaUsulan({ nomorPerkara: nomorPerkaraAbt(), sumber: "sipp" });
+        const s = j.sipp || {};
+        if (s.ok === false) throw new Error(s.alasan || "SIPP tidak menjawab.");
+        data.sipp = s;
+      })().catch((g) => {
+        galat.sipp = `SIPP: ${sorePesan(g)}`;
+      })
+    );
   }
   if (t6TombolTampak(k.tombol.saksi)) {
-    try {
-      const peta = barisVariabel();
-      const bacaan = await bacaKeteranganSaksiUsulan(peta);
-      if (!bacaan.teks1.trim() && !bacaan.teks2.trim()) {
-        data.info.push(
-          bacaan.catatan.length ? `Keterangan saksi tidak terbaca - ${bacaan.catatan.join("; ")}.` : "Keterangan saksi 1 dan 2 belum ada di blangko ini."
-        );
-      } else {
+    tugas.push(
+      (async () => {
+        const peta = barisVariabel();
+        const bacaan = await bacaKeteranganSaksiUsulan(peta);
+        if (!bacaan.teks1.trim() && !bacaan.teks2.trim()) {
+          data.info.push(
+            bacaan.catatan.length ? `Keterangan saksi tidak terbaca - ${bacaan.catatan.join("; ")}.` : "Keterangan saksi 1 dan 2 belum ada di blangko ini."
+          );
+          return;
+        }
         // Perbaikan 1 Okt butir 9: teks yang sama dengan yang dibaca bot -
         // cadangan "inti keterangan" bila bot belum mengirim intiCiri.
         data.teksSaksi = { 1: bacaan.teks1, 2: bacaan.teks2 };
         const j = await mintaUsulan(muatanUsulanSaksi(peta, bacaan));
         data.saksi = j.saksi || {};
         if (bacaan.catatan.length) data.catatan.push(`Keterangan saksi: ${bacaan.catatan.join("; ")}.`);
-      }
-    } catch (galat) {
-      data.galat.push(`Keterangan saksi: ${sorePesan(galat)}`);
-    }
+      })().catch((g) => {
+        galat.saksi = `Keterangan saksi: ${sorePesan(g)}`;
+      })
+    );
   }
-  const posita = () => {
-    const peta = barisVariabel();
-    return peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "";
-  };
   if (t6TombolTampak(k.tombol.itsbat) && posita().trim()) {
-    try {
-      const j = await mintaUsulan(muatanUsulanItsbat(posita()));
-      const it = j.itsbat || {};
-      if (it.ok === false) throw new Error(it.alasan || "Posita tidak dapat dibaca.");
-      data.itsbat = it;
-    } catch (galat) {
-      data.galat.push(`Posita permohonan: ${sorePesan(galat)}`);
-    }
+    tugas.push(
+      (async () => {
+        const j = await mintaUsulan(muatanUsulanItsbat(posita()));
+        const it = j.itsbat || {};
+        if (it.ok === false) throw new Error(it.alasan || "Posita tidak dapat dibaca.");
+        data.itsbat = it;
+      })().catch((g) => {
+        galat.itsbat = `Posita permohonan: ${sorePesan(g)}`;
+      })
+    );
   }
   if (t6TombolTampak(k.tombol.lain) && posita().trim()) {
-    try {
-      const j = await mintaUsulan(muatanUsulanLain(posita(), nomorPerkaraAbt()));
-      const lain = j.positaLain || {};
-      if (lain.ok === false) throw new Error(SEBAB_POSITA_LAIN[lain.alasan] || lain.alasan || "Posita tidak dapat dibaca.");
-      if (!lain.ok) throw new Error("ALETA Bot belum mengenal pengisian perkara lain dari posita.");
-      data.lain = lain;
-    } catch (galat) {
-      data.galat.push(`Posita perkara lain: ${sorePesan(galat)}`);
-    }
+    tugas.push(
+      (async () => {
+        const j = await mintaUsulan(muatanUsulanLain(posita(), nomorPerkaraAbt()));
+        const lain = j.positaLain || {};
+        if (lain.ok === false) throw new Error(SEBAB_POSITA_LAIN[lain.alasan] || lain.alasan || "Posita tidak dapat dibaca.");
+        if (!lain.ok) throw new Error("ALETA Bot belum mengenal pengisian perkara lain dari posita.");
+        data.lain = lain;
+      })().catch((g) => {
+        galat.lain = `Posita perkara lain: ${sorePesan(g)}`;
+      })
+    );
   }
   // Perbaikan 1 Okt butir 8 (UI Baru saja): posita dan keterangan saksi yang
   // RAPI ikut ke daftar Input ke ABT - hanya pratinjau, tidak menulis.
-  if (t6Modern()) data.rapi = await a1BacaRapi(k);
+  if (t6Modern()) {
+    tugas.push(
+      a1BacaRapi(k).then((r) => {
+        data.rapi = r;
+      })
+    );
+  }
+  await Promise.all(tugas);
+  for (const kunci of ["sipp", "saksi", "itsbat", "lain"]) if (galat[kunci]) data.galat.push(galat[kunci]);
   return data;
 }
 
@@ -12483,7 +12647,14 @@ function sorePilihUsulan(data) {
   const tampil = [];
   const tidakAda = [];
   const sama = [];
+  // 1.184.0 (butir 1): yang dihitung ABT sendiri (data_sql, data_sipp,
+  // multi_sidang, ...) tidak diusulkan - simpanVariabel memang menolaknya.
+  const dihitung = [];
   for (const [kode, u] of perKode) {
+    if (a3BolehDiisi(kode) === false) {
+      dihitung.push(kode);
+      continue;
+    }
     if (!soreTerdeteksi(u)) {
       tidakAda.push(kode);
       continue;
@@ -12495,7 +12666,38 @@ function sorePilihUsulan(data) {
     }
     tampil.push(u);
   }
-  return { tampil, tidakAda, sama };
+  return { tampil, tidakAda, sama, dihitung };
+}
+
+/**
+ * 1.184.0 (5 Okt, butir 17): variabel alasan perceraian 0222 sampai 8503
+ * WAJIB ada di panel. Yang tidak terdeteksi dari SIPP/keterangan saksi/posita
+ * tetap tampil sebagai kartu kosong yang dapat disunting - sampai 1.183.0 ia
+ * hanya disebut di "Tidak ditampilkan", dan petugas harus mengetiknya di ABT.
+ * 8503 punya bagian sendiri (huruf alasan): kartunya hanya muncul bila bagian
+ * itu tidak punya satu pilihan pun, supaya 8503 tidak ditulis dua kali.
+ */
+const A3_WAJIB_SUNTING = Object.freeze([
+  ["0222", "Awal Konflik"],
+  ["5227", "Alasan-Alasan Cerai"],
+  ["0246", "Pisah Rumah"],
+  ["9944", "Lama Pisah"],
+  ["7035", "Meninggalkan Kediaman Bersama"],
+  ["1268", "Upaya Damai Keluarga"],
+  ["8503", "Huruf Alasan Perceraian"],
+]);
+
+function a3KartuWajib(tampil, sama, adaHuruf) {
+  const peta = barisVariabel();
+  const sudah = new Set([...(tampil || []).map((u) => String(u.kode)), ...(sama || []).map(String)]);
+  const hasil = [];
+  for (const [kode, nama] of A3_WAJIB_SUNTING) {
+    if (sudah.has(kode) || !peta.has(kode)) continue;
+    if (kode === VAR_HURUF && adaHuruf) continue;
+    if (a3BolehDiisi(kode) === false) continue;
+    hasil.push({ kode, nama, nilai: "", keyakinan: "kosong", sumber: [], wajib: true });
+  }
+  return hasil;
 }
 
 /** Pemicu huruf -> kelompok alasannya pada jawaban saksi (nama persis, lalu sebagian). */
@@ -12688,7 +12890,12 @@ function soreGambarIsi(k, data) {
   if (kartuHuruf) w.huruf.appendChild(kartuHuruf);
 
   w.usulan.textContent = "";
-  const { tampil, tidakAda, sama } = sorePilihUsulan(data);
+  const pilihan = sorePilihUsulan(data);
+  const { sama, dihitung } = pilihan;
+  // 1.184.0 (butir 17): variabel alasan perceraian yang tidak terdeteksi tetap punya kartu Sunting.
+  const wajib = a3KartuWajib(pilihan.tampil, sama, hurufPilihan.length > 0);
+  const tampil = [...pilihan.tampil, ...wajib];
+  const tidakAda = pilihan.tidakAda.filter((kode) => !wajib.some((u) => u.kode === String(kode)));
   const peta = barisVariabel();
   const pilih = [];
   for (const u of tampil) {
@@ -12697,10 +12904,11 @@ function soreGambarIsi(k, data) {
     // Blangko yang sudah berisi lain: diganti hanya bila petugas mencentangnya.
     if (keadaanNilai(item.nilai) === "terisi") pilih[pilih.length - 1].centang.checked = false;
   }
-  if (tidakAda.length || sama.length) {
+  if (tidakAda.length || sama.length || dihitung.length) {
     const bagian = [];
     if (tidakAda.length) bagian.push(`${tidakAda.length} tidak terdeteksi (${tidakAda.join(", ")})`);
     if (sama.length) bagian.push(`${sama.length} sudah sama di blangko (${sama.join(", ")})`);
+    if (dihitung.length) bagian.push(`${dihitung.length} dihitung ABT sendiri, bukan isian (${dihitung.join(", ")})`);
     w.usulan.appendChild(soreEl("div", "aleta-t6-lembut aleta-teknis aleta-sore-tak-tampil", `Tidak ditampilkan: ${bagian.join("; ")}.`));
   }
   // Perbaikan 1 Okt butir 8 (UI Baru saja): posita & keterangan saksi rapi.
@@ -12714,9 +12922,12 @@ function soreGambarIsi(k, data) {
   }
   // Perbaikan 2 Okt butir 9: yang dirapikan tidak disebut sebagai yang harus
   // diperiksa (kartunya tidak tampil); rapiPilihan hanya berisi di UI Baru.
+  const terisi = tampil.length - wajib.length;
   ringkas.push(
-    tampil.length || hurufPilihan.length
-      ? `${tampil.length} data${hurufPilihan.length ? ` dan ${hurufPilihan.length} huruf alasan` : ""} siap diperiksa`
+    terisi || hurufPilihan.length || wajib.length
+      ? `${terisi} data${hurufPilihan.length ? ` dan ${hurufPilihan.length} huruf alasan` : ""} siap diperiksa${
+          wajib.length ? `; ${wajib.length} tidak terdeteksi - isi lewat Sunting (${wajib.map((u) => u.kode).join(", ")})` : ""
+        }`
       : rapiPilihan.length
         ? "Tidak ada data baru untuk diinput selain perapian posita/keterangan saksi (ikut tersimpan saat Input ke ABT)"
         : "Tidak ada data baru untuk diinput"
@@ -12786,6 +12997,10 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
     kabar.className = "aleta-abt-kabar";
     const bagian = [];
     let gagal = false;
+    // 1.184.0 (butir 16): posita SIPP dimulai sekarang, bersamaan dengan tulisan ABT.
+    const positaJanji = rapiDipilih.some((r) => r.kode === VAR_POSITA)
+      ? mintaPositaRapi(k.jatiDiri.perkaraId, false).catch((g) => ({ ok: false, pesan: sorePesan(g) }))
+      : null;
     try {
       if (dipilih.length) {
         const r = await terapkanUsulanBerurutan(dipilih, k.jatiDiri, (teks) => {
@@ -12809,9 +13024,14 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
       // Butir 8 (1 Okt, UI Baru): posita dan keterangan saksi rapi - jalur
       // simpan yang sama dengan "Terapkan" pada Rapikan.
       if (rapiDipilih.length) {
-        const r = await a1TerapkanRapi(k, rapiDipilih, (teks) => {
-          kabar.textContent = teks;
-        });
+        const r = await a1TerapkanRapi(
+          k,
+          rapiDipilih,
+          (teks) => {
+            kabar.textContent = teks;
+          },
+          { positaJanji }
+        );
         bagian.push(...r.pesan);
         if (r.gagal) gagal = true;
       }
@@ -12864,7 +13084,7 @@ async function soreJalankanSusun(k, opsi) {
   // Keterangan saksi yang SUDAH ada tidak disusun ulang sendiri: pratinjau
   // baru atasnya adalah tawaran menimpa, dan itu keputusan petugas. Di halaman
   // tanya-jawab (tempat keterangan itu sedang disunting) juga tidak.
-  if (o.otomatis && (!halamanBlangko() || keadaanNilai(nilaiVariabel(VAR_SAKSI_1)) === "terisi")) {
+  if (o.otomatis && (!halamanBlangko() || keadaanNilai(a3NilaiSaksi1()) === "terisi")) {
     soreStatus(
       k.statusSusun,
       halamanBlangko()
@@ -13591,8 +13811,11 @@ function a1GambarRapi(k, wadah, rapi) {
 }
 
 /** Tulisan rapi - jalur yang sama persis dengan "Terapkan" pada Rapikan. */
-async function a1TerapkanRapi(k, dipilih, lapor) {
+async function a1TerapkanRapi(k, dipilih, lapor, opsi) {
   const kabar = typeof lapor === "function" ? lapor : () => {};
+  // 1.184.0 (butir 16): posita ditulis bot ke SIPP - bukan ABT - jadi boleh
+  // sudah dimulai sejak tombol ditekan, bersamaan dengan tulisan ABT.
+  const positaJanji = opsi && opsi.positaJanji ? opsi.positaJanji : null;
   const pesan = [];
   let gagal = false;
   for (const r of dipilih) {
@@ -13600,7 +13823,7 @@ async function a1TerapkanRapi(k, dipilih, lapor) {
     try {
       let hasil;
       if (r.kode === VAR_POSITA) {
-        hasil = await mintaPositaRapi(k.jatiDiri.perkaraId, false);
+        hasil = await (positaJanji || mintaPositaRapi(k.jatiDiri.perkaraId, false));
         if (hasil.ok && hasil.sebelum) r.sebelum = hasil.sebelum;
       } else {
         hasil = await simpanKeteranganSaksi(r.kode);
@@ -14326,11 +14549,14 @@ function a2Tombol(teks, judul, kelas) {
  * latihan, dan coba yang menahan alamat itu. Fungsinya belum ada = tanpa jeda.
  */
 async function a2JedaTulis(jenis, alamat) {
-  try {
-    if (typeof alatJedaManusia === "function") await alatJedaManusia(jenis, { alamat: alamat ? String(alamat) : "" });
-  } catch {
-    /* jeda hanya tata krama - kegagalannya tidak menahan tulisan */
-  }
+  // 1.184.0 (5 Okt 2026, butir 16): TANPA jeda untuk tulisan ke ABT - keputusan
+  // pengguna ("Tanpa jeda di ABT"), menggantikan butir 14 (2 Okt) KHUSUS ABT.
+  // ±75% waktu "Input ke ABT" adalah jeda 0,9-2,2 detik per variabel. SIPP
+  // dan e-Court tetap berjeda (alatJedaManusia di konten.js dan bot). Riwayat
+  // ALETA tetap jujur dan lengkap (catatRiwayat). Tulisan ke ABT tetap satu
+  // per satu - ABT tidak pernah menerima dua tulisan sekaligus.
+  void jenis;
+  void alamat;
 }
 
 // ─── Butir 19 + 7: bawaan buka/tutup dan tag peran ──────────────────────────
@@ -15154,10 +15380,57 @@ function p7GabungUsulan(dariBot, dariSidang, peta) {
   for (const u of [...(dariBot || []), ...(dariSidang || [])]) {
     if (!u || !u.kode || !peta.has(String(u.kode)) || per.has(String(u.kode))) continue;
     if (!String(u.nilai || "").trim()) continue;
+    // 1.184.0 (butir 1): hanya data_teks/data_tanggal - sisanya dihitung ABT.
+    if (a3BolehDiisi(u.kode) === false) continue;
     per.set(String(u.kode), u);
   }
   const rapi = (x) => String(x || "").replace(/\s+/g, " ").trim().toLowerCase();
   return [...per.values()].filter((u) => rapi((peta.get(String(u.kode)) || {}).nilai) !== rapi(u.nilai));
+}
+
+/**
+ * 1.184.0 (butir 1): usulan tambahan untuk variabel data_teks/data_tanggal di
+ * blangko BAS - sumber yang sama dengan panel hakim: posita (itsbat, perkara
+ * lain) bila 5125 ada di halaman, dan keterangan saksi bila 2021/2022 ada.
+ * Variabel alasan perceraian (0222, 0246, 9944, 7035, 1268, 5127, ...) dan
+ * data nikah (5197, 1001, 0650/0651, 5178, ...) memang dipakai blangko BAS.
+ */
+async function p7UsulanTambahan(nomor, catatan) {
+  const peta = barisVariabel();
+  const posita = peta.get(VAR_POSITA) ? String(peta.get(VAR_POSITA).selNilai.innerText || "") : "";
+  const tugas = [];
+  if (posita.trim()) {
+    tugas.push(
+      mintaUsulan(muatanUsulanItsbat(posita))
+        .then((j) => (j && j.itsbat && j.itsbat.ok !== false && Array.isArray(j.itsbat.usulan) ? j.itsbat.usulan : []))
+        .catch((g) => {
+          catatan.push(`Posita permohonan: ${sorePesan(g)}.`);
+          return [];
+        })
+    );
+    tugas.push(
+      mintaUsulan(muatanUsulanLain(posita, nomor))
+        .then((j) => (j && j.positaLain && j.positaLain.ok && Array.isArray(j.positaLain.usulan) ? j.positaLain.usulan : []))
+        .catch((g) => {
+          catatan.push(`Posita perkara lain: ${sorePesan(g)}.`);
+          return [];
+        })
+    );
+  }
+  if (a3BlangkoMemuatSaksi(peta)) {
+    tugas.push(
+      (async () => {
+        const bacaan = await bacaKeteranganSaksiUsulan(peta);
+        if (!bacaan.teks1.trim() && !bacaan.teks2.trim()) return [];
+        const j = await mintaUsulan(muatanUsulanSaksi(peta, bacaan));
+        return j && j.saksi && Array.isArray(j.saksi.usulan) ? j.saksi.usulan : [];
+      })().catch((g) => {
+        catatan.push(`Keterangan saksi: ${sorePesan(g)}.`);
+        return [];
+      })
+    );
+  }
+  return (await Promise.all(tugas)).flat();
 }
 
 /** Variabel masih kosong / templat? (yang demikian tercentang sendiri). */
@@ -15241,7 +15514,8 @@ function p7PasangBas(k) {
       const c = document.createElement("input");
       c.type = "checkbox";
       c.className = "aleta-abt-centang";
-      c.checked = p7VariabelKosong(item);
+      // 1.184.0 (butir 1): yang tipenya belum diketahui tidak dicentang sendiri.
+      c.checked = p7VariabelKosong(item) && a3BolehDiisi(u.kode) === true;
       c.addEventListener("change", segarkanTombol);
       baris.appendChild(c);
       const teks = buatElemen("span", "aleta-abt-nama", `${u.nama || u.kode}: ${u.nilai}`);
@@ -15266,7 +15540,7 @@ function p7PasangBas(k) {
     let dariBot = [];
     try {
       if (!nomor) throw new Error("Nomor perkara tidak terbaca dari kepala halaman.");
-      const [rincian, bot] = await Promise.all([
+      const [rincian, bot, tambahan, tipeAda] = await Promise.all([
         p7BacaRincian(nomor).catch((g) => {
           catatan.push(`Data sidang: ${String((g && g.message) || g)}.`);
           return null;
@@ -15275,12 +15549,17 @@ function p7PasangBas(k) {
           catatan.push(`Usulan SIPP: ${String((g && g.message) || g)}.`);
           return null;
         }),
+        p7UsulanTambahan(nomor, catatan),
+        muatTipeHalaman().catch(() => false),
       ]);
       if (rincian) data = p7DataSidang(rincian, p7PilihSidang(rincian, p7SidangKe()));
       const s = bot && bot.sipp;
       if (s && s.ok !== false && Array.isArray(s.usulan)) dariBot = s.usulan;
       const peta = barisVariabel();
-      gambar(data, p7GabungUsulan(dariBot, p7UsulanDariSidang(data, peta), peta), catatan);
+      if (!tipeAda) catatan.push("Tipe variabel ABT belum terbaca - usulan tidak dicentang sendiri; periksa sebelum Input.");
+      const dihitung = [...peta.keys()].filter((kode) => a3BolehDiisi(kode) === false).length;
+      if (dihitung) catatan.push(`${dihitung} variabel halaman ini dihitung ABT sendiri (data SIPP/kueri/multi sidang) - tidak diusulkan.`);
+      gambar(data, p7GabungUsulan([...dariBot, ...tambahan], p7UsulanDariSidang(data, peta), peta), catatan);
       kabar.textContent = "";
     } catch (galat) {
       kabar.className = "aleta-p7-kabar aleta-abt-gagal";

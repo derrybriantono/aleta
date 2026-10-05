@@ -3483,10 +3483,130 @@ function alatBuatPita(info) {
   return pita;
 }
 
+// ── 1.184.0 (5 Okt 2026, butir 18): pembaruan OTOMATIS ───────────────────────
+
+/**
+ * Sampai 1.183.0 pembaruan menunggu petugas menekan pita "Pembaruan tersedia".
+ * Kini, begitu portal menyajikan versi yang lebih baru, ekstensi memperbarui
+ * DAN memuat ulang dirinya sendiri - jalan yang sama dengan pita
+ * (alatJalankanPembaruan -> latar.js requestUpdateCheck/reload), lalu tulisan
+ * kecil "diperbarui ke x.y.z" tampil di atas widget.
+ *
+ * Tiga pagar, supaya tidak ada pekerjaan yang hilang dan tidak ada putaran:
+ *   1. hanya pada halaman yang BARU dimuat (<= 20 detik) dan tanpa isian /
+ *      jendela sembul yang sedang terbuka - petugas belum mengetik apa pun;
+ *   2. sekali per versi (pembaruanOtomatis.versi): pemasangan "Load unpacked"
+ *      yang foldernya belum disalin tetap di versi lama sesudah dimuat ulang,
+ *      dan tanpa pagar ini halaman akan memuat ulang tanpa henti - pita
+ *      manual tetap ada untuk keadaan itu;
+ *   3. penahan putaran cetak relaas di latar.js tetap berlaku (tidak dipaksa).
+ */
+const ALAT_OTOMATIS_KUNCI = "pembaruanOtomatis";
+const ALAT_OTOMATIS_SEGAR_MS = 20000;
+const ALAT_CATATAN_PERBARUI_ID = "aleta-catatan-perbarui";
+let alatOtomatisJalan = false;
+let alatSesudahPerbaruiDicek = false;
+
+/** Ada isian atau jendela sembul yang sedang dikerjakan petugas? */
+function alatAdaKerjaTerbuka() {
+  try {
+    const aktif = document.activeElement;
+    if (aktif && aktif !== document.body && /^(INPUT|TEXTAREA|SELECT)$/.test(aktif.tagName)) return true;
+    if (aktif && aktif.isContentEditable) return true;
+    for (const el of Array.from(document.querySelectorAll(".popup, .mfp-wrap, .modal.in, .modal.show, [role=dialog]"))) {
+      if (el.offsetParent !== null || (el.getClientRects && el.getClientRects().length > 0)) return true;
+    }
+  } catch {
+    /* anggap tidak ada */
+  }
+  return false;
+}
+
+/** Tulisan kecil di atas widget checklist (atau kiri bawah bila widget tidak ada). */
+function alatTampilkanCatatanPerbarui(teks, buruk, lamaMs) {
+  try {
+    let el = document.getElementById(ALAT_CATATAN_PERBARUI_ID);
+    if (!el) {
+      el = document.createElement("div");
+      el.id = ALAT_CATATAN_PERBARUI_ID;
+      el.className = "aleta-catatan-perbarui";
+      el.setAttribute("role", "status");
+      (document.body || document.documentElement).appendChild(el);
+    }
+    el.textContent = String(teks || "");
+    el.classList.toggle("aleta-catatan-perbarui-buruk", Boolean(buruk));
+    const widget = document.getElementById("aleta-cm-akar");
+    const r = widget && widget.getBoundingClientRect ? widget.getBoundingClientRect() : null;
+    if (r && r.height > 0) {
+      el.style.left = `${Math.max(8, Math.round(r.left))}px`;
+      el.style.bottom = `${Math.max(8, Math.round(window.innerHeight - r.top + 6))}px`;
+    } else {
+      el.style.left = "16px";
+      el.style.bottom = "16px";
+    }
+    clearTimeout(el.aletaTutup);
+    if (lamaMs > 0) el.aletaTutup = setTimeout(() => el.remove(), lamaMs);
+    return el;
+  } catch {
+    return null;
+  }
+}
+
+/** Sesudah ekstensi dimuat ulang: sebut versi barunya sekali. */
+async function alatCekSesudahPerbarui() {
+  if (alatSesudahPerbaruiDicek) return;
+  alatSesudahPerbaruiDicek = true;
+  try {
+    const s = await chrome.storage.local.get([ALAT_OTOMATIS_KUNCI]);
+    const c = s && s[ALAT_OTOMATIS_KUNCI];
+    if (!c || !c.versi || c.diberitahu) return;
+    const terpasang = String(chrome.runtime.getManifest().version || "");
+    if (alatBandingVersi(terpasang, c.versi) < 0) return;
+    alatTampilkanCatatanPerbarui(`ALETA diperbarui ke ${terpasang}`, false, 8000);
+    await chrome.storage.local.set({ [ALAT_OTOMATIS_KUNCI]: { ...c, diberitahu: true } });
+  } catch {
+    /* tanpa catatan - versinya tetap terbaca di kaki panel */
+  }
+}
+
+/** Memperbarui sendiri bila pagar di atas mengizinkan. Pulang true bila dijalankan. */
+async function alatPembaruanOtomatis(info) {
+  if (!info || !info.portal || alatOtomatisJalan) return false;
+  try {
+    if (typeof performance !== "undefined" && performance.now() > ALAT_OTOMATIS_SEGAR_MS) return false;
+  } catch {
+    /* tanpa jam halaman - lanjut */
+  }
+  if (alatAdaKerjaTerbuka()) return false;
+  try {
+    const s = await chrome.storage.local.get([ALAT_OTOMATIS_KUNCI]);
+    const c = s && s[ALAT_OTOMATIS_KUNCI];
+    if (c && c.versi === info.portal) return false;
+    alatOtomatisJalan = true;
+    await chrome.storage.local.set({
+      [ALAT_OTOMATIS_KUNCI]: { versi: info.portal, dari: info.terpasang, pada: new Date().toISOString(), diberitahu: false },
+    });
+  } catch {
+    alatOtomatisJalan = false;
+    return false;
+  }
+  alatTampilkanCatatanPerbarui(`Memperbarui ALETA ke ${info.portal}…`, false, 0);
+  const hasil = await alatJalankanPembaruan(false, (teks, buruk) => {
+    if (buruk) alatTampilkanCatatanPerbarui(teks, true, 12000);
+  });
+  if (!hasil || !hasil.selesai) {
+    alatOtomatisJalan = false;
+    return false;
+  }
+  return true;
+}
+
 /** Menggambar atau mencabut pita di tiap panel yang terdaftar. */
 async function alatSegarkanPita() {
   const tampil = alatUjiMode() !== "lama";
   const info = tampil ? await alatPembaruanTersedia(false) : null;
+  // 1.184.0 (butir 18): pembaruan otomatis; pita tetap ada sebagai jalan manual.
+  if (info) void alatPembaruanOtomatis(info);
   for (const panel of Array.from(alatPitaPanel)) {
     if (!panel.isConnected && panel.aletaPitaPernah) {
       alatPitaPanel.delete(panel);
@@ -3523,6 +3643,7 @@ function alatPasangPitaPembaruan(panel) {
   }
   // Dalam Lama tidak ada permintaan dan tidak ada elemen.
   if (alatUjiMode() === "lama") return;
+  void alatCekSesudahPerbarui();
   void alatSegarkanPita();
 }
 

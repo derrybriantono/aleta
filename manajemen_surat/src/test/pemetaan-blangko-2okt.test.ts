@@ -612,8 +612,22 @@ const RINCIAN = {
 };
 
 type MintaAbt = { url: string; cara: string; badan: string };
-function bukaAbt(o: { peran: string; mode: "ui" | "baru" | "lama"; judul?: string }) {
-  const baris = Object.entries(ISI_BAS)
+/**
+ * 1.184.0 (butir 1): tipe variabel ABT lewat rute kamus. 0032 (Tanggal Sidang)
+ * multi_sidang - dihitung ABT sendiri, tidak boleh diusulkan; sisanya data_teks.
+ * `tanpaKamus` = rute tidak menjawab (tipe belum diketahui).
+ */
+const JENIS_BAS: Record<string, string> = { "0032": "multi_sidang" };
+
+function bukaAbt(o: {
+  peran: string;
+  mode: "ui" | "baru" | "lama";
+  judul?: string;
+  tanpaKamus?: boolean;
+  /** 1.184.0 (butir 23): variabel tambahan di blangko, mis. 5058 "TanyaJwb Saksi 1 P". */
+  tambahIsi?: Record<string, [string, string]>;
+}) {
+  const baris = Object.entries({ ...ISI_BAS, ...(o.tambahIsi || {}) })
     .map(
       ([k, [nama, nilai]]) =>
         `<tr valign="top"><td align=center id="${k}">${k}</td><td>${nama}</td><td>${nilai}</td>` +
@@ -665,6 +679,11 @@ function bukaAbt(o: { peran: string; mode: "ui" | "baru" | "lama"; judul?: strin
       return json({ data: { available: true } });
     }
     if (url.includes("/aleta-ecourt/sidang?nomor=")) return json({ ok: true, data: { available: true, nomorPerkara: NOMOR, sipp: RINCIAN } });
+    if (url.includes("/aleta-ecourt/kamus?jenis=")) {
+      if (o.tanpaKamus) return json({ ok: false }, 404);
+      const kode = decodeURIComponent(url.split("jenis=")[1] || "").split(",");
+      return json({ ok: true, data: { ada: true, sumber: "abt", jenis: Object.fromEntries(kode.map((k) => [k, JENIS_BAS[k] || "data_teks"])) } });
+    }
     if (url.includes("/edit_data?")) return cara === "POST" ? html("<b>DATA DISIMPAN</b>") : html('<input type="hidden" name="var_type" value="data_teks">');
     if (url.includes("/aleta-ecourt/bas-komentar")) return json({ ok: true, data: { komentar: [], saya: { id: "pp", nama: "PP", bolehMenulis: false, bolehMenyelesaikanSemua: false } } });
     if (url.includes("/aps_badilag/") && cara === "GET") return html("<html><body></body></html>");
@@ -706,8 +725,11 @@ describe("butir 7 - blangko BAS: Isi dari SIPP & input ke ABT (BAS) untuk panite
     expect(bagian.querySelector(".aleta-lipat-peran")?.textContent).toBe("Panitera");
     const baris = Array.from(bagian.querySelectorAll(".aleta-p7-baris")) as any[];
     const kode = baris.map((b) => b.querySelector(".aleta-abt-nama").title.split(" ")[1]);
-    // 0032 dari bot; 7101/7103/7104 dari data sidang; 7102 (agenda) "Mediasi" diganti "Pembuktian".
-    expect(kode.sort()).toEqual(["0032", "7101", "7102", "7103", "7104"]);
+    // 7101/7103/7104 dari data sidang; 7102 (agenda) "Mediasi" diganti "Pembuktian".
+    // 1.184.0 (butir 1): 0032 diusulkan bot tetapi bertipe multi_sidang - dihitung
+    // ABT sendiri, jadi TIDAK diusulkan (sampai 1.183.0 tampil tercentang).
+    expect(kode.sort()).toEqual(["7101", "7102", "7103", "7104"]);
+    expect(bagian.textContent).toMatch(/dihitung ABT sendiri/);
     // Yang sudah terisi (agenda) tidak tercentang sendiri.
     const agenda = baris.find((b) => b.querySelector(".aleta-abt-nama").title.includes("7102"));
     expect(agenda.querySelector("input").checked).toBe(false);
@@ -715,13 +737,43 @@ describe("butir 7 - blangko BAS: Isi dari SIPP & input ke ABT (BAS) untuk panite
     expect(tulisAbt(h)).toEqual([]);
 
     const tombol = bagian.querySelector(".aleta-p7-input") as HTMLButtonElement;
-    expect(tombol.textContent).toBe("Input ke ABT (4)");
+    expect(tombol.textContent).toBe("Input ke ABT (3)");
     tombol.click();
-    await sampai(() => /4 variabel tersimpan ke ABT/.test(bagian.textContent || ""), "tersimpan");
+    await sampai(() => /3 variabel tersimpan ke ABT/.test(bagian.textContent || ""), "tersimpan");
     const ditulis = tulisAbt(h).map((m) => new URLSearchParams(m.url.split("?")[1]).get("no_var") || m.badan);
-    expect(ditulis.length).toBe(4);
+    expect(ditulis.length).toBe(3);
+    // Tipe sudah dibaca sekali lewat kamus: tidak ada GET edit_data per variabel sebelum menulis.
+    expect(h.minta.filter((m) => m.cara === "GET" && m.url.includes("/edit_data?"))).toEqual([]);
     // Tanpa penanda ALETA di isian ABT (butir 14).
     for (const m of tulisAbt(h)) expect(decodeURIComponent(m.badan)).not.toMatch(/ALETA/i);
+  });
+
+  it("1.184.0: tipe variabel tidak terbaca - usulan tetap tampil tetapi tidak dicentang sendiri", async () => {
+    const h = bukaAbt({ peran: "Panitera Pengganti", mode: "ui", tanpaKamus: true });
+    const bagian = await sampai(() => h.panel()?.querySelector(".aleta-p7-bas"), "bagian BAS");
+    await sampai(() => bagian.querySelectorAll(".aleta-p7-baris").length >= 4, "daftar centang BAS");
+    const baris = Array.from(bagian.querySelectorAll(".aleta-p7-baris")) as any[];
+    expect(baris.some((b) => b.querySelector("input").checked)).toBe(false);
+    expect(bagian.textContent).toMatch(/Tipe variabel ABT belum terbaca/);
+    expect((bagian.querySelector(".aleta-p7-input") as HTMLButtonElement).textContent).toBe("Input ke ABT");
+  });
+
+  it("1.184.0 butir 23: blangko BAS dengan 5058 'TanyaJwb Saksi 1 P' (tanpa 2021) - Susun keterangan saksi tersedia di halaman perkara", async () => {
+    const susun = (h: ReturnType<typeof bukaAbt>) =>
+      (Array.from(h.panel()?.querySelectorAll("button") || []) as HTMLButtonElement[]).find((b) => b.textContent === "Susun keterangan saksi 1 & 2");
+    const dengan = bukaAbt({
+      peran: "Panitera Pengganti",
+      mode: "ui",
+      tambahIsi: { "1197": ["Nama Saksi 1 P", "Ahmad bin Madung"], "5058": ["TanyaJwb Saksi 1 P", "Saksi kenal dengan Penggugat;"] },
+    });
+    const tombolDengan = await sampai(() => susun(dengan), "tombol susun");
+    expect(tombolDengan.hidden).toBe(false);
+    await tunggu(300);
+    expect(dengan.panel().textContent || "").not.toContain("Susun keterangan saksi tidak tersedia di blangko ini");
+    // Blangko BAS tanpa satu pun variabel saksi: tetap tidak ditawarkan.
+    const tanpa = bukaAbt({ peran: "Panitera Pengganti", mode: "ui" });
+    const tombolTanpa = await sampai(() => susun(tanpa), "tombol susun (lama)");
+    expect(tombolTanpa.hidden).toBe(true);
   });
 
   it("tidak tampil: tampilan Baru, Hakim, blangko bukan BAS; Admin melihatnya", async () => {

@@ -26,7 +26,10 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const EKSTENSI = path.resolve(__dirname, "../../../ekstensi-sipp");
 const baca = (b: string) => readFileSync(path.join(EKSTENSI, b), "utf8").replace(/\r\n/g, "\n");
-const SUMBER_ALAT = baca("panel-alat.js");
+// ALETA_UJI_ALAT hanya dipakai pembukti gigitan (salinan panel-alat.js lama).
+const SUMBER_ALAT = process.env.ALETA_UJI_ALAT
+  ? readFileSync(process.env.ALETA_UJI_ALAT, "utf8").replace(/\r\n/g, "\n")
+  : baca("panel-alat.js");
 const SUMBER_ALETA = baca("aleta.js");
 const SUMBER_LATAR = baca("latar.js");
 const SUMBER_CHECKLIST = baca("checklist.js");
@@ -178,6 +181,12 @@ const UI = {
   panelBawaanTampil: { aleta: true, diubahPada: "2026-10-02T00:00:00.000Z" },
 };
 const BARU = { ujiTampilan: "baru", ujiIzinkanNyata: true, aktif: true };
+/**
+ * 1.184.0 (butir 18): percobaan otomatis untuk 1.175.0 SUDAH dilakukan (mis.
+ * Load unpacked yang foldernya belum disalin) - pita tinggal jalan manual.
+ * Uji klik pita di bawah menguji jalan manual itu.
+ */
+const SUDAH_OTOMATIS = { pembaruanOtomatis: { versi: "1.175.0", dari: "1.174.1", pada: "2026-10-05T00:00:00.000Z", diberitahu: false } };
 const panelPortal = (h: Halaman) => h.w.document.getElementById("aleta-panel-portal") as any;
 
 // ============================================================================
@@ -469,7 +478,7 @@ describe("butir 24: pita Pembaruan tersedia", () => {
   });
 
   it("klik = minta pembaruan ke latar.js, lalu muat ulang ekstensi bila Chrome tidak memasang apa pun", async () => {
-    const h = buka({ portal: true, simpanan: BARU, versiPortal: "1.175.0" });
+    const h = buka({ portal: true, simpanan: { ...BARU, ...SUDAH_OTOMATIS }, versiPortal: "1.175.0" });
     const pita = await sampai(() => panelPortal(h)?.querySelector(".aleta-pita-pembaruan"), "pita lahir");
     pita.click();
     await sampai(() => h.pesan.length >= 2, "dua pesan ke latar");
@@ -480,7 +489,7 @@ describe("butir 24: pita Pembaruan tersedia", () => {
   it("CRX terpasang: satu pesan saja, tidak memuat ulang dari folder", async () => {
     const h = buka({
       portal: true,
-      simpanan: BARU,
+      simpanan: { ...BARU, ...SUDAH_OTOMATIS },
       jawabLatar: () => ({ ok: true, keadaan: "dipasang", pesan: "sedang dipasang" }),
     });
     const pita = await sampai(() => panelPortal(h)?.querySelector(".aleta-pita-pembaruan"), "pita lahir");
@@ -493,7 +502,7 @@ describe("butir 24: pita Pembaruan tersedia", () => {
     let n = 0;
     const h = buka({
       portal: true,
-      simpanan: BARU,
+      simpanan: { ...BARU, ...SUDAH_OTOMATIS },
       jawabLatar: () => (n++ === 0 ? { ok: false, keadaan: "putaran-relaas-berjalan", pesan: "Putaran cetak relaas belum selesai." } : { ok: true, keadaan: "dipasang" }),
     });
     const pita = await sampai(() => panelPortal(h)?.querySelector(".aleta-pita-pembaruan"), "pita lahir");
@@ -528,6 +537,45 @@ describe("butir 24: pita Pembaruan tersedia", () => {
     expect(await kosong.w.alatPembaruanTersedia(false, { tanpaAmbil: true })).toBeNull();
     expect(kosong.minta.some((m) => m.url.includes("info=versi"))).toBe(false);
     expect(SUMBER_CHECKLIST).toContain("alatPembaruanTersedia(false, { tanpaAmbil: true })");
+  });
+
+  it("1.184.0 butir 18: versi lebih baru -> diperbarui OTOMATIS (tanpa klik), sekali per versi, tulisan kecil di atas widget", async () => {
+    const h = buka({ portal: true, simpanan: UI, versiPortal: "1.175.0", jawabLatar: () => ({ ok: true, keadaan: "dipasang", pesan: "sedang dipasang" }) });
+    await sampai(() => h.pesan.length >= 1, "pembaruan otomatis diminta");
+    expect(h.pesan.map((x) => x.jenis)).toEqual(["perbarui"]);
+    // Tidak dipaksa: penahan putaran relaas di latar.js tetap berlaku.
+    expect(h.pesan[0].paksa).toBeUndefined();
+    expect((h.simpanan.pembaruanOtomatis as any).versi).toBe("1.175.0");
+    const catatan = h.w.document.getElementById("aleta-catatan-perbarui");
+    expect(catatan.textContent).toBe("Memperbarui ALETA ke 1.175.0…");
+    // Halaman berikutnya (versi masih lama - mis. Load unpacked belum disalin): TIDAK berputar.
+    const lagi = buka({ portal: true, simpanan: h.simpanan, versiPortal: "1.175.0" });
+    await sampai(() => panelPortal(lagi)?.querySelector(".aleta-pita-pembaruan"), "pita manual tetap ada");
+    await tunggu(80);
+    expect(lagi.pesan).toEqual([]);
+  });
+
+  it("1.184.0 butir 18: sesudah dimuat ulang ke versi baru - 'ALETA diperbarui ke x' sekali saja", async () => {
+    const simpanan = { ...UI, pembaruanOtomatis: { versi: "1.174.1", dari: "1.174.0", pada: "2026-10-05T00:00:00.000Z", diberitahu: false } };
+    const h = buka({ portal: true, simpanan, versiPortal: "1.174.1" });
+    const catatan = await sampai(() => h.w.document.getElementById("aleta-catatan-perbarui"), "catatan diperbarui");
+    expect(catatan.textContent).toBe("ALETA diperbarui ke 1.174.1");
+    await sampai(() => (h.simpanan.pembaruanOtomatis as any).diberitahu === true, "ditandai sudah diberitahu");
+    const lagi = buka({ portal: true, simpanan: h.simpanan, versiPortal: "1.174.1" });
+    await sampai(() => panelPortal(lagi), "panel");
+    await tunggu(80);
+    expect(lagi.w.document.getElementById("aleta-catatan-perbarui")).toBeNull();
+  });
+
+  it("1.184.0 butir 18: isian sedang dikerjakan (fokus di kotak isian) - tidak diperbarui otomatis, pita tetap", async () => {
+    const h = buka({ portal: true, simpanan: UI, versiPortal: "1.175.0" });
+    const isian = h.w.document.createElement("input");
+    h.w.document.body.appendChild(isian);
+    isian.focus();
+    await sampai(() => panelPortal(h)?.querySelector(".aleta-pita-pembaruan"), "pita lahir");
+    await tunggu(80);
+    expect(h.pesan).toEqual([]);
+    expect(h.simpanan.pembaruanOtomatis).toBeUndefined();
   });
 
   it("banding versi: angka per bagian, bukan huruf", async () => {

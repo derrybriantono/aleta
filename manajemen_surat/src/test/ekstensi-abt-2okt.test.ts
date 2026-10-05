@@ -804,7 +804,10 @@ describe("butir 3: putusan massal ABT - blangko utama di atas, 'Blangko berbedaâ
 });
 
 // ============================================================================
-describe("butir 14: tulisan ke ABT berjeda seperti manusia, tanpa penanda ALETA", () => {
+// 1.184.0 (5 Okt 2026, butir 16): keputusan pengguna "Tanpa jeda di ABT" menggantikan
+// butir 14 KHUSUS ABT - tulisan ke ABT tidak lagi didahului jeda (Â±75% waktu Input
+// ke ABT). alatJedaManusia tetap ada untuk SIPP/e-Court. Tanpa penanda ALETA tetap.
+describe("butir 14 + 16: tulisan ke ABT TANPA jeda (5 Okt), tanpa penanda ALETA", () => {
   /** Mengganti alatJedaManusia dengan perekam; indeks = banyaknya permintaan saat jeda diminta. */
   function rekamJeda(h: Halaman) {
     const jeda: Array<{ jenis: string; alamat: string; ke: number }> = [];
@@ -819,7 +822,7 @@ describe("butir 14: tulisan ke ABT berjeda seperti manusia, tanpa penanda ALETA"
     ["UI Baru", ui([], nyata)],
     ["Baru (global, bukan hanya UI Baru)", baru([], nyata)],
   ] as const) {
-    it(`${nama}: tiap tulisan ABT (simpan variabel, tanya-jawab) didahului jeda; isinya tanpa kata ALETA`, async () => {
+    it(`${nama}: tulisan ABT (simpan variabel, tanya-jawab) tanpa jeda; isinya tanpa kata ALETA`, async () => {
       const h = buka({ simpanan, peran: "Hakim" });
       const jeda = rekamJeda(h);
       const input = await selesaiIsi(h);
@@ -830,25 +833,23 @@ describe("butir 14: tulisan ke ABT berjeda seperti manusia, tanpa penanda ALETA"
       // Tulisan LANGSUNG ke ABT. Posita SIPP dan unggah putusan lewat bot ALETA - jedanya urusan bot (agen E).
       const tulis = h.minta.map((m, i) => ({ ...m, i })).filter((m) => m.cara !== "GET" && m.url.includes("/aps_badilag/"));
       expect(tulis.length).toBeGreaterThan(0);
-      for (const t of tulis) {
-        const j = jeda.find((x) => x.ke === t.i);
-        expect(j, t.url).toBeDefined();
-        expect(j!.jenis).toBe("simpan");
-        expect(t.url.endsWith(j!.alamat)).toBe(true);
-        expect(decodeURIComponent(t.badan)).not.toMatch(/ALETA/i);
-      }
+      // Tidak satu jeda pun diminta untuk tulisan ABT.
+      expect(jeda).toEqual([]);
+      for (const t of tulis) expect(decodeURIComponent(t.badan)).not.toMatch(/ALETA/i);
     });
   }
 
-  it("jeda sungguhan berjalan bila tidak dinolkan (alatJedaManusia W) - dan dinolkan dalam mode coba", async () => {
+  it("alatJedaManusia W tetap hidup (untuk SIPP/e-Court) - tetapi Input ke ABT tidak menunggunya; dinolkan dalam mode coba", async () => {
     const h = buka({ simpanan: ui([], nyata), peran: "Hakim" });
-    h.w.__a2.setelJeda(0.02);
+    // Jeda yang SANGAT panjang bila sampai dipakai: Input ke ABT harus tetap selesai cepat.
+    h.w.__a2.setelJeda(5);
     const input = await selesaiIsi(h);
     const mulai = Date.now();
     input.click();
     await sampai(() => /dirapikan/.test(kabarInput(h)?.textContent || "") && !input.disabled, "kabar input");
-    // 1 variabel + huruf (simpan variabel) + tanya-jawab 2021: >= 3 x 18 ms.
-    expect(Date.now() - mulai).toBeGreaterThanOrEqual(50);
+    // Sampai 1.183.0: 1 variabel + huruf + tanya-jawab 2021 = 3 x (0,9-2,2 dtk) x 5 >= 13 dtk.
+    expect(Date.now() - mulai).toBeLessThan(4000);
+    h.w.__a2.setelJeda(0.02);
     expect(await h.w.__a2.jedaAsli("simpan", { alamat: "x" })).toBeGreaterThan(0);
     const coba = buka({ simpanan: ui([]), peran: "Hakim" });
     await siapPeran(coba);

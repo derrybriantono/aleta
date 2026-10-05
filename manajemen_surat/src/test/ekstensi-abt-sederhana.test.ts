@@ -602,7 +602,18 @@ describe("butir 5, 6, 7: satu daftar, huruf dengan sebabnya, satu tombol", () =>
     const h = buka({ simpanan: ui([]), peran: "Hakim", isi: { "9944": "1 tahun" } });
     await selesaiIsi(h);
     const kode = qs(h, ".aleta-abt-kartu .aleta-abt-kode").map((x) => x.textContent);
-    expect(kode).toEqual(["0222", "7035"]);
+    // 1.184.0 (butir 17): 5227, 0246, 1268 tidak terdeteksi - tetap tampil sebagai kartu
+    // KOSONG yang dapat disunting (tidak tercentang); 9944 sudah sama di blangko; 8503
+    // tidak, sebab bagian huruf alasan punya pilihan.
+    expect(kode).toEqual(["0222", "7035", "5227", "0246", "1268"]);
+    for (const wajib of ["5227", "0246", "1268"]) {
+      const kartu = qs(h, ".aleta-abt-kartu").find((k) => k.querySelector(".aleta-abt-kode")?.textContent === wajib);
+      expect(kartu.querySelector(".aleta-abt-isi-sunting").textContent).toBe("(kosong - klik untuk mengisi)");
+      const c = kartu.querySelector("input.aleta-abt-centang");
+      expect(c.checked).toBe(false);
+      expect(c.disabled).toBe(true);
+      expect(Array.from(kartu.querySelectorAll("button")).some((b: any) => b.textContent === "Sunting")).toBe(true);
+    }
     // 0222 diusulkan SIPP (ragu) dan saksi (pasti): tampil sekali, yang pasti.
     const k0222 = qs(h, ".aleta-abt-kartu").find((k) => k.querySelector(".aleta-abt-kode")?.textContent === "0222");
     expect(k0222.querySelector(".aleta-abt-isi-sunting").textContent).toBe("November 2022");
