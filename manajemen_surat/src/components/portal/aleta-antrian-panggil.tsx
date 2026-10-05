@@ -6,6 +6,7 @@ import { PanelRuangPapanPanggil } from "@/components/portal/jadwal-sidang-2okt";
 import { apiPath } from "@/lib/base-path";
 import { selangPanggilan, warnaRuang } from "@/lib/antrian-tampilan";
 import { hentikanUcapan, useSuaraPanggilan } from "@/lib/suara-panggilan";
+import { usePengumumanSuara } from "@/lib/pengumuman-suara-layar";
 import { cn } from "@/lib/utils";
 
 /**
@@ -139,6 +140,8 @@ export function AletaAntrianPanggil() {
    */
   const [suaraNyala, setSuaraNyala] = useState(false);
   const { daftar: daftarSuara, terpilih, pilih, bunyikan, didukung } = useSuaraPanggilan();
+  // Panggilan petugas dari Jadwal Sidang/Mediasi lewat pengeras suara (butir 33).
+  usePengumumanSuara({ nyala: suaraNyala, bunyikan });
 
   /**
    * Membaca antrian. TIDAK menyentuh keadaan layar - yang menulis hanya dua
