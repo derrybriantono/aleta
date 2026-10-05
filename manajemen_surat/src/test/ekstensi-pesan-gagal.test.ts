@@ -332,7 +332,12 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // 37 sejak perbaikan 5 Oktober 2026 (butir 26, hanya UI Baru): Rapikan
     // identitas para pihak (p5MintaRapi -> rapikan-alamat) - gagalnya
     // berbunyi sebagai kalimat di bagian itu.
-    expect(lewatAlat).toBe(37);
+    // 40 sejak butir 29 (Court Calendar otomatis, Baru & UI Baru, panitera/
+    // admin): tiga permintaan ke SIPP sendiri - daftar Court Calendar
+    // (ccBacaDaftarSipp), blangko Tambah Court Calender (ccBacaBlangkoSipp),
+    // dan simpanan validateInput (ccKirimBaris). Gagalnya disebut per baris
+    // ("tidak terbaca (status N)", "ditahan mode ...", pesan SIPP), bukan kode.
+    expect(lewatAlat).toBe(40);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

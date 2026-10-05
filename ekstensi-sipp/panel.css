@@ -10378,6 +10378,87 @@ html[data-aleta-tema-sipp="gelap"] :is(.aleta-c2-saksi, .aleta-c2-saksi-pemicu) 
 }
 /* === AKHIR C2 === */
 
+/* === CC - COURT CALENDAR OTOMATIS (butir 29) === */
+/*
+ * Bagian "Court Calendar otomatis" di kelompok Perkara (konten.js, ccGambar).
+ * Satu kartu per baris: kepala (centang, nomor, asal, keadaan, geser/hapus),
+ * agenda, tanggal + jam, keterangan, lalu catatan hari (libur/Sabtu-Minggu).
+ */
+.aleta-cc { display: grid; gap: 6px; }
+.aleta-cc-pola { display: grid; gap: 3px; font-size: calc(12px * var(--aleta-skala-huruf, 1)); color: var(--aleta-tulisan-lembut); }
+.aleta-cc-peringatan { color: var(--aleta-mendesak); }
+.aleta-cc-kabar-gagal { color: var(--aleta-lewat); }
+.aleta-cc-tabel { display: grid; gap: 6px; }
+.aleta-cc-baris {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-cc-baris.aleta-cc-asal-riwayat { opacity: 0.85; border-style: dashed; }
+.aleta-cc-baris.aleta-cc-libur { border-color: var(--aleta-lewat); }
+.aleta-cc-baris.aleta-cc-tersimpan { border-color: var(--aleta-aman); }
+.aleta-cc-baris.aleta-cc-ditolak,
+.aleta-cc-baris.aleta-cc-gagal,
+.aleta-cc-baris.aleta-cc-belum-terbaca { border-color: var(--aleta-lewat); }
+.aleta-cc-kepala { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.aleta-cc-nomor { font-weight: 600; min-width: 1.5em; }
+.aleta-cc-asal,
+.aleta-cc-keadaan {
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  padding: 0 6px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 999px;
+  color: var(--aleta-tulisan-lembut);
+}
+.aleta-cc-keadaan-tersimpan { color: var(--aleta-aman); border-color: var(--aleta-aman); }
+.aleta-cc-keadaan-ditolak,
+.aleta-cc-keadaan-gagal,
+.aleta-cc-keadaan-belum-terbaca { color: var(--aleta-lewat); border-color: var(--aleta-lewat); }
+.aleta-cc-keadaan-ditahan,
+.aleta-cc-keadaan-sudah-ada { color: var(--aleta-mendesak); border-color: var(--aleta-mendesak); }
+.aleta-cc-kecil {
+  margin-left: auto;
+  min-width: 24px;
+  padding: 0 4px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--aleta-tulisan-lembut);
+  cursor: pointer;
+}
+.aleta-cc-kecil + .aleta-cc-kecil { margin-left: 0; }
+.aleta-cc-kecil:disabled { opacity: 0.4; cursor: default; }
+.aleta-cc-medan { display: grid; gap: 4px; }
+.aleta-cc-waktu { display: flex; gap: 6px; flex-wrap: wrap; }
+.aleta-cc-agenda,
+.aleta-cc-ket,
+.aleta-cc-tanggal,
+.aleta-cc-jam {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 4px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+.aleta-cc-agenda { width: 100%; resize: vertical; }
+.aleta-cc-ket { width: 100%; }
+.aleta-cc-catatan { font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); color: var(--aleta-tulisan-lembut); overflow-wrap: anywhere; }
+.aleta-cc-libur .aleta-cc-catatan { color: var(--aleta-lewat); }
+.aleta-cc-aksi { display: flex; flex-wrap: wrap; gap: 6px; }
+.aleta-cc-input.aleta-cc-yakin { border-color: var(--aleta-mendesak); color: var(--aleta-mendesak); }
+.aleta-cc-ada { display: grid; gap: 2px; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-cc-ada-baris { display: flex; flex-wrap: wrap; gap: 6px; }
+.aleta-cc-ada-tgl { color: var(--aleta-tulisan-lembut); }
+.aleta-cc-ada-ket { color: var(--aleta-tulisan-lembut); font-style: italic; }
+/* === AKHIR CC === */
+
 /* === O3 - PERBAIKAN 2 OKT SORE (butir 5: label peran selalu di kiri) === */
 /*
  * Urutan di kepala lipatan UI Baru dipaksa lewat 'order', bukan diserahkan ke

@@ -8152,6 +8152,1125 @@ function setLencana(kotak, ringkas) {
   kotak.lencana.className = `aleta-bagian-lencana aleta-lencana-${ringkas.nada || "netral"}`;
 }
 
+/*
+ * ============================================================================
+ * COURT CALENDAR OTOMATIS - BUTIR 29 (panitera sidang, PP, Admin, Super Admin)
+ * ============================================================================
+ *
+ * Bagian "Court Calendar otomatis" di kelompok Perkara: menyusun rencana
+ * persidangan perkara ini (perkara_court_calendar), dapat disunting baris per
+ * baris, lalu DIINPUT SEKALIGUS ke SIPP lewat blangko "Tambah Court Calender"
+ * SIPP sendiri. Tampil hanya di tampilan Baru/UI Baru (Lama tetap identik),
+ * untuk golongan panitera dan admin, dan hanya bila boleh("data-umum") - hak
+ * yang sama dengan putusan otomatis, satu-satunya pengisian blangko SIPP lain
+ * yang dikerjakan PP.
+ *
+ * ============================================================================
+ * POLANYA DIUKUR, BUKAN DIKARANG - sipp_donggala, perkara didaftar >= 2022
+ * ============================================================================
+ *
+ * Skrip ukur: D:/aleta-dev/kerja/court-calendar/ (ekstrak.sql, ukur.js,
+ * ukur2.js, ukur3.sql). 6.854 baris Court Calendar, 8.562 sidang.
+ *
+ *   Siapa mengisi berapa baris (median):
+ *     cerai gugat       1.826 dari 2.240 perkara berkalender, median 2 baris
+ *                       (1.265 perkara tepat 2 baris)
+ *     cerai talak         433 dari 497, median 3
+ *     itsbat (Pdt.P)      576 dari 798, median 1 (517 tepat 1 baris)
+ *     dispensasi kawin     63 dari 77,  median 1
+ *     permohonan lain     110 dari 136, median 2
+ *     ekonomi syariah       0 dari 2   - tanpa data; aturannya dari PERMA
+ *   Baris diinput SEBELUM tanggal rencananya 2.510, pada harinya 3.637,
+ *   sesudahnya 707 - Court Calendar di satker ini sebagian besar disusun saat
+ *   sidang pertama, dan sebagian ditulis menyusul (keterangan "putus verstek").
+ *
+ *   Rencana yang disusun di depan (>= 2 baris dalam satu sesi input):
+ *     cerai gugat, putus verstek (n=385): Sidang Pertama -> Pemeriksaan Pokok
+ *       Perkara 124 kali, jarak median 14 hari (q25 7, q75 14)
+ *     cerai gugat, hadir (n=88): sidang pertama -> mediasi (med 11 hari);
+ *       rantai e-Litigasi jawaban -> replik -> duplik -> pembuktian, jarak
+ *       median 5 / 3 / 6 hari, jam 15:00, keterangan "Elitigasi"
+ *     cerai talak hadir (n=26): jawaban -> replik 4, replik -> duplik 5,5,
+ *       duplik -> pembuktian 6,5 hari
+ *
+ *   Jarak sidang yang SUNGGUH terjadi (perkara_jadwal_sidang, median hari):
+ *     pendaftaran -> sidang 1   cerai gugat 13 (n=2.236), cerai talak 13
+ *                               (497), itsbat Pdt.P 21 (798), dispensasi 10
+ *                               (77), permohonan lain 12 (136), itsbat Pdt.G 17
+ *     sidang 1 -> pokok perkara 14 (n=426)     sidang 1 -> laporan mediasi 14
+ *     laporan mediasi -> jawaban 3 (30/26)     jawaban -> replik 4 (47/46)
+ *     replik -> duplik 3 (48/45)               duplik -> pembuktian 5 (48/43)
+ *     pembuktian -> pembuktian 7 (60/56)       pembuktian -> kesimpulan 2
+ *     kesimpulan -> putusan 6 (36/41)          permohonan: tiap langkah 7
+ *     putusan cerai talak -> sidang ikrar: 35 hari terbanyak (60 dari 248),
+ *       lalu 28 (45)
+ *   Jumlah sidang: cerai gugat verstek median 2 (n=1.740) - pemeriksaan pokok,
+ *   pembuktian, dan putusan verstek pada sidang kedua; itsbat Pdt.P median 1.
+ *
+ *   Jam: 6.438 dari 8.541 baris 09:00; jawaban/replik/duplik/kesimpulan 15:00
+ *   (aturan yang sama dengan jamSidangBerikut di portal, @/lib/bawaan-tunda).
+ *   Keterangan: 5.024 dari 8.541 kosong; "Elitigasi" pada rantai jawab-menjawab
+ *   perkara e-Court. Hari: Selasa 976, Senin 685, Rabu 426, Kamis 400, Jumat
+ *   208 (rencana 2025+) - jarak 7/14 hari mempertahankan hari sidang majelis.
+ *
+ * ============================================================================
+ * SATU MESIN DENGAN TUNDA SIDANG, BUKAN DUA
+ * ============================================================================
+ *
+ * Portal sudah punya aturan tanggal/jam sidang berikutnya (1.180.0,
+ * @/lib/bawaan-tunda): tundaan mediasi 21 hari, jam sore untuk jawab-menjawab
+ * dan kesimpulan. Rencana di sini MEMAKAI angka yang sama (CC_HARI.laporanMediasi
+ * = HARI_TUNDA_MEDIASI, CC_TAHAP_SORE = TAHAP_SORE) - dijaga uji
+ * ekstensi-court-calendar-otomatis.test.ts yang membaca keduanya. Data
+ * menyebut 14 hari untuk sidang 1 -> laporan mediasi; aturan pengguna 21 hari
+ * yang dipakai supaya borang tunda dan Court Calendar tidak berselisih.
+ * Sebaliknya borang tunda MEMBACA Court Calendar (kedua pihak hadir ->
+ * tanggal rencana berikutnya) - kalender yang terisi di sini menajamkannya.
+ *
+ * ============================================================================
+ * MENULIS LEWAT JALAN SIPP SENDIRI
+ * ============================================================================
+ *
+ * Blangko SIPP (court_calendar/court_calendar_v.php) dikirim SubmitHandling:
+ * $.ajax POST serializeArray ke manage_court_calendar/validateInput, dijawab
+ * {st, msg}. Panel mengirim POST yang SAMA - medan yang sama (tgl_sidang
+ * dd/mm/yyyy, jamSidang, agenda_sidang, keterangan, nomor_perkara, enc) yang
+ * dibaca dari blangko Tambah Court Calender perkara ini - dengan sesi SIPP
+ * petugas yang sedang masuk. Pengesahan SIPP tetap berlaku (Sabtu/Minggu
+ * ditolak, tanggal sebelum pendaftaran ditolak), diinput_oleh = akun SIPP
+ * petugas, dan tidak ada tanda ALETA di baris mana pun. Dipilih daripada
+ * menekan tombol tingkap berulang kali: tiap Simpan memunculkan tingkap pesan
+ * dan memuat ulang #konten, sehingga N baris = N kali menutup dua tingkap -
+ * rapuh, dan hasilnya sama persis.
+ *
+ *   Sebelum menulis   daftar Court Calendar SIPP dibaca segar; baris yang sama
+ *                     persis (tanggal, jam, agenda) tidak dikirim lagi.
+ *   Saat menulis      mode latihan dan mode coba menahan POST di kait fetch
+ *                     (423); mode kering menahannya di sini; tiap simpanan
+ *                     didahului alatJedaManusia("simpan").
+ *   Sesudah menulis   daftar dibaca ULANG dan tiap baris dicari di sana -
+ *                     "tersimpan" hanya disebut bila memang terbaca kembali.
+ */
+
+/** Hari libur nasional & cuti bersama. 2026 cocok dengan hari kerja tanpa satu pun sidang di sipp_donggala. */
+const CC_LIBUR = {
+  "2026-01-01": "Tahun Baru Masehi",
+  "2026-01-16": "Isra Mikraj",
+  "2026-02-16": "cuti bersama Tahun Baru Imlek",
+  "2026-02-17": "Tahun Baru Imlek",
+  "2026-03-18": "cuti bersama Nyepi",
+  "2026-03-19": "Hari Suci Nyepi",
+  "2026-03-20": "cuti bersama Idul Fitri",
+  "2026-03-21": "Idul Fitri",
+  "2026-03-22": "Idul Fitri",
+  "2026-03-23": "cuti bersama Idul Fitri",
+  "2026-03-24": "cuti bersama Idul Fitri",
+  "2026-04-03": "Wafat Isa Almasih",
+  "2026-05-01": "Hari Buruh",
+  "2026-05-14": "Kenaikan Isa Almasih",
+  "2026-05-15": "cuti bersama Kenaikan Isa Almasih",
+  "2026-05-27": "Idul Adha",
+  "2026-05-28": "cuti bersama Idul Adha",
+  "2026-05-31": "Waisak",
+  "2026-06-01": "Hari Lahir Pancasila",
+  "2026-06-16": "Tahun Baru Islam",
+  "2026-08-17": "Hari Kemerdekaan",
+  "2026-08-25": "Maulid Nabi",
+  "2026-12-24": "cuti bersama Natal",
+  "2026-12-25": "Natal",
+  // 2027: hanya yang tanggalnya pasti (tetap, atau dihitung dari Paskah).
+  // Libur Hijriah/Imlek/Saka 2027 belum dimuat - SKB-nya belum terbit ketika
+  // ini ditulis; layar menyebutnya supaya petugas memeriksa sendiri.
+  "2027-01-01": "Tahun Baru Masehi",
+  "2027-03-26": "Wafat Isa Almasih",
+  "2027-05-01": "Hari Buruh",
+  "2027-05-06": "Kenaikan Isa Almasih",
+  "2027-06-01": "Hari Lahir Pancasila",
+  "2027-08-17": "Hari Kemerdekaan",
+  "2027-12-25": "Natal",
+};
+const CC_LIBUR_TAHUN_LENGKAP = ["2026"];
+
+/** Pendaftaran -> sidang pertama (median terukur, lihat di atas) bila PHS belum ada. */
+const CC_HARI_DAFTAR = {
+  "cerai-gugat": 13,
+  "cerai-talak": 13,
+  gugatan: 13,
+  itsbat: 21,
+  dispensasi: 10,
+  permohonan: 12,
+  sederhana: 13,
+};
+
+/** Jarak (hari kalender) dari sidang sebelumnya - median terukur, kecuali laporanMediasi (aturan tunda 21). */
+const CC_HARI = {
+  pokok: 14,
+  laporanMediasi: 21,
+  jawaban: 3,
+  replik: 4,
+  duplik: 3,
+  pembuktianPertama: 5,
+  pembuktianKedua: 7,
+  kesimpulan: 2,
+  putusan: 6,
+  verstek: 14,
+  damai: 7,
+  ikrar: 35,
+  langkahPermohonan: 7,
+  // PERMA 2/2015 jo. 4/2019: gugatan sederhana selesai paling lama 25 hari
+  // kerja sejak sidang pertama - tiga langkah sepekan muat di dalamnya.
+  langkahSederhana: 7,
+};
+
+const CC_JAM_PAGI = "09:00";
+const CC_JAM_SORE = "15:00";
+/** Sama dengan TAHAP_SORE di @/lib/bawaan-tunda. */
+const CC_TAHAP_SORE = ["jawaban", "replik", "duplik", "kesimpulan"];
+
+/** Urutan tahap acara gugatan - yang lebih jauh tidak direncanakan ulang. */
+const CC_URUT = {
+  lain: 0,
+  pertama: 0,
+  mediasi: 1,
+  "laporan-mediasi": 2,
+  pokok: 2,
+  jawaban: 3,
+  replik: 4,
+  duplik: 5,
+  "pembuktian-pertama": 6,
+  "pembuktian-kedua": 7,
+  kesimpulan: 8,
+  putusan: 9,
+  ikrar: 10,
+};
+
+const CC_NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const CC_NAMA_BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+function ccIsoSah(iso) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(iso || ""));
+}
+
+function ccTambahHari(iso, hari) {
+  if (!ccIsoSah(iso)) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + hari)).toISOString().slice(0, 10);
+}
+
+function ccHariKe(iso) {
+  if (!ccIsoSah(iso)) return -1;
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+/** Sebab tanggal ini bukan hari sidang ("" = hari kerja). */
+function ccBukanHariKerja(iso) {
+  const h = ccHariKe(iso);
+  if (h === 0 || h === 6) return h === 0 ? "hari Minggu" : "hari Sabtu";
+  return CC_LIBUR[iso] ? `libur: ${CC_LIBUR[iso]}` : "";
+}
+
+/** Maju ke hari kerja pertama pada atau sesudah iso. */
+function ccMajuHariKerja(iso) {
+  let t = iso;
+  for (let i = 0; i < 30 && t && ccBukanHariKerja(t); i += 1) t = ccTambahHari(t, 1);
+  return t;
+}
+
+/** "Selasa, 13 Okt 2026". */
+function ccTeksTanggal(iso) {
+  if (!ccIsoSah(iso)) return "-";
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${CC_NAMA_HARI[ccHariKe(iso)]}, ${String(d).padStart(2, "0")} ${CC_NAMA_BULAN[m - 1]} ${y}`;
+}
+
+/** Bentuk tanggal blangko SIPP: dd/mm/yyyy. */
+function ccTanggalSipp(iso) {
+  if (!ccIsoSah(iso)) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function ccJamSah(jam) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(jam || ""));
+}
+
+/**
+ * Golongan perkara. Bentuk nomor (Pdt.G / Pdt.P / Pdt.G.S) menentukan alurnya,
+ * jenisnya dari nama jenis perkara SIPP ("Istbat", bukan "itsbat" - lihat
+ * @/lib/sebutan-pihak).
+ */
+function ccGolongan(jenis, nomor) {
+  const j = String(jenis || "").toLowerCase();
+  const n = String(nomor || "");
+  if (/\/Pdt\.G\.S\//i.test(n)) return "sederhana";
+  if (/\/Pdt\.P\//i.test(n)) {
+    if (/istbat|itsbat|isbat|pengesahan perkawinan/.test(j)) return "itsbat";
+    if (/dispensasi/.test(j)) return "dispensasi";
+    return "permohonan";
+  }
+  if (/cerai talak/.test(j)) return "cerai-talak";
+  if (/cerai gugat/.test(j)) return "cerai-gugat";
+  return "gugatan";
+}
+
+/** Sebutan pihak - aturan #0046#/#0047# ABT: alur permohonan, cerai talak (346), izin poligami (341) = Pemohon. */
+function ccSebutan(golongan, jenis) {
+  if (golongan === "itsbat" || golongan === "dispensasi" || golongan === "permohonan") return { satu: "Pemohon", dua: "" };
+  if (golongan === "cerai-talak" || /izin poligami/i.test(String(jenis || ""))) return { satu: "Pemohon", dua: "Termohon" };
+  return { satu: "Penggugat", dua: "Tergugat" };
+}
+
+/** Tahap acara menurut kalimat agenda - kata kunci, sebab agenda SIPP ditulis bebas. Yang terjauh menang. */
+function ccTahap(agenda) {
+  const t = String(agenda || "").toLowerCase();
+  if (/ikrar/.test(t)) return "ikrar";
+  if (/musyawarah|putus|penetapan/.test(t)) return "putusan";
+  if (/kesimpulan/.test(t)) return "kesimpulan";
+  if (/duplik/.test(t)) return "duplik";
+  if (/replik/.test(t)) return "replik";
+  if (/jawab/.test(t)) return "jawaban";
+  if (/pembuktian|bukti|saksi/.test(t)) return /tergugat|termohon|pihak kedua/.test(t) ? "pembuktian-kedua" : "pembuktian-pertama";
+  if (/laporan (hasil )?mediasi|hasil mediasi/.test(t)) return "laporan-mediasi";
+  if (/mediasi|damai/.test(t)) return "mediasi";
+  if (/pembacaan (surat )?(gugatan|permohonan)|pokok perkara/.test(t)) return "pokok";
+  if (/identitas|pertama|panggil|penasihatan|penasehatan/.test(t)) return "pertama";
+  return "lain";
+}
+
+/** Rantai acara per jalur. hari = jarak dari langkah sebelumnya. */
+function ccRantai(jalur, golongan, s) {
+  const satu = s.satu;
+  const dua = s.dua || "Tergugat";
+  const pertama = { tahap: "pertama", agenda: "Sidang Pertama, Pemeriksaan Identitas, Penasihatan", hari: 0 };
+  const ikrar = golongan === "cerai-talak" ? [{ tahap: "ikrar", agenda: "Sidang Ikrar Talak", hari: CC_HARI.ikrar }] : [];
+  if (jalur === "awal") return [pertama, { tahap: "pokok", agenda: "Pemeriksaan Pokok Perkara", hari: CC_HARI.pokok }];
+  if (jalur === "verstek") {
+    return [
+      pertama,
+      { tahap: "putusan", agenda: `Pembacaan Gugatan, Pembuktian ${satu}, Musyawarah Majelis dan Pembacaan Putusan`, hari: CC_HARI.verstek },
+      ...ikrar,
+    ];
+  }
+  if (jalur === "damai") {
+    return [pertama, { tahap: "putusan", agenda: "Musyawarah Majelis dan Pembacaan Putusan", hari: CC_HARI.damai, ket: "mediasi berhasil" }];
+  }
+  if (jalur === "litigasi") {
+    return [
+      pertama,
+      { tahap: "laporan-mediasi", agenda: "Mendengar Laporan Hasil Mediasi", hari: CC_HARI.laporanMediasi },
+      { tahap: "jawaban", agenda: `Jawaban ${dua}`, hari: CC_HARI.jawaban, elitigasi: true },
+      { tahap: "replik", agenda: `Replik ${satu}`, hari: CC_HARI.replik, elitigasi: true },
+      { tahap: "duplik", agenda: `Duplik ${dua}`, hari: CC_HARI.duplik, elitigasi: true },
+      { tahap: "pembuktian-pertama", agenda: `Pembuktian ${satu}`, hari: CC_HARI.pembuktianPertama },
+      { tahap: "pembuktian-kedua", agenda: `Pembuktian ${dua}`, hari: CC_HARI.pembuktianKedua },
+      { tahap: "kesimpulan", agenda: `Kesimpulan ${satu} dan ${dua}`, hari: CC_HARI.kesimpulan, elitigasi: true },
+      { tahap: "putusan", agenda: "Musyawarah Majelis dan Pembacaan Putusan", hari: CC_HARI.putusan, elitigasi: true },
+      ...ikrar,
+    ];
+  }
+  if (jalur === "itsbat-awal") {
+    return [{ tahap: "putusan", agenda: "Sidang Pertama, Pemeriksaan Identitas, Pembacaan Permohonan, Pembuktian dan Pembacaan Penetapan", hari: 0 }];
+  }
+  if (jalur === "itsbat") {
+    return [
+      { tahap: "pertama", agenda: "Sidang Pertama, Pemeriksaan Identitas dan Pembacaan Permohonan", hari: 0 },
+      { tahap: "putusan", agenda: `Pembuktian ${satu}, Kesimpulan dan Pembacaan Penetapan`, hari: CC_HARI.langkahPermohonan },
+    ];
+  }
+  if (jalur === "dispensasi") {
+    return [
+      { tahap: "pembuktian-pertama", agenda: "Sidang Pertama, Pemeriksaan Identitas, Penasihatan, Pemeriksaan Pokok Perkara dan Pembuktian", hari: 0 },
+      { tahap: "putusan", agenda: "Musyawarah Majelis dan Pembacaan Penetapan", hari: CC_HARI.langkahPermohonan },
+    ];
+  }
+  if (jalur === "permohonan") {
+    return [
+      { tahap: "pertama", agenda: "Sidang Pertama, Pemeriksaan Identitas dan Pembacaan Permohonan", hari: 0 },
+      { tahap: "pembuktian-pertama", agenda: `Pembuktian ${satu}`, hari: CC_HARI.langkahPermohonan },
+      { tahap: "putusan", agenda: "Musyawarah Majelis dan Pembacaan Penetapan", hari: CC_HARI.langkahPermohonan },
+    ];
+  }
+  // sederhana
+  return [
+    { tahap: "pertama", agenda: "Sidang Pertama dan Upaya Perdamaian", hari: 0 },
+    { tahap: "jawaban", agenda: `Jawaban ${dua}`, hari: CC_HARI.langkahSederhana },
+    { tahap: "pembuktian-pertama", agenda: "Pembuktian", hari: CC_HARI.langkahSederhana },
+    { tahap: "putusan", agenda: "Pembacaan Putusan", hari: CC_HARI.langkahSederhana },
+  ];
+}
+
+const CC_PENJELASAN = {
+  awal:
+    "Belum ada sidang tercatat: sidang pertama, lalu pemeriksaan pokok perkara 14 hari kemudian - pola Court Calendar terbanyak yang disusun di awal (median 2 baris; jarak median 14 hari).",
+  verstek:
+    "Pihak kedua belum pernah hadir: satu sidang lagi 14 hari sesudahnya untuk pembacaan gugatan, pembuktian, dan putusan verstek (perkara verstek median 2 sidang).",
+  damai: "Mediasi berhasil: tinggal musyawarah dan pembacaan putusan/penetapan sepekan kemudian.",
+  litigasi:
+    "Kedua pihak pernah hadir: laporan mediasi 21 hari (aturan tunda mediasi), lalu jawab-menjawab e-Litigasi 3-4 hari sekali pukul 15.00, pembuktian, kesimpulan, dan putusan (jarak median terukur).",
+  "itsbat-awal": "Itsbat (permohonan): median 1 sidang - pemeriksaan, pembuktian, dan penetapan dibacakan pada hari yang sama.",
+  itsbat: "Itsbat (permohonan) yang sudah bersidang: pembuktian dan penetapan sepekan kemudian.",
+  dispensasi: "Dispensasi kawin: pemeriksaan dan pembuktian pada sidang pertama, penetapan sepekan kemudian (median 7 hari).",
+  permohonan: "Permohonan: sidang pertama, pembuktian, lalu penetapan - sepekan sekali (median 7 hari).",
+  sederhana:
+    "Gugatan sederhana: PERMA 2/2015 jo. 4/2019, selesai paling lama 25 hari kerja - sidang pertama dan perdamaian, jawaban, pembuktian, putusan sepekan sekali. Tidak ada data satker untuk diukur.",
+};
+
+/**
+ * Menyusun Court Calendar - fungsi murni, tanpa DOM dan tanpa jaringan.
+ *
+ * m: { nomorPerkara, jenisPerkara, tanggalDaftar, sidangPertama, hariIni,
+ *      jadwal: [{tanggal, jam, agenda, dihadiriOleh}],
+ *      kalender: [{tanggal, jam, agenda, keterangan}] | null (yang sudah di SIPP),
+ *      mediasi: {baris: [{berhasil, tanggalKeputusan, tanggalLaporan}]},
+ *      ecourt, sudahPutus, sudahIkrar }
+ *
+ * Pulang { golongan, jalur, sebutan, baris, sudahAda, catatan, penjelasan }.
+ * baris: [{ agenda, tanggal, jam, keterangan, tahap, asal, pilih, catatan }],
+ * asal "rencana" (disusun), "terjadwal" (sidang mendatang yang belum ada di
+ * Court Calendar), "riwayat" (sidang lampau yang belum ada - tidak dipilih).
+ */
+function ccSusun(m) {
+  const o = m && typeof m === "object" ? m : {};
+  const hariIni = ccIsoSah(o.hariIni) ? o.hariIni : new Date().toISOString().slice(0, 10);
+  const golongan = ccGolongan(o.jenisPerkara, o.nomorPerkara);
+  const sebutan = ccSebutan(golongan, o.jenisPerkara);
+  const catatan = [];
+
+  const sidang = (Array.isArray(o.jadwal) ? o.jadwal : [])
+    .map((x) => ({
+      tanggal: String((x && (x.tanggal || x.tanggalSidang)) || "").slice(0, 10),
+      jam: String((x && (x.jam || x.jamSidang)) || "").slice(0, 5),
+      agenda: String((x && x.agenda) || "").trim(),
+      dihadiri: x && x.dihadiriOleh !== null && x.dihadiriOleh !== undefined && x.dihadiriOleh !== "" ? Number(x.dihadiriOleh) : null,
+    }))
+    .filter((x) => ccIsoSah(x.tanggal))
+    .sort((a, b) => (a.tanggal < b.tanggal ? -1 : a.tanggal > b.tanggal ? 1 : 0));
+  const kalenderTerbaca = Array.isArray(o.kalender);
+  const sudahAda = (kalenderTerbaca ? o.kalender : [])
+    .map((x) => ({
+      tanggal: String((x && x.tanggal) || "").slice(0, 10),
+      jam: String((x && x.jam) || "").slice(0, 5),
+      agenda: String((x && x.agenda) || "").trim(),
+      keterangan: String((x && x.keterangan) || "").trim(),
+    }))
+    .filter((x) => ccIsoSah(x.tanggal))
+    .sort((a, b) => (a.tanggal < b.tanggal ? -1 : a.tanggal > b.tanggal ? 1 : 0));
+  if (!kalenderTerbaca) catatan.push("Court Calendar SIPP belum terbaca - baris yang sudah ada tidak dapat dipastikan.");
+  const tanggalAda = new Set(sudahAda.map((x) => x.tanggal));
+
+  const sidangBiasa = sidang.filter((x) => ccTahap(x.agenda) !== "ikrar");
+  const kehadiranTercatat = sidangBiasa.some((x) => [1, 2, 3, 4].includes(x.dihadiri));
+  const pihakKeduaPernah = sidangBiasa.some((x) => x.dihadiri === 1 || x.dihadiri === 3);
+  const med = o.mediasi && Array.isArray(o.mediasi.baris) && o.mediasi.baris.length ? o.mediasi.baris[o.mediasi.baris.length - 1] : null;
+  const mediasiBerhasil = Boolean(med && med.berhasil === true);
+
+  let jalur;
+  if (golongan === "itsbat") jalur = sidangBiasa.length ? "itsbat" : "itsbat-awal";
+  else if (golongan === "dispensasi" || golongan === "permohonan" || golongan === "sederhana") jalur = golongan;
+  else if (mediasiBerhasil) jalur = "damai";
+  else if (!sidangBiasa.length || !kehadiranTercatat) jalur = "awal";
+  else if (pihakKeduaPernah) jalur = "litigasi";
+  else jalur = "verstek";
+
+  // Tahap terjauh yang sudah dilalui atau sudah direncanakan.
+  let terjauh = -1;
+  for (const x of [...sidang, ...sudahAda]) terjauh = Math.max(terjauh, CC_URUT[ccTahap(x.agenda)] ?? 0);
+  if (o.sudahPutus === true) terjauh = Math.max(terjauh, CC_URUT.putusan);
+  if (o.sudahIkrar === true) terjauh = Math.max(terjauh, CC_URUT.ikrar);
+
+  // Jangkar: tanggal terakhir yang sudah ada (sidang maupun rencana).
+  let jangkar = "";
+  for (const x of [...sidang, ...sudahAda]) if (x.tanggal > jangkar) jangkar = x.tanggal;
+
+  // Langkah berjarak 0 adalah sidang pertama itu sendiri: bila sudah ada
+  // sidang atau rencana apa pun, ia sudah terwakili dan tidak disusun lagi
+  // (itsbat yang kalendernya sudah memuat satu baris tidak diberi baris kedua).
+  const rantai = ccRantai(jalur, golongan, sebutan);
+  const sisa = rantai.filter((x) => (CC_URUT[x.tahap] ?? 0) > terjauh && !(jangkar && x.hari === 0));
+  if (terjauh >= CC_URUT.putusan && !sisa.length) {
+    catatan.push("Sidang atau rencana perkara ini sudah sampai putusan - tidak ada sidang lagi untuk direncanakan.");
+  }
+
+  const baris = [];
+  let sebelumnya = jangkar;
+  for (let i = 0; i < sisa.length; i += 1) {
+    const langkah = sisa[i];
+    let tanggal;
+    let catatanBaris = "";
+    if (!sebelumnya) {
+      // Belum ada apa pun: sidang pertama menurut PHS, atau perkiraan dari pendaftaran.
+      if (ccIsoSah(o.sidangPertama)) tanggal = o.sidangPertama;
+      else if (ccIsoSah(o.tanggalDaftar)) {
+        tanggal = ccMajuHariKerja(ccTambahHari(o.tanggalDaftar, CC_HARI_DAFTAR[golongan] || 13));
+        catatanBaris = `perkiraan: PHS belum ada, ${CC_HARI_DAFTAR[golongan] || 13} hari sesudah pendaftaran (median)`;
+      } else {
+        tanggal = ccMajuHariKerja(ccTambahHari(hariIni, 7));
+        catatanBaris = "perkiraan: tanggal pendaftaran dan PHS tidak terbaca";
+      }
+    } else {
+      tanggal = ccTambahHari(sebelumnya, langkah.hari || 7);
+      // Rencana pertama sesudah sidang yang sudah lewat lama: digeser per
+      // PEKAN (hari sidang majelis tetap) sampai paling cepat 3 hari dari
+      // hari ini - waktu panggilan elektronik paling singkat.
+      if (i === 0 && tanggal < hariIni) {
+        const batas = ccTambahHari(hariIni, 3);
+        while (tanggal < batas) tanggal = ccTambahHari(tanggal, 7);
+        catatanBaris = "digeser ke depan: jarak bakunya sudah lewat";
+      }
+      tanggal = ccMajuHariKerja(tanggal);
+    }
+    const ecourtLitigasi = o.ecourt === true && jalur === "litigasi" && langkah.elitigasi === true;
+    const ada = tanggalAda.has(tanggal);
+    if (tanggal < hariIni) catatanBaris = catatanBaris ? `${catatanBaris}; tanggal sudah lewat` : "tanggal sudah lewat";
+    baris.push({
+      agenda: langkah.agenda,
+      tanggal,
+      jam: CC_TAHAP_SORE.includes(langkah.tahap) ? CC_JAM_SORE : CC_JAM_PAGI,
+      keterangan: langkah.ket || (ecourtLitigasi ? "Elitigasi" : ""),
+      tahap: langkah.tahap,
+      asal: "rencana",
+      pilih: !ada,
+      catatan: ada ? "tanggal ini sudah ada di Court Calendar SIPP" : catatanBaris,
+    });
+    sebelumnya = tanggal;
+  }
+
+  // Sidang di jadwal yang belum tercatat di Court Calendar.
+  for (const x of sidang) {
+    if (tanggalAda.has(x.tanggal)) continue;
+    const mendatang = x.tanggal >= hariIni;
+    baris.push({
+      agenda: x.agenda || "Sidang",
+      tanggal: x.tanggal,
+      jam: ccJamSah(x.jam) ? x.jam : CC_JAM_PAGI,
+      keterangan: "",
+      tahap: ccTahap(x.agenda),
+      asal: mendatang ? "terjadwal" : "riwayat",
+      pilih: mendatang,
+      catatan: mendatang ? "sidang sudah terjadwal, belum ada di Court Calendar" : "sidang lampau - dicentang bila ingin dicatat menyusul",
+    });
+  }
+  baris.sort((a, b) => (a.tanggal < b.tanggal ? -1 : a.tanggal > b.tanggal ? 1 : 0));
+
+  if (!sisa.length && !baris.length) catatan.push("Court Calendar SIPP sudah memuat seluruh rencana untuk keadaan perkara ini.");
+  const tahunTerpakai = new Set(baris.map((x) => x.tanggal.slice(0, 4)));
+  for (const th of tahunTerpakai) {
+    if (!CC_LIBUR_TAHUN_LENGKAP.includes(th)) {
+      catatan.push(`Libur keagamaan ${th} (Hijriah, Imlek, Nyepi, Waisak) belum dimuat - periksa tanggal ${th} terhadap SKB libur nasional.`);
+    }
+  }
+  return { golongan, jalur, sebutan, baris, sudahAda, catatan, penjelasan: CC_PENJELASAN[jalur] || "" };
+}
+
+// ─── Membaca dan menulis Court Calendar SIPP ─────────────────────────────────
+
+/** Teks polos dari pesan HTML SIPP. */
+function ccTeksPolos(html) {
+  const s = String(html === null || html === undefined ? "" : html);
+  try {
+    const d = new DOMParser().parseFromString(`<div>${s}</div>`, "text/html");
+    for (const br of Array.from(d.querySelectorAll("br"))) br.replaceWith(" ");
+    return String(d.body.textContent || "").replace(/\s+/g, " ").trim().slice(0, 300);
+  } catch {
+    return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+  }
+}
+
+/**
+ * Alamat dasar SIPP dan <enc> perkara ini - dibaca dari pemuat tab Court
+ * Calendar di halaman detail itu sendiri ($('#tabs27').load('.../court_calendar/<enc>')),
+ * atau dari pemuat Data Umum (open_dataumum/<enc>) yang memakai <enc> yang sama.
+ */
+function ccAlamatSipp() {
+  const isi = document.documentElement ? String(document.documentElement.innerHTML || "") : "";
+  const cocok =
+    /(https?:\/\/[^'"\s]*?\/)court_calendar\/([^'"\/\s?#)]+)/.exec(isi) ||
+    /(https?:\/\/[^'"\s]*?\/)open_dataumum\/([^'"\/\s?#)]+)/.exec(isi);
+  return cocok ? { dasar: cocok[1], enc: cocok[2] } : null;
+}
+
+/** Normal untuk membandingkan baris: tanggal|jam|agenda huruf kecil berspasi tunggal. */
+function ccKunciBaris(x) {
+  return `${String((x && x.tanggal) || "")}|${String((x && x.jam) || "").slice(0, 5)}|${String((x && x.agenda) || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()}`;
+}
+
+/**
+ * Daftar Court Calendar SIPP perkara ini, segar dari list_view SIPP (GET yang
+ * sama dengan yang dijalankan tab Court Calendar). Pulang { ok, baris, pesan }.
+ */
+async function ccBacaDaftarSipp() {
+  const alamat = ccAlamatSipp();
+  if (!alamat) return { ok: false, baris: [], pesan: "Alamat Court Calendar SIPP tidak terbaca dari halaman ini - buka halaman detail perkara SIPP." };
+  let teks = "";
+  try {
+    const respons = await alatAmbil(`${alamat.dasar}court_calendar/${alamat.enc}`, { credentials: "include", cache: "no-store" }, "Membaca Court Calendar SIPP");
+    if (!respons.ok) return { ok: false, baris: [], pesan: `Court Calendar SIPP tidak terbaca (status ${respons.status}).` };
+    teks = await respons.text();
+  } catch (galat) {
+    return { ok: false, baris: [], pesan: String((galat && galat.message) || galat).slice(0, 200) };
+  }
+  let dok;
+  try {
+    dok = new DOMParser().parseFromString(teks, "text/html");
+  } catch {
+    dok = null;
+  }
+  const tabel =
+    (dok && dok.querySelector("#tableinfo")) ||
+    (dok && Array.from(dok.querySelectorAll("table")).find((t) => /Agenda\/Acara Sidang/i.test(t.textContent || ""))) ||
+    null;
+  if (!tabel) return { ok: false, baris: [], pesan: "Daftar Court Calendar SIPP tidak terbaca - sesi SIPP mungkin sudah habis. Muat ulang halaman SIPP." };
+  const baris = [];
+  for (const tr of Array.from(tabel.querySelectorAll("tr"))) {
+    const sel = Array.from(tr.querySelectorAll("td"));
+    if (sel.length < 5) continue;
+    const tanggal = tanggalDariTeksSipp(sel[1].textContent || "");
+    if (!tanggal) continue;
+    const jam = (/(\d{1,2}):(\d{2})/.exec(sel[2].textContent || "") || []).slice(1, 3);
+    const bersih = (el) => {
+      const t = String(el.textContent || "").replace(/\s+/g, " ").trim();
+      return t === "-" ? "" : t;
+    };
+    baris.push({
+      tanggal,
+      jam: jam.length === 2 ? `${jam[0].padStart(2, "0")}:${jam[1]}` : "",
+      agenda: bersih(sel[3]),
+      keterangan: bersih(sel[4]),
+    });
+  }
+  return { ok: true, baris, pesan: "" };
+}
+
+/**
+ * Blangko Tambah Court Calender perkara ini (GET, persis yang dimuat tingkap
+ * SIPP): alamat action-nya dan medan tersembunyi nomor_perkara + enc.
+ */
+async function ccBacaBlangkoSipp() {
+  const alamat = ccAlamatSipp();
+  if (!alamat) return { ok: false, pesan: "Alamat blangko Court Calendar SIPP tidak terbaca dari halaman ini." };
+  let teks = "";
+  try {
+    const respons = await alatAmbil(
+      `${alamat.dasar}tambah_court_calendar/tambah/${alamat.enc}`,
+      { credentials: "include", cache: "no-store" },
+      "Membuka blangko Tambah Court Calender"
+    );
+    if (!respons.ok) return { ok: false, pesan: `Blangko Tambah Court Calender tidak terbuka (status ${respons.status}).` };
+    teks = await respons.text();
+  } catch (galat) {
+    return { ok: false, pesan: String((galat && galat.message) || galat).slice(0, 200) };
+  }
+  const dok = new DOMParser().parseFromString(teks, "text/html");
+  const borang = dok.querySelector("#frm_input_cc");
+  const nilai = (nama) => {
+    const el = borang ? borang.querySelector(`[name="${nama}"]`) : null;
+    return el ? String(el.getAttribute("value") || el.value || "") : "";
+  };
+  const action = borang ? String(borang.getAttribute("action") || "") : "";
+  if (!borang || !/manage_court_calendar\/validateInput/.test(action)) {
+    return { ok: false, pesan: "Blangko Tambah Court Calender tidak dikenali - akun SIPP ini mungkin tidak berwenang, atau sesinya habis." };
+  }
+  const enc = nilai("enc");
+  const nomor = nilai("nomor_perkara");
+  if (!enc || !nomor) return { ok: false, pesan: "Blangko Tambah Court Calender tidak memuat nomor perkara." };
+  return { ok: true, action: new URL(action, location.href).href, enc, nomor };
+}
+
+/** Satu POST ke validateInput - medan dan urutannya sama dengan serializeArray blangko SIPP. */
+async function ccKirimBaris(blangko, baris) {
+  const badan = new URLSearchParams();
+  badan.append("tgl_sidang", ccTanggalSipp(baris.tanggal));
+  badan.append("jamSidang", baris.jam);
+  badan.append("agenda_sidang", baris.agenda);
+  badan.append("keterangan", baris.keterangan || "");
+  badan.append("nomor_perkara", blangko.nomor);
+  badan.append("enc", blangko.enc);
+  let respons;
+  try {
+    respons = await alatAmbil(
+      blangko.action,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "X-Requested-With": "XMLHttpRequest" },
+        body: badan.toString(),
+      },
+      "Menyimpan Court Calendar ke SIPP"
+    );
+  } catch (galat) {
+    return { keadaan: "gagal", pesan: String((galat && galat.message) || galat).slice(0, 200) };
+  }
+  let isi = null;
+  let teks = "";
+  try {
+    teks = await respons.text();
+    isi = JSON.parse(teks);
+  } catch {
+    isi = null;
+  }
+  if (respons.status === 423) {
+    const alasan = String((isi && isi.alasan) || "");
+    return { keadaan: "ditahan", alasan, pesan: (isi && isi.pesan) || "Ditahan - tidak ada yang disimpan." };
+  }
+  if (isi && Number(isi.st) === 1) return { keadaan: "tersimpan", pesan: ccTeksPolos(isi.msg) };
+  if (isi && Number(isi.st) === 0) return { keadaan: "ditolak", pesan: ccTeksPolos(isi.msg) || "Ditolak SIPP." };
+  return { keadaan: "gagal", pesan: `SIPP menjawab status ${respons.status} tanpa keterangan yang dikenali.` };
+}
+
+/** Pemeriksaan sebelum dikirim - pengesahan SIPP yang sama, supaya penolakan terbaca lebih dulu. */
+function ccPeriksaBaris(b, tanggalDaftar) {
+  if (!String(b.agenda || "").trim()) return "agenda wajib diisi";
+  if (!ccIsoSah(b.tanggal)) return "tanggal wajib diisi";
+  if (!ccJamSah(b.jam)) return "jam wajib diisi (JJ:MM)";
+  const h = ccHariKe(b.tanggal);
+  if (h === 0 || h === 6) return "SIPP menolak Sabtu dan Minggu";
+  if (ccIsoSah(tanggalDaftar) && b.tanggal < tanggalDaftar) return "sebelum tanggal pendaftaran - SIPP menolak";
+  return "";
+}
+
+/**
+ * Menginput baris terpilih ke SIPP. Tidak pernah melempar.
+ * Pulang { ok, pesan, hasil: Map(baris -> {keadaan, pesan}) , daftarSesudah }.
+ */
+async function ccInputKeSipp(daftar, opsi) {
+  const o = opsi || {};
+  const hasil = new Map();
+  const kabar = typeof o.kabar === "function" ? o.kabar : () => {};
+  const dipilih = daftar.filter((b) => b.pilih && b.keadaan !== "tersimpan");
+  if (!dipilih.length) return { ok: false, pesan: "Tidak ada baris yang dicentang untuk diinput.", hasil };
+
+  for (const b of dipilih) {
+    const salah = ccPeriksaBaris(b, o.tanggalDaftar);
+    if (salah) hasil.set(b, { keadaan: "ditolak", pesan: salah });
+  }
+  const layak = dipilih.filter((b) => !hasil.has(b));
+  if (!layak.length) return { ok: false, pesan: "Semua baris terpilih belum lengkap - perbaiki yang ditandai.", hasil };
+
+  kabar("Membuka blangko Tambah Court Calender SIPP…");
+  const blangko = await ccBacaBlangkoSipp();
+  if (!blangko.ok) return { ok: false, pesan: blangko.pesan, hasil };
+  if (o.nomorPerkara && t7KunciNomor(blangko.nomor) !== t7KunciNomor(o.nomorPerkara)) {
+    return { ok: false, pesan: `Blangko SIPP milik perkara ${blangko.nomor}, bukan ${o.nomorPerkara} - tidak ada yang dikirim.`, hasil };
+  }
+
+  // Dibaca segar tepat sebelum menulis: yang sudah ada tidak dikirim lagi.
+  const sebelum = await ccBacaDaftarSipp();
+  if (!sebelum.ok) return { ok: false, pesan: `${sebelum.pesan} Tidak ada yang dikirim - tanpa daftar itu baris ganda tidak dapat dicegah.`, hasil };
+  const hitungSebelum = new Map();
+  for (const x of sebelum.baris) hitungSebelum.set(ccKunciBaris(x), (hitungSebelum.get(ccKunciBaris(x)) || 0) + 1);
+
+  if (typeof alatKeringNyala === "function" && alatKeringNyala()) {
+    for (const b of layak) hasil.set(b, { keadaan: "ditahan", pesan: "mode kering: Simpan ditahan, SIPP tidak menyimpan apa pun" });
+    if (typeof alatCatat === "function") alatCatat("kering", `DITAHAN Court Calendar ${layak.length} baris`, "mode kering aktif - SIPP tidak menyimpan apa pun");
+    return { ok: false, pesan: "Mode kering aktif: tidak ada yang dikirim ke SIPP.", hasil };
+  }
+
+  const dikirim = [];
+  let nomorKe = 0;
+  for (const b of layak) {
+    nomorKe += 1;
+    if (hitungSebelum.get(ccKunciBaris(b))) {
+      hasil.set(b, { keadaan: "sudah-ada", pesan: "baris yang sama persis sudah ada di SIPP - tidak dikirim lagi" });
+      continue;
+    }
+    kabar(`Menyimpan baris ${nomorKe} dari ${layak.length} ke SIPP…`);
+    if (typeof alatJedaManusia === "function") {
+      try {
+        await alatJedaManusia(dikirim.length ? "simpan" : "klik", { alamat: blangko.action });
+      } catch {
+        /* jeda gagal - simpanan tetap berjalan */
+      }
+    }
+    const jawab = await ccKirimBaris(blangko, b);
+    hasil.set(b, jawab);
+    if (jawab.keadaan === "tersimpan") dikirim.push(b);
+  }
+
+  let daftarSesudah = null;
+  if (dikirim.length) {
+    kabar("Membaca ulang Court Calendar SIPP…");
+    const sesudah = await ccBacaDaftarSipp();
+    if (sesudah.ok) {
+      daftarSesudah = sesudah.baris;
+      const hitungSesudah = new Map();
+      for (const x of sesudah.baris) hitungSesudah.set(ccKunciBaris(x), (hitungSesudah.get(ccKunciBaris(x)) || 0) + 1);
+      const terpakai = new Map();
+      for (const b of dikirim) {
+        const k = ccKunciBaris(b);
+        const butuh = (hitungSebelum.get(k) || 0) + (terpakai.get(k) || 0) + 1;
+        terpakai.set(k, (terpakai.get(k) || 0) + 1);
+        if ((hitungSesudah.get(k) || 0) >= butuh) hasil.set(b, { keadaan: "tersimpan", pesan: "tersimpan dan terbaca ulang di SIPP" });
+        else hasil.set(b, { keadaan: "belum-terbaca", pesan: "SIPP menjawab tersimpan, tetapi barisnya TIDAK terbaca ulang - periksa tab Court Calendar SIPP" });
+      }
+    } else {
+      for (const b of dikirim) hasil.set(b, { keadaan: "belum-terbaca", pesan: `SIPP menjawab tersimpan; pembacaan ulang gagal (${sesudah.pesan})` });
+    }
+    for (const b of dikirim) {
+      if (typeof alatCatatTindakan === "function") {
+        alatCatatTindakan({
+          jenis: "simpan-sipp",
+          penunjuk: "manage_court_calendar/validateInput",
+          label: `Court Calendar ${b.tanggal} ${b.jam} ${b.agenda}`.slice(0, 200),
+          nilaiBaru: (hasil.get(b) || {}).pesan || "",
+          dapatPulih: false,
+        });
+      }
+    }
+    // Simpanan keadaan perkara dibuang (Court Calendar-nya berubah), TANPA
+    // lupakanStatusPerkara: itu menggambar ulang bagian yang terbuka -
+    // termasuk bagian ini - dan menghapus hasil per baris sebelum terbaca.
+    if (simpananStatus.nomor === (o.nomorPerkara || "")) simpananStatus = { nomor: "", data: null, sedang: null };
+  }
+
+  const jumlah = (k) => Array.from(hasil.values()).filter((x) => x.keadaan === k).length;
+  const ditahan = Array.from(hasil.values()).find((x) => x.keadaan === "ditahan");
+  const bagianPesan = [];
+  if (jumlah("tersimpan")) bagianPesan.push(`${jumlah("tersimpan")} baris tersimpan dan terbaca ulang di SIPP`);
+  if (jumlah("belum-terbaca")) bagianPesan.push(`${jumlah("belum-terbaca")} baris belum terbaca ulang`);
+  if (jumlah("sudah-ada")) bagianPesan.push(`${jumlah("sudah-ada")} sudah ada, tidak dikirim lagi`);
+  if (jumlah("ditolak")) bagianPesan.push(`${jumlah("ditolak")} ditolak`);
+  if (jumlah("gagal")) bagianPesan.push(`${jumlah("gagal")} gagal`);
+  if (ditahan) {
+    bagianPesan.push(
+      ditahan.alasan === "mode_latihan"
+        ? "LATIHAN: tidak ada yang disimpan ke SIPP - lihat catatan latihan"
+        : ditahan.alasan === "mode_coba"
+          ? "mode coba aktif: tidak ada yang disimpan ke SIPP"
+          : `${jumlah("ditahan")} ditahan`
+    );
+  }
+  return { ok: jumlah("tersimpan") > 0 && !jumlah("ditolak") && !jumlah("gagal") && !jumlah("belum-terbaca"), pesan: `${bagianPesan.join("; ")}.`, hasil, daftarSesudah };
+}
+
+// ─── Bagian panel ────────────────────────────────────────────────────────────
+
+function ccBolehTampil() {
+  try {
+    if (typeof a30Aktif !== "function" || !a30Aktif()) return false;
+    const g = typeof s1Golongan === "function" ? s1Golongan() : "lain";
+    if (g !== "admin" && g !== "panitera") return false;
+    return boleh("data-umum");
+  } catch {
+    return false;
+  }
+}
+
+/** Bagian "Court Calendar otomatis" - null bila tidak berlaku untuk tampilan/peran ini. */
+function ccBagian(konteks) {
+  if (!konteks || !konteks.nomorPerkara || !ccBolehTampil()) return null;
+  const kotak = bagianMalas("Court Calendar otomatis", "courtCalendarOtomatis", konteks.nomorPerkara, (isi, status) =>
+    ccGambar(isi, status, konteks)
+  );
+  kotak.classList.add("aleta-cc-bagian");
+  // Penanda fitur Baru/UI Baru tanpa saklar - sama dengan Juru Sita; penjaga
+  // "Baru tanpa saklar = Lama" (ekstensi-sipp-tahap7) membuang yang bertanda ini.
+  kotak.setAttribute("data-a30-fitur", "court-calendar");
+  return kotak;
+}
+
+/** Bahan ccSusun dari keadaan perkara (bot) + Court Calendar SIPP yang terbaca. */
+function ccMasukan(status, konteks, kalender) {
+  const s = status || {};
+  const tahap = s.tahapan && Array.isArray(s.tahapan.tahap) ? s.tahapan.tahap : [];
+  const daftar = (tahap.find((x) => x && x.kunci === "pendaftaran") || {}).tanggal || "";
+  const identitas = (konteks && konteks.identitas) || s.identitasPihak || {};
+  return {
+    nomorPerkara: (konteks && konteks.nomorPerkara) || "",
+    jenisPerkara: String(identitas.jenisPerkara || identitas.jenisPerkaraLengkap || ""),
+    tanggalDaftar: String(daftar).slice(0, 10),
+    sidangPertama: String((s.tahapan && s.tahapan.sidangPertama) || "").slice(0, 10),
+    jadwal: (Array.isArray(s.jadwal) ? s.jadwal : []).map((j) => ({
+      tanggal: j.tanggalSidang || j.tanggal,
+      jam: j.jamSidang || j.jam,
+      agenda: j.agenda,
+      dihadiriOleh: j.dihadiriOleh,
+    })),
+    kalender,
+    mediasi: s.mediasi || null,
+    ecourt: s.lewatEcourt === true,
+    sudahPutus: Boolean(s.putusan && s.putusan.sudahPutus),
+    sudahIkrar: Boolean(s.ikrarTalak && s.ikrarTalak.ada),
+    hariIni: typeof alatTanggalIso === "function" ? alatTanggalIso(new Date()) : new Date().toISOString().slice(0, 10),
+  };
+}
+
+const CC_SEBUTAN_ASAL = { rencana: "rencana", terjadwal: "terjadwal", riwayat: "riwayat" };
+const CC_SEBUTAN_KEADAAN = {
+  tersimpan: "tersimpan",
+  "belum-terbaca": "belum terbaca ulang",
+  "sudah-ada": "sudah ada",
+  ditolak: "ditolak",
+  gagal: "gagal",
+  ditahan: "ditahan",
+};
+
+function ccGambar(isi, status, konteks) {
+  const nomor = String((konteks && konteks.nomorPerkara) || "");
+  const wadah = buatElemen("div", "aleta-cc");
+  isi.appendChild(wadah);
+  const ringkas = buatElemen("div", "aleta-cc-pola");
+  const kabar = buatElemen("div", "aleta-abt-kabar aleta-cc-kabar", "Membaca Court Calendar SIPP perkara ini…");
+  const tabel = buatElemen("div", "aleta-cc-tabel");
+  const aksi = buatElemen("div", "aleta-cc-aksi");
+  const ada = buatElemen("div", "aleta-cc-ada");
+  wadah.append(ringkas, kabar, tabel, aksi, ada);
+
+  const keadaan = { baris: [], masukan: null, sedang: false, siap: false, kalenderSipp: null };
+
+  const tambah = buatElemen("button", "aleta-permintaan-tombol aleta-cc-tambah", "+ Tambah baris");
+  tambah.type = "button";
+  const susunUlang = buatElemen("button", "aleta-permintaan-tombol aleta-cc-susun", "Susun ulang");
+  susunUlang.type = "button";
+  const input = buatElemen("button", "aleta-permintaan-tombol aleta-cc-input", "Input semua ke SIPP");
+  input.type = "button";
+  aksi.append(tambah, susunUlang, input);
+
+  let tungguYakin = 0;
+  const lepasYakin = () => {
+    if (tungguYakin) clearTimeout(tungguYakin);
+    tungguYakin = 0;
+    input.classList.remove("aleta-cc-yakin");
+    perbaruiTombol();
+  };
+
+  function terpilih() {
+    return keadaan.baris.filter((b) => b.pilih && b.keadaan !== "tersimpan");
+  }
+
+  function perbaruiTombol() {
+    const n = terpilih().length;
+    input.disabled = keadaan.sedang || !keadaan.siap || n === 0;
+    if (!tungguYakin) input.textContent = n ? `Input semua ke SIPP (${n} baris)` : "Input semua ke SIPP";
+    tambah.disabled = keadaan.sedang || !keadaan.siap;
+    susunUlang.disabled = keadaan.sedang;
+  }
+
+  function gambarAda() {
+    ada.textContent = "";
+    const daftar = keadaan.kalenderSipp;
+    if (!Array.isArray(daftar)) return;
+    ada.appendChild(buatElemen("div", "aleta-sub-judul", `Sudah di Court Calendar SIPP (${daftar.length})`));
+    if (!daftar.length) {
+      ada.appendChild(buatElemen("div", "aleta-kosong-lembut", "Belum ada rencana sidang di SIPP untuk perkara ini."));
+      return;
+    }
+    for (const x of daftar) {
+      const b = buatElemen("div", "aleta-cc-ada-baris");
+      b.appendChild(buatElemen("span", "aleta-cc-ada-tgl", `${ccTeksTanggal(x.tanggal)}${x.jam ? ` ${x.jam}` : ""}`));
+      b.appendChild(buatElemen("span", "aleta-cc-ada-agenda", x.agenda || "-"));
+      if (x.keterangan) b.appendChild(buatElemen("span", "aleta-cc-ada-ket", x.keterangan));
+      ada.appendChild(b);
+    }
+  }
+
+  function gambarBaris() {
+    tabel.textContent = "";
+    if (!keadaan.baris.length) {
+      tabel.appendChild(buatElemen("div", "aleta-kosong-lembut", "Tidak ada baris untuk diinput. Tekan + Tambah baris bila perlu."));
+      perbaruiTombol();
+      return;
+    }
+    const tanggalSipp = new Set((keadaan.kalenderSipp || []).map((x) => x.tanggal));
+    keadaan.baris.forEach((b, i) => {
+      const el = buatElemen("div", `aleta-cc-baris aleta-cc-asal-${b.asal}${b.keadaan ? ` aleta-cc-${b.keadaan}` : ""}`);
+      el.setAttribute("data-cc-ke", String(i));
+      const kunci = b.keadaan === "tersimpan" || keadaan.sedang;
+
+      const kepala = buatElemen("div", "aleta-cc-kepala");
+      const centang = document.createElement("input");
+      centang.type = "checkbox";
+      centang.className = "aleta-cc-pilih";
+      centang.checked = Boolean(b.pilih);
+      centang.disabled = kunci;
+      centang.title = "Ikut diinput ke SIPP";
+      centang.addEventListener("change", () => {
+        b.pilih = centang.checked;
+        perbaruiTombol();
+      });
+      kepala.appendChild(centang);
+      kepala.appendChild(buatElemen("span", "aleta-cc-nomor", String(i + 1)));
+      kepala.appendChild(buatElemen("span", "aleta-cc-asal", CC_SEBUTAN_ASAL[b.asal] || b.asal || ""));
+      if (b.keadaan) kepala.appendChild(buatElemen("span", `aleta-cc-keadaan aleta-cc-keadaan-${b.keadaan}`, CC_SEBUTAN_KEADAAN[b.keadaan] || b.keadaan));
+      const geser = (arah) => {
+        const j = i + arah;
+        if (j < 0 || j >= keadaan.baris.length) return;
+        const t = keadaan.baris[i];
+        keadaan.baris[i] = keadaan.baris[j];
+        keadaan.baris[j] = t;
+        gambarBaris();
+      };
+      const naik = buatElemen("button", "aleta-cc-kecil aleta-cc-naik", "↑");
+      naik.type = "button";
+      naik.title = "Geser ke atas";
+      naik.disabled = kunci || i === 0;
+      naik.addEventListener("click", () => geser(-1));
+      const turun = buatElemen("button", "aleta-cc-kecil aleta-cc-turun", "↓");
+      turun.type = "button";
+      turun.title = "Geser ke bawah";
+      turun.disabled = kunci || i === keadaan.baris.length - 1;
+      turun.addEventListener("click", () => geser(1));
+      const hapus = buatElemen("button", "aleta-cc-kecil aleta-cc-hapus", "✕");
+      hapus.type = "button";
+      hapus.title = "Hapus baris ini dari susunan (tidak menyentuh SIPP)";
+      hapus.disabled = kunci;
+      hapus.addEventListener("click", () => {
+        keadaan.baris.splice(i, 1);
+        gambarBaris();
+      });
+      kepala.append(naik, turun, hapus);
+      el.appendChild(kepala);
+
+      const medan = buatElemen("div", "aleta-cc-medan");
+      const agenda = document.createElement("textarea");
+      agenda.className = "aleta-cc-agenda";
+      agenda.rows = 2;
+      agenda.value = b.agenda;
+      agenda.placeholder = "Jadwal/Agenda Sidang";
+      agenda.disabled = kunci;
+      agenda.addEventListener("input", () => {
+        b.agenda = agenda.value;
+      });
+      const tgl = document.createElement("input");
+      tgl.type = "date";
+      tgl.className = "aleta-cc-tanggal";
+      tgl.value = b.tanggal;
+      tgl.disabled = kunci;
+      const jam = document.createElement("input");
+      jam.type = "time";
+      jam.className = "aleta-cc-jam";
+      jam.value = b.jam;
+      jam.disabled = kunci;
+      const ket = document.createElement("input");
+      ket.type = "text";
+      ket.className = "aleta-cc-ket";
+      ket.value = b.keterangan || "";
+      ket.placeholder = "Keterangan";
+      ket.disabled = kunci;
+      ket.addEventListener("input", () => {
+        b.keterangan = ket.value;
+      });
+      const peringatan = buatElemen("div", "aleta-cc-catatan");
+      const segarkanPeringatan = () => {
+        const bagianCatatan = [];
+        const sebab = ccIsoSah(b.tanggal) ? ccBukanHariKerja(b.tanggal) : "";
+        if (sebab) bagianCatatan.push(`${ccTeksTanggal(b.tanggal)}: ${sebab}`);
+        else if (ccIsoSah(b.tanggal)) bagianCatatan.push(ccTeksTanggal(b.tanggal));
+        if (tanggalSipp.has(b.tanggal) && b.keadaan !== "tersimpan") bagianCatatan.push("tanggal ini sudah ada di Court Calendar SIPP");
+        else if (b.catatan) bagianCatatan.push(b.catatan);
+        if (b.pesan) bagianCatatan.push(b.pesan);
+        peringatan.textContent = bagianCatatan.join(" · ");
+        el.classList.toggle("aleta-cc-libur", Boolean(sebab));
+      };
+      tgl.addEventListener("change", () => {
+        b.tanggal = tgl.value;
+        segarkanPeringatan();
+      });
+      jam.addEventListener("change", () => {
+        b.jam = jam.value;
+      });
+      segarkanPeringatan();
+      const baris2 = buatElemen("div", "aleta-cc-waktu");
+      baris2.append(tgl, jam);
+      medan.append(agenda, baris2, ket);
+      el.append(medan, peringatan);
+      tabel.appendChild(el);
+    });
+    perbaruiTombol();
+  }
+
+  async function susun() {
+    keadaan.siap = false;
+    lepasYakin();
+    kabar.textContent = "Membaca Court Calendar SIPP perkara ini…";
+    const sipp = await ccBacaDaftarSipp();
+    let kalender = null;
+    if (sipp.ok) kalender = sipp.baris;
+    else if (status && status.courtCalendar && status.courtCalendar.terbaca === true) kalender = status.courtCalendar.baris || [];
+    keadaan.kalenderSipp = kalender;
+    keadaan.masukan = ccMasukan(status, konteks, kalender);
+    const hasil = ccSusun(keadaan.masukan);
+    keadaan.baris = hasil.baris.map((b) => ({ ...b, keadaan: "", pesan: "" }));
+    ringkas.textContent = "";
+    ringkas.appendChild(buatElemen("div", "aleta-cc-penjelasan", hasil.penjelasan));
+    for (const c of hasil.catatan) ringkas.appendChild(buatElemen("div", "aleta-cc-peringatan", c));
+    keadaan.siap = sipp.ok;
+    kabar.textContent = sipp.ok
+      ? "Periksa dan sunting tiap baris. Yang dicentang diinput ke SIPP atas nama akun SIPP yang sedang masuk."
+      : `${sipp.pesan} Susunan tetap dapat dilihat; input ke SIPP menunggu daftar SIPP terbaca.`;
+    gambarAda();
+    gambarBaris();
+  }
+
+  tambah.addEventListener("click", () => {
+    const terakhir = keadaan.baris.length ? keadaan.baris[keadaan.baris.length - 1].tanggal : "";
+    const dasar = ccIsoSah(terakhir) ? terakhir : (keadaan.masukan && keadaan.masukan.hariIni) || "";
+    keadaan.baris.push({
+      agenda: "",
+      tanggal: ccIsoSah(dasar) ? ccMajuHariKerja(ccTambahHari(dasar, 7)) : "",
+      jam: CC_JAM_PAGI,
+      keterangan: "",
+      tahap: "lain",
+      asal: "rencana",
+      pilih: true,
+      catatan: "baris tambahan",
+      keadaan: "",
+      pesan: "",
+    });
+    gambarBaris();
+  });
+
+  susunUlang.addEventListener("click", () => {
+    void susun();
+  });
+
+  input.addEventListener("click", () => {
+    if (keadaan.sedang) return;
+    const n = terpilih().length;
+    if (!n) return;
+    if (!tungguYakin) {
+      // Dua tekanan, seperti Tetapkan: yang pertama hanya menyebutkan apa yang akan terjadi.
+      input.classList.add("aleta-cc-yakin");
+      input.textContent = `Tekan sekali lagi: simpan ${n} baris ke SIPP`;
+      tungguYakin = setTimeout(lepasYakin, 8000);
+      return;
+    }
+    lepasYakin();
+    keadaan.sedang = true;
+    gambarBaris();
+    void (async () => {
+      let hasil;
+      try {
+        hasil = await ccInputKeSipp(keadaan.baris, {
+          nomorPerkara: nomor,
+          tanggalDaftar: keadaan.masukan ? keadaan.masukan.tanggalDaftar : "",
+          kabar: (t) => {
+            kabar.textContent = t;
+          },
+        });
+      } catch (galat) {
+        hasil = { ok: false, pesan: String((galat && galat.message) || galat).slice(0, 200), hasil: new Map() };
+      }
+      for (const [b, r] of hasil.hasil) {
+        b.keadaan = r.keadaan;
+        b.pesan = r.pesan;
+        if (r.keadaan === "tersimpan" || r.keadaan === "sudah-ada") b.pilih = false;
+      }
+      if (Array.isArray(hasil.daftarSesudah)) keadaan.kalenderSipp = hasil.daftarSesudah;
+      keadaan.sedang = false;
+      kabar.textContent = hasil.ok ? `${hasil.pesan} Muat ulang tab Court Calendar SIPP untuk melihatnya.` : hasil.pesan;
+      kabar.classList.toggle("aleta-cc-kabar-gagal", !hasil.ok);
+      gambarAda();
+      gambarBaris();
+    })();
+  });
+
+  void susun();
+}
+
 /**
  * ============================================================================
  * KELOMPOK MENU
@@ -10760,6 +11879,9 @@ function susunPanel(konteks) {
   // dan kepalanya sudah menyebutkan yang paling genting di dalamnya.
   const kelPerkara = kelompok("Perkara", "perkara", true);
   kelPerkara.isi.appendChild(malas("Tahapan dan ketepatan input", "tahapan", gambarTahapan));
+  // Butir 29 (Baru & UI Baru, panitera/admin): Court Calendar otomatis. Lama: null.
+  const bagianCc = ccBagian(konteks);
+  if (bagianCc) kelPerkara.isi.appendChild(bagianCc);
 
   // Menu Nomor pihak ikut dimatikan bersama penandanya - lihat
   // TANDAI_NOMOR_PIHAK. Menyisakan menunya di panel sementara penandanya
@@ -20143,6 +21265,7 @@ const S2_PERAN_BAGIAN = {
   putusanMassalSipp: "Hakim",
   antreanSipp: "Hakim",
   juruSita: "Jurusita",
+  courtCalendarOtomatis: "Panitera",
 };
 /** Butir 7: tag peran per menu massal halaman daftar (data-mps-massal). */
 const S2_PERAN_MASSAL = {
