@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { bersihkanNomor, kalimatAlasan, panggilBot } from "@/server/modules/aleta-ecourt/ecourt-aksi";
+import { periksaAkunSippTerbuka } from "@/server/modules/aleta-ecourt/ecourt-akun-pengguna";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -45,6 +46,12 @@ export async function GET(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
     const nomor = bersihkanNomor(request.nextUrl.searchParams.get("nomor"));
+    // Butir 20: akun SIPP yang terbuka di halaman (dikirim panel ekstensi)
+    // tidak boleh milik pengguna ALETA lain - lihat ecourt-akun-pengguna.ts.
+    const sipp = await periksaAkunSippTerbuka(db, actor.id, request.nextUrl.searchParams.get("olehUsername"));
+    if (!sipp.ok) {
+      return ok({ ok: true, akun: null, salinan: null, alasan: sipp.alasan, pesan: kalimatAlasan(sipp.alasan) });
+    }
     const q = new URLSearchParams({ penggunaId: actor.id, nomor });
     const hasil = await panggilBot<{
       ok: boolean;

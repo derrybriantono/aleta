@@ -20,7 +20,10 @@
  *   2. Sesi yang dipakai SELALU milik penggunaId yang diteruskan portal (dari
  *      akun yang login, tidak pernah dari badan permintaan), dan perannya
  *      harus cocok dengan aksinya (PERAN_UNTUK_AKSI). Tidak ada sesi = tolak.
- *      Akun penarik data tidak pernah dipakai untuk menulis.
+ *      Akun penarik data tidak pernah dipakai untuk menulis. Butir 20 (5 Okt):
+ *      penolakannya menyebut jalan keluarnya - "akun_ecourt_belum_diisi"
+ *      (isi akun e-Court milik sendiri) atau "sesi_habis_akun_tersimpan"
+ *      (cukup Uji masuk dengan captcha) - lihat tolakTanpaSesi.
  *   3. Verifikasi: nama pengguna harus hakim terdaftar DAN duduk pada majelis
  *      perkara itu (penjagaan yang sama dengan jalur WhatsApp/portal lama).
  *   4. Satu aksi per pengguna pada satu waktu, batas aksi per jam per
@@ -186,6 +189,22 @@ function buatLayanan(depsMasuk = {}) {
     }
   }
 
+  /**
+   * Penolakan bila pengguna tidak punya sesi yang cocok untuk aksi ini (butir
+   * 20). Alasannya menyebut cara memperbaikinya - mengisi akun e-Court milik
+   * sendiri, atau cukup "Uji masuk" bila akunnya sudah tersimpan - dan TIDAK
+   * PERNAH beralih ke akun e-Court orang lain maupun akun penarik data.
+   */
+  function tolakTanpaSesi(id, aksi, bawaan) {
+    const s = deps().sesi;
+    const alasan = (typeof s.alasanTanpaSesi === "function" && s.alasanTanpaSesi(id, aksi, bawaan)) || bawaan;
+    const hasil = { ok: false, alasan };
+    if (alasan === "akun_ecourt_belum_diisi" || alasan === "sesi_habis_akun_tersimpan") {
+      hasil.peranDiperlukan = typeof s.sebutanPeranAksi === "function" ? s.sebutanPeranAksi(aksi) : [];
+    }
+    return hasil;
+  }
+
   function akunRingkas(baris) {
     if (!baris) return null;
     return {
@@ -311,7 +330,7 @@ function buatLayanan(depsMasuk = {}) {
     const id = sesiPengguna.normalkanPengguna(penggunaId);
     if (!id) return { ok: false, alasan: "pengguna_tidak_sah" };
     const baris = deps().sesi.pilihSesi(id, "baca");
-    if (!baris) return { ok: false, alasan: "sesi_pribadi_belum_tersambung" };
+    if (!baris) return tolakTanpaSesi(id, "baca", "sesi_pribadi_belum_tersambung");
     const dokumen = await deps().dokumenSatu(documentKey);
     if (!dokumen) return { ok: false, alasan: "dokumen_tidak_ditemukan" };
     const alamatPerkara = (await deps().alamatPerkara(normalizeCaseNumber(dokumen.nomorPerkara))) || dokumen.sumberUrl;
@@ -380,7 +399,7 @@ function buatLayanan(depsMasuk = {}) {
     }
 
     const baris = deps().sesi.pilihSesi(id, "verifikasi");
-    if (!baris) return { ok: false, alasan: "sesi_hakim_belum_tersambung" };
+    if (!baris) return tolakTanpaSesi(id, "verifikasi", "sesi_hakim_belum_tersambung");
     const cookies = deps().sesi.ambilCookies(id, baris.peran);
     if (!cookies) return { ok: false, alasan: "sesi_hakim_belum_tersambung" };
     const alamatPerkara = (await deps().alamatPerkara(nomor)) || dokumen.sumberUrl;
@@ -435,7 +454,7 @@ function buatLayanan(depsMasuk = {}) {
     if (!passphrase || typeof passphrase !== "string") return { ok: false, alasan: "passphrase_kosong" };
 
     const baris = deps().sesi.pilihSesi(id, "tte");
-    if (!baris) return { ok: false, alasan: "sesi_panitera_belum_tersambung" };
+    if (!baris) return tolakTanpaSesi(id, "tte", "sesi_panitera_belum_tersambung");
     const cookies = deps().sesi.ambilCookies(id, baris.peran);
     if (!cookies) return { ok: false, alasan: "sesi_panitera_belum_tersambung" };
     const alamatPerkara = await deps().alamatPerkara(nomor);
@@ -477,14 +496,13 @@ function buatLayanan(depsMasuk = {}) {
           .catch(() => null)
       : null;
     const milik = id ? deps().sesi.daftarSesi(id) : [];
+    const alasanLama = milik.some((b) => b.keadaan === "kedaluwarsa") ? "sesi_pribadi_kedaluwarsa" : "sesi_pribadi_belum_tersambung";
+    const tolak = !baris && id ? tolakTanpaSesi(id, "unggah", alasanLama) : null;
     return {
       ok: true,
       akun: akunRingkas(baris),
-      alasan: baris
-        ? ""
-        : milik.some((b) => b.keadaan === "kedaluwarsa")
-          ? "sesi_pribadi_kedaluwarsa"
-          : "sesi_pribadi_belum_tersambung",
+      alasan: baris ? "" : tolak ? tolak.alasan : alasanLama,
+      ...(tolak && tolak.peranDiperlukan ? { peranDiperlukan: tolak.peranDiperlukan } : {}),
       salinan: catatan
         ? {
             sudahDiunggah: Boolean(catatan.dokumenAda),
@@ -508,7 +526,7 @@ function buatLayanan(depsMasuk = {}) {
     if (buf.length > BATAS_BERKAS_BYTE) return { ok: false, alasan: "berkas_terlalu_besar" };
 
     const baris = deps().sesi.pilihSesi(id, "unggah");
-    if (!baris) return { ok: false, alasan: "sesi_pribadi_belum_tersambung" };
+    if (!baris) return tolakTanpaSesi(id, "unggah", "sesi_pribadi_belum_tersambung");
     const cookies = deps().sesi.ambilCookies(id, baris.peran);
     if (!cookies) return { ok: false, alasan: "sesi_pribadi_belum_tersambung" };
     const alamatPerkara = await deps().alamatPerkara(nomor);

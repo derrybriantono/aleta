@@ -23,7 +23,8 @@ const express = require("express");
 
 const { readRuntimeConfig } = require("../config/runtime-config");
 const sesiPengguna = require("../services/ecourtSesiPenggunaService");
-const aksi = require("../services/ecourtAksiService");
+const akunPengguna = require("../services/ecourtAkunPenggunaService");
+const aksi =require("../services/ecourtAksiService");
 const pantau = require("../services/ecourtPantauPutusanService");
 
 const router = express.Router();
@@ -65,6 +66,8 @@ router.get("/ecourt-pengguna/sesi", wajibToken, (req, res) => {
     ok: true,
     peranTersedia: sesiPengguna.PERAN_ECOURT.map((p) => ({ kode: p, sebutan: sesiPengguna.SEBUTAN_PERAN[p] })),
     sesi: sesiPengguna.daftarSesi(penggunaId),
+    // Butir 20: akun e-Court tersimpan milik pengguna ini - surel, tanpa sandi.
+    akun: akunPengguna.daftarMilik(penggunaId),
   });
 });
 
@@ -86,12 +89,61 @@ router.post("/ecourt-pengguna/login/kirim", wajibToken, async (req, res) => {
       email: String(req.body?.email || ""),
       sandi: String(req.body?.sandi || ""),
       captcha: String(req.body?.captcha || ""),
+      pakaiTersimpan: req.body?.pakaiTersimpan === true,
+      simpanAkun: req.body?.simpanAkun === true,
     });
+    if (req.body) req.body.sandi = "";
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch {
     // Galat sengaja tidak diteruskan: badan permintaan memuat sandi.
+    if (req.body) req.body.sandi = "";
     res.status(500).json({ ok: false, alasan: "gagal_memproses_login" });
   }
+});
+
+// ---------------------------------------------------------------------------
+// Akun e-Court milik pengguna (butir 20, 5 Okt 2026)
+//
+// TIDAK ADA rute yang memanggil fungsi ambil milik akunPengguna - sandi hanya dibuka
+// di kirimSambung, tepat sebelum diketik ke formulir e-Court. Jawaban rute di
+// bawah tidak pernah memuat sandi, tersandi pun tidak.
+// ---------------------------------------------------------------------------
+
+router.get("/ecourt-pengguna/akun", wajibToken, (req, res) => {
+  res.json({ ok: true, akun: akunPengguna.daftarMilik(String(req.query.penggunaId || "")) });
+});
+
+router.post("/ecourt-pengguna/akun/simpan", wajibToken, (req, res) => {
+  try {
+    const hasil = akunPengguna.simpan({
+      penggunaId: String(req.body?.penggunaId || ""),
+      peran: String(req.body?.peran || ""),
+      namaPengguna: String(req.body?.namaPengguna || ""),
+      email: String(req.body?.email || ""),
+      sandi: String(req.body?.sandi || ""),
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    if (req.body) req.body.sandi = "";
+    res.status(hasil.ok ? 200 : 400).json({ ok: hasil.ok, alasan: hasil.alasan });
+  } catch {
+    // Galat sengaja tidak diteruskan: badan permintaan memuat sandi.
+    if (req.body) req.body.sandi = "";
+    res.status(500).json({ ok: false, alasan: "gagal_menyimpan_akun" });
+  }
+});
+
+router.post("/ecourt-pengguna/akun/hapus", wajibToken, (req, res) => {
+  const hasil = akunPengguna.hapus({
+    penggunaId: ambil(req, "penggunaId"),
+    peran: ambil(req, "peran"),
+    olehSiapa: ambil(req, "olehSiapa"),
+  });
+  res.status(hasil.ok ? 200 : 400).json(hasil);
+});
+
+/** Rekap untuk admin: siapa yang sudah/belum menyimpan akun dan bersesi. Tanpa sandi, tanpa cookie. */
+router.get("/ecourt-pengguna/rekap", wajibToken, (req, res) => {
+  res.json({ ok: true, akun: akunPengguna.daftarSemua(), sesi: sesiPengguna.daftarSesiSemua() });
 });
 
 router.post("/ecourt-pengguna/periksa", wajibToken, async (req, res) => {

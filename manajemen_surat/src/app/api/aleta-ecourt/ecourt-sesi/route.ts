@@ -10,9 +10,11 @@ import {
 } from "@/server/modules/aleta-ecourt/ecourt-aksi";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
+import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { nextPrefixedId } from "@/server/shared/ids";
 import { alamatIpPeramban } from "@/server/shared/request";
 
 export const runtime = "nodejs";
@@ -29,9 +31,20 @@ type SesiBaris = {
   kedaluwarsaPada: string;
 };
 
+/** Akun e-Court tersimpan milik pengguna (butir 20) - surel, TANPA sandi. */
+type AkunBaris = {
+  peran: string;
+  email: string;
+  adaSandi: boolean;
+  diperbaruiPada: string;
+  diujiPada: string;
+  hasilUji: string;
+};
+
 /**
- * Sesi e-Court PRIBADI pengguna yang sedang login (perbaikan 1 Okt 2026, E10).
- * Daftar sesinya per peran, tanpa cookie - cookie tidak pernah keluar dari bot.
+ * Sesi e-Court PRIBADI pengguna yang sedang login (perbaikan 1 Okt 2026, E10)
+ * dan akun e-Court miliknya yang tersimpan (butir 20, 5 Okt 2026). Tanpa
+ * cookie dan tanpa sandi - keduanya tidak pernah keluar dari bot.
  */
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -40,18 +53,31 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
-    const hasil = await panggilBot<{ sesi: SesiBaris[]; peranTersedia: Array<{ kode: string; sebutan: string }> }>(
-      `/ecourt-pengguna/sesi?penggunaId=${encodeURIComponent(actor.id)}`
-    );
+    const hasil = await panggilBot<{
+      sesi: SesiBaris[];
+      akun?: AkunBaris[];
+      peranTersedia: Array<{ kode: string; sebutan: string }>;
+    }>(`/ecourt-pengguna/sesi?penggunaId=${encodeURIComponent(actor.id)}`);
     const jejak = await bacaJejakPengguna(db, actor.id, 20).catch(() => []);
     if (!hasil.ok) {
-      return ok({ tersedia: false, pesan: kalimatAlasan(hasil.alasan), sesi: [], peranTersedia: [], jejak });
+      return ok({ tersedia: false, pesan: kalimatAlasan(hasil.alasan), sesi: [], akun: [], peranTersedia: [], jejak });
     }
     return ok({
       tersedia: true,
       pesan: "",
       pengguna: { id: actor.id, nama: actor.name },
       sesi: hasil.data.sesi ?? [],
+      // Bot lama (sebelum butir 20) tidak mengirim `akun`: layar menyebut
+      // "belum didukung server" alih-alih pura-pura kosong.
+      akun: (hasil.data.akun ?? []).map((a) => ({
+        peran: String(a.peran),
+        email: String(a.email ?? ""),
+        adaSandi: Boolean(a.adaSandi),
+        diperbaruiPada: String(a.diperbaruiPada ?? ""),
+        diujiPada: String(a.diujiPada ?? ""),
+        hasilUji: String(a.hasilUji ?? ""),
+      })),
+      akunDidukung: Array.isArray(hasil.data.akun),
       peranTersedia: hasil.data.peranTersedia ?? [],
       jejak,
     });
@@ -67,10 +93,12 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * aksi: "mulai" | "kirim" | "periksa" | "keluar".
+ * aksi: "mulai" | "kirim" | "periksa" | "keluar" | "simpan-akun" | "hapus-akun".
  *
- * BADAN PERMINTAAN "kirim" MEMUAT SANDI e-COURT. Tidak satu bagiannya pun
- * dicatat; galat yang keluar dari rute ini diganti kalimat umum.
+ * BADAN PERMINTAAN "kirim" DAN "simpan-akun" MEMUAT SANDI e-COURT. Tidak satu
+ * bagiannya pun dicatat; galat yang keluar dari rute ini diganti kalimat
+ * umum. penggunaId SELALU akun yang login - pengguna hanya dapat menyimpan,
+ * menguji, dan menghapus akun e-Court MILIKNYA SENDIRI.
  */
 export async function POST(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -85,12 +113,14 @@ export async function POST(request: NextRequest) {
       email?: string;
       sandi?: string;
       captcha?: string;
+      pakaiTersimpan?: boolean;
+      simpanAkun?: boolean;
     };
     const peran = String(body.peran || "");
     const ip = alamatIpPeramban(request);
 
     if (body.aksi === "mulai") {
-      const hasil = await panggilBot<{ ok: boolean; alasan?: string; captcha?: string; adaCaptcha?: boolean }>(
+      const hasil = await panggilBot<{ ok: boolean; alasan?: string; captcha?: string; adaCaptcha?: boolean; akunTersimpan?: string }>(
         "/ecourt-pengguna/login/mulai",
         { method: "POST", body: { penggunaId: actor.id, peran }, batasMs: BATAS_PERAMBAN_MS }
       );
@@ -100,7 +130,8 @@ export async function POST(request: NextRequest) {
 
     if (body.aksi === "kirim") {
       const sandi = String(body.sandi || "");
-      const hasil = await panggilBot<{ ok: boolean; alasan?: string; namaAkunEcourt?: string }>(
+      const pakaiTersimpan = body.pakaiTersimpan === true;
+      const hasil = await panggilBot<{ ok: boolean; alasan?: string; namaAkunEcourt?: string; akunDisimpan?: boolean }>(
         "/ecourt-pengguna/login/kirim",
         {
           method: "POST",
@@ -108,9 +139,13 @@ export async function POST(request: NextRequest) {
             penggunaId: actor.id,
             peran,
             namaPengguna: actor.name,
-            email: String(body.email || ""),
-            sandi,
+            // Uji masuk dengan akun tersimpan: surel dan sandi diambil BOT dari
+            // simpanan milik penggunaId ini - portal tidak pernah melihatnya.
+            email: pakaiTersimpan ? "" : String(body.email || ""),
+            sandi: pakaiTersimpan ? "" : sandi,
             captcha: String(body.captcha || ""),
+            pakaiTersimpan,
+            simpanAkun: !pakaiTersimpan && body.simpanAkun === true,
           },
           batasMs: BATAS_PERAMBAN_MS,
         }
@@ -128,6 +163,7 @@ export async function POST(request: NextRequest) {
           aksi: "sambung",
           peranEcourt: peran,
           akunEcourt: hasil.ok ? String(hasil.data.namaAkunEcourt || "") : "",
+          sasaran: pakaiTersimpan ? "uji masuk akun tersimpan" : hasil.ok && hasil.data.akunDisimpan ? "akun disimpan" : "",
           hasil: berhasil ? "berhasil" : "gagal",
           alasan,
           alamatIp: ip,
@@ -139,7 +175,59 @@ export async function POST(request: NextRequest) {
         alasan,
         pesan: kalimatAlasan(alasan),
         namaAkunEcourt: hasil.ok ? sapuSandi(hasil.data.namaAkunEcourt || "") : "",
+        akunDisimpan: Boolean(hasil.ok && hasil.data.akunDisimpan),
       });
+    }
+
+    if (body.aksi === "simpan-akun") {
+      const sandi = String(body.sandi || "");
+      const hasil = await panggilBot<{ ok: boolean; alasan?: string }>("/ecourt-pengguna/akun/simpan", {
+        method: "POST",
+        body: {
+          penggunaId: actor.id,
+          peran,
+          namaPengguna: actor.name,
+          email: String(body.email || ""),
+          sandi,
+          olehSiapa: `portal:${actor.id}`,
+        },
+      });
+      body.sandi = "";
+      const berhasil = hasil.ok && hasil.data.ok;
+      const sapuSandi = (teks: unknown) => (sandi ? String(teks ?? "").split(sandi).join("***") : String(teks ?? ""));
+      const alasan = sapuSandi(hasil.ok ? String(hasil.data.alasan || "") : hasil.alasan);
+      if (berhasil) {
+        // Yang dicatat perbuatannya, bukan isinya: tanpa surel, tanpa sandi.
+        await appendAuditLog(db, {
+          id: await nextPrefixedId(db, "audit_logs", "adt"),
+          actorUserId: actor.id,
+          action: "ECOURT_AKUN_PRIBADI_DISIMPAN",
+          entityType: "ecourt_akun_pribadi",
+          entityId: peran || "-",
+          payload: { peran, sandiDiganti: Boolean(sandi), alamatIp: ip },
+        }).catch(() => undefined);
+      }
+      return ok({ ok: berhasil, alasan, pesan: berhasil ? "Akun e-Court tersimpan." : kalimatAlasan(alasan) });
+    }
+
+    if (body.aksi === "hapus-akun") {
+      const hasil = await panggilBot<{ ok: boolean; alasan?: string }>("/ecourt-pengguna/akun/hapus", {
+        method: "POST",
+        body: { penggunaId: actor.id, peran, olehSiapa: `portal:${actor.id}` },
+      });
+      const alasan = hasil.ok ? String(hasil.data.alasan || "") : hasil.alasan;
+      const berhasil = hasil.ok && hasil.data.ok;
+      if (berhasil) {
+        await appendAuditLog(db, {
+          id: await nextPrefixedId(db, "audit_logs", "adt"),
+          actorUserId: actor.id,
+          action: "ECOURT_AKUN_PRIBADI_DIHAPUS",
+          entityType: "ecourt_akun_pribadi",
+          entityId: peran || "-",
+          payload: { peran, alamatIp: ip },
+        }).catch(() => undefined);
+      }
+      return ok({ ok: berhasil, alasan, pesan: berhasil ? "Akun e-Court dihapus dari ALETA." : kalimatAlasan(alasan) });
     }
 
     if (body.aksi === "periksa" || body.aksi === "keluar") {

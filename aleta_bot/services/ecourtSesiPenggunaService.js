@@ -23,10 +23,17 @@
  * login e-Court, lalu hilang bersama peramban yang ditutup. Yang tersisa
  * hanyalah cookie sesi, disandi AES-256-GCM dengan kunci yang SAMA dengan
  * simpanan kredensial (ecourtKredensialService.sandikan) - kunci di luar folder
- * aplikasi. Tidak ada pengisian otomatis dari simpanan sandi bersama di sini.
+ * aplikasi. Tidak ada pengisian otomatis dari simpanan sandi BERSAMA di sini.
+ *
+ * Butir 20 (5 Okt 2026): pengguna BOLEH menyimpan akun e-Court MILIKNYA
+ * SENDIRI per peran (ecourtAkunPenggunaService, tersandi). Bila tersimpan,
+ * masuk ulang cukup captcha (kirimSambung pakaiTersimpan). Yang dibuka tetap
+ * hanya akun milik penggunaId itu untuk peran itu.
  *
  * Sesi habis = cookie-nya dihapus dan pengguna masuk lagi sendiri lewat layar
- * Integrasi e-Court > Sesi e-Court saya. Tidak ada perpanjangan paksa.
+ * Integrasi e-Court > Sesi e-Court saya. Tidak ada perpanjangan paksa dan
+ * tidak ada login otomatis di latar: menekan "Lanjut" di gerbang e-Court
+ * memutus sesi pemilik akun di perangkatnya sendiri.
  */
 
 const crypto = require("crypto");
@@ -53,7 +60,11 @@ const SEBUTAN_PERAN = {
 const PERAN_UNTUK_AKSI = {
   verifikasi: ["hakim"],
   tte: ["panitera"],
-  unggah: ["hakim", "panitera-pengganti", "panitera"],
+  // Juru sita ikut (butir 20, 5 Okt 2026): yang mengunggah adalah akun orang
+  // yang sedang membuka ALETA/SIPP. Boleh tidaknya akun itu mengunggah
+  // diputuskan e-Court sendiri - tombolnya harus tepat satu di halamannya,
+  // atau pengemudi berhenti tanpa menyentuh apa pun.
+  unggah: ["hakim", "panitera-pengganti", "panitera", "juru-sita"],
   baca: ["hakim", "panitera", "panitera-pengganti", "juru-sita", "lainnya"],
 };
 
@@ -104,6 +115,11 @@ function tulisSemua(isi) {
 function penyandi() {
   // Dimuat malas: modul kredensial membuat berkas kunci saat pertama dipakai.
   return require("./ecourtKredensialService");
+}
+
+/** Akun e-Court tersimpan milik pengguna (butir 20). Dimuat malas. */
+function akunPengguna() {
+  return require("./ecourtAkunPenggunaService");
 }
 
 /** Baris untuk layar - TANPA cookie, tersandi pun tidak. */
@@ -218,6 +234,45 @@ function pilihSesi(penggunaId, aksi) {
   return null;
 }
 
+/**
+ * Mengapa tidak ada sesi yang dapat dipakai untuk aksi ini (butir 20).
+ *
+ *   ""                         - ada sesi tersambung; tidak perlu alasan
+ *   "sesi_habis_akun_tersimpan" - akun e-Court milik pengguna untuk peran
+ *                                yang cocok TERSIMPAN; cukup "Uji masuk"
+ *                                (ketik captcha)
+ *   "akun_ecourt_belum_diisi"  - tidak ada akun tersimpan dan tidak pernah
+ *                                ada sesi untuk peran yang cocok: pengguna
+ *                                harus mengisi akunnya sendiri dulu
+ *   `bawaan`                   - pernah tersambung tanpa menyimpan akun;
+ *                                alasan lama (sesi_*_belum_tersambung /
+ *                                kedaluwarsa) tetap dipakai
+ *
+ * Tidak satu pun cabangnya mencari akun orang lain.
+ */
+function alasanTanpaSesi(penggunaId, aksi, bawaan) {
+  const id = normalkanPengguna(penggunaId);
+  if (!id) return "pengguna_tidak_sah";
+  if (pilihSesi(id, aksi)) return "";
+  const urutan = PERAN_UNTUK_AKSI[aksi] || [];
+  if (urutan.some((p) => akunPengguna().ada(id, p))) return "sesi_habis_akun_tersimpan";
+  const milik = daftarSesi(id);
+  if (milik.some((b) => urutan.includes(b.peran))) return bawaan;
+  return "akun_ecourt_belum_diisi";
+}
+
+/** Sebutan peran yang boleh dipakai untuk satu aksi - untuk pesan ke layar. */
+function sebutanPeranAksi(aksi) {
+  return (PERAN_UNTUK_AKSI[aksi] || []).map((p) => SEBUTAN_PERAN[p] || p);
+}
+
+/** Keadaan sesi SELURUH pengguna - untuk rekap admin. Tanpa cookie. */
+function daftarSesiSemua() {
+  return Object.values(bacaSemua())
+    .filter((b) => b && b.penggunaId && b.peran)
+    .map((b) => ({ penggunaId: b.penggunaId, namaPengguna: String(b.namaPengguna || ""), ...barisLayar(b) }));
+}
+
 // ===========================================================================
 // MENYAMBUNGKAN (login dengan captcha) - pengemudi peramban disuntikkan
 // ===========================================================================
@@ -244,15 +299,30 @@ async function mulaiSambung({ penggunaId, peran }, { pengemudi = pengemudiBawaan
   const hasil = await pengemudi.mulaiLogin();
   if (!hasil.ok) return { ok: false, alasan: hasil.alasan || "gagal_membuka" };
   menunggu.set(k, { token: hasil.token, dibuka: Date.now() });
-  return { ok: true, alasan: "", captcha: hasil.captcha || "", adaCaptcha: hasil.adaCaptcha !== false };
+  // Akun tersimpan (butir 20): layar cukup meminta captcha. Surel boleh
+  // tampil kepada pemiliknya - membantu memastikan akun yang benar. Sandi tidak.
+  const tersimpan = akunPengguna().daftarMilik(id).find((a) => a.peran === p && a.adaSandi);
+  return {
+    ok: true,
+    alasan: "",
+    captcha: hasil.captcha || "",
+    adaCaptcha: hasil.adaCaptcha !== false,
+    akunTersimpan: tersimpan ? tersimpan.email : "",
+  };
 }
 
 /**
  * Sandi diteruskan ke pengemudi dan TIDAK disentuh lagi sesudahnya: tidak
- * disimpan, tidak dicatat, tidak dikembalikan.
+ * dicatat, tidak dikembalikan. Disimpan (tersandi) HANYA bila pengguna
+ * mencentang simpanAkun DAN e-Court menerima login itu - sandi yang belum
+ * terbukti benar tidak pernah masuk simpanan.
+ *
+ * pakaiTersimpan: surel dan sandi diambil dari akun e-Court tersimpan milik
+ * pengguna ITU SENDIRI untuk peran ITU (butir 20). Tidak ada = ditolak, tidak
+ * pernah mencari akun lain.
  */
 async function kirimSambung(
-  { penggunaId, peran, namaPengguna = "", email, sandi, captcha },
+  { penggunaId, peran, namaPengguna = "", email, sandi, captcha, pakaiTersimpan = false, simpanAkun = false },
   { pengemudi = pengemudiBawaan() } = {}
 ) {
   const id = normalkanPengguna(penggunaId);
@@ -262,15 +332,43 @@ async function kirimSambung(
   const tunggu = menunggu.get(k);
   if (!tunggu) return { ok: false, alasan: "sesi_login_kedaluwarsa" };
   menunggu.delete(k);
-  if (!email || !sandi) {
+  let surel = String(email || "");
+  let kataSandi = String(sandi || "");
+  let dariSimpanan = false;
+  if (pakaiTersimpan === true) {
+    const t = akunPengguna().ambil(id, p);
+    if (!t) {
+      pengemudi.batalLogin && pengemudi.batalLogin(tunggu.token);
+      return { ok: false, alasan: "akun_ecourt_belum_diisi" };
+    }
+    surel = t.email;
+    kataSandi = t.sandi;
+    dariSimpanan = true;
+  }
+  if (!surel || !kataSandi) {
     pengemudi.batalLogin && pengemudi.batalLogin(tunggu.token);
     return { ok: false, alasan: "email_atau_sandi_kosong" };
   }
-  const hasil = await pengemudi.kirimLogin(tunggu.token, { email, sandi, captcha });
-  if (!hasil.ok) return { ok: false, alasan: String(hasil.alasan || "login_gagal").split(String(sandi)).join("***") };
+  const sapu = (teks) => String(teks || "").split(kataSandi).join("***");
+  let hasil;
+  try {
+    hasil = await pengemudi.kirimLogin(tunggu.token, { email: surel, sandi: kataSandi, captcha });
+  } catch (galat) {
+    hasil = { ok: false, alasan: `pengemudi_gagal: ${sapu(galat && galat.message).slice(0, 160)}` };
+  }
+  if (dariSimpanan) {
+    akunPengguna().catatUji(id, p, hasil.ok ? "berhasil" : hasil.alasan === "login_ditolak_ecourt" ? "ditolak" : "gagal");
+  }
+  if (!hasil.ok) return { ok: false, alasan: sapu(hasil.alasan || "login_gagal") };
   const simpan = simpanSesi({ penggunaId: id, peran: p, namaPengguna, namaAkunEcourt: hasil.namaAkun, cookies: hasil.cookies });
   if (!simpan.ok) return simpan;
-  return { ok: true, alasan: "", namaAkunEcourt: String(hasil.namaAkun || "") };
+  let akunDisimpan = false;
+  if (simpanAkun === true && !dariSimpanan) {
+    const s = akunPengguna().simpan({ penggunaId: id, peran: p, namaPengguna, email: surel, sandi: kataSandi, olehSiapa: `pengguna:${id}` });
+    akunDisimpan = s.ok;
+    if (s.ok) akunPengguna().catatUji(id, p, "berhasil");
+  }
+  return { ok: true, alasan: "", namaAkunEcourt: sapu(hasil.namaAkun || ""), akunDisimpan, dariSimpanan };
 }
 
 async function periksa({ penggunaId, peran }, { pengemudi = pengemudiBawaan() } = {}) {
@@ -291,8 +389,11 @@ module.exports = {
   PERAN_ECOURT,
   PERAN_UNTUK_AKSI,
   SEBUTAN_PERAN,
+  alasanTanpaSesi,
   ambilCookies,
   daftarSesi,
+  daftarSesiSemua,
+  sebutanPeranAksi,
   hapusSesi,
   jalurSimpanan,
   kirimSambung,

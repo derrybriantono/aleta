@@ -251,7 +251,7 @@ export function tentukanPemilikSipp(kredensial: KredensialSipp[]): Map<string, P
   return hasil;
 }
 
-async function bacaKredensialSipp(db: AletaDatabase): Promise<KredensialSipp[]> {
+export async function bacaKredensialSipp(db: AletaDatabase): Promise<KredensialSipp[]> {
   const baris = await db.queryAll<{
     user_id: string | null;
     external_username: string | null;

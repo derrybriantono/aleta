@@ -262,7 +262,10 @@ export function AletaEcourtAkun() {
             <CardDescription>
               Beberapa akun dipakai bergiliran, sehingga sesi yang habis pada satu akun tidak
               menghentikan penarikan. Surel dan sandi boleh disimpan tersandi supaya formulir
-              login terisi sendiri - captcha tetap diisi manusia.
+              login terisi sendiri - captcha tetap diisi manusia. Akun di sini hanya untuk
+              MENARIK data; verifikasi, TTE, dan unggah salinan putusan memakai akun e-Court
+              milik hakim/panitera/PP/juru sita masing-masing (kartu Sesi e-Court saya dan
+              rekap Akun e-Court per pengguna di bawah).
             </CardDescription>
           </div>
           <Button

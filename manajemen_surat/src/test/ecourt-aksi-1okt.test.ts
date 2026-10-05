@@ -237,7 +237,7 @@ describe("E9 - verifikasi majelis lewat sesi hakim sendiri (tiruan e-Court)", ()
     expect((await l.verifikasi({ ...dasar, penggunaId: "usr-ahmad", nama: "Ahmad" })).alasan).toBe("bukan_hakim_terdaftar");
     // Hakim terdaftar, tetapi hanya punya sesi PANITERA - tidak dialihkan.
     await sambung("usr-hakim", "panitera");
-    expect((await l.verifikasi({ ...dasar, penggunaId: "usr-hakim", nama: "Hakim Uji" })).alasan).toBe("sesi_hakim_belum_tersambung");
+    expect((await l.verifikasi({ ...dasar, penggunaId: "usr-hakim", nama: "Hakim Uji" })).alasan).toBe("akun_ecourt_belum_diisi");
     const l2 = aksiModul.buatLayanan(depsUji(e, { cekMajelis: async () => ({ anggota: false }) }).deps);
     await sambung("usr-hakim", "hakim");
     expect((await l2.verifikasi({ ...dasar, penggunaId: "usr-hakim", nama: "Hakim Uji" })).alasan).toBe("bukan_anggota_majelis");
@@ -322,10 +322,10 @@ describe("E10 - TTE panitera: passphrase tidak tersimpan, tidak tercatat, tidak 
     const n = { penggunaId: "usr-panitera", nama: "Panitera Uji", nomorPerkara: "2/Pdt.G/2026/PA.Dgl" };
     expect((await l.tte({ ...n, passphrase: PASSPHRASE })).alasan).toBe("konfirmasi_belum_diberikan");
     expect((await l.tte({ ...n, konfirmasi: true })).alasan).toBe("passphrase_kosong");
-    expect((await l.tte({ ...n, passphrase: PASSPHRASE, konfirmasi: true })).alasan).toBe("sesi_panitera_belum_tersambung");
+    expect((await l.tte({ ...n, passphrase: PASSPHRASE, konfirmasi: true })).alasan).toBe("akun_ecourt_belum_diisi");
     // Sesi HAKIM tidak dipakai untuk TTE.
     await sambung("usr-panitera", "hakim");
-    expect((await l.tte({ ...n, passphrase: PASSPHRASE, konfirmasi: true })).alasan).toBe("sesi_panitera_belum_tersambung");
+    expect((await l.tte({ ...n, passphrase: PASSPHRASE, konfirmasi: true })).alasan).toBe("akun_ecourt_belum_diisi");
     expect(e.panggilan).toHaveLength(0);
   });
 
@@ -374,7 +374,7 @@ describe("16b / K6 - akun pengunggah dan unggah salinan putusan (tiruan e-Court)
   it("akunPutusan: null + alasan bila belum tersambung; nama & peran bila tersambung; salinan dari catatan", async () => {
     const l = aksiModul.buatLayanan(depsUji(tiruanEcourt()).deps);
     const kosong = await l.akunPutusan({ penggunaId: "usr-hakim", nomorPerkara: "3/Pdt.G/2026/PA.Dgl" });
-    expect(kosong).toMatchObject({ ok: true, akun: null, alasan: "sesi_pribadi_belum_tersambung" });
+    expect(kosong).toMatchObject({ ok: true, akun: null, alasan: "akun_ecourt_belum_diisi" });
     expect(kosong.salinan).toMatchObject({ sudahDiunggah: true, tanggal: "Kamis, 01 Oktober 2026", olehNama: "hakim@uji" });
     await sambung("usr-hakim", "hakim");
     const ada = await l.akunPutusan({ penggunaId: "usr-hakim", nomorPerkara: "3/Pdt.G/2026/PA.Dgl" });
@@ -387,7 +387,7 @@ describe("16b / K6 - akun pengunggah dan unggah salinan putusan (tiruan e-Court)
     const n = { penggunaId: "usr-hakim", nama: "Hakim Uji", nomorPerkara: "3/Pdt.G/2026/PA.Dgl" };
     expect((await l.unggahSalinan({ ...n, isi: PDF })).alasan).toBe("konfirmasi_belum_diberikan");
     expect((await l.unggahSalinan({ ...n, isi: Buffer.from("bukan pdf"), konfirmasi: true })).alasan).toBe("berkas_bukan_pdf");
-    expect((await l.unggahSalinan({ ...n, isi: PDF, konfirmasi: true })).alasan).toBe("sesi_pribadi_belum_tersambung");
+    expect((await l.unggahSalinan({ ...n, isi: PDF, konfirmasi: true })).alasan).toBe("akun_ecourt_belum_diisi");
     expect(e.panggilan).toHaveLength(0);
   });
 
@@ -511,7 +511,7 @@ describe("rute bot /internal/aleta-bot/ecourt-* - token wajib, passphrase tidak 
       });
       const teks = await r.text();
       expect(r.status).toBe(400);
-      expect(JSON.parse(teks)).toMatchObject({ ok: false, alasan: "sesi_panitera_belum_tersambung" });
+      expect(JSON.parse(teks)).toMatchObject({ ok: false, alasan: "akun_ecourt_belum_diisi" });
       expect(teks).not.toContain(PASSPHRASE);
     } finally {
       server.close();
