@@ -1934,6 +1934,8 @@ const NADA_KEYAKINAN = {
   ragu: { kelas: "aleta-tanda-kuning", teks: "ragu — periksa dulu" },
   kosong: { kelas: "aleta-tanda-abu", teks: "tidak ditemukan" },
   tidak_ada_sumber: { kelas: "aleta-tanda-abu", teks: "tidak ada sumbernya" },
+  // 1.184.0 (butir 2): dibaca mesin dari berkas KTP e-Court - tidak dicentang sendiri.
+  ocr: { kelas: "aleta-tanda-kuning", teks: "dari berkas KTP e-Court — periksa" },
 };
 
 /**
@@ -1954,7 +1956,7 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // sendiri. Yang berselisih justru yang paling perlu dibaca manusia - dan
   // yang "ragu" pun tidak: nilai yang bot sendiri ragukan (mis. 0222 dari
   // posita) masuk ke blangko hanya bila petugas mencentangnya.
-  centang.checked = Boolean(u.nilai) && u.keyakinan !== "bentrok" && u.keyakinan !== "ragu";
+  centang.checked = Boolean(u.nilai) && u.keyakinan !== "bentrok" && u.keyakinan !== "ragu" && u.keyakinan !== "ocr";
   centang.disabled = !u.nilai;
   kepala.appendChild(centang);
   kepala.appendChild(buatElemen("span", "aleta-abt-kode", u.kode));
@@ -2222,7 +2224,9 @@ async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor) {
         // membacanya kelak tidak dapat membedakan mana yang diperiksa
         // manusia dan mana yang lolos begitu saja.
         const asalUsulan =
-          x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
+          x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "ktp-ecourt"
+            ? "usulan dari berkas KTP e-Court (dibaca mesin)"
+            : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
             ? `usulan dari posita permohonan (${x.usulan.keyakinan})`
             : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
             ? `usulan dari keterangan saksi (${x.usulan.keyakinan})`
@@ -12605,6 +12609,19 @@ async function soreBacaIsi(k) {
       })
     );
   }
+  // 1.184.0 (butir 2): #2222#/#0364# dari berkas KTP e-Court.
+  if (A3_VAR_TANGGAL_KTP_P.some((k) => barisVariabel().has(k))) {
+    tugas.push(
+      a3UsulanTanggalKtp(nomorPerkaraAbt())
+        .then((r) => {
+          data.ktp = { usulan: r.usulan };
+          if (r.catatan) data.catatan.push(`Tanggal KTP: ${r.catatan}`);
+        })
+        .catch((g) => {
+          data.catatan.push(`Tanggal KTP dari e-Court: ${sorePesan(g)}`);
+        })
+    );
+  }
   // Perbaikan 1 Okt butir 8 (UI Baru saja): posita dan keterangan saksi yang
   // RAPI ikut ke daftar Input ke ABT - hanya pratinjau, tidak menulis.
   if (t6Modern()) {
@@ -12637,7 +12654,7 @@ function soreBobot(u) {
 function sorePilihUsulan(data) {
   const peta = barisVariabel();
   const perKode = new Map();
-  for (const sumber of [data.sipp, data.saksi, data.itsbat, data.lain]) {
+  for (const sumber of [data.sipp, data.saksi, data.itsbat, data.lain, data.ktp]) {
     for (const u of (sumber && sumber.usulan) || []) {
       if (!u || !u.kode || !peta.has(String(u.kode))) continue;
       const lama = perKode.get(String(u.kode));
@@ -15229,6 +15246,42 @@ function a3BukanBlangkoPutusan() {
   return a3JenisBlangkoHalaman() === "bukan";
 }
 
+/**
+ * ============================================================================
+ * 1.184.0 (5 Okt, butir 2): #2222# / #0364# TANGGAL KTP DARI BERKAS KTP e-COURT
+ * ============================================================================
+ *
+ * Kedua variabel bertipe data_tanggal dan selama ini diketik dari fotokopi
+ * KTP. Portal (GET /aleta-ecourt/ktp-terbit) membaca PDF KTP perkara dari arsip
+ * e-Court ALETA dengan pembaca KTP yang sama dengan "Isi dari foto KTP" dan
+ * memulangkan tanggal penerbitannya ("dd/mm/yyyy" - bentuk tgl_sql ABT).
+ * Hasil mesin: keyakinan "ocr", TIDAK dicentang sendiri.
+ */
+const A3_VAR_TANGGAL_KTP_P = Object.freeze(["2222", "0364"]);
+const ALETA_API_KTP_TERBIT = "/aleta/api/aleta-ecourt/ktp-terbit";
+
+async function a3UsulanTanggalKtp(nomor) {
+  const peta = barisVariabel();
+  const kode = A3_VAR_TANGGAL_KTP_P.filter((k) => peta.has(k));
+  if (!kode.length || !nomor) return { usulan: [], catatan: "" };
+  const respons = await fetch(`${ALETA_API_KTP_TERBIT}?nomor=${encodeURIComponent(nomor)}`, { credentials: "include", cache: "no-store" });
+  if (!respons.ok) throw new Error(`server ALETA menjawab ${respons.status}`);
+  const luar = await respons.json();
+  const isi = luar && luar.data ? luar.data : luar;
+  if (!isi || !isi.ada || !isi.tanggal) return { usulan: [], catatan: (isi && isi.sebab) || "Tanggal KTP tidak terbaca dari e-Court." };
+  const judul = (isi.sumber && isi.sumber.judul) || "KTP";
+  return {
+    catatan: "",
+    usulan: kode.map((k) => ({
+      kode: k,
+      nama: "Tanggal KTP Penggugat/Pemohon",
+      nilai: String(isi.tanggal),
+      keyakinan: "ocr",
+      sumber: [{ asal: "ktp-ecourt", keterangan: `dibaca dari berkas "${judul}" e-Court${isi.kota ? `, ${isi.kota}` : ""}` }],
+    })),
+  };
+}
+
 /** Pemetaan blangko putusan mengenali halaman ini: tokennya, atau nama berkasnya. */
 function a3DikenaliPeta(peta) {
   const token = a1TokenHalaman();
@@ -15413,6 +15466,19 @@ async function p7UsulanTambahan(nomor, catatan) {
         .then((j) => (j && j.positaLain && j.positaLain.ok && Array.isArray(j.positaLain.usulan) ? j.positaLain.usulan : []))
         .catch((g) => {
           catatan.push(`Posita perkara lain: ${sorePesan(g)}.`);
+          return [];
+        })
+    );
+  }
+  if (A3_VAR_TANGGAL_KTP_P.some((k) => peta.has(k))) {
+    tugas.push(
+      a3UsulanTanggalKtp(nomor)
+        .then((r) => {
+          if (r.catatan) catatan.push(`Tanggal KTP: ${r.catatan}`);
+          return r.usulan;
+        })
+        .catch((g) => {
+          catatan.push(`Tanggal KTP dari e-Court: ${sorePesan(g)}.`);
           return [];
         })
     );
