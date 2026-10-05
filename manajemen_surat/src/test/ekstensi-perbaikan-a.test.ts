@@ -434,9 +434,11 @@ describe("Juru Sita (butir 15): bagian di Baru, tab di UI Baru, bila jurusita.js
     }, "tab Juru Sita");
     // Urutan disesuaikan perbaikan 30 Sep SORE (menu per peran, agen S):
     // Super Admin = Penetapan, Putusan, Juru Sita, Berkas, Perkara (matriks
-    // alatMenuPeran). Dijaga ekstensi-menu-peran-sipp.test.ts.
+    // alatMenuPeran). Dijaga ekstensi-menu-peran-sipp.test.ts. Perbaikan 5 Okt
+    // (butir 11): tab PTSP sesudah Penetapan.
     expect(Array.from(panel.querySelectorAll(".aleta-t7-tab")).map((t: any) => t.getAttribute("data-t7-ke"))).toEqual([
       "kerjakan",
+      "ptspKel",
       "putusanKel",
       "juruSitaKel",
       "berkas",

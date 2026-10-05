@@ -329,7 +329,10 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // oleh S): Upload edoc penetapan (s2KirimEdoc, butir 17 / K6) - 404
     // "belum tersedia di server", 423 "ditahan mode ...", selebihnya kalimat
     // rute atau alatPesanGagal. Berbicara ke petugas.
-    expect(lewatAlat).toBe(36);
+    // 37 sejak perbaikan 5 Oktober 2026 (butir 26, hanya UI Baru): Rapikan
+    // identitas para pihak (p5MintaRapi -> rapikan-alamat) - gagalnya
+    // berbunyi sebagai kalimat di bagian itu.
+    expect(lewatAlat).toBe(37);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

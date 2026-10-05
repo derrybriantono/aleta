@@ -178,9 +178,12 @@ describe("alatGolonganPeran: setiap nama DAN id peran portal", () => {
 // ============================================================================
 // Matriks - DAFTAR.md butir 1, urutan PERSIS kiri ke kanan
 // ============================================================================
+// Perbaikan 5 Okt (butir 11): "ptsp" - tab PTSP (Data Umum dari berkas gugatan
+// pindah dari Penetapan, isi dari foto KTP, rapikan identitas para pihak).
+// Ketua mendapatkannya karena Data Umum dulu ada di tab Penetapannya.
 const SIPP_PERKARA: Record<string, string[]> = {
-  admin: ["penetapan", "putusan", "jurusita", "berkas", "perkara"],
-  ketua: ["penetapan", "putusan", "berkas", "perkara"],
+  admin: ["penetapan", "ptsp", "putusan", "jurusita", "berkas", "perkara"],
+  ketua: ["penetapan", "putusan", "berkas", "perkara", "ptsp"],
   hakim: ["putusan", "berkas", "perkara"],
   panitera: ["berkas", "perkara"],
   jurusita: ["jurusita", "perkara", "berkas"],
@@ -266,8 +269,8 @@ describe("perkara yang TIDAK ditangani: membaca boleh, mengerjakan tidak", () =>
   it("SIPP Ketua/Wakil: Penetapan TETAP ada (PMH ditetapkan sebelum ada majelis - K2), Putusan tidak", () => {
     const m = muat();
     for (const p of ["Ketua", "Wakil Ketua", "wakil-ketua"]) {
-      expect(m.menu("sipp", "perkara", p, { ditangani: false }), p).toEqual(["penetapan", "berkas", "perkara"]);
-      expect(m.menu("sipp", "perkara", p, { ditangani: false, penunjukanLengkap: true }), p).toEqual(["berkas", "perkara"]);
+      expect(m.menu("sipp", "perkara", p, { ditangani: false }), p).toEqual(["penetapan", "berkas", "perkara", "ptsp"]);
+      expect(m.menu("sipp", "perkara", p, { ditangani: false, penunjukanLengkap: true }), p).toEqual(["berkas", "perkara", "ptsp"]);
     }
   });
 
@@ -298,8 +301,8 @@ describe("penunjukan lengkap (PMH, PPP, PJS, PHS): tab Penetapan Ketua/Wakil hil
   it("hanya Ketua/Wakil di SIPP perkara; Admin tetap melihat Penetapan", () => {
     const m = muat();
     const o = { penunjukanLengkap: true };
-    expect(m.menu("sipp", "perkara", "Ketua", o)).toEqual(["putusan", "berkas", "perkara"]);
-    expect(m.menu("sipp", "perkara", "Wakil Ketua", o)).toEqual(["putusan", "berkas", "perkara"]);
+    expect(m.menu("sipp", "perkara", "Ketua", o)).toEqual(["putusan", "berkas", "perkara", "ptsp"]);
+    expect(m.menu("sipp", "perkara", "Wakil Ketua", o)).toEqual(["putusan", "berkas", "perkara", "ptsp"]);
     expect(m.menu("sipp", "perkara", "Super Admin", o)).toEqual(SIPP_PERKARA.admin);
     expect(m.menu("sipp", "perkara", "Ketua", { penunjukanLengkap: false })).toEqual(SIPP_PERKARA.ketua);
     // Penetapan massal di daftar tidak ikut hilang.

@@ -343,10 +343,10 @@ describe("tampilan Lama: tanpa satu pun jejak menu per peran", () => {
 
 // ============================================================================
 describe("UI Baru di dalam perkara: tab mengikuti matriks peran", () => {
-  it("Super Admin: kelimanya, urut Penetapan-Putusan-Juru Sita-Berkas-Perkara; Juru Sita tampil WALAU aletaJurusitaBoleh menolak", async () => {
+  it("Super Admin: keenamnya, urut Penetapan-PTSP-Putusan-Juru Sita-Berkas-Perkara (PTSP: perbaikan 5 Okt butir 11); Juru Sita tampil WALAU aletaJurusitaBoleh menolak", async () => {
     const h = buka({ simpanan: UI, peran: "Super Admin", jurusita: true, jurusitaBoleh: () => false });
     const pn = await siapUi(h);
-    expect(tabTampak(pn)).toEqual(["kerjakan", "putusanKel", "juruSitaKel", "berkas", "perkara"]);
+    expect(tabTampak(pn)).toEqual(["kerjakan", "ptspKel", "putusanKel", "juruSitaKel", "berkas", "perkara"]);
     expect(pn.getAttribute("data-t7-tab")).toBe("kerjakan");
     expect(pn.getAttribute("data-mps-peran")).toBe("admin");
     // Admin tidak menunggu status perkara untuk menunya.
@@ -358,14 +358,14 @@ describe("UI Baru di dalam perkara: tab mengikuti matriks peran", () => {
   it("Admin: sama dengan Super Admin", async () => {
     const h = buka({ simpanan: UI, peran: "Admin", jurusita: true });
     const pn = await siapUi(h);
-    expect(tabTampak(pn)).toEqual(["kerjakan", "putusanKel", "juruSitaKel", "berkas", "perkara"]);
+    expect(tabTampak(pn)).toEqual(["kerjakan", "ptspKel", "putusanKel", "juruSitaKel", "berkas", "perkara"]);
   });
 
   it("Wakil Ketua majelis perkara, penunjukan belum lengkap: Penetapan, Putusan, Berkas, Perkara", async () => {
     const h = buka({ simpanan: UI, peran: "Wakil Ketua", nama: "Munifa, S.H.", petugas: { majelis: ["Dra. Hj. Munifa, S.H.I., M.H."], lengkap: false } });
     const pn = await siapUi(h);
     await sampai(() => pn.getAttribute("data-mps-ditangani") === "ya", "status terbaca");
-    expect(tabTampak(pn)).toEqual(["kerjakan", "putusanKel", "berkas", "perkara"]);
+    expect(tabTampak(pn)).toEqual(["kerjakan", "putusanKel", "berkas", "perkara", "ptspKel"]);
     expect(pn.getAttribute("data-t7-tab")).toBe("kerjakan");
   });
 
@@ -373,7 +373,7 @@ describe("UI Baru di dalam perkara: tab mengikuti matriks peran", () => {
     const h = buka({ simpanan: UI, peran: "Ketua", nama: "Munifa", petugas: { majelis: ["Munifa, S.H."], lengkap: true } });
     const pn = await siapUi(h);
     await sampai(() => !tabTampak(pn).includes("kerjakan"), "Penetapan disembunyikan");
-    expect(tabTampak(pn)).toEqual(["putusanKel", "berkas", "perkara"]);
+    expect(tabTampak(pn)).toEqual(["putusanKel", "berkas", "perkara", "ptspKel"]);
     expect(pn.getAttribute("data-t7-tab")).toBe("putusanKel");
     // Disembunyikan, bukan dibuang.
     expect(pn.querySelector('.aleta-isi > .aleta-kelompok[data-kunci="kerjakan"]')).not.toBeNull();
@@ -384,7 +384,7 @@ describe("UI Baru di dalam perkara: tab mengikuti matriks peran", () => {
     const h = buka({ simpanan: UI, peran: "Ketua", nama: "Munifa", petugas: { majelis: ["Ahmad Fauzi, S.H.I."], lengkap: false } });
     const pn = await siapUi(h);
     await sampai(() => pn.getAttribute("data-mps-ditangani") === "tidak", "bukan majelis");
-    expect(tabTampak(pn)).toEqual(["kerjakan", "berkas", "perkara"]);
+    expect(tabTampak(pn)).toEqual(["kerjakan", "berkas", "perkara", "ptspKel"]);
   });
 
   it("Hakim majelis: Putusan, Berkas, Perkara - Putusan terbuka", async () => {
@@ -456,7 +456,7 @@ describe("UI Baru di dalam perkara: tab mengikuti matriks peran", () => {
     const h = buka({ simpanan: UI, peran: "Operator" });
     const pn = await siapUi(h);
     await tunggu(30);
-    expect(tabSemua(pn)).toEqual(["kerjakan", "berkas", "perkara", "putusanKel"]);
+    expect(tabSemua(pn)).toEqual(["kerjakan", "ptspKel", "berkas", "perkara", "putusanKel"]);
     expect(pn.hasAttribute("data-mps-peran")).toBe(false);
     expect(pn.querySelector("[data-mps-sembunyi]")).toBeNull();
   });

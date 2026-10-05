@@ -8455,7 +8455,8 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-t7-tab-lencana.aleta-le
 html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="kerjakan"] .aleta-isi > .aleta-kelompok:not([data-kunci="kerjakan"]),
 html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="berkas"] .aleta-isi > .aleta-kelompok:not([data-kunci="berkas"]),
 html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="perkara"] .aleta-isi > .aleta-kelompok:not([data-kunci="perkara"]),
-html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="putusanKel"] .aleta-isi > .aleta-kelompok:not([data-kunci="putusanKel"]) {
+html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="putusanKel"] .aleta-isi > .aleta-kelompok:not([data-kunci="putusanKel"]),
+html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="ptspKel"] .aleta-isi > .aleta-kelompok:not([data-kunci="ptspKel"]) {
   display: none;
 }
 html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab] .aleta-isi > .aleta-kelompok > .aleta-kelompok-judul { display: none; }
@@ -10431,3 +10432,166 @@ html[data-aleta-kulit="modern"] #aleta-panel-abt[data-sore] .aleta-lipat-kepala 
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28); pointer-events: none;
 }
 .aleta-catatan-perbarui-buruk { color: #ffd7d7; border-color: rgba(255, 120, 120, 0.6); }
+/* === P5 - PERBAIKAN 5 OKT (kartu KTP UI Baru, zona seret-lepas, sembul SIPP, tab PTSP) === */
+/*
+ * Butir 13: kartu "Isi dari foto KTP" di UI Baru memakai token --aleta-* kulit
+ * modern (nilai yang sama dengan panel UI Baru, terang/gelap mengikuti
+ * data-tema panel yang disalin saksiscan.js ke kartu). Kartu hidup di luar
+ * .aleta-panel, jadi tokennya dipasang di kartu sendiri lalu --c2-* (yang
+ * dipakai seluruh aturan kartu di blok C2) dipetakan ke token itu. Tampilan
+ * Lama/Baru tidak pernah memunculkan kartu ini (gerbang saksiscan.js).
+ */
+html[data-aleta-kulit="modern"] .aleta-c2-saksi:not([data-tema="terang"]),
+html[data-aleta-kulit="modern"] .aleta-c2-saksi-pemicu {
+  --aleta-latar: #111a2b !important;
+  --aleta-latar-naik: #162238 !important;
+  --aleta-garis: #24324b !important;
+  --aleta-garis-kuat: #344560 !important;
+  --aleta-tulisan: #e8eef7 !important;
+  --aleta-tulisan-lembut: #aab6c8 !important;
+  --aleta-merek: #3ec6e6 !important;
+  --aleta-aman: #34d399 !important;
+  --aleta-mendesak: #f5b83d !important;
+  --aleta-lewat: #f87171 !important;
+  --c2-merek-tulisan: #08131f !important;
+}
+html[data-aleta-kulit="modern"] .aleta-c2-saksi[data-tema="terang"] {
+  --aleta-latar: #ffffff !important;
+  --aleta-latar-naik: #f3f5f9 !important;
+  --aleta-garis: #e2e7ef !important;
+  --aleta-garis-kuat: #cdd5e1 !important;
+  --aleta-tulisan: #111827 !important;
+  --aleta-tulisan-lembut: #4b5565 !important;
+  --aleta-merek: #0b89a8 !important;
+  --aleta-aman: #047857 !important;
+  --aleta-mendesak: #b45309 !important;
+  --aleta-lewat: #b91c1c !important;
+  --c2-merek-tulisan: #ffffff !important;
+}
+html[data-aleta-kulit="modern"] .aleta-c2-saksi,
+html[data-aleta-kulit="modern"] .aleta-c2-saksi-pemicu {
+  --c2-latar: var(--aleta-latar);
+  --c2-naik: var(--aleta-latar-naik);
+  --c2-garis: var(--aleta-garis-kuat);
+  --c2-tulisan: var(--aleta-tulisan);
+  --c2-lembut: var(--aleta-tulisan-lembut);
+  --c2-merek: var(--aleta-merek);
+  --c2-aman: var(--aleta-aman);
+  --c2-mendesak: var(--aleta-mendesak);
+  --c2-lewat: var(--aleta-lewat);
+  font-family: "Plus Jakarta Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+}
+html[data-aleta-kulit="modern"] .aleta-c2-saksi {
+  width: min(440px, calc(100vw - 24px));
+  border-radius: 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 16px 40px rgba(0, 0, 0, 0.42);
+}
+html[data-aleta-kulit="modern"] .aleta-c2-saksi[data-tema="terang"] {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 16px 36px rgba(16, 24, 40, 0.18);
+}
+html[data-aleta-kulit="modern"] .aleta-c2-saksi .aleta-tombol {
+  border-color: transparent;
+  border-radius: 8px;
+}
+html[data-aleta-kulit="modern"] .aleta-c2-saksi-pemicu {
+  border-radius: 999px;
+}
+
+/* Butir 12: zona seret-lepas besar - pengganti tombol "Choose File" bawaan. */
+.aleta-c2-saksi-zona {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 190px;
+  margin-bottom: 8px;
+  padding: 22px 16px;
+  border: 2px dashed var(--c2-garis);
+  border-radius: 14px;
+  background: var(--c2-naik);
+  color: var(--c2-lembut);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+.aleta-c2-saksi-zona:hover,
+.aleta-c2-saksi-zona:focus-visible {
+  border-color: var(--c2-merek);
+  color: var(--c2-tulisan);
+  outline: none;
+}
+.aleta-c2-saksi-zona[data-sorot="ya"] {
+  border-style: solid;
+  border-color: var(--c2-merek);
+  background: color-mix(in srgb, var(--c2-merek) 14%, var(--c2-naik));
+  transform: scale(1.01);
+}
+.aleta-c2-saksi-zona-ikon { color: var(--c2-merek); }
+.aleta-c2-saksi-zona-judul {
+  max-width: 300px;
+  color: var(--c2-tulisan);
+  font-size: calc(14px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  line-height: 1.35;
+}
+.aleta-c2-saksi-zona-ket { font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); }
+.aleta-c2-saksi-zona .aleta-c2-saksi-tempel:not(:empty) {
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--c2-latar);
+  color: var(--c2-aman);
+}
+/* Masukan berkas bawaan disembunyikan - zona di atas yang menjadi tombolnya. */
+.aleta-c2-saksi-zona .aleta-c2-saksi-berkas {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.aleta-c2-saksi-blangko[hidden] { display: none !important; }
+.aleta-c2-saksi-blangko { margin-top: 4px; color: var(--c2-mendesak); }
+
+/*
+ * Butir 15: sembul SIPP (.popup selebar layar) dipersempit ke kiri selama
+ * panel berlabuh kanan - kecuali panel lebih lebar dari separuh halaman
+ * (t7SetelSembul tidak memasang atributnya). Kartu KTP di kiri ikut
+ * dihindari bila sisanya masih cukup lebar.
+ */
+html[data-aleta-sembul-geser="ya"] :is(.popup, .popup2nd, #popup-detil) {
+  left: var(--aleta-sembul-kiri, 0px) !important;
+  right: auto !important;
+  width: calc(100% - var(--aleta-sembul-kiri, 0px) - var(--aleta-sembul-kanan, 0px)) !important;
+}
+
+/* Butir 11 & 26: tab PTSP. */
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-p5-tautan-ptsp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-p5-ktp-buka { width: 100%; margin-top: 6px; }
+#aleta-panel-sipp .aleta-p5-pihak { display: grid; gap: 6px; margin: 6px 0; }
+#aleta-panel-sipp .aleta-p5-satu .aleta-baris-ket { overflow-wrap: anywhere; }
+#aleta-panel-sipp .aleta-p5-usulan { color: var(--aleta-aman); }
+#aleta-panel-sipp .aleta-p5-perubahan { margin: 4px 0; padding-left: 18px; font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); }
+#aleta-panel-sipp .aleta-p5-centang { display: flex; align-items: center; gap: 6px; }
+#aleta-panel-sipp .aleta-p5-hasil:empty { display: none; }
+#aleta-panel-sipp .aleta-p5-tulis[hidden] { display: none; }
+/* Butir 28: para pihak dari berkas gugatan. */
+#aleta-panel-sipp .aleta-p5-pihak-gugatan { display: grid; gap: 6px; margin-top: 8px; }
+#aleta-panel-sipp .aleta-p5-pg-data {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 10px;
+  margin: 4px 0;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-sipp .aleta-p5-pg-data dt { color: var(--aleta-tulisan-lembut); }
+#aleta-panel-sipp .aleta-p5-pg-data dd { margin: 0; overflow-wrap: anywhere; }
+#aleta-panel-sipp .aleta-p5-pg-kosong { color: var(--aleta-mendesak); }
+/* === AKHIR P5 === */

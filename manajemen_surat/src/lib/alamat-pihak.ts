@@ -21,6 +21,19 @@
  *   2. SPASI DAN KOMA YANG BERLEBIH
  *      "Desa  Watatu ,Kecamatan Banawa  Selatan,,Kabupaten Donggala"
  *
+ *   4. EKOR WILAYAH DOBEL (perbaikan 5 Okt 2026 butir 26)
+ *      "Desa Oti, Kecamatan Sindue Tobata, Kabupaten Donggala, Provinsi
+ *      Sulawesi Tengah, Oti, Sindue Tobata, Kabupaten Donggala, Sulawesi
+ *      Tengah" - formulir e-Court menambahkan desa/kecamatan/kabupaten/
+ *      provinsi TANPA sebutan di ujung alamat yang sudah lengkap, juga
+ *      sesudah "Domisili elektronik : surel". Deretan di ujung yang SELURUH
+ *      namanya sudah ada di bagian depan dibuang; yang memuat satu nama baru
+ *      saja dibiarkan utuh.
+ *
+ *   5. KETERANGAN RUMAH DI DALAM KURUNG
+ *      "Desa Oti (rumah depan kantor Desa Oti)" - petunjuk menemukan rumah,
+ *      bukan alamat. Diperlakukan sama dengan petunjuk arah (1).
+ *
  *   3. TINGKATAN YANG LUPA DISEBUT NAMANYA
  *      "Pelawa Baru, Parigi Tengah, Kabupaten Parigi Moutong, Sulawesi Tengah"
  *      Empat tingkatannya ada, tetapi dua di antaranya tanpa sebutan. Yang
@@ -71,7 +84,7 @@ const TINGKATAN: Array<{ kunci: string; sebutan: string[]; baku: string }> = [
  * Yang dibuang hanya yang jelas-jelas petunjuk jalan.
  */
 const PETUNJUK_ARAH =
-  /\b(?:sesudah|setelah|sebelum|depan|belakang|samping|dekat|arah|masuk|lorong|seberang|di\s*atas|di\s*bawah|jalan\s+masuk|menuju|rumah\s+sebelum|rumah\s+sesudah|dari\s+arah)\b/i;
+  /^\s*rumah\b|\b(?:sesudah|setelah|sebelum|depan|belakang|samping|dekat|arah|masuk|lorong|seberang|di\s*atas|di\s*bawah|jalan\s+masuk|menuju|rumah\s+sebelum|rumah\s+sesudah|dari\s+arah)\b/i;
 
 function bersih(nilai: unknown): string {
   return String(nilai ?? "").trim();
@@ -125,6 +138,57 @@ function tingkatanPada(potong: string): string | "" {
  */
 export function rapikanAlamat(masukan: string): HasilRapiAlamat {
   const asli = bersih(masukan);
+  // Domisili elektronik dipisah dulu: bagian alamatnya dirapikan sendiri,
+  // surelnya dibiarkan apa adanya, dan ekor wilayah yang ditempelkan e-Court
+  // SESUDAH surel dibuang bila seluruh namanya sudah ada di alamat pokok.
+  const domisili = /^([\s\S]*?)([.,;]?)\s*Domisili\s+elektronik\s*:?\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})([\s\S]*)$/i.exec(asli);
+  if (!domisili || !bersih(domisili[1])) return rapikanPokok(asli);
+  const pokok = rapikanPokok(domisili[1]);
+  const perubahan = [...pokok.perubahan];
+  const namaPokok = new Set(pokok.alamat.split(",").map(namaTempat).filter(Boolean));
+  const ekor = domisili[4]
+    .split(",")
+    .map((x) => bersih(x))
+    .filter(Boolean);
+  let sisa = ekor.join(", ");
+  if (ekor.length && ekor.every((x) => namaPokok.has(namaTempat(x)))) {
+    perubahan.push(`Ekor wilayah dobel sesudah domisili elektronik dibuang: "${sisa}"`);
+    sisa = "";
+  }
+  const alamat = `${pokok.alamat}${domisili[2] === "." ? "." : ","} Domisili elektronik : ${domisili[3]}${sisa ? `, ${sisa}` : ""}`;
+  return { alamat, perubahan, kurang: pokok.kurang, berubah: alamat !== asli };
+}
+
+/** Nama tempat tanpa sebutan tingkatan, huruf kecil - untuk dibandingkan. */
+function namaTempat(potong: string): string {
+  return bersih(potong)
+    .toLowerCase()
+    .replace(/^(?:desa|kelurahan|kel\.?|ds\.?|kecamatan|kec\.?|kabupaten\/kota|kabupaten|kab\.?|kota|provinsi|propinsi|prov\.?)\s+/, "")
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Awal EKOR WILAYAH DOBEL - deretan potongan di ujung (paling sedikit dua,
+ * paling sedikit satu tanpa sebutan tingkatan) yang SELURUH namanya sudah
+ * disebut di bagian depan. -1 bila tidak ada. Satu nama baru saja di ekor
+ * membatalkannya: itu mungkin keterangan sungguhan.
+ */
+function awalEkorDobel(potongan: string[]): number {
+  for (let j = 1; j <= potongan.length - 2; j += 1) {
+    const depan = new Set(potongan.slice(0, j).map(namaTempat).filter(Boolean));
+    const ekor = potongan.slice(j);
+    if (!ekor.every((x) => depan.has(namaTempat(x)))) continue;
+    if (!ekor.some((x) => !tingkatanPada(x))) continue;
+    if (!potongan.slice(0, j).some((x) => tingkatanPada(x))) continue;
+    return j;
+  }
+  return -1;
+}
+
+function rapikanPokok(masukan: string): HasilRapiAlamat {
+  const asli = bersih(masukan);
   if (!asli) {
     return { alamat: "", perubahan: [], kurang: TINGKATAN.map((x) => x.baku), berubah: false };
   }
@@ -145,6 +209,13 @@ export function rapikanAlamat(masukan: string): HasilRapiAlamat {
     .split(",")
     .map((x) => bersih(x))
     .filter(Boolean);
+
+  // ── Ekor wilayah dobel (bentuk e-Court) ────────────────────────────────
+  const ekorDi = awalEkorDobel(potongan);
+  if (ekorDi > 0) {
+    perubahan.push(`Ekor wilayah dobel dibuang: "${potongan.slice(ekorDi).join(", ")}"`);
+    potongan.splice(ekorDi);
+  }
 
   // ── Sebutan tingkatan yang lupa ditulis ─────────────────────────────────
   //

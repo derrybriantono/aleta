@@ -115,12 +115,25 @@ export async function mesinOcrAda(spawn: Spawn = spawnAsli as unknown as Spawn):
  * bahasa "ind" tidak terpasang, diulang sekali dengan "eng" (label KTP
  * berhuruf Latin, dan hasilnya tetap ditinjau petugas).
  */
-export async function bacaGambar(gambar: Buffer, spawn: Spawn = spawnAsli as unknown as Spawn): Promise<HasilOcr> {
+export type OpsiOcr = {
+  /** Mode tata halaman tesseract: "6" satu blok (bawaan), "4" kolom, "11" teks tersebar. */
+  psm?: string;
+  /** Batas waktu lintasan ini (ms) - pemanggil yang menjalankan beberapa lintasan membagi waktunya. */
+  batasMs?: number;
+};
+
+export async function bacaGambar(
+  gambar: Buffer,
+  spawn: Spawn = spawnAsli as unknown as Spawn,
+  opsi: OpsiOcr = {}
+): Promise<HasilOcr> {
   if (!(await mesinOcrAda(spawn))) return { ok: false, alasan: "ocr_belum_tersedia", pesan: PESAN_OCR_BELUM_ADA };
   const bin = binTesseract();
+  const psm = /^\d{1,2}$/.test(String(opsi.psm || "")) ? String(opsi.psm) : "6";
+  const batas = Number.isFinite(opsi.batasMs) && Number(opsi.batasMs) > 0 ? Math.min(BATAS_WAKTU_MS, Number(opsi.batasMs)) : BATAS_WAKTU_MS;
   const bahasaUtama = String(process.env.ALETA_OCR_BAHASA || "ind").trim() || "ind";
   for (const bahasa of bahasaUtama === "eng" ? ["eng"] : [bahasaUtama, "eng"]) {
-    const r = await jalankan(spawn, bin, ["stdin", "stdout", "-l", bahasa, "--psm", "6"], gambar, BATAS_WAKTU_MS);
+    const r = await jalankan(spawn, bin, ["stdin", "stdout", "-l", bahasa, "--psm", psm], gambar, batas);
     if (r.habisWaktu) {
       return { ok: false, alasan: "ocr_habis_waktu", pesan: "Membaca gambar terlalu lama. Coba foto yang lebih kecil atau lebih tajam." };
     }

@@ -40,6 +40,7 @@ const keadaan = vi.hoisted(() => ({
   panggilanWilayah: [] as Array<Record<string, unknown>>,
   jawabanWilayah: null as null | { ok: true; data: Record<string, unknown> } | { ok: false; error: string; status?: number; kode?: string },
   ocrDipanggil: 0,
+  mesinAda: true,
   bufferOcr: null as Buffer | null,
   salinanOcr: "",
   jawabanOcr: null as null | { ok: true; teks: string; mesin: string } | { ok: false; alasan: string; pesan: string },
@@ -65,6 +66,8 @@ vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
   },
 }));
 vi.mock("@/app/api/aleta-ecourt/saksi-scan/ocr", () => ({
+  PESAN_OCR_BELUM_ADA: "ALETA belum dapat membaca gambar: mesin OCR belum terpasang di server.",
+  mesinOcrAda: async () => keadaan.mesinAda,
   bacaGambar: async (b: Buffer) => {
     keadaan.ocrDipanggil += 1;
     keadaan.bufferOcr = b;
@@ -104,6 +107,11 @@ async function sampai<T>(periksa: () => T, ket: string, batas = 5000): Promise<N
 }
 
 beforeEach(() => {
+  // Rute memanggil bacaKtpDariBerkas; praproses (proses anak) dimatikan di
+  // sini supaya bufer yang diterima OCR tiruan adalah bufer permintaan itu
+  // sendiri. Praproses diuji di saksi-scan-5okt.test.ts.
+  process.env.ALETA_OCR_PRAPROSES = "0";
+  keadaan.mesinAda = true;
   keadaan.izinkan = true;
   keadaan.kapabilitas = [];
   keadaan.panggilanWilayah = [];
@@ -324,11 +332,19 @@ describe("C1. POST /api/aleta-ecourt/saksi-scan", () => {
     expect(keadaan.ocrDipanggil).toBe(0);
   });
 
-  it("gambar tanpa mesin OCR: jawaban jujur ocr_belum_tersedia; bufer foto DITIMPA NOL sesudah permintaan", async () => {
+  it("gambar tanpa mesin OCR: jawaban jujur ocr_belum_tersedia, tanpa satu lintasan OCR pun (5 Okt: diperiksa sebelum praproses)", async () => {
+    keadaan.mesinAda = false;
     const r = await POST_SCAN(mintaScan({ gambar: `data:image/jpeg;base64,${JPEG.toString("base64")}` }));
     const j = await r.json();
     expect(j.data).toMatchObject({ available: true, ok: false, alasan: "ocr_belum_tersedia" });
     expect(j.data.pesan).toMatch(/belum dapat membaca gambar/);
+    expect(keadaan.ocrDipanggil).toBe(0);
+  });
+
+  it("mesin ada tetapi OCR gagal: jawaban jujur; bufer foto DITIMPA NOL sesudah permintaan", async () => {
+    const r = await POST_SCAN(mintaScan({ gambar: `data:image/jpeg;base64,${JPEG.toString("base64")}` }));
+    const j = await r.json();
+    expect(j.data).toMatchObject({ available: true, ok: false, alasan: "ocr_belum_tersedia" });
     expect(keadaan.ocrDipanggil).toBe(1);
     expect(keadaan.salinanOcr).toBe(JPEG.toString("base64"));
     // Bufer yang sama yang diterima OCR kini nol seluruhnya.
@@ -565,7 +581,7 @@ describe("E1. saksiscan.js - fungsi murni", () => {
     const salah = m.saksiscanCocokkan("LABUAN SALUMBON", KEL);
     expect(salah.tepat).toBeNull();
     expect(salah.calon[0].wilayah.kode).toBe("72.03.09.2001");
-    expect(m.saksiscanCocokkan("ZZZZZ QQQ", KEL)).toEqual({ tepat: null, calon: [] });
+    expect(m.saksiscanCocokkan("ZZZZZ QQQ", KEL)).toEqual({ tepat: null, yakin: null, calon: [] });
   });
 
   const tinjauLengkap = () => ({
@@ -609,16 +625,26 @@ describe("E1. saksiscan.js - fungsi murni", () => {
     expect(r.langkah.some((l) => /keterangan|simpan|submit|btn/i.test(l.penunjuk))).toBe(false);
   });
 
-  it("wilayah SEMUA atau TIDAK SAMA SEKALI: rantai putus, tingkat kosong, atau nilai bersandi tidak ada", () => {
+  // Perbaikan 5 Okt (butir 7): bukan lagi semua-atau-tidak - diisi BERURUTAN
+  // induk ke anak sejauh rantainya utuh; tingkat pertama yang putus/kosong/
+  // tanpa sandi menghentikan rantai (anak tanpa induk benar tidak pernah diisi).
+  it("wilayah diisi berurutan SEJAUH rantai utuh: berhenti di tingkat yang putus, kosong, atau tanpa sandi", () => {
+    const wil = (r: ReturnType<Murni["saksiscanRencana"]>) => r.langkah.filter((l) => l.opsi).map((l) => l.penunjuk);
     const putus = tinjauLengkap();
     putus.wilayah.kecamatan = { kode: "72.71.01", nama: "Palu Barat", nilaiSipp: "X" };
-    expect(m.saksiscanRencana(putus, borang).langkah.filter((l) => l.opsi)).toEqual([]);
+    expect(wil(m.saksiscanRencana(putus, borang))).toEqual(["#prop", "#kab"]);
     const kurang = tinjauLengkap();
     (kurang.wilayah as Record<string, unknown>).kelurahan = null;
-    expect(m.saksiscanRencana(kurang, borang).wilayahDiisi).toBe(false);
+    const rk = m.saksiscanRencana(kurang, borang);
+    expect(rk.wilayahDiisi).toBe(false);
+    expect(wil(rk)).toEqual(["#prop", "#kab", "#kec"]);
+    expect((rk as unknown as { wilayahTerisi: number }).wilayahTerisi).toBe(3);
+    const tanpaKab = tinjauLengkap();
+    (tanpaKab.wilayah as Record<string, unknown>).kabupaten = null;
+    expect(wil(m.saksiscanRencana(tanpaKab, borang))).toEqual(["#prop"]);
     const tanpaSandi = tinjauLengkap();
     tanpaSandi.wilayah.provinsi = { ...PROV[0], nilaiSipp: null as unknown as string };
-    expect(m.saksiscanRencana(tanpaSandi, borang).langkah.filter((l) => l.opsi)).toEqual([]);
+    expect(wil(m.saksiscanRencana(tanpaSandi, borang))).toEqual([]);
   });
 
   it("status kawin, pekerjaan, dan susunan alamat dari nama SIPP", () => {
@@ -824,15 +850,18 @@ describe("E2. saksiscan.js di halaman SIPP (jsdom)", () => {
     await sampai(() => pemicuTampak(h), "pemicu sesudah blangko dibuka");
   });
 
-  it("tinjau: yang cocok tepat terpilih, salah baca TIDAK terpilih sendiri (pilihan terdekat ditawarkan)", async () => {
+  // Perbaikan 5 Okt (butir 6): salah baca OCR satu huruf ("LABUAN SALUMBON")
+  // yang unggul jelas atas calon lain kini DIPILIH - ditandai "periksa".
+  it("tinjau: yang cocok tepat terpilih; salah baca satu huruf yang unggul jelas dipilih dan ditandai periksa", async () => {
     const h = bukaSipp();
     const k = await bacaDanTinjau(h);
     const sel = (t: string) => k.querySelector(`select[data-saksi-wilayah='${t}']`) as HTMLSelectElement;
     expect([sel("provinsi").value, sel("kabupaten").value, sel("kecamatan").value]).toEqual(["72", "72.03", "72.03.09"]);
-    expect(sel("kelurahan").value).toBe("");
+    expect(sel("kelurahan").value).toBe("72.03.09.2001");
     const mirip = sel("kelurahan").querySelector("optgroup[label='Paling mirip dengan hasil baca'] option") as HTMLOptionElement;
     expect(mirip.value).toBe("72.03.09.2001");
-    expect(k.querySelector("[data-saksi-ket='kelurahan']")!.textContent).toMatch(/tidak cocok tepat/);
+    expect(k.querySelector("[data-saksi-ket='kelurahan']")!.textContent).toMatch(/paling mirip, periksa/);
+    expect(k.querySelector("[data-saksi-ket='kecamatan']")!.textContent).toMatch(/cocok tepat/);
     // Belum dicentang: tombol isi mati.
     expect((k.querySelector(".aleta-c2-saksi-isi") as HTMLButtonElement).disabled).toBe(true);
   });

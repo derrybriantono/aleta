@@ -4034,6 +4034,10 @@ const NAMA_PETIKAN = {
   alamatTergugatRapi: "Alamat tergugat (dirapikan)",
   // Beberapa sekaligus - lihat catatan pada penggambarnya.
   domisiliElektronik: "Domisili elektronik",
+  // Perbaikan 5 Okt (butir 28): identitas lengkap tiap pihak - satu baris
+  // ringkas per pihak di sini; UI Baru menggambar pratinjau + "Isi pihak ke
+  // SIPP" di bawahnya (p5GambarPihakGugatan).
+  pihak: "Identitas pihak",
 
   // --- isi gugatan --------------------------------------------------------
   obyekSengketa: "Obyek sengketa",
@@ -4190,6 +4194,8 @@ function bagianDataUmum(konteks) {
           kabar.textContent = `${hasil.nama} terbaca dari arsip ALETA. Periksa tiap baris sebelum dipakai.`;
           gambarPetikan(hasilKotak, hasil);
           gambarKerjakanDataUmum(hasilKotak, hasil, konteks);
+          // Perbaikan 5 Okt (butir 28, UI Baru): para pihak -> blangko pihak SIPP.
+          if (typeof p5GambarPihakGugatan === "function" && s1Aktif()) p5GambarPihakGugatan(hasilKotak, hasil);
         } catch (galat) {
           kabar.textContent = String(galat.message || galat).slice(0, 180);
         } finally {
@@ -4235,6 +4241,8 @@ function bagianDataUmum(konteks) {
         kabar.textContent = `${hasil.nama} terbaca. Periksa tiap baris sebelum dipakai.`;
         gambarPetikan(hasilKotak, hasil);
         gambarKerjakanDataUmum(hasilKotak, hasil, konteks);
+        // Perbaikan 5 Okt (butir 28, UI Baru): para pihak -> blangko pihak SIPP.
+        if (typeof p5GambarPihakGugatan === "function" && s1Aktif()) p5GambarPihakGugatan(hasilKotak, hasil);
       } catch (galat) {
         kabar.textContent = String(galat.message || galat).slice(0, 180);
       }
@@ -10489,7 +10497,12 @@ function susunPanel(konteks) {
   // keduanya akan menyembunyikan Data Umum dari operator penjaga sidang, yang
   // justru dibuat untuk itu; menuntut salah satunya lalu menggambar keduanya
   // akan menawarkan papan penunjukan kepada yang tidak berwenang.
-  if (boleh("penunjukan") || boleh("data-umum")) {
+  // Perbaikan 5 Okt (butir 11) - UI Baru saja: Data Umum dari berkas gugatan
+  // dan "Isi formulir Data Umum dari posita" PINDAH ke tab PTSP (kelompok
+  // ptspKel di bawah). Penetapan menyisakan tautan ke sana. Lama dan Baru
+  // tetap seperti sebelumnya.
+  const pakaiPtsp = typeof s1Aktif === "function" && s1Aktif();
+  if (boleh("penunjukan") || (boleh("data-umum") && !pakaiPtsp)) {
     const kelKerja = kelompok("Penetapan", "kerjakan", false);
 
     if (boleh("penunjukan")) kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
@@ -10499,13 +10512,14 @@ function susunPanel(konteks) {
     if (boleh("penunjukan") && typeof s2BagianEdocPenetapan === "function" && s1Aktif()) {
       kelKerja.isi.appendChild(s2BagianEdocPenetapan(konteks.nomorPerkara));
     }
-    if (boleh("data-umum")) kelKerja.isi.appendChild(bagianDataUmum(konteks));
+    if (boleh("data-umum") && !pakaiPtsp) kelKerja.isi.appendChild(bagianDataUmum(konteks));
+    if (boleh("data-umum") && pakaiPtsp) kelKerja.isi.appendChild(p5TautanPtsp());
 
 
     // Dan hanya di layar Info Perkara Agama (Data Umum). Dikenali dari borangnya
     // sendiri (#frm_data_umum) dengan alasan yang sama: alamat SIPP berubah
     // bentuk antar versi, id borangnya tidak.
-    if (boleh("data-umum") && document.querySelector("#frm_data_umum")) {
+    if (boleh("data-umum") && !pakaiPtsp && document.querySelector("#frm_data_umum")) {
       kelKerja.isi.appendChild(bagianIsiAlasanPerkara(konteks.nomorPerkara));
     }
 
@@ -10524,6 +10538,21 @@ function susunPanel(konteks) {
 
     isi.appendChild(kelKerja);
     kelompokSemua.push(kelKerja);
+  }
+
+  // ==========================================================================
+  // PTSP (perbaikan 5 Okt butir 11 - UI Baru saja)
+  // ==========================================================================
+  //
+  // Yang dikerjakan petugas PTSP/operator: Data Umum dari berkas gugatan,
+  // isi formulir Data Umum dari posita (layar Data Umum), dan data
+  // saksi/pihak dari foto KTP (saksiscan.js, golongan peran lain/admin).
+  if (pakaiPtsp) {
+    const kelPtsp = p5KelompokPtsp(konteks);
+    if (kelPtsp) {
+      isi.appendChild(kelPtsp);
+      kelompokSemua.push(kelPtsp);
+    }
   }
 
   // ==========================================================================
@@ -15392,6 +15421,10 @@ const T7_API_CHECKLIST = "/aleta/api/aleta-ecourt/checklist";
 const T7_API_MASUKAN = "/aleta/api/feedback";
 const T7_TAB = [
   ["kerjakan", "Penetapan"],
+  // Perbaikan 5 Okt (butir 11): tab PTSP - Data Umum dari berkas gugatan
+  // (pindahan dari Penetapan) dan data saksi/pihak dari foto KTP. Hanya
+  // lahir di UI Baru (lihat a30/kelompok "ptspKel" di tampilkan()).
+  ["ptspKel", "PTSP"],
   ["berkas", "Berkas"],
   ["perkara", "Perkara"],
   ["putusanKel", "Putusan"],
@@ -17043,6 +17076,84 @@ function t7TerapkanLabuh() {
     });
     t7PengamatLabuh.observe(document.body, { childList: true });
   }
+  t7SetelSembul();
+}
+
+/**
+ * ============================================================================
+ * SEMBUL SIPP TIDAK TERTUTUP PANEL (perbaikan 5 Okt butir 15)
+ * ============================================================================
+ *
+ * Jendela sembul SIPP (.popup / .popup2nd / #popup-detil: "TAMBAH REFERENSI
+ * DATA PIHAK", "TAMBAH DATA PIHAK SAKSI", ...) adalah lapisan fixed selebar
+ * layar - margin-right body milik panel berlabuh tidak menyentuhnya, sehingga
+ * sisi kanannya tertutup panel. Selama panel berlabuh kanan, area sembul
+ * dipersempit ke kiri (lebar = layar - lebar panel); kartu KTP di kiri ikut
+ * dihindari bila sisanya masih cukup lebar.
+ *
+ * KECUALI panel lebih lebar dari setengah halaman: sembul dibiarkan apa
+ * adanya (tertutup panel saja) - mempersempitnya sampai kurang dari separuh
+ * layar merusak tata letak blangko SIPP lebih parah daripada tertutup.
+ *
+ * Yang diubah hanya atribut dan dua peubah CSS di <html>; DOM SIPP tidak
+ * disentuh. Dipanggil saat labuh berubah, tuas lebar digeser, jendela
+ * diubah ukurannya, dan kartu KTP dibuka/ditutup (saksiscan.js).
+ */
+const T7_ATRIBUT_SEMBUL = "data-aleta-sembul-geser";
+const T7_SEMBUL_SISA_MIN = 640;
+let t7SembulDengar = false;
+
+function t7SetelSembul() {
+  let akar = null;
+  try {
+    akar = document.documentElement;
+  } catch {
+    return;
+  }
+  if (!akar) return;
+  const lebarLayar = Number(window.innerWidth) || 0;
+  let kanan = 0;
+  if (akar.getAttribute(T7_ATRIBUT_LABUH) === "kanan" && lebarLayar >= 1100) {
+    const panel = document.getElementById(PENANDA);
+    let lebarPanel = 0;
+    try {
+      lebarPanel = panel ? Math.round(panel.getBoundingClientRect().width) : 0;
+    } catch {
+      lebarPanel = 0;
+    }
+    if (!lebarPanel) lebarPanel = Math.min(t7LebarTersimpan || T7_LEBAR_BAWAAN, Math.round(lebarLayar * 0.6));
+    if (lebarPanel <= lebarLayar / 2) kanan = lebarPanel;
+  }
+  let kiri = 0;
+  const kartu = document.querySelector(".aleta-c2-saksi:not([hidden])");
+  if (kartu) {
+    let lebarKartu = 0;
+    try {
+      const r = kartu.getBoundingClientRect();
+      lebarKartu = Math.round(r.right || r.width || 0);
+    } catch {
+      lebarKartu = 0;
+    }
+    if (lebarKartu > 0) lebarKartu += 12;
+    if (lebarKartu > 0 && lebarLayar - kanan - lebarKartu >= T7_SEMBUL_SISA_MIN) kiri = lebarKartu;
+  }
+  try {
+    if (kiri || kanan) {
+      akar.setAttribute(T7_ATRIBUT_SEMBUL, "ya");
+      akar.style.setProperty("--aleta-sembul-kiri", `${kiri}px`);
+      akar.style.setProperty("--aleta-sembul-kanan", `${kanan}px`);
+    } else if (akar.hasAttribute(T7_ATRIBUT_SEMBUL)) {
+      akar.removeAttribute(T7_ATRIBUT_SEMBUL);
+      akar.style.removeProperty("--aleta-sembul-kiri");
+      akar.style.removeProperty("--aleta-sembul-kanan");
+    }
+  } catch {
+    /* sembul tetap selebar layar */
+  }
+  if (!t7SembulDengar) {
+    t7SembulDengar = true;
+    window.addEventListener("resize", () => t7SetelSembul());
+  }
 }
 
 /** Tuas lebar di tepi kiri panel berlabuh. Lebarnya diingat PC ini. */
@@ -17065,6 +17176,7 @@ function t7PasangTuas(k) {
       const lebar = Math.min(maks, Math.max(T7_LEBAR_MIN, Math.round(window.innerWidth - ev.clientX)));
       t7LebarTersimpan = lebar;
       document.documentElement.style.setProperty("--aleta-t7-lebar", `${lebar}px`);
+      t7SetelSembul();
     };
     const lepas = () => {
       document.removeEventListener("pointermove", gerak);
@@ -18275,6 +18387,8 @@ async function a30OpsiSimpanPutusan(p) {
  */
 const MPS_KELOMPOK = {
   penetapan: "kerjakan",
+  // Perbaikan 5 Okt (butir 11): tab PTSP.
+  ptsp: "ptspKel",
   putusan: "putusanKel",
   jurusita: "juruSitaKel",
   berkas: "berkas",
@@ -20020,6 +20134,8 @@ const S2_PERAN_BAGIAN = {
   penetapanMassal: "Ketua",
   dataUmum: "PTSP",
   isiAlasanPerkara: "PTSP",
+  saksiKtp: "PTSP",
+  rapikanPihak: "PTSP",
   bacaBorang: "Admin",
   isiPutusan: "Hakim",
   unggahPutusanSipp: "Hakim",
@@ -20041,6 +20157,7 @@ const S2_PERAN_MASSAL = {
  */
 const S2_UTAMA_KELOMPOK = {
   kerjakan: ["penunjukan", "dataUmum"],
+  ptspKel: ["dataUmum", "saksiKtp", "rapikanPihak"],
   putusanKel: ["isiPutusan", "unggahPutusanSipp"],
   berkas: ["selisih", "tenggat", "dokumen"],
   perkara: ["tahapan", "nomorPihak"],
@@ -20990,4 +21107,406 @@ function s2PindahKeSudut(panel, sudut) {
   const hasil = typeof alatSudutPindahkan === "function" ? alatSudutPindahkan(panel, "", sudut) : null;
   if (hasil && Number.isFinite(hasil.kiri) && Number.isFinite(hasil.atas)) simpanKeadaanPanel({ kiri: hasil.kiri, atas: hasil.atas });
   return hasil;
+}
+
+/*
+ * ============================================================================
+ * PERBAIKAN 5 OKTOBER 2026 - TAB PTSP DI PANEL SIPP (butir 11, 12, 26)
+ * ============================================================================
+ *
+ * UI Baru saja (s1Aktif). Tab "PTSP" (kelompok ptspKel) berisi:
+ *
+ *   dataUmum          Data Umum dari berkas gugatan - PINDAHAN dari tab
+ *                     Penetapan (di sana tinggal tautan "Buka tab PTSP").
+ *   isiAlasanPerkara  Isi formulir Data Umum dari posita (layar Data Umum) -
+ *                     pindahan dari Penetapan juga.
+ *   saksiKtp          Data saksi / pihak - isi dari foto KTP: membuka kartu
+ *                     saksiscan.js di KIRI (zona seret-lepas besar). Golongan
+ *                     peran lain (PTSP/operator) dan admin - gerbang saksiscan.
+ *   rapikanPihak      Rapikan identitas para pihak (butir 26): alamat tabel
+ *                     pihak SIPP vs usulan rapi (rapikanAlamat portal), dan
+ *                     pengisian lewat blangko EDIT pihak SIPP sendiri.
+ *
+ * Tidak ada jalur tulis baru ke SIPP: ALETA membuka blangko dan mengisi
+ * medannya; Simpan selalu ditekan petugas. Tidak ada tanda ALETA di SIPP.
+ */
+const P5_API_RAPIKAN = "/aleta/api/aleta-ecourt/rapikan-alamat";
+
+/** Di tab Penetapan: Data Umum sudah pindah - satu tautan, bukan bagian. */
+function p5TautanPtsp() {
+  const kotak = buatElemen("div", "aleta-baris aleta-p5-tautan-ptsp");
+  kotak.appendChild(
+    buatElemen("div", "aleta-baris-ket", "Data Umum dari berkas gugatan kini di tab PTSP (bersama isi data saksi dari foto KTP).")
+  );
+  const tombol = buatElemen("button", "aleta-tombol aleta-tombol-kecil", "Buka tab PTSP");
+  tombol.type = "button";
+  tombol.addEventListener("click", () => {
+    const panel = tombol.closest(`#${PENANDA}`) || document.getElementById(PENANDA);
+    if (panel && typeof t7PilihTab === "function") t7PilihTab(panel, "ptspKel", true);
+  });
+  kotak.appendChild(tombol);
+  return kotak;
+}
+
+/** Apakah peran ini boleh memakai isi dari foto KTP (gerbang saksiscan.js). */
+function p5BolehKtp() {
+  const peran = typeof penggunaTerakhir !== "undefined" && penggunaTerakhir && penggunaTerakhir.peran ? String(penggunaTerakhir.peran) : "";
+  try {
+    return typeof saksiscanPeranBoleh === "function" && typeof saksiscanBuka === "function" && saksiscanPeranBoleh(peran);
+  } catch {
+    return false;
+  }
+}
+
+function p5KelompokPtsp(konteks) {
+  const bolehUmum = boleh("data-umum");
+  const bolehKtp = p5BolehKtp();
+  if (!bolehUmum && !bolehKtp) return null;
+  const kel = kelompok("PTSP", "ptspKel", false);
+  if (bolehUmum) kel.isi.appendChild(bagianDataUmum(konteks));
+  if (bolehUmum && document.querySelector("#frm_data_umum")) kel.isi.appendChild(bagianIsiAlasanPerkara(konteks.nomorPerkara));
+  if (bolehKtp) kel.isi.appendChild(p5BagianSaksiKtp());
+  if (bolehUmum || bolehKtp) kel.isi.appendChild(p5BagianRapikanPihak());
+  return kel;
+}
+
+/**
+ * Butir 10 & 12: kartu KTP dibuka dari sini kapan saja - tanpa harus membuka
+ * blangko saksi lebih dulu. Menekan kepala bagian juga membuka kartunya.
+ */
+function p5BagianSaksiKtp() {
+  const kotak = bagian("Data saksi / pihak - isi dari foto KTP", "saksiKtp", true);
+  kotak.isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-baris-ket",
+      "Baca foto atau PDF KTP kapan saja - hasilnya tinggal di kartu kiri sampai ditutup. Tombol isi di kartu membuka blangko SIPP yang tepat (Tambah pihak, atau Cari → Tambah pada blangko saksi) lalu mengisinya; Simpan tetap Anda yang menekan."
+    )
+  );
+  const tombol = buatElemen("button", "aleta-tombol aleta-p5-ktp-buka", "📷 Buka kartu isi dari foto KTP");
+  tombol.type = "button";
+  tombol.addEventListener("click", () => {
+    if (typeof saksiscanBuka === "function") saksiscanBuka();
+  });
+  kotak.isi.appendChild(tombol);
+  kotak.addEventListener("click", (e) => {
+    const kepala = e.target && e.target.closest ? e.target.closest(".aleta-bagian-judul, .aleta-lipat-kepala") : null;
+    if (kepala && kotak.contains(kepala) && typeof saksiscanBuka === "function") saksiscanBuka();
+  });
+  return kotak;
+}
+
+// ─── Butir 28: para pihak dari berkas gugatan -> blangko pihak SIPP ──────────
+
+const P5_LABEL_PIHAK = [
+  ["nama", "Nama"],
+  ["nik", "NIK"],
+  ["tempatLahir", "Tempat lahir"],
+  ["tanggalLahir", "Tanggal lahir"],
+  ["umur", "Umur"],
+  ["jenisKelamin", "Jenis kelamin"],
+  ["agama", "Agama"],
+  ["pendidikan", "Pendidikan"],
+  ["pekerjaan", "Pekerjaan"],
+  ["alamatLengkap", "Alamat"],
+  ["surel", "Domisili elektronik"],
+  ["telepon", "Telepon"],
+];
+
+/** Tautan "Tambah <pihak>" di layar Data Umum SIPP (data_umum.php) - jalan SIPP membuka blangko pihak. */
+function p5PenunjukTambahPihak(peran) {
+  const kedua = /tergugat|termohon/i.test(String(peran || ""));
+  return kedua ? 'a[onclick*="add_pihak_kedua/"][onclick*="/add"]' : 'a[onclick*="add_pihak_pertama/"][onclick*="/add"]';
+}
+
+/**
+ * Pratinjau per pihak (terbaca vs kosong) dan tombol "Isi pihak ke SIPP".
+ * Tombol: bila belum ada blangko pihak/saksi SIPP yang terbuka, tautan
+ * "Tambah Penggugat/Tergugat" SIPP ditekan lebih dulu; lalu kartu KTP
+ * (saksiscan.js, saksiscanIsiLangsung) memuat datanya dan menjalankan Cari ->
+ * Tambah -> isi "Tambah Referensi Data Pihak". Simpan tetap oleh petugas.
+ */
+function p5GambarPihakGugatan(wadah, hasil) {
+  const pihak = hasil && hasil.petikan && Array.isArray(hasil.petikan.pihak) ? hasil.petikan.pihak : [];
+  if (!pihak.length) return;
+  const kotak = buatElemen("div", "aleta-p5-pihak-gugatan");
+  kotak.appendChild(buatElemen("div", "aleta-baris-judul", "Para pihak dari berkas gugatan"));
+  kotak.appendChild(
+    buatElemen("div", "aleta-baris-ket aleta-remeh", "Periksa yang terbaca dan yang kosong; tombol mengisi blangko Tambah Referensi Data Pihak SIPP - Simpan tetap Anda yang menekan.")
+  );
+  for (const p of pihak) {
+    const m = p.medan || {};
+    const k = buatElemen("div", "aleta-baris aleta-p5-pg");
+    k.setAttribute("data-p5-peran", String(p.sebutan || p.peran || ""));
+    k.appendChild(buatElemen("div", "aleta-baris-judul", `${p.sebutan || p.peran}: ${m.nama || "(nama tidak terbaca)"}`));
+    const dl = buatElemen("dl", "aleta-p5-pg-data");
+    for (const [kunci, label] of P5_LABEL_PIHAK) {
+      if (!m[kunci]) continue;
+      dl.appendChild(buatElemen("dt", "", label));
+      const nilai = kunci === "jenisKelamin" ? (m[kunci] === "P" ? "Perempuan" : "Laki-laki") : String(m[kunci]);
+      dl.appendChild(buatElemen("dd", "", nilai));
+    }
+    k.appendChild(dl);
+    const wil = ["kelurahan", "kecamatan", "kabupaten", "provinsi"].map((x) => m[x]).filter(Boolean);
+    if (wil.length) k.appendChild(buatElemen("div", "aleta-baris-ket", `Wilayah: ${wil.join(" › ")}`));
+    if (Array.isArray(p.kosong) && p.kosong.length) {
+      k.appendChild(buatElemen("div", "aleta-baris-ket aleta-p5-pg-kosong", `Kosong (isi sendiri di blangko): ${p.kosong.join(", ")}`));
+    }
+    for (const c of p.catatan || []) k.appendChild(buatElemen("div", "aleta-baris-ket aleta-mendesak", String(c)));
+    const tombol = buatElemen("button", "aleta-tombol aleta-p5-isi-pihak", "Isi pihak ke SIPP");
+    tombol.type = "button";
+    const hasilEl = buatElemen("div", "aleta-baris-ket aleta-p5-hasil", "");
+    tombol.addEventListener("click", async () => {
+      if (typeof saksiscanIsiLangsung !== "function") {
+        hasilEl.textContent = "Kartu isi pihak (saksiscan.js) tidak termuat - muat ulang halaman SIPP.";
+        return;
+      }
+      tombol.disabled = true;
+      try {
+        const adaBlangko = typeof saksiscanKeadaanBlangko === "function" && saksiscanKeadaanBlangko();
+        if (!adaBlangko) {
+          const penunjuk = p5PenunjukTambahPihak(p.peran);
+          if (!document.querySelector(penunjuk)) {
+            hasilEl.textContent = "Tautan Tambah pihak SIPP tidak ada di layar ini - buka layar Data Umum perkara, atau buka blangko pihak sendiri lalu tekan lagi.";
+            return;
+          }
+          hasilEl.textContent = "Membuka blangko Tambah pihak SIPP…";
+          const buka = await kirimKeJembatanLangsung({ jenis: "tekan", penunjuk });
+          if (!buka || buka.ok !== true) {
+            hasilEl.textContent = `Tautan Tambah pihak tidak dapat ditekan (${String((buka && buka.alasan) || "tidak menjawab")}).`;
+            return;
+          }
+          const ada = await p5Tunggu(() => typeof saksiscanKeadaanBlangko === "function" && saksiscanKeadaanBlangko(), 10000);
+          if (!ada) {
+            hasilEl.textContent = "Blangko pihak SIPP tidak terbuka.";
+            return;
+          }
+        }
+        hasilEl.textContent = "Dimuat ke kartu kiri - hasil pengisian tampil di sana.";
+        await saksiscanIsiLangsung({ medan: m, nik: p.nik || null, catatan: p.catatan || [], sebutan: p.sebutan || p.peran });
+      } finally {
+        tombol.disabled = false;
+      }
+    });
+    k.appendChild(tombol);
+    k.appendChild(hasilEl);
+    kotak.appendChild(k);
+  }
+  wadah.appendChild(kotak);
+}
+
+// ─── Butir 26: rapikan identitas para pihak ──────────────────────────────────
+
+/**
+ * Baris tabel pihak di layar Data Umum SIPP (perkara_tab/data_umum.php):
+ * table.table_pihak1 / table.table_pihak2, kolom "Nama" dan "Alamat", tautan
+ * [Edit] = popup_form(add_pihak_pertama|kedua/.../edit/...).
+ */
+function p5BacaPihakSipp() {
+  const hasil = [];
+  const teks = (el) => String((el && el.textContent) || "").replace(/\s+/g, " ").trim();
+  for (const [kelas, sebut] of [
+    ["table_pihak1", "Pihak pertama"],
+    ["table_pihak2", "Pihak kedua"],
+  ]) {
+    const tabel = document.querySelector(`table.${kelas}`);
+    if (!tabel) continue;
+    const baris = Array.from(tabel.querySelectorAll(":scope > tbody > tr"));
+    if (baris.length < 2) continue;
+    const kepala = Array.from(baris[0].children).map((td) => teks(td).toLowerCase());
+    const iNama = kepala.indexOf("nama");
+    const iAlamat = kepala.indexOf("alamat");
+    if (iNama < 0 || iAlamat < 0) continue;
+    baris.slice(1).forEach((tr, j) => {
+      const sel = tr.children;
+      if (!sel || sel.length <= iAlamat) return;
+      const edit = tr.querySelector('a[onclick*="/edit/"]');
+      hasil.push({
+        kunci: `${kelas}-${j + 1}`,
+        sebutan: `${sebut} ${j + 1}`,
+        nama: teks(sel[iNama]),
+        alamat: teks(sel[iAlamat]),
+        penunjukEdit: edit ? `table.${kelas} > tbody > tr:nth-child(${j + 2}) a[onclick*="/edit/"]` : "",
+      });
+    });
+  }
+  return hasil;
+}
+
+async function p5MintaRapi(daftarAlamat) {
+  const opsi = {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ alamat: daftarAlamat }),
+  };
+  const r = await alatAmbil(P5_API_RAPIKAN, opsi, "Merapikan alamat para pihak");
+  let luar = null;
+  try {
+    luar = await r.json();
+  } catch {
+    luar = null;
+  }
+  if (!r.ok) {
+    const galat = luar && (luar.error || luar.message);
+    const pesan = galat && typeof galat === "object" ? galat.message : galat;
+    throw new Error(String(pesan || `Server ALETA menjawab ${r.status}.`));
+  }
+  const isi = luar && luar.data ? luar.data : luar;
+  return Array.isArray(isi && isi.hasil) ? isi.hasil : [];
+}
+
+function p5Tunggu(periksa, batasMs) {
+  return new Promise((selesai) => {
+    const mulai = Date.now();
+    const coba = () => {
+      let h = null;
+      try {
+        h = periksa();
+      } catch {
+        h = null;
+      }
+      if (h) return selesai(h);
+      if (Date.now() - mulai > batasMs) return selesai(null);
+      setTimeout(coba, 100);
+    };
+    coba();
+  });
+}
+
+function p5Tampak(el) {
+  if (!el) return false;
+  for (let s = el; s && s.nodeType === 1; s = s.parentElement) {
+    let gaya = null;
+    try {
+      gaya = window.getComputedStyle(s);
+    } catch {
+      gaya = null;
+    }
+    if (gaya && (gaya.display === "none" || gaya.visibility === "hidden")) return false;
+  }
+  return true;
+}
+
+/**
+ * Menuliskan satu alamat rapi lewat JALAN SIPP SENDIRI: [Edit] pihak itu
+ * (popup add_pihak_pertama/kedua .../edit) -> blangko #frm_user -> kolom
+ * Alamat (readonly di layar; SIPP sendiri mengisinya lewat skrip saat
+ * memilih referensi, dan nilainya ikut terkirim saat Simpan). Simpan TIDAK
+ * ditekan - petugas yang memeriksa lalu menyimpan.
+ */
+async function p5IsiAlamatSipp(pihak, alamatRapi) {
+  if (!pihak.penunjukEdit) return { ok: false, pesan: "Tautan [Edit] pihak ini tidak ada (Anda tidak berhak menyunting di SIPP?)." };
+  const buka = await kirimKeJembatanLangsung({ jenis: "tekan", penunjuk: pihak.penunjukEdit });
+  if (!buka || buka.ok !== true) return { ok: false, pesan: `[Edit] tidak dapat ditekan (${String((buka && buka.alasan) || "tidak menjawab")}).` };
+  const medan = await p5Tunggu(() => {
+    const el = document.querySelector("form#frm_user #alamat");
+    return el && p5Tampak(el) ? el : null;
+  }, 10000);
+  if (!medan) return { ok: false, pesan: "Blangko edit pihak SIPP tidak terbuka." };
+  const isi = await kirimKeJembatan({ jenis: "isi", penunjuk: "form#frm_user #alamat", jenisMedan: "teks", nilai: alamatRapi });
+  if (!isi || isi.ok !== true) return { ok: false, pesan: `Kolom Alamat tidak terisi (${String((isi && isi.alasan) || "tidak menjawab")}).` };
+  return { ok: true };
+}
+
+function p5BagianRapikanPihak() {
+  const kotak = bagian("Rapikan identitas para pihak", "rapikanPihak", true);
+  const isi = kotak.isi;
+  isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-baris-ket",
+      "Alamat para pihak di SIPP dibandingkan dengan usulan rapi: keterangan rumah/arah dalam kurung dan ekor wilayah dobel (bentuk e-Court) dibuang, sebutan tingkatan dilengkapi - tidak ada nama tempat yang dikarang."
+    )
+  );
+  const kabar = buatElemen("div", "aleta-tetap-sebab", "");
+  const daftar = buatElemen("div", "aleta-p5-pihak");
+  const baca = buatElemen("button", "aleta-tombol aleta-tombol-kecil", "Baca alamat para pihak");
+  baca.type = "button";
+  const tulis = buatElemen("button", "aleta-tombol aleta-p5-tulis", "Isi alamat rapi ke SIPP (pihak tercentang berikutnya)");
+  tulis.type = "button";
+  tulis.hidden = true;
+  isi.appendChild(baca);
+  isi.appendChild(kabar);
+  isi.appendChild(daftar);
+  isi.appendChild(tulis);
+  isi.appendChild(
+    buatElemen("div", "aleta-baris-ket aleta-remeh", "Tiap pihak dibuka di blangko Edit pihak SIPP dan kolom Alamatnya diisi - Anda yang memeriksa lalu menekan Simpan, satu pihak tiap kali.")
+  );
+
+  let baris = [];
+  const segarkanTulis = () => {
+    const sisa = baris.filter((b) => b.centang.checked && !b.selesai);
+    tulis.hidden = !baris.length;
+    tulis.disabled = !sisa.length;
+  };
+
+  baca.addEventListener("click", async () => {
+    daftar.textContent = "";
+    baris = [];
+    const pihak = p5BacaPihakSipp();
+    if (!pihak.length) {
+      kabar.textContent = "Tabel para pihak tidak ditemukan. Buka tab Data Umum perkara ini di SIPP, lalu tekan Baca lagi.";
+      segarkanTulis();
+      return;
+    }
+    baca.disabled = true;
+    kabar.textContent = "Merapikan…";
+    try {
+      const hasil = await p5MintaRapi(pihak.map((p) => p.alamat));
+      let berubah = 0;
+      pihak.forEach((p, i) => {
+        const h = hasil[i] || { alamat: p.alamat, perubahan: [], berubah: false };
+        const kartu = buatElemen("div", `aleta-baris aleta-p5-satu${h.berubah ? " aleta-mendesak" : ""}`);
+        kartu.setAttribute("data-p5-pihak", p.kunci);
+        kartu.appendChild(buatElemen("div", "aleta-baris-judul", `${p.sebutan}: ${p.nama}`));
+        kartu.appendChild(buatElemen("div", "aleta-baris-ket aleta-p5-sekarang", `Sekarang: ${p.alamat || "(kosong)"}`));
+        const centang = document.createElement("input");
+        centang.type = "checkbox";
+        if (h.berubah) {
+          berubah += 1;
+          kartu.appendChild(buatElemen("div", "aleta-baris-ket aleta-p5-usulan", `Usulan: ${h.alamat}`));
+          const ul = buatElemen("ul", "aleta-p5-perubahan");
+          for (const x of h.perubahan || []) ul.appendChild(buatElemen("li", "", String(x)));
+          kartu.appendChild(ul);
+          const label = buatElemen("label", "aleta-p5-centang");
+          centang.checked = Boolean(p.penunjukEdit);
+          centang.disabled = !p.penunjukEdit;
+          label.appendChild(centang);
+          label.appendChild(document.createTextNode(p.penunjukEdit ? " tuliskan alamat rapi ini" : " (tidak ada tautan [Edit] - tulis sendiri)"));
+          kartu.appendChild(label);
+        } else {
+          kartu.appendChild(buatElemen("div", "aleta-baris-ket aleta-p5-rapi", "Sudah rapi - tidak ada yang diubah."));
+        }
+        const hasilEl = buatElemen("div", "aleta-baris-ket aleta-p5-hasil", "");
+        kartu.appendChild(hasilEl);
+        centang.addEventListener("change", segarkanTulis);
+        daftar.appendChild(kartu);
+        if (h.berubah) baris.push({ pihak: p, rapi: h.alamat, centang, hasilEl, selesai: false });
+      });
+      kabar.textContent = berubah ? `${berubah} dari ${pihak.length} alamat perlu dirapikan.` : "Semua alamat para pihak sudah rapi.";
+    } catch (galat) {
+      kabar.textContent = `Gagal merapikan: ${String((galat && galat.message) || galat)}`;
+    } finally {
+      baca.disabled = false;
+      segarkanTulis();
+    }
+  });
+
+  tulis.addEventListener("click", async () => {
+    const satu = baris.find((b) => b.centang.checked && !b.selesai);
+    if (!satu) return;
+    tulis.disabled = true;
+    satu.hasilEl.textContent = "Membuka blangko Edit pihak SIPP…";
+    const h = await p5IsiAlamatSipp(satu.pihak, satu.rapi);
+    if (h.ok) {
+      satu.selesai = true;
+      satu.hasilEl.textContent = "✓ Kolom Alamat terisi. BELUM TERSIMPAN: periksa blangko lalu tekan Simpan sendiri.";
+    } else {
+      satu.hasilEl.textContent = `✗ ${h.pesan}`;
+    }
+    segarkanTulis();
+  });
+  return kotak;
 }

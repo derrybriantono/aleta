@@ -559,11 +559,17 @@ describe("butir 6 & 16: bagian di dalam tab menurut peran (UI Baru)", () => {
       }
       // Lompatan ⋯ ke bagian di tab yang tidak tampak ikut tersembunyi.
       const menu = pn.querySelector(".aleta-t7-menu");
-      for (const teks of ["Batalkan penetapan terakhir…", "Data umum dari gugatan"]) {
+      // Perbaikan 5 Okt (butir 11): Data Umum pindah ke tab PTSP di UI Baru -
+      // lompatannya mengikuti tab tempat bagiannya tinggal, bukan Penetapan.
+      for (const [teks, kunci] of [
+        ["Batalkan penetapan terakhir…", "penunjukan"],
+        ["Data umum dari gugatan", "dataUmum"],
+      ]) {
         const item = Array.from(menu.querySelectorAll(".aleta-t7-menu-item")).find((b: any) => b.textContent.trim() === teks) as any;
         if (!item) continue;
-        const bolehPenetapan = tabTampak.includes("kerjakan") || !pn.querySelector(".aleta-t7-tabbar");
-        expect(tampakDi(item), `${peran} ${teks}`).toBe(bolehPenetapan);
+        const kel = pn.querySelector(`.aleta-bagian[data-kunci="${kunci}"]`)?.closest(".aleta-kelompok");
+        const bolehTab = !pn.querySelector(".aleta-t7-tabbar") || (kel && tabTampak.includes(kel.dataset.kunci));
+        expect(tampakDi(item), `${peran} ${teks}`).toBe(Boolean(bolehTab));
       }
       const zona = menu.querySelector(".aleta-t7-menu-zona");
       if (zona) expect(zona.hasAttribute("data-s1-sembunyi")).toBe(!tabTampak.includes("kerjakan") && Boolean(pn.querySelector(".aleta-t7-tabbar")));

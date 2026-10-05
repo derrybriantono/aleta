@@ -702,7 +702,8 @@ describe("ide sipp-N hanya bila saklarnya menyala; D1-D15 hanya UI Baru", () => 
     // Urutan disesuaikan perbaikan 30 Sep SORE (menu per peran, agen S): uji
     // ini masuk sebagai Super Admin, yang menunya Penetapan, Putusan, (Juru
     // Sita), Berkas, Perkara. Dijaga ekstensi-menu-peran-sipp.test.ts.
-    expect(tab).toEqual(["kerjakan", "putusanKel", "berkas", "perkara"]);
+    // Perbaikan 5 Okt (butir 11): tab PTSP sesudah Penetapan.
+    expect(tab).toEqual(["kerjakan", "ptspKel", "putusanKel", "berkas", "perkara"]);
     expect(panel.getAttribute("data-t7-tab")).toBe("kerjakan");
     (panel.querySelector('.aleta-t7-tab[data-t7-ke="perkara"]') as any).click();
     expect(panel.getAttribute("data-t7-tab")).toBe("perkara");
