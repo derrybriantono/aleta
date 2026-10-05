@@ -96,6 +96,48 @@ function jamSah(jam) {
 
 /**
  * ============================================================================
+ * RUANG SIDANG + SIDANG KELILING DARI BLANGKO (5 Okt 2026, butir 25)
+ * ============================================================================
+ *
+ * Meniru blangko tunda SIPP (jadwal_sidang_c.php): ruangan_id + ruangan
+ * (nama dari ruangan_sidang) dan sidang_keliling 'Y'/'T'. Ruangannya DIBACA
+ * dari ruangan_sidang yang aktif - id yang tidak dikenal ditolak, namanya
+ * tidak pernah diambil dari pemanggil.
+ *
+ * Tanpa pilihan (bot dipanggil portal lama): nilai yang tercatat di sidang ini,
+ * persis seperti semula. `berubah` = ada kolom yang berbeda dari yang tercatat.
+ *
+ * @param {{ruanganId?: unknown, sidangKeliling?: unknown}} pilihan
+ * @param {{ruanganId?: unknown, ruangan?: unknown, sidangKeliling?: unknown}} keadaan
+ */
+async function ruangDipilih(pilihan, keadaan) {
+  const sekarang = {
+    ruangan_id: Number(keadaan.ruanganId) || null,
+    ruangan: bersih(keadaan.ruangan),
+    sidang_keliling: bersih(keadaan.sidangKeliling) === "Y" ? "Y" : "T",
+  };
+  const adaRuang = bersih(pilihan.ruanganId) !== "";
+  const adaKeliling = typeof pilihan.sidangKeliling === "boolean";
+  if (!adaRuang && !adaKeliling) return { ok: true, nilai: sekarang, berubah: false };
+
+  const nilai = { ...sekarang };
+  if (adaRuang) {
+    const ruangan = await penetapan.ruanganUntuk(pilihan.ruanganId).catch(() => null);
+    if (!ruangan) return { ok: false, alasan: "ruangan_sidang_tidak_dikenal" };
+    nilai.ruangan_id = ruangan.id;
+    // varchar(50) di perkara_jadwal_sidang.
+    nilai.ruangan = bersih(ruangan.nama).slice(0, 50);
+  }
+  if (adaKeliling) nilai.sidang_keliling = pilihan.sidangKeliling ? "Y" : "T";
+  const berubah =
+    nilai.ruangan_id !== sekarang.ruangan_id ||
+    nilai.ruangan !== sekarang.ruangan ||
+    nilai.sidang_keliling !== sekarang.sidang_keliling;
+  return { ok: true, nilai, berubah };
+}
+
+/**
+ * ============================================================================
  * `sampai_jam` ADALAH KOLOM TIME, DAN HANYA MENERIMA JAM
  * ============================================================================
  *
@@ -578,14 +620,22 @@ async function susunRencanaTunda(minta = {}) {
   );
 
   // ---- 2. Baris sidang berikutnya -----------------------------------------
+  // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling DIPILIH di blangko,
+  // seperti blangko tunda SIPP (ruangansidkel/ruangan + sidang_keliling).
+  // Tanpa pilihan: disalin dari sidang ini, seperti semula.
+  const ruangBerikut = await ruangDipilih(
+    { ruanganId: minta.ruanganIdBerikut, sidangKeliling: minta.sidangKelilingBerikut },
+    keadaan
+  );
+  if (!ruangBerikut.ok) return { ok: false, alasan: ruangBerikut.alasan };
   const nilaiBaru = {
     perkara_id: keadaan.perkaraId,
     tanggal_sidang: tanggalBerikut,
     jam_sidang: jamBerikut,
     agenda: agendaBerikut,
-    ruangan_id: Number(minta.ruanganIdBerikut) || Number(keadaan.ruanganId) || null,
-    ruangan: bersih(minta.ruanganBerikut) || bersih(keadaan.ruangan),
-    sidang_keliling: bersih(keadaan.sidangKeliling) === "Y" ? "Y" : "T",
+    ruangan_id: ruangBerikut.nilai.ruangan_id,
+    ruangan: ruangBerikut.nilai.ruangan,
+    sidang_keliling: ruangBerikut.nilai.sidang_keliling,
     verzet: bersih(keadaan.verzet) === "Y" ? "Y" : null,
     keberatan: bersih(keadaan.keberatan) === "Y" ? "Y" : null,
     ikrar_talak: bersih(keadaan.ikrarTalak) === "Y" ? "Y" : null,
@@ -866,35 +916,46 @@ async function susunRencanaPutus(minta = {}) {
   // luar itu kolomnya TIDAK disentuh sama sekali: menuliskan angka yang tidak
   // ada artinya lebih buruk daripada membiarkan yang sudah ada.
   const adaDihadiri = Number.isInteger(dihadiri) && dihadiri >= 1 && dihadiri <= 4;
+  // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling sidang INI dari
+  // blangko - ditulis HANYA bila berbeda dari yang tercatat (kolom lain tidak
+  // disentuh, dan tanpa pilihan tidak ada yang berubah sama sekali).
+  const ruangSidang = await ruangDipilih(
+    { ruanganId: minta.ruanganIdSidang, sidangKeliling: minta.sidangKelilingSidang },
+    keadaan
+  );
+  if (!ruangSidang.ok) return { ok: false, alasan: ruangSidang.alasan };
+  const ubahRuang = ruangSidang.berubah;
+  if (ubahRuang) {
+    nilaiJadwal.ruangan_id = ruangSidang.nilai.ruangan_id;
+    nilaiJadwal.ruangan = ruangSidang.nilai.ruangan;
+    nilaiJadwal.sidang_keliling = ruangSidang.nilai.sidang_keliling;
+  }
+  const kolomRuang = ubahRuang ? "ruangan_id = ?, ruangan = ?, sidang_keliling = ?, " : "";
+  const nilaiRuang = ubahRuang
+    ? [ruangSidang.nilai.ruangan_id, ruangSidang.nilai.ruangan, ruangSidang.nilai.sidang_keliling]
+    : [];
   langkah.push({
     tabel: "perkara_jadwal_sidang",
     aksi: "UPDATE",
-    keterangan: `sidang ${penetapan.tanggalIso(keadaan.tanggalSidang)} selesai - ${nilaiJadwal.alasan_ditunda}`,
+    keterangan: `sidang ${penetapan.tanggalIso(keadaan.tanggalSidang)} selesai - ${nilaiJadwal.alasan_ditunda}${
+      ubahRuang ? ` (${ruangSidang.nilai.ruangan || "ruang sidang"}${ruangSidang.nilai.sidang_keliling === "Y" ? ", sidang keliling" : ""})` : ""
+    }`,
     sql:
       `UPDATE perkara_jadwal_sidang
           SET sampai_jam = ?, alasan_ditunda = ?, jam_sidang = ?, ditunda = ?,
-              ${adaDihadiri ? "dihadiri_oleh = ?, " : ""}diperbaharui_oleh = ?, diperbaharui_tanggal = ?
+              ${adaDihadiri ? "dihadiri_oleh = ?, " : ""}${kolomRuang}diperbaharui_oleh = ?, diperbaharui_tanggal = ?
         WHERE id = ?`,
-    params: adaDihadiri
-      ? [
-          nilaiJadwal.sampai_jam,
-          nilaiJadwal.alasan_ditunda,
-          nilaiJadwal.jam_sidang,
-          nilaiJadwal.ditunda,
-          dihadiri,
-          nilaiJadwal.diperbaharui_oleh,
-          nilaiJadwal.diperbaharui_tanggal,
-          keadaan.jadwalId,
-        ]
-      : [
-          nilaiJadwal.sampai_jam,
-          nilaiJadwal.alasan_ditunda,
-          nilaiJadwal.jam_sidang,
-          nilaiJadwal.ditunda,
-          nilaiJadwal.diperbaharui_oleh,
-          nilaiJadwal.diperbaharui_tanggal,
-          keadaan.jadwalId,
-        ],
+    params: [
+      nilaiJadwal.sampai_jam,
+      nilaiJadwal.alasan_ditunda,
+      nilaiJadwal.jam_sidang,
+      nilaiJadwal.ditunda,
+      ...(adaDihadiri ? [dihadiri] : []),
+      ...nilaiRuang,
+      nilaiJadwal.diperbaharui_oleh,
+      nilaiJadwal.diperbaharui_tanggal,
+      keadaan.jadwalId,
+    ],
   });
   langkah.push(
     penetapan.barisAudit({
@@ -1072,6 +1133,7 @@ module.exports = {
   jamMenurutAgenda,
   tanggalDuaPekan,
   prosesUntukTunda,
+  ruangDipilih,
   susunRencanaTunda,
   susunRencanaPutus,
   AMAR_BELUM,

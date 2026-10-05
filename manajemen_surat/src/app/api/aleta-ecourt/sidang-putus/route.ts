@@ -89,6 +89,9 @@ export async function POST(request: NextRequest) {
         jamSekarang: String(badan.jamSekarang ?? ""),
         dihadiriOleh: badan.dihadiriOleh,
         ruangId: badan.ruangId,
+        // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling sidang ini.
+        ruanganIdSidang: badan.ruanganIdSidang,
+        sidangKelilingSidang: typeof badan.sidangKelilingSidang === "boolean" ? badan.sidangKelilingSidang : undefined,
         operator: actorUserId || "portal",
         kering: badan.kering !== false,
       });

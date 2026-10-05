@@ -106,6 +106,9 @@ export async function POST(request: NextRequest) {
       agendaBerikut: String(badan.agendaBerikut || ""),
       jenisPengadilan: badan.jenisPengadilan,
       ruangId: badan.ruangId,
+      // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling sidang BERIKUTNYA.
+      ruanganIdBerikut: badan.ruanganIdBerikut,
+      sidangKelilingBerikut: typeof badan.sidangKelilingBerikut === "boolean" ? badan.sidangKelilingBerikut : undefined,
       dihadiriOleh: badan.dihadiriOleh,
       olehUsername: String(badan.olehUsername || ""),
       // Operator adalah orang portal yang menekan tombolnya - terpisah dari

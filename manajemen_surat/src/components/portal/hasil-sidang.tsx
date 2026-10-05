@@ -29,6 +29,14 @@ import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import { IsianMediator } from "@/components/portal/jadwal-sidang-1okt";
 import { PapanRuangSidang } from "@/components/portal/jadwal-sidang-2okt";
 import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
+import type { Ruangan } from "@/lib/ruangan-sidang";
+import {
+  bawaanRuangSidang,
+  kelilingUntukRuangan,
+  muatanRuangSidang,
+  ruanganMenurutId,
+  type BawaanRuangSidang,
+} from "@/lib/ruang-sidang-blangko";
 import { cn } from "@/lib/utils";
 
 /**
@@ -72,6 +80,9 @@ type KeadaanSidang = {
   alasanDitunda?: string;
   urutan?: number;
   ruanganId?: number;
+  /** Nama ruangan + sidang keliling 'Y'/'T' yang tercatat (butir 25). */
+  ruangan?: string | null;
+  sidangKeliling?: string | null;
   dihadiriOleh?: number;
   /** Bahan sebutan para pihak dan bendera ikrar - bot 30 Sep 2026 ke atas. */
   alurPerkaraId?: number | null;
@@ -1076,6 +1087,12 @@ export function CatatHasilRingkas({
   const [sibuk, setSibuk] = useState(false);
   const [sudahTertulis, setSudahTertulis] = useState(false);
 
+  // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling - seperti blangko
+  // tunda SIPP. Bawaan: yang tercatat; keliling hanya bila sidang itu keliling.
+  const [daftarRuangan, setDaftarRuangan] = useState<Ruangan[]>([]);
+  const [ruangPilih, setRuangPilih] = useState<BawaanRuangSidang>({ ruanganId: "", keliling: false });
+  const [kelilingDisentuh, setKelilingDisentuh] = useState(false);
+
   useEffect(() => {
     void (async () => {
       setGalatMuat(null);
@@ -1088,12 +1105,16 @@ export function CatatHasilRingkas({
           alasan?: string;
           keadaan?: KeadaanSidang;
           riwayat?: RiwayatTunda;
+          ruangan?: Ruangan[];
         }>(balasan);
         if (!isi.ok || !isi.keadaan) {
           setGalatMuat(isi.alasan || "Jadwal sidang tidak ditemukan.");
           return;
         }
         setKeadaan(isi.keadaan);
+        const daftar = Array.isArray(isi.ruangan) ? isi.ruangan : [];
+        setDaftarRuangan(daftar);
+        setRuangPilih(bawaanRuangSidang(isi.keadaan, daftar));
         const tgl = String(isi.keadaan.tanggalSidang || "").slice(0, 10);
         setTanggalBerikut(tambahHari(tgl, 14));
 
@@ -1198,6 +1219,7 @@ export function CatatHasilRingkas({
               agendaBerikut,
               dihadiriOleh: dihadiri,
               ruangId: keadaan.ruanganId,
+              ...muatanRuangSidang(ruangPilih, "tunda"),
               kering: false,
             }
           : {
@@ -1210,6 +1232,7 @@ export function CatatHasilRingkas({
               jamSekarang: keadaan.jamSidang,
               dihadiriOleh: dihadiri,
               ruangId: keadaan.ruanganId,
+              ...muatanRuangSidang(ruangPilih, "putus"),
               kering: false,
             };
       const balasan = await fetch(apiPath(alamat), {
@@ -1241,6 +1264,7 @@ export function CatatHasilRingkas({
     statusId,
     tanggalPutus,
     verstek,
+    ruangPilih,
     onSelesai,
   ]);
 
@@ -1443,6 +1467,53 @@ export function CatatHasilRingkas({
           </label>
         </div>
       )}
+
+      {/* Butir 25 (5 Okt 2026): ruang sidang + sidang keliling, seperti blangko
+          tunda SIPP. Tunda = untuk sidang BERIKUTNYA; putus = sidang INI
+          (ditulis hanya bila diubah). */}
+      <div className="flex flex-wrap items-end gap-3" data-ruang-sidang-blangko="">
+        <label className="block min-w-[14rem] text-xs sm:max-w-md">
+          <span className="mb-0.5 block font-medium text-muted-foreground">
+            {jalan === "tunda" ? "Ruang sidang berikutnya" : "Ruang sidang"}
+          </span>
+          <NativeSelect
+            aria-label={jalan === "tunda" ? "Ruang sidang berikutnya" : "Ruang sidang"}
+            value={ruangPilih.ruanganId}
+            onChange={(e) => {
+              const id = e.target.value;
+              const ikut = kelilingUntukRuangan(daftarRuangan, id);
+              setRuangPilih((lama) => ({
+                ruanganId: id,
+                keliling: !kelilingDisentuh && ikut !== null ? ikut : lama.keliling,
+              }));
+            }}
+            className="h-8 text-sm"
+          >
+            {ruangPilih.ruanganId === "" || !ruanganMenurutId(daftarRuangan, ruangPilih.ruanganId) ? (
+              <option value="">{keadaan.ruangan ? `${keadaan.ruangan} (tercatat)` : "Seperti tercatat di SIPP"}</option>
+            ) : null}
+            {daftarRuangan.map((r) => (
+              <option key={r.id} value={String(r.id)}>
+                {r.nama}
+              </option>
+            ))}
+          </NativeSelect>
+        </label>
+        <label className="flex items-center gap-2 pb-1.5 text-sm">
+          <input
+            type="checkbox"
+            aria-label="Sidang keliling"
+            checked={ruangPilih.keliling}
+            onChange={(e) => {
+              setKelilingDisentuh(true);
+              const keliling = e.target.checked;
+              setRuangPilih((lama) => ({ ...lama, keliling }));
+            }}
+            className="h-4 w-4"
+          />
+          <span>Sidang keliling</span>
+        </label>
+      </div>
 
       <label className="block text-xs sm:max-w-md">
         <span className="mb-0.5 block font-medium text-muted-foreground">Kehadiran pihak</span>

@@ -2713,6 +2713,8 @@ const URUTAN_BONGKAR = ["phs", "pjs", "ppp", "pmh"];
 
 module.exports = {
   daftarRuangan,
+  // Dipakai blangko tunda/putus Jadwal Sidang (butir 25, 5 Okt 2026).
+  ruanganUntuk,
   URUTAN_BONGKAR,
   TANDA_ALETA,
   DAFTAR_TABEL,
