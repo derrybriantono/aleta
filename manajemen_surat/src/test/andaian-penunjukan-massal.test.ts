@@ -178,8 +178,10 @@ describe("bukti luring bot yang menyertai rilis ini", () => {
 
   it("layanan tulis menulis judul Smart Majelis hanya pada hakim_pn", () => {
     const tulis = baca("aleta_bot/services/penetapanTulisService.js");
-    expect(tulis).toContain("judulHalaman: ` Smart Majelis ${jejak.formulir}`,");
-    expect(tulis.split("judulHalaman: `").length - 1).toBe(1);
+    // Sejak butir 39 (5 Okt 2026) hanya pada jalur rekomendasi (status 1) -
+    // jalur borang (status 2) berjudul tanpa "Smart Majelis", seperti SIPP.
+    expect(tulis).toContain("judulHalaman: lewatSmart ? ` Smart Majelis ${jejak.formulir}` : undefined,");
+    expect(tulis.split("judulHalaman: ").length - 1).toBe(1);
     expect(tulis).toContain('const SMART_MAJELIS_SESUAI_REKOMENDASI = "1";');
     expect(tulis).toContain("WHERE rmt.aktif IN ('1', 'Y')");
   });

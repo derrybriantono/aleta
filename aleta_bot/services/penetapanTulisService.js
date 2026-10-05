@@ -172,17 +172,21 @@ function barisRiwayat({ perkaraId, jejak, tanggal, username, saat }) {
     proses_id: jejak.prosesId,
     proses_nama: jejak.prosesText,
     tanggal,
+    keterangan: "",
     diinput_oleh: username,
     diinput_tanggal: saat,
   };
   return {
     tabel: "perkara_proses",
     aksi: "REPLACE",
+    // keterangan '' - parameter ketujuh CALL perkara_proses_update, yang pada
+    // keempat controller penetapan SIPP selalu dikirim kosong. Tanpanya
+    // kolomnya NULL, satu-satunya baris riwayat penetapan yang begitu.
     sql:
       `REPLACE INTO perkara_proses
          (perkara_id, tahapan_id, tahapan_nama, proses_id, proses_nama, tanggal,
-          diinput_oleh, diinput_tanggal)
-       VALUES (?,?,?,?,?,?,?,?)`,
+          keterangan, diinput_oleh, diinput_tanggal)
+       VALUES (?,?,?,?,?,?,?,?,?)`,
     params: [
       perkaraId,
       jejak.tahapanId,
@@ -190,6 +194,7 @@ function barisRiwayat({ perkaraId, jejak, tanggal, username, saat }) {
       jejak.prosesId,
       jejak.prosesText,
       tanggal,
+      "",
       String(username).slice(0, 30),
       saat,
     ],
@@ -303,8 +308,12 @@ const JEJAK_PROSES = {
 const JADWAL_BAWAAN = {
   ruanganId: 1,
   jamSidang: "09:00:00",
-  sampaiJam: "09:30:00",
-  agenda: "SIDANG PERTAMA",
+  // Agenda bawaan borang SIPP sekarang. Diukur 5 Okt 2026 atas jadwal sidang
+  // pertama sejak Juni 2026 yang belum disunting: 30 dari 30 berbunyi
+  // "Sidang Pertama" dengan sampai_jam NULL. "SIDANG PERTAMA" + 09:30 yang
+  // dahulu dipatok di sini hanya muncul pada baris yang sudah disunting
+  // sesudahnya - atau yang ditulis ALETA.
+  agenda: "Sidang Pertama",
 };
 
 function runQuery(sql, params = []) {
@@ -706,7 +715,8 @@ function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer, didaftar
  */
 function keteranganAudit(nilai) {
   const baris = Object.entries(nilai)
-    .map(([kolom, isi]) => `<tr><td>${kolom}</td><td>${isi === null ? "" : String(isi)}</td></tr>`)
+    // PHP mencetak NULL sebagai teks kosong - '<td></td>' - begitu pula di sini.
+    .map(([kolom, isi]) => `<tr><td>${kolom}</td><td>${isi === null || isi === undefined ? "" : String(isi)}</td></tr>`)
     .join("");
   return (
     `<br><table style="vertical-align:top" cellspacing="0" cellpadding="1" border="1">` +
@@ -769,6 +779,10 @@ function barisAudit({
   // Memakai cetakan yang biasa di sana akan menghasilkan judul yang tidak
   // pernah ditulis SIPP untuk tabel itu.
   judulSendiri,
+  // "Primary Key" (bawaan) atau "Foreign Key". insert_penunjukan_panitera dan
+  // insert_penunjukan_juru_sita menulis "dengan Foreign Key [perkara_id=...]"
+  // pada baris perkara_panitera_pn dan perkara_jurusita.
+  jenisKunci = "Primary Key",
 }) {
   // Kunci utamanya diambil dari nilai yang ditulis bila tidak disebut - tiap
   // baris pada berkas ini selalu membawa perkara_id.
@@ -785,9 +799,9 @@ function barisAudit({
   // tanda yang membedakan barisnya dari baris SIPP.
   const idPerkara = Number(perkaraId || (nilai && nilai.perkara_id) || 0);
   const kunci = kunciSendiri
-    ? ` dengan Primary Key [${kunciSendiri}]`
+    ? ` dengan ${jenisKunci} [${kunciSendiri}]`
     : idPerkara > 0
-      ? ` dengan Primary Key [perkara_id=${idPerkara}]`
+      ? ` dengan ${jenisKunci} [perkara_id=${idPerkara}]`
       : "";
   return {
     tabel: "sys_audittrail",
@@ -910,6 +924,8 @@ async function keadaanPerkara(perkaraId) {
   const baris = await runQuery(
     `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
             p.jenis_perkara_id AS jenisPerkaraId,
+            -- addMajelis_c menolak PMH yang mendahului tanggal pendaftaran.
+            p.tanggal_pendaftaran AS tanggalDaftar,
             pen.perkara_id AS adaPenetapan,
             pen.penetapan_majelis_hakim AS pmh,
             pen.penetapan_panitera_pengganti AS ppp,
@@ -953,6 +969,107 @@ async function akunSipp(username) {
 }
 
 /**
+ * ============================================================================
+ * AKUN SIPP PETUGAS YANG SEDANG MASUK - BUKAN AKUN PEJABAT (butir 39, 5 Okt)
+ * ============================================================================
+ *
+ * Sampai 5 Oktober 2026 penetapan lewat ALETA tercatat di SIPP atas nama
+ * PEJABATNYA: PMH dan PHS atas nama "fahri", PPP dan PJS atas nama "Sri
+ * Susilowati" - padahal yang menekan tombolnya petugas lain, yang saat itu
+ * masuk SIPP dengan akunnya sendiri ("derry briantono", terbaca di
+ * sys_user_online dari alamat yang sama). Keputusan pengguna 2 Oktober
+ * menutup jalan itu: yang tercatat di sistem luar adalah petugas sesi
+ * sungguhan, dan nama petugas LAIN tidak pernah ditulis.
+ *
+ * Yang dikirim ekstensi adalah sapaan "Selamat Datang <font>...</font>" di
+ * kepala halaman SIPP. Diperiksa pada views/header.php SIPP: isinya
+ * session->userdata('fullname') - NAMA LENGKAP, bukan username. Sedangkan
+ * sys_audittrail.username dan seluruh kolom diinput_oleh menyimpan USERNAME.
+ * Karena itu namanya diterjemahkan di sini, dengan urutan yang tidak menebak:
+ *
+ *   1. username yang persis sama            -> itu (pemanggil lama mengirim username)
+ *   2. nama lengkap yang hanya milik satu akun aktif -> akun itu
+ *   3. nama lengkap milik beberapa akun (di satker ini meja1g/meja1p sama-sama
+ *      "Tiffany RS") -> dipersempit lewat sys_user_online: akun bernama itu
+ *      yang HARI INI masuk dari alamat IP peramban yang sama
+ *   4. masih ganda atau tidak ada -> DITOLAK, tidak pernah dipilihkan.
+ *
+ * @returns {Promise<{username:string, fullname:string} | {ganda:true, calon:string[]} | null>}
+ */
+async function akunPetugasMasuk(nama, ip = "") {
+  const teks = cleanText(nama);
+  if (!teks) return null;
+
+  const persis = await akunSipp(teks);
+  if (persis) return persis;
+
+  const baris = await runQuery(
+    `SELECT username, fullname, block FROM sys_users WHERE TRIM(fullname) = ?`,
+    [teks]
+  ).catch(() => []);
+  const semua = (Array.isArray(baris) ? baris : []).filter((x) => x && cleanText(x.username));
+  if (semua.length === 0) return null;
+  // block 0 = akun aktif. Akun yang diblokir tidak dapat sedang masuk.
+  const aktif = semua.filter((x) => String(x.block ?? "0") === "0");
+  const calon = aktif.length > 0 ? aktif : semua;
+  if (calon.length === 1) return { username: calon[0].username, fullname: calon[0].fullname };
+
+  const alamat = String(ip || "").trim();
+  if (alamat) {
+    const sesi = await runQuery(
+      `SELECT su.username AS username, su.fullname AS fullname
+         FROM sys_user_online suo
+         JOIN sys_users su ON su.userid = suo.userid
+        WHERE TRIM(su.fullname) = ? AND suo.host_address = ? AND DATE(suo.login_time) = CURDATE()
+        ORDER BY suo.login_time DESC`,
+      [teks, alamat]
+    ).catch(() => []);
+    const unik = [...new Set((Array.isArray(sesi) ? sesi : []).map((x) => cleanText(x.username)).filter(Boolean))];
+    if (unik.length === 1) {
+      const satu = sesi.find((x) => cleanText(x.username) === unik[0]);
+      return { username: satu.username, fullname: satu.fullname };
+    }
+  }
+  return { ganda: true, calon: calon.map((x) => String(x.username)) };
+}
+
+/** Sabtu atau Minggu - SIPP menolak keduanya untuk tanggal penetapan dan hari sidang. */
+function hariLibur(iso) {
+  if (!tanggalSah(iso)) return false;
+  const hari = new Date(`${iso}T00:00:00Z`).getUTCDay();
+  return hari === 0 || hari === 6;
+}
+
+/**
+ * Tahapan terakhir yang ditulis SIPP sesudah satu baris riwayat.
+ *
+ * riwayat_perkara_m::updateproses tidak menyalin langkah yang baru ditulis ke
+ * tabel perkara. Ia membaca ULANG perkara_proses - ORDER BY tahapan_id DESC,
+ * proses_id DESC - dan menulis yang paling akhir. Pada perkara baru keduanya
+ * sama; pada perkara yang riwayatnya sudah lebih jauh, tahapan terakhirnya
+ * tidak mundur.
+ */
+function prosesTerakhirSesudah(lama, baru) {
+  if (!lama || !(Number(lama.tahapanId) > 0)) return baru;
+  const t = Number(lama.tahapanId);
+  const p = Number(lama.prosesId) || 0;
+  if (t > baru.tahapanId || (t === baru.tahapanId && p > baru.prosesId)) {
+    return { tahapanId: t, tahapanText: lama.tahapanText, prosesId: p, prosesText: lama.prosesText };
+  }
+  return baru;
+}
+
+async function prosesTerakhirPerkara(perkaraId) {
+  const baris = await runQuery(
+    `SELECT tahapan_id AS tahapanId, tahapan_nama AS tahapanText, proses_id AS prosesId, proses_nama AS prosesText
+       FROM perkara_proses WHERE perkara_id = ?
+      ORDER BY tahapan_id DESC, proses_id DESC, tanggal DESC LIMIT 1`,
+    [perkaraId]
+  ).catch(() => []);
+  return (Array.isArray(baris) && baris[0]) || null;
+}
+
+/**
  * Petugas beserta kode dan NIP-nya, dari tabel acuannya sendiri.
  *
  * Dibaca, bukan diterima dari pemanggil: kode dan NIP tidak pernah ada di
@@ -982,6 +1099,10 @@ async function petugasUntuk(jenis, id) {
     // Nama bergelar yang dipakai SIPP pada berkas perkara - "Munifa, S.H.",
     // bukan "Munifa".
     nama: cleanText(satu.namaGelar) || cleanText(satu.nama),
+    // Nama TANPA gelar. add_juru_sita_m::insert_penunjukan_juru_sita menulis
+    // perkara_jurusita.jurusita_nama dari kolom `nama`, bukan `nama_gelar` -
+    // berbeda dari panitera_pn, yang memakai nama bergelar.
+    namaPolos: cleanText(satu.nama) || cleanText(satu.namaGelar),
   };
 }
 
@@ -1175,7 +1296,10 @@ async function hakimUntuk(daftarId) {
   if (id.length === 0) return [];
   const isian = id.map(() => "?").join(",");
   const baris = await runQuery(
-    `SELECT id AS hakimId, kode, nip, nama_gelar AS nama FROM hakim_pn WHERE id IN (${isian})`,
+    // nama_gelar untuk hakim_nama dan majelis_hakim_text; `nama` (tanpa gelar)
+    // untuk perkara_penetapan.majelis_hakim_nama - begitulah
+    // add_majelis_m::insert_penetapan_majelis(_sm) menulisnya.
+    `SELECT id AS hakimId, kode, nip, nama_gelar AS nama, nama AS namaPolos FROM hakim_pn WHERE id IN (${isian})`,
     id
   ).catch(() => []);
   const peta = new Map((baris || []).map((x) => [Number(x.hakimId), x]));
@@ -1222,21 +1346,89 @@ async function susunRencanaTulis(minta) {
     return { ok: false, alasan: "tanggal_penetapan_tidak_sah" };
   }
 
-  const akun = await akunSipp(minta.olehUsername);
+  // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
+  // Alamat peramban petugas - itulah yang dicatat SIPP sendiri
+  // ($this->input->ip_address()) untuk pekerjaan yang sama.
+  const ip = String(minta.ip || "");
+
+  // ==========================================================================
+  // DICATAT ATAS NAMA PETUGAS YANG MASUK SIPP DAN MENEKAN TOMBOLNYA
+  // ==========================================================================
+  //
+  // olehUsername kini AKUN SIPP PETUGAS YANG SEDANG MASUK (nama pada kepala
+  // halaman SIPP), bukan pemetaan jabatan pejabat. Lihat akunPetugasMasuk.
+  // Jalur data umum memakai bentuk yang sama sejak awal.
+  const akun = await akunPetugasMasuk(minta.olehUsername, ip);
   if (!akun) {
-    // Nama akunnya IKUT disebutkan. Tanpa itu, yang membacanya hanya tahu
-    // "akun pejabat tidak ketemu" dan tidak punya satu pun petunjuk akun mana
-    // yang dicari - padahal yang dicari datang dari pemetaan jabatan ALETA,
-    // dan di situlah perbaikannya.
+    // Nama yang dicari IKUT disebutkan - tanpa itu yang membacanya tidak tahu
+    // akun mana yang tidak ditemukan.
     return {
       ok: false,
-      alasan: "akun_pejabat_tidak_ketemu",
+      alasan: "akun_sipp_tidak_ketemu",
       username: String(minta.olehUsername || ""),
+    };
+  }
+  if (akun.ganda) {
+    // Dua akun bernama lengkap sama, dan tidak satu pun terbaca masuk dari
+    // peramban ini hari ini. Memilihkan salah satunya berarti mungkin menulis
+    // atas nama petugas LAIN - yang justru dilarang.
+    return {
+      ok: false,
+      alasan: "akun_sipp_ganda",
+      username: String(minta.olehUsername || ""),
+      calon: akun.calon,
     };
   }
 
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
+
+  // ==========================================================================
+  // JAM SUNGGUHAN - DIAMBIL SAAT LANGKAH INI DITULIS
+  // ==========================================================================
+  //
+  // Sampai 5 Oktober jam yang dicatat DISUSUN (waktuLangkah): satu rangkaian
+  // 08:00-14:00 per perkara, mundur bila perlu. Perkara 630/Pdt.G/2026 yang
+  // ditetapkan pukul ±13.02 karena itu tercatat 12:26:22, 12:35:46, 12:45:02,
+  // dan 12:54:22 - nomor audit 505555-505570 duduk SESUDAH baris 13:02:11
+  // milik petugas lain. Layar Audit Trail SIPP mengurut menurut datetime
+  // (audit_trail.php: ORDER BY datetime DESC), sehingga baris-baris itu
+  // terkubur di halaman yang sudah lewat, atas nama pejabat yang tidak
+  // menekan apa pun: "tidak ada satu baris pun".
+  //
+  // Sekarang jamnya jam basis data SIPP SAAT INI - jam yang sama yang dipakai
+  // SIPP ketika petugas menekan Simpan - dan jeda antarlangkahnya jeda
+  // sungguhan (lihat rute /penetapan/tulis dan rantaiPenetapan di ekstensi).
+  // Tanggal penetapan - tanggal substantif - tidak disentuh.
+  const saatServer = await waktuBasisData();
+  const saat = saatServer;
+  const hariIni = saatServer.slice(0, 10);
+
+  // ==========================================================================
+  // PAGAR TANGGAL MILIK SIPP SENDIRI
+  // ==========================================================================
+  //
+  // Keempat controller penetapan SIPP (addMajelis_c, addPanitera_c,
+  // addJuruSita_c, addSidangPertama_c) menolak tanggal penetapan yang
+  // melebihi hari ini dan yang jatuh pada Sabtu/Minggu. Penetapan yang ditolak
+  // SIPP tidak boleh lolos hanya karena ditulis lewat ALETA.
+  // Data Umum bukan penetapan - ia tidak bertanggal penetapan dan tidak ikut.
+  const penetapan = jenis !== "dataUmum";
+  if (penetapan && tanggalSah(hariIni) && minta.tanggalPenetapan > hariIni) {
+    return { ok: false, alasan: "tanggal_penetapan_masa_depan", diminta: minta.tanggalPenetapan, hariIni };
+  }
+  if (penetapan && hariLibur(minta.tanggalPenetapan)) {
+    return { ok: false, alasan: "tanggal_penetapan_hari_libur", diminta: minta.tanggalPenetapan };
+  }
+  const tanggalDaftar = tanggalIso(perkara.tanggalDaftar);
+  if (jenis === "pmh" && tanggalDaftar && minta.tanggalPenetapan < tanggalDaftar) {
+    return {
+      ok: false,
+      alasan: "tanggal_penetapan_sebelum_pendaftaran",
+      seharusnya: tanggalDaftar,
+      diminta: minta.tanggalPenetapan,
+    };
+  }
 
   // ==========================================================================
   // KEEMPAT LANGKAH SELALU PADA TANGGAL YANG SAMA
@@ -1314,24 +1506,26 @@ async function susunRencanaTulis(minta) {
         `${x.jenis.toUpperCase()} bertanggal ${x.tanggal}, sedangkan langkah ini ${minta.tanggalPenetapan}.`
     );
 
-  const saatServer = await waktuBasisData();
-  // Jam yang DICATAT ke SIPP - berjarak satu sampai sepuluh menit tiap
-  // langkah, tidak pernah melampaui jam sekarang. Jam peladen tidak disentuh.
-  const saat = waktuLangkah({
-    perkaraId: perkara.perkaraId,
-    tanggalPenetapan: minta.tanggalPenetapan,
-    jenis,
-    saatServer,
-    // Lantai jamnya: penetapan tidak pernah mendahului Pendaftaran Perkara.
-    didaftar: perkara.didaftar,
-  });
-  // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
-  const ip = String(minta.ip || "");
   const langkah = [];
   // Andaian yang dipakai menyusun rencana ini - kosong pada keadaan biasa.
   // Diteruskan apa adanya ke panel supaya yang membacanya tahu rencana ini
   // dinilai atas keadaan yang BELUM ada, bukan yang sudah.
   const andaian = [];
+
+  // ==========================================================================
+  // SATU BARIS AUDIT, BENTUK SIPP - DIBACA DARI SUMBER SIPP SENDIRI
+  // ==========================================================================
+  //
+  // Seluruh baris satu tekanan Simpan di SIPP berbagi akun, alamat, jam, dan
+  // nama halaman yang sama - add_audittrail() pada add_majelis_m,
+  // add_panitera_m, add_juru_sita_m, add_sidang_pertama_m, dan
+  // riwayat_perkara_m menulis datetime date(), ipaddress ip_address(),
+  // username session username, formname $namahalaman. Isi description adalah
+  // fetch_description($data) - larik yang SAMA yang ditulis ke tabelnya,
+  // dengan urutan kunci yang sama. Karena itu tiap langkah di bawah menyusun
+  // nilainya dalam urutan kunci larik PHP-nya.
+  const audit = (rincian) =>
+    barisAudit({ username: akun.username, formulir: jejak.formulir, ip, saat, ...rincian });
 
   // ---- PMH ---------------------------------------------------------------
   if (jenis === "pmh") {
@@ -1346,117 +1540,62 @@ async function susunRencanaTulis(minta) {
       return { ok: false, alasan: "hakim_kembar" };
     }
 
-    // Bentuk kolom gabungan ditiru dari baris SIPP yang sudah ada:
-    // id dipisah koma, kode dipisah garis tegak, nama dipisah </br>.
+    // Hakim tunggal BUKAN "Hakim Ketua": add_majelis_m menulis jabatan 3
+    // "Hakim Tunggal" dan teks "Hakim Tunggal: ..." bila hanya satu kursi.
+    const tunggal = hakim.length === 1;
+    const jabatanUntuk = (urutan) =>
+      urutan === 0
+        ? tunggal
+          ? { id: 3, nama: "Hakim Tunggal" }
+          : { id: 1, nama: "Hakim Ketua" }
+        : { id: 2, nama: "Hakim Anggota" };
+
+    // Bentuk kolom gabungan ditiru dari SIPP: id dipisah koma, kode dipisah
+    // garis tegak, nama dipisah </br>. majelis_hakim_nama memakai nama TANPA
+    // gelar ($data_hakim->nama), majelis_hakim_text nama bergelar - terbaca
+    // pada perkara 10186 yang ditetapkan tangan 5 Okt 2026.
     const idGabung = hakim.map((x) => x.hakimId).join(",");
     const kodeGabung = hakim.map((x) => x.kode || "").join("|");
-    const namaGabung = hakim.map((x) => x.nama).join("</br>");
+    const namaGabung = hakim.map((x) => x.namaPolos || x.nama).join("</br>");
     const teksGabung = hakim
-      .map((x, i) => `${i === 0 ? "Hakim Ketua" : `Hakim Anggota ${i}`}: ${x.nama}`)
+      .map((x, i) => `${i === 0 ? jabatanUntuk(0).nama : `Hakim Anggota ${i}`}: ${x.nama}`)
       .join("</br>");
 
-    const nilaiPenetapan = {
-      perkara_id: perkara.perkaraId,
-      penetapan_majelis_hakim: minta.tanggalPenetapan,
-      majelis_hakim_id: idGabung,
-      majelis_hakim_kode: kodeGabung,
-      majelis_hakim_nama: namaGabung,
-      majelis_hakim_text: teksGabung,
-      diinput_oleh: akun.username,
-      diinput_tanggal: saat,
-    };
-
-    langkah.push({
-      tabel: "perkara_penetapan",
-      aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
-      sql: perkara.adaPenetapan
-        ? `UPDATE perkara_penetapan SET penetapan_majelis_hakim = ?, majelis_hakim_id = ?,
-             majelis_hakim_kode = ?, majelis_hakim_nama = ?, majelis_hakim_text = ?,
-             diperbaharui_oleh = ?, diperbaharui_tanggal = ?
-           WHERE perkara_id = ?`
-        : `INSERT INTO perkara_penetapan
-             (perkara_id, penetapan_majelis_hakim, majelis_hakim_id, majelis_hakim_kode,
-              majelis_hakim_nama, majelis_hakim_text, diinput_oleh, diinput_tanggal)
-           VALUES (?,?,?,?,?,?,?,?)`,
-      params: perkara.adaPenetapan
-        ? [
-            minta.tanggalPenetapan,
-            idGabung,
-            kodeGabung,
-            namaGabung,
-            teksGabung,
-            akun.username,
-            saat,
-            perkara.perkaraId,
-          ]
-        : [
-            perkara.perkaraId,
-            minta.tanggalPenetapan,
-            idGabung,
-            kodeGabung,
-            namaGabung,
-            teksGabung,
-            akun.username,
-            saat,
-          ],
-      keterangan: `penetapan majelis ${kodeGabung}`,
-    });
-    langkah.push(
-      barisAudit({
-        username: akun.username,
-        tabel: "perkara_penetapan",
-        formulir: jejak.formulir,
-        aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
-        nilai: nilaiPenetapan,
-        ip,
-        saat,
-      })
-    );
-
     // ======================================================================
-    // SMART MAJELIS - BARIS YANG SELAMA INI TIDAK PERNAH DITULIS
+    // SMART MAJELIS: STATUS 1 BILA SUSUNANNYA MAJELIS SK, SELAIN ITU 2
     // ======================================================================
     //
-    // SIPP mencatat di perkara_smartmajelis setiap kali majelis ditetapkan
-    // BERBEDA dari susunan yang direkomendasikan SK majelis tetap, beserta
-    // sebabnya. Itulah yang dibaca laporan Smart Majelis, dan perkara yang
-    // majelisnya ditetapkan ALETA sama sekali tidak muncul di sana.
-    //
-    // Bentuknya ditiru persis dari addMajelis_c.php: pada keadaan "majelis
-    // diubah dari rekomendasi" SIPP menyimpan hakim_id2, status, tanggal, dan
-    // keterangan - TANPA menyentuh majelis_id maupun hakim_id, yang memang
-    // milik SK-nya. Baris yang sudah ada diperbarui, bukan disisipkan kedua
-    // kalinya.
-    //
-    // status 2 = susunannya ditetapkan di luar rekomendasi otomatis. Itu yang
-    // benar untuk ALETA: giliran majelis dihitung ALETA sendiri, bukan diambil
-    // dari rekomendasi Smart Majelis SIPP.
-    // Sebab yang DITULISKAN ke kolom keterangan SIPP, dan karena itu tidak
-    // boleh menyebut ALETA sama sekali. Yang dibaca laporan Smart Majelis
-    // adalah alasan majelisnya menyimpang dari rekomendasi - dan alasan yang
-    // sesungguhnya memang giliran serta beban perkara, bukan alat yang
-    // dipakai mengetiknya.
-    // ======================================================================
-    // SESUAI REKOMENDASI (STATUS 1) BILA SUSUNANNYA MAJELIS SK
-    // ======================================================================
-    //
-    // Diukur pada 1.112 perkara PA Donggala tahun 2026 yang ditetapkan
-    // tangan: 782 memakai tombol Smart Majelis, dan yang susunannya diterima
+    // Diukur pada 1.112 perkara PA Donggala tahun 2026: susunan yang diterima
     // apa adanya berbaris status 1 - majelis_id menunjuk ref_majelis_tetap,
-    // hakim_id berisi susunan itu, hakim_id2 dan keterangan kosong. Sejak
-    // ALETA memilih majelis dari SK Ketua, susunan yang ditetapkannya adalah
-    // susunan yang sama dengan ref_majelis_tetap; menulisnya sebagai "di
-    // luar rekomendasi" membuat laporan Smart Majelis menghitung tiap perkara
-    // ALETA sebagai penyimpangan yang tidak pernah terjadi.
+    // hakim_id berisi susunan itu, hakim_id2 dan keterangan kosong. Yang
+    // tidak ada di ref ditulis status 2 beserta sebabnya.
     //
-    // Yang tidak ada di ref - hakim tunggal di luar dispensasi kawin, atau
-    // susunan darurat - tetap ditulis sebagai status 2 beserta sebabnya,
-    // seperti dahulu.
+    // Kedua keadaan itu juga DUA JALUR SIPP yang berbeda bentuknya, dan
+    // keduanya ditiru utuh (diukur atas penetapan sejak Juni 2026):
+    //
+    //   status 1  majelis_tetap.php -> insert_penetapan_majelis_sm
+    //             jenis_acara NULL, nomor_sk_penetapan NULL, keterangan NULL,
+    //             judul hakim_pn "dari halaman <b> Smart Majelis ...</b>"
+    //   status 2  addMajelis_c (ism=2) -> insert_penetapan_majelis
+    //             jenis_acara '0', nomor_sk_penetapan '', keterangan = sebab,
+    //             judul hakim_pn TANPA "Smart Majelis"
+    //
+    // Sebelum ini ALETA selalu memakai judul Smart Majelis, juga pada status 2.
     const majelisTetap = await majelisTetapUntuk(
       hakim.map((x) => x.hakimId),
       perkara.nomorPerkara,
       perkara.jenisPerkaraId
     );
+    const lewatSmart = Boolean(majelisTetap);
+    // Sebab yang DITULISKAN ke kolom keterangan SIPP, dan karena itu tidak
+    // boleh menyebut ALETA sama sekali.
+    const sebabMajelis =
+      cleanText(minta.sebabMajelis) ||
+      "Ditetapkan menurut giliran majelis dan pemerataan beban perkara";
+
+    // perkara_smartmajelis DITULIS LEBIH DAHULU, sebagaimana kedua jalur SIPP
+    // (REPLACE pada majelis_tetap.php, insert/update pada addMajelis_c) - dan
+    // tanpa baris audit, sebab SIPP pun tidak pernah mengauditnya.
     if (majelisTetap) {
       const idMenurutRef = majelisTetap.hakim.join(",");
       langkah.push({
@@ -1474,16 +1613,7 @@ async function susunRencanaTulis(minta) {
         keterangan: `smart majelis: sesuai majelis tetap ${majelisTetap.majelisId}`,
       });
     } else {
-      const sebabMajelis =
-        cleanText(minta.sebabMajelis) ||
-        "Ditetapkan menurut giliran majelis dan pemerataan beban perkara";
-      const nilaiSmart = {
-        perkara_id: perkara.perkaraId,
-        hakim_id2: idGabung,
-        status: SMART_MAJELIS_DI_LUAR_REKOMENDASI,
-        tanggal: saat,
-        keterangan: sebabMajelis.slice(0, 1000),
-      };
+      const keteranganSmart = sebabMajelis.slice(0, 1000);
       langkah.push({
         tabel: "perkara_smartmajelis",
         aksi: perkara.adaSmartMajelis ? "UPDATE" : "INSERT",
@@ -1493,25 +1623,95 @@ async function susunRencanaTulis(minta) {
           : `INSERT INTO perkara_smartmajelis (perkara_id, hakim_id2, status, tanggal, keterangan)
              VALUES (?,?,?,?,?)`,
         params: perkara.adaSmartMajelis
-          ? [idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, nilaiSmart.keterangan, perkara.perkaraId]
-          : [perkara.perkaraId, idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, nilaiSmart.keterangan],
+          ? [idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, keteranganSmart, perkara.perkaraId]
+          : [perkara.perkaraId, idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, keteranganSmart],
         keterangan: `smart majelis: ${sebabMajelis}`,
       });
     }
-    // Tanpa baris audit: sama seperti perkara_proses, SIPP tidak pernah
-    // mencatat tabel ini di sys_audittrail - nol baris sejak 2016. Lihat
-    // catatan pada bagian Riwayat Perkara di bawah. Jejak "Smart Majelis" di
-    // Audit Trail justru ada pada JUDUL baris perkara_hakim_pn di bawah ini.
 
+    const jenisAcara = lewatSmart ? null : "0";
+    const nomorSk = lewatSmart ? null : "";
+    const keteranganHakim = lewatSmart ? null : sebabMajelis.slice(0, 500);
+
+    const nilaiPenetapan = {
+      perkara_id: perkara.perkaraId,
+      jenis_acara: jenisAcara,
+      penetapan_majelis_hakim: minta.tanggalPenetapan,
+      majelis_hakim_id: idGabung,
+      majelis_hakim_kode: kodeGabung,
+      majelis_hakim_nama: namaGabung,
+      majelis_hakim_text: teksGabung,
+      diinput_oleh: akun.username,
+      diinput_tanggal: saat,
+    };
+
+    langkah.push({
+      tabel: "perkara_penetapan",
+      aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
+      sql: perkara.adaPenetapan
+        ? `UPDATE perkara_penetapan SET jenis_acara = ?, penetapan_majelis_hakim = ?, majelis_hakim_id = ?,
+             majelis_hakim_kode = ?, majelis_hakim_nama = ?, majelis_hakim_text = ?,
+             diperbaharui_oleh = ?, diperbaharui_tanggal = ?
+           WHERE perkara_id = ?`
+        : `INSERT INTO perkara_penetapan
+             (perkara_id, jenis_acara, penetapan_majelis_hakim, majelis_hakim_id, majelis_hakim_kode,
+              majelis_hakim_nama, majelis_hakim_text, diinput_oleh, diinput_tanggal)
+           VALUES (?,?,?,?,?,?,?,?,?)`,
+      params: perkara.adaPenetapan
+        ? [
+            jenisAcara,
+            minta.tanggalPenetapan,
+            idGabung,
+            kodeGabung,
+            namaGabung,
+            teksGabung,
+            akun.username,
+            saat,
+            perkara.perkaraId,
+          ]
+        : [
+            perkara.perkaraId,
+            jenisAcara,
+            minta.tanggalPenetapan,
+            idGabung,
+            kodeGabung,
+            namaGabung,
+            teksGabung,
+            akun.username,
+            saat,
+          ],
+      keterangan: `penetapan majelis ${kodeGabung}`,
+    });
+    langkah.push(
+      audit({
+        tabel: "perkara_penetapan",
+        aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
+        nilai: nilaiPenetapan,
+      })
+    );
+
+    // ======================================================================
+    // SELURUH BARIS HAKIM DULU, BARU BARIS AUDITNYA - SEPERTI insert_batch
+    // ======================================================================
+    //
+    // SIPP menyisipkan ketiganya sekaligus (insert_batch) dengan id yang
+    // dihitungnya sendiri - MAX(id)+1, berurutan - lalu menulis satu baris
+    // audit per hakim yang MEMUAT id itu pada description-nya. id-nya karena
+    // itu dihitung penjalan tepat sebelum barisnya ditulis, dan penanda #ID#
+    // pada auditnya diganti dengan id yang sungguh terpakai.
+    const nilaiHakimSemua = [];
+    const indeksHakim = [];
     hakim.forEach((orang, urutan) => {
+      const jabatan = jabatanUntuk(urutan);
       const nilaiHakim = {
+        id: "#ID#",
         perkara_id: perkara.perkaraId,
         tahapan_id: TAHAPAN_TINGKAT_PERTAMA,
         tanggal_penetapan: minta.tanggalPenetapan,
+        nomor_sk_penetapan: nomorSk,
         urutan: urutan + 1,
-        // 1 ketua, 2 anggota - dibaca dari baris SIPP yang sudah ada.
-        jabatan_hakim_id: urutan === 0 ? 1 : 2,
-        jabatan_hakim_nama: urutan === 0 ? "Hakim Ketua" : "Hakim Anggota",
+        jabatan_hakim_id: jabatan.id,
+        jabatan_hakim_nama: jabatan.nama,
         hakim_id: orang.hakimId,
         hakim_kode: orang.kode || "",
         hakim_nip: orang.nip || "",
@@ -1519,23 +1719,27 @@ async function susunRencanaTulis(minta) {
         aktif: "Y",
         diinput_oleh: akun.username,
         diinput_tanggal: saat,
+        keterangan: keteranganHakim,
       };
+      nilaiHakimSemua.push(nilaiHakim);
       langkah.push({
         tabel: "perkara_hakim_pn",
         aksi: "INSERT",
         sql:
           `INSERT INTO perkara_hakim_pn
-             (perkara_id, tahapan_id, tanggal_penetapan, urutan, jabatan_hakim_id,
+             (id, perkara_id, tahapan_id, tanggal_penetapan, nomor_sk_penetapan, urutan, jabatan_hakim_id,
               jabatan_hakim_nama, hakim_id, hakim_kode, hakim_nip, hakim_nama, aktif,
-              diinput_oleh, diinput_tanggal)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+              diinput_oleh, diinput_tanggal, keterangan)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         params: [
+          0,
           perkara.perkaraId,
           TAHAPAN_TINGKAT_PERTAMA,
           minta.tanggalPenetapan,
+          nomorSk,
           urutan + 1,
-          urutan === 0 ? 1 : 2,
-          urutan === 0 ? "Hakim Ketua" : "Hakim Anggota",
+          jabatan.id,
+          jabatan.nama,
           orang.hakimId,
           orang.kode || "",
           orang.nip || "",
@@ -1543,23 +1747,25 @@ async function susunRencanaTulis(minta) {
           "Y",
           akun.username,
           saat,
+          keteranganHakim,
         ],
-        keterangan: `${urutan === 0 ? "ketua" : `anggota ${urutan}`}: ${orang.nama}`,
+        idDihitung: { tabel: "perkara_hakim_pn", posisiParam: 0 },
+        keterangan: `${urutan === 0 ? (tunggal ? "hakim tunggal" : "ketua") : `anggota ${urutan}`}: ${orang.nama}`,
       });
+      indeksHakim.push(langkah.length - 1);
+    });
+    nilaiHakimSemua.forEach((nilaiHakim, i) => {
       langkah.push(
-        barisAudit({
-          username: akun.username,
+        audit({
           tabel: "perkara_hakim_pn",
-          formulir: jejak.formulir,
-          // Persis tulisan SIPP saat petugas memakai tombol Smart Majelis:
-          // 782 dari 1.112 perkara 2026 di PA Donggala berjudul begini, dan
-          // hanya ketiga baris hakim_pn yang membawanya - baris
+          // Persis tulisan SIPP: hanya ketiga baris hakim_pn jalur Smart
+          // Majelis yang membawa kata itu, dengan spasi di depannya - baris
           // perkara_penetapan dan perkara di sebelahnya tidak.
-          judulHalaman: ` Smart Majelis ${jejak.formulir}`,
+          judulHalaman: lewatSmart ? ` Smart Majelis ${jejak.formulir}` : undefined,
           aksi: "INSERT",
           nilai: nilaiHakim,
-          ip,
-          saat,
+          perkaraId: perkara.perkaraId,
+          kunciDariLangkah: { "#ID#": indeksHakim[i] },
         })
       );
     });
@@ -1581,54 +1787,70 @@ async function susunRencanaTulis(minta) {
     const kolomId = ppp ? "panitera_pengganti_id" : "jurusita_id";
     const kolomTeks = ppp ? "panitera_pengganti_text" : "jurusita_text";
     const sebutan = ppp ? "Panitera Pengganti" : "Juru Sita Pengganti";
+    // Nama bergelar pada teksnya - "Panitera Pengganti: <nama_gelar>",
+    // "Juru Sita Pengganti: <nama_gelar>" - untuk keduanya.
     const teks = `${sebutan}: ${orangNama}`;
 
     if (!(await sippSkemaService.tabelAda(tabelPetugas))) {
       return { ok: false, alasan: `tabel_${tabelPetugas}_tidak_ada` };
     }
 
+    // ======================================================================
+    // TIGA KOLOM, TANPA diperbaharui_*
+    // ======================================================================
+    //
+    // insert_penunjukan_panitera dan insert_penunjukan_juru_sita memperbarui
+    // perkara_penetapan dengan TIGA kolom saja - tanggal, id, teks - dan tidak
+    // menyentuh diperbaharui_oleh/diperbaharui_tanggal. ALETA dahulu ikut
+    // menulis keduanya, dan description auditnya memuat perkara_id,
+    // diinput_oleh, dan diinput_tanggal yang tidak pernah ada di baris SIPP.
+    const nilaiPenetapan = {
+      [kolomTanggal]: minta.tanggalPenetapan,
+      [kolomId]: String(orangId),
+      [kolomTeks]: teks,
+    };
     langkah.push({
       tabel: "perkara_penetapan",
       aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
       sql: perkara.adaPenetapan
-        ? `UPDATE perkara_penetapan SET ${kolomTanggal} = ?, ${kolomId} = ?, ${kolomTeks} = ?,
-             diperbaharui_oleh = ?, diperbaharui_tanggal = ? WHERE perkara_id = ?`
+        ? `UPDATE perkara_penetapan SET ${kolomTanggal} = ?, ${kolomId} = ?, ${kolomTeks} = ? WHERE perkara_id = ?`
         : `INSERT INTO perkara_penetapan
              (perkara_id, ${kolomTanggal}, ${kolomId}, ${kolomTeks}, diinput_oleh, diinput_tanggal)
            VALUES (?,?,?,?,?,?)`,
       params: perkara.adaPenetapan
-        ? [minta.tanggalPenetapan, String(orangId), teks, akun.username, saat, perkara.perkaraId]
+        ? [minta.tanggalPenetapan, String(orangId), teks, perkara.perkaraId]
         : [perkara.perkaraId, minta.tanggalPenetapan, String(orangId), teks, akun.username, saat],
       keterangan: teks,
     });
     langkah.push(
-      barisAudit({
-        username: akun.username,
+      audit({
         tabel: "perkara_penetapan",
-        formulir: jejak.formulir,
         aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
-        nilai: {
-          perkara_id: perkara.perkaraId,
-          [kolomTanggal]: minta.tanggalPenetapan,
-          [kolomId]: orangId,
-          [kolomTeks]: teks,
-          diinput_oleh: akun.username,
-          diinput_tanggal: saat,
-        },
-        ip,
-        saat,
+        nilai: perkara.adaPenetapan
+          ? nilaiPenetapan
+          : {
+              perkara_id: perkara.perkaraId,
+              ...nilaiPenetapan,
+              diinput_oleh: akun.username,
+              diinput_tanggal: saat,
+            },
+        perkaraId: perkara.perkaraId,
       })
     );
 
-    // Kode dan NIP ikut ditulis, sebagaimana SIPP menulisnya sendiri. Baris
-    // yang tanpa NIP tetap tersimpan, tetapi laporan yang membacanya menurut
-    // NIP akan melewatkannya - kekurangan yang tidak berbunyi sampai laporan
-    // tahunan disusun.
+    // Kode dan NIP ikut ditulis, sebagaimana SIPP menulisnya sendiri. id-nya
+    // MAX(id)+1 (get_last_id), dan id itu ada di description auditnya.
+    //
+    // Selisih kecil antara keduanya, ditiru apa adanya:
+    //   perkara_panitera_pn  panitera_nama bergelar, kolom keterangan ''
+    //   perkara_jurusita     jurusita_nama TANPA gelar, tanpa kolom keterangan
     const kolomOrang = ppp ? "panitera_id" : "jurusita_id";
     const kolomKode = ppp ? "panitera_kode" : "jurusita_kode";
     const kolomNip = ppp ? "panitera_nip" : "jurusita_nip";
     const kolomOrangNama = ppp ? "panitera_nama" : "jurusita_nama";
+    const namaPada = ppp ? orangNama : petugas.namaPolos || orangNama;
     const nilaiPetugas = {
+      id: "#ID#",
       perkara_id: perkara.perkaraId,
       tahapan_id: TAHAPAN_TINGKAT_PERTAMA,
       tanggal_penetapan: minta.tanggalPenetapan,
@@ -1636,56 +1858,38 @@ async function susunRencanaTulis(minta) {
       [kolomOrang]: orangId,
       [kolomKode]: petugas.kode,
       [kolomNip]: petugas.nip,
-      [kolomOrangNama]: orangNama,
+      [kolomOrangNama]: namaPada,
       aktif: "Y",
       diinput_oleh: akun.username,
       diinput_tanggal: saat,
+      ...(ppp ? { keterangan: "" } : {}),
     };
-    // perkara_jurusita tidak memakai auto_increment - id-nya dihitung sendiri
-    // sesaat sebelum ditulis. Tanpa ini, perkara kedua dan seterusnya selalu
-    // bertabrakan pada id=0.
-    const idSendiri = TABEL_ID_DIHITUNG.has(tabelPetugas);
+    const kolomTulis = Object.keys(nilaiPetugas);
     langkah.push({
       tabel: tabelPetugas,
       aksi: "INSERT",
-      sql: idSendiri
-        ? `INSERT INTO ${tabelPetugas}
-             (id, perkara_id, tahapan_id, tanggal_penetapan, urutan, ${kolomOrang}, ${kolomKode},
-              ${kolomNip}, ${kolomOrangNama}, aktif, diinput_oleh, diinput_tanggal)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
-        : `INSERT INTO ${tabelPetugas}
-             (perkara_id, tahapan_id, tanggal_penetapan, urutan, ${kolomOrang}, ${kolomKode},
-              ${kolomNip}, ${kolomOrangNama}, aktif, diinput_oleh, diinput_tanggal)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      params: [
-        ...(idSendiri ? [0] : []),
-        perkara.perkaraId,
-        TAHAPAN_TINGKAT_PERTAMA,
-        minta.tanggalPenetapan,
-        1,
-        orangId,
-        petugas.kode,
-        petugas.nip,
-        orangNama,
-        "Y",
-        akun.username,
-        saat,
-      ],
+      sql:
+        `INSERT INTO ${tabelPetugas} (${kolomTulis.join(", ")}) ` +
+        `VALUES (${kolomTulis.map(() => "?").join(",")})`,
+      params: kolomTulis.map((k) => (k === "id" ? 0 : nilaiPetugas[k])),
       // Penjalannya yang mengisi id-nya, tepat sebelum pernyataan ini
       // dijalankan - bukan saat rencana disusun, supaya jaraknya sesempit
-      // mungkin dari penulisan yang sesungguhnya.
-      idDihitung: idSendiri ? { tabel: tabelPetugas, posisiParam: 0 } : undefined,
+      // mungkin dari penulisan yang sesungguhnya. perkara_jurusita bahkan
+      // tanpa auto_increment: tanpa ini perkara kedua bertabrakan pada id=0.
+      idDihitung: { tabel: tabelPetugas, posisiParam: 0 },
       keterangan: `${sebutan.toLowerCase()}: ${orangNama}`,
     });
+    const indeksPetugas = langkah.length - 1;
     langkah.push(
-      barisAudit({
-        username: akun.username,
+      audit({
         tabel: tabelPetugas,
-        formulir: jejak.formulir,
         aksi: "INSERT",
         nilai: nilaiPetugas,
-        ip,
-        saat,
+        // "dengan Foreign Key [perkara_id=...]" - bukan Primary Key. Terbaca
+        // pada perkara 10186: 505518 dan 505522.
+        jenisKunci: "Foreign Key",
+        perkaraId: perkara.perkaraId,
+        kunciDariLangkah: { "#ID#": indeksPetugas },
       })
     );
   }
@@ -1709,21 +1913,11 @@ async function susunRencanaTulis(minta) {
     // ada yang berwenang menetapkannya - dan SIPP pun menolaknya. Pagar itu
     // benar, dan tetap berlaku penuh pada penulisan sungguhan.
     //
-    // Tetapi pada UJI KERING ia memagari yang salah. Uji kering dijalankan
+    // Tetapi pada UJI KERING ia memagari yang salah: uji kering dijalankan
     // SEBELUM satu baris pun ditulis, jadi pada perkara yang baru didaftarkan
-    // PMH memang belum ada - dan tidak akan pernah ada selama uji keringnya
-    // sendiri yang menghalangi. Akibatnya, atas perkara yang justru paling
-    // lazim, keempat langkah tidak pernah sampai ke penulisan: PMH, PPP, dan
-    // PJS lulus, PHS ditolak "pmh_belum_ada", panel menyimpulkan rencananya
-    // belum siap, dan tombol "Tuliskan ke SIPP" tidak pernah menyala. Tidak
-    // ada satu pun penetapan yang tertulis, dan sebabnya tidak menunjuk ke
-    // sini sama sekali.
-    //
-    // Karena itu: bila pemanggilnya menyatakan PMH ditulis LEBIH DAHULU dalam
-    // rantai yang sama, uji kering menilai PHS seolah-olah PMH sudah ada, dan
-    // mengatakan andaian itu apa adanya. Pada penulisan sungguhan pemanggil
-    // benar-benar menulis PMH lebih dulu dan berhenti bila PMH gagal, sehingga
-    // saat PHS dijalankan majelisnya memang sudah tersimpan.
+    // PMH memang belum ada. Bila pemanggilnya menyatakan PMH ditulis LEBIH
+    // DAHULU dalam rantai yang sama, uji kering menilai PHS seolah-olah PMH
+    // sudah ada, dan mengatakan andaian itu apa adanya.
     const pmhMenyusul =
       minta.kering === true &&
       Array.isArray(minta.rantaiSebelum) &&
@@ -1742,6 +1936,17 @@ async function susunRencanaTulis(minta) {
     if (minta.tanggalSidang < minta.tanggalPenetapan) {
       return { ok: false, alasan: "sidang_mendahului_penetapan" };
     }
+    // ======================================================================
+    // TANGGAL PILIHAN PETUGAS DITOLAK DENGAN SEBAB, TIDAK PERNAH DIGANTI
+    // ======================================================================
+    //
+    // addSidangPertama_c menolak hari sidang pada Sabtu dan Minggu, kecuali
+    // jenis perkara 746. Butir 38: tanggal yang dipilih tangan pernah diganti
+    // diam-diam dengan usulan; di sini tanggal yang melanggar tidak diganti
+    // apa pun - permintaannya ditolak, dan petugas yang memilih ulang.
+    if (Number(perkara.jenisPerkaraId) !== 746 && hariLibur(minta.tanggalSidang)) {
+      return { ok: false, alasan: "tanggal_sidang_hari_libur", diminta: minta.tanggalSidang };
+    }
 
     const ruangan = await ruanganUntuk(minta.ruanganId || JADWAL_BAWAAN.ruanganId);
     if (!ruangan) return { ok: false, alasan: "ruangan_tidak_ketemu" };
@@ -1751,20 +1956,34 @@ async function susunRencanaTulis(minta) {
         ? `${minta.jamSidang}:00`
         : String(minta.jamSidang)
       : JADWAL_BAWAAN.jamSidang;
+    // Borang SIPP mengirim jam lima huruf ("09:00", exact_length[5]) dan
+    // fetch_description mencetaknya apa adanya - kolom TIME-nya sendiri
+    // menyimpannya 09:00:00.
+    const jamBorang = jam.slice(0, 5);
+
+    // urutan = MAX(urutan)+1 jadwal perkara itu (get_urutan_jadwal_terakhir),
+    // bukan 1 yang dipatok.
+    const urutanBaris = await runQuery(
+      `SELECT COALESCE(MAX(urutan), 0) + 1 AS berikutnya FROM perkara_jadwal_sidang WHERE perkara_id = ?`,
+      [perkara.perkaraId]
+    ).catch(() => []);
+    const urutanJadwal = Number((Array.isArray(urutanBaris) && urutanBaris[0] && urutanBaris[0].berikutnya) || 1) || 1;
 
     // ======================================================================
     // URUTANNYA DITIRU, BUKAN DIPILIH SENDIRI
     // ======================================================================
     //
-    // SIPP menulis perkara_penetapan LEBIH DAHULU, baru jadwal sidang dan
-    // penetapan hari sidangnya - terbaca dari sys_audittrail satker, nomor
-    // baris 501137 sampai 501141 pada perkara 566:
-    //
-    //   perkara_penetapan UPDATE, perkara_jadwal_sidang INSERT,
-    //   perkara_penetapan_hari_sidang INSERT, perkara UPDATE, perkara UPDATE
-    //
-    // Kelimanya berbagi detik yang sama, jadi yang membedakan hanya urutan
-    // nomornya - dan di layar Audit Trail urutan itulah yang terlihat.
+    // insert_jadwal_sidang_pertama: perkara_penetapan UPDATE, lalu
+    // perkara_jadwal_sidang INSERT, lalu perkara_penetapan_hari_sidang INSERT;
+    // sesudahnya dua kali updateproses (80 dan 81), masing-masing satu UPDATE
+    // perkara. Kelimanya berbagi detik yang sama, jadi yang membedakan hanya
+    // urutan nomornya - dan di layar Audit Trail urutan itulah yang terlihat.
+    const nilaiPenetapanHs = {
+      penetapan_hari_sidang: minta.tanggalPenetapan,
+      sidang_pertama: minta.tanggalSidang,
+      diperbaharui_oleh: akun.username,
+      diperbaharui_tanggal: saat,
+    };
     langkah.push({
       tabel: "perkara_penetapan",
       aksi: "UPDATE",
@@ -1781,140 +2000,102 @@ async function susunRencanaTulis(minta) {
       keterangan: `hari sidang pertama ${minta.tanggalSidang}`,
     });
     langkah.push(
-      barisAudit({
-        username: akun.username,
+      audit({
         tabel: "perkara_penetapan",
-        formulir: jejak.formulir,
         aksi: "UPDATE",
-        nilai: {
-          perkara_id: perkara.perkaraId,
-          penetapan_hari_sidang: minta.tanggalPenetapan,
-          sidang_pertama: minta.tanggalSidang,
-          diperbaharui_oleh: akun.username,
-          diperbaharui_tanggal: saat,
-        },
-        ip,
-        saat,
+        nilai: nilaiPenetapanHs,
+        perkaraId: perkara.perkaraId,
       })
     );
+
+    // Kolom dan urutan kuncinya = $datajsidang pada addSidangPertama_c (aksi
+    // add). ikrar_talak, sampai_jam, dan sifat_sidang TIDAK ditulis SIPP
+    // pada langkah ini - dibiarkan pada bawaan kolomnya. Diukur sejak Juni
+    // 2026: 30 dari 30 jadwal sidang pertama yang belum disunting berisi
+    // agenda "Sidang Pertama" dan sampai_jam NULL.
     const nilaiJadwal = {
       perkara_id: perkara.perkaraId,
-      urutan: 1,
+      verzet: "T",
+      keberatan: "T",
       tanggal_sidang: minta.tanggalSidang,
-      jam_sidang: jam,
-      agenda: JADWAL_BAWAAN.agenda,
-      ruangan_id: ruangan.id,
+      jam_sidang: jamBorang,
       ruangan: ruangan.nama,
+      ruangan_id: ruangan.id,
+      agenda: JADWAL_BAWAAN.agenda,
       sidang_keliling: ruangan.keliling ? "Y" : "T",
-      // Sidang yang baru ditetapkan belum ditunda apa pun.
       ditunda: "T",
-      sifat_sidang: "Y",
+      id: "#ID#",
       diinput_oleh: akun.username,
       diinput_tanggal: saat,
+      urutan: urutanJadwal,
     };
-
+    // id di depan pada pernyataannya (urutan kolom INSERT tidak berarti apa
+    // pun bagi basis data); urutan description tetap urutan larik SIPP.
+    const kolomJadwal = ["id", ...Object.keys(nilaiJadwal).filter((k) => k !== "id")];
     langkah.push({
       tabel: "perkara_jadwal_sidang",
       aksi: "INSERT",
-      // perkara_jadwal_sidang pun tanpa auto_increment. Di sini akibatnya
-      // lebih halus: id=0 membuat insertId ikut 0, dan langkah berikutnya -
-      // yang menunggu id ini untuk menunjuk barisnya - membacanya sebagai
-      // "belum ada" lalu berhenti. Jadwal sidangnya tertulis, penetapan hari
-      // sidangnya tidak.
+      // perkara_jadwal_sidang tanpa auto_increment: id-nya MAX(id)+1, dihitung
+      // penjalan. id=0 akan membuat langkah berikutnya - yang menunggu id ini
+      // - membacanya sebagai "belum ada" lalu berhenti.
       sql:
-        `INSERT INTO perkara_jadwal_sidang
-           (id, perkara_id, verzet, keberatan, ikrar_talak, urutan, tanggal_sidang, jam_sidang,
-            sampai_jam, agenda, ruangan_id, ruangan, sidang_keliling, ditunda, sifat_sidang,
-            diinput_oleh, diinput_tanggal)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      idDihitung: { tabel: "perkara_jadwal_sidang", posisiParam: 0 },
-      params: [
-        0,
-        perkara.perkaraId,
-        "T",
-        "T",
-        "T",
-        1,
-        minta.tanggalSidang,
-        jam,
-        JADWAL_BAWAAN.sampaiJam,
-        JADWAL_BAWAAN.agenda,
-        ruangan.id,
-        ruangan.nama,
-        ruangan.keliling ? "Y" : "T",
-        "T",
-        "Y",
-        akun.username,
-        saat,
-      ],
+        `INSERT INTO perkara_jadwal_sidang (${kolomJadwal.join(", ")}) ` +
+        `VALUES (${kolomJadwal.map(() => "?").join(",")})`,
+      idDihitung: { tabel: "perkara_jadwal_sidang", posisiParam: kolomJadwal.indexOf("id") },
+      params: kolomJadwal.map((k) => (k === "id" ? 0 : k === "jam_sidang" ? jam : nilaiJadwal[k])),
       keterangan: `jadwal sidang pertama ${minta.tanggalSidang} ${jam} di ${ruangan.nama}`,
     });
     const indeksJadwal = langkah.length - 1;
     langkah.push(
-      barisAudit({
-        username: akun.username,
+      audit({
         tabel: "perkara_jadwal_sidang",
-        formulir: jejak.formulir,
         aksi: "INSERT",
         nilai: nilaiJadwal,
-        // id barisnya dihitung sendiri saat langkahnya dijalankan - lihat
-        // idDihitung. Nilainya belum ada di sini, jadi tempatnya ditandai
-        // dan diisi jalankanRencana.
+        // id barisnya dihitung saat langkahnya dijalankan - ditandai di sini,
+        // diisi jalankanRencana.
         kunciSendiri: "id=#ID#",
         kunciDariLangkah: { "#ID#": indeksJadwal },
-        ip,
-        saat,
       })
     );
 
+    // $datahistoryphs: perkara_id, tahapan_id, tanggal_penetapan,
+    // tanggal_sidang, lalu id, jadwalsidang_id, diinput_oleh,
+    // diinput_tanggal, keterangan - urutan itulah yang tercetak di audit.
+    const nilaiHariSidang = {
+      perkara_id: perkara.perkaraId,
+      tahapan_id: jejak.tahapanId,
+      tanggal_penetapan: minta.tanggalPenetapan,
+      tanggal_sidang: minta.tanggalSidang,
+      id: "#ID#",
+      jadwalsidang_id: "#IDJADWAL#",
+      diinput_oleh: akun.username,
+      diinput_tanggal: saat,
+      keterangan: "Penetapan Hari Sidang Pertama",
+    };
+    const kolomHariSidang = ["id", ...Object.keys(nilaiHariSidang).filter((k) => k !== "id")];
     langkah.push({
       tabel: "perkara_penetapan_hari_sidang",
       aksi: "INSERT",
       sql:
-        `INSERT INTO perkara_penetapan_hari_sidang
-           (perkara_id, tahapan_id, jadwalsidang_id, tanggal_penetapan, tanggal_sidang,
-            keterangan, diinput_oleh, diinput_tanggal)
-         VALUES (?,?,?,?,?,?,?,?)`,
-      // Tempat ketiga menampung id baris jadwal sidang yang baru disisipkan.
-      params: [
-        perkara.perkaraId,
-        jejak.tahapanId,
-        null,
-        minta.tanggalPenetapan,
-        minta.tanggalSidang,
-        "Penetapan Hari Sidang Pertama",
-        akun.username,
-        saat,
-      ],
-      isiDariLangkah: { indeks: indeksJadwal, posisiParam: 2 },
+        `INSERT INTO perkara_penetapan_hari_sidang (${kolomHariSidang.join(", ")}) ` +
+        `VALUES (${kolomHariSidang.map(() => "?").join(",")})`,
+      params: kolomHariSidang.map((k) => (k === "id" ? 0 : k === "jadwalsidang_id" ? null : nilaiHariSidang[k])),
+      // id = MAX(id)+1 (get_last_id_perkara_phs), dan jadwalsidang_id = id
+      // baris jadwal sidang yang baru disisipkan.
+      idDihitung: { tabel: "perkara_penetapan_hari_sidang", posisiParam: kolomHariSidang.indexOf("id") },
+      isiDariLangkah: { indeks: indeksJadwal, posisiParam: kolomHariSidang.indexOf("jadwalsidang_id") },
       keterangan: "penetapan hari sidang pertama",
     });
     const indeksHariSidang = langkah.length - 1;
     langkah.push(
-      barisAudit({
-        username: akun.username,
+      audit({
         tabel: "perkara_penetapan_hari_sidang",
-        formulir: jejak.formulir,
         aksi: "INSERT",
-        // Tabel ini ber-auto_increment, jadi id-nya baru ada sesudah barisnya
-        // ditulis. Ditandai di sini, diisi dari insertId.
         kunciSendiri: "id=#ID#",
         kunciDariLangkah: { "#ID#": indeksHariSidang, "#IDJADWAL#": indeksJadwal },
-        nilai: {
-          perkara_id: perkara.perkaraId,
-          tahapan_id: jejak.tahapanId,
-          jadwalsidang_id: "#IDJADWAL#",
-          tanggal_penetapan: minta.tanggalPenetapan,
-          tanggal_sidang: minta.tanggalSidang,
-          keterangan: "Penetapan Hari Sidang Pertama",
-          diinput_oleh: akun.username,
-          diinput_tanggal: saat,
-        },
-        ip,
-        saat,
+        nilai: nilaiHariSidang,
       })
     );
-
   }
 
   // ---- DATA UMUM dari berkas gugatan --------------------------------------
@@ -2067,113 +2248,73 @@ async function susunRencanaTulis(minta) {
     };
   }
 
-  // ---- Riwayat Perkara, sama untuk keempatnya -----------------------------
+  // ---- Riwayat Perkara dan tahapan terakhir, sama untuk keempatnya --------
   //
-  // Ditulis SEBELUM jejak pada tabel perkara, mengikuti urutan SIPP sendiri.
-  // Data Umum tidak punya langkah penetapan, jadi ia tidak menambah riwayat.
-  // ==========================================================================
-  // DAN TIDAK SATU BARIS AUDIT PUN UNTUKNYA
-  // ==========================================================================
+  // riwayat_perkara_m::updateproses mengerjakan dua hal BERPASANGAN untuk tiap
+  // proses: CALL perkara_proses_update (tanpa baris audit - SIPP tidak pernah
+  // mengaudit perkara_proses, nol baris sejak 2016), lalu UPDATE perkara
+  // beserta SATU baris audit. PHS memanggilnya dua kali - proses 80 lalu 81 -
+  // sehingga urutannya riwayat 80, perkara, riwayat 81, perkara.
   //
-  // Berkas ini dahulu menuliskan baris sys_audittrail untuk perkara_proses,
-  // dengan alasan yang ditulis panjang lebar di sini: jalur tulis harus dapat
-  // ditelusuri. Alasan itu SALAH TEMPAT, dan pengukuran membuktikannya.
+  // keterangan riwayat diisi '' - parameter ketujuh prosedur itu, yang pada
+  // keempat controller penetapan selalu dikirim kosong.
   //
-  // Dihitung atas seluruh sys_audittrail satker sejak 2016 - ratusan ribu
-  // baris, sepuluh tahun:
-  //
-  //   perkara_proses        0 baris ditulis SIPP,  16 ditulis ALETA
-  //   perkara_smartmajelis  0 baris ditulis SIPP,   6 ditulis ALETA
-  //
-  // Dua nama tabel yang muncul di Audit Trail HANYA ketika ALETA yang
-  // mengerjakan. Menyaring audit menurut tablename memulangkan pekerjaan
-  // ALETA dan tidak satu pun yang lain - penanda yang lebih tajam daripada
-  // tulisan "[ALETA]" yang dahulu sengaja dihapus dari judulnya.
-  //
-  // Ketertelusurannya TIDAK hilang: jejakAletaService mencatat jenis, perkara,
-  // akun SIPP, operator, tabel yang disentuh, dan sebabnya bila gagal - di
-  // basis data ALETA sendiri, lebih lengkap daripada sys_audittrail, dan
-  // termasuk percobaan yang gagal, yang di sys_audittrail memang tidak pernah
-  // meninggalkan jejak. Yang dicabut di sini hanya salinannya di tempat yang
-  // tidak pernah menampung baris semacam itu.
-  //
-  // Barisnya sendiri TETAP ditulis - tanpa perkara_proses, tab Riwayat Perkara
-  // pada SIPP kosong. Yang dicabut catatan auditnya, bukan riwayatnya.
+  // Tahapan terakhir pada tabel perkara dibaca ULANG dari perkara_proses
+  // oleh SIPP (ORDER BY tahapan_id DESC, proses_id DESC), bukan disalin dari
+  // langkah yang baru ditulis - lihat prosesTerakhirSesudah.
   if (jejak.prosesId > 0) {
-    langkah.push(
-      barisRiwayat({
-        perkaraId: perkara.perkaraId,
-        jejak,
-        tanggal: minta.tanggalPenetapan,
-        username: akun.username,
-        saat,
-      })
-    );
-    // Baris kedua PHS - proses 81 "Sidang pertama", bertanggal tanggal
-    // sidangnya. Lihat catatan pada JEJAK_PROSES.phs.
-    if (jejak.lanjutan) {
+    let terakhir = await prosesTerakhirPerkara(perkara.perkaraId);
+    const tahap = jejak.lanjutan ? [jejak, jejak.lanjutan] : [jejak];
+    for (const langkahTahap of tahap) {
       langkah.push(
         barisRiwayat({
           perkaraId: perkara.perkaraId,
-          jejak: jejak.lanjutan,
-          tanggal: jejak.lanjutan.tanggalDariSidang ? minta.tanggalSidang : minta.tanggalPenetapan,
+          jejak: langkahTahap,
+          tanggal: langkahTahap.tanggalDariSidang ? minta.tanggalSidang : minta.tanggalPenetapan,
           username: akun.username,
           saat,
         })
       );
-    }
-  }
 
-  // ---- jejak pada tabel perkara, sama untuk keempatnya --------------------
-  //
-  // PHS menulisnya DUA KALI: sekali menjadi proses 80, sekali lagi menjadi
-  // proses 81. Bukan gaya penulisan - terhitung pada sys_audittrail 2026,
-  // formulir "Tambah Penetapan Sidang Pertama" meninggalkan 1.636 baris
-  // UPDATE perkara untuk 818 penetapan. Tepat dua, tidak pernah satu.
-  const tahap = jejak.lanjutan ? [jejak, jejak.lanjutan] : [jejak];
-  for (const langkahTahap of tahap) {
-    const nilaiPerkara = {
-      tahapan_terakhir_id: langkahTahap.tahapanId,
-      tahapan_terakhir_text: langkahTahap.tahapanText,
-      proses_terakhir_id: langkahTahap.prosesId,
-      proses_terakhir_text: langkahTahap.prosesText,
-      diperbaharui_oleh: akun.username,
-      diperbaharui_tanggal: saat,
-    };
-    langkah.push({
-      tabel: "perkara",
-      aksi: "UPDATE",
-      sql:
-        `UPDATE perkara SET tahapan_terakhir_id = ?, tahapan_terakhir_text = ?,
-           proses_terakhir_id = ?, proses_terakhir_text = ?,
-           diperbaharui_oleh = ?, diperbaharui_tanggal = ?
-         WHERE perkara_id = ?`,
-      params: [
-        langkahTahap.tahapanId,
-        langkahTahap.tahapanText,
-        langkahTahap.prosesId,
-        langkahTahap.prosesText,
-        akun.username,
-        saat,
-        perkara.perkaraId,
-      ],
-      keterangan: `tahapan terakhir menjadi ${langkahTahap.prosesText}`,
-    });
-    langkah.push(
-      barisAudit({
-        username: akun.username,
+      terakhir = prosesTerakhirSesudah(terakhir, langkahTahap);
+      const nilaiPerkara = {
+        tahapan_terakhir_id: terakhir.tahapanId,
+        tahapan_terakhir_text: terakhir.tahapanText,
+        proses_terakhir_id: terakhir.prosesId,
+        proses_terakhir_text: terakhir.prosesText,
+        diperbaharui_oleh: akun.username,
+        diperbaharui_tanggal: saat,
+      };
+      langkah.push({
         tabel: "perkara",
-        formulir: jejak.formulir,
         aksi: "UPDATE",
-        nilai: nilaiPerkara,
-        // nilaiPerkara hanya memuat kolom yang DIUBAH, dan perkara_id bukan
-        // salah satunya. Tanpa disebut di sini, judulnya menjadi satu-satunya
-        // baris audit tanpa Primary Key - dan justru itu yang menonjol.
-        perkaraId: perkara.perkaraId,
-        ip,
-        saat,
-      })
-    );
+        sql:
+          `UPDATE perkara SET tahapan_terakhir_id = ?, tahapan_terakhir_text = ?,
+             proses_terakhir_id = ?, proses_terakhir_text = ?,
+             diperbaharui_oleh = ?, diperbaharui_tanggal = ?
+           WHERE perkara_id = ?`,
+        params: [
+          terakhir.tahapanId,
+          terakhir.tahapanText,
+          terakhir.prosesId,
+          terakhir.prosesText,
+          akun.username,
+          saat,
+          perkara.perkaraId,
+        ],
+        keterangan: `tahapan terakhir menjadi ${terakhir.prosesText}`,
+      });
+      langkah.push(
+        audit({
+          tabel: "perkara",
+          aksi: "UPDATE",
+          nilai: nilaiPerkara,
+          // nilaiPerkara hanya memuat kolom yang DIUBAH, dan perkara_id bukan
+          // salah satunya - judulnya tetap menyebut Primary Key-nya.
+          perkaraId: perkara.perkaraId,
+        })
+      );
+    }
   }
 
   // Penjagaan terakhir: tidak satu pun langkah boleh menyentuh tabel di luar

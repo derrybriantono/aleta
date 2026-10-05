@@ -66,6 +66,7 @@ const productionGuardService = require("../services/productionGuardService");
 const manualSendService = require("../services/manualSendService");
 const penunjukanService = require("../services/penunjukanService");
 const jejakAletaService = require("../services/jejakAletaService");
+const jedaManusiaService = require("../services/jedaManusiaService");
 const selisihHarianService = require("../services/selisihHarianService");
 const tandaTanganService = require("../services/tandaTanganService");
 const dokumenPenetapanService = require("../services/dokumenPenetapanService");
@@ -910,6 +911,18 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
     // penyusun rencana, bukan hanya ke penjalannya: PHS menuntut PMH sudah
     // tersimpan, dan pada uji kering belum ada satu baris pun yang ditulis.
     const kering = badan.kering !== false;
+
+    // ========================================================================
+    // JEDA SUNGGUHAN SEBELUM MENULIS - DAN JAMNYA DIAMBIL SESUDAHNYA
+    // ========================================================================
+    //
+    // Petugas yang mengisi borang SIPP tidak menekan Simpan sedetik sesudah
+    // langkah sebelumnya. Jedanya dijalani di SINI, sebelum rencana disusun,
+    // sebab penyusun rencana mengambil jam basis data saat itu juga - jam yang
+    // tercatat di sys_audittrail adalah jam sesudah jeda, jam yang sungguh
+    // terjadi, bukan jam yang disusun. Uji kering tidak menunggu apa pun.
+    if (!kering) await jedaManusiaService.jeda("simpan", { kering });
+
     const rencana = await penetapanTulisService.susunRencanaTulis({
       jenis: String(badan.jenis || ""),
       perkaraId: badan.perkaraId,
@@ -929,10 +942,17 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       tanggalSidang: String(badan.tanggalSidang || ""),
       ruanganId: badan.ruanganId,
       jamSidang: String(badan.jamSidang || ""),
+      // Akun SIPP petugas yang SEDANG MASUK dan menekan tombolnya (nama pada
+      // kepala halaman SIPP) - bukan pejabat penetapnya. Lihat
+      // akunPetugasMasuk di penetapanTulisService.
       olehUsername: String(badan.olehUsername || ""),
       operator,
       ip: alamatAudit(req),
     });
+
+    // Pejabat penanda tangan penetapan (Ketua/Wakil/Plh, Panitera, ketua
+    // majelis) - HANYA untuk jejak jujur ALETA. Tidak pernah ditulis ke SIPP.
+    const pejabatPenetap = String(badan.pejabatUsername || "").trim().slice(0, 150);
 
     if (!rencana.ok) {
       // Yang DITOLAK ikut tercatat. Di sys_audittrail percobaan yang gagal
@@ -944,6 +964,7 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
         perkaraId: badan.perkaraId,
         tanggalPenetapan: String(badan.tanggalPenetapan || ""),
         akunSipp: String(badan.olehUsername || ""),
+        namaPejabat: pejabatPenetap,
         operator,
         ip: alamatAudit(req),
         berhasil: false,
@@ -967,7 +988,7 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
       tanggalPenetapan: String(badan.tanggalPenetapan || ""),
       akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
-      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+      namaPejabat: pejabatPenetap || (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
       operator: rencana.operator,
       ip: alamatAudit(req),
       berhasil: hasil.ok === true,

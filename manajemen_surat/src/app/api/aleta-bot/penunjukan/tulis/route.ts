@@ -17,8 +17,9 @@ export const dynamic = "force-dynamic";
  * ============================================================================
  *
  * Seluruh rute lain di ALETA membaca SIPP. Rute ini menulis, dan yang ditulis
- * tercatat atas nama PEJABAT sedangkan yang menekan tombolnya operator - itu
- * keputusan pimpinan pengadilan ini, dan bentuk penjagaannya ada di sini.
+ * tercatat di SIPP atas nama AKUN SIPP PETUGAS YANG SEDANG MASUK dan menekan
+ * tombolnya, dari alamat peramban petugas itu, pada jam sungguhan (keputusan
+ * pengguna 2 Okt 2026, butir 39). Nama petugas lain tidak pernah ditulis.
  *
  * ============================================================================
  * KERING SEBAGAI BAWAAN
@@ -32,10 +33,10 @@ export const dynamic = "force-dynamic";
  * OPERATOR DIAMBIL DARI SESI, BUKAN DARI PERAMBAN
  * ============================================================================
  *
- * Satu-satunya catatan yang menyimpan siapa SEBENARNYA yang menekan tombolnya
- * adalah nama operator pada judul baris sys_audittrail. Kalau nama itu boleh
- * dikirim peramban, ia dapat diisi apa saja - dan jalur ini kehilangan
- * satu-satunya hal yang membedakannya dari memalsukan tanda tangan.
+ * Akun ALETA yang menekan tombolnya dicatat pada jejak jujur ALETA
+ * (aleta_bot_jejak_penetapan: operator, akun SIPP, IP, "lewat ALETA"). Kalau
+ * nama itu boleh dikirim peramban, ia dapat diisi apa saja - dan jejak itu
+ * kehilangan satu-satunya hal yang membuatnya dapat dipercaya.
  *
  * Karena itu operatornya diambil dari akun ALETA yang sedang masuk, dan badan
  * permintaan yang mencoba menyebutnya diabaikan.
@@ -92,10 +93,19 @@ export async function POST(request: NextRequest) {
       return Response.json({ ok: false, alasan: "perkara_tidak_sah" }, { status: 400 });
     }
 
+    // ========================================================================
+    // AKUN SIPP PETUGAS YANG SEDANG MASUK - BUKAN PEJABATNYA (butir 39)
+    // ========================================================================
+    //
+    // olehUsername = nama pada kepala halaman SIPP yang sedang dibuka petugas.
+    // Itulah akun yang dicatat SIPP sendiri ketika petugas menekan Simpan, dan
+    // satu-satunya nama yang boleh tercatat di sys_audittrail. Pejabat penanda
+    // tangan (pejabatUsername) hanya diteruskan untuk jejak ALETA.
     const olehUsername = String(badan.olehUsername || "").trim();
     if (!olehUsername) {
-      return Response.json({ ok: false, alasan: "akun_pejabat_tidak_disebut" }, { status: 400 });
+      return Response.json({ ok: false, alasan: "akun_sipp_belum_terbaca" }, { status: 400 });
     }
+    const pejabatUsername = String(badan.pejabatUsername || "").trim().slice(0, 150);
 
     // Menulis HARUS diminta tegas. Permintaan yang lupa menyebutnya
     // menghasilkan hasil kering, bukan tulisan.
@@ -127,6 +137,7 @@ export async function POST(request: NextRequest) {
           ? (badan.dataUmum as Record<string, unknown>)
           : undefined,
       olehUsername,
+      pejabatUsername: pejabatUsername || undefined,
       operator,
       kering,
       rantaiSebelum,
