@@ -152,6 +152,17 @@ export const KALIMAT_ALASAN: Record<string, string> = {
   login_ditolak_ecourt: "e-Court menolak login. Periksa surel, sandi, dan kode captcha.",
   sesi_login_kedaluwarsa: "Formulir login sudah kedaluwarsa. Mulai lagi.",
   email_atau_sandi_kosong: "Surel dan sandi e-Court wajib diisi.",
+  // Butir 20 (5 Okt 2026) - akun e-Court milik tiap pengguna.
+  akun_ecourt_belum_diisi:
+    "Anda belum menyimpan akun e-Court milik Anda sendiri. Isi surel dan sandi akun e-Court Anda di Integrasi e-Court > Sesi e-Court saya > Akun e-Court saya, lalu tekan Uji masuk (cukup ketik captcha). ALETA tidak memakai akun e-Court orang lain.",
+  sesi_habis_akun_tersimpan:
+    "Akun e-Court Anda tersimpan, tetapi sesinya belum tersambung atau sudah habis. Tekan Uji masuk di Integrasi e-Court > Sesi e-Court saya - cukup ketik captcha.",
+  akun_sipp_milik_pengguna_lain:
+    "Akun SIPP yang sedang terbuka tersimpan atas nama pengguna ALETA lain, bukan akun ALETA yang sedang masuk di peramban ini. Tindakan e-Court dihentikan supaya tidak tercatat atas nama orang yang salah - masuk ALETA dengan akun Anda sendiri.",
+  email_kosong: "Surel akun e-Court wajib diisi.",
+  sandi_kosong: "Sandi akun e-Court wajib diisi.",
+  surel_berganti_sandi_wajib: "Surel berganti - ketik juga sandi akun e-Court yang baru.",
+  pengguna_atau_peran_tidak_sah: "Peran e-Court tidak dikenali.",
 };
 
 export function kalimatAlasan(alasan: string | undefined | null): string {

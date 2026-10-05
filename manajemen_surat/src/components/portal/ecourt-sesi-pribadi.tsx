@@ -12,6 +12,12 @@
  * Sandi diketik di sini, diteruskan sekali ke formulir login e-Court, lalu
  * dibuang. Yang disimpan server hanya cookie sesi tersandi. Sesi habis = masuk
  * lagi dari kartu ini.
+ *
+ * Butir 20 (5 Okt 2026): tiap hakim, panitera, panitera pengganti, dan juru
+ * sita BOLEH menyimpan akun e-Court MILIKNYA SENDIRI (surel + sandi, disandi
+ * di server bot, tidak pernah dikirim balik ke layar). Dengan akun tersimpan,
+ * "Uji masuk" cukup meminta captcha. Admin hanya melihat rekap siapa yang
+ * sudah/belum (EcourtRekapAkunPengguna) - tidak dapat mengubah akun orang.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -44,12 +50,29 @@ type Jejak = {
   dibuatPada: string;
 };
 
+type AkunTersimpan = {
+  peran: string;
+  email: string;
+  adaSandi: boolean;
+  diperbaruiPada: string;
+  diujiPada: string;
+  hasilUji: string;
+};
+
 type Data = {
   tersedia: boolean;
   pesan: string;
   sesi: Sesi[];
+  akun?: AkunTersimpan[];
+  akunDidukung?: boolean;
   peranTersedia: Array<{ kode: string; sebutan: string }>;
   jejak: Jejak[];
+};
+
+const SEBUT_UJI: Record<string, string> = {
+  berhasil: "uji masuk berhasil",
+  ditolak: "ditolak e-Court - periksa surel/sandi",
+  gagal: "uji masuk gagal",
 };
 
 const SEBUT_AKSI: Record<string, string> = {
@@ -81,9 +104,16 @@ export function EcourtSesiPribadi() {
   const [peranLogin, setPeranLogin] = useState("");
   const [captcha, setCaptcha] = useState("");
   const [sibuk, setSibuk] = useState(false);
+  /** Surel akun tersimpan yang dipakai login ini; kosong = surel+sandi diketik. */
+  const [loginTersimpan, setLoginTersimpan] = useState("");
+  const [simpanSaatMasuk, setSimpanSaatMasuk] = useState(false);
+  /** Peran yang formulir "Akun e-Court saya"-nya sedang terbuka. */
+  const [peranAkun, setPeranAkun] = useState("");
   const surelRef = useRef<HTMLInputElement | null>(null);
   const sandiRef = useRef<HTMLInputElement | null>(null);
   const captchaRef = useRef<HTMLInputElement | null>(null);
+  const akunSurelRef = useRef<HTMLInputElement | null>(null);
+  const akunSandiRef = useRef<HTMLInputElement | null>(null);
 
   const muat = useCallback(async () => {
     setMemuat(true);
@@ -113,10 +143,20 @@ export function EcourtSesiPribadi() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(badan),
     });
-    return baca<{ ok: boolean; pesan?: string; alasan?: string; captcha?: string; namaAkunEcourt?: string; berlaku?: boolean }>(r);
+    return baca<{
+      ok: boolean;
+      pesan?: string;
+      alasan?: string;
+      captcha?: string;
+      namaAkunEcourt?: string;
+      berlaku?: boolean;
+      akunTersimpan?: string;
+      akunDisimpan?: boolean;
+    }>(r);
   };
 
-  const mulai = async (peran: string) => {
+  /** pakaiTersimpan: "Uji masuk" dengan akun tersimpan - cukup captcha. */
+  const mulai = async (peran: string, pakaiTersimpan = false) => {
     setSibuk(true);
     setPesan("Membuka halaman login e-Court...");
     try {
@@ -124,7 +164,16 @@ export function EcourtSesiPribadi() {
       if (d?.ok) {
         setPeranLogin(peran);
         setCaptcha(d.captcha || "");
-        setPesan("Isi surel, sandi, dan kode captcha akun e-Court Anda.");
+        setSimpanSaatMasuk(false);
+        const tersimpan = pakaiTersimpan ? d.akunTersimpan || "" : "";
+        setLoginTersimpan(tersimpan);
+        setPesan(
+          tersimpan
+            ? `Masuk dengan akun tersimpan ${tersimpan} - cukup ketik kode captcha.`
+            : pakaiTersimpan
+              ? "Akun tersimpan untuk peran ini tidak ditemukan. Isi surel, sandi, dan kode captcha."
+              : "Isi surel, sandi, dan kode captcha akun e-Court Anda."
+        );
       } else {
         setPesan(d?.pesan || "Halaman login e-Court belum dapat dibuka.");
       }
@@ -142,17 +191,51 @@ export function EcourtSesiPribadi() {
     setSibuk(true);
     setPesan("Masuk ke e-Court...");
     try {
-      const d = await kirimAksi({ aksi: "kirim", peran: peranLogin, email, sandi, captcha: kode });
+      const d = await kirimAksi(
+        loginTersimpan
+          ? { aksi: "kirim", peran: peranLogin, captcha: kode, pakaiTersimpan: true }
+          : { aksi: "kirim", peran: peranLogin, email, sandi, captcha: kode, simpanAkun: simpanSaatMasuk }
+      );
       if (d?.ok) {
-        setPesan(`Tersambung${d.namaAkunEcourt ? ` sebagai ${d.namaAkunEcourt}` : ""}.`);
-        setPeranLogin("");
-        setCaptcha("");
-        await muat();
+        setPesan(
+          `Tersambung${d.namaAkunEcourt ? ` sebagai ${d.namaAkunEcourt}` : ""}.${d.akunDisimpan ? " Akun e-Court disimpan untuk masuk berikutnya." : ""}`
+        );
       } else {
         setPesan(d?.pesan || "Login e-Court belum berhasil. Mulai lagi dengan captcha baru.");
-        setPeranLogin("");
-        setCaptcha("");
       }
+      setPeranLogin("");
+      setCaptcha("");
+      setLoginTersimpan("");
+      await muat();
+    } finally {
+      setSibuk(false);
+    }
+  };
+
+  const simpanAkun = async () => {
+    const email = akunSurelRef.current?.value || "";
+    const sandi = akunSandiRef.current?.value || "";
+    // Sandi tidak pernah masuk state; kolomnya dikosongkan begitu terkirim.
+    if (akunSandiRef.current) akunSandiRef.current.value = "";
+    setSibuk(true);
+    setPesan("Menyimpan akun e-Court...");
+    try {
+      const d = await kirimAksi({ aksi: "simpan-akun", peran: peranAkun, email, sandi });
+      setPesan(d?.ok ? "Akun e-Court tersimpan. Tekan Uji masuk untuk memastikan e-Court menerimanya." : d?.pesan || "Akun belum tersimpan.");
+      if (d?.ok) setPeranAkun("");
+      await muat();
+    } finally {
+      setSibuk(false);
+    }
+  };
+
+  const hapusAkun = async (peran: string) => {
+    if (!window.confirm("Hapus akun e-Court tersimpan untuk peran ini? Sesi yang sedang tersambung tidak ikut diputus.")) return;
+    setSibuk(true);
+    try {
+      const d = await kirimAksi({ aksi: "hapus-akun", peran });
+      setPesan(d?.pesan || (d?.ok ? "Akun dihapus." : "Akun belum terhapus."));
+      await muat();
     } finally {
       setSibuk(false);
     }
@@ -178,6 +261,7 @@ export function EcourtSesiPribadi() {
   };
 
   const sesiPer = (kode: string) => data?.sesi.find((s) => s.peran === kode);
+  const akunPer = (kode: string) => data?.akun?.find((a) => a.peran === kode && a.adaSandi);
 
   return (
     <Card id="sesi-ecourt-saya">
@@ -185,9 +269,11 @@ export function EcourtSesiPribadi() {
         <CardTitle>Sesi e-Court saya</CardTitle>
         <CardDescription>
           Sambungkan sesi e-Court akun Anda sendiri, per peran. Sesi ini dipakai untuk verifikasi dokumen e-litigasi
-          (Hakim), TTE salinan putusan (Panitera), dan unggah salinan putusan. Akun penarik data milik pengadilan terpisah
-          dan tidak pernah dipakai atas nama Anda. Sandi tidak disimpan; yang disimpan server hanya sesi tersandi. Sesi
-          habis = masuk lagi di sini.
+          (Hakim), TTE salinan putusan (Panitera), dan unggah salinan putusan (Hakim, Panitera Pengganti, Panitera, Juru
+          Sita) - dari ALETA maupun dari panel ALETA di SIPP, selalu atas nama akun ALETA yang sedang masuk. Akun penarik
+          data milik pengadilan terpisah dan tidak pernah dipakai atas nama Anda. Anda dapat menyimpan akun e-Court milik
+          Anda sendiri (Akun e-Court saya) supaya masuk ulang cukup dengan captcha; sandinya disandi di server dan tidak
+          pernah ditampilkan lagi. Tanpa akun tersimpan, sandi tidak disimpan - yang disimpan hanya sesi tersandi.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -197,6 +283,7 @@ export function EcourtSesiPribadi() {
           <ul className="space-y-2">
             {data.peranTersedia.map((p) => {
               const s = sesiPer(p.kode);
+              const a = akunPer(p.kode);
               return (
                 <li key={p.kode} className="flex flex-wrap items-center gap-2 rounded-md border border-border/70 px-3 py-2">
                   <span className="min-w-36 font-medium">{p.sebutan}</span>
@@ -208,10 +295,37 @@ export function EcourtSesiPribadi() {
                     <Badge variant="muted">Belum tersambung</Badge>
                   )}
                   {s?.terakhirDipakai ? <span className="text-muted-foreground">dipakai {waktu(s.terakhirDipakai)}</span> : null}
+                  {a ? (
+                    <span className="text-muted-foreground" data-akun-ecourt-tersimpan={p.kode}>
+                      akun tersimpan: {a.email}
+                      {a.hasilUji ? ` (${SEBUT_UJI[a.hasilUji] || a.hasilUji} ${waktu(a.diujiPada)})` : " (belum diuji)"}
+                    </span>
+                  ) : null}
                   <span className="ml-auto flex flex-wrap gap-2">
+                    {a ? (
+                      <Button type="button" size="sm" disabled={sibuk} onClick={() => void mulai(p.kode, true)}>
+                        Uji masuk
+                      </Button>
+                    ) : null}
                     <Button type="button" size="sm" variant="outline" disabled={sibuk} onClick={() => void mulai(p.kode)}>
                       {s?.keadaan === "tersambung" ? "Masuk ulang" : "Sambungkan"}
                     </Button>
+                    {data.akunDidukung ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={sibuk}
+                        onClick={() => setPeranAkun(peranAkun === p.kode ? "" : p.kode)}
+                      >
+                        {a ? "Ubah akun" : "Simpan akun"}
+                      </Button>
+                    ) : null}
+                    {a ? (
+                      <Button type="button" size="sm" variant="ghost" disabled={sibuk} onClick={() => void hapusAkun(p.kode)}>
+                        Hapus akun
+                      </Button>
+                    ) : null}
                     {s?.keadaan === "tersambung" ? (
                       <Button type="button" size="sm" variant="ghost" disabled={sibuk} onClick={() => void periksaAtauPutus("periksa", p.kode)}>
                         Periksa
@@ -229,13 +343,72 @@ export function EcourtSesiPribadi() {
           </ul>
         ) : null}
 
+        {data?.tersedia && data.akunDidukung === false ? (
+          <p className="text-muted-foreground">
+            Menyimpan akun e-Court per pengguna belum didukung ALETA Bot di server ini (bot perlu diperbarui).
+          </p>
+        ) : null}
+
+        {peranAkun ? (
+          <div className="space-y-2 rounded-md bg-muted/40 p-3" data-akun-ecourt-saya={peranAkun}>
+            <p className="font-medium">
+              Akun e-Court saya - {data?.peranTersedia.find((p) => p.kode === peranAkun)?.sebutan || peranAkun}
+            </p>
+            <p className="text-muted-foreground">
+              Surel dan sandi akun e-Court MILIK ANDA SENDIRI. Disandi di server ALETA Bot, tidak pernah ditampilkan lagi,
+              dan hanya dipakai untuk masuk e-Court atas nama Anda ketika Anda menekan Uji masuk. Captcha tetap Anda ketik
+              sendiri. Kosongkan sandi bila hanya ingin menyimpan ulang surel yang sama.
+            </p>
+            <Input
+              key={`surel-${peranAkun}`}
+              ref={akunSurelRef}
+              type="email"
+              autoComplete="off"
+              defaultValue={data?.akun?.find((a) => a.peran === peranAkun)?.email || ""}
+              placeholder="Surel akun e-Court"
+            />
+            <Input
+              ref={akunSandiRef}
+              type="password"
+              autoComplete="new-password"
+              name="aleta-ecourt-akun-sandi"
+              placeholder={akunPer(peranAkun) ? "Sandi e-Court (kosongkan bila tidak berubah)" : "Sandi e-Court"}
+            />
+            <div className="flex gap-2">
+              <Button type="button" size="sm" disabled={sibuk} onClick={() => void simpanAkun()}>
+                Simpan akun
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setPeranAkun("")}>
+                Batal
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
         {peranLogin ? (
           <div className="space-y-2 rounded-md bg-muted/40 p-3">
             <p className="font-medium">
               Masuk e-Court sebagai {data?.peranTersedia.find((p) => p.kode === peranLogin)?.sebutan || peranLogin}
+              {loginTersimpan ? ` - akun tersimpan ${loginTersimpan}` : ""}
             </p>
-            <Input ref={surelRef} type="email" autoComplete="off" placeholder="Surel akun e-Court" />
-            <Input ref={sandiRef} type="password" autoComplete="off" name="aleta-ecourt-sandi-sekali" placeholder="Sandi e-Court (tidak disimpan)" />
+            {loginTersimpan ? null : (
+              <>
+                <Input ref={surelRef} type="email" autoComplete="off" placeholder="Surel akun e-Court" />
+                <Input
+                  ref={sandiRef}
+                  type="password"
+                  autoComplete="off"
+                  name="aleta-ecourt-sandi-sekali"
+                  placeholder={simpanSaatMasuk ? "Sandi e-Court (disimpan tersandi bila login berhasil)" : "Sandi e-Court (tidak disimpan)"}
+                />
+                {data?.akunDidukung ? (
+                  <label className="flex items-center gap-2 text-muted-foreground">
+                    <input type="checkbox" checked={simpanSaatMasuk} onChange={(e) => setSimpanSaatMasuk(e.target.checked)} />
+                    Simpan akun ini sebagai akun e-Court saya (hanya bila e-Court menerima login)
+                  </label>
+                ) : null}
+              </>
+            )}
             {captcha ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={captcha} alt="Kode captcha e-Court" className="h-12 rounded border" />
@@ -252,6 +425,7 @@ export function EcourtSesiPribadi() {
                 onClick={() => {
                   setPeranLogin("");
                   setCaptcha("");
+                  setLoginTersimpan("");
                 }}
               >
                 Batal
@@ -280,6 +454,115 @@ export function EcourtSesiPribadi() {
             </ul>
           </details>
         ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+type BarisRekap = {
+  penggunaId: string;
+  nama: string;
+  jabatan: string;
+  peranDiharapkan: string[];
+  akun: Array<{
+    peran: string;
+    email: string;
+    adaSandi: boolean;
+    diperbaruiPada: string;
+    hasilUji: string;
+    diujiPada: string;
+    sesi: string;
+    namaAkunEcourt: string;
+  }>;
+  keadaan: "sudah" | "sebagian" | "belum";
+};
+
+const SEBUT_PERAN: Record<string, string> = {
+  hakim: "Hakim",
+  panitera: "Panitera",
+  "panitera-pengganti": "Panitera Pengganti",
+  "juru-sita": "Juru Sita",
+  lainnya: "Lainnya",
+};
+
+/**
+ * Rekap akun e-Court per pengguna (butir 20) - hanya admin, hanya MEMBACA.
+ * Siapa yang sudah/belum menyimpan akun e-Court miliknya; tanpa sandi, dan
+ * tanpa tombol mengubah akun orang lain.
+ */
+export function EcourtRekapAkunPengguna() {
+  const [isi, setIsi] = useState<{
+    tersedia: boolean;
+    pesan: string;
+    baris: BarisRekap[];
+    ringkas?: { sudah: number; sebagian: number; belum: number };
+  } | null>(null);
+  const [pesan, setPesan] = useState("");
+
+  const muat = useCallback(async () => {
+    try {
+      const r = await fetch(apiPath("/api/aleta-ecourt/ecourt-sesi/rekap"), { cache: "no-store" });
+      if (r.status === 404) {
+        setPesan("Rekap akun e-Court per pengguna belum tersedia di server.");
+        return;
+      }
+      if (r.status === 403) {
+        setPesan("Hanya Super Admin dan Admin yang dapat melihat rekap ini.");
+        return;
+      }
+      const d = await baca<NonNullable<typeof isi>>(r);
+      setIsi(d);
+      setPesan(d?.tersedia ? "" : d?.pesan || "");
+    } catch {
+      setPesan("ALETA belum dapat dihubungi.");
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => void muat(), 0);
+    return () => window.clearTimeout(t);
+  }, [muat]);
+
+  return (
+    <Card id="rekap-akun-ecourt-pengguna">
+      <CardHeader>
+        <CardTitle>Akun e-Court per pengguna</CardTitle>
+        <CardDescription>
+          Hakim, panitera, panitera pengganti, dan juru sita menyimpan akun e-Court MILIKNYA SENDIRI di Integrasi e-Court
+          &gt; Sesi e-Court saya. Tindakan e-Court (verifikasi, TTE, unggah salinan putusan) selalu memakai akun pengguna
+          yang sedang masuk ALETA; yang belum menyimpan akun dihentikan dengan petunjuk mengisinya - tidak pernah dialihkan
+          ke akun orang lain atau akun penarik data. Daftar ini hanya untuk melihat; sandi tidak pernah ditampilkan, dan
+          akun seseorang hanya dapat diubah pemiliknya.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        {isi?.ringkas ? (
+          <p className="text-muted-foreground">
+            Sudah: {isi.ringkas.sudah} · Sebagian: {isi.ringkas.sebagian} · Belum: {isi.ringkas.belum}
+          </p>
+        ) : null}
+        {isi?.baris?.length ? (
+          <ul className="space-y-1">
+            {isi.baris.map((b) => (
+              <li key={b.penggunaId} className="flex flex-wrap items-center gap-2 rounded-md border border-border/70 px-3 py-2">
+                <span className="min-w-40 font-medium">{b.nama}</span>
+                <Badge variant={b.keadaan === "sudah" ? "success" : b.keadaan === "sebagian" ? "warning" : "muted"}>
+                  {b.keadaan === "sudah" ? "Sudah" : b.keadaan === "sebagian" ? "Sebagian" : "Belum"}
+                </Badge>
+                {b.akun.map((a) => (
+                  <span key={a.peran} className="text-muted-foreground">
+                    {SEBUT_PERAN[a.peran] || a.peran}:{" "}
+                    {a.adaSandi ? `${a.email}${a.hasilUji ? ` (${SEBUT_UJI[a.hasilUji] || a.hasilUji})` : " (belum diuji)"}` : "belum diisi"}
+                    {a.sesi === "tersambung" ? " · sesi tersambung" : a.sesi === "kedaluwarsa" ? " · sesi habis" : ""}
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
+        ) : isi?.tersedia ? (
+          <p className="text-muted-foreground">Belum ada pengguna berjabatan hakim, panitera, panitera pengganti, atau juru sita.</p>
+        ) : null}
+        {pesan ? <p className="text-muted-foreground">{pesan}</p> : null}
       </CardContent>
     </Card>
   );

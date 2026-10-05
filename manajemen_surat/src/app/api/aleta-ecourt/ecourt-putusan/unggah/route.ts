@@ -8,6 +8,7 @@ import {
   kalimatAlasan,
   panggilBot,
 } from "@/server/modules/aleta-ecourt/ecourt-aksi";
+import { periksaAkunSippTerbuka } from "@/server/modules/aleta-ecourt/ecourt-akun-pengguna";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -57,6 +58,24 @@ export async function POST(request: NextRequest) {
     const isi = Buffer.from(await berkas.arrayBuffer());
     if (isi.subarray(0, 5).toString("latin1") !== "%PDF-") {
       return ok({ ok: false, akun: null, salinan: null, alasan: "berkas_bukan_pdf", pesan: kalimatAlasan("berkas_bukan_pdf") });
+    }
+
+    // Butir 20: yang mengunggah SELALU akun e-Court milik pengguna ALETA yang
+    // login. Akun SIPP yang terbuka di halaman (olehUsername dari panel)
+    // hanya diperiksa: milik pengguna ALETA lain = berhenti, bot tidak dipanggil.
+    const sipp = await periksaAkunSippTerbuka(db, actor.id, form.get("olehUsername"));
+    if (!sipp.ok) {
+      await catatJejakAksi(db, {
+        penggunaId: actor.id,
+        penggunaNama: actor.name,
+        aksi: "unggah_salinan",
+        nomorPerkara: nomor,
+        sasaran: `akun SIPP terbuka: ${sipp.usernameSipp}`,
+        hasil: "ditolak",
+        alasan: sipp.alasan,
+        alamatIp: alamatIpPeramban(request),
+      }).catch(() => undefined);
+      return ok({ ok: false, akun: null, salinan: null, alasan: sipp.alasan, pesan: kalimatAlasan(sipp.alasan) });
     }
 
     const hasil = await panggilBot<{

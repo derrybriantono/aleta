@@ -36,7 +36,7 @@ import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib"
 import { AletaEcourtPemetaanBlangko } from "@/components/portal/aleta-ecourt-pemetaan-blangko";
 import { AletaEcourtProfilSaklar } from "@/components/portal/aleta-ecourt-profil-saklar";
 import { AletaEcourtTipeKeluaran } from "@/components/portal/aleta-ecourt-tipe-keluaran";
-import { EcourtPantauPutusan, EcourtSesiPribadi } from "@/components/portal/ecourt-sesi-pribadi";
+import { EcourtPantauPutusan, EcourtRekapAkunPengguna, EcourtSesiPribadi } from "@/components/portal/ecourt-sesi-pribadi";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -159,6 +159,9 @@ export function AletaEcourtAdmin() {
       {/* Sesi e-Court PRIBADI (1 Okt 2026, E10): akun orang yang memverifikasi,
           men-TTE, dan mengunggah - terpisah dari akun penarik data di atas. */}
       <EcourtSesiPribadi />
+      {/* Butir 20 (5 Okt 2026): siapa yang sudah/belum menyimpan akun e-Court
+          miliknya sendiri - hanya membaca. */}
+      <EcourtRekapAkunPengguna />
       <EcourtPantauPutusan />
 
       {/* Setelah penjadwal: penarikan berhenti sendiri bila ruang menipis,
