@@ -77,6 +77,10 @@ import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
+import { useHilangSendiri } from "@/lib/pesan-sementara";
+import { BannerGangguan } from "@/components/portal/banner-gangguan";
+import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
 
@@ -1121,9 +1125,39 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
   const [memuat, setMemuat] = useState(false);
   const [galat, setGalat] = useState("");
   const [pesan, setPesan] = useState("");
+  // Butir 3 (5 Okt 2026): pesan BERHASIL ("N nomor perkara disalin") dipisah
+  // dari `pesan` (keterangan/penolakan yang menetap) dan hilang sendiri.
+  const [pesanBerhasil, setPesanBerhasil] = useState("");
+  useHilangSendiri(pesanBerhasil, true, () => setPesanBerhasil(""));
 
   // ======================================================================
-  // HASIL: HALAMAN, TAMPILAN, URUTAN (butir 7 dan 8, 25 September 2026)
+  // BUTIR 14 (5 Okt 2026) - GANGGUAN JARINGAN DICOBA LAGI SENDIRI
+  // ======================================================================
+  // Tiap pemuatan (buka perkara, cari, muat lebih banyak) mencatat cara
+  // mengulangnya; bila gagal karena gangguan jaringan / 502-504 / jawaban
+  // bukan JSON, banner kuning menghitung mundur lalu mengulangnya - satu
+  // percobaan pada satu waktu. Hasil yang sudah tampil tidak dikosongkan.
+  const ulangTerakhir = useRef<(() => Promise<unknown>) | null>(null);
+  const cobaLagiStatus = useCobaLagiOtomatis(() => ulangTerakhir.current?.());
+  const { laporGagal: laporGagalStatus, laporBerhasil: laporBerhasilStatus } = cobaLagiStatus;
+  /**
+   * `available: false` dari rute: bot tak terjangkau = gangguan (dicoba lagi
+   * sendiri); selain itu (kueri SIPP habis waktu, tabel tidak ada) tetap merah
+   * apa adanya seperti semula - mengulang kueri berat tiap beberapa detik
+   * hanya membebani SIPP.
+   */
+  const tanganiTakTersedia = useCallback(
+    (pesanBot: string) => {
+      if (botTakTerjangkau(pesanBot)) {
+        laporGagalStatus(new GalatJawaban(pesanBot, 503, true), 503, `${pesanBot} ALETA akan mencoba memuat lagi sendiri.`);
+      } else {
+        // Server terjangkau dan menjawab: bukan gangguan jaringan.
+        laporBerhasilStatus();
+        setGalat(pesanBot);
+      }
+    },
+    [laporGagalStatus, laporBerhasilStatus]
+  );
   // ======================================================================
   //
   // Kueri pencarian terakhir disimpan TANPA batas dan lewati, supaya "Muat
@@ -1231,7 +1265,8 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     batasId: number | null;
   }>({ jumlah: null, dipotong: [], batasId: null });
 
-  const buka = useCallback(async (nomorPerkara: string) => {
+  const buka: (nomorPerkara: string) => Promise<void> = useCallback(async (nomorPerkara: string): Promise<void> => {
+    ulangTerakhir.current = () => buka(nomorPerkara);
     setMemuat(true);
     setGalat("");
     setPesan("");
@@ -1240,14 +1275,16 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         apiPath(`/api/aleta-ecourt/status-perkara?nomor=${encodeURIComponent(nomorPerkara)}`),
         { cache: "no-store" }
       );
-      const isi = await jawaban.json();
+      // Status diperiksa sebelum badan dibaca sebagai JSON (502/504, halaman galat proksi).
+      const isi = (await bacaJsonAman(jawaban)) as Record<string, unknown> & { data?: Record<string, unknown> };
       if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal membaca status perkara."));
 
-      const data = isi?.data ?? isi;
+      const data = (isi?.data ?? isi) as Record<string, unknown>;
       if (!data?.available) {
-        setGalat(String(data?.message || "ALETA Bot belum dapat dihubungi."));
+        tanganiTakTersedia(String(data?.message || "ALETA Bot belum dapat dihubungi."));
         return;
       }
+      laporBerhasilStatus();
       if (!data.status) {
         setGalat(
           String(data.alasan) === "perkara_tidak_ditemukan"
@@ -1258,11 +1295,13 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
       }
       setStatus(data.status as Status);
     } catch (kesalahan) {
-      setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca status perkara.");
+      if (!laporGagalStatus(kesalahan)) {
+        setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca status perkara.");
+      }
     } finally {
       setMemuat(false);
     }
-  }, []);
+  }, [laporGagalStatus, laporBerhasilStatus, tanganiTakTersedia]);
 
   // Datang dari layar Jadwal Sidang dengan nomor perkara: langsung dibuka,
   // tanpa menunggu penggunanya menekan Cari lagi.
@@ -1524,6 +1563,8 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     // penggunanya masih bekerja di panel itu.
     const sentuhAwal = { tag: sentuhTag.current, saringan: sentuhSaringan.current };
 
+    // Coba-lagi otomatis mengulang pencarian ini (isian terkini) - butir 14.
+    ulangTerakhir.current = async () => jalankanCariRef.current?.(tagTimpa);
     setMemuat(true);
     setMemuatLagi(false);
     setGalat("");
@@ -1534,16 +1575,25 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         apiPath(`/api/aleta-ecourt/status-perkara?${kueri.toString()}`),
         { cache: "no-store" }
       );
-      const isi = await jawaban.json();
+      const isi = (await bacaJsonAman(jawaban)) as Record<string, unknown> & { data?: Record<string, unknown> };
       // Jawaban dari putaran yang sudah ditinggalkan DIBUANG, bukan digambar.
       if (putaranCari.current !== putaran) return;
       if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal mencari perkara."));
 
-      const data = isi?.data ?? isi;
+      const data = (isi?.data ?? isi) as Record<string, unknown> & {
+        perkara?: unknown;
+        ruasTakTerbaca?: unknown;
+        adaLagi?: unknown;
+        lapis?: unknown;
+        jumlahTag?: unknown;
+        tagDipotong?: unknown;
+        batasId?: unknown;
+      };
       if (!data?.available) {
-        setGalat(String(data?.message || "ALETA Bot belum dapat dihubungi."));
+        tanganiTakTersedia(String(data?.message || "ALETA Bot belum dapat dihubungi."));
         return;
       }
+      laporBerhasilStatus();
 
       // Tiap baris membawa bagian yang gagal dibaca pada halamannya - selnya
       // lalu tertulis "tak terbaca", bukan nilai "tidak ada" pengisi bot.
@@ -1614,11 +1664,17 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
       }
     } catch (kesalahan) {
       if (putaranCari.current !== putaran) return;
-      setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal mencari perkara.");
+      if (!laporGagalStatus(kesalahan)) {
+        setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal mencari perkara.");
+      }
     } finally {
       if (putaranCari.current === putaran) setMemuat(false);
     }
-  }, [cari, saringan, tagPilih, dasarTag, periodeTag, dariTag, sampaiTag, acuanTag, katalogTag, buka, kecilkanAtauTunda]);
+  }, [cari, saringan, tagPilih, dasarTag, periodeTag, dariTag, sampaiTag, acuanTag, katalogTag, buka, kecilkanAtauTunda, laporGagalStatus, laporBerhasilStatus, tanganiTakTersedia]);
+  const jalankanCariRef = useRef<typeof jalankanCari | null>(null);
+  useEffect(() => {
+    jalankanCariRef.current = jalankanCari;
+  }, [jalankanCari]);
 
   /**
    * Halaman berikutnya dari pencarian yang SAMA.
@@ -1640,6 +1696,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
       // dimulai selagi ini berjalan, jawabannya dibuang - menempelkannya akan
       // mencampur dua pertanyaan dalam satu daftar.
       const putaran = putaranCari.current;
+      ulangTerakhir.current = async () => muatLagiRef.current?.(semua);
       setMemuatLagi(true);
       setGalat("");
       setPesan("");
@@ -1648,15 +1705,20 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
           apiPath(`/api/aleta-ecourt/status-perkara?${kueri.toString()}`),
           { cache: "no-store" }
         );
-        const isi = await jawaban.json();
+        const isi = (await bacaJsonAman(jawaban)) as Record<string, unknown> & { data?: Record<string, unknown> };
         if (putaranCari.current !== putaran) return;
         if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal memuat perkara berikutnya."));
 
-        const data = isi?.data ?? isi;
+        const data = (isi?.data ?? isi) as Record<string, unknown> & {
+          perkara?: unknown;
+          ruasTakTerbaca?: unknown;
+          adaLagi?: unknown;
+        };
         if (!data?.available) {
-          setGalat(String(data?.message || "ALETA Bot belum dapat dihubungi."));
+          tanganiTakTersedia(String(data?.message || "ALETA Bot belum dapat dihubungi."));
           return;
         }
+        laporBerhasilStatus();
 
         // Yang sudah ada tidak digandakan. Bot versi lama tidak mengenal
         // `lewati` dan memulangkan halaman pertama lagi - tanpa penyaring ini
@@ -1681,13 +1743,19 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         }
       } catch (kesalahan) {
         if (putaranCari.current !== putaran) return;
-        setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal memuat perkara berikutnya.");
+        if (!laporGagalStatus(kesalahan)) {
+          setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal memuat perkara berikutnya.");
+        }
       } finally {
         if (putaranCari.current === putaran) setMemuatLagi(false);
       }
     },
-    [kueriHasil, hasilCari]
+    [kueriHasil, hasilCari, laporGagalStatus, laporBerhasilStatus, tanganiTakTersedia]
   );
+  const muatLagiRef = useRef<typeof muatLagi | null>(null);
+  useEffect(() => {
+    muatLagiRef.current = muatLagi;
+  }, [muatLagi]);
 
   const salinNomor = useCallback(async (baris: Ditemukan[]) => {
     // Nomor disalin dalam urutan dan saringan yang SEDANG TAMPIL - yang
@@ -1696,7 +1764,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     if (!teks) return;
     try {
       await navigator.clipboard.writeText(teks);
-      setPesan(`${baris.length} nomor perkara disalin.`);
+      setPesanBerhasil(`${baris.length} nomor perkara disalin.`);
     } catch {
       // Papan salin ditolak peramban - lazim pada sambungan bukan HTTPS.
       // Disebutkan apa adanya; diam berarti penggunanya menempel yang lama.
@@ -2393,12 +2461,21 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
           </BilahPanelKecil>
         ) : null}
 
+        <BannerGangguan keadaan={cobaLagiStatus.keadaan} onCobaSekarang={cobaLagiStatus.cobaSekarang} />
         {galat ? (
-          <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-300">
-            {galat}
+          <p className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-300">
+            <span className="min-w-0 flex-1">{galat}</span>
+            <TombolTutupPesan onTutup={() => setGalat("")} />
           </p>
         ) : null}
+        {/* Keterangan / penolakan menetap sampai keadaannya berubah; yang
+            berhasil (pesanBerhasil) hilang sendiri - butir 3, 5 Okt 2026. */}
         {pesan ? <p className="text-sm text-muted-foreground">{pesan}</p> : null}
+        {pesanBerhasil ? (
+          <p className="text-sm text-emerald-700 dark:text-emerald-300" role="status">
+            {pesanBerhasil}
+          </p>
+        ) : null}
 
         {/* Batas baris TIDAK boleh memotong dalam diam.
 

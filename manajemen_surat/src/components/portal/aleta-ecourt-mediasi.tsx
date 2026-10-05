@@ -28,6 +28,11 @@ import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 import { tanggalHariPendek } from "@/lib/tanggal-indonesia";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
+import { usePesanSementara } from "@/lib/pesan-sementara";
+import { cn } from "@/lib/utils";
+import { BannerGangguan } from "@/components/portal/banner-gangguan";
+import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import {
   adaMediatorHakim,
   adaMediatorNonHakim,
@@ -222,7 +227,8 @@ function RincianMediasi({ baris }: { baris: Mediasi }) {
   const [kehadiran, setKehadiran] = useState<BarisKehadiran[] | null>(null);
   const [galat, setGalat] = useState("");
   const [sibuk, setSibuk] = useState(false);
-  const [pesan, setPesan] = useState("");
+  // Butir 3 (5 Okt 2026): "Tersimpan N catatan" hilang sendiri; yang gagal menetap.
+  const [pesan, setPesan] = usePesanSementara();
   const [putaran, setPutaran] = useState(0);
 
   useEffect(() => {
@@ -259,7 +265,7 @@ function RincianMediasi({ baris }: { baris: Mediasi }) {
   const simpan = async () => {
     if (!kehadiran) return;
     setSibuk(true);
-    setPesan("");
+    setPesan(null);
     try {
       const jawaban = await fetch(apiPath("/api/aleta-ecourt/kehadiran-mediasi"), {
         method: "POST",
@@ -286,13 +292,13 @@ function RincianMediasi({ baris }: { baris: Mediasi }) {
       };
       const hasil = isi.data ?? isi;
       if (!hasil.ok) {
-        setPesan(hasil.sebab || "Kehadiran belum dapat disimpan.");
+        setPesan({ ok: false, teks: hasil.sebab || "Kehadiran belum dapat disimpan." });
         return;
       }
-      setPesan(`Tersimpan ${hasil.jumlahDisimpan ?? 0} catatan kehadiran.`);
+      setPesan({ ok: true, teks: `Tersimpan ${hasil.jumlahDisimpan ?? 0} catatan kehadiran.` });
       setPutaran((n) => n + 1);
     } catch (kesalahan) {
-      setPesan(pesanGalatPortal(kesalahan, "Kehadiran belum dapat disimpan."));
+      setPesan({ ok: false, teks: pesanGalatPortal(kesalahan, "Kehadiran belum dapat disimpan.") });
     } finally {
       setSibuk(false);
     }
@@ -460,7 +466,17 @@ function RincianMediasi({ baris }: { baris: Mediasi }) {
               <Button size="sm" disabled={sibuk} onClick={() => void simpan()}>
                 {sibuk ? "Menyimpan…" : "Simpan kehadiran"}
               </Button>
-              {pesan ? <span className="text-xs text-muted-foreground">{pesan}</span> : null}
+              {pesan ? (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-xs",
+                    pesan.ok ? "text-muted-foreground" : "text-rose-600"
+                  )}
+                >
+                  {pesan.teks}
+                  {!pesan.ok ? <TombolTutupPesan onTutup={() => setPesan(null)} className="h-4 w-4" /> : null}
+                </span>
+              ) : null}
             </div>
 
             <p className="mt-2 text-xs text-muted-foreground">
@@ -740,10 +756,35 @@ export function AletaEcourtMediasi({
    * Tidak membaca dari state, sehingga dapat dipanggil pada putaran yang sama
    * dengan setDari - saat state-nya belum berubah.
    */
+  // ==========================================================================
+  // BUTIR 14 (5 Okt 2026) - GANGGUAN JARINGAN DICOBA LAGI SENDIRI
+  // ==========================================================================
+  // Sampai 1.183.0 tiap kegagalan mengosongkan tabel (setMediasi([])) dan
+  // meninggalkan "Failed to fetch". Kini: gangguan jaringan / 502-504 /
+  // jawaban bukan JSON -> banner kuning + hitung mundur, data lama tetap.
+  // Data rentang LAIN tetap dikosongkan (pertemuan hari lain di bawah judul
+  // hari ini lebih menyesatkan daripada tabel kosong).
+  const permintaanTerakhir = useRef<{ mulai: string; akhir: string; kata: string } | null>(null);
+  const rentangTampil = useRef("");
+  const muatRentangRef = useRef<((mulai: string, akhir: string, kata: string) => Promise<void>) | null>(null);
+  const cobaLagiMediasi = useCobaLagiOtomatis(() => {
+    const p = permintaanTerakhir.current;
+    return p && muatRentangRef.current ? muatRentangRef.current(p.mulai, p.akhir, p.kata) : undefined;
+  });
+  const { laporGagal: laporGagalMediasi, laporBerhasil: laporBerhasilMediasi } = cobaLagiMediasi;
+
   const muatRentang = useCallback(
     async (mulai: string, akhir: string, kata: string) => {
       if (sedangMuat.current) return;
       sedangMuat.current = true;
+      permintaanTerakhir.current = { mulai, akhir, kata };
+      const rentang = `${mulai}|${akhir}|${kata}`;
+      const kosongkanBilaLain = () => {
+        if (rentangTampil.current !== rentang) {
+          setMediasi([]);
+          rentangTampil.current = "";
+        }
+      };
       setMemuat(true);
       setPesan("");
       try {
@@ -751,27 +792,42 @@ export function AletaEcourtMediasi({
         const jawaban = await fetch(apiPath(`/api/aleta-ecourt/jadwal-mediasi?${params.toString()}`), {
           cache: "no-store",
         });
-        const isi = await jawaban.json();
+        // Status diperiksa sebelum badan dibaca sebagai JSON.
+        const isi = (await bacaJsonAman(jawaban)) as Record<string, unknown> & { data?: Record<string, unknown> };
         if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Jadwal mediasi gagal dimuat."));
 
-        const data = isi?.data ?? isi;
+        const data = (isi?.data ?? isi) as Record<string, unknown>;
         if (data?.available === false) {
-          setPesan(String(data.message || "ALETA Bot belum dapat dihubungi."));
-          setMediasi([]);
+          const pesanBot = String(data.message || "ALETA Bot belum dapat dihubungi.");
+          if (botTakTerjangkau(pesanBot)) {
+            laporGagalMediasi(new GalatJawaban(pesanBot, 503, true), 503, `${pesanBot} ALETA akan mencoba memuat lagi sendiri.`);
+          } else {
+            // Bot menjawab tetapi tidak dapat membaca: pesannya apa adanya, seperti semula.
+            laporBerhasilMediasi();
+            setPesan(pesanBot);
+          }
+          kosongkanBilaLain();
           return;
         }
+        laporBerhasilMediasi();
         setAlasan(String(data?.alasan || ""));
-        setMediasi(Array.isArray(data?.mediasi) ? data.mediasi : []);
+        setMediasi(Array.isArray(data?.mediasi) ? (data.mediasi as Mediasi[]) : []);
+        rentangTampil.current = rentang;
       } catch (galat) {
-        setPesan(galat instanceof Error ? galat.message : String(galat));
-        setMediasi([]);
+        if (!laporGagalMediasi(galat)) {
+          setPesan(galat instanceof Error ? galat.message : String(galat));
+          kosongkanBilaLain();
+        }
       } finally {
         sedangMuat.current = false;
         setMemuat(false);
       }
     },
-    []
+    [laporGagalMediasi, laporBerhasilMediasi]
   );
+  useEffect(() => {
+    muatRentangRef.current = muatRentang;
+  }, [muatRentang]);
 
   // Pemuatan pertama dilepas ke antrean tugas, mengikuti pola layar lain:
   // memanggil setState langsung di dalam efek melanggar aturan hook React.
@@ -898,9 +954,12 @@ export function AletaEcourtMediasi({
           </Button>
         </div>
 
+        <BannerGangguan keadaan={cobaLagiMediasi.keadaan} onCobaSekarang={cobaLagiMediasi.cobaSekarang} />
+        {/* Pesan di sini selalu kegagalan - menetap sampai pemuatan berikutnya atau ditutup. */}
         {pesan ? (
-          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-            {pesan}
+          <p className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+            <span className="min-w-0 flex-1">{pesan}</span>
+            <TombolTutupPesan onTutup={() => setPesan("")} />
           </p>
         ) : null}
 

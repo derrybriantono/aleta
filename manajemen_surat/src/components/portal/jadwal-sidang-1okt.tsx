@@ -32,6 +32,8 @@ import {
 } from "@/lib/jadwal-sidang-1okt";
 import { DATA_BERJALAN_KOSONG, type DataBerjalan, type PetaSkors } from "@/lib/jadwal-sidang-2okt";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { usePesanSementara } from "@/lib/pesan-sementara";
+import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { cn } from "@/lib/utils";
 
 function hariIniLokal(): string {
@@ -113,14 +115,15 @@ export function TombolSelesaiSidang({
   onBerubah: () => void;
 }) {
   const [sibuk, setSibuk] = useState(false);
-  const [pesan, setPesan] = useState("");
+  // Butir 3 (5 Okt 2026): pesan di sini selalu kegagalan - menetap, dapat ditutup.
+  const [pesan, setPesan] = usePesanSementara();
 
   const setel = async (selesai: boolean) => {
     if (!selesai && !window.confirm(`Batalkan tanda selesai ${baris.nomorPerkara}? Antrian sidangnya kembali "menunggu".`)) {
       return;
     }
     setSibuk(true);
-    setPesan("");
+    setPesan(null);
     try {
       const data = await bacaJson(
         await fetch(apiPath("/api/aleta-ecourt/sidang/selesai"), {
@@ -137,16 +140,16 @@ export function TombolSelesaiSidang({
         })
       );
       if (data.available === false || data.ok === false) {
-        setPesan(String(data.alasan || "Tanda selesai belum tersimpan."));
+        setPesan({ ok: false, teks: String(data.alasan || "Tanda selesai belum tersimpan.") });
         return;
       }
       const antrian = data.antrianSipp as { ok?: boolean; baris?: number; alasan?: string } | undefined;
       if (antrian && antrian.ok === false) {
-        setPesan(`Tersimpan di ALETA; antrian SIPP tidak tergerakkan: ${antrian.alasan || "error"}.`);
+        setPesan({ ok: false, teks: `Tersimpan di ALETA; antrian SIPP tidak tergerakkan: ${antrian.alasan || "error"}.` });
       }
       onBerubah();
     } catch (galat) {
-      setPesan(galat instanceof Error ? galat.message : "Tanda selesai belum tersimpan.");
+      setPesan({ ok: false, teks: galat instanceof Error ? galat.message : "Tanda selesai belum tersimpan." });
     } finally {
       setSibuk(false);
     }
@@ -179,7 +182,17 @@ export function TombolSelesaiSidang({
         {hijau ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
         {sibuk ? "…" : "Selesai"}
       </button>
-      {pesan ? <span className="max-w-[12rem] text-[11px] text-rose-600">{pesan}</span> : null}
+      {pesan ? (
+        <span
+          className={cn(
+            "inline-flex max-w-[12rem] items-start gap-1 text-[11px]",
+            pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600"
+          )}
+        >
+          <span className="min-w-0 flex-1">{pesan.teks}</span>
+          {!pesan.ok ? <TombolTutupPesan onTutup={() => setPesan(null)} className="h-4 w-4" /> : null}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -326,7 +339,8 @@ export function IsianMediator({
   const rencana = rencanaTersimpan && rencanaTersimpan.kunci === kunciIsian ? rencanaTersimpan.isi : null;
   const setRencana = (isi: Record<string, unknown> | null) =>
     setRencanaTersimpan(isi ? { kunci: kunciIsian, isi } : null);
-  const [pesan, setPesan] = useState("");
+  // Butir 3 (5 Okt 2026): "tertulis di SIPP" hilang sendiri; penolakan menetap.
+  const [pesan, setPesan] = usePesanSementara();
   const [sibuk, setSibuk] = useState(false);
   const [tertulis, setTertulis] = useState(false);
 
@@ -335,7 +349,7 @@ export function IsianMediator({
 
   const kirim = async (kering: boolean) => {
     setSibuk(true);
-    setPesan("");
+    setPesan(null);
     try {
       const isi = await bacaJson(
         await fetch(apiPath("/api/aleta-ecourt/sidang/mediator"), {
@@ -353,7 +367,7 @@ export function IsianMediator({
         })
       );
       if (isi.available === false || isi.ok === false) {
-        setPesan(String(isi.alasan || isi.pesan || "Penetapan mediator ditolak."));
+        setPesan({ ok: false, teks: String(isi.alasan || isi.pesan || "Penetapan mediator ditolak.") });
         setRencana(null);
         return;
       }
@@ -363,11 +377,11 @@ export function IsianMediator({
       }
       setTertulis(true);
       setRencana(null);
-      setPesan(`Penetapan mediator tertulis di SIPP (${Number(isi.jumlahLangkah) || 0} langkah).`);
+      setPesan({ ok: true, teks: `Penetapan mediator tertulis di SIPP (${Number(isi.jumlahLangkah) || 0} langkah).` });
       muatUlang();
       onTertulis?.();
     } catch (galat) {
-      setPesan(galat instanceof Error ? galat.message : "Penetapan mediator gagal.");
+      setPesan({ ok: false, teks: galat instanceof Error ? galat.message : "Penetapan mediator gagal." });
     } finally {
       setSibuk(false);
     }
@@ -390,7 +404,7 @@ export function IsianMediator({
           {" · "}
           {ringkasMediasi(mediasiPertama, hariIniLokal())}
         </p>
-        {pesan ? <p className="text-emerald-700 dark:text-emerald-300">{pesan}</p> : null}
+        {pesan ? <p className={pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600"}>{pesan.teks}</p> : null}
         {!tertulis ? (
           <p className="text-[11px] text-muted-foreground">
             Mengganti mediator yang sudah ditetapkan dikerjakan lewat Edit Penetapan Mediasi di SIPP.
@@ -539,7 +553,10 @@ export function IsianMediator({
       )}
 
       {pesan ? (
-        <p className={cn(tertulis ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600")}>{pesan}</p>
+        <p className={cn("flex items-start gap-1", pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600")}>
+          <span className="min-w-0 flex-1">{pesan.teks}</span>
+          {!pesan.ok ? <TombolTutupPesan onTutup={() => setPesan(null)} className="h-4 w-4" /> : null}
+        </p>
       ) : null}
     </div>
   );

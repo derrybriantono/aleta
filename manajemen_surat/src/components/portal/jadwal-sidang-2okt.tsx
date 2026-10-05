@@ -53,6 +53,8 @@ import {
 } from "@/lib/jadwal-sidang-2okt";
 import { bacaKontakPihak, kalimatKontak } from "@/lib/jadwal-sidang-kontak";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { usePesanSementara } from "@/lib/pesan-sementara";
+import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import type { KontakPihak } from "@/lib/bawaan-tunda";
 import { kunciWaktu, WAKTU_ANTRIAN_KOSONG, type WaktuAntrian } from "@/lib/tiga-jarak-sidang";
@@ -336,10 +338,23 @@ export function TombolRuangSidang({
   ruang?: string;
 }) {
   const [sibuk, setSibuk] = useState(false);
-  const [pesan, setPesan] = useState<{ ok: boolean; teks: string } | null>(null);
+  // Butir 3 (5 Okt 2026): "Diskors", "Ditandai berjalan", dsb. hilang sendiri
+  // sesudah beberapa detik; yang gagal menetap sampai ditutup / aksi berikutnya.
+  const [pesan, setPesan] = usePesanSementara();
+  const tampilPesan = pesan ? (
+    <span
+      className={cn(
+        "inline-flex max-w-[12rem] items-start gap-1 text-[11px]",
+        pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600"
+      )}
+    >
+      <span className="min-w-0 flex-1">{pesan.teks}</span>
+      {!pesan.ok ? <TombolTutupPesan onTutup={() => setPesan(null)} className="h-4 w-4" /> : null}
+    </span>
+  ) : null;
 
   if (!aksi.skors && !aksi.lompat && !aksi.lanjut && !aksi.tandai && !aksi.batalTanda) {
-    return pesan ? <span className={cn("max-w-[12rem] text-[11px]", pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600")}>{pesan.teks}</span> : null;
+    return tampilPesan;
   }
 
   const tandai = async (nyala: boolean) => {
@@ -454,11 +469,7 @@ export function TombolRuangSidang({
           {sibuk ? "…" : "Batalkan tanda"}
         </button>
       ) : null}
-      {pesan ? (
-        <span className={cn("max-w-[12rem] text-[11px]", pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600")}>
-          {pesan.teks}
-        </span>
-      ) : null}
+      {tampilPesan}
     </span>
   );
 }
