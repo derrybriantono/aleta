@@ -56,19 +56,25 @@ describe("unggah putusan hanya di blangko putusan (4 Okt)", () => {
     }
   });
 
-  it("penjaga memakai halaman BAS sebagai syarat pertama", () => {
-    const f = ambilFungsi(s, "a3BukanBlangkoPutusan");
-    expect(f).toMatch(/p7HalamanBas\(\)/);
-    expect(f).toMatch(/A3_POLA_BUKAN_PUTUSAN\.test\(p7NamaBlangko\(\)\)/);
+  it("penjaga memakai halaman BAS sebagai syarat pertama, lalu pola nama (1.183.0: a3JenisBlangkoHalaman)", () => {
+    expect(ambilFungsi(s, "a3BukanBlangkoPutusan")).toMatch(/a3JenisBlangkoHalaman\(\) === "bukan"/);
+    const f = ambilFungsi(s, "a3JenisBlangkoHalaman");
+    const iBas = f.indexOf("p7HalamanBas()");
+    const iPola = f.indexOf("A3_POLA_BUKAN_PUTUSAN.test(nama)");
+    const iMenu = f.indexOf("a3MenuHalaman(nama)");
+    expect(iBas).toBeGreaterThan(-1);
+    expect(iPola).toBeGreaterThan(iBas);
+    expect(iMenu).toBeGreaterThan(iPola);
   });
 
   it("bagianUnggahSatuAbt pulang null SEBELUM membuat kotak", () => {
     const f = ambilFungsi(s, "bagianUnggahSatuAbt");
-    const iJaga = f.indexOf("a3BukanBlangkoPutusan()");
+    const iJaga = f.indexOf('if (jenisHalaman === "bukan") return null;');
+    const iJenis = f.indexOf("const jenisHalaman = a3JenisBlangkoHalaman();");
     const iKotak = f.indexOf('buatElemen("div", "aleta-abt-bagian")');
-    expect(iJaga).toBeGreaterThan(-1);
+    expect(iJenis).toBeGreaterThan(-1);
+    expect(iJaga).toBeGreaterThan(iJenis);
     expect(iKotak).toBeGreaterThan(iJaga);
-    expect(f.slice(iJaga - 40, iJaga + 60)).toMatch(/return null/);
   });
 
   it("tombol punya penjaga kedua sebelum membaca blangko", () => {

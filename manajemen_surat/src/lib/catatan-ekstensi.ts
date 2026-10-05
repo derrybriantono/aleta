@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.183.0",
+    dirilis: "2026-10-04T14:50:00+08:00",
+    judul: "Panel ABT: bagian Unggah putusan dan tombol kaki \"Kerjakan perkara ini\" hanya di blangko putusan",
+    butir: [
+      "PERBAIKAN lanjutan 1.182.0. Diukur atas 812 blangko ABT: 1.182.0 hanya menolak BAS, relaas, dan pemberitahuan, sehingga PMH/PHS, Penunjukan PP/Jurusita, Penetapan Mediator, Penetapan Hari Sidang, Sampul, Daftar Isi, Akta Cerai, formulir, dan laporan mediasi masih mendapat bagian Unggah - dan di UI Baru panel memilih sendiri \"Blangko halaman ini\", jadi satu klik di kaki mengunggah blangko itu sebagai putusan. Kini semuanya dikenali dan bagian Unggah tidak digambar di sana.",
+      "Jenis blangko juga dikenali dari SUBMENU tempat berkasnya diklik di halaman daftar ABT (\"Putusan CG\", \"BAS Cerai Verstek\", \"Relaas dan PBT\", \"Gugatan & Permohonan\"), sebab banyak blangko putusan bernama tanpa kata putusan (\"CG Verstek\", \"PAW\", \"Wali Adhal\"). Catatannya hanya di sessionStorage tab itu - tidak ada yang ditulis ke ABT.",
+      "UI Baru: blangko yang tetap tidak dikenali (mis. \"PAW\" dibuka tanpa lewat daftar, atau penetapan ikrar talak) tidak lagi dipilih sendiri. Bagian Unggah dan tombol kaki DIKUNCI dengan satu kalimat dan tombol \"Ini blangko putusan - buka\"; kunci terbuka sendiri bila pemetaan blangko putusan mengenali token atau nama berkasnya.",
+      "Yang TIDAK berubah: blangko putusan yang dikenali tetap seperti biasa; tampilan Lama dan Baru tidak dikunci (keduanya tidak pernah memilih blangko halaman ini); \"Isi dari SIPP & input ke ABT (BAS)\" di blangko BAS tetap ada.",
+    ],
+  },
+  {
     versi: "1.182.0",
     dirilis: "2026-10-04T11:10:00+08:00",
     judul: "Panel ABT: bagian Unggah putusan tidak lagi tampil di blangko BAS, relaas, dan pemberitahuan",

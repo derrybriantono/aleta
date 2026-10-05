@@ -5566,6 +5566,8 @@ async function pasangMassalAbt() {
   if (sudahDipasangMassalAbt) return;
   if (!halamanBerandaAbt()) return;
   if (!(await sedangAktif())) return;
+  // 1.183.0: submenu berkas yang diklik, untuk mengenali jenis blangko.
+  a3CatatMenuBlangko();
   sudahDipasangMassalAbt = true;
   await muatPenggunaAleta();
   const panel = await susunPanelMassalAbt();
@@ -6757,7 +6759,10 @@ function bagianUnggahSatuAbt(isi) {
 
   // 1.182.0: bagian ini mengunggah PUTUSAN. Di blangko BAS, relaas, atau
   // pemberitahuan putusan ia tidak boleh ada - lihat a3BukanBlangkoPutusan.
-  if (a3BukanBlangkoPutusan()) return null;
+  // 1.183.0: juga PMH/PHS, penunjukan, sampul, akta, formulir, dan submenu
+  // daftar ABT yang bukan putusan; yang "ragu" dikunci di UI Baru (di bawah).
+  const jenisHalaman = a3JenisBlangkoHalaman();
+  if (jenisHalaman === "bukan") return null;
 
   const kotak = buatElemen("div", "aleta-abt-bagian");
   kotak.appendChild(buatElemen("div", "aleta-abt-judul", "Unggah putusan perkara ini ke SIPP"));
@@ -6817,8 +6822,19 @@ function bagianUnggahSatuAbt(isi) {
   }).then(() => {
     // Perbaikan 1 Okt butir 11 (UI Baru saja): blangko HALAMAN INI dipilih
     // sendiri - lihat a1PilihBlangkoHalaman.
-    if (t6Modern()) a1PilihBlangkoHalaman(pilihBlangko, petaTerakhir);
+    if (!t6Modern()) return;
+    // 1.183.0: blangko yang belum dikenali tidak pernah dipilih sendiri -
+    // kecuali pemetaan putusan mengenalinya (token atau nama berkas).
+    if (jenisHalaman === "ragu" && a3DikenaliPeta(petaTerakhir)) a3BukaUnggah(kotak);
+    if (jenisHalaman === "ragu" && !kotak.hasAttribute("data-a3-dibuka")) {
+      if (!a3Terkunci(kotak)) a3KunciUnggah(kotak, pilihHalamanIni);
+      return;
+    }
+    a1PilihBlangkoHalaman(pilihBlangko, petaTerakhir);
   });
+  const pilihHalamanIni = () => {
+    if (t6Modern() && petaTerakhir) a1PilihBlangkoHalaman(pilihBlangko, petaTerakhir);
+  };
 
   const pilihan = {};
   const centang = (kunci, label, bawaan) => {
@@ -6852,6 +6868,9 @@ function bagianUnggahSatuAbt(isi) {
       // BAS/relaas, tetapi halaman ABT dapat berganti isi tanpa muat ulang.
       if (a3BukanBlangkoPutusan()) {
         throw new Error("Halaman ini bukan blangko putusan (BAS, relaas, atau pemberitahuan) - putusan tidak diunggah dari sini.");
+      }
+      if (a3Terkunci(kotak)) {
+        throw new Error("Blangko ini belum dikenali sebagai blangko putusan - tekan \"Ini blangko putusan - buka\" lebih dahulu bila memang putusan.");
       }
       // Peta blangko dibaca SEKARANG, bukan disimpan saat panel dibangun:
       // pemetaannya dapat diubah orang di panel lain sementara halaman ini
@@ -6897,6 +6916,10 @@ function bagianUnggahSatuAbt(isi) {
       tombol.disabled = false;
     }
   });
+
+  // 1.183.0: UI Baru, blangko "ragu" - dikunci sejak lahir; .then di atas
+  // membukanya bila pemetaan putusan mengenalinya.
+  if (jenisHalaman === "ragu" && t6Modern()) a3KunciUnggah(kotak, pilihHalamanIni);
 
   isi.appendChild(kotak);
   return kotak;
@@ -10569,7 +10592,8 @@ function t6TataUnggah(k) {
   });
   const kerjakan = t6Tombol("Kerjakan perkara ini", "", "aleta-t6-utama");
   kerjakan.addEventListener("click", () => {
-    if (!tombol.disabled) tombol.click();
+    // 1.183.0: bagian Unggah yang terkunci (blangko belum dikenali) tidak ditekan dari kaki.
+    if (!tombol.disabled && !a3Terkunci(kotak)) tombol.click();
   });
   k.kakiWajib = t6El("span", "aleta-t6-kaki-wajib");
   k.kakiWajib.hidden = true;
@@ -10577,12 +10601,17 @@ function t6TataUnggah(k) {
     const pilihan = t6OpsiUnggah(k);
     ringkas.textContent = t6RingkasPilihan(pilihan);
     kerjakan.title = t6KalimatAkanTerjadi(pilihan);
-    kerjakan.disabled = tombol.disabled;
+    kerjakan.disabled = tombol.disabled || a3Terkunci(kotak);
+    // 1.183.0: kaki ikut tersembunyi selama bagian Unggah terkunci.
+    if (utama.hidden !== a3Terkunci(kotak)) utama.hidden = a3Terkunci(kotak);
   };
   for (const c of o.centang) c.addEventListener("change", segarKaki);
   const p = new MutationObserver(segarKaki);
   p.observe(tombol, { attributes: true, attributeFilter: ["disabled"] });
   k.pengamat.push(p);
+  const pKunci = new MutationObserver(segarKaki);
+  pKunci.observe(kotak, { attributes: true, attributeFilter: ["data-a3-jenis"] });
+  k.pengamat.push(pKunci);
   segarKaki();
   utama.appendChild(ringkas);
   utama.appendChild(opsi);
@@ -14847,17 +14876,185 @@ function p7HalamanBas() {
 }
 
 /**
- * Blangko yang dibuka BUKAN blangko putusan? (BAS, relaas panggilan,
- * pemberitahuan putusan/PBT.) Sampai 1.181.0 bagian "Unggah putusan perkara
- * ini" dan tombol kaki "Kerjakan perkara ini" tetap tampil di sana, dan bila
- * token blangko tidak cocok dengan pemetaan putusan, a1PilihBlangkoHalaman
- * jatuh ke "Blangko halaman ini (dari tautan CETAK)" - satu klik mengunggah
- * RTF BAS atau relaas sebagai putusan perkara.
+ * ============================================================================
+ * JENIS BLANGKO HALAMAN INI: PUTUSAN, BUKAN PUTUSAN, ATAU RAGU (1.182/1.183)
+ * ============================================================================
+ *
+ * Sampai 1.181.0 bagian "Unggah putusan perkara ini" dan tombol kaki
+ * "Kerjakan perkara ini" tampil di SEMUA halaman blangko ABT, dan bila token
+ * blangko tidak cocok dengan pemetaan putusan, a1PilihBlangkoHalaman jatuh ke
+ * "Blangko halaman ini (dari tautan CETAK)" - satu klik mengunggah RTF BAS,
+ * relaas, PMH, atau sampul berkas sebagai putusan perkara.
+ *
+ * 1.182.0 menolak BAS/relaas/pemberitahuan dari nama berkas. Diukur 4 Okt atas
+ * 812 berkas pustaka blangko ABT setempat: daftar itu masih meloloskan PMH/PHS, Penunjukan PP,
+ * Penetapan Mediator, Sampul, Akta Cerai, gugatan, dan formulir mediasi. Nama
+ * berkas saja juga tidak cukup untuk MENGENALI putusan - "CG Verstek", "PAW",
+ * "Wali Adhal", "IN 2 Pemohon" tidak memuat kata putusan. Folder kelompoknya
+ * (putusan_penetapan) terenkripsi di tautan, jadi sumbernya tiga:
+ *
+ *   1. nama berkas (judul <h2> view ABT) - pola bukan-putusan dan putusan;
+ *   2. submenu tempat berkas itu diklik di halaman daftar ABT ("Putusan CG",
+ *      "BAS Cerai Verstek", "Relaas dan PBT", "PMH & PHT") - dicatat di
+ *      sessionStorage tab ini oleh a3CatatMenuBlangko;
+ *   3. pemetaan blangko putusan (token atau nama berkas) - tiba belakangan.
+ *
+ *   "bukan"   bagian Unggah tidak digambar sama sekali (semua tampilan);
+ *   "putusan" seperti biasa;
+ *   "ragu"    UI Baru saja: bagian Unggah dan tombol kaki DIKUNCI sampai
+ *             pemetaan mengenalinya atau orangnya menyatakan "Ini blangko
+ *             putusan". Lama/Baru tidak punya pilihan "Blangko halaman ini" -
+ *             yang terunggah di sana selalu blangko putusan yang dipetakan.
  */
-const A3_POLA_BUKAN_PUTUSAN = /\bBAS\b|berita\s+acara|relaas|panggilan|pemberitahuan|\bPBT\b/i;
+const A3_POLA_BUKAN_PUTUSAN = /\bBAS\b|berita\s+acara|relaas|panggilan|pemberitahuan|\bPBT\b|\bPMH\b|\bPHS\b|\bPHT\b|\bPJS\b|\bPPP\b|penunjukan|penetapan\s+(majelis|hakim|hari|mediator|penahanan|sita|panitera|juru\s*sita|jurusita)|sampul|daftar\s+isi|akta\s+cerai|formulir|laporan|instrumen|surat\s+keterangan|tanda\s+terima|bukti\s+bayar|panjar|kuasa\s+pengguna|lafal\s+sumpah|persetujuan|pernyataan|permohonan\s+(banding|kasasi|peninjauan|pk\b)|tidak\s+berkekuatan\s+hukum/i;
+const A3_POLA_PUTUSAN = /putusan|penetapan|kabul|tolak|verstek|cabut|gugur|tidak\s+dapat\s+diterima|kontradiktur|rekonvensi/i;
+/** "(NO)", "[NO]", "NO" - huruf besar saja: "no" kecil bukan niet ontvankelijk. */
+const A3_POLA_NO = /(^|[^A-Za-z])NO([^A-Za-z]|$)/;
+/** Submenu daftar ABT yang pasti bukan putusan (dicocokkan SESUDAH kata "putusan"). */
+const A3_POLA_MENU_BUKAN = /\bBAS\b|berita\s+acara|relaas|\bPBT\b|\bPMH\b|\bPHT\b|P\s*H\s*S|penunjukan|ikrar|mediasi|gugatan|permohonan|formulir|kuasa|akta|PTSP|sampul|jinayat|kepaniteraan/i;
+const A3_KUNCI_MENU = "aletaAbtMenuBlangko";
+
+function a3Baku(teks) {
+  return String(teks || "").replace(/\s+/g, " ").trim();
+}
+
+/** Nama berkas untuk dibandingkan: tanpa ".rtf", huruf kecil, spasi tunggal. */
+function a3BakuBerkas(teks) {
+  return a3Baku(teks).replace(/^#\s*/, "").replace(/(\.rtf)+$/i, "").toLowerCase();
+}
+
+/**
+ * Halaman DAFTAR blangko ABT: submenu berkas yang diklik dicatat untuk halaman
+ * blangko berikutnya di tab yang sama (klik -> abt/main/cari -> view). Hanya
+ * di sessionStorage tab ini - tidak ada yang ditulis ke ABT.
+ */
+function a3CatatMenuBlangko() {
+  if (a3CatatMenuBlangko.dipasang) return;
+  a3CatatMenuBlangko.dipasang = true;
+  document.addEventListener(
+    "click",
+    (e) => {
+      const a = e.target && e.target.closest ? e.target.closest(".pricing-bottom-bottom a") : null;
+      if (!a) return;
+      const kartu = a.closest(".pricing_inner_w3ls");
+      const judul = kartu ? kartu.querySelector(".pricing-top h3") : null;
+      const span = a.querySelector("span");
+      const aktif = document.querySelector("#navbar a.active");
+      const panelGrup = aktif ? aktif.closest(".panel") : null;
+      const tombolGrup = panelGrup ? panelGrup.previousElementSibling : null;
+      // Judul kartu = "<submenu><br><jenis perkara> - <nomor>" (beranda.php ABT):
+      // yang dinilai hanya submenunya, sebab "Cerai Gugat" bukan nama menu.
+      let menu = "";
+      for (const n of Array.from((judul && judul.childNodes) || [])) {
+        if (n.nodeName === "BR") break;
+        menu += n.textContent || "";
+      }
+      const catatan = {
+        berkas: a3Baku((span || a).textContent).replace(/^#\s*/, ""),
+        menu: a3Baku(menu),
+        grup: tombolGrup && tombolGrup.classList.contains("accordion") ? a3Baku(tombolGrup.textContent) : "",
+      };
+      try {
+        if (catatan.berkas) sessionStorage.setItem(A3_KUNCI_MENU, JSON.stringify(catatan));
+      } catch {
+        /* tanpa sessionStorage: halaman blangko memakai nama berkas saja */
+      }
+    },
+    true
+  );
+}
+
+/** Submenu + grup tempat berkas halaman ini dipilih, bila tercatat untuk berkas YANG SAMA. */
+function a3MenuHalaman(nama) {
+  try {
+    const x = JSON.parse(sessionStorage.getItem(A3_KUNCI_MENU) || "null");
+    if (x && x.berkas && a3BakuBerkas(x.berkas) === a3BakuBerkas(nama)) return { menu: String(x.menu || ""), grup: String(x.grup || "") };
+  } catch {
+    /* catatan rusak atau sessionStorage terkunci */
+  }
+  return null;
+}
+
+/** "putusan" | "bukan" | "" dari nama submenu/grup daftar ABT. */
+function a3JenisMenu(teks) {
+  if (!teks) return "";
+  if (/putusan/i.test(teks)) return "putusan";
+  return A3_POLA_MENU_BUKAN.test(teks) ? "bukan" : "";
+}
+
+/** Jenis blangko halaman ini dari yang terbaca SERENTAK: "bukan" | "putusan" | "ragu". */
+function a3JenisBlangkoHalaman() {
+  if (p7HalamanBas()) return "bukan";
+  const nama = p7NamaBlangko();
+  if (A3_POLA_BUKAN_PUTUSAN.test(nama)) return "bukan";
+  const asal = a3MenuHalaman(nama);
+  if (asal) {
+    const menu = a3JenisMenu(asal.menu) || a3JenisMenu(asal.grup);
+    if (menu) return menu;
+  }
+  // Penetapan ikrar talak bukan putusan perkaranya - tetapi ada pula putusan
+  // CT yang menyebut ikrar. Tanpa submenu, biar orangnya yang menyatakan.
+  if (/ikrar/i.test(nama)) return "ragu";
+  if (A3_POLA_PUTUSAN.test(nama) || A3_POLA_NO.test(nama)) return "putusan";
+  return "ragu";
+}
+
 function a3BukanBlangkoPutusan() {
-  if (p7HalamanBas()) return true;
-  return A3_POLA_BUKAN_PUTUSAN.test(p7NamaBlangko());
+  return a3JenisBlangkoHalaman() === "bukan";
+}
+
+/** Pemetaan blangko putusan mengenali halaman ini: tokennya, atau nama berkasnya. */
+function a3DikenaliPeta(peta) {
+  const token = a1TokenHalaman();
+  const nama = a3BakuBerkas(p7NamaBlangko());
+  return Object.keys(peta || {}).some((x) => {
+    const b = peta[x];
+    if (!b || !alatBlangkoLengkap(b)) return false;
+    if (token && b.a === token.a && b.b === token.b) return true;
+    return Boolean(nama) && a3BakuBerkas(b.berkas) === nama;
+  });
+}
+
+function a3Terkunci(kotak) {
+  return Boolean(kotak) && kotak.getAttribute("data-a3-jenis") === "ragu";
+}
+
+/** Kunci "ragu": isi bagian Unggah disembunyikan, diganti satu kalimat dan satu tombol. */
+function a3KunciUnggah(kotak, saatDibuka) {
+  kotak.setAttribute("data-a3-jenis", "ragu");
+  const nama = p7NamaBlangko();
+  const catatan = buatElemen("div", "aleta-abt-catatan aleta-a3-ragu");
+  catatan.appendChild(
+    buatElemen(
+      "div",
+      "",
+      `Blangko ${nama ? `"${nama}" ` : ""}tidak dikenali sebagai blangko putusan, jadi bagian ini dikunci agar BAS, relaas, atau penetapan lain tidak terunggah sebagai putusan.`
+    )
+  );
+  const buka = buatElemen("button", "aleta-perkakas-aksi aleta-a3-buka", "Ini blangko putusan - buka");
+  buka.type = "button";
+  buka.title = "Membuka bagian Unggah untuk blangko yang sedang dibuka - belum mengunggah apa pun";
+  buka.addEventListener("click", () => a3BukaUnggah(kotak, saatDibuka));
+  catatan.appendChild(buka);
+  const judul = kotak.querySelector(".aleta-abt-judul");
+  kotak.insertBefore(catatan, judul ? judul.nextSibling : kotak.firstChild);
+  for (const anak of Array.from(kotak.children)) {
+    if (anak === catatan || anak === judul || anak.hidden) continue;
+    anak.hidden = true;
+    anak.setAttribute("data-a3-sembunyi", "ya");
+  }
+}
+
+function a3BukaUnggah(kotak, saatDibuka) {
+  kotak.setAttribute("data-a3-dibuka", "ya");
+  if (!a3Terkunci(kotak)) return;
+  kotak.removeAttribute("data-a3-jenis");
+  for (const el of Array.from(kotak.querySelectorAll(".aleta-a3-ragu"))) el.remove();
+  for (const anak of Array.from(kotak.querySelectorAll('[data-a3-sembunyi="ya"]'))) {
+    anak.hidden = false;
+    anak.removeAttribute("data-a3-sembunyi");
+  }
+  if (typeof saatDibuka === "function") saatDibuka();
 }
 
 /** Sidang ke- blangko ini: d= tautan CETAK, lalu "BAS <n>" di nama blangko; 0 = tidak terbaca. */

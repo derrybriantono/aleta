@@ -7513,6 +7513,12 @@ html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-portal-
   font-size: calc(13px * var(--aleta-skala-huruf, 1));
 }
 .aleta-t6-kaki-utama { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0; }
+/* 1.183.0: blangko yang belum dikenali sebagai putusan - bagian Unggah dan kaki
+   "Kerjakan perkara ini" dikunci (abt.js a3KunciUnggah). display di atas akan
+   mengalahkan [hidden] bawaan peramban, jadi ditegaskan di sini. */
+.aleta-t6-kaki-utama[hidden] { display: none !important; }
+#aleta-panel-abt[data-t6="ui"] .aleta-abt-bagian[data-a3-jenis="ragu"] > :not(.aleta-abt-judul):not(.aleta-a3-ragu) { display: none !important; }
+#aleta-panel-abt[data-t6="ui"] .aleta-a3-ragu { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .aleta-t6-kaki-ringkas { flex: 1; min-width: 0; color: var(--aleta-tulisan-lembut); font-size: calc(13px * var(--aleta-skala-huruf, 1)); }
 
 /* ── Dialog konfirmasi dan mode sidang - hidup di luar panel ───────────── */

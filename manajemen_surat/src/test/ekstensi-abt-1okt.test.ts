@@ -238,6 +238,12 @@ type Opsi = {
   beranda?: boolean;
   tanpaJudul?: boolean;
   konfirmasi?: boolean;
+  /** 4 Okt (1.183.0): judul <h2> view ABT = nama berkas blangko. Bawaan: blangko putusan sungguhan. */
+  judul?: string;
+  /** 4 Okt (1.183.0): isi sessionStorage tab sebelum skrip berjalan. */
+  sesi?: Record<string, string>;
+  /** 4 Okt (1.183.0): badan halaman pengganti (halaman daftar ABT sungguhan). */
+  badan?: string;
 };
 
 function buka(p: Opsi = {}): Halaman {
@@ -250,10 +256,13 @@ function buka(p: Opsi = {}): Halaman {
         `<td align="center"><a class="popup-with-zoom-anim" href="#small-dialog" onclick="load_form('${k}','10018','T1');">edit</a></td></tr>`
     )
     .join("");
-  const badan = p.beranda
+  const badan = p.badan
+    ? p.badan
+    : p.beranda
     ? `<div id="wrapper"><div id="cssmenu"></div><div id="navbar"><button class="accordion">Putusan &amp; Penetapan</button></div>` +
       `<div id="content"><div class="pricing_inner_w3ls"><div class="pricing-top"><h3>Putusan</h3></div><div class="pricing-bottom-bottom"></div></div></div></div>`
     : `<div id="wrapper"><div id="cssmenu"></div><div id="content"><h3 class="w3l_header"><span>${p.tanpaJudul ? "Blangko Kabul Verstek" : NOMOR}</span></h3>` +
+      `<h2>${p.judul ?? "CG (Lite) Verstek F V.2"}</h2>` +
       `<p class="cetak"><a id="cetak" href="${CETAK}">CETAK</a></p><table>${baris}</table></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, {
     url: p.beranda ? `${ASAL_ABT}/` : `${ASAL_ABT}/main/view?a=A&b=B&c=10018&d=3`,
@@ -262,6 +271,7 @@ function buka(p: Opsi = {}): Halaman {
   } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
   const w = dom.window as any;
+  for (const [k, v] of Object.entries(p.sesi || {})) w.sessionStorage.setItem(k, v);
   const simpanan: Record<string, unknown> = polos(p.simpanan ?? {});
   const pendengar: Array<(u: any, wilayah: string) => void> = [];
   const local = {
@@ -337,7 +347,8 @@ function buka(p: Opsi = {}): Halaman {
   // yang sama (panel-alat.js "use strict": fungsinya tidak menjadi milik window).
   w.eval(
     `${SUMBER_ALAT}\n;\n${SUMBER_ABT}\n;\nwindow.__a1 = typeof t6VarianKalimat === "function" ? { t6VarianKalimat, ` +
-      `a1KetuaMajelis: typeof a1KetuaMajelis === "function" ? a1KetuaMajelis : null, a1PutusanLayak: typeof a1PutusanLayak === "function" ? a1PutusanLayak : null } : null;` +
+      `a1KetuaMajelis: typeof a1KetuaMajelis === "function" ? a1KetuaMajelis : null, a1PutusanLayak: typeof a1PutusanLayak === "function" ? a1PutusanLayak : null, ` +
+      `a3JenisBlangkoHalaman: typeof a3JenisBlangkoHalaman === "function" ? a3JenisBlangkoHalaman : null } : null;` +
       `\n;\n/* 2 Okt (agen A, butir 14): jeda manusia dinolkan - lihat catatan di buka() */ if (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);`
   );
   return { dom, w, simpanan, minta, konfirmasi, navigasi };
@@ -838,5 +849,164 @@ describe("CSS blok A1", () => {
       for (const b of aturan.split("{")[0].split(",")) expect(b.trim(), b).toMatch(/^html\[data-aleta-kulit="modern"\] /);
     }
     expect(dihitung).toBeGreaterThan(20);
+  });
+});
+
+// ============================================================================
+// 4 OKT 2026 (1.183.0) - "UNGGAH PUTUSAN" HANYA DI BLANGKO PUTUSAN
+// ============================================================================
+//
+// 1.182.0 menolak BAS/relaas/pemberitahuan dari nama berkas, tetapi PMH, PHS,
+// Penunjukan PP, Penetapan Mediator, Sampul, Akta Cerai, dan gugatan masih
+// mendapat bagian Unggah - dan di UI Baru a1PilihBlangkoHalaman memilih
+// "Blangko halaman ini" sendiri, jadi satu klik di kaki mengunggah blangko itu
+// sebagai PUTUSAN. Nama-nama di bawah diambil dari _blangko_abt ABT setempat.
+// Pembukti gigitan: ALETA_UJI_ABT=<abt.js 3cffb39> membuat blok ini merah.
+describe("4 Okt (1.183.0): Unggah putusan hanya di blangko putusan", () => {
+  const bagian = (h: Halaman) => q(h, ".aleta-abt-bagian");
+  const kaki = (h: Halaman) => q(h, ".aleta-t6-kaki-utama");
+  const tombolKaki = (h: Halaman) => Array.from(kaki(h).querySelectorAll("button")).find((b: any) => b.textContent === "Kerjakan perkara ini") as any;
+  const tombolBagian = (h: Halaman) => bagian(h).querySelector("button.aleta-abt-tombol");
+  const tulisPutusan = (h: Halaman) => h.minta.filter((m) => /\/preview\?|unggah-naskah|main\/anonim|unggah-sipp/.test(m.url));
+  const MENU = "aletaAbtMenuBlangko";
+
+  it("nama berkas ABT sungguhan dipilah: bukan putusan, putusan, ragu", async () => {
+    const h = buka({ simpanan: ui([], nyata) });
+    await sampai(() => bagian(h), "bagian unggah");
+    const jenis = (nama: string) => {
+      h.w.document.querySelector("h2").textContent = nama;
+      return h.w.__a1.a3JenisBlangkoHalaman();
+    };
+    const BUKAN = [
+      "@ 1 - PMH",
+      "@ 2 - PHS",
+      "@ 0 - PMH - PHS",
+      "A.2.c. Penunjukan PP Sidang Ikrar Talak",
+      "999 Penetapan Mediator",
+      "2.1 Penetapan Mediator Diserahkan Kepada Majelis",
+      "1.a Penetapan Majelis Hakim",
+      "1.g Penetapan Hari Sidang",
+      "A.4.u. Penetapan Hari Sidang Ikrar Talak",
+      "Sampul Putusan",
+      "@ Sampul Berkas Perkara 2023",
+      "AKTA CERAI - Cerai Gugat",
+      "Daftar Isi Berkas A - Contensius",
+      "1. Formulir Penjelasan Mediasi",
+      "3. Laporan Mediasi ke KM tidak beritikad baik",
+      "4. Pernyataan Para Pihak ttg Hasil Mediasi",
+      "H.1.a. Permohonan Banding",
+      "Instrumen - Amar Penetapan Ikrar Talak",
+      "Penetapan Tidak Berkekuatan Hukumnya",
+      "04-a. BAS Pertama P Hadir _ T Tidak Hadir - Tunda Panggil T.PA.Mj",
+      "@BAS Pertama P Hadir & T Tidak Hadir - 1x sidang putus (sidang keliling) CG V2 Tunggal Sidkel",
+      "Relaas Panggilan Sidang Pertama",
+      "PBT Verstek",
+      "Persetujuan Pihak untuk Berperkara Secara Elektronik",
+      "TANDA TERIMA BUKU NIKAH 2",
+    ];
+    const PUTUSAN = [
+      "CG (Lite) Verstek F V.2",
+      "Putusan_IN_kabul_wali AK",
+      "[01] [Kabul] IN",
+      "[98] [Cabut] DK",
+      "Kewarisan (NO)",
+      "Derry cabut SEBELUM jawaban",
+      "Penetapan - IN 2P",
+      "Penetapan Ahli Waris Kabul",
+      "CG CT (Full) Gugur",
+      "CT Hadir-Kontradiktur",
+      "CT Rekonvensi",
+      "Cerai Tolak Verstek tidak ada bukti",
+    ];
+    const RAGU = ["PAW", "Wali Adhal", "IN 2 Pemohon", "Pengangkatan Anak", "Cerai Dynamic", "9999", "Penetapan Ikrar Talak (Termohon Tidak Hadir)", "CG - Umum"];
+    expect(BUKAN.filter((n) => jenis(n) !== "bukan")).toEqual([]);
+    expect(PUTUSAN.filter((n) => jenis(n) !== "putusan")).toEqual([]);
+    expect(RAGU.filter((n) => jenis(n) !== "ragu")).toEqual([]);
+  });
+
+  it("submenu daftar ABT menentukan - hanya bila tercatat untuk berkas YANG SAMA", async () => {
+    const h = buka({ simpanan: ui([], nyata), judul: "PAW", sesi: { [MENU]: JSON.stringify({ berkas: "PAW", menu: "Putusan & Penetapan", grup: "" }) } });
+    await sampai(() => bagian(h), "bagian unggah");
+    const jenis = (nama: string, catatan: Record<string, string>) => {
+      h.w.document.querySelector("h2").textContent = nama;
+      h.w.sessionStorage.setItem(MENU, JSON.stringify(catatan));
+      return h.w.__a1.a3JenisBlangkoHalaman();
+    };
+    expect(jenis("PAW", { berkas: "PAW", menu: "Putusan & Penetapan", grup: "" })).toBe("putusan");
+    expect(jenis("PAW", { berkas: "PAW.rtf", menu: "Putusan CG", grup: "" })).toBe("putusan");
+    // Berkas gugatan bernama "(Penetapan Ahli Waris)": namanya menyerupai putusan, submenunya tidak.
+    expect(jenis("P3HP 1P (Penetapan Ahli Waris)", { berkas: "P3HP 1P (Penetapan Ahli Waris)", menu: "Gugatan & Permohonan", grup: "" })).toBe("bukan");
+    expect(jenis("Verstek Tergugat", { berkas: "Verstek Tergugat", menu: "BAS Cerai Verstek", grup: "Blangko Derry (Daftar s.d. Produk)" })).toBe("bukan");
+    expect(jenis("Perwalian Anak oleh ortu kandung", { berkas: "Perwalian Anak oleh ortu kandung", menu: "Lain-lain", grup: "Blangko Derry (Daftar s.d. Produk)" })).toBe("ragu");
+    // Catatan milik berkas lain tidak berlaku.
+    expect(jenis("PAW", { berkas: "CG Verstek", menu: "Putusan CG", grup: "" })).toBe("ragu");
+    // Nama yang pasti bukan putusan menang atas submenu putusan.
+    expect(jenis("@ Sampul Berkas Perkara 2023", { berkas: "@ Sampul Berkas Perkara 2023", menu: "Putusan & Penetapan", grup: "" })).toBe("bukan");
+  });
+
+  it("halaman daftar ABT: klik berkas mencatat submenu dan grupnya di sessionStorage, tanpa menulis ke ABT", async () => {
+    const badan =
+      `<div id="wrapper"><div id="cssmenu"></div><div id="nav"><div id="navbar" class="pricing_inner_w3ls navbar">` +
+      `<button class="accordion">Blangko Derry (Daftar s.d. Produk)</button><div class="panel"><a class="active" href="#m">Putusan CG</a></div></div></div>` +
+      `<div class="pricing" id="pricing"><div class="pring_agile_its w3-agile"><div class="col-md-4 pricing_inner_w3ls">` +
+      `<div class="pricing-top"><h3>Putusan CG<br>Cerai Gugat - ${NOMOR}</h3></div>` +
+      `<div class="pricing-bottom"><div class="pricing-bottom-bottom"><p><a href="#"># <span>[02] [Kabul] CG - F</span></a></p></div></div></div></div></div></div>`;
+    const h = buka({ beranda: true, badan, simpanan: ui([], nyata) });
+    await sampai(() => massalDari(h), "panel daftar ABT");
+    h.w.document.querySelector(".pricing-bottom-bottom span").click();
+    expect(JSON.parse(h.w.sessionStorage.getItem(MENU))).toEqual({ berkas: "[02] [Kabul] CG - F", menu: "Putusan CG", grup: "Blangko Derry (Daftar s.d. Produk)" });
+    expect(nonGetAbt(h)).toEqual([]);
+  });
+
+  it("UI Baru, blangko tidak dikenali: Unggah dan kaki terkunci tanpa satu permintaan pun; 'Ini blangko putusan - buka' memulihkan alurnya", async () => {
+    const h = buka({ simpanan: ui([], nyata), judul: "PAW" });
+    await sampai(() => (bagian(h)?.getAttribute("data-a3-jenis") === "ragu" ? bagian(h) : null), "bagian unggah terkunci");
+    await sampai(() => (/memuat/.test(bagian(h).querySelector("select option")?.textContent || "memuat") ? null : true), "daftar blangko termuat");
+    await tunggu(80);
+    expect(Array.from(bagian(h).querySelector("select").options).map((o: any) => o.value)).not.toContain("__halaman-ini");
+    expect(tombolBagian(h).hidden).toBe(true);
+    const k = await sampai(() => kaki(h), "kaki panel");
+    expect(k.hidden).toBe(true);
+    tombolKaki(h).click();
+    tombolBagian(h).click();
+    await sampai(() => /belum dikenali sebagai blangko putusan/.test(bagian(h).querySelector(".aleta-abt-kabar").textContent), "kabar terkunci");
+    await tunggu(80);
+    expect(tulisPutusan(h)).toEqual([]);
+
+    (Array.from(bagian(h).querySelectorAll("button")).find((b: any) => b.textContent === "Ini blangko putusan - buka") as any).click();
+    await sampai(() => bagian(h).querySelector("select").value === "__halaman-ini", "blangko halaman ini sesudah dibuka");
+    expect(bagian(h).hasAttribute("data-a3-jenis")).toBe(false);
+    expect(tombolBagian(h).hidden).toBe(false);
+    await sampai(() => (kaki(h).hidden === false ? true : null), "kaki tampak lagi");
+    tombolKaki(h).click();
+    await sampai(() => h.minta.some((m) => m.url.includes("unggah-sipp")), "unggah sesudah dibuka", 8000);
+  });
+
+  it("UI Baru, nama tidak dikenali tetapi tokennya ada di pemetaan putusan: terbuka sendiri dan blangko petanya terpilih", async () => {
+    const peta = { petaBlangkoPutusan: { "cerai gugat": { blangko: "Putusan Cerai Gugat", berkas: "[01] Kabul Verstek CG", a: "A", b: "B", d: "" } } };
+    const h = buka({ simpanan: ui([], { ...nyata, ...peta }), judul: "PAW" });
+    await sampai(() => (bagian(h)?.querySelector("select")?.value === "cerai gugat" ? true : null), "blangko peta terpilih");
+    expect(bagian(h).hasAttribute("data-a3-jenis")).toBe(false);
+    expect(tombolBagian(h).hidden).toBe(false);
+    expect((await sampai(() => kaki(h), "kaki")).hidden).toBe(false);
+  });
+
+  it("UI Baru, BAS, relaas, PMH, dan Penunjukan PP: tanpa bagian Unggah dan tanpa kaki 'Kerjakan perkara ini'", async () => {
+    for (const judul of ["04-a. BAS Pertama P Hadir _ T Tidak Hadir - Tunda Panggil T.PA.Mj", "Relaas Panggilan Sidang Pertama", "@ 1 - PMH", "A.2.c. Penunjukan PP Sidang Ikrar Talak"]) {
+      const h = buka({ simpanan: ui([], nyata), judul });
+      await selesaiIsi(h);
+      await tunggu(150);
+      expect(bagian(h), judul).toBeNull();
+      expect(kaki(h), judul).toBeNull();
+    }
+  });
+
+  it("Baru, blangko tidak dikenali: tidak dikunci - Baru tidak memilih blangko halaman ini, perilakunya utuh", async () => {
+    const h = buka({ simpanan: baru([], nyata), judul: "PAW" });
+    await sampai(() => bagian(h)?.querySelector("select option"), "daftar blangko");
+    await tunggu(80);
+    expect(bagian(h).hasAttribute("data-a3-jenis")).toBe(false);
+    expect(tombolBagian(h).hidden).toBe(false);
+    expect(Array.from(bagian(h).querySelector("select").options).map((o: any) => o.value)).not.toContain("__halaman-ini");
   });
 });

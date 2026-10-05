@@ -374,7 +374,7 @@ function buka(
     .join("");
   const dom = new JSDOM(
     `<!doctype html><html><head><title>Blangko</title></head><body><div id="wrapper"><div id="cssmenu"></div><div id="content">` +
-      `<h3 class="w3l_header"><span>${NOMOR}</span></h3>` +
+      `<h3 class="w3l_header"><span>${NOMOR}</span></h3><h2>CG (Lite) Verstek F V.2</h2>` +
       `<p class="cetak"><a id="cetak" href="${CETAK}">CETAK</a></p><table>${baris}</table></div></div></body></html>`,
     { url: `${ASAL_ABT}/main/view?a=A&b=B&c=10018&d=3`, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]
   );
