@@ -288,8 +288,9 @@ describe("modus keterangan saksi", () => {
       modus: { saksi1: { modus: "tidak-tahu" }, saksi2: { modus: "dari-cerita" } },
     });
     expect(jawab(h.saksi1, "1")).toContain("tetangga");
-    expect(jawab(h.saksi1, "5")).toBe("sudah cukup;");
-    expect(jawab(h.saksi2, "5")).toBe("sudah cukup;");
+    // Butir 27: penutup pun berbeda antar saksi ("Sudah cukup" / "Cukup
+    // sekian"), tetap tanpa pembuka.
+    expect([jawab(h.saksi1, "5"), jawab(h.saksi2, "5")].sort()).toEqual(["cukup sekian;", "sudah cukup;"]);
   });
 
   // 25 September 2026 (t2-ragam-bas-bot): delapan pembuka lama SENGAJA

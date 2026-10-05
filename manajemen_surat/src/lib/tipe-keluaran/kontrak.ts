@@ -104,11 +104,11 @@ export const DAFTAR_TIPE = {
     pemakai: ["bot"],
     judul: "Kalimat jawaban menurut modus saksi",
     bentukKunci: "'kelompok|modus' - hanya kombinasi yang punya cabang kode",
-    bentukNilai: "templat 20-240 huruf dengan penanda {sumber}/{daftar}/{isi}",
+    bentukNilai: "templat 20-240 huruf dengan penanda {sumber}/{daftar}/{isi}/{jawab}",
     pemilikCermin: "CERMIN_BAS_SAKSI",
     dapatDitambah: true,
     perintahHakim: true,
-    penanda: ["{sumber}", "{daftar}", "{isi}"],
+    penanda: ["{sumber}", "{daftar}", "{isi}", "{jawab}"],
     ukur: null,
   },
   "bas.saksi.bentuk": {

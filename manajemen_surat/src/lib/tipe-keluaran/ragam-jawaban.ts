@@ -408,11 +408,16 @@ function varianRagamKata(teks: string, bank: BankRagam): string[] {
   return [...new Set(hasil)];
 }
 
+const POLA_AWAL_MENYANGKAL = /^(?:\S+\s+){0,2}(?:tidak|belum|bukan|tak)\b/i;
+
 function pilihPembuka(teks: string, jenis: string, benih: string, bank: BankRagam): string {
   if (jenis === "rumusan" || jenis === "tetap") return "";
   const kata = (String(teks).match(/^[A-Za-z]+/) || [""])[0];
   if (!HIMPUNAN_AWAL.has(kata.toLowerCase()) && !POLA_SEBUTAN_AWAL.test(kata)) return "";
   if (POLA_SUDAH_BERPEMBUKA.test(teks) || /^(sudah|cukup|tidak ada)\b/i.test(teks)) return "";
+  // Butir 27 - sama dengan bot: tidak ada pembuka di depan jawaban yang
+  // dibuka penyangkal ("Ya, saya tidak menyaksikannya sendiri").
+  if (POLA_AWAL_MENYANGKAL.test(teks)) return "";
   if (String(teks).split(" ").length < 3) return "";
   const u = angka01(`${benih}|pembuka`) * 100;
   let kumulatif = 0;

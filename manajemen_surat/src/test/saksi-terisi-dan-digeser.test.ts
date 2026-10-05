@@ -172,7 +172,8 @@ describe("butir 1b - modus saksi yang hanya tahu pisahnya", () => {
     // (t2-ragam-bas-bot) dapat memilih "perselisihan mereka tidak saya
     // ketahui". Yang dituntut MAKNANYA: saksi tidak tahu pertengkarannya.
     expect(jawabNo("1")).toMatch(/tidak (mengetahui|pernah mengetahui|saya ketahui)/i);
-    expect(jawabNo("2")).toMatch(/(tidak|belum) pernah (melihat|menyaksikan)/i);
+    // "tidak pernah sekalipun saya melihat ..." adalah bentuk setara di bank.
+    expect(jawabNo("2")).toMatch(/(tidak|belum) pernah (sekalipun saya )?(melihat|menyaksikan)/i);
   });
 
   it("tetapi pisah rumahnya TETAP diterangkan - itu yang ia ketahui", () => {

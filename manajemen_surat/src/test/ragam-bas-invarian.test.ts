@@ -181,7 +181,10 @@ describe("pilihan templat, hubungan dua saksi, dan isian yang dulu salah", () =>
   });
 
   it("siapa yang pergi: sebutan terdekat SEBELUM 'pergi/meninggalkan', dan pilihan templatnya terisi", () => {
-    expect(butir(1, "11").jawab).toMatch(/^(?:Ya, |Setahu saya, |Sepengetahuan saya, |Yang saya ketahui, )?[Yy]ang meninggalkan tempat tinggal bersama adalah Tergugat;$/);
+    // Butir 27: empat bentuk korpus "siapa pergi" - semuanya menyebut Tergugat.
+    expect(butir(1, "11").jawab).toMatch(
+      /^(?:Ya, |Setahu saya, |Sepengetahuan saya, |Yang saya ketahui, )?(?:[Yy]ang (?:pergi )?meninggalkan (?:tempat tinggal|kediaman) bersama adalah Tergugat|Tergugat yang pergi meninggalkan tempat tinggal bersama);$/
+    );
     expect(layanan.faktaDariPosita("Bahwa puncak keretakan terjadi, Tergugat pergi meninggalkan rumah sehingga Penggugat dan Tergugat pisah rumah", "Tergugat", "Penggugat").siapaPergi).toBe("Tergugat");
     expect(layanan.faktaDariPosita("Bahwa Penggugat pergi meninggalkan Tergugat dan pulang ke rumah orang tuanya", "Tergugat", "Penggugat").siapaPergi).toBe("Penggugat");
     // Anak kalimat 'yang meninggalkan ... adalah X' menunjuk subjek SESUDAH

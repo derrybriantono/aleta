@@ -2246,7 +2246,8 @@ function saringSaksiAbt(masuk, pelaku, lawan) {
 const PENANDA_TIPE_BOT = Object.freeze({
   "bas.saksi.pembuka": Object.freeze([]),
   "bas.saksi.ragam-kata": Object.freeze([]),
-  "bas.saksi.jawaban-modus": Object.freeze(["{sumber}", "{daftar}", "{isi}"]),
+  // {jawab} sejak butir 27: jawaban templat yang sudah diisi dari gugatan.
+  "bas.saksi.jawaban-modus": Object.freeze(["{sumber}", "{daftar}", "{isi}", "{jawab}"]),
   "bas.saksi.bentuk": Object.freeze(["{slot}", "#0046#", "#0047#"]),
   "bas.saksi.profil": Object.freeze([]),
   "bersama.alasan.frasa": Object.freeze(["{pelaku}", "{lawan}"]),
@@ -2447,15 +2448,31 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         req.body?.mediasi && typeof req.body.mediasi === "object"
           ? { selesai: req.body.mediasi.selesai === true, berhasil: req.body.mediasi.berhasil === true }
           : null;
-      const mediasi =
-        mediasiMasuk ||
-        (tanyaUpaya && nomorPerkara ? await abtUsulanService.mediasiPerkara(nomorPerkara).catch(() => null) : null);
+      // Butir 24 (5 Okt 2026): ekstensi mengirim posita hanya dari variabel
+      // 5125 ABT dan hanya bila "sama dengan gugatan" dicentang; variabel itu
+      // dapat kosong, dan tanpa posita SELURUH fakta saksi jatuh menjadi
+      // titik-titik (584/Pdt.G/2026/PA.Dgl). Posita dan tanggal sidang perkara
+      // yang sama dibaca dari SIPP bila tidak dikirim - HANYA SELECT, 2,5 detik,
+      // berjalan bersamaan dengan pembacaan mediasi.
+      const positaMasuk = String(req.body?.posita || "");
+      const tanggalSidangMasuk = String(req.body?.tanggalSidang || "").slice(0, 40);
+      const positaKurang = positaMasuk.replace(/<[^>]*>/g, " ").trim().length < 50;
+      const [mediasiSipp, konteksSipp] = await Promise.all([
+        !mediasiMasuk && tanyaUpaya && nomorPerkara ? abtUsulanService.mediasiPerkara(nomorPerkara).catch(() => null) : null,
+        nomorPerkara && (positaKurang || !tanggalSidangMasuk)
+          ? abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null)
+          : null,
+      ]);
+      const mediasi = mediasiMasuk || mediasiSipp;
+      const positaSipp = konteksSipp && konteksSipp.posita ? konteksSipp.posita : "";
+      const positaDipakai = positaKurang && positaSipp ? positaSipp : positaMasuk;
       jawaban.saksiSdg = abtUsulanService.susunKeteranganSaksiSdg({
         upayaDamai: String(req.body?.upayaDamai || "").slice(0, 600),
         mediasi,
         templat: templatMasuk,
         alasan: Array.isArray(req.body?.alasan) ? req.body.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
-        posita: String(req.body?.posita || ""),
+        posita: positaDipakai,
+        tanggalSidang: tanggalSidangMasuk || (konteksSipp && konteksSipp.tanggalSidang) || "",
         pelaku,
         lawan,
         // Nomor perkara dan kode kumpulan templat menentukan varian kalimat
@@ -2470,6 +2487,10 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         ...(saksiMasuk.saksi.length ? { saksi: saksiMasuk.saksi } : {}),
         ...(tipe.tipeKeluaran ? { tipeKeluaran: tipe.tipeKeluaran } : {}),
       });
+      // Dari mana fakta gugatan diambil - supaya panel dapat menyebutnya.
+      if (jawaban.saksiSdg && jawaban.saksiSdg.ok) {
+        jawaban.saksiSdg.asalPosita = positaDipakai === positaSipp && positaSipp ? "sipp" : positaMasuk ? "ekstensi" : "";
+      }
     }
     if (sumber === "semua" || sumber === "saksi") {
       jawaban.saksi = abtUsulanService.dariKeteranganSaksi(
