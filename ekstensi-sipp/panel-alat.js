@@ -4250,6 +4250,7 @@ const ALAT_LATIHAN_SEBUTAN = [
   [/\/putusan\/isian-sipp(?:[?#]|$)/, "Menyusun usulan isian putusan"],
   [/\/aleta\/api\/feedback(?:[?#]|$)/, "Mengirim laporan masalah ke Masukan ALETA"],
   [/\/aps_badilag\//, "Menyimpan ke ABT"],
+  [/\/manage_court_calendar\/validateInput(?:[?#]|$)/, "Menyimpan Court Calendar ke SIPP"],
 ];
 
 function alatLatihanNyala() {

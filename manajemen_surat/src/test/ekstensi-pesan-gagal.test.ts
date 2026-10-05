@@ -329,7 +329,12 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // oleh S): Upload edoc penetapan (s2KirimEdoc, butir 17 / K6) - 404
     // "belum tersedia di server", 423 "ditahan mode ...", selebihnya kalimat
     // rute atau alatPesanGagal. Berbicara ke petugas.
-    expect(lewatAlat).toBe(36);
+    // 39 sejak butir 29 (Court Calendar otomatis, Baru & UI Baru, panitera/
+    // admin): tiga permintaan ke SIPP sendiri - daftar Court Calendar
+    // (ccBacaDaftarSipp), blangko Tambah Court Calender (ccBacaBlangkoSipp),
+    // dan simpanan validateInput (ccKirimBaris). Gagalnya disebut per baris
+    // ("tidak terbaca (status N)", "ditahan mode ...", pesan SIPP), bukan kode.
+    expect(lewatAlat).toBe(39);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU
