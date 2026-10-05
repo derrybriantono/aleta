@@ -14,9 +14,10 @@
  *     terdengar siapa pun, dan hitungan itulah yang dipakai memutuskan
  *     penundaan perkara.
  *
- *   - Hanya disidang = 10 yang ditulis. Nilai lain artinya tidak diketahui,
- *     dan menebak arti sebuah kode di aplikasi orang lain adalah cara
- *     tercepat merusaknya.
+ *   - Memanggil = MASUK RUANG, persis tombol PROSES aplikasi antrian:
+ *     disidang = nomor ruang (ruangan_id) dan jam_sidang = NOW(). 10 berarti
+ *     SELESAI di aplikasi itu (dibaca dari _fungsi.php, 5 Okt 2026) dan tidak
+ *     pernah ditulis di sini; baris yang sudah 10 tidak disentuh.
  *
  *   - Hitungan panggilan bertambah satu tiap kali, dan batas tiga kali
  *     ditandai - itulah aturan yang sudah dijanjikan ALETA kepada para pihak
@@ -87,6 +88,8 @@ let gagalkanAntrian = "";
  * atas nol baris.
  */
 let barisAntrianTerpengaruh = 1;
+/** Jawaban SELECT keadaan baris hari ini (dibaca hanya bila UPDATE mengenai nol baris). */
+let barisKeadaan = [];
 const externalPath = require.resolve("../services/externalDbService");
 require("../services/externalDbService");
 require.cache[externalPath].exports = {
@@ -94,6 +97,7 @@ require.cache[externalPath].exports = {
   query: async (kunci, sql, params = []) => {
     kueri.push({ sql, params });
     if (gagalkanAntrian) throw new Error(gagalkanAntrian);
+    if (/^\s*SELECT/i.test(sql)) return barisKeadaan;
     return { affectedRows: barisAntrianTerpengaruh };
   },
 };
@@ -109,6 +113,7 @@ const layanan = require("../services/panggilanAntrianService");
 
 function bersihkan() {
   barisAntrianTerpengaruh = 1;
+  barisKeadaan = [];
   baris.length = 0;
   kueri.length = 0;
   gagalkanAntrian = "";
@@ -136,10 +141,14 @@ async function utama() {
     periksa("belum mencapai batas", hasil.sudahBatas === false);
 
     const perintah = kueri[0].sql;
-    periksa("menulis disidang", /SET disidang = \?/.test(perintah));
-    periksa("dan jam panggil", /jam_sidang = NOW\(\)/.test(perintah));
-    periksa("nilainya 10, bukan tebakan lain", kueri[0].params[0] === 10);
-    periksa("disaring per perkara", /WHERE perkara_id = \?/.test(perintah));
+    // Sama dengan tombol PROSES aplikasi antrian: masuk ruang = disidang
+    // nomor ruang. 10 = SELESAI di aplikasi itu - tidak pernah ditulis di sini.
+    periksa("menulis disidang = nomor ruang (ruangan_id)", /SET disidang = ruangan_id/.test(perintah));
+    periksa("dan jam masuk ruang", /jam_sidang = NOW\(\)/.test(perintah));
+    periksa("TIDAK menulis 10 (selesai)", !kueri.some((k) => k.params.includes(10) || /disidang = 10/.test(k.sql)));
+    periksa("baris yang sudah selesai tidak disentuh", /disidang IS NULL OR disidang = ruangan_id/.test(perintah));
+    periksa("disaring per perkara", /WHERE perkara_id = \?/.test(perintah) && kueri[0].params[0] === "9971");
+    periksa("layar aplikasi antrian disegarkan", kueri.some((k) => /sys_data_refresh/.test(k.sql)));
 
     // Kolom milik pengambilan tidak boleh ikut tersentuh saat memanggil.
     periksa("tidak menyentuh pihak_1", !/pihak_1/.test(perintah));
@@ -209,6 +218,30 @@ async function utama() {
     barisAntrianTerpengaruh = 1;
     const lagi = await layanan.panggil({ perkaraId: "9971", oleh: "A" });
     periksa("sesudah terdaftar, hitungannya mulai dari satu", lagi.urutan === 1);
+  }
+
+  // ==========================================================================
+  console.log("\n== Tidak masuk ruang: sebabnya dari keadaan barisnya ==");
+  {
+    bersihkan();
+    barisAntrianTerpengaruh = 0;
+    barisKeadaan = [{ disidang: 10, ruanganId: 1 }];
+    const selesai = await layanan.panggil({ perkaraId: "9971", oleh: "A" });
+    periksa("sudah selesai (10): ditolak", selesai.ok === false && /SELESAI/.test(selesai.alasan || ""));
+    periksa("riwayat tidak bertambah", baris.length === 0);
+    periksa("layar tidak disegarkan untuk panggilan yang tidak terjadi", !kueri.some((k) => /sys_data_refresh/.test(k.sql)));
+
+    bersihkan();
+    barisAntrianTerpengaruh = 0;
+    barisKeadaan = [{ disidang: null, ruanganId: null }];
+    const tanpaRuang = await layanan.panggil({ perkaraId: "9971", oleh: "A" });
+    periksa("tanpa ruang: disebut", tanpaRuang.ok === false && /ruang sidang/.test(tanpaRuang.alasan || ""));
+
+    bersihkan();
+    barisAntrianTerpengaruh = 0;
+    barisKeadaan = [{ disidang: 2, ruanganId: 1 }];
+    const lain = await layanan.panggil({ perkaraId: "9971", oleh: "A" });
+    periksa("sedang di ruang lain: disebut ruangnya", lain.ok === false && /Ruang 2/.test(lain.alasan || ""));
   }
 
   // ==========================================================================

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
 import { useSuaraPanggilan } from "@/lib/suara-panggilan";
 import { cn } from "@/lib/utils";
+import { KELAS_KODE_MAJELIS } from "@/lib/kode-majelis";
 
 /**
  * ============================================================================
@@ -264,7 +265,12 @@ export function AletaAntrianLayar() {
               </p>
               <p className="mt-2 text-2xl text-emerald-100">
                 {terbaru.noRuang ? `Ruang Sidang ${terbaru.noRuang}` : "Ruang sidang belum ditetapkan"}
-                {terbaru.majelisKode ? ` · Majelis ${terbaru.majelisKode}` : ""}
+                {terbaru.majelisKode ? (
+                  <>
+                    {" "}
+                    · Majelis <span className={KELAS_KODE_MAJELIS}>{terbaru.majelisKode}</span>
+                  </>
+                ) : null}
               </p>
             </>
           ) : (
@@ -353,7 +359,12 @@ function BarisAntrian({
       </span>
       <span className="min-w-0 flex-1 text-sm text-slate-300">
         {satu.noRuang ? `Ruang ${satu.noRuang}` : "Ruang —"}
-        {satu.majelisKode ? ` · Majelis ${satu.majelisKode}` : ""}
+        {satu.majelisKode ? (
+          <>
+            {" "}
+            · Majelis <span className={cn(KELAS_KODE_MAJELIS, "text-slate-100")}>{satu.majelisKode}</span>
+          </>
+        ) : null}
         {satu.jamPanggil ? ` · dipanggil ${satu.jamPanggil}` : ""}
         {/* Yang lebih dulu hadir menentukan nomor antrian perkara ini, dan
             itulah yang paling sering ditanya petugas: "yang datang duluan

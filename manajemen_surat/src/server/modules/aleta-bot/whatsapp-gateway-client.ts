@@ -2364,6 +2364,15 @@ export async function getGatewayAnalisaPerkara(
  * Dibaca sebelum borang penundaan ditawarkan: yang pertama dibutuhkan panitera
  * sidang bukan borang, melainkan jawaban - sidang ini sudah ditunda atau belum.
  */
+/**
+ * Penanda verifikasi majelis e-Litigasi satu tanggal (butir 30, 5 Okt 2026) -
+ * simpanan bot, tanpa menarik e-Court.
+ */
+export async function getGatewayVerifikasiHariIni(tanggal: string): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ tanggal: String(tanggal || "") });
+  return gatewayFetch(`/internal/aleta-bot/ecourt/verifikasi-hari-ini?${kueri.toString()}`);
+}
+
 export async function getGatewayKeadaanSidang(
   jadwalId: number | string
 ): Promise<GatewayResult<Record<string, unknown>>> {

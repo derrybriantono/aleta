@@ -7,6 +7,7 @@ import { apiPath } from "@/lib/base-path";
 import { selangPanggilan, warnaRuang } from "@/lib/antrian-tampilan";
 import { hentikanUcapan, useSuaraPanggilan } from "@/lib/suara-panggilan";
 import { cn } from "@/lib/utils";
+import { KELAS_KODE_MAJELIS } from "@/lib/kode-majelis";
 
 /**
  * ============================================================================
@@ -432,7 +433,10 @@ export function AletaAntrianPanggil() {
               <p className="text-lg">
                 {berikutnya.noRuang ? `Ruang Sidang ${berikutnya.noRuang}` : "Ruang belum ditetapkan"}
                 {berikutnya.majelisKode ? (
-                  <span className="text-muted-foreground"> · Majelis {berikutnya.majelisKode}</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · Majelis <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{berikutnya.majelisKode}</span>
+                  </span>
                 ) : null}
               </p>
 

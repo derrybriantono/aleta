@@ -259,7 +259,7 @@ async function utama() {
     // Dipanggil: jam_sidang ditimpa NOW().
     const panggil1 = g(
       kios.baris,
-      { tanggalSidang: "2026-09-01", perkaraId: "9971", jamSidang: "09:41:19", disidang: 10 },
+      { tanggalSidang: "2026-09-01", perkaraId: "9971", jamSidang: "09:41:19", disidang: 1 },
       "2026-09-01 09:41:30"
     );
     periksa("panggilan pertama tercatat berdetik", panggil1.baris.panggilPertama === "2026-09-01 09:41:19");
@@ -269,7 +269,7 @@ async function utama() {
 
     const sama = g(
       panggil1.baris,
-      { tanggalSidang: "2026-09-01", perkaraId: "9971", jamSidang: "09:41:19", disidang: 10 },
+      { tanggalSidang: "2026-09-01", perkaraId: "9971", jamSidang: "09:41:19", disidang: 1 },
       "2026-09-01 09:42:00"
     );
     periksa("pengamatan yang sama tidak menulis", sama.berubah === false);
@@ -277,14 +277,14 @@ async function utama() {
 
     const segar = g(
       panggil1.baris,
-      { tanggalSidang: "2026-09-01", perkaraId: "9971", jamSidang: "09:41:19", disidang: 10 },
+      { tanggalSidang: "2026-09-01", perkaraId: "9971", jamSidang: "09:41:19", disidang: 1 },
       "2026-09-01 09:46:31"
     );
     periksa("lima menit kemudian ditulis untuk memajukan terlihat_terakhir", segar.berubah === true);
 
     const panggil2 = g(
       panggil1.baris,
-      { tanggalSidang: "2026-09-01", perkaraId: "9971", jamSidang: "10:05:02", disidang: 10 },
+      { tanggalSidang: "2026-09-01", perkaraId: "9971", jamSidang: "10:05:02", disidang: 1 },
       "2026-09-01 10:05:10"
     );
     periksa("panggilan ulang: pertama TETAP", panggil2.baris.panggilPertama === "2026-09-01 09:41:19");
@@ -304,7 +304,7 @@ async function utama() {
     // Pencatat yang baru menyala sesudah perkaranya dipanggil.
     const telat = g(
       null,
-      { tanggalSidang: "2026-09-01", perkaraId: "9956", jamSidang: "09:30:00", disidang: 10, pihak1: "2026-09-01 08:00:00" },
+      { tanggalSidang: "2026-09-01", perkaraId: "9956", jamSidang: "09:30:00", disidang: 1, pihak1: "2026-09-01 08:00:00" },
       "2026-09-01 10:00:00"
     );
     periksa("pengamatan pertama yang sudah dipanggil: jadwal tidak diketahui", telat.baris.jamJadwal === "");
@@ -313,13 +313,48 @@ async function utama() {
     // jam_sidang ber-DATETIME di aplikasi antrian pengadilan lain.
     const lengkap = g(
       null,
-      { tanggalSidang: "2026-09-01", perkaraId: "1", jamSidang: "2026-09-01 11:02:03", disidang: 10 },
+      { tanggalSidang: "2026-09-01", perkaraId: "1", jamSidang: "2026-09-01 11:02:03", disidang: 1 },
       "2026-09-01 11:05:00"
     );
     periksa("jam_sidang DATETIME terbaca sama", lengkap.baris.panggilTerakhir === "2026-09-01 11:02:03");
     periksa("jam nol bukan jadwal", layanan.jamDariJamSidang("00:00:00") === "");
     periksa("tanggal nol MySQL dianggap kosong", g(null, { tanggalSidang: "2026-09-01", perkaraId: "2", pihak1: "0000-00-00 00:00:00" }, "2026-09-01 08:00:00").baris.ambilPihak1 === "");
     periksa("jam panggil TIME dilekatkan pada tanggal sidang", layanan.waktuPanggilDari("9:05", "2026-09-01") === "2026-09-01 09:05:00");
+  }
+
+  // ==========================================================================
+  console.log("\n== Arti disidang aplikasi antrian (5 Okt 2026): 1..9 = di ruang, 10 = SELESAI ==");
+  {
+    const g = layanan.gabungWaktu;
+    const menunggu = g(
+      null,
+      { tanggalSidang: "2026-10-05", perkaraId: "609", jamSidang: "09:00:00", disidang: null, pihak1: "2026-10-05 08:30:00" },
+      "2026-10-05 08:31:00"
+    ).baris;
+    periksa("NULL = menunggu: jam jadwal tercatat, belum dipanggil", menunggu.jamJadwal === "09:00:00" && menunggu.panggilTerakhir === "");
+
+    // Data hidup 5 Okt 10.20: 609/Pdt.G/2026 disidang = 1, jam_sidang 10:19.
+    const masuk = g(menunggu, { tanggalSidang: "2026-10-05", perkaraId: "609", jamSidang: "10:19:04", disidang: 1 }, "2026-10-05 10:20:00").baris;
+    periksa("disidang = nomor ruang: jam masuk ruang tercatat sebagai panggilan", masuk.panggilTerakhir === "2026-10-05 10:19:04");
+    periksa("dan dihitung satu panggilan", masuk.jumlahPanggil === 1);
+    periksa("jam jadwal tidak tertimpa jam masuk", masuk.jamJadwal === "09:00:00");
+
+    // Selesai: aplikasi antrian menulis 10 TANPA mengubah jam_sidang.
+    const selesai = g(masuk, { tanggalSidang: "2026-10-05", perkaraId: "609", jamSidang: "10:19:04", disidang: 10 }, "2026-10-05 10:40:00").baris;
+    periksa("disidang = 10 sesudah di ruang: bukan panggilan baru", selesai.jumlahPanggil === 1 && selesai.panggilTerakhir === "2026-10-05 10:19:04");
+
+    // Langsung ditunda tanpa PROSES: 10 dengan jam_sidang = jam jadwal.
+    const tundaLangsung = g(menunggu, { tanggalSidang: "2026-10-05", perkaraId: "609", jamSidang: "09:00:00", disidang: 10 }, "2026-10-05 11:00:00").baris;
+    periksa("10 dengan jam = jadwal: TIDAK dicatat sebagai panggilan", tundaLangsung.panggilTerakhir === "" && tundaLangsung.jumlahPanggil === 0);
+
+    // Masuk ruang yang TIDAK teramati (selang 30 detik terlewat), lalu selesai.
+    const terlewat = g(menunggu, { tanggalSidang: "2026-10-05", perkaraId: "609", jamSidang: "10:19:04", disidang: 10 }, "2026-10-05 11:00:00").baris;
+    periksa("10 dengan jam berbeda dari jadwal: jam masuknya tetap tercatat", terlewat.panggilTerakhir === "2026-10-05 10:19:04");
+
+    // Pencatat baru menyala sesudah sidangnya selesai, jadwal tak diketahui.
+    const tanpaJadwal = g(null, { tanggalSidang: "2026-10-05", perkaraId: "610", jamSidang: "09:30:00", disidang: 10 }, "2026-10-05 11:00:00").baris;
+    periksa("10 tanpa jadwal tercatat: tidak dikarang menjadi panggilan", tanpaJadwal.panggilTerakhir === "");
+    periksa("dan jam_sidang-nya tidak dicatat sebagai jadwal", tanpaJadwal.jamJadwal === "");
   }
 
   // ==========================================================================
@@ -385,7 +420,7 @@ async function utama() {
     antrian.baris[0] = barisAntrian({
       perkaraId: 9971,
       pihak1: "2026-09-01 09:00:00",
-      disidang: 10,
+      disidang: 1,
       jamSidang: "09:41:19",
     });
     const tiga = await layanan.catatSekali({ paksa: true });
@@ -491,6 +526,7 @@ async function utama() {
     periksa("hari lampau terbaca dari rekaman", lampau.terbaca && lampau.rekamanTerbaca);
     periksa("barisnya sampai", lampau.baris.length === 1 && lampau.baris[0].sumber === "rekaman");
     periksa("waktu panggil berdetik ikut", lampau.baris[0].panggilTerakhir === "2026-08-31 09:10:00");
+    periksa("rekaman saja: disidang TIDAK dikirim (keadaannya tidak diketahui)", !("disidang" in lampau.baris[0]));
     periksa("jam antrian ikut dikirim", lampau.sekarang === "2026-09-01 08:00:00" && lampau.hariIni === "2026-09-01");
     periksa(
       "hari lampau tidak membaca baris aplikasi antrian",
@@ -522,9 +558,9 @@ async function utama() {
       terlihatTerakhir: "2026-09-01 09:45:00",
     });
     antrian.baris = [
-      barisAntrian({ perkaraId: 9971, pihak1: "2026-09-01 08:12:40", disidang: 10, jamSidang: "10:05:02" }),
+      barisAntrian({ perkaraId: 9971, pihak1: "2026-09-01 08:12:40", disidang: 1, jamSidang: "10:05:02" }),
       // Perkara yang TIDAK ada di daftar SIPP yang diminta - tetap dikirim.
-      barisAntrian({ perkaraId: 7777, noRuang: 1, pihak1: "2026-09-01 08:30:00", disidang: 10, jamSidang: "09:50:00" }),
+      barisAntrian({ perkaraId: 7777, noRuang: 1, pihak1: "2026-09-01 08:30:00", disidang: 1, jamSidang: "09:50:00" }),
     ];
     const kini = await layanan.waktuUntukJadwal({
       tanggal: ["2026-09-01", "2026-09-01", "bukan-tanggal"],
@@ -538,6 +574,8 @@ async function utama() {
     periksa("hitungannya dua", b9971 && b9971.jumlahPanggil === 2);
     periksa("perkara di luar daftar tetap dikirim", b7777 && b7777.sumber === "langsung" && b7777.nomorAntrian === 5);
     periksa("pembaca TIDAK menulis", !kueriBot.some((k) => /INSERT INTO/.test(k.sql)));
+    // Keadaan langsung disidang ikut dikirim (portal: 1..9 = sedang berjalan).
+    periksa("disidang langsung ikut dikirim untuk baris hari ini", b9971 && b9971.disidang === 1);
 
     // Aplikasi antrian putus: rekaman tetap sampai, sebabnya disebut.
     bersihkan();
@@ -564,8 +602,8 @@ async function utama() {
     bersihkan();
     antrian.sekarang = "2026-09-01 10:06:00";
     antrian.baris = [
-      barisAntrian({ perkaraId: 9971, pihak1: "2026-09-01 08:12:40", disidang: 10, jamSidang: "10:05:02" }),
-      barisAntrian({ perkaraId: 7777, pihak1: "2026-09-01 08:30:00", disidang: 10, jamSidang: "09:50:00" }),
+      barisAntrian({ perkaraId: 9971, pihak1: "2026-09-01 08:12:40", disidang: 1, jamSidang: "10:05:02" }),
+      barisAntrian({ perkaraId: 7777, pihak1: "2026-09-01 08:30:00", disidang: 1, jamSidang: "09:50:00" }),
       barisAntrian({ perkaraId: 9956, pihak2: "2026-09-01 08:14:05" }),
     ];
     petaNomor.peta = {

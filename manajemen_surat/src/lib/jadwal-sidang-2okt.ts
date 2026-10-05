@@ -27,8 +27,10 @@
  *
  *   - "sedang berjalan" kini punya TIGA sumber, berurutan menurut kuatnya:
  *       manual         tombol "Tandai sedang berjalan" (tabel ALETA)
- *       antrian-proses "proses sidang" di mesin antrian ruang tunggu (hanya
- *                      bila nilainya disetel - ALETA_ANTRIAN_DISIDANG_PROSES)
+ *       antrian-proses "proses sidang" di mesin antrian ruang tunggu
+ *                      (disidang = nomor ruang 1..9; bawaan sejak 5 Okt 2026 -
+ *                      dari bot `berjalan.proses` maupun dari `disidang` baris
+ *                      waktu antrian hari ini)
  *       panggilan      turunan panggilan terakhir per ruang (bawaan semula)
  *     Satu ruang satu sidang berjalan; sumber yang lebih kuat mengalahkan yang
  *     lebih lemah di ruang yang sama.
@@ -42,7 +44,13 @@
  *
  * Lihat LEBAR_ECOURT di bawah.
  */
-import { hitungTigaJarak, kunciWaktu, type BarisWaktuAntrian } from "@/lib/tiga-jarak-sidang";
+import {
+  hitungTigaJarak,
+  kunciWaktu,
+  ruangDisidang,
+  selesaiDisidang,
+  type BarisWaktuAntrian,
+} from "@/lib/tiga-jarak-sidang";
 import { keadaanSelesai, kunciSelesai, type PetaSelesai } from "@/lib/jadwal-sidang-1okt";
 import { sidangSelesaiHariIni } from "@/lib/keadaan-sidang";
 
@@ -228,6 +236,13 @@ export function petaSidangBerjalan(
   const barisPerKunci: Record<string, BarisWaktuAntrian> = {};
 
   // ---- penanda dan ruang dari antrian; calon "panggilan" (perilaku semula) ----
+  // 5 Okt 2026: bila keadaan LANGSUNG aplikasi antrian diketahui (`disidang`
+  // ada di baris), itulah yang dipakai - 1..9 = sedang disidang di ruang itu
+  // (calon "antrian-proses", tanpa bergantung pada setelan bot), 10 = selesai,
+  // NULL = tidak di ruang. Tebakan "terakhir dipanggil di ruangnya" hanya untuk
+  // baris yang keadaan langsungnya tidak diketahui (rekaman saja / bot lama).
+  const prosesDariBot = new Set(proses.map((p) => kunciWaktu(p.tanggalSidang, p.perkaraId)));
+  const selesaiAntrian = new Set<string>();
   for (const satu of daftar) {
     const kunci = kunciWaktu(satu.tanggalSidang, satu.perkaraId);
     const t = tiga[kunci];
@@ -236,6 +251,22 @@ export function petaSidangBerjalan(
     hasil.ruangPerKunci[kunci] = t.ruang;
     hasil.panggilPerKunci[kunci] = rapi(satu.panggilTerakhir);
     tandai(kunci, satu.panggilTerakhir);
+    if (selesaiDisidang(satu.disidang)) selesaiAntrian.add(kunci);
+    if (satu.disidang !== undefined) {
+      const noRuang = ruangDisidang(satu.disidang);
+      if (noRuang === null || rapi(satu.tanggalSidang) !== hariIni || prosesDariBot.has(kunci)) continue;
+      calon.push({
+        kunci,
+        perkaraId: rapi(satu.perkaraId),
+        tanggalSidang: rapi(satu.tanggalSidang),
+        ruang: t.ruang,
+        sejak: rapi(satu.panggilTerakhir),
+        nomorAntrian: typeof satu.nomorAntrian === "number" ? satu.nomorAntrian : null,
+        sumber: "antrian-proses",
+        kuat: KUAT_SUMBER["antrian-proses"],
+      });
+      continue;
+    }
     if (t.lamaSidang.keadaan !== "berjalan") continue;
     calon.push({
       kunci,
@@ -297,7 +328,7 @@ export function petaSidangBerjalan(
 
   // ---- penyaringan: selesai dan diskors tidak berjalan ----
   const sah = calon.filter((c) => {
-    if (opsi.selesai?.[c.kunci]) return false;
+    if (opsi.selesai?.[c.kunci] || selesaiAntrian.has(c.kunci)) return false;
     return !skorsUntuk(opsi.skors, c, hasil.penandaPerKunci[c.kunci]);
   });
 

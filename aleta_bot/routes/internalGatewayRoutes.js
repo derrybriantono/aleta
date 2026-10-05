@@ -545,6 +545,20 @@ router.post("/ecourt/verifikasi", requireInternalToken, async (req, res) => {
   }
 });
 
+/**
+ * Penanda verifikasi majelis untuk perkara e-Litigasi pada satu tanggal
+ * (butir 30, 5 Okt 2026). Hanya MEMBACA simpanan ALETA - tidak menarik
+ * e-Court; penarikannya oleh ecourtVerifikasiHarianService di latar.
+ */
+router.get("/ecourt/verifikasi-hari-ini", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/ecourtVerifikasiHarianService").keadaanHari(String(req.query.tanggal || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Selisih antara catatan ALETA dan status sesungguhnya di e-Court. */
 router.get("/ecourt/rekonsiliasi", requireInternalToken, async (req, res) => {
   try {
@@ -1004,7 +1018,11 @@ router.get("/sidang/keadaan", requireInternalToken, async (req, res) => {
     const riwayat = await sidangHasilService
       .riwayatSidangPerkara(keadaan.perkaraId, keadaan.tanggalSidang)
       .catch(() => null);
-    res.json({ ok: true, keadaan, riwayat });
+    // Butir 25 (5 Okt 2026): pilihan ruang sidang blangko tunda/putus - daftar
+    // ruangan_sidang aktif (sama dengan penetapan hari sidang). Gagal = [] dan
+    // blangkonya memakai ruangan yang tercatat.
+    const ruangan = await penetapanTulisService.daftarRuangan().catch(() => []);
+    res.json({ ok: true, keadaan, riwayat, ruangan });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -1054,6 +1072,9 @@ router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
       // Cadangan saja - panitera sidang perkaranya dibaca dari SIPP.
       olehUsername: String(badan.olehUsername || ""),
       dihadiriOleh: badan.dihadiriOleh,
+      // Butir 25: ruang sidang + sidang keliling sidang BERIKUTNYA (kosong = salin).
+      ruanganIdBerikut: badan.ruanganIdBerikut,
+      sidangKelilingBerikut: typeof badan.sidangKelilingBerikut === "boolean" ? badan.sidangKelilingBerikut : undefined,
       operator,
       ip: alamatAudit(req),
     });
@@ -1165,6 +1186,9 @@ router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
       // Butir 12 (30 Sep 2026): bawaannya HANYA jadwal sidang. Putusan akhir
       // ikut ditulis hanya bila pemanggilnya meminta tegas.
       tulisPutusan: badan.tulisPutusan === true,
+      // Butir 25: ruang sidang + sidang keliling sidang INI (ditulis hanya bila berubah).
+      ruanganIdSidang: badan.ruanganIdSidang,
+      sidangKelilingSidang: typeof badan.sidangKelilingSidang === "boolean" ? badan.sidangKelilingSidang : undefined,
       operator,
       ip: alamatAudit(req),
     });

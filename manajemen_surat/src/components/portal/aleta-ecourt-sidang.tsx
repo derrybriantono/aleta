@@ -157,6 +157,17 @@ import {
   tanggalHariPendek,
 } from "@/lib/tanggal-indonesia";
 import { warnaStatusPutusan } from "@/lib/warna-putusan";
+import { KELAS_KODE_MAJELIS, KELAS_LENCANA_KODE_MAJELIS } from "@/lib/kode-majelis";
+import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
+import { useHilangSendiri, usePesanSementara } from "@/lib/pesan-sementara";
+import { BannerGangguan } from "@/components/portal/banner-gangguan";
+import {
+  DATA_VERIFIKASI_KOSONG,
+  penandaVerifikasi,
+  type DataVerifikasi,
+  type Penanda,
+} from "@/lib/penanda-verifikasi-ecourt";
+import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 
 /**
  * Dialog Cetak relaas dimuat SAAT DIBUKA, bukan bersama jadwal.
@@ -1902,7 +1913,8 @@ function TombolAmbilAntrian({
 }) {
   const [terbuka, setTerbuka] = useState(false);
   const [sibuk, setSibuk] = useState("");
-  const [pesan, setPesan] = useState("");
+  // Butir 3 (5 Okt 2026): yang berhasil hilang sendiri, yang gagal menetap.
+  const [pesan, setPesan] = usePesanSementara();
 
   // Menutup saat ditekan di luar - kait yang sama dengan menu Tampilan.
   const tutup = useCallback(() => setTerbuka(false), []);
@@ -1912,7 +1924,7 @@ function TombolAmbilAntrian({
 
   const batalkan = async (sisi: { kunci: string; label: string; jam: string }) => {
     setSibuk(`batal-${sisi.kunci}`);
-    setPesan("");
+    setPesan(null);
     try {
       const jawaban = await fetch(apiPath("/api/aleta-ecourt/antrian-ambil"), {
         method: "DELETE",
@@ -1932,20 +1944,21 @@ function TombolAmbilAntrian({
       };
       const hasil = isi.data ?? isi;
       if (!hasil.ok) {
-        setPesan(hasil.alasan || "Kehadiran belum dapat dibatalkan.");
+        setPesan({ ok: false, teks: hasil.alasan || "Kehadiran belum dapat dibatalkan." });
         return;
       }
       // antrianDikosongkan false berarti kolomnya memang sudah kosong - bukan
       // kegagalan. Yang menekan dua kali tidak perlu diberi pesan galat atas
       // keadaan yang justru sudah sesuai keinginannya.
-      setPesan(
-        hasil.antrianDikosongkan
+      setPesan({
+        ok: true,
+        teks: hasil.antrianDikosongkan
           ? `Kehadiran ${sisi.label} dibatalkan. Urutan antrian dihitung ulang.`
-          : `Kehadiran ${sisi.label} memang sudah kosong.`
-      );
+          : `Kehadiran ${sisi.label} memang sudah kosong.`,
+      });
       onSelesai();
     } catch {
-      setPesan("Kehadiran belum dapat dibatalkan.");
+      setPesan({ ok: false, teks: "Kehadiran belum dapat dibatalkan." });
     } finally {
       setSibuk("");
     }
@@ -1953,7 +1966,7 @@ function TombolAmbilAntrian({
 
   const ambil = async (peran: (typeof PERAN_ANTRIAN)[number]) => {
     setSibuk(peran.kunci);
-    setPesan("");
+    setPesan(null);
     try {
       const jawaban = await fetch(apiPath("/api/aleta-ecourt/antrian-ambil"), {
         method: "POST",
@@ -1975,20 +1988,21 @@ function TombolAmbilAntrian({
       };
       const hasil = isi.data ?? isi;
       if (!hasil.ok) {
-        setPesan(hasil.alasan || "Kehadiran belum dapat dicatat.");
+        setPesan({ ok: false, teks: hasil.alasan || "Kehadiran belum dapat dicatat." });
         return;
       }
       // Kedatangan kedua pada sisi yang sama TIDAK menggeser nomor - dijaga di
       // sisi bot. Yang dikatakan di sini bedanya, supaya petugas tahu
       // tekanannya berpengaruh atau hanya tercatat.
-      setPesan(
-        hasil.antrianDiisi
+      setPesan({
+        ok: true,
+        teks: hasil.antrianDiisi
           ? `Nomor antrian terbit untuk ${hasil.sebutan || peran.label}.`
-          : `${hasil.sebutan || peran.label} tercatat hadir; nomor antriannya sudah ada sebelumnya.`
-      );
+          : `${hasil.sebutan || peran.label} tercatat hadir; nomor antriannya sudah ada sebelumnya.`,
+      });
       onSelesai();
     } catch {
-      setPesan("Kehadiran belum dapat dicatat.");
+      setPesan({ ok: false, teks: "Kehadiran belum dapat dicatat." });
     } finally {
       setSibuk("");
     }
@@ -2074,7 +2088,15 @@ function TombolAmbilAntrian({
           ) : null}
 
           {pesan ? (
-            <p className="border-t px-2 py-1 text-[11px] text-muted-foreground">{pesan}</p>
+            <p
+              className={cn(
+                "flex items-start gap-1 border-t px-2 py-1 text-[11px]",
+                pesan.ok ? "text-muted-foreground" : "text-rose-600"
+              )}
+            >
+              <span className="min-w-0 flex-1">{pesan.teks}</span>
+              {!pesan.ok ? <TombolTutupPesan onTutup={() => setPesan(null)} /> : null}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -2264,6 +2286,24 @@ function UmurPerkara({ durasi, telahIkrar = false }: { durasi: SidangBaris["dura
         </span>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Penanda verifikasi majelis e-Litigasi (butir 30, 5 Okt 2026) - satu lencana,
+ * tiga keadaan; keterangannya (kapan terakhir diperiksa, oleh siapa
+ * diverifikasi) di title. Lihat @/lib/penanda-verifikasi-ecourt.
+ */
+export function LencanaVerifikasiMajelis({ penanda }: { penanda: Penanda | null }) {
+  if (!penanda) return null;
+  return (
+    <span
+      data-verifikasi-majelis={penanda.keadaan}
+      className={cn("whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold", penanda.kelas)}
+      title={penanda.keterangan}
+    >
+      {penanda.label}
+    </span>
   );
 }
 
@@ -3575,6 +3615,17 @@ export function SelAntrianJam({
 
       <div className="mt-0.5 text-sm tabular-nums text-muted-foreground">{jam}</div>
 
+      {/* Kode majelis menurut APLIKASI ANTRIAN (bentuk "C1|C2|C3") - butir 4,
+          5 Okt 2026. Kode SIPP-nya ada di kolom Majelis & Petugas; yang ini
+          kode yang dipakai mesin antrian memanggil, dan yang dicocokkan
+          petugas di depan ruang sidang. Ukuran relatif + nowrap: tidak melebarkan
+          kolom ini melewati max-w-[12rem]-nya. */}
+      {antrian.majelisKode ? (
+        <div className="mt-0.5 text-sm" title="Kode majelis di aplikasi antrian">
+          <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{antrian.majelisKode}</span>
+        </div>
+      ) : null}
+
       {/* ====================================================================
           SIAPA YANG SUDAH MENGAMBIL - BUKAN SEKADAR "SUDAH DIAMBIL"
           ====================================================================
@@ -4490,6 +4541,17 @@ export function AletaEcourtSidang({
     dilewati: Array<{ nomorPerkara: string; sebab: string }>;
     gagal: Array<{ nomorPerkara: string; sebab: string }>;
   } | null>(null);
+  // Butir 3 (5 Okt 2026): hasil BERHASIL ("N perkara didaftarkan", atau
+  // pemeriksaan tanpa apa pun yang perlu didaftarkan) hilang sendiri. Yang
+  // gagal sebagian/seluruhnya, dan pratinjau yang masih menunggu "Daftarkan
+  // sekarang", menetap.
+  const sinkronBerhasil = Boolean(
+    sinkronHasil &&
+      !sinkronHasil.alasan &&
+      sinkronHasil.gagal.length === 0 &&
+      (!sinkronHasil.ujiKering || sinkronHasil.akanDitambah.length === 0)
+  );
+  useHilangSendiri(sinkronHasil, sinkronBerhasil, () => setSinkronHasil(null));
 
   const jalankanSinkron = useCallback(
     async (terapkan: boolean) => {
@@ -4835,7 +4897,8 @@ export function AletaEcourtSidang({
       skors: tandaSelesai.skors,
       ruangSipp,
       // 2 Okt 2026 malam: tanda "Tandai sedang berjalan" + proses sidang di
-      // mesin antrian (hanya bila nilainya disetel di bot).
+      // mesin antrian (disidang = nomor ruang; bawaan bot sejak 5 Okt 2026, dan
+      // juga terbaca dari `disidang` baris waktu antrian hari ini).
       berjalan: tandaSelesai.berjalan,
     });
   }, [sidang, waktuAntrian, tandaSelesai.peta, tandaSelesai.skors, tandaSelesai.berjalan]);
@@ -4923,12 +4986,37 @@ export function AletaEcourtSidang({
    *   tombol skor memanggilnya pada putaran yang sama dengan setNilaiKesiapan,
    *   dan state React belum berubah saat itu.
    */
+  // ==========================================================================
+  // BUTIR 14 (5 Okt 2026) - "Failed to fetch" DICOBA LAGI SENDIRI
+  // ==========================================================================
+  // Gangguan jaringan / 502-504 / jawaban bukan JSON: banner kuning dengan
+  // hitung mundur (2, 4, 8, 15, lalu tiap 30 dtk), data lama tetap tampil.
+  // Lihat @/lib/coba-lagi-otomatis.
+  const muatTanggalRef = useRef<
+    ((mulai: string, akhir: string, pakaiSkor?: boolean, cariKini?: string) => Promise<void>) | null
+  >(null);
+  const permintaanTerakhirRef = useRef<{ mulai: string; akhir: string; pakaiSkor?: boolean; cariKini?: string } | null>(
+    null
+  );
+  /** Rentang yang datanya sedang tampil - data rentang yang sama tidak dikosongkan saat bot tak terjangkau. */
+  const rentangTampilRef = useRef("");
+  const cobaLagiJadwal = useCobaLagiOtomatis(() => {
+    const p = permintaanTerakhirRef.current;
+    const muatUlang = muatTanggalRef.current;
+    if (p && muatUlang) return muatUlang(p.mulai, p.akhir, p.pakaiSkor, p.cariKini);
+    return undefined;
+  });
+  const { laporGagal: laporGagalJadwal, laporBerhasil: laporBerhasilJadwal } = cobaLagiJadwal;
+
   const muatTanggal = useCallback(
     async (mulai: string, akhir: string, pakaiSkor?: boolean, cariKini?: string) => {
     // Ditandai lewat ref, bukan state: pemuatan ulang berkala membacanya dari
     // dalam setInterval, dan state yang terbaca di sana adalah state sewaktu
     // interval dipasang - selamanya false.
     memuatRef.current = true;
+    // Butir 14 (5 Okt 2026): permintaan terakhir diingat supaya coba-lagi
+    // otomatis memuat rentang yang SAMA, bukan rentang di state.
+    permintaanTerakhirRef.current = { mulai, akhir, pakaiSkor, cariKini };
     setMemuat(true);
     setGalat("");
     try {
@@ -4944,20 +5032,45 @@ export function AletaEcourtSidang({
       const jawaban = await fetch(apiPath(`/api/aleta-ecourt/sidang?${params.toString()}`), {
         cache: "no-store",
       });
-      const isi = await jawaban.json();
+      // Status diperiksa SEBELUM badan dibaca sebagai JSON: 502/504 proksi dan
+      // halaman galat HTML adalah gangguan yang dicoba lagi sendiri.
+      const isi = (await bacaJsonAman(jawaban)) as { data?: Record<string, unknown> } & Record<string, unknown>;
       if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal membaca jadwal sidang."));
 
-      const data = isi?.data ?? isi;
+      const data = (isi?.data ?? isi) as Record<string, unknown> & {
+        available?: boolean;
+        message?: unknown;
+        sidang?: unknown;
+        kesiapan?: unknown;
+        antrian?: unknown;
+        waktuAntrian?: unknown;
+      };
+      const rentang = `${mulai}|${akhir}`;
       if (!data?.available) {
-        setGalat(String(data?.message || "ALETA Bot belum dapat dihubungi."));
-        setSidang([]);
-        // Antrian ikut dikosongkan: nomor antrian kemarin yang tertinggal di
-        // layar lebih menyesatkan daripada kolom yang kosong.
-        setAntrian({ terbaca: false, alasan: "", tanggal: [], peta: {} });
-        setWaktuAntrian(WAKTU_ANTRIAN_KOSONG);
-        setPatokanWaktu(null);
+        const pesanBot = String(data?.message || "ALETA Bot belum dapat dihubungi.");
+        // Bot tak terjangkau dari portal biasanya sementara (bot dimulai
+        // ulang) - dicoba lagi sendiri. Data rentang yang SAMA yang sudah
+        // tampil dibiarkan; rentang lain dikosongkan seperti semula, sebab
+        // nomor antrian hari lain yang tertinggal di layar lebih menyesatkan
+        // daripada kolom yang kosong.
+        if (botTakTerjangkau(pesanBot)) {
+          laporGagalJadwal(new GalatJawaban(pesanBot, 503, true), 503, `${pesanBot} ALETA akan mencoba memuat lagi sendiri.`);
+        } else {
+          // Bot menjawab tetapi tidak dapat membaca (mis. SIPP): merah seperti semula.
+          laporBerhasilJadwal();
+          setGalat(pesanBot);
+        }
+        if (rentangTampilRef.current !== rentang) {
+          setSidang([]);
+          setAntrian({ terbaca: false, alasan: "", tanggal: [], peta: {} });
+          setWaktuAntrian(WAKTU_ANTRIAN_KOSONG);
+          setPatokanWaktu(null);
+          rentangTampilRef.current = "";
+        }
         return;
       }
+      laporBerhasilJadwal();
+      rentangTampilRef.current = rentang;
       setSidang(Array.isArray(data.sidang) ? data.sidang : []);
       setKesiapan((data.kesiapan ?? {}) as Record<string, KesiapanRingkas>);
       setAntrian(
@@ -4970,7 +5083,11 @@ export function AletaEcourtSidang({
       const sekarangMs = bacaWaktu(waktu.sekarang);
       setPatokanWaktu(sekarangMs === null ? null : { sekarangMs, diterimaMs: Date.now() });
     } catch (kesalahan) {
-      setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca jadwal sidang.");
+      // Gangguan jaringan: banner kuning + coba lagi sendiri, data lama tetap.
+      // Galat lain tetap merah seperti semula.
+      if (!laporGagalJadwal(kesalahan)) {
+        setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca jadwal sidang.");
+      }
     } finally {
       memuatRef.current = false;
       setMemuat(false);
@@ -4979,8 +5096,11 @@ export function AletaEcourtSidang({
       setPertamaMuat(false);
     }
     },
-    [cari, nilaiKesiapan]
+    [cari, nilaiKesiapan, laporGagalJadwal, laporBerhasilJadwal]
   );
+  useEffect(() => {
+    muatTanggalRef.current = muatTanggal;
+  }, [muatTanggal]);
 
 
   /** Perkara mana saja yang sedang tampil - dipakai memuat tunjukannya. */
@@ -5155,6 +5275,48 @@ export function AletaEcourtSidang({
 
     return () => window.clearInterval(putaran);
   }, [sedangHariIni, muat]);
+
+  // ==========================================================================
+  // BUTIR 30 (5 Okt 2026) - PENANDA VERIFIKASI MAJELIS E-LITIGASI HARI INI
+  // ==========================================================================
+  // Dibaca dari SIMPANAN bot (penarikannya di latar bot tiap 15 menit, satu
+  // perkara per putaran, berhenti bila semua sudah diverifikasi) - bukan
+  // tarikan e-Court saat halaman dimuat. Disegarkan bersama jadwalnya.
+  const [verifikasi, setVerifikasi] = useState<DataVerifikasi>(DATA_VERIFIKASI_KOSONG);
+  const adaElitigasiHariIni = useMemo(
+    () => sedangHariIni && sidang.some((b) => b.lewatEcourt && /\/Pdt\.G(\.S)?\//i.test(b.nomorPerkara)),
+    [sedangHariIni, sidang]
+  );
+  useEffect(() => {
+    if (!adaElitigasiHariIni) return;
+    let batal = false;
+    const tanggal = dari;
+    void (async () => {
+      try {
+        const jawaban = await fetch(apiPath(`/api/aleta-ecourt/sidang/verifikasi-ecourt?tanggal=${encodeURIComponent(tanggal)}`), {
+          cache: "no-store",
+        });
+        const isi = (await bacaJsonAman(jawaban)) as { data?: Record<string, unknown> } & Record<string, unknown>;
+        const data = (isi?.data ?? isi) as Record<string, unknown>;
+        if (batal) return;
+        if (!jawaban.ok || data?.available === false || data?.ok === false) {
+          setVerifikasi({ ...DATA_VERIFIKASI_KOSONG, alasan: String(data?.alasan || data?.message || "bot tidak tersambung") });
+          return;
+        }
+        setVerifikasi({
+          terbaca: true,
+          tanggal: String(data.tanggal || tanggal),
+          perkara: (data.perkara ?? {}) as DataVerifikasi["perkara"],
+          penarik: data.penarik as DataVerifikasi["penarik"],
+        });
+      } catch (galat) {
+        if (!batal) setVerifikasi({ ...DATA_VERIFIKASI_KOSONG, alasan: galat instanceof Error ? galat.message : "tidak terbaca" });
+      }
+    })();
+    return () => {
+      batal = true;
+    };
+  }, [adaElitigasiHariIni, dari, sidang]);
 
   /**
    * Berpindah ke satu hari, lalu memuatnya seketika.
@@ -5421,9 +5583,11 @@ export function AletaEcourtSidang({
       </CardHeader>
 
       <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
+        <BannerGangguan keadaan={cobaLagiJadwal.keadaan} onCobaSekarang={cobaLagiJadwal.cobaSekarang} />
         {galat ? (
-          <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            {galat}
+          <p className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <span className="min-w-0 flex-1">{galat}</span>
+            <TombolTutupPesan onTutup={() => setGalat("")} />
           </p>
         ) : null}
 
@@ -6389,7 +6553,10 @@ export function AletaEcourtSidang({
         {sinkronHasil ? (
           <div className="mb-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
             {sinkronHasil.alasan ? (
-              <p className="text-rose-600">{sinkronHasil.alasan}</p>
+              <p className="flex items-start gap-2 text-rose-600">
+                <span className="min-w-0 flex-1">{sinkronHasil.alasan}</span>
+                <TombolTutupPesan onTutup={() => setSinkronHasil(null)} />
+              </p>
             ) : sinkronHasil.ujiKering ? (
               <div className="flex flex-wrap items-center gap-2">
                 <span>
@@ -6413,12 +6580,16 @@ export function AletaEcourtSidang({
                 </button>
               </div>
             ) : (
-              <p className="text-emerald-700">
-                {sinkronHasil.ditambahkan} perkara didaftarkan ke antrian.
-                {sinkronHasil.gagal.length > 0
-                  ? ` ${sinkronHasil.gagal.length} gagal: ${sinkronHasil.gagal[0].sebab}`
-                  : ""}{" "}
-                Nomor antriannya baru terbit saat para pihak mengambilnya.
+              <p className={cn("flex items-start gap-2", sinkronHasil.gagal.length > 0 ? "text-rose-700" : "text-emerald-700")}>
+                <span className="min-w-0 flex-1">
+                  {sinkronHasil.ditambahkan} perkara didaftarkan ke antrian.
+                  {sinkronHasil.gagal.length > 0
+                    ? ` ${sinkronHasil.gagal.length} gagal: ${sinkronHasil.gagal[0].sebab}`
+                    : ""}{" "}
+                  Nomor antriannya baru terbit saat para pihak mengambilnya.
+                </span>
+                {/* Yang berhasil seluruhnya hilang sendiri; yang ada gagalnya menetap sampai ditutup. */}
+                {sinkronHasil.gagal.length > 0 ? <TombolTutupPesan onTutup={() => setSinkronHasil(null)} /> : null}
               </p>
             )}
           </div>
@@ -6931,6 +7102,8 @@ export function AletaEcourtSidang({
                               itulah yang dicari mata saat menelusuri jadwal. */}
                           <span className="ml-2 inline-flex gap-1 align-middle">
                             <PenandaPanggilan panggilan={baris.panggilan} />
+                            {/* Butir 30: verifikasi majelis e-Litigasi hari ini. */}
+                            <LencanaVerifikasiMajelis penanda={penandaVerifikasi(baris, verifikasi, hariIni())} />
                           </span>
                           {/* ==================================================
                               PENGGUGAT DAN TERGUGAT DIPISAH, BUKAN "A LAWAN B"
@@ -7175,7 +7348,7 @@ export function AletaEcourtSidang({
                             {baris.majelisKode ? (
                               <span className="whitespace-nowrap" title={baris.majelisNama}>
                                 <span className="font-medium text-foreground/70">Majelis</span>{" "}
-                                {baris.majelisKode}
+                                <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{baris.majelisKode}</span>
                               </span>
                             ) : null}
                             {baris.paniteraNama ? (
@@ -7647,7 +7820,7 @@ export function AletaEcourtSidang({
                                 (sejak 28 September 2026, bukan truncate
                                 max-w-[18rem] lagi) - truncate di dalam sel
                                 tabel memaksa kolomnya selebar namanya. */}
-                            <span className="whitespace-nowrap rounded bg-muted px-1 py-0.5 font-mono text-xs font-semibold">
+                            <span className={KELAS_LENCANA_KODE_MAJELIS}>
                               {baris.majelisKode || "—"}
                             </span>
                             {baris.majelisNama ? (

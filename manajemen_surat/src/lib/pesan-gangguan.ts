@@ -103,7 +103,29 @@ export function jenisGangguan(galat: unknown, status = 0): JenisGangguan {
  *                 kegagalan biasa seperti kata sandi yang keliru, yang memang
  *                 harus disampaikan apa adanya.
  */
-export function pesanGangguan(galat: unknown, cadangan: string, status = 0): string {
+export function pesanGangguan(
+  galat: unknown,
+  cadangan: string,
+  status = 0,
+  /**
+   * "masuk" (bawaan) = halaman masuk, kalimatnya menenangkan soal kata sandi.
+   * "data" = layar data (Jadwal Sidang, Jadwal Mediasi, Status Perkara) yang
+   * mencoba lagi sendiri - kata sandi tidak disebut sama sekali.
+   */
+  konteks: "masuk" | "data" = "masuk"
+): string {
+  if (konteks === "data") {
+    switch (jenisGangguan(galat, status)) {
+      case "basis-data":
+        return "Layanan data ALETA sedang tidak aktif sebentar. Data yang sudah tampil tetap dapat dibaca; ALETA akan mencoba memuat lagi sendiri.";
+      case "tidak-terjangkau":
+        return "Sambungan ke server ALETA sedang terputus - biasanya jaringan kantor atau server yang sedang dimulai ulang. Data yang sudah tampil tetap dapat dibaca; ALETA akan mencoba memuat lagi sendiri.";
+      case "peladen":
+        return "Server ALETA sedang sibuk atau dimulai ulang. Data yang sudah tampil tetap dapat dibaca; ALETA akan mencoba memuat lagi sendiri.";
+      default:
+        return cadangan;
+    }
+  }
   switch (jenisGangguan(galat, status)) {
     case "basis-data":
       return (

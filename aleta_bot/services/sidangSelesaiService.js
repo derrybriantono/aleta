@@ -27,20 +27,19 @@
  * yang sama, dan membaca kolom yang sama.
  *
  * ============================================================================
- * MESIN ANTRIAN RUANG TUNGGU - HANYA BILA NILAINYA DISEBUT
+ * MESIN ANTRIAN RUANG TUNGGU - ARTINYA SUDAH TERBACA DARI KODENYA (5 OKT 2026)
  * ============================================================================
  *
- * Aplikasi antrian ruang tunggu satker (sipp_turunan_antrian.antrian_sidang)
- * memakai `disidang = 10` untuk "dipanggil" - lihat panggilanAntrianService,
- * yang sengaja TIDAK menulis nilai lain karena artinya tidak diketahui.
- * Nilai "selesai"-nya belum pernah terbaca dari kodenya. Menebaknya berarti
- * menulis kode yang mungkin berarti lain di aplikasi orang lain.
+ * Aplikasi antrian ruang tunggu satker (sipp_turunan_antrian.antrian_sidang):
+ * disidang NULL = menunggu, nomor ruang 1..9 = SEDANG disidang di ruang itu,
+ * 10 = SELESAI (tunda/putus/ikrar/Selesai Sidang) - dibaca dari
+ * /var/www/html/antrian/php/_fungsi.php di server dan dicocokkan dengan data
+ * hidupnya; lihat antrianDisidang.js.
  *
- * Karena itu jalurnya ADA tetapi MATI sampai nilainya disebut tegas lewat
- * lingkungan ALETA_ANTRIAN_DISIDANG_SELESAI (mis. "20"). Sebelum itu, GET
- * /diagnosa menyebut nilai disidang apa saja yang hidup hari ini, supaya yang
- * memasangnya dapat mencocokkannya dengan layar aplikasi antrian - bukan
- * menebak.
+ * Sampai 1.183.0 berkas ini menganggap 10 = "dipanggil" dan karena itu
+ * mematikan jalur selesai sampai ALETA_ANTRIAN_DISIDANG_SELESAI disetel. Kini
+ * 10 adalah nilai selesai BAWAAN; lingkungan tetap dapat menimpanya, atau
+ * mematikannya dengan "mati". GET /diagnosa tetap menyebut nilai yang hidup.
  *
  * ============================================================================
  * CATATAN ALETA SENDIRI - SUPAYA HIJAUNYA TIDAK BERGANTUNG PADA ADA TIDAKNYA
@@ -78,8 +77,9 @@ const TABEL = "aleta_bot_sidang_selesai";
  * menimpa status apa pun: skors yang menimpa "selesai" justru menghapus tanda
  * Selesai yang sah.
  *
- * Mesin antrian ruang tunggu TIDAK disentuh: nilai disidang untuk "skors"
- * tidak pernah terbaca dari kodenya (lihat catatan nilai selesai di atas).
+ * Mesin antrian ruang tunggu: skors = BATAL / SKORS SIDANG aplikasi antrian -
+ * baris yang sedang disidang (disidang = ruang) kembali NULL (menunggu). Lihat
+ * setelSkors.
  */
 const TABEL_SKORS = "aleta_bot_sidang_skors";
 
@@ -88,8 +88,10 @@ const ANTRIAN_MENUNGGU = 0;
 const ANTRIAN_SKORS = 1;
 const ANTRIAN_SELESAI = 2;
 
-/** Nilai "dipanggil" mesin antrian ruang tunggu - sama dengan panggilanAntrianService. */
-const DISIDANG_DIPANGGIL = 10;
+const { DISIDANG_SELESAI, segarkanLayar } = require("./antrianDisidang");
+
+/** Kata yang mematikan jalur mesin ruang tunggu lewat lingkungan. */
+const KATA_MATI = new Set(["mati", "off", "0", "tidak", "false", "no"]);
 
 /**
  * ============================================================================
@@ -106,20 +108,16 @@ const DISIDANG_DIPANGGIL = 10;
  *      Drizzle): siapa, kapan, IP, lewat ALETA. Satu baris per penandaan;
  *      dibatalkan = dibatalkan_pada terisi, tidak dihapus.
  *
- *   2. "PROSES SIDANG" DI MESIN ANTRIAN RUANG TUNGGU - dibaca dan ditulis
- *      HANYA bila nilainya disebut tegas lewat ALETA_ANTRIAN_DISIDANG_PROSES.
- *      Nilainya TIDAK ditebak (sama dengan ALETA_ANTRIAN_DISIDANG_SELESAI):
- *      GET /selesai/diagnosa menyebut nilai disidang apa yang hidup hari ini
- *      beserta ruangan_id-nya, supaya yang memasangnya mencocokkan dengan
- *      layar aplikasi antrian.
+ *   2. "PROSES SIDANG" DI MESIN ANTRIAN RUANG TUNGGU - disidang = nomor ruang
+ *      (ruangan_id). Sejak 5 Okt 2026 ini BAWAAN: kodenya sudah dibaca dari
+ *      aplikasi antrian satker sendiri (_fungsi.php:934 tombol PROSES menulis
+ *      disidang = ruang + jam_sidang = now(); BATAL / SKORS SIDANG menulis
+ *      NULL; SELESAI SIDANG menulis 10) dan dicocokkan dengan data hidupnya.
+ *      Lingkungan masih dapat menimpanya:
  *
- *        ALETA_ANTRIAN_DISIDANG_PROSES=ruang   disidang = nomor ruang (ruangan_id)
- *            -> pola salinan aplikasi antrian (php/menu.sidang.php: tombol PROSES
- *               menulis disidang = ruang + jam_sidang = now(); BATAL / SKORS
- *               SIDANG menulis NULL; SELESAI SIDANG menulis 10). Salinan itu dari
- *               satker lain - cocokkan dengan diagnosa sebelum menyalakannya.
- *        ALETA_ANTRIAN_DISIDANG_PROSES=<angka> kode tetap (bukan 10, bukan nilai selesai)
- *        kosong / lainnya                       mati: mesin tidak dibaca, tidak ditulis
+ *        ALETA_ANTRIAN_DISIDANG_PROSES kosong / ruang   disidang = nomor ruang (bawaan)
+ *        ALETA_ANTRIAN_DISIDANG_PROSES=<angka>          kode tetap (bukan 10, bukan nilai selesai)
+ *        ALETA_ANTRIAN_DISIDANG_PROSES=mati             mesin tidak dibaca, tidak ditulis
  *
  *      Yang ditulis ke mesin hanya nilai asli aplikasi itu (nomor ruang atau
  *      NULL) - tanpa penanda ALETA di kolom mana pun (butir 14, 2 Okt).
@@ -127,18 +125,16 @@ const DISIDANG_DIPANGGIL = 10;
 const TABEL_BERJALAN = "aleta_bot_sidang_berjalan";
 
 /**
- * Nilai "proses sidang" mesin ruang tunggu - HANYA dari lingkungan.
+ * Nilai "proses sidang" mesin ruang tunggu.
  * Hasil: null (mati) | { mode: "ruang" } | { mode: "nilai", nilai }.
- * 10 ditolak: ALETA memakainya sebagai "dipanggil", dan salinan aplikasi antrian
- * memakainya untuk "selesai" - tidak pernah boleh menjadi "proses".
+ * Bawaan (kosong / tak dikenal) = "ruang" - arti aplikasi antrian satker.
+ * 10 tidak pernah boleh menjadi "proses": itu nilai SELESAI - jatuh ke bawaan.
  */
 function nilaiDisidangProses(mentah = process.env.ALETA_ANTRIAN_DISIDANG_PROSES) {
   const teks = bersih(mentah).toLowerCase();
-  if (teks === "ruang") return { mode: "ruang" };
-  if (!/^\d{1,4}$/.test(teks)) return null;
-  const angka = Number(teks);
-  if (angka === DISIDANG_DIPANGGIL) return null;
-  return { mode: "nilai", nilai: angka };
+  if (KATA_MATI.has(teks)) return null;
+  if (/^\d{1,4}$/.test(teks) && Number(teks) !== DISIDANG_SELESAI) return { mode: "nilai", nilai: Number(teks) };
+  return { mode: "ruang" };
 }
 
 /** "YYYY-MM-DD HH:MM:SS" dari jam_sidang (TIME atau DATETIME, dibaca CAST AS CHAR) dan tanggal sidangnya. */
@@ -165,15 +161,19 @@ function sebutGalat(galat) {
 }
 
 /**
- * Nilai disidang "selesai" mesin antrian ruang tunggu - HANYA dari lingkungan.
- * Kosong / bukan angka bulat / sama dengan nilai dipanggil = jalur mati.
+ * Nilai disidang "selesai" mesin antrian ruang tunggu.
+ * Bawaan (kosong / tak dikenal) = 10, arti aplikasi antrian satker. Angka lain
+ * dari lingkungan menimpanya, KECUALI nomor ruang 1..9 (itu "sedang disidang",
+ * tidak mungkin "selesai") yang jatuh ke bawaan. "mati" = jalur mati.
  */
 function nilaiDisidangSelesai(mentah = process.env.ALETA_ANTRIAN_DISIDANG_SELESAI) {
-  const teks = bersih(mentah);
-  if (!/^\d{1,4}$/.test(teks)) return null;
-  const angka = Number(teks);
-  if (angka === DISIDANG_DIPANGGIL) return null;
-  return angka;
+  const teks = bersih(mentah).toLowerCase();
+  if (KATA_MATI.has(teks)) return null;
+  if (/^\d{1,4}$/.test(teks)) {
+    const angka = Number(teks);
+    return angka >= 1 && angka <= 9 ? DISIDANG_SELESAI : angka;
+  }
+  return DISIDANG_SELESAI;
 }
 
 function kunciSelesai(perkaraId, tanggalSidang) {
@@ -582,6 +582,7 @@ function buatLayanan(deps = {}) {
             const baris = Number((hasil && hasil.affectedRows) || 0);
             mesinDitulis = baris > 0;
             antrianRuangTunggu = { ok: true, baris };
+            if (mesinDitulis) await segarkanLayar(kueriRuangTunggu);
           }
         } catch (galat) {
           antrianRuangTunggu = { ok: false, alasan: sebutGalat(galat) };
@@ -613,6 +614,7 @@ function buatLayanan(deps = {}) {
             [id, tanggal, ...k.params]
           );
           antrianRuangTunggu = { ok: true, baris: Number((hasil && hasil.affectedRows) || 0) };
+          if (antrianRuangTunggu.baris > 0) await segarkanLayar(kueriRuangTunggu);
         } catch (galat) {
           antrianRuangTunggu = { ok: false, alasan: sebutGalat(galat) };
         }
@@ -796,6 +798,7 @@ function buatLayanan(deps = {}) {
           [id, tanggal, ...k.params]
         );
         antrianRuangTunggu = { ok: true, baris: Number((hasil && hasil.affectedRows) || 0) };
+        if (antrianRuangTunggu.baris > 0) await segarkanLayar(kueriRuangTunggu);
       } catch (galat) {
         antrianRuangTunggu = { ok: false, alasan: sebutGalat(galat) };
       }
@@ -838,7 +841,7 @@ function buatLayanan(deps = {}) {
           ? "tidak disentuh (nilai selesai belum disetel)"
           : tandai
             ? `disidang = ${disidangSelesai}`
-            : `disidang = ${DISIDANG_DIPANGGIL} (hanya baris yang sedang ${disidangSelesai})`,
+            : `disidang = NULL / menunggu lagi (hanya baris yang sedang ${disidangSelesai})`,
     };
     if (kering !== false) return { ok: true, kering: true, rencana };
 
@@ -889,12 +892,16 @@ function buatLayanan(deps = {}) {
                 WHERE perkara_id = ? AND tanggal_sidang = ?`,
               [disidangSelesai, id, tanggal]
             )
-          : await kueriRuangTunggu(
-              `UPDATE sipp_turunan_antrian.antrian_sidang SET disidang = ?
+          : // Membatalkan Selesai = kembali MENUNGGU (NULL), seperti BATAL di
+            // aplikasi antrian. Sampai 1.183.0 ditulis 10 ("dipanggil") - yang
+            // justru nilai selesai itu sendiri.
+            await kueriRuangTunggu(
+              `UPDATE sipp_turunan_antrian.antrian_sidang SET disidang = NULL
                 WHERE perkara_id = ? AND tanggal_sidang = ? AND disidang = ?`,
-              [DISIDANG_DIPANGGIL, id, tanggal, disidangSelesai]
+              [id, tanggal, disidangSelesai]
             );
         antrianRuangTunggu = { ok: true, baris: Number((hasil && hasil.affectedRows) || 0) };
+        if (antrianRuangTunggu.baris > 0) await segarkanLayar(kueriRuangTunggu);
       } catch (galat) {
         antrianRuangTunggu = { ok: false, alasan: sebutGalat(galat) };
       }
@@ -950,7 +957,7 @@ function buatLayanan(deps = {}) {
         // Petunjuk, bukan keputusan: tidak ada yang dinyalakan dari sini.
         petunjuk: {
           salinanAplikasiAntrian:
-            "Salinan aplikasi antrian (php/menu.sidang.php dan _fungsi.php): disidang NULL = menunggu, nomor ruang (1-5) = sedang proses sidang di ruang itu, 10 = selesai (tunda/putus/ikrar/Selesai Sidang). ALETA memakai 10 untuk 'dipanggil' - cocokkan dengan layar aplikasi antrian satker sebelum menyetel ALETA_ANTRIAN_DISIDANG_PROSES / ALETA_ANTRIAN_DISIDANG_SELESAI.",
+            "Aplikasi antrian satker (php/menu.sidang.php dan _fungsi.php): disidang NULL = menunggu, nomor ruang (1-9, = ruangan_id) = sedang disidang di ruang itu, 10 = selesai (tunda/putus/ikrar/Selesai Sidang). Arti ini BAWAAN ALETA sejak 5 Okt 2026; ALETA_ANTRIAN_DISIDANG_PROSES / ALETA_ANTRIAN_DISIDANG_SELESAI hanya untuk menimpanya ('mati' mematikan).",
           prosesSamaDenganRuangTerlihat: samaDenganRuang.length > 0,
           usulanProses: samaDenganRuang.length > 0 ? "ruang" : null,
         },
@@ -985,7 +992,7 @@ module.exports = {
   ANTRIAN_MENUNGGU,
   ANTRIAN_SKORS,
   ANTRIAN_SELESAI,
-  DISIDANG_DIPANGGIL,
+  DISIDANG_SELESAI,
   buatLayanan,
   nilaiDisidangSelesai,
   nilaiDisidangProses,

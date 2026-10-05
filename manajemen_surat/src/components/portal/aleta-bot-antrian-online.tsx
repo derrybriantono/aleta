@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { apiPath } from "@/lib/base-path";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { KELAS_KODE_MAJELIS } from "@/lib/kode-majelis";
 
 /**
  * Pemantauan antrian sidang online.
@@ -238,7 +239,13 @@ export function AletaBotAntrianOnlinePanel() {
                         )}
                       </td>
                       <td className="px-4 py-2 font-medium">{item.nomorPerkara}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{item.majelisHakimKode || "-"}</td>
+                      <td className="px-4 py-2">
+                        {item.majelisHakimKode ? (
+                          <span className={KELAS_KODE_MAJELIS}>{item.majelisHakimKode}</span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </td>
                       {/* Jam pendaftaran sudah berupa teks jam dinding WITA dari
                           bot — ditampilkan apa adanya, JANGAN dilewatkan
                           formatDateTime yang akan menggeser zona lagi. */}
