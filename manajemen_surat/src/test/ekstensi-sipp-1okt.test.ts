@@ -420,12 +420,14 @@ describe("butir 2, 3, 4: Putusan otomatis di UI Baru", () => {
     expect(h.jembatan.some((x) => x.jenis === "tekan")).toBe(false);
   });
 
-  it("tanpa tab Putusan Akhir: disebut sebabnya, tidak ada yang ditekan", async () => {
+  it("tanpa tab Putusan Akhir (dan tanpa tombol Tambah Putusan Akhir): disebut sebabnya, tidak ada yang ditekan", async () => {
     const h = buka({ simpanan: UI });
     const pn = await siapUi(h);
     const kotak = await sampai(() => pn.querySelector('[data-s1-fitur="putusan-tanpa-blangko"]'), "bagian");
     (kotak.querySelector("[data-s1-jalankan]") as HTMLButtonElement).click();
-    await sampai(() => /Tab Putusan Akhir belum ada/.test(kotak.textContent || ""), "sebab disebut");
+    // 5 Okt 2026: tombol "Tambah Putusan Akhir" kini jalan masuk pertama
+    // (ekstensi-putusan-otomatis-tambah.test.ts); kalimatnya menyebut keduanya.
+    await sampai(() => /Tambah Putusan Akhir" maupun tab Putusan Akhir tidak ada/.test(kotak.textContent || ""), "sebab disebut");
     expect(h.nilai("s1Tugas")).toBeNull();
   });
 

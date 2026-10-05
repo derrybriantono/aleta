@@ -279,7 +279,12 @@
       if (jenis === "kaya" && window.CKEDITOR && elemen.id) {
         const editor = window.CKEDITOR.instances && window.CKEDITOR.instances[elemen.id];
         if (editor) {
-          return { ok: true, penunjuk, tampak, sumber: "ckeditor", nilai: String(editor.getData() || "") };
+          // siap: CKEditor yang baru dibangun (blangko baru dibuka) belum
+          // "ready" - setData sebelum itu dapat ditimpa isi awal textarea
+          // ketika editornya selesai dibangun. konten.js menunggunya menurut
+          // keadaan ini, bukan menurut jam. Versi tanpa .status: dianggap siap.
+          const siap = !editor.status || editor.status === "ready";
+          return { ok: true, penunjuk, tampak, sumber: "ckeditor", siap, nilai: String(editor.getData() || "") };
         }
         // CKEditor diminta tetapi tidak ada. Textarea-nya tetap dibaca - itu
         // jawaban terbaik yang tersisa - tetapi asalnya disebutkan, bukan
@@ -331,6 +336,12 @@
       if (jenis === "kaya" && window.CKEDITOR && elemen.id) {
         const editor = window.CKEDITOR.instances && window.CKEDITOR.instances[elemen.id];
         if (editor) {
+          // Belum siap = TIDAK diisi (lihat bacaNilai): isian yang ditimpa isi
+          // awal editor tampak "terisi" lalu tersimpan kosong. Pemanggil
+          // menunggu siap lalu mengulang.
+          if (editor.status && editor.status !== "ready") {
+            return { ok: false, alasan: "ckeditor_belum_siap", penunjuk, status: String(editor.status) };
+          }
           editor.setData(teks);
           return { ok: true, terbaca: String(editor.getData() || "").trim() };
         }
@@ -539,7 +550,8 @@
       if (selesai) return;
       selesai = true;
       lepas();
-      window.postMessage({ sumber: TANDA_JAWAB, id, jenis: "bukti-simpan", ...isi }, "*");
+      // Amplop ditulis terakhir - isi tidak boleh menimpanya (lihat pendengar pesan di bawah).
+      window.postMessage({ ...isi, sumber: TANDA_JAWAB, id, jenis: "bukti-simpan" }, "*");
     };
     const padaKirim = (_peristiwa, _xhr, opsi) => {
       if (alamat && alamatBaku(opsi && opsi.url) === alamat) terkirim = true;
@@ -701,7 +713,24 @@
       jawab = { ok: false, alasan: "permintaan_tidak_dikenali" };
     }
 
-    window.postMessage({ sumber: TANDA_JAWAB, id: pesan.id, ...jawab }, "*");
+    // ========================================================================
+    // AMPLOP JAWABAN TIDAK BOLEH DITIMPA ISINYA
+    // ========================================================================
+    //
+    // bacaNilai menjawab dengan ruasnya sendiri bernama `sumber` ("ckeditor",
+    // "textarea", "medan"). Sampai 5 Oktober 2026 ruas itu disebar SESUDAH
+    // amplopnya dan MENIMPA sumber "aleta-jembatan-jawab" - konten.js tidak
+    // pernah mengenali jawabannya, dan TIAP bacaan nilai berakhir pada batas
+    // tunggu 5 detik. Setiap isian blangko (kirimKeJembatan membaca nilai
+    // lama lebih dulu) karena itu tertahan 5 detik per kolom, dan tanggal
+    // putusan untuk praperiksa tidak pernah terbaca. Kini amplopnya ditulis
+    // TERAKHIR, dan ruas `sumber` isi jawaban berpindah ke `sumberNilai`.
+    const isiJawab = { ...(jawab || {}) };
+    if (Object.prototype.hasOwnProperty.call(isiJawab, "sumber")) {
+      isiJawab.sumberNilai = isiJawab.sumber;
+      delete isiJawab.sumber;
+    }
+    window.postMessage({ ...isiJawab, sumber: TANDA_JAWAB, id: pesan.id }, "*");
   });
 
   /**

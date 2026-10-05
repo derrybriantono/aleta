@@ -263,14 +263,63 @@ function muatUlangHalamanPerkara() {
   else location.reload();
 }
 
+/**
+ * ============================================================================
+ * NOMOR PERKARA DIBACA DARI SIPP, BUKAN DARI PANEL ALETA SENDIRI
+ * ============================================================================
+ *
+ * innerText badan halaman ikut memuat panel ALETA - panel itu ditempel ke
+ * body. Sampai 5 Oktober 2026 nomor di dalam panel ikut dihitung: kartu
+ * "Perkara berikutnya", daftar antrean putusan massal, dan riwayat menyebut
+ * nomor perkara LAIN. Begitu salah satunya tergambar, halaman detail perkara
+ * terbaca memuat dua nomor = "halaman daftar", segarkan() pulang tanpa
+ * menggambar ulang, dan panel membeku: blangko Putusan Akhir yang baru
+ * dibuka tidak pernah ditanggapi ("Blangko terbuka - … dibaca di Putusan
+ * otomatis…" lalu diam, blangkonya kosong).
+ *
+ * Nomor yang tertulis di elemen milik ALETA dikurangkan dari hitungannya.
+ * Nomor yang juga tertulis di halaman SIPP tetap terhitung, sebab
+ * kemunculannya di SIPP tidak ikut terkurangi. Elemen ALETA yang tidak
+ * tergambar (display:none) tidak dikurangkan - innerText badan pun tidak
+ * memuatnya.
+ */
+const PENUNJUK_ELEMEN_ALETA = `#${PENANDA}, [data-aleta-tanda], .aleta-sisip, .aleta-tanda`;
+
+function nomorDiElemenAleta() {
+  const jumlah = new Map();
+  if (!document.body || typeof document.querySelectorAll !== "function") return jumlah;
+  for (const el of Array.from(document.querySelectorAll(PENUNJUK_ELEMEN_ALETA))) {
+    // Hanya akar: elemen ALETA di dalam elemen ALETA sudah terhitung induknya.
+    const induk = el.parentElement;
+    if (induk && typeof induk.closest === "function" && induk.closest(PENUNJUK_ELEMEN_ALETA)) continue;
+    try {
+      if (typeof el.checkVisibility === "function" && !el.checkVisibility()) continue;
+    } catch {
+      /* peramban tanpa checkVisibility: dihitung */
+    }
+    const teks = String(el.innerText || "");
+    const pola = new RegExp(POLA_PERKARA.source, "g");
+    let m;
+    while ((m = pola.exec(teks)) !== null) jumlah.set(m[1], (jumlah.get(m[1]) || 0) + 1);
+  }
+  return jumlah;
+}
+
 function cariNomorPerkara() {
   const teks = document.body ? String(document.body.innerText || "") : "";
+  const milikAleta = nomorDiElemenAleta();
 
-  // Seluruh nomor perkara yang berbeda di halaman ini.
+  // Seluruh nomor perkara yang berbeda di halaman ini - yang tertulis di
+  // panel ALETA tidak dihitung (lihat di atas).
   const semua = new Set();
   POLA_PERKARA.lastIndex = 0;
   let cocok;
   while ((cocok = POLA_PERKARA.exec(teks)) !== null) {
+    const sisa = milikAleta.get(cocok[1]) || 0;
+    if (sisa > 0) {
+      milikAleta.set(cocok[1], sisa - 1);
+      continue;
+    }
     semua.add(cocok[1]);
     if (semua.size > 1) break; // sudah cukup untuk tahu ini daftar
   }
@@ -6690,7 +6739,11 @@ function bagianIsiPutusan(nomorPerkara) {
       // medan yang tampak bertambah, paling lama tetap 350 ms - putaran
       // berikutnya membaca ulang seluruhnya seperti biasa.
       if (s1Cepat && typeof s1TungguBerubah === "function") {
-        await s1TungguBerubah(() => hitungMedanTampak(), terbaca.length, 350);
+        await s1TungguBerubah(
+          () => hitungMedanTampak(),
+          terbaca.length,
+          typeof S1_TUNGGU_PINTU_MS === "number" ? S1_TUNGGU_PINTU_MS : 350
+        );
       } else {
         await new Promise((selesai) => setTimeout(selesai, 350));
       }
@@ -7768,6 +7821,8 @@ function bagianPenunjukan(nomor) {
  * Kerjakan sekali lagi.
  */
 const BATAS_TUNGGU_JEMBATAN = 5000;
+/** Paling lama menunggu CKEditor blangko siap sebelum diisi (lihat kirimKeJembatan). */
+const BATAS_CKEDITOR_SIAP_MS = 10000;
 let nomorPermintaan = 0;
 
 function kirimKeJembatanLangsung(pesan) {
@@ -7868,11 +7923,33 @@ async function kirimKeJembatan(pesan) {
   let lamaTerbaca = false;
   if (jenis === "isi") {
     try {
-      const baca = await kirimKeJembatanLangsung({
-        jenis: "nilai",
-        penunjuk,
-        jenisMedan: pesan.jenisMedan,
-      });
+      const bacaSekali = () =>
+        kirimKeJembatanLangsung({
+          jenis: "nilai",
+          penunjuk,
+          jenisMedan: pesan.jenisMedan,
+        });
+      let baca = await bacaSekali();
+      // CKEditor blangko yang baru dibuka belum siap (jembatan: siap=false):
+      // ditunggu menurut KEADAANNYA, diperiksa tiap 50 ms, paling lama
+      // BATAS_CKEDITOR_SIAP_MS - bukan jeda tetap. Bacaan yang sama juga
+      // memberi nilai lama untuk jalan pulang, jadi editor yang sudah siap
+      // tidak menambah satu pun perjalanan.
+      if (baca && baca.ok && baca.siap === false) {
+        const mulai = Date.now();
+        const batasSiap = typeof BATAS_CKEDITOR_SIAP_MS === "number" ? BATAS_CKEDITOR_SIAP_MS : 10000;
+        while (baca && baca.ok && baca.siap === false && Date.now() - mulai < batasSiap) {
+          await new Promise((selesai) => setTimeout(selesai, 50));
+          baca = await bacaSekali();
+        }
+        if (baca && baca.ok && baca.siap === false) {
+          alatCatat("jembatan", `isi ${penunjuk} ditunda`, "CKEditor belum siap");
+          return {
+            ok: false,
+            alasan: `ckeditor_belum_siap - editor ${penunjuk} belum selesai dibangun SIPP dalam ${Math.round(batasSiap / 1000)} detik`,
+          };
+        }
+      }
       if (baca && baca.ok && baca.tampak !== false) {
         nilaiLama = String(baca.nilai === undefined || baca.nilai === null ? "" : baca.nilai);
         lamaTerbaca = true;
@@ -13699,10 +13776,13 @@ async function bagianAntreanSipp(nomorHalaman) {
           "Tidak diulang sendiri: periksa blangkonya, lalu tekan tombol di bawah bila memang belum tersimpan.";
       } else {
         kabar.textContent = "Mode otomatis — mengisi perkara ini lalu menekan Simpan SIPP…";
+        // 5 Okt 2026: tanpa jeda 600 ms tetap. Yang dulu ditunggunya -
+        // CKEditor blangko yang belum siap - kini ditunggu menurut keadaannya
+        // sendiri tepat sebelum diisi (kirimKeJembatan, CKEDITOR status).
         setTimeout(() => {
           if (!kotak.isConnected) return;
           void jalankanAntreanSippSekali(antrean, butirIni, kabar, tombol, true);
-        }, 600);
+        }, 0);
       }
     }
   } else if (berikutnya) {
@@ -13715,11 +13795,21 @@ async function bagianAntreanSipp(nomorHalaman) {
         "aleta-massal-jeda",
         adaBorang
           ? `Perkara berikutnya di antrean: ${berikutnya.nomor}. Buka perkara itu di SIPP, lalu buka blangko putusannya.`
-          : `Perkara berikutnya: ${berikutnya.nomor}. Buka perkaranya dan buka tab Putusan — ALETA akan mengisikannya${antrean.modus === "otomatis" ? " sendiri lalu menekan Simpan SIPP" : ""}.`
+          : antrean.modus === "otomatis"
+            ? `Perkara berikutnya: ${berikutnya.nomor}. Buka halaman perkaranya — ALETA membuka blangko Putusan Akhir sendiri (tombol SIPP "Tambah Putusan Akhir"/"Edit Putusan Akhir"), mengisikannya, lalu menekan Simpan SIPP.`
+            : `Perkara berikutnya: ${berikutnya.nomor}. Buka halaman perkaranya, lalu tekan "Buka blangko Putusan Akhir" (atau buka blangkonya sendiri) — ALETA akan mengisikannya.`
       )
     );
   } else {
     isi.appendChild(buatElemen("div", "aleta-tetap-sebab", "Seluruh antrean selesai."));
+  }
+
+  // Perkara halaman ini ada di antrean tetapi blangkonya belum terbuka:
+  // ALETA membukanya sendiri lewat tombol SIPP ("Tambah Putusan Akhir" /
+  // "Edit Putusan Akhir") - mode otomatis seketika, mode manual atas tombol.
+  // Sampai 5 Oktober 2026 antrean berhenti di sini menunggu tangan petugas.
+  if (butirIni && !adaBorang && typeof antreanPasangBukaBlangko === "function") {
+    antreanPasangBukaBlangko({ kotak, aksi, kabar, antrean, butir: butirIni });
   }
 
   const hentikan = buatElemen("button", "aleta-perkakas-aksi", "Akhiri antrean");
@@ -13807,6 +13897,101 @@ async function jalankanAntreanSippSekali(antrean, butir, kabar, tombol, otomatis
     }
   } finally {
     antreanSippBerjalan = "";
+  }
+}
+
+/**
+ * Perkara antrean yang blangkonya sudah dicoba dibuka SENDIRI di halaman ini,
+ * beserta kabar kegagalannya (kosong = berhasil/sedang). Satu percobaan
+ * otomatis per perkara per pemuatan halaman - panel yang digambar ulang tidak
+ * mengulangnya; tombolnya tetap ada untuk mencoba lagi.
+ */
+const antreanBlangkoDibuka = new Map();
+
+/**
+ * Tombol "Buka blangko Putusan Akhir" untuk perkara antrean halaman ini, dan
+ * pada mode otomatis pembukaannya sendiri. Membuka tingkap SIPP lewat tombol
+ * SIPP (s1BukaBlangkoPutusan) - tidak menulis apa pun. Sesudah blangkonya
+ * lahir panel digambar ulang seketika (gambarUlangSesudahBlangko), dan cabang
+ * "butirIni && adaBorang" di bagianAntreanSipp yang mengisi lalu menyimpan.
+ */
+function antreanPasangBukaBlangko(p) {
+  if (typeof s1BukaBlangkoPutusan !== "function") return;
+  const { kotak, aksi, kabar, antrean, butir } = p;
+  const kunci = String(butir.nomor || "").replace(/\s+/g, "").toUpperCase();
+  const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-antrean-buka-blangko", "Buka blangko Putusan Akhir");
+  tombol.type = "button";
+  tombol.title = 'Membuka blangko lewat tombol SIPP "Tambah Putusan Akhir" (atau Edit Putusan Akhir) - tidak menyimpan apa pun.';
+  if (aksi) aksi.appendChild(tombol);
+  // Keadaan: "dijadwalkan" | "jalan" | "" (terbuka) | kalimat kegagalan.
+  const SEDANG = ["dijadwalkan", "jalan"];
+  const lama = antreanBlangkoDibuka.get(kunci);
+  if (lama && !SEDANG.includes(lama) && kabar) {
+    kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+    kabar.textContent = lama;
+  }
+  if (SEDANG.includes(lama)) tombol.disabled = true;
+
+  // Kabar ditulis ke panel antrean yang SEDANG tampak - panel tempat
+  // pembukaan dimulai bisa sudah digambar ulang di tengah jalan.
+  const kabarkan = (pesan, gagal) => {
+    const sasaran =
+      kotak.isConnected && kabar
+        ? kabar
+        : document.querySelector(`#${PENANDA} .aleta-antrean-sipp .aleta-abt-kabar`);
+    if (!sasaran) return;
+    sasaran.className = gagal ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
+    sasaran.textContent = pesan;
+  };
+
+  const lepasTombol = () => {
+    tombol.disabled = false;
+    for (const t of Array.from(document.querySelectorAll(".aleta-antrean-buka-blangko"))) t.disabled = false;
+  };
+  const buka = async () => {
+    if (antreanBlangkoDibuka.get(kunci) === "jalan") return;
+    tombol.disabled = true;
+    antreanBlangkoDibuka.set(kunci, "jalan");
+    kabarkan(`Membuka blangko Putusan Akhir ${butir.nomor}…`, false);
+    const hasil = await s1BukaBlangkoPutusan();
+    if (!hasil.ok) {
+      const pesan = `${butir.nomor}: ${hasil.pesan} Antrean menunggu perkara ini.`;
+      antreanBlangkoDibuka.set(kunci, pesan);
+      kabarkan(pesan, true);
+      lepasTombol();
+      return;
+    }
+    let digambar = false;
+    try {
+      digambar = typeof gambarUlangSesudahBlangko === "function" ? await gambarUlangSesudahBlangko(butir.nomor) : false;
+    } catch {
+      digambar = false;
+    }
+    antreanBlangkoDibuka.set(kunci, "");
+    if (!digambar) {
+      const pesan =
+        `${butir.nomor}: blangko terbuka, tetapi panel tidak dapat digambar ulang untuknya (data perkara di panel belum terbaca). ` +
+        "Muat ulang data perkara dari menu ⋯ - ALETA melanjutkan antreannya begitu panel menampilkan blangko.";
+      antreanBlangkoDibuka.set(kunci, pesan);
+      kabarkan(pesan, true);
+      lepasTombol();
+    }
+  };
+  tombol.addEventListener("click", () => void buka());
+
+  // Mode otomatis: SEKALI per perkara per pemuatan halaman. Tetap berjalan
+  // walau panel ini digambar ulang sebelum pewaktunya berbunyi - yang dibuka
+  // tingkap SIPP, bukan isi panel, dan tidak ada yang ditulis.
+  if (antrean.modus === "otomatis" && butir.keadaan === "menunggu" && !antreanBlangkoDibuka.has(kunci)) {
+    antreanBlangkoDibuka.set(kunci, "dijadwalkan");
+    tombol.disabled = true;
+    setTimeout(() => {
+      if (document.querySelector("#frm_putusan")) {
+        antreanBlangkoDibuka.set(kunci, "");
+        return;
+      }
+      void buka();
+    }, 0);
   }
 }
 
@@ -14070,8 +14255,13 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   }
   const bacaPilihan = async () => {
     const hasil = [];
-    for (const c of daftarPilihan) {
-      const j = await kirimKeJembatan({ jenis: "pilihan", penunjuk: c.penunjuk });
+    // Hanya MEMBACA - seluruh pertanyaan berangkat bersamaan (5 Okt 2026),
+    // urutan jawabannya tetap urutan daftar. Jembatan menjawab tiap pesan
+    // berurutan; yang hilang hanya tunggu bolak-balik satu per satu.
+    const jawaban = await Promise.all(daftarPilihan.map((c) => kirimKeJembatan({ jenis: "pilihan", penunjuk: c.penunjuk })));
+    for (let i = 0; i < daftarPilihan.length; i += 1) {
+      const c = daftarPilihan[i];
+      const j = jawaban[i];
       if (!j || !j.ok || !j.tampak) continue;
       const pilihan = (j.pilihan || []).map((x) => ({ nilai: x.nilai, label: x.label }));
       if (pilihan.length === 0) continue;
@@ -14166,7 +14356,17 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     if (!pintuTerbuka) break;
     bacaanBasi = true;
     // SIPP menggambar ulang bagian borangnya - sama dengan panel satu perkara.
-    await new Promise((selesai) => setTimeout(selesai, 350));
+    // 5 Okt 2026: menurut KEADAAN (medan tampak bertambah, diperiksa seketika)
+    // bila s1TungguBerubah ada, bukan 350 ms tetap tiap pintu.
+    if (typeof s1TungguBerubah === "function") {
+      await s1TungguBerubah(
+        async () => (await bacaPilihan()).length,
+        terbaca.length,
+        typeof S1_TUNGGU_PINTU_MS === "number" ? S1_TUNGGU_PINTU_MS : 350
+      );
+    } else {
+      await new Promise((selesai) => setTimeout(selesai, 350));
+    }
   }
   // Medan selain pintu: usulan yang tidak bentrok DIISIKAN ke medan yang
   // masih kosong atau masih pada nilai bawaan borang (NILAI_BAWAAN_BORANG) -
@@ -18505,6 +18705,8 @@ function mpsSusunDaftar(panel, isi, ringkasan, menu) {
  * ke e-COURT - bukan SIPP - dan TIDAK masuk ALETA_COBA_BOLEH).
  */
 const S1_TUGAS_UMUR_MS = 120000;
+/** Batas panel berpindah ke blangko yang baru dibuka (tugas Putusan otomatis diambil). */
+const S1_BATAS_PINDAH_BLANGKO_MS = 6000;
 const S1_API_ECOURT_AKUN = "/aleta/api/aleta-ecourt/ecourt-putusan/akun";
 const S1_API_ECOURT_UNGGAH = "/aleta/api/aleta-ecourt/ecourt-putusan/unggah";
 const S1_API_SIDANG = "/aleta/api/aleta-ecourt/sidang";
@@ -18587,15 +18789,21 @@ async function s1Tunggu(cari, batasMs, jedaMs) {
 
 /**
  * Butir 12: menunggu borang SIPP menggambar ulang sesudah pintu diisi.
- * Berhenti begitu jumlah medan yang tampak melampaui `awal`; bila tidak
- * pernah bertambah, waktunya tetap sekurang-kurangnya batasMs (350 ms dulu).
+ * Berhenti begitu jumlah medan yang tampak melampaui `awal` - diperiksa
+ * seketika, lalu tiap 50 ms; bila tidak pernah bertambah, berhenti sesudah
+ * batasMs (S1_TUNGGU_PINTU_MS; 350 ms tetap sampai 5 Okt 2026).
  */
+const S1_TUNGGU_PINTU_MS = 150;
 async function s1TungguBerubah(hitung, awal, batasMs) {
   const mulai = Date.now();
-  for (;;) {
+  // 5 Okt 2026: dibaca SEKETIKA lebih dulu. Penangan change Status Putusan
+  // dan Qobla di edit_putusan_akhir.php hanya .show()/.hide() serentak, jadi
+  // medan yang muncul sudah tampak begitu jembatan menjawab isian pintunya -
+  // menidurkan 70 ms dulu hanya memperlambat.
+  for (let pertama = true; ; pertama = false) {
     const sisa = batasMs - (Date.now() - mulai);
-    if (sisa <= 0) return false;
-    await s1Jeda(Math.min(70, sisa));
+    if (!pertama && sisa <= 0) return false;
+    if (!pertama) await s1Jeda(Math.min(50, sisa));
     let kini = 0;
     try {
       kini = Number(await hitung()) || 0;
@@ -18998,33 +19206,99 @@ async function s1AntreanMenunggu(nomor) {
 }
 
 /**
- * Membuka blangko Putusan Akhir SIPP seperti petugas: tab "Putusan Akhir"
- * (#tabs10, dimuat SIPP lewat AJAX) lalu tautan "Edit Putusan Akhir"
- * (popup_form add_putusan_akhir/<enc>/update). Membuka tingkap, tidak
- * menulis apa pun. Tidak pernah melempar.
+ * Elemen ini sungguh ditawarkan halaman? Leluhur ber-display:none (jQuery
+ * .hide() SIPP) = tidak. Tanpa tata letak (jsdom) tetap dianggap tampak -
+ * yang diperiksa hanya gaya, bukan kotak.
+ */
+function s1TautanTampak(el) {
+  for (let x = el; x && x.nodeType === 1; x = x.parentElement) {
+    let gaya = null;
+    try {
+      gaya = window.getComputedStyle(x);
+    } catch {
+      gaya = null;
+    }
+    const tampilan = gaya ? gaya.display : x.style && x.style.display;
+    if (tampilan === "none") return false;
+    if (gaya && (gaya.visibility === "hidden" || gaya.visibility === "collapse")) return false;
+  }
+  return true;
+}
+
+/**
+ * Tombol "Tambah Putusan Akhir" SIPP - baris tombol atas halaman detail
+ * perkara (detil_perkara_agama.php):
+ *
+ *   <a onClick="popup_form('…/add_putusan_akhir/<enc>/tambah')">Tambah Putusan Akhir</a>
+ *
+ * (alur 2/16: "Tambah Penetapan (Putusan Akhir)"). SIPP mencetaknya hanya bila
+ * putusan BELUM ada (sudah_putusan == 0), hasil sidang sudah dicatat, dan akun
+ * yang masuk berwenang sebagai hakim/panitera perkara itu. Tingkapnya sama
+ * dengan "Edit Putusan Akhir" - managePutusanAkhir::edit_data, borang
+ * #frm_putusan yang sama - hanya act-nya "tambah".
+ *
+ * Yang dicocokkan: alamat berakhir tepat "/tambah" (bukan tambah_sppa, bukan
+ * /tambah/tidakberwenang|dikembalikan|meninggal) DAN tulisannya "Tambah …
+ * Putusan …". "Terdakwa Meninggal", "Tidak Berwenang", dan "Gugatan Tidak
+ * Diperbaiki" memakai alamat yang sama tetapi bukan blangko putusan biasa.
+ */
+function s1CariTambahPutusan() {
+  return (
+    Array.from(document.querySelectorAll('a[onclick*="add_putusan_akhir/"]')).find((a) => {
+      const klik = String(a.getAttribute("onclick") || "");
+      if (!/add_putusan_akhir\/[^'"\s]+\/tambah['"]/.test(klik)) return false;
+      const tulisan = String(a.textContent || "").replace(/\s+/g, " ").trim();
+      return /^Tambah\b/i.test(tulisan) && /Putusan/i.test(tulisan) && s1TautanTampak(a);
+    }) || null
+  );
+}
+
+/** Tautan "Edit Putusan Akhir" di tab Putusan Akhir (putusan sudah ada). */
+function s1CariEditPutusan() {
+  return (
+    Array.from(document.querySelectorAll('a[onclick*="add_putusan_akhir/"]')).find((a) =>
+      /\/update['"]/.test(String(a.getAttribute("onclick") || ""))
+    ) || null
+  );
+}
+
+/**
+ * Membuka blangko Putusan Akhir SIPP seperti petugas, lewat jalan yang
+ * ditawarkan SIPP sendiri:
+ *
+ *   1. "Edit Putusan Akhir" yang sudah termuat (putusan sudah ada),
+ *   2. "Tambah Putusan Akhir" di baris tombol atas (putusan BELUM ada) -
+ *      sampai 5 Oktober 2026 jalan ini tidak dikenal, dan perkara yang
+ *      belum diputus ditolak dengan "Tab Putusan Akhir belum ada" padahal
+ *      tombolnya terpampang; putusan massal pun berhenti menunggu tangan,
+ *   3. tab "Putusan Akhir" (#tabs10, dimuat lewat AJAX) lalu Edit.
+ *
+ * Menekan tautan = SIPP sendiri yang menjalankan popup_form() miliknya
+ * (handler onclick halaman); tidak ada alamat yang dirakit di sini. Membuka
+ * tingkap, tidak menulis apa pun. Menunggu menurut keadaan (borang lahir),
+ * bukan waktu tetap. Tidak pernah melempar.
  */
 async function s1BukaBlangkoPutusan(opsi) {
   const o = opsi || {};
   const batas = o.batasMs || 15000;
-  const jeda = o.jedaMs || 100;
+  const jeda = o.jedaMs || 50;
   if (document.querySelector("#frm_putusan")) return { ok: true, sudah: true };
-  const cariTautan = () =>
-    Array.from(document.querySelectorAll('a[onclick*="add_putusan_akhir/"]')).find((a) =>
-      /\/update['"]/.test(String(a.getAttribute("onclick") || ""))
-    ) || null;
-  let tautan = cariTautan();
+  let tautan = s1CariEditPutusan() || s1CariTambahPutusan();
+  let lewat = tautan && /\/tambah['"]/.test(String(tautan.getAttribute("onclick") || "")) ? "tambah" : "edit";
   if (!tautan) {
     const tab = document.querySelector('a[href="#tabs10"]');
     if (!tab) {
       return {
         ok: false,
         pesan:
-          "Tab Putusan Akhir belum ada di halaman SIPP perkara ini - SIPP baru memunculkannya sesudah tahapan perkara sampai putusan. " +
-          "Catat hasil sidang putus lebih dulu, lalu jalankan lagi.",
+          'Tombol "Tambah Putusan Akhir" maupun tab Putusan Akhir tidak ada di halaman SIPP perkara ini. SIPP baru memunculkan ' +
+          "tombol itu bila putusan belum diinput, hasil sidang sudah dicatat, dan akun SIPP yang masuk berwenang sebagai " +
+          "hakim/panitera perkara ini. Catat hasil sidang lebih dulu (atau masuk dengan akun majelisnya), muat ulang halaman, lalu jalankan lagi.",
       };
     }
     tab.click();
-    tautan = await s1Tunggu(cariTautan, batas, jeda);
+    tautan = await s1Tunggu(() => s1CariEditPutusan() || s1CariTambahPutusan(), batas, jeda);
+    lewat = tautan && /\/tambah['"]/.test(String(tautan.getAttribute("onclick") || "")) ? "tambah" : "edit";
     if (!tautan) {
       return {
         ok: false,
@@ -19037,9 +19311,43 @@ async function s1BukaBlangkoPutusan(opsi) {
   tautan.click();
   const borang = await s1Tunggu(() => document.querySelector("#frm_putusan"), batas, jeda);
   if (!borang) {
-    return { ok: false, pesan: "Blangko Putusan Akhir tidak terbuka dalam 15 detik. Buka sendiri lewat tab Putusan Akhir › Edit Putusan Akhir." };
+    const pop = document.querySelector("#form_pop");
+    const kata = pop ? String(pop.textContent || "").replace(/\s+/g, " ").trim().slice(0, 160) : "";
+    return {
+      ok: false,
+      pesan:
+        `Blangko Putusan Akhir tidak terbuka dalam ${Math.round(batas / 1000)} detik sesudah ` +
+        `"${lewat === "tambah" ? "Tambah Putusan Akhir" : "Edit Putusan Akhir"}" ditekan` +
+        (kata ? ` - SIPP menampilkan: "${kata}"` : " - SIPP tidak menjawab") +
+        ". Periksa sambungan ke SIPP, lalu jalankan lagi.",
+    };
   }
-  return { ok: true };
+  return { ok: true, lewat };
+}
+
+/**
+ * Panel digambar ulang SEKARANG untuk blangko yang baru dibuka - tidak
+ * menunggu pengamat DOM (jeda 400 ms + waktu senggang sampai 1,2 detik), dan
+ * tidak bergantung pada pembacaan nomor dari halaman. Konteks perkara yang
+ * sudah terbaca dipakai; portal tidak ditanya lagi.
+ *
+ * Pulang true bila panel kini menggambarkan blangko itu (digambar di sini,
+ * atau segarkan() sudah mendahuluinya), false bila tidak dapat - blangkonya
+ * belum ada, atau konteks yang terbaca milik perkara lain.
+ */
+async function gambarUlangSesudahBlangko(nomor) {
+  if (!document.querySelector("#frm_putusan")) return false;
+  if (typeof konteksTerakhir === "undefined" || !konteksTerakhir) return false;
+  const kunci = (x) => String(x || "").replace(/\s+/g, "").toUpperCase();
+  if (nomor && kunci(konteksTerakhir.nomorPerkara) !== kunci(nomor)) return false;
+  const tanda = tandaBorang();
+  // segarkan() sudah menggambar ulang untuk borang ini - jangan dua kali.
+  if (tanda === borangTerakhir && document.querySelector(`#${PENANDA} .aleta-bagian[data-kunci="isiPutusan"]:not([data-s1-fitur])`)) {
+    return true;
+  }
+  borangTerakhir = tanda;
+  await gambarUlangKonteks();
+  return true;
 }
 
 /**
@@ -19142,16 +19450,41 @@ function s1BagianPutusanTanpaBlangko(nomorPerkara) {
       tombol.disabled = false;
       return;
     }
-    // Panel digambar ulang begitu blangkonya lahir (tandaBorang) dan
-    // pekerjaannya dilanjutkan di sana - kotak ini ikut terbuang.
+    // Panel digambar ulang SEKARANG untuk blangkonya dan pekerjaannya
+    // dilanjutkan di sana (s1PasangPutusanOtomatis) - kotak ini ikut
+    // terbuang. Sampai 5 Oktober 2026 penggambaran ulang ditunggu dari
+    // pengamat DOM; pengamat itu membeku begitu panel memuat nomor perkara
+    // lain (lihat cariNomorPerkara), dan alurnya diam di sini tanpa sebab.
+    const tugasIni = s1Tugas;
     kabar.textContent = berkas
       ? `Blangko terbuka - ${berkas.name} dibaca di Putusan otomatis…`
       : "Blangko terbuka - draf ALETA dimuat di Putusan otomatis…";
-    setTimeout(() => {
-      if (!kotak.isConnected) return;
-      tombol.disabled = false;
-      kabar.textContent += " Bila panel tidak berpindah sendiri, muat ulang data perkara dari menu ⋯.";
-    }, 4000);
+    let digambar = false;
+    let galatGambar = "";
+    try {
+      digambar = await gambarUlangSesudahBlangko(nomorPerkara);
+    } catch (galat) {
+      galatGambar = String((galat && galat.message) || galat);
+    }
+    // Penjaga: tugasnya harus diambil panel yang baru dalam batas waktu.
+    // Bila tidak, sebabnya disebut dan tombolnya hidup lagi - bukan diam.
+    const diambil = await s1Tunggu(() => s1Tugas !== tugasIni || !kotak.isConnected, S1_BATAS_PINDAH_BLANGKO_MS, 50);
+    if (diambil || !kotak.isConnected) return;
+    if (s1Tugas === tugasIni) s1Tugas = null;
+    tombol.disabled = false;
+    kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+    kabar.textContent =
+      "Blangko Putusan Akhir sudah terbuka, tetapi panel ALETA tidak berpindah ke blangko itu dalam " +
+      `${Math.round(S1_BATAS_PINDAH_BLANGKO_MS / 1000)} detik, jadi ${berkas ? "naskah belum dibaca" : "draf belum dimuat"} dan ` +
+      "tidak ada yang diisikan. Sebab: " +
+      (galatGambar
+        ? `panel gagal digambar ulang (${galatGambar}).`
+        : !document.querySelector("#frm_putusan")
+          ? "blangkonya sudah tertutup lagi."
+          : !digambar
+            ? "data perkara di panel belum terbaca atau milik perkara lain."
+            : "bagian Putusan otomatis tidak termuat (mode tampilan atau kewenangan peran).") +
+      " Tekan Jalankan sekali lagi - blangko yang sudah terbuka dipakai - atau muat ulang data perkara dari menu ⋯.";
   });
   return kotak;
 }
