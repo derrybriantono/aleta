@@ -197,7 +197,16 @@ const langkahData = (rencana) =>
     const smart = pmhLuar.ok && pmhLuar.langkah.find((x) => x.tabel === "perkara_smartmajelis");
     periksa("tanpa susunan tetap yang cocok: kembali ke status 2 beserta sebabnya", Boolean(smart) && smart.params.includes(2));
     const auditHakim = pmhLuar.ok ? pmhLuar.langkah.filter((x) => x.tabel === "sys_audittrail" && x.params[3] === "perkara_hakim_pn") : [];
-    periksa("judul Smart Majelis tetap ada walau susunannya di luar ref", auditHakim.length === 3 && auditHakim.every((x) => x.params[6].includes(" Smart Majelis ")));
+    // Diganti 5 Okt 2026 (butir 39): status 2 adalah jalur borang
+    // addMajelis_c -> insert_penetapan_majelis, yang judul hakim_pn-nya TANPA
+    // "Smart Majelis" - terbaca pada baris 505502-505504 perkara 10186
+    // (status 2, keterangan "Perkara sidkel"). Judul Smart Majelis hanya milik
+    // jalur rekomendasi (status 1).
+    periksa(
+      "susunan di luar ref: judul hakim_pn TANPA Smart Majelis, keterangan = sebabnya",
+      auditHakim.length === 3 &&
+        auditHakim.every((x) => !x.params[6].includes("Smart Majelis") && x.params[7].includes("<td>keterangan</td><td>Ditetapkan menurut giliran"))
+    );
   }
 
   // ======================================================================

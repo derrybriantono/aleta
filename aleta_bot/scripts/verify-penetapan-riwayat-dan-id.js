@@ -57,7 +57,7 @@ require.cache[dbPath].exports = {
       return selesai(null, [{ berikutnya: idBerikutnya[tabel] || 1 }]);
     }
     if (/FROM perkara p\b/.test(teks)) {
-      return selesai(null, [{ perkaraId: 10113, nomorPerkara: "561/Pdt.G/2026/PA.Dgl", adaPenetapan: 10113, pmh: "2026-09-12", ppp: null, pjs: null, phs: null }]);
+      return selesai(null, [{ perkaraId: 10113, nomorPerkara: "561/Pdt.G/2026/PA.Dgl", adaPenetapan: 10113, pmh: "2026-09-14", ppp: null, pjs: null, phs: null }]);
     }
     if (/FROM sys_users/.test(teks)) return selesai(null, [{ username: "Sri Susilowati", fullname: "Sri Susilowati, S.H." }]);
     if (/FROM jurusita/.test(teks)) return selesai(null, [{ id: 30, kode: "JS30", nip: "1987", namaGelar: "Mustini", nama: "Mustini" }]);
@@ -67,7 +67,7 @@ require.cache[dbPath].exports = {
       // Layanan skema: seluruh tabel yang ditanyakan dianggap ada.
       return selesai(null, [{ TABLE_NAME: "x", COLUMN_NAME: "y" }]);
     }
-    if (/NOW\(\)|CURRENT_TIMESTAMP/i.test(teks)) return selesai(null, [{ saat: "2026-09-12 12:00:00" }]);
+    if (/NOW\(\)|CURRENT_TIMESTAMP/i.test(teks)) return selesai(null, [{ saat: "2026-09-14 12:00:00" }]);
     return selesai(null, []);
   },
 };
@@ -86,7 +86,7 @@ const layanan = require("../services/penetapanTulisService");
 
 const dasar = {
   perkaraId: 10113,
-  tanggalPenetapan: "2026-09-12",
+  tanggalPenetapan: "2026-09-14",
   olehUsername: "Sri Susilowati",
   operator: "SUPER ADMIN DERRY",
   ip: "127.0.0.1",
@@ -190,10 +190,14 @@ const cari = (rencana, tabel, aksi) =>
       riwayat.params[4] === benar.prosesNama,
       String(riwayat.params[4])
     );
+    // Sejak butir 39 (5 Okt 2026): atas nama AKUN SIPP YANG SEDANG MASUK -
+    // olehUsername yang dikirim ekstensi - bukan pejabat, bukan operator
+    // ALETA. params[6] kini keterangan '' (parameter ketujuh
+    // perkara_proses_update SIPP), username pindah ke params[7].
     periksa(
-      `${jenis.toUpperCase()} riwayatnya atas nama PEJABAT, bukan operator`,
-      riwayat.params[6] === "Sri Susilowati",
-      String(riwayat.params[6])
+      `${jenis.toUpperCase()} riwayatnya atas nama akun SIPP yang masuk, bukan operator ALETA`,
+      riwayat.params[7] === "Sri Susilowati" && riwayat.params[6] === "",
+      `${String(riwayat.params[6])} / ${String(riwayat.params[7])}`
     );
   }
 
@@ -205,10 +209,15 @@ const cari = (rencana, tabel, aksi) =>
 
   const judul = audit.map((x) => String(x.params[6]));
   periksa("judul tidak lagi berawalan [ALETA]", judul.every((x) => !x.startsWith("[ALETA]")), judul[0]);
+  // perkara_jurusita: "Foreign Key", sebagaimana insert_penunjukan_juru_sita.
   periksa(
-    "judul menyebut Primary Key seperti SIPP",
-    judul.every((x) => /dengan Primary Key \[perkara_id=10113\]$/.test(x)),
-    judul[0]
+    "judul menyebut Primary/Foreign Key seperti SIPP",
+    audit.every((x) =>
+      new RegExp(
+        `dengan ${x.params[3] === "perkara_jurusita" ? "Foreign" : "Primary"} Key \\[perkara_id=10113\\]$`
+      ).test(String(x.params[6]))
+    ),
+    judul.join(" | ")
   );
   periksa(
     "judul berbentuk AKSI table <b>x</b> dari halaman <b>y</b>",

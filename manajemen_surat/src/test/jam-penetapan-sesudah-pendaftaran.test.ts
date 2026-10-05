@@ -172,9 +172,24 @@ describe("lantai jam penetapan", () => {
 });
 
 describe("penjaga sumbernya", () => {
-  it("jam pendaftaran dibaca dari tahapan 10 dan diteruskan ke waktuLangkah", () => {
-    expect(sumber).toContain("WHERE pr.perkara_id = p.perkara_id AND pr.tahapan_id = 10) AS didaftar");
-    expect(sumber).toContain("didaftar: perkara.didaftar,");
+  // ==========================================================================
+  // DIGANTI 5 OKT 2026 (butir 39): JAM PENETAPAN TIDAK LAGI DISUSUN
+  // ==========================================================================
+  //
+  // waktuLangkah menyusun jam rangkaian 08:00-14:00 dan memundurkannya - pada
+  // perkara 630/Pdt.G/2026 yang ditetapkan ±13.02, audit tercatat 12:26:22
+  // sampai 12:54:22. Keputusan pengguna: jam yang dicatat jam SUNGGUHAN tiap
+  // tulisan, berjeda sungguhan. Penulisnya tidak memanggil waktuLangkah lagi;
+  // fungsinya (dan uji di atas) tinggal sebagai pustaka. Penetapan tetap
+  // tidak mendahului pendaftaran - kini karena jamnya jam sekarang, dan
+  // addMajelis_c-nya ditiru: tanggal penetapan sebelum tanggal pendaftaran
+  // ditolak.
+  it("penulis penetapan memakai jam basis data sekarang, bukan waktuLangkah", () => {
+    const tulis = sumber.slice(sumber.indexOf("async function susunRencanaTulis("), sumber.indexOf("async function susunRencanaHapus("));
+    expect(tulis).not.toContain("waktuLangkah(");
+    expect(tulis).toContain("const saatServer = await waktuBasisData();");
+    expect(tulis).toContain("const saat = saatServer;");
+    expect(tulis).toContain('alasan: "tanggal_penetapan_sebelum_pendaftaran"');
   });
 
   it("bukti luringnya ikut menguji lantai itu", () => {

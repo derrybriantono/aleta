@@ -3698,7 +3698,10 @@ export async function kirimPenetapanTulisGateway(payload: {
   jamSidang?: string;
   /** Isian Data Umum - hanya dipakai jenis dataUmum. */
   dataUmum?: Record<string, unknown>;
+  /** Akun SIPP petugas yang sedang masuk (nama pada kepala halaman SIPP). */
   olehUsername: string;
+  /** Pejabat penanda tangan - hanya untuk jejak ALETA, tidak ditulis ke SIPP. */
+  pejabatUsername?: string;
   operator: string;
   kering: boolean;
   /**

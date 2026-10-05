@@ -58,7 +58,9 @@ describe("status sesudah PHS - butir 1", () => {
     // tanggal penetapan. Baris itu menyatakan kapan sidangnya digelar.
     expect(tulis).toContain("tanggalDariSidang: true,");
     expect(tulis).toContain(
-      "tanggal: jejak.lanjutan.tanggalDariSidang ? minta.tanggalSidang : minta.tanggalPenetapan,"
+      // Sejak butir 39 riwayat dan UPDATE perkara ditulis berpasangan per
+      // proses (urutan updateproses SIPP), jadi pilihannya per langkahTahap.
+      "tanggal: langkahTahap.tanggalDariSidang ? minta.tanggalSidang : minta.tanggalPenetapan,"
     );
   });
 
@@ -93,7 +95,7 @@ describe("audit tidak menyebut tabel yang SIPP tidak pernah catat - butir 2", ()
   it("riwayatnya SENDIRI tetap ditulis - yang dicabut catatan auditnya", () => {
     // Tanpa perkara_proses, tab Riwayat Perkara pada SIPP kosong. Yang
     // dihapus catatan pemeriksaannya, bukan riwayatnya.
-    expect(tulis).toContain("langkah.push(\n      barisRiwayat({");
+    expect(tulis).toContain("langkah.push(\n        barisRiwayat({");
     expect(tulis).toContain('tabel: "perkara_proses",\n      aksi: "DELETE",');
   });
 

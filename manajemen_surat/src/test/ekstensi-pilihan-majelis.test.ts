@@ -234,9 +234,16 @@ describe("PHS pun dapat dipilih", () => {
     expect(layanan()).toContain("[0, 7, 14, 21]");
   });
 
-  it("tanggal yang tidak ada di daftar jatuh kembali ke usulan", () => {
-    // Daftarnya dapat berubah sesudah papan digambar.
-    expect(konten()).toContain("const dipilih = calon.find((x) => x.tanggal === pilihanManual.phs);");
+  // Dibalik 5 Okt 2026 (butir 38): "jatuh kembali ke usulan" membuat tanggal
+  // dari kalender - yang memang tidak pernah ada di daftar calon - diganti
+  // usulan diam-diam (15 Okt dipilih, 21 Okt tertulis). Pilihan tangan kini
+  // selalu yang ditulis; yang melanggar aturan ditolak dengan sebabnya.
+  // Perilakunya diuji dijalankan di penetapan-audit-petugas.test.ts.
+  it("tanggal pilihan tangan tidak pernah diganti usulan diam-diam", () => {
+    const isi = konten();
+    expect(isi).toContain("function tanggalSidangTerpilih(usulan, pilihanManual = {}) {");
+    expect(isi).not.toContain("const dipilih = calon.find((x) => x.tanggal === pilihanManual.phs);");
+    expect(isi).toContain("const masalah = masalahTanggalSidang(usulan, pilihanManual);");
   });
 });
 

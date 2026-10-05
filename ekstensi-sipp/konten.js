@@ -1113,12 +1113,8 @@ function nilaiUntukBorang(formulir, usulan, pilihanManual = {}) {
       || (usulan.pjs && usulan.pjs.usulan);
     if (js) nilai.jurusita = js.nama;
   } else if (formulir === "phs") {
-    // Tanggal yang dipilih hanya dipakai bila ia memang salah satu hari sidang
-    // majelis itu - kalau tidak, jatuh kembali ke usulan. Tanggal yang tidak
-    // ada di daftar berarti daftarnya berubah sesudah papan digambar.
-    const calon = (usulan.phs && usulan.phs.calon) || [];
-    const dipilih = calon.find((x) => x.tanggal === pilihanManual.phs);
-    const tanggalSidang = (dipilih && dipilih.tanggal) || (usulan.phs && usulan.phs.usulan) || "";
+    // Pilihan petugas SELALU menang atas usulan - lihat tanggalSidangTerpilih.
+    const tanggalSidang = tanggalSidangTerpilih(usulan, pilihanManual);
     if (tanggalSidang) nilai.tanggal_sidang = tanggalSidang;
   }
 
@@ -1142,6 +1138,58 @@ function nilaiUntukBorang(formulir, usulan, pilihanManual = {}) {
  * berbeda. Nama yang salah tertulis di formulir dan terlihat sebelum disimpan;
  * id yang salah langsung mendarat di basis data atas nama orang lain.
  */
+/**
+ * ============================================================================
+ * TANGGAL SIDANG YANG DITULIS - PILIHAN PETUGAS SELALU MENANG (butir 38)
+ * ============================================================================
+ *
+ * 5 Okt 2026, perkara 630/Pdt.G/2026/PA.Dgl: petugas menyalakan "Pilih tanggal
+ * sendiri dari kalender" dan memilih 15 Oktober; papan menampilkan 15
+ * Oktober; yang tertulis ke SIPP 21 Oktober - usulan ALETA. Sebabnya di dua
+ * fungsi di sini (nilaiUntukBorang dan idUntukTulis): tanggal pilihan hanya
+ * dipakai bila ia salah satu calon hari sidang majelis, dan tanggal dari
+ * kalender memang TIDAK PERNAH ada di daftar calon - jadi ia selalu jatuh
+ * kembali ke usulan, diam-diam, sementara papannya (gambarPenunjukan)
+ * menampilkan tanggal pilihan.
+ *
+ * Sekarang tanggal yang dipilih tangan - dari daftar calon maupun dari
+ * kalender - SELALU yang ditulis. Usulan hanya dipakai bila petugas tidak
+ * memilih apa pun. Tanggal pilihan yang melanggar aturan TIDAK diganti:
+ * masalahTanggalSidang menolaknya dengan sebab, dan petugas memilih ulang.
+ */
+function tanggalSidangTerpilih(usulan, pilihanManual = {}) {
+  const manual = String((pilihanManual && pilihanManual.phs) || "").trim();
+  if (manual) return manual;
+  return String((usulan && usulan.phs && usulan.phs.usulan) || "");
+}
+
+/**
+ * Sebab tanggal sidang PILIHAN TANGAN tidak dapat ditulis - "" bila sah.
+ *
+ * Aturannya aturan addSidangPertama_c SIPP sendiri: format tanggal, tidak
+ * sebelum tanggal penetapan, bukan Sabtu/Minggu. Usulan ALETA sudah
+ * memenuhinya; yang diperiksa hanya pilihan tangan.
+ */
+function masalahTanggalSidang(usulan, pilihanManual = {}) {
+  const manual = String((pilihanManual && pilihanManual.phs) || "").trim();
+  if (!manual) return "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(manual)) {
+    return `Tanggal sidang pilihan Anda (${manual}) tidak terbaca. Pilih ulang dari kalender.`;
+  }
+  const penetapan = String((usulan && usulan.tanggalPenetapan) || "");
+  if (penetapan && manual < penetapan) {
+    return `Tanggal sidang pilihan Anda (${sebutTanggal(manual)}) mendahului tanggal penetapan ${sebutTanggal(penetapan)}. Pilih tanggal lain - ALETA tidak menggantinya sendiri.`;
+  }
+  // Jenis perkara 746 dikecualikan SIPP sendiri ("panggih, 10 maret 2026").
+  const perkara = (usulan && usulan.perkara) || {};
+  const jenisPerkara = Number(perkara.jenisPerkaraId ?? perkara.jenis_perkara_id ?? 0);
+  const libur = jenisPerkara === 746 ? "" : hariAkhirPekan(manual);
+  if (libur) {
+    return `Tanggal sidang pilihan Anda jatuh pada hari ${libur} (${sebutTanggal(manual)}) - SIPP menolak hari sidang di hari libur. Pilih tanggal lain - ALETA tidak menggantinya sendiri.`;
+  }
+  return "";
+}
+
 function idUntukTulis(jenis, usulan, pilihanManual = {}) {
   if (jenis === "pmh") {
     const anggota = (usulan.pmh && usulan.pmh.anggota) || [];
@@ -1183,10 +1231,7 @@ function idUntukTulis(jenis, usulan, pilihanManual = {}) {
   }
 
   if (jenis === "phs") {
-    const calon = (usulan.phs && usulan.phs.calon) || [];
-    const dipilih = calon.find((x) => x.tanggal === pilihanManual.phs);
-    const tanggalSidang =
-      (dipilih && dipilih.tanggal) || (usulan.phs && usulan.phs.usulan) || "";
+    const tanggalSidang = tanggalSidangTerpilih(usulan, pilihanManual);
     if (!tanggalSidang) return null;
 
     // ========================================================================
@@ -1348,6 +1393,42 @@ const KALIMAT_ALASAN = [
       "Perbaiki pemetaan jabatan di ALETA - yang disimpan di sana harus NAMA AKUN SIPP " +
       "(seperti ketua, hakim1, panitera), bukan nama orangnya.",
   },
+  // Butir 39: penetapan tercatat atas nama akun SIPP yang SEDANG MASUK.
+  {
+    pola: /^akun_sipp_belum_terbaca$/,
+    kalimat: () =>
+      "Akun SIPP Anda tidak terbaca di halaman ini. Masuk ke SIPP lebih dulu di peramban ini - penetapan dicatat SIPP atas nama akun yang sedang masuk, bukan atas nama pejabat.",
+  },
+  {
+    pola: /^akun_sipp_tidak_ketemu$/,
+    kalimat: (akun) =>
+      `Akun SIPP ${akun ? `"${akun}"` : "yang sedang masuk"} tidak ditemukan di daftar pengguna SIPP. Muat ulang halaman SIPP, lalu coba lagi.`,
+  },
+  {
+    pola: /^akun_sipp_ganda$/,
+    kalimat: (akun) =>
+      `Nama ${akun ? `"${akun}"` : "akun SIPP ini"} dipakai lebih dari satu akun SIPP, dan akun mana yang sedang masuk dari komputer ini tidak dapat dipastikan. ALETA tidak memilihkannya - keluar lalu masuk kembali ke SIPP, kemudian coba lagi.`,
+  },
+  {
+    pola: /^tanggal_sidang_hari_libur$/,
+    kalimat: () => "Tanggal sidang jatuh pada hari Sabtu/Minggu - SIPP menolaknya. Pilih tanggal lain; ALETA tidak menggantinya sendiri.",
+  },
+  {
+    pola: /^sidang_mendahului_penetapan$/,
+    kalimat: () => "Tanggal sidang mendahului tanggal penetapannya. Pilih tanggal lain; ALETA tidak menggantinya sendiri.",
+  },
+  {
+    pola: /^tanggal_penetapan_hari_libur$/,
+    kalimat: () => "Tanggal penetapan jatuh pada hari Sabtu/Minggu - SIPP menolak penetapan di hari libur.",
+  },
+  {
+    pola: /^tanggal_penetapan_masa_depan$/,
+    kalimat: () => "Tanggal penetapan melebihi hari ini - SIPP menolaknya.",
+  },
+  {
+    pola: /^tanggal_penetapan_sebelum_pendaftaran$/,
+    kalimat: () => "Tanggal penetapan majelis mendahului tanggal pendaftaran perkara - SIPP menolaknya.",
+  },
   {
     pola: /^tanggal_penetapan_tidak_sah$/,
     kalimat: () => "Tanggal penetapannya tidak terbaca. Perkara ini mungkin belum punya tanggal pendaftaran yang sah di SIPP.",
@@ -1402,6 +1483,33 @@ async function rantaiPenetapan(usulan, data, kering) {
   // perkara yang baru didaftarkan, dan tidak satu pun penetapan pernah
   // tertulis.
   const rantaiSebelum = [];
+
+  // ==========================================================================
+  // TERCATAT ATAS NAMA AKUN SIPP YANG SEDANG MASUK - BUKAN PEJABATNYA
+  // ==========================================================================
+  //
+  // Butir 39 (5 Okt 2026): yang dikirim dahulu username PEJABAT penetap -
+  // "fahri" untuk PMH/PHS, "Sri Susilowati" untuk PPP/PJS - sehingga Audit
+  // Trail SIPP mencatat orang yang tidak menekan apa pun. Keputusan pengguna
+  // 2 Okt: yang tercatat di SIPP adalah petugas sesi sungguhan, dan nama
+  // petugas lain tidak pernah ditulis.
+  //
+  // Akunnya dibaca dari kepala halaman SIPP yang sedang terbuka, sama seperti
+  // jalur Data Umum; bot menerjemahkan nama lengkap itu ke username SIPP.
+  // Tanpa akun yang terbaca rantainya tidak dimulai - menebak akun berarti
+  // mungkin menulis atas nama orang lain.
+  const akunMasuk = typeof namaPenggunaSipp === "function" ? String(namaPenggunaSipp() || "").trim() : "";
+  if (!akunMasuk) {
+    return [
+      {
+        jenis: URUTAN_TULIS[0],
+        ok: false,
+        alasan: "akun_sipp_belum_terbaca",
+        bunyi: kalimatAlasan("akun_sipp_belum_terbaca"),
+      },
+    ];
+  }
+
   for (const jenis of URUTAN_TULIS) {
     const nilai = idUntukTulis(jenis, usulan, pilihanManual);
     if (!nilai) {
@@ -1409,15 +1517,33 @@ async function rantaiPenetapan(usulan, data, kering) {
       break;
     }
 
-    // Pejabat penetapnya: pilihan petugas bila ada, kalau tidak yang dipilih
-    // mesin. Yang dikirim USERNAME akun SIPP-nya - itulah yang tercatat pada
-    // kolom pengguna dan pada baris sys_audittrail.
+    // Butir 38: tanggal sidang pilihan tangan yang melanggar aturan DITOLAK
+    // di sini dengan sebabnya - tidak pernah diganti usulan diam-diam.
+    if (jenis === "phs") {
+      const masalah = masalahTanggalSidang(usulan, pilihanManual);
+      if (masalah) {
+        hasil.push({ jenis, ok: false, alasan: "tanggal_sidang_pilihan_tidak_sah", bunyi: masalah });
+        break;
+      }
+    }
+
+    // Pejabat penetapnya (penanda tangan): pilihan petugas bila ada, kalau
+    // tidak yang dipilih mesin. Ia TIDAK lagi menentukan akun yang tercatat
+    // di SIPP - hanya diteruskan untuk jejak jujur ALETA.
     const langkah = rencana.find((x) => x.jenis === jenis);
     const otomatis = langkah && langkah.akun ? langkah.akun.username : "";
-    const olehUsername = pejabat[jenis] || otomatis;
-    if (!olehUsername) {
-      hasil.push({ jenis, ok: false, alasan: "akun pejabat penetapnya belum diketahui" });
-      break;
+    const pejabatUsername = pejabat[jenis] || otomatis || "";
+    const olehUsername = akunMasuk;
+
+    // Jeda sungguhan di antara langkah, seperti petugas yang berpindah dari
+    // borang PMH ke borang PPP. Hanya pada penulisan sungguhan; jam yang
+    // tercatat diambil bot SESUDAH jeda ini.
+    if (!kering && hasil.length > 0 && typeof alatJedaManusia === "function") {
+      try {
+        await alatJedaManusia("pindah", { alamat: ALETA_API_TULIS });
+      } catch {
+        /* jeda tidak pernah menggagalkan penetapan */
+      }
     }
 
     let jawab;
@@ -1434,6 +1560,7 @@ async function rantaiPenetapan(usulan, data, kering) {
             tanggalPenetapan: usulan.tanggalPenetapan || "",
             ...nilai,
             olehUsername,
+            pejabatUsername,
             kering,
             rantaiSebelum: rantaiSebelum.slice(),
           }),
@@ -1885,6 +2012,17 @@ function raporPraperiksa(usulan, data, hasilKering) {
   // Yang dipilih tangan ditandai. Tanpa tanda itu, petugas yang baru saja
   // memilih pejabat lain tidak punya cara memastikan pilihannya sampai -
   // dan pilihan yang tidak sampai tidak berbunyi apa pun.
+  //
+  // Sejak butir 39 (5 Okt 2026) pejabat ini PENANDA TANGAN penetapannya saja.
+  // Akun yang tercatat di SIPP - kolom diinput_oleh dan Audit Trail - adalah
+  // akun SIPP yang sedang masuk di peramban ini, dan baris di bawah inilah
+  // yang menyebutnya sebelum tombolnya ditekan.
+  const akunTercatat = typeof namaPenggunaSipp === "function" ? String(namaPenggunaSipp() || "").trim() : "";
+  baris.push({
+    label: "Tercatat di SIPP atas nama",
+    nilai: akunTercatat || "akun SIPP belum terbaca - masuk ke SIPP lebih dulu",
+    sebab: akunTercatat ? "akun SIPP yang sedang masuk" : "",
+  });
   const pejabatDipilih = (data && data.pejabatDipilih) || {};
   for (const langkah of (data && data.rencana && data.rencana.langkah) || []) {
     const jenis = String((langkah && langkah.jenis) || "").toUpperCase();
@@ -3146,6 +3284,13 @@ function gambarPenunjukan(isi, data) {
             `Lebih awal dari usulan ${phs.usulan}. Usulan itu hari sidang terdekat yang masih memenuhi jeda panggilan menurut SK - memajukannya memperpendek jeda tersebut.`
           )
         );
+      }
+
+      // Butir 38: tanggal yang akan DITOLAK dikatakan di sini, sebelum
+      // tombolnya ditekan - dan ia tidak pernah diganti usulan diam-diam.
+      const masalahPilihan = masalahTanggalSidang(usulan, pilihanManual);
+      if (masalahPilihan) {
+        isi.appendChild(buatElemen("div", "aleta-tetap-awas", masalahPilihan));
       }
 
       const adaDiCalon = (phs.calon || []).some((x) => x.tanggal === dipilihBebas);

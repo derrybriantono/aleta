@@ -51,6 +51,11 @@ function buatDb({ perkara = {}, akun = true, hakim = [], petugas = null, ruangan
     query(sql, params, callback) {
       direkam.push({ sql: String(sql), params });
 
+      // MAX(id)+1 - sejak butir 39 juga dihitung untuk perkara_hakim_pn,
+      // perkara_panitera_pn, dan perkara_penetapan_hari_sidang, seperti SIPP.
+      if (/COALESCE\(MAX\(id\), 0\) \+ 1/i.test(sql)) {
+        return callback(null, [{ berikutnya: 500 + direkam.length }]);
+      }
       if (/FROM perkara p/i.test(sql)) {
         return callback(null, perkara ? [perkara] : []);
       }
@@ -129,7 +134,8 @@ async function utama() {
   });
 
   cek("rencana tersusun", rencana.ok, true);
-  cek("atas nama pejabatnya", rencana.atasNama.username, "fahri");
+  // Butir 39: olehUsername = akun SIPP yang sedang masuk.
+  cek("atas nama akun SIPP yang masuk", rencana.atasNama.username, "fahri");
   cek("operatornya tercatat", rencana.operator, "meja1g");
 
   const tabel = rencana.langkah.map((x) => `${x.tabel}:${x.aksi}`);
@@ -171,7 +177,7 @@ async function utama() {
 
   const audit = rencana.langkah.filter((x) => x.tabel === "sys_audittrail");
   benar(
-    "audit atas nama pejabat",
+    "audit atas nama akun SIPP yang masuk",
     audit.every((x) => x.params[2] === "fahri")
   );
   // Judulnya kini berbentuk tulisan SIPP sendiri - itulah yang terbaca pada
@@ -253,9 +259,9 @@ async function utama() {
   await tolak("tanggal ngawur ditolak", { tanggalPenetapan: "kemarin" }, "tanggal_penetapan_tidak_sah");
   await tolak("operator wajib disebut", { operator: "" }, "operator_tidak_disebut");
   await tolak(
-    "akun pejabat harus ada di SIPP",
+    "akun SIPP yang masuk harus ada di SIPP",
     { _db: { akun: false } },
-    "akun_pejabat_tidak_ketemu"
+    "akun_sipp_tidak_ketemu"
   );
   // Sebabnya disebut dengan namanya sendiri: "hakim kembar" dapat dibetulkan
   // petugas, sedangkan "sebagian tidak ketemu" mengirimnya mencari kesalahan

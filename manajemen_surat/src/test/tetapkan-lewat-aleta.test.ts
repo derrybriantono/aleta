@@ -54,7 +54,7 @@ function potongFungsi(nama: string[]): string {
 type Nilai = { hakimId?: number[]; petugasId?: number; tanggalSidang?: string } | null;
 
 const buat = new Function(
-  `${potongFungsi(["idUntukTulis", "pilihanDari", "susunanTerpilih"])}
+  `${potongFungsi(["idUntukTulis", "pilihanDari", "susunanTerpilih", "tanggalSidangTerpilih"])}
    return idUntukTulis;`
 ) as () => (jenis: string, usulan: unknown, pilihanManual?: unknown) => Nilai;
 
@@ -133,12 +133,20 @@ describe("pilihan tangan menang atas usulan - sama seperti jalur blangko", () =>
     });
   });
 
-  it("tanggal di luar daftar TIDAK dipakai - jatuh kembali ke usulan", () => {
-    // Tanggal yang tidak ada di daftar berarti daftarnya berubah sesudah papan
-    // digambar. Memakainya berarti menetapkan hari yang bukan hari sidang
-    // majelis itu.
-    expect(idUntukTulis("phs", USULAN, { phs: "2026-12-25" })).toEqual({
-      tanggalSidang: "2026-09-24",
+  // ==========================================================================
+  // DIBALIK 5 OKT 2026 (butir 38)
+  // ==========================================================================
+  //
+  // Penjaga ini dahulu MENUNTUT tanggal di luar daftar jatuh kembali ke
+  // usulan. Tanggal dari kalender ("Pilih tanggal sendiri") memang tidak
+  // pernah ada di daftar calon - akibatnya petugas memilih 15 Okt, papan
+  // menampilkan 15 Okt, dan yang tertulis ke SIPP 21 Okt. Pilihan tangan kini
+  // selalu yang ditulis; yang melanggar aturan ditolak dengan sebabnya
+  // (masalahTanggalSidang, dan tanggal_sidang_hari_libur di bot), tidak
+  // diganti diam-diam.
+  it("tanggal di luar daftar (dari kalender) TETAP dipakai - tidak diganti usulan", () => {
+    expect(idUntukTulis("phs", USULAN, { phs: "2026-12-24" })).toEqual({
+      tanggalSidang: "2026-12-24",
     });
   });
 });
