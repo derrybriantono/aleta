@@ -16,7 +16,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { agendaLaporanMediasi, penandaHasilMediasi, penandaMediator, penandaPernahMediasi } from "@/lib/penanda-mediasi";
 import { CONTOH_TAMPILAN, DuaKeadaan, InfoContohSaklar } from "@/components/portal/contoh-tampilan";
-import { PenandaMediasiAgenda } from "@/components/portal/aleta-ecourt-sidang";
+import { LencanaCourtCalendarSinkron, PenandaMediasiAgenda } from "@/components/portal/aleta-ecourt-sidang";
+import { agendaSetujuan, courtCalendarTidakSinkron, keadaanCourtCalendar, tahapAgenda } from "@/lib/court-calendar-sinkron";
+import { pilihanSesudahBawaan } from "@/lib/tampilan-bawaan";
+import { bersihkanPilihan, KUNCI_BAWAAN } from "@/server/modules/aleta-ecourt/tampilan-jadwal-bawaan";
 
 const layar = readFileSync(path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"), "utf8");
 
@@ -198,5 +201,99 @@ describe("butir 11: ikon i dan contoh tampil/disembunyikan", () => {
 describe("butir 6: kode majelis tidak diulang di sel Antrian / Jam", () => {
   it("blok kode majelis antrian dibuang dari sel itu", () => {
     expect(layar).not.toContain('title="Kode majelis di aplikasi antrian"');
+  });
+});
+
+// ============================================================================
+// Butir 21-22 (6 Okt 2026)
+// ============================================================================
+
+describe("butir 21: Court Calendar tidak sinkron - perkara e-Litigasi", () => {
+  const b = (s: Record<string, unknown>) => ({
+    tanggalSidang: HARI,
+    agenda: "Replik",
+    lewatEcourt: true,
+    urutanSidang: 4,
+    courtCalendarTerbaca: true,
+    courtCalendar: [{ tanggal: HARI, agenda: "Replik Penggugat" }],
+    ...s,
+  });
+
+  it("kalimat berbeda tetapi tujuannya sama = sinkron", () => {
+    expect(agendaSetujuan("jawaban Tergugat", "Jawaban dari Termohon")).toBe(true);
+    expect(agendaSetujuan("Pemeriksaan Pokok Perkara (Putus Verstek)", "Pembacaan Putusan")).toBe(true);
+    expect(agendaSetujuan("Musyawarah Majelis", "Pengucapan Putusan Elektronik")).toBe(true);
+    expect(agendaSetujuan("Mendengar Laporan Hasil Mediasi", "pembacaan hasil mediasi")).toBe(true);
+    expect(keadaanCourtCalendar(b({}))).toMatchObject({ sinkron: true });
+  });
+
+  it("agenda yang hanya menyebut urutan tidak dapat dinilai - tidak dituduh", () => {
+    expect(tahapAgenda("Sidang kedua").size).toBe(0);
+    expect(courtCalendarTidakSinkron(b({ courtCalendar: [{ tanggal: HARI, agenda: "Sidang ketiga" }] }))).toBe(false);
+  });
+
+  it("tidak sinkron: tujuan berbeda, tanggal tidak ada, atau belum dibuat", () => {
+    expect(keadaanCourtCalendar(b({ courtCalendar: [{ tanggal: HARI, agenda: "Pembuktian" }] }))).toMatchObject({ sinkron: false });
+    expect(keadaanCourtCalendar(b({ courtCalendar: [{ tanggal: "2026-10-13", agenda: "Replik" }] }))?.sebab).toContain("Tidak ada rencana");
+    expect(keadaanCourtCalendar(b({ courtCalendar: [] }))?.sebab).toContain("belum dibuat");
+  });
+
+  it("hanya perkara e-Litigasi sesudah sidang pertama, dan hanya bila datanya terbaca", () => {
+    expect(keadaanCourtCalendar(b({ lewatEcourt: false, courtCalendar: [] }))).toBeNull();
+    expect(keadaanCourtCalendar(b({ urutanSidang: 1, courtCalendar: [] }))).toBeNull();
+    expect(keadaanCourtCalendar(b({ courtCalendarTerbaca: false, courtCalendar: [] }))).toBeNull();
+  });
+
+  it("lencana merah di samping nomor, kotak saring merah, dan saklar tampilan", () => {
+    const html = renderToStaticMarkup(createElement(LencanaCourtCalendarSinkron, { baris: b({ courtCalendar: [] }) }));
+    expect(html).toContain("data-cc-tidak-sinkron");
+    expect(html).toContain("bg-rose-600");
+    expect(renderToStaticMarkup(createElement(LencanaCourtCalendarSinkron, { baris: b({}) }))).toBe("");
+    expect(layar).toContain('kunci: "cc-tidak-sinkron",');
+    expect(layar).toContain("cocok: (x) => courtCalendarTidakSinkron(x),");
+    expect(layar).toContain("<LencanaCourtCalendarSinkron baris={baris} />");
+    expect(SAKLAR_TAMPILAN.find((x) => x.kunci === "cc-tidak-sinkron")?.wajib).toBe(true);
+  });
+});
+
+describe("butir 22: bawaan Tampilan dari Super Admin", () => {
+  const bawaan = { pilihan: { "potensi-verstek": false }, paksa: false, versi: "v1" };
+
+  it("belum mengatur sendiri: bawaan berlaku tanpa disimpan sebagai pilihan sendiri", () => {
+    const h = pilihanSesudahBawaan(null, null, bawaan);
+    expect(h.pilihan["potensi-verstek"]).toBe(false);
+    expect(h.simpanLokal).toBe(false);
+  });
+
+  it("sudah mengatur sendiri: pilihannya tetap - kecuali terapkan ulang dengan versi baru, sekali", () => {
+    const lokal = JSON.stringify({ "potensi-verstek": true });
+    expect(pilihanSesudahBawaan(lokal, null, bawaan).pilihan["potensi-verstek"]).toBe(true);
+    const paksa = { ...bawaan, paksa: true, versi: "v2" };
+    const sekali = pilihanSesudahBawaan(lokal, "v1", paksa);
+    expect(sekali).toMatchObject({ simpanLokal: true, versiBaru: "v2" });
+    expect(sekali.pilihan["potensi-verstek"]).toBe(false);
+    // Sudah diterapkan: tidak ditimpa lagi.
+    expect(pilihanSesudahBawaan(lokal, "v2", paksa).pilihan["potensi-verstek"]).toBe(true);
+  });
+
+  it("tanpa bawaan: pilihan peramban apa adanya", () => {
+    expect(pilihanSesudahBawaan(JSON.stringify({ retur: false, cetak: false }), null, null).pilihan.cetak).toBe(false);
+  });
+
+  it("server: hanya saklar dikenal, yang wajib selalu menyala; kunci di luar daftar putih ekstensi", () => {
+    const p = bersihkanPilihan({ retur: false, "tidak-ada": false, cetak: false });
+    expect(p.retur).toBe(true);
+    expect(p.cetak).toBe(false);
+    expect("tidak-ada" in p).toBe(false);
+    expect(KUNCI_BAWAAN.startsWith("portal:")).toBe(true);
+  });
+
+  it("dibaca halaman Jadwal Sidang, dan diatur di Integrasi e-Court", () => {
+    expect(layar).toContain('fetch(apiPath("/api/aleta-ecourt/sidang/tampilan-bawaan")');
+    expect(layar).toContain("pilihanSesudahBawaan(lokal, window.localStorage.getItem(KUNCI_VERSI_BAWAAN), bawaan)");
+    const admin = readFileSync(path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-admin.tsx"), "utf8");
+    expect(admin).toContain("<AletaEcourtTampilanJadwal />");
+    const modul = readFileSync(path.resolve(process.cwd(), "src/server/modules/aleta-ecourt/tampilan-jadwal-bawaan.ts"), "utf8");
+    expect(modul).toContain("Hanya Super Admin yang dapat mengatur bawaan tampilan Jadwal Sidang.");
   });
 });

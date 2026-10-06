@@ -40,7 +40,13 @@ import {
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
 import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
+import { KUNCI_VERSI_BAWAAN, pilihanSesudahBawaan, type BawaanDiterima } from "@/lib/tampilan-bawaan";
 import { DuaKeadaan, InfoContohSaklar } from "@/components/portal/contoh-tampilan";
+import {
+  courtCalendarTidakSinkron,
+  keadaanCourtCalendar,
+  type RencanaCourtCalendar,
+} from "@/lib/court-calendar-sinkron";
 import {
   penandaHasilMediasi,
   penandaMediator,
@@ -270,6 +276,9 @@ type SidangBaris = {
    */
   mediasi?: MediasiPerkara | null;
   mediasiTerbaca?: boolean;
+  /** Butir 21 (6 Okt 2026): rencana Court Calendar perkara ini. Lihat lib/court-calendar-sinkron. */
+  courtCalendar?: RencanaCourtCalendar[];
+  courtCalendarTerbaca?: boolean;
   hadirLengkapPertama?: string;
   hadirLengkapTerbaca?: boolean;
   tanggalSidangBerikut: string;
@@ -1050,6 +1059,19 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     judul:
       "Perkara terdaftar lewat e-Court DAN agendanya tahapan yang dipertukarkan elektronik: jawaban, replik, duplik, duplik rekonvensi, kesimpulan, musyawarah majelis, atau pembacaan putusan/penetapan/putusan sela - selain sidang pertama, yang selalu dihadiri. Di tabel, tulisan agendanya merah (dapat dimatikan di menu Tampilan).",
     cocok: (x) => sidangElitigasi(x),
+  },
+  // Butir 21 (6 Okt 2026): perkara e-Litigasi yang sidangnya tidak sesuai Court
+  // Calendar - merah, sebab para pihak membaca jadwal di e-Court. Hanya yang
+  // TERBUKTI tidak sinkron; lihat @/lib/court-calendar-sinkron.
+  {
+    kunci: "cc-tidak-sinkron",
+    label: "Court Calendar tidak sinkron",
+    labelPendek: "CC tidak sinkron",
+    nada: "bahaya",
+    kelompok: "sidang",
+    judul:
+      "Perkara e-Litigasi (sesudah sidang pertama) yang Court Calendar-nya belum dibuat, tidak memuat tanggal sidang ini, atau tujuan agendanya berbeda. Kalimatnya tidak harus sama - yang dibandingkan tahapannya (jawaban, replik, pembuktian, putusan, ...).",
+    cocok: (x) => courtCalendarTidakSinkron(x),
   },
 
   // --- PUTUSAN: berdirikah perkaranya di hadapan putusannya hari ini --------
@@ -3795,6 +3817,25 @@ function LencanaKesiapan({
 }
 
 /**
+ * Penanda merah "court calendar tidak sinkron" di samping nomor perkara
+ * (butir 21, 6 Okt 2026). Sebabnya di title. Tidak digambar bila sinkron,
+ * bukan e-Litigasi, atau datanya tidak terbaca.
+ */
+export function LencanaCourtCalendarSinkron({ baris }: { baris: Parameters<typeof keadaanCourtCalendar>[0] }) {
+  const k = keadaanCourtCalendar(baris);
+  if (!k || k.sinkron) return null;
+  return (
+    <span
+      data-cc-tidak-sinkron=""
+      className="whitespace-nowrap rounded bg-rose-600 px-1.5 py-0.5 text-[11px] font-semibold text-white"
+      title={k.sebab}
+    >
+      court calendar tidak sinkron
+    </span>
+  );
+}
+
+/**
  * Penanda mediasi di kolom Agenda (butir 8-9, 6 Okt 2026): "Mediasi" (pernah
  * bermediasi) dan hasil mediasi. Ditekan = membuka Status Perkara perkara itu,
  * tempat keterangan mediasinya lengkap.
@@ -4506,6 +4547,25 @@ export function AletaEcourtSidang({
         /* sama seperti modeRingkas - pilihannya saja yang tidak diingat */
       }
     });
+    // Butir 22 (6 Okt 2026): bawaan dari Super Admin (Integrasi e-Court) -
+    // berlaku bagi yang belum mengatur sendiri, atau menimpa SEKALI bila
+    // "terapkan ulang". Gagal dibaca = pilihan peramban apa adanya.
+    void (async () => {
+      try {
+        const jawab = await fetch(apiPath("/api/aleta-ecourt/sidang/tampilan-bawaan"), { cache: "no-store" });
+        if (!jawab.ok || batal) return;
+        const luar = (await jawab.json()) as { data?: { berlaku?: BawaanDiterima } };
+        const bawaan = luar?.data?.berlaku ?? null;
+        if (!bawaan || batal) return;
+        const lokal = window.localStorage.getItem(KUNCI_SIMPANAN_TAMPILAN);
+        const hasil = pilihanSesudahBawaan(lokal, window.localStorage.getItem(KUNCI_VERSI_BAWAAN), bawaan);
+        setTampilan(hasil.pilihan);
+        if (hasil.simpanLokal) window.localStorage.setItem(KUNCI_SIMPANAN_TAMPILAN, JSON.stringify(hasil.pilihan));
+        if (hasil.versiBaru) window.localStorage.setItem(KUNCI_VERSI_BAWAAN, hasil.versiBaru);
+      } catch {
+        /* bawaan tidak terbaca: pilihan peramban tetap */
+      }
+    })();
     return () => {
       batal = true;
     };
@@ -7265,6 +7325,10 @@ export function AletaEcourtSidang({
                             {tampil(tampilan, "verifikasi-majelis") ? (
                               <LencanaVerifikasiMajelis penanda={penandaVerifikasi(baris, verifikasi, hariIni())} />
                             ) : null}
+                            {/* Butir 21 (6 Okt 2026): Court Calendar tidak sinkron - merah.
+                                Saklarnya WAJIB (merah = menuntut tindakan), jadi
+                                tidak melewati tampil() - lihat SAKLAR_WAJIB. */}
+                            <LencanaCourtCalendarSinkron baris={baris} />
                           </span>
                           {/* ==================================================
                               PENGGUGAT DAN TERGUGAT DIPISAH, BUKAN "A LAWAN B"

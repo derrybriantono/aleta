@@ -58,6 +58,10 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
       </span>
     ),
   },
+  "cc-tidak-sinkron": {
+    letak: "kolom Perkara, di samping nomor (perkara e-Litigasi)",
+    contoh: lencana("bg-rose-600 text-white", "court calendar tidak sinkron"),
+  },
   "penanda-mediasi": {
     letak: "kolom Agenda",
     contoh: lencana("bg-sky-100 text-sky-900 ring-1 ring-sky-300 dark:bg-sky-900/60 dark:text-sky-100", "Mediasi"),

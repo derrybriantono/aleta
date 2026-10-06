@@ -239,6 +239,16 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kelompok: "penanda",
   },
   {
+    kunci: "cc-tidak-sinkron",
+    label: "Court Calendar tidak sinkron",
+    keterangan:
+      "Lencana merah di samping nomor perkara e-Litigasi bila Court Calendar-nya belum dibuat, tidak memuat tanggal sidang ini, atau tujuan agendanya berbeda (kalimat tidak harus sama). Merah = menuntut tindakan: para pihak membaca jadwal yang salah di e-Court.",
+    kelompok: "penanda",
+    // Merah, sama dengan retur/belum dipanggil: tiap kotak merah punya saklar
+    // wajib yang sekunci (dijaga tampilan-antrian-sidang.test.ts).
+    wajib: true,
+  },
+  {
     kunci: "penanda-mediasi",
     label: "Pernah mediasi",
     keterangan:

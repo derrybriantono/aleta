@@ -239,6 +239,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     petaPembebanan,
     petaMediasi,
     petaHadirLengkap,
+    petaCourtCalendar,
   ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
@@ -302,6 +303,10 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     // menyatakan "tidak pernah mediasi".
     aman(() => mediasiBanyakPerkara(idPerkara), "mediasi"),
     aman(() => hadirLengkapPertamaBanyakPerkara(idPerkara), "hadir-lengkap"),
+    // Butir 21 (6 Okt 2026): Court Calendar tiap perkara - penanda "court
+    // calendar tidak sinkron" pada perkara e-Litigasi. Gagal-terbuka dan
+    // dicatat: layar diam, bukan menuduh tidak sinkron.
+    aman(() => courtCalendarBanyakPerkara(idPerkara), "court-calendar"),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -383,6 +388,10 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       mediasiTerbaca: !gagal.has("mediasi"),
       hadirLengkapPertama: petaHadirLengkap[String(row.perkaraId)] || "",
       hadirLengkapTerbaca: !gagal.has("hadir-lengkap"),
+      // Butir 21: seluruh rencana Court Calendar perkara ini [{tanggal, agenda}]
+      // ([] = belum dibuat). Terbaca false = kuerinya gagal.
+      courtCalendar: petaCourtCalendar[String(row.perkaraId)] || [],
+      courtCalendarTerbaca: !gagal.has("court-calendar"),
       urutanSidang: Number(row.urutanSidang) || 0,
       dihadiriOleh: row.dihadiriOleh === null || row.dihadiriOleh === undefined ? null : Number(row.dihadiriOleh),
       adaBas: Boolean(cleanText(row.edocBas)),
@@ -1024,6 +1033,35 @@ async function mediasiBanyakPerkara(daftarPerkaraId = []) {
       keputusan: isoTanggal(b.keputusan),
       mediator: cleanText(b.mediator),
     };
+  }
+  return hasil;
+}
+
+/**
+ * Court Calendar (rencana sidang) tiap perkara - butir 21, 6 Okt 2026. Satu
+ * kueri IN. Satu perkara rata-rata 2-3 baris (median diukur butir 29), jadi
+ * seluruhnya dikirim dan kecocokannya dinilai di portal (lib/court-calendar-sinkron).
+ *
+ * @returns {Promise<Record<string, Array<{tanggal: string, agenda: string}>>>}
+ */
+async function courtCalendarBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+  if (!(await sippSkemaService.tabelAda("perkara_court_calendar"))) return {};
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+  const baris = await runQuery(
+    `SELECT perkara_id AS perkaraId, rencana_tanggal AS tanggal, rencana_agenda AS agenda
+       FROM perkara_court_calendar
+      WHERE perkara_id IN (${isian})
+      ORDER BY perkara_id, rencana_tanggal`,
+    dipakai
+  );
+  const hasil = {};
+  for (const b of Array.isArray(baris) ? baris : []) {
+    const k = String(b.perkaraId);
+    if (!hasil[k]) hasil[k] = [];
+    if (hasil[k].length < 60) hasil[k].push({ tanggal: isoTanggal(b.tanggal), agenda: cleanText(b.agenda) });
   }
   return hasil;
 }
@@ -3213,6 +3251,7 @@ module.exports = {
   pembebananBanyakPerkara,
   mediasiBanyakPerkara,
   hadirLengkapPertamaBanyakPerkara,
+  courtCalendarBanyakPerkara,
   barisSidangIkrar,
   AMBANG_DURASI_HARI,
   BATAS_POTONG_MEDIASI_HARI,

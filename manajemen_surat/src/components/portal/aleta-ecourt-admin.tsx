@@ -35,6 +35,7 @@ import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templa
 import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
 import { AletaEcourtPemetaanBlangko } from "@/components/portal/aleta-ecourt-pemetaan-blangko";
 import { AletaEcourtProfilSaklar } from "@/components/portal/aleta-ecourt-profil-saklar";
+import { AletaEcourtTampilanJadwal } from "@/components/portal/aleta-ecourt-tampilan-jadwal";
 import { AletaEcourtTipeKeluaran } from "@/components/portal/aleta-ecourt-tipe-keluaran";
 import { EcourtPantauPutusan, EcourtRekapAkunPengguna, EcourtSesiPribadi } from "@/components/portal/ecourt-sesi-pribadi";
 import { PageIntro } from "@/components/portal/shared";
@@ -366,6 +367,9 @@ export function AletaEcourtAdmin() {
             saklar dan fitur yang menyala bagi tiap peran. Jangkar
             #profil-saklar. */}
         <AletaEcourtProfilSaklar />
+        {/* Butir 22 (6 Okt 2026): bawaan Tampilan Jadwal Sidang untuk semua
+            pengguna / satu pengguna - Super Admin. Jangkar #tampilan-jadwal-sidang. */}
+        <AletaEcourtTampilanJadwal />
         {/* Sesudah kewenangan: siapa memakai ekstensi dibaca lebih dulu,
             baru kalimat dan penunjuk yang dikeluarkannya. */}
         <AletaEcourtTipeKeluaran />
