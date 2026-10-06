@@ -61,6 +61,38 @@ const trackedMutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 const GlobalLoadingContext = createContext<GlobalLoadingContextValue | null>(null);
 
+/**
+ * ============================================================================
+ * OVERLAY HANYA UNTUK GAGAL (6 Oktober 2026, butir 26)
+ * ============================================================================
+ *
+ * Diminta pengguna untuk layar Status Perkara: lapisan layar penuh "Sedang
+ * memproses..." dan "Proses berhasil" tidak perlu ada - yang memuat sudah
+ * terlihat pada tombolnya sendiri, dan yang berhasil terlihat dari hasilnya.
+ * Lapisan hanya muncul bila GAGAL.
+ *
+ * Layar yang memintanya memanggil useOverlayHanyaGagal(); selama layar itu
+ * terpasang, startLoading tidak memunculkan fase memuat maupun berhasil -
+ * hanya hasil berfase "error" yang tetap tampil. Layar lain tidak berubah.
+ */
+let jumlahPemintaHanyaGagal = 0;
+
+/** true bila ada layar terpasang yang meminta overlay hanya untuk gagal. */
+export function overlayHanyaGagal() {
+  return jumlahPemintaHanyaGagal > 0;
+}
+
+/** Dipanggil layar yang hanya ingin overlay saat gagal - berlaku selama layar terpasang. */
+export function useOverlayHanyaGagal(aktif = true) {
+  useEffect(() => {
+    if (!aktif) return;
+    jumlahPemintaHanyaGagal += 1;
+    return () => {
+      jumlahPemintaHanyaGagal = Math.max(0, jumlahPemintaHanyaGagal - 1);
+    };
+  }, [aktif]);
+}
+
 function getFetchMethod(input: FetchInput, init?: FetchInit) {
   const methodFromInit = init?.method;
   if (methodFromInit) return methodFromInit.toUpperCase();
@@ -352,6 +384,16 @@ export function GlobalLoadingProvider({ children }: { children: ReactNode }) {
 
   const startLoading = useCallback(
     (options?: GlobalLoadingOptions) => {
+      if (overlayHanyaGagal()) {
+        // Butir 26: tanpa lapisan memuat dan tanpa lapisan berhasil - yang
+        // gagal tetap tampil.
+        let berhenti = false;
+        return (result?: GlobalLoadingResult) => {
+          if (berhenti) return;
+          berhenti = true;
+          if (result?.phase === "error") showResult(result);
+        };
+      }
       activeCountRef.current += 1;
       scheduleWatchdog();
       latestOptionsRef.current = {
@@ -449,6 +491,9 @@ export function GlobalLoadingProvider({ children }: { children: ReactNode }) {
     const handleManualResult = (event: Event) => {
       const detail = (event as CustomEvent<GlobalLoadingResult>).detail;
       if (!detail?.phase) return;
+      // Butir 26: pada layar yang hanya ingin overlay saat gagal, kabar
+      // berhasil tidak dimunculkan sebagai lapisan.
+      if (overlayHanyaGagal() && detail.phase !== "error") return;
       activeCountRef.current = 0;
       showResult(detail);
     };

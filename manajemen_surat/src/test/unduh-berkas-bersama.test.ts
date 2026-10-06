@@ -100,7 +100,9 @@ describe("tombol-tombol unduh portal memakai penanganan bersama", () => {
 
   it.each([
     ["aleta-ecourt-sidang.tsx", "Relaas/Resi/BAS/berkas e-Court di Jadwal Sidang"],
-    ["tombol-unduh-zip.tsx", "ZIP perkara (Status Perkara)"],
+    // tombol-unduh-zip.tsx keluar dari daftar ini sejak butir 25 (6 Okt 2026):
+    // ZIP perkara yang besar tidak lagi lewat fetch + blob, melainkan unduhan
+    // biasa peramban - dijaga di unduh-seluruh-berkas-alir.test.ts.
     ["aleta-ecourt-arsip-berkas.tsx", "PDF/Word arsip berkas e-Court"],
     ["eviden-skp-menu.tsx", "Eviden SKP"],
   ])("%s (%s)", (berkas) => {

@@ -79,6 +79,7 @@ import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
 import { useHilangSendiri } from "@/lib/pesan-sementara";
+import { useOverlayHanyaGagal } from "@/lib/global-loading";
 import { BannerGangguan } from "@/components/portal/banner-gangguan";
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { cn } from "@/lib/utils";
@@ -1127,8 +1128,14 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
   const [pesan, setPesan] = useState("");
   // Butir 3 (5 Okt 2026): pesan BERHASIL ("N nomor perkara disalin") dipisah
   // dari `pesan` (keterangan/penolakan yang menetap) dan hilang sendiri.
-  const [pesanBerhasil, setPesanBerhasil] = useState("");
-  useHilangSendiri(pesanBerhasil, true, () => setPesanBerhasil(""));
+  // Butir 26 (6 Okt 2026): yang berhasil tidak lagi muncul sebagai pesan
+  // tersendiri di atas tabel - kabarnya pindah ke tulisan tombol salinnya
+  // ("Disalin (N)") selama beberapa detik, lalu kembali.
+  const [tandaSalin, setTandaSalin] = useState("");
+  useHilangSendiri(tandaSalin, true, () => setTandaSalin(""), 2500);
+  // Butir 26 (6 Okt 2026): di layar ini lapisan layar penuh hanya untuk
+  // GAGAL - tanpa lapisan "Sedang memproses..." dan "Proses berhasil".
+  useOverlayHanyaGagal();
 
   // ======================================================================
   // BUTIR 14 (5 Okt 2026) - GANGGUAN JARINGAN DICOBA LAGI SENDIRI
@@ -1764,7 +1771,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     if (!teks) return;
     try {
       await navigator.clipboard.writeText(teks);
-      setPesanBerhasil(`${baris.length} nomor perkara disalin.`);
+      setTandaSalin(`Disalin (${baris.length})`);
     } catch {
       // Papan salin ditolak peramban - lazim pada sambungan bukan HTTPS.
       // Disebutkan apa adanya; diam berarti penggunanya menempel yang lama.
@@ -2468,14 +2475,10 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
             <TombolTutupPesan onTutup={() => setGalat("")} />
           </p>
         ) : null}
-        {/* Keterangan / penolakan menetap sampai keadaannya berubah; yang
-            berhasil (pesanBerhasil) hilang sendiri - butir 3, 5 Okt 2026. */}
+        {/* Keterangan / penolakan menetap sampai keadaannya berubah. Kabar
+            BERHASIL tidak lagi tampil di sini - butir 26, 6 Okt 2026: ia
+            pindah ke tulisan tombol salinnya (tandaSalin). */}
         {pesan ? <p className="text-sm text-muted-foreground">{pesan}</p> : null}
-        {pesanBerhasil ? (
-          <p className="text-sm text-emerald-700 dark:text-emerald-300" role="status">
-            {pesanBerhasil}
-          </p>
-        ) : null}
 
         {/* Batas baris TIDAK boleh memotong dalam diam.
 
@@ -2537,7 +2540,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
               lapis={lapisHasil}
               aksi={(barisTampil) => (
                 <Button size="sm" variant="ghost" onClick={() => void salinNomor(barisTampil)}>
-                  Salin daftar nomor
+                  {tandaSalin || "Salin daftar nomor"}
                 </Button>
               )}
             />
@@ -2929,11 +2932,9 @@ function IsiStatus({
             sebagai JSON dan CSV, sebab yang dikirim ke banding dan yang
             diperiksa pengawas adalah keduanya. */}
         <div className="flex flex-wrap items-start gap-2 print:hidden">
-          <TombolUnduhZip
-            nomorPerkara={status.identitas.nomorPerkara}
-            isi="lengkap"
-            label="Unduh seluruh perkara"
-          />
+          {/* Tulisannya "Unduh seluruh berkas" (bawaan isi="lengkap") sejak
+              butir 25, 6 Okt 2026. */}
+          <TombolUnduhZip nomorPerkara={status.identitas.nomorPerkara} isi="lengkap" />
           <Button size="sm" variant="outline" onClick={onKembali}>
             Cari perkara lain
           </Button>
