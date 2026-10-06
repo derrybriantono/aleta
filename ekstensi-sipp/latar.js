@@ -866,12 +866,37 @@ function relaasCocokTepat(namaKatalog, namaHalaman) {
   return h === k || `${h}.rtf` === k;
 }
 
-/** Memetakan nama katalog ke token pada satu daftar berkas; yang pertama cocok menang. */
+/**
+ * Blangko ikrar talak dan kelompok ABT pemiliknya (perbaikan 6 Okt 2026 malam).
+ *
+ * Berkas "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf" di satker ada di
+ * DUA folder: derry_briantono/Relaas (menu 900/981, proses 80-220) dan
+ * _ikrar_talak/2 Relaas Ikrar Talak (menu 25, proses 290-600). Perkara yang
+ * sampai tahap ikrar selalu berproses 290 ke atas, jadi token dari folder
+ * derry SELALU ditolak ABT. Nama yang sama -> token ikrar wajib dari kelompok
+ * yang namanya menyebut ikrar; kelompok lain hanya cadangan bila kelompok
+ * ikrar memang tidak ada.
+ */
+function relaasNamaIkrar(nama) {
+  return /ikrar\s+talak/i.test(String(nama || ""));
+}
+
+function relaasKelompokIkrar(kelompok) {
+  return /ikrar/i.test(String(kelompok || ""));
+}
+
+/**
+ * Memetakan nama katalog ke token pada satu daftar berkas; yang pertama cocok
+ * menang - kecuali blangko ikrar, yang mengutamakan kelompok ikrar.
+ */
 function relaasPetakanToken(diminta, daftarBerkas) {
   const token = {};
   const hilang = [];
   for (const nama of diminta || []) {
-    const cocok = (daftarBerkas || []).find((b) => relaasCocokTepat(nama, b.berkas));
+    const semua = (daftarBerkas || []).filter((b) => relaasCocokTepat(nama, b.berkas));
+    const cocok = relaasNamaIkrar(nama)
+      ? semua.find((b) => relaasKelompokIkrar(b.blangko)) || semua[0]
+      : semua[0];
     if (cocok) token[nama] = { a: cocok.a, b: cocok.b, kelompok: cocok.blangko || "" };
     else hilang.push(nama);
   }
@@ -1664,6 +1689,14 @@ async function panenTokenRelaasInti(asalAbt, diminta, opsi) {
   const nama = [...new Set((diminta || []).map(String).filter(Boolean))];
   const peta = await bacaTokenTersimpan(dasar);
   if (opsi && opsi.paksa) for (const n of nama) delete peta[n];
+  // Token ikrar tersimpan dari kelompok bukan-ikrar yang BELUM pernah diuji
+  // terhadap kelompok ikrar (simpanan sebelum 6 Okt malam) dipanen ulang
+  // SEKALI. Yang ditandai ikrarCadangan sudah melewati pemeriksaan itu -
+  // kelompok ikrar tidak memuat berkasnya - jadi tidak dipanen tiap dokumen.
+  for (const n of nama) {
+    const t = peta[n];
+    if (t && relaasNamaIkrar(n) && !relaasKelompokIkrar(t.kelompok) && !t.ikrarCadangan) delete peta[n];
+  }
   let kurang = nama.filter((n) => !peta[n]);
   const pilih = () => Object.fromEntries(nama.filter((n) => peta[n]).map((n) => [n, peta[n]]));
   if (kurang.length === 0) {
@@ -1689,6 +1722,8 @@ async function panenTokenRelaasInti(asalAbt, diminta, opsi) {
   }
   let dibaca = 0;
   const gagal = [];
+  const adaKelompokIkrar = kelompok.some((k) => relaasKelompokIkrar(k.kelompok));
+  const cadanganIkrar = {};
   for (const k of kelompok) {
     await tidurRelaas(relaasJedaLangkah());
     const h = await relaasBacaHalaman(new URL(k.alamat, `${dasar}/`).href);
@@ -1699,10 +1734,27 @@ async function panenTokenRelaasInti(asalAbt, diminta, opsi) {
       continue;
     }
     const { token } = relaasPetakanToken(kurang, relaasUraiBerkas(h.teks));
-    for (const [n, t] of Object.entries(token)) peta[n] = { ...t, kelompok: t.kelompok || k.kelompok };
+    for (const [n, t] of Object.entries(token)) {
+      const isi = { ...t, kelompok: t.kelompok || k.kelompok };
+      // Blangko ikrar dari kelompok bukan-ikrar hanya cadangan selama
+      // kelompok ikrar ada dan belum dibuka.
+      if (relaasNamaIkrar(n) && !relaasKelompokIkrar(isi.kelompok)) {
+        // Tanpa kelompok ikrar sama sekali: tetap dipakai, ditandai sudah
+        // diperiksa supaya tidak dipanen ulang tiap dokumen.
+        if (!adaKelompokIkrar) {
+          peta[n] = { ...isi, ikrarCadangan: true };
+          continue;
+        }
+        if (!cadanganIkrar[n]) cadanganIkrar[n] = isi;
+        continue;
+      }
+      peta[n] = isi;
+    }
     kurang = nama.filter((n) => !peta[n]);
     if (kurang.length === 0) break;
   }
+  for (const [n, t] of Object.entries(cadanganIkrar)) if (!peta[n]) peta[n] = { ...t, ikrarCadangan: true };
+  kurang = nama.filter((n) => !peta[n]);
   await simpanTokenTersimpan(dasar, peta);
   return { ok: true, token: pilih(), hilang: kurang, kelompokDibaca: dibaca, kelompokGagal: gagal };
 }

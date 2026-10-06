@@ -473,7 +473,7 @@ describe.skipIf(!adaAbtSetempat)("panen token atas ABT setempat yang ASLI (tanpa
   const k = nyalakan(new Dunia(abtPalsu())).konteks;
   const php = (...arg: string[]) => execFileSync(PHP56, arg, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
 
-  it("keenam blangko relaas terpanen: lima dari 'Relaas dan PBT', ikrar dari 'Relaas Ikrar Talak' (menu 25)", () => {
+  it("seluruh blangko relaas katalog terpanen: dari 'Relaas dan PBT', ikrar dari 'Relaas Ikrar Talak' (menu 25)", () => {
     const beranda = php(PERENDER, "beranda");
     const kelompok = k.relaasUrutkanKelompok(k.relaasUraiKelompok(beranda));
     expect(kelompok[0].kelompok).toBe("Relaas dan PBT");
@@ -491,7 +491,8 @@ describe.skipIf(!adaAbtSetempat)("panen token atas ABT setempat yang ASLI (tanpa
     ];
     const { token, hilang } = k.relaasPetakanToken(KATALOG, berkasDua);
     expect(hilang).toEqual([]);
-    expect(Object.keys(token)).toHaveLength(6);
+    // 6 Okt 2026: blangko per pihak (0./1./2. P dan T) - seluruh katalog terpanen, bukan lagi enam.
+    expect(Object.keys(token)).toHaveLength(KATALOG.length);
     // Token ikrar mengurai (pustaka enkripsi ABT sendiri) ke folder menu 25.
     const dirIkrar = php(PERENDER, "urai", token[BERKAS("ikrar-talak")].a);
     expect(dirIkrar.replace(/\\/g, "/")).toMatch(/_ikrar_talak\/2 Relaas Ikrar Talak$/);
@@ -765,4 +766,30 @@ describe("telaah: tombol Perbarui / Muat ulang selagi putaran cetak belum selesa
     await jalankan(dunia, () => mulai.selesai());
     expect(dunia.dimuatUlang).toBe(0);
   }, 60_000);
+});
+
+describe("6 Okt 2026 malam: blangko ikrar diambil dari kelompok Relaas Ikrar Talak", () => {
+  // Berkas [JS] 4 kini ada di folder derry (menu 900/981, proses 80-220) DAN di
+  // folder menu 25 (proses 290-600). Perkara ikrar berproses 290+, jadi token
+  // dari folder derry selalu ditolak ABT - urutan kelompok tidak boleh menentukan.
+  const k = nyalakan(new Dunia(abtPalsu())).konteks;
+  const IKRAR = "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf";
+  const derry = { blangko: "Relaas Panggilan Sidang dan Pemberitahuan Putusan", berkas: IKRAR.replace(/\.rtf$/, ""), a: "aDerry", b: "bDerry" };
+  const menu25 = { blangko: "Relaas Ikrar Talak", berkas: IKRAR.replace(/\.rtf$/, ""), a: "aIkrar", b: "bIkrar" };
+
+  it("kelompok ikrar menang di urutan mana pun", () => {
+    expect(k.relaasPetakanToken([IKRAR], [derry, menu25]).token[IKRAR].a).toBe("aIkrar");
+    expect(k.relaasPetakanToken([IKRAR], [menu25, derry]).token[IKRAR].a).toBe("aIkrar");
+  });
+
+  it("tanpa kelompok ikrar, folder derry tetap dipakai (cadangan)", () => {
+    expect(k.relaasPetakanToken([IKRAR], [derry]).token[IKRAR].a).toBe("aDerry");
+  });
+
+  it("blangko bukan ikrar tetap: yang pertama cocok menang", () => {
+    const n = "[JS] 3.a. Permohonan Bantuan Panggilan Delegasi.rtf";
+    const x = { ...derry, berkas: n.replace(/\.rtf$/, "") };
+    const y = { ...menu25, berkas: n.replace(/\.rtf$/, "") };
+    expect(k.relaasPetakanToken([n], [x, y]).token[n].a).toBe("aDerry");
+  });
 });

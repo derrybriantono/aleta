@@ -57,6 +57,14 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.186.1",
+    dirilis: "2026-10-06T22:00:00+08:00",
+    judul: "Relaas ikrar talak memakai blangko derry dari menu Relaas Ikrar Talak",
+    butir: [
+      "Relaas & PBT massal: blangko \"[JS] 4. Relaas Panggilan Ikrar Talak P dan T\" diambil dari kelompok ABT \"Relaas Ikrar Talak\" (menu yang menerima perkara tahap ikrar), bukan dari folder Blangko Derry yang ditolak ABT untuk perkara ikrar. Token lama yang tersimpan dari folder derry dipanen ulang sekali.",
+    ],
+  },
+  {
     versi: "1.186.0",
     dirilis: "2026-10-06T21:00:00+08:00",
     judul: "6 Okt sore: Penetapan kembali, Kasir jurnal, pemantau RAM/disk/GPU, rekonvensi/eksepsi, Court Calendar & sedang berjalan, menu per perkara + e-Doc putusan massal",
