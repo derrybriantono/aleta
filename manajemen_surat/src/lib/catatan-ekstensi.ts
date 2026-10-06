@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.186.0",
+    dirilis: "2026-10-06T21:00:00+08:00",
+    judul: "6 Okt sore: Penetapan kembali, Kasir jurnal, pemantau RAM/disk/GPU, rekonvensi/eksepsi, Court Calendar & sedang berjalan, menu per perkara + e-Doc putusan massal",
+    butir: [
+      "Jadwal Sidang: penanda Court Calendar tidak sinkron hanya untuk perkara yang kedua pihaknya pernah hadir dan sesudah laporan hasil mediasi; \"sedang berjalan\" terdeteksi dalam beberapa detik dari antrian; deretan tombol tindakan bawaannya terciut; penanda \"eksepsi\"/\"rekonvensi\" dari jawaban & duplik Tergugat di e-Court.",
+      "Jadwal Sidang: tombol \"Penetapan kembali\" (PMH/PPP/PJS/PHS, satu atau massal, alasan sama/per perkara, penetap per jenis; bentuk persis blangko penetapan kembali SIPP) dan tombol \"Kasir\" (usulan jurnal keuangan perkara dari keadaan perkara, sunting, simpan ke SIPP).",
+      "Widget: titik RAM/Disk/GPU berwarna (ALETA <-> seluruh server); rincian per aplikasi di Admin -> Sumber daya server.",
+      "Panel SIPP: halaman satu perkara tidak lagi dikira daftar perkara (menu per perkara lengkap, menu massal hanya di daftar/dashboard); putusan massal ikut mengunggah e-Doc putusan dan e-Doc anonimisasi.",
+    ],
+  },
+  {
     versi: "1.185.0",
     dirilis: "2026-10-06T20:00:00+08:00",
     judul: "Perbaikan 6 Okt (butir 1-26): Jadwal Sidang (verifikasi, Court Calendar, mediasi, pembebanan, Turut T/Int, suara pihak), ABT (saksi, alasan C/D/E/H), penetapan ber-ttd+cap, unduh seluruh berkas",

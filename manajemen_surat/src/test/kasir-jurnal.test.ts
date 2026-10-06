@@ -523,6 +523,6 @@ describe("layar Kasir", () => {
     const antrian = isi.indexOf('"Daftarkan ke antrian"}');
     const tombol = isi.indexOf("<TombolKasirJurnal daftar={sidang} />");
     expect(antrian).toBeGreaterThan(0);
-    expect(isi.slice(antrian, tombol)).toMatch(/^"Daftarkan ke antrian"\}\n\s*<\/Button>\n\s*\) : null\}\n\s*$/);
+    expect(isi.slice(antrian, tombol)).toMatch(/^"Daftarkan ke antrian"\}\n\s*<\/Button>\n\s*\) : null\}\n\s*\{tampil\(tampilan, "tombol-kasir"\) \? $/);
   });
 });

@@ -29,7 +29,7 @@ export const dynamic = "force-dynamic";
  *                                   KERING kecuali `kering: false` tegas.
  *
  * Hak: kemampuan "penunjukan" - sama dengan rute tulis penetapan awal
- * (/api/aleta-bot/penunjukan/tulis). Super Admin dan Admin selalu.
+ * (rute bot penunjukan/tulis). Super Admin dan Admin selalu.
  *
  * Akun SIPP yang tercatat di SIPP: kredensial SIPP MILIK pengguna yang masuk
  * (akunSippPengguna - pola Court Calendar Jadwal Sidang), tidak pernah

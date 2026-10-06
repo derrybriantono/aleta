@@ -501,7 +501,7 @@ async function susunRencanaKembali(minta) {
       })
     );
     if (!ppp) {
-      catatan.push("Alasan penunjukan kembali juru sita tidak disimpan SIPP (borangnya membuang kotak keterangan) - alasannya tercatat di riwayat ALETA.");
+      catatan.push("Alasan penunjukan kembali juru sita tidak disimpan SIPP (blangkonya membuang kotak keterangan) - alasannya tercatat di riwayat ALETA.");
     }
     ringkas = teks;
   }

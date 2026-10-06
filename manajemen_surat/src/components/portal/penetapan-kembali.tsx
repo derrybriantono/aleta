@@ -461,7 +461,7 @@ export function PopupPenetapanKembali({
           <div>
             <h3 className="text-base font-semibold">Penetapan kembali</h3>
             <p className="text-sm text-muted-foreground">
-              PMH, PPP, PJS, dan PHS pengganti - ditulis ke SIPP dalam bentuk borang &quot;penetapan/penunjukan kembali&quot; SIPP. Pratinjau dulu,
+              PMH, PPP, PJS, dan PHS pengganti - ditulis ke SIPP dalam bentuk blangko &quot;penetapan/penunjukan kembali&quot; SIPP. Pratinjau dulu,
               lalu tulis dengan dua tekanan.
             </p>
           </div>
