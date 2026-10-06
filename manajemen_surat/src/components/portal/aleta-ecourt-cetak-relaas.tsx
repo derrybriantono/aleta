@@ -13,9 +13,10 @@
  *
  * Jadi dialog ini HANYA mencetak: daftar dokumennya dibaca dari
  * /api/aleta-ecourt/relaas-massal/cetak, juru sita memilih, lalu pilihannya
- * dikirim ke ekstensi ALETA yang mengambil RTF dari ABT, mengubahnya menjadi
- * PDF, dan menyimpannya di folder unduhan peramban. Tidak ada satu pun yang
- * ditulis ke SIPP.
+ * dikirim ke ekstensi ALETA yang mengambil RTF dari ABT dan menyimpannya APA
+ * ADANYA di folder unduhan peramban - RTF saja, tanpa PDF ("untuk cetak
+ * relaas dan BAS jangan pdf, cukup rtf/word saja", pengguna 6 Okt 2026).
+ * Tidak ada satu pun yang ditulis ke SIPP.
  *
  * ============================================================================
  * "HARI ITU" ADALAH HARI MENCETAK, BUKAN HARI SIDANGNYA
@@ -109,16 +110,11 @@ export type ButirPutaran = {
   jurusita?: string;
   /** "menunggu" | "sedang" | "selesai" | "gagal" | "dilewati" */
   keadaan: string;
-  /** Untuk "selesai" + tanpaPdf: sebab PDF-nya gagal. Untuk yang lain: sebab keadaannya. */
+  /** Sebab keadaannya (gagal, dilewati, dipulihkan). */
   sebab?: string;
   hasil?: string;
-  /**
-   * "selesai" TANPA PDF - hanya RTF yang tersimpan (rute PDF ALETA menolak,
-   * pengubah PDF mati, atau ALETA 5xx). Bukan "berhasil" polos: juru sita yang
-   * dijanjikan RTF + PDF harus tahu PDF mana yang tidak ada, dan sebabnya.
-   */
-  tanpaPdf?: boolean;
-  unduhan?: { rtf?: string; pdf?: string };
+  /** Relaas hanya RTF (6 Okt 2026) - tidak ada PDF. */
+  unduhan?: { rtf?: string };
   percobaan?: number;
 };
 
@@ -141,8 +137,6 @@ export type RingkasPutaran = {
   selesai: number;
   gagal: number;
   dilewati: number;
-  /** Bagian dari "selesai" yang hanya RTF. Tidak ada pada ekstensi lama - dihitung dari butirnya. */
-  tanpaPdf?: number;
 };
 
 export type PerkiraanWaktu = { rata: number; rendah: number; tinggi: number };
@@ -1539,10 +1533,6 @@ export function PanelPutaran({
     gagal: butir.filter((b) => b.keadaan === "gagal").length,
     dilewati: butir.filter((b) => b.keadaan === "dilewati").length + dilewatiAwal.length,
   };
-  // "Selesai" tanpa PDF dihitung dari BUTIRNYA - ringkas ekstensi lama tidak
-  // membawa tanpaPdf, dan angka yang hilang tidak boleh terbaca nol.
-  const hanyaRtf = butir.filter((b) => b.keadaan === "selesai" && b.tanpaPdf);
-  const jumlahHanyaRtf = Math.max(Number(ringkas.tanpaPdf) || 0, hanyaRtf.length);
   const total = butir.length + dilewatiAwal.length;
   const tuntas = ringkas.selesai + ringkas.gagal + ringkas.dilewati;
   const persen = total > 0 ? Math.round((tuntas / total) * 100) : 100;
@@ -1551,9 +1541,7 @@ export function PanelPutaran({
   const keadaan = pekerjaan.selesai
     ? pekerjaan.dihentikan
       ? "Dihentikan"
-      : jumlahHanyaRtf > 0
-        ? "Selesai, sebagian tanpa PDF"
-        : "Selesai"
+      : "Selesai"
     : tertahan
       ? "Tertahan"
       : "Berjalan";
@@ -1575,7 +1563,7 @@ export function PanelPutaran({
           variant={
             keadaan === "Berjalan"
               ? "info"
-              : keadaan === "Tertahan" || keadaan === "Selesai, sebagian tanpa PDF"
+              : keadaan === "Tertahan"
                 ? "warning"
                 : keadaan === "Selesai"
                   ? "success"
@@ -1618,13 +1606,7 @@ export function PanelPutaran({
       </div>
 
       <p className="text-sm">
-        <span className="font-medium">{ringkas.selesai - jumlahHanyaRtf} lengkap (RTF + PDF)</span>
-        {jumlahHanyaRtf > 0 ? (
-          <>
-            {" · "}
-            <span className="font-medium text-amber-800 dark:text-amber-300">{jumlahHanyaRtf} hanya RTF</span>
-          </>
-        ) : null}
+        <span className="font-medium">{ringkas.selesai} tersimpan (RTF)</span>
         {" · "}
         <span className={ringkas.gagal > 0 ? "font-medium text-rose-700 dark:text-rose-400" : ""}>{ringkas.gagal} gagal</span>
         {" · "}
@@ -1666,20 +1648,6 @@ export function PanelPutaran({
         <p className="text-xs text-muted-foreground">
           Berkas tersimpan di folder unduhan peramban: {pekerjaan.folder}/&lt;nama juru sita&gt;/
         </p>
-      ) : null}
-
-      {hanyaRtf.length > 0 ? (
-        <div className="space-y-1">
-          <p className="text-xs font-medium">Hanya RTF - PDF-nya gagal (cetak dari Word):</p>
-          <ul className="space-y-0.5 text-xs">
-            {hanyaRtf.map((b) => (
-              <li key={b.kunci}>
-                <span className="font-semibold">{b.nomorPerkara || b.kunci}</span>
-                {b.label ? ` (${b.label})` : ""}: {b.sebab || "sebab PDF gagal tidak tercatat"}
-              </li>
-            ))}
-          </ul>
-        </div>
       ) : null}
 
       {gagal.length > 0 ? (

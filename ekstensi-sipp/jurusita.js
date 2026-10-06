@@ -42,16 +42,16 @@
  * "relaas-henti" | "relaas-lanjut" | "relaas-bersihkan" }, persis bentuk yang
  * diteruskan jembatan aleta.js dari dialog Cetak relaas di Antrian Sidang.
  * Pekerja latar yang mengambil RTF dari ABT (dengan hak akses ABT petugas itu
- * sendiri), meminta PDF ke /aleta/api/aleta-bot/abt/pdf, lalu menyimpannya di
- * folder unduhan:
+ * sendiri), lalu menyimpan RTF itu APA ADANYA di folder unduhan - RTF saja,
+ * tanpa PDF (permintaan pengguna 6 Okt 2026: relaas cukup RTF/Word):
  *
- *   ALETA relaas <tanggal>/<juru sita>/<nomor perkara> - <keterangan>.rtf|.pdf
+ *   ALETA relaas <tanggal>/<juru sita>/<nomor perkara> - <keterangan>.rtf
  *
  * Asal portal dan ABT dihitung dari location.origin halaman ini, seperti
  * jembatan aleta.js; latar.js memeriksanya lagi terhadap asal tab pengirim.
  * TIDAK ADA YANG DITULIS KE SIPP: relaas di sini pembuatan dokumen (unduhan).
  * Seluruh permintaan di jalurnya pembacaan atau hitungan yang memang sudah
- * dibolehkan mode coba dan mode latihan (abt/pdf, main/cari ABT). Mode KERING
+ * dibolehkan mode coba dan mode latihan (main/cari ABT). Mode KERING
  * menahannya: yang akan dicetak disebutkan, tidak ada yang diunduh.
  *
  * Bahan per perkara: GET /aleta/api/aleta-ecourt/sidang?nomor= (rincian SIPP -
@@ -907,7 +907,7 @@ function jurusitaKalimatJawaban(jawab, jumlah) {
   if (jawab && jawab.ok) {
     const p = jawab.perkiraan && Number(jawab.perkiraan.rata) > 0 ? Math.max(1, Math.round(jawab.perkiraan.rata / 60000)) : 0;
     return {
-      teks: `${jumlah} dokumen masuk putaran cetak${p ? ` (perkiraan ±${p} menit)` : ""}. RTF + PDF turun ke folder unduhan "ALETA relaas".`,
+      teks: `${jumlah} dokumen masuk putaran cetak${p ? ` (perkiraan ±${p} menit)` : ""}. RTF (Word) turun ke folder unduhan "ALETA relaas".`,
       jenis: "baik",
     };
   }
@@ -949,8 +949,7 @@ function jurusitaGambarPutaran(kotak, jawab, pantau) {
       "aleta-jurusita-putaran-teks",
       `${status}: ${Number(r.selesai || 0)}/${jumlah} selesai` +
         (Number(r.gagal) ? ` · ${r.gagal} gagal` : "") +
-        (Number(r.dilewati) ? ` · ${r.dilewati} dilewati` : "") +
-        (Number(r.tanpaPdf) ? ` · ${r.tanpaPdf} tanpa PDF` : "")
+        (Number(r.dilewati) ? ` · ${r.dilewati} dilewati` : "")
     )
   );
   const tindak = (jenis, teks) => {
@@ -985,7 +984,7 @@ function jurusitaGambarPutaran(kotak, jawab, pantau) {
       cek.hidden = !t;
     });
   }
-  const gagal = (p.butir || []).filter((b) => b.keadaan === "gagal" || (b.keadaan === "selesai" && b.tanpaPdf));
+  const gagal = (p.butir || []).filter((b) => b.keadaan === "gagal");
   const lewat = Array.isArray(p.dilewati) ? p.dilewati : [];
   if (gagal.length + lewat.length > 0) {
     const rinci = jurusitaEl("details", "aleta-jurusita-rinci");
@@ -1071,7 +1070,7 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
   const { baris: judul } = jurusitaJudul(
     `Perkara ${konteksAwal.nomorPerkara}`,
     "Pilih sidang yang dipanggil dan pihaknya, lalu Cetak. Relaas diambil dari ABT dengan akun ABT Anda sendiri " +
-      "(hak akses ABT tetap berlaku), diubah menjadi PDF oleh ALETA, lalu RTF dan PDF-nya disimpan di folder unduhan " +
+      "(hak akses ABT tetap berlaku), lalu RTF-nya (Word, tanpa PDF) disimpan di folder unduhan " +
       '"ALETA relaas/<tanggal>/<juru sita>". Tidak ada yang ditulis ke SIPP. Penggugat dan Tergugat yang memakai ' +
       "blangko dan sidang yang sama dicetak SATU dokumen (blangko P dan T memuat keduanya). PBT hanya untuk perkara " +
       "yang sudah diputus. Sidang pertama memakai blangko sidang pertama (P dan T), kecuali Pemetaan blangko " +
@@ -2126,8 +2125,8 @@ async function aletaJurusitaPasangMassal(wadah, opsi) {
       "putusan (PBT) untuk putusan hari itu - bahan yang sama dengan tombol Cetak relaas di Antrian Sidang portal. " +
       "Tanggal sidang yang dipanggil tertulis di tiap perkara. Pilih semua mencentang pihak yang menurut SIPP perlu " +
       "dipanggil atau diberi tahu; yang sudah tercatat di SIPP, yang perlu konfirmasi, dan yang dari hari kerja " +
-      "sebelumnya dicentang sendiri. Relaas diambil dari ABT dengan akun ABT Anda sendiri, diubah menjadi PDF oleh " +
-      'ALETA, lalu disimpan di folder unduhan "ALETA relaas/<tanggal>/<juru sita>". Tidak ada yang ditulis ke SIPP.'
+      "sebelumnya dicentang sendiri. Relaas diambil dari ABT dengan akun ABT Anda sendiri, lalu RTF-nya (Word, " +
+      'tanpa PDF) disimpan di folder unduhan "ALETA relaas/<tanggal>/<juru sita>". Tidak ada yang ditulis ke SIPP.'
   );
   lipat.appendChild(judul);
   // Putaran di LUAR lipatan: yang sedang mencetak tetap tampak walau terlipat.

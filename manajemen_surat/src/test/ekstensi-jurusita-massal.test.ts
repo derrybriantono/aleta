@@ -19,8 +19,8 @@
  *   U3  panggilan sidang TUNDAAN: d = sidang tujuan; per perkara menyebut
  *       pertama/tundaan; atas data sungguhan sipp_donggala (SELECT saja).
  *   K5  penjelasan teknis bertanda aleta-teknis; pesan error tidak.
- *   latar.js: 401 pada PDF - "Sesi ALETA habis" hanya bila ALETA memang tidak
- *       mengenali sesinya.
+ *   latar.js: relaas RTF saja (6 Okt 2026) - rute PDF/siapa ALETA tidak
+ *       disentuh, jadi sesi ALETA tidak dapat menahan putaran.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -640,46 +640,23 @@ describe("U3 per perkara: sidang pertama DAN tundaan dapat dipilih", () => {
 });
 
 // ===========================================================================
-// latar.js - 401 pada PDF dikatakan jujur
+// latar.js - relaas RTF saja (6 Okt 2026): ALETA tidak disentuh, tidak tertahan
 // ===========================================================================
 
-describe("latar.js: 401 pada PDF - 'Sesi ALETA habis' hanya bila memang habis", () => {
-  const dunia = (statusSiapa: number) => {
+describe("latar.js: relaas RTF saja - sesi ALETA yang habis TIDAK menahan putaran", () => {
+  it("rute PDF dan 'siapa' menjawab 401, tetapi putaran selesai dengan RTF tanpa menyentuh keduanya", async () => {
     const abt = abtPalsu({ pdf: () => jawaban(401, "{}", `${ASAL_LATAR}/aleta/api/aleta-bot/abt/pdf`) });
-    return new Dunia((p) =>
-      p.alamat.includes("/aleta/api/aleta-ecourt/ekstensi/siapa")
-        ? jawaban(statusSiapa, JSON.stringify({ ok: true, data: { nama: "Andi" } }), p.alamat)
-        : abt(p)
+    const d = new Dunia((p) =>
+      p.alamat.includes("/aleta/api/aleta-ecourt/ekstensi/siapa") ? jawaban(401, "{}", p.alamat) : abt(p)
     );
-  };
-  async function tahan(statusSiapa: number) {
-    const d = dunia(statusSiapa);
     const pekerja = nyalakan(d);
     await minta(d, pekerja, pesanMulaiLatar(ENAM.slice(0, 1)));
-    await jalankan(d, () => Boolean(d.putaran()?.tertahan));
-    return d;
-  }
-
-  it("siapa 401: 'Sesi ALETA habis'; siapa ditanyakan SEKALI, dengan GET", async () => {
-    const d = await tahan(401);
-    expect(d.putaran().tertahan).toMatchObject({ perluMasuk: "aleta", sebab: "Sesi ALETA habis - masuk ke portal ALETA lagi, lalu tekan Lanjutkan." });
-    const siapa = d.permintaan.filter((p) => p.alamat.includes("/ekstensi/siapa"));
-    expect(siapa).toHaveLength(1);
-    expect(siapa[0].metode).toBe("GET");
-    expect(siapa[0].alamat).toBe(`${ASAL_LATAR}/aleta/api/aleta-ecourt/ekstensi/siapa`);
-  });
-
-  it("siapa 200: sesi masih dikenali - tidak menyuruh masuk lagi", async () => {
-    const d = await tahan(200);
-    const t = d.putaran().tertahan;
-    expect(t.perluMasuk).toBe("aleta");
-    expect(t.sebab).toMatch(/masih dikenali/);
-    expect(t.sebab).not.toMatch(/Sesi ALETA habis/);
-  });
-
-  it("siapa tak menentu (404): dikatakan tidak dapat diperiksa ulang", async () => {
-    const d = await tahan(404);
-    expect(d.putaran().tertahan.sebab).toMatch(/tidak dapat diperiksa ulang \(ALETA menjawab 404\)/);
+    await jalankan(d, () => Boolean(d.putaran()?.selesai));
+    expect(d.putaran().tertahan).toBeNull();
+    expect(d.putaran().butir[0].keadaan).toBe("selesai");
+    expect(d.permintaan.filter((p) => p.alamat.includes("/aleta/api/"))).toEqual([]);
+    expect(d.unduhan).toHaveLength(1);
+    expect(d.unduhan[0].filename).toMatch(/\.rtf$/);
   });
 });
 

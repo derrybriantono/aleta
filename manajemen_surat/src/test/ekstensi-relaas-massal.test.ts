@@ -36,7 +36,6 @@ import {
   ABT,
   KATALOG,
   BERKAS,
-  jawaban,
   Dunia,
   nyalakan,
   jalankan,
@@ -57,28 +56,29 @@ import type { Unduhan } from "./dunia-latar";
 
 describe("(a) putaran enam dokumen bertahan dari pekerja yang mati TIGA kali", () => {
   /**
-   * Tiga kematian di tiga titik yang menuntut jawaban berbeda:
-   *   #2  mati saat menunggu PDF - RTF-nya SUDAH tercatat tersimpan
-   *   #4  mati sesudah unduhan PDF LAHIR, sebelum pekerja sempat mencatatnya -
-   *       hanya riwayat unduhan (chrome.downloads.search) yang tahu
-   *   #5  mati sesudah unduhan RTF lahir, sebelum dicatat - yang ketahuan dari
-   *       riwayat hanya RTF-nya; PDF-nya masih harus dibuat
+   * Relaas hanya RTF (6 Okt 2026) - tidak ada PDF. Tiga kematian di titik
+   * yang menuntut jawaban berbeda:
+   *   #2  mati saat CETAK di ABT - belum ada berkas apa pun: diulang
+   *   #4  mati sesudah unduhan RTF LAHIR, sebelum pekerja sempat mencatatnya -
+   *       hanya riwayat unduhan (chrome.downloads.search) yang tahu; TIDAK
+   *       dicetak ulang
+   *   #5  mati saat CETAK lagi - diulang
    */
   async function putaranDenganKematian() {
-    const titikMati = new Set(["pdf-102", "unduh-104.pdf", "unduh-105.rtf"]);
+    const titikMati = new Set(["cetak-102", "unduh-104.rtf", "cetak-105"]);
     const dunia = new Dunia(
       abtPalsu({
         bunuhSaat: (p) => {
-          if (!p.alamat.endsWith("/abt/pdf")) return false;
-          const rtf = Buffer.from(JSON.parse(p.badan).rtfBase64, "base64").toString("latin1");
-          if (rtf.includes("perkara 102 ") && titikMati.delete("pdf-102")) return true;
+          if (!p.alamat.includes("/abt/preview?")) return false;
+          const c = new URL(p.alamat).searchParams.get("c");
+          if (c === "102" && titikMati.delete("cetak-102")) return true;
+          if (c === "105" && titikMati.delete("cetak-105")) return true;
           return false;
         },
       })
     );
     dunia.kaitUnduh = (relatif) => {
-      if (relatif.includes("104-Pdt") && relatif.endsWith(".pdf") && titikMati.delete("unduh-104.pdf")) return "bunuh";
-      if (relatif.includes("105-Pdt") && relatif.endsWith(".rtf") && titikMati.delete("unduh-105.rtf")) return "bunuh";
+      if (relatif.includes("104-Pdt") && relatif.endsWith(".rtf") && titikMati.delete("unduh-104.rtf")) return "bunuh";
       return undefined;
     };
 
@@ -109,16 +109,17 @@ describe("(a) putaran enam dokumen bertahan dari pekerja yang mati TIGA kali", (
     expect(p.butir.map((b: any) => b.keadaan)).toEqual(Array(6).fill("selesai"));
     expect(p.pemulihan).toBe(3);
 
-    // Tepat dua berkas per dokumen - RTF dan PDF - dan tidak satu pun " (1)".
+    // Tepat SATU berkas per dokumen - RTF saja, tanpa PDF - dan tidak satu pun " (1)".
     const nama = dunia.unduhan.map(namaRelatif);
     expect(nama.filter((n) => / \(\d+\)\.(rtf|pdf)$/.test(n)), nama.join("\n")).toEqual([]);
+    expect(nama.filter((n) => /\.pdf$/i.test(n)), nama.join("\n")).toEqual([]);
     expect(new Set(nama).size).toBe(nama.length);
     for (const d of ENAM) {
-      for (const akhiran of [".rtf", ".pdf"]) {
-        const cocok = nama.filter((n) => n.includes(`/${d.perkaraId}-Pdt`) && n.endsWith(akhiran));
-        expect(cocok, `${d.perkaraId}${akhiran}: ${cocok.join(", ")}`).toHaveLength(1);
-      }
+      const cocok = nama.filter((n) => n.includes(`/${d.perkaraId}-Pdt`) && n.endsWith(".rtf"));
+      expect(cocok, `${d.perkaraId}.rtf: ${cocok.join(", ")}`).toHaveLength(1);
     }
+    // Rute PDF ALETA tidak pernah disentuh.
+    expect(dunia.permintaan.filter((x) => x.alamat.includes("/abt/pdf"))).toEqual([]);
   });
 
   it("butir yang sedang dikerjakan saat mati dipulihkan lewat chrome.downloads.search", async () => {
@@ -126,17 +127,18 @@ describe("(a) putaran enam dokumen bertahan dari pekerja yang mati TIGA kali", (
     const p = dunia.putaran();
     const butir = (id: string) => p.butir.find((b: any) => b.perkaraId === id);
 
-    // #4: PDF lahir tepat sebelum pekerja mati - riwayat unduhanlah buktinya.
+    // #4: RTF lahir tepat sebelum pekerja mati - riwayat unduhanlah buktinya.
     expect(butir("104").sebab).toContain("riwayat unduhan");
-    expect(butir("104").unduhan.pdf).toMatch(/104-Pdt.*\.pdf$/);
+    expect(butir("104").unduhan.rtf).toMatch(/104-Pdt.*\.rtf$/);
+    expect(butir("104").unduhan.pdf).toBeUndefined();
     expect(cetakUntuk(dunia, "104")).toHaveLength(1); // TIDAK dicetak ulang dari ABT
+    expect(p.catatan.join("\n")).toMatch(/104.*selesai, dari riwayat unduhan/);
 
-    // #2 dan #5: diulang, tetapi RTF yang sudah ada tidak diunduh lagi.
+    // #2 dan #5: mati saat CETAK - diulang.
     expect(butir("102").percobaan).toBe(2);
     expect(butir("105").percobaan).toBe(2);
     expect(cetakUntuk(dunia, "102")).toHaveLength(2);
     expect(cetakUntuk(dunia, "105")).toHaveLength(2);
-    expect(p.catatan.join("\n")).toMatch(/105.*RTF ditemukan di riwayat unduhan/);
 
     // Pencarian riwayat memang dijalankan untuk ketiga butir yang tertinggal "sedang".
     const dicari = dunia.pencarian.map((k) => String(k.filenameRegex));
@@ -150,9 +152,9 @@ describe("(a) putaran enam dokumen bertahan dari pekerja yang mati TIGA kali", (
   it("berkas turun ke folder tanggal / juru sita, bernama nomor perkara", async () => {
     const { dunia } = await putaranDenganKematian();
     const nama = dunia.unduhan.map(namaRelatif).sort();
-    expect(nama).toContain("ALETA relaas 2026-09-25/Andi Juru Sita, S.H/101-Pdt.G-2026-PA.Dgl - dokumen 1.pdf");
+    expect(nama).toContain("ALETA relaas 2026-09-25/Andi Juru Sita, S.H/101-Pdt.G-2026-PA.Dgl - dokumen 1.rtf");
     expect(nama).toContain("ALETA relaas 2026-09-25/Budi Santoso/103-Pdt.G-2026-PA.Dgl - dokumen 3.rtf");
-    expect(nama).toContain("ALETA relaas 2026-09-25/Juru sita tidak tercatat/105-Pdt.G-2026-PA.Dgl - dokumen 5.pdf");
+    expect(nama).toContain("ALETA relaas 2026-09-25/Juru sita tidak tercatat/105-Pdt.G-2026-PA.Dgl - dokumen 5.rtf");
     // Tidak ada pekerja yang menulis galat ke konsol dalam putaran yang sehat.
     expect(dunia.galatKonsol.filter((g) => g[0] === "error")).toEqual([]);
   });
@@ -318,53 +320,59 @@ describe("(c) setiap kegagalan terbaca beserta sebabnya", () => {
     expect(j.pekerjaan.dilewati[0].sebab).toContain('"Relaas dan PBT" (ABT menjawab 500)');
   });
 
-  it("PDF gagal: RTF tetap tersimpan dan sebab PDF-nya ikut tercatat", async () => {
+  // Permintaan pengguna 6 Okt 2026: "untuk cetak relaas dan BAS jangan pdf,
+  // cukup rtf/word saja". Penjaga ini MENJALANKAN latar.js: rute PDF ALETA
+  // yang menjawab apa pun (bahkan 200 dengan PDF) tidak pernah dipanggil.
+  it("RTF SAJA: rute PDF ALETA tidak pernah dipanggil, yang turun hanya .rtf - walau kiriman lama meminta PDF", async () => {
+    let pdfDipanggil = 0;
     const dunia = new Dunia(
       abtPalsu({
-        pdf: () =>
-          jawaban(200, JSON.stringify({ ok: true, data: { available: false, message: "LibreOffice belum terpasang di container bot" } }), `${ASAL}/aleta/api/aleta-bot/abt/pdf`),
+        pdf: () => {
+          pdfDipanggil += 1;
+          return null;
+        },
       })
     );
     const pekerja = nyalakan(dunia);
-    await minta(dunia, pekerja, pesanMulai(ENAM.slice(0, 1), { rtfBilaPdfGagal: true }));
+    // Ruas lama dari portal/ekstensi versi sebelumnya - diabaikan.
+    await minta(dunia, pekerja, pesanMulai(ENAM.slice(0, 2), { unduhRtf: "bila-pdf-gagal", rtfBilaPdfGagal: true }));
     await jalankan(dunia, () => Boolean(dunia.putaran()?.selesai));
-    const b = dunia.putaran().butir[0];
-    expect(dunia.unduhan.map(namaRelatif)).toEqual(["ALETA relaas 2026-09-25/Andi Juru Sita, S.H/101-Pdt.G-2026-PA.Dgl - dokumen 1.rtf"]);
-    expect(b.keadaan).toBe("selesai");
-    expect(b.tanpaPdf).toBe(true);
-    expect(b.sebab).toContain("LibreOffice belum terpasang di container bot");
-    expect(b.sebab).toContain("Hanya RTF yang tersimpan");
+    const p = dunia.putaran();
+    expect(p.butir.map((b: any) => b.keadaan)).toEqual(["selesai", "selesai"]);
+    expect(pdfDipanggil).toBe(0);
+    expect(dunia.permintaan.filter((x) => x.alamat.includes("/abt/pdf"))).toEqual([]);
+    expect(dunia.unduhan.map(namaRelatif)).toEqual([
+      "ALETA relaas 2026-09-25/Andi Juru Sita, S.H/101-Pdt.G-2026-PA.Dgl - dokumen 1.rtf",
+      "ALETA relaas 2026-09-25/Andi Juru Sita, S.H/102-Pdt.G-2026-PA.Dgl - dokumen 2.rtf",
+    ]);
+    expect(p.butir.every((b: any) => b.unduhan.pdf === undefined && b.tanpaPdf === undefined)).toBe(true);
+    expect(p.opsi).toEqual({ bentuk: "rtf" });
+    expect(p.butir[0].hasil).toBe("101-Pdt.G-2026-PA.Dgl - dokumen 1.rtf");
   });
 
-  it("PDF gagal dengan cara 'bila-pdf-gagal': RTF diunduh SEBAGAI GANTI; dengan 'tidak': gagal tanpa berkas", async () => {
-    const pdfGagal = () => jawaban(502, "Bad Gateway", `${ASAL}/aleta/api/aleta-bot/abt/pdf`);
-    const a = new Dunia(abtPalsu({ pdf: pdfGagal }));
-    const pa = nyalakan(a);
-    await minta(a, pa, pesanMulai(ENAM.slice(0, 1), { unduhRtf: "bila-pdf-gagal" }));
-    await jalankan(a, () => Boolean(a.putaran()?.selesai));
-    expect(a.unduhan.map(namaRelatif)[0]).toMatch(/\.rtf$/);
-    expect(a.putaran().butir[0].sebab).toContain("ALETA menjawab 502");
-
-    const b = new Dunia(abtPalsu({ pdf: pdfGagal }));
-    const pb = nyalakan(b);
-    await minta(b, pb, pesanMulai(ENAM.slice(0, 1), { rtfBilaPdfGagal: false }));
-    await jalankan(b, () => Boolean(b.putaran()?.selesai));
-    expect(b.unduhan).toHaveLength(0);
-    expect(b.putaran().butir[0].keadaan).toBe("gagal");
-    expect(b.putaran().butir[0].sebab).toBe("PDF gagal: ALETA menjawab 502");
+  it("penjaga teks: latar.js dan jembatan aleta.js tidak lagi memuat rute PDF ataupun pilihan bentuk relaas", () => {
+    const akar = path.resolve(__dirname, "../../../ekstensi-sipp");
+    const latar = readFileSync(path.join(akar, "latar.js"), "utf8");
+    const jembatan = readFileSync(path.join(akar, "aleta.js"), "utf8");
+    expect(latar).not.toMatch(/aleta-bot\/abt\/pdf/);
+    expect(latar).not.toMatch(/data:application\/pdf/);
+    expect(latar).not.toMatch(/relaasCaraRtf|bila-pdf-gagal/);
+    expect(jembatan).not.toMatch(/JEMBATAN_CARA_RTF|pekerjaan\.unduhRtf|pekerjaan\.rtfBilaPdfGagal/);
   });
 
-  it("sesi ALETA habis (401 pada PDF): putaran tertahan perluMasuk 'aleta'", async () => {
-    const dunia = new Dunia(abtPalsu({ pdf: () => jawaban(401, "{}", `${ASAL}/aleta/api/aleta-bot/abt/pdf`) }));
-    const pekerja = nyalakan(dunia);
-    await minta(dunia, pekerja, pesanMulai(ENAM.slice(0, 1)));
-    await jalankan(dunia, () => Boolean(dunia.putaran()?.tertahan));
-    expect(dunia.putaran().tertahan.perluMasuk).toBe("aleta");
+  it("penjaga teks: BAS (massal & unduh naskah) tetap RTF - tidak ada konversi PDF di jalurnya", () => {
+    const akar = path.resolve(__dirname, "../../..");
+    const basmassal = readFileSync(path.join(akar, "ekstensi-sipp/basmassal.js"), "utf8");
+    const rute = readFileSync(path.join(akar, "manajemen_surat/src/app/api/aleta-ecourt/bas/naskah/route.ts"), "utf8");
+    for (const [nama, isi] of [["basmassal.js", basmassal], ["bas/naskah/route.ts", rute]] as const) {
+      expect(isi, nama).not.toMatch(/abt\/pdf|rtfKePdf|dokumenKePdf|application\/pdf|naskah\/konversi/);
+    }
+    expect(rute).toContain('"Content-Type": "application/rtf"');
   });
 
   it("unduhan yang diblokir peramban: gagal dengan sebab peramban, tidak dikira tersimpan", async () => {
     const dunia = new Dunia(abtPalsu());
-    dunia.kaitUnduh = (relatif) => (relatif.endsWith(".pdf") ? "blokir" : undefined);
+    dunia.kaitUnduh = (relatif) => (relatif.endsWith(".rtf") ? "blokir" : undefined);
     const pekerja = nyalakan(dunia);
     await minta(dunia, pekerja, pesanMulai(ENAM.slice(0, 1)));
     await jalankan(dunia, () => Boolean(dunia.putaran()?.selesai));
@@ -411,8 +419,10 @@ describe("nama berkas unduhan dan alamat ABT", () => {
     ]);
     // Pola riwayat unduhan satu dokumen tidak menangkap berkas dokumen lainnya.
     const pola = new RegExp(k.relaasPolaUnduhan(k.relaasJalurBerkas(p, p.butir[0])));
-    expect(pola.test("D:\\Unduhan\\ALETA relaas 2026-09-25\\Budi Santoso\\103-Pdt.G-2026-PA.Dgl - dokumen 3 (1).pdf")).toBe(true);
-    expect(pola.test("D:\\Unduhan\\ALETA relaas 2026-09-25\\Budi Santoso\\103-Pdt.G-2026-PA.Dgl - dokumen 3 - 2.pdf")).toBe(false);
+    expect(pola.test("D:\\Unduhan\\ALETA relaas 2026-09-25\\Budi Santoso\\103-Pdt.G-2026-PA.Dgl - dokumen 3 (1).rtf")).toBe(true);
+    expect(pola.test("D:\\Unduhan\\ALETA relaas 2026-09-25\\Budi Santoso\\103-Pdt.G-2026-PA.Dgl - dokumen 3 - 2.rtf")).toBe(false);
+    // PDF tidak lagi dibuat, jadi tidak pernah dijadikan bukti tersimpan.
+    expect(pola.test("D:\\Unduhan\\ALETA relaas 2026-09-25\\Budi Santoso\\103-Pdt.G-2026-PA.Dgl - dokumen 3.pdf")).toBe(false);
   });
 
   it("nama dirapikan untuk Windows: tanpa aksara terlarang, tanpa titik/spasi di ujung", () => {
@@ -530,18 +540,31 @@ describe("tombol Hentikan", () => {
     expect(cetakUntuk(dunia, "103")).toHaveLength(0);
   });
 
-  it("putaran tertahan yang dihentikan menyebut berkas yang SUDAH tersimpan", async () => {
-    const dunia = new Dunia(abtPalsu({ pdf: () => jawaban(401, "{}", `${ASAL}/aleta/api/aleta-bot/abt/pdf`) }));
+  it("putaran tertahan (sesi ABT) yang dihentikan: butirnya dilewati sebelum dikerjakan", async () => {
+    let sudahMasuk = true;
+    const dunia = new Dunia(abtPalsu({ masuk: () => sudahMasuk }));
     const pekerja = nyalakan(dunia);
-    await minta(dunia, pekerja, pesanMulai(ENAM.slice(0, 1)));
+    await minta(dunia, pekerja, pesanMulai(ENAM.slice(0, 2)));
+    await jalankan(dunia, () => dunia.putaran()?.butir[0].keadaan === "selesai");
+    sudahMasuk = false;
     await jalankan(dunia, () => Boolean(dunia.putaran()?.tertahan));
+    expect(dunia.putaran().tertahan.perluMasuk).toBe("abt");
     const j = await minta(dunia, pekerja, { jenis: "relaas-henti" });
     expect(j.ok).toBe(true);
-    const b = dunia.putaran().butir[0];
+    const b = dunia.putaran().butir[1];
     expect(b.keadaan).toBe("dilewati");
-    expect(b.sebab).toBe(
-      "dihentikan petugas di tengah dokumen ini - yang sudah tersimpan: 101-Pdt.G-2026-PA.Dgl - dokumen 1.rtf"
-    );
+    expect(b.sebab).toBe("dihentikan petugas sebelum dikerjakan");
+    expect(dunia.unduhan).toHaveLength(1);
+  });
+
+  it("butir yang RTF-nya sudah tersimpan lalu dihentikan menyebut berkas itu", () => {
+    const k = nyalakan(new Dunia(abtPalsu())).konteks;
+    const p = { butir: [{ keadaan: "sedang", unduhan: { rtf: "101-Pdt.G-2026-PA.Dgl - dokumen 1.rtf" } }] };
+    k.tutupDenganHenti(p);
+    expect(p.butir[0]).toMatchObject({
+      keadaan: "dilewati",
+      sebab: "dihentikan petugas di tengah dokumen ini - yang sudah tersimpan: 101-Pdt.G-2026-PA.Dgl - dokumen 1.rtf",
+    });
   });
 });
 
@@ -634,24 +657,17 @@ describe("telaah: dua relaas-mulai yang tumpang-tindih", () => {
   });
 });
 
-describe("telaah: rtfBilaPdfGagal menurut NAMANYA", () => {
-  it("true = RTF hanya bila PDF gagal; false = tidak pernah; tanpa keduanya = selalu", () => {
-    const k = nyalakan(new Dunia(abtPalsu())).konteks;
-    expect(k.relaasCaraRtf({})).toBe("selalu");
-    expect(k.relaasCaraRtf({ rtfBilaPdfGagal: true })).toBe("bila-pdf-gagal");
-    expect(k.relaasCaraRtf({ rtfBilaPdfGagal: false })).toBe("tidak");
-    expect(k.relaasCaraRtf({ unduhRtf: "selalu", rtfBilaPdfGagal: true })).toBe("selalu");
-  });
-
-  it("rtfBilaPdfGagal:true dengan PDF berhasil: hanya PDF yang turun", async () => {
+describe("6 Okt 2026: relaas RTF saja - ruas lama rtfBilaPdfGagal/unduhRtf tidak berarti apa-apa", () => {
+  it("rtfBilaPdfGagal:false (dulu 'jangan pernah RTF') tetap menghasilkan RTF, bukan nihil atau PDF", async () => {
     const dunia = new Dunia(abtPalsu());
     const pekerja = nyalakan(dunia);
-    await minta(dunia, pekerja, pesanMulai(ENAM.slice(0, 1), { rtfBilaPdfGagal: true }));
+    await minta(dunia, pekerja, pesanMulai(ENAM.slice(0, 1), { rtfBilaPdfGagal: false, unduhRtf: "tidak" }));
     await jalankan(dunia, () => Boolean(dunia.putaran()?.selesai));
     expect(dunia.unduhan.map(namaRelatif)).toEqual([
-      "ALETA relaas 2026-09-25/Andi Juru Sita, S.H/101-Pdt.G-2026-PA.Dgl - dokumen 1.pdf",
+      "ALETA relaas 2026-09-25/Andi Juru Sita, S.H/101-Pdt.G-2026-PA.Dgl - dokumen 1.rtf",
     ]);
     expect(dunia.putaran().butir[0].keadaan).toBe("selesai");
+    expect(typeof nyalakan(new Dunia(abtPalsu())).konteks.relaasCaraRtf).toBe("undefined");
   });
 });
 

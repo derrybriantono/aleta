@@ -452,6 +452,13 @@ async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername,
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0) return { ok: false, alasan: "perkara_tidak_sah" };
   if (!pdf || !pdf.length) return { ok: false, alasan: "pdf_kosong" };
+  // Penetapan PMH/PPP/PJS/PHS SELALU PDF (pengguna 6 Okt 2026: "penetapan
+  // pmh, ppp, pjs dan phs harus pdf"). Satu-satunya pintu tulis ke e-Doc
+  // penetapan SIPP menolak apa pun yang kepalanya bukan %PDF- - RTF/DOCX yang
+  // lolos ke sini akan tersimpan berakhiran .pdf dan tidak dapat dibuka SIPP.
+  if (!Buffer.from(pdf).subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
+    return { ok: false, alasan: "bukan_pdf" };
+  }
   if (!(await sippSkemaService.tabelAda("perkara_dokumen_penetapan"))) {
     return { ok: false, alasan: "tabel_dokumen_penetapan_tidak_ada" };
   }
