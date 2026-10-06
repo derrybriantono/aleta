@@ -305,7 +305,60 @@ function nomorDiElemenAleta() {
   return jumlah;
 }
 
+/**
+ * ============================================================================
+ * HALAMAN SATU PERKARA YANG MENYEBUT PERKARA LAIN (6 Oktober 2026, butir 7)
+ * ============================================================================
+ *
+ * "Lebih dari satu nomor berarti daftar" keliru di halaman detail perkara
+ * yang memang MENYEBUT perkara lain di isinya sendiri:
+ *
+ *   - Posita di tab Data Umum: "...dengan nomor putusan 556/Pdt.G/2024/PA.Dgl
+ *     dan perkara tersebut telah putus..." - diukur atas sipp_donggala,
+ *     131 dari 10.120 perkara (cerai ulang, harta bersama, verzet);
+ *   - tab Akta Cerai (nomor akta "123/AC/2026/PA.Dgl"), tab Banding ("Nomor
+ *     Perkara Tingkat Pertama" + nomor banding), dan baris "Terkait Nomor
+ *     Perkara" pada alur restitusi.
+ *
+ * Halaman itu terbaca "daftar": panel menampilkan DAFTAR PERKARA beserta
+ * seluruh menu massal, dan menu per perkara - termasuk unggah edoc putusan
+ * dan edoc anonimisasi hakim - hilang.
+ *
+ * Di halaman beralamat detail perkara, nomor milik halaman dibaca dari baris
+ * "Nomor Perkara" tab Data Umum - baris yang dicetak SIPP untuk perkara itu
+ * sendiri (data_umum.php: td#first-child "Nomor Perkara"). Tab yang sedang
+ * tidak dipilih tetap ada di DOM, jadi textContent dibaca, bukan innerText.
+ * Label lain yang diawali "Nomor Perkara" (Tingkat Pertama, Banding,
+ * Terkait...) TIDAK cocok: labelnya harus persis.
+ */
+const LABEL_NOMOR_PERKARA = /^nomor\s+perkara\s*:?$/i;
+
+function nomorUtamaHalamanPerkara() {
+  if (!document.body || typeof document.querySelectorAll !== "function") return "";
+  for (const sel of Array.from(document.querySelectorAll("td, th"))) {
+    if (typeof sel.closest === "function" && sel.closest(PENUNJUK_ELEMEN_ALETA)) continue;
+    const label = String(sel.textContent || "").replace(/\s+/g, " ").trim();
+    if (!LABEL_NOMOR_PERKARA.test(label)) continue;
+    let isi = sel.nextElementSibling;
+    // Satu sel penyela ":" di antara label dan isinya pada sebagian versi SIPP.
+    if (isi && /^:?$/.test(String(isi.textContent || "").trim())) isi = isi.nextElementSibling || isi;
+    if (!isi) continue;
+    const pola = new RegExp(POLA_PERKARA.source);
+    const cocok = pola.exec(String(isi.textContent || ""));
+    if (cocok) return cocok[1];
+  }
+  return "";
+}
+
 function cariNomorPerkara() {
+  // Halaman detail perkara: nomornya sendiri dari baris "Nomor Perkara" -
+  // nomor perkara LAIN di posita, akta, atau banding tidak menjadikannya
+  // halaman daftar (butir 7, 6 Okt 2026; lihat nomorUtamaHalamanPerkara).
+  if (alamatHalamanPerkara()) {
+    const utama = nomorUtamaHalamanPerkara();
+    if (utama) return utama;
+  }
+
   const teks = document.body ? String(document.body.innerText || "") : "";
   const milikAleta = nomorDiElemenAleta();
 
@@ -5987,14 +6040,25 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar, opsi) {
           lanjut = { ok: false, bunyi: `Edoc tidak terunggah: ${String((galat && galat.message) || galat)}.` };
         }
         const bunyiLanjut = `${bunyi} ${(lanjut && lanjut.bunyi) || ""}`.trim();
+        // Hasil edoc dipulangkan tersendiri supaya antrean massal dapat
+        // mencatatnya per perkara (butir 6, 6 Okt 2026).
+        const edoc = { ok: Boolean(lanjut && lanjut.ok), bunyi: String((lanjut && lanjut.bunyi) || "Edoc tidak terunggah.") };
         if (!lanjut || !lanjut.ok) {
+          // Antrean massal: edoc yang gagal TIDAK menghentikan antrean -
+          // putusannya sudah tersimpan, sebabnya tercatat di butir antrean,
+          // dan halaman tetap dibuka kembali untuk perkara berikutnya.
+          if (o.lanjutWalauEdocGagal === true) {
+            if (kabar) kabar.textContent = `${bunyiLanjut} Halaman perkara dibuka kembali…`;
+            setTimeout(muatUlangHalamanPerkara, 900);
+            return { ok: true, bunyi: bunyiLanjut, pesanSipp: jawaban ? jawaban.pesan : "", edoc };
+          }
           const tetap = `${bunyiLanjut} Halaman TIDAK dimuat ulang supaya keterangan ini terbaca.`;
           if (kabar) kabar.textContent = tetap;
-          return { ok: true, bunyi: tetap, pesanSipp: jawaban ? jawaban.pesan : "" };
+          return { ok: true, bunyi: tetap, pesanSipp: jawaban ? jawaban.pesan : "", edoc };
         }
         if (kabar) kabar.textContent = `${bunyiLanjut} Halaman perkara dibuka kembali…`;
         setTimeout(muatUlangHalamanPerkara, 900);
-        return { ok: true, bunyi: bunyiLanjut, pesanSipp: jawaban ? jawaban.pesan : "" };
+        return { ok: true, bunyi: bunyiLanjut, pesanSipp: jawaban ? jawaban.pesan : "", edoc };
       }
       if (kabar) kabar.textContent = `${bunyi} Halaman perkara dibuka kembali…`;
       setTimeout(muatUlangHalamanPerkara, 900);
@@ -6279,6 +6343,17 @@ function bagianIsiPutusan(nomorPerkara) {
   let naskahEdoc = null;
   const sekaligus = a30Nyala && typeof a30BarisSekaligus === "function" ? a30BarisSekaligus() : null;
   if (sekaligus) kotakUnggah.appendChild(sekaligus.baris);
+  // Butir 6 (6 Okt): drafnya dari naskah yang dikirim SEBELUMNYA di peramban
+  // ini (antrean dari berkas, atau halaman ini sebelum dimuat ulang) - naskah
+  // itu tetap menjadi edoc putusan + anonimisasinya. Barisnya tampil dengan
+  // nama berkasnya, dan centangnya dapat dilepas seperti biasa.
+  if (sekaligus && typeof a30AmbilNaskahEdoc === "function") {
+    void a30AmbilNaskahEdoc(nomorPerkara).then((tersimpan) => {
+      if (!tersimpan || naskahEdoc) return;
+      naskahEdoc = tersimpan;
+      sekaligus.setelNaskah(naskahEdoc);
+    });
+  }
   // Ringkasan panjang tiap bagian punya wadahnya SENDIRI, bukan wadah usulan.
   // Pembacaan usulan mengosongkan wadahnya lebih dulu, sehingga ringkasan yang
   // ditaruh di sana akan terhapus sepersekian detik sesudah ditulis - tepat
@@ -6387,6 +6462,10 @@ function bagianIsiPutusan(nomorPerkara) {
     // Peringatan konversi (butir 8) - PDF: tata letaknya dapat berubah.
     for (const p of peringatanBentuk) wadahUnggah.appendChild(buatElemen("div", "aleta-tetap-awas", String(p)));
     if (sekaligus) sekaligus.setelNaskah(naskahEdoc);
+    // Butir 6 (6 Okt): naskah yang sama disimpan di peramban ini, supaya
+    // "Putusan massal - SIPP" atas draf ini pun dapat mengunggah edocnya
+    // (a30OpsiEdocMassal). Tidak ditunggu, dan gagalnya tidak berbunyi.
+    if (naskahEdoc && typeof a30SimpanNaskahEdoc === "function") void a30SimpanNaskahEdoc(nomorPerkara, naskahEdoc.asli, naskahEdoc.rtf);
     // Perbaikan 1 Okt (S, butir 12 - UI Baru saja): anonimisasi edoc mulai
     // disiapkan SEKARANG, selagi usulan dibaca dan diperiksa - bukan sesudah
     // Isikan. Tidak ada yang dikirim ke SIPP; pemeriksanya tetap berjalan.
@@ -14536,6 +14615,14 @@ async function segarkan() {
   }
 
   const nomor = cariNomorPerkara();
+  if (!nomor && alamatHalamanPerkara()) {
+    // Halaman detail perkara yang nomornya belum terbaca (tab Data Umum
+    // belum termuat) BUKAN halaman daftar: panel daftar dan menu massalnya
+    // tidak pernah digambar di sini (butir 7, 6 Okt 2026). Pengamat DOM
+    // memanggil segarkan() lagi begitu Data Umum tiba. Panel perkara yang
+    // sudah tergambar dibiarkan: nomornya akan terbaca sama lagi.
+    return;
+  }
   if (!nomor) {
     // Bukan halaman perkara. Bila ini halaman daftar, barisnya ditandai -
     // itu justru tempat penanda paling berguna: petugas melihat puluhan
@@ -15054,7 +15141,9 @@ async function bagianAntreanSipp(nomorHalaman) {
   const berikutnya = alatAntreanBerikutnya(antrean);
   const daftar = buatElemen("div", "aleta-massal-daftar");
   for (const b of antrean.butir) {
-    const baris = buatElemen("div", `aleta-perkakas-baris ${b.keadaan === "selesai" ? "aleta-perkakas-baik" : b.keadaan === "gagal" ? "aleta-perkakas-buruk" : b.keadaan === "dilewati" ? "" : "aleta-perkakas-awas"}`);
+    // Edoc antrean yang gagal (butir 6): putusannya tersimpan, edocnya belum - kuning, bukan hijau.
+    const edocGagal = b.keadaan === "selesai" && /^gagal/.test(String(b.edoc || ""));
+    const baris = buatElemen("div", `aleta-perkakas-baris ${edocGagal ? "aleta-perkakas-awas" : b.keadaan === "selesai" ? "aleta-perkakas-baik" : b.keadaan === "gagal" ? "aleta-perkakas-buruk" : b.keadaan === "dilewati" ? "" : "aleta-perkakas-awas"}`);
     baris.appendChild(buatElemen("span", "aleta-perkakas-nama", b.nomor));
     baris.appendChild(buatElemen("span", "aleta-perkakas-nilai", b.catatan || namaKeadaanButir(b)));
     daftar.appendChild(baris);
@@ -15429,6 +15518,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
       if (butir.sebabTahan) b.sebabTahan = butir.sebabTahan;
       else delete b.sebabTahan;
       if (butir.isianPilihan) b.isianPilihan = butir.isianPilihan;
+      if (butir.edoc) b.edoc = butir.edoc;
     });
 
   butir.keadaan = "jalan";
@@ -15916,6 +16006,39 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     return;
   }
 
+  // 3e. Edoc putusan + edoc anonimisasi (butir 6, 6 Okt 2026 - Baru & UI
+  // Baru, sama dengan Putusan otomatis satu perkara). Sampai 1.185.0 antrean
+  // hanya mengisi blangko lalu Simpan; edoc tidak pernah ikut. Kini naskah
+  // asli perkara ini (disimpan di peramban saat "Kirim naskah lalu susun
+  // antrean" atau saat naskahnya dikirim dari panel perkara) dipakai jalur
+  // yang SAMA dengan panel satu perkara: a30OpsiSimpanPutusan menyiapkan
+  // anonimisasinya SEBELUM Simpan, a30UnggahEdoc mengunggah keduanya
+  // SESUDAH Simpan terbukti. Disiapkan di sini, sebelum 4a, supaya 4a tetap
+  // pemeriksaan terakhir sebelum Simpan. Edoc yang gagal tidak menahan
+  // Simpan dan tidak menghentikan antrean - dicatat pada butirnya.
+  // Antrean dari ABT tidak ikut: edocnya sudah diurus di tahap ABT
+  // (unggahBerkasAbt, pilihan "unggah ke SIPP" di sana).
+  let opsiSimpanA30 = typeof a30OpsiSimpanMassal === "function" ? a30OpsiSimpanMassal(segar) : null;
+  if (opsiSimpanA30 && antrean.asal !== "abt" && typeof a30OpsiEdocMassal === "function") {
+    try {
+      opsiSimpanA30 = await a30OpsiEdocMassal({
+        opsi: opsiSimpanA30,
+        nomorPerkara: butir.nomor,
+        kabar,
+        // Mode manual: petugas ada di depan layar - temuan pemeriksa anonim
+        // ditanyakan. Otomatis: tidak ditanyakan; edocnya tidak diunggah.
+        wadahTanya: antrean.modus === "manual" && kabar && kabar.parentNode ? kabar.parentNode : null,
+      });
+    } catch (galat) {
+      const sebab = String((galat && galat.message) || galat);
+      opsiSimpanA30 = {
+        ...opsiSimpanA30,
+        lanjutWalauEdocGagal: true,
+        sesudahTersimpan: async () => ({ ok: false, bunyi: `Edoc tidak disiapkan: ${sebab}.` }),
+      };
+    }
+  }
+
   // 4a. Antreannya masih ada, masih antrean yang sama, dan perkara ini masih
   // dipegang halaman ini? Dibaca segar TEPAT sebelum Simpan. Sampai 26
   // September 2026 hal itu hanya diperiksa saat pengerjaan dimulai: petugas
@@ -15948,8 +16071,8 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   // 4. Simpan, dibuktikan dari SIPP. Baru & UI Baru (butir 10): keadaan
   // "sebelum" yang dibaca di langkah 1 dipakai lagi - satu bacaan
   // status-perkara per perkara lebih sedikit; blangko yang diisi sejak itu
-  // tidak menulis apa pun ke basis data SIPP.
-  const opsiSimpanA30 = typeof a30OpsiSimpanMassal === "function" ? a30OpsiSimpanMassal(segar) : null;
+  // tidak menulis apa pun ke basis data SIPP. Opsinya (beserta edoc) sudah
+  // disusun di 3e.
   const hasilSimpan = opsiSimpanA30
     ? await simpanPutusanLaluBuka(butir.nomor, kabar, opsiSimpanA30)
     : await simpanPutusanLaluBuka(butir.nomor, kabar);
@@ -15973,6 +16096,14 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
       dapatPulih: false,
     });
     alatCatat("massal", `${butir.nomor}: putusan tersimpan`, "");
+    // 4e. Hasil edoc per perkara (butir 6, 6 Okt 2026). Putusannya tetap
+    // "selesai" - sudah tersimpan dan tidak boleh dikerjakan ulang - tetapi
+    // edoc yang gagal disebut sebabnya dan barisnya tidak lagi hijau.
+    if (hasilSimpan.edoc) {
+      butir.edoc = hasilSimpan.edoc.ok ? "ok" : `gagal: ${hasilSimpan.edoc.bunyi}`;
+      butir.catatan += hasilSimpan.edoc.ok ? ` · ${hasilSimpan.edoc.bunyi}` : ` · EDOC GAGAL: ${hasilSimpan.edoc.bunyi}`;
+      if (!hasilSimpan.edoc.ok) alatCatat("massal-galat", `${butir.nomor}: edoc ${hasilSimpan.edoc.bunyi}`, "");
+    }
   } else {
     butir.keadaan = "gagal";
     butir.catatan = hasilSimpan.bunyi;
@@ -16285,6 +16416,7 @@ function bagianMassalBerkas(isi, sesudahSusun) {
 
     const berhasil = [];
     let gagal = 0;
+    let naskahEdocTersimpan = 0;
     // BERURUTAN, dan itu disengaja. Tiap berkas dikirim utuh ke peladen lalu
     // diurai di sana; mengirim dua puluh sekaligus berarti dua puluh naskah
     // berada di memori peladen pada saat yang sama. Yang ditunggu orang di
@@ -16316,6 +16448,12 @@ function bagianMassalBerkas(isi, sesudahSusun) {
         const jawab = luar && luar.data ? luar.data : luar;
         if (!jawab || !jawab.ok) throw new Error((jawab && jawab.sebab) || "naskahnya tidak dapat dibaca");
         berhasil.push({ nomor: p.nomor, perkaraId: "", jenis: "" });
+        // Butir 6 (6 Okt, Baru & UI Baru): naskah aslinya disimpan di peramban
+        // ini supaya antrean dapat mengunggah edoc putusan + anonimisasinya di
+        // halaman perkara (a30OpsiEdocMassal). Gagal menyimpan tidak menggagalkan draf.
+        if (bentukLainA30 && typeof a30SimpanNaskahEdoc === "function") {
+          if (await a30SimpanNaskahEdoc(p.nomor, p.berkas, naskahKirim)) naskahEdocTersimpan += 1;
+        }
       } catch (galat) {
         gagal += 1;
         alatCatat("massal-galat", `${p.nomor}: ${String((galat && galat.message) || galat)}`, "");
@@ -16358,6 +16496,9 @@ function bagianMassalBerkas(isi, sesudahSusun) {
       (modus === "otomatis"
         ? "ALETA menekan Simpan SIPP sendiri begitu blangko Putusan Akhir tiap perkara dibuka. "
         : "tombol ALETA di tiap perkara mengisi blangko lalu menekan Simpan SIPP. ") +
+      (bentukLainA30
+        ? `Sesudah tiap putusan tersimpan, edoc putusan dan edoc anonimisasinya ikut diunggah (${naskahEdocTersimpan} dari ${berhasil.length} naskah siap untuk edoc). `
+        : "") +
       `Buka perkara pertamanya - ${berhasil[0].nomor} - di SIPP; panel antrean akan menuntun sisanya.`;
     if (typeof sesudahSusun === "function") sesudahSusun();
   });
@@ -19592,6 +19733,15 @@ async function a30UnggahEdoc(p) {
           .join("; ") || "tidak ada jawaban per berkas"}.`,
       };
     }
+    // Butir 6 (6 Okt): naskah yang disimpan di peramban untuk edoc antrean
+    // tidak disimpan lebih lama dari perlunya - edocnya sudah masuk.
+    if (typeof a30HapusNaskahEdoc === "function") {
+      try {
+        await a30HapusNaskahEdoc(p.nomorPerkara);
+      } catch {
+        /* simpanan peramban hanya pembantu */
+      }
+    }
     return {
       ok: true,
       bunyi: `Edoc putusan${p.anonimisasi ? " dan edoc anonimisasi" : ""} terunggah${jawab.antrean ? ", dan perkara ini masuk antrean Direktori Putusan" : ""}.`,
@@ -19639,6 +19789,188 @@ async function a30OpsiSimpanPutusan(p) {
   opsi.sesudahTersimpan = (kabar) =>
     a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: anon.berkas, kabar });
   return opsi;
+}
+
+/*
+ * ============================================================================
+ * EDOC PADA PUTUSAN MASSAL (6 Oktober 2026, butir 6)
+ * ============================================================================
+ *
+ * "Putusan otomatis sudah bisa mengisi blangko putusan, tetapi tidak ikut
+ * mengunggah edoc putusan, dan edoc anonimisasi tidak dibuatkan."
+ *
+ * Antrean massal bekerja di halaman tiap perkara, SESUDAH halaman dimuat
+ * ulang - berkas naskah yang dipilih petugas di halaman daftar sudah tidak
+ * ada lagi di sana, dan portal sengaja tidak menyimpan berkas aslinya (rute
+ * unggah-naskah hanya menyimpan draf hasil pemotongan). Karena itu naskah
+ * asli disimpan di PERAMBAN INI (IndexedDB asal SIPP - bukan di server),
+ * per nomor perkara, saat:
+ *   - "Kirim naskah lalu susun antrean" (Putusan massal - dari berkas);
+ *   - naskah dikirim dari Putusan otomatis panel satu perkara (supaya
+ *     "Putusan massal - SIPP" atas draf itu pun dapat mengunggah edocnya).
+ * Simpanannya dibuang sesudah edocnya terunggah, dan yang berumur lebih dari
+ * 14 hari dibuang sendiri. Bentuk yang diterima sama dengan a30BarisSekaligus
+ * (RTF/DOCX/DOC/PDF); TXT tidak disimpan.
+ *
+ * Unggah dan anonimisasinya TIDAK ditulis ulang: a30OpsiSimpanPutusan dan
+ * a30UnggahEdoc yang sama dengan panel satu perkara.
+ */
+const A30_RAK_NASKAH = { nama: "aleta-naskah-edoc", toko: "naskah", umurMs: 14 * 24 * 60 * 60 * 1000 };
+
+const a30KunciRak = (nomor) => String(nomor || "").trim().toLowerCase();
+
+/** Basis data rak naskah, atau null bila IndexedDB tidak ada/ditolak. TIDAK PERNAH melempar. */
+function a30BukaRakNaskah() {
+  return new Promise((selesai) => {
+    let idb = null;
+    try {
+      idb = typeof indexedDB !== "undefined" && indexedDB ? indexedDB : null;
+    } catch {
+      idb = null;
+    }
+    if (!idb) return selesai(null);
+    let minta;
+    try {
+      minta = idb.open(A30_RAK_NASKAH.nama, 1);
+    } catch {
+      return selesai(null);
+    }
+    minta.onupgradeneeded = () => {
+      try {
+        const db = minta.result;
+        if (!db.objectStoreNames.contains(A30_RAK_NASKAH.toko)) db.createObjectStore(A30_RAK_NASKAH.toko, { keyPath: "kunci" });
+      } catch {
+        /* gagal dibuat: onerror yang menjawab */
+      }
+    };
+    minta.onsuccess = () => selesai(minta.result);
+    minta.onerror = () => selesai(null);
+    minta.onblocked = () => selesai(null);
+  });
+}
+
+/** Satu transaksi rak. Pulang {ok, hasil}; TIDAK PERNAH melempar. */
+async function a30TransaksiRak(mode, kerja) {
+  const db = await a30BukaRakNaskah();
+  if (!db) return { ok: false, hasil: null };
+  return new Promise((selesai) => {
+    let hasil = null;
+    const tutup = (ok) => {
+      try {
+        db.close();
+      } catch {
+        /* sudah tertutup */
+      }
+      selesai({ ok, hasil: ok ? hasil : null });
+    };
+    try {
+      const tx = db.transaction(A30_RAK_NASKAH.toko, mode);
+      const m = kerja(tx.objectStore(A30_RAK_NASKAH.toko));
+      if (m) {
+        m.onsuccess = () => {
+          hasil = m.result;
+        };
+      }
+      tx.oncomplete = () => tutup(true);
+      tx.onerror = () => tutup(false);
+      tx.onabort = () => tutup(false);
+    } catch {
+      tutup(false);
+    }
+  });
+}
+
+async function a30BitaBerkas(berkas) {
+  if (!berkas) return null;
+  const bita = typeof berkas.arrayBuffer === "function" ? await berkas.arrayBuffer() : null;
+  if (!bita) return null;
+  return { nama: String(berkas.name || ""), tipe: String(berkas.type || ""), bita };
+}
+
+/**
+ * Menyimpan naskah asli (dan RTF-nya bila sudah diubah) untuk edoc antrean.
+ * Pulang true bila tersimpan. TIDAK PERNAH melempar.
+ */
+async function a30SimpanNaskahEdoc(nomor, asli, rtf) {
+  try {
+    const kunci = a30KunciRak(nomor);
+    if (!kunci || !asli || !["rtf", "docx", "doc", "pdf"].includes(a30Bentuk(asli.name))) return false;
+    const rekam = {
+      kunci,
+      nomor: String(nomor),
+      asli: await a30BitaBerkas(asli),
+      rtf: rtf && rtf !== asli ? await a30BitaBerkas(rtf) : null,
+      waktu: Date.now(),
+    };
+    if (!rekam.asli) return false;
+    // Yang kedaluwarsa dibuang sekalian - rak ini tidak tumbuh tanpa batas.
+    const semua = await a30TransaksiRak("readonly", (toko) => toko.getAll());
+    for (const lama of (semua.ok && Array.isArray(semua.hasil) ? semua.hasil : [])) {
+      if (lama && Date.now() - Number(lama.waktu || 0) > A30_RAK_NASKAH.umurMs) {
+        await a30TransaksiRak("readwrite", (toko) => toko.delete(lama.kunci));
+      }
+    }
+    const simpan = await a30TransaksiRak("readwrite", (toko) => toko.put(rekam));
+    return simpan.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Naskah tersimpan untuk satu nomor: {asli: File, rtf: File|null}, atau null. TIDAK PERNAH melempar. */
+async function a30AmbilNaskahEdoc(nomor) {
+  try {
+    const kunci = a30KunciRak(nomor);
+    if (!kunci) return null;
+    const baca = await a30TransaksiRak("readonly", (toko) => toko.get(kunci));
+    const r = baca.ok ? baca.hasil : null;
+    if (!r || !r.asli || !r.asli.bita) return null;
+    if (Date.now() - Number(r.waktu || 0) > A30_RAK_NASKAH.umurMs) return null;
+    const jadi = (b) => new File([b.bita], b.nama, { type: b.tipe || A30_MIME[a30Bentuk(b.nama)] || "" });
+    return { asli: jadi(r.asli), rtf: r.rtf && r.rtf.bita ? jadi(r.rtf) : null };
+  } catch {
+    return null;
+  }
+}
+
+async function a30HapusNaskahEdoc(nomor) {
+  const kunci = a30KunciRak(nomor);
+  if (!kunci) return false;
+  const hapus = await a30TransaksiRak("readwrite", (toko) => toko.delete(kunci));
+  return hapus.ok;
+}
+
+/**
+ * Opsi simpanPutusanLaluBuka untuk SATU perkara antrean massal (Baru & UI
+ * Baru): opsi dasar a30OpsiSimpanMassal + edoc dari naskah tersimpan, lewat
+ * a30OpsiSimpanPutusan yang sama dengan panel satu perkara. Selalu
+ * lanjutWalauEdocGagal - antrean tidak berhenti karena edoc.
+ */
+async function a30OpsiEdocMassal(p) {
+  const dasar = p.opsi || {};
+  const naskah = await a30AmbilNaskahEdoc(p.nomorPerkara);
+  if (!naskah) {
+    return {
+      ...dasar,
+      lanjutWalauEdocGagal: true,
+      sesudahTersimpan: async () => ({
+        ok: false,
+        bunyi:
+          "Edoc putusan dan edoc anonimisasi TIDAK diunggah: naskah aslinya tidak tersimpan di peramban ini " +
+          "(kirim naskahnya lewat “Kirim naskah lalu susun antrean” atau Putusan otomatis perkara ini di PC ini). " +
+          "Unggah lewat bagian “Unggah putusan ke SIPP” di halaman perkaranya.",
+      }),
+    };
+  }
+  const opsi = await a30OpsiSimpanPutusan({
+    nomorPerkara: p.nomorPerkara,
+    kabar: p.kabar,
+    wadah: p.wadahTanya || null,
+    sebelum: dasar.sebelum || null,
+    edoc: naskah,
+  });
+  // Terunggah: a30UnggahEdoc sendiri membuang naskah tersimpannya.
+  return { ...dasar, ...opsi, lanjutWalauEdocGagal: true };
 }
 
 /*
