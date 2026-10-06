@@ -4364,6 +4364,8 @@ app.use("/internal/aleta-bot/panggil", require("./routes/panggilRoutes"));
 app.use("/internal/aleta-bot", require("./routes/ecourtAksiRoutes"));
 // Edoc penetapan dari ABT, bertanda tangan dan bercap (perbaikan 2 Okt 2026, butir 17, K6).
 app.use("/internal/aleta-bot", require("./routes/penetapanEdocRoutes"));
+// Penetapan kembali PMH/PPP/PJS/PHS dari Jadwal Sidang, bentuk borang "kembali" SIPP (6 Okt 2026).
+app.use("/internal/aleta-bot/penetapan-kembali", require("./routes/penetapanKembaliRoutes"));
 app.use("/internal/aleta-bot", internalGatewayRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 
