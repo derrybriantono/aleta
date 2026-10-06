@@ -2903,4 +2903,12 @@ module.exports = {
   // perlahan, dan yang menyimpang justru baris yang dibaca pemeriksa.
   barisAudit,
   tanggalIso,
+  // Dipakai penetapanKembaliService (Penetapan kembali dari Jadwal Sidang,
+  // 6 Okt 2026) - satu penerjemah akun, satu pembaca petugas, satu aturan
+  // tahapan terakhir untuk kedua jalur.
+  akunPetugasMasuk,
+  hakimUntuk,
+  petugasUntuk,
+  prosesTerakhirPerkara,
+  prosesTerakhirSesudah,
 };

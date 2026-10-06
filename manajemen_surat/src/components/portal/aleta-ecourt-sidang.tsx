@@ -72,6 +72,7 @@ import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
 import { CourtCalendarSidang } from "@/components/portal/court-calendar-sidang";
+import { TombolPenetapanKembali } from "@/components/portal/penetapan-kembali";
 import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
@@ -6249,6 +6250,7 @@ export function AletaEcourtSidang({
               </Button>
               ) : null}
 
+              <TombolPenetapanKembali sidang={sidang} />
               {/* Pendaftaran ke aplikasi antrian ruang tunggu.
 
                   Dua tekanan, bukan satu: yang pertama hanya MEMPERLIHATKAN

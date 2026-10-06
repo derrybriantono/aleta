@@ -453,7 +453,7 @@ export type CalonPenetap = {
   otomatis: boolean;
 };
 
-function calonPenetap(
+export function calonPenetap(
   akun: AkunSiapPakai[],
   jabatan: "pimpinan" | "panitera" | "hakim",
   terpilih: AkunSiapPakai | null,
