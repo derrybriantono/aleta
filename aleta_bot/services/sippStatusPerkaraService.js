@@ -1661,6 +1661,10 @@ async function cariHalamanInti(kataCari, pilihan = {}) {
     jenisPerkaraId: 0,
     pihak1: "",
     pihak2: "",
+    // Butir 24 (6 Okt 2026): turut tergugat (perkara_pihak4) dan intervensi
+    // (perkara_pihak3), "; " seperti pihak1/2. Kosong = tidak ada.
+    turutTergugat: "",
+    intervensi: "",
     sebutanPihak1: "",
     sebutanPihak2: "",
     kuasa: "",
@@ -1860,9 +1864,15 @@ async function lengkapiRuas(hasil, hariIni, takTerbaca = []) {
                  FROM perkara_pihak1 a WHERE a.perkara_id IN (${isian})
                UNION ALL
                SELECT 2 AS ke, b.perkara_id AS perkaraId, b.nama AS nama, b.urutan AS urutan, b.id AS id
-                 FROM perkara_pihak2 b WHERE b.perkara_id IN (${isian})) u
+                 FROM perkara_pihak2 b WHERE b.perkara_id IN (${isian})
+               UNION ALL
+               SELECT 3 AS ke, c.perkara_id AS perkaraId, c.nama AS nama, c.urutan AS urutan, c.id AS id
+                 FROM perkara_pihak3 c WHERE c.perkara_id IN (${isian})
+               UNION ALL
+               SELECT 4 AS ke, d.perkara_id AS perkaraId, d.nama AS nama, d.urutan AS urutan, d.id AS id
+                 FROM perkara_pihak4 d WHERE d.perkara_id IN (${isian})) u
         ORDER BY u.perkaraId, u.ke, u.urutan, u.id`,
-      [...daftarId, ...daftarId]
+      [...daftarId, ...daftarId, ...daftarId, ...daftarId]
     ),
     // Sisinya (pihak_ke) ikut dibaca: kuasa kedua pihak dulu digabung dalam
     // satu kolom tanpa sisi, dan kuasa Tergugat/Termohon terbaca sebagai kuasa
@@ -1979,6 +1989,8 @@ async function lengkapiRuas(hasil, hariIni, takTerbaca = []) {
         .join("; ");
     x.pihak1 = sisi(1);
     x.pihak2 = sisi(2);
+    x.intervensi = sisi(3);
+    x.turutTergugat = sisi(4);
   }
 
   // ==========================================================================

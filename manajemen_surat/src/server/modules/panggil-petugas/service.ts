@@ -72,7 +72,7 @@ type BotPetugas = {
 
 type BotPihak = {
   kunci: string;
-  golongan: "pihak1" | "pihak2";
+  golongan: "pihak1" | "pihak2" | "pihak3" | "pihak4";
   jenis: "pihak" | "kuasa";
   nama: string;
   nomor: string;
@@ -319,7 +319,7 @@ export async function bacaSasaran(
       kunci: p.kunci,
       golongan: p.golongan,
       nama: p.nama,
-      peran: sebutanSatuPihak(p.golongan === "pihak2" ? 2 : 1, bahan, p.jenis),
+      peran: peranPihak(p.golongan, bahan, p.jenis),
       jenis: "pihak",
       nomor,
       nomorTersamar: samarkanNomor(nomor),
@@ -331,6 +331,18 @@ export async function bacaSasaran(
 }
 
 /** Yang aman dikirim ke peramban: nomor utuh dibuang. */
+/**
+ * Sebutan pihak menurut golongannya. pihak3 = intervensi, pihak4 = turut
+ * tergugat (butir 23, 6 Okt 2026) - sebelumnya keduanya tidak pernah menjadi
+ * sasaran, dan selain pihak2 seluruhnya disebut pihak pertama.
+ */
+function peranPihak(golongan: BotPihak["golongan"], bahan: Parameters<typeof sebutanSatuPihak>[1], jenis: string) {
+  const kuasa = String(jenis || "").toLowerCase() === "kuasa" ? "Kuasa " : "";
+  if (golongan === "pihak4") return `${kuasa}Turut ${sebutanSatuPihak(2, bahan)}`;
+  if (golongan === "pihak3") return `${kuasa}Intervensi`;
+  return sebutanSatuPihak(golongan === "pihak2" ? 2 : 1, bahan, jenis);
+}
+
 export function untukPeramban(orang: OrangLengkap): OrangSasaran & { golongan: GolonganSasaran } {
   const { nomor: _nomor, ...sisa } = orang;
   void _nomor;

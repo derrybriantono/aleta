@@ -405,7 +405,8 @@ describe("butir 8 - para pihak bersusun di bawah nomor perkara", () => {
     expect(sisi("503/Pdt.G/2026/PA.Dgl", "pihak-kedua")!.textContent).toBe(
       "Tergugat: Salbi bin Lasa; Indah binti Lasa"
     );
-    expect(sisi("503/Pdt.G/2026/PA.Dgl", "turut")!.textContent).toBe("Turut Tergugat: Intan binti Lasa");
+    // 6 Okt 2026 (butir 23): disingkat "Turut T", sama dengan Jadwal Sidang.
+    expect(sisi("503/Pdt.G/2026/PA.Dgl", "turut")!.textContent).toBe("Turut T: Intan binti Lasa");
   });
 
   it("saring cepat dan pencarian lanjutan tetap menemukan tiap pihak, termasuk turut tergugat", async () => {

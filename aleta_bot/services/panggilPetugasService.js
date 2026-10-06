@@ -179,7 +179,7 @@ function buatLayanan(deps = {}) {
     const tidakTerbaca = [];
     const tgl = /^\d{4}-\d{2}-\d{2}$/.test(bersih(tanggal).slice(0, 10)) ? bersih(tanggal).slice(0, 10) : "";
 
-    const [perkara, hakim, panitera, jurusita, mediator, pihak1, pihak2, kuasa, jadwal] = await Promise.all([
+    const [perkara, hakim, panitera, jurusita, mediator, pihak1, pihak2, kuasa, jadwal, pihak3, pihak4] = await Promise.all([
       kueriAman(
         `SELECT nomor_perkara AS nomorPerkara, alur_perkara_id AS alurPerkaraId,
                 jenis_perkara_id AS jenisPerkaraId, jenis_perkara_nama AS jenisPerkaraNama
@@ -238,6 +238,20 @@ function buatLayanan(deps = {}) {
             [id, tgl]
           )
         : Promise.resolve({ ok: true, baris: [] }),
+      // Butir 23 (6 Okt 2026): intervensi (perkara_pihak3) dan turut tergugat
+      // (perkara_pihak4) - dapat dikirimi WhatsApp seperti pihak lain.
+      kueriAman(
+        `SELECT x.pihak_id AS id, x.nama AS nama, x.urutan AS urutan, p.telepon AS telepon
+           FROM perkara_pihak3 x LEFT JOIN pihak p ON p.id = x.pihak_id
+          WHERE x.perkara_id = ? ORDER BY x.urutan`,
+        [id]
+      ),
+      kueriAman(
+        `SELECT x.pihak_id AS id, x.nama AS nama, x.urutan AS urutan, p.telepon AS telepon
+           FROM perkara_pihak4 x LEFT JOIN pihak p ON p.id = x.pihak_id
+          WHERE x.perkara_id = ? ORDER BY x.urutan`,
+        [id]
+      ),
     ]);
 
     const catat = (nama, hasil) => {
@@ -251,6 +265,8 @@ function buatLayanan(deps = {}) {
     catat("pihak pertama", pihak1);
     catat("pihak kedua", pihak2);
     catat("kuasa", kuasa);
+    catat("intervensi", pihak3);
+    catat("turut tergugat", pihak4);
 
     const satuPerkara = perkara.baris[0] || {};
 
@@ -328,13 +344,19 @@ function buatLayanan(deps = {}) {
       return hasil;
     };
 
-    const kuasa1 = kuasa.baris.filter((b) => Number(b.pihakKe) !== 2);
+    const kuasa1 = kuasa.baris.filter((b) => ![2, 3, 4].includes(Number(b.pihakKe)));
     const kuasa2 = kuasa.baris.filter((b) => Number(b.pihakKe) === 2);
-    const [p1, p2, k1, k2] = await Promise.all([
+    const kuasa3 = kuasa.baris.filter((b) => Number(b.pihakKe) === 3);
+    const kuasa4 = kuasa.baris.filter((b) => Number(b.pihakKe) === 4);
+    const [p1, p2, k1, k2, p3, k3, p4, k4] = await Promise.all([
       susunPihak(pihak1.baris, "pihak1", "pihak1", "pihak"),
       susunPihak(pihak2.baris, "pihak2", "pihak2", "pihak"),
       susunPihak(kuasa1, "pihak1", "kuasa1", "kuasa"),
       susunPihak(kuasa2, "pihak2", "kuasa2", "kuasa"),
+      susunPihak(pihak3.baris, "pihak3", "pihak3", "pihak"),
+      susunPihak(kuasa3, "pihak3", "kuasa3", "kuasa"),
+      susunPihak(pihak4.baris, "pihak4", "pihak4", "pihak"),
+      susunPihak(kuasa4, "pihak4", "kuasa4", "kuasa"),
     ]);
 
     const satuJadwal = jadwal.baris[0] || {};
@@ -350,7 +372,7 @@ function buatLayanan(deps = {}) {
         agenda: bersih(satuJadwal.agenda),
       },
       petugas: { majelis, pp, js, mediator: daftarMediator },
-      pihak: [...p1, ...k1, ...p2, ...k2],
+      pihak: [...p1, ...k1, ...p2, ...k2, ...p4, ...k4, ...p3, ...k3],
       tidakTerbaca,
     };
   }

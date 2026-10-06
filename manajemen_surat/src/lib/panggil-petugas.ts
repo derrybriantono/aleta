@@ -63,7 +63,7 @@ export const SAKLAR_PANGGIL: SaklarPanggil[] = [
     kunci: "panggil-pihak-chat",
     label: "Chat pihak (WhatsApp)",
     keterangan:
-      "Nama penggugat/pemohon, tergugat/termohon, dan kuasanya dapat diklik untuk mengirim pemberitahuan WhatsApp dipanggil masuk ruang sidang. Saksi tidak termasuk.",
+      "Nama penggugat/pemohon, tergugat/termohon, turut tergugat, intervensi, dan kuasanya dapat diklik untuk mengirim pemberitahuan WhatsApp dipanggil masuk ruang sidang. Saksi tidak termasuk.",
     bawaan: true,
   },
 ];
@@ -104,7 +104,8 @@ export function bacaPanggil(mentah: string | null | undefined): PilihanPanggil {
 // ============================================================================
 
 /** Golongan sasaran yang dapat diklik di layar. */
-export type GolonganSasaran = "majelis" | "pp" | "js" | "mediator" | "pihak1" | "pihak2";
+/** pihak3 = intervensi, pihak4 = turut tergugat (butir 23, 6 Okt 2026) - kedudukan perkara_pihakN SIPP. */
+export type GolonganSasaran = "majelis" | "pp" | "js" | "mediator" | "pihak1" | "pihak2" | "pihak3" | "pihak4";
 
 export type StatusNomor = "terverifikasi" | "belum-terverifikasi" | "bermasalah" | "tidak-ada";
 

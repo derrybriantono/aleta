@@ -88,11 +88,16 @@ const STATUS_KAWIN = {
  * Diambil dari pemakaian SIPP sendiri: cabang 1 penggugat/pemohon, 2
  * tergugat/termohon, 3 turut tergugat, 4 pelawan, 5 saksi.
  */
+// 6 Okt 2026 (butir 23-24): 3 dan 4 sempat tertukar ("Turut Tergugat" /
+// "Pelawan"). Sumber SIPP sendiri (models: "3 AS pihakke, 'intervensi'",
+// "4 AS pihakke, 'turut'", kolom jenis_intervensi_* hanya di perkara_pihak3)
+// dan data satker (perkara_pihak4: 28 baris turut tergugat, perkara_pihak3: 0)
+// menetapkan 3 = intervensi, 4 = turut tergugat.
 const KEDUDUKAN = {
   1: "Penggugat / Pemohon",
   2: "Tergugat / Termohon",
-  3: "Turut Tergugat",
-  4: "Pelawan",
+  3: "Intervensi",
+  4: "Turut Tergugat",
   5: "Saksi",
 };
 

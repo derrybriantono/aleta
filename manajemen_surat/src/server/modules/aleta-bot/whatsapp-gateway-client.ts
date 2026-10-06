@@ -1812,6 +1812,10 @@ export type BarisCariPerkara = {
   sebutanPihak1?: string;
   /** "Tergugat"/"Termohon"/"Terdakwa". */
   sebutanPihak2?: string;
+  /** Butir 24 (6 Okt 2026): turut tergugat (perkara_pihak4), "; ". */
+  turutTergugat?: string;
+  /** Butir 24: intervensi (perkara_pihak3), "; ". */
+  intervensi?: string;
   /** Kuasa hukum yang aktif, "" bila tidak ada. */
   kuasa?: string;
   hakimKetua?: string;

@@ -91,6 +91,8 @@ type Mediasi = {
     tergugat: string[];
     /** pihak_ke 4, dipisah bot sejak 27 Sep 2026; bot lama menaruhnya di tergugat. */
     turutTergugat?: string[];
+    /** pihak_ke 3 (perkara_pihak3) - butir 23, 6 Okt 2026. */
+    intervensi?: string[];
     saksi?: string[];
     lain?: string[];
   };
@@ -127,7 +129,9 @@ function susunanPihak(baris: Mediasi): Array<{ kunci: string; sebutan: string; n
   return [
     { kunci: "pihak-pertama", sebutan: sebutan.satu, nama: baris.pihak.penggugat ?? [] },
     { kunci: "pihak-kedua", sebutan: sebutan.dua, nama: baris.pihak.tergugat ?? [] },
-    { kunci: "turut", sebutan: `Turut ${sebutan.dua}`, nama: baris.pihak.turutTergugat ?? [] },
+    // Butir 23 (6 Okt 2026): disingkat "Turut T" dan "Int", sama dengan Jadwal Sidang.
+    { kunci: "turut", sebutan: `Turut ${sebutan.dua.charAt(0).toUpperCase()}`, nama: baris.pihak.turutTergugat ?? [] },
+    { kunci: "intervensi", sebutan: "Int", nama: baris.pihak.intervensi ?? [] },
   ].filter((sisi) => sisi.nama.length > 0);
 }
 
@@ -137,6 +141,7 @@ function namaPihakSemua(baris: Mediasi): string[] {
     ...(baris.pihak.penggugat ?? []),
     ...(baris.pihak.tergugat ?? []),
     ...(baris.pihak.turutTergugat ?? []),
+    ...(baris.pihak.intervensi ?? []),
   ];
 }
 

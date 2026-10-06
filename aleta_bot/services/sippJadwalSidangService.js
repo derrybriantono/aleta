@@ -2548,18 +2548,26 @@ async function pihakBanyakPerkara(daftarPerkaraId = [], opsi = {}) {
   for (const baris of Array.isArray(rows) ? rows : []) {
     const kunci = String(baris.perkaraId);
     if (!hasil[kunci]) {
-      hasil[kunci] = { penggugat: [], tergugat: [], saksi: [], lain: [] };
-      if (pisahkanTurut) hasil[kunci].turutTergugat = [];
+      // 6 Okt 2026 (butir 23): turutTergugat dan intervensi SELALU dikirim
+      // tersendiri. Tanpa pisahkanTurut, turut tergugat TETAP juga di
+      // tergugat (pemakai lama: cetak, layar antrian, papan ruang) - layar
+      // yang menyebutnya "Turut T" menyaringnya dari baris T sendiri.
+      hasil[kunci] = { penggugat: [], tergugat: [], saksi: [], lain: [], turutTergugat: [], intervensi: [] };
     }
     const nama = cleanText(baris.nama);
     if (!nama) continue;
 
     const kedudukan = Number(baris.pihakKe);
     if (kedudukan === 1) hasil[kunci].penggugat.push(nama);
-    else if (kedudukan === 4 && pisahkanTurut) hasil[kunci].turutTergugat.push(nama);
-    // Turut tergugat ada di SISI tergugat - itulah artinya. Menaruhnya di
-    // penggugat membalik kedudukannya di naskah yang dibaca para pihak.
-    else if (kedudukan === 2 || kedudukan === 4) hasil[kunci].tergugat.push(nama);
+    else if (kedudukan === 4) {
+      hasil[kunci].turutTergugat.push(nama);
+      // Turut tergugat ada di SISI tergugat - itulah artinya. Menaruhnya di
+      // penggugat membalik kedudukannya di naskah yang dibaca para pihak.
+      if (!pisahkanTurut) hasil[kunci].tergugat.push(nama);
+    } else if (kedudukan === 2) hasil[kunci].tergugat.push(nama);
+    // pihak_ke 3 = intervensi (perkara_pihak3: jenis_intervensi_*,
+    // tergabung_ke_pihak). Bukan sisi mana pun sampai ia tergabung.
+    else if (kedudukan === 3) hasil[kunci].intervensi.push(nama);
     else if (kedudukan === 5) hasil[kunci].saksi.push(nama);
     else hasil[kunci].lain.push(nama);
   }

@@ -347,7 +347,19 @@ type SidangBaris = {
     } | null;
     mediasi: Array<{ mulai: string; selesai: string; hasil: string; mediator: string }>;
   } | null;
-  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
+  /**
+   * turutTergugat/intervensi (butir 23, 6 Okt 2026): dikirim bot tersendiri.
+   * tergugat MASIH memuat turut tergugat (pemakai lama: cetak, antrian) -
+   * layar ini menyaringnya dari baris T. Lihat pihakTampil.
+   */
+  pihak: {
+    penggugat: string[];
+    tergugat: string[];
+    saksi?: string[];
+    lain?: string[];
+    turutTergugat?: string[];
+    intervensi?: string[];
+  };
   panggilan: {
     hadirSebelumnya: number | null;
     // Tergugat/termohon pernah hadir pada sidang mana pun sebelumnya. Dikirim
@@ -3814,6 +3826,16 @@ function LencanaKesiapan({
       {nilai.penghambat.length > 0 ? ` · ${nilai.penghambat.length}` : ""}
     </Badge>
   );
+}
+
+/**
+ * Tergugat TANPA turut tergugat (butir 23, 6 Okt 2026): bot masih memasukkan
+ * turut tergugat ke `tergugat` demi pemakai lama, dan layar ini menyebutnya
+ * sendiri di baris "Turut T". Nama yang sama tidak ditulis dua kali.
+ */
+export function pihakTampil(pihak: { tergugat: string[]; turutTergugat?: string[] }) {
+  const turut = new Set(pihak.turutTergugat ?? []);
+  return { tergugat: turut.size ? pihak.tergugat.filter((n) => !turut.has(n)) : pihak.tergugat };
 }
 
 /**
@@ -7360,7 +7382,9 @@ export function AletaEcourtSidang({
                               penggugat, sehingga hampir setiap perkara tampak
                               berpenggugat tiga orang. */}
                           {baris.pihak.penggugat.length > 0 ||
-                          baris.pihak.tergugat.length > 0 ? (
+                          baris.pihak.tergugat.length > 0 ||
+                          (baris.pihak.turutTergugat ?? []).length > 0 ||
+                          (baris.pihak.intervensi ?? []).length > 0 ? (
                             <div className="mt-0.5 space-y-0.5 text-sm text-muted-foreground">
                               {baris.pihak.penggugat.length > 0 ? (
                                 <div
@@ -7371,13 +7395,28 @@ export function AletaEcourtSidang({
                                   <NamaDapatDipanggil golongan="pihak1" {...konteksPanggil}>{baris.pihak.penggugat.join(", ")}</NamaDapatDipanggil>
                                 </div>
                               ) : null}
-                              {baris.pihak.tergugat.length > 0 ? (
+                              {pihakTampil(baris.pihak).tergugat.length > 0 ? (
                                 <div
                                   className="break-words"
-                                  title={baris.pihak.tergugat.join(", ")}
+                                  title={pihakTampil(baris.pihak).tergugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">T:</span>{" "}
-                                  <NamaDapatDipanggil golongan="pihak2" {...konteksPanggil}>{baris.pihak.tergugat.join(", ")}</NamaDapatDipanggil>
+                                  <NamaDapatDipanggil golongan="pihak2" {...konteksPanggil}>{pihakTampil(baris.pihak).tergugat.join(", ")}</NamaDapatDipanggil>
+                                </div>
+                              ) : null}
+                              {/* Butir 23 (6 Okt 2026): turut tergugat dan
+                                  intervensi di bawah P dan T, dapat diklik
+                                  (WhatsApp) seperti pihak lain. */}
+                              {(baris.pihak.turutTergugat ?? []).length > 0 ? (
+                                <div className="break-words" title={`Turut Tergugat: ${(baris.pihak.turutTergugat ?? []).join(", ")}`} data-pihak-turut="">
+                                  <span className="font-medium text-foreground/70">Turut T:</span>{" "}
+                                  <NamaDapatDipanggil golongan="pihak4" {...konteksPanggil}>{(baris.pihak.turutTergugat ?? []).join(", ")}</NamaDapatDipanggil>
+                                </div>
+                              ) : null}
+                              {(baris.pihak.intervensi ?? []).length > 0 ? (
+                                <div className="break-words" title={`Intervensi: ${(baris.pihak.intervensi ?? []).join(", ")}`} data-pihak-intervensi="">
+                                  <span className="font-medium text-foreground/70">Int:</span>{" "}
+                                  <NamaDapatDipanggil golongan="pihak3" {...konteksPanggil}>{(baris.pihak.intervensi ?? []).join(", ")}</NamaDapatDipanggil>
                                 </div>
                               ) : null}
                             </div>

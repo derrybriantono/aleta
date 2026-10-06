@@ -407,8 +407,12 @@ export function teksSel(kolom: KolomHasil, b: BarisHasil, bentuk: "layar" | "cet
     case "pihak2": {
       const nama = String((kolom.kunci === "pihak1" ? b.pihak1 : b.pihak2) ?? "").trim();
       const sebutan = String((kolom.kunci === "pihak1" ? b.sebutanPihak1 : b.sebutanPihak2) ?? "").trim();
-      if (!nama) return "—";
-      return sebutan ? `${sebutan}: ${nama}` : nama;
+      // Butir 24 (6 Okt 2026): turut tergugat dan intervensi ikut di kolom pihak kedua.
+      const tambahan = kolom.kunci === "pihak2" ? pihakTambahan(b) : [];
+      if (!nama && tambahan.length === 0) return "—";
+      return [nama ? (sebutan ? `${sebutan}: ${nama}` : nama) : "", ...tambahan.map((t) => `${t.sebutan}: ${t.nama}`)]
+        .filter(Boolean)
+        .join("; ");
     }
     case "tahapan": {
       const tahap = String(b.tahapan ?? "").trim();
@@ -1249,11 +1253,19 @@ function IsiSel({ kolom, b }: { kolom: KolomHasil; b: BarisHasil }) {
   if (kolom.kunci === "pihak1" || kolom.kunci === "pihak2") {
     const nama = String((kolom.kunci === "pihak1" ? b.pihak1 : b.pihak2) ?? "").trim();
     const sebutan = String((kolom.kunci === "pihak1" ? b.sebutanPihak1 : b.sebutanPihak2) ?? "").trim();
-    if (!nama) return <span className="text-muted-foreground">—</span>;
+    const tambahan = kolom.kunci === "pihak2" ? pihakTambahan(b) : [];
+    if (!nama && tambahan.length === 0) return <span className="text-muted-foreground">—</span>;
     return (
       <>
-        {sebutan ? <span className="block text-[11px] text-muted-foreground">{sebutan}</span> : null}
+        {sebutan && nama ? <span className="block text-[11px] text-muted-foreground">{sebutan}</span> : null}
         {nama}
+        {/* Butir 24 (6 Okt 2026): Turut T dan Int di bawah pihak kedua. */}
+        {tambahan.map((t) => (
+          <span key={t.kunci} className="mt-0.5 block" data-pihak-tambahan={t.kunci}>
+            <span className="text-[11px] font-semibold text-muted-foreground">{t.pendek}: </span>
+            {t.nama}
+          </span>
+        ))}
       </>
     );
   }
@@ -1298,6 +1310,21 @@ function IsiSel({ kolom, b }: { kolom: KolomHasil; b: BarisHasil }) {
 // ---------------------------------------------------------------------------
 // DAFTAR
 // ---------------------------------------------------------------------------
+
+/**
+ * Turut tergugat dan intervensi (butir 24, 6 Okt 2026) - ikut kolom pihak
+ * kedua. Sebutan lengkap untuk teks/unduhan, pendek ("Turut T", "Int") untuk
+ * layar - sama dengan Jadwal Sidang dan Jadwal Mediasi.
+ */
+export function pihakTambahan(b: { turutTergugat?: string; intervensi?: string; sebutanPihak2?: string }) {
+  const hasil: Array<{ kunci: string; sebutan: string; pendek: string; nama: string }> = [];
+  const turut = String(b.turutTergugat ?? "").trim();
+  const intervensi = String(b.intervensi ?? "").trim();
+  const dua = String(b.sebutanPihak2 ?? "").trim() || "Tergugat";
+  if (turut) hasil.push({ kunci: "turut", sebutan: `Turut ${dua}`, pendek: `Turut ${dua.charAt(0).toUpperCase()}`, nama: turut });
+  if (intervensi) hasil.push({ kunci: "intervensi", sebutan: "Intervensi", pendek: "Int", nama: intervensi });
+  return hasil;
+}
 
 function ringkasPihakBaris(b: BarisHasil): string {
   const satu = String(b.pihak1 ?? "").trim();

@@ -541,10 +541,12 @@ export function NamaDapatDipanggil({
   );
 }
 
-/** Golongan sasaran untuk sisi pihak di Jadwal Mediasi (turut tergugat tidak ikut). */
+/** Golongan sasaran untuk sisi pihak di Jadwal Mediasi (butir 23: turut tergugat & intervensi ikut). */
 export function golonganSisi(kunci: string): GolonganSasaran | null {
   if (kunci === "pihak-pertama" || kunci === "penggugat" || kunci === "pihak1") return "pihak1";
   if (kunci === "pihak-kedua" || kunci === "tergugat" || kunci === "pihak2") return "pihak2";
+  if (kunci === "turut" || kunci === "turut-tergugat" || kunci === "pihak4") return "pihak4";
+  if (kunci === "intervensi" || kunci === "pihak3") return "pihak3";
   return null;
 }
 
@@ -562,6 +564,10 @@ export function KartuPanggil(props: KonteksPanggil) {
     { kunci: "js", label: "Juru sita" },
     { kunci: "pihak1", label: "Pihak pertama & kuasa" },
     { kunci: "pihak2", label: "Pihak kedua & kuasa" },
+    // Butir 23 (6 Okt 2026). Perkara tanpa turut tergugat / intervensi:
+    // pop-up menyebut tidak ada orangnya.
+    { kunci: "pihak4", label: "Turut tergugat & kuasa" },
+    { kunci: "pihak3", label: "Intervensi & kuasa" },
   ];
   const tampil = golongan.filter((g) => namaDapatDiklik(pilihan, g.kunci));
   return (
