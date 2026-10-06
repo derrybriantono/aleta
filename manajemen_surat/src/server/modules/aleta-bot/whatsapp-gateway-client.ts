@@ -19,6 +19,7 @@ import type { AletaBotSnapshot, AletaBotDeadLetter, AletaBotWorkerState } from "
 import type { DataEvidenSkp, KunciPeriodeSkp, PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
 import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
 import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
+import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
 
 export type WhatsappRuntimeMode = "aleta_bot" | "legacy_portal" | "disabled";
@@ -1442,6 +1443,14 @@ export type SidangBaris = {
    */
   putusanTerbaca?: boolean;
   ikrarTerbaca?: boolean;
+  /**
+   * Pembebanan yang dibayar saat ikrar talak, diurai bot dari amar putusan
+   * (pembebananIkrarService) - HANYA pada sidang ikrar; null bila tidak ada.
+   * Bentuknya di lib/pembebanan-ikrar. pembebananTerbaca false = kuerinya
+   * gagal, bukan "tanpa pembebanan". Opsional: bot lama tidak mengirimnya.
+   */
+  pembebanan?: PembebananIkrar | null;
+  pembebananTerbaca?: boolean;
   urutanSidang: number;
   /** 1 semua pihak, 2 penggugat saja, 3 tergugat saja, 4 tidak hadir. */
   dihadiriOleh: number | null;
