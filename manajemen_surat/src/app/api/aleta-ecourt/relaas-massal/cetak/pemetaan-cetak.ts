@@ -1,4 +1,4 @@
-import { keadaanUntukGolongan } from "@/lib/pohon-blangko";
+import { blangkoRelaasPerPihak, keadaanUntukGolongan } from "@/lib/pohon-blangko";
 import {
   AWALAN_KUNCI_BAS_DB,
   pilihKunciRelaas,
@@ -85,4 +85,64 @@ export function blangkoMenurutPemetaan(
   const kunci = pilihKunciRelaas(kunciDaftar, minta);
   if (!kunci) return null;
   return { berkas: String(peta[kunci]).trim(), kunci };
+}
+
+/**
+ * ============================================================================
+ * SATU DOKUMEN "KEDUANYA" DIPECAH MENJADI DUA DOKUMEN PER PIHAK (6 Okt, butir 10)
+ * ============================================================================
+ *
+ * Bot melaporkan sidang pertama (dan sidang ditunda yang tidak dihadiri siapa
+ * pun, sandi 4) sebagai SATU dokumen berpihak "keduanya", lalu dokumen itu
+ * dicetak dengan blangko gabungan 3.b. Pengguna: relaas harus sesuai pihaknya
+ * - Penggugat/Pemohon blangko P, Tergugat/Termohon blangko T - dan gabungan
+ * HANYA bila memang hanya itu blangkonya. Maka dokumen "keduanya" dipecah
+ * menjadi dokumen pihak pertama (pihakKe 1) dan pihak kedua (pihakKe 2),
+ * masing-masing dengan kunci sendiri.
+ *
+ * Pemberitahuan putusan biasanya sudah per pihak dari bot (pihakKe 1/2); yang
+ * datang "keduanya" ikut dipecah dengan aturan yang sama.
+ *
+ * TIDAK dipecah: ikrar talak (blangkonya hanya gabungan), dan dokumen yang blangko kedua
+ * pihaknya ternyata SAMA (admin memetakan kedua kunci per pihak ke satu berkas
+ * gabungan) - dua cetakan berkas yang sama hanya menggandakan.
+ */
+type DokumenPecah = DokumenPetakan & {
+  kunci: string;
+  perkaraId: unknown;
+  d?: unknown;
+  pihakKe?: number | null;
+};
+
+function berkasSisi(
+  dokumen: DokumenPetakan,
+  sisi: "pertama" | "kedua",
+  petaRelaas: Record<string, string>,
+  petaPbt: Record<string, string>
+): string {
+  const keadaan = keadaanUntukGolongan(dokumen.golongan);
+  if (!keadaan) return "";
+  const dariPeta = blangkoMenurutPemetaan({ ...dokumen, pihakDipanggil: sisi }, petaRelaas, petaPbt);
+  if (dariPeta) return dariPeta.berkas;
+  return blangkoRelaasPerPihak(keadaan, sisi)?.berkas ?? "";
+}
+
+export function pecahDokumenPerPihak<T extends DokumenPecah>(
+  dokumen: T,
+  petaRelaas: Record<string, string>,
+  petaPbt: Record<string, string>
+): T[] {
+  const keadaan = keadaanUntukGolongan(dokumen.golongan);
+  if (String(dokumen.pihakDipanggil ?? "") !== "keduanya") return [dokumen];
+  if (keadaan !== "sidang-pertama" && keadaan !== "sidang-ditunda" && keadaan !== "pemberitahuan-putusan") return [dokumen];
+  const p = berkasSisi(dokumen, "pertama", petaRelaas, petaPbt);
+  const t = berkasSisi(dokumen, "kedua", petaRelaas, petaPbt);
+  if (!p || !t || p === t) return [dokumen];
+  const dasar = `${String(dokumen.golongan)}:${String(dokumen.perkaraId)}:${String(dokumen.d ?? 0)}`;
+  return (["pertama", "kedua"] as const).map((sisi, i) => ({
+    ...dokumen,
+    pihakDipanggil: sisi,
+    pihakKe: i + 1,
+    kunci: `${dasar}:${i + 1}`,
+  }));
 }

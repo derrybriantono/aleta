@@ -52,6 +52,16 @@ import {
   type PihakDipanggil,
 } from "@/lib/pohon-blangko";
 
+import { blangkoMenurutPemetaan } from "./pemetaan-cetak";
+
+/**
+ * Peta pemetaan blangko admin yang BERLAKU (admin di atas bawaan) - dikirim
+ * rute bersama dokumennya, supaya layar menilai ulang dengan peta yang SAMA
+ * (6 Okt, butir 10: sebelumnya layar menilai ulang tanpa peta, sehingga
+ * berkas yang dikirim ke ekstensi selalu bawaan pohon-blangko.ts).
+ */
+export type PetaBlangkoCetak = { relaas: Record<string, string>; pbt: Record<string, string> };
+
 /** Pihak yang boleh DIPILIH juru sita bila SIPP tidak menjawabnya. */
 export type PihakPilihan = "pertama" | "kedua" | "keduanya";
 
@@ -189,7 +199,8 @@ function peringatanUntuk(
   const jumlah = dokumen.jumlahPihak;
   if (jumlah && blangko) {
     const alur = angkaAtauNull(dokumen.alurPerkaraId);
-    const tSaja = blangko.berkas === blangkoRelaas("sidang-ditunda", "kedua")?.berkas;
+    // Blangko "T saja" = blangko berpihak kedua (0./1./2. ... T) - 6 Okt, butir 10.
+    const tSaja = BLANGKO_RELAAS.some((x) => x.pihak === "kedua" && x.berkas === blangko.berkas);
     const cakupan = cakupanBlangko(alur, tSaja);
     const sebutan = {
       pertama: String(dokumen.sebutanPihak?.pertama ?? "").trim() || "Pihak Pertama",
@@ -246,7 +257,11 @@ function peringatanUntuk(
  * Urutan pemeriksaannya urutan kerusakan yang paling mendasar lebih dahulu,
  * supaya sebab yang tampil adalah sebab yang harus dibereskan pertama.
  */
-export function nilaiCetakDokumen(dokumen: DokumenDinilai, pihakPilihan?: PihakPilihan | null): NilaiCetak {
+export function nilaiCetakDokumen(
+  dokumen: DokumenDinilai,
+  pihakPilihan?: PihakPilihan | null,
+  peta?: PetaBlangkoCetak | null
+): NilaiCetak {
   const pihakSipp = String(dokumen.pihakDipanggil ?? "").trim();
   const pihak =
     pihakSipp === "tidak-diketahui" && pihakPilihan && PIHAK_PILIHAN.includes(pihakPilihan)
@@ -256,7 +271,10 @@ export function nilaiCetakDokumen(dokumen: DokumenDinilai, pihakPilihan?: PihakP
   const keadaan = keadaanUntukGolongan(dokumen.golongan);
   const pihakSah = (PIHAK_DIKENAL.has(pihak) ? pihak : "tidak-diketahui") as PihakDipanggil;
   const pilih = keadaan ? blangkoRelaas(keadaan, pihakSah) : null;
-  const blangko = pilih ? { berkas: pilih.berkas, label: pilih.label } : null;
+  // Pemetaan admin menang atas bawaan (kunci paling khusus - per pihak).
+  const dariPeta =
+    pilih && peta ? blangkoMenurutPemetaan({ ...dokumen, pihakDipanggil: pihakSah }, peta.relaas, peta.pbt) : null;
+  const blangko = pilih ? { berkas: dariPeta ? dariPeta.berkas : pilih.berkas, label: pilih.label } : null;
   const peringatan = peringatanUntuk(dokumen, pihak, blangko);
 
   const tolak = (sebab: string): NilaiCetak => ({

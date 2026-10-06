@@ -86,11 +86,18 @@ vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", async (asli) => {
 // ============================================================================
 // BAHAN
 // ============================================================================
+// 6 Okt (butir 10): blangko PER PIHAK - P untuk pihak pertama, T untuk pihak kedua.
+const berkasUntuk = (keadaan: string, pihak?: string) =>
+  BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && (!pihak || x.pihak === pihak))!.berkas;
 const BERKAS = {
-  pertama: BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-pertama")!.berkas,
-  ditunda: BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-ditunda")!.berkas,
-  pemberitahuan: BLANGKO_RELAAS.find((x) => x.keadaan === "pemberitahuan-putusan")!.berkas,
-  ikrar: BLANGKO_RELAAS.find((x) => x.keadaan === "ikrar-talak")!.berkas,
+  pertamaP: berkasUntuk("sidang-pertama", "pertama"),
+  pertamaT: berkasUntuk("sidang-pertama", "kedua"),
+  gabungan: berkasUntuk("sidang-pertama", "keduanya"),
+  ditundaP: berkasUntuk("sidang-ditunda", "pertama"),
+  ditundaT: berkasUntuk("sidang-ditunda", "kedua"),
+  pemberitahuanP: berkasUntuk("pemberitahuan-putusan", "pertama"),
+  pemberitahuanT: berkasUntuk("pemberitahuan-putusan", "kedua"),
+  ikrar: berkasUntuk("ikrar-talak"),
 };
 
 const JS_ANDI = { nama: "ANDI RAHMAN, S.H., M.H.", nip: "198001012005011001", dariPenunjukan: true };
@@ -125,7 +132,8 @@ function dokumen(ubah: Partial<DokumenRelaasCetakGateway>): DokumenRelaasCetakGa
 /** Jawaban K1 palsu - lima dokumen, satu tidak perlu, satu tertunda. */
 function jawabanBot(): RelaasCetakGateway {
   const dok = [
-    dokumen({ perkaraId: 101, nomorPerkara: "101/Pdt.G/2026/PA.Dgl", jurusita: JS_BUDI }),
+    // Pihak pertama saja: dokumen "keduanya" dipecah dialog (6 Okt, butir 10) - diuji tersendiri.
+    dokumen({ perkaraId: 101, nomorPerkara: "101/Pdt.G/2026/PA.Dgl", pihakDipanggil: "pertama", jurusita: JS_BUDI }),
     dokumen({
       perkaraId: 102,
       nomorPerkara: "102/Pdt.G/2026/PA.Dgl",
@@ -158,7 +166,7 @@ function jawabanBot(): RelaasCetakGateway {
       tanggalSidangTujuan: "",
       sidangAsalId: 7104,
       dihadiriOleh: 4,
-      pihakDipanggil: "keduanya",
+      pihakDipanggil: "pertama",
       jurusita: JS_ANDI,
       sudahAdaRelaas: true,
     }),
@@ -244,20 +252,20 @@ describe("rute K2 - /api/aleta-ecourt/relaas-massal/cetak", () => {
     const isi = (await jawaban.json()) as { ok: boolean; data: { dokumen: DokumenPortal[]; tidakPerlu: unknown[] } };
     const per = new Map(isi.data.dokumen.map((d) => [d.perkaraId, d]));
 
-    expect(per.get(101)!.blangko?.berkas).toBe(BERKAS.pertama);
+    expect(per.get(101)!.blangko?.berkas).toBe(BERKAS.pertamaP);
     expect(per.get(101)!.bisaDicetak).toBe(true);
     expect(per.get(101)!.sebabTidakBisa).toBe("");
 
-    // Sidang ditunda, Pihak Kedua: blangko sidang lanjutan - SPASInya utuh.
-    expect(per.get(102)!.blangko?.berkas).toBe(BERKAS.ditunda);
-    expect(per.get(102)!.blangko!.berkas.endsWith(") .rtf")).toBe(true);
+    // Sidang ditunda, Pihak Kedua: blangko sidang lanjutan T - nama satker (tanpa spasi sebelum .rtf).
+    expect(per.get(102)!.blangko?.berkas).toBe(BERKAS.ditundaT);
+    expect(per.get(102)!.blangko!.berkas).toBe("[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf");
     expect(per.get(102)!.bisaDicetak).toBe(true);
 
     // Pihak belum diketahui: blangko bawaan tetap disebut, tetapi TIDAK dapat dicetak.
     expect(per.get(103)!.bisaDicetak).toBe(false);
     expect(per.get(103)!.sebabTidakBisa).toContain("pilih pihaknya dulu");
 
-    expect(per.get(104)!.blangko?.berkas).toBe(BERKAS.pemberitahuan);
+    expect(per.get(104)!.blangko?.berkas).toBe(BERKAS.pemberitahuanP);
     expect(per.get(104)!.bisaDicetak).toBe(true);
     expect(per.get(105)!.blangko?.berkas).toBe(BERKAS.ikrar);
 
@@ -484,16 +492,16 @@ describe("dialog Cetak relaas - pilihan", () => {
     const baris = kotak.parentElement!;
     expect(within(baris).getByText(/Belum dapat dicetak/)).toBeTruthy();
     expect(within(baris).getByText(/bersandi "10"/)).toBeTruthy();
-    // Blangko bawaan sebelum dipilih: sidang lanjutan (T).
-    expect(within(baris).getByText(BERKAS.ditunda)).toBeTruthy();
+    // Blangko bawaan sebelum dipilih: sidang lanjutan (blangko pertama keadaan itu).
+    expect(within(baris).getByText(BERKAS.ditundaP)).toBeTruthy();
 
     await userEvent.selectOptions(
       screen.getByLabelText("Pihak yang dipanggil untuk 103/Pdt.G/2026/PA.Dgl"),
       "pertama"
     );
     await waitFor(() => expect(centangUntuk("103/Pdt.G/2026/PA.Dgl").disabled).toBe(false));
-    // Pihak Pertama dipanggil pada sidang yang ditunda -> blangko dua pihak.
-    expect(within(centangUntuk("103/Pdt.G/2026/PA.Dgl").parentElement!).getByText(BERKAS.pertama)).toBeTruthy();
+    // Pihak Pertama dipanggil pada sidang yang ditunda -> blangko P (Sidang Lanjutan), bukan gabungan.
+    expect(within(centangUntuk("103/Pdt.G/2026/PA.Dgl").parentElement!).getByText(BERKAS.ditundaP)).toBeTruthy();
     // Dipilih pihaknya BUKAN berarti dicentang.
     expect(centangUntuk("103/Pdt.G/2026/PA.Dgl").checked).toBe(false);
   });
@@ -632,11 +640,10 @@ describe("dialog Cetak relaas - mengirim ke ekstensi", () => {
       expect(String(d.nama)).not.toMatch(/[\\/]/);
     }
     const per = new Map(dok.map((d) => [String(d.perkaraId), d]));
-    expect(per.get("101")!.berkas).toBe(BERKAS.pertama);
+    expect(per.get("101")!.berkas).toBe(BERKAS.pertamaP);
     expect(per.get("101")!.d).toBe(1);
-    // Nama blangko APA ADANYA - termasuk spasi sebelum ".rtf".
-    expect(per.get("102")!.berkas).toBe(BERKAS.ditunda);
-    expect(String(per.get("102")!.berkas).endsWith(") .rtf")).toBe(true);
+    // Nama blangko APA ADANYA - nama di folder ABT satker.
+    expect(per.get("102")!.berkas).toBe(BERKAS.ditundaT);
     expect(per.get("102")!.d).toBe(3);
     expect(per.get("102")!.jurusita).toBe(JS_ANDI.nama);
     expect(per.get("102")!.kunci).toBe("sidang-ditunda:102:3:0");
@@ -832,6 +839,8 @@ function jawabanTelaah(): RelaasCetakGateway {
       jumlahPihak: { pertama: 1, kedua: 6, lain: 0 },
       jumlahPihakSasaran: 7,
       sebutanPihak: { pertama: "Penggugat", kedua: "Tergugat" },
+      // Pihak kedua saja (dokumen "keduanya" dipecah dialog - 6 Okt, butir 10).
+      pihakDipanggil: "kedua",
     }),
     dokumen({
       perkaraId: 302,

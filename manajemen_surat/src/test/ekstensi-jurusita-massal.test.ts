@@ -49,10 +49,15 @@ const HALAMAN = {
   abtBeranda: `${ASAL}/aps_badilag/abt/`,
   sippPerkara: `${ASAL}/SIPP/perkara_detil_agama/xyz`,
 };
-const berkasUntuk = (keadaan: string) => BLANGKO_RELAAS.find((x) => x.keadaan === keadaan)!.berkas;
-const P_DAN_T = berkasUntuk("sidang-pertama");
-const T_LANJUTAN = berkasUntuk("sidang-ditunda");
-const PBT = berkasUntuk("pemberitahuan-putusan");
+// 6 Okt (butir 10): blangko PER PIHAK - P untuk pihak pertama, T untuk pihak kedua.
+const berkasUntuk = (keadaan: string, pihak?: string) =>
+  BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && (!pihak || x.pihak === pihak))!.berkas;
+const P_DAN_T = berkasUntuk("sidang-pertama", "keduanya");
+const PERTAMA_P = berkasUntuk("sidang-pertama", "pertama");
+const PERTAMA_T = berkasUntuk("sidang-pertama", "kedua");
+const P_LANJUTAN = berkasUntuk("sidang-ditunda", "pertama");
+const T_LANJUTAN = berkasUntuk("sidang-ditunda", "kedua");
+const PBT_T = berkasUntuk("pemberitahuan-putusan", "kedua");
 
 const tunggu = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 const polos = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
@@ -362,7 +367,7 @@ describe("K3 panel massal di DAFTAR perkara SIPP", () => {
     expect(tombol(h, "aleta-jurusita-cetak-massal").disabled).toBe(true);
   });
 
-  it("Pilih semua: pihak menurut SIPP; tundaan d = sidang tujuan; P dan T satu dokumen; PBT sekali; dikirim sesudah konfirmasi", async () => {
+  it("Pilih semua: pihak menurut SIPP; tundaan d = sidang tujuan; P dan T PER PIHAK (dua dokumen); PBT sekali; dikirim sesudah konfirmasi", async () => {
     const h = buka();
     await siapMode(h);
     await pasangMassal(h);
@@ -370,7 +375,7 @@ describe("K3 panel massal di DAFTAR perkara SIPP", () => {
     tombol(h, "aleta-jurusita-pilih-semua").click();
     await sampai(() => !tombol(h, "aleta-jurusita-cetak-massal").disabled, "cetak menyala");
     const cetak = tombol(h, "aleta-jurusita-cetak-massal");
-    expect(cetak.textContent).toBe("Cetak 4 dokumen");
+    expect(cetak.textContent).toBe("Cetak 6 dokumen");
     // Yang tidak ikut Pilih semua: sudah tercatat (705, PBT 704 pihak 1), pihak tak diketahui (703), ikrar ditolak ABT (707).
     expect(centang(h, 705, "p2").checked).toBe(false);
     expect(centang(h, 703, "p2").checked).toBe(false);
@@ -390,10 +395,12 @@ describe("K3 panel massal di DAFTAR perkara SIPP", () => {
     const dok = m.pekerjaan.dokumen;
     expect(dok.map(ringkasDok).sort()).toEqual(
       [
-        `700|sidang-pertama|1|${P_DAN_T}`,
+        `700|sidang-pertama|1|${PERTAMA_P}`,
+        `700|sidang-pertama|1|${PERTAMA_T}`,
         `701|sidang-ditunda|3|${T_LANJUTAN}`,
-        `702|sidang-ditunda|2|${P_DAN_T}`,
-        `704|pemberitahuan-putusan|0|${PBT}`,
+        `702|sidang-ditunda|2|${P_LANJUTAN}`,
+        `702|sidang-ditunda|2|${T_LANJUTAN}`,
+        `704|pemberitahuan-putusan|0|${PBT_T}`,
       ].sort()
     );
     // Hanya ruas kontrak mesin relaas; kunci unik; nama berkas menyebut sidang tundaan.
@@ -402,8 +409,9 @@ describe("K3 panel massal di DAFTAR perkara SIPP", () => {
     }
     expect(new Set(dok.map((d: any) => d.kunci)).size).toBe(dok.length);
     expect(dok.find((d: any) => d.perkaraId === "701").nama).toBe("701-Pdt.G-2026-PA.Dgl - panggilan sidang ke-3 Tergugat");
-    expect(dok.find((d: any) => d.perkaraId === "702").label).toBe("Panggilan Penggugat dan Tergugat");
-    await sampai(() => /4 dokumen masuk putaran cetak/.test(panel(h).textContent || ""), "kabar berhasil");
+    expect(dok.find((d: any) => d.perkaraId === "702" && d.berkas === P_LANJUTAN).label).toBe("Panggilan Penggugat");
+    expect(dok.map((d: any) => d.berkas)).not.toContain(P_DAN_T);
+    await sampai(() => /6 dokumen masuk putaran cetak/.test(panel(h).textContent || ""), "kabar berhasil");
   });
 
   it("centang sendiri: pihak tak diketahui (Tergugat -> T lanjutan), hari kerja sebelumnya ikut bila dicentang", async () => {
@@ -414,11 +422,11 @@ describe("K3 panel massal di DAFTAR perkara SIPP", () => {
     const kemarin = h.wadah.querySelector(".aleta-jurusita-kemarin") as HTMLDetailsElement;
     expect(kemarin.querySelector("summary")!.textContent).toBe("Dari hari kerja sebelumnya · 29 Sep 2026 (1)");
     tombol(h, "aleta-jurusita-pilih-semua").click();
-    await sampai(() => tombol(h, "aleta-jurusita-cetak-massal").textContent === "Cetak 4 dokumen", "4 dokumen");
+    await sampai(() => tombol(h, "aleta-jurusita-cetak-massal").textContent === "Cetak 6 dokumen", "6 dokumen");
     expect(centang(h, 708, "p2", "kemarin").checked).toBe(false); // tidak ikut Pilih semua
     klikCentang(h, 703, "p2");
     klikCentang(h, 708, "p2", "kemarin");
-    expect(tombol(h, "aleta-jurusita-cetak-massal").textContent).toBe("Cetak 6 dokumen");
+    expect(tombol(h, "aleta-jurusita-cetak-massal").textContent).toBe("Cetak 8 dokumen");
     tombol(h, "aleta-jurusita-cetak-massal").click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
     const dok = pesanMulai(h)[0].pekerjaan.dokumen.map(ringkasDok);
@@ -426,7 +434,7 @@ describe("K3 panel massal di DAFTAR perkara SIPP", () => {
     expect(dok).toContain(`708|sidang-ditunda|3|${T_LANJUTAN}`);
   });
 
-  it("tundaan yang pihaknya diubah: Tergugat saja -> T lanjutan; ditambah Penggugat -> satu P dan T", async () => {
+  it("tundaan yang pihaknya diubah: Tergugat saja -> T lanjutan; ditambah Penggugat -> P lanjutan + T lanjutan (per pihak)", async () => {
     const h = buka();
     await siapMode(h);
     await pasangMassal(h);
@@ -434,12 +442,15 @@ describe("K3 panel massal di DAFTAR perkara SIPP", () => {
     klikCentang(h, 701, "p2");
     expect(tombol(h, "aleta-jurusita-cetak-massal").textContent).toBe("Cetak 1 dokumen");
     klikCentang(h, 701, "p1");
-    expect(tombol(h, "aleta-jurusita-cetak-massal").textContent).toBe("Cetak 1 dokumen");
+    expect(tombol(h, "aleta-jurusita-cetak-massal").textContent).toBe("Cetak 2 dokumen");
     const blangko = h.wadah.querySelector('.aleta-jurusita-perkara[data-perkara-id="701"] .aleta-jurusita-blangko')!;
-    expect(blangko.textContent).toBe(`Blangko: ${P_DAN_T}`);
+    expect(blangko.textContent).toBe(`Blangko: ${P_LANJUTAN}; ${T_LANJUTAN}`);
     tombol(h, "aleta-jurusita-cetak-massal").click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
-    expect(pesanMulai(h)[0].pekerjaan.dokumen.map(ringkasDok)).toEqual([`701|sidang-ditunda|3|${P_DAN_T}`]);
+    expect(pesanMulai(h)[0].pekerjaan.dokumen.map(ringkasDok)).toEqual([
+      `701|sidang-ditunda|3|${P_LANJUTAN}`,
+      `701|sidang-ditunda|3|${T_LANJUTAN}`,
+    ]);
   });
 
   it("Batal pada konfirmasi dan mode kering: tidak ada yang dikirim", async () => {
@@ -759,10 +770,15 @@ describe.skipIf(!ADA_MYSQL)("U3 data sungguhan sipp_donggala: panggilan sidang T
     cetak.click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
     const kirim = pesanMulai(h)[0].pekerjaan.dokumen.filter((d: any) => d.golongan === "sidang-ditunda");
-    expect(kirim.map((d: any) => `${d.perkaraId}|${d.d}`).sort()).toEqual(harus.map((d: any) => `${d.perkaraId}|${Number(d.d)}`).sort());
+    // 6 Okt (butir 10): dokumen "keduanya" dicetak per pihak - dua dokumen, blangko P dan T.
+    const harap = harus.flatMap((d: any) =>
+      d.pihakDipanggil === "keduanya" ? [`${d.perkaraId}|${Number(d.d)}`, `${d.perkaraId}|${Number(d.d)}`] : [`${d.perkaraId}|${Number(d.d)}`]
+    );
+    expect(kirim.map((d: any) => `${d.perkaraId}|${d.d}`).sort()).toEqual(harap.sort());
     for (const d of kirim) {
       const asal = harus.find((x: any) => String(x.perkaraId) === d.perkaraId)!;
-      expect(d.berkas, d.nomorPerkara).toBe(asal.blangko.berkas);
+      if (asal.pihakDipanggil === "keduanya") expect([P_LANJUTAN, T_LANJUTAN], d.nomorPerkara).toContain(d.berkas);
+      else expect(d.berkas, d.nomorPerkara).toBe(asal.blangko.berkas);
     }
   }, 60000);
 });

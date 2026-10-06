@@ -14,7 +14,6 @@ import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
 import { nilaiCetakDokumen } from "./nilai-cetak";
-import { blangkoMenurutPemetaan } from "./pemetaan-cetak";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -91,10 +90,11 @@ export async function GET(request: NextRequest) {
     // Pemetaan blangko admin (2 Okt sore, butir 1): dibaca sekali per permintaan.
     // Tabel tak terbaca = peta kosong, jadi blangko bawaan dipakai seperti dulu.
     const [petaRelaas, petaPbt] = await Promise.all([petaPemetaanBerlaku(db, "relaas"), petaPemetaanBerlaku(db, "pbt")]);
+    const petaBlangko = { relaas: petaRelaas, pbt: petaPbt };
     const nilaiSatu = (satu: DokumenRelaasCetakGateway): DokumenRelaasCetakPortal => {
-      const nilai = nilaiCetakDokumen(satu);
-      const dariPeta = nilai.blangko ? blangkoMenurutPemetaan(satu, petaRelaas, petaPbt) : null;
-      const blangko = nilai.blangko && dariPeta ? { ...nilai.blangko, berkas: dariPeta.berkas } : nilai.blangko;
+      // Peta ikut dinilai (6 Okt, butir 10) - layar memakai peta yang sama.
+      const nilai = nilaiCetakDokumen(satu, null, petaBlangko);
+      const blangko = nilai.blangko;
       return {
         ...satu,
         blangko,
@@ -117,7 +117,11 @@ export async function GET(request: NextRequest) {
         ? { tanggal: String(kemarin.tanggal || ""), dokumen: kemarin.dokumen.map(nilaiSatu) }
         : undefined;
 
-    return ok({ ...data, dokumen, hariKerjaSebelumnya });
+    // Dokumen "keduanya" TIDAK dipecah di sini: panel massal ekstensi membaca
+    // daftar ini dan sudah memilih blangko per sisi yang dicentang. Dialog
+    // Cetak relaas portal memecahnya sendiri (pecahDokumenPerPihak) dengan
+    // `petaBlangko` di bawah - 6 Okt, butir 10.
+    return ok({ ...data, dokumen, hariKerjaSebelumnya, petaBlangko });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

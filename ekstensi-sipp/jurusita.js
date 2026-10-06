@@ -75,9 +75,10 @@
  * Kunci yang dibaca (K3): panggilan-penggugat, panggilan-tergugat,
  * panggilan-pemohon, panggilan-termohon, panggilan-ikrar, pbt-penggugat,
  * pbt-tergugat, pbt-pemohon, pbt-termohon, dan satu kunci bebas:
- * panggilan-sidang-pertama. Sidang PERTAMA memakai kunci itu (bawaannya
- * blangko "P dan T"), bukan "panggilan-<pihak>": blangko per pihak bawaannya
- * berjudul "(Sidang Lanjutan)".
+ * panggilan-sidang-pertama. Sidang PERTAMA memakai kunci per pihak
+ * relaas-panggilan-sidang-pertama-<pihak> (6 Okt, butir 10: blangko "0. ...
+ * Sidang Pertama P/T"); panggilan-sidang-pertama (gabungan "P dan T") hanya
+ * cadangan terakhir. "panggilan-<pihak>" = sidang lanjutan.
  *
  * ============================================================================
  * PERBAIKAN 2 OKT SORE (AGEN P) - KUNCI DIURAIKAN, PEMBACA BERSAMA
@@ -137,24 +138,38 @@ const JURUSITA_NAMA_MAKS = 180;
  * Blangko bawaan per kunci pemetaan - dipakai hanya bila server dan simpanan
  * sama-sama tidak menyebut kuncinya. Nama berkasnya APA ADANYA.
  */
+/*
+ * 6 Okt (butir 10): PER PIHAK - nama dari folder ABT satker (derry_briantono/
+ * Relaas, dibaca `ls -b` di server). Penggugat/Pemohon blangko P, Tergugat/
+ * Termohon blangko T; gabungan 3.b hanya untuk kunci tanpa pihak, ikrar hanya
+ * punya gabungan. Cermin bawaanPemetaan (lib/pemetaan-blangko.ts).
+ */
 const JURUSITA_BLANGKO_P_DAN_T = "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf";
-const JURUSITA_BLANGKO_T_LANJUTAN = "[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan) .rtf";
-const JURUSITA_BLANGKO_PBT = "[JS] 2. Relaas Pemberitahuan Putusan.rtf";
+const JURUSITA_BLANGKO_PERTAMA_P = "[JS] 0. Relaas Panggilan Sidang Pertama P.rtf";
+const JURUSITA_BLANGKO_PERTAMA_T = "[JS] 0. Relaas Panggilan Sidang Pertama T.rtf";
+const JURUSITA_BLANGKO_P_LANJUTAN = "[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan).rtf";
+const JURUSITA_BLANGKO_T_LANJUTAN = "[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf";
+const JURUSITA_BLANGKO_PBT_P = "[JS] 2. Relaas Pemberitahuan Putusan P.rtf";
+const JURUSITA_BLANGKO_PBT_T = "[JS] 2. Relaas Pemberitahuan Putusan T.rtf";
 const JURUSITA_BLANGKO_IKRAR = "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf";
 const JURUSITA_TERTANAM = {
   relaas: {
+    "relaas-panggilan-sidang-pertama-penggugat": JURUSITA_BLANGKO_PERTAMA_P,
+    "relaas-panggilan-sidang-pertama-pemohon": JURUSITA_BLANGKO_PERTAMA_P,
+    "relaas-panggilan-sidang-pertama-tergugat": JURUSITA_BLANGKO_PERTAMA_T,
+    "relaas-panggilan-sidang-pertama-termohon": JURUSITA_BLANGKO_PERTAMA_T,
     "panggilan-sidang-pertama": JURUSITA_BLANGKO_P_DAN_T,
-    "panggilan-penggugat": JURUSITA_BLANGKO_P_DAN_T,
-    "panggilan-pemohon": JURUSITA_BLANGKO_P_DAN_T,
+    "panggilan-penggugat": JURUSITA_BLANGKO_P_LANJUTAN,
+    "panggilan-pemohon": JURUSITA_BLANGKO_P_LANJUTAN,
     "panggilan-tergugat": JURUSITA_BLANGKO_T_LANJUTAN,
     "panggilan-termohon": JURUSITA_BLANGKO_T_LANJUTAN,
     "panggilan-ikrar": JURUSITA_BLANGKO_IKRAR,
   },
   pbt: {
-    "pbt-penggugat": JURUSITA_BLANGKO_PBT,
-    "pbt-pemohon": JURUSITA_BLANGKO_PBT,
-    "pbt-tergugat": JURUSITA_BLANGKO_PBT,
-    "pbt-termohon": JURUSITA_BLANGKO_PBT,
+    "pbt-penggugat": JURUSITA_BLANGKO_PBT_P,
+    "pbt-pemohon": JURUSITA_BLANGKO_PBT_P,
+    "pbt-tergugat": JURUSITA_BLANGKO_PBT_T,
+    "pbt-termohon": JURUSITA_BLANGKO_PBT_T,
   },
 };
 const JURUSITA_SEBUTAN_SUMBER = { server: "server", simpanan: "simpanan server terakhir", bawaan: "bawaan ekstensi" };
@@ -404,7 +419,9 @@ function jurusitaPermintaan(golongan, sisi, sebutan) {
   }
   if (golongan === "ikrar-talak") return { jenis: "relaas", awalan: "panggilan", keadaan: "ikrar", khusus, umum, tertanam: ["panggilan-ikrar"] };
   if (golongan === "sidang-pertama") {
-    return { jenis: "relaas", awalan: "panggilan", keadaan: "pertama", khusus, umum, tertanam: ["panggilan-sidang-pertama"] };
+    // Per pihak lebih dulu (6 Okt, butir 10); gabungan hanya cadangan terakhir.
+    const perPihak = [...new Set([khusus, umum].filter(Boolean))].map((p) => `relaas-panggilan-sidang-pertama-${p}`);
+    return { jenis: "relaas", awalan: "panggilan", keadaan: "pertama", khusus, umum, tertanam: [...perPihak, "panggilan-sidang-pertama"] };
   }
   return { jenis: "relaas", awalan: "panggilan", keadaan: "lanjutan", khusus, umum, tertanam: jurusitaKunciPihak("panggilan", sisi, sebutan) };
 }
@@ -638,14 +655,15 @@ function jurusitaNamaCocok(namaAkun, namaPetugas) {
 }
 
 /** Kunci pemetaan untuk satu dokumen jawaban relaas-massal/cetak. */
-function jurusitaKunciMassal(dok) {
+function jurusitaKunciMassal(dok, sisiPaksa) {
   const golongan = String(dok.golongan || "");
   const sebutanPertama = String((dok.sebutanPihak && dok.sebutanPihak.pertama) || "");
   const sebutan = /pemohon/i.test(sebutanPertama)
     ? { k1: "pemohon", k2: "termohon" }
     : { k1: "penggugat", k2: "tergugat" };
-  const sisi =
-    golongan === "pemberitahuan-putusan"
+  const sisi = sisiPaksa
+    ? sisiPaksa
+    : golongan === "pemberitahuan-putusan"
       ? Number(dok.pihakKe) === 2
         ? 2
         : 1
@@ -684,9 +702,6 @@ function jurusitaPilahMassal(dokumen, opsi) {
       perluDilihat.push({ dok, sebab: "sudah tercatat di SIPP" });
       continue;
     }
-    const k = jurusitaKunciMassal(dok);
-    const dariPeta = jurusitaPilihBlangko(opsi && opsi.peta, k.jenis, k.minta);
-    const pakaiPeta = dariPeta && dariPeta.sumber !== "bawaan";
     const golongan = String(dok.golongan || "");
     const d = golongan === "pemberitahuan-putusan" ? 0 : Number(dok.d);
     const bagian =
@@ -695,6 +710,38 @@ function jurusitaPilahMassal(dokumen, opsi) {
         : golongan === "ikrar-talak"
           ? `panggilan ikrar talak sidang ke-${d}`
           : `panggilan sidang ke-${d}`;
+    // 6 Okt (butir 10): dokumen "keduanya" (sidang pertama, tundaan sandi 4,
+    // PBT satu per perkara) dicetak PER PIHAK - blangko P dan blangko T - bukan
+    // dengan blangko gabungan rute. Tetap satu dokumen bila keduanya ternyata
+    // berblangko sama (pemetaan admin menunjuk satu berkas).
+    const bisaPecah = golongan !== "ikrar-talak" && String(dok.pihakDipanggil || "") === "keduanya" &&
+      !(golongan === "pemberitahuan-putusan" && (Number(dok.pihakKe) === 1 || Number(dok.pihakKe) === 2));
+    if (bisaPecah) {
+      const per = [1, 2].map((sisi) => {
+        const ks = jurusitaKunciMassal(dok, sisi);
+        return { sisi, blangko: jurusitaPilihBlangko(opsi && opsi.peta, ks.jenis, ks.minta) };
+      });
+      if (per.every((x) => x.blangko) && per[0].blangko.berkas !== per[1].blangko.berkas) {
+        for (const x of per) {
+          siap.push({
+            kunci: `${golongan}:${String(dok.perkaraId || "")}:${golongan === "pemberitahuan-putusan" ? 0 : d}:${x.sisi}`.slice(0, 160),
+            perkaraId: String(dok.perkaraId || ""),
+            nomorPerkara: String(dok.nomorPerkara || ""),
+            golongan,
+            label: `${bagian} - ${x.blangko.berkas}`.slice(0, 200),
+            d,
+            berkas: x.blangko.berkas,
+            nama: `${jurusitaNomorAman(dok.nomorPerkara, dok.perkaraId)} - ${bagian} pihak ${x.sisi}`.slice(0, JURUSITA_NAMA_MAKS),
+            jurusita: (namaJs || "tidak tercatat").slice(0, 120),
+            sumberBlangko: x.blangko.sumber,
+          });
+        }
+        continue;
+      }
+    }
+    const k = jurusitaKunciMassal(dok);
+    const dariPeta = jurusitaPilihBlangko(opsi && opsi.peta, k.jenis, k.minta);
+    const pakaiPeta = dariPeta && dariPeta.sumber !== "bawaan";
     siap.push({
       kunci: String(dok.kunci || "").slice(0, 160),
       perkaraId: String(dok.perkaraId || ""),
@@ -1071,10 +1118,10 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
     `Perkara ${konteksAwal.nomorPerkara}`,
     "Pilih sidang yang dipanggil dan pihaknya, lalu Cetak. Relaas diambil dari ABT dengan akun ABT Anda sendiri " +
       "(hak akses ABT tetap berlaku), lalu RTF-nya (Word, tanpa PDF) disimpan di folder unduhan " +
-      '"ALETA relaas/<tanggal>/<juru sita>". Tidak ada yang ditulis ke SIPP. Penggugat dan Tergugat yang memakai ' +
-      "blangko dan sidang yang sama dicetak SATU dokumen (blangko P dan T memuat keduanya). PBT hanya untuk perkara " +
-      "yang sudah diputus. Sidang pertama memakai blangko sidang pertama (P dan T), kecuali Pemetaan blangko " +
-      "mengatur blangko sidang pertama per pihak."
+      '"ALETA relaas/<tanggal>/<juru sita>". Tidak ada yang ditulis ke SIPP. Tiap pihak memakai blangkonya ' +
+      "sendiri: Penggugat/Pemohon blangko P, Tergugat/Termohon blangko T (sidang pertama, sidang lanjutan, PBT). " +
+      "Blangko gabungan P dan T hanya bila memang hanya itu yang ada (ikrar talak). PBT hanya untuk perkara " +
+      "yang sudah diputus."
   );
   bagian.appendChild(judul);
   const isi = jurusitaEl("div", "aleta-jurusita-isi");
@@ -1567,7 +1614,11 @@ function jurusitaDokumenBarisMassal(baris, pilih, peta) {
     const lanjutan = golongan === "sidang-ditunda" || golongan === "sidang-lanjutan";
     // Blangko rute untuk tundaan dihitung atas pihak SIPP - berlaku hanya bila
     // yang dicentang sama; sidang pertama dan ikrar tidak bergantung pihak.
-    const ruteBerlaku = pg.bisaDicetak === true && (!lanjutan || jurusitaSamaSisi(sisiP, kp.sisi));
+    // 6 Okt (butir 10): sidang pertama kini juga per pihak - blangko rute
+    // (satu blangko untuk dokumennya) hanya berlaku bila yang dicentang SATU
+    // sisi yang sama dengan dokumennya; selebihnya bawaan per pihak.
+    const perPihak = lanjutan || golongan === "sidang-pertama";
+    const ruteBerlaku = pg.bisaDicetak === true && (!perPihak || (sisiP.length === 1 && jurusitaSamaSisi(sisiP, kp.sisi)));
     for (const sisi of sisiP) {
       const blangko = jurusitaBlangkoBagian(pg, "relaas", jurusitaPermintaan(golongan, sisi, seb), ruteBerlaku, peta);
       const pihak = sisi === 1 ? seb.pertama : seb.kedua;

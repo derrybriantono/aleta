@@ -51,11 +51,20 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     { kunci: "Asal Usul Anak", sebutan: "Asal Usul Anak" },
   ],
   relaas: [
-    { kunci: "panggilan-sidang-pertama", sebutan: "Relaas panggilan sidang pertama (P dan T)" },
-    { kunci: "panggilan-penggugat", sebutan: "Relaas panggilan sidang - Penggugat" },
-    { kunci: "panggilan-tergugat", sebutan: "Relaas panggilan sidang - Tergugat" },
-    { kunci: "panggilan-pemohon", sebutan: "Relaas panggilan sidang - Pemohon" },
-    { kunci: "panggilan-termohon", sebutan: "Relaas panggilan sidang - Termohon" },
+    // 6 Okt (butir 10): sidang pertama PER PIHAK - kunci yang sama dengan yang
+    // dibuat admin di server 2 Okt, supaya barisnya menjadi baris baku.
+    { kunci: "relaas-panggilan-sidang-pertama-penggugat", sebutan: "Relaas panggilan sidang pertama - Penggugat" },
+    { kunci: "relaas-panggilan-sidang-pertama-tergugat", sebutan: "Relaas panggilan sidang pertama - Tergugat" },
+    { kunci: "relaas-panggilan-sidang-pertama-pemohon", sebutan: "Relaas panggilan sidang pertama - Pemohon" },
+    { kunci: "relaas-panggilan-sidang-pertama-termohon", sebutan: "Relaas panggilan sidang pertama - Termohon" },
+    {
+      kunci: "panggilan-sidang-pertama",
+      sebutan: "Relaas panggilan sidang P dan T (gabungan - hanya bila satu dokumen memanggil kedua pihak)",
+    },
+    { kunci: "panggilan-penggugat", sebutan: "Relaas panggilan sidang lanjutan - Penggugat" },
+    { kunci: "panggilan-tergugat", sebutan: "Relaas panggilan sidang lanjutan - Tergugat" },
+    { kunci: "panggilan-pemohon", sebutan: "Relaas panggilan sidang lanjutan - Pemohon" },
+    { kunci: "panggilan-termohon", sebutan: "Relaas panggilan sidang lanjutan - Termohon" },
     { kunci: "panggilan-ikrar", sebutan: "Relaas panggilan sidang ikrar talak" },
     { kunci: "delegasi", sebutan: "Permohonan bantuan panggilan (delegasi)" },
     { kunci: "amplop", sebutan: "Amplop panggilan surat tercatat" },
@@ -180,38 +189,56 @@ export function saranPemetaan(jenis: JenisPemetaan): { kunci: string; namaBerkas
  * ekstensi, yang disamakan dengan BLANGKO_RELAAS. Dibaca dari sana, tidak
  * diketik ulang - dua daftar yang diketik terpisah akan berselisih diam-diam.
  *
- *   panggilan-sidang-pertama, panggilan-penggugat, panggilan-pemohon
- *       -> blangko sidang pertama (P dan T): pihak pertama yang tidak hadir
- *          dipanggil dengan blangko yang memuat kedua pihak (keterangan
- *          BLANGKO_RELAAS "sidang-ditunda")
- *   panggilan-tergugat, panggilan-termohon -> blangko sidang lanjutan (T)
- *   panggilan-ikrar -> ikrar talak (P dan T)
+ * (Diubah 6 Okt, butir 10 - per pihak; aturan lama yang memberi
+ * panggilan-penggugat/pemohon blangko gabungan sudah dibuang.)
+ *   relaas-panggilan-sidang-pertama-<pihak> -> "0. ... Sidang Pertama P/T"
+ *   panggilan-<pihak> (sidang lanjutan)     -> "1. ... P/T (Sidang Lanjutan)"
+ *   pbt-<pihak>                             -> "2. ... Pemberitahuan Putusan P/T"
+ *   panggilan-sidang-pertama (tanpa pihak)  -> 3.b gabungan (cadangan)
+ *   panggilan-ikrar -> ikrar talak (P dan T - hanya gabungan yang ada)
  *   delegasi, amplop -> blangko masing-masing
- *   pbt-* -> Relaas Pemberitahuan Putusan (pihaknya dari baris PBT-nya)
  *
  * Putusan TIDAK berbawaan di sini (lihat `saran`).
  */
-const BAWAAN_KEADAAN: Record<string, KeadaanRelaas> = {
-  "panggilan-sidang-pertama": "sidang-pertama",
-  "panggilan-penggugat": "sidang-pertama",
-  "panggilan-pemohon": "sidang-pertama",
-  "panggilan-tergugat": "sidang-ditunda",
-  "panggilan-termohon": "sidang-ditunda",
-  "panggilan-ikrar": "ikrar-talak",
-  delegasi: "delegasi",
-  amplop: "amplop",
-  "pbt-penggugat": "pemberitahuan-putusan",
-  "pbt-tergugat": "pemberitahuan-putusan",
-  "pbt-pemohon": "pemberitahuan-putusan",
-  "pbt-termohon": "pemberitahuan-putusan",
+/*
+ * Perbaikan 6 Okt (butir 10): bawaan PER PIHAK. Sebelumnya panggilan-penggugat
+ * dan panggilan-pemohon (sidang LANJUTAN) berbawaan blangko gabungan 3.b dan
+ * pbt-* satu blangko tanpa pihak; kini tiap kunci berpihak menunjuk blangko
+ * pihaknya (P untuk Penggugat/Pemohon, T untuk Tergugat/Termohon). Gabungan
+ * hanya untuk kunci tanpa pihak (panggilan-sidang-pertama) dan ikrar talak -
+ * satu-satunya blangko ikrar di folder derry memang "P dan T".
+ */
+const BAWAAN_KEADAAN: Record<string, { keadaan: KeadaanRelaas; pihak?: "pertama" | "kedua" | "keduanya" }> = {
+  "relaas-panggilan-sidang-pertama-penggugat": { keadaan: "sidang-pertama", pihak: "pertama" },
+  "relaas-panggilan-sidang-pertama-pemohon": { keadaan: "sidang-pertama", pihak: "pertama" },
+  "relaas-panggilan-sidang-pertama-tergugat": { keadaan: "sidang-pertama", pihak: "kedua" },
+  "relaas-panggilan-sidang-pertama-termohon": { keadaan: "sidang-pertama", pihak: "kedua" },
+  "panggilan-sidang-pertama": { keadaan: "sidang-pertama", pihak: "keduanya" },
+  "panggilan-penggugat": { keadaan: "sidang-ditunda", pihak: "pertama" },
+  "panggilan-pemohon": { keadaan: "sidang-ditunda", pihak: "pertama" },
+  "panggilan-tergugat": { keadaan: "sidang-ditunda", pihak: "kedua" },
+  "panggilan-termohon": { keadaan: "sidang-ditunda", pihak: "kedua" },
+  "panggilan-ikrar": { keadaan: "ikrar-talak" },
+  delegasi: { keadaan: "delegasi" },
+  amplop: { keadaan: "amplop" },
+  "pbt-penggugat": { keadaan: "pemberitahuan-putusan", pihak: "pertama" },
+  "pbt-pemohon": { keadaan: "pemberitahuan-putusan", pihak: "pertama" },
+  "pbt-tergugat": { keadaan: "pemberitahuan-putusan", pihak: "kedua" },
+  "pbt-termohon": { keadaan: "pemberitahuan-putusan", pihak: "kedua" },
 };
 
 export function bawaanPemetaan(jenis: JenisPemetaan): { kunci: string; sebutan: string; namaBerkas: string; catatan: string }[] {
   if (jenis === "putusan") return [];
   const hasil: { kunci: string; sebutan: string; namaBerkas: string; catatan: string }[] = [];
   for (const { kunci, sebutan } of KUNCI_BAKU[jenis]) {
-    const keadaan = BAWAAN_KEADAAN[kunci];
-    const blangko = keadaan ? BLANGKO_RELAAS.find((b) => b.keadaan === keadaan) : undefined;
+    const aturan = BAWAAN_KEADAAN[kunci];
+    // Berpihak: HANYA blangko pihak itu (tidak jatuh ke gabungan). Tanpa pihak:
+    // blangko pertama keadaannya (ikrar, delegasi, amplop - masing-masing satu).
+    const blangko = !aturan
+      ? undefined
+      : aturan.pihak
+        ? BLANGKO_RELAAS.find((b) => b.keadaan === aturan.keadaan && b.pihak === aturan.pihak)
+        : BLANGKO_RELAAS.find((b) => b.keadaan === aturan.keadaan);
     if (!blangko) continue;
     hasil.push({ kunci, sebutan, namaBerkas: blangko.berkas, catatan: blangko.label });
   }

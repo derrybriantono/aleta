@@ -150,12 +150,16 @@ describe("K3 - /api/aleta-ecourt/pemetaan-blangko", () => {
       expect(Object.keys(b).sort()).toEqual(["catatan", "diubahOleh", "diubahPada", "kunci", "namaBerkas", "sebutan", "sumber"]);
     }
     const peta = Object.fromEntries(butir.map((b) => [b.kunci, b.namaBerkas]));
-    const berkas = (k: string) => BLANGKO_RELAAS.find((b) => b.keadaan === k)!.berkas;
-    expect(peta["panggilan-sidang-pertama"]).toBe(berkas("sidang-pertama"));
+    const berkas = (k: string, pihak?: string) =>
+      BLANGKO_RELAAS.find((b) => b.keadaan === k && (!pihak || b.pihak === pihak))!.berkas;
+    // 6 Okt (butir 10): per pihak; gabungan hanya kunci tanpa pihak.
+    expect(peta["panggilan-sidang-pertama"]).toBe(berkas("sidang-pertama", "keduanya"));
     expect(peta["panggilan-sidang-pertama"]).toBe("[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf");
-    expect(peta["panggilan-tergugat"]).toBe(berkas("sidang-ditunda"));
-    expect(peta["panggilan-termohon"]).toBe(berkas("sidang-ditunda"));
-    expect(peta["panggilan-penggugat"]).toBe(berkas("sidang-pertama"));
+    expect(peta["relaas-panggilan-sidang-pertama-penggugat"]).toBe("[JS] 0. Relaas Panggilan Sidang Pertama P.rtf");
+    expect(peta["relaas-panggilan-sidang-pertama-tergugat"]).toBe("[JS] 0. Relaas Panggilan Sidang Pertama T.rtf");
+    expect(peta["panggilan-tergugat"]).toBe(berkas("sidang-ditunda", "kedua"));
+    expect(peta["panggilan-termohon"]).toBe(berkas("sidang-ditunda", "kedua"));
+    expect(peta["panggilan-penggugat"]).toBe(berkas("sidang-ditunda", "pertama"));
     expect(peta["panggilan-ikrar"]).toBe(berkas("ikrar-talak"));
     expect(butir.every((b) => b.sumber === "bawaan")).toBe(true);
   });
@@ -164,7 +168,11 @@ describe("K3 - /api/aleta-ecourt/pemetaan-blangko", () => {
     const r = await panggil("pemetaan", "GET", { query: "jenis=pbt" });
     const kunci = (r.isi.data.butir as { kunci: string; namaBerkas: string }[]).map((b) => b.kunci).sort();
     expect(kunci).toEqual(["pbt-pemohon", "pbt-penggugat", "pbt-tergugat", "pbt-termohon"]);
-    for (const b of r.isi.data.butir) expect(b.namaBerkas).toBe("[JS] 2. Relaas Pemberitahuan Putusan.rtf");
+    const peta = Object.fromEntries((r.isi.data.butir as { kunci: string; namaBerkas: string }[]).map((b) => [b.kunci, b.namaBerkas]));
+    expect(peta["pbt-penggugat"]).toBe("[JS] 2. Relaas Pemberitahuan Putusan P.rtf");
+    expect(peta["pbt-pemohon"]).toBe("[JS] 2. Relaas Pemberitahuan Putusan P.rtf");
+    expect(peta["pbt-tergugat"]).toBe("[JS] 2. Relaas Pemberitahuan Putusan T.rtf");
+    expect(peta["pbt-termohon"]).toBe("[JS] 2. Relaas Pemberitahuan Putusan T.rtf");
   });
 
   it("GET putusan: HANYA yang diatur admin (kosong mula-mula) - bawaan ekstensi sebagai saran", async () => {

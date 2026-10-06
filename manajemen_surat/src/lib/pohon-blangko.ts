@@ -272,34 +272,94 @@ export const FOLDER_RELAAS_IKRAR = "_ikrar_talak/2 Relaas Ikrar Talak";
 const MENU_RELAAS = { nama: "Relaas dan PBT (Blangko Derry)", prosesMin: 80, prosesMax: 220 } as const;
 const MENU_RELAAS_IKRAR = { nama: "Relaas Ikrar Talak", prosesMin: 290, prosesMax: 600 } as const;
 
+// ===========================================================================
+// PERBAIKAN 6 OKT 2026 (BUTIR 10) - BLANGKO PER PIHAK, GABUNGAN HANYA CADANGAN
+// ===========================================================================
+//
+// Pengguna: relaas sidang pertama, sidang lanjutan, dan pemberitahuan putusan
+// HARUS sesuai pihaknya - Penggugat/Pemohon memakai blangko "P", Tergugat/
+// Termohon blangko "T" - dan blangko gabungan dipakai HANYA bila memang hanya
+// itu yang ada (ikrar talak, delegasi). Folder derry_briantono/Relaas di ABT
+// satker (dibaca `ls -b` 6 Okt 2026, server) kini berisi blangko per pihak:
+//
+//   [JS] 0. Relaas Panggilan Sidang Pertama P.rtf / ... T.rtf
+//   [JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan).rtf / ... T ...
+//   [JS] 2. Relaas Pemberitahuan Putusan P.rtf / ... T.rtf
+//   [JS] 3.a. Permohonan Bantuan Panggilan Delegasi.rtf
+//   [JS] 3.b. Relaas Panggilan Sidang P dan T.rtf          (gabungan)
+//   [JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf       (hanya gabungan)
+//   [JS] --AMPLOP PANGGILAN SURAT TERCATAT--.rtf
+//
+// Nama "T (Sidang Lanjutan)" di server TIDAK lagi berspasi sebelum ".rtf"
+// (spasi itu milik salinan laptop 25 Sep), dan "2. Relaas Pemberitahuan
+// Putusan.rtf" tanpa P/T sudah tidak ada. Satu blangko per (keadaan, pihak);
+// blangko gabungan 3.b berkeadaan sidang-pertama berpihak "keduanya" dan hanya
+// terpilih untuk SATU dokumen yang memanggil kedua pihak sekaligus - rute
+// cetak memecah dokumen seperti itu menjadi dua dokumen per pihak lebih dulu
+// (pecahDokumenPerPihak, relaas-massal/cetak/pemetaan-cetak.ts).
 export const BLANGKO_RELAAS: BlangkoRelaas[] = [
   {
     keadaan: "sidang-pertama",
+    berkas: "[JS] 0. Relaas Panggilan Sidang Pertama P.rtf",
+    label: "Panggilan sidang pertama (P)",
+    pihak: "pertama",
+    keterangan: "Sidang pertama, untuk Penggugat/Pemohon - satu relaas per pihak.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "sidang-pertama",
+    berkas: "[JS] 0. Relaas Panggilan Sidang Pertama T.rtf",
+    label: "Panggilan sidang pertama (T)",
+    pihak: "kedua",
+    keterangan: "Sidang pertama, untuk Tergugat/Termohon - satu relaas per pihak.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "sidang-pertama",
     berkas: "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf",
-    label: "Panggilan sidang pertama (P dan T)",
+    label: "Panggilan sidang P dan T (gabungan)",
     pihak: "keduanya",
     keterangan:
-      "Sidang pertama memanggil kedua pihak sekaligus - belum ada yang pernah hadir, jadi tidak ada yang dapat dikecualikan.",
+      "Blangko gabungan dua pihak - CADANGAN: hanya untuk satu dokumen yang memanggil kedua pihak sekaligus, " +
+      "bila blangko per pihak tidak tersedia.",
     folder: FOLDER_RELAAS,
     menuAbt: MENU_RELAAS,
   },
   {
     keadaan: "sidang-ditunda",
-    berkas: "[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan) .rtf",
+    berkas: "[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan).rtf",
+    label: "Panggilan sidang lanjutan (P)",
+    pihak: "pertama",
+    keterangan: "Sidang yang ditunda memanggil yang TIDAK hadir - blangko ini untuk Penggugat/Pemohon.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "sidang-ditunda",
+    berkas: "[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf",
     label: "Panggilan sidang lanjutan (T)",
     pihak: "kedua",
-    keterangan:
-      "Sidang yang ditunda memanggil yang TIDAK hadir. Blangko ini untuk Pihak Kedua; bila yang tidak hadir Pihak Pertama, atau keduanya, blangko sidang pertama yang dipakai sebab ia memuat kedua pihak.",
+    keterangan: "Sidang yang ditunda memanggil yang TIDAK hadir - blangko ini untuk Tergugat/Termohon.",
     folder: FOLDER_RELAAS,
     menuAbt: MENU_RELAAS,
   },
   {
     keadaan: "pemberitahuan-putusan",
-    berkas: "[JS] 2. Relaas Pemberitahuan Putusan.rtf",
-    label: "Pemberitahuan isi putusan",
-    pihak: "tidak-diketahui",
-    keterangan:
-      "Pihaknya ditentukan baris pemberitahuannya sendiri (kolom pihak dan pihak_id), bukan oleh blangkonya.",
+    berkas: "[JS] 2. Relaas Pemberitahuan Putusan P.rtf",
+    label: "Pemberitahuan isi putusan (P)",
+    pihak: "pertama",
+    keterangan: "Pemberitahuan isi putusan kepada Penggugat/Pemohon.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "pemberitahuan-putusan",
+    berkas: "[JS] 2. Relaas Pemberitahuan Putusan T.rtf",
+    label: "Pemberitahuan isi putusan (T)",
+    pihak: "kedua",
+    keterangan: "Pemberitahuan isi putusan kepada Tergugat/Termohon.",
     folder: FOLDER_RELAAS,
     menuAbt: MENU_RELAAS,
   },
@@ -374,10 +434,25 @@ export function blangkoRelaas(
   if (pihak === "tidak-perlu" && (keadaan === "sidang-ditunda" || keadaan === "pemberitahuan-putusan")) {
     return null;
   }
-  if (keadaan === "sidang-ditunda" && (pihak === "keduanya" || pihak === "pertama")) {
-    return BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-pertama") ?? null;
+  // Per pihak lebih dulu (6 Okt, butir 10): blangko yang pihaknya TEPAT.
+  if (pihak === "pertama" || pihak === "kedua") {
+    const tepat = BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && x.pihak === pihak);
+    if (tepat) return tepat;
   }
+  // Satu dokumen untuk dua pihak (sidang ditunda yang tidak dihadiri siapa pun,
+  // atau sidang pertama yang belum dipecah): hanya blangko gabungan yang memuat
+  // keduanya - 3.b berkeadaan sidang-pertama.
+  if (pihak === "keduanya" && (keadaan === "sidang-ditunda" || keadaan === "sidang-pertama")) {
+    return BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-pertama" && x.pihak === "keduanya") ?? null;
+  }
+  // Keadaan yang hanya punya satu blangko (ikrar - gabungan, delegasi, amplop)
+  // atau pihak yang belum diketahui: blangko pertama keadaan itu.
   return BLANGKO_RELAAS.find((x) => x.keadaan === keadaan) ?? null;
+}
+
+/** Blangko bawaan untuk satu keadaan dan satu sisi pihak (1 = P, 2 = T) - tanpa aturan kehadiran. */
+export function blangkoRelaasPerPihak(keadaan: KeadaanRelaas, sisi: "pertama" | "kedua"): BlangkoRelaas | null {
+  return BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && x.pihak === sisi) ?? null;
 }
 
 /**

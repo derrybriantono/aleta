@@ -144,11 +144,18 @@ async function isiRute(kueri = "") {
 }
 
 /** Nama berkas yang dipakai di seluruh berkas ini - dibaca, tidak ditulis ulang. */
+// 6 Okt (butir 10): blangko per pihak - P dan T terpisah; gabungan 3.b cadangan.
+const berkasUntuk = (keadaan: string, pihak?: string) =>
+  BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && (!pihak || x.pihak === pihak))!.berkas;
 const BERKAS = {
-  sidangPertama: BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-pertama")!.berkas,
-  sidangDitunda: BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-ditunda")!.berkas,
-  pemberitahuan: BLANGKO_RELAAS.find((x) => x.keadaan === "pemberitahuan-putusan")!.berkas,
-  ikrarTalak: BLANGKO_RELAAS.find((x) => x.keadaan === "ikrar-talak")!.berkas,
+  sidangPertama: berkasUntuk("sidang-pertama", "pertama"),
+  sidangPertamaT: berkasUntuk("sidang-pertama", "kedua"),
+  gabungan: berkasUntuk("sidang-pertama", "keduanya"),
+  /** Sidang lanjutan pihak KEDUA (T). */
+  sidangDitunda: berkasUntuk("sidang-ditunda", "kedua"),
+  sidangDitundaP: berkasUntuk("sidang-ditunda", "pertama"),
+  pemberitahuan: berkasUntuk("pemberitahuan-putusan", "pertama"),
+  ikrarTalak: berkasUntuk("ikrar-talak"),
 };
 
 /** Jawaban blangko.katalog seperti bentuk aslinya di sippReadOnlyBridgeService. */
@@ -175,12 +182,12 @@ beforeEach(() => {
 });
 
 describe("rute katalog blangko relaas - daftarnya dari satu sumber", () => {
-  it("memulangkan keenam blangko beserta folder dan aturan pihaknya", async () => {
+  it("memulangkan kesepuluh blangko (per pihak) beserta folder dan aturan pihaknya", async () => {
     keadaan.katalog = { ok: false, error: "bot tidak dijalankan pada uji ini" };
     const { data } = await isiRute();
 
     expect(data.jumlah).toBe(BLANGKO_RELAAS.length);
-    expect(data.jumlah).toBe(6);
+    expect(data.jumlah).toBe(10);
     expect(data.folder).toBe("derry_briantono/Relaas");
     expect(data.set?.id).toBe("relaas-jurusita");
 
@@ -192,16 +199,15 @@ describe("rute katalog blangko relaas - daftarnya dari satu sumber", () => {
     expect(data.blangko.every((x) => x.label.length > 0)).toBe(true);
   });
 
-  it("nama blangko sidang lanjutan tetap membawa spasi sebelum .rtf", async () => {
+  it("nama blangko sidang lanjutan T PERSIS nama di ABT satker (tanpa spasi sebelum .rtf, 6 Okt)", async () => {
     keadaan.katalog = { ok: false, error: "bot tidak dijalankan pada uji ini" };
     const { data } = await isiRute();
-    const lanjutan = data.blangko.find((x) => x.keadaan === "sidang-ditunda");
+    const lanjutan = data.blangko.find((x) => x.keadaan === "sidang-ditunda" && x.pihak === "kedua");
 
     expect(lanjutan).toBeDefined();
-    // Inilah satu-satunya alasan rute ini ada. Bila spasinya hilang, ekstensi
-    // mencari berkas yang tidak pernah ada - tanpa galat apa pun.
-    expect(lanjutan!.berkas.endsWith(") .rtf")).toBe(true);
-    expect(lanjutan!.berkas).not.toBe(lanjutan!.berkas.replace(") .rtf", ").rtf"));
+    // Dibaca `ls -b` di server satker 6 Okt 2026. Spasi sebelum ".rtf" milik
+    // salinan laptop 25 Sep; nama yang salah satu huruf pun tidak pernah ketemu.
+    expect(lanjutan!.berkas).toBe("[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf");
     expect(lanjutan!.jalur).toBe(`derry_briantono/Relaas/${lanjutan!.berkas}`);
   });
 
@@ -228,7 +234,7 @@ describe("rute katalog blangko relaas - folder ABT punya TIGA jawaban", () => {
     // null, BUKAN false: yang belum diukur tidak boleh terbaca sebagai hilang.
     for (const satu of data.blangko) expect(satu.adaDiAbt).toBeNull();
     // Katalognya sendiri tidak ikut gagal - ia datang dari TypeScript.
-    expect(data.jumlah).toBe(6);
+    expect(data.jumlah).toBe(10);
   });
 
   it("folder ABT tidak ada di mesin ini: sebab dari bot diteruskan apa adanya", async () => {
@@ -252,21 +258,21 @@ describe("rute katalog blangko relaas - folder ABT punya TIGA jawaban", () => {
     expect(data.abt.terbaca).toBe(true);
     expect(data.abt.jumlahDiFolder).toBe(4);
     expect(data.blangko.find((x) => x.keadaan === "sidang-pertama")!.adaDiAbt).toBe(true);
-    expect(data.blangko.find((x) => x.keadaan === "sidang-ditunda")!.adaDiAbt).toBe(true);
+    expect(data.blangko.find((x) => x.berkas === BERKAS.sidangDitunda)!.adaDiAbt).toBe(true);
     expect(data.blangko.find((x) => x.keadaan === "ikrar-talak")!.adaDiAbt).toBe(false);
     expect(data.abt.tidakDitemukan).toContain(BERKAS.ikrarTalak);
     expect(data.abt.tidakDitemukan).not.toContain(BERKAS.sidangPertama);
   });
 
-  it("katalog yang kehilangan SPASI sebelum .rtf dinyatakan tidak ditemukan", async () => {
-    // Folder yang berisi nama tanpa spasinya - inilah bentuk selisih yang
-    // tidak pernah menimbulkan galat, dan yang wajib ditangkap di sini.
-    const tanpaSpasi = BERKAS.sidangDitunda.replace(") .rtf", ").rtf");
-    expect(tanpaSpasi).not.toBe(BERKAS.sidangDitunda);
-    keadaan.katalog = katalogPalsu([BERKAS.sidangPertama, tanpaSpasi]);
+  it("katalog yang namanya BEDA SATU SPASI dinyatakan tidak ditemukan", async () => {
+    // Folder berisi nama lama berspasi sebelum ".rtf" - selisih yang tidak
+    // pernah menimbulkan galat, dan yang wajib ditangkap di sini.
+    const berspasi = BERKAS.sidangDitunda.replace(").rtf", ") .rtf");
+    expect(berspasi).not.toBe(BERKAS.sidangDitunda);
+    keadaan.katalog = katalogPalsu([BERKAS.sidangPertama, berspasi]);
 
     const { data } = await isiRute();
-    expect(data.blangko.find((x) => x.keadaan === "sidang-ditunda")!.adaDiAbt).toBe(false);
+    expect(data.blangko.find((x) => x.berkas === BERKAS.sidangDitunda)!.adaDiAbt).toBe(false);
     expect(data.abt.tidakDitemukan).toContain(BERKAS.sidangDitunda);
   });
 
@@ -312,16 +318,16 @@ describe("rute katalog blangko relaas - memilih satu blangko", () => {
     expect(data.pilihan?.adaDiAbt).toBe(true);
   });
 
-  it("sidang ditunda dengan Pihak Pertama beralih ke blangko dua pihak, dan sebabnya disebut", async () => {
+  it("sidang ditunda dengan Pihak Pertama memakai blangko P (Sidang Lanjutan), bukan gabungan (6 Okt)", async () => {
     keadaan.katalog = { ok: false, error: "bot mati" };
     const { data } = await isiRute("?keadaan=sidang-ditunda&pihak=pertama");
+    expect(data.pilihan?.berkas).toBe(BERKAS.sidangDitundaP);
+    expect(data.pilihan?.sebab).toContain("pihak pertama (P)");
 
-    // Bukan blangko sidang lanjutan: hanya blangko sidang pertama yang memuat
-    // dua pihak sekaligus. Keputusan itu ada di pohon-blangko.ts, dan rute ini
-    // WAJIB menyebutkannya - pergantian blangko yang tidak dijelaskan terbaca
-    // sebagai kekeliruan.
-    expect(data.pilihan?.berkas).toBe(BERKAS.sidangPertama);
-    expect(data.pilihan?.sebab).toContain("dua pihak");
+    // Satu dokumen untuk kedua pihak: hanya gabungan yang memuat keduanya, dan sebabnya disebut.
+    const dua = await isiRute("?keadaan=sidang-ditunda&pihak=keduanya");
+    expect(dua.data.pilihan?.berkas).toBe(BERKAS.gabungan);
+    expect(dua.data.pilihan?.sebab).toContain("dua pihak");
   });
 
   it("dihadiriOleh dipakai ketika pihak tidak disebut - satu penerjemah sandi, bukan dua", async () => {
@@ -333,10 +339,10 @@ describe("rute katalog blangko relaas - memilih satu blangko", () => {
     expect(dua.data.pilihan?.pihak).toBe("kedua");
     expect(dua.data.pilihan?.berkas).toBe(BERKAS.sidangDitunda);
 
-    // 3 = Pihak Kedua saja yang hadir -> panggil PIHAK PERTAMA -> blangko dua pihak.
+    // 3 = Pihak Kedua saja yang hadir -> panggil PIHAK PERTAMA -> blangko P (Sidang Lanjutan).
     const tiga = await isiRute("?keadaan=sidang-ditunda&dihadiriOleh=3");
     expect(tiga.data.sandi?.pihak).toBe("pertama");
-    expect(tiga.data.pilihan?.berkas).toBe(BERKAS.sidangPertama);
+    expect(tiga.data.pilihan?.berkas).toBe(BERKAS.sidangDitundaP);
 
     // 4 = tidak ada yang hadir -> panggil KEDUANYA.
     const empat = await isiRute("?keadaan=sidang-ditunda&dihadiriOleh=4");
@@ -480,20 +486,22 @@ describe("layar - ruas yang BELUM dikirim bot tidak digambar sebagai nol", () =>
 });
 
 describe("layar - ketiga golongan yang diminta pengguna dan blangkonya", () => {
-  it("sidang pertama memakai blangko P dan T, dan berkasnya tergambar", async () => {
+  it("sidang pertama memakai blangko PER PIHAK (P dan T terpisah), dan berkasnya tergambar", async () => {
     const { nilaiBaris, BarisPekerjaan } = await muatLayar();
     const baris = barisLama({ golongan: "sidang-pertama", urutanSidang: 1, dihadiriOleh: null });
     const nilai = nilaiBaris(baris);
 
     expect(nilai.golongan.label).toBe("Sidang pertama");
     expect(nilai.blangko.ada).toBe(true);
-    expect(nilai.blangko.berkas).toBe(BERKAS.sidangPertama);
+    expect(nilai.blangko.berkas).toBe(`${BERKAS.sidangPertama} + ${BERKAS.sidangPertamaT}`);
 
     const html = gambarBaris(baris, BarisPekerjaan);
     expect(html).toContain("Sidang pertama");
     expect(html).toContain("Sidang ke-1");
-    // Nama berkasnya digambar apa adanya, jadi spasinya pun ikut tergambar.
-    expect(html).toContain("Relaas Panggilan Sidang P dan T.rtf");
+    // Nama berkasnya digambar apa adanya; gabungan P dan T TIDAK dipakai.
+    expect(html).toContain("Relaas Panggilan Sidang Pertama P.rtf");
+    expect(html).toContain("Relaas Panggilan Sidang Pertama T.rtf");
+    expect(html).not.toContain("Relaas Panggilan Sidang P dan T.rtf");
   });
 
   it("sidang pertama: pihaknya keduanya menurut aturan blangko, TANPA peringatan kehadiran", async () => {
@@ -509,7 +517,7 @@ describe("layar - ketiga golongan yang diminta pengguna dan blangkonya", () => {
     expect(nilai.pihak.sandi).toBe("keduanya");
     expect(nilai.pihak.pasti).toBe(true);
     expect(nilai.pihak.sebab).toBe("");
-    expect(nilai.blangko.berkas).toBe(BERKAS.sidangPertama);
+    expect(nilai.blangko.berkas).toBe(`${BERKAS.sidangPertama} + ${BERKAS.sidangPertamaT}`);
 
     const html = gambarBaris(baris, BarisPekerjaan);
     expect(html).toContain("Kedua pihak dipanggil");
@@ -553,11 +561,11 @@ describe("layar - ketiga golongan yang diminta pengguna dan blangkonya", () => {
     expect(kedua.pihak.label).toBe("Pihak Kedua dipanggil");
     expect(kedua.blangko.berkas).toBe(BERKAS.sidangDitunda);
 
-    // 4 = tidak ada yang hadir -> KEDUANYA -> blangko yang memuat dua pihak.
+    // 4 = tidak ada yang hadir -> KEDUANYA -> blangko P dan blangko T, terpisah (6 Okt).
     const keduanya = nilaiBaris(barisLama({ golongan: "sidang-ditunda", dihadiriOleh: 4 }));
     expect(keduanya.pihak.sandi).toBe("keduanya");
-    expect(keduanya.blangko.berkas).toBe(BERKAS.sidangPertama);
-    expect(keduanya.blangko.sebab).toContain("dua pihak");
+    expect(keduanya.blangko.berkas).toBe(`${BERKAS.sidangDitundaP} + ${BERKAS.sidangDitunda}`);
+    expect(keduanya.blangko.berkas).not.toContain(BERKAS.gabungan);
   });
 
   it("pemberitahuan putusan dan ikrar talak punya blangkonya sendiri", async () => {
@@ -581,14 +589,13 @@ describe("layar - ketiga golongan yang diminta pengguna dan blangkonya", () => {
     expect(nilai.blangko.ada).toBe(true);
     expect(nilai.blangko.berkas).toBe(BERKAS.sidangDitunda);
 
-    // Pihak Pertama ikut dipanggil -> blangko dua pihak, seperti sidang-ditunda.
+    // Kedua pihak dipanggil -> blangko P dan T terpisah, seperti sidang-ditunda.
     const empat = nilaiBaris(barisLama({ golongan: "sidang-lanjutan", dihadiriOleh: 4 }));
-    expect(empat.blangko.berkas).toBe(BERKAS.sidangPertama);
-    expect(empat.blangko.sebab).toContain("dua pihak");
+    expect(empat.blangko.berkas).toBe(`${BERKAS.sidangDitundaP} + ${BERKAS.sidangDitunda}`);
 
     const html = gambarBaris(baris, BarisPekerjaan);
     expect(html).not.toContain("belum dapat ditentukan");
-    expect(html).toContain("Relaas Panggilan Sidang T (Sidang Lanjutan) .rtf");
+    expect(html).toContain("Relaas Panggilan Sidang T (Sidang Lanjutan).rtf");
   });
 
   it("golongan yang sama sekali tidak dikenal tetap bernama, bukan dibuang", async () => {
@@ -686,7 +693,8 @@ describe("layar - pihak yang dipanggil beserta SEBABNYA", () => {
       barisLama({ golongan: "sidang-ditunda", dihadiriOleh: 2, pihakDipanggil: "pertama" })
     );
     expect(nilai.pihak.sandi).toBe("pertama");
-    expect(nilai.blangko.berkas).toBe(BERKAS.sidangPertama);
+    // 6 Okt (butir 10): pihak pertama pada tundaan -> blangko P (Sidang Lanjutan).
+    expect(nilai.blangko.berkas).toBe(BERKAS.sidangDitundaP);
   });
 });
 
