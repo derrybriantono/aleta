@@ -8,6 +8,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { nilaiPraperiksa } from "@/lib/praperiksa-putusan";
 
+import { buatIndexedDbTiruan } from "./indexeddb-tiruan";
+
 /**
  * ============================================================================
  * MODE MASSAL PUTUSAN, DIJALANKAN UJUNG KE UJUNG ATAS BEBERAPA PERKARA
@@ -355,6 +357,8 @@ function buatDunia(perkara: Perkara[], opsi: OpsiDunia = {}) {
     },
     /** Borang satu tab - tanpa nomor: tab yang terakhir membuka borang. */
     borang: (tab?: number) => borangTab.get(tab ?? tabTerakhir)!.medan,
+    /** Nomor perkara borang yang terbuka di satu tab (edoc, butir 6). */
+    nomorBorang: (tab: number) => borangTab.get(tab)?.nomor ?? "",
     /** Petugas menekan "Tambah Putusan Akhir" di satu tab: borangnya lahir baru. */
     bukaBorang(tab: number, nomor: string) {
       tabTerakhir = tab;
@@ -462,7 +466,32 @@ type OpsiHalaman = {
   kunci?: KunciBersama;
   /** praperiksaSebelumMengisi sungguhan, dijawab nilaiPraperiksa. */
   praperiksaAsli?: boolean;
+  /**
+   * Butir 6 (6 Okt 2026): tampilan Baru, simpanPutusanLaluBuka dan jalur edoc
+   * a30 SUNGGUHAN (rak naskah di IndexedDB tiruan bersama, unggah-sipp
+   * tiruan). Yang ditiru hanya anonimisasi ABT dan tekanan Simpan.
+   */
+  edoc?: EdocUji;
 };
+type EdocUji = {
+  idb: ReturnType<typeof buatIndexedDbTiruan>;
+  /** Hasil anonimisasi ABT tiruan. */
+  anon: "ok" | "gagal";
+  /** Rute unggah-sipp menolak kiriman ini. */
+  tolakUnggah?: boolean;
+  /** Tampilan Lama (a30Aktif mati): tidak boleh ada edoc sama sekali. */
+  lama?: boolean;
+  /** Tiap kiriman unggah-sipp: nomor, nama berkas putusan dan anonimisasi. */
+  unggah: Array<{ nomor: string; putusan: string; anonimisasi: string }>;
+  /** Anonimisasi yang diminta (nama berkas sumbernya). */
+  anonDiminta: string[];
+  /** Tab yang memuat ulang halaman perkara sesudah Simpan. */
+  dimuatUlang: number[];
+};
+
+function edocUji(anon: "ok" | "gagal" = "ok", tolakUnggah = false): EdocUji {
+  return { idb: buatIndexedDbTiruan(), anon, tolakUnggah, unggah: [], anonDiminta: [], dimuatUlang: [] };
+}
 let nomorTab = 0;
 
 function muatHalaman(dunia: Dunia, simpanan: Record<string, unknown>, opsi: OpsiHalaman = {}) {
@@ -543,6 +572,14 @@ function muatHalaman(dunia: Dunia, simpanan: Record<string, unknown>, opsi: Opsi
       const metode = String(o?.method || "GET").toUpperCase();
       // Daftar tipe keluaran tidak terjangkau: cadangan tertanam yang berlaku.
       if (url.includes("/ekstensi/tipe-keluaran")) throw new TypeError("Failed to fetch");
+      if (url.includes("/putusan/unggah-sipp") && opsi.edoc) {
+        const badan = o?.body as FormData;
+        const put = badan.get("putusan") as File | null;
+        const anon = badan.get("anonimisasi") as File | null;
+        opsi.edoc.unggah.push({ nomor: String(badan.get("nomorPerkara")), putusan: put ? put.name : "", anonimisasi: anon ? anon.name : "" });
+        if (opsi.edoc.tolakUnggah) return jawab({ data: { ok: false, sebab: "Folder SIPP tidak terjangkau dari ALETA." } });
+        return jawab({ data: { ok: true, berkas: [{ jenis: "putusan", ok: true }, ...(anon ? [{ jenis: "anonimisasi", ok: true }] : [])] } });
+      }
       if (url.includes("/putusan/unggah-naskah")) {
         const badan = o?.body as FormData;
         dunia.unggahNaskah.push(String(badan.get("nomorPerkara")));
@@ -609,6 +646,66 @@ function muatHalaman(dunia: Dunia, simpanan: Record<string, unknown>, opsi: Opsi
     k.praperiksaSebelumMengisi = async () => ({ hentikan: false, jumlah: { perhatian: 0 }, temuan: [] });
   }
 
+  // Butir 6: tampilan Baru dengan simpanPutusanLaluBuka dan jalur edoc a30
+  // SUNGGUHAN. Yang ditiru: tekanan Simpan (borang dunia ini) beserta jawaban
+  // SIPP-nya, anonimisasi ABT, dan pemuatan ulang halaman.
+  const fungsiEdoc: string[] = [];
+  const tetapanEdoc: string[] = [];
+  if (opsi.edoc) {
+    const e = opsi.edoc;
+    let jawabSipp: { st: number; pesan: string } | null = null;
+    delete k.simpanPutusanLaluBuka;
+    Object.assign(k, {
+      indexedDB: e.idb,
+      // File/FormData Node: Blob jsdom tidak punya arrayBuffer().
+      File: globalThis.File,
+      FormData: globalThis.FormData,
+      a30Aktif: () => !e.lama,
+      namaPenggunaSipp: () => "munifa",
+      bunyiSimpanTidakDitekan: () => "Simpan tidak ditekan.",
+      dengarBuktiSimpan: () => ({ id: "telinga", tunggu: async () => jawabSipp, jawaban: () => jawabSipp, lepas() {} }),
+      tekanSimpanPutusan: async () => {
+        const h = dunia.tekanSimpan(tab, dunia.nomorBorang(tab));
+        jawabSipp = h.ok ? { st: 1, pesan: "Data Berhasil Disimpan" } : { st: 0, pesan: h.bunyi };
+        return { ok: true, bukti: "terkirim" };
+      },
+      muatUlangHalamanPerkara: () => void e.dimuatUlang.push(tab),
+      a30SiapkanAnonimisasi: async (p: { berkas: File }) => {
+        e.anonDiminta.push(p.berkas.name);
+        if (e.anon === "gagal") {
+          return { ok: false, perluAbt: true, pesan: "Masuk ABT dulu: anonimisasi dibuat oleh ABT dengan akun ABT Anda di peramban ini." };
+        }
+        return { ok: true, berkas: new globalThis.File(["{\\rtf1 anonim}"], `anonim_${p.berkas.name}`, { type: "application/rtf" }) };
+      },
+    });
+    fungsiEdoc.push(
+      ...[
+        "simpanPutusanLaluBuka",
+        "samaPutusan",
+        "a30OpsiSimpanMassal",
+        "a30OpsiEdocMassal",
+        "a30OpsiSimpanPutusan",
+        "a30UnggahEdoc",
+        "kirimBadanUnggahSipp",
+        "pesanGagalUnggah",
+        "perkaraIdDariHalaman",
+        "a30Bentuk",
+        "a30PerluKeRtf",
+        "a30BukaRakNaskah",
+        "a30TransaksiRak",
+        "a30BitaBerkas",
+        "a30SimpanNaskahEdoc",
+        "a30AmbilNaskahEdoc",
+        "a30HapusNaskahEdoc",
+      ].filter((n) => adaFungsi(konten, n))
+    );
+    tetapanEdoc.push(
+      ...["BATAS_JAWABAN_SIMPAN_MS", "BATAS_UNGGAH_SIPP_MS", "ALETA_API_UNGGAH_SIPP", "PESAN_GAGAL_UNGGAH", "A30_MIME", "A30_TERIMA_NASKAH", "A30_RAK_NASKAH", "a30KunciRak"].filter(
+        (n) => adaTetapan(konten, n)
+      )
+    );
+  }
+
   const fungsi = [
     "buatElemen",
     "ringkasHentikan",
@@ -644,9 +741,10 @@ function muatHalaman(dunia: Dunia, simpanan: Record<string, unknown>, opsi: Opsi
         "POLA_PERKARA",
         "NAMA_KEADAAN_ANTREAN",
         ...tetapanOpsional,
+        ...tetapanEdoc,
       ].map((n) => tetapan(konten, n)),
       konten.includes('\nlet antreanSippBerjalan = "";') ? 'let antreanSippBerjalan = "";' : "",
-      ...[...fungsi, ...opsional].map((n) => potongFungsi(konten, n)),
+      ...[...fungsi, ...opsional, ...fungsiEdoc].map((n) => potongFungsi(konten, n)),
       "this.__uji = { bagianAntreanSipp, bagianMassalBerkas, alatBuatAntrean, alatSimpanAntrean, alatMuatAntrean, " +
         'jalankanAntreanSippSekali: typeof jalankanAntreanSippSekali === "function" ? jalankanAntreanSippSekali : null };',
     ].join("\n"),
@@ -1516,5 +1614,195 @@ describe("I. antrean baru tidak diam-diam mengganti antrean yang belum selesai",
     const { ditanya } = await susunDariBerkas(simpanan, false);
     expect(ditanya).toEqual([]);
     expect(antreanTersimpan(simpanan)!.asal).toBe("berkas");
+  });
+});
+
+// ===========================================================================
+describe("J. edoc putusan + edoc anonimisasi sesudah Simpan antrean (butir 6, 6 Okt 2026)", () => {
+  const RAK = ["aleta-naskah-edoc", "naskah"] as const;
+  const NAMA = [
+    "101_Pdt.G_2026_PA.Dgl - [01] [Kabul] Cerai Gugat.rtf",
+    "PA.Dgl_2026_Pdt.G_102_putusan_akhir.rtf",
+    "103_Pdt.G_2026_PA.Dgl - [01] [Kabul] Cerai Gugat.rtf",
+  ];
+
+  /** "Kirim naskah lalu susun antrean" di halaman daftar, dengan opsi edoc. */
+  async function susunDariBerkasEdoc(dunia: Dunia, simpanan: Record<string, unknown>, e: EdocUji, nama = NAMA) {
+    const h = muatHalaman(dunia, simpanan, { edoc: e });
+    const wadah = h.dokumen.body.appendChild(h.dokumen.createElement("div"));
+    const kotak = h.uji.bagianMassalBerkas(wadah);
+    const pemilih = kotak.querySelector("input[type=file]") as HTMLInputElement;
+    const daftar = nama.map((n) => new globalThis.File([`{\\rtf1 naskah ${n}}`], n, { type: "application/rtf" }));
+    Object.defineProperty(pemilih, "files", { value: daftar, configurable: true });
+    pemilih.dispatchEvent(new h.k.Event("change"));
+    (kotak.querySelector("button") as HTMLButtonElement).click();
+    await tunggu(() => Boolean(antreanTersimpan(simpanan)), "antrean dari berkas tersimpan");
+    await tunggu(() => /Buka perkara pertamanya/.test(kotak.textContent || ""), "kabar susun");
+    return { h, kotak };
+  }
+
+  it("dari berkas, otomatis: tiap perkara tersimpan LALU edoc putusan + anonimisasinya diunggah; antrean berlanjut; rak dikosongkan", async () => {
+    const dunia = buatDunia(tigaPerkara());
+    const simpanan: Record<string, unknown> = {};
+    const e = edocUji();
+    const { kotak } = await susunDariBerkasEdoc(dunia, simpanan, e);
+    // Naskah asli disimpan di peramban (rak), per nomor perkara.
+    expect([...e.idb.isi(...RAK).keys()].sort()).toEqual([N1, N2, N3].map((n) => n.toLowerCase()).sort());
+    expect(kotak.textContent).toContain("edoc putusan dan edoc anonimisasinya ikut diunggah (3 dari 3 naskah siap untuk edoc)");
+
+    for (const nomor of [N1, N2, N3]) await kerjakanOtomatis(dunia, simpanan, nomor, { edoc: e });
+
+    expect(dunia.simpan.map((s) => [s.nomor, s.diterima])).toEqual([
+      [N1, true],
+      [N2, true],
+      [N3, true],
+    ]);
+    // Edoc SESUDAH Simpan, satu kiriman per perkara: naskah asli + anonimnya.
+    expect(e.unggah).toEqual([
+      { nomor: N1, putusan: NAMA[0], anonimisasi: `anonim_${NAMA[0]}` },
+      { nomor: N2, putusan: NAMA[1], anonimisasi: `anonim_${NAMA[1]}` },
+      { nomor: N3, putusan: NAMA[2], anonimisasi: `anonim_${NAMA[2]}` },
+    ]);
+    for (const nomor of [N1, N2, N3]) {
+      const b = butirDi(simpanan, nomor) as Butir & { edoc?: string };
+      expect(b.keadaan).toBe("selesai");
+      expect(b.edoc).toBe("ok");
+      expect(b.catatan).toContain("tersimpan di SIPP");
+      expect(b.catatan).toContain("Edoc putusan dan edoc anonimisasi terunggah");
+    }
+    // Halaman tiap perkara dibuka kembali - antrean menunjuk perkara berikutnya.
+    await tunggu(() => e.dimuatUlang.length === 3, "halaman perkara dibuka kembali");
+    expect(e.dimuatUlang).toHaveLength(3);
+    // Naskah yang sudah menjadi edoc tidak disimpan lebih lama.
+    expect(e.idb.isi(...RAK).size).toBe(0);
+  });
+
+  it("anonimisasi ABT gagal: putusan TETAP tersimpan, edoc tidak diunggah, sebabnya di butir, antrean LANJUT ke perkara berikutnya", async () => {
+    const dunia = buatDunia(tigaPerkara());
+    const simpanan: Record<string, unknown> = {};
+    const e = edocUji("gagal");
+    await susunDariBerkasEdoc(dunia, simpanan, e, NAMA.slice(0, 2));
+    await kerjakanOtomatis(dunia, simpanan, N1, { edoc: e });
+    const b1 = butirDi(simpanan, N1) as Butir & { edoc?: string };
+    expect(b1.keadaan).toBe("selesai");
+    expect(b1.edoc).toMatch(/^gagal: /);
+    expect(b1.catatan).toContain("EDOC GAGAL");
+    expect(b1.catatan).toContain("Masuk ABT dulu");
+    // Halaman tetap dibuka kembali (dahulu: "Halaman TIDAK dimuat ulang" -> antrean diam).
+    await tunggu(() => e.dimuatUlang.length === 1, "halaman perkara dibuka kembali");
+    expect(e.dimuatUlang).toHaveLength(1);
+
+    // Baris N1 di panel antrean tidak lagi hijau; N2 tetap dikerjakan.
+    const h2 = muatHalaman(dunia, simpanan, { edoc: e });
+    const panel = (await h2.gambarPanel(N2))!;
+    const baris = [...panel.querySelectorAll(".aleta-perkakas-baris")].find((x) => (x.textContent || "").includes(N1))!;
+    expect(baris.className).toContain("aleta-perkakas-awas");
+    expect(baris.className).not.toContain("aleta-perkakas-baik");
+    await kerjakanOtomatis(dunia, simpanan, N2, { edoc: e });
+    expect(dunia.simpan.map((s) => [s.nomor, s.diterima])).toEqual([
+      [N1, true],
+      [N2, true],
+    ]);
+    expect(e.unggah).toEqual([]);
+    // Naskah yang belum menjadi edoc tetap di rak - dapat diunggah dari panel perkara.
+    expect(e.idb.isi(...RAK).size).toBe(2);
+  });
+
+  it("rute unggah-sipp menolak: dicatat per perkara beserta sebabnya, antrean berlanjut", async () => {
+    const dunia = buatDunia(tigaPerkara());
+    const simpanan: Record<string, unknown> = {};
+    const e = edocUji("ok", true);
+    await susunDariBerkasEdoc(dunia, simpanan, e, NAMA.slice(0, 2));
+    for (const nomor of [N1, N2]) await kerjakanOtomatis(dunia, simpanan, nomor, { edoc: e });
+    expect(e.unggah.map((u) => u.nomor)).toEqual([N1, N2]);
+    for (const nomor of [N1, N2]) {
+      const b = butirDi(simpanan, nomor) as Butir & { edoc?: string };
+      expect(b.keadaan).toBe("selesai");
+      expect(b.edoc).toMatch(/^gagal: .*Folder SIPP tidak terjangkau/);
+    }
+    await tunggu(() => e.dimuatUlang.length === 2, "halaman perkara dibuka kembali");
+    expect(e.dimuatUlang).toHaveLength(2);
+  });
+
+  it("antrean dari tanggal sidang tanpa naskah di peramban ini: putusan tersimpan, edoc disebut TIDAK diunggah beserta jalan keluarnya", async () => {
+    const dunia = buatDunia(tigaPerkara());
+    const simpanan: Record<string, unknown> = {};
+    const e = edocUji();
+    await susunAntrean(dunia, simpanan, "otomatis", [N1]);
+    await kerjakanOtomatis(dunia, simpanan, N1, { edoc: e });
+    const b = butirDi(simpanan, N1) as Butir & { edoc?: string };
+    expect(b.keadaan).toBe("selesai");
+    expect(b.edoc).toMatch(/^gagal: /);
+    expect(b.catatan).toMatch(/naskah aslinya tidak tersimpan di peramban ini/);
+    expect(b.catatan).toMatch(/Unggah putusan ke SIPP/);
+    expect(e.unggah).toEqual([]);
+    await tunggu(() => e.dimuatUlang.length === 1, "halaman perkara dibuka kembali");
+    expect(e.dimuatUlang).toHaveLength(1);
+  });
+
+  it("antrean dari tanggal sidang, naskah perkara itu tersimpan sebelumnya: edocnya ikut diunggah", async () => {
+    const dunia = buatDunia(tigaPerkara());
+    const simpanan: Record<string, unknown> = {};
+    const e = edocUji();
+    // Naskah dikirim lebih dahulu dari Putusan otomatis panel perkara (prosesNaskah) - rak yang sama.
+    const h0 = muatHalaman(dunia, simpanan, { edoc: e });
+    const naskah = new globalThis.File(["{\\rtf1 naskah}"], "putusan 101.docx", {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    const rtf = new globalThis.File(["{\\rtf1 naskah}"], "putusan 101.rtf", { type: "application/rtf" });
+    expect(await h0.k.a30SimpanNaskahEdoc(N1, naskah, rtf)).toBe(true);
+    await susunAntrean(dunia, simpanan, "otomatis", [N1]);
+    await kerjakanOtomatis(dunia, simpanan, N1, { edoc: e });
+    // Bentuk asli (DOCX) yang diunggah sebagai edoc, bukan RTF antaranya.
+    expect(e.unggah).toEqual([{ nomor: N1, putusan: "putusan 101.docx", anonimisasi: "anonim_putusan 101.docx" }]);
+    expect((butirDi(simpanan, N1) as Butir & { edoc?: string }).edoc).toBe("ok");
+  });
+
+  it("rak naskah: TXT tidak disimpan, kunci tanpa beda huruf besar-kecil, kedaluwarsa 14 hari dibuang", async () => {
+    const e = edocUji();
+    const h = muatHalaman(buatDunia([]), {}, { edoc: e });
+    const f = (n: string) => new globalThis.File(["x"], n, { type: "" });
+    expect(await h.k.a30SimpanNaskahEdoc(N1, f("putusan.txt"), null)).toBe(false);
+    expect(await h.k.a30SimpanNaskahEdoc(N1, f("putusan.rtf"), null)).toBe(true);
+    const ambil = await h.k.a30AmbilNaskahEdoc(N1.toUpperCase());
+    expect(ambil.asli.name).toBe("putusan.rtf");
+    expect(ambil.rtf).toBeNull();
+    // Rekam berumur 15 hari: tidak dipakai, dan dibuang pada simpan berikutnya.
+    const isi = e.idb.isi(...RAK);
+    const lama = isi.get(N1.toLowerCase()) as { waktu: number };
+    lama.waktu = Date.now() - 15 * 24 * 60 * 60 * 1000;
+    expect(await h.k.a30AmbilNaskahEdoc(N1)).toBeNull();
+    expect(await h.k.a30SimpanNaskahEdoc(N2, f("b.pdf"), null)).toBe(true);
+    expect([...isi.keys()]).toEqual([N2.toLowerCase()]);
+  });
+
+  it("antrean dari ABT tidak ikut: edocnya diurus di tahap ABT", async () => {
+    const dunia = buatDunia(tigaPerkara());
+    const simpanan: Record<string, unknown> = {};
+    const e = edocUji();
+    const h = muatHalaman(dunia, simpanan, { edoc: e });
+    await h.k.a30SimpanNaskahEdoc(N1, new globalThis.File(["x"], "n.rtf"), null);
+    await h.uji.alatSimpanAntrean(h.uji.alatBuatAntrean({ tahap: "sipp", asal: "abt", modus: "otomatis", butir: [{ nomor: N1 }] }));
+    await kerjakanOtomatis(dunia, simpanan, N1, { edoc: e });
+    const b = butirDi(simpanan, N1) as Butir & { edoc?: string };
+    expect(b.keadaan).toBe("selesai");
+    expect(b.edoc).toBeUndefined();
+    expect(b.catatan).not.toMatch(/EDOC|Edoc/);
+    expect(e.unggah).toEqual([]);
+    expect(e.anonDiminta).toEqual([]);
+  });
+
+  it("tampilan Lama (a30 mati): naskah tidak disimpan, tidak ada edoc - perilaku semula", async () => {
+    const dunia = buatDunia(tigaPerkara());
+    const simpanan: Record<string, unknown> = {};
+    const e = { ...edocUji(), lama: true };
+    const { kotak } = await susunDariBerkasEdoc(dunia, simpanan, e, NAMA.slice(0, 1));
+    expect(e.idb.isi(...RAK).size).toBe(0);
+    expect(kotak.textContent).not.toContain("edoc");
+    await kerjakanOtomatis(dunia, simpanan, N1, { edoc: e });
+    const b = butirDi(simpanan, N1) as Butir & { edoc?: string };
+    expect(b.keadaan).toBe("selesai");
+    expect(b.edoc).toBeUndefined();
+    expect(e.unggah).toEqual([]);
   });
 });

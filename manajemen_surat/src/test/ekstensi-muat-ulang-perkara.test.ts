@@ -104,11 +104,14 @@ describe("tidak ada lagi pemuatan ulang yang terjatuh ke dasbor", () => {
     //      terbukti tersimpan DAN edoc putusan + anonimisasinya terunggah dalam
     //      satu kali kerja - cabang simpanPutusanLaluBuka yang memakai
     //      opsi.sesudahTersimpan; bila edoc gagal, halaman TIDAK dimuat ulang
+    //   8. (6 Okt 2026, butir 6) cabang yang sama di ANTREAN MASSAL: edoc yang
+    //      gagal tetap memuat ulang (opsi.lanjutWalauEdocGagal) supaya antrean
+    //      berlanjut ke perkara berikutnya - sebabnya tercatat di butirnya
     //
-    // Ketujuhnya lewat muatUlangHalamanPerkara, bukan location.reload() -
+    // Kedelapannya lewat muatUlangHalamanPerkara, bukan location.reload() -
     // halaman borang SIPP dibuka lewat sesi kilat, dan memuat ulangnya
     // mendaratkan petugas di dasbor.
-    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(7);
+    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(8);
     expect(isi.includes("setTimeout(() => location.reload()")).toBe(false);
   });
 
