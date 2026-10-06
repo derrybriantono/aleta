@@ -256,8 +256,10 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // dikira); 20 + 2 wajib + 11 yang dapat dimatikan. 34 sejak 2 Okt 2026
     // sore: + "tanda-antrian-online" (butir 4, dijaga
     // jadwal-sidang-antrian-online.test.ts). 35 sejak 6 Okt 2026: +
-    // "saring-ruang" (butir 5, dijaga jadwal-sidang-6okt.test.ts).
-    expect(SAKLAR_TAMPILAN.length).toBe(35);
+    // "saring-ruang" (butir 5, dijaga jadwal-sidang-6okt.test.ts). 40 sejak
+    // butir 10 6 Okt 2026: + verifikasi-majelis, penanda-mediasi, hasil-mediasi,
+    // pembebanan-ikrar, court-calendar.
+    expect(SAKLAR_TAMPILAN.length).toBe(40);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {

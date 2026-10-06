@@ -74,13 +74,17 @@ describe("butir 2 - tombol Mediator", () => {
     // baris - lebih dari sepertiga - dan yang terlewat justru sidang yang
     // agendanya memang mediasi.
     expect(sidangBerbauMediasi("Proses Mediasi", "")).toBe(true);
-    expect(layar).toContain("sidangBerbauMediasi(baris.agenda, baris.alasanDitunda)");
+    // 6 Okt 2026 (butir 7): tombol Mediator di Jadwal Sidang kini HANYA pada
+    // sidang yang dihadiri kedua belah pihak untuk pertama kali (penandaMediator,
+    // dijaga jadwal-sidang-6okt.test.ts); sebabBerbauMediasi tetap menjadi
+    // kalimat cadangannya.
+    expect(layar).toContain("penandaMediator(baris, antrianUntuk(antrian.peta, baris), hariIni())");
   });
 
   it("bendera ditunda TIDAK disyaratkan", () => {
     // 28 baris beragenda "Mediasi" dan 21 baris "proses mediasi" berbendera
     // 'T'. Mensyaratkan tundanya membuat tombolnya tidak pernah muncul di sana.
-    const i = layar.indexOf("sidangBerbauMediasi(baris.agenda, baris.alasanDitunda)");
+    const i = layar.indexOf("penandaMediator(baris, antrianUntuk(antrian.peta, baris), hariIni())");
     const blok = layar.slice(Math.max(0, i - 200), i + 200);
     expect(blok).not.toContain("baris.ditunda &&");
   });

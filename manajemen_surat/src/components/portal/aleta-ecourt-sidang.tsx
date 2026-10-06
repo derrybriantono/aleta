@@ -40,6 +40,14 @@ import {
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
 import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
+import { DuaKeadaan, InfoContohSaklar } from "@/components/portal/contoh-tampilan";
+import {
+  penandaHasilMediasi,
+  penandaMediator,
+  penandaPernahMediasi,
+  type MediasiPerkara,
+  type PenandaMediasi,
+} from "@/lib/penanda-mediasi";
 import {
   ChipSaring,
   KepalaUrut,
@@ -78,7 +86,7 @@ import {
   type PatokanWaktu,
 } from "@/components/portal/tiga-jarak-sidang";
 import { sebabMinutasiTertahan, sudahDiminutasi } from "@/lib/sebab-minutasi-tertahan";
-import { sebabBerbauMediasi, sidangBerbauMediasi } from "@/lib/mediasi-sidang";
+import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
 import { cariHakim, hakimPersis, type Hakim } from "@/lib/cari-hakim";
 import {
   KUNCI_SIMPANAN_TAMPILAN,
@@ -255,6 +263,15 @@ type SidangBaris = {
    */
   pembebanan?: PembebananIkrar | null;
   pembebananTerbaca?: boolean;
+  /**
+   * Butir 7-9 (6 Okt 2026): mediasi TERAKHIR perkara ini (null = belum pernah)
+   * dan tanggal sidang pertama yang dihadiri kedua belah pihak. Tidak terkirim
+   * = bot lama; *Terbaca false = kuerinya gagal. Lihat lib/penanda-mediasi.
+   */
+  mediasi?: MediasiPerkara | null;
+  mediasiTerbaca?: boolean;
+  hadirLengkapPertama?: string;
+  hadirLengkapTerbaca?: boolean;
   tanggalSidangBerikut: string;
   urutanSidang: number;
   dihadiriOleh: number | null;
@@ -2737,11 +2754,14 @@ function sebutWaktu(iso: string): string {
 function TombolMediator({
   baris,
   onBukaStatus,
+  sebabMediator,
 }: {
   baris: SidangBaris;
   onBukaStatus?: (nomorPerkara: string) => void;
+  /** Butir 7 (6 Okt 2026): kalimat "kedua belah pihak hadir pertama kali" dari penandaMediator. */
+  sebabMediator?: string;
 }) {
-  const sebab = sebabBerbauMediasi(baris.agenda, baris.alasanDitunda);
+  const sebab = sebabMediator || sebabBerbauMediasi(baris.agenda, baris.alasanDitunda);
   return (
     <TombolPilihMediator
       baris={baris}
@@ -3775,6 +3795,42 @@ function LencanaKesiapan({
 }
 
 /**
+ * Penanda mediasi di kolom Agenda (butir 8-9, 6 Okt 2026): "Mediasi" (pernah
+ * bermediasi) dan hasil mediasi. Ditekan = membuka Status Perkara perkara itu,
+ * tempat keterangan mediasinya lengkap.
+ */
+export function PenandaMediasiAgenda({
+  penanda,
+  onBuka,
+}: {
+  penanda: Array<PenandaMediasi | null>;
+  onBuka?: () => void;
+}) {
+  const ada = penanda.filter((x): x is PenandaMediasi => Boolean(x));
+  if (ada.length === 0) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {ada.map((p) => (
+        <button
+          key={p.kunci}
+          type="button"
+          data-penanda-mediasi={p.kunci}
+          onClick={onBuka}
+          disabled={!onBuka}
+          className={cn(
+            "whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold disabled:cursor-default",
+            p.kelas
+          )}
+          title={p.keterangan}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Batas lebar kolom Majelis & Petugas (6 Okt 2026) - pada kepala DAN sel,
  * sebab tabel bertata letak otomatis mengabaikan batas yang hanya ada di salah
  * satunya. Lihat catatan pada kepala kolomnya.
@@ -4238,6 +4294,13 @@ export function AletaEcourtSidang({
    * tanpa tahu sebabnya.
    */
   const [hanyaMilikSaya, setHanyaMilikSaya] = useState(true);
+
+  /**
+   * Butir 11 (6 Okt 2026): "Tampilkan contoh" di panel Tampilan - memampangkan
+   * contoh tampil/disembunyikan di bawah tiap saklar. Tidak diingat: ia alat
+   * bantu sesaat ketika menyetel, bukan bagian tampilan layar.
+   */
+  const [contohSaklar, setContohSaklar] = useState(false);
 
   /** Butir 5 (6 Okt 2026): ruang sidang pilihan di ujung kanan deretan alat. Tidak diingat - sama seperti di atas. */
   const [ruangDipilih, setRuangDipilih] = useState<string | null>(null);
@@ -5695,6 +5758,25 @@ export function AletaEcourtSidang({
               ) : null}
             </div>
 
+            {/* Butir 11 (6 Okt 2026): saklar "Tampilkan contoh" DI ATAS daftar.
+                Menyala = contoh tampil/disembunyikan tiap fitur terpampang di bawah
+                saklarnya; tiap saklar juga punya ikon "i" yang memperlihatkan hal
+                yang sama saat disorot. */}
+            <label
+              className="mb-3 flex w-fit cursor-pointer items-center gap-2 rounded-lg border bg-card px-2 py-1.5 text-sm"
+              data-saklar-contoh=""
+              title="Memampangkan contoh bentuk tiap fitur saat tampil dan saat disembunyikan, langsung di bawah saklarnya."
+            >
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 accent-primary"
+                checked={contohSaklar}
+                onChange={(e) => setContohSaklar(e.target.checked)}
+              />
+              <span className="font-medium">Tampilkan contoh semua fitur</span>
+              <span className="text-xs text-muted-foreground">(tampil dan disembunyikan)</span>
+            </label>
+
             <p className="mb-3 text-xs text-muted-foreground">
               Pilihannya tersimpan di peramban ini saja dan tidak mengubah data apa pun -
               yang dimatikan hanya tidak digambar, bukan tidak ada. Penanda yang mendesak
@@ -5712,6 +5794,7 @@ export function AletaEcourtSidang({
                       const menyala = tampil(tampilan, saklar.kunci);
                       return (
                         <li key={saklar.kunci}>
+                          <div className="flex items-start gap-1">
                           <label
                             className={cn(
                               "flex items-start gap-2 rounded-md px-1.5 py-1 text-sm",
@@ -5739,6 +5822,18 @@ export function AletaEcourtSidang({
                               ) : null}
                             </span>
                           </label>
+                          <InfoContohSaklar
+                            kunci={saklar.kunci}
+                            label={saklar.label}
+                            keterangan={saklar.keterangan}
+                            menyala={menyala}
+                          />
+                          </div>
+                          {contohSaklar ? (
+                            <div className="mb-1 ml-6 mt-0.5">
+                              <DuaKeadaan kunci={saklar.kunci} keterangan={saklar.keterangan} menyala={menyala} />
+                            </div>
+                          ) : null}
                         </li>
                       );
                     })}
@@ -7167,7 +7262,9 @@ export function AletaEcourtSidang({
                           <span className="ml-2 inline-flex gap-1 align-middle">
                             <PenandaPanggilan panggilan={baris.panggilan} />
                             {/* Butir 30: verifikasi majelis e-Litigasi hari ini. */}
-                            <LencanaVerifikasiMajelis penanda={penandaVerifikasi(baris, verifikasi, hariIni())} />
+                            {tampil(tampilan, "verifikasi-majelis") ? (
+                              <LencanaVerifikasiMajelis penanda={penandaVerifikasi(baris, verifikasi, hariIni())} />
+                            ) : null}
                           </span>
                           {/* ==================================================
                               PENGGUGAT DAN TERGUGAT DIPISAH, BUKAN "A LAWAN B"
@@ -7379,13 +7476,27 @@ export function AletaEcourtSidang({
                                 sudutnya. Lagi pula keduanya pekerjaan yang
                                 berbeda - tunda dan putus MENULIS ke SIPP,
                                 Mediator membuka keterangan. */}
-                            {tampil(tampilan, "tombol-mediator") &&
-                            sidangBerbauMediasi(baris.agenda, baris.alasanDitunda) ? (
-                              <TombolMediator
-                                baris={baris}
-                                onBukaStatus={onBukaStatus}
-                              />
-                            ) : null}
+                            {/* 6 Okt 2026 (butir 7): penanda/tombol Mediator HANYA
+                                muncul pada sidang yang dihadiri KEDUA BELAH PIHAK
+                                untuk PERTAMA KALI - saat mediasi wajib
+                                diperintahkan dan mediator ditunjuk. Sebelumnya ia
+                                muncul pada tiap agenda yang menyebut mediasi
+                                (sidangBerbauMediasi); keterangan mediasinya kini
+                                dibawa penanda "Mediasi" dan hasil mediasi di
+                                kolom Agenda, dan tetap ada di Status Perkara. */}
+                            {(() => {
+                              if (!tampil(tampilan, "tombol-mediator")) return null;
+                              const penanda = penandaMediator(baris, antrianUntuk(antrian.peta, baris), hariIni());
+                              return penanda ? (
+                                <span data-penanda-mediator="" className="inline-flex">
+                                  <TombolMediator
+                                    baris={baris}
+                                    onBukaStatus={onBukaStatus}
+                                    sebabMediator={penanda.keterangan}
+                                  />
+                                </span>
+                              ) : null;
+                            })()}
                           </div>
 
                           {/* ==================================================
@@ -7832,6 +7943,17 @@ export function AletaEcourtSidang({
                             </div>
                           ) : null}
 
+                          {/* Butir 8-9 (6 Okt 2026): pernah mediasi, dan hasil
+                              mediasi pada agenda laporan hasil mediasi. Tanpa
+                              mediasi = tanpa penanda. Lihat lib/penanda-mediasi. */}
+                          <PenandaMediasiAgenda
+                            penanda={[
+                              tampil(tampilan, "penanda-mediasi") ? penandaPernahMediasi(baris) : null,
+                              tampil(tampilan, "hasil-mediasi") ? penandaHasilMediasi(baris) : null,
+                            ]}
+                            onBuka={onBukaStatus ? () => onBukaStatus(baris.nomorPerkara) : undefined}
+                          />
+
                           {/* Umur perkara, tepat di bawah agendanya - diminta
                               pengguna 23 September 2026. Hari mediasi tidak
                               dihitung; warnanya pita Waktu Putus SK Dirjen
@@ -7859,11 +7981,13 @@ export function AletaEcourtSidang({
                               susun dari rekomendasi ALETA, tambah manual,
                               sunting baris lama, simpan ke SIPP. Hanya
                               panitera/admin; komponennya di berkas sendiri. */}
+                          {tampil(tampilan, "court-calendar") ? (
                           <CourtCalendarSidang
                             perkaraId={String(baris.perkaraId)}
                             nomorPerkara={baris.nomorPerkara}
                             jenisPerkara={baris.jenisPerkara}
                           />
+                          ) : null}
                         </td>
                         {/* Susunannya menurun dari yang paling menentukan ke
                             yang paling seragam: majelis, lalu petugasnya, lalu
@@ -8056,7 +8180,7 @@ export function AletaEcourtSidang({
                               BAWAH penanda putusan, hanya pada sidang ikrar
                               yang pembebanannya ada. Rinciannya di panel
                               Rincian - lihat components/portal/pembebanan-ikrar. */}
-                          <LencanaPembebananIkrar baris={baris} />
+                          {tampil(tampilan, "pembebanan-ikrar") ? <LencanaPembebananIkrar baris={baris} /> : null}
 
                           {/* ==================================================
                               KONSEPTOR SEMENTARA - DI BAWAH STATUS

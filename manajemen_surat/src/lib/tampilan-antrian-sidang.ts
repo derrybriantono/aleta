@@ -230,6 +230,35 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Ikon ponsel di kolom Antrian/Jam (dan satu kalimat di panel Rincian) bila nomor antriannya diambil lewat antrian online, bukan di loket/anjungan. Keterangan beserta jam ambilnya ada di tooltip. Kotak saring Antrian online tidak terpengaruh.",
     kelompok: "penanda",
   },
+  // --- 6 Okt 2026 (butir 10): saklar untuk penanda yang baru ---------------
+  {
+    kunci: "verifikasi-majelis",
+    label: "Verifikasi majelis e-Litigasi",
+    keterangan:
+      "Lencana di samping nomor perkara pada sidang e-Litigasi hari ini: sudah diverifikasi (hijau), belum diverifikasi (kuning), belum upload (jingga), tidak konek (abu).",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "penanda-mediasi",
+    label: "Pernah mediasi",
+    keterangan:
+      "Penanda biru \"Mediasi\" di kolom Agenda bila perkaranya pernah bermediasi (mediator ditunjuk pada atau sebelum hari sidang itu). Ditekan = membuka Status Perkara.",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "hasil-mediasi",
+    label: "Hasil mediasi",
+    keterangan:
+      "Penanda hasil mediasi di kolom Agenda, hanya pada agenda laporan hasil mediasi: berhasil dengan perdamaian (hijau), berhasil sebagian (hijau muda), berhasil dengan pencabutan (hijau toska), tidak berhasil (merah), tidak dapat dilaksanakan (abu).",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "pembebanan-ikrar",
+    label: "Pembebanan ikrar talak",
+    keterangan:
+      "Lencana ungu di kolom Putusan pada sidang ikrar talak yang putusannya membebankan mut'ah, nafkah iddah, madliyah, nafkah anak, atau pembebanan lain. Rinciannya tetap ada di panel Rincian.",
+    kelompok: "penanda",
+  },
   {
     kunci: "potensi-verstek",
     label: "Potensi verstek",
@@ -377,7 +406,14 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "tombol-mediator",
     label: "Tombol mediator",
     keterangan:
-      "Tombol pada sidang yang agenda atau alasan tundanya menyebut mediasi. Keterangan mediasinya tetap ada di Status Perkara, bagian Mediasi.",
+      "Tombol Mediator (menunjuk mediator) - sejak 6 Okt 2026 HANYA pada sidang yang dihadiri kedua belah pihak untuk pertama kali. Keterangan mediasinya tetap ada di Status Perkara, bagian Mediasi.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "court-calendar",
+    label: "Court Calendar",
+    keterangan:
+      "Tautan \"Court Calendar\" di dasar kolom Agenda: lihat, susun dari rekomendasi ALETA, sunting, dan simpan ke SIPP. Hanya untuk panitera dan admin.",
     kelompok: "alat",
   },
   {
