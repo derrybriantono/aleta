@@ -2758,6 +2758,59 @@ router.get("/sipp/berkas", requireInternalToken, async (req, res) => {
   }
 });
 
+// ============================================================================
+// PENANDA EKSEPSI & REKONVENSI - JAWABAN / DUPLIK TERGUGAT (butir 4, 6 Okt 2026)
+// ============================================================================
+//
+// Portal yang membaca (pdfjs + tesseract ada di citranya, tidak di bot); bot
+// hanya menyerahkan berkas kandidat dan menyimpan hasilnya. Lihat
+// services/penandaJawabanService.js.
+const penandaJawabanService = require("../services/penandaJawabanService");
+
+/** Berkas jawaban/duplik Tergugat yang belum dibaca - perkara ?nomor= lebih dulu. */
+router.get("/sipp/penanda-jawaban/antrian", requireInternalToken, async (req, res) => {
+  try {
+    const nomor = String(req.query.nomor || "")
+      .split("|")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const berkas = await penandaJawabanService.antrian({
+      nomor,
+      batas: Number(req.query.batas) || 12,
+      versi: Number(req.query.versi) || 0,
+    });
+    res.json({ ok: true, berkas });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Isi satu berkas kandidat, menurut id baris aleta_bot_ecourt_files. */
+router.get("/sipp/penanda-jawaban/berkas", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await penandaJawabanService.berkas(String(req.query.fileId || ""));
+    if (!hasil.ok) {
+      res.status(404).json({ ok: false, alasan: hasil.alasan });
+      return;
+    }
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Length", String(hasil.isi.length));
+    res.send(hasil.isi);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Hasil pembacaan portal, per berkas. */
+router.post("/sipp/penanda-jawaban", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await penandaJawabanService.simpan(Array.isArray(req.body?.hasil) ? req.body.hasil : []);
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Daftar sidang pada rentang tanggal. */
 router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
   try {

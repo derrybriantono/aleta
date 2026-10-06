@@ -261,7 +261,9 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // "saring-ruang" (butir 5, dijaga jadwal-sidang-6okt.test.ts). 40 sejak
     // butir 10 6 Okt 2026: + verifikasi-majelis, penanda-mediasi, hasil-mediasi,
     // pembebanan-ikrar, court-calendar. 41: + cc-tidak-sinkron (butir 21).
-    expect(SAKLAR_TAMPILAN.length).toBe(41);
+    // 42: + penanda-jawaban (butir 4 6 Okt 2026, eksepsi & rekonvensi;
+    // dijaga penanda-jawaban.test.ts).
+    expect(SAKLAR_TAMPILAN.length).toBe(42);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {

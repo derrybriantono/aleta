@@ -262,6 +262,16 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Penanda hasil mediasi di kolom Agenda, hanya pada agenda laporan hasil mediasi: berhasil dengan perdamaian (hijau), berhasil sebagian (hijau muda), berhasil dengan pencabutan (hijau toska), tidak berhasil (merah), tidak dapat dilaksanakan (abu).",
     kelompok: "penanda",
   },
+  // Butir 4 (6 Okt 2026): dibaca dari jawaban & duplik Tergugat di arsip
+  // e-Court. Satu saklar untuk keduanya - keduanya menjawab pertanyaan yang
+  // sama ("apa yang diajukan Tergugat selain bantahan pokok perkara").
+  {
+    kunci: "penanda-jawaban",
+    label: "Eksepsi & rekonvensi",
+    keterangan:
+      "Penanda \"eksepsi\" (jingga berbingkai) dan \"rekonvensi\" (biru tua) di kolom Agenda bila jawaban atau duplik Tergugat/Termohon di arsip e-Court mengajukannya - dibaca ALETA dari naskahnya, pindaian lewat OCR. Tooltip menyebut dokumen dan kalimat pemicunya; ditekan = membuka Status Perkara. Yang belum atau tidak dapat dibaca tidak diberi penanda apa pun (bukan berarti tidak ada).",
+    kelompok: "penanda",
+  },
   {
     kunci: "pembebanan-ikrar",
     label: "Pembebanan ikrar talak",

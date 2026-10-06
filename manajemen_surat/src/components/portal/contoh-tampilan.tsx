@@ -19,6 +19,7 @@
 import { Info, Smartphone } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { KELAS_PENANDA_JAWABAN } from "@/lib/penanda-jawaban";
 import { cn } from "@/lib/utils";
 
 const lencana = (kelas: string, isi: ReactNode) => (
@@ -75,6 +76,15 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
         {lencana("bg-teal-600 text-white", "berhasil dengan pencabutan")}
         {lencana("bg-rose-600 text-white", "tidak berhasil")}
         {lencana("bg-slate-500 text-white", "tidak dapat dilaksanakan")}
+      </span>
+    ),
+  },
+  "penanda-jawaban": {
+    letak: "kolom Agenda (dari jawaban/duplik Tergugat)",
+    contoh: (
+      <span className="inline-flex flex-wrap gap-1">
+        {lencana(KELAS_PENANDA_JAWABAN.eksepsi, "eksepsi")}
+        {lencana(KELAS_PENANDA_JAWABAN.rekonvensi, "rekonvensi")}
       </span>
     ),
   },

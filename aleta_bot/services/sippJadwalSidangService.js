@@ -49,6 +49,9 @@ const penilaianSippService = require("./penilaianSippService");
 const { satukanPetugas } = require("./petugasPerkaraUtil");
 // Pengurai pembebanan ikrar talak dari amar - berkas murni tanpa require.
 const pembebananIkrarService = require("./pembebananIkrarService");
+// Butir 4 (6 Okt 2026): eksepsi/rekonvensi dari jawaban & duplik Tergugat -
+// singgahan di basis data BOT (bukan SIPP); lihat berkasnya.
+const penandaJawabanService = require("./penandaJawabanService");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -240,6 +243,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     petaMediasi,
     petaHadirLengkap,
     petaCourtCalendar,
+    petaJawaban,
   ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
@@ -307,6 +311,14 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     // calendar tidak sinkron" pada perkara e-Litigasi. Gagal-terbuka dan
     // dicatat: layar diam, bukan menuduh tidak sinkron.
     aman(() => courtCalendarBanyakPerkara(idPerkara), "court-calendar"),
+    // Butir 4 (6 Okt 2026): eksepsi/rekonvensi yang terbaca dari jawaban dan
+    // duplik Tergugat di arsip e-Court - SATU kueri ke basis data bot untuk
+    // seluruh daftar, dari singgahan yang diisi portal (bacaannya tidak
+    // diulang tiap muat). Gagal-terbuka dan dicatat: layar diam.
+    aman(
+      () => penandaJawabanService.petaBanyakPerkara(rows.map((row) => cleanText(row.nomorPerkara))),
+      "penanda-jawaban"
+    ),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -392,6 +404,12 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // ([] = belum dibuat). Terbaca false = kuerinya gagal.
       courtCalendar: petaCourtCalendar[String(row.perkaraId)] || [],
       courtCalendarTerbaca: !gagal.has("court-calendar"),
+      // Butir 4 (6 Okt 2026): { eksepsi, rekonvensi, dokumen, dibaca,
+      // belumDibaca, tidakTerbaca } - null bila perkara ini tidak punya
+      // jawaban/duplik Tergugat di arsip. eksepsi/rekonvensi null = tidak satu
+      // pun berkasnya terbaca (BUKAN "tidak ada"). Lihat penandaJawabanService.
+      penandaJawaban: petaJawaban[cleanText(row.nomorPerkara)] || null,
+      penandaJawabanTerbaca: !gagal.has("penanda-jawaban"),
       urutanSidang: Number(row.urutanSidang) || 0,
       dihadiriOleh: row.dihadiriOleh === null || row.dihadiriOleh === undefined ? null : Number(row.dihadiriOleh),
       adaBas: Boolean(cleanText(row.edocBas)),

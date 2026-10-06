@@ -68,6 +68,7 @@ import { cn } from "@/lib/utils";
 import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { LencanaPembebananIkrar, PembebananIkrarRincian } from "@/components/portal/pembebanan-ikrar";
+import { PenandaJawabanAgenda } from "@/components/portal/penanda-jawaban-agenda";
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
@@ -8056,6 +8057,15 @@ export function AletaEcourtSidang({
                             ]}
                             onBuka={onBukaStatus ? () => onBukaStatus(baris.nomorPerkara) : undefined}
                           />
+
+                          {/* Butir 4 (6 Okt 2026): eksepsi / rekonvensi dari
+                              jawaban & duplik Tergugat. Lihat lib/penanda-jawaban. */}
+                          {tampil(tampilan, "penanda-jawaban") ? (
+                            <PenandaJawabanAgenda
+                              baris={baris}
+                              onBuka={onBukaStatus ? () => onBukaStatus(baris.nomorPerkara) : undefined}
+                            />
+                          ) : null}
 
                           {/* Umur perkara, tepat di bawah agendanya - diminta
                               pengguna 23 September 2026. Hari mediasi tidak
