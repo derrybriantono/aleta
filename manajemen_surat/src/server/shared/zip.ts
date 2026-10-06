@@ -153,27 +153,74 @@ function penutup(jumlah: number, ukuranDaftar: number, posisiDaftar: number): Bu
  * punya kemampuan itu.
  */
 export function susunZip(daftar: BerkasZip[]): Buffer {
+  const penulis = buatPenulisZip();
   const bagian: Buffer[] = [];
+  for (const berkas of daftar) bagian.push(...penulis.tambah(berkas));
+  bagian.push(penulis.tutup());
+  return Buffer.concat(bagian);
+}
+
+/**
+ * Penulis ZIP BERTAHAP - untuk arsip yang dialirkan ke peramban sepotong demi
+ * sepotong (6 Oktober 2026, butir 25).
+ *
+ * ============================================================================
+ * KENAPA PERLU
+ * ============================================================================
+ *
+ * susunZip menyusun SELURUH arsip menjadi satu Buffer - isi tiap berkas
+ * ditampung dua kali di memori (larik masukan + hasil gabungan), dan tidak satu
+ * byte pun dapat dikirim sebelum berkas terakhir selesai ditarik. Untuk ZIP
+ * "Unduh seluruh berkas" 445/Pdt.G/2026/PA.Dgl itu 25,8 MB yang dikirim
+ * sekaligus.
+ *
+ * Bentuk ZIP sebenarnya mengizinkan penulisan bertahap: kepala lokal + isi tiap
+ * berkas dapat dikirim segera sesudah berkas itu ada, dan hanya daftar isi
+ * (central directory) yang harus menunggu akhir. CRC dihitung dari isi yang
+ * sudah utuh di tangan, jadi tidak perlu data descriptor - hasilnya SAMA PERSIS
+ * byte demi byte dengan susunZip atas daftar yang sama (diuji).
+ *
+ * tambah() memulangkan potongan yang siap dikirim; sesudahnya isi berkas tidak
+ * disimpan lagi di sini - yang tersisa hanya kepala daftar isinya (puluhan byte
+ * per berkas).
+ */
+export type PenulisZip = {
+  /** Potongan (kepala lokal + isi) untuk satu berkas; kosong bila namanya tidak sah. */
+  tambah: (berkas: BerkasZip) => Buffer[];
+  /** Daftar isi + penutup - dipanggil SEKALI sesudah berkas terakhir. */
+  tutup: () => Buffer;
+  /** Jumlah byte yang sudah dipulangkan tambah(). */
+  readonly posisi: number;
+  /** Jumlah berkas yang sudah ditambahkan. */
+  readonly jumlah: number;
+};
+
+export function buatPenulisZip(): PenulisZip {
   const daftarIsi: Buffer[] = [];
   let posisi = 0;
 
-  for (const berkas of daftar) {
-    const nama = berkas.nama.replace(/\\/g, "/").replace(/\.\.\//g, "").replace(/^\/+/, "");
-    if (!nama) continue;
+  return {
+    tambah(berkas) {
+      const nama = berkas.nama.replace(/\\/g, "/").replace(/\.\.\//g, "").replace(/^\/+/, "");
+      if (!nama) return [];
 
-    const bersih: BerkasZip = { nama, isi: berkas.isi };
-    const crc = crc32(bersih.isi);
+      const bersih: BerkasZip = { nama, isi: berkas.isi };
+      const crc = crc32(bersih.isi);
 
-    const kepala = kepalaLokal(bersih, crc);
-    bagian.push(kepala, bersih.isi);
-    daftarIsi.push(kepalaDaftarIsi(bersih, crc, posisi));
-    posisi += kepala.length + bersih.isi.length;
-  }
-
-  const isiDaftar = Buffer.concat(daftarIsi);
-  return Buffer.concat([
-    ...bagian,
-    isiDaftar,
-    penutup(daftarIsi.length, isiDaftar.length, posisi),
-  ]);
+      const kepala = kepalaLokal(bersih, crc);
+      daftarIsi.push(kepalaDaftarIsi(bersih, crc, posisi));
+      posisi += kepala.length + bersih.isi.length;
+      return [kepala, bersih.isi];
+    },
+    tutup() {
+      const isiDaftar = Buffer.concat(daftarIsi);
+      return Buffer.concat([isiDaftar, penutup(daftarIsi.length, isiDaftar.length, posisi)]);
+    },
+    get posisi() {
+      return posisi;
+    },
+    get jumlah() {
+      return daftarIsi.length;
+    },
+  };
 }

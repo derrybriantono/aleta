@@ -110,6 +110,35 @@ export const BATAS_SATU_BERKAS_MS = Number(process.env.ALETA_ZIP_TIMEOUT_BERKAS_
  */
 export const BATAS_SELURUH_MS = Number(process.env.ALETA_ZIP_TIMEOUT_TOTAL_MS || 90_000);
 
+/**
+ * Batas waktu seluruh penyusunan bila ZIP-nya DIALIRKAN (rute unduh sejak
+ * 6 Oktober 2026, butir 25).
+ *
+ * Keheningan yang ditakuti BATAS_SELURUH_MS tidak ada lagi pada jalur alir:
+ * tiap berkas dikirim begitu ditarik, jadi jeda terpanjang antara dua potongan
+ * adalah satu berkas - dipagari BATAS_SATU_BERKAS_MS 30 detik, jauh di bawah
+ * timeout=120 ProxyPass Apache di peladen (/etc/httpd/conf.d/aleta.conf) yang
+ * berlaku per jeda baca, bukan untuk seluruh jawaban. Batas menyeluruh ini
+ * hanya pagar terakhir supaya satu unduhan tidak menahan bot tanpa akhir.
+ */
+export const BATAS_SELURUH_ALIR_MS = Number(process.env.ALETA_ZIP_TIMEOUT_ALIR_MS || 600_000);
+
+/**
+ * Jalur ALIR: tiap entri diserahkan ke pemanggil begitu lolos batas, bukan
+ * ditampung di isiZip. Dipakai rute unduh supaya ZIP mengalir ke peramban
+ * sepotong demi sepotong.
+ */
+export type AlirArsip = {
+  /** Satu entri ZIP, berurutan, segera sesudah lolos batas. */
+  kirim: (berkas: BerkasZip) => void;
+  /**
+   * Ditunggu sebelum tiap berkas ditarik dari bot - penahan bila peramban
+   * lebih lambat daripada bot, supaya antrian di memori tidak membengkak.
+   * Melempar = unduhan dibatalkan peramban; berkas sisanya dilewati.
+   */
+  tunggu?: () => Promise<void>;
+};
+
 /** Membersihkan judul dokumen menjadi nama berkas yang aman di semua sistem. */
 export function namaAman(teks: string, cadangan: string) {
   const bersih = String(teks || "")
@@ -169,11 +198,19 @@ export type OpsiArsipPerkara = {
   batasTotalByte?: number;
   batasSatuBerkasMs?: number;
   batasSeluruhMs?: number;
+  /** Bila ada: entri dialirkan lewat alir.kirim dan isiZip pulang kosong. */
+  alir?: AlirArsip;
 };
 
 export type HasilArsipPerkara = {
-  /** Isi arsip berurutan, termasuk DAFTAR ISI.txt dan KETERANGAN.txt. Kosong = tidak ada berkas tersimpan. */
+  /**
+   * Isi arsip berurutan, termasuk DAFTAR ISI.txt dan KETERANGAN.txt. Kosong =
+   * tidak ada berkas tersimpan - KECUALI pada jalur alir, yang isinya sudah
+   * diserahkan lewat alir.kirim (lihat jumlahIsi).
+   */
   isiZip: BerkasZip[];
+  /** Jumlah entri ZIP yang ditaruh/dialirkan, termasuk DAFTAR ISI dan KETERANGAN. */
+  jumlahIsi: number;
   daftar: BarisDaftar[];
   dilewati: string[];
   takTerbaca: string[];
@@ -219,6 +256,17 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
     const daftar: BarisDaftar[] = [];
     const dilewati: string[] = [];
     let totalByte = 0;
+    // Jumlah dan nama entri dihitung sendiri, bukan dibaca dari isiZip: pada
+    // jalur alir isiZip tetap kosong karena tiap entri langsung dikirim.
+    let jumlahIsi = 0;
+    const namaTerpakai = new Set<string>();
+    const alir = opsi.alir;
+    const simpan = (berkas: BerkasZip) => {
+      jumlahIsi += 1;
+      namaTerpakai.add(berkas.nama);
+      if (alir) alir.kirim(berkas);
+      else isiZip.push(berkas);
+    };
 
     /**
      * Menaruh satu berkas ke dalam ZIP, atau menyebutkan sebab ia tidak masuk.
@@ -236,7 +284,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         dilewati.push(`${nama}: berkasnya kosong`);
         return false;
       }
-      if (isiZip.length >= batasBerkas) {
+      if (jumlahIsi >= batasBerkas) {
         dilewati.push(`${nama}: melewati batas ${batasBerkas} berkas`);
         return false;
       }
@@ -244,7 +292,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         dilewati.push(`${nama}: melewati batas ukuran ZIP`);
         return false;
       }
-      isiZip.push({ nama, isi });
+      simpan({ nama, isi });
       daftar.push({ nama, byte: isi.byteLength, ...keterangan });
       totalByte += isi.byteLength;
       return true;
@@ -280,6 +328,13 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         dilewati.push(
           `${jenis} #${id}: batas waktu ${Math.round(batasSeluruhMs / 1000)} detik terlampaui`
         );
+        return null;
+      }
+      try {
+        // Jalur alir: tunggu peramban menghabiskan antrian dulu.
+        await alir?.tunggu?.();
+      } catch (galat) {
+        dilewati.push(`${jenis} #${id}: ${String((galat as Error)?.message || galat).slice(0, 120)}`);
         return null;
       }
       const pembatal = new AbortController();
@@ -347,6 +402,12 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         dilewati.push(
           `${sebutan} (${bentuk}): batas waktu ${Math.round(batasSeluruhMs / 1000)} detik terlampaui`
         );
+        return null;
+      }
+      try {
+        await alir?.tunggu?.();
+      } catch (galat) {
+        dilewati.push(`${sebutan} (${bentuk}): ${String((galat as Error)?.message || galat).slice(0, 120)}`);
         return null;
       }
       const pembatal = new AbortController();
@@ -1183,7 +1244,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
             // (ecourtDocumentService.js:40). Dua entri bernama sama di dalam
             // satu ZIP membuat Windows mengeluarkan hanya salah satunya, tanpa
             // peringatan, jadi bentuknya disebutkan ketika namanya bentrok.
-            if (isiZip.some((b) => b.nama === nama)) {
+            if (namaTerpakai.has(nama)) {
               nama = `06 e-Court/${duaAngka(urutan)} - ${judul} (${bentuk}).${ekstensi}`;
             }
             taruh(nama, berkas.isi, {
@@ -1305,11 +1366,12 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       }
     }
 
-    if (isiZip.length === 0) {
+    if (jumlahIsi === 0) {
       // Rute menjawabnya 404 "tidak_ada_berkas_tersimpan"; sinkron Drive
       // mencatatnya sebagai perkara tanpa berkas. Keduanya membaca `dilewati`.
       return {
         isiZip,
+        jumlahIsi,
         daftar,
         dilewati,
         takTerbaca,
@@ -1341,7 +1403,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       `Jumlah berkas: ${daftar.length}`,
       `Jumlah byte  : ${totalByte.toLocaleString("id-ID")}`,
     ].join("\r\n");
-    isiZip.push({ nama: "DAFTAR ISI.txt", isi: Buffer.from(daftarIsi, "utf8") });
+    simpan({ nama: "DAFTAR ISI.txt", isi: Buffer.from(daftarIsi, "utf8") });
 
     // Keterangan SELALU ikut, juga ketika tidak ada yang dilewati - penerima
     // ZIP perlu tahu berapa yang seharusnya ada, bukan hanya berapa yang ada.
@@ -1387,10 +1449,11 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           ].join("\r\n")
         : "",
     ].join("\r\n");
-    isiZip.push({ nama: "KETERANGAN.txt", isi: Buffer.from(keterangan, "utf8") });
+    simpan({ nama: "KETERANGAN.txt", isi: Buffer.from(keterangan, "utf8") });
 
     return {
       isiZip,
+      jumlahIsi,
       daftar,
       dilewati,
       takTerbaca,
