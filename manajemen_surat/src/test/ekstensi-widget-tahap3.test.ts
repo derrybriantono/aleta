@@ -945,8 +945,16 @@ describe("batas yang tidak berubah: mode coba, akar, layar publik", () => {
     await tunggu(700);
     expect(h.cara.length).toBeGreaterThan(0);
     expect(h.cara.filter((c) => c.cara !== "GET")).toEqual([]);
-    // Selain checklist hanya satu bacaan: tampilan yang diterapkan admin (tahap 5).
-    expect(h.cara.every((c) => c.url.includes(API) || c.url.includes("/api/aleta-ecourt/ekstensi/tampilan"))).toBe(true);
+    // Selain checklist hanya dua bacaan: tampilan yang diterapkan admin (tahap 5)
+    // dan indikator sumber daya server di samping lencana (butir 3, 6 Okt 2026).
+    expect(
+      h.cara.every(
+        (c) =>
+          c.url.includes(API) ||
+          c.url.includes("/api/aleta-ecourt/ekstensi/tampilan") ||
+          c.url === "/aleta/api/aleta-ecourt/sumber-daya"
+      )
+    ).toBe(true);
     // Semuanya di dalam SATU akar - senyap 1 jam dan blok cetak panel.css
     // menyembunyikan aleta-cm-widget, jadi tidak ada inang baru yang lolos.
     expect(Array.from(h.w.document.documentElement.children).map((x: any) => x.tagName)).toEqual([

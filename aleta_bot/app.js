@@ -4360,6 +4360,8 @@ app.use("/internal/aleta-bot/sinkron", require("./routes/sinkronRoutes"));
 app.use("/internal/aleta-bot/jadwal-sidang", require("./routes/jadwalSidangRoutes"));
 // Panggil petugas/pihak (WhatsApp + pengumuman suara) dan status pertemuan mediasi (butir 33-36, 5 Okt 2026).
 app.use("/internal/aleta-bot/panggil", require("./routes/panggilRoutes"));
+// Pemantau sumber daya server: RAM, disk, GPU - ALETA dan seluruh server (butir 3, 6 Okt 2026).
+app.use("/internal/aleta-bot/sumber-daya", require("./routes/sumberDayaRoutes"));
 // Sesi e-Court pribadi dan aksi e-Court per perkara (perbaikan 1 Okt 2026, E9-E11, 16b).
 app.use("/internal/aleta-bot", require("./routes/ecourtAksiRoutes"));
 // Edoc penetapan dari ABT, bertanda tangan dan bercap (perbaikan 2 Okt 2026, butir 17, K6).

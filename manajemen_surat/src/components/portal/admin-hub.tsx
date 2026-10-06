@@ -12,6 +12,7 @@ import {
   MessageCircleMore,
   PackageCheck,
   Scale,
+  Server,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -346,6 +347,13 @@ export function AdminHub() {
               description="Cadangan otomatis ALETA, SIPP, ABT, dan antrian ke laptop dan Google Drive, serta berkas seluruh perkara ke Google Drive."
               icon={<DatabaseBackup className="h-5 w-5 text-indigo-600" />}
               badge="Sinkron"
+            />
+            <AdminMenuAction
+              href="/admin/sumber-daya"
+              title="Sumber daya server"
+              description="RAM, disk, dan GPU yang dipakai ALETA dibanding seluruh server, dengan rincian tiap aplikasi (ALETA dipisah dari SIPP, ABT, MariaDB, dan layanan lain)."
+              icon={<Server className="h-5 w-5 text-sky-600" />}
+              badge="Pemantau"
             />
           </div>
         </div>

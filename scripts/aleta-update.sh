@@ -306,6 +306,12 @@ cp "$MANIFEST" "$REPORT_DIR/aleta-update-current.json"
 printf '{"version":"%s","previousVersion":"%s","status":"success","appliedAt":"%s","backupFile":"%s","bundleFile":"%s","message":"Update berhasil diterapkan."}\n' \
   "$TARGET_VERSION" "$CURRENT_VERSION" "$(date -Iseconds)" "$BACKUP_FILE" "$BUNDLE" >> "$HISTORY_FILE"
 
+# Cuplikan ukuran citra/build cache Docker untuk pemantau sumber daya (butir 3,
+# 6 Okt 2026). Tidak pernah menggagalkan pembaruan.
+if [ -f "$APP_DIR/scripts/aleta-sumber-daya-docker.sh" ]; then
+  bash "$APP_DIR/scripts/aleta-sumber-daya-docker.sh" >/dev/null 2>&1 || echo "Catatan: cuplikan docker system df tidak tertulis."
+fi
+
 echo "Update ALETA berhasil."
 echo "Versi sebelumnya : $CURRENT_VERSION"
 echo "Versi sekarang   : $TARGET_VERSION"
