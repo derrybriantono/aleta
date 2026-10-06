@@ -3125,7 +3125,6 @@ const JEMBATAN_JENIS_RELAAS = [
 ];
 const JEMBATAN_ID_MAKS = 64;
 const JEMBATAN_DOKUMEN_MAKS = 500;
-const JEMBATAN_CARA_RTF = ["selalu", "bila-pdf-gagal", "tidak"];
 const KALIMAT_EKSTENSI_DIMUAT_ULANG =
   "Ekstensi ALETA baru dimuat ulang atau diperbarui - muat ulang halaman ini supaya jembatannya tersambung lagi.";
 let jembatanRelaasTerpasang = false;
@@ -3186,10 +3185,8 @@ function jembatanSaringMuatan(jenis, muatan) {
       dilewati,
       ...jembatanAsal(),
     };
-    const cara = p.unduhRtf !== undefined ? p.unduhRtf : m.unduhRtf;
-    if (JEMBATAN_CARA_RTF.includes(cara)) pekerjaan.unduhRtf = cara;
-    const cadangan = p.rtfBilaPdfGagal !== undefined ? p.rtfBilaPdfGagal : m.rtfBilaPdfGagal;
-    if (typeof cadangan === "boolean") pekerjaan.rtfBilaPdfGagal = cadangan;
+    // Tidak ada pilihan bentuk: relaas selalu RTF saja (6 Okt 2026) - ruas
+    // lama unduhRtf/rtfBilaPdfGagal tidak diteruskan.
     return { isi: { pekerjaan } };
   }
   return { isi: {} };

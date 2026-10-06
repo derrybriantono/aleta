@@ -645,7 +645,7 @@ describe("dialog Cetak relaas - mengirim ke ekstensi", () => {
     expect(per.get("105")!.jurusita).toBe("tidak tercatat");
 
     // Kemajuan: tanya berikutnya (±2 detik) membawa neraca dan sebab gagalnya.
-    await waitFor(() => expect(screen.getByText(/1 lengkap \(RTF \+ PDF\)/)).toBeTruthy(), { timeout: 6000 });
+    await waitFor(() => expect(screen.getByText(/1 tersimpan \(RTF\)/)).toBeTruthy(), { timeout: 6000 });
     const panel = screen.getByRole("region", { name: "Kemajuan cetak relaas" });
     expect(within(panel).getByText(/1 gagal/)).toBeTruthy();
     expect(within(panel).getByText(/ABT menjawab 500 untuk pratinjau blangko/)).toBeTruthy();
@@ -1086,28 +1086,25 @@ describe("telaah 25 September 2026 - penilaian K2 dan dialog", () => {
     );
   });
 
-  it("PDF gagal di latar.js SUNGGUHAN: dialog menyebut 'hanya RTF' beserta sebabnya, bukan 'berhasil' polos", async () => {
+  it("relaas RTF saja (6 Okt 2026) di latar.js SUNGGUHAN: dialog menyebut 'tersimpan (RTF)', tanpa kata PDF, walau rute PDF mati", async () => {
     const d = await import("./dunia-latar");
     const dunia = new d.Dunia(d.abtPalsu({ pdf: () => d.jawaban(503, "Service Unavailable", `${d.ASAL}/aleta/api/aleta-bot/abt/pdf`) }));
     const pekerja = d.nyalakan(dunia);
     expect((await d.minta(dunia, pekerja, d.pesanMulai(d.ENAM.slice(0, 2)))).ok).toBe(true);
     await d.jalankan(dunia, () => Boolean(dunia.putaran()?.selesai));
     const keadaanLatar = await d.minta(dunia, pekerja, { jenis: "relaas-keadaan" });
-    expect(keadaanLatar.pekerjaan.butir.map((b: { keadaan: string; tanpaPdf: boolean }) => `${b.keadaan}:${b.tanpaPdf}`)).toEqual([
-      "selesai:true",
-      "selesai:true",
-    ]);
+    expect(keadaanLatar.pekerjaan.butir.map((b: { keadaan: string }) => b.keadaan)).toEqual(["selesai", "selesai"]);
+    expect(dunia.permintaan.filter((p) => p.alamat.includes("/abt/pdf"))).toEqual([]);
+    expect(dunia.unduhan.map((u) => u.filename).every((n) => /\.rtf$/.test(n))).toBe(true);
 
     document.documentElement.dataset.aletaRelaas = "1";
     pasangEkstensiPalsu(() => keadaanLatar);
     pasangFetch();
     await gambarDialog();
     const panel = await screen.findByRole("region", { name: "Kemajuan cetak relaas" });
-    expect(within(panel).getByText("Selesai, sebagian tanpa PDF")).toBeTruthy();
-    expect(within(panel).getByText(/0 lengkap \(RTF \+ PDF\)/)).toBeTruthy();
-    expect(within(panel).getByText(/2 hanya RTF/)).toBeTruthy();
-    expect(within(panel).getByText(/Hanya RTF - PDF-nya gagal/)).toBeTruthy();
-    expect(within(panel).getAllByText(/503/).length).toBe(2);
+    expect(within(panel).getByText("Selesai")).toBeTruthy();
+    expect(within(panel).getByText(/2 tersimpan \(RTF\)/)).toBeTruthy();
+    expect(panel.textContent ?? "").not.toMatch(/PDF/);
   });
 
   it("ABT menolak akunnya untuk SELURUH blangko (latar.js SUNGGUHAN): putaran tertahan, dialog menulis yang harus diatur di ABT", async () => {

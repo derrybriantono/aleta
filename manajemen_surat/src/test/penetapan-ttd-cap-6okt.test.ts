@@ -510,6 +510,38 @@ describe("B. simpanKeSipp: berkas + baris perkara_dokumen_penetapan SEPERTI ungg
       else process.env.ALETA_SIPP_ROOT = lama;
     }
   });
+
+  // Pengguna 6 Okt 2026: "penetapan pmh, ppp, pjs dan phs harus pdf". Pintu
+  // tulis satu-satunya ke e-Doc penetapan menolak RTF/DOCX - tidak ada berkas
+  // yang ditulis dan tidak ada baris yang disisipkan.
+  it.each([
+    ["RTF", Buffer.from("{\\rtf1\\ansi penetapan}", "latin1")],
+    ["DOCX", Buffer.from("PK\u0003\u0004word/document.xml", "latin1")],
+  ])("PMH/PPP/PJS/PHS SELALU PDF: %s ditolak 'bukan_pdf' sebelum menulis apa pun", async (_bentuk, isi) => {
+    mkdirSync(path.join(AKAR, "resources/file/doc"), { recursive: true });
+    const kueri: string[] = [];
+    pasang("db_config.js", {
+      query: (sql: string, _params: unknown[], cb: (g: unknown, h: unknown) => void) => {
+        kueri.push(String(sql));
+        return cb(null, [{ id: 1 }]);
+      },
+    });
+    pasang("services/sippSkemaService.js", { tabelAda: async () => true });
+    const lama = process.env.ALETA_SIPP_ROOT;
+    process.env.ALETA_SIPP_ROOT = AKAR;
+    try {
+      const d = muatSegar<{ simpanKeSipp: (m: Record<string, unknown>) => Promise<any> }>("services/dokumenPenetapanService.js");
+      for (const jenis of ["pmh", "ppp", "pjs", "phs"]) {
+        const h = await d.simpanKeSipp({ perkaraId: 10126, nomorPerkara: "575/Pdt.G/2026/PA.Dgl", jenis, pdf: isi, olehUsername: "fahri" });
+        expect(h, jenis).toEqual({ ok: false, alasan: "bukan_pdf" });
+      }
+      expect(kueri.filter((s) => /INSERT/i.test(s))).toEqual([]);
+      expect(existsSync(path.join(AKAR, "resources/file/doc/2026/10/575_PdtG_2026_PADgl"))).toBe(false);
+    } finally {
+      if (lama === undefined) delete process.env.ALETA_SIPP_ROOT;
+      else process.env.ALETA_SIPP_ROOT = lama;
+    }
+  });
 });
 
 let adaSoffice = false;

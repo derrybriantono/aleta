@@ -643,8 +643,8 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
  * window.postMessage, dan jembatan di aleta.js meneruskannya ke sini sebagai
  * pesan chrome.runtime berjenis "relaas-*" (lihat kontrak di aleta.js).
  *
- * Pekerja inilah yang mengambil RTF dari ABT, meminta PDF ke ALETA, dan
- * menyimpan berkasnya ke folder unduhan - tanpa membuka satu tab ABT pun di
+ * Pekerja inilah yang mengambil RTF dari ABT dan menyimpannya APA ADANYA ke
+ * folder unduhan - RTF saja, tanpa PDF (6 Okt 2026) - tanpa membuka satu tab ABT pun di
  * depan petugas. Petugas boleh berpindah halaman, menutup dialog, bahkan
  * menutup tab portal; putarannya tidak hidup di halaman mana pun.
  *
@@ -696,7 +696,7 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
  * akan MULAI DARI AWAL tiap kali pekerjanya hidup lagi, dan mencetak ganda.
  *
  * Karena itu tiap butir ditulis ke chrome.storage.session SEBELUM dikerjakan
- * ("sedang"), SESUDAH TIAP BERKAS tersimpan (unduhan.rtf / unduhan.pdf), dan
+ * ("sedang"), SESUDAH BERKASNYA tersimpan (unduhan.rtf), dan
  * SESUDAHNYA ("selesai"/"gagal"), juga waktu jeda berikutnya. Pekerja yang
  * hidup lagi membaca butir "sedang" sebagai pekerjaan pekerja yang sudah mati,
  * lalu memutuskan lewat riwayat unduhan peramban berkas mana yang sudah lahir
@@ -710,8 +710,8 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
  *
  * Berkas hasilnya TIDAK diunggah balik ke SIPP (doc_relaas / edoc_pbt) -
  * "tidak usah unggah ke SIPP dulu" (pengguna, 25 September 2026). Versi ini
- * hanya mencetak: RTF dan PDF turun ke folder unduhan
- *   ALETA relaas <tanggal>/<juru sita>/<nomor perkara> - <keterangan>.rtf|.pdf
+ * hanya mencetak: RTF (tanpa PDF - 6 Okt 2026) turun ke folder unduhan
+ *   ALETA relaas <tanggal>/<juru sita>/<nomor perkara> - <keterangan>.rtf
  */
 const KUNCI_RELAAS = "aletaRelaasMassal";
 /**
@@ -731,14 +731,6 @@ const KUNCI_TOKEN_RELAAS = "aletaTokenRelaas";
  * penyimpanan di atas.
  */
 const RELAAS_DETAK_MS = 10000;
-/** Rute PDF yang SAMA dengan putusan massal (ALETA_API_PDF di abt.js). */
-const RELAAS_API_PDF = "/aleta/api/aleta-bot/abt/pdf";
-/**
- * "Siapa saya" portal - ditanyakan HANYA sesudah rute PDF menjawab 401, supaya
- * kalimat "Sesi ALETA habis" dikatakan hanya bila ALETA memang tidak mengenali
- * sesinya (perbaikan 30 Sep sore, agen J). Pembacaan saja.
- */
-const RELAAS_API_SIAPA = "/aleta/api/aleta-ecourt/ekstensi/siapa";
 /** Paling banyak kelompok ABT yang dibuka saat mencari token. */
 const RELAAS_BATAS_KELOMPOK = 40;
 /**
@@ -1123,7 +1115,7 @@ const RELAAS_JEDA_LANGKAH_MAKS_MS = 1500;
 const RELAAS_JEDA_RATA_MS = Math.round((RELAAS_JEDA_MIN_MS + RELAAS_JEDA_MAKS_MS) / 2);
 /**
  * Kira-kira lamanya satu dokumen dikerjakan: tiga permintaan ABT, dua jarak
- * langkah di dalamnya (rata-rata 1 detik), PDF dari bot, unduhan.
+ * langkah di dalamnya (rata-rata 1 detik), unduhan RTF.
  */
 const RELAAS_KERJA_RATA_MS = 6000;
 
@@ -1194,20 +1186,14 @@ function relaasNamaJurusita(nilai) {
 }
 
 /**
- * Cara RTF diunduh: "selalu" (bawaan - "RTF + PDF diunduh"), "bila-pdf-gagal",
- * atau "tidak".
- *
- * Bentuk lama `rtfBilaPdfGagal` diterjemahkan MENURUT NAMANYA, seperti mesin
- * sebelumnya memakainya: true = RTF hanya sebagai ganti PDF yang gagal
- * ("bila-pdf-gagal"), false = tidak pernah. Tanpa keduanya: "selalu".
+ * Bentuk keluaran relaas & pemberitahuan putusan: RTF SAJA (permintaan
+ * pengguna 6 Okt 2026: "untuk cetak relaas dan BAS jangan pdf, cukup
+ * rtf/word saja"). RTF dari ABT disimpan apa adanya dan dicetak dari Word;
+ * putaran ini tidak lagi meminta PDF ke ALETA (rute abt/pdf), jadi tidak ada
+ * pilihan "unduhRtf"/"rtfBilaPdfGagal" - kiriman lama yang masih menyebutnya
+ * diabaikan.
  */
-function relaasCaraRtf(p) {
-  const cara = String((p && p.unduhRtf) || "");
-  if (cara === "selalu" || cara === "bila-pdf-gagal" || cara === "tidak") return cara;
-  if (p && p.rtfBilaPdfGagal === true) return "bila-pdf-gagal";
-  if (p && p.rtfBilaPdfGagal === false) return "tidak";
-  return "selalu";
-}
+const RELAAS_BENTUK = "rtf";
 
 /**
  * Pekerjaan satu putaran, dari dokumen yang dipilih halaman Antrian Sidang.
@@ -1298,8 +1284,7 @@ function relaasBuatPekerjaan(masukan, sekarangMs) {
       percobaan: 0,
       sebab: "",
       hasil: "",
-      unduhan: { rtf: "", pdf: "" },
-      tanpaPdf: false,
+      unduhan: { rtf: "" },
       mulaiPertama: 0,
       mulaiPada: 0,
       selesaiPada: 0,
@@ -1317,7 +1302,7 @@ function relaasBuatPekerjaan(masukan, sekarangMs) {
     // Satu folder per tanggal, satu subfolder per juru sita, supaya relaas
     // hari itu dapat dibagikan tanpa memilahnya dari unduhan lain.
     folder: relaasRapikanNama(`ALETA relaas ${tanggal || "tanpa tanggal"}`),
-    opsi: { unduhRtf: relaasCaraRtf(p) },
+    opsi: { bentuk: RELAAS_BENTUK },
     butir,
     dilewati,
     catatan: [],
@@ -1341,17 +1326,17 @@ function relaasButirBerikutnya(pekerjaan) {
   return pekerjaan.butir.find((b) => b.keadaan === "menunggu") || null;
 }
 
-/** Apakah seluruh berkas yang diminta untuk satu butir sudah tersimpan. */
+/** Apakah berkas satu butir sudah tersimpan - satu RTF, tidak ada PDF. */
 function relaasBerkasLengkap(pekerjaan, butir) {
+  void pekerjaan;
   const u = (butir && butir.unduhan) || {};
-  if (!u.pdf) return false;
-  return (pekerjaan && pekerjaan.opsi && pekerjaan.opsi.unduhRtf) !== "selalu" || Boolean(u.rtf);
+  return Boolean(u.rtf);
 }
 
 /** Nama berkas yang sudah tersimpan untuk satu butir, untuk neraca. */
 function relaasHasilButir(butir) {
   const u = (butir && butir.unduhan) || {};
-  return [u.pdf, u.rtf].filter(Boolean).join(", ");
+  return u.rtf ? String(u.rtf) : "";
 }
 
 /**
@@ -1382,16 +1367,13 @@ function relaasPulihkan(pekerjaan, bukti) {
   const peta = bukti || {};
   for (const b of pekerjaan.butir) {
     if (b.keadaan !== "sedang") continue;
-    if (!b.unduhan || typeof b.unduhan !== "object") b.unduhan = { rtf: "", pdf: "" };
+    if (!b.unduhan || typeof b.unduhan !== "object") b.unduhan = { rtf: "" };
     const ada = peta[b.kunci] || {};
-    const ditemukan = [];
-    for (const format of ["pdf", "rtf"]) {
-      if (!b.unduhan[format] && ada[format] && ada[format].nama) {
-        b.unduhan[format] = ada[format].nama;
-        ditemukan.push(format.toUpperCase());
-      }
+    let tambahan = "";
+    if (!b.unduhan.rtf && ada.rtf && ada.rtf.nama) {
+      b.unduhan.rtf = ada.rtf.nama;
+      tambahan = " (RTF ditemukan di riwayat unduhan, tidak diunduh ulang)";
     }
-    const tambahan = ditemukan.length ? ` (${ditemukan.join(" dan ")} ditemukan di riwayat unduhan, tidak diunduh ulang)` : "";
     if (relaasBerkasLengkap(pekerjaan, b)) {
       b.keadaan = "selesai";
       b.sebab = `dipulihkan dari riwayat unduhan sesudah pekerja latar mati - tidak diunduh ulang`;
@@ -1419,11 +1401,10 @@ function relaasPulihkan(pekerjaan, bukti) {
 
 /** Hitungan keadaan satu pekerjaan - neraca yang digambar halaman. */
 function relaasRingkas(pekerjaan) {
-  const hitung = { menunggu: 0, sedang: 0, selesai: 0, gagal: 0, dilewati: 0, tanpaPdf: 0 };
+  const hitung = { menunggu: 0, sedang: 0, selesai: 0, gagal: 0, dilewati: 0 };
   if (!pekerjaan) return hitung;
   for (const b of pekerjaan.butir || []) {
     hitung[b.keadaan] = (hitung[b.keadaan] || 0) + 1;
-    if (b.keadaan === "selesai" && b.tanpaPdf) hitung.tanpaPdf += 1;
   }
   hitung.dilewati += (pekerjaan.dilewati || []).length;
   return hitung;
@@ -1438,7 +1419,7 @@ function relaasPolaUnduhan(jalurRelatif) {
   const bagian = String(jalurRelatif || "")
     .split("/")
     .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  return `(^|[\\\\/])${bagian.join("[\\\\/]")}( \\(\\d+\\))?\\.(pdf|rtf)$`;
+  return `(^|[\\\\/])${bagian.join("[\\\\/]")}( \\(\\d+\\))?\\.rtf$`;
 }
 
 /** Base64 dari ArrayBuffer, dipotong supaya String.fromCharCode tidak kewalahan. */
@@ -1549,7 +1530,7 @@ function tidurRelaas(ms) {
 
 /**
  * Menutup pekerjaan yang diminta berhenti: sisa antrian dilewati BESERTA
- * sebabnya. Butir yang sudah separuh tersimpan (RTF-nya ada, PDF-nya belum)
+ * sebabnya. Butir yang RTF-nya sudah tersimpan tetapi belum tercatat selesai
  * tidak disebut "sebelum dikerjakan" - berkas yang sudah ada di folder
  * unduhan harus dapat dicocokkan dengan neracanya.
  */
@@ -1759,10 +1740,10 @@ async function buktiUnduhanRelaas(pekerjaan) {
       for (const x of daftar) {
         if (!x || x.state === "interrupted") continue;
         const namaBerkas = String(x.filename || "").split(/[\\/]/).pop();
-        const format = /\.pdf$/i.test(namaBerkas) ? "pdf" : /\.rtf$/i.test(namaBerkas) ? "rtf" : "";
+        const format = /\.rtf$/i.test(namaBerkas) ? "rtf" : "";
         if (format && !peta[format]) peta[format] = { nama: namaBerkas, pada: Date.parse(x.startTime || "") || 0 };
       }
-      if (peta.pdf || peta.rtf) bukti[b.kunci] = peta;
+      if (peta.rtf) bukti[b.kunci] = peta;
     } catch (galat) {
       // Riwayat yang tidak terbaca TIDAK ditelan: butirnya diulang (tanpa
       // bukti tidak ada cara lain), dan kemungkinan gandanya disebut.
@@ -1775,41 +1756,6 @@ async function buktiUnduhanRelaas(pekerjaan) {
 }
 
 const RELAAS_TAHAN_ABT = "Sesi ABT belum masuk atau sudah habis - masuk ke ABT lebih dahulu, lalu tekan Lanjutkan.";
-const RELAAS_TAHAN_SESI_HABIS = "Sesi ALETA habis - masuk ke portal ALETA lagi, lalu tekan Lanjutkan.";
-
-/**
- * Kalimat untuk 401 dari rute PDF - JUJUR tentang apa yang diketahui.
- *
- * 401 berarti ALETA tidak melihat sesi pada permintaan PEKERJA INI. Itu belum
- * tentu "sesi habis": tangkapan layar 30 Sep sore menunjukkan putaran tertahan
- * "Sesi ALETA habis" sementara tab portal ALETA masih masuk. Karena itu rute
- * "siapa saya" ditanyakan sekali (GET, tanpa efek), dari pekerja yang sama:
- *   401          -> sesi memang tidak dikenali: "Sesi ALETA habis".
- *   200          -> sesi dikenali, yang ditolak hanya permintaan PDF itu.
- *   lainnya/gagal-> tidak dapat dipastikan; dikatakan apa adanya.
- * perluMasuk tetap "aleta" pada ketiganya - putarannya tertahan dan Lanjutkan
- * mencobanya lagi.
- */
-async function relaasSebabTolakSesi(asal) {
-  let status = 0;
-  try {
-    const r = await fetch(`${asal}${RELAAS_API_SIAPA}`, { credentials: "include", cache: "no-store" });
-    status = Number(r.status) || 0;
-  } catch {
-    status = 0;
-  }
-  if (status === 401) return RELAAS_TAHAN_SESI_HABIS;
-  if (status >= 200 && status < 300) {
-    return (
-      "ALETA menolak membuat PDF (401) padahal sesi ALETA Anda masih dikenali - tekan Lanjutkan untuk mencoba lagi; " +
-      "bila tertahan lagi, keluar lalu masuk lagi di portal ALETA."
-    );
-  }
-  return (
-    `ALETA menolak membuat PDF karena sesi tidak dikenali (401); sesi tidak dapat diperiksa ulang` +
-    `${status ? ` (ALETA menjawab ${status})` : " (ALETA tidak terjangkau)"} - masuk ke portal ALETA lagi, lalu tekan Lanjutkan.`
-  );
-}
 
 /**
  * ============================================================================
@@ -1938,82 +1884,36 @@ async function relaasAmbilRtf(dasar, berkas, perkaraId, d, opsi) {
 
 /**
  * Satu dokumen: token -> buka blangko (cari) -> pilih sidang -> CETAK (RTF)
- * -> RTF disimpan -> PDF dari ALETA -> PDF disimpan.
+ * -> RTF disimpan. Tidak ada PDF (permintaan pengguna 6 Okt 2026: relaas
+ * cukup RTF/Word).
  *
  * Tidak pernah melempar. Pulang
- *   { ok:true, tanpaPdf?, sebab? }                  - berkasnya tersimpan
+ *   { ok:true }                                     - RTF-nya tersimpan
  *   { ok:false, sebab, bolehUlang? }                - gagal; bolehUlang bila
  *                                                     sebabnya sesaat (5xx, putus)
  *   { tahan:true, perluMasuk, sebab }               - putaran BERHENTI SEMENTARA:
- *       sesi ABT atau ALETA yang habis membuat SELURUH sisa antrian gagal
- *       dengan sebab yang sama, dan lima puluh baris gagal yang sama bukan
- *       neraca, melainkan kebisingan.
+ *       sesi ABT yang habis membuat SELURUH sisa antrian gagal dengan sebab
+ *       yang sama, dan lima puluh baris gagal yang sama bukan neraca,
+ *       melainkan kebisingan.
  *
- * `catat(format, nama)` dipanggil SEGERA sesudah tiap berkas diterima
+ * `catat(format, nama)` dipanggil SEGERA sesudah berkasnya diterima
  * peramban, dan ia menyimpan kemajuannya - pekerja yang mati sesudah RTF
  * tersimpan tidak mengunduh RTF itu lagi.
  */
 async function kerjakanSatuRelaas(pekerjaan, butir, catat) {
+  if (butir.unduhan && butir.unduhan.rtf) return { ok: true };
   const dasar = relaasDasarAbt(pekerjaan.asalAbt);
   const ambil = await relaasAmbilRtf(dasar, butir.berkas, butir.perkaraId, butir.d, {});
   if (!ambil.ok) return ambil;
   const rtf = ambil.rtf;
 
+  // RTF SAJA - tidak ada permintaan PDF ke ALETA (6 Okt 2026). RTF dari ABT
+  // disimpan apa adanya, dicetak dari Word.
   const jalur = relaasJalurBerkas(pekerjaan, butir);
-  const caraRtf = (pekerjaan.opsi && pekerjaan.opsi.unduhRtf) || "selalu";
-  const unduhRtf = async () => {
-    const u = await terbitkanUnduhan(`data:application/rtf;base64,${relaasBase64(rtf)}`, `${jalur}.rtf`);
-    if (!u.ok) return `RTF ditolak peramban: ${u.pesan}`;
-    await catat("rtf", `${butir.nama}.rtf`);
-    return "";
-  };
-  if (caraRtf === "selalu" && !butir.unduhan.rtf) {
-    const tolak = await unduhRtf();
-    if (tolak) return { ok: false, sebab: `unduhan ${tolak}` };
-  }
-  if (butir.unduhan.pdf) return { ok: true };
-
-  let pdfBase64 = "";
-  let pdfGagal = "";
-  try {
-    const r = await fetch(`${pekerjaan.asal}${RELAAS_API_PDF}`, {
-      method: "POST",
-      credentials: "include",
-      cache: "no-store",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rtfBase64: relaasBase64(rtf) }),
-    });
-    if (r.status === 401) {
-      return { tahan: true, perluMasuk: "aleta", sebab: await relaasSebabTolakSesi(pekerjaan.asal) };
-    }
-    if (r.status === 403) pdfGagal = "peran Anda tidak diberi kewenangan blangko-abt di ALETA";
-    else if (!r.ok) pdfGagal = `ALETA menjawab ${r.status}`;
-    else {
-      const luar = await r.json();
-      const isi = luar && luar.data ? luar.data : luar;
-      if (isi && isi.available && isi.pdfBase64) pdfBase64 = String(isi.pdfBase64);
-      else pdfGagal = (isi && isi.message) || "pengubah PDF tidak tersedia";
-    }
-  } catch (galat) {
-    pdfGagal = `ALETA tidak terjangkau: ${relaasPesan(galat)}`;
-  }
-
-  if (pdfBase64) {
-    const u = await terbitkanUnduhan(`data:application/pdf;base64,${pdfBase64}`, `${jalur}.pdf`);
-    if (!u.ok) return { ok: false, sebab: `unduhan PDF ditolak peramban: ${u.pesan}` };
-    await catat("pdf", `${butir.nama}.pdf`);
-    return { ok: true };
-  }
-  // PDF gagal. RTF-nya tetap diunduh bila caranya mengizinkan - berkas yang
-  // dapat dicetak dari Word jauh lebih berguna daripada tidak ada berkas.
-  if (caraRtf === "bila-pdf-gagal" && !butir.unduhan.rtf) {
-    const tolak = await unduhRtf();
-    if (tolak) return { ok: false, sebab: `PDF gagal (${pdfGagal}); ${tolak}` };
-  }
-  if (butir.unduhan.rtf) {
-    return { ok: true, tanpaPdf: true, sebab: `PDF gagal: ${pdfGagal}. Hanya RTF yang tersimpan - cetak dari Word.` };
-  }
-  return { ok: false, sebab: `PDF gagal: ${pdfGagal}` };
+  const u = await terbitkanUnduhan(`data:application/rtf;base64,${relaasBase64(rtf)}`, `${jalur}.rtf`);
+  if (!u.ok) return { ok: false, sebab: `unduhan RTF ditolak peramban: ${u.pesan}` };
+  await catat("rtf", `${butir.nama}.rtf`);
+  return { ok: true };
 }
 
 /* ─── 8. Putaran ─────────────────────────────────────────────────────────── */
@@ -2075,7 +1975,7 @@ async function jalankanRelaas() {
       if (berhenti) continue;
 
       // SEBELUM dikerjakan.
-      if (!butir.unduhan || typeof butir.unduhan !== "object") butir.unduhan = { rtf: "", pdf: "" };
+      if (!butir.unduhan || typeof butir.unduhan !== "object") butir.unduhan = { rtf: "" };
       butir.keadaan = "sedang";
       butir.percobaan = Number(butir.percobaan || 0) + 1;
       butir.mulaiPada = Date.now();
@@ -2117,7 +2017,6 @@ async function jalankanRelaas() {
         pekerjaan.catatan.push(`${butir.nomorPerkara || butir.kunci}: ${butir.sebab}`);
       } else if (hasil.ok) {
         butir.keadaan = "selesai";
-        butir.tanpaPdf = Boolean(hasil.tanpaPdf);
         butir.sebab = hasil.sebab || "";
         butir.selesaiPada = Date.now();
       } else {
