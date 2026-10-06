@@ -852,6 +852,50 @@
       font-size: calc(11px * var(--aleta-skala-huruf, 1));
     }
 
+    /* Butir 3 (6 Okt): indikator sumber daya server - RAM, Disk, GPU */
+    .aleta-cmw-lencana-baris:has(.aleta-cmw-sd) { flex-wrap: wrap; }
+    .aleta-cmw-sd {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 5px;
+      border-radius: 999px;
+      background: var(--aleta-latar);
+      box-shadow: var(--cm-bayang);
+      font-size: calc(11px * var(--aleta-skala-huruf, 1));
+      color: var(--aleta-tulisan-lembut);
+    }
+    .aleta-cmw-tumpuk-klasik + .aleta-cmw-sd, .aleta-cm-wadah > .aleta-cmw-sd { margin-bottom: 6px; }
+    .aleta-cmw-sd-lingkup, .aleta-cmw-sd-titik {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+    .aleta-cmw-sd-lingkup {
+      background: var(--aleta-latar-naik);
+      color: var(--aleta-tulisan);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .aleta-cmw-sd[data-sd-lingkup="server"] .aleta-cmw-sd-lingkup { background: var(--aleta-merek); color: var(--aleta-latar); }
+    .aleta-cmw-sd-titik:hover, .aleta-cmw-sd-lingkup:hover { outline: 1px solid var(--aleta-garis-kuat); }
+    .aleta-cmw-sd-bulat { width: 8px; height: 8px; border-radius: 50%; background: var(--aleta-garis-kuat); }
+    .aleta-cmw-sd-titik[data-warna="hijau"] .aleta-cmw-sd-bulat { background: #22c55e; }
+    .aleta-cmw-sd-titik[data-warna="kuning"] .aleta-cmw-sd-bulat { background: #eab308; }
+    .aleta-cmw-sd-titik[data-warna="merah"] .aleta-cmw-sd-bulat { background: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.35); }
+    .aleta-cmw-sd-titik[data-warna="merah"] .aleta-cmw-sd-nilai { color: var(--aleta-lewat); }
+    .aleta-cmw-sd-titik[data-warna="kuning"] .aleta-cmw-sd-nilai { color: var(--aleta-mendesak); }
+    .aleta-cmw-sd-nilai { color: var(--aleta-tulisan); font-variant-numeric: tabular-nums; }
+    .aleta-cmw-sd-rinci { padding: 2px 6px; color: var(--aleta-merek); text-decoration: none; white-space: nowrap; }
+    .aleta-cmw-sd-rinci:hover { text-decoration: underline; }
+
     /* D11 / popup-23: Atur widget */
     .aleta-cmw-atur-daftar { list-style: none; margin: 0; padding: 0; }
     .aleta-cmw-atur-baris { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-top: 1px solid var(--aleta-garis); }
@@ -2795,6 +2839,244 @@
     return t;
   }
 
+  // ─── Butir 3 (6 Okt 2026): indikator sumber daya server ────────────────────
+  //
+  // Tiga titik berwarna - RAM, Disk, GPU - di samping lencana dok (UI Baru)
+  // atau di atas checklist (Baru, hanya bila saklar portal-7 "Lencana SERVER
+  // yang bercerita" menyala). Lama: tidak ada apa pun, tidak ada permintaan.
+  //
+  //   klik titik     beralih ALETA saja <-> seluruh server; yang tampil
+  //                  disebut di chip di depannya (diingat di peramban ini)
+  //   "Rincian ›"    membuka Admin > Sumber daya server di tab baru (hanya
+  //                  bila portal menyebut pemanggilnya Admin)
+  //
+  // Diminta tiap 5 detik selama tab terlihat dan widget terpasang; berhenti
+  // saat tab disembunyikan. Satu GET, bersinggah 3 detik di portal dan bot.
+  // Isi titik diperbarui DI TEMPAT - widget tidak digambar ulang tiap detak.
+
+  const ALAMAT_SUMBER_DAYA = "/aleta/api/aleta-ecourt/sumber-daya";
+  const KUNCI_LINGKUP_SD = "lingkupSumberDaya";
+  const KODE_SD = "portal-7";
+  const DETAK_SD_MS = 5000;
+  const BATAS_TUNGGU_SD_MS = 4500;
+  const LINGKUP_SD = { aleta: "ALETA", server: "Server" };
+  const NAMA_SD = { ram: "RAM", disk: "Disk", gpu: "GPU" };
+  const WARNA_SD = ["hijau", "kuning", "merah", "kelabu"];
+
+  const sd = {
+    lingkup: "aleta",
+    lingkupTerbaca: false,
+    /** Jawaban terakhir yang berhasil: { diukurPada, ringkas, bolehRinci, alamatRinci }. */
+    data: null,
+    /** "" | "masuk" | "akses" | "jaringan" | "jawaban" */
+    galat: "",
+    jam: null,
+    jalan: false,
+    terakhir: 0,
+  };
+
+  /** Indikator berlaku di tampilan ini: UI Baru, atau Baru dengan saklar portal-7. Lama tidak pernah. */
+  function sdBerlaku() {
+    if (modeUji() === "lama") return false;
+    return modern() || fitur(KODE_SD);
+  }
+
+  function lingkupSdBersih(x) {
+    return x === "server" ? "server" : "aleta";
+  }
+
+  /** Jawaban portal -> bentuk yang dipercaya titik. null bila bentuknya tidak dikenal. */
+  function sdBersihkan(isi) {
+    const x = objek(isi);
+    const r = objek(x.ringkas);
+    if (!punya(r, "aleta") || !punya(r, "server")) return null;
+    const keping = (k) => {
+      const o = objek(k);
+      const p = o.persen === null || o.persen === undefined || o.persen === "" ? null : Number(o.persen);
+      return {
+        persen: Number.isFinite(p) ? p : null,
+        warna: WARNA_SD.includes(o.warna) ? o.warna : "kelabu",
+        ada: o.ada !== false,
+        keterangan: String(o.keterangan || ""),
+        partisi: o.partisi ? String(o.partisi) : "",
+        sebagian: o.sebagian === true,
+      };
+    };
+    const lingkup = (l) => ({ ram: keping(objek(l).ram), disk: keping(objek(l).disk), gpu: keping(objek(l).gpu) });
+    return {
+      diukurPada: String(x.diukurPada || ""),
+      ringkas: { aleta: lingkup(r.aleta), server: lingkup(r.server) },
+      bolehRinci: x.bolehRinci === true,
+      alamatRinci: String(x.alamatRinci || "/admin/sumber-daya"),
+    };
+  }
+
+  function sdTeksPersen(k) {
+    if (!k || k.persen === null) return "–";
+    return `${Math.round(k.persen)}%`;
+  }
+
+  function sdJudulTitik(jenis, k) {
+    const siapa = sd.lingkup === "server" ? "seluruh server" : "ALETA";
+    if (!k) {
+      const sebab =
+        sd.galat === "masuk" ? "belum masuk portal ALETA" : sd.galat === "jaringan" ? "portal tidak menjawab" : sd.galat ? "tidak terbaca" : "memuat";
+      return `${NAMA_SD[jenis]} ${siapa}: ${sebab}. Klik untuk beralih ALETA / seluruh server.`;
+    }
+    let isi;
+    if (jenis === "gpu" && !k.ada) isi = k.keterangan || "tidak ada GPU";
+    else isi = `${k.persen === null ? "tidak terukur" : `${String(k.persen).replace(".", ",")}%`}`;
+    if (jenis === "disk" && k.partisi) isi += ` (partisi ${k.partisi})`;
+    if (jenis === "disk" && k.sebagian) isi += " - sebagian: citra Docker belum terukur";
+    return `${NAMA_SD[jenis]} ${siapa}: ${isi}. Klik untuk beralih ke ${sd.lingkup === "server" ? "ALETA saja" : "seluruh server"}.`;
+  }
+
+  /** Strip indikator. `kecil` = dok ciut (tanpa tautan Rincian). */
+  function susunIndikatorSd(kecil) {
+    const strip = el("div", "aleta-cmw-sd");
+    strip.setAttribute("data-sd-lingkup", sd.lingkup);
+    if (kecil) strip.setAttribute("data-sd-kecil", "ya");
+    strip.setAttribute("role", "group");
+    strip.setAttribute("aria-label", `Sumber daya ${sd.lingkup === "server" ? "seluruh server" : "ALETA"}`);
+    const ganti = () => gantiLingkupSd();
+    const chip = tombol(
+      "aleta-cmw-sd-lingkup",
+      LINGKUP_SD[sd.lingkup],
+      `Yang tampil: ${sd.lingkup === "server" ? "seluruh server" : "ALETA saja"}. Klik untuk beralih.`,
+      ganti,
+      "sd-lingkup"
+    );
+    chip.setAttribute("aria-pressed", sd.lingkup === "server" ? "true" : "false");
+    strip.appendChild(chip);
+    const r = sd.data ? sd.data.ringkas[sd.lingkup] : null;
+    for (const jenis of ["ram", "disk", "gpu"]) {
+      const k = r ? r[jenis] : null;
+      const t = tombol("aleta-cmw-sd-titik", "", sdJudulTitik(jenis, k), ganti, `sd-${jenis}`);
+      t.setAttribute("data-sd", jenis);
+      t.setAttribute("data-warna", k ? k.warna : "kelabu");
+      t.setAttribute("aria-label", sdJudulTitik(jenis, k));
+      t.appendChild(el("span", "aleta-cmw-sd-bulat"));
+      t.appendChild(el("span", "aleta-cmw-sd-nama", NAMA_SD[jenis]));
+      t.appendChild(el("b", "aleta-cmw-sd-nilai", jenis === "gpu" && k && !k.ada ? "–" : sdTeksPersen(k)));
+      strip.appendChild(t);
+    }
+    if (!kecil && sd.data && sd.data.bolehRinci) {
+      const href = alamatPortal(sd.data.alamatRinci);
+      if (href) {
+        const a = el("a", "aleta-cmw-sd-rinci", "Rincian ›");
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.title = "Buka Admin > Sumber daya server: pemakaian tiap aplikasi, ALETA dipisah dari aplikasi lain";
+        a.setAttribute("data-fokus", "sd-rinci");
+        strip.appendChild(a);
+      }
+    }
+    return strip;
+  }
+
+  /** Mengganti isi strip yang sudah tergambar tanpa menggambar ulang widget. */
+  function perbaruiIndikatorSd() {
+    if (!bayang) return;
+    const fokus = kunciFokus();
+    for (const lama of Array.from(bayang.querySelectorAll(".aleta-cmw-sd"))) {
+      lama.replaceWith(susunIndikatorSd(lama.getAttribute("data-sd-kecil") === "ya"));
+    }
+    if (fokus && fokus.startsWith("sd-")) fokuskan(fokus);
+  }
+
+  function gantiLingkupSd() {
+    sd.lingkup = sd.lingkup === "server" ? "aleta" : "server";
+    tulis({ [KUNCI_LINGKUP_SD]: sd.lingkup });
+    perbaruiIndikatorSd();
+  }
+
+  async function mintaSumberDaya() {
+    if (sd.jalan) return;
+    sd.jalan = true;
+    sd.terakhir = Date.now();
+    const pengendali = typeof AbortController === "function" ? new AbortController() : null;
+    const tunda = pengendali ? setTimeout(() => pengendali.abort(), BATAS_TUNGGU_SD_MS) : null;
+    try {
+      const r = await fetch(ALAMAT_SUMBER_DAYA, {
+        credentials: "include",
+        cache: "no-store",
+        ...(pengendali ? { signal: pengendali.signal } : {}),
+      });
+      // 403 = tanpa kewenangan panel: tidak ada yang perlu ditanyakan lagi di halaman ini.
+      if (r.status === 401) sd.galat = "masuk";
+      else if (r.status === 403) sd.galat = "akses";
+      else if (!r.ok) sd.galat = "jawaban";
+      else {
+        const luar = await r.json();
+        const isi = sdBersihkan(luar && typeof luar === "object" && luar.data ? luar.data : luar);
+        if (isi) {
+          sd.data = isi;
+          sd.galat = "";
+        } else sd.galat = "jawaban";
+      }
+    } catch {
+      sd.galat = "jaringan";
+    } finally {
+      // Pemantau waktu nyata: angka yang tidak dapat diperbarui tidak dibiarkan
+      // tampak hidup. Titiknya kelabu dengan sebabnya sampai bacaan berikutnya.
+      if (sd.galat) sd.data = null;
+      if (tunda) clearTimeout(tunda);
+      sd.jalan = false;
+    }
+    if (sd.galat === "akses") {
+      hentikanJamSd();
+      if (bayang) for (const s of Array.from(bayang.querySelectorAll(".aleta-cmw-sd"))) s.remove();
+      return;
+    }
+    perbaruiIndikatorSd();
+  }
+
+  function hentikanJamSd() {
+    if (sd.jam) clearInterval(sd.jam);
+    sd.jam = null;
+  }
+
+  /**
+   * Menyalakan / mematikan detak menurut keadaan sekarang. Dipanggil sesudah
+   * tiap gambar(), saat tab berganti terlihat, dan saat tampilan berganti.
+   * Aman dipanggil berulang: tidak pernah memicu permintaan rapat.
+   */
+  function aturJamSd() {
+    const hidup = sdBerlaku() && sd.galat !== "akses" && akar && akar.isConnected && document.visibilityState !== "hidden";
+    if (!hidup) {
+      hentikanJamSd();
+      return;
+    }
+    if (!sd.lingkupTerbaca) {
+      sd.lingkupTerbaca = true;
+      void baca([KUNCI_LINGKUP_SD]).then((s) => {
+        const l = lingkupSdBersih(s[KUNCI_LINGKUP_SD]);
+        if (l !== sd.lingkup) {
+          sd.lingkup = l;
+          perbaruiIndikatorSd();
+        }
+      });
+    }
+    if (!sd.jam) sd.jam = setInterval(detakSd, DETAK_SD_MS);
+    if (!sd.jalan && Date.now() - sd.terakhir >= DETAK_SD_MS - 500) void mintaSumberDaya();
+  }
+
+  /** Satu detak: tab tersembunyi, widget terlepas, atau tampilan berganti = berhenti. */
+  function detakSd() {
+    if (!sdBerlaku() || sd.galat === "akses" || !akar || !akar.isConnected || document.visibilityState === "hidden") {
+      hentikanJamSd();
+      return;
+    }
+    void mintaSumberDaya();
+  }
+
+  /** Strip yang boleh dipasang di gambar ini (null bila tidak berlaku atau tidak berwenang). */
+  function indikatorSdUntukGambar(kecil) {
+    if (!sdBerlaku() || sd.galat === "akses") return null;
+    return susunIndikatorSd(kecil);
+  }
+
   // ─── Tahap 3: dok dan tumpukan widget (D9, D11, popup-20..23) ──────────────
 
   /** Susunan dok yang berlaku di situs ini: per situs hanya bila popup-23 menyala. */
@@ -2880,6 +3162,9 @@
     }
     const baris = el("div", "aleta-cmw-lencana-baris");
     baris.appendChild(susunLencana(kecil));
+    // Butir 3 (6 Okt): RAM / Disk / GPU di samping lencana, ciut maupun bentang.
+    const indikator = indikatorSdUntukGambar(kecil);
+    if (indikator) baris.appendChild(indikator);
     if (!kecil) {
       const ket = el("div", "aleta-cmw-lencana-ket");
       const a = angkaBelum();
@@ -2911,6 +3196,9 @@
       frag.appendChild(fitur("popup-8") ? susunLencana(true) : susunPil());
       return frag;
     }
+    // Butir 3 (6 Okt): indikator sumber daya - di Baru hanya dengan saklar portal-7.
+    const indikator = indikatorSdUntukGambar(false);
+    if (indikator) frag.appendChild(indikator);
     const tambahan = WIDGET.filter((w) => w.id !== "checklist" && widgetTersedia(w));
     if (tambahan.length) {
       const tumpuk = el("div", "aleta-cmw-tumpuk aleta-cmw-tumpuk-klasik");
@@ -4320,7 +4608,10 @@
         /* letak kursor hanya kemudahan */
       }
     }
-    if (mode !== "lama") aturJamSidang();
+    if (mode !== "lama") {
+      aturJamSidang();
+      aturJamSd();
+    }
   }
 
   // ─── Perbaikan 30 Sep: pita pembaruan (24) dan ⓘ (6) ─────────────────────
@@ -5008,6 +5299,9 @@
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") saatKembali();
   });
+  // Butir 3 (6 Okt): detak sumber daya berhenti saat tab disembunyikan dan
+  // menyala lagi saat terlihat. Dalam Lama aturJamSd tidak menyalakan apa pun.
+  document.addEventListener("visibilitychange", () => aturJamSd());
   window.addEventListener("resize", () => terapkanPosisi());
   // Pengalih Lama / Baru / UI Baru di popup - kulitnya ikut seketika.
   document.addEventListener("aleta-uji-berubah", () => terapkanTema());
