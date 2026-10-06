@@ -164,10 +164,31 @@ const VAR_PIHAK_PELAKU = "0047";
 const VAR_HURUF = "8503";
 
 /** Urutan kanonik. Kuerinya menerima urutan bebas; keseragaman untuk manusia. */
-const URUTAN_HURUF = ["A", "B", "F", "H"];
+const URUTAN_HURUF = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
-/** Gabungan yang benar-benar punya cabang di kueri 4020. */
+/** Huruf yang punya cabang di kueri blangko LAMA (sebelum paket abt-alasan-cdeh). */
+const HURUF_LAMA = ["A", "B", "F", "H"];
+
+/** Gabungan yang benar-benar punya cabang di kueri 4020 LAMA. */
 const GABUNGAN_4020 = new Set(["A", "B", "F", "H", "AB", "AF", "BF", "ABF"]);
+
+/**
+ * ============================================================================
+ * PAKET ABT "abt-alasan-cdeh" (6 Okt 2026) - DIBACA DARI HALAMAN, BUKAN DITEBAK
+ * ============================================================================
+ *
+ * Paket itu memberi 4020, 8521, 8522, 8528, dan 8530 cabang umum yang menerima
+ * SETIAP huruf A-H dan gabungannya (C, D, E, H dengan pertimbangan yuridis
+ * utuh), dan sekaligus mengganti NAMA variabel 8503 menjadi "... GABUNGAN
+ * BEBAS ...". Nama itulah penandanya: ia tampil di tabel variabel halaman ABT
+ * yang sama, sehingga ekstensi tahu blangko satker mana yang sedang dihadapi
+ * tanpa menebak - satker yang belum dipasangi paket tetap diperlakukan dengan
+ * daftar lama di atas.
+ */
+function abtKenalSemuaHuruf() {
+  const item = barisVariabel().get(VAR_HURUF);
+  return Boolean(item) && /GABUNGAN BEBAS/i.test(item.nama);
+}
 
 function susun8503(daftar) {
   const bersih = Array.from(new Set(daftar.map((x) => String(x || "").trim().toUpperCase())));
@@ -176,7 +197,9 @@ function susun8503(daftar) {
 }
 
 function dikenali4020(daftar) {
-  return GABUNGAN_4020.has(susun8503(daftar));
+  const isi = susun8503(daftar);
+  if (abtKenalSemuaHuruf()) return /^[A-H]+$/.test(isi);
+  return GABUNGAN_4020.has(isi);
 }
 
 /**
@@ -3341,11 +3364,13 @@ async function tulisHurufAlasan(dipilih, jatiDiri) {
   // ABT" - dan kalimat itu ikut tercetak ke dalam putusan.
   if (!gagal && !dikenali4020(dipilih)) {
     gagal = true;
-    pesan =
-      `8503 diisi "${isi8503}", tetapi kueri 4020 milik ABT tidak mengenali gabungan ini - ` +
-      `ia hanya mengenal A, B, F, H sendiri-sendiri, AB, AF, BF, dan ABF. ` +
-      `4020 akan berbunyi "TIDAK BENAR QUERY NYA" dan kalimat itu ikut tercetak. ` +
-      `Perbaiki kuerinya di ABT, atau kurangi hurufnya.`;
+    pesan = abtKenalSemuaHuruf()
+      ? `8503 diisi "${isi8503}", tetapi itu bukan deretan huruf A-H - ` +
+        `4020 akan berbunyi "TIDAK BENAR QUERY NYA" dan kalimat itu ikut tercetak.`
+      : `8503 diisi "${isi8503}", tetapi kueri 4020 milik ABT tidak mengenali gabungan ini - ` +
+        `ia hanya mengenal A, B, F, H sendiri-sendiri, AB, AF, BF, dan ABF (blangko satker ini belum dipasangi paket ABT abt-alasan-cdeh). ` +
+        `4020 akan berbunyi "TIDAK BENAR QUERY NYA" dan kalimat itu ikut tercetak. ` +
+        `Pasang paketnya di ABT, atau kurangi hurufnya.`;
   }
   return { gagal, pesan, isi8503 };
 }
@@ -8572,12 +8597,14 @@ function t6DaftarGalat() {
 /**
  * Huruf alasan pada 8503 yang tidak punya cabang di kueri 4020 blangko ini
  * (C, D, E, G, ...). Kosong bila 8503 bukan deretan huruf - "Fasakh" misalnya.
+ * Blangko yang sudah dipasangi paket abt-alasan-cdeh mengenal A-H seluruhnya.
  */
 function t6HurufTakBercabang() {
   const isi = nilaiVariabel(VAR_HURUF).toUpperCase().replace(/\bDAN\b/g, "");
   const huruf = isi.replace(/[^A-Z]/g, "");
   if (!huruf || huruf.length > 8 || !/^[A-K]+$/.test(huruf)) return [];
-  return Array.from(new Set(huruf.split(""))).filter((h) => !URUTAN_HURUF.includes(h));
+  const dikenal = abtKenalSemuaHuruf() ? URUTAN_HURUF : HURUF_LAMA;
+  return Array.from(new Set(huruf.split(""))).filter((h) => !dikenal.includes(h));
 }
 
 /**
@@ -8663,7 +8690,7 @@ function t6SegarkanPitaBahaya(k) {
       "div",
       "aleta-t6-lembut",
       takBercabang.length
-        ? "Tugas ABT satker \"enam baris huruf C/D/E/G\": tambahkan cabang huruf C, D, E, dan G ke kueri blangko [01] di ABT (sudah disiapkan, belum terpasang di satker). " +
+        ? "Tugas ABT satker \"enam baris huruf C/D/E/G\" - kini paket ABT abt-alasan-cdeh (huruf A-H dan gabungannya, beserta pertimbangan C, D, E, H): pasang paket itu di ABT satker (sudah disiapkan, belum terpasang). " +
             "Sampai itu terpasang, isi 8503 hanya dengan A, B, F, H, AB, AF, BF, atau ABF - atau tulis pertimbangannya sendiri di variabel pertimbangan."
         : "Variabel (OTOMATIS) disusun ABT dari kerangka fakta. Lengkapi variabel yang menyuapinya (lihat kartu huruf alasan dan variabel kerangka), lalu muat ulang halaman."
     )

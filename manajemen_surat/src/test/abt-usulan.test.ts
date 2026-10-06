@@ -86,6 +86,15 @@ type Aturan = {
     dasar: { bunyi: string; sumber: { nama: string } }[];
   }[];
   belumSiap: () => { huruf: string; sebab: string }[];
+  usulkanUntukBlangko01: (bahan: {
+    ciriSaksi1?: string[];
+    ciriSaksi2?: string[];
+    ciri?: string[];
+    lamaPisahBulan?: number | null;
+  }) => {
+    huruf: { huruf: string; syarat: string; centangOtomatis: boolean }[];
+    tidakDiusulkan: unknown[];
+  };
 };
 type Pustaka = {
   KALIMAT: {
@@ -1852,6 +1861,32 @@ describe("bunyi KHI untuk huruf yang baru ditambahkan", () => {
    * Mengubahnya menjadi siap hanya karena bunyinya ada akan melewatkan sebab
    * yang kedua, yaitu blangko yang belum mengenalinya.
    */
+  /**
+   * Paket ABT abt-alasan-cdeh (6 Okt 2026) memberi blangko [01] cabang C, D, E,
+   * dan H yang utuh. Sejak itu C, D, E diusulkan seperti huruf lain - tetap
+   * tanpa centang - dan syaratnya tidak lagi berbunyi "belum punya cabang".
+   * Jeda sebelum paket terpasang di satker dijaga ekstensi (nama 8503).
+   */
+  it("C, D, E diusulkan untuk blangko [01] dari ciri yang dikuatkan, urut huruf, tanpa centang", () => {
+    const hasil = aturan.usulkanUntukBlangko01({
+      ciriSaksi1: ["perselisihan terus-menerus"],
+      ciriSaksi2: ["perselisihan terus-menerus"],
+      ciri: ["kekerasan dalam rumah tangga", "salah satu pihak menjalani pidana penjara", "cacat badan atau penyakit"],
+      lamaPisahBulan: 6,
+    });
+    expect(hasil.huruf.map((h) => h.huruf)).toEqual(["C", "D", "E", "F"]);
+    expect(hasil.tidakDiusulkan).toEqual([]);
+    for (const h of hasil.huruf) {
+      expect(h.centangOtomatis, h.huruf).toBe(false);
+      expect(h.syarat, h.huruf).not.toContain("belum punya cabang");
+    }
+    expect(hasil.huruf.find((h) => h.huruf === "C")?.syarat).toContain("8536");
+  });
+
+  it("syarat H menyebut agama pihak di SIPP yang dibaca blangko [01]", () => {
+    expect(aturan.HURUF.find((x) => x.huruf === "H")?.syarat).toContain("SIPP");
+  });
+
   it("huruf G tetap belum siap, dengan dua sebab yang tertulis", () => {
     const g = aturan.HURUF.find((x) => x.huruf === "G");
     expect(g?.siap).toBe(false);

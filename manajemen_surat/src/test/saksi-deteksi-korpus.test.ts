@@ -369,10 +369,18 @@ describe("8503 - huruf alasan blangko [01] menurut keputusan pengguna 11", () =>
     ["Tergugat sering memukul Penggugat", "D", "kekerasan dalam rumah tangga"],
     ["Tergugat dipenjara karena kasus pencurian", "C", "salah satu pihak menjalani pidana penjara"],
     ["Tergugat mengalami cacat badan sejak kecelakaan", "E", "cacat badan atau penyakit"],
-  ])("C/D/E tidak pernah diusulkan untuk blangko [01]: %s", (kalimat, huruf, ciri) => {
+  ])("C/D/E diusulkan untuk blangko [01] - tanpa centang - sejak paket ABT abt-alasan-cdeh: %s", (kalimat, huruf, ciri) => {
+    // Keputusan 11 dahulu MENAHAN C/D/E karena kueri 4020/8521/8522/8528/8530
+    // tidak punya cabangnya ("TIDAK BENAR QUERY NYA" tercetak). Paket ABT
+    // abt-alasan-cdeh (6 Okt 2026) menambahkan cabang itu; jeda sebelum paket
+    // terpasang di satker dijaga ekstensi lewat nama 8503 di halaman ABT.
     const hasil = dua(kalimat);
-    expect(hasil.huruf.map((h) => h.huruf)).not.toContain(huruf);
-    expect(hasil.hurufTidakDiusulkan).toContainEqual(expect.objectContaining({ huruf, ciri }));
+    const h = hasil.huruf.find((x) => x.huruf === huruf);
+    expect(h, huruf).toBeTruthy();
+    expect(h?.pemicu).toContain(ciri);
+    expect(h?.centangOtomatis).toBe(false);
+    expect(String(h?.syarat || "").trim()).not.toBe("");
+    expect(hasil.hurufTidakDiusulkan).toEqual([]);
   });
 
   it("tidak satu huruf pun tercentang otomatis", () => {

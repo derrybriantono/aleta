@@ -187,6 +187,24 @@ const HURUF = [
    * Begitu cabang barunya ditambahkan ke blangko, kalimat ini dihapus dari
    * ketiga syarat di bawah. Sampai saat itu, ia yang menahan putusan tercetak
    * dengan kalimat galat di dalamnya.
+   *
+   * ==========================================================================
+   * 6 OKTOBER 2026 - PAKET ABT "abt-alasan-cdeh"
+   * ==========================================================================
+   *
+   * Cabangnya kini disiapkan sebagai satu paket (D:/aleta-dev/kerja/
+   * abt-alasan-cdeh): 4020, 8521, 8522, 8528, 8530 mendapat cabang UMUM yang
+   * menerima setiap huruf A-H dan gabungannya, beserta pertimbangan yuridis
+   * C, D, E, H yang utuh, ditambah 8531/8532 (pokok & dasar normatif, dahulu
+   * tertanam huruf f di RTF), 8536 (putusan pidana untuk C), dan amar fasakh
+   * di 4001 untuk H. Kalimat PERHATIAN dihapus dari syarat C, D, E; huruf
+   * itu kini diusulkan untuk blangko [01].
+   *
+   * Yang menjaga jeda sebelum paket itu terpasang di satker bukan berkas ini
+   * (bot tidak tahu isi ABT satker), melainkan ekstensi: ia membaca nama
+   * variabel 8503 di halaman ABT, yang ikut diganti paket itu
+   * ("GABUNGAN BEBAS"). Selama nama lama yang tampil, ekstensi tetap
+   * memperingatkan huruf di luar A, B, F, H sebelum CETAK.
    */
   {
     huruf: "C",
@@ -211,7 +229,7 @@ const HURUF = [
     // dijadikan ciri hanya bunyi yang menunjuk pidana penjaranya.
     ciri: ["hukuman penjara", "dipenjara", "pidana penjara", "lembaga pemasyarakatan"],
     syarat:
-      "menuntut DUA hal sekaligus: hukumannya 5 (lima) tahun atau lebih berat, DAN dijatuhkan setelah perkawinan berlangsung - periksa putusan pidananya, keduanya tidak dapat disimpulkan dari keterangan saksi | PERHATIAN: blangko [01] belum punya cabang untuk huruf ini - 8503 yang berisi huruf ini membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan",
+      "menuntut DUA hal sekaligus: hukumannya 5 (lima) tahun atau lebih berat, DAN dijatuhkan setelah perkawinan berlangsung - periksa putusan pidananya, keduanya tidak dapat disimpulkan dari keterangan saksi; isi juga variabel 8536 (putusan pidana) agar pertimbangan menyebut bukti Pasal 135 KHI",
   },
   {
     huruf: "D",
@@ -245,7 +263,7 @@ const HURUF = [
     // terbaca dari kata "memukul". Sekali menampar dan penganiayaan yang
     // membahayakan nyawa sama-sama memicu ciri di atas.
     syarat:
-      "menuntut kekejaman atau penganiayaan yang BERAT dan MEMBAHAYAKAN pihak lain - periksa derajatnya, sebab ciri di atas menyala pada kekerasan tingkat apa pun | PERHATIAN: blangko [01] belum punya cabang untuk huruf ini - 8503 yang berisi huruf ini membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan",
+      "menuntut kekejaman atau penganiayaan yang BERAT dan MEMBAHAYAKAN pihak lain - periksa derajatnya, sebab ciri di atas menyala pada kekerasan tingkat apa pun",
   },
   {
     huruf: "E",
@@ -269,7 +287,7 @@ const HURUF = [
     // ada di hampir tiap keterangan saksi perkara perselisihan.
     ciri: ["cacat badan", "cacat tetap", "impoten", "gangguan jiwa"],
     syarat:
-      "menuntut AKIBAT: cacat atau penyakitnya harus mengakibatkan tidak dapat menjalankan kewajiban sebagai suami/isteri - periksa apakah akibat itu terbukti, bukan penyakitnya saja | PERHATIAN: blangko [01] belum punya cabang untuk huruf ini - 8503 yang berisi huruf ini membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan",
+      "menuntut AKIBAT: cacat atau penyakitnya harus mengakibatkan tidak dapat menjalankan kewajiban sebagai suami/isteri - periksa apakah akibat itu terbukti, bukan penyakitnya saja",
   },
   {
     huruf: "F",
@@ -349,7 +367,7 @@ const HURUF = [
     // fakta yang harus dibuktikan di persidangan, dan tidak dapat disimpulkan
     // dari kata "murtad" yang muncul di keterangan saksi.
     syarat:
-      "menuntut akibat: murtadnya harus menyebabkan ketidakrukunan rumah tangga - periksa apakah itu terbukti",
+      "menuntut akibat: murtadnya harus menyebabkan ketidakrukunan rumah tangga - periksa apakah itu terbukti; agama pihak yang murtad harus sudah diubah di SIPP (blangko [01] membacanya dari sana) dan 0227 Tanggal Murtad diisi",
   },
 ];
 
@@ -388,14 +406,16 @@ function belumSiap() {
 
 /** Ciri (kunci CIRI_ALASAN) yang menunjuk huruf A pada blangko [01]. */
 const CIRI_HURUF_A = ["zina", "mabuk", "judi", "obat terlarang"];
-/** Ciri yang menunjuk huruf tanpa cabang di blangko [01] - tidak diusulkan. */
-const CIRI_HURUF_TANPA_CABANG = {
+/**
+ * Ciri yang menunjuk huruf C, D, E pada blangko [01]. Sampai 6 Okt 2026 ketiganya
+ * TIDAK diusulkan (blangko belum punya cabangnya); sejak paket ABT
+ * abt-alasan-cdeh ketiganya diusulkan seperti huruf lain - tetap tanpa centang.
+ */
+const CIRI_HURUF_CDE = {
   C: "salah satu pihak menjalani pidana penjara",
   D: "kekerasan dalam rumah tangga",
   E: "cacat badan atau penyakit",
 };
-const SEBAB_TANPA_CABANG =
-  "blangko [01] belum punya cabang untuk huruf ini - 8503 yang berisinya membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan";
 
 /**
  * ============================================================================
@@ -414,10 +434,12 @@ const SEBAB_TANPA_CABANG =
  *   B  HANYA bila lama pisah >= 24 bulan (syarat 2 tahun berturut-turut);
  *   A  HANYA dari ciri yang dikuatkan kedua saksi: zina, mabuk, judi, obat;
  *   H  dari ciri murtad yang dikuatkan kedua saksi (blangko [01] mengenalnya);
- *   C, D, E TIDAK diusulkan untuk blangko [01] - kueri 4020/8521/8522/8528/
- *      8530-nya tidak punya cabangnya, dan huruf itu mencetak "TIDAK BENAR
- *      QUERY NYA" ke putusan. Cirinya tidak dibuang diam-diam: ia dipulangkan
- *      pada `tidakDiusulkan` beserta sebabnya.
+ *   C, D, E dari ciri yang dikuatkan kedua saksi DAN didalilkan. Dahulu TIDAK
+ *      diusulkan karena kueri 4020/8521/8522/8528/8530 tidak punya cabangnya;
+ *      paket ABT abt-alasan-cdeh (6 Okt 2026) menambahkannya. Selama paket itu
+ *      belum terpasang di satker, ekstensi yang memperingatkan (ia membaca
+ *      nama 8503 di halaman ABT). `tidakDiusulkan` tetap dipulangkan - kosong -
+ *      agar ekstensi lama tidak patah.
  * Tidak satu pun dicentang otomatis (centangOtomatis: false, dan tiap huruf
  * membawa syarat - ekstensi hanya mencentang sendiri huruf tanpa syarat).
  *
@@ -440,12 +462,13 @@ function usulkanUntukBlangko01(bahan) {
   if (pemicuA.length) tambah("A", pemicuA);
   if (lama !== null && lama >= 24) tambah("B", [`lama pisah ${lama} bulan`]);
   if (gabungan.includes("perselisihan terus-menerus")) tambah("F", ["perselisihan terus-menerus"]);
+  for (const [kode, nama] of Object.entries(CIRI_HURUF_CDE)) {
+    if (ciri.includes(nama)) tambah(kode, [nama]);
+  }
   if (ciri.includes("murtad/pindah agama")) tambah("H", ["murtad/pindah agama"]);
-
-  const tidakDiusulkan = Object.entries(CIRI_HURUF_TANPA_CABANG)
-    .filter(([, nama]) => ciri.includes(nama))
-    .map(([kode, nama]) => ({ huruf: kode, ciri: nama, sebab: SEBAB_TANPA_CABANG }));
-  return { huruf, tidakDiusulkan };
+  // Urutan tampil = urutan huruf di PP/KHI, sama dengan urutan yang ditulis ke 8503.
+  huruf.sort((x, y) => x.huruf.localeCompare(y.huruf));
+  return { huruf, tidakDiusulkan: [] };
 }
 
 module.exports = { HURUF, usulkan, belumSiap, usulkanUntukBlangko01, SUMBER_PP_9_1975, SUMBER_KHI };
