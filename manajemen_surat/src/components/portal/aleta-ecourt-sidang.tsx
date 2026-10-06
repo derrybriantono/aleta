@@ -180,6 +180,9 @@ import { warnaStatusPutusan } from "@/lib/warna-putusan";
 import { KELAS_KODE_MAJELIS, KELAS_LENCANA_KODE_MAJELIS } from "@/lib/kode-majelis";
 import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
 import { useHilangSendiri, usePesanSementara } from "@/lib/pesan-sementara";
+import { perluMuatPenuh, saringProsesLangsung, terapkanDisidangLangsung } from "@/lib/disidang-langsung";
+import { ALAT_CIUT_BAWAAN } from "@/lib/alat-jadwal-sidang";
+import { useDisidangLangsung } from "@/components/portal/use-disidang-langsung";
 import { BannerGangguan } from "@/components/portal/banner-gangguan";
 import {
   DATA_VERIFIKASI_KOSONG,
@@ -4320,8 +4323,14 @@ export function AletaEcourtSidang({
    * TIDAK diingat peramban, alasan yang sama dengan hanyaMilikSaya: yang
    * diingat terbawa ke akun lain pada komputer bersama di ruang panitera, dan
    * orang berikutnya mendapati tombol yang hilang tanpa tahu sebabnya.
+   *
+   * BAWAANNYA TERCIUT sejak 6 Okt 2026 (diminta pengguna): deretan Hitung
+   * skor, Layar antrian, Cetak, Cetak relaas, Daftarkan ke antrian, dan tombol
+   * ruang sidang tidak dipakai tiap kali layar dibuka. Karena pilihan ini
+   * tidak disimpan, tiap layar dibuka mulai terciut; ikon pembentang di kepala
+   * deretan penanda membukanya. Lihat ALAT_CIUT_BAWAAN.
    */
-  const [alatCiut, setAlatCiut] = useState(false);
+  const [alatCiut, setAlatCiut] = useState(ALAT_CIUT_BAWAAN);
 
   /**
    * Kelompok penanda mana saja yang sedang diciutkan.
@@ -5057,20 +5066,26 @@ export function AletaEcourtSidang({
    * bahan yang sama dengan "lama sidang berjalan" di atas, ditambah tanda
    * Selesai (J2) dan skors. Lihat @/lib/jadwal-sidang-2okt.
    */
+  // 6 Okt 2026: keadaan disidang hari ini ditanyakan tiap 5 detik dan
+  // ditimpakan ke bahan di bawah - "sedang berjalan" tidak lagi menunggu muat
+  // ulang jadwal 45 detik. Lihat @/lib/disidang-langsung.
+  const disidangLangsung = useDisidangLangsung(dari === sampai && dari === hariIni());
+  const waktuAntrianHidup = useMemo(() => terapkanDisidangLangsung(waktuAntrian, disidangLangsung), [waktuAntrian, disidangLangsung]);
+  const berjalanHidup = useMemo(() => saringProsesLangsung(tandaSelesai.berjalan, disidangLangsung), [tandaSelesai.berjalan, disidangLangsung]);
   const ruangSidang = useMemo(() => {
     const ruangSipp: Record<string, string> = {};
     for (const b of sidang) ruangSipp[kunciWaktu(b.tanggalSidang, b.perkaraId)] = b.ruangan;
-    return petaSidangBerjalan(waktuAntrian.baris, {
-      hariIni: waktuAntrian.hariIni,
+    return petaSidangBerjalan(waktuAntrianHidup.baris, {
+      hariIni: waktuAntrianHidup.hariIni,
       selesai: selesaiPerKunciWaktu(sidang, tandaSelesai.peta),
       skors: tandaSelesai.skors,
       ruangSipp,
       // 2 Okt 2026 malam: tanda "Tandai sedang berjalan" + proses sidang di
       // mesin antrian (disidang = nomor ruang; bawaan bot sejak 5 Okt 2026, dan
       // juga terbaca dari `disidang` baris waktu antrian hari ini).
-      berjalan: tandaSelesai.berjalan,
+      berjalan: berjalanHidup,
     });
-  }, [sidang, waktuAntrian, tandaSelesai.peta, tandaSelesai.skors, tandaSelesai.berjalan]);
+  }, [sidang, waktuAntrianHidup, tandaSelesai.peta, tandaSelesai.skors, berjalanHidup]);
 
   /** Perkara yang sedang diskors - disebut satu per satu di ringkasan ruang sidang. */
   const diskorsHariIni = useMemo(
@@ -5444,6 +5459,16 @@ export function AletaEcourtSidang({
 
     return () => window.clearInterval(putaran);
   }, [sedangHariIni, muat]);
+
+  // 6 Okt 2026: perkara yang di-PROSES tetapi belum punya baris waktu antrian
+  // (antriannya diambil sesudah jadwal dimuat) - muat penuh SEKALI per perubahan.
+  const kurangBarisDisidang = perluMuatPenuh(waktuAntrian, disidangLangsung);
+  const kurangDimuatRef = useRef("");
+  useEffect(() => {
+    if (!kurangBarisDisidang || kurangBarisDisidang === kurangDimuatRef.current || memuatRef.current) return;
+    kurangDimuatRef.current = kurangBarisDisidang;
+    void muat();
+  }, [kurangBarisDisidang, muat]);
 
   // ==========================================================================
   // BUTIR 30 (5 Okt 2026) - PENANDA VERIFIKASI MAJELIS E-LITIGASI HARI INI

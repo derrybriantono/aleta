@@ -1445,7 +1445,9 @@ describe("butir 4 - urutan kolom kanan Jadwal Sidang", () => {
   });
 
   it("layar membaca data berjalan dan memberi tahu tombol: ruang, hari ini, penanda skors", () => {
-    expect(SIDANG).toContain("berjalan: tandaSelesai.berjalan,");
+    // 6 Okt 2026: lewat saringProsesLangsung (keadaan disidang terbaru) - lihat @/lib/disidang-langsung.
+    expect(SIDANG).toContain("saringProsesLangsung(tandaSelesai.berjalan, disidangLangsung)");
+    expect(SIDANG).toContain("berjalan: berjalanHidup,");
     expect(SIDANG).toContain("ruangSidang.penandaPerKunci[kunciTiga]");
     expect(SIDANG).toContain("bisaTandai: Boolean(waktuAntrian.hariIni) && baris.tanggalSidang === waktuAntrian.hariIni,");
     expect(SIDANG).toContain("ruang={ruangIni}");

@@ -98,7 +98,8 @@ describe("butir 8 - baris tombol tindakan dapat diciutkan", () => {
   it("punya keadaannya sendiri, terpisah dari kendaliCiut", () => {
     // kendaliCiut menyembunyikan SELURUH kendali termasuk pencarian. Yang ini
     // hanya tombol tindakan.
-    expect(layar).toContain("const [alatCiut, setAlatCiut] = useState(false);");
+    // 6 Okt 2026: bawaannya terciut (ALAT_CIUT_BAWAAN) - lihat jadwal-sidang-6okt-sore.test.tsx.
+    expect(layar).toContain("const [alatCiut, setAlatCiut] = useState(ALAT_CIUT_BAWAAN);");
     expect(layar).toContain("(kendaliCiut || alatCiut) && \"hidden\"");
   });
 

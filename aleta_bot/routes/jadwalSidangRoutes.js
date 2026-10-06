@@ -12,6 +12,8 @@
  *                                 + mesin ruang tunggu bila disetel)
  *   POST /selesai                 tandai / batalkan selesai (kering bawaan)
  *   GET  /selesai/diagnosa        nilai disidang yang hidup hari ini
+ *   GET  /disidang                keadaan disidang hari ini, satu kueri ringan
+ *                                 (6 Okt 2026) - "sedang berjalan" seketika
  *   POST /skors                   skors / lanjutkan sidang (kering bawaan) -
  *                                 perbaikan 2 Okt 2026, butir 10
  *   POST /berjalan                tandai / batalkan tanda "sedang berjalan"
@@ -35,6 +37,7 @@ const express = require("express");
 
 const { readRuntimeConfig } = require("../config/runtime-config");
 const sidangSelesaiService = require("../services/sidangSelesaiService");
+const disidangLangsungService = require("../services/disidangLangsungService");
 const sidangHasilService = require("../services/sidangHasilService");
 const sidangKontakService = require("../services/sidangKontakService");
 const mediatorTulisService = require("../services/mediatorTulisService");
@@ -85,6 +88,16 @@ router.get("/selesai", wajibToken, async (req, res) => {
   try {
     const hasil = await sidangSelesaiService.petaSelesai({ dari: req.query.dari, sampai: req.query.sampai });
     res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+// 6 Okt 2026: keadaan disidang hari ini, satu kueri ringan - portal menanyakannya
+// tiap 5 detik supaya "sedang berjalan" terdeteksi dalam hitungan detik.
+router.get("/disidang", wajibToken, async (req, res) => {
+  try {
+    res.json({ ok: true, ...(await disidangLangsungService.disidangHariIni()) });
   } catch (galat) {
     galat500(res, galat);
   }
