@@ -57,6 +57,7 @@ import { LencanaPembebananIkrar, PembebananIkrarRincian } from "@/components/por
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
+import { CourtCalendarSidang } from "@/components/portal/court-calendar-sidang";
 import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
@@ -7852,6 +7853,17 @@ export function AletaEcourtSidang({
                               <span className="text-xs text-muted-foreground">belum putus</span>
                             )}
                           </div>
+
+                          {/* Court Calendar perkara ini - PALING BAWAH sel
+                              Agenda (permintaan 6 Okt 2026, butir 3): lihat,
+                              susun dari rekomendasi ALETA, tambah manual,
+                              sunting baris lama, simpan ke SIPP. Hanya
+                              panitera/admin; komponennya di berkas sendiri. */}
+                          <CourtCalendarSidang
+                            perkaraId={String(baris.perkaraId)}
+                            nomorPerkara={baris.nomorPerkara}
+                            jenisPerkara={baris.jenisPerkara}
+                          />
                         </td>
                         {/* Susunannya menurun dari yang paling menentukan ke
                             yang paling seragam: majelis, lalu petugasnya, lalu
