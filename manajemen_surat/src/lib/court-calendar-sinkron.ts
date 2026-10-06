@@ -21,6 +21,33 @@
  *   tidak sinkron (a) Court Calendar perkara ini belum dibuat sama sekali;
  *                 (b) tidak ada rencana pada tanggal sidang itu;
  *                 (c) ada rencana pada tanggal itu, tetapi tahapannya berbeda.
+ *
+ * ============================================================================
+ * KAPAN COURT CALENDAR BOLEH DIPERIKSA (perbaikan 6 Okt 2026 sore)
+ * ============================================================================
+ *
+ * "Court calendar ada setelah tundaan setelah agenda sidang laporan hasil
+ * mediasi" (pengguna). Jadi sebelum itu Court Calendar yang kosong atau tidak
+ * memuat tanggal sidang BUKAN kesalahan. Diukur atas server 6 Okt 2026: 9
+ * perkara menyala merah, seluruhnya keliru - verstek yang Tergugatnya tidak
+ * pernah hadir (549, 555, 481), sidang mediasi/laporan mediasi itu sendiri
+ * (553, 561), ikrar sesudah putus verstek (462), permohonan tanpa mediasi
+ * (225, 226 Pdt.P). Sidang baru dinilai bila SELURUHNYA terpenuhi:
+ *
+ *   (a) kedua belah pihak pernah hadir lengkap (dihadiri_oleh = 1) pada
+ *       sidang SEBELUM sidang ini - hadirLengkapPertama;
+ *   (b) ada jangkar laporan hasil mediasi SEBELUM tanggal sidang ini:
+ *       - laporan mediator tercatat (perkara_mediasi.hasil_mediasi terisi;
+ *         tanggalnya tgl_laporan_mediator, cadangannya keputusan_mediasi), atau
+ *       - sidang sebelumnya beragenda laporan hasil mediasi - dan karena ada
+ *         sidang ini sesudahnya, sidang itu sudah ditunda;
+ *   (c) sidang ini sendiri bukan sidang mediasi / laporan hasil mediasi (itu
+ *       sidang yang MELAHIRKAN Court Calendar) dan bukan sidang ikrar talak
+ *       (sesudah putusan - di luar Court Calendar);
+ *   (d) seluruh datanya terbaca. Yang tidak terbaca (bot lama, kueri gagal)
+ *       = diam, tidak dituduh.
+ *
+ * Yang tidak memenuhi: tanpa penanda dan tidak masuk kotak merah.
  */
 
 export type RencanaCourtCalendar = { tanggal: string; agenda: string };
@@ -32,6 +59,16 @@ export type BarisCourtCalendar = {
   urutanSidang?: number;
   courtCalendar?: RencanaCourtCalendar[];
   courtCalendarTerbaca?: boolean;
+  /** Tanggal sidang pertama yang dihadiri kedua belah pihak ("" = belum pernah). */
+  hadirLengkapPertama?: string;
+  hadirLengkapTerbaca?: boolean;
+  /** Mediasi terakhir perkara ini; hasil terisi = laporan mediator sudah ada. */
+  mediasi?: { hasil?: string; keputusan?: string; laporan?: string } | null;
+  mediasiTerbaca?: boolean;
+  /** Tanggal sidang paling awal yang beragenda laporan hasil mediasi ("" = tidak ada). */
+  sidangLaporanMediasi?: string;
+  sidangLaporanMediasiTerbaca?: boolean;
+  sidangIkrarTalak?: boolean;
 };
 
 /** Tahapan yang dikenali, dari yang paling khas ke yang paling umum. */
@@ -74,11 +111,53 @@ export function agendaSetujuan(a: string, b: string): boolean {
 
 export type KeadaanCourtCalendar = { sinkron: boolean; sebab: string };
 
-/** null = bukan perkara e-Litigasi / data tidak terbaca - tanpa penanda. */
+const iso = (x: unknown) => {
+  const t = String(x ?? "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : "";
+};
+
+/**
+ * Jangkar laporan hasil mediasi SEBELUM tanggal sidang ini ("" = belum ada) -
+ * syarat (b) di atas. Yang paling awal dipakai.
+ */
+export function jangkarLaporanMediasi(baris: BarisCourtCalendar): string {
+  const tanggal = iso(baris.tanggalSidang);
+  if (!tanggal) return "";
+  const calon: string[] = [];
+  const m = baris.mediasi;
+  if (baris.mediasiTerbaca === true && m && String(m.hasil ?? "").trim()) {
+    calon.push(iso(m.laporan) || iso(m.keputusan));
+  }
+  if (baris.sidangLaporanMediasiTerbaca === true) calon.push(iso(baris.sidangLaporanMediasi));
+  const sah = calon.filter((t) => t && t < tanggal).sort();
+  return sah[0] ?? "";
+}
+
+/**
+ * Court Calendar sidang ini boleh dinilai? Lihat "KAPAN COURT CALENDAR BOLEH
+ * DIPERIKSA" di atas. false = tanpa penanda, tidak masuk kotak merah.
+ */
+export function courtCalendarDapatDiperiksa(baris: BarisCourtCalendar): boolean {
+  const tanggal = iso(baris.tanggalSidang);
+  if (!tanggal) return false;
+  // (a) pernah hadir lengkap sebelum sidang ini.
+  if (baris.hadirLengkapTerbaca !== true) return false;
+  const hadir = iso(baris.hadirLengkapPertama);
+  if (!hadir || hadir >= tanggal) return false;
+  // (c) sidang mediasi / laporan mediasi / ikrar tidak dinilai.
+  const tahap = tahapAgenda(baris.agenda);
+  if (tahap.has("mediasi") || tahap.has("laporan-mediasi") || tahap.has("ikrar")) return false;
+  if (baris.sidangIkrarTalak === true) return false;
+  // (b) sesudah laporan hasil mediasi.
+  return jangkarLaporanMediasi(baris) !== "";
+}
+
+/** null = bukan perkara e-Litigasi / belum waktunya diperiksa / data tidak terbaca - tanpa penanda. */
 export function keadaanCourtCalendar(baris: BarisCourtCalendar): KeadaanCourtCalendar | null {
   if (!baris.lewatEcourt) return null;
   if (!(Number(baris.urutanSidang) > 1)) return null;
   if (baris.courtCalendarTerbaca !== true) return null;
+  if (!courtCalendarDapatDiperiksa(baris)) return null;
   const tanggal = String(baris.tanggalSidang ?? "").slice(0, 10);
   const daftar = Array.isArray(baris.courtCalendar) ? baris.courtCalendar : [];
   if (daftar.length === 0) {

@@ -17,7 +17,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { agendaLaporanMediasi, penandaHasilMediasi, penandaMediator, penandaPernahMediasi } from "@/lib/penanda-mediasi";
 import { CONTOH_TAMPILAN, DuaKeadaan, InfoContohSaklar } from "@/components/portal/contoh-tampilan";
 import { LencanaCourtCalendarSinkron, PenandaMediasiAgenda } from "@/components/portal/aleta-ecourt-sidang";
-import { agendaSetujuan, courtCalendarTidakSinkron, keadaanCourtCalendar, tahapAgenda } from "@/lib/court-calendar-sinkron";
+import {
+  agendaSetujuan,
+  courtCalendarDapatDiperiksa,
+  courtCalendarTidakSinkron,
+  jangkarLaporanMediasi,
+  keadaanCourtCalendar,
+  tahapAgenda,
+} from "@/lib/court-calendar-sinkron";
 import { pilihanSesudahBawaan } from "@/lib/tampilan-bawaan";
 import { bersihkanPilihan, KUNCI_BAWAAN } from "@/server/modules/aleta-ecourt/tampilan-jadwal-bawaan";
 
@@ -216,6 +223,14 @@ describe("butir 21: Court Calendar tidak sinkron - perkara e-Litigasi", () => {
     urutanSidang: 4,
     courtCalendarTerbaca: true,
     courtCalendar: [{ tanggal: HARI, agenda: "Replik Penggugat" }],
+    // Syarat diperiksa (perbaikan 6 Okt sore): pernah hadir lengkap, sesudah
+    // laporan hasil mediasi.
+    hadirLengkapTerbaca: true,
+    hadirLengkapPertama: "2026-09-01",
+    mediasiTerbaca: true,
+    mediasi: { hasil: "T", keputusan: "2026-09-15", laporan: "2026-09-15" },
+    sidangLaporanMediasiTerbaca: true,
+    sidangLaporanMediasi: "",
     ...s,
   });
 
@@ -253,6 +268,111 @@ describe("butir 21: Court Calendar tidak sinkron - perkara e-Litigasi", () => {
     expect(layar).toContain("cocok: (x) => courtCalendarTidakSinkron(x),");
     expect(layar).toContain("<LencanaCourtCalendarSinkron baris={baris} />");
     expect(SAKLAR_TAMPILAN.find((x) => x.kunci === "cc-tidak-sinkron")?.wajib).toBe(true);
+  });
+});
+
+// ============================================================================
+// Perbaikan 6 Okt sore: Court Calendar hanya diperiksa sesudah kedua belah
+// pihak pernah hadir DAN sesudah laporan hasil mediasi. Kasusnya disalin dari
+// data server 6 Okt 2026 (9 perkara menyala merah, seluruhnya keliru) dan
+// Jul-Agu 2026 (yang memang tidak sinkron dan HARUS tetap menyala).
+// ============================================================================
+
+describe("Court Calendar diperiksa hanya sesudah hadir lengkap + laporan hasil mediasi", () => {
+  type Kasus = Record<string, unknown>;
+  const dasar = (s: Kasus) => ({
+    tanggalSidang: HARI,
+    lewatEcourt: true,
+    courtCalendarTerbaca: true,
+    hadirLengkapTerbaca: true,
+    mediasiTerbaca: true,
+    sidangLaporanMediasiTerbaca: true,
+    hadirLengkapPertama: "",
+    mediasi: null,
+    sidangLaporanMediasi: "",
+    courtCalendar: [],
+    ...s,
+  });
+
+  // Sembilan yang menyala di server 6 Okt 2026 dengan aturan lama.
+  const sembilan: Array<[string, Kasus]> = [
+    ["462 ikrar sesudah putus verstek", { urutanSidang: 3, agenda: "SIDANG IKRAR TALAK", courtCalendar: [{ tanggal: "2026-08-11", agenda: "Sidang Pertama" }] }],
+    ["481 Tergugat tidak pernah hadir", { urutanSidang: 3, agenda: "Panggil Tergugat" }],
+    ["532 tidak pernah hadir lengkap", { urutanSidang: 3, agenda: "Pembuktian", courtCalendar: [{ tanggal: "2026-09-22", agenda: "Pemeriksaan Pokok Perkara" }] }],
+    ["226 Pdt.P tanpa mediasi", { urutanSidang: 2, agenda: "Pembuktian", hadirLengkapPertama: "2026-09-29" }],
+    ["225 Pdt.P tanpa mediasi", { urutanSidang: 3, agenda: "musyawarah majelis", hadirLengkapPertama: "2026-09-28" }],
+    ["549 Panggil Tergugat, putus verstek", { urutanSidang: 2, agenda: "Panggil Tergugat" }],
+    [
+      "553 sidang Mediasi yang hari itu juga dilaporkan",
+      {
+        urutanSidang: 2,
+        agenda: "Mediasi",
+        hadirLengkapPertama: "2026-09-22",
+        mediasi: { hasil: "S", keputusan: HARI, laporan: HARI },
+        courtCalendar: [{ tanggal: "2026-10-08", agenda: "Jawaban Tergugat" }],
+      },
+    ],
+    ["555 Tergugat tidak hadir", { urutanSidang: 2, agenda: "Panggil Tergugat" }],
+    ["561 Proses Mediasi, dicabut", { urutanSidang: 2, agenda: "Proses Mediasi", hadirLengkapPertama: "2026-09-29", mediasi: { hasil: "Y2", keputusan: HARI, laporan: HARI } }],
+  ];
+
+  it.each(sembilan)("tidak menyala: %s", (_n, s) => {
+    const baris = dasar(s);
+    expect(courtCalendarTidakSinkron(baris)).toBe(false);
+    expect(keadaanCourtCalendar(baris)).toBeNull();
+    expect(courtCalendarDapatDiperiksa(baris)).toBe(false);
+  });
+
+  it("yang memang tidak sinkron sesudah laporan mediasi TETAP menyala (231, 350, 324 Jul-Agu 2026)", () => {
+    // 231: CC berakhir di Pembuktian 23 Jun; sidang 9 Jul tidak ada di CC. Jangkar dari sidang "mendengarkan laporan mediasi".
+    const b231 = dasar({
+      tanggalSidang: "2026-07-09", urutanSidang: 8, agenda: "musyawarah majelis, baca penetapan",
+      hadirLengkapPertama: "2026-05-12", mediasi: { hasil: "S", keputusan: "2026-05-21", laporan: "2026-05-21" },
+      sidangLaporanMediasi: "2026-06-02",
+      courtCalendar: [{ tanggal: "2026-06-05", agenda: "Jawaban Tergugat" }, { tanggal: "2026-06-23", agenda: "Pembuktian" }],
+    });
+    expect(jangkarLaporanMediasi(b231)).toBe("2026-05-21");
+    expect(keadaanCourtCalendar(b231)?.sebab).toContain("Tidak ada rencana");
+    // 324: tujuan berbeda (Pembuktian vs kesimpulan).
+    const b324 = dasar({
+      tanggalSidang: "2026-08-24", urutanSidang: 9, agenda: "Pembuktian Termohon",
+      hadirLengkapPertama: "2026-07-06", mediasi: { hasil: "S", keputusan: "2026-07-15", laporan: "2026-07-15" },
+      courtCalendar: [{ tanggal: "2026-08-24", agenda: "kesimpulan" }],
+    });
+    expect(courtCalendarTidakSinkron(b324)).toBe(true);
+  });
+
+  it("jangkar dari sidang laporan hasil mediasi saja (laporan mediator belum tercatat) juga cukup", () => {
+    const b = dasar({ urutanSidang: 4, agenda: "Replik", hadirLengkapPertama: "2026-09-01", sidangLaporanMediasi: "2026-09-29" });
+    expect(courtCalendarDapatDiperiksa(b)).toBe(true);
+    expect(keadaanCourtCalendar(b)?.sebab).toContain("belum dibuat");
+    // Sidang laporannya HARI INI belum ditunda ke sidang lain - belum diperiksa.
+    expect(courtCalendarDapatDiperiksa({ ...b, sidangLaporanMediasi: HARI })).toBe(false);
+  });
+
+  it("laporan mediator memakai tgl_laporan_mediator, cadangannya keputusan_mediasi; hasil kosong = mediasi berjalan", () => {
+    expect(jangkarLaporanMediasi(dasar({ mediasi: { hasil: "T", keputusan: "2026-09-01", laporan: "2026-09-10" } }))).toBe("2026-09-10");
+    expect(jangkarLaporanMediasi(dasar({ mediasi: { hasil: "T", keputusan: "2026-09-01" } }))).toBe("2026-09-01");
+    expect(jangkarLaporanMediasi(dasar({ mediasi: { hasil: "", keputusan: "2026-09-01" } }))).toBe("");
+  });
+
+  it("hadir lengkap harus SEBELUM sidang ini, dan data yang tidak terbaca = diam", () => {
+    const ok = dasar({ urutanSidang: 4, agenda: "Replik", hadirLengkapPertama: "2026-09-01", mediasi: { hasil: "T", keputusan: "2026-09-15" } });
+    expect(courtCalendarTidakSinkron(ok)).toBe(true);
+    expect(courtCalendarTidakSinkron({ ...ok, hadirLengkapPertama: HARI })).toBe(false);
+    expect(courtCalendarTidakSinkron({ ...ok, hadirLengkapTerbaca: false })).toBe(false);
+    expect(courtCalendarTidakSinkron({ ...ok, mediasiTerbaca: false })).toBe(false);
+    // Bot lama yang tidak mengirim hadirLengkapTerbaca - diam.
+    const { hadirLengkapTerbaca: _x, ...botLama } = ok;
+    expect(courtCalendarTidakSinkron(botLama)).toBe(false);
+  });
+
+  it("bot mengirim tanggal laporan mediator dan sidang laporan hasil mediasi; layar membawa tipenya", () => {
+    const bot = readFileSync(path.resolve(process.cwd(), "../aleta_bot/services/sippJadwalSidangService.js"), "utf8");
+    expect(bot).toContain('${adaLaporan ? "m.tgl_laporan_mediator" : "NULL"} AS laporan');
+    expect(bot).toContain('sidangLaporanMediasi: petaSidangLaporanMediasi[String(row.perkaraId)] || "",');
+    expect(bot).toContain('sidangLaporanMediasiTerbaca: !gagal.has("laporan-mediasi"),');
+    expect(layar).toContain("sidangLaporanMediasiTerbaca?: boolean;");
   });
 });
 

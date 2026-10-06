@@ -279,6 +279,8 @@ type SidangBaris = {
   /** Butir 21 (6 Okt 2026): rencana Court Calendar perkara ini. Lihat lib/court-calendar-sinkron. */
   courtCalendar?: RencanaCourtCalendar[];
   courtCalendarTerbaca?: boolean;
+  sidangLaporanMediasi?: string;
+  sidangLaporanMediasiTerbaca?: boolean;
   hadirLengkapPertama?: string;
   hadirLengkapTerbaca?: boolean;
   tanggalSidangBerikut: string;
@@ -990,7 +992,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     nada: "bahaya",
     kelompok: "sidang",
     judul:
-      "Perkara e-Litigasi (sesudah sidang pertama) yang Court Calendar-nya belum dibuat, tidak memuat tanggal sidang ini, atau tujuan agendanya berbeda. Kalimatnya tidak harus sama - yang dibandingkan tahapannya (jawaban, replik, pembuktian, putusan, ...).",
+      "Perkara e-Litigasi yang kedua belah pihaknya pernah hadir dan sudah melewati laporan hasil mediasi, tetapi Court Calendar-nya belum dibuat, tidak memuat tanggal sidang ini, atau tujuan agendanya berbeda. Kalimatnya tidak harus sama - yang dibandingkan tahapannya (jawaban, replik, pembuktian, putusan, ...).",
     cocok: (x) => courtCalendarTidakSinkron(x),
   },
   {

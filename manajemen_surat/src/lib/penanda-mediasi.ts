@@ -27,6 +27,8 @@ export type MediasiPerkara = {
   dimulai: string;
   hasil: string;
   keputusan: string;
+  /** tgl_laporan_mediator (6 Okt 2026); tidak terkirim oleh bot lama. */
+  laporan?: string;
   mediator: string;
 };
 

@@ -240,6 +240,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     petaMediasi,
     petaHadirLengkap,
     petaCourtCalendar,
+    petaSidangLaporanMediasi,
   ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
@@ -307,6 +308,10 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     // calendar tidak sinkron" pada perkara e-Litigasi. Gagal-terbuka dan
     // dicatat: layar diam, bukan menuduh tidak sinkron.
     aman(() => courtCalendarBanyakPerkara(idPerkara), "court-calendar"),
+    // Sidang beragenda laporan hasil mediasi (paling awal) tiap perkara -
+    // Court Calendar baru dibuat sesudah sidang itu ditunda, jadi penanda
+    // tidak sinkron hanya menilai sidang SESUDAHNYA (perbaikan 6 Okt 2026).
+    aman(() => sidangLaporanMediasiBanyakPerkara(idPerkara), "laporan-mediasi"),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -392,6 +397,10 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // ([] = belum dibuat). Terbaca false = kuerinya gagal.
       courtCalendar: petaCourtCalendar[String(row.perkaraId)] || [],
       courtCalendarTerbaca: !gagal.has("court-calendar"),
+      // Tanggal sidang PALING AWAL perkara ini yang beragenda laporan hasil
+      // mediasi ("" = tidak ada). Lihat sidangLaporanMediasiBanyakPerkara.
+      sidangLaporanMediasi: petaSidangLaporanMediasi[String(row.perkaraId)] || "",
+      sidangLaporanMediasiTerbaca: !gagal.has("laporan-mediasi"),
       urutanSidang: Number(row.urutanSidang) || 0,
       dihadiriOleh: row.dihadiriOleh === null || row.dihadiriOleh === undefined ? null : Number(row.dihadiriOleh),
       adaBas: Boolean(cleanText(row.edocBas)),
@@ -1014,10 +1023,17 @@ async function mediasiBanyakPerkara(daftarPerkaraId = []) {
   if (!(await sippSkemaService.tabelAda("perkara_mediasi"))) return {};
   const dipakai = id.slice(0, 500);
   const isian = dipakai.map(() => "?").join(", ");
+  // Tanggal laporan mediator kepada majelis (6 Okt 2026, penanda Court
+  // Calendar). Diukur di server: terisi pada 698 dari 698 mediasi berhasil-
+  // bertanggal, 230 di antaranya LEBIH LAMBAT dari keputusan_mediasi. Kolomnya
+  // ditanyakan dulu - pemasangan SIPP lama yang tidak memilikinya tetap
+  // mendapat peta mediasi, hanya tanpa tanggal laporan.
+  const adaLaporan = await sippSkemaService.kolomAda("perkara_mediasi", "tgl_laporan_mediator").catch(() => false);
   const baris = await runQuery(
     `SELECT m.perkara_id AS perkaraId, m.mediasi_id AS mediasiId,
             m.penetapan_penunjukan_mediator AS ditunjuk, m.dimulai_mediasi AS dimulai,
-            m.hasil_mediasi AS hasil, m.keputusan_mediasi AS keputusan, m.mediator_text AS mediator
+            m.hasil_mediasi AS hasil, m.keputusan_mediasi AS keputusan, m.mediator_text AS mediator,
+            ${adaLaporan ? "m.tgl_laporan_mediator" : "NULL"} AS laporan
        FROM perkara_mediasi m
       WHERE m.perkara_id IN (${isian})
       ORDER BY m.perkara_id, m.mediasi_id`,
@@ -1031,8 +1047,45 @@ async function mediasiBanyakPerkara(daftarPerkaraId = []) {
       dimulai: isoTanggal(b.dimulai),
       hasil: cleanText(b.hasil).toUpperCase(),
       keputusan: isoTanggal(b.keputusan),
+      laporan: isoTanggal(b.laporan),
       mediator: cleanText(b.mediator),
     };
+  }
+  return hasil;
+}
+
+/**
+ * Agenda "laporan hasil mediasi" - polanya SAMA dengan tahapan
+ * "laporan-mediasi" di portal (lib/court-calendar-sinkron.ts). Ditulis sebagai
+ * regex POSIX MySQL; [[:space:]] karena MariaDB 5.5 tidak mengenal \s.
+ */
+const POLA_AGENDA_LAPORAN_MEDIASI = "(laporan|hasil)[[:space:]]+(hasil[[:space:]]+)?medias";
+
+/**
+ * Tanggal sidang PALING AWAL tiap perkara yang beragenda laporan hasil
+ * mediasi ("Mendengarkan Hasil Mediasi", "mendengarkan laporan mediasi", ...)
+ * - perbaikan 6 Okt 2026. Court Calendar e-Litigasi dibuat sesudah sidang itu
+ * ditunda; penanda "CC tidak sinkron" menilai sidang sesudahnya saja. Diukur
+ * di server 6 Okt 2026: 215 perkara memiliki sidang beragenda itu. Satu kueri IN.
+ *
+ * @returns {Promise<Record<string, string>>} perkaraId -> "YYYY-MM-DD"
+ */
+async function sidangLaporanMediasiBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+  const baris = await runQuery(
+    `SELECT perkara_id AS perkaraId, MIN(tanggal_sidang) AS pertama
+       FROM perkara_jadwal_sidang
+      WHERE perkara_id IN (${isian}) AND LOWER(agenda) REGEXP ?
+      GROUP BY perkara_id`,
+    [...dipakai, POLA_AGENDA_LAPORAN_MEDIASI]
+  );
+  const hasil = {};
+  for (const b of Array.isArray(baris) ? baris : []) {
+    const t = isoTanggal(b.pertama);
+    if (t) hasil[String(b.perkaraId)] = t;
   }
   return hasil;
 }
@@ -3260,6 +3313,8 @@ module.exports = {
   mediasiBanyakPerkara,
   hadirLengkapPertamaBanyakPerkara,
   courtCalendarBanyakPerkara,
+  sidangLaporanMediasiBanyakPerkara,
+  POLA_AGENDA_LAPORAN_MEDIASI,
   barisSidangIkrar,
   AMBANG_DURASI_HARI,
   BATAS_POTONG_MEDIASI_HARI,
