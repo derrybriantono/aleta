@@ -74,6 +74,7 @@ import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
 import { CourtCalendarSidang } from "@/components/portal/court-calendar-sidang";
 import { TombolPenetapanKembali } from "@/components/portal/penetapan-kembali";
+import { TombolKasirJurnal } from "@/components/portal/kasir-jurnal";
 import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
@@ -6302,6 +6303,7 @@ export function AletaEcourtSidang({
                 {sinkronSibuk ? "Memeriksa…" : "Daftarkan ke antrian"}
               </Button>
               ) : null}
+              <TombolKasirJurnal daftar={sidang} />
 
             </div>
 

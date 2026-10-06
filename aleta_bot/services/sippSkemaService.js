@@ -226,6 +226,12 @@ const TABEL = [
   // evidenSkpService untuk kolom Sidang Keliling eviden SKP - tanpa didaftarkan
   // di sini, penandanya diam-diam dianggap tidak ada.
   "perkara_atribut",
+  // Kasir jurnal dari Jadwal Sidang (6 Okt 2026, kasirJurnalService): juru
+  // sita baris biaya panggilan/pemberitahuan (kategori 4/5/6), dan jenis
+  // biaya yang ditawarkan blangko Tambah jurnal per alur perkara beserta
+  // jumlah bawaannya (get_jenis_biaya_all SIPP).
+  "perkara_biaya_jurusita",
+  "biaya_perkara",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */

@@ -30,6 +30,10 @@
  *   POST /court-calendar          tambah/sunting Court Calendar ke SIPP atas
  *                                 akun SIPP petugas (kering bawaan) - 6 Okt
  *                                 2026, butir 3; courtCalendarTulisService
+ *   GET  /kasir?perkaraId         jurnal keuangan + usulan Kasir (hanya SELECT)
+ *   GET  /kasir/cari?nomor        cari perkara menurut nomor (hanya SELECT)
+ *   POST /kasir                   tambah baris jurnal ke SIPP atas akun SIPP
+ *                                 petugas (kering bawaan) - kasirJurnalService
  */
 
 const crypto = require("crypto");
@@ -415,6 +419,109 @@ router.post("/court-calendar", wajibToken, async (req, res) => {
       });
     }
 
+    res.status(hasil.ok || kering ? 200 : 409).json({
+      ...hasil,
+      perkara: rencana.perkara,
+      akunSipp: rencana.akunSipp,
+      ditolak: rencana.ditolak,
+      dilewati: rencana.dilewati,
+    });
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/**
+ * ============================================================================
+ * KASIR - JURNAL KEUANGAN PERKARA (6 Okt 2026, kasirJurnalService)
+ * ============================================================================
+ *
+ *   GET  /kasir?perkaraId   jurnal SIPP perkara + usulan baris yang BELUM ada
+ *                           (hanya SELECT)
+ *   GET  /kasir/cari?nomor  perkara menurut nomornya (hanya SELECT)
+ *   POST /kasir             tambah baris jurnal ke SIPP - bentuk blangko
+ *                           "Tambah" jurnal SIPP + sys_audittrail, atas akun
+ *                           SIPP petugas. Kering kecuali kering:false tegas.
+ */
+router.get("/kasir/cari", wajibToken, async (req, res) => {
+  try {
+    const kasirJurnalService = require("../services/kasirJurnalService");
+    res.json(await kasirJurnalService.cariPerkara(req.query.nomor));
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.get("/kasir", wajibToken, async (req, res) => {
+  try {
+    const kasirJurnalService = require("../services/kasirJurnalService");
+    const hasil = await kasirJurnalService.usulanPerkara(req.query.perkaraId);
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post("/kasir", wajibToken, async (req, res) => {
+  let jejak = null;
+  try {
+    jejak = require("../services/jejakAletaService");
+  } catch {
+    jejak = null;
+  }
+  try {
+    const kasirJurnalService = require("../services/kasirJurnalService");
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+    const kering = badan.kering !== false;
+    const ip = alamatAudit(req);
+    const rencana = await kasirJurnalService.susunRencana({
+      perkaraId: badan.perkaraId,
+      baris: badan.baris,
+      akunSipp: badan.akunSipp,
+      operator,
+      ip,
+    });
+    if (!rencana.ok) {
+      if (jejak) {
+        void jejak.catat({
+          aksi: "tulis",
+          jenis: "kasir-jurnal",
+          perkaraId: badan.perkaraId,
+          akunSipp: String(rencana.akunSipp || badan.akunSipp || ""),
+          operator,
+          ip,
+          berhasil: false,
+          kering,
+          alasan: String(rencana.alasan || "ditolak"),
+          langkah: [],
+        });
+      }
+      res.status(400).json(rencana);
+      return;
+    }
+
+    const hasil = await kasirJurnalService.jalankanRencana(rencana, { kering });
+    if (jejak) {
+      void jejak.catat({
+        aksi: "tulis",
+        jenis: "kasir-jurnal",
+        perkaraId: rencana.perkara.perkaraId,
+        nomorPerkara: rencana.perkara.nomorPerkara,
+        akunSipp: rencana.akunSipp.username,
+        namaPejabat: rencana.akunSipp.namaLengkap,
+        operator,
+        ip,
+        berhasil: hasil.ok === true,
+        kering,
+        alasan: hasil.ok ? "" : String(hasil.alasan || "sebagian tidak tersimpan"),
+        langkah: kasirJurnalService.langkahDatar(rencana),
+      });
+    }
     res.status(hasil.ok || kering ? 200 : 409).json({
       ...hasil,
       perkara: rencana.perkara,
