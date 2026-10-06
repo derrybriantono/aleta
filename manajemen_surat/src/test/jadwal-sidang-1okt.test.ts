@@ -747,8 +747,10 @@ describe("rute portal sidang/selesai dan sidang/mediator", () => {
     // Yang dijaga: SETIAP rute bertoken, bukan jumlahnya.
     // 6 Okt 2026 (butir 3): GET /court-calendar, GET /court-calendar/jumlah,
     // POST /court-calendar - ke-10 s.d. ke-12.
+    // 6 Okt 2026 (Kasir jurnal): GET /kasir, GET /kasir/cari, POST /kasir -
+    // ke-13 s.d. ke-15.
     const jumlahRute = rute.match(/router\.(get|post)\(/g)?.length ?? 0;
-    expect(jumlahRute).toBe(12);
+    expect(jumlahRute).toBe(15);
     expect(rute.match(/wajibToken, async/g)?.length).toBe(jumlahRute);
     expect(rute).toContain("kering: badan.kering !== false");
   });

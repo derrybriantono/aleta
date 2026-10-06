@@ -2884,6 +2884,8 @@ module.exports = {
   susunRencanaHapus,
   jalankanRencana,
   waktuBongkar,
+  // Dipakai Kasir jurnal (kasirJurnalService): nama lengkap SIPP -> username.
+  akunPetugasMasuk,
   // Diekspor untuk diuji satuan.
   waktuLangkah,
   rangkaianDetik,
