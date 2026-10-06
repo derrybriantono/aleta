@@ -7468,6 +7468,20 @@ html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-portal-
   text-transform: uppercase;
 }
 .aleta-t6-kelompok-deret { display: flex; flex-wrap: wrap; gap: 3px 10px; }
+/* Butir 12 (6 Okt 2026): modus "Hanya sebagian" - sesuai posita di atas, lainnya terlipat */
+.aleta-t6-alasan-posita-kepala {
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  color: var(--aleta-merek);
+  margin: 2px 0;
+}
+.aleta-t6-alasan-lain { margin-top: 4px; border-top: 1px dashed var(--aleta-garis, rgba(127, 127, 127, 0.4)); padding-top: 3px; }
+.aleta-t6-alasan-lain > summary {
+  cursor: pointer;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+}
 .aleta-t6-tanda-g {
   display: inline-grid;
   place-items: center;

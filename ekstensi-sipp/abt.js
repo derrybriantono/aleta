@@ -11205,10 +11205,148 @@ function t6KelompokkanAlasan(kotak, posita) {
   }
 }
 
+// ─── Butir 12 & 13 (6 Okt 2026): modus "Hanya sebagian" dan urutan modus ───
+
+/** Urutan label asli tiap kotak centang - dipakai saat dikelompokkan ulang. */
+const t6UrutanLabelAlasan = new WeakMap();
+
+/**
+ * Butir 12: kotak centang alasan modus "Hanya sebagian alasan yang ia
+ * ketahui". Yang tampil langsung hanya alasan yang SESUAI POSITA - sumber yang
+ * sama dengan "Alasan yang dipakai: ..." (bot alasanDariPosita, lewat sumber
+ * 'alasan-posita'); alasan lain di bawahnya dalam bagian terlipat "Lainnya (di
+ * luar posita)". Kotak centangnya tetap yang SAMA (dipindah, tidak disalin),
+ * jadi penyusun lama membaca pilihannya lewat rujukan yang sudah dipegangnya.
+ * Posita tidak terbaca (atau tidak satu pun alasan cocok) = semua tampil,
+ * berkelompok seperti sebelumnya.
+ *
+ * @param {Set<string>|null} sesuai kunci alasan yang terbaca dari posita
+ */
+function t6KelompokkanAlasanSaksi(kotak, posita, sesuai) {
+  const label = Array.from(kotak.querySelectorAll("label.aleta-sdg-centang"));
+  if (label.length < 4) return;
+  if (!t6UrutanLabelAlasan.has(kotak)) t6UrutanLabelAlasan.set(kotak, label.slice());
+  const urut = t6UrutanLabelAlasan.get(kotak).filter((l) => kotak.contains(l));
+  const nilai = (l) => {
+    const c = l.querySelector("input[type=checkbox]");
+    return c ? String(c.value) : "";
+  };
+  const pakaiPosita = Boolean(sesuai && sesuai.size && urut.some((l) => sesuai.has(nilai(l))));
+  const keadaan = pakaiPosita ? `posita:${[...sesuai].sort().join("|")}` : "ya";
+  if (kotak.getAttribute("data-t6-kelompok") === keadaan) return;
+  // Susunan sebelumnya dibongkar; label kembali ke kotaknya dalam urutan asli.
+  for (const lama of Array.from(kotak.children).filter((c) => c.classList.contains("aleta-t6"))) {
+    for (const l of Array.from(lama.querySelectorAll("label.aleta-sdg-centang"))) kotak.appendChild(l);
+    lama.remove();
+  }
+  for (const l of urut) kotak.appendChild(l);
+  kotak.setAttribute("data-t6-kelompok", keadaan);
+
+  const blokKelompok = (daftar) => {
+    const hasil = [];
+    const kelompok = new Map();
+    for (const [nama] of T6_KELOMPOK_ALASAN) kelompok.set(nama, []);
+    kelompok.set("Lainnya", []);
+    for (const l of daftar) {
+      const teks = String(l.textContent || "");
+      const cocok = T6_KELOMPOK_ALASAN.find(([, pola]) => pola.test(teks));
+      kelompok.get(cocok ? cocok[0] : "Lainnya").push(l);
+      if (!l.querySelector(".aleta-t6-tanda-g") && t6DidalilkanPosita(teks, posita)) {
+        const g = t6El("span", "aleta-t6-tanda-g", "G");
+        g.title = "Kata kuncinya terbaca di posita (5125) - perkiraan dari kata, periksa dalilnya sendiri.";
+        l.appendChild(g);
+      }
+    }
+    for (const [nama, isi] of kelompok) {
+      if (!isi.length) continue;
+      const blok = t6El("div", "aleta-t6-kelompok-alasan");
+      blok.appendChild(t6El("div", "aleta-t6-kelompok-judul", nama));
+      const deret = t6El("div", "aleta-t6-kelompok-deret");
+      for (const l of isi) deret.appendChild(l);
+      blok.appendChild(deret);
+      hasil.push(blok);
+    }
+    return hasil;
+  };
+
+  if (!pakaiPosita) {
+    for (const blok of blokKelompok(urut)) kotak.appendChild(blok);
+    return;
+  }
+  const dalam = urut.filter((l) => sesuai.has(nilai(l)));
+  const luar = urut.filter((l) => !sesuai.has(nilai(l)));
+  const kepala = t6El("div", "aleta-t6-alasan-posita-kepala", `Sesuai posita (${dalam.length})`);
+  kepala.title = "Alasan yang terbaca dari posita perkara ini - sumber yang sama dengan \"Alasan yang dipakai\" saat keterangan disusun.";
+  kotak.appendChild(kepala);
+  for (const blok of blokKelompok(dalam)) kotak.appendChild(blok);
+  if (luar.length) {
+    const lain = document.createElement("details");
+    lain.className = "aleta-t6 aleta-t6-alasan-lain";
+    // Yang sudah dicentang tidak boleh tersembunyi di balik lipatan.
+    lain.open = luar.some((l) => {
+      const c = l.querySelector("input[type=checkbox]");
+      return c && c.checked;
+    });
+    lain.appendChild(t6El("summary", "", `Lainnya (di luar posita) (${luar.length})`));
+    for (const blok of blokKelompok(luar)) lain.appendChild(blok);
+    kotak.appendChild(lain);
+  }
+}
+
+/**
+ * Alasan dari posita perkara ini - diminta SEKALI per panel (sumber
+ * 'alasan-posita'). Selama belum datang, atau gagal (portal/bot lama, mode
+ * coba), kotak centang tampil seperti sebelumnya: semua alasan.
+ */
+function t6MuatAlasanPosita(k) {
+  if (k.alasanPosita) return;
+  k.alasanPosita = { keadaan: "memuat", sesuai: null };
+  void (async () => {
+    try {
+      const isi = await mintaUsulan({
+        nomorPerkara: nomorPerkaraAbt(),
+        sumber: "alasan-posita",
+        posita: t6TeksVariabel(barisVariabel(), VAR_POSITA),
+      });
+      const ap = isi && isi.alasanPosita;
+      k.alasanPosita =
+        ap && ap.ok && Array.isArray(ap.alasan)
+          ? { keadaan: "siap", sesuai: new Set(ap.alasan.map(String)), asal: String(ap.asalPosita || "") }
+          : { keadaan: "gagal", sesuai: null };
+    } catch {
+      k.alasanPosita = { keadaan: "gagal", sesuai: null };
+    }
+    if (t6Keadaan === k) t6HiasSdg(k);
+  })();
+}
+
+/**
+ * Butir 13: "Tidak tahu pertengkarannya, hanya tahu sudah pisah" dipindah
+ * TEPAT SESUDAH "Tahu berselisih & berpisah, tidak tahu sebabnya" - keduanya
+ * saksi yang tahu pisahnya, dan berdampingan supaya bedanya terbaca sekilas.
+ * Hanya urutan opsinya yang berubah; nilai dan pilihan yang sudah dibuat tetap.
+ */
+function t6UrutkanModusSdg(form) {
+  for (const pilih of Array.from(form.querySelectorAll(".aleta-sdg-modus select"))) {
+    const tahuPisah = pilih.querySelector('option[value="tahu-pisah"]');
+    const tidakTahu = pilih.querySelector('option[value="tidak-tahu"]');
+    if (!tahuPisah || !tidakTahu || tidakTahu.nextElementSibling === tahuPisah) continue;
+    const nilaiSebelum = pilih.value;
+    pilih.insertBefore(tahuPisah, tidakTahu.nextElementSibling);
+    pilih.value = nilaiSebelum;
+  }
+}
+
 function t6HiasFormSdg(k, form) {
   if (t6Pakai(k, "abt-8")) {
     const posita = t6TeksVariabel(barisVariabel(), VAR_POSITA);
-    for (const kotak of Array.from(form.querySelectorAll(".aleta-sdg-alasan"))) t6KelompokkanAlasan(kotak, posita);
+    t6UrutkanModusSdg(form);
+    t6MuatAlasanPosita(k);
+    const sesuai = k.alasanPosita && k.alasanPosita.keadaan === "siap" ? k.alasanPosita.sesuai : null;
+    for (const kotak of Array.from(form.querySelectorAll(".aleta-sdg-alasan"))) {
+      if (kotak.classList.contains("aleta-sdg-alasan-saksi")) t6KelompokkanAlasanSaksi(kotak, posita, sesuai);
+      else t6KelompokkanAlasan(kotak, posita);
+    }
   }
   if (form.hasAttribute("data-t6-hias")) return;
   form.setAttribute("data-t6-hias", "ya");

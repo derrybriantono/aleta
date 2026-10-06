@@ -82,8 +82,12 @@ describe("butir 24 - lama dan sejak pisah dari peristiwa pisahnya", () => {
     expect(f.pisahSejak).toBe("bulan Mei 2024");
     expect(f.lamaPisah).toBe("2 tahun 5 bulan");
     expect(f.lamaPisahDihitung).toBe(true);
-    // Tanpa tanggal sidang: tidak ada acuan, tidak dikarang.
-    expect(fakta(posita).lamaPisah).toBe("");
+    // Diubah butir 14 (6 Okt 2026, permintaan pengguna "pisah rumah dari ...
+    // September 2025 berarti sudah 1 tahun 1 bulan"): tanpa tanggal sidang,
+    // acuannya HARI INI - tetap hitungan, bukan karangan.
+    const hariIni = layanan.faktaDariPosita(posita, TERGUGAT, PENGGUGAT, { hariIni: new Date(2026, 9, 5) });
+    expect(hariIni.lamaPisah).toBe("2 tahun 5 bulan");
+    expect(hariIni.lamaPisahDihitung).toBe(true);
   });
 
   it("hanya lamanya tertulis: tanggal pisah TIDAK dihitung mundur", () => {
@@ -305,7 +309,12 @@ describe("butir 24 - templat 04 ABT utuh (584/Pdt.G/2026 memakai templat ini)", 
     expect(hasil.belumTerisi).toEqual([]);
   });
 
-  it("posita yang tidak menyebut faktanya: jawaban tetap bertitik-titik, tidak dikarang", () => {
+  // Diubah butir 14 (6 Okt 2026): "jangan sampai kosong atau tidak dapat
+  // dibaca". Yang tidak tertulis tetap TIDAK dikarang - tidak ada tanggal,
+  // lama, atau pihak yang muncul - tetapi kalimatnya utuh: bagian yang tidak
+  // diketahui dirapikan, dan yang berupa salah satu dari dua menjadi PILIHAN
+  // yang wajib dipilih petugas. Semuanya tetap ditandai perlu diisi.
+  it("posita yang tidak menyebut faktanya: tidak dikarang, kalimat utuh, pilihan wajib, tetap perlu diisi", () => {
     const hasil = layanan.susunKeteranganSaksiSdg({
       templat: TEMPLAT_04,
       posita: "Bahwa Penggugat dan Tergugat adalah suami isteri yang sah;",
@@ -313,8 +322,13 @@ describe("butir 24 - templat 04 ABT utuh (584/Pdt.G/2026 memakai templat ini)", 
       lawan: PENGGUGAT,
       modus: { saksi1: { modus: "sama" }, saksi2: { modus: "sama" } },
     });
-    const jawab = Object.fromEntries(hasil.saksi1.map((b: { no: string; jawab: string }) => [b.no, b.jawab]));
-    for (const no of ["6", "10", "11", "12"]) expect(jawab[no]).toContain("...");
-    expect(jawab["14"]).toBe(layanan.TANDA_BELUM_TERISI);
+    const butir = Object.fromEntries(hasil.saksi[0].jawaban.map((b: { no: string }) => [b.no, b]));
+    for (const no of ["6", "10", "11", "12", "14"]) {
+      expect(butir[no].jawab, no).not.toMatch(/\.{3}|BELUM TERISI|\d{4}|\d+ (?:tahun|bulan)/);
+      expect(butir[no].perluDiisi, no).toBe(true);
+    }
+    expect(butir["11"].pilihan).toEqual(["Yang meninggalkan kediaman bersama adalah Penggugat;", "Yang meninggalkan kediaman bersama adalah Tergugat;"]);
+    expect(butir["14"].pilihan[1]).toMatch(/^Belum pernah ada upaya/);
+    expect(hasil.belumTerisi).toEqual([]);
   });
 });

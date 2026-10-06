@@ -197,7 +197,9 @@ export async function POST(request: NextRequest) {
       return ok({ available: false, message: "Nomor perkara tidak terbaca dari halaman ABT." });
     }
 
-    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain"] as const;
+    // "alasan-posita" (butir 12, 6 Okt 2026): alasan yang terbaca dari posita,
+    // untuk centang modus saksi "Hanya sebagian alasan" sebelum disusun.
+    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain", "alasan-posita"] as const;
     type Sumber = (typeof SUMBER_DIKENAL)[number] | "semua";
     const sumber: Sumber = (SUMBER_DIKENAL as readonly string[]).includes(sumberMinta)
       ? (sumberMinta as Sumber)
@@ -314,6 +316,7 @@ export async function POST(request: NextRequest) {
       saksiDitolak: hasil.data?.saksiDitolak ?? [],
       kabar,
       positaLain: hasil.data?.positaLain ?? null,
+      alasanPosita: hasil.data?.alasanPosita ?? null,
       available: true,
       message: "",
       // Diteruskan utuh, bukan disusun ulang medan demi medan. Rute massal
