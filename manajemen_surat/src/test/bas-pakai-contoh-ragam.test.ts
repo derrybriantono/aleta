@@ -123,6 +123,9 @@ describe("salinan portal = bot", () => {
         templat: TEMPLAT.map((b) => ({ no: b.no, tanya: b.tanya, jawab: b.jawab, jawabMentah: b.mentah })),
         alasan: [], posita: "", pelaku: "Tergugat", lawan: "Penggugat", nomorPerkara: no, kodeKumpulan: "A1a",
         saksi: [1, 2, 3, 4].map((ke) => ({ ke, pihak: "P", modus: "sama" })),
+        // Butir 14 (6 Okt 2026): contoh portal tidak punya perkara - perapian sisa
+        // titik-titik bot (rapikanSisaIsian) dimatikan; yang dibandingkan langkah ragamnya.
+        rapikanSisa: false,
       });
       for (const ke of [1, 2, 3, 4]) {
         const hp = contoh(no, ke);
@@ -391,6 +394,9 @@ describe("bentuk bersyarat: portal = bot", () => {
         templat: TEMPLAT.map((b) => ({ no: b.no, tanya: b.tanya, jawab: b.jawab, jawabMentah: b.mentah })),
         alasan: [], posita: "", pelaku: "Tergugat", lawan: "Penggugat", nomorPerkara: no, kodeKumpulan: "A1a",
         saksi: [1, 2, 3, 4].map((ke) => ({ ke, pihak: "P", modus: "sama" })),
+        // Butir 14 (6 Okt 2026): contoh portal tidak punya perkara - perapian sisa
+        // titik-titik bot (rapikanSisaIsian) dimatikan; yang dibandingkan langkah ragamnya.
+        rapikanSisa: false,
         // Bentuk yang dikirim ekstensi: idJenisPerkaraSipp + idAlurPerkaraSipp.
         jenisPerkara: "347",
         alur: "15",

@@ -3287,7 +3287,7 @@ export async function getGatewayAbtUsulan(muatan: {
   upayaDamai?: string;
   /** Keadaan mediasi bila diketahui ekstensi - butir 28. */
   mediasi?: { selesai: boolean; berhasil: boolean };
-  sumber?: "semua" | "sipp" | "saksi" | "itsbat" | "saksi-sdg" | "posita-lain";
+  sumber?: "semua" | "sipp" | "saksi" | "itsbat" | "saksi-sdg" | "posita-lain" | "alasan-posita";
   saksi1?: string;
   saksi2?: string;
   tanggalSidang?: string;
@@ -3344,6 +3344,11 @@ export async function getGatewayAbtUsulan(muatan: {
     saksiSdg: Record<string, unknown> | null;
     /** Usulan perkara lain dari posita (sumber 'posita-lain'). */
     positaLain?: Record<string, unknown> | null;
+    /**
+     * Alasan yang terbaca dari posita (sumber 'alasan-posita', butir 12):
+     * { ok, alasan: kunci ciri[], asalPosita: 'ekstensi'|'sipp'|'' }.
+     */
+    alasanPosita?: { ok: boolean; alasan: string[]; asalPosita: string } | null;
     /** Bot sungguh menerima tipeKeluaran; bot lama tidak mengirim ruas ini. */
     tipeKeluaranDiterima?: boolean;
     /** Entri pengaturan yang ditolak penyaring bot atau penyusunnya. */

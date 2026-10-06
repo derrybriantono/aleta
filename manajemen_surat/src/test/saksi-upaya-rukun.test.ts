@@ -25,7 +25,7 @@ import { describe, expect, it } from "vitest";
 const AKAR_BOT = path.resolve(__dirname, "../../../aleta_bot");
 const muat = createRequire(path.join(AKAR_BOT, "package.json"));
 
-type Butir = { no: string; tanya: string; jawab: string; perluDiisi?: boolean; belumTerisi?: boolean };
+type Butir = { no: string; tanya: string; jawab: string; perluDiisi?: boolean; belumTerisi?: boolean; pilihan?: string[] };
 type Hasil = {
   saksi: { jawaban: Butir[] }[];
   saksi1: Butir[];
@@ -125,14 +125,21 @@ describe("28. pertanyaan upaya rukun diisi dari data yang ada", () => {
 });
 
 describe("28. tidak pernah memulangkan kosong / '...' / '…' / '_' / variabel templat", () => {
-  it("tanpa sumber apa pun: TANDA BELUM TERISI yang jelas, perluDiisi & belumTerisi", () => {
+  // Diubah butir 14 (6 Okt 2026): pertanyaan UPAYA RUKUN tanpa sumber apa pun
+  // kini menjadi pilihan "sudah diupayakan, tidak berhasil" / "belum pernah
+  // ada upaya" yang WAJIB dipilih petugas (panel menahan simpan) - kalimat
+  // utuh, tidak ada yang dikarang, tetap perluDiisi. Tanda belum terisi
+  // tetap untuk pertanyaan lain (uji di bawah).
+  it("tanpa sumber apa pun: pilihan sudah/belum yang wajib dipilih, perluDiisi, tanpa titik-titik", () => {
     const h = susun("Ya, ...;");
     const b = j14(h);
-    expect(b.jawab).toBe(L().TANDA_BELUM_TERISI);
-    expect(b.jawab).not.toMatch(/\.{3}/);
+    expect(b.jawab).not.toMatch(/\.{3}|BELUM TERISI/);
+    expect(b.pilihan).toEqual([
+      "Penggugat dan Tergugat sudah pernah diupayakan untuk rukun kembali, namun tidak berhasil;",
+      "Belum pernah ada upaya untuk merukunkan Penggugat dan Tergugat;",
+    ]);
     expect(b.perluDiisi).toBe(true);
-    expect(b.belumTerisi).toBe(true);
-    expect(h.belumTerisi).toEqual([expect.objectContaining({ no: "14" })]);
+    expect(h.belumTerisi).toEqual([]);
     expect(h.tandaBelumTerisi).toBe(L().TANDA_BELUM_TERISI);
   });
 

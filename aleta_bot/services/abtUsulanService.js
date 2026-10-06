@@ -2839,6 +2839,8 @@ function awalKonflikPosita(butir) {
 function rapikanPenyebab(teks) {
   let t = String(teks || "")
     .replace(/^\s*(?:[a-z]|\d{1,2})[.)]\s+/i, "")
+    // "1 Tergugat berselingkuh ..." - nomor daftar tanpa titik (butir 14).
+    .replace(/^\s*\d{1,2}\s+(?=[A-Z])/, "")
     .replace(/^[\s\-–•:,]+/, "")
     .replace(/[\s.;,:]+$/, "")
     .replace(/\s+/g, " ")
@@ -2858,6 +2860,42 @@ const POLA_PEMBUKA_DAFTAR_SEBAB =
 const POLA_BUKAN_BUTIR_SEBAB =
   /^(?:puncak|atas\s|berdasarkan|sejak|pada\s|setelah|akibat|bahwa|keluarga|ikatan|dengan\s+(?:demikian|keadaan)|oleh\s+karena\s+itu|penggugat\s+(?:dan|dengan)\s+tergugat|pemohon\s+(?:dan|dengan)\s+termohon|perselisihan|pertengkaran|kehidupan|rumah\s+tangga|demikian|mengabulkan|primair|subsidair)/i;
 
+// "sebab-sebab terjadinya perselisihan ... yakni:", "adapun penyebabnya adalah
+// sebagai berikut:" - butir pendek yang hanya membuka daftar.
+const POLA_KEPALA_DAFTAR_SEBAB =
+  /^(?:adapun\s+)?(?:sebab|penyebab|alasan|faktor)[\w-]*\b[^:]{0,100}?(?:yakni|yaitu|adalah|antara\s+lain|sebagai\s+berikut|di\s*antaranya)?\s*:\s*$/i;
+
+/** Butir daftar penyebab sesudah butir ke-i: sampai 4 butir, kira-kira 300 huruf. */
+function butirDaftarSebab(butir, i) {
+  const daftar = [];
+  for (let j = i + 1; j < butir.length && daftar.length < 5; j++) {
+    // Butir 14: baris lanjutan (huruf kecil, tanpa nomor) milik butir di atasnya -
+    // posita yang disalin dari PDF memotong tiap butir daftar di tengah kalimat.
+    // Butir berawalan "Bahwa" juga tampak huruf kecil (kalimatPosita membuang
+    // "Bahwa"); baris lanjutan dibedakan: butir sebelumnya tidak berakhir
+    // titik, dan baris ini tidak bertanggal (cerita baru, bukan lanjutan).
+    if (
+      daftar.length &&
+      /^[a-z]/.test(butir[j]) &&
+      !/^[a-z][.)]\s/.test(butir[j]) &&
+      !/[.;]\s*$/.test(butir[j - 1]) &&
+      !waktuPosita(butir[j]).length
+    ) {
+      const sambung = `${daftar[daftar.length - 1]} ${rapikanPenyebab(butir[j])}`;
+      if (sambung.length > 220 || POLA_BUKAN_BUTIR_SEBAB.test(butir[j])) break;
+      daftar[daftar.length - 1] = sambung;
+      continue;
+    }
+    if (daftar.length >= 4) break;
+    const item = rapikanPenyebab(butir[j]);
+    if (!item || POLA_BUKAN_BUTIR_SEBAB.test(item) || item.length > 220 || waktuPosita(item).length) break;
+    // Jawaban saksi, bukan salinan posita: sampai kira-kira 300 huruf.
+    if (daftar.length && daftar.join(", ").length + item.length > 300) break;
+    daftar.push(item);
+  }
+  return daftar;
+}
+
 /**
  * Penyebab perselisihan menurut posita: sisa kalimat sesudah "disebabkan/
  * karena" pada kalimat perselisihan, atau butir daftar sesudahnya. Tanpa
@@ -2867,6 +2905,16 @@ const POLA_BUKAN_BUTIR_SEBAB =
 function penyebabPosita(butir) {
   for (let i = 0; i < butir.length; i++) {
     const b = butir[i];
+    // Butir 14: kepala daftar "sebab-sebab terjadinya perselisihan Penggugat
+    // dan Tergugat yakni:" - kata sebabnya mendahului kata perselisihannya,
+    // jadi pencarian "konflik lalu tanda sebab" di bawah tidak menemukannya.
+    if (POLA_KEPALA_DAFTAR_SEBAB.test(b)) {
+      const daftar = butirDaftarSebab(butir, i);
+      if (daftar.length) {
+        const nilai = daftar.length === 1 ? daftar[0] : `${daftar.slice(0, -1).join(", ")} dan ${daftar[daftar.length - 1]}`;
+        return { nilai, kalimat: [b, ...butir.slice(i + 1, i + 1 + daftar.length)].join(" | ") };
+      }
+    }
     const k = b.search(POLA_KONFLIK_POSITA);
     if (k < 0 || /^\s*puncak/i.test(b)) continue;
     POLA_TANDA_SEBAB.lastIndex = 0;
@@ -2875,18 +2923,17 @@ function penyebabPosita(butir) {
     let sisa = b.slice(tanda.index + tanda[0].length).replace(POLA_PEMBUKA_DAFTAR_SEBAB, "");
     sisa = sisa.split(/\b(?:sehingga|puncak\w*|yang\s+mengakibatkan|mengakibatkan|akibatnya)\b|\.\s/i)[0];
     if (rapikanPenyebab(sisa).length >= 10) {
-      const t = rapikanPenyebab(sisa);
-      return t.length <= 220 ? { nilai: t, kalimat: b } : { nilai: "", kalimat: "" };
+      let t = rapikanPenyebab(sisa);
+      // Butir 14: sebab yang panjang dipotong pada batas ceritanya ("hingga",
+      // ", akibat ...", ", namun") - dahulu seluruhnya dibuang, dan perkara
+      // itu tidak punya penyebab sama sekali.
+      if (t.length > 220) {
+        t = rapikanPenyebab(t.split(/\s+(?:hingga|sampai|namun|tetapi|akan\s+tetapi)\s+|,\s*(?:akibat|sehingga|namun|lalu|kemudian|dan\s+kemudian|hingga)\b/i)[0]);
+      }
+      if (t.length >= 10 && t.length <= 220) return { nilai: t, kalimat: b };
     }
     // "disebabkan karena :" - daftar di butir-butir berikutnya.
-    const daftar = [];
-    for (let j = i + 1; j < butir.length && daftar.length < 4; j++) {
-      const item = rapikanPenyebab(butir[j]);
-      if (!item || POLA_BUKAN_BUTIR_SEBAB.test(item) || item.length > 220 || waktuPosita(item).length) break;
-      // Jawaban saksi, bukan salinan posita: sampai kira-kira 300 huruf.
-      if (daftar.length && daftar.join(", ").length + item.length > 300) break;
-      daftar.push(item);
-    }
+    const daftar = butirDaftarSebab(butir, i);
     if (!daftar.length) continue;
     const nilai = daftar.length === 1 ? daftar[0] : `${daftar.slice(0, -1).join(", ")} dan ${daftar[daftar.length - 1]}`;
     return { nilai, kalimat: [b, ...butir.slice(i + 1, i + 1 + daftar.length)].join(" | ") };
@@ -2898,7 +2945,7 @@ function penyebabPosita(butir) {
 const POLA_PISAH_POSITA =
   /(?:(?:telah|sudah)\s+)?(?:pisah\s+(?:rumah|ranjang|tempat\s+tinggal|tempat\s+kediaman)|berpisah(?:\s+(?:rumah|ranjang|tempat\s+tinggal))?)|(?:telah|sudah)\s+pisah(?!\s+(?:kamar|tempat\s+tidur|tidur))|tidak\s+(?:lagi\s+)?(?:tinggal\s+bersama|hidup\s+bersama|serumah|satu\s+rumah|tinggal\s+serumah)/gi;
 const POLA_TINGGALKAN_RUMAH =
-  /(?:(?:pergi\s+)?meninggalkan\s+(?:rumah|tempat\s+(?:tinggal|kediaman)|kediaman|penggugat|tergugat|pemohon|termohon)|pergi\s+meninggalkan|pergi\s+dari\s+rumah|keluar\s+dari\s+rumah|(?:pulang|kembali)\s+(?:lagi\s+)?ke\s*(?:rumah\s+)?(?:orang\s*tua|orangtua|keluarga|saudara|mertua)|di\s*usir|mengusir|memulangkan|dipulangkan|diantar(?:kan)?\s+pulang)/gi;
+  /(?:(?:pergi\s+)?meninggalkan\s+(?:rumah|tempat\s+(?:tinggal|kediaman)|kediaman|penggugat|tergugat|pemohon|termohon)|pergi\s+meninggalkan|pergi\s+ke\s+[^.;,]{3,40}?\s+(?:dan\s+)?(?:tidak|tak)\s+(?:pernah\s+)?(?:lagi\s+)?(?:kembali|pulang)|pergi\s+dari\s+rumah|keluar\s+dari\s+rumah|(?:pulang|kembali)\s+(?:lagi\s+)?ke\s*(?:rumah\s+)?(?:orang\s*tua|orangtua|keluarga|saudara|mertua)|di\s*usir|mengusir|memulangkan|dipulangkan|diantar(?:kan)?\s+pulang)/gi;
 // Butir yang menceritakan kepergian yang BUKAN perpisahan: sudah rujuk
 // kembali, atau pergi bekerja dengan pamit dan hubungan masih baik.
 const POLA_RUJUK = /(rujuk|kembali\s+(?:lagi\s+)?menjalin|kembali\s+(?:hidup\s+|tinggal\s+)?(?:bersama|rukun|serumah)|berhasil\s+(?:untuk\s+)?(?:di)?(?:rukun|damai))/i;
@@ -3085,6 +3132,18 @@ const POLA_DITINGGAL = new RegExp(
   "g"
 );
 
+const POLA_TIDAK_KEMBALI_SUBJEK = new RegExp(
+  `${POLA_SEBUTAN_PIHAK}\\s+(?:(?:sudah|telah|juga|pun|akhirnya)\\s+)?(?:tidak|tak)\\s+(?:pernah\\s+)?(?:lagi\\s+)?(?:kembali|pulang)(?:\\s+lagi)?\\s+(?:ke\\s+(?:rumah|kediaman|tempat)|kepada\\s+${POLA_SEBUTAN_PIHAK.slice(1, -1)})`,
+  "g"
+);
+const POLA_IZIN_PULANG_SUBJEK = new RegExp(
+  // Di antara izin dan pulangnya hanya boleh "kepada <pihak lain>" - "Tergugat
+  // meminta izin ... untuk bekerja dan Penggugat kembali ke rumah orangtua"
+  // yang pulang Penggugat, bukan Tergugat.
+  `${POLA_SEBUTAN_PIHAK}\\s+(?:(?:telah|sudah|lalu|kemudian)\\s+)?(?:izin|ijin|pamit|berpamitan|meminta\\s+izin|minta\\s+izin)\\b(?:\\s+kepada\\s+${POLA_SEBUTAN_PIHAK.slice(1, -1)})?(?:(?!penggugat|tergugat|pemohon|termohon)[^.;]){0,60}?\\b(?:pulang|kembali)\\s+ke\\s*(?:rumah\\s+)?(?:orang\\s*tua|orangtua|keluarga|kampung)`,
+  "g"
+);
+
 /**
  * Sisi yang pergi menurut satu butir posita, atau "" bila tidak tersebut atau
  * kedua sisi sama-sama tersebut.
@@ -3099,6 +3158,15 @@ function sisiPergiButir(butirKecil) {
   for (const m of k.matchAll(POLA_DIUSIR)) temu.push({ sisi: sisi(m[1]), indeks: m.index });
   for (const m of k.matchAll(POLA_MENGUSIR)) temu.push({ sisi: sisi(m[1]), indeks: m.index });
   for (const m of k.matchAll(POLA_DITINGGAL)) temu.push({ sisi: sisi(m[2]), indeks: m.index });
+  // Butir 14: "Termohon tidak lagi kembali ke kediaman bersama", "Termohon izin
+  // ... untuk kembali ke rumah orang tua Termohon" - yang tidak kembali dan
+  // yang pamit pulang itulah yang meninggalkan kediaman bersama.
+  for (const pola of [POLA_TIDAK_KEMBALI_SUBJEK, POLA_IZIN_PULANG_SUBJEK]) {
+    for (const m of k.matchAll(pola)) {
+      if (/(?:\b(?:dengan|kepada|terhadap|oleh|bersama|antara)\s+|\b(?:penggugat|tergugat|pemohon|termohon)\s+(?:dan|dengan)\s+)$/.test(k.slice(0, m.index))) continue;
+      temu.push({ sisi: sisi(m[1]), indeks: m.index });
+    }
+  }
   for (const m of k.matchAll(POLA_PERGI_SUBJEK)) {
     // "Penggugat dan Tergugat pergi" (bersama), "marah kepada Penggugat lalu
     // pergi" (objek) - sebutan itu bukan subjek perginya.
@@ -3189,6 +3257,179 @@ function upayaDamaiPosita(butir) {
 
 /**
  * ============================================================================
+ * BUTIR 14 (6 OKTOBER 2026) - FAKTA TAMBAHAN DAN LAMA PISAH YANG DIHITUNG
+ * ============================================================================
+ *
+ * Permintaan pengguna: "lengkapkan susun keterangan saksi ... jangan sampai
+ * kosong atau tidak dapat dibaca sebisa mungkin (diutamakan ambil dari posita
+ * dan pakai logika kalau tidak ada datanya)". Diukur atas 1.257 posita cerai
+ * 2025-2026 sipp_donggala: jumlah anak tidak terbaca pada 569 perkara
+ * ("di karuniai seorang anak", "1 ( satu) orang anak", "tidak dikaruniai
+ * keturunan"), tempat tinggal pada 943 ("tinggal bersama di rumah orang tua
+ * Penggugat di Desa ... selama 3 tahun, setelah itu ..."), dan lama pisah tidak
+ * pernah dihitung dari "sejak tahun 2024" yang tanpa bulan.
+ *
+ * Yang ditambahkan tetap fakta yang TERTULIS atau yang dapat diturunkan dengan
+ * hitungan; tidak satu pun dikarang.
+ */
+
+/** Bulan acuan "awal/pertengahan/akhir tahun" (0 = Januari). */
+const BULAN_BAGIAN_TAHUN = { awal: 0, pertengahan: 5, akhir: 10 };
+
+/** Hari ini sebagai "DD/MM/YYYY" - acuan bila tanggal sidang tidak ada. */
+function hariIniTeks(hariIni) {
+  const d = hariIni instanceof Date ? hariIni : hariIni ? new Date(String(hariIni)) : new Date();
+  if (Number.isNaN(d.getTime())) return "";
+  const dua = (n) => String(n).padStart(2, "0");
+  return `${dua(d.getDate())}/${dua(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+
+/**
+ * Lama pisah dari "sejak" posita sampai tanggal acuan (sidang, atau hari ini).
+ *
+ *   "bulan September 2025"  -> 1 tahun 1 bulan  (acuan Oktober 2026)
+ *   "akhir tahun 2023"      -> 2 tahun 11 bulan (akhir tahun = November)
+ *   "tahun 2024"            -> 2 tahun, taksiran (bulannya tidak diketahui)
+ *
+ * Hitungan bulan memakai selisih tahun x 12 + selisih bulan, jadi batas tahun
+ * (Desember -> Januari) tetap satu bulan. null bila tidak terbaca, bila acuan
+ * lebih dahulu dari sejaknya, atau bila hasilnya kurang dari satu satuan -
+ * "sejak tahun 2026" pada tahun 2026 tidak menghasilkan angka apa pun.
+ *
+ * @returns {{teks:string, totalBulan:number, taksiran:boolean}|null}
+ */
+function lamaSejakAcuan(nilaiSejak, tanggalAcuan) {
+  const t = String(nilaiSejak || "").replace(/\s+/g, " ").trim();
+  const acuan = uraikanTanggal(tanggalKeTeks(tanggalAcuan));
+  if (!t || !acuan || Number.isNaN(acuan.getTime())) return null;
+  let tahun;
+  let bulan;
+  let taksiran = false;
+  let m = t.match(/^(?:(awal|akhir|pertengahan)\s+)?(?:bulan\s+)?([A-Za-z]+)\s+(\d{4})$/i);
+  if (m && bulanKeAngka(namaBulanBaku(m[2])) !== null) {
+    tahun = Number(m[3]);
+    bulan = bulanKeAngka(namaBulanBaku(m[2]));
+  } else if ((m = t.match(/^(awal|akhir|pertengahan)\s+tahun\s+(\d{4})$/i))) {
+    tahun = Number(m[2]);
+    bulan = BULAN_BAGIAN_TAHUN[m[1].toLowerCase()];
+    taksiran = true;
+  } else if ((m = t.match(/^tahun\s+(\d{4})$/i))) {
+    const n = acuan.getFullYear() - Number(m[1]);
+    if (n < 1) return null;
+    return { teks: `${n} tahun`, totalBulan: n * 12, taksiran: true };
+  } else {
+    return null;
+  }
+  const total = (acuan.getFullYear() - tahun) * 12 + (acuan.getMonth() - bulan);
+  if (total < 1) return null;
+  const th = Math.floor(total / 12);
+  const bl = total % 12;
+  const potong = [];
+  if (th > 0) potong.push(`${th} tahun`);
+  if (bl > 0) potong.push(`${bl} bulan`);
+  return { teks: potong.join(" "), totalBulan: total, taksiran };
+}
+
+/** "seorang", "dua", "1 ( satu)", "2 dua)" -> angka; null bila bukan bilangan. */
+function angkaAnak(teks) {
+  const t = String(teks || "").toLowerCase().trim();
+  if (/^\d+$/.test(t)) return Number(t);
+  if (t === "seorang" || t === "satu") return 1;
+  return Object.prototype.hasOwnProperty.call(ANGKA_KATA, t) ? ANGKA_KATA[t] : null;
+}
+
+const POLA_BELUM_ANAK =
+  /\b(?:belum|tidak)\s+(?:pernah\s+)?(?:juga\s+)?(?:di\s*)?karuniai\s+(?:seorang\s+)?(?:anak|keturunan|buah\s+hati)|\b(?:belum|tidak)\s+(?:mempunyai|memiliki|ada|punya)\s+(?:seorang\s+)?(?:anak|keturunan)/i;
+const POLA_JUMLAH_ANAK = new RegExp(
+  `(?:di\\s*karuniai|karuniai|mempunyai|memiliki|lahir(?:lah)?)\\s+(?:sebanyak\\s+)?(\\d{1,2}|seorang|${POLA_KATA_ANGKA})\\s*(?:\\(?\\s*[a-z]+\\s*\\)\\s*)?(?:orang\\s+)?(?:anak|putra|putri|puteri)`,
+  "i"
+);
+
+/** Jumlah anak dari kalimat karunia: "2 orang anak", "belum mempunyai anak", atau "". */
+function jumlahAnakPosita(butir) {
+  const calon = butir.filter((b) => /karunia|keturunan|(?:mempunyai|memiliki)\s+(?:\S+\s+){0,3}anak/i.test(b));
+  for (const b of calon) {
+    if (POLA_BELUM_ANAK.test(b)) return { nilai: "belum mempunyai anak", kalimat: b };
+    const m = b.match(POLA_JUMLAH_ANAK);
+    const n = m ? angkaAnak(m[1]) : null;
+    if (n && n > 0 && n < 20) return { nilai: `${n} orang anak`, kalimat: b };
+  }
+  return { nilai: "", kalimat: "" };
+}
+
+/**
+ * Pada siapa anak itu sekarang: "saat ini tinggal bersama Penggugat", "berada
+ * dalam pengasuhan Penggugat", "anak-anak tinggal bersama denganPenggugat".
+ * @returns {""|"pelaku"|"lawan"}
+ */
+function anakIkutPosita(butir) {
+  const pola =
+    /\banak[^.;]{0,160}?\b(?:tinggal|berada|ikut|diasuh|dirawat|dipelihara|dalam\s+(?:asuhan|pengasuhan|pemeliharaan|perawatan))\s+(?:(?:bersama|dalam\s+(?:asuhan|pengasuhan|pemeliharaan|perawatan))\s+)?(?:dengan\s*|oleh\s+)?(penggugat|tergugat|pemohon|termohon)\b/gi;
+  const sisi = new Set();
+  for (const b of butir) {
+    for (const m of b.matchAll(pola)) sisi.add(/tergugat|termohon/i.test(m[1]) ? "pelaku" : "lawan");
+  }
+  return sisi.size === 1 ? [...sisi][0] : "";
+}
+
+// Tempat tinggal sesudah menikah: "tinggal (bersama) di <tempat> (selama N)",
+// "pindah ke rumah ...". Tempat berakhir pada kata penyambung riwayat.
+const POLA_TEMPAT_TINGGAL =
+  /\b(?:bertempat\s+tinggal|tinggal|menetap|berdiam|pindah|membina\s+rumah\s+tangga)(?:\s+(?:bersama|lagi|kembali|sendiri|serumah))*\s+(?:di|ke)\s+([^,.;:()]{3,120}?)(?=\s+(?:selama|hingga|sampai|kemudian|lalu|setelah|sesudah|selanjutnya|terakhir|namun|tetapi|akan\s+tetapi|untuk|sejak|sekitar|kurang|dan\s+(?:terakhir|sempat|kemudian|selanjutnya|setelah|terkadang|saat|sejak|tetap|telah|sudah|pernah|juga|tidak))\b|\s*[,.;:(]|$)/gi;
+const POLA_KATA_TEMPAT =
+  /\b(?:rumah|desa|kelurahan|kel\.|kota|kecamatan|kec\.|kabupaten|kab\.|dusun|jalan|jl\.?|kampung|lorong|btn|perumahan|kost?|kontrakan|asrama|mess|lingkungan|wilayah|provinsi|kompleks)\b/i;
+
+/**
+ * Riwayat tempat tinggal bersama sesudah menikah - dari butir "setelah
+ * menikah ... tinggal ...". Berhenti pada "saat ini" (tempat tinggal SESUDAH
+ * berpisah bukan kediaman bersama).
+ * @returns {{tempat: Array<{tempat:string, lama:string}>, tidakPernahSerumah:boolean, kalimat:string}}
+ */
+function riwayatTinggalPosita(butir) {
+  const kosong = { tempat: [], tidakPernahSerumah: false, kalimat: "" };
+  const b = butir.find(
+    (x) =>
+      /(?:setelah|sesudah|selama|pasca)\s+(?:menikah|pernikahan|perkawinan|akad|melangsungkan)/i.test(x) &&
+      /tinggal|menetap|pindah|membina\s+rumah\s+tangga/i.test(x)
+  );
+  if (!b) return kosong;
+  const teks = b
+    .split(/\.\s+(?=[A-Z])|\b(?:dan\s+)?(?:saat\s+ini|sekarang\s+ini)\b/)[0]
+    .replace(/\b(di|ke)(rumah)\b/gi, "$1 $2");
+  if (/(?:menikah|pernikahan|perkawinan)[^.;]{0,60}\btidak\s+(?:pernah\s+)?(?:tinggal\s+bersama|serumah|satu\s+rumah)/i.test(teks)) {
+    return { tempat: [], tidakPernahSerumah: true, kalimat: b };
+  }
+  const tempat = [];
+  POLA_TEMPAT_TINGGAL.lastIndex = 0;
+  for (const m of teks.matchAll(POLA_TEMPAT_TINGGAL)) {
+    const t = m[1].replace(/\s+/g, " ").trim();
+    if (!POLA_KATA_TEMPAT.test(t) || t.length > 100) continue;
+    const sesudah = teks.slice(m.index + m[0].length, m.index + m[0].length + 60);
+    const lm = sesudah.match(/^\s*,?\s*selama\s+((?:kurang\s+lebih|lebih\s+kurang|sekitar|kira-kira|±)\s+)?/i);
+    const lama = lm ? lamaDalam(sesudah.slice(lm[0].length, lm[0].length + 40)) : null;
+    const isi = { tempat: t, lama: lama && lama.indeks <= 2 ? `${lm[1] ? "kurang lebih " : ""}${lama.nilai}` : "" };
+    if (!tempat.some((x) => x.tempat.toLowerCase() === t.toLowerCase())) tempat.push(isi);
+    if (tempat.length >= 4) break;
+  }
+  return { tempat, tidakPernahSerumah: false, kalimat: tempat.length ? b : "" };
+}
+
+/**
+ * Awal perselisihan yang tidak bertanggal tetapi tertulis peristiwanya:
+ * "perselisihan ... mulai terjadi sejak awal pernikahan".
+ */
+function awalKonflikTanpaTanggal(butir) {
+  for (const b of butir) {
+    const depan = b.split(POLA_BATAS_AWAL_KONFLIK)[0];
+    if (depan.search(POLA_KONFLIK_POSITA) < 0 || POLA_KONFLIK_ULANG.test(depan)) continue;
+    const m = depan.match(/\b(?:sejak|mulai|semenjak)\s+(awal\s+(?:pernikahan|perkawinan|menikah|berumah\s+tangga))\b/i);
+    if (m) return { nilai: m[1].toLowerCase().replace(/\s+/g, " "), kalimat: b };
+  }
+  return { nilai: "", kalimat: "" };
+}
+
+/**
+ * ============================================================================
  * JAWABAN TEMPLAT YANG MASIH KOSONG - DIISI, BUKAN SEKADAR DILAPORKAN
  * ============================================================================
  *
@@ -3217,20 +3458,32 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
 
   // Butir 24 - tiap fakta dari peristiwanya (lihat FAKTA POSITA DIBACA PER
   // PERISTIWA di atas), bukan dari kalimat pertama yang memuat satu kata.
-  const awal = awalKonflikPosita(butir);
+  // Butir 14: awal perselisihan tanpa tanggal ("sejak awal pernikahan") dipakai
+  // bila tidak ada yang bertanggal.
+  const awalBertanggal = awalKonflikPosita(butir);
+  const awal = awalBertanggal.nilai ? awalBertanggal : awalKonflikTanpaTanggal(butir);
   const sebab = penyebabPosita(butir);
   const sejak = pisahSejakPosita(butir);
   const lama = lamaPisahPosita(butir);
   const pergi = siapaPergiPosita(butir);
 
   // Hanya tanggalnya yang tertulis: lamanya dihitung sampai tanggal sidang -
-  // hanya bila tanggal itu bulan+tahun utuh dan tanggal sidangnya terbaca.
-  // Yang hanya tertulis lamanya TIDAK dihitung mundur menjadi tanggal: "kurang
-  // lebih 2 tahun" dari tanggal yang tidak diketahui bukan bulan yang pasti.
+  // atau sampai HARI INI bila tanggal sidang tidak ada (butir 14). Sejak
+  // bulan+tahun dihitung tepat per bulan ("September 2025" -> "1 tahun 1
+  // bulan" pada Oktober 2026); "awal/pertengahan/akhir tahun" dan "tahun 2024"
+  // ditandai taksiran ("kurang lebih"). Yang hanya tertulis lamanya TIDAK
+  // dihitung mundur menjadi tanggal: "kurang lebih 2 tahun" dari tanggal yang
+  // tidak diketahui bukan bulan yang pasti.
   let lamaPisah = lama.nilai;
   let lamaPisahDihitung = false;
-  if (!lamaPisah && sejak.presisi === "bulan" && o.tanggalSidang) {
-    const hitung = hitungLamaPisah(sejak.nilai, tanggalKeTeks(o.tanggalSidang));
+  const acuanLama = o.tanggalSidang ? tanggalKeTeks(o.tanggalSidang) : hariIniTeks(o.hariIni);
+  // Lama tertulis yang hanya hari/minggu ("sempat kembali selama 2 hari")
+  // padahal sejaknya bertahun-tahun lalu bukan lama pisahnya - yang dihitung
+  // dari sejaknya yang dipakai (logika: lama pisah tidak mungkin lebih pendek
+  // dari jarak sejak pisah sampai sidang).
+  const hanyaHari = Boolean(lamaPisah) && !/tahun|bulan/i.test(lamaPisah);
+  if ((!lamaPisah || hanyaHari) && sejak.nilai && acuanLama) {
+    const hitung = lamaSejakAcuan(sejak.nilai, acuanLama);
     if (hitung && hitung.totalBulan >= 1) {
       lamaPisah = hitung.teks;
       lamaPisahDihitung = true;
@@ -3313,7 +3566,11 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
   })();
 
   // "dikaruniai 2 orang anak", "dikaruniai dua orang anak", "mempunyai 3 anak".
-  const jumlahAnak = (() => {
+  // Butir 14: kalimat KARUNIA lebih dahulu ("di karuniai seorang anak",
+  // "1 ( satu) orang anak", "tidak dikaruniai keturunan"); kalimat pertama
+  // yang memuat "anak" tinggal cadangan.
+  const anakKarunia = jumlahAnakPosita(butir);
+  const jumlahAnak = anakKarunia.nilai || (() => {
     const teks = String(kalimatAnak || "").toLowerCase();
     if (/belum (?:di)?karuniai|belum mempunyai anak|tidak mempunyai anak|belum ada anak/.test(teks)) {
       return "belum mempunyai anak";
@@ -3327,12 +3584,17 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
   // Nama tempat sesudah "bertempat tinggal di ...". Dipotong pada tanda baca:
   // posita menyambung kalimatnya panjang, dan menyalin seluruh sisa kalimat ke
   // jawaban saksi menghasilkan kalimat yang tidak dapat dibaca.
-  const kediaman = (() => {
+  // Butir 14: riwayat tinggal sesudah menikah lebih dahulu (tempat pertama =
+  // kediaman bersama); bentuk lama tinggal cadangan.
+  const riwayat = riwayatTinggalPosita(butir);
+  const kediaman = (riwayat.tempat[0] && riwayat.tempat[0].tempat) || (() => {
     const cocok = String(kalimatKediaman || "").match(
       /(?:bertempat tinggal|kediaman bersama|tinggal bersama)\s+(?:di|pada)\s+([^;,.]{3,80})/i
     );
     return cocok ? cocok[1].trim() : "";
   })();
+  const sisiAnak = anakIkutPosita(butir);
+  const anakIkut = sisiAnak === "pelaku" ? pelaku || "Tergugat" : sisiAnak === "lawan" ? lawan || "Penggugat" : "";
 
   // Butir 27 - "puncak ... terjadi (pada) <waktu>": hanya waktu yang langsung
   // menyusul kata 'terjadi' di kalimat puncak itu sendiri.
@@ -3359,6 +3621,15 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
     tanggalNikah,
     jumlahAnak,
     kediaman,
+    // Butir 14 - fakta tambahan untuk melengkapi jawaban yang dahulu tertinggal.
+    // tempatTinggal: riwayat [{tempat, lama}] sesudah menikah (pertama = kediaman).
+    tempatTinggal: riwayat.tempat,
+    tidakPernahSerumah: riwayat.tidakPernahSerumah,
+    // Pada siapa anak tinggal sekarang (sebutan), atau "".
+    anakIkut,
+    // Posita memang menceritakan perpisahan tempat tinggal - dasar kalimat
+    // "sejak sebelum perkara ini diajukan" bila tanggal dan lamanya tidak ada.
+    adaPisah: butirPisah(butir).length > 0,
     // Kalimat posita asal tiap fakta - untuk diperiksa petugas, bukan dicetak.
     sumber: {
       awalKonflik: awal.kalimat,
@@ -3450,21 +3721,42 @@ function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
   // Tiga fakta yang selalu ditanyakan dan selama ini diketik sendiri.
   else if (/kapan.*(menikah|nikah|kawin)|(menikah|perkawinan).*kapan|tanggal.*nikah/i.test(tanya)) {
     ganti(fakta.tanggalNikah);
-  } else if (/berapa.*anak|anak.*berapa|dikaruniai|keturunan/i.test(tanya)) {
+  } else if (/berapa.*anak|anak.*berapa|dikarunia|keturunan/i.test(tanya)) {
+    // Butir 14: "dikarunia" - templat A1/A3 menulis "sudah dikarunia anak?"
+    // (tanpa i), sehingga pertanyaannya dahulu tidak pernah dikenali.
     // Templat kerap SUDAH menyebut "anak" sesudah titik-titiknya - "dikaruniai
     // ........... anak". Menyisipkan "2 orang anak" ke situ menerbitkan
     // "dikaruniai 2 orang anak anak".
     const templatSudahMenyebut = /(?:\.{3,}|_+)\s*(?:orang\s+)?anak/i.test(hasil);
-    if (!templatSudahMenyebut) ganti(fakta.jumlahAnak);
+    // "#0046# dan #0047# #8535#" (templat 04) - titik-titiknya langsung sesudah
+    // sebutan, tanpa kata kerja: "Penggugat dan Tergugat 3 orang anak" tidak
+    // terbaca. Kata kerjanya ikut dipasang.
+    const tanpaKataKerja = /\b(?:penggugat|tergugat|pemohon|termohon)\s*$/i.test(depanKosong());
+    if (tanpaKataKerja && fakta.jumlahAnak) {
+      ganti(fakta.jumlahAnak === "belum mempunyai anak" ? "belum dikaruniai anak" : `telah dikaruniai ${fakta.jumlahAnak}`);
+    } else if (!templatSudahMenyebut) ganti(fakta.jumlahAnak);
     else if (/^\d+\s+orang\s+anak$/.test(fakta.jumlahAnak)) {
-      ganti(fakta.jumlahAnak.replace(/\s+anak$/, ""));
+      // "dikaruniai ... orang anak" - hanya angkanya; "dikaruniai ... anak" -
+      // angka dan "orang". Dahulu selalu "N orang": "2 orang orang anak".
+      const sudahOrang = /(?:\.{3,}|_+)\s*orang\s+anak/i.test(hasil);
+      ganti(fakta.jumlahAnak.replace(sudahOrang ? /\s+orang\s+anak$/ : /\s+anak$/, ""));
     }
     // "belum mempunyai anak" sengaja TIDAK dipasang pada templat berpola itu:
     // hasilnya "dikaruniai belum mempunyai anak anak". Dibiarkan bertitik-titik
     // dan tetap ditandai perlu diisi - kalimat yang kacau di berita acara lebih
     // buruk daripada satu titik-titik yang jelas menunggu petugas.
-  } else if (/di mana.*(tinggal|kediaman|berdiam)|tempat tinggal|alamat.*tinggal/i.test(tanya)) {
-    ganti(fakta.kediaman);
+  } else if (/di ?mana.*(tinggal|kediaman|berdiam)|tempat tinggal|alamat.*tinggal|tinggal bersama di tempat lain/i.test(tanya)) {
+    // Butir 14: riwayat tempat tinggal sesudah menikah - "tinggal bersama di
+    // ...... pernah juga tinggal bersama di ....... dan terakhir tinggal
+    // bersama di ......" (A1/A3) diisi berurutan dari posita; bagian yang
+    // tempatnya tidak tertulis dibuang di rapikanSisaIsian, bukan dikarang.
+    hasil = isiRiwayatTinggal(hasil, tanya, fakta);
+  }
+
+  // Butir 14: "sebanyak .... kali" di pertanyaan melihat/mendengar (A1/A3) -
+  // bukan hanya pada pertanyaan "berapa kali".
+  if (/melihat|mendengar|menyaksikan/i.test(tanya)) {
+    hasil = hasil.replace(/\s*,?\s*sebanyak\s+(?:_+|\.{3,}|…)\s*kali/i, " beberapa kali");
   }
 
   // "_ kali" - berapa kali saksi menyaksikan. Tidak ada di gugatan mana pun,
@@ -3489,6 +3781,313 @@ function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
     .replace(/\bdilihat\/didengar\b/gi, "dilihat dan didengar");
 
   return hasil;
+}
+
+/** Titik-titik/garis bawah templat sebagai sumber pola (butir 14). */
+const SLOT = String.raw`(?:\.{3,}|_+|\u2026)`;
+const POLA_SLOT = new RegExp(SLOT);
+
+/**
+ * Riwayat tempat tinggal ke dalam templat (butir 14). Slot "di ......" diisi
+ * berurutan dari fakta.tempatTinggal; "selama ...." sesudahnya diisi lama
+ * tinggal di tempat itu bila tertulis. Bagian yang tempatnya tidak ada
+ * dibiarkan bertitik-titik - rapikanSisaIsian yang membuangnya.
+ */
+function isiRiwayatTinggal(teks, tanya, fakta) {
+  let hasil = String(teks || "");
+  const tempat = Array.isArray(fakta.tempatTinggal) && fakta.tempatTinggal.length
+    ? fakta.tempatTinggal
+    : fakta.kediaman
+      ? [{ tempat: fakta.kediaman, lama: "" }]
+      : [];
+  if (!tempat.length) return hasil;
+  const ruasDi = new RegExp(`\\bdi\\s+${SLOT}(\\s*,?\\s*selama\\s+${SLOT})?`, "gi");
+  const banyak = (hasil.match(ruasDi) || []).length;
+  if (!banyak) {
+    // "#8491#" kosong tanpa kata "di" di depannya - tempat pertama saja.
+    return hasil.replace(new RegExp(SLOT), tempat[0].tempat);
+  }
+  // A3#14 "pernah juga tinggal bersama di ... dan terakhir ... di ..." -
+  // pertanyaannya tentang tempat LAIN: tempat pertama sudah dijawab A3#13.
+  const tempatLain = /tempat lain/i.test(tanya) || /^\s*\S+\s+dan\s+\S+\s+(?:juga\s+)?pernah\s+juga/i.test(hasil);
+  let daftar = tempatLain ? tempat.slice(1) : tempat.slice();
+  if (!daftar.length) return hasil;
+  // Banyak tempat, sedikit slot: tempat tengah digabung ke slot tengah, yang
+  // terakhir tetap di slot "terakhir".
+  if (daftar.length > banyak && banyak >= 2) {
+    const tengah = daftar.slice(banyak - 2, daftar.length - 1);
+    daftar = [
+      ...daftar.slice(0, banyak - 2),
+      { tempat: tengah.map((x) => x.tempat).join(", "), lama: tengah.length === 1 ? tengah[0].lama : "" },
+      daftar[daftar.length - 1],
+    ];
+  }
+  // Dua tempat pada tiga slot (pertama, "pernah juga", "terakhir"): yang
+  // kedua ke slot terakhir; slot tengah tetap kosong lalu dibuang.
+  const urutanSlot =
+    banyak >= 3 && daftar.length === 2 ? [daftar[0], null, daftar[1]] : daftar.slice(0, banyak);
+  let ke = 0;
+  hasil = hasil.replace(ruasDi, (ruas, selama) => {
+    const x = urutanSlot[ke++];
+    if (!x) return ruas;
+    const lamaBagian = selama ? (x.lama ? `, selama ${x.lama}` : selama) : "";
+    return `di ${x.tempat}${lamaBagian}`;
+  });
+  return hasil;
+}
+
+/** Pola rapikanSisaIsian disinggahkan: sumbernya sama pada tiap jawaban (butir 14). */
+const SINGGAHAN_POLA_SISA = new Map();
+function rxSisa(sumber, bendera) {
+  const kunci = `${bendera || ""}|${sumber}`;
+  let pola = SINGGAHAN_POLA_SISA.get(kunci);
+  if (!pola) {
+    pola = new RegExp(sumber, bendera);
+    if (SINGGAHAN_POLA_SISA.size < 500) SINGGAHAN_POLA_SISA.set(kunci, pola);
+  }
+  pola.lastIndex = 0;
+  return pola;
+}
+
+/**
+ * ============================================================================
+ * SISA TITIK-TITIK - DITURUNKAN DENGAN LOGIKA, ATAU DIRAPIKAN TANPA MENGARANG
+ * ============================================================================
+ *
+ * Butir 14 (6 Oktober 2026). Sesudah diisi dari posita, sebagian jawaban
+ * templat masih memuat titik-titik yang memang tidak tertulis di gugatan:
+ * hubungan saksi, di mana ia melihat pertengkaran, oleh siapa didamaikan.
+ * Dahulu titik-titik itu dicetak apa adanya - "Saya kenal dengan Pemohon karena
+ * saya adalah ...;" - dan berita acara yang tersimpan berbunyi begitu.
+ *
+ * Tiga jalan, berurutan:
+ *   1. DITURUNKAN dari fakta posita dengan logika yang dapat diperiksa:
+ *      awal perselisihan yang tidak bertanggal menjadi "beberapa waktu sebelum
+ *      mereka berpisah tempat tinggal pada <tanggal pisah>"; puncak yang tidak
+ *      bertanggal menjadi peristiwa perpisahannya; lama pisah tanpa tanggal
+ *      menjadi "sejak sebelum perkara ini diajukan" (posita yang menyebut
+ *      pisah ditulis SEBELUM perkara didaftarkan).
+ *   2. DIJADIKAN PILIHAN bila jawabannya salah satu dari dua dan datanya tidak
+ *      ada (siapa yang pergi, sudah/belum ada anak, ada/tidaknya upaya
+ *      damai): petugas wajib memilih sebelum menyimpan - panel menahannya.
+ *   3. DIRAPIKAN - bagian yang hanya diketahui saksi dibuang dari kalimatnya
+ *      ("karena saya adalah ...", ", di ........", "oleh ....") sehingga
+ *      kalimatnya tetap utuh dan benar; barisnya tetap ditandai perluDiisi
+ *      supaya petugas menambahkannya dari keterangan saksi yang sesungguhnya.
+ *
+ * Tidak ada yang dikarang: tidak ada hubungan saksi, tempat, jumlah, atau
+ * nama yang tidak tertulis di posita.
+ *
+ * @returns {{jawab:string, pilihan:string[]|null, diturunkan:boolean, dibuang:boolean}}
+ */
+function rapikanSisaIsian({ tanya, jawab, fakta, pelaku, lawan, daftar }) {
+  const f = fakta || {};
+  const P1 = String(lawan || "").trim() || "Penggugat";
+  const P2 = String(pelaku || "").trim() || "Tergugat";
+  const keluar = { jawab: String(jawab || ""), pilihan: null, diturunkan: false, dibuang: false };
+  let t = keluar.jawab;
+  const q = String(tanya || "");
+  const ubah = (pola, isi, jenis) => {
+    const semula = t;
+    t = t.replace(pola, isi);
+    if (t !== semula) keluar[jenis === "turun" ? "diturunkan" : "dibuang"] = true;
+    return t !== semula;
+  };
+  const sebutan = String.raw`(?:penggugat|tergugat|pemohon|termohon|${P1.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}|${P2.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`;
+
+  // --- Anak ---------------------------------------------------------------
+  // ", anak tersebut saat ini tinggal dengan Pemohon / Termohon" - pilihan pihak.
+  const polaAnakIkut = /(\s*,?\s*(?:dan\s+)?anak(?:-anak)?\s+(?:tersebut\s+)?(?:saat\s+ini\s+|sekarang\s+)?(?:tinggal|ikut|berada)\s+(?:bersama\s+)?(?:dengan\s+)?)([^,;]*?\/[^,;]*?)(?=\s*[;.,]|$)/i;
+  if (polaAnakIkut.test(t)) {
+    if (f.anakIkut) ubah(polaAnakIkut, `$1${f.anakIkut}`, "turun");
+    else ubah(polaAnakIkut, "", "buang");
+  }
+  // "bahkan telah dikaruniai ..... orang anak" (A2#3).
+  const polaBahkanAnak = rxSisa(`\\s*,?\\s*bahkan\\s+(?:telah|sudah)\\s+dikaruniai\\s+${SLOT}\\s*(?:orang\\s+)?anak`, "i");
+  if (polaBahkanAnak.test(t)) {
+    if (f.jumlahAnak === "belum mempunyai anak") ubah(polaBahkanAnak, ", namun belum dikaruniai anak", "turun");
+    else ubah(polaBahkanAnak, "", "buang");
+  }
+  // "sudah dikaruniai ... orang anak" tanpa jumlah tertulis. Posita yang
+  // menyebut BELUM punya anak membalik kalimatnya; tanpa keterangan apa pun
+  // kalimatnya menjadi pilihan sudah/belum (pada jawaban berpilihan, pilihan
+  // "belum" templat sendiri yang dipakai - pilihan buatan ini diabaikan).
+  const polaAnakSlot = rxSisa(`(?:(?:sudah|telah)\\s+)?(dikaruniai)\\s+${SLOT}\\s*(?:orang\\s+)?anak`, "i");
+  if (polaAnakSlot.test(t)) {
+    if (f.jumlahAnak === "belum mempunyai anak") ubah(polaAnakSlot, "belum dikaruniai anak", "turun");
+    else {
+      const sudah = t.replace(polaAnakSlot, (m) => m.replace(rxSisa(`\\s+${SLOT}\\s*(?:orang\\s+)?anak`, "i"), " anak"));
+      const belum = t
+        .replace(polaAnakSlot, "belum dikaruniai anak")
+        .replace(/\s*,?\s*(?:dan\s+)?anak(?:-anak)?\s+tersebut\b[^;.]*/i, "");
+      keluar.pilihan = [sudah, belum];
+      t = sudah;
+      keluar.dibuang = true;
+    }
+  }
+  // "#0046# dan #0047# #8535#" kosong (04): sudah atau belum - dipilih petugas.
+  const anakTanpaKerja = rxSisa(`^(.*\\b${sebutan}\\s+(?:dan|dengan)\\s+${sebutan})\\s*${SLOT}\\s*[;.]?$`, "i");
+  if (/dikarunia|anak|keturunan/i.test(q) && anakTanpaKerja.test(t)) {
+    const dasar = t.match(anakTanpaKerja)[1];
+    keluar.pilihan = [`${dasar} sudah dikaruniai anak`, `${dasar} belum dikaruniai anak`];
+    t = keluar.pilihan[0];
+    keluar.dibuang = true;
+  }
+
+  // --- Hubungan saksi (hanya diketahui saksi) ------------------------------
+  ubah(rxSisa(`\\s*,?\\s*(?:karena\\s+)?saya\\s+(?:adalah\\s+)?${SLOT}(?=\\s*[;.]?\\s*$)`, "i"), "", "buang");
+  const hubunganDua = rxSisa(`^((?:ya|iya)\\s*,\\s*)?(${sebutan})\\s+adalah\\s+${SLOT}\\s+dan\\s+(${sebutan})\\s+adalah\\s+${SLOT}\\s*[;.]?\\s*$`, "i");
+  if (hubunganDua.test(t)) {
+    const m = t.match(hubunganDua);
+    t = `${m[1] || ""}saya mempunyai hubungan keluarga dengan ${m[2]} dan ${m[3]}`;
+    keluar.dibuang = true;
+  }
+
+  // --- Tempat tinggal -------------------------------------------------------
+  if (/tinggal|kediaman|berdiam|alamat/i.test(q) && !/pisah|serumah|satu rumah|masih tinggal/i.test(q)) {
+    ubah(rxSisa(`\\s*,?\\s*(?:juga\\s+)?pernah\\s+juga\\s+tinggal\\s+bersama\\s+di\\s+${SLOT}(?:\\s*,?\\s*selama\\s+${SLOT})?`, "i"), "", "buang");
+    ubah(rxSisa(`\\s*,?\\s*dan\\s+terakhir\\s+(?:mereka\\s+)?tinggal\\s+bersama\\s+di\\s+${SLOT}(?:\\s*,?\\s*selama\\s+${SLOT})?`, "i"), "", "buang");
+    ubah(rxSisa(`\\s*,?\\s*selama\\s+${SLOT}`, "gi"), "", "buang");
+    ubah(rxSisa(`\\s+(?:di|pada)\\s+${SLOT}`, "gi"), "", "buang");
+    // "P dan T juga pernah tinggal bersama di ... dan terakhir ..." tanpa satu
+    // pun tempat tersisa - tinggal subjeknya.
+    if (/^\s*\S+\s+dan\s+\S+\s*$/i.test(t.replace(/[;.]\s*$/, ""))) {
+      t = `${t.replace(/[;.]\s*$/, "")} pernah tinggal bersama di tempat lain`;
+    }
+  }
+
+  // --- Menyaksikan ----------------------------------------------------------
+  if (/melihat|mendengar|menyaksikan/i.test(q)) {
+    ubah(rxSisa(`\\s*,?\\s*sebanyak\\s+${SLOT}\\s*kali`, "i"), " beberapa kali", "buang");
+    const polaTerjadi = rxSisa(`\\s*,?\\s*terjadinya\\s+kira-kira\\s+${SLOT}`, "i");
+    if (polaTerjadi.test(t)) {
+      if (f.awalKonflik) ubah(polaTerjadi, `, terjadinya kira-kira sejak ${f.awalKonflik}`, "turun");
+      else ubah(polaTerjadi, "", "buang");
+    }
+    ubah(rxSisa(`\\s*,?\\s*di\\s+${SLOT}`, "i"), "", "buang");
+    ubah(rxSisa(`\\s+saya\\s+tahu\\s+karena\\s+${SLOT}`, "i"), " saya mengetahuinya", "buang");
+  }
+
+  // --- Upaya rukun ----------------------------------------------------------
+  if (POLA_TANYA_UPAYA_RUKUN.test(q) || /rukun|damai/i.test(q)) {
+    ubah(rxSisa(`\\s+oleh\\s+${SLOT}\\s*,?`, "gi"), ",", "buang");
+    ubah(rxSisa(`\\s+karena\\s+${SLOT}`, "gi"), "", "buang");
+    if (POLA_TANYA_UPAYA_RUKUN.test(q) && jawabanKosong(t)) {
+      keluar.pilihan = [
+        `${P1} dan ${P2} sudah pernah diupayakan untuk rukun kembali, namun tidak berhasil`,
+        `Belum pernah ada upaya untuk merukunkan ${P1} dan ${P2}`,
+      ];
+      t = keluar.pilihan[0];
+      keluar.dibuang = true;
+    }
+  }
+
+  // --- Siapa yang pergi -----------------------------------------------------
+  if (/siapa.*(meninggalkan|pergi)/i.test(q)) {
+    const polaPilihanPihak = rxSisa(`\\b${sebutan}\\s*\\/\\s*${sebutan}\\b|${SLOT}`, "i");
+    if (polaPilihanPihak.test(t)) {
+      keluar.pilihan = [t.replace(polaPilihanPihak, P1), t.replace(polaPilihanPihak, P2)];
+      t = keluar.pilihan[0];
+      keluar.dibuang = true;
+    }
+  }
+
+  // --- Pisah: sejak kapan dan berapa lama -----------------------------------
+  if (/pisah|serumah|satu rumah|masih tinggal|berapa lama/i.test(q)) {
+    // Lama tidak tertulis: ", kira-kira sampai sekarang sudah sekitar ........
+    // tahun/bulan" dibuang lebih dahulu. Lalu "sejak ....., kira-kira sampai
+    // sekarang sudah sekitar 1 tahun" - lama tertulis, sejaknya tidak:
+    // "sejak ....." dibuang.
+    ubah(rxSisa(`\\s*,?\\s*kira-kira\\s+sampai\\s+sekarang\\s+sudah\\s+sekitar\\s+${SLOT}\\s*(?:tahun\\s*\\/\\s*bulan)?`, "i"), "", "buang");
+    ubah(rxSisa(`\\s*sejak\\s+${SLOT}\\s*(,\\s*kira-kira)`, "i"), "$1", "buang");
+    const sejakSebelum = f.adaPisah ? " sejak sebelum perkara ini diajukan" : "";
+    if (ubah(rxSisa(`\\s*sejak\\s+${SLOT}`, "i"), sejakSebelum, sejakSebelum ? "turun" : "buang") && sejakSebelum) keluar.dibuang = true;
+    const polaLama = rxSisa(`\\s*(?:sudah\\s+)?(?:selama\\s+)?(?:kurang\\s+lebih|lebih\\s+kurang|sekitar|kira-kira)?\\s*${SLOT}\\s*(?:tahun\\s*\\/\\s*bulan)?(?:\\s*lamanya)?`, "i");
+    if (polaLama.test(t)) {
+      if (ubah(polaLama, sejakSebelum, sejakSebelum ? "turun" : "buang") && sejakSebelum) keluar.dibuang = true;
+    }
+  }
+
+  // --- Awal perselisihan dan puncaknya --------------------------------------
+  const sebelumPisah = f.pisahSejak
+    ? `beberapa waktu sebelum mereka berpisah tempat tinggal pada ${f.pisahSejak}`
+    : f.adaPisah
+      ? "beberapa waktu sebelum mereka berpisah tempat tinggal"
+      : "";
+  if (/puncak/i.test(q)) {
+    const polaPuncak = rxSisa(`(terjadi)\\s+(?:pada\\s+)?${SLOT}`, "i");
+    if (polaPuncak.test(t)) {
+      if (f.pisahSejak) {
+        const siapa = f.siapaPergi ? `, ketika ${f.siapaPergi} pergi meninggalkan tempat tinggal bersama` : ", hingga mereka berpisah tempat tinggal";
+        ubah(polaPuncak, `$1 pada ${f.pisahSejak}${siapa}`, "turun");
+      } else if (f.adaPisah) {
+        ubah(polaPuncak, "$1 ketika mereka akhirnya berpisah tempat tinggal", "turun");
+      } else ubah(polaPuncak, "$1 sebelum perkara ini diajukan", "buang");
+    }
+  } else if (/kapan|sejak|mulai/i.test(q) && /selisih|tengkar|cekcok/i.test(q)) {
+    const polaSejak = rxSisa(`\\bsejak\\s+${SLOT}`, "i");
+    if (polaSejak.test(t)) {
+      if (f.puncak) ubah(polaSejak, `sejak beberapa waktu sebelum puncaknya pada ${f.puncak}`, "turun");
+      else if (sebelumPisah) ubah(polaSejak, `sejak ${sebelumPisah}`, "turun");
+      // Tanpa fakta apa pun: yang pasti hanya bahwa perselisihan itu terjadi
+      // sebelum perkara diajukan - ditandai perlu diisi.
+      else ubah(polaSejak, "sebelum perkara ini diajukan", "buang");
+    }
+  }
+
+  // --- Penyebab -------------------------------------------------------------
+  if (/penyebab|\bsebab\b|apa\s+alasan/i.test(q) && !/bagaimana|dari\s+mana/i.test(q)) {
+    const polaSebab = rxSisa(`((?:adalah|yaitu|yakni)\\s+)(?:karena\\s+|sebab\\s+)?${SLOT}`, "i");
+    if (polaSebab.test(t)) {
+      if (daftar) ubah(polaSebab, `$1${daftar}`, "turun");
+      // Posita tanpa satu pun sebab yang tertulis: tidak ada perbuatan yang
+      // boleh dituduhkan. Yang dapat dikatakan hanya bahwa sumbernya
+      // permasalahan rumah tangga mereka - tetap ditandai perlu diisi.
+      else ubah(polaSebab, "$1permasalahan dalam rumah tangga mereka", "buang");
+    }
+  }
+
+  // Tanda baca yang tertinggal sesudah bagian dibuang.
+  t = t
+    .replace(/\s+([,;])/g, "$1")
+    .replace(/\s+\.(?!\.)/g, ".")
+    .replace(/,\s*,/g, ",")
+    .replace(/,\s*([;.])/g, "$1")
+    .replace(/,\s*$/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  keluar.jawab = t;
+  if (keluar.pilihan) keluar.pilihan = keluar.pilihan.map((p) => p.replace(/\s{2,}/g, " ").trim());
+  return keluar;
+}
+
+/**
+ * Pilihan templat yang dapat DIPUTUSKAN oleh fakta posita (butir 14): "sudah
+ * dikaruniai ... anak" / "belum dikaruniai anak" bila jumlah anaknya
+ * tertulis; "pernah juga tinggal di tempat lain" / "tidak pernah" menurut
+ * riwayat tinggalnya. -1 bila datanya tidak memutuskan apa-apa.
+ */
+function pilihMenurutFakta({ tanya, pilihan, fakta }) {
+  if (!Array.isArray(pilihan) || pilihan.length < 2) return -1;
+  const f = fakta || {};
+  const cari = (pola, bukan) => pilihan.findIndex((p) => pola.test(p) && !(bukan && bukan.test(p)));
+  const q = String(tanya || "");
+  if (/dikarunia|keturunan|\banak\b/i.test(q)) {
+    if (f.jumlahAnak === "belum mempunyai anak") return cari(/belum\s+(?:di)?karunia/i);
+    if (/^\d+\s+orang\s+anak$/.test(String(f.jumlahAnak || ""))) return cari(/(?:sudah|telah)\s+dikarunia/i, /belum/i);
+    return -1;
+  }
+  if (/tinggal/i.test(q) && !/pisah|serumah|satu rumah|masih tinggal/i.test(q)) {
+    const n = Array.isArray(f.tempatTinggal) ? f.tempatTinggal.length : 0;
+    if (/tempat lain/i.test(q)) {
+      if (n >= 2) return cari(/pernah\s+juga/i, /tidak\s+pernah/i);
+      if (n === 1) return cari(/tidak\s+pernah\s+tinggal/i);
+      return -1;
+    }
+    if (f.tidakPernahSerumah) return cari(/tidak\s+pernah\s+tinggal/i);
+    if (n >= 1) return cari(/tinggal\s+bersama\s+di|membina|bertempat/i, /tidak\s+pernah/i);
+  }
+  return -1;
 }
 
 /**
@@ -3819,6 +4418,22 @@ function susunKeteranganSaksiSdg(opsi) {
         }
       }
 
+      // Butir 14: pilihan templat yang diputuskan fakta posita (anak sudah/
+      // belum, tinggal di tempat lain atau tidak) tidak lagi menunggu petugas.
+      let dipilihFakta = false;
+      const kePilih = o.rapikanSisa === false ? -1 : pilihMenurutFakta({ tanya, pilihan, fakta });
+      if (kePilih >= 0) {
+        jawab = pilihan[kePilih];
+        pilihan = [];
+        dipilihFakta = true;
+      }
+      // rapikanSisa:false hanya untuk membandingkan langkah ragam dengan
+      // cermin contoh portal (ragamkanJawabanContoh), yang tidak punya perkara.
+      const rapikan = (teks) =>
+        o.rapikanSisa === false
+          ? { jawab: teks, pilihan: null, diturunkan: false, dibuang: false }
+          : rapikanSisaIsian({ tanya, jawab: teks, fakta, pelaku: pihak.pelaku, lawan: pihak.lawan, daftar });
+
       // Modus menjawab lebih dulu; bila ia tidak punya jawaban untuk
       // pertanyaan ini, templat yang bicara - seperti semula.
       let varian = { indeks: 0, n: 1, habis: false };
@@ -3833,7 +4448,8 @@ function susunKeteranganSaksiSdg(opsi) {
         bank: bank.jawabanModus,
         // Butir 27: bank waktu|... dan kehidupan|... membingkai jawaban
         // templat yang SUDAH diisi dari gugatan - faktanya tetap dari posita.
-        jawab: lengkapiJawabanTemplat({ tanya, jawab, fakta }),
+        // Butir 14: yang dibingkai jawaban yang SUDAH dirapikan - bukan "...".
+        jawab: rapikan(lengkapiJawabanTemplat({ tanya, jawab, fakta })).jawab,
         pilihBentuk: (bentuk, kunciBank) => {
           const indeks = indeksUntuk(`${kT}|${kunciBank}`, bentuk.length);
           varian = { indeks, n: bentuk.length, habis: bentuk.length < jumlahSaksi };
@@ -3857,8 +4473,18 @@ function susunKeteranganSaksiSdg(opsi) {
         if (ke === 1) terisiDariData.push({ no, tanya, sumber: upaya.sumber });
       }
       jawab = lengkapiJawabanTemplat({ tanya, jawab, fakta });
-      if (ke === 1 && jawab !== sebelumIsi && !dariUpaya) terisiDariPosita.push({ no, tanya });
-      if (pilihan.length) pilihan = pilihan.map((p) => akhiriJawaban(besarkanAwal(lengkapiJawabanTemplat({ tanya, jawab: p, fakta }))));
+      const terisiTemplat = jawab !== sebelumIsi;
+      // Butir 14: sisa titik-titik diturunkan dengan logika, dijadikan pilihan,
+      // atau dirapikan (lihat rapikanSisaIsian).
+      const rapi = dariModus ? null : rapikan(jawab);
+      if (rapi) {
+        jawab = rapi.jawab;
+        if (rapi.pilihan && !pilihan.length) pilihan = rapi.pilihan;
+      }
+      if (ke === 1 && !dariUpaya && (terisiTemplat || dipilihFakta || (rapi && rapi.diturunkan))) terisiDariPosita.push({ no, tanya });
+      if (pilihan.length) {
+        pilihan = pilihan.map((p) => akhiriJawaban(besarkanAwal(rapikan(lengkapiJawabanTemplat({ tanya, jawab: p, fakta })).jawab)));
+      }
       // "Ya, " templat dilepas (pembukanya dipilih ulang menurut profil manusia),
       // kecuali pada jawaban tetap yang tidak boleh disentuh.
       jawab = tanpaAkhiran(jawab);
@@ -3921,7 +4547,10 @@ function susunKeteranganSaksiSdg(opsi) {
           (t) => POLA_BELUM_TERISI.test(t) || PILIHAN_TEMPLAT.test(t) || POLA_PILIHAN_SEBUTAN_TEKS.test(t)
         ) ||
         pilihan.length > 1 ||
-        hubunganTerbuka;
+        hubunganTerbuka ||
+        // Butir 14: keterangan yang hanya diketahui saksi dibuang dari kalimat -
+        // kalimatnya utuh, tetapi petugas tetap diminta melengkapinya.
+        Boolean(rapi && rapi.dibuang);
       if (ke === 1 && perlu) perluDiisi.push({ no, tanya });
       const butir = { no, tanya, jawab: akhir, perluDiisi: perlu, varian };
       if (kosongSeluruhnya) butir.belumTerisi = true;
@@ -4072,6 +4701,13 @@ module.exports = {
   lamaPisahPosita,
   siapaPergiPosita,
   upayaDamaiPosita,
+  // Butir 14 (6 Okt 2026) - kelengkapan keterangan saksi, diuji langsung.
+  lamaSejakAcuan,
+  jumlahAnakPosita,
+  anakIkutPosita,
+  riwayatTinggalPosita,
+  rapikanSisaIsian,
+  pilihMenurutFakta,
   TANDA_BELUM_TERISI,
   POLA_TANYA_UPAYA_RUKUN,
   alasanDariPosita,

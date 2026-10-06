@@ -1781,13 +1781,16 @@ describe("fakta gugatan mengisi titik-titik templat", () => {
    * bertitik-titik: kalimat kacau di berita acara lebih buruk daripada satu
    * titik-titik yang jelas menunggu petugas.
    */
-  it("keadaan yang tidak muat pada templatnya dibiarkan menunggu petugas", () => {
+  // Diubah butir 14 (6 Okt 2026): kalimatnya kini DIBALIK menjadi "belum
+  // dikaruniai anak" - bukan disisipi "belum mempunyai anak" (yang kacau),
+  // dan bukan dibiarkan bertitik-titik.
+  it("keadaan 'belum punya anak' pada templat 'dikaruniai ... anak' membalik kalimatnya, tidak kacau", () => {
     const h = susun({
       templat: [{ no: "4", tanya: "Berapa orang anak mereka?", jawab: "Mereka dikaruniai ........... anak;" }],
       posita: "Bahwa keduanya belum dikaruniai anak;",
     });
-    expect(h.saksi1[0].jawab).toMatch(/\.{3,}/);
-    expect(h.perluDiisi.map((x) => x.no)).toContain("4");
+    expect(h.saksi1[0].jawab).toMatch(/belum dikaruniai anak;$/);
+    expect(h.saksi1[0].jawab).not.toMatch(/\.{3,}|anak\s+anak|belum mempunyai anak/);
   });
 });
 

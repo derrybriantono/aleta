@@ -2410,6 +2410,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       itsbat: null,
       saksiSdg: null,
       positaLain: null,
+      alasanPosita: null,
       // Yang dipakai penyusun, bukan yang diminta: portal menyebut asalnya
       // 'portal' hanya bila bot sungguh menerimanya.
       tipeKeluaranDiterima: Boolean(tipe.tipeKeluaran),
@@ -2453,6 +2454,25 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         },
         tipeKeluaran: tipe.tipeKeluaran,
       });
+    }
+    // Butir 12 (6 Okt 2026): alasan yang terbaca dari posita - SUMBER YANG SAMA
+    // dengan "Alasan yang dipakai" penyusun saksi (alasanDariPosita) - supaya
+    // centang modus "Hanya sebagian alasan" dapat mendahulukan alasan yang
+    // sesuai posita sebelum keterangan disusun. Posita dari ekstensi (5125),
+    // atau dari SIPP bila tidak dikirim (HANYA SELECT, 2,5 detik).
+    if (sumber === "alasan-posita") {
+      const positaMasuk = String(req.body?.posita || "");
+      const positaKurang = positaMasuk.replace(/<[^>]*>/g, " ").trim().length < 50;
+      const konteksSipp =
+        positaKurang && nomorPerkara ? await abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null) : null;
+      const positaSipp = konteksSipp && konteksSipp.posita ? konteksSipp.posita : "";
+      const positaDipakai = positaKurang && positaSipp ? positaSipp : positaMasuk;
+      const terbaca = positaDipakai.replace(/<[^>]*>/g, " ").trim().length >= 50;
+      jawaban.alasanPosita = {
+        ok: terbaca,
+        alasan: terbaca ? abtUsulanService.alasanDariPosita(positaDipakai) : [],
+        asalPosita: !terbaca ? "" : positaDipakai === positaSipp ? "sipp" : "ekstensi",
+      };
     }
     // Keterangan saksi SDG - disusun dari templat pertanyaan yang ekstensi
     // ambil lewat halaman penyunting ABT sendiri (load_template). Dua saksi,

@@ -361,7 +361,17 @@ describe("muatan saksi-sdg (susunMuatanSdg dijalankan dari abt.js)", () => {
         ujiTampilan: mode,
       });
       await susunSdg(w);
-      expect(j.c.usulan[0].upayaDamai, mode).toBe("sudah didamaikan keluarga namun tidak berhasil");
+      // Butir 12 (6 Okt 2026): Baru/UI Baru yang berkelompok juga meminta
+      // 'alasan-posita' saat borang dibuka - yang diperiksa muatan saksi-sdg.
+      const sdg = j.c.usulan.find((m: any) => m.sumber === "saksi-sdg");
+      expect(sdg.upayaDamai, mode).toBe("sudah didamaikan keluarga namun tidak berhasil");
+      if (mode === "ui") {
+        // Rute bot SUNGGUHAN menjawab alasan dari posita 5125 (judi).
+        const i = j.c.usulan.findIndex((m: any) => m.sumber === "alasan-posita");
+        expect(i).toBeGreaterThanOrEqual(0);
+        expect(j.c.jawabanBot[i].alasanPosita).toMatchObject({ ok: true, asalPosita: "ekstensi" });
+        expect(j.c.jawabanBot[i].alasanPosita.alasan).toContain("judi");
+      }
     }
   });
 
