@@ -149,17 +149,21 @@ function setRelaas() {
 
 /** Sebab pemilihan blangko - keputusannya disebut, bukan disembunyikan. */
 function sebabPilihan(keadaan: KeadaanRelaas, pihak: PihakDipanggil, terpilih: string) {
-  if (keadaan === "sidang-ditunda" && (pihak === "keduanya" || pihak === "pertama")) {
+  // 6 Okt (butir 10): blangko per pihak; gabungan hanya untuk SATU dokumen dua pihak.
+  if ((keadaan === "sidang-ditunda" || keadaan === "sidang-pertama") && pihak === "keduanya") {
     return (
-      "Sidang yang ditunda dengan Pihak Pertama ikut dipanggil memakai blangko sidang " +
-      "pertama - bukan karena ia sidang pertama, melainkan karena hanya blangko itu yang " +
-      "memuat dua pihak sekaligus."
+      "Satu dokumen untuk kedua pihak memakai blangko gabungan P dan T - hanya blangko itu yang " +
+      "memuat dua pihak sekaligus. Dialog Cetak relaas memecahnya menjadi blangko P dan blangko T " +
+      "per pihak."
     );
+  }
+  if (pihak === "pertama" || pihak === "kedua") {
+    return `Blangko ${pihak === "pertama" ? "pihak pertama (P)" : "pihak kedua (T)"} untuk keadaan "${keadaan}": ${terpilih}`;
   }
   if (pihak === "tidak-diketahui" && keadaan === "sidang-ditunda") {
     return (
       "Pihak yang dipanggil belum diketahui, jadi yang dipulangkan blangko bawaan keadaan " +
-      "ini (untuk Pihak Kedua). Periksa dahulu kehadiran sidang sebelumnya - terukur 1.354 " +
+      "ini (untuk Pihak Pertama). Periksa dahulu kehadiran sidang sebelumnya - terukur 1.354 " +
       "dari 20.109 baris jadwal sidang tidak mencatat kehadirannya."
     );
   }

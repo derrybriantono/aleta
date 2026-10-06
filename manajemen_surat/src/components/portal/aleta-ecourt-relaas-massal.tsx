@@ -69,6 +69,7 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import {
   BLANGKO_RELAAS,
   blangkoRelaas,
+  blangkoRelaasPerPihak,
   keadaanUntukGolongan,
   pihakDipanggil as pihakDariSandi,
   type PihakDipanggil,
@@ -397,8 +398,13 @@ export function nilaiBaris(baris: Baris): NilaiBaris {
   // sebagai teks: "sidang-lanjutan" adalah golongan bot yang keadaannya
   // "sidang-ditunda", dan pemetaan itu keputusan yang tinggal di sana.
   const keadaanGolongan = golongan.disebut ? keadaanUntukGolongan(golongan.sandi) : null;
+  // Keadaan yang memanggil KEDUA pihak (sidang pertama, ikrar) = keadaan yang
+  // punya blangko berpihak "keduanya" (6 Okt: sidang pertama kini juga punya
+  // blangko per pihak, jadi entri pertamanya tidak lagi "keduanya").
   const entriGolongan = keadaanGolongan
-    ? (BLANGKO_RELAAS.find((x) => x.keadaan === keadaanGolongan) ?? null)
+    ? (BLANGKO_RELAAS.find((x) => x.keadaan === keadaanGolongan && x.pihak === "keduanya") ??
+      BLANGKO_RELAAS.find((x) => x.keadaan === keadaanGolongan) ??
+      null)
     : null;
   const terjemahanSandi: PihakDipanggil = adaRuasHadir
     ? pihakDariSandi(hadirKosong ? "" : sandiHadir)
@@ -530,6 +536,18 @@ export function nilaiBaris(baris: Baris): NilaiBaris {
           pihak.sandi === "tidak-perlu"
             ? "Semua pihak hadir pada sidang itu - tidak ada yang dipanggil maupun diberi tahu, jadi tidak ada blangko yang dicetak."
             : `Keadaan "${keadaanGolongan}" tidak punya blangko terdaftar di BLANGKO_RELAAS.`,
+      };
+    }
+    // 6 Okt (butir 10): kedua pihak dipanggil dan blangko per pihak tersedia -
+    // dicetak TERPISAH (P dan T), bukan dengan blangko gabungan.
+    const perP = pihak.sandi === "keduanya" ? blangkoRelaasPerPihak(keadaanGolongan, "pertama") : null;
+    const perT = pihak.sandi === "keduanya" ? blangkoRelaasPerPihak(keadaanGolongan, "kedua") : null;
+    if (perP && perT) {
+      return {
+        ada: true,
+        label: `${perP.label} dan ${perT.label} - satu relaas per pihak`,
+        berkas: `${perP.berkas} + ${perT.berkas}`,
+        sebab: "",
       };
     }
     const bergeser = keadaanGolongan === "sidang-ditunda" && pilih.keadaan === "sidang-pertama";

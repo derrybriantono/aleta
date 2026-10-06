@@ -37,10 +37,16 @@ const SUMBER_JURUSITA = process.env.ALETA_UJI_JURUSITA
 
 const ASAL = "http://192.168.10.10";
 const NOMOR = "544/Pdt.G/2026/PA.Dgl";
-const berkasUntuk = (keadaan: string) => BLANGKO_RELAAS.find((x) => x.keadaan === keadaan)!.berkas;
-const P_DAN_T = berkasUntuk("sidang-pertama");
-const T_LANJUTAN = berkasUntuk("sidang-ditunda");
-const PBT = berkasUntuk("pemberitahuan-putusan");
+// 6 Okt (butir 10): blangko PER PIHAK - P untuk pihak pertama, T untuk pihak kedua.
+const berkasUntuk = (keadaan: string, pihak?: string) =>
+  BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && (!pihak || x.pihak === pihak))!.berkas;
+const P_DAN_T = berkasUntuk("sidang-pertama", "keduanya");
+const PERTAMA_P = berkasUntuk("sidang-pertama", "pertama");
+const PERTAMA_T = berkasUntuk("sidang-pertama", "kedua");
+const P_LANJUTAN = berkasUntuk("sidang-ditunda", "pertama");
+const T_LANJUTAN = berkasUntuk("sidang-ditunda", "kedua");
+const PBT_P = berkasUntuk("pemberitahuan-putusan", "pertama");
+const PBT_T = berkasUntuk("pemberitahuan-putusan", "kedua");
 
 const tunggu = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 const polos = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
@@ -296,7 +302,7 @@ describe("per perkara - relaas panggilan dan PBT lewat mesin relaas latar.js", (
     expect(m.pekerjaan.dokumen).toHaveLength(1);
     const d = m.pekerjaan.dokumen[0];
     expect(d.berkas).toBe(T_LANJUTAN);
-    expect(d.berkas).toContain(") .rtf"); // spasi sebelum .rtf tidak dirapikan
+    expect(d.berkas).toBe("[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf"); // nama ABT satker apa adanya
     expect(d).toMatchObject({ perkaraId: "10018", nomorPerkara: NOMOR, golongan: "sidang-lanjutan", d: 3, jurusita: "Rahmat Hidayat, S.H." });
     expect(d.nama).toBe("544-Pdt.G-2026-PA.Dgl - panggilan sidang ke-3 Tergugat");
     // Hanya ruas kontrak mesin relaas yang dikirim.
@@ -304,7 +310,7 @@ describe("per perkara - relaas panggilan dan PBT lewat mesin relaas latar.js", (
     await sampai(() => /1 dokumen masuk putaran cetak/.test(h.wadah.textContent || ""), "kabar berhasil");
   });
 
-  it("sidang pertama: Penggugat + Tergugat = SATU dokumen blangko P dan T", async () => {
+  it("sidang pertama: Penggugat + Tergugat = DUA dokumen per pihak (0. ... Pertama P dan T), bukan gabungan", async () => {
     const h = buka();
     await siapBaru(h);
     await pasang(h);
@@ -313,35 +319,38 @@ describe("per perkara - relaas panggilan dan PBT lewat mesin relaas latar.js", (
     pilih.dispatchEvent(new h.w.Event("change"));
     centang(h, "p1");
     centang(h, "p2");
-    expect(tombolCetak(h).textContent).toBe("Cetak");
+    expect(tombolCetak(h).textContent).toBe("Cetak 2 dokumen");
     tombolCetak(h).click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
     const dok = pesanMulai(h)[0].pekerjaan.dokumen;
-    expect(dok).toHaveLength(1);
-    expect(dok[0]).toMatchObject({ berkas: P_DAN_T, golongan: "sidang-pertama", d: 1, label: "Panggilan Penggugat dan Tergugat" });
+    expect(dok).toHaveLength(2);
+    expect(dok.map((x: { berkas: string }) => x.berkas).sort()).toEqual([PERTAMA_P, PERTAMA_T].sort());
+    expect(dok.map((x: { berkas: string }) => x.berkas)).not.toContain(P_DAN_T);
+    expect(dok.find((x: { berkas: string }) => x.berkas === PERTAMA_P)).toMatchObject({ golongan: "sidang-pertama", d: 1, label: "Panggilan Penggugat" });
+    expect(dok.find((x: { berkas: string }) => x.berkas === PERTAMA_T)).toMatchObject({ golongan: "sidang-pertama", d: 1, label: "Panggilan Tergugat" });
   });
 
-  it("sidang lanjutan: Penggugat + Tergugat = SATU dokumen P dan T (memuat keduanya, pohon-blangko)", async () => {
-    // Sampai 30 Sep sore: dua dokumen (P dan T + T lanjutan) - panggilan
-    // Tergugat tercetak dua kali. pohon-blangko.ts: pihak keduanya pada sidang
-    // ditunda memakai blangko P dan T saja.
+  it("sidang lanjutan: Penggugat + Tergugat = DUA dokumen, blangko P dan T (Sidang Lanjutan) masing-masing", async () => {
+    // 6 Okt (butir 10): tiap pihak blangkonya sendiri - gabungan tidak dipakai
+    // selama blangko per pihak ada.
     const h = buka();
     await siapBaru(h);
     await pasang(h);
     await sampai(() => h.wadah.querySelector("select.aleta-jurusita-sidang"), "pilihan");
     centang(h, "p1");
     centang(h, "p2");
-    expect(tombolCetak(h).textContent).toBe("Cetak");
+    expect(tombolCetak(h).textContent).toBe("Cetak 2 dokumen");
     // Blangko yang dipakai tertulis beserta sumbernya.
     const daftar = h.wadah.querySelector(".aleta-jurusita-rinci .aleta-jurusita-daftar")!.textContent || "";
-    expect(daftar).toContain(P_DAN_T);
-    expect(daftar).not.toContain(T_LANJUTAN);
+    expect(daftar).toContain(P_LANJUTAN);
+    expect(daftar).toContain(T_LANJUTAN);
+    expect(daftar).not.toContain(P_DAN_T);
     expect(daftar).toContain("bawaan ekstensi");
     tombolCetak(h).click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
     const dok = pesanMulai(h)[0].pekerjaan.dokumen;
-    expect(dok).toHaveLength(1);
-    expect(dok[0]).toMatchObject({ berkas: P_DAN_T, golongan: "sidang-lanjutan", d: 3, label: "Panggilan Penggugat dan Tergugat" });
+    expect(dok).toHaveLength(2);
+    expect(dok.map((x: { berkas: string }) => x.berkas).sort()).toEqual([P_LANJUTAN, T_LANJUTAN].sort());
   });
 
   it("PBT: mati sebelum putus; sesudah putus satu dokumen pemberitahuan-putusan tanpa sidang", async () => {
@@ -359,9 +368,11 @@ describe("per perkara - relaas panggilan dan PBT lewat mesin relaas latar.js", (
     centang(h2, "b2");
     tombolCetak(h2).click();
     await sampai(() => pesanMulai(h2).length === 1, "relaas-mulai");
+    // 6 Okt (butir 10): PBT per pihak - blangko P dan blangko T.
     const dok = pesanMulai(h2)[0].pekerjaan.dokumen;
-    expect(dok).toHaveLength(1);
-    expect(dok[0]).toMatchObject({ berkas: PBT, golongan: "pemberitahuan-putusan", d: 0 });
+    expect(dok).toHaveLength(2);
+    expect(dok.map((x: { berkas: string }) => x.berkas).sort()).toEqual([PBT_P, PBT_T].sort());
+    for (const x of dok) expect(x).toMatchObject({ golongan: "pemberitahuan-putusan", d: 0 });
   });
 
   it("cerai talak: sebutan Pemohon/Termohon, sidang sesudah putusan = panggilan ikrar", async () => {
@@ -428,7 +439,7 @@ describe("pemetaan blangko K3 - server, simpanan, bawaan", () => {
     expect(pesanMulai(h2)[0].pekerjaan.dokumen[0].berkas).toBe(khusus);
   });
 
-  it("sidang pertama tidak memakai kunci per pihak - hanya panggilan-sidang-pertama", async () => {
+  it("sidang pertama memakai kunci PER PIHAK - Tergugat blangko 0. ... Pertama T, bukan gabungan (6 Okt)", async () => {
     const h = buka({ pemetaan: { relaas: [{ kunci: "panggilan-tergugat", namaBerkas: "[JS] X.rtf" }], pbt: [] } });
     await siapBaru(h);
     await pasang(h);
@@ -438,7 +449,7 @@ describe("pemetaan blangko K3 - server, simpanan, bawaan", () => {
     centang(h, "p2");
     tombolCetak(h).click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
-    expect(pesanMulai(h)[0].pekerjaan.dokumen[0].berkas).toBe(P_DAN_T);
+    expect(pesanMulai(h)[0].pekerjaan.dokumen[0].berkas).toBe(PERTAMA_T);
   });
 
   it("jalan ke pengaturan hanya untuk admin dan super admin", async () => {
@@ -479,7 +490,7 @@ describe("cetak massal juru sita", () => {
       dok({ kunci: "sidang-pertama:20001:1:0" }),
       dok({ kunci: "sidang-pertama:20002:1:0", perkaraId: 20002, jurusita: { nama: "Budi Santoso", nip: "", dariPenunjukan: true } }),
       dok({ kunci: "sidang-ditunda:20003:2:0", perkaraId: 20003, golongan: "sidang-ditunda", d: 2, bisaDicetak: false, sebabTidakBisa: "Pihak yang dipanggil belum diketahui" }),
-      dok({ kunci: "pemberitahuan-putusan:20004:0:2", perkaraId: 20004, golongan: "pemberitahuan-putusan", d: null, pihakKe: 2, blangko: { berkas: PBT, label: "PBT" } }),
+      dok({ kunci: "pemberitahuan-putusan:20004:0:2", perkaraId: 20004, golongan: "pemberitahuan-putusan", d: null, pihakKe: 2, blangko: { berkas: PBT_T, label: "PBT" } }),
       // Dapat dicetak tetapi menahan "Pilih semua" (putusan dicabut) - perlu dilihat.
       dok({
         kunci: "pemberitahuan-putusan:20005:0:1",
@@ -487,7 +498,7 @@ describe("cetak massal juru sita", () => {
         golongan: "pemberitahuan-putusan",
         d: null,
         pihakKe: 1,
-        blangko: { berkas: PBT, label: "PBT" },
+        blangko: { berkas: PBT_P, label: "PBT" },
         ikutPilihSemua: false,
         peringatan: [{ jenis: "status-putusan", teks: 'Putusan berstatus "Dicabut" - pastikan diperlukan.', tahanPilihSemua: true }],
       }),
@@ -511,26 +522,34 @@ describe("cetak massal juru sita", () => {
   it("juru sita: hanya miliknya yang siap; yang belum pasti 'perlu dilihat'; dikirim sekaligus sesudah konfirmasi", async () => {
     const h = buka({ cetak: CETAK });
     const ringkas = await bukaMassal(h);
-    expect(ringkas.textContent).toBe("2 siap dicetak (1 sidang pertama, 1 PBT) · 3 perlu dilihat");
+    // 6 Okt (butir 10): sidang pertama "keduanya" dicetak per pihak - dua dokumen.
+    expect(ringkas.textContent).toBe("3 siap dicetak (2 sidang pertama, 1 PBT) · 3 perlu dilihat");
     const daftar = h.wadah.querySelector(".aleta-jurusita-hasil .aleta-jurusita-daftar")!.textContent || "";
     expect(daftar).toContain("Dicabut");
     expect(daftar).toContain("sudah tercatat di SIPP");
     expect(daftar).toContain("Pihak yang dipanggil belum diketahui");
     const cetak = h.wadah.querySelector(".aleta-jurusita-hasil .aleta-jurusita-tombol-utama") as HTMLButtonElement;
-    expect(cetak.textContent).toBe("Cetak 2 dokumen");
+    expect(cetak.textContent).toBe("Cetak 3 dokumen");
     cetak.click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai massal");
     expect(h.konfirmasi).toHaveLength(1);
     const kirim = pesanMulai(h)[0].pekerjaan.dokumen;
-    expect(kirim.map((x: any) => x.kunci)).toEqual(["sidang-pertama:20001:1:0", "pemberitahuan-putusan:20004:0:2"]);
-    expect(kirim[1]).toMatchObject({ golongan: "pemberitahuan-putusan", d: 0, berkas: PBT });
-    expect(kirim[0].nama).toBe("600-Pdt.G-2026-PA.Dgl - panggilan sidang ke-1");
+    expect(kirim.map((x: any) => x.kunci)).toEqual([
+      "sidang-pertama:20001:1:1",
+      "sidang-pertama:20001:1:2",
+      "pemberitahuan-putusan:20004:0:2",
+    ]);
+    expect(kirim[0]).toMatchObject({ golongan: "sidang-pertama", d: 1, berkas: PERTAMA_P });
+    expect(kirim[1]).toMatchObject({ golongan: "sidang-pertama", d: 1, berkas: PERTAMA_T });
+    expect(kirim[2]).toMatchObject({ golongan: "pemberitahuan-putusan", d: 0, berkas: PBT_T });
+    expect(kirim.map((x: any) => x.berkas)).not.toContain(P_DAN_T);
+    expect(kirim[0].nama).toBe("600-Pdt.G-2026-PA.Dgl - panggilan sidang ke-1 pihak 1");
   });
 
   it("Batal pada konfirmasi tidak mengirim apa pun; admin melihat semua juru sita", async () => {
     const h = buka({ cetak: CETAK, konfirmasi: false, siapa: { nama: "Admin", peran: "Admin", roleId: "admin" } });
     const ringkas = await bukaMassal(h);
-    expect(ringkas.textContent).toMatch(/^3 siap dicetak/);
+    expect(ringkas.textContent).toMatch(/^5 siap dicetak/);
     (h.wadah.querySelector(".aleta-jurusita-hasil .aleta-jurusita-tombol-utama") as HTMLButtonElement).click();
     await tunggu(50);
     expect(h.konfirmasi).toHaveLength(1);
@@ -545,7 +564,8 @@ describe("cetak massal juru sita", () => {
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai massal");
     const kirim = pesanMulai(h)[0].pekerjaan.dokumen;
     expect(kirim.find((x: any) => x.golongan === "pemberitahuan-putusan").berkas).toBe(khusus);
-    expect(kirim.find((x: any) => x.golongan === "sidang-pertama").berkas).toBe(P_DAN_T);
+    expect(kirim.find((x: any) => x.golongan === "sidang-pertama").berkas).toBe(PERTAMA_P);
+    expect(kirim.map((x: any) => x.berkas)).not.toContain(P_DAN_T);
   });
 });
 

@@ -62,8 +62,10 @@ import {
   PIHAK_PILIHAN,
   nilaiCetakDokumen,
   sebabProsesDiLuarMenu,
+  type PetaBlangkoCetak,
   type PihakPilihan,
 } from "@/app/api/aleta-ecourt/relaas-massal/cetak/nilai-cetak";
+import { pecahDokumenPerPihak } from "@/app/api/aleta-ecourt/relaas-massal/cetak/pemetaan-cetak";
 import { AletaEcourtRelaasMassal } from "@/components/portal/aleta-ecourt-relaas-massal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -706,7 +708,18 @@ export function DialogCetakRelaas({
   }, [ekstensi.ada, putaranBelumSelesai, memantau, tanyaKeadaan]);
 
   // ---- Penilaian dan pilihan ----------------------------------------------
-  const dokumen = useMemo(() => data?.dokumen ?? [], [data]);
+  // Pemetaan blangko admin dari rute (6 Okt, butir 10): tanpa peta ini layar
+  // menilai ulang dengan bawaan saja, dan berkas yang dikirim ke ekstensi
+  // mengabaikan Pemetaan blangko.
+  const petaBlangko = (data as { petaBlangko?: PetaBlangkoCetak } | null)?.petaBlangko ?? null;
+  // 6 Okt (butir 10): dokumen "keduanya" (sidang pertama, sidang ditunda sandi
+  // 4) dipecah menjadi satu dokumen per pihak - blangko P dan blangko T -
+  // sebelum dinilai; gabungan 3.b hanya bila blangko per pihak tidak ada.
+  const dokumen = useMemo(
+    () =>
+      (data?.dokumen ?? []).flatMap((d) => pecahDokumenPerPihak(d, petaBlangko?.relaas ?? {}, petaBlangko?.pbt ?? {})),
+    [data, petaBlangko]
+  );
   /**
    * Kelompok "dari hari kerja sebelumnya" - panggilan dari sidang kemarin yang
    * jadwalnya mungkin dicatat SESUDAH daftar kemarin dicetak. Milik daftar
@@ -716,17 +729,18 @@ export function DialogCetakRelaas({
    */
   const dokumenKemarin = useMemo(() => {
     const hariIniKunci = new Set(dokumen.map((d) => d.kunci));
-    return (data?.hariKerjaSebelumnya?.dokumen ?? []).filter((d) => !hariIniKunci.has(d.kunci));
-  }, [data, dokumen]);
+    return (data?.hariKerjaSebelumnya?.dokumen ?? [])
+      .flatMap((d) => pecahDokumenPerPihak(d, petaBlangko?.relaas ?? {}, petaBlangko?.pbt ?? {}))
+      .filter((d) => !hariIniKunci.has(d.kunci));
+  }, [data, dokumen, petaBlangko]);
   const tanggalKemarin = data?.hariKerjaSebelumnya?.tanggal ?? "";
-
   const nilai = useMemo(() => {
     const peta = new Map<string, ReturnType<typeof nilaiCetakDokumen>>();
     for (const dok of [...dokumen, ...dokumenKemarin]) {
-      peta.set(dok.kunci, nilaiCetakDokumen(dok, pilihanPihak[dok.kunci] ?? null));
+      peta.set(dok.kunci, nilaiCetakDokumen(dok, pilihanPihak[dok.kunci] ?? null, petaBlangko));
     }
     return peta;
-  }, [dokumen, dokumenKemarin, pilihanPihak]);
+  }, [dokumen, dokumenKemarin, pilihanPihak, petaBlangko]);
 
   const kelompok = useMemo(() => kelompokkanPerJurusita(dokumen, namaAkun), [dokumen, namaAkun]);
   const kelompokKemarin = useMemo(() => kelompokkanPerJurusita(dokumenKemarin, namaAkun), [dokumenKemarin, namaAkun]);

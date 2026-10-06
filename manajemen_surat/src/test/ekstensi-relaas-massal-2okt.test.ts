@@ -46,10 +46,13 @@ const SUMBER_BAS = bacaGanti(process.env.ALETA_UJI_BASMASSAL_R, "basmassal.js");
 
 const ASAL = "http://192.168.10.10";
 const HALAMAN = { sippDaftar: `${ASAL}/SIPP/perkara`, abtBeranda: `${ASAL}/aps_badilag/abt/` };
-const berkasUntuk = (keadaan: string) => BLANGKO_RELAAS.find((x) => x.keadaan === keadaan)!.berkas;
-const P_DAN_T = berkasUntuk("sidang-pertama");
-const T_LANJUTAN = berkasUntuk("sidang-ditunda");
-const PBT = berkasUntuk("pemberitahuan-putusan");
+// 6 Okt (butir 10): blangko PER PIHAK.
+const berkasUntuk = (keadaan: string, pihak?: string) =>
+  BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && (!pihak || x.pihak === pihak))!.berkas;
+const P_DAN_T = berkasUntuk("sidang-pertama", "keduanya");
+const PERTAMA_P = berkasUntuk("sidang-pertama", "pertama");
+const PERTAMA_T = berkasUntuk("sidang-pertama", "kedua");
+const T_LANJUTAN = berkasUntuk("sidang-ditunda", "kedua");
 
 const tunggu = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 const polos = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
@@ -309,11 +312,15 @@ describe("butir 2: relaas massal dibagi per juru sita (UI Baru, admin)", () => {
     expect(centangPerkara(h, 706)!.checked).toBe(false); // milik Budi
     expect(rahmat.querySelector(".aleta-lipat-ringkas")!.textContent).toBe("2 dicentang");
     const cetak = tombolCetak(h);
-    expect(cetak.textContent).toBe("Cetak 2 dokumen");
+    // Sidang pertama 700 untuk kedua pihak = dua dokumen per pihak (6 Okt, butir 10).
+    expect(cetak.textContent).toBe("Cetak 3 dokumen");
     cetak.click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
     const dok = pesanMulai(h)[0].pekerjaan.dokumen;
-    expect(dok.map(ringkasDok).sort()).toEqual([`700|sidang-pertama|1|${P_DAN_T}`, `701|sidang-ditunda|3|${T_LANJUTAN}`].sort());
+    expect(dok.map(ringkasDok).sort()).toEqual(
+      [`700|sidang-pertama|1|${PERTAMA_P}`, `700|sidang-pertama|1|${PERTAMA_T}`, `701|sidang-ditunda|3|${T_LANJUTAN}`].sort()
+    );
+    expect(dok.map((d: any) => d.berkas)).not.toContain(P_DAN_T);
     expect(dok.every((d: any) => d.jurusita === "Rahmat Hidayat, S.H.")).toBe(true);
     // Butir 14: tidak ada penanda ALETA di pekerjaan cetak (isi/nama berkas/label).
     expect(JSON.stringify(dok)).not.toMatch(/aleta/i);
@@ -334,7 +341,7 @@ describe("butir 2: relaas massal dibagi per juru sita (UI Baru, admin)", () => {
     ubahCentang(h, centangPihak(h, 704, "b2"), true);
     expect(centangPerkara(h, 704)!.checked).toBe(true);
     expect(centangKelompok(budi).checked).toBe(true);
-    expect(tombolCetak(h).textContent).toBe("Cetak 2 dokumen");
+    expect(tombolCetak(h).textContent).toBe("Cetak 3 dokumen");
     // Kosongkan perkara 706 -> pihaknya ikut kosong.
     ubahCentang(h, centangPerkara(h, 706)!, false);
     expect(centangPihak(h, 706, "p1").checked).toBe(false);

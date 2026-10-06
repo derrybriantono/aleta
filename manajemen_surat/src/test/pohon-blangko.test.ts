@@ -307,12 +307,19 @@ describe("relaas: sandi kehadiran dan golongan", () => {
     expect(blangkoRelaas("ikrar-talak", "tidak-perlu")?.keadaan).toBe("ikrar-talak");
   });
 
-  it("sidang ditunda memilih blangko menurut siapa yang tidak hadir", () => {
-    const pt = BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-pertama")!.berkas;
-    const t = BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-ditunda")!.berkas;
-    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(2))?.berkas).toBe(t);
-    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(3))?.berkas).toBe(pt);
-    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(4))?.berkas).toBe(pt);
+  it("sidang ditunda memilih blangko PER PIHAK menurut siapa yang tidak hadir (6 Okt, butir 10)", () => {
+    // Sandi 2 = hanya pihak pertama hadir -> panggil T; sandi 3 -> panggil P.
+    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(2))?.berkas).toBe(
+      "[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf"
+    );
+    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(3))?.berkas).toBe(
+      "[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan).rtf"
+    );
+    // Satu dokumen untuk dua pihak (sandi 4) - hanya gabungan yang memuat keduanya;
+    // dialog cetak memecahnya per pihak lebih dulu (pecahDokumenPerPihak).
+    expect(blangkoRelaas("sidang-ditunda", pihakDipanggil(4))?.berkas).toBe("[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf");
+    const gabungan = BLANGKO_RELAAS.filter((x) => x.pihak === "keduanya").map((x) => x.keadaan).sort();
+    expect(gabungan).toEqual(["ikrar-talak", "sidang-pertama"]);
   });
 
   it("golongan bot -> keadaan: 'sidang-lanjutan' memakai blangko sidang lanjutan", () => {
