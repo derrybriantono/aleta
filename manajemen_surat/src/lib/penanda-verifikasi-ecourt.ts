@@ -116,9 +116,9 @@ export function penandaVerifikasi(
     bagian.push(`${item.menunggu} dokumen persidangan menunggu verifikasi majelis.`);
   } else if (item.keadaan === "belum-upload") {
     bagian.push(
-      `Belum ada dokumen persidangan yang diunggah pihak sejak sidang sebelumnya${
+      `Pihak belum mengunggah dokumennya di e-Court - belum ada dokumen persidangan yang diunggah sejak sidang sebelumnya${
         item.sidangLalu ? ` (${item.sidangLalu})` : ""
-      } - agenda hari ini menuntut dokumen lewat e-Court.`
+      }, sehingga belum ada yang dapat diverifikasi hakim. Agenda hari ini menuntut dokumen pihak lewat e-Court.`
     );
   } else if (item.keadaan === "sudah") {
     bagian.push(
