@@ -894,10 +894,19 @@ function relaasPetakanToken(diminta, daftarBerkas) {
  * abt_menu 981, di bawah Blangko Derry), dan ada dua kelompok lain yang juga
  * bernama relaas ("Relaas Panggilan", "Relaas Ikrar Talak"). Nama menu di
  * peladen belum tentu sama; yang menentukan tetap ISI kelompoknya.
+ *
+ * `utamakan` (perbaikan 6 Okt 2026, edoc penetapan): nama kelompok dari Peta
+ * penetapan ("Form Bantu PTSP") dibuka PALING DULU - nama yang memuatnya
+ * utuh, lalu yang memuat salah satu kata khasnya ("ptsp"). Tetap urutan,
+ * bukan saringan. Tanpa `utamakan` urutannya sama persis dengan sebelumnya.
  */
-function relaasUrutkanKelompok(daftar) {
+function relaasUrutkanKelompok(daftar, utamakan) {
+  const u = String(utamakan || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const kataKhas = u.split(" ").filter((k) => k.length >= 4 && !/^(form|blangko|bantu|menu)$/.test(k));
   const nilai = (k) => {
     const n = String((k && k.kelompok) || "").toLowerCase();
+    if (u && n.replace(/\s+/g, " ").includes(u)) return -2;
+    if (kataKhas.length && kataKhas.some((k2) => n.includes(k2))) return -1;
     if (/rela+s/.test(n) && /pbt|pemberitahuan/.test(n)) return 0;
     if (/rela+s/.test(n)) return 1;
     if (/pbt|pemberitahuan/.test(n)) return 2;
@@ -1652,7 +1661,7 @@ async function panenTokenRelaas(asalAbt, diminta, opsi) {
   const mintaPaksa = Boolean(opsi && opsi.paksa);
   const paksa =
     mintaPaksa && !pelariRelaasHidup && Date.now() - panenRelaasPaksaTerakhir >= RELAAS_JEDA_PANEN_PAKSA_MS;
-  const janji = panenTokenRelaasInti(asalAbt, diminta, { paksa });
+  const janji = panenTokenRelaasInti(asalAbt, diminta, { paksa, utamakan: (opsi && opsi.utamakan) || "" });
   panenRelaasBerjalan = janji;
   try {
     const hasil = await janji;
@@ -1689,7 +1698,7 @@ async function panenTokenRelaasInti(asalAbt, diminta, opsi) {
       sebab: `ABT menjawab ${beranda.r.status} saat membaca beranda blangko`,
     };
   }
-  const kelompok = relaasUrutkanKelompok(relaasUraiKelompok(beranda.teks)).slice(0, RELAAS_BATAS_KELOMPOK);
+  const kelompok = relaasUrutkanKelompok(relaasUraiKelompok(beranda.teks), opsi && opsi.utamakan).slice(0, RELAAS_BATAS_KELOMPOK);
   if (kelompok.length === 0) {
     return {
       ok: false,
@@ -1803,27 +1812,24 @@ async function relaasSebabTolakSesi(asal) {
 }
 
 /**
- * Satu dokumen: token -> buka blangko (cari) -> pilih sidang -> CETAK (RTF)
- * -> RTF disimpan -> PDF dari ALETA -> PDF disimpan.
+ * ============================================================================
+ * SATU RTF DARI ABT - panen token -> buka (cari) -> pilih sidang -> CETAK
+ * ============================================================================
  *
- * Tidak pernah melempar. Pulang
- *   { ok:true, tanpaPdf?, sebab? }                  - berkasnya tersimpan
- *   { ok:false, sebab, bolehUlang? }                - gagal; bolehUlang bila
- *                                                     sebabnya sesaat (5xx, putus)
- *   { tahan:true, perluMasuk, sebab }               - putaran BERHENTI SEMENTARA:
- *       sesi ABT atau ALETA yang habis membuat SELURUH sisa antrian gagal
- *       dengan sebab yang sama, dan lima puluh baris gagal yang sama bukan
- *       neraca, melainkan kebisingan.
+ * Dipisah dari kerjakanSatuRelaas (perbaikan 6 Okt 2026, butir 17) supaya
+ * edoc penetapan ("relaas-rtf" dari panel SIPP) menempuh jalan YANG SAMA
+ * dengan cetak relaas massal - hak akses ABT tetap diperiksa di langkah cari.
+ * Isinya dipindah apa adanya; opsi.utamakan hanya mendahulukan kelompok
+ * blangko tertentu saat memanen token.
  *
- * `catat(format, nama)` dipanggil SEGERA sesudah tiap berkas diterima
- * peramban, dan ia menyimpan kemajuannya - pekerja yang mati sesudah RTF
- * tersimpan tidak mengunduh RTF itu lagi.
+ * Pulang { ok:true, rtf: ArrayBuffer } | { tahan:true, perluMasuk, sebab } |
+ * { ok:false, sebab, bolehUlang? }.
  */
-async function kerjakanSatuRelaas(pekerjaan, butir, catat) {
-  const dasar = relaasDasarAbt(pekerjaan.asalAbt);
+async function relaasAmbilRtf(dasar, berkas, perkaraId, d, opsi) {
+  const butir = { berkas, perkaraId, d: Number(d) || 0 };
   let token;
   try {
-    const panen = await panenTokenRelaas(dasar, [butir.berkas], {});
+    const panen = await panenTokenRelaas(dasar, [butir.berkas], { utamakan: (opsi && opsi.utamakan) || "" });
     if (panen.perluMasuk) return { tahan: true, perluMasuk: "abt", sebab: RELAAS_TAHAN_ABT };
     if (!panen.ok) return { ok: false, sebab: panen.sebab, bolehUlang: Boolean(panen.bolehUlang) };
     token = panen.token[butir.berkas];
@@ -1926,6 +1932,32 @@ async function kerjakanSatuRelaas(pekerjaan, butir, catat) {
   } catch (galat) {
     return { ok: false, bolehUlang: true, sebab: `ABT tidak terjangkau saat CETAK: ${relaasPesan(galat)}` };
   }
+
+  return { ok: true, rtf };
+}
+
+/**
+ * Satu dokumen: token -> buka blangko (cari) -> pilih sidang -> CETAK (RTF)
+ * -> RTF disimpan -> PDF dari ALETA -> PDF disimpan.
+ *
+ * Tidak pernah melempar. Pulang
+ *   { ok:true, tanpaPdf?, sebab? }                  - berkasnya tersimpan
+ *   { ok:false, sebab, bolehUlang? }                - gagal; bolehUlang bila
+ *                                                     sebabnya sesaat (5xx, putus)
+ *   { tahan:true, perluMasuk, sebab }               - putaran BERHENTI SEMENTARA:
+ *       sesi ABT atau ALETA yang habis membuat SELURUH sisa antrian gagal
+ *       dengan sebab yang sama, dan lima puluh baris gagal yang sama bukan
+ *       neraca, melainkan kebisingan.
+ *
+ * `catat(format, nama)` dipanggil SEGERA sesudah tiap berkas diterima
+ * peramban, dan ia menyimpan kemajuannya - pekerja yang mati sesudah RTF
+ * tersimpan tidak mengunduh RTF itu lagi.
+ */
+async function kerjakanSatuRelaas(pekerjaan, butir, catat) {
+  const dasar = relaasDasarAbt(pekerjaan.asalAbt);
+  const ambil = await relaasAmbilRtf(dasar, butir.berkas, butir.perkaraId, butir.d, {});
+  if (!ambil.ok) return ambil;
+  const rtf = ambil.rtf;
 
   const jalur = relaasJalurBerkas(pekerjaan, butir);
   const caraRtf = (pekerjaan.opsi && pekerjaan.opsi.unduhRtf) || "selalu";
@@ -2172,6 +2204,29 @@ async function layaniRelaas(pesan, pengirim) {
       jedaRataMs: RELAAS_JEDA_RATA_MS,
       kerjaRataMs: RELAAS_KERJA_RATA_MS,
     };
+  }
+
+  // ==========================================================================
+  // relaas-rtf - SATU blangko ABT untuk SATU perkara, RTF-nya dipulangkan
+  // (perbaikan 6 Okt 2026, butir 17: edoc penetapan PMH/PHS dari panel SIPP).
+  // Jalan yang sama dengan cetak relaas massal (relaasAmbilRtf): hak akses
+  // ABT diperiksa ABT sendiri. Tidak mengunduh apa pun, tidak menulis apa
+  // pun - RTF dipulangkan ke panel, yang mengirimkannya ke ALETA.
+  // ==========================================================================
+  if (pesan.jenis === "relaas-rtf") {
+    const saring = relaasSaringAsal(pesan.asal, pesan.asalAbt, pengirim);
+    if (saring.sebab) return { ok: false, sebab: saring.sebab };
+    const berkas = String(pesan.berkas || "");
+    const perkaraId = String(pesan.perkaraId || "").trim();
+    if (!berkas || berkas.length > 200 || /[\\/]/.test(berkas)) return { ok: false, sebab: "nama blangko tidak sah" };
+    if (!/^\d+$/.test(perkaraId) || /^0+$/.test(perkaraId)) return { ok: false, sebab: "perkara tidak dikenali" };
+    const ambil = await relaasAmbilRtf(saring.dasar, berkas, perkaraId, 0, {
+      utamakan: String(pesan.utamakan || "").slice(0, 120),
+    });
+    if (!ambil.ok) {
+      return { ok: false, perluMasuk: Boolean(ambil.tahan), sebab: ambil.sebab || "blangko tidak tercetak" };
+    }
+    return { ok: true, rtfBase64: relaasBase64(ambil.rtf), ukuran: ambil.rtf.byteLength };
   }
 
   if (pesan.jenis === "relaas-perkiraan") {

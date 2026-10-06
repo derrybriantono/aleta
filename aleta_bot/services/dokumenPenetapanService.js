@@ -57,6 +57,24 @@ const TABEL_PENETAPAN = {
   phs: "perkara_penetapan_hari_sidang",
 };
 
+/**
+ * Baris petugas yang ditunjuk perkara_penetapan_id - SEPERTI UNGGAHAN MANUAL
+ * PETUGAS DI SIPP, diukur 6 Okt 2026 atas sipp_donggala:
+ *
+ *   PMH  baris perkara_hakim_pn ber-URUTAN 1 (ketua majelis / hakim tunggal):
+ *        200 dari 200 unggahan terakhir menunjuk baris urutan 1; "id
+ *        terbesar" (bentuk sebelum 6 Okt) hanya cocok 144 dari 902, sebab
+ *        id terbesar adalah hakim anggota kedua.
+ *   PPP, PJS, PHS  baris terbaru perkara itu (771/866, 771/784, 783/784 -
+ *        sisanya baris yang diganti sesudah dokumennya diunggah).
+ */
+const KUERI_BARIS_PETUGAS = {
+  pmh: "SELECT id FROM perkara_hakim_pn WHERE perkara_id = ? ORDER BY (urutan = 1) DESC, (aktif = 'Y') DESC, id DESC LIMIT 1",
+  ppp: "SELECT id FROM perkara_panitera_pn WHERE perkara_id = ? ORDER BY id DESC LIMIT 1",
+  pjs: "SELECT id FROM perkara_jurusita WHERE perkara_id = ? ORDER BY id DESC LIMIT 1",
+  phs: "SELECT id FROM perkara_penetapan_hari_sidang WHERE perkara_id = ? ORDER BY id DESC LIMIT 1",
+};
+
 /** Bawaan alamat blangko ABT - dikosongkan, sebab ABT hanya ada di peladen. */
 const BLANGKO_BAWAAN = {
   aktif: false,
@@ -455,12 +473,8 @@ async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername,
   }
 
   // Baris petugas yang ditunjuk perkara_penetapan_id - dibaca dari tabelnya
-  // masing-masing, yang berbeda tiap jenis.
-  const tabelPetugas = TABEL_PENETAPAN[kunci];
-  const barisPetugas = await runQuery(
-    `SELECT id FROM ${tabelPetugas} WHERE perkara_id = ? ORDER BY id DESC LIMIT 1`,
-    [id]
-  ).catch(() => []);
+  // masing-masing, yang berbeda tiap jenis (KUERI_BARIS_PETUGAS).
+  const barisPetugas = await runQuery(KUERI_BARIS_PETUGAS[kunci], [id]).catch(() => []);
   const penetapanId = Number((Array.isArray(barisPetugas) && barisPetugas[0] && barisPetugas[0].id) || 0);
   if (!penetapanId) return { ok: false, alasan: `baris_${kunci}_belum_ada_di_sipp` };
 
@@ -554,6 +568,7 @@ async function terbitkan({ perkaraId, nomorPerkara, jenis, namaPenandatangan, ol
 module.exports = {
   JENIS_DOKUMEN_ID,
   TABEL_PENETAPAN,
+  KUERI_BARIS_PETUGAS,
   BLANGKO_BAWAAN,
   pengaturanBlangko,
   nomorBersih,

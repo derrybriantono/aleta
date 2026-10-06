@@ -87,6 +87,17 @@ router.post("/penetapan-edoc/unggah", wajibToken, async (req, res) => {
         jenis: String((m && m.jenis) || ""),
         isi: bita(m && m.isiBase64),
       })),
+      // RTF blangko ABT yang dicetak ekstensi (butir 17, 6 Okt) - bukan
+      // berkas pilihan petugas, jadi tidak masuk manual[].
+      abt: (Array.isArray(badan.abt) ? badan.abt : []).map((m) => ({
+        jenis: String((m && m.jenis) || ""),
+        isi: bita(m && m.isiBase64),
+        berkas: String((m && m.berkas) || ""),
+      })),
+      // Pengaturan peta penetapan per jenis (butir 19-20), disaring lagi di
+      // layanan (aturBerlaku) - nilai yang tidak dikenal dibuang.
+      atur: badan.atur && typeof badan.atur === "object" ? badan.atur : {},
+      otomatis: badan.otomatis === true,
       cap,
       penggunaId: String(badan.penggunaId || ""),
       operator: String(badan.operator || ""),

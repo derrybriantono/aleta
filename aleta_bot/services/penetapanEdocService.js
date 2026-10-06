@@ -60,11 +60,125 @@
  * perkara_dokumen_penetapan.diinput_oleh = akun SIPP petugas yang login.
  * Siapa + waktu + IP + "lewat ALETA" + cap/tanda tangan yang dipakai dicatat
  * di aleta_bot_jejak_penetapan (jejakAletaService, layar Riwayat ALETA).
+ *
+ * ============================================================================
+ * PERBAIKAN 6 OKT 2026 (butir 17-20): TANDA TANGAN SESUAI NAMA, CAP DI ATASNYA
+ * ============================================================================
+ *
+ * 1. RTF DARI EKSTENSI. Blangko ABT hanya dapat dicetak dengan sesi ABT
+ *    petugas (abt/preview menuntut login), jadi ekstensi yang mencetaknya
+ *    (latar.js "relaas-rtf", jalan yang sama dengan cetak relaas massal) lalu
+ *    mengirim RTF-nya ke sini sebagai m.abt[]. Jalan lama (m.jenis[] +
+ *    alamat blangkoPenetapan) tetap hidup.
+ *
+ * 2. GAMBAR BAWAAN BLANGKO DIGANTI. Blangko "@ 1 - PMH" Derry menanam gambar
+ *    tanda tangan Ketua (selalu orang yang sama) dan cap sebagai bentuk
+ *    mengambang di blok tanda tangan; "@ 2 - PHS" menanam tiga tanda tangan
+ *    hakim. Dibiarkan, penetapan yang ditandatangani Wakil/Plh tetap memuat
+ *    tanda tangan Ketua. Karena itu gambar di blok tanda tangan (sejak baris
+ *    sebelum "Ditetapkan di") dibuang dulu - pengaturan gantiGambarBawaan.
+ *
+ * 3. NAMA PENANDA TANGAN DIBACA DARI BLOK TANDA TANGAN: baris sesudah label
+ *    jabatannya ("Ketua," / "Wakil Ketua," / "Plh. Ketua," untuk PMH;
+ *    "Ketua Majelis," / "Hakim," untuk PHS; "Panitera," untuk PPP/PJS) -
+ *    BUKAN nama mana saja yang kebetulan muncul di dokumen (PMH memuat nama
+ *    seluruh majelis). Tanda tangan sah yang namanya sama dibubuhkan; tidak
+ *    ada = dokumen tetap disusun TANPA tanda tangan dan sebabnya dilaporkan
+ *    (peringatan), tidak pernah diganti tanda tangan orang lain.
+ *
+ * 4. TANDA TANGAN DAN CAP sama-sama bentuk mengambang yang ditambatkan pada
+ *    paragraf nama (tata letak tidak bergeser), cap DI ATAS tanda tangan
+ *    (\shpz lebih tinggi dan ditulis sesudahnya), menumpang sisi kiri tanda
+ *    tangan. Cap tanpa latar transparan (JPG/PNG tanpa alfa) ditaruh DI
+ *    BELAKANG teks supaya tidak menutupi tanda tangan.
  */
 
 const tteBawaan = require("./tteProviderService");
 
 const JENIS = ["pmh", "ppp", "pjs", "phs"];
+
+/** 1 mm dalam twip (1440 twip = 25,4 mm). */
+const TWIP_PER_MM = 1440 / 25.4;
+
+/**
+ * Siapa yang menandatangani, dikenali dari LABEL jabatannya di blok tanda
+ * tangan. Label ABT Derry (variabel #7050# dan #4004#): "Ketua,", "Wakil
+ * Ketua,", "Plh. Ketua,", "Ketua Majelis,", "Hakim,".
+ */
+const PENANDATANGAN = Object.freeze({
+  ketua: {
+    sebutan: "Ketua / Wakil Ketua / Plh. Ketua",
+    label: /^(?:(?:plh|plt)\.?\s*)?(?:wakil\s+)?ketua(?:\s+pengadilan\s+agama[^,]*)?\s*,?$/i,
+  },
+  ketua_majelis: {
+    sebutan: "Ketua Majelis / Hakim tunggal",
+    label: /^(?:(?:hakim\s+)?ketua\s+majelis|hakim(?:\s+tunggal|\s+ketua(?:\s+majelis)?)?)\s*,?$/i,
+  },
+  panitera: {
+    sebutan: "Panitera / Plh. Panitera",
+    label: /^(?:(?:plh|plt)\.?\s*)?(?:wakil\s+)?panitera(?:\s+pengadilan\s+agama[^,]*)?\s*,?$/i,
+  },
+  otomatis: {
+    sebutan: "Siapa pun yang tertulis di blok tanda tangan",
+    label: /^[A-Za-z][^,]{1,60},$/,
+  },
+});
+
+/**
+ * Pengaturan bawaan per jenis (ditimpa pengaturan "Peta penetapan" di
+ * Integrasi e-Court portal, yang dikirim portal per permintaan).
+ * Ukuran dan geser dalam milimeter, relatif terhadap tanda tangan.
+ */
+const ATUR_BAWAAN = Object.freeze({
+  pakaiTtd: true,
+  pakaiCap: false,
+  penandatangan: "otomatis",
+  labelPenandatangan: "",
+  gantiGambarBawaan: true,
+  tahanBilaTanpaTtd: false,
+  lebarTtdMm: 40,
+  tinggiTtdMaksMm: 22,
+  ttdGeserKananMm: 0,
+  ttdTurunMm: 2,
+  lebarCapMm: 30,
+  capGeserKiriMm: 16,
+  capGeserAtasMm: 6,
+});
+
+const ATUR_JENIS = Object.freeze({
+  pmh: { pakaiCap: true, penandatangan: "ketua" },
+  ppp: { pakaiCap: true, penandatangan: "panitera" },
+  pjs: { pakaiCap: true, penandatangan: "panitera" },
+  phs: { pakaiCap: false, penandatangan: "ketua_majelis" },
+});
+
+const BATAS_ANGKA = {
+  lebarTtdMm: [10, 90],
+  tinggiTtdMaksMm: [8, 60],
+  ttdGeserKananMm: [-60, 60],
+  ttdTurunMm: [-30, 30],
+  lebarCapMm: [10, 60],
+  capGeserKiriMm: [-60, 60],
+  capGeserAtasMm: [-60, 60],
+};
+
+/** Pengaturan berlaku untuk satu jenis: bawaan <- bawaan jenis <- kiriman portal (disaring). */
+function aturBerlaku(jenis, kiriman) {
+  const hasil = { ...ATUR_BAWAAN, ...(ATUR_JENIS[jenis] || {}) };
+  const k = kiriman && typeof kiriman === "object" ? kiriman : {};
+  for (const kunci of ["pakaiTtd", "pakaiCap", "gantiGambarBawaan", "tahanBilaTanpaTtd"]) {
+    if (typeof k[kunci] === "boolean") hasil[kunci] = k[kunci];
+  }
+  if (typeof k.penandatangan === "string" && PENANDATANGAN[k.penandatangan]) hasil.penandatangan = k.penandatangan;
+  if (typeof k.labelPenandatangan === "string") hasil.labelPenandatangan = k.labelPenandatangan.trim().slice(0, 80);
+  for (const [kunci, [bawah, atas]] of Object.entries(BATAS_ANGKA)) {
+    const n = Number(k[kunci]);
+    if (k[kunci] !== undefined && k[kunci] !== null && k[kunci] !== "" && Number.isFinite(n)) {
+      hasil[kunci] = Math.min(atas, Math.max(bawah, n));
+    }
+  }
+  return hasil;
+}
 
 /** Peta blangko PTSP Derry - lihat catatan kepala berkas. */
 const PETA_PTSP = Object.freeze({
@@ -292,56 +406,388 @@ function jenisGambar(isi, jenisDisebut) {
 }
 
 /**
- * Menempelkan CAP sebagai bentuk mengambang DI DEPAN tanda tangan.
- *
- * Disisipkan tepat sebelum kelompok gambar tanda tangan, di paragraf yang
- * sama: \shpwr3 (tanpa pembungkus teks), \shpfblwtxt0 (di depan teks),
- * digeser ke kiri dan ke atas supaya menumpang separuh tanda tangan - seperti
- * cap basah yang dibubuhkan di atas goresan tinta.
+ * Ukuran piksel gambar dari kepalanya (PNG IHDR, JPEG SOFn). null bila tidak
+ * terbaca - pemanggil memakai perbandingan cadangan.
  */
-function sisipkanCap(rtf, { isi, jenis, penandaTtd, lebarTwip = 1500, tinggiTwip = 1500 }) {
-  const s = String(rtf || "");
-  const bentuk = jenisGambar(isi, jenis);
-  if (!bentuk) return { ok: false, alasan: "cap_bukan_png_jpg" };
-  const letak = s.indexOf(penandaTtd);
-  if (letak < 0) return { ok: false, alasan: "tanda_tangan_belum_terpasang" };
-  const blip = bentuk === "jpg" ? "jpegblip" : "pngblip";
-  const kiri = -Math.round(lebarTwip * 0.45);
-  const atas = -Math.round(tinggiTwip * 0.35);
-  const bentukCap =
-    `{\\shp{\\*\\shpinst\\shpleft${kiri}\\shptop${atas}\\shpright${kiri + lebarTwip}\\shpbottom${atas + tinggiTwip}` +
-    `\\shpfhdr0\\shpbxcolumn\\shpbxignore\\shpbypara\\shpbyignore\\shpwr3\\shpwrk0\\shpfblwtxt0\\shpz1\\shplockanchor` +
-    `{\\sp{\\sn shapeType}{\\sv 75}}{\\sp{\\sn fBehindDocument}{\\sv 0}}{\\sp{\\sn fLayoutInCell}{\\sv 1}}` +
-    `{\\sp{\\sn pib}{\\sv {\\pict\\${blip}\\picwgoal${lebarTwip}\\pichgoal${tinggiTwip} ${heksGambar(isi)}}}}}}`;
-  return { ok: true, rtf: `${s.slice(0, letak)}${bentukCap}${s.slice(letak)}` };
+function ukuranGambar(isi) {
+  const b = Buffer.from(isi || []);
+  if (jenisGambar(b) === "png" && b.length >= 24 && b.toString("latin1", 12, 16) === "IHDR") {
+    const lebar = b.readUInt32BE(16);
+    const tinggi = b.readUInt32BE(20);
+    return lebar > 0 && tinggi > 0 ? { lebar, tinggi } : null;
+  }
+  if (jenisGambar(b) === "jpg") {
+    let i = 2;
+    while (i + 9 < b.length) {
+      if (b[i] !== 0xff) return null;
+      const penanda = b[i + 1];
+      const panjang = b.readUInt16BE(i + 2);
+      const sof = penanda >= 0xc0 && penanda <= 0xcf && penanda !== 0xc4 && penanda !== 0xc8 && penanda !== 0xcc;
+      if (sof) {
+        const tinggi = b.readUInt16BE(i + 5);
+        const lebar = b.readUInt16BE(i + 7);
+        return lebar > 0 && tinggi > 0 ? { lebar, tinggi } : null;
+      }
+      i += 2 + panjang;
+    }
+  }
+  return null;
+}
+
+/** PNG dengan saluran alfa (jenis warna 4/6) atau potongan tRNS. JPG tidak pernah. */
+function adaTransparansi(isi) {
+  const b = Buffer.from(isi || []);
+  if (jenisGambar(b) !== "png" || b.length < 26) return false;
+  if (b[25] === 4 || b[25] === 6) return true;
+  return b.indexOf(Buffer.from("tRNS", "latin1")) > 0;
+}
+
+/** Akhir kelompok RTF yang dibuka di `awal` (indeks "{"), -1 bila tidak seimbang. */
+function akhirKelompok(rtf, awal) {
+  let d = 0;
+  for (let i = awal; i < rtf.length; i++) {
+    const c = rtf[i];
+    if (c === "\\") {
+      // \bin N: N bita mentah dilompati; selebihnya kendali/simbol dua huruf.
+      const m = /^\\bin(\d+) ?/.exec(rtf.slice(i, i + 16));
+      if (m) {
+        i += m[0].length - 1 + Number(m[1]);
+        continue;
+      }
+      i += 1;
+      continue;
+    }
+    if (c === "{") d += 1;
+    else if (c === "}") {
+      d -= 1;
+      if (d === 0) return i;
+    }
+  }
+  return -1;
 }
 
 /**
- * Pejabat penandatangan: tanda tangan SAH yang namanya tertulis di bagian
- * dokumen ini. Tanda tangan milik pengguna yang login didahulukan ("sesuai
- * user"); bila namanya tidak ada di dokumen, dicari di antara tanda tangan
- * sah lain - yang namanya muncul PALING AKHIR di dokumen (blok tanda tangan
- * ada di ujung). Tidak ada yang cocok = tidak dibubuhkan, sebabnya disebut.
+ * Awal blok tanda tangan: baris SEBELUM "Ditetapkan di" (gambar bawaan PHS
+ * Derry tertambat di paragraf "- #7045#" tepat di atasnya), dimundurkan ke
+ * akhir paragraf sebelumnya supaya bentuk yang ditulis di awal paragraf ikut.
+ * Tanpa "Ditetapkan di": baris sebelum label penanda tangan.
  */
-async function pilihTandaTangan({ teks, penggunaId, ttd }) {
-  const baku = (n) => ttd.bakuNama(n);
-  const polos = String(teks || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const milik = penggunaId ? await ttd.untukPengguna(penggunaId).catch(() => null) : null;
-  if (milik && baku(milik.namaPejabat) && polos.includes(baku(milik.namaPejabat))) {
-    return { ...milik, sumber: "pengguna" };
+function awalBlokTtd(rtf, indeksLabel) {
+  const baris = sapuRtf(rtf).baris;
+  let i = -1;
+  for (let k = baris.length - 1; k >= 0; k--) {
+    if (/^ditetapkan\s+di\b/i.test(baris[k].teks)) {
+      i = k;
+      break;
+    }
   }
-  const daftar = await ttd.daftar({ hanyaSah: true }).catch(() => ({ baris: [] }));
-  let terbaik = null;
-  for (const b of (daftar && daftar.baris) || []) {
-    const n = baku(b.namaPejabat);
-    if (!n) continue;
-    const di = polos.lastIndexOf(n);
-    if (di >= 0 && (!terbaik || di > terbaik.di)) terbaik = { di, baris: b };
+  if (i < 0 && Number.isInteger(indeksLabel)) i = indeksLabel;
+  if (i < 0) return -1;
+  const acuan = baris[Math.max(0, i - 1)].mulai;
+  const par = rtf.lastIndexOf("\\par", acuan);
+  return par >= 0 ? par : acuan;
+}
+
+/**
+ * Membuang gambar (bentuk bergambar, \shppict/\nonshppict, \pict lepas) di
+ * blok tanda tangan. Bentuk TEKS (kotak "Ditandatangani secara elektronik"
+ * pada blangko gabungan) tidak disentuh.
+ */
+function buangGambarBlokTtd(rtf, { dari } = {}) {
+  let s = String(rtf || "");
+  const mulai = Number.isInteger(dari) ? dari : awalBlokTtd(s);
+  if (mulai < 0) return { rtf: s, dibuang: 0, uraian: [] };
+  const uraian = [];
+  let dibuang = 0;
+  let i = mulai;
+  while (i < s.length) {
+    const j = s.indexOf("{", i);
+    if (j < 0) break;
+    const kepala = s.slice(j, j + 24);
+    const bergambar = /^\{\\(?:shp\b|shp\s|\*\\shppict|nonshppict|pict\b)/.test(kepala) || /^\{\\shp[\\{ ]/.test(kepala);
+    if (!bergambar) {
+      i = j + 1;
+      continue;
+    }
+    const akhir = akhirKelompok(s, j);
+    if (akhir < 0) break;
+    const isi = s.slice(j, akhir + 1);
+    const bentuk = /^\{\\shp/.test(kepala);
+    if (bentuk && !/\{\\sn\s*pib\}/.test(isi)) {
+      // Bentuk tanpa gambar (kotak teks, garis) dibiarkan.
+      i = akhir + 1;
+      continue;
+    }
+    const nama = /\{\\sn\s*wzDescription\}\{\\sv\s*([^}]*)\}/.exec(isi) || /\{\\sn\s*wzName\}\{\\sv\s*([^}]*)\}/.exec(isi);
+    if (nama && nama[1].trim()) uraian.push(nama[1].trim().slice(0, 60));
+    s = s.slice(0, j) + s.slice(akhir + 1);
+    dibuang += 1;
+    i = j;
   }
-  if (!terbaik) return null;
-  const g = await ttd.gambar(terbaik.baris.id).catch(() => null);
-  if (!g || !g.isi) return null;
-  return { id: terbaik.baris.id, namaPejabat: terbaik.baris.namaPejabat, jenis: g.jenis, isi: g.isi, sumber: "nama_di_dokumen" };
+  return { rtf: s, dibuang, uraian };
+}
+
+/**
+ * Nama penanda tangan: baris sesudah LABEL jabatannya, di blok tanda tangan
+ * (sesudah "Ditetapkan di" bila ada). Label yang dipakai: label tegas dari
+ * pengaturan (labelPenandatangan) atau pola penandatangan. Yang terakhir
+ * cocok menang - blok tanda tangan ada di ujung dokumen.
+ *
+ * @returns {{ok:true, label, nama, mulaiNama, indeksLabel} | {ok:false, alasan, labelTerbaca?}}
+ */
+function cariPenandaTangan(rtf, { penandatangan = "otomatis", labelPenandatangan = "" } = {}) {
+  const baris = sapuRtf(rtf).baris;
+  let awal = 0;
+  for (let k = baris.length - 1; k >= 0; k--) {
+    if (/^ditetapkan\s+di\b/i.test(baris[k].teks)) {
+      awal = k;
+      break;
+    }
+  }
+  const tegas = String(labelPenandatangan || "").trim();
+  const baku = (t) => String(t || "").toLowerCase().replace(/\s+/g, " ").replace(/[\s,]+$/, "").trim();
+  const pola = (PENANDATANGAN[penandatangan] || PENANDATANGAN.otomatis).label;
+  const cocok = (t) => (tegas ? baku(t) === baku(tegas) : pola.test(String(t).trim()));
+  const labelTerbaca = [];
+  let iLabel = -1;
+  for (let k = baris.length - 1; k >= awal; k--) {
+    const t = baris[k].teks;
+    if (/,\s*$/.test(t) && t.length <= 70) labelTerbaca.unshift(t);
+    if (iLabel < 0 && cocok(t) && k + 1 < baris.length) iLabel = k;
+  }
+  if (iLabel < 0) return { ok: false, alasan: "label_penanda_tangan_tidak_ditemukan", labelTerbaca: labelTerbaca.slice(-4) };
+  const nama = baris[iLabel + 1];
+  const teks = String(nama.teks || "").trim();
+  // Variabel ABT yang tidak terisi (#0012#), kalimat galat ABT ("... MOHON
+  // HUBUNGI ADMIN"), atau baris tanpa huruf bukan nama orang.
+  if (!/[A-Za-z]{2}/.test(teks) || /#\d{4}#/.test(teks) || /hubungi\s+admin|perbaiki|belum\s+diinput/i.test(teks) || teks.length > 120) {
+    return { ok: false, alasan: "nama_penanda_tangan_tidak_terbaca", label: baris[iLabel].teks, nama: teks.slice(0, 120) };
+  }
+  return { ok: true, label: baris[iLabel].teks, nama: teks, mulaiNama: nama.mulai, indeksLabel: iLabel };
+}
+
+/** Nama tanpa gelar di belakang koma dan tanpa gelar depan - untuk cocok kedua. */
+function intiNama(nama, bakuNama) {
+  const depan = String(nama || "").split(",")[0];
+  const tanpaGelar = depan.replace(/^\s*(?:(?:prof|dr|drs|dra|ir|h|hj|kh|kgs|tgk)\.?\s+)+/i, "");
+  return bakuNama(tanpaGelar);
+}
+
+/**
+ * Tanda tangan SAH untuk satu nama. Cocok penuh (huruf-angka sama) dulu;
+ * kalau tidak ada, cocok nama inti (tanpa gelar) asal tidak ada dua ORANG
+ * berbeda yang cocok. Dua baris sah untuk orang yang sama: yang terbaru
+ * disahkan. Tidak ada = null, dan pemanggil TIDAK mencari pengganti.
+ */
+function cocokkanTandaTangan(nama, daftar, bakuNama) {
+  const semua = (Array.isArray(daftar) ? daftar : []).filter((b) => b && b.namaPejabat);
+  const terbaru = (xs) =>
+    xs.slice().sort((a, b) => String(b.disahkanPada || "").localeCompare(String(a.disahkanPada || "")) || Number(b.id) - Number(a.id))[0];
+  const penuh = semua.filter((b) => bakuNama(b.namaPejabat) && bakuNama(b.namaPejabat) === bakuNama(nama));
+  if (penuh.length) return { baris: terbaru(penuh), cara: "nama_lengkap" };
+  const inti = intiNama(nama, bakuNama);
+  if (inti.length < 5) return { baris: null, alasan: "nama_terlalu_pendek" };
+  const sebagian = semua.filter((b) => intiNama(b.namaPejabat, bakuNama) === inti);
+  if (!sebagian.length) return { baris: null, alasan: "tanda_tangan_tidak_ada_untuk_nama" };
+  const orang = new Set(sebagian.map((b) => bakuNama(b.namaPejabat)));
+  if (orang.size > 1) return { baris: null, alasan: "tanda_tangan_ganda_untuk_nama" };
+  return { baris: terbaru(sebagian), cara: "nama_tanpa_gelar" };
+}
+
+/** Tata paragraf yang berlaku di `posisi`: rata, inden, dan lebar bidang tulis. */
+function tataParagraf(rtf, posisi) {
+  const s = String(rtf || "");
+  const terakhir = (re, sampai, bawaan) => {
+    const g = new RegExp(re.source, "g");
+    let m;
+    let nilai = bawaan;
+    const potongan = s.slice(0, sampai);
+    while ((m = g.exec(potongan))) nilai = m;
+    return nilai;
+  };
+  const angka = (m, bawaan) => (m && m !== bawaan ? Number(m[1]) : bawaan);
+  const pard = s.lastIndexOf("\\pard", posisi);
+  const potong = pard >= 0 ? s.slice(pard, posisi) : s.slice(0, posisi);
+  const ambil = (re) => {
+    const g = new RegExp(re.source, "g");
+    let m;
+    let hasil = null;
+    while ((m = g.exec(potong))) hasil = m;
+    return hasil;
+  };
+  const rata = ambil(/\\q([lrcj])(?![a-z])/);
+  const li = ambil(/\\li(-?\d+)(?![a-z\d])/);
+  const fi = ambil(/\\fi(-?\d+)(?![a-z\d])/);
+  const ri = ambil(/\\ri(-?\d+)(?![a-z\d])/);
+  const kertas = angka(terakhir(/\\(?:paperw|pgwsxn)(\d+)/, posisi, null), 12240);
+  const kiri = angka(terakhir(/\\(?:margl|marglsxn)(\d+)/, posisi, null), 1800);
+  const kanan = angka(terakhir(/\\(?:margr|margrsxn)(\d+)/, posisi, null), 1800);
+  // Baris pertama paragraf? (tanpa \line di antara awal paragraf dan nama)
+  const awalPar = Math.max(s.lastIndexOf("\\par", posisi), pard);
+  const antara = awalPar >= 0 ? s.slice(awalPar, posisi) : "";
+  const barisPertama = !/\\line(?![a-z])/.test(antara.replace(/^\\pard?/, ""));
+  return {
+    rata: rata ? rata[1] : "l",
+    li: li ? Number(li[1]) : 0,
+    fi: fi ? Number(fi[1]) : 0,
+    ri: ri ? Number(ri[1]) : 0,
+    lebarBidang: Math.max(2000, kertas - kiri - kanan),
+    barisPertama,
+  };
+}
+
+/** Satu bentuk gambar mengambang, tertambat pada paragraf, relatif kolom. */
+function bentukGambar({ isi, jenis, kiri, atas, lebar, tinggi, z, lid, depan, nama }) {
+  const blip = jenis === "jpg" ? "jpegblip" : "pngblip";
+  const u = ukuranGambar(isi) || { lebar: Math.round(lebar / 15), tinggi: Math.round(tinggi / 15) };
+  const k = Math.round(kiri);
+  const a = Math.round(atas);
+  const l = Math.round(lebar);
+  const t = Math.round(tinggi);
+  return (
+    `{\\shp{\\*\\shpinst\\shpleft${k}\\shptop${a}\\shpright${k + l}\\shpbottom${a + t}` +
+    `\\shpfhdr0\\shpbxcolumn\\shpbxignore\\shpbypara\\shpbyignore\\shpwr3\\shpwrk0\\shpfblwtxt${depan ? 0 : 1}\\shpz${z}\\shplid${lid}` +
+    `{\\sp{\\sn shapeType}{\\sv 75}}{\\sp{\\sn fFlipH}{\\sv 0}}{\\sp{\\sn fFlipV}{\\sv 0}}{\\sp{\\sn fLockAspectRatio}{\\sv 1}}` +
+    `{\\sp{\\sn fAllowOverlap}{\\sv 1}}{\\sp{\\sn fBehindDocument}{\\sv ${depan ? 0 : 1}}}{\\sp{\\sn fLayoutInCell}{\\sv 1}}` +
+    `{\\sp{\\sn fLine}{\\sv 0}}{\\sp{\\sn fFilled}{\\sv 0}}{\\sp{\\sn wzName}{\\sv ${nama}}}` +
+    `{\\sp{\\sn pib}{\\sv {\\pict\\${blip}\\picw${u.lebar}\\pich${u.tinggi}\\picwgoal${l}\\pichgoal${t} ${heksGambar(isi)}}}}}}`
+  );
+}
+
+/**
+ * Membubuhkan tanda tangan dan/atau cap pada paragraf nama penanda tangan.
+ *
+ * Keduanya bentuk mengambang yang ditambatkan pada paragraf NAMA (sisipan di
+ * depan huruf pertama nama): tanda tangan tepat di atas nama, cap menumpang
+ * sisi kiri tanda tangan. Urutan tulis ttd lalu cap, \shpz cap lebih tinggi:
+ * cap DI ATAS tanda tangan. Cap tanpa transparansi ditaruh di belakang teks.
+ *
+ * @returns {{ok, rtf, geometri, capDiBelakang}}
+ */
+function bubuhkanTtdCap(rtf, { mulaiNama, ttd, cap, atur }) {
+  const s = String(rtf || "");
+  if (!Number.isInteger(mulaiNama) || mulaiNama <= 0 || mulaiNama >= s.length) return { ok: false, alasan: "letak_nama_tidak_sah" };
+  const a = { ...ATUR_BAWAAN, ...(atur || {}) };
+  const mm = (n) => Number(n) * TWIP_PER_MM;
+  const tata = tataParagraf(s, mulaiNama);
+
+  // Ukuran tanda tangan: lebar dari pengaturan, tinggi menurut perbandingan
+  // gambarnya, dibatasi tinggi maksimum (lebarnya ikut menyusut).
+  let ttdL = mm(a.lebarTtdMm);
+  let ttdT = ttdL / 2;
+  if (ttd && ttd.isi) {
+    const u = ukuranGambar(ttd.isi);
+    if (u) ttdT = (ttdL * u.tinggi) / u.lebar;
+    if (ttdT > mm(a.tinggiTtdMaksMm)) {
+      ttdL = (ttdL * mm(a.tinggiTtdMaksMm)) / ttdT;
+      ttdT = mm(a.tinggiTtdMaksMm);
+    }
+  }
+  const x0 = tata.li + (tata.barisPertama ? tata.fi : 0);
+  let ttdKiri;
+  if (tata.rata === "c") ttdKiri = tata.li + (tata.lebarBidang - tata.li - tata.ri - ttdL) / 2;
+  else if (tata.rata === "r") ttdKiri = tata.lebarBidang - tata.ri - ttdL;
+  else ttdKiri = x0;
+  ttdKiri += mm(a.ttdGeserKananMm);
+  const ttdAtas = -ttdT + mm(a.ttdTurunMm);
+
+  let sisipan = "";
+  const geometri = { ttd: null, cap: null, tata };
+  if (ttd && ttd.isi) {
+    const jenisTtd = jenisGambar(ttd.isi, ttd.jenis);
+    if (!jenisTtd) return { ok: false, alasan: "tanda_tangan_bukan_png_jpg" };
+    sisipan += bentukGambar({ isi: ttd.isi, jenis: jenisTtd, kiri: ttdKiri, atas: ttdAtas, lebar: ttdL, tinggi: ttdT, z: 2001, lid: 2001, depan: true, nama: "Tanda tangan" });
+    geometri.ttd = { kiri: Math.round(ttdKiri), atas: Math.round(ttdAtas), lebar: Math.round(ttdL), tinggi: Math.round(ttdT) };
+  }
+  let capDiBelakang = false;
+  if (cap && cap.isi) {
+    const jenisCap = jenisGambar(cap.isi, cap.jenis);
+    if (!jenisCap) return { ok: false, alasan: "cap_bukan_png_jpg" };
+    const capL = mm(a.lebarCapMm);
+    const u = ukuranGambar(cap.isi);
+    const capT = u ? (capL * u.tinggi) / u.lebar : capL;
+    const pusatX = ttdKiri + ttdL / 2 - mm(a.capGeserKiriMm);
+    const pusatY = ttdAtas + ttdT / 2 - mm(a.capGeserAtasMm);
+    capDiBelakang = !adaTransparansi(cap.isi);
+    sisipan += bentukGambar({
+      isi: cap.isi,
+      jenis: jenisCap,
+      kiri: pusatX - capL / 2,
+      atas: pusatY - capT / 2,
+      lebar: capL,
+      tinggi: capT,
+      z: capDiBelakang ? 1999 : 2002,
+      lid: 2002,
+      depan: !capDiBelakang,
+      nama: "Cap",
+    });
+    geometri.cap = { kiri: Math.round(pusatX - capL / 2), atas: Math.round(pusatY - capT / 2), lebar: Math.round(capL), tinggi: Math.round(capT) };
+  }
+  if (!sisipan) return { ok: true, rtf: s, geometri, capDiBelakang };
+  return { ok: true, rtf: `${s.slice(0, mulaiNama)}${sisipan}${s.slice(mulaiNama)}`, geometri, capDiBelakang };
+}
+
+/**
+ * Seluruh pembubuhan untuk satu RTF bagian: buang gambar bawaan blok tanda
+ * tangan (bila diatur), baca nama penanda tangan, cocokkan tanda tangan sah,
+ * bubuhkan ttd + cap. Tidak pernah gagal karena ttd/cap tidak ada - yang
+ * tidak dapat dibubuhkan menjadi PERINGATAN.
+ *
+ * @param {object} p  { rtf, jenis, atur, cap:{isi,jenis,id,nama}|null, daftarTtd, ambilGambar(id), bakuNama }
+ */
+async function bubuhkanPenetapan({ rtf, jenis, atur, cap, daftarTtd, ambilGambar, bakuNama }) {
+  const a = aturBerlaku(jenis, atur);
+  const peringatan = [];
+  let s = String(rtf || "");
+
+  // Penanda tangan dibaca dulu (indeks label dipakai menentukan awal blok).
+  let siapa = cariPenandaTangan(s, a);
+  let gambarBawaan = { dibuang: 0, uraian: [] };
+  if (a.gantiGambarBawaan) {
+    const buang = buangGambarBlokTtd(s, { dari: awalBlokTtd(s, siapa.ok ? siapa.indeksLabel : undefined) });
+    s = buang.rtf;
+    gambarBawaan = { dibuang: buang.dibuang, uraian: buang.uraian };
+    if (buang.dibuang) siapa = cariPenandaTangan(s, a);
+  }
+  if (!siapa.ok) {
+    peringatan.push({ kode: siapa.alasan, label: siapa.label || "", nama: siapa.nama || "", labelTerbaca: siapa.labelTerbaca || [] });
+    return { ok: true, rtf: s, tandaTangan: null, penandaTangan: null, cap: null, peringatan, gambarBawaan, atur: a };
+  }
+
+  let ttd = null;
+  if (a.pakaiTtd) {
+    const pilih = cocokkanTandaTangan(siapa.nama, daftarTtd, bakuNama);
+    if (pilih.baris) {
+      const g = await Promise.resolve(ambilGambar(pilih.baris.id)).catch(() => null);
+      if (g && g.isi && g.isi.length) {
+        ttd = { id: pilih.baris.id, namaPejabat: pilih.baris.namaPejabat, isi: g.isi, jenis: g.jenis, cara: pilih.cara };
+      } else peringatan.push({ kode: "gambar_tanda_tangan_tidak_terbaca", nama: siapa.nama });
+    } else {
+      peringatan.push({ kode: pilih.alasan, nama: siapa.nama });
+    }
+  }
+
+  let capDipakai = null;
+  if (a.pakaiCap) {
+    if (!cap || !cap.isi || !cap.isi.length) peringatan.push({ kode: "cap_belum_ada" });
+    else if (a.pakaiTtd && !ttd) peringatan.push({ kode: "cap_dilewati_tanpa_tanda_tangan" });
+    else capDipakai = cap;
+  }
+
+  const hasil = bubuhkanTtdCap(s, { mulaiNama: siapa.mulaiNama, ttd, cap: capDipakai, atur: a });
+  if (!hasil.ok) return { ok: false, alasan: hasil.alasan, peringatan, gambarBawaan };
+  if (hasil.capDiBelakang) peringatan.push({ kode: "cap_tanpa_latar_transparan_di_belakang" });
+  return {
+    ok: true,
+    rtf: hasil.rtf,
+    penandaTangan: { label: siapa.label, nama: siapa.nama },
+    tandaTangan: ttd ? { id: ttd.id, namaPejabat: ttd.namaPejabat, sumber: ttd.cara } : null,
+    cap: capDipakai ? { id: capDipakai.id || "", nama: capDipakai.nama || "", diBelakang: hasil.capDiBelakang } : null,
+    geometri: hasil.geometri,
+    peringatan,
+    gambarBawaan,
+    atur: a,
+  };
 }
 
 // ===========================================================================
@@ -474,37 +920,44 @@ function buatLayanan(depsMasuk) {
 
   /**
    * Menyiapkan PDF satu jenis: RTF (dari ABT atau unggahan manual) -> bagian
-   * yang cocok -> tanda tangan -> cap -> PDF -> (TTE bila diminta).
+   * yang cocok -> bubuhan (gambar bawaan diganti, tanda tangan sesuai nama,
+   * cap di atasnya - lihat bubuhkanPenetapan) -> PDF -> (TTE bila diminta).
+   *
+   * Tanda tangan/cap yang tidak dapat dibubuhkan TIDAK menggagalkan - menjadi
+   * peringatan. Kecuali tahanBilaTanpaTtd menyala: dokumen tanpa tanda tangan
+   * ditahan (tidak dibuat PDF, tidak diunggah).
    */
-  async function siapkanPdf({ jenis, rtf, penggunaId, cap, tte }) {
+  async function siapkanPdf({ jenis, rtf, penggunaId, cap, tte, atur }) {
     const d = deps();
+    void penggunaId;
     const bagian = ambilBagian(rtf, jenis);
     if (!bagian.ok) return { ...bagian, langkah: "bagian" };
 
-    const ttd = await pilihTandaTangan({ teks: bagian.teks, penggunaId, ttd: d.ttd });
-    if (!ttd) return { ok: false, langkah: "tanda_tangan", alasan: "tanda_tangan_sah_tidak_ada_untuk_nama_di_dokumen" };
-    const dibubuhi = d.dokumen.sisipkanTandaTangan(bagian.rtf, {
-      isi: ttd.isi,
-      jenis: ttd.jenis,
-      namaPejabat: ttd.namaPejabat,
+    const a = aturBerlaku(jenis, atur);
+    const daftar = a.pakaiTtd ? await d.ttd.daftar({ hanyaSah: true }).catch(() => ({ baris: [] })) : { baris: [] };
+    const bubuh = await bubuhkanPenetapan({
+      rtf: bagian.rtf,
+      jenis,
+      atur: a,
+      cap,
+      daftarTtd: (daftar && daftar.baris) || [],
+      ambilGambar: (id) => d.ttd.gambar(id),
+      bakuNama: (n) => d.ttd.bakuNama(n),
     });
-    if (!dibubuhi.ok) return { ...dibubuhi, langkah: "tanda_tangan" };
+    if (!bubuh.ok) return { ok: false, langkah: "tanda_tangan", alasan: bubuh.alasan, peringatan: bubuh.peringatan || [] };
+    if (a.pakaiTtd && !bubuh.tandaTangan && a.tahanBilaTanpaTtd) {
+      return {
+        ok: false,
+        langkah: "tanda_tangan",
+        alasan: "ditahan_tanpa_tanda_tangan",
+        penandaTangan: bubuh.penandaTangan,
+        peringatan: bubuh.peringatan,
+        gambarBawaan: bubuh.gambarBawaan,
+      };
+    }
 
-    if (!cap || !cap.isi || !cap.isi.length) return { ok: false, langkah: "cap", alasan: "cap_belum_ada" };
-    // Penanda letak tanda tangan: awal kelompok gambar yang baru disisipkan.
-    const heks = heksGambar(ttd.isi).slice(0, 64);
-    const awalTtd = dibubuhi.rtf.indexOf(heks);
-    const pembukaPict = awalTtd >= 0 ? dibubuhi.rtf.lastIndexOf("{\\pict", awalTtd) : -1;
-    if (pembukaPict < 0) return { ok: false, langkah: "cap", alasan: "tanda_tangan_belum_terpasang" };
-    const bercap = sisipkanCap(dibubuhi.rtf, {
-      isi: cap.isi,
-      jenis: cap.jenis,
-      penandaTtd: dibubuhi.rtf.slice(pembukaPict, pembukaPict + 40),
-    });
-    if (!bercap.ok) return { ...bercap, langkah: "cap" };
-
-    const pdf = await d.cetak.rtfKePdf(Buffer.from(bercap.rtf, "latin1"));
-    if (!pdf.ok) return { ok: false, langkah: "pdf", alasan: pdf.alasan || "pdf_gagal" };
+    const pdf = await d.cetak.rtfKePdf(Buffer.from(bubuh.rtf, "latin1"));
+    if (!pdf.ok) return { ok: false, langkah: "pdf", alasan: pdf.alasan || "pdf_gagal", peringatan: bubuh.peringatan };
 
     let akhir = pdf.pdf;
     let ber_tte = false;
@@ -517,20 +970,28 @@ function buatLayanan(depsMasuk) {
     return {
       ok: true,
       pdf: akhir,
-      tandaTangan: { id: ttd.id, namaPejabat: ttd.namaPejabat, sumber: ttd.sumber },
+      rtf: bubuh.rtf,
+      penandaTangan: bubuh.penandaTangan,
+      tandaTangan: bubuh.tandaTangan,
+      cap: bubuh.cap,
+      peringatan: bubuh.peringatan,
+      gambarBawaan: bubuh.gambarBawaan,
       tte: ber_tte,
       jumlahBagian: bagian.jumlahBagian,
     };
   }
 
   /**
-   * Mengunggah edoc penetapan - jenis[] dari ABT dan/atau manual[].
+   * Mengunggah edoc penetapan - abt[] (RTF ABT dari ekstensi), jenis[]
+   * (diambil bot dari alamat blangkoPenetapan, jalan lama) dan/atau manual[].
    *
    * @param {object} m
-   *   perkaraId|nomorPerkara, jenis: string[], manual: [{jenis, isi(Buffer)}],
-   *   cap: { [jenis]: {isi: Buffer, jenis, id, nama} }, penggunaId, operator,
-   *   olehUsername (akun SIPP petugas yang login), ip,
-   *   passphrase (opsional, TIDAK disimpan), nik, kering (bawaan true).
+   *   perkaraId|nomorPerkara, abt: [{jenis, isi(Buffer RTF), berkas}],
+   *   jenis: string[], manual: [{jenis, isi(Buffer)}],
+   *   cap: { [jenis]: {isi: Buffer, jenis, id, nama} },
+   *   atur: { [jenis]: pengaturan peta penetapan (lihat ATUR_BAWAAN) },
+   *   penggunaId, operator, olehUsername (akun SIPP petugas yang login), ip,
+   *   passphrase (opsional, TIDAK disimpan), nik, otomatis, kering (bawaan true).
    */
   async function unggah(m = {}) {
     const d = deps();
@@ -553,28 +1014,34 @@ function buatLayanan(depsMasuk) {
     const dariAbt = [...new Set((Array.isArray(m.jenis) ? m.jenis : []).map((x) => String(x).toLowerCase()))].filter((x) =>
       JENIS.includes(x)
     );
+    const abtEkstensi = (Array.isArray(m.abt) ? m.abt : [])
+      .map((x) => ({ jenis: String((x && x.jenis) || "").toLowerCase(), isi: x && x.isi, berkas: String((x && x.berkas) || "").slice(0, 160) }))
+      .filter((x) => JENIS.includes(x.jenis) && Buffer.isBuffer(x.isi) && x.isi.length > 0);
     const manual = (Array.isArray(m.manual) ? m.manual : [])
       .map((x) => ({ jenis: String((x && x.jenis) || "").toLowerCase(), isi: x && x.isi }))
       .filter((x) => JENIS.includes(x.jenis) && Buffer.isBuffer(x.isi) && x.isi.length > 0);
-    if (!dariAbt.length && !manual.length) return { ok: false, alasan: "tidak_ada_jenis_dipilih" };
+    if (!dariAbt.length && !manual.length && !abtEkstensi.length) return { ok: false, alasan: "tidak_ada_jenis_dipilih" };
 
     const hasil = [];
     const kerjakan = [
-      ...dariAbt.map((j) => ({ jenis: j, sumber: "abt" })),
+      ...abtEkstensi.map((x) => ({ jenis: x.jenis, sumber: "abt", isi: x.isi, berkas: x.berkas })),
+      ...dariAbt.filter((j) => !abtEkstensi.some((x) => x.jenis === j)).map((j) => ({ jenis: j, sumber: "abt" })),
       ...manual.map((x) => ({ jenis: x.jenis, sumber: "manual", isi: x.isi })),
     ];
     for (let i = 0; i < kerjakan.length; i++) {
       const k = kerjakan[i];
-      const cap = (m.cap && m.cap[k.jenis]) || null;
+      const atur = aturBerlaku(k.jenis, m.atur && m.atur[k.jenis]);
+      const cap = atur.pakaiCap ? (m.cap && m.cap[k.jenis]) || null : null;
       let satu;
       try {
-        satu = await kerjakanSatu({ ...k, perkara, cap, olehUsername, penggunaId: m.penggunaId, passphrase, nik: m.nik, kering, tteElektronik });
+        satu = await kerjakanSatu({ ...k, perkara, cap, atur, olehUsername, penggunaId: m.penggunaId, passphrase, nik: m.nik, kering, tteElektronik });
       } catch (galat) {
         satu = { ok: false, alasan: `galat: ${sapu(galat && galat.message).slice(0, 160)}` };
       }
       satu.alasan = sapu(satu.alasan);
-      hasil.push({ jenis: k.jenis, sumber: k.sumber, ...satu });
+      hasil.push({ jenis: k.jenis, sumber: k.sumber, ...(k.berkas ? { berkas: k.berkas } : {}), ...satu });
 
+      const peringatan = (satu.peringatan || []).map((p) => p.kode).join(",");
       await Promise.resolve(
         d.jejak.catat({
           aksi: "unggah",
@@ -595,8 +1062,10 @@ function buatLayanan(depsMasuk) {
                   tabel: "",
                   aksi: "INFO",
                   keterangan:
-                    `sumber ${k.sumber}; ttd ${(satu.tandaTangan && satu.tandaTangan.namaPejabat) || "-"}; ` +
-                    `cap ${(cap && (cap.nama || cap.id)) || "-"}; tte ${satu.tte ? "ya" : "tidak"}`,
+                    `sumber ${k.sumber}${k.berkas ? ` (${k.berkas})` : ""}${m.otomatis ? " otomatis" : ""}; ` +
+                    `ttd ${(satu.tandaTangan && satu.tandaTangan.namaPejabat) || "-"}; ` +
+                    `cap ${(satu.cap && (satu.cap.nama || satu.cap.id)) || "-"}; tte ${satu.tte ? "ya" : "tidak"}` +
+                    `${peringatan ? `; peringatan ${peringatan}` : ""}`,
                 },
               ]
             : [],
@@ -617,21 +1086,26 @@ function buatLayanan(depsMasuk) {
       kering,
       perkara,
       hasil: hasil.map((x) => {
-        const { pdf, ...sisa } = x;
+        const { pdf, rtf, ...sisa } = x;
         void pdf;
+        void rtf;
         return sisa;
       }),
     };
   }
 
-  async function kerjakanSatu({ jenis, sumber, isi, perkara, cap, olehUsername, penggunaId, passphrase, nik, kering, tteElektronik }) {
+  async function kerjakanSatu({ jenis, sumber, isi, perkara, cap, atur, olehUsername, penggunaId, passphrase, nik, kering, tteElektronik }) {
     const d = deps();
     let rtf = "";
     let pdfManual = null;
-    if (sumber === "abt") {
+    if (sumber === "abt" && !isi) {
       const b = await d.dokumen.ambilBlangko(jenis, perkara.nomorPerkara);
       if (!b.ok) return { ok: false, langkah: "blangko", alasan: b.alasan };
       rtf = b.rtf;
+    } else if (sumber === "abt") {
+      // RTF ABT yang dicetak ekstensi dengan sesi ABT petugas: harus RTF.
+      if (d.cetak.kenaliDokumen(isi) !== "rtf") return { ok: false, langkah: "blangko", alasan: "jawaban_abt_bukan_rtf" };
+      rtf = isi.toString("latin1");
     } else {
       const bentuk = d.cetak.kenaliDokumen(isi);
       if (bentuk === "rtf") rtf = isi.toString("latin1");
@@ -649,21 +1123,27 @@ function buatLayanan(depsMasuk) {
 
     let siap;
     if (pdfManual) {
-      siap = { ok: true, pdf: pdfManual, tandaTangan: null, tte: false, catatan: "pdf_apa_adanya_ttd_cap_dari_berkas" };
+      siap = { ok: true, pdf: pdfManual, tandaTangan: null, cap: null, peringatan: [], tte: false, catatan: "pdf_apa_adanya_ttd_cap_dari_berkas" };
     } else {
-      siap = await siapkanPdf({ jenis, rtf, penggunaId, cap, tte: tteElektronik ? { passphrase, nik } : null });
+      siap = await siapkanPdf({ jenis, rtf, penggunaId, cap, atur, tte: tteElektronik ? { passphrase, nik } : null });
       if (!siap.ok) return siap;
     }
 
+    const laporan = {
+      penandaTangan: siap.penandaTangan || null,
+      tandaTangan: siap.tandaTangan,
+      cap: siap.cap ? { id: siap.cap.id || "", nama: siap.cap.nama || "", diBelakang: Boolean(siap.cap.diBelakang) } : null,
+      peringatan: siap.peringatan || [],
+      gambarBawaan: siap.gambarBawaan || { dibuang: 0, uraian: [] },
+      tte: siap.tte,
+      catatan: siap.catatan || "",
+    };
     if (kering) {
       return {
         ok: true,
         kering: true,
         ukuranPdf: siap.pdf.length,
-        tandaTangan: siap.tandaTangan,
-        cap: cap ? { id: cap.id || "", nama: cap.nama || "" } : null,
-        tte: siap.tte,
-        catatan: siap.catatan || "",
+        ...laporan,
         jalurDirencanakan: d.dokumen.jalurDokumen(perkara.nomorPerkara, jenis),
       };
     }
@@ -674,15 +1154,12 @@ function buatLayanan(depsMasuk) {
       pdf: siap.pdf,
       olehUsername,
     });
-    if (!simpan.ok) return { ...simpan, langkah: "simpan" };
+    if (!simpan.ok) return { ...simpan, langkah: "simpan", peringatan: laporan.peringatan };
     return {
       ok: true,
       jalur: simpan.jalur,
       ukuranPdf: siap.pdf.length,
-      tandaTangan: siap.tandaTangan,
-      cap: cap ? { id: cap.id || "", nama: cap.nama || "" } : null,
-      tte: siap.tte,
-      catatan: siap.catatan || "",
+      ...laporan,
     };
   }
 
@@ -694,13 +1171,24 @@ const bawaan = buatLayanan();
 module.exports = {
   JENIS,
   PETA_PTSP,
+  PENANDATANGAN,
+  ATUR_BAWAAN,
+  ATUR_JENIS,
   CIRI,
+  aturBerlaku,
   sapuRtf,
   teksPolos,
   pisahBagian,
   ambilBagian,
-  sisipkanCap,
-  pilihTandaTangan,
+  ukuranGambar,
+  adaTransparansi,
+  awalBlokTtd,
+  buangGambarBlokTtd,
+  cariPenandaTangan,
+  cocokkanTandaTangan,
+  tataParagraf,
+  bubuhkanTtdCap,
+  bubuhkanPenetapan,
   buatLayanan,
   peta: (...a) => bawaan.peta(...a),
   unggah: (...a) => bawaan.unggah(...a),

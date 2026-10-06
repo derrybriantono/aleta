@@ -1644,6 +1644,16 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
   // Rapor hanya disusun untuk uji kering - pada penulisan sungguhan yang
   // dibaca orang hasilnya, bukan ramalannya.
   gambarHasilTulis(kabar, hasil, kering, kering ? raporPraperiksa(usulan, data, hasil) : null);
+  // Perbaikan 6 Okt (butir 17) - UI Baru saja: penetapan yang SUNGGUH
+  // tertulis langsung disusul edoc-nya dari blangko ABT (Peta penetapan).
+  // Tidak ditunggu: penetapannya sudah tertulis, edoc punya kabarnya sendiri.
+  if (!kering && typeof e6SesudahPenetapanTertulis === "function") {
+    try {
+      void Promise.resolve(e6SesudahPenetapanTertulis(kabar, usulan, hasil)).catch(() => undefined);
+    } catch {
+      /* edoc tidak pernah menggagalkan penetapan */
+    }
+  }
   return { ok: hasil.every((x) => x.ok), hasil };
 }
 
@@ -21417,6 +21427,7 @@ const S2_PERAN_BAGIAN = {
   isiAlasanPerkara: "PTSP",
   saksiKtp: "PTSP",
   rapikanPihak: "PTSP",
+  e6EdocPenetapan: "PTSP",
   bacaBorang: "Admin",
   isiPutusan: "Hakim",
   unggahPutusanSipp: "Hakim",
@@ -22449,6 +22460,9 @@ function p5KelompokPtsp(konteks) {
   if (bolehUmum && document.querySelector("#frm_data_umum")) kel.isi.appendChild(bagianIsiAlasanPerkara(konteks.nomorPerkara));
   if (bolehKtp) kel.isi.appendChild(p5BagianSaksiKtp());
   if (bolehUmum || bolehKtp) kel.isi.appendChild(p5BagianRapikanPihak());
+  // Perbaikan 6 Okt (butir 17): edoc penetapan dari blangko ABT - menulis ke
+  // SIPP, jadi kewenangannya sama dengan menuliskan penetapan.
+  if (boleh("penunjukan") && typeof e6BagianEdocPenetapan === "function") kel.isi.appendChild(e6BagianEdocPenetapan(konteks));
   return kel;
 }
 
@@ -22789,6 +22803,237 @@ function p5BagianRapikanPihak() {
       satu.hasilEl.textContent = `✗ ${h.pesan}`;
     }
     segarkanTulis();
+  });
+  return kotak;
+}
+
+/*
+ * ============================================================================
+ * PERBAIKAN 6 OKTOBER 2026 - EDOC PENETAPAN DARI BLANGKO ABT (butir 17-20)
+ * ============================================================================
+ *
+ * UI Baru saja (s1Aktif). Dua jalan, satu mesin (e6UnggahEdocPenetapan):
+ *
+ *   OTOMATIS  sesudah penetapan PMH/PHS TERTULIS lewat "Penetapan dan
+ *             Penunjukan Perkara" (tetapkanLewatAleta), untuk tiap jenis
+ *             yang di Peta penetapan (Integrasi e-Court) aktif + unggah
+ *             otomatis: blangko ABT-nya ("@ 1 - PMH", "@ 2 - PHS") dicetak
+ *             lewat latar.js ("relaas-rtf" - sesi ABT petugas, jalan yang
+ *             sama dengan cetak relaas massal), dikirim ke rute unggah edoc
+ *             penetapan yang SUDAH ADA (S2_API_EDOC_UNGGAH, s2KirimEdoc), dan
+ *             ALETA membubuhkan tanda tangan sesuai nama + cap di atasnya
+ *             sebelum mengunggahnya ke e-Doc tab Penetapan SIPP.
+ *   TOMBOL    bagian "Edoc penetapan dari blangko ABT" di tab PTSP: periksa
+ *             dulu (kering - tidak ada yang ditulis), lalu unggah.
+ *
+ * Penjaga: mode latihan/kering/coba menahan (s2ModeMenahan), rute menolak
+ * kiriman otomatis untuk jenis yang unggah otomatisnya mati, dan tidak ada
+ * jalur tulis ke SIPP selain rute unggah yang sudah ada. Tanpa tanda ALETA
+ * di SIPP: pelakunya akun SIPP yang sedang masuk (namaPenggunaSipp).
+ */
+const E6_API_PETA = "/aleta/api/aleta-ecourt/penetapan-edoc/peta-penetapan";
+
+/** Peta penetapan dari portal. Pulang { ok, butir } | { ok:false, pesan }. */
+async function e6BacaPeta() {
+  const j = await t7AmbilJson(E6_API_PETA, "Membaca peta penetapan");
+  if (!j.ok) return { ok: false, pesan: j.pesan };
+  const butir = j.data && Array.isArray(j.data.butir) ? j.data.butir : [];
+  return { ok: true, butir };
+}
+
+/** Jenis yang dipakai: aktif, bernama blangko, (otomatis: unggah otomatis menyala). Murni. */
+function e6JenisDipakai(butir, jenis, otomatis) {
+  const diminta = (jenis || []).map((x) => String(x).toLowerCase());
+  return (butir || []).filter(
+    (b) => b && diminta.includes(String(b.jenis)) && b.aktif === true && String(b.namaBerkas || "").trim() && (!otomatis || b.otomatisUnggah === true)
+  );
+}
+
+/** perkara_id: dari konteks halaman bila ada, kalau tidak dari peta edoc (bot membaca SIPP). */
+async function e6PerkaraId(nomorPerkara, perkaraId) {
+  const id = String(perkaraId || "").trim();
+  if (/^\d+$/.test(id) && !/^0+$/.test(id)) return id;
+  const j = await t7AmbilJson(`${S2_API_EDOC_PETA}?nomor=${encodeURIComponent(String(nomorPerkara || ""))}`, "Mengenali perkara");
+  const p = j.ok && j.data && j.data.perkara ? String(j.data.perkara.perkaraId || "") : "";
+  return /^\d+$/.test(p) ? p : "";
+}
+
+/** Meminta latar.js mencetak SATU blangko ABT untuk satu perkara (RTF base64). */
+async function e6CetakRtfAbt(perkaraId, butir) {
+  try {
+    const jawab = await chrome.runtime.sendMessage({
+      sumber: "aleta-panel",
+      jenis: "relaas-rtf",
+      asal: location.origin,
+      asalAbt: `${location.origin}/aps_badilag`,
+      perkaraId: String(perkaraId),
+      berkas: String(butir.namaBerkas || ""),
+      utamakan: String(butir.kelompok || ""),
+    });
+    return jawab && typeof jawab === "object" ? jawab : { ok: false, sebab: "ekstensi tidak menjawab" };
+  } catch (galat) {
+    return { ok: false, sebab: `ekstensi tidak menjawab: ${String((galat && galat.message) || galat)}` };
+  }
+}
+
+/** Kalimat hasil per jenis - termasuk tanda tangan siapa dan peringatannya. Murni. */
+function e6RingkasHasil(d) {
+  const berkas = d && Array.isArray(d.berkas) ? d.berkas : [];
+  return berkas
+    .map((x) => {
+      const jenis = String(x.jenis || "").toUpperCase();
+      if (!x.ok) return `${jenis}: gagal${x.sebab ? ` (${x.sebab})` : ""}`;
+      const ttd = x.tandaTangan ? `ttd ${x.tandaTangan}` : "TANPA tanda tangan";
+      const per = Array.isArray(x.peringatan) && x.peringatan.length ? ` - ${x.peringatan.join(" ")}` : "";
+      return `${jenis}: ${d.kering ? "siap" : "terunggah"}, ${ttd}${per}`;
+    })
+    .join(" · ");
+}
+
+/**
+ * Mesin bersama: cetak blangko ABT tiap jenis lalu kirim ke rute unggah.
+ * @param {{nomorPerkara, perkaraId, jenis: string[], otomatis: boolean, kering: boolean, kabar: HTMLElement}} p
+ */
+async function e6UnggahEdocPenetapan(p) {
+  const tulis = (teks, buruk) => {
+    if (!p.kabar) return;
+    p.kabar.className = buruk ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
+    p.kabar.textContent = teks;
+  };
+  const kering = p.kering !== false;
+  if (!kering) {
+    const ditahan = s2ModeMenahan(S2_API_EDOC_UNGGAH);
+    if (ditahan) {
+      tulis(`Edoc penetapan tidak diunggah: ditahan ${ditahan} - tidak ada yang dikirim.`);
+      return { ok: false, ditahan };
+    }
+  }
+  const peta = await e6BacaPeta();
+  if (!peta.ok) {
+    tulis(`Edoc penetapan: ${peta.pesan}`, true);
+    return { ok: false };
+  }
+  const dipakai = e6JenisDipakai(peta.butir, p.jenis, p.otomatis);
+  if (!dipakai.length) {
+    if (!p.otomatis) tulis("Tidak ada jenis yang dipilih yang aktif di Peta penetapan (Integrasi e-Court).", true);
+    return { ok: false, alasan: "tidak_ada_jenis" };
+  }
+  const perkaraId = await e6PerkaraId(p.nomorPerkara, p.perkaraId);
+  if (!perkaraId) {
+    tulis("Edoc penetapan: perkara tidak dikenali di SIPP.", true);
+    return { ok: false };
+  }
+  const abt = [];
+  const gagal = [];
+  for (const b of dipakai) {
+    tulis(`Mencetak ${String(b.jenis).toUpperCase()} dari blangko ABT "${b.namaBerkas}"…`);
+    const r = await e6CetakRtfAbt(perkaraId, b);
+    if (r && r.ok && r.rtfBase64) abt.push({ jenis: b.jenis, isiBase64: r.rtfBase64, berkas: b.namaBerkas });
+    else gagal.push(`${String(b.jenis).toUpperCase()}: ${(r && r.sebab) || "tidak tercetak"}${r && r.perluMasuk ? " (masuk ke ABT lebih dahulu)" : ""}`);
+  }
+  if (!abt.length) {
+    tulis(`Edoc penetapan belum ${kering ? "dapat diperiksa" : "terunggah"} - ${gagal.join("; ")}`, true);
+    return { ok: false, gagal };
+  }
+  tulis(`${kering ? "Memeriksa" : "Mengunggah"} ${abt.map((x) => String(x.jenis).toUpperCase()).join(" dan ")}…`);
+  if (!kering) await s2JedaTulis("unggah", S2_API_EDOC_UNGGAH);
+  const badan = {
+    nomorPerkara: String(p.nomorPerkara || ""),
+    perkaraId,
+    abt,
+    otomatis: Boolean(p.otomatis),
+    konfirmasi: !kering,
+    kering,
+    olehUsername: namaPenggunaSipp() || "",
+  };
+  const hasil = await s2KirimEdoc(JSON.stringify(badan), "Upload edoc penetapan");
+  const ringkas = hasil.d ? e6RingkasHasil({ ...hasil.d, kering }) : "";
+  const tambahan = gagal.length ? ` · tidak tercetak: ${gagal.join("; ")}` : "";
+  if (hasil.ok) tulis(`${ringkas || (kering ? "Siap diunggah." : "Terunggah ke e-Doc SIPP.")}${tambahan}`, Boolean(gagal.length));
+  else tulis(`${hasil.pesan}${ringkas ? ` · ${ringkas}` : ""}${tambahan}`, hasil.status !== 404);
+  return { ok: hasil.ok, hasil };
+}
+
+/**
+ * Dipanggil tetapkanLewatAleta sesudah rantai penetapan TERTULIS sungguhan
+ * (bukan kering). Hanya UI Baru, hanya jenis yang baru tertulis.
+ */
+function e6SesudahPenetapanTertulis(kabar, usulan, hasil) {
+  if (typeof s1Aktif !== "function" || !s1Aktif()) return null;
+  const tertulis = (hasil || []).filter((x) => x && x.ok === true).map((x) => String(x.jenis));
+  if (!tertulis.some((j) => j === "pmh" || j === "phs" || j === "ppp" || j === "pjs")) return null;
+  const wadah = buatElemen("div", "aleta-abt-kabar", "Menyiapkan edoc penetapan…");
+  wadah.setAttribute("data-e6-edoc", "otomatis");
+  if (kabar && kabar.parentNode) kabar.parentNode.insertBefore(wadah, kabar.nextSibling);
+  const perkara = (usulan && usulan.perkara) || {};
+  return e6UnggahEdocPenetapan({
+    nomorPerkara: String(perkara.nomorPerkara || ""),
+    perkaraId: String(perkara.perkaraId || ""),
+    jenis: tertulis,
+    otomatis: true,
+    kering: false,
+    kabar: wadah,
+  });
+}
+
+/** Bagian tombol di tab PTSP: periksa dulu (kering), lalu unggah. */
+function e6BagianEdocPenetapan(konteks) {
+  const nomor = String((konteks && konteks.nomorPerkara) || "");
+  const idHalaman = String((konteks && konteks.identitas && konteks.identitas.perkaraId) || "");
+  const kotak = bagian("Edoc penetapan dari blangko ABT (PMH/PHS)", "e6EdocPenetapan", true);
+  kotak.setAttribute("data-e6-fitur", "edoc-penetapan");
+  kotak.isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab aleta-remeh",
+      "Blangko dari Peta penetapan (Integrasi e-Court) dicetak dari ABT untuk perkara ini, ditandatangani sesuai nama penanda tangannya " +
+        "(PMH: ditambah cap kantor di atas tanda tangan), lalu diunggah ke e-Doc tab Penetapan SIPP. Periksa dulu - belum ada yang ditulis."
+    )
+  );
+  const pilihan = {};
+  for (const [j, sebutan] of [
+    ["pmh", "Penetapan Majelis Hakim (PMH)"],
+    ["phs", "Penetapan Hari Sidang (PHS)"],
+  ]) {
+    const baris = buatElemen("label", "aleta-massal-baris");
+    const c = document.createElement("input");
+    c.type = "checkbox";
+    c.className = "aleta-massal-centang";
+    c.checked = true;
+    c.setAttribute("data-e6-jenis", j);
+    pilihan[j] = c;
+    baris.append(c, buatElemen("span", "aleta-massal-nomor", sebutan));
+    kotak.isi.appendChild(baris);
+  }
+  const tombol = buatElemen("button", "aleta-tombol", "Periksa dulu - belum ditulis");
+  tombol.type = "button";
+  tombol.setAttribute("data-e6-edoc", "tombol");
+  const kabar = buatElemen("div", "aleta-abt-kabar", "");
+  kotak.isi.append(tombol, kabar);
+  let siapTulis = false;
+  for (const c of Object.values(pilihan)) {
+    c.addEventListener("change", () => {
+      siapTulis = false;
+      tombol.textContent = "Periksa dulu - belum ditulis";
+    });
+  }
+  tombol.addEventListener("click", async () => {
+    const jenis = Object.keys(pilihan).filter((j) => pilihan[j].checked);
+    if (!jenis.length) {
+      kabar.textContent = "Pilih minimal satu jenis.";
+      return;
+    }
+    tombol.disabled = true;
+    const tulis = siapTulis;
+    const h = await e6UnggahEdocPenetapan({ nomorPerkara: nomor, perkaraId: idHalaman, jenis, otomatis: false, kering: !tulis, kabar });
+    tombol.disabled = false;
+    if (!tulis && h && h.ok) {
+      siapTulis = true;
+      tombol.textContent = "Unggah ke e-Doc SIPP";
+    } else {
+      siapTulis = false;
+      tombol.textContent = tulis && h && h.ok ? "Sudah diunggah - periksa lagi" : "Periksa dulu - belum ditulis";
+    }
   });
   return kotak;
 }
