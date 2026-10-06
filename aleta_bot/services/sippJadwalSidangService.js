@@ -237,6 +237,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     petaDurasi,
     petaIkrar,
     petaPembebanan,
+    petaMediasi,
+    petaHadirLengkap,
   ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
@@ -294,6 +296,12 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
         ),
       "pembebanan"
     ),
+    // Butir 7-9 (6 Okt 2026): mediasi terakhir tiap perkara (pernah mediasi,
+    // hasilnya) dan sidang PERTAMA yang dihadiri kedua belah pihak. Dua kueri
+    // IN untuk seluruh daftar; gagal-terbuka dan dicatat - layar diam, bukan
+    // menyatakan "tidak pernah mediasi".
+    aman(() => mediasiBanyakPerkara(idPerkara), "mediasi"),
+    aman(() => hadirLengkapPertamaBanyakPerkara(idPerkara), "hadir-lengkap"),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -367,6 +375,14 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // menyatakan "tanpa pembebanan".
       pembebanan: barisSidangIkrar(row) ? petaPembebanan[String(row.perkaraId)] || null : null,
       pembebananTerbaca: !gagal.has("pembebanan"),
+      // Butir 7-9 (6 Okt 2026). mediasi: mediasi TERAKHIR perkara ini (null =
+      // belum pernah); hadirLengkapPertama: tanggal sidang pertama yang
+      // dihadiri kedua belah pihak menurut SIPP (dihadiri_oleh = 1), "" bila
+      // belum pernah. Terbaca false = kuerinya gagal; layar diam.
+      mediasi: petaMediasi[String(row.perkaraId)] || null,
+      mediasiTerbaca: !gagal.has("mediasi"),
+      hadirLengkapPertama: petaHadirLengkap[String(row.perkaraId)] || "",
+      hadirLengkapTerbaca: !gagal.has("hadir-lengkap"),
       urutanSidang: Number(row.urutanSidang) || 0,
       dihadiriOleh: row.dihadiriOleh === null || row.dihadiriOleh === undefined ? null : Number(row.dihadiriOleh),
       adaBas: Boolean(cleanText(row.edocBas)),
@@ -958,6 +974,82 @@ async function ikrarBanyakPerkara(daftarPerkaraId = []) {
     // perkara_id kunci utama tabel itu - satu baris per perkara. Bila suatu
     // pemasangan berbeda, yang pertama bertanggal dipakai.
     if (tanggal && !hasil[String(b.perkaraId)]) hasil[String(b.perkaraId)] = tanggal;
+  }
+  return hasil;
+}
+
+/**
+ * ============================================================================
+ * MEDIASI TERAKHIR TIAP PERKARA (6 Okt 2026, butir 8-9)
+ * ============================================================================
+ *
+ * hasil_mediasi SIPP (keterangan kolomnya di skrip ubah-skema SIPP sendiri,
+ * dan pemakaiannya di laporan mediasi SIPP):
+ *   Y / Y1  berhasil dengan perdamaian (akta perdamaian)
+ *   Y2      berhasil dengan pencabutan
+ *   S       berhasil sebagian
+ *   T       tidak berhasil
+ *   D       tidak dapat dilaksanakan
+ * Diukur di server 6 Okt 2026: 762 baris, 758 perkara; Y1 13, Y2 45, S 157,
+ * T 459, D 22, kosong 66 (mediasi berjalan).
+ *
+ * "Pernah mediasi" = ada baris perkara_mediasi (mediator ditunjuk - kolom
+ * penetapan_penunjukan_mediator terisi pada 762 dari 762). Bila satu perkara
+ * bermediasi lebih dari sekali, yang TERAKHIR (mediasi_id terbesar) dipakai.
+ *
+ * @returns {Promise<Record<string, {ditunjuk: string, dimulai: string, hasil: string, keputusan: string, mediator: string}>>}
+ */
+async function mediasiBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+  if (!(await sippSkemaService.tabelAda("perkara_mediasi"))) return {};
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+  const baris = await runQuery(
+    `SELECT m.perkara_id AS perkaraId, m.mediasi_id AS mediasiId,
+            m.penetapan_penunjukan_mediator AS ditunjuk, m.dimulai_mediasi AS dimulai,
+            m.hasil_mediasi AS hasil, m.keputusan_mediasi AS keputusan, m.mediator_text AS mediator
+       FROM perkara_mediasi m
+      WHERE m.perkara_id IN (${isian})
+      ORDER BY m.perkara_id, m.mediasi_id`,
+    dipakai
+  );
+  const hasil = {};
+  for (const b of Array.isArray(baris) ? baris : []) {
+    // Urut naik per perkara: yang terakhir menimpa yang sebelumnya.
+    hasil[String(b.perkaraId)] = {
+      ditunjuk: isoTanggal(b.ditunjuk),
+      dimulai: isoTanggal(b.dimulai),
+      hasil: cleanText(b.hasil).toUpperCase(),
+      keputusan: isoTanggal(b.keputusan),
+      mediator: cleanText(b.mediator),
+    };
+  }
+  return hasil;
+}
+
+/**
+ * Tanggal sidang PERTAMA yang dihadiri kedua belah pihak (dihadiri_oleh = 1,
+ * "Semua Pihak" di blangko SIPP) - butir 7, 6 Okt 2026. Satu kueri IN.
+ *
+ * @returns {Promise<Record<string, string>>} perkaraId -> "YYYY-MM-DD"
+ */
+async function hadirLengkapPertamaBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+  const baris = await runQuery(
+    `SELECT perkara_id AS perkaraId, MIN(tanggal_sidang) AS pertama
+       FROM perkara_jadwal_sidang
+      WHERE perkara_id IN (${isian}) AND dihadiri_oleh = 1
+      GROUP BY perkara_id`,
+    dipakai
+  );
+  const hasil = {};
+  for (const b of Array.isArray(baris) ? baris : []) {
+    const t = isoTanggal(b.pertama);
+    if (t) hasil[String(b.perkaraId)] = t;
   }
   return hasil;
 }
@@ -3119,6 +3211,8 @@ module.exports = {
   durasiBanyakPerkara,
   ikrarBanyakPerkara,
   pembebananBanyakPerkara,
+  mediasiBanyakPerkara,
+  hadirLengkapPertamaBanyakPerkara,
   barisSidangIkrar,
   AMBANG_DURASI_HARI,
   BATAS_POTONG_MEDIASI_HARI,
