@@ -45,6 +45,7 @@ import { appendAuditLog } from "@/server/shared/audit";
 import { nextPrefixedId } from "@/server/shared/ids";
 import {
   kalimatPengumuman,
+  kalimatPengumumanPihak,
   kalimatPesanPetugas,
   kalimatPesanPihak,
   samarkanNomor,
@@ -434,11 +435,9 @@ export async function lakukanPanggilan(db: AletaDatabase, pelaku: Pelaku, masuka
       pesan: "Orang ini tidak (lagi) tercatat pada perkara ini di SIPP - muat ulang jadwalnya.",
     });
   }
-  // Saksi tidak pernah ada di daftar sasaran; pihak tidak pernah diumumkan
-  // lewat pengeras suara (nama pihak sengaja tidak tampil di layar umum).
-  if (masukan.saluran === "audio" && orang.jenis !== "petugas") {
-    return selesai(orang, { ok: false, hasil: "ditolak", pesan: "Pengumuman suara hanya untuk petugas sidang." });
-  }
+  // Saksi tidak pernah ada di daftar sasaran. Pihak SEJAK 6 Okt 2026 (lanjutan
+  // butir 23) dapat diumumkan lewat pengeras suara atas permintaan pengguna -
+  // saklarnya (panggil-pihak-audio) bawaannya mati di peramban.
 
   const nomorPerkara = sasaran.perkara.nomorPerkara || String(masukan.nomorPerkara ?? "").slice(0, 64);
   const ruang = String(masukan.ruang ?? "").trim().slice(0, 128) || sasaran.perkara.ruang;
@@ -462,7 +461,10 @@ export async function lakukanPanggilan(db: AletaDatabase, pelaku: Pelaku, masuka
 
   // --- Pengumuman suara ------------------------------------------------------
   if (masukan.saluran === "audio") {
-    const teks = kalimatPengumuman({ peran: orang.peran, nama: orang.nama, ruang, nomorPerkara, konteks: masukan.konteks });
+    const teks =
+      orang.jenis === "petugas"
+        ? kalimatPengumuman({ peran: orang.peran, nama: orang.nama, ruang, nomorPerkara, konteks: masukan.konteks })
+        : kalimatPengumumanPihak({ peran: orang.peran, nama: orang.nama, ruang, nomorPerkara, konteks: masukan.konteks });
     const catat = await panggilBotPanggil<{ ok: boolean; id?: number; alasan?: string; pesan?: string }>("/catat", {
       method: "POST",
       body: { ...dasarCatat, teks, hasil: "diumumkan", keterangan: "diputar layar antrian / papan panggil yang suaranya menyala" },

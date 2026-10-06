@@ -148,6 +148,8 @@ describe("saklar dan kalimat (butir 37)", () => {
       "panggil-petugas-chat": true,
       "panggil-petugas-audio": false,
       "panggil-pihak-chat": true,
+      // Lanjutan butir 23 (6 Okt 2026) - bawaannya mati seperti audio petugas.
+      "panggil-pihak-audio": false,
     });
   });
 
@@ -158,9 +160,11 @@ describe("saklar dan kalimat (butir 37)", () => {
   });
 
   it("nama petugas tetap dapat diklik bila hanya audio yang hidup; nama pihak mengikuti saklarnya sendiri", () => {
-    const hanyaAudio = { "panggil-petugas-chat": false, "panggil-petugas-audio": true, "panggil-pihak-chat": false };
+    const hanyaAudio = { "panggil-petugas-chat": false, "panggil-petugas-audio": true, "panggil-pihak-chat": false, "panggil-pihak-audio": false };
     expect(namaDapatDiklik(hanyaAudio, "majelis")).toBe(true);
     expect(namaDapatDiklik(hanyaAudio, "pihak1")).toBe(false);
+    // Pihak dengan audio saja tetap dapat diklik.
+    expect(namaDapatDiklik({ ...hanyaAudio, "panggil-pihak-audio": true }, "pihak4")).toBe(true);
   });
 
   it("nomor disamarkan, dan kalimatnya memuat ruang, perkara, agenda, pemanggil", () => {
@@ -405,9 +409,11 @@ describe("portal: panggilan WhatsApp dan suara", () => {
     expect(String(tiruan.kirim.mock.calls[0][0].message)).toContain("Pemohon");
   });
 
-  it("pihak tidak dapat diumumkan lewat suara; petugas dapat", async () => {
+  it("pihak (lanjutan butir 23) dan petugas dapat diumumkan lewat suara", async () => {
     const pihak = await lakukanPanggilan(db, PELAKU, { perkaraId: "77", konteks: "sidang", kunci: "kuasa2:201", saluran: "audio" });
-    expect(pihak).toMatchObject({ ok: false, hasil: "ditolak" });
+    expect(pihak).toMatchObject({ ok: true, hasil: "diumumkan" });
+    expect(String(pihak.teks)).toMatch(/^Panggilan untuk Kuasa .* atas nama .*, perkara nomor 77\/Pdt\.G\/2026\/PA\.Dgl, dipersilakan masuk ke /);
+    tiruan.bot.length = 0;
     const hakim = await lakukanPanggilan(db, PELAKU, { perkaraId: "77", konteks: "sidang", kunci: "hakim:3", saluran: "audio" });
     expect(hakim).toMatchObject({ ok: true, hasil: "diumumkan" });
     expect(tiruan.bot.find((x) => x.jalur === "/catat")?.body).toMatchObject({

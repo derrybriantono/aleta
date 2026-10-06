@@ -320,7 +320,7 @@ function PopupPanggil({
   const orangTampil = (data?.orang ?? []).filter((o) =>
     o.jenis === "petugas"
       ? pilihan["panggil-petugas-chat"] || pilihan["panggil-petugas-audio"]
-      : pilihan["panggil-pihak-chat"]
+      : pilihan["panggil-pihak-chat"] || pilihan["panggil-pihak-audio"]
   );
 
   // Dihitung tiap gambar dari letak nama yang diklik; pop-up menutup sendiri
@@ -377,7 +377,8 @@ function PopupPanggil({
         {orangTampil.map((orang) => {
           const bolehChat =
             orang.jenis === "petugas" ? pilihan["panggil-petugas-chat"] : pilihan["panggil-pihak-chat"];
-          const bolehAudio = orang.jenis === "petugas" && pilihan["panggil-petugas-audio"];
+          // Lanjutan butir 23 (6 Okt 2026): pihak juga, lewat saklarnya sendiri.
+          const bolehAudio = orang.jenis === "petugas" ? pilihan["panggil-petugas-audio"] : pilihan["panggil-pihak-audio"];
           const hWa = hasil[`${orang.kunci}|whatsapp`];
           const hAudio = hasil[`${orang.kunci}|audio`];
           return (
@@ -520,7 +521,7 @@ export function NamaDapatDipanggil({
         aria-haspopup="dialog"
         aria-expanded={jangkar !== null}
         data-nama-panggil={golongan}
-        title={golonganPetugas(golongan) ? "Klik untuk memanggil petugas ini" : "Klik untuk mengirim pemberitahuan WhatsApp"}
+        title={golonganPetugas(golongan) ? "Klik untuk memanggil petugas ini" : "Klik untuk memanggil pihak ini (WhatsApp / suara)"}
         className={cn(
           "inline cursor-pointer break-words text-left underline decoration-dotted decoration-1 underline-offset-2 hover:text-primary",
           className

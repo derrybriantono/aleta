@@ -41,7 +41,7 @@ export type SaklarPanggil = {
   bawaan: boolean;
 };
 
-export type KunciSaklarPanggil = "panggil-petugas-chat" | "panggil-petugas-audio" | "panggil-pihak-chat";
+export type KunciSaklarPanggil = "panggil-petugas-chat" | "panggil-petugas-audio" | "panggil-pihak-chat" | "panggil-pihak-audio";
 
 /** Bawaan: chat petugas HIDUP, audio MATI, chat pihak HIDUP (permintaan pengguna, butir 37). */
 export const SAKLAR_PANGGIL: SaklarPanggil[] = [
@@ -65,6 +65,16 @@ export const SAKLAR_PANGGIL: SaklarPanggil[] = [
     keterangan:
       "Nama penggugat/pemohon, tergugat/termohon, turut tergugat, intervensi, dan kuasanya dapat diklik untuk mengirim pemberitahuan WhatsApp dipanggil masuk ruang sidang. Saksi tidak termasuk.",
     bawaan: true,
+  },
+  // Lanjutan butir 23 (6 Okt 2026): pihak juga dapat dipanggil lewat pengeras
+  // suara. Bawaannya MATI - sama dengan audio petugas: pengumuman menyebut nama
+  // pihak di ruang tunggu umum, jadi dinyalakan dengan sadar.
+  {
+    kunci: "panggil-pihak-audio",
+    label: "Panggil pihak (audio speaker)",
+    keterangan:
+      "Menambah tombol pengumuman suara pada pop-up nama pihak (penggugat, tergugat, turut tergugat, intervensi, dan kuasanya): \"Panggilan untuk Penggugat ..., perkara nomor ..., dipersilakan masuk ke Ruang Sidang ...\". Diputar layar antrian / papan panggil yang tersambung ke pengeras suara. Bawaannya mati.",
+    bawaan: false,
   },
 ];
 
@@ -134,7 +144,7 @@ export function golonganPetugas(golongan: GolonganSasaran): boolean {
 /** Apakah nama golongan ini dapat diklik menurut saklarnya. */
 export function namaDapatDiklik(pilihan: PilihanPanggil, golongan: GolonganSasaran): boolean {
   if (golonganPetugas(golongan)) return pilihan["panggil-petugas-chat"] || pilihan["panggil-petugas-audio"];
-  return pilihan["panggil-pihak-chat"];
+  return pilihan["panggil-pihak-chat"] || pilihan["panggil-pihak-audio"];
 }
 
 /** 0812****6789 - cukup untuk mengenali nomornya, tidak cukup untuk menyalinnya. */
@@ -193,6 +203,15 @@ export function kalimatPesanPihak(bahan: BahanKalimat & { sebutan?: string }): s
   const agenda = String(bahan.agenda ?? "").trim();
   const kegiatan = bahan.konteks === "mediasi" ? "mediasi" : "persidangan";
   return `Pemberitahuan persidangan: Saudara${bahan.sebutan ? ` (${bahan.sebutan})` : ""} dipanggil masuk ${tempatSidang(bahan)} untuk ${kegiatan} perkara ${bahan.nomorPerkara}${agenda ? ` (${agenda})` : ""}. Mohon segera menuju ${tempatSidang(bahan)}.`;
+}
+
+/**
+ * Kalimat pengumuman suara untuk PIHAK (lanjutan butir 23, 6 Okt 2026) -
+ * sebutan kedudukannya, nama, nomor perkara, lalu ruangnya.
+ */
+export function kalimatPengumumanPihak(bahan: { peran: string; nama: string; ruang?: string; nomorPerkara: string; konteks?: "sidang" | "mediasi" }): string {
+  const kegiatan = bahan.konteks === "mediasi" ? "mediasi" : "persidangan";
+  return `Panggilan untuk ${bahan.peran} atas nama ${bahan.nama}, perkara nomor ${bahan.nomorPerkara}, dipersilakan masuk ke ${tempatSidang({ ...bahan, pemanggil: "" })} untuk ${kegiatan}.`;
 }
 
 /** Kalimat pengumuman suara untuk PETUGAS. */
