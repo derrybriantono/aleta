@@ -72,15 +72,55 @@ function waktuTeks(nilai) {
  * @param {boolean} o.penarikTersambung penarik dapat menarik (akun/sesi siap)
  * @param {(d: object) => boolean} o.menunggu definisi dokumen menunggu majelis
  */
-function keadaanPerkara({ dokumen = [], diperiksaHariIni = false, penarikTersambung = true, menunggu }) {
+function keadaanPerkara({
+  dokumen = [],
+  diperiksaHariIni = false,
+  penarikTersambung = true,
+  menunggu,
+  perluUnggah = false,
+  sidangLalu = "",
+}) {
   const belum = dokumen.filter((d) => menunggu(d)).length;
-  if (belum > 0) return { keadaan: "belum", belum };
+  if (belum > 0) return { keadaan: "belum", belum, unggahBaru: unggahSesudah(dokumen, sidangLalu) };
   // Tidak ada yang menunggu menurut data tersimpan. Itu "sudah" bila datanya
   // segar (ditarik hari ini) atau memang ada dokumen yang sudah dibaca dan
   // tidak satu pun menunggu; tanpa data sama sekali dan penarik tidak
   // tersambung, keadaannya tidak diketahui -> tidak konek.
-  if (diperiksaHariIni || dokumen.length > 0) return { keadaan: "sudah", belum: 0 };
-  return { keadaan: penarikTersambung ? "belum-diperiksa" : "tidak-konek", belum: 0 };
+  if (diperiksaHariIni || dokumen.length > 0) {
+    // 6 Okt 2026 (keadaan keempat): agenda hari ini menuntut dokumen pihak
+    // (jawaban, replik, duplik, kesimpulan) tetapi sejak sidang sebelumnya
+    // belum ada satu pun dokumen persidangan yang diunggah - "sudah
+    // diverifikasi" di sana menyesatkan, sebab yang diverifikasi dokumen lama.
+    const unggahBaru = unggahSesudah(dokumen, sidangLalu);
+    if (perluUnggah && sidangLalu && unggahBaru === 0) return { keadaan: "belum-upload", belum: 0, unggahBaru };
+    return { keadaan: "sudah", belum: 0, unggahBaru };
+  }
+  return { keadaan: penarikTersambung ? "belum-diperiksa" : "tidak-konek", belum: 0, unggahBaru: 0 };
+}
+
+/**
+ * Agenda yang menuntut pihak mengunggah dokumen lewat e-Court sebelum sidang.
+ * Pembacaan putusan dan musyawarah majelis tidak - dokumennya bukan dari pihak.
+ */
+const POLA_AGENDA_UNGGAH = /jawab|replik|duplik|kesimpulan/i;
+
+function agendaPerluUnggah(agenda) {
+  return POLA_AGENDA_UNGGAH.test(bersih(agenda));
+}
+
+/**
+ * Jumlah dokumen persidangan (bukan berkas pendaftaran - status "tidak_perlu")
+ * yang diunggah SESUDAH hari sidang sebelumnya. Sehari sidang lalu itu sendiri
+ * tidak dihitung: unggahan pada hari itu milik sidang itu, bukan sidang ini.
+ */
+function unggahSesudah(dokumen, sidangLalu) {
+  const batas = bersih(sidangLalu).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(batas)) return 0;
+  return dokumen.filter((d) => {
+    if (bersih(d.statusVerifikasi) === "tidak_perlu") return false;
+    const tgl = waktuTeks(d.diunggahPada).slice(0, 10);
+    return Boolean(tgl) && tgl > batas;
+  }).length;
 }
 
 /**
@@ -142,16 +182,27 @@ function buatLayanan(deps = {}) {
 
   /** Perkara e-Litigasi gugatan yang bersidang pada tanggal itu - SIPP. */
   async function perkaraElitigasi(tanggal) {
+    // Agenda sidang hari itu dan tanggal sidang SEBELUMNYA ikut dibaca: keduanya
+    // menentukan keadaan "belum upload" (lihat keadaanPerkara).
     const baris = await kueriSipp(
-      `SELECT DISTINCT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara
+      `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
+              MAX(j.agenda) AS agenda,
+              (SELECT MAX(j2.tanggal_sidang) FROM perkara_jadwal_sidang j2
+                WHERE j2.perkara_id = p.perkara_id AND j2.tanggal_sidang < ?) AS sidangLalu
          FROM perkara_jadwal_sidang j
          JOIN perkara p ON p.perkara_id = j.perkara_id
          JOIN perkara_efiling_id k ON k.perkara_id = j.perkara_id
-        WHERE j.tanggal_sidang = ?`,
-      [tanggal]
+        WHERE j.tanggal_sidang = ?
+        GROUP BY p.perkara_id, p.nomor_perkara`,
+      [tanggal, tanggal]
     );
     return (Array.isArray(baris) ? baris : [])
-      .map((b) => ({ perkaraId: bersih(b.perkaraId), nomorPerkara: cleanText(b.nomorPerkara) }))
+      .map((b) => ({
+        perkaraId: bersih(b.perkaraId),
+        nomorPerkara: cleanText(b.nomorPerkara),
+        agenda: cleanText(b.agenda),
+        sidangLalu: waktuTeks(b.sidangLalu).slice(0, 10) || bersih(b.sidangLalu).slice(0, 10),
+      }))
       .filter((b) => b.nomorPerkara && POLA_GUGATAN.test(b.nomorPerkara));
   }
 
@@ -215,6 +266,8 @@ function buatLayanan(deps = {}) {
         diperiksaHariIni: Boolean(tarikMs) || terlihat.slice(0, 10) === hariIni,
         penarikTersambung: penarik.tersambung,
         menunggu,
+        perluUnggah: agendaPerluUnggah(p.agenda),
+        sidangLalu: p.sidangLalu,
       });
       perkara[p.nomorPerkara] = {
         perkaraId: p.perkaraId,
@@ -227,6 +280,9 @@ function buatLayanan(deps = {}) {
         dokumen: dok.length,
         terakhirDiperiksa,
         diverifikasiOleh: oleh.get(k) || [],
+        agenda: p.agenda,
+        sidangLalu: p.sidangLalu,
+        unggahSejakSidangLalu: k1.unggahBaru,
       };
     }
     return {
@@ -268,9 +324,18 @@ function buatLayanan(deps = {}) {
       const k = normalizeCaseNumber(p.nomorPerkara);
       const dok = dokumen.get(k) || [];
       // Perkara yang belum ditarik HARI INI selalu perlu sekali tarikan
-      // (datanya mungkin basi); sesudahnya hanya yang masih menunggu majelis.
+      // (datanya mungkin basi); sesudahnya hanya yang masih menunggu majelis
+      // atau yang dokumennya belum diunggah pihak (dapat masuk sepanjang hari).
       if (!penarik.berhasil.has(k)) return true;
-      return keadaanPerkara({ dokumen: dok, diperiksaHariIni: true, menunggu }).keadaan !== "sudah";
+      return (
+        keadaanPerkara({
+          dokumen: dok,
+          diperiksaHariIni: true,
+          menunggu,
+          perluUnggah: agendaPerluUnggah(p.agenda),
+          sidangLalu: p.sidangLalu,
+        }).keadaan !== "sudah"
+      );
     });
     if (perlu.length === 0) {
       penarik.berhentiUntuk = kunciDaftar;
@@ -352,6 +417,8 @@ module.exports = {
   JEDA_BAWAAN_MS,
   buatLayanan,
   keadaanPerkara,
+  agendaPerluUnggah,
+  unggahSesudah,
   tanggalLokal,
   mulai,
   hentikan,

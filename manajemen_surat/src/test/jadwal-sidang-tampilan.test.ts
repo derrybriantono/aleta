@@ -775,7 +775,7 @@ describe("ketiganya ada apa adanya di komponen", () => {
     // salah satu membuat tabel mengabaikan penyaring kartu tanpa satu galat
     // pun.
     expect(isi).toContain("const sidangSetelahKartu = adaSaringanKartu");
-    expect(isi).toContain("const sidangTampil = milikSaya.baris;");
+    expect(isi).toContain("const sidangTampil = saringKeRuang(milikSaya.baris, ruangSaring);");
     const iSaring = isi.indexOf("saringPerkaraSendiri(");
     expect(iSaring, "penyaring perkara saya tidak dipanggil").toBeGreaterThan(-1);
     expect(

@@ -3,20 +3,29 @@
  * PENANDA VERIFIKASI MAJELIS - PERKARA E-LITIGASI HARI INI (5 Okt 2026, butir 30)
  * ============================================================================
  *
- * SATU penanda di samping nomor perkara, tiga keadaan:
+ * SATU penanda di samping nomor perkara, empat keadaan:
  *
  *   sudah        hijau  tidak ada dokumen persidangan yang menunggu verifikasi
  *   belum        kuning ada dokumen yang menunggu verifikasi majelis
+ *   belum-upload jingga agenda menuntut dokumen pihak (jawaban/replik/duplik/
+ *                       kesimpulan) tetapi sejak sidang sebelumnya belum ada
+ *                       dokumen persidangan yang diunggah (6 Okt 2026)
  *   tidak-konek  abu    data e-Court tidak terbaca / bot tidak tersambung /
  *                       sesi e-Court habis
  *
- * Hanya perkara GUGATAN e-Litigasi (terdaftar e-Court) yang bersidang HARI
- * INI - perkara permohonan tidak melewati verifikasi majelis atas dokumen
- * persidangan. Datanya simpanan bot (GET /ecourt/verifikasi-hari-ini), bukan
+ * Hanya baris yang SIDANGNYA e-Litigasi - aturan yang sama dengan penanda
+ * e-Litigasi Jadwal Sidang (sidangElitigasi: terdaftar e-Court, bukan sidang
+ * pertama, agendanya tahapan yang dipertukarkan elektronik) - pada perkara
+ * GUGATAN yang bersidang HARI INI. Sampai 6 Okt 2026 syaratnya hanya
+ * "terdaftar e-Court", sehingga sidang pembuktian/ikrar yang dihadiri di ruang
+ * sidang pun mendapat "sudah diverifikasi". Perkara permohonan tidak melewati
+ * verifikasi majelis atas dokumen persidangan. Datanya simpanan bot (GET /ecourt/verifikasi-hari-ini), bukan
  * tarikan e-Court saat halaman dimuat.
  */
 
-export type KeadaanVerifikasi = "sudah" | "belum" | "tidak-konek";
+import { sidangElitigasi } from "@/lib/keadaan-sidang";
+
+export type KeadaanVerifikasi = "sudah" | "belum" | "belum-upload" | "tidak-konek";
 
 export type VerifikasiPerkara = {
   perkaraId?: string;
@@ -27,6 +36,9 @@ export type VerifikasiPerkara = {
   dokumen: number;
   terakhirDiperiksa: string;
   diverifikasiOleh: string[];
+  /** Tanggal sidang sebelumnya (YYYY-MM-DD) dan unggahan sesudahnya - keadaan belum-upload. */
+  sidangLalu?: string;
+  unggahSejakSidangLalu?: number;
 };
 
 export type DataVerifikasi = {
@@ -57,12 +69,14 @@ export type Penanda = {
 const LABEL: Record<KeadaanVerifikasi, string> = {
   sudah: "sudah diverifikasi",
   belum: "belum diverifikasi",
+  "belum-upload": "belum upload",
   "tidak-konek": "tidak konek",
 };
 
 const KELAS: Record<KeadaanVerifikasi, string> = {
   sudah: "bg-emerald-600 text-white",
   belum: "bg-amber-400 text-amber-950",
+  "belum-upload": "bg-orange-600 text-white",
   "tidak-konek": "bg-slate-300 text-slate-800 dark:bg-slate-600 dark:text-slate-100",
 };
 
@@ -76,11 +90,13 @@ function jamMenit(waktu: string): string {
  * (bukan e-Litigasi, bukan gugatan, atau bukan sidang hari ini).
  */
 export function penandaVerifikasi(
-  baris: { nomorPerkara: string; tanggalSidang: string; lewatEcourt?: boolean },
+  baris: { nomorPerkara: string; tanggalSidang: string; lewatEcourt?: boolean; agenda?: string; urutanSidang?: number },
   data: DataVerifikasi,
   hariIni: string
 ): Penanda | null {
   if (!baris.lewatEcourt) return null;
+  // Hanya sidang e-Litigasi - satu aturan dengan penanda e-Litigasi di tabel.
+  if (!sidangElitigasi(baris)) return null;
   if (!POLA_GUGATAN.test(String(baris.nomorPerkara || ""))) return null;
   if (!hariIni || String(baris.tanggalSidang || "").slice(0, 10) !== hariIni) return null;
 
@@ -98,6 +114,12 @@ export function penandaVerifikasi(
     bagian.push("Perkara ini belum terbaca sebagai e-Litigasi di data e-Court ALETA.");
   } else if (item.keadaan === "belum") {
     bagian.push(`${item.menunggu} dokumen persidangan menunggu verifikasi majelis.`);
+  } else if (item.keadaan === "belum-upload") {
+    bagian.push(
+      `Belum ada dokumen persidangan yang diunggah pihak sejak sidang sebelumnya${
+        item.sidangLalu ? ` (${item.sidangLalu})` : ""
+      } - agenda hari ini menuntut dokumen lewat e-Court.`
+    );
   } else if (item.keadaan === "sudah") {
     bagian.push(
       item.dokumen > 0

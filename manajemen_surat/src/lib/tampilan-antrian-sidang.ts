@@ -425,6 +425,13 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kelompok: "atas",
   },
   {
+    kunci: "saring-ruang",
+    label: "Tombol ruang sidang",
+    keterangan:
+      "Di ujung kanan deretan tombol: satu tombol per ruang sidang yang dipakai pada jadwal ini. Ditekan = hanya perkara di ruang itu; ditekan lagi = semua. Tidak tampil bila ruangnya tidak terbaca.",
+    kelompok: "atas",
+  },
+  {
     kunci: "layar-antrian",
     label: "Menu layar antrian",
     keterangan: "Tautan ke layar antrian dan layar panggil.",

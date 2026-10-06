@@ -214,7 +214,7 @@ describe("terpasang di layar antrian", () => {
     const iMilik = layar.indexOf("const milikSaya = saringPerkaraSendiri(");
     expect(iKartu).toBeGreaterThan(-1);
     expect(iMilik).toBeGreaterThan(iKartu);
-    expect(layar).toContain("const sidangTampil = milikSaya.baris;");
+    expect(layar).toContain("const sidangTampil = saringKeRuang(milikSaya.baris, ruangSaring);");
   });
 
   it("keadaan berlaku-tanpa-cocok punya keterangannya sendiri di layar", () => {

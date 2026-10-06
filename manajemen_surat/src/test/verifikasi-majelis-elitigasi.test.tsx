@@ -116,9 +116,50 @@ describe("bot: keadaan dan penarik verifikasi harian", () => {
   });
 });
 
-describe("portal: penanda satu lencana tiga keadaan", () => {
-  const baris = { nomorPerkara: "609/Pdt.G/2026/PA.Dgl", tanggalSidang: HARI, lewatEcourt: true };
-  const data = (keadaan: "sudah" | "belum" | "tidak-konek"): DataVerifikasi => ({
+describe("bot: keadaan belum upload (6 Okt 2026)", () => {
+  it("agenda menuntut dokumen pihak dan tidak ada unggahan sesudah sidang lalu = belum-upload; unggahan baru membaliknya", async () => {
+    const w = dunia();
+    w.perkara[0] = { ...w.perkara[0], agenda: "Kesimpulan", sidangLalu: "2026-09-28" } as (typeof w.perkara)[number];
+    // Dokumen persidangan lama sudah diverifikasi; tidak ada yang baru.
+    w.dokumen[1].statusVerifikasi = "valid";
+    w.dokumen[1].diunggahPada = "2026-09-20 10:00:00";
+    const k = (await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"] as unknown as Record<string, unknown>;
+    expect(k).toMatchObject({ keadaan: "belum-upload", sidangLalu: "2026-09-28", unggahSejakSidangLalu: 0 });
+
+    // Unggahan pada HARI sidang lalu itu sendiri milik sidang itu - tetap belum upload.
+    w.dokumen.push({ nomorPerkara: "609/Pdt.G/2026/PA.Dgl", judulDokumen: "Duplik", diunggahPada: "2026-09-28 14:00:00", statusVerifikasi: "valid", terakhirTerlihat: "2026-10-04 09:00:00" });
+    expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("belum-upload");
+
+    // Kesimpulan diunggah sesudahnya dan belum diverifikasi: belum diverifikasi.
+    w.dokumen.push({ nomorPerkara: "609/Pdt.G/2026/PA.Dgl", judulDokumen: "Kesimpulan Penggugat", diunggahPada: "2026-10-02 09:00:00", statusVerifikasi: "belum", terakhirTerlihat: "2026-10-04 09:00:00" });
+    expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("belum");
+    // ... lalu diverifikasi: sudah.
+    w.dokumen[w.dokumen.length - 1].statusVerifikasi = "valid";
+    expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("sudah");
+  });
+
+  it("agenda yang tidak menuntut unggahan pihak (pembacaan putusan) tidak pernah belum-upload", async () => {
+    const w = dunia();
+    w.perkara[0] = { ...w.perkara[0], agenda: "Pembacaan Putusan", sidangLalu: "2026-09-28" } as (typeof w.perkara)[number];
+    w.dokumen[1].statusVerifikasi = "valid";
+    w.dokumen[1].diunggahPada = "2026-09-20 10:00:00";
+    expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("sudah");
+  });
+
+  it("penarik tidak berhenti selama ada perkara yang dokumennya belum diunggah", async () => {
+    const w = dunia();
+    w.perkara[0] = { ...w.perkara[0], agenda: "Replik", sidangLalu: "2026-09-28" } as (typeof w.perkara)[number];
+    w.dokumen[1].statusVerifikasi = "valid";
+    w.dokumen[1].diunggahPada = "2026-09-20 10:00:00";
+    await w.L.putaran();
+    expect(await w.L.putaran()).toMatchObject({ jalan: true, nomorPerkara: "609/Pdt.G/2026/PA.Dgl" });
+    expect(w.tarikan).toHaveLength(2);
+  });
+});
+
+describe("portal: penanda satu lencana empat keadaan, hanya sidang e-Litigasi", () => {
+  const baris = { nomorPerkara: "609/Pdt.G/2026/PA.Dgl", tanggalSidang: HARI, lewatEcourt: true, agenda: "Replik", urutanSidang: 4 };
+  const data = (keadaan: "sudah" | "belum" | "belum-upload" | "tidak-konek"): DataVerifikasi => ({
     terbaca: true,
     tanggal: HARI,
     perkara: {
@@ -148,6 +189,23 @@ describe("portal: penanda satu lencana tiga keadaan", () => {
     expect(penandaVerifikasi({ ...baris, lewatEcourt: false }, data("sudah"), HARI)).toBeNull();
     expect(penandaVerifikasi({ ...baris, nomorPerkara: "70/Pdt.P/2026/PA.Dgl" }, data("sudah"), HARI)).toBeNull();
     expect(penandaVerifikasi({ ...baris, tanggalSidang: "2026-10-06" }, data("sudah"), HARI)).toBeNull();
+  });
+
+  it("6 Okt 2026: perkara e-Court yang sidangnya BUKAN e-Litigasi tidak diberi penanda", () => {
+    // Pembuktian dan ikrar dihadiri di ruang sidang - penanda e-Litigasi tidak menyala, penanda ini pun tidak.
+    expect(penandaVerifikasi({ ...baris, agenda: "Pembuktian" }, data("sudah"), HARI)).toBeNull();
+    expect(penandaVerifikasi({ ...baris, agenda: "SIDANG IKRAR TALAK" }, data("sudah"), HARI)).toBeNull();
+    // Sidang pertama tidak pernah e-Litigasi.
+    expect(penandaVerifikasi({ ...baris, urutanSidang: 1 }, data("sudah"), HARI)).toBeNull();
+  });
+
+  it("keadaan keempat: belum upload, jingga, menyebut sidang sebelumnya", () => {
+    const d = data("belum-upload");
+    d.perkara["609/Pdt.G/2026/PA.Dgl"].sidangLalu = "2026-09-28";
+    const p = penandaVerifikasi(baris, d, HARI)!;
+    expect(p).toMatchObject({ keadaan: "belum-upload", label: "belum upload" });
+    expect(p.kelas).toContain("orange");
+    expect(p.keterangan).toContain("sejak sidang sebelumnya (2026-09-28)");
   });
 
   it("lencananya dirender di Jadwal Sidang", () => {

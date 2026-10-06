@@ -27,6 +27,7 @@ import {
   Filter,
   Gauge,
   ListOrdered,
+  MapPin,
   MonitorPlay,
   PenLine,
   Printer,
@@ -38,6 +39,7 @@ import {
 } from "lucide-react";
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
+import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
 import {
   ChipSaring,
   KepalaUrut,
@@ -3767,6 +3769,13 @@ function LencanaKesiapan({
   );
 }
 
+/**
+ * Batas lebar kolom Majelis & Petugas (6 Okt 2026) - pada kepala DAN sel,
+ * sebab tabel bertata letak otomatis mengabaikan batas yang hanya ada di salah
+ * satunya. Lihat catatan pada kepala kolomnya.
+ */
+export const LEBAR_KOLOM_MAJELIS = "w-[17rem] max-w-[17rem]";
+
 /** Lencana keadaan verifikasi majelis - sejalan dengan Kendali Berkas. */
 function LencanaVerifikasi({ status }: { status: string }) {
   if (status === "valid") return <Badge variant="success">Diverifikasi</Badge>;
@@ -4224,6 +4233,9 @@ export function AletaEcourtSidang({
    * tanpa tahu sebabnya.
    */
   const [hanyaMilikSaya, setHanyaMilikSaya] = useState(true);
+
+  /** Butir 5 (6 Okt 2026): ruang sidang pilihan di ujung kanan deretan alat. Tidak diingat - sama seperti di atas. */
+  const [ruangDipilih, setRuangDipilih] = useState<string | null>(null);
 
   // Nama pengadilan dari identitas lembaga, bukan dipatok mati - ALETA dapat
   // dipasang di satker lain.
@@ -4832,7 +4844,11 @@ export function AletaEcourtSidang({
       : null,
     hanyaMilikSaya
   );
-  const sidangTampil = milikSaya.baris;
+  // Butir 5 (6 Okt 2026): saringan ruang sidang - PALING akhir, sesudah
+  // "Perkara saya", dan hanya bila saklarnya menyala. Lihat @/lib/ruang-sidang-saring.
+  const ruangAktif = useMemo(() => daftarRuangAktif(sidang), [sidang]);
+  const ruangSaring = tampil(tampilan, "saring-ruang") ? ruangPilihanBerlaku(ruangDipilih, ruangAktif) : null;
+  const sidangTampil = saringKeRuang(milikSaya.baris, ruangSaring);
 
   /**
    * ==========================================================================
@@ -6076,6 +6092,36 @@ export function AletaEcourtSidang({
               ) : null}
 
             </div>
+
+            {/* Butir 5 (6 Okt 2026): ruang sidang yang dipakai pada jadwal ini,
+                di UJUNG KANAN deretan. Ditekan = hanya perkara di ruang itu;
+                ditekan lagi = semua. Tidak ada ruang terbaca = tidak tampil. */}
+            {tampil(tampilan, "saring-ruang") && ruangAktif.length > 0 ? (
+              <div className="ml-auto flex flex-wrap items-center gap-1.5" data-saring-ruang="">
+                {ruangAktif.map((r) => {
+                  const aktif = ruangSaring === r.nama;
+                  return (
+                    <Button
+                      key={r.nama}
+                      size="sm"
+                      variant={aktif ? "default" : "outline"}
+                      aria-pressed={aktif}
+                      data-ruang={r.nama}
+                      onClick={() => setRuangDipilih(aktif ? null : r.nama)}
+                      title={
+                        aktif
+                          ? `Menampilkan ${r.jumlah} perkara di ${r.nama}. Tekan lagi untuk menampilkan semua ruang.`
+                          : `Tampilkan hanya ${r.jumlah} perkara yang bersidang di ${r.nama}.`
+                      }
+                    >
+                      <MapPin className="mr-1.5 h-4 w-4" />
+                      {r.nama}
+                      <span className="ml-1.5 rounded bg-muted px-1 text-xs font-semibold text-foreground">{r.jumlah}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
 
         </div>
@@ -6786,8 +6832,15 @@ export function AletaEcourtSidang({
                     yang selama ini dicari Perkara dan Agenda.
 
                     Diurutkan menurut majelis, sebab itulah yang dicari orang
-                    ketika menekan kepala kolom ini. */}
-                <KepalaUrut className="px-2 kolom-lengkap" kunci="majelis" urutan={urutTabel} onTekan={tekanUrut}>
+                    ketika menekan kepala kolom ini.
+
+                    6 Okt 2026: "satu kolom lebar" itu kebablasan - tata letak
+                    tabel otomatis memberinya ±430px (nama tiga hakim + "PP ...
+                    · JS ..." dalam satu baris), dan Perkara/Agenda kembali
+                    tersempitkan. Dibatasi LEBAR_KOLOM_MAJELIS pada kepala DAN
+                    sel (pola yang sama dengan Antrian / Jam): namanya melipat,
+                    tidak ada yang dipotong. */}
+                <KepalaUrut className={cn("px-2 kolom-lengkap", LEBAR_KOLOM_MAJELIS)} kunci="majelis" urutan={urutTabel} onTekan={tekanUrut}>
                   Majelis &amp; Petugas
                 </KepalaUrut>
                 <KepalaUrut
@@ -7802,7 +7855,7 @@ export function AletaEcourtSidang({
                             jadi ia yang paling pantas menjadi baris terakhir
                             yang teredam - ada bila dicari, tidak menarik mata
                             bila tidak. */}
-                        <td className="px-2 py-2 align-top text-sm kolom-lengkap">
+                        <td className={cn("px-2 py-2 align-top text-sm kolom-lengkap", LEBAR_KOLOM_MAJELIS)}>
                           <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                             {/* ============================================
                                 KODE MAJELIS TIDAK BOLEH PATAH DI TANDA HUBUNG
