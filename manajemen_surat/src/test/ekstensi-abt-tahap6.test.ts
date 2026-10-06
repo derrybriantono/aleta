@@ -367,12 +367,23 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { sumber?: string; simpanan?: Record<string, unknown>; ganti?: Pengganti; konfirmasi?: boolean } = {}): Halaman {
-  const baris = Object.keys(ISI)
+function buka(
+  p: {
+    sumber?: string;
+    simpanan?: Record<string, unknown>;
+    ganti?: Pengganti;
+    konfirmasi?: boolean;
+    isi?: Record<string, string>;
+    nama?: Record<string, string>;
+  } = {}
+): Halaman {
+  const isiPakai = { ...ISI, ...(p.isi || {}) };
+  const namaPakai = { ...NAMA, ...(p.nama || {}) };
+  const baris = Object.keys(isiPakai)
     .map(
       (k) =>
-        `<tr valign="top"><td align=center id="${k}">${k}</td><td>${NAMA[k] || `Variabel ${k}`}</td>` +
-        `<td>${ISI[k]}</td>` +
+        `<tr valign="top"><td align=center id="${k}">${k}</td><td>${namaPakai[k] || `Variabel ${k}`}</td>` +
+        `<td>${isiPakai[k]}</td>` +
         `<td align="center"><a class="popup-with-zoom-anim" href="#small-dialog" onclick="load_form('${k}','10018','T1');">edit</a></td></tr>`
     )
     .join("");
@@ -907,6 +918,26 @@ describe("desain D1-D15 hanya di UI Baru", () => {
 
 // ============================================================================
 describe("abt-5: CETAK dengan kalimat error = peringatan dengan konfirmasi, bukan penahanan", () => {
+  // Paket ABT abt-alasan-cdeh (6 Okt 2026) mengganti NAMA 8503 menjadi "... GABUNGAN BEBAS ...".
+  // Nama itu dibaca dari tabel halaman: satker yang sudah dipasangi paket mengenal A-H,
+  // satker yang belum tetap diperingatkan untuk huruf di luar A, B, F, H.
+  const NAMA_8503_PAKET =
+    "ALASAN PERCERAIAN SATU HURUF: A, B, C, D, E, F, G, H GABUNGAN BEBAS, tulis rapat: AF, BF, ABF, CF, DF, EF, FH, AD, dst.";
+  it("blangko satker yang BELUM dipasangi paket: huruf C pada 8503 disebut belum punya cabang", async () => {
+    const h = buka({ simpanan: baru(["abt-5"]), isi: { "8503": "CF" } });
+    const pita = await sampai(() => (q(h, ".aleta-t6-pita-bahaya:not([hidden])") ? q(h, ".aleta-t6-pita-bahaya") : null), "pita");
+    expect(pita.textContent).toContain("Blangko ini belum punya cabang untuk huruf C");
+    expect(pita.textContent).not.toContain("huruf C, F");
+  });
+  it("blangko satker yang SUDAH dipasangi paket: C, D, E, G tidak lagi disebut belum punya cabang", async () => {
+    const h = buka({ simpanan: baru(["abt-5"]), isi: { "8503": "CDEG" }, nama: { "8503": NAMA_8503_PAKET } });
+    const pita = await sampai(() => (q(h, ".aleta-t6-pita-bahaya:not([hidden])") ? q(h, ".aleta-t6-pita-bahaya") : null), "pita");
+    // 4020/8521 di halaman tiruan ini masih berbunyi galat - pitanya tetap muncul, tetapi
+    // sebabnya bukan lagi "belum punya cabang".
+    expect(pita.textContent).not.toContain("belum punya cabang");
+    expect(pita.textContent).toContain('berbunyi pesan error');
+  });
+
   it("pita merah di atas panel menyebut huruf G dan kelima kalimatnya ikut tercetak", async () => {
     const h = buka({ simpanan: baru(["abt-5"]) });
     const pita = await sampai(() => (q(h, ".aleta-t6-pita-bahaya:not([hidden])") ? q(h, ".aleta-t6-pita-bahaya") : null), "pita");
