@@ -1005,6 +1005,67 @@ export async function ambilBerkasGateway(
   });
 }
 
+// ---------------------------------------------------------------------------
+// PENANDA EKSEPSI & REKONVENSI (butir 4, 6 Okt 2026) - lihat
+// modules/aleta-ecourt/penanda-jawaban.ts dan aleta_bot penandaJawabanService.
+// ---------------------------------------------------------------------------
+
+export type BerkasJawabanAntri = {
+  fileId: string;
+  documentKey: string;
+  format: string;
+  ukuran: number;
+  nomorPerkara: string;
+  judul: string;
+  jenis: string;
+};
+
+export type HasilBacaJawaban = {
+  fileId: string;
+  terbaca: boolean;
+  sumber: "teks" | "ocr" | "";
+  panjang: number;
+  eksepsi: "ada" | "tidak" | "";
+  kalimatEksepsi: string;
+  rekonvensi: "ada" | "tidak" | "";
+  kalimatRekonvensi: string;
+  sebab: string;
+  versi: number;
+};
+
+/** Berkas jawaban/duplik Tergugat yang belum dibaca; perkara `nomor` lebih dulu. */
+export async function getGatewayAntrianJawaban(params: {
+  nomor: string[];
+  batas: number;
+  versi: number;
+}): Promise<GatewayResult<{ ok: boolean; berkas: BerkasJawabanAntri[] }>> {
+  const kueri = new URLSearchParams({
+    nomor: params.nomor.join("|"),
+    batas: String(params.batas),
+    versi: String(params.versi),
+  });
+  return gatewayFetch(`/internal/aleta-bot/sipp/penanda-jawaban/antrian?${kueri.toString()}`);
+}
+
+/** Isi satu berkas jawaban/duplik - Response mentah, sama seperti ambilBerkasGateway. */
+export async function ambilBerkasJawabanGateway(fileId: string, signal?: AbortSignal): Promise<Response> {
+  const token = getGatewayToken();
+  return fetch(
+    `${getGatewayBaseUrl()}/internal/aleta-bot/sipp/penanda-jawaban/berkas?${new URLSearchParams({ fileId }).toString()}`,
+    { headers: token ? { "x-aleta-internal-token": token } : {}, cache: "no-store", signal }
+  );
+}
+
+/** Hasil pembacaan, per berkas, untuk disinggahkan bot. */
+export async function kirimHasilJawabanGateway(
+  hasil: HasilBacaJawaban[]
+): Promise<GatewayResult<{ ok: boolean; tersimpan: number }>> {
+  return gatewayFetch(`/internal/aleta-bot/sipp/penanda-jawaban`, {
+    method: "POST",
+    body: JSON.stringify({ hasil }),
+  });
+}
+
 /**
  * Mengambil berkas SIPP - dokumen perkara, relaas, atau resi pos.
  *

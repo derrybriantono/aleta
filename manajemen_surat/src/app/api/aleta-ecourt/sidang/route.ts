@@ -5,6 +5,7 @@ import { hitungTigaJarak, kunciWaktu, WAKTU_ANTRIAN_KOSONG } from "@/lib/tiga-ja
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { picuPindaiJawaban } from "@/server/modules/aleta-ecourt/penanda-jawaban";
 import { bacaRekamAntrian, rekamAntrian } from "@/server/modules/aleta-ecourt/rekam-antrian";
 import {
   getGatewayArsipRincian,
@@ -133,6 +134,11 @@ export async function GET(request: NextRequest) {
     }
 
     const sidang = hasil.data?.sidang ?? [];
+
+    // Butir 4 (6 Okt 2026): baca jawaban/duplik Tergugat yang belum dibaca -
+    // di LATAR, tidak ditunggu, berjeda semenit. Perkara yang tampil lebih dulu.
+    // Hasilnya disinggahkan bot dan muncul pada pemuatan berikutnya.
+    picuPindaiJawaban(sidang.map((baris) => String(baris.nomorPerkara ?? "")).filter(Boolean));
 
     // Skor dihitung hanya bila diminta. Menilai kesiapan menembakkan beberapa
     // kueri per sidang, dan pemuatan jadwal biasa tidak boleh menanggung
