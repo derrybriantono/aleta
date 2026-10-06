@@ -47,9 +47,10 @@ function teksBerkelas(html: string, kelas: string[]): string[] {
 }
 
 describe("kode majelis di sel Antrian / Jam", () => {
-  it("kode majelis aplikasi antrian tampil tebal, lebih besar, tidak patah", () => {
+  it("6 Okt 2026 (butir 6): TIDAK lagi tampil di sel Antrian / Jam - sudah ada di kolom Majelis & Petugas", () => {
     const html = sel(antrian({ majelisKode: "C1|C2|C3" }));
-    expect(teksBerkelas(html, ["font-bold", "font-mono", "whitespace-nowrap", "text-[1.1em]"])).toEqual(["C1|C2|C3"]);
+    expect(html).not.toContain("C1|C2|C3");
+    expect(teksBerkelas(html, ["font-bold", "font-mono", "whitespace-nowrap"])).toEqual([]);
   });
 
   it("tanpa kode majelis tidak ada sisa kosong", () => {

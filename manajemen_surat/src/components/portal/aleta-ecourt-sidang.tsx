@@ -3618,16 +3618,10 @@ export function SelAntrianJam({
 
       <div className="mt-0.5 text-sm tabular-nums text-muted-foreground">{jam}</div>
 
-      {/* Kode majelis menurut APLIKASI ANTRIAN (bentuk "C1|C2|C3") - butir 4,
-          5 Okt 2026. Kode SIPP-nya ada di kolom Majelis & Petugas; yang ini
-          kode yang dipakai mesin antrian memanggil, dan yang dicocokkan
-          petugas di depan ruang sidang. Ukuran relatif + nowrap: tidak melebarkan
-          kolom ini melewati max-w-[12rem]-nya. */}
-      {antrian.majelisKode ? (
-        <div className="mt-0.5 text-sm" title="Kode majelis di aplikasi antrian">
-          <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{antrian.majelisKode}</span>
-        </div>
-      ) : null}
+      {/* Kode majelis aplikasi antrian ("C1|C2|C3", butir 4 5 Okt 2026) DIBUANG
+          dari sel ini 6 Okt 2026 (butir 6): ia mengulang kode di kolom
+          Majelis & Petugas pada baris yang sama. Datanya (antrian.majelisKode)
+          tetap terbaca dan tetap dipakai di tempat lain. */}
 
       {/* ====================================================================
           SIAPA YANG SUDAH MENGAMBIL - BUKAN SEKADAR "SUDAH DIAMBIL"
