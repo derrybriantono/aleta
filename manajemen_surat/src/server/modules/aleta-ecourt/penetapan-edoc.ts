@@ -36,6 +36,7 @@
 
 import { type AletaDatabase } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
+import { capBerlatarTransparan } from "@/server/shared/cap-latar-transparan";
 import { nextPrefixedId } from "@/server/shared/ids";
 
 import { BATAS_PERAMBAN_MS, panggilBot, type HasilBot } from "./ecourt-aksi";
@@ -90,6 +91,15 @@ export function jenisGambarCap(isi: Uint8Array): "png" | "jpg" | "" {
   if (isi.length > 2 && isi[0] === 0xff && isi[1] === 0xd8 && isi[2] === 0xff)
     return "jpg";
   return "";
+}
+
+/** WEBP (RIFF....WEBP) - diterima HANYA bila latarnya dibuang (hasilnya PNG). */
+export function jenisWebp(isi: Uint8Array): boolean {
+  return (
+    isi.length > 12 &&
+    Buffer.from(isi.subarray(0, 4)).toString("latin1") === "RIFF" &&
+    Buffer.from(isi.subarray(8, 12)).toString("latin1") === "WEBP"
+  );
 }
 
 export type BarisCap = {
@@ -161,6 +171,8 @@ export async function tambahCap(
     peruntukan: string;
     keterangan?: string;
     isi: Uint8Array;
+    /** Buang latar kertas -> PNG transparan (cap-latar-transparan.ts). WEBP hanya lewat jalan ini. */
+    buangLatar?: boolean;
   },
   aktor: { id: string; nama: string },
 ): Promise<HasilUbahCap> {
@@ -171,7 +183,30 @@ export async function tambahCap(
   const peruntukan = String(masukan.peruntukan ?? "") as PeruntukanCap;
   if (!PERUNTUKAN_CAP.includes(peruntukan))
     return { ok: false, alasan: "peruntukan_tidak_dikenal" };
-  const isi = masukan.isi;
+  let isi = masukan.isi;
+  let latarDibuang = false;
+  if (masukan.buangLatar) {
+    if (!isi || isi.length < BATAS_CAP_KECIL)
+      return { ok: false, alasan: "gambar_cap_terlalu_kecil" };
+    if (isi.length > BATAS_CAP_BYTE)
+      return { ok: false, alasan: "gambar_cap_terlalu_besar" };
+    if (!jenisGambarCap(isi) && !jenisWebp(isi))
+      return { ok: false, alasan: "gambar_cap_bukan_png_jpg" };
+    try {
+      const olah = await capBerlatarTransparan(Buffer.from(isi));
+      isi = new Uint8Array(olah.buffer);
+      latarDibuang = true;
+    } catch (galat) {
+      const pesan = galat instanceof Error ? galat.message : "";
+      return {
+        ok: false,
+        alasan:
+          pesan === "gambar_cap_tanpa_tinta"
+            ? "gambar_cap_tanpa_tinta"
+            : "gambar_cap_tidak_terbaca",
+      };
+    }
+  }
   if (!isi || isi.length < BATAS_CAP_KECIL)
     return { ok: false, alasan: "gambar_cap_terlalu_kecil" };
   if (isi.length > BATAS_CAP_BYTE)
@@ -205,7 +240,7 @@ export async function tambahCap(
     action: "CAP_PENETAPAN_TAMBAH",
     entityType: "aleta_ecourt_cap",
     entityId: id,
-    payload: { nama, peruntukan, ukuran: isi.length, lewat: "ALETA" },
+    payload: { nama, peruntukan, ukuran: isi.length, latarDibuang, lewat: "ALETA" },
   });
   return { ok: true, id };
 }
@@ -323,7 +358,11 @@ export type JawabanUnggah = {
     langkah?: string;
     jalur?: string;
     tandaTangan?: { id: number; namaPejabat: string; sumber: string } | null;
-    cap?: { id: string; nama: string } | null;
+    cap?: { id: string; nama: string; diBelakang?: boolean } | null;
+    penandaTangan?: { label: string; nama: string } | null;
+    peringatan?: Array<{ kode: string; nama?: string }>;
+    gambarBawaan?: { dibuang: number; uraian: string[] };
+    berkas?: string;
     tte?: boolean;
     catatan?: string;
   }>;
@@ -334,6 +373,11 @@ export async function unggahEdoc(badan: {
   perkaraId?: string;
   jenis: JenisPenetapan[];
   manual: Array<{ jenis: JenisPenetapan; isiBase64: string }>;
+  /** RTF blangko ABT yang dicetak ekstensi (butir 17, 6 Okt). */
+  abt?: Array<{ jenis: JenisPenetapan; isiBase64: string; berkas: string }>;
+  /** Pengaturan peta penetapan per jenis (aturUntukBot). */
+  atur?: Partial<Record<JenisPenetapan, Record<string, unknown>>>;
+  otomatis?: boolean;
   cap: Partial<
     Record<
       JenisPenetapan,
@@ -382,6 +426,13 @@ export const KALIMAT_EDOC: Record<string, string> = {
   nama_pejabat_tidak_ada_di_blangko:
     "Nama pejabat penanda tangan tidak ditemukan di dokumen.",
   konfirmasi_belum_diberikan: "Tindakan belum dikonfirmasi.",
+  // Perbaikan 6 Okt (butir 17-20).
+  jawaban_abt_bukan_rtf: "Yang dicetak ABT bukan RTF (sesi ABT habis atau blangko tidak ditemukan).",
+  ditahan_tanpa_tanda_tangan:
+    "Ditahan: tanda tangan penanda tangan belum ada, dan peta penetapan diatur menahan dokumen tanpa tanda tangan.",
+  otomatis_unggah_mati:
+    "Unggah otomatis untuk jenis ini dimatikan di Peta penetapan (Integrasi e-Court) - tidak ada yang ditulis.",
+  blangko_jenis_belum_dipetakan: "Jenis penetapan ini belum dipetakan ke blangko ABT di Peta penetapan.",
 };
 
 export function kalimatEdoc(kode: string | undefined | null): string {

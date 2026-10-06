@@ -282,7 +282,14 @@ const RTF_GABUNGAN = String.raw`{\rtf1\ansi\deff0{\fonttbl{\f0 Times New Roman;}
 }`;
 const PNG = (isi: string) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from(isi.padEnd(64, "."))]);
 const PNG_TTD = { 1: PNG("ttd-ketua"), 2: PNG("ttd-panitera"), 3: PNG("ttd-hakim") } as Record<number, Buffer>;
-const PNG_CAP = PNG("cap-pengadilan");
+// 6 Okt: cap berkepala IHDR jenis warna 6 (RGBA) - cap TRANSPARAN, yang
+// ditumpuk DI ATAS tanda tangan (cap tanpa alfa ditaruh di belakang).
+const PNG_CAP = Buffer.concat([
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]),
+  Buffer.from("IHDR", "latin1"),
+  Buffer.from([0, 0, 0, 100, 0, 0, 0, 120, 8, 6, 0, 0, 0]),
+  Buffer.from("cap-pengadilan".padEnd(48, ".")),
+]);
 const PASSPHRASE = "rahasia-TTE-2okt-9911";
 
 type LayananEdoc = {
@@ -423,18 +430,23 @@ describe("butir 17 - peta blangko PTSP dan pemisahan bagian", () => {
     for (const j of ["pmh", "ppp", "pjs", "phs"]) expect(m.ambilBagian(rtf, j).ok, j).toBe(true);
   });
 
-  it("cap disisipkan sebagai bentuk mengambang DI DEPAN tanda tangan, sebelum gambar tanda tangannya", () => {
-    const m = modulEdoc();
-    const rtf = String.raw`{\rtf1 \pard Ketua,\par {\pict\pngblip\picwgoal1700\pichgoal800 89504e47aa}\par Nama\par}`;
-    const h = m.sisipkanCap(rtf, { isi: PNG_CAP, jenis: "png", penandaTtd: "{\\pict\\pngblip\\picwgoal1700" });
+  // Diganti 6 Okt 2026: sisipkanCap (cap relatif KOLOM, jatuh di margin kiri)
+  // diganti bubuhkanTtdCap - ttd dan cap sama-sama bentuk mengambang yang
+  // ditambatkan pada paragraf NAMA; cap DI ATAS ttd. Uji rincinya di
+  // penetapan-ttd-cap-6okt.test.ts.
+  it("cap dibubuhkan sebagai bentuk mengambang DI DEPAN dan DI ATAS tanda tangan (z lebih tinggi, ditulis sesudahnya)", () => {
+    const m = modulEdoc() as unknown as { bubuhkanTtdCap: (r: string, o: Record<string, unknown>) => { ok: boolean; rtf?: string; alasan?: string } };
+    const rtf = String.raw`{\rtf1 \pard Ketua,\par \par Nama Pejabat\par}`;
+    const mulaiNama = rtf.indexOf("Nama Pejabat");
+    const h = m.bubuhkanTtdCap(rtf, { mulaiNama, ttd: { isi: PNG_TTD[1], jenis: "png" }, cap: { isi: PNG_CAP, jenis: "png" } });
     expect(h.ok).toBe(true);
-    const iCap = h.rtf!.indexOf("{\\shp");
-    expect(iCap).toBeGreaterThan(0);
-    expect(iCap).toBeLessThan(h.rtf!.indexOf("{\\pict\\pngblip\\picwgoal1700"));
-    expect(h.rtf).toContain("\\shpfblwtxt0");
+    const iTtd = h.rtf!.indexOf(heks(PNG_TTD[1]));
+    const iCap = h.rtf!.indexOf(heks(PNG_CAP));
+    expect(iTtd).toBeGreaterThan(0);
+    expect(iCap).toBeGreaterThan(iTtd);
+    expect(iCap).toBeLessThan(h.rtf!.indexOf("Nama Pejabat"));
     expect(h.rtf).toContain("{\\sn pib}");
-    expect(h.rtf).toContain(heks(PNG_CAP));
-    expect(m.sisipkanCap(rtf, { isi: Buffer.from("bukan gambar"), penandaTtd: "{\\pict" })).toMatchObject({ ok: false, alasan: "cap_bukan_png_jpg" });
+    expect(m.bubuhkanTtdCap(rtf, { mulaiNama, cap: { isi: Buffer.from("bukan gambar") } })).toMatchObject({ ok: false, alasan: "cap_bukan_png_jpg" });
   });
 });
 
@@ -486,11 +498,14 @@ describe("butir 17 - unggah edoc penetapan (tiruan SIPP/ABT)", () => {
     ]);
     const keSipp = JSON.stringify(catatan.simpan.map(({ pdf: _pdf, ...sisa }) => sisa));
     expect(keSipp).not.toMatch(/aleta/i);
-    // RTF yang diubah ke PDF: cap (shp) mendahului gambar tanda tangan.
+    // RTF yang diubah ke PDF (6 Okt): ttd lalu cap, keduanya bentuk
+    // mengambang; cap ditulis SESUDAH ttd dengan \shpz lebih tinggi = di atas.
     const pmh = catatan.rtfKePdf[0];
     expect(pmh).toContain(heks(PNG_TTD[1]));
     expect(pmh).toContain(heks(PNG_CAP));
-    expect(pmh.indexOf("{\\shp")).toBeLessThan(pmh.indexOf(heks(PNG_TTD[1])));
+    expect(pmh.indexOf(heks(PNG_CAP))).toBeGreaterThan(pmh.indexOf(heks(PNG_TTD[1])));
+    const z = (nama: string) => Number((new RegExp(String.raw`\\shpz(\d+)(?:(?!\\shpz)[\s\S])*?\{\\sv ${nama}\}`).exec(pmh) || [])[1]);
+    expect(z("Cap")).toBeGreaterThan(z("Tanda tangan"));
     expect(pmh).not.toMatch(/aleta/i);
     expect(catatan.jeda).toBe(1);
     expect(catatan.jejak).toHaveLength(2);
@@ -499,13 +514,18 @@ describe("butir 17 - unggah edoc penetapan (tiruan SIPP/ABT)", () => {
     expect(JSON.stringify(catatan.jejak[0])).toContain("cap Cap pmh");
   });
 
-  it("tanpa cap: DITOLAK per jenis (cap_belum_ada), tidak ada yang ditulis", async () => {
+  // Diubah 6 Okt 2026 (butir 18-20): ttd/cap yang tidak ada TIDAK lagi
+  // menggagalkan - dokumen tetap disusun tanpa cap, petugas diberi tahu
+  // lewat peringatan, dan tidak ada cap yang dikarang.
+  it("tanpa cap: dokumen tetap disusun TANPA cap, peringatan cap_belum_ada, tidak ada cap dikarang", async () => {
     const m = modulEdoc();
     const { deps, catatan, cap } = depsTiruan({ adaCap: false });
     const h = await m.buatLayanan(deps).unggah({ nomorPerkara: "x", jenis: ["pmh"], cap, kering: false, olehUsername: "ptsp1" });
-    expect(h.ok).toBe(false);
-    expect(h.hasil[0]).toMatchObject({ ok: false, alasan: "cap_belum_ada" });
-    expect(catatan.simpan).toEqual([]);
+    expect(h.ok).toBe(true);
+    expect(h.hasil[0]).toMatchObject({ ok: true, cap: null, tandaTangan: { namaPejabat: "Drs. H. Ketua Uji, M.H." } });
+    expect(h.hasil[0].peringatan.map((p: any) => p.kode)).toEqual(["cap_belum_ada"]);
+    expect(catatan.rtfKePdf[0]).not.toContain("{\\sv Cap}");
+    expect(catatan.simpan).toHaveLength(1);
   });
 
   it("menulis tanpa akun SIPP yang login ditolak - tidak ditulis atas nama kosong/orang lain", async () => {
@@ -776,7 +796,8 @@ describe("rute portal - cap dan unggah edoc penetapan", () => {
     });
     expect(kiriman[0].badan).toMatchObject({ jenis: ["pmh"], kering: false, olehUsername: "" });
     expect(kiriman[0].badan.cap.pmh).toMatchObject({ nama: "Cap Umum" });
-    expect(h.isi.data.berkas).toEqual([{ jenis: "PMH", ok: true, sebab: "" }]);
+    // 6 Okt (butir 18): berkas[] juga membawa tanda tangan siapa dan peringatannya.
+    expect(h.isi.data.berkas).toEqual([{ jenis: "PMH", ok: true, sebab: "", peringatan: [], tandaTangan: "" }]);
     expect(JSON.stringify(h.isi)).not.toContain(PASSPHRASE);
   });
 
@@ -795,7 +816,7 @@ describe("rute portal - cap dan unggah edoc penetapan", () => {
     expect(kiriman[0].badan.manual).toEqual([{ jenis: "pmh", isiBase64: Buffer.from("%PDF-1.4 manual").toString("base64") }]);
     expect(kiriman[0].badan.jenis).toEqual([]);
     expect(kiriman[0].badan.kering).toBe(false);
-    expect(isi.data.berkas).toEqual([{ jenis: "PMH", ok: true, sebab: "" }]);
+    expect(isi.data.berkas).toEqual([{ jenis: "PMH", ok: true, sebab: "", peringatan: [], tandaTangan: "" }]);
     const tersimpan = JSON.stringify(await d().queryAll<Record<string, unknown>>("SELECT * FROM audit_logs"));
     expect(tersimpan).not.toContain(PASSPHRASE);
   });

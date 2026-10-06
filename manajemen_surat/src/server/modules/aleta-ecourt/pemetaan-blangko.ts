@@ -75,7 +75,11 @@ async function bacaButir(db: AletaDatabase, jenis: JenisPemetaan): Promise<Butir
     )
     .all<Baris>(jenisDb(jenis));
   const bas = (b: Baris) => String(b.kunci).startsWith(AWALAN_KUNCI_BAS_DB);
+  // Perbaikan 6 Okt (butir 19): peta penetapan menumpang dengan cara yang
+  // sama ("penetapan|pmh", modul peta-penetapan.ts) - bukan relaas maupun BAS.
+  const penetapan = (b: Baris) => String(b.kunci).startsWith("penetapan|");
   const baris = semua
+    .filter((b) => !penetapan(b))
     .filter((b) => (jenis === "bas" ? bas(b) : !bas(b)))
     .map((b) => ({ ...b, kunci: jenis === "bas" ? String(b.kunci).slice(AWALAN_KUNCI_BAS_DB.length) : String(b.kunci) }));
   return baris.map((b) => ({

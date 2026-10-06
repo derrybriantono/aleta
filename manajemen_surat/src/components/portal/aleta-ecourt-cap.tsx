@@ -92,6 +92,10 @@ export function AletaEcourtCap() {
   const [nama, setNama] = useState("");
   const [untuk, setUntuk] = useState("panitera");
   const [keterangan, setKeterangan] = useState("");
+  // Perbaikan 6 Okt (butir 18/20): foto/pindaian cap dibuang latarnya di
+  // server menjadi PNG transparan - cap ditumpuk DI ATAS tanda tangan, jadi
+  // latar kertas akan menutupinya. Menyala sebagai bawaan.
+  const [buangLatar, setBuangLatar] = useState(true);
   const [berkas, setBerkas] = useState<{
     nama: string;
     base64: string;
@@ -179,6 +183,7 @@ export function AletaEcourtCap() {
       peruntukan: untuk,
       keterangan,
       isiBase64: berkas.base64,
+      buangLatar,
     });
     if (berhasil) {
       setNama("");
@@ -186,7 +191,7 @@ export function AletaEcourtCap() {
       setBerkas(null);
       setBukaTambah(false);
     }
-  }, [berkas, keterangan, kirim, nama, untuk]);
+  }, [berkas, buangLatar, keterangan, kirim, nama, untuk]);
 
   const sebutan = (kode: string) =>
     peruntukan.find((p) => p.kode === kode)?.sebutan ?? kode;
@@ -272,7 +277,7 @@ export function AletaEcourtCap() {
               Berkas gambar cap
               <input
                 type="file"
-                accept="image/png,image/jpeg"
+                accept={buangLatar ? "image/png,image/jpeg,image/webp" : "image/png,image/jpeg"}
                 className="text-sm text-foreground"
                 onChange={(e) => pilihBerkas(e.target.files?.[0] ?? null)}
               />
@@ -281,6 +286,20 @@ export function AletaEcourtCap() {
                   {berkas.nama} · {Math.round(berkas.ukuran / 1024)} KB
                 </span>
               ) : null}
+            </label>
+            <label className="flex items-start gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={buangLatar}
+                onChange={(e) => setBuangLatar(e.target.checked)}
+              />
+              <span>
+                Buang latar kertas (foto/pindaian cap, JPG/WEBP) menjadi PNG
+                transparan - cap ditumpuk di atas tanda tangan, jadi latarnya
+                tidak boleh menutupi goresan tanda tangan. Bintik debu di luar
+                cap ikut dibuang.
+              </span>
             </label>
             <Button
               type="button"
@@ -300,8 +319,9 @@ export function AletaEcourtCap() {
           <div className="min-h-[6rem] animate-pulse rounded-lg border border-border bg-muted/30" />
         ) : baris.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Belum ada cap. Edoc penetapan tidak dapat diunggah sampai cap untuk
-            peruntukannya (atau cap Umum) diunggah.
+            Belum ada cap. Edoc penetapan yang memakai cap (Peta penetapan di
+            Integrasi e-Court) disusun TANPA cap sampai cap untuk peruntukannya
+            (atau cap Umum) diunggah, dan petugas diberi tahu.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

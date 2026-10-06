@@ -25,7 +25,10 @@ const KALIMAT: Record<string, string> = {
     "Gambar cap terlalu kecil - unggah hasil pindai cap yang jelas.",
   gambar_cap_terlalu_besar: `Gambar cap melampaui ${BATAS_CAP_BYTE / 1024 / 1024} MB.`,
   gambar_cap_bukan_png_jpg:
-    "Gambar cap harus PNG atau JPG (PNG berlatar transparan paling baik).",
+    "Gambar cap harus PNG atau JPG (PNG berlatar transparan paling baik), atau WEBP dengan \"buang latar\" dicentang.",
+  gambar_cap_tanpa_tinta:
+    "Tidak ada tinta cap yang terbaca pada gambar ini - latar tidak dapat dibuang.",
+  gambar_cap_tidak_terbaca: "Gambar cap tidak dapat dibaca.",
   cap_tidak_ditemukan: "Cap tidak ditemukan.",
   tindakan_tidak_dikenali: "Tindakan tidak dikenali.",
 };
@@ -95,6 +98,9 @@ export async function POST(request: NextRequest) {
             peruntukan: String(badan.peruntukan ?? ""),
             keterangan: String(badan.keterangan ?? ""),
             isi: new Uint8Array(Buffer.from(teks, "base64")),
+            // Perbaikan 6 Okt (butir 18/20): foto/pindaian cap dibuang
+            // latarnya menjadi PNG transparan sebelum disimpan.
+            buangLatar: badan.buangLatar === true,
           },
           aktor,
         );

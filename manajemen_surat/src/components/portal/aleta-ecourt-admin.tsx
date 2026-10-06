@@ -34,6 +34,7 @@ import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-ta
 import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templat-hukum";
 import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
 import { AletaEcourtPemetaanBlangko } from "@/components/portal/aleta-ecourt-pemetaan-blangko";
+import { AletaEcourtPetaPenetapan } from "@/components/portal/aleta-ecourt-peta-penetapan";
 import { AletaEcourtProfilSaklar } from "@/components/portal/aleta-ecourt-profil-saklar";
 import { AletaEcourtTampilanJadwal } from "@/components/portal/aleta-ecourt-tampilan-jadwal";
 import { AletaEcourtTipeKeluaran } from "@/components/portal/aleta-ecourt-tipe-keluaran";
@@ -383,6 +384,9 @@ export function AletaEcourtAdmin() {
             (butir 17, 30 Sep 2026). Jangkar #pemetaan-blangko - tab Juru Sita
             di ekstensi menautkan ke sini. */}
         <AletaEcourtPemetaanBlangko />
+        {/* Peta penetapan + pengaturan tanda tangan/cap (perbaikan 6 Okt,
+            butir 19-20). Jangkar #peta-penetapan. */}
+        <AletaEcourtPetaPenetapan />
       </div>
 
       <AletaBotEcourtPengaturan />
