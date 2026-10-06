@@ -47,6 +47,8 @@ const ecourtPanggilanService = require("./ecourtPanggilanService");
 // putus dan pitanya dihitung DI SANA, bukan di sini.
 const penilaianSippService = require("./penilaianSippService");
 const { satukanPetugas } = require("./petugasPerkaraUtil");
+// Pengurai pembebanan ikrar talak dari amar - berkas murni tanpa require.
+const pembebananIkrarService = require("./pembebananIkrarService");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -234,6 +236,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     petaEcourt,
     petaDurasi,
     petaIkrar,
+    petaPembebanan,
   ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
@@ -279,6 +282,18 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       }
       return peta;
     }, "ikrar"),
+    // Pembebanan yang dibayar saat ikrar (mut'ah, nafkah iddah, madliyah,
+    // nafkah anak, ...) - HANYA untuk perkara yang sidangnya di daftar ini
+    // sidang ikrar, satu kueri IN untuk seluruhnya. Lihat
+    // pembebananBanyakPerkara. Gagal-terbuka dan dicatat: jadwal tetap tampil,
+    // dan layar tahu pembebanannya tidak terbaca (bukan "tidak ada").
+    aman(
+      () =>
+        pembebananBanyakPerkara(
+          rows.filter((row) => barisSidangIkrar(row)).map((row) => row.perkaraId)
+        ),
+      "pembebanan"
+    ),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -340,6 +355,18 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // menandai merah, sebab ketiadaan hasilnya tidak terbukti.
       putusanTerbaca: !gagal.has("putusan"),
       ikrarTerbaca: !gagal.has("ikrar"),
+      // ====================================================================
+      // PEMBEBANAN SAAT IKRAR TALAK - HANYA PADA SIDANG IKRAR
+      // ====================================================================
+      //
+      // Diurai dari amar putusan (perkara_putusan.amar_putusan) - tabel
+      // perkara_nafkah_istri milik SIPP praktis tidak pernah diisi (1 baris
+      // di satker). null pada sidang yang bukan ikrar, dan pada sidang
+      // ikrar yang putusannya tidak memuat pembebanan apa pun.
+      // pembebananTerbaca false = kuerinya gagal; layar lalu diam, bukan
+      // menyatakan "tanpa pembebanan".
+      pembebanan: barisSidangIkrar(row) ? petaPembebanan[String(row.perkaraId)] || null : null,
+      pembebananTerbaca: !gagal.has("pembebanan"),
       urutanSidang: Number(row.urutanSidang) || 0,
       dihadiriOleh: row.dihadiriOleh === null || row.dihadiriOleh === undefined ? null : Number(row.dihadiriOleh),
       adaBas: Boolean(cleanText(row.edocBas)),
@@ -931,6 +958,69 @@ async function ikrarBanyakPerkara(daftarPerkaraId = []) {
     // perkara_id kunci utama tabel itu - satu baris per perkara. Bila suatu
     // pemasangan berbeda, yang pertama bertanggal dipakai.
     if (tanggal && !hasil[String(b.perkaraId)]) hasil[String(b.perkaraId)] = tanggal;
+  }
+  return hasil;
+}
+
+/**
+ * Baris jadwal ini sidang ikrar talak? Aturannya SAMA dengan sidangIkrar di
+ * portal (lib/keadaan-sidang.ts): bendera ikrar_talak SIPP lebih dulu, lalu
+ * kata "ikrar" pada agendanya. Dua tempat yang berbeda aturan akan membuat
+ * baris yang bertanda biru "Ikrar Talak" tidak pernah membawa pembebanannya.
+ */
+function barisSidangIkrar(row) {
+  if (cleanText(row && row.ikrarTalak).toUpperCase() === "Y") return true;
+  return /\bikrar\b/i.test(cleanText(row && row.agenda));
+}
+
+/**
+ * ============================================================================
+ * PEMBEBANAN SAAT IKRAR TALAK - SATU KUERI UNTUK SELURUH SIDANG IKRAR DI DAFTAR
+ * ============================================================================
+ *
+ * Mut'ah, nafkah iddah, nafkah madliyah, nafkah anak, dan pembebanan lain
+ * yang menurut amar dibayar sebelum/saat ikrar diucapkan. Diurai dari
+ * perkara_putusan.amar_putusan oleh pembebananIkrarService - sebabnya (tabel
+ * perkara_nafkah_istri SIPP hanya 1 baris di satker) dan ukuran
+ * keterbacaannya tercatat di berkas itu.
+ *
+ * Hanya perkara yang sidangnya di daftar ini sidang ikrar yang ditanyakan -
+ * amar putusan adalah teks panjang, dan membacanya untuk seluruh sidang hari
+ * itu berarti memindahkan ratusan naskah yang tidak satu pun ditampilkan.
+ * Putusan TERAKHIR per perkara yang dipakai (tanggal_putusan bagian dari
+ * kunci tabelnya).
+ *
+ * @returns {Promise<Record<string, object>>} perkaraId -> hasil uraiPembebanan,
+ *   hanya untuk perkara yang memang punya pembebanan (atau menyebutnya tetapi
+ *   tidak terbaca).
+ */
+async function pembebananBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+
+  const baris = await runQuery(
+    `SELECT pu.perkara_id AS perkaraId,
+            pu.tanggal_putusan AS tanggalPutusan,
+            pu.amar_putusan AS amarPutusan
+       FROM perkara_putusan pu
+      WHERE pu.perkara_id IN (${isian})
+      ORDER BY pu.perkara_id ASC, pu.tanggal_putusan DESC`,
+    dipakai
+  );
+
+  const hasil = {};
+  const sudah = new Set();
+  for (const b of Array.isArray(baris) ? baris : []) {
+    const kunci = String(b.perkaraId);
+    if (sudah.has(kunci)) continue;
+    sudah.add(kunci);
+    const urai = pembebananIkrarService.uraiPembebanan(b.amarPutusan);
+    if (pembebananIkrarService.adaPembebanan(urai)) {
+      hasil[kunci] = { ...urai, tanggalPutusan: isoTanggal(b.tanggalPutusan) };
+    }
   }
   return hasil;
 }
@@ -3028,6 +3118,8 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
 module.exports = {
   durasiBanyakPerkara,
   ikrarBanyakPerkara,
+  pembebananBanyakPerkara,
+  barisSidangIkrar,
   AMBANG_DURASI_HARI,
   BATAS_POTONG_MEDIASI_HARI,
   hariMediasiBersih,

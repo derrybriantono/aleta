@@ -53,6 +53,8 @@ import {
 import { cn } from "@/lib/utils";
 import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 import { Bagian } from "@/components/portal/bagian-ciut";
+import { LencanaPembebananIkrar, PembebananIkrarRincian } from "@/components/portal/pembebanan-ikrar";
+import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
 import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
@@ -244,6 +246,14 @@ type SidangBaris = {
    */
   putusanTerbaca?: boolean;
   ikrarTerbaca?: boolean;
+  /**
+   * Pembebanan yang dibayar saat ikrar talak (mut'ah, nafkah iddah,
+   * madliyah, nafkah anak, ...) - diurai bot dari amar putusan, hanya pada
+   * sidang ikrar. null/tidak terkirim = tidak ada atau bot lama. Lihat
+   * lib/pembebanan-ikrar.
+   */
+  pembebanan?: PembebananIkrar | null;
+  pembebananTerbaca?: boolean;
   tanggalSidangBerikut: string;
   urutanSidang: number;
   dihadiriOleh: number | null;
@@ -8030,6 +8040,12 @@ export function AletaEcourtSidang({
                             <span className="text-muted-foreground">belum putus</span>
                           )}
 
+                          {/* Pembebanan saat ikrar talak (6 Okt 2026): di
+                              BAWAH penanda putusan, hanya pada sidang ikrar
+                              yang pembebanannya ada. Rinciannya di panel
+                              Rincian - lihat components/portal/pembebanan-ikrar. */}
+                          <LencanaPembebananIkrar baris={baris} />
+
                           {/* ==================================================
                               KONSEPTOR SEMENTARA - DI BAWAH STATUS
                               ==================================================
@@ -8267,6 +8283,7 @@ export function AletaEcourtSidang({
                                   tunjukan={tunjukan[String(baris.perkaraId)]}
                                   tampilCatatanHitung={tampil(tampilan, "catatan-cara-hitung")}
                                   durasi={baris.durasi}
+                                  pembebanan={sidangIkrar(baris) ? baris.pembebanan ?? null : null}
                                   tandaOnline={
                                     tampil(tampilan, "tanda-antrian-online")
                                       ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
@@ -8342,6 +8359,7 @@ export function RincianSidang({
   tampilCatatanHitung,
   durasi,
   tandaOnline = null,
+  pembebanan = null,
 }: {
   rincian: Rincian | null;
   nomorPerkara: string;
@@ -8366,6 +8384,11 @@ export function RincianSidang({
    * baris dengan saklarnya; null = tidak online atau saklarnya mati.
    */
   tandaOnline?: TandaOnline | null;
+  /**
+   * Pembebanan saat ikrar talak (6 Okt 2026) - dikirim dari baris, dan HANYA
+   * bila baris itu sidang ikrar. null = bagiannya tidak digambar.
+   */
+  pembebanan?: PembebananIkrar | null;
 }) {
   /**
    * Urutan sidang menurut sidangId - dari jadwal perkara, bukan dari urutan
@@ -9062,6 +9085,13 @@ export function RincianSidang({
           Bagian yang terciut menyebut ringkasan isinya di kepalanya
           (keterangan) - penghambat kesiapan dan umur perkara - supaya yang
           tidak membukanya tetap tahu ada apa di dalamnya. */}
+      {/* --- Pembebanan saat ikrar talak (6 Okt 2026) ---
+          Tepat di atas bagian putusan, dan TIDAK terciut sebagai bawaan:
+          pada sidang ikrar inilah yang dicari orang yang membuka rinciannya -
+          sudah dibayar belum, berapa, untuk siapa. Hanya tergambar pada
+          sidang ikrar yang pembebanannya ada. */}
+      <PembebananIkrarRincian pembebanan={pembebanan} />
+
       {/* --- Putusan dan tindak lanjutnya --- */}
       {sipp?.putusan?.sudahPutus ? (
         <Bagian judul="Putusan dan tindak lanjutnya" kunci="sidang-putusan-v2" ciutBawaan>
