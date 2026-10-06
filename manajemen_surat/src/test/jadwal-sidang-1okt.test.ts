@@ -78,10 +78,10 @@ afterEach(() => {
 
 describe("J5 - Mode lengkap dan Mode minimalis", () => {
   it("Mode lengkap: semua menyala KECUALI Kolom Siap dan Catatan cara menghitung", () => {
-    expect([...DIKECUALIKAN_MODE_LENGKAP]).toEqual(["kolom-siap", "catatan-cara-hitung"]);
+    expect([...DIKECUALIKAN_MODE_LENGKAP]).toEqual(["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai"]);
     const lengkap = tampilanModeLengkap();
     for (const s of SAKLAR_TAMPILAN) {
-      const harap = s.wajib ? true : !["kolom-siap", "catatan-cara-hitung"].includes(s.kunci);
+      const harap = s.wajib ? true : !["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai"].includes(s.kunci);
       expect(tampil(lengkap, s.kunci), s.kunci).toBe(harap);
     }
     // Sama dengan keadaan bawaan - Mode lengkap tidak mengubah layar orang yang

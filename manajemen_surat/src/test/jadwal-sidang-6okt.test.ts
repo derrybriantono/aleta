@@ -58,7 +58,7 @@ describe("butir 5: tombol ruang sidang", () => {
   });
 
   it("tersambung ke tabel, di ujung kanan deretan alat, dan punya saklar tampilan (menyala bawaan)", () => {
-    expect(layar).toContain("const sidangTampil = saringKeRuang(milikSaya.baris, ruangSaring);");
+    expect(layar).toContain("const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring);");
     expect(layar).toContain('tampil(tampilan, "saring-ruang") ? ruangPilihanBerlaku(ruangDipilih, ruangAktif) : null');
     // Jumlahnya dari SELURUH sidang, bukan yang tersaring.
     expect(layar).toContain("const ruangAktif = useMemo(() => daftarRuangAktif(sidang), [sidang]);");

@@ -25,7 +25,8 @@ import {
  * hilang hanya kalimat cara menghitung dan kolom skor yang baru terisi
  * sesudah Hitung skor ditekan - bukan fakta perkara.
  */
-export const DIKECUALIKAN_MODE_LENGKAP = ["kolom-siap", "catatan-cara-hitung"] as const;
+// ciutkan-selesai (6 Okt 2026, butir 8): menyembunyikan baris - Mode lengkap tidak boleh menyalakannya.
+export const DIKECUALIKAN_MODE_LENGKAP = ["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai"] as const;
 
 export type ModeTampilan = "lengkap" | "minimalis" | "suai";
 

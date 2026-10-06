@@ -5012,7 +5012,18 @@ export function AletaEcourtSidang({
   // "Perkara saya", dan hanya bila saklarnya menyala. Lihat @/lib/ruang-sidang-saring.
   const ruangAktif = useMemo(() => daftarRuangAktif(sidang), [sidang]);
   const ruangSaring = tampil(tampilan, "saring-ruang") ? ruangPilihanBerlaku(ruangDipilih, ruangAktif) : null;
-  const sidangTampil = saringKeRuang(milikSaya.baris, ruangSaring);
+  const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring);
+  // Butir 8 (6 Okt 2026): "Ciutkan perkara yang sudah selesai" - bawaannya mati.
+  // Selesai = tanda hijau yang sama dengan kolom Putusan (selesaiPerKunciWaktu).
+  const petaSelesaiCiut = useMemo(
+    () => selesaiPerKunciWaktu(sidang, tandaSelesai.peta),
+    [sidang, tandaSelesai.peta]
+  );
+  const ciutkanSelesai = tampil(tampilan, "ciutkan-selesai");
+  const sidangTampil = ciutkanSelesai
+    ? sidangSesudahRuang.filter((b) => !petaSelesaiCiut[kunciWaktu(b.tanggalSidang, b.perkaraId)])
+    : sidangSesudahRuang;
+  const jumlahDiciutkan = sidangSesudahRuang.length - sidangTampil.length;
 
   /**
    * ==========================================================================
@@ -6279,7 +6290,7 @@ export function AletaEcourtSidang({
               </Button>
               ) : null}
 
-              <TombolPenetapanKembali sidang={sidang} />
+              {tampil(tampilan, "tombol-penetapan-kembali") ? <TombolPenetapanKembali sidang={sidang} /> : null}
               {/* Pendaftaran ke aplikasi antrian ruang tunggu.
 
                   Dua tekanan, bukan satu: yang pertama hanya MEMPERLIHATKAN
@@ -6303,7 +6314,7 @@ export function AletaEcourtSidang({
                 {sinkronSibuk ? "Memeriksa…" : "Daftarkan ke antrian"}
               </Button>
               ) : null}
-              <TombolKasirJurnal daftar={sidang} />
+              {tampil(tampilan, "tombol-kasir") ? <TombolKasirJurnal daftar={sidang} /> : null}
 
             </div>
 
@@ -6952,6 +6963,18 @@ export function AletaEcourtSidang({
             sebab tidak ada lagi batas yang perlu dilepas. */}
         {/* Siapa yang sedang disidangkan di tiap ruang - perbaikan 2 Okt
             2026 (butir 10). Ditekan = menggulung ke barisnya. */}
+        {ciutkanSelesai && jumlahDiciutkan > 0 ? (
+          <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground" data-ciutkan-selesai="">
+            {jumlahDiciutkan} perkara yang sudah selesai diciutkan - yang tampil hanya yang berjalan dan belum selesai.
+            <button
+              type="button"
+              className="underline underline-offset-2 hover:text-foreground"
+              onClick={() => ubahSaklar("ciutkan-selesai", false)}
+            >
+              Tampilkan semua
+            </button>
+          </p>
+        ) : null}
         <RingkasRuangSidang
           perRuang={ruangSidang.perRuang}
           nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}

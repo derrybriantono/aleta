@@ -123,6 +123,9 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   cetak: { letak: "deretan tombol di atas tabel", contoh: tombol("Cetak") },
   "daftar-antrian": { letak: "deretan tombol di atas tabel", contoh: tombol("Daftarkan ke antrian") },
   "saring-ruang": { letak: "ujung kanan deretan tombol", contoh: tombol("Ruang Sidang 1 · 17") },
+  "ciutkan-selesai": { letak: "di atas tabel", contoh: redup("5 perkara yang sudah selesai diciutkan · tampilkan") },
+  "tombol-penetapan-kembali": { letak: "deretan tombol di atas tabel", contoh: tombol("Penetapan kembali") },
+  "tombol-kasir": { letak: "deretan tombol di atas tabel", contoh: tombol("Kasir") },
   "layar-antrian": { letak: "deretan tombol di atas tabel", contoh: tombol("Layar antrian") },
 };
 

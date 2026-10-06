@@ -25,6 +25,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Plus, RotateCcw, Search, Wallet, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -367,9 +368,12 @@ function DialogKasir({ daftar, onTutup }: { daftar: PerkaraPilihan[]; onTutup: (
     return `${kedudukan}: ${p.nama}`;
   };
 
-  return (
+  // Lewat portal ke document.body: induk ber-transform di Jadwal Sidang membuat
+  // "fixed" ikut induknya, dan pop-up muncul di puncak halaman (6 Okt 2026).
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
+      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Kasir - jurnal keuangan perkara"
@@ -731,7 +735,8 @@ function DialogKasir({ daftar, onTutup }: { daftar: PerkaraPilihan[]; onTutup: (
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

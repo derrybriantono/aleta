@@ -31,7 +31,8 @@ const baca = (jalur: string) =>
  * menghilangkan sesuatu dari layar orang yang tidak pernah meminta apa pun -
  * dan hilangnya tidak berbunyi.
  */
-const BOLEH_MATI_SEJAK_AWAL = ["kolom-siap", "catatan-cara-hitung"];
+// "ciutkan-selesai" (6 Okt 2026, butir 8): pengguna sendiri meminta "jangan jadikan default".
+const BOLEH_MATI_SEJAK_AWAL = ["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai"];
 
 describe("saklar tampilan", () => {
   it("bawaannya menyala, kecuali dua yang disebut pengguna", () => {
@@ -263,7 +264,9 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // pembebanan-ikrar, court-calendar. 41: + cc-tidak-sinkron (butir 21).
     // 42: + penanda-jawaban (butir 4 6 Okt 2026, eksepsi & rekonvensi;
     // dijaga penanda-jawaban.test.ts).
-    expect(SAKLAR_TAMPILAN.length).toBe(42);
+    // 45 sejak 6 Okt 2026 sore: + ciutkan-selesai (butir 8, bawaan mati),
+    // tombol-penetapan-kembali, tombol-kasir (butir 9).
+    expect(SAKLAR_TAMPILAN.length).toBe(45);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {

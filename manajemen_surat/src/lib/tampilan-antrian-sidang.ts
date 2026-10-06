@@ -481,6 +481,26 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kelompok: "atas",
   },
   {
+    kunci: "ciutkan-selesai",
+    label: "Ciutkan perkara yang sudah selesai",
+    keterangan:
+      "Perkara yang sidangnya sudah selesai (tanda hijau Selesai) tidak digambar di tabel - yang tampil hanya yang sedang berjalan dan yang belum selesai. Jumlah yang diciutkan disebut di atas tabel. Bawaannya MATI (6 Okt 2026, butir 8).",
+    kelompok: "atas",
+    bawaanMati: true,
+  },
+  {
+    kunci: "tombol-penetapan-kembali",
+    label: "Tombol Penetapan kembali",
+    keterangan: "Tombol pop-up penetapan kembali PMH/PPP/PJS/PHS (satu atau massal) di deretan tombol. Hanya bagi yang berwenang menetapkan.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "tombol-kasir",
+    label: "Tombol Kasir",
+    keterangan: "Tombol pop-up Kasir (usulan jurnal keuangan perkara, simpan ke SIPP) di deretan tombol. Hanya bagi kasir/keuangan/panitera/admin.",
+    kelompok: "atas",
+  },
+  {
     kunci: "saring-ruang",
     label: "Tombol ruang sidang",
     keterangan:

@@ -24,6 +24,7 @@
 
 import { Loader2, RotateCcw, Search, X } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
@@ -444,9 +445,12 @@ export function PopupPenetapanKembali({
 
   const daftarTampil = semuaPerkara.filter((p) => !saring.trim() || p.nomorPerkara.toLowerCase().includes(saring.trim().toLowerCase()));
 
-  return (
+  // Lewat portal ke document.body: induk ber-transform di Jadwal Sidang membuat
+  // "fixed" ikut induknya, dan pop-up muncul di puncak halaman (6 Okt 2026).
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
+      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Penetapan kembali"
@@ -762,7 +766,8 @@ export function PopupPenetapanKembali({
           </span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

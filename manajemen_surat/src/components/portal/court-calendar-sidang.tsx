@@ -30,6 +30,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CalendarClock, Pencil, Plus, RotateCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -453,9 +454,13 @@ function DialogCourtCalendar({
     void kirim(false);
   };
 
-  return (
+  // 6 Okt 2026: dirender lewat PORTAL ke document.body. Di dalam tabel Jadwal
+  // Sidang ada induk ber-transform/backdrop, sehingga "fixed" ikut induk itu
+  // dan dialognya muncul di puncak halaman - harus digulir ke atas dulu.
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
+      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={`Court Calendar ${nomorPerkara}`}
@@ -703,7 +708,8 @@ function DialogCourtCalendar({
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
