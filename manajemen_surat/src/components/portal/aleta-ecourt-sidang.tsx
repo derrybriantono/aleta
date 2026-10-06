@@ -980,6 +980,19 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
   },
 
   // --- JALANNYA SIDANG: verstek, ditunda, berita acara, pertama, e-litigasi --
+  // Butir 21 (6 Okt 2026): perkara e-Litigasi yang sidangnya tidak sesuai Court
+  // Calendar - merah, sebab para pihak membaca jadwal di e-Court. Hanya yang
+  // TERBUKTI tidak sinkron; lihat @/lib/court-calendar-sinkron.
+  {
+    kunci: "cc-tidak-sinkron",
+    label: "Court Calendar tidak sinkron",
+    labelPendek: "CC tidak sinkron",
+    nada: "bahaya",
+    kelompok: "sidang",
+    judul:
+      "Perkara e-Litigasi (sesudah sidang pertama) yang Court Calendar-nya belum dibuat, tidak memuat tanggal sidang ini, atau tujuan agendanya berbeda. Kalimatnya tidak harus sama - yang dibandingkan tahapannya (jawaban, replik, pembuktian, putusan, ...).",
+    cocok: (x) => courtCalendarTidakSinkron(x),
+  },
   {
     // ========================================================================
     // POTENSI VERSTEK - DARI SIDANG SEBELUMNYA; ATURANNYA potensiVerstek DI LIB
@@ -1071,19 +1084,6 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     judul:
       "Perkara terdaftar lewat e-Court DAN agendanya tahapan yang dipertukarkan elektronik: jawaban, replik, duplik, duplik rekonvensi, kesimpulan, musyawarah majelis, atau pembacaan putusan/penetapan/putusan sela - selain sidang pertama, yang selalu dihadiri. Di tabel, tulisan agendanya merah (dapat dimatikan di menu Tampilan).",
     cocok: (x) => sidangElitigasi(x),
-  },
-  // Butir 21 (6 Okt 2026): perkara e-Litigasi yang sidangnya tidak sesuai Court
-  // Calendar - merah, sebab para pihak membaca jadwal di e-Court. Hanya yang
-  // TERBUKTI tidak sinkron; lihat @/lib/court-calendar-sinkron.
-  {
-    kunci: "cc-tidak-sinkron",
-    label: "Court Calendar tidak sinkron",
-    labelPendek: "CC tidak sinkron",
-    nada: "bahaya",
-    kelompok: "sidang",
-    judul:
-      "Perkara e-Litigasi (sesudah sidang pertama) yang Court Calendar-nya belum dibuat, tidak memuat tanggal sidang ini, atau tujuan agendanya berbeda. Kalimatnya tidak harus sama - yang dibandingkan tahapannya (jawaban, replik, pembuktian, putusan, ...).",
-    cocok: (x) => courtCalendarTidakSinkron(x),
   },
 
   // --- PUTUSAN: berdirikah perkaranya di hadapan putusannya hari ini --------

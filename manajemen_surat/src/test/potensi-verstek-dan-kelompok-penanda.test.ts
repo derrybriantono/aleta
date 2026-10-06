@@ -134,7 +134,8 @@ describe("kotak keadaan berkelompok menurut maksudnya", () => {
     // Diukur atas 20 sidang empat belas hari ke depan: 6 menyala, seluruhnya
     // karena sidangnya sudah dekat sementara pihak wajibnya belum punya relaas
     // sama sekali. Sembilan belas menjadi dua puluh.
-    expect(kotak.length).toBe(20);
+    // 21 sejak 6 Okt 2026: + "cc-tidak-sinkron" (butir 21, merah, kelompok sidang).
+    expect(kotak.length).toBe(21);
     // Dan kotak barunya memang ada namanya - angka yang cocok tanpa nama yang
     // cocok berarti kotak lain yang bertambah diam-diam.
     expect(kotak.map((k) => k.kunci)).toContain("tenggang-mepet");

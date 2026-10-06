@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.185.0",
+    dirilis: "2026-10-06T20:00:00+08:00",
+    judul: "Perbaikan 6 Okt (butir 1-26): Jadwal Sidang (verifikasi, Court Calendar, mediasi, pembebanan, Turut T/Int, suara pihak), ABT (saksi, alasan C/D/E/H), penetapan ber-ttd+cap, unduh seluruh berkas",
+    butir: [
+      "Jadwal Sidang: penanda verifikasi majelis hanya pada sidang e-Litigasi, dengan keadaan keempat \"belum upload\" (pihak belum mengunggah dokumennya sehingga belum dapat diverifikasi hakim); penanda merah \"court calendar tidak sinkron\" (hanya bila tidak sinkron); kolom Majelis & Petugas tidak lagi melebar; kode majelis tidak diulang di kolom Antrian / Jam; tombol ruang sidang di ujung kanan deretan alat.",
+      "Jadwal Sidang: Court Calendar per perkara di dasar kolom Agenda (rekomendasi ALETA / manual / sunting baris lama, simpan ke SIPP); pembebanan saat ikrar talak di kolom Putusan + Rincian; tombol Mediator hanya saat kedua pihak hadir pertama kali; penanda \"Mediasi\" dan hasil mediasi pada agenda laporan mediasi; Turut T dan Int di bawah P/T (juga Jadwal Mediasi dan Status Perkara); para pihak dapat dipanggil WhatsApp dan pengeras suara (saklar \"Panggil pihak (audio speaker)\").",
+      "Panel Tampilan: saklar untuk semua penanda baru, ikon \"i\" berisi contoh tampil/disembunyikan, saklar \"Tampilkan contoh semua fitur\"; Super Admin dapat mengatur bawaan Tampilan untuk semua/per pengguna di Integrasi e-Court.",
+      "ABT: susun keterangan saksi - pada \"Hanya sebagian alasan\" centang yang sesuai posita tampil lebih dulu dan lainnya di bawah; urutan modus dirapikan; isian tidak lagi kosong (lama pisah dihitung dari \"sejak ...\", anak, kediaman, siapa yang pergi dari posita). Huruf alasan C/D/E/H (dan gabungannya) diusulkan untuk blangko [01] sesudah paket ABT satker terpasang.",
+      "SIPP: dokumen penetapan PMH/PHS otomatis disusun dari blangko ABT \"@ 1 - PMH\" / \"@ 2 - PHS\", dibubuhi tanda tangan penanda tangan (PMH ditambah cap kantor di atas tanda tangan), lalu diunggah ke e-Doc; peta & pengaturan penetapan di Integrasi e-Court.",
+      "Status Perkara: \"Unduh seluruh berkas\" (satu ZIP) dialirkan sebagai unduhan biasa peramban - tidak lagi \"Failed to fetch\"; overlay hanya untuk kegagalan.",
+    ],
+  },
+  {
     versi: "1.184.0",
     dirilis: "2026-10-05T18:00:00+08:00",
     judul: "Perbaikan 5 Okt: ABT lebih cepat & hanya isian sah, tab PTSP + KTP/PDF, putusan otomatis tanpa sembul, Court Calendar otomatis, pembaruan sendiri",

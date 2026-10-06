@@ -258,7 +258,14 @@ describe("aturan di layanan bot sama dengan salinan di uji ini", () => {
     // Kalau salah satu cabang dihapus, saksi atau turut tergugat kembali
     // tercampur ke penggugat - tanpa galat, dan tanpa uji lain yang menuduh.
     expect(isi).toContain("if (kedudukan === 1) hasil[kunci].penggugat.push(nama);");
-    expect(isi).toContain("else if (kedudukan === 2 || kedudukan === 4) hasil[kunci].tergugat.push(nama);");
+    // 6 Okt 2026 (butir 23): turut tergugat SELALU juga di turutTergugat, dan
+    // tetap di tergugat bagi pemakai lama (tanpa pisahkanTurut); intervensi
+    // (pihak_ke 3) tersendiri.
+    expect(isi).toContain("else if (kedudukan === 4) {");
+    expect(isi).toContain("hasil[kunci].turutTergugat.push(nama);");
+    expect(isi).toContain("if (!pisahkanTurut) hasil[kunci].tergugat.push(nama);");
+    expect(isi).toContain("} else if (kedudukan === 2) hasil[kunci].tergugat.push(nama);");
+    expect(isi).toContain("else if (kedudukan === 3) hasil[kunci].intervensi.push(nama);");
     expect(isi).toContain("else if (kedudukan === 5) hasil[kunci].saksi.push(nama);");
     expect(isi).toContain("else hasil[kunci].lain.push(nama);");
   });
