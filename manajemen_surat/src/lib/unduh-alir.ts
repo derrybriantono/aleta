@@ -123,7 +123,7 @@ export function mulaiUnduhAlir(alamat: string, opsi: OpsiUnduhAlir = {}): Promis
         {
           ok: false,
           sebab: "tidak-ada-kabar",
-          pesan: `Server belum mulai mengirim setelah ${Math.round(batasMs / 1000)} detik. Bila unduhannya ternyata sudah berjalan di bilah unduhan peramban atau di pengelola unduhan (mis. IDM), abaikan pesan ini; bila tidak, unduh per bagian di bawah.`,
+          pesan: `Server belum mulai mengirim setelah ${Math.round(batasMs / 1000)} detik. Bila unduhannya ternyata sudah berjalan di bilah unduhan peramban atau di pengelola unduhan (mis. IDM), abaikan pesan ini; bila tidak, tekan tombolnya sekali lagi.`,
         },
         0
       );

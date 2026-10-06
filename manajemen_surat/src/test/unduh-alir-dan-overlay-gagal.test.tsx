@@ -73,14 +73,14 @@ describe("butir 25 - tombol Unduh seluruh berkas", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Unduh seluruh berkas" })).toBeEnabled(), {
       timeout: 2000,
     });
-    // Tidak ada pesan galat; jalan per bagian ditawarkan sebagai cadangan.
+    // Tidak ada pesan galat; TETAP SATU ZIP - tidak ada tautan per bagian (6 Okt 2026).
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByText(/gagal di tengah jalan, unduh per bagian/)).toBeInTheDocument();
+    expect(screen.queryByText(/per bagian/)).toBeNull();
     // Cookie penanda sekali pakai dibuang.
     expect(document.cookie).not.toContain(`aleta_unduh_${b.dataset.aletaUnduh}`);
   });
 
-  it("galat server disebutkan sebabnya - bukan 'Failed to fetch' - dan per bagian ditawarkan", async () => {
+  it("galat server disebutkan sebabnya - bukan 'Failed to fetch' - tanpa tawaran per bagian", async () => {
     render(<TombolUnduhZip nomorPerkara="445/Pdt.G/2026/PA.Dgl" isi="lengkap" />);
     fireEvent.click(screen.getByRole("button", { name: "Unduh seluruh berkas" }));
     const b = bingkaiUnduh();
@@ -95,12 +95,8 @@ describe("butir 25 - tombol Unduh seluruh berkas", () => {
     expect(galat.textContent).toBe("tidak ada berkas tersimpan");
     expect(galat.textContent).not.toMatch(/failed to fetch/i);
 
-    // Per bagian: SIPP (data + berkas) dan e-Court terpisah.
-    fireEvent.click(screen.getByRole("button", { name: "berkas e-Court" }));
-    const semua = [...document.querySelectorAll<HTMLIFrameElement>("iframe[data-aleta-unduh]")];
-    const terakhir = new URL(semua[semua.length - 1].src, "http://uji.local");
-    expect(terakhir.searchParams.get("sumber")).toBe("ecourt");
-    expect(terakhir.searchParams.get("isi")).toBe("berkas");
+    // Satu ZIP saja: tidak ada tombol per bagian.
+    expect(screen.queryByRole("button", { name: "berkas e-Court" })).toBeNull();
   });
 
   it("halaman galat proksi (502 HTML) disebut isinya", () => {
@@ -117,7 +113,7 @@ describe("butir 25 - tombol Unduh seluruh berkas", () => {
     const hasil = await janji;
     expect(hasil).toMatchObject({ ok: false, sebab: "tidak-ada-kabar" });
     expect(hasil.ok ? "" : hasil.pesan).toMatch(/pengelola unduhan/);
-    expect(hasil.ok ? "" : hasil.pesan).toMatch(/per bagian/);
+    expect(hasil.ok ? "" : hasil.pesan).not.toMatch(/per bagian/);
   });
 });
 

@@ -129,8 +129,10 @@ export function TombolUnduhZip({
           ? "Unduh ZIP SIPP"
           : "Unduh semua berkas");
 
-  // Unduhan per bagian hanya bermakna bila ZIP utamanya memuat kedua sumber.
-  const tawarkanPerBagian = sumber === "semua" && (Boolean(catatan) || pernahMulai);
+  // 6 Okt 2026: TETAP SATU ZIP (permintaan pengguna) - tautan "unduh per
+  // bagian" yang sempat ditawarkan sesudah gagal/mulai dibuang. Jalur per
+  // sumber (unduh("sipp"/"ecourt")) tetap ada di kode, tidak digambar.
+  void pernahMulai;
 
   return (
     <div className="space-y-1">
@@ -151,28 +153,6 @@ export function TombolUnduhZip({
       {catatan ? (
         <p className="max-w-[20rem] text-xs text-rose-700 dark:text-rose-300" role="alert" data-bagian="galat-unduh-zip">
           {catatan}
-        </p>
-      ) : null}
-      {tawarkanPerBagian ? (
-        <p className="flex max-w-[20rem] flex-wrap items-center gap-1 text-xs text-muted-foreground" data-bagian="unduh-per-bagian">
-          <span>{catatan ? "Unduh per bagian:" : "Bila unduhan gagal di tengah jalan, unduh per bagian:"}</span>
-          <button
-            type="button"
-            className="underline underline-offset-2 hover:text-foreground disabled:opacity-50"
-            disabled={Boolean(sibuk)}
-            onClick={() => void unduh("sipp")}
-          >
-            {sibuk === "sipp" ? "Menyusun…" : isi === "lengkap" ? "data + berkas SIPP" : "berkas SIPP"}
-          </button>
-          <span aria-hidden="true">·</span>
-          <button
-            type="button"
-            className="underline underline-offset-2 hover:text-foreground disabled:opacity-50"
-            disabled={Boolean(sibuk)}
-            onClick={() => void unduh("ecourt")}
-          >
-            {sibuk === "ecourt" ? "Menyusun…" : "berkas e-Court"}
-          </button>
         </p>
       ) : null}
     </div>
