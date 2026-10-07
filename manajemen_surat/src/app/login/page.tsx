@@ -31,6 +31,12 @@ import { authClient } from "@/lib/auth-client";
 import { apiPath } from "@/lib/base-path";
 import { adalahGangguan, pesanGangguan } from "@/lib/pesan-gangguan";
 import { APP_VERSION } from "@/lib/patch-notes";
+import {
+  bacaPilihanIsiOtomatis,
+  masukLewatSipp,
+  simpanPilihanIsiOtomatis,
+  titipSandiKeEkstensi,
+} from "@/lib/masuk-sipp-klien";
 
 const loginBackgroundImageUrl =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Mahkamah_Agung_RI_%2830437101575%29_%28cropped%29.jpg/1280px-Mahkamah_Agung_RI_%2830437101575%29_%28cropped%29.jpg";
@@ -115,6 +121,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [rememberAccount, setRememberAccount] = useState(false);
+  const [isiOtomatisSipp, setIsiOtomatisSipp] = useState(true);
   const [isClientReady, setIsClientReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginNotice, setLoginNotice] = useState("");
@@ -157,6 +164,7 @@ export default function LoginPage() {
         setIdentifier(rememberedIdentifier);
         setRememberAccount(true);
       }
+      setIsiOtomatisSipp(bacaPilihanIsiOtomatis());
 
       setIsClientReady(true);
     }, 0);
@@ -226,37 +234,59 @@ export default function LoginPage() {
     setLoginNotice("");
 
     try {
-      const lookupResponse = await fetch(apiPath(`/api/users/lookup?identifier=${encodeURIComponent(normalizedIdentifier)}`), {
-        credentials: "include",
-        cache: "no-store",
-      });
-      const lookupPayload = (await lookupResponse.json().catch(() => null)) as
-        | { ok?: boolean; data?: { user?: { id: string; email: string } }; error?: { message?: string } }
-        | null;
-
-      if (!lookupResponse.ok || !lookupPayload?.ok || !lookupPayload.data?.user) {
-        // Peladen menjawab, tetapi jawabannya bisa berarti dua hal yang sangat
-        // berbeda: akunnya memang tidak ada, atau layanan datanya sedang mati.
-        // Keduanya tidak boleh disampaikan dengan kalimat yang sama - yang
-        // kedua membuat petugas mencoba berulang kali sampai akunnya terkunci.
-        throw new Error(
-          pesanGangguan(
-            lookupPayload,
-            lookupPayload?.error?.message ?? "Akun tidak ditemukan atau sudah tidak aktif.",
-            lookupResponse.status
-          )
-        );
+      // ======================================================================
+      // AKUN BERTAUTAN SIPP DICOCOKKAN KE SIPP LEBIH DAHULU (7 Okt 2026)
+      // ======================================================================
+      //
+      // Peladen memutuskan: password SIPP cocok = masuk; password ALETA cocok
+      // = masuk juga (fitur lama); akun SIPP diblokir/kedaluwarsa = ditolak.
+      // Akun tanpa tautan SIPP dijawab "bukan-sipp" dan menempuh jalur lama di
+      // bawah ini PERSIS seperti sebelumnya.
+      const sipp = await masukLewatSipp(normalizedIdentifier, normalizedPassword, rememberAccount);
+      if (sipp.jenis === "tolak") {
+        throw new Error(sipp.pesan);
       }
 
-      const user = lookupPayload.data.user;
-      const { error: authError } = await authClient.signIn.email({
-        email: user.email,
-        password: normalizedPassword,
-        rememberMe: rememberAccount,
-      });
+      if (sipp.jenis === "bukan-sipp") {
+        const lookupResponse = await fetch(apiPath(`/api/users/lookup?identifier=${encodeURIComponent(normalizedIdentifier)}`), {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const lookupPayload = (await lookupResponse.json().catch(() => null)) as
+          | { ok?: boolean; data?: { user?: { id: string; email: string } }; error?: { message?: string } }
+          | null;
 
-      if (authError) {
-        throw new Error(getAuthErrorMessage(authError));
+        if (!lookupResponse.ok || !lookupPayload?.ok || !lookupPayload.data?.user) {
+          // Peladen menjawab, tetapi jawabannya bisa berarti dua hal yang sangat
+          // berbeda: akunnya memang tidak ada, atau layanan datanya sedang mati.
+          // Keduanya tidak boleh disampaikan dengan kalimat yang sama - yang
+          // kedua membuat petugas mencoba berulang kali sampai akunnya terkunci.
+          throw new Error(
+            pesanGangguan(
+              lookupPayload,
+              lookupPayload?.error?.message ?? "Akun tidak ditemukan atau sudah tidak aktif.",
+              lookupResponse.status
+            )
+          );
+        }
+
+        const user = lookupPayload.data.user;
+        const { error: authError } = await authClient.signIn.email({
+          email: user.email,
+          password: normalizedPassword,
+          rememberMe: rememberAccount,
+        });
+
+        if (authError) {
+          throw new Error(getAuthErrorMessage(authError));
+        }
+      }
+
+      // Hanya password SIPP yang terbukti cocok yang dititipkan ke ekstensi,
+      // dan hanya ke chrome.storage.session-nya. Ekstensi yang tidak ada atau
+      // tidak menjawab tidak menahan masuk lebih dari sekejap.
+      if (sipp.jenis === "masuk" && sipp.lewat === "sipp" && isiOtomatisSipp) {
+        await titipSandiKeEkstensi(sipp.usernameSipp, normalizedPassword).catch(() => undefined);
       }
 
 
@@ -283,7 +313,11 @@ export default function LoginPage() {
         body: JSON.stringify({ diingat: rememberAccount }),
       }).catch(() => undefined);
 
-      setLoginNotice("Login berhasil. Menyiapkan Portal ALETA...");
+      setLoginNotice(
+        sipp.jenis === "masuk" && sipp.catatan
+          ? `Login berhasil. ${sipp.catatan}`
+          : "Login berhasil. Menyiapkan Portal ALETA..."
+      );
       await refetchSession().catch(() => undefined);
       router.replace("/portal");
     } catch (loginError) {
@@ -611,6 +645,29 @@ export default function LoginPage() {
                     <span className="block font-semibold text-foreground dark:text-slate-100">Simpan login akun</span>
                     <span className="block text-xs leading-5 text-slate-500 dark:text-slate-400">
                       Simpan sesi akun. Tanpa password.
+                    </span>
+                  </span>
+                </label>
+
+                <label
+                  data-testid="login-isi-otomatis-sipp"
+                  className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border/75 bg-card/70 px-4 py-3 text-sm text-muted-foreground transition hover:bg-card dark:border-white/10 dark:bg-white/[0.045] dark:text-slate-300 dark:hover:bg-white/[0.075]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isiOtomatisSipp}
+                    onChange={(event) => {
+                      setIsiOtomatisSipp(event.target.checked);
+                      simpanPilihanIsiOtomatis(event.target.checked);
+                    }}
+                    disabled={!isClientReady || isSubmitting}
+                    className="mt-1 h-4 w-4 rounded border-input accent-primary dark:border-white/20"
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-foreground dark:text-slate-100">Buka SIPP &amp; ABT otomatis</span>
+                    <span className="block text-xs leading-5 text-slate-500 dark:text-slate-400">
+                      Untuk akun yang tertaut ke SIPP: masuk dengan password SIPP, lalu ekstensi ALETA mengisi halaman
+                      masuk SIPP dan ABT. Password hanya diingat ekstensi selama Chrome terbuka, tidak disimpan di server.
                     </span>
                   </span>
                 </label>

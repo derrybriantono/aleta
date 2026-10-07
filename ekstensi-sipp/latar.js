@@ -516,6 +516,12 @@ function terbitkanUnduhan(alamatMentah, nama) {
 chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
 
+  // Masuk SIPP & ABT otomatis (7 Okt 2026) - lihat layaniMasuk di kaki berkas.
+  if (["masuk-titip", "masuk-lupakan", "masuk-minta", "masuk-gagal"].includes(pesan.jenis)) {
+    layaniPesanMasuk(pesan, pengirim, jawab);
+    return true; // jawaban menyusul
+  }
+
   if (pesan.jenis === "perbarui") {
     // Sengaja dibungkus: penolakan yang tidak tertangkap membuat panel
     // menunggu jawaban yang tidak pernah datang, dan tombolnya mati selamanya.
@@ -2630,3 +2636,159 @@ try {
   /* tanpa pendengar, tanda tetap di peramban ini */
 }
 void sinkronTandaBilaLama();
+
+/*
+ * ============================================================================
+ * MASUK SIPP & ABT OTOMATIS - TITIPAN PASSWORD HANYA DI chrome.storage.session
+ * ============================================================================
+ *
+ * Rencana 6 Okt 2026 malam (D:/aleta-dev/kerja/masuk-satu-akun-sipp/RENCANA.md),
+ * dibangun 7 Okt 2026. Petugas masuk ALETA dengan akun SIPP-nya; bila password
+ * SIPP-lah yang terbukti cocok, layar masuk portal menitipkan username +
+ * password itu ke sini (lewat jembatan aleta.js). Saat SIPP atau ABT
+ * menampilkan halaman masuknya (sesi habis), panel-alat.js meminta titipan itu,
+ * mengisi blangko masuknya, dan mengirimnya.
+ *
+ * DI MANA PASSWORD-NYA HIDUP: chrome.storage.session SAJA - memori Chrome,
+ * hilang ketika Chrome ditutup atau ekstensi dimuat ulang. TIDAK PERNAH jatuh
+ * ke chrome.storage.local (cakram), tidak ke portal, tidak ke basis data. Bila
+ * storage.session tidak ada, titipan DITOLAK - bukan disimpan di tempat lain.
+ * Variabel modul juga tidak dipakai: pekerja MV3 ini mati tiap ±30 detik
+ * menganggur dan seluruh variabelnya hilang.
+ *
+ * YANG BOLEH MEMINTA (pengirim diperiksa di sini, bukan dipercaya):
+ *   - masuk-titip / masuk-lupakan : halaman portal ALETA (jalur /aleta/...)
+ *   - masuk-minta / masuk-gagal   : halaman SIPP (/SIPP/..., /index.php/...
+ *     setempat) atau ABT (/aps_badilag/...) pada ASAL YANG SAMA dengan portal
+ *     yang menitipkannya, dan jenis halamannya harus sesuai permintaannya.
+ *
+ * TIDAK BERPUTAR: satu kali isi per jenis halaman per menit, dan halaman masuk
+ * yang memperlihatkan penolakan (password sudah diganti di SIPP) menahan isi
+ * otomatis untuk jenis itu sampai petugas masuk ALETA lagi. SIPP tidak
+ * mengunci akun karena salah password, tetapi mengirim password basi
+ * berulang-ulang tetap tidak boleh terjadi.
+ */
+const KUNCI_MASUK_TITIPAN = "aletaMasukSipp";
+const KUNCI_MASUK_COBA = "aletaMasukSippCoba";
+/** Titipan kedaluwarsa sendiri sesudah satu hari kerja, walau Chrome tetap terbuka. */
+const MASUK_BERLAKU_MS = 12 * 60 * 60 * 1000;
+/** Jarak paling dekat antara dua isi otomatis untuk jenis halaman yang sama. */
+const MASUK_JEDA_MS = 60 * 1000;
+
+function masukPenyimpanan() {
+  // SENGAJA tanpa cadangan chrome.storage.local - lihat kepala bagian ini.
+  return (chrome.storage && chrome.storage.session) || null;
+}
+
+function masukUrai(alamat) {
+  try {
+    return new URL(String(alamat || ""));
+  } catch {
+    return null;
+  }
+}
+
+/** Asal portal bila pengirimnya halaman portal ALETA; "" bila bukan. */
+function masukAsalPortal(alamat) {
+  const u = masukUrai(alamat);
+  if (!u || (u.protocol !== "http:" && u.protocol !== "https:")) return "";
+  return /^\/aleta(\/|$)/.test(u.pathname) ? u.origin : "";
+}
+
+/** "sipp" | "abt" | "" menurut alamat halaman pengirim. */
+function masukJenisHalaman(alamat) {
+  const u = masukUrai(alamat);
+  if (!u || (u.protocol !== "http:" && u.protocol !== "https:")) return "";
+  if (/^\/aps_badilag(\/|$)/i.test(u.pathname)) return "abt";
+  if (/^\/SIPP(\/|$)/i.test(u.pathname)) return "sipp";
+  // SIPP setempat (XAMPP) dilayani di akar: http://127.0.0.1/index.php/...
+  if ((u.hostname === "127.0.0.1" || u.hostname === "localhost") && /^\/index\.php(\/|$)/.test(u.pathname)) return "sipp";
+  return "";
+}
+
+function masukPengirimSah(pengirim) {
+  if (!pengirim || typeof pengirim !== "object") return false;
+  // Hanya skrip konten ekstensi ini sendiri, di bingkai teratas.
+  let idSaya = "";
+  try {
+    idSaya = String((chrome.runtime && chrome.runtime.id) || "");
+  } catch {
+    idSaya = "";
+  }
+  if (idSaya && pengirim.id && pengirim.id !== idSaya) return false;
+  if (typeof pengirim.frameId === "number" && pengirim.frameId !== 0) return false;
+  return true;
+}
+
+function masukTeks(nilai, batas) {
+  if (typeof nilai !== "string") return "";
+  // Aksara kendali tidak pernah ada dalam username/password yang sah.
+  if (/[\u0000-\u001f\u007f]/.test(nilai)) return "";
+  return nilai.length > batas ? "" : nilai;
+}
+
+async function layaniMasuk(pesan, pengirim) {
+  const gudang = masukPenyimpanan();
+  if (!gudang) return { ok: false, sebab: "chrome.storage.session tidak tersedia; titipan tidak disimpan di tempat lain" };
+  if (!masukPengirimSah(pengirim)) return { ok: false, sebab: "pengirim tidak dikenal" };
+  const alamat = pengirim.url || (pengirim.tab && pengirim.tab.url) || "";
+
+  if (pesan.jenis === "masuk-titip" || pesan.jenis === "masuk-lupakan") {
+    const asal = masukAsalPortal(alamat);
+    if (!asal) return { ok: false, sebab: "hanya halaman portal ALETA yang boleh menitipkan" };
+    if (pesan.jenis === "masuk-lupakan") {
+      await gudang.remove([KUNCI_MASUK_TITIPAN, KUNCI_MASUK_COBA]);
+      return { ok: true };
+    }
+    const username = masukTeks(pesan.username, 60).trim();
+    const sandi = masukTeks(pesan.sandi, 200);
+    if (!username || !sandi) return { ok: false, sebab: "username atau password tidak sah" };
+    await gudang.set({ [KUNCI_MASUK_TITIPAN]: { username, sandi, asal, dititipPada: Date.now() } });
+    // Titipan baru = penahanan lama dicabut (password mungkin baru diganti).
+    await gudang.remove(KUNCI_MASUK_COBA);
+    return { ok: true };
+  }
+
+  // masuk-minta / masuk-gagal: dari halaman masuk SIPP atau ABT.
+  const jenisHalaman = masukJenisHalaman(alamat);
+  if (!jenisHalaman || jenisHalaman !== pesan.halaman) return { ok: false, sebab: "bukan halaman SIPP/ABT yang dikenal" };
+  const asalHalaman = (masukUrai(alamat) || {}).origin || "";
+
+  const isi = await gudang.get([KUNCI_MASUK_TITIPAN, KUNCI_MASUK_COBA]);
+  const titipan = isi[KUNCI_MASUK_TITIPAN];
+  const coba = (isi[KUNCI_MASUK_COBA] && typeof isi[KUNCI_MASUK_COBA] === "object" ? isi[KUNCI_MASUK_COBA] : {}) || {};
+  const kini = Date.now();
+
+  if (pesan.jenis === "masuk-gagal") {
+    coba[jenisHalaman] = { ...(coba[jenisHalaman] || {}), ditahan: true, pada: kini };
+    await gudang.set({ [KUNCI_MASUK_COBA]: coba });
+    return { ok: true };
+  }
+
+  if (!titipan || typeof titipan !== "object") return { ok: false, sebab: "belum ada titipan" };
+  if (kini - Number(titipan.dititipPada || 0) > MASUK_BERLAKU_MS) {
+    await gudang.remove([KUNCI_MASUK_TITIPAN, KUNCI_MASUK_COBA]);
+    return { ok: false, sebab: "titipan kedaluwarsa" };
+  }
+  if (titipan.asal !== asalHalaman) return { ok: false, sebab: "asal halaman berbeda dengan portal penitip" };
+  const terakhir = coba[jenisHalaman] || {};
+  if (terakhir.ditahan) return { ok: false, sebab: "ditahan sesudah penolakan" };
+  if (kini - Number(terakhir.pada || 0) < MASUK_JEDA_MS) return { ok: false, sebab: "jeda" };
+
+  // Dicatat SEBELUM dijawab: pekerja yang mati sesudah menjawab tidak boleh
+  // membuat isi otomatis berikutnya lolos dari jeda.
+  coba[jenisHalaman] = { pada: kini, ditahan: false };
+  await gudang.set({ [KUNCI_MASUK_COBA]: coba });
+  return { ok: true, username: titipan.username, sandi: titipan.sandi };
+}
+
+/**
+ * Dipanggil dari pendengar pesan utama (di atas) - SATU pendengar untuk
+ * seluruh pesan panel, seperti yang diandalkan uji pekerja latar.
+ */
+function layaniPesanMasuk(pesan, pengirim, jawab) {
+  layaniMasuk(pesan, pengirim).then(jawab, (e) =>
+    // Sebabnya tanpa isi pesan - pesannya dapat memuat password.
+    jawab({ ok: false, sebab: String((e && e.message) || "tidak diketahui").slice(0, 160) })
+  );
+}

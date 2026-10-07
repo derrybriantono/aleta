@@ -7892,3 +7892,141 @@ function alatIsiPetaDariPohon(peta, set, pilihan) {
   }
   return terisi;
 }
+
+/*
+ * ============================================================================
+ * ISI OTOMATIS HALAMAN MASUK SIPP DAN ABT (7 Okt 2026)
+ * ============================================================================
+ *
+ * Berkas ini dimuat di SIPP, ABT, dan portal; yang di bawah ini hanya bekerja
+ * pada HALAMAN MASUK SIPP atau ABT yang dikenali dari blangkonya sendiri -
+ * bentuknya dibaca dari kode SIPP/ABT di server satker (diperiksa 7 Okt 2026):
+ *
+ *   SIPP  application/views/Login/login.php
+ *         <form id="login_frm" action=".../login/validation_credential">
+ *           input[name=username], input[name=password], input[type=submit]
+ *         Ditolak -> dialihkan ke .../login/index/ERR
+ *
+ *   ABT   application/views/login.php
+ *         <form action=".../login/signin">
+ *           input[name=userName], input[name=password], <button>Login</button>
+ *         Ditolak -> blangko yang sama dirender ulang di .../login/signin
+ *         (.alert-danger "Password salah" / "Status Akun Tidak Aktif")
+ *
+ * Password-nya tidak disimpan di sini: diminta dari pekerja latar tepat saat
+ * hendak diisi (titipan di chrome.storage.session, lihat latar.js), diisikan,
+ * lalu blangkonya dikirim. Isian yang sudah diketik petugas tidak ditimpa.
+ * Halaman masuk yang memperlihatkan penolakan TIDAK diisi lagi - ekstensi
+ * memberi tahu pekerja latar supaya menahan isi otomatis untuk jenis itu.
+ */
+function alatKenaliHalamanMasuk(dok, lokasi) {
+  if (!dok || !dok.querySelector) return null;
+  const jalur = String((lokasi && lokasi.pathname) || "");
+  const tujuan = (f) => String((f && f.getAttribute && f.getAttribute("action")) || "");
+
+  const sipp = dok.querySelector("form#login_frm");
+  if (sipp && /\/login\/validation_credential\/?$/.test(tujuan(sipp))) {
+    const nama = sipp.querySelector('input[name="username"]');
+    const sandi = sipp.querySelector('input[name="password"]');
+    if (nama && sandi) {
+      return {
+        jenis: "sipp",
+        blangko: sipp,
+        nama,
+        sandi,
+        tombol: sipp.querySelector('input[type="submit"], button[type="submit"], button:not([type])'),
+        ditolak: /\/login\/index\/ERR\/?$/i.test(jalur),
+      };
+    }
+  }
+
+  for (const f of Array.from(dok.querySelectorAll("form"))) {
+    if (!/\/login\/signin\/?$/.test(tujuan(f))) continue;
+    const nama = f.querySelector('input[name="userName"]');
+    const sandi = f.querySelector('input[name="password"]');
+    if (!nama || !sandi) continue;
+    return {
+      jenis: "abt",
+      blangko: f,
+      nama,
+      sandi,
+      tombol: f.querySelector('button[type="submit"], button:not([type]), input[type="submit"]'),
+      ditolak: /\/login\/signin\/?$/.test(jalur) || Boolean(f.querySelector(".alert-danger") || dok.querySelector(".alert-danger")),
+    };
+  }
+  return null;
+}
+
+/** Mengirim satu pesan ke pekerja latar; selalu selesai, tidak pernah melempar. */
+function alatPesanLatar(pesan) {
+  return new Promise((selesai) => {
+    try {
+      if (!chrome.runtime || !chrome.runtime.id) {
+        selesai(null);
+        return;
+      }
+      chrome.runtime.sendMessage(pesan, (jawaban) => {
+        let gagal = null;
+        try {
+          gagal = chrome.runtime.lastError || null;
+        } catch (e) {
+          gagal = e;
+        }
+        selesai(gagal ? null : jawaban || null);
+      });
+    } catch {
+      selesai(null);
+    }
+  });
+}
+
+/** Mengisi satu medan seperti diketik - peristiwa input/change ikut dilepas. */
+function alatIsiMedanMasuk(medan, nilai) {
+  const proto = Object.getPrototypeOf(medan);
+  const setel = proto && Object.getOwnPropertyDescriptor(proto, "value");
+  if (setel && setel.set) setel.set.call(medan, nilai);
+  else medan.value = nilai;
+  medan.dispatchEvent(new Event("input", { bubbles: true }));
+  medan.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+async function alatMasukOtomatis(dok, lokasi) {
+  const halaman = alatKenaliHalamanMasuk(dok, lokasi);
+  if (!halaman) return { dikerjakan: false, sebab: "bukan halaman masuk" };
+
+  if (halaman.ditolak) {
+    await alatPesanLatar({ sumber: "aleta-panel", jenis: "masuk-gagal", halaman: halaman.jenis });
+    return { dikerjakan: false, sebab: "ditolak" };
+  }
+  // Petugas sudah mengetik sendiri - tidak ditimpa.
+  if (halaman.sandi.value) return { dikerjakan: false, sebab: "sudah terisi" };
+
+  const jawaban = await alatPesanLatar({ sumber: "aleta-panel", jenis: "masuk-minta", halaman: halaman.jenis });
+  if (!jawaban || jawaban.ok !== true || typeof jawaban.username !== "string" || typeof jawaban.sandi !== "string") {
+    return { dikerjakan: false, sebab: (jawaban && jawaban.sebab) || "tanpa titipan" };
+  }
+  // Diperiksa lagi: petugas bisa mulai mengetik selama menunggu jawaban.
+  if (halaman.sandi.value) return { dikerjakan: false, sebab: "sudah terisi" };
+  // ABT meneruskan password akun bernama "supervisor" ke server Badilag
+  // (controllers/Login.php) - password SIPP tidak pernah dikirim ke sana.
+  if (halaman.jenis === "abt" && jawaban.username.trim() === "supervisor") {
+    return { dikerjakan: false, sebab: "akun supervisor ABT" };
+  }
+
+  alatIsiMedanMasuk(halaman.nama, jawaban.username);
+  alatIsiMedanMasuk(halaman.sandi, jawaban.sandi);
+  if (halaman.tombol && typeof halaman.tombol.click === "function") halaman.tombol.click();
+  else if (typeof halaman.blangko.requestSubmit === "function") halaman.blangko.requestSubmit();
+  else halaman.blangko.submit();
+  return { dikerjakan: true, jenis: halaman.jenis };
+}
+
+// Dijalankan sekali per halaman. Di halaman selain masuk SIPP/ABT ia berhenti
+// pada langkah pertama tanpa menghubungi siapa pun.
+try {
+  if (typeof document !== "undefined" && typeof location !== "undefined") {
+    void alatMasukOtomatis(document, location).catch(() => undefined);
+  }
+} catch {
+  /* di luar konteks halaman */
+}

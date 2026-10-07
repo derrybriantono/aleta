@@ -863,44 +863,10 @@ LIMIT 20`;
     .filter((item) => item.name);
 }
 
-/**
- * Sidik sandi SIPP - tiruan persis arr2md5() milik SIPP.
- *
- * Disalin dari application/models/Login/validation_user.php:
- *
- *     hasil = md5(kode_aktivasi)                       32 huruf heksadesimal
- *     code  = md5(sandi)                               32 huruf heksadesimal
- *     hasil[i] = chr(ord(hasil[i]) XOR ord(code[i]))   tiap huruf
- *     kembalikan md5(hasil)
- *
- * DUA HAL YANG MUDAH KELIRU:
- *
- *   1. XOR-nya atas HURUF heksadesimalnya, bukan atas byte yang diwakilinya.
- *      Menerjemahkan hex ke byte lebih dulu menghasilkan sidik yang salah.
- *
- *   2. Hasil XOR di-md5 sebagai DERET BYTE, bukan teks UTF-8. Huruf
- *      heksadesimal ada di 0x30-0x39 dan 0x61-0x66, jadi XOR-nya selalu di
- *      bawah 0x80 - masih aman di latin1, tetapi itu KEBETULAN. Disebut tegas
- *      supaya tidak bergantung pada kebetulan.
- *
- * Dicocokkan terhadap PHP asli di server untuk lima masukan berbeda; lihat
- * scripts/verify-sidik-sandi.js.
- */
-function sidikSandiSipp(kodeAktivasi, sandi) {
-  const md5Hex = (nilai) => crypto.createHash("md5").update(String(nilai == null ? "" : nilai)).digest("hex");
-
-  let hasil = md5Hex(kodeAktivasi);
-  const kode = md5Hex(sandi);
-
-  const batas = Math.min(hasil.length, kode.length);
-  let campur = "";
-  for (let i = 0; i < batas; i += 1) {
-    campur += String.fromCharCode(hasil.charCodeAt(i) ^ kode.charCodeAt(i));
-  }
-  hasil = campur + hasil.slice(batas);
-
-  return crypto.createHash("md5").update(Buffer.from(hasil, "latin1")).digest("hex");
-}
+// Sidik sandi SIPP (arr2md5) dan keadaan akun (block, user_expired) hidup di
+// utils/sidikSandiSipp.js sejak 7 Okt 2026 - dipindahkan apa adanya supaya
+// dapat diuji tanpa sambungan basis data. Lihat penjelasan di sana.
+const { sidikSandiSipp, akunSippDiblokir, akunSippKedaluwarsa } = require("../utils/sidikSandiSipp");
 
 /**
  * Memeriksa apakah sebuah sandi SIPP masih berlaku - TANPA memasukinya.
@@ -942,9 +908,15 @@ async function verifikasiSandiPengguna(params = {}) {
   const kolomSandi = columnExpr("u", cols, ["password"], "''");
   const kolomKode = columnExpr("u", cols, ["code_activation"], "''");
   const kolomBlokir = columnExpr("u", cols, ["block"], "0");
+  // Ditambahkan 7 Okt 2026 (masuk ALETA dengan akun SIPP): SIPP juga menolak
+  // akun yang user_expired-nya sudah lewat, dan userid dicatat di jejak masuk
+  // ALETA. Kolom yang tidak ada dibaca NULL - SIPP lama tetap terlayani.
+  const kolomKedaluwarsa = columnExpr("u", cols, ["user_expired"], "NULL");
+  const kolomId = columnExpr("u", cols, ["userid"], "NULL");
 
   const sql = `
-SELECT ${kolomSandi} AS sandi_tersimpan, ${kolomKode} AS kode_aktivasi, ${kolomBlokir} AS diblokir
+SELECT ${kolomSandi} AS sandi_tersimpan, ${kolomKode} AS kode_aktivasi, ${kolomBlokir} AS diblokir,
+       ${kolomKedaluwarsa} AS kedaluwarsa_pada, ${kolomId} AS sipp_user_id
 FROM ${quoteIdentifier("sys_users")} u
 WHERE ${kolomUsername} = ?
 LIMIT 1`;
@@ -961,16 +933,26 @@ LIMIT 1`;
   }
 
   const cocok = sidikSandiSipp(baris.kode_aktivasi, sandi) === tersimpan;
-  const diblokir = String(baris.diblokir || "0") === "1";
+  const diblokir = akunSippDiblokir(baris.diblokir);
+  const kedaluwarsa = akunSippKedaluwarsa(baris.kedaluwarsa_pada);
+  const sippUserId = baris.sipp_user_id == null ? "" : String(baris.sipp_user_id);
 
   return {
     ditemukan: true,
     cocok,
     diblokir,
+    kedaluwarsa,
+    sippUserId,
     // Akun yang diblokir tetap ditolak SIPP walau sandinya benar, dan itu
     // harus terbaca berbeda dari sandi yang salah - kalau tidak, pemakainya
     // akan mengetik ulang sandi yang sebenarnya sudah benar berkali-kali.
-    alasan: cocok ? (diblokir ? "sandi benar tetapi akun diblokir" : "") : "sandi tidak cocok",
+    alasan: cocok
+      ? diblokir
+        ? "sandi benar tetapi akun diblokir"
+        : kedaluwarsa
+          ? "sandi benar tetapi masa berlaku akun SIPP sudah lewat"
+          : ""
+      : "sandi tidak cocok",
   };
 }
 

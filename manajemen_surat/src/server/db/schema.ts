@@ -244,6 +244,33 @@ export const DDL_ECOURT_CAP = {
   indeks: [`CREATE INDEX IF NOT EXISTS idx_ecourt_cap_peruntukan ON aleta_ecourt_cap(peruntukan, aktif)`],
 } as const;
 
+/**
+ * Jejak masuk ALETA dengan akun SIPP - cermin PERSIS dari
+ * drizzle/0058_aleta_masuk_jejak.sql (7 Okt 2026). Tanpa ruas password.
+ *
+ * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
+ * menjalankan drizzle/*.sql, dan penjaga masuk-akun-sipp.test.ts
+ * membandingkan konstanta ini dengan isi berkasnya.
+ */
+export const DDL_MASUK_JEJAK = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_masuk_jejak (
+  id TEXT PRIMARY KEY,
+  aleta_user_id TEXT,
+  identitas TEXT NOT NULL DEFAULT '',
+  username_sipp TEXT NOT NULL DEFAULT '',
+  sipp_user_id TEXT NOT NULL DEFAULT '',
+  lewat TEXT NOT NULL DEFAULT '' CHECK (lewat IN ('', 'sipp', 'aleta')),
+  hasil TEXT NOT NULL CHECK (hasil IN ('berhasil', 'ditolak', 'dibatasi')),
+  alasan TEXT NOT NULL DEFAULT '',
+  alamat_ip TEXT NOT NULL DEFAULT '',
+  agen_peramban TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_masuk_jejak_pengguna ON aleta_masuk_jejak(aleta_user_id, dibuat_pada)`],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1245,6 +1272,8 @@ const schemaStatements = [
   ...DDL_ECOURT_AKSI_JEJAK.tabel,
   // Cap pengadilan untuk edoc penetapan (0056).
   ...DDL_ECOURT_CAP.tabel,
+  // Jejak masuk ALETA dengan akun SIPP (0058).
+  ...DDL_MASUK_JEJAK.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3187,6 +3216,7 @@ const indexStatements = [
   ...DDL_KOMENTAR_TEMPLAT_WAJIB.indeks,
   ...DDL_ECOURT_AKSI_JEJAK.indeks,
   ...DDL_ECOURT_CAP.indeks,
+  ...DDL_MASUK_JEJAK.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

@@ -14,6 +14,7 @@ import {
 } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { lupakanSandiDiEkstensi } from "@/lib/masuk-sipp-klien";
 import { mergeAIFeatureFlags, type PartialAIFeatureFlags } from "@/lib/ai-feature-flags";
 import { apiPath } from "@/lib/base-path";
 import {
@@ -1767,6 +1768,9 @@ export function PortalProvider({
           dispatch({ type: "sign-in", userId });
         },
         signOut: async () => {
+          // Titipan password SIPP di ekstensi (isi otomatis SIPP & ABT) ikut
+          // dihapus saat keluar ALETA. Tanpa ekstensi = tidak terjadi apa pun.
+          void lupakanSandiDiEkstensi().catch(() => undefined);
           try {
             await authClient.signOut();
           } catch (error) {

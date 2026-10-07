@@ -3123,6 +3123,13 @@ const JEMBATAN_JENIS_RELAAS = [
   "relaas-lanjut",
   "relaas-bersihkan",
 ];
+/**
+ * Masuk SIPP & ABT otomatis (7 Okt 2026). Layar masuk portal menitipkan
+ * username + password SIPP yang BARU SAJA terbukti cocok; latar.js
+ * menyimpannya hanya di chrome.storage.session. Jawabannya ke halaman TIDAK
+ * PERNAH memuat password - hanya { ok, sebab }.
+ */
+const JEMBATAN_JENIS_MASUK = ["masuk-titip", "masuk-lupakan"];
 const JEMBATAN_ID_MAKS = 64;
 const JEMBATAN_DOKUMEN_MAKS = 500;
 const KALIMAT_EKSTENSI_DIMUAT_ULANG =
@@ -3165,6 +3172,17 @@ function jembatanSaringDokumen(d) {
 /** Muatan per jenis, disaring. Pulang { isi } atau { sebab } bila bentuknya tidak sah. */
 function jembatanSaringMuatan(jenis, muatan) {
   const m = muatan && typeof muatan === "object" ? muatan : {};
+  if (jenis === "masuk-titip") {
+    // TIDAK dipotong: password yang dipotong diam-diam akan ditolak SIPP, dan
+    // yang terlalu panjang ditolak utuh di sini.
+    const username = typeof m.username === "string" ? m.username : "";
+    const sandi = typeof m.sandi === "string" ? m.sandi : "";
+    if (!username || username.length > 60 || !sandi || sandi.length > 200) {
+      return { sebab: "muatan masuk-titip tidak sah" };
+    }
+    return { isi: { username, sandi } };
+  }
+  if (jenis === "masuk-lupakan") return { isi: {} };
   if (jenis === "relaas-mulai") {
     const p = m.pekerjaan;
     if (!p || typeof p !== "object" || !Array.isArray(p.dokumen)) {
@@ -3243,6 +3261,22 @@ function jembatanTerimaPesan(e) {
     sudahDibalas = true;
     window.postMessage({ sumber: JEMBATAN_SUMBER_EKSTENSI, balasan: idPesan, jawaban }, location.origin);
   };
+  if (JEMBATAN_JENIS_MASUK.includes(data.jenis)) {
+    const saringMasuk = jembatanSaringMuatan(data.jenis, data.muatan);
+    if (saringMasuk.sebab) {
+      balas({ ok: false, sebab: saringMasuk.sebab });
+      return;
+    }
+    // Jawaban latar diperas menjadi { ok, sebab } - apa pun yang lain
+    // (termasuk password, seandainya kelak ikut pulang) tidak sampai ke halaman.
+    jembatanTeruskan({ sumber: "aleta-panel", jenis: data.jenis, ...saringMasuk.isi }, (jawaban) =>
+      balas({
+        ok: Boolean(jawaban && jawaban.ok === true),
+        sebab: jawaban && typeof jawaban.sebab === "string" ? jawaban.sebab.slice(0, 200) : undefined,
+      })
+    );
+    return;
+  }
   if (!JEMBATAN_JENIS_RELAAS.includes(data.jenis)) {
     balas({ ok: false, sebab: `jenis pesan "${String(data.jenis).slice(0, 40)}" tidak diterima jembatan relaas` });
     return;
@@ -3267,6 +3301,8 @@ function pasangJembatanRelaas() {
   const akar = document.documentElement;
   akar.dataset.aletaEkstensi = versi;
   akar.dataset.aletaRelaas = "1";
+  // Layar masuk portal membaca ini sebelum menitipkan password SIPP.
+  akar.dataset.aletaMasukSipp = "1";
   window.addEventListener("message", jembatanTerimaPesan);
   window.postMessage({ sumber: JEMBATAN_SUMBER_EKSTENSI, jenis: "siap", versi }, location.origin);
 }

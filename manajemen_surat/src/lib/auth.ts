@@ -6,6 +6,7 @@ import path from "node:path";
 
 import { getDatabase } from "@/server/db/client";
 import { schema } from "@/server/db/drizzle-schema";
+import { masukSippPlugin } from "@/server/modules/portal/masuk-sipp-plugin";
 import { hashSecret } from "@/server/shared/security";
 
 let cachedAuth: ReturnType<typeof createAuthInstance> | undefined;
@@ -163,6 +164,9 @@ function createAuthInstance(database: Parameters<typeof drizzleAdapter>[0]) {
       expiresIn: AUTH_SESSION_EXPIRES_IN_SECONDS,
       updateAge: AUTH_SESSION_UPDATE_AGE_SECONDS,
     },
+    // Masuk ALETA dengan akun SIPP (POST /api/auth/sign-in/sipp, 7 Okt 2026).
+    // Jalur /sign-in/email tetap utuh untuk akun tanpa tautan SIPP.
+    plugins: [masukSippPlugin()],
 
   });
 }

@@ -30,7 +30,9 @@
  * Tidak menyentuh basis data sama sekali.
  */
 
-const { sidikSandiSipp } = require("../services/sippReadOnlyBridgeService");
+// Dari utils, bukan dari layanan jembatan: layanan itu memuat sambungan MySQL
+// di tingkat atas, dan pembuktian ini tidak menyentuh basis data.
+const { sidikSandiSipp } = require("../utils/sidikSandiSipp");
 
 // [kode_aktivasi, sandi, hasil arr2md5() PHP SIPP di server]
 const DARI_PHP_SIPP = [
