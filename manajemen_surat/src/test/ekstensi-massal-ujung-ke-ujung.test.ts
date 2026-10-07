@@ -685,6 +685,9 @@ function muatHalaman(dunia: Dunia, simpanan: Record<string, unknown>, opsi: Opsi
         "a30OpsiSimpanMassal",
         "a30OpsiEdocMassal",
         "a30OpsiSimpanPutusan",
+        // 7 Okt 2026: penantian anonimisasi berbatas (tanpa wadah = gagal bersebab).
+        "a30TungguAnonim",
+        "a30PilihSesudahBatas",
         "a30UnggahEdoc",
         "kirimBadanUnggahSipp",
         "pesanGagalUnggah",

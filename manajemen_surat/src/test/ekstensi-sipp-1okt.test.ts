@@ -1099,6 +1099,8 @@ async function ukurSatu(mode: "baru" | "ui") {
         "a30PerluKeRtf",
         ...(/^async function s1BacaUsulanBorangCepat\(/m.test(konten) ? ["s1BacaUsulanBorangCepat", "s1TungguBerubah"] : []),
         ...(/^function s1SiapkanAnonimAwal\(/m.test(konten) ? ["s1SiapkanAnonimAwal"] : []),
+        // 7 Okt 2026: penantian anonimisasi berbatas dan berkabar.
+        ...(/^async function a30TungguAnonim\(/m.test(konten) ? ["a30TungguAnonim", "a30PilihSesudahBatas"] : []),
       ].map((nama) => potongFungsi(konten, nama)),
       "this.__uji = { bagianIsiPutusan };",
     ].join("\n"),

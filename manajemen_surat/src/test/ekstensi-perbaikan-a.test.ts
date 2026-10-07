@@ -662,7 +662,11 @@ describe("butir 11: anonimisasi otomatis dalam BENTUK YANG SAMA, lalu dua slot s
     const tanya = await sampai(() => u.bag.querySelector(".aleta-a30-tanya") as any, "kartu konfirmasi");
     expect(tanya.textContent).toContain("NIK");
     expect(tanya.textContent).toContain("7203111072023001");
-    expect(tanya.textContent).toMatch(/nama pihak "Isabella binti Muhamad Aini"/);
+    // 7 Okt 2026 (butir 4): nama pihak yang ditinggalkan ABT kini disamarkan
+    // ALETA pada salinan anonimisasi; yang tidak dapat disamarkan (NIK) tetap
+    // ditanyakan. Dahulu: nama pihak "Isabella binti Muhamad Aini" ikut terdaftar.
+    expect(tanya.textContent).not.toMatch(/nama pihak "Isabella/);
+    expect(tanya.textContent).toMatch(/ALETA sudah menyamarkan 1 sisa yang ditinggalkan ABT/);
     // "Tetap unggah" mati sampai "Sudah saya periksa" dicentang.
     expect(tanya.querySelector(".aleta-a30-tanya-ya").disabled).toBe(true);
     tanya.querySelector(".aleta-a30-tanya-tidak").click();
