@@ -436,6 +436,16 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Tautan \"Court Calendar\" di dasar kolom Agenda: lihat, susun dari rekomendasi ALETA, sunting, dan simpan ke SIPP. Hanya untuk panitera dan admin.",
     kelompok: "alat",
   },
+  // 7 Okt 2026: penanda "belum upload" dapat ditekan. Mematikannya tidak
+  // menyembunyikan penandanya - hanya tarikan sekarangnya; penarikan berkala
+  // bot tetap berjalan.
+  {
+    kunci: "tarik-belum-upload",
+    label: "Periksa e-Court dari \"belum upload\"",
+    keterangan:
+      "Penanda jingga \"belum upload\" dapat ditekan: ALETA langsung menarik ulang e-Court HANYA untuk perkara itu (daftar dokumen e-Litigasi + berkas baru ke arsip ALETA), lalu memperbarui penanda barisnya tanpa memuat ulang tabel. Dimatikan = penandanya tetap tampil tetapi tidak dapat ditekan; penarikan berkala tiap 15 menit tidak terpengaruh.",
+    kelompok: "alat",
+  },
   {
     kunci: "ambil-antrian",
     label: "Tombol Antrian di kolom jam",

@@ -750,8 +750,10 @@ describe("rute portal sidang/selesai dan sidang/mediator", () => {
     // (keadaan disidang ringan, jadwal-sidang-6okt-sore.test.tsx).
     // 6 Okt 2026 (Kasir jurnal): GET /kasir, GET /kasir/cari, POST /kasir -
     // ke-14 s.d. ke-16.
+    // 7 Okt 2026 (penanda belum upload dapat ditekan): POST dan GET
+    // /belum-upload/tarik - ke-17 dan ke-18 (jadwal-sidang-belum-upload-tarik.test.tsx).
     const jumlahRute = rute.match(/router\.(get|post)\(/g)?.length ?? 0;
-    expect(jumlahRute).toBe(16);
+    expect(jumlahRute).toBe(18);
     expect(rute.match(/wajibToken, async/g)?.length).toBe(jumlahRute);
     expect(rute).toContain("kering: badan.kering !== false");
   });

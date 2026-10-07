@@ -116,6 +116,16 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   },
   "tombol-mediator": { letak: "kolom Perkara (kedua pihak hadir pertama kali)", contoh: tombol("Mediator", "border-emerald-500 text-emerald-700") },
   "court-calendar": { letak: "dasar kolom Agenda", contoh: tombol("Court Calendar (3)") },
+  // 7 Okt 2026: penanda "belum upload" yang dapat ditekan + kemajuan tarikannya.
+  "tarik-belum-upload": {
+    letak: "kolom Perkara, penanda \"belum upload\" (ditekan = periksa e-Court perkara itu)",
+    contoh: (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        {lencana("bg-orange-600 text-white underline decoration-dotted underline-offset-2", "belum upload")}
+        {redup("2 dokumen baru: Duplik Tergugat, Bukti T-1")}
+      </span>
+    ),
+  },
   "ambil-antrian": { letak: "kolom Antrian / Jam", contoh: tombol("☰ Antrian") },
   "tunjuk-konseptor": { letak: "kolom Putusan", contoh: tombol("✎ tunjuk konseptor", "border-dashed") },
   "keterangan-perkara": { letak: "kolom Putusan", contoh: tombol("▢ keterangan", "border-dashed") },
