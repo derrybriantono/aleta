@@ -71,17 +71,24 @@
  *           langsung: alamat blangko (a, b) disandikan kunci peladen ABT.
  *           Blangko yang dituju disebut di petunjuk tombolnya.
  *   sipp    halaman perkara SIPP hanya terbuka lewat perkara_detil/<enc>, dan
- *           <enc> hasil enkripsi SIPP yang tidak dapat dibuat di luar SIPP
- *           (lihat "ALAMAT HALAMAN PERKARA YANG BOLEH DIBUKA ULANG" di
- *           konten.js). Karena itu dipakai alamat yang SUDAH PERNAH dirender
- *           SIPP di peramban ini: riwayat halaman detail (riwayatPerkaraSipp,
- *           dicatat konten.js - jalan kembali yang sama dengan panel portal)
- *           dan tautan "detil" di daftar perkara yang pernah dibuka (dipanen
- *           di sini, hanya selama saklarnya menyala, dan dihapus saat saklar
- *           dimatikan). Keduanya hanya dipakai bila jalurnya perkara_detil/
- *           <enc> di asal ini. Perkara yang belum pernah terlihat: beranda SIPP
- *           dibuka, nomornya disalin untuk ditempel di kotak cari - dan itu
- *           DISEBUT, bukan dibiarkan tampak seperti tautan yang benar.
+ *           <enc> hasil enkripsi SIPP (lihat "ALAMAT HALAMAN PERKARA YANG
+ *           BOLEH DIBUKA ULANG" di konten.js). Sumbernya, berurutan: riwayat
+ *           halaman detail (riwayatPerkaraSipp, dicatat konten.js), tautan
+ *           "detil" di daftar perkara yang pernah dibuka (dipanen di sini), dan
+ *           - untuk perkara yang belum pernah terlihat di peramban ini -
+ *           SERVER: rute portal sipp-tautan menyusun <enc> dari perkara_id
+ *           dengan sandi SIPP yang ditiru bot (7 Okt 2026, "diarahkan ke
+ *           halaman SIPP bagian jadwal sidang"). Alamat server diminta
+ *           sebelum tombol ditekan dan disimpan bersama tautan hasil panen.
+ *           Server dan tab tujuan hanya di Baru/UI Baru; Lama persis seperti
+ *           sebelumnya (pintu masuk tanpa tab, atau beranda).
+ *           Semuanya hanya selama saklarnya menyala, dihapus saat saklar
+ *           dimatikan, dan hanya dipakai bila jalurnya perkara_detil/<enc> di
+ *           asal ini. Tab pekerjaannya dibuka lewat segmen ketiga SIPP sendiri
+ *           (perkara_detil_agama/<enc>/4 = Jadwal Sidang) - lihat
+ *           NOMOR_TAB_SIPP dan bukaTabTujuanSipp. Bila alamatnya belum tiba
+ *           atau gagal disusun: beranda SIPP dibuka, nomornya disalin untuk
+ *           ditempel di kotak cari - dan sebabnya DISEBUT.
  *
  * Semua tujuan dibuka di tab baru. Tidak ada satu pun yang ditulis ke SIPP,
  * ABT, maupun ALETA dari sini: yang dikirim hanya satu GET tentang pekerjaan
@@ -296,6 +303,48 @@
     mediasi: "Mediasi",
     ikrar: "Ikrar Talak",
   };
+  /**
+   * Halaman semantik -> nomor tab di halaman perkara SIPP
+   * (views/perkara/detil_perkara_agama.php: <a href="#tabs<N>">). Nomor itu
+   * ditempel sebagai segmen ketiga pintu masuk - perkara_detil_agama/<enc>/<N> -
+   * jalan yang dipakai SIPP SENDIRI untuk kembali ke tab sesudah blangkonya
+   * disimpan (jadwal_sidang_p_tunda.php: ".../'.$enc.'/4"). manage_perkara::
+   * setParams menyimpannya sebagai flash tab_no, dan halaman detailnya
+   * menekan $('.tabs<N>').
+   *
+   * Tab Ikrar Talak (24), Akta Cerai (25), dan Biaya Perkara (11) dicetak SIPP
+   * TANPA kelas tabs<N>, jadi tekanan SIPP sendiri tidak menemukannya. Untuk
+   * itu alamatnya juga membawa #aleta-tab=<N>, dan widget di halaman detail
+   * menekan tabnya sendiri bila SIPP belum (lihat bukaTabTujuanSipp). "" =
+   * Data Umum, tab yang memang terbuka lebih dulu.
+   */
+  const NOMOR_TAB_SIPP = {
+    perkara: "",
+    penetapan: "2",
+    "jadwal-sidang": "4",
+    putusan: "10",
+    // Relaas dicetak dan pelaksanaannya diinput dari tab Jadwal Sidang -
+    // pelaksanaan_relaas_v.php pun kembali ke ".../4".
+    relaas: "4",
+    "akta-cerai": "25",
+    keuangan: "11",
+    saksi: "23",
+    mediasi: "6",
+    ikrar: "24",
+  };
+  /** Penanda tab tujuan di alamat - ditulis tombol Kerjakan, dibaca di halaman detail. */
+  const POLA_TAB_TUJUAN = /^#aleta-tab=(\d{1,3})$/;
+  /**
+   * Rute portal yang menyusun alamat bersandi perkara_detil_agama/<enc> dari
+   * perkara_id (bot meniru Encrypt CI2 SIPP dengan kunci SIPP - lihat
+   * aleta_bot/services/sippTautanService.js). Jawabannya SELALU
+   * { ok, data: { alamat, alasan } }.
+   */
+  const ALAMAT_TAUTAN_SIPP = "/aleta/api/aleta-ecourt/sipp-tautan";
+  /** Permintaan alamat yang boleh terbang bersamaan - bot tidak dibanjiri daftar panjang. */
+  const TAUTAN_SERVER_PARALEL = 3;
+  /** Alamat yang gagal disusun tidak diminta ulang sebelum selang ini. */
+  const TAUTAN_GAGAL_ULANG_MS = 5 * 60 * 1000;
   /** Kelompok blangko ABT yang disebut portal -> nama yang dicari petugas di bilah kiri ABT. */
   const BLANGKO_ABT = {
     "blangko-putusan": "Putusan",
@@ -1304,6 +1353,12 @@
     riwayatSipp: [],
     tautanSipp: {},
     petaSipp: new Map(),
+    /**
+     * Permintaan alamat bersandi ke server, per kunci nomor:
+     * { keadaan: "memuat" | "gagal", alasan, pada }. Yang berhasil tidak
+     * tinggal di sini - ia masuk tautanSipp (lihat siapkanTautanServer).
+     */
+    tautanServer: new Map(),
     /** Jawaban terakhir yang BERHASIL - tetap ditampilkan saat portal diam. */
     data: null,
     /** { jenis: "masuk"|"akses"|"jaringan"|"tidak-ada"|"jawaban", pesan } */
@@ -1951,24 +2006,270 @@
       };
     }
 
-    // SIPP
+    // SIPP: halaman perkaranya langsung, di tab pekerjaannya. Alamatnya dari
+    // riwayat, panen daftar, atau server (siapkanTautanServer) - yang
+    // terakhir itu membuat perkara yang belum pernah dibuka di peramban ini
+    // pun terbuka langsung.
+    //
+    // Hanya di Baru dan UI Baru. Tampilan Lama tetap PERSIS ekstensi
+    // sebelumnya (dijaga ekstensi-widget-tahap3: "Lama IDENTIK"): pintu masuk
+    // tanpa tab, dan perkara yang belum terlihat ke beranda.
     const tab = namaTabSipp(halaman);
     const lanjut = tab ? `, lalu tab ${tab}` : "";
     const dikenal = nomor ? keadaan.petaSipp.get(kunciNomor(nomor)) : "";
+    if (modeUji() === "lama") {
+      if (dikenal) {
+        return { tujuan, label, href: dikenal, judul: `Buka perkara ${nomor} di SIPP${lanjut} (tab baru)` };
+      }
+      return {
+        tujuan,
+        label,
+        href: berandaSipp(),
+        judul: nomor
+          ? `Perkara ${nomor} belum pernah terbuka di SIPP pada peramban ini, jadi alamatnya belum diketahui. ` +
+            `SIPP dibuka di berandanya dan nomornya disalin untuk dicari${lanjut}.`
+          : `Buka SIPP${lanjut} (tab baru)`,
+        salin: nomor,
+        tempat: "SIPP",
+      };
+    }
+    const nomorTab = nomorTabSipp(halaman);
     if (dikenal) {
-      return { tujuan, label, href: dikenal, judul: `Buka perkara ${nomor} di SIPP${lanjut} (tab baru)` };
+      return {
+        tujuan,
+        label,
+        href: alamatDenganTab(dikenal, nomorTab),
+        judul:
+          `Buka perkara ${nomor} di SIPP${tab ? ` langsung di tab ${tab}` : ""} (tab baru).` +
+          (nomorTab
+            ? ` Bila tab itu belum ada pada perkara ini, SIPP menampilkan Data Umum - tombol tambahnya ada di baris tombol atas.`
+            : ""),
+      };
     }
     return {
       tujuan,
       label,
       href: berandaSipp(),
       judul: nomor
-        ? `Perkara ${nomor} belum pernah terbuka di SIPP pada peramban ini, jadi alamatnya belum diketahui. ` +
-          `SIPP dibuka di berandanya dan nomornya disalin untuk dicari${lanjut}.`
+        ? `${sebabTautanBelumAda(nomor, idPerkara)} Sementara itu SIPP dibuka di berandanya dan nomornya disalin untuk dicari${lanjut}.`
         : `Buka SIPP${lanjut} (tab baru)`,
       salin: nomor,
       tempat: "SIPP",
     };
+  }
+
+  /** Kalimat sebab tombol SIPP masih ke beranda: memuat, gagal (beserta alasan server), atau tanpa pengenal. */
+  function sebabTautanBelumAda(nomor, idPerkara) {
+    if (!idPerkara) {
+      return `Portal tidak menyertakan pengenal perkara ${nomor}, jadi alamat halaman perkaranya di SIPP tidak dapat disusun.`;
+    }
+    const s = keadaan.tautanServer.get(kunciNomor(nomor));
+    if (s && s.keadaan === "memuat") return `Alamat halaman perkara ${nomor} di SIPP sedang disiapkan server.`;
+    if (s && s.keadaan === "gagal") {
+      return `Alamat halaman perkara ${nomor} di SIPP belum dapat disusun: ${s.alasan || "server tidak menjawab."}`;
+    }
+    return `Alamat halaman perkara ${nomor} di SIPP belum diketahui.`;
+  }
+
+  /** Nomor tab halaman perkara SIPP untuk halaman semantik portal; "" = Data Umum. */
+  function nomorTabSipp(halaman) {
+    const h = String(halaman || "").trim().toLowerCase();
+    return punya(NOMOR_TAB_SIPP, h) ? NOMOR_TAB_SIPP[h] : "";
+  }
+
+  /**
+   * Pintu masuk perkara + tab tujuan: perkara_detil_agama/<enc>/<N>#aleta-tab=<N>.
+   * Kueri dibuang - setParams SIPP membaca segmen, bukan kueri. Tanpa tab,
+   * pintu masuknya dipulangkan apa adanya.
+   *
+   * Pintu umum perkara_detil/<enc> (riwayat konten.js menyusunnya begitu)
+   * membuka views/perkara/detil_perkara.php, yang NOMOR TABNYA LAIN: di sana
+   * 24 = Mediasi Di Luar Pengadilan dan 25 = Court Calendar. Karena itu
+   * pintu umum diganti pintu agama - <enc>-nya sama (base64 encrypt
+   * perkara_id), dan rute sipp-tautan pun memulangkan perkara_detil_agama.
+   */
+  function alamatDenganTab(detil, tab) {
+    if (!tab) return detil;
+    try {
+      const url = new URL(detil);
+      url.pathname = url.pathname.replace(/\/perkara_detil\/([^/]+)\/?$/i, "/perkara_detil_agama/$1");
+      url.pathname = `${url.pathname.replace(/\/+$/, "")}/${tab}`;
+      url.search = "";
+      url.hash = `aleta-tab=${tab}`;
+      return url.href;
+    } catch {
+      return detil;
+    }
+  }
+
+  // ─── Alamat bersandi dari server ───────────────────────────────────────────
+
+  /**
+   * Butir SIPP yang halaman perkaranya belum diketahui peramban ini, dan
+   * belum (atau sudah lama tidak) dimintakan ke server.
+   */
+  function butirPerluTautan(data) {
+    const hasil = new Map();
+    const kini = Date.now();
+    for (const b of data && Array.isArray(data.butir) ? data.butir : []) {
+      const k = objek(b && b.kerjakan);
+      if (String(k.tujuan || "").toLowerCase() !== "sipp") continue;
+      const p = objek(b && b.perkara);
+      const nomor = String(p.nomor || "").trim();
+      const id = /^\d+$/.test(String(p.id ?? "").trim()) ? String(p.id).trim() : "";
+      if (!nomor || !id) continue;
+      const kunci = kunciNomor(nomor);
+      if (keadaan.petaSipp.has(kunci) || hasil.has(kunci)) continue;
+      const lalu = keadaan.tautanServer.get(kunci);
+      if (lalu && (lalu.keadaan === "memuat" || kini - Number(lalu.pada || 0) < TAUTAN_GAGAL_ULANG_MS)) continue;
+      hasil.set(kunci, { kunci, id, nomor });
+    }
+    return [...hasil.values()];
+  }
+
+  /** Sama dengan syarat panen: hanya selama widget menyala dan terpasang. */
+  function bolehMintaTautan() {
+    return !!document.body && bolehTampil() && !!akar && akar.isConnected;
+  }
+
+  /** Satu alamat dari server: { url } atau { alasan }. Tidak pernah melempar. */
+  async function mintaSatuTautan(t) {
+    const ambil = typeof alatAmbil === "function" ? alatAmbil : (alamat, opsi) => fetch(alamat, opsi);
+    const kueri = new URLSearchParams({ perkaraId: t.id, nomor: t.nomor });
+    try {
+      const respons = await ambil(
+        `${ALAMAT_TAUTAN_SIPP}?${kueri.toString()}`,
+        { credentials: "include", cache: "no-store" },
+        "Menyusun alamat halaman perkara SIPP"
+      );
+      if (respons.status === 401) return { alasan: "sesi portal ALETA habis - masuk lagi ke portal." };
+      if (respons.status === 403) return { alasan: "akun ALETA ini tidak berwenang membuka Status Perkara." };
+      if (respons.status === 404) return { alasan: "portal ALETA di server ini belum punya rute sipp-tautan." };
+      if (!respons.ok) {
+        const pesan = await pesanDariJawaban(respons);
+        return { alasan: `ALETA menjawab ${respons.status}${pesan ? `: ${pesan}` : "."}` };
+      }
+      const luar = await respons.json();
+      const isi = objek(luar && typeof luar === "object" && luar.data && typeof luar.data === "object" ? luar.data : luar);
+      const mentah = String(isi.alamat || "").trim();
+      if (!mentah) {
+        return { alasan: String(isi.alasan || "").trim().slice(0, 300) || "server tidak menyertakan alamatnya." };
+      }
+      // Dipakai hanya pintu masuk perkara SIPP di asal halaman ini - aturan
+      // yang sama dengan tautan hasil panen dan riwayat.
+      const url = alamatDetilSipp(mentah);
+      return url ? { url } : { alasan: "alamat dari server bukan pintu masuk perkara SIPP di peramban ini." };
+    } catch (galat) {
+      return { alasan: kalimatPertama(galat && galat.message) || "portal ALETA tidak menjawab." };
+    }
+  }
+
+  /**
+   * Meminta alamat bersandi (perkara_detil_agama/<enc>) untuk tiap butir SIPP
+   * yang alamatnya belum diketahui - SEBELUM tombolnya ditekan. Tombolnya
+   * harus tetap <a target="_blank"> biasa: tab yang dibuka sesudah menunggu
+   * jaringan ditahan pemblokir munculan, dan nomor hanya dapat disalin di
+   * dalam tekanan itu sendiri. Selama alamatnya belum tiba, atau bila
+   * gagal, tombolnya tetap jalan lama: beranda SIPP + nomor disalin.
+   *
+   * Yang berhasil disimpan bersama tautan hasil panen (tautanPerkaraSipp),
+   * jadi ikut dihapus saat saklarnya dimatikan.
+   */
+  async function siapkanTautanServer() {
+    if (!bolehMintaTautan() || !keadaan.data) return;
+    // Lama tidak meminta apa pun yang baru - tampilan yang berlaku dapat
+    // datang dari server, jadi ditunggu dulu.
+    try {
+      if (typeof alatUjiSiap === "function") await alatUjiSiap();
+    } catch {
+      /* tanpa tampilan server: yang lokal yang berlaku */
+    }
+    if (modeUji() === "lama" || !bolehMintaTautan()) return;
+    const antre = butirPerluTautan(keadaan.data);
+    if (antre.length === 0) return;
+    const mulaiPada = Date.now();
+    for (const t of antre) keadaan.tautanServer.set(t.kunci, { keadaan: "memuat", alasan: "", pada: mulaiPada });
+
+    const baru = [];
+    let i = 0;
+    const pekerja = async () => {
+      while (i < antre.length) {
+        const t = antre[i++];
+        // Saklar dimatikan di tengah jalan: sisanya tidak diminta.
+        if (!bolehMintaTautan()) return;
+        const h = await mintaSatuTautan(t);
+        if (h.url) {
+          keadaan.tautanServer.delete(t.kunci);
+          baru.push([t.kunci, h.url]);
+        } else {
+          keadaan.tautanServer.set(t.kunci, { keadaan: "gagal", alasan: h.alasan, pada: Date.now() });
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(TAUTAN_SERVER_PARALEL, antre.length) }, pekerja));
+    // Yang tidak sempat diminta dilepas - diminta lagi pada penyegaran berikutnya.
+    for (const t of antre) {
+      const s = keadaan.tautanServer.get(t.kunci);
+      if (s && s.keadaan === "memuat") keadaan.tautanServer.delete(t.kunci);
+    }
+
+    if (baru.length > 0 && bolehMintaTautan()) {
+      const simpan = await baca([KUNCI_TAUTAN_SIPP]);
+      // Sama dengan panen: yang tiba sesudah saklar dimatikan tidak ditulis.
+      if (bolehMintaTautan()) {
+        const peta = { ...objek(simpan[KUNCI_TAUTAN_SIPP]) };
+        const kini = Date.now();
+        for (const [kunci, url] of baru) peta[kunci] = { url, pada: kini };
+        const urut = Object.entries(peta)
+          .sort((x, y) => Number(objek(y[1]).pada || 0) - Number(objek(x[1]).pada || 0))
+          .slice(0, TAUTAN_MAKS);
+        keadaan.tautanSipp = Object.fromEntries(urut);
+        susunPetaSipp();
+        tulis({ [KUNCI_TAUTAN_SIPP]: keadaan.tautanSipp });
+      }
+    }
+    if (akar && akar.isConnected) gambar();
+  }
+
+  // ─── Tab tujuan di halaman perkara SIPP ────────────────────────────────────
+
+  /**
+   * Halaman detail perkara yang dibuka tombol Kerjakan membawa
+   * #aleta-tab=<N>. Tab bernomor yang punya kelas tabs<N> sudah ditekan SIPP
+   * sendiri (lewat segmen ketiga alamatnya); yang tidak - Ikrar Talak, Akta
+   * Cerai, Biaya Perkara - ditekan di sini, persis seperti petugas menekannya:
+   * pemuat AJAX tab itu milik halaman SIPP sendiri. Tidak ada yang ditulis.
+   * Tab yang memang belum ada pada perkara itu DISEBUT, bukan didiamkan.
+   */
+  async function bukaTabTujuanSipp() {
+    if (JENIS !== "sipp") return;
+    if (!POLA_TAB_TUJUAN.test(String(location.hash || ""))) return;
+    if (!/detil[_-]?perkara/i.test(String(location.pathname || ""))) return;
+    try {
+      if (typeof alatUjiSiap === "function") await alatUjiSiap();
+    } catch {
+      /* tanpa tampilan server: yang lokal yang berlaku */
+    }
+    const cocok = POLA_TAB_TUJUAN.exec(String(location.hash || ""));
+    if (!cocok || !keadaan.induk || !keadaan.nyala || modeUji() === "lama") return;
+    const no = cocok[1];
+    // Penanda dibuang: dimuat ulang atau disalin, alamatnya tidak menekan apa pun lagi.
+    try {
+      history.replaceState(history.state, "", `${location.pathname}${location.search}`);
+    } catch {
+      /* dibiarkan - penandanya tidak berbahaya */
+    }
+    const tab = document.querySelector(`a[href="#tabs${no}"]`);
+    if (!tab) {
+      const halaman = Object.keys(NOMOR_TAB_SIPP).find((h) => NOMOR_TAB_SIPP[h] === no);
+      const nama = halaman ? namaTabSipp(halaman) : `nomor ${no}`;
+      kabarSingkat(
+        `Tab ${nama} belum ada pada perkara ini, jadi SIPP menampilkan Data Umum. Tombol tambahnya ada di baris tombol atas.`
+      );
+      return;
+    }
+    if (tab.classList.contains("loaded") || tab.classList.contains("selected")) return;
+    tab.click();
   }
 
   /**
@@ -5097,7 +5398,11 @@
         tulisAngka();
       }
     }
-    void panenTautanSipp();
+    // Sesudah panen: perkara yang tautannya baru dipanen tidak perlu ditanyakan ke server.
+    void panenTautanSipp()
+      .catch(() => {})
+      .then(() => siapkanTautanServer())
+      .catch(() => {});
   }
 
   function gantiPeran(kunci) {
@@ -5290,6 +5595,7 @@
     keadaan.siap = true;
     evaluasi();
     sinkronTata();
+    void bukaTabTujuanSipp().catch(() => {});
   }
 
   // Pendengar dipasang SEBELUM penyimpanan terbaca: saklar yang diubah
@@ -5323,6 +5629,8 @@
     aturJamTunda();
     tulisAngka();
     sinkronTata();
+    // Dari Lama ke Baru/UI Baru: alamat halaman perkara SIPP baru diminta sekarang.
+    void siapkanTautanServer().catch(() => {});
   });
   // Jendela melayang tetap di dalam layar saat ukuran jendela berubah.
   window.addEventListener("resize", () => {

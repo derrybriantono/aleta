@@ -626,7 +626,7 @@ function aturanIkrar(b: BahanAturan, saring: (i: IkrarFakta) => boolean): HasilJ
         keterangan:
           `BHT ${tglPendek(i.tanggalBht)}; hari sidang ikrar belum ditetapkan; ${sisaTeks} ` +
           `(dihitung ALETA 180 hari sejak BHT, Pasal 70 ayat (6) UU 7/1989).`,
-        kerjakan: { tujuan: "sipp", halaman: "jadwal-sidang" },
+        kerjakan: { tujuan: "sipp", halaman: "ikrar" },
       });
       continue;
     }
@@ -640,7 +640,7 @@ function aturanIkrar(b: BahanAturan, saring: (i: IkrarFakta) => boolean): HasilJ
         `BHT ${tglPendek(i.tanggalBht)}; sidang ikrar ditetapkan ${tglPendek(i.penetapanSidangIkrar)}` +
         `${i.sidangIkrarBerikut ? `, sidang ikrar berikut ${tglPendek(i.sidangIkrarBerikut)}` : ", belum ada sidang ikrar mendatang"}` +
         `; ikrar belum diucapkan; ${sisaTeks}.`,
-      kerjakan: { tujuan: "sipp", halaman: "jadwal-sidang" },
+      kerjakan: { tujuan: "sipp", halaman: "ikrar" },
     });
   }
   return { calon, selesaiHariIni };

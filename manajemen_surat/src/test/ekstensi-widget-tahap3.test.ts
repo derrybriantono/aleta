@@ -389,8 +389,13 @@ describe("tampilan Lama IDENTIK dengan checklist.js sebelum tahap 3", () => {
     // pada keterangannya. Diminta pengguna untuk Baru DAN UI Baru.
     const tanpaTeknis = (x: string) =>
       x.replace(/<div class="aleta-cmw-teknis" data-widget-teknis="ya">[\s\S]*?<\/button><\/div>/g, "").replace(/ aleta-teknis/g, "");
+    // Selisih sah kedua: tombol "Kerjakan di SIPP" (7 Okt 2026) - di Baru dan
+    // UI Baru alamat halaman perkaranya diminta ke server dan petunjuknya
+    // menyebut sebab tombol masih ke beranda. ALAMATNYA tetap dibandingkan:
+    // tanpa jawaban server keduanya beranda SIPP.
+    const tanpaJudulSipp = (x: string) => x.replace(/ title="[^"]*" data-tujuan="sipp"/g, ' data-tujuan="sipp"');
     expect(isiWadah(kini)).toContain('data-widget-teknis="ya"');
-    expect(tanpaTeknis(isiWadah(kini))).toBe(isiWadah(lama));
+    expect(tanpaJudulSipp(tanpaTeknis(isiWadah(kini)))).toBe(tanpaJudulSipp(isiWadah(lama)));
     q(kini, ".aleta-cm-kecilkan").click();
     q(lama, ".aleta-cm-kecilkan").click();
     await Promise.all([sampai(() => q(kini, ".aleta-cm-pil"), "pil"), sampai(() => q(lama, ".aleta-cm-pil"), "pil")]);
@@ -945,14 +950,16 @@ describe("batas yang tidak berubah: mode coba, akar, layar publik", () => {
     await tunggu(700);
     expect(h.cara.length).toBeGreaterThan(0);
     expect(h.cara.filter((c) => c.cara !== "GET")).toEqual([]);
-    // Selain checklist hanya dua bacaan: tampilan yang diterapkan admin (tahap 5)
-    // dan indikator sumber daya server di samping lencana (butir 3, 6 Okt 2026).
+    // Selain checklist hanya tiga bacaan: tampilan yang diterapkan admin (tahap 5),
+    // indikator sumber daya server di samping lencana (butir 3, 6 Okt 2026), dan
+    // alamat halaman perkara SIPP untuk tombol Kerjakan (7 Okt 2026).
     expect(
       h.cara.every(
         (c) =>
           c.url.includes(API) ||
           c.url.includes("/api/aleta-ecourt/ekstensi/tampilan") ||
-          c.url === "/aleta/api/aleta-ecourt/sumber-daya"
+          c.url === "/aleta/api/aleta-ecourt/sumber-daya" ||
+          c.url.startsWith("/aleta/api/aleta-ecourt/sipp-tautan?")
       )
     ).toBe(true);
     // Semuanya di dalam SATU akar - senyap 1 jam dan blok cetak panel.css

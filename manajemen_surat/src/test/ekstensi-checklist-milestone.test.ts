@@ -297,6 +297,8 @@ function buka(
     html?: string;
     simpanan?: Record<string, unknown>;
     jawab?: Jawab;
+    /** Jawaban rute portal sipp-tautan (alamat bersandi perkara SIPP); tanpa ini {ok, data: {}}. */
+    tautan?: Jawab;
     /** Skrip halaman yang dimuat di antara panel-alat.js dan checklist.js - urutan manifest. */
     skrip?: string[];
     /**
@@ -331,6 +333,13 @@ function buka(
     const url = String(alamat);
     semua.push(url);
     if (url.includes("/ekstensi/siapa")) return Promise.resolve(tanggapan(200, SIAPA));
+    if (url.includes("/sipp-tautan") && p.tautan) {
+      try {
+        return Promise.resolve(p.tautan(url)).then((x) => tanggapan(x.status ?? 200, x.isi));
+      } catch (galat) {
+        return Promise.reject(galat);
+      }
+    }
     if (!url.includes(API)) return Promise.resolve(tanggapan(200, { ok: true, data: {} }));
     minta.push(url);
     terbang += 1;
@@ -827,6 +836,8 @@ describe("kontrak dengan katalog portal (src/lib/checklist-milestone-katalog.ts)
     "akta-cerai": "Akta Cerai",
     keuangan: "Biaya Perkara",
     saksi: "Saksi",
+    mediasi: "Mediasi",
+    ikrar: "Ikrar Talak",
   };
   const BLANGKO_ABT: Record<string, string> = {
     "blangko-putusan": "Putusan",
@@ -1935,5 +1946,341 @@ describe("pintu masuk perkara SIPP yang diingat", () => {
     await siap(h);
     const peta = await sampai(() => h.simpanan.tautanPerkaraSipp as any, "baris tunggal dipanen");
     expect(Object.keys(peta)).toEqual(["391/PDT.G/2026/PA.DGL"]);
+  });
+});
+
+// ============================================================================
+describe("Kerjakan di SIPP: halaman perkara bersandi dari server, langsung di tab pekerjaannya (7 Okt)", () => {
+  /**
+   * Keluhan 7 Okt 2026: "Catat hasil sidang ... 308/Pdt.G/2026/PA.Dgl" membuka
+   * beranda SIPP karena perkaranya belum pernah terbuka di peramban itu.
+   * Kini alamat perkara_detil_agama/<enc> disusun server (rute sipp-tautan,
+   * sandi SIPP ditiru bot) SEBELUM tombol ditekan, dan nomor tab pekerjaannya
+   * ditempel sebagai segmen ketiga - jalan yang dipakai SIPP sendiri.
+   */
+  const NOMOR_TAB: Record<string, string> = {
+    perkara: "",
+    penetapan: "2",
+    "jadwal-sidang": "4",
+    putusan: "10",
+    relaas: "4",
+    "akta-cerai": "25",
+    keuangan: "11",
+    saksi: "23",
+    mediasi: "6",
+    ikrar: "24",
+  };
+  const NAMA_TAB: Record<string, string> = {
+    perkara: "Data Umum",
+    penetapan: "Penetapan",
+    "jadwal-sidang": "Jadwal Sidang",
+    putusan: "Putusan Akhir",
+    relaas: "Jadwal Sidang (Cetak Relas)",
+    "akta-cerai": "Akta Cerai",
+    keuangan: "Biaya Perkara",
+    saksi: "Saksi",
+    mediasi: "Mediasi",
+    ikrar: "Ikrar Talak",
+  };
+  /** Halaman yang dituju tiap jenis katalog - pemetaan yang dilaporkan, dijaga di sini. */
+  const HALAMAN_JENIS: Record<string, string> = {
+    "hakim.putusan-belum-unggah": "putusan",
+    "hakim.phs-menunggu": "penetapan",
+    "hakim.hasil-sidang-belum-dicatat": "jadwal-sidang",
+    "hakim.lima-bulan": "jadwal-sidang",
+    "hakim.mediasi-30-hari": "mediasi",
+    "hakim.ikrar-talak": "ikrar",
+    "panitera-pengganti.hasil-sidang-belum-dicatat": "jadwal-sidang",
+    "panitera-pengganti.putusan-akhir-belum-diisi": "putusan",
+    "panitera-pengganti.putusan-belum-unggah": "putusan",
+    "panitera-pengganti.saksi-belum-lengkap": "saksi",
+    "jurusita.relaas-belum-diinput": "relaas",
+    "panitera.ppp-pjs-menunggu": "penetapan",
+    "panitera.direktori-putusan": "putusan",
+    "panitera.bht-belum-diisi": "putusan",
+    "panitera.akta-cerai-belum-terbit": "akta-cerai",
+    "panitera.arsip-bht": "perkara",
+    "panitera.panggilan-belum-patut": "relaas",
+    "ketua.pmh-hari-ini": "penetapan",
+    "ketua.lima-bulan-per-majelis": "jadwal-sidang",
+    "ketua.hasil-sidang-belum-dicatat": "jadwal-sidang",
+    "ketua.ikrar-akta": "akta-cerai",
+    "ketua.sidang-terancam-panggilan": "relaas",
+    "ptsp.ecourt-belum-register": "perkara",
+    "ptsp.panjar-habis": "keuangan",
+    "ptsp.data-umum-belum-lengkap": "perkara",
+    "ptsp.sisa-panjar": "keuangan",
+    "ptsp.akta-belum-unggah": "akta-cerai",
+    "operator.penetapan-gagal": "penetapan",
+    "operator.direktori-gagal": "putusan",
+  };
+  /** Baru dan UI Baru saja - tampilan Lama tetap persis seperti sebelumnya (uji terakhir blok ini). */
+  const BARU = { ...NYALA, ujiTampilan: "baru" };
+  const enc = (id: string) => `RU5D${id}`;
+  const dariServer = (url: string): Hasil => {
+    const q = new URL(url, ASAL).searchParams;
+    return { isi: { ok: true, data: { alamat: `${ASAL}/SIPP/perkara_detil_agama/${enc(q.get("perkaraId") || "")}`, alasan: "" } } };
+  };
+  const tautanDiminta = (h: Halaman) => h.semua.filter((u) => u.includes("/sipp-tautan"));
+
+  /** Satu butir per jenis katalog yang menuju SIPP - kunci dan judul sungguhan. */
+  function butirKatalogSipp() {
+    const hasil: Array<{ id: string; jenis: string; perkara: { id: string; nomor: string }; kerjakan: { halaman: string } } & Record<string, unknown>> = [];
+    KATALOG_CHECKLIST.forEach((j, i) => {
+      if (!j.tersedia || j.kerjakan.tujuan !== "sipp") return;
+      hasil.push({
+        id: `s${i}`,
+        jenis: j.kunci,
+        judul: j.judul,
+        perkara: { id: String(30000 + i), nomor: `${600 + i}/Pdt.G/2026/PA.Dgl` },
+        tenggat: hariKe(0),
+        kelompok: "hari-ini",
+        keterangan: "",
+        kerjakan: j.kerjakan,
+      });
+    });
+    return hasil;
+  }
+
+  it("pemetaan jenis -> halaman SIPP di katalog persis yang dilaporkan", () => {
+    const nyata: Record<string, string> = {};
+    for (const b of butirKatalogSipp()) nyata[b.jenis] = b.kerjakan.halaman;
+    expect(nyata).toEqual(HALAMAN_JENIS);
+  });
+
+  it("tiap jenis butir katalog: perkara yang belum pernah dibuka langsung ke halaman perkaranya, di tab yang benar", async () => {
+    const butir = butirKatalogSipp();
+    expect(butir.length).toBeGreaterThan(15);
+    const h = buka({
+      simpanan: BARU,
+      jawab: () => ({
+        isi: jawabanContoh({
+          butir,
+          ringkas: { lewat: 0, hariIni: butir.length, mingguIni: 0, selesaiHariIni: 0, totalHariIni: butir.length },
+        }),
+      }),
+      tautan: dariServer,
+    });
+    await siap(h);
+    await sampai(
+      () => butir.every((b) => /perkara_detil_agama/.test(kerjakan(h, b.id)?.getAttribute("href") || "")),
+      "alamat server terpasang"
+    );
+
+    for (const b of butir) {
+      const halaman = b.kerjakan.halaman;
+      const tab = NOMOR_TAB[halaman];
+      expect(tab, `halaman SIPP baru tanpa nomor tab: ${halaman}`).not.toBeUndefined();
+      const pintu = `${ASAL}/SIPP/perkara_detil_agama/${enc(b.perkara.id)}`;
+      const t = kerjakan(h, b.id);
+      expect(t.tagName, b.jenis).toBe("A");
+      expect(t.getAttribute("href"), b.jenis).toBe(tab ? `${pintu}/${tab}#aleta-tab=${tab}` : pintu);
+      expect(t.title, b.jenis).toContain(`langsung di tab ${NAMA_TAB[halaman]}`);
+      expect(t.target, b.jenis).toBe("_blank");
+    }
+
+    // Permintaannya membawa pengenal DAN nomor - bot memastikan keduanya satu perkara.
+    const minta = tautanDiminta(h);
+    expect(minta).toHaveLength(butir.length);
+    const pertama = butir[0];
+    const q0 = new URL(minta.find((u) => u.includes(`perkaraId=${pertama.perkara.id}`))!, ASAL).searchParams;
+    expect(q0.get("nomor")).toBe(pertama.perkara.nomor);
+    // Disimpan bersama tautan hasil panen.
+    const peta = h.simpanan.tautanPerkaraSipp as Record<string, { url: string }>;
+    expect(peta[pertama.perkara.nomor.toUpperCase()].url).toBe(`${ASAL}/SIPP/perkara_detil_agama/${enc(pertama.perkara.id)}`);
+  });
+
+  it("keluhan 7 Okt: Catat hasil sidang -> halaman perkara 308 di tab Jadwal Sidang, bukan beranda", async () => {
+    const butir = [
+      {
+        id: "pp1",
+        jenis: "panitera-pengganti.hasil-sidang-belum-dicatat",
+        judul: "Catat hasil sidang sebelum pukul 15.00",
+        perkara: { id: "4308", nomor: "308/Pdt.G/2026/PA.Dgl" },
+        tenggat: hariKe(0),
+        kelompok: "hari-ini",
+        keterangan: "Sidang 7 Okt 2026 pukul 09:00 - agenda Pembuktian Lanjutan",
+        kerjakan: { tujuan: "sipp", halaman: "jadwal-sidang" },
+      },
+    ];
+    const h = buka({ simpanan: BARU, jawab: () => ({ isi: jawabanContoh({ butir }) }), tautan: dariServer });
+    await siap(h);
+    const href = await sampai(() => {
+      const x = kerjakan(h, "pp1")?.getAttribute("href") || "";
+      return x.includes("perkara_detil_agama") ? x : "";
+    }, "alamat bersandi");
+    expect(href).toBe(`${ASAL}/SIPP/perkara_detil_agama/${enc("4308")}/4#aleta-tab=4`);
+    expect(kerjakan(h, "pp1").title).toContain("langsung di tab Jadwal Sidang");
+    expect(kerjakan(h, "pp1").title).not.toContain("beranda");
+  });
+
+  it("UI Baru (kulit Modern, kartu) pun begitu", async () => {
+    const h = buka({ simpanan: { ...NYALA, ujiTampilan: "ui" }, tautan: dariServer });
+    const href = await sampai(() => {
+      const x = kerjakan(h, "h3")?.getAttribute("href") || "";
+      return x.includes("perkara_detil_agama") ? x : "";
+    }, "alamat bersandi di UI Baru");
+    expect(href).toBe(`${ASAL}/SIPP/perkara_detil_agama/${enc("10023")}/4#aleta-tab=4`);
+  });
+
+  it("tampilan Lama tetap persis seperti sebelumnya: tidak bertanya ke server, tanpa tab, beranda untuk yang belum terlihat", async () => {
+    const h = buka({
+      simpanan: {
+        ...NYALA,
+        riwayatPerkaraSipp: [{ nomor: "385/Pdt.G/2026/PA.Dgl", url: `${ASAL}/SIPP/perkara_detil/ZW5jMzg1` }],
+      },
+      tautan: dariServer,
+    });
+    await siap(h);
+    await tunggu(80);
+    expect(tautanDiminta(h)).toEqual([]);
+    expect(kerjakan(h, "l1").getAttribute("href")).toBe(`${ASAL}/SIPP/perkara_detil/ZW5jMzg1`);
+    expect(kerjakan(h, "h3").getAttribute("href")).toBe(`${ASAL}/SIPP/`);
+    expect(kerjakan(h, "h3").title).toContain("belum pernah terbuka");
+  });
+
+  it("cadangan lama tetap ada: bot mati, rute belum terpasang, atau portal tak terjangkau -> beranda + nomor disalin, sebabnya disebut", async () => {
+    const kasus: Array<{ ket: string; tautan: Jawab; sebab: RegExp }> = [
+      {
+        ket: "bot mati",
+        tautan: () => ({
+          isi: { ok: true, data: { alamat: "", alasan: "Alamat halaman perkara di SIPP belum dapat disusun. aleta_bot tidak dapat dihubungi." } },
+        }),
+        sebab: /aleta_bot tidak dapat dihubungi/,
+      },
+      { ket: "rute belum ada", tautan: () => ({ status: 404, isi: null }), sebab: /sipp-tautan/ },
+      {
+        ket: "portal tak terjangkau",
+        tautan: () => {
+          throw new Error("Failed to fetch");
+        },
+        sebab: /belum dapat disusun/,
+      },
+    ];
+    for (const k of kasus) {
+      const h = buka({ simpanan: BARU, tautan: k.tautan });
+      await siap(h);
+      const judul = await sampai(() => {
+        const t = String(kerjakan(h, "h3")?.title || "");
+        return t.includes("belum dapat disusun") ? t : "";
+      }, `${k.ket}: sebab tergambar`);
+      expect(judul, k.ket).toMatch(k.sebab);
+      expect(judul, k.ket).toContain("nomornya disalin");
+      expect(kerjakan(h, "h3").getAttribute("href"), k.ket).toBe(`${ASAL}/SIPP/`);
+      kerjakan(h, "h3").click();
+      await sampai(
+        () => String(q(h, ".aleta-cm-kabar")?.textContent || "").includes("389/Pdt.G/2026/PA.Dgl"),
+        `${k.ket}: kabar menyebut nomor`
+      );
+      expect(h.simpanan.tautanPerkaraSipp, k.ket).toBeUndefined();
+    }
+  });
+
+  it("alamat dari server yang bukan pintu masuk perkara SIPP di asal ini tidak dipakai", async () => {
+    for (const alamat of [
+      "http://jahat.example/SIPP/perkara_detil_agama/QUJD",
+      `${ASAL}/SIPP/perkara_hapus/1`,
+      "javascript:alert(1)//perkara_detil/x",
+    ]) {
+      const h = buka({ simpanan: BARU, tautan: () => ({ isi: { ok: true, data: { alamat, alasan: "" } } }) });
+      await siap(h);
+      await sampai(() => String(kerjakan(h, "h3")?.title || "").includes("belum dapat disusun"), alamat);
+      expect(kerjakan(h, "h3").getAttribute("href"), alamat).toBe(`${ASAL}/SIPP/`);
+      expect(h.simpanan.tautanPerkaraSipp, alamat).toBeUndefined();
+    }
+  });
+
+  it("yang alamatnya sudah dikenal tidak ditanyakan; yang gagal tidak ditanyakan ulang tiap penyegaran", async () => {
+    const h = buka({
+      simpanan: {
+        ...BARU,
+        riwayatPerkaraSipp: [{ nomor: "385/Pdt.G/2026/PA.Dgl", url: `${ASAL}/SIPP/perkara_detil_agama/ZW5jMzg1` }],
+      },
+      tautan: () => ({ isi: { ok: true, data: { alamat: "", alasan: "Perkara tidak ditemukan." } } }),
+    });
+    await siap(h);
+    await sampai(() => tautanDiminta(h).length >= 2, "butir lain ditanyakan");
+    await tunggu(30);
+    const pertama = tautanDiminta(h);
+    expect(pertama.some((u) => u.includes("perkaraId=10018")), "385 sudah dikenal").toBe(false);
+    // Hanya butir bertujuan SIPP yang ditanyakan - butir ABT (10020) tidak.
+    expect(pertama.some((u) => u.includes("perkaraId=10020")), "butir ABT").toBe(false);
+    expect(pertama.some((u) => u.includes("perkaraId=10023")), "h3").toBe(true);
+    // Penyegaran lima menit: yang baru gagal tidak diminta lagi.
+    h.jam.find((j) => j.ms === LIMA_MENIT)!.f();
+    await sampai(() => h.minta.length >= 2, "penyegaran kedua");
+    await tunggu(50);
+    expect(tautanDiminta(h)).toEqual(pertama);
+  });
+
+  it("pintu umum perkara_detil/<enc> dari riwayat diganti pintu agama sebelum diberi tab (nomor tab detil_perkara.php lain)", async () => {
+    const h = buka({
+      simpanan: {
+        ...BARU,
+        lipatanChecklistMilestone: { "minggu-ini": true },
+        riwayatPerkaraSipp: [{ nomor: "385/Pdt.G/2026/PA.Dgl", url: `${ASAL}/SIPP/perkara_detil/ZW5jMzg1` }],
+      },
+      tautan: dariServer,
+    });
+    await siap(h);
+    expect(kerjakan(h, "l1").getAttribute("href")).toBe(`${ASAL}/SIPP/perkara_detil_agama/ZW5jMzg1/2#aleta-tab=2`);
+    // Tanpa halaman (m1): pintu masuknya dari server apa adanya, tanpa tab.
+    await sampai(() => /perkara_detil_agama/.test(kerjakan(h, "m1")?.getAttribute("href") || ""), "m1 dari server");
+    expect(kerjakan(h, "m1").getAttribute("href")).toBe(`${ASAL}/SIPP/perkara_detil_agama/${enc("10024")}`);
+  });
+
+  it("saklar mati: tidak ada permintaan alamat ke server", async () => {
+    const h = buka({ simpanan: { ujiTampilan: "baru" }, tautan: dariServer });
+    await tunggu(80);
+    expect(tautanDiminta(h)).toEqual([]);
+  });
+
+  // --------------------------------------------------------------------------
+  // Di halaman detail perkara yang dibuka tombol itu
+  // --------------------------------------------------------------------------
+  const TAB_DETIL =
+    '<div id="usual2"><ul>' +
+    '<li class="tab"><a href="#tabs1" id="tabInfo" class="selected">Data Umum</a></li>' +
+    '<li class="tab"><a class="tabs4 loaded selected" href="#tabs4" id="tabInfo">Jadwal Sidang</a></li>' +
+    '<li class="tab"><a href="#tabs25" id="tabInfo">Akta Cerai</a></li>' +
+    "</ul></div>";
+
+  it("tab tanpa kelas tabsN (Akta Cerai 25) ditekan widget, sekali, lalu penandanya dibuang", async () => {
+    const h = buka({ simpanan: BARU, alamat: `${ASAL}/SIPP/detil_perkara_agama#aleta-tab=25`, html: TAB_DETIL });
+    let tekanan = 0;
+    h.w.document.querySelector('a[href="#tabs25"]').addEventListener("click", () => (tekanan += 1));
+    await sampai(() => tekanan === 1, "tab Akta Cerai ditekan");
+    expect(h.w.location.hash).toBe("");
+    expect(h.w.location.pathname).toBe("/SIPP/detil_perkara_agama");
+    await tunggu(50);
+    expect(tekanan).toBe(1);
+  });
+
+  it("tab yang sudah dibuka SIPP sendiri (segmen ketiga) tidak ditekan lagi", async () => {
+    const h = buka({ simpanan: BARU, alamat: `${ASAL}/SIPP/detil_perkara_agama#aleta-tab=4`, html: TAB_DETIL });
+    let tekanan = 0;
+    h.w.document.querySelector('a[href="#tabs4"]').addEventListener("click", () => (tekanan += 1));
+    await sampai(() => h.w.location.hash === "", "penanda dibuang");
+    await tunggu(30);
+    expect(tekanan).toBe(0);
+  });
+
+  it("tab yang belum ada pada perkara itu disebut, bukan didiamkan", async () => {
+    const h = buka({ simpanan: BARU, alamat: `${ASAL}/SIPP/detil_perkara_agama#aleta-tab=24`, html: TAB_DETIL });
+    const kabar = await sampai(() => {
+      const t = String(q(h, ".aleta-cm-kabar")?.textContent || "");
+      return t.includes("Ikrar Talak") ? t : "";
+    }, "kabar tab tidak ada");
+    expect(kabar).toContain("belum ada pada perkara ini");
+    expect(kabar).toContain("Data Umum");
+  });
+
+  it("saklar mati: halaman detail tidak disentuh, penandanya pun dibiarkan", async () => {
+    const h = buka({ simpanan: { ujiTampilan: "baru" }, alamat: `${ASAL}/SIPP/detil_perkara_agama#aleta-tab=25`, html: TAB_DETIL });
+    let tekanan = 0;
+    h.w.document.querySelector('a[href="#tabs25"]').addEventListener("click", () => (tekanan += 1));
+    await tunggu(80);
+    expect(tekanan).toBe(0);
+    expect(h.w.location.hash).toBe("#aleta-tab=25");
   });
 });
