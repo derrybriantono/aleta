@@ -145,7 +145,7 @@ function Angka({ nilai, label, keterangan }: { nilai: number | string; label: st
 }
 
 export function AletaEcourtPengguna() {
-  const { currentUser } = usePortal();
+  const { currentUser, institutionIdentity } = usePortal();
   const peran = getEffectiveRoleId(currentUser);
   // Pengaturannya - termasuk login e-Court - sengaja TIDAK ditaruh di halaman
   // ini. Halaman ini terbuka untuk seluruh pegawai, dan sandi akun e-Court
@@ -718,6 +718,18 @@ export function AletaEcourtPengguna() {
                 setPerkaraDibuka(nomorPerkara);
                 setMenu("status");
               }}
+              // Tombol hasil mediasi (.rtf) - hanya mediator perkara itu dan
+              // Super Admin; namanya dicocokkan dengan mediator di SIPP.
+              pengguna={
+                currentUser
+                  ? {
+                      nama: currentUser.name,
+                      peran: String(peran || ""),
+                      peranTambahan: currentUser.additionalRoleIds ?? [],
+                      namaPengadilan: institutionIdentity?.courtName ?? "",
+                    }
+                  : null
+              }
             />
           ) : null}
 
