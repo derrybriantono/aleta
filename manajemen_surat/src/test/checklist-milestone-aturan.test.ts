@@ -190,7 +190,18 @@ describe("katalog", () => {
 
   it("tujuan Kerjakan memakai kunci halaman yang disepakati, dan alamat ALETA-nya sungguh ada", () => {
     const abt = ["blangko-putusan", "blangko-penetapan", "blangko-bas", "blangko-relaas", "blangko-akta"];
-    const sipp = ["perkara", "jadwal-sidang", "putusan", "relaas", "akta-cerai", "keuangan", "saksi"];
+    const sipp = [
+      "perkara",
+      "penetapan",
+      "jadwal-sidang",
+      "putusan",
+      "relaas",
+      "akta-cerai",
+      "keuangan",
+      "saksi",
+      "mediasi",
+      "ikrar",
+    ];
     for (const j of KATALOG_CHECKLIST) {
       if (!j.tersedia) continue;
       const k = j.kerjakan;

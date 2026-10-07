@@ -181,7 +181,9 @@ describe("GET /api/aleta-ecourt/checklist", () => {
       perkara: { id: "561", nomor: "561/Pdt.G/2026/PA.Dgl" },
       kelompok: "hari-ini",
       tenggat: "2026-09-10T15:59:59.000Z",
-      kerjakan: { tujuan: "sipp", halaman: "perkara" },
+      // PMH ditetapkan dari tab Penetapan (atau tombol "Penetapan Majelis
+      // Hakim" di baris atas bila tabnya belum ada) - bukan Data Umum.
+      kerjakan: { tujuan: "sipp", halaman: "penetapan" },
     });
   });
 

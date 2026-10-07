@@ -64,14 +64,26 @@ export const LABEL_PERAN: Record<KunciPeran, string> = {
 
 export type HalamanAbt = "blangko-putusan" | "blangko-penetapan" | "blangko-bas" | "blangko-relaas" | "blangko-akta";
 
+/**
+ * Halaman SIPP = tab di halaman perkara SIPP tempat pekerjaannya dikerjakan.
+ * Ekstensi memetakannya ke nomor tab SIPP (NOMOR_TAB_SIPP di
+ * ekstensi-sipp/checklist.js) dan membuka perkara_detil_agama/<enc>/<nomor>:
+ * perkara Data Umum, penetapan 2 (PMH/PPP/PJS/PHS), jadwal-sidang 4,
+ * relaas 4 (Cetak Relas & pelaksanaan relaas ada di tab Jadwal Sidang),
+ * mediasi 6, putusan 10, keuangan 11, saksi 23, ikrar 24, akta-cerai 25.
+ * Pilih halaman menurut PEKERJAANNYA, bukan menurut sumber datanya.
+ */
 export type HalamanSipp =
   | "perkara"
+  | "penetapan"
   | "jadwal-sidang"
   | "putusan"
   | "relaas"
   | "akta-cerai"
   | "keuangan"
-  | "saksi";
+  | "saksi"
+  | "mediasi"
+  | "ikrar";
 
 /**
  * Ke mana butir mengarah. URL ABT dan SIPP dibangun EKSTENSI dari kunci
@@ -189,7 +201,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "Hari titipan itu disiapkan (ditekan pada hari yang sama).",
     selesai: "Titipan berkeadaan 'dikerjakan' (atau dibatalkan/kedaluwarsa - keduanya bukan lagi pekerjaan Anda).",
     selesaiHariIni: "Titipan dikerjakan hari ini.",
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "penetapan" },
     sumber: "aleta_sipp_penunjukan_antrean (penunjukan-antrean.ts); SIPP perkara_hakim_pn; KT05",
     koleksi: ["perkaraTertentu"],
     butuhPejabat: true,
@@ -237,7 +249,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "Hari ke-150 = tanggal daftar + 149 hari + hari mediasi.",
     selesai: "Perkara putus.",
     selesaiHariIni: null,
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "jadwal-sidang" },
     sumber: "SEMA 2/2014; PERMA 1/2016 Pasal 24; durasiBanyakPerkara",
     koleksi: ["berjalan"],
     butuhPejabat: true,
@@ -253,7 +265,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "Penetapan mediator + 30 hari (rumus daftarJadwalMediasi). Perpanjangan 30 hari tidak tercatat di SIPP.",
     selesai: "tgl_laporan_mediator terisi.",
     selesaiHariIni: "Laporan mediator bertanggal hari ini.",
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "mediasi" },
     sumber: "PERMA 1/2016 Pasal 24; SIPP perkara_mediasi, mediator",
     koleksi: ["mediasi"],
     butuhPejabat: true,
@@ -270,7 +282,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
       "(a) Hari BHT - Pasal 70 ayat (3) UU 7/1989: sesudah BHT pengadilan menentukan hari sidang ikrar (diukur rata-rata 2,4 hari). (b) BHT + 180 hari (KT16, batas ALETA yang lebih hati-hati daripada hitungan sejak penetapan sidang ikrar).",
     selesai: "(a) tanggal_penetapan_sidang_ikrar terisi. (b) tgl_ikrar_talak terisi.",
     selesaiHariIni: "Penetapan sidang ikrar atau ikrarnya bertanggal hari ini.",
-    kerjakan: { tujuan: "sipp", halaman: "jadwal-sidang" },
+    kerjakan: { tujuan: "sipp", halaman: "ikrar" },
     sumber: "Pasal 70 UU 7/1989; SIPP perkara_ikrar_talak, perkara_putusan",
     koleksi: ["ikrar"],
     butuhPejabat: true,
@@ -518,7 +530,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "Hari titipan itu disiapkan.",
     selesai: "Titipan tidak lagi 'menunggu'.",
     selesaiHariIni: "Titipan dikerjakan hari ini.",
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "penetapan" },
     sumber: "aleta_sipp_penunjukan_antrean; KT03/KT04",
     koleksi: [],
     butuhPejabat: false,
@@ -625,7 +637,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "Hari pendaftaran (SK 048/2024 Tabel 2 I.2: hari yang sama bernilai 5).",
     selesai: "PMH tercatat.",
     selesaiHariIni: "PMH diinput hari ini.",
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "penetapan" },
     sumber: "SK 048/2024 I.2 penetapanMajelis; SIPP perkara, perkara_hakim_pn; aleta_sipp_penunjukan_antrean",
     koleksi: ["pmh"],
     butuhPejabat: false,
@@ -648,7 +660,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "Tanggal daftar + 149 hari + hari mediasi.",
     selesai: "Perkara putus.",
     selesaiHariIni: null,
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "jadwal-sidang" },
     sumber: "SEMA 2/2014; durasiBanyakPerkara",
     koleksi: ["berjalan"],
     butuhPejabat: false,
@@ -836,7 +848,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "Hari kegagalan itu.",
     selesai: "Ada tulisan berhasil sesudahnya.",
     selesaiHariIni: "Tulisan berhasil susulannya terjadi hari ini.",
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "penetapan" },
     sumber: "aleta_bot_jejak_penetapan",
     koleksi: ["penetapanGagal"],
     butuhPejabat: false,
