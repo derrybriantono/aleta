@@ -93,6 +93,12 @@ export class Dunia {
   pembaruan: { status: string; version?: string } = { status: "no_update" };
   /** Dipanggil tiap chrome.downloads.download - "bunuh" mematikan pekerjanya sesudah unduhan lahir. */
   kaitUnduh: ((relatif: string, pekerja: number) => "bunuh" | "blokir" | undefined) | null = null;
+  /**
+   * Lama jawab tiap permintaan dalam jam MAYA (ms) - untuk mengukur lamanya
+   * putaran seolah ABT sungguh merender. null = seketika (bawaan, seperti
+   * seluruh uji lama).
+   */
+  latensi: ((p: Permintaan) => number) | null = null;
   pelayan: Pelayan;
 
   constructor(pelayan: Pelayan) {
@@ -247,6 +253,8 @@ export function nyalakan(dunia: Dunia) {
       matikan();
       return tidakPernah();
     }
+    const lama = dunia.latensi ? Math.max(0, Number(dunia.latensi(p)) || 0) : 0;
+    if (lama > 0) return new Promise<Jawaban>((selesai) => pasangPewaktu(() => selesai(r), lama, 0));
     return Promise.resolve(r);
   };
 
@@ -385,7 +393,18 @@ export type OpsiAbt = {
    * merah TANPA nomor perkara, disusul meta refresh ke beranda ABT.
    */
   tolakSemua?: () => string | null;
+  /** Halaman hasil "buka" (view tanpa d) TANPA tautan CETAK - jalan lama lewat daftar sidang. */
+  tanpaCetakDiBuka?: boolean;
 };
+
+/** Halaman view ABT (views/abt/view.php): tautan CETAK dengan d = GET d, kosong bila tidak ada. */
+export function halamanView(alamat: string) {
+  const q = kueri(alamat);
+  const d = q.get("d") ?? "";
+  // base_url() ABT hanya JALUR ($root = "/aps_badilag/"), jadi tautannya relatif.
+  const cetak = `/aps_badilag/abt/preview?c=${q.get("c")}&e=&b=${q.get("b")}&a=${q.get("a")}&d=${d}`;
+  return `<table></table><a href="${cetak}"><img src="cetak.png"></a>`;
+}
 
 /** ABT setempat tiruan: beranda, kelompok, cari (303 ke view), view&d, preview, lalu PDF portal. */
 export function abtPalsu(o: OpsiAbt = {}): Pelayan {
@@ -434,15 +453,15 @@ export function abtPalsu(o: OpsiAbt = {}): Pelayan {
         );
       }
       // redirect("abt/main/view?b=".encode($file)."&c=$perkara_id&a=".encode($dir)) - token BARU.
+      // fetch MENGIKUTI pengalihan itu, jadi yang diterima halaman view TANPA d
+      // (view.php: tautan CETAK yang sama, d kosong). tanpaCetakDiBuka meniru
+      // halaman yang tidak memuat tautannya (mis. menunggu validasi hakim).
       const lihat = `${ASAL}/aps_badilag/index.php/abt/main/view?b=V${id}b~n.&c=${id}&a=V${id}a~n.`;
-      return jawaban(200, `<h2>blangko</h2>`, lihat);
+      if (o.tanpaCetakDiBuka) return jawaban(200, `<h2>blangko</h2>`, lihat);
+      return jawaban(200, `<h2>blangko</h2>${halamanView(lihat)}`, lihat);
     }
     if (u.pathname === "/aps_badilag/index.php/abt/main/view") {
-      const q = kueri(p.alamat);
-      const d = q.get("d") ?? "";
-      // base_url() ABT hanya JALUR ($root = "/aps_badilag/"), jadi tautannya relatif.
-      const cetak = `/aps_badilag/abt/preview?c=${q.get("c")}&e=&b=${q.get("b")}&a=${q.get("a")}&d=${d}`;
-      return jawaban(200, `<table></table><a href="${cetak}"><img src="cetak.png"></a>`, p.alamat);
+      return jawaban(200, halamanView(p.alamat), p.alamat);
     }
     if (u.pathname === "/aps_badilag/abt/preview") {
       const q = kueri(p.alamat);

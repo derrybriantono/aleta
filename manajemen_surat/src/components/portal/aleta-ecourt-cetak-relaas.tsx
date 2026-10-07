@@ -484,7 +484,12 @@ type KabarKirim =
 const BATAS_MULAI_MS = 120_000;
 const BATAS_TANYA_MS = 8_000;
 const BATAS_TINDAKAN_MS = 15_000;
-const JEDA_TANYA_MS = 2_000;
+/**
+ * Kemajuan putaran ditanya tiap detik (7 Okt 2026, cetak relaas cepat - dulu
+ * 2 detik). Satu dokumen kini selesai dalam beberapa detik saja, dan tanya
+ * keadaan hanya membaca penyimpanan ekstensi - tidak menyentuh ABT.
+ */
+const JEDA_TANYA_MS = 1_000;
 /**
  * Sesudah relaas-mulai tidak terjawab dalam BATAS_MULAI_MS, dialog MEMANTAU
  * keadaan ekstensi selama ini alih-alih menyuruh menekan Cetak lagi: panen
@@ -694,7 +699,7 @@ export function DialogCetakRelaas({
   const putaranBelumSelesai = Boolean(putaran && !putaran.pekerjaan.selesai);
 
   // Selama putaran belum selesai, atau selama menunggu putaran yang belum
-  // lahir: ditanya tiap ±2 detik.
+  // lahir: ditanya tiap detik (JEDA_TANYA_MS).
   useEffect(() => {
     if (!ekstensi.ada || !(putaranBelumSelesai || memantau)) return;
     const jam = window.setInterval(() => void tanyaKeadaan(), JEDA_TANYA_MS);
@@ -839,7 +844,7 @@ export function DialogCetakRelaas({
           jenis: "menunggu",
           sebab: jawab.batasWaktu
             ? `Ekstensi belum menjawab dalam ${Math.round(BATAS_MULAI_MS / 1000)} detik - kemungkinan masih ` +
-              "membaca blangko dari ABT. Jangan tekan Cetak lagi: dialog menanyakan keadaannya tiap 2 detik " +
+              "membaca blangko dari ABT. Jangan tekan Cetak lagi: dialog menanyakan keadaannya tiap detik " +
               "dan menampilkan putarannya begitu lahir."
             : jawab.sebab || "Ekstensi sedang menyiapkan putaran lain - tunggu sampai putarannya tampil.",
         });
@@ -1632,7 +1637,7 @@ export function PanelPutaran({
       {!pekerjaan.selesai && putaran.perkiraanSisa && ringkas.menunggu > 0 ? (
         <p className="text-xs text-muted-foreground">
           Perkiraan sisa waktu: {lamaWaktu(putaran.perkiraanSisa.rendah)} sampai{" "}
-          {lamaWaktu(putaran.perkiraanSisa.tinggi)}. Antar dokumen ada jeda 2-5 detik supaya server ABT
+          {lamaWaktu(putaran.perkiraanSisa.tinggi)}. Antar dokumen ada jeda 1-2,5 detik supaya server ABT
           tidak terbebani.
           {tungguBerikut > 0 ? ` Dokumen berikutnya sekitar ${Math.ceil(tungguBerikut / 1000)} detik lagi.` : ""}
         </p>

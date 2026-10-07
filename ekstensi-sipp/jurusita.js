@@ -131,7 +131,7 @@ const JURUSITA_KELAS_BOLEH = ["aleta-peran-super", "aleta-peran-admin", "aleta-p
 const JURUSITA_DATA_PERAN_BOLEH = ["super", "admin", "panitera"];
 const JURUSITA_BATAS_MULAI_MS = 60000;
 const JURUSITA_BATAS_PESAN_MS = 15000;
-const JURUSITA_JEDA_PANTAU_MS = 2500;
+const JURUSITA_JEDA_PANTAU_MS = 1000;
 const JURUSITA_NAMA_MAKS = 180;
 
 /**
@@ -308,6 +308,10 @@ async function jurusitaAmbilPetaServer(jenis) {
 async function jurusitaMuatPeta(paksa) {
   if (typeof alatPemetaanBlangko === "function") {
     const hasil = {};
+    // SENGAJA berurutan: alatPemetaanBlangko membaca-lalu-menulis kunci
+    // simpanan yang SAMA untuk kedua jenis - dua panggilan serentak saling
+    // menimpa simpanannya (terukur 7 Okt 2026). Singgahannya satu menit, jadi
+    // panggilan berikutnya tidak menyentuh server.
     for (const jenis of ["relaas", "pbt"]) {
       const h = await alatPemetaanBlangko(jenis, { kunciSimpan: JURUSITA_KUNCI_PETA, paksa: Boolean(paksa) });
       hasil[jenis] = { peta: h.peta || {}, sumber: h.sumber, diubahPada: h.diubahPada || "" };
@@ -320,8 +324,9 @@ async function jurusitaMuatPeta(paksa) {
   const hasil = {};
   const simpanBaru = { ...simpanan };
   let adaBaru = false;
-  for (const jenis of ["relaas", "pbt"]) {
-    const server = await jurusitaAmbilPetaServer(jenis);
+  const dariServer = await Promise.all(["relaas", "pbt"].map((jenis) => jurusitaAmbilPetaServer(jenis)));
+  for (const [i, jenis] of ["relaas", "pbt"].entries()) {
+    const server = dariServer[i];
     if (server) {
       hasil[jenis] = { peta: server.peta, sumber: "server", diubahPada: server.diubahPada };
       simpanBaru[jenis] = { peta: server.peta, diubahPada: server.diubahPada, diambil: Date.now() };
@@ -1046,7 +1051,7 @@ function jurusitaGambarPutaran(kotak, jawab, pantau) {
   return !p.selesai;
 }
 
-/** Satu pemeriksaan per penahanan (tertahan.pada) - pemantau menggambar ulang tiap 2,5 detik. */
+/** Satu pemeriksaan per penahanan (tertahan.pada) - pemantau menggambar ulang tiap detik. */
 let jurusitaCekSesi = { pada: null, janji: null };
 
 /**
@@ -1129,13 +1134,15 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
   bagian.appendChild(isi);
 
   void (async () => {
+    // Rincian sidang dan pemetaan blangko dibaca SERENTAK (7 Okt 2026).
+    const janjiPeta = jurusitaMuatPeta();
     let hasil;
     try {
       hasil = await jurusitaMuatRincian(konteksAwal.nomorPerkara);
     } catch (e) {
       hasil = { sebab: String((e && e.message) || e) };
     }
-    let peta = await jurusitaMuatPeta();
+    let peta = await janjiPeta;
     isi.textContent = "";
     if (!hasil.rincian) {
       isi.appendChild(jurusitaEl("div", "aleta-jurusita-kabar aleta-jurusita-kabar-salah", hasil.sebab));
@@ -1328,8 +1335,8 @@ function jurusitaGambarMassal(bagian, kotakPutaran, pantau) {
     muat.disabled = true;
     hasilKotak.textContent = "";
     hasilKotak.appendChild(jurusitaEl("div", "aleta-jurusita-lembut", "Membaca daftar..."));
-    const { data, sebab } = await jurusitaAmbilDaftarRelaas(tanggal.value);
-    const peta = await jurusitaMuatPeta();
+    // Daftar dan pemetaan dibaca SERENTAK (7 Okt 2026).
+    const [{ data, sebab }, peta] = await Promise.all([jurusitaAmbilDaftarRelaas(tanggal.value), jurusitaMuatPeta()]);
     muat.disabled = false;
     hasilKotak.textContent = "";
     if (!data || !Array.isArray(data.dokumen)) {
@@ -1864,8 +1871,8 @@ function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau, opsiPanel) {
     const ke = (urutanMuat += 1);
     hasil.textContent = "";
     hasil.appendChild(jurusitaEl("div", "aleta-jurusita-lembut", "Membaca daftar..."));
-    const jawab = await jurusitaAmbilDaftarRelaas(tanggal.value);
-    const p = await jurusitaMuatPeta();
+    // Daftar dan pemetaan dibaca SERENTAK (7 Okt 2026).
+    const [jawab, p] = await Promise.all([jurusitaAmbilDaftarRelaas(tanggal.value), jurusitaMuatPeta()]);
     if (ke !== urutanMuat) return; // tanggal berganti selagi membaca
     data = jawab.data && Array.isArray(jawab.data.dokumen) ? jawab.data : null;
     sebabGagal = data ? "" : jawab.sebab || "Daftar relaas tidak terbaca.";

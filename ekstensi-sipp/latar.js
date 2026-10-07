@@ -672,12 +672,19 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
  *   2. GET  <alamat view>&d=<urutan sidang> - DoNav() di daftar sidang, persis
  *      document.URL + '&d=' + urutan. Dilewati bila dokumennya tanpa sidang
  *      (pemberitahuan putusan: blangkonya tidak memuat variabel multi_sidang,
- *      jadi ABT pun tidak menampilkan daftar sidangnya).
+ *      jadi ABT pun tidak menampilkan daftar sidangnya). SEJAK 7 OKT 2026
+ *      dilewati juga bila halaman langkah 1 sudah memuat tautan CETAK untuk
+ *      perkara itu: view.php menulis tautan yang SAMA (c, e, b, a) dengan d
+ *      kosong, dan preview() membaca d hanya dari alamatnya sendiri - halaman
+ *      daftar sidang hanya tampilan, tanpa pemeriksaan hak akses apa pun.
+ *      Satu halaman berat (menyusun seluruh variabel blangko) per dokumen
+ *      hilang dari beban ABT. Halaman yang tidak memuat tautan itu
+ *      (mis. menunggu validasi hakim) tetap menempuh langkah 2.
  *   3. GET  abt/preview?c=&e=&b=&a=&d=  - tombol CETAK, diambil dari halaman
  *      view yang dirender ABT, bentuknya persis.
  *
- * Di antara langkah itu dan di antara dokumen ada jarak pendek untuk BEBAN
- * peladen ABT (lihat bagian 3) - bukan penyamaran. Keputusan 25 September
+ * Di antara dokumen ada jarak pendek untuk BEBAN peladen ABT (lihat bagian 3)
+ * - bukan penyamaran; di antara langkah satu dokumen tidak. Keputusan 25 September
  * 2026: putaran ini tidak dirancang untuk menyembunyikan ALETA dari catatan
  * ABT maupun SIPP.
  *
@@ -1112,6 +1119,29 @@ function relaasCetakDariTinjau(html, asalAbt, perkaraId, d) {
   return mutlak;
 }
 
+/**
+ * Alamat CETAK untuk sidang ke-d DARI HALAMAN LANGKAH 1 (view tanpa d) -
+ * cetak relaas cepat, 7 Okt 2026. view.php menulis tautan CETAK yang sama di
+ * kedua halaman, hanya d-nya yang berbeda ("$cek_sidang" = GET d, kosong di
+ * halaman langkah 1). Tautan itu dipakai hanya bila seasal dengan ABT,
+ * menunjuk perkara yang diminta, e-nya kosong (perkara SIPP, bukan perkara
+ * sementara), dan memuat token a/b; alamatnya disusun ulang dengan
+ * relaasAlamatPratinjau - bentuk yang sudah diuji SAMA PERSIS dengan ekspresi
+ * view.php yang dievaluasi PHP. Selain itu kosong, dan pemanggil menempuh
+ * langkah 2 (DoNav) seperti dulu.
+ */
+function relaasCetakSidangDariTinjau(html, asalAbt, perkaraId, d) {
+  const n = Number(d);
+  if (!Number.isInteger(n) || n <= 0) return "";
+  const tautan = relaasCetakDariTinjau(html, asalAbt, perkaraId, 0);
+  if (!tautan) return "";
+  if ((relaasParameter(tautan, "e") || "") !== "") return "";
+  const a = relaasParameter(tautan, "a");
+  const b = relaasParameter(tautan, "b");
+  if (!a || !b) return "";
+  return relaasAlamatPratinjau(asalAbt, { a, b }, perkaraId, n);
+}
+
 /* ─── 3. Jarak antar permintaan ke ABT ───────────────────────────────────── */
 
 /**
@@ -1124,31 +1154,60 @@ function relaasCetakDariTinjau(html, asalAbt, perkaraId, d) {
  * akan memborong peladen itu dari petugas lain yang sedang bekerja. Karena
  * itu:
  *
- *   ANTAR DOKUMEN        acak 2-5 detik (RELAAS_JEDA_MIN_MS..MAKS_MS), tanpa
- *                        jeda panjang.
- *   DI DALAM SATU        0,5-1,5 detik di antara buka (cari) -> daftar sidang
- *   DOKUMEN, DAN SAAT    (view) -> CETAK, dan di antara halaman kelompok
- *   MEMANEN BLANGKO      ketika token blangko dipanen.
+ *   ANTAR DOKUMEN        acak 1-2,5 detik (RELAAS_JEDA_MIN_MS..MAKS_MS), tanpa
+ *                        jeda panjang, dihitung sejak JAWABAN ABT TERAKHIR
+ *                        dokumen sebelumnya (bukan sejak unduhannya selesai
+ *                        diikuti) - jadi ABT benar-benar diam selama itu.
+ *   DI DALAM SATU        TANPA jeda (7 Okt 2026). Permintaannya berurutan -
+ *   DOKUMEN              yang berikut baru dikirim sesudah jawaban yang
+ *                        sebelumnya utuh diterima - jadi jeda di sini tidak
+ *                        mengurangi beban sedikit pun, hanya menambah waktu
+ *                        tunggu juru sita.
+ *   ANTAR HALAMAN        0,25-0,75 detik ketika token blangko dipanen (jarang:
+ *   KELOMPOK (PANEN)     tokennya disimpan tujuh hari).
+ *
+ * CETAK RELAAS CEPAT (7 Okt 2026, permintaan pengguna "buat cetak relaas
+ * lebih prosesnya cepat"). Dulu 2-5 detik antar dokumen dan 0,5-1,5 detik
+ * antar langkah, dengan TIGA halaman berat per dokumen (buka -> daftar
+ * sidang -> CETAK; ketiganya menyusun variabel blangko di PHP 5.6). Kini dua
+ * halaman berat per dokumen (daftar sidang dilewati bila halaman "buka" sudah
+ * memuat tautan CETAK-nya - lihat relaasAmbilRtf), jadi jeda antar dokumen
+ * boleh diturunkan ke 1-2,5 detik tanpa menambah halaman berat per menit
+ * secara berarti: ABT tetap melayani SATU permintaan pada satu waktu dan
+ * selalu diam sedikitnya satu detik di antara dua dokumen. Tidak dikerjakan
+ * paralel: sesi ABT (CodeIgniter 3, sess_driver files) mengunci berkas
+ * sesinya per permintaan, jadi dua permintaan serentak dengan kuki yang sama
+ * tetap dilayani bergantian - dan pembaruan id sesi (sess_time_to_update 300)
+ * di tengah dua permintaan serentak dapat mengeluarkan petugas dari ABT.
  *
  * Acaknya hanya supaya beberapa juru sita yang mencetak bersamaan tidak
  * mengetuk peladen pada detik yang sama. Keputusan 25 September 2026: jarak
- * ini TIDAK meniru pola kerja manusia dan tidak dimaksudkan menyembunyikan
- * ALETA dari catatan ABT atau SIPP - profil lama (rata-rata ±49 detik dengan
- * jeda panjang sesekali) sudah dibuang.
+ * ini TIDAK meniru pola kerja manusia - profil lama (rata-rata ±49 detik
+ * dengan jeda panjang sesekali) sudah dibuang; 5 Oktober 2026 pengguna memilih
+ * "tanpa jeda di ABT" untuk isian ABT, sebab ABT tidak menulis jejak audit
+ * untuk membaca blangko (view/preview tidak menulis satu baris pun).
  *
  * `acak` disuntikkan supaya uji dapat memakai deret tetap.
  */
-const RELAAS_JEDA_MIN_MS = 2000;
-const RELAAS_JEDA_MAKS_MS = 5000;
-const RELAAS_JEDA_LANGKAH_MIN_MS = 500;
-const RELAAS_JEDA_LANGKAH_MAKS_MS = 1500;
+const RELAAS_JEDA_MIN_MS = 1000;
+const RELAAS_JEDA_MAKS_MS = 2500;
+const RELAAS_JEDA_LANGKAH_MIN_MS = 250;
+const RELAAS_JEDA_LANGKAH_MAKS_MS = 750;
 /** Rata-rata jeda antar dokumen - sebarannya seragam, jadi titik tengahnya. */
 const RELAAS_JEDA_RATA_MS = Math.round((RELAAS_JEDA_MIN_MS + RELAAS_JEDA_MAKS_MS) / 2);
 /**
- * Kira-kira lamanya satu dokumen dikerjakan: tiga permintaan ABT, dua jarak
- * langkah di dalamnya (rata-rata 1 detik), unduhan RTF.
+ * Kira-kira lamanya satu dokumen dikerjakan: dua permintaan berat ABT (buka
+ * dan CETAK), tanpa jeda di antaranya, lalu unduhan RTF.
  */
-const RELAAS_KERJA_RATA_MS = 6000;
+const RELAAS_KERJA_RATA_MS = 3500;
+/**
+ * Blangko yang dicari di SELURUH kelompok dan tidak ada diingat sebentar,
+ * supaya tiap tombol Cetak tidak membuka ulang sampai empat puluh halaman
+ * kelompok untuk jawaban yang sama. Pendek dengan sengaja: blangko yang baru
+ * ditambahkan admin ke ABT terbaca lagi paling lambat sesudah ini (atau
+ * seketika lewat panen paksa).
+ */
+const RELAAS_UMUR_HILANG_MS = 10 * 60 * 1000;
 
 /** Sumber acak peramban bila ada; Math.random hanya cadangan. */
 function relaasAcak() {
@@ -1167,14 +1226,14 @@ function relaasJedaSeragam(acak, min, maks) {
   return Math.round(min + u * (maks - min));
 }
 
-/** Jeda antar dokumen: 2-5 detik, untuk beban peladen ABT. */
+/** Jeda antar dokumen: 1-2,5 detik, untuk beban peladen ABT. */
 function relaasJedaDokumen(acak) {
   return relaasJedaSeragam(acak, RELAAS_JEDA_MIN_MS, RELAAS_JEDA_MAKS_MS);
 }
 
 /**
- * Jarak di antara langkah satu dokumen (cari -> view -> CETAK) dan di antara
- * halaman kelompok saat memanen blangko: 0,5-1,5 detik.
+ * Jarak di antara halaman kelompok saat memanen blangko: 0,25-0,75 detik.
+ * Langkah di dalam satu dokumen tidak lagi berjeda (7 Okt 2026).
  */
 function relaasJedaLangkah(acak) {
   return relaasJedaSeragam(acak, RELAAS_JEDA_LANGKAH_MIN_MS, RELAAS_JEDA_LANGKAH_MAKS_MS);
@@ -1584,21 +1643,38 @@ function tutupDenganHenti(pekerjaan) {
 
 /* ─── 6. Token blangko dari halaman ABT ──────────────────────────────────── */
 
-async function bacaTokenTersimpan(dasarAbt) {
+/**
+ * Simpanan token satu alamat ABT: { token, hilang }. `hilang` = blangko yang
+ * dicari di seluruh kelompok dan TIDAK ada - { nama: { pada, dibaca } },
+ * berumur RELAAS_UMUR_HILANG_MS (7 Okt 2026). Di storage.local, bukan ingatan
+ * pekerja: pekerja MV3 mati tiap ±30 detik menganggur.
+ */
+async function bacaSimpananToken(dasarAbt) {
   const isi = await chrome.storage.local.get(KUNCI_TOKEN_RELAAS);
   const s = isi && isi[KUNCI_TOKEN_RELAAS];
-  if (!s || s.asal !== dasarAbt || Date.now() - Number(s.pada || 0) > RELAAS_UMUR_TOKEN_MS) return {};
-  return { ...(s.token || {}) };
+  if (!s || s.asal !== dasarAbt || Date.now() - Number(s.pada || 0) > RELAAS_UMUR_TOKEN_MS) return { token: {}, hilang: {} };
+  const hilang = {};
+  for (const [n, h] of Object.entries((s.hilang && typeof s.hilang === "object" && s.hilang) || {})) {
+    const pada = Number(h && h.pada) || 0;
+    if (Date.now() - pada >= 0 && Date.now() - pada < RELAAS_UMUR_HILANG_MS) hilang[n] = { pada, dibaca: Number(h.dibaca) || 0 };
+  }
+  return { token: { ...(s.token || {}) }, hilang };
 }
 
-async function simpanTokenTersimpan(dasarAbt, token) {
-  await chrome.storage.local.set({ [KUNCI_TOKEN_RELAAS]: { asal: dasarAbt, pada: Date.now(), token } });
+async function bacaTokenTersimpan(dasarAbt) {
+  return (await bacaSimpananToken(dasarAbt)).token;
+}
+
+/** `hilang` tidak disebut = yang tersimpan dipertahankan. */
+async function simpanTokenTersimpan(dasarAbt, token, hilang) {
+  const tetap = hilang === undefined ? (await bacaSimpananToken(dasarAbt)).hilang : hilang;
+  await chrome.storage.local.set({ [KUNCI_TOKEN_RELAAS]: { asal: dasarAbt, pada: Date.now(), token, hilang: tetap || {} } });
 }
 
 async function lupakanTokenRelaas(dasarAbt, nama) {
-  const token = await bacaTokenTersimpan(dasarAbt);
-  delete token[nama];
-  await simpanTokenTersimpan(dasarAbt, token);
+  const s = await bacaSimpananToken(dasarAbt);
+  delete s.token[nama];
+  await simpanTokenTersimpan(dasarAbt, s.token, s.hilang);
 }
 
 /** Satu halaman ABT, dengan sesi peramban (kuki ikut). */
@@ -1693,8 +1769,15 @@ async function panenTokenRelaasInti(asalAbt, diminta, opsi) {
   const dasar = relaasDasarAbt(asalAbt);
   if (!dasar) return { ok: false, sebab: "alamat ABT tidak diketahui" };
   const nama = [...new Set((diminta || []).map(String).filter(Boolean))];
-  const peta = await bacaTokenTersimpan(dasar);
-  if (opsi && opsi.paksa) for (const n of nama) delete peta[n];
+  const simpanan = await bacaSimpananToken(dasar);
+  const peta = simpanan.token;
+  const hilangLama = simpanan.hilang;
+  if (opsi && opsi.paksa) {
+    for (const n of nama) {
+      delete peta[n];
+      delete hilangLama[n];
+    }
+  }
   // Token ikrar tersimpan dari kelompok bukan-ikrar yang BELUM pernah diuji
   // terhadap kelompok ikrar (simpanan sebelum 6 Okt malam) dipanen ulang
   // SEKALI. Yang ditandai ikrarCadangan sudah melewati pemeriksaan itu -
@@ -1707,6 +1790,18 @@ async function panenTokenRelaasInti(asalAbt, diminta, opsi) {
   const pilih = () => Object.fromEntries(nama.filter((n) => peta[n]).map((n) => [n, peta[n]]));
   if (kurang.length === 0) {
     return { ok: true, token: pilih(), hilang: [], kelompokDibaca: 0, kelompokGagal: [], dariSimpanan: true };
+  }
+  // Seluruh yang kurang baru saja dicari di SEMUA kelompok dan tidak ada
+  // (7 Okt 2026): jawabannya sama, jadi kelompok ABT tidak dibuka ulang.
+  if (kurang.every((n) => hilangLama[n])) {
+    return {
+      ok: true,
+      token: pilih(),
+      hilang: kurang,
+      kelompokDibaca: Math.max(...kurang.map((n) => hilangLama[n].dibaca)),
+      kelompokGagal: [],
+      dariSimpanan: true,
+    };
   }
 
   const beranda = await relaasBacaHalaman(`${dasar}/main/beranda`);
@@ -1761,7 +1856,13 @@ async function panenTokenRelaasInti(asalAbt, diminta, opsi) {
   }
   for (const [n, t] of Object.entries(cadanganIkrar)) if (!peta[n]) peta[n] = { ...t, ikrarCadangan: true };
   kurang = nama.filter((n) => !peta[n]);
-  await simpanTokenTersimpan(dasar, peta);
+  // Yang tidak ada diingat HANYA bila tidak satu kelompok pun gagal dibaca -
+  // "tidak ditemukan" karena halaman menjawab 500 bukan jawaban yang boleh
+  // diulang dari simpanan.
+  const hilangBaru = { ...hilangLama };
+  for (const n of nama) if (peta[n]) delete hilangBaru[n];
+  if (gagal.length === 0) for (const n of kurang) hilangBaru[n] = { pada: Date.now(), dibaca };
+  await simpanTokenTersimpan(dasar, peta, hilangBaru);
   return { ok: true, token: pilih(), hilang: kurang, kelompokDibaca: dibaca, kelompokGagal: gagal };
 }
 
@@ -1892,10 +1993,13 @@ async function relaasAmbilRtf(dasar, berkas, perkaraId, d, opsi) {
   }
   const alamatTinjau = String(tinjau.r.url);
   let halamanCetak = tinjau;
+  // Tanpa jeda di antara langkah satu dokumen (7 Okt 2026) - lihat bagian 3.
+  // 2a. Pintas: halaman langkah 1 sudah memuat tautan CETAK perkara ini; d
+  //     ditulis sendiri, halaman daftar sidang tidak dibuka.
+  const alamatPintas = butir.d > 0 ? relaasCetakSidangDariTinjau(tinjau.teks, dasar, butir.perkaraId, butir.d) : "";
 
   // 2. DoNav: memilih baris sidang di daftar sidang.
-  if (butir.d > 0) {
-    await tidurRelaas(relaasJedaLangkah());
+  if (butir.d > 0 && !alamatPintas) {
     try {
       halamanCetak = await relaasBacaHalaman(`${alamatTinjau}&d=${butir.d}`);
     } catch (galat) {
@@ -1912,8 +2016,8 @@ async function relaasAmbilRtf(dasar, berkas, perkaraId, d, opsi) {
   }
 
   // 3. CETAK - tautan yang dirender ABT sendiri, bila terbaca.
-  await tidurRelaas(relaasJedaLangkah());
   const alamat =
+    alamatPintas ||
     relaasCetakDariTinjau(halamanCetak.teks, dasar, butir.perkaraId, butir.d) ||
     relaasAlamatPratinjau(
       dasar,
@@ -1937,7 +2041,9 @@ async function relaasAmbilRtf(dasar, berkas, perkaraId, d, opsi) {
     return { ok: false, bolehUlang: true, sebab: `ABT tidak terjangkau saat CETAK: ${relaasPesan(galat)}` };
   }
 
-  return { ok: true, rtf };
+  // abtSelesaiPada: saat jawaban ABT terakhir diterima - jeda ke dokumen
+  // berikutnya dihitung dari sini (lihat jalankanRelaas).
+  return { ok: true, rtf, abtSelesaiPada: Date.now() };
 }
 
 /**
@@ -1964,14 +2070,15 @@ async function kerjakanSatuRelaas(pekerjaan, butir, catat) {
   const ambil = await relaasAmbilRtf(dasar, butir.berkas, butir.perkaraId, butir.d, {});
   if (!ambil.ok) return ambil;
   const rtf = ambil.rtf;
+  const abtSelesaiPada = ambil.abtSelesaiPada;
 
   // RTF SAJA - tidak ada permintaan PDF ke ALETA (6 Okt 2026). RTF dari ABT
   // disimpan apa adanya, dicetak dari Word.
   const jalur = relaasJalurBerkas(pekerjaan, butir);
   const u = await terbitkanUnduhan(`data:application/rtf;base64,${relaasBase64(rtf)}`, `${jalur}.rtf`);
-  if (!u.ok) return { ok: false, sebab: `unduhan RTF ditolak peramban: ${u.pesan}` };
+  if (!u.ok) return { ok: false, sebab: `unduhan RTF ditolak peramban: ${u.pesan}`, abtSelesaiPada };
   await catat("rtf", `${butir.nama}.rtf`);
-  return { ok: true };
+  return { ok: true, abtSelesaiPada };
 }
 
 /* ─── 8. Putaran ─────────────────────────────────────────────────────────── */
@@ -2085,7 +2192,11 @@ async function jalankanRelaas() {
         butir.selesaiPada = Date.now();
       }
       butir.hasil = relaasHasilButir(butir);
-      pekerjaan.waktuBerikut = Date.now() + relaasJedaDokumen();
+      // Jeda dihitung sejak jawaban ABT terakhir dokumen ini (7 Okt 2026):
+      // menunggu konfirmasi unduhan peramban tidak membebani ABT, jadi waktu
+      // itu sudah termasuk jedanya. Tidak pernah sebelum jawaban itu.
+      const dasarJeda = Math.min(Date.now(), Number(hasil.abtSelesaiPada) || Date.now());
+      pekerjaan.waktuBerikut = dasarJeda + relaasJedaDokumen();
       await simpanRelaas(pekerjaan);
     }
   } catch (galat) {

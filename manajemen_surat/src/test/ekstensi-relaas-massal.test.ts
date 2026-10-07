@@ -161,49 +161,63 @@ describe("(a) putaran enam dokumen bertahan dari pekerja yang mati TIGA kali", (
 });
 
 // ===========================================================================
-// (b) JARAK RAMAH PELADEN ABT - 2-5 DETIK, TANPA JEDA PANJANG
+// (b) JARAK RAMAH PELADEN ABT - 1-2,5 DETIK ANTAR DOKUMEN, TANPA JEDA PANJANG
 // ===========================================================================
 //
 // Keputusan orkestrator 25 September 2026: jeda antar dokumen TIDAK lagi
 // meniru pola kerja manusia (dulu rata-rata ±49 dtk dengan jeda panjang
-// sesekali). Sasarannya diganti, tidak dilonggarkan: SELALU 2-5 dtk antar
-// dokumen, tidak ada jeda panjang, dan langkah di dalam satu dokumen 0,5-1,5
-// dtk - untuk beban peladen ABT (PHP 5.6), bukan penyamaran.
+// sesekali) - untuk beban peladen ABT (PHP 5.6), bukan penyamaran.
+//
+// DISESUAIKAN 7 Oktober 2026 (permintaan pengguna "buat cetak relaas lebih
+// prosesnya cepat"), bukan dilonggarkan tanpa alasan:
+//   - antar dokumen 2-5 dtk -> 1-2,5 dtk, dihitung sejak JAWABAN ABT
+//     TERAKHIR dokumen sebelumnya: halaman berat per dokumen turun dari tiga
+//     menjadi dua (daftar sidang dilewati bila halaman "buka" sudah memuat
+//     tautan CETAK - cetak-relaas-cepat.test.ts membuktikan alamat CETAK dan
+//     berkasnya identik), jadi beban per menit tidak naik berarti dan ABT
+//     tetap diam sedikitnya satu detik di antara dua dokumen;
+//   - langkah DI DALAM satu dokumen tanpa jeda: permintaannya berurutan
+//     (yang berikut baru dikirim sesudah jawaban sebelumnya diterima), jadi
+//     jeda di sana tidak mengurangi beban, hanya menambah tunggu;
+//   - antar halaman kelompok saat memanen blangko 0,5-1,5 -> 0,25-0,75 dtk
+//     (panen jarang: token disimpan tujuh hari).
+// Uji ini TETAP menjaga batasnya: tidak pernah di bawah 1 dtk, tidak ada jeda
+// panjang, tersebar.
 
 describe("(b) jarak ramah server ABT", () => {
   const dunia = new Dunia(abtPalsu());
   const k = nyalakan(dunia).konteks;
 
-  it("4000 jeda antar dokumen: SELALU di dalam 2-5 dtk, tidak ada jeda panjang, tersebar di seluruh rentang", () => {
+  it("4000 jeda antar dokumen: SELALU di dalam 1-2,5 dtk, tidak ada jeda panjang, tersebar di seluruh rentang", () => {
     const x = Array.from({ length: 4000 }, () => k.relaasJedaDokumen() as number);
-    expect(Math.min(...x)).toBeGreaterThanOrEqual(2000);
-    expect(Math.max(...x)).toBeLessThanOrEqual(5000);
+    expect(Math.min(...x)).toBeGreaterThanOrEqual(1000);
+    expect(Math.max(...x)).toBeLessThanOrEqual(2500);
     expect(x.every((v) => Number.isInteger(v))).toBe(true);
-    // Tersebar - bukan satu angka tetap: keenam lajur setengah detik terisi.
-    const lajur = new Set(x.filter((v) => v < 5000).map((v) => Math.floor((v - 2000) / 500)));
+    // Tersebar - bukan satu angka tetap: keenam lajur seperempat detik terisi.
+    const lajur = new Set(x.filter((v) => v < 2500).map((v) => Math.floor((v - 1000) / 250)));
     expect([...lajur].sort()).toEqual([0, 1, 2, 3, 4, 5]);
     // Rata-rata yang DIUMUMKAN ke halaman (perkiraan waktu) sesuai sampelnya.
     // const tingkat atas bukan properti global - dibaca lewat konteksnya.
     const diumumkan = vm.runInContext("RELAAS_JEDA_RATA_MS", k) as number;
-    expect(diumumkan).toBe(3500);
-    expect(Math.abs(simpangan(x).rata - diumumkan)).toBeLessThan(100);
+    expect(diumumkan).toBe(1750);
+    expect(Math.abs(simpangan(x).rata - diumumkan)).toBeLessThan(60);
   });
 
   it("ujung rentangnya tepat, dengan sumber acak yang tetap", () => {
-    expect(k.relaasJedaDokumen(() => 0)).toBe(2000);
-    expect(k.relaasJedaDokumen(() => 0.5)).toBe(3500);
-    expect(k.relaasJedaDokumen(() => 0.9999999)).toBe(5000);
-    expect(k.relaasJedaLangkah(() => 0)).toBe(500);
-    expect(k.relaasJedaLangkah(() => 0.9999999)).toBe(1500);
+    expect(k.relaasJedaDokumen(() => 0)).toBe(1000);
+    expect(k.relaasJedaDokumen(() => 0.5)).toBe(1750);
+    expect(k.relaasJedaDokumen(() => 0.9999999)).toBe(2500);
+    expect(k.relaasJedaLangkah(() => 0)).toBe(250);
+    expect(k.relaasJedaLangkah(() => 0.9999999)).toBe(750);
   });
 
-  it("langkah di dalam satu dokumen dan antar halaman panen: 0,5-1,5 dtk", () => {
+  it("antar halaman panen: 0,25-0,75 dtk", () => {
     const x = Array.from({ length: 2000 }, () => k.relaasJedaLangkah() as number);
-    expect(Math.min(...x)).toBeGreaterThanOrEqual(500);
-    expect(Math.max(...x)).toBeLessThanOrEqual(1500);
+    expect(Math.min(...x)).toBeGreaterThanOrEqual(250);
+    expect(Math.max(...x)).toBeLessThanOrEqual(750);
   });
 
-  it("dalam putaran sungguhan: jarak antar CETAK = jeda 2-5 dtk + langkah, tidak ada yang panjang", async () => {
+  it("dalam putaran sungguhan: jarak antar CETAK = jeda 1-2,5 dtk, tanpa jeda langkah, tidak ada yang panjang", async () => {
     const d = new Dunia(abtPalsu());
     const pekerja = nyalakan(d);
     await minta(d, pekerja, pesanMulai(ENAM));
@@ -211,27 +225,26 @@ describe("(b) jarak ramah server ABT", () => {
     const cetak = d.permintaan.filter((p) => p.alamat.includes("/abt/preview?")).map((p) => p.pada);
     expect(cetak).toHaveLength(6);
     const jarak = cetak.slice(1).map((t, i) => t - cetak[i]);
-    // Jeda antar dokumen (2-5 dtk) + satu atau dua langkah (0,5-1,5 dtk) - ABT
-    // palsu menjawab seketika, jadi hanya jeda yang mengisi jaraknya.
-    expect(Math.min(...jarak)).toBeGreaterThanOrEqual(2000 + 500);
-    expect(Math.max(...jarak)).toBeLessThanOrEqual(5000 + 2 * 1500);
+    // ABT palsu menjawab seketika, jadi hanya jeda antar dokumen yang mengisi
+    // jaraknya - langkah di dalam satu dokumen tidak berjeda.
+    expect(Math.min(...jarak)).toBeGreaterThanOrEqual(1000);
+    expect(Math.max(...jarak)).toBeLessThanOrEqual(2500);
     // Sesudah dokumen terakhir tidak ada jeda yang ditunggu.
-    expect(d.putaran().selesaiPada - cetak[cetak.length - 1]).toBeLessThan(2000);
+    expect(d.putaran().selesaiPada - cetak[cetak.length - 1]).toBeLessThan(1000);
 
     const panen = d.permintaan.filter((p) => p.alamat.includes("/abt/main/beranda")).map((p) => p.pada);
     expect(panen.length).toBeGreaterThanOrEqual(2);
-    expect(panen[1] - panen[0]).toBeGreaterThanOrEqual(500);
-    expect(panen[1] - panen[0]).toBeLessThanOrEqual(1500);
+    expect(panen[1] - panen[0]).toBeGreaterThanOrEqual(250);
+    expect(panen[1] - panen[0]).toBeLessThanOrEqual(750);
 
-    // Tiap dokumen menempuh jalan tombol ABT: buka (POST cari) -> [sidang] -> CETAK.
+    // Tiap dokumen menempuh tombol ABT: buka (POST cari - HAK AKSES diperiksa
+    // ABT di sini) -> CETAK. Daftar sidang dilewati: halaman "buka" sudah
+    // memuat tautan CETAK-nya (jalan lewat daftar sidang tetap ada bila tidak -
+    // lihat cetak-relaas-cepat.test.ts).
     const langkah = d.permintaan
       .filter((p) => p.alamat.includes(`c=${ENAM[1].perkaraId}`) || p.badan.includes(`c=${ENAM[1].perkaraId}`))
       .map((p) => `${p.metode} ${new URL(p.alamat).pathname}${new URL(p.alamat).searchParams.get("d") ? " d" : ""}`);
-    expect(langkah).toEqual([
-      "POST /aps_badilag/abt/main/cari",
-      "GET /aps_badilag/index.php/abt/main/view d",
-      "GET /aps_badilag/abt/preview d",
-    ]);
+    expect(langkah).toEqual(["POST /aps_badilag/abt/main/cari", "GET /aps_badilag/abt/preview d"]);
   });
 });
 
