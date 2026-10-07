@@ -32,7 +32,7 @@ describe("Smart Majelis di luar SK -> giliran majelis SK", () => {
 
 describe("susunan di luar SK tetap mendapat hari sidang", () => {
   it("hari sidangnya dipinjam dari kode ketuanya", () => {
-    expect(usul).toContain('const dariKetua = pmh.majelisKode === "" && kodeKetua !== "" && hariSidang[kodeKetua] !== undefined;');
+    expect(usul).toContain('const dariKetua = acuan.majelisKode === "" && kodeKetua !== "" && hariSidang[kodeKetua] !== undefined;');
   });
 
   it("kodenya TETAP kosong - yang dipinjam hanya harinya", () => {

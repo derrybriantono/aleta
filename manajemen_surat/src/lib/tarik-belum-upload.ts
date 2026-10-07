@@ -126,7 +126,7 @@ export async function tarikBelumUpload({
 }: {
   nomorPerkara: string;
   tanggal: string;
-  /** apiPath("/api/aleta-ecourt/sidang/verifikasi-ecourt/tarik") */
+  /** Alamat rute /api/aleta-ecourt/sidang/verifikasi-ecourt/tarik (dibungkus apiPath oleh pemanggil). */
   alamat: string;
   ambil?: Ambil;
   tunggu?: (ms: number) => Promise<unknown>;

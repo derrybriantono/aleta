@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.188.0",
+    dirilis: "2026-10-07T18:00:00+08:00",
+    judul: "7 Okt sore: tunda/putusan utuh atas nama PP, tarik e-Court dari \"belum upload\", hasil mediasi .rtf, penetapan tahap sisa, cetak relaas 2x lebih cepat",
+    butir: [
+      "Jadwal Sidang: tunda dan putusan ditulis utuh dalam satu transaksi (tidak lagi tertinggal setengah jadi), memakai jam masuk ruang dan kehadiran dari antrian sidang, dan tercatat di SIPP atas nama panitera sidang perkara itu.",
+      "Jadwal Sidang: penanda \"belum upload\" dapat ditekan untuk menarik ulang e-Court khusus perkara itu dan memperbarui penandanya.",
+      "Jadwal Mediasi: tombol \"Buat hasil mediasi (.rtf)\" khusus mediator - pilih hasil dan butir kesepakatan (mut'ah, nafkah iddah, nafkah anak, hak asuh, harta bersama, dll.), unduh laporan + kesepakatan perdamaian dalam Word.",
+      "Penetapan per perkara dan massal: tahap yang sudah dikerjakan manual dilewati, ALETA mengerjakan sisanya berurutan PMH-PPP-PJS-PHS; satu perkara gagal tidak menghentikan yang lain.",
+      "Cetak relaas & PBT kira-kira dua kali lebih cepat (Jadwal Sidang, panel SIPP, panel ABT) dengan hasil yang sama.",
+    ],
+  },
+  {
     versi: "1.187.1",
     dirilis: "2026-10-07T14:00:00+08:00",
     judul: "7 Okt siang: 8503 satu kesatuan di ABT, milestone ke halaman SIPP yang tepat, putusan otomatis tidak macet, anonimisasi menyamarkan nama",

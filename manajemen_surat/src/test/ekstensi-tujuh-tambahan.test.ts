@@ -72,8 +72,11 @@ describe("penetapan massal", () => {
   it("yang sudah ditetapkan dilewati, bukan dihitung gagal", () => {
     const badan = potongFungsi(konten(), "bagianPenetapanMassal");
     expect(badan).toContain("_sudah_ada$");
-    // Yang dilewati hanya perkara yang TIDAK SATU LANGKAH PUN dikerjakan.
-    expect(badan).toContain("gagalSungguhan.length === 0 && dikerjakan === 0");
+    // Yang dilewati hanya perkara yang TIDAK SATU LANGKAH PUN dikerjakan
+    // (7 Okt 2026: tahap yang sudah ada tidak lagi dikirim - perkara lengkap
+    // dilewati sebelum menulis, dan kegagalan sungguhan lebih dulu dicatat).
+    expect(badan).toContain("if (dikerjakan.length === 0) {");
+    expect(badan).toContain("sudah lengkap di SIPP - dilewati");
   });
 
   it("rantai yang TANGGUNG dihitung berhasil, bukan dilewati", () => {
@@ -82,8 +85,10 @@ describe("penetapan massal", () => {
     // satu langkah yang sudah ada membuat seluruh perkaranya dihitung
     // dilewati, padahal tiga langkah lainnya benar-benar masuk ke SIPP.
     const badan = potongFungsi(konten(), "bagianPenetapanMassal");
-    expect(badan).toContain("gagalSungguhan.length === 0 && sudahAda.length > 0");
-    expect(badan).toContain("sudahAda.length} sudah ada");
+    // 7 Okt 2026: perkara tanggung dihitung berhasil dan disebut tahap yang
+    // dikerjakan beserta tahap yang sudah ada sebelumnya.
+    expect(badan).toContain("berhasil += 1;");
+    expect(badan).toContain("sebutLangkah(sudahAda)} sudah ada)");
   });
 
   it("yang keempat penetapannya lengkap tidak ditawarkan sama sekali", () => {

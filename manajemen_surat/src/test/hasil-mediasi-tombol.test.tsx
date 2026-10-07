@@ -138,7 +138,11 @@ function pasangFetch() {
 
 async function gambar(pengguna: { nama: string; peran: string } | null) {
   pasangFetch();
-  render(createElement(AletaEcourtMediasi, { pengguna: pengguna ? { ...pengguna, namaPengadilan: "Pengadilan Agama Donggala" } : null }));
+  render(
+    <AletaEcourtMediasi
+      pengguna={pengguna ? { ...pengguna, namaPengadilan: "Pengadilan Agama Donggala" } : null}
+    />
+  );
   await waitFor(() => expect(screen.getByText(DATA[0].nomorPerkara)).toBeTruthy(), { timeout: 20_000 });
 }
 

@@ -237,7 +237,7 @@ describe("contoh pengguna: mut'ah, pihak Tergugat, Rp1.000.000", () => {
 describe("empat hasil", () => {
   it("berhasil seluruhnya (cerai): rukun kembali, gugatan dicabut, Pasal 27 ayat (6)", () => {
     const bahan = bahanCeraiGugat();
-    let draf = { ...drafAwal(bahan), hasil: "berhasil-seluruhnya" as const };
+    let draf: DrafHasilMediasi = { ...drafAwal(bahan), hasil: "berhasil-seluruhnya" };
     draf = aktifkan(draf, "rukun-kembali", { teks: "Tergugat tidak akan mengulangi perbuatannya" });
     const pasal = susunPasal(draf, bahan);
     expect(pasal[0].isi[0]).toContain("hidup rukun kembali sebagai suami istri");
@@ -255,7 +255,7 @@ describe("empat hasil", () => {
 
   it("berhasil seluruhnya (harta bersama): bawaannya Akta Perdamaian, Pasal 27 ayat (4)", () => {
     const bahan = bahanCeraiGugat({ jenisPerkara: "Harta Bersama", jenisPerkaraId: 348, anak: [] });
-    let draf = { ...drafAwal(bahan), hasil: "berhasil-seluruhnya" as const };
+    let draf: DrafHasilMediasi = { ...drafAwal(bahan), hasil: "berhasil-seluruhnya" };
     draf = aktifkan(draf, "harta-bersama", { objek: "Sebidang tanah SHM No. 12 di Desa Tibo\nSatu unit sepeda motor" });
     const pasal = susunPasal(draf, bahan);
     expect(pasal[0].isi).toEqual([
@@ -318,7 +318,7 @@ describe("perceraian - butir lain", () => {
         { pihakKe: 2, nama: "Rina Contoh binti Umar", kelamin: "Perempuan" },
       ],
     });
-    let draf = { ...drafAwal(bahan), hasil: "berhasil-sebagian" as const };
+    let draf: DrafHasilMediasi = { ...drafAwal(bahan), hasil: "berhasil-sebagian" };
     expect(draf.dokumen.sebutanSatu).toBe("Pemohon");
     expect(draf.butir["nafkah-iddah"].pihak).toBe("satu");
     draf = aktifkan(draf, "nafkah-iddah", { nominal: 1_800_000 });
@@ -338,7 +338,7 @@ describe("perceraian - butir lain", () => {
 
   it("hak asuh + nafkah anak: nama anak dari SIPP, kenaikan 10% per tahun, sampai 21 tahun", () => {
     const bahan = bahanCeraiGugat();
-    let draf = { ...drafAwal(bahan), hasil: "berhasil-sebagian" as const };
+    let draf: DrafHasilMediasi = { ...drafAwal(bahan), hasil: "berhasil-sebagian" };
     draf = aktifkan(draf, "hadhanah", { teks: "setiap akhir pekan" });
     draf = aktifkan(draf, "nafkah-anak", { nominal: 750_000 });
     const pasal = susunPasal(draf, bahan);
@@ -352,7 +352,7 @@ describe("perceraian - butir lain", () => {
 
   it("nominal kosong tercetak titik-titik dan disebut di daftar kekurangan", () => {
     const bahan = bahanCeraiGugat();
-    let draf = { ...drafAwal(bahan), hasil: "berhasil-sebagian" as const };
+    let draf: DrafHasilMediasi = { ...drafAwal(bahan), hasil: "berhasil-sebagian" };
     draf = aktifkan(draf, "nafkah-iddah", {});
     expect(susunPasal(draf, bahan).find((p) => p.asal === "nafkah-iddah")?.isi[0]).toContain("Rp.................. (");
     expect(kekuranganDraf(draf).some((k) => k.startsWith("Nafkah iddah: nominal belum diisi"))).toBe(true);
