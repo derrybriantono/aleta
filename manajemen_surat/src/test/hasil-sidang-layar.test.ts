@@ -322,8 +322,10 @@ describe("kehadiran pihak - angkanya milik SIPP, bukan urutan daftar", () => {
   it("cadangan layanan 4, bukan 1", () => {
     // Cadangan 1 menuliskan "semua hadir" pada sidang yang mungkin tidak
     // dihadiri siapa pun - pernyataan yang terbaca sebagai fakta persidangan.
-    expect(kodeLayanan).toContain(
-      "dihadiri_oleh: Number(minta.dihadiriOleh) || Number(keadaan.dihadiriOleh) || 4,"
+    // 7 Okt 2026: kehadiran dari antrian sidang (1/2/3, tidak pernah 4 karena
+    // kosong-kosong = tidak diketahui) disisipkan sebelum yang tercatat.
+    expect(kodeLayanan.replace(/\s+/g, " ")).toContain(
+      "dihadiri_oleh: Number(minta.dihadiriOleh) || (antrian && antrian.dihadiriOleh) || Number(keadaan.dihadiriOleh) || 4,"
     );
   });
 

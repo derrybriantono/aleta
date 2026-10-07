@@ -193,6 +193,8 @@ import {
   type DataVerifikasi,
   type Penanda,
 } from "@/lib/penanda-verifikasi-ecourt";
+import type { KeadaanTarik } from "@/lib/tarik-belum-upload";
+import { useTarikBelumUpload } from "@/components/portal/use-tarik-belum-upload";
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 
 /**
@@ -2367,16 +2369,62 @@ function UmurPerkara({ durasi, telahIkrar = false }: { durasi: SidangBaris["dura
  * tiga keadaan; keterangannya (kapan terakhir diperiksa, oleh siapa
  * diverifikasi) di title. Lihat @/lib/penanda-verifikasi-ecourt.
  */
-export function LencanaVerifikasiMajelis({ penanda }: { penanda: Penanda | null }) {
+export function LencanaVerifikasiMajelis({
+  penanda,
+  tarikan,
+  onTarik,
+}: {
+  penanda: Penanda | null;
+  /** 7 Okt 2026: keadaan tarik ulang e-Court perkara ini (lihat @/lib/tarik-belum-upload). */
+  tarikan?: KeadaanTarik;
+  /** Ada = penanda "belum upload" dapat ditekan (saklar tarik-belum-upload). */
+  onTarik?: () => void;
+}) {
   if (!penanda) return null;
+  const kelas = cn("whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold", penanda.kelas);
+  const berjalan = tarikan?.tahap === "berjalan";
+  // Hanya "belum upload" yang dapat ditekan: keadaan lain tidak menunggu pihak,
+  // jadi menarik ulang tidak menjawab apa pun yang ditanyakan penandanya.
+  const lencana =
+    penanda.keadaan === "belum-upload" && onTarik ? (
+      <button
+        type="button"
+        data-verifikasi-majelis={penanda.keadaan}
+        data-tarik-belum-upload=""
+        className={cn(kelas, "cursor-pointer underline decoration-dotted underline-offset-2 hover:opacity-90 disabled:cursor-wait disabled:opacity-70")}
+        title={`${penanda.keterangan} Tekan untuk memeriksa e-Court sekarang - hanya perkara ini.`}
+        disabled={berjalan}
+        aria-busy={berjalan}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTarik();
+        }}
+      >
+        {berjalan ? "memeriksa..." : penanda.label}
+      </button>
+    ) : (
+      <span data-verifikasi-majelis={penanda.keadaan} className={kelas} title={penanda.keterangan}>
+        {penanda.label}
+      </span>
+    );
   return (
-    <span
-      data-verifikasi-majelis={penanda.keadaan}
-      className={cn("whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold", penanda.kelas)}
-      title={penanda.keterangan}
-    >
-      {penanda.label}
-    </span>
+    <>
+      {lencana}
+      {tarikan ? (
+        <span
+          data-kemajuan-tarik={tarikan.tahap}
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "max-w-[16rem] truncate text-[10px] leading-5",
+            tarikan.tahap === "masalah" ? "text-red-700 dark:text-red-300" : "text-muted-foreground"
+          )}
+          title={tarikan.pesan}
+        >
+          {tarikan.pesan}
+        </span>
+      ) : null}
+    </>
   );
 }
 
@@ -5491,6 +5539,9 @@ export function AletaEcourtSidang({
   // perkara per putaran, berhenti bila semua sudah diverifikasi) - bukan
   // tarikan e-Court saat halaman dimuat. Disegarkan bersama jadwalnya.
   const [verifikasi, setVerifikasi] = useState<DataVerifikasi>(DATA_VERIFIKASI_KOSONG);
+  // 7 Okt 2026: penanda "belum upload" ditekan -> tarik ulang e-Court HANYA
+  // perkara itu; hasilnya menimpa keadaan barisnya saja (tanpa muat ulang).
+  const tarikBelumUpload = useTarikBelumUpload(setVerifikasi);
   const adaElitigasiHariIni = useMemo(
     () => sedangHariIni && sidang.some((b) => b.lewatEcourt && /\/Pdt\.G(\.S)?\//i.test(b.nomorPerkara)),
     [sedangHariIni, sidang]
@@ -7400,7 +7451,15 @@ export function AletaEcourtSidang({
                             <PenandaPanggilan panggilan={baris.panggilan} />
                             {/* Butir 30: verifikasi majelis e-Litigasi hari ini. */}
                             {tampil(tampilan, "verifikasi-majelis") ? (
-                              <LencanaVerifikasiMajelis penanda={penandaVerifikasi(baris, verifikasi, hariIni())} />
+                              <LencanaVerifikasiMajelis
+                                penanda={penandaVerifikasi(baris, verifikasi, hariIni())}
+                                tarikan={tarikBelumUpload.keadaanUntuk(baris.nomorPerkara)}
+                                onTarik={
+                                  tampil(tampilan, "tarik-belum-upload")
+                                    ? () => void tarikBelumUpload.tarik(baris)
+                                    : undefined
+                                }
+                              />
                             ) : null}
                             {/* Butir 21 (6 Okt 2026): Court Calendar tidak sinkron - merah.
                                 Saklarnya WAJIB (merah = menuntut tindakan), jadi

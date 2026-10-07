@@ -36,6 +36,8 @@ const AKAR = path.resolve(process.cwd(), "..");
 const baca = (jalur: string) => readFileSync(path.join(AKAR, jalur), "utf8").replace(/\r\n/g, "\n");
 
 const gerbang = baca("aleta_bot/routes/internalGatewayRoutes.js");
+// Alur tombol tunda/putus dipindah dari gerbang ke sini (7 Okt 2026, kasus 273).
+const alur = baca("aleta_bot/services/sidangHasilAlur.js");
 const klien = baca("manajemen_surat/src/server/modules/aleta-bot/whatsapp-gateway-client.ts");
 const rute = baca("manajemen_surat/src/app/api/aleta-ecourt/sidang-tunda/route.ts");
 // Satu layar untuk kedua hasil sidang. Dahulu dua berkas - `sidang-tunda.tsx`
@@ -47,7 +49,7 @@ const pengguna = baca("manajemen_surat/src/components/portal/aleta-ecourt-penggu
 
 describe("kering sebagai bawaan di tiap lapis", () => {
   it("gerbang: kering kecuali disebut tegas sebaliknya", () => {
-    expect(gerbang).toContain("const kering = badan.kering !== false;");
+    expect(alur).toContain("const kering = badan.kering !== false;");
   });
 
   it("rute portal: kering kecuali disebut tegas sebaliknya", () => {
@@ -56,7 +58,7 @@ describe("kering sebagai bawaan di tiap lapis", () => {
 
   it("layar: tombol tulis baru terbuka sesudah rencananya dibaca", () => {
     expect(layar).toContain("const rencanaKering = hasil?.ok === true && hasil.kering === true;");
-    expect(layar).toContain("disabled={!rencanaKering || sibuk || sudahTertulis}");
+    expect(layar).toContain("disabled={!rencanaKering || sibuk || sudahTertulis || atasNama?.ok === false}");
   });
 
   it("layar tidak pernah mengirim kering:false tanpa tombol yang terkunci", () => {
@@ -100,20 +102,25 @@ describe("audit trail memakai nama petugas, bukan nama ALETA", () => {
     expect(layanan).toContain("JOIN v_users d ON d.panitera_id = c.panitera_id");
   });
 
-  it("penundaan memakai panitera perkaranya, bukan nama yang dikirim", () => {
-    expect(layanan).toContain("const dariPerkara = await akunPerkara(keadaan.perkaraId);");
-    expect(layanan).toContain("dariPerkara.panitera || (await akunSipp(minta.olehUsername))");
+  it("penundaan memakai panitera perkaranya, bukan nama yang dikirim - dan TANPA cadangan", () => {
+    // Keputusan pengguna 7 Okt 2026: penginput di SIPP = PP perkara itu, siapa
+    // pun yang menekan. PP yang tidak tercatat / ganda / tanpa akun DITOLAK,
+    // tidak jatuh diam-diam ke username yang dikirim pemanggil.
+    expect(layanan).toContain("const pp = await paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang);");
+    expect(layanan).not.toContain("akunSipp(minta.olehUsername)");
   });
 
   it("rute TIDAK lagi menolak permintaan tanpa username", () => {
     expect(rute).not.toContain("Akun SIPP yang menuliskannya wajib disebut");
   });
 
-  it("operator portal tetap tercatat, dan username hanya diteruskan sebagai cadangan", () => {
-    // Dua pertanyaan yang berbeda: siapa yang namanya tercatat di SIPP, dan
-    // siapa yang menekan tombolnya di portal.
+  it("operator portal (penekan + akun SIPP miliknya) tercatat di jejak ALETA; username tidak lagi diteruskan", () => {
+    // Dua pertanyaan yang berbeda: siapa yang namanya tercatat di SIPP (PP),
+    // dan siapa yang menekan tombolnya di portal (jejak ALETA).
     expect(rute).toContain('operator: actorUserId || "portal"');
-    expect(rute).toContain('olehUsername: String(badan.olehUsername || ""),');
+    expect(rute).toContain("operatorNama: String(aktor.name || aktor.email || \"\"),");
+    expect(rute).toContain("operatorAkunSipp:");
+    expect(rute).not.toContain("olehUsername: String(badan.olehUsername");
   });
 
   it("layar tidak menanyakan akun SIPP sama sekali", () => {
@@ -126,27 +133,27 @@ describe("audit trail memakai nama petugas, bukan nama ALETA", () => {
   it("percobaan yang DITOLAK ikut tercatat di jejak ALETA", () => {
     // sys_audittrail tidak menyimpan percobaan yang gagal - padahal justru itu
     // yang dicari ketika panitera sidang bertanya kenapa penundaannya tidak jadi.
-    const potongan = gerbang.slice(gerbang.indexOf('router.post("/sidang/tunda"'));
-    expect(potongan).toContain('aksi: "tunda"');
-    expect(potongan).toContain("berhasil: false,");
+    expect(gerbang).toContain('sidangHasilAlur.jalankanHasilSidang("tunda"');
+    expect(alur).toContain('const aksi = jalan === "tunda" ? "tunda" : "putus";');
+    expect(alur).toContain("berhasil: false,");
   });
 });
 
 describe("antrian digerakkan sesudahnya, dan gagalnya tidak membatalkan penundaan", () => {
   it("antrian hanya disentuh bila penundaannya berhasil", () => {
-    const potongan = gerbang.slice(gerbang.indexOf('router.post("/sidang/tunda"'));
-    expect(potongan).toContain("if (hasil.ok) {");
-    expect(potongan).toContain("sidangHasilService.setelAntrian({");
+    // Alurnya di sidangHasilAlur.js sejak 7 Okt 2026.
+    expect(alur).toContain("if (hasil.ok) {");
+    expect(alur).toContain("antrian = await layanan.setelAntrian({");
   });
 
   it("status antrian yang disetel adalah SELESAI, bukan angka telanjang", () => {
-    expect(gerbang).toContain("keadaan: sidangHasilService.ANTRIAN_SELESAI");
+    expect(alur).toContain("keadaan: layanan.ANTRIAN_SELESAI");
   });
 
   it("gagalnya antrian tidak mengubah kode balasan penundaan", () => {
-    const potongan = gerbang.slice(gerbang.indexOf('router.post("/sidang/tunda"'));
+    const potongan = alur;
     // Kode balasan ditentukan hasil penundaannya saja.
-    expect(potongan).toContain("res.status(hasil.ok ? 200 : 409)");
+    expect(potongan).toContain("status: hasil.ok ? 200 : 409");
     expect(potongan).not.toMatch(/antrian\.ok\s*\?\s*200/);
   });
 

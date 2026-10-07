@@ -42,6 +42,19 @@ const JEDA_BAWAAN_MS = 15 * 60 * 1000;
 
 const POLA_GUGATAN = /\/Pdt\.G(\.S)?\//i;
 
+/**
+ * Tarikan satu perkara dari penanda "belum upload" (7 Okt 2026): jeda minimal
+ * per perkara sesudah selesai, dan batas waktu satu tarikan. Jeda tidak dapat
+ * di bawah 60 dtk walau env-nya disetel lebih kecil - e-Court milik MA.
+ */
+const JEDA_MIN_TARIK_PERKARA_MS = 60 * 1000;
+const BATAS_TARIK_PERKARA_MS = 5 * 60 * 1000;
+
+function jedaTarikBawaan() {
+  const n = Number(process.env.ALETA_ECOURT_TARIK_PERKARA_JEDA_MS);
+  return Number.isFinite(n) && n > 0 ? n : JEDA_MIN_TARIK_PERKARA_MS;
+}
+
 function bersih(nilai) {
   return String(nilai === null || nilai === undefined ? "" : nilai).trim();
 }
@@ -144,6 +157,30 @@ function buatLayanan(deps = {}) {
         tanpaUnduh: true,
         sumber: "verifikasi",
       }));
+  // Tarikan SATU perkara dari penanda "belum upload" (7 Okt 2026): jembatan
+  // yang sama, TANPA --tanpa-unduh (berkas baru ikut diunduh ke arsip yang
+  // di-mount), dengan batas waktu pendek - ada orang yang menunggunya.
+  const tarikPerkara =
+    deps.tarikPerkara ||
+    ((nomorPerkara) =>
+      require("./ecourtSchedulerService").jalankanSatuPutaran({
+        nomorPerkara,
+        maksPerkara: 0,
+        sumber: "jadwal-belum-upload",
+        batasMs: BATAS_TARIK_PERKARA_MS,
+      }));
+  // Penarikan lain (berkala, menyeluruh, dari PuTTY) yang sedang berjalan.
+  const sibuk =
+    deps.sibuk ||
+    (() => {
+      const s = require("./ecourtSchedulerService").getStatus();
+      if (s.sedangJalan) {
+        return { sibuk: true, keterangan: [s.sumber, s.perkaraDiminta].filter(Boolean).join(", ") };
+      }
+      if (s.adaPenarikanLain) return { sibuk: true, keterangan: "dari server" };
+      return { sibuk: false, keterangan: "" };
+    });
+  const jedaMs = Math.max(JEDA_MIN_TARIK_PERKARA_MS, Number(deps.jedaTarikMs) || jedaTarikBawaan());
   const akunSiap = deps.akunSiap || (() => require("./ecourtAkunService").pilihAkunSiap().ok === true);
   // Hanya bila penjadwal e-Court DINYALAKAN admin (bawaannya mati: menarik
   // dari sistem Mahkamah Agung tanpa diminta tidak pantas menyala sendiri
@@ -375,7 +412,258 @@ function buatLayanan(deps = {}) {
     return { ...penarik, berhasil: Object.fromEntries(penarik.berhasil), dicoba: Object.fromEntries(penarik.dicoba) };
   }
 
-  return { keadaanHari, putaran, status, perkaraElitigasi, dataTersimpan };
+  // ==========================================================================
+  // TARIK SEKARANG - SATU PERKARA, DARI PENANDA "BELUM UPLOAD" (7 Okt 2026)
+  // ==========================================================================
+  //
+  // Penanda "belum upload" di Jadwal Sidang dapat ditekan: ALETA menarik ulang
+  // e-Court HANYA untuk perkara itu - daftar dokumen e-Litigasi dan berkas baru
+  // yang belum ada di arsip (jembatan yang sama, --perkara, TANPA --tanpa-unduh;
+  // berkas yang sudah ada dilewati jembatan sendiri). Hasilnya ditulis ke tabel
+  // dan folder arsip yang sama dengan penarikan berkala.
+  //
+  // Penjagaan terhadap banjir ke e-Court:
+  //   - SATU tarikan per perkara pada satu waktu: penekanan kedua (orang yang
+  //     sama atau orang lain) bergabung ke tarikan yang sedang berjalan;
+  //   - JEDA per perkara sesudah selesai (bawaan 60 dtk, tidak dapat di bawah
+  //     60 dtk) - dalam jeda itu hasil terakhir yang dijawab;
+  //   - penarikan lain (berkala, menyeluruh, PuTTY) sedang berjalan -> ditolak
+  //     dengan sebab, bukan diantrekan diam-diam;
+  //   - jeda manusiawi antar halaman tetap milik jembatan, tidak dipercepat.
+
+  /** nomor dinormalkan -> tarikan terakhir (berjalan atau sudah selesai). */
+  const tarikan = new Map();
+
+  /** Potret dokumen + berkas satu perkara di arsip ALETA - pembanding sebelum/sesudah. */
+  async function potretPerkara(nomorNormal) {
+    const dok = await kueriBot(
+      `SELECT document_key AS documentKey, judul_dokumen AS judulDokumen, peran_pengunggah AS peranPengunggah,
+              diunggah_pada AS diunggahPada, status_verifikasi AS statusVerifikasi, terakhir_terlihat AS terakhirTerlihat
+         FROM aleta_bot_ecourt_documents
+        WHERE nomor_perkara = ?`,
+      [nomorNormal]
+    );
+    let berkas = [];
+    try {
+      berkas = await kueriBot(
+        `SELECT document_key AS documentKey, COUNT(*) AS jumlah
+           FROM aleta_bot_ecourt_files
+          WHERE nomor_perkara = ? AND dihapus_retensi IS NULL
+          GROUP BY document_key`,
+        [nomorNormal]
+      );
+    } catch {
+      berkas = [];
+    }
+    const jumlahBerkas = new Map();
+    for (const b of Array.isArray(berkas) ? berkas : []) jumlahBerkas.set(bersih(b.documentKey), Number(b.jumlah) || 0);
+    return { dokumen: Array.isArray(dok) ? dok : [], jumlahBerkas };
+  }
+
+  function ringkasTarikan(t) {
+    if (!t) return null;
+    const { _janji, ...isi } = t;
+    return { ...isi };
+  }
+
+  /**
+   * Memulai (atau bergabung ke) tarikan satu perkara. TIDAK menunggu selesai -
+   * jembatan e-Court butuh 1-3 menit (daftar disapu lebih dulu); portal
+   * menanyakan hasilnya lewat statusTarikan().
+   */
+  async function tarikSekarang({ nomorPerkara = "", tanggal = "", olehSiapa = "" } = {}) {
+    const nomor = cleanText(nomorPerkara);
+    const k = normalizeCaseNumber(nomor);
+    if (!k) return { ok: false, alasan: "nomor_perkara_kosong", pesan: "Nomor perkara kosong." };
+    const kini = sekarang();
+    const hari = bersih(tanggal).slice(0, 10) || tanggalLokal(kini);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(hari)) return { ok: false, alasan: "tanggal_tidak_sah", pesan: "Tanggal sidang tidak sah." };
+
+    // 1. Sedang berjalan -> bergabung, bukan tarikan kedua.
+    const lama = tarikan.get(k);
+    if (lama && lama.status === "berjalan") return { ok: true, bergabung: true, tarikan: ringkasTarikan(lama) };
+
+    // 2. Jeda per perkara sesudah tarikan terakhir selesai.
+    if (lama && lama.selesaiMs) {
+      const sisa = jedaMs - (kini.getTime() - lama.selesaiMs);
+      if (sisa > 0) {
+        return {
+          ok: true,
+          jeda: true,
+          sisaDetik: Math.ceil(sisa / 1000),
+          tarikan: ringkasTarikan(lama),
+        };
+      }
+    }
+
+    // Tempat dipesan SEKARANG, sebelum await pertama: dua penekanan yang
+    // datang hampir bersamaan (dua pengguna) tidak boleh sama-sama lolos
+    // pemeriksaan 1 lalu memulai dua tarikan. Yang kedua bergabung ke ini.
+    const t = {
+      id: `${k}@${kini.getTime()}`,
+      nomorPerkara: nomor,
+      tanggal: hari,
+      status: "berjalan",
+      mulai: waktuTeks(kini),
+      mulaiMs: kini.getTime(),
+      selesai: "",
+      selesaiMs: 0,
+      olehSiapa: bersih(olehSiapa).slice(0, 120),
+      dokumenBaru: [],
+      berkasBaru: 0,
+      pesan: "Memeriksa e-Court...",
+      perkara: null,
+    };
+    tarikan.set(k, t);
+
+    /** Ditolak sebelum menarik apa pun - tanpa jeda, tetap terbaca oleh yang bergabung. */
+    const tolak = (alasan, pesan) => {
+      t.status = "ditolak";
+      t.alasan = alasan;
+      t.pesan = pesan;
+      t.selesai = waktuTeks(sekarang());
+      t.selesaiMs = 0;
+      return { ok: false, alasan, pesan, tarikan: ringkasTarikan(t) };
+    };
+
+    // 3. Hanya perkara e-Litigasi yang bersidang pada tanggal itu - tombolnya
+    //    hidup di penanda yang sama, dan bot tidak menjadi penarik serba-guna.
+    let target = null;
+    try {
+      const daftar = await perkaraElitigasi(hari);
+      target = daftar.find((p) => normalizeCaseNumber(p.nomorPerkara) === k) || null;
+    } catch (e) {
+      return tolak("sipp_tidak_terbaca", `Jadwal SIPP tidak terbaca: ${String((e && e.message) || e).slice(0, 160)}`);
+    }
+    if (!target) {
+      return tolak(
+        "bukan_elitigasi_hari_itu",
+        "Perkara ini tidak terbaca sebagai perkara e-Litigasi yang bersidang pada tanggal itu."
+      );
+    }
+    t.nomorPerkara = target.nomorPerkara;
+
+    // 4. Penarikan lain sedang berjalan - ditolak dengan sebab.
+    const lain = sibuk();
+    if (lain && lain.sibuk) {
+      return tolak(
+        "penarikan_lain_berjalan",
+        `Penarikan e-Court lain sedang berjalan${lain.keterangan ? ` (${lain.keterangan})` : ""} - coba lagi sebentar lagi.`
+      );
+    }
+
+    // 5. Tanpa akun bersesi tidak ada yang dapat ditarik.
+    if (!akunSiap()) {
+      penarik.tersambung = false;
+      penarik.alasanTakTersambung = "tidak ada akun penarik e-Court yang sesinya siap";
+      return tolak(
+        "akun_tidak_siap",
+        "Tidak ada akun e-Court yang sesinya siap - sesi e-Court habis atau belum masuk. Minta admin masuk ulang di menu Integrasi e-Court."
+      );
+    }
+
+    const sebelum = await potretPerkara(k).catch(() => ({ dokumen: [], jumlahBerkas: new Map() }));
+    penarik.dicoba.set(k, kini.getTime());
+    penarik.jumlahTarik += 1;
+
+    t._janji = (async () => {
+      const hasil =
+        (await Promise.resolve()
+          .then(() => tarikPerkara(target.nomorPerkara))
+          .catch((e) => ({ kode: -1, catatan: String((e && e.message) || e) }))) || {};
+      const akhir = sekarang();
+      t.selesai = waktuTeks(akhir);
+      t.selesaiMs = akhir.getTime();
+      if (hasil.dilewati) {
+        // Kalah balapan dengan penarikan lain yang mulai sesudah pemeriksaan
+        // di atas. Jedanya tidak dikenakan - tidak ada yang ditarik.
+        t.status = "sibuk";
+        t.selesaiMs = 0;
+        t.pesan = "Penarikan e-Court lain sedang berjalan - coba lagi sebentar lagi.";
+        return;
+      }
+      if (hasil.kode === 2) {
+        penarik.tersambung = false;
+        penarik.alasanTakTersambung = "sesi e-Court habis";
+        t.status = "sesi-habis";
+        t.pesan = "Sesi e-Court habis - minta admin masuk ulang di menu Integrasi e-Court, lalu tekan lagi.";
+        return;
+      }
+      if (hasil.kode !== 0) {
+        penarik.tersambung = false;
+        penarik.alasanTakTersambung = bersih(hasil.catatan) || "penarikan gagal";
+        t.status = "gagal";
+        t.pesan = `Penarikan e-Court gagal: ${bersih(hasil.catatan) || "tanpa keterangan"}`;
+        return;
+      }
+      penarik.berhasil.set(k, akhir.getTime());
+      penarik.tersambung = true;
+      penarik.alasanTakTersambung = "";
+      // Hari ini sudah ada tarikan; penarik berkala tidak boleh berhenti
+      // diam-diam memakai daftar lama - biar ia menimbang ulang.
+      penarik.berhentiUntuk = "";
+
+      const sesudah = await potretPerkara(k).catch(() => ({ dokumen: [], jumlahBerkas: new Map() }));
+      const kunciLama = new Set(sebelum.dokumen.map((d) => bersih(d.documentKey)));
+      t.dokumenBaru = sesudah.dokumen
+        .filter((d) => !kunciLama.has(bersih(d.documentKey)))
+        .map((d) => ({
+          judul: cleanText(d.judulDokumen) || "(tanpa judul)",
+          peran: cleanText(d.peranPengunggah),
+          diunggahPada: waktuTeks(d.diunggahPada),
+        }));
+      let berkasBaru = 0;
+      for (const [kunci, n] of sesudah.jumlahBerkas) berkasBaru += Math.max(0, n - (sebelum.jumlahBerkas.get(kunci) || 0));
+      t.berkasBaru = berkasBaru;
+
+      // Keadaan baris itu dihitung ulang dengan aturan yang SAMA dengan
+      // keadaanHari - portal menimpanya ke barisnya tanpa memuat ulang tabel.
+      const ulang = await keadaanHari(hari).catch(() => null);
+      t.perkara = (ulang && ulang.ok && ulang.perkara && ulang.perkara[target.nomorPerkara]) || null;
+      t.status = "selesai";
+      const jam = t.selesai.slice(11, 16).replace(":", ".");
+      if (t.dokumenBaru.length > 0) {
+        t.pesan = `${t.dokumenBaru.length} dokumen baru: ${t.dokumenBaru.map((d) => d.judul).join(", ")}`;
+      } else if (t.perkara && t.perkara.keadaan === "belum-upload") {
+        t.pesan = `Masih belum diunggah pihak (diperiksa ${jam})`;
+      } else {
+        t.pesan = `Tidak ada dokumen baru (diperiksa ${jam})`;
+      }
+    })().catch((e) => {
+      t.status = "gagal";
+      t.selesai = waktuTeks(sekarang());
+      t.selesaiMs = sekarang().getTime();
+      t.pesan = `Penarikan e-Court gagal: ${String((e && e.message) || e).slice(0, 200)}`;
+    });
+
+    return { ok: true, dimulai: true, tarikan: ringkasTarikan(t) };
+  }
+
+  /** Keadaan tarikan terakhir satu perkara (berjalan / selesai), null bila belum pernah. */
+  function statusTarikan(nomorPerkara = "") {
+    const k = normalizeCaseNumber(cleanText(nomorPerkara));
+    const t = k ? tarikan.get(k) : null;
+    if (!t) return { ok: true, ada: false, tarikan: null };
+    const sisa = t.selesaiMs ? jedaMs - (sekarang().getTime() - t.selesaiMs) : 0;
+    return { ok: true, ada: true, tarikan: ringkasTarikan(t), sisaJedaDetik: sisa > 0 ? Math.ceil(sisa / 1000) : 0 };
+  }
+
+  /** Untuk uji: menunggu tarikan satu perkara selesai. */
+  async function tungguTarikan(nomorPerkara = "") {
+    const t = tarikan.get(normalizeCaseNumber(cleanText(nomorPerkara)));
+    if (t && t._janji) await t._janji;
+  }
+
+  return {
+    keadaanHari,
+    putaran,
+    status,
+    perkaraElitigasi,
+    dataTersimpan,
+    tarikSekarang,
+    statusTarikan,
+    tungguTarikan,
+  };
 }
 
 let bawaan = null;
@@ -415,6 +703,8 @@ function hentikan() {
 
 module.exports = {
   JEDA_BAWAAN_MS,
+  JEDA_MIN_TARIK_PERKARA_MS,
+  BATAS_TARIK_PERKARA_MS,
   buatLayanan,
   keadaanPerkara,
   agendaPerluUnggah,
@@ -425,4 +715,6 @@ module.exports = {
   keadaanHari: (tanggal) => layanan().keadaanHari(tanggal),
   putaran: () => layanan().putaran(),
   status: () => layanan().status(),
+  tarikSekarang: (isi) => layanan().tarikSekarang(isi),
+  statusTarikan: (nomorPerkara) => layanan().statusTarikan(nomorPerkara),
 };

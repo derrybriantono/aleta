@@ -34,6 +34,12 @@
  *   GET  /kasir/cari?nomor        cari perkara menurut nomor (hanya SELECT)
  *   POST /kasir                   tambah baris jurnal ke SIPP atas akun SIPP
  *                                 petugas (kering bawaan) - kasirJurnalService
+ *   POST /belum-upload/tarik      tarik ulang e-Court SATU perkara dari penanda
+ *                                 "belum upload" (7 Okt 2026) - tidak menulis
+ *                                 ke SIPP; daftar dokumen + berkas baru ke arsip
+ *                                 ALETA. Tidak menunggu selesai.
+ *   GET  /belum-upload/tarik?nomorPerkara  keadaan tarikan itu (ditanya portal
+ *                                 berkala sampai selesai)
  */
 
 const crypto = require("crypto");
@@ -529,6 +535,33 @@ router.post("/kasir", wajibToken, async (req, res) => {
       ditolak: rencana.ditolak,
       dilewati: rencana.dilewati,
     });
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+// ============================================================================
+// 7 Okt 2026: penanda "belum upload" dapat ditekan - tarik ulang e-Court HANYA
+// untuk perkara itu. Kunci ganda, jeda per perkara, dan penolakan bila ada
+// penarikan lain dijaga di ecourtVerifikasiHarianService.tarikSekarang.
+// ============================================================================
+router.post("/belum-upload/tarik", wajibToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await require("../services/ecourtVerifikasiHarianService").tarikSekarang({
+      nomorPerkara: String(badan.nomorPerkara || ""),
+      tanggal: String(badan.tanggal || "").slice(0, 10),
+      olehSiapa: String(badan.operator || "").slice(0, 120),
+    });
+    res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.get("/belum-upload/tarik", wajibToken, async (req, res) => {
+  try {
+    res.json(require("../services/ecourtVerifikasiHarianService").statusTarikan(String(req.query.nomorPerkara || "")));
   } catch (galat) {
     galat500(res, galat);
   }

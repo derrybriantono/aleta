@@ -252,6 +252,10 @@ function jalankanSatuPutaran({
   // (ecourtVerifikasiHarianService, butir 30, 5 Okt 2026).
   tanpaUnduh = false,
   sumber = "jadwal",
+  // Batas waktu putaran ini sendiri (ms). Bawaannya BATAS_PUTARAN_MS (2 jam);
+  // tarikan satu perkara dari penanda "belum upload" Jadwal Sidang (7 Okt
+  // 2026) memakai batas yang jauh lebih pendek - ada orang yang menunggunya.
+  batasMs = null,
 } = {}) {
   return new Promise((selesai) => {
     if (keadaan.sedangJalan) {
@@ -334,10 +338,12 @@ function jalankanSatuPutaran({
 
     // Dimatikan di penanganan close, apa pun sebab keluarnya.
     let dipaksaBerhenti = false;
+    const batasPutaran =
+      Number.isFinite(Number(batasMs)) && Number(batasMs) > 0 ? Math.min(Number(batasMs), BATAS_PUTARAN_MS) : BATAS_PUTARAN_MS;
     const pewaktu = setTimeout(() => {
       dipaksaBerhenti = true;
       anak.kill("SIGKILL");
-    }, BATAS_PUTARAN_MS);
+    }, batasPutaran);
 
     let keluaran = "";
 
@@ -423,7 +429,7 @@ function jalankanSatuPutaran({
         if (slotAkun) ecourtAkunService.tandaiBerhasil(slotAkun);
       } else {
         keadaan.terakhirCatatan = dipaksaBerhenti
-          ? `Dihentikan paksa setelah melewati batas ${Math.round(BATAS_PUTARAN_MS / 60000)} menit.`
+          ? `Dihentikan paksa setelah melewati batas ${Math.round(batasPutaran / 60000)} menit.`
           : `Berhenti dengan kode ${kode}.`;
         void logService.logSystemEvent({
           eventType: "ecourt_jadwal_gagal",

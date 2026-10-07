@@ -44,7 +44,17 @@ import {
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import { NamaDapatDipanggil, PengaturanPanggil, golonganSisi } from "@/components/portal/panggil-petugas";
 import { LencanaStatusMediasi, TombolStatusMediasi, kelasBarisMediasi, useStatusMediasi } from "@/components/portal/status-mediasi";
-import { ChevronDown, ChevronUp, Filter, X } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
+import { HasilMediasiDialog } from "@/components/portal/hasil-mediasi-dialog";
+import { bolehBuatHasilMediasi, type PenggunaHasilMediasi } from "@/lib/hasil-mediasi";
+import {
+  KUNCI_SIMPANAN_TAMPILAN_MEDIASI,
+  SAKLAR_TAMPILAN_MEDIASI,
+  bacaTampilanMediasi,
+  tampilMediasi,
+  tampilanMediasiBawaan,
+  type PilihanTampilanMediasi,
+} from "@/lib/tampilan-jadwal-mediasi";
 
 import {
   ChipSaring,
@@ -719,8 +729,15 @@ function cocokCariCepatMediasi(baris: Mediasi, kata: string) {
 
 export function AletaEcourtMediasi({
   onBukaStatus,
+  pengguna = null,
 }: {
   onBukaStatus?: (nomorPerkara: string) => void;
+  /**
+   * Akun yang masuk - untuk tombol "Buat hasil mediasi (.rtf)" yang HANYA
+   * tampil bagi mediator perkara itu dan Super Admin (7 Okt 2026). Tanpa
+   * ini (uji lama, layar lain) tombolnya tidak pernah tampil.
+   */
+  pengguna?: (PenggunaHasilMediasi & { namaPengadilan?: string }) | null;
 } = {}) {
   const [dari, setDari] = useState(hariIni());
   const [sampai, setSampai] = useState(hariIni());
@@ -753,6 +770,39 @@ export function AletaEcourtMediasi({
   const [dibuka, setDibuka] = useState("");
   // Butir 35 (5 Okt 2026): sedang berjalan / selesai, tersimpan di basis data ALETA.
   const statusMediasi = useStatusMediasi(dari, sampai, mediasi);
+
+  // ==========================================================================
+  // HASIL MEDIASI (.rtf) - 7 Okt 2026
+  // ==========================================================================
+  // Tombolnya hanya bagi mediator perkara itu dan Super Admin
+  // (bolehBuatHasilMediasi), dan punya saklar Tampilan sendiri - "setiap
+  // fitur baru punya centang". Rute memeriksa ulang mediatornya dari SIPP.
+  const [hasilDibuka, setHasilDibuka] = useState<{ nomorPerkara: string; mediasiId: string } | null>(null);
+  const [tampilan, setTampilan] = useState<PilihanTampilanMediasi>(() => tampilanMediasiBawaan());
+  const [panelTampilan, setPanelTampilan] = useState(false);
+  useEffect(() => {
+    // Dibaca sesudah gambar pertama: peladen tidak punya localStorage.
+    const tugas = window.setTimeout(() => {
+      try {
+        setTampilan(bacaTampilanMediasi(window.localStorage.getItem(KUNCI_SIMPANAN_TAMPILAN_MEDIASI)));
+      } catch {
+        // Penyimpanan tertutup (jendela pribadi) - bawaan berlaku.
+      }
+    }, 0);
+    return () => window.clearTimeout(tugas);
+  }, []);
+  const ubahTampilan = (kunci: string, menyala: boolean) => {
+    setTampilan((lama) => {
+      const baru = { ...lama, [kunci]: menyala };
+      try {
+        window.localStorage.setItem(KUNCI_SIMPANAN_TAMPILAN_MEDIASI, JSON.stringify(baru));
+      } catch {
+        // Tidak tersimpan - berlaku sampai halaman ditutup.
+      }
+      return baru;
+    });
+  };
+  const tombolHasilTampil = tampilMediasi(tampilan, "tombol-hasil-mediasi");
 
   const alihkanKeadaan = (kunci: string) =>
     setKeadaanTerpilih((sekarang) =>
@@ -909,6 +959,44 @@ export function AletaEcourtMediasi({
           Pasal 24.
         </p>
         <PengaturanPanggil />
+        <div className="mt-1">
+          <Button
+            size="sm"
+            variant={panelTampilan ? "default" : "outline"}
+            onClick={() => setPanelTampilan((x) => !x)}
+            aria-expanded={panelTampilan}
+            data-tampilan-mediasi=""
+          >
+            <SlidersHorizontal className="mr-1.5 h-4 w-4" />
+            Tampilan
+          </Button>
+          {panelTampilan ? (
+            <div className="mt-2 rounded-lg border bg-card p-2">
+              <p className="mb-1.5 text-xs text-muted-foreground">
+                Tersimpan di peramban ini saja dan tidak mengubah data apa pun - yang dimatikan hanya tidak digambar.
+              </p>
+              <ul className="space-y-1">
+                {SAKLAR_TAMPILAN_MEDIASI.map((saklar) => (
+                  <li key={saklar.kunci}>
+                    <label className="flex cursor-pointer items-start gap-2 text-sm" title={saklar.keterangan}>
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                        checked={tampilMediasi(tampilan, saklar.kunci)}
+                        onChange={(e) => ubahTampilan(saklar.kunci, e.target.checked)}
+                        data-saklar-mediasi={saklar.kunci}
+                      />
+                      <span className="leading-tight">
+                        {saklar.label}
+                        <span className="block text-xs text-muted-foreground">{saklar.keterangan}</span>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -1286,6 +1374,21 @@ export function AletaEcourtMediasi({
                         perkara, dan baris yang ikut menanggapi tekanan
                         membuka rincian yang tidak diminta. */}
                     <td className="px-2 py-2 text-right">
+                      {/* Hasil mediasi (.rtf) - hanya mediator perkara ini dan Super Admin. */}
+                      {tombolHasilTampil && bolehBuatHasilMediasi(pengguna, baris.mediator) ? (
+                        <div className="mb-1">
+                          <button
+                            type="button"
+                            onClick={() => setHasilDibuka({ nomorPerkara: baris.nomorPerkara, mediasiId: String(baris.mediasiId) })}
+                            title="Buat laporan hasil mediasi dan kesepakatan perdamaian (.rtf) - hanya bagi mediator perkara ini"
+                            className="inline-flex items-center gap-1 rounded-md border border-primary/40 px-2 py-1 text-xs font-medium text-primary transition hover:bg-primary/10"
+                            data-tombol-hasil-mediasi={baris.nomorPerkara}
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            Buat hasil mediasi (.rtf)
+                          </button>
+                        </div>
+                      ) : null}
                       <div className="mb-1">
                         <TombolStatusMediasi baris={{ mediasiId: String(baris.mediasiId), perkaraId: String(baris.perkaraId), nomorPerkara: baris.nomorPerkara, tanggal: baris.tanggal.slice(0, 10), tempat: baris.tempat }} status={statusMediasi.peta[kunciBaris]} onBerubah={statusMediasi.muatUlang} />
                       </div>
@@ -1331,6 +1434,15 @@ export function AletaEcourtMediasi({
             </table>
           </div>
         )}
+
+        {hasilDibuka ? (
+          <HasilMediasiDialog
+            nomorPerkara={hasilDibuka.nomorPerkara}
+            mediasiId={hasilDibuka.mediasiId}
+            namaPengadilan={pengguna?.namaPengadilan ?? ""}
+            onTutup={() => setHasilDibuka(null)}
+          />
+        ) : null}
 
         <p className="text-xs text-muted-foreground">
           Tenggang 30 hari dihitung sejak <strong>penetapan mediator</strong>, bukan sejak pertemuan

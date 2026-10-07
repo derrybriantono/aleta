@@ -204,9 +204,9 @@ function barisRiwayat({ perkaraId, jejak, tanggal, username, saat }) {
 }
 
 /** MAX(id)+1 pada tabel yang id-nya tidak bertambah sendiri. */
-async function idBerikutnya(tabel) {
+async function idBerikutnya(tabel, jalankan = runQuery) {
   if (!DAFTAR_TABEL.has(tabel)) throw new Error(`tabel_di_luar_daftar:${tabel}`);
-  const baris = await runQuery(`SELECT COALESCE(MAX(id), 0) + 1 AS berikutnya FROM ${tabel}`);
+  const baris = await jalankan(`SELECT COALESCE(MAX(id), 0) + 1 AS berikutnya FROM ${tabel}`);
   const nomor = Number((Array.isArray(baris) && baris[0] && baris[0].berikutnya) || 0);
   if (!Number.isFinite(nomor) || nomor <= 0) throw new Error(`id_berikutnya_tidak_terbaca:${tabel}`);
   return nomor;
@@ -2780,6 +2780,11 @@ async function jalankanRencana(rencana, opsi = {}) {
     };
   }
 
+  // Penjalan kueri: bawaannya kolam SIPP biasa (tiap langkah berdiri sendiri).
+  // Penulis hasil sidang (sidangHasilService.jalankanRencanaUtuh, 7 Okt 2026)
+  // menyerahkan SATU sambungan bertransaksi, supaya langkah yang gagal di
+  // tengah tidak meninggalkan langkah sebelumnya tertulis sendirian.
+  const jalankan = typeof opsi.kueri === "function" ? opsi.kueri : runQuery;
   const selesai = [];
   // id baris yang baru disisipkan, menurut urutan langkahnya.
   const idBaru = [];
@@ -2800,7 +2805,7 @@ async function jalankanRencana(rencana, opsi = {}) {
       // pengadilan yang dua petugasnya menekan Simpan bersamaan, jeda itu
       // cukup untuk melahirkan dua baris berid sama.
       if (satu.idDihitung) {
-        params[satu.idDihitung.posisiParam] = await idBerikutnya(satu.idDihitung.tabel);
+        params[satu.idDihitung.posisiParam] = await idBerikutnya(satu.idDihitung.tabel, jalankan);
       }
 
       if (satu.isiDariLangkah) {
@@ -2840,7 +2845,7 @@ async function jalankanRencana(rencana, opsi = {}) {
         }
       }
 
-      const hasil = await runQuery(satu.sql, params);
+      const hasil = await jalankan(satu.sql, params);
       // id yang kita tentukan sendiri dipakai lebih dulu: pada tabel tanpa
       // auto_increment, insertId yang dipulangkan basis data selalu 0.
       idBaru[urutan] = satu.idDihitung
