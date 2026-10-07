@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
 import {
   getGatewayStatusPutusan,
   postGatewayPutusSidang,
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
 
     const badan = (await request.json()) as Record<string, unknown>;
 
@@ -80,6 +81,9 @@ export async function POST(request: NextRequest) {
     // padahal yang dibutuhkan papan antrian, laporan harian, dan akta cerai
     // adalah FAKTA bahwa perkaranya sudah diputus, hari ini.
     if (String(badan.jalur ?? "") === "sidang") {
+      // Penginput di SIPP = PP perkara (keputusan 7 Okt 2026, ditentukan bot);
+      // penekan sebenarnya hanya untuk jejak ALETA.
+      const akunPenekan = await akunSippPengguna(db, aktor.id).catch(() => null);
       const respons = await postGatewayPutusSidang({
         jadwalId: badan.jadwalId,
         perkaraId: badan.perkaraId,
@@ -93,10 +97,17 @@ export async function POST(request: NextRequest) {
         ruanganIdSidang: badan.ruanganIdSidang,
         sidangKelilingSidang: typeof badan.sidangKelilingSidang === "boolean" ? badan.sidangKelilingSidang : undefined,
         operator: actorUserId || "portal",
+        operatorNama: String(aktor.name || aktor.email || ""),
+        operatorAkunSipp: akunPenekan && akunPenekan.milik.length ? akunPenekan.milik.join(", ") : "",
         kering: badan.kering !== false,
       });
       if (!respons.ok) {
-        return ok({ available: false, ok: false, alasan: respons.error || "ALETA Bot belum dapat dihubungi." });
+        return ok({
+          available: Boolean(respons.status),
+          ok: false,
+          alasan: respons.error || "ALETA Bot belum dapat dihubungi.",
+          kode: respons.kode,
+        });
       }
       return ok({ available: true, ...(respons.data as Record<string, unknown>) });
     }

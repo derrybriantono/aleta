@@ -206,7 +206,7 @@ describe("kering sebagai bawaan, tiap lapis", () => {
 
   it("layar - TIAP tombol tulis terkunci sampai rencananya dibaca", () => {
     expect(layar).toContain("const rencanaKering = hasil?.ok === true && hasil.kering === true;");
-    expect(layar).toContain("disabled={!rencanaKering || sibuk || sudahTertulis}");
+    expect(layar).toContain("disabled={!rencanaKering || sibuk || sudahTertulis || atasNama?.ok === false}");
 
     // ====================================================================
     // YANG DIJAGA BUKAN JUMLAHNYA, MELAINKAN PENGUNCINYA

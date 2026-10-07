@@ -67,6 +67,7 @@ const manualSendService = require("../services/manualSendService");
 const penunjukanService = require("../services/penunjukanService");
 const jejakAletaService = require("../services/jejakAletaService");
 const jedaManusiaService = require("../services/jedaManusiaService");
+const sidangHasilAlur = require("../services/sidangHasilAlur");
 const selisihHarianService = require("../services/selisihHarianService");
 const tandaTanganService = require("../services/tandaTanganService");
 const dokumenPenetapanService = require("../services/dokumenPenetapanService");
@@ -1028,22 +1029,10 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
  */
 router.get("/sidang/keadaan", requireInternalToken, async (req, res) => {
   try {
-    const keadaan = await sidangHasilService.keadaanJadwal(req.query.jadwalId);
-    if (!keadaan) {
-      res.status(404).json({ ok: false, alasan: "jadwal_tidak_ketemu" });
-      return;
-    }
-    // Riwayat sidang dan mediasi perkaranya - bahan bawaan isian tunda
-    // (butir 14, 30 Sep 2026). null bila tidak terbaca; borangnya jatuh ke
-    // bawaan lama.
-    const riwayat = await sidangHasilService
-      .riwayatSidangPerkara(keadaan.perkaraId, keadaan.tanggalSidang)
-      .catch(() => null);
-    // Butir 25 (5 Okt 2026): pilihan ruang sidang blangko tunda/putus - daftar
-    // ruangan_sidang aktif (sama dengan penetapan hari sidang). Gagal = [] dan
-    // blangkonya memakai ruangan yang tercatat.
-    const ruangan = await penetapanTulisService.daftarRuangan().catch(() => []);
-    res.json({ ok: true, keadaan, riwayat, ruangan });
+    // Sejak 7 Okt 2026 (kasus 273): keadaan + riwayat + ruangan + antrian
+    // sidang + atas nama siapa tombolnya menulis (PP) - sidangHasilAlur.
+    const { status, body } = await sidangHasilAlur.keadaanHasilSidang(req.query.jadwalId);
+    res.status(status).json(body);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -1074,102 +1063,12 @@ router.get("/sidang/keadaan", requireInternalToken, async (req, res) => {
  */
 router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
   try {
-    const badan = req.body || {};
-    const operator = String(badan.operator || "").trim();
-    if (!operator) {
-      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
-      return;
-    }
-    const kering = badan.kering !== false;
-
-    const rencana = await sidangHasilService.susunRencanaTunda({
-      jadwalId: badan.jadwalId,
-      alasanTunda: String(badan.alasanTunda || ""),
-      tanggalBerikut: String(badan.tanggalBerikut || ""),
-      jamBerikut: String(badan.jamBerikut || ""),
-      jamSekarang: String(badan.jamSekarang || ""),
-      agendaBerikut: String(badan.agendaBerikut || ""),
-      jenisPengadilan: badan.jenisPengadilan,
-      // Cadangan saja - panitera sidang perkaranya dibaca dari SIPP.
-      olehUsername: String(badan.olehUsername || ""),
-      dihadiriOleh: badan.dihadiriOleh,
-      // Butir 25: ruang sidang + sidang keliling sidang BERIKUTNYA (kosong = salin).
-      ruanganIdBerikut: badan.ruanganIdBerikut,
-      sidangKelilingBerikut: typeof badan.sidangKelilingBerikut === "boolean" ? badan.sidangKelilingBerikut : undefined,
-      operator,
+    // Alurnya di sidangHasilAlur (7 Okt 2026, kasus 273): rencana -> jeda ->
+    // SATU transaksi -> antrian -> jejak jujur; penolakan membawa kalimat sebab.
+    const { status, body } = await sidangHasilAlur.jalankanHasilSidang("tunda", req.body || {}, {
       ip: alamatAudit(req),
     });
-
-    if (!rencana.ok) {
-      // Yang DITOLAK ikut tercatat - di sys_audittrail percobaan yang gagal
-      // tidak meninggalkan jejak, dan justru itu yang dicari ketika panitera
-      // sidang bertanya kenapa penundaannya tidak jadi.
-      void jejakAletaService.catat({
-        aksi: "tunda",
-        jenis: "penundaan",
-        perkaraId: badan.perkaraId,
-        akunSipp: String(badan.olehUsername || ""),
-        operator,
-        ip: alamatAudit(req),
-        berhasil: false,
-        kering,
-        alasan: String(rencana.alasan || "ditolak"),
-        langkah: [],
-      });
-      res.status(400).json(rencana);
-      return;
-    }
-
-    const hasil = await sidangHasilService.jalankanRencana(rencana, { kering });
-
-    // Antrian digerakkan HANYA bila penundaannya sungguh tertulis. Pada uji
-    // kering ia ikut kering, supaya yang dibaca panitera sidang adalah rencana
-    // yang utuh - termasuk apa yang akan terjadi pada papan panggilnya.
-    let antrian = null;
-    if (hasil.ok) {
-      antrian = await sidangHasilService.setelAntrian({
-        perkaraId: rencana.perkara && rencana.perkara.perkaraId,
-        tanggalSidang: rencana.sidangSekarang && rencana.sidangSekarang.tanggal,
-        ruangId: badan.ruangId,
-        keadaan: sidangHasilService.ANTRIAN_SELESAI,
-        kering,
-      });
-    }
-
-    void jejakAletaService.catat({
-      aksi: "tunda",
-      jenis: "penundaan",
-      perkaraId: rencana.perkara && rencana.perkara.perkaraId,
-      nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
-      akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
-      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
-      operator: rencana.operator,
-      ip: alamatAudit(req),
-      berhasil: hasil.ok === true,
-      kering,
-      alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
-      langkah: rencana.langkah,
-    });
-
-    res.status(hasil.ok ? 200 : 409).json({
-      ...hasil,
-      perkara: rencana.perkara,
-      atasNama: rencana.atasNama,
-      operator: rencana.operator,
-      sidangSekarang: rencana.sidangSekarang,
-      sidangBerikutnya: rencana.sidangBerikutnya,
-      andaian: rencana.andaian || [],
-      antrian,
-      rencana: kering
-        ? rencana.langkah.map((x) => ({
-            tabel: x.tabel,
-            aksi: x.aksi,
-            keterangan: x.keterangan,
-            sql: String(x.sql).replace(/\s+/g, " ").trim(),
-            nilai: x.params,
-          }))
-        : undefined,
-    });
+    res.status(status).json(body);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -1189,97 +1088,11 @@ router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
  */
 router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
   try {
-    const badan = req.body || {};
-    const operator = String(badan.operator || "").trim();
-    if (!operator) {
-      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
-      return;
-    }
-    const kering = badan.kering !== false;
-
-    const rencana = await sidangHasilService.susunRencanaPutus({
-      jadwalId: badan.jadwalId,
-      statusPutusanId: badan.statusPutusanId,
-      tanggalPutus: String(badan.tanggalPutus || ""),
-      verstek: String(badan.verstek || ""),
-      jamSekarang: String(badan.jamSekarang || ""),
-      dihadiriOleh: badan.dihadiriOleh,
-      // Butir 12 (30 Sep 2026): bawaannya HANYA jadwal sidang. Putusan akhir
-      // ikut ditulis hanya bila pemanggilnya meminta tegas.
-      tulisPutusan: badan.tulisPutusan === true,
-      // Butir 25: ruang sidang + sidang keliling sidang INI (ditulis hanya bila berubah).
-      ruanganIdSidang: badan.ruanganIdSidang,
-      sidangKelilingSidang: typeof badan.sidangKelilingSidang === "boolean" ? badan.sidangKelilingSidang : undefined,
-      operator,
+    // Alur yang sama dengan tunda - sidangHasilAlur (7 Okt 2026).
+    const { status, body } = await sidangHasilAlur.jalankanHasilSidang("putus", req.body || {}, {
       ip: alamatAudit(req),
     });
-
-    if (!rencana.ok) {
-      void jejakAletaService.catat({
-        aksi: "putus",
-        jenis: "putus-sidang",
-        perkaraId: badan.perkaraId,
-        operator,
-        ip: alamatAudit(req),
-        berhasil: false,
-        kering,
-        alasan: String(rencana.alasan || "ditolak"),
-        langkah: [],
-      });
-      res.status(400).json(rencana);
-      return;
-    }
-
-    const hasil = await sidangHasilService.jalankanRencana(rencana, { kering });
-
-    // Antrian ditandai selesai, sama seperti pada penundaan - dan gagalnya
-    // tidak membatalkan putusan yang sudah benar.
-    let antrian = null;
-    if (hasil.ok) {
-      antrian = await sidangHasilService.setelAntrian({
-        perkaraId: rencana.perkara && rencana.perkara.perkaraId,
-        tanggalSidang: rencana.putusan && rencana.putusan.tanggalPutus,
-        ruangId: badan.ruangId,
-        keadaan: sidangHasilService.ANTRIAN_SELESAI,
-        kering,
-      });
-    }
-
-    void jejakAletaService.catat({
-      aksi: "putus",
-      jenis: "putus-sidang",
-      perkaraId: rencana.perkara && rencana.perkara.perkaraId,
-      nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
-      tanggalPenetapan: rencana.putusan && rencana.putusan.tanggalPutus,
-      akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
-      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
-      operator: rencana.operator,
-      ip: alamatAudit(req),
-      berhasil: hasil.ok === true,
-      kering,
-      alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
-      langkah: rencana.langkah,
-    });
-
-    res.status(hasil.ok ? 200 : 409).json({
-      ...hasil,
-      perkara: rencana.perkara,
-      atasNama: rencana.atasNama,
-      operator: rencana.operator,
-      putusan: rencana.putusan,
-      hanyaJadwal: rencana.hanyaJadwal === true,
-      andaian: rencana.andaian || [],
-      antrian,
-      rencana: kering
-        ? rencana.langkah.map((x) => ({
-            tabel: x.tabel,
-            aksi: x.aksi,
-            keterangan: x.keterangan,
-            sql: String(x.sql).replace(/\s+/g, " ").trim(),
-            nilai: x.params,
-          }))
-        : undefined,
-    });
+    res.status(status).json(body);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

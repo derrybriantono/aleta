@@ -80,10 +80,16 @@ function pasangTiruan() {
       selesai?.(null, jawab(String(sql)));
     },
   };
+  // 7 Okt 2026 (kasus 273): hasil sidang ditulis dalam SATU transaksi lewat
+  // satu sambungan kolam - sambungan palsunya meneruskan ke kueri yang sama.
+  (dbPalsu as Record<string, unknown>).getConnection = (cb: (e: unknown, s: unknown) => void) =>
+    cb(null, { query: dbPalsu.query, release() {} });
+  const antrianPalsu = { query: async () => [], sanitizeError: (g: unknown) => String(g) };
   const botDbPalsu = { query: async () => [], fromMysqlDate: () => null, toMysqlDate: () => null };
   for (const [relatif, isi] of [
     ["./db_config", dbPalsu],
     ["./services/botDbService", botDbPalsu],
+    ["./services/externalDbService", antrianPalsu],
   ] as const) {
     const berkas = muat.resolve(relatif);
     muat.cache[berkas] = { id: berkas, filename: berkas, loaded: true, exports: isi } as unknown as NodeJS.Module;
@@ -160,6 +166,9 @@ describe("12. putus dari jadwal sidang hanya menulis perkara_jadwal_sidang", () 
     expect(h.ok).toBe(true);
     const tulis = catatan.filter((k) => /^\s*(INSERT|UPDATE|DELETE)/i.test(k.sql));
     expect(tulis).toHaveLength(2);
+    // Dalam satu transaksi (7 Okt 2026, kasus 273).
+    expect(catatan.map((k) => k.sql.trim())).toContain("START TRANSACTION");
+    expect(catatan.map((k) => k.sql.trim())).toContain("COMMIT");
     expect(tulis.some((k) => /perkara_putusan/.test(k.sql))).toBe(false);
     expect(tulis.some((k) => /UPDATE perkara\s+SET tahapan/.test(k.sql))).toBe(false);
     expect((h.selesai ?? []).map((x) => x.tabel)).toEqual(["perkara_jadwal_sidang", "sys_audittrail"]);
@@ -179,7 +188,9 @@ describe("12. putus dari jadwal sidang hanya menulis perkara_jadwal_sidang", () 
   });
 
   it("gerbang hanya meneruskan tulisPutusan yang TEGAS true; portal jalur sidang tidak mengirimnya", () => {
-    const gerbang = readFileSync(path.join(AKAR_BOT, "routes/internalGatewayRoutes.js"), "utf8");
+    // Alur tombol tunda/putus pindah dari internalGatewayRoutes.js ke
+    // services/sidangHasilAlur.js (7 Okt 2026, kasus 273) - aturannya sama.
+    const gerbang = readFileSync(path.join(AKAR_BOT, "services/sidangHasilAlur.js"), "utf8");
     expect(gerbang).toContain("tulisPutusan: badan.tulisPutusan === true,");
     const rute = readFileSync(path.resolve(__dirname, "../app/api/aleta-ecourt/sidang-putus/route.ts"), "utf8");
     const jalurSidang = rute.slice(rute.indexOf('if (String(badan.jalur ?? "") === "sidang")'), rute.indexOf("// Jalur HAKIM"));

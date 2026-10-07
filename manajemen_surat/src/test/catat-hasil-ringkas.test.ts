@@ -127,7 +127,7 @@ describe("langsung dieksekusi, ringkasannya sesudah menulis (butir 13, 30 Sep 20
   });
 
   it("tombolnya mati selama isian belum lengkap atau sedang menulis, dan tekan kedua ditolak", () => {
-    expect(ringkas).toContain("disabled={!lengkap || sibuk}");
+    expect(ringkas).toContain("disabled={!lengkap || sibuk || atasNama?.ok === false}");
     expect(ringkas).toContain("if (!keadaan || sibuk || sudahTertulis) return;");
   });
 
