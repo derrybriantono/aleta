@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.187.1",
+    dirilis: "2026-10-07T14:00:00+08:00",
+    judul: "7 Okt siang: 8503 satu kesatuan di ABT, milestone ke halaman SIPP yang tepat, putusan otomatis tidak macet, anonimisasi menyamarkan nama",
+    butir: [
+      "Panel ABT (UI Baru): 8503 dan turunannya (4020, 8524, 8531, 8532, 8529, 8528, 8521, 8522, 8530) satu kesatuan - selama 8503 kosong cukup satu butir \"Isi huruf alasan perceraian (8503)\"; begitu disimpan, seluruh turunan terisi tanpa memuat ulang halaman.",
+      "Checklist milestone: tombol \"Kerjakan di SIPP\" membuka halaman perkara di SIPP pada tab pekerjaannya (mis. Jadwal Sidang), walau perkara belum pernah dibuka di peramban ini.",
+      "Putusan otomatis: pemeriksaan anonimisasi tampil tepat di bawah Isikan dan tidak lagi ditunggu tanpa batas - ada batas waktu dengan pilihan tunggu, ulangi, atau unggah e-Doc putusan saja.",
+      "Anonimisasi otomatis menyamarkan nama pihak (semua bentuk), nama saksi, dan alamat yang ditinggalkan ABT pada salinan anonimisasi; nama majelis dan panitera tetap utuh. Bila sudah bersih, kedua e-Doc langsung diunggah.",
+    ],
+  },
+  {
     versi: "1.187.0",
     dirilis: "2026-10-07T10:00:00+08:00",
     judul: "Masuk ALETA dengan akun SIPP, SIPP & ABT terbuka otomatis",
