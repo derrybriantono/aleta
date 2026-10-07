@@ -1504,6 +1504,18 @@ const KALIMAT_ALASAN = [
     kalimat: (_akun, kode) => `${kode.replace(/_sudah_ada$/, "").toUpperCase()} memang sudah ada di SIPP.`,
   },
   {
+    pola: /^tanggal_penetapan_mendahului$/,
+    kalimat: () =>
+      "Tanggal penetapan ini mendahului penetapan yang sudah ada di SIPP. Langkah sisa ditanggali sama dengan PMH yang sudah ada, atau sesudahnya.",
+  },
+  {
+    // Mode coba (Super Admin mencoba tampilan baru tanpa izin tindakan nyata)
+    // menahan SELURUH kiriman, termasuk uji kering penetapan.
+    pola: /^mode_coba$/,
+    kalimat: () =>
+      "Mode coba sedang aktif di peramban ini - tidak ada yang dikirim ke ALETA maupun SIPP. Centang 'Izinkan tindakan nyata' pada ikon ALETA di pojok peramban, lalu coba lagi.",
+  },
+  {
     pola: /^jenis_tidak_didukung$/,
     kalimat: () => "Jenis penetapan ini tidak dikenali ALETA.",
   },
@@ -1520,6 +1532,30 @@ function kalimatAlasan(kode, akun) {
   // masih dapat dicari, sedangkan kalimat karangan tidak.
   return teks;
 }
+
+/**
+ * Tanggal tiap penetapan yang SUDAH ada di SIPP menurut usulan (dibaca bot
+ * dari perkara_penetapan) - { pmh, ppp, pjs, phs }, "" bila belum.
+ */
+function keadaanPenetapanUsulan(usulan) {
+  const p = (usulan && usulan.penetapan) || {};
+  const hasil = {};
+  for (const jenis of URUTAN_TULIS) {
+    const nilai = String(p[jenis] || "").trim();
+    hasil[jenis] = /^\d{4}-\d{2}-\d{2}/.test(nilai) ? nilai.slice(0, 10) : "";
+  }
+  return hasil;
+}
+
+/**
+ * Penolakan yang berlaku untuk SELURUH perkara, bukan untuk satu perkara:
+ * akun SIPP tidak terbaca, mode coba, akun ALETA tidak terbaca. Pada
+ * penetapan massal hanya ini yang menghentikan antrean - mengulangnya pada
+ * tiap perkara hanya menulis kalimat yang sama dua puluh kali. Selebihnya
+ * (usulan satu perkara gagal, hakim tidak ketemu, tanggal) berlaku untuk
+ * perkara itu saja, dan perkara berikutnya tetap dikerjakan.
+ */
+const ALASAN_MENYELURUH = /^(akun_sipp_belum_terbaca|akun_sipp_tidak_ketemu|akun_sipp_ganda|operator_tidak_disebut|operator_tidak_dikenali|mode_coba)$/;
 
 async function rantaiPenetapan(usulan, data, kering) {
   const perkaraId = Number((usulan.perkara && usulan.perkara.perkaraId) || 0);
@@ -1563,7 +1599,43 @@ async function rantaiPenetapan(usulan, data, kering) {
     ];
   }
 
+  // ==========================================================================
+  // YANG SUDAH ADA DI SIPP DILEWATI SEBELUM APA PUN DIMINTA (7 Okt 2026)
+  // ==========================================================================
+  //
+  // Keluhan 4 & 5: "apabila sudah ada satu tahapannya yang dikerja manual
+  // maka aleta kerjakan penetapan sisa lainnya". Sebelumnya langkah yang
+  // sudah ada tetap disusun nilainya (idUntukTulis) dan dikirim ke bot hanya
+  // untuk ditolak "_sudah_ada" - dan bila usulannya untuk langkah itu tidak
+  // dapat disusun (mis. PMH tangan atas perkara yang bentuk majelisnya belum
+  // tentu), rantainya PUTUS di sana: "belum ada usulan yang dapat ditulis",
+  // padahal yang tersisa PPP, PJS, PHS.
+  //
+  // Keadaannya dibaca dari usulan.penetapan - perkara_penetapan, sumber yang
+  // SAMA dengan penjaga _sudah_ada di bot (sumber-keadaan-penetapan). Yang
+  // sudah bertanggal dicatat sudah ada, masuk rantaiSebelum (langkah
+  // berikutnya menuntutnya), dan TIDAK dikirim. Bot tetap menjaga: keadaan
+  // yang basi dijawabnya _sudah_ada dan dilewati di bawah.
+  const sudahDiSipp = keadaanPenetapanUsulan(usulan);
+
   for (const jenis of URUTAN_TULIS) {
+    if (sudahDiSipp[jenis]) {
+      hasil.push({
+        jenis,
+        ok: false,
+        sudahAda: true,
+        alasan: `${jenis}_sudah_ada`,
+        bunyi: kalimatAlasan(`${jenis}_sudah_ada`),
+        tanggalPenetapan: sudahDiSipp[jenis],
+        langkah: [],
+        andaian: [],
+        catatanTanggal: [],
+        olehUsername: akunMasuk,
+      });
+      rantaiSebelum.push(jenis);
+      continue;
+    }
+
     const nilai = idUntukTulis(jenis, usulan, pilihanManual);
     if (!nilai) {
       hasil.push({ jenis, ok: false, alasan: "belum ada usulan yang dapat ditulis" });
@@ -1590,8 +1662,9 @@ async function rantaiPenetapan(usulan, data, kering) {
 
     // Jeda sungguhan di antara langkah, seperti petugas yang berpindah dari
     // borang PMH ke borang PPP. Hanya pada penulisan sungguhan; jam yang
-    // tercatat diambil bot SESUDAH jeda ini.
-    if (!kering && hasil.length > 0 && typeof alatJedaManusia === "function") {
+    // tercatat diambil bot SESUDAH jeda ini. Langkah yang dilewati karena
+    // sudah ada tidak dihitung - tidak ada borang yang disimpan di sana.
+    if (!kering && hasil.some((x) => x.ok) && typeof alatJedaManusia === "function") {
       try {
         await alatJedaManusia("pindah", { alamat: ALETA_API_TULIS });
       } catch {
@@ -1641,6 +1714,7 @@ async function rantaiPenetapan(usulan, data, kering) {
     hasil.push({
       jenis,
       ok: berhasil,
+      sudahAda: !berhasil && /_sudah_ada$/.test(kode),
       // Kodenya dibawa apa adanya - penjaga _sudah_ada mencocokkannya.
       alasan: kode,
       // Dan bunyinya, untuk dibaca orang.
@@ -1707,7 +1781,12 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
       /* edoc tidak pernah menggagalkan penetapan */
     }
   }
-  return { ok: hasil.every((x) => x.ok), hasil };
+  // Langkah yang SUDAH ada di SIPP bukan kegagalan (keluhan 5, 7 Okt 2026).
+  // Sebelumnya ok menuntut keempatnya ok, sehingga perkara yang PMH-nya
+  // dikerjakan tangan tidak pernah lulus uji kering - tombol "Tuliskan ke
+  // SIPP" tidak pernah terbuka, dan PPP, PJS, PHS tidak dapat dikerjakan.
+  const dikerjakan = hasil.filter((x) => x.ok).length;
+  return { ok: hasil.every((x) => x.ok || x.sudahAda === true), dikerjakan, hasil };
 }
 
 /**
@@ -2210,6 +2289,21 @@ function gambarHasilTulis(kabar, hasil, kering, rapor) {
   if (kering && rapor) kotak.appendChild(gambarRaporPraperiksa(rapor));
 
   for (const satu of hasil) {
+    // Langkah yang sudah ada di SIPP (dikerjakan tangan atau lebih dahulu)
+    // tidak ditulis ulang - dan bukan kegagalan, jadi tidak bernada merah.
+    if (satu.sudahAda) {
+      const sudahBaris = buatElemen("div", "aleta-tulis-baris aleta-tulis-sudah");
+      sudahBaris.appendChild(buatElemen("span", "aleta-tulis-jenis", satu.jenis.toUpperCase()));
+      sudahBaris.appendChild(
+        buatElemen(
+          "span",
+          "aleta-tulis-ket",
+          `sudah ada di SIPP${satu.tanggalPenetapan ? ` (${sebutTanggal(satu.tanggalPenetapan)})` : ""} - dilewati`
+        )
+      );
+      kotak.appendChild(sudahBaris);
+      continue;
+    }
     const baris = buatElemen("div", satu.ok ? "aleta-tulis-baris" : "aleta-tulis-baris aleta-tulis-gagal");
     const atas = satu.atasNama && (satu.atasNama.namaLengkap || satu.atasNama.username);
     baris.appendChild(
@@ -3692,6 +3786,13 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
         keadaan,
         !rencanaSudahDibaca
       );
+
+      if (!rencanaSudahDibaca && hasil.ok && !hasil.dikerjakan) {
+        // Keempatnya sudah ada di SIPP - tidak ada sisa yang dapat ditulis.
+        tombol.textContent = "Keempat penetapan sudah ada";
+        tombol.disabled = true;
+        return;
+      }
 
       if (!rencanaSudahDibaca && hasil.ok) {
         // Rencananya terbaca dan seluruhnya siap - barulah tekanan berikutnya
@@ -12405,10 +12506,10 @@ const NAMA_KEADAAN = {
  *   2. DUA tekanan, sama seperti satu perkara: yang pertama menjalankan uji
  *      kering atas TIAP perkara terpilih dan memperlihatkan hasilnya baris
  *      demi baris, yang kedua menuliskannya.
- *   3. Berhenti pada kegagalan PERTAMA. Kegagalan pada penetapan massal
- *      hampir selalu bersifat menyeluruh - ALETA mati, akun pejabat keliru,
- *      kewenangan dicabut - dan meneruskannya berarti mengulang kesalahan
- *      yang sama belasan kali sebelum ada yang sempat membacanya.
+ *   3. Berhenti hanya pada kegagalan MENYELURUH (ALASAN_MENYELURUH: akun SIPP
+ *      tidak terbaca, mode coba, belum masuk ALETA). Kegagalan satu perkara
+ *      dilaporkan pada barisnya dan antrean berjalan terus (7 Okt 2026) -
+ *      sebelumnya satu perkara yang gagal menghentikan seluruh halaman.
  *
  * Perkara yang keempat penetapannya SUDAH ada dilewati tanpa berbunyi; itu
  * bukan kegagalan, itu perkara yang memang sudah dikerjakan.
@@ -12523,8 +12624,7 @@ function bagianPenetapanMassal(ringkasan) {
     const awalnya =
       kurang.length === URUTAN_RANTAI.length
         ? "belum ditetapkan"
-        : `kurang ${kurang.map((x) => x.toUpperCase()).join(
-)}`;
+        : `kurang ${kurang.map((x) => x.toUpperCase()).join(", ")}`;
     const keadaan = buatElemen("span", "aleta-massal-keadaan", awalnya);
     label.appendChild(keadaan);
     const butir = buatElemen("div", "aleta-massal-butir");
@@ -12727,15 +12827,47 @@ function bagianPenetapanMassal(ringkasan) {
     }
   }
 
+  /**
+   * ==========================================================================
+   * SATU PERKARA GAGAL TIDAK MENGHENTIKAN ANTREAN (7 Okt 2026, keluhan 4)
+   * ==========================================================================
+   *
+   * Sebelumnya antrean BERHENTI pada kegagalan pertama ("Berhenti di ...") -
+   * satu perkara yang usulannya tidak tersusun, atau satu langkah yang
+   * ditolak, membuat seluruh perkara terpilih sesudahnya tidak pernah
+   * diperiksa maupun ditetapkan, dan yang terbaca petugas hanya "error".
+   *
+   * Sekarang tiap perkara dilaporkan sendiri - dikerjakan (langkah sisanya),
+   * dilewati (keempatnya sudah ada), atau gagal beserta sebabnya - dan
+   * antrean berjalan terus. Yang MENGHENTIKAN hanya penolakan yang berlaku
+   * untuk seluruh perkara (ALASAN_MENYELURUH: akun SIPP tidak terbaca, mode
+   * coba, belum masuk ALETA) - mengulangnya dua puluh kali tidak menolong.
+   *
+   * Penulisan sungguhan hanya mengerjakan perkara yang LULUS pemeriksaan
+   * (siapDitulis) - yang gagal saat diperiksa tidak ikut ditulis.
+   */
+  let siapDitulis = new Set();
+
+  function sebutLangkah(daftar) {
+    return daftar.map((x) => String(x.jenis || x).toUpperCase()).join(", ");
+  }
+
   async function jalankan(kering) {
-    const urut = nomorSemua.filter((x) => terpilih.has(x));
+    const urut = nomorSemua.filter((x) => terpilih.has(x) && (kering || siapDitulis.has(x)));
     let berhasil = 0;
     let dilewati = 0;
+    const gagalPer = [];
+    const lulus = new Set();
     // Perkara yang sudah lolos uji kering di antrean ini - dikirim sebagai
     // andaian bagi perkara berikutnya, supaya gilirannya dihitung berurutan.
     // Pada penulisan sungguhan tidak diperlukan: yang sudah tertulis memang
     // sudah ada di basis data ketika perkara berikutnya diminta usulannya.
     const andaian = [];
+
+    const catatGagal = (nomor, sebab, ringkas) => {
+      gagalPer.push({ nomor, sebab });
+      tandaiBaris(nomor, `gagal - ${ringkas || sebab}`.slice(0, 80), "lewat");
+    };
 
     for (const nomor of urut) {
       tandaiBaris(nomor, kering ? "memeriksa…" : "menetapkan…", "");
@@ -12745,16 +12877,21 @@ function bagianPenetapanMassal(ringkasan) {
       try {
         data = await ambilUsulanPenunjukan(nomor, null, kering ? andaian : []);
       } catch (galat) {
-        tandaiBaris(nomor, String(galat.message || galat).slice(0, 60), "lewat");
-        kabar.textContent = `Berhenti di ${nomor}: ${String(galat.message || galat).slice(0, 120)}`;
-        return { berhasil, dilewati, berhentiDi: nomor };
+        const pesan = String((galat && galat.message) || galat).slice(0, 160);
+        // Belum masuk ALETA / peran tanpa akses berlaku untuk seluruh antrean.
+        if (/Belum masuk ALETA|tidak diberi akses/i.test(pesan)) {
+          catatGagal(nomor, pesan);
+          return { berhasil, dilewati, gagalPer, lulus, berhentiDi: nomor, sebabBerhenti: pesan };
+        }
+        catatGagal(nomor, `usulan tidak dapat disusun: ${pesan}`, "usulan tidak dapat disusun");
+        continue;
       }
 
       const usulan = data && data.usulan;
       if (!usulan || usulan.ok === false) {
-        tandaiBaris(nomor, "usulan tidak dapat disusun", "lewat");
-        kabar.textContent = `Berhenti di ${nomor}: usulan tidak dapat disusun.`;
-        return { berhasil, dilewati, berhentiDi: nomor };
+        const sebab = String((usulan && (usulan.alasan || usulan.message)) || (data && data.alasan) || "");
+        catatGagal(nomor, `usulan tidak dapat disusun${sebab ? ` (${sebab})` : ""}`, "usulan tidak dapat disusun");
+        continue;
       }
 
       // Tempat yang dipilih disisipkan ke tiap perkara - rantaiPenetapan
@@ -12765,96 +12902,131 @@ function bagianPenetapanMassal(ringkasan) {
         data.pilihanManual = { ...(data.pilihanManual || {}), ruangan: tempatMassal.ruangan };
       }
 
-      const hasil = await rantaiPenetapan(usulan, data, kering);
-      const gagal = hasil.filter((x) => !x.ok);
+      let hasil;
+      try {
+        hasil = await rantaiPenetapan(usulan, data, kering);
+      } catch (galat) {
+        catatGagal(nomor, String((galat && galat.message) || galat).slice(0, 160));
+        continue;
+      }
 
       // Yang SUDAH ada bukan kegagalan - perkara itu memang sudah
-      // dikerjakan, dan menyebutnya gagal membuat orang mencari kerusakan
-      // yang tidak ada.
-      const sudahAda = gagal.filter((x) => /_sudah_ada$/.test(String(x.alasan || "")));
-      const gagalSungguhan = gagal.filter((x) => !/_sudah_ada$/.test(String(x.alasan || "")));
-      const dikerjakan = hasil.filter((x) => x.ok).length;
+      // dikerjakan (tangan atau sebelumnya), dan menyebutnya gagal membuat
+      // orang mencari kerusakan yang tidak ada.
+      const sudahAda = hasil.filter((x) => !x.ok && (x.sudahAda === true || /_sudah_ada$/.test(String(x.alasan || ""))));
+      const gagalSungguhan = hasil.filter((x) => !x.ok && !sudahAda.includes(x));
+      const dikerjakan = hasil.filter((x) => x.ok);
 
       // Rincian yang akan (atau sudah) ditulis - dan, pada uji kering,
       // andaian bagi perkara berikutnya di antrean.
-      gambarRincianMassal(nomor, raporPraperiksa(usulan, data, hasil), hasil);
-      if (kering && gagalSungguhan.length === 0) {
-        const satuAndaian = andaianDari(usulan, data.pilihanManual || {});
-        if (satuAndaian) andaian.push(satuAndaian);
+      try {
+        gambarRincianMassal(nomor, raporPraperiksa(usulan, data, hasil), hasil);
+      } catch {
+        /* rincian tidak pernah menghentikan antrean */
       }
 
-      // Rantai yang TANGGUNG: sebagian langkahnya memang sudah ada, dan
-      // sisanya baru saja dikerjakan. Itu keberhasilan, bukan kegagalan -
-      // dan bukan pula "dilewati", sebab ada yang benar-benar tertulis.
-      //
-      // Sebelumnya keduanya tidak dibedakan: satu langkah yang sudah ada
-      // membuat seluruh perkaranya dihitung sebagai dilewati, padahal tiga
-      // langkah lainnya baru saja ditulis ke SIPP.
-      if (gagalSungguhan.length === 0 && dikerjakan === 0) {
+      if (gagalSungguhan.length > 0) {
+        const pertama = gagalSungguhan[0];
+        const bunyi = pertama.bunyi || pertama.alasan;
+        if (ALASAN_MENYELURUH.test(String(pertama.alasan || ""))) {
+          catatGagal(nomor, `${String(pertama.jenis).toUpperCase()}: ${bunyi}`);
+          return { berhasil, dilewati, gagalPer, lulus, berhentiDi: nomor, sebabBerhenti: bunyi };
+        }
+        // Langkah yang SEMPAT tertulis sebelum gagal disebut - petugas perlu
+        // tahu perkara ini kini separuh tertulis.
+        const tertulis = !kering && dikerjakan.length ? ` (sudah tertulis: ${sebutLangkah(dikerjakan)})` : "";
+        catatGagal(nomor, `${String(pertama.jenis).toUpperCase()}: ${bunyi}${tertulis}`, `${String(pertama.jenis).toUpperCase()}: ${pertama.alasan}`);
+        continue;
+      }
+
+      if (dikerjakan.length === 0) {
         dilewati += 1;
-        tandaiBaris(nomor, "sudah ditetapkan", "aman");
+        tandaiBaris(nomor, "sudah lengkap di SIPP - dilewati", "aman");
         continue;
-      }
-      if (gagalSungguhan.length === 0 && sudahAda.length > 0) {
-        berhasil += 1;
-        tandaiBaris(
-          nomor,
-          `${kering ? "siap" : "selesai"} — ${dikerjakan} langkah, ${sudahAda.length} sudah ada`,
-          "aman"
-        );
-        continue;
-      }
-      gagal.length = 0;
-      gagal.push(...gagalSungguhan);
-
-      if (gagal.length > 0) {
-        const bunyiGagal = gagal[0].bunyi || gagal[0].alasan;
-        tandaiBaris(nomor, `${gagal[0].jenis.toUpperCase()}: ${gagal[0].alasan}`.slice(0, 70), "lewat");
-        // Kalimat penuhnya di kabar - baris daftarnya terlalu sempit untuk
-        // kalimat yang menyebutkan jalan keluarnya, dan justru kalimat itulah
-        // yang dicari orang ketika seluruh halaman berhenti di perkara pertama.
-        kabar.textContent = `Berhenti di ${nomor} pada ${gagal[0].jenis.toUpperCase()}: ${bunyiGagal}`;
-        return { berhasil, dilewati, berhentiDi: nomor };
       }
 
       berhasil += 1;
-      tandaiBaris(nomor, kering ? "siap ditetapkan" : "ditetapkan", "aman");
+      lulus.add(nomor);
+      if (kering) {
+        const satuAndaian = andaianDari(usulan, data.pilihanManual || {});
+        if (satuAndaian) andaian.push(satuAndaian);
+      }
+      // Yang tanggung disebut apa adanya: langkah sisa yang dikerjakan, dan
+      // langkah yang sudah ada sebelumnya.
+      tandaiBaris(
+        nomor,
+        `${kering ? "siap" : "ditetapkan"} — ${sebutLangkah(dikerjakan)}` +
+          (sudahAda.length ? ` (${sebutLangkah(sudahAda)} sudah ada)` : ""),
+        "aman"
+      );
     }
 
-    return { berhasil, dilewati, berhentiDi: null };
+    return { berhasil, dilewati, gagalPer, lulus, berhentiDi: null, sebabBerhenti: "" };
+  }
+
+  /** Kalimat ringkas hasil antrean - dikerjakan, dilewati, gagal. */
+  function ringkasAntrean(hasil, kering) {
+    const bagianKalimat = [
+      kering ? `${hasil.berhasil} perkara siap ditetapkan` : `${hasil.berhasil} perkara ditetapkan`,
+    ];
+    if (hasil.dilewati) bagianKalimat.push(`${hasil.dilewati} perkara dilewati karena keempat penetapannya sudah ada`);
+    if (hasil.gagalPer.length) {
+      bagianKalimat.push(
+        `${hasil.gagalPer.length} perkara gagal: ` +
+          hasil.gagalPer.map((x) => `${x.nomor} - ${x.sebab}`).join("; ")
+      );
+    }
+    return bagianKalimat.join(", ");
   }
 
   tombol.addEventListener("click", async () => {
     tombol.disabled = true;
 
     if (!sudahDiperiksa) {
-      const hasil = await jalankan(true);
-      if (hasil.berhentiDi) {
+      let hasil;
+      try {
+        hasil = await jalankan(true);
+      } catch (galat) {
+        kabar.textContent = `Pemeriksaan terhenti: ${String((galat && galat.message) || galat).slice(0, 160)}`;
         tombol.disabled = false;
         return;
       }
-      sudahDiperiksa = true;
+      if (hasil.berhentiDi) {
+        kabar.textContent = `Dihentikan di ${hasil.berhentiDi}: ${hasil.sebabBerhenti} Belum ada yang ditulis.`;
+        tombol.disabled = false;
+        return;
+      }
+      siapDitulis = hasil.lulus;
+      sudahDiperiksa = hasil.berhasil > 0;
       kabar.textContent =
-        `${hasil.berhasil} perkara siap ditetapkan` +
-        (hasil.dilewati ? `, ${hasil.dilewati} sudah ditetapkan dan akan dilewati` : "") +
-        ". Belum ada yang ditulis - rinciannya tertera di bawah tiap perkara, dihitung berurutan. Tekan sekali lagi untuk menetapkan.";
-      tombol.textContent = `Tetapkan ${hasil.berhasil} perkara sekarang`;
-      tombol.disabled = hasil.berhasil === 0;
-      return;
-    }
-
-    const hasil = await jalankan(false);
-    if (hasil.berhentiDi) {
-      // Yang SUDAH tertulis disebutkan. Tanpa itu, yang membacanya tidak
-      // tahu sampai mana halaman ini terkerjakan, dan menekan lagi dari awal.
-      kabar.textContent += ` — ${hasil.berhasil} perkara sudah tertulis sebelum berhenti.`;
+        ringkasAntrean(hasil, true) +
+        (hasil.berhasil > 0
+          ? ". Belum ada yang ditulis - rinciannya tertera di bawah tiap perkara, dihitung berurutan. Tekan sekali lagi untuk menetapkan; yang gagal tidak ikut ditulis."
+          : ". Tidak ada yang dapat ditetapkan.");
+      tombol.textContent = hasil.berhasil > 0 ? `Tetapkan ${hasil.berhasil} perkara sekarang` : "Periksa ulang";
       tombol.disabled = false;
       return;
     }
-    kabar.textContent =
-      `Selesai: ${hasil.berhasil} perkara ditetapkan` +
-      (hasil.dilewati ? `, ${hasil.dilewati} dilewati karena sudah ada` : "") +
-      ". Muat ulang halaman daftar untuk melihat keadaannya yang baru.";
+
+    let hasil;
+    try {
+      hasil = await jalankan(false);
+    } catch (galat) {
+      kabar.textContent = `Penetapan terhenti: ${String((galat && galat.message) || galat).slice(0, 160)}. Muat ulang halaman daftar untuk melihat keadaannya.`;
+      return;
+    }
+    sudahDiperiksa = false;
+    siapDitulis = new Set();
+    if (hasil.berhentiDi) {
+      // Yang SUDAH tertulis disebutkan. Tanpa itu, yang membacanya tidak
+      // tahu sampai mana halaman ini terkerjakan, dan menekan lagi dari awal.
+      kabar.textContent =
+        `Dihentikan di ${hasil.berhentiDi}: ${hasil.sebabBerhenti} — ${hasil.berhasil} perkara sudah tertulis sebelum berhenti.`;
+      tombol.textContent = "Periksa ulang";
+      tombol.disabled = false;
+      return;
+    }
+    kabar.textContent = `Selesai: ${ringkasAntrean(hasil, false)}. Muat ulang halaman daftar untuk melihat keadaannya yang baru.`;
     tombol.textContent = "Selesai";
   });
 

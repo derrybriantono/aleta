@@ -1673,6 +1673,19 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     aturan,
   });
 
+  // ==========================================================================
+  // PMH SUDAH ADA (TANGAN ATAU SEBELUMNYA): SISANYA MENGIKUTI YANG TERCATAT
+  // ==========================================================================
+  //
+  // 7 Okt 2026, keluhan 4 & 5: penetapan SISA dikerjakan ALETA sesudah PMH
+  // dikerjakan tangan. Panitera pengganti menurut SK dan hari sidang dahulu
+  // dihitung dari majelis USULAN (pmh.majelisKode) - padahal yang sudah
+  // ditetapkan bisa majelis lain. PPP lalu mengusulkan panitera majelis lain
+  // dan PHS hari sidang majelis lain. Bila PMH sudah tercatat, acuan PPP dan
+  // PHS adalah majelis yang TERCATAT; usulan PMH tetap dikirim apa adanya
+  // (tidak ditulis - langkahnya dilewati).
+  const acuan = majelisAcuan(pmh, penetapan, tercatat, hakimAktifSemua, susunanSk);
+
   // --- PPP ----------------------------------------------------------------
   //
   // ==========================================================================
@@ -1712,7 +1725,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   // di borang SIPP tidak ada satu pun penjagaan. Karena itu seluruh panitera
   // aktif tetap ditawarkan; yang menurut SK berada di atas dan berkode, yang
   // lain di bawah tanpa kode.
-  const skMajelis = susunanSk.find((x) => x.majelisKode === pmh.majelisKode) || null;
+  const skMajelis = susunanSk.find((x) => x.majelisKode === acuan.majelisKode) || null;
   const pasanganPp = (skMajelis && Array.isArray(skMajelis.panitera) ? skMajelis.panitera : [])
     .filter((p) => Number(p.id) > 0);
   const kodeMenurutSk = new Map(pasanganPp.map((p) => [Number(p.id), String(p.kode || "")]));
@@ -1742,7 +1755,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
         usulan: usulanSk,
         calon: calonPp,
         sebab:
-          `panitera sidang Majelis ${pmh.majelisKode} menurut SK` +
+          `panitera sidang Majelis ${acuan.majelisKode} menurut SK` +
           (usulanSk.kodeSk ? ` - ${usulanSk.kodeSk}` : ""),
         terbaca: true,
       }
@@ -1786,11 +1799,11 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   // bersidang, dan yang paling masuk akal ia bersidang pada hari ketuanya.
   // Kodenya tetap kosong; hanya hari sidangnya yang dipinjam dari ketua, dan
   // sebabnya menyebut itu.
-  const kodeKetua = (pmh.anggota && pmh.anggota[0] && pmh.anggota[0].kode) || "";
-  const dariKetua = pmh.majelisKode === "" && kodeKetua !== "" && hariSidang[kodeKetua] !== undefined;
+  const kodeKetua = (acuan.anggota && acuan.anggota[0] && acuan.anggota[0].kode) || "";
+  const dariKetua = acuan.majelisKode === "" && kodeKetua !== "" && hariSidang[kodeKetua] !== undefined;
   const hariMajelis =
-    pmh.majelisKode !== ""
-      ? hariSidang[pmh.majelisKode]
+    acuan.majelisKode !== ""
+      ? hariSidang[acuan.majelisKode]
       : dariKetua
         ? hariSidang[kodeKetua]
         : undefined;
@@ -1806,9 +1819,9 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     sebab: tanggalSidang
       ? dariKetua
         ? `hari sidang mengikuti ketua majelis (kode ${kodeKetua}) - susunan ini di luar SK; sekurangnya ${jeda} hari sesudah pendaftaran`
-        : `hari sidang Majelis ${pmh.majelisKode}, sekurangnya ${jeda} hari sesudah pendaftaran`
-      : pmh.majelisKode
-        ? `hari sidang Majelis ${pmh.majelisKode} belum diatur di ALETA`
+        : `hari sidang Majelis ${acuan.majelisKode}, sekurangnya ${jeda} hari sesudah pendaftaran`
+      : acuan.majelisKode
+        ? `hari sidang Majelis ${acuan.majelisKode} belum diatur di ALETA`
         : "menunggu majelisnya ditentukan lebih dulu",
     jarakHari:
       tanggalSidang && identitas.tanggalDaftar
@@ -1907,6 +1920,8 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     ppp,
     pjs,
     phs,
+    // Majelis yang menjadi acuan PPP dan PHS - tercatat bila PMH sudah ada.
+    acuanMajelis: { dariTercatat: acuan.dariTercatat, majelisKode: acuan.majelisKode },
     tercatat: {
       ada: tercatat.length > 0,
       ketuaHakimId: ketuaTercatat ? ketuaTercatat.hakimId : 0,
@@ -2357,6 +2372,31 @@ async function majelisTercatat(perkaraId) {
  * pemasangan yang tidak mengisi jabatan_hakim_id sama sekali - di situ
  * urutan pertama yang dipakai, sebab itulah yang ditulis SIPP lebih dulu.
  */
+/**
+ * Majelis acuan PPP dan PHS.
+ *
+ * Belum ada PMH: usulan PMH itu sendiri (perilaku lama, utuh). Sudah ada PMH
+ * dan majelisnya terbaca di perkara_hakim_pn: majelis TERCATAT - kodenya
+ * dicocokkan ke SK menurut himpunan kode hakim (kodeSkUntuk), anggotanya
+ * urut ketua lebih dahulu. Susunan tercatat di luar SK berkode "" - hari
+ * sidangnya lalu mengikuti ketua, sama seperti susunan usulan di luar SK.
+ */
+function majelisAcuan(pmh, penetapan, tercatat, hakimAktif, susunanSk) {
+  const usulan = { majelisKode: (pmh && pmh.majelisKode) || "", anggota: (pmh && pmh.anggota) || [], dariTercatat: false };
+  const daftar = Array.isArray(tercatat) ? tercatat.filter((x) => Number(x.hakimId) > 0) : [];
+  if (!penetapan || !penetapan.pmh || daftar.length === 0) return usulan;
+
+  const peta = new Map((Array.isArray(hakimAktif) ? hakimAktif : []).map((x) => [Number(x.hakimId ?? x.id), x]));
+  const ketua = ketuaMajelisTercatat(daftar);
+  const urut = [ketua, ...daftar.filter((x) => x !== ketua)];
+  const anggota = urut.map((x) => {
+    const aktif = peta.get(Number(x.hakimId)) || {};
+    return { hakimId: Number(x.hakimId), nama: x.nama || aktif.nama || "", kode: String(aktif.kode || "") };
+  });
+  const majelisKode = kodeSkUntuk(anggota.map((x) => x.kode), susunanSk);
+  return { majelisKode, anggota, dariTercatat: true };
+}
+
 function ketuaMajelisTercatat(tercatat) {
   const daftar = Array.isArray(tercatat) ? tercatat.filter((x) => x.hakimId > 0) : [];
   if (daftar.length === 0) return null;
@@ -2500,5 +2540,7 @@ module.exports = {
   tanggalSidangPertama,
   tentukanSusunan,
   usulanPenunjukan,
+  // Diekspor untuk diuji satuan (penetapan sisa, 7 Okt 2026).
+  majelisAcuan,
   pegawaiPenunjukan,
 };

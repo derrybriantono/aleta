@@ -127,6 +127,7 @@ describe("alasan penolakan sampai ke petugas", () => {
 
   it("yang DIBACA orang bunyinya, bukan kodenya", () => {
     expect(konten).toContain("satu.bunyi || satu.alasan");
-    expect(konten).toContain("const bunyiGagal = gagal[0].bunyi || gagal[0].alasan;");
+    // Massal (7 Okt 2026): bunyi langkah gagal pertama tiap perkara.
+    expect(konten).toContain("const bunyi = pertama.bunyi || pertama.alasan;");
   });
 });

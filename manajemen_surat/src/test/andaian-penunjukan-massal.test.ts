@@ -128,7 +128,13 @@ describe("penetapan massal mengirim andaian dan memperlihatkan rinciannya", () =
 
   it("andaian hanya dari perkara yang lolos, dan hanya pada uji kering", () => {
     const badan = potongFungsi(konten(), "bagianPenetapanMassal");
-    expect(badan).toContain("if (kering && gagalSungguhan.length === 0) {");
+    // 7 Okt 2026: perkara yang gagal di-`continue` lebih dahulu; andaian
+    // hanya didorong sesudah lulus, dan hanya pada uji kering.
+    const lulus = badan.slice(badan.indexOf("lulus.add(nomor);"));
+    expect(badan.indexOf("if (gagalSungguhan.length > 0) {")).toBeGreaterThan(0);
+    expect(badan.indexOf("if (gagalSungguhan.length > 0) {")).toBeLessThan(badan.indexOf("lulus.add(nomor);"));
+    expect(lulus.slice(0, 200)).toContain("if (kering) {");
+    expect(lulus.slice(0, 300)).toContain("if (satuAndaian) andaian.push(satuAndaian);");
   });
 
   it("ambilUsulanPenunjukan menempelkan &andaian= hanya bila ada", () => {

@@ -421,6 +421,8 @@ const FUNGSI = [
   "hariAkhirPekan",
   "sebutTanggal",
   "kalimatAlasan",
+  // Penetapan sisa (7 Okt 2026): langkah yang sudah ada dibaca dari usulan.
+  "keadaanPenetapanUsulan",
   "rantaiPenetapan",
 ];
 const TETAPAN = ["ALETA_API_TULIS", "URUTAN_TULIS", "KALIMAT_ALASAN", "NAMA_HARI"];
