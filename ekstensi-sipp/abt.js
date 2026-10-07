@@ -203,6 +203,22 @@ function dikenali4020(daftar) {
 }
 
 /**
+ * ============================================================================
+ * TURUNAN 8503 - SATU KESATUAN (7 Okt 2026)
+ * ============================================================================
+ *
+ * Variabel yang kalimatnya disusun kueri ABT dari huruf alasan 8503 (data_sql
+ * - dihitung, bukan disimpan). Selama 8503 kosong atau bentuknya tidak
+ * dikenali, SEMUANYA berbunyi "TIDAK BENAR QUERY NYA ..." - satu sebab, bukan
+ * sembilan kerusakan. Daftar ini disebut pengguna (tangkapan 30, 7 Okt):
+ * 8531 dan 8532 (paket abt-alasan-cdeh) serta 8524 dulu tidak ikut, sehingga
+ * panel menyebut keduanya "2 variabel berbunyi pesan error" seolah kerusakan
+ * sendiri. Urutan di sini tidak berarti apa-apa - tampilan mengikuti urutan
+ * baris di halaman.
+ */
+const TURUNAN_8503 = Object.freeze(["4020", "8524", "8531", "8532", "8529", "8528", "8521", "8522", "8530"]);
+
+/**
  * Variabel "(OTOMATIS)" yang isinya disusun ABT dari kerangka fakta.
  *
  * Selama kerangkanya kosong, keempatnya berbunyi "TIDAK BENAR QUERY NYA" - dan
@@ -350,9 +366,11 @@ function asalAbt() {
  * kolom: halaman lain di aplikasi yang sama punya tabel dengan jumlah kolom
  * berbeda.
  */
-function barisVariabel() {
+function barisVariabel(akar) {
   const hasil = new Map();
-  for (const baris of Array.from(document.querySelectorAll("tr"))) {
+  // `akar` (7 Okt): halaman blangko yang dibaca ulang lewat DOMParser - lihat
+  // t6BacaUlangTurunan. Tanpa argumen: halaman yang sedang terbuka.
+  for (const baris of Array.from((akar || document).querySelectorAll("tr"))) {
     const sel = baris.querySelectorAll("td");
     if (sel.length < 3) continue;
     const kode = String(sel[0].id || "").trim();
@@ -3326,7 +3344,11 @@ function susunKartuSelisih(daftar) {
  *
  * @returns {Promise<{gagal: boolean, pesan: string, isi8503: string}>}
  */
-async function tulisHurufAlasan(dipilih, jatiDiri) {
+async function tulisHurufAlasan(dipilih, jatiDiri, opsi) {
+  // opsi.cara (7 Okt): isian langsung di butir "Isi huruf alasan perceraian
+  // (8503)" memakai penulis yang sama, dengan catatan riwayat sendiri.
+  const riwayat = { cara: "centangan huruf alasan" };
+  if (opsi && opsi.cara) riwayat.cara = String(opsi.cara);
   const isi8503 = susun8503(dipilih);
   const sebelum = (barisVariabel().get(VAR_HURUF) || {}).nilai || "";
   let pesan = "";
@@ -3343,7 +3365,7 @@ async function tulisHurufAlasan(dipilih, jatiDiri) {
         nama: "Alasan perceraian",
         sebelum,
         sesudah: isi8503,
-        cara: "centangan huruf alasan",
+        cara: riwayat.cara,
         pada: new Date().toISOString(),
       });
       const item = barisVariabel().get(VAR_HURUF);
@@ -7846,8 +7868,11 @@ const T6_PERAN_SDG = new Set(["super-admin", "admin", "panitera"]);
  * Variabel yang kalimatnya disusun ABT dari huruf alasan 8503 (butir 5).
  * Selama 8503 KOSONG, bunyi "TIDAK BENAR QUERY NYA" pada mereka memang belum
  * waktunya - bukan kerusakan - jadi tidak dimasukkan ke pita error.
+ *
+ * 7 Okt: = TURUNAN_8503 (ditambah 8524, 8531, 8532 - yang dulu lolos ke pita
+ * error sebagai "2 variabel berbunyi pesan error (8531, 8532)").
  */
-const T6_TERGANTUNG_8503 = ["4020", "8521", "8522", "8528", "8529", "8530"];
+const T6_TERGANTUNG_8503 = [...TURUNAN_8503];
 /** Penjelasan yang lebih panjang dari ini dilipat di balik ⓘ (butir 6). */
 const T6_INFO_BATAS = 90;
 /**
@@ -8404,7 +8429,10 @@ function t6SaatKlik(e) {
   }
   if (!t6Pakai(k, "abt-5")) return;
   // Perbaikan 1 Okt butir 10: di UI Baru yang ditunda tidak ikut ditanyakan.
-  const rusak = t6Modern() ? t6PilahGalat().rusak : t6DaftarGalat();
+  // 7 Okt: turunan 8503 yang dihimpun menjadi satu butir TETAP ditanyakan -
+  // kalimat errornya tetap ikut tercetak sampai 8503 diisi.
+  const pilah = t6Modern() ? t6PilahGalat() : null;
+  const rusak = pilah ? [...pilah.kesatuan, ...pilah.rusak] : t6DaftarGalat();
   if (!rusak.length) return;
   e.preventDefault();
   e.stopPropagation();
@@ -8617,18 +8645,26 @@ function t6HurufKosong() {
   return Boolean(item) && keadaanNilai(item.nilai) !== "terisi";
 }
 
-/** Daftar error dipilah: yang sungguh error, dan yang menunggu 8503. */
+/**
+ * Daftar error dipilah: yang sungguh error, yang menunggu 8503, dan (UI Baru,
+ * 7 Okt) `kesatuan` - turunan 8503 yang berbunyi error karena 8503 kosong
+ * atau tidak dikenali. Kesatuan tampil sebagai SATU butir "Isi huruf alasan
+ * perceraian (8503)", bukan sebagai daftar error per variabel - tetapi tetap
+ * ikut ditanyakan saat CETAK (t6SaatKlik).
+ */
 function t6PilahGalat() {
   const semua = t6DaftarGalat();
   // Perbaikan 1 Okt butir 10 (UI Baru saja): yang ditunda a1GalatDitunda
   // adalah "tunggu" - termasuk saat 8503 sudah berisi.
   if (t6Modern()) {
-    const tundaA1 = semua.filter((x) => a1GalatDitunda(x.kode));
-    return { rusak: semua.filter((x) => !tundaA1.includes(x)), tunggu: tundaA1 };
+    const kesatuan = t6Kesatuan8503Aktif() ? semua.filter((x) => TURUNAN_8503.includes(String(x.kode))) : [];
+    const sisa = semua.filter((x) => !kesatuan.includes(x));
+    const tundaA1 = sisa.filter((x) => a1GalatDitunda(x.kode));
+    return { rusak: sisa.filter((x) => !tundaA1.includes(x)), tunggu: tundaA1, kesatuan };
   }
-  if (!t6HurufKosong()) return { rusak: semua, tunggu: [] };
+  if (!t6HurufKosong()) return { rusak: semua, tunggu: [], kesatuan: [] };
   const tunggu = semua.filter((x) => T6_TERGANTUNG_8503.includes(String(x.kode)));
-  return { rusak: semua.filter((x) => !tunggu.includes(x)), tunggu };
+  return { rusak: semua.filter((x) => !tunggu.includes(x)), tunggu, kesatuan: [] };
 }
 
 function t6PasangPitaBahaya(k) {
@@ -8636,6 +8672,12 @@ function t6PasangPitaBahaya(k) {
   k.pitaBahaya.setAttribute("role", "alert");
   k.pitaBahaya.hidden = true;
   k.atas.appendChild(k.pitaBahaya);
+  // 7 Okt (UI Baru saja): satu butir untuk 8503 dan seluruh turunannya.
+  if (k.modern) {
+    k.pita8503 = t6El("div", "aleta-t6-pita-8503");
+    k.pita8503.hidden = true;
+    k.atas.appendChild(k.pita8503);
+  }
   k.pitaTunggu = t6El("div", "aleta-t6-pita-tunggu");
   k.pitaTunggu.hidden = true;
   k.atas.appendChild(k.pitaTunggu);
@@ -8644,7 +8686,14 @@ function t6PasangPitaBahaya(k) {
 function t6SegarkanPitaBahaya(k) {
   const pita = k.pitaBahaya;
   if (!pita) return;
-  const { rusak, tunggu } = t6PilahGalat();
+  const { rusak, tunggu, kesatuan } = t6PilahGalat();
+  if (k.pita8503) {
+    try {
+      t6Segarkan8503(k, kesatuan || []);
+    } catch (galat) {
+      t6CatatGalat(galat, "Butir 8503 panel ABT gagal disegarkan");
+    }
+  }
   const sidik =
     rusak.map((x) => x.kode).join(",") + "|" + tunggu.map((x) => x.kode).join(",") + "|" + nilaiVariabel(VAR_HURUF) + (t6Modern() ? `|${a1SidikStatus()}` : "");
   if (pita.dataset.sidik === sidik) return;
@@ -8705,11 +8754,15 @@ async function t6KonfirmasiCetak(k, tautan, rusak) {
   const { kurang } = periksaKelengkapan();
   const takBercabang = t6HurufTakBercabang();
   const wajib = t6WajibKosong(k);
+  const kesatuan = t6Modern() ? t6PilahGalat().kesatuan : [];
   const ya = await t6Dialog({
     judul: "Sebelum CETAK - kalimat error akan ikut tercetak",
     isi: [
       takBercabang.length
         ? `8503 berisi huruf ${takBercabang.join(", ")} yang belum punya cabang di blangko ini.`
+        : "",
+      kesatuan.length
+        ? `Huruf alasan perceraian (8503) belum diisi atau tidak dikenali ABT - ${kesatuan.map((x) => x.kode).join(", ")} berbunyi "TIDAK BENAR QUERY NYA" dan ikut tercetak. Isi 8503 di panel supaya ABT menyusun seluruhnya.`
         : "",
       t6PilahGalat().tunggu.length
         ? t6Modern()
@@ -8738,6 +8791,444 @@ async function t6KonfirmasiCetak(k, tautan, rusak) {
   if (!ya) return;
   t6CetakLolos = true;
   tautan.click();
+}
+
+// ─── 7 Okt: 8503 dan turunannya SATU KESATUAN (UI Baru saja) ────────────────
+//
+// Keluhan pengguna (tangkapan 30): pita merah menyebut "2 variabel berbunyi
+// pesan error (8531, 8532)", padahal 4020, 8524, 8521, 8522, 8528, 8529, 8530,
+// 8531, dan 8532 seluruhnya berbunyi "TIDAK BENAR QUERY NYA" karena SATU sebab:
+// huruf alasan 8503 belum diisi. Begitu 8503 terisi, kueri ABT menyusun
+// semuanya sendiri.
+//
+// Karena itu, selama 8503 kosong (atau bentuknya tidak dikenali kueri ABT) dan
+// sekurang-kurangnya satu turunannya berbunyi error, panel tidak menampilkan
+// daftar error per variabel melainkan SATU butir "Isi huruf alasan perceraian
+// (8503)" dengan isian langsung. Menyimpannya memakai penulis yang sama dengan
+// "Input ke ABT" (tulisHurufAlasan -> simpanVariabel -> abt/edit_data), lalu
+// turunannya dihitung ulang dengan membaca ulang halaman blangko yang sama
+// (GET, tanpa menulis) dan mengganti isi sel turunannya di tempat - panel
+// tidak dimuat ulang, isian lain yang sedang dikerjakan tidak hilang.
+//
+// Yang TIDAK berubah: CETAK tetap meminta "Sudah saya periksa" selama
+// turunannya masih berbunyi error (t6SaatKlik memasukkan `kesatuan`), dan
+// usulan huruf yang RAGU tidak pernah diisikan sendiri - ia hanya ditawarkan.
+
+/** Usulan huruf dari analisis saksi terakhir (soreGambarIsi). undefined = belum dibaca. */
+let t6UsulanHuruf = undefined;
+
+/** Turunan 8503 yang tergambar di halaman dan berbunyi pesan error. */
+function t6TurunanGalat() {
+  const peta = barisVariabel();
+  return TURUNAN_8503.filter((kode) => peta.has(kode) && keadaanNilai(peta.get(kode).nilai) === "galat");
+}
+
+/**
+ * Isi 8503 yang dikenali kueri ABT: deretan huruf A-H rapat (blangko berpaket
+ * abt-alasan-cdeh), atau salah satu gabungan lama (blangko tanpa paket), atau
+ * Fasakh/Murtad. "A, F" TIDAK - regexp ABT berjangkar dan tidak menerima koma.
+ */
+function t6HurufSah(nilai) {
+  if (keadaanNilai(nilai) !== "terisi") return false;
+  const baku = String(nilai || "").toUpperCase().replace(/\s+/g, "");
+  if (/^(FASAKH|MURTAD)$/.test(baku)) return true;
+  if (!/^[A-H]+$/.test(baku)) return false;
+  return dikenali4020(baku.split(""));
+}
+
+/**
+ * Butir satu kesatuan berlaku? Hanya UI Baru, hanya bila baris 8503 ada,
+ * 8503 tidak sah, dan sekurang-kurangnya satu turunannya berbunyi error.
+ * Huruf yang sah bentuknya tetapi belum bercabang di blangko lama (C, D, E, G
+ * tanpa paket) tetap memakai pesan lama "belum punya cabang" - tidak diambil
+ * alih di sini.
+ */
+function t6Kesatuan8503Aktif() {
+  if (!t6Modern()) return false;
+  const item = barisVariabel().get(VAR_HURUF);
+  if (!item) return false;
+  if (t6HurufSah(item.nilai)) return false;
+  if (t6HurufTakBercabang().length) return false;
+  return t6TurunanGalat().length > 0;
+}
+
+/**
+ * Usulan huruf dari jawaban analisis saksi (sama dengan kartu "Alasan
+ * perceraian"). `yakin` = huruf yang di kartu itu tercentang sendiri (tanpa
+ * syarat, centangOtomatis tidak false, dan tidak "jangan dipakai"); `ragu` =
+ * sisanya, kecuali yang di luar gugatan. null = tidak ada saksi terbaca.
+ */
+function t6Usulan8503(saksi) {
+  if (!saksi || typeof saksi !== "object") return null;
+  const yakin = [];
+  const ragu = [];
+  for (const h of Array.isArray(saksi.huruf) ? saksi.huruf : []) {
+    const x = String((h && h.huruf) || "").trim().toUpperCase();
+    if (!/^[A-H]$/.test(x)) continue;
+    const sebab = soreSebabHuruf(h, saksi);
+    if (sebab.nada === "awas") continue;
+    if (!h.syarat && h.centangOtomatis !== false) yakin.push(x);
+    else ragu.push(x);
+  }
+  const y = susun8503(yakin);
+  return { yakin: y, ragu: susun8503(ragu.filter((x) => !y.includes(x))) };
+}
+
+/**
+ * Isian 8503 dari ketikan: huruf A-H, boleh berspasi/berkoma/"dan" - disimpan
+ * rapat dan berurutan (susun8503). Gabungan yang tidak dikenali kueri blangko
+ * ini DITOLAK sebelum ditulis: menyimpannya hanya memindahkan pesan error.
+ */
+function t6Periksa8503(teks) {
+  const baku = String(teks || "").toUpperCase().replace(/\bDAN\b|&|[,;.+/\s]/g, "");
+  if (!baku) return { ok: false, isi: "", pesan: "Pilih atau ketik sekurang-kurangnya satu huruf alasan (A sampai H)." };
+  if (!/^[A-H]+$/.test(baku)) return { ok: false, isi: "", pesan: "Hanya huruf A sampai H - satu huruf atau gabungannya, mis. F, AF, BF, ABF." };
+  const isi = susun8503(baku.split(""));
+  if (!dikenali4020(isi.split(""))) {
+    return {
+      ok: false,
+      isi,
+      pesan: `Gabungan ${isi} belum punya cabang di blangko satker ini (paket ABT abt-alasan-cdeh belum terpasang) - pakai A, B, F, H, AB, AF, BF, atau ABF.`,
+    };
+  }
+  return { ok: true, isi, pesan: "" };
+}
+
+function t6JatiDiri8503(k) {
+  const s = soreKeadaan;
+  const j = (k && k.jatiDiri && k.jatiDiri.perkaraId ? k.jatiDiri : null) || (s && s.jatiDiri && s.jatiDiri.perkaraId ? s.jatiDiri : null) || jatiDiriPerkara();
+  return j && j.perkaraId ? j : null;
+}
+
+/** Isi sel ABT diganti dengan sel hasil baca ulang; hiasan ALETA di dalamnya dipertahankan. */
+function t6GantiIsiSel(sel, selBaru) {
+  const hiasan = (n) => n.nodeType === 1 && /(^|\s)aleta-/.test(String(n.getAttribute("class") || ""));
+  for (const n of Array.from(sel.childNodes)) if (!hiasan(n)) n.remove();
+  const acuan = sel.firstChild;
+  for (const n of Array.from(selBaru.childNodes)) {
+    const salin = document.importNode(n, true);
+    if (salin.nodeType === 1) {
+      if (salin.tagName === "SCRIPT") continue;
+      for (const s of Array.from(salin.querySelectorAll("script"))) s.remove();
+    }
+    sel.insertBefore(salin, acuan);
+  }
+  const gaya = selBaru.getAttribute("style");
+  if (gaya !== null) sel.setAttribute("style", gaya);
+}
+
+/**
+ * Menghitung ulang turunan 8503 TANPA memuat ulang panel: halaman blangko
+ * yang sama dibaca ulang (GET - ABT menghitung data_sql saat halaman
+ * disusun), lalu sel 8503 dan turunannya diganti di tempat. Penyunting yang
+ * sedang terbuka di sel itu tidak disentuh.
+ */
+async function t6BacaUlangTurunan() {
+  let teks = "";
+  try {
+    const r = await fetch(location.href, { credentials: "include", cache: "no-store" });
+    if (!r.ok) return { ok: false, pesan: `ABT menjawab ${r.status}`, diganti: [], sisa: t6TurunanGalat() };
+    teks = await r.text();
+  } catch (galat) {
+    return { ok: false, pesan: sorePesan(galat), diganti: [], sisa: t6TurunanGalat() };
+  }
+  let baru = new Map();
+  try {
+    baru = barisVariabel(new DOMParser().parseFromString(teks, "text/html"));
+  } catch {
+    baru = new Map();
+  }
+  if (!baru.size) return { ok: false, pesan: "halaman yang dibaca ulang tidak memuat tabel variabel", diganti: [], sisa: t6TurunanGalat() };
+  const kini = barisVariabel();
+  const diganti = [];
+  for (const kode of [VAR_HURUF, ...TURUNAN_8503]) {
+    const a = kini.get(kode);
+    const b = baru.get(kode);
+    if (!a || !b) continue;
+    if (a.selNilai.querySelector(".aleta-abt-sunting")) continue;
+    if (a.nilai === b.nilai) continue;
+    t6GantiIsiSel(a.selNilai, b.selNilai);
+    diganti.push(kode);
+  }
+  return { ok: true, pesan: "", diganti, sisa: t6TurunanGalat() };
+}
+
+function t6KabarHitungUlang(nilai, h) {
+  if (!h.ok) {
+    return {
+      teks: `8503 berisi "${nilai}", tetapi variabel turunannya belum dapat dihitung ulang dari ABT (${h.pesan}). Muat ulang halaman untuk melihat hasilnya.`,
+      gagal: true,
+      muatUlang: true,
+    };
+  }
+  if (h.sisa.length) {
+    return {
+      teks: `8503 berisi "${nilai}" dan turunannya sudah dihitung ulang ABT, tetapi ${h.sisa.join(", ")} masih berbunyi pesan error - lihat daftar error di atas.`,
+      gagal: true,
+    };
+  }
+  const turunan = h.diganti.filter((x) => x !== VAR_HURUF);
+  return {
+    teks: `8503 berisi "${nilai}". Variabel turunan dihitung ulang ABT${turunan.length ? ` (${turunan.join(", ")})` : ""} dan sudah terisi - tidak ada lagi pesan error dari 8503.`,
+    gagal: false,
+  };
+}
+
+/** Satu hitung ulang per isi 8503 - tombol Simpan dan pengamat tabel tidak menggandakannya. */
+function t6HitungUlangTurunan(k, nilai) {
+  if (k.hitungUlang && k.hitungUlang.nilai === nilai) return k.hitungUlang.janji;
+  const janji = t6BacaUlangTurunan()
+    .catch((galat) => ({ ok: false, pesan: sorePesan(galat), diganti: [], sisa: [] }))
+    .then((h) => {
+      if (t6Keadaan !== k) return h;
+      if (h.ok) {
+        // Sama dengan sesudah muat ulang: yang masih berbunyi error kini
+        // sungguh error, bukan "belum waktunya" (a1AdaInputTertunda).
+        a1Status.inputDiHalamanIni = false;
+        a1Status.inputSesudahMuat = true;
+      }
+      k.kabar8503 = t6KabarHitungUlang(nilai, h);
+      t6SegarkanHalaman(k);
+      return h;
+    });
+  k.hitungUlang = { nilai, janji };
+  return janji;
+}
+
+/**
+ * 8503 berubah di halaman ini (Simpan di butir ini, Input ke ABT, atau sunting
+ * di tempat) menjadi isi yang sah: turunannya dihitung ulang sendiri. Isi saat
+ * halaman dimuat tidak memicu apa pun - ABT baru saja menghitungnya.
+ */
+function t6PantauGanti8503(k) {
+  const nilai = nilaiVariabel(VAR_HURUF);
+  if (k.awal8503 === undefined) k.awal8503 = nilai;
+  if (nilai === k.awal8503 || !t6HurufSah(nilai)) return;
+  if (k.hitungUlang && k.hitungUlang.nilai === nilai) return;
+  const peta = barisVariabel();
+  if (!TURUNAN_8503.some((kode) => peta.has(kode))) return;
+  void t6HitungUlangTurunan(k, nilai);
+}
+
+function t6Segarkan8503(k, kesatuan) {
+  const kotak = k.pita8503;
+  if (!kotak) return;
+  t6PantauGanti8503(k);
+  const nilai = nilaiVariabel(VAR_HURUF);
+  const usulan = t6UsulanHuruf;
+  const paket = abtKenalSemuaHuruf();
+  const sidik = [
+    kesatuan.map((x) => x.kode).join(","),
+    nilai,
+    usulan === undefined ? "?" : usulan ? `${usulan.yakin}/${usulan.ragu}` : "-",
+    paket ? 1 : 0,
+    k.kabar8503 ? `${k.kabar8503.gagal ? 1 : 0}${k.kabar8503.teks}` : "",
+    k.simpan8503Jalan ? 1 : 0,
+  ].join("|");
+  if (kotak.dataset.sidik === sidik) return;
+  kotak.dataset.sidik = sidik;
+  kotak.textContent = "";
+  kotak.classList.toggle("aleta-t6-8503-isian", kesatuan.length > 0);
+
+  const gambarKabar = () => {
+    const kabar = t6El("div", "aleta-t6-8503-kabar");
+    kabar.setAttribute("role", "status");
+    if (k.kabar8503) {
+      kabar.textContent = k.kabar8503.teks;
+      kabar.classList.toggle("aleta-t6-gagal", Boolean(k.kabar8503.gagal));
+      if (k.kabar8503.muatUlang) {
+        const ulang = t6Tombol("Muat ulang halaman", "Memuat ulang halaman blangko ABT supaya variabel turunan 8503 dihitung ulang", "aleta-t6-kecil aleta-t6-8503-ulang");
+        ulang.addEventListener("click", () => location.reload());
+        kabar.appendChild(document.createTextNode(" "));
+        kabar.appendChild(ulang);
+      }
+    }
+    kabar.hidden = !kabar.textContent;
+    return kabar;
+  };
+
+  if (!kesatuan.length) {
+    // Sesudah 8503 terisi: hanya kabar hasil hitung ulang, bila ada.
+    kotak.hidden = !k.kabar8503;
+    if (k.kabar8503) kotak.appendChild(gambarKabar());
+    return;
+  }
+  kotak.hidden = false;
+
+  const kosong = keadaanNilai(nilai) !== "terisi";
+  kotak.appendChild(t6El("div", "aleta-t6-pita-judul", "Isi huruf alasan perceraian (8503)"));
+  kotak.appendChild(
+    t6El(
+      "div",
+      "aleta-t6-lembut",
+      kosong
+        ? `8503 masih kosong, sehingga ${kesatuan.length} variabel turunannya berbunyi "TIDAK BENAR QUERY NYA" - dan kalimat itu ikut tercetak ke dalam putusan. Cukup isi 8503: ABT menyusun seluruh turunannya sendiri.`
+        : `8503 berisi "${nilai}" - bentuk itu tidak dikenali kueri ABT, sehingga ${kesatuan.length} variabel turunannya berbunyi "TIDAK BENAR QUERY NYA". Tulis hurufnya rapat tanpa koma atau spasi (mis. AF).`
+    )
+  );
+  const rinci = document.createElement("details");
+  rinci.className = "aleta-t6 aleta-t6-pita-cara";
+  rinci.appendChild(t6El("summary", "", `Variabel turunan (${kesatuan.length})`));
+  const keping = t6El("div", "aleta-t6-keping-deret");
+  for (const x of kesatuan) keping.appendChild(t6KepingKode(x.kode, t6Pendek(x.nama, 28)));
+  rinci.appendChild(keping);
+  kotak.appendChild(rinci);
+
+  // ── Isian: tombol huruf A-H + kotak ketik, satu nilai ──────────────────
+  const hurufKini = kosong ? "" : t6Periksa8503(nilai);
+  let awal = "";
+  let asalAwal = "";
+  if (k.ketik8503 !== undefined) awal = k.ketik8503;
+  else if (hurufKini && hurufKini.ok) {
+    awal = hurufKini.isi;
+    asalAwal = `Diambil dari isi 8503 sekarang ("${nilai}"), dirapatkan - periksa, lalu simpan.`;
+  } else if (usulan && usulan.yakin) {
+    awal = usulan.yakin;
+  }
+
+  const deretHuruf = t6El("div", "aleta-t6-8503-huruf");
+  deretHuruf.setAttribute("role", "group");
+  deretHuruf.setAttribute("aria-label", "Huruf alasan perceraian");
+  const tombolHuruf = new Map();
+  for (const h of URUTAN_HURUF) {
+    const b = t6Tombol(h, `Huruf ${h}`, "aleta-t6-kecil aleta-t6-8503-tombol-huruf");
+    b.setAttribute("data-huruf", h);
+    if (!paket && !HURUF_LAMA.includes(h)) {
+      b.disabled = true;
+      b.title = `Huruf ${h} belum punya cabang di blangko satker ini (paket ABT abt-alasan-cdeh belum terpasang)`;
+    }
+    deretHuruf.appendChild(b);
+    tombolHuruf.set(h, b);
+  }
+  kotak.appendChild(deretHuruf);
+
+  const baris = t6El("div", "aleta-t6-8503-baris");
+  const kotakKetik = document.createElement("input");
+  kotakKetik.type = "text";
+  kotakKetik.className = "aleta-t6 aleta-t6-8503-ketik";
+  kotakKetik.maxLength = 24;
+  kotakKetik.placeholder = "mis. F, AF, BF, ABF";
+  kotakKetik.setAttribute("aria-label", "Isi 8503 - huruf alasan perceraian");
+  kotakKetik.value = awal;
+  const simpan = t6Tombol("Simpan ke ABT", "Menyimpan huruf alasan ke variabel 8503 di ABT, lalu menghitung ulang seluruh turunannya", "aleta-t6-8503-simpan");
+  baris.appendChild(kotakKetik);
+  baris.appendChild(simpan);
+  kotak.appendChild(baris);
+  const periksa = t6El("div", "aleta-t6-lembut aleta-t6-8503-periksa");
+  kotak.appendChild(periksa);
+
+  const segar = () => {
+    const p = t6Periksa8503(kotakKetik.value);
+    const ada = new Set(String(kotakKetik.value || "").toUpperCase().replace(/[^A-H]/g, "").split(""));
+    for (const [h, b] of tombolHuruf) b.setAttribute("aria-pressed", ada.has(h) ? "true" : "false");
+    simpan.disabled = Boolean(k.simpan8503Jalan) || !p.ok;
+    periksa.textContent = kotakKetik.value.trim() && !p.ok ? p.pesan : p.ok ? `Akan disimpan sebagai "${p.isi}".` : "";
+    periksa.classList.toggle("aleta-t6-gagal", Boolean(kotakKetik.value.trim() && !p.ok));
+  };
+  for (const [h, b] of tombolHuruf) {
+    b.addEventListener("click", () => {
+      const ada = new Set(String(kotakKetik.value || "").toUpperCase().replace(/[^A-H]/g, "").split("").filter(Boolean));
+      if (ada.has(h)) ada.delete(h);
+      else ada.add(h);
+      kotakKetik.value = susun8503(Array.from(ada));
+      k.ketik8503 = kotakKetik.value;
+      segar();
+    });
+  }
+  kotakKetik.addEventListener("input", () => {
+    k.ketik8503 = kotakKetik.value;
+    segar();
+  });
+  kotakKetik.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!simpan.disabled) simpan.click();
+    }
+  });
+
+  // ── Usulan ALETA: yakin diisikan (tetap menunggu Simpan), ragu ditawarkan ──
+  const usul = t6El("div", "aleta-t6-lembut aleta-t6-8503-usulan");
+  const tombolPakai = (huruf, judul) => {
+    const pakai = t6Tombol(`Pakai ${huruf}`, judul, "aleta-t6-kecil aleta-t6-8503-pakai");
+    pakai.addEventListener("click", () => {
+      kotakKetik.value = susun8503([...String(kotakKetik.value || "").toUpperCase().replace(/[^A-H]/g, "").split("").filter(Boolean), ...huruf.split("")]);
+      k.ketik8503 = kotakKetik.value;
+      segar();
+    });
+    return pakai;
+  };
+  if (asalAwal) usul.appendChild(document.createTextNode(`${asalAwal} `));
+  if (usulan === undefined) {
+    usul.appendChild(
+      document.createTextNode("Usulan huruf dari gugatan dan keterangan saksi belum terbaca (\"Isi dari SIPP & input ke ABT\") - isi sendiri sesuai pertimbangan majelis.")
+    );
+  } else if (!usulan || (!usulan.yakin && !usulan.ragu)) {
+    usul.appendChild(document.createTextNode("Huruf alasan tidak terdeteksi dari gugatan maupun keterangan saksi - isi sendiri sesuai pertimbangan majelis."));
+  } else {
+    if (usulan.yakin) {
+      // Diisikan hanya bila kotaknya memang berisi usulan ini (bukan ketikan
+      // petugas, bukan isi 8503 sekarang) - dan tetap menunggu Simpan.
+      const terisi = !asalAwal && k.ketik8503 === undefined;
+      usul.appendChild(
+        document.createTextNode(
+          terisi
+            ? `Usulan ALETA dari gugatan dan keterangan saksi: ${usulan.yakin} - sudah diisikan di kotak, belum tersimpan. Periksa, lalu tekan Simpan ke ABT. `
+            : `Usulan ALETA dari gugatan dan keterangan saksi: ${usulan.yakin}. `
+        )
+      );
+      if (!terisi) usul.appendChild(tombolPakai(usulan.yakin, `Menambahkan huruf ${usulan.yakin} ke isian 8503 (belum menyimpan)`));
+    }
+    if (usulan.ragu) {
+      usul.appendChild(document.createTextNode(` Usulan ragu: ${usulan.ragu} - tidak diisikan sendiri; periksa kartu Alasan perceraian lebih dulu. `));
+      usul.appendChild(tombolPakai(usulan.ragu, `Menambahkan huruf ${usulan.ragu} ke isian 8503 (belum menyimpan)`));
+    }
+  }
+  kotak.appendChild(usul);
+  if (!paket) {
+    kotak.appendChild(
+      t6El(
+        "div",
+        "aleta-t6-lembut aleta-teknis",
+        "Blangko satker ini belum dipasangi paket ABT abt-alasan-cdeh: hanya A, B, F, H, AB, AF, BF, dan ABF yang dikenali kuerinya."
+      )
+    );
+  }
+  kotak.appendChild(gambarKabar());
+
+  simpan.addEventListener("click", async () => {
+    const p = t6Periksa8503(kotakKetik.value);
+    if (!p.ok || k.simpan8503Jalan) {
+      segar();
+      return;
+    }
+    const jati = t6JatiDiri8503(k);
+    if (!jati) {
+      k.kabar8503 = { teks: "Perkara ini tidak terbaca dari halaman (tombol edit ABT tidak ditemukan) - 8503 tidak disimpan.", gagal: true };
+      t6SegarkanHalaman(k);
+      return;
+    }
+    k.simpan8503Jalan = true;
+    k.kabar8503 = { teks: `Menyimpan 8503 "${p.isi}" ke ABT…`, gagal: false };
+    t6SegarkanHalaman(k);
+    let r;
+    try {
+      r = await tulisHurufAlasan(p.isi.split(""), jati, { cara: "isian huruf alasan di panel (8503 satu kesatuan dengan turunannya)" });
+    } catch (galat) {
+      r = { gagal: true, pesan: `8503: ${sorePesan(galat)}` };
+    }
+    if (t6Keadaan !== k) return;
+    k.simpan8503Jalan = false;
+    if (r.gagal) {
+      k.kabar8503 = { teks: r.pesan, gagal: true };
+      t6SegarkanHalaman(k);
+      return;
+    }
+    k.ketik8503 = undefined;
+    k.kabar8503 = { teks: `8503 diisi "${r.isi8503}". Menghitung ulang variabel turunan dari ABT…`, gagal: false };
+    t6SegarkanHalaman(k);
+    await t6HitungUlangTurunan(k, nilaiVariabel(VAR_HURUF) || r.isi8503);
+  });
+  segar();
 }
 
 // ─── abt-11 / D13: bilah kemajuan ────────────────────────────────────────────
@@ -13070,6 +13561,8 @@ function soreGambarIsi(k, data) {
   k.a1TeksSaksi = data.teksSaksi || null;
   const kartuHuruf = soreKartuHuruf(k, data.saksi, hurufPilihan, Boolean(rinci));
   if (kartuHuruf) w.huruf.appendChild(kartuHuruf);
+  // 7 Okt (UI Baru): usulan huruf yang sama menjadi bawaan isian 8503.
+  t6UsulanHuruf = t6Usulan8503(data.saksi);
 
   w.usulan.textContent = "";
   const pilihan = sorePilihUsulan(data);
@@ -13363,7 +13856,7 @@ function soreKelola(k) {
     hasil.push([el, [...(berisi ? [] : ["alatVar"]), ...(a1Peran ? peranSalah(["isi-input", "susun-saksi", "unggah-putusan"]) : [])]]);
   }
   if (a1Peran) {
-    for (const kelas of ["aleta-t6-pita-bahaya", "aleta-t6-pita-tunggu"]) {
+    for (const kelas of ["aleta-t6-pita-bahaya", "aleta-t6-pita-8503", "aleta-t6-pita-tunggu"]) {
       for (const el of anak(kelas)) hasil.push([el, peranSalah(["isi-input", "unggah-putusan"])]);
     }
   }
@@ -13862,6 +14355,10 @@ function a1AdaInputTertunda() {
 function a1GalatDitunda(kode) {
   if (!t6Modern()) return false;
   if (!T6_TERGANTUNG_8503.includes(String(kode))) return false;
+  // 7 Okt: 8503 kosong/tidak dikenali = turunannya tidak akan terisi oleh
+  // Input lain mana pun - ia butir "Isi huruf alasan perceraian (8503)", dan
+  // penjaga CETAK (termasuk penjaga lama) tetap menanyakannya.
+  if (t6Kesatuan8503Aktif()) return false;
   a1MuatStatusInput();
   return a1AdaInputTertunda();
 }
