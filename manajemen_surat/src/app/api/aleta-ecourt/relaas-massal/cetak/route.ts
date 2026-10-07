@@ -65,7 +65,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const hasil = await getGatewayRelaasCetak({ tanggal });
+    // Pemetaan blangko admin (2 Okt sore, butir 1) dibaca SERENTAK dengan
+    // jawaban bot (7 Okt 2026, cetak relaas cepat) - keduanya saling lepas, dan
+    // petaPemetaanBerlaku tidak pernah melempar (tabel tak terbaca = peta
+    // kosong, jadi blangko bawaan dipakai seperti dulu).
+    const [hasil, petaRelaas, petaPbt] = await Promise.all([
+      getGatewayRelaasCetak({ tanggal }),
+      petaPemetaanBerlaku(db, "relaas"),
+      petaPemetaanBerlaku(db, "pbt"),
+    ]);
     if (!hasil.ok) {
       // Sebab dari bot diteruskan apa adanya - termasuk "halaman 404" ketika
       // rutenya belum terpasang di bot yang sedang berjalan.
@@ -87,9 +95,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Pemetaan blangko admin (2 Okt sore, butir 1): dibaca sekali per permintaan.
-    // Tabel tak terbaca = peta kosong, jadi blangko bawaan dipakai seperti dulu.
-    const [petaRelaas, petaPbt] = await Promise.all([petaPemetaanBerlaku(db, "relaas"), petaPemetaanBerlaku(db, "pbt")]);
+    // Pemetaan blangko dibaca sekali per permintaan (di atas, serentak dengan bot).
     const petaBlangko = { relaas: petaRelaas, pbt: petaPbt };
     const nilaiSatu = (satu: DokumenRelaasCetakGateway): DokumenRelaasCetakPortal => {
       // Peta ikut dinilai (6 Okt, butir 10) - layar memakai peta yang sama.

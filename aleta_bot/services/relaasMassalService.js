@@ -1974,7 +1974,7 @@ async function relaasCetakHarian(tanggalDiminta = "") {
   // satu yang tanggalnya perkara_penetapan.sidang_pertama - penetapan hari
   // sidang ULANG (lihat jalan (a) di bawah); jadwal kembar setanggal dapat
   // melipatgandakan barisnya, jadi yang dipakai baris pertama per perkara.
-  const barisDaftar = await kueri(
+  const janjiDaftar = kueri(
     `SELECT x.perkara_id AS perkaraId, pk.tanggal_pendaftaran AS tanggalPendaftaran,
             pp.penetapan_hari_sidang AS tanggalPhs, pp.sidang_pertama AS sidangPertamaPhs,
             j.id AS sidangId, j.urutan AS urutan, j.tanggal_sidang AS tanggalSidang,
@@ -1994,12 +1994,11 @@ async function relaasCetakHarian(tanggalDiminta = "") {
       LIMIT ?`,
     [tanggal, tanggal, BATAS_BARIS + 1]
   );
-  pagar(barisDaftar, "Perkara yang didaftarkan atau ditetapkan hari sidangnya");
 
   // (b) Sidang pada T beserta sidang BERIKUTNYA. Tiga sub-kueri skalar
   // memilah yang tanpa sidang berikutnya: diputus hari itu (masuk (d)), sidang
   // ikrar yang ikrarnya tercatat (selesai), atau diputus lebih awal.
-  const barisSidang = await kueri(
+  const janjiSidang = kueri(
     `SELECT j.id AS sidangAsalId, j.perkara_id AS perkaraId, j.urutan AS urutanAsal,
             j.dihadiri_oleh AS dihadiriOleh, j.ikrar_talak AS ikrarAsal, j.alasan_ditunda AS alasanAsal,
             n.id AS sidangId, n.urutan AS urutan, n.tanggal_sidang AS tanggalSidang,
@@ -2019,11 +2018,10 @@ async function relaasCetakHarian(tanggalDiminta = "") {
       LIMIT ?`,
     [tanggal, BATAS_BARIS + 1]
   );
-  pagar(barisSidang, "Sidang");
 
   // (c) Jadwal yang DIINPUT pada T - rentang setengah terbuka [T, T+1) supaya
   // indeks tidak dimatikan DATE() dan jam 23.59 tetap ikut.
-  const barisJadwalBaru = await kueri(
+  const janjiJadwalBaru = kueri(
     `SELECT n.id AS sidangId, n.perkara_id AS perkaraId, n.urutan AS urutan,
             n.tanggal_sidang AS tanggalSidang, n.ikrar_talak AS ikrarTujuan,
             n.verzet AS verzetTujuan, n.agenda AS agendaTujuan,
@@ -2039,13 +2037,12 @@ async function relaasCetakHarian(tanggalDiminta = "") {
       LIMIT ?`,
     [tanggal, besok, BATAS_BARIS + 1]
   );
-  pagar(barisJadwalBaru, "Jadwal sidang yang diinput");
 
   // (d) Putusan pada T. Sidang pembacaannya lewat sub-kueri, bukan JOIN: 46
   // perkara punya dua sidang sehari, dan JOIN akan melipatgandakan barisnya.
   // Status putusan lewat JOIN status_putusan: kolom status_putusan_nama milik
   // perkara_putusan kosong di SIPP ini, namanya hanya ada di tabel rujukan.
-  const barisPutusan = await kueri(
+  const janjiPutusan = kueri(
     `SELECT pu.perkara_id AS perkaraId, pu.status_putusan_id AS statusPutusanId,
             sp.nama AS statusPutusanNama,
             (SELECT j.id FROM perkara_jadwal_sidang j
@@ -2063,7 +2060,6 @@ async function relaasCetakHarian(tanggalDiminta = "") {
       LIMIT ?`,
     [tanggal, BATAS_BARIS + 1]
   );
-  pagar(barisPutusan, "Putusan");
 
   // (e) Sidang HARI KERJA SEBELUMNYA yang punya sidang berikutnya - jalan (b)
   // tanggal itu, dipulangkan terpisah (lihat bagian (e) di bawah). "Hari
@@ -2071,7 +2067,7 @@ async function relaasCetakHarian(tanggalDiminta = "") {
   // akhir pekan dan hari libur terlewati sendiri karena tidak ada sidang.
   // Jadwal yang diinput pada T atau sesudahnya tidak diambil - yang diinput
   // pada T sudah ditangkap jaring (c), yang sesudahnya belum ada pada hari T.
-  const barisKemarin = await kueri(
+  const janjiKemarin = kueri(
     `SELECT j.id AS sidangAsalId, j.perkara_id AS perkaraId, j.urutan AS urutanAsal,
             j.tanggal_sidang AS tanggalAsal, j.dihadiri_oleh AS dihadiriOleh,
             j.alasan_ditunda AS alasanAsal,
@@ -2091,6 +2087,20 @@ async function relaasCetakHarian(tanggalDiminta = "") {
       LIMIT ?`,
     [tanggal, tanggalMundur(tanggal, 7), tanggal, BATAS_BARIS + 1]
   );
+  // Kelima kueri tanggal (a)-(e) saling lepas, jadi dikirim SERENTAK ke kolam
+  // koneksi (cetak relaas cepat, 7 Okt 2026) - dulu berurutan, lima kali
+  // waktu jawab MySQL. Pagar tetap dipasang berurutan, jadi catatannya sama.
+  const [barisDaftar, barisSidang, barisJadwalBaru, barisPutusan, barisKemarin] = await Promise.all([
+    janjiDaftar,
+    janjiSidang,
+    janjiJadwalBaru,
+    janjiPutusan,
+    janjiKemarin,
+  ]);
+  pagar(barisDaftar, "Perkara yang didaftarkan atau ditetapkan hari sidangnya");
+  pagar(barisSidang, "Sidang");
+  pagar(barisJadwalBaru, "Jadwal sidang yang diinput");
+  pagar(barisPutusan, "Putusan");
   pagar(barisKemarin, "Sidang hari kerja sebelumnya");
 
   const dokumen = new Map();
@@ -2518,28 +2528,31 @@ async function relaasCetakHarian(tanggalDiminta = "") {
   let relaasAda = [];
   let pbtAda = [];
   if (perkaraIds.length > 0) {
-    penunjukan = await kueri(
+    // Kelima kueri di bawah saling lepas - dikirim SERENTAK (7 Okt 2026).
+    const janjiPenunjukan = kueri(
       `SELECT perkara_id AS perkaraId, jurusita_nama AS nama, jurusita_nip AS nip
          FROM perkara_jurusita
         WHERE aktif = 'Y' AND perkara_id IN (?)
         ORDER BY perkara_id, urutan, id`,
       [perkaraIds]
     );
-    nipPerNama = await kueri(
+    const janjiNip = kueri(
       `SELECT jurusita_nama AS nama, jurusita_nip AS nip, COUNT(*) AS n
          FROM perkara_jurusita
         WHERE jurusita_nip IS NOT NULL AND jurusita_nip <> ''
         GROUP BY jurusita_nama, jurusita_nip`
     );
-    sisiPihak = await kueri(
+    const janjiPihak = kueri(
       sqlSisiPihak(),
       TABEL_PIHAK.map(() => perkaraIds)
     );
+    let janjiRelaas = Promise.resolve([]);
+    let janjiPbt = Promise.resolve([]);
     const sidangTujuanIds = [...new Set(semua.map((x) => bilangan(x.sidangId)).filter((n) => n > 0))];
     if (sidangTujuanIds.length > 0) {
       // Syarat perkara disebut: 103 relaas se-riwayat sidang_id-nya milik
       // perkara lain - lihat kepala berkas.
-      relaasAda = await kueri(
+      janjiRelaas = kueri(
         `SELECT sidang_id AS sidangId, perkara_id AS perkaraId, pihak_id AS pihakId
            FROM perkara_pelaksanaan_relaas
           WHERE sidang_id IN (?) AND perkara_id IN (?)`,
@@ -2557,7 +2570,7 @@ async function relaasCetakHarian(tanggalDiminta = "") {
       // 2026: kedua baris kosong, dan dulu terbaca "sudah"; 60 dokumen
       // pemberitahuan 2026 begitu, 50 di antaranya seluruh barisnya kosong).
       // Pemberitahuan bertanggal lebih lama milik putusan lain.
-      pbtAda = await kueri(
+      janjiPbt = kueri(
         `SELECT perkara_id AS perkaraId, pihak AS pihakKe, pihak_id AS pihakBarisId
            FROM perkara_putusan_pemberitahuan_putusan
           WHERE perkara_id IN (?)
@@ -2567,6 +2580,13 @@ async function relaasCetakHarian(tanggalDiminta = "") {
         [perkaraPutusIds, tanggal]
       );
     }
+    [penunjukan, nipPerNama, sisiPihak, relaasAda, pbtAda] = await Promise.all([
+      janjiPenunjukan,
+      janjiNip,
+      janjiPihak,
+      janjiRelaas,
+      janjiPbt,
+    ]);
   }
 
   // ---- penunjukan juru sita ------------------------------------------------
