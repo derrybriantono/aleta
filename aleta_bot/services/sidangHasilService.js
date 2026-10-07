@@ -55,6 +55,8 @@
 const db = require("../db_config");
 const penetapan = require("./penetapanTulisService");
 const hariLiburService = require("./hariLiburService");
+const externalDbService = require("./externalDbService");
+const { keadaanDisidang, ruangDisidang } = require("./antrianDisidang");
 
 /** Nama halaman pada audit - persis yang ditulis SIPP sendiri. */
 const NAMA_HALAMAN = "PENUNDAAN JADWAL SIDANG";
@@ -156,6 +158,306 @@ async function ruangDipilih(pilihan, keadaan) {
 function jamDariCap(cap) {
   const cocok = String(cap || "").match(/(\d{2}):(\d{2}):(\d{2})/);
   return cocok ? `${cocok[1]}:${cocok[2]}:${cocok[3]}` : "";
+}
+
+/**
+ * ============================================================================
+ * BENDERA BARIS SIDANG BERIKUTNYA: 'Y' ATAU 'T', TIDAK PERNAH NULL
+ * ============================================================================
+ *
+ * Kasus 273/Pdt.G/2026/PA.Dgl, 7 Okt 2026 13:34: tombol TUNDA menulis baris
+ * sidang hari ini (ditunda='Y', alasan) lalu GAGAL menyisipkan sidang
+ * berikutnya - "Column 'verzet' cannot be null" (ER_BAD_NULL_ERROR 1048).
+ * `perkara_jadwal_sidang.verzet` NOT NULL DEFAULT 'T'; ALETA mengirim NULL
+ * tegas untuk sidang yang bukan verzet, dan MariaDB menolak NULL tegas pada
+ * INSERT satu baris walau sql_mode tidak ketat. Diulang di basis data uji
+ * lokal: bentuk lama -> 1048, bentuk ini -> tersimpan.
+ *
+ * SIPP sendiri (jadwal_sidang_c.php::validateTunda) tidak menyebut kolomnya
+ * kecuali perkaranya verzet/keberatan/ikrar - jadi barisnya berisi bawaan
+ * 'T'. Aplikasi antrian (scriptTunda) menulis 'T' tegas. Di sini 'T' tegas.
+ */
+function bendera(nilai) {
+  return bersih(nilai).toUpperCase() === "Y" ? "Y" : "T";
+}
+
+/** Sabtu/Minggu - ditolak SIPP ("Tidak Dapat Memilih Tanggal Sidang Pada Hari Libur, Sabtu dan Minggu"). */
+function akhirPekan(iso) {
+  if (!tanggalSah(iso)) return false;
+  const hari = new Date(`${bersih(iso)}T00:00:00`).getDay();
+  return hari === 0 || hari === 6;
+}
+
+/**
+ * ============================================================================
+ * ANTRIAN SIDANG - SUMBER JAM MULAI, RUANG, DAN KEHADIRAN SIDANG HARI INI
+ * ============================================================================
+ *
+ * Aplikasi antrian satker (/var/www/html/antrian/php/_fungsi.php, dibaca
+ * 7 Okt 2026) mengisi baris sidang yang ditunda/diputus dari barisnya di
+ * sipp_turunan_antrian.antrian_sidang:
+ *
+ *   jam_sidang     = antrian_sidang.jam_sidang (jam masuk ruang, ditulis
+ *                    tombol PROSES), BUKAN jam jadwal 09:00;
+ *   dihadiri_oleh  = data.skrg.php: pihak_1 & pihak_2 terisi -> 1, hanya
+ *                    pihak_1 -> 2, hanya pihak_2 -> 3, keduanya kosong -> 4;
+ *   ruangan        = ruang sidang tempat perkaranya disidangkan.
+ *
+ * Perkara 273 hari itu: antrian jam_sidang 13:12:50, pihak_1 11:12:07,
+ * pihak_2 kosong. ALETA menulis jam 09:00:00 dan dihadiri 1 ("semua hadir");
+ * yang ditulis PP lewat SIPP sesudahnya: 13:12:50 dan 2 ("pihak pertama
+ * saja") - persis yang tercatat di antrian.
+ *
+ * Kehadiran KOSONG-KOSONG sengaja dibaca "tidak diketahui" (null), bukan 4:
+ * perkara yang tidak mengambil nomor antrian juga kosong-kosong, dan
+ * menuliskan "para pihak tidak hadir" untuknya adalah pernyataan fakta
+ * persidangan yang tidak pernah diamati.
+ *
+ * Hanya SELECT; gagal membaca = null, dan rencananya kembali ke nilai SIPP.
+ */
+function ringkasAntrian(baris) {
+  if (!baris || typeof baris !== "object") return null;
+  const ada = (v) => v !== null && v !== undefined && bersih(v) !== "" && !/^0000-00-00/.test(bersih(v));
+  const hadir1 = ada(baris.pihak_1);
+  const hadir2 = ada(baris.pihak_2);
+  const keadaan = keadaanDisidang(baris.disidang);
+  const ruangSedang = ruangDisidang(baris.disidang);
+  const ruanganId = ruangSedang || Number(baris.ruangan_id) || null;
+  // Jam masuk ruang hanya berarti bila perkaranya pernah diproses masuk ruang
+  // (disidang terisi). Selain itu kolomnya jam jadwal atau kosong.
+  const jamMasuk = keadaan === "disidang" || keadaan === "selesai" ? jamDariCap(`x ${bersih(baris.jam_sidang)}`) : "";
+  let dihadiriOleh = null;
+  if (hadir1 && hadir2) dihadiriOleh = 1;
+  else if (hadir1) dihadiriOleh = 2;
+  else if (hadir2) dihadiriOleh = 3;
+  return {
+    jadwalId: Number(baris.id) || null,
+    ruanganId,
+    keadaan,
+    jamMasuk,
+    hadirPihak1: hadir1,
+    hadirPihak2: hadir2,
+    dihadiriOleh,
+  };
+}
+
+async function antrianSidangUntuk(keadaan) {
+  if (!keadaan) return null;
+  const tanggal = penetapan.tanggalIso(keadaan.tanggalSidang);
+  if (!tanggalSah(tanggal)) return null;
+  const baris = await externalDbService
+    .query(
+      "antrian_sidang",
+      `SELECT id, perkara_id, tanggal_sidang, ruangan_id, disidang,
+              TIME_FORMAT(jam_sidang, '%H:%i:%s') AS jam_sidang, pihak_1, pihak_2
+         FROM sipp_turunan_antrian.antrian_sidang
+        WHERE perkara_id = ? AND tanggal_sidang = ?
+        LIMIT 5`,
+      [Number(keadaan.perkaraId) || 0, tanggal]
+    )
+    .catch(() => null);
+  if (!Array.isArray(baris) || baris.length === 0) return null;
+  const tepat = baris.find((b) => Number(b.id) === Number(keadaan.jadwalId)) || baris[0];
+  return ringkasAntrian(tepat);
+}
+
+/**
+ * ============================================================================
+ * PENGINPUT DI SIPP = PANITERA SIDANG (PP) PERKARA ITU - KEPUTUSAN 7 OKT 2026
+ * ============================================================================
+ *
+ * Keputusan pengguna (dikonfirmasi lewat orkestrator, 7 Okt 2026): siapa pun
+ * yang menekan TUNDA atau PUTUSAN di Jadwal Sidang ALETA, yang tercatat di
+ * SIPP (diperbaharui_oleh / diinput_oleh / sys_audittrail.username) adalah
+ * PANITERA SIDANG perkara itu - sama dengan aplikasi antrian satker
+ * (`$data_pp`: perkara_panitera_pn aktif='Y' JOIN v_users block=0). Penekan
+ * sebenarnya hanya di jejak ALETA (aleta_bot_jejak_penetapan.operator).
+ *
+ * TIDAK MENEBAK: aplikasi antrian mengambil LIMIT 1. Di sini PP aktif yang
+ * lebih dari satu (14 perkara satker, 7 Okt 2026), PP tanpa akun SIPP, akun
+ * yang diblokir, atau satu PP berakun ganda DITOLAK dengan sebab yang jelas -
+ * tidak jatuh diam-diam ke akun lain (cadangan olehUsername dibuang).
+ *
+ * "Aktif pada hari sidang": bila ada lebih dari satu PP aktif, yang
+ * penetapannya sesudah hari sidang disisihkan lebih dulu.
+ *
+ * @param {Array<object>} baris  perkara_panitera_pn aktif LEFT JOIN v_users
+ * @param {string} tanggalSidang ISO
+ */
+function pilihPaniteraSidang(baris, tanggalSidang) {
+  const semua = Array.isArray(baris) ? baris : [];
+  if (semua.length === 0) return { ok: false, alasan: "panitera_sidang_tidak_ketemu" };
+  const tgl = penetapan.tanggalIso(tanggalSidang);
+  const idPanitera = (b) => String(b.panitera_id ?? "");
+  let calon = semua;
+  const kelompok = new Set(semua.map(idPanitera));
+  if (kelompok.size > 1 && tanggalSah(tgl)) {
+    const sebelum = semua.filter((b) => {
+      const t = penetapan.tanggalIso(b.tanggal_penetapan);
+      return !tanggalSah(t) || t <= tgl;
+    });
+    if (sebelum.length > 0) calon = sebelum;
+  }
+  const pp = [...new Set(calon.map(idPanitera))];
+  if (pp.length > 1) {
+    const nama = [...new Set(calon.map((b) => bersih(b.panitera_nama || b.fullname)).filter(Boolean))];
+    return { ok: false, alasan: "panitera_sidang_ganda", nama };
+  }
+  const milik = calon.filter((b) => bersih(b.username));
+  // block 1 = diblokir; kosong dibaca tidak diblokir (v_users.block bawaan 0).
+  const aktif = milik.filter((b) => Number(b.block || 0) === 0);
+  const namaPp = bersih(calon[0].panitera_nama) || bersih(calon[0].fullname);
+  if (aktif.length === 0) {
+    return {
+      ok: false,
+      alasan: milik.length > 0 ? "akun_sipp_pp_diblokir" : "akun_sipp_pp_tidak_ada",
+      nama: namaPp ? [namaPp] : [],
+    };
+  }
+  const akun = [...new Set(aktif.map((b) => bersih(b.username)))];
+  if (akun.length > 1) return { ok: false, alasan: "akun_sipp_pp_ganda", nama: namaPp ? [namaPp] : [], akun };
+  const satu = aktif[0];
+  return {
+    ok: true,
+    akun: {
+      username: bersih(satu.username),
+      fullname: bersih(satu.fullname) || namaPp,
+      paniteraId: Number(satu.panitera_id) || null,
+    },
+  };
+}
+
+async function paniteraSidang(perkaraId, tanggalSidang) {
+  const id = Number(perkaraId);
+  if (!Number.isInteger(id) || id <= 0) return { ok: false, alasan: "panitera_sidang_tidak_ketemu" };
+  const baris = await kueri(
+    `SELECT c.panitera_id, c.panitera_nama, c.tanggal_penetapan,
+            d.username, d.fullname, d.block
+       FROM perkara_panitera_pn c
+       LEFT JOIN v_users d ON d.panitera_id = c.panitera_id
+      WHERE c.aktif = 'Y' AND c.perkara_id = ?`,
+    [id]
+  ).catch(() => null);
+  if (!Array.isArray(baris)) return { ok: false, alasan: "panitera_sidang_tidak_terbaca" };
+  return pilihPaniteraSidang(baris, tanggalSidang);
+}
+
+/**
+ * Sidang yang SUDAH ditunda: utuh (ada sidang sesudahnya) atau setengah jadi
+ * (ditunda='Y' tetapi sidang berikutnya tidak pernah lahir - keadaan 273).
+ * null = tidak terbaca.
+ */
+async function adaSidangSesudah(keadaan) {
+  const baris = await kueri(
+    `SELECT COUNT(*) AS n FROM perkara_jadwal_sidang
+      WHERE perkara_id = ? AND id <> ? AND (urutan > ? OR tanggal_sidang > ?)`,
+    [
+      Number(keadaan.perkaraId) || 0,
+      Number(keadaan.jadwalId) || 0,
+      Number(keadaan.urutan) || 0,
+      penetapan.tanggalIso(keadaan.tanggalSidang),
+    ]
+  ).catch(() => null);
+  if (!Array.isArray(baris) || !baris[0]) return null;
+  return Number(baris[0].n) > 0;
+}
+
+/**
+ * ============================================================================
+ * MENJALANKAN RENCANA HASIL SIDANG SECARA UTUH - SATU TRANSAKSI
+ * ============================================================================
+ *
+ * Sampai 1.187.1 tiap langkah ditulis sendiri-sendiri lewat kolam sambungan.
+ * Pada 273, langkah 1-2 (sidang hari ini ditunda + auditnya) tertulis, langkah
+ * 3 (sidang berikutnya) ditolak, dan sisanya tidak pernah jalan: sidang
+ * tercatat "ditunda" tanpa sidang berikutnya, dan tombolnya menolak dicoba
+ * lagi ("sidang_sudah_ditunda").
+ *
+ * Kini seluruh langkah memakai SATU sambungan dalam satu transaksi (keempat
+ * tabelnya InnoDB; prosedur perkara_proses_update tidak ber-COMMIT): gagal di
+ * langkah mana pun -> ROLLBACK, tidak ada yang tertinggal. `dipulihkan`
+ * menyebut apakah pembatalannya sendiri berhasil.
+ */
+function ambilSambungan() {
+  return new Promise((selesai, gagal) => {
+    if (typeof db.getConnection !== "function") {
+      gagal(new Error("kolam sambungan SIPP tidak mendukung transaksi"));
+      return;
+    }
+    db.getConnection((galat, sambungan) => (galat ? gagal(galat) : selesai(sambungan)));
+  });
+}
+
+function pesanTeknis(galat) {
+  const kode = galat && galat.code ? `${galat.code}: ` : "";
+  return `${kode}${String((galat && (galat.sqlMessage || galat.message)) || galat)}`.slice(0, 300);
+}
+
+async function jalankanRencanaUtuh(rencana, opsi = {}) {
+  const kering = opsi.kering !== false;
+  if (kering || !rencana || rencana.ok !== true) return penetapan.jalankanRencana(rencana, { kering });
+
+  let sambungan;
+  try {
+    sambungan = await ambilSambungan();
+  } catch (galat) {
+    return {
+      ok: false,
+      kering: false,
+      alasan: "server_sipp_tidak_terhubung",
+      pesan: pesanTeknis(galat),
+      selesai: [],
+      dipulihkan: true,
+    };
+  }
+  const lewat = (sql, params = []) =>
+    new Promise((selesai, gagal) => {
+      sambungan.query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
+    });
+  const batalkan = () => lewat("ROLLBACK").then(
+    () => true,
+    () => false
+  );
+
+  try {
+    await lewat("START TRANSACTION");
+    const hasil = await penetapan.jalankanRencana(rencana, { kering: false, kueri: lewat });
+    if (!hasil.ok) {
+      const dipulihkan = await batalkan();
+      return { ...hasil, dipulihkan, dibatalkan: hasil.selesai || [], selesai: dipulihkan ? [] : hasil.selesai || [] };
+    }
+    try {
+      await lewat("COMMIT");
+    } catch (galat) {
+      const dipulihkan = await batalkan();
+      return {
+        ok: false,
+        kering: false,
+        alasan: "gagal_menyimpan",
+        pesan: pesanTeknis(galat),
+        dipulihkan,
+        dibatalkan: hasil.selesai || [],
+        selesai: [],
+      };
+    }
+    return { ...hasil, utuh: true };
+  } catch (galat) {
+    const dipulihkan = await batalkan();
+    return {
+      ok: false,
+      kering: false,
+      alasan: "gagal_menulis",
+      pesan: pesanTeknis(galat),
+      dipulihkan,
+      selesai: [],
+    };
+  } finally {
+    try {
+      sambungan.release();
+    } catch {
+      // Sambungan yang sudah putus tidak perlu dilepas.
+    }
+  }
 }
 
 /**
@@ -476,24 +778,31 @@ function prosesUntukTunda(keadaan, jenisPengadilan) {
 async function susunRencanaTunda(minta = {}) {
   const keadaan = await keadaanJadwal(minta.jadwalId);
   if (!keadaan) return { ok: false, alasan: "jadwal_tidak_ketemu" };
-  if (bersih(keadaan.ditunda) === "Y") return { ok: false, alasan: "sidang_sudah_ditunda" };
+  if (bersih(keadaan.ditunda) === "Y") {
+    // Ditunda tetapi sidang berikutnya tidak pernah lahir = penundaan yang
+    // setengah jadi (keadaan 273 sebelum 7 Okt 2026). Disebut dengan namanya
+    // sendiri supaya petugas tahu apa yang harus dibereskan di SIPP.
+    const utuh = await adaSidangSesudah(keadaan);
+    return {
+      ok: false,
+      alasan: utuh === false ? "tunda_belum_utuh" : "sidang_sudah_ditunda",
+      alasanTercatat: bersih(keadaan.alasanDitunda),
+    };
+  }
 
   // ==========================================================================
-  // AKUNNYA DITURUNKAN DARI PERKARA, TIDAK LAGI DIKETIK
+  // AKUNNYA DITURUNKAN DARI PERKARANYA: PANITERA SIDANG (PP) - TIDAK DIKETIK
   // ==========================================================================
   //
-  // Sebelumnya username-nya disebut pemanggil dan borangnya menanyakannya.
-  // Aplikasi antrian sidang satker tidak pernah bertanya - ia membaca panitera
-  // pengganti perkara itu dari perkara_panitera_pn. Bertanya membuka pintu
-  // menulis atas nama orang lain, dan audit trail SIPP hanya mencatat nama
-  // yang diberikan kepadanya: tidak ada satu pun pemeriksaan yang akan
-  // menangkapnya.
-  //
-  // Username yang disebut pemanggil masih diterima sebagai CADANGAN - hanya
-  // untuk perkara yang panitera penggantinya belum tercatat.
-  const dariPerkara = await akunPerkara(keadaan.perkaraId);
-  const akun = dariPerkara.panitera || (await akunSipp(minta.olehUsername));
-  if (!akun) return { ok: false, alasan: "panitera_sidang_tidak_ketemu" };
+  // Keputusan 7 Okt 2026 (lihat pilihPaniteraSidang): penginput di SIPP = PP
+  // perkara itu, siapa pun yang menekan tombolnya. Username yang dikirim
+  // pemanggil TIDAK lagi dipakai sebagai cadangan - PP yang tidak tercatat
+  // ditolak dengan sebabnya, bukan diganti akun lain.
+  const pp = await paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang);
+  if (!pp.ok) return { ok: false, alasan: pp.alasan, nama: pp.nama || [] };
+  const akun = pp.akun;
+
+  const antrian = await antrianSidangUntuk(keadaan);
 
   const alasanTunda = bersih(minta.alasanTunda);
   if (!alasanTunda) return { ok: false, alasan: "alasan_tunda_kosong" };
@@ -513,6 +822,10 @@ async function susunRencanaTunda(minta = {}) {
   const tanggalSekarang = (await penetapan.waktuBasisData()).slice(0, 10);
   if (tanggalBerikut <= tanggalSekarang) {
     return { ok: false, alasan: "tanggal_berikut_tidak_maju", diminta: tanggalBerikut };
+  }
+
+  if (akhirPekan(tanggalBerikut)) {
+    return { ok: false, alasan: "tanggal_berikut_akhir_pekan", diminta: tanggalBerikut };
   }
 
   const andaian = [];
@@ -545,8 +858,15 @@ async function susunRencanaTunda(minta = {}) {
   const langkah = [];
 
   // ---- 1. Baris sidang hari ini: ditunda ----------------------------------
+  // Jam mulai sidang: jam masuk ruang di antrian sidang (seperti aplikasi
+  // antrian), baru jam yang dikirim layar / jam jadwal bila antrian tidak
+  // mencatatnya. Kehadiran: pilihan blangko, lalu antrian, lalu yang tercatat.
+  const jamMulai = (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang);
+  if (antrian && antrian.jamMasuk) {
+    andaian.push(`Jam mulai sidang ${antrian.jamMasuk.slice(0, 5)} diambil dari antrian sidang (jam masuk ruang).`);
+  }
   const nilaiUbah = {
-    jam_sidang: bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
+    jam_sidang: jamMulai,
     // Jam selesainya sidang. Kosong bukan pilihan: "" masuk ke kolom TIME
     // sebagai 00:00:00 tanpa satu pun galat - lihat jamDariCap.
     sampai_jam: bersih(minta.sampaiJamSekarang) || bersih(keadaan.sampaiJam) || jamDariCap(saat),
@@ -568,7 +888,11 @@ async function susunRencanaTunda(minta = {}) {
     // terkirim sebagai 4. Cadangan 1 menuliskan "semua hadir" pada sidang
     // yang mungkin tidak dihadiri siapa pun - dan itu pernyataan yang
     // terbaca sebagai fakta persidangan, bukan sekadar nilai bawaan.
-    dihadiri_oleh: Number(minta.dihadiriOleh) || Number(keadaan.dihadiriOleh) || 4,
+    dihadiri_oleh:
+      Number(minta.dihadiriOleh) ||
+      (antrian && antrian.dihadiriOleh) ||
+      Number(keadaan.dihadiriOleh) ||
+      4,
     ditunda: "Y",
     alasan_ditunda: alasanTunda,
     sifat_sidang: bersih(minta.sifatSidang) || bersih(keadaan.sifatSidang),
@@ -623,8 +947,16 @@ async function susunRencanaTunda(minta = {}) {
   // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling DIPILIH di blangko,
   // seperti blangko tunda SIPP (ruangansidkel/ruangan + sidang_keliling).
   // Tanpa pilihan: disalin dari sidang ini, seperti semula.
+  // Tanpa pilihan blangko: ruang tempat perkaranya disidangkan hari ini menurut
+  // antrian (aplikasi antrian memakai ruang itu), lalu yang tercatat di SIPP.
+  const pilihRuangBerikut =
+    bersih(minta.ruanganIdBerikut) !== ""
+      ? minta.ruanganIdBerikut
+      : antrian && antrian.ruanganId && Number(antrian.ruanganId) !== Number(keadaan.ruanganId)
+        ? antrian.ruanganId
+        : undefined;
   const ruangBerikut = await ruangDipilih(
-    { ruanganId: minta.ruanganIdBerikut, sidangKeliling: minta.sidangKelilingBerikut },
+    { ruanganId: pilihRuangBerikut, sidangKeliling: minta.sidangKelilingBerikut },
     keadaan
   );
   if (!ruangBerikut.ok) return { ok: false, alasan: ruangBerikut.alasan };
@@ -636,9 +968,10 @@ async function susunRencanaTunda(minta = {}) {
     ruangan_id: ruangBerikut.nilai.ruangan_id,
     ruangan: ruangBerikut.nilai.ruangan,
     sidang_keliling: ruangBerikut.nilai.sidang_keliling,
-    verzet: bersih(keadaan.verzet) === "Y" ? "Y" : null,
-    keberatan: bersih(keadaan.keberatan) === "Y" ? "Y" : null,
-    ikrar_talak: bersih(keadaan.ikrarTalak) === "Y" ? "Y" : null,
+    // 'Y'/'T', TIDAK PERNAH NULL - lihat bendera(). Kasus 273.
+    verzet: bendera(keadaan.verzet),
+    keberatan: bendera(keadaan.keberatan),
+    ikrar_talak: bendera(keadaan.ikrarTalak),
     diinput_oleh: akun.username,
     diinput_tanggal: saat,
   };
@@ -778,9 +1111,10 @@ async function susunRencanaTunda(minta = {}) {
     ok: true,
     jenis: "tunda",
     perkara: { perkaraId: keadaan.perkaraId, nomorPerkara: keadaan.nomorPerkara },
-    atasNama: { username: akun.username, namaLengkap: akun.fullname },
+    atasNama: { username: akun.username, namaLengkap: akun.fullname, peran: "panitera sidang" },
     operator: bersih(minta.operator),
     saat,
+    antrian,
     sidangSekarang: { jadwalId: keadaan.jadwalId, tanggal: keadaan.tanggalSidang },
     sidangBerikutnya: { tanggal: tanggalBerikut, jam: jamBerikut, agenda: agendaBerikut },
     langkah,
@@ -861,8 +1195,21 @@ async function susunRencanaPutus(minta = {}) {
   const keadaan = await keadaanJadwal(minta.jadwalId);
   if (!keadaan) return { ok: false, alasan: "jadwal_tidak_ketemu" };
 
-  const akun = await akunPerkara(keadaan.perkaraId);
-  if (!akun.panitera) return { ok: false, alasan: "panitera_sidang_tidak_ketemu" };
+  // Sidang yang sudah ditunda DAN punya sidang sesudahnya tidak diputus dari
+  // sini: menimpa ditunda='T' membuat sidang berikutnya yatim - keadaan
+  // setengah jadi yang sama dengan 273, dari arah sebaliknya. Penundaan yang
+  // setengah jadi (tanpa sidang berikutnya) tetap boleh diputus.
+  if (bersih(keadaan.ditunda) === "Y") {
+    const utuh = await adaSidangSesudah(keadaan);
+    if (utuh !== false) return { ok: false, alasan: "sidang_ditunda_tidak_dapat_diputus" };
+  }
+
+  // Penginput di SIPP = panitera sidang (PP) perkara itu - keputusan 7 Okt
+  // 2026, lihat pilihPaniteraSidang. Hakim hanya untuk jalur tulisPutusan.
+  const pp = await paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang);
+  if (!pp.ok) return { ok: false, alasan: pp.alasan, nama: pp.nama || [] };
+  const akun = { panitera: pp.akun, hakim: tulisPutusan ? (await akunPerkara(keadaan.perkaraId)).hakim : null };
+  const antrian = await antrianSidangUntuk(keadaan);
   // Hakimnya boleh tidak ketemu - putusannya lalu dicatat atas nama panitera
   // sidang, dan itu disebutkan pada andaian, bukan dibiarkan senyap.
   const penulisPutusan = akun.hakim || akun.panitera;
@@ -887,7 +1234,8 @@ async function susunRencanaPutus(minta = {}) {
   if (!tanggalSah(tanggalPutus)) return { ok: false, alasan: "tanggal_putus_tidak_sah" };
 
   const verstek = bersih(minta.verstek).toUpperCase() === "Y" ? "Y" : "T";
-  const dihadiri = Number(minta.dihadiriOleh);
+  // Pilihan blangko, lalu kehadiran yang tercatat di antrian sidang.
+  const dihadiri = Number(minta.dihadiriOleh) || Number((antrian && antrian.dihadiriOleh) || 0);
   const saat = await penetapan.waktuBasisData();
   // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
   const ip = bersih(minta.ip) || "";
@@ -898,6 +1246,9 @@ async function susunRencanaPutus(minta = {}) {
         "Pada aplikasi antrian ia dicatat atas nama hakim."
     );
   }
+  if (antrian && antrian.jamMasuk) {
+    andaian.push(`Jam mulai sidang ${antrian.jamMasuk.slice(0, 5)} diambil dari antrian sidang (jam masuk ruang).`);
+  }
 
   const langkah = [];
 
@@ -907,7 +1258,8 @@ async function susunRencanaPutus(minta = {}) {
     // MySQL sebagai bentuk 'D HH:MM:SS' dan hasilnya bukan jam yang dimaksud.
     sampai_jam: jamDariCap(saat),
     alasan_ditunda: `putus ${namaStatus}${verstek === "Y" ? " (verstek)" : ""}`,
-    jam_sidang: bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
+    // Jam masuk ruang di antrian sidang, seperti aplikasi antrian.
+    jam_sidang: (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
     ditunda: "T",
     diperbaharui_oleh: akun.panitera.username,
     diperbaharui_tanggal: saat,
@@ -920,7 +1272,16 @@ async function susunRencanaPutus(minta = {}) {
   // blangko - ditulis HANYA bila berbeda dari yang tercatat (kolom lain tidak
   // disentuh, dan tanpa pilihan tidak ada yang berubah sama sekali).
   const ruangSidang = await ruangDipilih(
-    { ruanganId: minta.ruanganIdSidang, sidangKeliling: minta.sidangKelilingSidang },
+    {
+      // Tanpa pilihan blangko: ruang tempat perkaranya disidangkan menurut antrian.
+      ruanganId:
+        bersih(minta.ruanganIdSidang) !== ""
+          ? minta.ruanganIdSidang
+          : antrian && antrian.ruanganId && Number(antrian.ruanganId) !== Number(keadaan.ruanganId)
+            ? antrian.ruanganId
+            : undefined,
+      sidangKeliling: minta.sidangKelilingSidang,
+    },
     keadaan
   );
   if (!ruangSidang.ok) return { ok: false, alasan: ruangSidang.alasan };
@@ -1063,10 +1424,12 @@ async function susunRencanaPutus(minta = {}) {
     ok: true,
     jenis: "putus",
     hanyaJadwal: !tulisPutusan,
+    antrian,
     perkara: { perkaraId: keadaan.perkaraId, nomorPerkara: keadaan.nomorPerkara },
     atasNama: {
       username: akun.panitera.username,
       namaLengkap: akun.panitera.fullname,
+      peran: "panitera sidang",
       putusanAtasNama: tulisPutusan ? penulisPutusan.username : undefined,
     },
     operator: bersih(minta.operator),
@@ -1139,7 +1502,17 @@ module.exports = {
   AMAR_BELUM,
   SUMBER_HUKUM_TETAP,
   setelAntrian,
+  bendera,
+  akhirPekan,
+  ringkasAntrian,
+  antrianSidangUntuk,
+  pilihPaniteraSidang,
+  paniteraSidang,
+  adaSidangSesudah,
   // Rencana dijalankan oleh mesin yang sama dengan penetapan - satu penjalan,
-  // satu daftar putih tabel, satu cara mengisi kunci utama pada judul audit.
-  jalankanRencana: penetapan.jalankanRencana,
+  // satu daftar putih tabel, satu cara mengisi kunci utama pada judul audit -
+  // tetapi sejak 7 Okt 2026 (kasus 273) di dalam SATU transaksi: gagal di
+  // tengah = seluruhnya dibatalkan. Nama lamanya dipertahankan untuk pemanggil.
+  jalankanRencanaUtuh,
+  jalankanRencana: jalankanRencanaUtuh,
 };

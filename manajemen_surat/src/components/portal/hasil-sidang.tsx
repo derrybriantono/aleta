@@ -25,6 +25,14 @@ import {
   type SidangRiwayat,
 } from "@/lib/bawaan-tunda";
 import { bacaKontakPihak, kalimatKontak } from "@/lib/jadwal-sidang-kontak";
+import {
+  kalimatAtasNama,
+  kehadiranDariAntrian,
+  keadaanRuangMenurutAntrian,
+  keteranganAntrian,
+  type AntrianSidangRingkas,
+  type AtasNamaSipp,
+} from "@/lib/antrian-hasil-sidang";
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import { IsianMediator } from "@/components/portal/jadwal-sidang-1okt";
 import { PapanRuangSidang } from "@/components/portal/jadwal-sidang-2okt";
@@ -110,6 +118,8 @@ type LangkahRencana = { tabel: string; aksi: string; keterangan: string };
 type Hasil = {
   ok: boolean;
   alasan?: string;
+  /** Kode penolakan bot (7 Okt 2026); kalimatnya di `alasan`. */
+  kode?: string;
   kering?: boolean;
   perkara?: { perkaraId: number; nomorPerkara: string };
   atasNama?: { username: string; namaLengkap: string; putusanAtasNama?: string };
@@ -267,6 +277,9 @@ async function bacaKalender(perkaraId: number | string): Promise<RencanaKalender
 
 export function HasilSidang({ jadwalId }: { jadwalId: string }) {
   const [keadaan, setKeadaan] = useState<KeadaanSidang | null>(null);
+  // Antrian sidang + atas nama siapa tombolnya menulis ke SIPP (7 Okt 2026).
+  const [antrian, setAntrian] = useState<AntrianSidangRingkas>(null);
+  const [atasNama, setAtasNama] = useState<AtasNamaSipp>(null);
   const [galatMuat, setGalatMuat] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusPutusan[]>([]);
 
@@ -319,12 +332,16 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
         alasan?: string;
         keadaan?: KeadaanSidang;
         riwayat?: RiwayatTunda;
+        antrian?: AntrianSidangRingkas;
+        atasNama?: AtasNamaSipp;
       }>(balasan);
       if (!isi.ok || !isi.keadaan) {
         setGalatMuat(isi.alasan || "Jadwal sidang tidak ditemukan.");
         return;
       }
       setKeadaan(isi.keadaan);
+      setAntrian(isi.antrian ?? null);
+      setAtasNama(isi.atasNama ?? null);
       // Court Calendar dan email/persetujuan e-Court dibaca terpisah (null =
       // tak terbaca -> dua pekan / aturan tanpa email; tidak ditebak).
       const [kalender, kontak] = isi.riwayat
@@ -334,7 +351,9 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
       setRiwayat(riw);
       // Bawaan dari riwayat sidang perkaranya (butir 14, 30 Sep 2026) - hanya
       // mengisi kotak yang masih kosong; semuanya tetap dapat diganti.
-      const usul = usulanTunda(isi.keadaan, riw);
+      // Kehadiran mengikuti antrian sidang bila tercatat (7 Okt 2026).
+      const hadirAntrian = kehadiranDariAntrian(isi.antrian);
+      const usul = usulanTunda(isi.keadaan, riw, hadirAntrian);
       setUsulan(usul);
       if (usul) {
         setDihadiri(usul.kehadiran);
@@ -346,6 +365,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
       // 20.171 baris, dan empat baris bernilai 10.
       const sudahAda = Number(isi.keadaan.dihadiriOleh);
       if (KEHADIRAN.some((k) => k.nilai === sudahAda)) setDihadiri(sudahAda);
+      else if (!usul && hadirAntrian) setDihadiri(hadirAntrian);
 
       // Usulan tanggal dan jam sidang berikutnya - aturan BERSAMA dengan
       // CatatHasilRingkas (@/lib/bawaan-tunda): mengikuti Court Calendar bila
@@ -792,13 +812,37 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                   </p>
                 ) : null}
 
+                {keteranganAntrian(antrian) ? (
+                  <p className="flex items-start gap-2 text-xs text-muted-foreground" data-antrian-sidang="">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span>{keteranganAntrian(antrian)} Kehadiran, jam mulai, dan ruang mengikuti antrian sidang.</span>
+                  </p>
+                ) : null}
+                {kalimatAtasNama(atasNama) ? (
+                  <p
+                    data-atas-nama=""
+                    className={
+                      kalimatAtasNama(atasNama)!.ok
+                        ? "flex items-start gap-2 text-xs text-muted-foreground"
+                        : "flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+                    }
+                  >
+                    {kalimatAtasNama(atasNama)!.ok ? (
+                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                    ) : (
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                    )}
+                    <span>{kalimatAtasNama(atasNama)!.teks}</span>
+                  </p>
+                ) : null}
+
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" disabled={!lengkap || sibuk} onClick={() => void kirim(true)}>
                     <FileSearch className="mr-1.5 h-4 w-4" aria-hidden />
                     Lihat rencananya
                   </Button>
                   <Button
-                    disabled={!rencanaKering || sibuk || sudahTertulis}
+                    disabled={!rencanaKering || sibuk || sudahTertulis || atasNama?.ok === false}
                     onClick={() => void kirim(false)}
                     title={rencanaKering ? undefined : "Lihat rencananya lebih dahulu"}
                   >
@@ -1100,6 +1144,9 @@ export function CatatHasilRingkas({
   // tunda SIPP. Bawaan: yang tercatat; keliling hanya bila sidang itu keliling.
   const [daftarRuangan, setDaftarRuangan] = useState<Ruangan[]>([]);
   const [ruangPilih, setRuangPilih] = useState<BawaanRuangSidang>({ ruanganId: "", keliling: false });
+  // Antrian sidang + atas nama siapa tombolnya menulis ke SIPP (7 Okt 2026).
+  const [antrian, setAntrian] = useState<AntrianSidangRingkas>(null);
+  const [atasNama, setAtasNama] = useState<AtasNamaSipp>(null);
   const [kelilingDisentuh, setKelilingDisentuh] = useState(false);
 
   useEffect(() => {
@@ -1115,15 +1162,20 @@ export function CatatHasilRingkas({
           keadaan?: KeadaanSidang;
           riwayat?: RiwayatTunda;
           ruangan?: Ruangan[];
+          antrian?: AntrianSidangRingkas;
+          atasNama?: AtasNamaSipp;
         }>(balasan);
         if (!isi.ok || !isi.keadaan) {
           setGalatMuat(isi.alasan || "Jadwal sidang tidak ditemukan.");
           return;
         }
         setKeadaan(isi.keadaan);
+        setAntrian(isi.antrian ?? null);
+        setAtasNama(isi.atasNama ?? null);
         const daftar = Array.isArray(isi.ruangan) ? isi.ruangan : [];
         setDaftarRuangan(daftar);
-        setRuangPilih(bawaanRuangSidang(isi.keadaan, daftar));
+        // Ruang bawaan mengikuti antrian sidang (ruang tempat perkaranya disidangkan).
+        setRuangPilih(bawaanRuangSidang(keadaanRuangMenurutAntrian(isi.keadaan, isi.antrian), daftar));
         const tgl = String(isi.keadaan.tanggalSidang || "").slice(0, 10);
         setTanggalBerikut(tambahHari(tgl, 14));
 
@@ -1136,8 +1188,10 @@ export function CatatHasilRingkas({
         setRiwayat(riw);
 
         // Aturan tanggal dan jam BERSAMA dengan layar Hasil Sidang penuh -
-        // @/lib/bawaan-tunda, bukan salinan di sini.
-        const usul = usulanTunda(isi.keadaan, riw);
+        // @/lib/bawaan-tunda, bukan salinan di sini. Kehadiran mengikuti
+        // antrian sidang bila tercatat (7 Okt 2026, kasus 273).
+        const hadirAntrian = kehadiranDariAntrian(isi.antrian);
+        const usul = usulanTunda(isi.keadaan, riw, hadirAntrian);
         setUsulan(usul);
         if (usul) {
           // Bawaan dari riwayat sidang perkaranya (butir 14).
@@ -1150,6 +1204,7 @@ export function CatatHasilRingkas({
           // Bot lama tanpa riwayat: bawaan sebelumnya, apa adanya.
           const sudahAda = Number(isi.keadaan.dihadiriOleh);
           if (KEHADIRAN.some((k) => k.nilai === sudahAda)) setDihadiri(sudahAda);
+          else if (hadirAntrian) setDihadiri(hadirAntrian);
           const usulAgenda = usulanAgendaBerikut(isi.keadaan.agenda);
           if (usulAgenda) {
             setAgendaBerikut(usulAgenda);
@@ -1568,6 +1623,30 @@ export function CatatHasilRingkas({
         </p>
       ) : null}
 
+      {keteranganAntrian(antrian) ? (
+        <p className="flex items-start gap-1 text-[11px] text-muted-foreground" data-antrian-sidang="">
+          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+          <span>{keteranganAntrian(antrian)} Kehadiran, jam mulai, dan ruang mengikuti antrian sidang.</span>
+        </p>
+      ) : null}
+
+      {kalimatAtasNama(atasNama) ? (
+        <p
+          data-atas-nama=""
+          className={cn(
+            "flex items-start gap-1 text-xs",
+            kalimatAtasNama(atasNama)!.ok ? "text-muted-foreground" : "rounded-md border border-red-300 bg-red-50 px-3 py-2 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+          )}
+        >
+          {kalimatAtasNama(atasNama)!.ok ? (
+            <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+          ) : (
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          )}
+          <span>{kalimatAtasNama(atasNama)!.teks}</span>
+        </p>
+      ) : null}
+
       {hasil && !hasil.ok ? (
         <p className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -1579,7 +1658,7 @@ export function CatatHasilRingkas({
         <Button
           size="sm"
           className={cn(jalan === "tunda" ? "bg-amber-600 hover:bg-amber-700" : undefined)}
-          disabled={!lengkap || sibuk}
+          disabled={!lengkap || sibuk || atasNama?.ok === false}
           onClick={() => void kirim()}
         >
           {sibuk ? "Menulis…" : jalan === "tunda" ? "Tunda sekarang" : "Catat putus"}

@@ -156,7 +156,9 @@ describe("tanggal diperiksa sebelum satu baris pun ditulis", () => {
   });
 
   it("sidang yang sudah ditunda tidak ditunda dua kali", () => {
-    expect(badan).toContain('alasan: "sidang_sudah_ditunda"');
+    // 7 Okt 2026: penundaan yang setengah jadi (tanpa sidang berikutnya)
+    // disebut dengan namanya sendiri; yang utuh tetap sidang_sudah_ditunda.
+    expect(badan).toContain('alasan: utuh === false ? "tunda_belum_utuh" : "sidang_sudah_ditunda"');
   });
 
   it("akun pejabatnya harus benar-benar ada di SIPP", () => {
@@ -169,14 +171,21 @@ describe("tanggal diperiksa sebelum satu baris pun ditulis", () => {
     // Yang dijaga di sini tetap satu hal: TIDAK ADA baris yang ditulis tanpa
     // pejabat yang sungguh ada. Nama alasannya boleh berubah lagi; yang tidak
     // boleh hilang adalah penolakannya.
-    expect(badan).toContain('alasan: "panitera_sidang_tidak_ketemu"');
-    expect(badan).toContain("const dariPerkara = await akunPerkara(keadaan.perkaraId);");
+    // 7 Okt 2026 (keputusan pengguna): PP perkara, ditolak bila tidak ada /
+    // ganda / tanpa akun - tanpa cadangan akun lain.
+    expect(potongFungsi(layanan, ["pilihPaniteraSidang"])).toContain('alasan: "panitera_sidang_tidak_ketemu"');
+    expect(badan).toContain("const pp = await paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang);");
+    expect(badan).toContain("if (!pp.ok) return { ok: false, alasan: pp.alasan");
+    expect(badan).not.toContain("akunSipp(minta.olehUsername)");
   });
 });
 
 describe("mesin penulisnya satu, tidak disalin dua kali", () => {
   it("rencana dijalankan penjalan milik penulis penetapan", () => {
-    expect(layanan).toContain("jalankanRencana: penetapan.jalankanRencana,");
+    // Penjalannya tetap milik penulis penetapan, kini di dalam SATU transaksi
+    // (jalankanRencanaUtuh, 7 Okt 2026 - kasus 273).
+    expect(layanan).toContain("jalankanRencana: jalankanRencanaUtuh,");
+    expect(layanan).toContain("await penetapan.jalankanRencana(rencana, { kering: false, kueri: lewat })");
     expect(layanan).toContain("penetapan.barisAudit({");
   });
 

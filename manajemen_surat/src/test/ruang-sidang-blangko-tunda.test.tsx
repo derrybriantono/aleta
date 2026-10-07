@@ -110,10 +110,16 @@ function pasangTiruan() {
       selesai?.(null, jawab(String(sql), daftar));
     },
   };
+  // 7 Okt 2026 (kasus 273): hasil sidang ditulis dalam SATU transaksi lewat
+  // satu sambungan kolam - sambungan palsunya meneruskan ke kueri yang sama.
+  (dbPalsu as Record<string, unknown>).getConnection = (cb: (e: unknown, s: unknown) => void) =>
+    cb(null, { query: dbPalsu.query, release() {} });
+  const antrianPalsu = { query: async () => [], sanitizeError: (g: unknown) => String(g) };
   const botDbPalsu = { query: async () => [], fromMysqlDate: () => null, toMysqlDate: () => null };
   for (const [relatif, isi] of [
     ["./db_config", dbPalsu],
     ["./services/botDbService", botDbPalsu],
+    ["./services/externalDbService", antrianPalsu],
   ] as const) {
     const berkas = muat.resolve(relatif);
     muat.cache[berkas] = { id: berkas, filename: berkas, loaded: true, exports: isi } as unknown as NodeJS.Module;
