@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.187.0",
+    dirilis: "2026-10-07T10:00:00+08:00",
+    judul: "Masuk ALETA dengan akun SIPP, SIPP & ABT terbuka otomatis",
+    butir: [
+      "Masuk ALETA cukup dengan nama pengguna dan sandi SIPP (akun yang tertaut di Manajemen Akun). Sandi dicocokkan langsung ke SIPP dan TIDAK disimpan di ALETA; akun SIPP yang diblokir atau kedaluwarsa ditolak. Akun tanpa SIPP tetap masuk seperti biasa.",
+      "Pilihan \"Buka SIPP & ABT otomatis\" di layar masuk: bila sesi SIPP atau ABT habis, ekstensi mengisi halaman masuknya sendiri. Sandi hanya disimpan sementara di ekstensi dan hilang saat Chrome ditutup atau keluar dari ALETA.",
+    ],
+  },
+  {
     versi: "1.186.1",
     dirilis: "2026-10-06T22:00:00+08:00",
     judul: "Relaas ikrar talak memakai blangko derry dari menu Relaas Ikrar Talak",
