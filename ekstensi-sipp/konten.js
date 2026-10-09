@@ -12629,28 +12629,44 @@ function susunPanel(konteks) {
   // diminta menekan satu lipatan lagi.
   const adaBorangPutusan = Boolean(document.querySelector("#frm_putusan"));
   const kelPutusan = kelompok("Putusan", "putusanKel", !adaBorangPutusan);
-  if (boleh("data-umum") && adaBorangPutusan) {
+  // ==========================================================================
+  // HAK UNGGAH PUTUSAN = PERAN (keputusan 9 Okt 2026)
+  // ==========================================================================
+  //
+  // Putusan otomatis (isian borang + simpan), unggah e-Doc putusan, upload ke
+  // e-Court, dan antrean putusan massal HANYA untuk Hakim (termasuk
+  // Ketua/Wakil), Admin, dan Super Admin - alatBolehUnggahPutusan. Peran lain
+  // melihat kotak terkunci beralasan di tempatnya; menu baca ("Putusan dan
+  // upaya hukum", "Putusan di e-Court") tetap. null = peran belum terbaca:
+  // digambar seperti biasa, peladen yang menolak 403.
+  const hakPutusan = typeof alatBolehUnggahPutusan === "function" ? alatBolehUnggahPutusan(penggunaTerakhir) : null;
+  const bolehPutusan = hakPutusan !== false;
+  if (!bolehPutusan && typeof alatKotakTerkunciPutusan === "function") {
+    kelPutusan.isi.appendChild(alatKotakTerkunciPutusan("Putusan otomatis, unggah e-Doc putusan, dan upload ke e-Court"));
+  }
+  if (bolehPutusan && boleh("data-umum") && adaBorangPutusan) {
     kelPutusan.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
-  } else if (boleh("data-umum") && typeof s1BagianPutusanTanpaBlangko === "function" && s1Aktif()) {
+  } else if (bolehPutusan && boleh("data-umum") && typeof s1BagianPutusanTanpaBlangko === "function" && s1Aktif()) {
     // Perbaikan 1 Okt (S, butir 3 - UI Baru saja): Putusan otomatis juga
     // tersedia sebelum blangko dibuka; ALETA membuka blangkonya sendiri.
     kelPutusan.isi.appendChild(s1BagianPutusanTanpaBlangko(konteks.nomorPerkara));
   }
   // Unggahan MENULIS ke SIPP - berkas ke cakram, empat baris ke basis
-  // datanya - jadi kewenangannya "penunjukan", sama dengan menuliskan
-  // penetapan. Tidak digantungkan pada borang putusan yang terbuka: berkas
-  // putusan kerap diunggah belakangan, pada hari yang lain.
-  if (boleh("penunjukan")) {
+  // datanya. Dahulu menumpang kemampuan "penunjukan" (gerbang PENETAPAN);
+  // sejak 9 Okt 2026 hak PERAN tersendiri (bolehPutusan). Tidak digantungkan
+  // pada borang putusan yang terbuka: berkas putusan kerap diunggah
+  // belakangan, pada hari yang lain.
+  if (bolehPutusan) {
     kelPutusan.isi.appendChild(bagianUnggahPutusanSipp(konteks.nomorPerkara));
   }
   // Perbaikan 1 Okt (S, butir 16b - UI Baru saja): Upload putusan ke e-Court,
-  // tepat di bawah unggah edoc ke SIPP. Kewenangannya diperiksa rute E.
-  if (typeof s1BagianUnggahEcourt === "function" && s1Aktif()) {
+  // tepat di bawah unggah edoc ke SIPP. Aturan haknya sama (9 Okt 2026).
+  if (bolehPutusan && typeof s1BagianUnggahEcourt === "function" && s1Aktif()) {
     kelPutusan.isi.appendChild(s1BagianUnggahEcourt(konteks.nomorPerkara));
   }
   // Antrean putusan massal - bila ada, disisipkan di puncak isi supaya
   // langkah yang sedang ditunggu terbaca lebih dulu daripada perkaranya.
-  if (boleh("data-umum")) {
+  if (bolehPutusan && boleh("data-umum")) {
     void bagianAntreanSipp(konteks.nomorPerkara).then((k) => {
       if (k && isi.isConnected) isi.insertBefore(k, isi.firstChild);
     });
@@ -13178,8 +13194,24 @@ function bagianPenetapanMassal(ringkasan) {
     return daftar.map((x) => String(x.jenis || x).toUpperCase()).join(", ");
   }
 
+  // 9 Okt 2026: antrean dilaporkan ke latar.js selama berjalan - tombol
+  // "Perbarui ekstensi" ditahan sampai selesai (alatAntreanKerja). Dilepas
+  // pada SETIAP jalan keluar: selesai, berhenti, maupun lemparan.
   async function jalankan(kering) {
+    const lapor =
+      typeof alatAntreanKerja === "function"
+        ? alatAntreanKerja("penetapan-massal", kering ? "pemeriksaan penetapan massal" : "penetapan massal", 0)
+        : null;
+    try {
+      return await jalankanIsi(kering, lapor);
+    } finally {
+      if (lapor) lapor.selesai();
+    }
+  }
+
+  async function jalankanIsi(kering, lapor) {
     const urut = nomorSemua.filter((x) => terpilih.has(x) && (kering || siapDitulis.has(x)));
+    let ke = 0;
     let berhasil = 0;
     let dilewati = 0;
     const gagalPer = [];
@@ -13196,6 +13228,8 @@ function bagianPenetapanMassal(ringkasan) {
     };
 
     for (const nomor of urut) {
+      if (lapor) lapor.maju(ke, urut.length);
+      ke += 1;
       tandaiBaris(nomor, kering ? "memeriksa…" : "menetapkan…", "");
       kabar.textContent = `${nomor} — ${kering ? "diperiksa" : "ditetapkan"}…`;
 
@@ -13446,7 +13480,15 @@ function susunPanelDaftar(ringkasan) {
   if (!menuMassalPeran) if (boleh("penunjukan") && boleh("kerjakan")) {
     isi.appendChild(bagianPenetapanMassal(ringkasan));
   }
-  if (!menuMassalPeran && boleh("data-umum")) {
+  // Hak unggah putusan (9 Okt 2026): putusan massal hanya Hakim (termasuk
+  // Ketua/Wakil), Admin, Super Admin. Peran lain - termasuk peran "lain" yang
+  // memakai susunan lama - melihat kotak terkunci beralasan.
+  const bolehPutusanMassal =
+    typeof alatBolehUnggahPutusan !== "function" || alatBolehUnggahPutusan(penggunaTerakhir) !== false;
+  if (!menuMassalPeran && boleh("data-umum") && !bolehPutusanMassal && typeof alatKotakTerkunciPutusan === "function") {
+    isi.appendChild(alatKotakTerkunciPutusan("Putusan massal"));
+  }
+  if (!menuMassalPeran && boleh("data-umum") && bolehPutusanMassal) {
     // Fitur 2: antrean SIPP disusun dari tanggal sidang, tanpa lewat ABT.
     // Antrean yang baru disusun langsung tampil di panel ini - tanpa memuat
     // ulang halaman (tampilkanAntreanSipp).
@@ -14690,6 +14732,9 @@ async function muatPenggunaAleta() {
     if (isi && Object.prototype.hasOwnProperty.call(isi, "versiTipe")) alatSetelVersiTipe(isi.versiTipe);
     if (isi && isi.nama) {
       penggunaTerakhir = { nama: isi.nama, peran: isi.peran || "" };
+      // Hak unggah putusan dari peladen (9 Okt 2026) - portal lama tanpa ruas
+      // ini: dihitung dari nama perannya (alatBolehUnggahPutusan).
+      if (typeof isi.bolehUnggahPutusan === "boolean") penggunaTerakhir.bolehUnggahPutusan = isi.bolehUnggahPutusan;
       if (isi.kapabilitas) kapabilitasTerakhir = isi.kapabilitas;
     }
   } catch {
@@ -15601,6 +15646,9 @@ async function bagianAntreanSipp(nomorHalaman) {
   kotak.classList.add("aleta-antrean-sipp");
   const isi = kotak.isi;
   const h = alatAntreanRingkas(antrean);
+  // 9 Okt 2026: tombol "Perbarui ekstensi" ditahan selama antrean ini masih
+  // punya perkara menunggu/sedang dikerjakan - lihat alatLaporAntreanPutusanSipp.
+  if (typeof alatLaporAntreanPutusanSipp === "function") alatLaporAntreanPutusanSipp(antrean);
 
   // "Tertahan" punya dua sebab yang ditangani petugas secara berbeda:
   // praperiksa menahan karena fakta SIPP bertentangan dengan draf, sedangkan
@@ -15776,6 +15824,7 @@ async function bagianAntreanSipp(nomorHalaman) {
       return;
     }
     alatCatat("massal", "antrean SIPP diakhiri oleh pengguna", "");
+    if (typeof alatAntreanKerjaLepas === "function") alatAntreanKerjaLepas(`putusan-massal-sipp:${antrean.id || "aktif"}`);
     kotak.remove();
   });
   aksi.appendChild(hentikan);
@@ -15842,6 +15891,7 @@ async function jalankanAntreanSippSekali(antrean, butir, kabar, tombol, otomatis
       return;
     }
     const kini = klaim.butir;
+    if (typeof alatLaporAntreanPutusanSipp === "function") alatLaporAntreanPutusanSipp(antrean);
     try {
       await jalankanSatuAntreanSipp(antrean, kini, kabar, tombol);
     } catch (galat) {
@@ -15869,6 +15919,12 @@ async function jalankanAntreanSippSekali(antrean, butir, kabar, tombol, otomatis
     }
   } finally {
     antreanSippBerjalan = "";
+    // Kemajuan sesudah butir ini - dibaca ULANG, salinan di tangan basi.
+    if (typeof alatLaporAntreanPutusanSipp === "function") {
+      void alatMuatAntrean()
+        .then((segar) => alatLaporAntreanPutusanSipp(segar))
+        .catch(() => undefined);
+    }
   }
 }
 
@@ -16966,8 +17022,16 @@ function bagianMassalBerkas(isi, sesudahSusun) {
     // diurai di sana; mengirim dua puluh sekaligus berarti dua puluh naskah
     // berada di memori peladen pada saat yang sama. Yang ditunggu orang di
     // sini pengunggahan sekali seumur hari, bukan tiap kali layar dibuka.
+    // 9 Okt 2026: dilaporkan ke latar.js - tombol Perbarui ditahan selama
+    // naskah masih dikirim (alatAntreanKerja). Tiap butir bertangkap sendiri,
+    // jadi tidak ada yang lolos melewati selesai() di bawah perulangan.
+    const laporBerkas =
+      typeof alatAntreanKerja === "function"
+        ? alatAntreanKerja("unggah-naskah-massal", "unggah naskah putusan massal", dikerjakan.length)
+        : null;
     for (let i = 0; i < dikerjakan.length; i += 1) {
       const p = dikerjakan[i];
+      if (laporBerkas) laporBerkas.maju(i, dikerjakan.length);
       kabar.textContent = `Mengirim ${i + 1} dari ${dikerjakan.length}: ${p.berkas.name}…`;
       try {
         let naskahKirim = p.berkas;
@@ -17004,6 +17068,7 @@ function bagianMassalBerkas(isi, sesudahSusun) {
         alatCatat("massal-galat", `${p.nomor}: ${String((galat && galat.message) || galat)}`, "");
       }
     }
+    if (laporBerkas) laporBerkas.selesai();
 
     pemilih.disabled = false;
     tombol.disabled = false;
@@ -21304,6 +21369,8 @@ function mpsSusunDaftar(panel, isi, ringkasan, menu) {
       bukaPertama(kotak);
     } else if (kunci === "putusan-massal") {
       if (!boleh("data-umum")) continue;
+      // Hak unggah putusan (9 Okt 2026) - lapis kedua di atas matriks peran.
+      if (typeof alatBolehUnggahPutusan === "function" && alatBolehUnggahPutusan(penggunaTerakhir) === false) continue;
       const wadah = buatElemen("div", "aleta-mps-massal");
       wadah.setAttribute("data-mps-massal", kunci);
       isi.appendChild(wadah);

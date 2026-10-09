@@ -3298,6 +3298,12 @@ export async function gatewayUnggahPutusanSipp(muatan: {
    * audit SIPP. Rute bot membaca badan.ip; kosong berarti tidak diketahui.
    */
   ip?: string;
+  /**
+   * Peran yang memberi hak unggah putusan (keputusan 9 Okt 2026:
+   * super-admin/admin/hakim/ketua/wakil-ketua). Gerbang bot menolak 403 bila
+   * kosong atau di luar daftar itu - lapis kedua di belakang rute portal.
+   */
+  peranPenekan?: string;
 }) {
   return gatewayFetch<{
     ok: boolean;

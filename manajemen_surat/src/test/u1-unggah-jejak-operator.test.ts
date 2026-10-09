@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import vm from "node:vm";
 
 import { describe, expect, it } from "vitest";
@@ -34,6 +35,10 @@ function muatPenangan() {
   const konteks = vm.createContext({
     Buffer,
     requireInternalToken: () => undefined,
+    // Hak unggah putusan (9 Okt 2026) - layanan SUNGGUHAN, bukan tiruan.
+    hakUnggahPutusanService: createRequire(import.meta.url)(
+      path.resolve(process.cwd(), "../aleta_bot/services/hakUnggahPutusanService.js")
+    ),
     putusanUnggahService: {
       unggahPutusan: async (x: Record<string, unknown>) => {
         argumen.push(x);
@@ -76,6 +81,7 @@ describe("rute bot /sipp/putusan-unggah meneruskan operator ke layanan unggah", 
       olehUsername: "derry briantono",
       operator: "SUPER ADMIN DERRY",
       ip: "192.168.11.61",
+      peranPenekan: "super-admin",
     });
     expect(status).toBe(200);
     expect(argumen).toHaveLength(1);
@@ -84,7 +90,15 @@ describe("rute bot /sipp/putusan-unggah meneruskan operator ke layanan unggah", 
 
   it("tanpa operator (pemanggil lama): kosong, bukan karangan", async () => {
     const { jalankan, argumen } = muatPenangan();
-    await jalankan({ perkaraId: "1", nomorPerkara: "1/Pdt.G/2026/PA.Dgl", putusanBase64: "eA==", olehUsername: "x" });
+    await jalankan({ perkaraId: "1", nomorPerkara: "1/Pdt.G/2026/PA.Dgl", putusanBase64: "eA==", olehUsername: "x", peranPenekan: "hakim" });
     expect(argumen[0].operator).toBe("");
+  });
+
+  it("keputusan 9 Okt 2026: tanpa peranPenekan atau peran PP ditolak 403, layanan tidak dipanggil", async () => {
+    const { jalankan, argumen } = muatPenangan();
+    const badan = { perkaraId: "1", nomorPerkara: "1/Pdt.G/2026/PA.Dgl", putusanBase64: "eA==", olehUsername: "x" };
+    expect(await jalankan(badan)).toBe(403);
+    expect(await jalankan({ ...badan, peranPenekan: "panitera-pengganti" })).toBe(403);
+    expect(argumen).toHaveLength(0);
   });
 });

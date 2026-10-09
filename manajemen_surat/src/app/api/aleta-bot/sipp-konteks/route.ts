@@ -6,6 +6,7 @@ import {
   postGatewayVerifikasiDecision,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { kapabilitasPeran, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { type RoleId } from "@/lib/types";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -101,6 +102,9 @@ export async function GET(request: NextRequest) {
       pengguna: {
         nama: actor.name,
         peran: peran ? peran.name : String(actor.roleId || ""),
+        // Hak unggah putusan (9 Okt 2026) - dihitung peladen, supaya panel
+        // tidak menebak dari nama peran. Rute tulisnya tetap memeriksa ulang.
+        bolehUnggahPutusan: bolehUnggahPutusan(actor),
       },
       kapabilitas,
     });

@@ -288,6 +288,16 @@ if (perbaruiVersi && typeof chrome !== "undefined" && chrome.runtime && chrome.r
 let paksaPerbarui = false;
 let paksaMuatUlang = false;
 
+/**
+ * Ditahan latar.js? Putaran relaas (keadaan lama) ATAU antrean kerja massal
+ * di tab SIPP/ABT mana pun - penetapan, putusan, BAS, relaas & PBT massal
+ * ("antrean-berjalan", 9 Okt 2026). Tekanan kedua = "Tetap perbarui" (paksa).
+ */
+function pembaruanDitahan(jawab) {
+  if (!jawab) return false;
+  return jawab.ditahan === true || jawab.keadaan === "putaran-relaas-berjalan" || jawab.keadaan === "antrean-berjalan";
+}
+
 if (tombolPerbarui) {
   const labelPerbarui = tombolPerbarui.textContent;
   tombolPerbarui.addEventListener("click", async () => {
@@ -298,9 +308,9 @@ if (tombolPerbarui) {
     const jawab = paksaPerbarui ? await mintaKeLatar("perbarui", true) : await mintaKeLatar("perbarui");
     kabarPerbarui((jawab && jawab.pesan) || "Tidak ada jawaban dari ekstensi.");
 
-    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+    if (pembaruanDitahan(jawab)) {
       paksaPerbarui = true;
-      tombolPerbarui.textContent = "Tetap perbarui - putaran cetak hilang";
+      tombolPerbarui.textContent = jawab.labelPaksa || "Tetap perbarui - putaran cetak hilang";
       tombolPerbarui.disabled = false;
       return;
     }
@@ -326,10 +336,11 @@ if (tombolMuatUlangEkstensi) {
     tombolMuatUlangEkstensi.disabled = true;
     kabarPerbarui("Memuat ulang ekstensi dari berkasnya…");
     const jawab = await mintaKeLatar("muat-ulang", paksaMuatUlang);
-    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+    if (pembaruanDitahan(jawab)) {
       kabarPerbarui(jawab.pesan || "Putaran cetak relaas belum selesai.");
       paksaMuatUlang = true;
-      tombolMuatUlangEkstensi.textContent = "Tetap muat ulang - putaran cetak hilang";
+      tombolMuatUlangEkstensi.textContent =
+        jawab.keadaan === "antrean-berjalan" ? "Tetap muat ulang - antrean terputus" : "Tetap muat ulang - putaran cetak hilang";
       tombolMuatUlangEkstensi.disabled = false;
       return;
     }

@@ -331,11 +331,15 @@ describe("tampilan Lama: tanpa satu pun jejak menu per peran", () => {
     });
   }
 
-  it("Jurusita di halaman daftar Lama: Putusan massal TETAP ada seperti sebelumnya", async () => {
+  // Keputusan 9 Okt 2026: putusan massal (unggah putusan ke SIPP) hanya Super
+  // Admin, Admin, Hakim (termasuk Ketua/Wakil) - juga di tampilan Lama. Juru
+  // Sita melihat kotak terkunci beralasan, bukan lagi Putusan massal.
+  it("Jurusita di halaman daftar Lama: Putusan massal diganti kotak terkunci (hak unggah putusan 9 Okt 2026)", async () => {
     const h = buka({ peran: "Jurusita", daftar: true, massalRelaas: true });
     const pn = await siapDaftar(h);
     await tunggu(30);
-    expect(pn.querySelector('[data-kunci="putusanMassalSipp"]')).not.toBeNull();
+    expect(pn.querySelector('[data-kunci="putusanMassalSipp"]')).toBeNull();
+    expect(pn.querySelector('[data-aleta-terkunci="unggah-putusan"]')).not.toBeNull();
     expect(pn.outerHTML).not.toMatch(/data-mps-|aleta-teknis/);
     expect(h.massal).toEqual([]);
   });
@@ -574,13 +578,16 @@ describe("halaman daftar perkara / dashboard: menu massal per peran", () => {
     expect(massalDaftar(pn)).toEqual(["putusan-massal"]);
   });
 
-  it("peran lain (Operator): susunan lama (Penetapan massal + Putusan massal), tanpa data-mps", async () => {
+  // Keputusan 9 Okt 2026: Operator tidak berhak unggah putusan - Putusan
+  // massal diganti kotak terkunci; Penetapan massal (gerbang penetapan) tetap.
+  it("peran lain (Operator): susunan lama (Penetapan massal; Putusan massal terkunci), tanpa data-mps", async () => {
     const h = buka({ simpanan: UI, peran: "Operator", daftar: true, massalBas: true, massalRelaas: true });
     const pn = await siapDaftar(h);
     await tunggu(30);
     expect(pn.hasAttribute("data-mps-peran")).toBe(false);
     expect(pn.querySelector('[data-kunci="penetapanMassal"]')).not.toBeNull();
-    expect(pn.querySelector('[data-kunci="putusanMassalSipp"]')).not.toBeNull();
+    expect(pn.querySelector('[data-kunci="putusanMassalSipp"]')).toBeNull();
+    expect(pn.querySelector('[data-aleta-terkunci="unggah-putusan"]')).not.toBeNull();
     expect(h.massal).toEqual([]);
   });
 });

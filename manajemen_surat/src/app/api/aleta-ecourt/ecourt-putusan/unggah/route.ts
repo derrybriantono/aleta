@@ -9,7 +9,7 @@ import {
   panggilBot,
 } from "@/server/modules/aleta-ecourt/ecourt-aksi";
 import { periksaAkunSippTerbuka } from "@/server/modules/aleta-ecourt/ecourt-akun-pengguna";
-import { requireActorUser } from "@/server/modules/organization/service";
+import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -38,7 +38,10 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    const actor = await requireActorUser(db, actorUserId);
+    // Upload salinan putusan ke e-Court juga "upload putusan": keputusan
+    // 9 Okt 2026 berlaku sama - hanya Super Admin, Admin, dan Hakim
+    // (termasuk Ketua/Wakil). 403 bagi peran lain, SEBELUM berkas dibaca.
+    const { actor, peran: peranPenekan } = await pastikanBolehUnggahPutusan(db, actorUserId);
     const form = await request.formData().catch(() => null);
     if (!form) return ok({ ok: false, akun: null, salinan: null, alasan: "badan_bukan_multipart", pesan: "Kirim sebagai multipart (nomor + berkas)." });
     const nomor = bersihkanNomor(form.get("nomor"));
@@ -92,6 +95,7 @@ export async function POST(request: NextRequest) {
         nomor,
         berkasBase64: isi.toString("base64"),
         konfirmasi,
+        peranPenekan,
       },
       batasMs: BATAS_PERAMBAN_MS,
     });

@@ -590,6 +590,11 @@ vi.mock("@/server/db/client", () => ({
 }));
 vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: async () => ({ name: "Penguji" }) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
+vi.mock("@/server/modules/aleta-ecourt/hak-putusan", () => ({
+  // Hak unggah putusan (9 Okt 2026) diuji di hak-unggah-putusan-9okt.test.ts.
+  pastikanBolehUnggahPutusan: async () => ({ actor: { name: "Penguji" }, peran: "hakim" }),
+  bolehUnggahPutusan: () => true,
+}));
 vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
   getGatewaySippKonteks: async () => ({ ok: false, error: "tidak dipakai POST" }),
 }));

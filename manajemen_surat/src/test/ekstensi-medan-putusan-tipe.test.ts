@@ -48,6 +48,8 @@ const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const BERKAS_KONTEN = process.env.ALETA_UJI_KONTEN || path.join(EKSTENSI, "konten.js");
 const baca = (berkas: string) => readFileSync(berkas, "utf8").replace(/\r\n/g, "\n");
 const ALAMAT_TIPE = "/aleta/api/aleta-ecourt/ekstensi/tipe-keluaran";
+// Peran pengisi borang putusan = hakim: sejak 9 Okt 2026 isian putusan hanya
+// untuk Super Admin, Admin, Hakim (panel-alat.js menahan peran lain).
 const ALAMAT_ISIAN = "/aleta/api/aleta-ecourt/putusan/isian-sipp";
 const ALAMAT_SIAPA = "/aleta/api/aleta-ecourt/ekstensi/siapa";
 
@@ -261,7 +263,7 @@ function muat(p: Pilihan = {}) {
         return jawab({ data: { usulan } });
       }
       if (url.includes(ALAMAT_ISIAN)) return jawab({ data: drafUtuh() });
-      if (url.includes(ALAMAT_SIAPA)) return jawab(p.siapa ?? { data: { nama: "Petugas Uji", peran: "panitera" } });
+      if (url.includes(ALAMAT_SIAPA)) return jawab(p.siapa ?? { data: { nama: "Petugas Uji", peran: "hakim" } });
       return jawab({ ok: true });
     },
     requestAnimationFrame: (cb: () => void) => setTimeout(cb, 0),
@@ -516,7 +518,7 @@ describe("4. versiTipe dari /ekstensi/siapa", () => {
     const m = muat({
       portal: () => jawab,
       singgahan: { tipeKeluaran: { versi: jawab.versi, pada: "x", isi: jawab.daftar } },
-      siapa: { data: { nama: "Petugas Uji", peran: "panitera", versiTipe: jawab.versi } },
+      siapa: { data: { nama: "Petugas Uji", peran: "hakim", versiTipe: jawab.versi } },
     });
     await m.k.__uji.muatPenggunaAleta();
     expect(vm.runInContext("alatVersiTipeKini", m.k)).toBe(jawab.versi);
@@ -530,7 +532,7 @@ describe("4. versiTipe dari /ekstensi/siapa", () => {
     const m = muat({
       portal: () => baru,
       singgahan: { tipeKeluaran: { versi: lama.versi, pada: "x", isi: lama.daftar } },
-      siapa: { data: { nama: "Petugas Uji", peran: "panitera", versiTipe: baru.versi } },
+      siapa: { data: { nama: "Petugas Uji", peran: "hakim", versiTipe: baru.versi } },
     });
     await m.k.__uji.muatPenggunaAleta();
     await jalankanPanel(m);
@@ -543,7 +545,7 @@ describe("4. versiTipe dari /ekstensi/siapa", () => {
     const m = muat({
       portal: () => lama,
       singgahan: { tipeKeluaran: { versi: lama.versi, pada: "x", isi: lama.daftar } },
-      siapa: { data: { nama: "Petugas Uji", peran: "panitera", versiTipe: null } },
+      siapa: { data: { nama: "Petugas Uji", peran: "hakim", versiTipe: null } },
     });
     await m.k.__uji.muatPenggunaAleta();
     await jalankanPanel(m);
@@ -559,7 +561,7 @@ describe("4. versiTipe dari /ekstensi/siapa", () => {
       portal: () => jawabKini,
       borang: borangDenganAnak(),
       singgahan: { tipeKeluaran: { versi: lama.versi, pada: "x", isi: lama.daftar } },
-      siapa: { data: { nama: "Petugas Uji", peran: "panitera", versiTipe: lama.versi } },
+      siapa: { data: { nama: "Petugas Uji", peran: "hakim", versiTipe: lama.versi } },
     });
     await m.k.__uji.muatPenggunaAleta();
     const kotak = m.k.__uji.bagianIsiPutusan("12/Pdt.G/2026/PA.Uji") as HTMLDivElement;

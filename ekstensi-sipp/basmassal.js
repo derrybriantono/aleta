@@ -1630,8 +1630,14 @@ function basmassalGambar(akar, konteks) {
     saring.disabled = true;
     konteks.segarkanAksi();
     const hitung = { diunduh: 0, dilewati: 0, gagal: 0 };
+    // 9 Okt 2026: dilaporkan ke latar.js - tombol "Perbarui ekstensi"
+    // ditahan selama putaran ini (alatAntreanKerja di panel-alat.js). Tiap
+    // butir bertangkap sendiri, jadi selesai() di bawah selalu tercapai.
+    const laporBas =
+      typeof alatAntreanKerja === "function" ? alatAntreanKerja("bas-massal", "BAS massal", dipilih.length) : null;
     for (let i = 0; i < dipilih.length; i += 1) {
       if (berhenti) break;
+      if (laporBas) laporBas.maju(i, dipilih.length);
       basmassalKabar(kemajuan, `Mengerjakan ${i + 1} dari ${dipilih.length}: ${dipilih[i].baris.nomorPerkara}`, "");
       let h;
       try {
@@ -1642,6 +1648,7 @@ function basmassalGambar(akar, konteks) {
       hitung[h.keadaan] = (hitung[h.keadaan] || 0) + 1;
       if (i < dipilih.length - 1 && !berhenti) await new Promise((r) => setTimeout(r, BASMASSAL_JEDA_BERUNTUN_MS));
     }
+    if (laporBas) laporBas.selesai();
     const sisa = dipilih.length - hitung.diunduh - hitung.dilewati - hitung.gagal;
     basmassalKabar(
       kemajuan,

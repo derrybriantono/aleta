@@ -61,6 +61,12 @@ vi.mock("@/server/modules/aleta-ecourt/akses", async (asli) => {
   const modul = (await asli()) as Record<string, unknown>;
   return { ...modul, pastikanKapabilitas: async () => ({ name: "Penguji" }) };
 });
+// Hak unggah putusan (9 Okt 2026) diuji di hak-unggah-putusan-9okt.test.ts;
+// di sini yang diuji tipe keluaran, termasuk basis data yang tak terbaca.
+vi.mock("@/server/modules/aleta-ecourt/hak-putusan", () => ({
+  pastikanBolehUnggahPutusan: async () => ({ actor: { name: "Penguji" }, peran: "admin" }),
+  bolehUnggahPutusan: () => true,
+}));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr-admin" }));
 vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
   getGatewaySippKonteks: async () => ({ ok: false, error: "tidak dipakai" }),

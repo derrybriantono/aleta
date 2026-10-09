@@ -4466,6 +4466,9 @@ function susunPanelAbt(jatiDiri) {
   kaki.appendChild(barisKaki);
   panel.appendChild(kaki);
   void muatPenggunaAleta().then((pengguna) => {
+    // Hak unggah putusan (9 Okt 2026): bagian unggah yang tergambar sebelum
+    // peran terbaca diganti kotak terkunci bila perannya tidak berhak.
+    abtKunciUnggahBilaTolak(panel);
     // Tombol yang akan ditolak disembunyikan begitu kewenangannya diketahui.
     // Menawarkan tombol lalu menolaknya sesudah ditekan terbaca sebagai
     // kerusakan, bukan sebagai pembatasan yang disengaja.
@@ -5971,7 +5974,14 @@ async function susunPanelMassalAbt() {
   const keadaan = { peta, sidang: [], tanggal: alatTanggalIso(new Date()), berhenti: false, sedangJalan: false };
 
   isi.appendChild(bagianPetaBlangkoAbt(keadaan));
-  isi.appendChild(bagianMassalAbt(keadaan));
+  // Keputusan 9 Okt 2026: putusan massal (unggah ke SIPP) hanya Hakim
+  // (termasuk Ketua/Wakil), Admin, Super Admin - penggunaAletaAbt sudah
+  // terbaca (pasangMassalAbt menunggunya). Pemetaan blangko tetap.
+  if (abtTolakUnggahPutusan()) {
+    abtPasangKotakTerkunci(isi);
+  } else {
+    isi.appendChild(bagianMassalAbt(keadaan));
+  }
 
   // ==========================================================================
   // KAKI YANG SAMA DENGAN PANEL SIPP, ALETA, DAN PERKARA ABT
@@ -6938,6 +6948,13 @@ function bagianMassalAbt(keadaan) {
     });
     await alatSimpanAntrean(antrean);
     alatCatat("massal", `putusan massal ABT dimulai: ${dipilih.length} perkara, sidang ${keadaan.tanggal}`, "");
+    // 9 Okt 2026: dilaporkan ke latar.js - tombol "Perbarui ekstensi" ditahan
+    // sampai antrean ini berhenti (alatAntreanKerja). Dilepas sesudah
+    // perulangan, juga bila ia terhenti oleh lemparan.
+    const laporAbt =
+      typeof alatAntreanKerja === "function"
+        ? alatAntreanKerja("putusan-massal-abt", "putusan massal ABT", antrean.butir.length)
+        : null;
 
     const opsi = opsiMassal();
     const olehUsername = namaPenggunaAbt();
@@ -6977,6 +6994,10 @@ function bagianMassalAbt(keadaan) {
           b.nilai.textContent = butir.catatan;
           const tanda = centangPer.get(butir.nomor);
           if (tanda) tanda.tanda.textContent = butir.keadaan === "selesai" ? "selesai" : butir.keadaan === "gagal" ? "gagal" : "dilewati";
+          if (laporAbt) {
+            const tuntas = antrean.butir.filter((x) => x.keadaan === "selesai" || x.keadaan === "gagal" || x.keadaan === "dilewati").length;
+            laporAbt.maju(tuntas, antrean.butir.length);
+          }
           await alatSimpanAntrean(antrean);
         },
       });
@@ -6985,6 +7006,8 @@ function bagianMassalAbt(keadaan) {
       const pesan = String((galat && galat.message) || galat);
       neraca.appendChild(buatElemen("div", "aleta-tetap-sebab aleta-lencana-mendesak", `Putusan massal terhenti: ${pesan}`));
       alatCatat("massal-galat", `putusan massal ABT terhenti: ${pesan}`, "");
+    } finally {
+      if (laporAbt) laporAbt.selesai();
     }
     await alatSimpanAntrean(antrean);
 
@@ -7028,6 +7051,8 @@ function bagianMassalAbt(keadaan) {
         antrean.posisi = 0;
         await alatSimpanAntrean(antrean);
         alatCatat("massal", `antrean diserahkan ke SIPP (${modus})`, "");
+        // Antrean SIPP hidup sejak diserahkan - penahan tombol Perbarui ikut.
+        if (typeof alatLaporAntreanPutusanSipp === "function") alatLaporAntreanPutusanSipp(antrean);
         window.open(alamatSippDariAbt(), "_blank");
         serah.appendChild(
           buatElemen("div", "aleta-tetap-sebab", "Tab SIPP dibuka. Buka daftar perkara Perdata di sana - panel ALETA akan menawarkan melanjutkan antrean.")
@@ -7103,6 +7128,12 @@ function bagianUnggahSatuAbt(isi) {
   // daftar ABT yang bukan putusan; yang "ragu" dikunci di UI Baru (di bawah).
   const jenisHalaman = a3JenisBlangkoHalaman();
   if (jenisHalaman === "bukan") return null;
+
+  // Keputusan 9 Okt 2026: unggah putusan ke SIPP HANYA Hakim (termasuk
+  // Ketua/Wakil), Admin, Super Admin. Peran yang PASTI tidak berhak tidak
+  // diberi bagian ini; yang perannya belum terbaca diberi seperti biasa lalu
+  // diganti kotak terkunci begitu akun ALETA-nya terbaca (abtKunciUnggahBilaTolak).
+  if (abtTolakUnggahPutusan()) return abtPasangKotakTerkunci(isi);
 
   const kotak = buatElemen("div", "aleta-abt-bagian");
   kotak.appendChild(buatElemen("div", "aleta-abt-judul", "Unggah putusan perkara ini ke SIPP"));
@@ -7263,6 +7294,58 @@ function bagianUnggahSatuAbt(isi) {
 
   isi.appendChild(kotak);
   return kotak;
+}
+
+/**
+ * ============================================================================
+ * HAK UNGGAH PUTUSAN DI PANEL ABT (keputusan 9 Okt 2026)
+ * ============================================================================
+ *
+ * Aturannya satu, di panel-alat.js (alatBolehUnggahPutusan): Hakim (termasuk
+ * Ketua/Wakil), Admin, Super Admin. Peladen menolak 403 di rute unggah-sipp,
+ * unggah-naskah, dan isian-sipp; pemantau ambil menahan permintaannya. Di sini
+ * hanya supaya bagian yang pasti ditolak tidak ditawarkan.
+ */
+function abtTolakUnggahPutusan() {
+  try {
+    return typeof alatBolehUnggahPutusan === "function" && alatBolehUnggahPutusan(penggunaAletaAbt) === false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Kotak terkunci beralasan. Panitera dan juru sita di Baru/UI Baru tidak
+ * pernah punya menu unggah putusan di matriks perannya - bagi mereka cukup
+ * tidak digambar; peran lain dan tampilan Lama melihat alasannya.
+ */
+function abtPasangKotakTerkunci(isi) {
+  let golongan = "lain";
+  try {
+    golongan = typeof alatGolonganPeran === "function" ? alatGolonganPeran(penggunaAletaAbt && penggunaAletaAbt.peran) : "lain";
+  } catch {
+    golongan = "lain";
+  }
+  if (t6Aktif() && (golongan === "panitera" || golongan === "jurusita")) return null;
+  if (typeof alatKotakTerkunciPutusan !== "function") return null;
+  const kotak = alatKotakTerkunciPutusan("Unggah putusan perkara ini ke SIPP");
+  if (isi) isi.appendChild(kotak);
+  return kotak;
+}
+
+/**
+ * Peran yang terbaca SESUDAH bagian unggah tergambar (muatPenggunaAleta di
+ * panel perkara menyusul): bagian itu diganti kotak terkunci. Tidak memanggil
+ * portal sendiri - menumpang bacaan akun yang memang sudah berjalan.
+ */
+function abtKunciUnggahBilaTolak(akar) {
+  if (!akar || !abtTolakUnggahPutusan()) return;
+  for (const kotak of Array.from(akar.querySelectorAll(".aleta-abt-bagian"))) {
+    if (!kotak.isConnected) continue;
+    const ganti = abtPasangKotakTerkunci(null);
+    if (ganti) kotak.replaceWith(ganti);
+    else kotak.remove();
+  }
 }
 
 /**

@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
 import {
   getGatewayStatusPutusan,
@@ -113,6 +114,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Jalur HAKIM - menuntut amar dan pertimbangan, dan memang seharusnya.
+    // Menulis PUTUSAN ke SIPP: keputusan 9 Okt 2026 membatasinya ke Super
+    // Admin, Admin, dan Hakim (termasuk Ketua/Wakil) - 403 bagi peran lain.
+    // Jalur "sidang" di atas (panitera sidang mencatat FAKTA diputus di
+    // Jadwal Sidang, penginput = PP perkara) tidak termasuk dan tidak diubah.
+    const { peran: peranPenekan } = await pastikanBolehUnggahPutusan(db, actorUserId);
     const olehUsername = String(badan.olehUsername || "").trim();
     if (!olehUsername) {
       return ok({
@@ -133,6 +139,7 @@ export async function POST(request: NextRequest) {
       pertimbanganHukum: String(badan.pertimbanganHukum || ""),
       olehUsername,
       operator: actorUserId || "portal",
+      peranPenekan,
       kering: badan.kering !== false,
     });
 

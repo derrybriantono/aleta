@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
-import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import {
   kenaliBentuk,
   periksaBerkasUnggahSipp,
@@ -37,8 +37,8 @@ const BATAS_SATU_BERKAS = 10 * 1024 * 1024;
  * Berbeda dengan rute putusan yang lain di folder ini, yang ini benar-benar
  * MENULIS: berkas ke cakram SIPP, kolom dokumen pada perkara_putusan, baris
  * dirput_dokumen, dan antrean Direktori Putusan. Karena itu kewenangannya
- * "penunjukan" - kewenangan yang sama dengan menuliskan penetapan, bukan
- * kewenangan membaca panel.
+ * PERAN: Super Admin, Admin, Hakim (termasuk Ketua/Wakil) - keputusan
+ * 9 Okt 2026, lihat pastikanBolehUnggahPutusan. Peran lain ditolak 403.
  *
  * Portal tidak menyentuh SIPP sendiri; seluruhnya lewat gerbang bot, tempat
  * satu-satunya sambungan ke basis data SIPP berada.
@@ -67,7 +67,11 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    const aktor = await pastikanKapabilitas(db, actorUserId, "penunjukan");
+    // Keputusan 9 Okt 2026: unggah putusan HANYA Super Admin, Admin, dan
+    // Hakim (termasuk Ketua/Wakil). Bukan lagi kemampuan "penunjukan" - itu
+    // gerbang PENETAPAN, dan menumpanginya membuat hak putusan ikut bergeser
+    // tiap kali gerbang penetapan disunting (temuan uji U1).
+    const { actor: aktor, peran: peranPenekan } = await pastikanBolehUnggahPutusan(db, actorUserId);
     // Uji rilis U1 (9 Okt 2026): akun ALETA yang menekan tombolnya untuk JEJAK
     // JUJUR aleta_bot_jejak_penetapan - sebelumnya tidak diteruskan, sehingga
     // baris "unggah edoc_putusan" di server (533, 561) berkolom operator kosong.
@@ -214,6 +218,9 @@ export async function POST(request: NextRequest) {
       olehUsername,
       // Pengguna ALETA yang menekan - hanya untuk jejak ALETA.
       operator,
+      // Peran yang memberi hak unggah - gerbang bot menolak sendiri bila
+      // kosong atau bukan Hakim/Admin/Super Admin (lapis kedua).
+      peranPenekan,
       // Alamat peramban petugas itu, untuk kolom ipaddress baris audit SIPP.
       // Kosong bila tidak ada alamat IPv4 yang sah - tidak pernah dikarang.
       ip: alamatIpPeramban(request),

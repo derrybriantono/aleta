@@ -8,6 +8,7 @@ import {
   bolehMenyuntingAkses,
   kapabilitasPengguna,
 } from "@/server/modules/aleta-ecourt/akses";
+import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { susunMenuEkstensi } from "@/server/modules/aleta-ecourt/menu-ekstensi";
 import { untukEkstensi } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { requireActorUser } from "@/server/modules/organization/service";
@@ -65,6 +66,8 @@ export async function GET(request: NextRequest) {
       keterangan: KETERANGAN_KAPABILITAS,
       menu: susunMenuEkstensi(roleId, additionalRoleIds),
       bolehMengatur: bolehMenyuntingAkses(actor),
+      // Hak unggah putusan ke SIPP/e-Court (9 Okt 2026) - peran, bukan kemampuan.
+      bolehUnggahPutusan: bolehUnggahPutusan(actor),
       versiEkstensi: EKSTENSI_VERSI,
       dirilis: DIRILIS_EKSTENSI_TERBARU,
       // Versi tipe keluaran ikut di sini supaya ekstensi tahu singgahannya

@@ -541,8 +541,10 @@ function muatHalaman(dunia: Dunia, simpanan: Record<string, unknown>, opsi: Opsi
         // Pekerja latar MV3 yang sudah mati: tiap pesan ke sana gagal. Antrean
         // SIPP tidak boleh bergantung padanya - yang menyeberang antar
         // halaman hanya chrome.storage.local.
-        sendMessage: () => {
-          dunia.latarDipanggil += 1;
+        sendMessage: (pesan?: { jenis?: string }) => {
+          // Laporan antrean kerja (penahan tombol Perbarui, 9 Okt 2026) dikirim
+          // lalu dilupakan - antrean tidak bergantung padanya, jadi tidak dihitung.
+          if (!/^antrean-kerja-/.test(String((pesan && pesan.jenis) || ""))) dunia.latarDipanggil += 1;
           throw new Error("Could not establish connection. Receiving end does not exist.");
         },
       },
