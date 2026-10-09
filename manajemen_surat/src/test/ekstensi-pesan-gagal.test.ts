@@ -337,7 +337,10 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // (ccBacaDaftarSipp), blangko Tambah Court Calender (ccBacaBlangkoSipp),
     // dan simpanan validateInput (ccKirimBaris). Gagalnya disebut per baris
     // ("tidak terbaca (status N)", "ditahan mode ...", pesan SIPP), bukan kode.
-    expect(lewatAlat).toBe(40);
+    // 41 sejak uji rilis U1 (9 Okt 2026): sisa penetapan satu perkara dikirim
+    // SEKALIGUS (kirimRantaiUtuh) - gagalnya disebut per langkah beserta
+    // "tidak ada yang tertulis".
+    expect(lewatAlat).toBe(41);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

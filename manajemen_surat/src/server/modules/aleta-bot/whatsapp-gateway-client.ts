@@ -3807,6 +3807,35 @@ export async function kirimPenetapanTulisGateway(payload: {
 }
 
 /**
+ * Menulis SISA penetapan satu perkara dalam SATU transaksi (uji rilis U1,
+ * 9 Okt 2026): seluruh langkah tertulis, atau tidak satu pun. Hanya penulisan
+ * sungguhan. Bot menjalani jeda manusia per langkah, jadi batasnya lebih
+ * panjang daripada satu langkah (K6: bot < gerbang 120 dtk < ekstensi 150 dtk).
+ */
+export async function kirimPenetapanTulisRantaiGateway(payload: {
+  perkaraId: number;
+  tanggalPenetapan: string;
+  olehUsername: string;
+  operator: string;
+  ip?: string;
+  langkah: Array<{
+    jenis: string;
+    hakimId?: number[];
+    petugasId?: number;
+    tanggalSidang?: string;
+    ruanganId?: number;
+    jamSidang?: string;
+    pejabatUsername?: string;
+  }>;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/tulis-rantai", {
+    method: "POST",
+    body: JSON.stringify({ ...payload, kering: false }),
+    timeoutMs: 120000,
+  });
+}
+
+/**
  * Membongkar satu penetapan yang sudah tertulis.
  *
  * KERING sebagai bawaan, sama seperti menulis - bot tidak menghapus apa pun

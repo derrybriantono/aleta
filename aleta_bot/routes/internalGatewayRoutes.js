@@ -899,6 +899,88 @@ router.get("/penetapan/ruangan", requireInternalToken, async (req, res) => {
   }
 });
 
+/**
+ * Sisa penetapan SATU perkara, utuh atau batal (uji rilis U1, 9 Okt 2026) -
+ * lihat penetapanTulisService.tulisRantaiUtuh. Hanya penulisan sungguhan;
+ * uji kering tetap lewat /penetapan/tulis per langkah. Selalu 200 dengan ok di
+ * badan (kecuali galat tak terduga), supaya rinciannya sampai ke panel utuh.
+ */
+router.post("/penetapan/tulis-rantai", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+    if (badan.kering !== false) {
+      res.status(400).json({ ok: false, alasan: "rantai_hanya_untuk_menulis" });
+      return;
+    }
+    const langkah = (Array.isArray(badan.langkah) ? badan.langkah : []).map((x) => ({
+      jenis: String((x && x.jenis) || ""),
+      hakimId: Array.isArray(x && x.hakimId) ? x.hakimId : [],
+      petugasId: x && x.petugasId,
+      tanggalSidang: String((x && x.tanggalSidang) || ""),
+      ruanganId: x && x.ruanganId,
+      jamSidang: String((x && x.jamSidang) || ""),
+      pejabatUsername: String((x && x.pejabatUsername) || "").trim().slice(0, 150),
+    }));
+    const ip = alamatAudit(req);
+    const hasil = await penetapanTulisService.tulisRantaiUtuh({
+      perkaraId: badan.perkaraId,
+      tanggalPenetapan: String(badan.tanggalPenetapan || ""),
+      olehUsername: String(badan.olehUsername || ""),
+      operator,
+      ip,
+      langkah,
+    });
+
+    // Jejak jujur per langkah - termasuk yang DIBATALKAN bersama rantainya.
+    for (const satu of hasil.hasil || []) {
+      if (satu.sudahAda) continue;
+      const r = satu.rencana || {};
+      const pejabat = (langkah.find((x) => x.jenis.toLowerCase() === satu.jenis) || {}).pejabatUsername || "";
+      void jejakAletaService.catat({
+        aksi: "tulis",
+        jenis: satu.jenis,
+        perkaraId: badan.perkaraId,
+        nomorPerkara: (r.perkara && r.perkara.nomorPerkara) || "",
+        tanggalPenetapan: String(badan.tanggalPenetapan || ""),
+        akunSipp: (r.atasNama && r.atasNama.username) || String(badan.olehUsername || ""),
+        namaPejabat: pejabat || (r.atasNama && r.atasNama.namaLengkap) || "",
+        operator,
+        ip,
+        berhasil: hasil.ok === true && satu.ok === true,
+        kering: false,
+        alasan: hasil.ok ? "" : satu.ok ? `dibatalkan_rantai:${hasil.alasan || "gagal"}` : String(satu.alasan || "gagal"),
+        langkah: r.langkah || [],
+      });
+    }
+
+    res.json({
+      ok: hasil.ok === true,
+      utuh: hasil.utuh === true,
+      alasan: hasil.alasan || "",
+      jenisGagal: hasil.jenis || "",
+      pesan: hasil.pesan || "",
+      dipulihkan: hasil.dipulihkan === true,
+      hasil: (hasil.hasil || []).map((satu) => ({
+        jenis: satu.jenis,
+        ok: hasil.ok === true && satu.ok === true,
+        sudahAda: satu.sudahAda === true,
+        alasan: satu.alasan || "",
+        atasNama: satu.rencana ? satu.rencana.atasNama : undefined,
+        tanggalPenetapan: satu.rencana ? satu.rencana.tanggalPenetapan : "",
+        catatanTanggal: (satu.rencana && satu.rencana.catatanTanggal) || [],
+        langkah: satu.eksekusi && satu.eksekusi.selesai ? satu.eksekusi.selesai : [],
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, alasan: "gagal_menulis", pesan: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
   try {
     const badan = req.body || {};

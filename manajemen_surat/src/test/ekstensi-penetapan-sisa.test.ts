@@ -162,6 +162,36 @@ function buka(perkara: Record<string, Perkara>, opsi: { alamat?: string; html?: 
       } else {
         isi = { ok: true, data: { available: true, usulan: usulanUntuk(nomor, p), rencana: { langkah: [] } } };
       }
+    } else if (url.includes("/aleta-bot/penunjukan/tulis") && cara === "POST" && /"rantai"\s*:/.test(String(opsi?.body || ""))) {
+      // Uji rilis U1 (9 Okt 2026): penulisan sungguhan = SATU kiriman, bot
+      // menuliskannya dalam satu transaksi (tulisRantaiUtuh) - utuh atau batal.
+      const badan = JSON.parse(String(opsi?.body || "{}"));
+      const nomor = nomorDariId(Number(badan.perkaraId));
+      const p = perkara[nomor];
+      const salinan = { ...p.keadaan };
+      const hasilRantai: Array<Record<string, unknown>> = [];
+      let gagal = "";
+      for (const satu of badan.rantai as Array<{ jenis: Jenis }>) {
+        tulis.push({ nomor, perkaraId: badan.perkaraId, jenis: satu.jenis, kering: false, olehUsername: badan.olehUsername, tanggalPenetapan: badan.tanggalPenetapan, rantaiSebelum: [] });
+        if (salinan[satu.jenis]) {
+          hasilRantai.push({ jenis: satu.jenis, ok: false, sudahAda: true, alasan: `${satu.jenis}_sudah_ada` });
+          continue;
+        }
+        if (p.tulisGagal === satu.jenis) {
+          hasilRantai.push({ jenis: satu.jenis, ok: false, alasan: "hakim_tidak_ketemu" });
+          gagal = satu.jenis;
+          break;
+        }
+        salinan[satu.jenis] = badan.tanggalPenetapan;
+        hasilRantai.push({ jenis: satu.jenis, ok: true, langkah: [{ tabel: "perkara_penetapan" }], tanggalPenetapan: badan.tanggalPenetapan });
+      }
+      if (gagal) {
+        status = 409;
+        isi = { ok: false, alasan: "hakim_tidak_ketemu", jenisGagal: gagal, dipulihkan: true, hasil: hasilRantai.map((x) => ({ ...x, ok: false })) };
+      } else {
+        Object.assign(p.keadaan, salinan);
+        isi = { ok: true, utuh: true, hasil: hasilRantai };
+      }
     } else if (url.includes("/aleta-bot/penunjukan/tulis") && cara === "POST") {
       const badan = JSON.parse(String(opsi?.body || "{}"));
       const nomor = nomorDariId(Number(badan.perkaraId));
@@ -262,8 +292,10 @@ describe("rantai penetapan per perkara: hanya SISANYA, berurutan PMH -> PPP -> P
     expect(hasil.find((x) => x.jenis === "pmh")).toMatchObject({ ok: false, alasan: "pmh_sudah_ada", sudahAda: true });
     // Setanggal PMH yang sudah ada - bukan hari ini.
     expect(h.tulis.every((x) => x.tanggalPenetapan === "2026-10-06")).toBe(true);
-    // PMH yang sudah ada ikut rantaiSebelum - PHS menuntutnya.
-    expect(h.tulis.find((x) => x.jenis === "phs")!.rantaiSebelum).toEqual(["pmh", "ppp", "pjs"]);
+    // PMH yang sudah ada ikut rantaiSebelum - PHS menuntutnya (uji kering;
+    // penulisan sungguhan sejak uji rilis U1 satu kiriman utuh).
+    const kering = await rantai({ ...kosong(), pmh: "2026-10-06" }, true);
+    expect(kering.h.tulis.find((x) => x.jenis === "phs")!.rantaiSebelum).toEqual(["pmh", "ppp", "pjs"]);
   });
 
   it("PMH + PPP sudah ada -> hanya PJS dan PHS", async () => {

@@ -1649,6 +1649,8 @@ async function rantaiPenetapan(usulan, data, kering) {
   // berikutnya menuntutnya), dan TIDAK dikirim. Bot tetap menjaga: keadaan
   // yang basi dijawabnya _sudah_ada dan dilewati di bawah.
   const sudahDiSipp = keadaanPenetapanUsulan(usulan);
+  // Penulisan sungguhan: langkah sisa yang dikirim SEKALIGUS (lihat di bawah).
+  const antreRantai = [];
 
   for (const jenis of URUTAN_TULIS) {
     if (sudahDiSipp[jenis]) {
@@ -1692,16 +1694,21 @@ async function rantaiPenetapan(usulan, data, kering) {
     const pejabatUsername = pejabat[jenis] || otomatis || "";
     const olehUsername = akunMasuk;
 
-    // Jeda sungguhan di antara langkah, seperti petugas yang berpindah dari
-    // borang PMH ke borang PPP. Hanya pada penulisan sungguhan; jam yang
-    // tercatat diambil bot SESUDAH jeda ini. Langkah yang dilewati karena
-    // sudah ada tidak dihitung - tidak ada borang yang disimpan di sana.
-    if (!kering && hasil.some((x) => x.ok) && typeof alatJedaManusia === "function") {
-      try {
-        await alatJedaManusia("pindah", { alamat: ALETA_API_TULIS });
-      } catch {
-        /* jeda tidak pernah menggagalkan penetapan */
-      }
+    // ========================================================================
+    // PENULISAN SUNGGUHAN: SELURUH SISA DIKIRIM SEKALIGUS, UTUH ATAU BATAL
+    // ========================================================================
+    //
+    // Uji rilis U1 (9 Okt 2026): langkah demi langkah dalam permintaan
+    // terpisah dapat berhenti di tengah dan meninggalkan perkara separuh
+    // tertulis (cacat tunda 273). Langkahnya dikumpulkan di sini lalu dikirim
+    // dalam SATU permintaan; bot menuliskannya dalam satu transaksi dan
+    // menjalani jeda manusia di antara langkah (jam audit sesudah jeda).
+    if (!kering) {
+      const tempat = { jenis, ok: false, menungguRantai: true, alasan: "", olehUsername: akunMasuk, langkah: [], andaian: [], catatanTanggal: [] };
+      hasil.push(tempat);
+      antreRantai.push({ tempat, kirim: { jenis, ...nilai, pejabatUsername } });
+      rantaiSebelum.push(jenis);
+      continue;
     }
 
     let jawab;
@@ -1788,7 +1795,107 @@ async function rantaiPenetapan(usulan, data, kering) {
     rantaiSebelum.push(jenis);
   }
 
+  if (!kering && antreRantai.length > 0) await kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antreRantai);
   return hasil;
+}
+
+/**
+ * Mengirim seluruh langkah sisa satu perkara SEKALIGUS (uji rilis U1, 9 Okt
+ * 2026) dan mengisi tempatnya di `hasil`. Bot menuliskannya dalam satu
+ * transaksi: berhasil semua, atau tidak satu pun tertulis.
+ *
+ * Bila pemeriksaan di panel sudah gagal pada salah satu langkah (tanggal
+ * sidang tidak sah, usulan tidak tersusun), tidak ada yang dikirim - menulis
+ * sebagian rantai justru yang hendak dihindari.
+ */
+async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre) {
+  const jenisSebut = (j) => String(j || "").toUpperCase();
+  const gagalPanel = hasil.find((x) => !x.ok && !x.sudahAda && !x.menungguRantai);
+  const tandaiBatal = (tempat, sebab) => {
+    tempat.menungguRantai = false;
+    tempat.ok = false;
+    tempat.alasan = "dibatalkan_rantai";
+    tempat.bunyi = sebab;
+  };
+  if (gagalPanel) {
+    for (const a of antre) {
+      tandaiBatal(a.tempat, `Tidak ditulis - ${jenisSebut(gagalPanel.jenis)} belum dapat ditulis, jadi seluruh sisa penetapan ditahan.`);
+    }
+    return;
+  }
+
+  let jawab;
+  try {
+    const respons = await alatAmbil(
+      ALETA_API_TULIS,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        // Bot menjalani jeda manusia per langkah - lebih lama dari satu langkah.
+        batasMs: 150000,
+        body: JSON.stringify({
+          rantai: antre.map((a) => a.kirim),
+          perkaraId,
+          tanggalPenetapan: usulan.tanggalPenetapan || "",
+          olehUsername: akunMasuk,
+          kering: false,
+        }),
+      },
+      "Menulis penetapan"
+    );
+    const luar = await respons.json();
+    jawab = jawabPenetapanMenurutStatus(respons.status, luar && luar.data && luar.data.hasil ? luar.data : luar);
+  } catch (galat) {
+    jawab = { ok: false, alasan: String((galat && galat.message) || galat) };
+  }
+  jawab = jawab || { ok: false, alasan: "tanpa_jawaban" };
+
+  const rincian = Array.isArray(jawab.hasil) ? jawab.hasil : [];
+  if (jawab.ok !== false) {
+    lupakanStatusPerkara(String((usulan.perkara && usulan.perkara.nomorPerkara) || ""));
+    for (const a of antre) {
+      const r = rincian.find((x) => x && x.jenis === a.tempat.jenis) || {};
+      a.tempat.menungguRantai = false;
+      if (r.sudahAda) {
+        Object.assign(a.tempat, { ok: false, sudahAda: true, alasan: `${a.tempat.jenis}_sudah_ada`, bunyi: kalimatAlasan(`${a.tempat.jenis}_sudah_ada`) });
+        continue;
+      }
+      Object.assign(a.tempat, {
+        ok: true,
+        alasan: "",
+        bunyi: "",
+        atasNama: r.atasNama,
+        langkah: r.langkah || [],
+        catatanTanggal: r.catatanTanggal || [],
+        tanggalPenetapan: r.tanggalPenetapan || usulan.tanggalPenetapan || "",
+      });
+    }
+    return;
+  }
+
+  // Gagal: TIDAK ADA yang tertulis (transaksi dibatalkan). Langkah yang gagal
+  // membawa sebabnya; yang lain disebut dibatalkan bersamanya.
+  const jenisGagal = String(jawab.jenisGagal || "") || antre[0].tempat.jenis;
+  const kodeGagal = String(jawab.alasan || "ditolak");
+  const bunyiGagal = kalimatAlasan(kodeGagal, akunMasuk);
+  const peringatan =
+    jawab.dipulihkan === false
+      ? " PERHATIAN: pembatalan di server tidak terkonfirmasi - periksa tab Penetapan SIPP sebelum mencoba lagi."
+      : " Tidak ada yang tertulis - dapat dicoba lagi.";
+  for (const a of antre) {
+    const r = rincian.find((x) => x && x.jenis === a.tempat.jenis) || {};
+    if (a.tempat.jenis === jenisGagal) {
+      a.tempat.menungguRantai = false;
+      a.tempat.ok = false;
+      a.tempat.alasan = kodeGagal;
+      a.tempat.bunyi = `${bunyiGagal}${jawab.pesan ? ` (${String(jawab.pesan).slice(0, 160)})` : ""}${peringatan}`;
+    } else if (r.sudahAda) {
+      Object.assign(a.tempat, { menungguRantai: false, ok: false, sudahAda: true, alasan: `${a.tempat.jenis}_sudah_ada`, bunyi: kalimatAlasan(`${a.tempat.jenis}_sudah_ada`) });
+    } else {
+      tandaiBatal(a.tempat, `Tidak tertulis - seluruh sisa penetapan dibatalkan karena ${jenisSebut(jenisGagal)} gagal.${peringatan}`);
+    }
+  }
 }
 
 async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) {
@@ -1819,6 +1926,12 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
   // SIPP" tidak pernah terbuka, dan PPP, PJS, PHS tidak dapat dikerjakan.
   const dikerjakan = hasil.filter((x) => x.ok).length;
   return { ok: hasil.every((x) => x.ok || x.sudahAda === true), dikerjakan, hasil };
+}
+
+/** Penulisan sungguhan yang gagal tanpa satu langkah pun tertulis (rantai dibatalkan utuh) - aman diulang. */
+function rantaiDibatalkanUtuh(hasil) {
+  const daftar = (hasil && hasil.hasil) || [];
+  return !hasil.ok && daftar.every((x) => !x.ok) && !daftar.some((x) => /pembatalan di server tidak terkonfirmasi/.test(String(x.bunyi || "")));
 }
 
 /**
@@ -3925,6 +4038,16 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
       if (!rencanaSudahDibaca) {
         // Gagal pada uji kering: tetap dapat dicoba lagi sesudah dibetulkan.
         tombol.textContent = semula;
+        tombol.disabled = false;
+        return;
+      }
+
+      // Uji rilis U1 (9 Okt 2026): sisa penetapan ditulis dalam satu
+      // transaksi. Gagal = TIDAK ADA yang tertulis, jadi boleh diperiksa dan
+      // ditekan lagi dari awal (uji kering dulu).
+      if (!hasil.ok && rantaiDibatalkanUtuh(hasil)) {
+        rencanaSudahDibaca = false;
+        tombol.textContent = "Tetapkan dan tuliskan ke SIPP";
         tombol.disabled = false;
         return;
       }
@@ -13045,7 +13168,9 @@ function bagianPenetapanMassal(ringkasan) {
       }
 
       if (gagalSungguhan.length > 0) {
-        const pertama = gagalSungguhan[0];
+        // Langkah yang hanya ikut dibatalkan bersama rantainya bukan sebabnya
+        // (uji rilis U1, 9 Okt 2026 - lihat kirimRantaiUtuh).
+        const pertama = gagalSungguhan.find((x) => x.alasan !== "dibatalkan_rantai") || gagalSungguhan[0];
         const bunyi = pertama.bunyi || pertama.alasan;
         if (ALASAN_MENYELURUH.test(String(pertama.alasan || ""))) {
           catatGagal(nomor, `${String(pertama.jenis).toUpperCase()}: ${bunyi}`);

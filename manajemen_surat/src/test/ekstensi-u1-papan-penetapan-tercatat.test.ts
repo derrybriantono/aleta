@@ -218,8 +218,29 @@ function buka(keadaan: Keadaan, tampilan: "lama" | "ui", statusTulis: { nilai: n
       isi = { ok: true, data: { available: true, usulan: usulanUntuk(keadaan), rencana: rencanaUntuk(), bolehOtomatis: true } };
     } else if (url.includes("/aleta-bot/penunjukan/tulis") && cara === "POST") {
       const badan = JSON.parse(String(opsi?.body || "{}"));
-      tulis.push({ jenis: badan.jenis, kering: badan.kering !== false });
-      if (statusTulis.nilai === 401 || statusTulis.nilai === 403) {
+      if (Array.isArray(badan.rantai)) {
+        // Penulisan sungguhan: satu kiriman, bot satu transaksi (tulisRantaiUtuh).
+        for (const s of badan.rantai) tulis.push({ jenis: s.jenis, kering: false });
+        if (statusTulis.nilai === 409) {
+          status = 409;
+          isi = {
+            ok: false,
+            alasan: "gagal_menulis",
+            jenisGagal: "pjs",
+            pesan: "ER_LOCK_WAIT_TIMEOUT: Lock wait timeout exceeded",
+            dipulihkan: true,
+            hasil: badan.rantai.map((s: { jenis: string }) => ({ jenis: s.jenis, ok: false })),
+          };
+        } else {
+          for (const s of badan.rantai) keadaan[s.jenis as Jenis] = HARI;
+          isi = { ok: true, utuh: true, hasil: badan.rantai.map((s: { jenis: string }) => ({ jenis: s.jenis, ok: true, langkah: [{ tabel: "perkara_penetapan" }] })) };
+        }
+      } else {
+        tulis.push({ jenis: badan.jenis, kering: badan.kering !== false });
+      }
+      if (Array.isArray(badan.rantai)) {
+        /* sudah dijawab di atas */
+      } else if (statusTulis.nilai === 401 || statusTulis.nilai === 403) {
         // Bentuk galat portal (handleRouteError) - TANPA `alasan`.
         status = statusTulis.nilai;
         isi = { ok: false, error: { message: status === 401 ? "Sesi berakhir. Silakan masuk kembali." : "Peran Anda tidak diberi akses papan penunjukan." } };
@@ -418,5 +439,47 @@ describe("sesi ALETA habis / tidak berwenang SESUDAH papan dimuat: sebabnya terb
     const h = buka(kosong(), "lama");
     expect(polos(h.w.jawabPenetapanMenurutStatus(409, { ok: false, alasan: "pmh_sudah_ada" }))).toEqual({ ok: false, alasan: "pmh_sudah_ada" });
     expect(polos(h.w.jawabPenetapanMenurutStatus(200, { ok: true }))).toEqual({ ok: true });
+  });
+});
+
+// ============================================================================
+describe("penulisan sungguhan: sisa penetapan SATU kiriman, utuh atau batal (temuan U4)", () => {
+  async function tekanDua(h: ReturnType<typeof buka>) {
+    const kotak = await papan(h);
+    const tombol = kotak.querySelector(".aleta-tombol-tetapkan") as HTMLButtonElement;
+    tombol.click();
+    await sampai(() => tombol.textContent === "Tuliskan ke SIPP" && !tombol.disabled, () => `tombol kini "${tombol.textContent}"`);
+    h.tulis.length = 0;
+    tombol.click();
+    return { kotak, tombol };
+  }
+
+  it("PMH tangan: PPP, PJS, PHS dikirim dalam SATU permintaan (rantai), lalu 'Penetapan selesai'", async () => {
+    const h = buka({ ...kosong(), pmh: HARI }, "lama");
+    const { tombol } = await tekanDua(h);
+    await sampai(() => tombol.textContent === "Penetapan selesai", () => `tombol kini "${tombol.textContent}"`);
+    expect(h.tulis).toEqual([
+      { jenis: "ppp", kering: false },
+      { jenis: "pjs", kering: false },
+      { jenis: "phs", kering: false },
+    ]);
+  });
+
+  it("bot membatalkan transaksi (gagal di PJS): sebabnya terbaca, 'tidak ada yang tertulis', tombol dapat diulang", async () => {
+    const status = { nilai: 200 };
+    const h = buka(kosong(), "lama", status);
+    const kotak = await papan(h);
+    const tombol = kotak.querySelector(".aleta-tombol-tetapkan") as HTMLButtonElement;
+    tombol.click();
+    await sampai(() => tombol.textContent === "Tuliskan ke SIPP" && !tombol.disabled, () => `tombol kini "${tombol.textContent}"`);
+    status.nilai = 409;
+    tombol.click();
+    const kabar = () => String(kotak.querySelector(".aleta-tetap-kaki .aleta-tetap-sebab")?.textContent || "");
+    await sampai(() => /Tidak ada yang tertulis/.test(kabar()), () => `kabar kini "${kabar()}"`);
+    expect(kabar()).toMatch(/dibatalkan karena PJS gagal/);
+    expect(kabar()).toMatch(/ER_LOCK_WAIT_TIMEOUT/);
+    await sampai(() => !tombol.disabled, "tombol hidup lagi");
+    // Kembali ke awal: diperiksa (uji kering) dulu sebelum menulis lagi.
+    expect(tombol.textContent).toBe("Tetapkan dan tuliskan ke SIPP");
   });
 });
