@@ -7,6 +7,7 @@ import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { untukBot } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { roles as daftarPeran } from "@/lib/mock-data";
+import { tambahUsulanAlamat } from "@/lib/alamat-pihak";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -325,7 +326,9 @@ export async function POST(request: NextRequest) {
       // pernah menyusun ulang jawabannya begitu, dan medan yang lupa
       // didaftarkan hilang tanpa bunyi - empat kali dalam satu hari.
       pengguna,
-      sipp: hasil.data?.sipp ?? null,
+      // Butir 9 (1.189.x): usulan "Alamat Putusan" (8548/8549) dari alamat
+      // SIPP yang dirapikan + Domisili Elektronik - SIPP sendiri tidak diubah.
+      sipp: tambahUsulanAlamat(hasil.data?.sipp ?? null),
       saksi: hasil.data?.saksi ?? null,
       itsbat: hasil.data?.itsbat ?? null,
       saksiSdg: hasil.data?.saksiSdg ?? null,

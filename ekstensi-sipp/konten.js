@@ -6734,6 +6734,90 @@ async function praperiksaSebelumMengisi(nomorPerkara, kabar) {
   }
 }
 
+// ============================================================================
+// PUTUSAN YANG SUDAH TERISI DI SIPP (butir 6, 1.189.x)
+// ============================================================================
+//
+// Perkara yang putusannya SUDAH tersimpan di SIPP (perkara_putusan, dibaca
+// lewat status-perkara: putusan.sudahPutus) tidak butuh Putusan otomatis lagi.
+// Bagian itu DISEMBUNYIKAN selama borang Putusan Akhir tertutup - satu
+// keterangan pendek menggantikannya. Bila petugas membuka borang Putusan Akhir
+// kembali (edit), menunya muncul lagi dengan peringatan bahwa isinya akan
+// MENIMPA yang lama, dan sebelum apa pun dituliskan ALETA meminta konfirmasi.
+// Status yang tidak terbaca BUKAN "sudah terisi": bagiannya tetap tampil.
+async function b6KeadaanPutusanTerisi(nomorPerkara) {
+  if (!nomorPerkara || typeof ambilStatusPerkara !== "function") return null;
+  try {
+    const status = await ambilStatusPerkara(nomorPerkara);
+    const p = (status && status.putusan) || {};
+    const lengkap = (status && status.putusanLengkap) || {};
+    const tanggal = String(lengkap.tanggalPutusan || p.tanggalPutusan || "");
+    if (!p.sudahPutus && !tanggal) return { terisi: false };
+    return { terisi: true, tanggal, status: String(lengkap.statusPutusan || "") };
+  } catch {
+    return null;
+  }
+}
+
+function b6RincianPutusan(k) {
+  const bagianRinci = [];
+  if (k && k.tanggal) bagianRinci.push(`tanggal ${k.tanggal}`);
+  if (k && k.status) bagianRinci.push(k.status);
+  return bagianRinci.length ? ` (${bagianRinci.join(", ")})` : "";
+}
+
+/** Blangko tertutup: sembunyikan Putusan otomatis bila putusan sudah terisi. */
+function b6SembunyikanBilaTerisi(kotak, nomorPerkara) {
+  if (!kotak) return;
+  void b6KeadaanPutusanTerisi(nomorPerkara).then((k) => {
+    if (!k || !k.terisi || !kotak.isConnected) return;
+    kotak.hidden = true;
+    kotak.style.display = "none";
+    kotak.setAttribute("data-aleta-putusan-terisi", "sembunyi");
+    const catatan = buatElemen(
+      "div",
+      "aleta-tetap-sebab aleta-b6-putusan-terisi",
+      `Putusan perkara ini sudah terisi di SIPP${b6RincianPutusan(k)} - Putusan otomatis disembunyikan. ` +
+        "Untuk mengisi ulang, buka blangko Putusan Akhir (Edit); menunya muncul kembali dengan peringatan sebelum menimpa isi lama."
+    );
+    catatan.setAttribute("data-aleta-putusan-terisi", "catatan");
+    if (kotak.parentNode) kotak.parentNode.insertBefore(catatan, kotak.nextSibling);
+  });
+}
+
+/** Blangko terbuka atas putusan yang sudah ada: peringatan di puncak bagian. */
+function b6PeringatkanBilaTerisi(kotak, nomorPerkara) {
+  if (!kotak || !kotak.isi) return;
+  void b6KeadaanPutusanTerisi(nomorPerkara).then((k) => {
+    if (!k || !k.terisi || !kotak.isConnected) return;
+    kotak.setAttribute("data-aleta-putusan-terisi", "peringatan");
+    const awas = buatElemen(
+      "div",
+      "aleta-tetap-awas aleta-b6-awas-timpa",
+      `Putusan perkara ini SUDAH terisi di SIPP${b6RincianPutusan(k)}. Mengisikan dari ALETA akan MENIMPA isi lama ` +
+        "(pertimbangan hukum, amar, amar anonim, dan isian yang dicentang). ALETA meminta konfirmasi sebelum menulis."
+    );
+    kotak.isi.insertBefore(awas, kotak.isi.firstChild);
+  });
+}
+
+/**
+ * Konfirmasi sebelum menulis ke borang putusan yang sudah terisi. true = boleh
+ * lanjut (belum terisi, keadaan tidak terbaca, atau petugas menyetujui).
+ */
+async function b6KonfirmasiTimpaPutusan(nomorPerkara) {
+  const k = await b6KeadaanPutusanTerisi(nomorPerkara);
+  if (!k || !k.terisi) return true;
+  const tanya =
+    `Putusan perkara ${nomorPerkara} SUDAH terisi di SIPP${b6RincianPutusan(k)}.\n\n` +
+    "Isian dari ALETA akan MENIMPA isi putusan yang lama. Yakin menimpa yang lama?";
+  try {
+    return window.confirm(tanya) === true;
+  } catch {
+    return false;
+  }
+}
+
 function bagianIsiPutusan(nomorPerkara) {
   const kotak = bagian("Putusan otomatis", "isiPutusan", true);
   const isi = kotak.isi;
@@ -7700,6 +7784,13 @@ function bagianIsiPutusan(nomorPerkara) {
         return;
       }
       terap.disabled = true;
+      // Butir 6 (1.189.x): putusan yang sudah terisi di SIPP tidak ditimpa
+      // tanpa persetujuan petugas.
+      if (!(await b6KonfirmasiTimpaPutusan(nomorPerkara))) {
+        terap.disabled = false;
+        hasilTerap.textContent = "Dibatalkan - putusan lama di SIPP tidak diubah, blangko tidak diisi.";
+        return;
+      }
       const gagal = [];
       let berhasil = 0;
       // Butir 10 (Baru & UI Baru): keadaan putusan SEBELUM Simpan dibaca
@@ -12675,11 +12766,17 @@ function susunPanel(konteks) {
     kelPutusan.isi.appendChild(alatKotakTerkunciPutusan("Putusan otomatis, unggah e-Doc putusan, dan upload ke e-Court"));
   }
   if (bolehPutusan && boleh("data-umum") && adaBorangPutusan) {
-    kelPutusan.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
+    const kotakIsiPutusan = bagianIsiPutusan(konteks.nomorPerkara);
+    kelPutusan.isi.appendChild(kotakIsiPutusan);
+    // Butir 6 (1.189.x): borang dibuka lagi atas putusan yang sudah ada.
+    b6PeringatkanBilaTerisi(kotakIsiPutusan, konteks.nomorPerkara);
   } else if (bolehPutusan && boleh("data-umum") && typeof s1BagianPutusanTanpaBlangko === "function" && s1Aktif()) {
     // Perbaikan 1 Okt (S, butir 3 - UI Baru saja): Putusan otomatis juga
     // tersedia sebelum blangko dibuka; ALETA membuka blangkonya sendiri.
-    kelPutusan.isi.appendChild(s1BagianPutusanTanpaBlangko(konteks.nomorPerkara));
+    const kotakTanpaBlangko = s1BagianPutusanTanpaBlangko(konteks.nomorPerkara);
+    kelPutusan.isi.appendChild(kotakTanpaBlangko);
+    // Butir 6 (1.189.x): putusan sudah terisi di SIPP = disembunyikan.
+    b6SembunyikanBilaTerisi(kotakTanpaBlangko, konteks.nomorPerkara);
   }
   // Unggahan MENULIS ke SIPP - berkas ke cakram, empat baris ke basis
   // datanya. Dahulu menumpang kemampuan "penunjukan" (gerbang PENETAPAN);
@@ -14498,21 +14595,77 @@ function kotakPermintaan(nomorPerkara, keadaanAwal) {
   const pesan = buatElemen("div", "aleta-permintaan-pesan");
   const tombol = buatElemen("button", "aleta-permintaan-tombol", "Tarik dari e-Court");
   tombol.type = "button";
+  // Butir 8 (1.189.x): garis proses + persen dari tahap NYATA jembatan
+  // (keadaan.kemajuan, dilaporkan bot selama permintaan dikerjakan).
+  const garis = buatElemen("div", "aleta-b8-garis");
+  garis.setAttribute("role", "progressbar");
+  garis.setAttribute("aria-valuemin", "0");
+  garis.setAttribute("aria-valuemax", "100");
+  garis.style.cssText = "display:none;height:6px;border-radius:3px;background:rgba(127,127,127,.25);overflow:hidden;margin:4px 0;";
+  const isiGaris = buatElemen("div", "aleta-b8-garis-isi");
+  isiGaris.style.cssText = "height:100%;width:0;background:#0284c7;transition:width .5s;";
+  garis.appendChild(isiGaris);
+  let pewaktuTanya = null;
+  let mulaiTanya = 0;
+
+  function gambarKemajuan(k) {
+    if (!k || !Number.isFinite(Number(k.persen))) {
+      garis.style.display = "none";
+      return "";
+    }
+    const persen = Math.max(0, Math.min(100, Math.round(Number(k.persen))));
+    garis.style.display = "";
+    garis.setAttribute("aria-valuenow", String(persen));
+    isiGaris.style.width = `${persen}%`;
+    return `${persen}% · ${k.teks || k.label || "Menarik dari e-Court"}`;
+  }
+
+  /** Tanya keadaan berkala selama diantrekan/dikerjakan (paling lama 10 menit). */
+  function tanyaBerkala() {
+    if (pewaktuTanya) return;
+    if (!mulaiTanya) mulaiTanya = Date.now();
+    const sekali = async () => {
+      pewaktuTanya = null;
+      if (Date.now() - mulaiTanya > 10 * 60 * 1000) return;
+      if (!kotak.isConnected) {
+        // Kotak baru disisipkan sesudah keadaannya terbaca - beri waktu.
+        if (Date.now() - mulaiTanya < 15000) tanyaBerkala();
+        return;
+      }
+      try {
+        const respons = await alatAmbil(
+          `${ALETA_API_PERMINTAAN}?nomor=${encodeURIComponent(nomorPerkara)}`,
+          { credentials: "include", cache: "no-store" },
+          "Membaca kemajuan penarikan"
+        );
+        const hasil = respons.ok ? await respons.json() : null;
+        const isi = hasil?.data ?? hasil;
+        if (isi && isi.available !== false) tampilkanKeadaan(isi.keadaan ?? null);
+      } catch {
+        // Tidak terbaca sekali - ditanya lagi pada detak berikutnya.
+      }
+    };
+    pewaktuTanya = setTimeout(sekali, 3000);
+  }
 
   function tampilkanKeadaan(keadaan) {
     if (!keadaan) {
       pesan.textContent = "Perkara ini belum pernah ditarik ALETA.";
       tombol.style.display = "";
+      gambarKemajuan(null);
       return;
     }
     if (keadaan.status === "menunggu" || keadaan.status === "dikerjakan") {
+      const nyata = keadaan.status === "dikerjakan" ? gambarKemajuan(keadaan.kemajuan) : gambarKemajuan(null);
       pesan.textContent =
         keadaan.status === "dikerjakan"
-          ? "Sedang ditarik dari e-Court..."
+          ? nyata || "Sedang ditarik dari e-Court..."
           : "Sudah diantrekan. Akan ditarik pada putaran berikutnya.";
       tombol.style.display = "none";
+      tanyaBerkala();
       return;
     }
+    gambarKemajuan(null);
     if (keadaan.status === "gagal") {
       pesan.textContent = `Penarikan terakhir gagal${keadaan.catatan ? `: ${keadaan.catatan}` : "."}`;
       tombol.style.display = "";
@@ -14555,9 +14708,10 @@ function kotakPermintaan(nomorPerkara, keadaanAwal) {
     }
   });
 
-  tampilkanKeadaan(keadaanAwal);
   kotak.appendChild(pesan);
+  kotak.appendChild(garis);
   kotak.appendChild(tombol);
+  tampilkanKeadaan(keadaanAwal);
   return kotak;
 }
 
@@ -23407,6 +23561,8 @@ function s2BacaPetaEdoc(data) {
       nama: String(x.nama || x.blangko || x.berkas || ""),
       penandatangan: String(x.penandatangan || x.ttd || x.pejabat || ""),
       sudah: x.sudahDiunggah === true || x.sudahAda === true,
+      // Butir 7 (1.189.x): kapan terakhir diunggah (perkara_dokumen_penetapan).
+      terakhir: String(x.terakhirDiunggah || ""),
     });
   }
   const jenis = S2_JENIS_PENETAPAN.map((j) => per.get(j) || { jenis: j, ada: false, sebab: "tidak ada di peta ABT", nama: "", penandatangan: "", sudah: false });
@@ -23494,6 +23650,61 @@ function s2RingkasHasil(hasil, cadangan) {
   const per = s2BacaHasilEdoc(hasil.d);
   if (!per.length) return cadangan;
   return per.map((x) => `${S2_NAMA_PENETAPAN[x.jenis] || x.jenis}: ${x.ok ? "terunggah" : `gagal${x.sebab ? ` (${x.sebab})` : ""}`}`).join(" · ");
+}
+
+// ─── Butir 7 (1.189.x): e-Doc penetapan yang SUDAH terupload ────────────────
+//
+// Sumber keadaan: tabel dokumen penetapan SIPP (perkara_dokumen_penetapan),
+// dibaca bot di peta edoc (sudahDiunggah, terakhirDiunggah). Mengunggah ulang
+// MENIMPA yang lama - jadi petugas diberi tahu "sudah terupload" dan ditanya
+// "yakin menimpa yang lama?" lebih dulu. Peta yang tidak terbaca = tidak
+// diketahui, bukan "belum ada": pertanyaannya tetap tidak dibuat-buat.
+
+/** Tanggal ringkas dari cap waktu SIPP ("2026-10-05 09:12:00" / ISO). Murni. */
+function b7TanggalSingkat(t) {
+  const s = String(t || "").trim();
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/);
+  return m ? `${m[1]} ${m[2]}` : s.slice(0, 16);
+}
+
+/** Kalimat "PMH, PHS sudah terupload di e-Doc SIPP (terakhir ...)". Murni. */
+function b7KalimatSudah(sudah) {
+  return (sudah || [])
+    .map((x) => {
+      const kode = String(x.jenis || "").toUpperCase();
+      const nama = S2_NAMA_PENETAPAN[kode] || kode;
+      return `${nama} (${kode}) sudah terupload di e-Doc SIPP${x.terakhir ? ` - terakhir ${b7TanggalSingkat(x.terakhir)}` : ""}`;
+    })
+    .join("; ");
+}
+
+/** Dari peta yang sudah dibaca (s2BacaPetaEdoc), jenis terpilih yang sudah terupload. Murni. */
+function b7SudahDariPeta(peta, jenis) {
+  const diminta = (jenis || []).map((j) => String(j).toUpperCase());
+  return peta && Array.isArray(peta.jenis) ? peta.jenis.filter((x) => x.sudah && diminta.includes(x.jenis)) : [];
+}
+
+/** Membaca peta edoc perkara: null bila tidak terbaca. */
+async function b7BacaSudahTerunggah(nomorPerkara, jenis) {
+  const nomor = String(nomorPerkara || "");
+  if (!nomor) return null;
+  const j = await t7AmbilJson(`${S2_API_EDOC_PETA}?nomor=${encodeURIComponent(nomor)}`, "Membaca e-Doc penetapan yang sudah ada");
+  if (!j.ok) return null;
+  return b7SudahDariPeta(s2BacaPetaEdoc(j.data), jenis);
+}
+
+/** Konfirmasi jendela: true = boleh menimpa. */
+function b7KonfirmasiTimpaEdoc(nomorPerkara, sudah) {
+  if (!sudah || !sudah.length) return true;
+  try {
+    return (
+      window.confirm(
+        `${nomorPerkara}: ${b7KalimatSudah(sudah)}.\n\nMengunggah lagi akan MENIMPA e-Doc yang lama. Yakin menimpa yang lama?`
+      ) === true
+    );
+  } catch {
+    return false;
+  }
 }
 
 function s2BagianEdocPenetapan(nomorPerkara) {
@@ -23603,7 +23814,15 @@ function s2BagianEdocPenetapan(nomorPerkara) {
       );
       baris.appendChild(tanda);
       if (x.penandatangan) baris.appendChild(buatElemen("span", "aleta-massal-keadaan aleta-s1-sebab", `ditandatangani ${x.penandatangan}`));
-      if (x.sudah) baris.appendChild(buatElemen("span", "aleta-massal-keadaan", "edoc sudah ada di SIPP - mengunggah lagi menggantinya"));
+      if (x.sudah) {
+        const tandaSudah = buatElemen(
+          "span",
+          "aleta-massal-keadaan aleta-lencana-lewat aleta-b7-sudah",
+          `sudah terupload${x.terakhir ? ` (${b7TanggalSingkat(x.terakhir)})` : ""} - mengunggah lagi menimpa yang lama`
+        );
+        tandaSudah.setAttribute("data-b7-sudah", x.jenis);
+        baris.appendChild(tandaSudah);
+      }
       daftar.appendChild(baris);
     }
     segarkan();
@@ -23638,14 +23857,20 @@ function s2BagianEdocPenetapan(nomorPerkara) {
   const jalankan = async ({ tombolIni, isianSandi, wadahTanyaIni, kabarIni, jenis, buatBadan, apa, sumberTeks }) => {
     if (tombolIni.disabled || !jenis.length) return;
     tombolIni.disabled = true;
+    // Butir 7 (1.189.x): yang sudah terupload disebut, dan pertanyaannya
+    // menjadi "yakin menimpa yang lama?". Peta belum dimuat (upload manual)
+    // = dibaca sekarang.
+    const sudah = peta ? b7SudahDariPeta(peta, jenis) : (await b7BacaSudahTerunggah(nomor, jenis)) || [];
+    const barisTanya = [
+      `${nomor}: ${s2SebutPenetapan(jenis)} ${sumberTeks}, ditandatangani elektronik atas nama ${sebutTte()}, diberi cap di atas tanda tangan, lalu diunggah ke e-Doc SIPP.`,
+      "Ini menulis ke SIPP atas nama akun Anda.",
+    ];
+    if (sudah.length) barisTanya.unshift(`${b7KalimatSudah(sudah)}. Mengunggah lagi akan MENIMPA e-Doc yang lama - yakin menimpa yang lama?`);
     const ya = await tanya(
       wadahTanyaIni,
-      "Upload edoc penetapan ke SIPP",
-      [
-        `${nomor}: ${s2SebutPenetapan(jenis)} ${sumberTeks}, ditandatangani elektronik atas nama ${sebutTte()}, diberi cap di atas tanda tangan, lalu diunggah ke e-Doc SIPP.`,
-        "Ini menulis ke SIPP atas nama akun Anda.",
-      ],
-      "Upload"
+      sudah.length ? "e-Doc penetapan sudah terupload - timpa?" : "Upload edoc penetapan ke SIPP",
+      barisTanya,
+      sudah.length ? "Ya, timpa yang lama" : "Upload"
     );
     if (!ya) {
       kabarIni.className = "aleta-abt-kabar";
@@ -24272,10 +24497,32 @@ async function e6UnggahEdocPenetapan(p) {
     tulis(`Edoc penetapan: ${peta.pesan}`, true);
     return { ok: false };
   }
-  const dipakai = e6JenisDipakai(peta.butir, p.jenis, p.otomatis);
+  let dipakai = e6JenisDipakai(peta.butir, p.jenis, p.otomatis);
   if (!dipakai.length) {
     if (!p.otomatis) tulis("Tidak ada jenis yang dipilih yang aktif di Peta penetapan (Integrasi e-Court).", true);
     return { ok: false, alasan: "tidak_ada_jenis" };
+  }
+  // Butir 7 (1.189.x): e-Doc yang SUDAH terupload tidak ditimpa diam-diam.
+  // Tombol: "sudah terupload - yakin menimpa yang lama?". Otomatis (sesudah
+  // penetapan tertulis): yang sudah ada DILEWATI dan disebut - menimpanya
+  // hanya lewat tombol, atas persetujuan petugas.
+  let dilewati = "";
+  if (!kering) {
+    const sudah = await b7BacaSudahTerunggah(p.nomorPerkara, dipakai.map((b) => b.jenis));
+    if (sudah && sudah.length) {
+      if (p.otomatis) {
+        const kodeSudah = sudah.map((x) => x.jenis);
+        dipakai = dipakai.filter((b) => !kodeSudah.includes(String(b.jenis).toUpperCase()));
+        dilewati = `${b7KalimatSudah(sudah)} - tidak ditimpa otomatis (unggah ulang lewat tombol bila perlu).`;
+        if (!dipakai.length) {
+          tulis(dilewati);
+          return { ok: false, alasan: "sudah_terunggah", dilewati: kodeSudah };
+        }
+      } else if (!b7KonfirmasiTimpaEdoc(p.nomorPerkara, sudah)) {
+        tulis("Dibatalkan - e-Doc lama di SIPP tidak diubah, tidak ada yang dikirim.");
+        return { ok: false, dibatalkan: true };
+      }
+    }
   }
   const perkaraId = await e6PerkaraId(p.nomorPerkara, p.perkaraId);
   if (!perkaraId) {
@@ -24307,7 +24554,7 @@ async function e6UnggahEdocPenetapan(p) {
   };
   const hasil = await s2KirimEdoc(JSON.stringify(badan), "Upload edoc penetapan");
   const ringkas = hasil.d ? e6RingkasHasil({ ...hasil.d, kering }) : "";
-  const tambahan = gagal.length ? ` · tidak tercetak: ${gagal.join("; ")}` : "";
+  const tambahan = (gagal.length ? ` · tidak tercetak: ${gagal.join("; ")}` : "") + (dilewati ? ` · ${dilewati}` : "");
   if (hasil.ok) tulis(`${ringkas || (kering ? "Siap diunggah." : "Terunggah ke e-Doc SIPP.")}${tambahan}`, Boolean(gagal.length));
   else tulis(`${hasil.pesan}${ringkas ? ` · ${ringkas}` : ""}${tambahan}`, hasil.status !== 404);
   return { ok: hasil.ok, hasil };

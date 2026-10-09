@@ -1578,6 +1578,11 @@ async function dariSipp(nomorPerkara) {
   }
   const k = usulanKuasaSipp(Array.isArray(kuasa) ? kuasa : [], { tanggalDaftar: baris[0].tanggalDaftar });
 
+  // Butir 9 (1.189.x): alamat + surel para pihak untuk "Alamat Putusan"
+  // (8548/8549). Hanya DIBACA - alamat di SIPP tidak diubah (juru sita
+  // memakainya untuk PBT). Perapiannya di portal (rapikanAlamat PTSP).
+  const alamatPihak = await bacaAlamatPihak(perkaraId, nomor).catch(() => []);
+
   const hasil = [
     ...k.usulan,
     {
@@ -1624,8 +1629,75 @@ async function dariSipp(nomorPerkara) {
     tanggalDaftar: String(baris[0].tanggalDaftar || ""),
     // Dipakai panel untuk menamai berkas - lihat namaBerkas di abt.js.
     keteranganPerkara,
+    // Butir 9: dibaca rute portal abt/usulan -> usulan 8548/8549.
+    alamatPihak,
     usulan: hasil,
   };
+}
+
+/** Huruf saja, huruf kecil - pembanding nama SIPP vs e-Court. Murni. */
+function bakuNamaPihak(nama) {
+  return String(nama || "")
+    .toLowerCase()
+    .replace(/\b(bin|binti)\b.*$/, "")
+    .replace(/[^a-z]+/g, " ")
+    .trim();
+}
+
+/**
+ * Surel e-Court untuk tiap pihak SIPP (butir 9). Murni.
+ *   1. nama sama (tanpa "bin/binti ...") -> surelnya;
+ *   2. bila tidak: satu-satunya pihak e-Court di sisi itu (Penggugat/Pemohon =
+ *      1, Tergugat/Termohon = 2) yang bersurel.
+ * Kuasa/advokat tidak pernah dipakai - surelnya bukan domisili pihak.
+ */
+function padankanSurelEcourt(pihakSipp, pihakEcourt) {
+  const ec = (Array.isArray(pihakEcourt) ? pihakEcourt : []).filter(
+    (p) => p && /@/.test(String(p.email || "")) && !/kuasa|advokat|pengacara/i.test(String(p.peran || ""))
+  );
+  const sisiDari = (peran) =>
+    /penggugat|pemohon|pelawan|pembanding/i.test(String(peran || "")) ? 1 : /tergugat|termohon|terlawan|terbanding/i.test(String(peran || "")) ? 2 : 0;
+  return (Array.isArray(pihakSipp) ? pihakSipp : []).map((p) => {
+    const n = bakuNamaPihak(p.nama);
+    let cocok = n ? ec.find((e) => bakuNamaPihak(e.nama) === n) : null;
+    if (!cocok) {
+      const sisi = ec.filter((e) => sisiDari(e.peran) === Number(p.pihakKe));
+      if (sisi.length === 1 && Number(p.urutan) === 1) cocok = sisi[0];
+    }
+    return { ...p, emailEcourt: cocok ? String(cocok.email).trim() : "" };
+  });
+}
+
+/** Alamat + surel SIPP para pihak, ditambah surel e-Court yang tersimpan di ALETA. */
+async function bacaAlamatPihak(perkaraId, nomorPerkara) {
+  const baris = await runQuery(
+    `SELECT 1 AS pihak_ke, pp.urutan, pp.nama, pp.alamat, COALESCE(p.email, '') AS email
+       FROM perkara_pihak1 pp LEFT JOIN pihak p ON p.id = pp.pihak_id
+      WHERE pp.perkara_id = ?
+     UNION ALL
+     SELECT 2 AS pihak_ke, pp.urutan, pp.nama, pp.alamat, COALESCE(p.email, '') AS email
+       FROM perkara_pihak2 pp LEFT JOIN pihak p ON p.id = pp.pihak_id
+      WHERE pp.perkara_id = ?`,
+    [perkaraId, perkaraId]
+  );
+  const sipp = (Array.isArray(baris) ? baris : []).map((b) => ({
+    pihakKe: Number(b.pihak_ke) || 0,
+    urutan: Number(b.urutan) || 1,
+    nama: String(b.nama || "").trim(),
+    alamat: String(b.alamat || "").trim(),
+    emailSipp: String(b.email || "").trim(),
+  }));
+  let ecourt = [];
+  try {
+    const { normalizeCaseNumber } = require("./ecourtTextService");
+    ecourt = await require("./botDbService").query(
+      "SELECT nama, peran, email FROM aleta_bot_ecourt_pihak WHERE nomor_perkara = ?",
+      [normalizeCaseNumber(nomorPerkara)]
+    );
+  } catch {
+    ecourt = []; // tanpa data e-Court: surel SIPP saja
+  }
+  return padankanSurelEcourt(sipp, ecourt);
 }
 
 /**
@@ -4828,6 +4900,7 @@ module.exports = {
   dariSipp,
   // Kuasa hukum dari SIPP (9 Okt 2026) - diuji langsung.
   usulanKuasaSipp,
+  padankanSurelEcourt,
   bulanNomorRegister,
   dariPositaItsbat,
   susunKeteranganSaksiSdg,

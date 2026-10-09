@@ -42,6 +42,8 @@ const putusanEcourtService = require("../../services/putusanEcourtService");
 const ecourtDocumentService = require("../../services/ecourtDocumentService");
 const berkasIntegritasService = require("../../services/berkasIntegritasService");
 const sippReadOnlyBridgeService = require("../../services/sippReadOnlyBridgeService");
+// Butir 8 (1.189.x): tahap sungguhan dilaporkan ke penjadwal (baris bertanda).
+const kemajuanTarik = require("../../services/ecourtKemajuanTarik");
 const {
   caseNumberToFolder,
   cleanText,
@@ -194,6 +196,15 @@ function parseArgs(argv) {
 function log(pesan) {
   const waktu = new Date().toLocaleTimeString("id-ID");
   console.log(`[${waktu}] ${pesan}`);
+}
+
+/** Butir 8: satu baris kemajuan untuk penjadwal (lihat ecourtKemajuanTarik). */
+function kemajuan(tahap, rinci) {
+  try {
+    console.log(kemajuanTarik.barisKemajuan(tahap, rinci));
+  } catch {
+    // Laporan kemajuan tidak boleh menghentikan penarikan.
+  }
 }
 
 /**
@@ -664,7 +675,10 @@ async function kumpulkanTautan(page, acuan, ringkasan) {
   }
 
   const petaRegister = new Map();
+  let urutKategori = 0;
   for (const [kunci, jumlah] of kategori.entries()) {
+    urutKategori += 1;
+    kemajuan("cari-perkara", { i: urutKategori, n: kategori.size });
     const alamat = navigasi.pilihTautanMenu(menu, kunci);
     if (!alamat) {
       log(`  Menu "${kunci}" tidak ada di e-Court, dilewati (${jumlah} perkara SIPP).`);
@@ -756,6 +770,10 @@ async function processCase(page, url, ringkasan, args, acuan) {
   }
 
   log(`  Perkara ${detail.nomorPerkara} (${detail.dokumenPersidangan.length} dokumen persidangan, ${detail.dokumenPendaftaran.length} berkas pendaftaran)`);
+  kemajuan("daftar-dokumen", {
+    n: detail.dokumenPersidangan.length + detail.dokumenPendaftaran.length,
+    nomor: detail.nomorPerkara,
+  });
   // Identitas resmi dari SIPP, bukan tebakan dari teks halaman.
   const identitas = padankan(acuan, detail.nomorPerkara, detail.registrasiEcourt, ringkasan);
 
@@ -900,8 +918,11 @@ async function processCase(page, url, ringkasan, args, acuan) {
     ringkasan.perkaraKosong = (ringkasan.perkaraKosong || 0) + 1;
   }
 
+  let urutDokumen = 0;
   for (const dokumen of semua) {
     ringkasan.dokumenTerlihat += 1;
+    urutDokumen += 1;
+    kemajuan("unduh", { i: urutDokumen, n: semua.length, judul: dokumen.judul });
 
     const documentKey = ecourtStoreService.buildDocumentKey({
       nomorPerkara: detail.nomorPerkara,
@@ -1350,6 +1371,7 @@ async function utama() {
   }
 
   log("Membuka peramban e-Court...");
+  kemajuan("buka-peramban");
   // Profil peramban yang bertahan: selama sesi e-Court belum kedaluwarsa,
   // penjalanan berikutnya langsung masuk tanpa login ulang. Captcha tetap
   // diisi manusia - yang disimpan adalah hasil login petugas sendiri.
@@ -1396,6 +1418,7 @@ async function utama() {
 
   try {
     const page = (await browser.pages())[0] || (await browser.newPage());
+    kemajuan("masuk-sesi");
     await page.goto(`${scraper.BASE_URL}/Login`, { waitUntil: "networkidle2", timeout: 60000 });
 
     // Mode terjadwal TIDAK PERNAH menunggu login manusia.
@@ -1436,6 +1459,7 @@ async function utama() {
     });
 
     log("Membuka daftar perkara...");
+    kemajuan("cari-perkara");
 
     // Jalan utama: SIPP menentukan perkara mana, sapuan daftar e-Court
     // menentukan alamatnya. Mengembalikan kosong bila salah satunya tidak
@@ -1675,6 +1699,7 @@ async function utama() {
       }
 
       log(`[${ringkasan.perkaraDiperiksa}/${tautan.length}] ${url.slice(0, 80)}...`);
+      kemajuan("buka-perkara", { i: ringkasan.perkaraDiperiksa, n: tautan.length });
       try {
         await processCase(page, url, ringkasan, args, acuan);
       } catch (error) {
@@ -1709,6 +1734,7 @@ async function utama() {
     ringkasan.galatTerakhir = error.message;
     log(`Sinkronisasi berhenti: ${error.message}`);
   } finally {
+    kemajuan("simpan");
     if (runId) {
       try {
         await ecourtStoreService.finishSyncRun(runId, ringkasan);

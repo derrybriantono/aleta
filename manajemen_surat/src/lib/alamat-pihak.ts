@@ -316,6 +316,152 @@ export function surelDariGugatan(naskah: string): SurelGugatan[] {
  *   Dusun I, Desa Watatu, Kecamatan Banawa Selatan, Kabupaten Donggala,
  *   Provinsi Sulawesi Tengah, Domisili elektronik : nama@contoh.com
  */
+/**
+ * ============================================================================
+ * ALAMAT UNTUK PUTUSAN (butir 9, 1.189.x)
+ * ============================================================================
+ *
+ * Alamat di identitas para pihak pada PUTUSAN dirapikan (rapikanAlamat) dan
+ * diberi ", Domisili Elektronik: <surel>" bila pihaknya punya surel. Alamat di
+ * SIPP TIDAK diubah: juru sita memakainya apa adanya untuk relaas/PBT. Yang
+ * dihasilkan di sini hanya untuk variabel ABT "Alamat Putusan" (8548/8549,
+ * kosong = dari SIPP).
+ *
+ *   - surel tertulis tanpa label ("..., Provinsi Sulawesi Tengah, x@y.com,
+ *     Oti, ...") -> diberi label "Domisili Elektronik: ";
+ *   - label lama "Domisili elektronik : x" / ". Domisili ..." -> dibakukan
+ *     menjadi ", Domisili Elektronik: x";
+ *   - surel dari e-Court/SIPP yang belum tertulis -> ditambahkan di ujung;
+ *   - petik tunggal/ganda -> ’ (kueri data_sql ABT tidak patah).
+ */
+export type AlamatPutusan = {
+  alamat: string;
+  /** Benar bila berbeda dari alamat SIPP (perlu ditulis ke variabel putusan). */
+  berubah: boolean;
+  perubahan: string[];
+  surel: string;
+};
+
+const POLA_SUREL_SATU = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
+
+export function alamatPutusan(alamatSipp: string, surelLain = ""): AlamatPutusan {
+  const asli = bersih(alamatSipp);
+  const perubahan: string[] = [];
+  if (!asli) return { alamat: "", berubah: false, perubahan, surel: "" };
+
+  // 1. Surel yang tertulis tanpa label diberi label lama dulu, supaya
+  //    rapikanAlamat memperlakukannya sebagai domisili (dan membuang ekor
+  //    wilayah dobel e-Court di belakangnya).
+  // Titik dua berulang ("Domisili Elektronik : : x") dibakukan lebih dulu -
+  // tanpa itu domisilinya tidak dikenali dan surelnya ikut "dirapikan".
+  let teks = asli.replace(/Domisili\s+elektronik\s*(?::\s*)+/gi, "Domisili elektronik : ");
+  const tertulis = POLA_SUREL_SATU.exec(teks);
+  if (tertulis && !/domisili\s+elektronik/i.test(teks)) {
+    teks = `${teks.slice(0, tertulis.index).replace(/[\s,.;]+$/, "")}, Domisili elektronik : ${teks.slice(tertulis.index)}`;
+    perubahan.push(`Label "Domisili Elektronik" ditambahkan sebelum ${tertulis[0]}`);
+  }
+
+  // 2. Perapi alamat yang SAMA dengan PTSP.
+  const rapi = rapikanAlamat(teks);
+  perubahan.push(...rapi.perubahan);
+  let hasil = rapi.alamat;
+
+  // 3. Label dibakukan: ", Domisili Elektronik: surel".
+  const baku = hasil.replace(/\s*[.,;]?\s*Domisili\s+elektronik\s*:?\s*/i, ", Domisili Elektronik: ");
+  hasil = baku;
+
+  // 4. Surel dari e-Court/SIPP yang belum tertulis.
+  const surel = bersih(surelLain).toLowerCase();
+  const adaSurel = POLA_SUREL_SATU.exec(hasil);
+  if (!adaSurel && surel && POLA_SUREL_SATU.test(surel) && !SUREL_BUKAN_PIHAK.test(surel)) {
+    hasil = `${hasil.replace(/[\s,.;]+$/, "")}, Domisili Elektronik: ${surel}`;
+    perubahan.push(`Domisili Elektronik ditambahkan: ${surel}`);
+  }
+
+  // 5. Kebal petik: ABT menempelkan isian mentah ke literal SQL.
+  const tanpaPetik = hasil.replace(/\\/g, "/").replace(/["']/g, "’");
+  if (tanpaPetik !== hasil) perubahan.push("Petik diganti ’ (kueri ABT tidak patah)");
+  hasil = tanpaPetik;
+
+  const akhirSurel = POLA_SUREL_SATU.exec(hasil);
+  return { alamat: hasil, berubah: hasil !== asli, perubahan, surel: akhirSurel ? akhirSurel[0] : "" };
+}
+
+/** Variabel ABT alamat putusan (paket abt-alamat-putusan): kosong = alamat SIPP. */
+export const VAR_ALAMAT_PUTUSAN = Object.freeze({ 1: "8548", 2: "8549" } as const);
+
+export type AlamatPihakSipp = {
+  pihakKe: number;
+  urutan: number;
+  nama?: string;
+  alamat: string;
+  emailSipp?: string;
+  emailEcourt?: string;
+};
+
+/**
+ * Usulan ABT dari alamat SIPP pihak PERTAMA tiap sisi (urutan 1). Alamat yang
+ * sudah rapi (tidak berubah) TIDAK diusulkan: variabel yang kosong memang
+ * berarti "dari SIPP". Bentuknya sama dengan usulan bot (kode, nama, nilai,
+ * keyakinan, sumber, catatan).
+ */
+export function usulanAlamatPutusan(daftar: AlamatPihakSipp[] | null | undefined) {
+  const hasil: Array<{
+    kode: string;
+    nama: string;
+    nilai: string;
+    keyakinan: "pasti";
+    bentrok: string;
+    dihitung: boolean;
+    sumber: Array<{ asal: string; keterangan: string }>;
+    catatan: string;
+  }> = [];
+  for (const sisi of [1, 2] as const) {
+    const p = (daftar || []).find((x) => Number(x.pihakKe) === sisi && Number(x.urutan || 1) === 1);
+    if (!p || !bersih(p.alamat)) continue;
+    const surel = bersih(p.emailEcourt) || bersih(p.emailSipp);
+    const a = alamatPutusan(p.alamat, surel);
+    if (!a.berubah) continue;
+    const asalSurel = a.surel
+      ? bersih(p.emailEcourt) && a.surel.toLowerCase() === bersih(p.emailEcourt).toLowerCase()
+        ? "e-Court"
+        : bersih(p.emailSipp) && a.surel.toLowerCase() === bersih(p.emailSipp).toLowerCase()
+          ? "SIPP"
+          : "alamat SIPP"
+      : "";
+    hasil.push({
+      kode: VAR_ALAMAT_PUTUSAN[sisi],
+      nama: `Alamat Putusan pihak ${sisi === 1 ? "pertama" : "kedua"}`,
+      nilai: a.alamat,
+      keyakinan: "pasti",
+      bentrok: "",
+      dihitung: true,
+      sumber: [
+        { asal: "sipp", keterangan: "alamat SIPP dirapikan (perapi alamat PTSP) - alamat di SIPP TIDAK diubah" },
+        ...(asalSurel ? [{ asal: asalSurel === "e-Court" ? "ecourt" : "sipp", keterangan: `domisili elektronik dari ${asalSurel}` }] : []),
+      ],
+      catatan: `${a.perubahan.join("; ")}. Hanya untuk putusan; relaas/PBT tetap memakai alamat SIPP.`,
+    });
+  }
+  return hasil;
+}
+
+/**
+ * Butir 9 (1.189.x): usulan alamat putusan ditambahkan ke usulan SIPP bot.
+ * Perapinya SATU (rapikanAlamat PTSP lewat alamatPutusan); bot hanya membaca
+ * alamat + surel (SIPP, e-Court) - lihat bacaAlamatPihak di abtUsulanService.
+ * Usulan bot bernomor sama (bila kelak ada) didahulukan.
+ */
+export function tambahUsulanAlamat(sipp: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!sipp || typeof sipp !== "object") return sipp;
+  const daftar = Array.isArray(sipp.alamatPihak) ? (sipp.alamatPihak as AlamatPihakSipp[]) : [];
+  if (!daftar.length) return sipp;
+  const lama = Array.isArray(sipp.usulan) ? (sipp.usulan as Array<{ kode?: unknown }>) : [];
+  const ada = new Set(lama.map((u) => String(u && u.kode)));
+  const baru = usulanAlamatPutusan(daftar).filter((u) => !ada.has(u.kode));
+  return baru.length ? { ...sipp, usulan: [...lama, ...baru] } : sipp;
+}
+
 export function alamatDenganDomisili(alamat: string, surel: string): string {
   const pokok = bersih(alamat);
   const email = bersih(surel);

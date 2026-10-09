@@ -2636,6 +2636,20 @@ router.post("/ecourt/permintaan", requireInternalToken, async (req, res) => {
 router.get("/ecourt/permintaan", requireInternalToken, async (req, res) => {
   try {
     const keadaan = await ecourtPermintaanService.keadaan(String(req.query.nomor || ""));
+    // Butir 8 (1.189.x): permintaan yang SEDANG dikerjakan membawa kemajuan
+    // nyata putaran penjadwal (tahap jembatan + persen) bila putarannya memang
+    // untuk perkara ini.
+    if (keadaan && keadaan.status === "dikerjakan") {
+      try {
+        const s = require("../services/ecourtSchedulerService").getStatus();
+        const { normalizeCaseNumber } = require("../services/ecourtTextService");
+        if (s.sedangJalan && s.kemajuan && normalizeCaseNumber(s.perkaraDiminta) === normalizeCaseNumber(String(req.query.nomor || ""))) {
+          keadaan.kemajuan = s.kemajuan;
+        }
+      } catch {
+        // Tanpa kemajuan pun keadaannya tetap terjawab.
+      }
+    }
     res.json({ ok: true, keadaan });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

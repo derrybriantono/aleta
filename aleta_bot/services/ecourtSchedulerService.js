@@ -63,6 +63,9 @@ const keadaan = {
   perkaraDiminta: "",
   akun: "",
   anak: null,
+  // Butir 8 (1.189.x): kemajuan nyata putaran yang sedang berjalan (dari
+  // baris @@ALETA-KEMAJUAN jembatan) - { tahap, label, persen, i, n, teks }.
+  kemajuan: null,
 };
 
 /**
@@ -256,6 +259,10 @@ function jalankanSatuPutaran({
   // tarikan satu perkara dari penanda "belum upload" Jadwal Sidang (7 Okt
   // 2026) memakai batas yang jauh lebih pendek - ada orang yang menunggunya.
   batasMs = null,
+  // Butir 8 (1.189.x): tiap baris kemajuan jembatan (@@ALETA-KEMAJUAN, lihat
+  // ecourtKemajuanTarik) diteruskan ke sini - tarikan satu perkara memakainya
+  // untuk persen + tahap yang nyata. Gagal di sini tidak menyentuh penarikan.
+  padaKemajuan = null,
 } = {}) {
   return new Promise((selesai) => {
     if (keadaan.sedangJalan) {
@@ -346,6 +353,12 @@ function jalankanSatuPutaran({
     }, batasPutaran);
 
     let keluaran = "";
+    const kemajuanTarik = require("./ecourtKemajuanTarik");
+    keadaan.kemajuan = kemajuanTarik.hitungKemajuan({ tahap: "buka-peramban" });
+    const pilahKemajuan = kemajuanTarik.pemilahBaris((laporan) => {
+      keadaan.kemajuan = kemajuanTarik.majukan(keadaan.kemajuan, laporan);
+      if (typeof padaKemajuan === "function") padaKemajuan(laporan);
+    });
 
     /**
      * Menyalurkan keluaran ke dua tempat sekaligus.
@@ -360,6 +373,7 @@ function jalankanSatuPutaran({
       const teks = String(potongan);
       keluaran += teks;
       if (keluaran.length > 20000) keluaran = keluaran.slice(-20000);
+      pilahKemajuan(teks);
       if (tulisLog) {
         try {
           tulisLog.write(teks);
@@ -648,6 +662,7 @@ function getStatus() {
     berkasLog: keadaan.berkasLog,
     perkaraDiminta: keadaan.perkaraDiminta,
     akun: keadaan.akun,
+    kemajuan: keadaan.sedangJalan ? keadaan.kemajuan : null,
     daftarAkun: ecourtAkunService.daftarAkun(),
     // Penarikan dari PuTTY tidak terlihat oleh keadaan.sedangJalan. Kuncinya
     // yang memberi tahu bahwa ada penarikan lain di luar bot.
