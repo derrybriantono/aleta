@@ -915,6 +915,61 @@ function buatLayanan(deps = {}) {
       new Promise((selesai, gagal) => {
         require("../db_config").query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
       }));
+  /**
+   * ==========================================================================
+   * SATU BARIS JURNAL = SATU TRANSAKSI (uji rilis 9 Okt 2026, pola kasus 273)
+   * ==========================================================================
+   *
+   * Satu baris jurnal menyentuh tiga tabel: perkara_biaya, sys_audittrail,
+   * perkara_biaya_jurusita. Sampai 1.188.0 ketiganya ditulis lepas-lepas:
+   * audit yang gagal sesudah baris biayanya tertulis meninggalkan baris
+   * jurnal TANPA audit, dan penekanan ulang melewatinya sebagai "sudah ada" -
+   * auditnya tidak pernah lahir. Kini sekelompok itu satu transaksi (ketiga
+   * tabel InnoDB): gagal di langkah mana pun -> ROLLBACK seluruh baris itu.
+   *
+   * `transaksi(kerja)` memanggil kerja(kueriSambungan) di dalam START
+   * TRANSACTION .. COMMIT. Pemanggil yang memberi `deps.kueri` tanpa
+   * `deps.transaksi` (uji lama) tetap berjalan tanpa transaksi.
+   */
+  const transaksi =
+    deps.transaksi ||
+    (deps.kueri
+      ? async (kerja) => ({ hasil: await kerja(kueri), dipulihkan: null })
+      : (kerja) =>
+          new Promise((selesai, gagal) => {
+            const kolam = require("../db_config");
+            if (typeof kolam.getConnection !== "function") {
+              gagal(new Error("kolam sambungan SIPP tidak mendukung transaksi"));
+              return;
+            }
+            kolam.getConnection(async (galatSambung, sambungan) => {
+              if (galatSambung) {
+                gagal(galatSambung);
+                return;
+              }
+              const lewat = (sql, params = []) =>
+                new Promise((ok, no) => sambungan.query(sql, params, (g, r) => (g ? no(g) : ok(r))));
+              try {
+                await lewat("START TRANSACTION");
+                const hasil = await kerja(lewat);
+                await lewat("COMMIT");
+                selesai({ hasil, dipulihkan: null });
+              } catch (galat) {
+                const dipulihkan = await lewat("ROLLBACK").then(
+                  () => true,
+                  () => false
+                );
+                galat.dipulihkan = dipulihkan;
+                gagal(galat);
+              } finally {
+                try {
+                  sambungan.release();
+                } catch {
+                  // sambungan yang sudah putus tidak perlu dilepas
+                }
+              }
+            });
+          }));
   const tabelAda = deps.tabelAda || ((tabel) => require("./sippSkemaService").tabelAda(tabel));
   const jeda = deps.jeda || ((jenis, opsi) => require("./jedaManusiaService").jeda(jenis, opsi));
   // Nama lengkap SIPP -> username (pola akunPetugasMasuk penetapan, butir 39).
@@ -1457,35 +1512,50 @@ function buatLayanan(deps = {}) {
       let langkahSelesai = 0;
       try {
         saat = await saatBasisData();
-        for (let coba = 0; coba < 2; coba += 1) {
-          const m = await satu("SELECT COALESCE(MAX(id), 0) + 1 AS maxid FROM perkara_biaya", []);
-          id = Number(m && m.maxid) || 0;
-          if (!id) throw new Error("id_berikutnya_tidak_terbaca");
-          const isi = (v) => (v === TANDA_ID ? id : v === TANDA_SAAT ? saat : typeof v === "string" ? v.split(TANDA_ID).join(String(id)).split(TANDA_SAAT).join(saat) : v);
-          try {
-            await kueri(l.kelompok[0].sql, l.kelompok[0].params.map(isi));
-            break;
-          } catch (galat) {
-            if (coba === 0 && /ER_DUP_ENTRY|Duplicate entry/i.test(String((galat && (galat.code || galat.message)) || ""))) continue;
-            throw galat;
+        // Sekelompok tulisan satu baris jurnal = satu transaksi (lihat transaksi()).
+        await transaksi(async (lewat) => {
+          const satuLewat = async (sql, params) => {
+            const baris = await lewat(sql, params);
+            return (Array.isArray(baris) && baris[0]) || null;
+          };
+          for (let coba = 0; coba < 2; coba += 1) {
+            const m = await satuLewat("SELECT COALESCE(MAX(id), 0) + 1 AS maxid FROM perkara_biaya", []);
+            id = Number(m && m.maxid) || 0;
+            if (!id) throw new Error("id_berikutnya_tidak_terbaca");
+            const isi = (v) => (v === TANDA_ID ? id : v === TANDA_SAAT ? saat : typeof v === "string" ? v.split(TANDA_ID).join(String(id)).split(TANDA_SAAT).join(saat) : v);
+            try {
+              await lewat(l.kelompok[0].sql, l.kelompok[0].params.map(isi));
+              break;
+            } catch (galat) {
+              if (coba === 0 && /ER_DUP_ENTRY|Duplicate entry/i.test(String((galat && (galat.code || galat.message)) || ""))) continue;
+              throw galat;
+            }
           }
-        }
-        langkahSelesai = 1;
-        const isi = (v) => (v === TANDA_ID ? id : v === TANDA_SAAT ? saat : typeof v === "string" ? v.split(TANDA_ID).join(String(id)).split(TANDA_SAAT).join(saat) : v);
-        for (const x of l.kelompok.slice(1)) {
-          await kueri(x.sql, x.params.map(isi));
-          langkahSelesai += 1;
-        }
+          langkahSelesai = 1;
+          const isi = (v) => (v === TANDA_ID ? id : v === TANDA_SAAT ? saat : typeof v === "string" ? v.split(TANDA_ID).join(String(id)).split(TANDA_SAAT).join(saat) : v);
+          for (const x of l.kelompok.slice(1)) {
+            await lewat(x.sql, x.params.map(isi));
+            langkahSelesai += 1;
+          }
+        });
         idTulis.push(id);
         hasil.push({ ke: l.ke, id, saat, keadaan: "terkirim", pesan: "" });
       } catch (galat) {
+        const teknis = String((galat && galat.message) || galat).slice(0, 300);
+        // dipulihkan true = transaksi dibatalkan utuh: tidak ada yang tertinggal.
+        const utuhDibatalkan = galat && galat.dipulihkan === true;
+        const tertinggal = langkahSelesai > 0 && !utuhDibatalkan;
         hasil.push({
           ke: l.ke,
-          id,
-          keadaan: langkahSelesai ? "sebagian" : "gagal",
-          pesan: `${langkahSelesai ? `baris jurnal #${id} tertulis, langkah sesudahnya gagal: ` : ""}${String((galat && galat.message) || galat).slice(0, 300)}`,
+          id: tertinggal ? id : 0,
+          keadaan: tertinggal ? "sebagian" : "gagal",
+          pesan: tertinggal
+            ? `baris jurnal #${id} tertulis, langkah sesudahnya gagal: ${teknis}`
+            : utuhDibatalkan && langkahSelesai > 0
+              ? `tidak tersimpan - seluruh baris ini dibatalkan, tidak ada yang tertinggal di SIPP: ${teknis}`
+              : teknis,
         });
-        if (langkahSelesai) idTulis.push(id);
+        if (tertinggal) idTulis.push(id);
       }
     }
 
