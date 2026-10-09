@@ -106,7 +106,8 @@ describe("papan: mengganti majelis memuat ulang, di kedua mode", () => {
   });
 
   it("dropdown majelis tergambar di mode otomatis juga", () => {
-    expect(konten).toContain('const bolehPilihMajelis = adaSusunan && caraHakim === "majelis"');
+    // Uji rilis U1 (9 Okt 2026): tidak ditawarkan bila PMH sudah ada di SIPP.
+    expect(konten).toContain('const bolehPilihMajelis = !sudahDiSipp.pmh && adaSusunan && caraHakim === "majelis"');
     expect(tanpaKomentar(konten)).not.toContain('if (bolehPilihHakim && adaSusunan && caraHakim === "majelis") {');
   });
 

@@ -3278,6 +3278,11 @@ export async function gatewayUnggahPutusanSipp(muatan: {
   anonimisasiBase64?: string;
   olehUsername: string;
   /**
+   * Pengguna ALETA yang menekan tombolnya - hanya untuk jejak ALETA
+   * (aleta_bot_jejak_penetapan.operator), tidak pernah ditulis ke SIPP.
+   */
+  operator?: string;
+  /**
    * IPv4 peramban petugas (alamatIpPeramban), untuk kolom ipaddress baris
    * audit SIPP. Rute bot membaca badan.ip; kosong berarti tidak diketahui.
    */
@@ -3798,6 +3803,35 @@ export async function kirimPenetapanTulisGateway(payload: {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/tulis", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Menulis SISA penetapan satu perkara dalam SATU transaksi (uji rilis U1,
+ * 9 Okt 2026): seluruh langkah tertulis, atau tidak satu pun. Hanya penulisan
+ * sungguhan. Bot menjalani jeda manusia per langkah, jadi batasnya lebih
+ * panjang daripada satu langkah (K6: bot < gerbang 120 dtk < ekstensi 150 dtk).
+ */
+export async function kirimPenetapanTulisRantaiGateway(payload: {
+  perkaraId: number;
+  tanggalPenetapan: string;
+  olehUsername: string;
+  operator: string;
+  ip?: string;
+  langkah: Array<{
+    jenis: string;
+    hakimId?: number[];
+    petugasId?: number;
+    tanggalSidang?: string;
+    ruanganId?: number;
+    jamSidang?: string;
+    pejabatUsername?: string;
+  }>;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/tulis-rantai", {
+    method: "POST",
+    body: JSON.stringify({ ...payload, kering: false }),
+    timeoutMs: 120000,
   });
 }
 

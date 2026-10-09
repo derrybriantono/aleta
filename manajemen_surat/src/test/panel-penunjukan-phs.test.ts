@@ -52,12 +52,13 @@ describe("butir 1 - kalender tidak lagi mengunci tanggal", () => {
 
 describe("butir 2 - sidang keliling dapat ditetapkan di mode otomatis", () => {
   it("saklarnya digambar ketika mode otomatis", () => {
-    expect(konten).toContain("if (!manual && (phs.calon || []).length > 0) {");
+    // Uji rilis U1 (9 Okt 2026): PHS yang sudah ada di SIPP tidak lagi menawarkan pilihan.
+    expect(konten).toContain("if (!sudahDiSipp.phs && !manual && (phs.calon || []).length > 0) {");
     expect(konten).toContain("Sidang keliling - pilih hari dan tempatnya");
   });
 
   it("tempat dan hari terbuka oleh manual ATAU oleh saklar itu", () => {
-    expect(konten).toContain("const bukaTempat = manual || Boolean(pilihanManual.sidkel);");
+    expect(konten).toContain("const bukaTempat = !sudahDiSipp.phs && (manual || Boolean(pilihanManual.sidkel));");
   });
 
   it("mematikan saklarnya MELEPAS hari dan ruangan yang telanjur dipilih", () => {
@@ -71,7 +72,8 @@ describe("butir 2 - sidang keliling dapat ditetapkan di mode otomatis", () => {
 
 describe("butir 3 - usulan PMH tidak digambar di mode manual", () => {
   it("ketiganya berada di dalam cabang bukan-manual", () => {
-    const mulai = konten.indexOf("  if (!manual) {");
+    // Uji rilis U1 (9 Okt 2026): cabang yang sama, kini juga dilewati bila PMH sudah ada di SIPP.
+    const mulai = konten.indexOf("  if (!manual && !sudahDiSipp.pmh) {");
     expect(mulai).toBeGreaterThan(0);
     const potong = konten.slice(mulai, mulai + 2200);
     expect(potong).toContain('"Hakim tunggal"');

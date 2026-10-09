@@ -488,6 +488,18 @@ describe("rute unggah-sipp - satu atau dua slot, isi diperiksa, IP diteruskan", 
     expect((badan.data as { nomorIsi: unknown }).nomorIsi).toEqual({ putusan: NOMOR });
   });
 
+  it("akun ALETA penekan diteruskan sebagai operator jejak ALETA (uji rilis U1, 9 Okt 2026)", async () => {
+    // Server satker 9 Okt: baris aleta_bot_jejak_penetapan "unggah edoc_putusan"
+    // (533 & 561/Pdt.G/2026) berkolom operator KOSONG - rute ini tidak
+    // meneruskannya. Operatornya dari sesi (pastikanKapabilitas), bukan badan.
+    const { status } = await jalankanUnggahSipp(permintaanUnggah({ putusan: rtf(barisPutusan()) }));
+    expect(status).toBe(200);
+    expect(keadaan.unggah).toHaveLength(1);
+    expect(keadaan.unggah[0].operator).toBe("Penguji");
+    // Akun SIPP yang membuka halaman tetap pelaku di SIPP - bukan akun ALETA.
+    expect(keadaan.unggah[0].olehUsername).toBe("petugas uji");
+  });
+
   it("anonimisasi SAJA diterima", async () => {
     const { status } = await jalankanUnggahSipp(
       permintaanUnggah({ anonimisasi: rtf(barisPutusan(NOMOR, { anonim: true })) })

@@ -316,7 +316,19 @@ const JADWAL_BAWAAN = {
   agenda: "Sidang Pertama",
 };
 
+/**
+ * Penjalan kueri transaksi rantai (tulisRantaiUtuh, uji rilis U1 9 Okt 2026).
+ * Selama satu rantai berjalan, SELURUH kueri modul ini - penyusun rencana yang
+ * membaca perkara_penetapan/perkara_hakim_pn DAN penjalannya - lewat sambungan
+ * bertransaksi yang sama, sehingga PPP/PHS melihat PMH yang baru ditulis
+ * (belum di-COMMIT). Di luar rantai: kolam biasa, perilaku lama utuh.
+ */
+const { AsyncLocalStorage } = require("node:async_hooks");
+const kueriTransaksi = new AsyncLocalStorage();
+
 function runQuery(sql, params = []) {
+  const lewat = kueriTransaksi.getStore();
+  if (typeof lewat === "function") return lewat(sql, params);
   return new Promise((resolve, reject) => {
     db.query(sql, params, (error, hasil) => {
       if (error) reject(error);
@@ -2870,6 +2882,143 @@ async function jalankanRencana(rencana, opsi = {}) {
 }
 
 /**
+ * ============================================================================
+ * SISA PENETAPAN SATU PERKARA: UTUH ATAU BATAL (uji rilis U1, 9 Okt 2026)
+ * ============================================================================
+ *
+ * Sampai 1.188.0 ekstensi mengirim PMH, PPP, PJS, PHS sebagai permintaan
+ * terpisah, dan tiap langkah pun ditulis pernyataan demi pernyataan lewat
+ * kolam sambungan (lihat catatan jalankanRencana). Gagal di tengah - langkah
+ * PJS ditolak, sambungan putus, galat di baris audit - meninggalkan perkara
+ * separuh tertulis, dan menekan ulang ditolak "<jenis>_sudah_ada": cacat yang
+ * sama dengan tunda 273 (sidangHasilService.jalankanRencanaUtuh).
+ *
+ * Kini seluruh langkah sisa SATU perkara memakai SATU sambungan dalam SATU
+ * transaksi. Rencana tiap langkah disusun DI DALAM transaksi itu
+ * (kueriTransaksi), sehingga PPP/PJS/PHS melihat PMH yang baru ditulis. Gagal
+ * di langkah mana pun -> ROLLBACK: nol baris tertulis, dan perkara dapat
+ * dicoba lagi. Jeda manusia dan jam audit tetap per langkah (jam diambil
+ * sesudah jeda, NOW() per pernyataan).
+ *
+ * Langkah yang ternyata SUDAH ada (keadaan panel basi) dilewati, bukan gagal.
+ *
+ * `alat` dapat ditiru uji: { ambilSambungan, jeda }.
+ */
+const URUTAN_RANTAI = ["pmh", "ppp", "pjs", "phs"];
+
+function ambilSambunganSipp() {
+  return new Promise((selesai, gagal) => {
+    if (typeof db.getConnection !== "function") {
+      gagal(new Error("kolam sambungan SIPP tidak mendukung transaksi"));
+      return;
+    }
+    db.getConnection((galat, sambungan) => (galat ? gagal(galat) : selesai(sambungan)));
+  });
+}
+
+function pesanTeknisRantai(galat) {
+  const kode = galat && galat.code ? `${galat.code}: ` : "";
+  return `${kode}${String((galat && (galat.sqlMessage || galat.message)) || galat)}`.slice(0, 300);
+}
+
+async function tulisRantaiUtuh(minta, alat = {}) {
+  const umum = minta || {};
+  const langkahMinta = (Array.isArray(umum.langkah) ? umum.langkah : []).map((x) => ({
+    ...(x || {}),
+    jenis: String((x && x.jenis) || "").toLowerCase(),
+  }));
+  if (!langkahMinta.length) return { ok: false, alasan: "rantai_kosong", hasil: [], dipulihkan: true };
+  // Urutan PMH -> PPP -> PJS -> PHS, tanpa kembar: urutan itu yang dituntut
+  // SIPP (PPP/PJS/PHS menuntut majelis), dan rantai karangan ditolak utuh.
+  let posisi = -1;
+  for (const satu of langkahMinta) {
+    const i = URUTAN_RANTAI.indexOf(satu.jenis);
+    if (i <= posisi) return { ok: false, alasan: "rantai_tidak_berurutan", hasil: [], dipulihkan: true };
+    posisi = i;
+  }
+
+  const ambil = typeof alat.ambilSambungan === "function" ? alat.ambilSambungan : ambilSambunganSipp;
+  const jeda =
+    typeof alat.jeda === "function"
+      ? alat.jeda
+      : (jenis) => require("./jedaManusiaService").jeda(jenis, { kering: false });
+
+  let sambungan;
+  try {
+    sambungan = await ambil();
+  } catch (galat) {
+    return { ok: false, alasan: "server_sipp_tidak_terhubung", pesan: pesanTeknisRantai(galat), hasil: [], dipulihkan: true };
+  }
+  const lewat = (sql, params = []) =>
+    new Promise((selesai, gagal) => {
+      sambungan.query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
+    });
+  const batalkan = () =>
+    lewat("ROLLBACK").then(
+      () => true,
+      () => false
+    );
+
+  const hasil = [];
+  let gagal = null;
+  try {
+    await lewat("START TRANSACTION");
+    await kueriTransaksi.run(lewat, async () => {
+      for (const [i, satu] of langkahMinta.entries()) {
+        if (i > 0) await jeda("pindah");
+        await jeda("simpan");
+        const rencana = await susunRencanaTulis({
+          ...satu,
+          perkaraId: umum.perkaraId,
+          tanggalPenetapan: String(umum.tanggalPenetapan || ""),
+          olehUsername: String(umum.olehUsername || ""),
+          operator: String(umum.operator || ""),
+          ip: String(umum.ip || ""),
+          kering: false,
+          rantaiSebelum: [],
+        });
+        if (!rencana.ok) {
+          const alasan = String(rencana.alasan || "ditolak");
+          if (/_sudah_ada$/.test(alasan)) {
+            hasil.push({ jenis: satu.jenis, ok: false, sudahAda: true, alasan, rencana: null, eksekusi: null });
+            continue;
+          }
+          hasil.push({ jenis: satu.jenis, ok: false, alasan, rencana, eksekusi: null });
+          gagal = { alasan, jenis: satu.jenis };
+          return;
+        }
+        const eksekusi = await jalankanRencana(rencana, { kering: false, kueri: lewat });
+        hasil.push({ jenis: rencana.jenis, ok: eksekusi.ok === true, alasan: eksekusi.ok ? "" : String(eksekusi.alasan || "gagal"), rencana, eksekusi });
+        if (!eksekusi.ok) {
+          gagal = { alasan: String(eksekusi.alasan || "gagal"), jenis: rencana.jenis, pesan: eksekusi.pesan || "" };
+          return;
+        }
+      }
+    });
+    if (gagal) {
+      const dipulihkan = await batalkan();
+      return { ok: false, ...gagal, dipulihkan, hasil };
+    }
+    try {
+      await lewat("COMMIT");
+    } catch (galat) {
+      const dipulihkan = await batalkan();
+      return { ok: false, alasan: "gagal_menyimpan", pesan: pesanTeknisRantai(galat), dipulihkan, hasil };
+    }
+    return { ok: true, utuh: true, dipulihkan: false, hasil };
+  } catch (galat) {
+    const dipulihkan = await batalkan();
+    return { ok: false, alasan: "gagal_menulis", pesan: pesanTeknisRantai(galat), dipulihkan, hasil };
+  } finally {
+    try {
+      sambungan.release();
+    } catch {
+      // Sambungan yang sudah putus tidak perlu dilepas.
+    }
+  }
+}
+
+/**
  * Urutan membongkar: dari yang paling akhir ditulis ke yang paling awal.
  * Ditulis satu kali di sini supaya gerbang, ekstensi, dan uji membaca
  * urutan yang sama - urutan yang berbeda di salah satunya akan berujung
@@ -2888,6 +3037,8 @@ module.exports = {
   susunRencanaTulis,
   susunRencanaHapus,
   jalankanRencana,
+  // Sisa penetapan satu perkara dalam satu transaksi (uji rilis U1, 9 Okt 2026).
+  tulisRantaiUtuh,
   waktuBongkar,
   // Dipakai Kasir jurnal (kasirJurnalService): nama lengkap SIPP -> username.
   akunPetugasMasuk,

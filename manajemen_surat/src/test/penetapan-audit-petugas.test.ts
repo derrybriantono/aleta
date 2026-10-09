@@ -425,7 +425,10 @@ const FUNGSI = [
   "keadaanPenetapanUsulan",
   // Uji rilis 9 Okt 2026: jawaban portal tanpa kode bot (502 HTML, 401, 500).
   "jawabanTulisTanpaAlasan",
+  // Uji rilis U1 (9 Okt 2026): 401/403 dari rute tulis menjadi alasan bersebab.
+  "jawabPenetapanMenurutStatus",
   "rantaiPenetapan",
+  "kirimRantaiUtuh",
 ];
 const TETAPAN = ["ALETA_API_TULIS", "URUTAN_TULIS", "KALIMAT_ALASAN", "NAMA_HARI"];
 
@@ -523,11 +526,18 @@ describe("rantai penetapan di ekstensi (butir 38 + 39)", () => {
       false
     );
     expect(hasil.map((x) => x.ok)).toEqual([true, true, true, true]);
-    expect(ling.kiriman.map((x) => x.olehUsername)).toEqual(Array(4).fill("Derry Briantono, S.H."));
+    // Uji rilis U1 (9 Okt 2026): penulisan sungguhan = SATU kiriman berisi
+    // seluruh langkah, ditulis bot dalam satu transaksi; jeda manusia di
+    // antara langkah dijalani BOT (tulisRantaiUtuh), bukan peramban.
+    expect(ling.kiriman).toHaveLength(1);
+    const kirim = ling.kiriman[0] as { olehUsername: string; kering: boolean; rantai: Array<Record<string, unknown>> };
+    expect(kirim.olehUsername).toBe("Derry Briantono, S.H.");
+    expect(kirim.kering).toBe(false);
+    expect(kirim.rantai.map((x) => x.jenis)).toEqual(["pmh", "ppp", "pjs", "phs"]);
     // Pejabat penanda tangan tetap diteruskan - untuk jejak ALETA saja.
-    expect(ling.kiriman.map((x) => x.pejabatUsername)).toEqual(["fahri", "Sri Susilowati", "Sri Susilowati", "fahri"]);
-    expect(ling.kiriman[3].tanggalSidang).toBe("2026-10-15");
-    expect(ling.jeda).toEqual(["pindah", "pindah", "pindah"]);
+    expect(kirim.rantai.map((x) => x.pejabatUsername)).toEqual(["fahri", "Sri Susilowati", "Sri Susilowati", "fahri"]);
+    expect(kirim.rantai[3].tanggalSidang).toBe("2026-10-15");
+    expect(ling.jeda).toEqual([]);
   });
 
   it("uji kering tidak menunggu", async () => {
@@ -551,7 +561,10 @@ describe("rantai penetapan di ekstensi (butir 38 + 39)", () => {
       { pilihanManual: { phs: "2026-10-17", phsBebas: true }, rencana: RENCANA },
       false
     );
-    expect(ling.kiriman.map((x) => x.jenis)).toEqual(["pmh", "ppp", "pjs"]);
+    // Uji rilis U1 (9 Okt 2026): utuh atau batal - PMH/PPP/PJS TIDAK dikirim
+    // sendirian ketika PHS sudah pasti ditolak.
+    expect(ling.kiriman).toHaveLength(0);
+    expect(hasil.filter((x) => x.jenis !== "phs").every((x) => x.ok === false && x.alasan === "dibatalkan_rantai")).toBe(true);
     const phs = hasil[hasil.length - 1];
     expect(phs.jenis).toBe("phs");
     expect(phs.ok).toBe(false);

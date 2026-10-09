@@ -1,7 +1,10 @@
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
-import { kirimPenetapanTulisGateway } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import {
+  kirimPenetapanTulisGateway,
+  kirimPenetapanTulisRantaiGateway,
+} from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -83,6 +86,58 @@ export async function POST(request: NextRequest) {
       phs: "phs",
       dataumum: "dataUmum",
     };
+    // ========================================================================
+    // SISA PENETAPAN SATU PERKARA - UTUH ATAU BATAL (uji rilis U1, 9 Okt 2026)
+    // ========================================================================
+    //
+    // Panel mengirim seluruh langkah sisa sekaligus pada penulisan sungguhan;
+    // bot menuliskannya dalam SATU transaksi (tulisRantaiUtuh). Uji kering
+    // tetap per langkah di bawah.
+    if (Array.isArray(badan.rantai)) {
+      if (badan.kering !== false) {
+        return Response.json({ ok: false, alasan: "rantai_hanya_untuk_menulis" }, { status: 400 });
+      }
+      const perkaraIdRantai = Number(badan.perkaraId);
+      if (!Number.isFinite(perkaraIdRantai) || perkaraIdRantai <= 0) {
+        return Response.json({ ok: false, alasan: "perkara_tidak_sah" }, { status: 400 });
+      }
+      const olehRantai = String(badan.olehUsername || "").trim();
+      if (!olehRantai) {
+        return Response.json({ ok: false, alasan: "akun_sipp_belum_terbaca" }, { status: 400 });
+      }
+      const RANTAI_SAH = new Set(["pmh", "ppp", "pjs", "phs"]);
+      const langkah = (badan.rantai as unknown[]).map((x) => {
+        const s = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+        return {
+          jenis: String(s.jenis || "").toLowerCase(),
+          hakimId: Array.isArray(s.hakimId)
+            ? (s.hakimId as unknown[]).map((h) => Number(h)).filter((h) => Number.isFinite(h) && h > 0)
+            : undefined,
+          petugasId: s.petugasId === undefined ? undefined : Number(s.petugasId),
+          tanggalSidang: s.tanggalSidang === undefined ? undefined : String(s.tanggalSidang),
+          ruanganId: s.ruanganId === undefined ? undefined : Number(s.ruanganId),
+          jamSidang: s.jamSidang === undefined ? undefined : String(s.jamSidang),
+          pejabatUsername: String(s.pejabatUsername || "").trim().slice(0, 150) || undefined,
+        };
+      });
+      if (langkah.length === 0 || langkah.some((x) => !RANTAI_SAH.has(x.jenis))) {
+        return Response.json({ ok: false, alasan: "jenis_tidak_didukung" }, { status: 400 });
+      }
+      const responsRantai = await kirimPenetapanTulisRantaiGateway({
+        perkaraId: perkaraIdRantai,
+        tanggalPenetapan: String(badan.tanggalPenetapan || ""),
+        olehUsername: olehRantai,
+        operator,
+        ip: alamatIpPeramban(request),
+        langkah,
+      });
+      if (responsRantai?.ok === false) {
+        return Response.json({ ok: false, alasan: responsRantai.error ?? "ditolak", hasil: [] }, { status: 409 });
+      }
+      const badanRantai = (responsRantai?.data ?? {}) as Record<string, unknown>;
+      return Response.json(badanRantai, { status: badanRantai?.ok === false ? 409 : 200 });
+    }
+
     const jenis = JENIS_BAKU[String(badan.jenis || "").toLowerCase()];
     if (!jenis) {
       return Response.json({ ok: false, alasan: "jenis_tidak_didukung" }, { status: 400 });
