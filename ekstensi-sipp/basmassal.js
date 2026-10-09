@@ -1712,3 +1712,781 @@ async function aletaBasMassalPasang(wadah, opsi) {
 }
 
 globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
+
+/*
+ * ============================================================================
+ * TAB KASIR - KASIR OTOMATIS PER PERKARA, MASSAL, REKAP, PENGINGAT (1.189.x)
+ * ============================================================================
+ *
+ * Diminta pengguna 9 Okt 2026 (butir 1-5). Satu IIFE: tidak ada satu pun nama
+ * puncak baru di lingkup bersama skrip konten (lihat ekstensi-tdz-tingkat-atas);
+ * yang keluar hanya empat pintu di globalThis:
+ *
+ *   aletaKasirBoleh(pengguna?)            true | false | null (alatBolehKasir)
+ *   aletaKasirPasang(wadah, { perkaraId, nomorPerkara })
+ *       -> Promise<boolean>  Kasir PER PERKARA: usulan jurnal menurut KEADAAN
+ *          perkara langsung tersusun saat tabnya dibuka (atau saat tab Biaya
+ *          Perkara SIPP ditekan - konten.js), petugas memeriksa, menyunting,
+ *          lalu menyimpan. Tiap baris jurnal = satu transaksi (rute Kasir
+ *          1.186), atas akun SIPP petugas yang masuk.
+ *   aletaKasirPasangHarian(wadah, { situs })
+ *       -> Promise<boolean>  Kasir otomatis massal satu hari, Rekap
+ *          pengeluaran (harian terbuka; mingguan-tahunan diciutkan) + PDF, dan
+ *          Pengingat tugas kasir (setor PNBP dicatat di ALETA, bukan SIPP).
+ *   aletaKasirRentang(periode, tanggal)   kembaran rentangPeriode portal
+ *
+ * Tampilan Lama tidak menggambar apa pun. Mode kering: tidak ada yang
+ * disimpan - hanya pratinjau. Tidak ada tanda ALETA di SIPP: yang ditulis
+ * persis blangko "Tambah" jurnal SIPP (kasirJurnalService di bot).
+ */
+(() => {
+  const API = "/aleta/api/aleta-ecourt/sidang/kasir";
+  const PERIODE = [
+    ["harian", "Harian"],
+    ["mingguan", "Mingguan"],
+    ["bulanan", "Bulanan"],
+    ["triwulan", "Triwulan"],
+    ["semester", "Semester"],
+    ["tahunan", "Tahunan"],
+  ];
+  const SEBAB = { sidang: "bersidang", putusan: "diputus", ikrar: "ikrar talak", "penetapan-hari-sidang": "PHS ditetapkan", "surat-ke-pos": "surat panggilan ke Pos" };
+  const JUDUL_PENGINGAT = {
+    "sisa-panjar": "Kembalikan sisa panjar",
+    "belum-dijurnal": "Jurnal hari putusan belum diisi",
+    "panjar-kurang": "Panjar kurang - minta tambahan panjar",
+    "pnbp-belum-setor": "Setor PNBP ke kas negara",
+  };
+
+  const el = (tag, kelas, teks) => {
+    const e = document.createElement(tag);
+    if (kelas) e.className = kelas;
+    if (teks !== undefined && teks !== null) e.textContent = String(teks);
+    return e;
+  };
+  const tombol = (teks, kelas, aksi) => {
+    const b = el("button", `aleta-basmassal-tombol aleta-basmassal-tombol-kecil${kelas ? ` ${kelas}` : ""}`, teks);
+    b.type = "button";
+    if (aksi) b.addEventListener("click", aksi);
+    return b;
+  };
+  const kabar = (wadah, teks, jenis) => {
+    wadah.textContent = "";
+    if (!teks) return;
+    wadah.appendChild(el("div", `aleta-basmassal-kabar${jenis ? ` aleta-basmassal-kabar-${jenis}` : ""}`, teks));
+  };
+  const rupiah = (n) => {
+    const x = Math.round(Number(n) || 0);
+    return `${x < 0 ? "-" : ""}Rp${Math.abs(x).toLocaleString("id-ID")}`;
+  };
+  const tanggalTeks = (iso) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso || "-");
+  };
+  const hariIni = () => {
+    try {
+      return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Makassar", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  };
+  const tidur = (ms) => new Promise((r) => setTimeout(r, ms));
+  const kering = () => typeof alatKeringNyala === "function" && alatKeringNyala() === true;
+  const modeLama = () => typeof alatUjiMode !== "function" || alatUjiMode() === "lama";
+  const pengguna = () => (typeof alatPenggunaAkunAleta === "function" ? alatPenggunaAkunAleta() : null);
+  const boleh = (p) => (typeof alatBolehKasir === "function" ? alatBolehKasir(p === undefined ? pengguna() : p) : null);
+
+  /** JSON portal dibuka bungkusnya; HTTP gagal = Error berbunyi pesan portal. */
+  async function ambil(alamat, opsi) {
+    const r = await alatAmbil(alamat, { credentials: "include", cache: "no-store", ...(opsi || {}) }, "Kasir");
+    const luar = await r.json().catch(() => ({}));
+    const isi = luar && luar.data ? luar.data : luar;
+    if (!r.ok) {
+      const pesan = (luar && luar.error && (luar.error.message || luar.error)) || (isi && (isi.pesan || isi.alasan)) || `HTTP ${r.status}`;
+      throw new Error(String(pesan));
+    }
+    return isi || {};
+  }
+
+  /** Kembaran hitungSisaOtomatis (bot & portal): sisa = saldo sesudah baris tercentang sebelumnya. */
+  function hitungSisa(usulan, saldoAwal) {
+    let saldo = Number(saldoAwal) || 0;
+    for (const u of usulan) {
+      if (u.sisaOtomatis) {
+        u.jumlah = saldo;
+        if (u.pilih && saldo > 0) saldo = 0;
+        continue;
+      }
+      if (!u.pilih) continue;
+      saldo += (Number(u.jenisTransaksi) || -1) * (Number(u.jumlah) || 0);
+    }
+    return saldo;
+  }
+
+  function barisKirim(usulan) {
+    return usulan
+      .filter((u) => u.pilih && Number(u.jumlah) > 0)
+      .map((u) => ({
+        tanggal: u.tanggal,
+        jenisBiayaId: u.jenisBiayaId,
+        pihakKe: u.pihakKe,
+        pihakId: u.pihakId,
+        uraian: u.uraian,
+        jumlah: u.jumlah,
+        keterangan: u.keterangan || "",
+        jurusitaId: u.jurusitaId || 0,
+      }));
+  }
+
+  /** Baris akun SIPP: siapa yang tercatat di SIPP, atau pemilih bila akunnya lebih dari satu. */
+  function barisAkun(akun) {
+    const kotak = el("div", "aleta-basmassal-lembut");
+    const keadaan = { username: akun && akun.ok ? akun.username : "" };
+    if (akun && akun.ok) {
+      kotak.textContent = `Ditulis di SIPP atas akun SIPP Anda: ${akun.username}.`;
+    } else if (akun && akun.alasan === "akun_sipp_ganda" && Array.isArray(akun.milik) && akun.milik.length) {
+      kotak.appendChild(el("span", "", "Akun SIPP yang dipakai: "));
+      const pilih = el("select", "aleta-basmassal-pilih");
+      for (const u of akun.milik) pilih.appendChild(Object.assign(el("option", "", u), { value: u }));
+      keadaan.username = akun.milik[0];
+      pilih.addEventListener("change", () => (keadaan.username = pilih.value));
+      kotak.appendChild(pilih);
+    } else {
+      kotak.classList.add("aleta-basmassal-salah");
+      kotak.textContent = (akun && akun.pesan) || "Akun SIPP Anda belum tertaut - usulan dapat dilihat, tetapi tidak dapat disimpan.";
+    }
+    return { kotak, keadaan };
+  }
+
+  // ─── Per perkara ───────────────────────────────────────────────────────────
+
+  async function pasangPerkara(wadah, opsi) {
+    const o = opsi || {};
+    if (!wadah || modeLama() || boleh() === false) return false;
+    const perkaraId = String(o.perkaraId || "").trim();
+    const lama = wadah.querySelector(":scope > .aleta-kasir");
+    if (lama) lama.remove();
+    const akar = el("div", "aleta-kasir aleta-basmassal");
+    akar.setAttribute("data-aleta-kasir", "perkara");
+    wadah.appendChild(akar);
+    if (!/^\d+$/.test(perkaraId)) {
+      akar.appendChild(el("div", "aleta-basmassal-lembut", "Nomor perkara SIPP halaman ini belum terbaca - Kasir per perkara belum dapat disusun."));
+      return true;
+    }
+    const muat = async () => {
+      akar.textContent = "";
+      akar.appendChild(el("div", "aleta-basmassal-lembut", "Membaca jurnal dan keadaan perkara dari SIPP…"));
+      let data;
+      try {
+        data = await ambil(`${API}?perkaraId=${encodeURIComponent(perkaraId)}`);
+      } catch (galat) {
+        akar.textContent = "";
+        akar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-salah", `Kasir tidak dapat dimuat: ${String((galat && galat.message) || galat)}`));
+        return;
+      }
+      akar.textContent = "";
+      if (data.available === false || data.ok === false) {
+        akar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-salah", String(data.alasan || "Jurnal keuangan perkara tidak terbaca.")));
+        return;
+      }
+      gambarPerkara(akar, data, muat);
+    };
+    await muat();
+    return true;
+  }
+
+  function gambarPerkara(akar, data, muatUlang) {
+    const usulan = (Array.isArray(data.usulan) ? data.usulan : []).map((u) => ({ ...u, hasil: "" }));
+    const saldo = Number(data.saldo) || 0;
+    const kepala = el("div", "aleta-basmassal-kepala");
+    if (data.keadaan && data.keadaan.nama) {
+      const lencana = el("span", "aleta-kasir-keadaan", `Keadaan: ${data.keadaan.nama}`);
+      if (Array.isArray(data.keadaan.lazim) && data.keadaan.lazim.length) lencana.title = `Lazim pada keadaan ini: ${data.keadaan.lazim.join(", ")}`;
+      kepala.appendChild(lencana);
+    }
+    kepala.appendChild(el("span", "aleta-basmassal-lembut", `saldo jurnal ${rupiah(saldo)}`));
+    akar.appendChild(kepala);
+    if (data.keadaan && Array.isArray(data.keadaan.lazim) && data.keadaan.lazim.length) {
+      akar.appendChild(el("div", "aleta-basmassal-lembut", `Lazim pada keadaan ini: ${data.keadaan.lazim.join(", ")}.`));
+    }
+    const akun = barisAkun(data.akun);
+    akar.appendChild(akun.kotak);
+    for (const c of Array.isArray(data.catatan) ? data.catatan : []) akar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-peringatan", c));
+
+    if (!usulan.length) {
+      akar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-baik", "Jurnal sudah sesuai keadaan perkara - tidak ada yang perlu ditambah."));
+      akar.appendChild(tombol("Susun ulang", "", () => void muatUlang()));
+      return;
+    }
+
+    const tabel = el("table", "aleta-kasir-tabel");
+    const badan = el("tbody");
+    tabel.appendChild(badan);
+    akar.appendChild(tabel);
+    const ringkas = el("div", "aleta-basmassal-lembut");
+    akar.appendChild(ringkas);
+
+    const gambarBaris = () => {
+      hitungSisa(usulan, saldo);
+      badan.textContent = "";
+      for (const u of usulan) {
+        const tr = el("tr", u.pilih ? "" : "aleta-kasir-mati");
+        const tdPilih = el("td");
+        const cek = el("input");
+        cek.type = "checkbox";
+        cek.checked = Boolean(u.pilih);
+        cek.disabled = u.hasil === "tersimpan";
+        cek.setAttribute("aria-label", `Pilih ${u.uraian}`);
+        cek.addEventListener("change", () => {
+          u.pilih = cek.checked;
+          gambarBaris();
+        });
+        tdPilih.appendChild(cek);
+        tr.appendChild(tdPilih);
+
+        const tdTanggal = el("td");
+        const tgl = el("input", "aleta-kasir-masukan");
+        tgl.type = "date";
+        tgl.value = u.tanggal || "";
+        if (data.hariIni) tgl.max = data.hariIni;
+        tgl.addEventListener("change", () => (u.tanggal = tgl.value));
+        tdTanggal.appendChild(tgl);
+        tr.appendChild(tdTanggal);
+
+        const tdUraian = el("td");
+        const ur = el("input", "aleta-kasir-masukan aleta-kasir-uraian");
+        ur.type = "text";
+        ur.value = u.uraian || "";
+        ur.addEventListener("input", () => (u.uraian = ur.value));
+        tdUraian.appendChild(ur);
+        const dasar = el("div", "aleta-basmassal-lembut", `${u.peristiwa ? `${u.peristiwa} - ` : ""}${u.dasar || ""}${u.yakin && u.yakin !== "tinggi" ? ` (yakin ${u.yakin})` : ""}`);
+        tdUraian.appendChild(dasar);
+        if (/\/\s*$/.test(String(u.uraian || "")) && u.pilih) tdUraian.appendChild(el("div", "aleta-basmassal-salah", "Nomor resi Pos belum ada - lengkapi uraiannya."));
+        if (u.hasil) tdUraian.appendChild(el("div", u.hasil === "tersimpan" ? "aleta-basmassal-kabar aleta-basmassal-kabar-baik" : "aleta-basmassal-salah", u.pesan || u.hasil));
+        tr.appendChild(tdUraian);
+
+        const tdJumlah = el("td", "aleta-kasir-angka");
+        if (u.sisaOtomatis) {
+          tdJumlah.textContent = rupiah(u.jumlah);
+          tdJumlah.title = "Sisa panjar = saldo sesudah seluruh baris tercentang";
+        } else {
+          const j = el("input", "aleta-kasir-masukan aleta-kasir-angka");
+          j.type = "number";
+          j.min = "0";
+          j.step = "500";
+          j.value = u.jumlah === null || u.jumlah === undefined ? "" : String(u.jumlah);
+          j.placeholder = "jumlah";
+          j.addEventListener("change", () => {
+            u.jumlah = j.value === "" ? null : Number(j.value);
+            gambarBaris();
+          });
+          tdJumlah.appendChild(j);
+        }
+        tr.appendChild(tdJumlah);
+        badan.appendChild(tr);
+      }
+      const dipilih = usulan.filter((u) => u.pilih && u.hasil !== "tersimpan" && Number(u.jumlah) > 0);
+      ringkas.textContent = `${dipilih.length} baris dicentang · saldo sesudahnya ${rupiah(hitungSisa(usulan.map((x) => ({ ...x })), saldo))}`;
+    };
+    gambarBaris();
+
+    const kotakKabar = el("div");
+    const aksi = el("div", "aleta-basmassal-aksi");
+    let yakin = false;
+    let penunda = 0;
+    const kirim = async (keringKah) => {
+      const baris = barisKirim(usulan.filter((u) => u.hasil !== "tersimpan"));
+      if (!baris.length) return kabar(kotakKabar, "Tidak ada baris tercentang yang berjumlah.", "peringatan");
+      if (!akun.keadaan.username) return kabar(kotakKabar, "Akun SIPP Anda belum tertaut - tidak ada yang dapat disimpan.", "salah");
+      if (kering()) {
+        // Mode kering menahan tiap kiriman ke ALETA (alatKeringMenahan) -
+        // yang akan disimpan disebut di sini saja, tanpa satu permintaan pun.
+        return kabar(kotakKabar, `Mode kering menyala - tidak ada yang dikirim. Yang akan disimpan: ${baris.map((x) => `${x.uraian} ${rupiah(x.jumlah)}`).join("; ")}.`, "peringatan");
+      }
+      const sungguh = !keringKah;
+      kabar(kotakKabar, sungguh ? `Menyimpan ${baris.length} baris ke jurnal SIPP…` : "Menyusun pratinjau…");
+      for (const b of aksi.querySelectorAll("button")) b.disabled = true;
+      try {
+        const isi = await ambil(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ perkaraId: String(data.perkara.perkaraId), akunSipp: akun.keadaan.username, baris, kering: !sungguh }),
+        });
+        const dikirim = usulan.filter((u) => u.hasil !== "tersimpan" && u.pilih && Number(u.jumlah) > 0);
+        const tandai = (ke, hasil, pesan) => {
+          const u = dikirim[ke];
+          if (!u) return;
+          u.hasil = hasil;
+          u.pesan = pesan;
+          if (hasil === "tersimpan" || hasil === "sudah-ada") u.pilih = false;
+        };
+        for (const h of Array.isArray(isi.ditolak) ? isi.ditolak : []) tandai(h.ke, "ditolak", h.pesan);
+        for (const h of Array.isArray(isi.dilewati) ? isi.dilewati : []) tandai(h.ke, "sudah-ada", h.pesan);
+        if (!sungguh) {
+          const n = Array.isArray(isi.rencana) ? isi.rencana.length : 0;
+          gambarBaris();
+          return kabar(
+            kotakKabar,
+            n
+              ? `Pratinjau: ${n} baris jurnal akan ditulis ke SIPP (Audit Trail SIPP atas akun ${akun.keadaan.username}). Belum ada yang disimpan.`
+              : String(isi.pesan || isi.alasan || "Pratinjau: tidak ada baris yang perlu ditulis."),
+            n ? "" : "peringatan"
+          );
+        }
+        for (const h of Array.isArray(isi.hasil) ? isi.hasil : []) tandai(h.ke, h.keadaan || "gagal", h.pesan);
+        gambarBaris();
+        const r = isi.ringkas || {};
+        const bagian = [
+          r.tersimpan ? `${r.tersimpan} baris tersimpan dan terbaca ulang di jurnal SIPP` : "",
+          r.sudahAda ? `${r.sudahAda} sudah ada` : "",
+          r.sebagian ? `${r.sebagian} sebagian` : "",
+          r.gagal ? `${r.gagal} gagal` : "",
+          Array.isArray(isi.ditolak) && isi.ditolak.length ? `${isi.ditolak.length} ditolak` : "",
+        ].filter(Boolean);
+        kabar(kotakKabar, `${bagian.join("; ") || String(isi.pesan || isi.alasan || "Tidak ada yang tersimpan")}.`, isi.ok === true ? "baik" : "salah");
+        if (r.tersimpan) {
+          const muatSipp = tombol("Muat ulang halaman SIPP", "", () => location.reload());
+          kotakKabar.appendChild(muatSipp);
+        }
+      } catch (galat) {
+        kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
+      } finally {
+        for (const b of aksi.querySelectorAll("button")) b.disabled = false;
+      }
+    };
+    const tPratinjau = tombol("Pratinjau", "", () => void kirim(true));
+    const tSimpan = tombol(kering() ? "Simpan (mode kering: pratinjau)" : "Simpan ke SIPP", "aleta-basmassal-tombol-utama", () => {
+      if (!yakin && !kering()) {
+        yakin = true;
+        tSimpan.textContent = "Tekan sekali lagi: simpan ke SIPP";
+        clearTimeout(penunda);
+        penunda = setTimeout(() => {
+          yakin = false;
+          tSimpan.textContent = "Simpan ke SIPP";
+        }, 8000);
+        return;
+      }
+      yakin = false;
+      clearTimeout(penunda);
+      tSimpan.textContent = kering() ? "Simpan (mode kering: pratinjau)" : "Simpan ke SIPP";
+      void kirim(false);
+    });
+    aksi.appendChild(tPratinjau);
+    aksi.appendChild(tSimpan);
+    aksi.appendChild(tombol("Susun ulang", "", () => void muatUlang()));
+    akar.appendChild(aksi);
+    akar.appendChild(kotakKabar);
+  }
+
+  // ─── Massal satu hari ──────────────────────────────────────────────────────
+
+  function bagianMassal(isi) {
+    const atas = el("div", "aleta-basmassal-baris-atas");
+    const tgl = el("input", "aleta-basmassal-pilih");
+    tgl.type = "date";
+    tgl.value = hariIni();
+    tgl.setAttribute("aria-label", "Tanggal kasir massal");
+    atas.appendChild(tgl);
+    const daftar = el("div", "aleta-basmassal-daftar");
+    const akunWadah = el("div");
+    const kotakKabar = el("div");
+    const aksi = el("div", "aleta-basmassal-aksi");
+    let data = null;
+    let akun = null;
+    let henti = false;
+    let sedang = false;
+    const centang = new Map();
+    const laporan = new Map();
+
+    const gambar = () => {
+      daftar.textContent = "";
+      if (!data) return;
+      daftar.appendChild(
+        el(
+          "div",
+          "aleta-basmassal-lembut",
+          `${data.jumlahCalon} perkara bergerak ${tanggalTeks(data.tanggal)}: ${data.perkara.length} perlu dijurnal, ${data.lengkap.length} sudah lengkap${data.gagal.length ? `, ${data.gagal.length} tidak terbaca` : ""}${data.terpotong ? " (terpotong)" : ""}.`
+        )
+      );
+      for (const p of data.perkara) {
+        const baris = el("div", "aleta-basmassal-baris");
+        const kep = el("div", "aleta-basmassal-kepala");
+        const lab = el("label", "aleta-basmassal-pilih-perkara");
+        const cek = el("input");
+        cek.type = "checkbox";
+        cek.checked = Boolean(centang.get(p.perkaraId));
+        cek.disabled = sedang;
+        cek.addEventListener("change", () => {
+          centang.set(p.perkaraId, cek.checked);
+          gambarAksi();
+        });
+        lab.appendChild(cek);
+        lab.appendChild(el("span", "aleta-basmassal-nomor", p.nomorPerkara));
+        kep.appendChild(lab);
+        kep.appendChild(el("span", "aleta-kasir-keadaan", p.keadaan && p.keadaan.nama ? p.keadaan.nama : "-"));
+        kep.appendChild(el("span", "aleta-basmassal-lembut", (p.sebab || []).map((s) => SEBAB[s] || s).join(", ")));
+        if (p.perluPeriksa) kep.appendChild(el("span", "aleta-basmassal-tanda aleta-basmassal-tanda-belum", "perlu diperiksa"));
+        const l = laporan.get(p.perkaraId);
+        if (l) kep.appendChild(el("span", `aleta-basmassal-tanda ${l.ok ? "aleta-basmassal-tanda-baik" : "aleta-basmassal-tanda-belum"}`, l.pesan));
+        baris.appendChild(kep);
+        const t = el("table", "aleta-kasir-tabel");
+        for (const u of p.usulan) {
+          const tr = el("tr");
+          tr.appendChild(el("td", "", tanggalTeks(u.tanggal)));
+          tr.appendChild(el("td", "", u.uraian));
+          tr.appendChild(el("td", "aleta-kasir-angka", u.jumlah === null ? "jumlah?" : rupiah(u.jumlah)));
+          t.appendChild(tr);
+        }
+        baris.appendChild(t);
+        daftar.appendChild(baris);
+      }
+    };
+
+    const dipilih = () => (data ? data.perkara.filter((p) => centang.get(p.perkaraId) && barisKirim(p.usulan).length) : []);
+    const gambarAksi = () => {
+      aksi.textContent = "";
+      const n = dipilih().length;
+      if (sedang) {
+        aksi.appendChild(tombol("Hentikan", "", () => (henti = true)));
+        return;
+      }
+      aksi.appendChild(tombol("Pratinjau", "", () => void jalankan(true)));
+      aksi.appendChild(tombol(kering() ? `Simpan ${n} perkara (mode kering: pratinjau)` : `Simpan ${n} perkara ke SIPP`, "aleta-basmassal-tombol-utama", tekanSimpan));
+      for (const b of aksi.querySelectorAll("button")) b.disabled = !n || !(akun && akun.keadaan.username);
+    };
+    let yakin = false;
+    const tekanSimpan = (e) => {
+      if (!yakin && !kering()) {
+        yakin = true;
+        e.currentTarget.textContent = "Tekan sekali lagi: simpan berurutan ke SIPP";
+        setTimeout(() => {
+          yakin = false;
+          if (!sedang) gambarAksi();
+        }, 8000);
+        return;
+      }
+      yakin = false;
+      void jalankan(false);
+    };
+
+    const jalankan = async (keringKah) => {
+      const daftarKirim = dipilih();
+      if (!daftarKirim.length) return;
+      if (kering()) {
+        return kabar(kotakKabar, `Mode kering menyala - tidak ada yang dikirim. Yang akan disimpan: ${daftarKirim.map((p) => `${p.nomorPerkara} (${barisKirim(p.usulan).length} baris)`).join(", ")}.`, "peringatan");
+      }
+      const sungguh = !keringKah;
+      sedang = true;
+      henti = false;
+      laporan.clear();
+      gambar();
+      gambarAksi();
+      let ke = 0;
+      for (const p of daftarKirim) {
+        if (henti) {
+          laporan.set(p.perkaraId, { ok: false, pesan: "dihentikan petugas" });
+          continue;
+        }
+        if (ke > 0 && sungguh) await tidur(1800 + Math.round(Math.random() * 2400));
+        ke += 1;
+        kabar(kotakKabar, `${sungguh ? "Menyimpan" : "Pratinjau"} ${ke}/${daftarKirim.length}: ${p.nomorPerkara}…`);
+        try {
+          const isi = await ambil(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ perkaraId: String(p.perkaraId), akunSipp: akun.keadaan.username, baris: barisKirim(p.usulan), kering: !sungguh, massal: true }),
+          });
+          const r = isi.ringkas || {};
+          const ditolak = Array.isArray(isi.ditolak) ? isi.ditolak.length : 0;
+          if (!sungguh) {
+            const n = Array.isArray(isi.rencana) ? isi.rencana.length : 0;
+            laporan.set(p.perkaraId, { ok: isi.ok !== false, pesan: n ? `pratinjau ${n} baris${ditolak ? `, ${ditolak} ditolak` : ""}` : String(isi.alasan || "tidak ada yang ditulis") });
+          } else {
+            const pesan = [r.tersimpan ? `${r.tersimpan} tersimpan` : "", r.sudahAda ? `${r.sudahAda} sudah ada` : "", ditolak ? `${ditolak} ditolak` : "", r.gagal ? `${r.gagal} gagal` : ""].filter(Boolean).join(", ");
+            laporan.set(p.perkaraId, { ok: isi.ok === true, pesan: pesan || String(isi.pesan || isi.alasan || "tidak tersimpan") });
+          }
+        } catch (galat) {
+          // Satu perkara gagal TIDAK menghentikan yang lain.
+          laporan.set(p.perkaraId, { ok: false, pesan: String((galat && galat.message) || galat).slice(0, 160) });
+        }
+        gambar();
+      }
+      sedang = false;
+      const semua = [...laporan.values()];
+      kabar(
+        kotakKabar,
+        `${sungguh ? "Selesai" : "Pratinjau selesai"}: ${semua.filter((x) => x.ok).length} perkara berhasil, ${semua.filter((x) => !x.ok).length} tidak.`,
+        semua.every((x) => x.ok) ? "baik" : "peringatan"
+      );
+      gambar();
+      gambarAksi();
+    };
+
+    const baca = async () => {
+      kabar(kotakKabar, "Membaca perkara hari itu dan keadaannya dari SIPP…");
+      daftar.textContent = "";
+      try {
+        const isiJawab = await ambil(`${API}/harian?tanggal=${encodeURIComponent(tgl.value || hariIni())}`);
+        if (isiJawab.available === false || isiJawab.ok === false) {
+          data = null;
+          kabar(kotakKabar, String(isiJawab.alasan || "Daftar perkara hari itu tidak terbaca."), "salah");
+          return;
+        }
+        data = isiJawab;
+        akunWadah.textContent = "";
+        akun = barisAkun(isiJawab.akun);
+        akunWadah.appendChild(akun.kotak);
+        centang.clear();
+        for (const p of data.perkara) centang.set(p.perkaraId, !p.perluPeriksa && barisKirim(p.usulan).length > 0);
+        kabar(kotakKabar, "");
+        gambar();
+        gambarAksi();
+      } catch (galat) {
+        kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
+      }
+    };
+    atas.appendChild(tombol("Baca", "", () => void baca()));
+    isi.appendChild(atas);
+    isi.appendChild(
+      el("div", "aleta-basmassal-lembut", "Tiap perkara menurut keadaannya. Yang perlu diperiksa tangan tidak dicentang. Disimpan satu per satu dengan jeda; satu gagal tidak menghentikan yang lain.")
+    );
+    isi.appendChild(akunWadah);
+    isi.appendChild(daftar);
+    isi.appendChild(aksi);
+    isi.appendChild(kotakKabar);
+    return baca;
+  }
+
+  // ─── Rekap ─────────────────────────────────────────────────────────────────
+
+  function isiRekap(wadah, periode, tanggal) {
+    wadah.textContent = "";
+    wadah.appendChild(el("div", "aleta-basmassal-lembut", "Membaca rekap…"));
+    void (async () => {
+      try {
+        const isi = await ambil(`${API}/rekap?periode=${periode}&tanggal=${encodeURIComponent(tanggal)}`);
+        wadah.textContent = "";
+        if (isi.available === false || isi.ok === false || !isi.rekap) {
+          wadah.appendChild(el("div", "aleta-basmassal-salah", String(isi.alasan || "Rekap tidak terbaca.")));
+          return;
+        }
+        const r = isi.rekap;
+        wadah.appendChild(el("div", "aleta-basmassal-lembut", r.label));
+        wadah.appendChild(
+          el("div", "", `Keluar ${rupiah(r.totalKeluar)} · Masuk ${rupiah(r.totalMasuk)} · PNBP ${rupiah(r.totalPnbp)} (tercatat disetor ${rupiah(r.pnbpDisetor)}) · Sisa dikembalikan ${rupiah(r.sisaDikembalikan)}`)
+        );
+        const t = el("table", "aleta-kasir-tabel");
+        const kep = el("tr");
+        for (const k of ["Jenis biaya", "Transaksi", "Jumlah", "%"]) kep.appendChild(el("th", k === "Jenis biaya" ? "" : "aleta-kasir-angka", k));
+        t.appendChild(kep);
+        for (const j of r.pengeluaran) {
+          const tr = el("tr");
+          tr.appendChild(el("td", "", j.nama));
+          tr.appendChild(el("td", "aleta-kasir-angka", String(j.baris)));
+          tr.appendChild(el("td", "aleta-kasir-angka", rupiah(j.jumlah)));
+          tr.appendChild(el("td", "aleta-kasir-angka", `${j.persen}%`));
+          t.appendChild(tr);
+        }
+        const total = el("tr", "aleta-kasir-total");
+        total.appendChild(el("td", "", "Total pengeluaran"));
+        total.appendChild(el("td", "aleta-kasir-angka", String(r.jumlahBarisKeluar)));
+        total.appendChild(el("td", "aleta-kasir-angka", rupiah(r.totalKeluar)));
+        total.appendChild(el("td", "aleta-kasir-angka", "100%"));
+        t.appendChild(total);
+        wadah.appendChild(t);
+        const pdf = tombol("Unduh PDF", "", async () => {
+          pdf.disabled = true;
+          try {
+            const jawab = await alatAmbil(`${API}/rekap/pdf?periode=${periode}&tanggal=${encodeURIComponent(tanggal)}`, { credentials: "include", cache: "no-store", batasMs: 60000 }, "PDF rekap kasir");
+            if (!String(jawab.headers.get("content-type") || "").includes("application/pdf")) throw new Error("PDF rekap tidak terbentuk.");
+            const berkas = await jawab.blob();
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(berkas);
+            a.download = `Rekap kasir ${periode} ${r.dari}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+          } catch (galat) {
+            wadah.appendChild(el("div", "aleta-basmassal-salah", String((galat && galat.message) || galat)));
+          } finally {
+            pdf.disabled = false;
+          }
+        });
+        wadah.appendChild(pdf);
+      } catch (galat) {
+        wadah.textContent = "";
+        wadah.appendChild(el("div", "aleta-basmassal-salah", String((galat && galat.message) || galat)));
+      }
+    })();
+  }
+
+  function bagianRekap(isi) {
+    const atas = el("div", "aleta-basmassal-baris-atas");
+    atas.appendChild(el("span", "aleta-basmassal-lembut", "Tanggal acuan"));
+    const tgl = el("input", "aleta-basmassal-pilih");
+    tgl.type = "date";
+    tgl.value = hariIni();
+    tgl.setAttribute("aria-label", "Tanggal acuan rekap");
+    atas.appendChild(tgl);
+    isi.appendChild(atas);
+    const periode = [];
+    for (const [kunci, judul] of PERIODE) {
+      const d = el("details", "aleta-basmassal-rinci aleta-kasir-periode");
+      d.setAttribute("data-periode", kunci);
+      d.appendChild(el("summary", "", judul));
+      const wadah = el("div");
+      d.appendChild(wadah);
+      // Harian terbuka; mingguan s.d. tahunan diciutkan dan dibaca saat dibuka.
+      d.open = kunci === "harian";
+      d.addEventListener("toggle", () => {
+        if (d.open) isiRekap(wadah, kunci, tgl.value || hariIni());
+      });
+      periode.push({ d, wadah, kunci });
+      isi.appendChild(d);
+    }
+    tgl.addEventListener("change", () => {
+      for (const p of periode) if (p.d.open) isiRekap(p.wadah, p.kunci, tgl.value || hariIni());
+    });
+    return () => {
+      for (const p of periode) if (p.d.open) isiRekap(p.wadah, p.kunci, tgl.value || hariIni());
+    };
+  }
+
+  // ─── Pengingat ─────────────────────────────────────────────────────────────
+
+  function bagianPengingat(isi, ringkasJudul) {
+    const wadah = el("div");
+    isi.appendChild(wadah);
+    const muat = async (segar) => {
+      wadah.textContent = "";
+      wadah.appendChild(el("div", "aleta-basmassal-lembut", "Membaca pengingat kasir…"));
+      let data;
+      try {
+        data = await ambil(`${API}/pengingat${segar ? "?segar=1" : ""}`);
+      } catch (galat) {
+        wadah.textContent = "";
+        wadah.appendChild(el("div", "aleta-basmassal-salah", String((galat && galat.message) || galat)));
+        return;
+      }
+      wadah.textContent = "";
+      if (data.available === false || data.ok === false) {
+        wadah.appendChild(el("div", "aleta-basmassal-salah", String(data.alasan || "Pengingat kasir tidak terbaca.")));
+        return;
+      }
+      const butir = Array.isArray(data.butir) ? data.butir : [];
+      if (ringkasJudul) ringkasJudul.textContent = butir.length ? ` (${butir.length})` : "";
+      if (!butir.length) {
+        wadah.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-baik", "Tidak ada tugas kasir yang tertinggal."));
+        return;
+      }
+      const pilihSetor = new Set();
+      for (const jenis of Object.keys(JUDUL_PENGINGAT)) {
+        const kel = butir.filter((b) => b.jenis === jenis);
+        if (!kel.length) continue;
+        wadah.appendChild(el("div", "aleta-basmassal-judul-teks", `${JUDUL_PENGINGAT[jenis]} (${kel.length})`));
+        const ul = el("ul", "aleta-basmassal-daftar-temuan");
+        for (const b of kel.slice(0, 40)) {
+          const li = el("li");
+          if (jenis === "pnbp-belum-setor") {
+            const cek = el("input");
+            cek.type = "checkbox";
+            cek.setAttribute("aria-label", `Pilih PNBP ${b.tanggal}`);
+            cek.addEventListener("change", () => (cek.checked ? pilihSetor.add(b.tanggal) : pilihSetor.delete(b.tanggal)));
+            li.appendChild(cek);
+          }
+          li.appendChild(el("span", b.tenggat < data.hariIni ? "aleta-basmassal-salah" : "", `tenggat ${tanggalTeks(b.tenggat)} `));
+          if (b.nomorPerkara) li.appendChild(el("b", "", `${b.nomorPerkara} `));
+          li.appendChild(el("span", "", b.keterangan));
+          ul.appendChild(li);
+        }
+        if (kel.length > 40) ul.appendChild(el("li", "aleta-basmassal-lembut", `… dan ${kel.length - 40} lagi`));
+        wadah.appendChild(ul);
+        if (jenis === "pnbp-belum-setor") {
+          const baris = el("div", "aleta-basmassal-aksi");
+          const ntpn = el("input", "aleta-basmassal-pilih");
+          ntpn.type = "text";
+          ntpn.placeholder = "NTPN (boleh kosong)";
+          baris.appendChild(ntpn);
+          const hasil = el("span", "aleta-basmassal-lembut");
+          const t = tombol("Tandai sudah disetor", "", async () => {
+            if (!pilihSetor.size) return (hasil.textContent = "Centang tanggal PNBP-nya dulu.");
+            t.disabled = true;
+            try {
+              const j = await ambil(`${API}/pengingat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tanggal: [...pilihSetor], ntpn: ntpn.value }),
+              });
+              if (j.ok === false || j.available === false) hasil.textContent = String(j.alasan || "Setoran tidak tercatat.");
+              else await muat(true);
+            } catch (galat) {
+              hasil.textContent = String((galat && galat.message) || galat);
+            } finally {
+              t.disabled = false;
+            }
+          });
+          baris.appendChild(t);
+          baris.appendChild(hasil);
+          wadah.appendChild(baris);
+          wadah.appendChild(el("div", "aleta-basmassal-lembut", "Setoran dicatat di ALETA - jurnal SIPP tidak diubah."));
+        }
+      }
+    };
+    return muat;
+  }
+
+  /** Massal + rekap + pengingat sebagai tiga bagian berlipat. */
+  async function pasangHarian(wadah, opsi) {
+    const o = opsi || {};
+    if (!wadah || modeLama() || boleh() === false) return false;
+    const lama = wadah.querySelector(":scope > .aleta-kasir-harian");
+    if (lama) lama.remove();
+    const akar = el("div", "aleta-kasir aleta-kasir-harian aleta-basmassal");
+    akar.setAttribute("data-aleta-kasir", "harian");
+    if (o.judul !== false) {
+      const j = el("div", "aleta-basmassal-judul");
+      j.appendChild(el("span", "aleta-basmassal-judul-teks", "Kasir"));
+      akar.appendChild(j);
+    }
+    const bagian = (judul, terbuka) => {
+      const d = el("details", "aleta-basmassal-rinci aleta-kasir-bagian");
+      const s = el("summary", "", judul);
+      const tambahan = el("span");
+      s.appendChild(tambahan);
+      d.appendChild(s);
+      const isi = el("div", "aleta-kasir-isi");
+      d.appendChild(isi);
+      d.open = Boolean(terbuka);
+      akar.appendChild(d);
+      return { d, isi, tambahan };
+    };
+    const bPengingat = bagian("Pengingat tugas kasir", true);
+    const bMassal = bagian("Kasir otomatis massal (satu hari)", false);
+    const bRekap = bagian("Rekap pengeluaran", false);
+    const muatPengingat = bagianPengingat(bPengingat.isi, bPengingat.tambahan);
+    const bacaMassal = bagianMassal(bMassal.isi);
+    const segarRekap = bagianRekap(bRekap.isi);
+    let massalDibaca = false;
+    bMassal.d.addEventListener("toggle", () => {
+      if (bMassal.d.open && !massalDibaca) {
+        massalDibaca = true;
+        void bacaMassal();
+      }
+    });
+    let rekapDibaca = false;
+    bRekap.d.addEventListener("toggle", () => {
+      if (bRekap.d.open && !rekapDibaca) {
+        rekapDibaca = true;
+        segarRekap();
+      }
+    });
+    wadah.appendChild(akar);
+    void muatPengingat(false);
+    return true;
+  }
+
+  globalThis.aletaKasirBoleh = (p) => boleh(p);
+  globalThis.aletaKasirPasang = pasangPerkara;
+  globalThis.aletaKasirPasangHarian = pasangHarian;
+  globalThis.aletaKasirRentang = (periode, tanggal) => (typeof alatKasirRentang === "function" ? alatKasirRentang(periode, tanggal) : null);
+})();

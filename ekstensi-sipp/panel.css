@@ -9361,6 +9361,37 @@ html[data-aleta-teknis="sembunyi"] .aleta-teknis {
 .aleta-basmassal-kabar-salah { color: var(--aleta-lewat); background: color-mix(in srgb, var(--aleta-lewat) 12%, transparent); }
 /* === AKHIR M === */
 
+/* Kasir 1.189.x (basmassal.js, IIFE aletaKasir*) - hanya lahir di Baru dan UI
+ * Baru; memakai kelas .aleta-basmassal-* untuk tombol, kabar, dan baris. */
+.aleta-kasir-keadaan {
+  padding: 1px 7px;
+  border: 1px solid color-mix(in srgb, var(--aleta-merek) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--aleta-merek) 12%, transparent);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+}
+.aleta-kasir-tabel { width: 100%; border-collapse: collapse; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-kasir-tabel td,
+.aleta-kasir-tabel th { padding: 3px 4px; border-top: 1px solid var(--aleta-garis); vertical-align: top; text-align: left; }
+.aleta-kasir-tabel .aleta-kasir-angka { text-align: right; white-space: nowrap; }
+.aleta-kasir-tabel tr.aleta-kasir-mati { opacity: 0.6; }
+.aleta-kasir-tabel tr.aleta-kasir-total td { font-weight: 600; }
+.aleta-kasir-masukan {
+  max-width: 100%;
+  padding: 2px 4px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 4px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+.aleta-kasir-masukan.aleta-kasir-uraian { width: 100%; }
+.aleta-kasir-masukan.aleta-kasir-angka { width: 92px; text-align: right; }
+.aleta-kasir-bagian > summary { font-weight: 600; color: var(--aleta-tulisan); }
+.aleta-kasir-isi { display: grid; gap: 6px; padding-top: 6px; }
+
 /* === T - PERBAIKAN 30 SEP SORE === */
 /* Panel ABT sederhana + menu per peran (abt.js, lapisan sore). Seluruh aturan
  * bersyarat pada atribut/kelas yang hanya dipasang dalam tampilan Baru dan UI

@@ -268,7 +268,9 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // tombol-penetapan-kembali, tombol-kasir (butir 9).
     // 46 sejak 7 Okt 2026: + tarik-belum-upload (penanda belum upload dapat
     // ditekan; dijaga jadwal-sidang-belum-upload-tarik.test.tsx).
-    expect(SAKLAR_TAMPILAN.length).toBe(46);
+    // 47 sejak 1.189.x (10 Okt 2026): + tombol-kasir-harian (Kasir massal,
+    // rekap, pengingat; dijaga kasir-otomatis.test.ts).
+    expect(SAKLAR_TAMPILAN.length).toBe(47);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {

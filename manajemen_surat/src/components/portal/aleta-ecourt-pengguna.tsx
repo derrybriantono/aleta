@@ -286,6 +286,21 @@ export function AletaEcourtPengguna() {
     return () => window.clearTimeout(timer);
   }, [bolehMengatur]);
 
+  // 1.189.x: #kasir (pengingat setor PNBP di checklist milestone/widget)
+  // membuka Jadwal Sidang; dialog Kasir harian membuka dirinya sendiri.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      let jangkar = "";
+      try {
+        jangkar = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
+      } catch {
+        jangkar = "";
+      }
+      if (jangkar === "kasir") setMenu("sidang");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   // Dibaca sekali saat menu ekstensi dibuka, bukan saat portal dibuka.
   // Sebagian besar orang tidak pernah membuka menu ini sama sekali.
   useEffect(() => {

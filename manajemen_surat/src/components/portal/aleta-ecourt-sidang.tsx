@@ -75,6 +75,7 @@ import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
 import { CourtCalendarSidang } from "@/components/portal/court-calendar-sidang";
 import { TombolPenetapanKembali } from "@/components/portal/penetapan-kembali";
 import { TombolKasirJurnal } from "@/components/portal/kasir-jurnal";
+import { TombolKasirHarian } from "@/components/portal/kasir-otomatis";
 import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
@@ -6366,6 +6367,7 @@ export function AletaEcourtSidang({
               </Button>
               ) : null}
               {tampil(tampilan, "tombol-kasir") ? <TombolKasirJurnal daftar={sidang} /> : null}
+              {tampil(tampilan, "tombol-kasir-harian") ? <TombolKasirHarian /> : null}
 
             </div>
 

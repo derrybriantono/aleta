@@ -34,6 +34,10 @@
  *   GET  /kasir/cari?nomor        cari perkara menurut nomor (hanya SELECT)
  *   POST /kasir                   tambah baris jurnal ke SIPP atas akun SIPP
  *                                 petugas (kering bawaan) - kasirJurnalService
+ *   GET  /kasir/harian?tanggal    kasir otomatis massal satu hari (hanya SELECT)
+ *   GET  /kasir/rekap?dari&sampai rekap pengeluaran kasir (hanya SELECT)
+ *   GET  /kasir/pengingat         tugas kasir tertinggal (hanya SELECT)
+ *   POST /kasir/setor-pnbp        catat setoran PNBP di basis data ALETA bot
  *   POST /belum-upload/tarik      tarik ulang e-Court SATU perkara dari penanda
  *                                 "belum upload" (7 Okt 2026) - tidak menulis
  *                                 ke SIPP; daftar dokumen + berkas baru ke arsip
@@ -520,7 +524,9 @@ router.post("/kasir", wajibToken, async (req, res) => {
     if (jejak) {
       void jejak.catat({
         aksi: "tulis",
-        jenis: "kasir-jurnal",
+        // 1.189.x butir 2: simpanan dari Kasir otomatis massal ditandai di
+        // jejak ALETA (bukan di SIPP).
+        jenis: badan.massal === true ? "kasir-jurnal-massal" : "kasir-jurnal",
         perkaraId: rencana.perkara.perkaraId,
         nomorPerkara: rencana.perkara.nomorPerkara,
         akunSipp: rencana.akunSipp.username,
@@ -540,6 +546,61 @@ router.post("/kasir", wajibToken, async (req, res) => {
       ditolak: rencana.ditolak,
       dilewati: rencana.dilewati,
     });
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/**
+ * ============================================================================
+ * KASIR OTOMATIS 1.189.x (butir 2, 4, 5)
+ * ============================================================================
+ *
+ *   GET  /kasir/harian?tanggal    perkara hari itu yang perlu dijurnal + usulan
+ *                                 menurut keadaannya (hanya SELECT)
+ *   GET  /kasir/rekap?dari&sampai rekap pengeluaran/pemasukan (hanya SELECT)
+ *   GET  /kasir/pengingat         tugas kasir yang tertinggal (hanya SELECT)
+ *   POST /kasir/setor-pnbp        catat setoran PNBP - basis data ALETA saja,
+ *                                 TIDAK ke SIPP
+ */
+router.get("/kasir/harian", wajibToken, async (req, res) => {
+  try {
+    const kasirJurnalService = require("../services/kasirJurnalService");
+    res.json(await kasirJurnalService.daftarHarian(String(req.query.tanggal || ""), { batas: req.query.batas }));
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.get("/kasir/rekap", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/kasirRekapService").rekap({ dari: req.query.dari, sampai: req.query.sampai });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.get("/kasir/pengingat", wajibToken, async (req, res) => {
+  try {
+    res.json(await require("../services/kasirRekapService").pengingat({ hariIni: req.query.hariIni }));
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post("/kasir/setor-pnbp", wajibToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await require("../services/kasirRekapService").catatSetor({
+      tanggal: badan.tanggal,
+      ntpn: badan.ntpn,
+      keterangan: badan.keterangan,
+      operator: badan.operator,
+      akunSipp: badan.akunSipp,
+      ip: alamatAudit(req),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (galat) {
     galat500(res, galat);
   }

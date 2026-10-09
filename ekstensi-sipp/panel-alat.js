@@ -2539,6 +2539,62 @@ function alatKotakTerkunciPutusan(judul) {
   return kotak;
 }
 
+/*
+ * ============================================================================
+ * HAK KASIR - TAB KASIR EKSTENSI (1.189.x butir 3)
+ * ============================================================================
+ *
+ * Sama dengan Kasir 1.186 di portal (lib/kasir-jurnal.ts bolehKasir): kasir,
+ * petugas keuangan perkara, bendahara, analis keuangan, Panitera dan Panitera
+ * Muda, Admin, Super Admin. Panitera PENGGANTI, hakim, juru sita TIDAK -
+ * golongan "panitera" matriks menu memuat PP, jadi Kasir tidak menumpang
+ * matriks itu. Jawaban server (bolehKasir dari sipp-konteks / siapa) menang;
+ * tanpa itu dihitung dari nama perannya. Rute kasir tetap menolak sendiri.
+ */
+function alatBolehKasir(pengguna) {
+  let peran = pengguna;
+  if (pengguna && typeof pengguna === "object") {
+    if (typeof pengguna.bolehKasir === "boolean") return pengguna.bolehKasir;
+    peran = pengguna.peran;
+  }
+  const p = String(peran || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (!p) return null;
+  if (alatGolonganPeran(p) === "admin") return true;
+  if (/kasir|keuangan|bendahara/.test(p)) return true;
+  if (/pengganti|\bpp\b/.test(p)) return false;
+  return /^panitera( muda)?$|\bpanitera muda\b/.test(p) || p === "panitera";
+}
+
+/**
+ * Rentang periode rekap kasir yang MEMUAT tanggal itu - kembaran
+ * rentangPeriode di manajemen_surat/src/lib/kasir-otomatis.ts (uji
+ * kasir-otomatis.test.ts menuntut jawabannya sama). Minggu = Senin-Minggu.
+ */
+function alatKasirRentang(periode, tanggal) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(tanggal || ""));
+  if (!m) return null;
+  const t = Number(m[1]);
+  const b = Number(m[2]) - 1;
+  const h = Number(m[3]);
+  const iso = (tt, bb, hh) => new Date(Date.UTC(tt, bb, hh)).toISOString().slice(0, 10);
+  if (periode === "harian") return { dari: iso(t, b, h), sampai: iso(t, b, h) };
+  if (periode === "mingguan") {
+    const mundur = (new Date(Date.UTC(t, b, h)).getUTCDay() + 6) % 7;
+    return { dari: iso(t, b, h - mundur), sampai: iso(t, b, h - mundur + 6) };
+  }
+  if (periode === "bulanan") return { dari: iso(t, b, 1), sampai: iso(t, b + 1, 0) };
+  if (periode === "triwulan") {
+    const q = Math.floor(b / 3);
+    return { dari: iso(t, q * 3, 1), sampai: iso(t, q * 3 + 3, 0) };
+  }
+  if (periode === "semester") {
+    const s = b < 6 ? 0 : 1;
+    return { dari: iso(t, s * 6, 1), sampai: iso(t, s * 6 + 6, 0) };
+  }
+  if (periode === "tahunan") return { dari: iso(t, 0, 1), sampai: iso(t, 11, 31) };
+  return null;
+}
+
 function alatMenuPeran(situs, halaman, peran, opsi) {
   const o = opsi && typeof opsi === "object" ? opsi : {};
   const golongan = alatGolonganPeran(peran);

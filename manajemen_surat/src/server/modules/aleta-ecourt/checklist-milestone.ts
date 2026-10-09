@@ -22,6 +22,10 @@ import { getGatewayChecklistMilestone } from "@/server/modules/aleta-bot/whatsap
 import { KEADAAN_KREDENSIAL } from "@/server/modules/external-apps/service";
 import { type requireActorUser } from "@/server/modules/organization/service";
 
+import { bolehKasir } from "@/lib/kasir-jurnal";
+import { butirChecklistKasir } from "@/lib/kasir-otomatis";
+
+import { bacaPengingatKasir } from "./kasir-otomatis";
 import { bolehMenetapkan } from "./kewenangan-penetapan";
 import { bacaSemuaKonseptorSementara } from "./konseptor-sementara";
 import { type AkunSiapPakai, bacaPemetaanJabatan } from "./pemetaan-jabatan";
@@ -434,6 +438,8 @@ export type OpsiChecklist = {
   peranDiminta?: string;
   /** Jam acuan - hanya untuk uji dan pengukuran; tanpa singgahan. */
   kini?: Date;
+  /** Tanpa pengingat kasir (uji checklist lama yang tidak menyiapkan bot kasir). */
+  tanpaKasir?: boolean;
 };
 
 export async function susunChecklist(
@@ -460,21 +466,63 @@ export async function susunChecklist(
     }
   }
 
-  if (opsi.kini) return tempelCatatan(await hitung(db, aktor, aktif, tersedia, pemetaan, kini, false), catatanPermintaan);
+  if (opsi.kini) {
+    return tempelKasir(tempelCatatan(await hitung(db, aktor, aktif, tersedia, pemetaan, kini, false), catatanPermintaan), aktor, opsi);
+  }
 
   // Kunci singgahan memuat penautan pengguna saat ini: kredensial yang baru
   // disimpan atau dinonaktifkan tidak menunggu singgahan lamanya habis.
   const tautan = pemetaan.akun.map((a) => `${a.jabatan}:${a.pejabatId}`).sort().join(",");
   const kunciSinggah = `${aktor.id}|${aktif}|${tersedia.join(",")}|${tautan}`;
   const ada = singgahJawaban.get(kunciSinggah);
-  if (ada && detik - ada.kapan < SINGGAH_MS) return tempelCatatan(ada.isi, catatanPermintaan);
+  if (ada && detik - ada.kapan < SINGGAH_MS) return tempelKasir(tempelCatatan(ada.isi, catatanPermintaan), aktor, opsi);
 
   const jawaban = await sekaliJalan(`jawaban|${kunciSinggah}`, async () => {
     const isi = await hitung(db, aktor, aktif, tersedia, pemetaan, kini, true);
     simpanSinggah(singgahJawaban, kunciSinggah, isi, detik);
     return isi;
   });
-  return tempelCatatan(jawaban, catatanPermintaan);
+  return tempelKasir(tempelCatatan(jawaban, catatanPermintaan), aktor, opsi);
+}
+
+/**
+ * ============================================================================
+ * PENGINGAT KASIR (1.189.x butir 5) - DITEMPEL, BUKAN PERAN CHECKLIST BARU
+ * ============================================================================
+ *
+ * Bagi yang boleh Kasir (bolehKasir: kasir/keuangan/panitera/admin), pengingat
+ * tugas kasir - sisa panjar, jurnal hari putusan, panjar kurang, setor PNBP -
+ * ditempel ke checklist peran apa pun yang sedang dibuka, sehingga widget
+ * ekstensi menampilkannya tanpa versi ekstensi baru. Peran checklist yang ada
+ * tidak diubah. Gagal dibaca = disebut di `galat`, checklist lain tetap utuh.
+ */
+async function tempelKasir(jawaban: JawabanChecklist, aktor: Aktor, opsi: OpsiChecklist): Promise<JawabanChecklist> {
+  if (opsi.tanpaKasir || !bolehKasir(aktor)) return jawaban;
+  let pengingat: Awaited<ReturnType<typeof bacaPengingatKasir>>;
+  try {
+    pengingat = await bacaPengingatKasir();
+  } catch (e) {
+    pengingat = { ok: false, alasan: e instanceof Error ? e.message : String(e) };
+  }
+  if (!pengingat.ok) return { ...jawaban, galat: [...jawaban.galat, `Pengingat kasir tidak terbaca: ${pengingat.alasan}`] };
+  const tambahan = butirChecklistKasir(pengingat.data);
+  if (!tambahan.length) return jawaban;
+  const ada = new Set(jawaban.butir.map((b) => b.id));
+  const baru = tambahan.filter((b) => !ada.has(b.id)) as ButirChecklist[];
+  const hitung = (k: string) => baru.filter((b) => b.kelompok === k).length;
+  return {
+    ...jawaban,
+    butir: [...jawaban.butir, ...baru],
+    ringkas: {
+      ...jawaban.ringkas,
+      lewat: jawaban.ringkas.lewat + hitung("lewat"),
+      hariIni: jawaban.ringkas.hariIni + hitung("hari-ini"),
+      mingguIni: jawaban.ringkas.mingguIni + hitung("minggu-ini"),
+    },
+    // Akun kasir murni tidak punya peran checklist - kalimat "belum punya
+    // peran" tidak benar lagi bila pengingat kasirnya tampil.
+    galat: jawaban.peranAktif ? jawaban.galat : jawaban.galat.filter((g) => !g.startsWith("Akun Anda belum punya peran")),
+  };
 }
 
 function tempelCatatan(jawaban: JawabanChecklist, catatan: string[]): JawabanChecklist {
