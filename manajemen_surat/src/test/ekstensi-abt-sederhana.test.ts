@@ -775,3 +775,89 @@ describe("tampilan Lama tidak tersentuh lapisan sore", () => {
     expect(css).toContain('#aleta-panel-abt[data-sore] [data-sore-tampak="tidak"],');
   });
 });
+
+// ============================================================================
+describe("9 Okt (KUASA butir 1-4): kuasa hukum dari surat gugatan e-Court di Isi dari SIPP & input ke ABT", () => {
+  const ISI_KUASA = { "0184": "DATA_TIDAK_ADA", "8537": "DATA_TIDAK_ADA", "8538": "DATA_TIDAK_ADA", "8539": "DATA_TIDAK_ADA" };
+  const sumberG = (kalimat: string) => [{ asal: "gugatan-ecourt", kalimat: `"SURAT GUGATAN (Docx/Rtf)" e-Court: ${kalimat}` }];
+  const KUASA_GUGATAN = {
+    ada: true,
+    catatan: [],
+    usulan: [
+      { kode: "0156", nama: "Kantor Kuasa Penggugat", nilai: "DERRY & PARTNER'S", keyakinan: "cukup", sumber: sumberG("…pada Kantor Hukum “DERRY & PARTNER’S” berkedudukan…"), catatan: "" },
+      { kode: "0184", nama: "Tgl. Surat Kuasa Penggugat", nilai: "11/04/2026", keyakinan: "cukup", sumber: sumberG("Surat Kuasa Khusus tanggal 11 April 2026"), catatan: "" },
+      { kode: "8538", nama: "Alamat Kantor Kuasa Penggugat", nilai: "Jl. Dayo No. 2, Palu", keyakinan: "ragu", sumber: [{ asal: "sipp", kalimat: "Alamat advokat di SIPP: Jl. Dayo No. 2, Palu" }], catatan: "" },
+      { kode: "8537", nama: "Nama Advokat Kuasa Penggugat", nilai: "DERRY, S.H. dan ANDI, S.H.", keyakinan: "pasti", sumber: [{ asal: "sipp", kalimat: "Kuasa aktif Penggugat di SIPP" }], catatan: "" },
+    ],
+  };
+  const SIPP_KUASA = {
+    ...USULAN_SIPP,
+    jumlahKuasa: 2,
+    usulan: [
+      { kode: "0132", nama: "Tgl. Register Kuasa Khusus Penggugat", nilai: "11/08/2026", keyakinan: "pasti", sumber: [{ saksi: 0, kalimat: "DERRY, S.H. - register 69/SK/VIII/2026" }] },
+      { kode: "0156", nama: "Kantor Kuasa Penggugat", nilai: "", keyakinan: "kosong", sumber: [], catatan: "dibaca dari surat gugatan" },
+      { kode: "8539", nama: "No. Register Kuasa Khusus Penggugat", nilai: "69/SK/VIII/2026", keyakinan: "pasti", sumber: [] },
+      ...USULAN_SIPP.usulan.filter((u) => !["0132", "0156"].includes(u.kode)),
+    ],
+  };
+  const jawab =
+    (kuasa: unknown, sipp: unknown): Pengganti =>
+    (url, _c, badan) => {
+      if (url.includes("/aleta-ecourt/kuasa-gugatan")) return { isi: { ok: true, data: kuasa } };
+      if (url.includes("/abt/usulan") && JSON.parse(badan || "{}").sumber === "sipp") return { isi: { data: { available: true, sipp } } };
+      return undefined;
+    };
+  const kartu = (h: Halaman, kode: string) => qs(h, ".aleta-abt-kartu").find((k) => k.querySelector(".aleta-abt-kode")?.textContent === kode);
+
+  it("kantor & tanggal surat kuasa dari gugatan bertanda 'dari gugatan e-Court' dan tercentang; cadangan SIPP 'ragu' tidak; register dari SIPP", async () => {
+    const h = buka({ simpanan: ui(SEMUA_ABT, nyata), peran: "Hakim", isi: ISI_KUASA, ganti: jawab(KUASA_GUGATAN, SIPP_KUASA) });
+    await selesaiIsi(h);
+    expect(h.minta.filter((m) => m.url.includes("/aleta-ecourt/kuasa-gugatan?nomor=")).length).toBe(1);
+    for (const k of ["0156", "0184", "8538", "8537", "0132", "8539"]) expect(kartu(h, k), k).toBeDefined();
+    const k0156 = kartu(h, "0156");
+    expect(k0156.querySelector(".aleta-abt-isi-sunting").textContent).toBe("DERRY & PARTNER'S");
+    expect(k0156.querySelector(".aleta-tanda").textContent).toBe("dari gugatan e-Court");
+    expect(k0156.querySelector(".aleta-abt-asal").textContent).toBe("Gugatan e-Court");
+    expect(k0156.querySelector("input.aleta-abt-centang").checked).toBe(true);
+    expect(kartu(h, "0184").querySelector("input.aleta-abt-centang").checked).toBe(true);
+    expect(kartu(h, "8538").querySelector("input.aleta-abt-centang").checked).toBe(false);
+    expect(kartu(h, "0132").querySelector(".aleta-abt-isi-sunting").textContent).toBe("11/08/2026");
+    // Hanya MEMBACA sampai Input ke ABT ditekan.
+    expect(nonGetAbt(h)).toEqual([]);
+  });
+
+  it("perkara ber-kuasa yang kantornya tidak terdeteksi: kartu 0156 tetap ada, kosong, dapat disunting, membawa sebabnya", async () => {
+    const tanpaKantor = {
+      ...KUASA_GUGATAN,
+      usulan: KUASA_GUGATAN.usulan.map((u) => (u.kode === "0156" ? { ...u, nilai: "", keyakinan: "kosong", sumber: [], catatan: "Gugatan tidak menyebut nama kantor (kuasa perorangan)" } : u)),
+    };
+    const h = buka({ simpanan: ui([]), peran: "Hakim", isi: ISI_KUASA, ganti: jawab(tanpaKantor, SIPP_KUASA) });
+    await selesaiIsi(h);
+    const k = kartu(h, "0156");
+    expect(k.querySelector(".aleta-abt-isi-sunting").textContent).toBe("(kosong - klik untuk mengisi)");
+    expect(k.querySelector("input.aleta-abt-centang").disabled).toBe(true);
+    expect(Array.from(k.querySelectorAll("button")).some((b: any) => b.textContent === "Sunting")).toBe(true);
+    expect(k.querySelector(".aleta-abt-catatan").textContent).toContain("kuasa perorangan");
+  });
+
+  it("tanpa kuasa (SIPP 0, gugatan tidak menyebut): tidak ada kartu kuasa; server lama (404) diam", async () => {
+    const h = buka({ simpanan: ui([]), peran: "Hakim", isi: ISI_KUASA, ganti: jawab({ ada: false, catatan: [], usulan: [] }, USULAN_SIPP) });
+    await selesaiIsi(h);
+    for (const k of ["0156", "0184", "8538", "8537", "8539"]) expect(kartu(h, k), k).toBeUndefined();
+    const g = buka({ simpanan: ui([]), peran: "Hakim", isi: ISI_KUASA });
+    await selesaiIsi(g);
+    expect(g.minta.some((m) => m.url.includes("/aleta-ecourt/kuasa-gugatan"))).toBe(true);
+    expect(kerja(g, "isi").textContent).not.toContain("Kuasa hukum dari gugatan e-Court");
+  });
+
+  it("Input ke ABT menulis nama kantor gugatan ke #0156# dan tanggal surat kuasa ke #0184#; yang 'ragu' tidak", async () => {
+    const h = buka({ simpanan: ui(SEMUA_ABT, nyata), peran: "Hakim", isi: ISI_KUASA, ganti: jawab(KUASA_GUGATAN, SIPP_KUASA) });
+    const input = await selesaiIsi(h);
+    input.click();
+    await sampai(() => /tersimpan/.test(q(h, ".aleta-sore-tindakan + .aleta-abt-kabar")?.textContent || ""), "kabar input");
+    const tulis = tulisAbt(h).map((m) => ({ no: new URLSearchParams(m.url.split("?")[1]).get("no_var"), nilai: new URLSearchParams(m.badan).get("value") }));
+    expect(tulis).toContainEqual({ no: "0156", nilai: "DERRY & PARTNER'S" });
+    expect(tulis).toContainEqual({ no: "0184", nilai: "11/04/2026" });
+    expect(tulis.some((t) => t.no === "8538")).toBe(false);
+  });
+});
