@@ -14,8 +14,11 @@ import { ok } from "@/server/shared/http";
 
 import {
   folderDibutuhkan,
+  folderFormatDibutuhkan,
+  JAM_BATAS_KEHADIRAN_BAS,
   ringkasLembar,
   susunBarisBasMassal,
+  type AntrianBas,
   type BarisSidangBas,
   type BlangkoKatalog,
   type KatalogFolder,
@@ -109,7 +112,13 @@ export async function GET(request: NextRequest) {
     const terlihat =
       saringan === "saya" ? sidang.filter((s) => namaAdaDi(namaAkun, String(s?.paniteraNama ?? ""))) : sidang;
 
-    const folder = folderDibutuhkan(terlihat);
+    // 9 Okt 2026: antrian sidang (sudah ada di jawaban jadwal bot - tanpa
+    // panggilan tambahan) dan saat WITA untuk batas 14.00. Folder ABT umum
+    // (blangko gugur / tunda panggil para pihak) hanya dibaca bila ada sidang
+    // yang lewat 14.00 tanpa kehadiran.
+    const antrian = (jadwal.data?.antrian ?? null) as AntrianBas;
+    const saat = waktuPengadilan();
+    const folder = [...new Set([...folderDibutuhkan(terlihat), ...folderFormatDibutuhkan(terlihat, antrian, saat)])];
     const katalog: Record<string, KatalogFolder> = {};
     await Promise.all(
       folder.map(async (f) => {
@@ -150,7 +159,7 @@ export async function GET(request: NextRequest) {
     // Perbaikan 2 Okt sore (butir 8): Pemetaan blangko BAS dibaca tiap
     // permintaan (tanpa singgahan) - perubahan admin berlaku seketika.
     const petaBas = await petaPemetaanBerlaku(db, "bas");
-    const hasil = susunBarisBasMassal(sidang, { namaAkun, saringan, katalog, lembar, petaBas });
+    const hasil = susunBarisBasMassal(sidang, { namaAkun, saringan, katalog, lembar, petaBas, antrian, saat });
 
     return ok({
       tanggal,
@@ -165,6 +174,10 @@ export async function GET(request: NextRequest) {
       jumlahSemua: hasil.jumlahSemua,
       jumlahSaya: hasil.jumlahSaya,
       lembarTerbaca,
+      // 9 Okt 2026: saat WITA yang dipakai batas 14.00 dan terbaca tidaknya antrian.
+      saat,
+      jamBatasKehadiran: JAM_BATAS_KEHADIRAN_BAS,
+      antrianTerbaca: Boolean(antrian && antrian.terbaca === true),
       katalog: Object.fromEntries(Object.entries(katalog).map(([f, k]) => [f, { terbaca: k.terbaca, sebab: k.sebab }])),
       sidang: hasil.baris,
     });

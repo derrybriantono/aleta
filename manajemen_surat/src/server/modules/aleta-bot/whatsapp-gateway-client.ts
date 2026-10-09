@@ -1526,6 +1526,12 @@ export type SidangBaris = {
     hadirSebelumnya: number | null;
     /** Tergugat/termohon pernah hadir pada sidang mana pun sebelumnya. Sejak bot 2.19.4. */
     tergugatPernahHadir?: boolean;
+    /**
+     * Pihak pertama pernah hadir sebelumnya: true / false / null (ada sidang
+     * sebelumnya yang kehadirannya kosong). Sejak 9 Okt 2026 - BAS massal
+     * "gugur atau tunda panggil para pihak". Bot lama tidak mengirimnya.
+     */
+    penggugatPernahHadir?: boolean | null;
     wajibDipanggil: number[];
     belumDipanggil: number;
     retur: number;

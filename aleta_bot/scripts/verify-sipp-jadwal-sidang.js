@@ -520,6 +520,23 @@ console.log("\n== Panggilan: hanya sisi yang ada yang wajib dipanggil ==");
     periksa("penanda tidak bocor antar perkara", tergugatPernahHadir["71"] === false);
   }
   {
+    // 9 Okt 2026 (BAS massal tanpa kehadiran): pihak pertama pernah hadir -
+    // true / false / null. null bila ada sidang sebelumnya yang kosong:
+    // kehadiran yang tidak dicatat bukan bukti tidak hadir.
+    const { penggugatPernahHadir } = layanan.kehadiranSebelumnya([
+      { sidangId: 81, perkaraId: 900, tanggalSidang: "2026-08-01", dihadiriOleh: 4 },
+      { sidangId: 82, perkaraId: 900, tanggalSidang: "2026-08-15", dihadiriOleh: 3 },
+      { sidangId: 83, perkaraId: 900, tanggalSidang: "2026-08-30", dihadiriOleh: null },
+      { sidangId: 91, perkaraId: 901, tanggalSidang: "2026-08-01", dihadiriOleh: null },
+      { sidangId: 92, perkaraId: 901, tanggalSidang: "2026-08-15", dihadiriOleh: 2 },
+      { sidangId: 93, perkaraId: 901, tanggalSidang: "2026-08-30", dihadiriOleh: null },
+    ]);
+    periksa("sidang pertama: penggugat belum pernah hadir (false)", penggugatPernahHadir["81"] === false);
+    periksa("4 lalu 3: penggugat belum pernah hadir (false)", penggugatPernahHadir["83"] === false);
+    periksa("sidang sebelumnya kosong: tidak diketahui (null)", penggugatPernahHadir["92"] === null);
+    periksa("pernah hadir (sandi 2) mengalahkan yang kosong", penggugatPernahHadir["93"] === true);
+  }
+  {
     bersihkan();
     jawaban = {
       sidang: [

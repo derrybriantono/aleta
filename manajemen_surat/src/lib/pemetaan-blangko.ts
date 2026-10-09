@@ -536,6 +536,13 @@ export function kapanDipakaiPutusan(kunci: string): { dikenal: boolean; dipakai:
  * "lanjutan" +2, kehadiran tepat +1. Tidak ada yang cocok = BAS massal
  * memakai usulan otomatisnya dari katalog (perilaku sebelum ini).
  *
+ * FORMAT TANPA KEHADIRAN (keputusan pengguna 9 Okt 2026): bagian sidang
+ * "gugur" atau "tunda-panggil" hanya dipakai untuk sidang yang LEWAT pukul
+ * 14.00 WITA tanpa kehadiran sama sekali (tidak tercatat di SIPP, tidak
+ * mengambil nomor antrian) - BAS massal lalu mengusulkan putus gugur atau
+ * tunda panggil para pihak. Nilainya +16 dan kunci biasa tidak berlaku bagi
+ * sidang itu; sebaliknya kunci format tidak pernah cocok dengan sidang lain.
+ *
  * PENYIMPANAN TANPA MIGRASI: CHECK migrasi 0054 hanya menerima jenis
  * putusan/relaas/pbt. Baris BAS disimpan berjenis 'relaas' dengan kunci
  * berawalan "bas|" (lihat modul server) - kunci relaas biasa tidak pernah
@@ -561,6 +568,28 @@ export const AGENDA_BAS: Record<string, RegExp> = {
   kesimpulan: /kesimpulan/i,
 };
 
+/**
+ * Bagian sidang khusus "format tanpa kehadiran" (9 Okt 2026). Diperiksa
+ * SEBELUM pola lanjutan/tunda: "tunda-panggil" memuat kata "tunda".
+ */
+export const FORMAT_BAS_TANPA_HADIR = ["gugur", "tunda-panggil"] as const;
+export type FormatBasTanpaHadir = (typeof FORMAT_BAS_TANPA_HADIR)[number];
+
+/**
+ * Nama blangko untuk format tanpa kehadiran. Garis bawah ikut diterima: ABT
+ * menyimpan "&" sebagai "_" pada nama berkas yang diunggah ("34-a. BAS Putus
+ * P _ T Tidak Hadir (Gugur).rtf" di server).
+ */
+export const POLA_BLANGKO_FORMAT: Record<FormatBasTanpaHadir, RegExp[]> = {
+  gugur: [/gugur/i, /\bp\s*(?:&|_|dan)\s*t\s+tidak\s+hadir/i],
+  "tunda-panggil": [/tunda\s+panggil\s+p\s*(?:&|_|dan)\s*t\b/i, /\bp\s*(?:&|_|dan)\s*t\s+tidak\s+hadir/i],
+};
+
+export function cocokPolaFormat(format: FormatBasTanpaHadir, namaBerkas: string): boolean {
+  const n = String(namaBerkas || "").replace(/\s+/g, " ");
+  return POLA_BLANGKO_FORMAT[format].every((r) => r.test(n));
+}
+
 /** Keadaan baku tab BAS per jenis perkara - urutan tampilan. */
 export const KEADAAN_BAS_BAKU = [
   { kunci: "1|semua-hadir", sebutan: "Sidang pertama - P & T hadir" },
@@ -572,6 +601,8 @@ export const KEADAAN_BAS_BAKU = [
   { kunci: "mediasi|*", sebutan: "Laporan mediasi" },
   { kunci: "pembuktian|*", sebutan: "Pembuktian" },
   { kunci: "putusan|*", sebutan: "Pembacaan putusan" },
+  { kunci: "gugur|*", sebutan: "Lewat 14.00 tanpa kehadiran - putus gugur" },
+  { kunci: "tunda-panggil|*", sebutan: "Lewat 14.00 tanpa kehadiran - tunda panggil para pihak" },
 ] as const;
 
 /** Jenis perkara yang punya set BAS di pohon-blangko.ts (SET_BLANGKO) - grup tab BAS. */
@@ -582,6 +613,9 @@ function normalkanBagianSidang(x: string): string {
   if (!k || k === "*" || k === "semua") return "*";
   const angka = /^(?:sidang\s*)?(?:ke\s*-?\s*)?(\d+)$/.exec(k) || /^bas\s*(\d+)$/.exec(k);
   if (angka) return String(Number(angka[1]));
+  // Format tanpa kehadiran lebih dulu - "tunda panggil" memuat "tunda".
+  if (/gugur/.test(k)) return "gugur";
+  if (/tunda[\s-]*panggil|panggil[\s-]*para[\s-]*pihak/.test(k)) return "tunda-panggil";
   if (/pertama/.test(k)) return "1";
   if (/lanjut|tunda/.test(k)) return "lanjutan";
   for (const nama of Object.keys(AGENDA_BAS)) if (k.includes(nama)) return nama;
@@ -610,12 +644,24 @@ export type UraianKunciBas = { jenis: string; sidang: string; kehadiran: string;
 
 export function uraiKunciBas(kunci: string): UraianKunciBas {
   const [jenis, sidang, kehadiran] = normalkanKunciBas(rapat(kunci, 120)).split("|");
-  const sidangDikenal = sidang === "*" || sidang === "lanjutan" || /^\d+$/.test(sidang) || sidang in AGENDA_BAS;
+  const sidangDikenal =
+    sidang === "*" ||
+    sidang === "lanjutan" ||
+    /^\d+$/.test(sidang) ||
+    sidang in AGENDA_BAS ||
+    (FORMAT_BAS_TANPA_HADIR as readonly string[]).includes(sidang);
   const hadirDikenal = kehadiran === "*" || KEHADIRAN_BAS.some((h) => h.kode === kehadiran);
   return { jenis, sidang, kehadiran, dikenal: sidangDikenal && hadirDikenal };
 }
 
-export type SidangBas = { jenisPerkara: string; urutanSidang: number; agenda?: string; dihadiriOleh: number | null };
+export type SidangBas = {
+  jenisPerkara: string;
+  urutanSidang: number;
+  agenda?: string;
+  dihadiriOleh: number | null;
+  /** Sidang lewat 14.00 tanpa kehadiran (9 Okt 2026) - hanya kunci format yang berlaku. */
+  format?: FormatBasTanpaHadir;
+};
 
 export function nilaiKunciBas(kunci: string, s: SidangBas): number {
   const u = uraiKunciBas(kunci);
@@ -625,7 +671,13 @@ export function nilaiKunciBas(kunci: string, s: SidangBas): number {
     if (kunciJenisPerkara(u.jenis) !== kunciJenisPerkara(s.jenisPerkara)) return -1;
     nilai += 8;
   }
-  if (u.sidang !== "*") {
+  const kunciFormat = (FORMAT_BAS_TANPA_HADIR as readonly string[]).includes(u.sidang);
+  if (kunciFormat || s.format) {
+    // Kunci format hanya bagi sidang berformat yang sama, dan sidang berformat
+    // hanya memakai kunci format.
+    if (!kunciFormat || s.format !== u.sidang) return -1;
+    nilai += 16;
+  } else if (u.sidang !== "*") {
     if (/^\d+$/.test(u.sidang)) {
       if (Number(u.sidang) !== Number(s.urutanSidang)) return -1;
       nilai += 4;
@@ -663,14 +715,19 @@ export function kapanDipakaiBas(kunci: string): { dikenal: boolean; dipakai: str
     return { dikenal: false, dipakai: `Bagian "${u.sidang}|${u.kehadiran}" tidak dikenali - disimpan, tetapi tidak dipilih otomatis.` };
   }
   const jenis = u.jenis === "*" ? "semua jenis perkara" : u.jenis;
+  const SEBUTAN_FORMAT: Record<string, string> = {
+    gugur: "sidang lewat 14.00 tanpa kehadiran yang diusulkan putus gugur",
+    "tunda-panggil": "sidang lewat 14.00 tanpa kehadiran yang diusulkan tunda panggil para pihak",
+  };
   const sidang =
-    u.sidang === "*"
+    SEBUTAN_FORMAT[u.sidang] ??
+    (u.sidang === "*"
       ? "sidang mana pun"
       : /^\d+$/.test(u.sidang)
         ? `sidang ke-${u.sidang}`
         : u.sidang === "lanjutan"
           ? "sidang ke-2 dst."
-          : `agenda ${u.sidang}`;
+          : `agenda ${u.sidang}`);
   const hadir = u.kehadiran === "*" ? "" : `, ${KEHADIRAN_BAS.find((h) => h.kode === u.kehadiran)?.sebutan}`;
   return { dikenal: true, dipakai: `BAS ${jenis} - ${sidang}${hadir}.` };
 }
@@ -721,6 +778,12 @@ export function saranBasDariKatalog(
         if (!berkas) continue;
         const ke = Number(item.basKe) || 0;
         const teksSemua = `${String(item.keadaan ?? "")} ${String(item.tindakan ?? "")} ${String(item.judul ?? "")} ${berkas}`;
+        if ((FORMAT_BAS_TANPA_HADIR as readonly string[]).includes(u.sidang)) {
+          // Format tanpa kehadiran: menurut nama blangkonya saja.
+          if (!cocokPolaFormat(u.sidang as FormatBasTanpaHadir, berkas)) continue;
+          pilih = { berkas, folder: s.folder };
+          break;
+        }
         if (/^\d+$/.test(u.sidang) && ke !== Number(u.sidang)) continue;
         if (u.sidang === "lanjutan" && ke !== 2) continue;
         if (u.sidang in AGENDA_BAS && !AGENDA_BAS[u.sidang].test(teksSemua)) continue;

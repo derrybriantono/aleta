@@ -28,8 +28,12 @@
  *      perkara: BAS sidang itu sudah/belum diunggah ke SIPP, saksi yang
  *      diajukan, lembar BAS di ALETA, kehadiran yang tercatat.
  *   2. Blangko BAS diusulkan dari set yang cocok dengan jenis perkaranya pada
- *      jenjang "BAS <urutan sidang>" - hanya bila keadaan di nama blangko
- *      cocok dengan kehadiran di SIPP; selain itu dipilih petugas.
+ *      jenjang "BAS <urutan sidang>" - bila kehadiran tercatat di SIPP,
+ *      hanya bila keadaan di nama blangko cocok dengannya. Sejak 9 Okt 2026
+ *      kehadiran yang belum tercatat juga mendapat usulan: dari antrian
+ *      sidang, atau perkiraan bertanda "belum hadir"; lewat 14.00 WITA tanpa
+ *      kehadiran: putus gugur atau tunda panggil para pihak (susun.ts).
+ *      Petugas tetap dapat mengganti pilihannya.
  *   3. Pratinjau (GET bas/periksa): berapa penanda terisi dari SIPP, lembar
  *      ALETA, dan keterangan saksi yang sudah terekam di ABT; apa yang masih
  *      kosong dan harus dilengkapi.
@@ -1223,7 +1227,16 @@ function basmassalGambarBaris(daftar, baris, konteks) {
   const status = basmassalEl("div", "aleta-basmassal-status");
   if (baris.basSipp === true) status.appendChild(basmassalTanda("BAS sudah di SIPP", "baik", "BAS sidang ini sudah diunggah ke SIPP."));
   else if (baris.basSipp === false) status.appendChild(basmassalTanda("BAS belum di SIPP", "belum", "BAS sidang ini belum diunggah ke SIPP."));
-  status.appendChild(basmassalTanda(baris.kehadiran, "", "Kehadiran menurut jadwal sidang SIPP."));
+  // 9 Okt 2026: tanda kehadiran dari server (SIPP / antrian / belum hadir /
+  // lewat 14.00). Server lama tanpa tandaKehadiran: kalimat SIPP seperti dulu.
+  const tk = baris.tandaKehadiran;
+  if (tk && tk.teks) {
+    status.appendChild(
+      basmassalTanda(tk.teks, tk.keadaan === "tercatat" ? "" : "belum", tk.judul || "Kehadiran menurut jadwal sidang SIPP.")
+    );
+  } else {
+    status.appendChild(basmassalTanda(baris.kehadiran, "", "Kehadiran menurut jadwal sidang SIPP."));
+  }
   const saksi = baris.saksi || { pihak1: 0, pihak2: 0, nama1: [], nama2: [] };
   if (saksi.pihak1 + saksi.pihak2 > 0) {
     status.appendChild(
@@ -1276,7 +1289,24 @@ function basmassalGambarBaris(daftar, baris, konteks) {
     tanda.classList.add("aleta-p3-dari-peta");
     barisBlangko.appendChild(tanda);
   }
+  // 9 Okt 2026: usulan tanpa kehadiran tercatat - ditandai, petugas tetap
+  // dapat mengganti pilihannya di daftar di sebelahnya.
+  const fmt = baris.formatTanpaHadir;
+  if (b.usulan && b.usulan.format && fmt) {
+    barisBlangko.appendChild(
+      basmassalTanda(
+        `usulan: ${fmt.jenis === "gugur" ? "putus gugur" : "tunda panggil para pihak"}${fmt.ragu ? " (ragu)" : ""}`,
+        "belum",
+        (Array.isArray(fmt.dasar) ? fmt.dasar.join(" ") : fmt.alasan) || ""
+      )
+    );
+  } else if (b.usulan && b.usulan.perkiraan) {
+    barisBlangko.appendChild(
+      basmassalTanda("usulan perkiraan", "belum", "Kehadiran belum tercatat - blangko diusulkan menurut urutan sidang, agenda, dan keadaan perkara. Periksa kembali.")
+    );
+  }
   akar.appendChild(barisBlangko);
+  if (fmt && fmt.alasan) akar.appendChild(basmassalEl("div", "aleta-basmassal-lembut", fmt.alasan));
   if (b.sebab) akar.appendChild(basmassalEl("div", "aleta-basmassal-lembut", b.sebab));
 
   const aksi = basmassalEl("div", "aleta-basmassal-aksi");
@@ -1431,7 +1461,9 @@ function basmassalGambar(akar, konteks) {
       "div",
       "aleta-teknis",
       "Sumber: jadwal SIPP (edoc BAS, saksi, dihadiri_oleh) lewat ALETA Bot, katalog blangko APS Badilag, lembar " +
-        "aleta_bas_lembar. Usulan blangko hanya bila keadaan di nama blangko cocok dengan kehadiran. Pratinjau = " +
+        "aleta_bas_lembar, antrian sidang. Kehadiran tercatat di SIPP: usulan hanya bila keadaan di nama blangko cocok. " +
+        "Belum tercatat: usulan perkiraan (bertanda belum hadir); lewat 14.00 WITA tanpa kehadiran: usulan putus gugur " +
+        "atau tunda panggil para pihak - ragu selalu tunda. Pratinjau = " +
         "GET bas/periksa, Unduh = GET bas/naskah (blangko asli ABT, RTF). Tidak ada yang ditulis ke SIPP, ABT, maupun ALETA."
     )
   );
@@ -1529,9 +1561,14 @@ function basmassalGambar(akar, konteks) {
     }
     const belumSipp = sidang.filter((s) => s.basSipp === false).length;
     const berUsulan = sidang.filter((s) => s.blangko && s.blangko.usulan).length;
+    // 9 Okt 2026: berapa yang kehadirannya belum tercatat / lewat 14.00.
+    const belumHadir = sidang.filter((s) => s.tandaKehadiran && s.tandaKehadiran.keadaan === "belum-hadir").length;
+    const lewatBatas = sidang.filter((s) => s.tandaKehadiran && s.tandaKehadiran.keadaan === "lewat-batas").length;
     basmassalKabar(
       kabar,
-      `${sidang.length} perkara bersidang${belumSipp ? ` · ${belumSipp} BAS belum di SIPP` : ""} · ${berUsulan} blangko terusul`,
+      `${sidang.length} perkara bersidang${belumSipp ? ` · ${belumSipp} BAS belum di SIPP` : ""} · ${berUsulan} blangko terusul` +
+        (belumHadir ? ` · ${belumHadir} belum hadir` : "") +
+        (lewatBatas ? ` · ${lewatBatas} lewat 14.00 tanpa kehadiran` : ""),
       ""
     );
     if (d.saringan === "semua" && basmassalPerUserBoleh(konteks.peranAktif)) {

@@ -29,9 +29,35 @@
  * dicatat, atau nama yang tidak menyebut kehadiran, tidak ditebak: seluruh
  * pilihan pada jenjang itu tetap ditawarkan, tanpa satu pun yang terpilih.
  *
+ * ============================================================================
+ * KEPUTUSAN PENGGUNA 9 OKT 2026 - USULAN WALAU KEHADIRAN BELUM TERCATAT
+ * ============================================================================
+ *
+ * Temuan uji U2: 79 dari 82 sidang 12-15 Okt belum berkehadiran pada pagi
+ * harinya, sehingga BAS massal tidak mengusulkan apa pun dan panitera
+ * pengganti memilih satu per satu. Sejak ini:
+ *
+ *   - kehadiran dibaca dari SIPP (dihadiri_oleh), lalu dari ANTRIAN SIDANG
+ *     (pihak yang mengambil nomor = hadir) bila SIPP belum mencatat;
+ *   - belum ada keduanya, sebelum 14.00 WITA: usulan PERKIRAAN menurut
+ *     urutan sidang, agenda, dan keadaan perkara (tergugat pernah hadir ->
+ *     contra), bertanda "belum hadir";
+ *   - lewat 14.00 WITA (atau hari sidangnya sudah lewat) tetap tanpa
+ *     kehadiran: format PUTUS GUGUR atau TUNDA PANGGIL PARA PIHAK menurut
+ *     tentukanFormatTanpaHadir - ragu selalu jatuh ke tunda.
+ *
+ * Petugas tetap dapat mengganti pilihannya. Kehadiran yang tercatat di SIPP
+ * tetap memakai aturan lama (usulan hanya bila cocok) tanpa perubahan.
+ *
  * Tidak ada yang ditulis ke mana pun oleh apa pun di sini.
  */
-import { pilihBlangkoBasPeta } from "@/lib/pemetaan-blangko";
+import {
+  AGENDA_BAS,
+  cocokPolaFormat,
+  pilihBlangkoBasPeta,
+  uraiKunciBas,
+  type FormatBasTanpaHadir,
+} from "@/lib/pemetaan-blangko";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
 
@@ -56,7 +82,70 @@ export type BarisSidangBas = {
   saksiPihak2?: unknown;
   saksiNamaPihak1?: unknown;
   saksiNamaPihak2?: unknown;
-  panggilan?: { tergugatPernahHadir?: unknown } | null;
+  /** 15 = Pdt.G (gugatan), 16 = Pdt.P (permohonan). 0/tidak ada = dibaca dari nomor perkara. */
+  alurPerkaraId?: unknown;
+  sidangIkrarTalak?: unknown;
+  panggilan?: {
+    tergugatPernahHadir?: unknown;
+    /** true / false / null - bot sejak 9 Okt 2026; tidak ada = bot lama. */
+    penggugatPernahHadir?: unknown;
+    hadirSebelumnya?: unknown;
+    wajibDipanggil?: unknown;
+    belumDipanggil?: unknown;
+    sisiBelumDipanggil?: unknown;
+    retur?: unknown;
+    relaasTanpaKedudukan?: unknown;
+    tenggangMepet?: unknown;
+    tenggangTersempit?: { patut?: unknown; dinilai?: unknown; alasan?: unknown } | null;
+  } | null;
+};
+
+/** Baris peta antrian bot (AntrianBarisGateway) yang dipakai: tanggal dan jam ambil tiap sisi. */
+export type AntrianBarisBas = { tanggalSidang?: unknown; pihak1?: unknown; pihak2?: unknown };
+
+/** jawaban.antrian dari jadwal bot - berkunci perkara_id; tabelnya hanya memuat hari berjalan. */
+export type AntrianBas = {
+  terbaca?: unknown;
+  tanggal?: unknown;
+  peta?: Record<string, AntrianBarisBas | undefined> | null;
+} | null;
+
+/** Saat menurut WITA (waktuPengadilan): tanggal YYYY-MM-DD dan jam HH:MM:SS. */
+export type SaatBas = { tanggal: string; jam: string };
+
+/** Keputusan pengguna 9 Okt 2026: "perkara yang sudah sampai jam 2 tidak ada kehadirannya". */
+export const JAM_BATAS_KEHADIRAN_BAS = "14:00:00";
+
+/**
+ * Folder ABT umum yang memuat blangko format tanpa kehadiran. Set derry
+ * (pohon-blangko.ts) punya "Tunda Panggil P & T" untuk BAS 1 dan 2 perceraian,
+ * tetapi tidak satu pun BAS gugur - yang ada di "3 BAS Putus Standar" (34-a).
+ * Untuk perkara selain perceraian, "Tunda Panggil P dan T" sidang pertama
+ * ada di "1 BAS Pertama Standar" (02-a).
+ */
+export const FOLDER_BAS_FORMAT = ["berita_acara_sidang/3 BAS Putus Standar", "berita_acara_sidang/1 BAS Pertama Standar"];
+
+/** Nama blangko yang dibutuhkan bila katalog tidak memuatnya - disebut di layar, bukan ditebak. */
+export const BLANGKO_FORMAT_DIBUTUHKAN: Record<FormatBasTanpaHadir, string> = {
+  gugur: "BAS Putus P & T Tidak Hadir (Gugur)",
+  "tunda-panggil": "BAS P & T Tidak Hadir - Tunda Panggil P & T",
+};
+
+export type KehadiranPt = { p: boolean | null; t: boolean | null };
+
+export type KeadaanKehadiranBas = "tercatat" | "antrian" | "belum-hadir" | "lewat-batas";
+
+/** Tanda kehadiran satu baris - dibaca ekstensi; teksnya sudah siap tampil. */
+export type TandaKehadiranBas = { keadaan: KeadaanKehadiranBas; teks: string; judul: string };
+
+/** Format sidang lewat 14.00 tanpa kehadiran. ragu = data tidak cukup untuk gugur. */
+export type FormatTanpaHadir = {
+  jenis: FormatBasTanpaHadir;
+  ragu: boolean;
+  /** Kalimat penentu - satu baris di layar. */
+  alasan: string;
+  /** Seluruh pertimbangan yang terbaca, untuk keterangan. */
+  dasar: string[];
 };
 
 /** Satu blangko dari katalog bot (blangko.katalog) - bentuk BlangkoItem. */
@@ -84,6 +173,10 @@ export type PilihanBlangkoBas = {
   kehadiran: KecocokanKehadiran;
   /** Perbaikan 2 Okt sore (butir 8): kunci Pemetaan blangko BAS yang memilihnya. Tanpa = usulan otomatis. */
   dariPemetaan?: string;
+  /** 9 Okt 2026: usulan menurut PERKIRAAN kehadiran (belum tercatat) - periksa kembali. */
+  perkiraan?: boolean;
+  /** 9 Okt 2026: blangko format lewat 14.00 tanpa kehadiran. */
+  format?: FormatBasTanpaHadir;
 };
 
 export type RingkasLembar = { jumlah: number; selesai: number; draf: number };
@@ -103,6 +196,10 @@ export type BarisBasMassal = {
   urutanSidang: number;
   dihadiriOleh: number | null;
   kehadiran: string;
+  /** 9 Okt 2026: tercatat (SIPP) / antrian / belum-hadir / lewat-batas, beserta teks tandanya. */
+  tandaKehadiran: TandaKehadiranBas;
+  /** 9 Okt 2026: terisi hanya bila lewat 14.00 tanpa kehadiran sama sekali. */
+  formatTanpaHadir: FormatTanpaHadir | null;
   /** null = bot lama tidak mengirim ruasnya (BUKAN "belum ada"). */
   basSipp: boolean | null;
   paniteraNama: string;
@@ -195,11 +292,162 @@ function kehadiranSipp(dihadiriOleh: number | null): { p: boolean; t: boolean } 
 }
 
 export function cocokKehadiran(keadaan: string, dihadiriOleh: number | null): KecocokanKehadiran {
-  const sipp = kehadiranSipp(dihadiriOleh);
+  return cocokKehadiranPt(keadaan, kehadiranSipp(dihadiriOleh));
+}
+
+/**
+ * Kecocokan nama blangko dengan kehadiran per sisi (9 Okt 2026). Sisi yang
+ * belum diketahui (null) tidak dibandingkan; nama yang menyebut sisi itu
+ * saja yang diketahui tidak dinyatakan cocok - "tidak-diketahui".
+ */
+export function cocokKehadiranPt(keadaan: string, pt: KehadiranPt | null): KecocokanKehadiran {
   const nama = kehadiranDiNama(keadaan);
-  if (!sipp || (nama.p === null && nama.t === null)) return "tidak-diketahui";
-  if ((nama.p !== null && nama.p !== sipp.p) || (nama.t !== null && nama.t !== sipp.t)) return "bertentangan";
+  if (!pt || (pt.p === null && pt.t === null) || (nama.p === null && nama.t === null)) return "tidak-diketahui";
+  if ((nama.p !== null && pt.p !== null && nama.p !== pt.p) || (nama.t !== null && pt.t !== null && nama.t !== pt.t)) {
+    return "bertentangan";
+  }
+  if ((nama.p !== null && pt.p === null) || (nama.t !== null && pt.t === null)) return "tidak-diketahui";
   return "cocok";
+}
+
+/** Kehadiran per sisi -> sandi dihadiri_oleh (untuk Pemetaan blangko); null bila ada sisi yang belum diketahui. */
+export function sandiDariPt(pt: KehadiranPt | null): number | null {
+  if (!pt || pt.p === null || pt.t === null) return null;
+  if (pt.p && pt.t) return 1;
+  if (pt.p) return 2;
+  if (pt.t) return 3;
+  return 4;
+}
+
+/**
+ * Kehadiran menurut ANTRIAN SIDANG pada hari sidang itu: sisi yang
+ * mengambil nomor = hadir. null = antrian tidak dapat menjawab hari itu
+ * (tidak terbaca, atau tabelnya memuat hari lain - aplikasi antrian hanya
+ * menyimpan hari berjalan). Perkara yang tidak ada di peta padahal hari itu
+ * terbaca = tidak satu pun pihak mengambil nomor.
+ */
+export function kehadiranDariAntrian(
+  antrian: AntrianBas | undefined,
+  perkaraId: string,
+  tanggalSidang: string
+): { p: boolean; t: boolean } | null {
+  if (!antrian || antrian.terbaca !== true || !tanggalSidang) return null;
+  const peta = antrian.peta && typeof antrian.peta === "object" ? antrian.peta : {};
+  const baris = perkaraId ? peta[perkaraId] : undefined;
+  if (baris && teks(baris.tanggalSidang).slice(0, 10) === tanggalSidang) {
+    return { p: Boolean(teks(baris.pihak1)), t: Boolean(teks(baris.pihak2)) };
+  }
+  const hari = Array.isArray(antrian.tanggal) ? antrian.tanggal.map((x) => teks(x).slice(0, 10)) : [];
+  return hari.includes(tanggalSidang) ? { p: false, t: false } : null;
+}
+
+/** Hari sidang sudah lewat, atau hari ini pukul 14.00 WITA atau sesudahnya. Saat kosong = tidak pernah lewat. */
+export function lewatBatasKehadiran(tanggalSidang: string, saat: SaatBas | null | undefined): boolean {
+  if (!saat || !saat.tanggal || !tanggalSidang) return false;
+  if (tanggalSidang < saat.tanggal) return true;
+  return tanggalSidang === saat.tanggal && String(saat.jam || "") >= JAM_BATAS_KEHADIRAN_BAS;
+}
+
+/**
+ * ============================================================================
+ * GUGUR ATAU TUNDA PANGGIL PARA PIHAK - LEWAT 14.00 TANPA KEHADIRAN
+ * ============================================================================
+ *
+ * Pasal 124 HIR / Pasal 148 RBg (PA Donggala di luar Jawa-Madura: RBg):
+ * penggugat yang tidak datang pada hari sidang yang ditentukan, padahal
+ * telah dipanggil dengan patut, gugatannya dinyatakan gugur. Pasal 126 HIR /
+ * Pasal 150 RBg membolehkan hakim memanggil sekali lagi - karena itu
+ * GUGUR hanya diusulkan bila SELURUH syarat terbaca pasti dari data:
+ *
+ *   1. perkara gugatan (alur 15 / nomor "Pdt.G" - cerai talak ikut);
+ *      permohonan (Pdt.P) tidak digugurkan -> tunda;
+ *   2. bukan sidang ikrar talak (Pasal 70 ayat 6 UU 7/1989 - bukan 124
+ *      HIR) dan perkaranya belum putus;
+ *   3. penggugat BELUM PERNAH hadir pada sidang sebelumnya
+ *      (panggilan.penggugatPernahHadir === false; sidang pertama = belum).
+ *      Yang pernah hadir lalu tidak datang tidak digugurkan -> tunda.
+ *      Ada sidang sebelumnya yang kehadirannya kosong -> ragu;
+ *   4. relaas penggugat untuk sidang ini ADA (sisi 1 tidak di
+ *      sisiBelumDipanggil), tidak ada retur, tenggangnya patut (tidak mepet,
+ *      tenggang tersempit patut), dan tidak ada relaas tanpa kedudukan pihak
+ *      (relaas itu tidak pasti milik penggugat);
+ *   5. ketidakhadirannya terbaca dari antrian hari itu juga (antrian
+ *      terbaca, penggugat tidak mengambil nomor) - bukan hanya dari SIPP
+ *      yang kosong.
+ *
+ * Selebihnya TUNDA PANGGIL PARA PIHAK. Yang kurang datanya ditandai ragu -
+ * ALETA tidak pernah menebak gugur.
+ */
+export function tentukanFormatTanpaHadir(
+  s: BarisSidangBas,
+  opsi: { antrianTerbaca: boolean }
+): FormatTanpaHadir {
+  const dasar: string[] = [];
+  const tunda = (alasan: string, ragu: boolean): FormatTanpaHadir => ({
+    jenis: "tunda-panggil",
+    ragu,
+    alasan,
+    dasar: [...dasar, alasan],
+  });
+  const nomor = teks(s.nomorPerkara);
+  const alur = angka(s.alurPerkaraId);
+  const permohonan = alur === 16 || (alur === 0 && /\/pdt\.p\//i.test(nomor));
+  const gugatan = alur === 15 || (alur === 0 && /\/pdt\.g\//i.test(nomor));
+  if (permohonan) return tunda("Perkara permohonan (Pdt.P) tidak digugurkan - ditunda untuk memanggil Pemohon.", false);
+  if (!gugatan) return tunda("Jenis alur perkara (gugatan/permohonan) tidak terbaca.", true);
+  if (s.sidangIkrarTalak === true) {
+    return tunda("Sidang ikrar talak - berlaku Pasal 70 ayat (6) UU 7/1989, bukan pengguguran Pasal 124 HIR.", false);
+  }
+  if (s.sudahPutus === true) return tunda("Perkara sudah diputus - pengguguran tidak berlaku.", false);
+
+  const pg = s.panggilan;
+  if (!pg || !Array.isArray(pg.wajibDipanggil)) {
+    return tunda("Keadaan panggilan sidang ini tidak terbaca dari server.", true);
+  }
+  const urutan = angka(s.urutanSidang);
+  let pernah: boolean | null;
+  if (pg.penggugatPernahHadir === true || pg.penggugatPernahHadir === false) pernah = pg.penggugatPernahHadir;
+  else if (pg.penggugatPernahHadir === null) pernah = null;
+  else if (urutan === 1) pernah = false; // bot lama: sidang pertama belum punya sidang sebelumnya
+  else {
+    const sebelum = pg.hadirSebelumnya === null || pg.hadirSebelumnya === undefined ? null : angka(pg.hadirSebelumnya);
+    pernah = sebelum === 1 || sebelum === 2 ? true : null;
+  }
+  if (pernah === true) {
+    return tunda(
+      "Penggugat pernah hadir pada sidang sebelumnya - tidak digugurkan (Pasal 124 HIR / 148 RBg bagi penggugat yang tidak pernah datang); ditunda untuk memanggil para pihak.",
+      false
+    );
+  }
+  if (pernah === null) {
+    return tunda("Kehadiran sidang sebelumnya ada yang belum dicatat - tidak pasti penggugat belum pernah hadir.", true);
+  }
+  dasar.push(urutan === 1 ? "Sidang pertama - penggugat belum pernah hadir." : "Penggugat belum pernah hadir pada sidang sebelumnya.");
+
+  const wajib = (pg.wajibDipanggil as unknown[]).map(angka);
+  const sisiBelum = Array.isArray(pg.sisiBelumDipanggil) ? pg.sisiBelumDipanggil.map(angka) : null;
+  if (sisiBelum ? sisiBelum.includes(1) : angka(pg.belumDipanggil) > 0) {
+    return tunda("Relaas panggilan penggugat untuk sidang ini belum ada - panggilan belum terbukti patut.", sisiBelum === null);
+  }
+  if (!wajib.includes(1)) {
+    return tunda("Penggugat tidak termasuk pihak yang dipanggil untuk sidang ini - panggilannya tidak terbaca.", true);
+  }
+  if (angka(pg.retur) > 0) return tunda("Ada relaas yang kembali (retur) - panggilan belum pasti patut.", true);
+  if (angka(pg.relaasTanpaKedudukan) > 0) {
+    return tunda("Ada relaas tanpa kedudukan pihak - tidak pasti relaas penggugat sudah patut.", true);
+  }
+  if (pg.tenggangMepet === true) return tunda("Tenggang panggilan kurang dari ambangnya - panggilan tidak patut.", false);
+  const tersempit = pg.tenggangTersempit;
+  if (!tersempit) return tunda("Tenggang panggilan tidak terbaca - kepatutannya tidak dapat dinilai.", true);
+  if (tersempit.patut === false) return tunda("Panggilan tidak patut menurut tenggangnya.", false);
+  if (tersempit.patut !== true) return tunda("Kepatutan panggilan belum dapat dinilai (mis. surat tercatat belum terbukti diterima).", true);
+  dasar.push("Relaas penggugat untuk sidang ini ada, tidak retur, dan tenggangnya patut.");
+  if (!opsi.antrianTerbaca) {
+    return tunda("Antrian sidang hari itu tidak terbaca - ketidakhadiran hanya menurut SIPP yang kosong.", true);
+  }
+  const alasan =
+    "Penggugat tidak hadir (tidak tercatat di SIPP, tidak mengambil nomor antrian) padahal telah dipanggil resmi dan patut - Pasal 124 HIR / Pasal 148 RBg.";
+  return { jenis: "gugur", ragu: false, alasan, dasar: [...dasar, alasan] };
 }
 
 /** Nama terbaca satu blangko di dalam jenjangnya (setara labelBlangko pohon-blangko.ts). */
@@ -242,9 +490,121 @@ export function pilihBlangkoBas(masukan: {
   /** Perbaikan 2 Okt sore (butir 8): Pemetaan blangko BAS { kunci: nama berkas } dan agenda sidang. */
   petaBas?: Record<string, string>;
   agenda?: string;
+  /**
+   * 9 Okt 2026: kehadiran per sisi dari SIPP ATAU antrian. Tidak diisi =
+   * dari dihadiriOleh (perilaku lama). null/sebagian + perkiraan = usulan
+   * menurut perkiraan (P hadir; T hadir bila contra).
+   */
+  kehadiranPt?: KehadiranPt | null;
+  perkiraan?: boolean;
+  /** 9 Okt 2026: lewat 14.00 tanpa kehadiran - blangko format gugur / tunda panggil para pihak. */
+  format?: FormatTanpaHadir | null;
 }): { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string } {
+  if (masukan.format) return pilihBlangkoFormat(masukan, masukan.format);
   const otomatis = pilihBlangkoBasOtomatis(masukan);
   return terapkanPetaBas(otomatis, masukan);
+}
+
+/**
+ * ============================================================================
+ * BLANGKO FORMAT TANPA KEHADIRAN (9 OKT 2026)
+ * ============================================================================
+ *
+ * Urutan: Pemetaan blangko > BAS berkunci "<jenis>|gugur|*" atau
+ * "<jenis>|tunda-panggil|*" -> katalog set jenis perkaranya -> folder ABT
+ * umum (FOLDER_BAS_FORMAT). Nama dicocokkan POLA_BLANGKO_FORMAT; jenjang
+ * "BAS N" yang sama dengan urutan sidang (BAS 2 untuk lanjutan) lebih dulu,
+ * dan blangko "BAS Pertama" hanya untuk sidang pertama. Kedua format SELALU
+ * ada di pilihan (bila ditemukan) supaya petugas dapat menukarnya, lalu
+ * pilihan otomatis jenjang itu.
+ */
+function pilihBlangkoFormat(
+  masukan: Parameters<typeof pilihBlangkoBas>[0],
+  format: FormatTanpaHadir
+): { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string } {
+  const pt: KehadiranPt = { p: false, t: false };
+  const otomatis = pilihBlangkoBasOtomatis({ ...masukan, kehadiranPt: pt, perkiraan: false, format: null });
+  const set = setBasUntukPerkara(masukan.jenisPerkara);
+  const contra = contraLebihDulu(null, masukan.tergugatPernahHadir);
+  const urutSet = [...set].sort((a, b) => {
+    const n = (id: string) => (id === "bas-contra" ? (contra ? 0 : 1) : id === "bas-verstek" ? (contra ? 1 : 0) : 2);
+    return n(a.id) - n(b.id);
+  });
+  const folder = [...new Set([...urutSet.map((s) => s.folder), ...FOLDER_BAS_FORMAT])];
+  const jenjang = Math.min(Math.max(masukan.urutanSidang, 1), 2);
+
+  const buat = (f: string, item: BlangkoKatalog, jenis: FormatBasTanpaHadir, dariPemetaan?: string): PilihanBlangkoBas => {
+    const s = set.find((x) => x.folder === f);
+    return {
+      folder: f,
+      berkas: teks(item.berkas),
+      setId: s ? s.id : "",
+      setNama: s ? s.nama : f.split("/").pop() || f,
+      basKe: angka(item.basKe),
+      label: labelBlangkoBas(item),
+      kehadiran: cocokKehadiranPt(teks(item.keadaan), pt),
+      format: jenis,
+      ...(dariPemetaan ? { dariPemetaan } : {}),
+    };
+  };
+
+  const cari = (jenis: FormatBasTanpaHadir): PilihanBlangkoBas | null => {
+    // Pemetaan admin - hanya kunci format.
+    if (masukan.petaBas) {
+      const petaFormat = Object.fromEntries(
+        Object.entries(masukan.petaBas).filter(([k]) => uraiKunciBas(k).sidang === jenis)
+      );
+      const cocok = pilihBlangkoBasPeta(petaFormat, {
+        jenisPerkara: masukan.jenisPerkara,
+        urutanSidang: masukan.urutanSidang,
+        agenda: masukan.agenda,
+        dihadiriOleh: null,
+        format: jenis,
+      });
+      if (cocok) {
+        const dicari = kunciBerkasBas(cocok.namaBerkas);
+        for (const f of [...new Set([...folder, ...Object.keys(masukan.katalog)])]) {
+          const k = masukan.katalog[f];
+          const item = k && k.terbaca ? k.blangko.find((b) => kunciBerkasBas(b.berkas) === dicari) : undefined;
+          if (item) return buat(f, item, jenis, cocok.kunci);
+        }
+      }
+    }
+    let terbaik: { p: PilihanBlangkoBas; nilai: number } | null = null;
+    folder.forEach((f, iFolder) => {
+      const k = masukan.katalog[f];
+      if (!k || !k.terbaca) return;
+      for (const item of k.blangko) {
+        const berkas = teks(item.berkas);
+        if (!berkas || !cocokPolaFormat(jenis, berkas)) continue;
+        const pertama = /\bpertama\b/i.test(berkas);
+        if (pertama && masukan.urutanSidang > 1) continue;
+        const ke = angka(item.basKe);
+        if (ke > 0 && ke !== jenjang) continue;
+        // Folder lebih dulu (set jenis perkara sebelum folder umum), lalu nama.
+        const nilai = iFolder * 1000 + (ke === jenjang ? 0 : 1);
+        if (!terbaik || nilai < terbaik.nilai || (nilai === terbaik.nilai && berkas.localeCompare(terbaik.p.berkas, "id") < 0)) {
+          terbaik = { p: buat(f, item, jenis), nilai };
+        }
+      }
+    });
+    return terbaik ? (terbaik as { p: PilihanBlangkoBas }).p : null;
+  };
+
+  const gugur = cari("gugur");
+  const tundaPanggil = cari("tunda-panggil");
+  const usulan = format.jenis === "gugur" ? gugur : tundaPanggil;
+  const urut = format.jenis === "gugur" ? [gugur, tundaPanggil] : [tundaPanggil, gugur];
+  const pilihan: PilihanBlangkoBas[] = [];
+  for (const p of [...urut, ...otomatis.pilihan]) {
+    if (!p) continue;
+    if (pilihan.some((x) => x.folder === p.folder && kunciBerkasBas(x.berkas) === kunciBerkasBas(p.berkas))) continue;
+    pilihan.push(p);
+  }
+  const sebab = usulan
+    ? ""
+    : `Blangko "${BLANGKO_FORMAT_DIBUTUHKAN[format.jenis]}"${format.jenis === "tunda-panggil" && masukan.urutanSidang > 1 ? " untuk sidang lanjutan" : ""} belum ada di katalog yang terbaca - pilih blangkonya sendiri, atau atur di Pemetaan blangko > BAS (kunci "${format.jenis}").`;
+  return { usulan, pilihan: pilihan.slice(0, BATAS_PILIHAN_BLANGKO), sebab };
 }
 
 /** Nama berkas dibandingkan: huruf kecil, spasi tunggal, tanpa .rtf - sama dengan alatKunciBerkas ekstensi. */
@@ -295,9 +655,16 @@ function terapkanPetaBas(
       label: labelBlangkoBas(item),
       kehadiran: cocokKehadiran(teks(item.keadaan), masukan.dihadiriOleh),
       dariPemetaan: cocok.kunci,
+      // 9 Okt 2026: kunci pemetaan tanpa kehadiran yang dipakai sebelum
+      // kehadiran tercatat tetap ditandai perkiraan.
+      ...(masukan.perkiraan && masukan.dihadiriOleh === null ? { perkiraan: true } : {}),
     };
     const lain = otomatis.pilihan.filter((x) => !(x.folder === p.folder && kunciBerkasBas(x.berkas) === dicari));
-    return { usulan: p, pilihan: [p, ...lain].slice(0, BATAS_PILIHAN_BLANGKO), sebab: "" };
+    return {
+      usulan: p,
+      pilihan: [p, ...lain].slice(0, BATAS_PILIHAN_BLANGKO),
+      sebab: p.perkiraan ? otomatis.sebab : "",
+    };
   }
   return {
     usulan: null,
@@ -324,14 +691,26 @@ function pilihBlangkoBasOtomatis(masukan: Parameters<typeof pilihBlangkoBas>[0])
   if (!(masukan.urutanSidang > 0)) {
     return { usulan: null, pilihan: [], sebab: "Urutan sidang tidak dikirim server - blangko BAS tidak dapat dipilihkan." };
   }
-  const contra = contraLebihDulu(masukan.dihadiriOleh, masukan.tergugatPernahHadir);
+  // 9 Okt 2026: kehadiran per sisi (SIPP atau antrian). Tanpa kehadiranPt =
+  // dari dihadiriOleh, persis seperti sebelumnya.
+  const pt: KehadiranPt | null =
+    masukan.kehadiranPt !== undefined ? masukan.kehadiranPt : kehadiranSipp(masukan.dihadiriOleh);
+  const lengkap = Boolean(pt && pt.p !== null && pt.t !== null);
+  const contra =
+    pt && pt.t === true ? true : contraLebihDulu(masukan.dihadiriOleh, masukan.tergugatPernahHadir);
+  // Perkiraan bila kehadiran belum lengkap: P dianggap hadir (yang mengajukan
+  // perkara), T menurut keadaan perkaranya (contra = pernah hadir). Sisi yang
+  // sudah diketahui dari antrian tidak ditimpa.
+  const perkiraan: KehadiranPt | null =
+    masukan.perkiraan && !lengkap ? { p: pt?.p ?? true, t: pt?.t ?? contra } : null;
+  const agendaKunci = Object.keys(AGENDA_BAS).filter((k) => AGENDA_BAS[k].test(String(masukan.agenda || "")));
   const urutanSet = [...set].sort((a, b) => {
     const nilai = (id: string) => (id === "bas-contra" ? (contra ? 0 : 1) : id === "bas-verstek" ? (contra ? 1 : 0) : 2);
     return nilai(a.id) - nilai(b.id);
   });
 
   const tidakTerbaca: string[] = [];
-  const kandidat: Array<PilihanBlangkoBas & { urutSet: number }> = [];
+  const kandidat: Array<PilihanBlangkoBas & { urutSet: number; nilaiPerkiraan: number; nilaiAgenda: number }> = [];
   urutanSet.forEach((s, urutSet) => {
     const k = masukan.katalog[s.folder];
     if (!k || !k.terbaca) {
@@ -349,8 +728,16 @@ function pilihBlangkoBasOtomatis(masukan: Parameters<typeof pilihBlangkoBas>[0])
         setNama: s.nama,
         basKe: angka(item.basKe),
         label: labelBlangkoBas(item),
-        kehadiran: cocokKehadiran(teks(item.keadaan), masukan.dihadiriOleh),
+        kehadiran: cocokKehadiranPt(teks(item.keadaan), pt),
         urutSet,
+        nilaiPerkiraan: perkiraan ? PERINGKAT_KEHADIRAN[cocokKehadiranPt(teks(item.keadaan), perkiraan)] : 0,
+        // Agenda hanya memilah dalam mode perkiraan - urutan lama tidak berubah.
+        nilaiAgenda:
+          perkiraan && agendaKunci.length
+            ? agendaKunci.some((k) => AGENDA_BAS[k].test(`${teks(item.keadaan)} ${teks(item.tindakan)} ${berkas}`))
+              ? 0
+              : 1
+            : 0,
       });
     }
   });
@@ -359,9 +746,13 @@ function pilihBlangkoBasOtomatis(masukan: Parameters<typeof pilihBlangkoBas>[0])
     (a, b) =>
       a.urutSet - b.urutSet ||
       PERINGKAT_KEHADIRAN[a.kehadiran] - PERINGKAT_KEHADIRAN[b.kehadiran] ||
+      a.nilaiPerkiraan - b.nilaiPerkiraan ||
+      a.nilaiAgenda - b.nilaiAgenda ||
       a.berkas.localeCompare(b.berkas, "id", { numeric: true })
   );
-  const pilihan = kandidat.slice(0, BATAS_PILIHAN_BLANGKO).map(({ urutSet: _u, ...sisa }) => sisa);
+  const pilihan = kandidat
+    .slice(0, BATAS_PILIHAN_BLANGKO)
+    .map(({ urutSet: _u, nilaiPerkiraan: _n, nilaiAgenda: _a, ...sisa }) => sisa);
 
   if (pilihan.length === 0) {
     const sebab =
@@ -370,19 +761,131 @@ function pilihBlangkoBasOtomatis(masukan: Parameters<typeof pilihBlangkoBas>[0])
         : `Tidak ada blangko "BAS ${masukan.urutanSidang}" di ${urutanSet.map((s) => s.nama).join(" / ")} - pakai Alat Bantu Tulis BAS di portal.`;
     return { usulan: null, pilihan, sebab };
   }
-  const usulan = pilihan[0].kehadiran === "cocok" ? pilihan[0] : null;
-  const sebab = usulan
-    ? ""
-    : masukan.dihadiriOleh === null
+  if (pilihan[0].kehadiran === "cocok") return { usulan: pilihan[0], pilihan, sebab: "" };
+  if (perkiraan) {
+    // Usulan PERKIRAAN (9 Okt 2026): kandidat pertama yang tidak bertentangan
+    // dengan sisi yang sudah diketahui. Ditandai - petugas memeriksanya.
+    const pertama = pilihan.find((p) => p.kehadiran !== "bertentangan");
+    if (pertama) {
+      const usulan: PilihanBlangkoBas = { ...pertama, perkiraan: true };
+      return {
+        usulan,
+        pilihan: pilihan.map((p) => (p === pertama ? usulan : p)),
+        sebab: "Kehadiran belum tercatat - usulan menurut urutan sidang, agenda, dan keadaan perkara; periksa kembali sesudah sidang.",
+      };
+    }
+  }
+  const sebab =
+    pt === null || !lengkap
       ? "Kehadiran sidang ini belum dicatat di SIPP - pilih blangkonya sendiri."
       : "Tidak ada blangko yang keadaannya jelas cocok dengan kehadiran - pilih blangkonya sendiri.";
-  return { usulan, pilihan, sebab };
+  return { usulan: null, pilihan, sebab };
 }
 
 /** Ringkasan lembar ALETA satu perkara dari baris aleta_bas_lembar. */
 export function ringkasLembar(baris: Array<{ keadaan?: unknown }>): RingkasLembar {
   const selesai = baris.filter((b) => teks(b.keadaan) === "selesai").length;
   return { jumlah: baris.length, selesai, draf: baris.length - selesai };
+}
+
+const SEBUTAN_FORMAT: Record<FormatBasTanpaHadir, string> = {
+  gugur: "gugur",
+  "tunda-panggil": "tunda panggil para pihak",
+};
+
+/**
+ * Kehadiran satu sidang beserta tandanya (9 Okt 2026):
+ *
+ *   tercatat     dihadiri_oleh SIPP terisi - aturan lama
+ *   antrian      SIPP kosong, sedikitnya satu pihak mengambil nomor antrian;
+ *                sisi yang belum datang = belum diketahui sebelum 14.00,
+ *                tidak hadir sesudahnya
+ *   belum-hadir  keduanya kosong, sebelum 14.00 WITA - usulan perkiraan
+ *   lewat-batas  keduanya kosong, lewat 14.00 WITA - format gugur / tunda
+ */
+export function kehadiranBaris(
+  s: BarisSidangBas,
+  o: {
+    perkaraId: string;
+    tanggalSidang: string;
+    dihadiriMentah: number | null;
+    dihadiriOleh: number | null;
+    antrian?: AntrianBas;
+    saat?: SaatBas | null;
+  }
+): { keadaan: KeadaanKehadiranBas; pt: KehadiranPt | null; tanda: TandaKehadiranBas; format: FormatTanpaHadir | null } {
+  if (o.dihadiriMentah !== null) {
+    return {
+      keadaan: "tercatat",
+      pt: kehadiranSipp(o.dihadiriOleh),
+      tanda: {
+        keadaan: "tercatat",
+        teks: o.dihadiriOleh ? kalimatKehadiran(o.dihadiriOleh) : `kehadiran tercatat (sandi SIPP ${o.dihadiriMentah})`,
+        judul: "Kehadiran menurut jadwal sidang SIPP.",
+      },
+      format: null,
+    };
+  }
+  const lewat = lewatBatasKehadiran(o.tanggalSidang, o.saat);
+  const antri = kehadiranDariAntrian(o.antrian, o.perkaraId, o.tanggalSidang);
+  if (antri && (antri.p || antri.t)) {
+    const pt: KehadiranPt = { p: antri.p ? true : lewat ? false : null, t: antri.t ? true : lewat ? false : null };
+    const sisi = (hadir: boolean | null, nama: string) =>
+      hadir === true ? `${nama} hadir` : hadir === false ? `${nama} tidak hadir` : `${nama} belum datang`;
+    return {
+      keadaan: "antrian",
+      pt,
+      tanda: {
+        keadaan: "antrian",
+        teks: `menurut antrian: ${sisi(pt.p, "P")}, ${sisi(pt.t, "T")} - belum dicatat di SIPP`,
+        judul:
+          "Kehadiran belum dicatat di SIPP; dibaca dari antrian sidang (pihak yang mengambil nomor = hadir). " +
+          "Catat kehadirannya di SIPP sesudah sidang.",
+      },
+      format: null,
+    };
+  }
+  if (!lewat) {
+    return {
+      keadaan: "belum-hadir",
+      pt: null,
+      tanda: {
+        keadaan: "belum-hadir",
+        teks: "belum hadir - kehadiran belum tercatat",
+        judul:
+          "Belum dicatat di SIPP dan belum mengambil nomor antrian. Usulan blangko menurut urutan sidang, agenda, dan keadaan perkara - " +
+          "periksa kembali. Lewat pukul 14.00 WITA tanpa kehadiran, usulannya menjadi gugur atau tunda panggil para pihak.",
+      },
+      format: null,
+    };
+  }
+  const format = tentukanFormatTanpaHadir(s, { antrianTerbaca: antri !== null });
+  return {
+    keadaan: "lewat-batas",
+    pt: { p: false, t: false },
+    tanda: {
+      keadaan: "lewat-batas",
+      teks: `lewat 14.00 tanpa kehadiran - usulan: ${SEBUTAN_FORMAT[format.jenis]}${format.ragu ? " (ragu)" : ""}`,
+      judul: format.dasar.join(" "),
+    },
+    format,
+  };
+}
+
+/**
+ * Folder ABT umum yang perlu dibaca katalognya: hanya bila ada sidang yang
+ * lewat 14.00 tanpa kehadiran - pagi hari tidak menambah satu panggilan pun.
+ */
+export function folderFormatDibutuhkan(sidang: BarisSidangBas[], antrian: AntrianBas | undefined, saat: SaatBas | null): string[] {
+  for (const s of Array.isArray(sidang) ? sidang : []) {
+    if (!s || !(s.dihadiriOleh === null || s.dihadiriOleh === undefined)) continue;
+    const tanggal = teks(s.tanggalSidang).slice(0, 10);
+    if (!lewatBatasKehadiran(tanggal, saat)) continue;
+    const antri = kehadiranDariAntrian(antrian, teks(s.perkaraId), tanggal);
+    if (antri && (antri.p || antri.t)) continue;
+    return [...FOLDER_BAS_FORMAT];
+  }
+  return [];
 }
 
 /**
@@ -399,6 +902,10 @@ export function susunBarisBasMassal(
     lembar: Record<string, RingkasLembar | null | undefined>;
     /** Perbaikan 2 Okt sore (butir 8): Pemetaan blangko BAS dari server. */
     petaBas?: Record<string, string>;
+    /** 9 Okt 2026: antrian sidang dari jawaban jadwal bot (hari berjalan saja). */
+    antrian?: AntrianBas;
+    /** 9 Okt 2026: saat WITA - batas 14.00. Tanpa = batasnya tidak pernah lewat. */
+    saat?: SaatBas | null;
   }
 ): { baris: BarisBasMassal[]; jumlahSemua: number; jumlahSaya: number } {
   const sudah = new Set<string>();
@@ -413,12 +920,21 @@ export function susunBarisBasMassal(
     const urutanSidang = angka(s.urutanSidang);
     const paniteraNama = teks(s.paniteraNama);
     const jenisPerkara = teks(s.jenisPerkara);
+    const tanggalSidang = teks(s.tanggalSidang).slice(0, 10);
+    const k = kehadiranBaris(s, {
+      perkaraId,
+      tanggalSidang,
+      dihadiriMentah,
+      dihadiriOleh,
+      antrian: opsi.antrian,
+      saat: opsi.saat,
+    });
     semua.push({
       sidangId: teks(s.sidangId),
       perkaraId,
       nomorPerkara: nomor,
       jenisPerkara,
-      tanggalSidang: teks(s.tanggalSidang).slice(0, 10),
+      tanggalSidang,
       jamSidang: teks(s.jamSidang),
       agenda: teks(s.agenda),
       ruangan: teks(s.ruangan),
@@ -427,6 +943,8 @@ export function susunBarisBasMassal(
       urutanSidang,
       dihadiriOleh,
       kehadiran: kalimatKehadiran(dihadiriOleh),
+      tandaKehadiran: k.tanda,
+      formatTanpaHadir: k.format,
       basSipp: typeof s.adaBas === "boolean" ? s.adaBas : null,
       paniteraNama,
       majelisNama: teks(s.majelisNama),
@@ -442,11 +960,16 @@ export function susunBarisBasMassal(
       blangko: pilihBlangkoBas({
         jenisPerkara,
         urutanSidang,
-        dihadiriOleh,
+        // Pemetaan blangko memakai sandi kehadiran: dari SIPP, atau dari
+        // antrian bila kedua sisinya sudah terbaca.
+        dihadiriOleh: dihadiriOleh ?? (k.keadaan === "antrian" ? sandiDariPt(k.pt) : null),
         tergugatPernahHadir: s.panggilan?.tergugatPernahHadir,
         katalog: opsi.katalog,
         petaBas: opsi.petaBas,
         agenda: teks(s.agenda),
+        // Kehadiran tercatat di SIPP: perilaku lama, tanpa perkiraan.
+        ...(k.keadaan === "tercatat" ? {} : { kehadiranPt: k.pt, perkiraan: true }),
+        format: k.format,
       }),
     });
   }

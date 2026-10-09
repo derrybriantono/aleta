@@ -2154,29 +2154,50 @@ function caraRelaas(ketTemu) {
   return { sandi, cara: `Sandi SIPP "${sandi}"`, sampai: null, terbaca: false };
 }
 
+/**
+ * Kehadiran pada sidang-sidang SEBELUM tiap sidang.
+ *
+ * penggugatPernahHadir (9 Okt 2026, BAS massal tanpa kehadiran): pihak
+ * pertama pernah hadir pada sidang mana pun sebelumnya - true; tidak pernah
+ * dan SELURUH sidang sebelumnya tercatat kehadirannya (atau belum ada sidang
+ * sebelumnya) - false; tidak pernah tetapi ada sidang sebelumnya yang
+ * kehadirannya kosong - null (tidak diketahui). BAS massal hanya mengusulkan
+ * "gugur" bila nilainya false: kehadiran yang tidak dicatat bukan bukti tidak
+ * hadir.
+ */
 function kehadiranSebelumnya(semuaSidang = []) {
   const sebelumnya = {};
   const tergugatPernahHadir = {};
+  const penggugatPernahHadir = {};
   let perkaraTerakhir = null;
   let hadirTerakhir = null;
   let tergugatHadir = false;
+  let penggugatHadir = false;
+  let adaKosong = false;
   for (const baris of Array.isArray(semuaSidang) ? semuaSidang : []) {
     const perkara = String(baris.perkaraId);
     if (perkara !== perkaraTerakhir) {
       perkaraTerakhir = perkara;
       hadirTerakhir = null;
       tergugatHadir = false;
+      penggugatHadir = false;
+      adaKosong = false;
     }
     const kunci = String(baris.sidangId);
     sebelumnya[kunci] = hadirTerakhir;
     tergugatPernahHadir[kunci] = tergugatHadir;
+    penggugatPernahHadir[kunci] = penggugatHadir ? true : adaKosong ? null : false;
     hadirTerakhir =
       baris.dihadiriOleh === null || baris.dihadiriOleh === undefined
         ? null
         : Number(baris.dihadiriOleh);
     if (hadirTerakhir === 1 || hadirTerakhir === 3) tergugatHadir = true;
+    if (hadirTerakhir === 1 || hadirTerakhir === 2) penggugatHadir = true;
+    // Sandi 1-4 saja yang terbaca pasti; kosong dan sandi intervensi (5-15)
+    // tidak menyatakan pihak pertama tidak hadir.
+    if (!(hadirTerakhir >= 1 && hadirTerakhir <= 4)) adaKosong = true;
   }
-  return { sebelumnya, tergugatPernahHadir };
+  return { sebelumnya, tergugatPernahHadir, penggugatPernahHadir };
 }
 
 async function keadaanPanggilanSidang(daftarSidang = []) {
@@ -2229,7 +2250,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
   ]);
 
   // --- Kehadiran pada sidang SEBELUMNYA, per sidang -------------------------
-  const { sebelumnya, tergugatPernahHadir } = kehadiranSebelumnya(semuaSidang);
+  const { sebelumnya, tergugatPernahHadir, penggugatPernahHadir } = kehadiranSebelumnya(semuaSidang);
 
   // --- Relaas per sidang, dikelompokkan menurut sisi pihak ------------------
   const relaasPerSidang = {};
@@ -2358,6 +2379,11 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
       // memakainya untuk menutup "potensi verstek" pada perkara yang sudah
       // contradictoir - lihat kehadiranSebelumnya.
       tergugatPernahHadir: Boolean(tergugatPernahHadir[kunci]),
+      // Pihak pertama pernah hadir sebelumnya: true / false / null (ada
+      // sidang sebelumnya yang kehadirannya kosong). Dipakai BAS massal
+      // memilih "gugur" atau "tunda panggil para pihak" (9 Okt 2026).
+      penggugatPernahHadir:
+        penggugatPernahHadir[kunci] === undefined ? null : penggugatPernahHadir[kunci],
       wajibDipanggil: wajib,
       // Disebutkan supaya dapat ditelusuri bila penandanya terasa keliru.
       sisiPihakAda: sisiAda ? [...sisiAda].sort() : [],
