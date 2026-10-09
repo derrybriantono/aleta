@@ -531,7 +531,8 @@ describe("butir 17: Upload edoc penetapan (PMH/PPP/PJS/PHS)", () => {
     expect(c("PMH").disabled).toBe(false);
     expect(c("PJS").disabled).toBe(true);
     expect(kotak.querySelector('[data-s2-jenis="PJS"]').textContent).toContain("blangko PJS tidak ada di ABT");
-    expect(kotak.querySelector('[data-s2-jenis="PHS"]').textContent).toContain("sudah ada di SIPP");
+    // Butir 7 (1.189.x): "sudah terupload" + menimpa yang lama.
+    expect(kotak.querySelector('[data-s2-jenis="PHS"]').textContent).toContain("sudah terupload - mengunggah lagi menimpa yang lama");
     // Nama resmi di depan, kode SIPP hanya di kurung (penjaga ekstensi-pita-identitas).
     expect(kotak.querySelector('[data-s2-jenis="PMH"] .aleta-massal-nomor').textContent).toBe("Penetapan Majelis Hakim");
     expect(kotak.querySelector('[data-s2-jenis="PJS"]').textContent).toContain("Penunjukan Juru Sita(PJS)");
@@ -579,6 +580,24 @@ describe("butir 17: Upload edoc penetapan (PMH/PPP/PJS/PHS)", () => {
     // Tidak tersimpan di mana pun.
     expect(JSON.stringify(h.simpanan)).not.toContain(SANDI);
     expect(kotak.outerHTML).not.toContain(SANDI);
+  });
+
+  it("butir 7: PHS sudah terupload - dialog berkata 'sudah terupload' dan 'yakin menimpa yang lama?'; batal = tidak ada POST", async () => {
+    const h = buka({ simpanan: UI, jawab: jawabEdoc() });
+    const { kotak } = await bukaBagian(h);
+    await sampai(() => kotak.querySelector('[data-s2-jenis="PHS"]'), "peta");
+    const c = kotak.querySelector('[data-s2-jenis="PHS"] input') as HTMLInputElement;
+    c.checked = true;
+    c.dispatchEvent(new h.w.Event("change"));
+    ketik(h.w, kotak.querySelector(".aleta-s2-sandi-isian") as HTMLInputElement, SANDI);
+    (kotak.querySelector('[data-s2-edoc="otomatis"]') as HTMLButtonElement).click();
+    const kartu = await sampai(() => kotak.querySelector(".aleta-a30-tanya"), "konfirmasi tampil");
+    expect(kartu.textContent).toContain("Penetapan Hari Sidang (PHS) sudah terupload di e-Doc SIPP");
+    expect(kartu.textContent).toContain("yakin menimpa yang lama?");
+    expect((kartu.querySelector(".aleta-a30-tanya-ya") as HTMLButtonElement).textContent).toContain("Ya, timpa yang lama");
+    await setujui(h.w, kotak, false);
+    await tunggu(50);
+    expect(h.minta.some((m) => m.url.includes("/penetapan-edoc/unggah"))).toBe(false);
   });
 
   it("mode coba (tanpa izin tulis nyata): tidak ada POST sama sekali, passphrase tidak berangkat", async () => {
