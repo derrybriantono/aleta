@@ -301,3 +301,33 @@ describe("butir 7: e6UnggahEdocPenetapan atas e-Doc yang sudah terupload", () =>
     expect(h.tanya).toEqual([]);
   });
 });
+
+// ============================================================================
+// BUTIR 8 (1.189.x) - "Tarik dari e-Court" di panel: garis + persen nyata
+// ============================================================================
+describe("butir 8: kotak permintaan 'Tarik dari e-Court' menggambar kemajuan nyata", () => {
+  it("dikerjakan + kemajuan -> garis (aria-valuenow) dan '63% · Mengunduh berkas 2/3'; ditanya berkala sampai selesai", async () => {
+    let fase = 0;
+    const KEADAAN = [
+      { status: "dikerjakan", kemajuan: { tahap: "unduh", persen: 76, teks: "Mengunduh berkas 3/3" } },
+      { status: "selesai" },
+    ];
+    const h = bukaPanel({
+      blangko: false,
+      status: "belum",
+      jawab: (url) => (url.includes("/aleta-bot/ecourt/permintaan?") ? { isi: { ok: true, data: { available: true, keadaan: KEADAAN[fase] } } } : null),
+    });
+    await panel(h);
+    h.nilai(`globalThis.__kp = kotakPermintaan(${JSON.stringify(NOMOR)}, { status: "dikerjakan", kemajuan: { tahap: "unduh", persen: 63, teks: "Mengunduh berkas 2/3" } }); document.body.appendChild(globalThis.__kp);`);
+    const kotak = h.nilai("globalThis.__kp") as HTMLElement;
+    const garis = kotak.querySelector('.aleta-b8-garis[role="progressbar"]') as HTMLElement;
+    expect(garis.style.display).toBe("");
+    expect(garis.getAttribute("aria-valuenow")).toBe("63");
+    expect(kotak.querySelector(".aleta-permintaan-pesan")!.textContent).toBe("63% · Mengunduh berkas 2/3");
+    // Detak berikutnya (3 dtk): kemajuan baru dari bot.
+    await sampai(() => garis.getAttribute("aria-valuenow") === "76", "kemajuan 76%", 8000);
+    fase = 1;
+    // Lalu selesai: garis disembunyikan.
+    await sampai(() => garis.style.display === "none", "garis hilang sesudah selesai", 8000);
+  }, 20000);
+});

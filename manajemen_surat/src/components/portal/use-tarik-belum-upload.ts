@@ -53,6 +53,10 @@ export function useTarikBelumUpload(
           nomorPerkara: baris.nomorPerkara,
           tanggal: String(baris.tanggalSidang || "").slice(0, 10),
           alamat: apiPath(ALAMAT_TARIK_BELUM_UPLOAD),
+          // Butir 8 (1.189.x): persen + tahap nyata selama bot menarik.
+          padaKemajuan: (kemajuan) => {
+            if (hidupRef.current) setKeadaan((lama) => ({ ...lama, [k]: kemajuan }));
+          },
         });
         if (!hidupRef.current) return hasil;
         const { perkara, ...tampil } = hasil;

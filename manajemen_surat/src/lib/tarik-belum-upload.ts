@@ -36,11 +36,25 @@ const BATAS_TAK_MENJAWAB = 3;
 
 export type DokumenBaru = { judul: string; peran?: string; diunggahPada?: string };
 
+/**
+ * Butir 8 (1.189.x): kemajuan NYATA dari bot (aleta_bot/services/ecourtKemajuanTarik):
+ * tahap yang sungguh dikerjakan jembatan + persen yang dihitung dari tahap itu.
+ */
+export type KemajuanBot = {
+  tahap: string;
+  label?: string;
+  persen: number;
+  i?: number;
+  n?: number;
+  judul?: string;
+  teks?: string;
+};
+
 /** Tarikan menurut bot (ecourtVerifikasiHarianService.tarikSekarang). */
 export type TarikanBot = {
   id?: string;
   nomorPerkara: string;
-  status: "berjalan" | "selesai" | "gagal" | "sesi-habis" | "sibuk" | "ditolak";
+  status: "berjalan" | "selesai" | "gagal" | "sesi-habis" | "sibuk" | "ditolak" | "terputus";
   mulai?: string;
   selesai?: string;
   pesan?: string;
@@ -48,6 +62,7 @@ export type TarikanBot = {
   dokumenBaru?: DokumenBaru[];
   berkasBaru?: number;
   perkara?: VerifikasiPerkara | null;
+  kemajuan?: KemajuanBot | null;
 };
 
 /** Keadaan yang digambar di samping penanda. */
@@ -55,7 +70,19 @@ export type KeadaanTarik = {
   tahap: "berjalan" | "selesai" | "jeda" | "masalah";
   pesan: string;
   dokumenBaru: string[];
+  /** Butir 8: persen 0..100 dari tahap nyata bot (tanpa = belum dilaporkan). */
+  persen?: number;
+  /** Butir 8: nama tahap nyata ("Mengunduh berkas 2/5"). */
+  langkah?: string;
 };
+
+/** Persen + nama tahap dari kemajuan bot - murni; tanpa kemajuan = {}. */
+export function dariKemajuan(k: KemajuanBot | null | undefined): { persen?: number; langkah?: string } {
+  if (!k || typeof k !== "object") return {};
+  const persen = Number(k.persen);
+  if (!Number.isFinite(persen)) return {};
+  return { persen: Math.max(0, Math.min(100, Math.round(persen))), langkah: String(k.teks || k.label || "").trim() };
+}
 
 export type HasilTarik = KeadaanTarik & { perkara: VerifikasiPerkara | null };
 
@@ -81,16 +108,27 @@ export function hasilDariTarikan(t: TarikanBot): HasilTarik {
       (dokumenBaru.length > 0
         ? `${dokumenBaru.length} dokumen baru: ${dokumenBaru.join(", ")}`
         : `Tidak ada dokumen baru${jam ? ` (diperiksa ${jam})` : ""}`);
-    return { tahap: "selesai", pesan, dokumenBaru, perkara: t.perkara ?? null };
+    return { tahap: "selesai", pesan, dokumenBaru, perkara: t.perkara ?? null, ...dariKemajuan(t.kemajuan), persen: 100 };
   }
-  if (t.status === "berjalan") return { tahap: "berjalan", pesan: PESAN_MEMERIKSA, dokumenBaru: [], perkara: null };
+  if (t.status === "berjalan") {
+    const k = dariKemajuan(t.kemajuan);
+    return { tahap: "berjalan", pesan: k.langkah ? `${k.langkah}...` : PESAN_MEMERIKSA, dokumenBaru: [], perkara: null, ...k };
+  }
   const bawaan: Record<string, string> = {
     "sesi-habis": "Sesi e-Court habis - minta admin masuk ulang di menu Integrasi e-Court, lalu tekan lagi.",
     sibuk: "Penarikan e-Court lain sedang berjalan - coba lagi sebentar lagi.",
     gagal: "Penarikan e-Court gagal.",
     ditolak: "Tarikan ditolak bot.",
+    terputus: "ALETA Bot dinyalakan ulang saat penarikan berjalan - tekan lagi.",
   };
-  return { tahap: "masalah", pesan: t.pesan || bawaan[t.status] || "Penarikan e-Court tidak selesai.", dokumenBaru, perkara: null };
+  return {
+    tahap: "masalah",
+    pesan: t.pesan || bawaan[t.status] || "Penarikan e-Court tidak selesai.",
+    dokumenBaru,
+    perkara: null,
+    // Garis berhenti di persen terakhirnya - di situlah macetnya.
+    ...dariKemajuan(t.kemajuan),
+  };
 }
 
 type Ambil = (alamat: string, init?: RequestInit) => Promise<Response>;
@@ -153,6 +191,7 @@ export async function tarikBelumUpload({
   tunggu = (ms) => new Promise((selesai) => setTimeout(selesai, ms)),
   sekarang = () => Date.now(),
   batasTungguMs = BATAS_TUNGGU_MS,
+  padaKemajuan,
 }: {
   nomorPerkara: string;
   tanggal: string;
@@ -162,7 +201,19 @@ export async function tarikBelumUpload({
   tunggu?: (ms: number) => Promise<unknown>;
   sekarang?: () => number;
   batasTungguMs?: number;
+  /** Butir 8: dipanggil tiap kali bot melaporkan tahap/persen baru selama berjalan. */
+  padaKemajuan?: (k: KeadaanTarik) => void;
 }): Promise<HasilTarik> {
+  const lapor = (t: TarikanBot | null) => {
+    if (!padaKemajuan || !t || t.status !== "berjalan") return;
+    const { perkara: _abaikan, ...tampil } = hasilDariTarikan(t);
+    void _abaikan;
+    try {
+      padaKemajuan(tampil);
+    } catch {
+      // Penggambar yang rusak tidak menghentikan tarikan.
+    }
+  };
   const mulai = sekarang();
   let data: Record<string, unknown>;
   try {
@@ -209,6 +260,7 @@ export async function tarikBelumUpload({
   }
 
   if (tarikanAwal && tarikanAwal.status !== "berjalan") return hasilDariTarikan(tarikanAwal);
+  lapor(tarikanAwal);
 
   let takMenjawab = 0;
   const alamatTanya = `${alamat}?nomorPerkara=${encodeURIComponent(nomorPerkara)}`;
@@ -249,7 +301,10 @@ export async function tarikBelumUpload({
         perkara: null,
       };
     }
-    if (t.status === "berjalan") continue;
+    if (t.status === "berjalan") {
+      lapor(t);
+      continue;
+    }
     return hasilDariTarikan(t);
   }
 }

@@ -162,13 +162,32 @@ function buatLayanan(deps = {}) {
   // di-mount), dengan batas waktu pendek - ada orang yang menunggunya.
   const tarikPerkara =
     deps.tarikPerkara ||
-    ((nomorPerkara) =>
+    ((nomorPerkara, opsi = {}) =>
       require("./ecourtSchedulerService").jalankanSatuPutaran({
         nomorPerkara,
         maksPerkara: 0,
         sumber: "jadwal-belum-upload",
         batasMs: BATAS_TARIK_PERKARA_MS,
+        // Butir 8 (1.189.x): tahap sungguhan jembatan -> tarikan.kemajuan.
+        padaKemajuan: opsi.padaKemajuan,
       }));
+  // Butir 8 (1.189.x): tarikan disinggahkan ke berkas supaya bot yang
+  // dinyalakan ulang tetap tahu (a) tarikan yang terputus - dijawab
+  // "terputus", bukan "tidak pernah ada" - dan (b) jeda per perkara yang
+  // masih berlaku (banjir ke e-Court sesudah bot mulai ulang tidak lolos).
+  // Dunia uji yang membawa jembatan tiruan tidak menulis berkas kecuali
+  // diminta (deps.berkasTarikan).
+  const berkasTarikan =
+    "berkasTarikan" in deps
+      ? deps.berkasTarikan
+      : deps.tarikPerkara
+        ? null
+        : require("path").join(
+            process.env.ALETA_BOT_DATA_DIR
+              ? require("path").resolve(process.env.ALETA_BOT_DATA_DIR)
+              : require("path").resolve(__dirname, "..", "data"),
+            "ecourt-tarik-perkara.json"
+          );
   // Penarikan lain (berkala, menyeluruh, dari PuTTY) yang sedang berjalan.
   const sibuk =
     deps.sibuk ||
@@ -434,6 +453,68 @@ function buatLayanan(deps = {}) {
   /** nomor dinormalkan -> tarikan terakhir (berjalan atau sudah selesai). */
   const tarikan = new Map();
 
+  const kemajuanTarik = require("./ecourtKemajuanTarik");
+  /** Simpanan tarikan lebih dari sehari tidak berguna lagi. */
+  const UMUR_SIMPANAN_MS = 24 * 60 * 60 * 1000;
+
+  /** Menyinggahkan seluruh tarikan ke berkas. Gagal = diam (memori tetap benar). */
+  function simpanTarikan() {
+    if (!berkasTarikan) return;
+    try {
+      const fs = require("fs");
+      const isi = {};
+      for (const [k, t] of tarikan) isi[k] = ringkasTarikan(t);
+      fs.mkdirSync(require("path").dirname(berkasTarikan), { recursive: true });
+      const sementara = `${berkasTarikan}.${process.pid}.tmp`;
+      fs.writeFileSync(sementara, JSON.stringify({ versi: 1, tarikan: isi }));
+      fs.renameSync(sementara, berkasTarikan);
+    } catch {
+      // Simpanan hanya penolong sesudah bot mulai ulang.
+    }
+  }
+
+  // Kemajuan berubah tiap beberapa detik: penyinggahan dijarangkan (1 dtk).
+  let pewaktuSimpan = null;
+  function simpanNanti() {
+    if (!berkasTarikan || pewaktuSimpan) return;
+    pewaktuSimpan = setTimeout(() => {
+      pewaktuSimpan = null;
+      simpanTarikan();
+    }, 1000);
+    if (pewaktuSimpan.unref) pewaktuSimpan.unref();
+  }
+
+  /**
+   * Memuat simpanan saat layanan dibuat. Tarikan yang tercatat "berjalan"
+   * PASTI terputus: prosesnya anak bot yang sudah mati. Ia menjadi
+   * "terputus" tanpa jeda (tidak ada yang selesai ditarik) supaya dapat
+   * ditekan lagi; tarikan selesai membawa jedanya seperti semula.
+   */
+  (function muatTarikan() {
+    if (!berkasTarikan) return;
+    let isi = null;
+    try {
+      isi = JSON.parse(require("fs").readFileSync(berkasTarikan, "utf8"));
+    } catch {
+      return;
+    }
+    const kini = sekarang().getTime();
+    for (const [k, t] of Object.entries((isi && isi.tarikan) || {})) {
+      if (!t || typeof t !== "object") continue;
+      const waktu = Number(t.selesaiMs) || Number(t.mulaiMs) || 0;
+      if (!waktu || kini - waktu > UMUR_SIMPANAN_MS) continue;
+      const baru = { ...t };
+      if (baru.status === "berjalan") {
+        baru.status = "terputus";
+        baru.selesai = waktuTeks(sekarang());
+        baru.selesaiMs = 0;
+        baru.pesan = "ALETA Bot dinyalakan ulang saat penarikan berjalan - penarikan terputus, tekan lagi untuk menarik ulang.";
+        baru.kemajuan = { ...(baru.kemajuan || kemajuanTarik.hitungKemajuan({ tahap: "mulai" })), tahap: "terputus", teks: "Terputus" };
+      }
+      tarikan.set(k, baru);
+    }
+  })();
+
   /** Potret dokumen + berkas satu perkara di arsip ALETA - pembanding sebelum/sesudah. */
   async function potretPerkara(nomorNormal) {
     const dok = await kueriBot(
@@ -513,8 +594,11 @@ function buatLayanan(deps = {}) {
       berkasBaru: 0,
       pesan: "Memeriksa e-Court...",
       perkara: null,
+      // Butir 8 (1.189.x): tahap NYATA + persen (ecourtKemajuanTarik).
+      kemajuan: kemajuanTarik.hitungKemajuan({ tahap: "mulai" }),
     };
     tarikan.set(k, t);
+    simpanNanti();
 
     /** Ditolak sebelum menarik apa pun - tanpa jeda, tetap terbaca oleh yang bergabung. */
     const tolak = (alasan, pesan) => {
@@ -523,6 +607,8 @@ function buatLayanan(deps = {}) {
       t.pesan = pesan;
       t.selesai = waktuTeks(sekarang());
       t.selesaiMs = 0;
+      t.kemajuan = { ...t.kemajuan, tahap: "ditolak", teks: "Ditolak" };
+      simpanTarikan();
       return { ok: false, alasan, pesan, tarikan: ringkasTarikan(t) };
     };
 
@@ -567,13 +653,23 @@ function buatLayanan(deps = {}) {
     penarik.jumlahTarik += 1;
 
     t._janji = (async () => {
+      const padaKemajuan = (laporan) => {
+        if (t.status !== "berjalan") return;
+        t.kemajuan = kemajuanTarik.majukan(t.kemajuan, laporan);
+        t.pesan = `${t.kemajuan.teks}...`;
+        simpanNanti();
+      };
       const hasil =
         (await Promise.resolve()
-          .then(() => tarikPerkara(target.nomorPerkara))
+          .then(() => tarikPerkara(target.nomorPerkara, { padaKemajuan }))
           .catch((e) => ({ kode: -1, catatan: String((e && e.message) || e) }))) || {};
       const akhir = sekarang();
       t.selesai = waktuTeks(akhir);
       t.selesaiMs = akhir.getTime();
+      if (hasil.kode === 0 && !hasil.dilewati) {
+        // Jembatan selesai; arsip ALETA dibaca ulang untuk dokumen baru.
+        t.kemajuan = kemajuanTarik.majukan(t.kemajuan, { tahap: "simpan" });
+      }
       if (hasil.dilewati) {
         // Kalah balapan dengan penarikan lain yang mulai sesudah pemeriksaan
         // di atas. Jedanya tidak dikenakan - tidak ada yang ditarik.
@@ -629,12 +725,24 @@ function buatLayanan(deps = {}) {
       } else {
         t.pesan = `Tidak ada dokumen baru (diperiksa ${jam})`;
       }
-    })().catch((e) => {
-      t.status = "gagal";
-      t.selesai = waktuTeks(sekarang());
-      t.selesaiMs = sekarang().getTime();
-      t.pesan = `Penarikan e-Court gagal: ${String((e && e.message) || e).slice(0, 200)}`;
-    });
+    })()
+      .catch((e) => {
+        t.status = "gagal";
+        t.selesai = waktuTeks(sekarang());
+        t.selesaiMs = sekarang().getTime();
+        t.pesan = `Penarikan e-Court gagal: ${String((e && e.message) || e).slice(0, 200)}`;
+      })
+      .then(() => {
+        // Tahap akhir apa pun hasilnya; 100% HANYA bila benar-benar selesai.
+        // Yang gagal/sesi habis/sibuk berhenti di persen terakhirnya, beserta
+        // nama keadaannya - garis yang berhenti di 46% berkata di mana macetnya.
+        const AKHIR = { gagal: "Gagal", "sesi-habis": "Sesi e-Court habis", sibuk: "Penarikan lain berjalan" };
+        t.kemajuan =
+          t.status === "selesai"
+            ? kemajuanTarik.hitungKemajuan({ tahap: "selesai" })
+            : { ...t.kemajuan, tahap: t.status, teks: AKHIR[t.status] || t.status };
+        simpanTarikan();
+      });
 
     return { ok: true, dimulai: true, tarikan: ringkasTarikan(t) };
   }

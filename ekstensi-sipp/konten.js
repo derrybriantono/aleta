@@ -14595,21 +14595,77 @@ function kotakPermintaan(nomorPerkara, keadaanAwal) {
   const pesan = buatElemen("div", "aleta-permintaan-pesan");
   const tombol = buatElemen("button", "aleta-permintaan-tombol", "Tarik dari e-Court");
   tombol.type = "button";
+  // Butir 8 (1.189.x): garis proses + persen dari tahap NYATA jembatan
+  // (keadaan.kemajuan, dilaporkan bot selama permintaan dikerjakan).
+  const garis = buatElemen("div", "aleta-b8-garis");
+  garis.setAttribute("role", "progressbar");
+  garis.setAttribute("aria-valuemin", "0");
+  garis.setAttribute("aria-valuemax", "100");
+  garis.style.cssText = "display:none;height:6px;border-radius:3px;background:rgba(127,127,127,.25);overflow:hidden;margin:4px 0;";
+  const isiGaris = buatElemen("div", "aleta-b8-garis-isi");
+  isiGaris.style.cssText = "height:100%;width:0;background:#0284c7;transition:width .5s;";
+  garis.appendChild(isiGaris);
+  let pewaktuTanya = null;
+  let mulaiTanya = 0;
+
+  function gambarKemajuan(k) {
+    if (!k || !Number.isFinite(Number(k.persen))) {
+      garis.style.display = "none";
+      return "";
+    }
+    const persen = Math.max(0, Math.min(100, Math.round(Number(k.persen))));
+    garis.style.display = "";
+    garis.setAttribute("aria-valuenow", String(persen));
+    isiGaris.style.width = `${persen}%`;
+    return `${persen}% · ${k.teks || k.label || "Menarik dari e-Court"}`;
+  }
+
+  /** Tanya keadaan berkala selama diantrekan/dikerjakan (paling lama 10 menit). */
+  function tanyaBerkala() {
+    if (pewaktuTanya) return;
+    if (!mulaiTanya) mulaiTanya = Date.now();
+    const sekali = async () => {
+      pewaktuTanya = null;
+      if (Date.now() - mulaiTanya > 10 * 60 * 1000) return;
+      if (!kotak.isConnected) {
+        // Kotak baru disisipkan sesudah keadaannya terbaca - beri waktu.
+        if (Date.now() - mulaiTanya < 15000) tanyaBerkala();
+        return;
+      }
+      try {
+        const respons = await alatAmbil(
+          `${ALETA_API_PERMINTAAN}?nomor=${encodeURIComponent(nomorPerkara)}`,
+          { credentials: "include", cache: "no-store" },
+          "Membaca kemajuan penarikan"
+        );
+        const hasil = respons.ok ? await respons.json() : null;
+        const isi = hasil?.data ?? hasil;
+        if (isi && isi.available !== false) tampilkanKeadaan(isi.keadaan ?? null);
+      } catch {
+        // Tidak terbaca sekali - ditanya lagi pada detak berikutnya.
+      }
+    };
+    pewaktuTanya = setTimeout(sekali, 3000);
+  }
 
   function tampilkanKeadaan(keadaan) {
     if (!keadaan) {
       pesan.textContent = "Perkara ini belum pernah ditarik ALETA.";
       tombol.style.display = "";
+      gambarKemajuan(null);
       return;
     }
     if (keadaan.status === "menunggu" || keadaan.status === "dikerjakan") {
+      const nyata = keadaan.status === "dikerjakan" ? gambarKemajuan(keadaan.kemajuan) : gambarKemajuan(null);
       pesan.textContent =
         keadaan.status === "dikerjakan"
-          ? "Sedang ditarik dari e-Court..."
+          ? nyata || "Sedang ditarik dari e-Court..."
           : "Sudah diantrekan. Akan ditarik pada putaran berikutnya.";
       tombol.style.display = "none";
+      tanyaBerkala();
       return;
     }
+    gambarKemajuan(null);
     if (keadaan.status === "gagal") {
       pesan.textContent = `Penarikan terakhir gagal${keadaan.catatan ? `: ${keadaan.catatan}` : "."}`;
       tombol.style.display = "";
@@ -14652,9 +14708,10 @@ function kotakPermintaan(nomorPerkara, keadaanAwal) {
     }
   });
 
-  tampilkanKeadaan(keadaanAwal);
   kotak.appendChild(pesan);
+  kotak.appendChild(garis);
   kotak.appendChild(tombol);
+  tampilkanKeadaan(keadaanAwal);
   return kotak;
 }
 

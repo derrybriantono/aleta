@@ -2416,12 +2416,39 @@ export function LencanaVerifikasiMajelis({
           role="status"
           aria-live="polite"
           className={cn(
-            "max-w-[16rem] truncate text-[10px] leading-5",
+            "inline-flex max-w-[16rem] flex-col text-[10px] leading-4",
             tarikan.tahap === "masalah" ? "text-red-700 dark:text-red-300" : "text-muted-foreground"
           )}
           title={tarikan.pesan}
         >
-          {tarikan.pesan}
+          <span className="truncate">
+            {typeof tarikan.persen === "number" && tarikan.tahap !== "selesai" && tarikan.tahap !== "jeda" ? (
+              <span data-persen-tarik="" className="mr-1 font-semibold tabular-nums">
+                {tarikan.persen}%
+              </span>
+            ) : null}
+            {tarikan.pesan}
+          </span>
+          {/* Butir 8 (1.189.x): garis proses dari tahap NYATA bot - bukan waktu yang berlalu. */}
+          {typeof tarikan.persen === "number" && (tarikan.tahap === "berjalan" || tarikan.tahap === "masalah") ? (
+            <span
+              data-garis-tarik=""
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={tarikan.persen}
+              aria-valuetext={tarikan.langkah || tarikan.pesan}
+              className="mt-0.5 block h-1 w-40 overflow-hidden rounded bg-muted"
+            >
+              <span
+                className={cn(
+                  "block h-full rounded transition-[width] duration-500",
+                  tarikan.tahap === "masalah" ? "bg-red-500" : "bg-sky-600"
+                )}
+                style={{ width: `${tarikan.persen}%` }}
+              />
+            </span>
+          ) : null}
         </span>
       ) : null}
     </>
