@@ -10734,3 +10734,89 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-p5-ktp-buka { width: 10
 .aleta-t6-8503-kabar.aleta-t6-gagal,
 .aleta-t6-8503-periksa.aleta-t6-gagal { color: var(--aleta-mendesak); }
 /* === AKHIR 7 OKT 8503 === */
+
+/* === 1.189.x BUTIR 10-12: BANTU DATA SAKSI (saksiscan.js bagian 10) ===
+ * Kotak hubungan di bawah Keterangan blangko saksi (form#frm_user) dan lajur
+ * usulan di atas "Tambah Referensi Data Pihak" (form#frm_ref_pihak). Elemen
+ * ALETA sendiri - tidak ada kelas yang ditempel ke medan SIPP. Palet sama
+ * dengan kartu KTP (.aleta-c2-saksi), ikut tema gelap SIPP. */
+.aleta-c2-sbantu {
+  --c2-latar: #f6faf7;
+  --c2-garis: #c9d4ce;
+  --c2-tulisan: #1d2a24;
+  --c2-lembut: #52645a;
+  --c2-merek: #1f7a4d;
+  --c2-aman: #1f7a4d;
+  --c2-mendesak: #8a5a00;
+  --c2-lewat: #a32a1f;
+  margin: 6px 0 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--c2-garis);
+  border-left: 3px solid var(--c2-merek);
+  border-radius: 6px;
+  background: var(--c2-latar);
+  color: var(--c2-tulisan);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-c2-sbantu {
+  --c2-latar: var(--s-permukaan-2);
+  --c2-garis: var(--s-garis);
+  --c2-tulisan: var(--s-tulisan);
+  --c2-lembut: var(--s-tulisan-lembut);
+  --c2-merek: var(--s-hijau);
+  --c2-aman: var(--s-hijau-terang);
+  --c2-mendesak: var(--s-kuning);
+  --c2-lewat: var(--s-merah);
+}
+.aleta-c2-sbantu [hidden] { display: none !important; }
+.aleta-c2-sbantu-ref { margin: 0 0 6px; }
+.aleta-c2-sbantu-judul { font-weight: 700; margin-bottom: 4px; }
+.aleta-c2-sbantu-baris { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 3px 0; }
+.aleta-c2-sbantu :is(select, input[type="text"]) {
+  min-width: 0;
+  max-width: 100%;
+  padding: 3px 4px;
+  border: 1px solid var(--c2-garis);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.aleta-c2-sbantu-hub, .aleta-c2-sbantu-ketik { flex: 1 1 140px; }
+.aleta-c2-sbantu-sasaran { flex: 1 1 110px; }
+.aleta-c2-sbantu .aleta-tombol {
+  padding: 3px 8px;
+  border: 1px solid var(--c2-garis);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--c2-merek);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: normal;
+  text-align: left;
+}
+.aleta-c2-sbantu .aleta-tombol:hover { border-color: var(--c2-merek); }
+.aleta-c2-sbantu-ganti, .aleta-c2-sbantu-rapikan { display: block; margin: 3px 0; }
+.aleta-c2-sbantu-hasil { font-weight: 600; margin: 3px 0; }
+.aleta-c2-sbantu-lembut { color: var(--c2-lembut); }
+.aleta-c2-sbantu-peringatan { color: var(--c2-lewat); font-weight: 600; margin: 3px 0; }
+.aleta-c2-sbantu-status[data-nada="aman"] { color: var(--c2-aman); }
+.aleta-c2-sbantu-status[data-nada="mendesak"] { color: var(--c2-mendesak); }
+.aleta-c2-sbantu-status[data-nada="lewat"] { color: var(--c2-lewat); }
+.aleta-c2-sbantu-saklar { display: flex; gap: 4px; align-items: flex-start; margin: 2px 0 4px; }
+.aleta-c2-sbantu-diisi, .aleta-c2-sbantu-calon { margin: 3px 0; padding-left: 16px; }
+.aleta-c2-sbantu-diisi li, .aleta-c2-sbantu-calon li { margin: 2px 0; }
+.aleta-c2-sbantu-calon-nama { font-weight: 600; }
+.aleta-c2-sbantu-chip { display: flex; flex-wrap: wrap; gap: 4px; margin: 3px 0; }
+.aleta-c2-sbantu-kurang { color: var(--c2-mendesak); margin: 3px 0; }
+.aleta-c2-sbantu-kelola { margin-top: 4px; }
+.aleta-c2-sbantu-kelola summary { cursor: pointer; color: var(--c2-lembut); }
+.aleta-c2-sbantu-kelola-isi { max-height: 180px; overflow: auto; }
+.aleta-c2-sbantu-kelola-baris { display: flex; justify-content: space-between; gap: 6px; align-items: center; margin: 2px 0; }
+/* === AKHIR 1.189.x BANTU DATA SAKSI === */

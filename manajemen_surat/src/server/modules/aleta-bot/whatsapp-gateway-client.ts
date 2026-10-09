@@ -2596,6 +2596,37 @@ export async function getGatewayWilayahSipp(pilihan: {
 }
 
 /**
+ * Bantu data saksi (1.189.x butir 10-12): sebutan para pihak menurut jenis
+ * perkara, para pihak, dan saksi yang sudah ada pada satu perkara. Hanya
+ * membaca - lihat saksiBantuService di bot.
+ */
+export async function getGatewaySaksiKonteks(
+  nomorPerkara: string
+): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ nomorPerkara });
+  return gatewayFetch(`/internal/aleta-bot/sipp/saksi-bantu/konteks?${kueri.toString()}`);
+}
+
+/**
+ * Orang yang SUDAH ADA di tabel pihak SIPP dan cocok dengan isian saksi baru
+ * (NIK sama, atau nama + tanggal lahir sama). POST: nama dan NIK tidak masuk
+ * alamat permintaan. Batas 20 detik - kolom NIK SIPP tidak berindeks.
+ */
+export async function postGatewaySaksiGanda(isian: {
+  nama: string;
+  nik?: string;
+  tanggalLahir?: string;
+  nomorPerkara?: string;
+  kecualiPihakId?: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/sipp/saksi-bantu/ganda`, {
+    method: "POST",
+    body: JSON.stringify(isian),
+    timeoutMs: 20_000,
+  });
+}
+
+/**
  * Riwayat para pihak satu perkara - cerai berakta dan perkara lain orang yang
  * sama. Dibaca hanya ketika bagian Para pihak di Status Perkara dibuka.
  *

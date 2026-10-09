@@ -1,0 +1,1228 @@
+{
+ "sumber": "sipp_donggala (dump 9 Okt 2026), perkara_pihak5 urutan>0 JOIN pihak - 16.643 saksi. Hanya keterangan yang muncul >= 3 kali (tanpa nama orang).",
+ "jumlahSaksi": 16643,
+ "keteranganTerisi": 4504,
+ "keterangan": [
+  [
+   "tetangga",
+   206,
+   145,
+   61
+  ],
+  [
+   "ibu kandung penggugat",
+   183,
+   0,
+   183
+  ],
+  [
+   "tetangga penggugat",
+   165,
+   69,
+   96
+  ],
+  [
+   "adik kandung penggugat",
+   160,
+   69,
+   91
+  ],
+  [
+   "sepupu penggugat",
+   145,
+   45,
+   100
+  ],
+  [
+   "kakak kandung penggugat",
+   128,
+   58,
+   70
+  ],
+  [
+   "tante penggugat",
+   122,
+   3,
+   119
+  ],
+  [
+   "ibu kandung",
+   112,
+   2,
+   110
+  ],
+  [
+   "sepupu",
+   109,
+   51,
+   58
+  ],
+  [
+   "itsbat nikah",
+   93,
+   91,
+   2
+  ],
+  [
+   "ipar penggugat",
+   92,
+   34,
+   58
+  ],
+  [
+   "paman penggugat",
+   86,
+   85,
+   1
+  ],
+  [
+   "ayah kandung penggugat",
+   78,
+   78,
+   0
+  ],
+  [
+   "tetangga para pemohon",
+   72,
+   67,
+   5
+  ],
+  [
+   "kakak kandung",
+   71,
+   32,
+   39
+  ],
+  [
+   "paman",
+   63,
+   63,
+   0
+  ],
+  [
+   "ayah kandung",
+   62,
+   60,
+   2
+  ],
+  [
+   "keponakan penggugat",
+   58,
+   22,
+   36
+  ],
+  [
+   "paman pemohon ii",
+   58,
+   57,
+   1
+  ],
+  [
+   "teman penggugat",
+   58,
+   12,
+   46
+  ],
+  [
+   "adik kandung",
+   55,
+   17,
+   38
+  ],
+  [
+   "saudara kandung",
+   52,
+   15,
+   37
+  ],
+  [
+   "saudara kandung penggugat",
+   51,
+   16,
+   35
+  ],
+  [
+   "tetangga pemohon",
+   47,
+   34,
+   13
+  ],
+  [
+   "sepupu satu kali penggugat",
+   45,
+   10,
+   35
+  ],
+  [
+   "ipar",
+   41,
+   21,
+   20
+  ],
+  [
+   "tante",
+   35,
+   0,
+   35
+  ],
+  [
+   "teman",
+   35,
+   17,
+   18
+  ],
+  [
+   "keponakan",
+   34,
+   20,
+   14
+  ],
+  [
+   "paman pemohon i",
+   33,
+   32,
+   1
+  ],
+  [
+   "sepupu pemohon",
+   32,
+   17,
+   15
+  ],
+  [
+   "paman pemohon",
+   30,
+   30,
+   0
+  ],
+  [
+   "ipar pemohon",
+   29,
+   19,
+   10
+  ],
+  [
+   "tetangga penggugat.",
+   28,
+   9,
+   19
+  ],
+  [
+   "kakak kandung penggugat.",
+   27,
+   9,
+   18
+  ],
+  [
+   "keluarga penggugat",
+   27,
+   11,
+   16
+  ],
+  [
+   "adik kandung pemohon",
+   26,
+   11,
+   15
+  ],
+  [
+   "keluarga",
+   26,
+   20,
+   6
+  ],
+  [
+   "bapak kandung penggugat",
+   25,
+   25,
+   0
+  ],
+  [
+   "ibu kandung penggugat.",
+   25,
+   1,
+   24
+  ],
+  [
+   "sepupu satu kali penggugat.",
+   25,
+   8,
+   17
+  ],
+  [
+   "keluarga pemohon",
+   24,
+   16,
+   8
+  ],
+  [
+   "sepupu pemohon i",
+   24,
+   20,
+   4
+  ],
+  [
+   "teman pemohon",
+   24,
+   20,
+   4
+  ],
+  [
+   "cerai gugat",
+   23,
+   14,
+   9
+  ],
+  [
+   "keponakan pemohon",
+   23,
+   11,
+   12
+  ],
+  [
+   "ibu kandung pemohon",
+   22,
+   3,
+   19
+  ],
+  [
+   "sepupu dua kali penggugat",
+   21,
+   8,
+   13
+  ],
+  [
+   "sepupu pemohon ii",
+   21,
+   19,
+   2
+  ],
+  [
+   "ipar penggugat.",
+   20,
+   10,
+   10
+  ],
+  [
+   "kakak kandung pemohon ii",
+   19,
+   17,
+   2
+  ],
+  [
+   "kakak ipar penggugat",
+   18,
+   8,
+   10
+  ],
+  [
+   "sepupu satu kali",
+   18,
+   5,
+   13
+  ],
+  [
+   "tante pemohon",
+   18,
+   0,
+   18
+  ],
+  [
+   "sepupu 1 kali",
+   16,
+   5,
+   11
+  ],
+  [
+   "tante penggugat.",
+   16,
+   0,
+   16
+  ],
+  [
+   "adik kandung penggugat.",
+   15,
+   6,
+   9
+  ],
+  [
+   "kakak kandung pemohon",
+   15,
+   6,
+   9
+  ],
+  [
+   "kakak kandung pemohon i",
+   15,
+   13,
+   2
+  ],
+  [
+   "ayah kandung pemohon ii",
+   14,
+   14,
+   0
+  ],
+  [
+   "saudara",
+   14,
+   7,
+   7
+  ],
+  [
+   "ayah kandung pemohon",
+   13,
+   13,
+   0
+  ],
+  [
+   "saudara kandung pemohon",
+   13,
+   5,
+   8
+  ],
+  [
+   "saudara kandung penggugat.",
+   13,
+   1,
+   12
+  ],
+  [
+   "sepupu satu kali pemohon",
+   13,
+   5,
+   8
+  ],
+  [
+   "adik sepupu penggugat",
+   12,
+   3,
+   9
+  ],
+  [
+   "cerai talak",
+   12,
+   4,
+   8
+  ],
+  [
+   "keponakan penggugat.",
+   12,
+   4,
+   8
+  ],
+  [
+   "menantu penggugat",
+   12,
+   8,
+   4
+  ],
+  [
+   "paman p1",
+   12,
+   12,
+   0
+  ],
+  [
+   "ponakan penggugat",
+   12,
+   3,
+   9
+  ],
+  [
+   "teman kerja",
+   12,
+   7,
+   5
+  ],
+  [
+   "saudara sepupu",
+   11,
+   3,
+   8
+  ],
+  [
+   "sepupu dua kali pemohon",
+   11,
+   11,
+   0
+  ],
+  [
+   "adik ipar",
+   10,
+   7,
+   3
+  ],
+  [
+   "adik penggugat",
+   10,
+   8,
+   2
+  ],
+  [
+   "anak kandung penggugat",
+   10,
+   2,
+   8
+  ],
+  [
+   "ipar pemohon i",
+   10,
+   9,
+   1
+  ],
+  [
+   "nenek penggugat",
+   10,
+   0,
+   10
+  ],
+  [
+   "paman penggugat.",
+   10,
+   10,
+   0
+  ],
+  [
+   "sepupu dua kali",
+   10,
+   4,
+   6
+  ],
+  [
+   "tetangga pemohon i",
+   10,
+   10,
+   0
+  ],
+  [
+   "kerabat penggugat",
+   9,
+   3,
+   6
+  ],
+  [
+   "ponakan",
+   9,
+   3,
+   6
+  ],
+  [
+   "adik",
+   8,
+   2,
+   6
+  ],
+  [
+   "bapak kandung penggugat.",
+   8,
+   8,
+   0
+  ],
+  [
+   "saksi 2",
+   8,
+   8,
+   0
+  ],
+  [
+   "sepupu 1x penggugat",
+   8,
+   3,
+   5
+  ],
+  [
+   "anak kandung",
+   7,
+   2,
+   5
+  ],
+  [
+   "kakak ipar pemohon",
+   7,
+   3,
+   4
+  ],
+  [
+   "kakak sepupu penggugat",
+   7,
+   1,
+   6
+  ],
+  [
+   "keponakan pemohon i",
+   7,
+   7,
+   0
+  ],
+  [
+   "kerabat",
+   7,
+   5,
+   2
+  ],
+  [
+   "orang tua kandung penggugat",
+   7,
+   2,
+   5
+  ],
+  [
+   "saksi i",
+   7,
+   7,
+   0
+  ],
+  [
+   "tetangga.",
+   7,
+   5,
+   2
+  ],
+  [
+   "adik kandung pemohon ii",
+   6,
+   5,
+   1
+  ],
+  [
+   "ayah kandung pemohon i",
+   6,
+   6,
+   0
+  ],
+  [
+   "bapak kandung",
+   6,
+   6,
+   0
+  ],
+  [
+   "dispensasi nikah",
+   6,
+   4,
+   2
+  ],
+  [
+   "ibu kandung pemohon ii",
+   6,
+   1,
+   5
+  ],
+  [
+   "ipar pemohon ii",
+   6,
+   6,
+   0
+  ],
+  [
+   "kakak ipar",
+   6,
+   2,
+   4
+  ],
+  [
+   "kakek pemohon ii",
+   6,
+   6,
+   0
+  ],
+  [
+   "kemenakan pemohon",
+   6,
+   4,
+   2
+  ],
+  [
+   "orang tua kandung penggugat.",
+   6,
+   1,
+   5
+  ],
+  [
+   "orangtua",
+   6,
+   1,
+   5
+  ],
+  [
+   "saudara pemohon",
+   6,
+   4,
+   2
+  ],
+  [
+   "tetangga pemohon ii",
+   6,
+   5,
+   1
+  ],
+  [
+   "tetangga pemohon.",
+   6,
+   5,
+   1
+  ],
+  [
+   "adik sepupu",
+   5,
+   2,
+   3
+  ],
+  [
+   "ibu kandung p",
+   5,
+   0,
+   5
+  ],
+  [
+   "ibu kandung pemohon i",
+   5,
+   0,
+   5
+  ],
+  [
+   "kakek penggugat",
+   5,
+   5,
+   0
+  ],
+  [
+   "keluarga pemohon.",
+   5,
+   5,
+   0
+  ],
+  [
+   "keluarga tergugat",
+   5,
+   4,
+   1
+  ],
+  [
+   "kemanakan penggugat",
+   5,
+   1,
+   4
+  ],
+  [
+   "kemanakan penggugat.",
+   5,
+   4,
+   1
+  ],
+  [
+   "kerabat pemohon",
+   5,
+   3,
+   2
+  ],
+  [
+   "kerabat pemohon i",
+   5,
+   4,
+   1
+  ],
+  [
+   "ponakan pemohon",
+   5,
+   3,
+   2
+  ],
+  [
+   "saudara ipar",
+   5,
+   4,
+   1
+  ],
+  [
+   "saudara kandung pemohon ii",
+   5,
+   3,
+   2
+  ],
+  [
+   "sepupu 2 kali",
+   5,
+   2,
+   3
+  ],
+  [
+   "sepupu 2 kali penggugat",
+   5,
+   1,
+   4
+  ],
+  [
+   "sepupu satu kali dengan penggugat",
+   5,
+   3,
+   2
+  ],
+  [
+   "sepupu tergugat",
+   5,
+   2,
+   3
+  ],
+  [
+   "adik ipar penggugat",
+   4,
+   2,
+   2
+  ],
+  [
+   "anak kandung pemohon",
+   4,
+   2,
+   2
+  ],
+  [
+   "anak penggugat",
+   4,
+   2,
+   2
+  ],
+  [
+   "bapak kandung pemohon",
+   4,
+   4,
+   0
+  ],
+  [
+   "ibu",
+   4,
+   0,
+   4
+  ],
+  [
+   "ipar pemohon.",
+   4,
+   1,
+   3
+  ],
+  [
+   "itsbat nikah.",
+   4,
+   4,
+   0
+  ],
+  [
+   "kakak",
+   4,
+   0,
+   4
+  ],
+  [
+   "kakek pemohon 2",
+   4,
+   4,
+   0
+  ],
+  [
+   "mantan karyawan penggugat",
+   4,
+   1,
+   3
+  ],
+  [
+   "orang tua",
+   4,
+   1,
+   3
+  ],
+  [
+   "orang tua penggugat",
+   4,
+   3,
+   1
+  ],
+  [
+   "paman p2",
+   4,
+   4,
+   0
+  ],
+  [
+   "paman pemohon 2",
+   4,
+   4,
+   0
+  ],
+  [
+   "sepupu 1 kali penggugat",
+   4,
+   1,
+   3
+  ],
+  [
+   "sepupu 2 kali pemohon ii",
+   4,
+   4,
+   0
+  ],
+  [
+   "sepupu 2 x",
+   4,
+   2,
+   2
+  ],
+  [
+   "sepupu penggugat.",
+   4,
+   3,
+   1
+  ],
+  [
+   "tante p",
+   4,
+   0,
+   4
+  ],
+  [
+   "tante pemohon i",
+   4,
+   0,
+   4
+  ],
+  [
+   "tante pemohon ii",
+   4,
+   0,
+   4
+  ],
+  [
+   "tante pemohon.",
+   4,
+   0,
+   4
+  ],
+  [
+   "teman pemohon.",
+   4,
+   3,
+   1
+  ],
+  [
+   "teman penggugat.",
+   4,
+   1,
+   3
+  ],
+  [
+   "tetangga tergugat",
+   4,
+   2,
+   2
+  ],
+  [
+   "adik ipar pemohon",
+   3,
+   1,
+   2
+  ],
+  [
+   "adik ipar penggugat.",
+   3,
+   1,
+   2
+  ],
+  [
+   "adik kandung p",
+   3,
+   2,
+   1
+  ],
+  [
+   "ayah kandung penggugat.",
+   3,
+   3,
+   0
+  ],
+  [
+   "ayah penggugat",
+   3,
+   3,
+   0
+  ],
+  [
+   "bapak kandung pemohon i",
+   3,
+   3,
+   0
+  ],
+  [
+   "ibu kandung tergugat",
+   3,
+   0,
+   3
+  ],
+  [
+   "ibu penggugat",
+   3,
+   0,
+   3
+  ],
+  [
+   "ibu tiri penggugat",
+   3,
+   0,
+   3
+  ],
+  [
+   "itsbat nikak",
+   3,
+   3,
+   0
+  ],
+  [
+   "kakak ipar pemohon ii",
+   3,
+   1,
+   2
+  ],
+  [
+   "kakak kandung tergugat",
+   3,
+   2,
+   1
+  ],
+  [
+   "kakak penggugat",
+   3,
+   2,
+   1
+  ],
+  [
+   "kakak sepupu",
+   3,
+   1,
+   2
+  ],
+  [
+   "menantu",
+   3,
+   2,
+   1
+  ],
+  [
+   "nenek",
+   3,
+   0,
+   3
+  ],
+  [
+   "om penggugat",
+   3,
+   2,
+   1
+  ],
+  [
+   "orang tua kandung.",
+   3,
+   1,
+   2
+  ],
+  [
+   "orang tua penggugat.",
+   3,
+   1,
+   2
+  ],
+  [
+   "paman pemohon i dan pemohon ii",
+   3,
+   3,
+   0
+  ],
+  [
+   "paman termohon",
+   3,
+   3,
+   0
+  ],
+  [
+   "rekan kerja",
+   3,
+   1,
+   2
+  ],
+  [
+   "rekan kerja pemohon",
+   3,
+   3,
+   0
+  ],
+  [
+   "saudara ipar pemohon",
+   3,
+   3,
+   0
+  ],
+  [
+   "saudara kandung tergugat",
+   3,
+   0,
+   3
+  ],
+  [
+   "saudara penggugat",
+   3,
+   0,
+   3
+  ],
+  [
+   "saudara sepupu pemohon",
+   3,
+   1,
+   2
+  ],
+  [
+   "sepupu dari penggugat",
+   3,
+   1,
+   2
+  ],
+  [
+   "sepupu para pemohon",
+   3,
+   2,
+   1
+  ],
+  [
+   "sepupu satu kali pemohon i",
+   3,
+   3,
+   0
+  ],
+  [
+   "sepupu satu kali pemohon ii",
+   3,
+   2,
+   1
+  ],
+  [
+   "sepupu satu kali pemohon.",
+   3,
+   3,
+   0
+  ],
+  [
+   "sepupu satu kali tergugat",
+   3,
+   3,
+   0
+  ],
+  [
+   "sepupu satu kali.",
+   3,
+   0,
+   3
+  ],
+  [
+   "sepupu termohon",
+   3,
+   2,
+   1
+  ],
+  [
+   "sepupu tiga kali penggugat",
+   3,
+   2,
+   1
+  ],
+  [
+   "teman kantor",
+   3,
+   2,
+   1
+  ],
+  [
+   "teman kerja penggugat",
+   3,
+   1,
+   2
+  ],
+  [
+   "teman tergugat",
+   3,
+   2,
+   1
+  ],
+  [
+   "tetangga p",
+   3,
+   3,
+   0
+  ],
+  [
+   "tetangga pemohon i dan pemohon ii",
+   3,
+   1,
+   2
+  ],
+  [
+   "tetangga/pegawai syara",
+   3,
+   3,
+   0
+  ],
+  [
+   "tokoh adat",
+   3,
+   3,
+   0
+  ]
+ ],
+ "agama": {
+  "islam": 16203,
+  "terisi": 16366
+ },
+ "wargaNegaraIndonesia": {
+  "indonesia": 16626,
+  "jumlah": 16643
+ },
+ "pekerjaan": {
+  "lakiLaki": {
+   "petani": 6453,
+   "jumlah": 10577
+  },
+  "perempuan": {
+   "rumahTangga": 4184,
+   "jumlah": 6066
+  }
+ },
+ "statusKawin": {
+  "kawin": 6478,
+  "terisi": 7238
+ },
+ "pendidikan": {
+  "slta": 6314,
+  "sd": 5028,
+  "sltp": 3005,
+  "s1": 1416,
+  "terisi": 16158
+ },
+ "alamatSamaPenggugat": {
+  "persis": 318,
+  "jumlah": 16629
+ },
+ "yangMenghadirkan": {
+  "pihakPertama": 16402,
+  "jumlah": 16643
+ },
+ "sebutanSejalanMenghadirkan": {
+  "sejalan": 2918,
+  "jumlah": 2948
+ },
+ "sebutanSalahJenisPerkara": {
+  "ceraiTalakPoligamiPenggugat": 112,
+  "lain": 41
+ },
+ "ganda": {
+  "saksiBerkembaran": 736,
+  "kelompokKembaranPihak": 934,
+  "nikGanda": 811,
+  "dipakaiUlangLintasPerkara": 812
+ }
+}

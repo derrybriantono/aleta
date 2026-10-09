@@ -3503,6 +3503,23 @@ router.get("/sipp/riwayat-pihak", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * Bantu data saksi (1.189.x butir 10-12): sebutan para pihak menurut jenis
+ * perkara + saksi yang sudah ada (konteks), dan orang yang SUDAH ADA di tabel
+ * pihak SIPP (ganda). SELECT saja; NIK tidak pernah keluar - lihat kepala
+ * saksiBantuService. Ganda lewat POST supaya nama dan NIK tidak masuk alamat.
+ */
+router.get("/sipp/saksi-bantu/konteks", requireInternalToken, async (req, res) => {
+  const { status, body } = await require("../services/saksiBantuService").jawabKonteks(req.query || {});
+  res.status(status).json(body);
+});
+
+router.post("/sipp/saksi-bantu/ganda", requireInternalToken, async (req, res) => {
+  const badan = req.body && typeof req.body === "object" ? req.body : {};
+  const { status, body } = await require("../services/saksiBantuService").jawabGanda(badan);
+  res.status(status).json(body);
+});
+
+/**
  * Lapisan panggilan tidak bertemu per desa.
  *
  * Dihitung HANYA dari baris bersandi Y/T - sandi `ket_temu` berganti arti sejak
