@@ -374,6 +374,10 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
       // liburnya tetap diperiksa peladen.
       const tgl = String(isi.keadaan.tanggalSidang || "").slice(0, 10);
       setTanggalBerikut(usul ? usul.tanggal : tambahHari(tgl, 14));
+      // Tanggal putusan = tanggal SIDANG yang diputus (uji rilis 9 Okt 2026),
+      // bukan hari layar dibuka: sidang kemarin yang baru dicatat hari ini
+      // diputus kemarin. Hari ini hanya cadangan bila tanggal sidangnya kosong.
+      if (/^\d{4}-\d{2}-\d{2}$/.test(tgl)) setTanggalPutus(tgl);
     } catch (e) {
       setGalatMuat(e instanceof Error ? e.message : "Jadwal sidang tidak dapat dibaca.");
     }
@@ -1178,6 +1182,9 @@ export function CatatHasilRingkas({
         setRuangPilih(bawaanRuangSidang(keadaanRuangMenurutAntrian(isi.keadaan, isi.antrian), daftar));
         const tgl = String(isi.keadaan.tanggalSidang || "").slice(0, 10);
         setTanggalBerikut(tambahHari(tgl, 14));
+        // Tanggal putusan = tanggal SIDANG yang diputus, bukan hari blangko
+        // dibuka (uji rilis 9 Okt 2026) - lihat HasilSidang.
+        if (/^\d{4}-\d{2}-\d{2}$/.test(tgl)) setTanggalPutus(tgl);
 
         // Court Calendar dan email/persetujuan e-Court dibaca terpisah (null =
         // tak terbaca -> dua pekan / aturan tanpa email; tidak ditebak).

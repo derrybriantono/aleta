@@ -45,6 +45,7 @@ let pp: Baris[];
 let antrianBaris: Baris[];
 let gagalPada: RegExp | null;
 let transaksiDipakai: number;
+let antrianDisetel: unknown[][] = [];
 
 function keadaanAwal(): Keadaan {
   const jadwal = new Map<number, Baris>();
@@ -181,7 +182,10 @@ function jawab(sqlMentah: string, params: unknown[] = []): unknown {
     sipp.perkaraDiubah += 1;
     return { affectedRows: 1 };
   }
-  if (/^UPDATE antrian SET status/.test(sql)) return { affectedRows: 0 };
+  if (/^UPDATE antrian SET status/.test(sql)) {
+    antrianDisetel.push([...p]);
+    return { affectedRows: 0 };
+  }
   throw new Error(`tiruan SIPP tidak mengenal kueri: ${sql.slice(0, 120)}`);
 }
 
@@ -274,6 +278,7 @@ beforeEach(() => {
   ];
   gagalPada = null;
   transaksiDipakai = 0;
+  antrianDisetel = [];
 });
 
 /** Yang dikirim layar Jadwal Sidang pada 273 (jejak #86 + audit 506191). */
@@ -487,5 +492,19 @@ describe("alur tombol + jejak jujur + pesan sebab", () => {
     const { body } = await alur.jalankanHasilSidang("putus", { jadwalId: 19965, statusPutusanId: 62, operator: "u", kering: false }, {}, deps());
     expect(body.kode).toBe("sidang_ditunda_tidak_dapat_diputus");
     expect(sipp.jadwal.get(19965)!.ditunda).toBe("Y");
+  });
+
+  it("uji rilis 9 Okt: putus yang dicatat dengan tanggal putusan lain menggerakkan antrian pada TANGGAL SIDANG", async () => {
+    const { status, body } = await alur.jalankanHasilSidang(
+      "putus",
+      { jadwalId: 20219, statusPutusanId: 62, tanggalPutus: "2026-10-08", operator: "u", kering: false },
+      {},
+      deps()
+    );
+    expect(status, JSON.stringify(body)).toBe(200);
+    expect(antrianDisetel).toHaveLength(1);
+    // [status, perkara_id, tanggal_sidang]
+    expect(antrianDisetel[0][1]).toBe(9729);
+    expect(antrianDisetel[0][2]).toBe("2026-10-07");
   });
 });

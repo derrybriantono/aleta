@@ -156,10 +156,11 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
   if (hasil.ok) {
     antrian = await layanan.setelAntrian({
       perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+      // Antrian sidang dikunci pada tanggal SIDANG - juga untuk putus: tanggal
+      // putusan yang diketik di blangko boleh berbeda (uji rilis 9 Okt 2026).
       tanggalSidang:
-        jalan === "tunda"
-          ? rencana.sidangSekarang && rencana.sidangSekarang.tanggal
-          : rencana.putusan && rencana.putusan.tanggalPutus,
+        (rencana.sidangSekarang && rencana.sidangSekarang.tanggal) ||
+        (jalan === "putus" && rencana.putusan ? rencana.putusan.tanggalPutus : ""),
       ruangId: badan.ruangId,
       keadaan: layanan.ANTRIAN_SELESAI,
       kering,
