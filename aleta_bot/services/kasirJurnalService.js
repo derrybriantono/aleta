@@ -935,41 +935,7 @@ function buatLayanan(deps = {}) {
     deps.transaksi ||
     (deps.kueri
       ? async (kerja) => ({ hasil: await kerja(kueri), dipulihkan: null })
-      : (kerja) =>
-          new Promise((selesai, gagal) => {
-            const kolam = require("../db_config");
-            if (typeof kolam.getConnection !== "function") {
-              gagal(new Error("kolam sambungan SIPP tidak mendukung transaksi"));
-              return;
-            }
-            kolam.getConnection(async (galatSambung, sambungan) => {
-              if (galatSambung) {
-                gagal(galatSambung);
-                return;
-              }
-              const lewat = (sql, params = []) =>
-                new Promise((ok, no) => sambungan.query(sql, params, (g, r) => (g ? no(g) : ok(r))));
-              try {
-                await lewat("START TRANSACTION");
-                const hasil = await kerja(lewat);
-                await lewat("COMMIT");
-                selesai({ hasil, dipulihkan: null });
-              } catch (galat) {
-                const dipulihkan = await lewat("ROLLBACK").then(
-                  () => true,
-                  () => false
-                );
-                galat.dipulihkan = dipulihkan;
-                gagal(galat);
-              } finally {
-                try {
-                  sambungan.release();
-                } catch {
-                  // sambungan yang sudah putus tidak perlu dilepas
-                }
-              }
-            });
-          }));
+      : async (kerja) => ({ hasil: await require("./transaksiSipp").denganTransaksi(kerja), dipulihkan: null }));
   const tabelAda = deps.tabelAda || ((tabel) => require("./sippSkemaService").tabelAda(tabel));
   const jeda = deps.jeda || ((jenis, opsi) => require("./jedaManusiaService").jeda(jenis, opsi));
   // Nama lengkap SIPP -> username (pola akunPetugasMasuk penetapan, butir 39).
