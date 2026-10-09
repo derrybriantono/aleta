@@ -2101,9 +2101,15 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // Usulan dari posita (itsbat, perkara lain) berkeyakinan "cukup" - tetapi
   // "satu saksi" di sebelah kalimat posita menyebut sumber yang tidak ada.
   const dariPosita = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber.every((s) => s && s.asal === "posita");
+  // 9 Okt (KUASA): usulan dari surat gugatan e-Court membawa tanda sumbernya sendiri.
+  const dariGugatan = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber[0] && u.sumber[0].asal === "gugatan-ecourt";
   const nada =
     dariPosita && u.keyakinan === "cukup"
       ? { kelas: "aleta-tanda-kuning", teks: "dari posita" }
+      : dariGugatan && u.keyakinan === "cukup"
+      ? { kelas: "aleta-tanda-hijau", teks: "dari gugatan e-Court" }
+      : dariGugatan && u.keyakinan === "ragu"
+      ? { kelas: "aleta-tanda-kuning", teks: "dari gugatan e-Court — periksa" }
       : NADA_KEYAKINAN[u.keyakinan] || NADA_KEYAKINAN.kosong;
   const lencana = buatElemen("span", `aleta-tanda ${nada.kelas}`, nada.teks);
   kepala.appendChild(lencana);
@@ -2305,9 +2311,13 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   for (const s of u.sumber || []) {
     const kutip = buatElemen("div", "aleta-abt-kutipan");
     kutip.appendChild(
-      buatElemen("span", "aleta-abt-asal", s.asal === "posita" ? "Posita" : s.saksi ? `Saksi ${s.saksi}` : "SIPP")
+      buatElemen(
+        "span",
+        "aleta-abt-asal",
+        s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.saksi ? `Saksi ${s.saksi}` : "SIPP"
+      )
     );
-    kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", s.kalimat));
+    kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", s.kalimat || s.keterangan || ""));
     kartu.appendChild(kutip);
   }
 
@@ -2362,6 +2372,8 @@ async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor) {
         const asalUsulan =
           x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "ktp-ecourt"
             ? "usulan dari berkas KTP e-Court (dibaca mesin)"
+            : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "gugatan-ecourt"
+            ? `usulan dari surat gugatan e-Court (${x.usulan.keyakinan})`
             : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
             ? `usulan dari posita permohonan (${x.usulan.keyakinan})`
             : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
@@ -13416,6 +13428,20 @@ async function soreBacaIsi(k) {
         })
     );
   }
+  // 9 Okt (KUASA butir 1-4): kantor, alamat kantor, tanggal surat kuasa, dan
+  // advokat dari surat gugatan e-Court (+ cadangan SIPP) - lihat a3UsulanKuasa.
+  if (A3_VAR_KUASA.some((kode) => barisVariabel().has(kode))) {
+    tugas.push(
+      a3UsulanKuasa(nomorPerkaraAbt())
+        .then((r) => {
+          data.kuasa = { usulan: r.usulan, ada: r.ada };
+          for (const c of r.catatan) data.catatan.push(`Kuasa hukum: ${c}`);
+        })
+        .catch((g) => {
+          data.catatan.push(`Kuasa hukum dari gugatan e-Court: ${sorePesan(g)}`);
+        })
+    );
+  }
   // Perbaikan 1 Okt butir 8 (UI Baru saja): posita dan keterangan saksi yang
   // RAPI ikut ke daftar Input ke ABT - hanya pratinjau, tidak menulis.
   if (t6Modern()) {
@@ -13448,7 +13474,7 @@ function soreBobot(u) {
 function sorePilihUsulan(data) {
   const peta = barisVariabel();
   const perKode = new Map();
-  for (const sumber of [data.sipp, data.saksi, data.itsbat, data.lain, data.ktp]) {
+  for (const sumber of [data.sipp, data.saksi, data.itsbat, data.lain, data.ktp, data.kuasa]) {
     for (const u of (sumber && sumber.usulan) || []) {
       if (!u || !u.kode || !peta.has(String(u.kode))) continue;
       const lama = perKode.get(String(u.kode));
@@ -13706,7 +13732,11 @@ function soreGambarIsi(k, data) {
   const pilihan = sorePilihUsulan(data);
   const { sama, dihitung } = pilihan;
   // 1.184.0 (butir 17): variabel alasan perceraian yang tidak terdeteksi tetap punya kartu Sunting.
-  const wajib = a3KartuWajib(pilihan.tampil, sama, hurufPilihan.length > 0);
+  // 9 Okt (KUASA): begitu pula variabel kuasa pada perkara ber-kuasa.
+  const wajib = [
+    ...a3KartuWajib(pilihan.tampil, sama, hurufPilihan.length > 0),
+    ...a3KartuKuasaKosong(pilihan.tampil, sama, data),
+  ];
   const tampil = [...pilihan.tampil, ...wajib];
   const tidakAda = pilihan.tidakAda.filter((kode) => !wajib.some((u) => u.kode === String(kode)));
   const peta = barisVariabel();
@@ -16086,6 +16116,73 @@ async function a3UsulanTanggalKtp(nomor) {
       sumber: [{ asal: "ktp-ecourt", keterangan: `dibaca dari berkas "${judul}" e-Court${isi.kota ? `, ${isi.kota}` : ""}` }],
     })),
   };
+}
+
+/**
+ * 9 Okt 2026 (KUASA butir 1-4): kuasa hukum Penggugat dari SURAT GUGATAN e-Court.
+ *
+ *   #0156#   Kantor Kuasa         nama kantor di gugatan (mis. "DERRY & PARTNERS"),
+ *                                 BUKAN alamat - sampai 1.188.0 diisi alamat advokat SIPP
+ *   #0184#   Tgl. Surat Kuasa     "Surat Kuasa Khusus tanggal ..." di gugatan
+ *   #8538#  Alamat Kantor Kuasa  sesudah nama kantor di gugatan
+ *   #8537#  Nama Advokat         kuasa aktif SIPP (cadangan: gugatan)
+ *
+ * Portal (GET /aleta-ecourt/kuasa-gugatan) membaca surat gugatan dari arsip
+ * e-Court ALETA (lapisan teks Word/PDF, OCR bila pindaian) dan kuasa SIPP
+ * lewat bot. Tanda sumber "Gugatan e-Court"; hasil OCR dan cadangan SIPP
+ * berkeyakinan "ragu" (tidak dicentang sendiri). #0132# (tanggal REGISTER kuasa
+ * khusus) dan #8539# (nomor register) datang dari SIPP lewat usulan bot.
+ */
+const A3_VAR_KUASA = Object.freeze(["0156", "0184", "8538", "8537"]);
+/** Variabel kuasa yang tetap berkartu (kosong, dapat disunting) pada perkara ber-kuasa. */
+const A3_VAR_KUASA_KARTU = Object.freeze(["0156", "0184", "8538", "8537", "8539", "0132"]);
+const ALETA_API_KUASA = "/aleta/api/aleta-ecourt/kuasa-gugatan";
+
+async function a3UsulanKuasa(nomor) {
+  const peta = barisVariabel();
+  if (!nomor || !A3_VAR_KUASA.some((k) => peta.has(k))) return { usulan: [], ada: false, catatan: [] };
+  const respons = await fetch(`${ALETA_API_KUASA}?nomor=${encodeURIComponent(nomor)}`, { credentials: "include", cache: "no-store" });
+  // Server ALETA lama belum punya rutenya: diam, sama dengan sebelum fitur ini.
+  if (respons.status === 404) return { usulan: [], ada: false, catatan: [] };
+  if (!respons.ok) throw new Error(`server ALETA menjawab ${respons.status}`);
+  const luar = await respons.json();
+  const isi = luar && luar.data ? luar.data : luar;
+  const usulan = (Array.isArray(isi && isi.usulan) ? isi.usulan : []).filter((u) => u && peta.has(String(u.kode)));
+  const catatan = (Array.isArray(isi && isi.catatan) ? isi.catatan : []).map(String).filter(Boolean);
+  return { usulan, ada: Boolean(isi && isi.ada), catatan };
+}
+
+/**
+ * Perkara ber-kuasa (gugatan atau SIPP menyebut kuasa): variabel kuasa yang
+ * tidak terdeteksi tetap tampil sebagai kartu kosong yang dapat disunting,
+ * membawa sebabnya - bukan hanya disebut di "Tidak ditampilkan".
+ */
+function a3KartuKuasaKosong(tampil, sama, data) {
+  const d = data || {};
+  const adaKuasa = Boolean(d.kuasa && d.kuasa.ada) || Number((d.sipp && d.sipp.jumlahKuasa) || 0) > 0;
+  if (!adaKuasa) return [];
+  const peta = barisVariabel();
+  const sudah = new Set([...(tampil || []).map((u) => String(u.kode)), ...(sama || []).map(String)]);
+  const asal = new Map();
+  for (const sumber of [d.sipp, d.kuasa]) {
+    for (const u of (sumber && sumber.usulan) || []) if (u && u.kode) asal.set(String(u.kode), u);
+  }
+  const hasil = [];
+  for (const kode of A3_VAR_KUASA_KARTU) {
+    if (sudah.has(kode) || !peta.has(kode)) continue;
+    if (a3BolehDiisi(kode) === false) continue;
+    const u = asal.get(kode) || {};
+    hasil.push({
+      kode,
+      nama: u.nama || (peta.get(kode) || {}).nama || kode,
+      nilai: "",
+      keyakinan: "kosong",
+      sumber: [],
+      catatan: u.catatan || "",
+      wajib: true,
+    });
+  }
+  return hasil;
 }
 
 /** Pemetaan blangko putusan mengenali halaman ini: tokennya, atau nama berkasnya. */

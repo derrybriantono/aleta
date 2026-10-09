@@ -1534,7 +1534,8 @@ async function dariSipp(nomorPerkara) {
     `SELECT p.perkara_id, p.prodeo,
             p.jenis_perkara_text AS jenisPerkara,
             pp.status_putusan_text AS statusPutusan,
-            pp.putusan_verstek AS verstek
+            pp.putusan_verstek AS verstek,
+            DATE_FORMAT(p.tanggal_pendaftaran, '%Y-%m-%d') AS tanggalDaftar
        FROM perkara p
        LEFT JOIN perkara_putusan pp ON pp.perkara_id = p.perkara_id
       WHERE p.nomor_perkara = ? LIMIT 1`,
@@ -1551,44 +1552,34 @@ async function dariSipp(nomorPerkara) {
     verstek: String(baris[0].verstek || "") === "Y",
   };
 
-  const kuasa = await runQuery(
-    `SELECT nama, alamat, nomor_kuasa,
-            DATE_FORMAT(tanggal_kuasa, '%d/%m/%Y') AS tanggal
-       FROM perkara_pengacara
-      WHERE perkara_id = ? AND aktif = 'Y'
-      ORDER BY urutan, id`,
-    [perkaraId]
-  );
-
-  const daftarKuasa = Array.isArray(kuasa) ? kuasa : [];
-  const pertama = daftarKuasa[0] || null;
-  const sumberKuasa = daftarKuasa.map((k) => ({
-    saksi: 0,
-    kalimat: `${k.nama}${k.nomor_kuasa ? ` — kuasa ${k.nomor_kuasa}` : ""}${k.tanggal ? ` tanggal ${k.tanggal}` : ""}`,
-  }));
+  // Kuasa hukum dari SIPP - lihat usulanKuasaSipp (9 Okt 2026, butir 1-4 KUASA).
+  // pihak_pengacara.alamat_kantor ikut dibaca sebagai cadangan alamat/nama
+  // kantor; SIPP yang tidak punya tabelnya tetap dijawab tanpa kolom itu.
+  let kuasa;
+  try {
+    kuasa = await runQuery(
+      `SELECT pp.pihak_ke, pp.urutan, pp.nama, pp.alamat, pk.alamat_kantor, pp.nomor_kuasa,
+              DATE_FORMAT(pp.tanggal_kuasa, '%Y-%m-%d') AS tanggal_kuasa
+         FROM perkara_pengacara pp
+         LEFT JOIN pihak_pengacara pk ON pk.pihak_id = pp.pengacara_id
+        WHERE pp.perkara_id = ? AND pp.aktif = 'Y'
+        ORDER BY pp.urutan, pp.id`,
+      [perkaraId]
+    );
+  } catch {
+    kuasa = await runQuery(
+      `SELECT pihak_ke, urutan, nama, alamat, '' AS alamat_kantor, nomor_kuasa,
+              DATE_FORMAT(tanggal_kuasa, '%Y-%m-%d') AS tanggal_kuasa
+         FROM perkara_pengacara
+        WHERE perkara_id = ? AND aktif = 'Y'
+        ORDER BY urutan, id`,
+      [perkaraId]
+    );
+  }
+  const k = usulanKuasaSipp(Array.isArray(kuasa) ? kuasa : [], { tanggalDaftar: baris[0].tanggalDaftar });
 
   const hasil = [
-    {
-      kode: "0132",
-      nama: "Tgl. Kuasa Penggugat",
-      nilai: pertama && pertama.tanggal ? pertama.tanggal : "",
-      keyakinan: pertama && pertama.tanggal ? "pasti" : "kosong",
-      bentrok: "",
-      sumber: sumberKuasa,
-      catatan: daftarKuasa.length === 0 ? "Perkara ini tidak punya kuasa hukum aktif di SIPP." : "",
-    },
-    {
-      kode: "0156",
-      nama: "Kantor Kuasa Penggugat",
-      nilai: pertama && pertama.alamat ? pertama.alamat : "",
-      keyakinan: pertama && pertama.alamat ? "pasti" : "kosong",
-      bentrok: "",
-      sumber: sumberKuasa,
-      catatan:
-        daftarKuasa.length > 1
-          ? `Ada ${daftarKuasa.length} kuasa aktif. Yang diusulkan alamat kuasa pertama - periksa bila kantornya berbeda.`
-          : "",
-    },
+    ...k.usulan,
     {
       kode: "0661",
       nama: "No. SK Prodeo",
@@ -1626,11 +1617,161 @@ async function dariSipp(nomorPerkara) {
     ok: true,
     perkaraId,
     prodeo,
-    jumlahKuasa: daftarKuasa.length,
+    jumlahKuasa: k.kuasaSipp.length,
+    // Baris kuasa SIPP apa adanya - dibaca rute portal /aleta-ecourt/kuasa-gugatan
+    // sebagai cadangan nama/alamat kantor dan daftar advokat (#8537#).
+    kuasaSipp: k.kuasaSipp,
+    tanggalDaftar: String(baris[0].tanggalDaftar || ""),
     // Dipakai panel untuk menamai berkas - lihat namaBerkas di abt.js.
     keteranganPerkara,
     usulan: hasil,
   };
+}
+
+/**
+ * ============================================================================
+ * KUASA HUKUM DARI SIPP: TANGGAL & NOMOR REGISTER KUASA KHUSUS (9 Okt 2026)
+ * ============================================================================
+ *
+ * Pengguna: "#0132# Tgl. Kuasa Penggugat itu bukan tanggal surat kuasa tetapi
+ * tanggal register kuasa khusus di pengadilan agama".
+ *
+ * SIPP menyimpan register kuasa khusus di perkara_pengacara.nomor_kuasa dan
+ * .tanggal_kuasa (borang SIPP menamainya "Nomor/Tanggal Surat Kuasa", tetapi
+ * register Surat Kuasa APS Badilag membaca nomor_kuasa sebagai nomor register).
+ * Diukur di satker 9 Okt 2026, 180 baris aktif 2024-2026 berpola
+ * "<urut>/SK/<bulan romawi>/<tahun>" - nomor URUT KEPANITERAAN, berurutan lintas
+ * advokat - dan pada 160 di antaranya (89%) bulan tanggal_kuasa sama dengan
+ * bulan romawi nomornya: itu tanggal register. Sisanya (20 baris) petugas
+ * mengetik tanggal SURAT KUASA ke kolom itu: tanggalnya SEBELUM tanggal
+ * pendaftaran perkara dan bulannya berbeda dari nomor register.
+ *
+ * Maka:
+ *   - bulannya = bulan romawi nomor register                -> "pasti" (termasuk
+ *     kuasa e-Court yang didaftarkan sebelum perkaranya teregister)
+ *   - bulan berbeda / nomor tak berpola, atau tanggal
+ *     sebelum pendaftaran                                   -> "ragu" (tidak dicentang)
+ *   - bulan berbeda DAN sebelum pendaftaran                 -> TIDAK diusulkan,
+ *     catatan menyebut tanggal itu kemungkinan tanggal surat kuasa.
+ *
+ * Kuasa Penggugat = pihak_ke 1 (sampai 1.188.0 baris kuasa Tergugat pun dapat
+ * terbaca sebagai "kuasa pertama"). #0156# (nama kantor) TIDAK lagi diisi
+ * alamat advokat - nama kantornya dibaca dari surat gugatan e-Court oleh portal.
+ */
+const BULAN_ROMAWI = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10, XI: 11, XII: 12 };
+
+function bersihkanKuasa(x) {
+  return String(x == null ? "" : x).replace(/\s+/g, " ").trim();
+}
+
+function bulanNomorRegister(nomor) {
+  const m = /^\s*\d+\s*\/\s*S\.?\s*K\.?\s*\/\s*([IVXivx]+)\s*\/\s*(\d{4})\b/.exec(String(nomor || ""));
+  if (!m) return null;
+  const bulan = BULAN_ROMAWI[m[1].toUpperCase()];
+  return bulan ? { bulan, tahun: Number(m[2]) } : null;
+}
+
+function isoKeTampil(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+  return m && m[1] !== "0000" ? `${m[3]}/${m[2]}/${m[1]}` : "";
+}
+
+/**
+ * @param rows baris perkara_pengacara aktif (pihak_ke, urutan, nama, alamat,
+ *        alamat_kantor, nomor_kuasa, tanggal_kuasa "YYYY-MM-DD")
+ * @param opsi {tanggalDaftar: "YYYY-MM-DD"}
+ */
+function usulanKuasaSipp(rows, opsi) {
+  const tanggalDaftar = String((opsi && opsi.tanggalDaftar) || "");
+  const kuasaSipp = (Array.isArray(rows) ? rows : []).map((r) => ({
+    pihakKe: Number(r.pihak_ke) || 0,
+    urutan: Number(r.urutan) || 0,
+    nama: bersihkanKuasa(r.nama),
+    alamat: bersihkanKuasa(r.alamat),
+    alamatKantor: bersihkanKuasa(r.alamat_kantor),
+    nomorKuasa: bersihkanKuasa(r.nomor_kuasa),
+    tanggalKuasa: /^\d{4}-\d{2}-\d{2}$/.test(String(r.tanggal_kuasa || "")) && !String(r.tanggal_kuasa).startsWith("0000")
+      ? String(r.tanggal_kuasa)
+      : "",
+  }));
+  const p = kuasaSipp.filter((x) => x.pihakKe === 1);
+  const sumber = p.map((x) => ({
+    saksi: 0,
+    kalimat: `${x.nama}${x.nomorKuasa ? ` - register ${x.nomorKuasa}` : ""}${x.tanggalKuasa ? ` tanggal ${isoKeTampil(x.tanggalKuasa)}` : ""}`,
+  }));
+  const tanpa = "Penggugat/Pemohon tidak punya kuasa hukum aktif di SIPP.";
+
+  // Nomor register: baris pertama yang bernomor.
+  const bernomor = p.find((x) => x.nomorKuasa) || null;
+  const nomor = {
+    kode: "8539",
+    nama: "No. Register Kuasa Khusus Penggugat",
+    nilai: bernomor ? bernomor.nomorKuasa : "",
+    keyakinan: bernomor ? (bulanNomorRegister(bernomor.nomorKuasa) ? "pasti" : "ragu") : "kosong",
+    bentrok: "",
+    sumber,
+    catatan: !p.length
+      ? tanpa
+      : !bernomor
+      ? "Nomor register kuasa khusus belum dicatat di SIPP (Data Pihak > Kuasa)."
+      : bulanNomorRegister(bernomor.nomorKuasa)
+      ? ""
+      : `Nomor "${bernomor.nomorKuasa}" tidak berbentuk nomor register kepaniteraan (urut/SK/bulan romawi/tahun) - periksa.`,
+  };
+
+  // Tanggal register: dari baris yang sama dengan nomornya bila ada.
+  const dasar = (bernomor && bernomor.tanggalKuasa ? bernomor : null) || p.find((x) => x.tanggalKuasa) || null;
+  let tgl = { nilai: "", keyakinan: p.length ? "kosong" : "kosong", catatan: p.length ? "Tanggal register kuasa khusus belum dicatat di SIPP." : tanpa };
+  if (dasar) {
+    const reg = bulanNomorRegister(dasar.nomorKuasa);
+    const bulanCocok = reg ? reg.bulan === Number(dasar.tanggalKuasa.slice(5, 7)) && reg.tahun === Number(dasar.tanggalKuasa.slice(0, 4)) : null;
+    const sesudahDaftar = tanggalDaftar ? dasar.tanggalKuasa >= tanggalDaftar : null;
+    const tampil = isoKeTampil(dasar.tanggalKuasa);
+    if (bulanCocok === true) {
+      // Bulan = bulan romawi nomor register: tanggal register, termasuk kuasa
+      // e-Court yang didaftarkan sebelum perkaranya teregister (531/2026).
+      tgl = { nilai: tampil, keyakinan: "pasti", catatan: "" };
+    } else if (bulanCocok === false && sesudahDaftar === false) {
+      tgl = {
+        nilai: "",
+        keyakinan: "ragu",
+        catatan: `SIPP mencatat ${tampil} - sebelum tanggal pendaftaran dan bulannya berbeda dari register ${dasar.nomorKuasa}; itu kemungkinan tanggal SURAT KUASA, bukan tanggal register. Isi dari buku register kuasa khusus.`,
+      };
+    } else if (bulanCocok === false || sesudahDaftar === false) {
+      tgl = {
+        nilai: tampil,
+        keyakinan: "ragu",
+        catatan:
+          sesudahDaftar === false
+            ? `Tanggal ${tampil} sebelum tanggal pendaftaran perkara - pastikan ini tanggal register, bukan tanggal surat kuasa.`
+            : `Bulan tanggal ${tampil} berbeda dari bulan nomor register ${dasar.nomorKuasa} - periksa.`,
+      };
+    } else {
+      // Nomor tanpa bulan romawi, tanggal sesudah pendaftaran.
+      tgl = { nilai: tampil, keyakinan: "ragu", catatan: "Nomor register tidak berpola urut/SK/bulan/tahun - pastikan tanggal ini tanggal register." };
+    }
+  }
+  const tanggal = {
+    kode: "0132",
+    nama: "Tgl. Register Kuasa Khusus Penggugat",
+    nilai: tgl.nilai,
+    keyakinan: tgl.keyakinan,
+    bentrok: "",
+    sumber,
+    catatan: tgl.catatan,
+  };
+  const kantor = {
+    kode: "0156",
+    nama: "Kantor Kuasa Penggugat",
+    nilai: "",
+    keyakinan: "kosong",
+    bentrok: "",
+    sumber: [],
+    catatan: p.length
+      ? "Nama kantor kuasa tidak disimpan SIPP - dibaca dari surat gugatan e-Court (bagian kuasa)."
+      : tanpa,
+  };
+  return { kuasaSipp, usulan: [tanggal, kantor, nomor] };
 }
 
 /* ==========================================================================
@@ -4685,6 +4826,9 @@ module.exports = {
   uraikanTanggal,
   dariKeteranganSaksi,
   dariSipp,
+  // Kuasa hukum dari SIPP (9 Okt 2026) - diuji langsung.
+  usulanKuasaSipp,
+  bulanNomorRegister,
   dariPositaItsbat,
   susunKeteranganSaksiSdg,
   // Butir 28 (30 Sep 2026) - diuji langsung.
