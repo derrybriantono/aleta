@@ -22,7 +22,8 @@ const express = require("express");
 
 const { readRuntimeConfig } = require("../config/runtime-config");
 const layanan = require("../services/penetapanKembaliService");
-const penetapanTulisService = require("../services/penetapanTulisService");
+// Penjalan bertransaksi yang sama dengan tombol tunda/putus (jalankanRencanaUtuh).
+const sidangHasilService = require("../services/sidangHasilService");
 const jejakAletaService = require("../services/jejakAletaService");
 const jedaManusiaService = require("../services/jedaManusiaService");
 
@@ -123,7 +124,17 @@ router.post("/tulis", wajibToken, async (req, res) => {
       return;
     }
 
-    const hasil = await penetapanTulisService.jalankanRencana(rencana, { kering });
+    // ========================================================================
+    // SATU TRANSAKSI (uji rilis 9 Okt 2026, pola kasus 273)
+    // ========================================================================
+    //
+    // Penetapan kembali MENONAKTIFKAN majelis/PP/JS lama (UPDATE aktif='T')
+    // lalu MENYISIPKAN yang baru. Ditulis lepas-lepas, kegagalan di antara
+    // keduanya meninggalkan perkara TANPA majelis/PP/JS aktif sama sekali.
+    // Kini seluruh langkahnya satu transaksi (semua tabelnya InnoDB, diukur di
+    // server): gagal di tengah = ROLLBACK, keadaan SIPP kembali seperti semula.
+    // Mesin langkahnya tetap penetapanTulisService.jalankanRencana.
+    const hasil = await sidangHasilService.jalankanRencanaUtuh(rencana, { kering });
 
     void jejakAletaService.catat({
       aksi: "kembali",
@@ -137,7 +148,11 @@ router.post("/tulis", wajibToken, async (req, res) => {
       ip,
       berhasil: hasil.ok === true,
       kering,
-      alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+      alasan: hasil.ok
+        ? ""
+        : `${String(hasil.alasan || "gagal")}${
+            hasil.dipulihkan === true ? " (dibatalkan utuh)" : hasil.dipulihkan === false ? " (TIDAK dipulihkan)" : ""
+          }${hasil.pesan ? `: ${String(hasil.pesan)}` : ""}`.slice(0, 160),
       // Langkah pertama memuat alasan penggantiannya - itulah satu-satunya
       // tempat alasan PJS tersimpan (SIPP tidak menyimpannya).
       langkah: rencana.langkah,
