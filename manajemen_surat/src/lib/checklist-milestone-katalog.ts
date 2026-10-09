@@ -72,6 +72,13 @@ export type HalamanAbt = "blangko-putusan" | "blangko-penetapan" | "blangko-bas"
  * relaas 4 (Cetak Relas & pelaksanaan relaas ada di tab Jadwal Sidang),
  * mediasi 6, putusan 10, keuangan 11, saksi 23, ikrar 24, akta-cerai 25.
  * Pilih halaman menurut PEKERJAANNYA, bukan menurut sumber datanya.
+ *
+ * Dua pekerjaan TIDAK dikerjakan di halaman perkara, jadi kuncinya menu SIPP
+ * (uji rilis 9 Okt 2026; tautan menu dari sys_menus SIPP satker):
+ *   pendaftaran-online  e-Court > Tingkat Pertama (pendaftaran_online) -
+ *                       register e-Court belum punya perkara sama sekali;
+ *   arsip-perkara       Arsip Perkara > Daftar Arsip Perkara (list_arsip) -
+ *                       halaman detail perkara tidak memuat arsip.
  */
 export type HalamanSipp =
   | "perkara"
@@ -83,7 +90,9 @@ export type HalamanSipp =
   | "keuangan"
   | "saksi"
   | "mediasi"
-  | "ikrar";
+  | "ikrar"
+  | "pendaftaran-online"
+  | "arsip-perkara";
 
 /**
  * Ke mana butir mengarah. URL ABT dan SIPP dibangun EKSTENSI dari kunci
@@ -594,7 +603,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "BHT + 5 hari (SK 048/2024 Tabel 2 I.16: 5 hari atau kurang bernilai 5).",
     selesai: "Baris arsip ada.",
     selesaiHariIni: "Arsip diinput hari ini.",
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "arsip-perkara" },
     sumber: "SK 048/2024 I.16 dataArsip; SIPP arsip, perkara_putusan",
     koleksi: ["arsip"],
     butuhPejabat: false,
@@ -726,7 +735,7 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     tenggat: "Hari pembayaran (SK 048/2024 Tabel 2 I.1: hari yang sama bernilai 5).",
     selesai: "Nomor perkara terisi.",
     selesaiHariIni: "Didaftarkan hari ini.",
-    kerjakan: { tujuan: "sipp", halaman: "perkara" },
+    kerjakan: { tujuan: "sipp", halaman: "pendaftaran-online" },
     sumber: "SIPP perkara_efiling",
     koleksi: ["efiling"],
     butuhPejabat: false,

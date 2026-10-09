@@ -62,9 +62,55 @@ let versiMenunggu = "";
  * penetapan, dan panel yang lenyap di saat itu membuang pekerjaannya. Yang
  * dikerjakan hanya mencatatnya, supaya panel dapat menawarkan pemasangannya.
  */
+/** Kunci chrome.storage.session untuk versi yang sudah diunduh Chrome. */
+const KUNCI_VERSI_MENUNGGU = "aletaVersiMenunggu";
+
 chrome.runtime.onUpdateAvailable.addListener((rincian) => {
   versiMenunggu = String((rincian && rincian.version) || "");
+  // Pekerja MV3 mati tiap +-30 detik menganggur, dan peristiwa ini TIDAK
+  // berbunyi lagi untuk pekerja berikutnya. Ingatan modul saja membuat versi
+  // yang sudah diunduh terlupa (uji rilis 9 Okt 2026) - jadi ia dititipkan ke
+  // chrome.storage.session, yang dikosongkan Chrome sendiri begitu ekstensi
+  // dimuat ulang atau diperbarui.
+  try {
+    const titip = chrome.storage.session.set({ [KUNCI_VERSI_MENUNGGU]: versiMenunggu });
+    if (titip && typeof titip.catch === "function") titip.catch(() => {});
+  } catch {
+    /* tanpa storage.session: ingatan modul saja, seperti sebelumnya */
+  }
 });
+
+/**
+ * Versi yang sudah diunduh Chrome dan menunggu dipasang - dari ingatan, atau
+ * dari titipan pekerja sebelumnya. Titipan yang tidak lebih baru dari versi
+ * terpasang berarti pembaruannya sudah berlaku: diabaikan.
+ */
+async function bacaVersiMenunggu() {
+  if (versiMenunggu) return versiMenunggu;
+  let titipan = "";
+  try {
+    const isi = await chrome.storage.session.get([KUNCI_VERSI_MENUNGGU]);
+    titipan = String((isi && isi[KUNCI_VERSI_MENUNGGU]) || "");
+  } catch {
+    return "";
+  }
+  if (!titipan) return "";
+  const sekarang = String(chrome.runtime.getManifest().version || "");
+  if (bandingkanVersi(titipan, sekarang) <= 0) return "";
+  versiMenunggu = titipan;
+  return versiMenunggu;
+}
+
+/** -1 / 0 / 1 untuk versi bertitik seperti "1.188.0". */
+function bandingkanVersi(a, b) {
+  const pa = String(a || "").split(".").map((x) => Number.parseInt(x, 10) || 0);
+  const pb = String(b || "").split(".").map((x) => Number.parseInt(x, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
 
 /** Menjadwalkan pemuatan ulang, sesudah jawabannya sempat terkirim. */
 function muatUlangSebentarLagi() {
@@ -89,7 +135,8 @@ async function perbaruiSekarang(opsi) {
   const versiSekarang = String(chrome.runtime.getManifest().version || "");
 
   // Sudah pernah diunduh Chrome dan tinggal dipasang - tidak perlu bertanya
-  // lagi ke portal.
+  // lagi ke portal. Dibaca juga dari titipan pekerja sebelumnya.
+  await bacaVersiMenunggu();
   if (versiMenunggu) {
     const cegah = paksa ? null : await relaasPenghalangMuatUlang();
     if (cegah) return relaasTahanMuatUlang(cegah, versiSekarang, versiMenunggu);
@@ -626,11 +673,15 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   }
 
   if (pesan.jenis === "keadaan-pembaruan") {
-    jawab({
-      ok: true,
-      versiSekarang: String(chrome.runtime.getManifest().version || ""),
-      versiMenunggu,
-    });
+    bacaVersiMenunggu()
+      .catch(() => versiMenunggu)
+      .then((menunggu) =>
+        jawab({
+          ok: true,
+          versiSekarang: String(chrome.runtime.getManifest().version || ""),
+          versiMenunggu: String(menunggu || ""),
+        })
+      );
     return true;
   }
 

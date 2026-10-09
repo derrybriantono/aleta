@@ -201,6 +201,9 @@ describe("katalog", () => {
       "saksi",
       "mediasi",
       "ikrar",
+      // Menu SIPP, bukan tab halaman perkara (uji rilis U2c 9 Okt 2026).
+      "pendaftaran-online",
+      "arsip-perkara",
     ];
     for (const j of KATALOG_CHECKLIST) {
       if (!j.tersedia) continue;

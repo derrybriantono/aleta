@@ -1516,6 +1516,30 @@ const KALIMAT_ALASAN = [
       "Mode coba sedang aktif di peramban ini - tidak ada yang dikirim ke ALETA maupun SIPP. Centang 'Izinkan tindakan nyata' pada ikon ALETA di pojok peramban, lalu coba lagi.",
   },
   {
+    // Mode kering dan mode latihan menahan kiriman yang SAMA dengan mode coba
+    // (uji rilis 9 Okt 2026). Tanpa terjemahan ini penetapan massal menulis
+    // "PMH: mode_latihan" pada tiap perkara, dan tidak berhenti.
+    pola: /^mode_kering$/,
+    kalimat: () =>
+      "Mode kering sedang aktif di peramban ini - tidak ada yang dikirim ke ALETA maupun SIPP, termasuk pemeriksaan penetapan. Matikan Mode kering di Perkakas Super Admin, lalu coba lagi.",
+  },
+  {
+    pola: /^mode_latihan$/,
+    kalimat: () =>
+      "LATIHAN: mode latihan menyala di peramban ini - tidak ada yang dikirim ke ALETA maupun SIPP, termasuk pemeriksaan penetapan. Lihat catatan latihan; matikan mode latihan pada ikon ALETA untuk menetapkan sungguhan.",
+  },
+  {
+    // Jawaban portal tanpa kode bot (uji rilis 9 Okt 2026) - lihat
+    // jawabanTulisTanpaAlasan di rantaiPenetapan.
+    pola: /^aleta_belum_masuk$/,
+    kalimat: () =>
+      "Sesi ALETA Anda habis atau belum masuk di peramban ini. Masuk ke portal ALETA di tab lain, lalu tekan lagi - perkara yang sudah tertulis akan dilewati.",
+  },
+  {
+    pola: /^aleta_tanpa_akses$/,
+    kalimat: () => "Peran Anda tidak diberi akses menulis penetapan di ALETA.",
+  },
+  {
     pola: /^jenis_tidak_didukung$/,
     kalimat: () => "Jenis penetapan ini tidak dikenali ALETA.",
   },
@@ -1555,7 +1579,54 @@ function keadaanPenetapanUsulan(usulan) {
  * (usulan satu perkara gagal, hakim tidak ketemu, tanggal) berlaku untuk
  * perkara itu saja, dan perkara berikutnya tetap dikerjakan.
  */
-const ALASAN_MENYELURUH = /^(akun_sipp_belum_terbaca|akun_sipp_tidak_ketemu|akun_sipp_ganda|operator_tidak_disebut|operator_tidak_dikenali|mode_coba)$/;
+const ALASAN_MENYELURUH = /^(akun_sipp_belum_terbaca|akun_sipp_tidak_ketemu|akun_sipp_ganda|operator_tidak_disebut|operator_tidak_dikenali|mode_coba|mode_kering|mode_latihan|aleta_belum_masuk|aleta_tanpa_akses)$/;
+
+/**
+ * ============================================================================
+ * JAWABAN PORTAL YANG TIDAK MEMBAWA KODE BOT (uji rilis 9 Okt 2026)
+ * ============================================================================
+ *
+ * Rute tulis meneruskan penolakan bot beserta `alasan`-nya. Tetapi tidak
+ * setiap jawaban berasal dari bot:
+ *
+ *   - 502/503 dari Apache selagi portal dibangun ulang berupa HALAMAN HTML -
+ *     respons.json() melempar, dan yang dahulu terbaca petugas adalah
+ *     "Unexpected token '<', "<html>..." is not valid JSON";
+ *   - 401/403/500 dari portal sendiri berbentuk { ok:false, error:{ message } }
+ *     tanpa `alasan` - dahulu satu kata "ditolak", dan 401 (sesi ALETA habis)
+ *     tidak menghentikan antrean sehingga tiap perkara sisanya dicoba dan
+ *     ditolak dengan kata yang sama.
+ *
+ * Mengembalikan null bila jawabannya memang jawaban bot (berhasil, atau
+ * ditolak beralasan) - jalannya tidak berubah. Selain itu satu hasil gagal
+ * yang sebabnya terbaca: 401/403 menjadi kode menyeluruh (antrean berhenti),
+ * selebihnya gagal untuk perkara itu saja.
+ */
+function jawabanTulisTanpaAlasan(respons, jawab, jenis, kering) {
+  const status = Number(respons && respons.status) || 0;
+  const httpGagal = status > 0 && (status < 200 || status >= 300);
+  const bentukSah = jawab !== null && typeof jawab === "object";
+  if (bentukSah && jawab.alasan) return null;
+  if (bentukSah && !httpGagal) return null;
+  if (status === 401 || status === 403) {
+    const kode = status === 401 ? "aleta_belum_masuk" : "aleta_tanpa_akses";
+    return { jenis, ok: false, alasan: kode, bunyi: kalimatAlasan(kode), status };
+  }
+  const galat = bentukSah ? jawab.error : null;
+  const pesanPortal = String((galat && (typeof galat === "string" ? galat : galat.message)) || "").trim();
+  const sebab = pesanPortal
+    ? `${pesanPortal.replace(/[.\s]+$/, "")} (ALETA menjawab ${status || "tanpa kode"})`
+    : bentukSah
+      ? `ALETA menjawab ${status}`
+      : `jawaban ALETA tidak terbaca${status ? ` (ALETA menjawab ${status})` : ""} - server ALETA mungkin sedang dimuat ulang`;
+  // Pada penulisan sungguhan jawabannya yang hilang, belum tentu tulisannya:
+  // bot dapat sudah menulis sebelum gerbangnya menyerah. Disebut apa adanya -
+  // menekan lagi aman, langkah yang sudah ada dilewati.
+  const lanjut = kering
+    ? ". Coba lagi sebentar lagi."
+    : ". Belum pasti tertulis atau tidak - periksa di SIPP; bila ditekan lagi, langkah yang sudah ada dilewati.";
+  return { jenis, ok: false, alasan: `jawaban_aleta_${status || "rusak"}`, bunyi: `${sebab}${lanjut}`, status };
+}
 
 async function rantaiPenetapan(usulan, data, kering) {
   const perkaraId = Number((usulan.perkara && usulan.perkara.perkaraId) || 0);
@@ -1673,8 +1744,9 @@ async function rantaiPenetapan(usulan, data, kering) {
     }
 
     let jawab;
+    let respons;
     try {
-      const respons = await alatAmbil(
+      respons = await alatAmbil(
         ALETA_API_TULIS,
         {
           method: "POST",
@@ -1693,10 +1765,22 @@ async function rantaiPenetapan(usulan, data, kering) {
         },
         kering ? "Menyusun rencana penetapan" : "Menulis penetapan"
       );
-      const luar = await respons.json();
-      jawab = luar && luar.data ? luar.data : luar;
     } catch (galat) {
       hasil.push({ jenis, ok: false, alasan: String((galat && galat.message) || galat) });
+      break;
+    }
+    // Badannya dibaca terpisah: halaman HTML 502 bukan galat jaringan, dan
+    // sebabnya disusun jawabanTulisTanpaAlasan - bukan bunyi JSON.parse.
+    let luar = null;
+    try {
+      luar = await respons.json();
+    } catch {
+      luar = null;
+    }
+    jawab = luar && luar.data ? luar.data : luar;
+    const tanpaAlasan = jawabanTulisTanpaAlasan(respons, jawab, jenis, kering);
+    if (tanpaAlasan) {
+      hasil.push({ ...tanpaAlasan, olehUsername });
       break;
     }
 
@@ -15438,7 +15522,15 @@ async function bagianAntreanSipp(nomorHalaman) {
   hentikan.type = "button";
   hentikan.title = "Membuang antrean ini. Perkara yang sudah tersimpan tetap tersimpan.";
   hentikan.addEventListener("click", async () => {
-    await alatSimpanAntrean(null);
+    // Penyimpanan yang tidak terjangkau (ekstensi dimuat ulang) tidak
+    // mengakhiri apa pun - dahulu panelnya tetap dibuang, dan antrean yang
+    // masih tersimpan hidup lagi di halaman berikutnya tanpa kabar.
+    if ((await alatSimpanAntrean(null)) === false) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent =
+        "Antrean BELUM diakhiri: penyimpanannya tidak terjangkau dari halaman ini (ALETA baru saja dimuat ulang atau diperbarui). Muat ulang halaman ini, lalu tekan Akhiri antrean lagi.";
+      return;
+    }
     alatCatat("massal", "antrean SIPP diakhiri oleh pengguna", "");
     kotak.remove();
   });
@@ -15453,6 +15545,18 @@ async function bagianAntreanSipp(nomorHalaman) {
  * bagianAntreanSipp.
  */
 let antreanSippBerjalan = "";
+
+/**
+ * Antrean tidak dapat dibaca/ditulis dari halaman ini (uji rilis 9 Okt 2026):
+ * "terputus" = ekstensi dimuat ulang atau diperbarui selagi halaman terbuka;
+ * "gagal-tulis" = penyimpanan peramban menolak. Bukan "antrean diakhiri" -
+ * antreannya masih ada, halaman inilah yang kehilangan jalannya ke sana.
+ */
+function kalimatAntreanTakTerjangkau(sebab, nomor) {
+  return sebab === "terputus"
+    ? `ALETA baru saja dimuat ulang atau diperbarui, jadi antrean tidak terjangkau dari halaman ini. ${nomor} tidak dikerjakan dan Simpan tidak ditekan - muat ulang halaman ini (F5), lalu lanjutkan antreannya.`
+    : `Antrean tidak dapat dicatat di penyimpanan peramban ini. ${nomor} tidak dikerjakan dan Simpan tidak ditekan - muat ulang halaman ini, lalu coba lagi.`;
+}
 
 /**
  * Pintu tunggal ke jalankanSatuAntreanSipp dari panel antrean - tombol maupun
@@ -15485,9 +15589,11 @@ async function jalankanAntreanSippSekali(antrean, butir, kabar, tombol, otomatis
     if (!klaim.ok) {
       if (kabar) {
         kabar.textContent =
-          klaim.sebab === "diakhiri" || klaim.sebab === "diganti"
-            ? "Antrean ini sudah diakhiri atau diganti antrean lain - tidak ada yang dikerjakan."
-            : `${butir.nomor} sudah ${klaim.butir ? namaKeadaanButir(klaim.butir) : "tidak ada di antrean"} - tidak dikerjakan lagi.`;
+          klaim.sebab === "terputus" || klaim.sebab === "gagal-tulis"
+            ? kalimatAntreanTakTerjangkau(klaim.sebab, butir.nomor)
+            : klaim.sebab === "diakhiri" || klaim.sebab === "diganti"
+              ? "Antrean ini sudah diakhiri atau diganti antrean lain - tidak ada yang dikerjakan."
+              : `${butir.nomor} sudah ${klaim.butir ? namaKeadaanButir(klaim.butir) : "tidak ada di antrean"} - tidak dikerjakan lagi.`;
       }
       return;
     }
@@ -15719,7 +15825,9 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
       kabar.textContent =
         awal.sebab === "ditolak"
           ? `${butir.nomor} sedang dikerjakan di halaman lain - tidak dikerjakan di sini.`
-          : "Antrean ini sudah diakhiri atau diganti antrean lain - tidak ada yang dikerjakan.";
+          : awal.sebab === "terputus" || awal.sebab === "gagal-tulis"
+            ? kalimatAntreanTakTerjangkau(awal.sebab, butir.nomor)
+            : "Antrean ini sudah diakhiri atau diganti antrean lain - tidak ada yang dikerjakan.";
     }
     if (tombol) tombol.disabled = false;
     return;
@@ -16242,7 +16350,9 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
         ? "antrean ini sudah diganti antrean lain"
         : pegangan.sebab === "tidak-ada"
           ? "perkara ini sudah tidak ada di antrean"
-          : "antrean sudah diakhiri"
+          : pegangan.sebab === "terputus"
+            ? "ALETA dimuat ulang atau diperbarui di tengah pengerjaan (muat ulang halaman ini lalu lanjutkan)"
+            : "antrean sudah diakhiri"
       : "perkara ini sudah dipegang halaman lain";
     butir.keadaan = "tertahan";
     butir.sebabTahan = "antrean-diakhiri";

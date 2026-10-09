@@ -837,6 +837,9 @@ function jurusitaKirim(jenis, tambahan, batasMs) {
     } catch (e) {
       pulang({
         ok: false,
+        // konteksHilang: skrip halaman ini tidak lagi tersambung ke ekstensi -
+        // bertanya lagi tidak akan pernah berhasil (lihat jurusitaPasangPantau).
+        konteksHilang: true,
         sebab: `Ekstensi ALETA baru dimuat ulang - muat ulang halaman ini (${String((e && e.message) || e)}).`,
       });
     }
@@ -1082,16 +1085,89 @@ function jurusitaCekSesiHalaman(pada) {
   return janji;
 }
 
+/**
+ * ============================================================================
+ * PEMANTAU PUTARAN - SATU PERTANYAAN YANG GAGAL TIDAK MEMBEKUKAN PANEL
+ * ============================================================================
+ *
+ * Uji rilis 9 Okt 2026: pemantau dulu BERHENTI pada pertanyaan relaas-keadaan
+ * pertama yang gagal. Di MV3 itu terjadi justru di tengah putaran: Chrome
+ * mematikan pekerja latar selagi ia menjawab ("The message port closed before
+ * a response was received"), atau pekerja yang baru bangun belum menjawab
+ * dalam batas waktu. Putarannya sendiri TETAP berjalan (latar.js melanjutkan
+ * dari penyimpanan), tetapi panel membeku di "Mencetak 3/10" sampai halaman
+ * dimuat ulang - juru sita mengira cetaknya macet.
+ *
+ * Kini, selama putaran yang terakhir tergambar belum selesai, pertanyaan yang
+ * gagal diulang (JURUSITA_JEDA_PANTAU_GAGAL_MS) dengan sebabnya disebut di
+ * bawah putaran; gambaran putarannya tidak dihapus. Menyerah sesudah
+ * JURUSITA_PANTAU_GAGAL_MAKS kali berturut-turut, atau seketika bila halaman
+ * ini sudah terputus dari ekstensi (konteksHilang - ekstensi dimuat ulang).
+ * Tanpa putaran yang tampil, kegagalan tetap diam seperti dulu: panel di tiap
+ * halaman tidak bertanya terus ke pekerja yang tidak punya putaran.
+ *
+ * Penjadwalan selalu membatalkan pewaktu sebelumnya: tanya() dipanggil juga
+ * dari tombol Cetak/Hentikan/Lanjutkan, dan dua pertanyaan yang kebetulan
+ * terbang bersamaan dulu masing-masing memasang pewaktunya - dua rantai
+ * pemantau sekaligus.
+ */
+const JURUSITA_JEDA_PANTAU_GAGAL_MS = 2000;
+const JURUSITA_PANTAU_GAGAL_MAKS = 15;
+
+function jurusitaKabarPantau(kotak, teks) {
+  let kabar = kotak.querySelector(":scope > .aleta-jurusita-pantau-kabar");
+  if (!teks) {
+    if (kabar) kabar.remove();
+    return;
+  }
+  if (!kabar) {
+    kabar = jurusitaEl("div", "aleta-jurusita-kabar aleta-jurusita-kabar-peringatan aleta-jurusita-pantau-kabar");
+    kotak.appendChild(kabar);
+  }
+  kabar.textContent = teks;
+  kabar.hidden = false;
+}
+
 /** Memantau putaran selama bagiannya masih ada di halaman. */
 function jurusitaPasangPantau(akar, kotak) {
   let jam = 0;
+  let berjalan = false;
+  let gagal = 0;
+  const jadwalkan = (ms) => {
+    clearTimeout(jam);
+    jam = setTimeout(tanya, ms);
+  };
   const tanya = async () => {
     clearTimeout(jam);
     if (!akar.isConnected) return;
     const j = await jurusitaKirim("relaas-keadaan", {}, JURUSITA_BATAS_PESAN_MS);
     if (!akar.isConnected) return;
-    const berjalan = j && j.ok ? jurusitaGambarPutaran(kotak, j, tanya) : false;
-    if (berjalan) jam = setTimeout(tanya, JURUSITA_JEDA_PANTAU_MS);
+    if (j && j.ok) {
+      gagal = 0;
+      berjalan = jurusitaGambarPutaran(kotak, j, tanya);
+      if (berjalan) jadwalkan(JURUSITA_JEDA_PANTAU_MS);
+      return;
+    }
+    if (!berjalan || kotak.hidden) return;
+    const sebab = String((j && j.sebab) || "ekstensi tidak menjawab");
+    if (j && j.konteksHilang) {
+      jurusitaKabarPantau(kotak, sebab);
+      return;
+    }
+    gagal += 1;
+    if (gagal >= JURUSITA_PANTAU_GAGAL_MAKS) {
+      jurusitaKabarPantau(
+        kotak,
+        `Keadaan putaran tidak terbaca ${gagal} kali berturut-turut (${sebab}). Pemantauan dihentikan - ` +
+          "putarannya mungkin tetap berjalan; muat ulang halaman ini untuk melihat kemajuannya."
+      );
+      return;
+    }
+    jurusitaKabarPantau(
+      kotak,
+      `Keadaan putaran belum terbaca dari ekstensi (${sebab}). Putarannya tetap berjalan di ekstensi; ditanyakan lagi sebentar lagi.`
+    );
+    jadwalkan(JURUSITA_JEDA_PANTAU_GAGAL_MS);
   };
   return tanya;
 }

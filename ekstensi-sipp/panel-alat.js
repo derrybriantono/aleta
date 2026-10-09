@@ -6916,12 +6916,38 @@ const ALAT_ANTREAN_MAKS = 120;
  *   yang diisikan ALETA pada perkara itu
  */
 async function alatMuatAntrean() {
+  return (await alatMuatAntreanRinci()).antrean;
+}
+
+/**
+ * ============================================================================
+ * EKSTENSI DIMUAT ULANG DI TENGAH ANTREAN (uji rilis 9 Okt 2026)
+ * ============================================================================
+ *
+ * Sesudah ekstensi dimuat ulang atau diperbarui, skrip di halaman yang sudah
+ * terbuka tetap hidup, tetapi tiap chrome.storage melempar "Extension context
+ * invalidated". Dahulu itu terbaca sama dengan antrean yang KOSONG, sehingga
+ * petugas diberi tahu "antrean ini sudah diakhiri atau diganti" - keliru, dan
+ * tanpa jalan keluar. Kini sebabnya "terputus": muat ulang halamannya.
+ */
+function alatGalatTerputus(galat) {
+  const pesan = String((galat && galat.message) || galat || "");
+  if (/context invalidated/i.test(pesan)) return true;
+  try {
+    return typeof chrome === "undefined" || !chrome || !chrome.storage || !chrome.storage.local;
+  } catch {
+    return true;
+  }
+}
+
+/** Antrean beserta keterangan apakah penyimpanan ekstensi terputus. */
+async function alatMuatAntreanRinci() {
   try {
     const simpan = await chrome.storage.local.get([ALAT_ANTREAN_KUNCI]);
     const q = simpan[ALAT_ANTREAN_KUNCI];
-    return q && Array.isArray(q.butir) ? q : null;
-  } catch {
-    return null;
+    return { antrean: q && Array.isArray(q.butir) ? q : null, terputus: false };
+  } catch (galat) {
+    return { antrean: null, terputus: alatGalatTerputus(galat) };
   }
 }
 
@@ -6987,13 +7013,18 @@ async function alatDalamKunciAntrean(kerja) {
   }
 }
 
+/** Tulis antrean terakhir yang gagal karena ekstensi terputus (lihat alatGalatTerputus). */
+let alatAntreanTulisTerputus = false;
+
 /** Tulis utuh TANPA kunci - hanya untuk dipanggil dari dalam kunci antrean. */
 async function alatTulisAntreanLangsung(antrean) {
   try {
     if (!antrean) await chrome.storage.local.remove([ALAT_ANTREAN_KUNCI]);
     else await chrome.storage.local.set({ [ALAT_ANTREAN_KUNCI]: antrean });
+    alatAntreanTulisTerputus = false;
     return true;
-  } catch {
+  } catch (galat) {
+    alatAntreanTulisTerputus = alatGalatTerputus(galat);
     return false;
   }
 }
@@ -7010,24 +7041,31 @@ async function alatSimpanAntrean(antrean) {
  * Pulang { ok, sebab, butir } - butir adalah salinan sesudah diubah (atau
  * sebelum, bila batal). sebab: "diakhiri" (antrean sudah tidak ada),
  * "diganti" (antrean lain), "tidak-ada" (nomornya tidak di antrean), "ditolak"
- * (ubah memulangkan false), "gagal-tulis".
+ * (ubah memulangkan false), "gagal-tulis", "terputus" (ekstensi dimuat ulang -
+ * penyimpanannya tidak terjangkau dari halaman ini; uji rilis 9 Okt 2026).
  */
 async function alatUbahButirAntrean(idAntrean, nomor, ubah) {
   return alatDalamKunciAntrean(async () => {
-    const antrean = await alatMuatAntrean();
+    const { antrean, terputus } = await alatMuatAntreanRinci();
+    if (terputus) return { ok: false, sebab: "terputus", butir: null };
     if (!antrean) return { ok: false, sebab: "diakhiri", butir: null };
     if (antrean.id !== idAntrean) return { ok: false, sebab: "diganti", butir: null };
     const butir = antrean.butir.find((x) => x.nomor === nomor);
     if (!butir) return { ok: false, sebab: "tidak-ada", butir: null };
     if (ubah(butir) === false) return { ok: false, sebab: "ditolak", butir: { ...butir } };
     const tertulis = await alatTulisAntreanLangsung(antrean);
-    return { ok: tertulis, sebab: tertulis ? "" : "gagal-tulis", butir: { ...butir } };
+    return {
+      ok: tertulis,
+      sebab: tertulis ? "" : alatAntreanTulisTerputus ? "terputus" : "gagal-tulis",
+      butir: { ...butir },
+    };
   });
 }
 
 /** Membaca SATU butir antrean segar - tanpa menulis. Bentuk pulangnya sama. */
 async function alatBacaButirAntrean(idAntrean, nomor) {
-  const antrean = await alatMuatAntrean();
+  const { antrean, terputus } = await alatMuatAntreanRinci();
+  if (terputus) return { ok: false, sebab: "terputus", butir: null };
   if (!antrean) return { ok: false, sebab: "diakhiri", butir: null };
   if (antrean.id !== idAntrean) return { ok: false, sebab: "diganti", butir: null };
   const butir = antrean.butir.find((x) => x.nomor === nomor);
@@ -7926,15 +7964,36 @@ function alatKenaliHalamanMasuk(dok, lokasi) {
 
   const sipp = dok.querySelector("form#login_frm");
   if (sipp && /\/login\/validation_credential\/?$/.test(tujuan(sipp))) {
-    const nama = sipp.querySelector('input[name="username"]');
-    const sandi = sipp.querySelector('input[name="password"]');
+    // SIPP menulis <form> DI DALAM <tbody> (views/Login/login.php). Parser
+    // HTML menutup form seperti itu seketika, jadi medan-medannya BUKAN
+    // keturunannya - hanya "dimiliki" lewat penunjuk form parser (uji rilis
+    // 9 Okt 2026: sampai 1.188.0 halaman masuk SIPP sungguhan tidak pernah
+    // dikenali). Dicari lewat form.elements, lalu keturunan, lalu medan
+    // tunggal sehalaman yang tidak dimiliki form lain.
+    const medanMilik = (pilih, nama) => {
+      try {
+        const dariDaftar = sipp.elements && sipp.elements.namedItem ? sipp.elements.namedItem(nama) : null;
+        if (dariDaftar && dariDaftar.tagName === "INPUT") return dariDaftar;
+      } catch {
+        /* lanjut ke cara berikutnya */
+      }
+      const keturunan = sipp.querySelector(pilih);
+      if (keturunan) return keturunan;
+      const sehalaman = Array.from(dok.querySelectorAll(pilih)).filter((x) => !x.form || x.form === sipp);
+      return sehalaman.length === 1 ? sehalaman[0] : null;
+    };
+    const nama = medanMilik('input[name="username"]', "username");
+    const sandi = medanMilik('input[name="password"]', "password");
     if (nama && sandi) {
+      const tombolSemua = Array.from(
+        dok.querySelectorAll('input[type="submit"], button[type="submit"], button:not([type])')
+      ).filter((x) => x.form === sipp || sipp.contains(x));
       return {
         jenis: "sipp",
         blangko: sipp,
         nama,
         sandi,
-        tombol: sipp.querySelector('input[type="submit"], button[type="submit"], button:not([type])'),
+        tombol: tombolSemua[0] || null,
         ditolak: /\/login\/index\/ERR\/?$/i.test(jalur),
       };
     }

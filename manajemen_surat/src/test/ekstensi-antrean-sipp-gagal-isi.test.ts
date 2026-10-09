@@ -117,6 +117,9 @@ function muatAntrean() {
       return pewaktu.length;
     },
     alatMuatAntrean: async () => (tersimpan ? JSON.parse(tersimpan) : null),
+    // Uji rilis 9 Okt 2026: baca-ubah-tulis per butir membaca lewat bentuk
+    // rincinya (antrean + apakah ekstensi terputus) - penyimpanan tiruan sama.
+    alatMuatAntreanRinci: async () => ({ antrean: tersimpan ? JSON.parse(tersimpan) : null, terputus: false }),
     alatSimpanAntrean: async (a: Antrean | null) => {
       tersimpan = a ? JSON.stringify(a) : null;
       return true;

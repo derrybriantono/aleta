@@ -1585,6 +1585,12 @@ function basmassalGambar(akar, konteks) {
     henti.hidden = false;
     henti.disabled = false;
     muat.disabled = true;
+    // Uji rilis 9 Okt 2026: tanggal & saringan dikunci selama putaran. Dulu
+    // keduanya tetap dapat diganti, tampilkan() diam-diam menolak (berjalan),
+    // dan sesudah putaran daftar tanggal LAMA tampil di bawah tanggal BARU -
+    // "Kerjakan" berikutnya mengunduh BAS sidang yang bukan tanggal tertulis.
+    tanggal.disabled = true;
+    saring.disabled = true;
     konteks.segarkanAksi();
     const hitung = { diunduh: 0, dilewati: 0, gagal: 0 };
     for (let i = 0; i < dipilih.length; i += 1) {
@@ -1611,6 +1617,8 @@ function basmassalGambar(akar, konteks) {
     berjalan = false;
     henti.hidden = true;
     muat.disabled = false;
+    tanggal.disabled = false;
+    saring.disabled = false;
     konteks.segarkanAksi();
   });
 
