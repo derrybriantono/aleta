@@ -225,8 +225,12 @@ const layanan = muatLayanan();
  *               membuktikan tambahan ini tidak mengubah belahan pertama.
  *   2026-08-18  memuat KEDUA belahan sekaligus: 20 relaas dan 15 pemberitahuan
  *               tercatat, serta 9 baris yang relaasnya belum ada.
- *   2026-09-22  relaas 0 dan pemberitahuan 0, tetapi 22 sidang hari itu belum
- *               punya relaas - hari yang sebelum ini dijawab "tidak ada apa-apa".
+ *   2026-10-15  relaas 0 dan pemberitahuan 0, tetapi 44 panggilan untuk 40
+ *               sidang hari itu belum punya relaas - hari yang sebelum ini
+ *               dijawab "tidak ada apa-apa". (Semula 2026-09-22; sejak
+ *               sipp_donggala diimpor ulang dari salinan produksi 9 Okt 2026
+ *               22 Sep sudah memuat 15 relaas - fakta jangkarnya hilang,
+ *               relaasMassalService.js tidak berubah sejak e8c1a3d.)
  *   2026-09-04  18 sidang yang sidang sebelumnya dihadiri SEMUA pihak (sandi 1)
  *               dan 14 putusan yang dibacakan di hadapan semua pihak - inilah
  *               yang menguji "tidak-perlu" (32 bukan pekerjaan) - serta 4
@@ -238,7 +242,7 @@ const layanan = muatLayanan();
 const TANGGAL = {
   tersibuk: "2026-04-29",
   duaBelahan: "2026-08-18",
-  tampakKosong: "2026-09-22",
+  tampakKosong: "2026-10-15",
   kehadiranTakTerbaca: "2026-09-04",
   sidangPerkaraLain: "2026-06-30",
 } as const;
@@ -461,7 +465,7 @@ describe.skipIf(!ADA_MYSQL)("dua belahan, dan keduanya ditandai", () => {
   });
 
   it("hari yang relaasnya nol TIDAK berarti hari tanpa pekerjaan", () => {
-    // 22 September 2026: tidak ada satu pun relaas maupun pemberitahuan
+    // 15 Oktober 2026 (semula 22 Sep, lihat TANGGAL): tidak ada satu pun relaas maupun pemberitahuan
     // tercatat, sementara sidang hari itu menunggu dipanggil. Sebelum belahan
     // kedua ada, tanggal ini dijawab "tidak ada apa-apa".
     const h = hasil[TANGGAL.tampakKosong];

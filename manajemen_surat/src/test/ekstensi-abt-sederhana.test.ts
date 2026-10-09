@@ -858,7 +858,11 @@ describe("9 Okt (KUASA butir 1-4): kuasa hukum dari surat gugatan e-Court di Isi
     input.click();
     await sampai(() => /tersimpan/.test(q(h, ".aleta-sore-tindakan + .aleta-abt-kabar")?.textContent || ""), "kabar input");
     const tulis = tulisAbt(h).map((m) => ({ no: new URLSearchParams(m.url.split("?")[1]).get("no_var"), nilai: new URLSearchParams(m.badan).get("value") }));
-    expect(tulis).toContainEqual({ no: "0156", nilai: "DERRY & PARTNER'S" });
+    // Petik lurus dinetralkan menjadi ’ oleh simpanVariabel (uji rilis U3,
+    // 8c1e9f7): ABT menempelkan #var# mentah ke kueri data_sql, dan petik
+    // lurus mematikan seluruh halaman blangko. cleanHtmlTagSpecial ABT
+    // mengembalikannya menjadi ' saat mencetak - namanya tetap utuh.
+    expect(tulis).toContainEqual({ no: "0156", nilai: "DERRY & PARTNER’S" });
     expect(tulis).toContainEqual({ no: "0184", nilai: "11/04/2026" });
     expect(tulis.some((t) => t.no === "8538")).toBe(false);
   });

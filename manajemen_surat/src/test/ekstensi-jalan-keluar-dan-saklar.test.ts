@@ -144,7 +144,10 @@ describe("sunting sekali klik di ABT - bawaannya MATI", () => {
     // Tanpa atribut checked pada markupnya.
     const potong = popupHtml.slice(popupHtml.indexOf('id="suntingLangsungAbt"') - 60);
     expect(potong.slice(0, 120)).not.toContain("checked");
-    expect(popupJs).toContain('simpan("suntingLangsungAbt", kotakSunting.checked)');
+    // Sejak uji rilis U2c (2c31407) kotak centangnya ikut dikirim sebagai
+    // argumen ketiga - simpanSaklar mengembalikan centang bila penyimpanan
+    // menolak. Yang dijaga tetap: kuncinya disimpan dengan nilai centang.
+    expect(popupJs).toContain('simpan("suntingLangsungAbt", kotakSunting.checked, kotakSunting)');
   });
 });
 

@@ -212,6 +212,35 @@ function buka(perkara: Record<string, Perkara>, opsi: OpsiBuka = {}) {
       if (p && p.usulanStatus) return jawaban(p.usulanStatus, { ok: false, error: { message: "Sesi berakhir." } });
       return jawaban(200, { ok: true, data: { available: true, usulan: usulanUntuk(nomor, p), rencana: { langkah: [] } } });
     }
+    if (url.includes("/aleta-bot/penunjukan/tulis") && cara === "POST" && /"rantai"\s*:/.test(String((o && o.body) || ""))) {
+      // Sejak uji rilis U1 (9 Okt 2026, 9818b1a) penulisan SUNGGUHAN satu
+      // perkara = SATU kiriman `rantai` yang ditulis bot dalam satu transaksi
+      // (tulisRantaiUtuh) - utuh atau batal; uji kering tetap per langkah.
+      // Bot tiruan ini meniru keduanya: tiap jenis dalam rantai dicatat
+      // sebagai kiriman sungguhan, dan gangguan mengenai seluruh kiriman.
+      const badan = JSON.parse(String((o && o.body) || "{}"));
+      const nomor = nomorDariId(Number(badan.perkaraId));
+      const p = perkara[nomor];
+      const rantai = (badan.rantai || []) as Array<{ jenis: Jenis }>;
+      for (const satu of rantai) tulis.push({ nomor, jenis: satu.jenis, kering: false });
+      if (p.gangguanNyata) {
+        const g = p.gangguanNyata;
+        if (g.macam === "jaringan") throw new TypeError("Failed to fetch");
+        if (g.macam === "batas") {
+          const e = new Error("The operation was aborted.");
+          e.name = "AbortError";
+          throw e;
+        }
+        return jawaban(g.status, g.badan ?? {}, g.html);
+      }
+      const hasil = rantai.map((satu) =>
+        p.keadaan[satu.jenis]
+          ? { jenis: satu.jenis, ok: false, sudahAda: true, alasan: `${satu.jenis}_sudah_ada` }
+          : { jenis: satu.jenis, ok: true, langkah: [{ tabel: "perkara_penetapan" }], tanggalPenetapan: badan.tanggalPenetapan },
+      );
+      for (const satu of rantai) if (!p.keadaan[satu.jenis]) p.keadaan[satu.jenis] = badan.tanggalPenetapan;
+      return jawaban(200, { ok: true, data: { ok: true, utuh: true, hasil } });
+    }
     if (url.includes("/aleta-bot/penunjukan/tulis") && cara === "POST") {
       const badan = JSON.parse(String((o && o.body) || "{}"));
       const nomor = nomorDariId(Number(badan.perkaraId));
@@ -310,10 +339,16 @@ const nyataPer = (h: ReturnType<typeof buka>, nomor: string) => h.tulis.filter((
 // ============================================================================
 describe("satu perkara terganggu di tengah antrean (ke-2 dari 4): antrean LANJUT, sebabnya terbaca", () => {
   it("502 halaman HTML (portal sedang dibangun ulang): bukan 'Unexpected token', perkara 3 dan 4 tetap ditetapkan", async () => {
-    const h = buka(empatPerkara({ macam: "http", status: 502, html: "<html><body><h1>502 Bad Gateway</h1></body></html>" }));
+    const perkara = empatPerkara({ macam: "http", status: 502, html: "<html><body><h1>502 Bad Gateway</h1></body></html>" });
+    const h = buka(perkara);
     const { kotak, kabar } = await periksaLaluTetapkan(h, /^Selesai/);
     expect(nyataPer(h, N[0])).toEqual(["pmh", "ppp", "pjs", "phs"]);
-    expect(nyataPer(h, N[1])).toEqual(["pmh"]);
+    // Sejak U1 (9818b1a) sisa satu perkara = SATU kiriman rantai utuh: yang
+    // terganggu adalah kiriman itu seluruhnya (semula hanya PMH yang sempat
+    // dikirim lalu rantai putus). Tidak ada yang tertulis separuh.
+    expect(nyataPer(h, N[1])).toEqual(["pmh", "ppp", "pjs", "phs"]);
+    expect(perkara[N[1]].keadaan).toEqual(kosong());
+    expect(kabar).toMatch(/Belum pasti tertulis/);
     expect(nyataPer(h, N[2])).toEqual(["ppp", "pjs", "phs"]);
     expect(nyataPer(h, N[3])).toEqual(["pmh", "ppp", "pjs", "phs"]);
     expect(kabar).toMatch(/3 perkara ditetapkan/);

@@ -495,6 +495,10 @@ describe("popup: saklar 'Sembunyikan penjelasan teknis'", () => {
     expect(p.d.querySelectorAll('[class^="tb-"], [class*=" tb-"]').length).toBe(0);
     kotak.checked = false;
     kotak.dispatchEvent(new p.w.Event("change", { bubbles: true }));
+    // Sejak uji rilis U2c (2c31407) saklar ditulis lewat simpanSaklar - satu
+    // giliran mikrotugas kemudian (agar penolakan penyimpanan dapat
+    // mengembalikan centangnya). Ditunggu, bukan dibaca serentak.
+    await sampai(() => p.simpanan.sembunyikanTeknis === false, "sembunyikanTeknis tersimpan false");
     expect(p.simpanan.sembunyikanTeknis).toBe(false);
     expect(p.d.documentElement.hasAttribute("data-aleta-teknis")).toBe(false);
   });

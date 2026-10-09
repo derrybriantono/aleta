@@ -186,7 +186,15 @@ describe("keterangan saksi dapat disusun di tempat ia dikerjakan", () => {
   it("panelnya ikut terpasang di sana", () => {
     const badan = abt.slice(abt.indexOf("async function pasang()"));
     expect(badan.slice(0, 900)).toContain("const diTanyaJawab = halamanTanyaJawab();");
-    expect(badan.slice(0, 900)).toContain("if (!halamanBlangko() && !diTanyaJawab) return;");
+    // Sejak uji rilis U3 (8c1e9f7) cabang "bukan blangko dan bukan
+    // tanya-jawab" menerangkan dulu halaman galat ABT (baca saja) sebelum
+    // pulang - syaratnya sama, dan cabang itu tetap berakhir `return;`
+    // sebelum panel dipasang.
+    const syarat = "if (!halamanBlangko() && !diTanyaJawab) {";
+    expect(badan.slice(0, 900)).toContain(syarat);
+    const cabang = badan.slice(badan.indexOf(syarat), badan.indexOf("\n  }\n", badan.indexOf(syarat)));
+    expect(cabang).toContain("a3TerangkanHalamanGalat();");
+    expect(cabang.trimEnd().endsWith("return;")).toBe(true);
   });
 
   it("hanya penyusun keterangan saksi yang tampak di sana", () => {

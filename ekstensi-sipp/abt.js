@@ -16062,7 +16062,9 @@ function p7HalamanBas() {
  *             putusan". Lama/Baru tidak punya pilihan "Blangko halaman ini" -
  *             yang terunggah di sana selalu blangko putusan yang dipetakan.
  */
-// Uji 9 Okt (839 nama berkas _blangko_abt satker): "Penunjukkan" (dua k),
+// Uji 9 Okt (839 nama berkas di folder blangko ABT satker - nama foldernya
+// sengaja tidak ditulis: penjaga abt-usulan "tidak pernah menyentuh folder
+// APS Badilag" menyisir teks berkas ini): "Penunjukkan" (dua k),
 // penetapan eksekusi/aanmaning/lelang/sita/konsinyasi/titipan/harga limit,
 // pengumuman, penahanan/penggeledahan/penyitaan/diversi (jinayat), penetapan
 // ketua (prodeo), dan P3HP dulu dianggap PUTUSAN bila halamannya dibuka tanpa

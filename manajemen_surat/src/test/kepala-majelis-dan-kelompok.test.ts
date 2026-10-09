@@ -13,6 +13,9 @@ const baca = (p: string) => readFileSync(path.join(AKAR, p), "utf8");
 const konten = baca("ekstensi-sipp/konten.js");
 const css = baca("ekstensi-sipp/panel.css");
 
+/** Penjaga mode otomatis di papan penetapan (lihat catatan U1 di bawah). */
+const PENJAGA_MODE = "if (!manual && !sudahDiSipp.pmh) {";
+
 describe("kepala Penetapan Majelis Hakim ada di kedua mode", () => {
   it("kepalanya digambar TANPA syarat mode", () => {
     // Sejak mengganti majelis memuat ulang usulannya, kepala ini menampilkan
@@ -21,7 +24,10 @@ describe("kepala Penetapan Majelis Hakim ada di kedua mode", () => {
     expect(mulai).toBeGreaterThan(0);
     // Tidak ada `if (!manual) {` yang masih terbuka tepat sebelum kepala ini:
     // blok saklar ditutup dulu dengan `  }` sebelum kepala digambar.
-    const sebelum = konten.slice(konten.lastIndexOf("if (!manual) {", mulai), mulai);
+    // Sejak uji rilis U1 (088f921) penjaganya juga melewati PMH yang sudah
+    // tercatat di SIPP (digambar dari yang tercatat, tanpa pilihan):
+    // `if (!manual && !sudahDiSipp.pmh) {` - syarat modenya tetap sama.
+    const sebelum = konten.slice(konten.lastIndexOf(PENJAGA_MODE, mulai), mulai);
     expect(sebelum).toContain("\n  }\n");
   });
 
@@ -31,7 +37,7 @@ describe("kepala Penetapan Majelis Hakim ada di kedua mode", () => {
 
   it("saklar Hakim tunggal tetap hanya di mode otomatis", () => {
     const saklar = konten.indexOf('"Hakim tunggal",');
-    const penjaga = konten.lastIndexOf("if (!manual) {", saklar);
+    const penjaga = konten.lastIndexOf(PENJAGA_MODE, saklar);
     expect(penjaga).toBeGreaterThan(0);
     expect(konten.slice(penjaga, saklar)).not.toContain("\n  }\n");
   });

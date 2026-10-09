@@ -201,15 +201,25 @@ const layanan = muatLayanan();
  *   2026-09-04  18 putusan: 14 dibacakan di hadapan semua pihak, 4 Pdt.P yang
  *               sidang pembacaannya diinput susulan tanpa sandi (tidak
  *               diketahui); 4 jadwal susulan, satu bersandi sebelumnya 4.
- *   2026-09-22  22 sidang tanpa sidang berikutnya maupun putusan - sesudah
- *               tanggal data terakhir (16 Sep), jadi semuanya tertunda.
+ *   2026-10-15  (semula 2026-09-22, lihat catatan impor ulang di bawah) 40
+ *               sidang tanpa sidang berikutnya maupun putusan - sesudah
+ *               tanggal data terakhir (9 Okt), jadi semuanya tertunda.
  *   2026-04-22  hari pendaftaran terbanyak 2026: 25 perkara.
  *   2026-08-12  24 perkara didaftarkan + 10 sidang bersidang berikutnya.
- *   2026-09-10  5 perkara didaftarkan TANPA penetapan hari sidang setanggal:
- *               4 tanpa jadwal ke-1 (tertunda), 1 ber-PHS 12 Sep. Inilah yang
- *               menggigit bila pendaftaran tidak diikutkan.
- *   2026-09-12  PHS perkara 10112 yang didaftarkan 10 Sep - menggigit bila
- *               penetapan hari sidang tidak diikutkan.
+ *   2026-06-30  (semula 2026-09-10) 180/Pdt.P/2026 (9891) didaftarkan tanpa
+ *               jadwal ke-1 PADA HARI ITU - jadwalnya baru diinput 15 Jul.
+ *               Inilah yang menggigit bila pendaftaran tidak diikutkan.
+ *   2026-07-15  (semula 2026-09-12) hari jadwal ke-1 9891 diinput - perkara
+ *               itu tidak boleh menjadi dokumen "didaftarkan" di dua tanggal.
+ *
+ * IMPOR ULANG 9 Oktober 2026: sipp_donggala diganti salinan produksi terbaru
+ * (CREATE_TIME tabel perkara/perkara_jadwal_sidang/perkara_putusan 9 Okt
+ * 11.45-12.20). Pada salinan itu 22 Sep sudah bersidang lanjutan (tertunda 0),
+ * dan kelima perkara 10 Sep (10112-10116) ternyata berjadwal ke-1 sejak 10 Sep
+ * 14.45 - fakta jangkarnya hilang, bukan perilakunya: relaasMassalService.js
+ * tidak berubah sejak e8c1a3d, dan uji berbasis aturan (dihitung dari data
+ * mentah) tetap hijau. Jangkar diganti dengan tanggal yang memuat keadaan yang
+ * sama pada salinan baru.
  *   2026-01-05  perkara 9262: penunjukan Mustini TIDAK aktif (id 9410) lebih
  *               kecil daripada Tanty Restianty yang aktif (id 9473) - menggigit
  *               bila juru sita diambil dari penunjukan yang tidak aktif. Juga
@@ -233,11 +243,11 @@ const TANGGAL = {
   tersibuk: "2026-04-29",
   jaring: "2026-08-18",
   putusanPdtP: "2026-09-04",
-  sesudahData: "2026-09-22",
+  sesudahData: "2026-10-15",
   daftarRamai: "2026-04-22",
   daftarDanTunda: "2026-08-12",
-  daftarTanpaPhs: "2026-09-10",
-  phsTanpaDaftar: "2026-09-12",
+  daftarTanpaPhs: "2026-06-30",
+  phsTanpaDaftar: "2026-07-15",
   penunjukanTakAktif: "2026-01-05",
   sandiSatuPanggil: "2026-02-05",
   phsUlang: "2026-07-16",
@@ -515,16 +525,23 @@ describe.skipIf(!ADA_MYSQL)("(a) perkara yang didaftarkan atau ditetapkan hari s
   });
 
   it("perkara yang didaftarkan TANPA PHS setanggal tetap masuk pada hari pendaftarannya (sebagai tertunda bila jadwalnya belum ada)", () => {
-    // 10 Sep 2026: lima perkara didaftarkan tanpa jadwal ke-1 PADA HARI ITU -
-    // empat belum berjadwal sama sekali, 10112 (560/Pdt.G/2026) jadwal dan
-    // PHS-nya baru diinput 12 Sep. Tanpa jalan "didaftarkan" kelimanya tidak
-    // muncul di mana pun pada tanggal ini.
+    // Semula 10 Sep 2026 (10112-10116); sejak impor ulang 9 Okt kelimanya
+    // berjadwal ke-1 setanggal - lihat catatan di atas TANGGAL.
+    //
+    // 30 Jun 2026: 180/Pdt.P/2026 (9891) didaftarkan tanpa jadwal ke-1 PADA
+    // HARI ITU - jadwalnya baru diinput 15 Jul. Tanpa jalan "didaftarkan" ia
+    // tidak muncul di mana pun pada tanggal ini.
     const h = hasil[TANGGAL.daftarTanpaPhs];
-    expect(h.tertunda.filter((x) => x.sebab === "jadwal-pertama-belum-ada").length).toBe(5);
-    // Pada hari PHS-nya ia menjadi dokumen - SATU kali, bukan di dua tanggal.
+    const belumAda = h.tertunda.filter((x) => x.sebab === "jadwal-pertama-belum-ada");
+    expect(belumAda.map((x) => x.perkaraId)).toEqual([9891]);
+    expect(h.dokumen.some((x) => x.perkaraId === 9891)).toBe(false);
+    // Bukan di dua tanggal: jadwal ke-1 9891 diinput 15 Jul UNTUK sidang 15 Jul
+    // itu sendiri (pencatatan susulan), jadi pada hari inputnya pun ia bukan
+    // dokumen "didaftarkan" - dan di seluruh tanggal paling banyak sekali.
     const phs = hasil[TANGGAL.phsTanpaDaftar];
-    expect(phs.dokumen.filter((x) => x.perkaraId === 10112 && x.sebabMasuk === "didaftarkan")).toHaveLength(1);
-    expect(h.dokumen.some((x) => x.perkaraId === 10112)).toBe(false);
+    expect(phs.dokumen.filter((x) => x.perkaraId === 9891 && x.sebabMasuk === "didaftarkan")).toHaveLength(0);
+    const didaftarkan = SEMUA_TANGGAL.flatMap((t) => hasil[t].dokumen.filter((x) => x.perkaraId === 9891 && x.sebabMasuk === "didaftarkan"));
+    expect(didaftarkan.length).toBeLessThanOrEqual(1);
   });
 });
 
@@ -784,8 +801,9 @@ describe.skipIf(!ADA_MYSQL)("tertunda", () => {
       expect(hasilnya.length, `tertunda pada ${tanggal}`).toBe(harap);
       for (const x of hasil[tanggal].tertunda) expect(x.keterangan.length).toBeGreaterThan(20);
     }
-    // 22 Sep 2026 sesudah data terakhir: 22 sidang, semuanya tertunda.
-    expect(hasil[TANGGAL.sesudahData].tertunda.length).toBe(22);
+    // 15 Okt 2026 sesudah data terakhir (impor ulang 9 Okt; semula 22 Sep
+    // dengan 22 sidang): 40 sidang, semuanya tertunda.
+    expect(hasil[TANGGAL.sesudahData].tertunda.length).toBe(40);
     expect(hasil[TANGGAL.sesudahData].dokumen.length).toBe(0);
   });
 });
@@ -901,9 +919,10 @@ describe.skipIf(!ADA_MYSQL)("telaah 25 September 2026", () => {
   });
 
   it("jadwal ke-1 yang baru diinput SESUDAH hari pendaftaran: tertunda di hari pendaftaran, dokumen di hari inputnya", () => {
-    const tunda = hasil[TANGGAL.daftarTanpaPhs].tertunda.find((x) => x.perkaraId === 10112);
+    // Semula 10112 (baru diinput 2026-09-12); sejak impor ulang 9 Okt: 9891.
+    const tunda = hasil[TANGGAL.daftarTanpaPhs].tertunda.find((x) => x.perkaraId === 9891);
     expect(tunda?.sebab).toBe("jadwal-pertama-belum-ada");
-    expect(tunda?.keterangan).toContain("baru diinput 2026-09-12");
+    expect(tunda?.keterangan).toContain("baru diinput 2026-07-15");
   });
 
   it("sidang ikrar tanpa penanda ikrar_talak dikenali dari agendanya", () => {

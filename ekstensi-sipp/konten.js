@@ -1928,10 +1928,35 @@ async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre) {
       },
       "Menulis penetapan"
     );
-    const luar = await respons.json();
-    jawab = jawabPenetapanMenurutStatus(respons.status, luar && luar.data && luar.data.hasil ? luar.data : luar);
+    // Badannya dibaca terpisah (perbaikan sesudah penggabungan U1+U2, 9 Okt
+    // 2026): kiriman rantai utuh semula memanggil respons.json() di dalam try
+    // yang sama, sehingga 502 berupa halaman HTML Apache terbaca petugas
+    // sebagai "Unexpected token '<'", dan 500 JSON portal { error:{message} }
+    // menjadi satu kata "ditolak". Kini melewati jawabanTulisTanpaAlasan yang
+    // sama dengan langkah tunggal: 401/403 tetap kode menyeluruh (antrean
+    // berhenti), selebihnya gagal untuk perkara ini saja dengan sebab terbaca.
+    let luar = null;
+    try {
+      luar = await respons.json();
+    } catch {
+      luar = null;
+    }
+    const isi = luar && luar.data && luar.data.hasil ? luar.data : luar;
+    const status = Number(respons && respons.status) || 0;
+    const tanpaAlasan = status === 401 || status === 403 ? null : jawabanTulisTanpaAlasan(respons, isi, antre[0].tempat.jenis, false);
+    jawab = tanpaAlasan
+      ? { ok: false, alasan: tanpaAlasan.alasan, bunyiTetap: tanpaAlasan.bunyi }
+      : jawabPenetapanMenurutStatus(respons.status, isi);
   } catch (galat) {
-    jawab = { ok: false, alasan: String((galat && galat.message) || galat) };
+    // Batas waktu / jaringan putus: kalimat alatAmbil sudah terbaca. Pada
+    // batas waktu bot dapat sudah meng-COMMIT sebelum gerbangnya menyerah,
+    // jadi tidak disebut "tidak ada yang tertulis".
+    const pesan = String((galat && galat.message) || galat).replace(/[.\s]+$/, "");
+    jawab = {
+      ok: false,
+      alasan: pesan,
+      bunyiTetap: `${pesan}. Belum pasti tertulis atau tidak - periksa di SIPP; bila ditekan lagi, langkah yang sudah ada dilewati.`,
+    };
   }
   jawab = jawab || { ok: false, alasan: "tanpa_jawaban" };
 
@@ -1962,9 +1987,12 @@ async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre) {
   // membawa sebabnya; yang lain disebut dibatalkan bersamanya.
   const jenisGagal = String(jawab.jenisGagal || "") || antre[0].tempat.jenis;
   const kodeGagal = String(jawab.alasan || "ditolak");
-  const bunyiGagal = kalimatAlasan(kodeGagal, akunMasuk);
-  const peringatan =
-    jawab.dipulihkan === false
+  const bunyiGagal = jawab.bunyiTetap || kalimatAlasan(kodeGagal, akunMasuk);
+  // Jawaban yang hilang (bunyiTetap) sudah menyebut "belum pasti" - tidak
+  // ditimpa "Tidak ada yang tertulis" yang belum tentu benar.
+  const peringatan = jawab.bunyiTetap
+    ? ""
+    : jawab.dipulihkan === false
       ? " PERHATIAN: pembatalan di server tidak terkonfirmasi - periksa tab Penetapan SIPP sebelum mencoba lagi."
       : " Tidak ada yang tertulis - dapat dicoba lagi.";
   for (const a of antre) {
@@ -1976,6 +2004,8 @@ async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre) {
       a.tempat.bunyi = `${bunyiGagal}${jawab.pesan ? ` (${String(jawab.pesan).slice(0, 160)})` : ""}${peringatan}`;
     } else if (r.sudahAda) {
       Object.assign(a.tempat, { menungguRantai: false, ok: false, sudahAda: true, alasan: `${a.tempat.jenis}_sudah_ada`, bunyi: kalimatAlasan(`${a.tempat.jenis}_sudah_ada`) });
+    } else if (jawab.bunyiTetap) {
+      tandaiBatal(a.tempat, `Dikirim bersama ${jenisSebut(jenisGagal)} dalam satu transaksi - keadaannya sama dengan ${jenisSebut(jenisGagal)} (utuh tertulis atau tidak sama sekali).`);
     } else {
       tandaiBatal(a.tempat, `Tidak tertulis - seluruh sisa penetapan dibatalkan karena ${jenisSebut(jenisGagal)} gagal.${peringatan}`);
     }
