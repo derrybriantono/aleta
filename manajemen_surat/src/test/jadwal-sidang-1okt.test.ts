@@ -488,6 +488,48 @@ describe("J1 - rencana penetapan mediator = blangko Penetapan Mediasi SIPP", () 
     }
   });
 
+  it("uji rilis 9 Okt: langkah gagal di tengah -> SELURUH penetapan mediator dibatalkan (transaksi), bukan perkara_mediasi tertinggal sendirian", async () => {
+    const db = sippTiruan();
+    const { r } = await rencanaDari(db);
+    const kejadian: string[] = [];
+    const kueriGagal = async (sql: string, params: unknown[] = []) => {
+      if (/^INSERT INTO perkara_jadwal_mediasi/.test(sql.trim())) throw new Error("ER_LOCK_WAIT_TIMEOUT: Lock wait timeout exceeded");
+      return db.kueri(sql, params);
+    };
+    const L = mediatorMod.buatLayanan({
+      kueri: db.kueri,
+      waktu: async () => "2026-09-29 14:20:05",
+      // Transaksi tiruan: mencatat START/COMMIT/ROLLBACK seperti transaksiSipp.
+      transaksi: async (kerja: (k: typeof kueriGagal) => Promise<unknown>) => {
+        kejadian.push("START");
+        try {
+          const hasil = await kerja(kueriGagal);
+          kejadian.push("COMMIT");
+          return hasil;
+        } catch (galat) {
+          kejadian.push("ROLLBACK");
+          (galat as { dipulihkan?: boolean }).dipulihkan = true;
+          throw galat;
+        }
+      },
+    });
+    const hasil = await (L.jalankanRencanaMediator as (a: unknown, b: unknown) => Promise<Record<string, unknown>>)(r, { kering: false });
+    expect(hasil).toMatchObject({ ok: false, alasan: "gagal_menulis", dipulihkan: true, selesai: [] });
+    expect((hasil.pada as { tabel: string }).tabel).toBe("perkara_jadwal_mediasi");
+    expect((hasil.dibatalkan as unknown[]).length).toBe(5);
+    expect(kejadian).toEqual(["START", "ROLLBACK"]);
+  });
+
+  it("uji rilis 9 Okt: penjaga 'sudah tersimpan' dan id MAX+1 dibaca DI DALAM transaksi", () => {
+    const sumber = readFileSync(path.join(AKAR, "aleta_bot/services/mediatorTulisService.js"), "utf8");
+    const awal = sumber.indexOf("async function jalankanRencanaMediator");
+    const badan = sumber.slice(awal, sumber.indexOf("return { daftarMediator", awal));
+    const trans = badan.indexOf("return await transaksi(");
+    expect(trans).toBeGreaterThan(0);
+    expect(badan.indexOf("Data Mediasi Sudah Tersimpan")).toBeGreaterThan(trans);
+    expect(badan.indexOf("MAX(mediasi_id)+1")).toBeGreaterThan(trans);
+  });
+
   it("daftar putih menolak tabel di luar daftar, sebelum satu pun ditulis", async () => {
     const db = sippTiruan();
     const { L, r } = await rencanaDari(db);

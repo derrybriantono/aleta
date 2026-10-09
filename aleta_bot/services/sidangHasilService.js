@@ -1426,6 +1426,9 @@ async function susunRencanaPutus(minta = {}) {
     hanyaJadwal: !tulisPutusan,
     antrian,
     perkara: { perkaraId: keadaan.perkaraId, nomorPerkara: keadaan.nomorPerkara },
+    // Sidang yang diputus - antrian sidang dikunci pada TANGGAL SIDANG ini,
+    // bukan pada tanggal putusan yang diketik (uji rilis 9 Okt 2026).
+    sidangSekarang: { jadwalId: keadaan.jadwalId, tanggal: penetapan.tanggalIso(keadaan.tanggalSidang) },
     atasNama: {
       username: akun.panitera.username,
       namaLengkap: akun.panitera.fullname,

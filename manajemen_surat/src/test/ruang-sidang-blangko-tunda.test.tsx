@@ -269,4 +269,63 @@ describe("blangko Tunda sidang: ruang sidang + sidang keliling", () => {
     await waitFor(() => expect(kiriman).toHaveLength(1));
     expect(kiriman[0]).toMatchObject({ ruanganIdBerikut: 3, sidangKelilingBerikut: true });
   });
+
+  it("uji rilis 9 Okt: Catat putus - tanggal putusan bawaan = TANGGAL SIDANG, bukan hari blangko dibuka", async () => {
+    const kiriman: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (alamat: string, init?: RequestInit) => {
+        const url = String(alamat);
+        if (url.includes("/api/aleta-ecourt/sidang-tunda")) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                available: true,
+                ok: true,
+                keadaan: {
+                  jadwalId: 20501,
+                  perkaraId: 9901,
+                  nomorPerkara: "610/Pdt.G/2026/PA.Dgl",
+                  // Sidang lampau yang baru dicatat hasilnya.
+                  tanggalSidang: "2026-10-01",
+                  jamSidang: "09:00:00",
+                  agenda: "Pembacaan Putusan",
+                  ditunda: "T",
+                  ruanganId: 1,
+                  ruangan: "Ruang Sidang 1 Dalam Gedung",
+                  sidangKeliling: "T",
+                },
+                riwayat: null,
+                ruangan: RUANGAN,
+              },
+            })
+          );
+        }
+        if (url.includes("/api/aleta-ecourt/sidang-putus") && init?.method === "POST") {
+          kiriman.push(JSON.parse(String(init?.body)));
+          return new Response(JSON.stringify({ data: { ok: true, kering: false } }));
+        }
+        if (url.includes("/api/aleta-ecourt/sidang-putus")) {
+          return new Response(JSON.stringify({ data: { ok: true, daftar: [{ id: 62, nama: "Dikabulkan" }] } }));
+        }
+        return new Response(JSON.stringify({ data: {} }));
+      })
+    );
+    render(
+      createElement(CatatHasilRingkas, {
+        jadwalId: "20501",
+        nomorPerkara: "610/Pdt.G/2026/PA.Dgl",
+        jalan: "putus",
+        onTutup: () => undefined,
+        onSelesai: () => undefined,
+      })
+    );
+    await screen.findByLabelText("Ruang sidang", {}, { timeout: 10000 });
+    const tanggal = document.querySelector('input[type="date"]') as HTMLInputElement;
+    expect(tanggal.value).toBe("2026-10-01");
+    await waitFor(() => expect((screen.getByRole("button", { name: "Catat putus" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Catat putus" }));
+    await waitFor(() => expect(kiriman).toHaveLength(1));
+    expect(kiriman[0]).toMatchObject({ tanggalPutus: "2026-10-01", statusPutusanId: 62 });
+  });
 });

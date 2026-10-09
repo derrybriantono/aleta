@@ -367,7 +367,20 @@ export function IsianMediator({
         })
       );
       if (isi.available === false || isi.ok === false) {
-        setPesan({ ok: false, teks: String(isi.alasan || isi.pesan || "Penetapan mediator ditolak.") });
+        // gagal_menulis = SIPP menolak satu langkah; sejak uji rilis 9 Okt 2026
+        // seluruh langkahnya satu transaksi, jadi sebutkan nasibnya.
+        const gagalTulis = isi.alasan === "gagal_menulis";
+        const pada = (isi.pada as { tabel?: string } | undefined)?.tabel;
+        setPesan({
+          ok: false,
+          teks: gagalTulis
+            ? `SIPP menolak langkah ${pada || "penulisan"}${isi.pesan ? ` (${String(isi.pesan)})` : ""} - ${
+                isi.dipulihkan === true
+                  ? "seluruh penetapan mediator dibatalkan, tidak ada yang tertinggal di SIPP. Dapat dicoba lagi."
+                  : "periksa tab Mediasi di SIPP sebelum mencoba lagi."
+              }`
+            : String(isi.alasan || isi.pesan || "Penetapan mediator ditolak."),
+        });
         setRencana(null);
         return;
       }

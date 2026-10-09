@@ -311,7 +311,12 @@ router.post("/mediator", wajibToken, async (req, res) => {
         ip: alamatAudit(req),
         berhasil: hasil.ok === true,
         kering,
-        alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+        // Kode + nasib transaksi + sebab teknis (uji rilis 9 Okt 2026).
+        alasan: hasil.ok
+          ? ""
+          : `${String(hasil.alasan || "gagal")}${
+              hasil.dipulihkan === true ? " (dibatalkan utuh)" : hasil.dipulihkan === false ? " (TIDAK dipulihkan)" : ""
+            }${hasil.pada && hasil.pada.tabel ? ` ${hasil.pada.tabel}` : ""}${hasil.pesan ? `: ${hasil.pesan}` : ""}`.slice(0, 160),
         langkah: rencana.langkah,
       });
     }

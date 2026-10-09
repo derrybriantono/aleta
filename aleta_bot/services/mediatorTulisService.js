@@ -197,6 +197,14 @@ function buatLayanan(deps = {}) {
       new Promise((selesai, gagal) => {
         require("../db_config").query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
       }));
+  // Uji rilis 9 Okt 2026 (pola kasus 273): seluruh langkah satu penetapan
+  // mediator = SATU transaksi. Tanpa itu langkah yang gagal di tengah
+  // meninggalkan perkara_mediasi tertulis sendirian, dan penekanan ulang
+  // ditolak "Data Mediasi Sudah Tersimpan" - setengah jadi selamanya.
+  // deps.kueri tanpa deps.transaksi (uji lama) = tanpa transaksi.
+  const transaksi =
+    deps.transaksi ||
+    (deps.kueri ? (kerja) => kerja(kueri) : (kerja) => require("./transaksiSipp").denganTransaksi(kerja));
   // Jam basis data SIPP (24 jam) - bukan jam container. Lihat waktuBasisData.
   const waktu =
     deps.waktu || (() => require("./penetapanTulisService").waktuBasisData());
@@ -603,61 +611,81 @@ function buatLayanan(deps = {}) {
       }
     }
 
-    // Penjaga terakhir terhadap dua penekan bersamaan.
-    const sudah = await satu(
-      `SELECT mediasi_id FROM perkara_mediasi WHERE perkara_id = ? AND tahapan_id = 10 AND jenis_mediasi = 1 LIMIT 1`,
-      [rencana.perkara.perkaraId]
-    );
-    if (sudah) return { ok: false, kering: false, alasan: "Data Mediasi Sudah Tersimpan.", selesai: [] };
-
-    const ambilAngka = async (sql) => {
-      const b = await satu(sql, []);
-      const n = Number(b && b.n);
-      if (!Number.isFinite(n) || n <= 0) throw new Error("id_berikutnya_tidak_terbaca");
-      return n;
-    };
-    let id;
-    try {
-      id = {
-        [TANDA.mediasi]: await ambilAngka("SELECT IFNULL(MAX(mediasi_id)+1,1) AS n FROM perkara_mediasi"),
-        [TANDA.mediator]: await ambilAngka("SELECT COALESCE(MAX(id),0)+1 AS n FROM perkara_mediator"),
-        [TANDA.jadwal]: await ambilAngka("SELECT COALESCE(MAX(id),0)+1 AS n FROM perkara_jadwal_mediasi"),
-      };
-    } catch (galat) {
-      return { ok: false, kering: false, alasan: String((galat && galat.message) || galat), selesai: [] };
-    }
-
-    const isi = (nilai) => {
-      if (typeof nilai !== "string") return nilai;
-      if (Object.prototype.hasOwnProperty.call(id, nilai)) return id[nilai];
-      let hasil = nilai;
-      for (const [tanda, angka] of Object.entries(id)) hasil = hasil.split(tanda).join(String(angka));
-      return hasil;
-    };
-
+    // Seluruh tulisan - termasuk penjaga "sudah tersimpan" dan id MAX+1 -
+    // di dalam SATU transaksi (lihat `transaksi` di atas).
+    const TOLAK = Symbol("tolak");
     const selesai = [];
-    for (const satuLangkah of rencana.langkah) {
-      try {
-        await kueri(satuLangkah.sql, satuLangkah.params.map(isi));
-        selesai.push({ tabel: satuLangkah.tabel, aksi: satuLangkah.aksi, keterangan: satuLangkah.keterangan });
-      } catch (galat) {
-        return {
-          ok: false,
-          kering: false,
-          alasan: "gagal_menulis",
-          pada: { tabel: satuLangkah.tabel, aksi: satuLangkah.aksi, keterangan: satuLangkah.keterangan },
-          pesan: String((galat && galat.message) || galat).slice(0, 300),
-          selesai,
+    let pada = null;
+    try {
+      return await transaksi(async (lewat) => {
+        const satuLewat = async (sql, params) => {
+          const baris = await lewat(sql, params);
+          return (Array.isArray(baris) && baris[0]) || null;
         };
-      }
+        // Penjaga terakhir terhadap dua penekan bersamaan.
+        const sudah = await satuLewat(
+          `SELECT mediasi_id FROM perkara_mediasi WHERE perkara_id = ? AND tahapan_id = 10 AND jenis_mediasi = 1 LIMIT 1`,
+          [rencana.perkara.perkaraId]
+        );
+        if (sudah) {
+          const g = new Error("Data Mediasi Sudah Tersimpan.");
+          g[TOLAK] = true;
+          throw g;
+        }
+
+        const ambilAngka = async (sql) => {
+          const b = await satuLewat(sql, []);
+          const n = Number(b && b.n);
+          if (!Number.isFinite(n) || n <= 0) {
+            const g = new Error("id_berikutnya_tidak_terbaca");
+            g[TOLAK] = true;
+            throw g;
+          }
+          return n;
+        };
+        const id = {
+          [TANDA.mediasi]: await ambilAngka("SELECT IFNULL(MAX(mediasi_id)+1,1) AS n FROM perkara_mediasi"),
+          [TANDA.mediator]: await ambilAngka("SELECT COALESCE(MAX(id),0)+1 AS n FROM perkara_mediator"),
+          [TANDA.jadwal]: await ambilAngka("SELECT COALESCE(MAX(id),0)+1 AS n FROM perkara_jadwal_mediasi"),
+        };
+
+        const isi = (nilai) => {
+          if (typeof nilai !== "string") return nilai;
+          if (Object.prototype.hasOwnProperty.call(id, nilai)) return id[nilai];
+          let hasil = nilai;
+          for (const [tanda, angka] of Object.entries(id)) hasil = hasil.split(tanda).join(String(angka));
+          return hasil;
+        };
+
+        for (const satuLangkah of rencana.langkah) {
+          pada = { tabel: satuLangkah.tabel, aksi: satuLangkah.aksi, keterangan: satuLangkah.keterangan };
+          await lewat(satuLangkah.sql, satuLangkah.params.map(isi));
+          selesai.push({ tabel: satuLangkah.tabel, aksi: satuLangkah.aksi, keterangan: satuLangkah.keterangan });
+        }
+        return {
+          ok: true,
+          kering: false,
+          jumlahLangkah: selesai.length,
+          selesai,
+          mediasiId: id[TANDA.mediasi],
+        };
+      });
+    } catch (galat) {
+      const pesan = String((galat && galat.message) || galat).slice(0, 300);
+      if (galat && galat[TOLAK]) return { ok: false, kering: false, alasan: pesan, selesai: [] };
+      const dipulihkan = galat && typeof galat.dipulihkan === "boolean" ? galat.dipulihkan : undefined;
+      return {
+        ok: false,
+        kering: false,
+        alasan: "gagal_menulis",
+        pada,
+        pesan,
+        dipulihkan,
+        // Yang dibatalkan ROLLBACK tidak lagi "selesai".
+        dibatalkan: dipulihkan === true ? [...selesai] : undefined,
+        selesai: dipulihkan === true ? [] : selesai,
+      };
     }
-    return {
-      ok: true,
-      kering: false,
-      jumlahLangkah: selesai.length,
-      selesai,
-      mediasiId: id[TANDA.mediasi],
-    };
   }
 
   return { daftarMediator, prosesMediasi, akunPerkara, susunRencanaMediator, jalankanRencanaMediator };

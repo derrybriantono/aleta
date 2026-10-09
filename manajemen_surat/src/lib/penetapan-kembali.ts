@@ -285,6 +285,10 @@ export function kalimatTolakKembali(alasan: string): string {
     akun_sipp_belum_tertaut: "akun ALETA Anda belum tertaut ke akun SIPP (Manajemen Akun)",
     ruangan_tidak_ketemu: "ruang sidang tidak ditemukan",
     jam_sidang_tidak_sah: "jam sidang tidak sah",
+    // Ditulis dalam SATU transaksi sejak uji rilis 9 Okt 2026 - gagal = dibatalkan utuh.
+    gagal_menulis: "SIPP menolak salah satu langkah - seluruh penetapan kembali perkara ini dibatalkan, tidak ada yang tertinggal di SIPP",
+    gagal_menyimpan: "SIPP tidak dapat menyimpan - seluruh penetapan kembali perkara ini dibatalkan",
+    server_sipp_tidak_terhubung: "server SIPP tidak terhubung - tidak ada yang ditulis",
   };
   return peta[alasan] || alasan.replace(/_/g, " ");
 }

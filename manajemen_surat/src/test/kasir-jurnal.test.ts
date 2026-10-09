@@ -283,7 +283,7 @@ describe("mesin usulan Kasir - perkara sungguhan yang dianonimkan", () => {
 
 type Kueri = { sql: string; params: unknown[] };
 
-function basisDataTiruan(jurnalAwal: Jurnal[]) {
+function basisDataTiruan(jurnalAwal: Jurnal[], pilihan: { gagalAudit?: boolean; transaksi?: boolean } = {}) {
   const rekaman: Kueri[] = [];
   const urutan: string[] = [];
   const jurnal = jurnalAwal.map((b) => ({ ...b, diinputOleh: "kasir", diinputTanggal: "", namaPihak: "", jurusita: "" }));
@@ -336,12 +336,29 @@ function basisDataTiruan(jurnalAwal: Jurnal[]) {
       });
       return { insertId: 0, affectedRows: 1 };
     }
-    if (/^INSERT INTO sys_audittrail/.test(s)) return { insertId: 1, affectedRows: 1 };
+    if (/^INSERT INTO sys_audittrail/.test(s)) {
+      if (pilihan.gagalAudit) throw Object.assign(new Error("ER_LOCK_WAIT_TIMEOUT: Lock wait timeout exceeded"), { code: "ER_LOCK_WAIT_TIMEOUT" });
+      return { insertId: 1, affectedRows: 1 };
+    }
     if (/perkara_biaya_jurusita/.test(s)) return { affectedRows: 1 };
     throw new Error(`kueri tak terduga: ${s.slice(0, 90)}`);
   };
+  // Transaksi tiruan: ROLLBACK memulihkan jurnal seperti sebelum baris itu.
+  const transaksi = pilihan.transaksi
+    ? async (kerja: (k: typeof kueri) => Promise<unknown>) => {
+        const sebelum = jurnal.length;
+        try {
+          return { hasil: await kerja(kueri), dipulihkan: null };
+        } catch (galat) {
+          jurnal.length = sebelum;
+          (galat as { dipulihkan?: boolean }).dipulihkan = true;
+          throw galat;
+        }
+      }
+    : undefined;
   const layanan = kasir.buatLayanan({
     kueri,
+    transaksi,
     tabelAda: async () => true,
     jeda: async (jenis: string, opsi: { kering?: boolean }) => {
       urutan.push(`JEDA:${jenis}:${opsi?.kering ? "kering" : "sungguh"}`);
@@ -461,6 +478,18 @@ describe("penulis jurnal SIPP (bot)", () => {
     expect(namaLengkap.akunSipp).toEqual({ username: "kasir", namaLengkap: "Petugas Kasir" });
     const tanpa = await t.layanan.susunRencana({ perkaraId: 10132, operator: "Penguji", baris: BARIS_KIRIM });
     expect([tanpa.ok, tanpa.alasan]).toEqual([false, "akun_sipp_tidak_disebut"]);
+  });
+
+  it("uji rilis 9 Okt: audit gagal sesudah baris biaya tertulis -> SATU baris jurnal dibatalkan utuh (transaksi), bukan 'sebagian'", async () => {
+    const t = basisDataTiruan(PENDAFTARAN_580, { gagalAudit: true, transaksi: true });
+    const rencana = await t.layanan.susunRencana({ perkaraId: 10132, akunSipp: "kasir", operator: "Penguji", baris: BARIS_KIRIM.slice(0, 1) });
+    const sebelum = t.jurnal.length;
+    const hasil = await t.layanan.jalankanRencana(rencana, { kering: false });
+    expect(hasil.ok).toBe(false);
+    expect(hasil.hasil.map((h: { keadaan: string }) => h.keadaan)).toEqual(["gagal"]);
+    expect(String(hasil.hasil[0].pesan)).toMatch(/dibatalkan, tidak ada yang tertinggal/);
+    // Tidak ada baris jurnal TANPA audit yang tertinggal.
+    expect(t.jurnal.length).toBe(sebelum);
   });
 
   it("daftar putih tabel kasir hanya tiga, dan tiap tabel yang ditanya ada di daftar skema", () => {
