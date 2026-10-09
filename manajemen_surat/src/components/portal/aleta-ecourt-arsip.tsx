@@ -23,12 +23,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
+import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 type Arsip = {
   pengaturan: { minRuangGb: number; maksBerkasMb: number; simpanBulan: number };
   ruang: { ok: boolean; bebasGb: number | null; totalGb: number | null; alasan?: string };
   arsip: { jumlahBerkas: number; totalMb: number };
-  kedaluwarsa: { aktif: boolean; jumlah: number; totalMb: number };
+  /** alasan: sebab angka kedaluwarsa tidak dapat dihitung (mis. SIPP tidak terbaca). */
+  kedaluwarsa: { aktif: boolean; jumlah: number; totalMb: number; alasan?: string };
   ruangMenipis: boolean | null;
 };
 
@@ -39,6 +41,28 @@ const ALASAN: Record<string, string> = {
   masa_simpan_belum_ditetapkan: "Masa simpan belum ditetapkan, jadi tidak ada yang dihapus.",
   bot_tidak_terjangkau: "ALETA Bot belum dapat dihubungi.",
 };
+
+/**
+ * Sebab bot tidak menghapus apa pun walau menjawab ok (U5, 9 Okt 2026).
+ *
+ * Saat SIPP tidak terbaca, bot sengaja tidak menghapus apa pun dan menyebut
+ * sebabnya ("sipp_tidak_terbaca: ..."). Dulu layar membuang sebab itu dan
+ * menulis "0 berkas dihapus." - terbaca seperti pembersihan yang berhasil.
+ */
+export function kalimatAlasanArsip(alasan: string): string {
+  const teks = String(alasan || "").trim();
+  if (!teks) return "";
+  if (ALASAN[teks]) return ALASAN[teks];
+  if (teks.startsWith("sipp_tidak_terbaca")) {
+    const rinci = teks.slice("sipp_tidak_terbaca".length).replace(/^:\s*/, "").trim();
+    return (
+      "Tidak ada berkas yang dihapus: SIPP tidak terbaca, jadi keadaan akhir perkara tidak dapat dipastikan" +
+      (rinci ? ` (${rinci})` : "") +
+      ". Coba lagi sesudah SIPP dapat dihubungi."
+    );
+  }
+  return `Tidak ada berkas yang dihapus: ${teks.replace(/_/g, " ")}.`;
+}
 
 function Angka({
   nilai,
@@ -120,10 +144,17 @@ export function AletaEcourtArsip() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        const hasil = await respons.json();
+        const hasil = await respons.json().catch(() => null);
         const isi = hasil?.data ?? hasil;
 
-        if (isi?.ok) {
+        if (!respons.ok) {
+          // Mis. 403 bagi yang bukan Super Admin/Admin - pesan server apa adanya.
+          setCatatan(pesanGalatPortal(hasil, `Gagal (HTTP ${respons.status}).`));
+        } else if (isi?.ok && isi.alasan) {
+          setCatatan(kalimatAlasanArsip(String(isi.alasan)));
+          setKonfirmasiHapus(false);
+          await muat();
+        } else if (isi?.ok) {
           if (typeof isi.terhapus === "number") {
             setCatatan(
               `${isi.terhapus} berkas dihapus${isi.gagal ? `, ${isi.gagal} gagal` : ""}. Catatan dokumennya tetap tersimpan.`
@@ -187,14 +218,18 @@ export function AletaEcourtArsip() {
                 keterangan={`${data.arsip.jumlahBerkas} berkas tersimpan`}
               />
               <Angka
-                nilai={data.kedaluwarsa.aktif ? `${data.kedaluwarsa.jumlah}` : "—"}
+                nilai={data.kedaluwarsa.aktif && !data.kedaluwarsa.alasan ? `${data.kedaluwarsa.jumlah}` : "—"}
                 label="Melewati masa simpan"
                 keterangan={
-                  data.kedaluwarsa.aktif
-                    ? `${data.kedaluwarsa.totalMb} MB dapat dihapus`
-                    : "masa simpan belum ditetapkan"
+                  !data.kedaluwarsa.aktif
+                    ? "masa simpan belum ditetapkan"
+                    : data.kedaluwarsa.alasan
+                      ? String(data.kedaluwarsa.alasan).startsWith("sipp_tidak_terbaca")
+                        ? "belum dapat dihitung: SIPP tidak terbaca"
+                        : `belum dapat dihitung: ${String(data.kedaluwarsa.alasan).replace(/_/g, " ")}`
+                      : `${data.kedaluwarsa.totalMb} MB dapat dihapus`
                 }
-                nada={data.kedaluwarsa.jumlah > 0 ? "perhatian" : "netral"}
+                nada={data.kedaluwarsa.alasan ? "perhatian" : data.kedaluwarsa.jumlah > 0 ? "perhatian" : "netral"}
               />
             </div>
 

@@ -162,9 +162,39 @@ function samarkan(nomor, depan = 4, belakang = 3) {
   return `${teks.slice(0, depan)}${"*".repeat(teks.length - depan - belakang)}${teks.slice(-belakang)}`;
 }
 
+// urutan ikut dibaca (9 Okt 2026): "Tergugat I, II, ..." pada naskah hasil
+// mediasi dan identitas berjenjang harus mengikuti urutan SIPP, bukan abjad.
+// Terukur pada 490/Pdt.G/2026/PA.Dgl: urutan SIPP Zaitun (I) ... Nurlin (VI),
+// sedangkan urut nama menjadikan Abd. Salam Tergugat I.
 const CABANG_SQL = CABANG.map(
-  (ke) => `SELECT perkara_id, pihak_id, ${ke} AS pihak_ke FROM perkara_pihak${ke}`
+  (ke) => `SELECT perkara_id, pihak_id, ${ke} AS pihak_ke, urutan FROM perkara_pihak${ke}`
 ).join("\n      UNION ALL ");
+
+/**
+ * Kuasa hukum perkara (perkara_pengacara) - nama dan sisinya saja.
+ *
+ * Dibaca untuk naskah hasil mediasi (PERMA 1/2016 Pasal 27 ayat (3):
+ * persetujuan tertulis pihak yang diwakili kuasa). Gagal-terbuka: kuasa yang
+ * tidak terbaca dikirim null, BUKAN daftar kosong - "tanpa kuasa" adalah
+ * pernyataan yang keliru bila sebenarnya belum terbaca.
+ */
+async function kuasaPerkara(nomor) {
+  try {
+    const baris = await kueri(
+      `SELECT a.nama AS nama, a.pihak_ke AS pihakKe
+         FROM perkara_pengacara a
+         JOIN perkara c ON c.perkara_id = a.perkara_id
+        WHERE c.nomor_perkara = ?
+        ORDER BY a.pihak_ke, a.urutan, a.nama`,
+      [nomor]
+    );
+    return (Array.isArray(baris) ? baris : [])
+      .map((b) => ({ nama: bersih(b.nama), pihakKe: Number(b.pihakKe) || 0 }))
+      .filter((b) => b.nama);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Identitas para pihak satu perkara.
@@ -209,15 +239,17 @@ async function identitasPihak(nomorPerkara) {
          LEFT JOIN ref_kabupaten_new kb ON kb.kabupaten_kode = b.kabupaten
          LEFT JOIN ref_provinsi_new  pr ON pr.provinsi_kode  = b.propinsi
         WHERE c.nomor_perkara = ?
-        ORDER BY a.pihak_ke, b.nama`,
+        ORDER BY a.pihak_ke, a.urutan IS NULL, a.urutan, b.nama`,
       [nomor]
     );
   } catch (e) {
     return { ok: false, alasan: "gagal_membaca_sipp", pesan: String((e && e.message) || e) };
   }
 
+  const kuasa = await kuasaPerkara(nomor);
+
   if (!Array.isArray(baris) || baris.length === 0) {
-    return { ok: true, pihak: [], catatan: "Identitas pihak tidak tercatat untuk perkara ini." };
+    return { ok: true, pihak: [], kuasa, catatan: "Identitas pihak tidak tercatat untuk perkara ini." };
   }
 
   const pihak = baris.map((b) => {
@@ -262,7 +294,7 @@ async function identitasPihak(nomorPerkara) {
     };
   });
 
-  return { ok: true, pihak };
+  return { ok: true, pihak, kuasa };
 }
 
 module.exports = {

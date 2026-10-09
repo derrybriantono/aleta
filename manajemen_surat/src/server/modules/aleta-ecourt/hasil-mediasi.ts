@@ -41,7 +41,9 @@ import {
   type PertemuanSipp,
   type PihakSipp,
 } from "@/lib/hasil-mediasi";
+import { namaCocokSatu } from "@/lib/perkara-sendiri";
 import { getEffectiveRoleId } from "@/lib/permissions";
+import { namaTiapMediator } from "@/lib/sebutan-mediator";
 import type { UserPersona } from "@/lib/types";
 import type { AletaDatabase } from "@/server/db/client";
 import {
@@ -74,7 +76,11 @@ function isoHari(geser: number): string {
  * perkara. Tenggang mediasi 30 hari - setahun jauh melampauinya.
  */
 async function pertemuanPerkara(nomorPerkara: string, mediasiId: string): Promise<GatewayJadwalMediasi[]> {
-  const hasil = await getGatewayJadwalMediasi({ dari: isoHari(-400), sampai: isoHari(120), cari: nomorPerkara, batas: 100 });
+  // Lima tahun ke belakang (9 Okt 2026; sebelumnya 400 hari): layar Jadwal
+  // Mediasi dapat menampilkan rentang tanggal mana pun, dan tombol pada baris
+  // yang lebih tua dari 400 hari menjawab "jadwal mediasi tidak ditemukan"
+  // padahal barisnya terlihat. Kuerinya tetap disaring nomor perkara.
+  const hasil = await getGatewayJadwalMediasi({ dari: isoHari(-1830), sampai: isoHari(120), cari: nomorPerkara, batas: 100 });
   if (!hasil.ok) {
     throw new ApiError(503, hasil.error || "ALETA Bot belum dapat dihubungi - jadwal mediasi tidak terbaca.");
   }
@@ -136,8 +142,20 @@ export async function bacaBahanHasilMediasi(
   ]);
   const tidakTerbaca: string[] = [];
   let pihak: PihakSipp[] = [];
+  let kuasa: BahanHasilMediasi["kuasa"];
   if (identitas && identitas.ok && Array.isArray((identitas.data as { pihak?: unknown }).pihak)) {
-    pihak = ((identitas.data as { pihak: PihakSipp[] }).pihak ?? []).filter((p) => p.pihakKe === 1 || p.pihakKe === 2);
+    // pihak_ke 4 = Turut Tergugat (ikut dalam laporan sejak 9 Okt 2026).
+    pihak = ((identitas.data as { pihak: PihakSipp[] }).pihak ?? []).filter(
+      (p) => p.pihakKe === 1 || p.pihakKe === 2 || p.pihakKe === 4
+    );
+    // Kuasa ikut dikirim bot sejak 9 Okt 2026 (perkara_pengacara). null/tidak
+    // ada = belum terbaca: isian kuasa dibiarkan kosong untuk diketik.
+    const mentahKuasa = (identitas.data as { kuasa?: unknown }).kuasa;
+    if (Array.isArray(mentahKuasa)) {
+      kuasa = mentahKuasa
+        .map((k) => ({ nama: teks((k as { nama?: unknown })?.nama), pihakKe: Number((k as { pihakKe?: unknown })?.pihakKe) || 0 }))
+        .filter((k) => k.nama && (k.pihakKe === 1 || k.pihakKe === 2));
+    }
   } else {
     tidakTerbaca.push("identitas para pihak");
   }
@@ -172,6 +190,10 @@ export async function bacaBahanHasilMediasi(
     pihak,
     namaPenggugat: acuan.pihak?.penggugat ?? [],
     namaTergugat: acuan.pihak?.tergugat ?? [],
+    ...(kuasa ? { kuasa } : {}),
+    hasilSipp: teks(acuan.hasil),
+    // Mediator yang menyusun = penandatangan, bila mediatornya lebih dari satu.
+    mediatorAkun: namaTiapMediator(acuan.mediator).find((nama) => namaCocokSatu(aktor.name, nama)) ?? "",
     anak,
     majelis,
     namaPengadilan: teks(masukan.namaPengadilan),

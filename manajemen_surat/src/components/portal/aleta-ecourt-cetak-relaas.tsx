@@ -66,7 +66,7 @@ import {
   type PetaBlangkoCetak,
   type PihakPilihan,
 } from "@/app/api/aleta-ecourt/relaas-massal/cetak/nilai-cetak";
-import { pecahDokumenPerPihak } from "@/app/api/aleta-ecourt/relaas-massal/cetak/pemetaan-cetak";
+import { pecahDokumenPerPihak, pecahPilihanKeduanya } from "@/app/api/aleta-ecourt/relaas-massal/cetak/pemetaan-cetak";
 import { AletaEcourtRelaasMassal } from "@/components/portal/aleta-ecourt-relaas-massal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -733,13 +733,38 @@ export function DialogCetakRelaas({
       .filter((d) => !hariIniKunci.has(d.kunci));
   }, [data, dokumen, petaBlangko]);
   const tanggalKemarin = data?.hariKerjaSebelumnya?.tanggal ?? "";
-  const nilai = useMemo(() => {
-    const peta = new Map<string, ReturnType<typeof nilaiCetakDokumen>>();
+  /**
+   * 9 Okt 2026: dokumen yang pihaknya dipilihkan "Kedua pihak" dicetak PER
+   * PIHAK (blangko P dan blangko T), seperti dokumen "keduanya" dari bot dan
+   * seperti tab Juru Sita ekstensi - bukan dengan gabungan 3.b. Barisnya tetap
+   * satu (pilihan pihaknya tetap dapat diubah); pecahannya dipakai saat
+   * menilai blangko yang ditampilkan dan saat mengirim ke ekstensi.
+   */
+  const pecahanPilihan = useMemo(() => {
+    const peta = new Map<string, DokumenRelaasCetakPortal[]>();
     for (const dok of [...dokumen, ...dokumenKemarin]) {
-      peta.set(dok.kunci, nilaiCetakDokumen(dok, pilihanPihak[dok.kunci] ?? null, petaBlangko));
+      const pecah = pecahPilihanKeduanya(dok, pilihanPihak[dok.kunci], petaBlangko?.relaas ?? {}, petaBlangko?.pbt ?? {});
+      if (pecah.length > 0) peta.set(dok.kunci, pecah);
     }
     return peta;
   }, [dokumen, dokumenKemarin, pilihanPihak, petaBlangko]);
+  const nilai = useMemo(() => {
+    const peta = new Map<string, ReturnType<typeof nilaiCetakDokumen>>();
+    for (const dok of [...dokumen, ...dokumenKemarin]) {
+      const n = nilaiCetakDokumen(dok, pilihanPihak[dok.kunci] ?? null, petaBlangko);
+      const pecah = pecahanPilihan.get(dok.kunci);
+      const bagian = pecah ? pecah.map((x) => nilaiCetakDokumen(x, null, petaBlangko).blangko) : [];
+      if (n.blangko && bagian.length === 2 && bagian.every(Boolean)) {
+        // Hanya tampilan: yang dikirim diambil ulang per pecahan (mulaiCetak).
+        n.blangko = {
+          label: bagian.map((b) => b!.label).join(" + "),
+          berkas: bagian.map((b) => b!.berkas).join(" + "),
+        };
+      }
+      peta.set(dok.kunci, n);
+    }
+    return peta;
+  }, [dokumen, dokumenKemarin, pilihanPihak, petaBlangko, pecahanPilihan]);
 
   const kelompok = useMemo(() => kelompokkanPerJurusita(dokumen, namaAkun), [dokumen, namaAkun]);
   const kelompokKemarin = useMemo(() => kelompokkanPerJurusita(dokumenKemarin, namaAkun), [dokumenKemarin, namaAkun]);
@@ -750,6 +775,8 @@ export function DialogCetakRelaas({
       [...dokumen, ...dokumenKemarin].filter((dok) => terpilih.has(dok.kunci) && nilai.get(dok.kunci)?.bisaDicetak),
     [dokumen, dokumenKemarin, terpilih, nilai]
   );
+  /** Jumlah dokumen yang SUNGGUH dikirim - pilihan "Kedua pihak" menjadi dua (9 Okt 2026). */
+  const jumlahDikirim = siapDikirim.reduce((n, dok) => n + (pecahanPilihan.get(dok.kunci)?.length ?? 1), 0);
 
   /**
    * "Siap dicetak" untuk tombol Pilih semua: dapat dicetak, TANPA peringatan
@@ -800,20 +827,24 @@ export function DialogCetakRelaas({
       setKabarKirim({ jenis: "ekstensi" });
       return;
     }
-    const kirim = siapDikirim.map((dok) => {
-      const n = nilai.get(dok.kunci)!;
-      return {
-        kunci: dok.kunci,
-        perkaraId: String(dok.perkaraId),
-        nomorPerkara: dok.nomorPerkara,
-        golongan: dok.golongan,
-        label: `${labelGolonganCetak(dok.golongan)} - ${n.blangko?.label ?? ""}`,
-        d: dok.golongan === "pemberitahuan-putusan" ? (dok.d ?? 0) : dok.d,
-        // APA ADANYA dari pohon-blangko.ts - termasuk spasi sebelum ".rtf".
-        berkas: n.blangko?.berkas ?? "",
-        nama: namaBerkasDokumen(dok),
-        jurusita: String(dok.jurusita?.nama || NAMA_TIDAK_TERCATAT),
-      };
+    // Pilihan "Kedua pihak" dikirim sebagai DUA dokumen per pihak (9 Okt 2026).
+    const kirim = siapDikirim.flatMap((asal) => {
+      const pecah = pecahanPilihan.get(asal.kunci);
+      return (pecah ?? [asal]).map((dok) => {
+        const n = pecah ? nilaiCetakDokumen(dok, null, petaBlangko) : nilai.get(asal.kunci)!;
+        return {
+          kunci: dok.kunci,
+          perkaraId: String(dok.perkaraId),
+          nomorPerkara: dok.nomorPerkara,
+          golongan: dok.golongan,
+          label: `${labelGolonganCetak(dok.golongan)} - ${n.blangko?.label ?? ""}`,
+          d: dok.golongan === "pemberitahuan-putusan" ? (dok.d ?? 0) : dok.d,
+          // APA ADANYA dari pohon-blangko.ts - termasuk spasi sebelum ".rtf".
+          berkas: n.blangko?.berkas ?? "",
+          nama: namaBerkasDokumen(dok),
+          jurusita: String(dok.jurusita?.nama || NAMA_TIDAK_TERCATAT),
+        };
+      });
     });
     if (kirim.length === 0) return;
 
@@ -1135,7 +1166,7 @@ export function DialogCetakRelaas({
               }
             >
               <Printer className="mr-1.5 h-4 w-4" />
-              {mengirim ? "Mengirim ke ekstensi…" : `Cetak ${siapDikirim.length} dokumen`}
+              {mengirim ? "Mengirim ke ekstensi…" : `Cetak ${jumlahDikirim} dokumen`}
             </Button>
           </div>
         </div>

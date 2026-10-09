@@ -1,8 +1,9 @@
 import { toNextJsHandler } from "better-auth/next-js";
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { getAuth } from "@/lib/auth";
 import { getDatabase } from "@/server/db/client";
+import { tolakJalurLamaBilaSippNonaktif } from "@/server/modules/portal/masuk-sipp-plugin";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { handleRouteError } from "@/server/shared/http";
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     let loginUser: { id: string; is_active: number } | null = null;
 
     if (pathname.endsWith("/sign-in/email")) {
-      const body = await request.clone().json().catch(() => null) as { email?: string } | null;
+      const body = await request.clone().json().catch(() => null) as { email?: string; password?: string } | null;
       const email = body?.email?.trim();
       rateLimitEmail = email ?? "";
 
@@ -62,6 +63,28 @@ export async function POST(request: NextRequest) {
             },
           });
           throw new ApiError(403, "Akun ini telah diblokir dan tidak dapat digunakan untuk login.");
+        }
+
+        // Akun bertautan SIPP yang akun SIPP-nya diblokir/kedaluwarsa ikut
+        // tertutup di jalur lama - sama dengan /sign-in/sipp (9 Okt 2026).
+        // Super Admin dan bot yang mati tetap lolos; password yang salah
+        // dibiarkan ditolak Better Auth seperti biasa.
+        if (loginUser && typeof body?.password === "string" && body.password) {
+          const tolak = await tolakJalurLamaBilaSippNonaktif(
+            db,
+            await (await getAuth()).$context,
+            { userId: loginUser.id, email, sandi: body.password },
+            request.headers
+          );
+          if (tolak) {
+            // Berbentuk jawaban Better Auth ({ message, code }) supaya
+            // authClient.signIn.email menampilkan kalimatnya, ditambah bentuk
+            // { ok, error } yang dibaca rute ALETA lain.
+            return NextResponse.json(
+              { ok: false, message: tolak.pesan, code: tolak.kode, error: { message: tolak.pesan } },
+              { status: tolak.status }
+            );
+          }
         }
       }
     }

@@ -197,7 +197,12 @@ async function lampiranDokumen(documentKey) {
       .filter(Boolean);
 
   const pilih = (daftar) =>
-    daftar.find((j) => ecourtDocumentService.describeEcourtDocument(j).ok) || daftar[0] || null;
+    // Batas lampiran WhatsApp disebut di sini: describeEcourtDocument tidak lagi
+    // membatasi ukuran secara bawaan (unduhan portal tidak terikat 16 MB).
+    daftar.find(
+      (j) =>
+        ecourtDocumentService.describeEcourtDocument(j, { batasByte: ecourtDocumentService.MAX_ATTACHMENT_BYTES }).ok
+    ) || daftar[0] || null;
 
   return ecourtDocumentService.pickBestAttachment({
     berkasPdf: pilih(jalur("pdf")),

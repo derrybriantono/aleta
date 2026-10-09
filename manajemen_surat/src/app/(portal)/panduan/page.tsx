@@ -26,12 +26,18 @@ function audiencesForUser(roleId: string | null | undefined, positionLabel: stri
   if (roleId === "hakim") audiences.add("hakim");
   if (roleId === "panitera" || roleId === "panitera-muda" || roleId === "panitera-pengganti" || roleId === "analis-perkara") audiences.add("panitera");
   if (roleId === "jurusita") audiences.add("jurusita");
-  if (roleId === "sekretaris" || roleId === "kasubag" || roleId === "pejabat-struktural") audiences.add("admin");
+  // Sekretaris, Kasubag, dan pejabat struktural (mis. Panitera Muda) TIDAK
+  // diberi audiens "admin" lagi (U5, 9 Okt 2026): panduan berpenonton admin
+  // berisi prosedur teknis server (patch lewat SSH, backup, database), dan
+  // halaman ini menjanjikan panduan teknis hanya bagi akun yang berwenang.
+  // Mereka tetap pejabat yang menyetujui (E-Kepegawaian, PLH/PLT), jadi
+  // diberi audiens "pimpinan" - panduan yang memang untuk pejabat tidak hilang.
+  if (roleId === "sekretaris" || roleId === "kasubag" || roleId === "pejabat-struktural") audiences.add("pimpinan");
 
   if (normalizedPosition.includes("panmud") || normalizedPosition.includes("panitera muda")) audiences.add("panitera");
   if (normalizedPosition.includes("jurusita")) audiences.add("jurusita");
   if (normalizedPosition.includes("ptsp")) audiences.add("ptsp");
-  if (normalizedPosition.includes("kasubag")) audiences.add("admin");
+  if (normalizedPosition.includes("kasubag")) audiences.add("pimpinan");
 
   return Array.from(audiences);
 }

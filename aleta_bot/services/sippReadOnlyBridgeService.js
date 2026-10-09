@@ -146,9 +146,11 @@ async function getTableColumns(connectionKey, tableName) {
     columnCache.set(key, columns);
     return columns;
   } catch {
-    const empty = new Set();
-    columnCache.set(key, empty);
-    return empty;
+    // Kegagalan TIDAK disimpan (9 Okt 2026): MySQL SIPP yang sesaat tidak
+    // terjangkau dulu membuat tabelnya "tanpa kolom" sampai bot dinyalakan
+    // ulang - masuk dengan akun SIPP lalu menjawab "username tidak ditemukan"
+    // walau MySQL sudah pulih. Percobaan berikutnya membaca ulang.
+    return new Set();
   }
 }
 
@@ -901,7 +903,10 @@ async function verifikasiSandiPengguna(params = {}) {
 
   const cols = await getTableColumns(connectionKey, "sys_users");
   if (cols.size === 0) {
-    return { ditemukan: false, cocok: false, alasan: "tabel sys_users tidak terbaca" };
+    // Dilempar, bukan "tidak ditemukan": jembatan lalu menjawab ok:false dan
+    // portal menempuh "SIPP tidak terjangkau" (password ALETA tetap berlaku),
+    // bukan menuduh password petugas salah (9 Okt 2026).
+    throw new Error("tabel sys_users tidak terbaca");
   }
 
   const kolomUsername = columnExpr("u", cols, ["username", "userid"], "''");

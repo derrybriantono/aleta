@@ -1272,8 +1272,22 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     batasId: number | null;
   }>({ jumlah: null, dipotong: [], batasId: null });
 
+  // ======================================================================
+  // PUTARAN PEMBUKAAN PERKARA (9 Oktober 2026)
+  // ======================================================================
+  //
+  // Membaca satu perkara dapat makan beberapa detik di SIPP. Tanpa nomor
+  // putaran, perkara A yang dibuka lebih dulu tetapi dijawab lebih lambat
+  // MENIMPA perkara B yang diminta sesudahnya - petugas membaca status
+  // perkara yang bukan dicarinya, tanpa satu pun tanda. Tiap pembukaan, tiap
+  // pencarian, dan tombol "Cari perkara lain" menaikkan putarannya; jawaban
+  // dari putaran yang sudah ditinggalkan dibuang.
+  const putaranBuka = useRef(0);
+
   const buka: (nomorPerkara: string) => Promise<void> = useCallback(async (nomorPerkara: string): Promise<void> => {
     ulangTerakhir.current = () => buka(nomorPerkara);
+    putaranBuka.current += 1;
+    const putaran = putaranBuka.current;
     setMemuat(true);
     setGalat("");
     setPesan("");
@@ -1284,6 +1298,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
       );
       // Status diperiksa sebelum badan dibaca sebagai JSON (502/504, halaman galat proksi).
       const isi = (await bacaJsonAman(jawaban)) as Record<string, unknown> & { data?: Record<string, unknown> };
+      if (putaranBuka.current !== putaran) return;
       if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal membaca status perkara."));
 
       const data = (isi?.data ?? isi) as Record<string, unknown>;
@@ -1293,20 +1308,31 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
       }
       laporBerhasilStatus();
       if (!data.status) {
+        // Perkara yang diminta TIDAK ada: status perkara sebelumnya tidak
+        // dibiarkan tampil di bawah pesannya - dibuka dari dalam layar
+        // perkara (riwayat, sematan), pesan "tidak ditemukan" di atas perkara
+        // lain terbaca seolah perkara yang tampil itulah yang tidak ada.
+        setStatus(null);
+        const alasan = String(data.alasan || "");
         setGalat(
-          String(data.alasan) === "perkara_tidak_ditemukan"
-            ? "Perkara tidak ditemukan di SIPP."
-            : String(data.alasan || "Tidak dapat dibaca.")
+          alasan === "perkara_tidak_ditemukan"
+            ? `Perkara ${nomorPerkara} tidak ditemukan di SIPP.`
+            : alasan === "nomor_perkara_kosong"
+              ? "Nomor perkara kosong."
+              : alasan
+                ? alasan.replace(/_/g, " ")
+                : "Tidak dapat dibaca."
         );
         return;
       }
       setStatus(data.status as Status);
     } catch (kesalahan) {
+      if (putaranBuka.current !== putaran) return;
       if (!laporGagalStatus(kesalahan)) {
         setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca status perkara.");
       }
     } finally {
-      setMemuat(false);
+      if (putaranBuka.current === putaran) setMemuat(false);
     }
   }, [laporGagalStatus, laporBerhasilStatus, tanganiTakTersedia]);
 
@@ -1577,6 +1603,9 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
     setGalat("");
     setPesan("");
     setStatus(null);
+    // Pembukaan perkara yang masih berjalan milik pertanyaan sebelumnya -
+    // jawabannya tidak boleh mendarat di atas hasil pencarian ini.
+    putaranBuka.current += 1;
     try {
       const jawaban = await fetch(
         apiPath(`/api/aleta-ecourt/status-perkara?${kueri.toString()}`),
@@ -2548,7 +2577,17 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         ) : null}
 
         {status ? (
-          <IsiStatus status={status} onKembali={() => setStatus(null)} onBuka={(n) => void buka(n)} />
+          <IsiStatus
+            status={status}
+            onKembali={() => {
+              // Pembukaan yang masih berjalan tidak boleh memunculkan perkara
+              // lagi sesudah penggunanya kembali ke daftar.
+              putaranBuka.current += 1;
+              setMemuat(false);
+              setStatus(null);
+            }}
+            onBuka={(n) => void buka(n)}
+          />
         ) : null}
       </CardContent>
     </Card>

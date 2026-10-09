@@ -501,7 +501,7 @@ export function AletaEcourtPenarikan() {
                     pada setiap penghitungan tanpa pernah dapat ditarik. */}
             <p className="text-xs text-muted-foreground">
               Dua hal yang perlu diketahui sebelum angkanya dipercaya. Pertama, &quot;sudah
-              utuh&quot; di sini berarti utuh menurut CATATAN, bukan menurut cakram: berkas yang
+              utuh&quot; di sini berarti utuh menurut CATATAN, bukan menurut disk: berkas yang
               tercatat tetapi hilang dari disk tidak akan masuk sasaran &mdash; yang membuktikannya
               ke disk adalah <strong>Pemeriksaan keutuhan arsip</strong> di bawah. Kedua, jumlah
               sasaran adalah batas <strong>atas</strong>: perkara yang tercatat di SIPP tetapi tidak

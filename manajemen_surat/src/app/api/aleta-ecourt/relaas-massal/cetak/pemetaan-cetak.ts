@@ -80,7 +80,12 @@ export function blangkoMenurutPemetaan(
 ): { berkas: string; kunci: string } | null {
   const minta = permintaanUntukDokumen(dokumen);
   if (!minta) return null;
-  const peta = minta.awalan === "pbt" ? petaPbt : petaRelaas;
+  // 9 Okt 2026: kedua peta DIGABUNG - awalan kuncinya yang menentukan
+  // (pilihKunciRelaas), sama dengan jurusitaPilihBlangko di ekstensi. Dulu
+  // hanya satu peta yang dicari, sehingga kunci PBT yang ditulis di tab Relaas
+  // (atau sebaliknya) dipakai ekstensi tetapi diabaikan portal. Relaas menang
+  // bila kuncinya sama persis di kedua tab - urutan ekstensi juga.
+  const peta = { ...petaPbt, ...petaRelaas };
   const kunciDaftar = Object.keys(peta).filter((x) => !x.startsWith(AWALAN_KUNCI_BAS_DB) && String(peta[x] || "").trim());
   const kunci = pilihKunciRelaas(kunciDaftar, minta);
   if (!kunci) return null;
@@ -145,4 +150,25 @@ export function pecahDokumenPerPihak<T extends DokumenPecah>(
     pihakKe: i + 1,
     kunci: `${dasar}:${i + 1}`,
   }));
+}
+
+/**
+ * Dokumen yang pihaknya TIDAK diketahui SIPP lalu dipilihkan "Kedua pihak" oleh
+ * juru sita (9 Okt 2026). Dokumen itu tidak ikut pecahDokumenPerPihak - ia
+ * baru "keduanya" sesudah dipilih - sehingga dulu dicetak dengan blangko
+ * gabungan 3.b, sedangkan tab Juru Sita ekstensi mencetak dokumen yang sama
+ * per pihak. Kini dipecah dengan aturan yang SAMA: dua dokumen (blangko P dan
+ * blangko T) - atau [] bila tidak dipecah (bukan pilihan "keduanya", keadaan
+ * yang hanya punya gabungan, atau kedua pihak berblangko sama), dan yang
+ * berlaku tetap penilaian dokumen aslinya.
+ */
+export function pecahPilihanKeduanya<T extends DokumenPecah>(
+  dokumen: T,
+  pilihan: unknown,
+  petaRelaas: Record<string, string>,
+  petaPbt: Record<string, string>
+): T[] {
+  if (String(dokumen.pihakDipanggil ?? "") !== "tidak-diketahui" || pilihan !== "keduanya") return [];
+  const pecah = pecahDokumenPerPihak({ ...dokumen, pihakDipanggil: "keduanya" }, petaRelaas, petaPbt);
+  return pecah.length === 2 ? pecah : [];
 }

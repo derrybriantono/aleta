@@ -7,6 +7,7 @@ import {
   type UserPersona,
 } from "@/lib/types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
+import type { KredensialSipp } from "@/server/modules/aleta-ecourt/checklist-milestone";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
@@ -198,16 +199,43 @@ export async function findUserIdsByExternalUsername(db: AletaDatabase, username:
   if (!target) return [];
 
   const rows = await db.prepare(
-    `SELECT user_id, external_username
+    `SELECT user_id, app_id, external_username, is_enabled, last_verified_status
      FROM external_app_credentials
      WHERE external_username <> ''`
-  ).all<Pick<ExternalCredentialRow, "user_id" | "external_username">>();
+  ).all<Pick<ExternalCredentialRow, "user_id" | "app_id" | "external_username" | "is_enabled" | "last_verified_status">>();
 
   const userIds = new Set<string>();
+  const klaimSipp: KredensialSipp[] = [];
   for (const row of rows) {
     if (String(row.external_username ?? "").trim().toLowerCase() === target) {
       userIds.add(row.user_id);
+      if (row.app_id === "sipp") {
+        klaimSipp.push({
+          userId: String(row.user_id ?? ""),
+          username: String(row.external_username ?? "").trim(),
+          aktif: Number(row.is_enabled) === 1,
+          keadaan: String(row.last_verified_status || KEADAAN_KREDENSIAL.BELUM_DIUJI),
+        });
+      }
     }
+  }
+
+  // ==========================================================================
+  // USERNAME SIPP YANG DISIMPAN LEBIH DARI SATU AKUN: ATURAN PEMILIK (9 Okt 2026)
+  // ==========================================================================
+  //
+  // Dulu dua penyimpan = "tidak ditemukan" bagi keduanya, termasuk pemiliknya
+  // sendiri - walau penyimpan lain sudah menonaktifkan kredensialnya atau
+  // uji password-nya terbukti salah. Aturan pemilik yang dipakai Penetapan
+  // kembali, Court Calendar, dan masuk dengan akun SIPP (tentukanPemilikSipp)
+  // kini berlaku juga di sini. Bila tetap setara (tidak ada pemilik), hasilnya
+  // seperti dulu: lebih baik gagal daripada masuk ke akun orang lain.
+  //
+  // Dimuat saat perlu: checklist-milestone memuat berkas ini di tingkat atas.
+  if (userIds.size > 1 && klaimSipp.length > 0) {
+    const { tentukanPemilikSipp } = await import("@/server/modules/aleta-ecourt/checklist-milestone");
+    const pemilik = tentukanPemilikSipp(klaimSipp).get(target)?.pemilik ?? null;
+    if (pemilik && userIds.has(pemilik)) return [pemilik];
   }
   return Array.from(userIds);
 }

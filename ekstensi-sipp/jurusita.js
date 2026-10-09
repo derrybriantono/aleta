@@ -465,9 +465,26 @@ function jurusitaPermintaanDariDaftar(jenis, daftar) {
 
 /* ─── 3. Perkara: sebutan pihak, golongan, dokumen ────────────────────────── */
 
-/** Sebutan pihak menurut perkaranya: Pemohon/Termohon untuk cerai talak dan permohonan. */
-function jurusitaSebutan(nomorPerkara, jenisPerkara) {
-  const permohonan = /\/Pdt\.P\//i.test(String(nomorPerkara || "")) || /cerai\s+talak/i.test(String(jenisPerkara || ""));
+/**
+ * Sebutan pihak menurut perkaranya - aturan #0046#/#0047# ABT, kembaran
+ * manajemen_surat/src/lib/sebutan-pihak.ts (sebutanPihakPerkara), memakai NOMOR:
+ *   alur 122/123 -> Penuntut Umum/Terdakwa; alur 16 -> Pemohon/Termohon;
+ *   jenis 346 (Cerai Talak) / 341 (Izin Poligami) -> Pemohon/Termohon meski
+ *   bernomor /Pdt.G/; alur lain yang tercatat -> Penggugat/Tergugat.
+ * Tanpa id (bot lama, 9 Okt 2026): cadangan kata - /Pdt.P/, cerai talak,
+ * atau poligami. k1/k2 = kunci pemetaan blangko (pemohon/termohon atau
+ * penggugat/tergugat).
+ */
+function jurusitaSebutan(nomorPerkara, jenisPerkara, alurPerkaraId, jenisPerkaraId) {
+  const alur = Number(alurPerkaraId) || 0;
+  const jenisId = Number(jenisPerkaraId) || 0;
+  if (alur === 122 || alur === 123) return { pertama: "Penuntut Umum", kedua: "Terdakwa", k1: "penggugat", k2: "tergugat" };
+  const permohonan =
+    alur === 16 || jenisId === 346 || jenisId === 341
+      ? true
+      : alur
+        ? false
+        : /\/Pdt\.P\//i.test(String(nomorPerkara || "")) || /cerai\s*talak|poligami/i.test(String(jenisPerkara || ""));
   return permohonan
     ? { pertama: "Pemohon", kedua: "Termohon", k1: "pemohon", k2: "termohon" }
     : { pertama: "Penggugat", kedua: "Tergugat", k1: "penggugat", k2: "tergugat" };
@@ -566,7 +583,7 @@ function jurusitaSatukanPdanT(calon) {
  */
 function jurusitaSusunDokumen(konteks, pilihan, petaBerlaku) {
   const { perkaraId, nomorPerkara, rincian, sidang, jurusita } = konteks;
-  const sebutan = jurusitaSebutan(nomorPerkara, rincian && rincian.jenisPerkara);
+  const sebutan = jurusitaSebutan(nomorPerkara, rincian && rincian.jenisPerkara, rincian && rincian.alurPerkaraId, rincian && rincian.jenisPerkaraId);
   const nomorAman = jurusitaNomorAman(nomorPerkara, perkaraId);
   const calon = [];
   const tanpaBlangko = [];
@@ -1152,7 +1169,7 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
     const perkaraId = /^\d+$/.test(String(konteksAwal.perkaraId || "")) && !/^0+$/.test(String(konteksAwal.perkaraId))
       ? String(konteksAwal.perkaraId)
       : String(rincian.perkaraId || "");
-    const sebutan = jurusitaSebutan(konteksAwal.nomorPerkara, rincian.jenisPerkara);
+    const sebutan = jurusitaSebutan(konteksAwal.nomorPerkara, rincian.jenisPerkara, rincian.alurPerkaraId, rincian.jenisPerkaraId);
     const jadwal = (Array.isArray(rincian.jadwalPerkara) ? rincian.jadwalPerkara : [])
       .filter((s) => Number(s.urutanSidang) > 0)
       .sort((a, b) => Number(a.urutanSidang) - Number(b.urutanSidang));
@@ -1483,7 +1500,7 @@ function jurusitaSebutanDok(dok) {
       k2: mohon ? "termohon" : "tergugat",
     };
   }
-  return jurusitaSebutan(dok && dok.nomorPerkara, dok && dok.jenisPerkara);
+  return jurusitaSebutan(dok && dok.nomorPerkara, dok && dok.jenisPerkara, dok && dok.alurPerkaraId, dok && dok.jenisPerkaraId);
 }
 
 /**

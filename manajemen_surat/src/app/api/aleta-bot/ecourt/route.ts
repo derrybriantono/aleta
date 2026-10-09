@@ -5,6 +5,7 @@ import {
   getGatewayEcourtStatus,
   setGatewayEcourtAktif,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { pastikanAdminIstimewa } from "@/server/modules/aleta-ecourt/akses";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -65,7 +66,8 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await requireActorUser(db, actorUserId);
+    // Menyalakan/mematikan pemberitahuan: Super Admin dan Admin saja (U5, 9 Okt 2026).
+    await pastikanAdminIstimewa(db, actorUserId, "menyalakan atau mematikan pemberitahuan e-Court");
 
     const body = (await request.json()) as { aktif?: boolean };
     const hasil = await setGatewayEcourtAktif(body.aktif === true);

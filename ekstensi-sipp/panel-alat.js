@@ -8009,7 +8009,8 @@ async function alatMasukOtomatis(dok, lokasi) {
   if (halaman.sandi.value) return { dikerjakan: false, sebab: "sudah terisi" };
   // ABT meneruskan password akun bernama "supervisor" ke server Badilag
   // (controllers/Login.php) - password SIPP tidak pernah dikirim ke sana.
-  if (halaman.jenis === "abt" && jawaban.username.trim() === "supervisor") {
+  // Tanpa peka huruf besar: MySQL ABT mencocokkan "Supervisor" = "supervisor".
+  if (halaman.jenis === "abt" && jawaban.username.trim().toLowerCase() === "supervisor") {
     return { dikerjakan: false, sebab: "akun supervisor ABT" };
   }
 

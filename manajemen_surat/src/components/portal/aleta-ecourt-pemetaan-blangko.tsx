@@ -231,11 +231,15 @@ export function AletaEcourtPemetaanBlangko() {
     }
   }, [draf, jenis]);
 
+  // 9 Okt 2026: mengubah CATATAN baris bawaan membawa nama berkas bawaannya
+  // (yang tampak di kotaknya). Dulu draf mulai dari nama kosong, sehingga nama
+  // menghilang dan Simpan mengirim perintah hapus - catatannya tidak tersimpan.
   const ubah = (kunci: string, bidang: "namaBerkas" | "catatan", nilai: string, asal: Butir) =>
     setDraf((lama) => ({
       ...lama,
       [kunci]: {
-        namaBerkas: lama[kunci]?.namaBerkas ?? (asal.sumber === "admin" ? asal.namaBerkas : ""),
+        namaBerkas:
+          lama[kunci]?.namaBerkas ?? (asal.sumber === "admin" || bidang === "catatan" ? asal.namaBerkas : ""),
         catatan: lama[kunci]?.catatan ?? asal.catatan,
         [bidang]: nilai,
       },

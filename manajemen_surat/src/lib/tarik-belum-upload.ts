@@ -105,6 +105,36 @@ async function bacaData(jawaban: Response): Promise<Record<string, unknown>> {
   }
 }
 
+/**
+ * Jawaban portal {ok, data} DIBUKA sekali: isi `data` beserta pesan
+ * penolakan server ({ error: { message } }) - tanpa memulangkan bungkusnya.
+ */
+async function bacaJawaban(jawaban: Response): Promise<{ data: Record<string, unknown>; pesanServer: string }> {
+  try {
+    const luar = (await jawaban.json()) as { data?: unknown; error?: { message?: unknown } } | null;
+    const isi = luar && typeof luar === "object" ? luar.data : null;
+    const pesan = luar && typeof luar === "object" ? luar.error?.message : undefined;
+    return {
+      data: (isi && typeof isi === "object" ? isi : {}) as Record<string, unknown>,
+      pesanServer: typeof pesan === "string" ? pesan.trim() : "",
+    };
+  } catch {
+    return { data: {}, pesanServer: "" };
+  }
+}
+
+/**
+ * Penolakan oleh portal sendiri: sesi habis (401) atau tanpa kewenangan (403).
+ * Pesan server ({ error: { message } }) dipakai bila ada.
+ */
+function pesanPenolakanPortal(status: number, dariServer: string): string {
+  if (status !== 401 && status !== 403) return "";
+  if (status === 401) {
+    return `Sesi ALETA Anda berakhir${dariServer ? ` (${dariServer})` : ""} - masuk ulang ke portal, lalu tekan lagi.`;
+  }
+  return dariServer || "Akun Anda tidak berwenang memeriksa e-Court dari layar ini.";
+}
+
 function pesanBotMati(data: Record<string, unknown>): string {
   const sebab = String(data.pesan || data.alasan || "").trim();
   return `ALETA Bot tidak tersambung${sebab ? ` (${sebab})` : ""} - e-Court tidak dapat diperiksa sekarang.`;
@@ -142,8 +172,13 @@ export async function tarikBelumUpload({
       body: JSON.stringify({ nomorPerkara, tanggal }),
       cache: "no-store",
     });
-    data = await bacaData(jawaban);
+    const dibuka = await bacaJawaban(jawaban);
+    data = dibuka.data;
     if (!jawaban.ok && data.available === undefined) {
+      // 401/403 berasal dari PORTAL, bukan dari bot (U5, 9 Okt 2026): dulu
+      // keduanya terbaca "ALETA Bot tidak tersambung (HTTP 401)".
+      const pesanPortal = pesanPenolakanPortal(jawaban.status, dibuka.pesanServer);
+      if (pesanPortal) return { tahap: "masalah", pesan: pesanPortal, dokumenBaru: [], perkara: null };
       return { tahap: "masalah", pesan: pesanBotMati({ pesan: `HTTP ${jawaban.status}` }), dokumenBaru: [], perkara: null };
     }
   } catch (e) {

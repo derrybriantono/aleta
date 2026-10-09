@@ -54,6 +54,20 @@ async function pengesah(request: NextRequest) {
   return { db, actorUserId, nama };
 }
 
+/**
+ * Status HTTP jawaban ubah.
+ *
+ * Penolakan BOT (bot menjawab 4xx: gambar_sudah_ada, nama_pejabat_kosong, ...)
+ * tetap 400. Bot yang TIDAK menjawab (tanpa status - koneksi ditolak, habis
+ * waktu) atau menjawab 5xx menjadi 502: dulu semuanya 400, sehingga bot mati
+ * terbaca seperti isian yang salah.
+ */
+function statusUbah(respons: { ok: boolean; status?: number } | null | undefined): number {
+  if (!respons || respons.ok !== false) return 200;
+  const s = Number(respons.status ?? 0);
+  return s >= 400 && s < 500 ? 400 : 502;
+}
+
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
@@ -147,7 +161,7 @@ export async function POST(request: NextRequest) {
         asal: `unggahan layar oleh ${sesi.nama}`,
         oleh: sesi.nama,
       });
-      return Response.json(respons, { status: respons?.ok === false ? 400 : 200 });
+      return Response.json(respons, { status: statusUbah(respons) });
     }
 
     const id = Number(badan.id);
@@ -164,17 +178,17 @@ export async function POST(request: NextRequest) {
         subPeran: String(badan.subPeran ?? "").slice(0, 255),
         oleh: sesi.nama,
       });
-      return Response.json(respons, { status: respons?.ok === false ? 400 : 200 });
+      return Response.json(respons, { status: statusUbah(respons) });
     }
 
     if (tindakan === "sahkan") {
       const respons = await kirimTandaTanganSahkan(id, sesi.nama);
-      return Response.json(respons, { status: respons?.ok === false ? 400 : 200 });
+      return Response.json(respons, { status: statusUbah(respons) });
     }
 
     if (tindakan === "hapus") {
       const respons = await kirimTandaTanganHapus(id);
-      return Response.json(respons, { status: respons?.ok === false ? 400 : 200 });
+      return Response.json(respons, { status: statusUbah(respons) });
     }
 
     return Response.json({ ok: false, alasan: "tindakan_tidak_dikenali" }, { status: 400 });

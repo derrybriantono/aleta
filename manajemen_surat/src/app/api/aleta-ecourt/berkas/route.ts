@@ -9,6 +9,15 @@ import { ambilBerkasGateway } from "@/server/modules/aleta-bot/whatsapp-gateway-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Kalimat untuk petugas saat berkas tidak dapat diminta dari ALETA Bot. */
+function pesanBotTakTerjangkau(galat: unknown): string {
+  const nama = galat instanceof Error ? galat.name : "";
+  if (nama === "TimeoutError" || nama === "AbortError") {
+    return "ALETA Bot belum dapat dihubungi: berkas tidak terkirim dalam 30 detik. Coba lagi sebentar lagi.";
+  }
+  return "ALETA Bot belum dapat dihubungi. Pastikan layanan aleta_bot berjalan, lalu coba lagi.";
+}
+
 /**
  * Mengunduh satu berkas dokumen e-Court, dipanggil ekstensi dari halaman SIPP.
  *
@@ -36,7 +45,18 @@ export async function GET(request: NextRequest) {
       return Response.json({ ok: false, alasan: "document_key_kosong" }, { status: 400 });
     }
 
-    const respons = await ambilBerkasGateway(documentKey, format);
+    // Bot mati / menolak sambungan / melewati batas 30 detik: fetch MELEMPAR.
+    // Dulu lemparan itu jatuh ke handleRouteError dan petugas membaca
+    // "Terjadi kendala pada layanan ALETA" (U5, 9 Okt 2026).
+    let respons: Response;
+    try {
+      respons = await ambilBerkasGateway(documentKey, format);
+    } catch (galatBot) {
+      return Response.json(
+        { ok: false, alasan: "bot_tidak_terjangkau", error: { message: pesanBotTakTerjangkau(galatBot) } },
+        { status: 503 }
+      );
+    }
 
     if (!respons.ok) {
       // Jawaban galat dari bot berupa JSON; diteruskan apa adanya supaya

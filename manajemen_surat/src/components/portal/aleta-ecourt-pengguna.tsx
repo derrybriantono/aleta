@@ -259,6 +259,33 @@ export function AletaEcourtPengguna() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // ==========================================================================
+  // #ttd MEMBUKA MENU TANDA TANGAN
+  // ==========================================================================
+  //
+  // Tautan "Berkas tanda tangan" di Peta penetapan, panel ekstensi, dan
+  // jawaban rute peta edoc (TAUTAN_BERKAS_TANDA_TANGAN) semuanya menuju
+  // /aleta-ecourt#ttd - tetapi sampai 9 Oktober 2026 tidak ada yang membaca
+  // jangkarnya: tautan itu selalu mendarat di Dasbor. "#tanda-tangan" ikut
+  // dikenali karena cadangan ekstensi memakai sebutan itu.
+  //
+  // Hanya bagi yang memang boleh membuka menunya; yang lain tetap di Dasbor.
+  // Bergantung pada bolehMengatur: sesi portal dapat terbaca sesudah halaman
+  // terpasang, dan jangkar yang dibaca sebelum itu akan diabaikan selamanya.
+  useEffect(() => {
+    if (!bolehMengatur) return;
+    const timer = window.setTimeout(() => {
+      let jangkar = "";
+      try {
+        jangkar = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
+      } catch {
+        jangkar = "";
+      }
+      if (jangkar === "ttd" || jangkar === "tanda-tangan") setMenu("ttd");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [bolehMengatur]);
+
   // Dibaca sekali saat menu ekstensi dibuka, bukan saat portal dibuka.
   // Sebagian besar orang tidak pernah membuka menu ini sama sekali.
   useEffect(() => {

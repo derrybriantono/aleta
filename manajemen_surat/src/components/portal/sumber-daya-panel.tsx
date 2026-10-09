@@ -8,6 +8,7 @@ import { PageIntro } from "@/components/portal/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiPath } from "@/lib/base-path";
+import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
 import type { ButirDisk, ButirMemori, Keping, KepingGpu, SumberDaya, Warna } from "@/server/modules/sumber-daya/layanan";
 
@@ -101,7 +102,7 @@ function KartuLingkup({ judul, ket, r, adalahAleta }: { judul: string; ket: stri
           ikon={<MemoryStick className="h-4 w-4 text-muted-foreground" />}
           label="RAM"
           keping={r.ram}
-          bawah={`${formatByte(r.ram.byte)} dari ${formatByte(r.ram.totalByte)}`}
+          bawah={`${formatByte(r.ram.byte)} dari ${formatByte(r.ram.totalByte)}${"sebagian" in r.ram && r.ram.sebagian ? " - SEBAGIAN: hanya container portal yang terukur" : ""}`}
         />
         <Meter
           ikon={<HardDrive className="h-4 w-4 text-muted-foreground" />}
@@ -203,9 +204,11 @@ export function SumberDayaPanel() {
     setMemuat(true);
     try {
       const r = await fetch(apiPath("/api/admin/sumber-daya"), { cache: "no-store" });
-      const isi = (await r.json().catch(() => null)) as { ok?: boolean; data?: SumberDaya; error?: string; message?: string } | null;
+      const isi = (await r.json().catch(() => null)) as { ok?: boolean; data?: SumberDaya; error?: unknown; message?: string } | null;
       if (!r.ok || !isi?.ok || !isi.data) {
-        setGalat(String(isi?.error || isi?.message || `HTTP ${r.status}`));
+        // Rute menjawab { ok:false, error:{ message } } - dulu String(error)
+        // menampilkan "[object Object]" tepat saat ALETA Bot mati (U5, 9 Okt 2026).
+        setGalat(pesanGalatPortal(isi, `Sumber daya server belum terbaca (HTTP ${r.status}).`));
       } else {
         setData(isi.data);
         setGalat("");
