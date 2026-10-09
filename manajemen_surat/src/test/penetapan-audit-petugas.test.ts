@@ -423,6 +423,8 @@ const FUNGSI = [
   "kalimatAlasan",
   // Penetapan sisa (7 Okt 2026): langkah yang sudah ada dibaca dari usulan.
   "keadaanPenetapanUsulan",
+  // Uji rilis U1 (9 Okt 2026): 401/403 dari rute tulis menjadi alasan bersebab.
+  "jawabPenetapanMenurutStatus",
   "rantaiPenetapan",
 ];
 const TETAPAN = ["ALETA_API_TULIS", "URUTAN_TULIS", "KALIMAT_ALASAN", "NAMA_HARI"];

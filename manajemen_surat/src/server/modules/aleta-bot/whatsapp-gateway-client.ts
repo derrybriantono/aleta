@@ -3278,6 +3278,11 @@ export async function gatewayUnggahPutusanSipp(muatan: {
   anonimisasiBase64?: string;
   olehUsername: string;
   /**
+   * Pengguna ALETA yang menekan tombolnya - hanya untuk jejak ALETA
+   * (aleta_bot_jejak_penetapan.operator), tidak pernah ditulis ke SIPP.
+   */
+  operator?: string;
+  /**
    * IPv4 peramban petugas (alamatIpPeramban), untuk kolom ipaddress baris
    * audit SIPP. Rute bot membaca badan.ip; kosong berarti tidak diketahui.
    */

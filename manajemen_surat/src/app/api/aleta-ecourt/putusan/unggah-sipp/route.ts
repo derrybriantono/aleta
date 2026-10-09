@@ -67,7 +67,12 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "penunjukan");
+    const aktor = await pastikanKapabilitas(db, actorUserId, "penunjukan");
+    // Uji rilis U1 (9 Okt 2026): akun ALETA yang menekan tombolnya untuk JEJAK
+    // JUJUR aleta_bot_jejak_penetapan - sebelumnya tidak diteruskan, sehingga
+    // baris "unggah edoc_putusan" di server (533, 561) berkolom operator kosong.
+    // Diambil dari sesi, bukan dari badan permintaan; tidak pernah ditulis ke SIPP.
+    const operator = String(aktor?.name || aktor?.email || actorUserId || "").trim();
 
     const formulir = await request.formData();
     let perkaraId = String(formulir.get("perkaraId") ?? "").trim();
@@ -207,6 +212,8 @@ export async function POST(request: NextRequest) {
       // orang yang sedang masuk SIPP di layar itu. Bahwa tulisannya lewat
       // ALETA disebut bot pada judul dan deskripsi baris auditnya.
       olehUsername,
+      // Pengguna ALETA yang menekan - hanya untuk jejak ALETA.
+      operator,
       // Alamat peramban petugas itu, untuk kolom ipaddress baris audit SIPP.
       // Kosong bila tidak ada alamat IPv4 yang sah - tidak pernah dikarang.
       ip: alamatIpPeramban(request),

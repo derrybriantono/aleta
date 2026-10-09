@@ -4369,6 +4369,9 @@ router.post("/sipp/putusan-unggah", requireInternalToken, async (req, res) => {
       pdfAnonimisasi: bita(badan.anonimisasiBase64),
       olehUsername: String(badan.olehUsername || ""),
       ip: String(badan.ip || ""),
+      // Uji rilis U1 (9 Okt 2026): akun ALETA penekan untuk jejak ALETA -
+      // sebelumnya tidak diteruskan, kolom operator jejak unggah kosong.
+      operator: String(badan.operator || ""),
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
