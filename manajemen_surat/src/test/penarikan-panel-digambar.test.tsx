@@ -170,7 +170,7 @@ describe("panel penarikan menggambar apa yang akan dikerjakan", () => {
 
   it("dua batas jujur disebut di layar, bukan hanya di komentar kode", async () => {
     await gambarLaluHitung();
-    expect(screen.getByText(/utuh menurut CATATAN, bukan menurut cakram/)).toBeTruthy();
+    expect(screen.getByText(/utuh menurut CATATAN, bukan menurut disk/)).toBeTruthy();
     expect(screen.getByText(/muncul pada daftar e-Court tidak akan pernah terbuka/)).toBeTruthy();
   });
 

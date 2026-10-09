@@ -3212,7 +3212,10 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
   if (!nomorPerkara) return { ok: false, alasan: "nomor_perkara_kosong" };
 
   const barisPerkara = await runQuery(
-    `SELECT p.perkara_id AS perkaraId, p.jenis_perkara_nama AS jenisPerkara
+    // alur/jenis_perkara_id (9 Okt 2026): sebutan pihak tab Juru Sita dari
+    // NOMOR, bukan kata - Izin Poligami (341) bernomor /Pdt.G/ tetapi Pemohon.
+    `SELECT p.perkara_id AS perkaraId, p.alur_perkara_id AS alurPerkaraId, p.jenis_perkara_id AS jenisPerkaraId,
+            p.jenis_perkara_nama AS jenisPerkara
        FROM perkara p WHERE p.nomor_perkara = ? ORDER BY p.perkara_id DESC LIMIT 1`,
     [nomorPerkara]
   );
@@ -3305,6 +3308,10 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     // panggilan sidang ini tanpa mencari ulang perkaranya dari nomornya.
     perkaraId: perkara.perkaraId,
     jenisPerkara: cleanText(perkara.jenisPerkara),
+    // Tambahan ruas (9 Okt 2026) - penentu sebutan Pemohon/Penggugat di
+    // jurusita.js (jurusitaSebutan). null bila kolomnya kosong.
+    alurPerkaraId: Number(perkara.alurPerkaraId) || null,
+    jenisPerkaraId: Number(perkara.jenisPerkaraId) || null,
     majelis,
     panitera: petugas.panitera,
     jurusita: petugas.jurusita,

@@ -1382,6 +1382,8 @@ export function PortalProvider({
       "Sebagian data portal belum selesai dimuat. Data akan dicoba lagi saat halaman dimuat ulang."
     ).catch((error) => {
       if (error instanceof BackendRequestError && error.status === 401 && syncGenerationRef.current === syncGeneration) {
+        // Sesi habis = keluar paksa: titipan password SIPP di ekstensi ikut dihapus (9 Okt 2026).
+        void lupakanSandiDiEkstensi().catch(() => undefined);
         void authClient.signOut();
         dispatch({ type: "sign-out" });
         return null;
@@ -1400,6 +1402,8 @@ export function PortalProvider({
     );
 
     if (unauthorized) {
+      // Sesi habis = keluar paksa: titipan password SIPP di ekstensi ikut dihapus (9 Okt 2026).
+      void lupakanSandiDiEkstensi().catch(() => undefined);
       void authClient.signOut();
       dispatch({ type: "sign-out" });
       return;
@@ -1489,6 +1493,8 @@ export function PortalProvider({
       void syncSecondaryPortalData(actorUserId, syncGeneration);
     } catch (error) {
       if (error instanceof BackendRequestError && error.status === 401) {
+        // Sesi habis = keluar paksa: titipan password SIPP di ekstensi ikut dihapus (9 Okt 2026).
+        void lupakanSandiDiEkstensi().catch(() => undefined);
         void authClient.signOut();
         dispatch({ type: "sign-out" });
       } else {

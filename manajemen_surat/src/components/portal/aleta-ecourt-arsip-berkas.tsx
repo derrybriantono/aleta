@@ -15,7 +15,7 @@
  * Daftar dokumennya baru berguna setelah satu perkara dipilih.
  */
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
 import { AletaEcourtKendaliSipp } from "@/components/portal/aleta-ecourt-kendali-sipp";
 import { KepalaUrut, useUrutan, type ArahUrut } from "@/components/portal/tabel-kendali";
@@ -215,6 +215,13 @@ export function AletaEcourtArsipBerkas({
   const [dibuka, setDibuka] = useState("");
   const [rincian, setRincian] = useState<BarisDokumen[]>([]);
   const [memuatRincian, setMemuatRincian] = useState(false);
+  // Sebab rincian gagal dibaca (bot mati, server tidak menjawab). Dibedakan
+  // dari "tidak ada dokumen" - yang satu keadaan arsip, yang lain gangguan.
+  const [pesanRincian, setPesanRincian] = useState("");
+  // Nomor putaran pembukaan rincian: baris A yang dijawab lebih lambat dari
+  // baris B yang ditekan sesudahnya tidak boleh menuliskan dokumennya di
+  // bawah baris B.
+  const putaranRincian = useRef(0);
 
   const muat = useCallback(async () => {
     setMemuat(true);
@@ -248,6 +255,9 @@ export function AletaEcourtArsipBerkas({
     } catch (error) {
       setPesan(error instanceof Error ? error.message : "Gagal membaca arsip.");
       setPerkara([]);
+      // Angka lama ikut dibuang: tanpa ini kepala tabel tetap menyebut
+      // "222 perkara ... menampilkan 0 teratas" di atas tabel yang kosong.
+      setTotal(0);
     } finally {
       setMemuat(false);
     }
@@ -262,28 +272,47 @@ export function AletaEcourtArsipBerkas({
 
   const bukaRincian = useCallback(
     async (nomorPerkara: string) => {
+      putaranRincian.current += 1;
+      const putaran = putaranRincian.current;
+
       // Menekan baris yang sama menutupnya kembali.
       if (dibuka === nomorPerkara) {
         setDibuka("");
         setRincian([]);
+        setPesanRincian("");
+        setMemuatRincian(false);
         return;
       }
 
       setDibuka(nomorPerkara);
       setRincian([]);
+      setPesanRincian("");
       setMemuatRincian(true);
       try {
         const params = new URLSearchParams({ nomor: nomorPerkara });
         const respons = await fetch(apiPath(`/api/aleta-ecourt/arsip/perkara?${params.toString()}`), {
           cache: "no-store",
         });
-        const hasil = await respons.json();
+        const hasil = await respons.json().catch(() => null);
+        if (putaranRincian.current !== putaran) return;
         const isi = hasil?.data ?? hasil;
-        setRincian(isi?.available ? (isi.dokumen ?? []) : []);
-      } catch {
+        if (!respons.ok) {
+          setRincian([]);
+          setPesanRincian(pesanGalatPortal(hasil, `Dokumen perkara ini tidak dapat dibaca (HTTP ${respons.status}).`));
+        } else if (!isi?.available) {
+          // Bot mati: katakan itu - "tidak ada dokumen tercatat" di sini
+          // berbohong tentang arsip yang sebenarnya tidak sempat dibaca.
+          setRincian([]);
+          setPesanRincian(String(isi?.message || "ALETA Bot belum dapat dihubungi."));
+        } else {
+          setRincian(isi.dokumen ?? []);
+        }
+      } catch (error) {
+        if (putaranRincian.current !== putaran) return;
         setRincian([]);
+        setPesanRincian(error instanceof Error ? error.message : "Dokumen perkara ini tidak dapat dibaca.");
       } finally {
-        setMemuatRincian(false);
+        if (putaranRincian.current === putaran) setMemuatRincian(false);
       }
     },
     [dibuka]
@@ -412,7 +441,10 @@ export function AletaEcourtArsipBerkas({
               </tr>
             </thead>
             <tbody>
-              {perkara.length === 0 && !memuat ? (
+              {/* Tidak ditulis bila daftar GAGAL dibaca (pesan terisi): "Arsip
+                  masih kosong" di bawah "ALETA Bot belum dapat dihubungi"
+                  menyuruh orang menarik ulang arsip yang mungkin utuh. */}
+              {perkara.length === 0 && !memuat && !pesan ? (
                 <tr>
                   <td className="px-3 py-6 text-center text-muted-foreground" colSpan={8}>
                     {kataCari || belumLengkap
@@ -487,7 +519,7 @@ export function AletaEcourtArsipBerkas({
                         {baris.berkasHilang > 0 ? (
                           <Badge
                             variant="danger"
-                            title="Berkasnya tercatat pernah diunduh tetapi tidak ada lagi di cakram. Jalankan penarikan ulang untuk mengisinya kembali."
+                            title="Berkasnya tercatat pernah diunduh tetapi tidak ada lagi di disk server. Jalankan penarikan ulang untuk mengisinya kembali."
                           >
                             {baris.berkasHilang} berkas hilang
                           </Badge>
@@ -534,6 +566,10 @@ export function AletaEcourtArsipBerkas({
                       <td className="px-3 py-3" colSpan={8}>
                         {memuatRincian ? (
                           <p className="text-sm text-muted-foreground">Memuat dokumen…</p>
+                        ) : pesanRincian ? (
+                          <p className="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+                            {pesanRincian}
+                          </p>
                         ) : rincian.length === 0 ? (
                           <p className="text-sm text-muted-foreground">
                             Tidak ada dokumen tercatat untuk perkara ini.
@@ -564,9 +600,9 @@ export function AletaEcourtArsipBerkas({
             di-mount. */}
         <p className="rounded bg-muted/50 p-2.5 text-xs text-muted-foreground">
           Kolom &quot;Berkas ada&quot; dan &quot;Belum ada&quot; dihitung dari catatan berkas, sedangkan
-          lencana &quot;berkas hilang&quot; dan tombol ZIP dibuktikan ke cakram server. Bila keduanya
+          lencana &quot;berkas hilang&quot; dan tombol ZIP dibuktikan ke disk server. Bila keduanya
           berselisih, yang benar adalah lencananya &mdash; catatan dapat tertinggal ketika berkasnya
-          lenyap dari cakram.
+          lenyap dari disk.
         </p>
       </CardContent>
       </Card>

@@ -206,7 +206,9 @@ const JENIS_CERAI = [346, 347];
 export function kelompokPerkara(bahan: { jenisPerkaraId?: number | null; jenisPerkara?: string | null }): KelompokPerkara {
   const id = Number(bahan.jenisPerkaraId) || 0;
   const nama = String(bahan.jenisPerkara ?? "").toLowerCase();
-  if (JENIS_CERAI.includes(id) || /cerai|talak|fasakh|khulu|li.?an/.test(nama)) return "cerai";
+  // li'an sebagai KATA utuh: "li.?an" tanpa batas kata menangkap "Perwalian"
+  // dan menggolongkannya perceraian (9 Okt 2026).
+  if (JENIS_CERAI.includes(id) || /cerai|talak|fasakh|khulu|\bli.?an\b/.test(nama)) return "cerai";
   if (/harta bersama|gono/.test(nama)) return "harta-bersama";
   if (/waris|kewarisan/.test(nama)) return "waris";
   if (/hibah|wakaf|wasiat|sedekah|shadaqah|infaq/.test(nama)) return "hibah-wakaf";
@@ -652,6 +654,24 @@ export type BahanHasilMediasi = {
   /** Nama ringkas dari jadwal bila identitas tidak terbaca. */
   namaPenggugat?: string[];
   namaTergugat?: string[];
+  /**
+   * Kuasa hukum dari SIPP (perkara_pengacara), urut menurut sisi dan urutan
+   * SIPP. Tidak ada (bot lama / tidak terbaca) = isian kuasa dibiarkan kosong.
+   */
+  kuasa?: Array<{ nama: string; pihakKe: number }>;
+  /**
+   * Sandi hasil mediasi yang SUDAH tercatat di SIPP (perkara_mediasi.
+   * hasil_mediasi): Y1 berhasil kesepakatan damai, Y2 berhasil dengan
+   * pencabutan, S berhasil sebagian, T tidak berhasil, D tidak dapat
+   * dilaksanakan. Kosong = belum dicatat; pop-up memakai bawaannya.
+   */
+  hasilSipp?: string;
+  /**
+   * Nama mediator yang cocok dengan akun yang membuka pop-up, bila mediator
+   * perkara itu lebih dari satu ("H,H" - 3 perkara di sipp_donggala). Yang
+   * menandatangani laporan adalah mediator yang menyusunnya.
+   */
+  mediatorAkun?: string;
   anak: string[];
   majelis: Array<{ nama: string; jabatan: string }>;
   namaPengadilan: string;
@@ -686,6 +706,12 @@ export type DrafHasilMediasi = {
     sebutanDua: string;
     pihakSatu: OrangDraf[];
     pihakDua: OrangDraf[];
+    /**
+     * Turut Tergugat/Termohon (pihak_ke 4) - 9 Okt 2026. Sebelumnya dibuang,
+     * sehingga laporan perkara waris/harta bersama yang berturut tergugat
+     * tidak menyebut mereka sama sekali (273/Pdt.G/2026: tujuh orang).
+     */
+    pihakTurut: OrangDraf[];
     kuasaSatu: string;
     kuasaDua: string;
     anak: string[];
@@ -776,11 +802,16 @@ export function kotaDariPengadilan(nama: string): string {
 /** Keterangan identitas tanpa nama dan tanpa "sebagai ..." - contoh 371. */
 export function keteranganIdentitas(p: PihakSipp): string {
   const potong: string[] = [];
+  // Tanda kosong SIPP ("-", ".") bukan isi: "pendidikan -" tidak boleh tercetak.
+  const isi = (x: unknown) => {
+    const t = bersih(x);
+    return /^[-.–—]*$/.test(t) ? "" : t;
+  };
   if (p.umur !== null && p.umur !== undefined && Number.isFinite(p.umur)) potong.push(`umur ${p.umur} tahun`);
-  if (bersih(p.agama)) potong.push(`agama ${bersih(p.agama)}`);
-  if (bersih(p.pendidikan)) potong.push(`pendidikan ${bersih(p.pendidikan)}`);
-  if (bersih(p.pekerjaan)) potong.push(`pekerjaan ${bersih(p.pekerjaan)}`);
-  const alamat = [bersih(p.alamat), ...(p.wilayah ?? []).map(bersih)].filter(Boolean);
+  if (isi(p.agama)) potong.push(`agama ${isi(p.agama)}`);
+  if (isi(p.pendidikan)) potong.push(`pendidikan ${isi(p.pendidikan)}`);
+  if (isi(p.pekerjaan)) potong.push(`pekerjaan ${isi(p.pekerjaan)}`);
+  const alamat = [isi(p.alamat), ...(p.wilayah ?? []).map(isi)].filter(Boolean);
   // Wilayah yang sudah tertulis di alamat tidak diulang.
   const unik: string[] = [];
   for (const a of alamat) {
@@ -808,6 +839,32 @@ export function sisiSuami(bahan: Pick<BahanHasilMediasi, "pihak" | "jenisPerkara
 
 export function lawan(sisi: Sisi): Sisi {
   return sisi === "satu" ? "dua" : "satu";
+}
+
+/** Nama kuasa satu sisi dari SIPP: "A", "A dan B", "A, B, dan C". */
+export function namaKuasa(bahan: Pick<BahanHasilMediasi, "kuasa">, pihakKe: 1 | 2): string {
+  const nama = (Array.isArray(bahan.kuasa) ? bahan.kuasa : [])
+    .filter((k) => Number(k?.pihakKe) === pihakKe)
+    .map((k) => bersih(k?.nama))
+    .filter(Boolean);
+  return gabungDan([...new Set(nama)]);
+}
+
+/** Hasil dari sandi SIPP; null = belum tercatat (bawaan pop-up berlaku). */
+export function hasilDariSipp(sandi: unknown): KunciHasil | null {
+  switch (bersih(sandi).toUpperCase()) {
+    case "Y1":
+    case "Y2":
+      return "berhasil-seluruhnya";
+    case "S":
+      return "berhasil-sebagian";
+    case "T":
+      return "tidak-berhasil";
+    case "D":
+      return "tidak-dapat-dilaksanakan";
+    default:
+      return null;
+  }
 }
 
 export function drafAwal(bahan: BahanHasilMediasi, sekarang = hariIniIso()): DrafHasilMediasi {
@@ -860,13 +917,24 @@ export function drafAwal(bahan: BahanHasilMediasi, sekarang = hariIniIso()): Dra
     butir[b.kunci] = isian;
   }
 
+  // Hasil yang sudah dicatat di SIPP dipilih lebih dulu (9 Okt 2026); bila
+  // belum, bawaannya tetap "berhasil sebagian". Pilihan bawaan diperlakukan
+  // SAMA dengan pilihan tangan di pop-up: sebagian menyalakan butir "yang
+  // tidak disepakati", seluruhnya pada perceraian menyalakan rukun kembali.
+  const hasilAwal: KunciHasil = hasilDariSipp(bahan.hasilSipp) ?? "berhasil-sebagian";
+  if (hasilAwal === "berhasil-sebagian") butir["tidak-disepakati"] = { ...butir["tidak-disepakati"], aktif: true };
+  if (hasilAwal === "berhasil-seluruhnya" && kelompok === "cerai") butir["rukun-kembali"] = { ...butir["rukun-kembali"], aktif: true };
+  const sandiSipp = bersih(bahan.hasilSipp).toUpperCase();
+  const penutupAwal: DrafHasilMediasi["penutup"] =
+    kelompok === "cerai" || sandiSipp === "Y2" ? "cabut" : "akta";
+
   return {
     versi: 1,
-    hasil: "berhasil-sebagian",
+    hasil: hasilAwal,
     alasanTidakBerhasil: "batas-waktu",
     alasanTidakDapat: "tidak-hadir-a",
     pihakTidakBeriktikad: "dua",
-    penutup: kelompok === "cerai" ? "cabut" : "akta",
+    penutup: penutupAwal,
     butir,
     dokumen: {
       nomorPerkara: bersih(bahan.nomorPerkara),
@@ -874,7 +942,7 @@ export function drafAwal(bahan: BahanHasilMediasi, sekarang = hariIniIso()): Dra
       namaPengadilan,
       kota,
       tempatMediasi: `ruang mediasi ${namaPengadilan}`,
-      mediator: namaTiapMediator(bahan.mediator).join("; ") || bersih(bahan.mediator),
+      mediator: bersih(bahan.mediatorAkun) || namaTiapMediator(bahan.mediator).join("; ") || bersih(bahan.mediator),
       tanggalPenunjukan: (bahan.penetapanMediator || "").slice(0, 10),
       tanggalKesepakatan: pertemuan.length ? pertemuan[pertemuan.length - 1].tanggal : sekarang,
       tanggalLaporan: sekarang,
@@ -883,8 +951,12 @@ export function drafAwal(bahan: BahanHasilMediasi, sekarang = hariIniIso()): Dra
       sebutanDua: sebutan.dua,
       pihakSatu: orang(1, bahan.namaPenggugat),
       pihakDua: orang(2, bahan.namaTergugat),
-      kuasaSatu: "",
-      kuasaDua: "",
+      pihakTurut: orang(4),
+      // Kuasa dari SIPP - sebelumnya selalu kosong, sehingga persetujuan
+      // tertulis pihak berkuasa (Pasal 27 ayat (3)) tidak pernah tersusun
+      // kecuali mediator mengetik sendiri nama kuasanya.
+      kuasaSatu: namaKuasa(bahan, 1),
+      kuasaDua: namaKuasa(bahan, 2),
       anak: [...(bahan.anak ?? [])],
       pertemuan,
       biayaJasa: 0,
@@ -1210,14 +1282,17 @@ export function susunPasal(draf: DrafHasilMediasi, bahan?: Pick<BahanHasilMedias
 
   if (sebagian) {
     const tidak = baris(draf.butir["tidak-disepakati"]?.aktif ? draf.butir["tidak-disepakati"]?.teks : "");
+    // Cerai talak dan perkara bersebutan Pemohon diajukan dengan PERMOHONAN,
+    // bukan gugatan - sama dengan kata pada pasal penutup di bawah.
+    const pokok = d.sebutanSatu === "Pemohon" ? "pokok permohonan" : "pokok gugatan";
     hasil.push({
       isi: tidak.length
         ? [
-            "Tentang pokok gugatan yang tidak tertuang dalam Kesepakatan Perdamaian ini, yaitu:",
+            `Tentang ${pokok} yang tidak tertuang dalam Kesepakatan Perdamaian ini, yaitu:`,
             ...tidak.map((x, i) => `${i + 1}. ${x.replace(/[;.]\s*$/, "")};`),
             "Para Pihak menyerahkannya kepada Majelis Hakim untuk diperiksa dan diadili.",
           ]
-        : ["Tentang pokok gugatan yang tidak tertuang dalam Kesepakatan Perdamaian ini akan dilanjutkan pada proses persidangan."],
+        : [`Tentang ${pokok} yang tidak tertuang dalam Kesepakatan Perdamaian ini akan dilanjutkan pada proses persidangan.`],
       asal: "tidak-disepakati",
     });
     hasil.push({
@@ -1306,6 +1381,37 @@ export type Blok =
   | { jenis: "seksi-lanskap" }
   | { jenis: "tabel"; kepala: string[]; lebar: number[]; baris: string[][] };
 
+/** 1 -> "I", 14 -> "XIV". Perkara waris satker berpihak sampai belasan orang. */
+export function romawi(n: number): string {
+  let sisa = Math.floor(Number(n) || 0);
+  if (sisa <= 0 || sisa >= 4000) return String(n);
+  const lambang: Array<[number, string]> = [
+    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"],
+    [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+  ];
+  let hasil = "";
+  for (const [nilai, huruf] of lambang) {
+    while (sisa >= nilai) {
+      hasil += huruf;
+      sisa -= nilai;
+    }
+  }
+  return hasil;
+}
+
+/**
+ * "Tergugat" bila seorang, "Tergugat III" bila beberapa. Dulu daftar romawi
+ * berhenti di VI, sehingga Penggugat ketujuh dst. tertulis "Penggugat 7"
+ * (273/Pdt.G/2026: empat belas penggugat).
+ */
+function sebutanKe(sebutan: string, i: number, jumlah: number): string {
+  return jumlah > 1 ? `${sebutan} ${romawi(i + 1)}` : sebutan;
+}
+
+function turutSebutan(d: DrafHasilMediasi["dokumen"]): string {
+  return `Turut ${d.sebutanDua}`;
+}
+
 function sebutSisi(d: DrafHasilMediasi["dokumen"], sisi: SisiAtauKeduanya): string {
   if (sisi === "keduanya") return `${d.sebutanSatu} dan ${d.sebutanDua}`;
   return sisi === "satu" ? d.sebutanSatu : d.sebutanDua;
@@ -1329,17 +1435,21 @@ function blokPara(d: DrafHasilMediasi["dokumen"], gaya: "laporan" | "kesepakatan
     const kuasa = bersih(sisi === "satu" ? d.kuasaSatu : d.kuasaDua);
     const daftar = orang.length ? orang : [{ nama: "", keterangan: "" }];
     return daftar.map((o, i) => {
-      const nama = daftar.length > 1 ? `${sebutan} ${["I", "II", "III", "IV", "V", "VI"][i] ?? i + 1}` : sebutan;
+      const nama = sebutanKe(sebutan, i, daftar.length);
       const sebagai = gaya === "kesepakatan" ? `${nama}, selanjutnya disebut Pihak ${sisi === "satu" ? "I" : "II"}` : nama;
       let teks = kalimatOrang(o, sebagai);
       if (kuasa && i === daftar.length - 1) teks = teks.replace(/;$/, `, dalam hal ini diwakili oleh kuasanya, ${kuasa};`);
       return { jenis: "paragraf", teks, menjorok: false } as Blok;
     });
   };
+  const turut = Array.isArray(d.pihakTurut) ? d.pihakTurut : [];
   return [
     ...sisiBlok("satu"),
     { jenis: "paragraf", teks: gaya === "kesepakatan" ? "d a n" : "melawan", rata: "tengah" },
     ...sisiBlok("dua"),
+    ...turut.map(
+      (o, i): Blok => ({ jenis: "paragraf", teks: kalimatOrang(o, sebutanKe(turutSebutan(d), i, turut.length)), menjorok: false })
+    ),
   ];
 }
 
@@ -1351,13 +1461,25 @@ function ttdPara(d: DrafHasilMediasi["dokumen"]): Blok[] {
     const isi: string[] = [];
     (orang.length ? orang : [{ nama: "", keterangan: "" }]).forEach((o, i, semua) => {
       if (i > 0) isi.push("");
-      isi.push(semua.length > 1 ? `${sebutan} ${["I", "II", "III", "IV", "V", "VI"][i] ?? i + 1},` : `${sebutan},`, "", "", "", bersih(o.nama) || "..............................");
+      isi.push(`${sebutanKe(sebutan, i, semua.length)},`, "", "", "", bersih(o.nama) || "..............................");
     });
     if (kuasa) isi.push("", `Kuasa ${sebutan},`, "", "", "", kuasa);
     return isi;
   };
+  // Turut tergugat bertanda tangan pada baris sendiri, bergantian kiri-kanan.
+  const turut = Array.isArray(d.pihakTurut) ? d.pihakTurut : [];
+  const kolomTurut = (genap: boolean): string[] => {
+    const isi: string[] = [];
+    turut.forEach((o, i) => {
+      if ((i % 2 === 0) !== genap) return;
+      if (isi.length) isi.push("");
+      isi.push(`${sebutanKe(turutSebutan(d), i, turut.length)},`, "", "", "", bersih(o.nama) || "..............................");
+    });
+    return isi;
+  };
   return [
     { jenis: "ttd", kiri: kolom("satu"), kanan: kolom("dua") },
+    ...(turut.length ? ([{ jenis: "kosong" }, { jenis: "ttd", kiri: kolomTurut(true), kanan: kolomTurut(false) }] as Blok[]) : []),
     { jenis: "kosong" },
     { jenis: "paragraf", teks: "Mediator,", rata: "tengah" },
     { jenis: "kosong" },
@@ -1604,7 +1726,10 @@ export function susunNaskah(
           { jenis: "kosong" },
           { jenis: "paragraf", teks: "Yang bertanda tangan di bawah ini:" },
           ...(sisi === "satu" ? d.pihakSatu : d.pihakDua).map(
-            (o): Blok => ({ jenis: "paragraf", teks: kalimatOrang(o, sebutan).replace(/;$/, `, yang memberikan kuasa kepada ${kuasa};`) })
+            (o, i, semua): Blok => ({
+              jenis: "paragraf",
+              teks: kalimatOrang(o, sebutanKe(sebutan, i, semua.length)).replace(/;$/, `, yang memberikan kuasa kepada ${kuasa};`),
+            })
           ),
           {
             jenis: "paragraf",

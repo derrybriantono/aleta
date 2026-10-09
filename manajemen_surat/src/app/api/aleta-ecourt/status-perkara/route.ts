@@ -186,6 +186,21 @@ export async function GET(request: NextRequest) {
 
     const hasil = await getGatewayStatusPerkara(nomor);
     if (!hasil.ok) {
+      // Bot SEHAT yang menolak: ia menjawab 400 { ok:false, alasan } dan
+      // gatewayFetch memindahkan alasannya ke `error`. Sampai 9 Oktober 2026
+      // penolakan itu jatuh ke cabang "bot tidak terjangkau" di bawah, dan
+      // layar menulis kode mentah "perkara_tidak_ditemukan" - cabang
+      // `!hasil.data?.ok` sesudahnya tidak pernah tercapai. Diteruskan sebagai
+      // alasan, yang diterjemahkan layar menjadi kalimat.
+      const kode = String(hasil.error || "").trim();
+      if (
+        typeof hasil.status === "number" &&
+        hasil.status >= 400 &&
+        hasil.status < 500 &&
+        /^[a-z0-9_]+$/.test(kode)
+      ) {
+        return ok({ available: true, status: null, alasan: kode });
+      }
       return ok({
         available: false,
         message: hasil.error || "ALETA Bot belum dapat dihubungi.",

@@ -64,6 +64,8 @@ vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", async (asli) => {
           { pihakKe: 1, nama: "Siti Contoh binti Rolla", kelamin: "Perempuan", umur: 30, agama: "Islam", pekerjaan: "Ibu Rumah Tangga", alamat: "Tibo" },
           { pihakKe: 2, nama: "Darwis Contoh bin Dahlan", kelamin: "Laki-laki", umur: 33, agama: "Islam", pekerjaan: "Petani", alamat: "Tibo" },
         ],
+        // Bot sejak 9 Okt 2026 ikut mengirim kuasa (perkara_pengacara).
+        kuasa: [{ nama: "Advokat Contoh, S.H.", pihakKe: 2 }],
       },
     }),
     getGatewayPraperiksaFakta: async () => ({ ok: true, data: { anak: ["Aisyah Contoh"], majelis: [] } }),
@@ -267,6 +269,40 @@ describe("rute memeriksa mediatornya sendiri", () => {
     expect(isi.bahan.anak).toEqual(["Aisyah Contoh"]);
     expect(isi.bahan.pihak.map((p: { nama: string }) => p.nama)).toEqual(["Siti Contoh binti Rolla", "Darwis Contoh bin Dahlan"]);
     expect(isi.bahan.pertemuan[0].tanggal).toBe("2026-10-07");
+    expect(isi.bahan.kuasa).toEqual([{ nama: "Advokat Contoh, S.H.", pihakKe: 2 }]);
+    expect(isi.bahan.mediatorAkun).toBe("Drs. H. Ahmad Contoh, M.H.");
+    expect(isi.bahan.hasilSipp).toBe("");
     expect(isi.draf).toBeNull();
   });
+});
+
+describe("U5 9 Okt 2026: kuasa dari SIPP dan id isian unik", () => {
+  it("kuasa SIPP terisi di Data perkara, dan isian nominal tiap butir punya id sendiri", async () => {
+    await gambar({ nama: "Ahmad Contoh", peran: "hakim" });
+    fireEvent.click(tombolHasil("601/Pdt.G/2026/PA.Dgl")!);
+    const dialog = await waitFor(() => {
+      const d = document.querySelector("[data-hasil-mediasi]") as HTMLElement;
+      expect(d?.querySelector('[data-hasil="berhasil-sebagian"]')).toBeTruthy();
+      return d;
+    }, { timeout: 20_000 });
+    fireEvent.click(dialog.querySelector('[data-hasil="berhasil-sebagian"] input')!);
+    fireEvent.click(within(dialog).getByRole("tab", { name: "2. Butir kesepakatan" }));
+    for (const kunci of ["nafkah-iddah", "mutah"]) {
+      const kartu = dialog.querySelector(`[data-butir="${kunci}"]`) as HTMLElement;
+      fireEvent.click(within(kartu).getAllByRole("checkbox")[0]);
+    }
+    const id = [...dialog.querySelectorAll('[data-medan="nominal"]')].map((x) => x.id);
+    expect(id.length).toBe(2);
+    expect(new Set(id).size).toBe(2);
+    // Label "Uang (Rp)" mut'ah menunjuk isian mut'ah sendiri, bukan nafkah iddah.
+    const kartuMutah = dialog.querySelector('[data-butir="mutah"]') as HTMLElement;
+    const label = within(kartuMutah).getByText("Uang (Rp)") as HTMLLabelElement;
+    expect(document.getElementById(label.htmlFor)?.closest("[data-butir]")?.getAttribute("data-butir")).toBe("mutah");
+
+    fireEvent.click(within(dialog).getByRole("tab", { name: "3. Data perkara" }));
+    const kuasaDua = within(dialog).getByText("Kuasa Tergugat (bila ada)").parentElement!.querySelector("input") as HTMLInputElement;
+    expect(kuasaDua.value).toBe("Advokat Contoh, S.H.");
+    fireEvent.click(within(dialog).getByRole("tab", { name: "4. Pratinjau & unduh" }));
+    expect(dialog.textContent).toContain("persetujuan pihak yang diwakili kuasa");
+  }, 60_000);
 });

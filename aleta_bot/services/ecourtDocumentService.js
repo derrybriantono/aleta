@@ -61,18 +61,55 @@ function isInsideRoot(absolutePath) {
   return target.startsWith(root + path.sep);
 }
 
+/** Jalur tersimpan -> jalur absolut (relatif terhadap folder unduhan bila tidak absolut). */
+function jalurAbsolut(raw) {
+  return path.isAbsolute(raw) ? path.resolve(raw) : path.resolve(resolveRoot(), raw);
+}
+
 /**
- * Memeriksa dan menyiapkan satu berkas e-Court untuk dilampirkan.
+ * Jalur absolut sebuah berkas arsip bila jalurnya AMAN (di dalam folder unduhan
+ * dan berekstensi dokumen) - tanpa menuntut berkasnya masih ada. null bila
+ * tidak aman. Dipakai pembersih masa simpan: berkas yang sudah hilang tetap
+ * boleh "dihapus" (unlink ENOENT dianggap selesai), tetapi jalur di luar folder
+ * tidak pernah boleh disentuh.
+ */
+function jalurDiDalamArsip(storedPath) {
+  const raw = String(storedPath || "").trim();
+  if (!raw) return null;
+  const absolutePath = jalurAbsolut(raw);
+  if (!isInsideRoot(absolutePath)) return null;
+  if (!ALLOWED_EXTENSIONS.has(path.extname(absolutePath).toLowerCase())) return null;
+  return absolutePath;
+}
+
+/**
+ * Memeriksa dan menyiapkan satu berkas e-Court.
  *
+ * ============================================================================
+ * BATAS UKURAN HANYA UNTUK LAMPIRAN WHATSAPP (U5, 9 Okt 2026)
+ * ============================================================================
+ *
+ * Dulu batas 16 MB lampiran WhatsApp berlaku untuk SEMUA pemanggil - termasuk
+ * unduhan portal/ekstensi (sippKonteksService.getBerkas), penghitung "berkas
+ * hilang" arsip, dan pembersih masa simpan - padahal jembatan menyimpan berkas
+ * sampai 64 MB. Berkas 17 MB yang sah tersimpan jadi tidak dapat diunduh,
+ * terhitung "hilang", dan tidak pernah dapat dibersihkan.
+ *
+ * Kini tanpa batas bawaan; yang mengirim lewat WhatsApp menyebut
+ * `{ batasByte: MAX_ATTACHMENT_BYTES }` (pickBestAttachment, pekerja
+ * pemberitahuan).
+ *
+ * @param {string} storedPath
+ * @param {{ batasByte?: number }} [pilihan]
  * @returns {{ ok: boolean, reason?: string, absolutePath?: string, fileName?: string, size?: number }}
  */
-function describeEcourtDocument(storedPath) {
+function describeEcourtDocument(storedPath, { batasByte = Infinity } = {}) {
   const raw = String(storedPath || "").trim();
   if (!raw) return { ok: false, reason: "Path berkas kosong." };
 
   // Path tersimpan boleh relatif terhadap folder unduhan maupun absolut;
   // keduanya diresolusi ke bentuk absolut sebelum diperiksa.
-  const absolutePath = path.isAbsolute(raw) ? path.resolve(raw) : path.resolve(resolveRoot(), raw);
+  const absolutePath = jalurAbsolut(raw);
 
   if (!isInsideRoot(absolutePath)) {
     return {
@@ -95,7 +132,7 @@ function describeEcourtDocument(storedPath) {
 
   if (!stat.isFile()) return { ok: false, reason: "Path bukan berkas." };
   if (stat.size === 0) return { ok: false, reason: "Berkas kosong (0 byte), kemungkinan unduhan gagal." };
-  if (stat.size > MAX_ATTACHMENT_BYTES) {
+  if (stat.size > batasByte) {
     return {
       ok: false,
       reason: `Berkas terlalu besar untuk dikirim (${Math.round(stat.size / 1024 / 1024)} MB).`,
@@ -127,7 +164,8 @@ function pickBestAttachment({ berkasPdf, berkasWord } = {}) {
 
   for (const item of kandidat) {
     if (!item.path) continue;
-    const hasil = describeEcourtDocument(item.path);
+    // Lampiran WhatsApp: batas 16 MB berlaku di sini.
+    const hasil = describeEcourtDocument(item.path, { batasByte: MAX_ATTACHMENT_BYTES });
     if (hasil.ok) return { ok: true, jenis: item.jenis, ...hasil };
     alasan.push(`${item.jenis}: ${hasil.reason}`);
   }
@@ -154,6 +192,7 @@ module.exports = {
   caseFolder,
   describeEcourtDocument,
   isInsideRoot,
+  jalurDiDalamArsip,
   pickBestAttachment,
   resolveRoot,
 };

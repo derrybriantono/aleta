@@ -460,7 +460,12 @@ export function AletaEcourtKendaliSipp({ onBukaPerkara }: { onBukaPerkara?: (nom
             <p className="rounded-md border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
               {memuat
                 ? "Memuat..."
-                : ringkasan && ringkasan.totalPerkara === 0
+                : // Daftar yang GAGAL dibaca (sebabnya tertulis di atas) bukan
+                  // daftar yang kosong: "tidak ada perkara yang kurang berkas"
+                  // saat bot mati adalah kabar baik palsu.
+                  pesan && !ringkasan
+                  ? "Daftar perkara belum dapat dibaca - lihat pesan di atas, lalu tekan Segarkan."
+                  : ringkasan && ringkasan.totalPerkara === 0
                   ? "Belum pernah disandingkan. Jalankan penyandingan di atas."
                   : "Tidak ada perkara yang kurang berkas."}
             </p>

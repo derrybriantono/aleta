@@ -173,6 +173,13 @@ function alamatIp(headers: Headers) {
 }
 
 const PESAN_DIBATASI = "Terlalu banyak percobaan login. Coba lagi beberapa menit lagi.";
+const PESAN_SANDI_SALAH = "Password tidak cocok dengan akun SIPP maupun akun ALETA.";
+
+function pesanSippNonaktif(diblokir: boolean) {
+  return diblokir
+    ? "Akun SIPP Anda sedang diblokir, sehingga akses ALETA ikut tertutup. Hubungi admin SIPP."
+    : "Masa berlaku akun SIPP Anda sudah habis, sehingga akses ALETA ikut tertutup. Hubungi admin SIPP.";
+}
 
 /**
  * Memutuskan satu permintaan masuk. Tidak membuat sesi - itu pekerjaan
@@ -261,17 +268,17 @@ export async function putuskanMasukSipp(
 
   if (data.ditemukan && (data.diblokir || data.kedaluwarsa)) {
     const sebab = data.diblokir ? "sipp_diblokir" : "sipp_kedaluwarsa";
-    if (pengguna.roleId === "super-admin" && (await deps.verifikasiSandiAleta(pengguna.id, sandi))) {
+    const sandiAletaBenar = await deps.verifikasiSandiAleta(pengguna.id, sandi);
+    // Keadaan "nonaktif" hanya disebut kepada yang membuktikan dirinya pemilik
+    // akun (password SIPP atau ALETA benar) - urutan SIPP sendiri: password
+    // dulu, baru blokir. Penebak hanya mendapat "password salah" (9 Okt 2026).
+    if (!data.cocok && !sandiAletaBenar) {
+      return gagal("sandi_salah", sippUserId, PESAN_SANDI_SALAH);
+    }
+    if (pengguna.roleId === "super-admin" && sandiAletaBenar) {
       return berhasil("aleta", sippUserId, `${sebab}_super_admin`, "Akun SIPP tertaut sedang nonaktif; Super Admin masuk memakai password ALETA.");
     }
-    return gagal(
-      sebab,
-      sippUserId,
-      data.diblokir
-        ? "Akun SIPP Anda sedang diblokir, sehingga akses ALETA ikut tertutup. Hubungi admin SIPP."
-        : "Masa berlaku akun SIPP Anda sudah habis, sehingga akses ALETA ikut tertutup. Hubungi admin SIPP.",
-      403
-    );
+    return gagal(sebab, sippUserId, pesanSippNonaktif(data.diblokir === true), 403);
   }
 
   if (data.ditemukan && data.cocok) {
@@ -288,9 +295,62 @@ export async function putuskanMasukSipp(
       data.ditemukan ? "" : "Username SIPP tertaut tidak ditemukan di SIPP; masuk memakai password ALETA."
     );
   }
-  return gagal(
-    data.ditemukan ? "sandi_salah" : "sipp_tidak_terdaftar",
-    sippUserId,
-    "Password tidak cocok dengan akun SIPP maupun akun ALETA."
-  );
+  return gagal(data.ditemukan ? "sandi_salah" : "sipp_tidak_terdaftar", sippUserId, PESAN_SANDI_SALAH);
+}
+
+// ---------------------------------------------------------------------------
+// JALUR LAMA (/sign-in/email) IKUT TERTUTUP BAGI AKUN SIPP NONAKTIF (9 Okt 2026)
+// ---------------------------------------------------------------------------
+//
+// Layar masuk tidak memanggil /sign-in/email untuk akun bertautan, tetapi
+// rutenya tetap terbuka (klien lama, ekstensi lama, panggilan langsung). Tanpa
+// pemeriksaan ini pegawai yang akun SIPP-nya diblokir tetap masuk ALETA dengan
+// password ALETA - aturan "AKUN SIPP NONAKTIF = ALETA TERTUTUP" bocor.
+//
+// Pengecualian yang SAMA dengan jalur SIPP: Super Admin tetap boleh, bot/SIPP
+// tidak terjangkau = lolos (bot mati tidak mengunci kantor), dan keadaan
+// "nonaktif" hanya disebut bila password ALETA-nya memang benar - password
+// yang salah dibiarkan ditolak Better Auth seperti biasa.
+
+export type DepsJalurLama = Pick<DepsMasukSipp, "akunSippMilik" | "verifikasiSipp" | "verifikasiSandiAleta" | "catatJejak">;
+
+export async function periksaSippNonaktifJalurLama(
+  deps: DepsJalurLama,
+  masukan: { pengguna: PenggunaMasuk; identitas: string; sandi: string },
+  konteks: KonteksMasuk,
+  env: Record<string, string | undefined> = process.env
+): Promise<null | { status: 403; kode: "SIPP_NONAKTIF"; pesan: string }> {
+  if (!masukSippDinyalakan(env)) return null;
+  const { pengguna } = masukan;
+  if (pengguna.roleId === "super-admin") return null;
+  const sandi = String(masukan.sandi ?? "");
+  if (!sandi) return null;
+
+  const milik = await deps.akunSippMilik(pengguna.id);
+  if (milik.length !== 1) return null;
+  const usernameSipp = milik[0];
+
+  const jawaban = await deps.verifikasiSipp(usernameSipp, sandi);
+  if (!jawaban.ok) return null;
+  const data = jawaban.data ?? {};
+  if (!data.ditemukan || !(data.diblokir || data.kedaluwarsa)) return null;
+  if (!(await deps.verifikasiSandiAleta(pengguna.id, sandi))) return null;
+
+  const sebab = data.diblokir ? "sipp_diblokir" : "sipp_kedaluwarsa";
+  await deps
+    .catatJejak({
+      aletaUserId: pengguna.id,
+      identitas: String(masukan.identitas ?? "").trim().slice(0, 200),
+      usernameSipp,
+      sippUserId: String(data.sippUserId ?? "").slice(0, 40),
+      lewat: "aleta",
+      hasil: "ditolak",
+      alasan: `${sebab}_jalur_lama`,
+      alamatIp: alamatIp(konteks.headers),
+      agenPeramban: (konteks.headers.get("user-agent") ?? "").slice(0, 240),
+    })
+    .catch((galat) => {
+      console.warn("[ALETA MASUK SIPP] jejak masuk tidak tertulis:", galat instanceof Error ? galat.message : "tidak diketahui");
+    });
+  return { status: 403, kode: "SIPP_NONAKTIF", pesan: pesanSippNonaktif(data.diblokir === true) };
 }

@@ -330,14 +330,22 @@ async function bersihkan({ hapus = false, limit = 500, olehSiapa = "" } = {}) {
     // Jalur diperiksa berada di dalam folder arsip SEBELUM dihapus. Baris
     // database yang keliru tidak boleh berujung menghapus berkas lain di
     // server.
+    //
+    // Berkas yang SUDAH HILANG dari disk (atau 0 byte) gagal di
+    // describeEcourtDocument, padahal yang dituntut di sini hanya jalurnya
+    // aman. Dulu ia terhitung "gagal" pada setiap putaran, tidak pernah
+    // ditandai, dan - karena diurutkan dari yang terlama - terus memakan jatah
+    // putaran berikutnya (U5, 9 Okt 2026). Kini jalur yang aman tetap
+    // di-unlink; ENOENT dianggap selesai seperti yang dimaksud di bawah.
     const periksa = ecourtDocumentService.describeEcourtDocument(row.jalur_berkas);
-    if (!periksa.ok) {
+    const jalurAman = periksa.ok ? periksa.absolutePath : ecourtDocumentService.jalurDiDalamArsip(row.jalur_berkas);
+    if (!jalurAman) {
       ringkas.gagal += 1;
       continue;
     }
 
     try {
-      fs.unlinkSync(periksa.absolutePath);
+      fs.unlinkSync(jalurAman);
     } catch (error) {
       // Berkas sudah tidak ada: tetap dianggap selesai, barisnya dibersihkan.
       if (error.code !== "ENOENT") {
@@ -401,7 +409,14 @@ async function getStatus() {
     pengaturan,
     ruang,
     arsip: ukuran,
-    kedaluwarsa: { aktif: calon.aktif === true, jumlah: calon.jumlah || 0, totalMb: calon.totalMb || 0 },
+    // alasan ikut (U5, 9 Okt 2026): "SIPP tidak terbaca" dulu terbuang di sini,
+    // sehingga layar menampilkan 0 berkas kedaluwarsa tanpa sebab.
+    kedaluwarsa: {
+      aktif: calon.aktif === true,
+      jumlah: calon.jumlah || 0,
+      totalMb: calon.totalMb || 0,
+      alasan: calon.aktif === true && calon.alasan ? String(calon.alasan) : "",
+    },
     ruangMenipis: ruang.ok ? ruang.bebasGb < pengaturan.minRuangGb : null,
   };
 }

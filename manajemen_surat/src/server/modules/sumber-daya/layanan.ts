@@ -207,6 +207,13 @@ export function gabungTambahanPortal(
     k.byte = hasil.rincian.diskAleta.byte;
     k.persen = persenDari(k.byte, k.totalByte);
     k.warna = warnaDariAmbang(k.persen, hasil.ambang.disk);
+    // Bot belum mengukur apa pun (byte null - mis. panggilan pertama sesudah
+    // bot menyala): yang tersisa hanya Postgres, dan itu BUKAN disk ALETA utuh.
+    // Tanpa tanda ini 0,3 GB tampil seolah seluruh disk ALETA (U5, 9 Okt 2026).
+    if (lama === null) {
+      k.sebagian = true;
+      hasil.rincian.diskAleta.lengkap = false;
+    }
   }
   if (tambahan.portalSendiri && !hasil.rincian.aleta.some((b) => b.kunci === "aleta-portal")) {
     hasil.rincian.aleta.push({
@@ -218,6 +225,9 @@ export function gabungTambahanPortal(
       swapByte: 0,
     });
     const k = hasil.ringkas.aleta.ram;
+    // Sama seperti disk: RAM ALETA dari bot tidak terbaca -> hanya portal yang
+    // terhitung, jadi angkanya sebagian.
+    if (k.byte === null) k.sebagian = true;
     k.byte = (k.byte ?? 0) + tambahan.portalSendiri.ramByte;
     k.persen = persenDari(k.byte, k.totalByte);
     k.warna = warnaDariAmbang(k.persen, hasil.ambang.ram);

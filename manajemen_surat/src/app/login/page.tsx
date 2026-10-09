@@ -33,6 +33,7 @@ import { adalahGangguan, pesanGangguan } from "@/lib/pesan-gangguan";
 import { APP_VERSION } from "@/lib/patch-notes";
 import {
   bacaPilihanIsiOtomatis,
+  lupakanSandiDiEkstensi,
   masukLewatSipp,
   simpanPilihanIsiOtomatis,
   titipSandiKeEkstensi,
@@ -287,6 +288,11 @@ export default function LoginPage() {
       // tidak menjawab tidak menahan masuk lebih dari sekejap.
       if (sipp.jenis === "masuk" && sipp.lewat === "sipp" && isiOtomatisSipp) {
         await titipSandiKeEkstensi(sipp.usernameSipp, normalizedPassword).catch(() => undefined);
+      } else {
+        // Titipan orang SEBELUMNYA di Chrome ini (hidup sampai 12 jam) harus
+        // dilupakan; kalau tidak, halaman masuk SIPP & ABT terisi akun orang
+        // lain. Berlaku juga bila pilihan isi otomatis dimatikan (9 Okt 2026).
+        await lupakanSandiDiEkstensi().catch(() => undefined);
       }
 
 

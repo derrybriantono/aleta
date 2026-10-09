@@ -7,9 +7,11 @@ import {
   kirimGatewayEcourtLogin,
   mulaiGatewayEcourtLogin,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { pastikanAdminIstimewa } from "@/server/modules/aleta-ecourt/akses";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { ApiError } from "@/server/shared/errors";
 import { ok } from "@/server/shared/http";
 
 export const runtime = "nodejs";
@@ -69,7 +71,9 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await requireActorUser(db, actorUserId);
+    // Masuk/keluar akun e-Court PENGADILAN: Super Admin dan Admin saja (U5, 9 Okt
+    // 2026). Sesi e-Court pribadi tiap pegawai memakai rute ecourt-sesi.
+    await pastikanAdminIstimewa(db, actorUserId, "masuk atau keluar akun e-Court pengadilan");
 
     const body = (await request.json()) as {
       aksi?: string;
@@ -104,7 +108,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Galat sengaja tidak diteruskan apa adanya: pesannya dapat memuat
     // potongan badan permintaan, dan badan permintaan ini memuat sandi.
-    return handleAdminRouteError(new Error("Permintaan login e-Court gagal diproses."), request, {
+    // Kecuali penolakan kewenangan (401/403): pesannya buatan portal sendiri,
+    // tanpa isi badan, dan harus sampai ke layar sebagai 403 - bukan 500.
+    const tolak = error instanceof ApiError && (error.status === 401 || error.status === 403);
+    return handleAdminRouteError(tolak ? error : new Error("Permintaan login e-Court gagal diproses."), request, {
       db,
       actorUserId,
       action: "ECOURT_LOGIN_FAILED",

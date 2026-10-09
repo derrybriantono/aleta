@@ -64,6 +64,32 @@ type TandaTangan = {
   asal: string;
 };
 
+/**
+ * Kode penolakan bot/rute -> kalimat. Kode yang tidak dikenal ditampilkan apa
+ * adanya (tanpa garis bawah) - lebih baik daripada membuangnya, dan kalimat
+ * yang sudah utuh (mis. "ALETA Bot belum dapat dihubungi.") lolos tanpa diubah.
+ */
+const KALIMAT_TANDA_TANGAN: Record<string, string> = {
+  bukan_gambar_png_atau_jpeg: "Berkas bukan gambar PNG atau JPEG.",
+  gambar_kosong: "Berkas gambar kosong.",
+  gambar_sudah_ada: "Gambar yang sama persis sudah ada di daftar.",
+  gambar_terlalu_besar: "Gambar terlalu besar.",
+  gambar_terlalu_kecil: "Gambar terlalu kecil - unggah hasil pindai tanda tangan yang jelas.",
+  gambar_tidak_terbaca: "Gambar tidak dapat dibaca.",
+  nama_pejabat_kosong: "Nama pejabat wajib diisi.",
+  tanda_tangan_tidak_ketemu: "Tanda tangan tidak ditemukan - muat ulang daftarnya.",
+  belum_dinamai: "Beri nama lebih dahulu sebelum mengesahkan.",
+  pengesah_tidak_dikenali: "Akun yang mengesahkan tidak dikenali - masuk ulang ke ALETA.",
+  id_tidak_sah: "Nomor tanda tangan tidak sah.",
+  tindakan_tidak_dikenali: "Tindakan tidak dikenali.",
+};
+
+function kalimatTandaTangan(kode: string): string {
+  const k = String(kode || "").trim();
+  if (KALIMAT_TANDA_TANGAN[k]) return KALIMAT_TANDA_TANGAN[k];
+  return /^[a-z0-9_]+$/.test(k) ? k.replace(/_/g, " ") : k;
+}
+
 export function AletaEcourtTandaTangan() {
   const [baris, setBaris] = useState<TandaTangan[]>([]);
   const [memuat, setMemuat] = useState(true);
@@ -93,17 +119,36 @@ export function AletaEcourtTandaTangan() {
         cache: "no-store",
       });
       if (!respons.ok) {
+        // Sebabnya dibaca dari badan jawaban lebih dulu: rute meneruskan
+        // kalimat bot ("ALETA Bot belum dapat dihubungi.") di ruas error.
+        // Tanpa itu yang tampil hanya nomor HTTP.
+        // Hanya ruas `error` yang dibaca: kalimat bot (gatewayFetch) berupa
+        // teks, galat rute portal berupa { message }.
+        const badanGagal = (await respons.json().catch(() => null)) as {
+          error?: string | { message?: string };
+        } | null;
+        const sebab =
+          typeof badanGagal?.error === "string" ? badanGagal.error : badanGagal?.error?.message || "";
         throw new Error(
           respons.status === 403
             ? "Hanya admin yang dapat menamai dan mengesahkan tanda tangan."
-            : `ALETA menjawab ${respons.status}.`
+            : sebab
+              ? kalimatTandaTangan(sebab)
+              : `ALETA menjawab ${respons.status}.`
         );
       }
       // Jawaban portal dibungkus { ok, data } - barisnya ada DI DALAM data.
       // Dibaca dari bungkusnya, daftarnya selalu kosong tanpa satu pun galat.
+      //
+      // Daftar PENGGUNA justru di LUAR data: rute menyusunnya sendiri lalu
+      // menempelkannya di tingkat atas bungkus ({ ...jawabanBot, pengguna,
+      // penggunaAlasan }). Dibaca dari data saja, pemilih akun selalu kosong
+      // (terukur 9 Okt 2026). Keduanya dibaca - tingkat atas lebih dulu.
       const bungkus = (await respons.json()) as {
         data?: { baris?: TandaTangan[]; pengguna?: PenggunaTaut[]; penggunaAlasan?: string };
         baris?: TandaTangan[];
+        pengguna?: PenggunaTaut[];
+        penggunaAlasan?: string;
       };
       const isi = (bungkus.data ?? bungkus) as {
         baris?: TandaTangan[];
@@ -111,8 +156,14 @@ export function AletaEcourtTandaTangan() {
         penggunaAlasan?: string;
       };
       setBaris(Array.isArray(isi.baris) ? isi.baris : []);
-      setPengguna(Array.isArray(isi.pengguna) ? isi.pengguna : []);
-      setPenggunaAlasan(String(isi.penggunaAlasan ?? ""));
+      setPengguna(
+        Array.isArray(bungkus.pengguna)
+          ? bungkus.pengguna
+          : Array.isArray(isi.pengguna)
+            ? isi.pengguna
+            : []
+      );
+      setPenggunaAlasan(String(bungkus.penggunaAlasan ?? isi.penggunaAlasan ?? ""));
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Daftar tidak dapat dibaca.");
       setBaris([]);
@@ -125,8 +176,13 @@ export function AletaEcourtTandaTangan() {
     void muat();
   }, [muat]);
 
+  /**
+   * Mengirim satu tindakan. Mengembalikan true bila berhasil - pemanggil yang
+   * mengosongkan isian (tambah) HANYA mengosongkannya bila berhasil; yang
+   * ditolak harus tetap dapat diperbaiki tanpa memilih berkas dari awal.
+   */
   const kirim = useCallback(
-    async (muatan: Record<string, unknown>) => {
+    async (muatan: Record<string, unknown>): Promise<boolean> => {
       setSibuk((n) => n + 1);
       setGalat("");
       try {
@@ -136,20 +192,33 @@ export function AletaEcourtTandaTangan() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(muatan),
         });
-        // Penolakan datang di dalam bungkus { ok, data: { ok, alasan } } -
-        // alasannya harus dibaca dari data, bukan dari bungkusnya.
-        const bungkus = (await respons.json()) as {
+        // Penolakan datang dalam dua bentuk:
+        //   - dari rute sendiri: { ok:false, alasan }
+        //   - dari bot lewat gatewayFetch: { ok:false, error, status } - alasan
+        //     bot sudah dipindah ke ruas `error`.
+        // Yang kedua dulu tidak dibaca, sehingga "gambar_sudah_ada" maupun bot
+        // yang mati sama-sama terbaca "ALETA menjawab 400.".
+        const bungkus = (await respons.json().catch(() => ({}))) as {
           ok?: boolean;
-          data?: { ok?: boolean; alasan?: string };
+          data?: { ok?: boolean; alasan?: string; error?: string };
           alasan?: string;
+          error?: string | { message?: string };
         };
-        const isi = (bungkus.data ?? bungkus) as { ok?: boolean; alasan?: string };
+        const isi = (bungkus.data ?? bungkus) as { ok?: boolean; alasan?: string; error?: unknown };
         if (!respons.ok || bungkus.ok === false || isi.ok === false) {
-          throw new Error(isi.alasan || `ALETA menjawab ${respons.status}.`);
+          const sebab =
+            isi.alasan ||
+            (typeof isi.error === "string" ? isi.error : "") ||
+            bungkus.alasan ||
+            (typeof bungkus.error === "string" ? bungkus.error : bungkus.error?.message) ||
+            "";
+          throw new Error(sebab ? kalimatTandaTangan(sebab) : `ALETA menjawab ${respons.status}.`);
         }
         await muat();
+        return true;
       } catch (kesalahan) {
         setGalat(kesalahan instanceof Error ? kesalahan.message : "Tidak dapat disimpan.");
+        return false;
       } finally {
         setSibuk((n) => n - 1);
       }
@@ -200,7 +269,7 @@ export function AletaEcourtTandaTangan() {
   const kirimTambah = useCallback(async () => {
     if (!berkasBaru || !namaBaru.trim()) return;
     const u = tautBaru ? petaPengguna.get(tautBaru) : null;
-    await kirim({
+    const berhasil = await kirim({
       tindakan: "tambah",
       isiBase64: berkasBaru.base64,
       jenisBerkas: berkasBaru.jenis,
@@ -210,6 +279,9 @@ export function AletaEcourtTandaTangan() {
       peran: u?.peran ?? "",
       subPeran: u?.subPeran ?? "",
     });
+    // Yang ditolak TIDAK dikosongkan: berkas, nama, dan jabatannya tetap ada
+    // untuk diperbaiki, dan sebab penolakannya tampil di atas daftar.
+    if (!berhasil) return;
     setBerkasBaru(null);
     setTautBaru("");
     setNamaBaru("");
@@ -364,9 +436,14 @@ export function AletaEcourtTandaTangan() {
         {memuat ? (
           <div className="min-h-[14rem] animate-pulse rounded-lg border border-border bg-muted/30" />
         ) : baris.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Belum ada tanda tangan. Jalankan impor dari berkas .doc satuan kerja lebih dahulu.
-          </p>
+          // Daftar yang GAGAL dibaca bukan daftar yang kosong: menyuruh
+          // "jalankan impor" saat server tidak menjawab menyesatkan - sebabnya
+          // sudah tertulis di atas.
+          galat ? null : (
+            <p className="text-sm text-muted-foreground">
+              Belum ada tanda tangan. Jalankan impor dari berkas .doc satuan kerja lebih dahulu.
+            </p>
+          )
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {baris.map((x) => {
@@ -375,9 +452,13 @@ export function AletaEcourtTandaTangan() {
                 jabatan: x.jabatan,
                 penggunaId: x.penggunaId ?? "",
               };
+              // Dibandingkan sesudah dipangkas: bot menyimpan nama dan jabatan
+              // terpangkas (tandaTanganService.namai). Dibandingkan mentah,
+              // satu spasi di ujung nama membuat isian "berubah" selamanya dan
+              // tombol Sahkan mati sampai halaman dimuat ulang.
               const berubah =
-                sunting.nama !== x.namaPejabat ||
-                sunting.jabatan !== x.jabatan ||
+                sunting.nama.trim() !== String(x.namaPejabat ?? "").trim() ||
+                String(sunting.jabatan ?? "").trim() !== String(x.jabatan ?? "").trim() ||
                 sunting.penggunaId !== (x.penggunaId ?? "");
               const akun = sunting.penggunaId ? petaPengguna.get(sunting.penggunaId) : null;
 
@@ -486,11 +567,20 @@ export function AletaEcourtTandaTangan() {
                         void kirim({
                           id: x.id,
                           tindakan: "nama",
-                          namaPejabat: sunting.nama,
-                          jabatan: sunting.jabatan,
+                          namaPejabat: sunting.nama.trim(),
+                          jabatan: String(sunting.jabatan ?? "").trim(),
                           penggunaId: u?.id ?? "",
                           peran: u?.peran ?? "",
                           subPeran: u?.subPeran ?? "",
+                        }).then((berhasil) => {
+                          // Sesudah tersimpan, isiannya kembali dibaca dari
+                          // daftar yang baru dimuat - bukan dari ketikan lama.
+                          if (!berhasil) return;
+                          setSuntingan((s) => {
+                            const sisa = { ...s };
+                            delete sisa[x.id];
+                            return sisa;
+                          });
                         });
                       }}
                     >
@@ -525,8 +615,25 @@ export function AletaEcourtTandaTangan() {
                       size="sm"
                       variant="ghost"
                       disabled={sibuk > 0}
-                      onClick={() => void kirim({ id: x.id, tindakan: "hapus" })}
+                      onClick={() => {
+                        // Menghapus PERMANEN di server (DELETE, bukan dimatikan) -
+                        // termasuk tanda tangan yang sudah disahkan. Satu klik
+                        // yang meleset tidak boleh cukup.
+                        const nama = x.namaPejabat || `nomor ${x.id}`;
+                        const pesanYakin = x.disahkan
+                          ? `Hapus PERMANEN tanda tangan ${nama} yang SUDAH disahkan? Penetapan berikutnya tidak lagi dapat dibubuhi tanda tangan ini.`
+                          : `Hapus permanen gambar tanda tangan ${nama}?`;
+                        let yakin = false;
+                        try {
+                          yakin = window.confirm(pesanYakin);
+                        } catch {
+                          yakin = false;
+                        }
+                        if (!yakin) return;
+                        void kirim({ id: x.id, tindakan: "hapus" });
+                      }}
                       title="Buang gambar ini"
+                      aria-label={`Buang gambar tanda tangan ${x.namaPejabat || x.id}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>

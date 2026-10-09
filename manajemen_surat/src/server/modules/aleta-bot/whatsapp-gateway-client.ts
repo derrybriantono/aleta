@@ -992,7 +992,10 @@ export async function ambilBerkasGateway(
    * Sumber bawaan tombol Status Perkara adalah "semua", jadi jalur e-Court itu
    * dilewati setiap kali tombolnya ditekan - bukan jalur yang jarang.
    *
-   * Pemanggil yang tidak menyebutnya tetap berjalan seperti sebelumnya.
+   * Pemanggil yang tidak menyebutnya kini mendapat batas bawaan 30 detik
+   * (U5 9 Okt 2026): sebelumnya tanpa batas
+   * sama sekali, sehingga bot yang menggantung membuat tombol Unduh menunggu
+   * sampai batas nginx tanpa keterangan.
    */
   signal?: AbortSignal
 ): Promise<Response> {
@@ -1001,7 +1004,9 @@ export async function ambilBerkasGateway(
   return fetch(`${getGatewayBaseUrl()}/internal/aleta-bot/sipp/berkas?${params.toString()}`, {
     headers: token ? { "x-aleta-internal-token": token } : {},
     cache: "no-store",
-    signal,
+    // Batas bawaan 30 detik hanya bila pemanggil tidak membawa sinyal sendiri
+    // (penyusun ZIP mengatur batasnya sendiri).
+    signal: signal ?? AbortSignal.timeout(30_000),
   });
 }
 

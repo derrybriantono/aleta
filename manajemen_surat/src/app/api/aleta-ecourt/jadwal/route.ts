@@ -6,6 +6,7 @@ import {
   jalankanGatewayEcourtSekarang,
   saveGatewayEcourtJadwal,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { pastikanAdminIstimewa } from "@/server/modules/aleta-ecourt/akses";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -52,7 +53,9 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    const actor = await requireActorUser(db, actorUserId);
+    // Mengatur atau menjalankan penarikan dari e-Court: Super Admin dan Admin
+    // saja (U5, 9 Okt 2026) - kartunya hanya digambar bagi keduanya.
+    const actor = await pastikanAdminIstimewa(db, actorUserId, "mengatur atau menjalankan penarikan e-Court");
 
     const body = (await request.json()) as {
       aksi?: string;

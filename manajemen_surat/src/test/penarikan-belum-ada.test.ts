@@ -502,7 +502,8 @@ describe("layar menggambar apa yang akan dikerjakan, dan menyebut batasnya", () 
     // Pengguna menulis "yang belum ada datanya ATAU FILENYA", dan seluruh arsip
     // pernah lenyap karena volume Docker belum di-mount - jadi ini bukan
     // kemungkinan teoretis.
-    expect(layar).toContain("utuh menurut CATATAN, bukan menurut cakram");
+    // "disk", bukan "cakram" - istilah tampilan (U5, 9 Okt 2026).
+    expect(layar).toContain("utuh menurut CATATAN, bukan menurut disk");
     expect(layar).toContain("hilang dari disk tidak akan masuk sasaran");
   });
 

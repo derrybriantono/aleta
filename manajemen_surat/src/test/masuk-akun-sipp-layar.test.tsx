@@ -101,7 +101,8 @@ describe("layar masuk dengan akun SIPP", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Buka SIPP & ABT otomatis/ }));
     fireEvent.click(screen.getByTestId("login-submit"));
     await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith("/portal"));
-    expect(ekstensi.titipan).toEqual([]);
+    // Tidak ada titipan; yang lama dilupakan (audit U5, 9 Okt 2026).
+    expect(ekstensi.titipan.map((p) => p.jenis)).toEqual(["masuk-lupakan"]);
     expect(window.localStorage.getItem("aleta:isi-otomatis-sipp")).toBe("0");
   });
 
@@ -112,7 +113,8 @@ describe("layar masuk dengan akun SIPP", () => {
     await isiDanKirim("pp.budi");
     fireEvent.click(screen.getByTestId("login-submit"));
     await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith("/portal"));
-    expect(ekstensi.titipan).toEqual([]);
+    // Tidak ada titipan; yang lama dilupakan (audit U5, 9 Okt 2026).
+    expect(ekstensi.titipan.map((p) => p.jenis)).toEqual(["masuk-lupakan"]);
   });
 
   it("bukan akun SIPP (Super Admin): jalur lama lookup + password ALETA berjalan seperti dulu", async () => {
@@ -124,7 +126,8 @@ describe("layar masuk dengan akun SIPP", () => {
     fireEvent.click(screen.getByTestId("login-submit"));
     await waitFor(() => expect(authMock.signInEmail).toHaveBeenCalledWith({ email: "u1@uji.local", password: SANDI, rememberMe: false }));
     await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith("/portal"));
-    expect(ekstensi.titipan).toEqual([]);
+    // Tidak ada titipan; yang lama dilupakan (audit U5, 9 Okt 2026).
+    expect(ekstensi.titipan.map((p) => p.jenis)).toEqual(["masuk-lupakan"]);
   });
 
   it("akun SIPP diblokir: pesan server tampil, tidak masuk, jalur lama tidak dicoba", async () => {

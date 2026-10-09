@@ -117,11 +117,14 @@ function PilihPihak({
 }
 
 function MedanIsian({
+  butir,
   medan,
   isi,
   onUbah,
   draf,
 }: {
+  /** Kunci butir pemilik medan - id unik per kartu (9 Okt 2026). */
+  butir: string;
   medan: MedanButir;
   isi: IsianButir;
   onUbah: (ubahan: Partial<IsianButir>) => void;
@@ -129,7 +132,10 @@ function MedanIsian({
 }) {
   const d = draf.dokumen;
   const nilai = isi[medan.ruas];
-  const id = `medan-${medan.ruas}`;
+  // Unik per butir: "medan-nominal" dulu dipakai bersama oleh nafkah iddah,
+  // mut'ah, dst., sehingga label "Uang (Rp)" mut'ah memfokuskan isian nafkah
+  // iddah - id ganda di satu halaman.
+  const id = `medan-${butir}-${medan.ruas}`;
   let kendali: React.ReactNode = null;
   switch (medan.jenis) {
     case "pihak":
@@ -302,7 +308,7 @@ function KartuButir({
       {isi.aktif ? (
         <div className="mt-2 space-y-2 border-t pt-2">
           {medan.map((m) => (
-            <MedanIsian key={m.ruas} medan={m} isi={isi} onUbah={onUbah} draf={draf} />
+            <MedanIsian key={m.ruas} butir={def.kunci} medan={m} isi={isi} onUbah={onUbah} draf={draf} />
           ))}
         </div>
       ) : null}
@@ -344,7 +350,9 @@ export function HasilMediasiDialog({
           draf?: unknown;
           tidakTerbaca?: string[];
         };
-        if (batal || !isi.bahan) return;
+        if (batal) return;
+        // Jawaban tanpa bahan dulu meninggalkan pop-up kosong tanpa pesan.
+        if (!isi.bahan) throw new Error("Bahan hasil mediasi tidak terbaca dari server.");
         setBahan(isi.bahan);
         setDraf(paduDraf(drafAwal(isi.bahan), isi.draf));
         setTidakTerbaca(isi.tidakTerbaca ?? []);
@@ -671,12 +679,13 @@ export function HasilMediasiDialog({
                   ))}
                 </div>
 
-                {(["pihakSatu", "pihakDua"] as const).map((ruas) => (
-                  <div key={ruas} className="rounded-lg border p-2.5">
+                {/* Turut Tergugat hanya ditampilkan bila SIPP mencatatnya (9 Okt 2026). */}
+                {(["pihakSatu", "pihakDua", ...((d.pihakTurut ?? []).length ? (["pihakTurut"] as const) : [])] as const).map((ruas) => (
+                  <div key={ruas} className="rounded-lg border p-2.5" data-identitas={ruas}>
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {ruas === "pihakSatu" ? d.sebutanSatu : d.sebutanDua} - identitas
+                      {ruas === "pihakSatu" ? d.sebutanSatu : ruas === "pihakDua" ? d.sebutanDua : `Turut ${d.sebutanDua}`} - identitas
                     </p>
-                    {d[ruas].map((o, i) => (
+                    {(d[ruas] ?? []).map((o, i) => (
                       <div key={i} className="mb-2 grid gap-1">
                         <Input
                           value={o.nama}
@@ -694,7 +703,7 @@ export function HasilMediasiDialog({
                         />
                       </div>
                     ))}
-                    {d[ruas].length === 0 ? (
+                    {(d[ruas] ?? []).length === 0 ? (
                       <Button size="sm" variant="outline" onClick={() => ubahDokumen({ [ruas]: [{ nama: "", keterangan: "" }] })}>
                         Tambah nama
                       </Button>
