@@ -484,9 +484,38 @@ async function tipeData(kode, jatiDiri) {
   if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
   const teks = await respons.text();
   const cocok = teks.match(/name="var_type"\s+value="([^"]*)"/);
-  const tipe = cocok ? cocok[1] : "";
+  if (!cocok) {
+    // Uji 9 Okt: dulu "" ikut diingat. Sesi ABT habis (halaman masuk) membuat
+    // variabel itu "bertipe tidak dikenal" sampai halaman dimuat ulang -
+    // walau petugas sudah masuk lagi. Yang tidak terbaca tidak diingat.
+    const sebab = a3SebabBukanAbt(teks);
+    if (sebab) throw new Error(sebab);
+    return "";
+  }
+  const tipe = cocok[1];
   tipeVariabel.set(kode, tipe);
   return tipe;
+}
+
+/**
+ * Sebab jawaban ABT yang BUKAN yang diminta (uji 9 Okt) - "" bila tidak dikenali.
+ *
+ *  - Abt_model::get_data_variabel menjalankan die("<h3>ERROR Variabel #x#</h3>")
+ *    bila satu kueri data_sql patah: seluruh halaman/pratinjau CETAK berhenti.
+ *  - Abt::__construct mengalihkan ke halaman masuk bila sesinya habis - jawaban
+ *    200 berisi borang sandi, bukan RTF/"DATA DISIMPAN".
+ */
+function a3SebabBukanAbt(teks) {
+  const t = String(teks || "").slice(0, 6000);
+  const galat = t.match(/ERROR\s+Variabel\s*#(\d{3,5})#/i);
+  if (galat) {
+    return (
+      `ABT berhenti menghitung variabel #${galat[1]}# - kuerinya patah, biasanya karena petik (' atau ") ` +
+      `atau garis miring terbalik pada isian yang dirujuknya. Perbaiki isian itu di ABT lalu ulangi.`
+    );
+  }
+  if (/type=["']?password|name=["']?password/i.test(t)) return "sesi ABT habis - masuk ulang ke ABT, lalu ulangi.";
+  return "";
 }
 
 /** Tipe yang benar-benar dapat disimpan lewat rute itu. */
@@ -578,6 +607,35 @@ function a3TanggalAbt(nilai) {
 }
 
 /**
+ * ============================================================================
+ * PETIK DAN GARIS MIRING TERBALIK DINETRALKAN SEBELUM MASUK ABT (uji 9 Okt)
+ * ============================================================================
+ *
+ * Abt_model::variabel_var_data mengganti #xxxx# di kueri data_sql dengan isi
+ * variabel APA ADANYA (str_replace, tanpa escape). 5227/0222/0246/9944/7035/
+ * 1268 masuk literal ber-petik ganda di 8521/8528/8522, dan 8503/9944/0246/
+ * 5227/1214 masuk literal ber-petik tunggal di 4020/8522/8529/8530 dst. Satu
+ * petik di isian mematahkan kuerinya, dan get_data_variabel lalu menjalankan
+ * die("ERROR Variabel #xxxx#") - SELURUH halaman blangko dan pratinjau CETAK
+ * perkara itu berhenti, bukan satu variabel saja.
+ *
+ * Diukur baca-saja di satker (MariaDB 5.5.68, 9 Okt 2026): isian berpetik
+ * ganda -> 8521/8522/8528 ER_PARSE_ERROR; berpetik tunggal -> 8522/8529;
+ * berakhiran "\" -> 8521/8522/8528. Sesudah dinetralkan: 0 galat. 37 jawaban
+ * saksi satker memuat petik ganda dan 89 petik tunggal - bahan usulan 5227.
+ *
+ * Petik diganti U+2019 (’): TemplateHelper::cleanHtmlTagSpecial ABT sendiri
+ * mengubah ’ kembali menjadi ' saat mencetak, jadi cetakannya tetap berpetik.
+ * Garis miring terbalik diganti "/". Hanya data_teks - data_tanggal disusun
+ * ulang menjadi d/m/Y di bawah.
+ */
+function a3NetralkanPetik(nilai) {
+  return String(nilai == null ? "" : nilai)
+    .replace(/\\/g, "/")
+    .replace(/["']/g, "’");
+}
+
+/**
  * Menyimpan satu variabel.
  *
  * Jawabannya HTML, bukan JSON - ABT memang menjawab begitu. Yang dicari
@@ -601,6 +659,10 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
     if (!nilaiKirim) {
       return { ok: false, pesan: `Variabel ${kode} bertipe tanggal - "${nilai}" tidak terbaca sebagai tanggal (contoh 15/10/2026).` };
     }
+  } else {
+    // Uji 9 Okt: petik/garis miring terbalik mentah mematahkan kueri data_sql
+    // yang merujuk variabel ini - lihat a3NetralkanPetik.
+    nilaiKirim = a3NetralkanPetik(nilai);
   }
 
   const badan = new URLSearchParams();
@@ -623,9 +685,20 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
   if (/DATA DISIMPAN/i.test(teks)) {
     // Perbaikan 1 Okt butir 10 (UI Baru saja): perkara ini sudah diinput.
     a1CatatInput(jatiDiri);
-    return { ok: true, pesan: "tersimpan" };
+    // nilaiTersimpan: yang SUNGGUH dikirim (petik dinetralkan / tanggal d/m/Y),
+    // supaya layar dan riwayat menyebut isi yang ada di ABT.
+    return {
+      ok: true,
+      pesan:
+        tipe !== "data_tanggal" && nilaiKirim !== String(nilai == null ? "" : nilai)
+          ? "tersimpan (petik diganti ’ agar kueri ABT tidak patah)"
+          : "tersimpan",
+      nilaiTersimpan: tipe === "data_tanggal" ? nilai : nilaiKirim,
+    };
   }
   if (/DATA TIDAK TERSIMPAN/i.test(teks)) return { ok: false, pesan: "ABT menolak menyimpan." };
+  const sebab = a3SebabBukanAbt(teks);
+  if (sebab) return { ok: false, pesan: `Belum tersimpan - ${sebab}` };
   return { ok: false, pesan: "Jawaban ABT tidak dikenali - anggap belum tersimpan." };
 }
 
@@ -714,7 +787,18 @@ const POLA_PENUTUP = [
   /^sudah\s+tidak\s+sanggup\s+lagi\b/i,
 ];
 
+/**
+ * Uji 9 Okt (data satker, 4.251 jawaban penutup): 2 jawaban berbunyi
+ * "Sudah\ncukup;" - penutupnya terbelah baris sehingga tidak satu baris pun
+ * cocok POLA_PENUTUP dan ia lolos. Jawaban yang SELURUHNYA hanya kalimat
+ * penutup (spasi/baris dirapatkan) dibuang utuh; yang memuat kata lain tetap
+ * diperiksa per baris seperti sebelumnya.
+ */
+const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?(?:cukup|tidak\s+sanggup\s+lagi)\s*[;.]?$/i;
+
 function bersihkanKeteranganSaksi(teks) {
+  const rapat = String(teks || "").replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
+  if (rapat && POLA_PENUTUP_UTUH.test(rapat)) return "";
   const baris = String(teks || "").replace(/\r\n/g, "\n").split("\n");
   const disimpan = baris.filter((satu) => {
     const bersih = satu.replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
@@ -774,7 +858,9 @@ async function mintaPositaRapi(perkaraId, ujiKering) {
     body: JSON.stringify({ perkaraId, ujiKering: ujiKering === true }),
   }, "Merapikan posita");
   if (!respons.ok) {
-    return { ok: false, pesan: alatPesanGagal(null, respons.status, "Menyambung kata") };
+    // Uji 9 Okt: label kedua fungsi ini dulu tertukar ("Menyambung kata gagal"
+    // saat merapikan posita, dan sebaliknya).
+    return { ok: false, pesan: alatPesanGagal(null, respons.status, "Merapikan posita") };
   }
 
   const luar = await respons.json();
@@ -782,7 +868,7 @@ async function mintaPositaRapi(perkaraId, ujiKering) {
   if (!isi?.available) {
     // Pesan dari portal diteruskan apa adanya bila ada - ia menyebut sebab
     // yang lebih tepat daripada kalimat umum, misalnya penolakan pagar isi.
-    return { ok: false, pesan: isi?.message || alatPesanGagal(null, 0, "Menyambung kata") };
+    return { ok: false, pesan: isi?.message || alatPesanGagal(null, 0, "Merapikan posita") };
   }
 
   const disambung = Number(isi.disambung) || 0;
@@ -826,13 +912,13 @@ async function sambungPecahanPosita(perkaraId, indeks) {
     body: JSON.stringify({ aksi: "sambung", perkaraId, indeks }),
   }, "Menyambung kata");
   if (!respons.ok) {
-    return { ok: false, pesan: alatPesanGagal(null, respons.status, "Merapikan posita") };
+    return { ok: false, pesan: alatPesanGagal(null, respons.status, "Menyambung kata") };
   }
 
   const luar = await respons.json();
   const isi = luar?.data ?? luar;
   if (!isi?.available) {
-    return { ok: false, pesan: isi?.message || alatPesanGagal(null, 0, "Merapikan posita") };
+    return { ok: false, pesan: isi?.message || alatPesanGagal(null, 0, "Menyambung kata") };
   }
 
   return {
@@ -1636,6 +1722,14 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
     if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
     isiRtf = await respons.arrayBuffer();
     if (isiRtf.byteLength < 32) throw new Error("berkasnya kosong");
+    // Uji 9 Okt: dulu hanya panjangnya yang diperiksa - halaman masuk (sesi
+    // ABT habis) atau "ERROR Variabel #x#" tersimpan sebagai putusan .rtf dan
+    // ikut dikirim ke konversi PDF. Jalur massal sudah memeriksa ini.
+    const awal = new TextDecoder("latin1").decode(new Uint8Array(isiRtf).subarray(0, 5));
+    if (!awal.startsWith("{\\rtf")) {
+      const sebab = a3SebabBukanAbt(new TextDecoder("latin1").decode(new Uint8Array(isiRtf).subarray(0, 6000)));
+      throw new Error(sebab || "ABT tidak mengembalikan RTF");
+    }
     unduhBlob(new Blob([isiRtf], { type: "application/rtf" }), namaBerkas(nomor, "rtf", "putusan"));
     hasil.rtf = "tersimpan";
   } catch (galat) {
@@ -1919,17 +2013,18 @@ function sunting(item, jatiDiri, sesudahSimpan) {
         batal.disabled = false;
         return;
       }
+      const tersimpan = String(hasil.nilaiTersimpan ?? ketik.value).trim();
       void catatRiwayat({
         perkaraId: jatiDiri.perkaraId,
         kode: item.kode,
         nama: item.nama,
         sebelum: nilaiLama,
-        sesudah: ketik.value.trim(),
+        sesudah: tersimpan,
         cara: "sunting tangan",
         pada: new Date().toISOString(),
       });
-      tutup(ketik.value.trim());
-      if (typeof sesudahSimpan === "function") sesudahSimpan(item.kode, ketik.value.trim());
+      tutup(tersimpan);
+      if (typeof sesudahSimpan === "function") sesudahSimpan(item.kode, tersimpan);
     } catch (galat) {
       kabar.textContent = String((galat && galat.message) || galat);
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
@@ -2278,7 +2373,7 @@ async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor) {
           kode: x.usulan.kode,
           nama: x.usulan.nama,
           sebelum,
-          sesudah: nilaiDipakai,
+          sesudah: hasil.nilaiTersimpan ?? nilaiDipakai,
           cara: bunyi && !x.disunting()
             ? `bunyi "${bunyi}" dipilih petugas dari pilihan ALETA (${x.usulan.keyakinan})`
             : x.disunting()
@@ -2289,7 +2384,7 @@ async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor) {
           pada: new Date().toISOString(),
         });
         const item = barisVariabel().get(x.usulan.kode);
-        if (item) item.selNilai.textContent = nilaiDipakai;
+        if (item) item.selNilai.textContent = hasil.nilaiTersimpan ?? nilaiDipakai;
         x.centang.checked = false;
         x.centang.disabled = true;
       } else {
@@ -5466,10 +5561,51 @@ alatDaftarkanPenunjuk("Menu ABT", ["#cssmenu"], { wajib: true });
 alatDaftarkanPenunjuk("Daftar blangko", [".pricing-top", ".pricing_inner_w3ls"], { wajib: false, saat: "halaman blangko" });
 alatDaftarkanPenunjuk("Blangko tanya-jawab", ["#tanyajawab", "table.tabel_tanyajawab", "form"], { wajib: false, saat: "halaman tanya-jawab" });
 
+/**
+ * Uji 9 Okt: halaman blangko yang dihentikan ABT sendiri - die("<h3>ERROR
+ * Variabel #x#</h3>...") - tidak punya tabel, jadi panel tidak lahir dan
+ * petugas hanya melihat pesan SQL. Di satker 5 perkara sudah begitu karena
+ * isian berpetik (0156 -> 7080 pada 4 perkara, 1214 -> 8529 pada 1 perkara).
+ * Yang dikerjakan HANYA menerangkan sebabnya di atas pesan itu - tidak ada
+ * yang ditulis ke ABT.
+ */
+function a3TerangkanHalamanGalat() {
+  if (!document.body || document.getElementById("aleta-abt-galat-variabel")) return false;
+  if (document.querySelector("#wrapper table td[id]")) return false;
+  const teks = String(document.body.textContent || "").slice(0, 6000);
+  const m = teks.match(/ERROR\s+Variabel\s*#(\d{3,5})#/i);
+  if (!m) return false;
+  const kotak = buatElemen("div", "aleta-abt-galat-variabel");
+  kotak.id = "aleta-abt-galat-variabel";
+  kotak.setAttribute("role", "alert");
+  kotak.style.cssText =
+    "margin:12px;padding:12px 14px;border:2px solid #b91c1c;border-radius:8px;background:#fef2f2;color:#7f1d1d;font:14px/1.5 system-ui,sans-serif;max-width:860px";
+  kotak.appendChild(buatElemen("strong", "", "ALETA: halaman blangko ini dihentikan ABT"));
+  kotak.appendChild(buatElemen("div", "", a3SebabBukanAbt(teks)));
+  kotak.appendChild(
+    buatElemen(
+      "div",
+      "",
+      `Cari isian (data teks) yang dirujuk kueri #${m[1]} dan memuat petik ' atau " - mis. nama kantor kuasa "Partner's" ` +
+        `atau nama "Assa'" - lalu ganti petiknya dengan ’ lewat menu edit variabel ABT (atau minta admin ABT). ` +
+        "Sesudah itu muat ulang halaman ini."
+    )
+  );
+  document.body.insertBefore(kotak, document.body.firstChild);
+  return true;
+}
+
 async function pasang() {
   if (sudahDipasang) return;
   const diTanyaJawab = halamanTanyaJawab();
-  if (!halamanBlangko() && !diTanyaJawab) return;
+  if (!halamanBlangko() && !diTanyaJawab) {
+    try {
+      if (/\/abt\//i.test(location.pathname) && (await sedangAktif())) a3TerangkanHalamanGalat();
+    } catch {
+      /* penerang saja - gagal tidak mengubah apa pun */
+    }
+    return;
+  }
   if (!(await sedangAktif())) return;
 
   // Di halaman tanya-jawab tidak ada satu pun tautan load_form, jadi jati diri
@@ -7195,7 +7331,8 @@ async function siapkanPerkaraAbt(butir, peta, opsi, lapor) {
     const isiRtf = await respons.arrayBuffer();
     const awal = new TextDecoder("latin1").decode(new Uint8Array(isiRtf).subarray(0, 5));
     if (!awal.startsWith("{\\rtf")) {
-      throw new Error("ABT tidak mengembalikan RTF - token blangko tidak sah atau sesi ABT habis");
+      const sebab = a3SebabBukanAbt(new TextDecoder("latin1").decode(new Uint8Array(isiRtf).subarray(0, 6000)));
+      throw new Error(sebab || "ABT tidak mengembalikan RTF - token blangko tidak sah atau sesi ABT habis");
     }
     siap.isiRtf = isiRtf;
     dokumen.rtf = "ok";
@@ -11108,13 +11245,14 @@ async function t6SimpanNilai(k, kode, nilai, cara, sebelum, nama) {
     return hasil;
   }
   const item = barisVariabel().get(kode);
-  if (item) item.selNilai.textContent = nilai || "DATA_TIDAK_ADA";
+  const tersimpan = hasil.nilaiTersimpan ?? nilai;
+  if (item) item.selNilai.textContent = tersimpan || "DATA_TIDAK_ADA";
   void catatRiwayat({
     perkaraId: k.perkaraId,
     kode,
     nama: nama || (item ? item.nama : ""),
     sebelum: sebelum || "",
-    sesudah: nilai,
+    sesudah: tersimpan,
     cara,
     pada: new Date().toISOString(),
   });
@@ -15811,7 +15949,13 @@ function p7HalamanBas() {
  *             putusan". Lama/Baru tidak punya pilihan "Blangko halaman ini" -
  *             yang terunggah di sana selalu blangko putusan yang dipetakan.
  */
-const A3_POLA_BUKAN_PUTUSAN = /\bBAS\b|berita\s+acara|relaas|panggilan|pemberitahuan|\bPBT\b|\bPMH\b|\bPHS\b|\bPHT\b|\bPJS\b|\bPPP\b|penunjukan|penetapan\s+(majelis|hakim|hari|mediator|penahanan|sita|panitera|juru\s*sita|jurusita)|sampul|daftar\s+isi|akta\s+cerai|formulir|laporan|instrumen|surat\s+keterangan|tanda\s+terima|bukti\s+bayar|panjar|kuasa\s+pengguna|lafal\s+sumpah|persetujuan|pernyataan|permohonan\s+(banding|kasasi|peninjauan|pk\b)|tidak\s+berkekuatan\s+hukum/i;
+// Uji 9 Okt (839 nama berkas _blangko_abt satker): "Penunjukkan" (dua k),
+// penetapan eksekusi/aanmaning/lelang/sita/konsinyasi/titipan/harga limit,
+// pengumuman, penahanan/penggeledahan/penyitaan/diversi (jinayat), penetapan
+// ketua (prodeo), dan P3HP dulu dianggap PUTUSAN bila halamannya dibuka tanpa
+// catatan submenu - tombol Unggah putusan terbuka untuk penetapan eksekusi.
+// Tidak satu pun berkas di putusan_penetapan/ ikut tertolak karena tambahan ini.
+const A3_POLA_BUKAN_PUTUSAN = /\bBAS\b|berita\s+acara|relaas|panggilan|pemberitahuan|\bPBT\b|\bPMH\b|\bPHS\b|\bPHT\b|\bPJS\b|\bPPP\b|penunjukk?an|penetapan\s+(majelis|hakim|hari|mediator|penahanan|sita|panitera|juru\s*sita|jurusita|ketua)|eksekusi|aanmaning|lelang|konsinyasi|titipan|harga\s+limit|pengangkatan\s+sita|pengumuman|penahanan|penggeledahan|penyitaan|diversi|\bP3HP\b|sampul|daftar\s+isi|akta\s+cerai|formulir|laporan|instrumen|surat\s+keterangan|tanda\s+terima|bukti\s+bayar|panjar|kuasa\s+pengguna|lafal\s+sumpah|persetujuan|pernyataan|permohonan\s+(banding|kasasi|peninjauan|pk\b)|tidak\s+berkekuatan\s+hukum/i;
 const A3_POLA_PUTUSAN = /putusan|penetapan|kabul|tolak|verstek|cabut|gugur|tidak\s+dapat\s+diterima|kontradiktur|rekonvensi/i;
 /** "(NO)", "[NO]", "NO" - huruf besar saja: "no" kecil bukan niet ontvankelijk. */
 const A3_POLA_NO = /(^|[^A-Za-z])NO([^A-Za-z]|$)/;
