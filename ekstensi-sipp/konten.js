@@ -6778,7 +6778,7 @@ function b6SembunyikanBilaTerisi(kotak, nomorPerkara) {
       "div",
       "aleta-tetap-sebab aleta-b6-putusan-terisi",
       `Putusan perkara ini sudah terisi di SIPP${b6RincianPutusan(k)} - Putusan otomatis disembunyikan. ` +
-        "Untuk mengisi ulang, buka borang Putusan Akhir (Edit); menunya muncul kembali dengan peringatan sebelum menimpa isi lama."
+        "Untuk mengisi ulang, buka blangko Putusan Akhir (Edit); menunya muncul kembali dengan peringatan sebelum menimpa isi lama."
     );
     catatan.setAttribute("data-aleta-putusan-terisi", "catatan");
     if (kotak.parentNode) kotak.parentNode.insertBefore(catatan, kotak.nextSibling);

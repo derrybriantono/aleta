@@ -203,7 +203,7 @@ describe("butir 6: blangko tertutup", () => {
     expect(kotak.getAttribute("data-aleta-putusan-terisi")).toBe("sembunyi");
     const catatan = pn.querySelector(".aleta-b6-putusan-terisi");
     expect(String(catatan && catatan.textContent)).toContain("sudah terisi di SIPP");
-    expect(String(catatan && catatan.textContent)).toContain("buka borang Putusan Akhir (Edit)");
+    expect(String(catatan && catatan.textContent)).toContain("buka blangko Putusan Akhir (Edit)");
   });
 
   it("belum putus: Putusan otomatis tetap tampil", async () => {
