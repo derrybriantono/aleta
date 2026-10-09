@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.189.0",
+    dirilis: "2026-10-09T20:00:00+08:00",
+    judul: "Uji rilis 9 Okt: kuasa hukum lengkap di ABT + puluhan perbaikan dari uji nyata seluruh fitur",
+    butir: [
+      "ABT: kantor kuasa (0156) dan tanggal surat kuasa dibaca dari gugatan e-Court, tanggal & nomor register kuasa khusus dari SIPP; kalimat kuasa lengkap di identitas pihak (7047/7048) dan blangko [01] Kabul Verstek Cerai.",
+      "Panel ABT: isian berpetik tidak lagi mematikan blangko dan CETAK; CETAK menolak halaman yang bukan RTF; sesi ABT habis disebut jelas.",
+      "Penetapan PMH-PPP-PJS-PHS, Penetapan kembali, Kasir, dan tombol mediator ditulis dalam satu transaksi - tidak pernah tertinggal setengah jadi.",
+      "Masuk akun SIPP: isi otomatis halaman masuk SIPP kini bekerja; titipan sandi petugas sebelumnya dihapus.",
+      "Hasil mediasi .rtf: kuasa, urutan pihak, turut tergugat, dan penomoran pihak diperbaiki; rute admin Integrasi e-Court hanya untuk Admin.",
+      "Penetapan & putusan massal, BAS & relaas massal, popup, checklist, Status Perkara, Kendali Berkas, TTD: sebab kegagalan terbaca dan tidak membeku.",
+      "Unggah putusan ke SIPP dan e-Court hanya untuk Hakim, Admin, dan Super Admin; tombol Perbarui ekstensi ditahan selama antrean massal berjalan.",
+      "BAS massal: usulan blangko walau kehadiran belum tercatat (bertanda); lewat pukul 14.00 tanpa kehadiran diusulkan putus gugur atau ditunda panggil para pihak.",
+    ],
+  },
+  {
     versi: "1.188.0",
     dirilis: "2026-10-07T18:00:00+08:00",
     judul: "7 Okt sore: tunda/putusan utuh atas nama PP, tarik e-Court dari \"belum upload\", hasil mediasi .rtf, penetapan tahap sisa, cetak relaas 2x lebih cepat",
