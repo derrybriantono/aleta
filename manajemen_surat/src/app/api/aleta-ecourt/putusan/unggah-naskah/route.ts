@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { unggahNaskahPutusan } from "@/server/modules/aleta-ecourt/unggah-naskah-putusan";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -47,6 +48,10 @@ export async function POST(request: NextRequest) {
     // Kapabilitas yang sama dengan pengisian borang putusan itu sendiri -
     // yang boleh mengisikannya boleh pula menyiapkan bahannya.
     await pastikanKapabilitas(db, actorUserId, "data-umum");
+    // Naskah yang diunggah di sini menjadi bahan borang Putusan Akhir SIPP
+    // (putusan otomatis / massal). Keputusan 9 Okt 2026: hanya Super Admin,
+    // Admin, dan Hakim (termasuk Ketua/Wakil) - 403 bagi peran lain.
+    await pastikanBolehUnggahPutusan(db, actorUserId);
 
     const formulir = await request.formData();
     const berkas = formulir.get("berkas");

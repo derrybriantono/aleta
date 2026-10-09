@@ -579,7 +579,11 @@ describe("butir 6 & 16: bagian di dalam tab menurut peran (UI Baru)", () => {
     });
   }
 
-  it("Upload ke e-Court duduk di tab Putusan: tampak bagi Admin/Ketua/Hakim, tersembunyi bersama tabnya bagi Panitera/Juru Sita", async () => {
+  // Keputusan 9 Okt 2026: upload putusan ke e-Court hanya Super Admin, Admin,
+  // Hakim (termasuk Ketua/Wakil). Bagi Panitera/Juru Sita bagiannya kini TIDAK
+  // digambar sama sekali (dahulu digambar lalu tersembunyi bersama tabnya) -
+  // rutenya pun menolak 403 (hak-unggah-putusan-9okt.test.ts).
+  it("Upload ke e-Court duduk di tab Putusan: tampak bagi Admin/Ketua/Hakim, TIDAK digambar bagi Panitera/Juru Sita", async () => {
     for (const [peran, tampak] of [
       ["Hakim", true],
       ["Panitera Pengganti", false],
@@ -589,6 +593,10 @@ describe("butir 6 & 16: bagian di dalam tab menurut peran (UI Baru)", () => {
       const pn = await siapUi(h);
       await tunggu(1100);
       const b = bagianDi(pn, "s1UnggahEcourt");
+      if (!tampak) {
+        expect(b, peran).toBeNull();
+        continue;
+      }
       expect(b, peran).not.toBeNull();
       expect(b.closest(".aleta-kelompok").dataset.kunci).toBe("putusanKel");
       expect(tampakDi(b), peran).toBe(tampak);
@@ -791,6 +799,11 @@ const rute = vi.hoisted(() => ({
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
 vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: async () => ({ name: "Penguji" }) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
+vi.mock("@/server/modules/aleta-ecourt/hak-putusan", () => ({
+  // Hak unggah putusan (9 Okt 2026) diuji di hak-unggah-putusan-9okt.test.ts.
+  pastikanBolehUnggahPutusan: async () => ({ actor: { name: "Penguji" }, peran: "hakim" }),
+  bolehUnggahPutusan: () => true,
+}));
 vi.mock("@/server/shared/admin-access-audit", () => ({
   handleAdminRouteError: (galat: unknown) => {
     throw galat;

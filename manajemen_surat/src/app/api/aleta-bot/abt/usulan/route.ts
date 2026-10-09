@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { getGatewayAbtUsulan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { kapabilitasPengguna, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { untukBot } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { roles as daftarPeran } from "@/lib/mock-data";
@@ -177,6 +178,7 @@ export async function POST(request: NextRequest) {
         pengguna: {
           nama: dia.name,
           peran: peranDia ? peranDia.name : String(dia.roleId || ""),
+          bolehUnggahPutusan: bolehUnggahPutusan(dia),
         },
         kapabilitas: await kapabilitasPengguna(db, { id: dia.id, roleId: String(dia.roleId) }),
         sipp: null,
@@ -190,7 +192,7 @@ export async function POST(request: NextRequest) {
     // ke ABT - dan itu menuntut kemampuan blangko, bukan sekadar panel.
     const actor = await pastikanKapabilitas(db, actorUserId, "blangko-abt");
     const peran = daftarPeran.find((x) => x.id === actor.roleId);
-    const pengguna = { nama: actor.name, peran: peran ? peran.name : String(actor.roleId || "") };
+    const pengguna = { nama: actor.name, peran: peran ? peran.name : String(actor.roleId || ""), bolehUnggahPutusan: bolehUnggahPutusan(actor) };
 
     const nomorPerkara = String(body.nomorPerkara || "").trim();
     if (!nomorPerkara) {

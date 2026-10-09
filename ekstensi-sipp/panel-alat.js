@@ -2374,6 +2374,11 @@ function alatGolonganPeran(peran) {
   return "lain";
 }
 
+// Menu "putusan" / "putusan-massal" / "unggah-putusan" hanya pada golongan
+// admin, ketua, hakim - selaras dengan keputusan 9 Okt 2026 (hak unggah
+// putusan = Super Admin, Admin, Hakim termasuk Ketua/Wakil). Peran "lain"
+// (null = susunan lama) tetap TIDAK diberi bagian unggahnya: konten.js/abt.js
+// menanyakan alatBolehUnggahPutusan sendiri, dan pemantau ambil menahannya.
 const ALAT_MENU_PERAN = {
   sipp: {
     perkara: {
@@ -2413,6 +2418,126 @@ const ALAT_MENU_PERAN = {
     },
   },
 };
+
+/*
+ * ============================================================================
+ * HAK UNGGAH PUTUSAN - PERAN EKSPLISIT (keputusan 9 Okt 2026)
+ * ============================================================================
+ *
+ * "untuk putusan itu hanya bisa dilakukan oleh superadmin, admin dan hakim,
+ * yang lain tidak boleh upload putusan ke sipp".
+ *
+ * Berlaku untuk SEMUA jalur putusan: e-Doc putusan + anonimisasi ke SIPP,
+ * isian borang Putusan Akhir otomatis ("Isikan yang dicentang"/simpan),
+ * putusan massal SIPP dan ABT, dan upload salinan putusan ke e-Court.
+ * Golongan "admin" (Super Admin, Admin), "hakim", dan "ketua" (Ketua/Wakil -
+ * hakim yang mengetuai majelis). PP, panitera, juru sita, operator, analis,
+ * staf: TIDAK - bagiannya tidak digambar dan tiap permintaannya ditahan
+ * pemantau ambil (alatUnggahPutusanDitahan) dengan kalimat di bawah.
+ *
+ * Bukan lagi kemampuan "penunjukan" (papan penunjukan): itu gerbang
+ * PENETAPAN, dan menumpanginya membuat PP & JS kehilangan/ mendapat hak putusan
+ * menurut saklar yang tidak ada hubungannya (temuan uji U1).
+ *
+ * Penjagaan sesungguhnya di peladen: rute portal menolak 403 dan gerbang bot
+ * menolak sekali lagi. Di sini KENYAMANAN - supaya tombol yang pasti ditolak
+ * tidak ditawarkan.
+ */
+const ALAT_PESAN_TOLAK_UNGGAH_PUTUSAN =
+  "Unggah putusan ke SIPP dan e-Court hanya untuk Hakim, Admin, dan Super Admin. Peran Anda tidak diberi hak ini.";
+
+/**
+ * true | false | null. `pengguna` = objek { peran, bolehUnggahPutusan? } dari
+ * portal, atau nama/id peran. Jawaban peladen (bolehUnggahPutusan) menang;
+ * tanpa itu dihitung dari golongan perannya. null = peran belum diketahui
+ * (belum masuk / belum terbaca) - pemanggil menggambar seperti biasa dan
+ * peladen yang menolak.
+ */
+function alatBolehUnggahPutusan(pengguna) {
+  let peran = pengguna;
+  if (pengguna && typeof pengguna === "object") {
+    if (typeof pengguna.bolehUnggahPutusan === "boolean") return pengguna.bolehUnggahPutusan;
+    peran = pengguna.peran;
+  }
+  const p = String(peran || "").trim();
+  if (!p) return null;
+  const golongan = alatGolonganPeran(p);
+  return golongan === "admin" || golongan === "hakim" || golongan === "ketua";
+}
+
+/**
+ * Akun ALETA yang sedang masuk di halaman ini - BUKAN peran pratinjau "ganti
+ * peran": yang ditahan di sini tulisan sungguhan, dan yang menentukannya
+ * akun yang sungguh masuk. Dibaca dari variabel milik konten.js (SIPP) atau
+ * abt.js (ABT) bila ada.
+ */
+function alatPenggunaAkunAleta() {
+  try {
+    // eslint-disable-next-line no-undef
+    if (typeof penggunaTerakhir !== "undefined" && penggunaTerakhir) return penggunaTerakhir;
+  } catch {
+    /* bukan halaman SIPP */
+  }
+  try {
+    // eslint-disable-next-line no-undef
+    if (typeof penggunaAletaAbt !== "undefined" && penggunaAletaAbt) return penggunaAletaAbt;
+  } catch {
+    /* bukan halaman ABT */
+  }
+  return null;
+}
+
+/** Hak unggah putusan akun yang sedang masuk: true | false | null (belum diketahui). */
+function alatBolehUnggahPutusanKini() {
+  return alatBolehUnggahPutusan(alatPenggunaAkunAleta());
+}
+
+/** Rute portal yang MENULIS putusan atau menyiapkan isian borang putusan. */
+const ALAT_RUTE_UNGGAH_PUTUSAN = [
+  /\/aleta\/api\/aleta-ecourt\/putusan\/unggah-sipp(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-ecourt\/putusan\/unggah-naskah(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-ecourt\/putusan\/isian-sipp(?:[?#]|$)/,
+  /\/aleta\/api\/aleta-ecourt\/ecourt-putusan\/unggah(?:[?#]|$)/,
+];
+
+/**
+ * Ditahan karena peran yang masuk TIDAK berhak unggah putusan? Hanya bila
+ * perannya PASTI bukan Hakim/Admin/Super Admin - peran yang belum terbaca
+ * dibiarkan berangkat, dan peladen yang menolak 403.
+ */
+function alatUnggahPutusanDitahan(alamat) {
+  const a = String(alamat || "");
+  if (!ALAT_RUTE_UNGGAH_PUTUSAN.some((pola) => pola.test(a))) return false;
+  return alatBolehUnggahPutusanKini() === false;
+}
+
+/** Jawaban tiruan 403 untuk permintaan putusan yang ditahan - bentuk badannya sama dengan portal. */
+function alatJawabanTolakUnggahPutusan() {
+  const badan = JSON.stringify({
+    ok: false,
+    error: { message: ALAT_PESAN_TOLAK_UNGGAH_PUTUSAN },
+    data: { ok: false, alasan: "peran_tidak_boleh_unggah_putusan", sebab: ALAT_PESAN_TOLAK_UNGGAH_PUTUSAN },
+    alasan: "peran_tidak_boleh_unggah_putusan",
+    pesan: ALAT_PESAN_TOLAK_UNGGAH_PUTUSAN,
+  });
+  return new Response(badan, {
+    status: 403,
+    statusText: "Forbidden",
+    headers: { "content-type": "application/json" },
+  });
+}
+
+/**
+ * Kotak terkunci pengganti bagian putusan bagi peran yang tidak berhak -
+ * fiturnya tidak hilang diam-diam: alasannya disebut di tempatnya.
+ */
+function alatKotakTerkunciPutusan(judul) {
+  const kotak = alatEl("div", "aleta-terkunci-putusan aleta-kosong-lembut");
+  kotak.setAttribute("data-aleta-terkunci", "unggah-putusan");
+  kotak.setAttribute("role", "note");
+  kotak.textContent = `${judul ? `${judul}: ` : ""}${ALAT_PESAN_TOLAK_UNGGAH_PUTUSAN}`;
+  return kotak;
+}
 
 function alatMenuPeran(situs, halaman, peran, opsi) {
   const o = opsi && typeof opsi === "object" ? opsi : {};
@@ -3402,6 +3527,123 @@ async function alatHitungPembaruan(paksa, tanpaAmbil) {
 }
 
 /**
+ * ============================================================================
+ * ANTREAN KERJA MASSAL DILAPORKAN KE LATAR - PENAHAN TOMBOL PERBARUI (9 Okt 2026)
+ * ============================================================================
+ *
+ * Penetapan massal, putusan massal (SIPP dan ABT), BAS massal, dan putaran
+ * massal lain berjalan di skrip konten TAB, bukan di latar.js. Memuat ulang
+ * ekstensi di tengahnya memutus butir yang sedang dikerjakan. Karena itu tiap
+ * antrean melapor: denyut saat mulai dan tiap kali maju, "selesai" saat
+ * berhenti dengan cara apa pun. latar.js menyimpannya di
+ * chrome.storage.session dan MENAHAN "Perbarui ekstensi" selama ada yang
+ * hidup - "Tunggu antrean <nama> selesai (x/y)", dengan "Tetap perbarui"
+ * (paksa) tetap tersedia.
+ *
+ * Denyut HANYA saat antrean benar-benar maju - bukan pengatur waktu. Antrean
+ * yang macet (satu butir menggantung) atau ditinggal berhenti berdenyut, dan
+ * sesudah 10 menit latar.js tidak menahan lagi. Antrean yang hidup di memori
+ * tab dilepas saat halamannya ditinggal (pagehide); antrean bertahan antar
+ * halaman (putusan massal SIPP) memakai `id` tetap dan `lepasSaatPergi: false`.
+ *
+ * Gagal mengirim pesan TIDAK PERNAH menghentikan antreannya - yang hilang
+ * hanya penahan tombol Perbarui.
+ */
+function alatKirimKeLatar(pesan) {
+  try {
+    if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) return;
+    const janji = chrome.runtime.sendMessage(pesan);
+    if (janji && typeof janji.catch === "function") janji.catch(() => undefined);
+  } catch {
+    /* konteks ekstensi mati - antreannya tetap berjalan */
+  }
+}
+
+/**
+ * alatAntreanKerja(antrean, nama, total, opsi?) -> { id, maju(x, y?), selesai() }
+ *   antrean  kunci jenis: "penetapan-massal" | "putusan-massal-sipp" |
+ *            "putusan-massal-abt" | "bas-massal" | "unggah-naskah-massal" ...
+ *   nama     sebutan manusia untuk kalimat "Tunggu antrean <nama> selesai"
+ *   opsi.id  id tetap (antrean yang bertahan antar halaman)
+ *   opsi.lepasSaatPergi  bawaan true - lepas saat halaman ditinggal
+ */
+function alatAntreanKerja(antrean, nama, total, opsi) {
+  const o = opsi && typeof opsi === "object" ? opsi : {};
+  const id = o.id
+    ? String(o.id)
+    : `${String(antrean || "antrean")}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  let selesai = Math.max(0, Number(o.selesai) || 0);
+  let jumlah = Math.max(0, Number(total) || 0);
+  let hidup = true;
+  const lepasSaatPergi = o.lepasSaatPergi !== false;
+  const denyut = () => {
+    if (!hidup) return;
+    alatKirimKeLatar({ sumber: "aleta-panel", jenis: "antrean-kerja-denyut", id, antrean: String(antrean || ""), nama: String(nama || ""), selesai, total: jumlah });
+  };
+  const akhiri = () => {
+    if (!hidup) return;
+    hidup = false;
+    try {
+      if (lepasSaatPergi) window.removeEventListener("pagehide", akhiri);
+    } catch {
+      /* tanpa window */
+    }
+    alatKirimKeLatar({ sumber: "aleta-panel", jenis: "antrean-kerja-selesai", id });
+  };
+  try {
+    if (lepasSaatPergi) window.addEventListener("pagehide", akhiri);
+  } catch {
+    /* tanpa window - antrean lepas sendiri sesudah basi */
+  }
+  denyut();
+  return {
+    id,
+    maju(x, y) {
+      selesai = Math.max(0, Number(x) || 0);
+      if (y !== undefined && y !== null) jumlah = Math.max(0, Number(y) || 0);
+      denyut();
+    },
+    selesai: akhiri,
+  };
+}
+
+/**
+ * Antrean putusan massal SIPP BERTAHAN antar halaman (chrome.storage.local):
+ * satu butir per halaman perkara. Ia dilaporkan dengan id tetap tiap kali
+ * panelnya digambar atau satu butir selesai, dan dilepas begitu tidak ada lagi
+ * yang menunggu atau sedang dikerjakan. Petugas yang meninggalkannya lebih
+ * dari 10 menit tidak lagi menahan tombol Perbarui (basi di latar.js).
+ */
+function alatLaporAntreanPutusanSipp(antrean) {
+  if (!antrean || !Array.isArray(antrean.butir)) return;
+  const id = `putusan-massal-sipp:${antrean.id || "aktif"}`;
+  const h = alatAntreanRingkas(antrean);
+  const sisa = (h.menunggu || 0) + (h.jalan || 0);
+  if (antrean.tahap !== "sipp" || sisa === 0) {
+    alatAntreanKerjaLepas(id);
+    return;
+  }
+  const total = antrean.butir.length;
+  alatAntreanKerja("putusan-massal-sipp", "putusan massal SIPP", total, { id, lepasSaatPergi: false, selesai: total - sisa });
+}
+
+/** Melepas antrean ber-id tetap tanpa pegangannya (mis. "Akhiri antrean" di halaman lain). */
+function alatAntreanKerjaLepas(id) {
+  if (!id) return;
+  alatKirimKeLatar({ sumber: "aleta-panel", jenis: "antrean-kerja-selesai", id: String(id) });
+}
+
+/**
+ * Jawaban latar.js yang MENAHAN pembaruan: putaran relaas (keadaan lama)
+ * atau antrean kerja massal di tab SIPP/ABT ("antrean-berjalan", 9 Okt
+ * 2026). Keduanya membawa ditahan: true dari latar.js yang baru.
+ */
+function alatPembaruanDitahan(jawab) {
+  if (!jawab) return false;
+  return jawab.ditahan === true || jawab.keadaan === "putaran-relaas-berjalan" || jawab.keadaan === "antrean-berjalan";
+}
+
+/**
  * Minta pembaruan ke latar.js, lalu muat ulang ekstensi - satu klik.
  *
  *   1. "perbarui": Chrome memeriksa updates.xml; CRX yang lebih baru
@@ -3431,17 +3673,17 @@ async function alatJalankanPembaruan(paksa, kabar) {
   };
   sampaikan("Menanyakan pembaruan kepada Chrome…", false);
   let jawab = await kirim("perbarui");
-  if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
-    sampaikan(`${jawab.pesan || "Putaran cetak relaas belum selesai."} Klik sekali lagi untuk tetap memperbarui.`, true);
-    return { selesai: false, perluPaksa: true };
+  if (alatPembaruanDitahan(jawab)) {
+    sampaikan(`${jawab.pesan || "Antrean massal belum selesai."} Klik sekali lagi untuk tetap memperbarui.`, true);
+    return { selesai: false, perluPaksa: true, labelPaksa: jawab.labelPaksa || "" };
   }
   const terpasang = jawab && jawab.ok && (jawab.keadaan === "dipasang" || jawab.keadaan === "konteks_mati");
   if (!terpasang) {
     sampaikan("Memuat ulang ekstensi dari berkasnya…", false);
     jawab = await kirim("muat-ulang");
-    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
-      sampaikan(`${jawab.pesan || "Putaran cetak relaas belum selesai."} Klik sekali lagi untuk tetap memuat ulang.`, true);
-      return { selesai: false, perluPaksa: true };
+    if (alatPembaruanDitahan(jawab)) {
+      sampaikan(`${jawab.pesan || "Antrean massal belum selesai."} Klik sekali lagi untuk tetap memuat ulang.`, true);
+      return { selesai: false, perluPaksa: true, labelPaksa: jawab.labelPaksa || "" };
     }
   }
   sampaikan(`${(jawab && jawab.pesan) || "Ekstensi sedang dimuat ulang."} Halaman ini dimuat ulang sebentar lagi.`, false);
@@ -4979,6 +5221,14 @@ function alatPasangPemantauAmbil() {
   globalThis.fetch = async function aletaFetch(masukan, opsi) {
     const alamat = typeof masukan === "string" ? masukan : (masukan && masukan.url) || String(masukan);
     const cara = String((opsi && opsi.method) || (masukan && masukan.method) || "GET").toUpperCase();
+
+    // Hak unggah putusan (keputusan 9 Okt 2026) - PALING DULU, dan untuk
+    // semua cara termasuk GET isian-sipp: peran yang pasti tidak berhak tidak
+    // mengirim apa pun; jawabannya 403 tiruan berkalimat sama dengan peladen.
+    if (alatUnggahPutusanDitahan(alamat)) {
+      alatCatat("hak", `DITAHAN ${cara} ${alatRingkasAlamat(alamat)}`, "peran tidak berhak unggah putusan");
+      return alatJawabanTolakUnggahPutusan();
+    }
 
     // Mode latihan lebih dulu daripada kering dan coba: ia yang paling ketat,
     // dan yang ditahannya harus tercatat di kotak "yang akan ditulis" walau

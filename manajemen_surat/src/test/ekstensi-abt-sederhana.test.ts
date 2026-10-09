@@ -372,7 +372,8 @@ describe("butir 1: menu panel perkara per peran (alatMenuPeran abt/perkara)", ()
     expect(tampak(kerja(h, "susun"))).toBe(true);
     expect(tampak(q(h, ".aleta-sdg-hasil"))).toBe(true);
     expect(tampak(kerja(h, "isi"))).toBe(false);
-    expect(tampak(q(h, ".aleta-abt-bagian"))).toBe(false);
+    // 9 Okt 2026: PP tidak berhak unggah putusan - bagiannya tidak ada sama sekali.
+    expect(q(h, ".aleta-abt-bagian") === null || !tampak(q(h, ".aleta-abt-bagian"))).toBe(true);
     expect(usulanDiminta(h, "sipp")).toBe(0);
     expect(usulanDiminta(h, "saksi-sdg")).toBe(1);
     expect(tulisAbt(h)).toEqual([]);
@@ -411,7 +412,8 @@ describe("butir 1: menu panel perkara per peran (alatMenuPeran abt/perkara)", ()
     await tunggu(150);
     expect(tampak(kerja(h, "isi"))).toBe(false);
     expect(tampak(kerja(h, "susun"))).toBe(false);
-    expect(tampak(q(h, ".aleta-abt-bagian"))).toBe(false);
+    // 9 Okt 2026: juru sita tidak berhak unggah putusan - bagiannya tidak ada sama sekali.
+    expect(q(h, ".aleta-abt-bagian") === null || !tampak(q(h, ".aleta-abt-bagian"))).toBe(true);
     expect(usulanDiminta(h, "sipp") + usulanDiminta(h, "saksi")).toBe(0);
   });
 

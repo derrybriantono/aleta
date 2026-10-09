@@ -238,8 +238,12 @@ describe("panel", () => {
     expect(badan.slice(0, 5000)).toContain('pemilih.accept = ".rtf,.doc,.docx,.pdf";');
   });
 
-  it("kewenangannya penunjukan - ini menulis ke SIPP, bukan membaca", () => {
-    expect(konten).toContain('if (boleh("penunjukan")) {\n    kelPutusan.isi.appendChild(bagianUnggahPutusanSipp(konteks.nomorPerkara));');
+  // Keputusan 9 Okt 2026: bukan lagi kemampuan "penunjukan" (gerbang PENETAPAN),
+  // melainkan hak PERAN Super Admin/Admin/Hakim - dijalankan sungguhan di
+  // ekstensi-hak-putusan-tahan-perbarui.test.ts dan hak-unggah-putusan-9okt.test.ts.
+  it("kewenangannya hak unggah putusan (peran) - ini menulis ke SIPP, bukan membaca", () => {
+    expect(konten).toContain('if (bolehPutusan) {\n    kelPutusan.isi.appendChild(bagianUnggahPutusanSipp(konteks.nomorPerkara));');
+    expect(konten).not.toContain('if (boleh("penunjukan")) {\n    kelPutusan.isi.appendChild(bagianUnggahPutusanSipp(');
   });
 
   it("akun SIPP yang tercatat, bukan akun ALETA", () => {

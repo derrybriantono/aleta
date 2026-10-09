@@ -41,6 +41,7 @@ const sippStatusPerkaraService = require("../services/sippStatusPerkaraService")
 const sippTautanService = require("../services/sippTautanService");
 const tagPerkaraService = require("../services/tagPerkaraService");
 const putusanUnggahService = require("../services/putusanUnggahService");
+const hakUnggahPutusanService = require("../services/hakUnggahPutusanService");
 const kendaliBerkasService = require("../services/kendaliBerkasService");
 const putusanEcourtService = require("../services/putusanEcourtService");
 const sippSkemaService = require("../services/sippSkemaService");
@@ -1214,6 +1215,14 @@ router.get("/sidang/status-putusan", requireInternalToken, async (req, res) => {
  */
 router.post("/sidang/putus", requireInternalToken, async (req, res) => {
   try {
+    // Keputusan 9 Okt 2026: unggah/tulis putusan hanya Super Admin, Admin,
+    // dan Hakim (termasuk Ketua/Wakil). Portal sudah memeriksa; ini lapis
+    // kedua - lihat hakUnggahPutusanService.
+    const hak = hakUnggahPutusanService.periksaHakUnggahPutusan(req.body || {});
+    if (!hak.ok) {
+      res.status(hak.status).json({ ok: false, alasan: hak.alasan, pesan: hak.pesan, error: hak.pesan });
+      return;
+    }
     const badan = req.body || {};
     const operator = String(badan.operator || "").trim();
     if (!operator) {
@@ -4434,6 +4443,14 @@ router.post("/laporan-perkara/catat", requireInternalToken, async (req, res) => 
  */
 router.post("/sipp/putusan-unggah", requireInternalToken, async (req, res) => {
   try {
+    // Keputusan 9 Okt 2026: unggah/tulis putusan hanya Super Admin, Admin,
+    // dan Hakim (termasuk Ketua/Wakil). Portal sudah memeriksa; ini lapis
+    // kedua - lihat hakUnggahPutusanService.
+    const hak = hakUnggahPutusanService.periksaHakUnggahPutusan(req.body || {});
+    if (!hak.ok) {
+      res.status(hak.status).json({ ok: false, alasan: hak.alasan, pesan: hak.pesan, error: hak.pesan });
+      return;
+    }
     const badan = req.body || {};
     const bita = (nilai) => {
       const teks = String(nilai || "");

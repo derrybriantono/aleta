@@ -351,6 +351,11 @@ function bagianEkstensi(siapa) {
   const LABEL_MUAT_ULANG = "Muat ulang ekstensi";
   let paksaPerbarui = false;
   let paksaMuatUlang = false;
+  // Ditahan latar.js: putaran relaas ATAU antrean kerja massal di tab SIPP/ABT
+  // ("antrean-berjalan", 9 Okt 2026). Sama dengan popup dan pita panel.
+  const ditahan = (jawab) =>
+    Boolean(jawab) &&
+    (jawab.ditahan === true || jawab.keadaan === "putaran-relaas-berjalan" || jawab.keadaan === "antrean-berjalan");
 
   tombolPerbarui.addEventListener("click", async () => {
     tombolPerbarui.disabled = true;
@@ -359,9 +364,9 @@ function bagianEkstensi(siapa) {
     const jawab = await mintaKeLatar("perbarui", paksaPerbarui);
     kabarkan((jawab && jawab.pesan) || "Tidak ada jawaban dari ekstensi.", !(jawab && jawab.ok));
 
-    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+    if (ditahan(jawab)) {
       paksaPerbarui = true;
-      tombolPerbarui.textContent = "Tetap perbarui - putaran cetak hilang";
+      tombolPerbarui.textContent = jawab.labelPaksa || "Tetap perbarui - putaran cetak hilang";
       tombolPerbarui.disabled = false;
       return;
     }
@@ -386,10 +391,11 @@ function bagianEkstensi(siapa) {
     tombolMuatUlang.disabled = true;
     kabarkan("Memuat ulang ekstensi dari berkasnya…", false);
     const jawab = await mintaKeLatar("muat-ulang", paksaMuatUlang);
-    if (jawab && jawab.keadaan === "putaran-relaas-berjalan") {
+    if (ditahan(jawab)) {
       kabarkan(jawab.pesan || "Putaran cetak relaas belum selesai.", true);
       paksaMuatUlang = true;
-      tombolMuatUlang.textContent = "Tetap muat ulang - putaran cetak hilang";
+      tombolMuatUlang.textContent =
+        jawab.keadaan === "antrean-berjalan" ? "Tetap muat ulang - antrean terputus" : "Tetap muat ulang - putaran cetak hilang";
       tombolMuatUlang.disabled = false;
       return;
     }

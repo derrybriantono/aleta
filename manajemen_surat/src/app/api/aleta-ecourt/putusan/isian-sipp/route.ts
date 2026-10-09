@@ -6,6 +6,7 @@ import { pecahNaskahPutusan } from "@/lib/susunan-putusan";
 import { readJsonBody } from "@/server/shared/request";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { untukPortal } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { getGatewaySippKonteks } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -81,6 +82,12 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    // Usulan isian borang Putusan Akhir = bahan "Isikan yang dicentang" dan
+    // putusan otomatis/massal yang lalu disimpan ke SIPP. Keputusan 9 Okt 2026:
+    // hanya Super Admin, Admin, dan Hakim (termasuk Ketua/Wakil) - 403 bagi
+    // peran lain, supaya tombol yang tersembunyi di layar tidak dapat
+    // dijalankan dari luar panel.
+    await pastikanBolehUnggahPutusan(db, actorUserId);
 
     const nomorPerkara = String(getSearchParam(request, "nomorPerkara") ?? "").trim();
     if (!nomorPerkara) return ok({ ada: false, sebab: "Nomor perkara belum disebut." });
@@ -207,6 +214,12 @@ export async function POST(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    // Usulan isian borang Putusan Akhir = bahan "Isikan yang dicentang" dan
+    // putusan otomatis/massal yang lalu disimpan ke SIPP. Keputusan 9 Okt 2026:
+    // hanya Super Admin, Admin, dan Hakim (termasuk Ketua/Wakil) - 403 bagi
+    // peran lain, supaya tombol yang tersembunyi di layar tidak dapat
+    // dijalankan dari luar panel.
+    await pastikanBolehUnggahPutusan(db, actorUserId);
 
     const badan = await readJsonBody<{
       nomorPerkara?: string;

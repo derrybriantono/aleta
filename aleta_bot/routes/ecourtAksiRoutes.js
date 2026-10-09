@@ -26,6 +26,7 @@ const sesiPengguna = require("../services/ecourtSesiPenggunaService");
 const akunPengguna = require("../services/ecourtAkunPenggunaService");
 const aksi =require("../services/ecourtAksiService");
 const pantau = require("../services/ecourtPantauPutusanService");
+const hakUnggahPutusanService = require("../services/hakUnggahPutusanService");
 
 const router = express.Router();
 
@@ -258,6 +259,14 @@ router.get("/ecourt-putusan/akun", wajibToken, async (req, res) => {
 
 router.post("/ecourt-putusan/unggah", wajibToken, async (req, res) => {
   try {
+    // Keputusan 9 Okt 2026: unggah/tulis putusan hanya Super Admin, Admin,
+    // dan Hakim (termasuk Ketua/Wakil). Portal sudah memeriksa; ini lapis
+    // kedua - lihat hakUnggahPutusanService.
+    const hak = hakUnggahPutusanService.periksaHakUnggahPutusan(req.body || {});
+    if (!hak.ok) {
+      res.status(hak.status).json({ ok: false, alasan: hak.alasan, pesan: hak.pesan, error: hak.pesan });
+      return;
+    }
     const base64 = String(req.body?.berkasBase64 || "");
     const hasil = await aksi.unggahSalinan({
       penggunaId: String(req.body?.penggunaId || ""),

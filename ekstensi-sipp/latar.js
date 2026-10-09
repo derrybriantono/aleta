@@ -138,8 +138,8 @@ async function perbaruiSekarang(opsi) {
   // lagi ke portal. Dibaca juga dari titipan pekerja sebelumnya.
   await bacaVersiMenunggu();
   if (versiMenunggu) {
-    const cegah = paksa ? null : await relaasPenghalangMuatUlang();
-    if (cegah) return relaasTahanMuatUlang(cegah, versiSekarang, versiMenunggu);
+    const cegah = paksa ? null : await penghalangMuatUlang();
+    if (cegah) return tahanMuatUlang(cegah, versiSekarang, versiMenunggu);
     muatUlangSebentarLagi();
     return {
       ok: true,
@@ -161,9 +161,9 @@ async function perbaruiSekarang(opsi) {
   const keadaan = String((hasil && hasil.status) || "");
 
   if (keadaan === "update_available") {
-    const cegah = paksa ? null : await relaasPenghalangMuatUlang();
+    const cegah = paksa ? null : await penghalangMuatUlang();
     if (cegah) {
-      return relaasTahanMuatUlang(cegah, versiSekarang, String((hasil && hasil.version) || ""));
+      return tahanMuatUlang(cegah, versiSekarang, String((hasil && hasil.version) || ""));
     }
     muatUlangSebentarLagi();
     return {
@@ -569,6 +569,23 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
     return true; // jawaban menyusul
   }
 
+  // Antrean kerja massal di tab SIPP/ABT (9 Okt 2026) - lihat
+  // KUNCI_ANTREAN_KERJA. Dijawab sesudah tersimpan, supaya tab tahu denyutnya
+  // sampai; kegagalan tidak pernah menghentikan antreannya.
+  if (pesan.jenis === "antrean-kerja-denyut" || pesan.jenis === "antrean-kerja-selesai") {
+    (pesan.jenis === "antrean-kerja-denyut" ? catatDenyutAntrean(pesan, pengirim) : lepasAntreanKerja(pesan.id))
+      .then(() => jawab({ ok: true }))
+      .catch((e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 200) }));
+    return true;
+  }
+
+  if (pesan.jenis === "antrean-kerja-daftar") {
+    antreanKerjaPenghalang()
+      .then((a) => jawab({ ok: true, antrean: a }))
+      .catch((e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 200) }));
+    return true;
+  }
+
   if (pesan.jenis === "perbarui") {
     // Sengaja dibungkus: penolakan yang tidak tertangkap membuat panel
     // menunggu jawaban yang tidak pernah datang, dan tombolnya mati selamanya.
@@ -585,9 +602,9 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   }
 
   if (pesan.jenis === "muat-ulang") {
-    (pesan.paksa === true ? Promise.resolve(null) : relaasPenghalangMuatUlang())
+    (pesan.paksa === true ? Promise.resolve(null) : penghalangMuatUlang())
       .then((cegah) => {
-        if (cegah) return relaasTahanMuatUlang(cegah, "", "");
+        if (cegah) return tahanMuatUlang(cegah, "", "");
         muatUlangSebentarLagi();
         return {
           ok: true,
@@ -600,7 +617,7 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
         jawab({
           ok: false,
           keadaan: "galat",
-          pesan: `Keadaan putaran cetak relaas tidak terbaca, jadi ekstensi TIDAK dimuat ulang: ${String((e && e.message) || e).slice(0, 240)}`,
+          pesan: `Keadaan putaran cetak relaas / antrean massal tidak terbaca, jadi ekstensi TIDAK dimuat ulang: ${String((e && e.message) || e).slice(0, 240)}`,
         })
       );
     return true;
@@ -1648,6 +1665,180 @@ function relaasTahanMuatUlang(keadaanPutaran, versiSekarang, versiBaru) {
         : "") +
       `Tunggu sampai putarannya selesai, atau hentikan dulu di dialog Cetak relaas. Tekan tombolnya ` +
       `sekali lagi bila tetap ingin sekarang.`,
+  };
+}
+
+/**
+ * ============================================================================
+ * ANTREAN KERJA MASSAL DI TAB SIPP/ABT - JUGA MENAHAN PEMBARUAN (9 Okt 2026)
+ * ============================================================================
+ *
+ * Keputusan pengguna: tombol "Perbarui ekstensi" DITAHAN selama antrean massal
+ * berjalan - penetapan massal, putusan massal (SIPP dan ABT), BAS massal,
+ * relaas & PBT massal, dan putaran kerja massal lain di tab SIPP/ABT mana pun.
+ * Sebelumnya hanya putaran relaas (yang hidup di pekerja ini) yang menahan;
+ * antrean lain hidup di skrip konten tab, dan memuat ulang ekstensi MEMUTUS
+ * skrip itu di tengah butir - borang setengah terisi, unduhan setengah jalan.
+ *
+ * Tab melaporkan antreannya lewat pesan (alatAntreanKerja di panel-alat.js):
+ *   "antrean-kerja-denyut"  { id, antrean, nama, selesai, total }
+ *   "antrean-kerja-selesai" { id }
+ * Catatannya di chrome.storage.session, BUKAN variabel modul: pekerja MV3 mati
+ * tiap ±30 detik menganggur dan catatannya harus tetap ada sesudah ia bangun.
+ * Penyimpanan sesi dikosongkan Chrome sendiri saat ekstensi dimuat ulang -
+ * tepat ketika antrean di tab memang terputus.
+ *
+ * BASI: antrean tanpa denyut selama ANTREAN_KERJA_BASI_MS dianggap macet atau
+ * ditinggal dan TIDAK menahan lagi. Tab yang ditutup dilepas seketika.
+ */
+const KUNCI_ANTREAN_KERJA = "aletaAntreanKerjaMassal";
+const ANTREAN_KERJA_BASI_MS = 10 * 60 * 1000;
+const ANTREAN_KERJA_MAKS = 30;
+
+function gudangAntreanKerja() {
+  return (chrome.storage && (chrome.storage.session || chrome.storage.local)) || null;
+}
+
+/** Hanya yang bentuknya sah dan belum basi. `sekarang` dapat disuntik uji. */
+function antreanKerjaBersih(catatan, sekarang) {
+  const kini = Number(sekarang) || Date.now();
+  const hasil = {};
+  for (const [id, a] of Object.entries((catatan && typeof catatan === "object" && catatan) || {})) {
+    if (!a || typeof a !== "object") continue;
+    const denyut = Number(a.denyut) || 0;
+    if (!denyut || kini - denyut >= ANTREAN_KERJA_BASI_MS) continue;
+    hasil[id] = a;
+  }
+  return hasil;
+}
+
+async function muatAntreanKerja() {
+  const g = gudangAntreanKerja();
+  if (!g) return {};
+  const isi = await g.get(KUNCI_ANTREAN_KERJA);
+  return (isi && isi[KUNCI_ANTREAN_KERJA]) || {};
+}
+
+async function simpanAntreanKerja(catatan) {
+  const g = gudangAntreanKerja();
+  if (!g) return;
+  await g.set({ [KUNCI_ANTREAN_KERJA]: catatan });
+}
+
+/** Rantai tulis satu per satu - dua denyut serentak tidak boleh saling menimpa. */
+let rantaiAntreanKerja = Promise.resolve();
+function ubahAntreanKerja(ubah) {
+  const jalan = rantaiAntreanKerja.then(async () => {
+    const catatan = antreanKerjaBersih(await muatAntreanKerja());
+    ubah(catatan);
+    const kunci = Object.keys(catatan);
+    if (kunci.length > ANTREAN_KERJA_MAKS) {
+      kunci
+        .sort((a, b) => Number(catatan[a].denyut) - Number(catatan[b].denyut))
+        .slice(0, kunci.length - ANTREAN_KERJA_MAKS)
+        .forEach((k) => delete catatan[k]);
+    }
+    await simpanAntreanKerja(catatan);
+    return catatan;
+  });
+  rantaiAntreanKerja = jalan.catch(() => undefined);
+  return jalan;
+}
+
+function catatDenyutAntrean(pesan, pengirim) {
+  const id = String((pesan && pesan.id) || "").slice(0, 120);
+  if (!id) return Promise.resolve(null);
+  const angka = (x) => Math.max(0, Math.floor(Number(x) || 0));
+  return ubahAntreanKerja((catatan) => {
+    catatan[id] = {
+      id,
+      antrean: String((pesan && pesan.antrean) || "").slice(0, 60),
+      nama: String((pesan && pesan.nama) || "antrean massal").slice(0, 80),
+      selesai: angka(pesan && pesan.selesai),
+      total: angka(pesan && pesan.total),
+      tab: pengirim && pengirim.tab && Number.isInteger(pengirim.tab.id) ? pengirim.tab.id : null,
+      denyut: Date.now(),
+    };
+  });
+}
+
+function lepasAntreanKerja(id) {
+  const kunci = String(id || "");
+  if (!kunci) return Promise.resolve(null);
+  return ubahAntreanKerja((catatan) => {
+    delete catatan[kunci];
+  });
+}
+
+try {
+  if (chrome.tabs && chrome.tabs.onRemoved) {
+    chrome.tabs.onRemoved.addListener((idTab) => {
+      void ubahAntreanKerja((catatan) => {
+        for (const [id, a] of Object.entries(catatan)) if (a && a.tab === idTab) delete catatan[id];
+      }).catch(() => undefined);
+    });
+  }
+} catch {
+  /* tanpa tabs: antrean tab yang ditutup lepas sendiri sesudah basi */
+}
+
+/**
+ * Antrean kerja yang masih berjalan dan akan TERPUTUS bila ekstensi dimuat
+ * ulang - yang denyutnya paling baru - atau null. `sekarang` dapat disuntik uji.
+ */
+async function antreanKerjaPenghalang(sekarang) {
+  if (!gudangAntreanKerja()) return null;
+  const hidup = Object.values(antreanKerjaBersih(await muatAntreanKerja(), sekarang));
+  if (!hidup.length) return null;
+  hidup.sort((a, b) => Number(b.denyut) - Number(a.denyut));
+  const a = hidup[0];
+  const lain = hidup.length - 1;
+  const kemajuan = a.total ? ` (${Math.min(a.selesai, a.total)}/${a.total})` : "";
+  return {
+    nama: a.nama,
+    selesai: a.selesai,
+    total: a.total,
+    jumlah: hidup.length,
+    kalimat: `Tunggu antrean ${a.nama} selesai${kemajuan}.${lain ? ` ${lain} antrean massal lain juga sedang berjalan.` : ""}`,
+  };
+}
+
+/**
+ * Satu pertanyaan untuk tombol Perbarui / Muat ulang: putaran relaas DULU
+ * (kalimat dan keadaannya tetap seperti sebelumnya), lalu antrean kerja tab.
+ * Pulang { jenis: "relaas" | "antrean", kalimat, ... } atau null.
+ */
+async function penghalangMuatUlang() {
+  const relaas = await relaasPenghalangMuatUlang();
+  if (relaas) return { jenis: "relaas", kalimat: relaas };
+  const antrean = await antreanKerjaPenghalang();
+  if (antrean) return { jenis: "antrean", ...antrean };
+  return null;
+}
+
+/** Jawaban tombol yang DITAHAN - relaas atau antrean kerja. "Tetap perbarui" (paksa) tetap ada. */
+function tahanMuatUlang(cegah, versiSekarang, versiBaru) {
+  if (!cegah) return null;
+  if (cegah.jenis === "relaas") {
+    return { ...relaasTahanMuatUlang(cegah.kalimat, versiSekarang, versiBaru), ditahan: true, labelPaksa: "Tetap perbarui - putaran cetak hilang" };
+  }
+  return {
+    ok: false,
+    keadaan: "antrean-berjalan",
+    ditahan: true,
+    labelPaksa: "Tetap perbarui - antrean terputus",
+    antrean: { nama: cegah.nama, selesai: cegah.selesai, total: cegah.total, jumlah: cegah.jumlah },
+    versiSekarang,
+    versiBaru,
+    pesan:
+      `${cegah.kalimat} Memperbarui atau memuat ulang ekstensi sekarang MEMUTUS antrean itu di tengah ` +
+      `butir yang sedang dikerjakan - butir yang terputus harus diperiksa dan diulang sendiri. ` +
+      (versiBaru
+        ? `Versi ${versiBaru} sudah tersedia dan dipasang Chrome sendiri begitu ekstensi menganggur. `
+        : "") +
+      `Tunggu sampai antreannya selesai atau hentikan dulu dari panelnya. Antrean yang tidak berdenyut ` +
+      `${Math.round(ANTREAN_KERJA_BASI_MS / 60000)} menit dianggap macet dan tidak menahan lagi. Tekan ` +
+      `"Tetap perbarui" bila tetap ingin sekarang - antreannya akan terputus.`,
   };
 }
 
