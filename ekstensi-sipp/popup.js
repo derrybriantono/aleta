@@ -158,9 +158,81 @@ if (penyimpanan) {
   pasangNilai({});
 }
 
-function simpan(kunci, nilai) {
+function simpan(kunci, nilai, kotakCentang) {
   if (!penyimpanan) return;
-  void penyimpanan.set({ [kunci]: nilai });
+  if (kotakCentang) {
+    void simpanSaklar({ [kunci]: nilai }, kotakCentang);
+    return;
+  }
+  void Promise.resolve()
+    .then(() => penyimpanan.set({ [kunci]: nilai }))
+    .catch(() => {
+      /* bukan saklar (skala, tema): nilai lama tetap berlaku di panel */
+    });
+}
+
+/**
+ * ============================================================================
+ * SAKLAR YANG GAGAL TERSIMPAN TIDAK BOLEH TAMPAK TERSIMPAN
+ * ============================================================================
+ *
+ * Uji rilis U2c (9 Okt 2026). chrome.storage.local boleh menolak menulis -
+ * kuota penuh, atau ekstensi sedang dimuat ulang. Sebelumnya penolakan itu
+ * ditelan (`void penyimpanan.set(...)`): centangnya berubah di jendela ini
+ * sementara panel di SIPP tetap memakai nilai lama. Yang paling berbahaya:
+ * Mode latihan tampak MENYALA padahal panel tetap menulis ke SIPP, dan
+ * "Izinkan tindakan nyata" tampak mati padahal tindakan nyata tetap berlaku.
+ *
+ * Kini centangnya dikembalikan ke nilai yang sungguh berlaku, sebabnya
+ * disebut tepat di bawah saklar itu, dan `saatGagal` memulihkan keadaan
+ * jendela ini (keterangan mode coba / latihan). Pulang true bila tersimpan.
+ */
+function kabarSimpanUntuk(kotakCentang) {
+  const induk = (kotakCentang && (kotakCentang.closest("label") || kotakCentang.parentNode)) || null;
+  if (!induk || !induk.parentNode) return null;
+  const ada = induk.nextElementSibling;
+  if (ada && ada.hasAttribute && ada.hasAttribute("data-gagal-simpan")) return ada;
+  return null;
+}
+
+function simpanSaklar(isi, kotakCentang, saatGagal) {
+  const nilaiBaru = kotakCentang ? kotakCentang.checked : undefined;
+  return Promise.resolve()
+    .then(() => {
+      if (!penyimpanan) throw new Error("Penyimpanan ekstensi tidak tersedia di jendela ini.");
+      return penyimpanan.set(isi);
+    })
+    .then(() => {
+      const kabar = kabarSimpanUntuk(kotakCentang);
+      if (kabar) kabar.remove();
+      return true;
+    })
+    .catch(() => {
+      // Dikembalikan hanya bila petugas belum mengubahnya lagi sementara itu.
+      if (kotakCentang && kotakCentang.checked === nilaiBaru) kotakCentang.checked = !nilaiBaru;
+      if (typeof saatGagal === "function") {
+        try {
+          saatGagal();
+        } catch {
+          /* keterangan jendela ini saja */
+        }
+      }
+      const induk = kotakCentang && (kotakCentang.closest("label") || kotakCentang.parentNode);
+      if (induk && induk.parentNode) {
+        let kabar = kabarSimpanUntuk(kotakCentang);
+        if (!kabar) {
+          kabar = document.createElement("p");
+          kabar.className = "saklar-ket";
+          kabar.setAttribute("data-gagal-simpan", "ya");
+          kabar.setAttribute("role", "alert");
+          induk.parentNode.insertBefore(kabar, induk.nextSibling);
+        }
+        kabar.textContent =
+          "Tidak tersimpan - penyimpanan ekstensi menolak menulis, jadi saklar ini dikembalikan ke nilai yang " +
+          "sedang berlaku. Coba lagi; bila tetap gagal, muat ulang ekstensi.";
+      }
+      return false;
+    });
 }
 
 /**
@@ -222,6 +294,7 @@ if (tombolPerbarui) {
     tombolPerbarui.disabled = true;
     kabarPerbarui("Menanyakan pembaruan kepada Chrome…");
 
+    const sudahDipaksa = paksaPerbarui;
     const jawab = paksaPerbarui ? await mintaKeLatar("perbarui", true) : await mintaKeLatar("perbarui");
     kabarPerbarui((jawab && jawab.pesan) || "Tidak ada jawaban dari ekstensi.");
 
@@ -237,6 +310,11 @@ if (tombolPerbarui) {
     if (jawab && jawab.ok && jawab.keadaan === "dipasang") return;
 
     // Chrome tidak memasang apa pun. Jalan kedua ditawarkan hanya sekarang.
+    // Petugas yang SUDAH menekan "Tetap perbarui - putaran cetak hilang" tidak
+    // ditahan kedua kalinya oleh putaran yang sama (uji rilis U2c 9 Okt 2026) -
+    // sama dengan alatJalankanPembaruan di panel, yang membawa paksa ke
+    // "muat-ulang" juga.
+    if (sudahDipaksa) paksaMuatUlang = true;
     if (tombolMuatUlangEkstensi) tombolMuatUlangEkstensi.hidden = false;
     tombolPerbarui.disabled = false;
   });
@@ -261,20 +339,23 @@ if (tombolMuatUlangEkstensi) {
       (jawab && jawab.pesan) ||
         "Ekstensi sedang dimuat ulang. Muat ulang halaman SIPP yang terbuka sebentar lagi."
     );
+    // latar.js menolak (keadaan putaran tidak terbaca): ekstensi TIDAK dimuat
+    // ulang, jadi jendela ini tetap hidup - tombolnya harus dapat ditekan lagi.
+    if (jawab && jawab.ok === false) tombolMuatUlangEkstensi.disabled = false;
   });
 }
 
-kotak.addEventListener("change", () => simpan("aktif", kotak.checked));
-kotakTanda.addEventListener("change", () => simpan("tandaiHalaman", kotakTanda.checked));
-kotakSisip.addEventListener("change", () => simpan("sisipJadwal", kotakSisip.checked));
+kotak.addEventListener("change", () => simpan("aktif", kotak.checked, kotak));
+kotakTanda.addEventListener("change", () => simpan("tandaiHalaman", kotakTanda.checked, kotakTanda));
+kotakSisip.addEventListener("change", () => simpan("sisipJadwal", kotakSisip.checked, kotakSisip));
 if (kotakCetak) {
-  kotakCetak.addEventListener("change", () => simpan("cetakTigaBerkas", kotakCetak.checked));
+  kotakCetak.addEventListener("change", () => simpan("cetakTigaBerkas", kotakCetak.checked, kotakCetak));
   if (kotakSunting) {
-    kotakSunting.addEventListener("change", () => simpan("suntingLangsungAbt", kotakSunting.checked));
+    kotakSunting.addEventListener("change", () => simpan("suntingLangsungAbt", kotakSunting.checked, kotakSunting));
   }
 }
 if (kotakChecklist) {
-  kotakChecklist.addEventListener("change", () => simpan("checklistMilestone", kotakChecklist.checked));
+  kotakChecklist.addEventListener("change", () => simpan("checklistMilestone", kotakChecklist.checked, kotakChecklist));
   // × di kepala widget mematikan saklar ini. Centangnya ikut lepas di sini
   // selama jendela ini terbuka - centang yang tertinggal menyala sementara
   // widgetnya sudah tertutup adalah saklar yang berbohong.
@@ -892,7 +973,10 @@ async function pasangUjiTampilan(peran) {
     if (kotakNyata) {
       kotakNyata.addEventListener("change", () => {
         ujiKeadaan.nyata = kotakNyata.checked;
-        if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_NYATA]: ujiKeadaan.nyata });
+        void simpanSaklar({ [KUNCI_UJI_NYATA]: ujiKeadaan.nyata }, kotakNyata, () => {
+          ujiKeadaan.nyata = kotakNyata.checked;
+          tulisKetUji();
+        });
         tulisKetUji();
       });
     }
@@ -977,7 +1061,9 @@ async function pasangModeLatihan(peran) {
   if (!bagian.dataset.terpasang) {
     bagian.dataset.terpasang = "ya";
     kotak.addEventListener("change", () => {
-      if (penyimpanan) void penyimpanan.set({ [KUNCI_MODE_LATIHAN]: kotak.checked === true });
+      // Saklar keselamatan: yang gagal tersimpan dikembalikan dan disebut -
+      // latihan yang tampak menyala padahal tidak berarti SIPP tetap ditulis.
+      void simpanSaklar({ [KUNCI_MODE_LATIHAN]: kotak.checked === true }, kotak, tulisKet);
       tulisKet();
     });
   }
@@ -1943,7 +2029,11 @@ function pasangPilihanPosisi() {
         tulis("Penyimpanan ekstensi tidak tersedia di jendela ini.");
         return;
       }
-      const kunci = KUNCI_LETAK_PANEL.filter((k) => (k.startsWith("posisiChecklist") ? widget : panel));
+      // sudutWidget (popup-9) milik WIDGET checklist: tanpanya "hanya widget"
+      // membiarkan widget kembali ke sudut lama, dan "hanya panel" justru
+      // memindahkan widget yang katanya dibiarkan (uji rilis U2c 9 Okt 2026).
+      const milikWidget = (k) => k.startsWith("posisiChecklist") || k === "sudutWidget";
+      const kunci = KUNCI_LETAK_PANEL.filter((k) => (milikWidget(k) ? widget : panel));
       tombol.disabled = true;
       void penyimpanan
         .remove(kunci)

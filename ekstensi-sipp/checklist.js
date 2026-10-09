@@ -302,6 +302,21 @@
     saksi: "Saksi",
     mediasi: "Mediasi",
     ikrar: "Ikrar Talak",
+    "pendaftaran-online": "e-Court Tingkat Pertama",
+    "arsip-perkara": "Daftar Arsip Perkara",
+  };
+  /**
+   * Pekerjaan yang tempatnya MENU SIPP, bukan tab halaman perkara (uji rilis
+   * 9 Okt 2026). Jalurnya tautan menu SIPP sendiri (sys_menus.link satker),
+   * di bawah akar SIPP - keduanya daftar yang hanya DIBACA saat dibuka:
+   *   pendaftaran-online  register e-Court yang dibayar belum punya perkara,
+   *                       jadi halaman perkara (dan beranda) bukan tempatnya;
+   *   arsip-perkara       halaman detail perkara tidak memuat arsip sama sekali.
+   * Hanya di Baru dan UI Baru; tampilan Lama tetap persis (beranda).
+   */
+  const MENU_SIPP = {
+    "pendaftaran-online": { jalur: "pendaftaran_online", nama: "e-Court > Tingkat Pertama" },
+    "arsip-perkara": { jalur: "list_arsip", nama: "Arsip Perkara > Daftar Arsip Perkara" },
   };
   /**
    * Halaman semantik -> nomor tab di halaman perkara SIPP
@@ -2033,6 +2048,18 @@
         tempat: "SIPP",
       };
     }
+    const menu = menuSipp(halaman);
+    if (menu) {
+      return {
+        tujuan,
+        label,
+        href: `${dasarSipp()}${menu.jalur}`,
+        judul: nomor
+          ? `Buka menu ${menu.nama} di SIPP (tab baru). Nomor ${nomor} disalin untuk dicari di sana.`
+          : `Buka menu ${menu.nama} di SIPP (tab baru).`,
+        ...(nomor ? { salin: nomor, tempat: `SIPP (${menu.nama})`, menu: true } : {}),
+      };
+    }
     const nomorTab = nomorTabSipp(halaman);
     if (dikenal) {
       return {
@@ -2069,6 +2096,12 @@
       return `Alamat halaman perkara ${nomor} di SIPP belum dapat disusun: ${s.alasan || "server tidak menjawab."}`;
     }
     return `Alamat halaman perkara ${nomor} di SIPP belum diketahui.`;
+  }
+
+  /** Menu SIPP (bukan tab halaman perkara) untuk halaman semantik portal, atau null. */
+  function menuSipp(halaman) {
+    const h = String(halaman || "").trim().toLowerCase();
+    return punya(MENU_SIPP, h) ? MENU_SIPP[h] : null;
   }
 
   /** Nomor tab halaman perkara SIPP untuk halaman semantik portal; "" = Data Umum. */
@@ -2114,6 +2147,8 @@
     for (const b of data && Array.isArray(data.butir) ? data.butir : []) {
       const k = objek(b && b.kerjakan);
       if (String(k.tujuan || "").toLowerCase() !== "sipp") continue;
+      // Menu SIPP: halamannya bukan halaman perkara, alamat bersandi tidak dipakai.
+      if (menuSipp(k.halaman)) continue;
       const p = objek(b && b.perkara);
       const nomor = String(p.nomor || "").trim();
       const id = /^\d+$/.test(String(p.id ?? "").trim()) ? String(p.id).trim() : "";
@@ -2332,6 +2367,8 @@
     if (t.salin) {
       const nomor = t.salin;
       const tempat = t.tempat || "SIPP";
+      // Menu SIPP: alamatnya memang menu itu - yang dicari di sana nomornya.
+      const menu = t.menu === true;
       a.addEventListener("click", () => {
         // Disalin DI DALAM tekanan - execCommand menolak di luar itu.
         const tersalin = salinTeks(nomor);
@@ -2341,7 +2378,9 @@
           kabarSingkat(
             tersalin
               ? `Nomor ${nomor} disalin - tempel di kotak cari ${tempat}.`
-              : `Alamat perkara ${nomor} belum diketahui - cari nomornya di ${tempat}.`
+              : menu
+                ? `Cari nomor ${nomor} di ${tempat}.`
+                : `Alamat perkara ${nomor} belum diketahui - cari nomornya di ${tempat}.`
           );
         }, 0);
       });

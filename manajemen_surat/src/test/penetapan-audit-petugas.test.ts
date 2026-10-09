@@ -423,6 +423,8 @@ const FUNGSI = [
   "kalimatAlasan",
   // Penetapan sisa (7 Okt 2026): langkah yang sudah ada dibaca dari usulan.
   "keadaanPenetapanUsulan",
+  // Uji rilis 9 Okt 2026: jawaban portal tanpa kode bot (502 HTML, 401, 500).
+  "jawabanTulisTanpaAlasan",
   "rantaiPenetapan",
 ];
 const TETAPAN = ["ALETA_API_TULIS", "URUTAN_TULIS", "KALIMAT_ALASAN", "NAMA_HARI"];

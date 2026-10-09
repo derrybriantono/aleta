@@ -838,6 +838,9 @@ describe("kontrak dengan katalog portal (src/lib/checklist-milestone-katalog.ts)
     saksi: "Saksi",
     mediasi: "Mediasi",
     ikrar: "Ikrar Talak",
+    // Menu SIPP, bukan tab halaman perkara (uji rilis U2c 9 Okt 2026).
+    "pendaftaran-online": "e-Court Tingkat Pertama",
+    "arsip-perkara": "Daftar Arsip Perkara",
   };
   const BLANGKO_ABT: Record<string, string> = {
     "blangko-putusan": "Putusan",
@@ -1999,14 +2002,14 @@ describe("Kerjakan di SIPP: halaman perkara bersandi dari server, langsung di ta
     "panitera.direktori-putusan": "putusan",
     "panitera.bht-belum-diisi": "putusan",
     "panitera.akta-cerai-belum-terbit": "akta-cerai",
-    "panitera.arsip-bht": "perkara",
+    "panitera.arsip-bht": "arsip-perkara",
     "panitera.panggilan-belum-patut": "relaas",
     "ketua.pmh-hari-ini": "penetapan",
     "ketua.lima-bulan-per-majelis": "jadwal-sidang",
     "ketua.hasil-sidang-belum-dicatat": "jadwal-sidang",
     "ketua.ikrar-akta": "akta-cerai",
     "ketua.sidang-terancam-panggilan": "relaas",
-    "ptsp.ecourt-belum-register": "perkara",
+    "ptsp.ecourt-belum-register": "pendaftaran-online",
     "ptsp.panjar-habis": "keuangan",
     "ptsp.data-umum-belum-lengkap": "perkara",
     "ptsp.sisa-panjar": "keuangan",
@@ -2049,7 +2052,12 @@ describe("Kerjakan di SIPP: halaman perkara bersandi dari server, langsung di ta
   });
 
   it("tiap jenis butir katalog: perkara yang belum pernah dibuka langsung ke halaman perkaranya, di tab yang benar", async () => {
-    const butir = butirKatalogSipp();
+    // Menu SIPP (bukan halaman perkara) diuji tersendiri - uji "U2c 9 Okt" di atas.
+    const MENU = ["pendaftaran-online", "arsip-perkara"];
+    for (const b of butirKatalogSipp()) {
+      expect(MENU.includes(b.kerjakan.halaman) || NOMOR_TAB[b.kerjakan.halaman] !== undefined, `halaman SIPP baru: ${b.kerjakan.halaman}`).toBe(true);
+    }
+    const butir = butirKatalogSipp().filter((b) => !MENU.includes(b.kerjakan.halaman));
     expect(butir.length).toBeGreaterThan(15);
     const h = buka({
       simpanan: BARU,
@@ -2112,6 +2120,72 @@ describe("Kerjakan di SIPP: halaman perkara bersandi dari server, langsung di ta
     expect(href).toBe(`${ASAL}/SIPP/perkara_detil_agama/${enc("4308")}/4#aleta-tab=4`);
     expect(kerjakan(h, "pp1").title).toContain("langsung di tab Jadwal Sidang");
     expect(kerjakan(h, "pp1").title).not.toContain("beranda");
+  });
+
+  it("uji rilis U2c 9 Okt: pekerjaan yang tempatnya MENU SIPP (register e-Court PTSP, arsip panitera) membuka menu itu, bukan beranda / Data Umum", async () => {
+    // Menu satker (sys_menus SIPP 192.168.10.10): "e-Court > Tingkat Pertama"
+    // = pendaftaran_online, "Arsip Perkara > Daftar Arsip Perkara" =
+    // list_arsip. Arsip TIDAK ada di halaman detail perkara, dan register
+    // e-Court belum punya perkara sama sekali.
+    const jenis = (k: string) => KATALOG_CHECKLIST.find((j) => j.kunci === k) as { kunci: string; judul: string; kerjakan: unknown };
+    const ecourt = jenis("ptsp.ecourt-belum-register");
+    const arsip = jenis("panitera.arsip-bht");
+    const butir = [
+      {
+        id: "ptsp1",
+        jenis: ecourt.kunci,
+        judul: ecourt.judul,
+        perkara: null,
+        tenggat: hariKe(0),
+        kelompok: "hari-ini",
+        keterangan: "Register e-Court PA.DGL-12/2026",
+        kerjakan: ecourt.kerjakan,
+      },
+      {
+        id: "ars1",
+        jenis: arsip.kunci,
+        judul: arsip.judul,
+        perkara: { id: "4400", nomor: "400/Pdt.G/2026/PA.Dgl" },
+        tenggat: hariKe(-1),
+        kelompok: "lewat",
+        keterangan: "",
+        kerjakan: arsip.kerjakan,
+      },
+    ];
+    const isi = () => ({
+      isi: jawabanContoh({ butir, ringkas: { lewat: 1, hariIni: 1, mingguIni: 0, selesaiHariIni: 0, totalHariIni: 1 } }),
+    });
+    for (const [simpanan, ket] of [
+      [BARU, "Baru"],
+      [{ ...NYALA, ujiTampilan: "ui" }, "UI Baru"],
+    ] as const) {
+      const h = buka({ simpanan, jawab: isi, tautan: dariServer });
+      await siap(h);
+      await tunggu(80);
+      expect(kerjakan(h, "ptsp1").getAttribute("href"), ket).toBe(`${ASAL}/SIPP/pendaftaran_online`);
+      expect(kerjakan(h, "ptsp1").title, ket).toMatch(/e-Court/);
+      expect(kerjakan(h, "ars1").getAttribute("href"), ket).toBe(`${ASAL}/SIPP/list_arsip`);
+      expect(kerjakan(h, "ars1").title, ket).toContain("400/Pdt.G/2026/PA.Dgl");
+      // Bukan halaman perkara: alamat bersandi tidak perlu ditanyakan ke server.
+      expect(tautanDiminta(h), ket).toEqual([]);
+      kerjakan(h, "ars1").click();
+      const kabar = await sampai(() => {
+        const x = String(q(h, ".aleta-cm-kabar")?.textContent || "");
+        return x.includes("400/Pdt.G/2026/PA.Dgl") ? x : "";
+      }, `${ket}: kabar menyebut nomor arsip`);
+      // Alamatnya memang menu Arsip - bukan "alamat perkara belum diketahui".
+      expect(kabar, ket).not.toMatch(/belum diketahui/);
+      expect(kabar, ket).toContain("Daftar Arsip Perkara");
+    }
+    // SIPP setempat (/index.php/) memakai akarnya sendiri.
+    const lokal = buka({ simpanan: BARU, alamat: "http://127.0.0.1/index.php/perkara_list", jawab: isi });
+    await siap(lokal);
+    expect(kerjakan(lokal, "ptsp1").getAttribute("href")).toBe("http://127.0.0.1/index.php/pendaftaran_online");
+    expect(kerjakan(lokal, "ars1").getAttribute("href")).toBe("http://127.0.0.1/index.php/list_arsip");
+    // Lama tetap persis seperti sebelumnya: beranda.
+    const lama = buka({ simpanan: NYALA, jawab: isi });
+    await siap(lama);
+    expect(kerjakan(lama, "ptsp1").getAttribute("href")).toBe(`${ASAL}/SIPP/`);
   });
 
   it("UI Baru (kulit Modern, kartu) pun begitu", async () => {

@@ -637,9 +637,11 @@ describe("panel-alat.js mengisi halaman masuk SIPP/ABT yang dikenal saja", () =>
     const w = dom.window as any;
     const pesan: any[] = [];
     const dikirim: Array<Record<string, string>> = [];
+    const dikirimId: string[] = [];
     w.document.addEventListener("submit", (e: any) => {
       e.preventDefault();
       dikirim.push(Object.fromEntries(new w.FormData(e.target)));
+      dikirimId.push(String(e.target.id || ""));
     });
     w.chrome = {
       runtime: {
@@ -664,7 +666,7 @@ describe("panel-alat.js mengisi halaman masuk SIPP/ABT yang dikenal saja", () =>
     w.eval(SUMBER_ALAT);
     for (let i = 0; i < 5; i += 1) await new Promise((r) => setTimeout(r, 0));
     const masuk = pesan.filter((p) => String(p.jenis).startsWith("masuk-"));
-    return { w, masuk, dikirim };
+    return { w, masuk, dikirim, dikirimId };
   }
 
   it("SIPP: blangko masuk diisi dan dikirim", async () => {
@@ -702,6 +704,43 @@ describe("panel-alat.js mengisi halaman masuk SIPP/ABT yang dikenal saja", () =>
     const { dikirim } = await buka(`${ASAL}/aps_badilag/login`, BLANGKO_ABT, () => ({ ok: true, username: "supervisor", sandi: SANDI }));
     expect(dikirim).toEqual([]);
   });
+
+  // Uji rilis U2 (9 Okt 2026): halaman masuk SIPP SUNGGUHAN (diambil dari
+  // http://192.168.10.10/SIPP/login, views/Login/login.php) membuka <form>
+  // DI DALAM <tbody>. Parser HTML menutup form seperti itu seketika: form-nya
+  // kosong, dan medan username/password berada di <tr> sesudahnya - pemiliknya
+  // tetap login_frm (form element pointer), tetapi BUKAN keturunannya. Blangko
+  // tiruan di atas membungkus medannya di dalam form, sehingga cacat ini lolos.
+  const BLANGKO_SIPP_ASLI =
+    `<div id="kotakLogin"><table width='100%'><tbody>` +
+    `<tr><td align="center"><img src="${ASAL}/SIPP/resources/img/logo-login.png"></td></tr>` +
+    `<tr><td colspan="4" align="center"><strong>Sistem Informasi Penelusuran Perkara</strong></td></tr>` +
+    `<form action="${ASAL}/SIPP/login/validation_credential" method="post" accept-charset="utf-8" name="login" id="login_frm">` +
+    `<tr><td><small>Username</small><input type="text" name="username" value="" class="login" autofocus="autofocus"  /></td></tr>` +
+    `<tr><td><small>Password</small><input type="password" name="password" value="" class="login"  /><br>` +
+    `<input type="submit" name="" value="Login" class="tombol7"  /></td></tr></tbody></table></div>`;
+
+  it("SIPP asli (form di dalam tbody): medan tetap ditemukan, diisi, dan dikirim", async () => {
+    const { masuk, w, dikirimForm } = await bukaAsli(`${ASAL}/SIPP/login`, BLANGKO_SIPP_ASLI);
+    // Bukti bentuknya memang begitu setelah diurai: form kosong.
+    expect(w.document.querySelector("#login_frm input")).toBeNull();
+    expect(masuk).toEqual([{ sumber: "aleta-panel", jenis: "masuk-minta", halaman: "sipp" }]);
+    expect(w.document.querySelector('input[name="username"]').value).toBe("pp.budi");
+    expect(w.document.querySelector('input[name="password"]').value).toBe(SANDI);
+    expect(dikirimForm).toEqual(["login_frm"]);
+  });
+
+  it("SIPP asli: halaman ERR tetap dikenali sebagai penolakan", async () => {
+    const { masuk, dikirimForm } = await bukaAsli(`${ASAL}/SIPP/login/index/ERR`, BLANGKO_SIPP_ASLI);
+    expect(masuk).toEqual([{ sumber: "aleta-panel", jenis: "masuk-gagal", halaman: "sipp" }]);
+    expect(dikirimForm).toEqual([]);
+  });
+
+  /** Seperti buka(), tetapi mencatat form MANA yang dikirim (FormData jsdom tidak mengenal pemilik non-keturunan). */
+  async function bukaAsli(alamat: string, badan: string) {
+    const hasil = await buka(alamat, badan);
+    return { ...hasil, dikirimForm: hasil.dikirimId };
+  }
 
   it("tanpa titipan: tidak ada yang diisi atau dikirim", async () => {
     const { dikirim, w } = await buka(`${ASAL}/SIPP/index.php/login`, BLANGKO_SIPP, () => ({ ok: false, sebab: "belum ada titipan" }));
