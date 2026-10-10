@@ -6454,6 +6454,38 @@ router.post("/kelengkapan/jalankan", requireInternalToken, async (req, res) => {
   }
 });
 
+/* === P4P7B2 10 Okt === */
+/**
+ * B2 + P4 + P7 (10 Okt 2026, agen 3): isi gugatan / jawaban e-Court ke ABT.
+ *
+ *   POST /abt/isi-gugatan  { nomorPerkara, sebutan: {lawan, pelaku}, majelis?,
+ *                            dokumen: [{judul, peran, teks, baca, penuntutKode, rekonvensi}] }
+ *     -> { ok, ada, tuntutan[], anak[], jawab[], usulan[], kalimat[], diabaikan[], catatan[] }
+ *
+ * Teks berkas dibaca PORTAL dari arsip e-Court (pembaca PDF/DOCX/OCR ada di
+ * sana); di sini hanya pola kamus (tuntutan.json, gugatan.json,
+ * kalimat-hakim.json lewat kamusDeteksi) yang menimbangnya. Tidak menulis apa pun.
+ */
+const isiGugatanService = require("../services/isiGugatanService");
+
+router.post("/abt/isi-gugatan", requireInternalToken, async (req, res) => {
+  try {
+    const sebutanMasuk = req.body?.sebutan && typeof req.body.sebutan === "object" ? req.body.sebutan : {};
+    const hasil = isiGugatanService.susunIsiGugatan({
+      sebutan: {
+        lawan: String(sebutanMasuk.lawan || "").replace(/[^A-Za-z /]/g, "").slice(0, 40),
+        pelaku: String(sebutanMasuk.pelaku || "").replace(/[^A-Za-z /]/g, "").slice(0, 40),
+      },
+      majelis: /^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(String(req.body?.majelis || "")) ? String(req.body.majelis) : undefined,
+      dokumen: Array.isArray(req.body?.dokumen) ? req.body.dokumen : [],
+    });
+    res.json({ ...hasil, nomorPerkara: String(req.body?.nomorPerkara || "").slice(0, 80) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/* === AKHIR P4P7B2 === */
+
 router.setRuntimeLifecycleHandlers = setRuntimeLifecycleHandlers;
 
 module.exports = router;

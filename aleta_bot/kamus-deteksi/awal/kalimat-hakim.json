@@ -1,0 +1,191 @@
+{
+  "kelompok": "kalimat-hakim",
+  "versi": 1,
+  "catatan": "P7 (10 Okt 2026, agen 3): rangkaian kata hakim - 5227 (sebab perselisihan), duduk perkara ringkas, pertimbangan fakta hukum per tuntutan accessoir, kalimat saksi saling bersesuaian. Bunyi DIAMBIL dari blangko hakim satker sendiri (ABT _blangko_abt/derry_briantono, dibaca baca-saja 10 Okt) dan dari isian 5227 manusia (aps_badilag.abt_data_teks, 318 isian) - bukan dikarang. Penanda: {lawan} = 0046 (Penggugat/Pemohon), {pelaku} = 0047 (Tergugat/Termohon), {penuntut}/{dibebani} = sebutan pihak yang menuntut/dihukum (rekonvensi: + ' Rekonvensi'), {nilai} = nominal ABT, {perbuatan} = daftar perbuatan berpelaku (frasa baku abtKalimatBaku), {daftarTuntutan}, {awal}, {pisah}, {lama}, {anak}, {pengasuh}, {kali}. Dipakai kalimatHakimService.js; tiap kalimat USULAN - disunting hakim sebelum Input, dasar hukum diperiksa hakim.",
+  "pola": [],
+  "templat": [
+    {
+      "kode": "hakim-5227-ringkas",
+      "label": "5227 - sebab saja (sesudah 'yang disebabkan')",
+      "gaya": "ringkas",
+      "kodeAbt": "5227",
+      "teks": "{pelaku} {perbuatan}",
+      "syarat": { "bagian": "5227" },
+      "status": "aktif",
+      "asal": "blangko [02] Kabul Rekonvensi CT (derry) baris 82: '... sering terjadi perselisihan dan pertengkaran yang disebabkan #5227#, yang akibatnya ...' - akibat sudah tertulis di blangko."
+    },
+    {
+      "kode": "hakim-5227-baku",
+      "label": "5227 - sebab + akibat (bentuk baku ALETA)",
+      "gaya": "lengkap",
+      "kodeAbt": "5227",
+      "teks": "{pelaku} {perbuatan} yang memicu perselisihan terus-menerus dengan {lawan}",
+      "syarat": { "bagian": "5227" },
+      "status": "aktif",
+      "asal": "abtKalimatBaku.frasaCiri (bentuk terbanyak 318 isian 5227 manusia: '{pelaku} melalaikan kewajiban nafkah lahir ... yang memicu perselisihan terus-menerus dengan {lawan}')."
+    },
+    {
+      "kode": "hakim-5227-sehingga",
+      "label": "5227 - sebab lalu perselisihan (bentuk 'sehingga')",
+      "gaya": "lengkap",
+      "kodeAbt": "5227",
+      "teks": "{pelaku} {perbuatan}, sehingga antara {lawan} dan {pelaku} sering terjadi perselisihan dan pertengkaran",
+      "syarat": { "bagian": "5227" },
+      "status": "aktif",
+      "asal": "isian 5227 manusia bentuk 'Tergugat ... sehingga ...' (mis. 'Tergugat malas bekerja sehingga melalaikan kewajiban nafkah lahir kepada Penggugat')."
+    },
+    {
+      "kode": "hakim-duduk-ringkas",
+      "label": "Duduk perkara ringkas (alasan pokok)",
+      "gaya": "lengkap",
+      "teks": "Menimbang, bahwa alasan pokok {lawan} mengajukan {jenisSurat} cerai adalah sejak {awal} {lawan} dan {pelaku} sering terjadi perselisihan dan pertengkaran yang disebabkan {sebab}, yang akibatnya pada {pisah} antara {lawan} dan {pelaku} telah pisah kediaman bersama, {lawan} dan {pelaku} telah berpisah tempat tinggal selama kurang lebih {lama}, meskipun keluarga {lawan} dan {pelaku} telah berusaha mendamaikannya, akan tetapi usaha tersebut tidak berhasil;",
+      "syarat": { "bagian": "duduk" },
+      "status": "aktif",
+      "asal": "blangko [02] Kabul Rekonvensi CT (derry) baris 82."
+    },
+    {
+      "kode": "hakim-bersesuaian-dalil",
+      "label": "Keterangan saksi saling bersesuaian (dalil {lawan})",
+      "gaya": "lengkap",
+      "teks": "Keterangan para saksi mengenai hal tersebut adalah keterangan berdasarkan fakta yang dialami, didengar dan dilihat sendiri oleh saksi, saling bersesuaian satu dengan yang lain, serta relevan dengan dalil yang harus dibuktikan oleh {pihakSaksi}, maka dari itu keterangan para saksi {pihakSaksi} mengenai hal tersebut telah memenuhi syarat materiil;",
+      "syarat": { "bagian": "bersesuaian", "pihak": "lawan" },
+      "status": "aktif",
+      "asal": "blangko [02] Kabul Rekonvensi CT (derry) baris 125."
+    },
+    {
+      "kode": "hakim-bersesuaian-bantahan",
+      "label": "Keterangan saksi saling bersesuaian (bantahan {pelaku})",
+      "gaya": "lengkap",
+      "teks": "Keterangan para saksi mengenai hal tersebut adalah keterangan berdasarkan fakta yang dialami, didengar dan dilihat sendiri oleh saksi, saling bersesuaian satu dengan yang lain, serta relevan dengan bantahan yang harus dibuktikan oleh {pihakSaksi}, maka dari itu keterangan para saksi {pihakSaksi} mengenai hal tersebut telah memenuhi syarat materiil;",
+      "syarat": { "bagian": "bersesuaian", "pihak": "pelaku" },
+      "status": "aktif",
+      "asal": "blangko [02] Kabul Rekonvensi CT (derry) baris 154."
+    },
+    {
+      "kode": "hakim-bersesuaian-kedua-pihak",
+      "label": "Saksi kedua pihak saling bersesuaian (fakta pokok)",
+      "gaya": "ringkas",
+      "teks": "Menimbang, bahwa berdasarkan keterangan para saksi {lawan} dan {pelaku} yang saling bersesuaian satu sama lain maka terbukti hal-hal pokok sebagai berikut;",
+      "syarat": { "bagian": "bersesuaian", "pihak": "keduanya" },
+      "status": "aktif",
+      "asal": "blangko [02] Kabul Rekonvensi CT (derry) baris 330."
+    },
+    {
+      "kode": "hakim-tuntutan-pokok-rekonvensi",
+      "label": "Pokok gugatan rekonvensi (daftar tuntutan)",
+      "gaya": "lengkap",
+      "teks": "Menimbang, bahwa dalam gugatan rekonvensinya yang pada pokoknya {penuntut} menuntut jika perceraian terjadi, maka {penuntut} meminta {daftarTuntutan} kepada {dibebani};",
+      "syarat": { "bagian": "tuntutan-pokok", "posisi": "rekonvensi" },
+      "status": "aktif",
+      "asal": "blangko [02] Kabul Rekonvensi CT (derry) baris 246."
+    },
+    {
+      "kode": "hakim-tuntutan-pokok-gugatan",
+      "label": "Pokok tuntutan dalam gugatan (daftar tuntutan)",
+      "gaya": "lengkap",
+      "teks": "Menimbang, bahwa selain perceraian, {penuntut} dalam {jenisSurat}nya juga menuntut {daftarTuntutan} kepada {dibebani};",
+      "syarat": { "bagian": "tuntutan-pokok", "posisi": "konvensi" },
+      "status": "aktif",
+      "asal": "disusun dari baris 246 blangko yang sama untuk tuntutan yang diajukan di surat gugatan (kumulasi), bukan rekonvensi."
+    },
+    {
+      "kode": "hakim-sengketa-mutah",
+      "label": "Pokok sengketa - mut'ah",
+      "gaya": "ringkas",
+      "teks": "Apakah {penuntut} berhak atas mut'ah dari {dibebani} sebagai akibat dari cerai talak?",
+      "syarat": { "bagian": "sengketa", "jenis": "mutah" },
+      "status": "aktif",
+      "asal": "blangko derry baris 252."
+    },
+    {
+      "kode": "hakim-sengketa-iddah",
+      "label": "Pokok sengketa - nafkah iddah",
+      "gaya": "ringkas",
+      "teks": "Apakah {penuntut} berhak atas nafkah selama iddah (3 bulan) dari {dibebani} sebagai akibat dari cerai talak?",
+      "syarat": { "bagian": "sengketa", "jenis": "iddah" },
+      "status": "aktif",
+      "asal": "blangko derry baris 253."
+    },
+    {
+      "kode": "hakim-sengketa-madliyah",
+      "label": "Pokok sengketa - nafkah lampau",
+      "gaya": "ringkas",
+      "teks": "Apakah {penuntut} berhak atas nafkah lampau (madliyah) selama {kali} dari {dibebani}?",
+      "syarat": { "bagian": "sengketa", "jenis": "madliyah" },
+      "status": "aktif",
+      "asal": "blangko derry baris 254."
+    },
+    {
+      "kode": "hakim-sengketa-hadhanah",
+      "label": "Pokok sengketa - hak asuh",
+      "gaya": "ringkas",
+      "teks": "Apakah perlu ditetapkan hak pemeliharaan (hadhanah) atas {anak} yang merupakan anak {lawan} dan {pelaku} kepada salah satu diantara kedua belah pihak, demi kepentingan terbaik anak?",
+      "syarat": { "bagian": "sengketa", "jenis": "hadhanah" },
+      "status": "aktif",
+      "asal": "blangko derry baris 255."
+    },
+    {
+      "kode": "hakim-sengketa-nafkah-anak",
+      "label": "Pokok sengketa - nafkah anak",
+      "gaya": "ringkas",
+      "teks": "Apakah perlu ditetapkan nafkah pemeliharaan atas {anak} diluar dari biaya pendidikan dan kesehatan?",
+      "syarat": { "bagian": "sengketa", "jenis": "nafkah-anak" },
+      "status": "aktif",
+      "asal": "blangko derry baris 256."
+    },
+    {
+      "kode": "hakim-fakta-mutah",
+      "label": "Fakta hukum - nominal mut'ah",
+      "gaya": "lengkap",
+      "teks": "Bahwa dengan mendasarkan pada penghitungan di atas, dikaitkan dengan asas kemampuan suami, kepatutan dan kelayakan, serta lamanya pernikahan antara {penuntut} dan {dibebani}, maka selanjutnya {majelis} berpendapat nominal mut'ah yang wajib diberikan oleh {dibebani} kepada {penuntut} adalah {nilai};",
+      "syarat": { "bagian": "fakta", "jenis": "mutah" },
+      "status": "aktif",
+      "asal": "blangko derry [01a] baris 79 dan [02] baris 407 (#6055#)."
+    },
+    {
+      "kode": "hakim-fakta-iddah",
+      "label": "Fakta hukum - nominal nafkah iddah",
+      "gaya": "lengkap",
+      "teks": "Bahwa mengacu pada hal tersebut di atas, berdasarkan kemampuan faktual suami dan aspek kebutuhan dasar istri, nafkah iddah yang wajib dibayarkan oleh {dibebani} kepada {penuntut} adalah {nilai};",
+      "syarat": { "bagian": "fakta", "jenis": "iddah" },
+      "status": "aktif",
+      "asal": "blangko derry [01a] baris 96 dan [02] baris 444 (#6054#)."
+    },
+    {
+      "kode": "hakim-fakta-madliyah",
+      "label": "Fakta hukum - nominal nafkah lampau",
+      "gaya": "lengkap",
+      "teks": "Bahwa ukuran kelayakan mengenai nafkah lampau (madliyah) mengacu pada jumlah nafkah iddah yang telah dipertimbangkan di atas, sehingga nafkah lampau (madliyah) yang dibebankan kepada {dibebani} adalah {nilai};",
+      "syarat": { "bagian": "fakta", "jenis": "madliyah" },
+      "status": "aktif",
+      "asal": "blangko derry [02] baris 468 (#7120#)."
+    },
+    {
+      "kode": "hakim-fakta-nafkah-anak",
+      "label": "Fakta hukum - nominal nafkah anak",
+      "gaya": "lengkap",
+      "teks": "Menimbang, bahwa berdasarkan pertimbangan tersebut di atas, {majelis} berkesimpulan untuk menentukan nafkah anak {nilai} sampai anak tersebut dewasa (berumur 21 tahun atau telah menikah);",
+      "syarat": { "bagian": "fakta", "jenis": "nafkah-anak" },
+      "status": "aktif",
+      "asal": "blangko derry [02] baris 504 (#6071#)."
+    },
+    {
+      "kode": "hakim-fakta-hadhanah",
+      "label": "Fakta hukum - anak ikut siapa",
+      "gaya": "ringkas",
+      "teks": "Bahwa anak {lawan} dan {pelaku} bernama {anak} tinggal dan ikut bersama {pengasuh};",
+      "syarat": { "bagian": "fakta", "jenis": "hadhanah" },
+      "status": "aktif",
+      "asal": "blangko derry [02] baris 341 (#5110#, #2004#)."
+    },
+    {
+      "kode": "hakim-tuntutan-tidak-ada",
+      "label": "Tuntutan yang tidak diajukan (ex officio)",
+      "gaya": "ringkas",
+      "teks": "Menimbang, bahwa meskipun {penuntut} tidak menuntut {daftarTuntutan}, {majelis} secara ex officio akan mempertimbangkannya sebagai berikut;",
+      "syarat": { "bagian": "exofficio" },
+      "status": "aktif",
+      "asal": "judul bagian blangko derry [01a] 'Pertimbangan Ex Officio Mengenai Mut'ah, Nafkah Iddah dan Nafkah Anak' (baris 57)."
+    }
+  ]
+}

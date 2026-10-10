@@ -13895,6 +13895,9 @@ async function soreBacaIsi(k) {
       })
     );
   }
+  /* === P4P7B2 10 Okt === */
+  tugas.push(p4BacaGugatan(data));
+  /* === AKHIR P4P7B2 === */
   await Promise.all(tugas);
   for (const kunci of ["sipp", "saksi", "itsbat", "lain"]) if (galat[kunci]) data.galat.push(galat[kunci]);
   return data;
@@ -13918,7 +13921,8 @@ function soreBobot(u) {
 function sorePilihUsulan(data) {
   const peta = barisVariabel();
   const perKode = new Map();
-  for (const sumber of [data.sipp, data.saksi, data.itsbat, data.lain, data.ktp, data.kuasa]) {
+  // P4P7B2 10 Okt: data.gugatan = isi berkas e-Court (gugatan, jawaban) - lihat p4BacaGugatan.
+  for (const sumber of [data.sipp, data.saksi, data.itsbat, data.lain, data.ktp, data.kuasa, data.gugatan]) {
     for (const u of (sumber && sumber.usulan) || []) {
       if (!u || !u.kode || !peta.has(String(u.kode))) continue;
       const lama = perKode.get(String(u.kode));
@@ -14181,7 +14185,8 @@ function soreGambarIsi(k, data) {
     ...a3KartuWajib(pilihan.tampil, sama, hurufPilihan.length > 0),
     ...a3KartuKuasaKosong(pilihan.tampil, sama, data),
   ];
-  const tampil = [...pilihan.tampil, ...wajib];
+  // P4P7B2 10 Okt: bunyi pilihan templat hakim (5227) digabung ke kartunya.
+  const tampil = p4GabungPilihan([...pilihan.tampil, ...wajib], data);
   const tidakAda = pilihan.tidakAda.filter((kode) => !wajib.some((u) => u.kode === String(kode)));
   const peta = barisVariabel();
   const pilih = [];
@@ -14198,6 +14203,8 @@ function soreGambarIsi(k, data) {
     if (dihitung.length) bagian.push(`${dihitung.length} dihitung ABT sendiri, bukan isian (${dihitung.join(", ")})`);
     w.usulan.appendChild(soreEl("div", "aleta-t6-lembut aleta-teknis aleta-sore-tak-tampil", `Tidak ditampilkan: ${bagian.join("; ")}.`));
   }
+  // P4P7B2 10 Okt: tuntutan, anak, jawab-menjawab, dan kalimat hakim dari berkas e-Court.
+  p4GambarEcourt(w.usulan, data);
   // Perbaikan 1 Okt butir 8 (UI Baru saja): posita & keterangan saksi rapi.
   const rapiPilihan = t6Modern() ? a1GambarRapi(k, w.usulan, data.rapi) : [];
   soreBarisInput(k, pilih, hurufPilihan, rapiPilihan);
@@ -16843,6 +16850,201 @@ function a3KartuKuasaKosong(tampil, sama, data) {
   }
   return hasil;
 }
+
+/* === P4P7B2 10 Okt === */
+/**
+ * ============================================================================
+ * B2 + P4 + P7 (10 Okt 2026): ISI DARI e-COURT KE ABT
+ * ============================================================================
+ *
+ * Portal (GET /aleta-ecourt/isi-gugatan) membaca surat gugatan dan jawaban/
+ * replik/duplik/kesimpulan dari arsip e-Court ALETA, bot menimbangnya dengan
+ * kamus deteksi. Yang datang ke sini:
+ *
+ *   usulan    kartu variabel (6055 mut'ah, 6054 iddah, 7120 madliyah, 6071/6072
+ *             nafkah anak, 7778 hadhanah, 5110/5111 anak, 0007, 2004, 7084,
+ *             9881) - sumber "gugatan-ecourt" dengan kutipan "e-Court: <judul>
+ *             hal. n"; semuanya "ragu" (tidak dicentang sendiri) kecuali 9881.
+ *             5227 datang sebagai BUNYI PILIHAN templat hakim (pilihan[]) yang
+ *             digabung ke kartu 5227 yang sudah ada (p4GabungPilihan).
+ *   tuntutan, anak, jawab, kalimat - digambar di lipatan "Dari berkas e-Court"
+ *             (p4GambarEcourt): daftar tuntutan + nominal + pihak, anak,
+ *             ringkasan jawab-menjawab, dan rangkaian kata hakim untuk disalin.
+ *
+ * Tidak ada yang ditulis sebelum petugas mencentang dan menekan Input ke ABT.
+ */
+const P4_VAR_ECOURT = Object.freeze(["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227"]);
+const ALETA_API_ISI_GUGATAN = "/aleta/api/aleta-ecourt/isi-gugatan";
+
+/** Dibaca bersama bacaan Isi dari SIPP lainnya. Diam bila server lama belum punya rutenya. */
+async function p4BacaGugatan(data) {
+  const peta = barisVariabel();
+  const nomor = nomorPerkaraAbt();
+  if (!nomor || !P4_VAR_ECOURT.some((k) => peta.has(k))) return;
+  try {
+    const q = new URLSearchParams({ nomor, lawan: nilaiVariabel(VAR_PIHAK_LAWAN) || "", pelaku: nilaiVariabel(VAR_PIHAK_PELAKU) || "" });
+    const majelis = String(nilaiVariabel("8554") || "").trim();
+    if (/^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(majelis)) q.set("majelis", majelis);
+    const respons = await fetch(`${ALETA_API_ISI_GUGATAN}?${q.toString()}`, { credentials: "include", cache: "no-store" });
+    if (respons.status === 404) return;
+    if (!respons.ok) throw new Error(`server ALETA menjawab ${respons.status}`);
+    const luar = await respons.json();
+    const isi = luar && luar.data ? luar.data : luar;
+    const larik = (k) => (Array.isArray(isi && isi[k]) ? isi[k] : []);
+    data.gugatan = {
+      usulan: larik("usulan").filter((u) => u && peta.has(String(u.kode))),
+      tuntutan: larik("tuntutan"),
+      anak: larik("anak"),
+      jawab: larik("jawab"),
+      kalimat: larik("kalimat"),
+      diabaikan: larik("diabaikan"),
+      dokumen: larik("dokumen"),
+    };
+    for (const c of larik("catatan")) data.catatan.push(`Berkas e-Court: ${String(c)}`);
+  } catch (galat) {
+    data.catatan.push(`Isi dari berkas e-Court: ${sorePesan(galat)}`);
+  }
+}
+
+/** Bunyi pilihan 5227 (templat hakim) digabung ke kartu yang sudah tampil - kartu itu tetap miliknya. */
+function p4GabungPilihan(tampil, data) {
+  const dariEcourt = new Map();
+  for (const u of (data && data.gugatan && data.gugatan.usulan) || []) {
+    if (u && Array.isArray(u.pilihan) && u.pilihan.length) dariEcourt.set(String(u.kode), u);
+  }
+  if (!dariEcourt.size) return tampil;
+  return (tampil || []).map((u) => {
+    const e = dariEcourt.get(String(u && u.kode));
+    if (!e || e === u || (Array.isArray(u.pilihan) && u.pilihan.length)) return u;
+    return { ...u, pilihan: e.pilihan, sumber: [...(Array.isArray(u.sumber) ? u.sumber : []), ...(e.sumber || [])] };
+  });
+}
+
+/** Salin teks - clipboard bila ada (SIPP satker bukan konteks aman), selain itu execCommand. */
+async function p4Salin(teks) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(teks);
+      return true;
+    }
+  } catch (_galat) {
+    /* jatuh ke cara lama */
+  }
+  const kotak = document.createElement("textarea");
+  kotak.value = teks;
+  kotak.setAttribute("readonly", "");
+  kotak.style.position = "fixed";
+  kotak.style.opacity = "0";
+  document.body.appendChild(kotak);
+  kotak.select();
+  let berhasil = false;
+  try {
+    berhasil = document.execCommand("copy");
+  } catch (_galat) {
+    berhasil = false;
+  }
+  kotak.remove();
+  return berhasil;
+}
+
+function p4Rupiah(n) {
+  const x = Math.round(Number(n) || 0);
+  return `Rp${String(x).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+}
+
+/** Lipatan "Dari berkas e-Court" di bawah kartu usulan. */
+function p4GambarEcourt(wadah, data) {
+  const g = data && data.gugatan;
+  if (!wadah || !g) return;
+  const adaIsi = g.tuntutan.length || g.anak.length || g.jawab.length || g.kalimat.length;
+  if (!adaIsi && !g.dokumen.length) return;
+  const kotak = document.createElement("details");
+  kotak.className = "aleta-abt-kartu aleta-p4-ecourt";
+  const ringkas = [];
+  if (g.tuntutan.length) ringkas.push(`${g.tuntutan.length} tuntutan`);
+  if (g.anak.length) ringkas.push(`${g.anak.length} anak`);
+  if (g.jawab.length) ringkas.push(`${g.jawab.length} jawab-menjawab`);
+  if (g.kalimat.length) ringkas.push(`${g.kalimat.length} kalimat hakim`);
+  kotak.appendChild(buatElemen("summary", "aleta-abt-nama", `Dari berkas e-Court: ${ringkas.join(" · ") || "tidak ada yang terbaca"}`));
+  const lembut = (teks) => kotak.appendChild(buatElemen("div", "aleta-t6-lembut aleta-teknis", teks));
+  lembut("Usulan - nominal yang DITUNTUT bukan yang dikabulkan; amar dan dasar hukum diperiksa hakim. Kartu variabel di atas berlabel \"dari gugatan e-Court — periksa\".");
+
+  if (g.tuntutan.length) {
+    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "Tuntutan tambahan (accessoir)"));
+    for (const t of g.tuntutan) {
+      const baris = buatElemen("div", "aleta-abt-kutipan");
+      const n = t.nominal || null;
+      const nominal = n ? `${p4Rupiah(n.total || n.nilai)}${n.perBulan && n.kali ? ` (${p4Rupiah(n.perBulan)}/bulan × ${n.kali} bulan)` : n.periode === "bulan" ? " per bulan" : n.periode === "hari" ? " per hari" : ""}` : t.benda ? `berupa ${t.benda}` : "tanpa nominal";
+      baris.appendChild(buatElemen("span", "aleta-abt-asal", t.label || t.jenis));
+      baris.appendChild(
+        buatElemen(
+          "span",
+          "aleta-abt-kalimat",
+          `${nominal} · dituntut ${t.penuntut || "?"}${t.rekonvensi ? " (rekonvensi)" : ""}${t.dibebani ? ` kepada ${t.dibebani}` : ""}${n && n.cocokTerbilang === false ? " · angka dan terbilang berbeda - periksa" : ""}`
+        )
+      );
+      baris.appendChild(buatElemen("div", "aleta-t6-lembut", `${t.sumber || "e-Court"}: "${t.kutipan || ""}"`));
+      kotak.appendChild(baris);
+    }
+  }
+  if (g.diabaikan.length) {
+    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "Bukan tuntutan (kesanggupan / penolakan / dasar hukum)"));
+    for (const x of g.diabaikan.slice(0, 6)) {
+      kotak.appendChild(buatElemen("div", "aleta-t6-lembut", `${x.sebab || "-"} · ${x.judul || ""}${x.halaman ? ` hal. ${x.halaman}` : ""}: "${x.kutipan || ""}"`));
+    }
+  }
+  if (g.anak.length) {
+    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "Anak (tidak dicatat SIPP)"));
+    for (const a of g.anak) {
+      kotak.appendChild(buatElemen("div", "aleta-abt-kutipan", `${a.nama}${a.umur ? `, umur ${a.umur}` : ""}${a.tanggalLahir ? `, lahir ${a.tanggalLahir}` : ""} - ${a.sumber || "e-Court"}`));
+    }
+  }
+  if (g.jawab.length) {
+    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "Jawab-menjawab"));
+    for (const j of g.jawab) {
+      const lipat = document.createElement("details");
+      lipat.appendChild(
+        buatElemen("summary", "aleta-abt-kutipan", `${j.judul} (${j.peran}${j.rekonvensi === "ada" ? ", memuat rekonvensi" : ""}) - ${(j.diakui || []).length} dalil diakui, ${(j.dibantah || []).length} dibantah`)
+      );
+      lipat.appendChild(buatElemen("div", "aleta-t6-lembut", j.ringkas || ""));
+      for (const d of j.diakui || []) lipat.appendChild(buatElemen("div", "aleta-abt-kutipan", `diakui: ${d}`));
+      for (const d of j.dibantah || []) lipat.appendChild(buatElemen("div", "aleta-abt-kutipan", `dibantah: ${d}`));
+      kotak.appendChild(lipat);
+    }
+  }
+  if (g.kalimat.length) {
+    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "Rangkaian kata hakim (sunting dulu sebelum dipakai)"));
+    for (const k of g.kalimat) {
+      const baris = buatElemen("div", "aleta-abt-kutipan aleta-p4-kalimat");
+      baris.appendChild(buatElemen("span", "aleta-abt-asal", k.label || k.kode));
+      const teks = document.createElement("textarea");
+      teks.className = "aleta-abt-sunting-kotak";
+      teks.value = k.teks || "";
+      teks.rows = Math.min(6, Math.max(2, Math.ceil((teks.value.length || 1) / 90)));
+      baris.appendChild(teks);
+      const salin = buatElemen("button", "aleta-perkakas-pulih", "Salin");
+      salin.type = "button";
+      salin.title = "Menyalin kalimat (yang sudah Anda sunting di kotak) - tidak menulis ke ABT";
+      salin.addEventListener("click", async () => {
+        const berhasil = await p4Salin(teks.value);
+        salin.textContent = berhasil ? "Tersalin" : "Gagal - pilih teks lalu Ctrl+C";
+        setTimeout(() => {
+          salin.textContent = "Salin";
+        }, 2000);
+      });
+      baris.appendChild(salin);
+      if (Array.isArray(k.kosong) && k.kosong.length) baris.appendChild(buatElemen("div", "aleta-t6-lembut", `Lengkapi: ${k.kosong.map((x) => `{${x}}`).join(", ")}`));
+      kotak.appendChild(baris);
+    }
+  }
+  if (g.dokumen.length) {
+    lembut(
+      `Berkas dibaca: ${g.dokumen.map((d) => `${d.judul} (${d.terbaca ? `${d.baca === "ocr" ? "OCR" : "teks"}${d.halaman ? `, ${d.halaman} hal.` : ""}` : "tidak terbaca"})`).join("; ")}.`
+    );
+  }
+  wadah.appendChild(kotak);
+}
+/* === AKHIR P4P7B2 === */
 
 /** Pemetaan blangko putusan mengenali halaman ini: tokennya, atau nama berkasnya. */
 function a3DikenaliPeta(peta) {
