@@ -33,6 +33,7 @@ import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-tampilan-ekstensi";
 import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templat-hukum";
 import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
+import { AletaEcourtKamusSumber } from "@/components/portal/aleta-ecourt-kamus-sumber";
 import { AletaEcourtPemetaanBlangko } from "@/components/portal/aleta-ecourt-pemetaan-blangko";
 import { AletaEcourtPetaPenetapan } from "@/components/portal/aleta-ecourt-peta-penetapan";
 import { AletaEcourtProfilSaklar } from "@/components/portal/aleta-ecourt-profil-saklar";
@@ -380,6 +381,10 @@ export function AletaEcourtAdmin() {
             #abt-wajib. */}
         <AletaEcourtTemplatHukum />
         <AletaEcourtAbtWajib />
+        {/* D1 (10 Okt 2026): kamus variabel ABT - sumber, arti, blangko
+            pemakai, status; cermin SIPP untuk pengingat sebelum CETAK (B1).
+            Jangkar #kamus-variabel-abt. */}
+        <AletaEcourtKamusSumber />
         {/* Pemetaan blangko putusan, relaas, dan pemberitahuan putusan
             (butir 17, 30 Sep 2026). Jangkar #pemetaan-blangko - tab Juru Sita
             di ekstensi menautkan ke sini. */}

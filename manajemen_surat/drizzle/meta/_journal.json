@@ -407,6 +407,13 @@
       "when": 1790248801001,
       "tag": "0058_aleta_masuk_jejak",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1790508001001,
+      "tag": "0059_aleta_kamus_variabel_sumber",
+      "breakpoints": true
     }
   ]
 }
