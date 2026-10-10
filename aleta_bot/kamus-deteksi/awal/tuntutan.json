@@ -1,0 +1,502 @@
+{
+  "kelompok": "tuntutan",
+  "versi": 1,
+  "catatan": "P4 (10 Okt 2026, agen 3): tuntutan tambahan (accessoir) di gugatan/posita/petitum dan jawaban/rekonvensi. Dibaca tuntutanDeteksiService.js lewat kamusDeteksi.polaKelompok('tuntutan'). peran: jenis (kunci = jenis tuntutan), tuntut (kata kerja menuntut), abaikan (bukan tuntutan: menolak, tidak menuntut, kutipan pasal), periode (kunci = bulan/hari/tahun), kali (berapa bulan), total (penanda jumlah akhir), bagian (petitum/subsidair/rekonvensi/konvensi), pembebanan (siapa dihukum membayar; grup 1 = sebutan, grup 2 = Rekonvensi). Angka ukur: aleta_bot/tools/ukur-deteksi-tuntutan.js atas sipp_donggala salinan 9 Okt.",
+  "pola": [
+    {
+      "kode": "tuntutan-mutah",
+      "label": "Mut'ah",
+      "kunci": "mutah",
+      "peran": "jenis",
+      "regex": "\\bmu'?\\s?t'?h?ah\\b|\\bmuth'?ah\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Mut'ah berupa uang sebesar Rp. 2.000.000,-",
+        "membayar mu'tah kepada Penggugat",
+        "Mutah sejumlah Rp1.000.000,00"
+      ],
+      "contohSalah": [
+        "dengan mutasi jabatan",
+        "secara mutlak"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "sumber": "posita+petitum SIPP perkara diputus vs amar (sipp_donggala salinan 9 Okt), salah tangkap diperiksa tangan; aleta_bot/tools/ukur-deteksi-tuntutan.js",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Teks sudah dirapikan sebelum diuji: petik ’‘`´ dan &#39; menjadi '. UKUR 10 Okt: Gugatan SIPP jarang memuat mut'ah (124 amar menyebut mut'ah tanpa tuntutan di SIPP - ex officio). Berkas e-Court lokal: 5 perkara, 5/5 jenis cocok amar. n kecil -> ragu."
+    },
+    {
+      "kode": "tuntutan-iddah",
+      "label": "Nafkah iddah",
+      "kunci": "iddah",
+      "peran": "jenis",
+      "regex": "(?:^|[^a-z])'?(?:iddah|iddha|idah|idda|eddah)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Nafkah iddah sebesar Rp. 3.000.000,-",
+        "nafkah selama masa 'iddah",
+        "nafkah iddha dan mut'ah"
+      ],
+      "contohSalah": [
+        "Penggugat bernama Faridah",
+        "biaya hidup"
+      ],
+      "ukur": {
+        "n": 9,
+        "tepat": 9,
+        "salahTangkap": 0,
+        "sumber": "posita+petitum SIPP perkara diputus vs amar (sipp_donggala salinan 9 Okt), salah tangkap diperiksa tangan; aleta_bot/tools/ukur-deteksi-tuntutan.js",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Maskan dan kiswah selama iddah ikut jenis ini. UKUR 10 Okt: n kecil -> ragu. Berkas e-Court lokal 5/5."
+    },
+    {
+      "kode": "tuntutan-madliyah",
+      "label": "Nafkah lampau (madliyah)",
+      "kunci": "madliyah",
+      "peran": "jenis",
+      "regex": "\\bmad[hl]?[iy]?y?ah\\b|\\bmadiah\\b|\\bnafkah\\s+(?:yang\\s+)?(?:lampau|terhutang|terutang|telah\\s+lalu|masa\\s+lalu|yang\\s+lalu|yang\\s+tidak\\s+diberikan|selama\\s+(?:di\\s*tinggal|pisah|berpisah))|\\b(?:biaya\\s+)?(?:hadh?[ao]nah|hadlon?ah)\\s+(?:yang\\s+)?terh?utang",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Nafkah Lampau sebesar Rp. 10.000.000,-",
+        "nafkah madhiyah selama 7 bulan",
+        "nafkah terhutang sejak November 2023",
+        "nafkah madliyah"
+      ],
+      "contohSalah": [
+        "nafkah iddah selama 3 bulan",
+        "biaya hidup sehari-hari"
+      ],
+      "ukur": {
+        "n": 9,
+        "tepat": 9,
+        "salahTangkap": 0,
+        "sumber": "posita+petitum SIPP perkara diputus vs amar (sipp_donggala salinan 9 Okt), salah tangkap diperiksa tangan; aleta_bot/tools/ukur-deteksi-tuntutan.js",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "\"nafkah lampau anak\" dan \"biaya hadhanah terhutang\" = madliyah untuk anak (ruas untukAnak). \"Madiyah\" dapat nama orang - nama pihak/saksi tidak berada dalam butir bertuntutan, dan kata kerja menuntut tetap disyaratkan. UKUR 10 Okt: n kecil -> ragu. 'nafkah lampau anak' dihitung madliyah untuk anak."
+    },
+    {
+      "kode": "tuntutan-nafkah-anak",
+      "label": "Nafkah anak",
+      "kunci": "nafkah-anak",
+      "peran": "jenis",
+      "regex": "\\b(?:nafkah|biaya\\s+(?:hidup|nafkah|pemeliharaan|pendidikan|hadh?[ao]nah|hadlon?ah|pengasuhan))\\b(?:(?!iddah|idah|mut'?ah|lampau|madl|madh|terh?utang|Penggugat|Tergugat|Pemohon|Termohon|istri|isteri)[^.;:]){0,60}?\\banak|\\bmenafkahi\\s+(?:\\S+\\s+){0,3}?anak|\\b(?:biaya\\s+)?(?:hadh?[ao]nah|hadlon?ah)\\s*\\((?:nafkah|biaya)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Nafkah anak-anak sejumlah Rp. 3.000.000,-",
+        "biaya nafkah hidup dan biaya pendidikan anak-anak sebesar Rp.2.500.000,-",
+        "memberikan nafkah kepada kedua anak"
+      ],
+      "contohSalah": [
+        "menetapkan hak asuh anak kepada Penggugat",
+        "nafkah iddah"
+      ],
+      "ukur": {
+        "n": 36,
+        "tepat": 35,
+        "salahTangkap": 1,
+        "sumber": "posita+petitum SIPP perkara diputus vs amar (sipp_donggala salinan 9 Okt), salah tangkap diperiksa tangan; aleta_bot/tools/ukur-deteksi-tuntutan.js",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Bila butir yang sama menyebut madliyah (lampau/terhutang), yang dipakai madliyah untuk anak. UKUR 10 Okt: Salah tangkap: 151/Pdt.G/2022 ('saat Penggugat meminta nafkah untuk anak' - dalil). 97,2% tetapi nominal dituntut != dikabulkan dan hukum diperiksa hakim -> ragu."
+    },
+    {
+      "kode": "tuntutan-hadhanah",
+      "label": "Hak asuh anak (hadhanah)",
+      "kunci": "hadhanah",
+      "peran": "jenis",
+      "regex": "\\bhak\\s+(?:asuh|hadh?[ao]nah|hadlon?ah|pemeliharaan|pengasuhan|alimentasi)|\\b(?:berada\\s+)?(?:di\\s*bawah|dalam)\\s+(?:asuhan|pengasuhan|pemeliharaan|hadh?anah)\\b|\\bdi\\s*asuh\\s+(?:dan\\s+dirawat\\s+)?oleh\\b|\\bhadh?[ao]nah\\b|\\bhadlon?ah\\b|\\bpemegang\\s+hak\\s+asuh|\\bhak\\s+mengasuh|\\bberhak\\s+(?:dalam+\\s+hal\\s+)?(?:pengasuhan|mengasuh|pemeliharaan\\s+anak)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Menetapkan hak asuh anak kepada Penggugat",
+        "anak tersebut dibawah asuhan Penggugat",
+        "memohon hak hadhanah (hak asuh)"
+      ],
+      "contohSalah": [
+        "nafkah anak sebesar Rp1.000.000",
+        "biaya hidup anak"
+      ],
+      "ukur": {
+        "n": 91,
+        "tepat": 89,
+        "salahTangkap": 2,
+        "sumber": "posita+petitum SIPP perkara diputus vs amar (sipp_donggala salinan 9 Okt), salah tangkap diperiksa tangan; aleta_bot/tools/ukur-deteksi-tuntutan.js",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "\"biaya hadhanah\" adalah nafkah anak, bukan hak asuh - didahulukan pola nafkah-anak/madliyah. UKUR 10 Okt: Salah tangkap: 793/Pdt.P/2018, 407/Pdt.G/2024 (kalimat fakta 'dalam pengasuhan'). 97,8% - tetap ragu: hak asuh adalah amar yang diputus hakim."
+    },
+    {
+      "kode": "tuntutan-harta-bersama",
+      "label": "Harta bersama",
+      "kunci": "harta-bersama",
+      "peran": "jenis",
+      "regex": "\\bharta\\s+(?:bersama|gono[\\s-]*gini|gana[\\s-]*gini|yang\\s+diperoleh\\s+selama\\s+(?:dalam\\s+)?perkawinan)|\\bgono[\\s-]*gini\\b|\\bsita\\s+marital",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Menetapkan sebagai harta bersama berupa sebidang tanah",
+        "pembagian harta gono-gini"
+      ],
+      "contohSalah": [
+        "harta bawaan Penggugat",
+        "hidup bersama"
+      ],
+      "ukur": {
+        "n": 22,
+        "tepat": 21,
+        "salahTangkap": 1,
+        "sumber": "posita+petitum SIPP perkara diputus vs amar (sipp_donggala salinan 9 Okt), salah tangkap diperiksa tangan; aleta_bot/tools/ukur-deteksi-tuntutan.js",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Pada izin poligami penetapan harta bersama memang tuntutan (Pasal 5 UU 1/1974 jo. 94 KHI). UKUR 10 Okt: Salah tangkap: 398/Pdt.G/2021 (sita marital atas harta warisan). Termasuk tuntutan harta bersama di perkara waris/poligami."
+    },
+    {
+      "kode": "tuntutan-mahar",
+      "label": "Mahar terutang",
+      "kunci": "mahar",
+      "peran": "jenis",
+      "regex": "\\bmahar\\s+(?:yang\\s+)?(?:masih\\s+)?(?:terh?utang|belum\\s+(?:di\\s*bayar|dibayarkan|lunas|diserahkan|diberikan)|ter[- ]?hutang)|\\bh?utang\\s+mahar|\\b(?:membayar|melunasi|menyerahkan)\\s+(?:sisa\\s+)?mahar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "mahar yang masih terhutang berupa emas 5 gram",
+        "menghukum Tergugat membayar mahar"
+      ],
+      "contohSalah": [
+        "dengan mahar berupa seperangkat alat sholat dibayar tunai",
+        "mahar mitsil"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "sumber": "posita+petitum SIPP perkara diputus vs amar (sipp_donggala salinan 9 Okt), salah tangkap diperiksa tangan; aleta_bot/tools/ukur-deteksi-tuntutan.js",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "\"mahar\" saja ada di hampir tiap posita akad nikah - itu fakta pernikahan, bukan tuntutan. UKUR 10 Okt: n=1 (+1 berkas e-Court 365/Pdt.G/2026) -> ragu."
+    },
+    {
+      "kode": "tuntutan-kata-tuntut",
+      "label": "Kata kerja menuntut",
+      "kunci": "tuntut",
+      "peran": "tuntut",
+      "regex": "\\b(?:menuntut|dituntut|tuntutan|meminta|memohon|mohon|menghukum|mengukum|menghukumkan|dibebankan|membebankan|ditanggung|berhak\\s+(?:atas|untuk|mendapatkan|memperoleh|menerima)|penerima\\s+nafkah)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Menghukum Tergugat untuk membayar",
+        "Penggugat meminta nafkah iddah",
+        "Penggugat berhak atas mut'ah"
+      ],
+      "contohSalah": [
+        "Tergugat sering marah",
+        "Tergugat tidak pernah memberikan nafkah kepada anak",
+        "anak tersebut berada dalam pengasuhan Tergugat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Syarat butir di LUAR petitum dihitung tuntutan. Sengaja TANPA memberi/memberikan/membayar/sebesar: ukuran 10 Okt atas posita SIPP menunjukkan kalimat dalil alasan ('Tergugat tidak pernah memberikan nafkah kepada anak') menjadi salah tangkap terbanyak."
+    },
+    {
+      "kode": "tuntutan-abaikan-tolak",
+      "label": "Bukan tuntutan: menolak / tidak menuntut",
+      "kunci": "abaikan",
+      "peran": "abaikan",
+      "regex": "\\b(?:tidak|tdk|tak|bukan)\\s+(?:akan\\s+)?(?:menuntut|meminta|memohon|mempersoalkan|mempermasalahkan|keberatan\\s+untuk\\s+tidak)\\b|\\bmenolak\\s+(?:untuk\\s+)?(?:membayar|memberikan|memberi|tuntutan|permintaan|gugatan\\s+rekonvensi)|\\b(?:merelakan|mengikhlaskan|ikhlas\\s+tidak)\\b|\\btidak\\s+(?:sanggup|mampu)\\s+(?:membayar|memberikan|memberi)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Penggugat tidak menuntut nafkah iddah",
+        "Pemohon menolak membayar mut'ah",
+        "Termohon mengikhlaskan nafkah lampau"
+      ],
+      "contohSalah": [
+        "Penggugat menuntut nafkah iddah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Butir yang cocok tidak menghasilkan tuntutan; disebut di catatan supaya hakim tahu ada sikap pihak."
+    },
+    {
+      "kode": "tuntutan-abaikan-kesanggupan",
+      "label": "Bukan tuntutan: kesanggupan pihak",
+      "kunci": "sanggup",
+      "peran": "abaikan",
+      "regex": "\\b(?:bersedia|sanggup|menyanggupi|kesanggupan|siap)\\s+(?:untuk\\s+)?(?:memberi|memberikan|membayar|menanggung|menyerahkan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pemohon bersedia memberi nafkah kepada Termohon selama masa iddah",
+        "Pemohon sanggup membayar mut'ah"
+      ],
+      "contohSalah": [
+        "Termohon menuntut mut'ah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Kesanggupan (biasanya Pemohon cerai talak) disebut tersendiri, bukan tuntutan - penting bagi hakim tetapi bukan dalil yang dituntut."
+    },
+    {
+      "kode": "tuntutan-abaikan-dasar-hukum",
+      "label": "Bukan tuntutan: kutipan dasar hukum",
+      "kunci": "abaikan",
+      "peran": "abaikan",
+      "regex": "\\b(?:pasal|ayat|kompilasi\\s+hukum\\s+islam|undang-undang|sema|perma|yurisprudensi|qs\\.?|surat\\s+al-?|al-?baqarah|imam\\s+\\w+|kitab)\\b[^;]{0,80}\\b(?:wajib|berhak|menyebutkan|menyatakan|berbunyi|mengatur)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pasal 149 huruf a Kompilasi Hukum Islam menyatakan bekas suami wajib memberikan mut'ah"
+      ],
+      "contohSalah": [
+        "Menghukum Pemohon membayar mut'ah sejumlah Rp1.000.000"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Dasar hukum yang dikutip para pihak bukan tuntutan. Butir petitum tidak pernah diabaikan karena pola ini."
+    },
+    {
+      "kode": "tuntutan-periode-bulan",
+      "label": "Per bulan",
+      "kunci": "bulan",
+      "peran": "periode",
+      "regex": "\\b(?:setiap|tiap|per)\\s*bulan(?:nya)?\\b|\\bperbulan(?:nya|ya)?\\b|\\bsebulan\\b|/\\s*bulan\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Rp1.000.000,00 setiap bulan",
+        "2.000.000/ bulan",
+        "Rp.3.000.000,- perbulannya"
+      ],
+      "contohSalah": [
+        "selama 3 bulan"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Hanya dibaca dalam 40 huruf sesudah nominal."
+    },
+    {
+      "kode": "tuntutan-periode-hari",
+      "label": "Per hari",
+      "kunci": "hari",
+      "peran": "periode",
+      "regex": "\\b(?:setiap|tiap|per)\\s*hari(?:nya)?\\b|\\bperhari(?:nya)?\\b|/\\s*hari\\b|\\bsehari\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Rp. 50.000,- perhari",
+        "Rp20.000,00 setiap harinya"
+      ],
+      "contohSalah": [
+        "selama 90 hari"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "tuntutan-kali-bulan",
+      "label": "Dikali N bulan",
+      "kunci": "kali",
+      "peran": "kali",
+      "regex": "(?:\\bx|\\bdikali(?:kan)?|\\bkali|\\bselama|\\bselama\\s+masa\\s+iddah)\\s*\\(?\\s*(\\d{1,3})\\s*\\)?\\s*(?:\\(\\s*[a-z ]+\\)\\s*)?bulan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Rp5.000.000,00 setiap bulan dikali 3 bulan",
+        "x 30 (tiga puluh) bulan",
+        "selama 3 (tiga) bulan"
+      ],
+      "contohSalah": [
+        "umur 3 tahun"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Grup 1 = banyak bulan."
+    },
+    {
+      "kode": "tuntutan-total",
+      "label": "Penanda jumlah akhir",
+      "kunci": "total",
+      "peran": "total",
+      "regex": "=|\\b(?:total(?:nya)?|seluruhnya|keseluruhan|sehingga|jumlah(?:nya)?|dengan\\s+jumlah|adalah)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "= Rp.45.000.000,-",
+        "sehingga total Rp.9.000.000,-"
+      ],
+      "contohSalah": [
+        "Rp1.000.000 setiap bulan"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Nominal yang didahului penanda ini (<= 30 huruf) dipakai sebagai jumlah akhir."
+    },
+    {
+      "kode": "tuntutan-bagian-petitum",
+      "label": "Awal petitum",
+      "kunci": "petitum",
+      "peran": "bagian",
+      "regex": "\\b(?:PRIMAIR|PRIMER|PETITUM)\\b|\\bmemohon\\s+(?:dengan\\s+hormat\\s+)?(?:kepada|agar|kiranya)\\b[^.]{0,220}?\\b(?:memutus(?:kan)?|mengadili|menjatuhkan\\s+putusan|menetapkan)\\b|\\bmohon\\s+(?:(?:se)?kiranya\\s+|dengan\\s+hormat\\s+)?(?:kepada\\s+)?(?:Ketua|Majelis|Bapak|Ibu|Yang\\s+Mulia)[^.]{0,220}?\\b(?:memutus(?:kan)?|mengadili|menjatuhkan|amarnya)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "PRIMAIR :",
+        "memohon dengan hormat agar kiranya majelis Hakim yang memeriksa Perkara ini memutuskan"
+      ],
+      "contohSalah": [
+        "Bahwa Penggugat memohon maaf"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Yang dipakai kemunculan TERAKHIR sebelum SUBSIDAIR."
+    },
+    {
+      "kode": "tuntutan-bagian-subsidair",
+      "label": "Akhir petitum",
+      "kunci": "subsidair",
+      "peran": "bagian",
+      "regex": "\\b(?:SUBSIDAIR|SUBSIDER|SUBSIDIAIR|ex\\s+a?equo\\s+et\\s+bono|Wassalamu)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "SUBSIDAIR:",
+        "(ex aequo et bono)"
+      ],
+      "contohSalah": [
+        "PRIMAIR"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "tuntutan-bagian-rekonvensi",
+      "label": "Awal rekonvensi",
+      "kunci": "rekonvensi",
+      "peran": "bagian",
+      "regex": "\\bdalam\\s+rekon[pv]ensi\\b|\\bgugatan\\s+(?:rekon[pv]ensi|balik)\\b|\\bpenggugat\\s+rekon[pv]ensi\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "DALAM REKONVENSI;",
+        "Jawaban dan Gugatan Rekonvensi",
+        "Dalam Rekonpensi"
+      ],
+      "contohSalah": [
+        "DALAM KONVENSI"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Butir sesudahnya pada dokumen jawaban dituntut Tergugat/Termohon (Penggugat Rekonvensi)."
+    },
+    {
+      "kode": "tuntutan-pembebanan",
+      "label": "Pihak yang dihukum membayar",
+      "kunci": "dibebani",
+      "peran": "pembebanan",
+      "regex": "\\b(?:menghukum|mengukum|membebankan(?:\\s+kepada)?|mewajibkan|memerintahkan)\\s+(?:kepada\\s+)?(Penggugat|Tergugat|Pemohon|Termohon)(\\s+(?:Konvensi\\s*/\\s*)?Rekon[pv]ensi)?\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Menghukum Tergugat Rekonvensi (Pemohon) membayar",
+        "Menghukum kepada Tergugat memberikan nafkah"
+      ],
+      "contohSalah": [
+        "Mengabulkan gugatan Penggugat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "-",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Tergugat Rekonvensi = pihak yang mengajukan perkara (0046); Penggugat Rekonvensi = 0047."
+    }
+  ],
+  "templat": []
+}

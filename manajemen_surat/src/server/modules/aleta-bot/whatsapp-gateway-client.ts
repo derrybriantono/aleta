@@ -4724,3 +4724,22 @@ export async function gatewayUkurTipe(muatan: {
     timeoutMs: TIMEOUT_PENILAIAN_MS,
   });
 }
+
+/* === P4P7B2 10 Okt === */
+/**
+ * B2/P4/P7 (10 Okt 2026): teks berkas gugatan/jawaban e-Court -> tuntutan,
+ * anak, jawab-menjawab, usulan variabel ABT, dan kalimat hakim. Hanya membaca.
+ */
+export async function postGatewayIsiGugatan(muatan: {
+  nomorPerkara: string;
+  sebutan: { lawan: string; pelaku: string };
+  majelis?: string;
+  dokumen: Array<{ judul: string; peran: string; teks: string; baca: "teks" | "ocr"; penuntutKode: string }>;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/abt/isi-gugatan", {
+    method: "POST",
+    body: JSON.stringify(muatan),
+    timeoutMs: 30_000,
+  });
+}
+/* === AKHIR P4P7B2 === */

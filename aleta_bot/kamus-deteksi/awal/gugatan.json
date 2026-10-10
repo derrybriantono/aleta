@@ -1,0 +1,78 @@
+{
+  "kelompok": "gugatan",
+  "versi": 1,
+  "catatan": "B2 (10 Okt 2026, agen 3) - KELOMPOK BARU: membaca isi gugatan/jawaban e-Court untuk data yang tidak ada di SIPP (anak, umur anak, sikap jawaban). peran: anak (wilayah kalimat anak), anak-umur (grup 1 tahun, grup 2 bulan), anak-lahir (grup 1 tanggal), jawab (kunci diakui/dibantah). Dibaca tuntutanDeteksiService.js.",
+  "pola": [
+    {
+      "kode": "gugatan-anak-wilayah",
+      "label": "Kalimat yang menyebut anak",
+      "kunci": "anak",
+      "peran": "anak",
+      "regex": "\\b(?:di\\s*karuniai|karunia(?:i)?|mempunyai|memiliki|telah\\s+lahir)\\b[^.;]{0,60}?\\banak|\\banak(?:-anak)?\\s+(?:yang\\s+)?(?:masing-masing\\s+)?bernama|\\banak\\s+(?:kandung|hasil\\s+perkawinan)|\\bhak\\s+(?:asuh|hadh?anah)[^.;]{0,40}?\\banak",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": ["telah di karunia anak 2 (dua) orang anak bernama:", "dikaruniai seorang anak perempuan bernama", "anak yang bernama: NUR KHAFIZAH binti ANJAS"],
+      "contohSalah": ["Penggugat anak ketiga dari lima bersaudara"],
+      "ukur": { "n": 0, "tepat": 0, "salahTangkap": 0, "sumber": "lihat hasil-agen3.md", "tanggal": "2026-10-10" },
+      "catatan": "Nama anak dipetik dari 600 huruf sesudahnya: kata sebelum bin/binti."
+    },
+    {
+      "kode": "gugatan-anak-umur",
+      "label": "Umur anak",
+      "kunci": "umur",
+      "peran": "anak-umur",
+      "regex": "\\b(?:umur|usia|berumur|berusia)\\s*[:.]?\\s*(?:\\+\\s*|±\\s*|kurang\\s+lebih\\s+)?(\\d{1,2})\\s*(?:\\(\\s*[a-z ]+\\)\\s*)?tahun(?:\\s*(\\d{1,2})\\s*(?:\\(\\s*[a-z ]+\\)\\s*)?bulan)?",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": ["Umur 5 tahun 3 bulan", "usia 15 tahun", "umur 1 (satu) tahun 7 (tujuh) bulan"],
+      "contohSalah": ["menikah 5 tahun yang lalu"],
+      "ukur": { "n": 0, "tepat": 0, "salahTangkap": 0, "sumber": "-", "tanggal": "2026-10-10" },
+      "catatan": ""
+    },
+    {
+      "kode": "gugatan-anak-lahir",
+      "label": "Tanggal lahir anak",
+      "kunci": "lahir",
+      "peran": "anak-lahir",
+      "regex": "\\blahir\\s+(?:di\\s+[A-Za-z .'-]{2,30}?,?\\s*)?(?:pada\\s+)?(?:tanggal\\s+)?(\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": ["lahir tanggal 06 April 2021", "lahir di Palu, 12 Mei 2019"],
+      "contohSalah": ["lahirnya anak membawa bahagia"],
+      "ukur": { "n": 0, "tepat": 0, "salahTangkap": 0, "sumber": "-", "tanggal": "2026-10-10" },
+      "catatan": ""
+    },
+    {
+      "kode": "gugatan-jawab-diakui",
+      "label": "Jawaban mengakui dalil",
+      "kunci": "diakui",
+      "peran": "jawab",
+      "regex": "(?<!tidak\\s)(?<!bukan\\s)\\b(?:benar|membenarkan|mengakui|tidak\\s+membantah|sesuai\\s+dengan)\\s+(?:dalil|posita|poin|angka|permohonan|gugatan)|\\bbahwa\\s+benar\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": ["Bahwa benar dalil Pemohon Pada Poin 1", "Termohon membenarkan dalil angka 3"],
+      "contohSalah": ["Bahwa tidak benar dalil Pemohon angka 4"],
+      "ukur": { "n": 0, "tepat": 0, "salahTangkap": 0, "sumber": "-", "tanggal": "2026-10-10" },
+      "catatan": "Untuk klasifikasi jawaban (dalil yang diakui / dibantah) di kalimat hakim; selalu usulan."
+    },
+    {
+      "kode": "gugatan-jawab-dibantah",
+      "label": "Jawaban membantah dalil",
+      "kunci": "dibantah",
+      "peran": "jawab",
+      "regex": "\\b(?:tidak\\s+benar|membantah|menolak(?:\\s+dengan\\s+tegas)?|keberatan\\s+atas|mengada-ada|tidak\\s+sesuai\\s+(?:dengan\\s+)?fakta)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": ["Bahwa tidak benar dalil Pemohon angka 4", "Tergugat menolak dengan tegas dalil"],
+      "contohSalah": ["Bahwa benar dalil Pemohon Pada Poin 1"],
+      "ukur": { "n": 0, "tepat": 0, "salahTangkap": 0, "sumber": "-", "tanggal": "2026-10-10" },
+      "catatan": ""
+    }
+  ],
+  "templat": []
+}
