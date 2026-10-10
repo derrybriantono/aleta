@@ -288,6 +288,11 @@ function muat(p: Pilihan = {}) {
     jalankanPraperiksaPanel: async () => null,
     praperiksaSebelumMengisi: async () => ({ hentikan: false, jumlah: { perhatian: 0 }, temuan: [] }),
     gambarRaporAgen: () => dokumen.createElement("div"),
+    // Butir 6 (1.189.x): perkara di dunia uji BELUM diputus - sama dengan
+    // bacaPutusanSegar di bawah. Di peladen ambilStatusPerkara sudah tersimpan
+    // sejak panel dibuka (b6PeringatkanBilaTerisi), jadi tidak ada jeda baru.
+    // Konfirmasi timpa tidak boleh muncul untuk perkara yang belum diputus.
+    ambilStatusPerkara: async () => ({ putusan: { sudahPutus: false }, putusanLengkap: {} }),
     bacaPutusanSegar: async () => ({ sudahPutus: false }),
     perkaraIdDariHalaman: () => "",
     simpanPutusanLaluBuka: async (nomor: string) => {
@@ -332,6 +337,13 @@ function muat(p: Pilihan = {}) {
         ...(/^function nilaiTerpilihBukanBawaan\(/m.test(konten) ? ["nilaiTerpilihBukanBawaan"] : []),
         "muatanUsulanMedan",
         "bagianIsiPutusan",
+        // Butir 6 (1.189.x): tombol Isikan menunggu b6KonfirmasiTimpaPutusan
+        // (berkas yang sama, di luar potongan lama). Ikut DIPOTONG - bukan
+        // disalin - supaya jalur Isikan yang diuji tetap kode sungguhan.
+        // Salinan kode lebih tua (pembukti gigitan) belum punya fungsinya.
+        ...(/^async function b6KonfirmasiTimpaPutusan\(/m.test(konten)
+          ? ["b6KeadaanPutusanTerisi", "b6RincianPutusan", "b6KonfirmasiTimpaPutusan"]
+          : []),
         "jalankanSatuAntreanSipp",
         "muatPenggunaAleta",
       ].map((nama) => potongFungsi(konten, nama)),

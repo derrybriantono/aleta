@@ -1038,6 +1038,11 @@ async function ukurSatu(mode: "baru" | "ui") {
     namaPenggunaSipp: () => "petugas",
     a30Aktif: () => true,
     s1Aktif: () => mode === "ui",
+    // Butir 6 (1.189.x): perkara di dunia uji BELUM diputus - sama dengan
+    // bacaPutusanSegar di bawah. Di peladen ambilStatusPerkara sudah tersimpan
+    // sejak panel dibuka (b6PeringatkanBilaTerisi), jadi tidak ada jeda baru.
+    // Konfirmasi timpa tidak boleh muncul untuk perkara yang belum diputus.
+    ambilStatusPerkara: async () => ({ putusan: { sudahPutus: false }, putusanLengkap: {} }),
     bacaPutusanSegar: async () => {
       await L("statusSegar");
       catat("keadaan sebelum terbaca");
@@ -1103,6 +1108,13 @@ async function ukurSatu(mode: "baru" | "ui") {
         "nilaiTerpilihBukanBawaan",
         "muatanUsulanMedan",
         "bagianIsiPutusan",
+        // Butir 6 (1.189.x): tombol Isikan menunggu b6KonfirmasiTimpaPutusan
+        // (berkas yang sama, di luar potongan lama). Ikut DIPOTONG - bukan
+        // disalin - supaya jalur Isikan yang diuji tetap kode sungguhan.
+        // Salinan kode lebih tua (pembukti gigitan) belum punya fungsinya.
+        ...(/^async function b6KonfirmasiTimpaPutusan\(/m.test(konten)
+          ? ["b6KeadaanPutusanTerisi", "b6RincianPutusan", "b6KonfirmasiTimpaPutusan"]
+          : []),
         "jalankanPraperiksaPanel",
         "bacaUsulanBorangPutusan",
         "mintaPraperiksaPutusan",

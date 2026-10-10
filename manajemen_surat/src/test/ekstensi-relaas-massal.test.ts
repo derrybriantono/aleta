@@ -375,11 +375,24 @@ describe("(c) setiap kegagalan terbaca beserta sebabnya", () => {
 
   it("penjaga teks: BAS (massal & unduh naskah) tetap RTF - tidak ada konversi PDF di jalurnya", () => {
     const akar = path.resolve(__dirname, "../../..");
-    const basmassal = readFileSync(path.join(akar, "ekstensi-sipp/basmassal.js"), "utf8");
+    const basmassalUtuh = readFileSync(path.join(akar, "ekstensi-sipp/basmassal.js"), "utf8");
+    // Sejak 1.189.x (Kasir otomatis, butir 1-5) basmassal.js juga memuat Tab
+    // Kasir - satu IIFE tersendiri di ujung berkas, sesudah judul "TAB KASIR".
+    // PDF di sana adalah rekap pengeluaran kasir (/sidang/kasir/rekap/pdf),
+    // bukan BAS. Yang dijaga tetap sama: jalur BAS tanpa konversi PDF sama
+    // sekali; bagian Kasir hanya boleh menyebut PDF rekapnya sendiri.
+    const iKasir = basmassalUtuh.indexOf(" * TAB KASIR - ");
+    const basmassal = iKasir >= 0 ? basmassalUtuh.slice(0, iKasir) : basmassalUtuh;
+    const kasir = iKasir >= 0 ? basmassalUtuh.slice(iKasir) : "";
     const rute = readFileSync(path.join(akar, "manajemen_surat/src/app/api/aleta-ecourt/bas/naskah/route.ts"), "utf8");
-    for (const [nama, isi] of [["basmassal.js", basmassal], ["bas/naskah/route.ts", rute]] as const) {
+    for (const [nama, isi] of [["basmassal.js (bagian BAS)", basmassal], ["bas/naskah/route.ts", rute]] as const) {
       expect(isi, nama).not.toMatch(/abt\/pdf|rtfKePdf|dokumenKePdf|application\/pdf|naskah\/konversi/);
     }
+    // Bagian Kasir: tidak ada konversi naskah, dan satu-satunya PDF-nya
+    // adalah rekap kasir.
+    expect(kasir, "basmassal.js (Tab Kasir)").not.toMatch(/abt\/pdf|rtfKePdf|dokumenKePdf|naskah\/konversi|\/bas\//);
+    expect((kasir.match(/application\/pdf/g) ?? []).length).toBeLessThanOrEqual(1);
+    if (kasir.includes("application/pdf")) expect(kasir).toContain("/rekap/pdf?periode=");
     expect(rute).toContain('"Content-Type": "application/rtf"');
   });
 

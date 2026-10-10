@@ -136,6 +136,7 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   "ciutkan-selesai": { letak: "di atas tabel", contoh: redup("5 perkara yang sudah selesai diciutkan · tampilkan") },
   "tombol-penetapan-kembali": { letak: "deretan tombol di atas tabel", contoh: tombol("Penetapan kembali") },
   "tombol-kasir": { letak: "deretan tombol di atas tabel", contoh: tombol("Kasir") },
+  "tombol-kasir-harian": { letak: "deretan tombol di atas tabel", contoh: tombol("Kasir harian") },
   "layar-antrian": { letak: "deretan tombol di atas tabel", contoh: tombol("Layar antrian") },
 };
 

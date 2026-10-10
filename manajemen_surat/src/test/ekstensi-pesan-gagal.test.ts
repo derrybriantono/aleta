@@ -340,7 +340,11 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // 41 sejak uji rilis U1 (9 Okt 2026): sisa penetapan satu perkara dikirim
     // SEKALIGUS (kirimRantaiUtuh) - gagalnya disebut per langkah beserta
     // "tidak ada yang tertulis".
-    expect(lewatAlat).toBe(41);
+    // 42 sejak butir 8 (1.189.x, 10 Okt 2026): kotak "Tarik dari e-Court"
+    // menanyakan kemajuan penarikan berkala (tanyaBerkala -> "Membaca
+    // kemajuan penarikan") untuk garis persen tahap nyata jembatan. Lewat
+    // alatAmbil seperti permintaan panel lain, bukan fetch mentah.
+    expect(lewatAlat).toBe(42);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

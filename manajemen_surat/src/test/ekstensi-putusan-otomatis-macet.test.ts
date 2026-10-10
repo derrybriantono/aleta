@@ -248,6 +248,11 @@ function pasang(o: { abt: Abt; batasTungguMs?: number; batasAbtMs?: number }) {
     a30Aktif: () => true,
     s1Aktif: () => true,
     a30PesanDitahan: (_b: unknown, apa: string) => `${apa} ditahan`,
+    // Butir 6 (1.189.x): perkara di dunia uji BELUM diputus - sama dengan
+    // bacaPutusanSegar di bawah. Di peladen ambilStatusPerkara sudah tersimpan
+    // sejak panel dibuka (b6PeringatkanBilaTerisi), jadi tidak ada jeda baru.
+    // Konfirmasi timpa tidak boleh muncul untuk perkara yang belum diputus.
+    ambilStatusPerkara: async () => ({ putusan: { sudahPutus: false }, putusanLengkap: {} }),
     bacaPutusanSegar: async () => ({ sudahPutus: false, tanggal: "", status: "" }),
     a30UnggahEdoc: async (p: { putusan: File; anonimisasi: File | null }) => {
       unggahan.push({ putusan: p.putusan.name, anonimisasi: p.anonimisasi || null });
@@ -309,6 +314,13 @@ function pasang(o: { abt: Abt; batasTungguMs?: number; batasAbtMs?: number }) {
         "nilaiTerpilihBukanBawaan",
         "muatanUsulanMedan",
         "bagianIsiPutusan",
+        // Butir 6 (1.189.x): tombol Isikan menunggu b6KonfirmasiTimpaPutusan
+        // (berkas yang sama, di luar potongan lama). Ikut DIPOTONG - bukan
+        // disalin - supaya jalur Isikan yang diuji tetap kode sungguhan.
+        // Salinan kode lebih tua (pembukti gigitan) belum punya fungsinya.
+        ...(/^async function b6KonfirmasiTimpaPutusan\(/m.test(konten)
+          ? ["b6KeadaanPutusanTerisi", "b6RincianPutusan", "b6KonfirmasiTimpaPutusan"]
+          : []),
         "jalankanPraperiksaPanel",
         "bacaUsulanBorangPutusan",
         "mintaPraperiksaPutusan",
