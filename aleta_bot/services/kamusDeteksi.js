@@ -5,7 +5,8 @@
  *
  * Lapis 1: benih JSON di kamus-deteksi/awal/<kelompok>.json.
  * Lapis 2: baris database (diisi lewat aturLapisDatabase oleh pemuat tabel aleta_* - dipasang terpisah).
- * Baris database dengan kode sama menimpa benih; status "nonaktif" mematikan pola.
+ * Baris database dengan kode sama menimpa benih; hanya status "aktif" (atau tanpa status) yang dipakai -
+ * "draf" menunggu tinjauan, "nonaktif" dimatikan.
  */
 
 const fs = require("fs");
@@ -37,7 +38,9 @@ function gabung(daftarBenih, daftarDb, kelompok) {
   const peta = new Map();
   for (const x of daftarBenih) peta.set(x.kode, { ...x, kelompok, asal: "benih" });
   for (const x of daftarDb) if (x.kelompok === kelompok) peta.set(x.kode, { ...x, asal: "database" });
-  return Array.from(peta.values()).filter((x) => x.status !== "nonaktif");
+  // Hanya yang AKTIF dipakai mendeteksi: "draf" = tersimpan untuk ditinjau (sama dengan lapis database, yang tidak
+  // mengirim draf ke bot), "nonaktif" = dimatikan. Tanpa status dianggap aktif.
+  return Array.from(peta.values()).filter((x) => (x.status || "aktif") === "aktif");
 }
 
 const cacheRegex = new Map();

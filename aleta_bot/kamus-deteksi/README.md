@@ -7,6 +7,7 @@ disimpan sebagai DATA, bukan kode, agar bisa ditambah tanpa rilis. Sumbernya dua
    `data/` di-mount volume di server dan isinya ditimpa).
 2. **Database** (tabel `aleta_*` di Postgres portal) - tambahan/ubahan dari layar Admin "Kamus deteksi & kalimat".
    Baris database dengan `kode` yang sama MENIMPA benih; `status: "nonaktif"` mematikan pola benih.
+   **Hanya `status: "aktif"` yang dipakai mendeteksi.** `draf` = tersimpan untuk ditinjau/diukur, BELUM dipakai.
 
 Kode pemakai SELALU membaca lewat `services/kamusDeteksi.js` (`polaKelompok`, `templatKelompok`), tidak pernah
 membaca JSON langsung - agar lapisan database berlaku di mana-mana.
