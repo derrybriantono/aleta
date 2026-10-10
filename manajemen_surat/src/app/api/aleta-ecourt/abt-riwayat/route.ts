@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { bacaRiwayat, catatRiwayat } from "@/server/modules/aleta-ecourt/abt-riwayat";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { catatKoreksi } from "@/server/modules/aleta-ecourt/kamus-deteksi";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
     const daftarMentah = Array.isArray(badan.daftar) ? badan.daftar : [badan];
 
     const tercatat = [];
+    let koreksi = 0;
     for (const satu of daftarMentah.slice(0, 50)) {
       const isi = (satu ?? {}) as Record<string, unknown>;
       const baris = await catatRiwayat(db, String(actorUserId ?? ""), {
@@ -90,9 +92,38 @@ export async function POST(request: NextRequest) {
         pada: String(isi.pada ?? ""),
       });
       if (baris) tercatat.push(baris.id);
+
+      /* === KAMUS-DB 10 Okt === D2 jejak koreksi: usulan ALETA vs nilai akhir.
+         Ekstensi melampirkan {koreksi} pada catatan dari terapkanUsulanBerurutan
+         ("Input ke ABT", "Input semua yang pasti", dst.). Gagal mencatat
+         koreksi TIDAK menggagalkan riwayat - jejak ini tambahan. */
+      if (baris && isi.koreksi && typeof isi.koreksi === "object" && !Array.isArray(isi.koreksi)) {
+        const k = isi.koreksi as Record<string, unknown>;
+        try {
+          const jejak = await catatKoreksi(db, String(actorUserId ?? ""), {
+            perkaraId: String(isi.perkaraId ?? ""),
+            nomorPerkara: String(isi.nomorPerkara ?? ""),
+            variabel: String(isi.kode ?? ""),
+            namaVariabel: String(isi.nama ?? ""),
+            nilaiUsulan: String(k.usulan ?? ""),
+            sumber: String(k.sumber ?? ""),
+            kodePola: String(k.kodePola ?? ""),
+            keyakinan: String(k.keyakinan ?? ""),
+            kalimatSumber: String(k.kalimatSumber ?? ""),
+            nilaiAkhir: String(isi.sesudah ?? ""),
+            hasil: String(k.hasil ?? ""),
+            jalur: String(k.jalur ?? ""),
+            pada: String(isi.pada ?? ""),
+          });
+          if (jejak) koreksi += 1;
+        } catch {
+          /* jejak koreksi tertinggal - riwayatnya tetap tercatat */
+        }
+      }
+      /* === AKHIR KAMUS-DB === */
     }
 
-    return ok({ ok: true, tercatat: tercatat.length });
+    return ok({ ok: true, tercatat: tercatat.length, koreksi });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

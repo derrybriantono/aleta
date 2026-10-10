@@ -2363,6 +2363,33 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   return kartu;
 }
 
+/* === KAMUS-DB 10 Okt === */
+/**
+ * D2 (10 Okt 2026) - JEJAK KOREKSI: usulan yang DITAMPILKAN ALETA dan nilai
+ * yang akhirnya disimpan petugas ke ABT, dikirim bersama catatan riwayat ke
+ * /api/aleta-ecourt/abt-riwayat (portal menulis aleta_jejak_koreksi). Nilai
+ * akhirnya = "sesudah" pada catatan yang sama. Tidak ada tanda apa pun di ABT.
+ *
+ * kodePola: kode pola kamus deteksi yang melahirkan usulan (bila layanan bot
+ * mengisinya pada usulan: u.kodePola). Koreksi yang berulang atas satu kode
+ * pola menjadi CALON tinjauan pola di layar Admin (P8).
+ */
+function d2Koreksi(x, asalUsulan, bunyi, opsi) {
+  const u = (x && x.usulan) || {};
+  const s0 = Array.isArray(u.sumber) && u.sumber[0] ? u.sumber[0] : null;
+  const disunting = typeof x.disunting === "function" && x.disunting();
+  return {
+    usulan: String(u.nilai || ""),
+    sumber: String(asalUsulan || ""),
+    kodePola: typeof u.kodePola === "string" ? u.kodePola : "",
+    keyakinan: String(u.tingkat || u.keyakinan || ""),
+    kalimatSumber: s0 ? String(s0.kalimat || s0.keterangan || "").slice(0, 1000) : "",
+    hasil: bunyi && !disunting ? "dipilih" : "",
+    jalur: String((opsi && opsi.jalur) || "panel ALETA"),
+  };
+}
+/* === AKHIR KAMUS-DB === */
+
 /**
  * ============================================================================
  * TERAPKAN YANG DICENTANG - SATU PER SATU, BERURUTAN
@@ -2382,7 +2409,7 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
  * @param lapor    (teks) => void - kemajuan untuk petugas
  * @returns {Promise<{berhasil: number, gagal: string[]}>}
  */
-async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor) {
+async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor, opsi) {
   const kabar = typeof lapor === "function" ? lapor : () => {};
   const ringkasan = { berhasil: 0, gagal: [] };
 
@@ -2424,6 +2451,9 @@ async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor) {
               : "diketik petugas di panel ALETA"
             : asalUsulan,
           pada: new Date().toISOString(),
+          /* === KAMUS-DB 10 Okt === D2 jejak koreksi (lihat d2Koreksi) */
+          koreksi: d2Koreksi(x, asalUsulan, bunyi, opsi),
+          /* === AKHIR KAMUS-DB === */
         });
         const item = barisVariabel().get(x.usulan.kode);
         if (item) item.selNilai.textContent = hasil.nilaiTersimpan ?? nilaiDipakai;
@@ -14306,9 +14336,14 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
       : null;
     try {
       if (dipilih.length) {
-        const r = await terapkanUsulanBerurutan(dipilih, k.jatiDiri, (teks) => {
-          kabar.textContent = teks;
-        });
+        const r = await terapkanUsulanBerurutan(
+          dipilih,
+          k.jatiDiri,
+          (teks) => {
+            kabar.textContent = teks;
+          },
+          { jalur: "Input ke ABT" } /* KAMUS-DB 10 Okt: D2 */
+        );
         if (r.gagal.length) gagal = true;
         bagian.push(r.gagal.length ? `${r.berhasil} tersimpan, ${r.gagal.length} gagal — ${r.gagal.join("; ")}` : `${r.berhasil} variabel tersimpan`);
       }
@@ -14509,7 +14544,8 @@ function s5BukaPratinjau(k, daftar, wadah, sesudah) {
         k.jatiDiri,
         (teks) => {
           kabar.textContent = teks;
-        }
+        },
+        { jalur: "Input semua yang pasti" } /* KAMUS-DB 10 Okt: D2 */
       );
     } catch (galat) {
       r = { berhasil: 0, gagal: [`Input terhenti: ${sorePesan(galat)}`] };

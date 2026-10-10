@@ -353,6 +353,13 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 7 Oktober 2026 (0058): jejak masuk ALETA dengan akun SIPP. Tanpa kunci
   // asing - urutannya bebas.
   "aleta_masuk_jejak",
+  // 10 Oktober 2026 (0060): kamus deteksi & kalimat (lapis database), jejak
+  // koreksi petugas atas usulan ALETA, calon pola/templat dari koreksi. Tanpa
+  // kunci asing - urutannya bebas.
+  "aleta_kamus_deteksi_pola",
+  "aleta_kamus_deteksi_templat",
+  "aleta_jejak_koreksi",
+  "aleta_kamus_deteksi_calon",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

@@ -13,8 +13,12 @@ import {
   sahkanButir,
   serapPertimbangan,
   tolakButir,
+  aturLabelButir,
+  tambahKalimatPustaka,
   type Butir,
 } from "@/server/modules/aleta-ecourt/pustaka-pertimbangan";
+import { daftarKamus } from "@/server/modules/aleta-ecourt/kamus-deteksi";
+import { usulLabelKalimat } from "@/lib/kamus-deteksi";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { getSearchParam } from "@/server/shared/request";
@@ -36,6 +40,13 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan:"sahkan", ...}       mengesahkan, WAJIB menyebut atas perintah siapa
  *   POST {tindakan:"tolak", ...}        menolak, wajib beralasan
  *   POST {tindakan:"ganti", ...}        versi baru menggantikan yang lama
+ *
+ *   D3 (10 Okt 2026) - label kalimat untuk templat P6/P7:
+ *   GET ?bagian=keterangan-saksi&labelAlasan=F&labelKeadaan=pisah-rumah
+ *   POST {tindakan:"label", butirId, bagian, labelAlasan[], labelKeadaan[]}
+ *   POST {tindakan:"tambah", teks, bagian, jenisPerkara, labelAlasan[], labelKeadaan[]}
+ *   POST {tindakan:"usul-label", butirId | teks}  usulan label dari kamus deteksi
+ *                                                (tidak disimpan)
  *
  * ============================================================================
  * MEMBACA BOLEH LUAS, MENGUBAH TIDAK
@@ -59,6 +70,9 @@ export async function GET(request: NextRequest) {
     const keadaan = String(getSearchParam(request, "keadaan") ?? "").trim();
     const jenisPerkara = String(getSearchParam(request, "jenisPerkara") ?? "").trim();
     const minimal = Number(getSearchParam(request, "minimalPemakaian") ?? "0") || 0;
+    const bagian = String(getSearchParam(request, "bagian") ?? "").trim();
+    const labelAlasan = String(getSearchParam(request, "labelAlasan") ?? "").trim();
+    const labelKeadaan = String(getSearchParam(request, "labelKeadaan") ?? "").trim();
 
     if (butirId) {
       const butir = await bacaButir(db, butirId);
@@ -71,12 +85,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (cari || keadaan || jenisPerkara || minimal) {
+    if (cari || keadaan || jenisPerkara || minimal || bagian || labelAlasan || labelKeadaan) {
       const butir = await cariButir(db, {
         cari,
         jenisPerkara,
         minimalPemakaian: minimal,
         keadaan: (keadaan || "disahkan") as Butir["keadaan"],
+        bagian,
+        labelAlasan,
+        labelKeadaan,
       });
       return ok({ ada: true, jumlah: butir.length, butir });
     }
@@ -102,6 +119,11 @@ type Masukan = {
   syarat?: Record<string, unknown>;
   alasan?: string;
   teksBaru?: string;
+  bagian?: string;
+  labelAlasan?: unknown;
+  labelKeadaan?: unknown;
+  teks?: string;
+  jenisPerkara?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -145,6 +167,38 @@ export async function POST(request: NextRequest) {
             syarat: masukan.syarat,
           })
         );
+
+      /* === KAMUS-DB 10 Okt === D3 */
+      case "label":
+        return ok(
+          await aturLabelButir(db, aktor, {
+            butirId: String(masukan.butirId ?? ""),
+            bagian: masukan.bagian,
+            labelAlasan: masukan.labelAlasan,
+            labelKeadaan: masukan.labelKeadaan,
+          })
+        );
+
+      case "tambah":
+        return ok(
+          await tambahKalimatPustaka(db, aktor, {
+            teks: String(masukan.teks ?? ""),
+            bagian: masukan.bagian,
+            jenisPerkara: String(masukan.jenisPerkara ?? ""),
+            labelAlasan: masukan.labelAlasan,
+            labelKeadaan: masukan.labelKeadaan,
+          })
+        );
+
+      case "usul-label": {
+        const butir = masukan.butirId ? await bacaButir(db, String(masukan.butirId)) : null;
+        const kalimat = butir?.teks ?? String(masukan.teks ?? "");
+        if (!kalimat.trim()) return ok({ ok: false, sebab: "Kalimat tidak ditemukan." });
+        const kamus = await daftarKamus(db);
+        const pola = kamus.kelompok.flatMap((k) => k.pola.map((p) => ({ ...p, kelompok: k.kelompok })));
+        return ok({ ok: true, ...usulLabelKalimat(kalimat, pola) });
+      }
+      /* === AKHIR KAMUS-DB === */
 
       default:
         return ok({ ok: false, sebab: "Tindakan tidak dikenali." });

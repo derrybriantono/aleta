@@ -189,6 +189,9 @@ app.use("/internal/aleta-bot/ecourt-putusan/unggah", express.json({ limit: "28mb
 // Edoc penetapan PMH/PPP/PJS/PHS (perbaikan 2 Okt 2026, butir 17): unggahan manual
 // dan gambar cap sebagai base64 - batas sama dengan naskah.
 app.use("/internal/aleta-bot/penetapan-edoc/unggah", express.json({ limit: "28mb" }));
+/* === KAMUS-DB 10 Okt === lapis kamus deteksi dapat melebihi 1 MB (ratusan pola + contoh). */
+app.use("/internal/aleta-bot/kamus-deteksi/lapis", express.json({ limit: "8mb" }));
+/* === AKHIR KAMUS-DB === */
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static("public"));
 
@@ -4362,6 +4365,21 @@ app.use("/internal/aleta-bot/jadwal-sidang", require("./routes/jadwalSidangRoute
 app.use("/internal/aleta-bot/panggil", require("./routes/panggilRoutes"));
 // Pemantau sumber daya server: RAM, disk, GPU - ALETA dan seluruh server (butir 3, 6 Okt 2026).
 app.use("/internal/aleta-bot/sumber-daya", require("./routes/sumberDayaRoutes"));
+/* === KAMUS-DB 10 Okt === */
+// Kamus deteksi & kalimat: benih + lapis database dari portal, uji pola atas sampel (paket deteksi lengkap).
+// Lapis terakhir dimuat dari runtime-data saat bot hidup lalu dibaca ulang berkala; tanpa berkas = benih murni.
+app.use("/internal/aleta-bot/kamus-deteksi", require("./routes/kamusDeteksiRoutes"));
+try {
+  const muatKamus = require("./services/kamusDeteksiLapis").mulaiPemuatLapis();
+  console.log(
+    muatKamus.dimuat
+      ? `[kamus deteksi] lapis database dimuat: ${muatKamus.pola} pola, ${muatKamus.templat} templat.`
+      : `[kamus deteksi] lapis database tidak dimuat (${muatKamus.sebab}) - memakai benih saja.`
+  );
+} catch (galatKamus) {
+  console.error("[kamus deteksi] pemuat lapis gagal:", (galatKamus && galatKamus.message) || galatKamus);
+}
+/* === AKHIR KAMUS-DB === */
 // Sesi e-Court pribadi dan aksi e-Court per perkara (perbaikan 1 Okt 2026, E9-E11, 16b).
 app.use("/internal/aleta-bot", require("./routes/ecourtAksiRoutes"));
 // Edoc penetapan dari ABT, bertanda tangan dan bercap (perbaikan 2 Okt 2026, butir 17, K6).

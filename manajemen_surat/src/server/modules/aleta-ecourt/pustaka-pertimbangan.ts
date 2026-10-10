@@ -52,7 +52,57 @@ export type Butir = {
   alasanTolak: string;
   digantiOlehId: string;
   versi: number;
+  /* === KAMUS-DB 10 Okt === D3 label kalimat (0061) */
+  bagian: BagianKalimat;
+  labelAlasan: string[];
+  labelKeadaan: string[];
+  labelOleh: string;
+  labelAt: string;
+  /* === AKHIR KAMUS-DB === */
 };
+
+/* === KAMUS-DB 10 Okt === */
+/**
+ * D3 (10 Okt 2026): pustaka yang sama menampung kalimat keterangan saksi,
+ * tuntutan, posita, dan amar - bukan hanya pertimbangan - supaya templat P6/P7
+ * (kamus kelompok kalimat-saksi / kalimat-hakim) dapat memilih kalimat menurut
+ * label alasan dan keadaan. Butir lama dan hasil serap tetap "pertimbangan".
+ */
+export const BAGIAN_KALIMAT = ["pertimbangan", "keterangan-saksi", "tuntutan", "posita", "amar"] as const;
+export type BagianKalimat = (typeof BAGIAN_KALIMAT)[number];
+
+function bagianSah(nilai: unknown): BagianKalimat {
+  const isi = teks(nilai);
+  return (BAGIAN_KALIMAT as readonly string[]).includes(isi) ? (isi as BagianKalimat) : "pertimbangan";
+}
+
+function bacaDaftar(nilai: unknown): string[] {
+  try {
+    const isi = JSON.parse(String(nilai ?? "[]"));
+    return Array.isArray(isi) ? isi.map((x) => teks(x)).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Huruf alasan A-K, huruf besar, unik, terurut. */
+export function rapikanLabelAlasan(nilai: unknown): string[] {
+  const daftar = Array.isArray(nilai) ? nilai : String(nilai ?? "").split(/[,\s]+/);
+  return Array.from(new Set(daftar.map((x) => teks(x).toUpperCase()).filter((x) => /^[A-K]$/.test(x)))).sort();
+}
+
+/** Label keadaan: huruf kecil, angka, tanda hubung, titik dua (kelompok:kunci). */
+export function rapikanLabelKeadaan(nilai: unknown): string[] {
+  const daftar = Array.isArray(nilai) ? nilai : String(nilai ?? "").split(/[,\n]+/);
+  return Array.from(
+    new Set(
+      daftar
+        .map((x) => teks(x).toLowerCase().replace(/\s+/g, "-"))
+        .filter((x) => /^[a-z0-9][a-z0-9:._-]{0,60}$/.test(x))
+    )
+  ).sort();
+}
+/* === AKHIR KAMUS-DB === */
 
 export type RujukanTersimpan = Rujukan & {
   id: string;
@@ -98,6 +148,11 @@ function bentukButir(baris: Record<string, unknown>): Butir {
     alasanTolak: teks(baris.alasan_tolak),
     digantiOlehId: teks(baris.diganti_oleh_id),
     versi: Number(baris.versi) || 1,
+    bagian: bagianSah(baris.bagian),
+    labelAlasan: bacaDaftar(baris.label_alasan),
+    labelKeadaan: bacaDaftar(baris.label_keadaan),
+    labelOleh: teks(baris.label_oleh),
+    labelAt: teks(baris.label_at),
   };
 }
 
@@ -386,8 +441,9 @@ export async function gantikanButir(
   await db.run(
     `INSERT INTO aleta_pertimbangan_butir
        (id, sidik, teks, jenis_perkara, isu, syarat, jumlah_pemakaian, keadaan,
-        disahkan_oleh, atas_perintah, disahkan_at, versi, dibuat_oleh, dibuat_at, diubah_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'disahkan', ?, ?, ?, ?, ?, ?, ?)`,
+        disahkan_oleh, atas_perintah, disahkan_at, versi, dibuat_oleh, dibuat_at, diubah_at,
+        bagian, label_alasan, label_keadaan, label_oleh, label_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'disahkan', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       baruId,
       sidik,
@@ -403,6 +459,12 @@ export async function gantikanButir(
       teks(actorUserId),
       sekarang,
       sekarang,
+      // D3: versi baru membawa label versi lama.
+      bagianSah(lama.bagian),
+      JSON.stringify(bacaDaftar(lama.label_alasan)),
+      JSON.stringify(bacaDaftar(lama.label_keadaan)),
+      teks(lama.label_oleh),
+      teks(lama.label_at),
     ]
   );
 
@@ -430,6 +492,11 @@ export type PilihanButir = {
   /** Butir yang muncul sekurangnya sekian kali - menyaring yang tidak mapan. */
   minimalPemakaian?: number;
   batas?: number;
+  /* === KAMUS-DB 10 Okt === D3 */
+  bagian?: string;
+  labelAlasan?: string;
+  labelKeadaan?: string;
+  /* === AKHIR KAMUS-DB === */
 };
 
 /**
@@ -455,6 +522,20 @@ export async function cariButir(db: AletaDatabase, pilihan: PilihanButir = {}): 
     syarat.push("jumlah_pemakaian >= ?");
     nilai.push(pilihan.minimalPemakaian);
   }
+  /* === KAMUS-DB 10 Okt === D3: saring bagian dan label (JSON berisi "A" / "keadaan"). */
+  if (pilihan.bagian) {
+    syarat.push("bagian = ?");
+    nilai.push(bagianSah(pilihan.bagian));
+  }
+  for (const huruf of rapikanLabelAlasan(pilihan.labelAlasan ?? "")) {
+    syarat.push("label_alasan LIKE ?");
+    nilai.push(`%"${huruf}"%`);
+  }
+  for (const label of rapikanLabelKeadaan(pilihan.labelKeadaan ?? "")) {
+    syarat.push("label_keadaan LIKE ?");
+    nilai.push(`%"${label}"%`);
+  }
+  /* === AKHIR KAMUS-DB === */
 
   const batas = Math.min(Math.max(pilihan.batas ?? 50, 1), 300);
   const baris = await db.queryAll<Record<string, unknown>>(
@@ -513,3 +594,82 @@ export async function ringkasPustaka(db: AletaDatabase): Promise<Record<string, 
   for (const item of baris) hasil[teks(item.keadaan)] = Number(item.jumlah) || 0;
   return hasil;
 }
+
+/* === KAMUS-DB 10 Okt === */
+/**
+ * D3: menetapkan bagian dan label satu butir. Label adalah keterangan untuk
+ * MEMILIH kalimat, bukan pengesahan - keadaan butir tidak berubah, dan butir
+ * usulan tetap tidak terbaca perakit sampai disahkan.
+ */
+export async function aturLabelButir(
+  db: AletaDatabase,
+  actorUserId: string,
+  args: { butirId: string; bagian?: unknown; labelAlasan?: unknown; labelKeadaan?: unknown }
+): Promise<{ ok: boolean; sebab: string; butir?: Butir }> {
+  const butirId = teks(args.butirId);
+  const lama = butirId ? await db.queryOne<Record<string, unknown>>(`SELECT * FROM aleta_pertimbangan_butir WHERE id = ?`, [butirId]) : null;
+  if (!lama) return { ok: false, sebab: "Butir tidak ditemukan." };
+  const sekarang = new Date().toISOString();
+  await db.run(
+    `UPDATE aleta_pertimbangan_butir
+        SET bagian = ?, label_alasan = ?, label_keadaan = ?, label_oleh = ?, label_at = ?, diubah_at = ?
+      WHERE id = ?`,
+    [
+      args.bagian === undefined ? bagianSah(lama.bagian) : bagianSah(args.bagian),
+      JSON.stringify(args.labelAlasan === undefined ? bacaDaftar(lama.label_alasan) : rapikanLabelAlasan(args.labelAlasan)),
+      JSON.stringify(args.labelKeadaan === undefined ? bacaDaftar(lama.label_keadaan) : rapikanLabelKeadaan(args.labelKeadaan)),
+      teks(actorUserId),
+      sekarang,
+      sekarang,
+      butirId,
+    ]
+  );
+  const baru = await bacaButir(db, butirId);
+  return { ok: true, sebab: "", butir: baru ?? undefined };
+}
+
+/**
+ * D3: menambah satu kalimat ke pustaka dengan bagian dan labelnya (keterangan
+ * saksi, tuntutan, posita, amar, atau pertimbangan yang diketik). Masuk
+ * sebagai USULAN seperti hasil serap; kalimat yang sidiknya sudah ada tidak
+ * digandakan - labelnya yang diperbarui bila belum pernah ditetapkan orang.
+ */
+export async function tambahKalimatPustaka(
+  db: AletaDatabase,
+  actorUserId: string,
+  args: { teks: string; bagian?: unknown; jenisPerkara?: string; labelAlasan?: unknown; labelKeadaan?: unknown }
+): Promise<{ ok: boolean; sebab: string; butirId: string; baru: boolean }> {
+  const isi = teks(args.teks);
+  if (isi.length < 20) return { ok: false, sebab: "Kalimat terlalu pendek untuk pustaka (minimal 20 huruf).", butirId: "", baru: false };
+  const sidik = sidikButir(isi);
+  if (!sidik) return { ok: false, sebab: "Kalimat tidak dapat disidik.", butirId: "", baru: false };
+  const ada = await db.queryOne<Record<string, unknown>>(`SELECT id, label_oleh FROM aleta_pertimbangan_butir WHERE sidik = ?`, [sidik]);
+  if (ada) {
+    if (!teks(ada.label_oleh)) await aturLabelButir(db, actorUserId, { butirId: teks(ada.id), ...args });
+    return { ok: true, sebab: "Kalimat sudah ada di pustaka.", butirId: teks(ada.id), baru: false };
+  }
+  const id = randomUUID();
+  const sekarang = new Date().toISOString();
+  await db.run(
+    `INSERT INTO aleta_pertimbangan_butir
+       (id, sidik, teks, jenis_perkara, jumlah_pemakaian, keadaan, dibuat_oleh, dibuat_at, diubah_at,
+        bagian, label_alasan, label_keadaan, label_oleh, label_at)
+     VALUES (?, ?, ?, ?, 0, 'usulan', ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      sidik,
+      isi,
+      teks(args.jenisPerkara),
+      teks(actorUserId),
+      sekarang,
+      sekarang,
+      bagianSah(args.bagian),
+      JSON.stringify(rapikanLabelAlasan(args.labelAlasan ?? [])),
+      JSON.stringify(rapikanLabelKeadaan(args.labelKeadaan ?? [])),
+      teks(actorUserId),
+      sekarang,
+    ]
+  );
+  return { ok: true, sebab: "", butirId: id, baru: true };
+}
+/* === AKHIR KAMUS-DB === */

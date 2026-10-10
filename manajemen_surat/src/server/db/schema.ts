@@ -300,6 +300,131 @@ export const DDL_KAMUS_SUMBER = {
   ],
 } as const;
 
+/**
+ * Kamus deteksi & kalimat - lapis database, jejak koreksi (D2), calon dari
+ * koreksi (P8). Cermin PERSIS dari drizzle/0060_aleta_kamus_deteksi.sql
+ * (10 Okt 2026, paket deteksi lengkap).
+ *
+ * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
+ * menjalankan drizzle/*.sql, dan penjaga kamus-deteksi-db-10okt.test.ts
+ * membandingkan konstanta ini dengan isi berkasnya.
+ */
+export const DDL_KAMUS_DETEKSI = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_kamus_deteksi_pola (
+  id TEXT PRIMARY KEY,
+  kode TEXT NOT NULL,
+  kelompok TEXT NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  kunci TEXT NOT NULL DEFAULT '',
+  regex TEXT NOT NULL,
+  flags TEXT NOT NULL DEFAULT 'i',
+  status TEXT NOT NULL DEFAULT 'draf',
+  yakin TEXT NOT NULL DEFAULT 'ragu',
+  contoh_benar TEXT NOT NULL DEFAULT '[]',
+  contoh_salah TEXT NOT NULL DEFAULT '[]',
+  ukur TEXT NOT NULL DEFAULT '{}',
+  catatan TEXT NOT NULL DEFAULT '',
+  asal_calon TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_kamus_deteksi_templat (
+  id TEXT PRIMARY KEY,
+  kode TEXT NOT NULL,
+  kelompok TEXT NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  gaya TEXT NOT NULL DEFAULT '',
+  teks TEXT NOT NULL,
+  syarat TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'draf',
+  catatan TEXT NOT NULL DEFAULT '',
+  asal_calon TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_jejak_koreksi (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  variabel TEXT NOT NULL,
+  nama_variabel TEXT NOT NULL DEFAULT '',
+  nilai_usulan TEXT NOT NULL DEFAULT '',
+  sumber TEXT NOT NULL DEFAULT '',
+  kode_pola TEXT NOT NULL DEFAULT '',
+  keyakinan TEXT NOT NULL DEFAULT '',
+  kalimat_sumber TEXT NOT NULL DEFAULT '',
+  nilai_akhir TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  petugas_id TEXT NOT NULL DEFAULT '',
+  petugas_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_kamus_deteksi_calon (
+  id TEXT PRIMARY KEY,
+  jenis TEXT NOT NULL,
+  sidik TEXT NOT NULL,
+  kelompok TEXT NOT NULL DEFAULT '',
+  variabel TEXT NOT NULL DEFAULT '',
+  kode_pola_asal TEXT NOT NULL DEFAULT '',
+  usul_kode TEXT NOT NULL DEFAULT '',
+  usul_label TEXT NOT NULL DEFAULT '',
+  usul_kunci TEXT NOT NULL DEFAULT '',
+  usul_regex TEXT NOT NULL DEFAULT '',
+  usul_flags TEXT NOT NULL DEFAULT 'i',
+  usul_teks TEXT NOT NULL DEFAULT '',
+  contoh_benar TEXT NOT NULL DEFAULT '[]',
+  contoh_salah TEXT NOT NULL DEFAULT '[]',
+  jumlah_koreksi INTEGER NOT NULL DEFAULT 0,
+  jumlah_perkara INTEGER NOT NULL DEFAULT 0,
+  jumlah_dipakai INTEGER NOT NULL DEFAULT 0,
+  bukti TEXT NOT NULL DEFAULT '[]',
+  alasan TEXT NOT NULL DEFAULT '',
+  keadaan TEXT NOT NULL DEFAULT 'menunggu',
+  ditinjau_oleh TEXT NOT NULL DEFAULT '',
+  ditinjau_at TEXT NOT NULL DEFAULT '',
+  alasan_tolak TEXT NOT NULL DEFAULT '',
+  hasil_kode TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_kamus_deteksi_pola_kode ON aleta_kamus_deteksi_pola(kode)`,
+    `CREATE INDEX IF NOT EXISTS idx_kamus_deteksi_pola_kelompok ON aleta_kamus_deteksi_pola(kelompok, status)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_kamus_deteksi_templat_kode ON aleta_kamus_deteksi_templat(kode)`,
+    `CREATE INDEX IF NOT EXISTS idx_kamus_deteksi_templat_kelompok ON aleta_kamus_deteksi_templat(kelompok, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_jejak_koreksi_variabel ON aleta_jejak_koreksi(variabel, hasil)`,
+    `CREATE INDEX IF NOT EXISTS idx_jejak_koreksi_perkara ON aleta_jejak_koreksi(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_jejak_koreksi_pola ON aleta_jejak_koreksi(kode_pola)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_kamus_deteksi_calon_sidik ON aleta_kamus_deteksi_calon(sidik)`,
+    `CREATE INDEX IF NOT EXISTS idx_kamus_deteksi_calon_keadaan ON aleta_kamus_deteksi_calon(keadaan, jenis)`,
+  ],
+} as const;
+
+/**
+ * D3 - label bagian/alasan/keadaan pada butir pustaka pertimbangan (0061,
+ * 10 Okt 2026). Kolom tambahan atas aleta_pertimbangan_butir (0026) - pustaka
+ * yang lama diperluas, bukan pustaka kedua. Cermin PERSIS dari
+ * drizzle/0061_aleta_pustaka_label_kalimat.sql.
+ */
+export const DDL_PUSTAKA_LABEL = {
+  kolom: [
+    `ALTER TABLE aleta_pertimbangan_butir ADD COLUMN IF NOT EXISTS bagian TEXT NOT NULL DEFAULT 'pertimbangan'`,
+    `ALTER TABLE aleta_pertimbangan_butir ADD COLUMN IF NOT EXISTS label_alasan TEXT NOT NULL DEFAULT '[]'`,
+    `ALTER TABLE aleta_pertimbangan_butir ADD COLUMN IF NOT EXISTS label_keadaan TEXT NOT NULL DEFAULT '[]'`,
+    `ALTER TABLE aleta_pertimbangan_butir ADD COLUMN IF NOT EXISTS label_oleh TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_pertimbangan_butir ADD COLUMN IF NOT EXISTS label_at TEXT NOT NULL DEFAULT ''`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_pertimbangan_bagian ON aleta_pertimbangan_butir(bagian, keadaan)`],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1303,6 +1428,8 @@ const schemaStatements = [
   ...DDL_ECOURT_CAP.tabel,
   // Jejak masuk ALETA dengan akun SIPP (0058).
   ...DDL_MASUK_JEJAK.tabel,
+  // Kamus deteksi & kalimat, jejak koreksi, calon dari koreksi (0060).
+  ...DDL_KAMUS_DETEKSI.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3247,6 +3374,7 @@ const indexStatements = [
   ...DDL_ECOURT_CAP.indeks,
   ...DDL_MASUK_JEJAK.indeks,
   ...DDL_KAMUS_SUMBER.indeks,
+  ...DDL_KAMUS_DETEKSI.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
@@ -3770,6 +3898,9 @@ const migrationStatements = [
   `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS lama_sidang_detik INTEGER`,
   // Kamus variabel ABT: uraian sumber/arti/status/cermin SIPP (0059).
   ...DDL_KAMUS_SUMBER.kolom,
+  // D3: label bagian/alasan/keadaan pada butir pustaka pertimbangan (0061).
+  ...DDL_PUSTAKA_LABEL.kolom,
+  ...DDL_PUSTAKA_LABEL.indeks,
 ];
 
 const aletaSippSchemaStatements = [
