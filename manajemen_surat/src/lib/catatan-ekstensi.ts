@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.190.0",
+    dirilis: "2026-10-10T18:00:00+08:00",
+    judul: "Kasir otomatis & rekap, saksi lebih cepat diisi, putusan & e-Doc tidak tertimpa diam-diam, persen tarik e-Court, alamat putusan + Domisili Elektronik",
+    butir: [
+      "Kasir: usulan jurnal otomatis menurut keadaan perkara (verstek, baru daftar, cabut, gugur, ikrar, dll.), Kasir massal satu hari, tab Kasir di panel SIPP, rekap harian sampai tahunan + PDF, dan pengingat tugas kasir.",
+      "Saksi: pilihan hubungan dengan pihak yang lengkap (mis. Ibu Kandung Pemohon), isian yang bisa ditebak terisi otomatis, dan peringatan bila data saksi sudah ada.",
+      "Putusan otomatis disembunyikan bila putusan sudah terisi di SIPP (muncul lagi dengan peringatan saat blangko dibuka ulang); e-Doc penetapan yang sudah terunggah meminta konfirmasi sebelum ditimpa.",
+      "Tarik dari e-Court menampilkan persen dan garis proses menurut tahap nyata.",
+      "Alamat para pihak di putusan dirapikan + Domisili Elektronik (alamat SIPP tidak diubah; perlu paket ABT alamat putusan).",
+    ],
+  },
+  {
     versi: "1.189.0",
     dirilis: "2026-10-09T20:00:00+08:00",
     judul: "Uji rilis 9 Okt: kuasa hukum lengkap di ABT + puluhan perbaikan dari uji nyata seluruh fitur",
