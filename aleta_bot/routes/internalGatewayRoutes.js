@@ -2408,6 +2408,13 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       const positaMasuk = String(req.body?.posita || "");
       const tanggalSidangMasuk = String(req.body?.tanggalSidang || "").slice(0, 40);
       const positaKurang = positaMasuk.replace(/<[^>]*>/g, " ").trim().length < 50;
+      /* === P5P6 10 Okt === */
+      // Identitas saksi dari SIPP untuk paragraf keterangan saksi - SELECT saja,
+      // berjalan bersamaan dengan bacaan di bawah, dibatasi 2,5 detik; gagal = tanpa identitas.
+      const janjiIdentitasSaksi = nomorPerkara
+        ? require("../services/saksiBantuService").identitasSaksiBerbatas(nomorPerkara, 2500)
+        : Promise.resolve(null);
+      /* === AKHIR P5P6 === */
       const [mediasiSipp, konteksSipp] = await Promise.all([
         !mediasiMasuk && tanyaUpaya && nomorPerkara ? abtUsulanService.mediasiPerkara(nomorPerkara).catch(() => null) : null,
         nomorPerkara && (positaKurang || !tanggalSidangMasuk)
@@ -2442,6 +2449,28 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       if (jawaban.saksiSdg && jawaban.saksiSdg.ok) {
         jawaban.saksiSdg.asalPosita = positaDipakai === positaSipp && positaSipp ? "sipp" : positaMasuk ? "ekstensi" : "";
       }
+      /* === P5P6 10 Okt === */
+      // Paragraf keterangan saksi (ringkas & lengkap) + peringatan ringan. Hanya
+      // MENAMBAH ruas - tanya-jawab yang disusun tidak disentuh, dan galat di
+      // sini tidak pernah menggagalkan susunan.
+      if (jawaban.saksiSdg && jawaban.saksiSdg.ok) {
+        try {
+          const identitasSaksi = await janjiIdentitasSaksi;
+          Object.assign(
+            jawaban.saksiSdg,
+            require("../services/deteksiSaksiService").lengkapiSusunan(jawaban.saksiSdg, {
+              identitas: identitasSaksi,
+              lawan,
+              pelaku,
+              kelompokTanya: require("../services/pemilihRagam").kelompokTanya,
+              penutup: req.body?.penutupSaksi === "tanggapan" ? "tanggapan" : "",
+            })
+          );
+        } catch (galatParagraf) {
+          jawaban.saksiSdg.paragrafGagal = String((galatParagraf && galatParagraf.message) || galatParagraf).slice(0, 200);
+        }
+      }
+      /* === AKHIR P5P6 === */
     }
     if (sumber === "semua" || sumber === "saksi") {
       jawaban.saksi = abtUsulanService.dariKeteranganSaksi(

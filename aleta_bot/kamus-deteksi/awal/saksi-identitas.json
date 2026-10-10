@@ -1,0 +1,276 @@
+{
+  "kelompok": "saksi-identitas",
+  "versi": 1,
+  "keterangan": "Medan identitas saksi dari baris identitas (gaya putusan/BAS atau ketikan petugas). Kelompok bernama 'nilai' memegang isinya. Data SIPP terstruktur tetap sumber utama; pola ini untuk teks.",
+  "pola": [
+    {
+      "kode": "idn-umur",
+      "label": "Umur saksi",
+      "kunci": "umur",
+      "regex": "\\b(?:umur|usia|berumur|berusia)\\s*:?\\s*(?<nilai>\\d{1,3})\\s*(?:tahun|thn|th)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Sumarni binti Jiding, umur 50 tahun, agama Islam",
+        "usia 33 thn"
+      ],
+      "contohSalah": [
+        "anak tersebut lahir tahun 2010",
+        "umur perkawinan sudah lama"
+      ],
+      "ukur": {
+        "n": 16338,
+        "tepat": 16338,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Baris identitas: 100.0% dari 16338."
+    },
+    {
+      "kode": "idn-agama",
+      "label": "Agama saksi",
+      "kunci": "agama",
+      "regex": "(?:^|[,;]\\s*)agama\\s*:?\\s*(?<nilai>islam|kristen\\s+protestan|protestan|kristen|katolik|katholik|hindu|budha|buddha|kong\\s*hu\\s*cu|konghucu)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "umur 40 tahun, agama Hindu, pendidikan SLTA"
+      ],
+      "contohSalah": [
+        "meninggal dalam keadaan beragama Islam",
+        "Pengadilan Agama Donggala"
+      ],
+      "ukur": {
+        "n": 16362,
+        "tepat": 16362,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10",
+        "diLuarKonteks": {
+          "jawaban": 68090,
+          "cocok": 0
+        }
+      },
+      "catatan": "Baris identitas: 100.0% dari 16362. Di jawaban saksi biasa (bukan baris identitas) menyala 0 dari 68090 - pakai HANYA pada baris identitas."
+    },
+    {
+      "kode": "idn-pendidikan",
+      "label": "Pendidikan saksi",
+      "kunci": "pendidikan",
+      "regex": "(?:^|[,;]\\s*)pendidikan\\s*:?\\s*(?<nilai>tidak\\s+(?:ada|sekolah|tamat\\s+sd)|belum\\s+sekolah|tidak\\s+tamat|sd|sltp|smp|slta|sma|smk|d\\s*[1-4]|diploma\\s+(?:i{1,3}|iv)|s\\s*[1-3]|strata\\s+(?:i{1,3})|tk|mi|mts|ma)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "agama Islam, pendidikan SLTP, pekerjaan Petani",
+        "pendidikan S1"
+      ],
+      "contohSalah": [
+        "biaya pendidikan anak",
+        "pendidikan anak-anak ditanggung Pemohon"
+      ],
+      "ukur": {
+        "n": 16158,
+        "tepat": 16158,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10",
+        "diLuarKonteks": {
+          "jawaban": 68090,
+          "cocok": 0
+        }
+      },
+      "catatan": "Baris identitas: 100.0% dari 16158. Di jawaban saksi biasa (bukan baris identitas) menyala 0 dari 68090 - pakai HANYA pada baris identitas."
+    },
+    {
+      "kode": "idn-pekerjaan",
+      "label": "Pekerjaan saksi",
+      "kunci": "pekerjaan",
+      "regex": "(?:^|[,;]\\s*)pekerjaan\\s*:?\\s*(?<nilai>[^,;\\n]{2,80}?)\\s*(?=,|;|\\n|$)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "pendidikan SD, pekerjaan Urusan Rumah Tangga, bertempat tinggal di Desa Kabobona"
+      ],
+      "contohSalah": [
+        "Tergugat tidak mempunyai pekerjaan tetap sehingga"
+      ],
+      "ukur": {
+        "n": 16643,
+        "tepat": 16630,
+        "salahTangkap": 13,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10",
+        "diLuarKonteks": {
+          "jawaban": 68090,
+          "cocok": 13
+        }
+      },
+      "catatan": "Baris identitas: 99.9% dari 16643. Di jawaban saksi biasa (bukan baris identitas) menyala 13 dari 68090 - pakai HANYA pada baris identitas."
+    },
+    {
+      "kode": "idn-alamat",
+      "label": "Alamat saksi",
+      "kunci": "alamat",
+      "regex": "\\b(?:bertempat\\s+(?:tinggal|kediaman)|tempat\\s+(?:tinggal|kediaman)|beralamat|alamat)\\s*(?:di|:)?\\s*(?<nilai>[^\\n]+?)\\s*[;,.]*\\s*(?=,\\s*(?:saksi\\s+mengaku|di\\s*bawah\\s+(?:sumpah|janji)|memberikan\\s+keterangan|telah\\s+(?:memberikan|bersumpah|berjanji))|;|\\n|$)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "pekerjaan Petani, bertempat tinggal di Desa Wisolo, Kecamatan Dolo Selatan, Kabupaten Sigi, saksi mengaku sebagai Sepupu"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat tinggal bersama di rumah orang tua Penggugat"
+      ],
+      "ukur": {
+        "n": 16643,
+        "tepat": 16633,
+        "salahTangkap": 10,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Baris identitas: 99.9% dari 16643."
+    },
+    {
+      "kode": "idn-hubungan-mengaku",
+      "label": "Hubungan tertulis \"saksi mengaku sebagai\"",
+      "kunci": "hubungan",
+      "regex": "\\bsaksi\\s+mengaku\\s+sebagai\\s+(?<nilai>[^,;\\n]{2,80}?)\\s*[.;]*\\s*(?=,|;|\\n|$)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "..., saksi mengaku sebagai Ibu Kandung Penggugat, di bawah sumpahnya ..."
+      ],
+      "contohSalah": [
+        "saksi mengaku tidak mengetahui penyebabnya"
+      ],
+      "ukur": {
+        "n": 1340,
+        "tepat": 1340,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Baris identitas: 100.0% dari 1340."
+    },
+    {
+      "kode": "idn-nama",
+      "label": "Nama saksi (awal baris identitas)",
+      "kunci": "nama",
+      "regex": "^\\s*(?:\\d{1,2}\\s*[.)]\\s*)?(?:[Ss]aksi\\s+(?:[Kk]e\\s*)?(?:[IVXivx]{1,4}|\\d|[Pp]ertama|[Kk]edua|[Kk]etiga|[Kk]eempat)\\s*(?:[Pp]enggugat|[Tt]ergugat|[Pp]emohon|[Tt]ermohon)?\\s*[,:.]?\\s*)?(?<nilai>[A-Z][A-Za-z'’.\\-]*(?:\\s+(?:[A-Z][A-Za-z'’.\\-]*|bin|binti|al|el|van|de|dg)){0,8})\\s*(?:\\([^)]{0,40}\\)\\s*)?,\\s*(?:[Uu]mur|[Uu]sia|[Bb]erumur)\\b",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "1. Ana Valdana binti Ismail, umur 33 tahun, agama Islam",
+        "Saksi I, Jamaudin Bin Podau, umur 52 tahun"
+      ],
+      "contohSalah": [
+        "anak bernama Madina Azzahra umur 9 tahun",
+        "Bahwa Penggugat sudah tidak tahan"
+      ],
+      "ukur": {
+        "n": 15440,
+        "tepat": 15440,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10",
+        "diLuarKonteks": {
+          "jawaban": 68090,
+          "cocok": 2
+        }
+      },
+      "catatan": "Baris identitas: 100.0% dari 15440. Di jawaban saksi biasa (bukan baris identitas) menyala 2 dari 68090 - pakai HANYA pada baris identitas."
+    },
+    {
+      "kode": "idn-sumpah-tidak",
+      "label": "Tidak / belum disumpah",
+      "kunci": "tidak-disumpah",
+      "regex": "\\b(?:tidak|tanpa|belum)\\s+(?:di\\s*bawah\\s+)?(?:di)?(?:sumpah|janji)\\b|\\btidak\\s+(?:ber)?(?:sumpah|janji)\\b|\\bmenolak\\s+(?:di)?sumpah\\b",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saksi tersebut tidak disumpah karena masih di bawah umur",
+        "didengar tanpa sumpah"
+      ],
+      "contohSalah": [
+        "di bawah sumpahnya telah memberikan keterangan"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10",
+        "diLuarKonteks": {
+          "jawaban": 68090,
+          "cocok": 0
+        }
+      },
+      "catatan": "Tidak terukur atas korpus identitas (korpus tidak memuat bentuk ini) - tetap ragu. Di jawaban saksi biasa (bukan baris identitas) menyala 0 dari 68090 - pakai HANYA pada baris identitas."
+    },
+    {
+      "kode": "idn-sumpah-ya",
+      "label": "Sudah disumpah / berjanji",
+      "kunci": "disumpah",
+      "regex": "\\bdi\\s*bawah\\s+(?:sumpah|janji)(?:nya)?\\b|\\btelah\\s+(?:di)?(?:sumpah|bersumpah|berjanji)\\b|\\b(?:ber)?sumpah\\s+menurut\\b|\\bmengucapkan\\s+(?:sumpah|janji)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "di bawah sumpahnya telah memberikan keterangan",
+        "saksi tersebut bersumpah menurut tata cara agama Islam"
+      ],
+      "contohSalah": [
+        "saksi tidak disumpah",
+        "sumpah pemuda"
+      ],
+      "ukur": {
+        "n": 16643,
+        "tepat": 16643,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10",
+        "diLuarKonteks": {
+          "jawaban": 68090,
+          "cocok": 0
+        }
+      },
+      "catatan": "Baris identitas: 100.0% dari 16643. Di jawaban saksi biasa (bukan baris identitas) menyala 0 dari 68090 - pakai HANYA pada baris identitas."
+    },
+    {
+      "kode": "idn-bawah-umur-kata",
+      "label": "Disebut di bawah umur / belum dewasa",
+      "kunci": "bawah-umur",
+      "regex": "\\bsaksi\\b[^.;\\n]{0,40}\\b(?:di\\s*bawah\\s+umur|belum\\s+dewasa|belum\\s+cukup\\s+umur|masih\\s+anak-anak)\\b",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saksi tersebut masih di bawah umur sehingga tidak disumpah"
+      ],
+      "contohSalah": [
+        "anak Pemohon belum cukup umur untuk menikah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js); korpus 10 ragam pembuka blangko ABT satker x 16643 saksi SIPP",
+        "tanggal": "2026-10-10",
+        "diLuarKonteks": {
+          "jawaban": 68090,
+          "cocok": 0
+        }
+      },
+      "catatan": "Tidak terukur atas korpus identitas (korpus tidak memuat bentuk ini) - tetap ragu. Di jawaban saksi biasa (bukan baris identitas) menyala 0 dari 68090 - pakai HANYA pada baris identitas."
+    }
+  ],
+  "templat": []
+}

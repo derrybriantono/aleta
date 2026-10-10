@@ -4575,6 +4575,21 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="bord
   flex-direction: column;
   gap: 8px;
 }
+/* === P5P6 10 Okt === paragraf keterangan saksi (ringkas/lengkap) + peringatan ringan */
+.aleta-p6-peringatan-daftar { margin: 4px 0 0; padding-left: 18px; }
+.aleta-p6-peringatan-daftar li { margin: 2px 0; }
+.aleta-p6-ringan { border-left: 3px solid #9a5b06; padding-left: 6px; }
+.aleta-p6-info { opacity: 0.85; }
+.aleta-p6-paragraf { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(127, 127, 127, 0.35); padding-top: 8px; }
+.aleta-p6-kepala { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.aleta-p6-gaya { display: inline-flex; gap: 4px; }
+.aleta-p6-gaya-tombol { font: inherit; padding: 2px 10px; border-radius: 4px; border: 1px solid rgba(127, 127, 127, 0.6); background: transparent; color: inherit; cursor: pointer; }
+.aleta-p6-gaya-tombol[aria-pressed="true"] { background: #1d4ed8; border-color: #1d4ed8; color: #ffffff; }
+.aleta-p6-saksi { display: flex; flex-direction: column; gap: 4px; }
+.aleta-p6-teks { width: 100%; box-sizing: border-box; min-height: 90px; font: inherit; resize: vertical; }
+.aleta-p6-salin { align-self: flex-start; font: inherit; padding: 2px 10px; cursor: pointer; }
+.aleta-p6-kabar { font-size: 0.85em; opacity: 0.8; }
+/* === AKHIR P5P6 === */
 /* ==========================================================================
    TATA LETAK KETERANGAN DUA SAKSI - BERDAMPINGAN SEBAGAI BAWAAN
    ==========================================================================
