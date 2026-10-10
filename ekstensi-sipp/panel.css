@@ -7250,6 +7250,36 @@ html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-portal-
   line-height: 1.4;
   vertical-align: middle;
 }
+/* B1 (10 Okt 2026): pengingat SIPP vs ABT sebelum CETAK - warna merek/info,
+   BUKAN warna mendesak penahan error: CETAK tetap dapat ditekan. */
+.aleta-t6-cek-sipp { font-size: calc(13px * var(--aleta-skala-huruf, 1)); }
+.aleta-t6-cek-sipp-beda {
+  padding: 6px 8px;
+  border: 1px dashed var(--aleta-merek);
+  border-radius: 6px;
+}
+.aleta-t6-cek-sipp-judul { font-weight: 700; margin-bottom: 4px; }
+.aleta-t6-cek-sipp-rinci { width: 100%; border-collapse: collapse; margin: 2px 0 6px; }
+.aleta-t6-cek-sipp-rinci th { text-align: left; font-weight: 600; opacity: 0.75; padding: 2px 4px; }
+.aleta-t6-cek-sipp-rinci td { vertical-align: top; padding: 3px 4px; border-top: 1px solid var(--aleta-garis); word-break: break-word; }
+.aleta-t6-cek-sipp-nilai { font-weight: 600; }
+.aleta-t6-cek-sipp-aksi { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+/* Di halaman ABT, di samping CETAK - biru info, berbeda dari .aleta-t6-wajib-cetak. */
+.aleta-t6-cek-sipp-cetak {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid #1d4ed8;
+  border-radius: 4px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-family: system-ui, sans-serif;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+  line-height: 1.4;
+  vertical-align: middle;
+  cursor: help;
+}
 .aleta-t6-komentar {
   border: 1px solid var(--aleta-garis);
   border-radius: 6px;

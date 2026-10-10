@@ -7,6 +7,7 @@ import {
   type DefinisiVariabel,
   type KelasVariabel,
 } from "@/lib/kelas-variabel";
+import { lupakanKamusSiap, uraiUlangKamus } from "@/server/modules/aleta-ecourt/kamus-sumber";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import type { AletaDatabase } from "@/server/db/client";
 
@@ -225,6 +226,16 @@ export async function salinKamus(
       WHERE id = ?`,
     [butir.length, rekap.A, rekap.B, rekap.C, salinId]
   );
+
+  // D1 (0059): uraian sumber/status/cermin dihitung ulang atas definisi yang
+  // baru tersalin; suntingan Super Admin tidak ditimpa. Gagalnya tidak
+  // membatalkan salinan - uraian dihitung lagi saat kamus dibaca berikutnya.
+  lupakanKamusSiap(db);
+  try {
+    await uraiUlangKamus(db);
+  } catch {
+    /* pastikanKamusAwal mengurai baris yang belum berurai pada pembacaan berikutnya */
+  }
 
   return { ok: true, salinId, jumlahBaris: butir.length, rekap, asalSkema: skema, sebab: "" };
 }

@@ -8853,6 +8853,8 @@ async function t6Tata(panel, jatiDiri) {
   if (t6Pakai(k, "abt-5")) t6PasangPitaBahaya(k);
   if (t6Pakai(k, "abt-11")) t6PasangKemajuan(k);
   if (t6Nyala("abt-17")) t6PasangWajib(k);
+  // B1 (10 Okt): pengingat SIPP vs ABT sebelum CETAK - UI Baru saja.
+  if (modern) t6PasangCekSipp(k);
   if (t6Nyala("abt-18")) t6PasangKomentar(k);
   if (t6Nyala("abt-21") || t6Nyala("abt-22")) t6PasangCari(k);
   if (t6Nyala("abt-29")) t6PasangDrafLama(k);
@@ -9555,6 +9557,7 @@ function t6SegarkanHalaman(k) {
   t6SegarkanKemajuan(k);
   t6SegarkanPitaBahaya(k);
   t6SegarkanWajib(k);
+  t6SegarkanCekSipp(k);
 }
 
 // ─── abt-17: variabel wajib sebelum CETAK ────────────────────────────────────
@@ -9641,6 +9644,307 @@ function t6SegarkanWajib(k) {
     k.kakiWajib.textContent = kosong.length ? `⚠ ${kosong.length} wajib kosong` : "";
     k.kakiWajib.title = judul;
   }
+}
+
+// ─── B1 (10 Okt 2026): pengingat SIPP vs ABT sebelum CETAK ──────────────────
+
+/**
+ * ============================================================================
+ * PENGINGAT, BUKAN PENAHAN - BERBEDA DARI PENAHAN ERROR VARIABEL
+ * ============================================================================
+ *
+ * Rencana B1 (dikerjakan 10 Okt, keputusan pengguna: PENGINGAT saja). Untuk
+ * data inti - nama pihak, nomor perkara, majelis/PP/JS, tanggal putusan/
+ * penetapan, kuasa, biaya - nilai yang tergambar di blangko ABT dibandingkan
+ * dengan SIPP TERKINI. Kamus variabel (D1, portal) yang menunjuk variabel mana
+ * mencerminkan kolom SIPP mana, dan portal menghitung nilai SIPP-nya dengan
+ * definisi ABT yang sama lewat jembatan baca-saja. Isi halaman ABT TIDAK
+ * dikirim ke mana pun: perbandingannya di sini.
+ *
+ * Beda pada variabel OTOMATIS hampir selalu berarti halaman dibuka sebelum SIPP
+ * berubah - "Muat ulang variabel" membaca ulang halaman yang sama (GET, ABT
+ * menghitung ulang saat menyusunnya) dan mengganti selnya di tempat. Beda pada
+ * isian MANUAL yang meniru SIPP (mis. Nama Advokat Kuasa) disunting petugas di
+ * ABT sendiri.
+ *
+ * CETAK TETAP DAPAT DITEKAN: blok ini tidak memasang pendengar klik apa pun
+ * pada tautan CETAK. Penandanya di samping CETAK berkelas sendiri
+ * (aleta-t6-cek-sipp-cetak, warna info), terpisah dari penahan error variabel
+ * (t6SaatKlik / abt-5) yang tetap meminta "Sudah saya periksa".
+ *
+ *   GET /aleta/api/aleta-ecourt/abt-cek-sipp?perkaraId=&kode=   saat panel lahir,
+ *                                                               "Periksa lagi",
+ *                                                               sesudah muat ulang
+ */
+const T6_API_CEK_SIPP = "/aleta/api/aleta-ecourt/abt-cek-sipp";
+const CEK_SIPP_BULAN = Object.freeze({
+  januari: 1, jan: 1, februari: 2, pebruari: 2, feb: 2, peb: 2, maret: 3, mar: 3, april: 4, apr: 4,
+  mei: 5, may: 5, juni: 6, jun: 6, juli: 7, jul: 7, agustus: 8, agu: 8, agt: 8, aug: 8,
+  september: 9, sep: 9, sept: 9, oktober: 10, okt: 10, oct: 10, november: 11, nov: 11, nopember: 11, nop: 11,
+  desember: 12, des: 12, dec: 12,
+});
+
+function cekSippDuaAngka(n) {
+  return String(n).padStart(2, "0");
+}
+
+/** Tanggal dalam bentuk apa pun yang lazim di SIPP/ABT -> "YYYY-MM-DD"; "" bila bukan tanggal. */
+function cekSippTanggal(nilai) {
+  const t = String(nilai == null ? "" : nilai).replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?$/);
+  if (m) return `${m[1]}-${cekSippDuaAngka(m[2])}-${cekSippDuaAngka(m[3])}`;
+  m = t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (m) return `${m[3]}-${cekSippDuaAngka(m[2])}-${cekSippDuaAngka(m[1])}`;
+  // "Senin, 12 Oktober 2026" / "12 Okt 2026" / "Mon Oct 12 2026 00:00:00 GMT+0800"
+  m = t.toLowerCase().match(/(\d{1,2})\s+([a-z]+)\.?\s+(\d{4})(?!\d)/) || t.toLowerCase().match(/^[a-z]{3}\s+([a-z]{3})\s+(\d{1,2})\s+(\d{4})\b/);
+  if (!m) return "";
+  const terbalik = /^[a-z]/.test(m[1]);
+  const hari = terbalik ? m[2] : m[1];
+  const bulan = CEK_SIPP_BULAN[terbalik ? m[1] : m[2]];
+  if (!bulan) return "";
+  const tahun = m[3];
+  // Kalimat panjang yang kebetulan memuat tanggal bukan "nilai tanggal".
+  if (t.length > 48) return "";
+  return `${tahun}-${cekSippDuaAngka(bulan)}-${cekSippDuaAngka(hari)}`;
+}
+
+/** Nominal "Rp 1.250.000,-" / "1250000.00" -> angka; null bila bukan nominal. */
+function cekSippAngka(nilai) {
+  const t = String(nilai == null ? "" : nilai).replace(/\s+/g, "").replace(/,-$/, "").trim();
+  if (!/^(rp\.?)?[\d.,]+$/i.test(t)) return null;
+  let a = t.replace(/^rp\.?/i, "");
+  if (/^\d+\.\d{1,2}$/.test(a)) return Number(a); // 1250000.00 (desimal SIPP)
+  if (/,\d{1,2}$/.test(a)) a = a.replace(/,\d{1,2}$/, ""); // 1.250.000,00
+  a = a.replace(/[.,]/g, "");
+  return /^\d+$/.test(a) ? Number(a) : null;
+}
+
+/** Teks dibandingkan tanpa beda huruf besar, spasi, tag, dan tanda baca di ujung. */
+function cekSippTeks(nilai) {
+  return String(nilai == null ? "" : nilai)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/[‘’`]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[\s.,;:]+$/, "")
+    .toLowerCase();
+}
+
+/** Nilai ABT sama dengan nilai SIPP? Tanggal dan nominal dibandingkan menurut artinya. */
+function cekSippSama(abt, sipp) {
+  const a = cekSippTeks(abt);
+  const s = cekSippTeks(sipp);
+  if (a === s) return true;
+  const ta = cekSippTanggal(abt);
+  const ts = cekSippTanggal(sipp);
+  if (ta && ts) return ta === ts;
+  const na = cekSippAngka(abt);
+  const ns = cekSippAngka(sipp);
+  if (na !== null && ns !== null) return na === ns;
+  return false;
+}
+
+/**
+ * Membandingkan isi halaman dengan jawaban portal.
+ * @param {Map<string, {nilai: string, nama: string}>} peta barisVariabel()
+ * @param {Array<object>} butir jawaban abt-cek-sipp
+ */
+function cekSippBanding(peta, butir) {
+  const beda = [];
+  let sama = 0;
+  let takTerbaca = 0;
+  for (const b of Array.isArray(butir) ? butir : []) {
+    const item = peta.get(String(b.kode));
+    if (!item) continue;
+    if (!b.terbaca) {
+      takTerbaca += 1;
+      continue;
+    }
+    const keadaan = keadaanNilai(item.nilai);
+    // Variabel berbunyi error ditangani penahan error (abt-5) - bukan di sini.
+    if (keadaan === "galat") continue;
+    const manual = b.status === "manual";
+    const sipp = String(b.nilaiSipp == null ? "" : b.nilaiSipp).trim();
+    if (keadaan === "kosong") {
+      // Isian manual kosong = "kosong = dari SIPP"; otomatis kosong tetapi SIPP
+      // sudah berisi = halaman dibuka sebelum SIPP diisi.
+      if (manual || !sipp) {
+        sama += manual ? 0 : 1;
+        continue;
+      }
+    } else if (cekSippSama(item.nilai, sipp)) {
+      sama += 1;
+      continue;
+    }
+    beda.push({
+      kode: String(b.kode),
+      nama: item.nama || String(b.nama || ""),
+      label: String(b.label || b.cermin || ""),
+      manual,
+      acuan: String(b.acuan || ""),
+      nilaiAbt: keadaan === "kosong" ? "" : item.nilai,
+      nilaiSipp: sipp,
+    });
+  }
+  return { beda, sama, takTerbaca };
+}
+
+function t6PasangCekSipp(k) {
+  const kotak = t6El("div", "aleta-t6-cek-sipp");
+  k.atas.appendChild(kotak);
+  k.cekSippKotak = kotak;
+  k.cekSipp = null;
+  void t6MuatCekSipp(k);
+}
+
+async function t6MuatCekSipp(k) {
+  if (!k.cekSippKotak) return;
+  if (!/^\d+$/.test(String(k.perkaraId || ""))) {
+    k.cekSipp = { ok: false, lembut: true, pesan: "Perkara sementara - tidak dibandingkan dengan SIPP.", butir: [] };
+    t6SegarkanCekSipp(k);
+    return;
+  }
+  k.cekSipp = { ok: false, memuat: true, pesan: "Membandingkan data inti blangko dengan SIPP…", butir: [] };
+  t6SegarkanCekSipp(k);
+  const kode = [...barisVariabel().keys()];
+  const h = await t6AmbilJson(
+    `${T6_API_CEK_SIPP}?perkaraId=${encodeURIComponent(k.perkaraId)}&kode=${encodeURIComponent(kode.join(","))}`,
+    "Pemeriksa data SIPP"
+  );
+  if (t6Keadaan !== k) return;
+  const data = h.data || {};
+  k.cekSipp = h.ok
+    ? { ok: true, butir: Array.isArray(data.butir) ? data.butir : [], pesan: "" }
+    : { ok: false, lembut: true, pesan: h.belumAda ? "Pemeriksa data SIPP belum tersedia di server." : h.pesan, butir: [] };
+  t6SegarkanCekSipp(k);
+}
+
+/** Hasil perbandingan terkini (dihitung ulang dari halaman tiap kali dipanggil). */
+function t6HasilCekSipp(k) {
+  if (!k || !k.cekSipp || !k.cekSipp.ok) return null;
+  return cekSippBanding(barisVariabel(), k.cekSipp.butir);
+}
+
+function t6SegarkanCekSipp(k) {
+  const kotak = k && k.cekSippKotak;
+  if (!kotak || !k.cekSipp) return;
+  const hasil = t6HasilCekSipp(k);
+  const beda = hasil ? hasil.beda : [];
+  const sidik = JSON.stringify([k.cekSipp.ok, k.cekSipp.memuat || false, k.cekSipp.pesan, beda, hasil && hasil.sama, k.cekSippKabar || ""]);
+  if (kotak.dataset.sidik !== sidik) {
+    kotak.dataset.sidik = sidik;
+    kotak.textContent = "";
+    kotak.classList.toggle("aleta-t6-cek-sipp-beda", beda.length > 0);
+    if (!k.cekSipp.ok) {
+      kotak.appendChild(t6El("span", "aleta-t6-lembut", k.cekSipp.pesan));
+    } else if (!beda.length) {
+      const n = hasil ? hasil.sama : 0;
+      kotak.appendChild(
+        t6El("span", "aleta-t6-lembut", n ? `✓ Data inti blangko sama dengan SIPP (${n} diperiksa).` : "Tidak ada data inti SIPP di blangko ini yang dapat dibandingkan.")
+      );
+    } else {
+      kotak.appendChild(t6El("div", "aleta-t6-cek-sipp-judul", `⚠ ${beda.length} data berbeda dengan SIPP`));
+      const tabel = t6El("table", "aleta-t6-cek-sipp-rinci");
+      const kepala = t6El("tr");
+      for (const j of ["Variabel", "Di ABT", "Di SIPP"]) kepala.appendChild(t6El("th", "", j));
+      tabel.appendChild(kepala);
+      for (const x of beda) {
+        const tr = t6El("tr");
+        tr.setAttribute("data-kode", x.kode);
+        const sel = t6El("td");
+        sel.appendChild(t6KepingKode(x.kode, t6Pendek(x.label || x.nama, 30)));
+        if (x.manual) sel.appendChild(t6El("div", "aleta-t6-lembut", `isian manual${x.acuan ? ` - SIPP dari #${x.acuan}#` : ""}`));
+        tr.appendChild(sel);
+        tr.appendChild(t6El("td", "aleta-t6-cek-sipp-abt", x.nilaiAbt ? t6Pendek(x.nilaiAbt, 80) : "(kosong)"));
+        tr.appendChild(t6El("td", "aleta-t6-cek-sipp-nilai", x.nilaiSipp ? t6Pendek(x.nilaiSipp, 80) : "(kosong)"));
+        tabel.appendChild(tr);
+      }
+      kotak.appendChild(tabel);
+      const aksi = t6El("div", "aleta-t6-cek-sipp-aksi");
+      const muat = t6Tombol("Muat ulang variabel", "Baca ulang halaman blangko ini dari ABT (tanpa menulis apa pun) supaya variabel otomatis memakai data SIPP terkini", "aleta-t6-kecil aleta-t6-cek-sipp-muat");
+      muat.addEventListener("click", () => void t6CekSippMuatUlang(k, muat));
+      const lagi = t6Tombol("Periksa lagi", "Bandingkan sekali lagi dengan SIPP", "aleta-t6-kecil");
+      lagi.addEventListener("click", () => void t6MuatCekSipp(k));
+      aksi.appendChild(muat);
+      aksi.appendChild(lagi);
+      kotak.appendChild(aksi);
+      const adaManual = beda.some((x) => x.manual);
+      kotak.appendChild(
+        t6El(
+          "div",
+          "aleta-t6-lembut",
+          "Pengingat saja - CETAK tetap dapat ditekan." + (adaManual ? " Isian manual yang berbeda disunting di ABT." : "")
+        )
+      );
+    }
+    if (k.cekSippKabar) kotak.appendChild(t6El("div", "aleta-t6-lembut aleta-t6-cek-sipp-kabar", k.cekSippKabar));
+  }
+  // Penanda di samping CETAK - info, bukan penahan; tidak ada pendengar klik.
+  const judul = beda.map((x) => `${x.kode} ${x.label || x.nama}: ABT "${x.nilaiAbt || "(kosong)"}" / SIPP "${x.nilaiSipp || "(kosong)"}"`).join("\n");
+  for (const tautan of Array.from(document.querySelectorAll('a[href*="abt/preview"]'))) {
+    const induk = tautan.parentElement || tautan;
+    let tanda = Array.from(induk.children).find((c) => c.classList.contains("aleta-t6-cek-sipp-cetak"));
+    if (!beda.length) {
+      if (tanda) tanda.remove();
+      continue;
+    }
+    if (!tanda) {
+      tanda = t6El("span", "aleta-t6-halaman aleta-t6-cek-sipp-cetak");
+      induk.insertBefore(tanda, tautan.nextSibling);
+    }
+    // Ditulis hanya bila berubah - pengamat tabel tidak ikut terpicu sia-sia.
+    const tulisan = `ⓘ ${beda.length} beda SIPP`;
+    if (tanda.textContent !== tulisan) tanda.textContent = tulisan;
+    tanda.title = `Pengingat - CETAK tetap dapat ditekan.\n${judul}`;
+  }
+}
+
+/**
+ * Membaca ulang halaman blangko yang sama (GET - ABT menghitung data_sql dan
+ * data_sipp saat menyusunnya) lalu mengganti sel variabel bercermin di
+ * tempat, kemudian membandingkan lagi. Tidak menulis apa pun ke ABT.
+ */
+async function t6CekSippMuatUlang(k, tombol) {
+  if (tombol) tombol.disabled = true;
+  let teksHalaman = "";
+  try {
+    const r = await fetch(location.href, { credentials: "include", cache: "no-store" });
+    if (!r.ok) throw new Error(`ABT menjawab ${r.status}`);
+    teksHalaman = await r.text();
+  } catch (e) {
+    k.cekSippKabar = `Halaman blangko belum dapat dibaca ulang (${sorePesan(e)}). Muat ulang halaman dengan F5.`;
+    if (tombol) tombol.disabled = false;
+    t6SegarkanCekSipp(k);
+    return;
+  }
+  let baru = new Map();
+  try {
+    baru = barisVariabel(new DOMParser().parseFromString(teksHalaman, "text/html"));
+  } catch {
+    baru = new Map();
+  }
+  if (t6Keadaan !== k) return;
+  const kini = barisVariabel();
+  const diganti = [];
+  for (const b of (k.cekSipp && k.cekSipp.butir) || []) {
+    const kode = String(b.kode);
+    const a = kini.get(kode);
+    const n = baru.get(kode);
+    if (!a || !n || a.nilai === n.nilai) continue;
+    if (a.selNilai.querySelector(".aleta-abt-sunting")) continue;
+    t6GantiIsiSel(a.selNilai, n.selNilai);
+    diganti.push(kode);
+  }
+  k.cekSippKabar = !baru.size
+    ? "Halaman yang dibaca ulang tidak memuat tabel variabel - muat ulang halaman dengan F5."
+    : diganti.length
+      ? `Variabel dimuat ulang dari ABT: ${diganti.join(", ")}.`
+      : "Variabel dimuat ulang dari ABT - tidak ada yang berubah di halaman.";
+  await t6MuatCekSipp(k);
+  if (tombol) tombol.disabled = false;
 }
 
 // ─── abt-18: komentar hakim atas BAS (tanpa acc, tidak menahan apa pun) ─────

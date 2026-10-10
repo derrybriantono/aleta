@@ -271,6 +271,35 @@ export const DDL_MASUK_JEJAK = {
   indeks: [`CREATE INDEX IF NOT EXISTS idx_masuk_jejak_pengguna ON aleta_masuk_jejak(aleta_user_id, dibuat_pada)`],
 } as const;
 
+/**
+ * Kamus variabel ABT - uraian sumber, arti, blangko pemakai, status, cermin
+ * SIPP (0059, D1 10 Okt 2026). Kolom tambahan atas aleta_kamus_variabel (0033).
+ *
+ * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
+ * menjalankan drizzle/*.sql, dan penjaga kamus-variabel-cek-cetak.test.ts
+ * membandingkan konstanta ini dengan isi berkasnya.
+ */
+export const DDL_KAMUS_SUMBER = {
+  kolom: [
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS urutan_data TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS referensi TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS sumber TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS sumber_rinci TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS tabel_sipp TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS arti TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS blangko_pakai TEXT NOT NULL DEFAULT '[]'`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS jumlah_blangko INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS cermin_sipp TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS disunting_oleh TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_kamus_variabel ADD COLUMN IF NOT EXISTS disunting_at TEXT NOT NULL DEFAULT ''`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_kamus_variabel_cermin ON aleta_kamus_variabel(cermin_sipp)`,
+    `CREATE INDEX IF NOT EXISTS idx_kamus_variabel_status ON aleta_kamus_variabel(status)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -3217,6 +3246,7 @@ const indexStatements = [
   ...DDL_ECOURT_AKSI_JEJAK.indeks,
   ...DDL_ECOURT_CAP.indeks,
   ...DDL_MASUK_JEJAK.indeks,
+  ...DDL_KAMUS_SUMBER.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
@@ -3738,6 +3768,8 @@ const migrationStatements = [
   `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS menunggu_detik INTEGER`,
   `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS jarak_sebelum_detik INTEGER`,
   `ALTER TABLE aleta_rekam_antrian ADD COLUMN IF NOT EXISTS lama_sidang_detik INTEGER`,
+  // Kamus variabel ABT: uraian sumber/arti/status/cermin SIPP (0059).
+  ...DDL_KAMUS_SUMBER.kolom,
 ];
 
 const aletaSippSchemaStatements = [
