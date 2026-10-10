@@ -537,7 +537,7 @@ describe("bot: pemuat lapis database kamus deteksi", () => {
 
   it("tanpa berkas: tidak melempar, lapis kosong (perilaku benih murni)", () => {
     expect(lapis.muatLapisTersimpan({ paksa: true })).toMatchObject({ dimuat: false });
-    expect(kamus.polaKelompok("alasan")).toEqual([]);
+    expect(kamus.polaKelompok("uji-lapis")).toEqual([]);
   });
 
   it("lapis dari portal dipakai polaKelompok, disimpan ke berkas, dan bertahan saat bot hidup ulang; baris rusak dibuang", async () => {
@@ -583,7 +583,7 @@ describe("bot: pemuat lapis database kamus deteksi", () => {
     const server = app.listen(0);
     try {
       const port = (server.address() as AddressInfo).port;
-      const badan = JSON.stringify({ sidik: "abc", pola: [{ kode: "alasan-q", kelompok: "alasan", regex: "selingkuh", status: "aktif" }], templat: [] });
+      const badan = JSON.stringify({ sidik: "abc", pola: [{ kode: "alasan-q", kelompok: "uji-lapis", regex: "selingkuh", status: "aktif" }], templat: [] });
       const tanpa = await fetch(`http://127.0.0.1:${port}/k/lapis`, { method: "PUT", headers: { "content-type": "application/json" }, body: badan });
       expect(tanpa.status).toBe(401);
       const dengan = await fetch(`http://127.0.0.1:${port}/k/lapis`, {
@@ -592,7 +592,7 @@ describe("bot: pemuat lapis database kamus deteksi", () => {
         body: badan,
       });
       expect(dengan.status).toBe(200);
-      expect(kamus.polaKelompok("alasan").map((p) => p.kode)).toEqual(["alasan-q"]);
+      expect(kamus.polaKelompok("uji-lapis").map((p) => p.kode)).toEqual(["alasan-q"]);
       const g = await fetch(`http://127.0.0.1:${port}/k`, { headers: { "x-aleta-internal-token": "token-uji-kamus" } });
       const isi = (await g.json()) as { ok: boolean; benih: Record<string, unknown>; lapis: { sidik: string; jumlahPola: number } };
       expect(isi).toMatchObject({ ok: true, lapis: { sidik: "abc", jumlahPola: 1 } });
