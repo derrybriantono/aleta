@@ -23,6 +23,7 @@ export const KELOMPOK_BAKU = [
   "tuntutan",
   "kalimat-saksi",
   "kalimat-hakim",
+  "gugatan", // anak & jawab-menjawab dari berkas e-Court (agen 3, P4/B2)
 ] as const;
 
 export const STATUS_KAMUS = ["aktif", "draf", "nonaktif"] as const;

@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.192.0",
+    dirilis: "2026-10-10T21:00:00+08:00",
+    judul: "Deteksi lengkap: saksi, huruf alasan, tuntutan & nominal dari gugatan e-Court, kamus deteksi yang bisa ditambah Admin",
+    butir: [
+      "Susun keterangan saksi: identitas saksi terbaca otomatis, paragraf keterangan gaya Ringkas atau Lengkap (mengikuti blangko putusan) dengan tombol Salin, dan peringatan ringan (mis. saksi bukan keluarga pada perkara syiqaq) yang tidak menahan simpan.",
+      "Kartu huruf alasan: tanda kesesuaian saksi - kedua saksi sama, hanya satu saksi, atau pelaku/sebab berbeda antar saksi; deteksi sebab bertambah (murtad, dipenjara, meninggalkan, dll.). Huruf alasan tetap usulan yang dicentang hakim.",
+      "Dari berkas e-Court: tuntutan tambahan (mut'ah, iddah, madliyah, nafkah anak, hadhanah, harta bersama, mahar) beserta nominalnya, data anak, dan jawab-menjawab tampil sebagai usulan berkutipan halaman; pilihan bunyi kalimat 5227 dan kalimat pertimbangan hakim siap disalin.",
+      "Admin > Integrasi e-Court > Kamus deteksi & kalimat: lihat, tambah, uji, dan nonaktifkan pola deteksi serta templat kalimat tanpa menunggu rilis; koreksi petugas atas usulan tercatat dan menjadi calon pola baru untuk ditinjau.",
+    ],
+  },
+  {
     versi: "1.191.0",
     dirilis: "2026-10-10T20:00:00+08:00",
     judul: "Sinkron SIPP-ABT: fakta saksi ke kartu hakim, Input semua yang pasti, pengingat beda SIPP sebelum CETAK, kamus variabel ABT",
