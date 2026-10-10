@@ -544,35 +544,37 @@ describe("bot: pemuat lapis database kamus deteksi", () => {
     // Bentuk persis yang dikirim portal (lapisUntukBot) - draf tidak ikut.
     const kirim = lapisUntukBot({
       pola: [
-        { kode: "alasan-z", kelompok: "alasan", label: "", kunci: "B", regex: "judi", flags: "i", status: "aktif", yakin: "ragu", contohBenar: [], contohSalah: [], ukur: { n: 0, tepat: 0, salahTangkap: 0 }, catatan: "", asalCalon: "", diubahOleh: "", diubahAt: "" },
-        { kode: "alasan-mati", kelompok: "alasan", label: "", kunci: "", regex: "x", flags: "i", status: "nonaktif", yakin: "ragu", contohBenar: [], contohSalah: [], ukur: { n: 0, tepat: 0, salahTangkap: 0 }, catatan: "", asalCalon: "", diubahOleh: "", diubahAt: "" },
-        { kode: "alasan-draf", kelompok: "alasan", label: "", kunci: "", regex: "y", flags: "i", status: "draf", yakin: "ragu", contohBenar: [], contohSalah: [], ukur: { n: 0, tepat: 0, salahTangkap: 0 }, catatan: "", asalCalon: "", diubahOleh: "", diubahAt: "" },
+        { kode: "alasan-z", kelompok: "uji-lapis", label: "", kunci: "B", regex: "judi", flags: "i", status: "aktif", yakin: "ragu", contohBenar: [], contohSalah: [], ukur: { n: 0, tepat: 0, salahTangkap: 0 }, catatan: "", asalCalon: "", diubahOleh: "", diubahAt: "" },
+        { kode: "alasan-mati", kelompok: "uji-lapis", label: "", kunci: "", regex: "x", flags: "i", status: "nonaktif", yakin: "ragu", contohBenar: [], contohSalah: [], ukur: { n: 0, tepat: 0, salahTangkap: 0 }, catatan: "", asalCalon: "", diubahOleh: "", diubahAt: "" },
+        { kode: "alasan-draf", kelompok: "uji-lapis", label: "", kunci: "", regex: "y", flags: "i", status: "draf", yakin: "ragu", contohBenar: [], contohSalah: [], ukur: { n: 0, tepat: 0, salahTangkap: 0 }, catatan: "", asalCalon: "", diubahOleh: "", diubahAt: "" },
       ],
-      templat: [{ kode: "t-1", kelompok: "kalimat-saksi", label: "", gaya: "", teks: "Saksi {nama}", syarat: {}, status: "aktif", catatan: "", asalCalon: "", diubahOleh: "", diubahAt: "" }],
+      templat: [{ kode: "t-1", kelompok: "uji-lapis-kalimat", label: "", gaya: "", teks: "Saksi {nama}", syarat: {}, status: "aktif", catatan: "", asalCalon: "", diubahOleh: "", diubahAt: "" }],
     });
     expect(kirim.pola.map((p) => p.kode)).toEqual(["alasan-z", "alasan-mati"]);
-    const hasil = lapis.terimaLapis({ ...kirim, pola: [...kirim.pola, { kode: "rusak", kelompok: "alasan", regex: "(judi" }] });
+    const hasil = lapis.terimaLapis({ ...kirim, pola: [...kirim.pola, { kode: "rusak", kelompok: "uji-lapis", regex: "(judi" }] });
     expect(hasil).toMatchObject({ ok: true, diterima: { pola: 2, templat: 1 }, galatSimpan: "" });
     expect(hasil.ditolak.join(" ")).toMatch(/rusak: regex tidak terkompilasi/);
     expect(existsSync(berkas)).toBe(true);
-    expect(kamus.polaKelompok("alasan").map((p) => p.kode)).toEqual(["alasan-z"]);
-    expect(kamus.polaKelompok("alasan")[0]).toMatchObject({ asal: "database" });
-    expect(kamus.polaKelompok("alasan")[0].re.test("suka berjudi")).toBe(true);
-    expect(kamus.templatKelompok("kalimat-saksi").map((t) => t.kode)).toEqual(["t-1"]);
+    expect(kamus.polaKelompok("uji-lapis").map((p) => p.kode)).toEqual(["alasan-z"]);
+    expect(kamus.polaKelompok("uji-lapis")[0]).toMatchObject({ asal: "database" });
+    expect(kamus.polaKelompok("uji-lapis")[0].re.test("suka berjudi")).toBe(true);
+    expect(kamus.templatKelompok("uji-lapis-kalimat").map((t) => t.kode)).toEqual(["t-1"]);
     expect(lapis.keadaanLapis()).toMatchObject({ jumlahPola: 2, sidik: kirim.sidik });
 
     // "Bot hidup ulang": ingatan dikosongkan, berkas dibaca lagi.
     kamus.lupakan();
     lapis._setel();
-    expect(kamus.polaKelompok("alasan")).toEqual([]);
+    expect(kamus.polaKelompok("uji-lapis")).toEqual([]);
     expect(lapis.muatLapisTersimpan({ paksa: true })).toMatchObject({ dimuat: true, pola: 2 });
-    expect(kamus.polaKelompok("alasan").map((p) => p.kode)).toEqual(["alasan-z"]);
+    expect(kamus.polaKelompok("uji-lapis").map((p) => p.kode)).toEqual(["alasan-z"]);
     // Baca berkala: berkas tidak berubah -> tidak dimuat ulang.
     expect(lapis.muatLapisTersimpan()).toMatchObject({ dimuat: false, sebab: "tidak berubah" });
   });
 
   it("rute bot menuntut token internal; PUT /lapis bertoken memasang lapis", async () => {
-    const express = require_("express") as typeof import("express");
+    // express milik aleta_bot; portal tidak memasang tipenya.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const express = require_("express") as any;
     const lama = process.env.ALETA_BOT_INTERNAL_TOKEN;
     process.env.ALETA_BOT_INTERNAL_TOKEN = "token-uji-kamus";
     const app = express();

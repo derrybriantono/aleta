@@ -93,7 +93,7 @@ describe("kamus deteksi - benih umum (aleta_bot/kamus-deteksi/awal)", () => {
     const t = periksaFolder(FOLDER);
     expect(kamus.daftarKelompok().sort()).toEqual(t.benih.map((b) => b.kelompok).sort());
     for (const b of t.benih) {
-      const aktif = b.pola.filter((p) => p.status !== "nonaktif");
+      const aktif = b.pola.filter((p) => (p.status || "aktif") === "aktif"); // draf & nonaktif tidak dipakai
       const dimuat = kamus.polaKelompok(b.kelompok);
       expect(dimuat.map((p) => p.kode).sort()).toEqual(aktif.map((p) => p.kode).sort());
       for (const p of dimuat) expect(p.re).toBeInstanceOf(RegExp);
