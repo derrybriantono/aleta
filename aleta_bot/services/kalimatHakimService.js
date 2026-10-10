@@ -84,6 +84,37 @@ function varian5227(ciri, pihak, opsi) {
  *   6071  "sebesar Rp1.000.000,00 (satu juta rupiah) setiap bulan"
  *   7120  "sejumlah Rp3.000.000,00 (...) setiap bulan dikali 7 (tujuh) bulan dengan total sejumlah Rp21.000.000,00 (...)"
  */
+/**
+ * Nafkah iddah dihitung 3 bulan (keputusan pengguna 10 Okt 2026).
+ * Per bulan dari berkas bila ada; bila hanya total, per bulan = total / 3.
+ * Hasil: { perBulan, total, catatan } - catatan menyebut bila berkas berbeda.
+ */
+function iddahTigaBulan(n) {
+  if (!n) return null;
+  if (n.perBulan) {
+    const catatan =
+      n.kali && n.kali !== 3
+        ? `Berkas menyebut ${n.kali} bulan; nafkah iddah dihitung 3 bulan.`
+        : !n.kali && !n.total
+          ? "Lama iddah tidak tertulis di berkas - dihitung 3 bulan."
+          : n.total && n.total !== n.perBulan * 3
+            ? `Total di berkas ${T.formatRupiah(n.total)} tidak sama dengan 3 x per bulan - dihitung 3 bulan.`
+            : "";
+    return { perBulan: n.perBulan, total: n.perBulan * 3, catatan };
+  }
+  const total = n.total || n.nilai;
+  if (!total) return null;
+  const perBulan = Math.round(total / 3);
+  const bulat = perBulan * 3 === total;
+  return {
+    perBulan,
+    total: bulat ? total : perBulan * 3,
+    catatan: bulat
+      ? "Berkas hanya menyebut total - per bulan = total dibagi 3."
+      : `Berkas hanya menyebut total ${T.formatRupiah(total)} yang tidak habis dibagi 3 - per bulan dibulatkan; periksa.`,
+  };
+}
+
 function nilaiAbtTuntutan(t) {
   if (!t) return "";
   const n = t.nominal;
@@ -96,10 +127,11 @@ function nilaiAbtTuntutan(t) {
   const pb = n.perBulan;
   const kali = n.kali;
   if (t.jenis === "iddah") {
-    if (pb && kali) return `${rT(pb)} setiap bulan dikali ${kali} (${T.terbilang(kali)}) bulan dengan jumlah ${rT(pb * kali)} selama masa iddah`;
-    // "Nafkah Iddah sebesar Rp.500.000 / Bulan" tanpa lama: masa iddah 3 bulan
-    // (perkara 365/Pdt.G/2026: amar Rp1.500.000). Pemanggil menyebut andaian ini.
-    if (pb && !n.total) return `${rT(pb)} setiap bulan dikali 3 (tiga) bulan dengan jumlah ${rT(pb * 3)} selama masa iddah`;
+    // Keputusan pengguna 10 Okt 2026: nafkah iddah SELALU dijumlah 3 (tiga) bulan, dan
+    // nafkah per bulannya tetap disebut - juga bila berkas hanya menyebut total atau
+    // menyebut lama lain. Penyimpangan dari berkas disebut di catatan kartu (iddahTigaBulan).
+    const i3 = iddahTigaBulan(n);
+    if (i3) return `${rT(i3.perBulan)} setiap bulan dikali 3 (tiga) bulan dengan jumlah ${rT(i3.total)} selama masa iddah`;
     return `sejumlah ${rT(n.total || n.nilai)}`;
   }
   if (t.jenis === "madliyah") {
@@ -223,6 +255,7 @@ module.exports = {
   templatMenurut,
   varian5227,
   nilaiAbtTuntutan,
+  iddahTigaBulan,
   daftarTuntutan,
   kalimatTuntutan,
   kalimatBersesuaian,

@@ -177,7 +177,7 @@ function susunIsiGugatan(masukan) {
     `Nominal yang DITUNTUT ${sebutanPihak(t.penuntutKode, sebutan)}${t.rekonvensi ? " (rekonvensi)" : ""} - besaran yang dikabulkan diputus majelis; sunting sesuai amar.` +
     (t.nominal && t.nominal.cocokTerbilang === false ? ` Angka dan terbilang di berkas BERBEDA (${T.formatRupiah(t.nominal.nilai)} lawan "${t.nominal.terbilang}") - periksa.` : "") +
     (t.gabungan ? " Satu nominal di berkas untuk beberapa tuntutan sekaligus - pisahkan." : "") +
-    (t.jenis === "iddah" && t.nominal && t.nominal.perBulan && !t.nominal.kali && !t.nominal.total ? " Lama iddah tidak tertulis di berkas - diandaikan 3 bulan." : "");
+    (t.jenis === "iddah" && t.nominal && K.iddahTigaBulan(t.nominal) && K.iddahTigaBulan(t.nominal).catatan ? ` ${K.iddahTigaBulan(t.nominal).catatan}` : "");
   const tambah = (kode, nama, nilai, t, catatanKhusus, keyakinan) => {
     if (!nilai) return;
     usulan.push({

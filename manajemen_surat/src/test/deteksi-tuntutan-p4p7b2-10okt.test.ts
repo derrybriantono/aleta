@@ -414,3 +414,24 @@ describe("B2 - panel ABT (blok p4 di abt.js)", () => {
     expect(wadah.querySelectorAll("button").length).toBe(kotak.length);
   });
 });
+
+// Keputusan pengguna 10 Okt 2026: nafkah iddah SELALU dijumlah 3 bulan, per bulan tetap disebut.
+describe("nafkah iddah selalu 3 bulan, per bulan tetap disebut", () => {
+  const bunyi = (nominal: Apa) => K.nilaiAbtTuntutan({ jenis: "iddah", nominal });
+  it("per bulan tanpa lama -> dikali 3, catatan menyebutnya", () => {
+    expect(bunyi({ perBulan: 500_000 })).toBe(
+      "Rp500.000,00 (lima ratus ribu rupiah) setiap bulan dikali 3 (tiga) bulan dengan jumlah Rp1.500.000,00 (satu juta lima ratus ribu rupiah) selama masa iddah"
+    );
+    expect(K.iddahTigaBulan({ perBulan: 500_000 }).catatan).toMatch(/dihitung 3 bulan/);
+  });
+  it("berkas menyebut lama lain (4 bulan) -> tetap 3 bulan, penyimpangan disebut", () => {
+    expect(bunyi({ perBulan: 1_000_000, kali: 4, total: 4_000_000 })).toContain("dikali 3 (tiga) bulan dengan jumlah Rp3.000.000,00");
+    expect(K.iddahTigaBulan({ perBulan: 1_000_000, kali: 4, total: 4_000_000 }).catatan).toBe("Berkas menyebut 4 bulan; nafkah iddah dihitung 3 bulan.");
+  });
+  it("hanya total -> per bulan = total / 3 dan tetap disebut", () => {
+    expect(bunyi({ nilai: 3_000_000, total: 3_000_000 })).toMatch(/^Rp1\.000\.000,00 \(satu juta rupiah\) setiap bulan dikali 3 \(tiga\) bulan dengan jumlah Rp3\.000\.000,00/);
+  });
+  it("per bulan x 3 = total yang tertulis -> tanpa catatan", () => {
+    expect(K.iddahTigaBulan({ perBulan: 5_000_000, kali: 3, total: 15_000_000 }).catatan).toBe("");
+  });
+});
