@@ -2075,6 +2075,27 @@ const NADA_KEYAKINAN = {
 };
 
 /**
+ * S5=H1 (10 Okt 2026): 0222/0246/9944/5227 dari keterangan saksi membawa DUA
+ * tanda yang berbeda arti - lihat tandaiS5 di abtUsulanService.js:
+ *   kesepakatan  apa kata para saksi (sama/berbeda/satu saksi/posita)
+ *   tingkat      seberapa sering golongan itu sama dengan isian akhir petugas,
+ *                terukur atas putusan nyata. "ragu" tidak dicentang sendiri;
+ *                hanya "pasti" yang ikut "Input semua yang pasti".
+ */
+const NADA_KESEPAKATAN = {
+  sama: { kelas: "aleta-tanda-hijau", teks: "kedua saksi sama" },
+  berbeda: { kelas: "aleta-tanda-merah", teks: "saksi berbeda" },
+  "satu saksi": { kelas: "aleta-tanda-kuning", teks: "satu saksi" },
+  dihitung: { kelas: "aleta-tanda-kuning", teks: "dihitung dari pisah rumah" },
+  posita: { kelas: "aleta-tanda-kuning", teks: "dari posita — belum dikuatkan saksi" },
+};
+const NADA_TINGKAT = {
+  pasti: { kelas: "aleta-tanda-hijau", teks: "yakin: pasti" },
+  cukup: { kelas: "aleta-tanda-kuning", teks: "yakin: cukup" },
+  ragu: { kelas: "aleta-tanda-abu", teks: "yakin: ragu — periksa" },
+};
+
+/**
  * Satu usulan, beserta kalimat yang melahirkannya.
  *
  * Kutipan sumbernya bukan hiasan. Tanpa itu, memeriksa satu usulan berarti
@@ -2092,7 +2113,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // sendiri. Yang berselisih justru yang paling perlu dibaca manusia - dan
   // yang "ragu" pun tidak: nilai yang bot sendiri ragukan (mis. 0222 dari
   // posita) masuk ke blangko hanya bila petugas mencentangnya.
-  centang.checked = Boolean(u.nilai) && u.keyakinan !== "bentrok" && u.keyakinan !== "ragu" && u.keyakinan !== "ocr";
+  centang.checked =
+    Boolean(u.nilai) && u.keyakinan !== "bentrok" && u.keyakinan !== "ragu" && u.keyakinan !== "ocr" && u.tingkat !== "ragu";
   centang.disabled = !u.nilai;
   kepala.appendChild(centang);
   kepala.appendChild(buatElemen("span", "aleta-abt-kode", u.kode));
@@ -2103,8 +2125,10 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   const dariPosita = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber.every((s) => s && s.asal === "posita");
   // 9 Okt (KUASA): usulan dari surat gugatan e-Court membawa tanda sumbernya sendiri.
   const dariGugatan = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber[0] && u.sumber[0].asal === "gugatan-ecourt";
-  const nada =
-    dariPosita && u.keyakinan === "cukup"
+  const nadaS5 = typeof u.kesepakatan === "string" && u.nilai ? NADA_KESEPAKATAN[u.kesepakatan] : null;
+  const nada = nadaS5
+    ? nadaS5
+    : dariPosita && u.keyakinan === "cukup"
       ? { kelas: "aleta-tanda-kuning", teks: "dari posita" }
       : dariGugatan && u.keyakinan === "cukup"
       ? { kelas: "aleta-tanda-hijau", teks: "dari gugatan e-Court" }
@@ -2113,6 +2137,12 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
       : NADA_KEYAKINAN[u.keyakinan] || NADA_KEYAKINAN.kosong;
   const lencana = buatElemen("span", `aleta-tanda ${nada.kelas}`, nada.teks);
   kepala.appendChild(lencana);
+  if (nadaS5 && NADA_TINGKAT[u.tingkat]) {
+    const yakin = buatElemen("span", `aleta-tanda aleta-s5-yakin ${NADA_TINGKAT[u.tingkat].kelas}`, NADA_TINGKAT[u.tingkat].teks);
+    yakin.dataset.tingkat = u.tingkat;
+    yakin.title = `Tingkat yakin menurut ukuran atas putusan yang sudah diputus. Golongan: ${u.dasarTingkat || "-"}.`;
+    kepala.appendChild(yakin);
+  }
   kartu.appendChild(kepala);
 
   const sanding = buatElemen("div", "aleta-abt-sanding");
@@ -13460,7 +13490,11 @@ async function soreBacaIsi(k) {
           data.info.push(
             bacaan.catatan.length ? `Keterangan saksi tidak terbaca - ${bacaan.catatan.join("; ")}.` : "Keterangan saksi 1 dan 2 belum ada di blangko ini."
           );
-          return;
+          // S5=H1 (10 Okt 2026): tanpa keterangan saksi, kartu 0222/0246/
+          // 9944/5227 tetap diisi dari POSITA - berkeyakinan "ragu", tidak
+          // dicentang sendiri, kutipan posita ditampilkan.
+          if (!posita().trim()) return;
+          data.info.push("Alasan, awal konflik, dan pisah rumah diusulkan dari posita (ragu - periksa sebelum diinput).");
         }
         // Perbaikan 1 Okt butir 9: teks yang sama dengan yang dibaca bot -
         // cadangan "inti keterangan" bila bot belum mengirim intiCiri.
@@ -13889,8 +13923,16 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
   }
   const kabar = buatElemen("div", "aleta-abt-kabar");
   baris.appendChild(tombol);
+  // S5/H3 (10 Okt 2026): "Input semua yang pasti" - lihat s5BukaPratinjau.
+  const tombolPasti = buatElemen("button", "aleta-permintaan-tombol aleta-sore-input-pasti", "Input semua yang pasti");
+  tombolPasti.type = "button";
+  tombolPasti.title =
+    "Menampilkan pratinjau lama → baru untuk SEMUA usulan berkeyakinan pasti, lalu menyimpannya ke ABT sesudah Anda setujui. Yang ragu tetap dicentang manual.";
+  baris.appendChild(tombolPasti);
+  const wadahPasti = buatElemen("div", "aleta-s5-wadah");
   w.appendChild(baris);
   w.appendChild(kabar);
+  w.appendChild(wadahPasti);
   // Perbaikan 2 Okt butir 9 (UI Baru): yang dirapikan tidak tampil, jadi tidak
   // ikut angka di tombol - tetap ikut tersimpan (lihat klik di bawah).
   const rapiTampak = () => !t6Modern() || Boolean(k.a2LihatRapi);
@@ -13902,6 +13944,9 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
     if (!tombol.isConnected) return;
     const n = hitung();
     tombol.textContent = n ? `Input ke ABT (${n})` : "Input ke ABT";
+    const pasti = s5DaftarPasti(pilih);
+    tombolPasti.hidden = !pasti.length;
+    tombolPasti.textContent = `Input semua yang pasti (${pasti.length})`;
     a1SegarkanGalat();
   };
   for (const el of [w, k.wadah.huruf]) {
@@ -13910,6 +13955,11 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
     el.addEventListener("focusout", () => setTimeout(segar, 0));
   }
   segar();
+  tombolPasti.addEventListener("click", () => {
+    s5BukaPratinjau(k, s5DaftarPasti(pilih), wadahPasti, () => {
+      segar();
+    });
+  });
   tombol.addEventListener("click", async () => {
     const dipilih = pilih.filter((x) => x.centang.checked && x.nilai());
     const huruf = hurufPilihan.filter((x) => x.centang.checked);
@@ -13971,6 +14021,203 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
     kabar.textContent = `${bagian.join(". ")}${gagal ? "" : ". Muat ulang halaman bila variabel otomatis belum ikut berubah."}`;
     if (a1AdaYangMasuk(dipilih, huruf, rapiDipilih)) a1CatatInput(k.jatiDiri);
     segar();
+  });
+}
+
+// ─── S5/H3: Input semua yang pasti ──────────────────────────────────────────
+
+/**
+ * ============================================================================
+ * S5/H3 (10 Okt 2026) - "INPUT SEMUA YANG PASTI"
+ * ============================================================================
+ *
+ * Satu tekanan untuk semua usulan berkeyakinan PASTI, tetapi tidak satu pun
+ * tertulis sebelum petugas melihat pratinjau lama → baru dan menyetujuinya.
+ * Jalur tulisnya tidak bertambah: terapkanUsulanBerurutan -> simpanVariabel
+ * (petik ' dan " menjadi ’, garis miring terbalik menjadi /) - sama dengan
+ * "Input ke ABT". Sesudahnya halaman blangko dibaca ulang (GET, ABT menyusun
+ * ulang) dan tiap variabel diberi tanda hijau bila isinya SUNGGUH terbaca di
+ * ABT, merah bila tidak.
+ *
+ * Yang dihitung pasti:
+ *   - usulan bertingkat (0222/0246/9944/5227 dari saksi): HANYA tingkat
+ *     "pasti" - golongan yang terukur >= 95% sama dengan isian petugas;
+ *   - usulan lain: keyakinan "pasti" yang BUKAN dari keterangan saksi,
+ *     posita, atau berkas KTP (mis. data SIPP). 7035/1268 dari saksi tidak
+ *     pernah diukur, jadi tidak ikut.
+ * Usulan yang sudah disunting petugas tidak ikut (itu bukan lagi usulan
+ * mesin - pakai "Input ke ABT"). Yang ragu tetap dicentang manual.
+ */
+function s5UsulanPasti(u) {
+  if (!u || !String(u.nilai || "").trim()) return false;
+  if (typeof u.tingkat === "string" && u.tingkat) return u.tingkat === "pasti";
+  if (u.keyakinan !== "pasti") return false;
+  const sumber = Array.isArray(u.sumber) ? u.sumber : [];
+  return !sumber.some((x) => x && (x.saksi || x.asal === "posita" || x.asal === "ktp-ecourt"));
+}
+
+/** Butir kartu (lihat kartuUsulan) yang ikut "Input semua yang pasti". */
+function s5DaftarPasti(pilih) {
+  return (pilih || []).filter(
+    (x) => x && x.usulan && s5UsulanPasti(x.usulan) && !x.centang.disabled && !x.disunting() && String(x.nilai() || "").trim()
+  );
+}
+
+/** Dua isi dianggap sama bila hanya berbeda spasi, besar-kecil huruf, dan jenis petik. */
+function s5Sama(a, b) {
+  const baku = (x) =>
+    String(x == null ? "" : x)
+      .replace(/[’‘`"“”]/g, "'")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  return baku(a) === baku(b);
+}
+
+/**
+ * Halaman blangko dibaca ulang (GET) dan isi tiap variabel diambil dari
+ * sana - bukti bahwa ABT sungguh menyimpannya. Sel di halaman diganti dengan
+ * isi baru (hiasan ALETA dipertahankan), penyunting yang terbuka tidak disentuh.
+ */
+async function s5BacaUlang(kodes) {
+  let teks = "";
+  try {
+    const r = await fetch(location.href, { credentials: "include", cache: "no-store" });
+    if (!r.ok) return { ok: false, pesan: `ABT menjawab ${r.status}` };
+    teks = await r.text();
+  } catch (galat) {
+    return { ok: false, pesan: sorePesan(galat) };
+  }
+  let baru = new Map();
+  try {
+    baru = barisVariabel(new DOMParser().parseFromString(teks, "text/html"));
+  } catch {
+    baru = new Map();
+  }
+  if (!baru.size) return { ok: false, pesan: "halaman yang dibaca ulang tidak memuat tabel variabel" };
+  const kini = barisVariabel();
+  for (const kode of kodes) {
+    const a = kini.get(kode);
+    const b = baru.get(kode);
+    if (!a || !b || a.selNilai.querySelector(".aleta-abt-sunting") || a.nilai === b.nilai) continue;
+    t6GantiIsiSel(a.selNilai, b.selNilai);
+  }
+  return { ok: true, nilai: new Map(kodes.map((kode) => [kode, baru.has(kode) ? baru.get(kode).nilai : null])) };
+}
+
+/**
+ * Pratinjau lama → baru. Baris yang blangkonya sudah berisi LAIN tidak
+ * dicentang (menimpa isi petugas harus dipilih sendiri); yang kosong dicentang.
+ * "Baru" ditampilkan sebagaimana akan tersimpan (petik sudah menjadi ’).
+ */
+function s5BukaPratinjau(k, daftar, wadah, sesudah) {
+  wadah.textContent = "";
+  if (!daftar.length) return;
+  const kotak = buatElemen("div", "aleta-s5-pratinjau");
+  kotak.appendChild(buatElemen("div", "aleta-s5-judul", `Pratinjau: ${daftar.length} usulan pasti akan disimpan ke ABT`));
+  const tabel = document.createElement("table");
+  tabel.className = "aleta-s5-tabel";
+  const kepala = document.createElement("tr");
+  for (const judul of ["", "Variabel", "Lama (di ABT)", "Baru", "Hasil"]) kepala.appendChild(buatElemen("th", "", judul));
+  tabel.appendChild(kepala);
+  const peta = barisVariabel();
+  const barisan = [];
+  for (const x of daftar) {
+    const kode = String(x.usulan.kode);
+    const lama = (peta.get(kode) || {}).nilai || "";
+    const tr = document.createElement("tr");
+    tr.dataset.kode = kode;
+    const tdCentang = document.createElement("td");
+    const centang = document.createElement("input");
+    centang.type = "checkbox";
+    centang.className = "aleta-s5-centang";
+    const menimpa = keadaanNilai(lama) === "terisi";
+    centang.checked = !menimpa;
+    tdCentang.appendChild(centang);
+    tr.appendChild(tdCentang);
+    tr.appendChild(buatElemen("td", "aleta-s5-var", `${kode} ${x.usulan.nama || ""}`.trim()));
+    const tdLama = buatElemen("td", "aleta-s5-lama", keadaanNilai(lama) === "kosong" ? "(belum diisi)" : lama);
+    if (menimpa) tdLama.appendChild(buatElemen("span", "aleta-tanda aleta-tanda-kuning", "akan ditimpa"));
+    tr.appendChild(tdLama);
+    tr.appendChild(buatElemen("td", "aleta-s5-baru", a3NetralkanPetik(x.nilai())));
+    const hasil = buatElemen("td", "aleta-s5-hasil", "");
+    tr.appendChild(hasil);
+    tabel.appendChild(tr);
+    barisan.push({ x, kode, centang, hasil, tr });
+  }
+  kotak.appendChild(tabel);
+  const tindakan = buatElemen("div", "aleta-abt-tindakan");
+  const simpan = buatElemen("button", "aleta-permintaan-tombol aleta-s5-simpan", "");
+  simpan.type = "button";
+  const batal = buatElemen("button", "aleta-perkakas-pulih aleta-s5-batal", "Batal");
+  batal.type = "button";
+  tindakan.appendChild(simpan);
+  tindakan.appendChild(batal);
+  kotak.appendChild(tindakan);
+  const kabar = buatElemen("div", "aleta-abt-kabar aleta-s5-kabar");
+  kotak.appendChild(kabar);
+  wadah.appendChild(kotak);
+  const segarTombol = () => {
+    const n = barisan.filter((b) => b.centang.checked && !b.centang.disabled).length;
+    simpan.textContent = `Ya, simpan ${n} ke ABT`;
+    simpan.disabled = !n;
+  };
+  for (const b of barisan) b.centang.addEventListener("change", segarTombol);
+  segarTombol();
+  batal.addEventListener("click", () => {
+    wadah.textContent = "";
+  });
+  simpan.addEventListener("click", async () => {
+    const dipilih = barisan.filter((b) => b.centang.checked && !b.centang.disabled);
+    if (!dipilih.length) return;
+    simpan.disabled = true;
+    batal.disabled = true;
+    for (const b of barisan) b.centang.disabled = true;
+    kabar.className = "aleta-abt-kabar aleta-s5-kabar";
+    const harap = new Map(dipilih.map((b) => [b.kode, a3NetralkanPetik(b.x.nilai())]));
+    let r = { berhasil: 0, gagal: [] };
+    try {
+      r = await terapkanUsulanBerurutan(
+        dipilih.map((b) => b.x),
+        k.jatiDiri,
+        (teks) => {
+          kabar.textContent = teks;
+        }
+      );
+    } catch (galat) {
+      r = { berhasil: 0, gagal: [`Input terhenti: ${sorePesan(galat)}`] };
+    }
+    kabar.textContent = "Membaca ulang ABT…";
+    const baca = await s5BacaUlang(dipilih.map((b) => b.kode));
+    let hijau = 0;
+    for (const b of dipilih) {
+      const gagalIni = r.gagal.find((g) => String(g).startsWith(`${b.kode}:`));
+      const terbaca = baca.ok ? baca.nilai.get(b.kode) : null;
+      b.tr.classList.remove("aleta-s5-hijau", "aleta-s5-merah");
+      if (gagalIni) {
+        b.hasil.textContent = `gagal - ${String(gagalIni).slice(b.kode.length + 1).trim()}`;
+        b.tr.classList.add("aleta-s5-merah");
+      } else if (!baca.ok) {
+        b.hasil.textContent = `tersimpan menurut ABT, belum dapat dibaca ulang (${baca.pesan})`;
+        b.tr.classList.add("aleta-s5-merah");
+      } else if (s5Sama(terbaca, harap.get(b.kode))) {
+        b.hasil.textContent = "✓ tersimpan";
+        b.tr.classList.add("aleta-s5-hijau");
+        hijau += 1;
+      } else {
+        b.hasil.textContent = `belum terbaca di ABT - isinya "${terbaca == null ? "(tidak ada)" : terbaca}"`;
+        b.tr.classList.add("aleta-s5-merah");
+      }
+    }
+    const merah = dipilih.length - hijau;
+    kabar.className = merah ? "aleta-abt-kabar aleta-s5-kabar aleta-abt-gagal" : "aleta-abt-kabar aleta-s5-kabar";
+    kabar.textContent = merah
+      ? `${hijau} dari ${dipilih.length} terbukti tersimpan; ${merah} perlu diperiksa - lihat kolom Hasil.`
+      : `${hijau} variabel terbukti tersimpan di ABT (dibaca ulang). Yang ragu tetap menunggu dicentang manual.`;
+    if (r.berhasil) a1CatatInput(k.jatiDiri);
+    batal.disabled = false;
+    batal.textContent = "Tutup";
+    if (typeof sesudah === "function") sesudah();
   });
 }
 

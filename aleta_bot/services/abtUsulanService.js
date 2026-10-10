@@ -123,10 +123,16 @@ function cariButir(butir, wajib, terlarang) {
 /** Bulan dan tahun dari sepotong kalimat, dalam bentuk yang dipakai blangko. */
 function ambilBulanTahun(kalimat) {
   const teks = String(kalimat || "");
-  const polaBulan = new RegExp(`\\b(${BULAN.join("|")})\\s+(\\d{4})\\b`, "i");
+  // S5=H1 (10 Okt 2026): "bulan Desember tahun 2013" dan ejaan petugas
+  // "Pebruari"/"Nopember" dahulu jatuh ke cadangan tahun - terukur pada
+  // 392/Pdt.G/2025 ("sejak bulan Desember tahun 2013" -> "tahun 2013",
+  // isian petugas "bulan Desember 2013").
+  const polaBulan = new RegExp(`\\b(${BULAN.join("|")}|Pebruari|Nopember)\\s*,?\\s+(?:tahun\\s+)?(\\d{4})\\b`, "i");
   const cocokBulan = teks.match(polaBulan);
   if (cocokBulan) {
-    const namaBulan = BULAN.find((b) => b.toLowerCase() === cocokBulan[1].toLowerCase());
+    const kecil = cocokBulan[1].toLowerCase();
+    const baku = kecil === "pebruari" ? "februari" : kecil === "nopember" ? "november" : kecil;
+    const namaBulan = BULAN.find((b) => b.toLowerCase() === baku);
     return { nilai: `bulan ${namaBulan} ${cocokBulan[2]}`, jenis: "bulan" };
   }
   const cocokAwalAkhir = teks.match(/\b(awal|akhir|pertengahan)\s+tahun\s+(\d{4})\b/i);
@@ -989,9 +995,21 @@ function lamaDiucapkan(butir) {
     const i = b.search(/pisah|berpisah|tidak (lagi )?tinggal bersama|tidak serumah|meninggalkan/i);
     if (i < 0) continue;
     const sisa = b.slice(i);
-    const tahun = banyakSatuan(sisa, "tahun");
-    const bulan = banyakSatuan(sisa, "bulan");
-    if (tahun === null && bulan === null) continue;
+    let tahun = banyakSatuan(sisa, "tahun");
+    let bulan = banyakSatuan(sisa, "bulan");
+    if (tahun === null && bulan === null) {
+      // S5=H1 (10 Okt 2026): lamanya DISEBUT SEBELUM kata pisahnya - "sudah
+      // 8 bulan pisah rumah", "sudah ± 2 tahun Tergugat pergi meninggalkan".
+      // Hanya bila didahului penanda lama (sudah/telah/selama/kurang lebih/
+      // sekitar/±) dalam 40 huruf sebelum kata pisahnya, supaya umur anak
+      // ("anak umur 3 tahun ... pisah") tidak terbaca.
+      const depan = b.slice(Math.max(0, i - 40), i);
+      const m = depan.match(/(?:sudah|telah|selama|kurang\s+lebih|lebih\s+kurang|sekitar|kira-kira|±|\+\/-)\s*(?:sekitar\s+|kurang\s+lebih\s+|±\s*)?([^,;]*?(?:tahun|bulan)(?:\s+(?:lebih\s+)?[^,;]*?bulan)?)\s*(?:lamanya\s+)?(?:\S+\s+){0,3}$/i);
+      if (!m || /umur|usia|anak|nikah|menikah|kawin/i.test(m[0])) continue;
+      tahun = banyakSatuan(m[1], "tahun");
+      bulan = banyakSatuan(m[1], "bulan");
+      if (tahun === null && bulan === null) continue;
+    }
     const potong = [];
     if (tahun !== null) potong.push(`${tahun} tahun`);
     if (bulan !== null) potong.push(`${bulan} bulan`);
@@ -1086,6 +1104,210 @@ function upayaDamaiDari(butir) {
   return { keadaan: berhasil ? "berhasil" : "gagal", kalimat };
 }
 
+/**
+ * ============================================================================
+ * S5=H1 (10 Okt 2026) - KESEPAKATAN SAKSI DAN TINGKAT YAKIN, TERPISAH
+ * ============================================================================
+ *
+ * `keyakinan` tetap berarti apa yang dikatakan para saksi (pasti = kedua
+ * saksi sama) - lencana lama dan centangnya bergantung padanya. Dua ruas
+ * baru untuk 0222/0246/9944/5227:
+ *   kesepakatan  "sama" | "berbeda" | "satu saksi" | "dihitung" | "posita" | ""
+ *   tingkat      "pasti" | "cukup" | "ragu" - SEBERAPA SERING usulan dalam
+ *                golongan itu SAMA dengan isian akhir petugas, terukur atas
+ *                putusan nyata. Hanya "pasti" yang ikut "Input semua yang
+ *                pasti" (H3); "ragu" tidak dicentang sendiri.
+ *   dasarTingkat ciri golongannya, untuk dibaca petugas.
+ * Kedua saksi sama BELUM tentu pasti: "sejak tahun 2023" dari kedua saksi
+ * hanya 1 dari 3 sama dengan isian petugas (petugas menulis bulannya dari
+ * posita). Angka per golongan ada di ATURAN_TINGKAT_S5.
+ */
+function normalWaktu(x) {
+  const t = String(x || "").toLowerCase().replace(/^bulan\s+/, "").replace(/[.,;]+$/, "").replace(/\s+/g, " ").trim();
+  return t;
+}
+
+/**
+ * S5=H1 - SIAPA PELAKU SEBAB ITU. Kalimat 5227 selalu berbunyi "{pelaku}
+ * ..." (pelaku = 0047 = Tergugat/Termohon). Bila subjek kalimat pemicunya
+ * PIHAK YANG MENGAJUKAN (0046 = Penggugat/Pemohon) - "Penggugat pergi
+ * meninggalkan", "Pemohon berjudi" - memasukkannya berarti menuduh pihak
+ * yang salah di putusan. Ciri itu dikeluarkan dari kalimat dan disebut.
+ *
+ * Subjek = sebutan TERAKHIR sebelum kata cirinya dalam 70 huruf, yang tidak
+ * didahului kata objek/milik (POLA_BUKAN_SUBJEK: "kepada", "keluarga",
+ * "menuduh" tidak termasuk - "Tergugat menuduh Penggugat selingkuh" berarti
+ * Penggugat dituduh, dan itu pun bukan perbuatan Tergugat). Kata pasif
+ * ("dipukul") dan ciri tanpa pelaku (perselisihan, ekonomi, campur tangan
+ * keluarga) tidak dinilai. "Penggugat dan Tergugat ..." tidak dinilai.
+ * @returns {"pelaku"|"lawan"|"tuduhan"|""}
+ */
+const KUNCI_TANPA_PELAKU = new Set(["perselisihan terus-menerus", "masalah ekonomi", "campur tangan keluarga"]);
+const POLA_KATA_TUDUH = /\b(menuduh|dituduh|tuduh|mencurigai|curiga|memfitnah|menyangka|disangka|mengira)\s+(?:\S+\s+){0,2}$/;
+const POLA_SELA_MINTA = /\b(meminta|menanyakan|menuntut|menagih|mempertanyakan|mengeluh\w*|bekerja|mencari|menanggung|membiayai)\b/;
+// Sela yang menyambung KE PERBUATAN LAIN - sesudahnya bukan lagi isi tuduhan.
+const POLA_SELA_SAMBUNG = /\b(bahkan|dan|serta|lalu|kemudian|juga|hingga|sehingga|namun|tetapi|pernah)\b/;
+// Sebutan pihak yang mengajukan dianggap SUBJEK hanya di awal klausa -
+// "uang Penggugat untuk bermain judi", "barang pribadi Penggugat agar ...",
+// "nama baik Penggugat kepada selingkuhan Tergugat" bukan perbuatannya.
+const POLA_AWAL_KLAUSA =
+  /(?:^|[,:(]|\b(?:karena|bahwa|dan|yaitu|yakni|adalah|sehingga|namun|tetapi|lalu|kemudian|juga|sedangkan|justru|akhirnya|ternyata|saat|ketika|dimana|bahkan|serta|\d{4}))\s*$/;
+/** Penilaian satu kemunculan kata ciri di kalimat (huruf kecil). */
+function pelakuSatuKata(kecil, i) {
+  const depan = kecil.slice(Math.max(0, i - 70), i);
+  const semua = [...depan.matchAll(/(penggugat|tergugat|pemohon|termohon)/g)];
+  if (!semua.length) return "";
+  const m = semua[semua.length - 1];
+  const sebelum = depan.slice(0, m.index);
+  const sela = depan.slice(m.index + m[0].length);
+  if (/[.;]/.test(sela) || /\boleh\b/.test(sela)) return "";
+  const sisi = /tergugat|termohon/.test(m[1]) ? "pelaku" : "lawan";
+  // "Tergugat menuduh Penggugat selingkuh" - tuduhan, bukan perbuatan.
+  if (sisi === "lawan" && POLA_KATA_TUDUH.test(sebelum)) {
+    return sela.length <= 30 && !POLA_SELA_SAMBUNG.test(sela) && !/,/.test(sela) ? "tuduhan" : "";
+  }
+  if (POLA_BUKAN_SUBJEK.test(sebelum) || /\bme\w+\s+$/.test(sebelum)) {
+    // Sebutan itu OBJEK ("memukul Penggugat, mencekik") - subjeknya sebutan
+    // sebelumnya, bila ada dan tidak terpotong titik.
+    if (semua.length < 2) return "";
+    const s2 = semua[semua.length - 2];
+    const sela2 = depan.slice(s2.index + s2[0].length);
+    if (/[.;]/.test(sela2) || POLA_BUKAN_SUBJEK.test(depan.slice(0, s2.index))) return "";
+    return /tergugat|termohon/.test(s2[1]) ? "pelaku" : "";
+  }
+  if (/(penggugat|tergugat|pemohon|termohon)\s+(dan|&|serta|maupun|bersama)\s+$/.test(sebelum)) return "";
+  if (sisi === "lawan" && (sela.length > 40 || /,/.test(sela) || POLA_SELA_MINTA.test(sela) || POLA_SELA_SAMBUNG.test(sela))) return "";
+  if (sisi === "lawan" && !POLA_AWAL_KLAUSA.test(sebelum)) return "";
+  return sisi;
+}
+function pelakuCiri(kalimat, ciri, daftar) {
+  if (!kalimat || KUNCI_TANPA_PELAKU.has(ciri)) return "";
+  const kecil = String(kalimat).toLowerCase();
+  const d = daftar || CIRI_ALASAN;
+  const hasil = new Set();
+  for (const baris of d) {
+    if (baris.kunci !== ciri || !barisBerlaku(kecil, baris, d)) continue;
+    const kata = baris.kata[0];
+    if (/^di[a-z]/.test(kata)) continue;
+    for (let i = kecil.indexOf(kata); i >= 0; i = kecil.indexOf(kata, i + 1)) hasil.add(pelakuSatuKata(kecil, i));
+  }
+  // Satu kemunculan yang dilakukan pelaku cukup untuk memasukkannya.
+  if (hasil.has("pelaku")) return "pelaku";
+  if (hasil.has("lawan")) return "lawan";
+  if (hasil.has("tuduhan")) return "tuduhan";
+  return "";
+}
+
+function golonganS5(kode, info, u) {
+  const gab = info.gab || {};
+  const dariPosita = gab.dariPosita || (Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber.every((x) => x && x.asal === "posita"));
+  const kesepakatan = dariPosita
+    ? "posita"
+    : gab.dihitung
+    ? "dihitung"
+    : gab.keyakinan === "pasti"
+    ? "sama"
+    : gab.keyakinan === "bentrok"
+    ? "berbeda"
+    : gab.keyakinan === "cukup"
+    ? "satu saksi"
+    : gab.keyakinan === "ragu" && kode === "5227"
+    ? "sama"
+    : "";
+  const fitur = [];
+  if (kode === "0222" || kode === "0246") {
+    fitur.push(/^bulan /.test(u.nilai) ? "bulan" : /^(awal|akhir|pertengahan) /.test(u.nilai) ? "bagian" : "tahun");
+    if (gab.diperkaya) fitur.push("bulan-dari-posita");
+    const p = normalWaktu(info.posita);
+    const n = normalWaktu(u.nilai);
+    if (!p) fitur.push("tanpa-posita");
+    else if (p === n) fitur.push("posita-sama");
+    else if (p.slice(-4) === n.slice(-4)) fitur.push("posita-tahun-sama");
+    else fitur.push("posita-beda");
+  } else if (kode === "9944") {
+    const pb = u.pembanding;
+    if (!pb) fitur.push("tanpa-hitung");
+    else fitur.push(totalBulan(u.nilai) === pb.totalBulan ? "hitung-sama" : Math.abs(totalBulan(u.nilai) - pb.totalBulan) <= 2 ? "hitung-dekat" : "hitung-beda");
+    const p = totalBulan(info.posita);
+    if (p === null) fitur.push("tanpa-posita");
+    else fitur.push(p === totalBulan(u.nilai) ? "posita-sama" : "posita-beda");
+    const kal = (info.ucap || []).map((x) => String((x && x.kalimat) || "")).join(" ");
+    if (/(tahun|bulan)\s+(lebih|lewat)\b/i.test(kal)) fitur.push("lebih");
+  } else if (kode === "5227") {
+    if (!info.gugatanTerbaca) fitur.push("tanpa-posita");
+  }
+  return { kesepakatan, fitur };
+}
+
+/**
+ * Aturan tingkat yakin per golongan, berurutan (yang pertama cocok menang).
+ * Golongan yang tidak tercantum = "cukup". Ambang: pasti >= 95% sama dengan
+ * isian akhir petugas pada n >= 20; ragu bila < 75%.
+ *
+ * Terukur 10 Okt 2026 atas putusan PA Donggala yang SUDAH diputus (salinan
+ * server 9 Okt; keterangan saksi abt_keterangan_saksi + posita SIPP, isian
+ * petugas abt_data_teks; ukur.js di D:/aleta-dev/kerja/saksi-ke-hakim):
+ *   0222 sama+bulan+posita sama          98/101  97%  -> pasti
+ *   0246 sama+bulan+posita sama         180/185  97%  -> pasti
+ *   0222/0246 bulan diambil dari posita  23/42   55%  -> ragu
+ *   0222/0246 posita menyebut lain        9/19   47%  -> ragu
+ *   0246 tahun saja, posita diam          1/6         -> ragu
+ *   9944 dihitung dari 0246 ke sidang     9/43   21%  -> ragu
+ *   9944 posita menyebut lama lain       ~40%         -> ragu
+ *   9944 ucapan beda dgn hitungan         ~45%        -> ragu
+ *   9944 sama+hitung dekat+posita sama   90/101  89%  -> cukup (tidak ada
+ *        golongan 9944 yang mencapai 95% - 9944 TIDAK PERNAH pasti)
+ *   5227 kedua saksi sama: susunan alasan persis sama dengan petugas hanya
+ *        25/301 (8%), beririsan 238/301 (79%) - petugas memilih sebagian
+ *        alasan. 5227 TIDAK PERNAH pasti; tetap dicentang seperti dahulu.
+ */
+const ATURAN_TINGKAT_S5 = [
+  { kode: "0222", kesepakatan: "sama", dengan: ["bulan", "posita-sama"], tanpa: ["bulan-dari-posita"], tingkat: "pasti" },
+  { kode: "0246", kesepakatan: "sama", dengan: ["bulan", "posita-sama"], tanpa: ["bulan-dari-posita"], tingkat: "pasti" },
+  ...["0222", "0246"].flatMap((kode) => [
+    { kode, dengan: ["bulan-dari-posita"], tingkat: "ragu" },
+    { kode, dengan: ["posita-beda"], tingkat: "ragu" },
+    { kode, dengan: ["posita-tahun-sama"], tingkat: "ragu" },
+    { kode, dengan: ["tahun", "tanpa-posita"], tingkat: "ragu" },
+  ]),
+  { kode: "9944", kesepakatan: "dihitung", tingkat: "ragu" },
+  { kode: "9944", dengan: ["posita-beda"], tingkat: "ragu" },
+  { kode: "9944", dengan: ["hitung-beda"], tingkat: "ragu" },
+  { kode: "5227", tingkat: "cukup" },
+];
+
+function tingkatS5(kode, kesepakatan, fitur) {
+  if (!kesepakatan) return "";
+  if (kesepakatan === "posita" || kesepakatan === "berbeda") return "ragu";
+  for (const a of ATURAN_TINGKAT_S5) {
+    if (a.kode !== kode) continue;
+    if (a.kesepakatan && a.kesepakatan !== kesepakatan) continue;
+    if ((a.dengan || []).some((f) => !fitur.includes(f))) continue;
+    if ((a.tanpa || []).some((f) => fitur.includes(f))) continue;
+    return a.tingkat;
+  }
+  return "cukup";
+}
+
+function tandaiS5(daftar, peta) {
+  for (const u of daftar) {
+    const info = peta[u.kode];
+    if (!info) continue;
+    if (!u.nilai) {
+      u.kesepakatan = "";
+      u.tingkat = "";
+      continue;
+    }
+    const { kesepakatan, fitur } = golonganS5(u.kode, info, u);
+    u.kesepakatan = kesepakatan;
+    u.tingkat = tingkatS5(u.kode, kesepakatan, fitur);
+    u.dasarTingkat = [kesepakatan, ...fitur].join(", ");
+    // Keyakinan "ragu" dari bot sendiri tidak pernah naik menjadi pasti.
+    if (u.keyakinan === "ragu") u.tingkat = "ragu";
+    if (info.gab && info.gab.nilaiSaksi) u.nilaiSaksi = info.gab.nilaiSaksi;
+  }
+}
+
 function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posita, opsi) {
   const b1 = butirKeterangan(teksSaksi1);
   const b2 = butirKeterangan(teksSaksi2);
@@ -1119,8 +1341,16 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   const konflik1 = kalimatAwalKonflik(b1);
   const konflik2 = kalimatAwalKonflik(b2);
   const awal = gabungkan(ambilBulanTahun(konflik1).nilai, ambilBulanTahun(konflik2).nilai);
-  const konflikPosita = kalimatAwalKonflik(butirPosita);
-  const awalPosita = ambilBulanTahun(konflikPosita).nilai;
+  let konflikPosita = kalimatAwalKonflik(butirPosita);
+  let awalPosita = ambilBulanTahun(konflikPosita).nilai;
+  if (!awalPosita && butirPosita.length) {
+    // S5=H1: pembaca posita per peristiwa (butir 24) sebagai cadangan kedua.
+    const lain = awalKonflikPosita(butirPosita);
+    if (lain.nilai) {
+      awalPosita = lain.nilai;
+      konflikPosita = lain.kalimat;
+    }
+  }
   let sumberAwal = [...sumberDari(konflik1, 1), ...sumberDari(konflik2, 2)];
   if (!awal.nilai && awalPosita) {
     awal.nilai = awalPosita;
@@ -1136,6 +1366,47 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   const pisah1 = kalimatPisahRumah(b1);
   const pisah2 = kalimatPisahRumah(b2);
   const pisah = gabungkan(ambilBulanTahun(pisah1).nilai, ambilBulanTahun(pisah2).nilai);
+  let sumberPisah = [...sumberDari(pisah1, 1), ...sumberDari(pisah2, 2)];
+
+  // ==========================================================================
+  // S5=H1 (10 Okt 2026) - POSITA MENGISI KARTU YANG "TIDAK DITEMUKAN"
+  // ==========================================================================
+  //
+  // Dua keadaan, keduanya TERUKUR atas putusan nyata PA Donggala yang sudah
+  // diputus (ukur.js di D:/aleta-dev/kerja/saksi-ke-hakim, salinan 9 Okt):
+  //   1. kedua saksi diam -> nilai posita, keyakinan "ragu" (tidak dicentang
+  //      sendiri), asal "posita": dalil yang belum dikuatkan saksi.
+  //   2. saksi hanya menyebut TAHUN, posita menyebut bulan pada tahun yang
+  //      sama -> bulannya dari posita. Petugas menulis "bulan Mei 2023" saat
+  //      saksi berkata "sejak tahun 2023" (271, 430, 458, 468/Pdt.G/2025):
+  //      bulannya diambil dari dalil yang tahunnya dikuatkan saksi.
+  // Tingkat yakin (pasti/cukup/ragu) diberikan sesudahnya oleh tingkatS5().
+  const pisahPosita = butirPosita.length ? pisahSejakPosita(butirPosita) : { nilai: "", kalimat: "" };
+  const perkayaBulan = (gab, nilaiPosita, kalimatPosita, sumberLama) => {
+    const thn = String(gab.nilai || "").match(/^tahun (\d{4})$/);
+    const bln = String(nilaiPosita || "").match(/(?:bulan \S+|(?:awal|akhir|pertengahan) tahun) (\d{4})$/);
+    if (!thn || !bln || thn[1] !== bln[1]) return sumberLama;
+    gab.nilaiSaksi = gab.nilai;
+    gab.nilai = nilaiPosita.replace(/^(awal|akhir|pertengahan) bulan /, "bulan ");
+    gab.diperkaya = true;
+    gab.catatan = `Saksi menyebut ${gab.nilaiSaksi}; bulannya dari posita ("${nilaiPosita}").`;
+    return [...sumberLama, { saksi: 0, asal: "posita", kalimat: kalimatPosita }];
+  };
+  const isiDariPosita = (gab, nilaiPosita, kalimatPosita, nama) => {
+    gab.nilai = nilaiPosita;
+    gab.keyakinan = "ragu";
+    gab.dariPosita = true;
+    gab.catatan = `Kedua saksi tidak menyebut ${nama}; diambil dari posita - dalil yang belum dikuatkan saksi.`;
+    return [{ saksi: 0, asal: "posita", kalimat: kalimatPosita }];
+  };
+  if (!pisah.nilai && pisahPosita.nilai) {
+    sumberPisah = isiDariPosita(pisah, pisahPosita.nilai.replace(/^(awal|akhir|pertengahan) bulan /, "bulan "), pisahPosita.kalimat, "sejak kapan pisah rumah");
+  } else if (pisah.nilai && pisah.keyakinan !== "bentrok") {
+    sumberPisah = perkayaBulan(pisah, pisahPosita.nilai, pisahPosita.kalimat, sumberPisah);
+  }
+  if (awal.nilai && !awal.dariPosita && awal.keyakinan !== "bentrok" && sumberAwal.every((s) => s.asal !== "posita")) {
+    sumberAwal = perkayaBulan(awal, awalPosita, konflikPosita, sumberAwal);
+  }
 
   // ==========================================================================
   // 9944 - UCAPAN SAKSI LEBIH DULU, HITUNGAN SEBAGAI PEMBANDING DAN CADANGAN
@@ -1160,13 +1431,26 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     if (!lama.nilai) {
       lama.nilai = dihitung.teks;
       lama.dihitung = true;
-      lama.keyakinan = "cukup";
+      // S5=H1: titik awalnya dari posita (pisah.dariPosita) -> hitungannya
+      // pun dalil yang belum dikuatkan saksi.
+      lama.keyakinan = pisah.dariPosita ? "ragu" : "cukup";
+      if (pisah.dariPosita) lama.dariPosita = true;
       lama.catatan =
         `Saksi tidak menyebut lamanya; dihitung dari ${pisah.nilai} sampai tanggal sidang ${tanggalSidang}.`;
     } else if (totalBulan(lama.nilai) !== dihitung.totalBulan) {
       lama.catatan =
         `Saksi menyebut "${lama.nilai}"; dihitung dari ${pisah.nilai} sampai sidang ${tanggalSidang} ` +
         `hasilnya ${dihitung.teks}. Yang diusulkan ucapan saksi, supaya sama dengan berita acara.`;
+    }
+  }
+
+  let sumberLama = [...sumberDari(ucap1.kalimat || pisah1, 1), ...sumberDari(ucap2.kalimat || pisah2, 2)];
+  if (!lama.nilai && butirPosita.length) {
+    // S5=H1: kedua saksi diam dan tidak ada yang dapat dihitung - lama pisah
+    // yang didalilkan posita, "ragu".
+    const lamaPosita = lamaPisahPosita(butirPosita);
+    if (lamaPosita && lamaPosita.nilai) {
+      sumberLama = isiDariPosita(lama, lamaPosita.nilai, lamaPosita.kalimat, "lama pisah");
     }
   }
 
@@ -1320,7 +1604,23 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   // 5227 menjadi kosong karena gugatannya kebetulan tidak terbaca.
   const ciriPosita = butirPosita.length ? ciriDariKalimat(butirPosita, daftarCiri.daftar) : null;
 
-  const ciri = ciriPosita ? berdua.filter((x) => ciriPosita.includes(x)) : berdua;
+  const ciriDisaring = ciriPosita ? berdua.filter((x) => ciriPosita.includes(x)) : berdua;
+  // S5=H1: ciri yang subjek kalimat pemicunya pihak yang mengajukan (0046)
+  // tidak masuk kalimat "{pelaku} ..." - lihat pelakuCiri.
+  const ciriPelakuLawan = [];
+  const pelakuLawanDi = (nama, sumberButir) => {
+    for (const [asal, butir] of sumberButir) {
+      const k = kalimatPemicu(butir, nama, daftarCiri.daftar);
+      const siapa = k ? pelakuCiri(k, nama, daftarCiri.daftar) : "";
+      if (siapa === "lawan" || siapa === "tuduhan") return { ciri: nama, asal, kalimat: k, sebab: siapa };
+    }
+    return null;
+  };
+  const ciri = ciriDisaring.filter((nama) => {
+    const t = pelakuLawanDi(nama, [["saksi 1", b1], ["saksi 2", b2]]);
+    if (t) ciriPelakuLawan.push(t);
+    return !t;
+  });
 
   const ciriSepihak = [
     ...ciriSaksi1.filter((x) => !ciriSaksi2.includes(x)).map((nama) => ({ nama, saksi: 1 })),
@@ -1366,6 +1666,31 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
         "kalimat di atas TIDAK memuatnya; tambahkan sendiri bila terbukti."
       : "",
   };
+  let sumber5227 = sumberBerpasangan(ciri, b1, b2, daftarCiri.daftar);
+  const ciriPositaPelaku = (ciriPosita || []).filter((nama) => {
+    const t = pelakuLawanDi(nama, [["posita", butirPosita]]);
+    if (t && !ciriPelakuLawan.some((x) => x.ciri === nama)) ciriPelakuLawan.push(t);
+    return !t;
+  });
+  if (!ciri.length && ciriPositaPelaku.length) {
+    // S5=H1: kedua saksi tidak menerangkan alasan yang sama (atau yang sama
+    // tidak didalilkan) - kalimatnya disusun dari DALIL posita, "ragu".
+    const dariPosita = kalimatBaku.susunAlasanRinci(ciriPositaPelaku, pihak, opsi);
+    if (dariPosita.kalimat) {
+      hasil5227.nilai = dariPosita.kalimat;
+      hasil5227.keyakinan = "ragu";
+      hasil5227.dariPosita = true;
+      hasil5227.catatan =
+        (berdua.length
+          ? "Alasan yang diterangkan kedua saksi tidak didalilkan gugatan"
+          : "Kedua saksi tidak menerangkan alasan yang sama") + "; disusun dari posita - dalil yang belum dikuatkan saksi.";
+      sumber5227 = ciriPositaPelaku
+        .slice(0, 6)
+        .map((nama) => ({ saksi: 0, asal: "posita", kalimat: kalimatPemicu(butirPosita, nama, daftarCiri.daftar) }))
+        .filter((x) => x.kalimat);
+    }
+  }
+
   // Entri daftar dari pengaturan yang ditolak penyaring - disebut, bukan
   // ditelan. Ruasnya hanya ada bila memang ada yang ditolak.
   const tipeKeluaranDitolak = [
@@ -1478,15 +1803,12 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
         //
         // Karena itu sumbernya disusun PER ALASAN, berpasangan: kalimat
         // saksi 1 lalu kalimat saksi 2 untuk alasan yang sama, berurutan.
-        sumberBerpasangan(ciri, b1, b2, daftarCiri.daftar)
+        sumber5227
       ),
-      usulan("0246", "Pisah Rumah", pisah, [...sumberDari(pisah1, 1), ...sumberDari(pisah2, 2)]),
+      usulan("0246", "Pisah Rumah", pisah, sumberPisah),
       // Sumbernya kalimat yang MENYEBUT lamanya bila ada; bila tidak, kalimat
       // pisah rumah yang menjadi titik awal hitungan.
-      usulan("9944", "Lama Pisah", lama, [
-        ...sumberDari(ucap1.kalimat || pisah1, 1),
-        ...sumberDari(ucap2.kalimat || pisah2, 2),
-      ]),
+      usulan("9944", "Lama Pisah", lama, sumberLama),
       usulan(
         "7035",
         "Meninggalkan Kediaman Bersama",
@@ -1501,6 +1823,22 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
       ),
     ],
   };
+  if (ciriPelakuLawan.length) {
+    hasil.ciriPelakuLawan = ciriPelakuLawan;
+    const u5227 = hasil.usulan.find((u) => u.kode === "5227");
+    const daftarLawan = ciriPelakuLawan
+      .map((x) => `${x.ciri} (${x.asal}${x.sebab === "tuduhan" ? `, tuduhan terhadap ${sebutanPenggugat}` : `, dilakukan ${sebutanPenggugat}`})`)
+      .join(", ");
+    u5227.catatan = [u5227.catatan, `Bukan perbuatan ${sebutanTergugat} menurut kalimatnya - tidak dimasukkan: ${daftarLawan}.`]
+      .filter(Boolean)
+      .join(" ");
+  }
+  tandaiS5(hasil.usulan, {
+    "0222": { gab: awal, posita: awalPosita },
+    "0246": { gab: pisah, posita: pisahPosita.nilai },
+    "9944": { gab: lama, posita: butirPosita.length ? lamaPisahPosita(butirPosita).nilai || "" : "", ucap: [ucap1, ucap2] },
+    "5227": { gab: hasil5227, gugatanTerbaca: Boolean(ciriPosita) },
+  });
   if (tipeKeluaranDitolak.length) hasil.tipeKeluaranDitolak = tipeKeluaranDitolak;
   return hasil;
 }
