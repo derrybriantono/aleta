@@ -9773,6 +9773,13 @@ html[data-aleta-kulit="modern"] #aleta-panel-abt .aleta-a1-simpul-huruf {
   font-size: calc(13px * var(--aleta-skala-huruf, 1));
   line-height: 1.45;
 }
+/* === P1-P3-S6 10 Okt === S6: kedua saksi sama / berbeda / hanya satu saksi, di samping nama huruf. */
+html[data-aleta-kulit="modern"] #aleta-panel-abt .aleta-a1-s6 {
+  margin-left: 6px;
+  vertical-align: middle;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+/* === AKHIR P1-P3-S6 === */
 html[data-aleta-kulit="modern"] #aleta-panel-abt .aleta-a1-ikon-deret,
 html[data-aleta-kulit="modern"] #aleta-panel-abt .aleta-a1-sdg-deret {
   display: inline-flex;

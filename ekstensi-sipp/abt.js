@@ -15585,6 +15585,30 @@ function a1KesimpulanHuruf(h, saksi) {
   return kalimat.join(" ");
 }
 
+/* === P1-P3-S6 10 Okt === */
+/**
+ * S6: tanda ringkas di kartu huruf - kedua saksi menerangkan SEBAB YANG SAMA untuk
+ * huruf ini, berbeda (sebab lain / pelaku bertentangan / lama pisah), atau hanya
+ * satu saksi (unus testis nullus testis). Dari h.kesesuaian kiriman ALETA Bot
+ * (deteksiAlasanService.kesesuaianHuruf); bot lama tidak mengirimnya -> tanpa tanda.
+ */
+const NADA_S6 = {
+  sama: "aleta-tanda-hijau",
+  berbeda: "aleta-tanda-merah",
+  "satu saksi": "aleta-tanda-kuning",
+  "tidak ada": "aleta-tanda-abu",
+};
+function a1TandaKesesuaian(h) {
+  const k = h && h.kesesuaian;
+  if (!k || !NADA_S6[k.status] || !k.label) return null;
+  const tanda = buatElemen("span", `aleta-tanda aleta-a1-s6 ${NADA_S6[k.status]}`, k.label);
+  tanda.dataset.s6 = k.status;
+  const daftar = (x) => (Array.isArray(x) && x.length ? x.join(", ") : "tidak menerangkannya");
+  tanda.title = `Saksi 1: ${daftar(k.saksi1)}. Saksi 2: ${daftar(k.saksi2)}. Keterangan satu saksi saja belum cukup (unus testis nullus testis).`;
+  return tanda;
+}
+/* === AKHIR P1-P3-S6 === */
+
 /** Kalimat keterangan yang memuat ciri - cadangan bila bot belum mengirim intiCiri. */
 function a1CariKalimat(teks, ciri) {
   const butir = String(teks || "")
@@ -15655,6 +15679,8 @@ function a1SusunHuruf(k, blok, label, h, saksi, sebab) {
   blok.insertBefore(baris, label);
   baris.appendChild(label);
   label.appendChild(buatElemen("span", "aleta-a1-simpul-huruf", a1KesimpulanHuruf(h, saksi)));
+  const tandaS6 = a1TandaKesesuaian(h); // P1-P3-S6 10 Okt
+  if (tandaS6) label.insertBefore(tandaS6, label.lastChild);
 
   const deret = a1El("span", "aleta-a1-ikon-deret");
   const tAturan = a1TombolInfo("aturan", `Aturan huruf ${h.huruf}: pasal dan syaratnya`);
