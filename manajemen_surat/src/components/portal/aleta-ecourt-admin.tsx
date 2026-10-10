@@ -34,6 +34,7 @@ import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-ta
 import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templat-hukum";
 import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
 import { AletaEcourtKamusSumber } from "@/components/portal/aleta-ecourt-kamus-sumber";
+import { AletaEcourtKamusDeteksi } from "@/components/portal/aleta-ecourt-kamus-deteksi";
 import { AletaEcourtPemetaanBlangko } from "@/components/portal/aleta-ecourt-pemetaan-blangko";
 import { AletaEcourtPetaPenetapan } from "@/components/portal/aleta-ecourt-peta-penetapan";
 import { AletaEcourtProfilSaklar } from "@/components/portal/aleta-ecourt-profil-saklar";
@@ -385,6 +386,11 @@ export function AletaEcourtAdmin() {
             pemakai, status; cermin SIPP untuk pengingat sebelum CETAK (B1).
             Jangkar #kamus-variabel-abt. */}
         <AletaEcourtKamusSumber />
+        {/* P9 (10 Okt 2026): kamus deteksi & kalimat - pola dan templat
+            (benih + database), uji pola, calon dari koreksi petugas (P8),
+            jejak koreksi (D2), label pustaka kalimat (D3). Hanya Super Admin/
+            Admin. Jangkar #kamus-deteksi. */}
+        <AletaEcourtKamusDeteksi />
         {/* Pemetaan blangko putusan, relaas, dan pemberitahuan putusan
             (butir 17, 30 Sep 2026). Jangkar #pemetaan-blangko - tab Juru Sita
             di ekstensi menautkan ke sini. */}

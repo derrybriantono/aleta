@@ -19,6 +19,7 @@ node_modules/
 **/.wwebjs_cache/
 **/.cache/
 **/config/aleta-runtime.json
+**/config/kamus-deteksi-lapis.json
 
 # Build output and generated artifacts
 .next/

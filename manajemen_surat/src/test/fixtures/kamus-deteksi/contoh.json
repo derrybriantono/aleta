@@ -1,0 +1,42 @@
+{
+  "kelompok": "contoh",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "contoh-nafkah-tidak-memberi",
+      "label": "Tidak memberi nafkah (CONTOH UJI - bukan benih sungguhan)",
+      "kunci": "B",
+      "regex": "tidak\\s+(pernah\\s+)?(memberi|menafkahi)\\s+(nafkah|belanja)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": ["Tergugat tidak pernah memberi nafkah sejak 2023", "termohon tidak menafkahi belanja"],
+      "contohSalah": ["Tergugat tidak memberi tahu", "Tergugat memberi nafkah setiap bulan"],
+      "ukur": { "n": 200, "tepat": 196, "salahTangkap": 4, "sumber": "fixture uji", "tanggal": "2026-10-10" },
+      "catatan": "Hanya fixture untuk kamus-deteksi-benih.test.ts."
+    },
+    {
+      "kode": "contoh-pisah-rumah",
+      "label": "Pisah tempat tinggal (CONTOH UJI)",
+      "kunci": "pisah-rumah",
+      "regex": "pisah\\s+(tempat\\s+tinggal|rumah|ranjang)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": ["sudah pisah tempat tinggal sejak Januari 2026"],
+      "contohSalah": ["tinggal serumah sampai sekarang"],
+      "ukur": { "n": 0, "tepat": 0, "salahTangkap": 0 },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "contoh-saksi-pembuka",
+      "label": "Pembuka keterangan saksi (CONTOH UJI)",
+      "gaya": "lengkap",
+      "teks": "Bahwa saksi {ke} bernama {nama}, umur {umur} tahun, di bawah sumpah pada pokoknya menerangkan:",
+      "syarat": {},
+      "status": "aktif"
+    }
+  ]
+}

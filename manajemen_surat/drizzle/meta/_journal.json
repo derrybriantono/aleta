@@ -414,6 +414,20 @@
       "when": 1790508001001,
       "tag": "0059_aleta_kamus_variabel_sumber",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790511601001,
+      "tag": "0060_aleta_kamus_deteksi",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1790515201001,
+      "tag": "0061_aleta_pustaka_label_kalimat",
+      "breakpoints": true
     }
   ]
 }
