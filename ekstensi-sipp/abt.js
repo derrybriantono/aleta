@@ -12191,8 +12191,33 @@ function t6HiasHuruf(k) {
     }
     if (t6Nyala("abt-27") && !Array.from(blok.children).some((c) => c.classList.contains("aleta-t6-pasal-sisip"))) {
       const saran = t6El("div", "aleta-t6-pasal-sisip");
-      saran.appendChild(t6El("div", "aleta-t6-lembut", "Saran dasar hukum - membaca…"));
       blok.appendChild(saran);
+      // Templat pasal diminta saat DIBUKA, bukan saat panel lahir (kontrak permintaan
+      // jaringan Tahap 6): UI Baru lewat ⓘ aturan, tampilan lain lewat tombolnya sendiri.
+      const tAturan = blok.querySelector(".aleta-a1-info-aturan");
+      const muat = () => {
+        if (saran.getAttribute("data-t6-dimuat")) return;
+        saran.setAttribute("data-t6-dimuat", "1");
+        saran.textContent = "";
+        saran.appendChild(t6El("div", "aleta-t6-lembut", "Saran dasar hukum - membaca…"));
+        t6IsiPasalHuruf(k, saran, huruf);
+      };
+      if (k.pasal) {
+        muat(); // templat sudah diminta lewat alat "Saran dasar hukum" - pakai yang tersimpan, tanpa permintaan baru
+      } else if (tAturan) {
+        tAturan.addEventListener("click", muat);
+        if (blok.getAttribute("data-a1-aturan") === "buka") muat();
+      } else {
+        const tMuat = t6El("button", "aleta-t6-lembut", "Dasar hukum huruf " + huruf + " ›");
+        tMuat.type = "button";
+        tMuat.addEventListener("click", muat);
+        saran.appendChild(tMuat);
+      }
+    }
+  }
+}
+
+function t6IsiPasalHuruf(k, saran, huruf) {
       void t6MuatPasal(k).then((h) => {
         saran.textContent = "";
         if (!h.ok) {
@@ -12206,8 +12231,6 @@ function t6HiasHuruf(k) {
         }
         for (const b of cocok) saran.appendChild(t6KartuPasal(k, b));
       });
-    }
-  }
 }
 
 // ─── Borang dan penyunting keterangan saksi ─────────────────────────────────

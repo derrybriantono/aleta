@@ -10886,19 +10886,17 @@ html[data-aleta-tema-sipp="gelap"] .aleta-c2-sbantu {
 .aleta-s5-yakin { margin-left: 4px; }
 .aleta-s5-pratinjau { margin: 8px 0; padding: 8px; border: 1px solid #c9d3cf; border-radius: 6px; background: #f7faf9; }
 .aleta-s5-judul { font-weight: 600; margin-bottom: 6px; }
-.aleta-s5-tabel { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.aleta-s5-tabel { width: 100%; border-collapse: collapse; font-size: calc(12px * var(--aleta-skala-huruf, 1)); table-layout: fixed; }
 .aleta-s5-tabel th, .aleta-s5-tabel td { border-bottom: 1px solid #dfe6e3; padding: 3px 4px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
 .aleta-s5-tabel th:first-child, .aleta-s5-tabel td:first-child { width: 22px; }
-.aleta-s5-tabel tr.aleta-s5-hijau td { background: #e3f4ea; }
+.aleta-s5-tabel tr.aleta-s5-hijau td { background: color-mix(in srgb, var(--aleta-aman) 14%, transparent); }
 .aleta-s5-tabel tr.aleta-s5-merah td { background: #fbe7e7; }
-.aleta-s5-hijau .aleta-s5-hasil { color: #16704a; font-weight: 600; }
+.aleta-s5-hijau .aleta-s5-hasil { color: var(--aleta-aman); font-weight: 600; }
 .aleta-s5-merah .aleta-s5-hasil { color: #a12a2a; }
 @media (prefers-color-scheme: dark) {
   .aleta-s5-pratinjau { background: #1d2422; border-color: #3a4642; }
-  .aleta-s5-tabel th, .aleta-s5-tabel td { border-color: #33403c; }
-  .aleta-s5-tabel tr.aleta-s5-hijau td { background: #173326; }
+  .aleta-s5-tabel th, .aleta-s5-tabel td { border-color: var(--s-garis, #33403c); }
   .aleta-s5-tabel tr.aleta-s5-merah td { background: #3a1d1d; }
-  .aleta-s5-hijau .aleta-s5-hasil { color: #7fd3a8; }
   .aleta-s5-merah .aleta-s5-hasil { color: #f0a0a0; }
 }
 /* === AKHIR S5/H3 === */

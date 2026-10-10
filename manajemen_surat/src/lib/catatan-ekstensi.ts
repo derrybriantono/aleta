@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.191.0",
+    dirilis: "2026-10-10T20:00:00+08:00",
+    judul: "Sinkron SIPP-ABT: fakta saksi ke kartu hakim, Input semua yang pasti, pengingat beda SIPP sebelum CETAK, kamus variabel ABT",
+    butir: [
+      "Panel ABT hakim: kartu awal konflik, pisah rumah, lama pisah, dan alasan kini terisi dari keterangan saksi + posita gugatan, lengkap dengan kutipan sumbernya; yang tidak cukup yakin tetap ditandai ragu.",
+      "Tombol Input semua yang pasti: pratinjau isi lama -> baru sebelum menulis ke ABT, lalu dibaca ulang; kartu ragu tetap dicentang manual.",
+      "Sebelum CETAK: pengingat bila nama, tanggal, majelis, atau kuasa di ABT berbeda dengan SIPP - CETAK tetap bisa diklik.",
+      "Kamus variabel ABT di portal (Admin): arti, sumber, dan keadaan tiap variabel, termasuk yang masih diisi manual dan yang rawan tanda petik.",
+      "Butuh paket ABT terpisah (dipasang di server ABT): kebal tanda petik, majelis pemeriksa dari SIPP, kuasa seragam di semua blangko, riwayat sidang & kehadiran di BAS lanjutan.",
+    ],
+  },
+  {
     versi: "1.190.0",
     dirilis: "2026-10-10T18:00:00+08:00",
     judul: "Kasir otomatis & rekap, saksi lebih cepat diisi, putusan & e-Doc tidak tertimpa diam-diam, persen tarik e-Court, alamat putusan + Domisili Elektronik",
