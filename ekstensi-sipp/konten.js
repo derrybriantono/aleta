@@ -13629,6 +13629,19 @@ function susunPanelDaftar(ringkasan) {
       if (k && isi.isConnected) isi.appendChild(k);
     });
   }
+  // 1.189.x (butir 2, 4, 5): Kasir harian - massal satu hari, rekap, pengingat.
+  // Baru & UI Baru saja, bagi kasir/keuangan/panitera/admin (basmassal.js).
+  if (typeof a30Aktif === "function" && a30Aktif() && typeof globalThis.aletaKasirPasangHarian === "function" && a30BolehKasir()) {
+    const wadahKasir = buatElemen("div", "aleta-mps-massal");
+    wadahKasir.setAttribute("data-mps-massal", "kasir-harian");
+    isi.appendChild(wadahKasir);
+    Promise.resolve()
+      .then(() => globalThis.aletaKasirPasangHarian(wadahKasir, { situs: "sipp" }))
+      .then((ok) => {
+        if (ok === false) wadahKasir.remove();
+      })
+      .catch(() => wadahKasir.remove());
+  }
 
   panel.appendChild(isi);
 
@@ -14919,6 +14932,8 @@ async function muatPenggunaAleta() {
       // Hak unggah putusan dari peladen (9 Okt 2026) - portal lama tanpa ruas
       // ini: dihitung dari nama perannya (alatBolehUnggahPutusan).
       if (typeof isi.bolehUnggahPutusan === "boolean") penggunaTerakhir.bolehUnggahPutusan = isi.bolehUnggahPutusan;
+      // Hak Kasir (1.189.x) dari peladen - tab/bagian Kasir.
+      if (typeof isi.bolehKasir === "boolean") penggunaTerakhir.bolehKasir = isi.bolehKasir;
       if (isi.kapabilitas) kapabilitasTerakhir = isi.kapabilitas;
     }
   } catch {
@@ -17657,6 +17672,8 @@ const T7_TAB = [
   // Perbaikan 30 Sep (butir 15): tab Juru Sita - kelompoknya hanya lahir di
   // UI Baru, untuk peran yang boleh, dan bila jurusita.js termuat (a30JuruSita).
   ["juruSitaKel", "Juru Sita"],
+  // 1.189.x (butir 3): tab Kasir - kasir/keuangan/panitera/admin (a30Kasir).
+  ["kasirKel", "Kasir"],
 ];
 const T7_LEBAR_BAWAAN = 470;
 const T7_LEBAR_MIN = 360;
@@ -19823,6 +19840,7 @@ function a30Tata(panel, konteks, ui) {
   // Sita supaya matriks yang memutuskan tabnya; diterapkan sesudahnya.
   if (typeof mpsSiapkan === "function") mpsSiapkan(panel, konteks || {});
   a30JuruSita(panel, konteks || {}, ui);
+  a30Kasir(panel, konteks || {}, ui);
   if (typeof mpsTerapkan === "function") mpsTerapkan(panel);
   a30PasangLipat(panel);
   if (typeof mpsSegarkanDariStatus === "function") mpsSegarkanDariStatus(panel, konteks || {});
@@ -20005,6 +20023,116 @@ function a30LepasJuruSita(panel, wadahan) {
   const tab = panel.querySelector('.aleta-t7-tab[data-t7-ke="juruSitaKel"]');
   if (tab) tab.remove();
   if (panel.getAttribute("data-t7-tab") === "juruSitaKel") {
+    const pertama = panel.querySelector(".aleta-t7-tab:not([data-mps-sembunyi])");
+    if (pertama && typeof t7PilihTab === "function") t7PilihTab(panel, pertama.getAttribute("data-t7-ke"), false);
+  }
+}
+
+// ─── 1.189.x butir 1 & 3: tab Kasir (basmassal.js, IIFE aletaKasir*) ─────────
+
+/**
+ * Hak Kasir akun ALETA yang masuk: jawaban server (pengguna.bolehKasir dari
+ * sipp-konteks) atau dihitung dari nama peran (alatBolehKasir, panel-alat.js).
+ * Rute kasir tetap menolak sendiri - ini kenyamanan.
+ */
+function a30BolehKasir() {
+  if (typeof globalThis.aletaKasirPasang !== "function" || typeof alatBolehKasir !== "function") return false;
+  try {
+    return alatBolehKasir(typeof penggunaTerakhir !== "undefined" ? penggunaTerakhir : null) === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Halaman dibuka menuju tab Biaya Perkara SIPP (segmen ketiga /11 atau #aleta-tab=11)? */
+function a30MenujuJurnal() {
+  const alamat = `${location.pathname || ""}${location.hash || ""}`;
+  return /\/11\/?(?:$|[?#])|#aleta-tab=11$/.test(alamat);
+}
+
+/**
+ * Tab "Kasir" (UI Baru) / kelompok Kasir (Baru). Isinya: Kasir per perkara -
+ * usulan jurnal menurut KEADAAN perkara langsung tersusun saat dibuka - lalu
+ * pengingat tugas kasir, massal satu hari, dan rekap (berlipat). Dibuka
+ * sendiri bila petugas menekan tab "Biaya Perkara" SIPP (jurnal keuangan
+ * perkara) atau halamannya dibuka menuju tab itu.
+ */
+function a30Kasir(panel, konteks, ui) {
+  if (!a30BolehKasir()) return;
+  const isi = panel.querySelector(":scope > .aleta-isi");
+  if (!isi || isi.querySelector('[data-a30-fitur="kasir"]')) return;
+  const menu = panel.mps && Array.isArray(panel.mps.menu) ? panel.mps.menu : null;
+  const sendiri = ui || Boolean(menu);
+  const wadahan = sendiri ? kelompok("Kasir", "kasirKel", !ui) : bagian("Kasir", "kasir", true);
+  wadahan.setAttribute("data-a30-fitur", "kasir");
+  const perkaraId = String((konteks.identitas && konteks.identitas.perkaraId) || perkaraIdDariHalaman() || "");
+  let dipasang = false;
+  const pasang = () => {
+    if (dipasang) return;
+    dipasang = true;
+    const memuat = buatElemen("div", "aleta-memuat", "Memuat Kasir…");
+    wadahan.isi.appendChild(memuat);
+    Promise.resolve()
+      .then(() => globalThis.aletaKasirPasang(wadahan.isi, { perkaraId, nomorPerkara: String(konteks.nomorPerkara || "") }))
+      .then((ok) => {
+        memuat.remove();
+        if (!ok) return a30LepasKasir(panel, wadahan);
+        if (typeof globalThis.aletaKasirPasangHarian === "function") return globalThis.aletaKasirPasangHarian(wadahan.isi, { situs: "sipp", judul: false });
+        return true;
+      })
+      .catch((galat) => {
+        memuat.remove();
+        wadahan.isi.appendChild(buatElemen("div", "aleta-gagal", `Kasir tidak dapat dimuat: ${String((galat && galat.message) || galat)}`));
+      });
+  };
+  const terbuka = () => wadahan.isi.style.display !== "none" && !wadahan.hasAttribute("data-mps-sembunyi");
+  const bukaKasir = () => {
+    if (ui && typeof t7PilihTab === "function") t7PilihTab(panel, "kasirKel", false);
+    else if (typeof bukaBagianPanel === "function") bukaBagianPanel(panel, sendiri ? "kasirKel" : "kasir");
+    pasang();
+  };
+  if (ui) {
+    isi.appendChild(wadahan);
+    new MutationObserver(() => {
+      if (panel.getAttribute("data-t7-tab") === "kasirKel") pasang();
+    }).observe(panel, { attributes: true, attributeFilter: ["data-t7-tab"] });
+    const judulKel = wadahan.querySelector(":scope > .aleta-kelompok-judul");
+    if (judulKel) judulKel.addEventListener("click", () => terbuka() && pasang());
+  } else if (sendiri) {
+    isi.appendChild(wadahan);
+    new MutationObserver(() => {
+      if (terbuka()) pasang();
+    }).observe(wadahan.isi, { attributes: true, attributeFilter: ["style"] });
+  } else {
+    const judul = wadahan.querySelector(":scope > .aleta-bagian-judul");
+    if (judul) judul.addEventListener("click", () => terbuka() && pasang());
+    const kel = typeof t7Kelompok === "function" ? t7Kelompok(isi, "perkara") : null;
+    (kel && kel.isi ? kel.isi : isi).appendChild(wadahan);
+  }
+  // Butir 1: membuka jurnal keuangan perkara SIPP = usulan Kasir tersusun.
+  // Satu pendengar per halaman (panel digambar ulang berkali-kali).
+  if (!document.documentElement.hasAttribute("data-aleta-kasir-tab11")) {
+    document.documentElement.setAttribute("data-aleta-kasir-tab11", "");
+    document.addEventListener(
+      "click",
+      (e) => {
+        const a = e.target && e.target.closest ? e.target.closest('a[href$="#tabs11"]') : null;
+        if (!a) return;
+        const p = document.getElementById(PENANDA);
+        if (p && p.a30BukaKasir) setTimeout(() => p.a30BukaKasir(), 0);
+      },
+      true
+    );
+  }
+  panel.a30BukaKasir = bukaKasir;
+  if (a30MenujuJurnal()) setTimeout(bukaKasir, 0);
+}
+
+function a30LepasKasir(panel, wadahan) {
+  wadahan.remove();
+  const tab = panel.querySelector('.aleta-t7-tab[data-t7-ke="kasirKel"]');
+  if (tab) tab.remove();
+  if (panel.getAttribute("data-t7-tab") === "kasirKel") {
     const pertama = panel.querySelector(".aleta-t7-tab:not([data-mps-sembunyi])");
     if (pertama && typeof t7PilihTab === "function") t7PilihTab(panel, pertama.getAttribute("data-t7-ke"), false);
   }
@@ -21192,6 +21320,9 @@ const MPS_KELOMPOK = {
   jurusita: "juruSitaKel",
   berkas: "berkas",
   perkara: "perkara",
+  // 1.189.x: Kasir tidak ada di matriks golongan (golongan "panitera" memuat
+  // PP); mpsSiapkan menambahkannya bila alatBolehKasir.
+  kasir: "kasirKel",
 };
 /** Golongan yang menu perkaranya dapat berubah karena "ditangani" / penunjukan lengkap. */
 const MPS_GOLONGAN_BERSTATUS = ["ketua", "hakim", "jurusita"];
@@ -21359,6 +21490,7 @@ function mpsSiapkan(panel, konteks) {
   const menu = mpsMenuPerkara({ ditangani: ditanganiAwal });
   if (!menu) return null;
   const golongan = alatGolonganPeran(mpsPeran());
+  if (a30BolehKasir() && !menu.includes("kasir")) menu.push("kasir");
   panel.mps = {
     golongan,
     ditangani: ditanganiAwal,

@@ -113,6 +113,8 @@ export async function POST(request: NextRequest) {
         operator: String(aktor.name || aktor.email || aktor.id),
         ip: alamatIpPeramban(request),
         kering,
+        // 1.189.x butir 2: simpanan Kasir otomatis massal - jejak ALETA saja.
+        massal: badan.massal === true,
       },
       // Tiap baris didahului jeda manusia (sampai 2,2 detik) di bot.
       timeoutMs: kering ? 25_000 : Math.min(150_000, 25_000 + baris.length * 4_000),

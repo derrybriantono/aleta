@@ -511,6 +511,13 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kelompok: "atas",
   },
   {
+    kunci: "tombol-kasir-harian",
+    label: "Tombol Kasir harian",
+    keterangan:
+      "Tombol Kasir harian (jurnal otomatis massal satu hari menurut keadaan tiap perkara, rekap pengeluaran harian s.d. tahunan dengan PDF, dan pengingat tugas kasir) beserta tombol pengingatnya. Hanya bagi kasir/keuangan/panitera/admin.",
+    kelompok: "atas",
+  },
+  {
     kunci: "saring-ruang",
     label: "Tombol ruang sidang",
     keterangan:

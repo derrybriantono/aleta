@@ -126,6 +126,10 @@ const JENIS_PNBP_PERTAMA = new Set([236, 237, 253, 388]);
 const KATEGORI_JURUSITA = new Set([4, 5, 6]);
 const STATUS_CABUT = new Set([7, 67]);
 const STATUS_DIKABULKAN = 62;
+/** Digugurkan (65, 93) dan tidak dapat diterima (64): pemberitahuan kepada Penggugat yang tidak hadir. */
+const STATUS_PBT_PENGGUGAT = new Set([64, 65, 93]);
+/** Dikabulkan, ditolak, perdamaian - Tergugat tidak hadir pada sidang putusan (dihadiri_oleh 2). */
+const STATUS_PBT_TERGUGAT_HADIR2 = new Set([62, 63, 85]);
 const JENIS_CERAI_TALAK = 346;
 /** jenis_perkara_id yang dikecualikan SIPP dari larangan Sabtu/Minggu. */
 const JENIS_BEBAS_AKHIR_PEKAN = 746;
@@ -349,6 +353,68 @@ function ikrarDariSidang(sidangIkrar) {
     (x) => !x.ditunda && tanggalSah(x.tanggal) && (/ikrar/i.test(bersih(x.hasil)) || bersih(x.hasil) === "0")
   );
   return s ? tanggalSah(s.tanggal) : "";
+}
+
+/**
+ * ============================================================================
+ * KEADAAN PERKARA UNTUK KASIR OTOMATIS (1.189.x, 10 Okt 2026)
+ * ============================================================================
+ *
+ * Nama keadaan yang dilihat kasir di atas usulannya, dan daftar biaya yang
+ * LAZIM pada keadaan itu. Daftar lazim diukur atas jurnal satker
+ * (sipp_donggala, putusan Jul 2025 - Sep 2026, scripts/ukur-kasir-keadaan.js):
+ * jenis biaya yang ditulis kasir pada hari putusan di sekurangnya separuh
+ * perkara berkeadaan itu. Mesin usulan (susunUsulan) yang menentukan baris
+ * sesungguhnya - daftar ini penjelasannya, bukan aturannya.
+ */
+const KEADAAN_KASIR = Object.freeze({
+  baru: { nama: "Baru didaftar - menunggu panggilan sidang pertama", lazim: ["PNBP Relaas Panggilan Pertama Penggugat/Pemohon", "Biaya Panggilan Tergugat/Termohon", "PNBP Relaas Panggilan Pertama Tergugat/Termohon"] },
+  persidangan: { nama: "Dalam persidangan", lazim: ["Biaya Panggilan ulang pihak yang tidak hadir"] },
+  verstek: { nama: "Putus verstek", lazim: ["Redaksi", "Meterai", "Biaya Pemberitahuan", "PNBP Relaas Pemberitahuan Putusan Kepada Tergugat", "Pengembalian Sisa Panjar"] },
+  contradictoir: { nama: "Putus contradictoir (dikabulkan)", lazim: ["Redaksi", "Meterai", "Pengembalian Sisa Panjar"] },
+  cabut: { nama: "Dicabut", lazim: ["Redaksi", "Meterai", "PNBP Surat Permohonan Pencabutan Perkara", "Pengembalian Sisa Panjar"] },
+  gugur: { nama: "Digugurkan", lazim: ["Redaksi", "Meterai", "PNBP Relaas Pemberitahuan Putusan Kepada Penggugat", "Pengembalian Sisa Panjar"] },
+  damai: { nama: "Perdamaian", lazim: ["Redaksi", "Meterai", "Pengembalian Sisa Panjar"] },
+  tolak: { nama: "Ditolak", lazim: ["Redaksi", "Meterai", "Pengembalian Sisa Panjar"] },
+  "tidak-diterima": { nama: "Tidak dapat diterima", lazim: ["Redaksi", "Meterai", "Pengembalian Sisa Panjar"] },
+  coret: { nama: "Dicoret dari register", lazim: ["Redaksi", "Meterai", "Pengembalian Sisa Panjar"] },
+  permohonan: { nama: "Permohonan dikabulkan", lazim: ["Redaksi", "Meterai", "Pengembalian Sisa Panjar"] },
+  "menunggu-ikrar": { nama: "Cerai talak dikabulkan - menunggu ikrar talak", lazim: ["Redaksi", "Meterai", "Biaya Pemberitahuan bila verstek", "PNBP Relaas Pemberitahuan Putusan Kepada Termohon bila verstek"] },
+  ikrar: { nama: "Ikrar talak sudah diucapkan", lazim: ["Biaya Panggilan Ikrar Talak", "Pengembalian Sisa Panjar (tanggal ikrar)"] },
+  putus: { nama: "Diputus (status putusan belum tertulis)", lazim: ["Redaksi", "Meterai", "Pengembalian Sisa Panjar"] },
+  prodeo: { nama: "Prodeo - jurnal diisi di SIPP", lazim: [] },
+});
+
+/**
+ * Keadaan perkara untuk Kasir - fungsi MURNI atas bentuk bacaKeadaan.
+ * Putusan dibaca dari perkara_putusan, atau dari hasil sidang bila belum
+ * diinput (aturan yang sama dengan mesin usulan).
+ */
+function keadaanPerkara(k) {
+  const perkara = (k && k.perkara) || {};
+  const pilih = (kunci) => ({ kunci, nama: KEADAAN_KASIR[kunci].nama, lazim: KEADAAN_KASIR[kunci].lazim.slice() });
+  if (Number((k && k.pembiayaan) || 1) !== 1) return pilih("prodeo");
+  const sidang = (Array.isArray(k && k.sidang) ? k.sidang : [])
+    .slice()
+    .sort((a, b) => angka(a.urutan) - angka(b.urutan) || bersih(a.tanggal).localeCompare(bersih(b.tanggal)));
+  const sidangBiasa = sidang.filter((s) => !s.ikrar);
+  const putusan = k && k.putusan && tanggalSah(k.putusan.tanggal) ? k.putusan : putusanDariSidang(sidangBiasa, tanggalSah(k && k.hariIni));
+  if (!putusan) return sidangBiasa.length > 1 || (sidangBiasa[0] && sidangBiasa[0].dihadiriOleh !== null && sidangBiasa[0].dihadiriOleh !== undefined) ? pilih("persidangan") : pilih("baru");
+  const statusId = Number(putusan.statusId) || 0;
+  if (STATUS_CABUT.has(statusId) || /cabut/i.test(bersih(putusan.statusNama))) return pilih("cabut");
+  if (statusId === 65 || statusId === 93 || /gugur/i.test(bersih(putusan.statusNama))) return pilih("gugur");
+  if (statusId === 85 || /damai/i.test(bersih(putusan.statusNama))) return pilih("damai");
+  if (statusId === 63) return pilih("tolak");
+  if (statusId === 64) return pilih("tidak-diterima");
+  if (statusId === 66) return pilih("coret");
+  if (!statusId && putusan.dariSidang) return pilih("putus");
+  if (Number(perkara.alurPerkaraId) === ALUR_PERMOHONAN) return pilih("permohonan");
+  if (Number(perkara.jenisPerkaraId) === JENIS_CERAI_TALAK && statusId === STATUS_DIKABULKAN) {
+    const tIkrar = (k.ikrar && tanggalSah(k.ikrar.tanggal)) || ikrarDariSidang(sidang.filter((s) => s.ikrar));
+    return pilih(tIkrar ? "ikrar" : "menunggu-ikrar");
+  }
+  if (bersih(putusan.verstek).toUpperCase() === "Y") return pilih("verstek");
+  return pilih("contradictoir");
 }
 
 /**
@@ -723,7 +789,10 @@ function susunUsulan(k) {
           yakin: "sedang",
           // Uji balik: tepat 3/3 bila hanya pihak kedua yang hadir, 18/26 bila
           // tidak ada yang hadir - yang kedua ditawarkan tanpa dicentang.
-          pilih: hadirPutus === 3,
+          // 1.189.x (ukur-kasir-keadaan, Jul 2025-Sep 2026): gugatan yang
+          // DIGUGURKAN / TIDAK DAPAT DITERIMA tanpa seorang pun hadir ditulis
+          // kasir 27 dari 38 kali - dicentang. Permohonan begitu 3/12 - tidak.
+          pilih: hadirPutus === 3 || (hadirPutus === 4 && !permohonan && STATUS_PBT_PENGGUGAT.has(statusId)),
           kelompok: 53,
         });
       }
@@ -746,7 +815,11 @@ function susunUsulan(k) {
           jurnal.some((b) => JENIS_PANGGILAN.has(Number(b.jenisBiayaId)) && Number(b.pihakId) === Number(p.pihakId)) ||
           (peristiwaPanggil.get(Number(p.pihakId)) || { biasa: [] }).biasa.some((e) => e.relaas);
         const tanpaStatus = Boolean(putusan.dariSidang) && !statusId;
-        const pilihPbt = berbiaya && (verstek || ket === "S" || ket === "P" || (tanpaStatus && hadirPutus === 2));
+        // 1.189.x: putusan contradictoir/ditolak/damai yang dihadiri Penggugat
+        // saja (dihadiri_oleh 2) - kasir menulis pemberitahuan kepada Tergugat
+        // 28 dari 31 kali (ukur-kasir-keadaan) - dicentang.
+        const hadirPihakPertama = hadirPutus === 2 && STATUS_PBT_TERGUGAT_HADIR2.has(statusId);
+        const pilihPbt = berbiaya && (verstek || ket === "S" || ket === "P" || (tanpaStatus && hadirPutus === 2) || hadirPihakPertama);
         const yakin = pilihPbt ? "tinggi" : "sedang";
         const dasar = verstek
           ? `putusan verstek ${tPut}`
@@ -1264,6 +1337,97 @@ function buatLayanan(deps = {}) {
       usulan: hasil.usulan,
       catatan: hasil.catatan,
       sebutan: sebutanPerkara(k.perkara),
+      // 1.189.x butir 1: keadaan perkara + biaya yang lazim padanya, untuk
+      // kepala usulan di portal dan tab Kasir ekstensi.
+      keadaan: keadaanPerkara(k),
+    };
+  }
+
+  /**
+   * ==========================================================================
+   * KASIR OTOMATIS MASSAL SATU HARI (1.189.x butir 2) - HANYA SELECT
+   * ==========================================================================
+   *
+   * Perkara yang "bergerak" pada tanggal itu - bersidang, diputus, ikrar talak,
+   * penetapan hari sidang, atau suratnya diserahkan ke Pos sehari kerja
+   * sebelumnya - dibaca satu per satu dengan mesin usulan yang SAMA dengan
+   * Kasir per perkara. Yang usulan tercentangnya kosong disebut "sudah
+   * lengkap", bukan dibuang diam-diam. Penulisannya tetap lewat POST /kasir,
+   * satu perkara satu permintaan (layar yang mengurutkannya dengan jeda).
+   */
+  async function daftarHarian(tanggal, opsi = {}) {
+    const hari = tanggalSah(tanggal) || (await saatBasisData()).slice(0, 10);
+    const batas = Math.max(1, Math.min(150, Number(opsi.batas) || 120));
+    let sebelum = geserHari(hari, -1);
+    while (akhirPekan(sebelum)) sebelum = geserHari(sebelum, -1);
+    const calon = await semua(
+      `SELECT x.perkara_id AS perkaraId, GROUP_CONCAT(DISTINCT x.sebab ORDER BY x.sebab SEPARATOR ',') AS sebab
+         FROM (
+           SELECT perkara_id, 'sidang' AS sebab FROM perkara_jadwal_sidang WHERE tanggal_sidang = ?
+           UNION ALL SELECT perkara_id, 'putusan' FROM perkara_putusan WHERE tanggal_putusan = ?
+           UNION ALL SELECT perkara_id, 'ikrar' FROM perkara_ikrar_talak WHERE tgl_ikrar_talak = ?
+           UNION ALL SELECT perkara_id, 'penetapan-hari-sidang' FROM perkara_penetapan WHERE penetapan_hari_sidang = ?
+           UNION ALL SELECT perkara_id, 'surat-ke-pos' FROM perkara_pelaksanaan_relaas WHERE tanggal_jursit_pos = ?
+         ) x
+        GROUP BY x.perkara_id ORDER BY x.perkara_id ASC LIMIT ?`,
+      [hari, hari, hari, hari, sebelum, batas + 1]
+    );
+    const terpotong = calon.length > batas;
+    const daftar = [];
+    const lengkap = [];
+    const gagal = [];
+    const antre = calon.slice(0, batas);
+    // Empat sekaligus - tiap perkara sepuluh SELECT kecil; tarif satker disinggahkan.
+    let ke = 0;
+    const pekerja = async () => {
+      while (ke < antre.length) {
+        const c = antre[ke];
+        ke += 1;
+        try {
+          const baca = await (deps.bacaKeadaan || bacaKeadaan)(c.perkaraId);
+          if (!baca.ok) {
+            gagal.push({ perkaraId: Number(c.perkaraId), alasan: baca.alasan });
+            continue;
+          }
+          const k = baca.keadaan;
+          const hasil = susunUsulan(k);
+          const dipilih = hasil.usulan.filter((u) => u.pilih && (!u.sisaOtomatis || Number(u.jumlah) > 0));
+          const ringkas = {
+            perkaraId: k.perkara.perkaraId,
+            nomorPerkara: k.perkara.nomorPerkara,
+            jenisPerkara: k.perkara.jenisPerkaraNama,
+            sebab: bersih(c.sebab).split(",").filter(Boolean),
+            keadaan: keadaanPerkara(k),
+            saldo: hasil.saldo,
+          };
+          if (!dipilih.length) {
+            lengkap.push(ringkas);
+            continue;
+          }
+          const perluPeriksa = dipilih.some((u) => u.perluResi || u.jumlah === null || u.yakin !== "tinggi" || !u.tersedia);
+          daftar.push({
+            ...ringkas,
+            usulan: dipilih,
+            ditawarkan: hasil.usulan.filter((u) => !u.pilih).length,
+            catatan: hasil.catatan,
+            perluPeriksa,
+            saldoAkhir: hitungSisaOtomatis(dipilih.map((u) => ({ ...u })), hasil.saldo),
+          });
+        } catch (galat) {
+          gagal.push({ perkaraId: Number(c.perkaraId), alasan: String((galat && galat.message) || galat).slice(0, 200) });
+        }
+      }
+    };
+    await Promise.all([pekerja(), pekerja(), pekerja(), pekerja()]);
+    const urut = (a, b) => a.perkaraId - b.perkaraId;
+    return {
+      ok: true,
+      tanggal: hari,
+      perkara: daftar.sort(urut),
+      lengkap: lengkap.sort(urut),
+      gagal,
+      terpotong,
+      jumlahCalon: Math.min(calon.length, batas),
     };
   }
 
@@ -1560,7 +1724,7 @@ function buatLayanan(deps = {}) {
     };
   }
 
-  return { cariPerkara, bacaJurnal, bacaKeadaan, muatTarif, usulanPerkara, akunPetugas, susunRencana, jalankanRencana, langkahDatar };
+  return { cariPerkara, bacaJurnal, bacaKeadaan, muatTarif, usulanPerkara, daftarHarian, akunPetugas, susunRencana, jalankanRencana, langkahDatar };
 }
 
 let bawaan = null;
@@ -1577,8 +1741,10 @@ module.exports = {
   SQL_SISIP_AUDIT,
   JB,
   PESAN,
+  KEADAAN_KASIR,
   buatLayanan,
   susunUsulan,
+  keadaanPerkara,
   hitungSisaOtomatis,
   tanggalPatut,
   teksLatin1,
@@ -1586,6 +1752,7 @@ module.exports = {
   judulAudit,
   cariPerkara: (teks) => layananBawaan().cariPerkara(teks),
   usulanPerkara: (perkaraId) => layananBawaan().usulanPerkara(perkaraId),
+  daftarHarian: (tanggal, opsi) => layananBawaan().daftarHarian(tanggal, opsi),
   susunRencana: (minta) => layananBawaan().susunRencana(minta),
   jalankanRencana: (rencana, opsi) => layananBawaan().jalankanRencana(rencana, opsi),
   langkahDatar: (rencana) => layananBawaan().langkahDatar(rencana),

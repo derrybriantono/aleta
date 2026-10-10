@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase, type AletaDatabase } from "@/server/db/client";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { DIRILIS_EKSTENSI_TERBARU } from "@/lib/catatan-ekstensi";
+import { bolehKasir } from "@/lib/kasir-jurnal";
 import {
   KETERANGAN_KAPABILITAS,
   bolehMenyuntingAkses,
@@ -68,6 +69,8 @@ export async function GET(request: NextRequest) {
       bolehMengatur: bolehMenyuntingAkses(actor),
       // Hak unggah putusan ke SIPP/e-Court (9 Okt 2026) - peran, bukan kemampuan.
       bolehUnggahPutusan: bolehUnggahPutusan(actor),
+      // Tab Kasir ekstensi (1.189.x): kasir/keuangan/panitera/admin - aturan Kasir 1.186.
+      bolehKasir: bolehKasir(actor),
       versiEkstensi: EKSTENSI_VERSI,
       dirilis: DIRILIS_EKSTENSI_TERBARU,
       // Versi tipe keluaran ikut di sini supaya ekstensi tahu singgahannya

@@ -44,6 +44,7 @@ import {
   type PihakKasir,
   type UsulanJurnal,
 } from "@/lib/kasir-jurnal";
+import type { KeadaanKasir } from "@/lib/kasir-otomatis";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
 
@@ -69,6 +70,8 @@ type DataKasir = {
   usulan: UsulanJurnal[];
   catatan: string[];
   sebutan: { satu: string; dua: string };
+  /** 1.189.x butir 1: keadaan perkara + biaya yang lazim padanya (bot keadaanPerkara). */
+  keadaan?: KeadaanKasir;
   akun: { ok: boolean; username?: string; milik: string[]; pesan?: string; alasan?: string };
 };
 
@@ -110,7 +113,7 @@ function tanggalTeks(iso: string) {
   return t && b && h ? `${h}/${b}/${t}` : iso || "-";
 }
 
-function DialogKasir({ daftar, onTutup }: { daftar: PerkaraPilihan[]; onTutup: () => void }) {
+export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[]; onTutup: () => void; awal?: string }) {
   const pilihan = useMemo(() => {
     const lihat = new Set<string>();
     return daftar.filter((p) => /^\d+$/.test(String(p.perkaraId)) && !lihat.has(String(p.perkaraId)) && lihat.add(String(p.perkaraId)));
@@ -182,6 +185,20 @@ function DialogKasir({ daftar, onTutup }: { daftar: PerkaraPilihan[]; onTutup: (
     setPerkaraId(id);
     void muat(id);
   };
+
+  // 1.189.x butir 1: dibuka untuk satu perkara (dari Kasir harian / massal) -
+  // usulannya langsung tersusun tanpa memilih lagi. Satu-satunya perkara di
+  // jadwal pun langsung dibuka.
+  const idAwal = useRef(awal && /^\d+$/.test(awal) ? awal : pilihan.length === 1 ? pilihan[0].perkaraId : "");
+  useEffect(() => {
+    const id = idAwal.current;
+    if (!id) return;
+    const jam = setTimeout(() => {
+      setPerkaraId(id);
+      void muat(id);
+    }, 0);
+    return () => clearTimeout(jam);
+  }, [muat]);
 
   async function jalankanCari() {
     const teks = cari.trim();
@@ -534,6 +551,12 @@ function DialogKasir({ daftar, onTutup }: { daftar: PerkaraPilihan[]; onTutup: (
             <section>
               <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-sm font-semibold">Usulan ALETA - yang belum ada di jurnal</h4>
+                {data.keadaan ? (
+                  <span className="mr-auto text-xs" title={data.keadaan.lazim.length ? `Lazim pada keadaan ini: ${data.keadaan.lazim.join(", ")}` : undefined}>
+                    <span className="rounded border border-sky-500/40 bg-sky-500/10 px-1.5 py-0.5 text-sky-700 dark:text-sky-300">Keadaan: {data.keadaan.nama}</span>
+                    {data.keadaan.lazim.length ? <span className="ml-2 text-muted-foreground">lazim: {data.keadaan.lazim.join(", ")}</span> : null}
+                  </span>
+                ) : null}
                 <Button size="sm" variant="outline" className="h-7 text-xs" disabled={sedang} onClick={tambahManual}>
                   <Plus className="mr-1 h-3 w-3" />
                   Tambah baris manual
