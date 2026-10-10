@@ -293,9 +293,77 @@ async function cariGanda(masukan = {}) {
   };
 }
 
+/* === P5P6 10 Okt === */
+/**
+ * Identitas tiap saksi satu perkara untuk paragraf keterangan saksi (P6) -
+ * SELECT saja, sumber dan urutannya SAMA dengan variabel ABT 1197-1202/1241
+ * (P) dan 6100-6105/1251 (T): perkara_pihak5 urut `urutan` per saksi_pihak_ke,
+ * nama & alamat dari perkara_pihak5, umur = get_umur(tanggal_lahir,
+ * diinput_tanggal), agama lewat agama_id, pendidikan = kode tingkat_pendidikan.
+ * Hasil: [{ pihak 'P'|'T', urutPihak, nama, umur, agama, pendidikan,
+ * pekerjaan, alamat, keterangan }]. NIK tidak dibaca.
+ */
+async function identitasSaksiPerkara(nomorPerkara) {
+  const baca = await bacaPerkara(nomorPerkara);
+  if (!baca.ok) return [];
+  const baris = await kueri(
+    `SELECT p5.saksi_pihak_ke, p5.urutan, p5.nama, p5.alamat, p5.keterangan, p5.diinput_tanggal,
+            p.tanggal_lahir, p.pekerjaan, a.nama AS agama, tp.kode AS pendidikan
+       FROM perkara_pihak5 p5
+       LEFT JOIN pihak p ON p.id = p5.pihak_id
+       LEFT JOIN agama a ON a.id = p.agama_id
+       LEFT JOIN tingkat_pendidikan tp ON tp.id = p.pendidikan_id
+      WHERE p5.perkara_id = ? AND p5.urutan > 0
+      ORDER BY p5.saksi_pihak_ke, p5.urutan`,
+    [baca.perkara.perkara_id]
+  );
+  const { umurPada } = require("./deteksiSaksiService");
+  const hitung = { P: 0, T: 0 };
+  return baris.map((b) => {
+    const pihak = Number(b.saksi_pihak_ke) === 2 ? "T" : "P";
+    hitung[pihak] += 1;
+    return {
+      pihak,
+      urutPihak: hitung[pihak],
+      nama: bersih(b.nama),
+      umur: umurPada(b.tanggal_lahir, b.diinput_tanggal),
+      agama: bersih(b.agama),
+      pendidikan: bersih(b.pendidikan),
+      pekerjaan: bersih(b.pekerjaan),
+      alamat: bersih(b.alamat),
+      keterangan: bersih(b.keterangan),
+    };
+  });
+}
+
+/**
+ * identitasSaksiPerkara dengan batas waktu: null bila gagal atau lewat batas -
+ * keterangan saksi tidak boleh tertahan karena SIPP lambat (seperti mediasiPerkara).
+ */
+function identitasSaksiBerbatas(nomorPerkara, batasMs = 2500) {
+  let pewaktu = null;
+  const batas = new Promise((selesai) => {
+    pewaktu = setTimeout(() => selesai(null), batasMs);
+  });
+  const kerja = identitasSaksiPerkara(nomorPerkara).catch(() => null);
+  return Promise.race([kerja, batas]).finally(() => clearTimeout(pewaktu));
+}
+
+/** Ringkasan kamus hubungan (dasar, golongan, jenis kelamin) - memperkaya tebakan ekstensi. */
+function kamusHubunganUntukEkstensi() {
+  try {
+    return require("./deteksiSaksiService").kamusHubunganRingkas();
+  } catch (_) {
+    return [];
+  }
+}
+/* === AKHIR P5P6 === */
+
 async function jawabKonteks(query = {}) {
   try {
     const hasil = await konteksSaksi({ nomorPerkara: query.nomorPerkara });
+    // P5P6 10 Okt: kamus hubungan ikut konteks (diteruskan utuh oleh portal).
+    if (hasil.ok) hasil.kamusHubungan = kamusHubunganUntukEkstensi();
     if (hasil.ok) return { status: 200, body: hasil };
     return { status: hasil.kode === "perkara_tidak_ada" ? 404 : 400, body: hasil };
   } catch (galat) {
@@ -323,6 +391,10 @@ module.exports = {
   cariGanda,
   jawabKonteks,
   jawabGanda,
+  // P5P6 10 Okt - identitas saksi untuk paragraf keterangan saksi.
+  identitasSaksiPerkara,
+  identitasSaksiBerbatas,
+  kamusHubunganUntukEkstensi,
   // Aturan murni - diekspor untuk diuji.
   tingkatGanda,
   medanKurang,

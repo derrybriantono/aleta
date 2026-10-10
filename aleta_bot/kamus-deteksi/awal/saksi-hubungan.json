@@ -1,0 +1,1968 @@
+{
+  "kelompok": "saksi-hubungan",
+  "versi": 1,
+  "keterangan": "Hubungan saksi dengan pihak. Pola jenis 'jangkar' mengambil FRASA dari kalimat (jawaban kenal / baris identitas); pola jenis 'istilah' dicocokkan UTUH pada frasa yang sudah dibuang sebutan pihaknya. kunci = dasar hubungan (sama dengan daftar HUBUNGAN_BAWAAN portal); golongan keluarga/dekat/lain dipakai peringatan Pasal 76 UU 7/1989; jk dipakai tebakan jenis kelamin.",
+  "pola": [
+    {
+      "kode": "hub-jangkar-karena-saya",
+      "label": "\"karena saya (adalah) ...\" dalam jawaban kenal",
+      "kunci": "jangkar",
+      "jenis": "jangkar",
+      "regex": "\\b(?:karena|sebab|krn|karna)\\s+(?:saksi|saya)\\s+(?:ini\\s+)?(?:adalah\\s+|merupakan\\s+|sebagai\\s+|selaku\\s+|ialah\\s+){0,2}(?:(?:seorang|salah\\s+(?:satu|seorang))\\s+)?(?<frasa>[a-z][a-z0-9\\- ]{1,48}?)(?=\\s*(?:\\b(?:penggugat|tergugat|pemohon|termohon|para|pihak|dari|dengan|kepada|beliau|keduanya|mereka|yang|dan|bernama|sejak)\\b|[;,.:/(]|$))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Saya kenal dengan Penggugat karena saya adalah Ibu Kandung Penggugat;",
+        "kenal karena saya tetangga Penggugat"
+      ],
+      "contohSalah": [
+        "Saya kenal dengan Tergugat sebagai suami Penggugat;",
+        "Penggugat dan Tergugat bertengkar karena masalah ekonomi"
+      ],
+      "ukur": {
+        "n": 1853,
+        "tepat": 1683,
+        "salahTangkap": 170,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Pasangan jawaban kenal ABT - Keterangan saksi SIPP yang keduanya terbaca; setara 90.8%. Ketepatan jangkar = ketepatan istilah sesudahnya."
+    },
+    {
+      "kode": "hub-jangkar-saya-adalah",
+      "label": "\"saya adalah/sebagai ...\"",
+      "kunci": "jangkar",
+      "jenis": "jangkar",
+      "regex": "\\bsaya\\s+(?:ini\\s+)?(?:adalah|merupakan|sebagai|selaku|ialah)\\s+(?:(?:seorang|salah\\s+(?:satu|seorang))\\s+)?(?<frasa>[a-z][a-z0-9\\- ]{1,48}?)(?=\\s*(?:\\b(?:penggugat|tergugat|pemohon|termohon|para|pihak|dari|dengan|kepada|beliau|keduanya|mereka|yang|dan|bernama|sejak)\\b|[;,.:/(]|$))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Saya adalah paman Penggugat;",
+        "saya sebagai tetangga Pemohon"
+      ],
+      "contohSalah": [
+        "Saya kenal dengan Tergugat sebagai kakak ipar saya;",
+        "Tergugat adalah suami dari sepupu saya"
+      ],
+      "ukur": {
+        "n": 4,
+        "tepat": 4,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Pasangan jawaban kenal ABT - Keterangan saksi SIPP yang keduanya terbaca; setara 100.0%. Ketepatan jangkar = ketepatan istilah sesudahnya."
+    },
+    {
+      "kode": "hub-jangkar-mengaku-sebagai",
+      "label": "\"saksi mengaku sebagai ...\" (baris identitas putusan)",
+      "kunci": "jangkar",
+      "jenis": "jangkar",
+      "regex": "\\bsaksi\\s+mengaku\\s+sebagai\\s+(?<frasa>[a-z][a-z0-9\\- ]{1,48}?)(?=\\s*(?:\\b(?:penggugat|tergugat|pemohon|termohon|para|pihak|dari|dengan|kepada|beliau|keduanya|mereka|yang|dan|bernama|sejak)\\b|[;,.:/(]|$))",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "..., saksi mengaku sebagai Sepupu Pemohon, di bawah sumpahnya ..."
+      ],
+      "contohSalah": [
+        "saksi mengaku tidak tahu"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Pasangan jawaban kenal ABT - Keterangan saksi SIPP yang keduanya terbaca; setara -. Ketepatan jangkar = ketepatan istilah sesudahnya."
+    },
+    {
+      "kode": "hub-ibu-kandung",
+      "label": "Ibu Kandung",
+      "kunci": "Ibu Kandung",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "P",
+      "regex": "^(?:(?:ibu|mama|mamak|bunda|umi)(?:\\s+kandung(?:nya)?)?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "ibu kandung",
+        "ibu"
+      ],
+      "contohSalah": [
+        "ibu tiri",
+        "ibu mertua"
+      ],
+      "ukur": {
+        "n": 399,
+        "tepat": 376,
+        "salahTangkap": 23,
+        "rincian": {
+          "kalimat": {
+            "n": 210,
+            "tepat": 196,
+            "salahTangkap": 14
+          },
+          "label": {
+            "n": 189,
+            "tepat": 180,
+            "salahTangkap": 9
+          }
+        },
+        "golongan": {
+          "n": 399,
+          "tepat": 399,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 94.2% (jawaban 93.3% n=210, label 95.2% n=189); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-ayah-kandung",
+      "label": "Ayah Kandung",
+      "kunci": "Ayah Kandung",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "L",
+      "regex": "^(?:(?:ayah|bapak|bapa|papa|abah)(?:\\s+kandung(?:nya)?)?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "bapak kandung",
+        "ayah"
+      ],
+      "contohSalah": [
+        "ayah tiri",
+        "bapak mertua"
+      ],
+      "ukur": {
+        "n": 219,
+        "tepat": 207,
+        "salahTangkap": 12,
+        "rincian": {
+          "kalimat": {
+            "n": 115,
+            "tepat": 107,
+            "salahTangkap": 8
+          },
+          "label": {
+            "n": 104,
+            "tepat": 100,
+            "salahTangkap": 4
+          }
+        },
+        "golongan": {
+          "n": 219,
+          "tepat": 219,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 94.5% (jawaban 93.0% n=115, label 96.2% n=104); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-orang-tua",
+      "label": "Orang Tua Kandung",
+      "kunci": "Orang Tua Kandung",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:orang\\s*tua(?:\\s+kandung)?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "orang tua kandung",
+        "orangtua"
+      ],
+      "contohSalah": [
+        "orang tua angkat"
+      ],
+      "ukur": {
+        "n": 25,
+        "tepat": 23,
+        "salahTangkap": 2,
+        "rincian": {
+          "kalimat": {
+            "n": 3,
+            "tepat": 2,
+            "salahTangkap": 1
+          },
+          "label": {
+            "n": 22,
+            "tepat": 21,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 25,
+          "tepat": 24,
+          "salahTangkap": 1
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 92.0% (jawaban 66.7% n=3, label 95.5% n=22); golongan sama 96.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-ibu-tiri",
+      "label": "Ibu Tiri",
+      "kunci": "Ibu Tiri",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "P",
+      "regex": "^(?:(?:ibu|mama)\\s+tiri)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "ibu tiri"
+      ],
+      "contohSalah": [
+        "ibu kandung"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 3,
+            "tepat": 3,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 3,
+            "tepat": 3,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 6,
+          "tepat": 6,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=3, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-ayah-tiri",
+      "label": "Ayah Tiri",
+      "kunci": "Ayah Tiri",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "L",
+      "regex": "^(?:(?:ayah|bapak)\\s+tiri)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "ayah tiri"
+      ],
+      "contohSalah": [
+        "ayah kandung"
+      ],
+      "ukur": {
+        "n": 5,
+        "tepat": 4,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 2,
+            "tepat": 2,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 3,
+            "tepat": 2,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 5,
+          "tepat": 5,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 80.0% (jawaban 100.0% n=2, label 66.7% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-ibu-mertua",
+      "label": "Mertua",
+      "kunci": "Mertua",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:(?:ibu|bapak|ayah)\\s+)?mertua)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "mertua",
+        "ibu mertua"
+      ],
+      "contohSalah": [
+        "menantu"
+      ],
+      "ukur": {
+        "n": 8,
+        "tepat": 4,
+        "salahTangkap": 4,
+        "rincian": {
+          "kalimat": {
+            "n": 4,
+            "tepat": 2,
+            "salahTangkap": 2
+          },
+          "label": {
+            "n": 4,
+            "tepat": 2,
+            "salahTangkap": 2
+          }
+        },
+        "golongan": {
+          "n": 8,
+          "tepat": 8,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 50.0% (jawaban 50.0% n=4, label 50.0% n=4); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-kakak-kandung",
+      "label": "Kakak Kandung",
+      "kunci": "Kakak Kandung",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:kakak|kaka|kakaknya)(?:\\s+(?:kandung|laki-laki|laki\\s+laki|perempuan))?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "kakak kandung",
+        "kaka",
+        "kakak perempuan"
+      ],
+      "contohSalah": [
+        "kakak ipar",
+        "kakak sepupu"
+      ],
+      "ukur": {
+        "n": 305,
+        "tepat": 281,
+        "salahTangkap": 24,
+        "rincian": {
+          "kalimat": {
+            "n": 157,
+            "tepat": 145,
+            "salahTangkap": 12
+          },
+          "label": {
+            "n": 148,
+            "tepat": 136,
+            "salahTangkap": 12
+          }
+        },
+        "golongan": {
+          "n": 305,
+          "tepat": 302,
+          "salahTangkap": 3
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 92.1% (jawaban 92.4% n=157, label 91.9% n=148); golongan sama 99.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-adik-kandung",
+      "label": "Adik Kandung",
+      "kunci": "Adik Kandung",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:adik|ade|adek|adiknya)(?:\\s+(?:kandung|laki-laki|laki\\s+laki|perempuan))?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "adik kandung",
+        "adik"
+      ],
+      "contohSalah": [
+        "adik ipar",
+        "adik sepupu"
+      ],
+      "ukur": {
+        "n": 345,
+        "tepat": 315,
+        "salahTangkap": 30,
+        "rincian": {
+          "kalimat": {
+            "n": 176,
+            "tepat": 160,
+            "salahTangkap": 16
+          },
+          "label": {
+            "n": 169,
+            "tepat": 155,
+            "salahTangkap": 14
+          }
+        },
+        "golongan": {
+          "n": 345,
+          "tepat": 342,
+          "salahTangkap": 3
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 91.3% (jawaban 90.9% n=176, label 91.7% n=169); golongan sama 99.1%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-saudara-kandung",
+      "label": "Saudara Kandung",
+      "kunci": "Saudara Kandung",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:saudara|saudari|sodara|saudra|suadara)\\s+(?:kandung|seayah\\s+seibu))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saudara kandung",
+        "sodara kandung"
+      ],
+      "contohSalah": [
+        "saudara sepupu",
+        "saudara ipar"
+      ],
+      "ukur": {
+        "n": 153,
+        "tepat": 140,
+        "salahTangkap": 13,
+        "rincian": {
+          "kalimat": {
+            "n": 71,
+            "tepat": 68,
+            "salahTangkap": 3
+          },
+          "label": {
+            "n": 82,
+            "tepat": 72,
+            "salahTangkap": 10
+          }
+        },
+        "golongan": {
+          "n": 153,
+          "tepat": 151,
+          "salahTangkap": 2
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 91.5% (jawaban 95.8% n=71, label 87.8% n=82); golongan sama 98.7%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-saudara-seibu",
+      "label": "Saudara Seibu",
+      "kunci": "Saudara Seibu",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:saudara\\s+se(?:ibu|ayah|bapak))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saudara seibu",
+        "saudara seayah"
+      ],
+      "contohSalah": [
+        "saudara kandung"
+      ],
+      "ukur": {
+        "n": 8,
+        "tepat": 3,
+        "salahTangkap": 5,
+        "rincian": {
+          "kalimat": {
+            "n": 7,
+            "tepat": 2,
+            "salahTangkap": 5
+          },
+          "label": {
+            "n": 1,
+            "tepat": 1,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 8,
+          "tepat": 8,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 37.5% (jawaban 28.6% n=7, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-saudara-tiri",
+      "label": "Saudara Tiri",
+      "kunci": "Saudara Tiri",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:saudara|kakak|adik)\\s+tiri)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saudara tiri",
+        "kakak tiri"
+      ],
+      "contohSalah": [
+        "saudara kandung"
+      ],
+      "ukur": {
+        "n": 7,
+        "tepat": 4,
+        "salahTangkap": 3,
+        "rincian": {
+          "kalimat": {
+            "n": 2,
+            "tepat": 2,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 5,
+            "tepat": 2,
+            "salahTangkap": 3
+          }
+        },
+        "golongan": {
+          "n": 7,
+          "tepat": 7,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 57.1% (jawaban 100.0% n=2, label 40.0% n=5); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-anak-tiri",
+      "label": "Anak Tiri",
+      "kunci": "Anak Tiri",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:anak\\s+tiri)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak tiri"
+      ],
+      "contohSalah": [
+        "anak kandung"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 0,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 1,
+            "tepat": 0,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 1,
+          "tepat": 1,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 0.0% (jawaban - n=0, label 0.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-saudara",
+      "label": "Saudara",
+      "kunci": "Saudara",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:saudara|saudari|sodara|saudra))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saudara"
+      ],
+      "contohSalah": [
+        "saudara kandung",
+        "saudara ipar"
+      ],
+      "ukur": {
+        "n": 16,
+        "tepat": 13,
+        "salahTangkap": 3,
+        "rincian": {
+          "kalimat": {
+            "n": 3,
+            "tepat": 1,
+            "salahTangkap": 2
+          },
+          "label": {
+            "n": 13,
+            "tepat": 12,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 16,
+          "tepat": 16,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 81.3% (jawaban 33.3% n=3, label 92.3% n=13); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-sepupu-satu",
+      "label": "Sepupu Satu Kali",
+      "kunci": "Sepupu Satu Kali",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:saudara\\s+)?(?:sepupu|supupu|sepupun)\\s+(?:satu\\s*kali|sekali|1\\s*(?:x|kali)|i\\s*(?:x|kali)|satu\\s*x))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sepupu satu kali",
+        "sepupu 1x",
+        "sepupu sekali"
+      ],
+      "contohSalah": [
+        "sepupu dua kali"
+      ],
+      "ukur": {
+        "n": 155,
+        "tepat": 147,
+        "salahTangkap": 8,
+        "rincian": {
+          "kalimat": {
+            "n": 74,
+            "tepat": 70,
+            "salahTangkap": 4
+          },
+          "label": {
+            "n": 81,
+            "tepat": 77,
+            "salahTangkap": 4
+          }
+        },
+        "golongan": {
+          "n": 155,
+          "tepat": 154,
+          "salahTangkap": 1
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 94.8% (jawaban 94.6% n=74, label 95.1% n=81); golongan sama 99.4%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-sepupu-dua",
+      "label": "Sepupu Dua Kali",
+      "kunci": "Sepupu Dua Kali",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:saudara\\s+)?(?:sepupu|supupu|sepupun)\\s+(?:dua\\s*kali|2\\s*(?:x|kali)|ii\\s*(?:x|kali)|dua\\s*x))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "sepupu dua kali",
+        "sepupu 2 x"
+      ],
+      "contohSalah": [
+        "sepupu satu kali"
+      ],
+      "ukur": {
+        "n": 77,
+        "tepat": 75,
+        "salahTangkap": 2,
+        "rincian": {
+          "kalimat": {
+            "n": 39,
+            "tepat": 38,
+            "salahTangkap": 1
+          },
+          "label": {
+            "n": 38,
+            "tepat": 37,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 77,
+          "tepat": 77,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 97.4% (jawaban 97.4% n=39, label 97.4% n=38); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-sepupu-tiga",
+      "label": "Sepupu Tiga Kali",
+      "kunci": "Sepupu Tiga Kali",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:saudara\\s+)?(?:sepupu|supupu)\\s+(?:tiga\\s*kali|3\\s*(?:x|kali)|iii\\s*(?:x|kali)))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sepupu tiga kali",
+        "sepupu 3 kali"
+      ],
+      "contohSalah": [
+        "sepupu dua kali"
+      ],
+      "ukur": {
+        "n": 9,
+        "tepat": 8,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 7,
+            "tepat": 6,
+            "salahTangkap": 1
+          },
+          "label": {
+            "n": 2,
+            "tepat": 2,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 9,
+          "tepat": 9,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 88.9% (jawaban 85.7% n=7, label 100.0% n=2); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-kakak-sepupu",
+      "label": "Kakak Sepupu",
+      "kunci": "Kakak Sepupu",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:kakak|kaka)\\s+sepupu)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "kakak sepupu"
+      ],
+      "contohSalah": [
+        "kakak ipar"
+      ],
+      "ukur": {
+        "n": 12,
+        "tepat": 11,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 5,
+            "tepat": 5,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 7,
+            "tepat": 6,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 12,
+          "tepat": 12,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 91.7% (jawaban 100.0% n=5, label 85.7% n=7); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-adik-sepupu",
+      "label": "Adik Sepupu",
+      "kunci": "Adik Sepupu",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:adik|ade)\\s+sepupu)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "adik sepupu"
+      ],
+      "contohSalah": [
+        "adik ipar"
+      ],
+      "ukur": {
+        "n": 17,
+        "tepat": 12,
+        "salahTangkap": 5,
+        "rincian": {
+          "kalimat": {
+            "n": 7,
+            "tepat": 5,
+            "salahTangkap": 2
+          },
+          "label": {
+            "n": 10,
+            "tepat": 7,
+            "salahTangkap": 3
+          }
+        },
+        "golongan": {
+          "n": 17,
+          "tepat": 17,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 70.6% (jawaban 71.4% n=7, label 70.0% n=10); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-saudara-sepupu",
+      "label": "Saudara Sepupu",
+      "kunci": "Saudara Sepupu",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:saudara\\s+sepupu)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saudara sepupu"
+      ],
+      "contohSalah": [
+        "saudara ipar"
+      ],
+      "ukur": {
+        "n": 14,
+        "tepat": 14,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 5,
+            "tepat": 5,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 9,
+            "tepat": 9,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 14,
+          "tepat": 14,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=5, label 100.0% n=9); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-sepupu",
+      "label": "Sepupu",
+      "kunci": "Sepupu",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:sepupu|supupu|sepupun|sepupi)(?:\\s+(?:jauh|dekat))?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sepupu",
+        "supupu"
+      ],
+      "contohSalah": [
+        "sepupu paman"
+      ],
+      "ukur": {
+        "n": 362,
+        "tepat": 332,
+        "salahTangkap": 30,
+        "rincian": {
+          "kalimat": {
+            "n": 200,
+            "tepat": 180,
+            "salahTangkap": 20
+          },
+          "label": {
+            "n": 162,
+            "tepat": 152,
+            "salahTangkap": 10
+          }
+        },
+        "golongan": {
+          "n": 362,
+          "tepat": 354,
+          "salahTangkap": 8
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 91.7% (jawaban 90.0% n=200, label 93.8% n=162); golongan sama 97.8%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-paman",
+      "label": "Paman",
+      "kunci": "Paman",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "L",
+      "regex": "^(?:(?:paman|om|pamannya|pak\\s*de|pakde|pak\\s*le|paklek|mamak\\s+laki))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "paman",
+        "om"
+      ],
+      "contohSalah": [
+        "paman anak"
+      ],
+      "ukur": {
+        "n": 192,
+        "tepat": 172,
+        "salahTangkap": 20,
+        "rincian": {
+          "kalimat": {
+            "n": 100,
+            "tepat": 85,
+            "salahTangkap": 15
+          },
+          "label": {
+            "n": 92,
+            "tepat": 87,
+            "salahTangkap": 5
+          }
+        },
+        "golongan": {
+          "n": 192,
+          "tepat": 190,
+          "salahTangkap": 2
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 89.6% (jawaban 85.0% n=100, label 94.6% n=92); golongan sama 99.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-tante",
+      "label": "Tante",
+      "kunci": "Tante",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "P",
+      "regex": "^(?:(?:tante|tanta|tante\\s+kandung))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tante"
+      ],
+      "contohSalah": [
+        "tante dari suami"
+      ],
+      "ukur": {
+        "n": 230,
+        "tepat": 203,
+        "salahTangkap": 27,
+        "rincian": {
+          "kalimat": {
+            "n": 118,
+            "tepat": 101,
+            "salahTangkap": 17
+          },
+          "label": {
+            "n": 112,
+            "tepat": 102,
+            "salahTangkap": 10
+          }
+        },
+        "golongan": {
+          "n": 230,
+          "tepat": 228,
+          "salahTangkap": 2
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 88.3% (jawaban 85.6% n=118, label 91.1% n=112); golongan sama 99.1%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-bibi",
+      "label": "Bibi",
+      "kunci": "Bibi",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "P",
+      "regex": "^(?:(?:bibi|bibik|tbibi|bu\\s*de|bude|bu\\s*le|bulek))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "bibi",
+        "bude"
+      ],
+      "contohSalah": [
+        "bibit"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 3,
+            "tepat": 3,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 3,
+            "tepat": 3,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 6,
+          "tepat": 6,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=3, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-keponakan",
+      "label": "Keponakan",
+      "kunci": "Keponakan",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:keponakan|ponakan|kemenakan|kemanakan)(?:\\s+kandung)?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "keponakan",
+        "kemanakan"
+      ],
+      "contohSalah": [
+        "keponakan suami"
+      ],
+      "ukur": {
+        "n": 170,
+        "tepat": 132,
+        "salahTangkap": 38,
+        "rincian": {
+          "kalimat": {
+            "n": 74,
+            "tepat": 68,
+            "salahTangkap": 6
+          },
+          "label": {
+            "n": 96,
+            "tepat": 64,
+            "salahTangkap": 32
+          }
+        },
+        "golongan": {
+          "n": 170,
+          "tepat": 167,
+          "salahTangkap": 3
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 77.6% (jawaban 91.9% n=74, label 66.7% n=96); golongan sama 98.2%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-kakak-ipar",
+      "label": "Kakak Ipar",
+      "kunci": "Kakak Ipar",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:kakak|kaka)\\s+ipar)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "kakak ipar"
+      ],
+      "contohSalah": [
+        "adik ipar"
+      ],
+      "ukur": {
+        "n": 25,
+        "tepat": 24,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 11,
+            "tepat": 11,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 14,
+            "tepat": 13,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 25,
+          "tepat": 25,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 96.0% (jawaban 100.0% n=11, label 92.9% n=14); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-adik-ipar",
+      "label": "Adik Ipar",
+      "kunci": "Adik Ipar",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:adik|ade)\\s+ipar)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "adik ipar"
+      ],
+      "contohSalah": [
+        "kakak ipar"
+      ],
+      "ukur": {
+        "n": 14,
+        "tepat": 10,
+        "salahTangkap": 4,
+        "rincian": {
+          "kalimat": {
+            "n": 7,
+            "tepat": 5,
+            "salahTangkap": 2
+          },
+          "label": {
+            "n": 7,
+            "tepat": 5,
+            "salahTangkap": 2
+          }
+        },
+        "golongan": {
+          "n": 14,
+          "tepat": 14,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 71.4% (jawaban 71.4% n=7, label 71.4% n=7); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-saudara-ipar",
+      "label": "Saudara Ipar",
+      "kunci": "Saudara Ipar",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:saudara\\s+ipar)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saudara ipar"
+      ],
+      "contohSalah": [
+        "saudara kandung"
+      ],
+      "ukur": {
+        "n": 5,
+        "tepat": 5,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 5,
+            "tepat": 5,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 5,
+          "tepat": 5,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 100.0% (jawaban - n=0, label 100.0% n=5); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-ipar",
+      "label": "Ipar",
+      "kunci": "Ipar",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:ipar|par))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "ipar"
+      ],
+      "contohSalah": [
+        "ipar dari tetangga"
+      ],
+      "ukur": {
+        "n": 207,
+        "tepat": 193,
+        "salahTangkap": 14,
+        "rincian": {
+          "kalimat": {
+            "n": 106,
+            "tepat": 100,
+            "salahTangkap": 6
+          },
+          "label": {
+            "n": 101,
+            "tepat": 93,
+            "salahTangkap": 8
+          }
+        },
+        "golongan": {
+          "n": 207,
+          "tepat": 205,
+          "salahTangkap": 2
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 93.2% (jawaban 94.3% n=106, label 92.1% n=101); golongan sama 99.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-menantu",
+      "label": "Menantu",
+      "kunci": "Menantu",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:menantu|mantu|anak\\s+mantu|anak\\s+menantu))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "menantu",
+        "anak mantu"
+      ],
+      "contohSalah": [
+        "mertua"
+      ],
+      "ukur": {
+        "n": 18,
+        "tepat": 12,
+        "salahTangkap": 6,
+        "rincian": {
+          "kalimat": {
+            "n": 8,
+            "tepat": 6,
+            "salahTangkap": 2
+          },
+          "label": {
+            "n": 10,
+            "tepat": 6,
+            "salahTangkap": 4
+          }
+        },
+        "golongan": {
+          "n": 18,
+          "tepat": 18,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 66.7% (jawaban 75.0% n=8, label 60.0% n=10); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-anak-kandung",
+      "label": "Anak Kandung",
+      "kunci": "Anak Kandung",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:anak(?:\\s+kandung(?:nya)?)?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak kandung",
+        "anak"
+      ],
+      "contohSalah": [
+        "anak tiri",
+        "anak angkat"
+      ],
+      "ukur": {
+        "n": 28,
+        "tepat": 19,
+        "salahTangkap": 9,
+        "rincian": {
+          "kalimat": {
+            "n": 14,
+            "tepat": 9,
+            "salahTangkap": 5
+          },
+          "label": {
+            "n": 14,
+            "tepat": 10,
+            "salahTangkap": 4
+          }
+        },
+        "golongan": {
+          "n": 28,
+          "tepat": 27,
+          "salahTangkap": 1
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 67.9% (jawaban 64.3% n=14, label 71.4% n=14); golongan sama 96.4%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-cucu",
+      "label": "Cucu",
+      "kunci": "Cucu",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:cucu(?:\\s+kandung)?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "cucu"
+      ],
+      "contohSalah": [
+        "cucu tetangga"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 2,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 2,
+            "tepat": 1,
+            "salahTangkap": 1
+          },
+          "label": {
+            "n": 1,
+            "tepat": 1,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 3,
+          "tepat": 3,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 66.7% (jawaban 50.0% n=2, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-kakek",
+      "label": "Kakek",
+      "kunci": "Kakek",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "L",
+      "regex": "^(?:(?:kakek|kakeknya|opa|datuk|tete))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "kakek"
+      ],
+      "contohSalah": [
+        "kakak"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 1,
+            "tepat": 1,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 1,
+            "tepat": 1,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 2,
+          "tepat": 2,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=1, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-nenek",
+      "label": "Nenek",
+      "kunci": "Nenek",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "P",
+      "regex": "^(?:(?:nenek|oma|nene))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "nenek"
+      ],
+      "contohSalah": [
+        "neneknya tetangga"
+      ],
+      "ukur": {
+        "n": 14,
+        "tepat": 14,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 7,
+            "tepat": 7,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 7,
+            "tepat": 7,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 14,
+          "tepat": 14,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=7, label 100.0% n=7); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-keluarga",
+      "label": "Keluarga",
+      "kunci": "Keluarga",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:keluarga|famili|keluarga\\s+dekat|keluarga\\s+jauh|masih\\s+keluarga))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "keluarga",
+        "keluarga dekat"
+      ],
+      "contohSalah": [
+        "tetangga"
+      ],
+      "ukur": {
+        "n": 58,
+        "tepat": 51,
+        "salahTangkap": 7,
+        "rincian": {
+          "kalimat": {
+            "n": 12,
+            "tepat": 12,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 46,
+            "tepat": 39,
+            "salahTangkap": 7
+          }
+        },
+        "golongan": {
+          "n": 58,
+          "tepat": 51,
+          "salahTangkap": 7
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 87.9% (jawaban 100.0% n=12, label 84.8% n=46); golongan sama 87.9%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-kerabat",
+      "label": "Kerabat",
+      "kunci": "Kerabat",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:kerabat|kerabat\\s+dekat|kerabat\\s+jauh))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "kerabat"
+      ],
+      "contohSalah": [
+        "sahabat"
+      ],
+      "ukur": {
+        "n": 27,
+        "tepat": 26,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 15,
+            "tepat": 15,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 12,
+            "tepat": 11,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 27,
+          "tepat": 26,
+          "salahTangkap": 1
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 96.3% (jawaban 100.0% n=15, label 91.7% n=12); golongan sama 96.3%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-tetangga",
+      "label": "Tetangga",
+      "kunci": "Tetangga",
+      "jenis": "istilah",
+      "golongan": "dekat",
+      "jk": "",
+      "regex": "^(?:(?:tetangga|tetanggat|tewtangga|tetangg|tetangga\\s+(?:dekat|rumah|kampung|desa)))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tetangga",
+        "tetangga dekat"
+      ],
+      "contohSalah": [
+        "tetangga desa sebelah yang tidak kenal"
+      ],
+      "ukur": {
+        "n": 420,
+        "tepat": 390,
+        "salahTangkap": 30,
+        "rincian": {
+          "kalimat": {
+            "n": 211,
+            "tepat": 195,
+            "salahTangkap": 16
+          },
+          "label": {
+            "n": 209,
+            "tepat": 195,
+            "salahTangkap": 14
+          }
+        },
+        "golongan": {
+          "n": 420,
+          "tepat": 394,
+          "salahTangkap": 26
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 92.9% (jawaban 92.4% n=211, label 93.3% n=209); golongan sama 93.8%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-teman-kerja",
+      "label": "Teman Kerja",
+      "kunci": "Teman Kerja",
+      "jenis": "istilah",
+      "golongan": "dekat",
+      "jk": "",
+      "regex": "^(?:(?:teman|kawan)\\s+(?:kerja|sekerja|kantor|sekantor))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "teman kerja",
+        "teman kantor"
+      ],
+      "contohSalah": [
+        "teman"
+      ],
+      "ukur": {
+        "n": 12,
+        "tepat": 11,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 7,
+            "tepat": 6,
+            "salahTangkap": 1
+          },
+          "label": {
+            "n": 5,
+            "tepat": 5,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 12,
+          "tepat": 11,
+          "salahTangkap": 1
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 91.7% (jawaban 85.7% n=7, label 100.0% n=5); golongan sama 91.7%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-rekan-kerja",
+      "label": "Rekan Kerja",
+      "kunci": "Rekan Kerja",
+      "jenis": "istilah",
+      "golongan": "dekat",
+      "jk": "",
+      "regex": "^(?:rekan\\s+(?:kerja|sekerja|kantor))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "rekan kerja"
+      ],
+      "contohSalah": [
+        "rekan"
+      ],
+      "ukur": {
+        "n": 12,
+        "tepat": 11,
+        "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 7,
+            "tepat": 6,
+            "salahTangkap": 1
+          },
+          "label": {
+            "n": 5,
+            "tepat": 5,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 12,
+          "tepat": 11,
+          "salahTangkap": 1
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 91.7% (jawaban 85.7% n=7, label 100.0% n=5); golongan sama 91.7%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-sahabat",
+      "label": "Sahabat",
+      "kunci": "Sahabat",
+      "jenis": "istilah",
+      "golongan": "dekat",
+      "jk": "",
+      "regex": "^(?:(?:sahabat|sahabat\\s+dekat))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sahabat"
+      ],
+      "contohSalah": [
+        "teman kerja"
+      ],
+      "ukur": {
+        "n": 9,
+        "tepat": 9,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 6,
+            "tepat": 6,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 3,
+            "tepat": 3,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 9,
+          "tepat": 9,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=6, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-teman",
+      "label": "Teman",
+      "kunci": "Teman",
+      "jenis": "istilah",
+      "golongan": "dekat",
+      "jk": "",
+      "regex": "^(?:(?:teman|kawan|teman\\s+(?:dekat|akrab|sekolah|kampung|main)))$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "teman",
+        "teman dekat"
+      ],
+      "contohSalah": [
+        "teman kerja"
+      ],
+      "ukur": {
+        "n": 119,
+        "tepat": 107,
+        "salahTangkap": 12,
+        "rincian": {
+          "kalimat": {
+            "n": 58,
+            "tepat": 51,
+            "salahTangkap": 7
+          },
+          "label": {
+            "n": 61,
+            "tepat": 56,
+            "salahTangkap": 5
+          }
+        },
+        "golongan": {
+          "n": 119,
+          "tepat": 111,
+          "salahTangkap": 8
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Setara dengan pembanding 89.9% (jawaban 87.9% n=58, label 91.8% n=61); golongan sama 93.3%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+    },
+    {
+      "kode": "hub-aparat-desa",
+      "label": "Aparat Desa",
+      "kunci": "Aparat Desa",
+      "jenis": "istilah",
+      "golongan": "lain",
+      "jk": "",
+      "regex": "^(?:(?:aparat|perangkat|staf|staff)\\s+desa|kepala\\s+(?:desa|dusun|lingkungan)|kades|kadus|sekretaris\\s+desa|sekdes|ketua\\s+(?:rt|rw)|pak\\s+rt|lurah)$",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "aparat desa",
+        "kepala desa",
+        "ketua rt"
+      ],
+      "contohSalah": [
+        "tetangga"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 0,
+          "tepat": 0,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Belum pernah muncul berpasangan di data satker - belum terukur."
+    },
+    {
+      "kode": "hub-tokoh-adat",
+      "label": "Tokoh Adat",
+      "kunci": "Tokoh Adat",
+      "jenis": "istilah",
+      "golongan": "lain",
+      "jk": "",
+      "regex": "^(?:(?:tokoh|ketua|pemangku)\\s+adat)$",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tokoh adat"
+      ],
+      "contohSalah": [
+        "tokoh agama"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 0,
+          "tepat": 0,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Belum pernah muncul berpasangan di data satker - belum terukur."
+    },
+    {
+      "kode": "hub-tokoh-agama",
+      "label": "Tokoh Agama",
+      "kunci": "Tokoh Agama",
+      "jenis": "istilah",
+      "golongan": "lain",
+      "jk": "",
+      "regex": "^(?:tokoh\\s+(?:agama|masyarakat)|imam(?:\\s+(?:desa|masjid|kampung))?|pegawai\\s+syara|guru\\s+ngaji)$",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "imam desa",
+        "pegawai syara",
+        "tokoh agama"
+      ],
+      "contohSalah": [
+        "tokoh adat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 0,
+          "tepat": 0,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Belum pernah muncul berpasangan di data satker - belum terukur."
+    }
+  ],
+  "templat": []
+}

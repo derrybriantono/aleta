@@ -2018,19 +2018,66 @@ function saksibantuRapikan(teks, konteks, yangMenghadirkan) {
 }
 
 /** Jenis kelamin yang tersirat dari kata hubungan - 98,7% tepat atas data satker. */
-function saksibantuJkHubungan(dasar) {
+function saksibantuJkHubungan(dasar, kamus) {
   const d = String(dasar || "").toLowerCase().trim();
   if (/^(?:ibu|tante|bibi|nenek|istri|bude|kakak perempuan|adik perempuan|anak perempuan)\b/.test(d)) return "P";
   if (/^(?:ayah|bapak|paman|om|kakek|suami|pakde|kakak laki|adik laki|anak laki)\b/.test(d)) return "L";
-  return "";
+  // P5P6 10 Okt: dasar yang tidak dikenal aturan di atas dicari di kamus hubungan bot.
+  const k = saksibantuDariKamus(d, kamus);
+  return k && (k.jk === "L" || k.jk === "P") ? k.jk : "";
 }
 
 /** Hubungan keluarga (yang mungkin serumah) - syarat usulan alamat. */
-function saksibantuKeluarga(dasar) {
-  return /^(?:ibu|ayah|bapak|orang tua|kakak|adik|saudara|anak|nenek|kakek|paman|tante|bibi|sepupu|keponakan|ipar|menantu|mertua|cucu|keluarga|kerabat|suami|istri)\b/i.test(
-    String(dasar || "").trim()
-  );
+function saksibantuKeluarga(dasar, kamus) {
+  if (
+    /^(?:ibu|ayah|bapak|orang tua|kakak|adik|saudara|anak|nenek|kakek|paman|tante|bibi|sepupu|keponakan|ipar|menantu|mertua|cucu|keluarga|kerabat|suami|istri)\b/i.test(
+      String(dasar || "").trim()
+    )
+  ) {
+    return true;
+  }
+  // P5P6 10 Okt: kamus hubungan bot (golongan keluarga) memperkaya - tidak pernah mengurangi.
+  const k = saksibantuDariKamus(String(dasar || "").toLowerCase().trim(), kamus);
+  return Boolean(k && k.golongan === "keluarga");
 }
+
+/* === P5P6 10 Okt === */
+/**
+ * Kamus hubungan dari bot (konteks.kamusHubungan: [{dasar, golongan, jk}]) -
+ * pola deteksi P5 yang bisa ditambah lewat database tanpa rilis ekstensi.
+ * Dicocokkan pada DASAR yang sudah dirapikan saksibantuUrai, tanpa beda besar-kecil.
+ */
+function saksibantuDariKamus(dasarKecil, kamus) {
+  if (!dasarKecil || !Array.isArray(kamus)) return null;
+  const sama = kamus.find((x) => x && String(x.dasar || "").toLowerCase() === dasarKecil);
+  if (sama) return sama;
+  // Pola istilahnya (dicocokkan UTUH, ^...$) - "mama kandung" dikenal sebagai Ibu Kandung.
+  for (const x of kamus) {
+    if (!x || !x.regex) continue;
+    try {
+      if (new RegExp(String(x.regex), String(x.flags || "i")).test(dasarKecil)) return x;
+    } catch {
+      // pola rusak dari database diabaikan
+    }
+  }
+  return null;
+}
+
+/** { kodePola } bila dasar hubungan dikenali kamus - untuk jejak koreksi (agen 4). */
+function saksibantuKodeKamus(dasar, kamus) {
+  const k = saksibantuDariKamus(String(dasar || "").toLowerCase().trim(), kamus);
+  return k && k.kode ? { kodePola: String(k.kode) } : {};
+}
+
+function saksibantuKamusHubungan() {
+  try {
+    const k = typeof saksibantuKeadaan !== "undefined" && saksibantuKeadaan.data && saksibantuKeadaan.data.konteks;
+    return k && Array.isArray(k.kamusHubungan) ? k.kamusHubungan : [];
+  } catch {
+    return [];
+  }
+}
+/* === AKHIR P5P6 === */
 
 /** Pekerjaan blangko SIPP terisi? Pengadilan agama memakai #apakahtni + uraian. */
 function saksibantuPekerjaanTerisi(k) {
@@ -2060,12 +2107,17 @@ function saksibantuUsulan(k) {
       });
     }
   }
-  const jkHub = saksibantuJkHubungan(x.hubungan);
+  const jkHub = saksibantuJkHubungan(x.hubungan, x.kamusHubungan);
+  // P5P6 10 Okt: tebakan yang HANYA dikenal kamus belum terukur - usulan klik (tidak kuat) + kodePola.
+  const kamusJk = !saksibantuJkHubungan(x.hubungan) && jkHub ? saksibantuDariKamus(String(x.hubungan || "").toLowerCase().trim(), x.kamusHubungan) : null;
   if (!String(x.jenisKelamin || "").trim() && jkHub) {
     u.push({
-      medan: "jenisKelamin", label: "Jenis kelamin", tulisan: jkHub === "L" ? "Laki Laki" : "Perempuan", kuat: true,
-      alasan: `dari hubungan "${x.hubungan}" (${SAKSIBANTU_UKURAN.jkDariHubungan} tepat)`,
+      medan: "jenisKelamin", label: "Jenis kelamin", tulisan: jkHub === "L" ? "Laki Laki" : "Perempuan", kuat: !kamusJk,
+      alasan: kamusJk
+        ? `dari hubungan "${x.hubungan}" menurut kamus hubungan ALETA - periksa dulu`
+        : `dari hubungan "${x.hubungan}" (${SAKSIBANTU_UKURAN.jkDariHubungan} tepat)`,
       langkah: [{ penunjuk: "#pihak_jenis_kelamin", jenis: "pilih", nilai: jkHub === "L" ? "1" : "2" }],
+      ...(kamusJk && kamusJk.kode ? { kodePola: String(kamusJk.kode) } : {}),
     });
   }
   const jk = String(x.jenisKelamin) === "1" ? "L" : String(x.jenisKelamin) === "2" ? "P" : jkHub;
@@ -2087,11 +2139,12 @@ function saksibantuUsulan(k) {
       langkah: [{ penunjuk: "#pihak_status_kawin", jenis: "pilih", nilai: "1" }],
     });
   }
-  if (!String(x.alamat || "").trim() && String(x.alamatPihak || "").trim() && saksibantuKeluarga(x.hubungan)) {
+  if (!String(x.alamat || "").trim() && String(x.alamatPihak || "").trim() && saksibantuKeluarga(x.hubungan, x.kamusHubungan)) {
     u.push({
       medan: "alamat", label: "Alamat", tulisan: `sama dengan alamat ${x.sebutanPihak || "pihak"}`, kuat: false,
       alasan: `hanya bila serumah - ${SAKSIBANTU_UKURAN.alamatSama} saksi beralamat persis sama`,
       langkah: [{ penunjuk: "#pihak_alamat", jenis: "teks", nilai: String(x.alamatPihak).trim() }],
+      ...(saksibantuKeluarga(x.hubungan) ? {} : saksibantuKodeKamus(x.hubungan, x.kamusHubungan)), // P5P6 10 Okt
     });
   }
   return u;
@@ -2868,6 +2921,7 @@ async function saksibantuSegarkanLajur(f) {
   const usulan = saksibantuUsulan({
     ...b,
     hubungan: saksibantuKeadaan.pilihan.dasar,
+    kamusHubungan: saksibantuKamusHubungan(), // P5P6 10 Okt
     alamatPihak: pihak ? pihak.alamat : "",
     sebutanPihak: pihak ? pihak.sebutan : "",
   });
@@ -2880,6 +2934,7 @@ async function saksibantuSegarkanLajur(f) {
   const usulanAkhir = saksibantuUsulan({
     ...sesudah,
     hubungan: saksibantuKeadaan.pilihan.dasar,
+    kamusHubungan: saksibantuKamusHubungan(), // P5P6 10 Okt
     alamatPihak: pihak ? pihak.alamat : "",
     sebutanPihak: pihak ? pihak.sebutan : "",
   });

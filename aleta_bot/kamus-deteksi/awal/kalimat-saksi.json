@@ -1,0 +1,131 @@
+{
+  "kelompok": "kalimat-saksi",
+  "versi": 1,
+  "keterangan": "Templat rangkaian kata keterangan saksi (Susun keterangan saksi). [ ... ] dibuang utuh bila salah satu {isian} di dalamnya kosong.",
+  "pola": [],
+  "templat": [
+    {
+      "kode": "saksi-pembuka-lengkap",
+      "label": "Pembuka saksi - lengkap (gaya blangko putusan derry_briantono)",
+      "bagian": "pembuka",
+      "gaya": "lengkap",
+      "teks": "{nomor}. {nama}[, umur {umur} tahun][, agama {agama}][, pendidikan {pendidikan}][, pekerjaan {pekerjaan}][, bertempat tinggal di {alamat}][, saksi mengaku sebagai {hubungan}], di bawah {sumpahnya} telah memberikan keterangan di muka persidangan yang pada pokoknya sebagai berikut:",
+      "syarat": {},
+      "status": "aktif",
+      "catatan": "Ragam terbanyak di 68 ragam pembuka blangko ABT satker (141 dari 754 tempat, termasuk awalan \"Saksi I,\")."
+    },
+    {
+      "kode": "saksi-butir-lengkap",
+      "label": "Satu butir keterangan - lengkap",
+      "bagian": "fakta",
+      "gaya": "lengkap",
+      "teks": "- {isi};",
+      "syarat": {},
+      "status": "aktif",
+      "catatan": "{isi} = jawaban sebagaimana dicetak ABT (replace_ket_saksi: \"Bahwa \" + saya->saksi)."
+    },
+    {
+      "kode": "saksi-pembuka-ringkas",
+      "label": "Pembuka saksi - ringkas",
+      "bagian": "pembuka",
+      "gaya": "ringkas",
+      "teks": "Bahwa saksi {urut} {sebutanPihak}[, {nama}][, umur {umur} tahun][, {hubungan}], di bawah {sumpah} pada pokoknya menerangkan bahwa {isi};",
+      "syarat": {},
+      "status": "aktif",
+      "catatan": "{isi} = rangkaian keterangan pokok (kenal, keadaan rumah tangga, penyebab, pisah, upaya damai) dipisah koma."
+    },
+    {
+      "kode": "saksi-kenal",
+      "label": "Kenal para pihak (bila jawaban kenal belum ada)",
+      "bagian": "kenal",
+      "gaya": "semua",
+      "teks": "saksi kenal dengan {lawan}[ dan {pelaku}][ karena saksi adalah {hubungan}]",
+      "syarat": {},
+      "status": "aktif"
+    },
+    {
+      "kode": "saksi-fakta-perselisihan",
+      "label": "Fakta: perselisihan dan pertengkaran",
+      "bagian": "fakta",
+      "gaya": "semua",
+      "teks": "rumah tangga {lawan} dan {pelaku} sudah tidak rukun[ sejak {sejak}] karena sering terjadi perselisihan dan pertengkaran[ yang disebabkan {sebab}]",
+      "syarat": {
+        "alasan": "perselisihan terus-menerus"
+      },
+      "status": "aktif"
+    },
+    {
+      "kode": "saksi-fakta-nafkah",
+      "label": "Fakta: tidak memberi nafkah",
+      "bagian": "fakta",
+      "gaya": "semua",
+      "teks": "{pelaku} tidak lagi memberi nafkah kepada {lawan}[ sejak {sejak}]",
+      "syarat": {
+        "alasan": "tidak memberi nafkah"
+      },
+      "status": "aktif"
+    },
+    {
+      "kode": "saksi-fakta-kekerasan",
+      "label": "Fakta: kekerasan dalam rumah tangga",
+      "bagian": "fakta",
+      "gaya": "semua",
+      "teks": "{pelaku} pernah melakukan kekerasan terhadap {lawan}",
+      "syarat": {
+        "alasan": "kekerasan dalam rumah tangga"
+      },
+      "status": "aktif"
+    },
+    {
+      "kode": "saksi-fakta-pihak-lain",
+      "label": "Fakta: pihak ketiga (pria/wanita idaman lain)",
+      "bagian": "fakta",
+      "gaya": "semua",
+      "teks": "{pelaku} menjalin hubungan dengan {orangLain}",
+      "syarat": {
+        "alasan": "pihak lain (wanita/pria idaman lain)"
+      },
+      "status": "aktif"
+    },
+    {
+      "kode": "saksi-fakta-umum",
+      "label": "Fakta per alasan (bentuk umum)",
+      "bagian": "fakta",
+      "gaya": "semua",
+      "teks": "{pelaku} {frasa}",
+      "syarat": {},
+      "status": "aktif",
+      "catatan": "Dipakai untuk alasan yang tidak punya templat khusus; {frasa} dari hasil deteksi alasan (kamus agen 1) atau masukan."
+    },
+    {
+      "kode": "saksi-fakta-pisah",
+      "label": "Fakta: pisah tempat tinggal",
+      "bagian": "fakta",
+      "gaya": "semua",
+      "teks": "{lawan} dan {pelaku} sudah berpisah tempat tinggal[ sejak {pisahSejak}][ selama {lamaPisah}][ dan yang pergi meninggalkan tempat kediaman bersama adalah {yangPergi}]",
+      "syarat": {},
+      "status": "aktif"
+    },
+    {
+      "kode": "saksi-upaya-damai",
+      "label": "Upaya damai",
+      "bagian": "upaya",
+      "gaya": "semua",
+      "teks": "{lawan} dan {pelaku} sudah diupayakan rukun kembali[ oleh {oleh}], namun tidak berhasil",
+      "syarat": {},
+      "status": "aktif"
+    },
+    {
+      "kode": "saksi-penutup-tanggapan",
+      "label": "Penutup: tanggapan pihak (hanya bila dipilih petugas)",
+      "bagian": "penutup",
+      "gaya": "semua",
+      "teks": "Bahwa atas keterangan saksi tersebut, {lawan} menyatakan membenarkan dan tidak keberatan;",
+      "syarat": {
+        "diminta": true
+      },
+      "status": "aktif",
+      "catatan": "Tidak pernah ditambahkan otomatis - tanggapan pihak harus sungguh terjadi di persidangan."
+    }
+  ]
+}

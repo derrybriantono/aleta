@@ -1,0 +1,1500 @@
+{
+ "sumber": "sipp_donggala+aps_badilag (salinan 9 Okt 2026), tools/ukur-deteksi-saksi.js",
+ "catatan": "Pasangan jawaban kenal (ABT) - Keterangan saksi (SIPP) nyata; nama sesudah 'bernama' disamarkan.",
+ "ringkasan": {
+  "keduanya": 1857,
+  "setara": 1687,
+  "persis": 1479,
+  "golonganSama": 1821
+ },
+ "pasangan": [
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah paman Penggugat;",
+   "label": "paman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Ibu kandung Pemohon;",
+   "label": "ibu kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga\nPenggugat;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Ya, saya kenal Pemohon dan Termohon karena saya sepupu Pemohon;",
+   "label": "sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu dua kali Penggugat;",
+   "label": "Sepupu dua kali Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya sepupu dua kali Penggugat;",
+   "label": "sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah sepupu dua kali dengan Pemohon;",
+   "label": "Sepupu dua kali"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya Ibu kandung Penggugat;",
+   "label": "ibu kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat;",
+   "label": "KAKAK KANDUNG"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu dua kali Penggugat;",
+   "label": "Sepupu dua kali dengan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu dua kali dengan Penggugat;",
+   "label": "Sepupu dua kali Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya anak kandung Penggugat;",
+   "label": "anak kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ipar Penggugat;",
+   "label": "Ipar"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya anak kandung Penggugat;",
+   "label": "Ipar"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu kandung Penggugat;",
+   "label": "Ibu Kandung"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya Ayah kandung Penggugat;",
+   "label": "Ayah kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat;",
+   "label": "kakak kandung"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya Sepupu Penggugat;",
+   "label": "Adik"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya tante Penggugat;",
+   "label": "Tante"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak ipar Penggugat;",
+   "label": "Kakak Ipar Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya sepupu Penggugat;",
+   "label": "sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kerabat Penggugat;",
+   "label": "Kerabat Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya teman Penggugat;",
+   "label": "Teman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah teman;",
+   "label": "teman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah kerabat Pemohon;",
+   "label": "kerabat Pemohon"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal Penggugat dan Tergugat karena saya adalah adik kandung Tergugat;",
+   "label": "saudara kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah paman Penggugat;",
+   "label": "paman"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya Nenek Penggugat;",
+   "label": "saksi nenek Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal Pemohon dan Termohon karena saya sahabat Pemohon;",
+   "label": "saksi teman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah  keponakan Penggugat;",
+   "label": "keponakan Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya saudara sepupu Penggugat;",
+   "label": "Sepupu 2 kali"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya Ibu Kandung Penggugat;",
+   "label": "Ibu kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah paman Penggugat...;",
+   "label": "Paman Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya saudara sepupu Penggugat;",
+   "label": "sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah teman Penggugat;",
+   "label": "Teman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "tetangga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat;",
+   "label": "Ayah kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah saudara kandung Penggugat;",
+   "label": "Saudara kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya Adik kandung Penggugat dan Tergugat kakak Ipar;",
+   "label": "Adik"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat\ndan Tergugat karena saya adalah keponakan Penggugat;",
+   "label": "Keponakan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Paman Pemohon;",
+   "label": "Paman Pemohon"
+  },
+  {
+   "jawaban": "Ya, Saya kenal dengan Pemohon dan Termohon karena saya adalah teman Pemohon;",
+   "label": "Teman Pemohon"
+  },
+  {
+   "jawaban": "Ya,\nsaya kenal dengan Penggugat dan Tergugat karena saya Paman  Penggugat dan Tergugat adalah suami Penggugat\nbernama NAMA;",
+   "label": "Paman"
+  },
+  {
+   "jawaban": "Ya,\nsaya kenal dengan Penggugat dan Tergugat karena saya tetangga dengan mereka dan\nTergugat adalah suami Penggugat bernama NAMA;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan\nPenggugat dan Tergugat karena saya sepupu Penggugat;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Paman Penggugat;",
+   "label": "Paman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah teman  kantor Pemohon dan saya kenal dengan Termohon sebagai istri Pemohon yang bernama NAMA;",
+   "label": "Teman sekantor"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah teman Pemohon;",
+   "label": "Teman Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan para Pemohon karena saya adalah  kakak kandung Pemohon;",
+   "label": "Adik kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu satu kali dengan Penggugat;",
+   "label": "Sepupu satu kali Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan\nTergugat yang bernama NAMA;",
+   "label": "Ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ipar Penggugat;",
+   "label": "Ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Adik Kandung Penggugat;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ipar;",
+   "label": "Ipar Penggugat"
+  },
+  {
+   "jawaban": "Ya, Saya kenal dengan Para Pemohon karena saya adalah Sepupu Pemohon II sekaligus sebagai NAMA NAMA NAMA NAMA;",
+   "label": "Sepupu Pemohon II"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat dan Tergugat karena saya adalah paman Penggugat. Tergugat bernama NAMA;",
+   "label": "Paman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah saudara kandung Penggugat;",
+   "label": "Saudara Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Tergugat sebagai suami Penggugat bernama NAMA;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Kakak kandung Penggugat dan Tergugat adalah Ipar;",
+   "label": "kakak kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Ayah kandung Pemohon;",
+   "label": "Ayah kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah ponakan Pemohon;",
+   "label": "Ponakan Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Kakak Kandung Penggugat;",
+   "label": "Saudara Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adik kandung Penggugat;",
+   "label": "Adik Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ipar Penggugat;",
+   "label": "Ipar"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak Kandung Penggugat;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Teman Pemohon;",
+   "label": "Sepupu Termohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu satu kali Penggugat;",
+   "label": "Sepupu satu kali"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan\npara Pemohon karena saya adalah Keponakan Pemohon IV;",
+   "label": "Keponakan Pemohon IV"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Paman Pemohon;",
+   "label": "Paman Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Tergugat karena saya sepupu satu kali Tergugat;",
+   "label": "Sepupu Satu Kali Tergugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya sahabat Penggugat;",
+   "label": "Sahabat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Paman Penggugat;",
+   "label": "Paman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat;",
+   "label": "Kakak Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Ibu Kandung Pemohon;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Saudara kandung Penggugat;",
+   "label": "Saudara Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adik kandung Penggugat;",
+   "label": "Adik Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Sepupu satu kali Pemohon;",
+   "label": "Adik Sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat;",
+   "label": "Saudara Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat;",
+   "label": "Ayah Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon bernama NAMA;",
+   "label": "Sepupu Dua Kali"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Paman Penggugat;",
+   "label": "Paman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat;",
+   "label": "Ayah Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah teman Pemohon;",
+   "label": "Teman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu Kandung Penggugat;",
+   "label": "Ibu Kandung"
+  },
+  {
+   "jawaban": "Ya,\nsaya kenal dengan Pemohon karena saya adalah Sepupu Pemohon;",
+   "label": "Sepupu Dua Kali"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu 1 kali Penggugat;",
+   "label": "Sepupu 1 kali"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Sepupu Pemohon;",
+   "label": "Sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ipar Penggugat;",
+   "label": "Ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Saudara tiri Penggugat;",
+   "label": "Saudara Tiri Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Paman Penggugat;",
+   "label": "Paman P"
+  },
+  {
+   "jawaban": "Saya kenal dengan Tergugat sebagai anak mantu karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah adik kandung Pemohon;",
+   "label": "Adik Kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah sepupu dua kali Pemohon;",
+   "label": "Sepupu dua kali Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Sepupu Penggugat;",
+   "label": "Sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Ibu kandung Pemohon;",
+   "label": "Ibu kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adalah sepupu satu kali Penggugat;",
+   "label": "Sepupu satu kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Adik Kandung Penggugat;",
+   "label": "adik kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu kandung Penggugat;",
+   "label": "Ibu Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu satu kali Penggugat;",
+   "label": "Sepupu satu kali"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Anak kandung Penggugat;",
+   "label": "Anak Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Adik Kandung Penggugat;",
+   "label": "Saudara"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat;",
+   "label": "Kakak kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan para Pemohon karena saya adalah Paman dari Pemohon II;",
+   "label": "Paman Pemohon II"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Ya,\nsaya kenal dengan para Pemohon karena saya adalah Sepupu para Pemohon;",
+   "label": "Sepupu para Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ponakan Penggugat;",
+   "label": "Ponakan"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah adik kandung Pemohon;",
+   "label": "Saudara Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Tergugat sebagai anak mantu karena saya adalah ibu kandung Penggugat.;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Ayah kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah\nibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah paman Pemohon;",
+   "label": "Paman Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah tetangga Pemohon;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "kakak kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah paman Penggugat;",
+   "label": "Keponakan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Ibu Kandung Pemohon, NAMA Pemohon bernama NAMA;",
+   "label": "Ibu Kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah\nanak kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Anak Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah paman Penggugat, Penggugat bernama NAMA;",
+   "label": "Paman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat;",
+   "label": "Ayah Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu\ndua kali\nPenggugat;",
+   "label": "Sepupu dua kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Paman\nPenggugat;",
+   "label": "Paman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga ;",
+   "label": "Keponakan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan para Pemohon karena saya adalah Ipar Pemohon;",
+   "label": "Ipar pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ipar Penggugat;",
+   "label": "ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Ibu Kandung Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu satu kali Penggugat, Penggugat bernama NAMA;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Saudara kandung Pemohon;",
+   "label": "Adik Kandung"
+  },
+  {
+   "jawaban": "Ya, saya kenal Pemohon bernama NAMA, S.NAMA bin NAMA sedangkan Termohon bernama NAMA;",
+   "label": "Ibu Kandung Termohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan para Pemohon karena saya adalah tetangga Pemohon;",
+   "label": "Tetangga penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah adik kandung Pemohon;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Ibu kandung Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah bapak kandung Penggugat;",
+   "label": "Bapak Kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah sepupu Pemohon, Pemohon bernama NAMA;",
+   "label": "Keluarga Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adik kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat dan Tergugat karena saya adalah ipar Penggugat;",
+   "label": "Kakak Ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah teman Penggugat sejak 5 tahun yang lalu;",
+   "label": "Teman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Tetangga Penggugat;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Paman Penggugat;",
+   "label": "Paman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Bapak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu satu kali dengan Penggugat;",
+   "label": "Sepupu Satu Kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah ipar Pemohon;",
+   "label": "Ipar Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu 1 kali Penggugat;",
+   "label": "Sepupu 1 kali Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu dua kali Penggugat Kandung;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Termohon sebagai isteri Pemohon karena saya adalah Saudara kandung Pemohon;",
+   "label": "Saudara Kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "Sepupu 1x Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah tetangga Pemohon dan Termohon\nsejak tahun 1998;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu Kandung Penggugat;",
+   "label": "Ibu Kandung"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Keluarga;",
+   "label": "Keluarga"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Sepupu;",
+   "label": "Kakak Sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Tergugat  sebagai ipar karena saya adalah saudara kandung Penggugat;",
+   "label": "Adik kandung penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Tante Penggugat;",
+   "label": "Tante"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah anak kandung dari Pemohon;",
+   "label": "ibu kandung pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Tetangga Penggugat;",
+   "label": "Tetangga Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "sepupu satu kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan para Pemohon karena saya adalah tetangga para Pemohon;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "Sepupu 1X penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Keponakan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Teman Pemohon;",
+   "label": "teman pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu kandung penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah  Sepupu Penggugat;",
+   "label": "Adik Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ibu Kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu Penggugat, Penggugat bernama NAMA;",
+   "label": "sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah tante Pemohon;",
+   "label": "Tante Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan NAMA karena saya adalah Saudara kandung Penggugat;",
+   "label": "Ade Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Kandung Penggugat;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah ponakan Penggugat;",
+   "label": "Keluarga Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu satu kali Penggugat;",
+   "label": "Sepupu Satu Kali Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ipar Penggugat;",
+   "label": "Kakak kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Sepupu Penggugat;",
+   "label": "Sepupu Satu Kali"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah keponakan Penggugat;",
+   "label": "Keponakan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Termohon sebagai isteri Pemohon karena saya adalah saudara kandung Pemohon;",
+   "label": "Saudara Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah rekan kerja Pemohon;",
+   "label": "Keluarga Pemohon."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Sepupu Tergugat;",
+   "label": "Sepupu Tergugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu Penggugat;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah Ayah kandung Pemohon;",
+   "label": "Ayah kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah  sepupu Penggugat...;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu 2 kali Penggugat;",
+   "label": "Sepupu 2x Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu dua kali Penggugat, Penggugat bernama NAMA;",
+   "label": "sepupu dua kali Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Kandung Tergugat;",
+   "label": "Kakak Kandung"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ibu Kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Ibu Kandung Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Sepupu Penggugat;",
+   "label": "Kakak Sepupu Penggugat.."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah tetangga Penggugat, Penggugat bernama NAMA;",
+   "label": "tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ayah Kandung Penggugat;",
+   "label": "Ayah Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Saudara Kandung Penggugat;",
+   "label": "Saudara Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah saudara kandung Pemohon;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah Kakak Kandung Pemohon, Pemohon bernama NAMA;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga dekat dengan rumah orang tua Penggugat di NAMA NAMA;",
+   "label": "Tetangga Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah Tetangga Pemohon, Pemohon bernama NAMA;",
+   "label": "Tetangga Pemohon."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Teman Penggugat / Adik Kandung Penggugat;",
+   "label": "Teman Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah Bapak kandung;",
+   "label": "Bapak kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Sepupu Penggugat;",
+   "label": "Sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu kandung Penggugat dan Tergugat adalah suami Penggugat bernama NAMA;",
+   "label": "Keluarga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat",
+   "label": "Orang Tua Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "Keluarga Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah teman Penggugat;",
+   "label": "Teman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu 3 kali Penggugat;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adik kandung Penggugat;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Sepupu Penggugat;",
+   "label": "Sepupu Satu Kali."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu 1 kali Penggugat;",
+   "label": "Sepupu Satu Kali Penggugat."
+  },
+  {
+   "jawaban": "Ya kenal saksi  kenal dengan Penggugat karena saksi adalah sepupu satu kali dari Penggugat",
+   "label": "Sepupu Satu Kali Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon dan Termohon karena saya adalah adik kandung Pemohon;",
+   "label": "Adik Kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante dari Penggugat;",
+   "label": "Keponakan Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu kandung Penggugat;",
+   "label": "Ibu Kandung P"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Ya saksi  kenal dengan Penggugat karena saya adalah adik Kandung Penggugat;",
+   "label": "Kakak Kandung Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu satu kali Penggugat, Penggugat bernama NAMA;",
+   "label": "sepupu satu kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu Penggugat Penggugat;",
+   "label": "Sepupu Satu Kali Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah adik kandung Penggugat;",
+   "label": "adik kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ipar Penggugat",
+   "label": "Ipar Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ipar Penggugat;",
+   "label": "Ipar Penggugat."
+  },
+  {
+   "jawaban": "Ya saksi kenal dengan Penggugat dan Tergugat karena saksi  adalah sepupu Penggugat",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah kakak kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Kakak Kandung Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah bapak tiri Penggugat;",
+   "label": "Bapak Tiri Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu Penggugat;",
+   "label": "Ibu Kandung Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah ibu Kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu Kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah paman Penggugat;",
+   "label": "Keponakan Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah tetangga  Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kerabat Penggugat;",
+   "label": "Kerabat Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah adik Kandung;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu 2 kali Penggugat;",
+   "label": "Sepupu 2 kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah sepupu dua kali Penggugat;",
+   "label": "Keluarga Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan\npara Pemohon karena saya adalah Tetangga dari USMAN GUMANTI (Pemohon IX);",
+   "label": "Tetangga Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah saudara kandung Penggugat;",
+   "label": "Saudara Kandung Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Kandung Penggugat;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Sepupu Penggugat;",
+   "label": "Sepupu Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan para Para Pemohon karena saya adalah  ipar Pemohon III;",
+   "label": "Saudara Ipar Pemohon I."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Sepupu Penggugat;",
+   "label": "Sepupu Satu Kali Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Adik Penggugat;",
+   "label": "Kakak Kandung Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah kakak kandung Penggugat;",
+   "label": "Kakak Kandung Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah Ibu Kandung Termohon;",
+   "label": "Ibu Kandung Tergugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah  tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah ayah kandung Penggugat, Tergugat menantu saya bernama NAMA;",
+   "label": "Orang Tua Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Adik sepupu Penggugat;",
+   "label": "Sepupu Satu Kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ayah Kandung Penggugat;",
+   "label": "Ayah Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ipar Penggugat;",
+   "label": "Ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ipar Penggugat;",
+   "label": "Ipar Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ponakan Penggugat;",
+   "label": "Ponakan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan para Pemohon karena saya adalah tetangga para Pemohon;",
+   "label": "Tetangga Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah  sepupu satu kali Penggugat;",
+   "label": "Sepupu Satu Kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Kakak Kandung Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Ipar Penggugat;",
+   "label": "Kakak Ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat."
+  },
+  {
+   "jawaban": "Ya saksi  kenal dengan Pemohon karena saksi adalah ipar Pemohon;",
+   "label": "Keponakan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu Kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak ipar Penggugat;",
+   "label": "Ipar Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saksi  adalah Tetangga Penggugat",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adik kandung Penggugat;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kerabat Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah tetangga Pemohon;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Ya,\nsaya kenal dengan Pemohon dan Termohon karena saya adalah Sepupu Pemohon",
+   "label": "Sepupu Pemohon"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Sepupu Penggugat, Tergugat bernama NAMA;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Paman Penggugat;",
+   "label": "Paman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat;",
+   "label": "Bapak Kandung Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah  Tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah Adik Kandung Pemohon, Termohon adalah kakak ipar saya bernama NAMA;",
+   "label": "Adik Kandung  Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu satu kali Penggugat sekaligus sebagai tetangga,  Penggugat bernama NAMA;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak ipar Penggugat;",
+   "label": "Kakak Ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah adalah sepupu Pemohon;",
+   "label": "Supupu Satu Kali Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat dan Tergugat karena saksi adalah sepupu/ tetangga Penggugat;",
+   "label": "Tetangga Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah paman Penggugat;",
+   "label": "Paman Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adik kandung Penggugat;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adik kandung Penggugat;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Adik Kandung Penggugat;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah sepupu 1 kali Pemohon;",
+   "label": "sepupu Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah teman Penggugat;",
+   "label": "Teman Penggugat"
+  },
+  {
+   "jawaban": "Ya saksi kenal dengan Penggugat dan Tergugat karena saksi adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat."
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Kandung Penggugat, Tergugat adalah adik ipar saya bernama NAMA;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah keponakan Penggugat;",
+   "label": "Keponakan Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah adik kandung Penggugat;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya Saya kenal dengan Penggugat karena saksi adalah  tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Kandung Penggugat",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah kakak kandung Penggugat, Penggugat bernama NAMA;",
+   "label": "kakak kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah adik kandung Penggugat;",
+   "label": "Saudara Kandung"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Tante Penggugat, Tergugat bernama NAMA;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Bapak kandung Penggugat;",
+   "label": "Bapak"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Saudara Sepupu",
+   "label": "Saudara Sepupu"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah kakak kandung Penggugat;",
+   "label": "Kakak Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu Kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu Penggugat;",
+   "label": "Tante"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Sepupu Penggugat, Tergugat bernama NAMA;",
+   "label": "Sepupu satu kali"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah ipar Penggugat;",
+   "label": "Ipar Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah keponakan Pemohon;",
+   "label": "Paman Pemohon"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ibu Kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah adik Kandung Pemohon;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak kandung Penggugat dan Tergugat adalah adik ipar saya;",
+   "label": "Kakak kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Teman Pemohon;",
+   "label": "Keluarga"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah tante Pemohon. Pemohon bernama NAMA, dan Termohon bernama NAMA;",
+   "label": "Keponakan"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ayah Kandung Penggugat;",
+   "label": "Ayah Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah sepupu dua kali Penggugat, Penggugat bernama NAMA;",
+   "label": "sepupu dua kali Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ayah Kandung Penggugat dan Tergugat adalah menantu saya;",
+   "label": "Ayah kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ibu Tiri Penggugat;",
+   "label": "Mama Tiri"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Keponakan Penggugat;",
+   "label": "Keponakan"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah adik ipar Penggugat;",
+   "label": "Ipar Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Adik Kandung Penggugat;",
+   "label": "Adik Kandung"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Adik Kandung;",
+   "label": "Tetangga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Sepupu Pemohon;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Tetangga Pemohon;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Ya, Saya\nkenal dengan Pemohon dan Termohon karena saya\nadalah ipar Pemohon, Pemohon bernama NAMA;",
+   "label": "Kakak Ipar"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Pemohon dan Termohon karena saya adalah Adik kandung Pemohon;",
+   "label": "Adik kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan para Pemohon karena saya adalah keponakan Pemohon I;",
+   "label": "Keponakan Pemohon I"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Sepupu Penggugat;",
+   "label": "Sepupu Satu Kali Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Adik Kandung Penggugat;",
+   "label": "Adik Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Sepupu Penggugat;",
+   "label": "Saudara"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Sepupu Penggugat;",
+   "label": "Ipar"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Adik Kandung Penggugat;",
+   "label": "Teman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat;",
+   "label": "Orang Tua Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Paman Penggugat;",
+   "label": "Paman"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Sepupu Penggugat;",
+   "label": "Keluarga"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga kampung Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah adik kandung  Penggugat;",
+   "label": "Adik Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah tante Penggugat;",
+   "label": "Tante"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ayah kandung Penggugat;",
+   "label": "Ayah Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah Ayah kandung Pemohon;",
+   "label": "Ayah kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ponakan Penggugat;",
+   "label": "Keponakan Penggugat."
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Tetangga Penggugat;",
+   "label": "Tetangga Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Kakak Kandung Penggugat;",
+   "label": "Keponakan"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Sahabat Penggugat;",
+   "label": "Teman"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Tante Penggugat;",
+   "label": "Tante Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah sepupu Pemohon;",
+   "label": "Sepupu Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Adik Kandung Penggugat;",
+   "label": "Adik Kandung"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah Ayah Kandung Penggugat;",
+   "label": "Ayah Kandung Pemohon"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat karena saya adalah ibu kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Penggugat dan Tergugat karena saya Kakak kandung Penggugat;",
+   "label": "Kakak kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah Ibu Kandung Penggugat;",
+   "label": "Ibu Kandung Penggugat"
+  },
+  {
+   "jawaban": "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah kakak kandung  Penggugat;",
+   "label": "Kakak kandung Penggugat"
+  },
+  {
+   "jawaban": "Saya kenal dengan Pemohon karena saya adalah anak kandung Pemohon;",
+   "label": "Menantu Pemohon."
+  }
+ ]
+}

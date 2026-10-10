@@ -1467,6 +1467,156 @@ function simpanTataSaksi(nilai) {
     // ingatannya - dan itu tidak pantas menjatuhkan penyuntingan.
   }
 }
+
+/* === P5P6 10 Okt === */
+/**
+ * ============================================================================
+ * PARAGRAF KETERANGAN SAKSI (RINGKAS / LENGKAP) + PERINGATAN RINGAN
+ * ============================================================================
+ *
+ * Bot (deteksiSaksiService.lengkapiSusunan) menambahkan dua ruas pada jawaban
+ * "Susun keterangan saksi": paragrafSaksi[] - tiap saksi dalam dua gaya,
+ * identitasnya dari SIPP di awal paragraf - dan peringatanSaksi[] (saksi di
+ * bawah umur, bukan keluarga pada perkara syiqaq, hanya satu saksi).
+ *
+ *   - Peringatan TIDAK menahan apa pun; tombol simpan tetap seperti semula.
+ *   - Paragraf TIDAK disimpan ke ABT. Yang disimpan tetap tanya-jawab (ABT
+ *     sendiri mencetaknya menjadi "Bahwa ..."). Paragraf untuk disalin ke
+ *     putusan/catatan; ia mengikuti susunan SAAT tombol Susun ditekan.
+ *   - Gaya diingat per peramban (chrome.storage.local), bawaannya "lengkap"
+ *     (gaya blangko putusan satker). Gagal membaca = bawaan, bukan galat.
+ *   - Bot lama tanpa ruas ini: tidak ada yang digambar.
+ */
+const P6_KUNCI_GAYA = "gayaParagrafSaksi";
+let p6GayaParagraf = "lengkap";
+
+async function p6MuatGaya() {
+  try {
+    const simpan = await chrome.storage.local.get([P6_KUNCI_GAYA]);
+    p6GayaParagraf = simpan[P6_KUNCI_GAYA] === "ringkas" ? "ringkas" : "lengkap";
+  } catch {
+    p6GayaParagraf = "lengkap";
+  }
+}
+
+function p6SimpanGaya(nilai) {
+  p6GayaParagraf = nilai === "ringkas" ? "ringkas" : "lengkap";
+  try {
+    void chrome.storage.local.set({ [P6_KUNCI_GAYA]: p6GayaParagraf });
+  } catch {
+    // Pilihan tetap berlaku selama halaman terbuka.
+  }
+}
+
+function p6El(tag, kelas, teks) {
+  const el = document.createElement(tag);
+  if (kelas) el.className = kelas;
+  if (teks !== undefined && teks !== null) el.textContent = teks;
+  return el;
+}
+
+/** Salin teks - ABT satker bukan konteks aman (http), jadi clipboard API bisa tidak ada. */
+async function p6Salin(teks, area) {
+  try {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      await navigator.clipboard.writeText(teks);
+      return true;
+    }
+  } catch {
+    // jatuh ke cara lama
+  }
+  try {
+    if (area && typeof area.select === "function") {
+      area.select();
+      return document.execCommand ? document.execCommand("copy") : false;
+    }
+  } catch {
+    // tidak dapat menyalin - petugas memilih teksnya sendiri
+  }
+  return false;
+}
+
+/** Daftar peringatan ringan, atau null bila tidak ada. */
+function p6GambarPeringatan(sdg) {
+  const daftar = sdg && Array.isArray(sdg.peringatanSaksi) ? sdg.peringatanSaksi : [];
+  if (!daftar.length) return null;
+  const kotak = p6El("div", "aleta-abt-catatan aleta-p6-peringatan");
+  kotak.setAttribute("role", "note");
+  kotak.appendChild(p6El("strong", "", "Periksa saksi (peringatan, tidak menahan penyimpanan):"));
+  const ul = p6El("ul", "aleta-p6-peringatan-daftar");
+  for (const x of daftar) {
+    const li = p6El("li", x.tingkat === "ringan" ? "aleta-p6-ringan" : "aleta-p6-info", String(x.pesan || ""));
+    li.dataset.kode = String(x.kode || "");
+    ul.appendChild(li);
+  }
+  kotak.appendChild(ul);
+  return kotak;
+}
+
+/** Paragraf per saksi dengan pengalih gaya Ringkas/Lengkap, atau null bila bot tidak mengirimnya. */
+function p6GambarParagraf(sdg) {
+  const daftar = sdg && Array.isArray(sdg.paragrafSaksi) ? sdg.paragrafSaksi : [];
+  if (!daftar.length) return null;
+  const kotak = p6El("div", "aleta-p6-paragraf");
+  const kepala = p6El("div", "aleta-p6-kepala");
+  kepala.appendChild(p6El("span", "aleta-abt-label", "Paragraf keterangan saksi (untuk putusan)"));
+  const pilih = p6El("div", "aleta-p6-gaya");
+  pilih.setAttribute("role", "group");
+  pilih.setAttribute("aria-label", "Gaya paragraf");
+  const tombol = {};
+  for (const [gaya, tulisan] of [["ringkas", "Ringkas"], ["lengkap", "Lengkap"]]) {
+    const b = p6El("button", "aleta-p6-gaya-tombol", tulisan);
+    b.type = "button";
+    b.dataset.gaya = gaya;
+    tombol[gaya] = b;
+    pilih.appendChild(b);
+  }
+  kepala.appendChild(pilih);
+  kotak.appendChild(kepala);
+  kotak.appendChild(
+    p6El(
+      "div",
+      "aleta-abt-catatan",
+      (sdg.identitasAsal === "sipp" ? "Identitas saksi dari SIPP. " : "Identitas saksi belum terbaca dari SIPP - lengkapi sendiri. ") +
+        "Disusun dari jawaban saat tombol Susun ditekan; ubahan di kolom tanya-jawab di atas tidak ikut. Paragraf ini tidak disimpan ke ABT - salin bila perlu."
+    )
+  );
+  const isian = [];
+  for (const p of daftar) {
+    const satu = p6El("div", "aleta-p6-saksi");
+    const hub = p.hubungan && p.hubungan.teks ? ` - ${p.hubungan.teks}` : "";
+    satu.appendChild(p6El("div", "aleta-sdg-judul", `${p.label || "Saksi"}${hub}`));
+    const area = p6El("textarea", "aleta-p6-teks");
+    area.readOnly = true;
+    area.rows = 6;
+    const salin = p6El("button", "aleta-p6-salin", "Salin");
+    salin.type = "button";
+    const kabar = p6El("span", "aleta-p6-kabar", "");
+    salin.addEventListener("click", async () => {
+      const ok = await p6Salin(area.value, area);
+      kabar.textContent = ok ? "tersalin" : "pilih teksnya lalu Ctrl+C";
+    });
+    satu.appendChild(area);
+    satu.appendChild(salin);
+    satu.appendChild(kabar);
+    kotak.appendChild(satu);
+    isian.push({ area, p });
+  }
+  function segarkan() {
+    for (const { area, p } of isian) area.value = String((p6GayaParagraf === "ringkas" ? p.ringkas : p.lengkap) || "");
+    for (const g of Object.keys(tombol)) tombol[g].setAttribute("aria-pressed", g === p6GayaParagraf ? "true" : "false");
+    kotak.dataset.gaya = p6GayaParagraf;
+  }
+  for (const g of Object.keys(tombol)) {
+    tombol[g].addEventListener("click", () => {
+      p6SimpanGaya(g);
+      segarkan();
+    });
+  }
+  segarkan();
+  return kotak;
+}
+/* === AKHIR P5P6 === */
 const ALETA_API_PDF = "/aleta/api/aleta-bot/abt/pdf";
 
 /**
@@ -4802,6 +4952,8 @@ function susunPanelAbt(jatiDiri) {
     if (hasil.catatan) ringkas.push(hasil.catatan);
     if (hasil.identik) ringkas.push(`${hasil.identik} jawaban masih sama persis pada saksi 1 dan saksi 2 - ubah salah satunya.`);
     kotak.appendChild(buatElemen("div", "aleta-abt-catatan", ringkas.join(" ")));
+    const p6Peringatan = p6GambarPeringatan(hasil); // P5P6 10 Okt
+    if (p6Peringatan) kotak.appendChild(p6Peringatan);
 
     const perlu = new Set((hasil.perluDiisi || []).map((x) => String(x.no)));
     const diisiGugatan = new Set((hasil.terisiDariPosita || []).map((x) => String(x.no)));
@@ -5152,6 +5304,8 @@ function susunPanelAbt(jatiDiri) {
     kotak.appendChild(kabarPilih);
     kotak.appendChild(simpan);
     kotak.appendChild(hasilSimpan);
+    const p6Paragraf = p6GambarParagraf(hasil); // P5P6 10 Okt
+    if (p6Paragraf) kotak.appendChild(p6Paragraf);
     segarkanSimpan();
 
     // ========================================================================
@@ -5698,6 +5852,7 @@ async function pasang() {
     saklarCetakDibaca = true;
     await muatSaklarCetak();
     await muatTataSaksi();
+    await p6MuatGaya(); // P5P6 10 Okt - gaya paragraf saksi
   }
   pasangSunting(jatiDiri);
   const panel = susunPanelAbt(jatiDiri);
