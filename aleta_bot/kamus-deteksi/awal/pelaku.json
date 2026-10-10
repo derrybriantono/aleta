@@ -1,0 +1,491 @@
+{
+  "kelompok": "pelaku",
+  "versi": 1,
+  "catatan": "Pola subjek/pelaku per kalimat (P3, 10 Okt 2026). pelaku = 0047 = Tergugat/Termohon; lawan = 0046 = Penggugat/Pemohon (sudah 2x tertukar - sebutan pihak dari alur/jenis perkara, bukan dari kata). jenis 'struktur' = pola penentu subjek yang dipindah APA ADANYA dari abtUsulanService (pelakuSatuKata, menikahLagiTerjadi, siapaPergiDari) - pola sekunci digabung; kunci 'pergi-subjek' bertanda urut (gugus 1 = sebutan pelaku, dicoba berurutan). jenis 'perbuatan' = kata kerja P3 yang dinilai subjeknya per kalimat (pelakuPerKalimat). JANGAN memakai bendera g.",
+  "pola": [
+    {
+      "kode": "pelaku-bukan-subjek",
+      "label": "sebutan sesudah kata ini BUKAN subjek (objek/milik/sasaran)",
+      "kunci": "bukan-subjek",
+      "jenis": "struktur",
+      "regex": "\\b(?:kepada|terhadap|dengan|pada|ke|dari|oleh|untuk|bagi|bersama|antara|meninggalkan|ditinggalkan|menceraikan|memukul|menyuruh|mengajak|mengizinkan|mengijinkan|melarang|menafkahi|menelantarkan|restu|izin|ijin|suami|isteri|istri|tua|orangtua|keluarga|anak|ibu|ayah|bapak|mertua|saudara|adik|kakak|sepengetahuan|persetujuan)\\s+$",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "memukul "
+      ],
+      "contohSalah": [
+        "Tergugat "
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Dipakai pelakuSatuKata & menikahLagiTerjadi - diuji atas teks DEPAN sebutan (berakhiran spasi)."
+    },
+    {
+      "kode": "pelaku-niat-nikah",
+      "label": "niat/izin/suruhan sebelum kata nikah - belum terjadi",
+      "kunci": "niat-nikah",
+      "jenis": "struktur",
+      "regex": "\\b(?:ingin|mau|hendak|akan|berniat|niat|niatnya|berencana|rencana|bermaksud|izin|ijin|mengizinkan|mengijinkan|restu|merestui|menyuruh|suruh|disuruh|menyarankan|mengancam|ancam|diancam|mengajak|memaksa|dipaksa|harus|boleh|silakan|silahkan|untuk|agar|supaya|tidak|belum|batal)\\s+(?:\\S+\\s+)?$",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ingin "
+      ],
+      "contohSalah": [
+        "Tergugat telah "
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Pemeriksa 26 Sep 2026: 896 kalimat berkata nikah, +-18 salah sebelum saringan ini."
+    },
+    {
+      "kode": "pelaku-kata-tuduh",
+      "label": "tuduhan: 'menuduh Penggugat selingkuh' bukan perbuatan",
+      "kunci": "tuduh",
+      "jenis": "struktur",
+      "regex": "\\b(menuduh|dituduh|tuduh|mencurigai|curiga|memfitnah|menyangka|disangka|mengira)\\s+(?:\\S+\\s+){0,2}$",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menuduh "
+      ],
+      "contohSalah": [
+        "Tergugat memukul "
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "pelaku-sela-minta",
+      "label": "sela meminta/menuntut - sebutan pihak lawan bukan subjek",
+      "kunci": "sela-minta",
+      "jenis": "struktur",
+      "regex": "\\b(meminta|menanyakan|menuntut|menagih|mempertanyakan|mengeluh\\w*|bekerja|mencari|menanggung|membiayai)\\b",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        " meminta uang untuk "
+      ],
+      "contohSalah": [
+        " sering "
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "pelaku-sela-sambung",
+      "label": "sela penyambung ke perbuatan lain",
+      "kunci": "sela-sambung",
+      "jenis": "struktur",
+      "regex": "\\b(bahkan|dan|serta|lalu|kemudian|juga|hingga|sehingga|namun|tetapi|pernah)\\b",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        " dan "
+      ],
+      "contohSalah": [
+        " sering "
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "pelaku-awal-klausa",
+      "label": "sebutan pihak yang mengajukan = subjek hanya di awal klausa",
+      "kunci": "awal-klausa",
+      "jenis": "struktur",
+      "regex": "(?:^|[,:(]|\\b(?:karena|bahwa|dan|yaitu|yakni|adalah|sehingga|namun|tetapi|lalu|kemudian|juga|sedangkan|justru|akhirnya|ternyata|saat|ketika|dimana|bahkan|serta|\\d{4}))\\s*$",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "karena "
+      ],
+      "contohSalah": [
+        "uang "
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'uang Penggugat untuk bermain judi' bukan perbuatan Penggugat."
+    },
+    {
+      "kode": "pelaku-pilihan-templat",
+      "label": "pilihan templat 'Penggugat/Tergugat' yang tidak diisi petugas",
+      "kunci": "pilihan-templat",
+      "jenis": "struktur",
+      "regex": "(?:penggugat|tergugat|pemohon|termohon)\\s*\\/\\s*(?:penggugat|tergugat|pemohon|termohon)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "yang meninggalkan adalah penggugat/tergugat"
+      ],
+      "contohSalah": [
+        "yang meninggalkan adalah tergugat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Dahulu sebutan pertamanya terbaca sebagai yang pergi (441, 550/Pdt.G/2025, 77/Pdt.G/2026)."
+    },
+    {
+      "kode": "pelaku-pergi-pemicu",
+      "label": "kalimat siapa yang pergi (7035)",
+      "kunci": "pergi-pemicu",
+      "jenis": "struktur",
+      "regex": "meninggalkan|pergi dari rumah|keluar dari rumah",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tergugat pergi meninggalkan penggugat"
+      ],
+      "contohSalah": [
+        "tergugat tinggal di rumah orang tuanya"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "pelaku-pergi-adalah",
+      "label": "'yang meninggalkan ... adalah Termohon'",
+      "kunci": "pergi-subjek",
+      "jenis": "struktur",
+      "regex": "meninggalkan[^.;]*?adalah\\s*(penggugat|tergugat|pemohon|termohon)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "yang meninggalkan tempat tinggal bersama adalah termohon"
+      ],
+      "contohSalah": [
+        "tergugat meninggalkan penggugat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Urutan 1 siapaPergiDari.",
+      "urut": 1
+    },
+    {
+      "kode": "pelaku-pergi-sebelum-meninggalkan",
+      "label": "sebutan tepat sebelum '(yang) (telah) (pergi) meninggalkan'",
+      "kunci": "pergi-subjek",
+      "jenis": "struktur",
+      "regex": "(penggugat|tergugat|pemohon|termohon)(?:\\s+yang)?\\s+(?:telah\\s+|sudah\\s+|lah\\s+)?(?:pergi\\s+)?meninggalkan",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tergugat pergi meninggalkan penggugat"
+      ],
+      "contohSalah": [
+        "penggugat ditinggalkan"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Urutan 2 siapaPergiDari - yang terakhir disebut justru yang DITINGGALKAN.",
+      "urut": 2
+    },
+    {
+      "kode": "pelaku-pergi-pulang",
+      "label": "sebutan tepat sebelum pergi/pulang/kembali/keluar",
+      "kunci": "pergi-subjek",
+      "jenis": "struktur",
+      "regex": "(penggugat|tergugat|pemohon|termohon)\\s+(?:pergi|pulang|kembali|keluar)\\b",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "termohon pulang ke rumah orang tuanya"
+      ],
+      "contohSalah": [
+        "rumah orang tua"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Urutan 3 siapaPergiDari.",
+      "urut": 3
+    },
+    {
+      "kode": "perbuatan-pergi",
+      "label": "pergi meninggalkan",
+      "kunci": "perbuatan",
+      "perbuatan": "pergi",
+      "jenis": "perbuatan",
+      "regex": "(?<!di)tinggalkan|pergi\\s+(?:dari|ke|meninggalkan)|tidak\\s+(?:pernah\\s+)?(?:kembali|pulang)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pergi meninggalkan Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat ditinggalkan Tergugat"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 1127,
+        "cara": "subjek dibaca satu per satu (sampel tersebar)",
+        "sumber": "aps_badilag.abt_keterangan_saksi salinan 9 Okt (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    },
+    {
+      "kode": "perbuatan-memukul",
+      "label": "memukul/KDRT",
+      "kunci": "perbuatan",
+      "perbuatan": "memukul",
+      "jenis": "perbuatan",
+      "regex": "memukul|menampar|menendang|mencekik|menganiaya|menjambak|menonjok|meninju|melakukan\\s+(?:kdrt|kekerasan|pemukulan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat memukul Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dipukul Tergugat"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 775,
+        "cara": "subjek dibaca satu per satu (sampel tersebar)",
+        "sumber": "aps_badilag.abt_keterangan_saksi salinan 9 Okt (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    },
+    {
+      "kode": "perbuatan-tidak-menafkahi",
+      "label": "tidak menafkahi",
+      "kunci": "perbuatan",
+      "perbuatan": "tidak menafkahi",
+      "jenis": "perbuatan",
+      "regex": "tidak\\s+(?:pernah\\s+)?(?:memberi(?:kan)?\\s+nafkah|menafkahi)|kurang\\s+(?:memberi(?:kan)?\\s+nafkah|menafkahi)|menelantarkan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak pernah memberikan nafkah"
+      ],
+      "contohSalah": [
+        "Penggugat meminta nafkah"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 2501,
+        "cara": "subjek dibaca satu per satu (sampel tersebar)",
+        "sumber": "aps_badilag.abt_keterangan_saksi salinan 9 Okt (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    },
+    {
+      "kode": "perbuatan-selingkuh",
+      "label": "selingkuh/pihak lain",
+      "kunci": "perbuatan",
+      "perbuatan": "selingkuh",
+      "jenis": "perbuatan",
+      "regex": "berselingkuh|selingkuh|idaman\\s+lain|menjalin\\s+hubungan\\s+dengan\\s+(?:wanita|perempuan|laki-laki|lelaki|pria)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat berselingkuh dengan wanita lain"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menjalin hubungan baik"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 438,
+        "cara": "subjek dibaca satu per satu (sampel tersebar)",
+        "sumber": "aps_badilag.abt_keterangan_saksi salinan 9 Okt (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    },
+    {
+      "kode": "perbuatan-judi",
+      "label": "berjudi",
+      "kunci": "perbuatan",
+      "perbuatan": "judi",
+      "jenis": "perbuatan",
+      "regex": "berjudi|bermain\\s+judi|main\\s+judi|judi\\s+online|togel",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon sering bermain judi"
+      ],
+      "contohSalah": [
+        "Tergugat bermain bola"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 9,
+        "salahTangkap": 1,
+        "kalimat": 362,
+        "cara": "subjek dibaca satu per satu (sampel tersebar)",
+        "sumber": "aps_badilag.abt_keterangan_saksi salinan 9 Okt (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    },
+    {
+      "kode": "perbuatan-mabuk",
+      "label": "mabuk/minum keras",
+      "kunci": "perbuatan",
+      "perbuatan": "mabuk",
+      "jenis": "perbuatan",
+      "regex": "mabuk|minum(?:an)?\\s+keras|meminum\\s+minuman|miras",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering mabuk"
+      ],
+      "contohSalah": [
+        "Tergugat minum kopi"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 546,
+        "cara": "subjek dibaca satu per satu (sampel tersebar)",
+        "sumber": "aps_badilag.abt_keterangan_saksi salinan 9 Okt (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    },
+    {
+      "kode": "perbuatan-narkoba",
+      "label": "memakai narkoba",
+      "kunci": "perbuatan",
+      "perbuatan": "narkoba",
+      "jenis": "perbuatan",
+      "regex": "mengkonsumsi\\s+(?:obat|narkoba|sabu|shabu)|mengonsumsi\\s+(?:obat|narkoba|sabu|shabu)|memakai\\s+(?:narkoba|sabu|shabu)|narkoba|sabu|shabu",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mengkonsumsi sabu"
+      ],
+      "contohSalah": [
+        "Tergugat membeli obat batuk"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 532,
+        "cara": "subjek dibaca satu per satu (sampel tersebar)",
+        "sumber": "aps_badilag.abt_keterangan_saksi salinan 9 Okt (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    },
+    {
+      "kode": "perbuatan-menikah-lagi",
+      "label": "menikah lagi",
+      "kunci": "perbuatan",
+      "perbuatan": "menikah lagi",
+      "jenis": "perbuatan",
+      "regex": "menikah\\s+lagi|kawin\\s+lagi|menikah\\s+siri",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat telah menikah lagi"
+      ],
+      "contohSalah": [
+        "Tergugat menikah dengan Penggugat"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 9,
+        "salahTangkap": 1,
+        "kalimat": 226,
+        "cara": "subjek dibaca satu per satu (sampel tersebar)",
+        "sumber": "aps_badilag.abt_keterangan_saksi salinan 9 Okt (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    }
+  ],
+  "templat": []
+}

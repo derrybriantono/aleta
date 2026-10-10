@@ -1,0 +1,398 @@
+{
+  "kelompok": "waktu",
+  "versi": 1,
+  "catatan": "Pola fakta waktu (P2, 10 Okt 2026). jenis 'struktur' = pola yang dipindah APA ADANYA dari abtUsulanService (kalimatAwalKonflik/kalimatPisahRumah/lamaDiucapkan) - dibaca per kunci: pola sekunci DIGABUNG (cocok salah satu), kecuali kunci bertanda 'urut' yang memakai gugus tangkap (dicoba berurutan, yang pertama cocok menang). jenis 'fakta' = pola P2 baru yang menghasilkan petunjuk nilai variabel (0222/0246/9944) beserta tingkat yakin. JANGAN memakai bendera g (RegExp dibagi bersama - lastIndex).",
+  "pola": [
+    {
+      "kode": "waktu-konflik",
+      "label": "kata konflik (0222)",
+      "kunci": "konflik",
+      "jenis": "struktur",
+      "regex": "(perselisihan|pertengkaran|berselisih|bertengkar|cekcok|percekcokan|tidak harmonis|tidak lagi harmonis|tidak rukun|tidak lagi rukun)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sering terjadi perselisihan dan pertengkaran sejak tahun 2020",
+        "sudah tidak rukun lagi"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah pada tahun 2015"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Dahulu hanya 'perselisihan': 45 dari 64 yang terlewat berkata tidak rukun/berselisih/bertengkar."
+    },
+    {
+      "kode": "waktu-mulai",
+      "label": "penanda mulai: sejak/mulai/semenjak",
+      "kunci": "mulai",
+      "jenis": "struktur",
+      "regex": "\\b(sejak|mulai|semenjak)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sejak tahun 2020"
+      ],
+      "contohSalah": [
+        "pada tahun 2020"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waktu-tahun",
+      "label": "ada tahun 19xx/20xx",
+      "kunci": "tahun",
+      "jenis": "struktur",
+      "regex": "\\b(19|20)\\d{2}\\b",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sejak tahun 2020"
+      ],
+      "contohSalah": [
+        "sejak bulan Maret"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waktu-pisah-rumah",
+      "label": "bentuk pisah rumah (0246)",
+      "kunci": "pisah-rumah",
+      "jenis": "struktur",
+      "regex": "(pisah|tidak (lagi )?tinggal bersama|tidak serumah|pergi meninggalkan|meninggalkan (tempat|rumah|kediaman))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pergi meninggalkan rumah kediaman bersama",
+        "sudah tidak tinggal bersama lagi"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat tinggal di rumah orang tua"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'puncak ... pergi meninggalkan rumah' = 16 dari 33 yang terlewat."
+    },
+    {
+      "kode": "waktu-konflik-terjadi",
+      "label": "konflik 'terjadi (pada) <waktu>' - cadangan 0222",
+      "kunci": "konflik-terjadi",
+      "jenis": "struktur",
+      "regex": "\\bterjadi\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "perselisihan terjadi bulan Agustus 2023"
+      ],
+      "contohSalah": [
+        "sering bertengkar"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Cadangan kalimatAwalKonflik; bukan puncak/terakhir (titik akhir)."
+    },
+    {
+      "kode": "waktu-titik-akhir",
+      "label": "puncak/terakhir = titik AKHIR, bukan awal konflik",
+      "kunci": "titik-akhir",
+      "jenis": "struktur",
+      "regex": "puncak|terakhir",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "puncak perselisihan terjadi pada Mei 2024"
+      ],
+      "contohSalah": [
+        "perselisihan terjadi sejak 2020"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waktu-kata-pisah",
+      "label": "kata 'pisah' (bentuk pertama 0246)",
+      "kunci": "pisah-kata",
+      "jenis": "struktur",
+      "regex": "pisah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "berpisah sejak 2021"
+      ],
+      "contohSalah": [
+        "tinggal bersama"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waktu-puncak",
+      "label": "kalimat puncak bertanggal - cadangan terakhir 0246",
+      "kunci": "puncak",
+      "jenis": "struktur",
+      "regex": "puncak",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "puncaknya pada bulan Mei 2024"
+      ],
+      "contohSalah": [
+        "sejak tahun 2020"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Templat satker: puncak = hari salah satu pihak pergi; 276 -> 282 dari 316."
+    },
+    {
+      "kode": "waktu-pisah-lama",
+      "label": "kata pisah tempat lama pisah dibaca (9944)",
+      "kunci": "pisah-lama",
+      "jenis": "struktur",
+      "regex": "pisah|berpisah|tidak (lagi )?tinggal bersama|tidak serumah|meninggalkan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sudah berpisah selama 2 tahun",
+        "Tergugat meninggalkan Penggugat"
+      ],
+      "contohSalah": [
+        "tinggal bersama orang tua"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Hanya bagian SESUDAH kata ini yang dibaca - umur anak di depan tidak terbaca."
+    },
+    {
+      "kode": "waktu-lama-sebelum-pisah",
+      "label": "lama disebut SEBELUM kata pisah (gugus 1 = lamanya)",
+      "kunci": "lama-sebelum-pisah",
+      "jenis": "struktur",
+      "regex": "(?:sudah|telah|selama|kurang\\s+lebih|lebih\\s+kurang|sekitar|kira-kira|±|\\+\\/-)\\s*(?:sekitar\\s+|kurang\\s+lebih\\s+|±\\s*)?([^,;]*?(?:tahun|bulan)(?:\\s+(?:lebih\\s+)?[^,;]*?bulan)?)\\s*(?:lamanya\\s+)?(?:\\S+\\s+){0,3}$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sudah 8 bulan ",
+        "sudah ± 2 tahun Tergugat "
+      ],
+      "contohSalah": [
+        "anak umur 3 tahun ikut Penggugat "
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "S5=H1: 'sudah 8 bulan pisah rumah', 'sudah ± 2 tahun Tergugat pergi meninggalkan'. Dicocokkan atas 40 huruf sebelum kata pisah.",
+      "urut": 1
+    },
+    {
+      "kode": "waktu-bukan-lama",
+      "label": "bukan lama pisah: umur/usia/anak/nikah",
+      "kunci": "bukan-lama",
+      "jenis": "struktur",
+      "regex": "umur|usia|anak|nikah|menikah|kawin",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak umur 3 tahun"
+      ],
+      "contohSalah": [
+        "sudah 2 tahun"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "dipindah apa adanya dari abtUsulanService.js (perilaku lama; ukurannya di S5=H1 6e48d2a)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "fakta-sejak-bulan-tanpa-tahun",
+      "label": "'sejak bulan Maret' - bulan tanpa tahun (petunjuk 0222/0246)",
+      "kunci": "sejak-bulan-tanpa-tahun",
+      "jenis": "fakta",
+      "variabel": [
+        "0222",
+        "0246"
+      ],
+      "regex": "\\b(?:sejak|mulai|semenjak)\\s+(?:awal\\s+|akhir\\s+|pertengahan\\s+)?bulan\\s+(Januari|Februari|Pebruari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Nopember|Desember)\\b(?!\\s*,?\\s*(?:tahun\\s+)?(?:19|20)\\d{2})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "perselisihan terjadi sejak bulan Maret",
+        "pisah rumah sejak bulan Juli lalu"
+      ],
+      "contohSalah": [
+        "sejak bulan Maret 2023",
+        "sejak bulan Maret tahun 2023"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "kalimat": 16,
+        "perkara": 11,
+        "cara": "tahun perkiraan dibanding isian 0246 petugas (hanya 2 perkara yang isiannya ada)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Tidak mengisi variabel (tahunnya tidak ada) - hanya petunjuk di catatan kartu; tahun diambil manusia dari posita/BAS."
+    },
+    {
+      "kode": "fakta-sejak-hari-raya",
+      "label": "'sejak lebaran' / Idul Fitri / Idul Adha / tahun baru (petunjuk 0222/0246)",
+      "kunci": "sejak-hari-raya",
+      "jenis": "fakta",
+      "variabel": [
+        "0222",
+        "0246"
+      ],
+      "regex": "\\b(?:sejak|mulai|semenjak|setelah|sesudah)\\s+(?:hari\\s+)?(lebaran(?:\\s+(?:haji|idul\\s+fitri|idul\\s+adha))?|idul\\s+fitri|idul\\s+adha|idulfitri|iduladha|natal|tahun\\s+baru)(?:\\s+(?:tahun\\s+)?((?:19|20)\\d{2}))?",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sudah pisah rumah sejak lebaran tahun 2023",
+        "bertengkar terus sejak Idul Fitri"
+      ],
+      "contohSalah": [
+        "pada saat lebaran keluarga berkumpul"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Tanggal hari raya berubah tiap tahun - tidak dikonversi ke bulan; hanya petunjuk."
+    },
+    {
+      "kode": "fakta-lama-kira",
+      "label": "'kurang lebih 2 tahun' / 'sudah 8 bulan' - lama (petunjuk 9944)",
+      "kunci": "lama-kira",
+      "jenis": "fakta",
+      "variabel": [
+        "9944"
+      ],
+      "regex": "(?:kurang\\s+lebih|lebih\\s+kurang|sekitar|kira-kira|±|\\+/-|sudah|telah|selama|hampir)\\s*(?:sekitar\\s+|kurang\\s+lebih\\s+|±\\s*)?(\\d{1,2}|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|setahun|sebulan)\\s*(?:\\([^)]{1,20}\\)\\s*)?(tahun|bulan)?",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sudah pisah kurang lebih 2 tahun",
+        "sudah 8 bulan pisah rumah"
+      ],
+      "contohSalah": [
+        "pisah rumah sejak tahun 2020"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Petunjuk saja: pembaca lamanya tetap lamaDiucapkan (9944 TIDAK PERNAH pasti - S5)."
+    },
+    {
+      "kode": "fakta-lama-satuan",
+      "label": "banyak satuan lama: '1 tahun 2 bulan', 'tiga tahun', 'setahun' (gugus 1 angka, gugus 2 satuan)",
+      "kunci": "lama-satuan",
+      "jenis": "fakta",
+      "variabel": [
+        "9944"
+      ],
+      "regex": "\\b(\\d{1,2}|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|se)\\s*(?:\\([^)]{1,20}\\)\\s*)?(tahun|bulan)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sudah sekitar 1 tahun 2 bulan",
+        "kurang lebih tiga tahun",
+        "sudah setahun"
+      ],
+      "contohSalah": [
+        "sejak tahun 2020",
+        "selama ini"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "cara": "lewat tahun perkiraan (lihat fakta-sejak-bulan-tanpa-tahun)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Dipakai petunjuk tahun perkiraan 'sejak bulan X' (deteksiAlasanService.tahunPerkiraan): seluruh satuan dalam sisa kalimat dijumlah."
+    }
+  ],
+  "templat": []
+}

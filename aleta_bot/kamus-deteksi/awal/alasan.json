@@ -1,0 +1,4811 @@
+{
+  "kelompok": "alasan",
+  "versi": 1,
+  "catatan": "Pola deteksi alasan perceraian (P1, 10 Okt 2026). jenis 'ciri' = baris lama CIRI_ALASAN (abtUsulanService): kata = potongan huruf kecil yang SEMUANYA harus ada dalam SATU kalimat, regex = padanannya; dipakai 5227, SDG (kecuali hanyaDeteksi), dan dicerminkan ke portal (bawaan-alasan.ts) - kata-lah yang berlaku, regex wajib setara. jenis 'tambahan' = pola regex P1 yang hanya dipakai mesin deteksi huruf/sebab & kesesuaian saksi (deteksiAlasanService), tidak mengubah 5227/SDG. kunci = huruf alasan (Pasal 19 PP 9/1975 & Pasal 116 KHI, bunyi resmi di abtAturanAlasan.js); sebab yang hanya MENYEBABKAN perselisihan berkunci F. Huruf tetap usulan untuk diperiksa manusia.",
+  "pola": [
+    {
+      "kode": "ciri-perselisihan-terus-mener-perselisihan",
+      "label": "perselisihan terus-menerus: perselisihan",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "perselisihan"
+      ],
+      "regex": "perselisihan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat perselisihan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-pertengkaran",
+      "label": "perselisihan terus-menerus: pertengkaran",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "pertengkaran"
+      ],
+      "regex": "pertengkaran",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pertengkaran terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-percekcokan",
+      "label": "perselisihan terus-menerus: percekcokan",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "percekcokan"
+      ],
+      "regex": "percekcokan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat percekcokan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-cekcok",
+      "label": "perselisihan terus-menerus: cekcok",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "cekcok"
+      ],
+      "regex": "cekcok",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat cekcok terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-bertengkar",
+      "label": "perselisihan terus-menerus: bertengkar",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "bertengkar"
+      ],
+      "regex": "bertengkar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat bertengkar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-berselisih",
+      "label": "perselisihan terus-menerus: berselisih",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "berselisih"
+      ],
+      "regex": "berselisih",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat berselisih terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-tidak-harmonis",
+      "label": "perselisihan terus-menerus: tidak harmonis",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "tidak harmonis"
+      ],
+      "regex": "tidak harmonis",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak harmonis terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-tidak-rukun",
+      "label": "perselisihan terus-menerus: tidak rukun",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "tidak rukun"
+      ],
+      "regex": "tidak rukun",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak rukun terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-tidak-ada-kecocokan",
+      "label": "perselisihan terus-menerus: tidak ada kecocokan",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "tidak ada kecocokan"
+      ],
+      "regex": "tidak ada kecocokan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak ada kecocokan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-perselisihan-terus-mener-syiqaq",
+      "label": "perselisihan terus-menerus: syiqaq",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "ciri",
+      "kata": [
+        "syiqaq"
+      ],
+      "regex": "syiqaq",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat syiqaq terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf f. Dipecah per kata (dahulu menuntut perselisihan DAN pertengkaran sekaligus - posita yang menulis salah satunya lolos). 'meninggalkan' telanjang SENGAJA bukan ciri: itu peristiwa pisah rumah (0246/7035)."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-kdrt",
+      "label": "kekerasan dalam rumah tangga: kdrt",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "kdrt"
+      ],
+      "regex": "kdrt",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kdrt terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-memukul",
+      "label": "kekerasan dalam rumah tangga: memukul",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "memukul"
+      ],
+      "regex": "memukul",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat memukul terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-kekerasan",
+      "label": "kekerasan dalam rumah tangga: kekerasan",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "kekerasan"
+      ],
+      "regex": "kekerasan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kekerasan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-menganiaya",
+      "label": "kekerasan dalam rumah tangga: menganiaya",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "menganiaya"
+      ],
+      "regex": "menganiaya",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menganiaya terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-penganiayaan",
+      "label": "kekerasan dalam rumah tangga: penganiayaan",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "penganiayaan"
+      ],
+      "regex": "penganiayaan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat penganiayaan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-menampar",
+      "label": "kekerasan dalam rumah tangga: menampar",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "menampar"
+      ],
+      "regex": "menampar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menampar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-menendang",
+      "label": "kekerasan dalam rumah tangga: menendang",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "menendang"
+      ],
+      "regex": "menendang",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menendang terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-mencekik",
+      "label": "kekerasan dalam rumah tangga: mencekik",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "mencekik"
+      ],
+      "regex": "mencekik",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mencekik terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-kekejaman",
+      "label": "kekerasan dalam rumah tangga: kekejaman",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "kekejaman"
+      ],
+      "regex": "kekejaman",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kekejaman terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-main-tangan",
+      "label": "kekerasan dalam rumah tangga: main tangan",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "main tangan"
+      ],
+      "regex": "main tangan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat main tangan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-mengancam-bunuh",
+      "label": "kekerasan dalam rumah tangga: mengancam + bunuh",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "mengancam",
+        "bunuh"
+      ],
+      "regex": "^(?=[\\s\\S]*mengancam)(?=[\\s\\S]*bunuh)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mengancam lalu bunuh"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-ancaman-senjata",
+      "label": "kekerasan dalam rumah tangga: ancaman + senjata",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "ancaman",
+        "senjata"
+      ],
+      "regex": "^(?=[\\s\\S]*ancaman)(?=[\\s\\S]*senjata)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ancaman lalu senjata"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-pemukulan",
+      "label": "kekerasan dalam rumah tangga: pemukulan",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "pemukulan"
+      ],
+      "regex": "pemukulan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pemukulan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-dipukul",
+      "label": "kekerasan dalam rumah tangga: dipukul",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "dipukul"
+      ],
+      "regex": "dipukul",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat dipukul terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-menyakiti-fisik",
+      "label": "kekerasan dalam rumah tangga: menyakiti + fisik",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "menyakiti",
+        "fisik"
+      ],
+      "regex": "^(?=[\\s\\S]*menyakiti)(?=[\\s\\S]*fisik)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menyakiti lalu fisik"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-mengancam-tajam",
+      "label": "kekerasan dalam rumah tangga: mengancam + tajam",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "mengancam",
+        "tajam"
+      ],
+      "regex": "^(?=[\\s\\S]*mengancam)(?=[\\s\\S]*tajam)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mengancam lalu tajam"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-dicekik",
+      "label": "kekerasan dalam rumah tangga: dicekik",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "dicekik"
+      ],
+      "regex": "dicekik",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat dicekik terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-ditampar",
+      "label": "kekerasan dalam rumah tangga: ditampar",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "ditampar"
+      ],
+      "regex": "ditampar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ditampar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-ditendang",
+      "label": "kekerasan dalam rumah tangga: ditendang",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "ditendang"
+      ],
+      "regex": "ditendang",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ditendang terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-menjambak",
+      "label": "kekerasan dalam rumah tangga: menjambak",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "menjambak"
+      ],
+      "regex": "menjambak",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menjambak terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-kekerasan-dalam-rumah-ta-ringan-tangan",
+      "label": "kekerasan dalam rumah tangga: ringan tangan",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "ciri",
+      "kata": [
+        "ringan tangan"
+      ],
+      "regex": "ringan tangan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ringan tangan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf d (derajat BERAT tetap diperiksa manusia). 'mengancam' telanjang terlalu luas - hanya ancaman nyawa/senjata. Dibuka untuk SDG 26 Sep 2026: pemukulan 9/10, dipukul 10/10, mengancam+tajam 10/10 (label-presisi.json). 'menyakiti+fisik' 4 kemunculan - hanyaDeteksi. 'pukul' telanjang tidak: 'pukul 10.00'."
+    },
+    {
+      "kode": "ciri-tidak-memberi-nafkah-nafkah",
+      "label": "tidak memberi nafkah: nafkah",
+      "kunci": "F",
+      "sebab": "tidak memberi nafkah",
+      "jenis": "ciri",
+      "kata": [
+        "nafkah"
+      ],
+      "regex": "nafkah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat nafkah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'nafkah' saja dibiarkan seperti semula - posita menyebutnya sebagai alasan jauh lebih sering daripada sebagai tuntutan."
+    },
+    {
+      "kode": "ciri-tidak-memberi-nafkah-menelantarkan",
+      "label": "tidak memberi nafkah: menelantarkan",
+      "kunci": "F",
+      "sebab": "tidak memberi nafkah",
+      "jenis": "ciri",
+      "kata": [
+        "menelantarkan"
+      ],
+      "regex": "menelantarkan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menelantarkan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'nafkah' saja dibiarkan seperti semula - posita menyebutnya sebagai alasan jauh lebih sering daripada sebagai tuntutan."
+    },
+    {
+      "kode": "ciri-tidak-memberi-nafkah-terlantar",
+      "label": "tidak memberi nafkah: terlantar",
+      "kunci": "F",
+      "sebab": "tidak memberi nafkah",
+      "jenis": "ciri",
+      "kata": [
+        "terlantar"
+      ],
+      "regex": "terlantar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat terlantar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'nafkah' saja dibiarkan seperti semula - posita menyebutnya sebagai alasan jauh lebih sering daripada sebagai tuntutan."
+    },
+    {
+      "kode": "ciri-tidak-memberi-nafkah-tidak-menafkahi",
+      "label": "tidak memberi nafkah: tidak menafkahi",
+      "kunci": "F",
+      "sebab": "tidak memberi nafkah",
+      "jenis": "ciri",
+      "kata": [
+        "tidak menafkahi"
+      ],
+      "regex": "tidak menafkahi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak menafkahi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'nafkah' saja dibiarkan seperti semula - posita menyebutnya sebagai alasan jauh lebih sering daripada sebagai tuntutan."
+    },
+    {
+      "kode": "ciri-tidak-memberi-nafkah-tidak-bertanggung-jawab",
+      "label": "tidak memberi nafkah: tidak bertanggung jawab",
+      "kunci": "F",
+      "sebab": "tidak memberi nafkah",
+      "jenis": "ciri",
+      "kata": [
+        "tidak bertanggung jawab"
+      ],
+      "regex": "tidak bertanggung jawab",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak bertanggung jawab terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'nafkah' saja dibiarkan seperti semula - posita menyebutnya sebagai alasan jauh lebih sering daripada sebagai tuntutan."
+    },
+    {
+      "kode": "ciri-tidak-memberi-nafkah-lalai-kewajiban",
+      "label": "tidak memberi nafkah: lalai + kewajiban",
+      "kunci": "F",
+      "sebab": "tidak memberi nafkah",
+      "jenis": "ciri",
+      "kata": [
+        "lalai",
+        "kewajiban"
+      ],
+      "regex": "^(?=[\\s\\S]*lalai)(?=[\\s\\S]*kewajiban)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat lalai lalu kewajiban"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'nafkah' saja dibiarkan seperti semula - posita menyebutnya sebagai alasan jauh lebih sering daripada sebagai tuntutan."
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-idaman-lain",
+      "label": "pihak lain (wanita/pria idaman lain): idaman lain",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "idaman lain"
+      ],
+      "regex": "idaman lain",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat idaman lain terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata."
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-selingkuh",
+      "label": "pihak lain (wanita/pria idaman lain): selingkuh",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "selingkuh"
+      ],
+      "regex": "selingkuh",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat selingkuh terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata."
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-perselingkuhan",
+      "label": "pihak lain (wanita/pria idaman lain): perselingkuhan",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "perselingkuhan"
+      ],
+      "regex": "perselingkuhan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat perselingkuhan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata."
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-pihak-ketiga",
+      "label": "pihak lain (wanita/pria idaman lain): pihak ketiga",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "pihak ketiga"
+      ],
+      "regex": "pihak ketiga",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pihak ketiga terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata."
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-wanita-lain",
+      "label": "pihak lain (wanita/pria idaman lain): wanita lain",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "wanita lain"
+      ],
+      "regex": "wanita lain",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat wanita lain terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata."
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-perempuan-lain",
+      "label": "pihak lain (wanita/pria idaman lain): perempuan lain",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "perempuan lain"
+      ],
+      "regex": "perempuan lain",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat perempuan lain terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata."
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-laki-laki-lain",
+      "label": "pihak lain (wanita/pria idaman lain): laki-laki lain",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "laki-laki lain"
+      ],
+      "regex": "laki-laki lain",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat laki-laki lain terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-lelaki-lain",
+      "label": "pihak lain (wanita/pria idaman lain): lelaki lain",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "lelaki lain"
+      ],
+      "regex": "lelaki lain",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat lelaki lain terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-pihak-lain-wanita-pria-i-pria-lain",
+      "label": "pihak lain (wanita/pria idaman lain): pria lain",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "ciri",
+      "kata": [
+        "pria lain"
+      ],
+      "regex": "pria lain",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pria lain terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), BUKAN zina. 'wanita lain' 10/10, 'perempuan lain' 9/10 dibuka SDG; laki-laki/pria/lelaki lain 5/10 (separuhnya tuduhan suami cemburu) - hanyaDeteksi. Singkatan WIL/PIL tidak dipakai di baris kata (potongan tanpa batas kata menyala pada 'wilayah'/'dipilih') - lihat pola tambahan berbatas kata.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-menikah-lagi-menikah-lagi",
+      "label": "menikah lagi: menikah lagi",
+      "kunci": "F",
+      "sebab": "menikah lagi",
+      "jenis": "ciri",
+      "kata": [
+        "menikah lagi"
+      ],
+      "regex": "menikah lagi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menikah lagi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Kunci sendiri (SIPP: faktor Poligami), bukan perselingkuhan. Hanya perkawinan PELAKU yang sudah terjadi - disaring menikahLagiTerjadi (niat/izin/suruhan/subjek pihak lawan tidak dihitung). 'menikah lagi' 9/10, 'menikah dengan wanita/laki' 10/10."
+    },
+    {
+      "kode": "ciri-menikah-lagi-kawin-lagi",
+      "label": "menikah lagi: kawin lagi",
+      "kunci": "F",
+      "sebab": "menikah lagi",
+      "jenis": "ciri",
+      "kata": [
+        "kawin lagi"
+      ],
+      "regex": "kawin lagi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kawin lagi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Kunci sendiri (SIPP: faktor Poligami), bukan perselingkuhan. Hanya perkawinan PELAKU yang sudah terjadi - disaring menikahLagiTerjadi (niat/izin/suruhan/subjek pihak lawan tidak dihitung). 'menikah lagi' 9/10, 'menikah dengan wanita/laki' 10/10."
+    },
+    {
+      "kode": "ciri-menikah-lagi-menikah-dengan-wanita",
+      "label": "menikah lagi: menikah dengan wanita",
+      "kunci": "F",
+      "sebab": "menikah lagi",
+      "jenis": "ciri",
+      "kata": [
+        "menikah dengan wanita"
+      ],
+      "regex": "menikah dengan wanita",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menikah dengan wanita terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Kunci sendiri (SIPP: faktor Poligami), bukan perselingkuhan. Hanya perkawinan PELAKU yang sudah terjadi - disaring menikahLagiTerjadi (niat/izin/suruhan/subjek pihak lawan tidak dihitung). 'menikah lagi' 9/10, 'menikah dengan wanita/laki' 10/10."
+    },
+    {
+      "kode": "ciri-menikah-lagi-menikah-dengan-perempuan",
+      "label": "menikah lagi: menikah dengan perempuan",
+      "kunci": "F",
+      "sebab": "menikah lagi",
+      "jenis": "ciri",
+      "kata": [
+        "menikah dengan perempuan"
+      ],
+      "regex": "menikah dengan perempuan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menikah dengan perempuan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Kunci sendiri (SIPP: faktor Poligami), bukan perselingkuhan. Hanya perkawinan PELAKU yang sudah terjadi - disaring menikahLagiTerjadi (niat/izin/suruhan/subjek pihak lawan tidak dihitung). 'menikah lagi' 9/10, 'menikah dengan wanita/laki' 10/10."
+    },
+    {
+      "kode": "ciri-menikah-lagi-menikah-dengan-laki",
+      "label": "menikah lagi: menikah dengan laki",
+      "kunci": "F",
+      "sebab": "menikah lagi",
+      "jenis": "ciri",
+      "kata": [
+        "menikah dengan laki"
+      ],
+      "regex": "menikah dengan laki",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menikah dengan laki terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Kunci sendiri (SIPP: faktor Poligami), bukan perselingkuhan. Hanya perkawinan PELAKU yang sudah terjadi - disaring menikahLagiTerjadi (niat/izin/suruhan/subjek pihak lawan tidak dihitung). 'menikah lagi' 9/10, 'menikah dengan wanita/laki' 10/10."
+    },
+    {
+      "kode": "ciri-menikah-lagi-menikah-dengan-pria",
+      "label": "menikah lagi: menikah dengan pria",
+      "kunci": "F",
+      "sebab": "menikah lagi",
+      "jenis": "ciri",
+      "kata": [
+        "menikah dengan pria"
+      ],
+      "regex": "menikah dengan pria",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menikah dengan pria terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Kunci sendiri (SIPP: faktor Poligami), bukan perselingkuhan. Hanya perkawinan PELAKU yang sudah terjadi - disaring menikahLagiTerjadi (niat/izin/suruhan/subjek pihak lawan tidak dihitung). 'menikah lagi' 9/10, 'menikah dengan wanita/laki' 10/10."
+    },
+    {
+      "kode": "ciri-menikah-lagi-menikah-siri",
+      "label": "menikah lagi: menikah siri",
+      "kunci": "F",
+      "sebab": "menikah lagi",
+      "jenis": "ciri",
+      "kata": [
+        "menikah siri"
+      ],
+      "regex": "menikah siri",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menikah siri terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Kunci sendiri (SIPP: faktor Poligami), bukan perselingkuhan. Hanya perkawinan PELAKU yang sudah terjadi - disaring menikahLagiTerjadi (niat/izin/suruhan/subjek pihak lawan tidak dihitung). 'menikah lagi' 9/10, 'menikah dengan wanita/laki' 10/10."
+    },
+    {
+      "kode": "ciri-cemburu-cemburu",
+      "label": "cemburu: cemburu",
+      "kunci": "F",
+      "sebab": "cemburu",
+      "jenis": "ciri",
+      "kata": [
+        "cemburu"
+      ],
+      "regex": "cemburu",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat cemburu terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'curiga' SENGAJA tidak dipakai: 3 dari 7 bukan kecemburuan."
+    },
+    {
+      "kode": "ciri-obat-terlarang-sabu",
+      "label": "obat terlarang: sabu",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "ciri",
+      "kata": [
+        "sabu"
+      ],
+      "regex": "sabu",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sabu terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemadat). 'shabu' tidak memuat 'sabu' - ejaan petugas sendiri; 'obat-obatan terlarang' dituntut dua kata dalam satu kalimat. Dibuka SDG 26 Sep 2026 10/10."
+    },
+    {
+      "kode": "ciri-obat-terlarang-shabu",
+      "label": "obat terlarang: shabu",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "ciri",
+      "kata": [
+        "shabu"
+      ],
+      "regex": "shabu",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat shabu terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemadat). 'shabu' tidak memuat 'sabu' - ejaan petugas sendiri; 'obat-obatan terlarang' dituntut dua kata dalam satu kalimat. Dibuka SDG 26 Sep 2026 10/10."
+    },
+    {
+      "kode": "ciri-obat-terlarang-obat-terlarang",
+      "label": "obat terlarang: obat + terlarang",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "ciri",
+      "kata": [
+        "obat",
+        "terlarang"
+      ],
+      "regex": "^(?=[\\s\\S]*obat)(?=[\\s\\S]*terlarang)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat obat lalu terlarang"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemadat). 'shabu' tidak memuat 'sabu' - ejaan petugas sendiri; 'obat-obatan terlarang' dituntut dua kata dalam satu kalimat. Dibuka SDG 26 Sep 2026 10/10."
+    },
+    {
+      "kode": "ciri-obat-terlarang-narkoba",
+      "label": "obat terlarang: narkoba",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "ciri",
+      "kata": [
+        "narkoba"
+      ],
+      "regex": "narkoba",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat narkoba terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemadat). 'shabu' tidak memuat 'sabu' - ejaan petugas sendiri; 'obat-obatan terlarang' dituntut dua kata dalam satu kalimat. Dibuka SDG 26 Sep 2026 10/10."
+    },
+    {
+      "kode": "ciri-obat-terlarang-narkotika",
+      "label": "obat terlarang: narkotika",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "ciri",
+      "kata": [
+        "narkotika"
+      ],
+      "regex": "narkotika",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat narkotika terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemadat). 'shabu' tidak memuat 'sabu' - ejaan petugas sendiri; 'obat-obatan terlarang' dituntut dua kata dalam satu kalimat. Dibuka SDG 26 Sep 2026 10/10."
+    },
+    {
+      "kode": "ciri-obat-terlarang-pemadat",
+      "label": "obat terlarang: pemadat",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "ciri",
+      "kata": [
+        "pemadat"
+      ],
+      "regex": "pemadat",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pemadat terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemadat). 'shabu' tidak memuat 'sabu' - ejaan petugas sendiri; 'obat-obatan terlarang' dituntut dua kata dalam satu kalimat. Dibuka SDG 26 Sep 2026 10/10."
+    },
+    {
+      "kode": "ciri-obat-terlarang-madat",
+      "label": "obat terlarang: madat",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "ciri",
+      "kata": [
+        "madat"
+      ],
+      "regex": "madat",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat madat terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemadat). 'shabu' tidak memuat 'sabu' - ejaan petugas sendiri; 'obat-obatan terlarang' dituntut dua kata dalam satu kalimat. Dibuka SDG 26 Sep 2026 10/10."
+    },
+    {
+      "kode": "ciri-obat-terlarang-ganja",
+      "label": "obat terlarang: ganja",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "ciri",
+      "kata": [
+        "ganja"
+      ],
+      "regex": "ganja",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ganja terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemadat). 'shabu' tidak memuat 'sabu' - ejaan petugas sendiri; 'obat-obatan terlarang' dituntut dua kata dalam satu kalimat. Dibuka SDG 26 Sep 2026 10/10."
+    },
+    {
+      "kode": "ciri-judi-judi",
+      "label": "judi: judi",
+      "kunci": "A",
+      "sebab": "judi",
+      "jenis": "ciri",
+      "kata": [
+        "judi"
+      ],
+      "regex": "judi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat judi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (penjudi). 'sabung ayam', 'slot' 10/10."
+    },
+    {
+      "kode": "ciri-judi-togel",
+      "label": "judi: togel",
+      "kunci": "A",
+      "sebab": "judi",
+      "jenis": "ciri",
+      "kata": [
+        "togel"
+      ],
+      "regex": "togel",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat togel terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (penjudi). 'sabung ayam', 'slot' 10/10."
+    },
+    {
+      "kode": "ciri-judi-sabung-ayam",
+      "label": "judi: sabung ayam",
+      "kunci": "A",
+      "sebab": "judi",
+      "jenis": "ciri",
+      "kata": [
+        "sabung ayam"
+      ],
+      "regex": "sabung ayam",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sabung ayam terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (penjudi). 'sabung ayam', 'slot' 10/10."
+    },
+    {
+      "kode": "ciri-judi-slot",
+      "label": "judi: slot",
+      "kunci": "A",
+      "sebab": "judi",
+      "jenis": "ciri",
+      "kata": [
+        "slot"
+      ],
+      "regex": "slot",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat slot terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (penjudi). 'sabung ayam', 'slot' 10/10."
+    },
+    {
+      "kode": "ciri-mabuk-mabuk",
+      "label": "mabuk: mabuk",
+      "kunci": "A",
+      "sebab": "mabuk",
+      "jenis": "ciri",
+      "kata": [
+        "mabuk"
+      ],
+      "regex": "mabuk",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mabuk terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemabuk/pemabok - KHI vs PP)."
+    },
+    {
+      "kode": "ciri-mabuk-minuman-keras",
+      "label": "mabuk: minuman keras",
+      "kunci": "A",
+      "sebab": "mabuk",
+      "jenis": "ciri",
+      "kata": [
+        "minuman keras"
+      ],
+      "regex": "minuman keras",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat minuman keras terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemabuk/pemabok - KHI vs PP)."
+    },
+    {
+      "kode": "ciri-mabuk-miras",
+      "label": "mabuk: miras",
+      "kunci": "A",
+      "sebab": "mabuk",
+      "jenis": "ciri",
+      "kata": [
+        "miras"
+      ],
+      "regex": "miras",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat miras terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemabuk/pemabok - KHI vs PP)."
+    },
+    {
+      "kode": "ciri-mabuk-pemabuk",
+      "label": "mabuk: pemabuk",
+      "kunci": "A",
+      "sebab": "mabuk",
+      "jenis": "ciri",
+      "kata": [
+        "pemabuk"
+      ],
+      "regex": "pemabuk",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pemabuk terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemabuk/pemabok - KHI vs PP)."
+    },
+    {
+      "kode": "ciri-mabuk-pemabok",
+      "label": "mabuk: pemabok",
+      "kunci": "A",
+      "sebab": "mabuk",
+      "jenis": "ciri",
+      "kata": [
+        "pemabok"
+      ],
+      "regex": "pemabok",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pemabok terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a (pemabuk/pemabok - KHI vs PP)."
+    },
+    {
+      "kode": "ciri-malas-bekerja-malas-bekerja",
+      "label": "malas bekerja: malas bekerja",
+      "kunci": "F",
+      "sebab": "malas bekerja",
+      "jenis": "ciri",
+      "kata": [
+        "malas bekerja"
+      ],
+      "regex": "malas bekerja",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat malas bekerja terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). Dibuka SDG 26 Sep 2026: malas bekerja 10/10, malas+kerja 10/10, tidak mau bekerja 10/10 (BAS petugas 1.498 perkara)."
+    },
+    {
+      "kode": "ciri-malas-bekerja-malas-dalam-bekerja",
+      "label": "malas bekerja: malas dalam bekerja",
+      "kunci": "F",
+      "sebab": "malas bekerja",
+      "jenis": "ciri",
+      "kata": [
+        "malas dalam bekerja"
+      ],
+      "regex": "malas dalam bekerja",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat malas dalam bekerja terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). Dibuka SDG 26 Sep 2026: malas bekerja 10/10, malas+kerja 10/10, tidak mau bekerja 10/10 (BAS petugas 1.498 perkara)."
+    },
+    {
+      "kode": "ciri-malas-bekerja-malasbekerja",
+      "label": "malas bekerja: malasbekerja",
+      "kunci": "F",
+      "sebab": "malas bekerja",
+      "jenis": "ciri",
+      "kata": [
+        "malasbekerja"
+      ],
+      "regex": "malasbekerja",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat malasbekerja terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). Dibuka SDG 26 Sep 2026: malas bekerja 10/10, malas+kerja 10/10, tidak mau bekerja 10/10 (BAS petugas 1.498 perkara)."
+    },
+    {
+      "kode": "ciri-malas-bekerja-malas-mencari-pekerjaan",
+      "label": "malas bekerja: malas mencari pekerjaan",
+      "kunci": "F",
+      "sebab": "malas bekerja",
+      "jenis": "ciri",
+      "kata": [
+        "malas mencari pekerjaan"
+      ],
+      "regex": "malas mencari pekerjaan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat malas mencari pekerjaan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). Dibuka SDG 26 Sep 2026: malas bekerja 10/10, malas+kerja 10/10, tidak mau bekerja 10/10 (BAS petugas 1.498 perkara)."
+    },
+    {
+      "kode": "ciri-malas-bekerja-malas-cari-pekerjaan",
+      "label": "malas bekerja: malas cari pekerjaan",
+      "kunci": "F",
+      "sebab": "malas bekerja",
+      "jenis": "ciri",
+      "kata": [
+        "malas cari pekerjaan"
+      ],
+      "regex": "malas cari pekerjaan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat malas cari pekerjaan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). Dibuka SDG 26 Sep 2026: malas bekerja 10/10, malas+kerja 10/10, tidak mau bekerja 10/10 (BAS petugas 1.498 perkara)."
+    },
+    {
+      "kode": "ciri-malas-bekerja-malas-mencari-kerja",
+      "label": "malas bekerja: malas mencari kerja",
+      "kunci": "F",
+      "sebab": "malas bekerja",
+      "jenis": "ciri",
+      "kata": [
+        "malas mencari kerja"
+      ],
+      "regex": "malas mencari kerja",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat malas mencari kerja terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). Dibuka SDG 26 Sep 2026: malas bekerja 10/10, malas+kerja 10/10, tidak mau bekerja 10/10 (BAS petugas 1.498 perkara)."
+    },
+    {
+      "kode": "ciri-malas-bekerja-malas-kerja",
+      "label": "malas bekerja: malas + kerja",
+      "kunci": "F",
+      "sebab": "malas bekerja",
+      "jenis": "ciri",
+      "kata": [
+        "malas",
+        "kerja"
+      ],
+      "regex": "^(?=[\\s\\S]*malas)(?=[\\s\\S]*kerja)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat malas lalu kerja"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). Dibuka SDG 26 Sep 2026: malas bekerja 10/10, malas+kerja 10/10, tidak mau bekerja 10/10 (BAS petugas 1.498 perkara)."
+    },
+    {
+      "kode": "ciri-malas-bekerja-tidak-mau-bekerja",
+      "label": "malas bekerja: tidak mau bekerja",
+      "kunci": "F",
+      "sebab": "malas bekerja",
+      "jenis": "ciri",
+      "kata": [
+        "tidak mau bekerja"
+      ],
+      "regex": "tidak mau bekerja",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak mau bekerja terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). Dibuka SDG 26 Sep 2026: malas bekerja 10/10, malas+kerja 10/10, tidak mau bekerja 10/10 (BAS petugas 1.498 perkara)."
+    },
+    {
+      "kode": "ciri-temperamental-temperam",
+      "label": "temperamental: temperam",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "temperam"
+      ],
+      "regex": "temperam",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat temperam terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-tempram",
+      "label": "temperamental: tempram",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "tempram"
+      ],
+      "regex": "tempram",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tempram terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-teperamen",
+      "label": "temperamental: teperamen",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "teperamen"
+      ],
+      "regex": "teperamen",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat teperamen terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-temparamen",
+      "label": "temperamental: temparamen",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "temparamen"
+      ],
+      "regex": "temparamen",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat temparamen terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-sering-marah",
+      "label": "temperamental: sering marah",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "sering marah"
+      ],
+      "regex": "sering marah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering marah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-marah-marah",
+      "label": "temperamental: marah-marah",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "marah-marah"
+      ],
+      "regex": "marah-marah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat marah-marah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-marah-marah-2",
+      "label": "temperamental: marah marah",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "marah marah"
+      ],
+      "regex": "marah marah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat marah marah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-mudah-marah",
+      "label": "temperamental: mudah marah",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "mudah marah"
+      ],
+      "regex": "mudah marah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mudah marah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-pemarah",
+      "label": "temperamental: pemarah",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "pemarah"
+      ],
+      "regex": "pemarah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pemarah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-suka-marah",
+      "label": "temperamental: suka marah",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "suka marah"
+      ],
+      "regex": "suka marah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat suka marah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-cepat-marah",
+      "label": "temperamental: cepat marah",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "cepat marah"
+      ],
+      "regex": "cepat marah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat cepat marah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-gampang-marah",
+      "label": "temperamental: gampang marah",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "gampang marah"
+      ],
+      "regex": "gampang marah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat gampang marah terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-temperamental-emosional",
+      "label": "temperamental: emosional",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "emosional"
+      ],
+      "regex": "emosional",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat emosional terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat).",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-temperamental-tersulut-emosi",
+      "label": "temperamental: tersulut emosi",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "tersulut emosi"
+      ],
+      "regex": "tersulut emosi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tersulut emosi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat).",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-temperamental-mudah-emosi",
+      "label": "temperamental: mudah emosi",
+      "kunci": "F",
+      "sebab": "temperamental",
+      "jenis": "ciri",
+      "kata": [
+        "mudah emosi"
+      ],
+      "regex": "mudah emosi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mudah emosi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). temperam/tempram/sering marah/marah-marah/mudah marah/suka marah 10/10; 'emosional' 3/6 dan 'tersulut emosi' 0/2 di POSITA - hanyaDeteksi. 'marah' telanjang tidak (5/10 kemarahan sesaat)."
+    },
+    {
+      "kode": "ciri-berkata-kasar-kata-kasar",
+      "label": "berkata kasar: kata kasar",
+      "kunci": "F",
+      "sebab": "berkata kasar",
+      "jenis": "ciri",
+      "kata": [
+        "kata kasar"
+      ],
+      "regex": "kata kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kata kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'kata kasar' 10/10. 'kasar' telanjang tidak (ucapan vs sikap)."
+    },
+    {
+      "kode": "ciri-berkata-kasar-kata-kata-kasar",
+      "label": "berkata kasar: kata-kata kasar",
+      "kunci": "F",
+      "sebab": "berkata kasar",
+      "jenis": "ciri",
+      "kata": [
+        "kata-kata kasar"
+      ],
+      "regex": "kata-kata kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kata-kata kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'kata kasar' 10/10. 'kasar' telanjang tidak (ucapan vs sikap)."
+    },
+    {
+      "kode": "ciri-berkata-kasar-bicara-kasar",
+      "label": "berkata kasar: bicara kasar",
+      "kunci": "F",
+      "sebab": "berkata kasar",
+      "jenis": "ciri",
+      "kata": [
+        "bicara kasar"
+      ],
+      "regex": "bicara kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat bicara kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'kata kasar' 10/10. 'kasar' telanjang tidak (ucapan vs sikap)."
+    },
+    {
+      "kode": "ciri-berkata-kasar-ucapan-kasar",
+      "label": "berkata kasar: ucapan kasar",
+      "kunci": "F",
+      "sebab": "berkata kasar",
+      "jenis": "ciri",
+      "kata": [
+        "ucapan kasar"
+      ],
+      "regex": "ucapan kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ucapan kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'kata kasar' 10/10. 'kasar' telanjang tidak (ucapan vs sikap)."
+    },
+    {
+      "kode": "ciri-berkata-kasar-berucap-kasar",
+      "label": "berkata kasar: berucap kasar",
+      "kunci": "F",
+      "sebab": "berkata kasar",
+      "jenis": "ciri",
+      "kata": [
+        "berucap kasar"
+      ],
+      "regex": "berucap kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat berucap kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'kata kasar' 10/10. 'kasar' telanjang tidak (ucapan vs sikap)."
+    },
+    {
+      "kode": "ciri-berkata-kasar-perkataan-kasar",
+      "label": "berkata kasar: perkataan kasar",
+      "kunci": "F",
+      "sebab": "berkata kasar",
+      "jenis": "ciri",
+      "kata": [
+        "perkataan kasar"
+      ],
+      "regex": "perkataan kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat perkataan kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'kata kasar' 10/10. 'kasar' telanjang tidak (ucapan vs sikap)."
+    },
+    {
+      "kode": "ciri-bersikap-kasar-sikap-kasar",
+      "label": "bersikap kasar: sikap kasar",
+      "kunci": "F",
+      "sebab": "bersikap kasar",
+      "jenis": "ciri",
+      "kata": [
+        "sikap kasar"
+      ],
+      "regex": "sikap kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sikap kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'sikap kasar' 9/10 (satu penyangkalan)."
+    },
+    {
+      "kode": "ciri-bersikap-kasar-berlaku-kasar",
+      "label": "bersikap kasar: berlaku kasar",
+      "kunci": "F",
+      "sebab": "bersikap kasar",
+      "jenis": "ciri",
+      "kata": [
+        "berlaku kasar"
+      ],
+      "regex": "berlaku kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat berlaku kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'sikap kasar' 9/10 (satu penyangkalan)."
+    },
+    {
+      "kode": "ciri-bersikap-kasar-perlakuan-kasar",
+      "label": "bersikap kasar: perlakuan kasar",
+      "kunci": "F",
+      "sebab": "bersikap kasar",
+      "jenis": "ciri",
+      "kata": [
+        "perlakuan kasar"
+      ],
+      "regex": "perlakuan kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat perlakuan kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'sikap kasar' 9/10 (satu penyangkalan)."
+    },
+    {
+      "kode": "ciri-bersikap-kasar-berbuat-kasar",
+      "label": "bersikap kasar: berbuat kasar",
+      "kunci": "F",
+      "sebab": "bersikap kasar",
+      "jenis": "ciri",
+      "kata": [
+        "berbuat kasar"
+      ],
+      "regex": "berbuat kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat berbuat kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'sikap kasar' 9/10 (satu penyangkalan)."
+    },
+    {
+      "kode": "ciri-bersikap-kasar-bertindak-kasar",
+      "label": "bersikap kasar: bertindak kasar",
+      "kunci": "F",
+      "sebab": "bersikap kasar",
+      "jenis": "ciri",
+      "kata": [
+        "bertindak kasar"
+      ],
+      "regex": "bertindak kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat bertindak kasar terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f). 'sikap kasar' 9/10 (satu penyangkalan)."
+    },
+    {
+      "kode": "ciri-tidak-memiliki-pekerjaan-tidak-memiliki-pekerjaan-tetap",
+      "label": "tidak memiliki pekerjaan tetap: tidak memiliki pekerjaan tetap",
+      "kunci": "F",
+      "sebab": "tidak memiliki pekerjaan tetap",
+      "jenis": "ciri",
+      "kata": [
+        "tidak memiliki pekerjaan tetap"
+      ],
+      "regex": "tidak memiliki pekerjaan tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak memiliki pekerjaan tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f) - keadaan, bukan watak (beda dengan malas bekerja). Hanya bentuk ber-'tetap'; 9/9."
+    },
+    {
+      "kode": "ciri-tidak-memiliki-pekerjaan-tidak-mempunyai-pekerjaan-tetap",
+      "label": "tidak memiliki pekerjaan tetap: tidak mempunyai pekerjaan tetap",
+      "kunci": "F",
+      "sebab": "tidak memiliki pekerjaan tetap",
+      "jenis": "ciri",
+      "kata": [
+        "tidak mempunyai pekerjaan tetap"
+      ],
+      "regex": "tidak mempunyai pekerjaan tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak mempunyai pekerjaan tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f) - keadaan, bukan watak (beda dengan malas bekerja). Hanya bentuk ber-'tetap'; 9/9."
+    },
+    {
+      "kode": "ciri-tidak-memiliki-pekerjaan-tidak-punya-pekerjaan-tetap",
+      "label": "tidak memiliki pekerjaan tetap: tidak punya pekerjaan tetap",
+      "kunci": "F",
+      "sebab": "tidak memiliki pekerjaan tetap",
+      "jenis": "ciri",
+      "kata": [
+        "tidak punya pekerjaan tetap"
+      ],
+      "regex": "tidak punya pekerjaan tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak punya pekerjaan tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f) - keadaan, bukan watak (beda dengan malas bekerja). Hanya bentuk ber-'tetap'; 9/9."
+    },
+    {
+      "kode": "ciri-tidak-memiliki-pekerjaan-belum-memiliki-pekerjaan-tetap",
+      "label": "tidak memiliki pekerjaan tetap: belum memiliki pekerjaan tetap",
+      "kunci": "F",
+      "sebab": "tidak memiliki pekerjaan tetap",
+      "jenis": "ciri",
+      "kata": [
+        "belum memiliki pekerjaan tetap"
+      ],
+      "regex": "belum memiliki pekerjaan tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat belum memiliki pekerjaan tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f) - keadaan, bukan watak (beda dengan malas bekerja). Hanya bentuk ber-'tetap'; 9/9."
+    },
+    {
+      "kode": "ciri-tidak-memiliki-pekerjaan-belum-mempunyai-pekerjaan-tetap",
+      "label": "tidak memiliki pekerjaan tetap: belum mempunyai pekerjaan tetap",
+      "kunci": "F",
+      "sebab": "tidak memiliki pekerjaan tetap",
+      "jenis": "ciri",
+      "kata": [
+        "belum mempunyai pekerjaan tetap"
+      ],
+      "regex": "belum mempunyai pekerjaan tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat belum mempunyai pekerjaan tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f) - keadaan, bukan watak (beda dengan malas bekerja). Hanya bentuk ber-'tetap'; 9/9."
+    },
+    {
+      "kode": "ciri-tidak-memiliki-pekerjaan-tidak-memiliki-pekerjaan-yang-tetap",
+      "label": "tidak memiliki pekerjaan tetap: tidak memiliki pekerjaan yang tetap",
+      "kunci": "F",
+      "sebab": "tidak memiliki pekerjaan tetap",
+      "jenis": "ciri",
+      "kata": [
+        "tidak memiliki pekerjaan yang tetap"
+      ],
+      "regex": "tidak memiliki pekerjaan yang tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak memiliki pekerjaan yang tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f) - keadaan, bukan watak (beda dengan malas bekerja). Hanya bentuk ber-'tetap'; 9/9."
+    },
+    {
+      "kode": "ciri-tidak-memiliki-pekerjaan-tidak-memiliki-penghasilan-tetap",
+      "label": "tidak memiliki pekerjaan tetap: tidak memiliki penghasilan tetap",
+      "kunci": "F",
+      "sebab": "tidak memiliki pekerjaan tetap",
+      "jenis": "ciri",
+      "kata": [
+        "tidak memiliki penghasilan tetap"
+      ],
+      "regex": "tidak memiliki penghasilan tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak memiliki penghasilan tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f) - keadaan, bukan watak (beda dengan malas bekerja). Hanya bentuk ber-'tetap'; 9/9."
+    },
+    {
+      "kode": "ciri-tidak-memiliki-pekerjaan-tidak-mempunyai-penghasilan-tetap",
+      "label": "tidak memiliki pekerjaan tetap: tidak mempunyai penghasilan tetap",
+      "kunci": "F",
+      "sebab": "tidak memiliki pekerjaan tetap",
+      "jenis": "ciri",
+      "kata": [
+        "tidak mempunyai penghasilan tetap"
+      ],
+      "regex": "tidak mempunyai penghasilan tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak mempunyai penghasilan tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f) - keadaan, bukan watak (beda dengan malas bekerja). Hanya bentuk ber-'tetap'; 9/9."
+    },
+    {
+      "kode": "ciri-masalah-ekonomi-masalah-ekonomi",
+      "label": "masalah ekonomi: masalah ekonomi",
+      "kunci": "F",
+      "sebab": "masalah ekonomi",
+      "jenis": "ciri",
+      "kata": [
+        "masalah ekonomi"
+      ],
+      "regex": "masalah ekonomi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat masalah ekonomi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku. 'masalah ekonomi' 117 perkara BAS petugas, 10/10."
+    },
+    {
+      "kode": "ciri-masalah-ekonomi-faktor-ekonomi",
+      "label": "masalah ekonomi: faktor ekonomi",
+      "kunci": "F",
+      "sebab": "masalah ekonomi",
+      "jenis": "ciri",
+      "kata": [
+        "faktor ekonomi"
+      ],
+      "regex": "faktor ekonomi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat faktor ekonomi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku. 'masalah ekonomi' 117 perkara BAS petugas, 10/10."
+    },
+    {
+      "kode": "ciri-masalah-ekonomi-persoalan-ekonomi",
+      "label": "masalah ekonomi: persoalan ekonomi",
+      "kunci": "F",
+      "sebab": "masalah ekonomi",
+      "jenis": "ciri",
+      "kata": [
+        "persoalan ekonomi"
+      ],
+      "regex": "persoalan ekonomi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat persoalan ekonomi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku. 'masalah ekonomi' 117 perkara BAS petugas, 10/10."
+    },
+    {
+      "kode": "ciri-masalah-ekonomi-permasalahan-ekonomi",
+      "label": "masalah ekonomi: permasalahan ekonomi",
+      "kunci": "F",
+      "sebab": "masalah ekonomi",
+      "jenis": "ciri",
+      "kata": [
+        "permasalahan ekonomi"
+      ],
+      "regex": "permasalahan ekonomi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat permasalahan ekonomi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku. 'masalah ekonomi' 117 perkara BAS petugas, 10/10."
+    },
+    {
+      "kode": "ciri-masalah-ekonomi-alasan-ekonomi",
+      "label": "masalah ekonomi: alasan ekonomi",
+      "kunci": "F",
+      "sebab": "masalah ekonomi",
+      "jenis": "ciri",
+      "kata": [
+        "alasan ekonomi"
+      ],
+      "regex": "alasan ekonomi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat alasan ekonomi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku. 'masalah ekonomi' 117 perkara BAS petugas, 10/10."
+    },
+    {
+      "kode": "ciri-campur-tangan-keluarga-ikut-campur",
+      "label": "campur tangan keluarga: ikut campur",
+      "kunci": "F",
+      "sebab": "campur tangan keluarga",
+      "jenis": "ciri",
+      "kata": [
+        "ikut campur"
+      ],
+      "regex": "ikut campur",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ikut campur terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku; hanyaDeteksi (campur tangan dilakukan keluarga, bukan pelaku). 'ikut campur' 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-campur-tangan-keluarga-turut-campur",
+      "label": "campur tangan keluarga: turut campur",
+      "kunci": "F",
+      "sebab": "campur tangan keluarga",
+      "jenis": "ciri",
+      "kata": [
+        "turut campur"
+      ],
+      "regex": "turut campur",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat turut campur terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku; hanyaDeteksi (campur tangan dilakukan keluarga, bukan pelaku). 'ikut campur' 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-campur-tangan-keluarga-campur-tangan",
+      "label": "campur tangan keluarga: campur tangan",
+      "kunci": "F",
+      "sebab": "campur tangan keluarga",
+      "jenis": "ciri",
+      "kata": [
+        "campur tangan"
+      ],
+      "regex": "campur tangan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat campur tangan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku; hanyaDeteksi (campur tangan dilakukan keluarga, bukan pelaku). 'ikut campur' 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-campur-tangan-keluarga-mencampuri",
+      "label": "campur tangan keluarga: mencampuri",
+      "kunci": "F",
+      "sebab": "campur tangan keluarga",
+      "jenis": "ciri",
+      "kata": [
+        "mencampuri"
+      ],
+      "regex": "mencampuri",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mencampuri terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f), tanpa pelaku; hanyaDeteksi (campur tangan dilakukan keluarga, bukan pelaku). 'ikut campur' 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-tidak-menghargai-tidak-menghargai",
+      "label": "tidak menghargai: tidak menghargai",
+      "kunci": "F",
+      "sebab": "tidak menghargai",
+      "jenis": "ciri",
+      "kata": [
+        "tidak menghargai"
+      ],
+      "regex": "tidak menghargai",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak menghargai terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f); hanyaDeteksi (sasarannya beragam). 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-tidak-menghargai-tidak-menghormati",
+      "label": "tidak menghargai: tidak menghormati",
+      "kunci": "F",
+      "sebab": "tidak menghargai",
+      "jenis": "ciri",
+      "kata": [
+        "tidak menghormati"
+      ],
+      "regex": "tidak menghormati",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak menghormati terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f); hanyaDeteksi (sasarannya beragam). 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-keluar-malam-keluar-malam",
+      "label": "keluar malam: keluar malam",
+      "kunci": "F",
+      "sebab": "keluar malam",
+      "jenis": "ciri",
+      "kata": [
+        "keluar malam"
+      ],
+      "regex": "keluar malam",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat keluar malam terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f); hanyaDeteksi (bunyi terbanyak memuat 'sering'). 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-keluar-malam-pulang-larut",
+      "label": "keluar malam: pulang larut",
+      "kunci": "F",
+      "sebab": "keluar malam",
+      "jenis": "ciri",
+      "kata": [
+        "pulang larut"
+      ],
+      "regex": "pulang larut",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pulang larut terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f); hanyaDeteksi (bunyi terbanyak memuat 'sering'). 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-keluar-malam-pulang-pagi",
+      "label": "keluar malam: pulang pagi",
+      "kunci": "F",
+      "sebab": "keluar malam",
+      "jenis": "ciri",
+      "kata": [
+        "pulang pagi"
+      ],
+      "regex": "pulang pagi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pulang pagi terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Sebab perselisihan (huruf f); hanyaDeteksi (bunyi terbanyak memuat 'sering'). 10/10.",
+      "hanyaDeteksi": true
+    },
+    {
+      "kode": "ciri-zina-zina",
+      "label": "zina: zina",
+      "kunci": "A",
+      "sebab": "zina",
+      "jenis": "ciri",
+      "kata": [
+        "zina"
+      ],
+      "regex": "zina",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat zina terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a. Terpisah dari 'pihak lain': zina menuntut pembuktian jauh lebih berat."
+    },
+    {
+      "kode": "ciri-zina-berzina",
+      "label": "zina: berzina",
+      "kunci": "A",
+      "sebab": "zina",
+      "jenis": "ciri",
+      "kata": [
+        "berzina"
+      ],
+      "regex": "berzina",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat berzina terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf a. Terpisah dari 'pihak lain': zina menuntut pembuktian jauh lebih berat."
+    },
+    {
+      "kode": "ciri-salah-satu-pihak-menjala-dipenjara",
+      "label": "salah satu pihak menjalani pidana penjara: dipenjara",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "ciri",
+      "kata": [
+        "dipenjara"
+      ],
+      "regex": "dipenjara",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat dipenjara terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf c. 'penjara' telanjang tidak dipakai - peristiwa lampau/keterangan tempat; hanya bunyi MENJALANI pidana."
+    },
+    {
+      "kode": "ciri-salah-satu-pihak-menjala-dihukum-penjara",
+      "label": "salah satu pihak menjalani pidana penjara: dihukum + penjara",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "ciri",
+      "kata": [
+        "dihukum",
+        "penjara"
+      ],
+      "regex": "^(?=[\\s\\S]*dihukum)(?=[\\s\\S]*penjara)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat dihukum lalu penjara"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf c. 'penjara' telanjang tidak dipakai - peristiwa lampau/keterangan tempat; hanya bunyi MENJALANI pidana."
+    },
+    {
+      "kode": "ciri-salah-satu-pihak-menjala-menjalani-pidana",
+      "label": "salah satu pihak menjalani pidana penjara: menjalani + pidana",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "ciri",
+      "kata": [
+        "menjalani",
+        "pidana"
+      ],
+      "regex": "^(?=[\\s\\S]*menjalani)(?=[\\s\\S]*pidana)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menjalani lalu pidana"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf c. 'penjara' telanjang tidak dipakai - peristiwa lampau/keterangan tempat; hanya bunyi MENJALANI pidana."
+    },
+    {
+      "kode": "ciri-salah-satu-pihak-menjala-lembaga-pemasyarakatan",
+      "label": "salah satu pihak menjalani pidana penjara: lembaga pemasyarakatan",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "ciri",
+      "kata": [
+        "lembaga pemasyarakatan"
+      ],
+      "regex": "lembaga pemasyarakatan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat lembaga pemasyarakatan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf c. 'penjara' telanjang tidak dipakai - peristiwa lampau/keterangan tempat; hanya bunyi MENJALANI pidana."
+    },
+    {
+      "kode": "ciri-cacat-badan-atau-penyaki-cacat-badan",
+      "label": "cacat badan atau penyakit: cacat badan",
+      "kunci": "E",
+      "sebab": "cacat badan atau penyakit",
+      "jenis": "ciri",
+      "kata": [
+        "cacat badan"
+      ],
+      "regex": "cacat badan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat cacat badan terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf e. 'sakit' telanjang ditolak ('sakit hati')."
+    },
+    {
+      "kode": "ciri-cacat-badan-atau-penyaki-cacat-tetap",
+      "label": "cacat badan atau penyakit: cacat tetap",
+      "kunci": "E",
+      "sebab": "cacat badan atau penyakit",
+      "jenis": "ciri",
+      "kata": [
+        "cacat tetap"
+      ],
+      "regex": "cacat tetap",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat cacat tetap terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf e. 'sakit' telanjang ditolak ('sakit hati')."
+    },
+    {
+      "kode": "ciri-cacat-badan-atau-penyaki-penyakit-tidak-dapat-menjalankan",
+      "label": "cacat badan atau penyakit: penyakit + tidak dapat menjalankan",
+      "kunci": "E",
+      "sebab": "cacat badan atau penyakit",
+      "jenis": "ciri",
+      "kata": [
+        "penyakit",
+        "tidak dapat menjalankan"
+      ],
+      "regex": "^(?=[\\s\\S]*penyakit)(?=[\\s\\S]*tidak dapat menjalankan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat penyakit lalu tidak dapat menjalankan"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf e. 'sakit' telanjang ditolak ('sakit hati')."
+    },
+    {
+      "kode": "ciri-cacat-badan-atau-penyaki-impoten",
+      "label": "cacat badan atau penyakit: impoten",
+      "kunci": "E",
+      "sebab": "cacat badan atau penyakit",
+      "jenis": "ciri",
+      "kata": [
+        "impoten"
+      ],
+      "regex": "impoten",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat impoten terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf e. 'sakit' telanjang ditolak ('sakit hati')."
+    },
+    {
+      "kode": "ciri-cacat-badan-atau-penyaki-gangguan-jiwa",
+      "label": "cacat badan atau penyakit: gangguan jiwa",
+      "kunci": "E",
+      "sebab": "cacat badan atau penyakit",
+      "jenis": "ciri",
+      "kata": [
+        "gangguan jiwa"
+      ],
+      "regex": "gangguan jiwa",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat gangguan jiwa terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf e. 'sakit' telanjang ditolak ('sakit hati')."
+    },
+    {
+      "kode": "ciri-pelanggaran-taklik-talak-taklik-talak",
+      "label": "pelanggaran taklik talak: taklik talak",
+      "kunci": "G",
+      "sebab": "pelanggaran taklik talak",
+      "jenis": "ciri",
+      "kata": [
+        "taklik talak"
+      ],
+      "regex": "taklik talak",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat taklik talak terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf g (belum siap di abtAturanAlasan)."
+    },
+    {
+      "kode": "ciri-pelanggaran-taklik-talak-taklik",
+      "label": "pelanggaran taklik talak: taklik",
+      "kunci": "G",
+      "sebab": "pelanggaran taklik talak",
+      "jenis": "ciri",
+      "kata": [
+        "taklik"
+      ],
+      "regex": "taklik",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat taklik terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf g (belum siap di abtAturanAlasan)."
+    },
+    {
+      "kode": "ciri-pelanggaran-taklik-talak-ta-lik",
+      "label": "pelanggaran taklik talak: ta'lik",
+      "kunci": "G",
+      "sebab": "pelanggaran taklik talak",
+      "jenis": "ciri",
+      "kata": [
+        "ta'lik"
+      ],
+      "regex": "ta'lik",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ta'lik terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf g (belum siap di abtAturanAlasan)."
+    },
+    {
+      "kode": "ciri-murtad-pindah-agama-murtad",
+      "label": "murtad/pindah agama: murtad",
+      "kunci": "H",
+      "sebab": "murtad/pindah agama",
+      "jenis": "ciri",
+      "kata": [
+        "murtad"
+      ],
+      "regex": "murtad",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat murtad terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf h."
+    },
+    {
+      "kode": "ciri-murtad-pindah-agama-pindah-agama",
+      "label": "murtad/pindah agama: pindah agama",
+      "kunci": "H",
+      "sebab": "murtad/pindah agama",
+      "jenis": "ciri",
+      "kata": [
+        "pindah agama"
+      ],
+      "regex": "pindah agama",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pindah agama terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf h."
+    },
+    {
+      "kode": "ciri-murtad-pindah-agama-keluar-dari-agama-islam",
+      "label": "murtad/pindah agama: keluar dari agama islam",
+      "kunci": "H",
+      "sebab": "murtad/pindah agama",
+      "jenis": "ciri",
+      "kata": [
+        "keluar dari agama islam"
+      ],
+      "regex": "keluar dari agama islam",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat keluar dari agama islam terhadap Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah secara sah dan dikaruniai dua orang anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "Huruf h."
+    },
+    {
+      "kode": "tambah-h-kembali-ke-agama",
+      "label": "murtad: kembali ke agama semula",
+      "kunci": "H",
+      "sebab": "murtad/pindah agama",
+      "jenis": "tambahan",
+      "regex": "kembali\\s*(?:ke\\s*)?(?:agama|keagama)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon telah kembali ke agama semula yaitu agama Kristen",
+        "Tergugat kembali keagamanya Katolik"
+      ],
+      "contohSalah": [
+        "Tergugat kembali ke rumah orang tuanya"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 19,
+        "perkara": 11,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Bunyi saksi PA Donggala untuk murtad: 'kembali ke agamanya (semula) yaitu Kristen'. Ciri lama hanya 'murtad'/'pindah agama'/'keluar dari agama islam' - faktor SIPP Murtad 9 perkara, ciri lama 3."
+    },
+    {
+      "kode": "tambah-h-keluar-dari-islam",
+      "label": "murtad: keluar dari / tidak lagi beragama Islam (tanpa penyangkalan)",
+      "kunci": "H",
+      "sebab": "murtad/pindah agama",
+      "jenis": "tambahan",
+      "regex": "(?<!(?:tidak|belum)\\s+(?:pernah\\s+)?)(?<!(?:ingin|mau|hendak|akan)\\s+)keluar\\s+dari\\s+(?:agama\\s+)?islam|tidak\\s+lagi\\s+(?:beragama|memeluk(?:\\s+agama)?)\\s+islam",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon keluar dari Agama Islam lalu memeluk Agama lain",
+        "Tergugat tidak lagi beragama Islam"
+      ],
+      "contohSalah": [
+        "almarhumah tidak pernah keluar dari agama Islam",
+        "Tergugat sering mengancam ingin keluar dari agama Islam"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "kalimat": 6,
+        "perkara": 4,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'tidak pernah keluar dari agama Islam' adalah bunyi perkara itsbat/waris - penyangkalan dibuang; niat ('ingin keluar') bukan murtad."
+    },
+    {
+      "kode": "sangkal-h-tidak-keluar-islam",
+      "label": "PENYANGKAL murtad: tidak pernah keluar dari Islam / tetap beragama Islam",
+      "kunci": "H",
+      "sebab": "murtad/pindah agama",
+      "jenis": "penyangkal",
+      "regex": "(?:tidak|belum)\\s+(?:pernah\\s+)?keluar\\s+dari\\s+(?:agama\\s+)?islam|(?:tetap|masih)\\s+(?:beragama|memeluk(?:\\s+agama)?)\\s+islam",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "almarhumah beragama Islam dan tidak pernah keluar dari agama Islam",
+        "Pemohon masih beragama Islam sampai sekarang"
+      ],
+      "contohSalah": [
+        "Termohon keluar dari Agama Islam lalu memeluk Agama lain"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 250,
+        "perkara": 190,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "jenis 'penyangkal': kalimat yang cocok TIDAK menyalakan sebabnya di mesin P1 (deteksiAlasanService). Baris ciri lama 'keluar dari agama islam' menyala pada bunyi itsbat/waris ini; 5227 sengaja tidak diubah (perilaku lama dijaga), mesin P1 menyaringnya."
+    },
+    {
+      "kode": "tambah-c-lapas-rutan",
+      "label": "penjara: berada/ditahan di Lapas/Rutan",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "tambahan",
+      "regex": "\\b(?:lapas|rutan|lembaga\\s+pemasyarakatan|rumah\\s+tahanan|ruang\\s+tahanan)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saat ini Tergugat ditahan di Rutan Kelas IIB Donggala"
+      ],
+      "contohSalah": [
+        "Tergugat tinggal di rumah orang tuanya"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 67,
+        "perkara": 38,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Menunjuk pidana yang DIJALANI; syarat huruf c (5 tahun atau lebih, sesudah perkawinan) tetap diperiksa dari putusan pidananya."
+    },
+    {
+      "kode": "tambah-c-dijatuhi-pidana",
+      "label": "penjara: dijatuhi hukuman/divonis",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "tambahan",
+      "regex": "dijatuhi\\s+(?:hukuman\\s+)?(?:pidana\\s+)?penjara|divonis|vonis\\s+(?:selama\\s+)?\\d",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat telah dijatuhi hukuman penjara selama 6 tahun",
+        "Tergugat divonis penjara selama 2 tahun"
+      ],
+      "contohSalah": [
+        "Tergugat dihukum oleh orang tuanya"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 30,
+        "perkara": 19,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "tambah-c-ditahan-polisi",
+      "label": "penjara: ditahan/ditangkap polisi",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "tambahan",
+      "regex": "di\\s?(?:tahan|tangkap)\\s+(?:oleh\\s+)?(?:pihak\\s+|anggota\\s+)?(?:kepolisian|polisi|polsek|polres|aparat)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat ditangkap oleh pihak kepolisian pada bulan Juli 2022",
+        "Tergugat di tahan Kepolisian"
+      ],
+      "contohSalah": [
+        "Pemohon sempat ditahan di rumah Termohon satu malam"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 60,
+        "perkara": 29,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Penahanan belum tentu pidana yang dijalani - ragu."
+    },
+    {
+      "kode": "tambah-c-di-penjara",
+      "label": "penjara: di penjara / masuk penjara / narapidana",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "tambahan",
+      "regex": "\\bdi\\s+penjara\\b|masuk\\s+penjara|\\bnarapidana\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pernah di penjara karena kasus pencurian"
+      ],
+      "contohSalah": [
+        "Tergugat bekerja di pelabuhan"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 12,
+        "perkara": 11,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'dipenjara' (tanpa spasi) sudah ciri lama."
+    },
+    {
+      "kode": "tambah-e-gangguan-jiwa",
+      "label": "cacat/penyakit: sakit jiwa, gangguan kejiwaan, lemah syahwat",
+      "kunci": "E",
+      "sebab": "cacat badan atau penyakit",
+      "jenis": "tambahan",
+      "regex": "sakit\\s+jiwa|gangguan\\s+(?:mental|kejiwaan)|lemah\\s+syahwat|impotensi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat menderita lemah syahwat sehingga tidak mampu melaksanakan kewajibannya",
+        "Tergugat mengalami gangguan kejiwaan"
+      ],
+      "contohSalah": [
+        "Penggugat sakit hati atas perbuatan Tergugat"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 14,
+        "perkara": 7,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'stroke'/'lumpuh' dicoba dan DIBUANG: muncul untuk kerabat pada perkara itsbat. Syarat akibat huruf e diperiksa manusia."
+    },
+    {
+      "kode": "tambah-a-zina-hamil-lain",
+      "label": "zina: hamil dengan laki-laki lain / berhubungan badan dengan orang lain",
+      "kunci": "A",
+      "sebab": "zina",
+      "jenis": "tambahan",
+      "regex": "hamil\\s+(?:dengan|oleh|dari)\\s+(?:laki-laki|lelaki|pria)\\s+lain|kumpul\\s+kebo|(?:berhubungan|hubungan)\\s+badan\\s+dengan\\s+(?:wanita|perempuan|laki-laki|lelaki|pria)\\s+lain|tidur\\s+(?:bersama|dengan)\\s+(?:wanita|perempuan|laki-laki|lelaki|pria)\\s+lain",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon kembali dalam keadaan hamil dengan laki-laki lain"
+      ],
+      "contohSalah": [
+        "Termohon sudah tidak mau berhubungan badan dengan Pemohon"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "kalimat": 2,
+        "perkara": 1,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'berhubungan badan dengan Pemohon' (penolakan nafkah batin) bukan zina - hanya dengan orang LAIN."
+    },
+    {
+      "kode": "tambah-a-judi-varian",
+      "label": "judi: judol, domino, main kartu, taruhan",
+      "kunci": "A",
+      "sebab": "judi",
+      "jenis": "tambahan",
+      "regex": "\\bjudol\\b|\\bdomino\\b|(?:main|bermain)\\s+kartu|\\bkoprok\\b|taruhan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat suka menghabiskan uang dengan judol"
+      ],
+      "contohSalah": [
+        "Tergugat bermain bola bersama temannya"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "kalimat": 1,
+        "perkara": 1,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "tambah-a-mabuk-varian",
+      "label": "mabuk: mabok, minum-minum, ballo, saguer, cap tikus, tuak, alkohol",
+      "kunci": "A",
+      "sebab": "mabuk",
+      "jenis": "tambahan",
+      "regex": "\\bmabok|\\bballo\\b|\\bsaguer\\b|cap\\s+tikus|\\btuak\\b|minuman\\s+beralkohol|(?:minum|mengkonsumsi|mengonsumsi)\\s+alkohol|minum[\\s-]+minum(?:an)?\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering meminum minum keras dan mabuk",
+        "Tergugat suka minum ballo bersama temannya"
+      ],
+      "contohSalah": [
+        "Tergugat minum kopi di warung"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 602,
+        "perkara": 292,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Minuman keras setempat Sulawesi: ballo, saguer, cap tikus."
+    },
+    {
+      "kode": "tambah-a-obat-varian",
+      "label": "obat terlarang: obat-obatan, tramadol, ekstasi, lem, pengedar",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "tambahan",
+      "regex": "obat-obatan|\\btramadol|\\bsamcodin|\\bekstasi|\\binex\\b|\\bpil\\s+(?:koplo|ekstasi|dextro|double)|(?:menghisap|menghirup|ngisap)\\s+lem|\\bngelem\\b|psikotropika|zat\\s+adiktif|\\bpengedar\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering mengkonsumsi obat-obatan terlarang jenis sabu-sabu",
+        "Tergugat menghisap lem"
+      ],
+      "contohSalah": [
+        "Tergugat membeli obat di apotek"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 513,
+        "perkara": 329,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "tambah-d-kdrt-varian",
+      "label": "kekerasan: dipukuli, dianiaya, disiksa, ditinju, dibanting, memar, lebam, babak belur",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "tambahan",
+      "regex": "dipukuli|memukuli|dianiaya|menyiksa|disiksa|meninju|ditinju|menonjok|ditonjok|membanting|dibanting|dijambak|mencakar|dicakar|diinjak|menginjak|menusuk|ditusuk|membacok|dibacok|\\blebam|\\bmemar\\b|babak\\s+belur|mencekek|dicekek|menempeleng|ditempeleng|menikam",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat memukul Penggugat hingga babak belur",
+        "Tergugat menonjok mata kiri Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat memukul kentongan di pos ronda",
+        "Penggugat menyapu halaman"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 8,
+        "salahTangkap": 2,
+        "kalimat": 228,
+        "perkara": 169,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Derajat BERAT huruf d tetap diperiksa manusia."
+    },
+    {
+      "kode": "tambah-f-pihak-lain-wil-pil",
+      "label": "pihak lain: singkatan WIL/PIL (huruf besar, berbatas kata)",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "tambahan",
+      "regex": "\\b(?:WIL|PIL)\\b",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat telah mempunyai wanita idaman lain (WIL)"
+      ],
+      "contohSalah": [
+        "Tergugat bekerja di wilayah Palu",
+        "nama yang dipilih"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 10,
+        "perkara": 8,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Regex berbatas kata & peka huruf besar - aman dari 'wilayah'/'dipilih' yang membuat singkatan ini ditolak di baris kata."
+    },
+    {
+      "kode": "tambah-f-pihak-lain-asmara",
+      "label": "pihak lain: berpacaran, hubungan gelap/asmara/khusus, orang ketiga, mantan pacar",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "tambahan",
+      "regex": "berpacaran|\\bpacaran\\b|hubungan\\s+(?:gelap|khusus|spesial|terlarang|asmara)|\\bpelakor\\b|\\bpebinor\\b|orang\\s+ketiga|mantan\\s+pacar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat telah menjalin hubungan asmara dengan perempuan lain"
+      ],
+      "contohSalah": [
+        "hubungan Penggugat dan Tergugat baik-baik saja"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 9,
+        "salahTangkap": 1,
+        "kalimat": 130,
+        "perkara": 96,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Separuh 'hubungan asmara' di BAS adalah TUDUHAN suami cemburu - pelaku/tuduhan disaring P3 (pelakuSatuKata); tetap ragu."
+    },
+    {
+      "kode": "tambah-f-pihak-lain-bersama",
+      "label": "pihak lain: berboncengan/bertemu/tinggal bersama wanita/laki-laki lain",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "tambahan",
+      "regex": "(?:jalan|berjalan|berboncengan|bertemu|tinggal|jalan-jalan)\\s+(?:\\S+\\s+){0,3}(?:dengan|bersama)\\s+(?:seorang\\s+)?(?:wanita|perempuan|laki-laki|lelaki|pria)\\s+lain",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saya pernah melihat Tergugat berboncengan dengan wanita lain"
+      ],
+      "contohSalah": [
+        "Tergugat tinggal bersama orang tuanya"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 23,
+        "perkara": 14,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "tambah-f-nafkah-uang",
+      "label": "nafkah: tidak memberi uang/biaya/belanja, kurang menafkahi",
+      "kunci": "F",
+      "sebab": "tidak memberi nafkah",
+      "jenis": "tambahan",
+      "regex": "tidak\\s+(?:pernah\\s+)?(?:memberi|memberikan|mengirim|mengirimkan)\\s+(?:\\S+\\s+){0,2}(?:uang|biaya|belanja)|kurang\\s+(?:memberi\\s+)?menafkahi|uang\\s+belanja\\s+(?:\\S+\\s+){0,2}(?:tidak|kurang)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak pernah memberikan uang belanja kepada Penggugat",
+        "Tergugat kurang menafkahi Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat memberikan uang belanja setiap bulan"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 57,
+        "perkara": 48,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'kebutuhan sehari-hari'/'biaya hidup' dicoba dan DIBUANG: muncul pada tuntutan nafkah anak dan pada TKW yang mencari nafkah."
+    },
+    {
+      "kode": "tambah-f-ekonomi-sulit",
+      "label": "ekonomi: kesulitan/himpitan ekonomi, ekonomi sulit/tidak mencukupi",
+      "kunci": "F",
+      "sebab": "masalah ekonomi",
+      "jenis": "tambahan",
+      "regex": "(?:kesulitan|kekurangan|himpitan)\\s+ekonomi|ekonomi\\s+(?:yang\\s+)?(?:sulit|tidak\\s+(?:mencukupi|cukup|stabil)|pas-pasan|morat-marit)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "karena kesulitan ekonomi Pemohon"
+      ],
+      "contohSalah": [
+        "untuk memperbaiki keadaan ekonomi Pemohon",
+        "Surat Pernyataan Ekonomi Lemah"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 3,
+        "salahTangkap": 0,
+        "kalimat": 3,
+        "perkara": 1,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'keadaan ekonomi' dan 'ekonomi lemah' DIBUANG (usaha memperbaiki ekonomi, surat prodeo)."
+    },
+    {
+      "kode": "tambah-b-tidak-kembali",
+      "label": "meninggalkan: tidak pernah kembali/pulang lagi",
+      "kunci": "B",
+      "sebab": "meninggalkan",
+      "jenis": "tambahan",
+      "regex": "tidak\\s+(?:pernah\\s+)?(?:kembali|pulang)(?:\\s+lagi)?(?!\\s+(?:ke\\s*)?agama)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sejak saat itu Tergugat tidak pernah kembali lagi"
+      ],
+      "contohSalah": [
+        "Tergugat pulang setiap minggu"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 370,
+        "perkara": 259,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "SEBAB meninggalkan, BUKAN huruf b: huruf b menuntut 2 (dua) tahun berturut-turut - diusulkan hanya dari lama pisah >= 24 bulan (keputusan pengguna 11)."
+    },
+    {
+      "kode": "tambah-b-tanpa-izin",
+      "label": "meninggalkan: pergi/meninggalkan tanpa izin/pamit/sepengetahuan/alasan",
+      "kunci": "B",
+      "sebab": "meninggalkan",
+      "jenis": "tambahan",
+      "regex": "(?:pergi|meninggalkan)\\s+(?:\\S+\\s+){0,6}tanpa\\s+(?:izin|ijin|pamit|sepengetahuan|alasan|kabar)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pergi meninggalkan rumah kediaman bersama tanpa sepengetahuan Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat telah menikah lagi tanpa sepengetahuan Penggugat"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 159,
+        "perkara": 111,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "'keluar malam tanpa izin' sengaja tidak (kata kerja keluar dibuang)."
+    },
+    {
+      "kode": "tambah-b-tidak-diketahui",
+      "label": "meninggalkan: tidak diketahui keberadaannya / tidak ada kabar / ghaib",
+      "kunci": "B",
+      "sebab": "meninggalkan",
+      "jenis": "tambahan",
+      "regex": "tidak\\s+(?:diketahui|jelas)(?:\\s+lagi)?\\s+(?:\\S+\\s+){0,2}(?:keberadaan|alamat|tempat\\s+tinggal|dimana|di\\s+mana|rimba)|tidak\\s+ada\\s+kabar|tanpa\\s+kabar|\\bghoi?b\\b|\\bgaib\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak diketahui lagi keberadaannya sampai sekarang",
+        "tidak diketahui alamatnya yang jelas (GHOIB)"
+      ],
+      "contohSalah": [
+        "Penggugat mengetahui keberadaan Tergugat"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 123,
+        "perkara": 73,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "tambah-b-dua-tahun-berturut",
+      "label": "meninggalkan: 2 (dua) tahun berturut-turut",
+      "kunci": "B",
+      "sebab": "meninggalkan",
+      "jenis": "tambahan",
+      "regex": "(?:2|dua)\\s*(?:\\(\\s*\\w+\\s*\\)\\s*)?tahun\\s+berturut|berturut-turut\\s+selama",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pergi lebih dari 2 (dua) tahun berturut-turut"
+      ],
+      "contohSalah": [
+        "Tergugat pergi selama 2 bulan"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 16,
+        "perkara": 10,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Bunyi syarat huruf b sendiri; tetap diperiksa terhadap lama pisah 9944."
+    },
+    {
+      "kode": "tambah-f-merantau",
+      "label": "merantau/LDR: merantau, bekerja di luar daerah, hubungan jarak jauh",
+      "kunci": "F",
+      "sebab": "merantau/LDR",
+      "jenis": "tambahan",
+      "regex": "merantau|bekerja\\s+(?:di|ke)\\s+luar\\s+(?:daerah|kota|pulau|negeri|provinsi)|hubungan\\s+jarak\\s+jauh|\\bLDR\\b",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat meminta izin kepada Penggugat untuk pergi merantau ke Kalimantan"
+      ],
+      "contohSalah": [
+        "Tergugat bekerja di kebun"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 6,
+        "salahTangkap": 4,
+        "kalimat": 34,
+        "perkara": 19,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Sebab baru (bukan ciri 5227). TKI/TKW dan 'tinggal berjauhan' DIBUANG: muncul untuk anak dan untuk saksi sendiri."
+    },
+    {
+      "kode": "tambah-f-beda-prinsip",
+      "label": "beda prinsip/pendapat",
+      "kunci": "F",
+      "sebab": "beda prinsip",
+      "jenis": "tambahan",
+      "regex": "beda\\s+prinsip|perbedaan\\s+(?:prinsip|pendapat|pandangan|visi)|berbeda\\s+(?:prinsip|pendapat|pandangan)|beda\\s+pendapat|tidak\\s+sepaham",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Antara Pemohon dan Termohon sering memiliki perbedaan pendapat"
+      ],
+      "contohSalah": [
+        "Pemohon dan Termohon sepakat bercerai"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 29,
+        "perkara": 23,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Sebab baru. 'tidak ada kecocokan' sudah ciri perselisihan; 'tidak sejalan' DIBUANG (tidak sejalan dengan tujuan perkawinan)."
+    },
+    {
+      "kode": "tambah-f-campur-keluarga",
+      "label": "campur tangan keluarga: keluarga/mertua menghasut, mencampuri; tidak direstui",
+      "kunci": "F",
+      "sebab": "campur tangan keluarga",
+      "jenis": "tambahan",
+      "regex": "(?:keluarga|orang\\s*tua|mertua|ipar)\\s+(?:(?:penggugat|tergugat|pemohon|termohon)\\s+)?(?:\\S+\\s+){0,2}(?:menghasut|mencampuri|menghalang)|tidak\\s+(?:direstui|disukai|disenangi)\\s+(?:oleh\\s+)?(?:orang\\s*tua|keluarga|mertua)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Keluarga Termohon menghalang-halangi Termohon untuk tinggal bersama Pemohon",
+        "orang tua Tergugat sering mencampuri persoalan rumah tangga"
+      ],
+      "contohSalah": [
+        "Termohon sering melarang Pemohon bertemu keluarga Pemohon lainnya dan sering menghasut",
+        "Termohon tidak menghargai orang tua Pemohon selain itu Termohon ingin mengatur Pemohon"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "kalimat": 6,
+        "perkara": 4,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Penghasut harus keluarga, berdekatan (<= 3 kata) - 'Termohon menghasut' bukan campur tangan keluarga."
+    },
+    {
+      "kode": "tambah-f-kawin-paksa",
+      "label": "kawin paksa: dijodohkan, terpaksa menikah, bukan atas dasar cinta",
+      "kunci": "F",
+      "sebab": "kawin paksa",
+      "jenis": "tambahan",
+      "regex": "(?<!tidak\\s)dijodohkan|kawin\\s+paksa|nikah\\s+paksa|dipaksa\\s+(?:untuk\\s+)?(?:menikah|kawin)|menikah\\s+(?:karena|secara)\\s+terpaksa|terpaksa\\s+menikah|(?:tidak|bukan)\\s+(?:didasari|didasarkan|atas\\s+dasar)\\s+(?:rasa\\s+)?(?:suka\\s+sama\\s+suka|cinta|saling\\s+mencintai)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Penggugat dan Tergugat menikah karena dijodohkan",
+        "menikah bukan atas dasar cinta melainkan karena dijodohkan"
+      ],
+      "contohSalah": [
+        "sebenarnya tidak dijodohkan karena sebelum ada pelamaran"
+      ],
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "kalimat": 21,
+        "perkara": 13,
+        "cara": "dibaca satu per satu (sampel tersebar)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus)",
+        "tanggal": "2026-10-10"
+      },
+      "catatan": "Sebab baru (SIPP faktor 10 Kawin Paksa)."
+    }
+  ],
+  "templat": []
+}
