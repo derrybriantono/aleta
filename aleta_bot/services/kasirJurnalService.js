@@ -610,10 +610,39 @@ function susunUsulan(k) {
     return hasil;
   };
 
+  /* === K-KEJADIAN 11 Okt === SATU PANGGILAN IKRAR UNTUK SERANGKAIAN SIDANG IKRAR
+   * Diukur atas 98 perkara ikrar (Jul 2025 - Okt 2026, skrip ikrar-pola): sidang
+   * ikrar yang ditunda (dua sidang ikrar) dijurnal SATU "Biaya Panggilan Ikrar
+   * Talak" 13 dari 16 kali dan TIDAK PERNAH dua - juga bila kedua sidang ber-
+   * relaas Pos (486/2025). Sidang ikrar pertama yang dipanggil elektronik/
+   * langsung (E/W/N) tanpa relaas berbiaya lain: 0 baris 4 dari 5. Keputusan
+   * pengguna 11 Okt: satu panggilan untuk rangkaian sidang ikrar. */
+  const satuPanggilanIkrar = (p, deret) => {
+    if (!deret.length) return [];
+    const berbiaya = deret.find((e) => e.relaas);
+    const e = berbiaya || deret[0];
+    if (!berbiaya) {
+      const r0 = relaas.find((x) => sidangIkrar[0] && Number(x.sidangId) === Number(sidangIkrar[0].id) && Number(x.pihakId) === Number(p.pihakId));
+      const akhir = sidangIkrar[sidangIkrar.length - 1];
+      if (r0 && KET_TANPA_BIAYA.has(bersih(r0.ket).toUpperCase())) {
+        e.pilih = false;
+        e.yakin = "rendah";
+        e.dasar = `${e.dasar}; sidang ikrar pertama dipanggil tanpa biaya (kode ${bersih(r0.ket).toUpperCase()})`;
+      } else {
+        // Belum ada relaas: dicentang selama rangkaian sidang ikrarnya belum lewat.
+        e.pilih = !hariIni || bersih(akhir && akhir.tanggal) >= hariIni;
+        e.yakin = "sedang";
+      }
+    }
+    if (sidangIkrar.length > 1) e.dasar = `${e.dasar}; satu panggilan untuk ${sidangIkrar.length} sidang ikrar (kebiasaan kasir)`;
+    return [e];
+  };
+  /* === AKHIR K-KEJADIAN === */
+
   for (const ke of kedudukanDipanggil) {
     for (const p of pihakKe(ke)) {
       const biasa = deretPanggilan(p, sidangBiasa, false);
-      const ikrar = ke === 2 ? deretPanggilan(p, sidangIkrar, true) : [];
+      const ikrar = ke === 2 ? satuPanggilanIkrar(p, deretPanggilan(p, sidangIkrar, true)) : [];
       peristiwaPanggil.set(Number(p.pihakId), { biasa, ikrar });
     }
   }
@@ -982,7 +1011,8 @@ function susunUsulan(k) {
    * ukur-kasir-kejadian.js): jumlahnya = kekurangan seluruh pengeluaran
    * kejadian itu, sekurangnya Rp10.000 - 41 dari 48 (85%); bertanggal sama
    * dengan pengeluaran sesudahnya 44 dari 48. Uang ini dibayar pihak, maka
-   * keyakinannya "sedang": kasir memastikan pembayarannya sebelum menyimpan.
+   * DITAWARKAN TANPA CENTANG (keputusan pengguna 11 Okt): kasir sendiri yang
+   * mencentangnya sesudah pihak membayar - sisa panjar dihitung ulang layar.
    */
   // Jurnal yang sudah ditutup (sisa panjar dikembalikan) tidak dibuka lagi dengan tambahan panjar.
   if (jenisBiaya[JB_TAMBAH_PANJAR] && pembayar && !jurnal.some((b) => Number(b.jenisBiayaId) === JB.SISA)) {
@@ -1022,7 +1052,7 @@ function susunUsulan(k) {
         peristiwa: "Tambahan panjar",
         dasar: `saldo panjar Rp${saldo.toLocaleString("id-ID")} kurang Rp${kurang.toLocaleString("id-ID")} untuk biaya yang diusulkan - pastikan pihak sudah membayar tambahan panjar`,
         yakin: "sedang",
-        pilih: true,
+        pilih: false,
         perluResi: false,
         sisaOtomatis: false,
         kelompok: pemicu.kelompok - 0.5,
@@ -1035,7 +1065,9 @@ function susunUsulan(k) {
   /* === AKHIR K-KEJADIAN === */
   const saldoAkhir = hitungSisaOtomatis(usulan, saldo);
   if (sisa && !(sisa.jumlah > 0)) {
-    sisa.pilih = false;
+    // K-KEJADIAN 11 Okt: bila tambahan panjar ditawarkan, sisa tetap tercentang - jumlahnya
+    // dihitung ulang layar saat kasir mencentang tambahan panjar; selama <= 0 tidak dikirim.
+    sisa.pilih = usulan.some((u) => u.tambahPanjar);
     catatan.push(
       sisa.jumlah < 0
         ? `Saldo panjar KURANG Rp${Math.abs(sisa.jumlah).toLocaleString("id-ID")} - perlu Tambahan Panjar Biaya Perkara, bukan pengembalian.`
@@ -1049,8 +1081,8 @@ function susunUsulan(k) {
     catatan.push("Sebagian tarif belum diketahui - jumlahnya harus diisi sebelum disimpan.");
   }
   /* === K-KEJADIAN 11 Okt === */
-  if (usulan.some((u) => u.tambahPanjar && u.pilih)) {
-    catatan.push("Saldo panjar kurang - Tambahan Panjar Biaya Perkara diusulkan sebelum biaya yang kekurangan. Pastikan pihak sudah membayarnya; bila belum, hapus centangnya - tanpa tambahan panjar saldo jurnal menjadi minus.");
+  if (usulan.some((u) => u.tambahPanjar)) {
+    catatan.push("Saldo panjar kurang - Tambahan Panjar Biaya Perkara ditawarkan (belum dicentang) sebelum biaya yang kekurangan. Centang sesudah pihak membayarnya; tanpa tambahan panjar saldo jurnal menjadi minus.");
   }
   return { usulan, catatan, saldo, saldoAkhir, tutup: [...tutup].map(([jurnalId, kejadian]) => ({ jurnalId, kejadian })) };
   /* === AKHIR K-KEJADIAN === */

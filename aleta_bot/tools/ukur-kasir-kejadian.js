@@ -258,6 +258,12 @@ async function pendaftaran() {
       if (e.jenis === "ikrar" && !nyata.length) continue;
       const sebelum = keadaanSebelum(k, kj, e);
       const h2 = kasir.susunUsulan(salin(sebelum));
+      // Tambahan panjar DITAWARKAN tanpa centang: diukur seolah kasir mencentangnya
+      // (pihak membayar) - sisa panjar dihitung ulang seperti layar.
+      if (h2.usulan.some((u) => u.tambahPanjar)) {
+        for (const u of h2.usulan) if (u.tambahPanjar) u.pilih = true;
+        kasir.hitungSisaOtomatis(h2.usulan, h2.saldo);
+      }
       const usul = h2.usulan.filter((u) => u.kejadian === e.kunci && u.pilih && (!u.sisaOtomatis || Number(u.jumlah) > 0));
       const j = bandingkan(
         usul.map((u) => u.jenisBiayaId),
