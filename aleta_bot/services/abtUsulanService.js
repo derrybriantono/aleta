@@ -1733,6 +1733,14 @@ async function dariSipp(nomorPerkara) {
   // memakainya untuk PBT). Perapiannya di portal (rapikanAlamat PTSP).
   const alamatPihak = await bacaAlamatPihak(perkaraId, nomor).catch(() => []);
 
+  /* === PEKERJAAN 11 Okt === */
+  // Kategori pekerjaan pihak (PNS/TNI/POLRI/BUMN/BUMD/desa) dari teks SIPP - kartu info panel ABT.
+  // Aturan yang sama dipakai kueri ABT 8510/8524/8533 (paket abt-pekerjaan-dinamis).
+  const pekerjaanPihak = await require("./pekerjaanPihakService")
+    .bacaPekerjaanPihak(perkaraId, runQuery)
+    .catch(() => []);
+  /* === AKHIR PEKERJAAN === */
+
   const hasil = [
     ...k.usulan,
     {
@@ -1781,6 +1789,9 @@ async function dariSipp(nomorPerkara) {
     keteranganPerkara,
     // Butir 9: dibaca rute portal abt/usulan -> usulan 8548/8549.
     alamatPihak,
+    /* === PEKERJAAN 11 Okt === */
+    pekerjaanPihak,
+    /* === AKHIR PEKERJAAN === */
     usulan: hasil,
   };
 }

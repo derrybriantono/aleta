@@ -6659,6 +6659,35 @@ router.post("/abt/kontak-ecourt", requireInternalToken, async (req, res) => {
 });
 /* === AKHIR KONTAK-EC === */
 
+/* === PEKERJAAN 11 Okt === */
+/**
+ * PEKERJAAN (11 Okt 2026, agen 7): kategori pekerjaan pihak (PNS/TNI/POLRI/BUMN/BUMD/desa; PPPK -> PNS) dari teks
+ * bebas SIPP - kamus kamus-deteksi/awal/pekerjaan.json lewat services/pekerjaanPihakService.js. Untuk lajur
+ * "Pekerjaan terbaca" di blangko Data Pihak SIPP (usul teks baku, Simpan ditekan petugas). Baca saja.
+ *
+ *   POST /abt/pekerjaan-terbaca  { teks?: string | string[] (<= 10), perkaraId? }
+ *     -> { ok, hasil: [{teks, kunci, label, asal, kodePola, yakin, golongan, dasar, pilihanSipp, teksBaku, kalimat}], pihak? }
+ */
+const pekerjaanPihakService = require("../services/pekerjaanPihakService");
+
+router.post("/abt/pekerjaan-terbaca", requireInternalToken, async (req, res) => {
+  try {
+    const masuk = Array.isArray(req.body?.teks) ? req.body.teks : req.body?.teks != null ? [req.body.teks] : [];
+    const hasil = masuk.slice(0, 10).map((t) => {
+      const teks = String(t == null ? "" : t).slice(0, 300);
+      const k = pekerjaanPihakService.klasifikasiPekerjaan(teks);
+      return { teks, ...k, kalimat: pekerjaanPihakService.kalimatTerbaca(teks, k) };
+    });
+    const jawaban = { ok: true, hasil };
+    const perkaraId = Number(req.body?.perkaraId);
+    if (Number.isFinite(perkaraId) && perkaraId > 0) jawaban.pihak = await pekerjaanPihakService.bacaPekerjaanPihak(perkaraId);
+    res.json(jawaban);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 120) });
+  }
+});
+/* === AKHIR PEKERJAAN === */
+
 router.setRuntimeLifecycleHandlers = setRuntimeLifecycleHandlers;
 
 module.exports = router;

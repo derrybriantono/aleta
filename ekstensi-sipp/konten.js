@@ -25539,3 +25539,259 @@ function k5Mulai() {
 /* K5 mulai */
 k5Mulai();
 /* === AKHIR KONTAK-EC === */
+
+/* === PEKERJAAN 11 Okt === */
+/**
+ * ============================================================================
+ * PEKERJAAN (11 Okt 2026, agen 7): PILIHAN PEKERJAAN DI BLANGKO DATA PIHAK SIPP
+ * ============================================================================
+ *
+ * Permintaan pengguna: "kadang petugas mengisi kerjaannya itu lainnya tetapi di
+ * isi PNS/POLRI/TNI/BUMN/BUMD, buat deteksi otomatis bagi manual di isi
+ * lainnya dan tautkan sesuai (PPPK gabung dengan PNS pertimbangan PNS)".
+ *
+ * Blangko pihak SIPP pengadilan agama (pihak_list.php, jenis_pengadilan 4):
+ * pilihan #apakahtni (1 Tentara Nasional Indonesia, 3 Pegawai Negeri Sipil,
+ * 4 Pegawai BUMN/BUMD, 5 POLRI, 2 Lain-Lain) + uraian #pihak_pekerjaan yang
+ * hanya tersimpan bila Lain-Lain. Bila petugas memilih Lain-Lain lalu mengetik
+ * "ASN Dinas Pendidikan" / "PPPK (Guru SDN ...)" / "Anggota Polri", lajur ini
+ * menyebut kategori yang terbaca (kamus pekerjaan.json di bot - aturan yang
+ * sama dengan kueri ABT 8510/8524/8533) dan MENAWARKAN pilihan yang sesuai.
+ *
+ *   - Tidak pernah mengganti diam-diam: tombol mati sampai petugas mencentang
+ *     "Ya, ganti pilihan" (uraian Lain-Lain tidak ikut tersimpan SIPP).
+ *   - ALETA hanya memilih #apakahtni lewat jembatan.js; Simpan ditekan petugas.
+ *   - Pensiunan/mantan/honorer/kontrak/swasta: hanya keterangan "tidak dibaca
+ *     sebagai PNS ...", tanpa tombol. Perangkat desa: tidak ada pilihannya di
+ *     SIPP - keterangan saja (ABT tetap membacanya dari teks).
+ *   - Tanpa tanda ALETA di medan SIPP; lajur berdiri di luar blangko. Gerbang
+ *     sama dengan bantu data saksi / kontak e-Court: tampilan UI Baru.
+ *
+ * GET /aleta/api/aleta-ecourt/pekerjaan-pihak?teks=...
+ */
+const PK_API = "/aleta/api/aleta-ecourt/pekerjaan-pihak";
+const PK_JEDA_PANTAU_MS = 900;
+const PK_BORANG = "form#frm_ref_pihak";
+/** Kategori bot -> nilai #apakahtni SIPP (pihak_list.php: switch($apakahtni)). */
+const PK_NILAI_PILIHAN = Object.freeze({ TNI: "1", PNS: "3", BUMN: "4", BUMD: "4", POLRI: "5" });
+const PK_TULISAN_PILIHAN = Object.freeze({ 1: "Tentara Nasional Indonesia", 3: "Pegawai Negeri Sipil", 4: "Pegawai BUMN/BUMD", 5: "POLRI", 2: "Lain-Lain" });
+
+/**
+ * Rencana lajur dari keadaan blangko + jawaban bot. Murni (diuji tanpa DOM).
+ * @param {{pilihan: string|null, uraian: string}} blangko  pilihan = nilai #apakahtni (null bila tidak ada)
+ * @param {object|null} hasil  satu butir jawaban bot {kunci, label, asal, teksBaku, kalimat, golongan, dasar}
+ * @returns {{tampil: boolean, judul: string, keterangan: string, tombol: null|{nilai: string, tulisan: string}, perluKonfirmasi: boolean}}
+ */
+function pkRencana(blangko, hasil) {
+  const kosong = { tampil: false, judul: "", keterangan: "", tombol: null, perluKonfirmasi: false };
+  const uraian = String((blangko && blangko.uraian) || "").trim();
+  const pilihan = blangko ? blangko.pilihan : null;
+  // Pilihan baku sudah dipilih (bukan Lain-Lain): tidak ada yang ditawarkan.
+  if (pilihan !== null && pilihan !== undefined && pilihan !== "" && pilihan !== "2") return kosong;
+  if (!uraian || !hasil || !hasil.kunci) return kosong;
+  const kunci = String(hasil.kunci);
+  if (kunci === "LAIN" || kunci === "KOSONG") return kosong;
+  const pilihanTulisan = pilihan === null || pilihan === undefined ? "teks bebas" : PK_TULISAN_PILIHAN[pilihan] || "Lain-Lain";
+  const judul = `Pekerjaan terbaca: ${hasil.kalimat || kunci}${pilihan === null || pilihan === undefined ? "" : `, pilihan SIPP: ${pilihanTulisan}`}`;
+  const nilai = PK_NILAI_PILIHAN[kunci];
+  if (kunci === "BUKAN") {
+    return { tampil: true, judul, keterangan: "Tetap Lain-Lain - kalimat izin atasan PNS/TNI/POLRI tidak dipakai ABT untuk pekerjaan ini.", tombol: null, perluKonfirmasi: false };
+  }
+  if (!nilai) {
+    return {
+      tampil: true,
+      judul,
+      keterangan: "SIPP tidak punya pilihan untuk pekerjaan ini - biarkan Lain-Lain; ABT (8510/8524/8533) tetap membacanya dari uraian.",
+      tombol: null,
+      perluKonfirmasi: false,
+    };
+  }
+  if (pilihan === null || pilihan === undefined) {
+    // Blangko tanpa #apakahtni (SIPP lain): keterangan saja.
+    return { tampil: true, judul, keterangan: `ABT membacanya sebagai ${hasil.label || kunci}.`, tombol: null, perluKonfirmasi: false };
+  }
+  return {
+    tampil: true,
+    judul,
+    keterangan: `ABT (8510/8524/8533) sudah membacanya sebagai ${hasil.label || kunci}${hasil.asal === "pppk" ? " (PPPK digabung ke PNS)" : ""}. Mengganti pilihan merapikan data SIPP; uraian "${uraian}" tidak ikut tersimpan.`,
+    tombol: { nilai, tulisan: PK_TULISAN_PILIHAN[nilai] },
+    perluKonfirmasi: true,
+  };
+}
+
+const pkKeadaan = { lajur: null, kunci: "", kunciCalon: "", sejak: 0, hasil: null, janji: null, pantau: null, jam: null, pengamat: null, singgah: new Map() };
+
+function pkBolehTampil() {
+  try {
+    return typeof saksiscanModeUi === "function" && saksiscanModeUi();
+  } catch {
+    return false;
+  }
+}
+
+function pkBorangTerbuka() {
+  const f = document.querySelector(PK_BORANG);
+  return f && typeof saksiscanTampak === "function" && saksiscanTampak(f) ? f : null;
+}
+
+function pkBacaBlangko(f) {
+  const pilih = f.querySelector("#apakahtni");
+  const uraian = f.querySelector("#pihak_pekerjaan");
+  return { pilihan: pilih ? String(pilih.value || "") : null, uraian: uraian ? String(uraian.value || "") : "" };
+}
+
+async function pkAmbil(teks) {
+  const t = String(teks || "").trim().slice(0, 300);
+  if (pkKeadaan.singgah.has(t)) return pkKeadaan.singgah.get(t);
+  const alamat = `${PK_API}?${new URLSearchParams({ teks: t }).toString()}`;
+  let hasil;
+  try {
+    const o = { credentials: "include", cache: "no-store" };
+    const r = typeof alatAmbil === "function" ? await alatAmbil(alamat, o, "Membaca kategori pekerjaan") : await fetch(alamat, o);
+    if (r.status === 404) return { ok: false, pesan: "Server ALETA belum mengenal pembacaan pekerjaan (perlu pembaruan)." };
+    if (r.status === 423) return { ok: false, pesan: "Ditahan mode coba - tidak ada yang dikirim ke ALETA." };
+    if (r.status === 401 || r.status === 403) return { ok: false, pesan: "Belum masuk portal ALETA, atau peran ini tidak diberi akses panel." };
+    const luar = await r.json().catch(() => null);
+    const isi = luar && luar.data ? luar.data : luar;
+    if (!r.ok || !isi || isi.tersedia === false) return { ok: false, pesan: (isi && isi.pesan) || `Server ALETA menjawab ${r.status}.` };
+    hasil = { ok: true, isi: Array.isArray(isi.hasil) ? isi.hasil[0] || null : null };
+  } catch {
+    return { ok: false, pesan: "Server ALETA tidak dapat dihubungi." };
+  }
+  pkKeadaan.singgah.set(t, hasil);
+  if (pkKeadaan.singgah.size > 200) pkKeadaan.singgah.delete(pkKeadaan.singgah.keys().next().value);
+  return hasil;
+}
+
+function pkEl(tag, kelas, teks) {
+  return typeof saksiscanEl === "function" ? saksiscanEl(tag, kelas, teks) : Object.assign(document.createElement(tag), { className: kelas || "", textContent: teks == null ? "" : String(teks) });
+}
+
+function pkGambar(lajur, rencana, pesan) {
+  lajur.textContent = "";
+  if (pesan) {
+    lajur.appendChild(pkEl("div", "aleta-c2-sbantu-judul", "Pekerjaan terbaca"));
+    lajur.appendChild(pkEl("div", "aleta-c2-sbantu-lembut", pesan));
+    return;
+  }
+  lajur.appendChild(pkEl("div", "aleta-c2-sbantu-judul", rencana.judul));
+  lajur.appendChild(pkEl("div", "aleta-c2-sbantu-lembut", rencana.keterangan));
+  if (!rencana.tombol) return;
+  const wadah = pkEl("div", "aleta-c2-sbantu-baris");
+  const label = pkEl("label", "aleta-c2-sbantu-saklar");
+  const centang = document.createElement("input");
+  centang.type = "checkbox";
+  label.appendChild(centang);
+  label.appendChild(pkEl("span", "", ` Ya, ganti pilihan pekerjaan ke "${rencana.tombol.tulisan}"`));
+  wadah.appendChild(label);
+  const tombol = pkEl("button", "aleta-tombol", `Pilih "${rencana.tombol.tulisan}"`);
+  tombol.type = "button";
+  tombol.disabled = true;
+  centang.addEventListener("change", () => {
+    tombol.disabled = !centang.checked;
+  });
+  tombol.addEventListener("click", async () => {
+    if (!centang.checked) return;
+    tombol.disabled = true;
+    const j = await saksiscanJembatan({ jenis: "isi", penunjuk: `${PK_BORANG} #apakahtni`, jenisMedan: "pilih", nilai: rencana.tombol.nilai });
+    tombol.textContent = j && j.ok === true ? "Terpilih - tekan Simpan SIPP" : "Gagal memilih - pilih manual";
+  });
+  wadah.appendChild(tombol);
+  lajur.appendChild(wadah);
+}
+
+/** Lajur berdiri tepat di atas blangko; lajur ALETA lain (kontak, bantu saksi) boleh di antaranya. */
+function pkPosisiBenar(lajur, f) {
+  if (!lajur || !f || !lajur.isConnected || lajur.parentElement !== f.parentElement) return false;
+  for (let s = lajur.nextElementSibling; s; s = s.nextElementSibling) {
+    if (s === f) return true;
+    if (!s.classList || !s.classList.contains("aleta-c2-sbantu")) return false;
+  }
+  return false;
+}
+
+async function pkPeriksa() {
+  const f = pkBolehTampil() ? pkBorangTerbuka() : null;
+  if (!f) {
+    if (pkKeadaan.lajur && pkKeadaan.lajur.isConnected) pkKeadaan.lajur.remove();
+    return false;
+  }
+  const b = pkBacaBlangko(f);
+  const uraian = b.uraian.replace(/\s+/g, " ").trim();
+  const kunci = `${b.pilihan}|${uraian.toLowerCase()}`;
+  const lain = b.pilihan === null || b.pilihan === "" || b.pilihan === "2";
+  if (!lain || !uraian) {
+    if (pkKeadaan.lajur && pkKeadaan.lajur.isConnected) pkKeadaan.lajur.remove();
+    pkKeadaan.kunci = kunci;
+    return true;
+  }
+  // Uraian yang masih diketik tidak dibaca tiap huruf: tunggu tenang sesaat.
+  if (kunci !== pkKeadaan.kunciCalon) {
+    pkKeadaan.kunciCalon = kunci;
+    pkKeadaan.sejak = Date.now();
+    return true;
+  }
+  if (kunci !== pkKeadaan.kunci && Date.now() - pkKeadaan.sejak < 700) return true;
+  if (kunci !== pkKeadaan.kunci) {
+    pkKeadaan.kunci = kunci;
+    const janji = pkAmbil(uraian);
+    pkKeadaan.janji = janji;
+    const j = await janji;
+    if (pkKeadaan.janji !== janji) return true;
+    pkKeadaan.hasil = j;
+    const rencana = j.ok ? pkRencana(b, j.isi) : null;
+    if (j.ok && !rencana.tampil) {
+      if (pkKeadaan.lajur && pkKeadaan.lajur.isConnected) pkKeadaan.lajur.remove();
+      return true;
+    }
+    if (!pkKeadaan.lajur) pkKeadaan.lajur = pkEl("div", "aleta-c2-sbantu aleta-c2-sbantu-ref aleta-pk-pekerjaan");
+    pkGambar(pkKeadaan.lajur, rencana, j.ok ? "" : j.pesan);
+  }
+  const lajur = pkKeadaan.lajur;
+  if (lajur && lajur.childNodes.length && !pkPosisiBenar(lajur, f) && f.parentElement) f.parentElement.insertBefore(lajur, f);
+  return true;
+}
+
+function pkPantau(ada) {
+  if (ada && !pkKeadaan.pantau) {
+    pkKeadaan.pantau = setInterval(() => {
+      void pkPeriksa()
+        .then((masih) => {
+          if (!masih) pkPantau(false);
+        })
+        .catch(() => pkPantau(false));
+    }, PK_JEDA_PANTAU_MS);
+  } else if (!ada && pkKeadaan.pantau) {
+    clearInterval(pkKeadaan.pantau);
+    pkKeadaan.pantau = null;
+  }
+}
+
+function pkJadwalkan() {
+  if (pkKeadaan.jam) return;
+  pkKeadaan.jam = setTimeout(() => {
+    pkKeadaan.jam = null;
+    void pkPeriksa()
+      .then((ada) => pkPantau(ada))
+      .catch(() => pkPantau(false));
+  }, 400);
+}
+
+function pkMulai() {
+  if (typeof document === "undefined" || !document.body || globalThis.__aletaPkTerpasang) return false;
+  globalThis.__aletaPkTerpasang = true;
+  try {
+    pkKeadaan.pengamat = new MutationObserver((daftar) => {
+      const luar = daftar.some((m) => !(m.target && m.target.closest && m.target.closest(".aleta-pk-pekerjaan")));
+      if (luar) pkJadwalkan();
+    });
+    pkKeadaan.pengamat.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class"] });
+  } catch {
+    /* tanpa pengamat: tidak ada lajur pekerjaan - SIPP tetap seperti biasa */
+  }
+  pkJadwalkan();
+  return true;
+}
+/* PK mulai */
+pkMulai();
+/* === AKHIR PEKERJAAN === */
