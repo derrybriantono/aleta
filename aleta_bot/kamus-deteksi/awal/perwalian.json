@@ -1,0 +1,143 @@
+{
+  "kelompok": "perwalian",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "perwalian-keperluan",
+      "label": "Keperluan perwalian",
+      "kunci": "8171",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:untuk|guna)\\s+(?:keperluan\\s+|kepentingan\\s+)?(?<nilai>(?:mengurus|pengurusan|penjualan|menjual|mencairkan|pencairan|pengambilan|mengambil|bertindak|mewakili|melakukan|balik\\s+nama|peralihan|administrasi|persyaratan|pembuatan)\\b[^;]{3,200}?)(?=\\s*;|\\.\\s+[A-Z0-9]|\\.\\s*$|\\s+[0-9]{1,2}\\.\\s+Bahwa|\\s+Bahwa\\b|,?\\s+(?:namun|akan\\s+tetapi|tetapi)\\b|$)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pemohon membutuhkan penetapan perwalian untuk mengurus pencairan dana pensiun atas nama almarhum;"
+      ],
+      "contohSalah": [
+        "untuk menetapkan Pemohon sebagai wali;"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 0,
+        "salahTangkap": 3,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "perwalian-anak-bernama",
+      "label": "Anak yang dimohonkan perwalian",
+      "kunci": "5110",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "anak\\s+(?:kandung\\s+)?(?:Pemohon\\s+)?(?:yang\\s+)?(?:masih\\s+di\\s+bawah\\s+umur\\s+)?(?:bernama|yaitu|yakni)\\s*:?\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak kandung Pemohon yang bernama Aisyah binti Rahman, umur 9 tahun"
+      ],
+      "contohSalah": [
+        "anak Pemohon masih kecil"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "perwalian-tanggal-wafat",
+      "label": "Tanggal wafat orang tua anak",
+      "kunci": "fakta-tanggal-wafat",
+      "jenis": "fakta",
+      "bentuk": "tanggal",
+      "regex": "meninggal\\s+dunia\\s+(?:pada\\s+)?(?:hari\\s+[A-Za-z']+,?\\s+)?(?:tanggal\\s+|tgl\\.?\\s+)?(?<nilai>\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "suami Pemohon telah meninggal dunia pada tanggal 12 Januari 2023"
+      ],
+      "contohSalah": [
+        "menikah pada tanggal 12 Januari 2003"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "perwalian-sebab-wafat",
+      "label": "Sebab wafat orang tua anak",
+      "kunci": "fakta-sebab-wafat",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "meninggal\\s+dunia[^;]{0,90}?\\b(?:dikarenakan|disebabkan(?:\\s+karena|\\s+oleh)?|karena|akibat)\\s+(?<nilai>(?:sakit|kecelakaan|usia\\s+tua|faktor\\s+usia|lanjut\\s+usia|melahirkan|tenggelam|serangan\\s+jantung|stroke|covid|bencana|gempa|tsunami|dibunuh|dianiaya)[a-z ]{0,40}?)(?=\\s+(?:sesuai|berdasarkan|sebagaimana|dan|di|pada|yang|dengan)\\b|[;,.()]|$)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "telah meninggal dunia pada tanggal 12 Januari 2023 karena sakit"
+      ],
+      "contohSalah": [
+        "telah meninggal dunia pada tanggal 12 Januari 2023"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "perwalian-tanya-tujuan",
+      "label": "Pertanyaan: tujuan perwalian",
+      "kunci": "tanya-8171",
+      "jenis": "tanya",
+      "regex": "(?:maksud\\s+dan\\s+tujuan|tujuan|keperluan)\\s+[^?]{0,60}?perwalian",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah Saudara mengetahui maksud dan tujuan Pemohon mengajukan penetapan perwalian anak ke Pengadilan Agama?"
+      ],
+      "contohSalah": [
+        "Berapa umur anak tersebut?"
+      ],
+      "ukur": {
+        "n": 39,
+        "tepat": 2,
+        "salahTangkap": 37,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "perwalian-peringatan-syarat",
+      "label": "Info: syarat wali",
+      "gaya": "peringatan",
+      "teks": "Perwalian anak yang belum berumur 18 tahun (Pasal 50-51 UU 1/1974, Pasal 107 KHI): saksi sebaiknya menerangkan kematian/ketidakmampuan orang tua, keadaan anak, dan kelakuan baik calon wali{kosong}.",
+      "syarat": {
+        "peringatan": "syarat-wali"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}

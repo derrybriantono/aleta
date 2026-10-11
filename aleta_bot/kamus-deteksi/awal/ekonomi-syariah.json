@@ -1,0 +1,94 @@
+{
+  "kelompok": "ekonomi-syariah",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "ekonomi-syariah-akad",
+      "label": "Jenis akad",
+      "kunci": "fakta-akad",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "akad\\s+(?:pembiayaan\\s+)?(?<nilai>murabahah|mudh?arabah|musyarakah(?:\\s+mutanaqishah)?|ijarah(?:\\s+muntahiyah\\s+bit\\s+tamlik)?|qardh?|rahn|wakalah|istishna|salam|kafalah)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Penggugat dan Tergugat telah menandatangani akad pembiayaan murabahah"
+      ],
+      "contohSalah": [
+        "akad nikah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "ekonomi-syariah-nomor-akad",
+      "label": "Nomor akad",
+      "kunci": "fakta-nomor-akad",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "akad[^;]{0,60}?(?:nomor|no\\.?)\\s*:?\\s*(?<nilai>[0-9A-Za-z./-]{4,40})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Akad Pembiayaan Murabahah Nomor 12/MRB/2023 tanggal 3 Maret 2023"
+      ],
+      "contohSalah": [
+        "akad nikah dilangsungkan"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "ekonomi-syariah-wanprestasi",
+      "label": "Dalil wanprestasi",
+      "kunci": "fakta-wanprestasi",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "wanprestasi|ingkar\\s+janji|tidak\\s+(?:lagi\\s+)?(?:membayar|melunasi)\\s+(?:angsuran|kewajiban|cicilan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat telah wanprestasi karena tidak membayar angsuran"
+      ],
+      "contohSalah": [
+        "Tergugat membayar angsuran tepat waktu"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "ekonomi-syariah-peringatan",
+      "label": "Info: gugatan sederhana",
+      "gaya": "peringatan",
+      "teks": "Ekonomi syariah (gugatan sederhana, Perma 2/2015 jo. 4/2019): pembuktian terutama dengan akad dan bukti pembayaran; saksi keluarga garis lurus tidak dapat didengar (Pasal 172 ayat (1) RBg).",
+      "syarat": {
+        "peringatan": "ekonomi-syariah"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}

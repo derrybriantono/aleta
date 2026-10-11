@@ -3340,6 +3340,38 @@ function kunciJenisLain(namaAtauId) {
   return null;
 }
 
+/* === JENIS3 11 Okt === */
+/**
+ * Variabel ABT yang dikenali kamus per jenis perkara (aleta_bot/kamus-deteksi/awal/<kelompok>.json,
+ * pola berkunci nomor variabel) - cermin, dijaga uji deteksi-semua-jenis-11okt.test.ts. Kunci = id
+ * jenis perkara SIPP. Hanya untuk menggambar tombol "Isi dari posita permohonan"; yang diusulkan
+ * dan keyakinannya tetap diputuskan bot.
+ */
+const J3_VARIABEL_JENIS = Object.freeze({
+  341: Object.freeze([]),
+  348: Object.freeze([]),
+  349: Object.freeze([]),
+  352: Object.freeze(["5110"]),
+  354: Object.freeze(["8171", "5110"]),
+  358: Object.freeze(["8171", "1357", "1025"]),
+  360: Object.freeze(["8171", "1357", "1025"]),
+  362: Object.freeze(["1014", "0604", "2029", "2030"]),
+  363: Object.freeze(["1029", "1030", "6087", "1046", "1217"]),
+  364: Object.freeze(["1025", "1247", "1509", "8171"]),
+  365: Object.freeze(["1025", "1247", "1509", "8171"]),
+  370: Object.freeze([]),
+  371: Object.freeze(["1025", "1247", "1509", "8171"]),
+});
+
+/** Blangko memuat variabel kamus per jenis untuk jenis perkara ini (nama atau id SIPP)? */
+function j3BlangkoMemuatVariabelJenis(petaVariabel, namaAtauId) {
+  if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
+  const id = idJenisPerkaraSipp(String(namaAtauId || "").replace(/\s+/g, " ").trim());
+  const daftar = J3_VARIABEL_JENIS[id];
+  return Boolean(daftar) && daftar.some((k) => petaVariabel.has(k));
+}
+/* === AKHIR JENIS3 === */
+
 /** Blangko ini memuat sekurang-kurangnya satu variabel siap MILIK jenis perkara ini? */
 function blangkoMemuatVariabelSiapLain(petaVariabel, kunciJenis) {
   if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
@@ -3879,6 +3911,13 @@ function susunPanelAbt(jatiDiri) {
   tombolPositaLain.type = "button";
   const jenisAwal = (petaAwal.get(VAR_JENIS_PERKARA) || {}).nilai || sebutJenisPerkara(nomorPerkaraAbt());
   tombolPositaLain.hidden = !blangkoMemuatVariabelSiapLain(petaAwal, kunciJenisLain(jenisAwal));
+  /* === JENIS3 11 Okt === */
+  // Semua jenis non-cerai: tombol juga tergambar bila blangko memuat variabel yang dikenali kamus
+  // per jenis (usulan "ragu" tampil tidak tercentang). Itsbat/asal usul tetap lewat tombol itsbat.
+  if (tombolPositaLain.hidden && tombolItsbat.hidden && j3BlangkoMemuatVariabelJenis(petaAwal, jenisAwal)) {
+    tombolPositaLain.hidden = false;
+  }
+  /* === AKHIR JENIS3 === */
   if (!tombolPositaLain.hidden && !tombolItsbat.hidden) tombolPositaLain.textContent = "Isi dari posita permohonan (perkara lain)";
   tombolPositaLain.title =
     "Variabel perkara lain yang lulus gerbang ukur (presisi ≥ 0,9 atas isian manusia) dan tidak lebih buruk dari " +
@@ -4954,6 +4993,17 @@ function susunPanelAbt(jatiDiri) {
     kotak.appendChild(buatElemen("div", "aleta-abt-catatan", ringkas.join(" ")));
     const p6Peringatan = p6GambarPeringatan(hasil); // P5P6 10 Okt
     if (p6Peringatan) kotak.appendChild(p6Peringatan);
+    /* === JENIS3 11 Okt === */
+    if (hasil.kalimatPokokJenis && hasil.kalimatPokokJenis.ringkas) {
+      kotak.appendChild(
+        buatElemen(
+          "div",
+          "aleta-abt-catatan",
+          `Pokok keterangan saksi ${hasil.kalimatPokokJenis.nama || ""} (dari posita, hanya fakta terukur - periksa sebelum dipakai): ${hasil.kalimatPokokJenis.ringkas}`
+        )
+      );
+    }
+    /* === AKHIR JENIS3 === */
 
     const perlu = new Set((hasil.perluDiisi || []).map((x) => String(x.no)));
     const diisiGugatan = new Set((hasil.terisiDariPosita || []).map((x) => String(x.no)));

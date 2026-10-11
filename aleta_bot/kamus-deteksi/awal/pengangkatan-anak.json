@@ -1,0 +1,69 @@
+{
+  "kelompok": "pengangkatan-anak",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "pengangkatan-anak-nama",
+      "label": "Anak yang diangkat",
+      "kunci": "5110",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "(?:mengangkat|pengangkatan)\\s+(?:seorang\\s+)?anak\\s+(?:yang\\s+)?(?:bernama|yaitu)\\s*:?\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pemohon bermaksud mengangkat anak bernama Nadia binti Arif"
+      ],
+      "contohSalah": [
+        "Pemohon belum dikaruniai anak"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "pengangkatan-anak-ortu-kandung",
+      "label": "Orang tua kandung anak",
+      "kunci": "fakta-ortu-kandung",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "orang\\s+tua\\s+kandung(?:nya)?\\s+(?:anak\\s+tersebut\\s+)?(?:bernama|yaitu|adalah)\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "orang tua kandung anak tersebut bernama Arif bin Lasa"
+      ],
+      "contohSalah": [
+        "orang tua angkat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "pengangkatan-anak-peringatan",
+      "label": "Info: pengangkatan anak",
+      "gaya": "peringatan",
+      "teks": "Pengangkatan anak (PP 54/2007, Pasal 171 huruf h KHI): saksi sebaiknya menerangkan asal usul anak, persetujuan orang tua kandung, dan kemampuan serta kelakuan calon orang tua angkat.",
+      "syarat": {
+        "peringatan": "pengangkatan-anak"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}

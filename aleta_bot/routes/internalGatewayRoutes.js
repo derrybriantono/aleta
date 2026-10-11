@@ -2295,6 +2295,10 @@ function saringTipeKeluaranAbt(tipe, templat) {
  * aps_badilag. Yang menuliskannya ke ABT adalah ekstensi di peramban petugas,
  * lewat rute simpan milik ABT sendiri, sesudah petugas memeriksanya.
  */
+/* === JENIS3 11 Okt === */
+// Deteksi per jenis perkara non-cerai (kamus per jenis) - lihat services/deteksiJenisPerkaraService.js.
+const { tambahUsulanJenis, lengkapiSaksiJenis } = require("../services/deteksiJenisPerkaraService");
+/* === AKHIR JENIS3 === */
 router.post("/abt/usulan", requireInternalToken, async (req, res) => {
   try {
     const nomorPerkara = String(req.body?.nomorPerkara || "");
@@ -2343,6 +2347,18 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       // 1002, 0007) dikirim sebagai tawaran ABT, bukan usulan ALETA - lihat
       // GERBANG_ITSBAT di abtUsulanLainService.
       jawaban.itsbat = abtUsulanLainService.saringUsulanItsbat(itsbat, String(req.body?.jenisPerkara || "").slice(0, 80));
+      /* === JENIS3 11 Okt === */
+      // Variabel itsbat tambahan dari kamus per jenis (8171 tujuan itsbat, 1357 alasan wali, 1025
+      // pasangan wafat). Pola "ragu" dikirim keyakinan "ragu" - tampil TIDAK tercentang.
+      try {
+        jawaban.itsbat = tambahUsulanJenis(jawaban.itsbat, String(req.body?.posita || ""), {
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80) || "360",
+          alur: String(req.body?.alur || "").slice(0, 20),
+        });
+      } catch (_galatJenis) {
+        // tambahan per jenis tidak pernah menggagalkan usulan itsbat
+      }
+      /* === AKHIR JENIS3 === */
     }
     // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
     // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.
@@ -2358,6 +2374,18 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         },
         tipeKeluaran: tipe.tipeKeluaran,
       });
+      /* === JENIS3 11 Okt === */
+      // Semua jenis non-cerai (ahli waris, wali adhol, poligami, harta bersama, ekonomi syariah, ...):
+      // variabel dari kamus per jenis ditambahkan; jenis yang dulu "tidak dilayani" kini dijawab.
+      try {
+        jawaban.positaLain = tambahUsulanJenis(jawaban.positaLain, String(req.body?.posita || ""), {
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+          alur: String(req.body?.alur || "").slice(0, 20),
+        });
+      } catch (_galatJenis) {
+        // tambahan per jenis tidak pernah menggagalkan usulan perkara lain
+      }
+      /* === AKHIR JENIS3 === */
     }
     // Butir 12 (6 Okt 2026): alasan yang terbaca dari posita - SUMBER YANG SAMA
     // dengan "Alasan yang dipakai" penyusun saksi (alasanDariPosita) - supaya
@@ -2424,6 +2452,24 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       const mediasi = mediasiMasuk || mediasiSipp;
       const positaSipp = konteksSipp && konteksSipp.posita ? konteksSipp.posita : "";
       const positaDipakai = positaKurang && positaSipp ? positaSipp : positaMasuk;
+      /* === JENIS3 11 Okt === */
+      // Perkara non-cerai: variabel templat ABT yang tercetak "..." (belum diisi di ABT) diisi dari
+      // posita per jenis - hanya fakta yang lulus gerbang isian saksi (deteksiJenisPerkaraService).
+      // Templat masukan diganti di tempat agar susunKeteranganSaksiSdg di bawah tidak berubah.
+      let jenis3Isi = null;
+      try {
+        jenis3Isi = require("../services/deteksiJenisPerkaraService").isiTemplatSaksi(templatMasuk, {
+          posita: positaDipakai,
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+          alur: String(req.body?.alur || "").slice(0, 20),
+        });
+        if (jenis3Isi && jenis3Isi.jenis && Array.isArray(jenis3Isi.templat) && jenis3Isi.terisi.length) {
+          templatMasuk.splice(0, templatMasuk.length, ...jenis3Isi.templat);
+        }
+      } catch (_galatJenis) {
+        jenis3Isi = null;
+      }
+      /* === AKHIR JENIS3 === */
       jawaban.saksiSdg = abtUsulanService.susunKeteranganSaksiSdg({
         upayaDamai: String(req.body?.upayaDamai || "").slice(0, 600),
         mediasi,
@@ -2471,6 +2517,21 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         }
       }
       /* === AKHIR P5P6 === */
+      /* === JENIS3 11 Okt === */
+      // Jenis perkara, isian dari posita per jenis, peringatan syarat saksi per jenis, dan kalimat
+      // pokok (ringkas) - hanya MENAMBAH ruas; galat di sini tidak menggagalkan susunan.
+      if (jawaban.saksiSdg && jawaban.saksiSdg.ok && jenis3Isi && jenis3Isi.jenis) {
+        try {
+          lengkapiSaksiJenis(jawaban.saksiSdg, jenis3Isi, {
+            posita: positaDipakai,
+            jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+            alur: String(req.body?.alur || "").slice(0, 20),
+          });
+        } catch (galatJenis) {
+          jawaban.saksiSdg.jenisGagal = String((galatJenis && galatJenis.message) || galatJenis).slice(0, 200);
+        }
+      }
+      /* === AKHIR JENIS3 === */
     }
     if (sumber === "semua" || sumber === "saksi") {
       jawaban.saksi = abtUsulanService.dariKeteranganSaksi(

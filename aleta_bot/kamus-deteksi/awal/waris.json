@@ -1,0 +1,336 @@
+{
+  "kelompok": "waris",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "waris-pewaris-meninggal",
+      "label": "Pewaris: 'X bin/binti Y telah meninggal dunia'",
+      "kunci": "1025",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "(?:^|;\\s*)(?:\\d{1,2}\\s*[.)]\\s*)?(?:Bahwa\\s+)?(?:(?:almarhum(?:ah)?|alm\\.?|pewaris|Pewaris)\\s+)?(?<nilai>[A-Z][A-Za-z.'’-]*(?:,?\\s+(?:[A-Z][A-Za-z.'’-]*|alias))*\\s+bin(?:ti)?\\s+[A-Z][A-Za-z.'’-]*(?:\\s+[A-Z][A-Za-z.'’-]*)*)\\s*(?:\\((?:alm|almh|almarhum|almarhumah)\\.?\\)\\s*)?,?\\s+(?:telah\\s+){1,2}(?:meninggal|wafat)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "1. Bahwa Rasia binti Yalihasa telah meninggal dunia pada tanggal 06 Mei 2026 dikarenakan sakit"
+      ],
+      "contohSalah": [
+        "Bahwa Pemohon adalah anak kandung dari Rasia binti Yalihasa"
+      ],
+      "ukur": {
+        "n": 4,
+        "tepat": 1,
+        "salahTangkap": 3,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Diambil kemunculan PERTAMA di posita (pewaris disebut lebih dulu dari orang tuanya)."
+    },
+    {
+      "kode": "waris-sebab-wafat",
+      "label": "Sebab pewaris meninggal",
+      "kunci": "1247",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "meninggal\\s+dunia[^;]{0,90}?\\b(?:dikarenakan|disebabkan(?:\\s+karena|\\s+oleh)?|karena|akibat)\\s+(?<nilai>(?:sakit|kecelakaan|usia\\s+tua|faktor\\s+usia|lanjut\\s+usia|melahirkan|tenggelam|serangan\\s+jantung|stroke|covid|bencana|gempa|tsunami|dibunuh|dianiaya)[a-z ]{0,40}?)(?=\\s+(?:sesuai|berdasarkan|sebagaimana|dan|di|pada|yang|dengan)\\b|[;,.()]|$)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "telah meninggal dunia pada tanggal 06 Mei 2026 dikarenakan sakit sesuai dengan Surat Keterangan Kematian"
+      ],
+      "contohSalah": [
+        "telah meninggal dunia pada tanggal 06 Mei 2026 sesuai dengan Surat Keterangan Kematian"
+      ],
+      "ukur": {
+        "n": 9,
+        "tepat": 9,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-tempat-wafat",
+      "label": "Tempat pewaris meninggal",
+      "kunci": "1509",
+      "jenis": "fakta",
+      "bentuk": "tempat",
+      "regex": "meninggal\\s+dunia\\s+di\\s+(?<nilai>(?:Desa|Kelurahan|Dusun|Kota|Kabupaten|Kecamatan|Rumah\\s+Sakit|RSUD|RS\\b|Puskesmas|Jalan|Jl\\.)[^;()]{3,120}?)(?=\\s+(?:pada|karena|dikarenakan|disebabkan|akibat|sesuai|berdasarkan|dalam)\\b|[;]|\\.\\s|$)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "telah meninggal dunia di Desa Dalaka, Kecamatan Sindue, Kabupaten Donggala pada tanggal 2 Mei 2026"
+      ],
+      "contohSalah": [
+        "telah meninggal dunia pada tanggal 2 Mei 2026"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-tanggal-wafat",
+      "label": "Tanggal pewaris meninggal",
+      "kunci": "fakta-tanggal-wafat",
+      "jenis": "fakta",
+      "bentuk": "tanggal",
+      "regex": "meninggal\\s+dunia\\s+(?:pada\\s+)?(?:hari\\s+[A-Za-z']+,?\\s+)?(?:tanggal\\s+|tgl\\.?\\s+)?(?<nilai>\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "telah meninggal dunia pada tanggal 06 Mei 2026 dikarenakan sakit"
+      ],
+      "contohSalah": [
+        "lahir pada tanggal 06 Mei 1960"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-keperluan",
+      "label": "Keperluan penetapan ahli waris",
+      "kunci": "8171",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:untuk|guna)\\s+(?:keperluan\\s+|kepentingan\\s+)?(?<nilai>(?:mengurus|pengurusan|pencairan|mencairkan|pengambilan|mengambil|balik\\s+nama|peralihan|penjualan|menjual|pembagian|pengalihan|klaim|mengklaim|administrasi|persyaratan|melengkapi|kelengkapan|pembuatan|membuat)\\b[^;]{3,200}?)(?=\\s*;|\\.\\s+[A-Z0-9]|\\.\\s*$|\\s+[0-9]{1,2}\\.\\s+Bahwa|\\s+Bahwa\\b|,?\\s+(?:namun|akan\\s+tetapi|tetapi)\\b|$)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "penetapan ahli waris tersebut diperlukan untuk keperluan pencairan dana BPJS Ketenagakerjaan atas nama almarhumah;"
+      ],
+      "contohSalah": [
+        "untuk menetapkan para Pemohon sebagai ahli waris;"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 0,
+        "salahTangkap": 3,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-agama-islam",
+      "label": "Pewaris beragama Islam sampai wafat",
+      "kunci": "fakta-pewaris-islam",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "(?:tetap\\s+)?beragama\\s+Islam(?:\\s+(?:sampai|hingga)\\s+(?:meninggal|wafat|akhir\\s+hayat))?",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "semasa hidupnya Rasia binti Yalihasa tetap beragama Islam"
+      ],
+      "contohSalah": [
+        "beragama Kristen"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-ortu-lebih-dahulu",
+      "label": "Orang tua pewaris lebih dahulu meninggal",
+      "kunci": "fakta-ortu-wafat",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "(?:ayah|ibu|bapak|orang\\s+tua)\\s+(?:kandung\\s+)?(?:dari\\s+)?(?:almarhum(?:ah)?\\s+|pewaris\\s+)?[^;]{0,60}?(?:telah\\s+)?meninggal\\s+(?:dunia\\s+)?(?:lebih\\s+dahulu|terlebih\\s+dahulu|sebelum|pada)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Ayah dari bapak Rasia binti Yalihasa yaitu Yalihasa telah meninggal dunia pada 29 Juli 2012"
+      ],
+      "contohSalah": [
+        "ayah Pemohon masih hidup"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-tanya-keperluan",
+      "label": "Pertanyaan: keperluan penetapan ahli waris",
+      "kunci": "tanya-8171",
+      "jenis": "tanya",
+      "regex": "(?:keperluan|tujuan|untuk\\s+apa)\\s+[^?]{0,60}?(?:ahli\\s+waris|permohonan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apa keperluan para Pemohon mengajukan permohonan penetapan ahli waris?"
+      ],
+      "contohSalah": [
+        "Siapa yang telah meninggal dunia?"
+      ],
+      "ukur": {
+        "n": 51,
+        "tepat": 2,
+        "salahTangkap": 49,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-tanya-pewaris",
+      "label": "Pertanyaan: siapa yang meninggal",
+      "kunci": "tanya-1025",
+      "jenis": "tanya",
+      "regex": "siapa\\s+yang\\s+(?:telah\\s+)?meninggal",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Siapa yang telah meninggal dunia?"
+      ],
+      "contohSalah": [
+        "Apa keperluan para Pemohon?"
+      ],
+      "ukur": {
+        "n": 21,
+        "tepat": 10,
+        "salahTangkap": 11,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-tanya-tanggal",
+      "label": "Pertanyaan: siapa/kapan meninggal (tanggal)",
+      "kunci": "tanya-fakta-tanggal-wafat",
+      "jenis": "tanya",
+      "regex": "siapa\\s+yang\\s+(?:telah\\s+)?meninggal|kapan\\s+[^?]{0,40}?meninggal",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Siapa yang telah meninggal dunia?"
+      ],
+      "contohSalah": [
+        "Apa keperluan para Pemohon?"
+      ],
+      "ukur": {
+        "n": 63,
+        "tepat": 45,
+        "salahTangkap": 18,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-tanya-tempat",
+      "label": "Pertanyaan: di mana meninggal",
+      "kunci": "tanya-1509",
+      "jenis": "tanya",
+      "regex": "(?:dimana|di\\s+mana)\\s+[^?]{0,40}?meninggal",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Dimana almarhum meninggal dunia dan apa sebab ia meninggal?"
+      ],
+      "contohSalah": [
+        "Siapa yang telah meninggal dunia?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "waris-tanya-sebab",
+      "label": "Pertanyaan: sebab meninggal",
+      "kunci": "tanya-1247",
+      "jenis": "tanya",
+      "regex": "(?:apa\\s+)?sebab\\s+[^?]{0,30}?meninggal|dimana\\s+[^?]{0,40}?meninggal",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Dimana almarhum meninggal dunia dan apa sebab ia meninggal?"
+      ],
+      "contohSalah": [
+        "Siapa yang telah meninggal dunia?"
+      ],
+      "ukur": {
+        "n": 52,
+        "tepat": 46,
+        "salahTangkap": 6,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "waris-peringatan-ahli-waris",
+      "label": "Peringatan: ahli waris belum diterangkan",
+      "gaya": "peringatan",
+      "teks": "Keterangan saksi tentang {yang} masih kosong - penetapan ahli waris menuntut saksi menerangkan pewaris, waktu wafat, agama, dan SELURUH ahli waris yang masih hidup saat pewaris wafat (Pasal 171 huruf b dan c KHI).",
+      "syarat": {
+        "peringatan": "ahli-waris-kosong"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "waris-peringatan-saksi-lurus",
+      "label": "Peringatan: saksi keluarga garis lurus pada perkara kebendaan",
+      "gaya": "peringatan",
+      "teks": "{saksi} ({hubungan}) adalah keluarga sedarah/semenda garis lurus - pada gugatan kebendaan (kewarisan, harta bersama, ekonomi syariah) Pasal 172 ayat (1) RBg / 145 HIR menyatakan mereka tidak dapat didengar sebagai saksi.",
+      "syarat": {
+        "peringatan": "saksi-garis-lurus"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "waris-ringkas-pokok",
+      "label": "Pokok keterangan saksi PAW (ringkas)",
+      "gaya": "ringkas",
+      "teks": "pewaris[ {1025}] telah meninggal dunia[ pada tanggal {tanggalWafat}][ karena {1247}][ di {1509}] dalam keadaan beragama Islam, dan {para} adalah ahli warisnya",
+      "syarat": {
+        "jenis": "penetapan-ahli-waris"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}
