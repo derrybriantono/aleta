@@ -44,6 +44,13 @@ const salin = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 const JENIS_224 = { id: 224, nama: "Tambahan Panjar Biaya Perkara", kategoriId: 1, jenisTransaksi: 1, jumlahBawaan: 0 };
 const dipilih = (u: Usul) => u.pilih && (!u.sisaOtomatis || Number(u.jumlah) > 0);
 
+/** Kasir mencentang tambahan panjar yang ditawarkan (pihak sudah membayar) - sisa dihitung ulang seperti layar. */
+function centangTambahPanjar(h: { usulan: Usul[]; saldo: number }) {
+  for (const u of h.usulan) if (u.tambahPanjar) u.pilih = true;
+  kasir.hitungSisaOtomatis(h.usulan, h.saldo);
+  return h.usulan;
+}
+
 function susun(k: unknown) {
   const h = kasir.susunUsulan(salin(k));
   const kj = kasir.susunKejadian(salin(k), h);
@@ -132,7 +139,10 @@ describe("2. uji balik per kejadian (kasir-kejadian-nyata.json)", () => {
 
   for (const [nama, c] of contoh) {
     it(`${nama}: usulan tercentang kejadian ${c.kejadian} = baris yang ditulis kasir (jenis, jumlah, urutan)`, () => {
-      const { usulan, kejadian } = susun(c.keadaan);
+      const { usulan: awal, kejadian, h } = susun(c.keadaan);
+      // Tambahan panjar ditawarkan TANPA centang; uji balik = kasir mencentangnya.
+      expect(awal.filter((u) => u.tambahPanjar).every((u) => !u.pilih)).toBe(true);
+      const usulan = centangTambahPanjar(h);
       const usul = usulan.filter((u) => u.kejadian === c.kejadian && dipilih(u));
       expect(usul.map((u) => `${u.jenisBiayaId}|${Number(u.jumlah)}`)).toEqual(c.harap.map((h) => `${h.jenisBiayaId}|${h.jumlah}`));
       const e = kejadian.find((x) => x.kunci === c.kejadian)!;
@@ -143,7 +153,7 @@ describe("2. uji balik per kejadian (kasir-kejadian-nyata.json)", () => {
 
   it("tambahan panjar nyata: tepat sebelum biaya yang kekurangan, bertanggal sama, sisa panjar tetap terakhir", () => {
     const c = KEJADIAN.contoh["putusan-tambah-panjar"];
-    const { usulan } = susun(c.keadaan);
+    const usulan = centangTambahPanjar(susun(c.keadaan).h);
     const i224 = usulan.findIndex((u) => u.jenisBiayaId === 224);
     expect(i224).toBeGreaterThanOrEqual(0);
     expect(usulan[i224].jenisTransaksi).toBe(1);
@@ -166,7 +176,8 @@ describe("2. uji balik per kejadian (kasir-kejadian-nyata.json)", () => {
     expect(tepat("pertama")).toBeGreaterThanOrEqual(0.94);
     expect(tepat("tunda")).toBeGreaterThanOrEqual(0.93);
     expect(tepat("putusan")).toBeGreaterThanOrEqual(0.94);
-    expect(tepat("ikrar")).toBeGreaterThanOrEqual(0.8);
+    // Satu panggilan ikrar untuk rangkaian sidang ikrar (11 Okt): 82,7% -> 93,9%.
+    expect(tepat("ikrar")).toBeGreaterThanOrEqual(0.92);
     for (const k of Object.keys(r)) {
       expect(r[k].presisiBaris, k).toBeGreaterThanOrEqual(0.92);
       expect(r[k].cakupanBaris, k).toBeGreaterThanOrEqual(0.95);
@@ -193,24 +204,32 @@ describe("3. aturan kejadian baru", () => {
     return k;
   }
 
-  it("saldo kurang Rp10.000 untuk Redaksi+Meterai+PNBP cabut: tambahan panjar Rp10.000 (pihak pertama, pemasukan) sebelum Redaksi; sisa nol tidak dicentang", () => {
-    const { usulan, kejadian, h } = susun(cabutDenganSaldo(20000));
+  it("saldo kurang Rp10.000 untuk Redaksi+Meterai+PNBP cabut: tambahan panjar Rp10.000 DITAWARKAN TANPA CENTANG sebelum Redaksi; tidak terhitung usulan lencana", () => {
+    const { usulan, kejadian, kj, h } = susun(cabutDenganSaldo(20000));
     expect(usulan.map((u) => u.jenisBiayaId)).toEqual([224, 157, 152, 404, 151]);
     const t = usulan[0];
-    expect(t).toMatchObject({ jumlah: 10000, jenisTransaksi: 1, pihakKe: 1, kejadian: "putusan", pilih: true, yakin: "sedang", uraian: "Tambahan Panjar Biaya Perkara" });
+    expect(t).toMatchObject({ jumlah: 10000, jenisTransaksi: 1, pihakKe: 1, kejadian: "putusan", pilih: false, uraian: "Tambahan Panjar Biaya Perkara" });
     expect(t.tanggal).toBe(usulan[1].tanggal);
-    const sisa = usulan[usulan.length - 1];
-    expect(sisa.jumlah).toBe(0);
-    expect(sisa.pilih).toBe(false);
-    expect(h.catatan.join(" ")).toMatch(/Tambahan Panjar Biaya Perkara diusulkan/);
-    expect(kejadian.find((e) => e.jenis === "putusan")!.komponen[0].tambahPanjar).toBe(true);
+    expect((t as unknown as { dasar: string }).dasar).toMatch(/kurang Rp10\.000/);
+    // Tanpa centang: sisa minus, tidak terhitung dan tidak terkirim.
+    expect(usulan[usulan.length - 1].jumlah).toBe(-10000);
+    expect(kj.ringkas.usulan).toBe(3);
+    expect(h.catatan.join(" ")).toMatch(/Tambahan Panjar Biaya Perkara ditawarkan \(belum dicentang\)/);
+    const put = kejadian.find((e) => e.jenis === "putusan")!;
+    expect(put.komponen[0]).toMatchObject({ tambahPanjar: true, pilih: false });
+    // Kasir mencentangnya: sisa nol.
+    centangTambahPanjar(h);
+    expect(usulan[usulan.length - 1].jumlah).toBe(0);
   });
 
-  it("kekurangan kecil (Rp2.000) dibulatkan ke Rp10.000 - sisa Rp8.000 dikembalikan (pola 9657 & 238/2026)", () => {
-    const { usulan } = susun(cabutDenganSaldo(28000));
-    expect(usulan[0]).toMatchObject({ jenisBiayaId: 224, jumlah: 10000 });
+  it("kekurangan kecil (Rp2.000) dibulatkan ke Rp10.000 - sesudah dicentang kasir sisa Rp8.000 dikembalikan (pola 9657 & 238/2026)", () => {
+    const { usulan, h } = susun(cabutDenganSaldo(28000));
+    expect(usulan[0]).toMatchObject({ jenisBiayaId: 224, jumlah: 10000, pilih: false });
     const sisa = usulan[usulan.length - 1];
-    expect(sisa).toMatchObject({ sisaOtomatis: true, jumlah: 8000, pilih: true });
+    expect(sisa).toMatchObject({ sisaOtomatis: true, pilih: true });
+    expect(Number(sisa.jumlah)).toBeLessThan(0);
+    centangTambahPanjar(h);
+    expect(sisa).toMatchObject({ jumlah: 8000, pilih: true });
   });
 
   it("saldo cukup, jurnal sudah ditutup, atau jenis 224 tidak tersedia: tidak ada tambahan panjar", () => {
@@ -262,6 +281,49 @@ describe("3. aturan kejadian baru", () => {
     const t2 = b.kejadian.find((e) => e.jenis === "tunda")!;
     expect(t2).toMatchObject({ status: "selesai", tanpaBiaya: true });
     expect(t2.keterangan).toMatch(/Semua pihak hadir/);
+  });
+
+  /** Perkara ikrar nyata dengan sidang ikrar kedua (ikrar pertama ditunda). */
+  function ikrarDuaSidang(ket2: string, resi2: string) {
+    const k = salin(NYATA.contoh.ikrar[0].keadaan);
+    const s1 = k.sidang.find((s: { ikrar: boolean }) => s.ikrar);
+    s1.ditunda = true;
+    s1.dihadiriOleh = 4;
+    s1.hasil = "Termohon tidak hadir";
+    const s2 = { ...s1, id: s1.id + 1, urutan: s1.urutan + 1, tanggal: "2026-10-14", ditunda: false, dihadiriOleh: 2, hasil: "telah ikrar talak" };
+    k.sidang.push(s2);
+    const t = k.pihak.find((p: { ke: number }) => p.ke === 2);
+    k.relaas.push({ id: 1, sidangId: s2.id, pihakId: t.pihakId, ket: ket2, resi: resi2, tanggalRelaas: "2026-10-09", tanggalJursitPos: "2026-10-08" });
+    k.ikrar = { tanggal: "2026-10-14" };
+    k.hariIni = "2026-10-14";
+    return k;
+  }
+
+  it("ikrar ditunda (dua sidang ikrar, keduanya ber-relaas Pos): SATU Biaya Panggilan Ikrar Talak untuk rangkaiannya (13/16 nyata, tidak pernah dua)", () => {
+    const k = ikrarDuaSidang("S", "P2610080001234");
+    const { usulan, kejadian } = susun(k);
+    const ikrar = usulan.filter((u) => u.kejadian === "ikrar" && u.jenisBiayaId === 14);
+    expect(ikrar).toHaveLength(1);
+    expect(ikrar[0].pilih).toBe(true);
+    expect((ikrar[0] as unknown as { dasar: string }).dasar).toMatch(/satu panggilan untuk 2 sidang ikrar/);
+    expect(kejadian.find((e) => e.jenis === "ikrar")!.komponen.filter((c) => c.sumber === "usulan").map((c) => c.jenisBiayaId)).toEqual([14, 151]);
+    // Panggilan ikrar yang sudah ditulis menutup seluruh rangkaian.
+    k.jurnal.push({ id: 999100, jenisBiayaId: 14, jenisTransaksi: -1, jumlah: 29500, tanggal: "2026-09-24", pihakId: k.pihak[1].pihakId, pihakKe: 2, uraian: "Biaya Panggilan Ikrar Talak/P2609230049139", urutan: 0 });
+    expect(susun(k).usulan.filter((u) => u.jenisBiayaId === 14)).toHaveLength(0);
+  });
+
+  it("ikrar: sidang ikrar pertama dipanggil tanpa biaya (E) dan tidak ada relaas berbiaya - panggilan ikrar ditawarkan tanpa centang", () => {
+    const k = salin(NYATA.contoh.ikrar[0].keadaan);
+    const s1 = k.sidang.find((s: { ikrar: boolean }) => s.ikrar);
+    const t = k.pihak.find((p: { ke: number }) => p.ke === 2);
+    const r = k.relaas.find((x: { sidangId: number; pihakId: number }) => x.sidangId === s1.id && x.pihakId === t.pihakId);
+    r.ket = "E";
+    r.resi = "";
+    k.sidang.push({ ...s1, id: s1.id + 1, urutan: s1.urutan + 1, tanggal: "2026-10-14", hasil: "telah ikrar talak" });
+    k.hariIni = "2026-10-14";
+    const ikrar = susun(k).usulan.filter((u) => u.kejadian === "ikrar" && u.jenisBiayaId === 14);
+    expect(ikrar.length).toBeLessThanOrEqual(1);
+    expect(ikrar.every((u) => !u.pilih)).toBe(true);
   });
 
   it("mediasi: kejadian sendiri tanpa usulan; Biaya Panggilan Mediasi yang sudah ditulis masuk kejadian mediasi", () => {
@@ -409,7 +471,7 @@ describe("4. ekstensi - Kasir per perkara tersusun per kejadian", () => {
     expect(lama.minta.filter((m) => m.url.includes("/kasir"))).toEqual([]);
   });
 
-  it("Simpan tetap dua tekanan; baris dikirim menurut urutan usulan (tambahan panjar sebelum biayanya, sisa panjar terakhir)", async () => {
+  it("tambahan panjar ditawarkan tanpa centang; sesudah kasir mencentang, Simpan dua tekanan mengirim menurut urutan usulan (tambahan panjar sebelum biayanya, sisa panjar terakhir)", async () => {
     const k = salin(NYATA.contoh.cabut[0].keadaan);
     const saldo = kasir.susunUsulan(salin(k)).saldo;
     k.jurnal.find((b: { jenisBiayaId: number }) => b.jenisBiayaId === 1).jumlah -= saldo - 28000;
@@ -420,6 +482,13 @@ describe("4. ekstensi - Kasir per perkara tersusun per kejadian", () => {
     await sampai(() => e.w.__mode() === "baru", "mode baru");
     await e.w.aletaKasirPasang(e.wadah, { perkaraId: String(e.k.perkara.perkaraId) });
     await sampai(() => e.wadah.querySelector(".aleta-kasir-kejadian[data-kejadian=putusan]"), "putusan");
+    // Tambahan panjar tampil sebagai usulan TANPA centang; kasir yang mencentangnya.
+    const cek224 = e.wadah.querySelector('input[aria-label="Pilih Tambahan Panjar Biaya Perkara"]') as HTMLInputElement;
+    expect(cek224.checked).toBe(false);
+    expect(e.wadah.textContent).toContain("pastikan pihak sudah membayar tambahan panjar");
+    cek224.checked = true;
+    cek224.dispatchEvent(new e.w.Event("change"));
+    await sampai(() => /Rp8\.000/.test(e.wadah.querySelector(".aleta-kasir-kejadian[data-kejadian=putusan]")!.textContent || ""), "sisa Rp8.000");
     const simpan = Array.from(e.wadah.querySelectorAll("button")).find((b) => /Simpan ke SIPP/.test(b.textContent || "")) as HTMLButtonElement;
     simpan.click();
     await tunggu(20);
