@@ -1,0 +1,238 @@
+{
+  "kelompok": "kontak",
+  "versi": 1,
+  "catatan": "KONTAK-EC (11 Okt 2026, agen 5) - KELOMPOK BARU: email dan nomor HP/WhatsApp pihak dan kuasa dari teks berkas e-Court (surat gugatan, jawab-menjawab, surat kuasa). Dibaca kontakEcourtService.js. peran: email, email-renggang (spasi sebelum @ hasil salin PDF), hp, telepon (telepon kantor berlabel), domisili (label domisili/alamat elektronik), label-pihak (grup 1 = sebutan pihak SESUDAH identitas), kuasa (kata advokat/kantor hukum), pemberi (akhir bagian kuasa: atas nama/kepentingan hukum dari), kop (kop surat kantor hukum di awal berkas). Kepemilikan (pihak/kuasa, sisi 1/2) ditentukan susunan kata - BUKAN polanya sendiri - jadi semuanya ragu sampai diukur di server (tools/ukur-kontak-ecourt.js). Keyakinan usulan dari teks naik ke 'cukup' HANYA bila pola kontak-label-pihak diubah menjadi yakin 'pasti' sesudah terukur >= 95%.",
+  "pola": [
+    {
+      "kode": "kontak-email",
+      "label": "Alamat email",
+      "kunci": "email",
+      "peran": "email",
+      "regex": "[A-Za-z0-9][A-Za-z0-9._%+-]*@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "alamat domisili elektronik email; budi.sh@gmail.com, Selanjutnya",
+        "Email : rahma_77@yahoo.co.id"
+      ],
+      "contohSalah": [
+        "Jl. Sam Ratulangi No. 12 @ Palu",
+        "nama@ domain"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "lihat hasil-agen5.md (14 perkara berkas lokal)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Bentuk alamat saja; pemiliknya ditentukan konteks."
+    },
+    {
+      "kode": "kontak-email-renggang",
+      "label": "Email dengan spasi sebelum @ (salinan PDF)",
+      "kunci": "email",
+      "peran": "email-renggang",
+      "regex": "([A-Za-z0-9][A-Za-z0-9._%+-]*)\\s@\\s?((?:gmail|yahoo|ymail|hotmail|outlook|icloud|live)\\.(?:com|co\\.id))\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Domisili elekronik nurhana.sh @gmail.com."
+      ],
+      "contohSalah": [
+        "budi@gmail.com",
+        "alamat Elektronik @ hilman@yahoo.com"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "berkas jawaban lokal 9 Okt (2 kemunculan)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Hanya penyedia surel umum; bagian depan 'elektronik/email/surel/alamat' ditolak kode."
+    },
+    {
+      "kode": "kontak-hp",
+      "label": "Nomor HP/WhatsApp Indonesia",
+      "kunci": "hp",
+      "peran": "hp",
+      "regex": "(?<![0-9])(?:\\(?\\+?\\s?62\\)?[\\s.-]?|0)8[0-9]{1,3}(?:[\\s.-]?[0-9]{2,5}){2,4}(?![0-9])",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "No. HP/WA. 0823-4567-8901 berdasarkan",
+        "Telp. +62 812 4592 1767",
+        "nomor 081234567890;"
+      ],
+      "contohSalah": [
+        "NIK 7203123456780001",
+        "NIP 199390092021012345"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "lihat hasil-agen5.md",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dinormalkan ke 08xxxxxxxxxx (10-13 angka) - bentuk yang diterima borang SIPP (numeric). Tidak diambil bila menempel pada deret angka lain (NIK/NIP)."
+    },
+    {
+      "kode": "kontak-telepon",
+      "label": "Nomor telepon kantor berlabel",
+      "kunci": "telepon",
+      "peran": "telepon",
+      "regex": "\\b(?:Telp?\\.?|Telepon|Tlp\\.?|Phone|Fax)\\s*[:.]?\\s*(\\(?0[2-7][0-9]{1,3}\\)?[\\s.-]?[0-9]{3,4}[\\s.-]?[0-9]{2,5})(?![0-9])",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "JL. S.Wera No. 160 Kota Palu, Telp. (0451) 421234"
+      ],
+      "contohSalah": [
+        "Telp. 081234567890"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "kop kantor advokat berkas lokal",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Telepon rumah/kantor - BUKAN WhatsApp; diusulkan ke kolom telepon hanya bila tidak ada HP."
+    },
+    {
+      "kode": "kontak-label-domisili",
+      "label": "Label domisili / alamat elektronik",
+      "kunci": "domisili",
+      "peran": "domisili",
+      "regex": "domisili\\s+ele[kc]{0,2}t?roni[kc]|alamat\\s+(?:surat\\s+)?ele[kc]troni[kc]|surat\\s+ele[kc]troni[kc]|\\be-?mail\\b|\\bsurel\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Domisili elekronik",
+        "alamat domisili elektronik email;",
+        "alamat Elektronik @"
+      ],
+      "contohSalah": [
+        "alamat tempat tinggal"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "berkas jawaban lokal 9 Okt",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Email yang didahului label ini (<= 80 huruf) ditandai sebagai domisili elektronik."
+    },
+    {
+      "kode": "kontak-label-pihak",
+      "label": "Sebutan pihak sesudah identitas",
+      "kunci": "sebutan",
+      "peran": "label-pihak",
+      "regex": "(?:selanjutnya\\s+(?:di\\s*sebut|disebut)(?:\\s+sebagai)?|sebagai|selaku)[\\s\\-–—:\"“”'‘’.]*(?:para\\s+)?(p ?e ?n ?g ?g ?u ?g ?a ?t|t ?e ?r ?g ?u ?g ?a ?t|p ?e ?m ?o ?h ?o ?n|t ?e ?r ?m ?o ?h ?o ?n|p ?e ?l ?a ?w ?a ?n|t ?e ?r ?l ?a ?w ?a ?n)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Selanjutnya disebut sebagai Termohon / Penggugat Rekonvensi;",
+        "Selaku --------- “TERGUGAT”",
+        "No. Hp. 0812, sebagai Pemohon / Tergugat Rekonvensi;",
+        "dengan Reg. Nomor: 9/SK/II/2026 , selanjutnya disebut sebagai TER MO HON."
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah",
+        "sebagai suami istri"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "lihat hasil-agen5.md",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Identitas pihak ditutup sebutannya ('selanjutnya disebut Penggugat'): kontak di dalam identitas itu milik sisi sebutan PERTAMA sesudahnya (Termohon / Penggugat Rekonvensi = Termohon). Huruf sebutan boleh terpisah satu spasi (salinan PDF: 'TER MO HON')."
+    },
+    {
+      "kode": "kontak-kuasa",
+      "label": "Kata bagian kuasa hukum",
+      "kunci": "kuasa",
+      "peran": "kuasa",
+      "regex": "\\badvo[ck]at|\\bpengacara\\b|penasehat\\s+hukum|penasihat\\s+hukum|konsultan\\s+hukum|kantor\\s+(?:hukum|advo[ck]at)|law\\s*(?:firm|office)|\\bkuasa\\s+hukum|\\bberkantor\\b|penerima\\s+kuasa",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Advokat/Pengacara/Penasehat Hukum pada Kantor Hukum HILMAN & Partners",
+        "berkantor pada Kantor Advokat H. MUHTAR, SH & REKAN"
+      ],
+      "contohSalah": [
+        "Penggugat memberikan nafkah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "berkas jawaban lokal 9 Okt",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Kontak sesudah kata ini dan SEBELUM 'atas nama / kepentingan hukum dari' milik kuasa."
+    },
+    {
+      "kode": "kontak-pemberi-kuasa",
+      "label": "Akhir bagian kuasa (pihak yang diwakili)",
+      "kunci": "pemberi",
+      "peran": "pemberi",
+      "regex": "untuk\\s+dan\\s+atas\\s+nama|kepentingan\\s+hukum(?:\\s+dari)?|pemberi\\s+kuasa|\\bmewakili\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "bertindak untuk dan atas nama serta kepentingan hukum dari : Romi",
+        "Klien Kami selaku Pemberi Kuasa"
+      ],
+      "contohSalah": [
+        "atas permohonan Penggugat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "berkas jawaban lokal 9 Okt",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "kontak-kop-kuasa",
+      "label": "Kop surat kantor hukum",
+      "kunci": "kop",
+      "peran": "kop",
+      "regex": "kantor\\s+advo[ck]at|law\\s*(?:firm|office)|konsultan\\s+hukum|advocates?\\b|kantor\\s+hukum",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "KANTOR ADVOKAT / KONSULTAN HUKUM"
+      ],
+      "contohSalah": [
+        "PENGADILAN AGAMA DONGGALA"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "berkas jawaban lokal 9 Okt",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Kontak pada 500 huruf pertama berkas berkop kantor hukum milik kuasa pengunggah."
+    }
+  ],
+  "templat": []
+}
