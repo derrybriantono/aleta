@@ -640,6 +640,12 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
     const kupas = (h: Halaman) => {
       const salinan = panelDari(h).cloneNode(true);
       for (const el of Array.from(salinan.querySelectorAll(".aleta-sore")) as any[]) el.remove();
+      // 12 Okt: Baru & UI Baru memulai panel di kanan atas dengan ukuran bawaan besar (gaya sebaris
+      // width/height/max-height + data-tinggi-sendiri); Lama TIDAK (SYARAT MUTLAK fd9aad7, dijaga
+      // checklist-posisi-panel-12okt.test.ts). Hanya ketiga gaya itu yang dibuang - isi tetap dibandingkan.
+      for (const gaya of ["width", "height", "max-height"]) salinan.style.removeProperty(gaya);
+      salinan.removeAttribute("data-tinggi-sendiri");
+      if (!salinan.getAttribute("style")) salinan.removeAttribute("style");
       for (const el of [salinan, ...Array.from(salinan.querySelectorAll("*"))] as any[]) {
         for (const n of el.getAttributeNames()) if (n.startsWith("data-sore")) el.removeAttribute(n);
         if (el.classList.contains("aleta-teknis")) {

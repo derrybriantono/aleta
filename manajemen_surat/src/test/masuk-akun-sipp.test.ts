@@ -532,17 +532,50 @@ describe("latar.js: titipan password hanya di chrome.storage.session", () => {
     expect(dunia.sesi.aletaMasukSipp).toBeUndefined();
   });
 
-  it("kode latar.js: tidak ada jalan titipan ke chrome.storage.local", () => {
-    const latar = baca(path.join(AKAR_EKSTENSI, "latar.js"));
-    const bagian = latar.slice(latar.indexOf("const KUNCI_MASUK_TITIPAN"));
-    // Kode saja - komentarnya memang menyebut storage.local untuk melarangnya.
-    const kode = bagian
+  // Kode saja - komentarnya memang menyebut storage.local untuk melarangnya.
+  function tanpaKomentar(teks: string) {
+    return teks
       .split("\n")
       .filter((b) => !/^\s*(\/\/|\*|\/\*)/.test(b))
       .map((b) => b.replace(/\/\/.*$/, ""))
       .join("\n");
+  }
+  const PENANDA_PERAN = "/* === POPUP-PERAN 12 Okt === */";
+
+  it("kode latar.js: tidak ada jalan titipan ke chrome.storage.local", () => {
+    const latar = baca(path.join(AKAR_EKSTENSI, "latar.js"));
+    // Dari KUNCI_MASUK_TITIPAN sampai awal blok POPUP-PERAN 12 Okt. Blok itu (setelan per
+    // akun, catatan pembaruan) memang memakai storage.local, tidak menyentuh titipan, dan
+    // dijaga sendiri pada uji berikutnya - jadi bukan lagi "sisa berkas" yang disisir di sini.
+    const awal = latar.indexOf("const KUNCI_MASUK_TITIPAN");
+    const akhir = latar.indexOf(PENANDA_PERAN);
+    expect(awal).toBeGreaterThan(-1);
+    expect(akhir).toBeGreaterThan(awal);
+    const kode = tanpaKomentar(latar.slice(awal, akhir));
     expect(kode).toContain("chrome.storage.session");
     expect(kode).not.toContain("storage.local");
+  });
+
+  it("latar.js blok POPUP-PERAN 12 Okt: storage.local hanya memuat setelan, identitas tanpa sandi, dan catatan pembaruan", () => {
+    const latar = baca(path.join(AKAR_EKSTENSI, "latar.js"));
+    const awal = latar.indexOf(PENANDA_PERAN);
+    const akhir = latar.indexOf("/* === AKHIR POPUP-PERAN === */");
+    expect(awal).toBeGreaterThan(-1);
+    expect(akhir).toBeGreaterThan(awal);
+    const kode = tanpaKomentar(latar.slice(awal, akhir));
+    // Tidak menyebut kunci titipan, username/sandi, ataupun kuki.
+    expect(kode).not.toMatch(/KUNCI_MASUK|aletaMasukSipp|titipan|sandi|password|\bcookie|\.cookies\b/i);
+    // Setiap tulisan storage.local hanya ke kunci yang dikenal.
+    const tulisan = kode.match(/chrome\.storage\.local\.set\([^;]*\);/g) || [];
+    expect(tulisan.length).toBeGreaterThan(0);
+    for (const t of tulisan) {
+      expect(t).toMatch(/\[k\]|KUNCI_PEMBARUAN_OTOMATIS|KUNCI_MENUNGGU_LATAR|KUNCI_PERALIHAN_LATAR/);
+    }
+    // Daftar kunci setelan per akun tertutup dan tanpa kunci rahasia.
+    const mulaiDaftar = kode.indexOf("const KUNCI_SETELAN_AKUN");
+    const daftar = kode.slice(mulaiDaftar, kode.indexOf("];", mulaiDaftar));
+    expect(daftar.length).toBeGreaterThan(50);
+    expect(daftar).not.toMatch(/sandi|password|token|kuki|rahasia|titip/i);
   });
 });
 

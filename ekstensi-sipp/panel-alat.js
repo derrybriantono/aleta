@@ -223,6 +223,13 @@ function alatUkuranAwal() {
  */
 function alatTerapkanUkuranAwal(panel, posisi) {
   if (!panel || !panel.style) return false;
+  // SYARAT MUTLAK (tahap 7): tampilan Lama identik dengan fd9aad7 sampai ke
+  // gaya sebaris panelnya - ukuran bawaan besar hanya di Baru dan UI Baru.
+  try {
+    if (alatUjiMode() === "lama") return false;
+  } catch {
+    return false;
+  }
   const awal = alatUkuranAwal();
   if (!awal) return false;
   const simpan = posisi && typeof posisi === "object" ? posisi : {};

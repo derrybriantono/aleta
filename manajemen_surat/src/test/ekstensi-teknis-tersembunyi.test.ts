@@ -114,7 +114,8 @@ function jawabanChecklist() {
   return {
     ok: true,
     data: {
-      pengguna: { nama: "Hakim Uji", peran: ["hakim"] },
+      // 12 Okt: keterangan teknis di pita/kaki widget hanya untuk Super Admin (portal mengirim superAdmin).
+      pengguna: { nama: "Hakim Uji", peran: ["hakim"], superAdmin: true },
       peranTersedia: [{ kunci: "hakim", label: "Hakim" }],
       peranAktif: "hakim",
       dibuat: new Date().toISOString(),
@@ -165,7 +166,13 @@ function buka(p: { simpanan?: Record<string, unknown>; checklist?: boolean; port
   } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
   const w = dom.window as any;
-  const { simpanan, storage } = penyimpanan(p.simpanan ?? {});
+  // 12 Okt: widget BAWAAN TERTUTUP bagi sesi tanpa posisi tersimpan; uji ini menguji isi yang
+  // terbentang (saklar di kaki/Atur widget), jadi dimulai dari posisi "terbentang" kecuali disebut.
+  const awalSimpanan: Record<string, unknown> = { ...(p.simpanan ?? {}) };
+  for (const k of ["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"]) {
+    if (!(k in awalSimpanan)) awalSimpanan[k] = { kecil: false };
+  }
+  const { simpanan, storage } = penyimpanan(awalSimpanan);
   w.chrome = {
     runtime: {
       id: "aleta-uji",
