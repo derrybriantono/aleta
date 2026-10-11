@@ -3,7 +3,10 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
+  RUAS_BAKU_POLA,
+  RUAS_BAKU_TEMPLAT,
   bentukBakuNilai,
+  gabungTambahan,
   ketepatan,
   kompilasiPola,
   periksaBerkasBenih,
@@ -77,6 +80,7 @@ function barisKePola(b: Record<string, unknown>): BarisPolaDb {
       contohSalah: json<string[]>(b.contoh_salah, []),
       ukur: json<UkurPola>(b.ukur, { n: 0, tepat: 0, salahTangkap: 0 }),
       catatan: b.catatan,
+      tambahan: json<Record<string, unknown>>(b.tambahan, {}),
     }),
     status: statusSah(b.status),
     asalCalon: teks(b.asal_calon),
@@ -95,6 +99,7 @@ function barisKeTemplat(b: Record<string, unknown>): BarisTemplatDb {
       teks: b.teks,
       syarat: json<Record<string, unknown>>(b.syarat, {}),
       catatan: b.catatan,
+      tambahan: json<Record<string, unknown>>(b.tambahan, {}),
     }),
     status: statusSah(b.status),
     asalCalon: teks(b.asal_calon),
@@ -122,38 +127,50 @@ export type LapisBot = {
 
 /**
  * Bentuk yang diterima aturLapisDatabase di aleta_bot/services/kamusDeteksi.js:
- * butir berbentuk benih + kelompok. Draf TIDAK ikut.
+ * butir berbentuk benih + kelompok. Draf TIDAK ikut. Ruas tambahan (0063)
+ * digabung kembali ke objek butir - bentuknya sama dengan pola benih, jadi
+ * mesin bot membaca p.sebab / p.kebalikan / p.golongan seperti dari benih.
  */
 export function lapisUntukBot(lapis: { pola: BarisPolaDb[]; templat: BarisTemplatDb[] }, kini = new Date()): LapisBot {
   const dikirim = (s: StatusKamus) => s === "aktif" || s === "nonaktif";
   const pola = lapis.pola
     .filter((p) => dikirim(p.status))
-    .map((p) => ({
-      kode: p.kode,
-      kelompok: p.kelompok,
-      label: p.label,
-      kunci: p.kunci,
-      regex: p.regex,
-      flags: p.flags,
-      status: p.status,
-      yakin: p.yakin,
-      contohBenar: p.contohBenar,
-      contohSalah: p.contohSalah,
-      ukur: p.ukur,
-      catatan: p.catatan,
-    }));
+    .map((p) =>
+      gabungTambahan(
+        {
+          kode: p.kode,
+          kelompok: p.kelompok,
+          label: p.label,
+          kunci: p.kunci,
+          regex: p.regex,
+          flags: p.flags,
+          status: p.status,
+          yakin: p.yakin,
+          contohBenar: p.contohBenar,
+          contohSalah: p.contohSalah,
+          ukur: p.ukur,
+          catatan: p.catatan,
+        },
+        p.tambahan
+      )
+    );
   const templat = lapis.templat
     .filter((t) => dikirim(t.status))
-    .map((t) => ({
-      kode: t.kode,
-      kelompok: t.kelompok,
-      label: t.label,
-      gaya: t.gaya,
-      teks: t.teks,
-      syarat: t.syarat,
-      status: t.status,
-      catatan: t.catatan,
-    }));
+    .map((t) =>
+      gabungTambahan(
+        {
+          kode: t.kode,
+          kelompok: t.kelompok,
+          label: t.label,
+          gaya: t.gaya,
+          teks: t.teks,
+          syarat: t.syarat,
+          status: t.status,
+          catatan: t.catatan,
+        },
+        t.tambahan
+      )
+    );
   return { pola, templat, sidik: sidikPendek(JSON.stringify({ pola, templat })), disusunPada: kini.toISOString() };
 }
 
@@ -376,17 +393,80 @@ async function namaPengguna(db: AletaDatabase, id: string): Promise<string> {
   }
 }
 
+/* === RUAS-TAMBAHAN 11 Okt === */
+/**
+ * Badan permintaan hanya boleh membawa ruas baku + `tambahan` (objek). Kunci
+ * lain di badan (tindakan, asalCalon, ...) BUKAN ruas tambahan pola - tanpa
+ * penyaring ini rapikanPola akan menganggapnya ruas benih.
+ */
+function hanyaRuasBaku(masukan: Record<string, unknown>, ruasBaku: readonly string[]): Record<string, unknown> {
+  const hasil: Record<string, unknown> = {};
+  for (const k of ruasBaku) if (masukan[k] !== undefined) hasil[k] = masukan[k];
+  if (masukan.tambahan !== undefined) hasil.tambahan = masukan.tambahan;
+  return hasil;
+}
+
+function tambahanDariBadan(masukan: Record<string, unknown>): Record<string, unknown> | undefined {
+  if (masukan.tambahan === undefined || masukan.tambahan === null) return undefined;
+  if (typeof masukan.tambahan !== "object" || Array.isArray(masukan.tambahan))
+    throw new ApiError(400, "Ruas tambahan harus objek JSON ({...}), bukan daftar atau teks.");
+  return masukan.tambahan as Record<string, unknown>;
+}
+
+/** Rincian ukur di luar n/tepat/salahTangkap/sumber/tanggal (mis. golongan). */
+function rincianUkur(ukur: UkurPola | undefined): Record<string, unknown> {
+  const hasil: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(ukur ?? {})) if (!["n", "tepat", "salahTangkap", "sumber", "tanggal"].includes(k)) hasil[k] = v;
+  return hasil;
+}
+
+async function benihPola(kode: string, benih?: BenihKelompok[]): Promise<PolaKamus | null> {
+  for (const b of benih ?? (await bacaBenihKamus()).kelompok) {
+    const x = b.pola.find((p) => p.kode === kode);
+    if (x) return x;
+  }
+  return null;
+}
+
+async function benihTemplat(kode: string, benih?: BenihKelompok[]): Promise<TemplatKamus | null> {
+  for (const b of benih ?? (await bacaBenihKamus()).kelompok) {
+    const x = b.templat.find((t) => t.kode === kode);
+    if (x) return x;
+  }
+  return null;
+}
+/* === AKHIR RUAS-TAMBAHAN === */
+
 /**
  * Menyimpan (tambah/sunting) satu pola database. Galat aturan = 400.
  * Status bawaan untuk pola BARU adalah draf: yang baru diketik belum diuji
  * atas apa pun selain contohnya sendiri.
+ *
+ * Ruas tambahan (0063): `tambahan` di badan = isi lengkapnya (objek kosong
+ * mengosongkan). Badan TANPA `tambahan` (klien lama, terima calon) mewarisi
+ * ruas tambahan - beserta rincian ukur - dari baris lama, atau dari benih
+ * berkode sama, supaya pola benih yang disunting tidak kehilangan ruas yang
+ * dibaca mesin bot.
  */
-export async function simpanPola(db: AletaDatabase, actorUserId: string, masukan: Record<string, unknown>): Promise<BarisPolaDb> {
+export async function simpanPola(
+  db: AletaDatabase,
+  actorUserId: string,
+  masukan: Record<string, unknown>,
+  benih?: BenihKelompok[]
+): Promise<BarisPolaDb> {
   const lama = await db.queryOne<Record<string, unknown>>(`SELECT * FROM aleta_kamus_deteksi_pola WHERE kode = ?`, [teks(masukan.kode)]);
+  const tambahanBadan = tambahanDariBadan(masukan);
   const p: PolaKamus = {
-    ...rapikanPola(masukan),
+    ...rapikanPola(hanyaRuasBaku(masukan, RUAS_BAKU_POLA)),
     status: statusSah(masukan.status, lama ? statusSah(lama.status) : "draf"),
   };
+  if (tambahanBadan === undefined) {
+    const sumber = lama ? barisKePola(lama) : await benihPola(p.kode, benih);
+    if (sumber) {
+      p.tambahan = { ...sumber.tambahan };
+      p.ukur = { ...rincianUkur(sumber.ukur), ...p.ukur };
+    }
+  }
   const periksa = periksaPola(p);
   if (periksa.galat.length) throw new ApiError(400, `Pola ditolak: ${periksa.galat.join("; ")}`);
   const kini = new Date().toISOString();
@@ -403,21 +483,22 @@ export async function simpanPola(db: AletaDatabase, actorUserId: string, masukan
     JSON.stringify(p.contohSalah),
     JSON.stringify(p.ukur),
     p.catatan,
+    JSON.stringify(p.tambahan ?? {}),
   ];
   if (lama) {
     await db.run(
       `UPDATE aleta_kamus_deteksi_pola
           SET kelompok = ?, label = ?, kunci = ?, regex = ?, flags = ?, status = ?, yakin = ?,
-              contoh_benar = ?, contoh_salah = ?, ukur = ?, catatan = ?, diubah_oleh = ?, diubah_at = ?
+              contoh_benar = ?, contoh_salah = ?, ukur = ?, catatan = ?, tambahan = ?, diubah_oleh = ?, diubah_at = ?
         WHERE kode = ?`,
       [...nilai, oleh, kini, p.kode]
     );
   } else {
     await db.run(
       `INSERT INTO aleta_kamus_deteksi_pola
-         (id, kode, kelompok, label, kunci, regex, flags, status, yakin, contoh_benar, contoh_salah, ukur, catatan,
+         (id, kode, kelompok, label, kunci, regex, flags, status, yakin, contoh_benar, contoh_salah, ukur, catatan, tambahan,
           asal_calon, dibuat_oleh, dibuat_at, diubah_oleh, diubah_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [randomUUID(), p.kode, ...nilai, teks(masukan.asalCalon), oleh, kini, oleh, kini]
     );
   }
@@ -425,29 +506,46 @@ export async function simpanPola(db: AletaDatabase, actorUserId: string, masukan
   return barisKePola(baru ?? {});
 }
 
-export async function simpanTemplat(db: AletaDatabase, actorUserId: string, masukan: Record<string, unknown>): Promise<BarisTemplatDb> {
+/**
+ * Templat: aturan ruas tambahan sama dengan simpanPola. `syarat` yang tidak
+ * dikirim juga diwarisi (layar lama tidak mengirimnya sama sekali).
+ */
+export async function simpanTemplat(
+  db: AletaDatabase,
+  actorUserId: string,
+  masukan: Record<string, unknown>,
+  benih?: BenihKelompok[]
+): Promise<BarisTemplatDb> {
   const lama = await db.queryOne<Record<string, unknown>>(`SELECT * FROM aleta_kamus_deteksi_templat WHERE kode = ?`, [teks(masukan.kode)]);
+  const tambahanBadan = tambahanDariBadan(masukan);
   const t: TemplatKamus = {
-    ...rapikanTemplat(masukan),
+    ...rapikanTemplat(hanyaRuasBaku(masukan, RUAS_BAKU_TEMPLAT)),
     status: statusSah(masukan.status, lama ? statusSah(lama.status) : "draf"),
   };
+  if (tambahanBadan === undefined || masukan.syarat === undefined) {
+    const sumber = lama ? barisKeTemplat(lama) : await benihTemplat(t.kode, benih);
+    if (sumber) {
+      if (tambahanBadan === undefined) t.tambahan = { ...sumber.tambahan };
+      if (masukan.syarat === undefined) t.syarat = { ...sumber.syarat };
+    }
+  }
   const periksa = periksaTemplat(t);
   if (periksa.galat.length) throw new ApiError(400, `Templat ditolak: ${periksa.galat.join("; ")}`);
   const kini = new Date().toISOString();
   const oleh = teks(actorUserId);
-  const nilai = [t.kelompok, t.label, t.gaya, t.teks, JSON.stringify(t.syarat), t.status, t.catatan];
+  const nilai = [t.kelompok, t.label, t.gaya, t.teks, JSON.stringify(t.syarat), t.status, t.catatan, JSON.stringify(t.tambahan ?? {})];
   if (lama) {
     await db.run(
       `UPDATE aleta_kamus_deteksi_templat
-          SET kelompok = ?, label = ?, gaya = ?, teks = ?, syarat = ?, status = ?, catatan = ?, diubah_oleh = ?, diubah_at = ?
+          SET kelompok = ?, label = ?, gaya = ?, teks = ?, syarat = ?, status = ?, catatan = ?, tambahan = ?, diubah_oleh = ?, diubah_at = ?
         WHERE kode = ?`,
       [...nilai, oleh, kini, t.kode]
     );
   } else {
     await db.run(
       `INSERT INTO aleta_kamus_deteksi_templat
-         (id, kode, kelompok, label, gaya, teks, syarat, status, catatan, asal_calon, dibuat_oleh, dibuat_at, diubah_oleh, diubah_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, kode, kelompok, label, gaya, teks, syarat, status, catatan, tambahan, asal_calon, dibuat_oleh, dibuat_at, diubah_oleh, diubah_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [randomUUID(), t.kode, ...nilai, teks(masukan.asalCalon), oleh, kini, oleh, kini]
     );
   }
@@ -458,6 +556,8 @@ export async function simpanTemplat(db: AletaDatabase, actorUserId: string, masu
 /**
  * Mengubah status. Pola/templat yang HANYA ada di benih disalin dulu ke
  * database (dengan status barunya) - itulah cara mematikan pola benih.
+ * Salinannya memuat SELURUH ruas benih: ruas baku, ruas tambahan (0063),
+ * dan rincian ukur.
  */
 export async function ubahStatusKamus(
   db: AletaDatabase,
@@ -490,13 +590,13 @@ export async function ubahStatusKamus(
     if (jenis === "pola") {
       const p = b.pola.find((x) => x.kode === kode);
       if (p) {
-        await simpanPola(db, actorUserId, { ...p, kelompok: b.kelompok, status });
+        await simpanPola(db, actorUserId, { ...p, tambahan: p.tambahan ?? {}, kelompok: b.kelompok, status }, daftarBenih);
         return { kode, status, disalinDariBenih: true };
       }
     } else {
       const t = b.templat.find((x) => x.kode === kode);
       if (t) {
-        await simpanTemplat(db, actorUserId, { ...t, kelompok: b.kelompok, status });
+        await simpanTemplat(db, actorUserId, { ...t, tambahan: t.tambahan ?? {}, kelompok: b.kelompok, status }, daftarBenih);
         return { kode, status, disalinDariBenih: true };
       }
     }

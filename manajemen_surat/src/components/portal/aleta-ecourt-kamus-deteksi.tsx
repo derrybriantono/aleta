@@ -10,6 +10,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { apiPath } from "@/lib/base-path";
+import { RUAS_BAKU_POLA, RUAS_BAKU_TEMPLAT, periksaTambahan } from "@/lib/kamus-deteksi";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 /**
@@ -27,7 +28,7 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 type Status = "aktif" | "draf" | "nonaktif";
 type Asal = "benih" | "database" | "database-menimpa";
-type Ukur = { n: number; tepat: number; salahTangkap: number; sumber?: string; tanggal?: string };
+type Ukur = { n: number; tepat: number; salahTangkap: number; sumber?: string; tanggal?: string; [rincian: string]: unknown };
 type Lapangan = { dipakai: number; diterima: number; disunting: number; persenDiterima: number };
 
 type Pola = {
@@ -43,6 +44,7 @@ type Pola = {
   contohSalah: string[];
   ukur: Ukur;
   catatan: string;
+  tambahan?: Record<string, unknown>;
   asal: Asal;
   adaBenih: boolean;
   ketepatan: number;
@@ -58,8 +60,10 @@ type Templat = {
   label: string;
   gaya: string;
   teks: string;
+  syarat?: Record<string, unknown>;
   status: Status;
   catatan: string;
+  tambahan?: Record<string, unknown>;
   asal: Asal;
   adaBenih: boolean;
 };
@@ -153,9 +157,83 @@ type SuntingPola = {
   ukurSalah: string;
   ukurSumber: string;
   catatan: string;
+  /** Ruas tambahan (JSON objek, terformat) - sebab, jenis, kebalikan, golongan, peran, ... */
+  tambahan: string;
+  /** Ukur asli beserta rinciannya (mis. golongan) - dikirim ulang utuh, hanya n/tepat/salah/sumber yang disunting. */
+  ukurAsli: Record<string, unknown>;
 };
 
-type SuntingTemplat = { baru: boolean; kode: string; kelompok: string; label: string; gaya: string; teks: string; status: Status; catatan: string };
+type SuntingTemplat = {
+  baru: boolean;
+  kode: string;
+  kelompok: string;
+  label: string;
+  gaya: string;
+  teks: string;
+  status: Status;
+  catatan: string;
+  /** syarat & ruas tambahan templat sebagai JSON objek terformat */
+  syarat: string;
+  tambahan: string;
+};
+
+/* === RUAS-TAMBAHAN 11 Okt === */
+/**
+ * Ruas tambahan disunting sebagai JSON terformat. Kosong = {}. Ditolak bila
+ * bukan objek, nama ruasnya tidak sah, atau bentrok dengan ruas baku - aturan
+ * yang SAMA dengan server (periksaTambahan di lib/kamus-deteksi).
+ */
+function jsonTerformat(nilai: unknown): string {
+  return nilai && typeof nilai === "object" && Object.keys(nilai as object).length ? JSON.stringify(nilai, null, 2) : "";
+}
+
+function uraiObjekJson(teksJson: string, nama: string, ruasBaku?: readonly string[]): { ok: true; nilai: Record<string, unknown> } | { ok: false; galat: string } {
+  if (!teksJson.trim()) return { ok: true, nilai: {} };
+  let nilai: unknown;
+  try {
+    nilai = JSON.parse(teksJson);
+  } catch (e) {
+    return { ok: false, galat: `${nama}: JSON tidak sah - ${e instanceof Error ? e.message : String(e)}` };
+  }
+  if (!nilai || typeof nilai !== "object" || Array.isArray(nilai)) return { ok: false, galat: `${nama} harus objek JSON {...}.` };
+  const galat = ruasBaku ? periksaTambahan(nilai as Record<string, unknown>, ruasBaku) : [];
+  return galat.length ? { ok: false, galat: `${nama}: ${galat.join("; ")}` } : { ok: true, nilai: nilai as Record<string, unknown> };
+}
+
+function templatKeSunting(t: Templat | null, kelompok = ""): SuntingTemplat {
+  return {
+    baru: !t,
+    kode: t?.kode ?? "",
+    kelompok: t?.kelompok ?? kelompok,
+    label: t?.label ?? "",
+    gaya: t?.gaya ?? "",
+    teks: t?.teks ?? "",
+    status: t ? t.status : "draf",
+    catatan: t?.catatan ?? "",
+    syarat: jsonTerformat(t?.syarat),
+    tambahan: jsonTerformat(t?.tambahan),
+  };
+}
+
+function RuasTambahan(props: { nilai: string; ubah: (v: string) => void; ruasBaku: readonly string[]; label: string }) {
+  const urai = uraiObjekJson(props.nilai, props.label, props.ruasBaku);
+  return (
+    <label className="block space-y-1 text-xs text-muted-foreground">
+      {props.label} (JSON) - ruas yang dibaca mesin bot di luar isian di atas; ikut tersimpan dan dikirim ke bot apa adanya
+      <Textarea
+        value={props.nilai}
+        onChange={(e) => props.ubah(e.target.value)}
+        rows={Math.min(14, Math.max(3, props.nilai.split("\n").length))}
+        className="font-mono text-[11px]"
+        placeholder='{"jenis": "fakta"}'
+        aria-label={props.label}
+        spellCheck={false}
+      />
+      {urai.ok ? null : <span className="text-rose-600 dark:text-rose-400">{urai.galat}</span>}
+    </label>
+  );
+}
+/* === AKHIR RUAS-TAMBAHAN === */
 
 const persen = (x: number) => `${(x * 100).toFixed(1)}%`;
 const baris = (x: string) => x.split("\n").map((s) => s.trim()).filter(Boolean);
@@ -189,6 +267,8 @@ function polaKeSunting(p: Pola | null, kelompok = ""): SuntingPola {
     ukurSalah: String(p?.ukur.salahTangkap ?? 0),
     ukurSumber: p?.ukur.sumber ?? "",
     catatan: p?.catatan ?? "",
+    tambahan: jsonTerformat(p?.tambahan),
+    ukurAsli: p ? { ...p.ukur } : {},
   };
 }
 
@@ -295,6 +375,7 @@ function PenyuntingPola(props: {
         <Input value={s.ukurSumber} onChange={ubah("ukurSumber")} placeholder="sumber ukur" aria-label="Sumber ukur" />
       </div>
       <Textarea value={s.catatan} onChange={ubah("catatan")} rows={2} placeholder="Catatan" aria-label="Catatan" />
+      <RuasTambahan nilai={s.tambahan} ubah={(v) => setS({ ...s, tambahan: v })} ruasBaku={RUAS_BAKU_POLA} label="Ruas tambahan" />
 
       <div className="space-y-2 rounded-md border border-dashed border-border/80 p-2">
         <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Uji pola</div>
@@ -390,6 +471,8 @@ function PenyuntingTemplat(props: { awal: SuntingTemplat; kelompokBaku: string[]
         </NativeSelect>
         <Input value={s.catatan} onChange={ubah("catatan")} placeholder="Catatan" aria-label="Catatan templat" />
       </div>
+      <RuasTambahan nilai={s.syarat} ubah={(v) => setS({ ...s, syarat: v })} ruasBaku={[]} label="Syarat templat" />
+      <RuasTambahan nilai={s.tambahan} ubah={(v) => setS({ ...s, tambahan: v })} ruasBaku={RUAS_BAKU_TEMPLAT} label="Ruas tambahan templat" />
       <div className="flex flex-wrap gap-2">
         <Button size="sm" disabled={props.sibuk} onClick={() => void props.simpan(s)}>
           Simpan templat
@@ -533,6 +616,11 @@ export function AletaEcourtKamusDeteksi() {
   );
 
   const simpanPola = async (s: SuntingPola) => {
+    const tambahan = uraiObjekJson(s.tambahan, "Ruas tambahan", RUAS_BAKU_POLA);
+    if (!tambahan.ok) {
+      setPesanGagal(tambahan.galat);
+      return false;
+    }
     const d = await tindak(
       {
         tindakan: "simpan-pola",
@@ -546,8 +634,9 @@ export function AletaEcourtKamusDeteksi() {
         yakin: s.yakin,
         contohBenar: baris(s.contohBenar),
         contohSalah: baris(s.contohSalah),
-        ukur: { n: Number(s.ukurN) || 0, tepat: Number(s.ukurTepat) || 0, salahTangkap: Number(s.ukurSalah) || 0, sumber: s.ukurSumber },
+        ukur: { ...s.ukurAsli, n: Number(s.ukurN) || 0, tepat: Number(s.ukurTepat) || 0, salahTangkap: Number(s.ukurSalah) || 0, sumber: s.ukurSumber },
         catatan: s.catatan,
+        tambahan: tambahan.nilai,
       },
       `Pola ${s.kode} tersimpan.`
     );
@@ -556,7 +645,16 @@ export function AletaEcourtKamusDeteksi() {
   };
 
   const simpanTemplat = async (s: SuntingTemplat) => {
-    const d = await tindak({ tindakan: "simpan-templat", ...s, kode: s.kode.trim(), kelompok: s.kelompok.trim() }, `Templat ${s.kode} tersimpan.`);
+    const syarat = uraiObjekJson(s.syarat, "Syarat templat");
+    const tambahan = uraiObjekJson(s.tambahan, "Ruas tambahan templat", RUAS_BAKU_TEMPLAT);
+    if (!syarat.ok || !tambahan.ok) {
+      setPesanGagal(!syarat.ok ? syarat.galat : !tambahan.ok ? tambahan.galat : "");
+      return false;
+    }
+    const d = await tindak(
+      { tindakan: "simpan-templat", ...s, kode: s.kode.trim(), kelompok: s.kelompok.trim(), syarat: syarat.nilai, tambahan: tambahan.nilai },
+      `Templat ${s.kode} tersimpan.`
+    );
     if (d) setSuntingTemplat(null);
     return Boolean(d);
   };
@@ -641,7 +739,7 @@ export function AletaEcourtKamusDeteksi() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setSuntingTemplat({ baru: true, kode: "", kelompok: saring.kelompok, label: "", gaya: "", teks: "", status: "draf", catatan: "" })}
+                onClick={() => setSuntingTemplat(templatKeSunting(null, saring.kelompok))}
               >
                 Tambah templat
               </Button>
@@ -707,6 +805,9 @@ export function AletaEcourtKamusDeteksi() {
                           {p.lapangan ? `${p.lapangan.dipakai} dipakai, ${p.lapangan.persenDiterima}% diterima utuh, ${p.lapangan.disunting} disunting` : "belum ada"}
                         </span>
                       </div>
+                      {p.tambahan && Object.keys(p.tambahan).length ? (
+                        <div className="mt-1 text-xs text-muted-foreground">Ruas tambahan: {Object.keys(p.tambahan).join(", ")}</div>
+                      ) : null}
                       {p.peringatan.length ? <div className="text-xs text-amber-700 dark:text-amber-300">{p.peringatan.join("; ")}</div> : null}
                       <div className="mt-1 flex flex-wrap gap-2">
                         <Button size="sm" variant="outline" disabled={sibuk} onClick={() => setSuntingPola(polaKeSunting(p))}>
@@ -744,12 +845,15 @@ export function AletaEcourtKamusDeteksi() {
                         <span className="text-muted-foreground">{t.label}</span>
                       </div>
                       <div className="mt-1 whitespace-pre-wrap text-xs">{t.teks}</div>
+                      {t.tambahan && Object.keys(t.tambahan).length ? (
+                        <div className="mt-1 text-xs text-muted-foreground">Ruas tambahan: {Object.keys(t.tambahan).join(", ")}</div>
+                      ) : null}
                       <div className="mt-1 flex flex-wrap gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           disabled={sibuk}
-                          onClick={() => setSuntingTemplat({ baru: false, kode: t.kode, kelompok: t.kelompok, label: t.label, gaya: t.gaya, teks: t.teks, status: t.status, catatan: t.catatan })}
+                          onClick={() => setSuntingTemplat(templatKeSunting(t))}
                         >
                           Sunting
                         </Button>

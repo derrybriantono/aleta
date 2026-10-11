@@ -355,7 +355,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_masuk_jejak",
   // 10 Oktober 2026 (0060): kamus deteksi & kalimat (lapis database), jejak
   // koreksi petugas atas usulan ALETA, calon pola/templat dari koreksi. Tanpa
-  // kunci asing - urutannya bebas.
+  // kunci asing - urutannya bebas. 11 Oktober 2026 (0063): kolom `tambahan`
+  // (ruas tambahan pola/templat) ikut tersalin karena cadangan menyalin
+  // seluruh kolom; potret lama tanpa kolom itu dipulihkan dengan bawaan '{}'.
   "aleta_kamus_deteksi_pola",
   "aleta_kamus_deteksi_templat",
   "aleta_jejak_koreksi",

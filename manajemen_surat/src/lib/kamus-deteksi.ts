@@ -44,6 +44,11 @@ export type UkurPola = {
   salahTangkap: number;
   sumber?: string;
   tanggal?: string;
+  /**
+   * Rincian ukur lain dari benih (golongan, rincian, cara, kalimat, ...).
+   * DIPERTAHANKAN apa adanya: deteksiSaksiService membaca ukur.golongan.
+   */
+  [rincian: string]: unknown;
 };
 
 export type PolaKamus = {
@@ -59,6 +64,12 @@ export type PolaKamus = {
   contohSalah: string[];
   ukur: UkurPola;
   catatan: string;
+  /**
+   * Ruas tambahan di luar ruas baku (sebab, jenis, kebalikan, golongan, peran,
+   * ...) - dibaca mesin bot, disimpan di kolom `tambahan` (0063). Opsional di
+   * tipe agar objek lama tetap sah; rapikanPola selalu mengisinya.
+   */
+  tambahan?: Record<string, unknown>;
 };
 
 export type TemplatKamus = {
@@ -70,6 +81,8 @@ export type TemplatKamus = {
   syarat: Record<string, unknown>;
   status: StatusKamus;
   catatan: string;
+  /** Ruas tambahan templat (kodeAbt, asal, bagian, ...) - kolom `tambahan` (0063). */
+  tambahan?: Record<string, unknown>;
 };
 
 export type BenihKelompok = { kelompok: string; versi?: number; pola: PolaKamus[]; templat: TemplatKamus[] };
@@ -97,8 +110,9 @@ export function yakinSah(nilai: unknown): YakinKamus {
 }
 
 export function rapikanUkur(nilai: unknown): UkurPola {
-  const u = nilai && typeof nilai === "object" ? (nilai as Record<string, unknown>) : {};
+  const u = nilai && typeof nilai === "object" && !Array.isArray(nilai) ? (nilai as Record<string, unknown>) : {};
   return {
+    ...tanpaKunciBerbahaya(u),
     n: Math.max(0, Math.round(angka(u.n))),
     tepat: Math.max(0, Math.round(angka(u.tepat))),
     salahTangkap: Math.max(0, Math.round(angka(u.salahTangkap))),
@@ -111,6 +125,77 @@ export function rapikanUkur(nilai: unknown): UkurPola {
 export function ketepatan(ukur: UkurPola): number {
   return ukur.n > 0 ? ukur.tepat / ukur.n : 0;
 }
+
+/* === RUAS-TAMBAHAN 11 Okt === */
+/**
+ * Ruas baku pola/templat (kolom 0060). Ruas lain pada pola benih - sebab,
+ * jenis, kata, cakupan, hanyaDeteksi, ganti, kebalikan, golongan, jk, bentuk,
+ * awalan, peran, urut, perbuatan, variabel; templat: kodeAbt, asal, bagian -
+ * adalah RUAS TAMBAHAN yang dibaca mesin bot. Sebelum 0063 ruas itu hilang
+ * saat pola benih disalin ke database (sunting/nonaktifkan dari layar Admin),
+ * dan baris database menimpa benih menurut kode: pola rusak diam-diam.
+ */
+export const RUAS_BAKU_POLA = ["kode", "kelompok", "label", "kunci", "regex", "flags", "status", "yakin", "contohBenar", "contohSalah", "ukur", "catatan"] as const;
+export const RUAS_BAKU_TEMPLAT = ["kode", "kelompok", "label", "gaya", "teks", "syarat", "status", "catatan"] as const;
+
+/** Bukan ruas tambahan: wadahnya sendiri, dan ruas buatan bot (RegExp siap pakai). */
+const RUAS_BUKAN_TAMBAHAN = ["tambahan", "re"];
+const KUNCI_BERBAHAYA = new Set(["__proto__", "prototype", "constructor"]);
+const POLA_NAMA_RUAS = /^[A-Za-z_][A-Za-z0-9_]{0,59}$/;
+/** Batas ukuran JSON ruas tambahan satu butir (peta `kebalikan` terbesar ~1,5 KB). */
+export const BATAS_TAMBAHAN = 64 * 1024;
+
+function objekPolos(nilai: unknown): nilai is Record<string, unknown> {
+  return Boolean(nilai) && typeof nilai === "object" && !Array.isArray(nilai);
+}
+
+function tanpaKunciBerbahaya(o: Record<string, unknown>): Record<string, unknown> {
+  const hasil: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(o)) if (!KUNCI_BERBAHAYA.has(k)) hasil[k] = v;
+  return hasil;
+}
+
+/**
+ * Ruas tambahan satu butir: ruas di luar ruas baku pada objek itu sendiri
+ * (bentuk benih JSON), lalu isi objek `tambahan` (bentuk badan permintaan /
+ * baris database) yang mengalahkannya. Ruas berbahaya dibuang; ruas yang
+ * bentrok dengan ruas baku DIBIARKAN di sini supaya periksaTambahan dapat
+ * menolaknya dengan pesan - saat digabung ke objek pola, ruas baku menang.
+ */
+export function ambilTambahan(nilai: unknown, ruasBaku: readonly string[]): Record<string, unknown> {
+  if (!objekPolos(nilai)) return {};
+  const baku = new Set<string>([...ruasBaku, ...RUAS_BUKAN_TAMBAHAN]);
+  const hasil: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(nilai)) if (!baku.has(k) && !KUNCI_BERBAHAYA.has(k) && v !== undefined) hasil[k] = v;
+  if (objekPolos(nilai.tambahan)) for (const [k, v] of Object.entries(nilai.tambahan)) if (!KUNCI_BERBAHAYA.has(k) && v !== undefined) hasil[k] = v;
+  return hasil;
+}
+
+/** Galat ruas tambahan (menolak penyimpanan dari layar Admin). */
+export function periksaTambahan(tambahan: Record<string, unknown> | undefined, ruasBaku: readonly string[]): string[] {
+  const galat: string[] = [];
+  if (!tambahan) return galat;
+  const baku = new Set<string>([...ruasBaku, ...RUAS_BUKAN_TAMBAHAN]);
+  for (const k of Object.keys(tambahan)) {
+    if (baku.has(k)) galat.push(`ruas tambahan "${k}" bentrok dengan ruas baku - sunting di isian ${k} sendiri`);
+    else if (!POLA_NAMA_RUAS.test(k)) galat.push(`nama ruas tambahan "${k}" tidak sah (huruf, angka, garis bawah; diawali huruf)`);
+  }
+  if (JSON.stringify(tambahan).length > BATAS_TAMBAHAN) galat.push(`ruas tambahan melebihi ${BATAS_TAMBAHAN / 1024} KB`);
+  return galat;
+}
+
+/**
+ * Objek butir untuk bot: ruas baku + ruas tambahan, ruas baku SELALU menang
+ * (ruas tambahan tidak dapat menimpa kode/kelompok/regex/status). Tanpa ruas
+ * tambahan hasilnya sama persis dengan bentuk lama (sidik lapis tidak berubah).
+ */
+export function gabungTambahan<T extends Record<string, unknown>>(baku: T, tambahan: Record<string, unknown> | undefined): T {
+  if (!tambahan) return baku;
+  const hasil: Record<string, unknown> = { ...baku };
+  for (const [k, v] of Object.entries(tambahan)) if (!(k in baku) && !RUAS_BUKAN_TAMBAHAN.includes(k) && !KUNCI_BERBAHAYA.has(k)) hasil[k] = v;
+  return hasil as T;
+}
+/* === AKHIR RUAS-TAMBAHAN === */
 
 /** Bentuk baku satu pola dari JSON benih / badan permintaan / baris database. */
 export function rapikanPola(nilai: unknown, kelompokBawaan = ""): PolaKamus {
@@ -128,6 +213,7 @@ export function rapikanPola(nilai: unknown, kelompokBawaan = ""): PolaKamus {
     contohSalah: daftarTeks(p.contohSalah),
     ukur: rapikanUkur(p.ukur),
     catatan: teks(p.catatan),
+    tambahan: ambilTambahan(p, RUAS_BAKU_POLA),
   };
 }
 
@@ -143,6 +229,7 @@ export function rapikanTemplat(nilai: unknown, kelompokBawaan = ""): TemplatKamu
     syarat,
     status: statusSah(t.status, "aktif"),
     catatan: teks(t.catatan),
+    tambahan: ambilTambahan(t, RUAS_BAKU_TEMPLAT),
   };
 }
 
@@ -190,6 +277,7 @@ export function periksaPola(p: PolaKamus): { galat: string[]; peringatan: string
     if (p.ukur.tepat > p.ukur.n) galat.push("ukur.tepat melebihi ukur.n");
   }
   if (!p.contohBenar.length) peringatan.push("belum ada contohBenar");
+  galat.push(...periksaTambahan(p.tambahan, RUAS_BAKU_POLA));
   return { galat, peringatan };
 }
 
@@ -202,6 +290,7 @@ export function periksaTemplat(t: TemplatKamus): { galat: string[]; peringatan: 
   const buka = (t.teks.match(/\{/g) || []).length;
   const tutup = (t.teks.match(/\}/g) || []).length;
   if (buka !== tutup) galat.push("kurung kurawal tempat isian tidak seimbang");
+  galat.push(...periksaTambahan(t.tambahan, RUAS_BAKU_TEMPLAT));
   return { galat, peringatan };
 }
 
