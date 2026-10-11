@@ -267,7 +267,8 @@ describe("butir 25: profil peran (K4) di panel-alat.js", () => {
   });
 
   it("Lama: profil tidak berlaku sama sekali - tidak ada yang ditulis", async () => {
-    const h = buka({ simpanan: { tampilanServer: { ...SERVER_UI(PROFIL_HAKIM), diterapkan: false }, cetakTigaBerkas: true } });
+    // UIBARU-WAJIB 12 Okt: peran dikenal selain Super Admin selalu UI Baru; Lama = peran belum diketahui.
+    const h = buka({ simpanan: { tampilanServer: { ...SERVER_UI({ ...PROFIL_HAKIM, peran: "" }), diterapkan: false }, cetakTigaBerkas: true } });
     await h.w.alatMuatUji();
     expect(h.w.alatUjiMode()).toBe("lama");
     expect(h.w.alatProfilPeran()).toBeNull();
@@ -347,7 +348,9 @@ describe("butir 25: profil peran (K4) di panel-alat.js", () => {
 // ============================================================================
 // Butir 25 dan 6 di popup
 // ============================================================================
-function bukaPopup(simpan: Record<string, unknown>) {
+// UIBARU-WAJIB 12 Okt: pilihan Lama/Baru dan saklar fitur lokal hanya milik Super Admin,
+// jadi popup uji memakai Super Admin kecuali diminta lain.
+function bukaPopup(simpan: Record<string, unknown>, peran = "Super Admin") {
   const html = POPUP_HTML.replace(/<script[\s\S]*?<\/script>/g, "");
   const dom = new JSDOM(html, { url: "chrome-extension://aleta/popup.html", runScripts: "outside-only" });
   terbuka.push(dom);
@@ -377,7 +380,7 @@ function bukaPopup(simpan: Record<string, unknown>) {
   w.fetch = async (alamat: string) => {
     const a = String(alamat);
     if (a.includes("info=siapa")) {
-      return { ok: true, status: 200, json: async () => ({ ok: true, data: { pengguna: { nama: "Uji", peran: "Hakim" }, versi: "1.174.1" } }) };
+      return { ok: true, status: 200, json: async () => ({ ok: true, data: { pengguna: { nama: "Uji", peran }, versi: "1.174.1" } }) };
     }
     return { ok: true, status: 200, url: a, json: async () => ({}) };
   };
@@ -393,11 +396,11 @@ async function popupTenang(p: ReturnType<typeof bukaPopup>) {
 }
 
 describe("popup: profil saklar hanya bagi Super Admin dan Admin (butir 25)", () => {
-  it("pegawai dengan profil peran: bagian Profil saklar TIDAK tampil, kalimat profilnya tampil", async () => {
-    const p = bukaPopup({ tampilanServer: SERVER_UI(PROFIL_HAKIM) });
+  it("pegawai dengan profil peran: bagian Profil saklar TIDAK tampil, dan kalimat teknis profilnya tidak tampil (hanya Super Admin; 12 Okt)", async () => {
+    const p = bukaPopup({ tampilanServer: SERVER_UI(PROFIL_HAKIM) }, "Hakim");
     await popupTenang(p);
     expect(p.d.getElementById("tbProfil")).toBeNull();
-    expect(p.d.getElementById("tbProfilPeran")?.textContent).toMatch(/profil peran hakim yang diatur admin/);
+    expect(p.d.getElementById("tbProfilPeran")).toBeNull();
     // Saklarnya sendiri tetap ada dan tetap dapat diubah.
     expect((p.d.getElementById("checklistMilestone") as HTMLInputElement).disabled).toBe(false);
   });

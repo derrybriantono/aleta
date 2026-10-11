@@ -3035,6 +3035,15 @@ async function pasangPortal() {
     const luar = await respons.json();
     const siapa = luar && luar.data ? luar.data : luar;
     if (!siapa || !siapa.nama) return;
+    /* === POPUP-PERAN 12 Okt === Sudah masuk ALETA: latar.js (pendengar onChanged) memeriksa
+       versi baru dan menyiapkannya di belakang layar (satu pemeriksaan per 30 menit, ditahan
+       latar.js). Lewat penyimpanan, bukan pesan: tidak menambah lalu lintas pesan panel. */
+    try {
+      void Promise.resolve(chrome.storage.local.set({ sesiPortalMasuk: Date.now() })).catch(() => {});
+    } catch {
+      /* di luar konteks ekstensi */
+    }
+    /* === AKHIR POPUP-PERAN === */
     if (document.getElementById(PENANDA_ALETA)) return;
     const panel = await susunPanelPortal(siapa);
     document.body.appendChild(panel);

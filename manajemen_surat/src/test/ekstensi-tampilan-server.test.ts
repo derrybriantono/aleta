@@ -329,9 +329,12 @@ describe("popup: tampilan yang diterapkan admin", () => {
     expect((d.getElementById("ujiLainBaris") as HTMLElement).hidden).toBe(true);
   });
 
-  it("tanpa penerapan: popup Lama", async () => {
-    const d = buka("Hakim", {});
+  it("tanpa penerapan: popup Lama bagi Super Admin; selain itu UI Baru wajib (12 Okt)", async () => {
+    const d = buka("Super Admin", {});
     await new Promise((r) => setTimeout(r, 80));
     expect(d.documentElement.hasAttribute("data-kulit")).toBe(false);
+    const h = buka("Hakim", {});
+    await new Promise((r) => setTimeout(r, 80));
+    expect(h.documentElement.getAttribute("data-kulit")).toBe("modern");
   });
 });

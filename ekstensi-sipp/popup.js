@@ -45,6 +45,74 @@ const penyimpanan =
  * dijaga tetap sama oleh uji ekstensi - kalau berbeda, popup akan menawarkan
  * angka yang kemudian dijepit panel tanpa ada yang mengatakannya.
  */
+/* === POPUP-PERAN 12 Okt === deklarasi data dipindah ke atas: dibaca sebelum bagian lain selesai dievaluasi (TDZ). */
+const KUNCI_IDENTITAS = "identitasPopup";
+const KUNCI_PERALIHAN = "identitasPeralihan";
+const AWALAN_AKUN = "pengaturanAkun:";
+/** Kunci setelan pribadi - SAMA dengan KUNCI_SETELAN_AKUN di latar.js (dijaga uji). */
+const KUNCI_SETELAN_AKUN = [
+  "aktif",
+  "tandaiHalaman",
+  "sisipJadwal",
+  "cetakTigaBerkas",
+  "suntingLangsungAbt",
+  "checklistMilestone",
+  "skalaHuruf",
+  "temaPopup",
+  "temaPanel",
+  "warnaGelap",
+  "warnaMandiri",
+  "warnaSendiri",
+  "panelBawaanTampil",
+  "senyapSampai",
+  "sembunyikanTeknis",
+  "ujiTampilan",
+  "ujiFitur",
+  "ujiIzinkanNyata",
+];
+/** Nilai awal tiap kunci yang punya bawaan jelas; selebihnya dihapus saat berganti akun. */
+const BAWAAN_AKUN = {
+  aktif: true,
+  tandaiHalaman: true,
+  sisipJadwal: false,
+  cetakTigaBerkas: false,
+  suntingLangsungAbt: false,
+  checklistMilestone: false,
+  skalaHuruf: 100,
+  temaPopup: "ikut",
+  temaPanel: "gelap",
+  sembunyikanTeknis: true,
+  ujiTampilan: "lama",
+  ujiFitur: {},
+  ujiIzinkanNyata: false,
+};
+const SAKLAR_PROFIL_ID = ["tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone"];
+const SITUS_PANEL_ID = ["aleta", "sipp", "abt"];
+
+const LABEL_GOLONGAN = {
+  "super-admin": "Super Admin",
+  admin: "Admin",
+  ketua: "Ketua",
+  hakim: "Hakim",
+  "panitera-pengganti": "Panitera Pengganti",
+  "juru-sita": "Juru Sita",
+  panitera: "Panitera",
+  kasir: "Kasir",
+  ptsp: "PTSP",
+  mediator: "Mediator",
+  operator: "Operator",
+  umum: "Pegawai",
+};
+
+let identitasPopup = null;
+/** { profil, kustom } milik akun+golongan yang masuk - dari salinan tersimpan. */
+let rekamAkunPopup = { profil: "", kustom: null };
+
+let golonganTersimpan = "";
+const KUNCI_PEMBARUAN_OTOMATIS = "pembaruanOtomatis";
+const pembaruanLatar = { versiPortal: "", menunggu: "", diunduh: null };
+
+
 const SKALA_KUNCI = "skalaHuruf";
 const SKALA_BAWAAN = 100;
 const SKALA_MIN = 80;
@@ -258,15 +326,21 @@ function kabarPerbarui(teks) {
   if (!perbaruiKabar) return;
   perbaruiKabar.textContent = teks;
   perbaruiKabar.hidden = false;
+  // POPUP-PERAN 12 Okt: kabar yang sama di pemberitahuan puncak jendela.
+  const kabarPita = document.getElementById("pemberitahuanVersiKabar");
+  if (kabarPita) {
+    kabarPita.textContent = teks;
+    kabarPita.hidden = false;
+  }
 }
 
-async function mintaKeLatar(jenis, paksa) {
+async function mintaKeLatar(jenis, paksa, tambahan) {
   if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
     return { ok: false, pesan: "Jendela ini tidak berjalan sebagai ekstensi." };
   }
   try {
-    if (paksa) return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis, paksa: true });
-    return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis });
+    if (paksa) return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis, paksa: true, ...(tambahan || {}) });
+    return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis, ...(tambahan || {}) });
   } catch (galat) {
     // Ekstensi sedang dimuat ulang - konteksnya mati sebelum jawabannya
     // sampai. Itu pertanda perintahnya berjalan, bukan gagal.
@@ -326,6 +400,7 @@ if (tombolPerbarui) {
     // "muat-ulang" juga.
     if (sudahDipaksa) paksaMuatUlang = true;
     if (tombolMuatUlangEkstensi) tombolMuatUlangEkstensi.hidden = false;
+    tampilkanMuatUlangPita(jawab);
     tombolPerbarui.disabled = false;
   });
 }
@@ -615,6 +690,9 @@ async function periksaAkunAleta(asal) {
     });
     // Pemilih warna gelap hanya bagi super admin - diputuskan di sini, sesudah
     // portal menjawab siapa yang masuk. Sebelum itu barisnya tersembunyi.
+    // POPUP-PERAN 12 Okt: setelan per akun + golongan diselaraskan SEBELUM
+    // bagian lain membaca penyimpanan.
+    await prosesIdentitasPopup(data);
     void pasangPemilihWarnaPopup(peran);
     // Pengalih uji tampilan - juga hanya bagi super admin, diputuskan di sini.
     void pasangUjiTampilan(peran);
@@ -815,6 +893,11 @@ const ujiKeadaan = { mode: "lama", fitur: {}, nyata: false, server: null };
  * Super Admin tetap membaca pilihan LOKAL (ujiKeadaan.mode).
  */
 function modePopupBerlaku() {
+  // UIBARU-WAJIB 12 Okt: selain Super Admin, popup selalu UI Baru.
+  if (popupWajibUi()) {
+    const w = ujiKeadaan.server;
+    return { mode: "ui", fitur: w && w.diterapkan === true && w.fitur && typeof w.fitur === "object" ? w.fitur : {} };
+  }
   if (ujiKeadaan.mode !== "lama") return { mode: ujiKeadaan.mode, fitur: ujiKeadaan.fitur };
   const s = ujiKeadaan.server;
   if (s && s.diterapkan === true && MODE_UJI.includes(s.mode) && s.mode !== "lama") {
@@ -839,9 +922,12 @@ function terapkanKulitPopup() {
 async function muatUjiPopup() {
   if (!penyimpanan) return;
   try {
-    const simpan = await penyimpanan.get([KUNCI_UJI_TAMPILAN, KUNCI_UJI_FITUR, KUNCI_UJI_NYATA, "tampilanServer"]);
+    const simpan = await penyimpanan.get([KUNCI_UJI_TAMPILAN, KUNCI_UJI_FITUR, KUNCI_UJI_NYATA, "tampilanServer", KUNCI_IDENTITAS]);
     const sv = simpan && simpan.tampilanServer;
     ujiKeadaan.server = sv && typeof sv === "object" && !Array.isArray(sv) ? sv : null;
+    // Golongan pegawai yang terakhir masuk - supaya kulit benar sejak gambar pertama.
+    const idTersimpan = simpan && simpan[KUNCI_IDENTITAS];
+    golonganTersimpan = idTersimpan && typeof idTersimpan.golongan === "string" ? idTersimpan.golongan : "";
     ujiKeadaan.mode = bersihModeUji(simpan && simpan[KUNCI_UJI_TAMPILAN]);
     const f = simpan && simpan[KUNCI_UJI_FITUR];
     ujiKeadaan.fitur = f && typeof f === "object" && !Array.isArray(f) ? { ...f } : {};
@@ -954,9 +1040,16 @@ async function pasangUjiTampilan(peran) {
   await ujiSiap;
   if (!/super/i.test(String(peran || ""))) {
     bagian.hidden = true;
-    // Bukan super admin, tetapi tampilan uji tertinggal menyala di PC ini:
-    // disebut, dan boleh dikembalikan ke Lama - keadaan bawaan yang aman.
-    if (lain) lain.hidden = ujiKeadaan.mode === "lama";
+    // POPUP-PERAN / UIBARU-WAJIB 12 Okt: bukan Super Admin = selalu UI Baru, tanpa
+    // pengalih. Keterangan teknis "tampilan uji Super Admin sedang menyala"
+    // tidak ditampilkan; pilihan uji yang tertinggal di PC ini dipulihkan ke
+    // Lama (bawaan aman) dan tidak berlaku bagi akun ini.
+    if (lain) lain.hidden = true;
+    if (ujiKeadaan.mode !== "lama") {
+      ujiKeadaan.mode = "lama";
+      if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_TAMPILAN]: "lama" });
+      terapkanKulitPopup();
+    }
     const kembali = document.getElementById("ujiKembaliLama");
     if (kembali && !kembali.dataset.terpasang) {
       kembali.dataset.terpasang = "ya";
@@ -1379,6 +1472,11 @@ function pulihkanSusunan() {
 
 /** Menggambar ulang bagian yang bergantung keadaan (portal, saklar, senyap). */
 function segarkanSusunan() {
+  try {
+    terapkanPeranPopup();
+  } catch {
+    /* penyaringan peran tidak boleh menahan penyegar lain */
+  }
   for (const fn of susunan.penyegar.slice()) {
     try {
       fn();
@@ -1393,7 +1491,10 @@ async function terapkanSusunan() {
   // Dari sini sampai akhir serempak: dua panggilan tidak dapat bersilang.
   pulihkanSusunan();
   const mode = modePopupBerlaku().mode;
-  if (mode === "lama") return;
+  if (mode === "lama") {
+    terapkanPeranPopup();
+    return;
+  }
   atributSementara(document.documentElement, "data-susunan", mode);
   if (mode === "ui") susunUiBaru();
   else susunBaru();
@@ -1401,7 +1502,7 @@ async function terapkanSusunan() {
   // Baru DAN UI Baru, sesudah ukuran huruf panel.
   pasangSaklarTeknis();
   // Butir 25: kalimat profil peran di puncak daftar saklar.
-  if (profilPeranMengaturSaklar()) {
+  if (profilPeranMengaturSaklar() && popupSuperAdmin()) {
     const isi = document.querySelector(".isi");
     if (isi) sisipkan(komponenProfilPeran(), isi, isi.firstChild);
   }
@@ -1744,7 +1845,7 @@ function komponenCari() {
     const butir = Array.from(document.querySelectorAll(".isi label.saklar, .isi .skala, .isi [data-cari]"));
     let ada = 0;
     for (const x of butir) {
-      if (x.hidden) continue;
+      if (x.hidden || x.hasAttribute("data-peran-sembunyi")) continue;
       const cocok = !cari || x.textContent.toLowerCase().includes(cari);
       if (cocok) {
         x.removeAttribute("data-cari-sembunyi");
@@ -1780,51 +1881,165 @@ function komponenCari() {
 // membuka isian di atas nilai yang benar, dan itu keputusan orangnya sendiri.
 // Saklar induk tidak disentuh profil mana pun - profil mengatur ALETA yang
 // menyala, bukan menyalakan atau mematikannya.
-const PROFIL_SAKLAR = [
-  {
-    kode: "hakim",
+const PROFIL_GOLONGAN = {
+  // saklar = keadaan awal; panel = panel yang terbuka saat halaman dibuka;
+  // relevan = saklar yang ditampilkan popup bagi golongan itu (12 Okt).
+  ketua: {
+    nama: "Ketua",
+    saklar: { tandaiHalaman: true, sisipJadwal: true, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: false, sipp: true, abt: true },
+    relevan: ["tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone"],
+  },
+  hakim: {
     nama: "Hakim",
     saklar: { tandaiHalaman: true, sisipJadwal: true, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: false, sipp: true, abt: true },
+    relevan: ["tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone"],
   },
-  {
-    kode: "pp",
+  "panitera-pengganti": {
     nama: "Panitera Pengganti",
-    pendek: "PP",
     saklar: { tandaiHalaman: true, sisipJadwal: true, cetakTigaBerkas: true, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: false, sipp: true, abt: true },
+    relevan: ["tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone"],
   },
-  {
-    kode: "jurusita",
+  "juru-sita": {
     nama: "Juru Sita",
     saklar: { tandaiHalaman: true, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: false, sipp: true, abt: true },
+    relevan: ["tandaiHalaman", "checklistMilestone"],
   },
-];
+  panitera: {
+    nama: "Panitera / Panmud",
+    saklar: { tandaiHalaman: true, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: true, sipp: true, abt: true },
+    relevan: ["tandaiHalaman", "sisipJadwal", "checklistMilestone"],
+  },
+  kasir: {
+    nama: "Kasir",
+    saklar: { tandaiHalaman: false, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: true, sipp: true, abt: false },
+    relevan: ["checklistMilestone"],
+  },
+  ptsp: {
+    nama: "PTSP",
+    saklar: { tandaiHalaman: true, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: true, sipp: true, abt: false },
+    relevan: ["tandaiHalaman", "checklistMilestone"],
+  },
+  mediator: {
+    nama: "Mediator",
+    saklar: { tandaiHalaman: true, sisipJadwal: true, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: true, sipp: true, abt: false },
+    relevan: ["tandaiHalaman", "sisipJadwal", "checklistMilestone"],
+  },
+  operator: {
+    nama: "Operator",
+    saklar: { tandaiHalaman: true, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: false },
+    panel: { aleta: false, sipp: true, abt: false },
+    relevan: ["tandaiHalaman", "checklistMilestone"],
+  },
+  umum: {
+    nama: "Pegawai",
+    saklar: { tandaiHalaman: true, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
+    panel: { aleta: false, sipp: true, abt: true },
+    relevan: ["tandaiHalaman", "checklistMilestone"],
+  },
+};
 
-/** Profil yang cocok dengan saklar sekarang; "kustom" bila tidak ada. */
+/** Tombol profil di kartu "Profil saklar" (Super Admin dan Admin): satu per golongan. */
+const PROFIL_SAKLAR = [
+  { kode: "hakim", nama: "Hakim", golongan: "hakim" },
+  { kode: "pp", nama: "Panitera Pengganti", pendek: "PP", golongan: "panitera-pengganti" },
+  { kode: "jurusita", nama: "Juru Sita", golongan: "juru-sita" },
+  { kode: "panitera", nama: "Panitera / Panmud", pendek: "Panitera", golongan: "panitera" },
+  { kode: "kasir", nama: "Kasir", golongan: "kasir" },
+  { kode: "ptsp", nama: "PTSP", golongan: "ptsp" },
+  { kode: "mediator", nama: "Mediator", golongan: "mediator" },
+  { kode: "operator", nama: "Operator", golongan: "operator" },
+].map((p) => ({ ...p, saklar: PROFIL_GOLONGAN[p.golongan].saklar, panel: PROFIL_GOLONGAN[p.golongan].panel }));
+
+/** Profil yang cocok dengan saklar sekarang; "kustom" bila tidak ada. Yang tercatat untuk akun ini didahulukan. */
 function profilSekarang() {
-  for (const p of PROFIL_SAKLAR) {
-    const cocok = Object.entries(p.saklar).every(([id, nilai]) => {
+  const cocok = (p) =>
+    Object.entries(p.saklar).every(([id, nilai]) => {
       const k = document.getElementById(id);
       return k && k.checked === nilai;
     });
-    if (cocok) return p.kode;
-  }
+  const dicatat = PROFIL_SAKLAR.find((p) => p.kode === rekamAkunPopup.profil);
+  if (dicatat && cocok(dicatat)) return dicatat.kode;
+  // Belum ada profil yang dipilih untuk akun ini: kombinasi bawaan kebetulan sama
+  // dengan satu profil (mis. Operator) - tidak boleh tampak sebagai pilihan.
+  if (!rekamAkunPopup.profil) return "kustom";
+  for (const p of PROFIL_SAKLAR) if (cocok(p)) return p.kode;
   return "kustom";
+}
+
+function saklarSekarangPopup() {
+  const hasil = {};
+  for (const id of SAKLAR_PROFIL_ID) {
+    const k = document.getElementById(id);
+    if (k) hasil[id] = k.checked;
+  }
+  return hasil;
+}
+
+/** Panel yang terbuka saat halaman dibuka, sebagaimana berlaku sekarang. */
+async function panelSekarangPopup() {
+  let lokal = null;
+  try {
+    const s = penyimpanan ? await penyimpanan.get([KUNCI_BAWAAN_PANEL]) : {};
+    lokal = s && s[KUNCI_BAWAAN_PANEL] && typeof s[KUNCI_BAWAAN_PANEL] === "object" ? s[KUNCI_BAWAAN_PANEL] : null;
+  } catch {
+    lokal = null;
+  }
+  const b = bawaanPanelBerlaku(lokal, bawaanPanelServer());
+  return { aleta: b.aleta !== false, sipp: b.sipp !== false, abt: b.abt !== false };
+}
+
+/** Menyetel saklar lewat KOTAK CENTANG ASLINYA, dengan peristiwa change. */
+function setelSaklarPopup(peta) {
+  for (const [id, nilai] of Object.entries(peta || {})) {
+    const k = document.getElementById(id);
+    if (!k || k.checked === nilai) continue;
+    k.checked = nilai;
+    k.dispatchEvent(new Event("change", { bubbles: true }));
+  }
 }
 
 /**
  * Menyetel saklar lewat KOTAK CENTANG ASLINYA, dengan peristiwa change -
  * sehingga yang menyimpan tetap pendengar lama, satu-satunya penulis kunci
  * itu. Tidak ada salinan aturan simpan di sini.
+ *
+ * 12 Okt: profil juga menyetel PANEL yang terbuka saat halaman dibuka, dan
+ * "Kustom" memulihkan setelan sendiri yang diingat sebelum profil dicoba.
  */
 function terapkanProfil(kode) {
+  if (kode === "kustom") {
+    const k = rekamAkunPopup.kustom;
+    if (!k || !k.saklar) return;
+    setelSaklarPopup(k.saklar);
+    void ubahRekamAkun({ profil: "kustom" });
+    if (k.panel) {
+      void simpanBawaanPanel(k.panel).then(() => kabarkanPanelPopup());
+    }
+    segarkanSusunan();
+    return;
+  }
   const p = PROFIL_SAKLAR.find((x) => x.kode === kode);
   if (!p) return;
-  for (const [id, nilai] of Object.entries(p.saklar)) {
-    const k = document.getElementById(id);
-    if (!k || k.checked === nilai) continue;
-    k.checked = nilai;
-    k.dispatchEvent(new Event("change", { bubbles: true }));
-  }
+  const kustomSaklar = profilSekarang() === "kustom" ? saklarSekarangPopup() : null;
+  const panelLama = kustomSaklar ? panelSekarangPopup() : null;
+  // Diingat SEKARANG (serempak): "Kustom" yang ditekan segera sesudahnya sudah punya isi.
+  if (kustomSaklar) rekamAkunPopup = { ...rekamAkunPopup, kustom: { saklar: kustomSaklar, panel: null } };
+  rekamAkunPopup = { ...rekamAkunPopup, profil: kode };
+  setelSaklarPopup(p.saklar);
+  void (async () => {
+    if (kustomSaklar) await ubahRekamAkun({ kustom: { saklar: kustomSaklar, panel: await panelLama } });
+    await ubahRekamAkun({ profil: kode });
+    await simpanBawaanPanel(p.panel);
+    kabarkanPanelPopup();
+  })();
   segarkanSusunan();
 }
 
@@ -1834,6 +2049,7 @@ function komponenProfil() {
   const seg = buat("div", "uji-seg tb-seg");
   seg.setAttribute("role", "group");
   seg.setAttribute("aria-label", "Profil saklar per peran");
+  seg.style.flexWrap = "wrap";
   const tombol = [];
   for (const p of [...PROFIL_SAKLAR, { kode: "kustom", nama: "Kustom" }]) {
     // "PP", bukan "Panitera Pengganti": empat tombol sebaris di kartu selebar
@@ -1841,16 +2057,16 @@ function komponenProfil() {
     const b = buat("button", "", p.pendek || p.nama);
     b.type = "button";
     b.dataset.profil = p.kode;
-    if (p.saklar) b.title = `Setel saklar untuk ${p.nama}`;
-    else b.title = "Atur saklar satu per satu di bawah";
-    b.addEventListener("click", () => (p.saklar ? terapkanProfil(p.kode) : null));
+    if (p.saklar) b.title = `Setel saklar dan panel untuk ${p.nama}`;
+    else b.title = "Kembali ke setelan Anda sendiri (diingat sebelum profil dicoba)";
+    b.addEventListener("click", () => terapkanProfil(p.kode));
     seg.appendChild(b);
     tombol.push(b);
   }
   const ket = buat(
     "p",
     "saklar-ket aleta-teknis",
-    "Menyetel lima saklar sekaligus; saklar induk tidak disentuh. Ubah satu saklar → Kustom."
+    "Menyetel lima saklar dan panel yang terbuka sekaligus; saklar induk tidak disentuh. Ubah satu saklar → Kustom."
   );
   k.appendChild(seg);
   k.appendChild(ket);
@@ -2504,9 +2720,9 @@ function susunBaru() {
   const keadaan = document.querySelector(".keadaan");
   const kartu = [];
   if (fiturPopupNyala("popup-2")) kartu.push(komponenLampu(true));
-  if (fiturPopupNyala("popup-27")) kartu.push(komponenBatasSitus());
+  if (fiturPopupNyala("popup-27") && popupSuperAdmin()) kartu.push(komponenBatasSitus());
   if (fiturPopupNyala("popup-10")) kartu.push(komponenVersi());
-  if (fiturPopupNyala("popup-11") && !profilPeranMengaturSaklar()) kartu.push(komponenProfil());
+  if (fiturPopupNyala("popup-11") && !profilPeranMengaturSaklar() && stripProfilBoleh()) kartu.push(komponenProfil());
   if (fiturPopupNyala("popup-5")) kartu.push(komponenTema(true, true));
   if (fiturPopupNyala("popup-12")) kartu.push(komponenSenyap());
   if (fiturPopupNyala("popup-15")) kartu.push(komponenCari());
@@ -2612,9 +2828,25 @@ function masalahSambungan() {
     return hasil;
   }
   if (!p.masuk) hasil.push({ teks: "Belum masuk portal ALETA.", alamat: `${tahap2.asalPortal}/login` });
+  // POPUP-PERAN 12 Okt (butir 4): SIPP dan ABT yang menjawab 404/5xx/tidak
+  // terjangkau, atau belum masuk, ikut dihitung - dahulu kartu bertulis
+  // "Semua tersambung" walau lampu SIPP dan ABT merah.
+  for (const [kode, nama] of [
+    ["sipp", "SIPP"],
+    ["abt", "ABT"],
+  ]) {
+    const l = lampuSitus[kode];
+    if (l.keadaan === "putus") hasil.push({ teks: `${nama} ${l.ket}.`, alamat: alamatAplikasi(kode) });
+    else if (l.keadaan === "awas") hasil.push({ teks: `Belum masuk ${nama}.`, alamat: alamatAplikasi(kode) });
+  }
   const v = keadaanVersi();
   if (v.kode === "usang") hasil.push({ teks: `Ekstensi ${terpasang} - ${v.teks}.`, perbarui: true });
   return hasil;
+}
+
+/** SIPP/ABT masih diperiksa (lampu "memuat") - kartu belum boleh menyebut "tersambung". */
+function sambunganMasihDiperiksa() {
+  return lampuSitus.sipp.keadaan === "memuat" || lampuSitus.abt.keadaan === "memuat";
 }
 
 function komponenStatusUi() {
@@ -2629,16 +2861,33 @@ function komponenStatusUi() {
   perbaiki.id = "uiPerbaiki";
   kepala.appendChild(ikon);
   kepala.appendChild(judul);
+  // POPUP-PERAN 12 Okt (butir 4): bila semua tersambung kartu menciut jadi satu
+  // baris (bisa dibuka lewat "rincian"); bila ada masalah tampil penuh.
+  const lipat = buat("button", "tb-status-lipat", "rincian ▾");
+  lipat.type = "button";
+  lipat.id = "uiStatusLipat";
+  lipat.setAttribute("aria-expanded", "false");
+  kepala.appendChild(lipat);
   kepala.appendChild(perbaiki);
   const ringkas = buat("p", "saklar-ket tb-status-ringkas");
   const masalah = buat("ul", "tb-status-masalah");
+  const isiKartu = buat("div", "tb-status-isi");
   k.appendChild(kepala);
-  k.appendChild(ringkas);
-  k.appendChild(masalah);
-  if (fiturPopupNyala("popup-2")) k.appendChild(komponenLampu(false));
+  isiKartu.appendChild(ringkas);
+  isiKartu.appendChild(masalah);
+  if (fiturPopupNyala("popup-2")) isiKartu.appendChild(komponenLampu(false));
+  else if (!lampuSitus.sipp.ket && !sambunganMasihDiperiksa()) void periksaLampu(false);
   const rincian = buat("details", "tb-rincian");
   rincian.appendChild(buat("summary", "", "Rincian: versi dan akun"));
-  k.appendChild(rincian);
+  isiKartu.appendChild(rincian);
+  k.appendChild(isiKartu);
+  lipat.addEventListener("click", () => {
+    const buka = k.dataset.terbuka !== "ya";
+    if (buka) k.dataset.terbuka = "ya";
+    else delete k.dataset.terbuka;
+    lipat.setAttribute("aria-expanded", buka ? "true" : "false");
+    lipat.textContent = buka ? "sembunyikan ▴" : "rincian ▾";
+  });
   let yangPertama = null;
   perbaiki.addEventListener("click", () => {
     const m = yangPertama;
@@ -2657,7 +2906,7 @@ function komponenStatusUi() {
     masalah.textContent = "";
     for (const m of daftar) masalah.appendChild(buat("li", "", m.teks));
     const p = keadaanPortal;
-    if (!p.selesai) {
+    if (!p.selesai || (!daftar.length && sambunganMasihDiperiksa())) {
       k.dataset.keadaan = "memuat";
       ikon.textContent = "…";
       judul.textContent = "Memeriksa sambungan…";
@@ -2670,6 +2919,16 @@ function komponenStatusUi() {
       ikon.textContent = "!";
       judul.textContent = daftar.length === 1 ? "1 hal perlu dibereskan" : `${daftar.length} hal perlu dibereskan`;
     }
+    // Menciut hanya bila semuanya baik; masalah selalu tampil penuh.
+    const semuaBaik = k.dataset.keadaan === "ok";
+    if (semuaBaik) k.dataset.ringkas = "ya";
+    else {
+      delete k.dataset.ringkas;
+      delete k.dataset.terbuka;
+      lipat.setAttribute("aria-expanded", "false");
+      lipat.textContent = "rincian ▾";
+    }
+    lipat.hidden = !semuaBaik;
     perbaiki.hidden = !yangPertama || (!yangPertama.alamat && !yangPertama.ulang && !yangPertama.perbarui);
     const bagian = [];
     if (p.nama) bagian.push(`Portal · ${p.nama}`);
@@ -2790,9 +3049,12 @@ function komponenBawaanPanel() {
   sek.id = "kelompok-bawaan-panel";
   sek.dataset.kelompok = "bawaan-panel";
   sek.appendChild(buat("h3", "tb-kelompok-judul", "Panel saat halaman dibuka"));
-  sek.appendChild(
-    buat("p", "saklar-ket", "Mati = panel lahir sebagai logo ALETA (lencana); klik logonya untuk membuka. Tidak ada fitur yang dimatikan.")
-  );
+  // POPUP-PERAN 12 Okt: penjelasan teknis hanya untuk Super Admin.
+  if (popupSuperAdmin()) {
+    sek.appendChild(
+      buat("p", "saklar-ket", "Mati = panel lahir sebagai logo ALETA (lencana); klik logonya untuk membuka. Tidak ada fitur yang dimatikan.")
+    );
+  }
   const kotak = {};
   for (const [situs, nama] of SITUS_BAWAAN_PANEL) {
     const label = buat("label", "saklar");
@@ -2802,7 +3064,7 @@ function komponenBawaanPanel() {
     masukan.dataset.situs = situs;
     const teks = buat("span");
     teks.appendChild(buat("span", "saklar-nama", nama));
-    teks.appendChild(buat("span", "saklar-ket", `Bawaan: ${BAWAAN_PANEL[situs] ? "terbuka" : "tersembunyi"}`));
+    if (popupSuperAdmin()) teks.appendChild(buat("span", "saklar-ket", `Bawaan: ${BAWAAN_PANEL[situs] ? "terbuka" : "tersembunyi"}`));
     label.appendChild(masukan);
     label.appendChild(teks);
     sek.appendChild(label);
@@ -2816,7 +3078,7 @@ function komponenBawaanPanel() {
   const gambar = () => {
     const b = bawaanPanelBerlaku(lokal, bawaanPanelServer());
     for (const [situs] of SITUS_BAWAAN_PANEL) kotak[situs].checked = b[situs] !== false;
-    if (!kabar.dataset.dikabarkan) {
+    if (!kabar.dataset.dikabarkan && popupSuperAdmin()) {
       kabar.textContent =
         b.sumber === "akun" ? "Mengikuti setelan akun Anda." : b.sumber === "lokal" ? "Mengikuti setelan peramban ini." : "Memakai bawaan.";
     }
@@ -2831,15 +3093,19 @@ function komponenBawaanPanel() {
       kabar.textContent = await simpanBawaanPanel(nilai);
     });
   }
-  if (penyimpanan) {
-    void penyimpanan
-      .get([KUNCI_BAWAAN_PANEL])
-      .then((s) => {
-        lokal = s && s[KUNCI_BAWAAN_PANEL] && typeof s[KUNCI_BAWAAN_PANEL] === "object" ? s[KUNCI_BAWAAN_PANEL] : null;
-        gambar();
-      })
-      .catch(gambar);
-  }
+  const muatLokal = () =>
+    penyimpanan
+      ? penyimpanan
+          .get([KUNCI_BAWAAN_PANEL])
+          .then((s) => {
+            lokal = s && s[KUNCI_BAWAAN_PANEL] && typeof s[KUNCI_BAWAAN_PANEL] === "object" ? s[KUNCI_BAWAAN_PANEL] : null;
+            gambar();
+          })
+          .catch(gambar)
+      : Promise.resolve();
+  void muatLokal();
+  // Profil yang diterapkan / akun yang berganti menulis ulang panelBawaanTampil.
+  dengarSementara(document, "aleta-popup-panel", () => void muatLokal());
   gambar();
   susunan.penyegar.push(gambar);
   return sek;
@@ -2856,7 +3122,7 @@ function susunUiBaru() {
     sisipkan(kartu, keadaan.parentNode, keadaan);
     pindahkan(keadaan, rincian, null);
   }
-  if (fiturPopupNyala("popup-27")) sisipkan(komponenBatasSitus(), kartu.parentNode, kartu.nextSibling);
+  if (fiturPopupNyala("popup-27") && popupSuperAdmin()) sisipkan(komponenBatasSitus(), kartu.parentNode, kartu.nextSibling);
 
   const isi = document.querySelector(".isi");
   if (!isi) return;
@@ -2879,7 +3145,7 @@ function susunUiBaru() {
 
   // Bagian atas isi: profil (popup-11), cari (popup-15), lompat (popup-3).
   const atas = [];
-  if (fiturPopupNyala("popup-11") && !profilPeranMengaturSaklar()) atas.push(komponenProfil());
+  if (fiturPopupNyala("popup-11") && !profilPeranMengaturSaklar() && stripProfilBoleh()) atas.push(komponenProfil());
   if (fiturPopupNyala("popup-15")) atas.push(komponenCari());
   if (fiturPopupNyala("popup-3")) atas.push(komponenLompat());
   const pertama = isi.querySelector(".tb-kelompok");
@@ -2906,6 +3172,405 @@ function susunUiBaru() {
   if (kaki) sisipkan(komponenKakiUi(), kaki, kaki.firstChild);
 }
 
+/* === POPUP-PERAN 12 Okt === */
+/**
+ * ============================================================================
+ * POPUP PER AKUN + GOLONGAN (12 Okt 2026)
+ * ============================================================================
+ *
+ * Keluhan pengguna: isi widget "dicampur seluruh peran", dan profil saklar
+ * (Hakim / PP / Juru Sita / Kustom) tampak tidak mengubah apa pun.
+ *
+ * SEBAB profil tampak diam (ditelusuri 12 Okt):
+ *   1. ketiga profil lama hanya berbeda pada DUA dari lima saklar
+ *      (sisipJadwal untuk Juru Sita, cetakTigaBerkas untuk PP) - dan kelima
+ *      saklar itu berada di bawah gulungan, di luar pandangan saat tombol
+ *      profil ditekan;
+ *   2. "Kustom" hanya penanda "tidak ada yang cocok" - menekannya tidak
+ *      mengerjakan apa pun, dan setelan sendiri tidak pernah diingat;
+ *   3. profil tidak menyentuh panel yang dibuka bersama halaman, dan tidak
+ *      mengenal peran lain (panitera, kasir, PTSP, mediator, operator);
+ *   4. satu PC = satu set kunci: tidak ada yang terpisah per akun dan peran.
+ *
+ * PENYELESAIAN:
+ *   - Kunci global yang dibaca panel (aktif, tandaiHalaman, ...) tetap
+ *     menjadi "setelan yang sedang berlaku" - skrip konten tidak diubah.
+ *     Setelan TIAP AKUN+GOLONGAN disimpan sebagai salinan di kunci
+ *     "pengaturanAkun:<kunci>" dan DIPULIHKAN ke kunci global saat akun/peran
+ *     yang masuk berganti (selaraskanIdentitas). Salinan diperbarui oleh
+ *     pendengar onChanged (di sini dan di latar.js) pada tiap perubahan.
+ *   - Akun baru pada PC ini memulai dari profil bawaan golongannya; akun
+ *     pertama sesudah pembaruan memakai setelan PC yang sudah ada apa adanya.
+ *   - Tiap golongan punya profil yang BERBEDA nyata (saklar + panel yang
+ *     terbuka); isi popup hanya menampilkan saklar yang relevan bagi golongan
+ *     itu. Super Admin dan Admin melihat semuanya dan dapat mencoba profil
+ *     mana pun; "Kustom" = setelan sendiri, diingat sebelum profil dicoba.
+ *   - Keterangan teknis (profil, batas situs, panel bawaan, uji Super Admin)
+ *     hanya untuk Super Admin.
+ */
+/** Golongan dari nama peran - cadangan bila portal belum mengirim `golongan`. */
+function golonganDariNama(peran) {
+  const p = String(peran || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (!p) return "umum";
+  if (/super/.test(p)) return "super-admin";
+  if (/\badmin\b|administrator/.test(p)) return "admin";
+  if (/\bketua\b/.test(p)) return "ketua";
+  if (/hakim/.test(p)) return "hakim";
+  if (/panitera pengganti|\bpp\b/.test(p)) return "panitera-pengganti";
+  if (/juru\s*sita|jurusita/.test(p)) return "juru-sita";
+  if (/\bpanitera\b/.test(p)) return "panitera";
+  if (/kasir|keuangan|bendahara/.test(p)) return "kasir";
+  if (/ptsp/.test(p)) return "ptsp";
+  if (/mediator/.test(p)) return "mediator";
+  if (/operator/.test(p)) return "operator";
+  return "umum";
+}
+
+/** { kunci, nama, peranNama, golongan: { kode, semua } } dari jawaban ?info=siapa. */
+function bangunIdentitas(data) {
+  const u = (data && data.pengguna) || {};
+  const nama = String(u.nama || "");
+  const peranNama = String(u.peran || "");
+  let kode = "";
+  let semua = [];
+  if (u.golongan && typeof u.golongan === "object" && LABEL_GOLONGAN[u.golongan.kode]) {
+    kode = u.golongan.kode;
+    semua = Array.isArray(u.golongan.semua) ? u.golongan.semua.filter((x) => LABEL_GOLONGAN[x]) : [];
+  }
+  if (!kode) kode = golonganDariNama(peranNama);
+  if (!semua.length) semua = [kode];
+  const orang = String(u.kunci || "").trim() || nama.trim().toLowerCase().replace(/\s+/g, "-") || "-";
+  return { kunci: `${orang}|${kode}`, nama, peranNama, golongan: { kode, semua } };
+}
+
+function popupSuperAdmin() {
+  return Boolean(identitasPopup && identitasPopup.golongan.semua.includes("super-admin"));
+}
+
+function popupAdmin() {
+  return Boolean(identitasPopup && identitasPopup.golongan.semua.some((g) => g === "super-admin" || g === "admin"));
+}
+
+/**
+ * Yang relevan bagi golongan: { saklar:Set, panel:Set }, atau null = semua
+ * (Super Admin, Admin, dan peran yang belum diketahui).
+ */
+function relevanPopup() {
+  if (!identitasPopup || popupAdmin()) return null;
+  const saklar = new Set();
+  const panel = new Set();
+  for (const g of identitasPopup.golongan.semua) {
+    const p = PROFIL_GOLONGAN[g] || PROFIL_GOLONGAN.umum;
+    for (const s of p.relevan) saklar.add(s);
+    for (const s of SITUS_PANEL_ID) if (p.panel[s]) panel.add(s);
+  }
+  return { saklar, panel };
+}
+
+/** UIBARU-WAJIB 12 Okt: selain Super Admin popup selalu UI Baru (identitas, atau yang terakhir tersimpan). */
+function popupWajibUi() {
+  const g = identitasPopup ? identitasPopup.golongan.semua : golonganTersimpan ? [golonganTersimpan] : null;
+  return Boolean(g && !g.includes("super-admin"));
+}
+
+/** Tombol "muat ulang ekstensi" di pemberitahuan puncak - sesudah pemasangan perlu muat ulang. */
+function tampilkanMuatUlangPita(jawab) {
+  const t = document.getElementById("muatUlangPita");
+  if (t) {
+    t.hidden = false;
+    if (!t.dataset.terpasang) {
+      t.dataset.terpasang = "ya";
+      t.addEventListener("click", () => {
+        if (tombolMuatUlangEkstensi && !tombolMuatUlangEkstensi.disabled) tombolMuatUlangEkstensi.click();
+      });
+    }
+  }
+  if (jawab && jawab.idUnduhan) {
+    pembaruanLatar.diunduh = { versi: String(jawab.versiBaru || ""), id: jawab.idUnduhan, nama: String(jawab.namaBerkas || "") };
+    gambarPemberitahuanVersi();
+  }
+}
+
+function nilaiDariSimpanan(s) {
+  const hasil = {};
+  if (!s || typeof s !== "object") return hasil;
+  for (const k of KUNCI_SETELAN_AKUN) if (s[k] !== undefined) hasil[k] = s[k];
+  return hasil;
+}
+
+/** Profil awal akun BARU: profil server (bila Admin mengaturnya) lalu bawaan golongan. */
+function profilAwalPopup(golongan) {
+  const hasil = {};
+  const kode = golongan.kode;
+  if (kode === "super-admin" || kode === "admin") return hasil;
+  const p = PROFIL_GOLONGAN[kode] || PROFIL_GOLONGAN.umum;
+  Object.assign(hasil, p.saklar);
+  const sv = ujiKeadaan.server && ujiKeadaan.server.profil;
+  if (sv && sv.saklar && typeof sv.saklar === "object" && sv.bolehUbahProfil !== true) {
+    for (const id of SAKLAR_PROFIL_ID) if (typeof sv.saklar[id] === "boolean") hasil[id] = sv.saklar[id];
+  }
+  // diubahPada kosong: setelan panel milik AKUN di server (bila ada) menang atas bawaan golongan.
+  hasil.panelBawaanTampil = { ...p.panel, diubahPada: "" };
+  return hasil;
+}
+
+/**
+ * Menyelaraskan kunci global dengan akun+golongan yang masuk. Pulang true bila
+ * kunci global diganti (jendela perlu membaca ulang).
+ */
+async function selaraskanIdentitas(id) {
+  identitasPopup = id;
+  if (!penyimpanan || !id) return false;
+  const kunciBaru = AWALAN_AKUN + id.kunci;
+  let s;
+  try {
+    s = await penyimpanan.get([KUNCI_IDENTITAS, kunciBaru, ...KUNCI_SETELAN_AKUN]);
+  } catch {
+    return false;
+  }
+  const aktif = s && s[KUNCI_IDENTITAS];
+  const rekam = s && s[kunciBaru] && typeof s[kunciBaru] === "object" ? s[kunciBaru] : null;
+  rekamAkunPopup = { profil: String((rekam && rekam.profil) || ""), kustom: (rekam && rekam.kustom) || null };
+  if (aktif && aktif.kunci === id.kunci) return false;
+
+  const sekarang = new Date().toISOString();
+  try {
+    // Salinan akun yang LAMA dikunci dulu dengan keadaan terakhirnya.
+    if (aktif && aktif.kunci) {
+      const kl = AWALAN_AKUN + aktif.kunci;
+      const lama = ((await penyimpanan.get([kl])) || {})[kl] || {};
+      await penyimpanan.set({ [kl]: { ...lama, nilai: nilaiDariSimpanan(s), diubahPada: sekarang } });
+    }
+    const ada = nilaiDariSimpanan(s);
+    // Setelan pribadi sungguhan (bukan sekadar pilihan uji Super Admin) = tanda PC ini sudah dipakai.
+    const adaPribadi = Object.keys(ada).filter((k) => !/^uji/.test(k));
+    let target;
+    let tulisSemua = true;
+    if (rekam && rekam.nilai && typeof rekam.nilai === "object") target = { ...rekam.nilai };
+    else if (!aktif && (adaPribadi.length || popupAdmin())) {
+      // Pembaruan dari versi tanpa setelan per akun: setelan PC ini milik akun pertama.
+      target = ada;
+      tulisSemua = false;
+    } else target = profilAwalPopup(id.golongan);
+
+    await penyimpanan.set({ [KUNCI_PERALIHAN]: true });
+    const tulis = {};
+    for (const k of Object.keys(target)) tulis[k] = target[k];
+    if (tulisSemua) {
+      // Nilai lama akun sebelumnya tidak boleh tertinggal: yang punya bawaan ditimpa, sisanya dihapus.
+      const hapus = [];
+      for (const k of KUNCI_SETELAN_AKUN) {
+        if (k in target || s[k] === undefined) continue;
+        if (k in BAWAAN_AKUN) tulis[k] = BAWAAN_AKUN[k];
+        else hapus.push(k);
+      }
+      if (hapus.length && penyimpanan.remove) await penyimpanan.remove(hapus);
+    }
+    const sesudah = { ...(tulisSemua ? {} : ada), ...target };
+    for (const k of KUNCI_SETELAN_AKUN) if (tulis[k] !== undefined) sesudah[k] = tulis[k];
+    await penyimpanan.set({
+      ...tulis,
+      [KUNCI_IDENTITAS]: { kunci: id.kunci, nama: id.nama, golongan: id.golongan.kode },
+      [kunciBaru]: { ...(rekam || {}), nilai: nilaiDariSimpanan(sesudah), diubahPada: sekarang },
+      [KUNCI_PERALIHAN]: false,
+    });
+    return tulisSemua;
+  } catch {
+    try {
+      await penyimpanan.set({ [KUNCI_PERALIHAN]: false });
+    } catch {
+      /* penyimpanan menolak: salinan akun menyusul pada pembukaan berikutnya */
+    }
+    return false;
+  }
+}
+
+/** Memberi tahu bagian "Panel saat halaman dibuka" bahwa setelannya ditulis ulang (profil / akun berganti). */
+function kabarkanPanelPopup() {
+  try {
+    document.dispatchEvent(new CustomEvent("aleta-popup-panel"));
+  } catch {
+    /* jendela sudah ditutup */
+  }
+}
+
+/** Salinan akun yang masuk diperbarui dari kunci global (dipanggil tiap setelan berubah). */
+async function catatSalinanAkun() {
+  if (!penyimpanan) return;
+  try {
+    const s = await penyimpanan.get([KUNCI_IDENTITAS, KUNCI_PERALIHAN, ...KUNCI_SETELAN_AKUN]);
+    const a = s && s[KUNCI_IDENTITAS];
+    if (!a || !a.kunci || s[KUNCI_PERALIHAN] === true) return;
+    const k = AWALAN_AKUN + a.kunci;
+    const r = ((await penyimpanan.get([k])) || {})[k] || {};
+    await penyimpanan.set({ [k]: { ...r, nilai: nilaiDariSimpanan(s), diubahPada: new Date().toISOString() } });
+  } catch {
+    /* salinan menyusul pada perubahan berikutnya */
+  }
+}
+
+async function ubahRekamAkun(ubah) {
+  rekamAkunPopup = { ...rekamAkunPopup, ...ubah };
+  if (!penyimpanan || !identitasPopup) return;
+  try {
+    const k = AWALAN_AKUN + identitasPopup.kunci;
+    const r = ((await penyimpanan.get([k])) || {})[k] || {};
+    await penyimpanan.set({ [k]: { ...r, ...ubah } });
+  } catch {
+    /* hanya ingatan jendela ini */
+  }
+}
+
+/** Jendela membaca ulang semua yang bergantung kunci global setelah berganti akun. */
+async function bacaUlangSetelanPopup() {
+  if (!penyimpanan) return;
+  try {
+    const s = await penyimpanan.get([
+      "aktif",
+      "tandaiHalaman",
+      "sisipJadwal",
+      "cetakTigaBerkas",
+      "suntingLangsungAbt",
+      "checklistMilestone",
+      "asalPortal",
+      SKALA_KUNCI,
+      KUNCI_TEMA_POPUP,
+      KUNCI_TEMA_PANEL,
+    ]);
+    pasangNilai(s || {});
+    const t = String((s && s[KUNCI_TEMA_POPUP]) || "");
+    temaPopup = URUTAN_TEMA.includes(t) ? t : "ikut";
+    temaPanelSekarang = (s && s[KUNCI_TEMA_PANEL]) === "terang" ? "terang" : "gelap";
+    terapkanTemaPopup();
+    await muatUjiPopup();
+    await muatTahap2();
+    kabarkanPanelPopup();
+    jadwalkanSusunan();
+  } catch {
+    /* jendela memakai nilai yang sudah digambar */
+  }
+}
+
+/** Dipanggil periksaAkunAleta sesudah portal menjawab siapa yang masuk. */
+async function prosesIdentitasPopup(data) {
+  const id = bangunIdentitas(data);
+  if (!id.nama) return;
+  const berganti = await selaraskanIdentitas(id);
+  if (berganti) await bacaUlangSetelanPopup();
+  // Golongan sudah diketahui: kulit (UI Baru wajib bagi selain Super Admin) dan
+  // susunan digambar ulang dengan keterangan teknis yang sesuai.
+  terapkanKulitPopup();
+  terapkanPeranPopup();
+  segarkanSusunan();
+}
+
+/** Menyembunyikan (bukan menghapus) yang tidak relevan; nilai tetap tersimpan. */
+function terapkanPeranPopup() {
+  const r = relevanPopup();
+  const sembunyi = (el, ya) => {
+    if (!el) return;
+    if (ya) el.setAttribute("data-peran-sembunyi", "ya");
+    else el.removeAttribute("data-peran-sembunyi");
+  };
+  for (const id of SAKLAR_PROFIL_ID) {
+    const k = document.getElementById(id);
+    sembunyi(k && k.closest("label.saklar"), Boolean(r) && !r.saklar.has(id));
+  }
+  for (const situs of SITUS_PANEL_ID) {
+    const k = document.getElementById(`bawaanPanel-${situs}`);
+    sembunyi(k && k.closest("label.saklar"), Boolean(r) && !r.panel.has(situs));
+  }
+  for (const g of Array.from(document.querySelectorAll(".tb-kelompok"))) {
+    const kode = g.getAttribute("data-kelompok");
+    if (!["sipp", "abt", "portal", "bawaan-panel"].includes(kode)) continue;
+    const label = Array.from(g.querySelectorAll("label.saklar"));
+    sembunyi(g, Boolean(r) && label.length > 0 && label.every((l) => l.hasAttribute("data-peran-sembunyi")));
+  }
+  const khusus = !popupSuperAdmin();
+  for (const el of Array.from(document.querySelectorAll(".aleta-hanya-super"))) sembunyi(el, khusus);
+}
+
+/** Kartu "Profil saklar" hanya untuk Super Admin dan Admin (peran lain: profil mengikuti perannya). */
+function stripProfilBoleh() {
+  return !identitasPopup || popupAdmin();
+}
+
+/**
+ * ----------------------------------------------------------------------------
+ * PEMBERITAHUAN VERSI BARU (puncak jendela)
+ * ----------------------------------------------------------------------------
+ * Sumber: versi yang disajikan portal (?info=siapa) dan catatan latar.js
+ * ("pembaruanOtomatis": paket yang sudah diunduh / versi yang sudah diunduh
+ * Chrome). "Perbaharui" menekan tombol Perbarui sekarang yang sudah ada -
+ * satu aturan untuk dua jalan masuk.
+ */
+function versiBaruPopup() {
+  const p = keadaanPortal.versi;
+  const dariPortal = terpasang && p && bandingVersi(p, terpasang) > 0 ? p : "";
+  const dariLatar = [pembaruanLatar.versiPortal, pembaruanLatar.menunggu, pembaruanLatar.diunduh && pembaruanLatar.diunduh.versi]
+    .filter((v) => v && terpasang && bandingVersi(v, terpasang) > 0)
+    .sort((a, b) => bandingVersi(b, a))[0];
+  return [dariPortal, dariLatar || ""].filter(Boolean).sort((a, b) => bandingVersi(b, a))[0] || "";
+}
+
+function gambarPemberitahuanVersi() {
+  const el = document.getElementById("pemberitahuanVersi");
+  if (!el) return;
+  const baru = versiBaruPopup();
+  el.hidden = !baru;
+  if (!baru) return;
+  const teks = document.getElementById("pemberitahuanVersiTeks");
+  const siap = pembaruanLatar.diunduh && pembaruanLatar.diunduh.versi === baru;
+  const menunggu = pembaruanLatar.menunggu === baru;
+  if (teks) {
+    teks.textContent =
+      `Versi baru ${baru} tersedia (terpasang ${terpasang}).` +
+      (menunggu ? " Sudah diunduh Chrome - tinggal dipasang." : siap ? " Paketnya sudah diunduh otomatis." : "");
+  }
+  const lihat = document.getElementById("tampilkanPaketBaru");
+  if (lihat) lihat.hidden = !(siap && pembaruanLatar.diunduh.id);
+}
+
+function pasangPemberitahuanVersi() {
+  const tautan = document.getElementById("tautanPerbaharui");
+  const lihat = document.getElementById("tampilkanPaketBaru");
+  if (tautan && !tautan.dataset.terpasang) {
+    tautan.dataset.terpasang = "ya";
+    tautan.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (tombolPerbarui && !tombolPerbarui.disabled) tombolPerbarui.click();
+    });
+  }
+  if (lihat && !lihat.dataset.terpasang) {
+    lihat.dataset.terpasang = "ya";
+    lihat.addEventListener("click", () => {
+      const d = pembaruanLatar.diunduh;
+      if (d && d.id) void mintaKeLatar("tampilkan-unduhan", false, { id: d.id });
+    });
+  }
+  document.addEventListener("aleta-popup-portal", gambarPemberitahuanVersi);
+  if (penyimpanan) {
+    void penyimpanan
+      .get([KUNCI_PEMBARUAN_OTOMATIS])
+      .then((s) => {
+        catatPembaruanLatar(s && s[KUNCI_PEMBARUAN_OTOMATIS]);
+        gambarPemberitahuanVersi();
+      })
+      .catch(() => {});
+  }
+}
+
+function catatPembaruanLatar(x) {
+  const o = x && typeof x === "object" && !Array.isArray(x) ? x : {};
+  pembaruanLatar.versiPortal = String(o.versiPortal || "");
+  pembaruanLatar.menunggu = String(o.menunggu || "");
+  pembaruanLatar.diunduh = o.diunduh && typeof o.diunduh === "object" ? o.diunduh : null;
+}
+
+pasangPemberitahuanVersi();
+
+/* === AKHIR POPUP-PERAN === */
+
 // ── Diikuti selama jendela terbuka ───────────────────────────────────────────
 
 document.addEventListener("aleta-popup-portal", () => segarkanSusunan());
@@ -2927,6 +3592,12 @@ try {
       tahap2.teknis = ubah[KUNCI_TEKNIS].newValue !== false;
       tandaiTeknisPopup();
       perlu = true;
+    }
+    // POPUP-PERAN 12 Okt: salinan setelan akun + pembaruan dari latar.js.
+    if (KUNCI_SETELAN_AKUN.some((k) => ubah[k])) void catatSalinanAkun();
+    if (ubah[KUNCI_PEMBARUAN_OTOMATIS]) {
+      catatPembaruanLatar(ubah[KUNCI_PEMBARUAN_OTOMATIS].newValue);
+      gambarPemberitahuanVersi();
     }
     // Profil peran (butir 25) tiba lewat singgahan tampilan server.
     if (ubah.tampilanServer) {

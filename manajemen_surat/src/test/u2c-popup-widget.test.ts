@@ -263,7 +263,8 @@ describe("penyimpanan ekstensi menolak menulis: saklar tidak boleh berbohong", (
 
   it("saklar induk dan checklist: centang dikembalikan, sebab disebut; tulisan yang berhasil sesudahnya menghapus kabarnya", async () => {
     let tolak = true;
-    const p = bukaPopup({ peran: "Hakim", tolakTulis: () => tolak });
+    // UIBARU-WAJIB 12 Okt: Super Admin - susunan Lama/Baru yang diuji di sini hanya miliknya.
+    const p = bukaPopup({ peran: "Super Admin", tolakTulis: () => tolak });
     await tenang(p);
     const induk = el<HTMLInputElement>(p, "aktif");
     expect(induk.checked).toBe(true);
