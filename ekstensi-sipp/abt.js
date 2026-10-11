@@ -17910,14 +17910,14 @@ function pkGambarPekerjaan(wadah, data) {
     )
   );
   // Keputusan pengguna 11 Okt (5): Tergugat/Termohon PNS/PPPK/POLRI/TNI -> kalimat kewajiban pemberitahuan gugatan
-  // kepada atasannya disambung di #8524# (disusun dari PP 45/1990 Pasal 3 - perlu ditinjau hakim).
+  // kepada atasannya disambung di #8524# (pertimbangan) dan #8533# (BAS, revisi 3); bunyinya disetujui pengguna.
   const p2 = daftar.find((o) => Number(o.pihakKe) === 2 && Number(o.urutan) === 1) || null;
   if (p2 && PK_KATEGORI_TERGUGAT.includes(p2.kunci)) {
     kotak.appendChild(
       buatElemen(
         "div",
         "aleta-t6-lembut aleta-teknis",
-        `#0047# ${p2.label || p2.kunci}: #8524# juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan #0047# (disusun dari PP 10/1983 jo. PP 45/1990 Pasal 3 - mohon ditinjau hakim).`
+        `#0047# ${p2.label || p2.kunci}: #8524# (pertimbangan) dan #8533# (BAS) juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan #0047# (dasar: Pasal 3 ayat (2)(3) PP 10/1983 jo PP 45/1990).`
       )
     );
   }
