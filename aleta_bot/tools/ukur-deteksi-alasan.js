@@ -269,6 +269,31 @@ function ukur(data) {
         const kunci = `${kode} ${x.kode}${u.nilai ? " (kartu terisi)" : " (kartu kosong)"}`;
         tambah(hasil.petunjukWaktu, kunci, "diusulkan");
         if (!m) continue;
+        /* === KDL2 11 Okt === */
+        // Petunjuk berperkiraan (N lalu / N setelah menikah / sejak awal pernikahan): yang dinilai perkiraannya.
+        // tepat = bulan+tahun sama (atau tahun sama bila perkiraannya hanya tahun); "tahun sama" dicatat terpisah.
+        if (/sejak-lalu|sejak-tahun-lalu|setelah-menikah|awal-menikah/.test(x.kode)) {
+          // Petugas yang menulis bunyi relatifnya apa adanya ("3 bulan setelah pernikahan") = sama bunyi.
+          const bunyi = x.teks.toLowerCase().replace(/^(?:sejak|mulai|semenjak|sudah|telah|sekitar|kira-kira|kurang\s+lebih)\s+/g, "").replace(/\s+/g, " ");
+          tambah(hasil.petunjukWaktu, `${kode} ${x.kode} (bunyi sama dengan isian)`, "diusulkan");
+          tambah(hasil.petunjukWaktu, `${kode} ${x.kode} (bunyi sama dengan isian)`, m.replace(/\s+/g, " ").includes(bunyi) ? "tepat" : "salahTangkap");
+          if (x.perkiraan) {
+            const k3 = `${kode} perkiraan ${x.kode}`;
+            const kecil = x.perkiraan.toLowerCase();
+            const thn = (kecil.match(/(?:19|20)\d{2}/) || [""])[0];
+            const bln = (kecil.match(/^bulan\s+([a-z]+)/) || [])[1];
+            const mm = m.replace(/pebruari/g, "februari").replace(/nopember/g, "november");
+            const tahunSama = Boolean(thn) && mm.includes(thn);
+            const tepat = bln ? tahunSama && mm.includes(bln) : tahunSama;
+            tambah(hasil.petunjukWaktu, k3, "diusulkan");
+            tambah(hasil.petunjukWaktu, k3, tepat ? "tepat" : "salahTangkap");
+            tambah(hasil.petunjukWaktu, `${k3} (tahun saja)`, "diusulkan");
+            tambah(hasil.petunjukWaktu, `${k3} (tahun saja)`, tahunSama ? "tepat" : "salahTangkap");
+            contoh(`perkiraan-${kode}-${x.kode}`, { nomor: p.nomor, petunjuk: x.teks, perkiraan: x.perkiraan, manusia: m.slice(0, 80), tepat });
+          }
+          continue;
+        }
+        /* === AKHIR KDL2 === */
         const bulan = (x.teks.match(/bulan\s+(\S+)/i) || [])[1];
         const sesuai = bulan ? m.includes(bulan.toLowerCase().replace("pebruari", "februari").replace("nopember", "november")) : /idul|lebaran|syawal/i.test(m);
         tambah(hasil.petunjukWaktu, kunci, sesuai ? "tepat" : "salahTangkap");
