@@ -131,6 +131,13 @@ export interface ExternalAppCredentialSummary {
   lastVerifiedAt?: string | null;
   lastVerifiedStatus?: string;
   lastLaunchAt?: string | null;
+  /**
+   * 11 Okt 2026 (0062): tautan yang dibuat ALETA sendiri - 'nama-sipp',
+   * 'nip-sipp', 'sesi-sipp'; "" = diisi manusia di Manajemen Akun.
+   */
+  tautanSumber?: string;
+  /** Kapan Admin menyetujui tautan buatan ALETA; null = perlu ditinjau. */
+  tautanDitinjauPada?: string | null;
 }
 
 export interface ExternalAppCredentialInput {

@@ -564,7 +564,8 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
 
   // Masuk SIPP & ABT otomatis (7 Okt 2026) - lihat layaniMasuk di kaki berkas.
-  if (["masuk-titip", "masuk-lupakan", "masuk-minta", "masuk-gagal"].includes(pesan.jenis)) {
+  // MASUK-SESI-SIPP 11 Okt: masuk-sesi-boleh / masuk-sesi-lepas (panel SIPP).
+  if (["masuk-titip", "masuk-lupakan", "masuk-minta", "masuk-gagal", "masuk-sesi-boleh", "masuk-sesi-lepas"].includes(pesan.jenis)) {
     layaniPesanMasuk(pesan, pengirim, jawab);
     return true; // jawaban menyusul
   }
@@ -3023,6 +3024,15 @@ void sinkronTandaBilaLama();
  */
 const KUNCI_MASUK_TITIPAN = "aletaMasukSipp";
 const KUNCI_MASUK_COBA = "aletaMasukSippCoba";
+/* === MASUK-SESI-SIPP 11 Okt === */
+// Masuk otomatis dari SIPP ke ALETA (panel SIPP yang menerima 401 meminta
+// portal membuktikan sesi SIPP lewat bot). Keluar ALETA dengan SENGAJA
+// (masuk-lupakan dari portal) menahan percobaan OTOMATIS sampai petugas masuk
+// ALETA lagi, menekan "Masuk dengan akun SIPP ini" sendiri, atau Chrome
+// ditutup - tanpa ini, orang yang keluar untuk berganti akun langsung
+// dimasukkan kembali. Hanya tanda waktu; tidak ada username atau password.
+const KUNCI_MASUK_SESI_TAHAN = "aletaMasukSesiSippTahan";
+/* === AKHIR MASUK-SESI-SIPP === */
 /** Titipan kedaluwarsa sendiri sesudah satu hari kerja, walau Chrome tetap terbuka. */
 const MASUK_BERLAKU_MS = 12 * 60 * 60 * 1000;
 /** Jarak paling dekat antara dua isi otomatis untuk jenis halaman yang sama. */
@@ -3091,6 +3101,7 @@ async function layaniMasuk(pesan, pengirim) {
     if (!asal) return { ok: false, sebab: "hanya halaman portal ALETA yang boleh menitipkan" };
     if (pesan.jenis === "masuk-lupakan") {
       await gudang.remove([KUNCI_MASUK_TITIPAN, KUNCI_MASUK_COBA]);
+      await gudang.set({ [KUNCI_MASUK_SESI_TAHAN]: { pada: Date.now() } }); // MASUK-SESI-SIPP 11 Okt
       return { ok: true };
     }
     const username = masukTeks(pesan.username, 60).trim();
@@ -3098,9 +3109,21 @@ async function layaniMasuk(pesan, pengirim) {
     if (!username || !sandi) return { ok: false, sebab: "username atau password tidak sah" };
     await gudang.set({ [KUNCI_MASUK_TITIPAN]: { username, sandi, asal, dititipPada: Date.now() } });
     // Titipan baru = penahanan lama dicabut (password mungkin baru diganti).
-    await gudang.remove(KUNCI_MASUK_COBA);
+    await gudang.remove([KUNCI_MASUK_COBA, KUNCI_MASUK_SESI_TAHAN]);
     return { ok: true };
   }
+
+  /* === MASUK-SESI-SIPP 11 Okt === */
+  if (pesan.jenis === "masuk-sesi-boleh" || pesan.jenis === "masuk-sesi-lepas") {
+    if (masukJenisHalaman(alamat) !== "sipp") return { ok: false, sebab: "bukan halaman SIPP yang dikenal" };
+    if (pesan.jenis === "masuk-sesi-lepas") {
+      await gudang.remove(KUNCI_MASUK_SESI_TAHAN);
+      return { ok: true, boleh: true };
+    }
+    const isiTahan = await gudang.get(KUNCI_MASUK_SESI_TAHAN);
+    return { ok: true, boleh: !isiTahan[KUNCI_MASUK_SESI_TAHAN] };
+  }
+  /* === AKHIR MASUK-SESI-SIPP === */
 
   // masuk-minta / masuk-gagal: dari halaman masuk SIPP atau ABT.
   const jenisHalaman = masukJenisHalaman(alamat);

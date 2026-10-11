@@ -428,6 +428,13 @@
       "when": 1790515201001,
       "tag": "0061_aleta_pustaka_label_kalimat",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790518801001,
+      "tag": "0062_aleta_tautan_sipp_sumber",
+      "breakpoints": true
     }
   ]
 }

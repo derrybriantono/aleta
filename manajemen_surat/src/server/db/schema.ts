@@ -425,6 +425,21 @@ export const DDL_PUSTAKA_LABEL = {
   indeks: [`CREATE INDEX IF NOT EXISTS idx_pertimbangan_bagian ON aleta_pertimbangan_butir(bagian, keadaan)`],
 } as const;
 
+/**
+ * Asal & tinjauan tautan akun SIPP yang dibuat ALETA sendiri (0062, 11 Okt
+ * 2026 - masuk otomatis dari SIPP, pencocokan nama/NIP). Kolom tambahan atas
+ * external_app_credentials. Cermin PERSIS dari
+ * drizzle/0062_aleta_tautan_sipp_sumber.sql; dijaga
+ * masuk-otomatis-nama-sipp-11okt.test.ts.
+ */
+export const DDL_TAUTAN_SIPP_SUMBER = {
+  kolom: [
+    `ALTER TABLE external_app_credentials ADD COLUMN IF NOT EXISTS tautan_sumber TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE external_app_credentials ADD COLUMN IF NOT EXISTS tautan_ditinjau_oleh TEXT`,
+    `ALTER TABLE external_app_credentials ADD COLUMN IF NOT EXISTS tautan_ditinjau_pada TEXT`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -3901,6 +3916,8 @@ const migrationStatements = [
   // D3: label bagian/alasan/keadaan pada butir pustaka pertimbangan (0061).
   ...DDL_PUSTAKA_LABEL.kolom,
   ...DDL_PUSTAKA_LABEL.indeks,
+  // Asal & tinjauan tautan akun SIPP buatan ALETA (0062, 11 Okt 2026).
+  ...DDL_TAUTAN_SIPP_SUMBER.kolom,
 ];
 
 const aletaSippSchemaStatements = [

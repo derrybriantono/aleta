@@ -961,6 +961,112 @@ LIMIT 1`;
   };
 }
 
+/* === MASUK-SESI-SIPP 11 Okt === */
+/**
+ * Identitas satu akun SIPP untuk dicocokkan ke akun ALETA: username, nama
+ * lengkap (sys_users.fullname), keadaan akun, dan nama + NIP pejabat yang
+ * tertaut lewat user_hakim / user_panitera / user_jurusita. Murni membaca.
+ * Sidik password dan kode aktivasi TIDAK ikut.
+ */
+async function identitasPenggunaSipp(params = {}) {
+  const connectionKey = normalizeConnectionKey(params.connectionKey);
+  const userid = safeString(params.sippUserId);
+  const username = safeString(params.username);
+  if (!/^\d+$/.test(userid) && !username) return { ditemukan: false };
+
+  const cols = await getTableColumns(connectionKey, "sys_users");
+  if (cols.size === 0) throw new Error("tabel sys_users tidak terbaca");
+  const kolomUsername = columnExpr("u", cols, ["username"], "''");
+  const kolomNama = columnExpr("u", cols, ["fullname", "nama"], "''");
+  const kolomBlokir = columnExpr("u", cols, ["block"], "0");
+  const kolomKedaluwarsa = columnExpr("u", cols, ["user_expired"], "NULL");
+  const saring = /^\d+$/.test(userid) ? `u.${quoteIdentifier("userid")} = ?` : `${kolomUsername} = ?`;
+  const rows = await runReadOnly(
+    connectionKey,
+    `SELECT u.${quoteIdentifier("userid")} AS userid, ${kolomUsername} AS username, ${kolomNama} AS nama_lengkap,
+       ${kolomBlokir} AS diblokir, ${kolomKedaluwarsa} AS kedaluwarsa_pada
+     FROM ${quoteIdentifier("sys_users")} u WHERE ${saring} LIMIT 1`,
+    [/^\d+$/.test(userid) ? userid : username]
+  );
+  const baris = Array.isArray(rows) ? rows[0] : null;
+  if (!baris) return { ditemukan: false };
+  const id = String(baris.userid);
+
+  const pejabat = [];
+  for (const [tabelTaut, kolomTaut, tabelPejabat, jabatan] of [
+    ["user_hakim", "hakim_id", "hakim_pn", "hakim"],
+    ["user_panitera", "panitera_id", "panitera_pn", "panitera"],
+    ["user_jurusita", "jurusita_id", "jurusita", "jurusita"],
+  ]) {
+    const kolomTautAda = await getTableColumns(connectionKey, tabelTaut);
+    const kolomPejabat = await getTableColumns(connectionKey, tabelPejabat);
+    if (kolomTautAda.size === 0 || kolomPejabat.size === 0) continue;
+    const nama = columnExpr("p", kolomPejabat, ["nama"], "''");
+    const nip = columnExpr("p", kolomPejabat, ["nip"], "''");
+    const hasil = await runReadOnly(
+      connectionKey,
+      `SELECT ${nama} AS nama, ${nip} AS nip
+       FROM ${quoteIdentifier(tabelTaut)} t
+       JOIN ${quoteIdentifier(tabelPejabat)} p ON p.${quoteIdentifier("id")} = t.${quoteIdentifier(kolomTaut)}
+       WHERE t.${quoteIdentifier("userid")} = ? LIMIT 5`,
+      [id]
+    );
+    for (const r of Array.isArray(hasil) ? hasil : []) {
+      if (safeString(r.nama)) pejabat.push({ jabatan, nama: safeString(r.nama), nip: safeString(r.nip) });
+    }
+  }
+
+  return {
+    ditemukan: true,
+    sippUserId: id,
+    username: safeString(baris.username),
+    namaLengkap: safeString(baris.nama_lengkap),
+    diblokir: akunSippDiblokir(baris.diblokir),
+    kedaluwarsa: akunSippKedaluwarsa(baris.kedaluwarsa_pada),
+    pejabat,
+  };
+}
+
+/**
+ * Siapa yang sedang masuk SIPP di peramban ini - dari cookie ci_session yang
+ * diteruskan portal (lihat sesiSippService.js). Pulang { terbukti: false,
+ * sebab } bila cookie tidak ada, tandanya salah, kedaluwarsa, peramban lain,
+ * atau belum masuk; selain itu identitas lengkap (identitasPenggunaSipp).
+ * Cookie dan session_id tidak pernah dipulangkan atau dicatat.
+ */
+async function sesiSippMasuk(params = {}) {
+  const { bukaCookieSesiSipp } = require("./sippTautanService");
+  const { periksaIsiSesi } = require("./sesiSippService");
+  const daftar = (Array.isArray(params.cookie) ? params.cookie : [params.cookie])
+    .map((x) => String(x == null ? "" : x))
+    .filter(Boolean)
+    .slice(0, 4);
+  if (daftar.length === 0) return { terbukti: false, sebab: "tanpa_cookie_sipp" };
+
+  let sebabTerakhir = "tanda_tidak_sah";
+  for (const nilai of daftar) {
+    const buka = bukaCookieSesiSipp(nilai);
+    if (!buka.ok) {
+      if (buka.sebab === "kunci_sipp_tidak_terbaca") throw new Error("kunci SIPP tidak terbaca di bot");
+      sebabTerakhir = buka.sebab;
+      continue;
+    }
+    const isi = periksaIsiSesi(buka.serial, {
+      userAgent: params.userAgent,
+      kedaluwarsaDetik: buka.kedaluwarsaDetik,
+    });
+    if (!isi.terbukti) {
+      sebabTerakhir = isi.sebab;
+      continue;
+    }
+    const identitas = await identitasPenggunaSipp({ connectionKey: params.connectionKey, sippUserId: isi.sippUserId });
+    if (!identitas.ditemukan) return { terbukti: false, sebab: "akun_sipp_tidak_ada" };
+    return { terbukti: true, ...identitas };
+  }
+  return { terbukti: false, sebab: sebabTerakhir };
+}
+/* === AKHIR MASUK-SESI-SIPP === */
+
 /**
  * Menautkan akun SIPP dengan jabatannya - hakim, panitera, juru sita.
  *
@@ -2722,6 +2828,10 @@ async function handleBridgeOperation(operation, params = {}) {
     "user.byId": async (input) => (await searchUsers({ ...input, query: input.id, limit: 1 }))[0] || null,
     "user.verifikasiSandi": verifikasiSandiPengguna,
     "jabatan.pemetaanAkun": pemetaanAkunJabatan,
+    /* === MASUK-SESI-SIPP 11 Okt === */
+    "user.sesiSipp": sesiSippMasuk,
+    "user.identitasSipp": identitasPenggunaSipp,
+    /* === AKHIR MASUK-SESI-SIPP === */
     "estatus.candidates": getEStatusCandidates,
     "schema.introspect": introspectSchema,
     "ecourt.caseList": listEcourtCases,

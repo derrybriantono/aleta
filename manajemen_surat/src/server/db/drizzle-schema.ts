@@ -121,6 +121,10 @@ export const externalAppCredentials = pgTable(
     updatedBy: text("updated_by").references(() => users.id),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
+    // 0062 (11 Okt 2026): tautan buatan ALETA (nama/NIP/sesi SIPP) & tinjauan Admin.
+    tautanSumber: text("tautan_sumber").notNull().default(""),
+    tautanDitinjauOleh: text("tautan_ditinjau_oleh"),
+    tautanDitinjauPada: text("tautan_ditinjau_pada"),
   },
   (table) => ({
     userAppUnique: uniqueIndex("uq_external_app_credentials_user_app").on(table.userId, table.appId),

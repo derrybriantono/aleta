@@ -44,6 +44,14 @@ type ExternalCredentialDraft = {
   password: string;
   isEnabled: boolean;
   hasPassword: boolean;
+  /* === MASUK-SESI-SIPP 11 Okt === */
+  /** Tautan buatan ALETA ('nama-sipp' | 'nip-sipp' | 'sesi-sipp'); "" = diisi manusia. */
+  tautanSumber: string;
+  tautanDitinjau: boolean;
+  /** Keadaan tersimpan - tautan tanpa password tetap sah bila username tidak diubah. */
+  usernameAwal: string;
+  aktifAwal: boolean;
+  /* === AKHIR MASUK-SESI-SIPP === */
 };
 
 const PPPK_POSITION_ID = "pos-pppk";
@@ -151,9 +159,32 @@ function buildExternalCredentialDrafts(user?: Pick<UserPersona, "externalCredent
       password: "",
       isEnabled: Boolean(credential?.isEnabled),
       hasPassword: Boolean(credential?.hasPassword),
+      tautanSumber: credential?.appId === option.appId ? String(credential?.tautanSumber ?? "") : "",
+      tautanDitinjau: Boolean(credential?.tautanDitinjauPada),
+      usernameAwal: credential?.username ?? "",
+      aktifAwal: Boolean(credential?.isEnabled),
     };
   });
 }
+
+/* === MASUK-SESI-SIPP 11 Okt === */
+/** Tautan tanpa password yang tersimpan aktif dan username-nya tidak diubah. */
+function tautanTanpaSandiTetap(draft: ExternalCredentialDraft) {
+  return (
+    draft.aktifAwal &&
+    !draft.hasPassword &&
+    !draft.password &&
+    Boolean(draft.username.trim()) &&
+    draft.username.trim().toLowerCase() === draft.usernameAwal.trim().toLowerCase()
+  );
+}
+
+const SEBUT_SUMBER_TAUTAN: Record<string, string> = {
+  "nama-sipp": "dicocokkan lewat NAMA di SIPP",
+  "nip-sipp": "dicocokkan lewat NIP pejabat SIPP",
+  "sesi-sipp": "ditautkan pegawai sendiri dari panel SIPP (sesi ALETA + SIPP)",
+};
+/* === AKHIR MASUK-SESI-SIPP === */
 
 function toExternalCredentialPayload(drafts: ExternalCredentialDraft[]): ExternalAppCredentialInput[] {
   return drafts.map((draft) => ({
@@ -165,7 +196,9 @@ function toExternalCredentialPayload(drafts: ExternalCredentialDraft[]): Externa
 }
 
 function validateExternalCredentialDrafts(drafts: ExternalCredentialDraft[]) {
-  const invalid = drafts.find((draft) => draft.isEnabled && (!draft.username.trim() || (!draft.password && !draft.hasPassword)));
+  const invalid = drafts.find(
+    (draft) => draft.isEnabled && !tautanTanpaSandiTetap(draft) && (!draft.username.trim() || (!draft.password && !draft.hasPassword))
+  );
   if (!invalid) return "";
   return `Username dan password ${invalid.label} wajib diisi sebelum login otomatis diaktifkan.`;
 }
@@ -246,13 +279,37 @@ function AdditionalRolesPicker({
 function ExternalCredentialsEditor({
   value,
   onChange,
+  userId,
 }: {
   value: ExternalCredentialDraft[];
   onChange: (value: ExternalCredentialDraft[]) => void;
+  /** 11 Okt 2026: akun yang disunting - untuk tinjauan tautan buatan ALETA. */
+  userId?: string;
 }) {
   const updateCredential = (appId: ExternalAppId, patch: Partial<ExternalCredentialDraft>) => {
     onChange(value.map((item) => (item.appId === appId ? { ...item, ...patch } : item)));
   };
+  /* === MASUK-SESI-SIPP 11 Okt === */
+  const [tinjau, setTinjau] = useState<{ sibuk: boolean; pesan: string }>({ sibuk: false, pesan: "" });
+  const kirimTinjauan = async (appId: ExternalAppId, aksi: "setujui" | "cabut") => {
+    if (!userId) return;
+    setTinjau({ sibuk: true, pesan: "" });
+    try {
+      const response = await fetch(apiPath(`/api/users/${encodeURIComponent(userId)}/tautan-sipp`), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aksi }),
+      });
+      const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: { message?: string } } | null;
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error?.message ?? "Tinjauan tautan gagal disimpan.");
+      updateCredential(appId, aksi === "setujui" ? { tautanDitinjau: true } : { tautanDitinjau: true, isEnabled: false, aktifAwal: false });
+      setTinjau({ sibuk: false, pesan: aksi === "setujui" ? "Tautan disetujui." : "Tautan dicabut (dinonaktifkan)." });
+    } catch (galat) {
+      setTinjau({ sibuk: false, pesan: galat instanceof Error ? galat.message : "Tinjauan tautan gagal disimpan." });
+    }
+  };
+  /* === AKHIR MASUK-SESI-SIPP === */
 
   return (
     <div className="rounded-[1.2rem] border border-border bg-muted/35 p-4">
@@ -274,8 +331,35 @@ function ExternalCredentialsEditor({
               <div>
                 <p className="font-semibold text-foreground">{credential.label}</p>
                 <p className="text-xs text-muted-foreground">
-                  {credential.hasPassword ? "Password sudah tersimpan. Isi lagi hanya jika ingin mengganti." : "Belum ada password tersimpan."}
+                  {credential.hasPassword
+                    ? "Password sudah tersimpan. Isi lagi hanya jika ingin mengganti."
+                    : tautanTanpaSandiTetap(credential)
+                      ? "Tertaut tanpa password - cukup untuk masuk ALETA dengan akun SIPP. Isi password hanya bila perlu kartu SIPP otomatis."
+                      : "Belum ada password tersimpan."}
                 </p>
+                {credential.tautanSumber ? (
+                  <div className="mt-2 space-y-2" data-tautan-sipp={credential.tautanSumber}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={credential.tautanDitinjau ? "success" : "warning"}>
+                        {credential.tautanDitinjau ? "Tautan otomatis - sudah ditinjau" : "Tautan otomatis - perlu ditinjau"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {SEBUT_SUMBER_TAUTAN[credential.tautanSumber] ?? credential.tautanSumber}
+                      </span>
+                    </div>
+                    {!credential.tautanDitinjau && userId ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button type="button" size="sm" variant="outline" disabled={tinjau.sibuk} onClick={() => void kirimTinjauan(credential.appId, "setujui")}>
+                          Setujui tautan
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" disabled={tinjau.sibuk} onClick={() => void kirimTinjauan(credential.appId, "cabut")}>
+                          Cabut tautan
+                        </Button>
+                      </div>
+                    ) : null}
+                    {tinjau.pesan ? <p className="text-xs text-muted-foreground">{tinjau.pesan}</p> : null}
+                  </div>
+                ) : null}
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={credential.isEnabled ? "success" : "muted"}>
@@ -656,6 +740,10 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                       <div className="flex flex-col items-end gap-1.5">
                         <UserRoleBadgeDisplay user={user} />
                         {!user.isActive ? <Badge variant="danger">Diblokir</Badge> : null}
+                        {/* MASUK-SESI-SIPP 11 Okt: tautan SIPP buatan ALETA yang belum ditinjau Admin. */}
+                        {user.externalCredentials?.some((k) => k.appId === "sipp" && k.tautanSumber && !k.tautanDitinjauPada && k.isEnabled) ? (
+                          <Badge variant="warning" data-tautan-sipp-tinjau="1">Tautan SIPP perlu ditinjau</Badge>
+                        ) : null}
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -1177,6 +1265,7 @@ function ManagedUserEditor({
           <ExternalCredentialsEditor
             value={form.externalCredentials}
             onChange={(value) => resetForm("externalCredentials", value)}
+            userId={user.id}
           />
 
           {/* Admin Level Selector */}

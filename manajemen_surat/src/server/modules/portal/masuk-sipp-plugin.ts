@@ -13,7 +13,7 @@
  */
 
 import type { BetterAuthPlugin } from "better-auth";
-import { APIError, createAuthEndpoint, formCsrfMiddleware } from "better-auth/api";
+import { APIError, createAuthEndpoint, formCsrfMiddleware, sessionMiddleware } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import * as z from "zod";
 
@@ -24,6 +24,15 @@ import {
   type BarisJejakMasuk,
   type JawabanVerifikasiSipp,
 } from "@/server/modules/portal/masuk-sipp";
+import {
+  akunAletaUntukIdentitas,
+  identitasDariJawaban,
+  nilaiCookieSesiSipp,
+  putuskanMasukDariSesiSipp,
+  putuskanTautkanSesiSipp,
+  type BahanPilih,
+  type JawabanSesiSipp,
+} from "@/server/modules/portal/masuk-sipp-nama";
 import { appendAuditLog } from "@/server/shared/audit";
 import { nextPrefixedId } from "@/server/shared/ids";
 
@@ -32,12 +41,13 @@ import { nextPrefixedId } from "@/server/shared/ids";
 // server/shared/auth - memuat lib/auth.ts kembali. Muat-saat-perlu memutus
 // lingkarannya dan tidak memperlambat permintaan lain yang memuat Better Auth.
 async function modulMasuk() {
-  const [klien, jembatan, akun, milestone, pengguna] = await Promise.all([
+  const [klien, jembatan, akun, milestone, pengguna, aplikasiLuar] = await Promise.all([
     import("@/server/db/client"),
     import("@/server/modules/aleta-sipp/aleta-sipp-datasource"),
     import("@/server/modules/aleta-ecourt/court-calendar-akun"),
     import("@/server/modules/aleta-ecourt/checklist-milestone"),
     import("@/server/modules/users/service"),
+    import("@/server/modules/external-apps/service"),
   ]);
   return {
     getDatabase: klien.getDatabase,
@@ -45,8 +55,88 @@ async function modulMasuk() {
     akunSippMilik: akun.akunSippMilik,
     bacaKredensialSipp: milestone.bacaKredensialSipp,
     lookupUserForLoginInDb: pengguna.lookupUserForLoginInDb,
+    tulisTautanSippOtomatis: aplikasiLuar.tulisTautanSippOtomatis,
   };
 }
+
+/* === MASUK-SESI-SIPP 11 Okt === */
+type ModulMasuk = Awaited<ReturnType<typeof modulMasuk>>;
+
+/** Tautan SIPP + seluruh akun ALETA yang belum dihapus - bahan pemilih akun. */
+async function bacaBahanPilih(db: AletaDatabase, m: ModulMasuk): Promise<BahanPilih> {
+  const [kredensial, baris] = await Promise.all([
+    m.bacaKredensialSipp(db),
+    db.queryAll<{ id: string; name: string | null; nip: string | null; role_id: string | null; is_active: number | boolean | null }>(
+      `SELECT id, name, nip, role_id, is_active FROM users WHERE deleted_at IS NULL`,
+      []
+    ),
+  ]);
+  return {
+    kredensial,
+    akun: baris.map((b) => ({
+      id: String(b.id),
+      name: String(b.name ?? ""),
+      nip: b.nip == null ? null : String(b.nip),
+      roleId: String(b.role_id ?? ""),
+      isActive: b.is_active === true || Number(b.is_active) === 1,
+    })),
+  };
+}
+
+/** Pemeriksa sesi SIPP lewat bot: cookie ci_session + User-Agent permintaan ini. */
+function pemeriksaSesi(m: ModulMasuk, headers: Headers) {
+  return async (): Promise<JawabanSesiSipp> => {
+    const cookie = nilaiCookieSesiSipp(headers.get("cookie") ?? "");
+    if (cookie.length === 0) return { ok: true, data: { terbukti: false, sebab: "tanpa_cookie_sipp" } };
+    return (await m.callAletaBotSippBridge(
+      "user.sesiSipp",
+      { cookie, userAgent: headers.get("user-agent") ?? "" },
+      { timeoutMs: BATAS_TUNGGU_BOT_MS }
+    )) as JawabanSesiSipp;
+  };
+}
+
+/** Jejak sesi -> baris aleta_masuk_jejak (lewat "sipp" hanya bila berhasil). */
+function jejakSesi(db: AletaDatabase, headers: Headers) {
+  return (baris: {
+    aletaUserId: string | null;
+    usernameSipp: string;
+    sippUserId: string;
+    hasil: "berhasil" | "ditolak" | "dibatasi";
+    alasan: string;
+  }) =>
+    catatJejakMasuk(db, {
+      ...baris,
+      identitas: baris.usernameSipp,
+      lewat: baris.hasil === "berhasil" ? "sipp" : "",
+      alamatIp: (headers.get("x-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip")?.trim() || "unknown").slice(0, 80),
+      agenPeramban: (headers.get("user-agent") ?? "").slice(0, 240),
+    }).catch((galat) => {
+      console.warn("[ALETA MASUK SIPP] jejak sesi tidak tertulis:", galat instanceof Error ? galat.message : "tidak diketahui");
+    });
+}
+
+/** Untuk jalur password SIPP di layar masuk: akun ALETA dari username SIPP terbukti. */
+function akunAletaDariSippUntuk(db: AletaDatabase, m: ModulMasuk) {
+  return async (usernameSipp: string, sippUserId: string) => {
+    const jawab = (await m.callAletaBotSippBridge(
+      "user.identitasSipp",
+      sippUserId ? { sippUserId } : { username: usernameSipp },
+      { timeoutMs: BATAS_TUNGGU_BOT_MS }
+    )) as JawabanSesiSipp & { data?: { ditemukan?: boolean } };
+    if (!jawab.ok || !jawab.data?.ditemukan) {
+      return { ok: false as const, sebab: "identitas_sipp_tak_terbaca", pesan: "Nama akun SIPP Anda belum dapat dibaca. Coba lagi sebentar lagi." };
+    }
+    return akunAletaUntukIdentitas(
+      {
+        bacaBahan: () => bacaBahanPilih(db, m),
+        tulisTautan: (p) => m.tulisTautanSippOtomatis(db, p),
+      },
+      identitasDariJawaban(jawab.data)
+    );
+  };
+}
+/* === AKHIR MASUK-SESI-SIPP === */
 
 /** Bot yang lambat tidak boleh membuat layar masuk menggantung lama. */
 const BATAS_TUNGGU_BOT_MS = 8_000;
@@ -162,8 +252,8 @@ export function masukSippPlugin() {
         "/sign-in/sipp",
         { method: "POST", use: [formCsrfMiddleware], body: badanMasuk },
         async (ctx) => {
-          const { getDatabase, callAletaBotSippBridge, akunSippMilik, bacaKredensialSipp, lookupUserForLoginInDb } =
-            await modulMasuk();
+          const m = await modulMasuk();
+          const { getDatabase, callAletaBotSippBridge, akunSippMilik, bacaKredensialSipp, lookupUserForLoginInDb } = m;
           const db = await getDatabase();
           const headers = ctx.request?.headers ?? ctx.headers ?? new Headers();
 
@@ -180,6 +270,8 @@ export function masukSippPlugin() {
                 })) as JawabanVerifikasiSipp,
               verifikasiSandiAleta: (userId, sandi) => cocokkanSandiAleta(ctx.context, userId, sandi),
               catatJejak: (baris) => catatJejakMasuk(db, baris),
+              // 11 Okt 2026: username SIPP tanpa tautan -> tautan/NIP/nama.
+              akunAletaDariSipp: akunAletaDariSippUntuk(db, m),
             },
             { identitas: ctx.body.identifier, sandi: ctx.body.password },
             { headers }
@@ -223,6 +315,78 @@ export function masukSippPlugin() {
           });
         }
       ),
+
+      /* === MASUK-SESI-SIPP 11 Okt === */
+      // POST /api/auth/sign-in/sipp-sesi - panel ekstensi di halaman SIPP yang
+      // menerima 401 dari portal memanggil ini (satu asal, cookie ci_session
+      // SIPP ikut). Bot membuktikan sesinya; akun ALETA dipilih lewat tautan,
+      // NIP, atau nama tunggal (masuk-sipp-nama.ts). Tanpa password.
+      masukDariSesiSipp: createAuthEndpoint(
+        "/sign-in/sipp-sesi",
+        { method: "POST", use: [formCsrfMiddleware], body: z.object({ rememberMe: z.boolean().optional() }).optional() },
+        async (ctx) => {
+          const m = await modulMasuk();
+          const db = await m.getDatabase();
+          const headers = ctx.request?.headers ?? ctx.headers ?? new Headers();
+          const keputusan = await putuskanMasukDariSesiSipp({
+            periksaSesi: pemeriksaSesi(m, headers),
+            bacaBahan: () => bacaBahanPilih(db, m),
+            tulisTautan: (p) => m.tulisTautanSippOtomatis(db, p),
+            catatJejak: jejakSesi(db, headers),
+          });
+
+          if (keputusan.jenis === "tolak") {
+            throw new APIError("FORBIDDEN", { message: keputusan.pesan, code: keputusan.kode });
+          }
+          if (keputusan.jenis !== "masuk") {
+            return ctx.json({
+              ok: true,
+              jenis: keputusan.jenis,
+              sebab: "sebab" in keputusan ? keputusan.sebab : "",
+              pesan: "pesan" in keputusan ? keputusan.pesan : "",
+            });
+          }
+
+          const pengguna = await ctx.context.internalAdapter.findUserById(keputusan.userId);
+          if (!pengguna) throw new APIError("UNAUTHORIZED", { message: "Akun ALETA tidak ditemukan.", code: "AKUN_TIDAK_ADA" });
+          const tidakDiingat = ctx.body?.rememberMe === false;
+          const sesi = await ctx.context.internalAdapter.createSession(pengguna.id, tidakDiingat);
+          if (!sesi) throw new APIError("UNAUTHORIZED", { message: "Sesi masuk gagal dibuat.", code: "SESI_GAGAL" });
+          await setSessionCookie(ctx, { session: sesi, user: pengguna }, tidakDiingat);
+          return ctx.json({
+            ok: true,
+            jenis: "masuk" as const,
+            nama: String((pengguna as { name?: string }).name ?? ""),
+            usernameSipp: keputusan.usernameSipp,
+            tautanBaru: keputusan.tautanBaru,
+          });
+        }
+      ),
+
+      // POST /api/auth/sipp-sesi/tautkan - pegawai yang SEDANG masuk ALETA dan
+      // SEDANG masuk SIPP di peramban yang sama menautkan akun SIPP itu ke
+      // akun ALETA-nya dengan satu tekanan (pilihan manual bila nama ganda).
+      tautkanSesiSipp: createAuthEndpoint(
+        "/sipp-sesi/tautkan",
+        { method: "POST", use: [formCsrfMiddleware, sessionMiddleware] },
+        async (ctx) => {
+          const m = await modulMasuk();
+          const db = await m.getDatabase();
+          const headers = ctx.request?.headers ?? ctx.headers ?? new Headers();
+          const aktor = ctx.context.session.user;
+          const hasil = await putuskanTautkanSesiSipp(
+            {
+              periksaSesi: pemeriksaSesi(m, headers),
+              bacaBahan: () => bacaBahanPilih(db, m),
+              catatJejak: jejakSesi(db, headers),
+              tulisTautanManual: (p) => m.tulisTautanSippOtomatis(db, { ...p, sumber: "sesi-sipp" }),
+            },
+            { id: aktor.id }
+          );
+          return ctx.json({ ok: hasil.jenis !== "tolak", ...hasil });
+        }
+      ),
+      /* === AKHIR MASUK-SESI-SIPP === */
     },
   } satisfies BetterAuthPlugin;
 }

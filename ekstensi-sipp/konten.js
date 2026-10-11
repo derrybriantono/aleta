@@ -13683,11 +13683,157 @@ function susunAjakanMasuk() {
   tautan.target = "_blank";
   tautan.rel = "noreferrer noopener";
   isi.appendChild(tautan);
+  susunMasukSesiSippDiAjakan(isi); // MASUK-SESI-SIPP 11 Okt
 
   panel.appendChild(isi);
   panel.appendChild(kakiPanel({ nomorPerkara: cariNomorPerkara() }));
   return panel;
 }
+
+/* === MASUK-SESI-SIPP 11 Okt === */
+/**
+ * ============================================================================
+ * MASUK OTOMATIS DARI SIPP KE ALETA (11 Okt 2026)
+ * ============================================================================
+ *
+ * Permintaan pengguna: petugas yang sudah masuk SIPP harus dikenali ALETA.
+ * Sebelumnya panel di sini hanya berbunyi "Masuk ke ALETA" dan menunggu.
+ *
+ * Panel TIDAK mengirim nama dari kepala halaman (siapa pun dapat menulisnya).
+ * Ia hanya meminta portal - satu asal dengan SIPP, sehingga cookie sesi SIPP
+ * ikut terkirim sendiri - dan portal meminta bot membuka cookie itu dengan
+ * kunci SIPP. Akun ALETA dipilih di server: tautan Manajemen Akun, NIP, atau
+ * nama SIPP yang sama dan tunggal. Ganda/ragu = tidak masuk; panel
+ * menerangkan sebabnya dan menawarkan tautan manual.
+ *
+ * Otomatis SEKALI per pemuatan halaman, dan ditahan sesudah petugas keluar
+ * ALETA dengan sengaja (latar.js: masuk-sesi-boleh). Tombol "Masuk dengan
+ * akun SIPP ini" selalu dapat ditekan sendiri.
+ */
+const ALETA_API_MASUK_SESI = "/aleta/api/auth/sign-in/sipp-sesi";
+const ALETA_API_TAUTKAN_SESI = "/aleta/api/auth/sipp-sesi/tautkan";
+const KUNCI_TAUTKAN_SESUDAH_MASUK = "aletaTautkanSippSesudahMasuk";
+let masukSesiSudahDicoba = false;
+let masukSesiHasil = null;
+
+async function masukAletaDariSesiSipp(manual) {
+  if (!manual && masukSesiSudahDicoba) return masukSesiHasil;
+  masukSesiSudahDicoba = true;
+  if (manual) {
+    await alatPesanLatar({ sumber: "aleta-panel", jenis: "masuk-sesi-lepas" });
+  } else {
+    const izin = await alatPesanLatar({ sumber: "aleta-panel", jenis: "masuk-sesi-boleh" });
+    if (izin && izin.ok === true && izin.boleh === false) {
+      masukSesiHasil = { jenis: "ditahan", pesan: "Anda keluar dari ALETA tadi - tekan \"Masuk dengan akun SIPP ini\" bila ingin masuk lagi." };
+      return masukSesiHasil;
+    }
+  }
+  try {
+    const r = await fetch(ALETA_API_MASUK_SESI, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const isi = await r.json().catch(() => null);
+    if (r.ok && isi && typeof isi === "object") masukSesiHasil = isi;
+    else if (r.status === 404) masukSesiHasil = { jenis: "tidak-tersedia", pesan: "" };
+    else masukSesiHasil = { jenis: "tolak", pesan: String((isi && (isi.message || isi.pesan)) || "ALETA menolak masuk dengan sesi SIPP ini.").slice(0, 300) };
+  } catch {
+    masukSesiHasil = { jenis: "tak-terjangkau", pesan: "ALETA belum dapat dihubungi." };
+  }
+  return masukSesiHasil;
+}
+
+function kalimatMasukSesi(hasil) {
+  if (!hasil) return "";
+  if (hasil.pesan) return String(hasil.pesan);
+  if (hasil.jenis === "tanpa-sesi") return "Sesi SIPP di peramban ini belum terbaca ALETA - muat ulang halaman SIPP, atau masuk ALETA seperti biasa.";
+  if (hasil.jenis === "dimatikan") return "Masuk otomatis dari SIPP dimatikan di server ALETA.";
+  return "";
+}
+
+function susunMasukSesiSippDiAjakan(isi) {
+  const kabar = buatElemen("div", "aleta-kosong-lembut", kalimatMasukSesi(masukSesiHasil));
+  kabar.setAttribute("data-aleta-masuk-sesi", (masukSesiHasil && masukSesiHasil.jenis) || "");
+  if (!kabar.textContent) kabar.hidden = true;
+  isi.appendChild(kabar);
+
+  if (masukSesiHasil && masukSesiHasil.jenis === "tidak-tersedia") return;
+  const tombol = buatElemen("button", "aleta-tombol", "Masuk dengan akun SIPP ini");
+  tombol.type = "button";
+  tombol.addEventListener("click", async () => {
+    tombol.disabled = true;
+    tombol.textContent = "Memeriksa sesi SIPP…";
+    const hasil = await masukAletaDariSesiSipp(true);
+    if (hasil && hasil.jenis === "masuk") {
+      nomorTerakhir = "";
+      void segarkan();
+      return;
+    }
+    kabar.hidden = false;
+    kabar.textContent = kalimatMasukSesi(hasil) || "Belum dapat masuk dengan sesi SIPP ini.";
+    tombol.disabled = false;
+    tombol.textContent = "Masuk dengan akun SIPP ini";
+    if (hasil && hasil.jenis === "ragu") tampilkanTautkanManual();
+  });
+  isi.appendChild(tombol);
+
+  // Nama ganda / belum ada tautan: tautkan sendiri sesudah masuk ALETA.
+  const tautkan = buatElemen("a", "aleta-tombol", "Masuk ALETA lalu tautkan akun SIPP ini");
+  tautkan.href = "/aleta/login";
+  tautkan.target = "_blank";
+  tautkan.rel = "noreferrer noopener";
+  tautkan.hidden = !(masukSesiHasil && masukSesiHasil.jenis === "ragu");
+  tautkan.addEventListener("click", () => {
+    try {
+      sessionStorage.setItem(KUNCI_TAUTKAN_SESUDAH_MASUK, String(Date.now()));
+    } catch {
+      /* tanpa sessionStorage: tautkan lewat Manajemen Akun */
+    }
+  });
+  isi.appendChild(tautkan);
+  function tampilkanTautkanManual() {
+    tautkan.hidden = false;
+  }
+}
+
+/** Dipanggil sesudah konteks perkara terbaca (ALETA sudah masuk). */
+async function tautkanSesiSippBilaDiminta() {
+  let diminta = "";
+  try {
+    diminta = sessionStorage.getItem(KUNCI_TAUTKAN_SESUDAH_MASUK) || "";
+    if (diminta) sessionStorage.removeItem(KUNCI_TAUTKAN_SESUDAH_MASUK);
+  } catch {
+    return;
+  }
+  // Permintaan basi (lebih dari 30 menit) tidak dikerjakan.
+  if (!diminta || Date.now() - Number(diminta) > 30 * 60 * 1000) return;
+  let pesan = "";
+  try {
+    const r = await fetch(ALETA_API_TAUTKAN_SESI, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const isi = await r.json().catch(() => null);
+    if (isi && isi.jenis === "tertaut") pesan = `Akun SIPP ${isi.usernameSipp} kini tertaut ke akun ALETA Anda.`;
+    else if (isi && isi.jenis === "sudah") pesan = `Akun SIPP ${isi.usernameSipp} memang sudah tertaut ke akun ALETA Anda.`;
+    else pesan = String((isi && (isi.pesan || isi.message)) || "Tautan akun SIPP belum dapat disimpan.");
+  } catch {
+    pesan = "Tautan akun SIPP belum dapat disimpan - ALETA tidak terjangkau.";
+  }
+  const panel = document.getElementById(PENANDA);
+  const wadah = panel && panel.querySelector(".aleta-isi");
+  if (!wadah) return;
+  const kabar = buatElemen("div", "aleta-kosong-lembut", pesan);
+  kabar.setAttribute("data-aleta-tautkan-sesi", "1");
+  wadah.insertBefore(kabar, wadah.firstChild);
+}
+/* === AKHIR MASUK-SESI-SIPP === */
 
 // ─── Menandai halaman SIPP ────────────────────────────────────────────────────
 //
@@ -14915,11 +15061,19 @@ let sedangAmbil = false;
 async function muatPenggunaAleta() {
   if (penggunaTerakhir && penggunaTerakhir.nama) return penggunaTerakhir;
   try {
-    const respons = await alatAmbil(
+    let respons = await alatAmbil(
       ALETA_API_SIAPA,
       { credentials: "include", cache: "no-store" },
       "Membaca akun ALETA"
     );
+    /* === MASUK-SESI-SIPP 11 Okt === */
+    if (respons.status === 401) {
+      const hasilMasukSesi = await masukAletaDariSesiSipp(false);
+      if (hasilMasukSesi && hasilMasukSesi.jenis === "masuk") {
+        respons = await alatAmbil(ALETA_API_SIAPA, { credentials: "include", cache: "no-store" }, "Membaca akun ALETA");
+      }
+    }
+    /* === AKHIR MASUK-SESI-SIPP === */
     if (!respons.ok) return null;
     const luar = await respons.json();
     const isi = luar && luar.data ? luar.data : luar;
@@ -15511,6 +15665,17 @@ async function segarkan() {
 
     if (respons.status === 401) {
       nomorTerakhir = nomor;
+      /* === MASUK-SESI-SIPP 11 Okt === */
+      // Petugas sudah masuk SIPP: portal diminta membuktikan sesi SIPP itu
+      // lewat bot dan memasukkannya ke akun ALETA yang sama (tautan/NIP/nama
+      // tunggal). Berhasil = panel digambar ulang dengan sesi ALETA baru.
+      const hasilMasukSesi = await masukAletaDariSesiSipp(false);
+      if (hasilMasukSesi && hasilMasukSesi.jenis === "masuk") {
+        nomorTerakhir = "";
+        setTimeout(() => void segarkan(), 0);
+        return;
+      }
+      /* === AKHIR MASUK-SESI-SIPP === */
       tampilkan(susunAjakanMasuk());
       mulaiMenungguMasuk();
       return;
@@ -15539,6 +15704,7 @@ async function segarkan() {
     berhentiMenungguMasuk();
     nomorTerakhir = nomor;
     konteksTerakhir = isi.konteks;
+    void tautkanSesiSippBilaDiminta(); // MASUK-SESI-SIPP 11 Okt
     // Jawaban yang segar mengakhiri keadaan luring, dan mengisi simpanan
     // untuk panggilan berikutnya yang barangkali gagal.
     sedangLuring = false;
