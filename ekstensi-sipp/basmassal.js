@@ -1720,7 +1720,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
  *
  * Diminta pengguna 9 Okt 2026 (butir 1-5). Satu IIFE: tidak ada satu pun nama
  * puncak baru di lingkup bersama skrip konten (lihat ekstensi-tdz-tingkat-atas);
- * yang keluar hanya empat pintu di globalThis:
+ * yang keluar hanya pintu di globalThis berikut:
  *
  *   aletaKasirBoleh(pengguna?)            true | false | null (alatBolehKasir)
  *   aletaKasirPasang(wadah, { perkaraId, nomorPerkara })
@@ -1734,6 +1734,13 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
  *          pengeluaran (harian terbuka; mingguan-tahunan diciutkan) + PDF, dan
  *          Pengingat tugas kasir (setor PNBP dicatat di ALETA, bukan SIPP).
  *   aletaKasirRentang(periode, tanggal)   kembaran rentangPeriode portal
+ *   aletaKasirRingkas({ perkaraId })      (11 Okt) lencana tab Kasir:
+ *       -> Promise<{ usulan, kejadian, keadaan, saldo } | null> - satu GET
+ *          yang sama dengan Kasir per perkara (disinggahkan 20 detik).
+ *
+ * 11 Okt (K-KEJADIAN): Kasir per perkara tersusun PER KEJADIAN perkara
+ * (pendaftaran, panggilan pertama, tiap sidang ditunda, mediasi, putusan,
+ * ikrar) - yang sudah ada di jurnal bertanda, yang belum = usulan tercentang.
  *
  * Tampilan Lama tidak menggambar apa pun. Mode kering: tidak ada yang
  * disimpan - hanya pratinjau. Tidak ada tanda ALETA di SIPP: yang ditulis
@@ -1859,6 +1866,128 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
 
   // ─── Per perkara ───────────────────────────────────────────────────────────
 
+  /* === K-KEJADIAN 11 Okt ===
+   * Jawaban GET Kasir per perkara disinggahkan 20 detik: lencana tab Kasir
+   * (aletaKasirRingkas, dipanggil konten.js) dan tab yang dibuka sesudahnya
+   * memakai SATU permintaan. Susun ulang dan sesudah simpan selalu segar. */
+  const simpananPerkara = new Map();
+  function ambilPerkara(perkaraId, segar) {
+    const id = String(perkaraId);
+    const lama = simpananPerkara.get(id);
+    if (!segar && lama && Date.now() - lama.saat < 20000) return lama.janji;
+    const janji = ambil(`${API}?perkaraId=${encodeURIComponent(id)}`);
+    simpananPerkara.set(id, { saat: Date.now(), janji });
+    janji.catch(() => simpananPerkara.delete(id));
+    return janji;
+  }
+
+  /** Ringkasan untuk lencana tab Kasir: { usulan, kejadian, keadaan, saldo } atau null. */
+  async function ringkasPerkara(opsi) {
+    const id = String((opsi && opsi.perkaraId) || "").trim();
+    if (!/^\d+$/.test(id) || modeLama() || boleh() === false) return null;
+    try {
+      const d = await ambilPerkara(id, false);
+      if (!d || d.available === false || d.ok === false) return null;
+      const r = d.ringkas || {};
+      const usulan = Number.isFinite(Number(r.usulan))
+        ? Number(r.usulan)
+        : (Array.isArray(d.usulan) ? d.usulan : []).filter((u) => u.pilih && (!u.sisaOtomatis || Number(u.jumlah) > 0)).length;
+      return {
+        usulan,
+        kejadian: Number.isFinite(Number(r.kejadian)) ? Number(r.kejadian) : usulan ? 1 : 0,
+        keadaan: String(r.keadaan || (d.keadaan && d.keadaan.nama) || ""),
+        saldo: Number(r.saldo ?? d.saldo) || 0,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  const JUDUL_STATUS_KEJADIAN = { terbuka: "perlu dijurnal", selesai: "selesai", periksa: "periksa", menunggu: "menunggu" };
+
+  /**
+   * Usulan per kejadian: tiap kejadian (tanggalnya, keterangannya) memuat baris
+   * jurnal yang SUDAH ada (bertanda, tidak dapat dicentang) dan usulan yang
+   * BELUM ada (baris blangko Tambah yang sama dengan tampilan datar). Kejadian
+   * tanpa usulan tercentang = selesai dan diciutkan; tanpa biaya = satu baris.
+   */
+  function gambarKejadian(wadah, kejadian, usulan, terbuka, barisUsulan) {
+    wadah.textContent = "";
+    const peta = new Map(usulan.map((u) => [u.kunci, u]));
+    const tergambar = new Set();
+    const masihPilih = (u) => u.pilih && u.hasil !== "tersimpan" && (u.sisaOtomatis ? Number(u.jumlah) > 0 : true);
+    const statusHidup = (e) => {
+      if (e.status === "periksa" || e.status === "menunggu") return e.status;
+      const usul = (e.komponen || []).filter((c) => c.sumber === "usulan").map((c) => peta.get(c.kunci)).filter(Boolean);
+      return usul.some(masihPilih) ? "terbuka" : "selesai";
+    };
+    const nBuka = kejadian.filter((e) => statusHidup(e) === "terbuka").length;
+    wadah.appendChild(el("div", "aleta-basmassal-lembut", `${kejadian.length} kejadian · ${nBuka ? `${nBuka} perlu dijurnal` : "semua selesai"}`));
+    for (const e of kejadian) {
+      const komponen = Array.isArray(e.komponen) ? e.komponen : [];
+      const status = statusHidup(e);
+      if (!komponen.length && status === "selesai") {
+        const baris = el("div", "aleta-kasir-kejadian aleta-basmassal-lembut");
+        baris.setAttribute("data-kejadian", e.jenis || "");
+        baris.setAttribute("data-status", "selesai");
+        baris.appendChild(el("span", "aleta-basmassal-tanda aleta-basmassal-tanda-baik", "tanpa biaya"));
+        baris.appendChild(document.createTextNode(` ${tanggalTeks(e.tanggal)} · ${e.judul}${e.keterangan ? ` - ${e.keterangan}` : ""}`));
+        wadah.appendChild(baris);
+        continue;
+      }
+      const d = el("details", "aleta-basmassal-rinci aleta-kasir-kejadian");
+      d.setAttribute("data-kejadian", e.jenis || "");
+      d.setAttribute("data-status", status);
+      d.open = terbuka.has(e.kunci) ? terbuka.get(e.kunci) : status !== "selesai";
+      d.addEventListener("toggle", () => terbuka.set(e.kunci, d.open));
+      const s = el("summary");
+      const nUsul = komponen.filter((c) => c.sumber === "usulan" && peta.get(c.kunci) && masihPilih(peta.get(c.kunci))).length;
+      const kelasTanda = status === "selesai" ? " aleta-basmassal-tanda-baik" : status === "menunggu" ? "" : " aleta-basmassal-tanda-belum";
+      s.appendChild(el("span", `aleta-basmassal-tanda${kelasTanda}`, status === "terbuka" ? `${nUsul} usulan` : JUDUL_STATUS_KEJADIAN[status]));
+      s.appendChild(document.createTextNode(` ${e.tanggal ? `${tanggalTeks(e.tanggal)} · ` : ""}${e.judul}`));
+      const nTawar = komponen.filter((c) => c.sumber === "usulan" && peta.get(c.kunci) && !peta.get(c.kunci).pilih && peta.get(c.kunci).hasil !== "tersimpan").length;
+      if (nTawar) s.appendChild(el("span", "aleta-basmassal-lembut", ` · ${nTawar} ditawarkan`));
+      d.appendChild(s);
+      const isi = el("div", "aleta-kasir-isi");
+      if (e.keterangan) isi.appendChild(el("div", "aleta-basmassal-lembut", e.keterangan));
+      if (Array.isArray(e.lazim) && e.lazim.length) isi.appendChild(el("div", "aleta-basmassal-lembut", `Lazim: ${e.lazim.join(", ")}.`));
+      const t = el("table", "aleta-kasir-tabel");
+      const tb = el("tbody");
+      t.appendChild(tb);
+      for (const c of komponen) {
+        if (c.sumber === "jurnal") {
+          const tr = el("tr", "aleta-kasir-sudah");
+          const td = el("td");
+          td.appendChild(el("span", "aleta-basmassal-tanda aleta-basmassal-tanda-baik", "sudah"));
+          tr.appendChild(td);
+          tr.appendChild(el("td", "", tanggalTeks(c.tanggal)));
+          tr.appendChild(el("td", "", c.uraian));
+          tr.appendChild(el("td", "aleta-kasir-angka", `${c.masuk ? "+" : ""}${rupiah(c.jumlah)}`));
+          tb.appendChild(tr);
+          continue;
+        }
+        const u = peta.get(c.kunci);
+        if (!u || tergambar.has(u.kunci)) continue;
+        tergambar.add(u.kunci);
+        tb.appendChild(barisUsulan(u));
+      }
+      if (tb.children.length) isi.appendChild(t);
+      d.appendChild(isi);
+      wadah.appendChild(d);
+    }
+    // Usulan yang tidak termuat kejadian mana pun tetap tampil (tidak hilang diam-diam).
+    const yatim = usulan.filter((u) => !tergambar.has(u.kunci));
+    if (yatim.length) {
+      const t = el("table", "aleta-kasir-tabel");
+      const tb = el("tbody");
+      for (const u of yatim) tb.appendChild(barisUsulan(u));
+      t.appendChild(tb);
+      wadah.appendChild(el("div", "aleta-basmassal-lembut", "Usulan lain"));
+      wadah.appendChild(t);
+    }
+  }
+  /* === AKHIR K-KEJADIAN === */
+
   async function pasangPerkara(wadah, opsi) {
     const o = opsi || {};
     if (!wadah || modeLama() || boleh() === false) return false;
@@ -1872,12 +2001,13 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       akar.appendChild(el("div", "aleta-basmassal-lembut", "Nomor perkara SIPP halaman ini belum terbaca - Kasir per perkara belum dapat disusun."));
       return true;
     }
-    const muat = async () => {
+    // K-KEJADIAN 11 Okt: muat(true) = buka pertama (boleh memakai jawaban lencana); Susun ulang = segar.
+    const muat = async (pertama) => {
       akar.textContent = "";
       akar.appendChild(el("div", "aleta-basmassal-lembut", "Membaca jurnal dan keadaan perkara dari SIPP…"));
       let data;
       try {
-        data = await ambil(`${API}?perkaraId=${encodeURIComponent(perkaraId)}`);
+        data = await ambilPerkara(perkaraId, pertama !== true);
       } catch (galat) {
         akar.textContent = "";
         akar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-salah", `Kasir tidak dapat dimuat: ${String((galat && galat.message) || galat)}`));
@@ -1890,7 +2020,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       }
       gambarPerkara(akar, data, muat);
     };
-    await muat();
+    await muat(true);
     return true;
   }
 
@@ -1912,81 +2042,97 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     akar.appendChild(akun.kotak);
     for (const c of Array.isArray(data.catatan) ? data.catatan : []) akar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-peringatan", c));
 
-    if (!usulan.length) {
+    /* === K-KEJADIAN 11 Okt === usulan tersusun per kejadian perkara */
+    const perKejadian = Array.isArray(data.kejadian) && data.kejadian.length > 0;
+    if (!usulan.length && !perKejadian) {
       akar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-baik", "Jurnal sudah sesuai keadaan perkara - tidak ada yang perlu ditambah."));
       akar.appendChild(tombol("Susun ulang", "", () => void muatUlang()));
       return;
     }
+    const daftarKejadian = el("div", "aleta-kasir-kejadian-daftar");
+    const terbukaKejadian = new Map();
+    /* === AKHIR K-KEJADIAN === */
 
     const tabel = el("table", "aleta-kasir-tabel");
     const badan = el("tbody");
     tabel.appendChild(badan);
-    akar.appendChild(tabel);
+    akar.appendChild(perKejadian ? daftarKejadian : tabel);
     const ringkas = el("div", "aleta-basmassal-lembut");
     akar.appendChild(ringkas);
 
     const gambarBaris = () => {
       hitungSisa(usulan, saldo);
       badan.textContent = "";
-      for (const u of usulan) {
-        const tr = el("tr", u.pilih ? "" : "aleta-kasir-mati");
-        const tdPilih = el("td");
-        const cek = el("input");
-        cek.type = "checkbox";
-        cek.checked = Boolean(u.pilih);
-        cek.disabled = u.hasil === "tersimpan";
-        cek.setAttribute("aria-label", `Pilih ${u.uraian}`);
-        cek.addEventListener("change", () => {
-          u.pilih = cek.checked;
-          gambarBaris();
-        });
-        tdPilih.appendChild(cek);
-        tr.appendChild(tdPilih);
-
-        const tdTanggal = el("td");
-        const tgl = el("input", "aleta-kasir-masukan");
-        tgl.type = "date";
-        tgl.value = u.tanggal || "";
-        if (data.hariIni) tgl.max = data.hariIni;
-        tgl.addEventListener("change", () => (u.tanggal = tgl.value));
-        tdTanggal.appendChild(tgl);
-        tr.appendChild(tdTanggal);
-
-        const tdUraian = el("td");
-        const ur = el("input", "aleta-kasir-masukan aleta-kasir-uraian");
-        ur.type = "text";
-        ur.value = u.uraian || "";
-        ur.addEventListener("input", () => (u.uraian = ur.value));
-        tdUraian.appendChild(ur);
-        const dasar = el("div", "aleta-basmassal-lembut", `${u.peristiwa ? `${u.peristiwa} - ` : ""}${u.dasar || ""}${u.yakin && u.yakin !== "tinggi" ? ` (yakin ${u.yakin})` : ""}`);
-        tdUraian.appendChild(dasar);
-        if (/\/\s*$/.test(String(u.uraian || "")) && u.pilih) tdUraian.appendChild(el("div", "aleta-basmassal-salah", "Nomor resi Pos belum ada - lengkapi uraiannya."));
-        if (u.hasil) tdUraian.appendChild(el("div", u.hasil === "tersimpan" ? "aleta-basmassal-kabar aleta-basmassal-kabar-baik" : "aleta-basmassal-salah", u.pesan || u.hasil));
-        tr.appendChild(tdUraian);
-
-        const tdJumlah = el("td", "aleta-kasir-angka");
-        if (u.sisaOtomatis) {
-          tdJumlah.textContent = rupiah(u.jumlah);
-          tdJumlah.title = "Sisa panjar = saldo sesudah seluruh baris tercentang";
-        } else {
-          const j = el("input", "aleta-kasir-masukan aleta-kasir-angka");
-          j.type = "number";
-          j.min = "0";
-          j.step = "500";
-          j.value = u.jumlah === null || u.jumlah === undefined ? "" : String(u.jumlah);
-          j.placeholder = "jumlah";
-          j.addEventListener("change", () => {
-            u.jumlah = j.value === "" ? null : Number(j.value);
-            gambarBaris();
-          });
-          tdJumlah.appendChild(j);
-        }
-        tr.appendChild(tdJumlah);
-        badan.appendChild(tr);
+      /* === K-KEJADIAN 11 Okt === */
+      if (perKejadian) {
+        gambarKejadian(daftarKejadian, data.kejadian, usulan, terbukaKejadian, barisUsulan);
+        const dipilihK = usulan.filter((u) => u.pilih && u.hasil !== "tersimpan" && Number(u.jumlah) > 0);
+        ringkas.textContent = `${dipilihK.length} baris dicentang · saldo sesudahnya ${rupiah(hitungSisa(usulan.map((x) => ({ ...x })), saldo))}`;
+        return;
       }
+      /* === AKHIR K-KEJADIAN === */
+      for (const u of usulan) badan.appendChild(barisUsulan(u));
       const dipilih = usulan.filter((u) => u.pilih && u.hasil !== "tersimpan" && Number(u.jumlah) > 0);
       ringkas.textContent = `${dipilih.length} baris dicentang · saldo sesudahnya ${rupiah(hitungSisa(usulan.map((x) => ({ ...x })), saldo))}`;
     };
+
+    /** Satu baris usulan yang dapat disunting (bentuk blangko Tambah SIPP). */
+    function barisUsulan(u) {
+      const tr = el("tr", u.pilih ? "" : "aleta-kasir-mati");
+      const tdPilih = el("td");
+      const cek = el("input");
+      cek.type = "checkbox";
+      cek.checked = Boolean(u.pilih);
+      cek.disabled = u.hasil === "tersimpan";
+      cek.setAttribute("aria-label", `Pilih ${u.uraian}`);
+      cek.addEventListener("change", () => {
+        u.pilih = cek.checked;
+        gambarBaris();
+      });
+      tdPilih.appendChild(cek);
+      tr.appendChild(tdPilih);
+
+      const tdTanggal = el("td");
+      const tgl = el("input", "aleta-kasir-masukan");
+      tgl.type = "date";
+      tgl.value = u.tanggal || "";
+      if (data.hariIni) tgl.max = data.hariIni;
+      tgl.addEventListener("change", () => (u.tanggal = tgl.value));
+      tdTanggal.appendChild(tgl);
+      tr.appendChild(tdTanggal);
+
+      const tdUraian = el("td");
+      const ur = el("input", "aleta-kasir-masukan aleta-kasir-uraian");
+      ur.type = "text";
+      ur.value = u.uraian || "";
+      ur.addEventListener("input", () => (u.uraian = ur.value));
+      tdUraian.appendChild(ur);
+      const dasar = el("div", "aleta-basmassal-lembut", `${u.peristiwa ? `${u.peristiwa} - ` : ""}${u.dasar || ""}${u.yakin && u.yakin !== "tinggi" ? ` (yakin ${u.yakin})` : ""}`);
+      tdUraian.appendChild(dasar);
+      if (/\/\s*$/.test(String(u.uraian || "")) && u.pilih) tdUraian.appendChild(el("div", "aleta-basmassal-salah", "Nomor resi Pos belum ada - lengkapi uraiannya."));
+      if (u.hasil) tdUraian.appendChild(el("div", u.hasil === "tersimpan" ? "aleta-basmassal-kabar aleta-basmassal-kabar-baik" : "aleta-basmassal-salah", u.pesan || u.hasil));
+      tr.appendChild(tdUraian);
+
+      const tdJumlah = el("td", "aleta-kasir-angka");
+      if (u.sisaOtomatis) {
+        tdJumlah.textContent = rupiah(u.jumlah);
+        tdJumlah.title = "Sisa panjar = saldo sesudah seluruh baris tercentang";
+      } else {
+        const j = el("input", "aleta-kasir-masukan aleta-kasir-angka");
+        j.type = "number";
+        j.min = "0";
+        j.step = "500";
+        j.value = u.jumlah === null || u.jumlah === undefined ? "" : String(u.jumlah);
+        j.placeholder = "jumlah";
+        j.addEventListener("change", () => {
+          u.jumlah = j.value === "" ? null : Number(j.value);
+          gambarBaris();
+        });
+        tdJumlah.appendChild(j);
+      }
+      tr.appendChild(tdJumlah);
+      return tr;
+    }
     gambarBaris();
 
     const kotakKabar = el("div");
@@ -2044,6 +2190,13 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         ].filter(Boolean);
         kabar(kotakKabar, `${bagian.join("; ") || String(isi.pesan || isi.alasan || "Tidak ada yang tersimpan")}.`, isi.ok === true ? "baik" : "salah");
         if (r.tersimpan) {
+          // K-KEJADIAN 11 Okt: lencana tab Kasir membaca ulang (peristiwa untuk konten.js).
+          simpananPerkara.delete(String(data.perkara.perkaraId));
+          try {
+            document.dispatchEvent(new CustomEvent("aleta-kasir-berubah", { detail: { perkaraId: String(data.perkara.perkaraId) } }));
+          } catch {
+            /* peramban tanpa CustomEvent - lencana disegarkan saat tab dibuka lagi */
+          }
           const muatSipp = tombol("Muat ulang halaman SIPP", "", () => location.reload());
           kotakKabar.appendChild(muatSipp);
         }
@@ -2487,6 +2640,9 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
 
   globalThis.aletaKasirBoleh = (p) => boleh(p);
   globalThis.aletaKasirPasang = pasangPerkara;
+  /* === K-KEJADIAN 11 Okt === lencana tab Kasir (Agen R): Promise<{usulan, kejadian, keadaan, saldo}|null> */
+  globalThis.aletaKasirRingkas = ringkasPerkara;
+  /* === AKHIR K-KEJADIAN === */
   globalThis.aletaKasirPasangHarian = pasangHarian;
   globalThis.aletaKasirRentang = (periode, tanggal) => (typeof alatKasirRentang === "function" ? alatKasirRentang(periode, tanggal) : null);
 })();

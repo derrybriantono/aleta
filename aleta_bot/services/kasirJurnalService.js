@@ -121,6 +121,11 @@ const JB = Object.freeze({
   PNBP_CABUT: 404,
 });
 
+/* === K-KEJADIAN 11 Okt === */
+const JB_TAMBAH_PANJAR = 224;
+const TAMBAH_PANJAR_MINIMUM = 10000;
+const JB_PANGGIL_MEDIASI = 381;
+/* === AKHIR K-KEJADIAN === */
 const JENIS_PANGGILAN = new Set([12, 13, 14, 15]);
 const JENIS_PNBP_PERTAMA = new Set([236, 237, 253, 388]);
 const KATEGORI_JURUSITA = new Set([4, 5, 6]);
@@ -531,6 +536,9 @@ function susunUsulan(k) {
       sisaOtomatis: Boolean(u.sisaOtomatis),
       kelompok: u.kelompok,
       tersedia: Boolean(jenisBiaya[u.jenisBiayaId]),
+      /* === K-KEJADIAN 11 Okt === kejadian perkara yang melahirkan baris ini (susunKejadian) */
+      kejadian: u.kejadian || "lain",
+      /* === AKHIR K-KEJADIAN === */
     });
   };
 
@@ -542,16 +550,20 @@ function susunUsulan(k) {
   // lebih dahulu menurut pihak_id, sisanya menurut pihak_ke, sisanya lagi
   // menurut urutan. Satu baris lama tidak pernah menutup dua peristiwa.
   const terpakai = new Set();
+  /* === K-KEJADIAN 11 Okt === baris jurnal lama -> kejadian yang ditutupnya */
+  const tutup = new Map();
+  /* === AKHIR K-KEJADIAN === */
   // Longgar: baris yang tidak menunjuk pihak LAIN sekedudukan. Kasir kadang
   // memilih pihak keliru (458/2026: Biaya Pemberitahuan atas nama Penggugat)
   // - baris itu tetap menutup peristiwanya, bukan memancing usulan ganda.
-  const cariAda = (saring, p) => {
+  const cariAda = (saring, p, kejadian) => {
     const calon = jurnal.filter((b) => !terpakai.has(b.id) && saring(b));
     const tepat = p ? calon.find((b) => Number(b.pihakId) === Number(p.pihakId)) : null;
     const lainSekedudukan = p ? new Set(pihak.filter((x) => x.ke === p.ke && x !== p).map((x) => Number(x.pihakId))) : new Set();
     const longgar = p ? calon.find((b) => !lainSekedudukan.has(Number(b.pihakId))) : calon[0];
     const hasil = tepat || longgar || null;
     if (hasil) terpakai.add(hasil.id);
+    if (hasil && kejadian) tutup.set(hasil.id, kejadian);
     return hasil;
   };
 
@@ -591,7 +603,9 @@ function susunUsulan(k) {
       } else {
         return;
       }
-      hasil.push({ sidang: s, relaas: r || null, ket, resi: r ? resiPos(r.resi) : "", ikrar, yakin, pilih, dasar });
+      // K-KEJADIAN 11 Okt: panggilan sidang ke-n lahir dari sidang ke-(n-1) yang ditunda.
+      const kejadian = ikrar ? "ikrar" : i === 0 ? "pertama" : `tunda:${deret[i - 1].id}`;
+      hasil.push({ sidang: s, relaas: r || null, ket, resi: r ? resiPos(r.resi) : "", ikrar, yakin, pilih, dasar, kejadian });
     });
     return hasil;
   };
@@ -603,6 +617,43 @@ function susunUsulan(k) {
       peristiwaPanggil.set(Number(p.pihakId), { biasa, ikrar });
     }
   }
+  /* === K-KEJADIAN 11 Okt === SATU AMPLOP
+   * Beberapa Tergugat serumah dipanggil dengan SATU surat tercatat (resi Pos
+   * sama pada sidang yang sama): kasir menulis satu Biaya Panggilan dan satu
+   * PNBP relaas (542/2026: tiga Tergugat, satu resi, satu baris). Pihak kedua
+   * dst. ditawarkan tanpa dicentang, bukan dibuang. */
+  const resiTerpakai = new Set();
+  for (const ke of kedudukanDipanggil) {
+    for (const p of pihakKe(ke)) {
+      const e = peristiwaPanggil.get(Number(p.pihakId));
+      for (const ev of e ? [...e.biasa, ...e.ikrar] : []) {
+        if (!ev.resi) continue;
+        const kunci = `${ev.sidang.id}|${ev.resi}`;
+        if (resiTerpakai.has(kunci)) {
+          ev.pilih = false;
+          ev.yakin = "rendah";
+          ev.dasar = `${ev.dasar}; resi Pos sama dengan pihak lain pada sidang ini - satu amplop, lazimnya satu baris`;
+        } else {
+          resiTerpakai.add(kunci);
+        }
+      }
+    }
+  }
+  // Pihak sekedudukan TANPA relaas padahal pihak lain pada sidang yang sama
+  // sudah tercatat relaasnya: lazimnya tidak dipanggil tersendiri (380/2026:
+  // empat Tergugat, satu yang dipanggil lewat Pos, satu baris biaya).
+  const sidangBerelaas = new Set(
+    relaas.filter((r) => pihak.some((p) => kedudukanDipanggil.includes(p.ke) && Number(p.pihakId) === Number(r.pihakId))).map((r) => Number(r.sidangId))
+  );
+  for (const e of peristiwaPanggil.values()) {
+    for (const ev of [...e.biasa, ...e.ikrar]) {
+      if (ev.relaas || !sidangBerelaas.has(Number(ev.sidang.id))) continue;
+      ev.pilih = false;
+      ev.yakin = "rendah";
+      ev.dasar = `${ev.dasar}; pihak lain pada sidang ini sudah tercatat relaasnya, pihak ini belum`;
+    }
+  }
+  /* === AKHIR K-KEJADIAN === */
 
   /**
    * Tanggal satu peristiwa panggilan: hari kerja SESUDAH surat diserahkan ke
@@ -631,7 +682,7 @@ function susunUsulan(k) {
         // Pihak pertama dan kedua punya jenisnya sendiri - 237 milik Tergugat
         // tidak boleh menutup PNBP Penggugat.
         const jenisSendiri = ke === 1 ? [JB.PNBP_PERTAMA_P, JB.PNBP_PERTAMA_PEMOHON] : [JB.PNBP_PERTAMA_T, JB.PNBP_PERTAMA_TERMOHON, 254];
-        const ada = cariAda((b) => jenisSendiri.includes(Number(b.jenisBiayaId)), p);
+        const ada = cariAda((b) => jenisSendiri.includes(Number(b.jenisBiayaId)), p, "pertama");
         if (ada) return;
         const r1 = relaas.find((x) => Number(x.sidangId) === Number(sidangBiasa[0].id) && Number(x.pihakId) === Number(p.pihakId));
         // Tergugat yang tidak dipanggil berbiaya pada sidang pertama (relaas
@@ -676,6 +727,7 @@ function susunUsulan(k) {
           yakin,
           pilih,
           kelompok: ke === 1 ? 10 : 30 + ke,
+          kejadian: "pertama",
         });
       });
     }
@@ -706,6 +758,7 @@ function susunUsulan(k) {
           if (b) {
             terpakai.add(b.id);
             tertutup.add(ev);
+            tutup.set(b.id, ev.kejadian);
           }
         }
         for (const ev of deret) {
@@ -714,6 +767,7 @@ function susunUsulan(k) {
           if (b) {
             terpakai.add(b.id);
             tertutup.add(ev);
+            tutup.set(b.id, ev.kejadian);
           }
         }
         deret.forEach((ev, i) => {
@@ -746,6 +800,7 @@ function susunUsulan(k) {
             pilih: ev.pilih,
             perluResi: !ev.resi && ev.ket !== "R" && KET_BERBIAYA.has(ev.ket || "S") && ev.ket !== "Y" && ev.ket !== "T",
             kelompok: ev.ikrar ? 40 : 20 + i,
+            kejadian: ev.kejadian,
           });
         });
       }
@@ -768,15 +823,15 @@ function susunUsulan(k) {
     const hadirPutus = sidangPutus && sidangPutus.dihadiriOleh !== null && sidangPutus.dihadiriOleh !== undefined ? Number(sidangPutus.dihadiriOleh) : null;
     const satu = (jb, kelompok, peristiwa, dasar, uraian) => {
       if (!pembayar) return;
-      if (cariAda((b) => Number(b.jenisBiayaId) === jb, null)) return;
-      tambah({ jenisBiayaId: jb, pihakKe: 1, pihakId: Number(pembayar.pihakId), uraian, jumlah: lazim(jb), tanggal: tPut, peristiwa, dasar, kelompok });
+      if (cariAda((b) => Number(b.jenisBiayaId) === jb, null, "putusan")) return;
+      tambah({ jenisBiayaId: jb, pihakKe: 1, pihakId: Number(pembayar.pihakId), uraian, jumlah: lazim(jb), tanggal: tPut, peristiwa, dasar, kelompok, kejadian: "putusan" });
     };
     satu(JB.REDAKSI, 50, "Putusan", `putusan ${tPut}`, "Redaksi");
     satu(JB.METERAI, 51, "Putusan", `putusan ${tPut}`, "Meterai");
     if (cabut) satu(JB.PNBP_CABUT, 52, "Pencabutan perkara", `putusan ${tPut} berstatus dicabut`, "PNBP Surat Permohonan Pencabutan Perkara");
 
     if (!cabut && (hadirPutus === 3 || hadirPutus === 4) && pembayar) {
-      if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PNBP_PBT_P, null)) {
+      if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PNBP_PBT_P, null, "putusan")) {
         tambah({
           jenisBiayaId: JB.PNBP_PBT_P,
           pihakKe: 1,
@@ -794,6 +849,7 @@ function susunUsulan(k) {
           // kasir 27 dari 38 kali - dicentang. Permohonan begitu 3/12 - tidak.
           pilih: hadirPutus === 3 || (hadirPutus === 4 && !permohonan && STATUS_PBT_PENGGUGAT.has(statusId)),
           kelompok: 53,
+          kejadian: "putusan",
         });
       }
     }
@@ -827,7 +883,7 @@ function susunUsulan(k) {
             ? `${sebutan.dua} tidak hadir pada sidang putusan ${tPut} (status putusan belum tertulis)`
             : `${sebutan.dua} tidak hadir pada sidang putusan ${tPut} (bukan verstek)`;
         if (!["W", "M", "R"].includes(ket)) {
-          if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PEMBERITAHUAN, p)) {
+          if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PEMBERITAHUAN, p, "putusan")) {
             const t = tarifPihak(p);
             const resi = pb ? resiPos(pb.resi) : "";
             tambah({
@@ -844,10 +900,11 @@ function susunUsulan(k) {
               // "/P" memang kebiasaan hari putusan - resinya baru lahir sesudahnya.
               perluResi: false,
               kelompok: 54 + i * 2,
+              kejadian: "putusan",
             });
           }
         }
-        if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PNBP_PBT_T, p)) {
+        if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PNBP_PBT_T, p, "putusan")) {
           tambah({
             jenisBiayaId: JB.PNBP_PBT_T,
             pihakKe: 2,
@@ -860,6 +917,7 @@ function susunUsulan(k) {
             yakin,
             pilih: pilihPbt,
             kelompok: 55 + i * 2,
+            kejadian: "putusan",
           });
         }
       });
@@ -867,6 +925,13 @@ function susunUsulan(k) {
 
     // Sisa panjar - selalu terakhir, selalu menghabiskan saldo.
     const sudahSisa = jurnal.some((b) => Number(b.jenisBiayaId) === JB.SISA);
+    /* === K-KEJADIAN 11 Okt === sisa panjar yang sudah ada menutup putusan, atau ikrar pada cerai talak dikabulkan */
+    for (const b of jurnal) {
+      if (Number(b.jenisBiayaId) !== JB.SISA || tutup.has(b.id)) continue;
+      const talakKabul = Number(perkara.jenisPerkaraId) === JENIS_CERAI_TALAK && statusId === STATUS_DIKABULKAN;
+      tutup.set(b.id, talakKabul ? "ikrar" : "putusan");
+    }
+    /* === AKHIR K-KEJADIAN === */
     if (!sudahSisa && pembayar) {
       const ikrarPerlu = Number(perkara.jenisPerkaraId) === JENIS_CERAI_TALAK && statusId === STATUS_DIKABULKAN;
       const tIkrar = (k.ikrar && tanggalSah(k.ikrar.tanggal)) || ikrarDariSidang(sidangIkrar);
@@ -884,6 +949,7 @@ function susunUsulan(k) {
           dasar: ikrarPerlu ? `ikrar talak ${tIkrar}` : `putusan ${tPut}`,
           sisaOtomatis: true,
           kelompok: 90,
+          kejadian: ikrarPerlu ? "ikrar" : "putusan",
         });
       }
     }
@@ -904,6 +970,69 @@ function susunUsulan(k) {
     const terakhir = [...usulan.filter((u) => u !== sisa).map((u) => u.tanggal), ...jurnal.map((b) => b.tanggal)].filter(Boolean).sort().pop();
     if (terakhir && terakhir > sisa.tanggal) sisa.tanggal = patut(terakhir);
   }
+  /* === K-KEJADIAN 11 Okt === TAMBAHAN PANJAR BILA SALDO KURANG
+   *
+   * Bila saldo panjar tidak cukup untuk biaya suatu kejadian, kasir menulis
+   * "Tambahan Panjar Biaya Perkara" (jenis 224, pemasukan, pihak pertama)
+   * SEBELUM baris pertama kejadian itu, bertanggal sama (224>157>152>...,
+   * 224>14>151 pada ikrar). Blangko SIPP sendiri hanya membandingkan tiap
+   * biaya dengan JUMLAH pemasukan (get_panjar_biaya), jadi saldo minus tidak
+   * dicegahnya - kebiasaan kasirlah yang menjaga saldo tidak minus.
+   * Diukur atas 48 tambahan panjar biasa 2024-2026 (aleta_bot/tools/
+   * ukur-kasir-kejadian.js): jumlahnya = kekurangan seluruh pengeluaran
+   * kejadian itu, sekurangnya Rp10.000 - 41 dari 48 (85%); bertanggal sama
+   * dengan pengeluaran sesudahnya 44 dari 48. Uang ini dibayar pihak, maka
+   * keyakinannya "sedang": kasir memastikan pembayarannya sebelum menyimpan.
+   */
+  // Jurnal yang sudah ditutup (sisa panjar dikembalikan) tidak dibuka lagi dengan tambahan panjar.
+  if (jenisBiaya[JB_TAMBAH_PANJAR] && pembayar && !jurnal.some((b) => Number(b.jenisBiayaId) === JB.SISA)) {
+    let jalan = saldo;
+    let titik = -1;
+    for (let i = 0; i < usulan.length; i += 1) {
+      const u = usulan[i];
+      if (u.sisaOtomatis || !u.pilih) continue;
+      jalan += (Number(u.jenisTransaksi) || -1) * (Number(u.jumlah) || 0);
+      if (jalan < 0 && titik < 0) titik = i;
+    }
+    if (titik >= 0) {
+      // Ditaruh sebelum baris PERTAMA kejadian yang kekurangan itu.
+      for (let j = 0; j < titik; j += 1) {
+        const u = usulan[j];
+        if (u.pilih && !u.sisaOtomatis && u.kejadian === usulan[titik].kejadian) {
+          titik = j;
+          break;
+        }
+      }
+      const pemicu = usulan[titik];
+      const kurang = -jalan;
+      const jb = jenisBiaya[JB_TAMBAH_PANJAR];
+      nomor += 1;
+      usulan.splice(titik, 0, {
+        kunci: `u${nomor}`,
+        jenisBiayaId: JB_TAMBAH_PANJAR,
+        kategoriId: Number(jb.kategoriId) || 1,
+        jenisTransaksi: Number(jb.jenisTransaksi) || 1,
+        pihakKe: 1,
+        pihakId: Number(pembayar.pihakId),
+        uraian: "Tambahan Panjar Biaya Perkara",
+        jumlah: Math.max(kurang, TAMBAH_PANJAR_MINIMUM),
+        tanggal: pemicu.tanggal,
+        keterangan: "",
+        jurusitaId: 0,
+        peristiwa: "Tambahan panjar",
+        dasar: `saldo panjar Rp${saldo.toLocaleString("id-ID")} kurang Rp${kurang.toLocaleString("id-ID")} untuk biaya yang diusulkan - pastikan pihak sudah membayar tambahan panjar`,
+        yakin: "sedang",
+        pilih: true,
+        perluResi: false,
+        sisaOtomatis: false,
+        kelompok: pemicu.kelompok - 0.5,
+        tersedia: true,
+        kejadian: pemicu.kejadian,
+        tambahPanjar: true,
+      });
+    }
+  }
+  /* === AKHIR K-KEJADIAN === */
   const saldoAkhir = hitungSisaOtomatis(usulan, saldo);
   if (sisa && !(sisa.jumlah > 0)) {
     sisa.pilih = false;
@@ -919,7 +1048,12 @@ function susunUsulan(k) {
   if (usulan.some((u) => u.pilih && u.jumlah === null)) {
     catatan.push("Sebagian tarif belum diketahui - jumlahnya harus diisi sebelum disimpan.");
   }
-  return { usulan, catatan, saldo, saldoAkhir };
+  /* === K-KEJADIAN 11 Okt === */
+  if (usulan.some((u) => u.tambahPanjar && u.pilih)) {
+    catatan.push("Saldo panjar kurang - Tambahan Panjar Biaya Perkara diusulkan sebelum biaya yang kekurangan. Pastikan pihak sudah membayarnya; bila belum, hapus centangnya - tanpa tambahan panjar saldo jurnal menjadi minus.");
+  }
+  return { usulan, catatan, saldo, saldoAkhir, tutup: [...tutup].map(([jurnalId, kejadian]) => ({ jurnalId, kejadian })) };
+  /* === AKHIR K-KEJADIAN === */
 }
 
 /**
@@ -940,6 +1074,248 @@ function hitungSisaOtomatis(usulan, saldoAwal) {
   }
   return saldo;
 }
+
+/* === K-KEJADIAN 11 Okt === */
+/**
+ * ============================================================================
+ * KASIR PER KEJADIAN (11 Okt 2026)
+ * ============================================================================
+ *
+ * Permintaan pengguna: "tambahkan otomatis isi data kasir tiap kejadian tiap
+ * perkara ... komponen dikeluarkan berbeda-beda (seperti saat putus ...
+ * berikut juga beda kalau di daftar atau ditunda perkara)".
+ *
+ * susunKejadian - fungsi MURNI atas keadaan (bacaKeadaan) + hasil susunUsulan.
+ * Tiap kejadian perkara (pendaftaran, panggilan sidang pertama, tiap sidang
+ * yang ditunda, mediasi, putusan, ikrar talak) dengan tanggalnya, berisi:
+ *   - baris jurnal yang SUDAH ada (yang menutup kejadian itu menurut
+ *     pembanding mesin usulan - satu baris tidak pernah menutup dua kejadian)
+ *   - usulan yang BELUM ada (baris susunUsulan yang sama - urutan, bentuk, dan
+ *     sisa panjar terakhir tidak berubah; kasir tetap yang menekan Simpan).
+ * Kejadian tanpa usulan tercentang = selesai.
+ *
+ * Kebiasaan per kejadian diukur atas jurnal satker (sipp_donggala, putusan
+ * Jul 2025 - Okt 2026; aleta_bot/tools/ukur-kasir-kejadian.js, ringkasan di
+ * catatan kerja kasir-11okt/hasil-agen-k.md):
+ *   pendaftaran  Panjar (urutan 1) > Biaya Pendaftaran/PNBP 30.000 (2) >
+ *                Biaya Pemberkasan/ATK 100.000 (3) - ditulis SIPP sendiri
+ *                (new_perdata add_data) pada detik yang sama dengan perkaranya
+ *                1.375 dari 1.375; BUKAN lewat Tambah, maka tidak diusulkan.
+ *   mediasi      lazimnya tanpa biaya - Biaya Panggilan Mediasi hanya pada 3
+ *                dari 103 mediasi; tidak diusulkan.
+ *   tambahan panjar  lihat susunUsulan (jenis 224).
+ */
+const URUT_KEJADIAN = { daftar: 0, pertama: 1, mediasi: 2, tunda: 3, putusan: 4, ikrar: 5, lain: 9 };
+const JENIS_DAFTAR = new Set([1, 61, 155]);
+const JENIS_HARI_PUTUSAN_SAJA = new Set([157, 152, 404, 260, 29, 389, 252]);
+
+function tanggalLayar(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : "-";
+}
+
+function teksKehadiran(d, sebutan, permohonan) {
+  if (d === null || d === undefined) return "Kehadiran sidang belum diisi di SIPP.";
+  if (permohonan) return Number(d) === 1 ? "Pemohon hadir." : "Pemohon tidak lengkap hadir.";
+  if (Number(d) === 1) return "Semua pihak hadir - tidak ada panggilan ulang.";
+  if (Number(d) === 2) return `Hanya ${sebutan.satu} hadir - ${sebutan.dua} dipanggil ulang.`;
+  if (Number(d) === 3) return `Hanya ${sebutan.dua} hadir.`;
+  if (Number(d) === 4) return `Tidak ada pihak hadir - ${sebutan.dua} dipanggil ulang.`;
+  return "";
+}
+
+/**
+ * @param {object} k keadaan (bentuk bacaKeadaan)
+ * @param {object} [hasil] hasil susunUsulan(k) - disusun sendiri bila tidak diberikan
+ * @returns {{ kejadian: object[], ringkas: { usulan: number, kejadian: number, keadaan: string, kunciKeadaan: string, saldo: number } }}
+ */
+function susunKejadian(k, hasil) {
+  const h = hasil || susunUsulan(k);
+  const perkara = (k && k.perkara) || {};
+  const permohonan = Number(perkara.alurPerkaraId) === ALUR_PERMOHONAN;
+  const sebutan = sebutanPerkara(perkara);
+  const hariIni = tanggalSah(k && k.hariIni);
+  const tanggalDaftar = tanggalSah(perkara.tanggalDaftar);
+  const jurnal = (Array.isArray(k && k.jurnal) ? k.jurnal : []).slice().sort((a, b) => angka(a.id) - angka(b.id));
+  const usulan = Array.isArray(h.usulan) ? h.usulan : [];
+  const tutup = new Map((Array.isArray(h.tutup) ? h.tutup : []).map((x) => [Number(x.jurnalId), x.kejadian]));
+  const sidang = (Array.isArray(k && k.sidang) ? k.sidang : [])
+    .slice()
+    .sort((a, b) => angka(a.urutan) - angka(b.urutan) || bersih(a.tanggal).localeCompare(bersih(b.tanggal)));
+  const sidangBiasa = sidang.filter((s) => !s.ikrar);
+  const sidangIkrar = sidang.filter((s) => s.ikrar);
+  const keadaan = keadaanPerkara(k);
+  const putusan = k && k.putusan && tanggalSah(k.putusan.tanggal) ? k.putusan : putusanDariSidang(sidangBiasa, hariIni);
+  const statusId = putusan ? Number(putusan.statusId) || 0 : 0;
+  const talakKabul = Number(perkara.jenisPerkaraId) === JENIS_CERAI_TALAK && statusId === STATUS_DIKABULKAN;
+  const tIkrar = (k && k.ikrar && tanggalSah(k.ikrar.tanggal)) || ikrarDariSidang(sidangIkrar);
+
+  const peta = new Map();
+  const buat = (kunci, jenis, tanggal, judul, keterangan, lazim) => {
+    if (!peta.has(kunci)) peta.set(kunci, { kunci, jenis, tanggal: tanggalSah(tanggal), judul, keterangan: keterangan || "", lazim: lazim || [], komponen: [] });
+    return peta.get(kunci);
+  };
+
+  buat(
+    "daftar",
+    "daftar",
+    tanggalDaftar,
+    "Pendaftaran",
+    "Panjar, PNBP pendaftaran, dan ATK/pemberkasan ditulis SIPP sendiri saat perkara didaftar - bukan lewat Tambah.",
+    ["Panjar Biaya Perkara", "Biaya Pendaftaran/PNBP", "Biaya Pemberkasan/ATK"]
+  );
+  if (sidangBiasa[0]) {
+    buat(
+      "pertama",
+      "pertama",
+      tanggalSah(perkara.penetapanHariSidang) || sidangBiasa[0].tanggal,
+      `Penetapan hari sidang - panggilan sidang pertama ${tanggalLayar(sidangBiasa[0].tanggal)}`,
+      permohonan ? "PNBP relaas panggilan pertama tiap pemohon." : `${sebutan.dua} lewat Pos/RRI berbiaya; panggilan elektronik tanpa biaya, PNBP-nya tetap.`,
+      permohonan
+        ? ["PNBP Relaas Panggilan Pertama Pemohon"]
+        : [`PNBP Relaas Panggilan Pertama Kepada ${sebutan.satu}`, `Biaya Panggilan ${sebutan.dua}`, `PNBP Relaas Panggilan Pertama Kepada ${sebutan.dua}`]
+    );
+  } else if (Number((k && k.pembiayaan) || 1) === 1) {
+    // Kejadian berikutnya yang DITUNGGU - tampil agar kasir tahu biaya apa yang menyusul.
+    buat(
+      "pertama",
+      "pertama",
+      "",
+      "Penetapan hari sidang - panggilan sidang pertama",
+      "Sidang pertama belum ditetapkan - biaya panggilan pertama diusulkan sesudah PHS.",
+      permohonan ? ["PNBP Relaas Panggilan Pertama Pemohon"] : [`PNBP Relaas Panggilan Pertama Kepada ${sebutan.satu}`, `Biaya Panggilan ${sebutan.dua}`, `PNBP Relaas Panggilan Pertama Kepada ${sebutan.dua}`]
+    ).menunggu = true;
+  }
+  for (const m of Array.isArray(k && k.mediasi) ? k.mediasi : []) {
+    if (!tanggalSah(m.tanggal)) continue;
+    buat(`mediasi:${m.id}`, "mediasi", m.tanggal, `Mediasi${m.selesai ? ` (selesai ${tanggalLayar(m.selesai)})` : ""}`, "Lazimnya tanpa biaya (Biaya Panggilan Mediasi hanya 3 dari 103 mediasi).", []);
+  }
+  const relaasSemua = Array.isArray(k && k.relaas) ? k.relaas : [];
+  const pihakDua = new Set((Array.isArray(k && k.pihak) ? k.pihak : []).filter((p) => p.ke === 2 || p.ke === 4).map((p) => Number(p.pihakId)));
+  sidangBiasa.forEach((s, i) => {
+    const berikut = sidangBiasa[i + 1];
+    if (!berikut) return;
+    const rBerikut = relaasSemua.filter((r) => Number(r.sidangId) === Number(berikut.id) && pihakDua.has(Number(r.pihakId)));
+    const elektronik = rBerikut.length > 0 && rBerikut.every((r) => KET_TANPA_BIAYA.has(bersih(r.ket).toUpperCase()));
+    buat(
+      `tunda:${s.id}`,
+      "tunda",
+      s.tanggal,
+      `Sidang ${tanggalLayar(s.tanggal)} ditunda ke ${tanggalLayar(berikut.tanggal)}`,
+      `${teksKehadiran(s.dihadiriOleh, sebutan, permohonan)}${elektronik ? " Panggilan elektronik/tanpa biaya." : ""}`,
+      permohonan ? [] : [`Biaya Panggilan ${sebutan.dua} (bila tidak hadir)`]
+    );
+  });
+  if (putusan) {
+    const kunciLazim = keadaan.kunci === "ikrar" ? "menunggu-ikrar" : keadaan.kunci;
+    buat(
+      "putusan",
+      "putusan",
+      putusan.tanggal,
+      `Putusan ${tanggalLayar(putusan.tanggal)}`,
+      putusan.dariSidang ? `Dibaca dari hasil sidang ("${bersih(putusan.statusNama)}") - data putusan belum diinput.` : keadaan.nama,
+      KEADAAN_KASIR[kunciLazim] ? KEADAAN_KASIR[kunciLazim].lazim.slice() : []
+    );
+  }
+  if (sidangIkrar.length || tIkrar || talakKabul) {
+    buat(
+      "ikrar",
+      "ikrar",
+      tIkrar || (sidangIkrar[0] && sidangIkrar[0].tanggal) || "",
+      `Ikrar talak${tIkrar ? ` ${tanggalLayar(tIkrar)}` : sidangIkrar[0] ? ` (sidang ${tanggalLayar(sidangIkrar[0].tanggal)})` : ""}`,
+      tIkrar ? "Sisa panjar dikembalikan pada hari ikrar." : "Ikrar belum diucapkan - sisa panjar menunggu hari ikrar.",
+      KEADAAN_KASIR.ikrar.lazim.slice()
+    ).menunggu = !tIkrar;
+  }
+
+  // Kejadian baris jurnal yang tidak ditutup pembanding: menurut jenis dan tanggalnya.
+  const kunciPanggilPada = (tanggal) => {
+    let hasilKunci = peta.has("pertama") ? "pertama" : "";
+    sidangBiasa.forEach((s, i) => {
+      if (sidangBiasa[i + 1] && peta.has(`tunda:${s.id}`) && s.tanggal && tanggal > s.tanggal) hasilKunci = `tunda:${s.id}`;
+    });
+    return hasilKunci;
+  };
+  const golong = (b, i) => {
+    if (tutup.has(b.id)) return tutup.get(b.id);
+    const jb = Number(b.jenisBiayaId);
+    if (JENIS_DAFTAR.has(jb) && (Number(b.urutan) > 0 || b.tanggal === tanggalDaftar)) return "daftar";
+    if (jb === JB_TAMBAH_PANJAR) {
+      // Tambahan panjar membiayai baris sesudahnya.
+      for (let x = i + 1; x < jurnal.length; x += 1) {
+        if (Number(jurnal[x].jenisTransaksi) > 0) continue;
+        return golong(jurnal[x], x);
+      }
+      return "lain";
+    }
+    if (jb === JB_PANGGIL_MEDIASI) {
+      const m = [...peta.values()].filter((e) => e.jenis === "mediasi" && e.tanggal && e.tanggal <= b.tanggal).pop();
+      return m ? m.kunci : "lain";
+    }
+    if (JENIS_PANGGILAN.has(jb) && /ikrar/i.test(bersih(b.uraian)) && peta.has("ikrar")) return "ikrar";
+    if (JENIS_HARI_PUTUSAN_SAJA.has(jb) && peta.has("putusan")) return "putusan";
+    if (jb === JB.SISA) return talakKabul && peta.has("ikrar") ? "ikrar" : peta.has("putusan") ? "putusan" : "lain";
+    if (JENIS_PANGGILAN.has(jb) || JENIS_PNBP_PERTAMA.has(jb) || jb === 254) return kunciPanggilPada(b.tanggal) || "lain";
+    return "lain";
+  };
+  const ambilKejadian = (kunci) =>
+    peta.get(kunci) || buat("lain", "lain", "", "Baris jurnal lain", "Tidak terkait kejadian yang dikenali (mis. pemeriksaan setempat, verzet).", []);
+  jurnal.forEach((b, i) => {
+    ambilKejadian(golong(b, i)).komponen.push({
+      sumber: "jurnal",
+      jurnalId: b.id,
+      jenisBiayaId: Number(b.jenisBiayaId) || 0,
+      uraian: bersih(b.uraian),
+      jumlah: angka(b.jumlah),
+      tanggal: tanggalSah(b.tanggal),
+      masuk: angka(b.jenisTransaksi) > 0,
+    });
+  });
+  for (const u of usulan) {
+    ambilKejadian(u.kejadian).komponen.push({
+      sumber: "usulan",
+      kunci: u.kunci,
+      jenisBiayaId: u.jenisBiayaId,
+      uraian: u.uraian,
+      jumlah: u.jumlah,
+      tanggal: u.tanggal,
+      pilih: Boolean(u.pilih),
+      yakin: u.yakin,
+      sisaOtomatis: Boolean(u.sisaOtomatis),
+      tambahPanjar: Boolean(u.tambahPanjar),
+    });
+  }
+
+  const dipilih = (c) => c.sumber === "usulan" && c.pilih && (!c.sisaOtomatis || Number(c.jumlah) > 0);
+  const kejadian = [...peta.values()]
+    .map((e) => {
+      const sudah = e.komponen.filter((c) => c.sumber === "jurnal").length;
+      const usul = e.komponen.filter(dipilih).length;
+      const tawaran = e.komponen.filter((c) => c.sumber === "usulan" && !dipilih(c)).length;
+      let status = usul ? "terbuka" : "selesai";
+      if (e.jenis === "daftar" && !sudah) status = "periksa";
+      // Kejadian yang belum terjadi dan belum berbaris apa pun: ditunggu, bukan selesai.
+      if (status === "selesai" && e.menunggu && !e.komponen.length) status = "menunggu";
+      return { ...e, sudah, usulan: usul, ditawarkan: tawaran, status, tanpaBiaya: !e.komponen.length && status === "selesai" };
+    })
+    .filter((e) => e.jenis !== "lain" || e.komponen.length)
+    .sort(
+      (a, b) =>
+        (a.tanggal || "9999").localeCompare(b.tanggal || "9999") ||
+        (URUT_KEJADIAN[a.jenis] ?? 9) - (URUT_KEJADIAN[b.jenis] ?? 9)
+    );
+  return {
+    kejadian,
+    ringkas: {
+      usulan: usulan.filter((u) => u.pilih && (!u.sisaOtomatis || Number(u.jumlah) > 0)).length,
+      kejadian: kejadian.filter((e) => e.status === "terbuka").length,
+      keadaan: keadaan.nama,
+      kunciKeadaan: keadaan.kunci,
+      saldo: Number(h.saldo) || 0,
+    },
+  };
+}
+/* === AKHIR K-KEJADIAN === */
 
 /** Tabel deskripsi audit persis fetch_description() SIPP. */
 function keteranganAudit(nilai) {
@@ -1116,7 +1492,7 @@ function buatLayanan(deps = {}) {
       penetapanHariSidang: tanggalSah(p.penetapanHariSidang),
     };
 
-    const [hari, jurnal, pihakMentah, jurusitaMentah, sidangMentah, relaasMentah, putusanMentah, pbtMentah, ikrarMentah, jenisMentah] =
+    const [hari, jurnal, pihakMentah, jurusitaMentah, sidangMentah, relaasMentah, putusanMentah, pbtMentah, ikrarMentah, jenisMentah, mediasiMentah] =
       await Promise.all([
         saatBasisData().then((s) => s.slice(0, 10)),
         bacaJurnal(id),
@@ -1171,6 +1547,14 @@ function buatLayanan(deps = {}) {
             ORDER BY jb.kategori_id, jb.id`,
           [perkara.alurPerkaraId, TAHAPAN]
         ),
+        /* === K-KEJADIAN 11 Okt === kejadian mediasi (baca saja; tabel terdaftar di sippSkemaService) */
+        semua(
+          `SELECT mediasi_id AS id, DATE_FORMAT(penetapan_penunjukan_mediator, '%Y-%m-%d') AS tanggal,
+                  DATE_FORMAT(keputusan_mediasi, '%Y-%m-%d') AS selesai, hasil_mediasi AS hasil
+             FROM perkara_mediasi WHERE perkara_id = ? ORDER BY mediasi_id ASC`,
+          [id]
+        ).catch(() => []),
+        /* === AKHIR K-KEJADIAN === */
       ]);
 
     const jenisBiaya = {};
@@ -1238,6 +1622,11 @@ function buatLayanan(deps = {}) {
       })),
       ikrar: ikrarMentah && tanggalSah(ikrarMentah.tanggal) ? { tanggal: tanggalSah(ikrarMentah.tanggal) } : null,
       jenisBiaya,
+      /* === K-KEJADIAN 11 Okt === */
+      mediasi: (Array.isArray(mediasiMentah) ? mediasiMentah : [])
+        .map((m) => ({ id: Number(m.id) || 0, tanggal: tanggalSah(m.tanggal), selesai: tanggalSah(m.selesai), hasil: bersih(m.hasil) }))
+        .filter((m) => m.tanggal),
+      /* === AKHIR K-KEJADIAN === */
     };
     keadaan.tarif = await muatTarif(keadaan);
     return { ok: true, keadaan };
@@ -1324,8 +1713,13 @@ function buatLayanan(deps = {}) {
     if (!baca.ok) return baca;
     const k = baca.keadaan;
     const hasil = susunUsulan(k);
+    /* === K-KEJADIAN 11 Okt === usulan tersusun per kejadian + ringkasan lencana tab Kasir */
+    const perKejadian = susunKejadian(k, hasil);
+    /* === AKHIR K-KEJADIAN === */
     return {
       ok: true,
+      kejadian: perKejadian.kejadian,
+      ringkas: perKejadian.ringkas,
       perkara: k.perkara,
       hariIni: k.hariIni,
       pembiayaan: k.pembiayaan,
@@ -1744,6 +2138,10 @@ module.exports = {
   KEADAAN_KASIR,
   buatLayanan,
   susunUsulan,
+  /* === K-KEJADIAN 11 Okt === */
+  susunKejadian,
+  JB_TAMBAH_PANJAR,
+  /* === AKHIR K-KEJADIAN === */
   keadaanPerkara,
   hitungSisaOtomatis,
   tanggalPatut,
