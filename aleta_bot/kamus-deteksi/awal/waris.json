@@ -331,6 +331,17 @@
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "waris-lengkap-pokok",
+      "label": "Pokok keterangan saksi PAW (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa pewaris[ {1025}] telah meninggal dunia[ pada tanggal {tanggalWafat}][ di {1509}];|[- Bahwa pewaris meninggal dunia karena {1247};|]- Bahwa pewaris meninggal dunia dalam keadaan beragama Islam;|- Bahwa {para} adalah ahli waris pewaris;",
+      "syarat": {
+        "jenis": "penetapan-ahli-waris"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }

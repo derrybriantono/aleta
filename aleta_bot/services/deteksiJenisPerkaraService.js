@@ -590,18 +590,38 @@ function kalimatPokok(o = {}) {
   const fakta = {};
   for (const [k, f] of Object.entries(semua)) if (o.tanpaGerbang || lulusGerbangIsi(polaTanya, k).lulus) fakta[k] = f;
   const kel = [jenis.kelompok, ...(jenis.pinjam || [])];
-  let t = null;
-  for (const k of kel) {
-    t = kamus.templatKelompok(k).find((x) => x.gaya === "ringkas" && (!x.syarat || !x.syarat.jenis || x.syarat.jenis === jenis.kunci));
-    if (t) break;
-  }
+  const cariGaya = (gaya) => {
+    for (const k of kel) {
+      const x = kamus.templatKelompok(k).find((y) => y.gaya === gaya && (!y.syarat || !y.syarat.jenis || y.syarat.jenis === jenis.kunci));
+      if (x) return x;
+    }
+    return null;
+  };
+  const t = cariGaya("ringkas");
   if (!t) return null;
+  const tl = cariGaya("lengkap");
   const para = /\bpara\s+(?:Pemohon|Penggugat)\b/i.test(String(o.posita || "")) ? `para ${sebutan.satu}` : sebutan.satu;
   const nilai = { pemohon1: sebutan.pemohon1, pemohon2: sebutan.pemohon2, satu: sebutan.satu, dua: sebutan.dua, para };
   for (const [k, f] of Object.entries(fakta)) nilai[k] = f.nilai;
   if (fakta["fakta-tanggal-wafat"]) nilai.tanggalWafat = fakta["fakta-tanggal-wafat"].nilai;
+  // {wali}: "Ayah Kandung bernama X", atau "X" saja bila hubungan wali tidak terbaca.
+  if (fakta["1217"]) nilai.wali = fakta["1046"] ? `${fakta["1046"].nilai} bernama ${fakta["1217"].nilai}` : String(fakta["1217"].nilai);
   const ringkas = isiKurung(t.teks, nilai);
-  return ringkas ? { ringkas: `Bahwa saksi menerangkan ${ringkas};`, kodePola: t.kode } : null;
+  if (!ringkas) return null;
+  // Gaya lengkap: satu butir "- Bahwa ..." per baris; "|" di templat = ganti baris.
+  const lengkap = tl
+    ? isiKurung(tl.teks, nilai)
+        .split("|")
+        .map((b) => b.trim())
+        .filter(Boolean)
+        .join("\n")
+    : "";
+  return {
+    ringkas: `Bahwa saksi menerangkan ${ringkas};`,
+    ...(lengkap ? { lengkap } : {}),
+    kodePola: t.kode,
+    kodePolaGaya: { ringkas: t.kode, ...(tl ? { lengkap: tl.kode } : {}) },
+  };
 }
 
 /* ============================================================================

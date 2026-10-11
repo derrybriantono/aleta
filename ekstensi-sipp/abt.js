@@ -4995,13 +4995,17 @@ function susunPanelAbt(jatiDiri) {
     if (p6Peringatan) kotak.appendChild(p6Peringatan);
     /* === JENIS3 11 Okt === */
     if (hasil.kalimatPokokJenis && hasil.kalimatPokokJenis.ringkas) {
-      kotak.appendChild(
-        buatElemen(
-          "div",
-          "aleta-abt-catatan",
-          `Pokok keterangan saksi ${hasil.kalimatPokokJenis.nama || ""} (dari posita, hanya fakta terukur - periksa sebelum dipakai): ${hasil.kalimatPokokJenis.ringkas}`
-        )
+      const pokok = buatElemen(
+        "div",
+        "aleta-abt-catatan",
+        `Pokok keterangan saksi ${hasil.kalimatPokokJenis.nama || ""} (dari posita, hanya fakta terukur - periksa sebelum dipakai): ${hasil.kalimatPokokJenis.ringkas}`
       );
+      if (hasil.kalimatPokokJenis.lengkap) {
+        const rinci = buatElemen("div", "", hasil.kalimatPokokJenis.lengkap);
+        rinci.style.whiteSpace = "pre-wrap";
+        pokok.appendChild(rinci);
+      }
+      kotak.appendChild(pokok);
     }
     /* === AKHIR JENIS3 === */
 

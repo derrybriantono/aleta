@@ -269,6 +269,11 @@ describe("susunan saksi lengkap untuk perkara itsbat (layanan sungguhan)", () =>
     expect(sdg.catatan).toMatch(/belum terukur cukup, TIDAK diisikan/);
     expect(sdg.kalimatPokokJenis.ringkas).toMatch(/^Bahwa saksi menerangkan Pemohon I dan Pemohon II telah menikah pada tanggal 21 November 1996/);
     expect(sdg.kalimatPokokJenis.ringkas).not.toMatch(/Rp100\.000/); // mahar belum terukur -> tidak dikarang ke kalimat
+    // gaya lengkap: satu butir "- Bahwa ..." per baris, wali dengan hubungannya
+    const butir = sdg.kalimatPokokJenis.lengkap.split("\n");
+    expect(butir.every((b: string) => b.startsWith("- Bahwa "))).toBe(true);
+    expect(butir).toContain("- Bahwa yang menjadi wali nikah adalah Ayah Kandung bernama Xxxa;");
+    expect(butir.some((b: string) => /mahar/i.test(b))).toBe(false);
   });
 });
 

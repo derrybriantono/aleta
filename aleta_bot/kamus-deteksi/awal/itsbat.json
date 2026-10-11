@@ -616,12 +616,23 @@
       "kode": "itsbat-ringkas-pokok",
       "label": "Pokok keterangan saksi itsbat (ringkas)",
       "gaya": "ringkas",
-      "teks": "{pemohon1} dan {pemohon2} telah menikah[ pada tanggal {5197}][ di {5105}][ dengan wali nikah {1046} bernama {1217}][, yang menikahkan {8087}][, disaksikan oleh {0650} dan {0651}][ dengan mahar {1001}], sejak menikah tidak pernah bercerai dan tidak ada pihak yang keberatan atas pernikahan tersebut",
+      "teks": "{pemohon1} dan {pemohon2} telah menikah[ pada tanggal {5197}][ di {5105}][ dengan wali nikah {wali}][, yang menikahkan {8087}][, disaksikan oleh {0650} dan {0651}][ dengan mahar {1001}], sejak menikah tidak pernah bercerai dan tidak ada pihak yang keberatan atas pernikahan tersebut",
       "syarat": {
         "jenis": "itsbat-nikah"
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "itsbat-lengkap-pokok",
+      "label": "Pokok keterangan saksi itsbat (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {pemohon1} dan {pemohon2} telah menikah[ pada tanggal {5197}][ di {5105}];|[- Bahwa yang menjadi wali nikah adalah {wali};|][- Bahwa yang menikahkan adalah {8087};|][- Bahwa yang menjadi saksi nikah adalah {0650} dan {0651};|][- Bahwa maharnya berupa {1001};|][- Bahwa saat menikah {pemohon1} berstatus {1002} dan {pemohon2} berstatus {1003};|]- Bahwa sejak menikah {pemohon1} dan {pemohon2} tidak pernah bercerai dan tidak ada pihak yang keberatan atas pernikahan tersebut;",
+      "syarat": {
+        "jenis": "itsbat-nikah"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }

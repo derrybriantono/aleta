@@ -511,6 +511,17 @@
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "dispensasi-lengkap-pokok",
+      "label": "Pokok keterangan saksi DK (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {para} hendak menikahkan anaknya[ yang bernama {0606}][ dengan {0600}];|[- Bahwa anak tersebut sekarang berumur {0607};|][- Bahwa calon suaminya berumur {0601};|]- Bahwa Kantor Urusan Agama menolak mencatat perkawinan tersebut karena belum cukup umur;|[- Bahwa {1014};|]- Bahwa keluarga kedua belah pihak telah merestui dan tidak ada larangan perkawinan di antara keduanya;",
+      "syarat": {
+        "jenis": "dispensasi-kawin"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }
