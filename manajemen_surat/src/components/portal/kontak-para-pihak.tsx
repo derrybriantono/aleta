@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { apiPath } from "@/lib/base-path";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 import type { KontakParaPihak, KontakParaPihakBaris } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
 /* === STATUS-ZIP 12 Okt === */
@@ -86,14 +88,17 @@ export function bersihkanKontakParaPihak(nomorPerkara?: string) {
 
 export function useKontakParaPihak(nomorPerkara: string): Keadaan {
   const [, paksa] = useState(0);
+  // HAK-PERAN 12 Okt: kontak pribadi pihak = status.data-pihak; rute juga 403.
+  const boleh = bolehAksiLayar(usePenggunaAktifOpsional(), "status.data-pihak");
   useEffect(() => {
     const dengar = () => paksa((x) => x + 1);
     pendengar.add(dengar);
-    if (nomorPerkara) void muat(nomorPerkara);
+    if (nomorPerkara && boleh) void muat(nomorPerkara);
     return () => {
       pendengar.delete(dengar);
     };
-  }, [nomorPerkara]);
+  }, [nomorPerkara, boleh]);
+  if (!boleh) return { tahap: "ditolak" };
   return simpanan.get(nomorPerkara) ?? { tahap: "memuat" };
 }
 

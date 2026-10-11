@@ -8,6 +8,8 @@ import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { nextPrefixedId } from "@/server/shared/ids";
 import { ok } from "@/server/shared/http";
+import { pastikanAksiAktor } from "@/server/modules/akses/hak-peran";
+import type { UserPersona } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,10 +45,8 @@ export const dynamic = "force-dynamic";
  * aksi `status.data-pihak` pada matriks peran (D:/aleta-dev/kerja/peran-12okt/
  * matriks-peran.md: Admin, Ketua/Wakil, Hakim, Panitera, Panmud, PP, JS, Kasir,
  * PTSP, Mediator, Analis; TIDAK untuk petugas sidang, kesekretariatan, TI,
- * pelaksana). Saat cabang matriks digabung, ganti pemeriksaan di bawah menjadi
- * `pastikanAksi(db, actorUserId, "status.data-pihak")` seperti pada rute
- * identitas-pihak dan riwayat-pihak, dan tambahkan rute ini ke daftar rute
- * aksi itu.
+ * pelaksana). Ditegakkan `pastikanAksiAktor(aktor, "status.data-pihak")`
+ * (matriks peran 12 Okt) seperti rute identitas-pihak dan riwayat-pihak.
  */
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     // Sama dengan identitas-pihak/riwayat-pihak pada dasar 75e8621.
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
+    pastikanAksiAktor(aktor as UserPersona, "status.data-pihak"); // HAK-PERAN 12 Okt: matriks peran
 
     const nomor = String(request.nextUrl.searchParams.get("nomor") || "").trim().slice(0, 80);
     if (!nomor) {
