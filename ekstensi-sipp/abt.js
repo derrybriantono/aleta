@@ -17035,13 +17035,85 @@ function a3BukanBlangkoPutusan() {
  * memulangkan tanggal penerbitannya ("dd/mm/yyyy" - bentuk tgl_sql ABT).
  * Hasil mesin: keyakinan "ocr", TIDAK dicentang sendiri.
  */
-const A3_VAR_TANGGAL_KTP_P = Object.freeze(["2222", "0364"]);
+// 12 Okt (KTP-PIHAK): + 0365 (Tgl. KTP Termohon/Tergugat) dan 0366 (Tgl. KTP Pemohon II).
+const A3_VAR_TANGGAL_KTP_P = Object.freeze(["2222", "0364", "0365", "0366"]);
 const ALETA_API_KTP_TERBIT = "/aleta/api/aleta-ecourt/ktp-terbit";
+const ALETA_API_KTP_PIHAK = "/aleta/api/aleta-ecourt/ktp-pihak";
+
+/* === KTP-PIHAK 12 Okt === */
+/**
+ * Tanggal KTP DIKELUARKAN tiap pihak dari berkas KTP e-Court (butir 14-15). ALETA membacanya di latar
+ * (portal membaca berkas, bot mencocokkan ke pihak SIPP dan menyimpan di aleta_bot_ktp_pihak - dibaca juga
+ * oleh variabel ABT 8870-8872). Panel hanya menanyakan hasilnya per perkara:
+ *   GET /aleta/api/aleta-ecourt/ktp-pihak?nomor=&tunggu=1 -> { ada, pihak: [{ cabang, urutan, peran, nama,
+ *   tanggalKtp "dd/mm/yyyy", yakin, cocok, sebab }], catatan[] }
+ * Sumber kartu: "e-Court: KTP". Keyakinan "ocr" (tidak dicentang sendiri); "pasti" (hanya setelah terukur
+ * >= 95% di server dan dinyalakan) ikut "Input semua yang pasti". Isian petugas tidak pernah ditimpa di sini.
+ */
+const KTP_KODE_PIHAK = Object.freeze({
+  "2222": { cabang: 1, urutan: 1, sebutan: "Penggugat/Pemohon" },
+  "0364": { cabang: 1, urutan: 1, sebutan: "Penggugat/Pemohon" },
+  "0365": { cabang: 2, urutan: 1, sebutan: "Tergugat/Termohon" },
+  "0366": { cabang: 1, urutan: 2, sebutan: "Pemohon II" },
+});
+const KTP_SEBAB_RAGU = Object.freeze({
+  hanya_nama_cocok: "hanya nama yang cocok dengan pihak SIPP",
+  nik_tidak_sah: "NIK terbaca tidak sah",
+  sesudah_perkara_didaftarkan: "tanggal sesudah perkara didaftarkan",
+  sebelum_umur_14: "tanggal sebelum pihak berumur 14 tahun",
+  tanggal_di_masa_depan: "tanggal di masa depan",
+  tanggal_terlalu_lama: "tanggal terlalu lama",
+  tanggal_ktp_tidak_terbaca: "tanggal tidak terbaca",
+});
+const KTP_LABEL_COCOK = Object.freeze({
+  nik: "NIK sama dengan SIPP",
+  nama_lahir: "nama dan tanggal lahir sama dengan SIPP",
+  nama_nik: "nama sama, NIK mirip SIPP",
+  nama: "nama sama dengan SIPP",
+});
+
+async function ktpUsulanDariPihak(nomor, kode) {
+  const respons = await fetch(`${ALETA_API_KTP_PIHAK}?nomor=${encodeURIComponent(nomor)}&tunggu=1`, { credentials: "include", cache: "no-store" });
+  if (respons.status === 404) return null; // server ALETA lama: rute belum ada
+  if (!respons.ok) throw new Error(`server ALETA menjawab ${respons.status}`);
+  const luar = await respons.json();
+  const isi = luar && luar.data ? luar.data : luar;
+  const pihak = Array.isArray(isi && isi.pihak) ? isi.pihak : [];
+  const usulan = [];
+  for (const k of kode) {
+    const peran = KTP_KODE_PIHAK[k];
+    const p = peran && pihak.find((x) => Number(x.cabang) === peran.cabang && Number(x.urutan) === peran.urutan);
+    if (!p || !p.tanggalKtp) continue;
+    const pasti = p.yakin === "pasti";
+    const ragu = p.yakin === "ragu";
+    usulan.push({
+      kode: k,
+      nama: `Tanggal KTP ${p.peran || peran.sebutan}`,
+      nilai: String(p.tanggalKtp),
+      keyakinan: ragu ? "ragu" : "ocr",
+      ...(pasti ? { tingkat: "pasti" } : {}),
+      sumber: [
+        {
+          asal: "ktp-ecourt",
+          keterangan:
+            `e-Court: KTP ${p.peran || peran.sebutan}${p.nama ? ` (${p.nama})` : ""} — ${KTP_LABEL_COCOK[p.cocok] || "dicocokkan ke pihak SIPP"}` +
+            `${p.kota ? `, dikeluarkan ${p.kota}` : ""}${ragu ? `; ragu: ${KTP_SEBAB_RAGU[p.sebab] || "periksa"}` : ""}`,
+        },
+      ],
+    });
+  }
+  const catatan = usulan.length ? "" : (Array.isArray(isi && isi.catatan) && isi.catatan.length ? isi.catatan.join(" ") : (isi && isi.sebab) || "");
+  return { usulan, catatan };
+}
+/* === AKHIR KTP-PIHAK === */
 
 async function a3UsulanTanggalKtp(nomor) {
   const peta = barisVariabel();
   const kode = A3_VAR_TANGGAL_KTP_P.filter((k) => peta.has(k));
   if (!kode.length || !nomor) return { usulan: [], catatan: "" };
+  // 12 Okt (KTP-PIHAK): jalur baru per pihak; server lama (tanpa rute) jatuh ke jalur 5 Okt di bawah.
+  const baru = await ktpUsulanDariPihak(nomor, kode);
+  if (baru) return baru;
   const respons = await fetch(`${ALETA_API_KTP_TERBIT}?nomor=${encodeURIComponent(nomor)}`, { credentials: "include", cache: "no-store" });
   if (!respons.ok) throw new Error(`server ALETA menjawab ${respons.status}`);
   const luar = await respons.json();
@@ -17050,7 +17122,8 @@ async function a3UsulanTanggalKtp(nomor) {
   const judul = (isi.sumber && isi.sumber.judul) || "KTP";
   return {
     catatan: "",
-    usulan: kode.map((k) => ({
+    // jalur lama membaca satu KTP saja (Penggugat/Pemohon): hanya 2222 dan 0364
+    usulan: kode.filter((k) => k === "2222" || k === "0364").map((k) => ({
       kode: k,
       nama: "Tanggal KTP Penggugat/Pemohon",
       nilai: String(isi.tanggal),

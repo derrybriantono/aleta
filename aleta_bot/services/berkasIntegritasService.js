@@ -41,10 +41,15 @@
  */
 const UKURAN_MINIMUM = 512;
 
-const UKURAN_MINIMUM_FORMAT = { pdf: 5120, word: 3072 };
+// 12 Okt (KTP-PIHAK): "gambar" = foto KTP e-Court (JPEG/PNG) - lihat gambarKtp di bawah.
+const UKURAN_MINIMUM_FORMAT = { pdf: 5120, word: 3072, gambar: 4096 };
 
 const PENANDA = {
   pdf: [{ nama: "PDF", awalan: Buffer.from("%PDF-", "ascii") }],
+  gambar: [
+    { nama: "JPEG", awalan: Buffer.from([0xff, 0xd8, 0xff]) },
+    { nama: "PNG", awalan: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) },
+  ],
   word: [
     // docx, xlsx, pptx - seluruhnya wadah ZIP.
     { nama: "Office XML (docx)", awalan: Buffer.from([0x50, 0x4b, 0x03, 0x04]) },
@@ -104,7 +109,8 @@ function periksaIsi(isi, { format = "pdf", potongan = false } = {}) {
   // Yang benar: penanda bentuk lebih dulu, sebab ia yang PASTI. Halaman web
   // tidak pernah punya penanda bentuk yang cocok, jadi maksud perbaikan
   // pertama tetap tercapai tanpa mengorbankan RTF.
-  const daftar = PENANDA[format === "word" ? "word" : "pdf"];
+  const kunciFormat = format === "word" ? "word" : format === "gambar" ? "gambar" : "pdf";
+  const daftar = PENANDA[kunciFormat];
   let cocok = null;
   for (const penanda of daftar) {
     if (isi.subarray(0, penanda.awalan.length).equals(penanda.awalan)) {
@@ -120,7 +126,7 @@ function periksaIsi(isi, { format = "pdf", potongan = false } = {}) {
     }
   }
 
-  const batasUkuran = UKURAN_MINIMUM_FORMAT[format === "word" ? "word" : "pdf"] || UKURAN_MINIMUM;
+  const batasUkuran = UKURAN_MINIMUM_FORMAT[kunciFormat] || UKURAN_MINIMUM;
   if (!potongan && isi.length < batasUkuran) {
     // Bukan penolakan karena ukurannya sendiri, melainkan karena dokumen
     // sungguhan tidak pernah sekecil ini - yang sekecil ini selalu halaman
@@ -205,13 +211,36 @@ function formatDariNama(namaBerkas) {
   const nama = String(namaBerkas || "").toLowerCase();
   if (nama.endsWith(".pdf")) return "pdf";
   if (/\.(docx?|rtf|odt)$/.test(nama)) return "word";
+  if (/\.(jpe?g|png)$/.test(nama)) return "gambar";
   return "";
 }
+
+/* === KTP-PIHAK 12 Okt === */
+/** Judul dokumen e-Court yang dianggap KTP (sama dengan ktpPihakService.POLA_JUDUL_KTP). */
+const POLA_JUDUL_KTP = /\b(?:e-?ktp|ktp(?:-?el)?|kartu\s+tanda\s+penduduk)\b/i;
+
+/**
+ * Foto KTP e-Court (JPEG/PNG) yang diunggah pihak sebagai "KTP". e-Court tidak menyediakan
+ * PDF-nya (404, diukur 23 Sep: 145 dari 168 galat) dan yang tersedia kerap gambar aslinya -
+ * yang selama ini ditolak penanda PDF ("penanda_tidak_dikenali (ff d8 ff e0 ...)") sehingga
+ * KTP-nya tidak pernah masuk arsip. Hanya untuk dokumen berjudul KTP dan hanya bila isinya
+ * benar-benar JPEG/PNG utuh; disimpan sebagai format "gambar" (BUKAN pdf), jadi tidak tampil
+ * di tempat yang menampilkan PDF dan tidak dilaporkan rusak oleh pemeriksa arsip.
+ *
+ * @returns {{ ok: boolean, jenis: string, alasan: string }}
+ */
+function gambarKtp(isi, judul) {
+  if (!POLA_JUDUL_KTP.test(String(judul || ""))) return { ok: false, jenis: "", alasan: "bukan_dokumen_ktp" };
+  return periksaIsi(isi, { format: "gambar" });
+}
+/* === AKHIR KTP-PIHAK === */
 
 module.exports = {
   dugaHasilPindai,
   UKURAN_MINIMUM_FORMAT,
   UKURAN_MINIMUM,
   formatDariNama,
+  gambarKtp,
+  POLA_JUDUL_KTP,
   periksaIsi,
 };

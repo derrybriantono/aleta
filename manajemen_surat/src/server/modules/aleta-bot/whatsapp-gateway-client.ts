@@ -4791,3 +4791,98 @@ export async function postGatewayPekerjaanTerbaca(muatan: { teks: string[]; perk
   });
 }
 /* === AKHIR PEKERJAAN === */
+
+/* === KTP-PIHAK 12 Okt === */
+/**
+ * KTP-PIHAK (12 Okt 2026): tanggal KTP pihak dari berkas KTP e-Court. Portal
+ * membaca (pdfjs + tesseract), bot mencocokkan ke pihak SIPP dan menyimpan di
+ * aleta_bot_ktp_pihak (dibaca variabel ABT 8870-8872). Lihat
+ * modules/aleta-ecourt/ktp-pihak.ts dan aleta_bot ktpPihakService.
+ */
+export type BerkasKtpAntri = {
+  fileId: string;
+  documentKey: string;
+  format: string;
+  ukuran: number;
+  nomorPerkara: string;
+  judul: string;
+};
+
+export type KtpTerbaca = {
+  nik: string;
+  nikSah: boolean;
+  nama: string;
+  /** dd/mm/yyyy */
+  tanggalLahir: string;
+  /** dd/mm/yyyy - tanggal KTP dikeluarkan */
+  tanggalTerbit: string;
+  kotaTerbit: string;
+  sumber?: string;
+};
+
+export type HasilBacaKtpPihak = {
+  fileId: string;
+  status: "terbaca" | "tidak_terbaca" | "bukan_ktp";
+  sebab: string;
+  sumber: string;
+  versi: number;
+  ktp: KtpTerbaca[];
+};
+
+export type KtpPihakPerkara = {
+  ok: boolean;
+  ada: boolean;
+  perkaraId: number | null;
+  nomorPerkara: string;
+  pihak: Array<{
+    cabang: number;
+    urutan: number;
+    peran: string;
+    nama: string;
+    tanggalKtp: string;
+    tanggalKtpIso: string;
+    kota: string;
+    yakin: "pasti" | "cukup" | "ragu" | "";
+    cocok: string;
+    sebab: string;
+    sumberBaca: string;
+    fileId: string;
+  }>;
+  dokumenKtp: number;
+  belumDibaca: number;
+  tidakTerbaca: number;
+  takBertuan: number;
+};
+
+export async function getGatewayAntrianKtp(params: { nomor: string[]; batas: number; versi?: number }) {
+  const kueri = new URLSearchParams({ nomor: params.nomor.join("|"), batas: String(params.batas) });
+  if (params.versi) kueri.set("versi", String(params.versi));
+  return gatewayFetch<{ ok: boolean; berkas: BerkasKtpAntri[]; versi: number }>(
+    `/internal/aleta-bot/sipp/ktp-pihak/antrian?${kueri.toString()}`,
+    { timeoutMs: 20_000 }
+  );
+}
+
+export async function ambilBerkasKtpGateway(fileId: string, signal?: AbortSignal): Promise<Response> {
+  const token = getGatewayToken();
+  return fetch(`${getGatewayBaseUrl()}/internal/aleta-bot/sipp/ktp-pihak/berkas?${new URLSearchParams({ fileId }).toString()}`, {
+    headers: token ? { "x-aleta-internal-token": token } : {},
+    cache: "no-store",
+    signal: signal ?? AbortSignal.timeout(30_000),
+  });
+}
+
+export async function kirimHasilKtpGateway(hasil: HasilBacaKtpPihak[]) {
+  return gatewayFetch<{ ok: boolean; tersimpan: number; kembaran: number }>("/internal/aleta-bot/sipp/ktp-pihak", {
+    method: "POST",
+    body: JSON.stringify({ hasil }),
+    timeoutMs: 60_000,
+  });
+}
+
+export async function getGatewayKtpPerkara(nomorPerkara: string) {
+  const kueri = new URLSearchParams({ nomor: nomorPerkara });
+  return gatewayFetch<KtpPihakPerkara>(`/internal/aleta-bot/sipp/ktp-pihak/perkara?${kueri.toString()}`, { timeoutMs: 20_000 });
+}
+/* === AKHIR KTP-PIHAK === */
+
