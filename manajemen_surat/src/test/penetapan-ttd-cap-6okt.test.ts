@@ -861,7 +861,10 @@ describe("E. latar.js relaas-rtf: SATU blangko ABT, jalan yang sama dengan cetak
 describe("E. konten.js blok 6 Okt: tanpa jalur tulis baru, otomatis hanya sesudah penetapan SUNGGUH tertulis", () => {
   const konten = KONTEN();
   const awal = konten.indexOf("PERBAIKAN 6 OKTOBER 2026 - EDOC PENETAPAN DARI BLANGKO ABT");
-  const blok = awal >= 0 ? konten.slice(awal) : "";
+  // Blok 6 Okt berakhir di blok berlabel berikutnya ("/* === ... === */", mis. KONTAK-EC 11 Okt yang
+  // memang mengisi blangko pihak SIPP) - penjaga ini hanya untuk blok edoc penetapan.
+  const akhir = awal >= 0 ? konten.indexOf("/* === ", awal) : -1;
+  const blok = awal >= 0 ? konten.slice(awal, akhir > awal ? akhir : undefined) : "";
 
   it("tidak ada method/postMessage/pesan jembatan/sentuhan borang SIPP; tulisan hanya lewat s2KirimEdoc (rute unggah edoc yang sudah ada)", () => {
     expect(blok.length).toBeGreaterThan(3000);

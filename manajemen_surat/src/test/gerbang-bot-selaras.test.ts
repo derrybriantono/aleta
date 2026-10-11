@@ -192,10 +192,12 @@ describe("ekstensi memanggil rute portal yang benar-benar ada", () => {
 
   function ada(jalur: string, rute: string[]): boolean {
     if (rute.includes(jalur)) return true;
-    // Rute dinamis Next.js: [id]
+    // Rute dinamis Next.js: [id] satu ruas; [...all] / [[...all]] tangkap-semua
+    // (mis. Better Auth /api/auth/[...all] yang melayani sign-in/sipp-sesi).
     return rute.some((r) => {
       if (!r.includes("[")) return false;
-      return new RegExp(`^${r.replace(/\[[^\]]+\]/g, "[^/]+")}$`).test(jalur);
+      const pola = r.replace(/\[\[?\.\.\.[^\]]+\]\]?/g, "\u0000").replace(/\[[^\]]+\]/g, "[^/]+").replace(/\u0000/g, ".+");
+      return new RegExp(`^${pola}$`).test(jalur);
     });
   }
 

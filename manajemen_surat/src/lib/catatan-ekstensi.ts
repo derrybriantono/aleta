@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.193.0",
+    dirilis: "2026-10-11T21:00:00+08:00",
+    judul: "Kasir per kejadian & tampilan per peran, masuk otomatis dari SIPP, deteksi semua jenis perkara, kontak e-Court",
+    butir: [
+      "Kasir: usulan jurnal per kejadian (panggilan pertama, sidang ditunda, putusan, ikrar talak, tambahan panjar) dengan tanda sudah/belum; tambahan panjar ditawarkan tanpa centang; ikrar talak satu panggilan untuk sidang ikrar yang ditunda.",
+      "Halaman jurnal per perkara hanya menampilkan Kasir, tab Kasir berlencana (usulan/lengkap); Kasir massal, pengingat & rekap pindah ke halaman daftar Jurnal Keuangan Perkara; menu Kasir dan PTSP sesuai perannya.",
+      "Masuk otomatis dari SIPP ke ALETA: akun dikenali dari sesi SIPP yang terbukti, dicocokkan lewat tautan, NIP, atau nama (tanpa gelar); tautan buatan ALETA ditinjau Admin di Manajemen Akun.",
+      "Deteksi panel ABT & susun keterangan saksi untuk semua jenis perkara (itsbat, dispensasi kawin, waris, perwalian, asal usul anak, wali adhol, harta bersama, poligami, dll.); pola alasan, waktu, hubungan saksi, dan tempat tinggal bersama diperluas.",
+      "Kontak dari e-Court: email & nomor HP pihak/kuasa diusulkan pada blangko pihak SIPP (petugas yang menyimpan); data e-Court tersedia bagi blangko ABT; blangko bawaan untuk Harta Bersama, Kewarisan, dan Izin Poligami.",
+    ],
+  },
+  {
     versi: "1.192.0",
     dirilis: "2026-10-10T21:00:00+08:00",
     judul: "Deteksi lengkap: saksi, huruf alasan, tuntutan & nominal dari gugatan e-Court, kamus deteksi yang bisa ditambah Admin",

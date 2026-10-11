@@ -344,7 +344,11 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // menanyakan kemajuan penarikan berkala (tanyaBerkala -> "Membaca
     // kemajuan penarikan") untuk garis persen tahap nyata jembatan. Lewat
     // alatAmbil seperti permintaan panel lain, bukan fetch mentah.
-    expect(lewatAlat).toBe(42);
+    // 46 sejak 1.193.0 (11 Okt 2026): masuk otomatis dari sesi SIPP (sign-in/
+    // sipp-sesi lalu baca akun ALETA), Kasir di detil_biaya (cari perkara dari
+    // nomor, ringkasan untuk lencana tab Kasir), dan kontak e-Court di blangko
+    // pihak SIPP. Semuanya berbicara ke petugas dan gagalnya harus kalimat.
+    expect(lewatAlat).toBe(46);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU
@@ -374,6 +378,14 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     //                         ("Masuk ABT dulu", "ABT menjawab 500", 423 mode
     //                         coba) dan fetch-nya tetap lewat pembungkus
     //                         panel-alat.js (mode coba/kering/latihan).
-    expect(mentah).toBe(6);
+    //   masuk & tautkan sesi SIPP (MASUK-SESI-SIPP, 1.193.0) - POST sign-in/
+    //                         sipp-sesi dan sipp-sesi/tautkan. Kalimatnya disusun
+    //                         sendiri per jawaban (tanpa-sesi, dimatikan, tolak,
+    //                         tak terjangkau); sengaja TIDAK lewat alatAmbil
+    //                         karena masuk akun bukan tulisan ke SIPP dan tidak
+    //                         boleh ditahan mode coba/latihan.
+    //   kontak e-Court (KONTAK-EC, 1.193.0) - fetch hanya CADANGAN bila
+    //                         alatAmbil tidak ada; jalur utamanya alatAmbil.
+    expect(mentah).toBe(9);
   });
 });
