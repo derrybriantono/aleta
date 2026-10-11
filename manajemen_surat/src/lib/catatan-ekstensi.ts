@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.195.0",
+    dirilis: "2026-10-12T12:00:00+08:00",
+    judul: "Tampilan & hak per peran, widget per akun, checklist & panel, ZIP Status Perkara lengkap, tanggal KTP dari e-Court",
+    butir: [
+      "Tampilan & hak per peran: tiap peran hanya melihat menu, tab, dan tombol yang menjadi tugasnya (portal, e-Court, ekstensi); aplikasi yang belum siap hanya untuk Super Admin.",
+      "Widget ekstensi: setelan tersimpan per akun & peran, profil saklar per peran, status sambungan ringkas, keterangan teknis hanya Super Admin, pemberitahuan versi baru dengan tautan Perbaharui; selain Super Admin selalu UI Baru.",
+      "Checklist milestone tertutup secara bawaan dan tombol kepalanya tidak lagi hilang klik; panel ALETA muncul di kanan atas dengan ukuran lebih besar; pengingat kasir untuk panitera hanya dibaca.",
+      "Status Perkara: unduh seluruh berkas dalam satu ZIP kini lengkap (dengan daftar isi & sebab bila ada yang gagal) dan bisa dipilih per kategori; email, WhatsApp, dan kesediaan e-Litigasi para pihak.",
+      "Tanggal KTP pihak dibaca dari berkas KTP e-Court di latar dan diusulkan di panel ABT (butuh paket ABT abt-tanggal-ktp).",
+    ],
+  },
+  {
     versi: "1.194.0",
     dirilis: "2026-10-11T22:00:00+08:00",
     judul: "Pekerjaan pihak terbaca dinamis: PNS, PPPK, TNI, POLRI, BUMN/BUMD dari isian Lain-Lain",
