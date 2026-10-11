@@ -20093,8 +20093,11 @@ function a30Kasir(panel, konteks, ui) {
     dipasang = true;
     const memuat = buatElemen("div", "aleta-memuat", "Memuat Kasir…");
     wadahan.isi.appendChild(memuat);
+    // R 11 Okt: halaman jurnal per perkara (detil_biaya) tidak memuat perkara_id
+    // polos - dicari dari nomor perkara lewat rute Kasir yang sudah ada (?cari=).
     Promise.resolve()
-      .then(() => globalThis.aletaKasirPasang(wadahan.isi, { perkaraId, nomorPerkara: String(konteks.nomorPerkara || "") }))
+      .then(() => perkaraId || r11CariPerkaraId(String(konteks.nomorPerkara || "")))
+      .then((id) => globalThis.aletaKasirPasang(wadahan.isi, { perkaraId: id || "", nomorPerkara: String(konteks.nomorPerkara || "") }))
       .then((ok) => {
         memuat.remove();
         if (!ok) return a30LepasKasir(panel, wadahan);
@@ -20295,6 +20298,28 @@ function r11LepasKonteksKasir(panel) {
   }
 }
 
+/** nomor perkara -> Promise<"perkaraId" | ""> (rute Kasir ?cari=, hanya SELECT); disinggah per halaman. */
+const r11SinggahId = new Map();
+function r11CariPerkaraId(nomor) {
+  const n = String(nomor || "").trim();
+  if (!n) return Promise.resolve("");
+  if (r11SinggahId.has(n)) return r11SinggahId.get(n);
+  const janji = (async () => {
+    const r = await alatAmbil(`${R11_API_KASIR}?cari=${encodeURIComponent(n)}`, { credentials: "include", cache: "no-store" }, "Mencari perkara Kasir");
+    if (!r || !r.ok) return "";
+    const luar = await r.json().catch(() => null);
+    const isi = luar && luar.data ? luar.data : luar;
+    const cocok = (isi && Array.isArray(isi.perkara) ? isi.perkara : []).find((p) => p && String(p.nomorPerkara || "").trim() === n);
+    return cocok && /^\d+$/.test(String(cocok.perkaraId)) ? String(cocok.perkaraId) : "";
+  })().catch(() => "");
+  r11SinggahId.set(n, janji);
+  // Gagal/tidak ketemu tidak disinggah selamanya - halaman berikutnya boleh mencoba lagi.
+  janji.then((id) => {
+    if (!id) r11SinggahId.delete(n);
+  });
+  return janji;
+}
+
 /** Jawaban ringkas (agen K atau cadangan) -> { teks, nada } | null. */
 function r11NormalRingkas(x) {
   if (x === null || x === undefined || x === false) return null;
@@ -20313,14 +20338,14 @@ function r11NormalRingkas(x) {
 
 /** Ringkasan Kasir satu perkara: aletaKasirRingkas (agen K) bila ada, selain itu rute kasir. */
 async function r11RingkasKasir(o, segar) {
+  const id = String(o.perkaraId || (await r11CariPerkaraId(o.nomorPerkara)) || "");
   if (typeof globalThis.aletaKasirRingkas === "function") {
     try {
-      return r11NormalRingkas(await globalThis.aletaKasirRingkas({ perkaraId: o.perkaraId, nomorPerkara: o.nomorPerkara, segar: Boolean(segar) }));
+      return r11NormalRingkas(await globalThis.aletaKasirRingkas({ perkaraId: id, nomorPerkara: o.nomorPerkara, segar: Boolean(segar) }));
     } catch {
       return null;
     }
   }
-  const id = String(o.perkaraId || "");
   if (!/^\d+$/.test(id)) return null;
   const ada = r11SinggahKasir.get(id);
   if (!segar && ada && Date.now() - ada.waktu < R11_UMUR_SINGGAH_MS) return ada.janji;
@@ -21915,7 +21940,7 @@ function mpsBukaBagian(kotak) {
  * disiapkan di sini; bila berkasnya belum termuat, dilewati tanpa error.
  */
 function mpsSusunDaftar(panel, isi, ringkasan, menu) {
-  panel.setAttribute("data-mps-peran", alatGolonganPeran(mpsPeran()));
+  panel.setAttribute("data-mps-peran", typeof alatGolonganMenu === "function" ? alatGolonganMenu(r11PenggunaMenu()) : alatGolonganPeran(mpsPeran()));
   panel.setAttribute("data-mps-menu", menu.join(" "));
   let sudahBuka = false;
   const bukaPertama = (kotak) => {

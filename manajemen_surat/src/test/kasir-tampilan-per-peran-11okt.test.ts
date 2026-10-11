@@ -75,7 +75,7 @@ function konteksContoh() {
     ok: true,
     nomorPerkara: NOMOR,
     nomorRegister: "PA.DGL-2026-0450",
-    identitas: { ditemukan: true, perkaraId: 9950, jenisPerkara: "Cerai Gugat", jenisPerkaraLengkap: "Cerai Gugat", adaKumulasi: false, kumulasi: [], adaKuasa: false },
+    identitas: { ditemukan: true, jenisPerkara: "Cerai Gugat", jenisPerkaraLengkap: "Cerai Gugat", adaKumulasi: false, kumulasi: [], adaKuasa: false },
     ringkasan: { dokumen: 0 },
     dokumen: [],
     selisih: [],
@@ -98,6 +98,8 @@ type Opsi = {
   ringkas?: unknown;
   /** jawaban rute kasir cadangan: larik usulan, atau "gagal" */
   ruteKasir?: Array<Record<string, unknown>> | "gagal";
+  /** halaman tanpa input perkara_id (detil_biaya SIPP sungguhan) */
+  tanpaId?: boolean;
   kapabilitas?: Record<string, boolean> | null;
 };
 type Halaman = {
@@ -122,7 +124,7 @@ function buka(p: Opsi = {}): Halaman {
   const nama = "Munifa, S.H.";
   const tubuh = p.daftar
     ? `<div id="konten"><h3>JURNAL KEUANGAN PERKARA PERDATA GUGATAN/PERMOHONAN</h3>${BARIS(p.daftar === "satu" ? 1 : 3)}</div>`
-    : `<div id="konten"><h3>BUKU JURNAL KEUANGAN PERKARA GUGATAN TINGKAT PERTAMA</h3><p>Nomor Perkara ${NOMOR}</p><input type="hidden" name="perkara_id" value="9950"></div>`;
+    : `<div id="konten"><h3>BUKU JURNAL KEUANGAN PERKARA GUGATAN TINGKAT PERTAMA</h3><p>Nomor Perkara ${NOMOR}</p>${p.tanpaId ? "" : '<input type="hidden" name="perkara_id" value="9950">'}</div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>SIPP</title><style>${GAYA}</style></head><body>${tubuh}</body></html>`, {
     url: `${ASAL}/SIPP/${p.jalur ?? (p.daftar ? "main" : "detil_perkara_agama")}`,
     runScripts: "outside-only",
@@ -179,6 +181,18 @@ function buka(p: Opsi = {}): Halaman {
       isi = { ok: true, data: { available: true, konteks: konteksContoh(), pengguna, kapabilitas } };
     } else if (url.includes("/aleta-ecourt/status-perkara?")) {
       isi = { ok: true, data: { available: true, status: { majelis: [], panitera: [], jurusita: [], tahapan: { terbaca: false, tahap: [] }, putusan: {}, putusanLengkap: {}, penilaianSk: { rinci: [] } } } };
+    } else if (/\/sidang\/kasir\?cari=/.test(url)) {
+      isi = {
+        ok: true,
+        data: {
+          available: true,
+          ok: true,
+          perkara: [
+            { perkaraId: 19950, nomorPerkara: `1${NOMOR}` },
+            { perkaraId: 9950, nomorPerkara: NOMOR },
+          ],
+        },
+      };
     } else if (/\/sidang\/kasir\?perkaraId=/.test(url)) {
       if (p.ruteKasir === "gagal") {
         status = 500;
@@ -290,6 +304,15 @@ describe("1. jurnal per perkara (detil_biaya) = Kasir saja", () => {
     await tunggu(30);
     expect(h.harian).toEqual([]);
     expect(pn.querySelector(".tiruan-kasir-harian")).toBeNull();
+  });
+
+  it("detil_biaya SIPP tanpa perkara_id polos: id dicari dari nomor (rute Kasir ?cari=, cocok persis) untuk Kasir dan lencananya", async () => {
+    const h = buka({ jalur: "detil_biaya", tanpaId: true, ringkas: async (o: any) => (o && o.perkaraId === "9950" ? { usulan: 2 } : null) });
+    const pn = await siapUi(h);
+    await sampai(() => h.kasir.length, "Kasir per perkara dipasang");
+    expect(h.kasir[0]).toMatchObject({ perkaraId: "9950", nomorPerkara: NOMOR });
+    await sampai(() => lencanaTab(pn, "kasirKel") === "2 usulan", "lencana dari id hasil cari");
+    expect(h.minta.filter((m) => /\/sidang\/kasir\?cari=/.test(m.url)).length).toBe(1);
   });
 
   it("Hakim (tidak boleh Kasir) di detil_biaya: menu perannya sendiri, tanpa Kasir", async () => {
