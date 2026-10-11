@@ -2179,7 +2179,8 @@ function saksibantuNilaiMedan(usulan) {
 
 /** Tanggal "dd/mm/yyyy" hari ini - bawaan #pihak_tgl_lahir SIPP pada blangko Tambah. */
 function saksibantuHariIni(sekarang) {
-  const d = sekarang instanceof Date ? sekarang : new Date();
+  // Bukan instanceof: tanggal dari realm lain (uji, iframe) bukan instanceof Date realm ini.
+  const d = sekarang && typeof sekarang.getDate === "function" ? sekarang : new Date();
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
