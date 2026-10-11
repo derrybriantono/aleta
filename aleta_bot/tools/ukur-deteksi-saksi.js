@@ -144,12 +144,25 @@ async function ukurHubungan() {
   let setara = 0;
   let persis = 0;
   let golonganSama = 0;
+  /* === KDL2 11 Okt === */
+  const labelSaja = new Map();
+  /* === AKHIR KDL2 === */
   for (const [, s] of perSaksi) {
     saksi += 1;
     const lab = String(s.keterangan || "").trim();
     const dLab = lab ? d.deteksiHubungan(lab, { bentuk: "label" }) : null;
     if (lab) labelTerisi += 1;
     if (dLab) labelTerbaca += 1;
+    /* === KDL2 11 Okt === */
+    // Label yang terbaca per istilah (tanpa pasangan jawaban) - untuk istilah jarang (aparat desa,
+    // tokoh adat, karyawan) yang hampir tidak pernah berpasangan; contohnya dibaca satu per satu.
+    if (dLab) {
+      const s = labelSaja.get(dLab.kode) || { n: 0, contoh: [] };
+      s.n += 1;
+      if (s.contoh.length < 12 && !s.contoh.includes(lab)) s.contoh.push(lab);
+      labelSaja.set(dLab.kode, s);
+    }
+    /* === AKHIR KDL2 === */
     let dJaw = null;
     let jawabDipakai = "";
     for (const j of s.jawab) {
@@ -166,9 +179,27 @@ async function ukurHubungan() {
     if (ok) setara += 1;
     if (dJaw.kunci === dLab.kunci) persis += 1;
     // Peran kalimat: istilah jawaban vs label. Peran label: istilah label vs jawaban.
-    tambahStat(perPola, `${dJaw.kode}|kalimat`, ok);
-    tambahStat(perPola, `${dLab.kode}|label`, ok);
+    /* === KDL2 11 Okt === */
+    // Pasangan jangkar terbalik hanya dinilai di perJangkar (pihaknya bisa berbeda dari label),
+    // supaya angka per istilah tetap sebanding dengan ukuran 10 Okt.
+    if (dJaw.jangkar !== "hub-jangkar-terbalik") {
+      tambahStat(perPola, `${dJaw.kode}|kalimat`, ok);
+      tambahStat(perPola, `${dLab.kode}|label`, ok);
+    }
+    /* === AKHIR KDL2 === */
     tambahStat(perJangkar, dJaw.jangkar, ok);
+    /* === KDL2 11 Okt === */
+    // Jangkar terbalik menyebut pihaknya ("Tergugat adalah menantu saya"): bila label SIPP menyebut
+    // hubungan terhadap pihak LAIN ("Ibu Kandung Penggugat"), keduanya bisa sama benar - dicatat terpisah.
+    if (dJaw.jangkar === "hub-jangkar-terbalik") {
+      const sisi = (e) => (/penggugat|pemohon/.test((e || []).join(" ")) ? 1 : /tergugat|termohon/.test((e || []).join(" ")) ? 2 : 0);
+      const a = sisi(dJaw.ekor);
+      const b2 = sisi(dLab.ekor);
+      tambahStat(perJangkar, `${dJaw.jangkar}|${ok ? "setara" : a && b2 && a !== b2 ? "pihak-lain" : a === 2 && !b2 ? "pihak-lain (label tanpa sebutan)" : "beda"}`, ok);
+    } else {
+      tambahStat(perJangkar, "_tanpa-jangkar-terbalik", ok);
+    }
+    /* === AKHIR KDL2 === */
     const gSama = dJaw.golongan === dLab.golongan;
     if (gSama) golonganSama += 1;
     tambahStat(perGolongan, dJaw.golongan, gSama);
@@ -198,6 +229,9 @@ async function ukurHubungan() {
     perGolongan: Object.fromEntries(perGolongan),
     perPolaGolongan: Object.fromEntries(perPolaGolongan),
     salahContoh,
+    /* === KDL2 11 Okt === */
+    labelSaja: Object.fromEntries(labelSaja),
+    /* === AKHIR KDL2 === */
     contohPasangan,
   };
 }

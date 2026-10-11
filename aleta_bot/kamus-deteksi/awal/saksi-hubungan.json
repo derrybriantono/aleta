@@ -1,7 +1,7 @@
 {
   "kelompok": "saksi-hubungan",
   "versi": 1,
-  "keterangan": "Hubungan saksi dengan pihak. Pola jenis 'jangkar' mengambil FRASA dari kalimat (jawaban kenal / baris identitas); pola jenis 'istilah' dicocokkan UTUH pada frasa yang sudah dibuang sebutan pihaknya. kunci = dasar hubungan (sama dengan daftar HUBUNGAN_BAWAAN portal); golongan keluarga/dekat/lain dipakai peringatan Pasal 76 UU 7/1989; jk dipakai tebakan jenis kelamin.",
+  "keterangan": "Hubungan saksi dengan pihak. Pola jenis 'jangkar' mengambil FRASA dari kalimat (jawaban kenal / baris identitas); pola jenis 'istilah' dicocokkan UTUH pada frasa yang sudah dibuang sebutan pihaknya. kunci = dasar hubungan (sama dengan daftar HUBUNGAN_BAWAAN portal); golongan keluarga/dekat/lain dipakai peringatan Pasal 76 UU 7/1989; jk dipakai tebakan jenis kelamin. KDL2 11 Okt: jenis 'ejaan' (pembetul ejaan petugas, ruas ganti), jangkar terbalik berperta 'kebalikan'.",
   "pola": [
     {
       "kode": "hub-jangkar-karena-saya",
@@ -21,13 +21,13 @@
         "Penggugat dan Tergugat bertengkar karena masalah ekonomi"
       ],
       "ukur": {
-        "n": 1853,
-        "tepat": 1683,
-        "salahTangkap": 170,
+        "n": 1909,
+        "tepat": 1730,
+        "salahTangkap": 179,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11"
       },
-      "catatan": "Pasangan jawaban kenal ABT - Keterangan saksi SIPP yang keduanya terbaca; setara 90.8%. Ketepatan jangkar = ketepatan istilah sesudahnya."
+      "catatan": "Pasangan jawaban kenal ABT - Keterangan saksi SIPP yang keduanya terbaca; setara 90.8%. Ketepatan jangkar = ketepatan istilah sesudahnya. Terukur 11 Okt: setara 90.6% (n=1909)."
     },
     {
       "kode": "hub-jangkar-saya-adalah",
@@ -47,13 +47,13 @@
         "Tergugat adalah suami dari sepupu saya"
       ],
       "ukur": {
-        "n": 4,
-        "tepat": 4,
+        "n": 5,
+        "tepat": 5,
         "salahTangkap": 0,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11"
       },
-      "catatan": "Pasangan jawaban kenal ABT - Keterangan saksi SIPP yang keduanya terbaca; setara 100.0%. Ketepatan jangkar = ketepatan istilah sesudahnya."
+      "catatan": "Pasangan jawaban kenal ABT - Keterangan saksi SIPP yang keduanya terbaca; setara 100.0%. Ketepatan jangkar = ketepatan istilah sesudahnya. Terukur 11 Okt: setara 100.0% (n=5)."
     },
     {
       "kode": "hub-jangkar-mengaku-sebagai",
@@ -75,9 +75,572 @@
         "tepat": 0,
         "salahTangkap": 0,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11"
       },
       "catatan": "Pasangan jawaban kenal ABT - Keterangan saksi SIPP yang keduanya terbaca; setara -. Ketepatan jangkar = ketepatan istilah sesudahnya."
+    },
+    {
+      "kode": "ejaan-kandung",
+      "label": "ejaan petugas -> \"kandung\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:kanduing|kandun|kanduung|kadung|kandug|kandng|kandunng|kandungg)\\b",
+      "flags": "i",
+      "ganti": "kandung",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "adik kanduung penggugat",
+        "Ayah Kanduing"
+      ],
+      "contohSalah": [
+        "anak kandung"
+      ],
+      "ukur": {
+        "n": 9,
+        "tepat": 9,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-sepupu",
+      "label": "ejaan petugas -> \"sepupu\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:seupu|sepuppu|sepupuh|spupu)\\b",
+      "flags": "i",
+      "ganti": "sepupu",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saya adalah seupu satu kali Penggugat"
+      ],
+      "contohSalah": [
+        "sepupu"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-sepupu-satu-rapat",
+      "label": "ejaan petugas -> \"sepupu $1\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\bsepupu(satu|dua|tiga)\\b",
+      "flags": "i",
+      "ganti": "sepupu $1",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saya sepupusatu kali penggugat"
+      ],
+      "contohSalah": [
+        "sepupu satu kali"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-satu-kali",
+      "label": "ejaan petugas -> \"satu kali\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\bsau\\s+kali\\b",
+      "flags": "i",
+      "ganti": "satu kali",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Sepupu Sau Kali Penggugat"
+      ],
+      "contohSalah": [
+        "satu kali"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-kali",
+      "label": "ejaan petugas -> \"kali\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\bkalli\\b",
+      "flags": "i",
+      "ganti": "kali",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Sepupu Dua Kalli Penggugat"
+      ],
+      "contohSalah": [
+        "kali"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-keponakan",
+      "label": "ejaan petugas -> \"keponakan\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:keponaka|keponakabn|kermenakan|penakan|keponkan|kepoakan)\\b",
+      "flags": "i",
+      "ganti": "keponakan",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Keponaka Penggugat",
+        "saya penakan penggugat"
+      ],
+      "contohSalah": [
+        "keponakan"
+      ],
+      "ukur": {
+        "n": 4,
+        "tepat": 4,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-saudara",
+      "label": "ejaan petugas -> \"saudara\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:saudar|saudarav|sudara|saudaraa)\\b",
+      "flags": "i",
+      "ganti": "saudara",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Saudarav kandung Pemohon",
+        "saya adalah saudar kandung"
+      ],
+      "contohSalah": [
+        "saudara"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 3,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-keluarga",
+      "label": "ejaan petugas -> \"keluarga\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:keluaraga|kelurga|kluarga)\\b",
+      "flags": "i",
+      "ganti": "keluarga",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Keluaraga Penggugat"
+      ],
+      "contohSalah": [
+        "keluarga"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-ipar",
+      "label": "ejaan petugas -> \"ipar\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\bipra\\b",
+      "flags": "i",
+      "ganti": "ipar",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Adik Ipra"
+      ],
+      "contohSalah": [
+        "ipar"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-adik",
+      "label": "ejaan petugas -> \"adik\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:aduik|adiik)\\b",
+      "flags": "i",
+      "ganti": "adik",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Aduik Kandung"
+      ],
+      "contohSalah": [
+        "adik"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-kakak",
+      "label": "ejaan petugas -> \"kakak\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:kakaik|kakk)\\b|\\bkk(?=\\s+kandung)",
+      "flags": "i",
+      "ganti": "kakak",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Kakaik Kandung",
+        "kk kandung"
+      ],
+      "contohSalah": [
+        "kakak kandung",
+        "nomor KK keluarga"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-anak",
+      "label": "ejaan petugas -> \"anak\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\banaik\\b",
+      "flags": "i",
+      "ganti": "anak",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Anaik Kandung Penggugat"
+      ],
+      "contohSalah": [
+        "anak"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-ayah",
+      "label": "ejaan petugas -> \"ayah\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:atah|ayha)(?=\\s+kandung)",
+      "flags": "i",
+      "ganti": "ayah",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saya adalah atah kandung penggugat"
+      ],
+      "contohSalah": [
+        "ayah kandung"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-penggugat",
+      "label": "ejaan petugas -> \"penggugat\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:pengugat|pemggugat|pennggugat|pengguagt|penggugt|penggguat|pengggugat|pengguat)\\b",
+      "flags": "i",
+      "ganti": "penggugat",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tante Pennggugat",
+        "Keponakan Pengugat"
+      ],
+      "contohSalah": [
+        "penggugat"
+      ],
+      "ukur": {
+        "n": 19,
+        "tepat": 19,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-pemohon",
+      "label": "ejaan petugas -> \"pemohon\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:penohon|pemophon|pemohn|pemohonn|pemhon)\\b",
+      "flags": "i",
+      "ganti": "pemohon",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Paman Penohon II",
+        "Adik Kandung Pemophon"
+      ],
+      "contohSalah": [
+        "pemohon"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-tergugat",
+      "label": "ejaan petugas -> \"tergugat\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:terguat|tergugt|terggugat|terguagt)\\b",
+      "flags": "i",
+      "ganti": "tergugat",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "ipar Terguat"
+      ],
+      "contohSalah": [
+        "tergugat"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "ejaan-termohon",
+      "label": "ejaan petugas -> \"termohon\"",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:temohon|termhon|termoohn)\\b",
+      "flags": "i",
+      "ganti": "termohon",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "adik Temohon"
+      ],
+      "contohSalah": [
+        "termohon"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "cara": "seluruh label SIPP & jawaban kenal yang dicocokkan dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Dijalankan atas teks huruf kecil SEBELUM istilah dicocokkan (deteksiSaksiService.rapikanEjaan)."
+    },
+    {
+      "kode": "hub-jangkar-saya-masih",
+      "label": "\"saya masih (ada hubungan) ... dengan\"",
+      "kunci": "jangkar",
+      "jenis": "jangkar",
+      "regex": "\\bsaya\\s+masih\\s+(?:ada\\s+)?(?:hubungan\\s+)?(?:(?:keluarga|famili)\\s+(?:yaitu|sebagai)\\s+)?(?<frasa>[a-z][a-z0-9\\- ]{1,40}?)(?=\\s+(?:dengan|penggugat|tergugat|pemohon|termohon|dari|para)\\b)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "saya masih sepupu dengan Penggugat",
+        "Saya kenal karena saya masih keluarga Penggugat"
+      ],
+      "contohSalah": [
+        "saya masih ingat kejadian itu"
+      ],
+      "ukur": {
+        "n": 5,
+        "tepat": 5,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Terukur 11 Okt: setara 100.0% (n=5)."
+    },
+    {
+      "kode": "hub-jangkar-bertetangga",
+      "label": "\"saya bertetangga dengan ...\"",
+      "kunci": "jangkar",
+      "jenis": "jangkar",
+      "regex": "\\b(?:saya|saksi)\\s+(?:juga\\s+|masih\\s+)?(?<frasa>bertetangga)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Saya kenal karena saya bertetangga dengan Penggugat"
+      ],
+      "contohSalah": [
+        "rumah Penggugat bertetangga dengan rumah Tergugat"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt. Frasanya selalu 'bertetangga' -> istilah Tetangga. Terukur 11 Okt: setara 100.0% (n=1)."
+    },
+    {
+      "kode": "hub-jangkar-terbalik",
+      "label": "\"Tergugat adalah menantu saya\" - hubungan PIHAK terhadap saksi, dibalik",
+      "kunci": "jangkar",
+      "jenis": "jangkar",
+      "regex": "\\b(?<pihak>penggugat|tergugat|pemohon|termohon)(?:\\s+(?:i|ii|1|2))?\\s+(?:adalah|merupakan|ialah)\\s+(?:juga\\s+)?(?<frasa>[a-z][a-z\\- ]{1,40}?)\\s+saya\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "kebalikan": {
+        "Menantu": "Mertua",
+        "Mertua": "Menantu",
+        "Adik Kandung": "Kakak Kandung",
+        "Kakak Kandung": "Adik Kandung",
+        "Saudara Kandung": "Saudara Kandung",
+        "Saudara": "Saudara",
+        "Adik Ipar": "Kakak Ipar",
+        "Kakak Ipar": "Adik Ipar",
+        "Ipar": "Ipar",
+        "Saudara Ipar": "Saudara Ipar",
+        "Sepupu": "Sepupu",
+        "Sepupu Satu Kali": "Sepupu Satu Kali",
+        "Sepupu Dua Kali": "Sepupu Dua Kali",
+        "Sepupu Tiga Kali": "Sepupu Tiga Kali",
+        "Saudara Sepupu": "Saudara Sepupu",
+        "Kakak Sepupu": "Adik Sepupu",
+        "Adik Sepupu": "Kakak Sepupu",
+        "Anak Kandung": "Orang Tua Kandung",
+        "Ibu Kandung": "Anak Kandung",
+        "Ayah Kandung": "Anak Kandung",
+        "Orang Tua Kandung": "Anak Kandung",
+        "Paman": "Keponakan",
+        "Tante": "Keponakan",
+        "Bibi": "Keponakan",
+        "Kakek": "Cucu",
+        "Nenek": "Cucu",
+        "Tetangga": "Tetangga",
+        "Teman": "Teman",
+        "Sahabat": "Sahabat",
+        "Teman Kerja": "Teman Kerja",
+        "Rekan Kerja": "Rekan Kerja",
+        "Keluarga": "Keluarga",
+        "Kerabat": "Kerabat",
+        "Besan": "Besan"
+      },
+      "contohBenar": [
+        "Saya kenal dengan Tergugat karena Tergugat adalah menantu saya",
+        "Penggugat adalah adik kandung saya sedangkan Tergugat adalah adik ipar saya"
+      ],
+      "contohSalah": [
+        "Tergugat adalah suami Penggugat",
+        "saya adalah paman Penggugat",
+        "Saya kenal dengan Tergugat sebagai kaka ipar saya"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 13,
+        "salahTangkap": 7,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11",
+        "pihakLain": 7,
+        "beda": 0
+      },
+      "catatan": "KDL2 11 Okt. Hubungan dibalik lewat peta `kebalikan` (Menantu->Mertua, Adik Kandung->Kakak Kandung, Paman->Keponakan ...); istilah tanpa kebalikan pasti (keponakan, cucu, anak tiri) DILEWATI. Dipakai sesudah jangkar 'saya adalah ...' (urutan kamus). Terukur: setara dengan label SIPP 13/20; 7 lagi label menyebut hubungan terhadap pihak LAIN (mis. 'kenal Tergugat sebagai menantu saya' = Mertua Tergugat, label 'Ibu Kandung Penggugat') - keduanya benar; hanya 0 sungguh berbeda (100.0% konsisten). Angka per istilah TIDAK memasukkan pasangan jangkar ini."
     },
     {
       "kode": "hub-ibu-kandung",
@@ -99,30 +662,41 @@
         "ibu mertua"
       ],
       "ukur": {
-        "n": 399,
-        "tepat": 376,
-        "salahTangkap": 23,
+        "n": 401,
+        "tepat": 377,
+        "salahTangkap": 24,
         "rincian": {
           "kalimat": {
-            "n": 210,
-            "tepat": 196,
+            "n": 211,
+            "tepat": 197,
             "salahTangkap": 14
           },
           "label": {
-            "n": 189,
+            "n": 190,
             "tepat": 180,
-            "salahTangkap": 9
+            "salahTangkap": 10
           }
         },
         "golongan": {
-          "n": 399,
-          "tepat": 399,
+          "n": 403,
+          "tepat": 403,
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 380,
+          "contoh": [
+            "Ibu Kandung Pemohon",
+            "ibu kandung Penggugat",
+            "Ibu kandung Tergugat",
+            "Ibu kandung Penggugat",
+            "Ibu Kandung Penggugat",
+            "Ibu Kandung"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 94.2% (jawaban 93.3% n=210, label 95.2% n=189); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 94.0% (jawaban 93.4% n=211, label 94.7% n=190); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-ayah-kandung",
@@ -144,30 +718,41 @@
         "bapak mertua"
       ],
       "ukur": {
-        "n": 219,
-        "tepat": 207,
-        "salahTangkap": 12,
+        "n": 231,
+        "tepat": 218,
+        "salahTangkap": 13,
         "rincian": {
           "kalimat": {
-            "n": 115,
-            "tepat": 107,
-            "salahTangkap": 8
+            "n": 122,
+            "tepat": 113,
+            "salahTangkap": 9
           },
           "label": {
-            "n": 104,
-            "tepat": 100,
+            "n": 109,
+            "tepat": 105,
             "salahTangkap": 4
           }
         },
         "golongan": {
-          "n": 219,
-          "tepat": 219,
+          "n": 231,
+          "tepat": 231,
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 251,
+          "contoh": [
+            "Ayah kandung Penggugat",
+            "Ayah Kandung Penggugat",
+            "Ayah Kandung Tergugat",
+            "ayah kandung",
+            "Ayah kandung Pemohon",
+            "Saksi bapak kandung"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 94.5% (jawaban 93.0% n=115, label 96.2% n=104); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 94.4% (jawaban 92.6% n=122, label 96.3% n=109); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-orang-tua",
@@ -188,8 +773,8 @@
         "orang tua angkat"
       ],
       "ukur": {
-        "n": 25,
-        "tepat": 23,
+        "n": 27,
+        "tepat": 25,
         "salahTangkap": 2,
         "rincian": {
           "kalimat": {
@@ -198,20 +783,31 @@
             "salahTangkap": 1
           },
           "label": {
-            "n": 22,
-            "tepat": 21,
+            "n": 24,
+            "tepat": 23,
             "salahTangkap": 1
           }
         },
         "golongan": {
-          "n": 25,
-          "tepat": 24,
+          "n": 28,
+          "tepat": 27,
           "salahTangkap": 1
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 37,
+          "contoh": [
+            "Orang Tua",
+            "Orang Tua Penggugat",
+            "Orang Tua Kandung Penggugat",
+            "Orang Tua Penggugat.",
+            "Orang Tua Kandung",
+            "Orang Tua Pemohon"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 92.0% (jawaban 66.7% n=3, label 95.5% n=22); golongan sama 96.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 92.6% (jawaban 66.7% n=3, label 95.8% n=24); golongan sama 96.4%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-ibu-tiri",
@@ -220,12 +816,13 @@
       "jenis": "istilah",
       "golongan": "keluarga",
       "jk": "P",
-      "regex": "^(?:(?:ibu|mama)\\s+tiri)$",
+      "regex": "^(?:(?:ibu|mama)\\s+(?:tiri|sambung))$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
-        "ibu tiri"
+        "ibu tiri",
+        "ibu sambung"
       ],
       "contohSalah": [
         "ibu kandung"
@@ -252,9 +849,17 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 5,
+          "contoh": [
+            "Ibu Tiri Penggugat",
+            "Ibu Tiri Pemohon.",
+            "Mama Tiri"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=3, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=3, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-ayah-tiri",
@@ -263,12 +868,13 @@
       "jenis": "istilah",
       "golongan": "keluarga",
       "jk": "L",
-      "regex": "^(?:(?:ayah|bapak)\\s+tiri)$",
+      "regex": "^(?:(?:ayah|bapak|bapa)\\s+(?:tiri|sambung))$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
-        "ayah tiri"
+        "ayah tiri",
+        "ayah sambung"
       ],
       "contohSalah": [
         "ayah kandung"
@@ -295,9 +901,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 11,
+          "contoh": [
+            "Ayah Tiri",
+            "Ayah tiri Pemohon II",
+            "Ayah Sambung Pemohon I",
+            "Ayah Tiri P",
+            "Ayah Tiri Pemohon",
+            "Bapak Tiri Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 80.0% (jawaban 100.0% n=2, label 66.7% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 80.0% (jawaban 100.0% n=2, label 66.7% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-ibu-mertua",
@@ -306,13 +923,14 @@
       "jenis": "istilah",
       "golongan": "keluarga",
       "jk": "",
-      "regex": "^(?:(?:(?:ibu|bapak|ayah)\\s+)?mertua)$",
+      "regex": "^(?:(?:mantan\\s+)?(?:(?:ibu|bapak|ayah)\\s+)?mertua)$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "mertua",
-        "ibu mertua"
+        "ibu mertua",
+        "mantan mertua"
       ],
       "contohSalah": [
         "menantu"
@@ -334,14 +952,25 @@
           }
         },
         "golongan": {
-          "n": 8,
-          "tepat": 8,
+          "n": 11,
+          "tepat": 11,
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 10,
+          "contoh": [
+            "Mertua Pemohon",
+            "Mertua",
+            "Mertua Penggugat",
+            "Mantan mertua Penggugat",
+            "bapak mertua Penggugat",
+            "ibu mertua Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 50.0% (jawaban 50.0% n=4, label 50.0% n=4); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 50.0% (jawaban 50.0% n=4, label 50.0% n=4); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-kakak-kandung",
@@ -364,13 +993,13 @@
         "kakak sepupu"
       ],
       "ukur": {
-        "n": 305,
-        "tepat": 281,
+        "n": 306,
+        "tepat": 282,
         "salahTangkap": 24,
         "rincian": {
           "kalimat": {
-            "n": 157,
-            "tepat": 145,
+            "n": 158,
+            "tepat": 146,
             "salahTangkap": 12
           },
           "label": {
@@ -380,14 +1009,25 @@
           }
         },
         "golongan": {
-          "n": 305,
-          "tepat": 302,
+          "n": 312,
+          "tepat": 309,
           "salahTangkap": 3
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 308,
+          "contoh": [
+            "Kakak Kandung Penggugat",
+            "Kakak kandung Pemohon",
+            "kakak kandung Penggugat",
+            "kakak kandung",
+            "Kakak Kandung Pemohon",
+            "Kakak kandung Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 92.1% (jawaban 92.4% n=157, label 91.9% n=148); golongan sama 99.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 92.2% (jawaban 92.4% n=158, label 91.9% n=148); golongan sama 99.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-adik-kandung",
@@ -409,30 +1049,41 @@
         "adik sepupu"
       ],
       "ukur": {
-        "n": 345,
-        "tepat": 315,
+        "n": 347,
+        "tepat": 317,
         "salahTangkap": 30,
         "rincian": {
           "kalimat": {
-            "n": 176,
-            "tepat": 160,
+            "n": 177,
+            "tepat": 161,
             "salahTangkap": 16
           },
           "label": {
-            "n": 169,
-            "tepat": 155,
+            "n": 170,
+            "tepat": 156,
             "salahTangkap": 14
           }
         },
         "golongan": {
-          "n": 345,
-          "tepat": 342,
+          "n": 347,
+          "tepat": 344,
           "salahTangkap": 3
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 308,
+          "contoh": [
+            "Adik Kandung Penggugat",
+            "Adik kanduung Penggugat",
+            "Adik kandung Pemohon",
+            "Saksi adik kandung Pemohon Pemohon",
+            "Adik kandung Penggugat",
+            "Adik Kandung"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 91.3% (jawaban 90.9% n=176, label 91.7% n=169); golongan sama 99.1%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 91.4% (jawaban 91.0% n=177, label 91.8% n=170); golongan sama 99.1%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-saudara-kandung",
@@ -454,30 +1105,41 @@
         "saudara ipar"
       ],
       "ukur": {
-        "n": 153,
-        "tepat": 140,
+        "n": 157,
+        "tepat": 144,
         "salahTangkap": 13,
         "rincian": {
           "kalimat": {
-            "n": 71,
-            "tepat": 68,
+            "n": 73,
+            "tepat": 70,
             "salahTangkap": 3
           },
           "label": {
-            "n": 82,
-            "tepat": 72,
+            "n": 84,
+            "tepat": 74,
             "salahTangkap": 10
           }
         },
         "golongan": {
-          "n": 153,
-          "tepat": 151,
+          "n": 157,
+          "tepat": 155,
           "salahTangkap": 2
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 150,
+          "contoh": [
+            "Saudara Kandung",
+            "saudara kandung",
+            "saudara kandung Penggugat",
+            "Saudara kandung Penggugat",
+            "Saudara kandung",
+            "Saudara Kandung Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 91.5% (jawaban 95.8% n=71, label 87.8% n=82); golongan sama 98.7%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 91.7% (jawaban 95.9% n=73, label 88.1% n=84); golongan sama 98.7%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-saudara-seibu",
@@ -486,13 +1148,14 @@
       "jenis": "istilah",
       "golongan": "keluarga",
       "jk": "",
-      "regex": "^(?:saudara\\s+se(?:ibu|ayah|bapak))$",
+      "regex": "^(?:(?:saudara|adik|kakak|kaka|ade)\\s+se(?:ibu|ayah|bapak))$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "saudara seibu",
-        "saudara seayah"
+        "saudara seayah",
+        "adik seibu"
       ],
       "contohSalah": [
         "saudara kandung"
@@ -519,9 +1182,18 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 5,
+          "contoh": [
+            "Saudara Seibu",
+            "Adik seibu",
+            "Saudara sebapak",
+            "Saudara seayah"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 37.5% (jawaban 28.6% n=7, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 37.5% (jawaban 28.6% n=7, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-saudara-tiri",
@@ -563,9 +1235,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 9,
+          "contoh": [
+            "Kakak tiri",
+            "Kakak Tiri",
+            "Saudara tiri Pemohon",
+            "Kakak Tiri Penggugat",
+            "Saudara Tiri Penggugat",
+            "Saudara tiri dengan Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 57.1% (jawaban 100.0% n=2, label 40.0% n=5); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 57.1% (jawaban 100.0% n=2, label 40.0% n=5); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-anak-tiri",
@@ -574,20 +1257,77 @@
       "jenis": "istilah",
       "golongan": "keluarga",
       "jk": "",
-      "regex": "^(?:anak\\s+tiri)$",
+      "regex": "^(?:anak\\s+(?:tiri|sambung|bawaan))$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
-        "anak tiri"
+        "anak tiri",
+        "anak sambung",
+        "anak bawaan"
       ],
       "contohSalah": [
         "anak kandung"
       ],
       "ukur": {
-        "n": 1,
-        "tepat": 0,
+        "n": 5,
+        "tepat": 4,
         "salahTangkap": 1,
+        "rincian": {
+          "kalimat": {
+            "n": 2,
+            "tepat": 2,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 3,
+            "tepat": 2,
+            "salahTangkap": 1
+          }
+        },
+        "golongan": {
+          "n": 5,
+          "tepat": 5,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 6,
+          "contoh": [
+            "anak tiri Pemohon",
+            "anak bawaan",
+            "Anak Sambung Pemohon",
+            "Anak tiri Penggugat",
+            "Anak Sambung Penggugat",
+            "Anak Tiri Termohon."
+          ]
+        }
+      },
+      "catatan": "Setara dengan pembanding 80.0% (jawaban 100.0% n=2, label 66.7% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
+    },
+    {
+      "kode": "hub-orang-tua-angkat",
+      "label": "Orang Tua Angkat",
+      "kunci": "Orang Tua Angkat",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:(?:orang\\s*tua|ayah|bapak|ibu|mama)\\s+angkat)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "orang tua angkat",
+        "ayah angkat"
+      ],
+      "contohSalah": [
+        "orang tua kandung"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 3,
+        "salahTangkap": 0,
         "rincian": {
           "kalimat": {
             "n": 0,
@@ -595,20 +1335,72 @@
             "salahTangkap": 0
           },
           "label": {
-            "n": 1,
+            "n": 0,
             "tepat": 0,
-            "salahTangkap": 1
+            "salahTangkap": 0
           }
         },
         "golongan": {
-          "n": 1,
-          "tepat": 1,
+          "n": 0,
+          "tepat": 0,
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 3,
+          "contoh": [
+            "Orang tua angkat Pemohon I",
+            "Orang Tua Angkat",
+            "Ayah Angkat Pemohon I"
+          ]
+        },
+        "cara": "tanpa pasangan jawaban; label SIPP yang terbaca dibaca satu per satu"
       },
-      "catatan": "Setara dengan pembanding 0.0% (jawaban - n=0, label 0.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Tidak pernah berpasangan dengan jawaban kenal; 3 label SIPP terbaca & dibaca benar (Orang tua angkat Pemohon I; Orang Tua Angkat; Ayah Angkat Pemohon I). KDL2 11 Okt."
+    },
+    {
+      "kode": "hub-anak-angkat",
+      "label": "Anak Angkat",
+      "kunci": "Anak Angkat",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:anak\\s+angkat)$",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak angkat"
+      ],
+      "contohSalah": [
+        "anak kandung"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 0,
+            "tepat": 0,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 0,
+          "tepat": 0,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Belum pernah muncul di data satker (label maupun jawaban) - belum terukur, draf. KDL2 11 Okt."
     },
     {
       "kode": "hub-saudara",
@@ -650,9 +1442,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 26,
+          "contoh": [
+            "Saudara Pemohon",
+            "saudara",
+            "Saudara Penggugat",
+            "Saudara Pemohon I",
+            "Saudara Pemohon II",
+            "Saudara"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 81.3% (jawaban 33.3% n=3, label 92.3% n=13); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 81.3% (jawaban 33.3% n=3, label 92.3% n=13); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-sepupu-satu",
@@ -674,30 +1477,41 @@
         "sepupu dua kali"
       ],
       "ukur": {
-        "n": 155,
-        "tepat": 147,
-        "salahTangkap": 8,
+        "n": 162,
+        "tepat": 153,
+        "salahTangkap": 9,
         "rincian": {
           "kalimat": {
-            "n": 74,
-            "tepat": 70,
-            "salahTangkap": 4
+            "n": 78,
+            "tepat": 73,
+            "salahTangkap": 5
           },
           "label": {
-            "n": 81,
-            "tepat": 77,
+            "n": 84,
+            "tepat": 80,
             "salahTangkap": 4
           }
         },
         "golongan": {
-          "n": 155,
-          "tepat": 154,
-          "salahTangkap": 1
+          "n": 162,
+          "tepat": 160,
+          "salahTangkap": 2
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 178,
+          "contoh": [
+            "Supupu satu kali Penggugat",
+            "sepupu satu kali",
+            "Sepupu  satu kali Penggugat",
+            "Sepupu satu kali Penggugat",
+            "Sepupu 1 kali",
+            "Sepupu satu kali dengan Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 94.8% (jawaban 94.6% n=74, label 95.1% n=81); golongan sama 99.4%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 94.4% (jawaban 93.6% n=78, label 95.2% n=84); golongan sama 98.8%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-sepupu-dua",
@@ -718,8 +1532,8 @@
         "sepupu satu kali"
       ],
       "ukur": {
-        "n": 77,
-        "tepat": 75,
+        "n": 78,
+        "tepat": 76,
         "salahTangkap": 2,
         "rincian": {
           "kalimat": {
@@ -728,20 +1542,31 @@
             "salahTangkap": 1
           },
           "label": {
-            "n": 38,
-            "tepat": 37,
+            "n": 39,
+            "tepat": 38,
             "salahTangkap": 1
           }
         },
         "golongan": {
-          "n": 77,
-          "tepat": 77,
+          "n": 78,
+          "tepat": 78,
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 75,
+          "contoh": [
+            "Sepupu 2 kali",
+            "Sepupu dua kali Penggugat",
+            "Sepupu Dua kali",
+            "Sepupu 2 X",
+            "Sepupu dua kali dengan Penggugat",
+            "Sepupu Dua Kali"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 97.4% (jawaban 97.4% n=39, label 97.4% n=38); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 97.4% (jawaban 97.4% n=39, label 97.4% n=39); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-sepupu-tiga",
@@ -783,9 +1608,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 12,
+          "contoh": [
+            "saksi sepupu tiga kali penggugat",
+            "Termohon Sepupu tiga kali",
+            "Sepupu tiga kali Penggugat",
+            "Sepupu tiga kali dengan Penggugat",
+            "sepupu tiga kali dengan Pemohon I",
+            "sepupu tiga kali Pemohon II"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 88.9% (jawaban 85.7% n=7, label 100.0% n=2); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 88.9% (jawaban 85.7% n=7, label 100.0% n=2); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-kakak-sepupu",
@@ -826,9 +1662,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 17,
+          "contoh": [
+            "kakak sepupu Penggugat",
+            "Kakak Sepupu",
+            "Kakak sepupu",
+            "Kakak Sepupu Penggugat",
+            "Kakak Sepupu Penggugat..",
+            "Kaka Sepupu Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 91.7% (jawaban 100.0% n=5, label 85.7% n=7); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 91.7% (jawaban 100.0% n=5, label 85.7% n=7); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-adik-sepupu",
@@ -869,9 +1716,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 19,
+          "contoh": [
+            "adik sepupu",
+            "Adik Sepupu Penggugat",
+            "Adik sepupu Penggugat",
+            "Adik Sepupu dari Penggugat",
+            "Adik Sepupu",
+            "Adik sepupu penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 70.6% (jawaban 71.4% n=7, label 70.0% n=10); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 70.6% (jawaban 71.4% n=7, label 70.0% n=10); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-saudara-sepupu",
@@ -912,9 +1770,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 15,
+          "contoh": [
+            "saudara sepupu Pemohon",
+            "Saudara Sepupu",
+            "Saudara sepupu",
+            "saudara sepupu",
+            "Saudara Sepupu Penggugat",
+            "Saudara Sepupu Pemohon"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=5, label 100.0% n=9); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=5, label 100.0% n=9); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-sepupu",
@@ -935,30 +1804,41 @@
         "sepupu paman"
       ],
       "ukur": {
-        "n": 362,
-        "tepat": 332,
+        "n": 369,
+        "tepat": 339,
         "salahTangkap": 30,
         "rincian": {
           "kalimat": {
-            "n": 200,
-            "tepat": 180,
+            "n": 204,
+            "tepat": 184,
             "salahTangkap": 20
           },
           "label": {
-            "n": 162,
-            "tepat": 152,
+            "n": 165,
+            "tepat": 155,
             "salahTangkap": 10
           }
         },
         "golongan": {
-          "n": 362,
-          "tepat": 354,
+          "n": 371,
+          "tepat": 363,
           "salahTangkap": 8
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 361,
+          "contoh": [
+            "Sepupu",
+            "sepupu jauh",
+            "sepupu Pemohon",
+            "Sepupu Penggugat",
+            "Sepupu Pemohon",
+            "sepupu"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 91.7% (jawaban 90.0% n=200, label 93.8% n=162); golongan sama 97.8%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 91.9% (jawaban 90.2% n=204, label 93.9% n=165); golongan sama 97.8%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-paman",
@@ -967,20 +1847,21 @@
       "jenis": "istilah",
       "golongan": "keluarga",
       "jk": "L",
-      "regex": "^(?:(?:paman|om|pamannya|pak\\s*de|pakde|pak\\s*le|paklek|mamak\\s+laki))$",
+      "regex": "^(?:(?:paman|om|pamannya|pak\\s*de|pakde|pak\\s*le|paklek|mamak\\s+laki)(?:\\s+kandung)?)$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "paman",
-        "om"
+        "om",
+        "paman kandung"
       ],
       "contohSalah": [
         "paman anak"
       ],
       "ukur": {
-        "n": 192,
-        "tepat": 172,
+        "n": 193,
+        "tepat": 173,
         "salahTangkap": 20,
         "rincian": {
           "kalimat": {
@@ -989,20 +1870,31 @@
             "salahTangkap": 15
           },
           "label": {
-            "n": 92,
-            "tepat": 87,
+            "n": 93,
+            "tepat": 88,
             "salahTangkap": 5
           }
         },
         "golongan": {
-          "n": 192,
-          "tepat": 190,
+          "n": 193,
+          "tepat": 191,
           "salahTangkap": 2
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 338,
+          "contoh": [
+            "Paman Pemohon",
+            "Paman Penggugat",
+            "paman Penggugat",
+            "saksi paman Penggugat",
+            "Paman Pemohon 1",
+            "Paman Pemohon I"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 89.6% (jawaban 85.0% n=100, label 94.6% n=92); golongan sama 99.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 89.6% (jawaban 85.0% n=100, label 94.6% n=93); golongan sama 99.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-tante",
@@ -1043,9 +1935,20 @@
           "salahTangkap": 2
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 224,
+          "contoh": [
+            "tante Pennggugat",
+            "Tante Penggugat",
+            "saksi tante Penggugat",
+            "Tante Pemohon",
+            "tante Penggugat",
+            "Tante"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 88.3% (jawaban 85.6% n=118, label 91.1% n=112); golongan sama 99.1%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 88.3% (jawaban 85.6% n=118, label 91.1% n=112); golongan sama 99.1%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-bibi",
@@ -1087,9 +1990,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 7,
+          "contoh": [
+            "Bibi P",
+            "tBibi Tergugat",
+            "Bibi Penggugat",
+            "bibi Pemohon",
+            "Bibi",
+            "Bibi dari Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=3, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=3, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-keponakan",
@@ -1110,30 +2024,41 @@
         "keponakan suami"
       ],
       "ukur": {
-        "n": 170,
-        "tepat": 132,
+        "n": 177,
+        "tepat": 139,
         "salahTangkap": 38,
         "rincian": {
           "kalimat": {
-            "n": 74,
-            "tepat": 68,
+            "n": 77,
+            "tepat": 71,
             "salahTangkap": 6
           },
           "label": {
-            "n": 96,
-            "tepat": 64,
+            "n": 100,
+            "tepat": 68,
             "salahTangkap": 32
           }
         },
         "golongan": {
-          "n": 170,
-          "tepat": 167,
+          "n": 179,
+          "tepat": 176,
           "salahTangkap": 3
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 206,
+          "contoh": [
+            "Kemenakan Pemohon",
+            "Penggugat sebagai keponakan",
+            "saksi ponakan Pemohon",
+            "keponakan",
+            "Keponakan Penggugat",
+            "Ponakan Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 77.6% (jawaban 91.9% n=74, label 66.7% n=96); golongan sama 98.2%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 78.5% (jawaban 92.2% n=77, label 68.0% n=100); golongan sama 98.3%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-kakak-ipar",
@@ -1169,14 +2094,25 @@
           }
         },
         "golongan": {
-          "n": 25,
-          "tepat": 25,
+          "n": 28,
+          "tepat": 28,
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 37,
+          "contoh": [
+            "kakak ipar Penggugat",
+            "Kakak Ipar Pemohon",
+            "Kakak ipar Penggugat",
+            "Kakak ipar",
+            "Kakak ipar Pemohon",
+            "Kakak Ipar Pemohon I"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 96.0% (jawaban 100.0% n=11, label 92.9% n=14); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 96.0% (jawaban 100.0% n=11, label 92.9% n=14); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-adik-ipar",
@@ -1217,9 +2153,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 22,
+          "contoh": [
+            "Adik ipar Penggugat",
+            "Adik Ipar",
+            "Adik Ipra",
+            "adik ipar",
+            "Adik ipar",
+            "Adik ipar Pemohon"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 71.4% (jawaban 71.4% n=7, label 71.4% n=7); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 71.4% (jawaban 71.4% n=7, label 71.4% n=7); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-saudara-ipar",
@@ -1260,9 +2207,19 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 10,
+          "contoh": [
+            "Saudara IPar Pemohon",
+            "Saudara ipar Pemohon",
+            "Saudara Ipar Pemohon I",
+            "Saudara Ipar",
+            "Saudara Ipar Pemohon I."
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 100.0% (jawaban - n=0, label 100.0% n=5); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 100.0% (jawaban - n=0, label 100.0% n=5); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-ipar",
@@ -1298,14 +2255,25 @@
           }
         },
         "golongan": {
-          "n": 207,
-          "tepat": 205,
+          "n": 212,
+          "tepat": 210,
           "salahTangkap": 2
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 214,
+          "contoh": [
+            "saksi ipar Penggugat",
+            "Pemohon sebagai ipar",
+            "saksi ipar Pemohon",
+            "Ipar",
+            "Ipar Pemohon 1",
+            "Ipar Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 93.2% (jawaban 94.3% n=106, label 92.1% n=101); golongan sama 99.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 93.2% (jawaban 94.3% n=106, label 92.1% n=101); golongan sama 99.1%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-menantu",
@@ -1347,9 +2315,69 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 25,
+          "contoh": [
+            "Menantu",
+            "saksi menantu",
+            "Menantu para Pemohon",
+            "menantu",
+            "Anak mantu Penggugat",
+            "Menantu Termohon"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 66.7% (jawaban 75.0% n=8, label 60.0% n=10); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 66.7% (jawaban 75.0% n=8, label 60.0% n=10); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
+    },
+    {
+      "kode": "hub-besan",
+      "label": "Besan",
+      "kunci": "Besan",
+      "jenis": "istilah",
+      "golongan": "keluarga",
+      "jk": "",
+      "regex": "^(?:besan)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "besan"
+      ],
+      "contohSalah": [
+        "menantu"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "rincian": {
+          "kalimat": {
+            "n": 1,
+            "tepat": 1,
+            "salahTangkap": 0
+          },
+          "label": {
+            "n": 1,
+            "tepat": 1,
+            "salahTangkap": 0
+          }
+        },
+        "golongan": {
+          "n": 2,
+          "tepat": 2,
+          "salahTangkap": 0
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 1,
+          "contoh": [
+            "Besan Penggugat"
+          ]
+        }
+      },
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=1, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-anak-kandung",
@@ -1387,14 +2415,25 @@
           }
         },
         "golongan": {
-          "n": 28,
-          "tepat": 27,
+          "n": 30,
+          "tepat": 29,
           "salahTangkap": 1
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 38,
+          "contoh": [
+            "Penggugat anak Kandung",
+            "Anak kandung Penggugat",
+            "Anak kandung",
+            "Anak",
+            "Anak kandung para Pemohon",
+            "Anak Kandung"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 67.9% (jawaban 64.3% n=14, label 71.4% n=14); golongan sama 96.4%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 67.9% (jawaban 64.3% n=14, label 71.4% n=14); golongan sama 96.7%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-cucu",
@@ -1435,9 +2474,16 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 2,
+          "contoh": [
+            "cucu",
+            "Cucu Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 66.7% (jawaban 50.0% n=2, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 66.7% (jawaban 50.0% n=2, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-kakek",
@@ -1446,12 +2492,13 @@
       "jenis": "istilah",
       "golongan": "keluarga",
       "jk": "L",
-      "regex": "^(?:(?:kakek|kakeknya|opa|datuk|tete))$",
+      "regex": "^(?:(?:kakek|kakeknya|opa|datuk|tete)(?:\\s+kandung)?)$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
-        "kakek"
+        "kakek",
+        "kakek kandung"
       ],
       "contohSalah": [
         "kakak"
@@ -1478,9 +2525,20 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 22,
+          "contoh": [
+            "Kakek Pemohon",
+            "Kakek Penggugat",
+            "kakek",
+            "kakek Penggugat",
+            "Kakek dari Penggugat",
+            "Kakek"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=1, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=1, label 100.0% n=1); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-nenek",
@@ -1489,41 +2547,53 @@
       "jenis": "istilah",
       "golongan": "keluarga",
       "jk": "P",
-      "regex": "^(?:(?:nenek|oma|nene))$",
+      "regex": "^(?:(?:nenek|oma|nene)(?:\\s+kandung)?)$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
-        "nenek"
+        "nenek",
+        "nenek kandung"
       ],
       "contohSalah": [
         "neneknya tetangga"
       ],
       "ukur": {
-        "n": 14,
-        "tepat": 14,
+        "n": 16,
+        "tepat": 16,
         "salahTangkap": 0,
         "rincian": {
           "kalimat": {
-            "n": 7,
-            "tepat": 7,
+            "n": 8,
+            "tepat": 8,
             "salahTangkap": 0
           },
           "label": {
-            "n": 7,
-            "tepat": 7,
+            "n": 8,
+            "tepat": 8,
             "salahTangkap": 0
           }
         },
         "golongan": {
-          "n": 14,
-          "tepat": 14,
+          "n": 16,
+          "tepat": 16,
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 19,
+          "contoh": [
+            "nenek Penggugat",
+            "Nenek",
+            "saksi nenek Penggugat",
+            "Nenek Kandung Penggugat",
+            "Nenek Penggugat",
+            "Nenek Termohon"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=7, label 100.0% n=7); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=8, label 100.0% n=8); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-keluarga",
@@ -1544,30 +2614,41 @@
         "tetangga"
       ],
       "ukur": {
-        "n": 58,
-        "tepat": 51,
-        "salahTangkap": 7,
+        "n": 62,
+        "tepat": 54,
+        "salahTangkap": 8,
         "rincian": {
           "kalimat": {
-            "n": 12,
-            "tepat": 12,
+            "n": 14,
+            "tepat": 14,
             "salahTangkap": 0
           },
           "label": {
-            "n": 46,
-            "tepat": 39,
-            "salahTangkap": 7
+            "n": 48,
+            "tepat": 40,
+            "salahTangkap": 8
           }
         },
         "golongan": {
-          "n": 58,
-          "tepat": 51,
-          "salahTangkap": 7
+          "n": 62,
+          "tepat": 54,
+          "salahTangkap": 8
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 102,
+          "contoh": [
+            "keluarga/tetangga Tergugat",
+            "Keluarga PI",
+            "Keluarga Pemohon",
+            "Keluarga Penggugat",
+            "Keluarga",
+            "Keluarga Jauh Pemohon 3"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 87.9% (jawaban 100.0% n=12, label 84.8% n=46); golongan sama 87.9%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 87.1% (jawaban 100.0% n=14, label 83.3% n=48); golongan sama 87.1%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-kerabat",
@@ -1587,9 +2668,9 @@
         "sahabat"
       ],
       "ukur": {
-        "n": 27,
+        "n": 28,
         "tepat": 26,
-        "salahTangkap": 1,
+        "salahTangkap": 2,
         "rincian": {
           "kalimat": {
             "n": 15,
@@ -1597,20 +2678,31 @@
             "salahTangkap": 0
           },
           "label": {
-            "n": 12,
+            "n": 13,
             "tepat": 11,
-            "salahTangkap": 1
+            "salahTangkap": 2
           }
         },
         "golongan": {
-          "n": 27,
+          "n": 28,
           "tepat": 26,
-          "salahTangkap": 1
+          "salahTangkap": 2
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 31,
+          "contoh": [
+            "kerabat Tergugat",
+            "Kerabat Penggugat",
+            "Kerabat",
+            "Kerabat Tergugat",
+            "kerabat Pemohon",
+            "Kerabat Pemohon"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 96.3% (jawaban 100.0% n=15, label 91.7% n=12); golongan sama 96.3%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 92.9% (jawaban 100.0% n=15, label 84.6% n=13); golongan sama 92.9%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-tetangga",
@@ -1619,42 +2711,54 @@
       "jenis": "istilah",
       "golongan": "dekat",
       "jk": "",
-      "regex": "^(?:(?:tetangga|tetanggat|tewtangga|tetangg|tetangga\\s+(?:dekat|rumah|kampung|desa)))$",
+      "regex": "^(?:(?:tetangga|tetanggat|tewtangga|tetangg|bertetangga|tetangga\\s+(?:dekat|rumah|kampung|desa)))$",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "tetangga",
-        "tetangga dekat"
+        "tetangga dekat",
+        "bertetangga"
       ],
       "contohSalah": [
         "tetangga desa sebelah yang tidak kenal"
       ],
       "ukur": {
-        "n": 420,
-        "tepat": 390,
-        "salahTangkap": 30,
+        "n": 462,
+        "tepat": 430,
+        "salahTangkap": 32,
         "rincian": {
           "kalimat": {
-            "n": 211,
-            "tepat": 195,
-            "salahTangkap": 16
+            "n": 233,
+            "tepat": 215,
+            "salahTangkap": 18
           },
           "label": {
-            "n": 209,
-            "tepat": 195,
+            "n": 229,
+            "tepat": 215,
             "salahTangkap": 14
           }
         },
         "golongan": {
-          "n": 420,
-          "tepat": 394,
-          "salahTangkap": 26
+          "n": 470,
+          "tepat": 442,
+          "salahTangkap": 28
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 580,
+          "contoh": [
+            "Tetangga",
+            "Tetangga P1 dan P2",
+            "Tetangga Pemohon",
+            "tetangga P",
+            "Tetangga Penggugat, Tergugat",
+            "tetangga Penggugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 92.9% (jawaban 92.4% n=211, label 93.3% n=209); golongan sama 93.8%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 93.1% (jawaban 92.3% n=233, label 93.9% n=229); golongan sama 94.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-teman-kerja",
@@ -1696,9 +2800,20 @@
           "salahTangkap": 1
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 22,
+          "contoh": [
+            "Teman Kerja",
+            "teman kerja",
+            "Teman kerja Tergugat",
+            "Teman kerja",
+            "Teman kantor",
+            "Teman sekantor"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 91.7% (jawaban 85.7% n=7, label 100.0% n=5); golongan sama 91.7%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 91.7% (jawaban 85.7% n=7, label 100.0% n=5); golongan sama 91.7%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-rekan-kerja",
@@ -1739,9 +2854,18 @@
           "salahTangkap": 1
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 6,
+          "contoh": [
+            "rekan kerja",
+            "REKAN KERJA",
+            "Rekan Kerja Pemohon",
+            "Rekan kerja"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 91.7% (jawaban 85.7% n=7, label 100.0% n=5); golongan sama 91.7%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 91.7% (jawaban 85.7% n=7, label 100.0% n=5); golongan sama 91.7%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-sahabat",
@@ -1777,14 +2901,24 @@
           }
         },
         "golongan": {
-          "n": 9,
-          "tepat": 9,
+          "n": 11,
+          "tepat": 11,
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 6,
+          "contoh": [
+            "Sahabat dekat P",
+            "sahabat",
+            "Sahabat Pemohon",
+            "Sahabat",
+            "Sahabat Tergugat"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=6, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 100.0% (jawaban 100.0% n=6, label 100.0% n=3); golongan sama 100.0%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
     },
     {
       "kode": "hub-teman",
@@ -1805,30 +2939,99 @@
         "teman kerja"
       ],
       "ukur": {
-        "n": 119,
+        "n": 123,
         "tepat": 107,
-        "salahTangkap": 12,
+        "salahTangkap": 16,
         "rincian": {
           "kalimat": {
-            "n": 58,
+            "n": 59,
             "tepat": 51,
-            "salahTangkap": 7
+            "salahTangkap": 8
           },
           "label": {
-            "n": 61,
+            "n": 64,
             "tepat": 56,
-            "salahTangkap": 5
+            "salahTangkap": 8
           }
         },
         "golongan": {
-          "n": 119,
-          "tepat": 111,
-          "salahTangkap": 8
+          "n": 127,
+          "tepat": 118,
+          "salahTangkap": 9
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 141,
+          "contoh": [
+            "Sebagai  teman Penggugat",
+            "Teman Penggugat",
+            "teman Pemohon",
+            "saksi teman Penggugat",
+            "sebagai teman",
+            "Teman Pemohon"
+          ]
+        }
       },
-      "catatan": "Setara dengan pembanding 89.9% (jawaban 87.9% n=58, label 91.8% n=61); golongan sama 93.3%. Ketidaksepakatan sebagian besar data (mis. \"paman\" di jawaban lawan \"Keponakan\" di SIPP - arah hubungan terbalik)."
+      "catatan": "Setara dengan pembanding 87.0% (jawaban 86.4% n=59, label 87.5% n=64); golongan sama 92.9%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain)."
+    },
+    {
+      "kode": "hub-pekerja",
+      "label": "Karyawan/Pekerja",
+      "kunci": "Karyawan/Pekerja",
+      "jenis": "istilah",
+      "golongan": "dekat",
+      "jk": "",
+      "regex": "^(?:(?:mantan\\s+)?(?:karyawan|pekerja|sopir|supir|driver|asisten\\s+rumah\\s+tangga|pembantu(?:\\s+rumah\\s+tangga)?|anak\\s+buah|buruh)(?:\\s+(?:warung|toko|kebun|catering))?)$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "mantan karyawan",
+        "sopir",
+        "asisten rumah tangga",
+        "karyawan warung"
+      ],
+      "contohSalah": [
+        "pegawai syara",
+        "rekan kerja"
+      ],
+      "ukur": {
+        "n": 15,
+        "tepat": 10,
+        "salahTangkap": 5,
+        "rincian": {
+          "kalimat": {
+            "n": 8,
+            "tepat": 5,
+            "salahTangkap": 3
+          },
+          "label": {
+            "n": 7,
+            "tepat": 5,
+            "salahTangkap": 2
+          }
+        },
+        "golongan": {
+          "n": 15,
+          "tepat": 13,
+          "salahTangkap": 2
+        },
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 10,
+          "contoh": [
+            "Asisten Rumah tangga",
+            "Sopir Tergugat",
+            "Mantan Karyawan Penggugat",
+            "Sopir/Driver Pemohon",
+            "Karyawan Penggugat",
+            "Karyawan Warung Penggugat"
+          ]
+        }
+      },
+      "catatan": "Setara dengan pembanding 66.7% (jawaban 62.5% n=8, label 71.4% n=7); golongan sama 86.7%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-aparat-desa",
@@ -1837,43 +3040,57 @@
       "jenis": "istilah",
       "golongan": "lain",
       "jk": "",
-      "regex": "^(?:(?:aparat|perangkat|staf|staff)\\s+desa|kepala\\s+(?:desa|dusun|lingkungan)|kades|kadus|sekretaris\\s+desa|sekdes|ketua\\s+(?:rt|rw)|pak\\s+rt|lurah)$",
+      "regex": "^(?:(?:aparat|perangkat|staf|staff)\\s+desa|(?:mantan\\s+)?kepala\\s+(?:desa|dusun|lingkungan)(?:\\s+[a-z]+){0,2}|kades|kadus|sekretaris\\s+desa|sekdes(?:\\s+[a-z]+)?|ketua\\s+(?:rt|rw)|pak\\s+rt|lurah|badan\\s+permusyawaratan\\s+desa|bpd|ketua\\s+lembaga\\s+desa)$",
       "flags": "i",
-      "status": "draf",
+      "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "aparat desa",
         "kepala desa",
-        "ketua rt"
+        "ketua rt",
+        "kepala desa rejeki",
+        "badan permusyawaratan desa",
+        "sekdes karawana"
       ],
       "contohSalah": [
         "tetangga"
       ],
       "ukur": {
-        "n": 0,
-        "tepat": 0,
-        "salahTangkap": 0,
+        "n": 3,
+        "tepat": 2,
+        "salahTangkap": 1,
         "rincian": {
           "kalimat": {
-            "n": 0,
-            "tepat": 0,
-            "salahTangkap": 0
+            "n": 2,
+            "tepat": 1,
+            "salahTangkap": 1
           },
           "label": {
-            "n": 0,
-            "tepat": 0,
+            "n": 1,
+            "tepat": 1,
             "salahTangkap": 0
           }
         },
         "golongan": {
-          "n": 0,
-          "tepat": 0,
-          "salahTangkap": 0
+          "n": 3,
+          "tepat": 2,
+          "salahTangkap": 1
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 9,
+          "contoh": [
+            "Mantan Kepala Desa Siweli",
+            "Kepala Desa Rejeki",
+            "perangkat desa",
+            "Aparat Desa",
+            "Sekdes Karawana",
+            "Badan Permusyawaratan Desa"
+          ]
+        }
       },
-      "catatan": "Belum pernah muncul berpasangan di data satker - belum terukur."
+      "catatan": "Setara dengan pembanding 66.7% (jawaban 50.0% n=2, label 100.0% n=1); golongan sama 66.7%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-tokoh-adat",
@@ -1882,41 +3099,51 @@
       "jenis": "istilah",
       "golongan": "lain",
       "jk": "",
-      "regex": "^(?:(?:tokoh|ketua|pemangku)\\s+adat)$",
+      "regex": "^(?:(?:tokoh|ketua|pemangku|lembaga)\\s+adat(?:\\s+desa)?(?:\\s+setempat)?)$",
       "flags": "i",
-      "status": "draf",
+      "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
-        "tokoh adat"
+        "tokoh adat",
+        "pemangku adat desa setempat",
+        "lembaga adat"
       ],
       "contohSalah": [
         "tokoh agama"
       ],
       "ukur": {
-        "n": 0,
-        "tepat": 0,
-        "salahTangkap": 0,
+        "n": 3,
+        "tepat": 2,
+        "salahTangkap": 1,
         "rincian": {
           "kalimat": {
-            "n": 0,
-            "tepat": 0,
+            "n": 1,
+            "tepat": 1,
             "salahTangkap": 0
           },
           "label": {
-            "n": 0,
-            "tepat": 0,
-            "salahTangkap": 0
+            "n": 2,
+            "tepat": 1,
+            "salahTangkap": 1
           }
         },
         "golongan": {
-          "n": 0,
-          "tepat": 0,
-          "salahTangkap": 0
+          "n": 3,
+          "tepat": 2,
+          "salahTangkap": 1
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 5,
+          "contoh": [
+            "Pemangku Adat Desa setempat",
+            "Tokoh Adat",
+            "Lembaga Adat/Tetangga."
+          ]
+        }
       },
-      "catatan": "Belum pernah muncul berpasangan di data satker - belum terukur."
+      "catatan": "Setara dengan pembanding 66.7% (jawaban 100.0% n=1, label 50.0% n=2); golongan sama 66.7%. Ketidaksepakatan sebagian besar data (arah hubungan terbalik, keterangan saksi lain). KDL2 11 Okt: diperluas."
     },
     {
       "kode": "hub-tokoh-agama",
@@ -1925,21 +3152,24 @@
       "jenis": "istilah",
       "golongan": "lain",
       "jk": "",
-      "regex": "^(?:tokoh\\s+(?:agama|masyarakat)|imam(?:\\s+(?:desa|masjid|kampung))?|pegawai\\s+syara|guru\\s+ngaji)$",
+      "regex": "^(?:tokoh\\s+(?:agama|masyarakat)|imam(?:\\s+(?:desa|masjid|kampung)(?:\\s+[a-z]+){0,2})?|pegawai\\s+sy?a?ra?h?(?:\\s+[a-z]+)?|guru\\s+ngaji|penghulu)$",
       "flags": "i",
-      "status": "draf",
+      "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "imam desa",
         "pegawai syara",
-        "tokoh agama"
+        "tokoh agama",
+        "imam desa labuan panimba",
+        "pegawai syara batusuya",
+        "pegawai sara"
       ],
       "contohSalah": [
         "tokoh adat"
       ],
       "ukur": {
-        "n": 0,
-        "tepat": 0,
+        "n": 7,
+        "tepat": 7,
         "salahTangkap": 0,
         "rincian": {
           "kalimat": {
@@ -1959,9 +3189,21 @@
           "salahTangkap": 0
         },
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-saksi.js)",
-        "tanggal": "2026-10-10"
+        "tanggal": "2026-10-11",
+        "labelSaja": {
+          "n": 7,
+          "contoh": [
+            "Penghulu",
+            "Imam Masjid",
+            "Pegawai Syarah",
+            "Pegawai Syara Batusuya",
+            "Imam Desa Doda",
+            "Tokoh Agama;"
+          ]
+        },
+        "cara": "tanpa pasangan jawaban; label SIPP yang terbaca dibaca satu per satu"
       },
-      "catatan": "Belum pernah muncul berpasangan di data satker - belum terukur."
+      "catatan": "Tidak pernah berpasangan dengan jawaban kenal; 7 label SIPP terbaca & dibaca benar (Penghulu; Imam Masjid; Pegawai Syarah). KDL2 11 Okt."
     }
   ],
   "templat": []
