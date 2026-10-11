@@ -3073,6 +3073,12 @@ function alatUjiBersihMode(x) {
  *   3. Selain itu Lama - persis ekstensi sebelumnya.
  */
 function alatUjiBerlaku() {
+  /* === UIBARU-WAJIB 12 Okt === */
+  if (alatUjiWajibUi()) {
+    const w = alatUji.server;
+    return { mode: "ui", fitur: w && w.diterapkan === true && w.fitur ? w.fitur : {}, sumber: "wajib" };
+  }
+  /* === AKHIR UIBARU-WAJIB === */
   if (alatUji.mode !== "lama") return { mode: alatUji.mode, fitur: alatUji.fitur, sumber: "coba" };
   const s = alatUji.server;
   if (s && s.diterapkan === true && s.mode !== "lama") return { mode: s.mode, fitur: s.fitur || {}, sumber: "server" };
@@ -3108,8 +3114,27 @@ function alatFiturNyala(kode) {
 
 /** Mode coba aktif: tampilan bukan Lama dan tindakan nyata tidak diizinkan. */
 function alatCobaAktif() {
+  // UIBARU-WAJIB 12 Okt: pilihan uji lokal hanya milik Super Admin; akun lain
+  // tidak pernah dikenai mode coba oleh sisa pilihan yang tertinggal di PC ini.
+  if (alatUjiWajibUi()) return false;
   return alatUji.mode !== "lama" && alatUji.izinkanNyata !== true;
 }
+
+/* === UIBARU-WAJIB 12 Okt ===
+ * Selain Super Admin, tampilan SELALU UI Baru (keputusan pengguna 12 Okt):
+ * pilihan Lama/Baru tersimpan diabaikan dan pengalihnya disembunyikan di popup.
+ * Peran dibaca dari profil yang disinggahkan GET /ekstensi/tampilan
+ * (data.profil.peran = kunci peran: "super-admin", "admin", "hakim", ...).
+ * Peran belum diketahui (belum masuk, portal lama) = aturan lama berlaku.
+ * Satu fungsi penentu: konten.js/abt.js/checklist.js/aleta.js membaca mode lewat
+ * alatUjiBerlaku/alatUjiMode (t7Aktif, s1Aktif, a30Aktif ...), jadi ikut seluruhnya. */
+function alatUjiWajibUi() {
+  const s = alatUji.server;
+  const p = s && typeof s === "object" ? s.profil : null;
+  const peran = p && typeof p === "object" ? String(p.peran || "") : "";
+  return Boolean(peran) && peran !== "super-admin";
+}
+/* === AKHIR UIBARU-WAJIB === */
 
 /**
  * Apakah permintaan ini harus ditahan mode coba?

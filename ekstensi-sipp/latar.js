@@ -150,6 +150,13 @@ async function perbaruiSekarang(opsi) {
     };
   }
 
+  // POPUP-PERAN 12 Okt: pemasangan folder (Load unpacked) tidak dapat memasang
+  // sendiri - yang dapat dikerjakan: mengunduh paket ZIP terbarunya.
+  if ((await jenisPemasangan()) === "development") {
+    const paket = await siapkanPaketManual(versiSekarang);
+    if (paket) return paket;
+  }
+
   let hasil = null;
   let galat = "";
   try {
@@ -600,6 +607,26 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
         })
       );
     return true; // jawaban menyusul
+  }
+
+  // POPUP-PERAN 12 Okt: pemeriksaan sesudah masuk ALETA (dari popup / halaman portal)
+  // dan menampilkan paket ZIP yang sudah diunduh.
+  if (pesan.jenis === "periksa-pembaruan") {
+    periksaSesudahMasuk({ paksa: pesan.paksa === true })
+      .then(jawab)
+      .catch((e) => jawab({ ok: false, keadaan: "galat", pesan: String((e && e.message) || e).slice(0, 200) }));
+    return true;
+  }
+
+  if (pesan.jenis === "tampilkan-unduhan") {
+    try {
+      const id = Number(pesan.id);
+      if (Number.isFinite(id) && chrome.downloads && typeof chrome.downloads.show === "function") chrome.downloads.show(id);
+      jawab({ ok: true });
+    } catch (e) {
+      jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 160) });
+    }
+    return false;
   }
 
   if (pesan.jenis === "muat-ulang") {
@@ -3168,3 +3195,283 @@ function layaniPesanMasuk(pesan, pengirim, jawab) {
     jawab({ ok: false, sebab: String((e && e.message) || "tidak diketahui").slice(0, 160) })
   );
 }
+
+/* === POPUP-PERAN 12 Okt === */
+/*
+ * ============================================================================
+ * SETELAN PER AKUN + PEMBARUAN OTOMATIS SESUDAH MASUK ALETA (12 Okt 2026)
+ * ============================================================================
+ *
+ * 1. Salinan setelan per akun+golongan (lihat popup.js, "POPUP PER AKUN +
+ *    GOLONGAN"): tiap perubahan kunci setelan pribadi - dari panel di tab mana
+ *    pun, dari popup, dari widget - disalin ke "pengaturanAkun:<kunci>" milik
+ *    akun yang sedang masuk, meski popup tertutup. KUNCI_SETELAN_AKUN SAMA
+ *    dengan popup.js (dijaga uji).
+ *
+ * 2. Sesudah masuk ALETA, ekstensi memeriksa versi yang disajikan portal dan
+ *    MENYIAPKAN pembaruannya di belakang layar. Yang MUNGKIN tergantung cara
+ *    ekstensi terpasang (chrome.management.getSelf().installType):
+ *
+ *      "development" (Load unpacked, dari folder):
+ *          Chrome mengabaikan update_url, dan ekstensi TIDAK dapat menimpa
+ *          berkasnya sendiri. Yang dapat dikerjakan: mengunduh paket ZIP
+ *          terbaru dari portal ke folder Unduhan (ALETA/aleta-ekstensi-sipp-
+ *          <versi>.zip), sekali per versi. Mengekstraknya ke folder ekstensi
+ *          dan menekan "muat ulang ekstensi" tetap dilakukan orangnya.
+ *      selain itu (CRX lewat kebijakan / update_url):
+ *          requestUpdateCheck membuat Chrome mengunduh dan menyiapkan versi
+ *          baru sendiri (onUpdateAvailable); dipasang saat "Perbaharui"
+ *          ditekan (reload) - tidak pernah dimuat ulang otomatis, sebab
+ *          petugas mungkin sedang di tengah pekerjaan.
+ *
+ *    Hasilnya dicatat di "pembaruanOtomatis" yang dibaca popup untuk
+ *    pemberitahuan "Versi baru X tersedia - Perbaharui". Satu pemeriksaan
+ *    paling sering per 30 menit.
+ */
+const KUNCI_IDENTITAS_LATAR = "identitasPopup";
+const KUNCI_PERALIHAN_LATAR = "identitasPeralihan";
+const KUNCI_MENUNGGU_LATAR = "identitasMenunggu";
+const AWALAN_AKUN_LATAR = "pengaturanAkun:";
+const KUNCI_SETELAN_AKUN = [
+  "aktif",
+  "tandaiHalaman",
+  "sisipJadwal",
+  "cetakTigaBerkas",
+  "suntingLangsungAbt",
+  "checklistMilestone",
+  "skalaHuruf",
+  "temaPopup",
+  "temaPanel",
+  "warnaGelap",
+  "warnaMandiri",
+  "warnaSendiri",
+  "panelBawaanTampil",
+  "senyapSampai",
+  "sembunyikanTeknis",
+  "ujiTampilan",
+  "ujiFitur",
+  "ujiIzinkanNyata",
+];
+const KUNCI_PEMBARUAN_OTOMATIS = "pembaruanOtomatis";
+const JEDA_PERIKSA_MASUK_MS = 30 * 60 * 1000;
+const BATAS_WAKTU_PERIKSA_MS = 6000;
+
+async function catatSalinanAkunLatar() {
+  try {
+    const s = await chrome.storage.local.get([KUNCI_IDENTITAS_LATAR, KUNCI_PERALIHAN_LATAR, KUNCI_MENUNGGU_LATAR, ...KUNCI_SETELAN_AKUN]);
+    const a = s && s[KUNCI_IDENTITAS_LATAR];
+    if (!a || !a.kunci || s[KUNCI_PERALIHAN_LATAR] === true || s[KUNCI_MENUNGGU_LATAR]) return;
+    const k = AWALAN_AKUN_LATAR + a.kunci;
+    const r = ((await chrome.storage.local.get([k])) || {})[k] || {};
+    const nilai = {};
+    for (const x of KUNCI_SETELAN_AKUN) if (s[x] !== undefined) nilai[x] = s[x];
+    await chrome.storage.local.set({ [k]: { ...r, nilai, diubahPada: new Date().toISOString() } });
+  } catch {
+    /* salinan menyusul pada perubahan berikutnya */
+  }
+}
+
+try {
+  chrome.storage.onChanged.addListener((ubah, tempat) => {
+    if (tempat !== "local" || !ubah) return;
+    if (KUNCI_SETELAN_AKUN.some((k) => ubah[k])) void catatSalinanAkunLatar();
+    // Halaman portal ALETA mencatat "sesiPortalMasuk" tiap panelnya terpasang (sudah masuk).
+    if (ubah.sesiPortalMasuk) void periksaSesudahMasuk({}).catch(() => {});
+  });
+} catch {
+  /* tanpa pendengar perubahan: salinan dicatat popup saat dibuka */
+}
+
+/** "development" bila dimuat sebagai folder (Load unpacked); kosong bila tidak terbaca. */
+async function jenisPemasangan() {
+  try {
+    if (chrome.management && typeof chrome.management.getSelf === "function") {
+      const d = await chrome.management.getSelf();
+      return String((d && d.installType) || "");
+    }
+  } catch {
+    /* tanpa izin/dukungan: diperlakukan tidak diketahui */
+  }
+  return "";
+}
+
+function kePembaruanBase64(buf) {
+  const bita = new Uint8Array(buf);
+  let teks = "";
+  for (let i = 0; i < bita.length; i += 0x8000) teks += String.fromCharCode.apply(null, bita.subarray(i, i + 0x8000));
+  return btoa(teks);
+}
+
+/** Mengunduh paket ZIP ekstensi terbaru ke Unduhan/ALETA. Pulang { ok, id, nama } atau { ok:false, pesan }. */
+async function unduhPaketTerbaru(asal, versi) {
+  const nama = `ALETA/aleta-ekstensi-sipp-${String(versi).replace(/[^0-9A-Za-z.\-]/g, "_")}.zip`;
+  const pembatal = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const henti = pembatal ? setTimeout(() => pembatal.abort(), 30000) : 0;
+  try {
+    const r = await fetch(`${asal}/api/aleta-ecourt/ekstensi`, {
+      credentials: "include",
+      cache: "no-store",
+      ...(pembatal ? { signal: pembatal.signal } : {}),
+    });
+    if (!r.ok) return { ok: false, pesan: `portal menjawab ${r.status}` };
+    const buf = await r.arrayBuffer();
+    // Lewat data: dan antrean nama yang sama dengan unduhan panel - unduhan
+    // http langsung dari ekstensi dapat diblokir Chrome ("insecure download").
+    const hasil = await terbitkanUnduhan(`data:application/zip;base64,${kePembaruanBase64(buf)}`, nama);
+    return hasil && hasil.ok ? { ok: true, id: hasil.id, nama } : { ok: false, pesan: (hasil && hasil.pesan) || "unduhan ditolak" };
+  } catch (e) {
+    return { ok: false, pesan: String((e && e.message) || e).slice(0, 160) };
+  } finally {
+    if (henti) clearTimeout(henti);
+  }
+}
+
+/**
+ * Memeriksa sesi ALETA, versi yang disajikan, dan menyiapkan pembaruan.
+ * opsi.paksa: abaikan jeda 30 menit; opsi.unduh: paket ZIP DIUNDUH sekarang
+ * (jalan manual "Perbaharui") walau sudah pernah.
+ */
+let periksaBerjalan = null;
+async function periksaSesudahMasuk(opsi) {
+  // Pekerja yang bangun, pesan portal, dan popup dapat tiba serempak: satu
+  // pemeriksaan berjalan sekali (tidak ada unduhan ganda); yang meminta paksa
+  // menunggu yang berjalan lalu memeriksa lagi.
+  if (periksaBerjalan) {
+    await periksaBerjalan.catch(() => {});
+    if (!(opsi && (opsi.paksa || opsi.unduh))) return { ok: true, keadaan: "dilewati" };
+  }
+  const p = periksaSesudahMasukInti(opsi);
+  periksaBerjalan = p;
+  try {
+    return await p;
+  } finally {
+    if (periksaBerjalan === p) periksaBerjalan = null;
+  }
+}
+
+async function periksaSesudahMasukInti(opsi) {
+  const paksa = Boolean(opsi && (opsi.paksa || opsi.unduh));
+  let s;
+  try {
+    s = await chrome.storage.local.get(["asalPortal", KUNCI_PEMBARUAN_OTOMATIS, KUNCI_IDENTITAS_LATAR]);
+  } catch {
+    return { ok: false, keadaan: "penyimpanan" };
+  }
+  const asal = String((s && s.asalPortal) || "");
+  if (!asal) return { ok: false, keadaan: "tanpa-portal" };
+  const catatan = s[KUNCI_PEMBARUAN_OTOMATIS] && typeof s[KUNCI_PEMBARUAN_OTOMATIS] === "object" ? { ...s[KUNCI_PEMBARUAN_OTOMATIS] } : {};
+  const kini = Date.now();
+  if (!paksa && kini - Number(catatan.periksaPada || 0) < JEDA_PERIKSA_MASUK_MS) return { ok: true, keadaan: "dilewati" };
+  // Dicatat SEBELUM bertanya: pekerja yang bangun serempak tidak memeriksa dua kali.
+  catatan.periksaPada = kini;
+  await chrome.storage.local.set({ [KUNCI_PEMBARUAN_OTOMATIS]: catatan });
+
+  let data = null;
+  const pembatal = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const henti = pembatal ? setTimeout(() => pembatal.abort(), BATAS_WAKTU_PERIKSA_MS) : 0;
+  try {
+    const r = await fetch(`${asal}/api/aleta-ecourt/ekstensi?info=siapa`, {
+      credentials: "include",
+      cache: "no-store",
+      ...(pembatal ? { signal: pembatal.signal } : {}),
+    });
+    if (!r.ok) return { ok: false, keadaan: r.status === 401 || r.status === 403 ? "belum-masuk" : "portal" };
+    const isi = await r.json();
+    data = isi && isi.data ? isi.data : isi;
+  } catch {
+    return { ok: false, keadaan: "portal" };
+  } finally {
+    if (henti) clearTimeout(henti);
+  }
+  const pengguna = (data && data.pengguna) || {};
+  if (!pengguna.nama) return { ok: false, keadaan: "belum-masuk" };
+
+  // Akun/golongan berganti sejak terakhir: salinan akun lama dikunci (tidak
+  // lagi diperbarui), dan popup yang menukar setelannya saat dibuka
+  // (golongan dihitung di sana).
+  const kode = pengguna.golongan && pengguna.golongan.kode ? String(pengguna.golongan.kode) : "";
+  const orang = String(pengguna.kunci || "").trim();
+  if (orang && kode) {
+    const kunciBaru = `${orang}|${kode}`;
+    const aktif = s[KUNCI_IDENTITAS_LATAR];
+    if (aktif && aktif.kunci && aktif.kunci !== kunciBaru) {
+      try {
+        await chrome.storage.local.set({ [KUNCI_MENUNGGU_LATAR]: kunciBaru, [KUNCI_PERALIHAN_LATAR]: true });
+      } catch {
+        /* popup tetap menyelaraskan saat dibuka */
+      }
+    }
+  }
+
+  const terpasang = String(chrome.runtime.getManifest().version || "");
+  const versiPortal = String((data && data.versi) || "");
+  catatan.versiPortal = versiPortal;
+  catatan.masuk = true;
+  if (!versiPortal || bandingkanVersi(versiPortal, terpasang) <= 0) {
+    await chrome.storage.local.set({ [KUNCI_PEMBARUAN_OTOMATIS]: catatan });
+    return { ok: true, keadaan: "terbaru", versiPortal };
+  }
+
+  const tipe = await jenisPemasangan();
+  let hasil = { ok: true, keadaan: "versi-baru", versiPortal, tipe };
+  if (tipe === "development") {
+    const sudah = catatan.diunduh && catatan.diunduh.versi === versiPortal && catatan.diunduh.id;
+    if (!sudah) {
+      const u = await unduhPaketTerbaru(asal, versiPortal);
+      if (u.ok) {
+        catatan.diunduh = { versi: versiPortal, id: u.id, nama: u.nama, pada: kini };
+        hasil = { ok: true, keadaan: "paket-diunduh", versiPortal, tipe, id: u.id, nama: u.nama };
+      } else hasil = { ok: false, keadaan: "unduh-gagal", versiPortal, tipe, pesan: u.pesan };
+    } else hasil = { ok: true, keadaan: "paket-diunduh", versiPortal, tipe, id: catatan.diunduh.id, nama: catatan.diunduh.nama };
+  } else if (chrome.runtime && typeof chrome.runtime.requestUpdateCheck === "function") {
+    try {
+      const r = await chrome.runtime.requestUpdateCheck();
+      if (r && r.status === "update_available") {
+        catatan.menunggu = String(r.version || versiPortal);
+        hasil = { ok: true, keadaan: "menunggu-pasang", versiPortal, tipe, versiBaru: catatan.menunggu };
+      }
+    } catch {
+      /* Chrome tidak melayani - popup tetap menyebut versi baru dari portal */
+    }
+  }
+  await chrome.storage.local.set({ [KUNCI_PEMBARUAN_OTOMATIS]: catatan });
+  return hasil;
+}
+
+/** Jalan manual pada pemasangan folder: unduh paketnya, lalu jelaskan langkah sisanya. */
+async function siapkanPaketManual(versiSekarang) {
+  const h = await periksaSesudahMasuk({ unduh: true });
+  if (h.keadaan === "paket-diunduh") {
+    return {
+      ok: false,
+      keadaan: "paket_diunduh",
+      versiSekarang,
+      versiBaru: h.versiPortal,
+      idUnduhan: h.id,
+      namaBerkas: h.nama,
+      pesan:
+        `Versi ${h.versiPortal} sudah diunduh ke folder Unduhan (${String(h.nama).replace(/\//g, "\\")}). ` +
+        "Ekstensi yang dimuat sebagai folder tidak dapat mengganti berkasnya sendiri: ekstrak ZIP itu ke folder ekstensi " +
+        "(timpa semua berkas), lalu tekan muat ulang ekstensi.",
+    };
+  }
+  if (h.keadaan === "unduh-gagal") {
+    return {
+      ok: false,
+      keadaan: "unduh_gagal",
+      versiSekarang,
+      pesan: `Paket versi ${h.versiPortal} gagal diunduh (${h.pesan || "tidak diketahui"}). Coba lagi, atau unduh dari halaman Ekstensi di portal.`,
+    };
+  }
+  return null;
+}
+
+// Sesudah masuk ALETA: tiap pekerja bangun / peramban dibuka / ekstensi baru terpasang.
+try {
+  if (chrome.runtime.onStartup) chrome.runtime.onStartup.addListener(() => void periksaSesudahMasuk({}));
+  if (chrome.runtime.onInstalled) chrome.runtime.onInstalled.addListener(() => void periksaSesudahMasuk({ paksa: true }));
+} catch {
+  /* tanpa pendengar siklus hidup: pesan dari halaman portal/popup tetap memicu */
+}
+void periksaSesudahMasuk({}).catch(() => {});
+/* === AKHIR POPUP-PERAN === */

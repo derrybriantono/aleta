@@ -468,12 +468,12 @@ describe("popup: pengalih khusus Super Admin", () => {
     }
   });
 
-  it("tersembunyi bagi yang bukan Super Admin; tampilan Lama tidak menyisakan apa pun", async () => {
+  it("tersembunyi bagi yang bukan Super Admin; selalu UI Baru (UIBARU-WAJIB 12 Okt)", async () => {
     const p = bukaPopup("Panitera Pengganti");
     await tunggu(60);
     expect((p.d.getElementById("bagianUji") as HTMLElement).hidden).toBe(true);
     expect((p.d.getElementById("ujiLainBaris") as HTMLElement).hidden).toBe(true);
-    expect(p.d.documentElement.hasAttribute("data-kulit")).toBe(false);
+    expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
   });
 
   it("Super Admin melihatnya, bawaan Lama, dan semua saklar fitur mati", async () => {
@@ -517,12 +517,11 @@ describe("popup: pengalih khusus Super Admin", () => {
     await sampai(() => JSON.stringify(p.simpanan.ujiFitur) === "{}", "semua mati");
   });
 
-  it("bukan Super Admin, tetapi tampilan uji tertinggal menyala: disebut dan dapat dikembalikan ke Lama", async () => {
-    const p = bukaPopup("Hakim", { ujiTampilan: "ui" });
-    await sampai(() => !(p.d.getElementById("ujiLainBaris") as HTMLElement).hidden, "pesan tampil");
+  it("bukan Super Admin, pilihan uji tertinggal di PC ini: keterangan teknis tidak tampil, pilihan dipulihkan ke Lama, tampilan tetap UI Baru", async () => {
+    const p = bukaPopup("Hakim", { ujiTampilan: "baru" });
+    await sampai(() => p.simpanan.ujiTampilan === "lama", "pilihan uji dipulihkan");
     expect((p.d.getElementById("bagianUji") as HTMLElement).hidden).toBe(true);
-    (p.d.getElementById("ujiKembaliLama") as HTMLButtonElement).click();
-    await sampai(() => p.simpanan.ujiTampilan === "lama", "kembali lama");
-    expect(p.d.documentElement.hasAttribute("data-kulit")).toBe(false);
+    expect((p.d.getElementById("ujiLainBaris") as HTMLElement).hidden).toBe(true);
+    expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
   });
 });
