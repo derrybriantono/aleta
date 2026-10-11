@@ -25549,6 +25549,8 @@ k5Mulai();
  * Permintaan pengguna: "kadang petugas mengisi kerjaannya itu lainnya tetapi di
  * isi PNS/POLRI/TNI/BUMN/BUMD, buat deteksi otomatis bagi manual di isi
  * lainnya dan tautkan sesuai (PPPK gabung dengan PNS pertimbangan PNS)".
+ * Revisi 11 Okt: PPPK berkalimat sendiri "Aparatur Sipil Negara (PPPK)" - SIPP tidak
+ * punya pilihannya, jadi PPPK TIDAK ditawari "Pegawai Negeri Sipil" (biarkan Lain-Lain).
  *
  * Blangko pihak SIPP pengadilan agama (pihak_list.php, jenis_pengadilan 4):
  * pilihan #apakahtni (1 Tentara Nasional Indonesia, 3 Pegawai Negeri Sipil,
@@ -25613,7 +25615,7 @@ function pkRencana(blangko, hasil) {
   return {
     tampil: true,
     judul,
-    keterangan: `ABT (8510/8524/8533) sudah membacanya sebagai ${hasil.label || kunci}${hasil.asal === "pppk" ? " (PPPK digabung ke PNS)" : ""}. Mengganti pilihan merapikan data SIPP; uraian "${uraian}" tidak ikut tersimpan.`,
+    keterangan: `ABT (8510/8524/8533) sudah membacanya sebagai ${hasil.label || kunci}. Mengganti pilihan merapikan data SIPP; uraian "${uraian}" tidak ikut tersimpan.`,
     tombol: { nilai, tulisan: PK_TULISAN_PILIHAN[nilai] },
     perluKonfirmasi: true,
   };

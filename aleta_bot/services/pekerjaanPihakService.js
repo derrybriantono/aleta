@@ -24,17 +24,26 @@
  * Pola = DATA di kamus-deteksi/awal/pekerjaan.json (dibaca lewat kamusDeteksi).
  *
  * Urutan: (1) 'pilihan' = teks baku yang dibandingkan kueri lama -> hasil lama
- * tidak berubah; (2) penyangkal kuat -> BUKAN; (3) PPPK -> PNS; (4) penyangkal
- * lemah -> BUKAN; (5) deteksi PNS, POLRI, TNI, BUMN, BUMD, DESA.
+ * tidak berubah; (2) penyangkal kuat -> BUKAN (termasuk CPNS & PPPK paruh waktu);
+ * (3) PPPK -> PPPK; (4) penyangkal lemah -> BUKAN; (5) deteksi PNS, POLRI, TNI,
+ * BUMN, BUMD, DESA.
+ *
+ * Revisi keputusan pengguna 11 Okt: PPPK BUKAN lagi digabung ke PNS - kategori
+ * sendiri berkalimat "Aparatur Sipil Negara (PPPK)" dengan dasar hukum PNS;
+ * CPNS dan PPPK paruh waktu tidak dibaca PNS/PPPK.
  */
 
 const kamus = require("./kamusDeteksi");
 
 const KELOMPOK = "pekerjaan";
 const URUT_PERAN = ["pilihan", "penyangkal-kuat", "pppk", "penyangkal-lemah", "deteksi"];
-const KATEGORI = Object.freeze(["PNS", "POLRI", "TNI", "BUMN", "BUMD", "DESA"]);
+const KATEGORI = Object.freeze(["PNS", "PPPK", "POLRI", "TNI", "BUMN", "BUMD", "DESA"]);
 
-/** Teks baku SIPP yang diusulkan di blangko pihak (sama dengan cabang 'pilihan' kueri lama). DESA tidak diusulkan. */
+/**
+ * Teks baku SIPP yang diusulkan di blangko pihak (sama dengan cabang 'pilihan' kueri lama). DESA dan PPPK tidak
+ * diusulkan: SIPP tidak punya pilihannya, dan memilih "Pegawai Negeri Sipil" untuk PPPK akan membuat ABT mencetak
+ * kalimat PNS - PPPK dibaca ABT dari uraian Lain-Lain (keputusan pengguna 11 Okt: kalimat "Aparatur Sipil Negara (PPPK)").
+ */
 const TEKS_BAKU = Object.freeze({
   PNS: "Pegawai Negeri Sipil",
   POLRI: "POLRI",
@@ -45,12 +54,13 @@ const TEKS_BAKU = Object.freeze({
 
 const LABEL_KATEGORI = Object.freeze({
   PNS: "PNS",
+  PPPK: "ASN (PPPK)",
   POLRI: "POLRI",
   TNI: "TNI",
   BUMN: "BUMN",
   BUMD: "BUMD",
   DESA: "Kepala/Perangkat Desa",
-  BUKAN: "bukan PNS/TNI/POLRI/BUMN/BUMD",
+  BUKAN: "bukan PNS/PPPK/TNI/POLRI/BUMN/BUMD",
   LAIN: "lainnya",
   KOSONG: "kosong",
 });
@@ -110,11 +120,14 @@ function kalimatTerbaca(teks, k) {
   if (x.kunci === "KOSONG") return "pekerjaan kosong di SIPP";
   if (x.asal === "pilihan") return `${x.label} (teks baku SIPP ${kutip})`;
   if (x.kunci === "BUKAN") {
-    const g = { pensiunan: "pensiunan", mantan: "mantan", keluarga: "keluarga anggota", satpol: "Satpol PP", "non-pns": "bukan PNS", honorer: "honorer", kontrak: "kontrak/harian", swasta: "swasta" }[x.golongan] || x.golongan;
-    return `${g}${x.dasar ? ` ${LABEL_KATEGORI[x.dasar] || x.dasar}` : ""} - tidak dibaca sebagai ${x.dasar ? LABEL_KATEGORI[x.dasar] || x.dasar : "PNS/TNI/POLRI/BUMN/BUMD"} (dari teks ${kutip})`;
+    const g = { pensiunan: "pensiunan", mantan: "mantan", keluarga: "keluarga anggota", satpol: "Satpol PP", "non-pns": "bukan PNS", honorer: "honorer", kontrak: "kontrak/harian", swasta: "swasta", cpns: "CPNS", "paruh-waktu": "PPPK paruh waktu" }[x.golongan] || x.golongan;
+    // CPNS/PPPK paruh waktu: sebutannya sudah memuat kategorinya (keputusan pengguna 11 Okt: keduanya bukan PNS/PPPK).
+    const sebutDasar = x.dasar && !["cpns", "paruh-waktu"].includes(x.golongan);
+    const disangkal = x.golongan === "cpns" ? "PNS" : x.golongan === "paruh-waktu" ? "PNS/PPPK" : x.dasar ? LABEL_KATEGORI[x.dasar] || x.dasar : "PNS/PPPK/TNI/POLRI/BUMN/BUMD";
+    return `${g}${sebutDasar ? ` ${LABEL_KATEGORI[x.dasar] || x.dasar}` : ""} - tidak dibaca sebagai ${disangkal} (dari teks ${kutip})`;
   }
   if (x.kunci === "LAIN") return `lainnya (teks ${kutip})`;
-  return `${x.label}${x.asal === "pppk" ? " (PPPK, digabung ke PNS)" : ""} (dari teks ${kutip})`;
+  return `${x.label} (dari teks ${kutip})`;
 }
 
 // ---------------------------------------------------------------------------

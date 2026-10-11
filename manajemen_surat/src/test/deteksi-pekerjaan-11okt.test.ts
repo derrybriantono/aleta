@@ -44,16 +44,17 @@ const NYATA: Array<[string, string]> = [
   ["Aparatur Sipil Negara", "PNS"],
   ["Aparatur Sipil Negeri", "PNS"],
   ["Pns guru di SDN 24 Dampelas", "PNS"],
-  ["CPNS Guru SD Panggalasiang", "PNS"],
+  ["CPNS Guru SD Panggalasiang", "BUKAN"], // keputusan pengguna 11 Okt: CPNS bukan PNS
+  ["Calon Pegawai Negeri Sipil", "BUKAN"],
   ["PNS (Satuan Pamong Praja Kabupaten Sigi)", "PNS"],
   ["PNS polri di Ditpolair Polda Sulteng", "PNS"],
   ["Bidan (Pegawai Negeri Sipil)", "PNS"],
-  ["PPPK (Dinas Pendidikan Luwuk)", "PNS"],
-  ["ASN PPPK", "PNS"],
-  ["Guru/PPPK", "PNS"],
-  ["P3K (Guru SDN 18 Banawa Selatan)", "PNS"],
-  ["Pegawai Pemerintahan dengan Perjanjian Kerja (Guru SMAN 1 Rio Pakava, Dinas Pendidikan Provinsi Sulawesi Tengah. NIPPPK. )", "PNS"],
-  ["Pegawai Pemerintahan dengan Perjanjian Kerja  Paruh Waktu ( Operatur Layanan  Operasional di Dinas Perindustrian)", "PNS"],
+  ["PPPK (Dinas Pendidikan Luwuk)", "PPPK"],
+  ["ASN PPPK", "PPPK"],
+  ["Guru/PPPK", "PPPK"],
+  ["P3K (Guru SDN 18 Banawa Selatan)", "PPPK"],
+  ["Pegawai Pemerintahan dengan Perjanjian Kerja (Guru SMAN 1 Rio Pakava, Dinas Pendidikan Provinsi Sulawesi Tengah. NIPPPK. )", "PPPK"],
+  ["Pegawai Pemerintahan dengan Perjanjian Kerja  Paruh Waktu ( Operatur Layanan  Operasional di Dinas Perindustrian)", "BUKAN"], // PPPK paruh waktu: bukan (keputusan pengguna 11 Okt)
   ["Anggota POLRI", "POLRI"],
   ["Kepolisian RI (POLRI)", "POLRI"],
   ["Anggota POLRI (AIRUD)", "POLRI"],
@@ -123,7 +124,7 @@ describe("kamus kelompok 'pekerjaan' (benih + lapis database)", () => {
   it("termuat lewat kamusDeteksi dengan semua peran; tiap pola punya regexSql tanpa garis miring terbalik", () => {
     const pola = kamus.polaKelompok("pekerjaan");
     expect(new Set(pola.map((p: Apa) => p.peran))).toEqual(new Set(["pilihan", "penyangkal-kuat", "pppk", "penyangkal-lemah", "deteksi"]));
-    expect(new Set(pola.map((p: Apa) => p.kunci))).toEqual(new Set(["PNS", "POLRI", "TNI", "BUMN", "BUMD", "DESA", "BUKAN"]));
+    expect(new Set(pola.map((p: Apa) => p.kunci))).toEqual(new Set(["PNS", "PPPK", "POLRI", "TNI", "BUMN", "BUMD", "DESA", "BUKAN"]));
     for (const p of pola) {
       if (p.peran === "pilihan") expect(Array.isArray(p.samaDengan) && p.samaDengan.length).toBeTruthy();
       else expect(p.regexSql && !/\\/.test(p.regexSql)).toBe(true);
@@ -152,8 +153,8 @@ describe("kamus kelompok 'pekerjaan' (benih + lapis database)", () => {
     }
   });
 
-  it("lapis database berlaku: pola PPPK dinonaktifkan dari Admin -> 'PPPK (Guru)' tidak lagi PNS", () => {
-    expect(svc.klasifikasiPekerjaan("PPPK (Guru SDN Berdikari)").kunci).toBe("PNS");
+  it("lapis database berlaku: pola PPPK dinonaktifkan dari Admin -> 'PPPK (Guru)' tidak lagi PPPK", () => {
+    expect(svc.klasifikasiPekerjaan("PPPK (Guru SDN Berdikari)").kunci).toBe("PPPK");
     const asli = benih.pola.find((p: Apa) => p.kode === "pekerjaan-pppk");
     kamus.aturLapisDatabase({ pola: [{ ...asli, kelompok: "pekerjaan", status: "nonaktif" }], templat: [] });
     expect(svc.klasifikasiPekerjaan("PPPK (Guru SDN Berdikari)").kunci).toBe("LAIN");
@@ -168,7 +169,9 @@ describe("klasifikasiPekerjaan atas teks nyata SIPP", () => {
   it("pilihan SIPP baku (pembanding lama) ditandai pilihanSipp; PPPK disebut asal pppk; penyangkal menyebut golongan + kategori yang disangkal", () => {
     expect(svc.klasifikasiPekerjaan("Pegawai Negeri Sipil")).toMatchObject({ kunci: "PNS", asal: "pilihan", pilihanSipp: true, teksBaku: "Pegawai Negeri Sipil" });
     expect(svc.klasifikasiPekerjaan("ASN Dinas Pendidikan")).toMatchObject({ kunci: "PNS", asal: "teks", pilihanSipp: false, kodePola: "pekerjaan-pns" });
-    expect(svc.klasifikasiPekerjaan("PPPK Bidan")).toMatchObject({ kunci: "PNS", asal: "pppk", kodePola: "pekerjaan-pppk", teksBaku: "Pegawai Negeri Sipil" });
+    expect(svc.klasifikasiPekerjaan("PPPK Bidan")).toMatchObject({ kunci: "PPPK", label: "ASN (PPPK)", asal: "pppk", kodePola: "pekerjaan-pppk", teksBaku: "" });
+    expect(svc.klasifikasiPekerjaan("CPNS Guru")).toMatchObject({ kunci: "BUKAN", golongan: "cpns", kodePola: "pekerjaan-bukan-cpns" });
+    expect(svc.klasifikasiPekerjaan("PPPK Paruh Waktu Dinas Kesehatan")).toMatchObject({ kunci: "BUKAN", golongan: "paruh-waktu", dasar: "PPPK" });
     expect(svc.klasifikasiPekerjaan("Pensiunan PNS")).toMatchObject({ kunci: "BUKAN", golongan: "pensiunan", dasar: "PNS" });
     expect(svc.klasifikasiPekerjaan("Istri anggota TNI")).toMatchObject({ kunci: "BUKAN", golongan: "keluarga" });
     expect(svc.klasifikasiPekerjaan("anak polisi")).toMatchObject({ kunci: "BUKAN", golongan: "keluarga" });
@@ -178,7 +181,9 @@ describe("klasifikasiPekerjaan atas teks nyata SIPP", () => {
 
   it("kalimat info untuk panel/lajur", () => {
     expect(svc.kalimatTerbaca("ASN Dinas Pendidikan")).toBe("PNS (dari teks 'ASN Dinas Pendidikan')");
-    expect(svc.kalimatTerbaca("PPPK (RS Torabelo)")).toBe("PNS (PPPK, digabung ke PNS) (dari teks 'PPPK (RS Torabelo)')");
+    expect(svc.kalimatTerbaca("PPPK (RS Torabelo)")).toBe("ASN (PPPK) (dari teks 'PPPK (RS Torabelo)')");
+    expect(svc.kalimatTerbaca("CPNS Guru")).toBe("CPNS - tidak dibaca sebagai PNS (dari teks 'CPNS Guru')");
+    expect(svc.kalimatTerbaca("PPPK Paruh Waktu")).toBe("PPPK paruh waktu - tidak dibaca sebagai PNS/PPPK (dari teks 'PPPK Paruh Waktu')");
     expect(svc.kalimatTerbaca("Pensiunan PNS")).toBe("pensiunan PNS - tidak dibaca sebagai PNS (dari teks 'Pensiunan PNS')");
     expect(svc.kalimatTerbaca("Pegawai Negeri Sipil")).toBe("PNS (teks baku SIPP 'Pegawai Negeri Sipil')");
   });
@@ -256,7 +261,7 @@ describe("bot: pekerjaanPihak ikut jawaban 'Isi dari SIPP'", () => {
     const h = await svc.bacaPekerjaanPihak(9001, kueri);
     expect((kueri.mock.calls as Apa)[0][1]).toEqual([9001, 9001]);
     expect(h).toMatchObject([
-      { pihakKe: 1, nama: "SITI binti AHMAD", kunci: "PNS", asal: "pppk", kalimat: "PNS (PPPK, digabung ke PNS) (dari teks 'PPPK (Guru SDN 2)')" },
+      { pihakKe: 1, nama: "SITI binti AHMAD", kunci: "PPPK", asal: "pppk", kalimat: "ASN (PPPK) (dari teks 'PPPK (Guru SDN 2)')" },
       { pihakKe: 2, kunci: "BUKAN", golongan: "pensiunan", dasar: "TNI" },
     ]);
     expect(await svc.bacaPekerjaanPihak("bukan-angka", kueri)).toEqual([]);
@@ -323,11 +328,25 @@ describe("panel ABT: kartu 'Pekerjaan terbaca' (blok PEKERJAAN abt.js)", () => {
     expect(teks).toContain("Kalimat izin atasan (#8510# duduk perkara, #8524# pertimbangan, #8533# BAS) dipakai untuk PNS");
   });
 
+  it("Tergugat PNS/PPPK: kartu menyebut kalimat kewajiban pemberitahuan gugatan kepada atasan di #8524# (perlu ditinjau); Tergugat pensiunan/BUMN tidak", () => {
+    const p = pasang({ "0046": "Penggugat", "0047": "Tergugat" });
+    const orang = (pihakKe: number, pekerjaan: string) => ({ pihakKe, urutan: 1, nama: "X", pekerjaan, ...svc.klasifikasiPekerjaan(pekerjaan), kalimat: svc.kalimatTerbaca(pekerjaan) });
+    const w1 = document.createElement("div");
+    p.pkGambarPekerjaan(w1, { sipp: { pekerjaanPihak: [orang(1, "Petani"), orang(2, "PPPK (Guru SDN 2)")] } });
+    expect(w1.textContent).toContain("#0047# ASN (PPPK): #8524# juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan #0047#");
+    expect(w1.textContent).toContain("mohon ditinjau hakim");
+    for (const kerja of ["Pensiunan PNS", "Karyawan BUMN", "CPNS Guru"]) {
+      const w = document.createElement("div");
+      p.pkGambarPekerjaan(w, { sipp: { pekerjaanPihak: [orang(1, "Petani"), orang(2, kerja)] } });
+      expect(w.textContent, kerja).not.toContain("pemberitahuan adanya gugatan");
+    }
+  });
+
   it("Penggugat honorer: keterangan bahwa kalimat izin atasan TIDAK dipakai; tanpa data -> tidak ada kartu", () => {
     const p = pasang({ "0046": "Pemohon" });
     const wadah = document.createElement("div");
     p.pkGambarPekerjaan(wadah, { sipp: { pekerjaanPihak: [{ pihakKe: 1, urutan: 1, nama: "A", pekerjaan: "Honorer", ...svc.klasifikasiPekerjaan("Honorer"), kalimat: svc.kalimatTerbaca("Honorer") }] } });
-    expect(wadah.textContent).toContain("Pemohon - A: honorer - tidak dibaca sebagai PNS/TNI/POLRI/BUMN/BUMD");
+    expect(wadah.textContent).toContain("Pemohon - A: honorer - tidak dibaca sebagai PNS/PPPK/TNI/POLRI/BUMN/BUMD");
     expect(wadah.textContent).toContain("TIDAK dipakai");
     const kosong = document.createElement("div");
     p.pkGambarPekerjaan(kosong, { sipp: {} });
@@ -394,17 +413,17 @@ describe("lajur 'Pekerjaan terbaca' di blangko Data Pihak SIPP (blok PEKERJAAN k
     await api.pkPeriksa();
   }
 
-  it("Lain-Lain + 'PPPK (Guru SDN 2 Banawa)': lajur di LUAR blangko menyebut PNS; tombol mati sampai dicentang; memilih #apakahtni=3 lewat jembatan; Simpan tidak ditekan", async () => {
-    const f = borang("2", "PPPK (Guru SDN 2 Banawa)");
+  it("Lain-Lain + 'Anggota Polri (Polsek Banawa)': lajur di LUAR blangko menyebut POLRI; tombol mati sampai dicentang; memilih #apakahtni=5 lewat jembatan; Simpan tidak ditekan", async () => {
+    const f = borang("2", "Anggota Polri (Polsek Banawa)");
     const { api, jembatan, diminta } = pasang();
     await tunggu(api);
-    expect(diminta).toEqual(["/aleta/api/aleta-ecourt/pekerjaan-pihak?teks=PPPK+%28Guru+SDN+2+Banawa%29"]);
+    expect(diminta).toEqual(["/aleta/api/aleta-ecourt/pekerjaan-pihak?teks=Anggota+Polri+%28Polsek+Banawa%29"]);
     const lajur = f.previousElementSibling as HTMLElement;
     expect(lajur.className).toContain("aleta-pk-pekerjaan");
     expect(f.querySelectorAll("[class*='aleta'], [data-aleta]").length).toBe(0);
-    expect(lajur.textContent).toContain("Pekerjaan terbaca: PNS (PPPK, digabung ke PNS) (dari teks 'PPPK (Guru SDN 2 Banawa)'), pilihan SIPP: Lain-Lain");
+    expect(lajur.textContent).toContain("Pekerjaan terbaca: POLRI (dari teks 'Anggota Polri (Polsek Banawa)'), pilihan SIPP: Lain-Lain");
     const tombol = lajur.querySelector("button") as HTMLButtonElement;
-    expect(tombol.textContent).toBe('Pilih "Pegawai Negeri Sipil"');
+    expect(tombol.textContent).toBe('Pilih "POLRI"');
     expect(tombol.disabled).toBe(true);
     tombol.click();
     await new Promise((r) => setTimeout(r, 0));
@@ -414,13 +433,24 @@ describe("lajur 'Pekerjaan terbaca' di blangko Data Pihak SIPP (blok PEKERJAAN k
     centang.dispatchEvent(new Event("change"));
     tombol.click();
     await new Promise((r) => setTimeout(r, 0));
-    expect(jembatan).toEqual([{ jenis: "isi", penunjuk: "form#frm_ref_pihak #apakahtni", jenisMedan: "pilih", nilai: "3" }]);
-    expect((f.querySelector("#apakahtni") as HTMLSelectElement).value).toBe("3");
+    expect(jembatan).toEqual([{ jenis: "isi", penunjuk: "form#frm_ref_pihak #apakahtni", jenisMedan: "pilih", nilai: "5" }]);
+    expect((f.querySelector("#apakahtni") as HTMLSelectElement).value).toBe("5");
     expect(jembatan.some((j) => /simpan|submit/i.test(JSON.stringify(j)))).toBe(false);
     // pilihan baku sudah terpilih -> lajur hilang
     await api.pkPeriksa();
     await api.pkPeriksa();
     expect(document.querySelector(".aleta-pk-pekerjaan")).toBeNull();
+  });
+
+  it("Lain-Lain + PPPK: TIDAK ditawari 'Pegawai Negeri Sipil' (ABT membaca PPPK dari uraian -> kalimat 'Aparatur Sipil Negara (PPPK)')", async () => {
+    const f = borang("2", "PPPK (Guru SDN 2 Banawa)");
+    const { api, jembatan } = pasang();
+    await tunggu(api);
+    const lajur = f.previousElementSibling as HTMLElement;
+    expect(lajur.textContent).toContain("Pekerjaan terbaca: ASN (PPPK) (dari teks 'PPPK (Guru SDN 2 Banawa)'), pilihan SIPP: Lain-Lain");
+    expect(lajur.textContent).toContain("SIPP tidak punya pilihan untuk pekerjaan ini - biarkan Lain-Lain");
+    expect(lajur.querySelector("button")).toBeNull();
+    expect(jembatan).toEqual([]);
   });
 
   it("Anggota Polri -> POLRI (5); Karyawan PDAM -> Pegawai BUMN/BUMD (4); Pensiunan PNS & perangkat desa: keterangan tanpa tombol", () => {
@@ -432,6 +462,8 @@ describe("lajur 'Pekerjaan terbaca' di blangko Data Pihak SIPP (blok PEKERJAAN k
     expect(r("Pensiunan PNS")).toMatchObject({ tampil: true, tombol: null });
     expect(r("Pensiunan PNS").keterangan).toContain("Tetap Lain-Lain");
     expect(r("Perangkat Desa Sipeso")).toMatchObject({ tampil: true, tombol: null });
+    expect(r("PPPK Bidan")).toMatchObject({ tampil: true, tombol: null });
+    expect(r("CPNS Guru")).toMatchObject({ tampil: true, tombol: null });
     expect(r("Petani").tampil).toBe(false);
     expect(r("PNS", "3").tampil).toBe(false); // pilihan baku sudah dipilih
     expect(r("PNS", null)).toMatchObject({ tampil: true, tombol: null }); // blangko tanpa #apakahtni

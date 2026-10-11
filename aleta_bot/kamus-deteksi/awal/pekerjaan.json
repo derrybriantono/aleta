@@ -1,7 +1,7 @@
 {
   "kelompok": "pekerjaan",
   "versi": 1,
-  "catatan": "PEKERJAAN (11 Okt 2026, agen 7) - KELOMPOK BARU: kategori pekerjaan pihak dari kolom bebas SIPP pihak.pekerjaan (PA mengetik teks bebas; tidak ada kolom pilihan/id). Kunci: PNS | TNI | POLRI | BUMN | BUMD | DESA (kepala/perangkat desa - cabang lama variabel ABT 8510/8524/8533) | BUKAN (penyangkal). PPPK DIGABUNG ke PNS (keputusan pengguna 11 Okt). Urutan baca (sama persis di JS pekerjaanPihakService.klasifikasiPekerjaan dan di kueri ABT): (1) peran 'pilihan' = teks persis yang sejak dulu dibandingkan kueri ABT lama (pembanding '=' MySQL: tanpa beda huruf besar, spasi di belakang diabaikan) -> hasil lama TIDAK berubah; (2) 'penyangkal-kuat' (pensiunan, mantan, keluarga anggota, Satpol PP, non-PNS) -> BUKAN; (3) 'pppk' -> PNS; (4) 'penyangkal-lemah' (honorer, kontrak, swasta, satpam) -> BUKAN; (5) 'deteksi' menurut urutan. regexSql = padanan Henry Spencer (MariaDB 5.5 satker) yang dipakai kueri ABT - dijaga uji deteksi-pekerjaan-11okt agar sama arti dengan regex JS. ukur: semua pihak perkara_pihak1+2 sipp_donggala salinan 9 Okt (20.353 baris, 1.248 teks berbeda), diperiksa satu per satu.",
+  "catatan": "PEKERJAAN (11 Okt 2026, agen 7) - KELOMPOK BARU: kategori pekerjaan pihak dari kolom bebas SIPP pihak.pekerjaan (PA mengetik teks bebas; tidak ada kolom pilihan/id). Kunci: PNS | PPPK | TNI | POLRI | BUMN | BUMD | DESA (kepala/perangkat desa - cabang lama variabel ABT 8510/8524/8533) | BUKAN (penyangkal). PPPK = kategori sendiri berkalimat \"Aparatur Sipil Negara (PPPK)\" dengan dasar hukum PNS; CPNS dan PPPK paruh waktu BUKAN (keputusan pengguna 11 Okt, revisi). Urutan baca (sama persis di JS pekerjaanPihakService.klasifikasiPekerjaan dan di kueri ABT): (1) peran 'pilihan' = teks persis yang sejak dulu dibandingkan kueri ABT lama (pembanding '=' MySQL: tanpa beda huruf besar, spasi di belakang diabaikan) -> hasil lama TIDAK berubah; (2) 'penyangkal-kuat' (pensiunan, mantan, keluarga anggota, Satpol PP, non-PNS) -> BUKAN; (3) 'pppk' -> PNS; (4) 'penyangkal-lemah' (honorer, kontrak, swasta, satpam) -> BUKAN; (5) 'deteksi' menurut urutan. regexSql = padanan Henry Spencer (MariaDB 5.5 satker) yang dipakai kueri ABT - dijaga uji deteksi-pekerjaan-11okt agar sama arti dengan regex JS. ukur: semua pihak perkara_pihak1+2 sipp_donggala salinan 9 Okt (20.353 baris, 1.248 teks berbeda), diperiksa satu per satu.",
   "pola": [
     {
       "kode": "pekerjaan-pilihan-pns",
@@ -289,9 +289,68 @@
       "catatan": "'Pegawai PBPNS' (3 baris) dibaca sebagai Pegawai Bukan PNS."
     },
     {
+      "kode": "pekerjaan-bukan-cpns",
+      "label": "CPNS / calon pegawai negeri (bukan PNS - keputusan pengguna 11 Okt)",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-kuat",
+      "golongan": "cpns",
+      "urutan": 15,
+      "regex": "\\bcpns\\b|calon\\s+(?:pegawai\\s+nege?ri|pns|asn)",
+      "regexSql": "[[:<:]]cpns[[:>:]]|calon[[:space:]]+(pegawai[[:space:]]+nege?ri|pns|asn)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "CPNS Guru SD Panggalasiang",
+        "CPNS ( Dinas Perindustrian dan Perdagangan Koperasi dan UMKM)",
+        "Calon Pegawai Negeri Sipil"
+      ],
+      "contohSalah": [
+        "PNS",
+        "Pegawai Negeri Sipil (PNS)"
+      ],
+      "ukur": {
+        "n": 5,
+        "tepat": 5,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Keputusan pengguna 11 Okt: CPNS tidak dibaca PNS (tanpa kalimat izin atasan). n kecil (5) - ragu."
+    },
+    {
+      "kode": "pekerjaan-bukan-pppk-paruh-waktu",
+      "label": "PPPK paruh waktu (bukan PNS/PPPK penuh - keputusan pengguna 11 Okt)",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-kuat",
+      "golongan": "paruh-waktu",
+      "urutan": 16,
+      "regex": "paruh\\s*waktu",
+      "regexSql": "paruh[[:space:]]*waktu",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pegawai Pemerintahan dengan Perjanjian Kerja  Paruh Waktu ( Operatur Layanan  Operasional di Dinas Perindustrian)",
+        "PPPK Paruh Waktu"
+      ],
+      "contohSalah": [
+        "PPPK (RS Torabelo)",
+        "Pegawai Pemerintahan dengan Perjanjian Kerja (Guru SD Inpres Pandere"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Keputusan pengguna 11 Okt: PPPK paruh waktu tidak dibaca PNS/PPPK. Dibaca SEBELUM pola PPPK."
+    },
+    {
       "kode": "pekerjaan-pppk",
-      "label": "PPPK / P3K / Pegawai Pemerintah dengan Perjanjian Kerja (digabung ke PNS)",
-      "kunci": "PNS",
+      "label": "PPPK / P3K / Pegawai Pemerintah dengan Perjanjian Kerja (kalimat \"Aparatur Sipil Negara (PPPK)\")",
+      "kunci": "PPPK",
       "peran": "pppk",
       "urutan": 20,
       "regex": "\\b(?:pppk|p3k|nipppk)\\b|perjanjian\\s+kerja",
@@ -311,13 +370,13 @@
         "Karyawan Kontrak"
       ],
       "ukur": {
-        "n": 55,
-        "tepat": 55,
+        "n": 53,
+        "tepat": 53,
         "salahTangkap": 0,
         "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
         "tanggal": "2026-10-11"
       },
-      "catatan": "Dibaca SEBELUM penyangkal lemah (honorer/kontrak) karena \"perjanjian kerja\" = PPPK. Termasuk PPPK paruh waktu (2 baris) dan \"Pegawai P3K DPRD Provinsi\"."
+      "catatan": "Keputusan pengguna 11 Okt: PPPK = kategori sendiri dengan kalimat \"Aparatur Sipil Negara (PPPK)\", dasar hukum sama dengan PNS (PP 10/1983 jo. PP 45/1990). PPPK paruh waktu (2) disangkal lebih dulu. Dibaca SEBELUM penyangkal lemah (honorer/kontrak)."
     },
     {
       "kode": "pekerjaan-bukan-honorer",
@@ -422,8 +481,8 @@
       "kunci": "PNS",
       "peran": "deteksi",
       "urutan": 40,
-      "regex": "\\b(?:c?pns|asn)\\b|pegawai\\s+nege?ri|aparatur\\s+sipil",
-      "regexSql": "[[:<:]](c?pns|asn)[[:>:]]|pegawai[[:space:]]+nege?ri|aparatur[[:space:]]+sipil",
+      "regex": "\\b(?:pns|asn)\\b|pegawai\\s+nege?ri|aparatur\\s+sipil",
+      "regexSql": "[[:<:]](pns|asn)[[:>:]]|pegawai[[:space:]]+nege?ri|aparatur[[:space:]]+sipil",
       "flags": "i",
       "status": "aktif",
       "yakin": "pasti",
@@ -435,22 +494,22 @@
         "Aparatur Sipil Negeri",
         "PNS ( Guru SMA N 3 Palu )",
         "Pns guru di SDN 24 Dampelas",
-        "CPNS Guru SD Panggalasiang",
         "ASN Dinas Pendidikan"
       ],
       "contohSalah": [
         "Pegawai PBPNS",
         "Pegawai Swasta",
-        "Guru"
+        "Guru",
+        "CPNS Guru"
       ],
       "ukur": {
-        "n": 186,
-        "tepat": 186,
+        "n": 181,
+        "tepat": 181,
         "salahTangkap": 0,
         "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
         "tanggal": "2026-10-11"
       },
-      "catatan": "Termasuk CPNS 5 baris dan \"PNS polri di Ditpolair\" (PNS di lingkungan Polri). Perlakuan CPNS ditanyakan di laporan."
+      "catatan": "CPNS (5) kini disangkal pola pekerjaan-bukan-cpns (keputusan pengguna 11 Okt). Termasuk \"PNS polri di Ditpolair\" (PNS di lingkungan Polri)."
     },
     {
       "kode": "pekerjaan-bukan-satpol",
