@@ -310,6 +310,21 @@ describe("7. panel ALETA: sesi baru di KANAN ATAS dengan ukuran bawaan besar", (
   }
 
   const ukuran = (h: Halaman) => polos(vm.runInContext("alatUkuranAwal()", h.ctx));
+  /** Tampilan yang berlaku dibaca dari penyimpanan secara tak serempak - tunggu sampai terbaca. */
+  const modeBerlaku = (h: Halaman, mode: string) =>
+    sampai(() => vm.runInContext("alatUjiMode()", h.ctx) === mode, `tampilan ${mode} terbaca`);
+
+  it("SYARAT MUTLAK: tampilan Lama tidak menerima ukuran bawaan besar (identik dengan fd9aad7)", async () => {
+    const h = buka({ lebar: 1920, tinggi: 1080, tanpaChecklist: true });
+    expect(vm.runInContext("alatUjiMode()", h.ctx)).toBe("lama");
+    const panel = h.w.document.createElement("div");
+    panel.className = "aleta-panel";
+    h.w.document.body.appendChild(panel);
+    tiruTataLetak(h, panel);
+    expect(vm.runInContext("alatTerapkanUkuranAwal", h.ctx)(panel, null)).toBe(false);
+    expect([panel.style.width, panel.style.height, panel.style.maxHeight]).toEqual(["", "", ""]);
+    expect(panel.dataset.tinggiSendiri).toBeUndefined();
+  });
 
   it("ukuran bawaan dihitung dari layar: sepertiga lebar (520-760) dan 70% tinggi, tidak melewati layar", () => {
     const tabel: Array<[number, number, { lebar: number; tinggi: number }]> = [
@@ -326,7 +341,8 @@ describe("7. panel ALETA: sesi baru di KANAN ATAS dengan ukuran bawaan besar", (
   });
 
   it("alatPasangPanel: sesi baru - lebar & tinggi bawaan, sudut KANAN ATAS tetap di tempatnya", async () => {
-    const h = buka({ lebar: 1920, tinggi: 1080, tanpaChecklist: true });
+    const h = buka({ lebar: 1920, tinggi: 1080, tanpaChecklist: true, simpanan: { ujiTampilan: "ui" } });
+    await modeBerlaku(h, "ui");
     const panel = h.w.document.createElement("div");
     panel.className = "aleta-panel";
     const kepala = h.w.document.createElement("div");
@@ -362,7 +378,8 @@ describe("7. panel ALETA: sesi baru di KANAN ATAS dengan ukuran bawaan besar", (
   });
 
   it("hanya lebar yang pernah ditarik: lebar dihormati, tinggi tetap bawaan (dinilai sendiri-sendiri)", async () => {
-    const h = buka({ lebar: 1920, tinggi: 1080, tanpaChecklist: true, simpanan: { posisiPanelAbt: { lebar: 700 } } });
+    const h = buka({ lebar: 1920, tinggi: 1080, tanpaChecklist: true, simpanan: { ujiTampilan: "ui", posisiPanelAbt: { lebar: 700 } } });
+    await modeBerlaku(h, "ui");
     const panel = h.w.document.createElement("div");
     panel.className = "aleta-panel";
     h.w.document.body.appendChild(panel);
@@ -373,7 +390,7 @@ describe("7. panel ALETA: sesi baru di KANAN ATAS dengan ukuran bawaan besar", (
     expect(panel.style.height).toBe("756px");
   });
 
-  it("panel SIPP (konten.js): terapkanPosisi yang ASLI memakai ukuran bawaan bila belum tersimpan, dan menghormati yang tersimpan", () => {
+  it("panel SIPP (konten.js): terapkanPosisi yang ASLI memakai ukuran bawaan bila belum tersimpan, dan menghormati yang tersimpan", async () => {
     const awal = SUMBER_KONTEN.indexOf("function terapkanPosisi(panel, posisi) {");
     expect(awal).toBeGreaterThan(0);
     // ambil fungsi utuh dengan mencocokkan kurung kurawal
@@ -392,7 +409,8 @@ describe("7. panel ALETA: sesi baru di KANAN ATAS dengan ukuran bawaan besar", (
     }
     const fungsi = SUMBER_KONTEN.slice(awal, akhir);
 
-    const h = buka({ lebar: 1366, tinggi: 768, tanpaChecklist: true });
+    const h = buka({ lebar: 1366, tinggi: 768, tanpaChecklist: true, simpanan: { ujiTampilan: "ui" } });
+    await modeBerlaku(h, "ui");
     vm.runInContext(
       `${fungsi}; var keadaanPanel = null; function jepitKeLayar(k, a) { return { kiri: k, atas: a }; } function jepitTinggiKeRuangTersisa() {}`,
       h.ctx

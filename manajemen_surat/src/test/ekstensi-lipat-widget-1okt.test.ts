@@ -386,7 +386,13 @@ function halamanWidget(p: { simpanan?: Record<string, unknown>; server?: ServerU
   terbuka.push(dom);
   const w = dom.window as any;
   const server = p.server ?? serverBaru();
-  const { simpanan, tulisan, storage } = penyimpanan(p.simpanan ?? {});
+  // 12 Okt: widget BAWAAN TERTUTUP bagi sesi tanpa posisi tersimpan; uji ini menguji bagian yang
+  // terbentang (lipat, pisah, tinggi), jadi dimulai dari posisi "terbentang" kecuali disebut.
+  const awalSimpanan: Record<string, unknown> = { ...(p.simpanan ?? {}) };
+  for (const k of ["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"]) {
+    if (!(k in awalSimpanan)) awalSimpanan[k] = { kecil: false };
+  }
+  const { simpanan, tulisan, storage } = penyimpanan(awalSimpanan);
   w.chrome = {
     runtime: { id: "aleta-uji", getManifest: () => ({ version: "0.0.0" }), getURL: (x: string) => x, sendMessage: async () => ({}) },
     storage,

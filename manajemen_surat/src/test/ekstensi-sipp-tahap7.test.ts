@@ -629,9 +629,19 @@ describe("SYARAT MUTLAK: tampilan Lama identik dengan fd9aad7", () => {
     // aleta-teknis pada penjelasan teknis. Penanda dan kelasnya dibuang, dan
     // kelompoknya dikembalikan ke urutan Lama; isi tiap kelompok tetap
     // dibandingkan utuh.
+    // Perbedaan DISENGAJA keempat (12 Okt 2026, checklist-posisi-panel-12okt.test.ts bagian 7):
+    // sesi baru di Baru & UI Baru memulai panel di kanan atas dengan ukuran bawaan besar
+    // (gaya sebaris width/height/max-height + data-tinggi-sendiri). Lama TIDAK menerimanya -
+    // itulah yang dijaga dua uji SYARAT MUTLAK di atas. Hanya ketiga gaya itu yang dibuang;
+    // isi panelnya tetap dibandingkan utuh.
     const URUTAN_LAMA = ["kerjakan", "berkas", "perkara", "putusanKel"];
     const tanpaA30 = (html: string) => {
       const d = new JSDOM(`<!doctype html><body>${html}</body>`).window.document;
+      for (const panel of Array.from(d.querySelectorAll("#aleta-panel-sipp")) as HTMLElement[]) {
+        for (const gaya of ["width", "height", "max-height"]) panel.style.removeProperty(gaya);
+        panel.removeAttribute("data-tinggi-sendiri");
+        if (!panel.getAttribute("style")) panel.removeAttribute("style");
+      }
       for (const el of Array.from(d.querySelectorAll("[data-a30-info], [data-a30-fitur]"))) el.remove();
       for (const el of Array.from(d.querySelectorAll("[data-t7-a30], [data-a30-lipat]"))) {
         el.removeAttribute("data-t7-a30");
