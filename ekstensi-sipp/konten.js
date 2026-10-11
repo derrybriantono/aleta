@@ -15101,6 +15101,10 @@ async function muatPenggunaAleta() {
       if (typeof isi.bolehKasir === "boolean") penggunaTerakhir.bolehKasir = isi.bolehKasir;
       // R 11 Okt: peran tambahan (kasir, petugas_ptsp, ...) - golongan menu Kasir/PTSP.
       if (Array.isArray(isi.peranTambahan)) penggunaTerakhir.peranTambahan = isi.peranTambahan.slice();
+      /* === HAK-PERAN 12 Okt === */
+      // Golongan menu dari matriks peran portal (jabatan + peran tambahan).
+      if (Array.isArray(isi.golonganMenu)) penggunaTerakhir.golonganMenu = isi.golonganMenu.slice();
+      /* === AKHIR HAK-PERAN === */
       if (isi.kapabilitas) kapabilitasTerakhir = isi.kapabilitas;
     }
   } catch {

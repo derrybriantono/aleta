@@ -5,6 +5,8 @@ import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 import {
   PILIHAN_ARAH,
   PILIHAN_MEDIASI,
@@ -107,7 +109,7 @@ function Centang({
   );
 }
 
-export function AletaPromptPutusan({ nomorPerkara }: { nomorPerkara: string }) {
+function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
   const [keadaan, setKeadaan] = useState<Keadaan>("diam");
   const [pesan, setPesan] = useState("");
   const [bahan, setBahan] = useState<BahanPrompt | null>(null);
@@ -447,3 +449,13 @@ export function AletaPromptPutusan({ nomorPerkara }: { nomorPerkara: string }) {
     </div>
   );
 }
+
+/* === HAK-PERAN 12 Okt === */
+// Matriks peran: hanya golongan yang berhak (status.analisa) yang melihat panel ini;
+// rute GET-nya juga menjawab 403 (pastikanAksi).
+export function AletaPromptPutusan(props: { nomorPerkara: string }) {
+  const currentUser = usePenggunaAktifOpsional();
+  if (!bolehAksiLayar(currentUser, "status.analisa")) return null;
+  return <AletaPromptPutusanInti {...props} />;
+}
+/* === AKHIR HAK-PERAN === */

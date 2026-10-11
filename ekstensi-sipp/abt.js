@@ -2917,6 +2917,11 @@ async function muatPenggunaAleta() {
     const isi = await mintaUsulan({ nomorPerkara: nomorPerkaraAbt(), sumber: "siapa" });
     penggunaAletaAbt = isi && isi.pengguna && isi.pengguna.nama ? isi.pengguna : null;
     kapabilitasAletaAbt = (isi && isi.kapabilitas) || null;
+    /* === HAK-PERAN 12 Okt === */
+    // Golongan menu dari matriks peran portal - soreMenuPeran memanggil
+    // alatMenuPeran dengan NAMA peran, jadi golongannya diingat di panel-alat.
+    if (penggunaAletaAbt && typeof alatSetelGolonganServer === "function") alatSetelGolonganServer(penggunaAletaAbt.golonganMenu);
+    /* === AKHIR HAK-PERAN === */
   } catch {
     penggunaAletaAbt = null;
   }

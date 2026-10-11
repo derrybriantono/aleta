@@ -6,6 +6,7 @@ import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { pastikanAplikasi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanAplikasi(db, actorUserId, "aleta-e-audit"); // HAK-PERAN 12 Okt: aplikasi belum fix
 
     const hasil = await getGatewayKatalogEAudit();
     if (!hasil.ok) {

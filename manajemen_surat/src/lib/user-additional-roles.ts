@@ -10,6 +10,8 @@ export const USER_ADDITIONAL_ROLE_OPTIONS: UserAdditionalRoleOption[] = [
   { id: "petugas_keuangan_perkara", label: "Petugas Keuangan Perkara", group: "Keuangan Perkara", description: "Tindak lanjut panjar, biaya panggilan, dan keuangan perkara." },
   { id: "bendahara_penerimaan", label: "Bendahara Penerimaan", group: "Keuangan", description: "Penerimaan negara, PNBP, dan administrasi setoran." },
   { id: "bendahara_pengeluaran", label: "Bendahara Pengeluaran", group: "Keuangan", description: "Belanja, pertanggungjawaban, dan administrasi pengeluaran." },
+  // HAK-PERAN 12 Okt: mediator non-hakim (bersertifikat) - golongan "mediator" di matriks peran.
+  { id: "mediator", label: "Mediator Non-Hakim", group: "Persidangan", description: "Mediator bersertifikat bukan hakim: Jadwal Mediasi, kehadiran & hasil mediasi perkara yang ia mediasi." },
   { id: "penjaga_sidang", label: "Penjaga Sidang", group: "Persidangan", description: "Pemanggilan ruang sidang, ketertiban, dan dukungan jadwal sidang." },
   { id: "operator_antrian_sidang", label: "Operator Antrian Sidang", group: "Persidangan", description: "Pengelolaan nomor antrean, panggilan sidang, dan layar antrean." },
   { id: "operator_panggilan_sidang", label: "Operator Panggilan Sidang", group: "Persidangan", description: "Pengingat panggilan sidang, relaas, dan status panggilan." },

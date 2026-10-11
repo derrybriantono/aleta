@@ -6,6 +6,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { badRequest, handleRouteError, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export async function POST(
 
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "e-status"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await transitionEStatusBatch(db, actor, id, batchAction, payload, request));
   } catch (error) {
     return handleRouteError(error);

@@ -7,6 +7,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { created, handleRouteError, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export async function GET(
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const templateId = normalizeId(id, "ID template");
     const [items, validation] = await Promise.all([
       listTemplateVariables(db, actor, templateId),
@@ -42,6 +44,7 @@ export async function POST(
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const items = await mapVariableToTemplate(db, actor, {
       templateId: normalizeId(id, "ID template"),
       variableId: readStringValue(payload, "variableId", { required: true, maxLength: 180 }),
@@ -66,6 +69,7 @@ export async function PATCH(
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const action = readOptionalStringValue(payload, "action", { maxLength: 40 });
 
     if (action === "unmap") {

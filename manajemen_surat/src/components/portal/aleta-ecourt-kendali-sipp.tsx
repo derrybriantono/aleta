@@ -27,6 +27,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -169,6 +171,7 @@ function Angka({ nilai, label, nada }: { nilai: number | string; label: string; 
 }
 
 export function AletaEcourtKendaliSipp({ onBukaPerkara }: { onBukaPerkara?: (nomor: string) => void } = {}) {
+  const penggunaAktif = usePenggunaAktifOpsional(); // HAK-PERAN 12 Okt
   const [ringkasan, setRingkasan] = useState<Ringkasan | null>(null);
   const [kurang, setKurang] = useState<PerkaraKurang[]>([]);
   const [pesan, setPesan] = useState("");
@@ -420,9 +423,12 @@ export function AletaEcourtKendaliSipp({ onBukaPerkara }: { onBukaPerkara?: (nom
               />
               <span>Hanya perkara e-Court</span>
             </label>
+            {/* HAK-PERAN 12 Okt: berkas.sinkron-sipp = Admin/Super Admin (rute sudah 403). */}
+            {bolehAksiLayar(penggunaAktif, "berkas.sinkron-sipp") ? (
             <Button size="sm" disabled={memulai || berjalan} onClick={() => void mulai()}>
               {berjalan ? "Sedang berjalan" : memulai ? "Memulai..." : "Mulai penyandingan"}
             </Button>
+            ) : null}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
             Hanya Super Admin dan Admin yang boleh memulai. Dapat juga dijalankan dari server dengan{" "}

@@ -8,6 +8,7 @@ import {
 import { kapabilitasPeran, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { bolehKasir } from "@/lib/kasir-jurnal";
+import { golonganMenuEkstensi } from "@/lib/matriks-peran";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { type RoleId } from "@/lib/types";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -111,6 +112,8 @@ export async function GET(request: NextRequest) {
         // Peran tambahan (kasir, petugas_ptsp, ...) - golongan menu Kasir/PTSP
         // panel ekstensi (11 Okt 2026); sama dengan ruas di /ekstensi/siapa.
         peranTambahan: actor.additionalRoleIds ?? [],
+        // HAK-PERAN 12 Okt: golongan menu dari matriks peran (sama dengan /ekstensi/siapa).
+        golonganMenu: golonganMenuEkstensi(actor),
       },
       kapabilitas,
     });

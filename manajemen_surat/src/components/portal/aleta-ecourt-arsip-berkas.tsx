@@ -25,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { tanganiUnduhan } from "@/lib/unduh-berkas";
 import { formatDateTime } from "@/lib/format";
@@ -633,6 +635,7 @@ function TombolTarikPerkara({
 }) {
   const [sibuk, setSibuk] = useState(false);
   const [catatan, setCatatan] = useState("");
+  const bolehTarik = bolehAksiLayar(usePenggunaAktifOpsional(), "berkas.tarik"); // HAK-PERAN 12 Okt
 
   const tarik = async () => {
     setSibuk(true);
@@ -670,6 +673,8 @@ function TombolTarikPerkara({
     }
   };
 
+  // HAK-PERAN 12 Okt: berkas.tarik (pemegang perkara + PTSP); rute menuntut kemampuan "permintaan".
+  if (!bolehTarik) return null;
   return (
     <div className="space-y-1">
       <Button size="sm" variant="outline" disabled={sibuk} onClick={() => void tarik()}>

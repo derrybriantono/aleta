@@ -2678,6 +2678,9 @@ ALAT_MENU_PERAN.abt.daftar.kasir = [];
  * { peran, bolehKasir?, peranTambahan? }. Selalu memulangkan larik tak kosong.
  */
 function alatGolonganMenuSemua(pengguna) {
+  // HAK-PERAN 12 Okt: golongan dari matriks peran portal menang atas tebakan nama.
+  const dariServer = alatGolonganDariServer(pengguna);
+  if (dariServer) return dariServer;
   const objek = pengguna && typeof pengguna === "object" ? pengguna : null;
   const peran = objek ? objek.peran : pengguna;
   const dasar = alatGolonganPeran(peran);
@@ -2697,6 +2700,103 @@ function alatGolonganMenu(pengguna) {
   return alatGolonganMenuSemua(pengguna)[0];
 }
 /* === AKHIR R 11 Okt === */
+
+/* === HAK-PERAN 12 Okt === */
+/*
+ * MATRIKS PERAN 12 Okt 2026 - satu sumber di portal (src/lib/matriks-peran.ts,
+ * golonganMenuEkstensi). Server mengirim `golonganMenu` lewat /ekstensi/siapa,
+ * sipp-konteks, dan sumber "siapa" ABT: jabatan (positionId) dan peran
+ * tambahan ikut terbaca, juga di ABT yang dulu hanya tahu NAMA peran.
+ * Matriks lengkap & alasannya: D:/aleta-dev/kerja/peran-12okt/matriks-peran.md.
+ *
+ * Golongan baru di sini (hanya bila datang dari server; tebakan nama tetap
+ * golongan lama, sehingga portal lama tidak mengubah apa pun):
+ *   pp           - Panitera Pengganti (dulu "panitera"): susunan lama panitera.
+ *   panmud       - Panitera Muda: + tab PTSP (registrasi/Data Umum).
+ *   panitera-utama - Panitera ("panitera" dari server): + tab PTSP (pengawas registrasi).
+ *   mediator     - mediator non-hakim: Perkara, Berkas (baca).
+ *   analis       - Analis Perkara: Berkas, Perkara; ABT bantu susun saksi/BAS.
+ *   sekretariat  - Kesekretariatan: Perkara saja (tidak menangani perkara).
+ *   lain-tetap   - pelaksana/TI/staf tanpa tugas perkara: Perkara saja.
+ * Peran tanpa golonganMenu dari server tetap memakai tebakan lama
+ * (alatGolonganPeran + R 11 Okt), termasuk "lain" = susunan lama.
+ */
+const ALAT_GOLONGAN_MENU_SAH = [
+  "admin",
+  "ketua",
+  "hakim",
+  "panitera",
+  "panmud",
+  "pp",
+  "jurusita",
+  "kasir",
+  "ptsp",
+  "mediator",
+  "analis",
+  "sekretariat",
+  "lain",
+];
+let alatGolonganServerTerakhir = null;
+
+/** Diingat dari jawaban server (ABT memanggil alatMenuPeran dengan NAMA peran). */
+function alatSetelGolonganServer(daftar) {
+  const bersih = Array.isArray(daftar)
+    ? daftar.map((x) => String(x || "").toLowerCase()).filter((x) => ALAT_GOLONGAN_MENU_SAH.includes(x))
+    : [];
+  alatGolonganServerTerakhir = bersih.length ? bersih : null;
+}
+
+/** Golongan dari server (objek pengguna ber-golonganMenu, atau yang terakhir diingat) - null bila tidak ada. */
+function alatGolonganDariServer(pengguna) {
+  const objek = pengguna && typeof pengguna === "object" ? pengguna : null;
+  let daftar = null;
+  if (objek && Array.isArray(objek.golonganMenu)) {
+    alatSetelGolonganServer(objek.golonganMenu);
+    daftar = alatGolonganServerTerakhir;
+  } else if (!objek && alatGolonganServerTerakhir && pengguna) {
+    daftar = alatGolonganServerTerakhir;
+  }
+  if (!daftar || !daftar.length) return null;
+  // "lain" dari server = tidak menangani perkara -> tabel "lain-tetap"
+  // (bukan "lain" tebakan nama yang berarti susunan lama).
+  // "panitera" dari server = Panitera sungguhan -> "panitera-utama" (tebakan
+  // nama "panitera" tetap mencakup PP, susunan lamanya tidak diubah).
+  return daftar.map((g) => (g === "lain" ? "lain-tetap" : g === "panitera" ? "panitera-utama" : g));
+}
+
+// SIPP - halaman perkara (tab pertama = tab bawaan terbuka)
+ALAT_MENU_PERAN.sipp.perkara.pp = ["berkas", "perkara"];
+ALAT_MENU_PERAN.sipp.perkara["panitera-utama"] = ["berkas", "perkara", "ptsp"];
+ALAT_MENU_PERAN.sipp.perkara.panmud = ["berkas", "perkara", "ptsp"];
+ALAT_MENU_PERAN.sipp.perkara.mediator = ["perkara", "berkas"];
+ALAT_MENU_PERAN.sipp.perkara.analis = ["berkas", "perkara"];
+ALAT_MENU_PERAN.sipp.perkara.sekretariat = ["perkara"];
+ALAT_MENU_PERAN.sipp.perkara["lain-tetap"] = ["perkara"];
+// SIPP - daftar/dashboard (menu massal)
+ALAT_MENU_PERAN.sipp.daftar.pp = ["bas-massal"];
+ALAT_MENU_PERAN.sipp.daftar["panitera-utama"] = ["bas-massal"];
+ALAT_MENU_PERAN.sipp.daftar.panmud = ["bas-massal"];
+ALAT_MENU_PERAN.sipp.daftar.mediator = [];
+ALAT_MENU_PERAN.sipp.daftar.analis = ["bas-massal"];
+ALAT_MENU_PERAN.sipp.daftar.sekretariat = [];
+ALAT_MENU_PERAN.sipp.daftar["lain-tetap"] = [];
+// ABT - perkara & beranda. PTSP di ABT SENGAJA tidak disentuh (keputusan
+// R 11 Okt butir 5 masih menunggu pengguna) - tetap susunan lama.
+ALAT_MENU_PERAN.abt.perkara.pp = ["susun-saksi", "isi-bas"];
+ALAT_MENU_PERAN.abt.perkara["panitera-utama"] = ["susun-saksi", "isi-bas"];
+ALAT_MENU_PERAN.abt.perkara.panmud = ["susun-saksi", "isi-bas"];
+ALAT_MENU_PERAN.abt.perkara.mediator = [];
+ALAT_MENU_PERAN.abt.perkara.analis = ["susun-saksi", "isi-bas"];
+ALAT_MENU_PERAN.abt.perkara.sekretariat = [];
+ALAT_MENU_PERAN.abt.perkara["lain-tetap"] = [];
+ALAT_MENU_PERAN.abt.daftar.pp = ["bas-massal"];
+ALAT_MENU_PERAN.abt.daftar["panitera-utama"] = ["bas-massal"];
+ALAT_MENU_PERAN.abt.daftar.panmud = ["bas-massal"];
+ALAT_MENU_PERAN.abt.daftar.mediator = [];
+ALAT_MENU_PERAN.abt.daftar.analis = ["bas-massal"];
+ALAT_MENU_PERAN.abt.daftar.sekretariat = [];
+ALAT_MENU_PERAN.abt.daftar["lain-tetap"] = [];
+/* === AKHIR HAK-PERAN === */
 
 /*
  * ============================================================================

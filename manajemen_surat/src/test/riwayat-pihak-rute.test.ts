@@ -54,7 +54,8 @@ vi.mock("@/server/modules/aleta-ecourt/akses", () => ({
     // Kewenangan yang diminta rute harus "panel" - sama dengan Status Perkara.
     if (kapabilitas !== "panel") throw new ApiError(500, `kewenangan tak terduga: ${kapabilitas}`);
     if (!keadaan.izinkan) throw new ApiError(403, "Peran Anda tidak diberi akses panel status perkara.");
-    return { id: "usr_uji", name: "Penguji Panel" };
+    // HAK-PERAN 12 Okt: riwayat pihak = data pribadi, hanya golongan status.data-pihak (di sini PP).
+    return { id: "usr_uji", name: "Penguji Panel", roleId: "panitera-pengganti" };
   },
 }));
 vi.mock("@/server/shared/admin-access-audit", async () => {

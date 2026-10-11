@@ -15,6 +15,7 @@ import { getPositionsFromDb, getUserByIdFromDb } from "@/server/modules/organiza
 import { listUsersFromDb } from "@/server/modules/users/service";
 import { getRoleLabel } from "@/lib/permissions";
 import type { RoleId } from "@/lib/types";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
     const sesi = await pengesah(request);
     db = sesi.db;
     actorUserId = sesi.actorUserId;
+    await pastikanAksi(db, actorUserId, "ttd.kelola"); // HAK-PERAN 12 Okt: matriks peran
     if (!sesi.nama) {
       return Response.json({ ok: false, alasan: "pengesah_tidak_dikenali" }, { status: 403 });
     }

@@ -6,6 +6,8 @@ import { ExternalLink, X } from "lucide-react";
 
 import { badgeVariants } from "@/components/ui/badge";
 import { apiPath, withBasePath } from "@/lib/base-path";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { alamatStatusPerkara } from "@/lib/rekap-petugas";
 import { tanggalDMY } from "@/lib/tanggal-indonesia";
 import { cn } from "@/lib/utils";
@@ -230,7 +232,7 @@ const KonteksRiwayat = createContext<NilaiRiwayat | null>(null);
  * Pembaca riwayat para pihak - dipasang DI DALAM isi bagian Para pihak,
  * sehingga baru membaca ketika bagian itu dibuka.
  */
-export function PenyediaRiwayatPihak({
+function PenyediaRiwayatPihakInti({
   perkaraId,
   nomorPerkara,
   children,
@@ -579,3 +581,12 @@ export function PenandaRiwayatPihak({ nama, pihakKe }: { nama: string; pihakKe: 
     </>
   );
 }
+
+/* === HAK-PERAN 12 Okt === */
+// Riwayat perkara lain para pihak = data pribadi: hanya status.data-pihak; rute juga 403.
+export function PenyediaRiwayatPihak(props: { perkaraId: string; nomorPerkara: string; children: ReactNode }) {
+  const currentUser = usePenggunaAktifOpsional();
+  if (!bolehAksiLayar(currentUser, "status.data-pihak")) return <>{props.children}</>;
+  return <PenyediaRiwayatPihakInti {...props} />;
+}
+/* === AKHIR HAK-PERAN === */

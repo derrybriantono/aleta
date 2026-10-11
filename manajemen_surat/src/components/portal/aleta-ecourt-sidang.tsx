@@ -142,6 +142,7 @@ import {
 } from "@/components/portal/jadwal-sidang-2okt";
 import { tandaAntrianOnline, type TandaAntrianOnline as TandaOnline } from "@/lib/tanda-antrian-online";
 import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";
+import { bolehAksi, saringSaklarSidang } from "@/lib/matriks-peran";
 import {
   AGENDA_ELITIGASI,
   AGENDA_MUSYAWARAH,
@@ -4638,7 +4639,15 @@ export function AletaEcourtSidang({
   // Nilai awalnya BAWAAN, bukan hasil pembacaan simpanan - sama sebabnya
   // dengan modeRingkas di atas: peladen tidak punya localStorage, dan nilai
   // awal yang berbeda antara keduanya membuat React membuang pohonnya.
-  const [tampilan, setTampilan] = useState<PilihanTampilan>(() => tampilanBawaan());
+  const [tampilanPilihan, setTampilan] = useState<PilihanTampilan>(() => tampilanBawaan());
+  /* === HAK-PERAN 12 Okt === */
+  // Saklar BUKAN hak: tombol aksi yang tidak diberikan matriks peran
+  // (Tunda/Putus, Mediator, Court Calendar, Kasir, Konseptor, Antrian, ...)
+  // dimatikan apa pun pilihan saklarnya; pilihan aslinya tetap tersimpan.
+  // Rutenya juga menjawab 403 (pastikanAksi).
+  const tampilan = useMemo(() => saringSaklarSidang(tampilanPilihan, currentUser), [tampilanPilihan, currentUser]);
+  const bolehJalannya = bolehAksi(currentUser, "sidang.jalannya");
+  /* === AKHIR HAK-PERAN === */
   const [panelTampilan, setPanelTampilan] = useState(false);
 
   // Layar penuh berjendela (perbaikan 1 Okt 2026, J4) - Esc keluar.
@@ -8567,6 +8576,8 @@ export function AletaEcourtSidang({
                                 tombol yang hilang, hanya urutannya. */}
                             {/* Skors / Lompat ke sini / Lanjutkan / Tandai berjalan - butir 10
                                 (2 Okt 2026). Tidak pernah pada baris hijau. */}
+                            {/* HAK-PERAN 12 Okt: hanya golongan sidang.jalannya / sidang.antrian */}
+                            {bolehJalannya ? (
                             <TombolRuangSidang
                               baris={baris}
                               aksi={aksiRuang}
@@ -8580,13 +8591,16 @@ export function AletaEcourtSidang({
                                 void muatTanggal(dari, sampai, nilaiKesiapan);
                               }}
                             />
+                            ) : null}
                             {/* Selesai - sinkron dua arah dengan antrian sidang
                                 (perbaikan 1 Okt 2026, J2). */}
+                            {bolehJalannya ? (
                             <TombolSelesaiSidang
                               baris={baris}
                               keadaan={selesaiTanda}
                               onBerubah={tandaSelesai.muatUlang}
                             />
+                            ) : null}
                           </div>
                         </td>
                       </tr>

@@ -9,6 +9,8 @@ import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 import { nextPrefixedId } from "@/server/shared/ids";
 import { getRequestAuditMetadata } from "@/server/shared/request";
+import { pastikanAksiAktor } from "@/server/modules/akses/hak-peran";
+import type { UserPersona } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,6 +74,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
+    pastikanAksiAktor(aktor as UserPersona, "status.data-pihak"); // HAK-PERAN 12 Okt: matriks peran
 
     const perkaraId = String(request.nextUrl.searchParams.get("perkaraId") || "").trim();
     const nomorPerkara = String(request.nextUrl.searchParams.get("nomorPerkara") || "").trim();

@@ -1,4 +1,5 @@
 import { modules, moduleVisibility } from "@/lib/mock-data";
+import { MODUL_MILIK_APLIKASI, modulTampil } from "@/lib/matriks-peran";
 import { type RoleId } from "@/lib/types";
 
 /**
@@ -41,7 +42,9 @@ const PINTASAN_PERAN: Record<string, string[]> = {
   panitera: ["/aleta-sipp", "/aleta-ecourt", "/perkara", "/bas"],
   "panitera-muda": ["/aleta-ecourt", "/perkara", "/arsip"],
   "panitera-pengganti": ["/bas", "/perkara", "/aleta-ecourt"],
-  jurusita: ["/aleta-antrian", "/perkara"],
+  // HAK-PERAN 12 Okt: Antrian (belum fix) & Ruang Kerja Perkara bukan untuk
+  // juru sita menurut matriks - Jadwal Sidang e-Court (Cetak relaas) di depan.
+  jurusita: ["/aleta-ecourt", "/aleta-antrian", "/perkara"],
   // Peran tambahan: hanya menambah papan penetapan, tempat Kerjakan berada.
   operator: ["/aleta-sipp"],
   bawaan: ["/manajemen-surat", "/tugas"],
@@ -64,8 +67,14 @@ const KETERANGAN: Record<string, string> = {
   "/tugas": "tugas dan disposisi",
 };
 
-function bolehDilihat(roleId: RoleId, modulId: string, roleIds: RoleId[], href: string) {
+function bolehDilihat(roleId: RoleId, modulId: string, roleIds: RoleId[], href: string, additionalRoleIds: string[] = []) {
   if (roleId === "super-admin") return true;
+  /* === HAK-PERAN 12 Okt === */
+  // Modul milik aplikasi di matriks peran (ALETA x SIPP, e-Audit, Judicia,
+  // Antrian, BAS, Ruang Kerja Perkara, ...) ikut matriks: pintasan ke
+  // aplikasi belum fix tidak lagi ditawarkan kepada ketua/hakim/panitera.
+  if (modulId in MODUL_MILIK_APLIKASI) return modulTampil({ roleId, additionalRoleIds }, modulId);
+  /* === AKHIR HAK-PERAN === */
   // Dasbor dan tugas dimiliki setiap orang yang dapat masuk - termasuk peran
   // yang belum punya peta keterlihatan sama sekali. Menyaringnya berarti
   // panel yang kosong bagi orang yang justru paling perlu petunjuk.
@@ -90,7 +99,7 @@ export function susunMenuEkstensi(roleId: string, additionalRoleIds: string[] = 
     if (hasil.some((h) => h.href === href)) continue;
     const modul = modules.find((m) => m.href === href);
     if (!modul) continue;
-    if (!bolehDilihat(peran, modul.id, modul.roleIds, href)) continue;
+    if (!bolehDilihat(peran, modul.id, modul.roleIds, href, additionalRoleIds)) continue;
     hasil.push({ href, label: modul.label, keterangan: KETERANGAN[href] ?? modul.description });
   }
   return hasil;

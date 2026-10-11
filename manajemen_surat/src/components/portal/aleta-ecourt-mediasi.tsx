@@ -47,6 +47,8 @@ import { LencanaStatusMediasi, TombolStatusMediasi, kelasBarisMediasi, useStatus
 import { ChevronDown, ChevronUp, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
 import { HasilMediasiDialog } from "@/components/portal/hasil-mediasi-dialog";
 import { bolehBuatHasilMediasi, type PenggunaHasilMediasi } from "@/lib/hasil-mediasi";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 import {
   KUNCI_SIMPANAN_TAMPILAN_MEDIASI,
   SAKLAR_TAMPILAN_MEDIASI,
@@ -240,7 +242,7 @@ function KeteranganTenggang({ baris }: { baris: Mediasi }) {
  * tahu ruas mana yang dapat diperbaiki di sini dan mana yang harus diperbaiki
  * di SIPP.
  */
-function RincianMediasi({ baris }: { baris: Mediasi }) {
+function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCatat?: boolean }) {
   const [kehadiran, setKehadiran] = useState<BarisKehadiran[] | null>(null);
   const [galat, setGalat] = useState("");
   const [sibuk, setSibuk] = useState(false);
@@ -480,9 +482,14 @@ function RincianMediasi({ baris }: { baris: Mediasi }) {
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-2">
+              {/* HAK-PERAN 12 Okt: simpan kehadiran hanya mediasi.catat; rute juga 403. */}
+              {bolehCatat ? (
               <Button size="sm" disabled={sibuk} onClick={() => void simpan()}>
                 {sibuk ? "Menyimpan…" : "Simpan kehadiran"}
               </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground">Kehadiran dicatat mediator/kepaniteraan perkara ini.</span>
+              )}
               {pesan ? (
                 <span
                   className={cn(
@@ -739,6 +746,9 @@ export function AletaEcourtMediasi({
    */
   pengguna?: (PenggunaHasilMediasi & { namaPengadilan?: string }) | null;
 } = {}) {
+  // HAK-PERAN 12 Okt: catat kehadiran/status mediasi hanya golongan mediasi.catat.
+  const penggunaAktif = usePenggunaAktifOpsional();
+  const bolehCatatMediasi = bolehAksiLayar(penggunaAktif, "mediasi.catat");
   const [dari, setDari] = useState(hariIni());
   const [sampai, setSampai] = useState(hariIni());
   const [cari, setCari] = useState("");
@@ -1389,9 +1399,11 @@ export function AletaEcourtMediasi({
                           </button>
                         </div>
                       ) : null}
+                      {bolehCatatMediasi ? (
                       <div className="mb-1">
                         <TombolStatusMediasi baris={{ mediasiId: String(baris.mediasiId), perkaraId: String(baris.perkaraId), nomorPerkara: baris.nomorPerkara, tanggal: baris.tanggal.slice(0, 10), tempat: baris.tempat }} status={statusMediasi.peta[kunciBaris]} onBerubah={statusMediasi.muatUlang} />
                       </div>
+                      ) : null}
                       {/* Berwarna primer selama rinciannya terbuka, kembali ke
                           rupa semula begitu ditutup - rupanya sama dengan
                           tombol Rincian di Antrian Sidang, lihat catatan di
@@ -1423,7 +1435,7 @@ export function AletaEcourtMediasi({
                   {dibuka === kunciBaris ? (
                     <tr className="border-t bg-muted/40">
                       <td colSpan={8} className="px-3 py-3">
-                        <RincianMediasi baris={baris} />
+                        <RincianMediasi baris={baris} bolehCatat={bolehCatatMediasi} />
                       </td>
                     </tr>
                   ) : null}
