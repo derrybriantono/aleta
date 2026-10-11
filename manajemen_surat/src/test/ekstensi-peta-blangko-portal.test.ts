@@ -165,12 +165,16 @@ function petaBertoken(a: string, b: string) {
   };
 }
 
+/** Kunci peta bawaan ekstensi (cermin putusan.peta-blangko), urut abjad. */
+const KUNCI_BAWAAN = CERMIN_EKSTENSI["putusan.peta-blangko"].map((e) => e.kunci).sort();
+
 // ============================================================================
 describe("satu jenis tambahan di portal berlaku untuk dua peramban, token tetap per peramban", () => {
-  it("tanpa portal: 4 jenis; dengan Perwalian disahkan di portal: 5 jenis di KEDUA peramban", async () => {
+  // Jumlah bawaan dihitung dari cermin (4 jenis lama + 3 jenis gugatan lain blok 4B 11 Okt), bukan diketik.
+  it("tanpa portal: semua jenis bawaan; dengan Perwalian disahkan di portal: bawaan + 1 di KEDUA peramban", async () => {
     const tanpa = peramban(portalMati);
     const petaTanpa = await tanpa.muat();
-    expect(Object.keys(petaTanpa).sort()).toEqual(["cerai gugat", "cerai talak", "dispensasi kawin", "itsbat nikah"]);
+    expect(Object.keys(petaTanpa).sort()).toEqual(KUNCI_BAWAAN);
 
     const portal = portalDengan(
       [baris("putusan.peta-blangko", PERWALIAN, { asal: "tambahan" })],
@@ -182,7 +186,7 @@ describe("satu jenis tambahan di portal berlaku untuk dua peramban, token tetap 
     const petaB = await B.muat();
 
     for (const peta of [petaA, petaB]) {
-      expect(Object.keys(peta)).toHaveLength(5);
+      expect(Object.keys(peta)).toHaveLength(KUNCI_BAWAAN.length + 1);
       expect(peta.perwalian).toMatchObject({ jenisAsli: "Perwalian", berkas: "[01] [Kabul] Perwalian", bawaan: true });
     }
     // Token a/b milik masing-masing peramban, tidak tertukar dan tidak dilepas
@@ -224,7 +228,7 @@ describe("bawaan yang dimatikan atau diganti di portal", () => {
     const A = peramban(portal);
     const peta = await A.muat();
     expect(peta["dispensasi kawin"]).toBeUndefined();
-    expect(Object.keys(peta)).toHaveLength(3);
+    expect(Object.keys(peta)).toHaveLength(KUNCI_BAWAAN.length - 1);
 
     const B = peramban(portal, {
       [KUNCI_PETA]: { "dispensasi kawin": { jenisAsli: "Dispensasi Kawin", berkas: "Pilihan saya", bawaan: false } },
@@ -259,6 +263,6 @@ describe("bawaan yang dimatikan atau diganti di portal", () => {
     expect(peta["dispensasi kawin"].berkas).toBe("DK (Full) Perempuan Hamil V.2");
     expect(peta["harta bersama"].berkas).toBe("[01] HB");
     expect(peta["cerai gugat"].a).toBe("tokenAAAAAAAA~1");
-    expect(Object.keys(peta).sort()).toEqual(["cerai gugat", "cerai talak", "dispensasi kawin", "harta bersama", "itsbat nikah"]);
+    expect(Object.keys(peta).sort()).toEqual(KUNCI_BAWAAN);
   });
 });

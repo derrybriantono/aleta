@@ -76,6 +76,42 @@ export const CERMIN_EKSTENSI = {
       },
       urutan: 3,
     },
+    /* === 4B 11 Okt === cermin blok Object.assign(ALAT_PETA_BAWAAN, ...) panel-alat.js (paket ABT abt-blangko-gugatan-lain) */
+    {
+      kunci: "harta bersama",
+      nilai: "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi",
+      data: {
+        jenisAsli: "Harta Bersama",
+        blangko: "Putusan Harta Bersama",
+        blangkoLain: ["Putusan HB"],
+        catatan:
+          "paket ABT abt-blangko-gugatan-lain - varian: [97] [Perdamaian] Akta Perdamaian; [98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban",
+      },
+      urutan: 4,
+    },
+    {
+      kunci: "kewarisan",
+      nilai: "[01] [Kabul] Kewarisan - Kontradiktur",
+      data: {
+        jenisAsli: "Kewarisan",
+        blangko: "Putusan Kewarisan",
+        blangkoLain: ["Putusan Waris"],
+        catatan: "paket ABT abt-blangko-gugatan-lain - varian: [97] [Perdamaian] Akta Perdamaian",
+      },
+      urutan: 5,
+    },
+    {
+      kunci: "poligami",
+      nilai: "[01] [Kabul] Izin Poligami",
+      data: {
+        jenisAsli: "Izin Poligami",
+        blangko: "Putusan Izin Poligami",
+        blangkoLain: ["Putusan Poligami"],
+        catatan: "paket ABT abt-blangko-gugatan-lain - varian: [98] [Cabut] Permohonan - P & T Hadir Sebelum Jawaban",
+      },
+      urutan: 6,
+    },
+    /* === AKHIR 4B === */
   ],
   "putusan.padanan-jenis": [
     { kunci: "itsbat nikah", nilai: "pengesahan perkawinan/istbat nikah", urutan: 0 },

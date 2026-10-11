@@ -145,8 +145,9 @@ describe("putusan.medan-borang = CALON_MEDAN_PANEL + MEDAN_PINTU (konten.js)", (
 describe("putusan.peta-blangko dan putusan.padanan-jenis = panel-alat.js yang dijalankan", () => {
   const { ALAT_PETA_BAWAAN, ALAT_PADANAN_JENIS } = jalankanPanelAlat();
 
-  it("ALAT_PETA_BAWAAN: 4 jenis, isi sama persis ('bawaan: true' = asal bawaan)", () => {
-    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(4);
+  // 4 jenis lama + 3 jenis gugatan lain (blok 4B 11 Okt: harta bersama, kewarisan, poligami).
+  it("ALAT_PETA_BAWAAN: 7 jenis, isi sama persis ('bawaan: true' = asal bawaan)", () => {
+    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(7);
     const cermin = CERMIN_EKSTENSI["putusan.peta-blangko"];
     const dariCermin = Object.fromEntries(
       cermin.map((e) => {
