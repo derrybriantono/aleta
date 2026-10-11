@@ -2597,12 +2597,17 @@ function alatKasirRentang(periode, tanggal) {
 
 function alatMenuPeran(situs, halaman, peran, opsi) {
   const o = opsi && typeof opsi === "object" ? opsi : {};
-  const golongan = alatGolonganPeran(peran);
+  // R 11 Okt: `peran` boleh objek pengguna { peran, bolehKasir, peranTambahan }
+  // - golongan menu Kasir/PTSP dikenali dari situ (alatGolonganMenuSemua).
+  const golonganSemua = alatGolonganMenuSemua(peran);
+  const golongan = golonganSemua[0];
   const tabel = ALAT_MENU_PERAN[situs] && ALAT_MENU_PERAN[situs][halaman];
-  if (!tabel || !tabel[golongan]) return null;
-  let menu = tabel[golongan].slice();
+  if (!tabel || !golonganSemua.some((g) => tabel[g])) return null;
+  let menu = [];
+  for (const g of golonganSemua) for (const k of tabel[g] || []) if (!menu.includes(k)) menu.push(k);
   if (golongan === "admin") return menu;
-  if (halaman === "perkara" && o.ditangani === false) {
+  // R 11 Okt: kasir & PTSP bekerja atas SEMUA perkara - "ditangani" tidak berlaku.
+  if (halaman === "perkara" && o.ditangani === false && golongan !== "kasir" && golongan !== "ptsp") {
     // Membaca boleh, mengerjakan tidak. KECUALI Penetapan bagi Ketua/Wakil
     // (agen W, uji ekstensi-menu-peran): PMH/PPP/PJS/PHS justru ditetapkan
     // SEBELUM ada majelis, jadi ketua belum pernah "menangani" perkara yang
@@ -2621,6 +2626,77 @@ function alatMenuPeran(situs, halaman, peran, opsi) {
   }
   return menu;
 }
+
+/* === R 11 Okt === */
+/*
+ * GOLONGAN MENU KASIR & PTSP (perbaikan tampilan per peran, 11 Okt 2026)
+ *
+ * "buat tampilannya sesuai dengan rolenya jangan sampai tercampur (kecuali
+ * superadmin dan admin)". Kasir (peran tambahan kasir/keuangan/bendahara,
+ * Analis Keuangan) dan petugas PTSP/operator selama ini jatuh ke golongan
+ * "lain" -> alatMenuPeran null -> SELURUH tab (Penetapan, Putusan, Juru Sita,
+ * ...) tampil bagi mereka. Golongan menu di sini HANYA untuk matriks menu;
+ * alatGolonganPeran tidak berubah (dipakai gerbang lain: saksiscan "lain",
+ * BAS massal, unggah putusan) supaya tidak ada kewenangan yang bergeser.
+ *
+ * Urutan pengenalan: golongan jabatan yang sudah ada menang (admin, ketua,
+ * hakim, panitera, jurusita). Hanya "lain" yang diperinci menjadi "kasir"
+ * dan/atau "ptsp"; yang tidak dikenali tetap "lain" (susunan lama).
+ */
+const ALAT_PERAN_TAMBAHAN_KASIR = ["kasir", "petugas_keuangan_perkara", "bendahara_penerimaan", "bendahara_pengeluaran"];
+const ALAT_PERAN_TAMBAHAN_PTSP = [
+  "petugas_ptsp",
+  "petugas_meja_informasi",
+  "petugas_pendaftaran_perkara",
+  "resepsionis",
+  "operator_sipp",
+  "operator_edoc",
+  "petugas_ecourt",
+  "petugas_validasi_ecourt",
+  "petugas_gugatan_mandiri",
+];
+// "Kasubag Umum dan Keuangan" BUKAN kasir (kesekretariatan) - polanya sempit;
+// jawaban server bolehKasir dan peran tambahan yang menentukan selebihnya.
+const ALAT_POLA_PERAN_KASIR = /kasir|bendahara|analis keuangan|keuangan perkara/;
+const ALAT_POLA_PERAN_PTSP = /ptsp|operator|meja informasi|pendaftaran|resepsionis|front office/;
+
+ALAT_MENU_PERAN.sipp.perkara.kasir = ["kasir", "perkara"];
+ALAT_MENU_PERAN.sipp.perkara.ptsp = ["ptsp", "berkas", "perkara"];
+// Kasir massal/rekap/pengingat bukan menu daftar umum: tempatnya halaman
+// daftar jurnal keuangan (konten.js r11HalamanJurnalDaftar), bukan dashboard.
+ALAT_MENU_PERAN.sipp.daftar.kasir = [];
+// Penetapan massal tetap ditawarkan: gerbang kemampuan "penunjukan" (diatur
+// Admin per peran) yang memutuskan di konten.js - matriks hanya mengurangi.
+ALAT_MENU_PERAN.sipp.daftar.ptsp = ["penetapan-massal"];
+// ABT: kasir tidak punya pekerjaan blangko. PTSP di ABT belum diputuskan
+// pengguna - tetap susunan lama (tanpa kunci).
+ALAT_MENU_PERAN.abt.perkara.kasir = [];
+ALAT_MENU_PERAN.abt.daftar.kasir = [];
+
+/**
+ * Golongan menu (satu atau lebih, urut) untuk nama peran ATAU objek pengguna
+ * { peran, bolehKasir?, peranTambahan? }. Selalu memulangkan larik tak kosong.
+ */
+function alatGolonganMenuSemua(pengguna) {
+  const objek = pengguna && typeof pengguna === "object" ? pengguna : null;
+  const peran = objek ? objek.peran : pengguna;
+  const dasar = alatGolonganPeran(peran);
+  if (dasar !== "lain") return [dasar];
+  const p = String(peran || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  const tambahan = objek && Array.isArray(objek.peranTambahan) ? objek.peranTambahan.map((x) => String(x || "").toLowerCase()) : [];
+  const hasil = [];
+  if (ALAT_POLA_PERAN_KASIR.test(p) || tambahan.some((x) => ALAT_PERAN_TAMBAHAN_KASIR.includes(x)) || (objek && objek.bolehKasir === true)) {
+    hasil.push("kasir");
+  }
+  if (ALAT_POLA_PERAN_PTSP.test(p) || tambahan.some((x) => ALAT_PERAN_TAMBAHAN_PTSP.includes(x))) hasil.push("ptsp");
+  return hasil.length ? hasil : ["lain"];
+}
+
+/** Golongan menu utama (yang pertama) - "kasir"/"ptsp" hanya bila jabatannya "lain". */
+function alatGolonganMenu(pengguna) {
+  return alatGolonganMenuSemua(pengguna)[0];
+}
+/* === AKHIR R 11 Okt === */
 
 /*
  * ============================================================================

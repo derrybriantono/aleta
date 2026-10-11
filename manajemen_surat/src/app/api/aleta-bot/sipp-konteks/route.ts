@@ -108,6 +108,9 @@ export async function GET(request: NextRequest) {
         bolehUnggahPutusan: bolehUnggahPutusan(actor),
         // Tab Kasir (1.189.x) - aturan Kasir 1.186; rute kasir memeriksa ulang.
         bolehKasir: bolehKasir(actor),
+        // Peran tambahan (kasir, petugas_ptsp, ...) - golongan menu Kasir/PTSP
+        // panel ekstensi (11 Okt 2026); sama dengan ruas di /ekstensi/siapa.
+        peranTambahan: actor.additionalRoleIds ?? [],
       },
       kapabilitas,
     });
