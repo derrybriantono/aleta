@@ -14447,6 +14447,8 @@ function soreGambarIsi(k, data) {
   p4GambarEcourt(w.usulan, data);
   // KONTAK-EC 11 Okt: kontak & domisili elektronik dari e-Court (lihat k5GambarKontak).
   if (typeof k5GambarKontak === "function") k5GambarKontak(w.usulan, data);
+  // PEKERJAAN 11 Okt: kategori pekerjaan pihak yang dibaca kueri ABT 8510/8524/8533 (lihat pkGambarPekerjaan).
+  if (typeof pkGambarPekerjaan === "function") pkGambarPekerjaan(w.usulan, data);
   // Perbaikan 1 Okt butir 8 (UI Baru saja): posita & keterangan saksi rapi.
   const rapiPilihan = t6Modern() ? a1GambarRapi(k, w.usulan, data.rapi) : [];
   soreBarisInput(k, pilih, hurufPilihan, rapiPilihan);
@@ -17848,3 +17850,64 @@ function k5GambarKontak(wadah, data) {
   wadah.appendChild(kotak);
 }
 /* === AKHIR KONTAK-EC === */
+
+/* === PEKERJAAN 11 Okt === */
+/**
+ * ============================================================================
+ * PEKERJAAN (11 Okt 2026, agen 7): KARTU "PEKERJAAN TERBACA" DI PANEL ABT
+ * ============================================================================
+ *
+ * Variabel ABT 8510 (duduk perkara), 8524 (pertimbangan) dan 8533 (BAS) -
+ * kalimat izin atasan PNS/POLRI/TNI/BUMN-BUMD/perangkat desa - kini membaca
+ * kategori pekerjaan #0046# secara DINAMIS (paket abt-pekerjaan-dinamis):
+ * pilihan SIPP baku tetap seperti dulu; "Lain-Lain" dibaca dari uraiannya
+ * (PNS/ASN/CPNS/PPPK -> PNS, Anggota Polri -> POLRI, ...; pensiunan, honorer,
+ * kontrak, swasta -> bukan). Kartu ini MENAMPILKAN hasil baca itu untuk tiap
+ * pihak (bot: data.sipp.pekerjaanPihak - aturan yang sama, kamus
+ * pekerjaan.json) agar petugas tahu MENGAPA kalimat izin atasan muncul atau
+ * tidak. Tidak menulis apa pun.
+ */
+const PK_ROMAWI = ["", "", " II", " III", " IV", " V"];
+const PK_KATEGORI_IZIN = Object.freeze(["PNS", "POLRI", "TNI", "BUMN", "BUMD", "DESA"]);
+
+/** Satu baris kartu (murni). */
+function pkBarisPihak(o) {
+  if (!o) return "";
+  const dasar = Number(o.pihakKe) === 1 ? String(nilaiVariabel("0046") || "").trim() || "Penggugat" : String(nilaiVariabel("0047") || "").trim() || "Tergugat";
+  const sebutan = `${dasar}${PK_ROMAWI[Number(o.urutan) || 1] || ""}`;
+  const pilihan = o.asal === "pilihan" ? "pilihan SIPP baku" : o.kunci === "KOSONG" ? "kosong di SIPP" : "pilihan SIPP: Lain-Lain";
+  const kategori = o.kunci === "BUKAN" || o.kunci === "LAIN" || o.kunci === "KOSONG" ? "" : o.label || o.kunci;
+  const isi =
+    o.kunci === "KOSONG"
+      ? "pekerjaan belum diisi di SIPP"
+      : kategori
+        ? `${kategori}${o.asal === "pppk" ? " (PPPK, digabung ke PNS)" : ""} (dari teks '${o.pekerjaan}', ${pilihan})`
+        : `${o.kalimat || o.pekerjaan}`;
+  return `${sebutan}${o.nama ? ` - ${o.nama}` : ""}: ${isi}`;
+}
+
+/** Kartu lipat "Pekerjaan terbaca" di bawah kartu usulan. */
+function pkGambarPekerjaan(wadah, data) {
+  const daftar = data && data.sipp && Array.isArray(data.sipp.pekerjaanPihak) ? data.sipp.pekerjaanPihak : [];
+  if (!wadah || !daftar.length) return;
+  const p1 = daftar.find((o) => Number(o.pihakKe) === 1 && Number(o.urutan) === 1) || null;
+  const kotak = document.createElement("details");
+  kotak.className = "aleta-abt-kartu aleta-pk-pekerjaan";
+  const izin = p1 && PK_KATEGORI_IZIN.includes(p1.kunci);
+  const ringkas = p1
+    ? `Pekerjaan terbaca: ${p1.kunci === "BUKAN" || p1.kunci === "LAIN" || p1.kunci === "KOSONG" ? p1.kalimat || p1.pekerjaan || "-" : `${p1.label || p1.kunci} (dari teks '${p1.pekerjaan}', ${p1.asal === "pilihan" ? "pilihan SIPP baku" : "pilihan SIPP: Lain-Lain"})`}`
+    : "Pekerjaan terbaca";
+  kotak.appendChild(buatElemen("summary", "aleta-abt-nama", ringkas));
+  for (const o of daftar) kotak.appendChild(buatElemen("div", "aleta-abt-kutipan", pkBarisPihak(o)));
+  kotak.appendChild(
+    buatElemen(
+      "div",
+      "aleta-t6-lembut aleta-teknis",
+      izin
+        ? `Kalimat izin atasan (#8510# duduk perkara, #8524# pertimbangan, #8533# BAS) dipakai untuk ${p1.label || p1.kunci} pada cerai gugat/talak - nomor/tanggal/pejabat surat izin dari SIPP (Izin Cerai). Hanya dibaca, tidak ada yang ditulis dari sini.`
+        : "Kalimat izin atasan (#8510#/#8524#/#8533#) TIDAK dipakai untuk pekerjaan #0046# ini. Hanya dibaca, tidak ada yang ditulis dari sini."
+    )
+  );
+  wadah.appendChild(kotak);
+}
+/* === AKHIR PEKERJAAN === */

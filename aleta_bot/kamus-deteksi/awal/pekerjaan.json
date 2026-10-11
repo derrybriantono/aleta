@@ -1,0 +1,653 @@
+{
+  "kelompok": "pekerjaan",
+  "versi": 1,
+  "catatan": "PEKERJAAN (11 Okt 2026, agen 7) - KELOMPOK BARU: kategori pekerjaan pihak dari kolom bebas SIPP pihak.pekerjaan (PA mengetik teks bebas; tidak ada kolom pilihan/id). Kunci: PNS | TNI | POLRI | BUMN | BUMD | DESA (kepala/perangkat desa - cabang lama variabel ABT 8510/8524/8533) | BUKAN (penyangkal). PPPK DIGABUNG ke PNS (keputusan pengguna 11 Okt). Urutan baca (sama persis di JS pekerjaanPihakService.klasifikasiPekerjaan dan di kueri ABT): (1) peran 'pilihan' = teks persis yang sejak dulu dibandingkan kueri ABT lama (pembanding '=' MySQL: tanpa beda huruf besar, spasi di belakang diabaikan) -> hasil lama TIDAK berubah; (2) 'penyangkal-kuat' (pensiunan, mantan, keluarga anggota, Satpol PP, non-PNS) -> BUKAN; (3) 'pppk' -> PNS; (4) 'penyangkal-lemah' (honorer, kontrak, swasta, satpam) -> BUKAN; (5) 'deteksi' menurut urutan. regexSql = padanan Henry Spencer (MariaDB 5.5 satker) yang dipakai kueri ABT - dijaga uji deteksi-pekerjaan-11okt agar sama arti dengan regex JS. ukur: semua pihak perkara_pihak1+2 sipp_donggala salinan 9 Okt (20.353 baris, 1.248 teks berbeda), diperiksa satu per satu.",
+  "pola": [
+    {
+      "kode": "pekerjaan-pilihan-pns",
+      "label": "Teks baku 'Pegawai Negeri Sipil' (pembanding lama ABT)",
+      "kunci": "PNS",
+      "peran": "pilihan",
+      "urutan": 1,
+      "samaDengan": [
+        "Pegawai Negeri Sipil"
+      ],
+      "regex": "^Pegawai Negeri Sipil *$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Pegawai Negeri Sipil",
+        "PEGAWAI NEGERI SIPIL "
+      ],
+      "contohSalah": [
+        "Pegawai Negeri Sipil (PNS)",
+        "Pensiunan Pegawai Negeri Sipil"
+      ],
+      "ukur": {
+        "n": 529,
+        "tepat": 529,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Sama persis dengan cabang lama 8510/8524/8533 - hasil lama dipertahankan."
+    },
+    {
+      "kode": "pekerjaan-pilihan-polri",
+      "label": "Teks baku POLRI/Polisi/Polwan (pembanding lama ABT)",
+      "kunci": "POLRI",
+      "peran": "pilihan",
+      "urutan": 2,
+      "samaDengan": [
+        "POLRI",
+        "Polisi",
+        "polwan"
+      ],
+      "regex": "^(?:POLRI|Polisi|polwan) *$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "POLRI",
+        "polisi"
+      ],
+      "contohSalah": [
+        "Anggota POLRI",
+        "Polisi Pamong praja"
+      ],
+      "ukur": {
+        "n": 71,
+        "tepat": 71,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Sama persis dengan cabang lama."
+    },
+    {
+      "kode": "pekerjaan-pilihan-tni",
+      "label": "Teks baku Tentara Nasional Indonesia/TNI/Tentara (pembanding lama ABT)",
+      "kunci": "TNI",
+      "peran": "pilihan",
+      "urutan": 3,
+      "samaDengan": [
+        "Tentara Nasional Indonesia",
+        "TNI",
+        "Tentara"
+      ],
+      "regex": "^(?:Tentara Nasional Indonesia|TNI|Tentara) *$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Tentara Nasional Indonesia",
+        "TNI"
+      ],
+      "contohSalah": [
+        "Pensiunan TNI",
+        "TNI AD"
+      ],
+      "ukur": {
+        "n": 12,
+        "tepat": 12,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Sama persis dengan cabang lama."
+    },
+    {
+      "kode": "pekerjaan-pilihan-bumn",
+      "label": "Teks baku Pegawai BUMN/BUMD (pembanding lama ABT)",
+      "kunci": "BUMN",
+      "peran": "pilihan",
+      "urutan": 4,
+      "samaDengan": [
+        "Pegawai BUMN/BUMD",
+        "Pegawai BUMN",
+        "Pegawai BUMD",
+        "BUMN/BUMD",
+        "BUMN",
+        "BUMD"
+      ],
+      "regex": "^(?:Pegawai BUMN/BUMD|Pegawai BUMN|Pegawai BUMD|BUMN/BUMD|BUMN|BUMD) *$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Pegawai BUMN/BUMD",
+        "BUMN"
+      ],
+      "contohSalah": [
+        "Karyawan BUMN",
+        "Karyawan Swasta (Karyawan BUMN)"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Sama persis dengan cabang lama (BUMN dan BUMD satu kalimat 'Pegawai BUMN/BUMD')."
+    },
+    {
+      "kode": "pekerjaan-pilihan-desa",
+      "label": "Teks baku Kepala/Aparat/Sekretaris Desa (pembanding lama ABT)",
+      "kunci": "DESA",
+      "peran": "pilihan",
+      "urutan": 5,
+      "samaDengan": [
+        "Kepala Desa",
+        "Kades",
+        "aparat desa",
+        "sekretaris desa",
+        "Sekdes"
+      ],
+      "regex": "^(?:Kepala Desa|Kades|aparat desa|sekretaris desa|Sekdes) *$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Kepala Desa",
+        "SEKDES"
+      ],
+      "contohSalah": [
+        "Kepala Desa Pakuli",
+        "Bidan Desa"
+      ],
+      "ukur": {
+        "n": 5,
+        "tepat": 5,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Sama persis dengan cabang lama."
+    },
+    {
+      "kode": "pekerjaan-bukan-pensiunan",
+      "label": "Pensiunan / purnawirawan (bukan PNS/TNI/POLRI aktif)",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-kuat",
+      "golongan": "pensiunan",
+      "urutan": 10,
+      "regex": "\\bpensi|purnawirawan|\\bpurna\\s*(?:bakti|tugas)",
+      "regexSql": "[[:<:]]pensi|purnawirawan|[[:<:]]purna[[:space:]]*(bakti|tugas)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Pensiunan PNS",
+        "Pensiuanan PNS",
+        "pensiunan PNS Dinas Perhubungan",
+        "Pensiunan TNI AD",
+        "Purnawirawan POLRI"
+      ],
+      "contohSalah": [
+        "Pegawai Negeri Sipil",
+        "Dispensasi"
+      ],
+      "ukur": {
+        "n": 105,
+        "tepat": 105,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Pensiunan PNS 50, POLRI 5, TNI 7, BUMN 1, pensiunan tanpa sebutan/guru 42. Perlakuan pensiunan menunggu keputusan pengguna (hasil-agen7.md); sekarang TIDAK mendapat kalimat izin atasan."
+    },
+    {
+      "kode": "pekerjaan-bukan-mantan",
+      "label": "Mantan / bekas / eks",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-kuat",
+      "golongan": "mantan",
+      "urutan": 11,
+      "regex": "\\b(?:mantan|bekas|eks|ex)\\b",
+      "regexSql": "[[:<:]](mantan|bekas|eks|ex)[[:>:]]",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Mantan PNS",
+        "eks anggota TNI"
+      ],
+      "contohSalah": [
+        "PNS Dinas Ekonomi",
+        "Eksportir"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Hanya \"Mantan PNS\" (2 baris). Penyangkal - hanya mencegah kalimat izin atasan."
+    },
+    {
+      "kode": "pekerjaan-bukan-keluarga",
+      "label": "Istri/suami/anak anggota (bukan pegawainya sendiri)",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-kuat",
+      "golongan": "keluarga",
+      "urutan": 12,
+      "regex": "\\b(?:istri|isteri|suami|anak|janda|duda)\\s+(?:dari\\s+|seorang\\s+)?(?:anggota|pns|tni|polri|polisi|asn|tentara|pegawai|prajurit|almarhum|alm)\\b|\\b(?:persit|bhayangkari)\\b",
+      "regexSql": "[[:<:]](istri|isteri|suami|anak|janda|duda)[[:space:]]+(dari[[:space:]]+|seorang[[:space:]]+)?(anggota|pns|tni|polri|polisi|asn|tentara|pegawai|prajurit|almarhum|alm)[[:>:]]|[[:<:]](persit|bhayangkari)[[:>:]]",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Istri anggota TNI",
+        "anak polisi",
+        "Ibu Rumah Tangga (istri PNS)",
+        "Persit Kartika Chandra Kirana"
+      ],
+      "contohSalah": [
+        "PNS Dinas Perlindungan Anak",
+        "Anak Buah Kapal"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Tidak pernah muncul di data Donggala; dijaga agar 'istri anggota TNI' tidak terbaca TNI."
+    },
+    {
+      "kode": "pekerjaan-bukan-tegas",
+      "label": "Bukan PNS / non-ASN (tegas)",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-kuat",
+      "golongan": "non-pns",
+      "urutan": 14,
+      "regex": "\\bbukan\\b|\\bnon[\\s-]*(?:pns|asn)\\b|\\bpbpns\\b",
+      "regexSql": "[[:<:]]bukan[[:>:]]|[[:<:]]non[[:space:]-]*(pns|asn)[[:>:]]|[[:<:]]pbpns[[:>:]]",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pegawai PBPNS",
+        "Tenaga non ASN",
+        "Non-PNS"
+      ],
+      "contohSalah": [
+        "PNS",
+        "ASN PPPK"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 3,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "'Pegawai PBPNS' (3 baris) dibaca sebagai Pegawai Bukan PNS."
+    },
+    {
+      "kode": "pekerjaan-pppk",
+      "label": "PPPK / P3K / Pegawai Pemerintah dengan Perjanjian Kerja (digabung ke PNS)",
+      "kunci": "PNS",
+      "peran": "pppk",
+      "urutan": 20,
+      "regex": "\\b(?:pppk|p3k|nipppk)\\b|perjanjian\\s+kerja",
+      "regexSql": "[[:<:]](pppk|p3k|nipppk)[[:>:]]|perjanjian[[:space:]]+kerja",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "PPPK (Dinas Pendidikan Luwuk)",
+        "ASN PPPK",
+        "Guru/PPPK",
+        "Pegawai Pemerintahan dengan Perjanjian Kerja (Guru SMAN 1 Rio Pakava)",
+        "P3K Guru"
+      ],
+      "contohSalah": [
+        "Guru Honorer SMP LPPKD",
+        "Karyawan Kontrak"
+      ],
+      "ukur": {
+        "n": 55,
+        "tepat": 55,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dibaca SEBELUM penyangkal lemah (honorer/kontrak) karena \"perjanjian kerja\" = PPPK. Termasuk PPPK paruh waktu (2 baris) dan \"Pegawai P3K DPRD Provinsi\"."
+    },
+    {
+      "kode": "pekerjaan-bukan-honorer",
+      "label": "Honorer / honor / honorarium (bukan PNS)",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-lemah",
+      "golongan": "honorer",
+      "urutan": 30,
+      "regex": "\\bhon(?:or|er|oner|arer)",
+      "regexSql": "[[:<:]]hon(or|er|oner|arer)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Honorer",
+        "Guru Honor",
+        "Hononer",
+        "Honerer (Guru MTS Al-Khairaat Sigimpu)",
+        "Honorarium (RSUD Pendau Tambu)",
+        "Karyawan Honorer"
+      ],
+      "contohSalah": [
+        "PNS",
+        "Hongkong"
+      ],
+      "ukur": {
+        "n": 796,
+        "tepat": 796,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Honorer/tenaga honor di instansi pemerintah BUKAN PNS (tanpa NIP, tanpa izin atasan PP 10/1983)."
+    },
+    {
+      "kode": "pekerjaan-bukan-kontrak",
+      "label": "Kontrak / sukarela / harian lepas / PTT / magang",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-lemah",
+      "golongan": "kontrak",
+      "urutan": 31,
+      "regex": "\\b(?:kontrak|sukarela|magang|phl|thl|ptt)\\b|outsourc|harian\\s+lepas|tenaga\\s+harian",
+      "regexSql": "[[:<:]](kontrak|sukarela|magang|phl|thl|ptt)[[:>:]]|outsourc|harian[[:space:]]+lepas|tenaga[[:space:]]+harian",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Karyawan Kontrak Dinas Peternakan Sigi",
+        "Pegawai Harian lepas(PHL) badan Satuan Pamong Praja",
+        "Bidan PTT",
+        "Tenaga Sukarela Puskesmas"
+      ],
+      "contohSalah": [
+        "PNS",
+        "Kontraktor"
+      ],
+      "ukur": {
+        "n": 323,
+        "tepat": 323,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Buruh harian lepas 312, tenaga/karyawan kontrak 8, PTT 1, PHL 2. Kontraktor (pemborong) tidak tertangkap - kata utuh."
+    },
+    {
+      "kode": "pekerjaan-bukan-swasta",
+      "label": "Swasta / wiraswasta / satpam / agen BRILink / SPBU (penyangkal BUMN-BUMD dari nama perusahaan)",
+      "kunci": "BUKAN",
+      "peran": "penyangkal-lemah",
+      "golongan": "swasta",
+      "urutan": 32,
+      "regex": "swasta|\\b(?:satpam|security|cleaning|spbu|agen|brilink)\\b|\\bbri\\s*link\\b",
+      "regexSql": "swasta|[[:<:]](satpam|security|cleaning|spbu|agen|brilink)[[:>:]]|[[:<:]]bri[[:space:]]*link[[:>:]]",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Karyawan Swasta (PLN Instalasi Listrik)",
+        "Swasta (Karyawan Bank BSG)",
+        "Security Bank BPR Lokadana Donggala",
+        "Satpam (PT. Briya Utama)",
+        "Karyawan (Admin BRI Link)",
+        "Operator SPBU ( Pertamina)"
+      ],
+      "contohSalah": [
+        "Karyawan PDAM",
+        "Karyawan BUMN (PLTU Lero Tatari)"
+      ],
+      "ukur": {
+        "n": 2903,
+        "tepat": 2896,
+        "salahTangkap": 7,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Diragukan 7 baris yang menulis swasta/wiraswasta bersama PLN/Telkom/BUMN (mis. \"Wiraswasta (Pegawai PLN)\", \"Karyawan Swasta (Karyawan BUMN)\") - teksnya bertentangan sendiri, sengaja dibiarkan BUKAN; panel menyebutnya agar petugas memeriksa. Agen BRILink dan operator SPBU bukan pegawai BRI/Pertamina."
+    },
+    {
+      "kode": "pekerjaan-pns",
+      "label": "PNS / ASN / CPNS / Pegawai Negeri / Aparatur Sipil",
+      "kunci": "PNS",
+      "peran": "deteksi",
+      "urutan": 40,
+      "regex": "\\b(?:c?pns|asn)\\b|pegawai\\s+nege?ri|aparatur\\s+sipil",
+      "regexSql": "[[:<:]](c?pns|asn)[[:>:]]|pegawai[[:space:]]+nege?ri|aparatur[[:space:]]+sipil",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "PNS",
+        "Pegawai Negeri Sipil (PNS)",
+        "Pegawai Negri Sipil",
+        "Aparatur Sipil Negara",
+        "Aparatur Sipil Negeri",
+        "PNS ( Guru SMA N 3 Palu )",
+        "Pns guru di SDN 24 Dampelas",
+        "CPNS Guru SD Panggalasiang",
+        "ASN Dinas Pendidikan"
+      ],
+      "contohSalah": [
+        "Pegawai PBPNS",
+        "Pegawai Swasta",
+        "Guru"
+      ],
+      "ukur": {
+        "n": 186,
+        "tepat": 186,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Termasuk CPNS 5 baris dan \"PNS polri di Ditpolair\" (PNS di lingkungan Polri). Perlakuan CPNS ditanyakan di laporan."
+    },
+    {
+      "kode": "pekerjaan-bukan-satpol",
+      "label": "Satpol PP / Polisi Pamong Praja (bukan POLRI)",
+      "kunci": "BUKAN",
+      "peran": "deteksi",
+      "golongan": "satpol",
+      "urutan": 41,
+      "regex": "pamong\\s*praja|\\bsat\\s*pol\\b",
+      "regexSql": "pamong[[:space:]]*praja|[[:<:]]sat[[:space:]]*pol[[:>:]]",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Polisi Pamong praja",
+        "Satpol PP",
+        "Honorer (SATPOL PP KAbupaten Donggala)."
+      ],
+      "contohSalah": [
+        "POLRI",
+        "Polres Donggala"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dibaca SESUDAH deteksi PNS (urutan 41) dan SEBELUM POLRI: \"PNS (Satuan Pamong Praja)\" tetap PNS, \"Polisi Pamong Praja\"/\"Satpol PP\" tanpa kata PNS tidak dibaca POLRI. Satpol PP yang PNS tetapi tidak menulis \"PNS\" tidak mendapat kalimat izin atasan - lihat laporan."
+    },
+    {
+      "kode": "pekerjaan-polri",
+      "label": "POLRI / polisi / Brimob / Bhabinkamtibmas / pangkat polisi",
+      "kunci": "POLRI",
+      "peran": "deteksi",
+      "urutan": 42,
+      "regex": "\\b(?:polri|polisi|polwan|kepolisian|brimob|bhabinkamtibmas|bhabin|polres|polresta|polsek|polda|bripka|brigpol|brigadir|briptu|bripda|aiptu|aipda|ipda|iptu|kompol|akbp)\\b",
+      "regexSql": "[[:<:]](polri|polisi|polwan|kepolisian|brimob|bhabinkamtibmas|bhabin|polres|polresta|polsek|polda|bripka|brigpol|brigadir|briptu|bripda|aiptu|aipda|ipda|iptu|kompol|akbp)[[:>:]]",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Anggota POLRI",
+        "Kepolisian RI (POLRI)",
+        "Polisi",
+        "Bhabinkamtibmas Polsek Banawa",
+        "Brimob"
+      ],
+      "contohSalah": [
+        "Politeknik",
+        "Satpam Polindo"
+      ],
+      "ukur": {
+        "n": 7,
+        "tepat": 7,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "n kecil (7) - belum boleh pasti walau 7/7 tepat. Contoh salah yang disangkal pola lain (pensiunan, Satpol PP, swasta/BRILink/SPBU) diuji di deteksi-pekerjaan-11okt.test.ts, bukan di contoh pola ini (regex ini sendiri memang cocok)."
+    },
+    {
+      "kode": "pekerjaan-tni",
+      "label": "TNI / tentara / prajurit / Babinsa / Angkatan Darat-Laut-Udara",
+      "kunci": "TNI",
+      "peran": "deteksi",
+      "urutan": 43,
+      "regex": "\\b(?:tni|tentara|prajurit|babinsa|kodim|koramil|korem|kodam|lanal|lanud|yonif|marinir|kostrad|kopassus|serda|sertu|serka|serma|kopda|koptu|kopka|praka|pratu|prada|letda|lettu)\\b|angkatan\\s+(?:darat|laut|udara)",
+      "regexSql": "[[:<:]](tni|tentara|prajurit|babinsa|kodim|koramil|korem|kodam|lanal|lanud|yonif|marinir|kostrad|kopassus|serda|sertu|serka|serma|kopda|koptu|kopka|praka|pratu|prada|letda|lettu)[[:>:]]|angkatan[[:space:]]+(darat|laut|udara)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "TNI AD",
+        "Anggota TNI Angkatan Darat",
+        "Prajurit TNI",
+        "Babinsa Koramil Banawa",
+        "Angkatan Laut"
+      ],
+      "contohSalah": [
+        "Pelaut",
+        "Kontraktor"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Semua TNI aktif di Donggala ditulis teks baku (12); tidak ada kemunculan lain. Contoh salah yang disangkal pola lain (pensiunan, Satpol PP, swasta/BRILink/SPBU) diuji di deteksi-pekerjaan-11okt.test.ts, bukan di contoh pola ini (regex ini sendiri memang cocok)."
+    },
+    {
+      "kode": "pekerjaan-bumn",
+      "label": "Karyawan BUMN (Pertamina, PLN, Telkom, BRI/BNI/Mandiri/BTN/BSI, Pegadaian, Pos, Pelni, KAI, ...)",
+      "kunci": "BUMN",
+      "peran": "deteksi",
+      "urutan": 44,
+      "regex": "\\b(?:bumn|persero|pertamina|pln|telkom|bri|bni|btn|bsi|pegadaian|pelni|kai|taspen|asabri|pelindo|bulog|ptpn|perhutani|asdp|damri|pgn)\\b|bank\\s+(?:mandiri|rakyat\\s+indonesia|negara\\s+indonesia|tabungan\\s+negara|syariah\\s+indonesia)|kereta\\s+api|pos\\s+indonesia|kantor\\s+pos|\\bpt\\.?\\s*pos\\b|jasa\\s+raharja|angkasa\\s+pura|garuda\\s+indonesia|semen\\s+tonasa|permodalan\\s+nasio[a-z]*\\s+madani|\\bpnm\\b",
+      "regexSql": "[[:<:]](bumn|persero|pertamina|pln|telkom|bri|bni|btn|bsi|pegadaian|pelni|kai|taspen|asabri|pelindo|bulog|ptpn|perhutani|asdp|damri|pgn)[[:>:]]|bank[[:space:]]+(mandiri|rakyat[[:space:]]+indonesia|negara[[:space:]]+indonesia|tabungan[[:space:]]+negara|syariah[[:space:]]+indonesia)|kereta[[:space:]]+api|pos[[:space:]]+indonesia|kantor[[:space:]]+pos|[[:<:]]pt[.]?[[:space:]]*pos[[:>:]]|jasa[[:space:]]+raharja|angkasa[[:space:]]+pura|garuda[[:space:]]+indonesia|semen[[:space:]]+tonasa|permodalan[[:space:]]+nasio[a-z]*[[:space:]]+madani|[[:<:]]pnm[[:>:]]",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Karyawan BUMN",
+        "Karyawan BUMN (PLTU Lero Tatari)",
+        "karyawan pertamina",
+        "Pegawai Bank BRI",
+        "Pegawai PT Pos Indonesia",
+        "Karyawan PT PLN (Persero)",
+        "Karyawan PT Permodalan Nasioal Madani"
+      ],
+      "contohSalah": [
+        "Karyawan PT.Mandiri Tunas Finance",
+        "Honorer ( Guru TK KB Bina Mandiri Lawua )",
+        "Telkomsel",
+        "Karyawan PT Briya Utama"
+      ],
+      "ukur": {
+        "n": 16,
+        "tepat": 14,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "14 pasti BUMN + 2 \"Karyawan (Kantor) PLN\" yang bisa juga tenaga alih daya - ragu. Anak perusahaan (Mandiri Tunas Finance, Telkomsel, Pertamina Lubricants, Telkom Akses) bukan BUMN dan tidak tertangkap. Contoh salah yang disangkal pola lain (pensiunan, Satpol PP, swasta/BRILink/SPBU) diuji di deteksi-pekerjaan-11okt.test.ts, bukan di contoh pola ini (regex ini sendiri memang cocok)."
+    },
+    {
+      "kode": "pekerjaan-bumd",
+      "label": "Karyawan BUMD (Bank Sulteng, PDAM, Perusda/Perumda, BPD)",
+      "kunci": "BUMD",
+      "peran": "deteksi",
+      "urutan": 45,
+      "regex": "\\b(?:bumd|pdam|perumda|perusda|perseroda|bsg)\\b|bank\\s+(?:sulteng|daerah|sulutgo|sulselbar|bpd)|\\bbpd\\s+sulteng|perusahaan\\s+daerah",
+      "regexSql": "[[:<:]](bumd|pdam|perumda|perusda|perseroda|bsg)[[:>:]]|bank[[:space:]]+(sulteng|daerah|sulutgo|sulselbar|bpd)|[[:<:]]bpd[[:space:]]+sulteng|perusahaan[[:space:]]+daerah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Karyawan BUMD",
+        "Karyawan PDAM",
+        "Karyawan Bank Sulteng Donggala",
+        "Pegawai Perusda Donggala"
+      ],
+      "contohSalah": [
+        "Security Bank BPR Lokadana Donggala",
+        "Anggota BPD Desa Maku"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "BPD (Badan Permusyawaratan Desa) TIDAK dibaca BUMD - hanya \"Bank BPD\"/\"BPD Sulteng\". BPR swasta tidak tertangkap. Kalimat ABT BUMD = kalimat lama \"Pegawai BUMN/BUMD\". Contoh salah yang disangkal pola lain (pensiunan, Satpol PP, swasta/BRILink/SPBU) diuji di deteksi-pekerjaan-11okt.test.ts, bukan di contoh pola ini (regex ini sendiri memang cocok)."
+    },
+    {
+      "kode": "pekerjaan-desa",
+      "label": "Kepala desa / sekretaris desa / Kaur-Kasi / kepala dusun / aparat-perangkat desa",
+      "kunci": "DESA",
+      "peran": "deteksi",
+      "urutan": 46,
+      "regex": "kepala\\s+desa|\\bkades\\b|sekretaris\\s+desa|\\bsekdes\\b|aparat(?:ur)?\\s+(?:kantor\\s+|balai\\s+)?desa|perangkat\\s+desa|\\bkaur\\b|kepala\\s+seksi.*desa|\\bkasi\\b.*desa|kepala\\s+dusun|\\bkadus\\b",
+      "regexSql": "kepala[[:space:]]+desa|[[:<:]]kades[[:>:]]|sekretaris[[:space:]]+desa|[[:<:]]sekdes[[:>:]]|aparat(ur)?[[:space:]]+(kantor[[:space:]]+|balai[[:space:]]+)?desa|perangkat[[:space:]]+desa|[[:<:]]kaur[[:>:]]|kepala[[:space:]]+seksi.*desa|[[:<:]]kasi[[:>:]].*desa|kepala[[:space:]]+dusun|[[:<:]]kadus[[:>:]]",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Kepala Desa Pakuli",
+        "Sekretaris Desa Batusuya Go'o",
+        "Aparat Desa Lalombi.",
+        "Perangkat Desa",
+        "Aparatur Desa",
+        "Kaur Pemerintahan Kantor Desa Tinggede Selatan",
+        "Kepala Dusun",
+        "Aparatur Balai Desa Lemanta",
+        "Kepala Seksi Kantor Desa Simagaya"
+      ],
+      "contohSalah": [
+        "Honorer (Kantor Desa Lolu)",
+        "Bidan Desa",
+        "Konsultan Kementrian Desa",
+        "Anggota Badan Permusyawaratan Desa Maku",
+        "Operator Desa",
+        "pegawai kantor desa"
+      ],
+      "ukur": {
+        "n": 31,
+        "tepat": 31,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 9 Okt, perkara_pihak1+2 (20.353 baris), diperiksa per teks",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Cabang lama \"aparat Desa\". Kini juga Perangkat/Aparatur Desa, Kaur, Kepala Seksi, Kepala Dusun - lihat laporan."
+    }
+  ],
+  "templat": []
+}

@@ -4763,3 +4763,31 @@ export async function postGatewayKontakEcourt(muatan: {
   });
 }
 /* === AKHIR KONTAK-EC === */
+
+/* === PEKERJAAN 11 Okt === */
+/**
+ * PEKERJAAN (11 Okt 2026): kategori pekerjaan pihak (PNS/TNI/POLRI/BUMN/BUMD/desa; PPPK -> PNS) dari teks
+ * bebas SIPP, dibaca bot dengan kamus pekerjaan.json. Baca saja.
+ */
+export type PekerjaanTerbaca = {
+  teks: string;
+  kunci: string;
+  label: string;
+  asal: string;
+  kodePola: string;
+  yakin: string;
+  golongan: string;
+  dasar: string;
+  pilihanSipp: boolean;
+  teksBaku: string;
+  kalimat: string;
+};
+
+export async function postGatewayPekerjaanTerbaca(muatan: { teks: string[]; perkaraId?: number }) {
+  return gatewayFetch<{ ok: boolean; hasil: PekerjaanTerbaca[]; pihak?: unknown[] }>("/internal/aleta-bot/abt/pekerjaan-terbaca", {
+    method: "POST",
+    body: JSON.stringify(muatan),
+    timeoutMs: 15_000,
+  });
+}
+/* === AKHIR PEKERJAAN === */
