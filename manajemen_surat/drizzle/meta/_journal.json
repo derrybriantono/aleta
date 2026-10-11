@@ -428,6 +428,13 @@
       "when": 1790515201001,
       "tag": "0061_aleta_pustaka_label_kalimat",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1790611201001,
+      "tag": "0063_aleta_kamus_ruas_tambahan",
+      "breakpoints": true
     }
   ]
 }

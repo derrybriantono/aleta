@@ -8,6 +8,10 @@ disimpan sebagai DATA, bukan kode, agar bisa ditambah tanpa rilis. Sumbernya dua
 2. **Database** (tabel `aleta_*` di Postgres portal) - tambahan/ubahan dari layar Admin "Kamus deteksi & kalimat".
    Baris database dengan `kode` yang sama MENIMPA benih; `status: "nonaktif"` mematikan pola benih.
    **Hanya `status: "aktif"` yang dipakai mendeteksi.** `draf` = tersimpan untuk ditinjau/diukur, BELUM dipakai.
+   **Ruas tambahan** (di luar ruas baku di contoh bawah - mis. `sebab`, `jenis`, `kebalikan`, `golongan`, `jk`,
+   `peran`; templat: `kodeAbt`, `asal`, `bagian`) dan rincian `ukur` (mis. `ukur.golongan`) ikut tersimpan di
+   database (kolom `tambahan`, migrasi 0063, 11 Okt 2026) dan digabung kembali ke objek pola saat lapis didorong
+   ke bot - ruas baku selalu menang. Pola benih yang disunting/dinonaktifkan dari layar Admin tetap utuh.
 
 Kode pemakai SELALU membaca lewat `services/kamusDeteksi.js` (`polaKelompok`, `templatKelompok`), tidak pernah
 membaca JSON langsung - agar lapisan database berlaku di mana-mana.

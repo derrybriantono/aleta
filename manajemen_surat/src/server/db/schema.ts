@@ -425,6 +425,19 @@ export const DDL_PUSTAKA_LABEL = {
   indeks: [`CREATE INDEX IF NOT EXISTS idx_pertimbangan_bagian ON aleta_pertimbangan_butir(bagian, keadaan)`],
 } as const;
 
+/**
+ * Ruas tambahan pola/templat kamus deteksi (0063, 11 Okt 2026). Ruas di luar
+ * ruas baku 0060 yang dibaca mesin bot (sebab, jenis, kebalikan, golongan,
+ * peran, ...) disimpan sebagai JSON agar baris yang menimpa benih tidak
+ * membuangnya. Cermin PERSIS dari drizzle/0063_aleta_kamus_ruas_tambahan.sql.
+ */
+export const DDL_KAMUS_RUAS_TAMBAHAN = {
+  kolom: [
+    `ALTER TABLE aleta_kamus_deteksi_pola ADD COLUMN IF NOT EXISTS tambahan TEXT NOT NULL DEFAULT '{}'`,
+    `ALTER TABLE aleta_kamus_deteksi_templat ADD COLUMN IF NOT EXISTS tambahan TEXT NOT NULL DEFAULT '{}'`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -3901,6 +3914,8 @@ const migrationStatements = [
   // D3: label bagian/alasan/keadaan pada butir pustaka pertimbangan (0061).
   ...DDL_PUSTAKA_LABEL.kolom,
   ...DDL_PUSTAKA_LABEL.indeks,
+  // Ruas tambahan pola/templat kamus deteksi (0063).
+  ...DDL_KAMUS_RUAS_TAMBAHAN.kolom,
 ];
 
 const aletaSippSchemaStatements = [
