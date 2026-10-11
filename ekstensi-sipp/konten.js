@@ -13570,6 +13570,9 @@ function susunPanelDaftar(ringkasan) {
         'Penandaan baris sedang dimatikan. Nyalakan "Tandai halaman SIPP" pada ikon ALETA di pojok peramban.'
       )
     );
+  } else if (ringkasan.r11Cadangan) {
+    // R 11 Okt: daftar jurnal yang barisnya tidak terbaca sebagai daftar perkara.
+    isi.appendChild(buatElemen("div", "aleta-kosong-lembut", "Penanda baris tidak dipasang di halaman jurnal ini."));
   } else if (ringkasan.bertanda === 0) {
     isi.appendChild(
       buatElemen("div", "aleta-kosong", "Tidak ada perkara di halaman ini yang berkeadaan khusus.")
@@ -13596,7 +13599,13 @@ function susunPanelDaftar(ringkasan) {
 
   // Perbaikan 30 Sep sore (Baru & UI Baru): menu massal mengikuti matriks
   // peran - lihat mpsSusunDaftar. null (Lama, peran lain) = susunan di bawah.
-  const menuMassalPeran = typeof mpsMenuDaftar === "function" ? mpsMenuDaftar() : null;
+  // R 11 Okt (butir 4 & 5): di halaman daftar JURNAL KEUANGAN, yang boleh
+  // Kasir hanya melihat Kasir massal/pengingat/rekap - konteks halaman
+  // mengalahkan "semua" (juga Super Admin). Menu massal lain tetap di
+  // dashboard dan daftar perkara biasa.
+  const r11HanyaKasir = r11DaftarHanyaKasir();
+  const menuMassalPeran = r11HanyaKasir ? [] : typeof mpsMenuDaftar === "function" ? mpsMenuDaftar() : null;
+  if (r11HanyaKasir) panel.setAttribute("data-r11-halaman", "jurnal-daftar");
   if (menuMassalPeran) {
     mpsSusunDaftar(panel, isi, ringkasan, menuMassalPeran);
   }
@@ -13631,7 +13640,9 @@ function susunPanelDaftar(ringkasan) {
   }
   // 1.189.x (butir 2, 4, 5): Kasir harian - massal satu hari, rekap, pengingat.
   // Baru & UI Baru saja, bagi kasir/keuangan/panitera/admin (basmassal.js).
-  if (typeof a30Aktif === "function" && a30Aktif() && typeof globalThis.aletaKasirPasangHarian === "function" && a30BolehKasir()) {
+  // R 11 Okt (butir 4): HANYA di halaman daftar jurnal keuangan perkara
+  // (jurnal_perkara_list, all_jurnal_perkara) - bukan dashboard/daftar lain.
+  if (r11HanyaKasir && typeof globalThis.aletaKasirPasangHarian === "function") {
     const wadahKasir = buatElemen("div", "aleta-mps-massal");
     wadahKasir.setAttribute("data-mps-massal", "kasir-harian");
     isi.appendChild(wadahKasir);
@@ -14934,6 +14945,8 @@ async function muatPenggunaAleta() {
       if (typeof isi.bolehUnggahPutusan === "boolean") penggunaTerakhir.bolehUnggahPutusan = isi.bolehUnggahPutusan;
       // Hak Kasir (1.189.x) dari peladen - tab/bagian Kasir.
       if (typeof isi.bolehKasir === "boolean") penggunaTerakhir.bolehKasir = isi.bolehKasir;
+      // R 11 Okt: peran tambahan (kasir, petugas_ptsp, ...) - golongan menu Kasir/PTSP.
+      if (Array.isArray(isi.peranTambahan)) penggunaTerakhir.peranTambahan = isi.peranTambahan.slice();
       if (isi.kapabilitas) kapabilitasTerakhir = isi.kapabilitas;
     }
   } catch {
@@ -15377,7 +15390,12 @@ async function segarkan() {
     return;
   }
 
-  const nomor = cariNomorPerkara();
+  // R 11 Okt (butir 4): halaman daftar jurnal keuangan SELALU halaman daftar -
+  // juga bila saringannya hanya menyisakan satu perkara (nomor tunggal itu
+  // bukan halaman perkara) atau barisnya tidak terbaca, supaya Kasir massal
+  // bagi yang boleh tetap ada di tempatnya.
+  const r11Jurnal = await r11SiapHalamanJurnalDaftar();
+  const nomor = r11Jurnal ? "" : cariNomorPerkara();
   if (!nomor && alamatHalamanPerkara()) {
     // Halaman detail perkara yang nomornya belum terbaca (tab Data Umum
     // belum termuat) BUKAN halaman daftar: panel daftar dan menu massalnya
@@ -15390,7 +15408,8 @@ async function segarkan() {
     // Bukan halaman perkara. Bila ini halaman daftar, barisnya ditandai -
     // itu justru tempat penanda paling berguna: petugas melihat puluhan
     // perkara sekaligus dan langsung tahu mana yang perlu dibuka.
-    const ringkasan = await tandaiHalamanDaftar();
+    let ringkasan = await tandaiHalamanDaftar();
+    if (!ringkasan && r11Jurnal) ringkasan = r11RingkasanJurnal();
     if (!ringkasan) {
       // Bukan halaman daftar juga - halaman awal, laporan, atau referensi.
       // Panel perkara yang tertinggal dari halaman sebelumnya dibuang supaya
@@ -18192,6 +18211,8 @@ function t7PilihTab(panel, kunci, simpan) {
   for (const t of Array.from(panel.querySelectorAll(".aleta-t7-tab"))) {
     t.setAttribute("aria-selected", t.getAttribute("data-t7-ke") === kunci ? "true" : "false");
   }
+  // R 11 Okt: baris atas (Langkah/Perkara berikutnya) milik tab utama saja.
+  if (typeof r11SetelTabUtama === "function") r11SetelTabUtama(panel);
   if (simpan) t7Tulis({ [T7_KUNCI_TAB]: kunci });
 }
 
@@ -20072,12 +20093,17 @@ function a30Kasir(panel, konteks, ui) {
     dipasang = true;
     const memuat = buatElemen("div", "aleta-memuat", "Memuat Kasir…");
     wadahan.isi.appendChild(memuat);
+    // R 11 Okt: halaman jurnal per perkara (detil_biaya) tidak memuat perkara_id
+    // polos - dicari dari nomor perkara lewat rute Kasir yang sudah ada (?cari=).
     Promise.resolve()
-      .then(() => globalThis.aletaKasirPasang(wadahan.isi, { perkaraId, nomorPerkara: String(konteks.nomorPerkara || "") }))
+      .then(() => perkaraId || r11CariPerkaraId(String(konteks.nomorPerkara || "")))
+      .then((id) => globalThis.aletaKasirPasang(wadahan.isi, { perkaraId: id || "", nomorPerkara: String(konteks.nomorPerkara || "") }))
       .then((ok) => {
         memuat.remove();
         if (!ok) return a30LepasKasir(panel, wadahan);
-        if (typeof globalThis.aletaKasirPasangHarian === "function") return globalThis.aletaKasirPasangHarian(wadahan.isi, { situs: "sipp", judul: false });
+        // R 11 Okt (butir 4): Kasir massal/pengingat/rekap TIDAK lagi di tab per
+        // perkara - pindah ke halaman daftar jurnal keuangan (susunPanelDaftar).
+        r11SegarkanLencanaKasir(panel, wadahan, { perkaraId, nomorPerkara: String(konteks.nomorPerkara || "") }, false);
         return true;
       })
       .catch((galat) => {
@@ -20125,7 +20151,11 @@ function a30Kasir(panel, konteks, ui) {
     );
   }
   panel.a30BukaKasir = bukaKasir;
-  if (a30MenujuJurnal()) setTimeout(bukaKasir, 0);
+  // R 11 Okt (butir 1 & 3): halaman jurnal per perkara = Kasir saja; lencana
+  // bulat di samping tab Kasir seperti tab lain.
+  r11TandaiHalamanKasir(panel);
+  r11PasangLencanaKasir(panel, wadahan, { perkaraId, nomorPerkara: String(konteks.nomorPerkara || "") });
+  if (a30MenujuJurnal() || r11HalamanJurnalPerkara()) setTimeout(bukaKasir, 0);
 }
 
 function a30LepasKasir(panel, wadahan) {
@@ -20136,7 +20166,244 @@ function a30LepasKasir(panel, wadahan) {
     const pertama = panel.querySelector(".aleta-t7-tab:not([data-mps-sembunyi])");
     if (pertama && typeof t7PilihTab === "function") t7PilihTab(panel, pertama.getAttribute("data-t7-ke"), false);
   }
+  // R 11 Okt: Kasir ditolak di halaman jurnal per perkara -> panel kembali ke
+  // menu perannya (bukan panel kosong).
+  r11LepasKonteksKasir(panel);
 }
+
+/* === R 11 Okt === */
+/*
+ * ============================================================================
+ * TAMPILAN KASIR & PER PERAN (perbaikan 11 Okt 2026, agen R)
+ * ============================================================================
+ *
+ * Temuan pengguna di 1.192.0 (SIPP lokal, Super Admin):
+ *
+ *  1. Halaman jurnal per perkara (detil_biaya): tab Kasir terpilih, tetapi
+ *     Penetapan, PTSP, Riwayat ALETA, Langkah/Perkara berikutnya ikut tampil.
+ *     SEBABNYA: aturan CSS penyaring tab (panel.css, "Hanya kelompok tab yang
+ *     dipilih yang tampil") tidak memuat kasirKel - memilih tab Kasir tidak
+ *     menyembunyikan kelompok mana pun; dan baris atas (.aleta-t7-atas:
+ *     Langkah berikutnya, Perkara berikutnya) bukan anggota kelompok mana pun
+ *     sehingga tampil di SEMUA tab. Sekarang: penyaring kasirKel ditambahkan,
+ *     baris atas milik tab utama (tab pertama menu peran), dan halaman jurnal
+ *     per perkara = Kasir saja bagi yang boleh Kasir - juga Super Admin
+ *     (konteks halaman mengalahkan "semua").
+ *  3. Lencana bulat di samping tab Kasir seperti tab lain. Sumbernya
+ *     globalThis.aletaKasirRingkas({ perkaraId, nomorPerkara, segar }) milik
+ *     basmassal.js (agen K, 5d751d7) -> { usulan, kejadian, keadaan, saldo }
+ *     (juga diterima: { terbuka, lengkap, teks?, nada? } | angka) | null.
+ *     Bila belum ada: cadangan ringan GET rute kasir per perkara yang
+ *     sudah ada (jumlah usulan tercentang), disinggah 2 menit per perkara.
+ *     Peristiwa "aleta-kasir-berubah" di document = segarkan lencana.
+ *  4. Kasir massal/pengingat/rekap pindah dari tab per perkara dan dashboard
+ *     ke halaman daftar jurnal keuangan (jurnal_perkara_list/*,
+ *     all_jurnal_perkara). Fiturnya sama - hanya tempatnya.
+ *  5. Golongan menu Kasir & PTSP (panel-alat.js alatGolonganMenuSemua).
+ *
+ * Tampilan Lama tidak tersentuh: semua jalur di sini dijaga a30Aktif().
+ */
+const R11_API_KASIR = "/aleta/api/aleta-ecourt/sidang/kasir";
+const R11_UMUR_SINGGAH_MS = 120000;
+const R11_JEDA_LENCANA_MS = 700;
+/** perkaraId -> { waktu, janji } ringkasan cadangan dari rute kasir. */
+const r11SinggahKasir = new Map();
+const r11Keadaan = { pendengarBerubah: false };
+
+/** Halaman jurnal keuangan PER PERKARA SIPP ("BUKU JURNAL KEUANGAN PERKARA ..."). */
+function r11HalamanJurnalPerkara() {
+  return /\/detil_biaya(?:_ht|_teguran)?(?:\/|$)/i.test(String(location.pathname || ""));
+}
+
+/** Halaman DAFTAR jurnal keuangan ("JURNAL KEUANGAN PERKARA PERDATA GUGATAN/PERMOHONAN"). */
+function r11HalamanJurnalDaftar() {
+  return /\/(?:jurnal_perkara_list|all_jurnal_perkara|jurnal_all_perkara)(?:\/|$)/i.test(String(location.pathname || ""));
+}
+
+/** Akun yang boleh Kasir, di Baru/UI Baru, sedang di daftar jurnal? */
+function r11DaftarHanyaKasir() {
+  return r11HalamanJurnalDaftar() && typeof a30Aktif === "function" && a30Aktif() && a30BolehKasir();
+}
+
+/** Seperti r11DaftarHanyaKasir, sesudah akun ALETA terbaca (segarkan memanggilnya sebelum panel apa pun). */
+async function r11SiapHalamanJurnalDaftar() {
+  if (!r11HalamanJurnalDaftar() || typeof a30Aktif !== "function" || !a30Aktif()) return false;
+  if (typeof muatPenggunaAleta === "function") await muatPenggunaAleta();
+  return a30BolehKasir();
+}
+
+/** Ringkasan daftar pengganti bila baris jurnal tidak terbaca sebagai daftar perkara. */
+function r11RingkasanJurnal() {
+  let jumlah = 0;
+  try {
+    jumlah = typeof barisPerkaraDiHalaman === "function" ? barisPerkaraDiHalaman().length : 0;
+  } catch {
+    jumlah = 0;
+  }
+  return { jumlah, ditandai: true, bertanda: 0, sebab: {}, penetapan: {}, r11Cadangan: true };
+}
+
+/** Pengguna untuk matriks menu: objek akun (bolehKasir, peranTambahan) atau nama peran. */
+function r11PenggunaMenu() {
+  const p = typeof penggunaTerakhir !== "undefined" ? penggunaTerakhir : null;
+  if (p && typeof p === "object" && p.peran) return p;
+  return typeof mpsPeran === "function" ? mpsPeran() : "";
+}
+
+/**
+ * Menu perkara sesudah matriks: (a) PTSP mendapat Penetapan bila kemampuan
+ * "penunjukan" diberikan Admin (fitur lama tidak dikurangi), (b) Kasir bagi
+ * yang boleh, (c) halaman jurnal per perkara = Kasir saja.
+ */
+function r11SesuaikanMenu(menu, panel) {
+  let m = Array.isArray(menu) ? menu.slice() : [];
+  const golongan = typeof alatGolonganMenuSemua === "function" ? alatGolonganMenuSemua(r11PenggunaMenu()) : [];
+  if (golongan.includes("ptsp") && !m.includes("penetapan") && typeof boleh === "function" && boleh("penunjukan")) m.unshift("penetapan");
+  const bolehKasir = a30BolehKasir();
+  if (bolehKasir && !m.includes("kasir")) m.push("kasir");
+  if (bolehKasir && r11HalamanJurnalPerkara() && !(panel && panel.r11TanpaKasir)) m = ["kasir"];
+  return m;
+}
+
+/** data-r11-tab-utama: tab terpilih = tab pertama yang tampak (pemilik baris atas). */
+function r11SetelTabUtama(panel) {
+  if (!panel || typeof panel.getAttribute !== "function") return;
+  const pilihan = panel.getAttribute("data-t7-tab") || "";
+  const pertama = panel.querySelector(":scope > .aleta-t7-tabbar > .aleta-t7-tab:not([data-mps-sembunyi])");
+  const utama = pertama ? pertama.getAttribute("data-t7-ke") : pilihan;
+  if (pilihan && pilihan === utama) {
+    if (!panel.hasAttribute("data-r11-tab-utama")) panel.setAttribute("data-r11-tab-utama", "");
+  } else if (panel.hasAttribute("data-r11-tab-utama")) {
+    panel.removeAttribute("data-r11-tab-utama");
+  }
+}
+
+/** Panel di halaman jurnal per perkara ditandai - CSS menyembunyikan baris atas & daftar isi. */
+function r11TandaiHalamanKasir(panel) {
+  if (!panel || panel.r11TanpaKasir) return;
+  if (r11HalamanJurnalPerkara()) panel.setAttribute("data-r11-halaman", "jurnal-perkara");
+}
+
+function r11LepasKonteksKasir(panel) {
+  if (!panel || !panel.hasAttribute("data-r11-halaman")) return;
+  panel.r11TanpaKasir = true;
+  panel.removeAttribute("data-r11-halaman");
+  const s = panel.mps;
+  if (s && typeof mpsMenuPerkara === "function") {
+    const menu = mpsMenuPerkara({ ditangani: s.ditangani, penunjukanLengkap: s.penunjukanLengkap });
+    if (menu) {
+      s.menu = r11SesuaikanMenu(menu, panel).filter((k) => k !== "kasir");
+      if (typeof mpsTerapkan === "function") mpsTerapkan(panel);
+    }
+  }
+}
+
+/** nomor perkara -> Promise<"perkaraId" | ""> (rute Kasir ?cari=, hanya SELECT); disinggah per halaman. */
+const r11SinggahId = new Map();
+function r11CariPerkaraId(nomor) {
+  const n = String(nomor || "").trim();
+  if (!n) return Promise.resolve("");
+  if (r11SinggahId.has(n)) return r11SinggahId.get(n);
+  const janji = (async () => {
+    const r = await alatAmbil(`${R11_API_KASIR}?cari=${encodeURIComponent(n)}`, { credentials: "include", cache: "no-store" }, "Mencari perkara Kasir");
+    if (!r || !r.ok) return "";
+    const luar = await r.json().catch(() => null);
+    const isi = luar && luar.data ? luar.data : luar;
+    const cocok = (isi && Array.isArray(isi.perkara) ? isi.perkara : []).find((p) => p && String(p.nomorPerkara || "").trim() === n);
+    return cocok && /^\d+$/.test(String(cocok.perkaraId)) ? String(cocok.perkaraId) : "";
+  })().catch(() => "");
+  r11SinggahId.set(n, janji);
+  // Gagal/tidak ketemu tidak disinggah selamanya - halaman berikutnya boleh mencoba lagi.
+  janji.then((id) => {
+    if (!id) r11SinggahId.delete(n);
+  });
+  return janji;
+}
+
+/** Jawaban ringkas (agen K atau cadangan) -> { teks, nada } | null. */
+function r11NormalRingkas(x) {
+  if (x === null || x === undefined || x === false) return null;
+  const o = typeof x === "number" ? { terbuka: x } : x;
+  if (typeof o !== "object") return null;
+  // Agen K (5d751d7): { usulan, kejadian, keadaan, saldo } - usulan = baris tercentang.
+  const mentah = o.terbuka !== undefined ? o.terbuka : typeof o.usulan === "number" ? o.usulan : o.jumlah;
+  const terbuka = mentah === undefined || mentah === null || mentah === "" ? NaN : Number(mentah);
+  const lengkap = o.lengkap === true || terbuka === 0;
+  let teks = typeof o.teks === "string" ? o.teks.trim() : "";
+  if (!teks) teks = lengkap ? "lengkap" : Number.isFinite(terbuka) && terbuka > 0 ? `${terbuka} usulan` : "";
+  if (!teks) return null;
+  const nada = ["lewat", "mendesak", "aman", "netral"].includes(o.nada) ? o.nada : lengkap ? "aman" : "mendesak";
+  return { teks, nada };
+}
+
+/** Ringkasan Kasir satu perkara: aletaKasirRingkas (agen K) bila ada, selain itu rute kasir. */
+async function r11RingkasKasir(o, segar) {
+  const id = String(o.perkaraId || (await r11CariPerkaraId(o.nomorPerkara)) || "");
+  if (typeof globalThis.aletaKasirRingkas === "function") {
+    try {
+      return r11NormalRingkas(await globalThis.aletaKasirRingkas({ perkaraId: id, nomorPerkara: o.nomorPerkara, segar: Boolean(segar) }));
+    } catch {
+      return null;
+    }
+  }
+  if (!/^\d+$/.test(id)) return null;
+  const ada = r11SinggahKasir.get(id);
+  if (!segar && ada && Date.now() - ada.waktu < R11_UMUR_SINGGAH_MS) return ada.janji;
+  const janji = (async () => {
+    const r = await alatAmbil(`${R11_API_KASIR}?perkaraId=${encodeURIComponent(id)}`, { credentials: "include", cache: "no-store" }, "Ringkasan Kasir");
+    if (!r || !r.ok) return null;
+    const luar = await r.json().catch(() => null);
+    const isi = luar && luar.data ? luar.data : luar;
+    if (!isi || isi.available === false || isi.ok === false || !Array.isArray(isi.usulan)) return null;
+    // Yang dihitung = baris yang ALETA usulkan untuk ditulis (tercentang
+    // bawaan); sisa otomatis bernilai nol bukan pekerjaan.
+    const terbuka = isi.usulan.filter((u) => u && u.pilih && (!u.sisaOtomatis || Number(u.jumlah) > 0)).length;
+    if (!terbuka && isi.usulan.length) return { teks: "periksa", nada: "netral" };
+    return r11NormalRingkas({ terbuka });
+  })().catch(() => null);
+  r11SinggahKasir.set(id, { waktu: Date.now(), janji });
+  return janji;
+}
+
+/** Lencana ke kepala kelompok Kasir (UI Baru: ikut ke tabnya) atau ke bagian Kasir (Baru tanpa matriks). */
+function r11TerapkanLencanaKasir(panel, wadahan, r) {
+  if (!wadahan) return;
+  if (wadahan.ringkas) {
+    wadahan.ringkas.textContent = r ? r.teks : "";
+    wadahan.ringkas.className = `aleta-kelompok-ringkas${r ? ` aleta-lencana-${r.nada}` : ""}`;
+    wadahan.setAttribute("data-r11-lencana", r ? r.teks : "");
+    if (typeof t7Keadaan !== "undefined" && t7Keadaan && t7Keadaan.panel === panel && typeof t7LencanaTab === "function") t7LencanaTab(t7Keadaan);
+  } else if (r && typeof setLencana === "function") {
+    setLencana(wadahan, r);
+  }
+}
+
+function r11SegarkanLencanaKasir(panel, wadahan, o, segar) {
+  return Promise.resolve()
+    .then(() => r11RingkasKasir(o, segar))
+    .then((r) => {
+      if (panel.isConnected) r11TerapkanLencanaKasir(panel, wadahan, r);
+      return r;
+    })
+    .catch(() => null);
+}
+
+function r11PasangLencanaKasir(panel, wadahan, o) {
+  if (!r11Keadaan.pendengarBerubah) {
+    r11Keadaan.pendengarBerubah = true;
+    document.addEventListener("aleta-kasir-berubah", () => {
+      const p = document.getElementById(PENANDA);
+      if (p && typeof p.r11SegarkanLencanaKasir === "function") p.r11SegarkanLencanaKasir(true);
+    });
+  }
+  panel.r11SegarkanLencanaKasir = (segar) => r11SegarkanLencanaKasir(panel, wadahan, o, segar);
+  // Sesudah panel menempel ke halaman; panel yang digambar ulang sebelum
+  // jedanya habis tidak bertanya apa pun (singgahan dipakai panel penggantinya).
+  setTimeout(() => {
+    if (panel.isConnected) void r11SegarkanLencanaKasir(panel, wadahan, o, false);
+  }, R11_JEDA_LENCANA_MS);
+}
+/* === AKHIR R 11 Okt === */
 
 // ─── Butir 8: konversi naskah (K1) ───────────────────────────────────────────
 
@@ -21452,7 +21719,7 @@ function mpsMenuPerkara(o) {
   const opsi = o || {};
   let menu;
   try {
-    menu = alatMenuPeran("sipp", "perkara", peran, { ditangani: opsi.ditangani, penunjukanLengkap: opsi.penunjukanLengkap });
+    menu = alatMenuPeran("sipp", "perkara", r11PenggunaMenu(), { ditangani: opsi.ditangani, penunjukanLengkap: opsi.penunjukanLengkap });
   } catch {
     return null;
   }
@@ -21474,7 +21741,7 @@ function mpsMenuPerkara(o) {
 function mpsMenuDaftar() {
   if (!mpsSiapMatriks()) return null;
   try {
-    const menu = alatMenuPeran("sipp", "daftar", mpsPeran());
+    const menu = alatMenuPeran("sipp", "daftar", r11PenggunaMenu());
     return Array.isArray(menu) ? menu.slice() : null;
   } catch {
     return null;
@@ -21487,10 +21754,12 @@ function mpsMenuDaftar() {
 function mpsSiapkan(panel, konteks) {
   panel.mps = null;
   const ditanganiAwal = konteks && konteks.hakim && konteks.hakim.bolehVerifikasi === true ? true : undefined;
-  const menu = mpsMenuPerkara({ ditangani: ditanganiAwal });
-  if (!menu) return null;
-  const golongan = alatGolonganPeran(mpsPeran());
-  if (a30BolehKasir() && !menu.includes("kasir")) menu.push("kasir");
+  const menuMatriks = mpsMenuPerkara({ ditangani: ditanganiAwal });
+  if (!menuMatriks) return null;
+  const golongan = typeof alatGolonganMenu === "function" ? alatGolonganMenu(r11PenggunaMenu()) : alatGolonganPeran(mpsPeran());
+  // R 11 Okt: Kasir ditambahkan bila boleh, PTSP + Penetapan bila berwenang,
+  // dan halaman jurnal per perkara = Kasir saja (r11SesuaikanMenu).
+  const menu = r11SesuaikanMenu(menuMatriks, panel);
   panel.mps = {
     golongan,
     ditangani: ditanganiAwal,
@@ -21572,6 +21841,8 @@ function mpsTerapkan(panel) {
     for (const c of semuaChip) mpsSetelSembunyi(c, !tampak.has(c.getAttribute("data-t7-ke")));
     mpsUrutkan(chip, semuaChip, (el) => el.getAttribute("data-t7-ke"), urut);
   }
+  // R 11 Okt: urutan tab berubah -> tab utama (pemilik "Langkah berikutnya") ikut.
+  r11SetelTabUtama(panel);
 
   // Baru (kelompok berlipat): menu pertama terbuka sebagai bawaan - kecuali
   // petugas pernah melipatnya sendiri (lipatan tersimpan menang).
@@ -21609,7 +21880,8 @@ function mpsSegarkanDariStatus(panel, konteks) {
       if (!menu) return;
       s.ditangani = ditangani;
       s.penunjukanLengkap = penunjukanLengkap;
-      s.menu = menu;
+      // R 11 Okt: Kasir tidak hilang saat menu menyusut; konteks halaman tetap menang.
+      s.menu = r11SesuaikanMenu(menu, panel);
       panel.setAttribute("data-mps-ditangani", ditangani === undefined ? "?" : ditangani ? "ya" : "tidak");
       mpsTerapkan(panel);
     })
@@ -21668,7 +21940,7 @@ function mpsBukaBagian(kotak) {
  * disiapkan di sini; bila berkasnya belum termuat, dilewati tanpa error.
  */
 function mpsSusunDaftar(panel, isi, ringkasan, menu) {
-  panel.setAttribute("data-mps-peran", alatGolonganPeran(mpsPeran()));
+  panel.setAttribute("data-mps-peran", typeof alatGolonganMenu === "function" ? alatGolonganMenu(r11PenggunaMenu()) : alatGolonganPeran(mpsPeran()));
   panel.setAttribute("data-mps-menu", menu.join(" "));
   let sudahBuka = false;
   const bukaPertama = (kotak) => {

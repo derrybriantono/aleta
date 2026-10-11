@@ -213,6 +213,18 @@ const ABT_DAFTAR: Record<string, string[]> = {
   jurusita: ["relaas-pbt-massal"],
 };
 
+// Perbaikan 11 Okt 2026 (agen R, "tampilan sesuai role, jangan tercampur"):
+// golongan "lain" diperinci HANYA untuk matriks menu - Kasir (Analis
+// Keuangan, peran tambahan kasir/keuangan/bendahara, bolehKasir server) dan
+// PTSP/operator. alatGolonganPeran tidak berubah. Selebihnya tetap "lain".
+const GOLONGAN_MENU: Record<string, string> = { "analis-keuangan": "kasir", operator: "ptsp" };
+SIPP_PERKARA.kasir = ["kasir", "perkara"];
+SIPP_PERKARA.ptsp = ["ptsp", "berkas", "perkara"];
+SIPP_DAFTAR.kasir = [];
+SIPP_DAFTAR.ptsp = ["penetapan-massal"];
+ABT_PERKARA.kasir = [];
+ABT_DAFTAR.kasir = [];
+
 describe("alatMenuPeran: tiap peran portal, tiap situs dan halaman", () => {
   const kasus: Array<[string, string, Record<string, string[]>]> = [
     ["sipp", "perkara", SIPP_PERKARA],
@@ -224,8 +236,8 @@ describe("alatMenuPeran: tiap peran portal, tiap situs dan halaman", () => {
     it(`${situs} / ${halaman} - ditangani belum diketahui (tidak mengurangi)`, () => {
       const m = muat();
       for (const { id, nama } of PERAN_MOCK) {
-        const g = GOLONGAN[id];
-        const hasil = g === "lain" ? null : harap[g];
+        const g = GOLONGAN_MENU[id] ?? GOLONGAN[id];
+        const hasil = g === "lain" ? null : harap[g] ?? null;
         expect(m.menu(situs, halaman, id), `${id}`).toEqual(hasil);
         expect(m.menu(situs, halaman, nama), `${nama}`).toEqual(hasil);
         expect(m.menu(situs, halaman, nama, { ditangani: true }), `${nama} ditangani`).toEqual(hasil);
@@ -290,10 +302,32 @@ describe("perkara yang TIDAK ditangani: membaca boleh, mengerjakan tidak", () =>
 
   it("peran 'lain' tetap null walau tidak menangani - susunan lama tidak dikurangi", () => {
     const m = muat();
-    for (const p of ["Operator", "Analis Perkara", "Kepala Subbagian", "Sekretaris", "Staf Pelaksana"]) {
+    for (const p of ["Analis Perkara", "Kepala Subbagian", "Sekretaris", "Staf Pelaksana", "Kasubag Umum dan Keuangan"]) {
       expect(m.menu("sipp", "perkara", p, { ditangani: false }), p).toBeNull();
       expect(m.menu("abt", "daftar", p), p).toBeNull();
     }
+  });
+
+  it("11 Okt: PTSP/operator dan Kasir bekerja atas semua perkara - 'ditangani' tidak mengurangi; ABT PTSP tetap susunan lama", () => {
+    const m = muat();
+    expect(m.menu("sipp", "perkara", "Operator", { ditangani: false })).toEqual(SIPP_PERKARA.ptsp);
+    expect(m.menu("sipp", "perkara", "Analis Keuangan", { ditangani: false })).toEqual(SIPP_PERKARA.kasir);
+    expect(m.menu("abt", "daftar", "Operator")).toBeNull();
+    expect(m.menu("abt", "perkara", "Analis Keuangan")).toEqual([]);
+  });
+
+  it("11 Okt: objek pengguna - peran tambahan & bolehKasir server menentukan golongan menu peran 'lain'", () => {
+    const m = muat();
+    expect(m.menu("sipp", "perkara", { peran: "Pelaksana", peranTambahan: ["kasir"] })).toEqual(SIPP_PERKARA.kasir);
+    expect(m.menu("sipp", "perkara", { peran: "Staf", bolehKasir: true })).toEqual(SIPP_PERKARA.kasir);
+    expect(m.menu("sipp", "perkara", { peran: "Pelaksana", peranTambahan: ["petugas_ptsp"] })).toEqual(SIPP_PERKARA.ptsp);
+    // Kasir + PTSP: gabungan, urutan golongan.
+    expect(m.menu("sipp", "perkara", { peran: "PPPK", peranTambahan: ["petugas_ptsp", "kasir"] })).toEqual(["kasir", "perkara", "ptsp", "berkas"]);
+    // Golongan jabatan menang: PP berperan tambahan kasir tetap menu panitera.
+    expect(m.menu("sipp", "perkara", { peran: "Panitera Pengganti", peranTambahan: ["kasir"], bolehKasir: true })).toEqual(SIPP_PERKARA.panitera);
+    expect(m.menu("sipp", "perkara", { peran: "Super Admin", bolehKasir: true })).toEqual(SIPP_PERKARA.admin);
+    // Peran tambahan lain tidak mengubah apa pun.
+    expect(m.menu("sipp", "perkara", { peran: "Pelaksana", peranTambahan: ["penjaga_sidang"] })).toBeNull();
   });
 });
 

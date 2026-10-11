@@ -10922,3 +10922,21 @@ html[data-aleta-tema-sipp="gelap"] .aleta-c2-sbantu {
   .aleta-s5-merah .aleta-s5-hasil { color: #f0a0a0; }
 }
 /* === AKHIR S5/H3 === */
+
+/* === R 11 Okt === */
+/* Tampilan Kasir & per peran (11 Okt 2026). Penyaring tab di blok Tahap 7
+   tidak memuat kasirKel: memilih tab Kasir tidak menyembunyikan kelompok mana
+   pun. Ditambahkan di sini (blok Tahap 7 tidak disunting). */
+html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="kasirKel"] .aleta-isi > .aleta-kelompok:not([data-kunci="kasirKel"]) {
+  display: none;
+}
+/* Baris atas (Langkah berikutnya, Perkara berikutnya) bukan anggota kelompok
+   mana pun - kini milik tab utama (tab pertama menu peran) saja. */
+#aleta-panel-sipp[data-t7-tab]:not([data-r11-tab-utama]) .aleta-isi > .aleta-t7-atas { display: none !important; }
+/* Halaman jurnal keuangan per perkara (detil_biaya): Kasir saja. */
+#aleta-panel-sipp[data-r11-halaman="jurnal-perkara"] .aleta-isi > .aleta-t7-atas,
+#aleta-panel-sipp[data-r11-halaman="jurnal-perkara"] .aleta-isi > .aleta-t7-daftar-isi,
+#aleta-panel-sipp[data-r11-halaman="jurnal-perkara"] .aleta-isi > .aleta-kelompok:not([data-kunci="kasirKel"]) {
+  display: none !important;
+}
+/* === AKHIR R 11 Okt === */

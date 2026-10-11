@@ -456,13 +456,27 @@ describe("UI Baru di dalam perkara: tab mengikuti matriks peran", () => {
     expect(pn.getAttribute("data-t7-tab")).toBe("perkara");
   });
 
-  it("peran lain (Operator): susunan lama, tanpa data-mps", async () => {
-    const h = buka({ simpanan: UI, peran: "Operator" });
+  // 11 Okt 2026 (agen R): Operator/PTSP kini golongan menu "ptsp" - contoh
+  // peran "lain" yang tetap susunan lama: Analis Perkara.
+  it("peran lain (Analis Perkara): susunan lama, tanpa data-mps", async () => {
+    const h = buka({ simpanan: UI, peran: "Analis Perkara" });
     const pn = await siapUi(h);
     await tunggu(30);
     expect(tabSemua(pn)).toEqual(["kerjakan", "ptspKel", "berkas", "perkara", "putusanKel"]);
     expect(pn.hasAttribute("data-mps-peran")).toBe(false);
     expect(pn.querySelector("[data-mps-sembunyi]")).toBeNull();
+  });
+
+  it("11 Okt: Operator (PTSP) - PTSP, Berkas, Perkara; Penetapan tetap karena kemampuan penunjukan; Putusan tidak", async () => {
+    const h = buka({ simpanan: UI, peran: "Operator" });
+    const pn = await siapUi(h);
+    await tunggu(30);
+    expect(pn.getAttribute("data-mps-peran")).toBe("ptsp");
+    expect(tabTampak(pn)).toEqual(["kerjakan", "ptspKel", "berkas", "perkara"]);
+    const tanpaPenunjukan = buka({ simpanan: UI, peran: "Operator", kapabilitas: { penunjukan: false } });
+    const pn2 = await siapUi(tanpaPenunjukan);
+    await tunggu(30);
+    expect(tabTampak(pn2)).toEqual(["ptspKel", "berkas", "perkara"]);
   });
 });
 
@@ -580,8 +594,19 @@ describe("halaman daftar perkara / dashboard: menu massal per peran", () => {
 
   // Keputusan 9 Okt 2026: Operator tidak berhak unggah putusan - Putusan
   // massal diganti kotak terkunci; Penetapan massal (gerbang penetapan) tetap.
-  it("peran lain (Operator): susunan lama (Penetapan massal; Putusan massal terkunci), tanpa data-mps", async () => {
+  it("11 Okt: Operator (PTSP) - Penetapan massal saja (gerbang penunjukan), tanpa kotak Putusan terkunci", async () => {
     const h = buka({ simpanan: UI, peran: "Operator", daftar: true, massalBas: true, massalRelaas: true });
+    const pn = await siapDaftar(h);
+    await tunggu(30);
+    expect(pn.getAttribute("data-mps-menu")).toBe("penetapan-massal");
+    expect(pn.querySelector('[data-kunci="penetapanMassal"]')).not.toBeNull();
+    expect(pn.querySelector('[data-aleta-terkunci="unggah-putusan"]')).toBeNull();
+    expect(pn.querySelector('[data-mps-massal="kasir-harian"]')).toBeNull();
+    expect(h.massal).toEqual([]);
+  });
+
+  it("peran lain (Analis Perkara): susunan lama (Penetapan massal; Putusan massal terkunci), tanpa data-mps", async () => {
+    const h = buka({ simpanan: UI, peran: "Analis Perkara", daftar: true, massalBas: true, massalRelaas: true });
     const pn = await siapDaftar(h);
     await tunggu(30);
     expect(pn.hasAttribute("data-mps-peran")).toBe(false);
