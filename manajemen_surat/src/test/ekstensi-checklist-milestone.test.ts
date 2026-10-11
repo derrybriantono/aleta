@@ -307,6 +307,14 @@ function buka(
      * sungguh memakainya, bukan salinannya sendiri.
      */
     awal?: string;
+    /**
+     * Sejak 12 Okt widget BAWAAN TERTUTUP (lencana) untuk sesi tanpa posisi
+     * tersimpan. Uji-uji lama menguji isi checklist yang terbentang, jadi
+     * helper ini memulainya terbentang (kecil:false tersimpan) - kecuali
+     * berkas ini sendiri menyebut posisinya, atau tanpaPosisiAwal: true.
+     * Perilaku bawaan tertutup diuji di checklist-posisi-panel-12okt.test.ts.
+     */
+    tanpaPosisiAwal?: boolean;
   } = {}
 ): Halaman {
   const dom = jsdomBaru(`<!doctype html><html><head></head><body>${p.html ?? ""}</body></html>`, {
@@ -317,7 +325,13 @@ function buka(
   let terbang = 0;
   terbuka.push({ dom, terbang: () => terbang });
   const w = dom.window as any;
-  const { simpanan, storage } = penyimpananTiruan(p.simpanan ?? {});
+  const awalSimpanan: Record<string, unknown> = { ...(p.simpanan ?? {}) };
+  if (!p.tanpaPosisiAwal) {
+    for (const k of ["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"]) {
+      if (!(k in awalSimpanan)) awalSimpanan[k] = { kecil: false };
+    }
+  }
+  const { simpanan, storage } = penyimpananTiruan(awalSimpanan);
   w.chrome = {
     runtime: {
       id: "aleta-uji",
@@ -950,8 +964,9 @@ describe("kecil menjadi pil, dan digeser", () => {
     expect([akar.style.left, akar.style.bottom]).toEqual(["72px", "112px"]);
     await sampai(() => h.simpanan.posisiChecklistSipp, "posisi tersimpan");
     expect(h.simpanan.posisiChecklistSipp).toEqual({ kecil: false, kiri: 72, bawah: 112 });
-    expect(h.simpanan.posisiChecklistAbt).toBeUndefined();
-    expect(h.simpanan.posisiChecklistAleta).toBeUndefined();
+    // Aplikasi lain tidak disentuh: tinggal nilai awal helper (terbentang), tanpa koordinat.
+    expect(h.simpanan.posisiChecklistAbt).toEqual({ kecil: false });
+    expect(h.simpanan.posisiChecklistAleta).toEqual({ kecil: false });
 
     const segar = q(h, ".aleta-cm-segar");
     tekan(h, segar, "pointerdown", 160, 600);

@@ -51,6 +51,25 @@ export function bolehKasir(pengguna: PenggunaHak | null | undefined): boolean {
   return POSISI_KASIR.test(posisi);
 }
 
+/**
+ * Pengingat tugas kasir di checklist milestone (Setor PNBP, jurnal hari
+ * putusan, panjar kurang) - hanya untuk yang MENGERJAKANNYA: peran tambahan
+ * Keuangan Perkara/kasir/bendahara, peran analis-keuangan, dan jabatan
+ * bendahara/analis keuangan. Admin, Super Admin, dan panitera boleh MEMBUKA
+ * Kasir (bolehKasir) tetapi pengingat harian itu bukan pekerjaan mereka -
+ * "Setor PNBP" tidak patut menumpuk di checklist Operator atau Panitera.
+ */
+export function bolehPengingatKasir(pengguna: PenggunaHak | null | undefined): boolean {
+  if (!pengguna) return false;
+  const persona = pengguna as UserPersona;
+  const peran = new Set<string>([String(getEffectiveRoleId(persona) ?? pengguna.roleId ?? ""), String(pengguna.roleId ?? "")]);
+  if (peran.has("analis-keuangan")) return true;
+  const tambahan = new Set((pengguna.additionalRoleIds ?? []).map((x) => String(x).toLowerCase()));
+  if (PERAN_TAMBAHAN_KASIR.some((p) => tambahan.has(p))) return true;
+  const posisi = String(getEffectivePositionId(persona) ?? pengguna.positionId ?? "");
+  return /^pos-(bendahara|analis-keuangan)/.test(posisi);
+}
+
 // ─── Bentuk data (jawaban bot) ───────────────────────────────────────────────
 
 export type BarisJurnal = {

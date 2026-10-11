@@ -22,7 +22,7 @@ import { getGatewayChecklistMilestone } from "@/server/modules/aleta-bot/whatsap
 import { KEADAAN_KREDENSIAL } from "@/server/modules/external-apps/service";
 import { type requireActorUser } from "@/server/modules/organization/service";
 
-import { bolehKasir } from "@/lib/kasir-jurnal";
+import { bolehPengingatKasir } from "@/lib/kasir-jurnal";
 import { butirChecklistKasir } from "@/lib/kasir-otomatis";
 
 import { bacaPengingatKasir } from "./kasir-otomatis";
@@ -73,7 +73,11 @@ type Aktor = Awaited<ReturnType<typeof requireActorUser>>;
 export type PeranTersedia = { kunci: KunciPeran; label: string };
 
 export type JawabanChecklist = {
-  pengguna: { nama: string; peran: string[] };
+  /**
+   * superAdmin: penanda untuk ekstensi - keterangan teknis di pita widget
+   * (arti cincin, jumlah tugas) hanya diperlihatkan kepada Super Admin.
+   */
+  pengguna: { nama: string; peran: string[]; superAdmin: boolean };
   peranTersedia: PeranTersedia[];
   peranAktif: string;
   dibuat: string;
@@ -497,7 +501,7 @@ export async function susunChecklist(
  * tidak diubah. Gagal dibaca = disebut di `galat`, checklist lain tetap utuh.
  */
 async function tempelKasir(jawaban: JawabanChecklist, aktor: Aktor, opsi: OpsiChecklist): Promise<JawabanChecklist> {
-  if (opsi.tanpaKasir || !bolehKasir(aktor)) return jawaban;
+  if (opsi.tanpaKasir || !bolehPengingatKasir(aktor)) return jawaban;
   let pengingat: Awaited<ReturnType<typeof bacaPengingatKasir>>;
   try {
     pengingat = await bacaPengingatKasir();
@@ -563,7 +567,7 @@ async function hitung(
 ): Promise<JawabanChecklist> {
   const konteks = konteksDari(kini);
   const dasar = {
-    pengguna: { nama: String(aktor.name ?? ""), peran: [...tersedia] as string[] },
+    pengguna: { nama: String(aktor.name ?? ""), peran: [...tersedia] as string[], superAdmin: String(aktor.roleId ?? "") === "super-admin" },
     peranTersedia: tersedia.map((k) => ({ kunci: k, label: LABEL_PERAN[k] })),
     peranAktif: aktif,
     dibuat: kini.toISOString(),
