@@ -131,9 +131,9 @@ describe("butir 25 - ZIP dialirkan, bukan dikirim sekaligus", () => {
       potongan.push(value!);
     }
     const zip = Buffer.concat(potongan);
-    // Lima dokumen + DAFTAR ISI + KETERANGAN, dan penutup ZIP di akhir.
+    // Lima dokumen + DAFTAR ISI.txt + DAFTAR ISI.csv (12 Okt 2026) + KETERANGAN, dan penutup ZIP di akhir.
     expect(zip.readUInt32LE(zip.length - 22)).toBe(0x06054b50);
-    expect(zip.readUInt16LE(zip.length - 22 + 10)).toBe(7);
+    expect(zip.readUInt16LE(zip.length - 22 + 10)).toBe(8);
     expect(keadaan.ditarik).toEqual(["dok1", "dok2", "dok3", "dok4", "dok5"]);
   });
 

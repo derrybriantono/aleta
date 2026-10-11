@@ -9,6 +9,7 @@ import {
   BATAS_SELURUH_ALIR_MS,
   namaBerkasArsipPerkara,
   susunArsipPerkara,
+  uraiKategoriArsip,
 } from "@/server/modules/aleta-ecourt/susun-arsip-perkara";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { appendAuditLog } from "@/server/shared/audit";
@@ -138,11 +139,28 @@ export async function GET(request: NextRequest) {
     // "berkas" = perilaku lama, persis. "lengkap" = data SIPP + berkas, dan
     // hanya itu yang dipakai layar Status Perkara. Bawaannya tetap "berkas"
     // supaya panel Antrian Sidang dan Arsip berkas tidak berubah sedikit pun.
-    const lengkap = String(request.nextUrl.searchParams.get("isi") || "").toLowerCase() === "lengkap";
+    const isiLengkapDiminta = String(request.nextUrl.searchParams.get("isi") || "").toLowerCase() === "lengkap";
     // Berkas pindaian arsip fisik ikut hanya bila DIMINTA: terukur 2 MB sampai
     // 28 MB sebuah, dan itu selisih yang menentukan apakah seseorang
     // mengunduhnya sekarang atau menunggu.
-    const sertakanArsip = lengkap && request.nextUrl.searchParams.get("arsipFisik") === "1";
+    /* === STATUS-ZIP 12 Okt === */
+    // Pilihan kategori (butir 11): ?kategori=bas,relaas,ecourt (atau "semua").
+    // Tidak disebut = perilaku lama. Kategori "arsip" menggantikan arsipFisik=1.
+    // Disebut tetapi tidak satu pun dikenal = 400, bukan ZIP kosong.
+    const kategoriMentah = request.nextUrl.searchParams.get("kategori");
+    const kategori = uraiKategoriArsip(kategoriMentah);
+    if (kategori && kategori.length === 0) {
+      return Response.json({ ok: false, alasan: "kategori_tidak_dikenali" }, { status: 400 });
+    }
+    // Data SIPP, penetapan, dan arsip fisik hanya terlihat lewat status perkara
+    // (isi=lengkap): memilih salah satunya berarti isi lengkap, juga bila
+    // alamatnya lupa menyebut isi=lengkap - bukan berkas yang diam-diam tidak ikut.
+    const lengkap =
+      isiLengkapDiminta ||
+      Boolean(kategori?.some((k) => k === "data" || k === "penetapan" || k === "arsip"));
+    /* === AKHIR STATUS-ZIP === */
+    const sertakanArsip =
+      lengkap && (kategori ? kategori.includes("arsip") : request.nextUrl.searchParams.get("arsipFisik") === "1");
 
 
     // Penanda unduhan dari tombol (src/lib/unduh-alir.ts). Peramban tidak
@@ -197,6 +215,7 @@ export async function GET(request: NextRequest) {
       sumber,
       lengkap,
       sertakanArsip,
+      kategori,
       batasSeluruhMs: BATAS_SELURUH_ALIR_MS,
       alir: {
         kirim(berkas) {
@@ -224,7 +243,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const namaZip = namaBerkasArsipPerkara(nomor, { lengkap, sumber });
+    const namaZip = namaBerkasArsipPerkara(nomor, { lengkap, sumber, kategori });
     const dbAudit = db;
 
     void kerja.then(
@@ -263,6 +282,12 @@ export async function GET(request: NextRequest) {
             byteZip: penulis.posisi,
             ditutupPeramban: dibatalkan,
             jumlahDilewati: hasil.dilewati.length,
+            // Kategori yang dipilih (null = seluruhnya) dan berapa yang GAGAL
+            // diambil beserta sebabnya - jejak ini dulu tidak dapat menjawab
+            // "kenapa berkas perkara itu tidak lengkap".
+            kategori: kategori ?? null,
+            jumlahGagal: (hasil.gagal ?? []).filter((g) => g.status === "gagal").length,
+            gagal: (hasil.gagal ?? []).filter((g) => g.status === "gagal").slice(0, 30),
             // Berapa bagian yang tabelnya ikut tetapi TIDAK TERBACA. Tanpa
             // angka ini, jejak audit tidak dapat membedakan ekspor yang
             // lengkap dari ekspor yang tampak lengkap - dan yang kedua yang

@@ -6659,6 +6659,28 @@ router.post("/abt/kontak-ecourt", requireInternalToken, async (req, res) => {
 });
 /* === AKHIR KONTAK-EC === */
 
+/* === STATUS-ZIP 12 Okt === */
+/**
+ * Kontak para pihak untuk layar Status Perkara (butir 12, 12 Okt 2026): email, HP/WhatsApp
+ * (SIPP dulu, lalu e-Court - dengan tanda sumber) dan "bersedia sidang elektronik
+ * (e-Litigasi)" dari persetujuan saluran elektronik e-Court. Hanya SELECT, tanpa catatan
+ * nilai kontak ke log. Hak lihat dijaga portal (data pribadi). Lihat
+ * services/kontakEcourtService.js kontakParaPihak.
+ *
+ *   GET /sipp/kontak-para-pihak?nomor=273/Pdt.G/2026/PA.Dgl
+ *     -> { ok, ada, nomorPerkara, lewatEcourt, ecourtTerbaca, orang[{jenis,pihakKe,urutan,nama,email,hp,elitigasi}] }
+ */
+router.get("/sipp/kontak-para-pihak", requireInternalToken, async (req, res) => {
+  try {
+    const nomor = String(req.query.nomor || "").trim().slice(0, 80);
+    if (!nomor) return res.status(400).json({ ok: false, alasan: "nomor_kosong" });
+    res.json(await require("../services/kontakEcourtService").kontakParaPihak(nomor));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 120) });
+  }
+});
+/* === AKHIR STATUS-ZIP === */
+
 /* === PEKERJAAN 11 Okt === */
 /**
  * PEKERJAAN (11 Okt 2026, agen 7): kategori pekerjaan pihak (PNS/TNI/POLRI/BUMN/BUMD/desa; PPPK -> PNS) dari teks
