@@ -4764,6 +4764,49 @@ export async function postGatewayKontakEcourt(muatan: {
 }
 /* === AKHIR KONTAK-EC === */
 
+/* === STATUS-ZIP 12 Okt === */
+export type KontakNilaiPihak = {
+  nilai: string;
+  lazim: boolean;
+  sumber: "sipp" | "ecourt" | "";
+  label: string;
+  keyakinan?: string;
+  lain: Array<{ nilai: string; sumber: string; label: string }>;
+};
+export type KontakParaPihakBaris = {
+  jenis: "pihak" | "kuasa";
+  pihakKe: number;
+  urutan: number;
+  nama: string;
+  email: KontakNilaiPihak;
+  hp: KontakNilaiPihak & { jenis: string; bisaWhatsApp: boolean };
+  elitigasi: {
+    status: "ya" | "tidak" | "belum" | "tidak-diketahui" | "tidak-berlaku";
+    sumber: string;
+    label: string;
+    terakhirTerlihat: string | null;
+  };
+};
+export type KontakParaPihak = {
+  ok: boolean;
+  ada: boolean;
+  sebab?: string;
+  nomorPerkara?: string;
+  lewatEcourt?: boolean;
+  ecourtTerbaca?: boolean;
+  jumlahPersetujuanEcourt?: number;
+  orang: KontakParaPihakBaris[];
+};
+
+/** Kontak para pihak layar Status Perkara (butir 12, 12 Okt 2026). Hanya baca. */
+export async function getGatewayKontakParaPihak(nomorPerkara: string) {
+  const kueri = new URLSearchParams({ nomor: nomorPerkara });
+  return gatewayFetch<KontakParaPihak>(`/internal/aleta-bot/sipp/kontak-para-pihak?${kueri.toString()}`, {
+    timeoutMs: 20_000,
+  });
+}
+/* === AKHIR STATUS-ZIP === */
+
 /* === PEKERJAAN 11 Okt === */
 /**
  * PEKERJAAN (11 Okt 2026): kategori pekerjaan pihak (PNS/TNI/POLRI/BUMN/BUMD/desa; PPPK -> PNS) dari teks

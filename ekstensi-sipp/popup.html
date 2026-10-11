@@ -639,6 +639,29 @@
      Penandanya dipasang popup.js hanya dalam Baru dan UI Baru (bawaan nyala);
      Lama tidak pernah memilikinya. */
   :root[data-aleta-teknis="sembunyi"] .aleta-teknis { display: none !important; }
+
+  /* === POPUP-PERAN 12 Okt === */
+  /* Saklar/bagian yang tidak relevan bagi peran yang masuk disembunyikan
+     (popup.js memasang data-peran-sembunyi); nilainya tetap tersimpan. */
+  [data-peran-sembunyi] { display: none !important; }
+  /* Pemberitahuan versi baru di puncak jendela - semua peran. */
+  .pita-versi {
+    margin: 8px 14px 0; padding: 8px 12px; border: 1px solid #2f6fd6; border-radius: 10px;
+    background: rgba(47, 111, 214, 0.12); font-size: 12.5px; line-height: 1.45;
+  }
+  .pita-versi[hidden] { display: none; }
+  .pita-versi-baris { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  .pita-versi-teks { flex: 1; min-width: 0; }
+  .pita-versi a.tautan-biru { color: #2f8bff; font-weight: 700; text-decoration: underline; cursor: pointer; }
+  .pita-versi a.tautan-biru[aria-disabled="true"] { opacity: 0.55; pointer-events: none; }
+  .pita-versi p { margin: 4px 0 0; font-size: 12px; color: var(--tulisan-lembut); }
+  .pita-versi .uji-fitur-aksi { margin-top: 4px; }
+  /* Kartu sambungan: satu baris bila semua tersambung, penuh bila ada masalah. */
+  .tb-status[data-ringkas="ya"] { padding: 6px 12px; }
+  .tb-status[data-ringkas="ya"] .tb-status-isi { display: none; }
+  .tb-status[data-ringkas="ya"][data-terbuka="ya"] .tb-status-isi { display: block; margin-top: 6px; }
+  .tb-status-lipat { flex: none; border: 0; background: transparent; color: var(--tulisan-lembut); font-size: 12px; cursor: pointer; text-decoration: underline; }
+  .tb-status-lipat[hidden] { display: none; }
 </style>
 
 <div class="kepala">
@@ -655,6 +678,24 @@
   <button type="button" id="tombolTema" class="tombol-tema" title="Tema ALETA - jendela ini dan panel di SIPP, ABT, serta portal sekaligus">
     tema: ikut ALETA
   </button>
+</div>
+
+
+<!-- === POPUP-PERAN 12 Okt ===
+     Pemberitahuan versi baru, di puncak untuk SEMUA peran. Diisi popup.js:
+     versi yang disajikan portal lebih baru daripada yang terpasang, atau
+     latar.js sudah mengunduh/menyiapkannya sesudah masuk ALETA.
+     "Perbaharui" = jalan manual (sama dengan Perbarui sekarang di Lainnya). -->
+<div id="pemberitahuanVersi" class="pita-versi" role="status" hidden>
+  <div class="pita-versi-baris">
+    <span class="pita-versi-teks" id="pemberitahuanVersiTeks">Versi baru tersedia</span>
+    <a href="#" id="tautanPerbaharui" class="tautan-biru" role="button">Perbaharui</a>
+  </div>
+  <p id="pemberitahuanVersiKabar" hidden></p>
+  <div class="uji-fitur-aksi">
+    <button type="button" id="tampilkanPaketBaru" class="uji-kecil" hidden>tampilkan berkas unduhan</button>
+    <button type="button" id="muatUlangPita" class="uji-kecil" hidden>muat ulang ekstensi</button>
+  </div>
 </div>
 
 <!-- Enam warna gelap super admin - satu baris titik, diisi popup.js dari

@@ -356,11 +356,15 @@ describe("butir 6 - ZIP-nya dibuka, bukan kodenya dibaca", () => {
     keadaan.panggilanEcourt = [];
     delete process.env.ALETA_ZIP_TIMEOUT_BERKAS_MS;
     delete process.env.ALETA_ZIP_TIMEOUT_TOTAL_MS;
+    delete process.env.ALETA_ZIP_MAKS_BERKAS;
+    delete process.env.ALETA_ZIP_MAKS_BYTE;
   });
 
   afterEach(() => {
     delete process.env.ALETA_ZIP_TIMEOUT_BERKAS_MS;
     delete process.env.ALETA_ZIP_TIMEOUT_TOTAL_MS;
+    delete process.env.ALETA_ZIP_MAKS_BERKAS;
+    delete process.env.ALETA_ZIP_MAKS_BYTE;
   });
 
   it("folder 00 Data SIPP memuat perkara.json dan seluruh 26 tabel yang dijanjikan", async () => {
@@ -537,8 +541,10 @@ describe("butir 6 - ZIP-nya dibuka, bukan kodenya dibaca", () => {
     const isi = await ambilZip("?nomor=273/Pdt.G/2026/PA.Dgl&sumber=ecourt");
     const nama = [...isi.keys()].filter((x) => x.startsWith("06 e-Court/"));
 
-    expect(nama).toContain("06 e-Court/01 - Jawaban Tergugat.rtf");
-    expect(nama).toContain("06 e-Court/02 - Alat Bukti.odt");
+    // Subfolder menurut jenis (butir 10, 12 Okt 2026): judul tanpa jenis resmi
+    // dikelompokkan dari judulnya.
+    expect(nama).toContain("06 e-Court/Jawaban/01 - Jawaban Tergugat.rtf");
+    expect(nama).toContain("06 e-Court/Alat bukti/02 - Alat Bukti.odt");
     expect(nama.some((x) => x.endsWith(".docx"))).toBe(false);
   });
 
@@ -571,7 +577,7 @@ describe("butir 6 - ZIP-nya dibuka, bukan kodenya dibaca", () => {
     // Yang menggantung disebutkan, yang lain tetap ikut.
     const keteranganTxt = isi.get("KETERANGAN.txt")!.toString("utf8");
     expect(keteranganTxt).toContain("BAS 2018 (pdf): The operation was aborted");
-    expect([...isi.keys()]).toContain("06 e-Court/02 - Replik.pdf");
+    expect([...isi.keys()]).toContain("06 e-Court/Replik/02 - Replik.pdf");
     // Batas waktu 15 detik, bukan 120 detik bawaan vitest: sinyal yang hilang
     // membuat uji ini MENGGANTUNG, dan diukur 25 September 2026 gantungnya
     // memang penuh sampai batas waktu. Tanpa batas yang lebih pendek, satu
@@ -579,6 +585,9 @@ describe("butir 6 - ZIP-nya dibuka, bukan kodenya dibaca", () => {
   }, 15_000);
 
   it("data SIPP tidak lagi menjadi yang pertama dibuang ketika batas 150 berkas terlampaui", async () => {
+    // Jalur alir kini longgar (5.000 berkas, 12 Okt 2026); batas 150 diberlakukan
+    // lewat ALETA_ZIP_MAKS_BERKAS supaya urutan penulisannya tetap terjaga.
+    process.env.ALETA_ZIP_MAKS_BERKAS = "150";
     // 200 relaas berdokumen. Sebelum 25 September 2026 folder 00 ditulis
     // PALING AKHIR, jadi 150 slotnya habis oleh relaas dan folder yang diminta
     // pengguna dengan kalimatnya sendiri adalah satu-satunya yang dibuang.
@@ -688,8 +697,8 @@ describe("butir 6 - ZIP-nya dibuka, bukan kodenya dibaca", () => {
 
     expect(kunci.length).toBe(2);
     expect(new Set(kunci).size).toBe(2);
-    expect(kunci).toContain("06 e-Court/01 - Kesimpulan.pdf");
-    expect(kunci).toContain("06 e-Court/01 - Kesimpulan (word).pdf");
+    expect(kunci).toContain("06 e-Court/Kesimpulan/01 - Kesimpulan.pdf");
+    expect(kunci).toContain("06 e-Court/Kesimpulan/01 - Kesimpulan (word).pdf");
   });
 
   it("DAFTAR ISI menyebut seluruh entri yang benar-benar ada", async () => {
@@ -698,7 +707,9 @@ describe("butir 6 - ZIP-nya dibuka, bukan kodenya dibaca", () => {
 
     // DAFTAR ISI dan KETERANGAN sendiri tidak masuk daftarnya - keduanya
     // ditaruh sesudah daftarnya disusun.
-    const dihitung = [...isi.keys()].filter((x) => x !== "DAFTAR ISI.txt" && x !== "KETERANGAN.txt");
+    const dihitung = [...isi.keys()].filter(
+      (x) => x !== "DAFTAR ISI.txt" && x !== "DAFTAR ISI.csv" && x !== "KETERANGAN.txt"
+    );
     expect(daftar).toContain(`Jumlah berkas: ${dihitung.length}`);
     for (const nama of dihitung) expect(daftar, nama).toContain(nama);
   });

@@ -435,7 +435,8 @@ describe("panel portal: tanda teknis hanya di Baru/UI Baru", () => {
 // ============================================================================
 // Popup
 // ============================================================================
-function bukaPopup(simpan: Record<string, unknown>, peran = "Hakim") {
+// UIBARU-WAJIB 12 Okt: pilihan Lama/Baru hanya milik Super Admin.
+function bukaPopup(simpan: Record<string, unknown>, peran = "Super Admin") {
   const html = POPUP_HTML.replace(/<script[\s\S]*?<\/script>/g, "");
   const dom = new JSDOM(html, { url: "chrome-extension://aleta/popup.html", runScripts: "outside-only" });
   terbuka.push(dom);

@@ -36,6 +36,8 @@ type Panggilan = { alamat: string; cara: string };
 
 type Opsi = {
   peran?: string;
+  /** info=siapa menjawab 401: peran tidak diketahui, jadi tidak ada UI Baru wajib (UIBARU-WAJIB 12 Okt). */
+  belumMasuk?: boolean;
   simpan?: Record<string, unknown>;
   /** Jawaban tiruan untuk GET ke SIPP/ABT; lempar untuk "tidak terjangkau". */
   situs?: (alamat: string) => { ok: boolean; status: number; url?: string } | "lempar";
@@ -84,6 +86,7 @@ function bukaPopup(opsi: Opsi = {}) {
   w.fetch = async (alamat: string, init?: { method?: string }) => {
     const a = String(alamat);
     panggilan.push({ alamat: a, cara: String((init && init.method) || "GET").toUpperCase() });
+    if (a.includes("info=siapa") && opsi.belumMasuk) return { ok: false, status: 401, json: async () => ({}) };
     if (a.includes("info=siapa")) {
       return {
         ok: true,
@@ -157,7 +160,8 @@ describe("tampilan Lama: popup persis seperti sebelum Tahap 2", () => {
     ["nilai tampilan tak dikenal (diperlakukan Lama)", { ujiTampilan: "entah", ujiFitur: SEMUA_POPUP }],
   ] as const) {
     it(judul, async () => {
-      const p = bukaPopup({ peran: "Panitera Pengganti", simpan });
+      // UIBARU-WAJIB 12 Okt: peran dikenal selain Super Admin selalu UI Baru; Lama utuh bagi yang belum dikenal.
+      const p = bukaPopup({ belumMasuk: true, simpan });
       await tenang(p);
       expect(sidik(p.d)).toBe(sidikMentah());
       expect(p.d.documentElement.hasAttribute("data-kulit")).toBe(false);
@@ -172,7 +176,7 @@ describe("tampilan Lama: popup persis seperti sebelum Tahap 2", () => {
   }
 
   it("Baru tanpa satu pun saklar popup menyala: juga tidak ada elemen buatan", async () => {
-    const p = bukaPopup({ peran: "Hakim", simpan: { ujiTampilan: "baru", ujiFitur: { "sipp-5": true } } });
+    const p = bukaPopup({ belumMasuk: true, simpan: { ujiTampilan: "baru", ujiFitur: { "sipp-5": true } } });
     await tenang(p);
     expect(p.d.querySelectorAll('[class^="tb-"], [class*=" tb-"]').length).toBe(0);
     expect(p.d.getElementById("fiturCoba")).toBeNull();

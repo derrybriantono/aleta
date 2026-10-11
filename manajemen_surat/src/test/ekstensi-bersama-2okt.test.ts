@@ -665,8 +665,11 @@ function jawabanChecklist() {
 }
 const SEMUA_WIDGET = { "popup-20": true, "popup-21": true, "popup-22": true };
 function halamanWidget(simpanan: Record<string, unknown>, sumber = SUMBER_CHECKLIST) {
+  // Sejak 12 Okt widget BAWAAN TERTUTUP; uji-uji ini menguji isinya yang terbentang,
+  // jadi dimulai dari posisi tersimpan "terbentang" kecuali disebut lain.
+  const terbentang = { posisiChecklistSipp: { kecil: false }, posisiChecklistAbt: { kecil: false }, posisiChecklistAleta: { kecil: false } };
   const h = halaman({
-    simpanan: { checklistMilestone: true, ...simpanan },
+    simpanan: { checklistMilestone: true, ...terbentang, ...simpanan },
     tambahan: [["checklist.js", sumber]],
     jawab: (url) => (url.includes("/aleta-ecourt/checklist") ? jawabanChecklist() : undefined),
   });

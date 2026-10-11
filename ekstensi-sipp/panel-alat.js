@@ -190,6 +190,59 @@ function alatSimpanPosisi(kunci, posisi) {
   }
 }
 
+/* === POSISI-AWAL 12 Okt === */
+//
+// SESI BARU: panel ALETA di KANAN ATAS dengan ukuran yang nyaman.
+//
+// Letaknya sudah kanan atas (panel.css: top/right 12px) selama petugas belum
+// pernah menggesernya; yang kurang adalah UKURAN - 460px dan setinggi isinya
+// terasa sempit, dan setiap petugas baru menariknya sendiri dulu supaya besar.
+// Bawaan sekarang dihitung dari layar: lebar sepertiga layar (paling sedikit
+// 520px, paling banyak 760px) dan tinggi 70% layar - tidak pernah melewati
+// layarnya. Ukuran yang SUDAH tersimpan (ditarik petugas) tidak disentuh.
+const ALAT_AWAL_LEBAR_MIN = 520;
+const ALAT_AWAL_LEBAR_MAKS = 760;
+const ALAT_AWAL_TEPI = 12;
+
+function alatUkuranAwal() {
+  const w = Number(window.innerWidth) || 0;
+  const h = Number(window.innerHeight) || 0;
+  if (w <= 0 || h <= 0) return null;
+  const lebarLayar = Math.max(w - ALAT_AWAL_TEPI * 2, 260);
+  const tinggiLayar = Math.max(h - ALAT_AWAL_TEPI * 2, 160);
+  const lebar = Math.min(Math.max(Math.round(w * 0.33), ALAT_AWAL_LEBAR_MIN), ALAT_AWAL_LEBAR_MAKS, lebarLayar);
+  const tinggi = Math.min(Math.max(Math.round(h * 0.7), 420), tinggiLayar);
+  return { lebar, tinggi };
+}
+
+/**
+ * Memasang ukuran bawaan pada yang BELUM punya ukuran tersimpan (lebar dan
+ * tinggi dinilai sendiri-sendiri). Dipanggil sebelum jangkar dinormalkan -
+ * lebar baru dipasang selagi panel masih berjangkar kanan, jadi sudut kanan
+ * atasnya tetap di tempat. Mengembalikan true bila ada yang dipasang.
+ */
+function alatTerapkanUkuranAwal(panel, posisi) {
+  if (!panel || !panel.style) return false;
+  const awal = alatUkuranAwal();
+  if (!awal) return false;
+  const simpan = posisi && typeof posisi === "object" ? posisi : {};
+  let dipasang = false;
+  if (!(typeof simpan.lebar === "number" && simpan.lebar > 0)) {
+    panel.style.width = `${awal.lebar}px`;
+    dipasang = true;
+  }
+  if (!(typeof simpan.tinggi === "number" && simpan.tinggi > 0)) {
+    panel.style.height = `${awal.tinggi}px`;
+    panel.style.maxHeight = "none";
+    // Tingginya bawaan yang disengaja: batas idaman (sepertiga layar) tidak
+    // memotongnya, hanya tepi layar.
+    panel.dataset.tinggiSendiri = "1";
+    dipasang = true;
+  }
+  return dipasang;
+}
+/* === AKHIR POSISI-AWAL === */
+
 function alatTerapkanPosisi(panel, posisi) {
   if (!panel || !posisi) return;
 
@@ -1709,8 +1762,10 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   // Klik 2x kepala = layar penuh (butir 18, Baru & UI Baru). Panel SIPP
   // memasangnya sendiri di konten.js - kepalanya disusun di sana.
   alatPasangKlikGandaKepala(panel, kunci, kepala);
-  alatNormalkanJangkar(panel);
   const posisiTersimpan = await alatMuatPosisi(kunci);
+  // POSISI-AWAL 12 Okt: ukuran bawaan untuk sesi baru, SEBELUM jangkar dinormalkan.
+  alatTerapkanUkuranAwal(panel, posisiTersimpan);
+  alatNormalkanJangkar(panel);
   alatTerapkanPosisi(panel, posisiTersimpan);
   // Keadaan lencana ikut dipulihkan. Yang menutup halaman dengan panel
   // terciut mengharapkannya terciut lagi saat kembali - panel yang
@@ -3173,6 +3228,12 @@ function alatUjiBersihMode(x) {
  *   3. Selain itu Lama - persis ekstensi sebelumnya.
  */
 function alatUjiBerlaku() {
+  /* === UIBARU-WAJIB 12 Okt === */
+  if (alatUjiWajibUi()) {
+    const w = alatUji.server;
+    return { mode: "ui", fitur: w && w.diterapkan === true && w.fitur ? w.fitur : {}, sumber: "wajib" };
+  }
+  /* === AKHIR UIBARU-WAJIB === */
   if (alatUji.mode !== "lama") return { mode: alatUji.mode, fitur: alatUji.fitur, sumber: "coba" };
   const s = alatUji.server;
   if (s && s.diterapkan === true && s.mode !== "lama") return { mode: s.mode, fitur: s.fitur || {}, sumber: "server" };
@@ -3208,8 +3269,27 @@ function alatFiturNyala(kode) {
 
 /** Mode coba aktif: tampilan bukan Lama dan tindakan nyata tidak diizinkan. */
 function alatCobaAktif() {
+  // UIBARU-WAJIB 12 Okt: pilihan uji lokal hanya milik Super Admin; akun lain
+  // tidak pernah dikenai mode coba oleh sisa pilihan yang tertinggal di PC ini.
+  if (alatUjiWajibUi()) return false;
   return alatUji.mode !== "lama" && alatUji.izinkanNyata !== true;
 }
+
+/* === UIBARU-WAJIB 12 Okt ===
+ * Selain Super Admin, tampilan SELALU UI Baru (keputusan pengguna 12 Okt):
+ * pilihan Lama/Baru tersimpan diabaikan dan pengalihnya disembunyikan di popup.
+ * Peran dibaca dari profil yang disinggahkan GET /ekstensi/tampilan
+ * (data.profil.peran = kunci peran: "super-admin", "admin", "hakim", ...).
+ * Peran belum diketahui (belum masuk, portal lama) = aturan lama berlaku.
+ * Satu fungsi penentu: konten.js/abt.js/checklist.js/aleta.js membaca mode lewat
+ * alatUjiBerlaku/alatUjiMode (t7Aktif, s1Aktif, a30Aktif ...), jadi ikut seluruhnya. */
+function alatUjiWajibUi() {
+  const s = alatUji.server;
+  const p = s && typeof s === "object" ? s.profil : null;
+  const peran = p && typeof p === "object" ? String(p.peran || "") : "";
+  return Boolean(peran) && peran !== "super-admin";
+}
+/* === AKHIR UIBARU-WAJIB === */
 
 /**
  * Apakah permintaan ini harus ditahan mode coba?

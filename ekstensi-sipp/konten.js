@@ -11098,6 +11098,17 @@ function jepitKeLayar(kiri, atas, lebar, tinggi) {
 
 function terapkanPosisi(panel, posisi) {
   keadaanPanel = posisi ? { ...posisi } : null;
+  /* === POSISI-AWAL 12 Okt === */
+  // Sesi baru (atau belum pernah menarik ukuran): panel kanan atas dengan
+  // ukuran bawaan yang nyaman - lihat alatTerapkanUkuranAwal di panel-alat.js.
+  // Dipasang selagi panel masih berjangkar kanan atas (normalkanJangkar
+  // dipanggil sesudahnya). Yang sudah tersimpan tidak disentuh.
+  try {
+    if (typeof alatTerapkanUkuranAwal === "function") alatTerapkanUkuranAwal(panel, posisi);
+  } catch {
+    /* tanpa ukuran bawaan, panel.css tetap berlaku */
+  }
+  /* === AKHIR POSISI-AWAL === */
   if (!posisi) return;
 
   // Ukuran lebih dulu: posisinya dijepit terhadap ukuran yang SUDAH berlaku,

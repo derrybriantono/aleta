@@ -1,7 +1,10 @@
+import { createHash } from "node:crypto";
+
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { CATATAN_EKSTENSI } from "@/lib/catatan-ekstensi";
+import { golonganPopup } from "@/lib/golongan-popup";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -102,6 +105,12 @@ export async function GET(request: NextRequest) {
           pengguna: {
             nama: actor.name,
             peran: peran ? peran.name : String(actor.roleId || ""),
+            // POPUP-PERAN 12 Okt: kunci penyimpanan per akun + golongan di
+            // popup. Kunci = sidik pendek pengenal akun (bukan pengenalnya);
+            // golongan = aturan satu-satunya di lib/golongan-popup.ts.
+            kunci: createHash("sha256").update(String(actor.id || actor.name)).digest("hex").slice(0, 12),
+            peranId: String(actor.roleId || ""),
+            golongan: golonganPopup(actor as never),
           },
         },
         { headers: { "Cache-Control": "no-store" } }
