@@ -2486,6 +2486,33 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         String(req.body?.posita || ""),
         tipe.tipeKeluaran ? { tipeKeluaran: tipe.tipeKeluaran } : undefined
       );
+      /* === KDL2 11 Okt === */
+      // Tempat tinggal bersama semasa rukun -> kartu 1006 (Tempat tinggal setelah nikah) & 8570
+      // (Kediaman bersama terakhir), sumber posita + kutipan saksi. Posita dari ekstensi (5125) atau
+      // SIPP bila tidak dikirim (SELECT, 2,5 detik). Hanya MENAMBAH kartu yang belum ada; galat di sini
+      // tidak pernah menggagalkan usulan lain.
+      if (jawaban.saksi && Array.isArray(jawaban.saksi.usulan)) {
+        try {
+          const positaMasukTt = String(req.body?.posita || "");
+          let positaTt = positaMasukTt;
+          if (positaMasukTt.replace(/<[^>]*>/g, " ").trim().length < 50 && nomorPerkara) {
+            const konteksTt = await abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null);
+            if (konteksTt && konteksTt.posita) positaTt = konteksTt.posita;
+          }
+          const tt = require("../services/deteksiTempatTinggalService").usulanTempatTinggal({
+            posita: positaTt,
+            saksi1: String(req.body?.saksi1 || ""),
+            saksi2: String(req.body?.saksi2 || ""),
+          });
+          for (const u of tt.usulan) {
+            if (!jawaban.saksi.usulan.some((x) => x && x.kode === u.kode)) jawaban.saksi.usulan.push(u);
+          }
+          jawaban.saksi.tempatTinggal = tt.tempatTinggal;
+        } catch (galatTt) {
+          jawaban.saksi.tempatTinggalGalat = String((galatTt && galatTt.message) || galatTt).slice(0, 200);
+        }
+      }
+      /* === AKHIR KDL2 === */
     }
 
     // Entri pengaturan yang ditolak - oleh penyaring di atas maupun oleh
