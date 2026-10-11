@@ -44,6 +44,9 @@ vi.mock("@/server/modules/organization/service", () => ({
     return keadaan.aktor;
   },
   getUserByIdFromDb: async () => keadaan.aktor,
+  // Rute yang lolos pagar matriks lanjut membaca daftar pengguna; tanpa tiruan ini
+  // vitest mencatat "unhandled rejection" sesudah ujinya selesai (bukan kegagalan pagar).
+  getUsersFromDb: async () => (keadaan.aktor ? [keadaan.aktor] : []),
 }));
 // Kemampuan ekstensi lama dianggap ada - yang diuji pagar MATRIKS di atasnya.
 vi.mock("@/server/modules/aleta-ecourt/akses", () => ({
