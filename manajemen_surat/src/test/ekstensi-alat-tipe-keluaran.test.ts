@@ -211,7 +211,7 @@ describe("1. portal mati dan singgahan kosong: sama persis dengan yang tertanam"
     const p = peramban(() => ({ ok: false, status: 503, json: async () => ({ ok: false, alasan: "basis_data_tidak_terbaca" }) }));
     const hasil = await p.jalan('alatTipeKeluaran("putusan.peta-blangko")');
     expect(hasil.asal).toBe("tertanam");
-    expect(hasil.entri).toHaveLength(4);
+    expect(hasil.entri).toHaveLength(CERMIN_EKSTENSI["putusan.peta-blangko"].length);
   });
 });
 
@@ -230,7 +230,7 @@ describe("2. versi sama 0 permintaan, versi berbeda tepat 1, portal gagal pakai 
     const hasil = await p.jalan('alatTipeKeluaran("putusan.peta-blangko")');
     expect(p.permintaan).toHaveLength(0);
     expect(hasil.asal).toBe("singgahan");
-    expect(hasil.entri).toHaveLength(4);
+    expect(hasil.entri).toHaveLength(CERMIN_EKSTENSI["putusan.peta-blangko"].length);
     // opsi.versiTipe sama berlakunya dengan alatSetelVersiTipe.
     const lagi = await p.jalan(`alatTipeKeluaran("putusan.padanan-jenis", { versiTipe: ${JSON.stringify(lama.versi)} })`);
     expect(lagi.asal).toBe("singgahan");

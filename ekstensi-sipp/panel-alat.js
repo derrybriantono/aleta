@@ -7846,6 +7846,44 @@ const ALAT_PETA_BAWAAN = {
   },
 };
 
+/* === 4B 11 Okt === */
+/**
+ * Blangko putusan GUGATAN LAIN dari paket ABT "abt-blangko-gugatan-lain" (menu baru grup derry_briantono:
+ * 920 Putusan Harta Bersama, 921 Putusan Kewarisan, 923 Putusan Izin Poligami). Disusun dari putusan nyata
+ * PA Donggala (506/Pdt.G/2026, 620/Pdt.G/2025, 0102/Pdt.G/2016) - bukan tebakan nama.
+ *
+ * Sebelum paket itu dipasang di satker berkasnya tidak ada; pencarian token lalu tidak menemukan apa pun dan
+ * panel menyebutnya - perlakuan yang sama dengan bawaan lain yang belum ada di server. Itsbat kontensius
+ * (alur 15, menu 922) TIDAK diberi baris sendiri: jenis SIPP-nya sama dengan itsbat permohonan ("itsbat nikah").
+ */
+Object.assign(ALAT_PETA_BAWAAN, {
+  "harta bersama": {
+    jenisAsli: "Harta Bersama",
+    berkas: "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi",
+    blangko: "Putusan Harta Bersama",
+    blangkoLain: ["Putusan HB"],
+    bawaan: true,
+    catatan: "paket ABT abt-blangko-gugatan-lain - varian: [97] [Perdamaian] Akta Perdamaian; [98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban",
+  },
+  kewarisan: {
+    jenisAsli: "Kewarisan",
+    berkas: "[01] [Kabul] Kewarisan - Kontradiktur",
+    blangko: "Putusan Kewarisan",
+    blangkoLain: ["Putusan Waris"],
+    bawaan: true,
+    catatan: "paket ABT abt-blangko-gugatan-lain - varian: [97] [Perdamaian] Akta Perdamaian",
+  },
+  poligami: {
+    jenisAsli: "Izin Poligami",
+    berkas: "[01] [Kabul] Izin Poligami",
+    blangko: "Putusan Izin Poligami",
+    blangkoLain: ["Putusan Poligami"],
+    bawaan: true,
+    catatan: "paket ABT abt-blangko-gugatan-lain - varian: [98] [Cabut] Permohonan - P & T Hadir Sebelum Jawaban",
+  },
+});
+/* === AKHIR 4B === */
+
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah
  * disentuh. Yang pernah disunting - termasuk yang sengaja dihapus lalu
