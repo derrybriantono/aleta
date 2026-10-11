@@ -1,0 +1,638 @@
+{
+  "kelompok": "itsbat",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "itsbat-tujuan-membutuhkan-untuk",
+      "label": "Tujuan itsbat: 'membutuhkan ... untuk ...'",
+      "kunci": "8171",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:membutuhkan|memerlukan|diperlukan|dipergunakan|digunakan|dibutuhkan|guna\\s+keperluan)[^;]{0,90}?\\b(?:untuk|guna)\\s+(?<nilai>[^;]{5,200}?)(?=\\s*;|\\.\\s+[A-Z0-9]|\\.\\s*$|\\s+[0-9]{1,2}\\.\\s+Bahwa|\\s+Bahwa\\b|,?\\s+(?:namun|akan\\s+tetapi|tetapi)\\b|$)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sementara saat ini para Pemohon I dan Pemohon II membutuhkan Akta Nikah tersebut untuk mengurus Buku Nikah dan untuk kepentingan hukum lainnya;",
+        "Penetapan Pengesahan Nikah tersebut akan dipergunakan untuk pengurusan pencairan dana BPJS Ketenagakerjaan;"
+      ],
+      "contohSalah": [
+        "para Pemohon mengajukan permohonan ini untuk menetapkan sahnya perkawinan;"
+      ],
+      "ukur": {
+        "n": 439,
+        "tepat": 166,
+        "salahTangkap": 273,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Isian 8171 manusia sering menominalkan ('pengurusan' untuk 'mengurus'); pembanding menyamakannya."
+    },
+    {
+      "kode": "itsbat-alasan-wali-hakim",
+      "label": "Alasan wali nikah bukan ayah ('karena ayah kandung ... meninggal')",
+      "kunci": "1357",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "awalan": ", ",
+      "regex": "(?<nilai>(?:karena|oleh\\s+karena|sebab)\\s+(?:ayah|bapak|orang\\s+tua|wali)(?:\\s+kandung)?[^;.()]{0,60}?(?:telah\\s+)?(?:meninggal(?:\\s+dunia)?|wafat|beragama\\s+(?:kristen|katolik|hindu|budha|non\\s*muslim)|non\\s*muslim|tidak\\s+(?:diketahui|ada|beragama\\s+islam))(?:(?!\\s+dan\\s+yang\\s+menikahkan|\\s+yang\\s+menikahkan)[^;.,()]){0,60})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "wali nikah Pemohon II adalah kakak kandungnya karena ayah kandung Pemohon II telah meninggal dunia;",
+        "wali nikah yaitu Ludin (Paman Pemohon II karena Ayah dari Pemohon II telah meninggal dunia) dan yang menikahkan adalah Makin"
+      ],
+      "contohSalah": [
+        "yang menjadi wali nikah adalah ayah kandung Pemohon II bernama Ludin;"
+      ],
+      "ukur": {
+        "n": 13,
+        "tepat": 8,
+        "salahTangkap": 5,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Blangko menulis 'bernama #1217##1357#' - nilai diusulkan berawalan ', ' seperti isian petugas."
+    },
+    {
+      "kode": "itsbat-pasangan-wafat",
+      "label": "Pasangan yang telah wafat (itsbat 1 Pemohon)",
+      "kunci": "1025",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "(?:suami|isteri|istri)\\s+(?:dari\\s+)?Pemohon[^;]{0,30}?(?:bernama|yaitu|yakni)\\s+(?:almarhum(?:ah)?\\s+|alm\\.?\\s+)?(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)\\s*(?:\\((?:alm|almh|almarhum|almarhumah)\\.?\\)\\s*)?,?\\s+(?:telah\\s+)?(?:meninggal|wafat)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Bahwa suami Pemohon bernama Saruna bin Yali telah meninggal dunia pada tanggal 3 Maret 2024;"
+      ],
+      "contohSalah": [
+        "Bahwa suami Pemohon bernama Saruna bin Yali masih hidup;"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanggal-wafat-pasangan",
+      "label": "Tanggal wafat pasangan",
+      "kunci": "fakta-tanggal-wafat",
+      "jenis": "fakta",
+      "bentuk": "tanggal",
+      "regex": "meninggal\\s+dunia\\s+(?:pada\\s+)?(?:hari\\s+[A-Za-z']+,?\\s+)?(?:tanggal\\s+|tgl\\.?\\s+)?(?<nilai>\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "suami Pemohon telah meninggal dunia pada tanggal 3 Maret 2024"
+      ],
+      "contohSalah": [
+        "menikah pada tanggal 3 Maret 2004"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tidak-tercatat",
+      "label": "Sebab pernikahan tidak tercatat",
+      "kunci": "fakta-tidak-tercatat",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?<nilai>(?:pernikahan|perkawinan)\\s+(?:tersebut\\s+)?(?:tidak|belum)\\s+(?:terdaftar|tercatat|dicatatkan|didaftarkan)[^;]{0,160})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "pernikahan tersebut tidak terdaftar di Kantor Urusan Agama Kecamatan Dolo, Kabupaten Sigi"
+      ],
+      "contohSalah": [
+        "pernikahan tersebut telah tercatat di Kantor Urusan Agama"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tidak-bercerai",
+      "label": "Sejak menikah tidak pernah bercerai",
+      "kunci": "fakta-tidak-bercerai",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "(?:tidak|belum)\\s+pernah\\s+(?:bercerai|bercerai\\s+baik|cerai)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sejak menikah para Pemohon tidak pernah bercerai"
+      ],
+      "contohSalah": [
+        "para Pemohon telah bercerai pada tahun 2020"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tidak-ada-halangan",
+      "label": "Tidak ada halangan nikah (nasab/semenda/sesusuan)",
+      "kunci": "fakta-tanpa-halangan",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "tidak\\s+(?:ada|terdapat)\\s+(?:hubungan\\s+(?:darah|nasab)|halangan|larangan|pertalian\\s+nasab)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "antara Pemohon I dan Pemohon II tidak ada hubungan darah, semenda maupun sesusuan"
+      ],
+      "contohSalah": [
+        "antara keduanya ada hubungan darah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-tujuan",
+      "label": "Pertanyaan: tujuan/maksud itsbat",
+      "kunci": "tanya-8171",
+      "jenis": "tanya",
+      "regex": "(?:tujuan|maksud)\\s+[^?]{0,60}?(?:mengajukan|permohonan)\\s+[^?]{0,30}?(?:i[st]{1,2}bat|isbat|pengesahan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apa tujuan Pemohon I dan Pemohon II mengajukan permohonan itsbat nikah?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara mengetahui maksud Pemohon menghadap di persidangan ini?"
+      ],
+      "ukur": {
+        "n": 316,
+        "tepat": 71,
+        "salahTangkap": 245,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-wali",
+      "label": "Pertanyaan: siapa wali nikah",
+      "kunci": "tanya-1217",
+      "jenis": "tanya",
+      "regex": "siapa(?:kah)?\\s+yang\\s+(?:menjadi|bertindak\\s+sebagai)\\s+wali\\s+nikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Siapa yang bertindak sebagai wali nikah Pemohon II pada pernikahan tersebut?"
+      ],
+      "contohSalah": [
+        "Siapa yang menikahkan Pemohon I dengan Pemohon II?"
+      ],
+      "ukur": {
+        "n": 303,
+        "tepat": 261,
+        "salahTangkap": 42,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-menikahkan",
+      "label": "Pertanyaan: siapa yang menikahkan",
+      "kunci": "tanya-8087",
+      "jenis": "tanya",
+      "regex": "siapa(?:kah)?\\s+yang\\s+menikahkan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Siapa yang menikahkan Pemohon I dengan Pemohon II?"
+      ],
+      "contohSalah": [
+        "Siapa yang menjadi wali nikah?"
+      ],
+      "ukur": {
+        "n": 273,
+        "tepat": 131,
+        "salahTangkap": 142,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-saksi-nikah",
+      "label": "Pertanyaan: siapa saksi nikah",
+      "kunci": "tanya-0650",
+      "jenis": "tanya",
+      "regex": "siapa(?:kah)?\\s+yang\\s+(?:menjadi|bertindak\\s+sebagai)\\s+saksi\\s+(?:nikah|pada\\s+pernikahan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Siapakah yang bertindak sebagai saksi nikah pada saat terjadinya ijab kabul?"
+      ],
+      "contohSalah": [
+        "Siapa yang menikahkan?"
+      ],
+      "ukur": {
+        "n": 301,
+        "tepat": 254,
+        "salahTangkap": 47,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-mahar",
+      "label": "Pertanyaan: mahar",
+      "kunci": "tanya-1001",
+      "jenis": "tanya",
+      "regex": "(?:mahar|mas\\s+kawin)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apa mahar yang diberikan Pemohon I kepada Pemohon II?"
+      ],
+      "contohSalah": [
+        "Siapa yang menikahkan?"
+      ],
+      "ukur": {
+        "n": 334,
+        "tepat": 202,
+        "salahTangkap": 132,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-tanggal-tempat",
+      "label": "Pertanyaan: kapan menikah",
+      "kunci": "tanya-5197",
+      "jenis": "tanya",
+      "regex": "kapan\\s+[^?]{0,60}?menikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Kapan Pemohon dengan almarhum menikah?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara hadir sewaktu Pemohon I menikah?"
+      ],
+      "ukur": {
+        "n": 74,
+        "tepat": 62,
+        "salahTangkap": 12,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-tempat",
+      "label": "Pertanyaan: di mana menikah",
+      "kunci": "tanya-5105",
+      "jenis": "tanya",
+      "regex": "(?:dimana|di\\s+mana)\\s+[^?]{0,60}?menikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Dimana Pemohon I dengan Pemohon II menikah?"
+      ],
+      "contohSalah": [
+        "Kapan Pemohon menikah?"
+      ],
+      "ukur": {
+        "n": 82,
+        "tepat": 44,
+        "salahTangkap": 38,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-status-wali",
+      "label": "Pertanyaan: wali nikah (hubungan wali)",
+      "kunci": "tanya-1046",
+      "jenis": "tanya",
+      "regex": "siapa(?:kah)?\\s+yang\\s+(?:menjadi|bertindak\\s+sebagai)\\s+wali\\s+nikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Siapa yang bertindak sebagai wali nikah Pemohon II pada pernikahan tersebut?"
+      ],
+      "contohSalah": [
+        "Siapa yang menikahkan?"
+      ],
+      "ukur": {
+        "n": 86,
+        "tepat": 80,
+        "salahTangkap": 6,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-alasan-wali",
+      "label": "Pertanyaan: wali nikah (alasan wali bukan ayah)",
+      "kunci": "tanya-1357",
+      "jenis": "tanya",
+      "regex": "siapa(?:kah)?\\s+yang\\s+(?:menjadi|bertindak\\s+sebagai)\\s+wali\\s+nikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Siapa yang menjadi wali nikah Pemohon II?"
+      ],
+      "contohSalah": [
+        "Siapa yang menikahkan?"
+      ],
+      "ukur": {
+        "n": 22,
+        "tepat": 6,
+        "salahTangkap": 16,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-saksi-nikah-2",
+      "label": "Pertanyaan: siapa saksi nikah (saksi kedua)",
+      "kunci": "tanya-0651",
+      "jenis": "tanya",
+      "regex": "siapa(?:kah)?\\s+yang\\s+(?:menjadi|bertindak\\s+sebagai)\\s+saksi\\s+(?:nikah|pada\\s+pernikahan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Siapa yang menjadi saksi pada pernikahan Pemohon I dan Pemohon II?"
+      ],
+      "contohSalah": [
+        "Siapa yang menikahkan?"
+      ],
+      "ukur": {
+        "n": 287,
+        "tepat": 225,
+        "salahTangkap": 62,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-status-2",
+      "label": "Pertanyaan: status saat menikah (pihak kedua)",
+      "kunci": "tanya-1003",
+      "jenis": "tanya",
+      "regex": "(?:apa\\s+)?status\\s+[^?]{0,60}?(?:saat|sebelum|ketika)\\s+menikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Apa status Pemohon I dan Pemohon II sebelum menikah?"
+      ],
+      "contohSalah": [
+        "Apakah pernah bercerai?"
+      ],
+      "ukur": {
+        "n": 259,
+        "tepat": 251,
+        "salahTangkap": 8,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-umur-1",
+      "label": "Pertanyaan: umur saat menikah (pihak pertama)",
+      "kunci": "tanya-7211",
+      "jenis": "tanya",
+      "regex": "umur\\s+[^?]{0,60}?(?:ketika|saat|waktu)\\s+menikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Berapa umur Pemohon I dan Pemohon II ketika menikah?"
+      ],
+      "contohSalah": [
+        "Berapa umur anak tersebut?"
+      ],
+      "ukur": {
+        "n": 25,
+        "tepat": 23,
+        "salahTangkap": 2,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-umur-2",
+      "label": "Pertanyaan: umur saat menikah (pihak kedua)",
+      "kunci": "tanya-7212",
+      "jenis": "tanya",
+      "regex": "umur\\s+[^?]{0,60}?(?:ketika|saat|waktu)\\s+menikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Berapa umur Pemohon I dan Pemohon II ketika menikah?"
+      ],
+      "contohSalah": [
+        "Berapa umur calon suami?"
+      ],
+      "ukur": {
+        "n": 17,
+        "tepat": 17,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-pasangan",
+      "label": "Pertanyaan: mengetahui pernikahan (pasangan wafat)",
+      "kunci": "tanya-1025",
+      "jenis": "tanya",
+      "regex": "mengetahui\\s+pernikahan\\s+(?:Pemohon|#0046#)\\??$",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah Saudara mengetahui pernikahan Pemohon?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara mengetahui pernikahan Pemohon I dengan Pemohon II di KUA?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-status",
+      "label": "Pertanyaan: status saat menikah",
+      "kunci": "tanya-1002",
+      "jenis": "tanya",
+      "regex": "(?:apa\\s+)?status\\s+[^?]{0,60}?(?:saat|sebelum|ketika)\\s+menikah",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Apa status Pemohon I dan Pemohon II saat menikah?"
+      ],
+      "contohSalah": [
+        "Apakah Pemohon I dan Pemohon II pernah bercerai?"
+      ],
+      "ukur": {
+        "n": 294,
+        "tepat": 291,
+        "salahTangkap": 3,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-anak",
+      "label": "Pertanyaan: dikaruniai anak",
+      "kunci": "tanya-0007",
+      "jenis": "tanya",
+      "regex": "dikarunia?i\\s+anak|memiliki\\s+keturunan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah dari pernikahan tersebut Pemohon I dengan Pemohon II telah dikaruniai anak?"
+      ],
+      "contohSalah": [
+        "Apakah Pemohon I pernah bercerai?"
+      ],
+      "ukur": {
+        "n": 296,
+        "tepat": 33,
+        "salahTangkap": 263,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-tanya-hadir",
+      "label": "Pertanyaan: saksi hadir saat akad",
+      "kunci": "tanya-fakta-hadir",
+      "jenis": "tanya",
+      "regex": "(?:hadir|menyaksikan)\\s+[^?]{0,30}?(?:sewaktu|saat|ketika|pada\\s+saat)\\s+[^?]{0,60}?(?:menikah|akad|ijab)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah Saudara hadir sewaktu Pemohon I dengan Pemohon II menikah?"
+      ],
+      "contohSalah": [
+        "Apakah petugas dari KUA hadir saat pernikahan?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "itsbat-peringatan-de-auditu",
+      "label": "Peringatan: saksi itsbat tidak hadir saat akad",
+      "gaya": "peringatan",
+      "teks": "{saksi} menerangkan tidak hadir saat akad nikah - keterangannya dari orang lain (testimonium de auditu). Rukun nikah (wali, dua saksi, ijab kabul - Pasal 14 KHI) sebaiknya dibuktikan saksi yang menyaksikan sendiri.",
+      "syarat": {
+        "peringatan": "de-auditu"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-peringatan-rukun-kosong",
+      "label": "Peringatan: rukun nikah belum terisi",
+      "gaya": "peringatan",
+      "teks": "Keterangan tentang {yang} belum terisi - wali, dua saksi nikah, dan ijab kabul adalah rukun nikah yang wajib terbukti (Pasal 14 KHI).",
+      "syarat": {
+        "peringatan": "rukun-kosong"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-ringkas-pokok",
+      "label": "Pokok keterangan saksi itsbat (ringkas)",
+      "gaya": "ringkas",
+      "teks": "{pemohon1} dan {pemohon2} telah menikah[ pada tanggal {5197}][ di {5105}][ dengan wali nikah {wali}][, yang menikahkan {8087}][, disaksikan oleh {0650} dan {0651}][ dengan mahar {1001}], sejak menikah tidak pernah bercerai dan tidak ada pihak yang keberatan atas pernikahan tersebut",
+      "syarat": {
+        "jenis": "itsbat-nikah"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "itsbat-lengkap-pokok",
+      "label": "Pokok keterangan saksi itsbat (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {pemohon1} dan {pemohon2} telah menikah[ pada tanggal {5197}][ di {5105}];|[- Bahwa yang menjadi wali nikah adalah {wali};|][- Bahwa yang menikahkan adalah {8087};|][- Bahwa yang menjadi saksi nikah adalah {0650} dan {0651};|][- Bahwa maharnya berupa {1001};|][- Bahwa saat menikah {pemohon1} berstatus {1002} dan {pemohon2} berstatus {1003};|]- Bahwa sejak menikah {pemohon1} dan {pemohon2} tidak pernah bercerai dan tidak ada pihak yang keberatan atas pernikahan tersebut;",
+      "syarat": {
+        "jenis": "itsbat-nikah"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
+    }
+  ]
+}

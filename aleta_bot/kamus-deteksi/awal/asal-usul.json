@@ -1,0 +1,118 @@
+{
+  "kelompok": "asal-usul",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "asal-usul-nama-anak",
+      "label": "Nama anak yang dimohonkan asal usulnya",
+      "kunci": "fakta-nama-anak",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "anak\\s+(?:pertama\\s+|kedua\\s+|ketiga\\s+)?(?:kandung\\s+)?(?:para\\s+)?(?:Pemohon(?:\\s+I(?:\\s+dan\\s+Pemohon\\s+II)?)?\\s+)?(?:yang\\s+)?(?:bernama|yaitu|yakni)\\s*:?\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak pertama para Pemohon yang bernama Rizki bin Ahmad lahir tanggal 3 Mei 2015"
+      ],
+      "contohSalah": [
+        "anak para Pemohon kesulitan membuat akta kelahiran"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "asal-usul-lahir",
+      "label": "Tanggal lahir anak",
+      "kunci": "fakta-lahir-anak",
+      "jenis": "fakta",
+      "bentuk": "tanggal",
+      "regex": "lahir\\s+(?:di\\s+[A-Z][^,;]{1,40},?\\s+)?(?:pada\\s+)?(?:tanggal\\s+|tgl\\.?\\s+)?(?<nilai>\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Rizki bin Ahmad lahir di Donggala, 3 Mei 2015"
+      ],
+      "contohSalah": [
+        "pada tanggal 3 Mei 2015 menikah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "asal-usul-akta-kelahiran",
+      "label": "Kendala akta kelahiran",
+      "kunci": "fakta-akta-kelahiran",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?<nilai>(?:tidak\\s+dapat|belum\\s+dapat|kesulitan|tidak\\s+bisa)\\s+(?:mengurus|membuat|menerbitkan|mendapatkan)\\s+(?:akta|akte)\\s+kelahiran[^;]{0,120})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sehingga anak tersebut kesulitan membuat akte kelahiran"
+      ],
+      "contohSalah": [
+        "anak tersebut telah memiliki akta kelahiran"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "asal-usul-tanya-anak",
+      "label": "Pertanyaan: anak yang dimohonkan",
+      "kunci": "tanya-fakta-nama-anak",
+      "jenis": "tanya",
+      "regex": "anak\\s+(?:bernama|tersebut)\\s+[^?]{0,40}?(?:anak\\s+kandung|lahir)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Sepengetahuan Saksi, apakah benar anak bernama _ tersebut adalah anak kandung yang lahir dari pernikahan siri?"
+      ],
+      "contohSalah": [
+        "Apa mahar yang diserahkan?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "asal-usul-peringatan-dasar",
+      "label": "Info: dasar asal usul anak",
+      "gaya": "peringatan",
+      "teks": "Asal usul anak (Pasal 55 UU 1/1974, Pasal 103 KHI): saksi sebaiknya menerangkan pernikahan orang tua (beserta rukunnya) SEBELUM anak lahir, dan kelahiran anak itu sendiri.",
+      "syarat": {
+        "peringatan": "dasar-asal-usul"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}

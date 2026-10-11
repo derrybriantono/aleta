@@ -1,0 +1,119 @@
+{
+  "kelompok": "poligami",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "poligami-calon-istri",
+      "label": "Calon istri kedua",
+      "kunci": "fakta-calon-istri",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "(?:calon\\s+(?:isteri|istri)(?:\\s+kedua)?|seorang\\s+perempuan|perempuan\\s+lain|wanita\\s+lain)\\s+(?:Pemohon\\s+)?(?:yang\\s+)?(?:bernama|yaitu|yakni)\\s*:?\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pemohon hendak menikah lagi dengan seorang perempuan bernama Siti binti Lamba"
+      ],
+      "contohSalah": [
+        "Termohon adalah istri sah Pemohon"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "poligami-persetujuan",
+      "label": "Persetujuan istri",
+      "kunci": "fakta-persetujuan-istri",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "(?:Termohon|isteri|istri)[^;]{0,60}?(?:telah\\s+)?(?:menyetujui|setuju|tidak\\s+keberatan|memberikan\\s+(?:izin|persetujuan)|mengizinkan|rela)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon telah memberikan persetujuan secara tertulis"
+      ],
+      "contohSalah": [
+        "Termohon menolak Pemohon menikah lagi"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "poligami-alasan",
+      "label": "Alasan poligami (Pasal 4 ayat (2) UU 1/1974)",
+      "kunci": "fakta-alasan-poligami",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?<nilai>(?:Termohon|isteri|istri)\\s+(?:Pemohon\\s+)?(?:tidak\\s+dapat\\s+(?:menjalankan|melahirkan|memberikan)|mendapat\\s+cacat|menderita|sakit|tidak\\s+mampu)[^;]{3,140})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon tidak dapat melahirkan keturunan"
+      ],
+      "contohSalah": [
+        "Termohon dan Pemohon hidup rukun"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "poligami-penghasilan",
+      "label": "Penghasilan Pemohon",
+      "kunci": "fakta-penghasilan",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "penghasilan[^;]{0,50}?(?<nilai>Rp\\.?\\s*[\\d.,]+(?:,-)?[^;]{0,60}?(?:per\\s*bulan|setiap\\s+bulan|perbulan|sebulan)?)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pemohon mempunyai penghasilan rata-rata Rp. 5.000.000,- per bulan"
+      ],
+      "contohSalah": [
+        "Pemohon bekerja sebagai petani"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "poligami-peringatan-syarat",
+      "label": "Info: syarat poligami",
+      "gaya": "peringatan",
+      "teks": "Izin poligami (Pasal 4-5 UU 1/1974, Pasal 55-59 KHI): saksi sebaiknya menerangkan alasan (istri tidak dapat menjalankan kewajiban/cacat/tidak dapat melahirkan), persetujuan istri, kemampuan menjamin keperluan hidup, dan sikap adil.",
+      "syarat": {
+        "peringatan": "poligami"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}

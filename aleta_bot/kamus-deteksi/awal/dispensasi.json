@@ -1,0 +1,527 @@
+{
+  "kelompok": "dispensasi",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "dispensasi-hamil",
+      "label": "Alasan mendesak: calon mempelai wanita hamil",
+      "kunci": "fakta-hamil",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?<nilai>(?:sedang|telah|sudah)\\s+hamil(?:\\s+(?:kurang\\s+lebih\\s+|sekitar\\s+|±\\s*)?\\d{1,2}(?:\\s*\\/\\s*\\d{1,2})?\\s*(?:\\([^)]{1,30}\\)\\s*)?(?:minggu|bulan))?)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sehingga anak para Pemohon sekarang sedang hamil 28 minggu;"
+      ],
+      "contohSalah": [
+        "Surat Keterangan Tidak Hamil",
+        "belum hamil"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-hubungan-erat",
+      "label": "Alasan mendesak: hubungan sudah sangat erat",
+      "kunci": "1014",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?<nilai>hubungan\\s+(?:mereka|keduanya|kedua(?:nya)?\\s+calon|cinta\\s+mereka)\\s+(?:telah|sudah)\\s+(?:sedemikian\\s+|sangat\\s+|begitu\\s+)?erat(?:nya)?(?:\\s+sehingga[^;(]{0,120})?)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "dan hubungan mereka telah sedemikian eratnya sehingga anak para Pemohon sekarang sedang hamil 28 minggu;"
+      ],
+      "contohSalah": [
+        "hubungan baik dengan tetangga"
+      ],
+      "ukur": {
+        "n": 21,
+        "tepat": 0,
+        "salahTangkap": 21,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-lamaran",
+      "label": "Calon sudah dilamar/dipinang",
+      "kunci": "fakta-lamaran",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "(?:telah|sudah)\\s+(?:di)?(?:lamar|pinang)|(?:telah|sudah)\\s+(?:ada|dilakukan|terjadi)\\s+(?:lamaran|pelamaran|peminangan|pinangan)|lamaran\\s+(?:telah|sudah)\\s+diterima",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak para Pemohon telah dilamar oleh keluarga calon suaminya"
+      ],
+      "contohSalah": [
+        "akan melamar pekerjaan"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-restu",
+      "label": "Kedua keluarga merestui",
+      "kunci": "fakta-restu",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "(?:kedua\\s+(?:belah\\s+)?(?:pihak\\s+)?keluarga|keluarga\\s+kedua\\s+(?:belah\\s+)?pihak|orang\\s+tua\\s+kedua\\s+(?:belah\\s+)?pihak)[^;]{0,60}?(?:setuju|sepakat|merestui|menyetujui|merestuinya|tidak\\s+keberatan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "kedua belah pihak keluarga telah sepakat dan merestui pernikahan tersebut"
+      ],
+      "contohSalah": [
+        "keluarga Pemohon tidak setuju"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-pekerjaan-calon-pria",
+      "label": "Pekerjaan calon suami",
+      "kunci": "0604",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "calon\\s+(?:suami|mempelai\\s+(?:laki-laki|pria))[^;]{0,140}?(?:bekerja\\s+sebagai|pekerjaan(?:nya)?\\s*:?)\\s+(?<nilai>[A-Za-z][A-Za-z /-]{2,50}?)(?=\\s+(?:dengan|yang|dan|di)\\b|[;,.(]|$)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "calon suami anak Pemohon bekerja sebagai Petani dengan penghasilan Rp2.000.000"
+      ],
+      "contohSalah": [
+        "Pemohon bekerja sebagai Petani"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-status-calon-pria",
+      "label": "Status calon suami (jejaka/duda)",
+      "kunci": "2029",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "calon\\s+(?:suami|mempelai\\s+(?:laki-laki|pria))[^;]{0,120}?berstatus\\s+(?<nilai>jejaka|perjaka|bujang|duda(?:\\s+(?:cerai|mati))?)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "calon suami anak Pemohon berstatus jejaka"
+      ],
+      "contohSalah": [
+        "anak Pemohon berstatus gadis"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-status-calon-wanita",
+      "label": "Status calon istri (gadis/janda)",
+      "kunci": "2030",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:calon\\s+(?:isteri|istri|mempelai\\s+(?:wanita|perempuan))|anak\\s+(?:para\\s+)?Pemohon(?:\\s+(?:I|II))?)[^;]{0,80}?berstatus\\s+(?<nilai>gadis|perawan|janda(?:\\s+(?:cerai|mati))?)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak Pemohon berstatus perawan"
+      ],
+      "contohSalah": [
+        "calon suami berstatus jejaka"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-kedekatan",
+      "label": "Pertanyaan: kedekatan calon",
+      "kunci": "tanya-1014",
+      "jenis": "tanya",
+      "regex": "(?:kedekatan|sudah\\s+saling\\s+mengenal|hubungan\\s+[^?]{0,40}?calon|eratnya)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah anak para Pemohon dengan calon suaminya sudah mempunyai kedekatan satu sama lain?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara kenal dengan para Pemohon?"
+      ],
+      "ukur": {
+        "n": 151,
+        "tepat": 8,
+        "salahTangkap": 143,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-pekerjaan",
+      "label": "Pertanyaan: pekerjaan calon",
+      "kunci": "tanya-0604",
+      "jenis": "tanya",
+      "regex": "(?:mata\\s+pencaharian|pekerjaan|penghasilan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah calon suami anak para Pemohon sudah memiliki mata pencaharian?"
+      ],
+      "contohSalah": [
+        "Berapa umur anak para Pemohon?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-status",
+      "label": "Pertanyaan: status anak dan calon",
+      "kunci": "tanya-2029",
+      "jenis": "tanya",
+      "regex": "status\\s+(?:anak|calon)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apa status anak para Pemohon dan apa status calon suaminya?"
+      ],
+      "contohSalah": [
+        "Berapa umur calon suami?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-anak",
+      "label": "Pertanyaan: anak yang dimohonkan",
+      "kunci": "tanya-0606",
+      "jenis": "tanya",
+      "regex": "mengenal\\s+anak\\s+[^?]{0,40}?(?:dimintakan|dimohonkan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah Saudara mengenal anak para Pemohon yang dimintakan dispensasi kawin tersebut?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara mengenal calon suami anak para Pemohon?"
+      ],
+      "ukur": {
+        "n": 76,
+        "tepat": 67,
+        "salahTangkap": 9,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-umur-anak",
+      "label": "Pertanyaan: umur anak",
+      "kunci": "tanya-0607",
+      "jenis": "tanya",
+      "regex": "umur\\s+anak\\s+(?:para\\s+)?Pemohon",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Berapa umur anak para Pemohon tersebut sekarang?"
+      ],
+      "contohSalah": [
+        "Berapa umur calon suami anak Pemohon sekarang?"
+      ],
+      "ukur": {
+        "n": 75,
+        "tepat": 60,
+        "salahTangkap": 15,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-calon",
+      "label": "Pertanyaan: calon suami",
+      "kunci": "tanya-0600",
+      "jenis": "tanya",
+      "regex": "mengenal\\s+calon\\s+suami",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "pasti",
+      "contohBenar": [
+        "Apakah Saudara mengenal calon suami anak para Pemohon?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara mengenal calon isteri anak para Pemohon?"
+      ],
+      "ukur": {
+        "n": 64,
+        "tepat": 62,
+        "salahTangkap": 2,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-calon-istri",
+      "label": "Pertanyaan: calon istri",
+      "kunci": "tanya-0606",
+      "jenis": "tanya",
+      "regex": "mengenal\\s+calon\\s+ist?e?ri",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah Saudara mengenal calon isteri anak para Pemohon?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara mengenal calon suami anak para Pemohon?"
+      ],
+      "ukur": {
+        "n": 5,
+        "tepat": 4,
+        "salahTangkap": 1,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-umur-calon",
+      "label": "Pertanyaan: umur calon suami",
+      "kunci": "tanya-0601",
+      "jenis": "tanya",
+      "regex": "umur\\s+calon\\s+suami",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Berapa umur calon suami anak Pemohon sekarang?"
+      ],
+      "contohSalah": [
+        "Berapa umur calon isteri anak Pemohon sekarang?"
+      ],
+      "ukur": {
+        "n": 4,
+        "tepat": 4,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-umur-calon-istri",
+      "label": "Pertanyaan: umur calon istri",
+      "kunci": "tanya-0607",
+      "jenis": "tanya",
+      "regex": "umur\\s+calon\\s+ist?e?ri",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Berapa umur calon isteri anak para Pemohon sekarang?"
+      ],
+      "contohSalah": [
+        "Berapa umur calon suami anak Pemohon sekarang?"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 2,
+        "salahTangkap": 1,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-kua",
+      "label": "Pertanyaan: sebab dispensasi (KUA menolak)",
+      "kunci": "tanya-3333",
+      "jenis": "tanya",
+      "regex": "(?:kenapa|mengapa|apa\\s+sebab(?:nya)?)\\s+[^?]{0,40}?dispensasi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Kenapa para Pemohon mau meminta dispensasi kawin?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara mengetahui maksud para Pemohon?"
+      ],
+      "ukur": {
+        "n": 80,
+        "tepat": 20,
+        "salahTangkap": 60,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-sebab",
+      "label": "Pertanyaan: sebab meminta dispensasi",
+      "kunci": "tanya-fakta-sebab-dispensasi",
+      "jenis": "tanya",
+      "regex": "(?:kenapa|mengapa|apa\\s+sebab(?:nya)?)\\s+[^?]{0,40}?dispensasi",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Kenapa para Pemohon mau meminta dispensasi kawin?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara mengetahui maksud para Pemohon?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-pelamaran",
+      "label": "Pertanyaan: pelamaran",
+      "kunci": "tanya-fakta-lamaran",
+      "jenis": "tanya",
+      "regex": "(?:pelamaran|lamaran|peminangan|pinangan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah sudah ada pelamaran dari pihak keluarga calon mempelai laki-laki?"
+      ],
+      "contohSalah": [
+        "Apakah keluarga merestui?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "dispensasi-peringatan-perma",
+      "label": "Peringatan: Perma 5/2019",
+      "gaya": "peringatan",
+      "teks": "Dispensasi kawin: Perma 5 Tahun 2019 meminta hakim mendengar anak yang dimohonkan, calon suami/istri, dan orang tua/wali kedua calon - saksi keluarga melengkapi, tidak menggantikan keterangan mereka.",
+      "syarat": {
+        "peringatan": "perma-dk"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-peringatan-umur-cukup",
+      "label": "Peringatan: umur calon sudah 19",
+      "gaya": "peringatan",
+      "teks": "{siapa} disebut berumur {umur} tahun - batas umur perkawinan 19 tahun (Pasal 7 ayat (1) UU 1/1974 jo. UU 16/2019); periksa apakah dispensasi memang diperlukan untuknya.",
+      "syarat": {
+        "peringatan": "umur-cukup"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-peringatan-hamil",
+      "label": "Info: alasan mendesak hamil",
+      "gaya": "peringatan",
+      "teks": "Posita menyebut calon mempelai wanita {hamil} - alasan mendesak; periksa surat keterangan dokter/puskesmas sebagai alat bukti.",
+      "syarat": {
+        "peringatan": "hamil"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-ringkas-pokok",
+      "label": "Pokok keterangan saksi DK (ringkas)",
+      "gaya": "ringkas",
+      "teks": "{para} hendak menikahkan anaknya[ bernama {0606}][ yang berumur {0607}][ dengan {0600}][ yang berumur {0601}], namun ditolak Kantor Urusan Agama karena belum cukup umur[, sedangkan {1014}], keluarga kedua belah pihak telah merestui dan tidak ada larangan perkawinan di antara keduanya",
+      "syarat": {
+        "jenis": "dispensasi-kawin"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-lengkap-pokok",
+      "label": "Pokok keterangan saksi DK (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {para} hendak menikahkan anaknya[ yang bernama {0606}][ dengan {0600}];|[- Bahwa anak tersebut sekarang berumur {0607};|][- Bahwa calon suaminya berumur {0601};|]- Bahwa Kantor Urusan Agama menolak mencatat perkawinan tersebut karena belum cukup umur;|[- Bahwa {1014};|]- Bahwa keluarga kedua belah pihak telah merestui dan tidak ada larangan perkawinan di antara keduanya;",
+      "syarat": {
+        "jenis": "dispensasi-kawin"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
+    }
+  ]
+}

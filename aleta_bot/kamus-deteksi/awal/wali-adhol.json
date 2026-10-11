@@ -1,0 +1,240 @@
+{
+  "kelompok": "wali-adhol",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "wali-adhol-calon-suami",
+      "label": "Calon suami Pemohon",
+      "kunci": "1029",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "(?:calon\\s+suami(?:nya)?|seorang\\s+laki-laki)\\s+(?:Pemohon\\s+)?(?:yang\\s+)?(?:bernama|yaitu|yakni)\\s*:?\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pemohon hendak menikah dengan seorang laki-laki bernama Andi bin Rahman, umur 27 tahun"
+      ],
+      "contohSalah": [
+        "calon suami Pemohon sudah bekerja"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-umur-calon",
+      "label": "Umur calon suami",
+      "kunci": "1030",
+      "jenis": "fakta",
+      "bentuk": "angka",
+      "regex": "(?:calon\\s+suami(?:nya)?|seorang\\s+laki-laki)[^;]{0,80}?(?:umur|usia|berumur|berusia)\\s+(?<nilai>\\d{1,2})\\s*(?:\\([^)]{1,30}\\)\\s*)?tahun",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "seorang laki-laki bernama Andi bin Rahman, umur 27 tahun"
+      ],
+      "contohSalah": [
+        "Pemohon umur 25 tahun"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-alasan-menolak",
+      "label": "Alasan wali menolak",
+      "kunci": "6087",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:wali|ayah|bapak)[^;]{0,80}?(?:menolak|enggan|tidak\\s+(?:mau|bersedia|setuju|merestui))[^;]{0,60}?(?:dengan\\s+alasan|karena|disebabkan|sebab)\\s+(?<nilai>[^;]{5,160}?)(?=\\s*;|\\.\\s+[A-Z0-9]|\\.\\s*$|$)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "ayah kandung Pemohon menolak menjadi wali nikah dengan alasan calon suami Pemohon bukan dari suku yang sama;"
+      ],
+      "contohSalah": [
+        "ayah kandung Pemohon bersedia menjadi wali;"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-status-wali",
+      "label": "Hubungan wali yang menolak",
+      "kunci": "1046",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?<nilai>ayah\\s+kandung|bapak\\s+kandung|kakek|saudara\\s+(?:laki-laki\\s+)?kandung|kakak\\s+(?:laki-laki\\s+)?kandung|paman)\\s+(?:dari\\s+)?Pemohon[^;]{0,80}?(?:menolak|enggan|tidak\\s+(?:mau|bersedia|setuju))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "ayah kandung Pemohon bernama Ahmad menolak menjadi wali nikah"
+      ],
+      "contohSalah": [
+        "ayah kandung Pemohon telah meninggal dunia"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-nama-wali",
+      "label": "Nama wali yang menolak",
+      "kunci": "1217",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "(?:ayah|bapak)\\s+kandung\\s+(?:dari\\s+)?Pemohon\\s+(?:yang\\s+)?(?:bernama|yaitu)\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "ayah kandung Pemohon bernama Ahmad bin Lasa menolak menjadi wali nikah"
+      ],
+      "contohSalah": [
+        "ayah kandung Pemohon menolak"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-tanya-sebab",
+      "label": "Pertanyaan: sebab wali menolak",
+      "kunci": "tanya-6087",
+      "jenis": "tanya",
+      "regex": "sebab(?:nya)?\\s+wali\\s+[^?]{0,40}?(?:tidak\\s+mau|menolak|enggan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apa sebabnya wali Pemohon tidak mau menjadi wali nikah dari Pemohon?"
+      ],
+      "contohSalah": [
+        "Apa hubungan Pemohon dengan wali Pemohon?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-tanya-calon",
+      "label": "Pertanyaan: calon suami",
+      "kunci": "tanya-1029",
+      "jenis": "tanya",
+      "regex": "kenal\\s+dengan\\s+calon\\s+suami",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah Saudara kenal dengan calon suami Pemohon?"
+      ],
+      "contohSalah": [
+        "Berapa umur calon suami Pemohon?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-tanya-umur",
+      "label": "Pertanyaan: umur calon suami",
+      "kunci": "tanya-1030",
+      "jenis": "tanya",
+      "regex": "umur\\s+calon\\s+suami",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Berapa umur calon suami Pemohon ?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara kenal dengan calon suami Pemohon?"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-tanya-hubungan-wali",
+      "label": "Pertanyaan: hubungan Pemohon dengan wali",
+      "kunci": "tanya-1046",
+      "jenis": "tanya",
+      "regex": "hubungan\\s+Pemohon\\s+dengan\\s+wali",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apa hubungan Pemohon dengan wali Pemohon ?"
+      ],
+      "contohSalah": [
+        "Apa sebabnya wali Pemohon tidak mau menjadi wali nikah?"
+      ],
+      "ukur": {
+        "n": 4,
+        "tepat": 4,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "wali-adhol-peringatan-wali",
+      "label": "Info: wali adhol",
+      "gaya": "peringatan",
+      "teks": "Wali adhol (Pasal 23 ayat (2) KHI, PMA 30 Tahun 2005): penolakan wali dan alasannya perlu terbukti, dan wali yang menolak sebaiknya dipanggil dan didengar keterangannya.",
+      "syarat": {
+        "peringatan": "wali-adhol"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}

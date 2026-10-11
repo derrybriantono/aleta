@@ -1,0 +1,69 @@
+{
+  "kelompok": "hadhanah",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "hadhanah-anak",
+      "label": "Anak yang dimohonkan hak asuhnya",
+      "kunci": "fakta-nama-anak",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "anak\\s+(?:kandung\\s+)?(?:Penggugat\\s+dan\\s+Tergugat\\s+|Pemohon\\s+dan\\s+Termohon\\s+)?(?:yang\\s+)?(?:bernama|yaitu|yakni)\\s*:?\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "seorang anak yang bernama Aulia binti Hamdan, umur 5 tahun"
+      ],
+      "contohSalah": [
+        "anak tersebut tinggal bersama Penggugat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "hadhanah-belum-mumayyiz",
+      "label": "Anak belum mumayyiz",
+      "kunci": "fakta-belum-mumayyiz",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "belum\\s+mumay?y?iz|di\\s+bawah\\s+(?:umur\\s+)?12\\s+tahun",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "anak tersebut belum mumayyiz"
+      ],
+      "contohSalah": [
+        "anak tersebut sudah mumayyiz"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "hadhanah-peringatan",
+      "label": "Info: hadhanah",
+      "gaya": "peringatan",
+      "teks": "Hadhanah (Pasal 105 dan 156 KHI): saksi sebaiknya menerangkan umur anak, siapa yang selama ini mengasuh, dan keadaan/kelakuan kedua orang tua.",
+      "syarat": {
+        "peringatan": "hadhanah"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}

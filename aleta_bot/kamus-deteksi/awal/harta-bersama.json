@@ -1,0 +1,94 @@
+{
+  "kelompok": "harta-bersama",
+  "versi": 1,
+  "pola": [
+    {
+      "kode": "harta-bersama-objek",
+      "label": "Objek harta bersama yang didalilkan",
+      "kunci": "fakta-objek-harta",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?<nilai>(?:sebidang|satu\\s+bidang|1\\s*\\(satu\\)\\s*(?:bidang|unit|buah)|sebuah|satu\\s+unit|satu\\s+buah)\\s+(?:tanah|rumah|kebun|sawah|kendaraan|sepeda\\s+motor|mobil|bangunan|toko|kios)[^;]{0,160})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "berupa sebidang tanah kebun kelapa seluas 2 hektar di Desa Lalombi"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat telah bercerai"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "harta-bersama-akta-cerai",
+      "label": "Akta cerai para pihak",
+      "kunci": "fakta-akta-cerai",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "akta\\s+cerai\\s+(?:nomor|no\\.?)\\s*:?\\s*(?<nilai>[0-9A-Za-z./-]{5,40})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "berdasarkan Akta Cerai Nomor 123/AC/2024/PA.Dgl"
+      ],
+      "contohSalah": [
+        "akta nikah nomor 12/03/2010"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "harta-bersama-diperoleh-selama",
+      "label": "Harta diperoleh selama perkawinan",
+      "kunci": "fakta-selama-perkawinan",
+      "jenis": "fakta",
+      "bentuk": "ada",
+      "regex": "(?:diperoleh|didapat|dibeli|dibangun)\\s+(?:secara\\s+bersama\\s+)?(?:selama|dalam\\s+masa|dalam)\\s+(?:masa\\s+)?perkawinan",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "harta tersebut diperoleh selama perkawinan Penggugat dan Tergugat"
+      ],
+      "contohSalah": [
+        "harta bawaan Penggugat sebelum menikah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": ""
+    }
+  ],
+  "templat": [
+    {
+      "kode": "harta-bersama-peringatan-saksi",
+      "label": "Info: saksi harta bersama",
+      "gaya": "peringatan",
+      "teks": "Harta bersama (Pasal 35 UU 1/1974, Pasal 85-97 KHI): saksi sebaiknya menerangkan kapan dan bagaimana tiap objek diperoleh (selama perkawinan atau bawaan) serta letak dan batasnya.",
+      "syarat": {
+        "peringatan": "harta-bersama"
+      },
+      "status": "aktif",
+      "catatan": ""
+    }
+  ]
+}
