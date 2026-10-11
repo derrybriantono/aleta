@@ -52,14 +52,11 @@ export function bolehKasir(pengguna: PenggunaHak | null | undefined): boolean {
 }
 
 /**
- * Pengingat tugas kasir di checklist milestone (Setor PNBP, jurnal hari
- * putusan, panjar kurang) - hanya untuk yang MENGERJAKANNYA: peran tambahan
+ * Pelaksana kasir: yang MENGERJAKAN jurnal dan setoran - peran tambahan
  * Keuangan Perkara/kasir/bendahara, peran analis-keuangan, dan jabatan
- * bendahara/analis keuangan. Admin, Super Admin, dan panitera boleh MEMBUKA
- * Kasir (bolehKasir) tetapi pengingat harian itu bukan pekerjaan mereka -
- * "Setor PNBP" tidak patut menumpuk di checklist Operator atau Panitera.
+ * bendahara/analis keuangan.
  */
-export function bolehPengingatKasir(pengguna: PenggunaHak | null | undefined): boolean {
+export function pelaksanaKasir(pengguna: PenggunaHak | null | undefined): boolean {
   if (!pengguna) return false;
   const persona = pengguna as UserPersona;
   const peran = new Set<string>([String(getEffectiveRoleId(persona) ?? pengguna.roleId ?? ""), String(pengguna.roleId ?? "")]);
@@ -68,6 +65,39 @@ export function bolehPengingatKasir(pengguna: PenggunaHak | null | undefined): b
   if (PERAN_TAMBAHAN_KASIR.some((p) => tambahan.has(p))) return true;
   const posisi = String(getEffectivePositionId(persona) ?? pengguna.positionId ?? "");
   return /^pos-(bendahara|analis-keuangan)/.test(posisi);
+}
+
+/**
+ * Pengawas kasir (12 Okt, keputusan pengguna): panitera dan panitera muda -
+ * atasan yang MEMERIKSA jurnal. Mereka membaca (pengingat tampil di checklist
+ * dan tab Pengingat) tetapi tidak mengeksekusi: tanpa tombol Kerjakan,
+ * Selesai/Tunda, jurnal, maupun "Tandai sudah disetor"; rute tulis menolaknya
+ * (403). Yang juga pelaksana (peran tambahan kasir) atau admin tidak termasuk.
+ */
+export function pengawasKasir(pengguna: PenggunaHak | null | undefined): boolean {
+  if (!pengguna || !bolehKasir(pengguna) || pelaksanaKasir(pengguna)) return false;
+  const persona = pengguna as UserPersona;
+  if (isPrivilegedAdmin(persona)) return false;
+  const peran = new Set<string>([String(getEffectiveRoleId(persona) ?? pengguna.roleId ?? ""), String(pengguna.roleId ?? "")]);
+  if (peran.has("admin") || peran.has("super-admin")) return false;
+  if (PERAN_KASIR.some((p) => p !== "analis-keuangan" && peran.has(p))) return true;
+  const posisi = String(getEffectivePositionId(persona) ?? pengguna.positionId ?? "");
+  return /^pos-(panitera$|panitera-muda)/.test(posisi);
+}
+
+/** Boleh MENULIS lewat Kasir (jurnal, setoran PNBP): boleh Kasir dan bukan pengawas saja. */
+export function bolehMengerjakanKasir(pengguna: PenggunaHak | null | undefined): boolean {
+  return bolehKasir(pengguna) && !pengawasKasir(pengguna);
+}
+
+/**
+ * Pengingat tugas kasir di checklist milestone (Setor PNBP, jurnal hari
+ * putusan, panjar kurang): untuk pelaksana (lengkap) dan pengawas (baca saja).
+ * Admin dan Super Admin boleh MEMBUKA Kasir tetapi pengingat harian itu bukan
+ * pekerjaan mereka - tidak menumpuk di checklist Operator.
+ */
+export function bolehPengingatKasir(pengguna: PenggunaHak | null | undefined): boolean {
+  return pelaksanaKasir(pengguna) || pengawasKasir(pengguna);
 }
 
 // ─── Bentuk data (jawaban bot) ───────────────────────────────────────────────

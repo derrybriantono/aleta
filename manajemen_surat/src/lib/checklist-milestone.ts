@@ -63,6 +63,8 @@ export type ButirChecklist = {
   kelompok: Kelompok;
   keterangan: string;
   kerjakan: Kerjakan;
+  /** Hanya pengingat (pengingat kasir bagi panitera): tanpa tombol Kerjakan/Selesai/Tunda di widget. */
+  hanyaBaca?: boolean;
 };
 
 export type RingkasChecklist = {

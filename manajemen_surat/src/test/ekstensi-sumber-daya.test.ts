@@ -60,7 +60,7 @@ function jawabanChecklist() {
   return {
     ok: true,
     data: {
-      pengguna: { nama: "Admin Uji", peran: ["hakim"] },
+      pengguna: { nama: "Admin Uji", peran: ["hakim"], superAdmin: true },
       peranTersedia: [{ kunci: "hakim", label: "Hakim" }],
       peranAktif: "hakim",
       dibuat: new Date().toISOString(),
@@ -178,7 +178,13 @@ function buka(simpananAwal: Record<string, unknown>): Halaman {
   } as ConstructorParameters<typeof JSDOM>[1]) as JsdomUji;
   terbuka.push(dom);
   const w = dom.window as any;
-  const { simpanan, tulisan, storage } = penyimpananTiruan(simpananAwal);
+  // 12 Okt: widget BAWAAN TERTUTUP bagi sesi tanpa posisi tersimpan; uji ini menguji isi yang
+  // terbentang, jadi dimulai dari posisi tersimpan "terbentang" kecuali berkas ini menyebutnya.
+  const awalSimpanan: Record<string, unknown> = { ...simpananAwal };
+  for (const k of ["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"]) {
+    if (!(k in awalSimpanan)) awalSimpanan[k] = { kecil: false };
+  }
+  const { simpanan, tulisan, storage } = penyimpananTiruan(awalSimpanan);
   w.chrome = {
     runtime: {
       id: "aleta-uji",

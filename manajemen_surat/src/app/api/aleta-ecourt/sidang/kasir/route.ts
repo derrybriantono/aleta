@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 
-import { bolehKasir } from "@/lib/kasir-jurnal";
+import { bolehKasir, pengawasKasir } from "@/lib/kasir-jurnal";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { akunSippPengguna, type PilihanAkunSipp } from "@/server/modules/aleta-ecourt/court-calendar-akun";
@@ -95,6 +95,9 @@ export async function POST(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const aktor = await pastikanHak(db, actorUserId);
+    if (pengawasKasir(aktor)) {
+      throw new ApiError(403, "Panitera hanya dapat membaca Kasir - mencatat jurnal dikerjakan kasir atau petugas keuangan.");
+    }
     const badan = (await request.json()) as Record<string, unknown>;
 
     const akun = akunKasir(await akunSippPengguna(db, aktor.id, badan.akunSipp));

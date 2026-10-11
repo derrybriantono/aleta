@@ -33,7 +33,7 @@ import { DialogKasir } from "@/components/portal/kasir-jurnal";
 import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
-import { bolehKasir, rupiah } from "@/lib/kasir-jurnal";
+import { bolehKasir, pengawasKasir, rupiah } from "@/lib/kasir-jurnal";
 import {
   JUDUL_PENGINGAT,
   LABEL_PERIODE,
@@ -453,7 +453,7 @@ function BagianRekap() {
 
 // ─── Pengingat ───────────────────────────────────────────────────────────────
 
-export function BagianPengingatKasir({ onSunting }: { onSunting?: (perkaraId: string) => void }) {
+export function BagianPengingatKasir({ onSunting, hanyaBaca = false }: { onSunting?: (perkaraId: string) => void; hanyaBaca?: boolean }) {
   const [data, setData] = useState<JawabanPengingat | null>(null);
   const [galat, setGalat] = useState("");
   const [pilihSetor, setPilihSetor] = useState<Record<string, boolean>>({});
@@ -509,6 +509,7 @@ export function BagianPengingatKasir({ onSunting }: { onSunting?: (perkaraId: st
   const kelompok = (["sisa-panjar", "belum-dijurnal", "panjar-kurang", "pnbp-belum-setor"] as const).map((j) => ({ jenis: j, butir: data.butir.filter((b) => b.jenis === j) }));
   return (
     <div className="grid gap-3 text-sm">
+      {hanyaBaca ? <p className="text-xs text-muted-foreground">Hanya pengingat: jurnal dan setoran PNBP dikerjakan kasir atau petugas keuangan.</p> : null}
       {data.butir.length === 0 ? <p className="text-muted-foreground">Tidak ada tugas kasir yang tertinggal.</p> : null}
       {kelompok
         .filter((k) => k.butir.length)
@@ -520,7 +521,7 @@ export function BagianPengingatKasir({ onSunting }: { onSunting?: (perkaraId: st
             <ul className="grid gap-1 text-xs">
               {k.butir.map((b) => (
                 <li key={`${b.jenis}-${b.perkaraId}-${b.tanggal ?? ""}`} className="flex flex-wrap items-center gap-2">
-                  {b.jenis === "pnbp-belum-setor" ? (
+                  {b.jenis === "pnbp-belum-setor" && !hanyaBaca ? (
                     <input
                       type="checkbox"
                       aria-label={`Pilih PNBP ${b.tanggal}`}
@@ -531,7 +532,7 @@ export function BagianPengingatKasir({ onSunting }: { onSunting?: (perkaraId: st
                   <span className={cn("whitespace-nowrap", b.tenggat < data.hariIni && "font-semibold text-rose-700 dark:text-rose-300")}>tenggat {tanggalPanjang(b.tenggat)}</span>
                   {b.nomorPerkara ? <b>{b.nomorPerkara}</b> : null}
                   <span className="text-muted-foreground">{b.keterangan}</span>
-                  {b.perkaraId && onSunting ? (
+                  {b.perkaraId && onSunting && !hanyaBaca ? (
                     <Button size="sm" variant="ghost" className="ml-auto h-6 text-xs" onClick={() => onSunting(String(b.perkaraId))}>
                       Buka jurnal
                     </Button>
@@ -539,7 +540,7 @@ export function BagianPengingatKasir({ onSunting }: { onSunting?: (perkaraId: st
                 </li>
               ))}
             </ul>
-            {k.jenis === "pnbp-belum-setor" ? (
+            {k.jenis === "pnbp-belum-setor" && !hanyaBaca ? (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <input type="text" aria-label="NTPN" placeholder="NTPN (boleh kosong)" className={cn(kelasMedan, "w-56")} value={ntpn} onChange={(e) => setNtpn(e.target.value)} />
                 <Button size="sm" variant="outline" disabled={sedang || !Object.values(pilihSetor).some(Boolean)} onClick={() => void tandaiSetor()}>
@@ -558,8 +559,8 @@ export function BagianPengingatKasir({ onSunting }: { onSunting?: (perkaraId: st
 
 type TabKasir = "massal" | "rekap" | "pengingat";
 
-function DialogKasirHarian({ onTutup, tabAwal }: { onTutup: () => void; tabAwal: TabKasir }) {
-  const [tab, setTab] = useState<TabKasir>(tabAwal);
+function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onTutup: () => void; tabAwal: TabKasir; hanyaBaca?: boolean }) {
+  const [tab, setTab] = useState<TabKasir>(hanyaBaca && tabAwal === "massal" ? "pengingat" : tabAwal);
   const [sunting, setSunting] = useState("");
   useEffect(() => {
     const tekan = (e: KeyboardEvent) => {
@@ -589,7 +590,9 @@ function DialogKasirHarian({ onTutup, tabAwal }: { onTutup: () => void; tabAwal:
               ["rekap", "Rekap"],
               ["pengingat", "Pengingat"],
             ] as Array<[TabKasir, string]>
-          ).map(([k, judul]) => (
+          )
+            .filter(([k]) => !(hanyaBaca && k === "massal"))
+            .map(([k, judul]) => (
             <button
               key={k}
               type="button"
@@ -602,9 +605,9 @@ function DialogKasirHarian({ onTutup, tabAwal }: { onTutup: () => void; tabAwal:
             </button>
           ))}
         </div>
-        {tab === "massal" ? <BagianMassal onSunting={setSunting} /> : null}
+        {tab === "massal" && !hanyaBaca ? <BagianMassal onSunting={setSunting} /> : null}
         {tab === "rekap" ? <BagianRekap /> : null}
-        {tab === "pengingat" ? <BagianPengingatKasir onSunting={setSunting} /> : null}
+        {tab === "pengingat" ? <BagianPengingatKasir onSunting={hanyaBaca ? undefined : setSunting} hanyaBaca={hanyaBaca} /> : null}
       </div>
     </div>
     {/* Di luar latar dialog ini: klik di dialog Kasir tidak menutup Kasir harian. */}
@@ -620,6 +623,8 @@ export function TombolKasirHarian() {
   const [buka, setBuka] = useState<TabKasir | "">("");
   const tutup = useCallback(() => setBuka(""), []);
   const boleh = bolehKasir(currentUser);
+  // Panitera/panitera muda: membaca saja (rekap dan pengingat), tanpa massal/jurnal/setoran.
+  const hanyaBaca = pengawasKasir(currentUser);
   useEffect(() => {
     if (!boleh) return;
     const jam = setTimeout(() => {
@@ -641,7 +646,7 @@ export function TombolKasirHarian() {
       <Button size="sm" variant="ghost" onClick={() => setBuka("pengingat")} title="Pengingat tugas kasir" aria-label="Pengingat tugas kasir">
         <ListChecks className="h-4 w-4" />
       </Button>
-      {buka ? <DialogKasirHarian tabAwal={buka} onTutup={tutup} /> : null}
+      {buka ? <DialogKasirHarian tabAwal={buka} onTutup={tutup} hanyaBaca={hanyaBaca} /> : null}
     </>
   );
 }

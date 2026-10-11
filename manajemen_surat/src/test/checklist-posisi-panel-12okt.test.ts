@@ -8,7 +8,7 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { KATALOG_CHECKLIST, KUNCI_PERAN } from "@/lib/checklist-milestone-katalog";
-import { bolehPengingatKasir } from "@/lib/kasir-jurnal";
+import { bolehMengerjakanKasir, bolehPengingatKasir, pengawasKasir, pelaksanaKasir } from "@/lib/kasir-jurnal";
 import { createAletaDatabase, type AletaDatabase } from "@/server/db/client";
 
 /**
@@ -546,6 +546,102 @@ describe("8. tombol kepala checklist bekerja - klik tidak hilang saat widget dig
 });
 
 // ============================================================================
+describe("pengingat kasir bagi pengawas (panitera): tampil, tanpa tombol eksekusi", () => {
+  const BUKA = { ...UI, posisiChecklistSipp: { kecil: false } };
+  const butirKasir = (hanyaBaca: boolean) => ({
+    id: "kasir.pnbp-belum-setor:2026-09-01",
+    jenis: "kasir.pnbp-belum-setor",
+    judul: "Setor PNBP ke kas negara",
+    perkara: null,
+    tenggat: hariKe(-3),
+    kelompok: "lewat",
+    keterangan: "PNBP 2026-09-01: Rp590.000 - setorannya belum dicatat.",
+    kerjakan: { tujuan: "aleta", alamat: "/aleta/aleta-ecourt#kasir" },
+    ...(hanyaBaca ? { hanyaBaca: true } : {}),
+  });
+
+  function bukaDengan(hanyaBaca: boolean, simpanan: Record<string, unknown>) {
+    const h = buka({ simpanan });
+    const dasar = jawabanContoh();
+    h.w.fetch = (alamat: string) => {
+      const isi = String(alamat).includes(API)
+        ? { ...dasar, data: { ...dasar.data, butir: [...dasar.data.butir, butirKasir(hanyaBaca)] } }
+        : { ok: true, data: {} };
+      return Promise.resolve(tanggapan(200, isi));
+    };
+    return h;
+  }
+  const kartuKasir = (h: Halaman) => q(h, '[data-id="kasir.pnbp-belum-setor:2026-09-01"]');
+
+  it("UI Baru: hanyaBaca - judul & keterangan tampil, tanpa Kerjakan, Selesai, Tunda; butir lain tetap lengkap", async () => {
+    const h = bukaDengan(true, { ...BUKA, ujiFitur: { "popup-7": true } });
+    await sampai(() => q(h, ".aleta-cm-kelompok"), "terbentang");
+    await h.setel({ ujiFitur: { "popup-7": true } });
+    h.w.document.querySelector("aleta-cm-widget") && q(h, ".aleta-cm-segar").click();
+    const kartu = await sampai(() => kartuKasir(h), "kartu kasir");
+    expect(kartu.textContent).toMatch(/Setor PNBP ke kas negara/);
+    expect(kartu.querySelector(".aleta-cm-kerjakan")).toBeNull();
+    expect(kartu.querySelector(".aleta-cm-tanda")).toBeNull();
+    expect(kartu.querySelector("a")).toBeNull();
+    expect(kartu.textContent).toMatch(/Hanya pengingat/);
+    // butir PMH biasa (bukan hanyaBaca) tetap punya Kerjakan
+    expect(q(h, '[data-id="l1"] .aleta-cm-kerjakan')).not.toBeNull();
+    // Kontrol: tombol Selesai/Tunda memang ada pada butir biasa - jadi ketiadaannya di butir kasir bermakna.
+    expect(q(h, '[data-id="l1"] .aleta-cm-tanda-selesai')).not.toBeNull();
+    expect(q(h, '[data-id="l1"] .aleta-cm-tanda-tunda')).not.toBeNull();
+  });
+
+  it("kulit Klasik (Baru): sama - tanpa tombol eksekusi", async () => {
+    const h = bukaDengan(true, { checklistMilestone: true, ujiTampilan: "baru", posisiChecklistSipp: { kecil: false } });
+    const kartu = await sampai(() => kartuKasir(h), "butir kasir");
+    expect(kartu.querySelector(".aleta-cm-kerjakan")).toBeNull();
+    expect(kartu.textContent).toMatch(/Hanya pengingat/);
+  });
+
+  it("pelaksana (tanpa hanyaBaca): tombol Kerjakan di ALETA tetap ada", async () => {
+    const h = bukaDengan(false, BUKA);
+    const kartu = await sampai(() => kartuKasir(h), "kartu kasir");
+    expect(kartu.querySelector(".aleta-cm-kerjakan")).not.toBeNull();
+    expect(kartu.textContent).not.toMatch(/Hanya pengingat/);
+  });
+});
+
+// ============================================================================
+describe("strip RAM/Disk/GPU di pita: HANYA Super Admin", () => {
+  const BUKA = { ...UI, posisiChecklistSipp: { kecil: false } };
+  const adaStrip = (h: Halaman) => q(h, ".aleta-cmw-sd") !== null;
+
+  async function bukaSd(pengguna: Record<string, unknown>) {
+    const h = buka({ simpanan: BUKA, pengguna });
+    const diminta: string[] = [];
+    const asli = h.w.fetch;
+    h.w.fetch = (alamat: string) => {
+      if (String(alamat).includes("/sumber-daya")) diminta.push(String(alamat));
+      return asli(alamat);
+    };
+    await sampai(() => q(h, ".aleta-cm-kelompok"), "terbentang");
+    await tunggu(80);
+    return { h, diminta };
+  }
+
+  it("Super Admin: strip tampil", async () => {
+    const { h } = await bukaSd({ superAdmin: true });
+    await sampai(() => adaStrip(h), "strip sumber daya");
+  });
+
+  it("Admin biasa (superAdmin:false): tanpa strip dan tanpa permintaan sumber daya", async () => {
+    const { h, diminta } = await bukaSd({ superAdmin: false, peran: ["operator"] });
+    expect(adaStrip(h)).toBe(false);
+    expect(diminta).toEqual([]);
+  });
+
+  it("portal lama tanpa penanda: tanpa strip", async () => {
+    const { h } = await bukaSd({});
+    expect(adaStrip(h)).toBe(false);
+  });
+});
+
+// ============================================================================
 describe("5. pita widget bawah: keterangan teknis hanya Super Admin", () => {
   const BUKA = { ...UI, posisiChecklistSipp: { kecil: false } };
 
@@ -669,14 +765,14 @@ describe("9. isi checklist per peran dan per akun", () => {
   }
 
   // Matriks yang diperiksa: akun seed -> peran checklist yang tersedia & bawaan.
-  const MATRIKS: Array<{ akun: string; sebutan: string; tersedia: string[]; bawaan: string; superAdmin: boolean; kasir: boolean }> = [
+  const MATRIKS: Array<{ akun: string; sebutan: string; tersedia: string[]; bawaan: string; superAdmin: boolean; kasir: boolean; baca?: boolean }> = [
     { akun: "usr-super", sebutan: "Super Admin", tersedia: ["operator"], bawaan: "operator", superAdmin: true, kasir: false },
     { akun: "usr-admin", sebutan: "Admin", tersedia: ["operator"], bawaan: "operator", superAdmin: false, kasir: false },
     { akun: "usr-ketua", sebutan: "Ketua", tersedia: ["hakim", "ketua"], bawaan: "ketua", superAdmin: false, kasir: false },
     { akun: "usr-wakil", sebutan: "Wakil Ketua", tersedia: ["hakim", "ketua"], bawaan: "ketua", superAdmin: false, kasir: false },
     { akun: "usr-hakim", sebutan: "Hakim", tersedia: ["hakim"], bawaan: "hakim", superAdmin: false, kasir: false },
-    { akun: "usr-panitera", sebutan: "Panitera", tersedia: ["panitera"], bawaan: "panitera", superAdmin: false, kasir: false },
-    { akun: "usr-ahmad", sebutan: "Panitera Muda Hukum", tersedia: ["panitera"], bawaan: "panitera", superAdmin: false, kasir: false },
+    { akun: "usr-panitera", sebutan: "Panitera", tersedia: ["panitera"], bawaan: "panitera", superAdmin: false, kasir: true, baca: true },
+    { akun: "usr-ahmad", sebutan: "Panitera Muda Hukum", tersedia: ["panitera"], bawaan: "panitera", superAdmin: false, kasir: true, baca: true },
     { akun: "usr-ppg", sebutan: "Panitera Pengganti", tersedia: ["panitera-pengganti"], bawaan: "panitera-pengganti", superAdmin: false, kasir: false },
     { akun: "usr-jurusita", sebutan: "Juru Sita", tersedia: ["jurusita"], bawaan: "jurusita", superAdmin: false, kasir: false },
     { akun: "usr-jsp", sebutan: "Juru Sita Pengganti", tersedia: ["jurusita"], bawaan: "jurusita", superAdmin: false, kasir: false },
@@ -697,6 +793,11 @@ describe("9. isi checklist per peran dan per akun", () => {
       const jenis: string[] = data.butir.map((b: { jenis: string }) => b.jenis);
       // Setor PNBP & kawan-kawan: HANYA kasir/keuangan.
       expect(jenis.some((j) => j.startsWith("kasir."))).toBe(m.kasir);
+      // Panitera/panitera muda = pengawas: pengingat tampil tetapi hanyaBaca; pelaksana lengkap (tanpa penanda).
+      for (const b of data.butir.filter((x: { jenis: string }) => x.jenis.startsWith("kasir."))) {
+        expect(b.hanyaBaca === true, `${m.akun} ${b.jenis}`).toBe(m.baca === true);
+      }
+      for (const b of data.butir.filter((x: { jenis: string }) => !x.jenis.startsWith("kasir."))) expect(b.hanyaBaca).toBeUndefined();
       // Selain pengingat kasir, setiap butir milik katalog PERAN YANG AKTIF - tidak ada tugas peran lain.
       for (const j of jenis.filter((x) => !x.startsWith("kasir."))) expect(j.startsWith(`${m.bawaan}.`), j).toBe(true);
       // Peran lain yang dimiliki dapat dipilih, dan isinya pun hanya katalog peran itu.
@@ -721,12 +822,21 @@ describe("9. isi checklist per peran dan per akun", () => {
     expect(data.galat.join(" ")).not.toMatch(/belum punya peran/);
   });
 
-  it("Admin/Super Admin/Panitera boleh MEMBUKA Kasir tetapi tidak ditumpuki pengingat hariannya", async () => {
-    for (const akun of ["usr-super", "usr-admin", "usr-panitera", "usr-ahmad"]) {
+  it("Admin/Super Admin boleh MEMBUKA Kasir tetapi tidak ditumpuki pengingat hariannya (bot tidak ditanya)", async () => {
+    for (const akun of ["usr-super", "usr-admin"]) {
       const data = await panggil(akun);
       expect(data.butir.some((b: { jenis: string }) => b.jenis.startsWith("kasir.")), akun).toBe(false);
     }
-    expect(pengingat).not.toHaveBeenCalled(); // bahkan tidak menanyakannya ke bot
+    expect(pengingat).not.toHaveBeenCalled();
+  });
+
+  it("panitera: pengingat kasir tampil (baca), peran checklist panitera tetap utuh", async () => {
+    const data = await panggil("usr-panitera");
+    const kasir = data.butir.filter((b: { jenis: string }) => b.jenis.startsWith("kasir."));
+    expect(kasir.map((b: { judul: string }) => b.judul)).toEqual(["Setor PNBP ke kas negara"]);
+    expect(kasir[0]).toMatchObject({ hanyaBaca: true, kelompok: "lewat" });
+    expect(data.peranAktif).toBe("panitera");
+    expect(data.ringkas.lewat).toBeGreaterThanOrEqual(1);
   });
 
   it("katalog: kunci jenis tiap peran berawalan perannya sendiri dan tidak ada yang dipakai dua peran", () => {
@@ -742,18 +852,104 @@ describe("9. isi checklist per peran dan per akun", () => {
     }
   });
 
-  it("bolehPengingatKasir: kasir/keuangan ya; admin, super admin, panitera, hakim, ketua, PTSP tidak", () => {
-    const orang = (roleId: string, positionId = "", additionalRoleIds: string[] = []) => ({ roleId, positionId, additionalRoleIds }) as never;
-    expect(bolehPengingatKasir(orang("staf", "pos-arsiparis", ["kasir"]))).toBe(true);
-    expect(bolehPengingatKasir(orang("staf", "pos-arsiparis", ["petugas_keuangan_perkara"]))).toBe(true);
-    expect(bolehPengingatKasir(orang("staf", "pos-arsiparis", ["bendahara_penerimaan"]))).toBe(true);
-    expect(bolehPengingatKasir(orang("analis-keuangan"))).toBe(true);
-    expect(bolehPengingatKasir(orang("staf", "pos-bendahara"))).toBe(true);
-    expect(bolehPengingatKasir(orang("staf", "pos-analis-keuangan"))).toBe(true);
-    for (const r of ["super-admin", "admin", "panitera", "panitera-muda", "hakim", "ketua", "jurusita", "panitera-pengganti"]) {
+  const orang = (roleId: string, positionId = "", additionalRoleIds: string[] = []) => ({ roleId, positionId, additionalRoleIds }) as never;
+
+  it("hak kasir: pelaksana lengkap, panitera/panmud pengawas (baca), admin/lain tanpa pengingat", () => {
+    // pelaksana
+    for (const o of [
+      orang("staf", "pos-arsiparis", ["kasir"]),
+      orang("staf", "pos-arsiparis", ["petugas_keuangan_perkara"]),
+      orang("staf", "pos-arsiparis", ["bendahara_penerimaan"]),
+      orang("analis-keuangan"),
+      orang("staf", "pos-bendahara"),
+      orang("staf", "pos-analis-keuangan"),
+    ]) {
+      expect(pelaksanaKasir(o)).toBe(true);
+      expect(pengawasKasir(o)).toBe(false);
+      expect(bolehPengingatKasir(o)).toBe(true);
+      expect(bolehMengerjakanKasir(o)).toBe(true);
+    }
+    // pengawas: baca saja
+    for (const o of [orang("panitera", "pos-panitera"), orang("panitera-muda"), orang("pejabat-struktural", "pos-panitera-muda-hukum")]) {
+      expect(pengawasKasir(o)).toBe(true);
+      expect(bolehPengingatKasir(o)).toBe(true);
+      expect(bolehMengerjakanKasir(o)).toBe(false);
+    }
+    // panitera yang JUGA kasir (peran tambahan): pelaksana, bukan pengawas
+    expect(pengawasKasir(orang("panitera", "pos-panitera", ["kasir"]))).toBe(false);
+    expect(bolehMengerjakanKasir(orang("panitera", "pos-panitera", ["kasir"]))).toBe(true);
+    // admin: boleh membuka dan menulis, tanpa pengingat
+    for (const r of ["super-admin", "admin"]) {
+      expect(bolehPengingatKasir(orang(r, "pos-x"))).toBe(false);
+      expect(bolehMengerjakanKasir(orang(r, "pos-x"))).toBe(true);
+    }
+    // bukan Kasir sama sekali
+    for (const r of ["hakim", "ketua", "jurusita", "panitera-pengganti"]) {
       expect(bolehPengingatKasir(orang(r, "pos-x")), r).toBe(false);
+      expect(bolehMengerjakanKasir(orang(r, "pos-x")), r).toBe(false);
     }
     expect(bolehPengingatKasir(orang("staf", "pos-ptsp"))).toBe(false);
     expect(bolehPengingatKasir(null)).toBe(false);
+  });
+});
+
+// ============================================================================
+// SISI SERVER: panitera ditolak mengeksekusi aksi kasir, tetap boleh membaca
+// ============================================================================
+describe("rute Kasir: panitera membaca, tidak menulis", () => {
+  beforeEach(async () => {
+    db = await createAletaDatabase({ useInMemory: true, seed: true });
+    vi.mocked(bacaPengingatKasir).mockResolvedValue({ ok: true, data: { ok: true, hariIni: "2026-09-10", butir: [], ringkas: {}, setorTerbaca: true } } as never);
+  });
+  afterEach(async () => {
+    await db?.close();
+    db = null;
+  });
+
+  it("pastikanHakKasirTulis: kasir & admin lolos; panitera & panmud 403; hakim 403", async () => {
+    const { pastikanHakKasirTulis, pastikanHakKasir } = await vi.importActual<typeof import("@/server/modules/aleta-ecourt/kasir-otomatis")>(
+      "@/server/modules/aleta-ecourt/kasir-otomatis"
+    );
+    const hasil: Record<string, string> = {};
+    for (const akun of ["usr-analiskeu", "usr-bendahara", "usr-admin", "usr-super", "usr-panitera", "usr-ahmad", "usr-hakim"]) {
+      try {
+        await pastikanHakKasirTulis(db as AletaDatabase, akun);
+        hasil[akun] = "tulis";
+      } catch (e) {
+        hasil[akun] = `ditolak-${(e as { status?: number }).status ?? "?"}`;
+      }
+    }
+    // pembaca: panitera lolos pastikanHakKasir (baca) walau ditolak menulis
+    let baca = "";
+    try {
+      await pastikanHakKasir(db as AletaDatabase, "usr-panitera");
+      baca = "baca";
+    } catch (e) {
+      baca = `ditolak-${(e as { status?: number }).status ?? "?"}`;
+    }
+    expect(hasil["usr-panitera"]).toBe("ditolak-403");
+    expect(hasil["usr-ahmad"]).toBe("ditolak-403");
+    expect(hasil["usr-hakim"]).toBe("ditolak-403");
+    expect(hasil["usr-analiskeu"]).toBe("tulis");
+    expect(hasil["usr-admin"]).toBe("tulis");
+    expect(baca).toBe("baca");
+  });
+
+  it("POST /kasir/pengingat (setor PNBP) oleh panitera = 403 dan bot TIDAK dipanggil; GET (baca) = 200", async () => {
+    const { GET, POST } = await import("@/app/api/aleta-ecourt/sidang/kasir/pengingat/route");
+    aktor = "usr-panitera";
+    const baca = await GET(new NextRequest("http://localhost/api/aleta-ecourt/sidang/kasir/pengingat"));
+    expect(baca.status).toBe(200);
+    const tulis = await POST(
+      new NextRequest("http://localhost/api/aleta-ecourt/sidang/kasir/pengingat", { method: "POST", body: JSON.stringify({ tanggal: ["2026-09-01"], ntpn: "X" }) })
+    );
+    expect(tulis.status).toBe(403);
+  });
+
+  it("POST /kasir (jurnal) oleh panitera = 403", async () => {
+    const { POST } = await import("@/app/api/aleta-ecourt/sidang/kasir/route");
+    aktor = "usr-panitera";
+    const r = await POST(new NextRequest("http://localhost/api/aleta-ecourt/sidang/kasir", { method: "POST", body: JSON.stringify({ perkaraId: "1", baris: [] }) }));
+    expect(r.status).toBe(403);
   });
 });

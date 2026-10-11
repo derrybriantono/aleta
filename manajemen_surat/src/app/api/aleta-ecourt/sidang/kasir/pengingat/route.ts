@@ -3,7 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
 import { panggilBotJadwalSidang } from "@/server/modules/aleta-ecourt/jadwal-sidang-gateway";
-import { bacaPengingatKasir, kosongkanSinggahPengingatKasir, pastikanHakKasir } from "@/server/modules/aleta-ecourt/kasir-otomatis";
+import { bacaPengingatKasir, kosongkanSinggahPengingatKasir, pastikanHakKasir, pastikanHakKasirTulis } from "@/server/modules/aleta-ecourt/kasir-otomatis";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    const aktor = await pastikanHakKasir(db, actorUserId);
+    const aktor = await pastikanHakKasirTulis(db, actorUserId);
     const badan = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const tanggal = (Array.isArray(badan.tanggal) ? badan.tanggal : [badan.tanggal]).map((x) => String(x ?? "").slice(0, 10)).slice(0, 62);
     const akun = await akunSippPengguna(db, aktor.id);
