@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpDown, Camera, CheckCircle2, Eye, EyeOff, KeyRound, LoaderCircle, Save, Shield, ShieldAlert, ShieldCheck, Smartphone, UserPlus, UserRound, XCircle } from "lucide-react";
 
+import { AksesMenuMatriks } from "@/components/portal/akses-menu-matriks";
 import { UserAvatar } from "@/components/portal/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { apiPath } from "@/lib/base-path";
 import { modules, portalApps } from "@/lib/mock-data";
 import { getDefaultRoleForPosition, getEffectiveRoleId, getRoleLabel, getUserPositionLabel, getUserRoleBadge, isPrivilegedAdmin } from "@/lib/permissions";
 import { USER_ADDITIONAL_ROLE_OPTIONS, getAdditionalRoleLabel, getAdditionalRoleSearchText, normalizeAdditionalRoleIds } from "@/lib/user-additional-roles";
+import { MODUL_MILIK_APLIKASI, PETA_ATURAN_APLIKASI } from "@/lib/matriks-peran";
 import { cn } from "@/lib/utils";
 import { type ExternalAppCredentialInput, type ExternalAppId, type ModuleId, type ModuleVisibility, type Position, type RoleId, type UserPersona } from "@/lib/types";
 
@@ -92,7 +94,14 @@ const EXTERNAL_CREDENTIAL_OPTIONS: Array<{ appId: ExternalAppId; label: string }
   { appId: "sipp", label: "Akun SIPP" },
 ];
 const moduleIds = new Set<ModuleId>(modules.map((module) => module.id));
-const portalVisibilityApps = portalApps.filter((app) => !moduleIds.has(app.id));
+/* === HAK-PERAN 12 Okt === */
+// Aplikasi & modul yang diatur matriks peran pindah ke kartu AksesMenuMatriks
+// (Bawaan/Buka/Tutup); saklar lama untuk id itu tidak lagi menentukan apa pun,
+// jadi tidak digambar dua kali.
+const diaturMatriks = (id: string) => PETA_ATURAN_APLIKASI.has(id) || id in MODUL_MILIK_APLIKASI;
+const modulSaklarLama = modules.filter((module) => !diaturMatriks(module.id));
+const portalVisibilityApps = portalApps.filter((app) => !moduleIds.has(app.id) && !diaturMatriks(app.id));
+/* === AKHIR HAK-PERAN === */
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1843,7 +1852,7 @@ export function RoleVisibilityPanel({
               <CardDescription>Perubahan di sini langsung memengaruhi sidebar dan halaman kerja persona yang bersangkutan.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 lg:grid-cols-2">
-              {modules.map((module) => (
+              {modulSaklarLama.map((module) => (
                 <label
                   key={module.id}
                   className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-muted/35 p-4"
@@ -1861,6 +1870,14 @@ export function RoleVisibilityPanel({
             </CardContent>
           </Card>
 
+          {/* === HAK-PERAN 12 Okt === */}
+          <AksesMenuMatriks
+            item={item}
+            namaPeran={getRoleName(item.roleId)}
+            onToggle={(roleId, moduleId, enabled) => onToggle(roleId, moduleId as keyof ModuleVisibility["modules"], enabled)}
+          />
+          {/* === AKHIR HAK-PERAN === */}
+          {portalVisibilityApps.length > 0 ? (
           <Card className="border-border/80">
             <CardHeader>
               <CardTitle>Akses grid aplikasi Portal</CardTitle>
@@ -1886,6 +1903,7 @@ export function RoleVisibilityPanel({
               ))}
             </CardContent>
           </Card>
+          ) : null}
           </div>
         </TabsContent>
       ))}

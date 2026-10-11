@@ -12,6 +12,7 @@ import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { getSearchParam } from "@/server/shared/request";
 import { ok } from "@/server/shared/http";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,6 +62,7 @@ export async function PUT(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanAksi(db, actorUserId, "sidang.kehadiran-bas"); // HAK-PERAN 12 Okt: matriks peran
 
     const masukan = (await request.json()) as MasukanKehadiran;
     const kehadiran = await simpanKehadiran(db, String(actorUserId ?? ""), masukan);

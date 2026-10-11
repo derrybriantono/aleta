@@ -2,12 +2,14 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { getNumberSearchParam, getSearchParam } from "@/server/shared/request";
 
 export async function monitoringContext(request: NextRequest) {
   const db = await getDatabase();
   const actor = await requireActorUser(db, await resolveActorUserId(request));
+  await pastikanAplikasiAktor(db, actor, "aleta-sipp"); // HAK-PERAN 12 Okt: aplikasi belum fix
   return { db, actor };
 }
 

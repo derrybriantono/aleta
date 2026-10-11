@@ -6,6 +6,7 @@ import { getGatewayPromptPutusan } from "@/server/modules/aleta-bot/whatsapp-gat
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanAksi(db, actorUserId, "status.analisa"); // HAK-PERAN 12 Okt: matriks peran
 
     const nomor = String(request.nextUrl.searchParams.get("nomor") || "").trim();
     if (!nomor) {

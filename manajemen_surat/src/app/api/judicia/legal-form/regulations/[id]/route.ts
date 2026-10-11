@@ -7,6 +7,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
 import { getRequestAuditMetadata, readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const { id } = await context.params;
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await getRegulation(db, actor, normalizeId(id)));
   } catch (error) {
     return handleRouteError(error);
@@ -28,6 +30,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const payload = asRecord(await readJsonBody(request));
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await updateRegulation(db, actor, normalizeId(id), {
       regulationTypeId: readOptionalStringValue(payload, "regulationTypeId", { maxLength: 160 }),
       title: readOptionalStringValue(payload, "title", { maxLength: 400 }),
@@ -55,6 +58,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const { id } = await context.params;
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await archiveRegulation(db, actor, normalizeId(id), getRequestAuditMetadata(request)));
   } catch (error) {
     return handleRouteError(error);

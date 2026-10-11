@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Info } from "lucide-react";
 
 import { apiPath } from "@/lib/base-path";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { siarkanAba } from "@/lib/alat-bagian";
 import { Button } from "@/components/ui/button";
 
@@ -76,7 +78,13 @@ async function bukaBungkus<T>(balasan: Response): Promise<T> {
  */
 const simpanan = new Map<string, PihakLengkap[]>();
 
-export function useIdentitasPihak(nomorPerkara: string, aktif: boolean) {
+export function useIdentitasPihak(nomorPerkara: string, aktifDiminta: boolean) {
+  /* === HAK-PERAN 12 Okt === */
+  // Data pribadi pihak hanya bagi yang melayani perkara (status.data-pihak); rute juga 403.
+  const currentUser = usePenggunaAktifOpsional();
+  const bolehLihat = bolehAksiLayar(currentUser, "status.data-pihak");
+  const aktif = aktifDiminta && bolehLihat;
+  /* === AKHIR HAK-PERAN === */
   const [pihak, setPihak] = useState<PihakLengkap[] | null>(
     () => simpanan.get(nomorPerkara) ?? null
   );
@@ -127,7 +135,13 @@ export function useIdentitasPihak(nomorPerkara: string, aktif: boolean) {
     [pihak]
   );
 
-  return { pihak, cari, galat, memuat };
+  return {
+    pihak,
+    cari,
+    // HAK-PERAN 12 Okt: sebab yang jujur, bukan kartu kosong.
+    galat: !bolehLihat && aktifDiminta ? "Identitas pihak hanya untuk petugas yang melayani perkara (matriks peran)." : galat,
+    memuat,
+  };
 }
 
 function Baris({ label, nilai }: { label: string; nilai: string }) {

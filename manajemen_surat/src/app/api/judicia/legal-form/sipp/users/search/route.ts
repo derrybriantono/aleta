@@ -9,6 +9,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
 import { getSearchParam } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     requireJlfPermission(actor, JLF_PERMISSION.ACCOUNT_SYNC_MANAGE);
 
     const query = normalizeSafeSearchQuery(getSearchParam(request, "query") ?? "", "Pencarian user SIPP", 2);

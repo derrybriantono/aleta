@@ -74,6 +74,8 @@ import {
   type TaskItem,
   type TaskSourcesPayload,
 } from "@/lib/task-sources";
+import { PETA_ATURAN_APLIKASI } from "@/lib/matriks-peran";
+import { portalApps } from "@/lib/mock-data";
 
 const STORAGE_KEY = "portal-terpadu-pa-v2";
 const SEEN_DISPOSITION_STORAGE_PREFIX = "aleta:seen-dispositions";
@@ -1131,26 +1133,16 @@ type UploadPdfResult = {
  * ditujukan untuk pegawai harus ditambahkan ke sini, bukan hanya didaftarkan di
  * mock-data. Uji regresi menjaga keduanya tetap sejalan.
  */
-export const DEFAULT_PORTAL_APP_IDS = new Set<string>([
-  "manajemen-surat",
-  "aleta-bot",
-  "sipp",
-  "aps-badilag",
-  "asisten-hakim",
-  "e-kepegawaian",
-  "audit-trail",
-  // Untuk seluruh pegawai: mengunduh ekstensi SIPP dan melihat keadaan
-  // penghubung e-Court.
-  "aleta-ecourt",
-  // Alat bantu tulis BAS. Yang paling membutuhkannya justru panitera, bukan
-  // super admin - jadi ia harus ada di daftar bawaan, bukan hanya terlihat
-  // oleh peran yang melihat segalanya.
-  "bas",
-  // Ruang kerja perkara. Yang membukanya hakim dan panitera, bukan super
-  // admin - jadi ia harus ada di daftar bawaan, bukan hanya terlihat oleh
-  // peran yang melihat segalanya.
-  "perkara",
-]);
+/* === HAK-PERAN 12 Okt === */
+// Kini TURUNAN matriks peran (src/lib/matriks-peran.ts): aplikasi portal
+// berstatus "matang". Aplikasi belum fix (Judicia, ALETA x SIPP, e-Audit,
+// E-Status, Antrian, kerangka E-Keuangan/Aset/Perpustakaan/Notifikasi) tidak
+// ada di sini - hanya Super Admin, kecuali dibuka lewat Akses Menu. Ubin
+// sendiri disaring getAccessiblePortalApps (matriks + timpaan Akses Menu).
+export const DEFAULT_PORTAL_APP_IDS = new Set<string>(
+  portalApps.filter((app) => PETA_ATURAN_APLIKASI.get(app.id)?.status === "matang").map((app) => app.id)
+);
+/* === AKHIR HAK-PERAN === */
 
 export function PortalProvider({
   children,
@@ -1529,11 +1521,8 @@ export function PortalProvider({
   const currentRoleId = getEffectiveRoleId(currentUser);
   // Mode default portal: selain Super Admin, grid aplikasi hanya menampilkan
   // aplikasi inti berikut (tetap dipotong lagi oleh hak akses role & Akses Menu).
+  // HAK-PERAN 12 Okt: belum-fix/bawaan sudah disaring matriks peran di getAccessiblePortalApps.
   const accessiblePortalApps = getAccessiblePortalApps(currentUser, state.moduleVisibility)
-    .filter((app) => {
-      if (currentRoleId === "super-admin") return true;
-      return DEFAULT_PORTAL_APP_IDS.has(app.id);
-    })
     .filter((app) => {
       if (app.id !== "asisten-hakim") return true;
       return canAccessAssistantJudge(currentRoleId, state.assistantJudgeConfig, currentUser?.id);
@@ -2546,6 +2535,18 @@ export function PortalProvider({
     </PortalContext.Provider>
   );
 }
+
+/* === HAK-PERAN 12 Okt === */
+/**
+ * Pengguna aktif TANPA melempar galat di luar PortalProvider: undefined bila
+ * tidak ada penyedia (uji lama, layar lepas). Dipakai gerbang matriks peran
+ * di komponen yang juga dirender tanpa portal - lihat bolehAksiLayar.
+ */
+export function usePenggunaAktifOpsional(): UserPersona | null | undefined {
+  const context = useContext(PortalContext);
+  return context ? context.currentUser : undefined;
+}
+/* === AKHIR HAK-PERAN === */
 
 export function usePortal() {
   const context = useContext(PortalContext);

@@ -7,6 +7,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
 import { getRequestAuditMetadata, readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export async function PATCH(
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await updateBasQaItem(db, actor, id, itemId, asRecord(payload), getRequestAuditMetadata(request)));
   } catch (error) {
     return handleRouteError(error);
@@ -35,6 +37,7 @@ export async function DELETE(
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await deleteBasQaItem(db, actor, id, itemId, getRequestAuditMetadata(request)));
   } catch (error) {
     return handleRouteError(error);

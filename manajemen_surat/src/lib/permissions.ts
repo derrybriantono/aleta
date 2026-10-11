@@ -5,6 +5,7 @@ import {
   resolveEffectivePositionId,
   resolveEffectiveRoleId,
 } from "@/core/organization/service";
+import { MODUL_MILIK_APLIKASI, PETA_ATURAN_APLIKASI, aplikasiTampil, modulTampil } from "@/lib/matriks-peran";
 import {
   modules,
   portalApps,
@@ -346,6 +347,16 @@ export function getAccessibleModules(
   return modules.filter((module) => {
     const roleAllowed = roleId ? module.roleIds.includes(roleId) : false;
     const positionAllowed = !module.positionIds || (positionId ? module.positionIds.includes(positionId) : false);
+    /* === HAK-PERAN 12 Okt === */
+    // Modul milik aplikasi di matriks peran (Judicia, ALETA x SIPP, e-Audit,
+    // E-Status, BAS, Ruang Kerja Perkara, Peta, Beban Konseptor, ...) ikut
+    // matriks + timpaan buka:/tutup: - baris visibilitas lamanya hanya sisa
+    // benih (lihat kunciBukaAplikasi). Aplikasi belum fix tidak bocor lewat
+    // sidebar. roleIds modul tetap pagar (mis. *-settings hanya admin).
+    if (module.id in MODUL_MILIK_APLIKASI) {
+      return roleAllowed && positionAllowed && modulTampil(user, module.id, roleVisibility);
+    }
+    /* === AKHIR HAK-PERAN === */
     const visibilityAllowed = module.id ? roleVisibility?.modules[module.id] ?? false : false;
 
     return roleAllowed && positionAllowed && visibilityAllowed;
@@ -362,6 +373,11 @@ export function getAccessiblePortalApps(
   const roleVisibility = visibility.find((item) => item.roleId === roleId);
 
   return portalApps.filter((app) => {
+    /* === HAK-PERAN 12 Okt === */
+    // Satu sumber: matriks peran (golongan dari jabatan + peran tambahan) +
+    // timpaan Akses Menu. Menggantikan roleIds + DEFAULT_PORTAL_APP_IDS.
+    if (PETA_ATURAN_APLIKASI.has(app.id)) return aplikasiTampil(user, app.id, roleVisibility);
+    /* === AKHIR HAK-PERAN === */
     const roleAllowed = roleId ? app.roleIds.includes(roleId) : false;
     const visibilityAllowed = roleVisibility?.modules[app.id] ?? false;
     return roleAllowed && visibilityAllowed;

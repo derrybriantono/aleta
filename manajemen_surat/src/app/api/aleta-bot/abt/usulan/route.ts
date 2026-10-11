@@ -4,6 +4,8 @@ import { getDatabase } from "@/server/db/client";
 import { getGatewayAbtUsulan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { kapabilitasPengguna, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
+import { bolehKasir } from "@/lib/kasir-jurnal";
+import { golonganMenuEkstensi } from "@/lib/matriks-peran";
 import { untukBot } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { roles as daftarPeran } from "@/lib/mock-data";
@@ -180,6 +182,10 @@ export async function POST(request: NextRequest) {
           nama: dia.name,
           peran: peranDia ? peranDia.name : String(dia.roleId || ""),
           bolehUnggahPutusan: bolehUnggahPutusan(dia),
+          // HAK-PERAN 12 Okt: ABT kini juga tahu jabatan & peran tambahan.
+          bolehKasir: bolehKasir(dia),
+          peranTambahan: dia.additionalRoleIds ?? [],
+          golonganMenu: golonganMenuEkstensi(dia),
         },
         kapabilitas: await kapabilitasPengguna(db, { id: dia.id, roleId: String(dia.roleId) }),
         sipp: null,

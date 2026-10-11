@@ -27,6 +27,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 
 export type KonteksEcourtAksi = "jadwal" | "status";
 
@@ -210,6 +212,8 @@ export function EcourtAksiPerkara({ nomorPerkara, tanggalSidang, konteks }: Ecou
   const [memuat, setMemuat] = useState(true);
   const [pesan, setPesan] = useState("");
   const [semuaDokumen, setSemuaDokumen] = useState(konteks === "status");
+  const currentUser = usePenggunaAktifOpsional();
+  const bolehVerifikasiPeran = bolehAksiLayar(currentUser, "ecourt.verifikasi");
 
   const muat = useCallback(async () => {
     if (!nomor) return;
@@ -228,7 +232,8 @@ export function EcourtAksiPerkara({ nomorPerkara, tanggalSidang, konteks }: Ecou
         setRingkasan(null);
       } else {
         setPesan("");
-        setRingkasan(d.ringkasan);
+        // HAK-PERAN 12 Okt: verifikasi hanya hakim/pimpinan (ecourt.verifikasi); rute juga 403.
+        setRingkasan({ ...d.ringkasan, bolehVerifikasi: d.ringkasan.bolehVerifikasi && bolehVerifikasiPeran });
         cacheKeadaan.set(nomor, d.ringkasan.putusan);
       }
     } catch {
@@ -237,7 +242,7 @@ export function EcourtAksiPerkara({ nomorPerkara, tanggalSidang, konteks }: Ecou
     } finally {
       setMemuat(false);
     }
-  }, [nomor, hari]);
+  }, [nomor, hari, bolehVerifikasiPeran]);
 
   useEffect(() => {
     const t = window.setTimeout(() => void muat(), 0);
@@ -526,6 +531,9 @@ function FormVerifikasi({ dokumen, akun, onSelesai }: { dokumen: Dokumen; akun: 
 function BagianPutusan({ ringkasan, onSelesai }: { ringkasan: Ringkasan; onSelesai: () => void }) {
   const p = ringkasan.putusan!;
   const akun = ringkasan.akunTte;
+  // HAK-PERAN 12 Okt: TTE salinan hanya panitera/panmud (ecourt.tte); rute juga 403.
+  const currentUser = usePenggunaAktifOpsional();
+  const bolehTte = bolehAksiLayar(currentUser, "ecourt.tte");
   const kolomRef = useRef<HTMLInputElement | null>(null);
   const [bukaTte, setBukaTte] = useState(false);
   const [pesan, setPesan] = useState("");
@@ -587,7 +595,7 @@ function BagianPutusan({ ringkasan, onSelesai }: { ringkasan: Ringkasan; onSeles
         {p.paniteraNama ? ` · Panitera ${p.paniteraNama}` : ""}
         {p.paniteraTanggalTte ? ` · TTE ${p.paniteraTanggalTte}` : ""}
       </p>
-      {p.belumTte ? (
+      {p.belumTte && bolehTte ? (
         akun ? (
           <div className="space-y-2">
             <Button type="button" size="sm" variant="outline" onClick={() => setBukaTte((x) => !x)}>

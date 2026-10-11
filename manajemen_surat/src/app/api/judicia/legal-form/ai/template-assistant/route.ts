@@ -7,6 +7,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
 import { getRequestAuditMetadata, readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export async function POST(request: NextRequest) {
     const payload = asRecord(await readJsonBody(request));
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await runTemplateAssistant(db, actor, { inputText: readStringValue(payload, "inputText", { required: true, maxLength: 12000 }), context: payload.context as Record<string, unknown> | undefined }, getRequestAuditMetadata(request)));
   } catch (error) {
     return handleRouteError(error);

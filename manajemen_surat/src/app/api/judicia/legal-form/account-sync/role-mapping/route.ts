@@ -20,6 +20,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { created, handleRouteError, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const items = await listMappings(db, actor);
 
     return ok({ items });
@@ -56,6 +58,7 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const mapping = await createMapping(db, actor, {
       sippGroupId: readStringValue(payload, "sippGroupId", { required: true, maxLength: 120 }),
       sippGroupName: readStringValue(payload, "sippGroupName", { required: true, maxLength: 180 }),
@@ -78,6 +81,7 @@ export async function PATCH(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const id = normalizeId(String(payload.id ?? ""), "ID mapping role SIPP");
 
     if (payload.action === "disable") {

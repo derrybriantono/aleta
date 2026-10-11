@@ -120,7 +120,8 @@ const keadaan = vi.hoisted(() => ({
 
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
 vi.mock("@/server/modules/aleta-ecourt/akses", () => ({
-  pastikanKapabilitas: async () => ({ name: "Penguji" }),
+  // HAK-PERAN 12 Okt: kontak pribadi pihak hanya golongan status.data-pihak (di sini PP).
+  pastikanKapabilitas: async () => ({ name: "Penguji", roleId: "panitera-pengganti" }),
 }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
 vi.mock("@/server/shared/ids", () => ({ nextPrefixedId: async () => "adt_uji" }));

@@ -11,6 +11,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { created, handleRouteError, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok({ items: await listWhatsappTemplates(db, actor) });
   } catch (error) {
     return handleRouteError(error);
@@ -32,6 +34,7 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
 
     return created(await createWhatsappTemplate(db, actor, {
       key: readStringValue(payload, "key", { required: true, maxLength: 140 }),
@@ -51,6 +54,7 @@ export async function PATCH(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
 
     return ok(await updateWhatsappTemplate(db, actor, {
       id: readStringValue(payload, "id", { required: true, maxLength: 160 }),

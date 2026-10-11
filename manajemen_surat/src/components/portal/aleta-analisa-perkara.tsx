@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { cn } from "@/lib/utils";
 import { langgananAba, siarkanAba } from "@/lib/alat-bagian";
 
@@ -120,7 +122,7 @@ const ANALISA: Array<{
   { kunci: "rombonganSepekan", lingkup: "perkara", label: "Rombongan sepekan", keterangan: "Perkara yang masuk pada pekan yang sama" },
 ];
 
-export function AletaAnalisaPerkara({ nomorPerkara }: { nomorPerkara: string }) {
+function AletaAnalisaPerkaraInti({ nomorPerkara }: { nomorPerkara: string }) {
   const [terpilih, setTerpilih] = useState("");
   const [sibuk, setSibuk] = useState("");
   // Hasil yang sudah diambil disimpan supaya tidak dihitung ulang.
@@ -343,3 +345,13 @@ function IsiAnalisa({ hasil }: { hasil: Hasil }) {
     </div>
   );
 }
+
+/* === HAK-PERAN 12 Okt === */
+// Matriks peran: hanya golongan yang berhak (status.analisa) yang melihat panel ini;
+// rute GET-nya juga menjawab 403 (pastikanAksi).
+export function AletaAnalisaPerkara(props: { nomorPerkara: string }) {
+  const currentUser = usePenggunaAktifOpsional();
+  if (!bolehAksiLayar(currentUser, "status.analisa")) return null;
+  return <AletaAnalisaPerkaraInti {...props} />;
+}
+/* === AKHIR HAK-PERAN === */

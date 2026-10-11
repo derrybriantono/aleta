@@ -6,6 +6,7 @@ import { readLimit } from "@/server/modules/judicia/legal-form/jlf-validation";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const result = await listAuditLogs(db, actor, {
       userId: searchParams.get("userId")?.trim() || undefined,
       action: searchParams.get("action")?.trim() || undefined,

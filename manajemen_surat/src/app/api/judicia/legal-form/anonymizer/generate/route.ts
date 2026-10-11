@@ -10,6 +10,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { created, handleRouteError } from "@/server/shared/http";
 import { getRequestAuditMetadata, readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
     const payload = asRecord(await readJsonBody(request));
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const result = await generateAnonymizedDocument(
       db,
       actor,

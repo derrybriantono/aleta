@@ -7,6 +7,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
 import { getRequestAuditMetadata, readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
   try {
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok({ items: await listAiPrompts(db, actor) });
   } catch (error) {
     return handleRouteError(error);
@@ -26,6 +28,7 @@ export async function PATCH(request: NextRequest) {
     const payload = asRecord(await readJsonBody(request));
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await updateAiPrompt(db, actor, {
       key: readStringValue(payload, "key", { required: true, maxLength: 160 }),
       promptTemplate: readStringValue(payload, "promptTemplate", { required: true, maxLength: 12000 }),

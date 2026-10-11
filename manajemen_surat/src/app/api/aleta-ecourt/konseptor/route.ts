@@ -6,6 +6,7 @@ import { getGatewayBebanKonseptor } from "@/server/modules/aleta-bot/whatsapp-ga
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanAksi(db, actorUserId, "analitik.peta-beban"); // HAK-PERAN 12 Okt: matriks peran
 
     const cari = request.nextUrl.searchParams;
     const periode = String(cari.get("periode") || "bulan").trim();

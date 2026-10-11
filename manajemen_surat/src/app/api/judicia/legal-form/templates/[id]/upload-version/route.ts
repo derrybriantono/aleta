@@ -7,6 +7,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
 import { created, handleRouteError } from "@/server/shared/http";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export async function POST(
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const version = await createVersion(db, actor, normalizeId(id, "ID template"), file, { changeNote });
 
     return created(version);

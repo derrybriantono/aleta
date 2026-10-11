@@ -7,6 +7,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { created, handleRouteError, ok } from "@/server/shared/http";
 import { getRequestAuditMetadata, readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const { id } = await context.params;
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok({ items: await listSections(db, actor, normalizeId(id)) });
   } catch (error) {
     return handleRouteError(error);
@@ -28,6 +30,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const payload = asRecord(await readJsonBody(request));
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return created(await createSection(db, actor, {
       regulationId: normalizeId(id),
       regulationVersionId: readOptionalStringValue(payload, "regulationVersionId", { maxLength: 160 }),
@@ -51,6 +54,7 @@ export async function PATCH(request: NextRequest) {
     const payload = asRecord(await readJsonBody(request));
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await updateSection(db, actor, normalizeId(readStringValue(payload, "sectionId", { required: true })), {
       regulationVersionId: readOptionalStringValue(payload, "regulationVersionId", { maxLength: 160 }),
       sectionType: readOptionalStringValue(payload, "sectionType", { maxLength: 60 }),
@@ -73,6 +77,7 @@ export async function DELETE(request: NextRequest) {
     const payload = asRecord(await readJsonBody(request));
     const db = await getDatabase();
     const actor = await requireActorUser(db, await resolveActorUserId(request));
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     return ok(await deleteSection(db, actor, normalizeId(readStringValue(payload, "sectionId", { required: true })), getRequestAuditMetadata(request)));
   } catch (error) {
     return handleRouteError(error);

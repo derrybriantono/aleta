@@ -36,6 +36,7 @@ import { usePortal } from "@/lib/app-state";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 import { getEffectiveRoleId } from "@/lib/permissions";
+import { bolehAksi, tabEcourtTampil, type TabEcourt } from "@/lib/matriks-peran";
 import {
   KELAS_LEBAR_ECOURT,
   KUNCI_SIMPAN_LEBAR_ECOURT,
@@ -160,7 +161,13 @@ export function AletaEcourtPengguna() {
   // admin ikut melihatnya - diminta pengguna 25 September 2026, "keliatan juga
   // di superadmin dan admin". BUKAN tab tersendiri: "jangan buat tab baru di
   // aleta e-court, cukup tambahkan tombol cetak relaas di antrian aleta sidang".
-  const bolehRelaasMassal = peran === "jurusita" || bolehMengatur;
+  // HAK-PERAN 12 Okt: lewat matriks peran - Jurusita PENGGANTI (jabatan) ikut.
+  const bolehRelaasMassal = bolehAksi(currentUser, "sidang.cetak-relaas") || bolehMengatur;
+  /* === HAK-PERAN 12 Okt === */
+  // Tab per golongan (TAB_ECOURT di src/lib/matriks-peran.ts). Mediasi
+  // tertutup untuk umum; Riwayat ALETA menuntut kemampuan penunjukan.
+  const tabBoleh = (tab: TabEcourt) => tabEcourtTampil(currentUser, tab);
+  /* === AKHIR HAK-PERAN === */
   const [menu, setMenu] = useState<
     "dasbor" | "sidang" | "mediasi" | "status" | "berkas" | "riwayat" | "ttd" | "ekstensi"
   >("dasbor");
@@ -410,13 +417,15 @@ export function AletaEcourtPengguna() {
       : []),
     { id: "ekstensi" as const, label: "Ekstensi SIPP", keterangan: "Pasang di peramban", ikon: Puzzle },
   ];
+  // HAK-PERAN 12 Okt: hanya tab yang diberikan matriks peran.
+  const menuItemPeran = menuItem.filter((item) => tabBoleh(item.id));
   // Menu yang cocok dengan pencarian. Label dan keterangannya sama-sama
   // dicari: petugas mengingat "arsip", bukan "Kendali Berkas".
   const menuTampil = cariMenu.trim()
-    ? menuItem.filter((item) =>
+    ? menuItemPeran.filter((item) =>
         `${item.label} ${item.keterangan}`.toLowerCase().includes(cariMenu.trim().toLowerCase())
       )
-    : menuItem;
+    : menuItemPeran;
 
   return (
     // ==================================================================
@@ -754,7 +763,7 @@ export function AletaEcourtPengguna() {
             />
           ) : null}
 
-          {menu === "mediasi" ? (
+          {menu === "mediasi" && tabBoleh("mediasi") ? (
             <AletaEcourtMediasi
               onBukaStatus={(nomorPerkara) => {
                 setPerkaraDibuka(nomorPerkara);
@@ -793,7 +802,7 @@ export function AletaEcourtPengguna() {
             />
           ) : null}
 
-          {menu === "riwayat" ? <AletaEcourtRiwayat /> : null}
+          {menu === "riwayat" && tabBoleh("riwayat") ? <AletaEcourtRiwayat /> : null}
 
           {menu === "ttd" && bolehMengatur ? <AletaEcourtTandaTangan /> : null}
 

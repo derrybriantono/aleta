@@ -52,11 +52,14 @@ describe("pintasan menurut jabatan", () => {
     expect(hasil).toContain("/manajemen-surat");
   });
 
-  it("peran tambahan Operator menambah papan penetapan, tanpa mengulang", () => {
+  it("peran tambahan Operator: pintasan ALETA x SIPP tidak lagi ditawarkan (belum fix, matriks peran 12 Okt), tanpa mengulang", () => {
     const tanpa = susunMenuEkstensi("jurusita").map((m) => m.href);
     const dengan = susunMenuEkstensi("jurusita", ["operator"]).map((m) => m.href);
     expect(tanpa).not.toContain("/aleta-sipp");
-    expect(dengan).toContain("/aleta-sipp");
+    // Dulu operator mendapat /aleta-sipp; kini aplikasi itu hanya Super Admin
+    // (kecuali dibuka Akses Menu) - pintasannya tidak boleh menuntun ke 403.
+    expect(dengan).not.toContain("/aleta-sipp");
+    expect(susunMenuEkstensi("super-admin").map((m) => m.href)).toContain("/aleta-sipp");
     expect(new Set(dengan).size).toBe(dengan.length);
   });
 

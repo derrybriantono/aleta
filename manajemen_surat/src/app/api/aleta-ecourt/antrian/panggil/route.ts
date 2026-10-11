@@ -6,6 +6,7 @@ import { panggilAntrian } from "@/server/modules/aleta-bot/whatsapp-gateway-clie
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const actor = await pastikanKapabilitas(db, actorUserId, "permintaan");
+    await pastikanAksi(db, actorUserId, "sidang.antrian"); // HAK-PERAN 12 Okt: matriks peran
 
     const isi = (await request.json().catch(() => ({}))) as {
       perkaraId?: string;

@@ -12,6 +12,7 @@ import {
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,6 +83,9 @@ export async function POST(request: NextRequest) {
     // padahal yang dibutuhkan papan antrian, laporan harian, dan akta cerai
     // adalah FAKTA bahwa perkaranya sudah diputus, hari ini.
     if (String(badan.jalur ?? "") === "sidang") {
+      // HAK-PERAN 12 Okt: jalur fakta diputus = pencatat sidang (matriks peran);
+      // jalur hakim di bawah dijaga pastikanBolehUnggahPutusan (keputusan 9 Okt).
+      await pastikanAksi(db, actorUserId, "sidang.tunda-putus");
       // Penginput di SIPP = PP perkara (keputusan 7 Okt 2026, ditentukan bot);
       // penekan sebenarnya hanya untuk jejak ALETA.
       const akunPenekan = await akunSippPengguna(db, aktor.id).catch(() => null);

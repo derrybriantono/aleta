@@ -7,6 +7,7 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { created, handleRouteError, ok } from "@/server/shared/http";
 import { getBooleanSearchParam, getSearchParam, readJsonBody } from "@/server/shared/request";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const query = getSearchParam(request, "query");
     const limitParam = request.nextUrl.searchParams.get("limit");
     const offset = Math.max(0, Number(request.nextUrl.searchParams.get("offset") ?? 0) || 0);
@@ -42,6 +44,7 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "judicia-legal-form"); // HAK-PERAN 12 Okt: aplikasi belum fix
     const variable = await createVariable(db, actor, {
       legacyCode: readOptionalStringValue(payload, "legacyCode", { maxLength: 20 }),
       key: readStringValue(payload, "key", { required: true, maxLength: 140 }),
