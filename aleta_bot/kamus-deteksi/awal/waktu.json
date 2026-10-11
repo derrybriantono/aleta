@@ -307,32 +307,37 @@
     },
     {
       "kode": "fakta-sejak-hari-raya",
-      "label": "'sejak lebaran' / Idul Fitri / Idul Adha / tahun baru (petunjuk 0222/0246)",
+      "label": "'sejak lebaran' / Idul Fitri / Idul Adha / bulan puasa / tahun baru (petunjuk 0222/0246)",
       "kunci": "sejak-hari-raya",
       "jenis": "fakta",
       "variabel": [
         "0222",
         "0246"
       ],
-      "regex": "\\b(?:sejak|mulai|semenjak|setelah|sesudah)\\s+(?:hari\\s+)?(lebaran(?:\\s+(?:haji|idul\\s+fitri|idul\\s+adha))?|idul\\s+fitri|idul\\s+adha|idulfitri|iduladha|natal|tahun\\s+baru)(?:\\s+(?:tahun\\s+)?((?:19|20)\\d{2}))?",
+      "regex": "\\b(?:(?:sejak|mulai|semenjak|setelah|sesudah|sebelum|menjelang)\\s+(?:hari\\s+)?|pada\\s+(?=bulan\\s+(?:puasa|ramadh?an)))(lebaran(?:\\s+(?:haji|idul\\s+fitri|idul\\s+adha|ketupat))?|idul\\s+fitri|idul\\s+adha|idulfitri|iduladha|natal|tahun\\s+baru|bulan\\s+(?:puasa|ramadh?an|syawal)|ramadh?an)(?:\\s+(?:tahun\\s+)?((?:19|20)\\d{2}|ini|lalu|kemarin))?",
       "flags": "i",
-      "status": "draf",
+      "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "sudah pisah rumah sejak lebaran tahun 2023",
-        "bertengkar terus sejak Idul Fitri"
+        "bertengkar terus sejak Idul Fitri",
+        "namun sejak bulan puasa tahun ini sudah mulai tidak rukun",
+        "sejak Penggugat mengunjungi rumah saya pada bulan Ramadhan dan tidak pernah kembali"
       ],
       "contohSalah": [
-        "pada saat lebaran keluarga berkumpul"
+        "pada saat lebaran keluarga berkumpul",
+        "Tergugat hanya membelikan baju anaknya pada saat lebaran"
       ],
       "ukur": {
-        "n": 0,
-        "tepat": 0,
+        "n": 7,
+        "tepat": 7,
         "salahTangkap": 0,
-        "sumber": "",
-        "tanggal": "2026-10-10"
+        "kalimat": 7,
+        "cara": "seluruh petunjuk di 2.277 perkara dibaca satu per satu (kalimat konflik/pisah yang memuat hari raya/bulan puasa sebagai waktu)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37",
+        "tanggal": "2026-10-11"
       },
-      "catatan": "Tanggal hari raya berubah tiap tahun - tidak dikonversi ke bulan; hanya petunjuk."
+      "catatan": "Tanggal hari raya berubah tiap tahun - tidak dikonversi ke bulan; hanya petunjuk. KDL2 11 Okt: + bulan puasa/Ramadhan/Syawal, 'sebelum/menjelang', 'tahun ini/lalu'. Terukur 7/7 (petunjuk saja, tidak pernah mengisi 0222/0246)."
     },
     {
       "kode": "fakta-lama-kira",
@@ -392,6 +397,156 @@
         "tanggal": "2026-10-10"
       },
       "catatan": "Dipakai petunjuk tahun perkiraan 'sejak bulan X' (deteksiAlasanService.tahunPerkiraan): seluruh satuan dalam sisa kalimat dijumlah."
+    },
+    {
+      "kode": "fakta-sejak-lalu",
+      "label": "'sejak N tahun/bulan yang lalu' (perkiraan mundur dari tanggal sidang)",
+      "kunci": "sejak-lalu",
+      "jenis": "fakta",
+      "variabel": [
+        "0222",
+        "0246"
+      ],
+      "regex": "(?:(?:sejak|mulai|semenjak|sudah|telah|sekitar|kira-kira|kurang\\s+lebih|±)\\s+){0,3}(?:(?<tahunDepan>\\d{1,2}|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|se)\\s*(?:\\([^)]{1,20}\\)\\s*)?tahun\\s+(?:lebih\\s+)?(?:dan\\s+)?)?(?<angka>\\d{1,2}|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|se)\\s*(?:\\([^)]{1,20}\\)\\s*)?(?<satuan>tahun|bulan|minggu)\\s+(?:yang\\s+lalu|silam|lalu(?=\\s*(?:[,.;]|$|sampai|hingga)))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Penggugat dan Tergugat sudah pisah tempat tinggal sejak 7 bulan yang lalu",
+        "sudah berpisah tempat tinggal sejak bulan September 2020, sudah ada 2 tahun 8 bulan yang lalu",
+        "namun sejak 3 tahun yang lalu sering terjadi perselisihan",
+        "sudah pisah tempat tinggal sejak kira-kira lima tahun yang lalu",
+        "sejak setahun yang lalu"
+      ],
+      "contohSalah": [
+        "tinggal di rumah orang tua Pemohon selama 1 tahun lalu tinggal di rumah kediaman bersama sampai pisah"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 19,
+        "salahTangkap": 1,
+        "kalimat": 221,
+        "perkiraan0246": {
+          "n": 15,
+          "tepat": 11,
+          "tahunSama": 13
+        },
+        "perkiraan0222": {
+          "n": 17,
+          "tepat": 6,
+          "tahunSama": 6
+        },
+        "cara": "20 petunjuk tersebar dibaca (frasa = waktu konflik/pisah); perkiraan dibanding isian 0222/0246 petugas",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Perkiraan bulan/tahun = tanggal sidang dikurangi lamanya (deteksiAlasanService.mundurDari) - petunjuk di catatan kartu, tidak mengisi variabel. Perkiraan pisah rumah (0246) 11/15 sama bulan-tahun, 13/15 sama tahun; awal konflik (0222) hanya 6/17 - saksi menghitung 'sejak N tahun lalu' lebih pendek dari dalil posita. Selalu disebut PERKIRAAN."
+    },
+    {
+      "kode": "fakta-sejak-tahun-lalu",
+      "label": "'sejak tahun lalu' tanpa angka (= 1 tahun sebelum tanggal sidang)",
+      "kunci": "sejak-lalu",
+      "jenis": "fakta",
+      "variabel": [
+        "0222",
+        "0246"
+      ],
+      "regex": "\\b(?:sejak|mulai|semenjak)\\s+(?:awal\\s+|akhir\\s+|pertengahan\\s+)?()(tahun)\\s+lalu\\b(?!\\s+(?:yaitu|tepatnya)?\\s*(?:tahun\\s+)?(?:19|20)\\d{2})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sering bertengkar sejak tahun lalu"
+      ],
+      "contohSalah": [
+        "sejak awal tahun lalu yaitu tahun 2022"
+      ],
+      "ukur": {
+        "n": 1,
+        "tepat": 1,
+        "salahTangkap": 0,
+        "kalimat": 1,
+        "cara": "dibaca; perkiraan 1/1 sama tahun dengan isian 0222",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Gugus 1 sengaja kosong = satu tahun. Yang menyebut tahunnya sendiri ('yaitu tahun 2022') tidak perlu petunjuk. Jarang (1 kalimat) - aktif karena terbaca benar dan hanya petunjuk."
+    },
+    {
+      "kode": "fakta-setelah-menikah",
+      "label": "'N bulan/tahun setelah menikah' (perkiraan maju dari tanggal nikah posita)",
+      "kunci": "setelah-menikah",
+      "jenis": "fakta",
+      "variabel": [
+        "0222",
+        "0246"
+      ],
+      "regex": "(?:(?:sejak|mulai|sekitar|kurang\\s+lebih|kira-kira|baru)\\s+){0,2}(?<angka>\\d{1,2}|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|se|beberapa)\\s*(?:\\([^)]{1,20}\\)\\s*)?(?<satuan>hari|minggu|bulan|tahun)\\s+(?:setelah|sesudah|pasca)\\s+(?:menikah|pernikahan|perkawinan|akad(?:\\s+nikah)?)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "namun sejak 2 (dua) tahun setelah menikah sudah mulai tidak rukun",
+        "sejak beberapa bulan setelah menikah Penggugat dan Tergugat sudah mulai tidak rukun",
+        "Tergugat pergi meninggalkan Penggugat tanpa pamit 3 bulan setelah akad nikah"
+      ],
+      "contohSalah": [
+        "Setelah menikah Penggugat dan Tergugat tinggal bersama di rumah orang tua Penggugat"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 142,
+        "perkiraan0222": {
+          "n": 13,
+          "tepat": 4,
+          "tahunSama": 6
+        },
+        "bunyiSamaIsian0222": {
+          "n": 14,
+          "tepat": 2
+        },
+        "cara": "20 petunjuk tersebar dibaca; perkiraan (tanggal nikah posita + lama) dibanding isian 0222 petugas",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Perkiraan = tanggal nikah (posita) + lamanya (deteksiAlasanService.majuDariNikah); 'beberapa' tanpa perkiraan. Frasanya selalu terbaca benar; perkiraannya lemah (4/13) - petugas sering mengisi 0222 dari dalil posita, bukan dari hitungan saksi. 'beberapa bulan' tanpa perkiraan."
+    },
+    {
+      "kode": "fakta-awal-menikah",
+      "label": "'sejak awal pernikahan' / 'tidak lama setelah menikah' (perkiraan = bulan nikah)",
+      "kunci": "setelah-menikah",
+      "jenis": "fakta",
+      "variabel": [
+        "0222"
+      ],
+      "regex": "\\b(?:sejak|mulai|semenjak|di)\\s+awal(?:-awal)?\\s+(?:menikah|pernikahan|perkawinan|berumah\\s+tangga)|\\btidak\\s+lama\\s+(?:setelah|sesudah)\\s+(?:menikah|pernikahan|perkawinan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "keadaan rumah tangga sejak awal pernikahan sudah tidak rukun",
+        "tidak lama setelah menikah mulai sering bertengkar"
+      ],
+      "contohSalah": [
+        "pada awalnya rumah tangga rukun"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 28,
+        "perkiraan0222": {
+          "n": 5,
+          "tepat": 0,
+          "tahunSama": 2
+        },
+        "cara": "20 petunjuk tersebar dibaca; perkiraan bulan nikah 0/5 -> perkiraan DIMATIKAN (hanya bunyi petunjuk)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Templat petugas sering menulis 0222 'sejak awal pernikahan' apa adanya - perkiraan bulan nikah hanya pembanding. Tanpa perkiraan (majuDariNikah memulangkan kosong untuk 'awal')."
     }
   ],
   "templat": []

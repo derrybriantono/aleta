@@ -269,6 +269,31 @@ function ukur(data) {
         const kunci = `${kode} ${x.kode}${u.nilai ? " (kartu terisi)" : " (kartu kosong)"}`;
         tambah(hasil.petunjukWaktu, kunci, "diusulkan");
         if (!m) continue;
+        /* === KDL2 11 Okt === */
+        // Petunjuk berperkiraan (N lalu / N setelah menikah / sejak awal pernikahan): yang dinilai perkiraannya.
+        // tepat = bulan+tahun sama (atau tahun sama bila perkiraannya hanya tahun); "tahun sama" dicatat terpisah.
+        if (/sejak-lalu|sejak-tahun-lalu|setelah-menikah|awal-menikah/.test(x.kode)) {
+          // Petugas yang menulis bunyi relatifnya apa adanya ("3 bulan setelah pernikahan") = sama bunyi.
+          const bunyi = x.teks.toLowerCase().replace(/^(?:sejak|mulai|semenjak|sudah|telah|sekitar|kira-kira|kurang\s+lebih)\s+/g, "").replace(/\s+/g, " ");
+          tambah(hasil.petunjukWaktu, `${kode} ${x.kode} (bunyi sama dengan isian)`, "diusulkan");
+          tambah(hasil.petunjukWaktu, `${kode} ${x.kode} (bunyi sama dengan isian)`, m.replace(/\s+/g, " ").includes(bunyi) ? "tepat" : "salahTangkap");
+          if (x.perkiraan) {
+            const k3 = `${kode} perkiraan ${x.kode}`;
+            const kecil = x.perkiraan.toLowerCase();
+            const thn = (kecil.match(/(?:19|20)\d{2}/) || [""])[0];
+            const bln = (kecil.match(/^bulan\s+([a-z]+)/) || [])[1];
+            const mm = m.replace(/pebruari/g, "februari").replace(/nopember/g, "november");
+            const tahunSama = Boolean(thn) && mm.includes(thn);
+            const tepat = bln ? tahunSama && mm.includes(bln) : tahunSama;
+            tambah(hasil.petunjukWaktu, k3, "diusulkan");
+            tambah(hasil.petunjukWaktu, k3, tepat ? "tepat" : "salahTangkap");
+            tambah(hasil.petunjukWaktu, `${k3} (tahun saja)`, "diusulkan");
+            tambah(hasil.petunjukWaktu, `${k3} (tahun saja)`, tahunSama ? "tepat" : "salahTangkap");
+            contoh(`perkiraan-${kode}-${x.kode}`, { nomor: p.nomor, petunjuk: x.teks, perkiraan: x.perkiraan, manusia: m.slice(0, 80), tepat });
+          }
+          continue;
+        }
+        /* === AKHIR KDL2 === */
         const bulan = (x.teks.match(/bulan\s+(\S+)/i) || [])[1];
         const sesuai = bulan ? m.includes(bulan.toLowerCase().replace("pebruari", "februari").replace("nopember", "november")) : /idul|lebaran|syawal/i.test(m);
         tambah(hasil.petunjukWaktu, kunci, sesuai ? "tepat" : "salahTangkap");
@@ -300,8 +325,50 @@ function ukur(data) {
   return hasil;
 }
 
+/* === KDL2 11 Okt === */
+/**
+ * Salah tangkap di posita BUKAN perceraian (temuan agen 3): kalimat baku itsbat "tidak (ada) pihak ketiga
+ * yang mengganggu gugat" tidak boleh menjadi sebab "pihak lain". Dihitung dengan & tanpa penyangkal letak.
+ * node tools/ukur-deteksi-alasan.js itsbat
+ */
+async function ukurItsbat() {
+  const mysql = require("mysql");
+  const usulan = require("../services/abtUsulanService");
+  const deteksi = require("../services/deteksiAlasanService");
+  const kamus = require("../services/kamusDeteksi");
+  const db = mysql.createConnection({
+    host: process.env.UKUR_MYSQL_HOST || "127.0.0.1",
+    user: process.env.UKUR_MYSQL_USER || "root",
+    password: process.env.UKUR_MYSQL_PASSWORD || "",
+    database: process.env.UKUR_DB_SIPP || "sipp_donggala",
+  });
+  const r = await new Promise((ok, no) =>
+    db.query("SELECT nomor_perkara, posita FROM perkara WHERE (nomor_perkara LIKE '%Pdt.P%' OR jenis_perkara_text LIKE '%sbat%') AND posita IS NOT NULL", (e, x) => (e ? no(e) : ok(x)))
+  );
+  db.end();
+  const semua = kamus.polaKelompok("alasan");
+  const tanpa = semua.filter((p) => !(p.jenis === "penyangkal" && p.cakupan === "letak"));
+  const hasil = {};
+  for (const p of r) {
+    const b = usulan.butirKeterangan(usulan.polosPosita(p.posita));
+    const a = new Set(deteksi.sebabDariButir(b, { pola: tanpa }).map((s) => s.sebab));
+    const s = new Set(deteksi.sebabDariButir(b, { pola: semua }).map((x) => x.sebab));
+    for (const k of new Set([...a, ...s])) {
+      const w = (hasil[k] = hasil[k] || { tanpaPenyangkal: 0, sekarang: 0 });
+      if (a.has(k)) w.tanpaPenyangkal += 1;
+      if (s.has(k)) w.sekarang += 1;
+    }
+  }
+  console.log(`posita Pdt.P/itsbat ${r.length} - sebab yang menyala (salah tangkap: posita ini bukan gugatan cerai):`);
+  console.log(JSON.stringify(hasil, null, 1));
+}
+/* === AKHIR KDL2 === */
+
 async function utama() {
   const [perintah, berkas, keluaran] = process.argv.slice(2);
+  /* === KDL2 11 Okt === */
+  if (perintah === "itsbat") return ukurItsbat();
+  /* === AKHIR KDL2 === */
   if (perintah === "ambil") {
     const data = await ambil();
     fs.writeFileSync(berkas, JSON.stringify(data));

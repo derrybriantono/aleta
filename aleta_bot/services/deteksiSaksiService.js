@@ -102,11 +102,47 @@ function uraiLabel(teks) {
 
 function polaHubungan() {
   const semua = kamus.polaKelompok("saksi-hubungan").filter(dipakai);
+  /* === KDL2 11 Okt === */
+  // jenis "ejaan" = pembetul ejaan petugas ("kanduing" -> "kandung") yang dijalankan SEBELUM istilah
+  // dicocokkan - bukan istilah hubungan.
+  const ejaan = (p) => p.jenis === "ejaan" || p.kunci === "ejaan";
   return {
     jangkar: semua.filter((p) => p.jenis === "jangkar" || p.kunci === "jangkar"),
-    istilah: semua.filter((p) => !(p.jenis === "jangkar" || p.kunci === "jangkar")),
+    istilah: semua.filter((p) => !(p.jenis === "jangkar" || p.kunci === "jangkar") && !ejaan(p)),
+    ejaan: semua.filter(ejaan),
+  };
+  /* === AKHIR KDL2 === */
+}
+
+/* === KDL2 11 Okt === */
+/** Ejaan petugas dibetulkan menurut pola "ejaan" kamus (huruf kecil). */
+function rapikanEjaan(teks) {
+  let t = String(teks || "").toLowerCase();
+  for (const p of polaHubungan().ejaan) {
+    if (typeof p.ganti !== "string") continue;
+    t = t.replace(new RegExp(p.re.source, p.re.flags.includes("g") ? p.re.flags : `${p.re.flags}g`), p.ganti);
+  }
+  return t;
+}
+
+/** Hasil klasifikasi untuk satu dasar (kunci) - dipakai jangkar terbalik ("Tergugat adalah menantu saya" -> Mertua). */
+function klasifikasiKunci(kunci, dari) {
+  const p = polaHubungan().istilah.find((x) => x.kunci === kunci);
+  if (!p) return null;
+  const g = p.ukur && p.ukur.golongan;
+  return {
+    kunci: p.kunci,
+    golongan: p.golongan || "lain",
+    jk: p.jk || "",
+    kode: p.kode,
+    kodePola: p.kode,
+    kodeAsal: dari ? dari.kode : "",
+    yakin: "ragu",
+    yakinGolongan: g && g.n >= 30 && g.tepat / g.n >= 0.95 ? "pasti" : "ragu",
+    frasa: dari ? dari.frasa : "",
   };
 }
+/* === AKHIR KDL2 === */
 
 /** Frasa dasar -> istilah kamus yang cocok UTUH, atau null. */
 function klasifikasiFrasa(frasa) {
@@ -142,7 +178,17 @@ function frasaDariKalimat(teks) {
     let m;
     while ((m = re.exec(t))) {
       const frasa = m.groups && m.groups.frasa ? m.groups.frasa.trim() : "";
-      if (frasa) hasil.push({ frasa, jangkar: p.kode });
+      /* === KDL2 11 Okt === */
+      if (frasa) {
+        hasil.push({
+          frasa,
+          jangkar: p.kode,
+          ...(p.kebalikan && typeof p.kebalikan === "object" ? { kebalikan: p.kebalikan } : {}),
+          // Pihak yang disebut jangkar ("Tergugat adalah menantu saya" -> tergugat) = ekor hubungan.
+          ...(m.groups && m.groups.pihak ? { ekor: [m.groups.pihak.toLowerCase()] } : {}),
+        });
+      }
+      /* === AKHIR KDL2 === */
       if (m.index === re.lastIndex) re.lastIndex += 1;
     }
   }
@@ -157,12 +203,23 @@ function frasaDariKalimat(teks) {
  * Hasil: { kunci, golongan, jk, kode, yakin, frasa, asal, jangkar? } atau null.
  */
 function deteksiHubungan(teks, opsi = {}) {
-  const t = bersih(teks);
+  /* === KDL2 11 Okt === */
+  const t = rapikanEjaan(bersih(teks));
+  /* === AKHIR KDL2 === */
   if (!t) return null;
   const bentuk = opsi.bentuk || "otomatis";
   if (bentuk !== "label") {
     for (const c of frasaDariKalimat(t)) {
       const k = klasifikasiFrasa(c.frasa);
+      /* === KDL2 11 Okt === */
+      // Jangkar terbalik: yang disebut hubungan PIHAK terhadap saksi - dibalik lewat peta `kebalikan`
+      // pola jangkarnya; istilah yang tidak berkebalikan pasti (keponakan, cucu) dilewati.
+      if (k && c.kebalikan) {
+        const kb = klasifikasiKunci(c.kebalikan[k.kunci], k);
+        if (kb) return { ...kb, asal: "kalimat", jangkar: c.jangkar, ...(c.ekor ? { ekor: c.ekor } : {}) };
+        continue;
+      }
+      /* === AKHIR KDL2 === */
       if (k) return { ...k, asal: "kalimat", jangkar: c.jangkar };
     }
     if (bentuk === "kalimat") return null;

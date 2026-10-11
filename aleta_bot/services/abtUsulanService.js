@@ -1622,12 +1622,16 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     }
     // P2: kartu 0222/0246 yang kosong - saksi menyebut waktunya tetapi tanpa tahun.
     const wkt = deteksiAlasan.penguji("waktu");
+    /* === KDL2 11 Okt === */
+    // Tanggal nikah posita - dasar perkiraan "N bulan setelah menikah".
+    const opsiWaktu = { tanggalNikah: deteksiAlasan.tanggalNikahDari(butirPosita) };
+    /* === AKHIR KDL2 === */
     // Ruas petunjukWaktu selalu dikirim bila ada; catatan kartu hanya bila kartunya kosong.
     for (const [kode, gab] of [["0222", awal], ["0246", pisah]]) {
       const u = hasil.usulan.find((x) => x.kode === kode);
       const petunjuk = [
-        [1, deteksiAlasan.petunjukWaktu(b1, kode, wkt, tanggalSidang)],
-        [2, deteksiAlasan.petunjukWaktu(b2, kode, wkt, tanggalSidang)],
+        [1, deteksiAlasan.petunjukWaktu(b1, kode, wkt, tanggalSidang, opsiWaktu)],
+        [2, deteksiAlasan.petunjukWaktu(b2, kode, wkt, tanggalSidang, opsiWaktu)],
       ]
         .filter(([, p]) => p)
         .map(([saksi, p]) => ({ saksi, ...p }));
@@ -1635,7 +1639,11 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
       u.petunjukWaktu = petunjuk;
       if (gab.nilai) continue;
       u.kodePola = petunjuk[0].kode;
-      const bunyi = petunjuk.map((x) => `saksi ${x.saksi} "${x.teks}"${x.perkiraan ? ` (perkiraan ${x.perkiraan}, dihitung dari lama yang disebut dan tanggal sidang)` : ""}`);
+      /* === KDL2 11 Okt === */
+      const dasarPerkiraan = (x) =>
+        /setelah-menikah/.test(x.kode) ? "dihitung dari tanggal nikah di posita" : /sejak-lalu/.test(x.kode) ? "dihitung mundur dari tanggal sidang" : "dihitung dari lama yang disebut dan tanggal sidang";
+      const bunyi = petunjuk.map((x) => `saksi ${x.saksi} "${x.teks}"${x.perkiraan ? ` (perkiraan ${x.perkiraan}, ${dasarPerkiraan(x)})` : ""}`);
+      /* === AKHIR KDL2 === */
       u.catatan = [u.catatan, `Petunjuk saksi: ${bunyi.join(", ")} - tahunnya tidak disebut; isi sendiri dari BAS/posita.`]
         .filter(Boolean)
         .join(" ");

@@ -1,7 +1,7 @@
 {
   "kelompok": "alasan",
   "versi": 1,
-  "catatan": "Pola deteksi alasan perceraian (P1, 10 Okt 2026). jenis 'ciri' = baris lama CIRI_ALASAN (abtUsulanService): kata = potongan huruf kecil yang SEMUANYA harus ada dalam SATU kalimat, regex = padanannya; dipakai 5227, SDG (kecuali hanyaDeteksi), dan dicerminkan ke portal (bawaan-alasan.ts) - kata-lah yang berlaku, regex wajib setara. jenis 'tambahan' = pola regex P1 yang hanya dipakai mesin deteksi huruf/sebab & kesesuaian saksi (deteksiAlasanService), tidak mengubah 5227/SDG. kunci = huruf alasan (Pasal 19 PP 9/1975 & Pasal 116 KHI, bunyi resmi di abtAturanAlasan.js); sebab yang hanya MENYEBABKAN perselisihan berkunci F. Huruf tetap usulan untuk diperiksa manusia.",
+  "catatan": "Pola deteksi alasan perceraian (P1, 10 Okt 2026). jenis 'ciri' = baris lama CIRI_ALASAN (abtUsulanService): kata = potongan huruf kecil yang SEMUANYA harus ada dalam SATU kalimat, regex = padanannya; dipakai 5227, SDG (kecuali hanyaDeteksi), dan dicerminkan ke portal (bawaan-alasan.ts) - kata-lah yang berlaku, regex wajib setara. jenis 'tambahan' = pola regex P1 yang hanya dipakai mesin deteksi huruf/sebab & kesesuaian saksi (deteksiAlasanService), tidak mengubah 5227/SDG. kunci = huruf alasan (Pasal 19 PP 9/1975 & Pasal 116 KHI, bunyi resmi di abtAturanAlasan.js); sebab yang hanya MENYEBABKAN perselisihan berkunci F. Huruf tetap usulan untuk diperiksa manusia. KDL2 11 Okt: jenis 'penyangkal' bercakupan 'letak' hanya memadamkan kecocokan yang jatuh DI DALAM rentangnya (bukan sekalimat); sebab baru berkunci F (ucap talak, tidak taat, keluar tanpa izin, merusak barang, tidak jujur, kurang perhatian, tidak mau ikut) hanya MENYEBABKAN perselisihan dan tidak mengubah usulan huruf.",
   "pola": [
     {
       "kode": "ciri-perselisihan-terus-mener-perselisihan",
@@ -4149,6 +4149,323 @@
       "catatan": "jenis 'penyangkal': kalimat yang cocok TIDAK menyalakan sebabnya di mesin P1 (deteksiAlasanService). Baris ciri lama 'keluar dari agama islam' menyala pada bunyi itsbat/waris ini; 5227 sengaja tidak diubah (perilaku lama dijaga), mesin P1 menyaringnya."
     },
     {
+      "kode": "sangkal-f-tidak-bertengkar",
+      "label": "penyangkal: tidak (pernah/ada) bertengkar / tanpa pertengkaran",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b(?:tidak|tak|belum)\\s+(?:pernah\\s+)?(?:ada\\s+|terjadi\\s+|lagi\\s+)?(?:(?:melihat|mengetahui|mendengar|tahu|menyaksikan)\\s+(?:secara\\s+langsung\\s+|langsung\\s+)?(?:(?:mereka|keduanya)\\s+)?)?(?:ada\\s+)?(?:perselisihan|pertengkaran|percekcokan|cekcok|cek\\s+cok|bertengkar|berselisih|ribut)|\\btanpa\\s+(?:ada(?:nya)?\\s+)?(?:perselisihan|pertengkaran|percekcokan|cekcok|perselisian)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "antara Penggugat dan Tergugat tidak ada pertengkaran",
+        "saya tidak pernah melihat pertengkaran antara Pemohon dan Termohon",
+        "Tergugat pergi tanpa adanya perselisian dan pertengkaran"
+      ],
+      "contohSalah": [
+        "sering terjadi perselisihan dan pertengkaran yang tidak dapat didamaikan",
+        "tidak rukun dan sering bertengkar"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 19,
+        "salahTangkap": 1,
+        "kalimat": 108,
+        "perkara": 71,
+        "padam": 35,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). 1 dari 20 diragukan: 'tidak melihat langsung bertengkar hanya mengetahui lewat Penggugat' (de auditu - tetap dipadamkan)."
+    },
+    {
+      "kode": "sangkal-d-tidak-pernah-memukul",
+      "label": "penyangkal: tidak pernah memukul / melakukan kekerasan",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b(?:tidak|tak|belum)\\s+(?:pernah\\s+(?:sampai\\s+)?(?:melakukan\\s+)?|sampai\\s+|melakukan\\s+)(?:kekerasan|kdrt|memukul|menampar|menendang|menganiaya|penganiayaan|main\\s+tangan|menyakiti|dipukul|ditampar)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat tidak pernah memukul Penggugat",
+        "Penggugat tidak pernah menyakiti secara fisik anaknya",
+        "Tergugat tidak melakukan kekerasan"
+      ],
+      "contohSalah": [
+        "Tergugat sering melakukan tidak kekerasan dalam rumah tangga",
+        "Tergugat sering memukul Penggugat dan tidak pernah menafkahi"
+      ],
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "kalimat": 8,
+        "perkara": 6,
+        "padam": 6,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Seluruh kalimat yang padam dibaca; 4 di antaranya keterangan hadhanah ('Penggugat tidak pernah memukul anaknya')."
+    },
+    {
+      "kode": "sangkal-d-membanting-barang",
+      "label": "bukan KDRT: membanting/melempar BARANG (perusakan barang, sebab tersendiri)",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b(?:membanting|dibanting|melempar(?:kan)?)\\s+(?:barang|piring|perabot\\w*|hp|handphone|pintu|gelas|kursi|meja|televisi|tv)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kalau marah membanting piring",
+        "sering membanting barang-barang di rumah"
+      ],
+      "contohSalah": [
+        "Tergugat membanting Penggugat ke lantai"
+      ],
+      "ukur": {
+        "n": 14,
+        "tepat": 14,
+        "salahTangkap": 0,
+        "kalimat": 26,
+        "perkara": 21,
+        "padam": 14,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Membanting BARANG bukan kekerasan terhadap orang - dibaca sebagai sebab 'merusak barang'."
+    },
+    {
+      "kode": "sangkal-menikah-lagi-tidak-pernah",
+      "label": "penyangkal: tidak pernah menikah (lagi) dengan orang lain",
+      "kunci": "F",
+      "sebab": "menikah lagi",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b(?:tidak|belum)\\s+pernah\\s+(?:menikah|kawin)\\s+(?:lagi|dengan\\s+(?:wanita|perempuan|laki-laki|lelaki|pria)|siri)",
+      "flags": "i",
+      "status": "draf",
+      "yakin": "ragu",
+      "contohBenar": [
+        "selama menikah dengan almarhumah, Pemohon tidak pernah menikah dengan wanita lain",
+        "belum pernah menikah dengan laki-laki lain"
+      ],
+      "contohSalah": [
+        "Tergugat telah menikah lagi dengan wanita lain"
+      ],
+      "ukur": {
+        "n": 4,
+        "tepat": 0,
+        "salahTangkap": 4,
+        "kalimat": 4,
+        "perkara": 2,
+        "padam": 0,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Ciri menikah-lagi sudah tersaring menikahLagiTerjadi: 0 kalimat padam di korpus - tidak berpengaruh, disimpan draf."
+    },
+    {
+      "kode": "sangkal-pihak-lain-tidak-ada",
+      "label": "penyangkal: tidak ada pihak ketiga / tidak pernah selingkuh",
+      "kunci": "F",
+      "sebab": "pihak lain (wanita/pria idaman lain)",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b(?:tidak|tak|belum)\\s+(?:ada\\s+|pernah\\s+(?:ada\\s+)?)?(?:pihak\\s+(?:ketiga|lain)|orang\\s+(?:ketiga|lain)|wanita\\s+lain|perempuan\\s+lain|laki-laki\\s+lain|pria\\s+lain|WIL|PIL)|\\btidak\\s+pernah\\s+(?:ber)?selingkuh|\\bpihak\\s+ketiga\\s+yang\\s+mengg?ang?gu\\s+gugat",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "sejak pernikahan sampai sekarang tidak ada pihak ketiga yang mengganggu",
+        "Tergugat tidak pernah selingkuh",
+        "selama pernikahan tersebut tidak pihak ketiga yang mengganggu gugat pernikahan para Pemohon",
+        "tidak ada pihak lain yang keberatan"
+      ],
+      "contohSalah": [
+        "Tergugat selingkuh dengan wanita lain"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 182,
+        "perkara": 173,
+        "padam": 174,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Temuan agen 3 (11 Okt): posita itsbat baku 'tidak (ada) pihak ketiga yang mengganggu gugat' dibaca sebab pihak lain pada 2.167 dari 3.442 posita Pdt.P/itsbat; dengan penyangkal ini 3 - ketiganya dispensasi kawin 'berpacaran'/'pernah menikah', bukan kalimat itsbat (ukur cek-itsbat-pihak-lain.js). Juga 'tidak ada pihak lain yang keberatan'."
+    },
+    {
+      "kode": "sangkal-keluar-malam-tidak-suka",
+      "label": "penyangkal: tidak (suka/pernah) keluar malam",
+      "kunci": "F",
+      "sebab": "keluar malam",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "(?<!(?:agar|supaya|untuk|jangan)\\s+)\\btidak\\s+(?:suka|pernah|sering)\\s+keluar\\s+malam",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Penggugat tidak suka keluar malam"
+      ],
+      "contohSalah": [
+        "Tergugat sering keluar malam"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "kalimat": 2,
+        "perkara": 1,
+        "padam": 2,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Dijaga 'ditegur agar tidak sering keluar malam' (= ia memang keluar malam) tidak ikut padam."
+    },
+    {
+      "kode": "sangkal-kasar-tidak-pernah",
+      "label": "penyangkal: tidak pernah berbuat/bersikap kasar",
+      "kunci": "F",
+      "sebab": "bersikap kasar",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\btidak\\s+pernah\\s+(?:berbuat|bersikap|berlaku|bertindak)\\s+kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Penggugat tidak pernah berbuat kasar terhadap anak-anaknya"
+      ],
+      "contohSalah": [
+        "Tergugat sering berbuat kasar"
+      ],
+      "ukur": {
+        "n": 7,
+        "tepat": 7,
+        "salahTangkap": 0,
+        "kalimat": 7,
+        "perkara": 4,
+        "padam": 7,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B)."
+    },
+    {
+      "kode": "sangkal-kata-kasar-tidak-pernah",
+      "label": "penyangkal: tidak pernah berkata kasar",
+      "kunci": "F",
+      "sebab": "berkata kasar",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\btidak\\s+pernah\\s+(?:berkata|berbicara|mengucapkan)\\s+(?:kata[\\s-]+(?:kata\\s+)?)?kasar",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Penggugat tidak pernah berkata kasar pada anak-anaknya"
+      ],
+      "contohSalah": [
+        "Tergugat sering berkata kasar"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 3,
+        "salahTangkap": 0,
+        "kalimat": 3,
+        "perkara": 3,
+        "padam": 3,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B)."
+    },
+    {
+      "kode": "sangkal-a-judi-dalam-nama",
+      "label": "bukan judi: potongan nama orang (Sirajudin, Alidjudi, Judia)",
+      "kunci": "A",
+      "sebab": "judi",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b\\w*judin\\w*|\\b\\w+djudi\\b|\\bjudia\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "NURDIN BIN SIRAJUDIN",
+        "Amir bin Ali Alidjudi",
+        "Judia binti Sandai"
+      ],
+      "contohSalah": [
+        "Tergugat suka berjudi",
+        "Tergugat main judi online",
+        "perjudian"
+      ],
+      "ukur": {
+        "n": 9,
+        "tepat": 9,
+        "salahTangkap": 0,
+        "kalimat": 9,
+        "perkara": 5,
+        "padam": 9,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Ciri lama 'judi' adalah POTONGAN kata (5227) - menyala pada nama Sirajudin/Tajudin/Mahijudin (9 kalimat cerai/itsbat, semua nama); itsbat Pdt.P: lihat `node tools/ukur-deteksi-alasan.js itsbat`."
+    },
+    {
+      "kode": "sangkal-a-obat-dalam-nama",
+      "label": "bukan narkoba: potongan nama orang (Lamadate, ashabul Kahfi)",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b\\w*madate\\w*|\\blamadat\\w*|\\bashab\\w*",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Agustin binti Lamadate",
+        "ashabul Kahfi bin Jumardi"
+      ],
+      "contohSalah": [
+        "Tergugat seorang pemadat",
+        "Tergugat memakai sabu"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "kalimat": 1,
+        "perkara": 1,
+        "padam": 0,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). 0 kalimat di korpus cerai; di posita Pdt.P 'Lamadate' & 'ashabul Kahfi' (2 dibaca, nama) - ciri lama 'madat'/'shabu' potongan kata."
+    },
+    {
       "kode": "tambah-c-lapas-rutan",
       "label": "penjara: berada/ditahan di Lapas/Rutan",
       "kunci": "C",
@@ -4805,6 +5122,433 @@
         "tanggal": "2026-10-10"
       },
       "catatan": "Sebab baru (SIPP faktor 10 Kawin Paksa)."
+    },
+    {
+      "kode": "tambah-f-perselisihan-ejaan",
+      "label": "perselisihan: ejaan petugas & bahasa daerah (cek-cok, baku bantah, perselisian, bertengakar)",
+      "kunci": "F",
+      "sebab": "perselisihan terus-menerus",
+      "jenis": "tambahan",
+      "regex": "\\bperselis(?:ian|han)\\b|\\bperselihan\\b|\\bpertengakar(?:an)?\\b|\\bbertengakar\\b|\\bpetengkaran\\b|\\bpertengkara\\b|\\bcek[\\s-]+cok\\b|\\bbaku\\s+(?:bantah|marah|tengkar|ribut|maki|mulut)\\b|\\badu\\s+mulut\\b|\\bbersitegang\\b|\\bberselisih\\s+fa?ham\\b|\\bbertikai\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "mereka sering baku bantah",
+        "Penggugat dan Tergugat sering cek-cok",
+        "penyebab lain perselisian antara Tergugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat rukun"
+      ],
+      "ukur": {
+        "n": 13,
+        "tepat": 13,
+        "salahTangkap": 0,
+        "kalimat": 45,
+        "perkara": 37,
+        "baru": 13,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Kalimat baru seluruhnya dibaca. Ejaan petugas (perselisian, perselihan, bertengakar, cek-cok) dan Melayu Manado 'baku bantah'."
+    },
+    {
+      "kode": "tambah-d-kdrt-ejaan",
+      "label": "KDRT: ejaan terpisah & bahasa daerah (di pukul, baku pukul, kase pukul, tindak kekerasan ditulis 'tidak kekerasan')",
+      "kunci": "D",
+      "sebab": "kekerasan dalam rumah tangga",
+      "jenis": "tambahan",
+      "regex": "\\bdi\\s+(?:pukul(?!\\s+\\d)|tampar|tendang|aniaya|siksa|cekik|jambak|tinju|injak)\\b|\\bbaku\\s+(?:pukul|tampar|hantam|tinju)\\b|\\b(?:kase|kasih|dapa|ba)\\s+pukul\\b|\\bpukulan\\b|\\btidak\\s+kekerasan\\s+dalam\\s+rumah\\s+tangga\\b|\\bmencekik\\b|\\bmenganiyaya\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tangan Penggugat lebam akibat di pukul oleh Tergugat",
+        "saya melihat langsung mereka baku pukul",
+        "Tergugat biasa melakukan tidak Kekerasan Dalam Rumah Tangga"
+      ],
+      "contohSalah": [
+        "pukul 09.00 Wita Penggugat menikah"
+      ],
+      "ukur": {
+        "n": 19,
+        "tepat": 19,
+        "salahTangkap": 0,
+        "kalimat": 113,
+        "perkara": 85,
+        "baru": 20,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Sesudah dibuang 'di pukul 22.30' (jam). 'bekas pukulan' terbanyak; 'baku pukul/baku tampar' (Manado) = saling - pelaku dinilai pelakuSatuKata."
+    },
+    {
+      "kode": "tambah-f-ekonomi-utang-keuangan",
+      "label": "ekonomi: utang/pinjaman online, masalah keuangan, tidak terbuka soal penghasilan",
+      "kunci": "F",
+      "sebab": "masalah ekonomi",
+      "jenis": "tambahan",
+      "regex": "\\bmasalah\\s+keuangan\\b|\\bpersoalan\\s+keuangan\\b|\\b(?:ber)?(?:hutang|utang)\\b|\\bpinjaman\\s+online\\b|\\bpinjol\\b|tidak\\s+(?:jujur|terbuka)\\s+(?:\\S+\\s+){0,3}(?:keuangan|penghasilan|gaji|pendapatan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering berhutang tanpa sepengetahuan Penggugat",
+        "karena masalah keuangan",
+        "Tergugat tidak terbuka masalah penghasilan"
+      ],
+      "contohSalah": [
+        "Tergugat tidak memberi nafkah"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 320,
+        "perkara": 171,
+        "baru": 308,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Faktor SIPP Ekonomi: lihat cakupan sebab di laporan."
+    },
+    {
+      "kode": "tambah-f-berkata-kasar-varian",
+      "label": "berkata kasar: menghina, mencaci maki, memaki, memarahi, kata kotor",
+      "kunci": "F",
+      "sebab": "berkata kasar",
+      "jenis": "tambahan",
+      "regex": "\\bmenghina\\w*|\\bmencaci\\w*|\\bcaci[\\s-]*maki\\b|\\bmemaki\\w*|\\bmemarahi\\b|\\bkata[\\s-]+(?:kata\\s+)?(?:kotor|tidak\\s+pantas|tidak\\s+sopan)\\b|\\bberkata\\s+kotor\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering menghina Penggugat",
+        "sering marah dengan mencaci-maki",
+        "Tergugat sering memarahi Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat sering marah-marah"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 173,
+        "perkara": 116,
+        "baru": 78,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B)."
+    },
+    {
+      "kode": "tambah-f-cemburu-curiga",
+      "label": "cemburu: curiga, mencurigai, posesif, kecembuaruan",
+      "kunci": "F",
+      "sebab": "cemburu",
+      "jenis": "tambahan",
+      "regex": "\\bposesif\\b|\\bkecembu\\w*|\\b(?:curiga|mencurigai|dicurigai)\\b(?=(?:\\s+\\S+){0,8}?\\s+(?:hubungan|selingkuh\\w*|berselingkuh|wanita|perempuan|laki-laki|lelaki|pria|berlebih\\w*|pihak\\s+ketiga|orang\\s+ketiga|idaman))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat terlalu posesif dan sering curiga kepada Penggugat",
+        "Termohon sering mencurigai Pemohon memiliki hubungan dengan wanita lain"
+      ],
+      "contohSalah": [
+        "Tergugat sering marah",
+        "Penggugat mencurigai Tergugat mengkonsumsi obat terlarang"
+      ],
+      "ukur": {
+        "n": 21,
+        "tepat": 21,
+        "salahTangkap": 0,
+        "kalimat": 235,
+        "perkara": 154,
+        "baru": 21,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). 'curiga' telanjang 85% (curiga memakai sabu, curiga mengambil uang) - kini hanya bila diikuti hubungan/wanita/laki-laki/selingkuh/berlebihan dalam 8 kata."
+    },
+    {
+      "kode": "tambah-f-kawin-paksa-perjodohan",
+      "label": "kawin paksa: perjodohan, di jodohkan, desakan keluarga",
+      "kunci": "F",
+      "sebab": "kawin paksa",
+      "jenis": "tambahan",
+      "regex": "\\bperjodohan\\b|(?<!tidak\\s)\\bdi\\s+jodohkan\\b|(?:menikah|kawin)\\s+(?:karena|atas)\\s+desakan\\s+(?:keluarga|orang\\s*tua)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "pernikahan Penggugat dan Tergugat adalah hasil perjodohan antara orangtua",
+        "Pemohon dan Termohon menikah karena desakan keluarga Termohon"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat menikah atas dasar suka sama suka"
+      ],
+      "ukur": {
+        "n": 12,
+        "tepat": 12,
+        "salahTangkap": 0,
+        "kalimat": 12,
+        "perkara": 8,
+        "baru": 12,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Faktor SIPP Kawin paksa hanya 4 perkara."
+    },
+    {
+      "kode": "tambah-b-tidak-balik-kabar",
+      "label": "meninggalkan: tidak pernah balik, tanpa ada kabar, putus komunikasi",
+      "kunci": "B",
+      "sebab": "meninggalkan",
+      "jenis": "tambahan",
+      "regex": "tidak\\s+(?:pernah\\s+)?balik(?:[\\s-]+balik)?(?:\\s+lagi)?|tanpa\\s+ada\\s+kabar|tidak\\s+(?:pernah\\s+)?(?:lagi\\s+)?(?:memberi(?:kan)?\\s+)?kabar(?!\\s+baik)|hilang\\s+kabar|putus\\s+komunikasi|lost\\s+contact",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pergi kerja di Palu dan tidak pernah balik lagi",
+        "pergi bekerja di Morowali tanpa ada kabar berita",
+        "Tergugat tidak pernah memberi kabar"
+      ],
+      "contohSalah": [
+        "Tergugat pulang membawa kabar baik"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 19,
+        "salahTangkap": 1,
+        "kalimat": 43,
+        "perkara": 28,
+        "baru": 36,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). 1 salah: 'memposting berita Pemohon hilang kabar di media sosial'."
+    },
+    {
+      "kode": "tambah-f-ucap-talak",
+      "label": "sering mengucapkan kata talak/cerai",
+      "kunci": "F",
+      "sebab": "mengucapkan kata talak/cerai",
+      "jenis": "tambahan",
+      "regex": "(?:mengucap|mengatakan|mengeluarkan|melontarkan|menyebut|mengucapkan)\\w*\\s+(?:kata[\\s-]+(?:kata\\s+)?)?(?:talak|cerai|pisah)\\b|\\bkata[\\s-]+(?:kata\\s+)?(?:talak|cerai)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering mengucapkan kata talak kepada Penggugat",
+        "Tergugat mengatakan cerai kepada Penggugat"
+      ],
+      "contohSalah": [
+        "Menjatuhkan talak satu ba'in shughra Tergugat"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 134,
+        "perkara": 82,
+        "baru": 134,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). 'Menjatuhkan talak' (amar/petitum) sengaja tidak dikenali."
+    },
+    {
+      "kode": "tambah-f-tidak-taat",
+      "label": "istri/suami tidak taat, tidak mendengar nasihat, membangkang",
+      "kunci": "F",
+      "sebab": "tidak taat/nusyuz",
+      "jenis": "tambahan",
+      "regex": "tidak\\s+(?:taat|patuh|menurut)\\b|tidak\\s+(?:mau\\s+)?(?:mendengar|mendengarkan|menuruti|mengindahkan|menerima)\\s+(?:\\S+\\s+){0,2}(?:nasi?e?hat|perkataan|perintah|saran|masukan)|\\bnusyuz\\b|\\bmembangkang\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon tidak taat dan tidak patuh kepada Pemohon",
+        "Termohon tidak mau mendengarkan nasehat yang disampaikan Pemohon"
+      ],
+      "contohSalah": [
+        "saya sudah menasihati Penggugat dan Tergugat namun tidak berhasil"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 163,
+        "perkara": 113,
+        "baru": 163,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Terbanyak posita cerai talak 'Termohon tidak taat dan tidak patuh ... tidak mendengarkan nasehat'."
+    },
+    {
+      "kode": "tambah-f-keluar-tanpa-izin",
+      "label": "sering keluar rumah tanpa izin / keluyuran",
+      "kunci": "F",
+      "sebab": "keluar rumah tanpa izin",
+      "jenis": "tambahan",
+      "regex": "keluar\\s+rumah\\s+(?:\\S+\\s+){0,4}tanpa\\s+(?:izin|ijin|seizin|seijin|sepengetahuan|pamit)|\\bkeluyuran\\b|\\bkelayapan\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon sering keluar rumah tanpa seizin Pemohon",
+        "Termohon sering keluyuran"
+      ],
+      "contohSalah": [
+        "Tergugat pergi meninggalkan rumah tanpa izin"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 48,
+        "perkara": 36,
+        "baru": 48,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B)."
+    },
+    {
+      "kode": "tambah-f-merusak-barang",
+      "label": "merusak/membanting/menghancurkan barang rumah tangga",
+      "kunci": "F",
+      "sebab": "merusak barang",
+      "jenis": "tambahan",
+      "regex": "\\bmerusak\\s+(?:barang|perabot|dinding|pintu|rumah)\\w*|\\bmenghancurkan\\s+(?:barang|perabot)\\w*|\\b(?:membanting|melempar(?:kan)?|memecahkan)\\s+(?:barang|piring|perabot\\w*|hp|handphone|pintu|gelas|kursi|meja|kaca|televisi|tv)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kalau marah suka merusak barang-barang dalam rumah",
+        "sering menghancurkan perabot rumah",
+        "membanting piring"
+      ],
+      "contohSalah": [
+        "Tergugat membanting Penggugat"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 107,
+        "perkara": 59,
+        "baru": 107,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B)."
+    },
+    {
+      "kode": "tambah-f-tidak-jujur",
+      "label": "tidak jujur / sering berbohong",
+      "kunci": "F",
+      "sebab": "tidak jujur",
+      "jenis": "tambahan",
+      "regex": "\\btidak\\s+jujur\\b|\\b(?:sering|suka|selalu)\\s+berbohong\\b|\\bmembohongi\\b|\\bkebohongan\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon sering tidak jujur",
+        "Termohon sering berbohong"
+      ],
+      "contohSalah": [
+        "Tergugat jujur"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 77,
+        "perkara": 56,
+        "baru": 77,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Sering bersama masalah keuangan (pola ekonomi juga menyala)."
+    },
+    {
+      "kode": "tambah-f-kurang-perhatian",
+      "label": "kurang perhatian / tidak peduli / cuek",
+      "kunci": "F",
+      "sebab": "kurang perhatian",
+      "jenis": "tambahan",
+      "regex": "\\bkurang\\s+perhatian\\b|\\btidak\\s+(?:pernah\\s+)?(?:memberi(?:kan)?\\s+)?perhatian\\b|\\btidak\\s+(?:peduli|memperdulikan|mempedulikan)\\s+(?:lagi\\s+)?(?:(?:dengan|pada|kepada|terhadap)\\s+)?(?:penggugat|tergugat|pemohon|termohon|anak\\w*|istri\\w*|isteri\\w*|suami\\w*|kondisi|keadaan|kehidupan)\\b|\\bbersikap\\s+cuek\\b|\\bsifat\\s+cuek\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat kurang perhatian kepada Penggugat",
+        "Tergugat tidak pernah memberikan perhatian kepada Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat memperhatikan anaknya"
+      ],
+      "ukur": {
+        "n": 30,
+        "tepat": 30,
+        "salahTangkap": 0,
+        "kalimat": 45,
+        "perkara": 33,
+        "baru": 45,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). 'tidak menghiraukan' dibuang (nasihat/teriakan - 4 salah dari 25); 'tidak peduli' hanya bila objeknya pihak/anak/istri/suami/kondisi."
+    },
+    {
+      "kode": "tambah-f-tidak-mau-ikut",
+      "label": "tidak mau ikut/tinggal bersama di tempat pasangan",
+      "kunci": "F",
+      "sebab": "tidak mau tinggal bersama/ikut pasangan",
+      "jenis": "tambahan",
+      "regex": "tidak\\s+mau\\s+(?:ikut\\s+)?(?:tinggal|pindah)\\s+(?:\\S+\\s+){0,2}(?:bersama|dengan|ke)|tidak\\s+ada\\s+kesepakatan\\s+(?:tentang|mengenai|soal)\\s+tempat\\s+tinggal|tidak\\s+betah\\s+tinggal",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon tidak mau ikut tinggal bersama Pemohon",
+        "tidak ada kesepakatan tentang tempat tinggal"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat tinggal bersama"
+      ],
+      "ukur": {
+        "n": 20,
+        "tepat": 20,
+        "salahTangkap": 0,
+        "kalimat": 28,
+        "perkara": 20,
+        "baru": 28,
+        "cara": "kalimat yang sebabnya BELUM terbaca pola lama, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Hampir seluruhnya cerai talak (Termohon tidak mau ikut tinggal bersama Pemohon)."
     }
   ],
   "templat": []

@@ -162,6 +162,44 @@ function letakCocok(p, kalimat, kecil) {
   return letak;
 }
 
+/* === KDL2 11 Okt === */
+/** Rentang [awal, akhir) tiap penyangkal-letak yang cocok, per sebab. */
+function rentangPenyangkal(daftar, teks) {
+  const peta = new Map();
+  for (const p of daftar) {
+    const bendera = (p.flags || "").includes("g") ? p.flags : `${p.flags || ""}g`;
+    for (const m of teks.matchAll(new RegExp(p.regex, bendera))) {
+      if (!m[0]) break;
+      if (!peta.has(p.sebab)) peta.set(p.sebab, []);
+      peta.get(p.sebab).push([m.index, m.index + m[0].length]);
+    }
+  }
+  return peta;
+}
+
+/** Semua letak kecocokan pola (termasuk bentuk pasif) - untuk diuji terhadap rentang penyangkal. */
+function letakSemua(p, teks, kecil) {
+  const letak = [];
+  if (p.jenis === "ciri" && Array.isArray(p.kata)) {
+    const kata = p.kata[0];
+    for (let i = kecil.indexOf(kata); i >= 0; i = kecil.indexOf(kata, i + 1)) letak.push(i);
+    return letak;
+  }
+  const bendera = (p.flags || "").includes("g") ? p.flags : `${p.flags || ""}g`;
+  for (const m of teks.matchAll(new RegExp(p.regex, bendera))) {
+    letak.push(m.index);
+    if (m[0] === "") break;
+  }
+  return letak;
+}
+
+/** true bila SETIAP kecocokan pola jatuh di dalam salah satu rentang penyangkal. */
+function semuaDisangkal(p, teks, kecil, daftarRentang) {
+  const letak = letakSemua(p, teks, kecil);
+  return letak.length > 0 && letak.every((i) => daftarRentang.some(([a, b]) => i >= a && i < b));
+}
+/* === AKHIR KDL2 === */
+
 /**
  * Sebab yang terbaca pada sekumpulan kalimat (satu saksi, atau posita).
  *
@@ -178,13 +216,24 @@ function sebabDariButir(butir, opsi) {
   const ciri = pola.filter((p) => p.jenis === "ciri" && Array.isArray(p.kata)).map((p) => ({ kunci: p.sebab, kata: p.kata }));
   const uj = o.ujiPelaku || penguji("pelaku");
   const penyangkal = pola.filter((p) => p.jenis === "penyangkal" && p.sebab);
+  /* === KDL2 11 Okt === */
+  // Penyangkal bercakupan "letak" hanya memadamkan kecocokan yang JATUH di dalam
+  // rentangnya ("Tergugat tidak pernah memukul" - kata "memukul" di dalam rentang
+  // penyangkal), bukan seluruh kalimat: "sering memukul ... tetapi tidak pernah memukul
+  // anak" tetap menyala. Penyangkal lama (tanpa cakupan) tetap sekalimat.
+  const penyangkalKalimat = penyangkal.filter((p) => p.cakupan !== "letak");
+  const penyangkalLetak = penyangkal.filter((p) => p.cakupan === "letak");
+  /* === AKHIR KDL2 === */
   const peta = new Map();
   for (const kalimat of butir || []) {
     const teks = String(kalimat || "");
     const kecil = teks.toLowerCase();
     // Pola berjenis "penyangkal" ("tidak pernah keluar dari agama Islam") memadamkan
     // sebabnya untuk KALIMAT itu saja - di mesin ini, bukan di 5227 (perilaku lama dijaga).
-    const disangkal = new Set(penyangkal.filter((p) => p.re.test(teks)).map((p) => p.sebab));
+    const disangkal = new Set(penyangkalKalimat.filter((p) => p.re.test(teks)).map((p) => p.sebab));
+    /* === KDL2 11 Okt === */
+    const rentang = rentangPenyangkal(penyangkalLetak, teks);
+    /* === AKHIR KDL2 === */
     for (const p of pola) {
       if (!p.sebab || p.jenis === "penyangkal" || disangkal.has(p.sebab)) continue;
       const cocok =
@@ -192,6 +241,9 @@ function sebabDariButir(butir, opsi) {
           ? usul.barisBerlaku(kecil, { kunci: p.sebab, kata: p.kata }, ciri)
           : p.re.test(teks);
       if (!cocok) continue;
+      /* === KDL2 11 Okt === */
+      if (rentang.has(p.sebab) && semuaDisangkal(p, teks, kecil, rentang.get(p.sebab))) continue;
+      /* === AKHIR KDL2 === */
       let s = peta.get(p.sebab);
       if (!s) {
         s = { sebab: p.sebab, huruf: p.kunci || "", pola: [], kalimat: teks, sisi: new Set(), yakin: "ragu" };
@@ -323,12 +375,16 @@ function usulHuruf({ s1, s2, posita, lamaPisahBulan }) {
  * @param {"0222"|"0246"} variabel
  * @returns {{kode, teks, kalimat}|null}
  */
-function petunjukWaktu(butir, variabel, ujWaktu, tanggalSidang) {
+function petunjukWaktu(butir, variabel, ujWaktu, tanggalSidang, opsi) {
   const uj = ujWaktu || penguji("waktu");
   const konteks = variabel === "0222" ? (b) => uj.uji("konflik", b) : (b) => uj.uji("pisah-rumah", b) || uj.uji("pisah-kata", b);
   for (const b of butir || []) {
     if (!konteks(b)) continue;
-    for (const kunci of ["sejak-bulan-tanpa-tahun", "sejak-hari-raya"]) {
+    /* === KDL2 11 Okt === */
+    // "sejak-lalu" (N tahun/bulan yang lalu) dan "setelah-menikah" (N bulan setelah menikah) ditambah;
+    // perkiraannya dari tanggal sidang / tanggal nikah posita - tetap petunjuk, tidak mengisi variabel.
+    for (const kunci of ["sejak-bulan-tanpa-tahun", "sejak-hari-raya", "sejak-lalu", "setelah-menikah"]) {
+    /* === AKHIR KDL2 === */
       for (const p of uj.pola(kunci)) {
         if (Array.isArray(p.variabel) && !p.variabel.includes(variabel)) continue;
         const m = String(b).match(p.re);
@@ -339,12 +395,90 @@ function petunjukWaktu(butir, variabel, ujWaktu, tanggalSidang) {
           const perkiraan = tahunPerkiraan(m[1], String(b).slice(m.index + m[0].length), tanggalSidang, uj);
           if (perkiraan) hasil.perkiraan = perkiraan;
         }
+        /* === KDL2 11 Okt === */
+        if (kunci === "sejak-lalu") {
+          const perkiraan = mundurDari(m, tanggalSidang);
+          if (perkiraan) hasil.perkiraan = perkiraan;
+        }
+        if (kunci === "setelah-menikah") {
+          const perkiraan = majuDariNikah(m, opsi && opsi.tanggalNikah);
+          if (perkiraan) hasil.perkiraan = perkiraan;
+        }
+        /* === AKHIR KDL2 === */
         return hasil;
       }
     }
   }
   return null;
 }
+
+/* === KDL2 11 Okt === */
+const ANGKA_KATA_LUAS = { ...{ satu: 1, se: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6, tujuh: 7, delapan: 8, sembilan: 9, sepuluh: 10, sebelas: 11 }, setahun: 1, sebulan: 1 };
+
+/** Angka & satuan dari gugus bernama `angka`/`satuan` (atau 1/2); "tahun lalu" tanpa angka = 1. */
+function angkaSatuan(m) {
+  const g = (m && m.groups) || {};
+  const mentah = String(g.angka || m[1] || "").toLowerCase();
+  const satuan = String(g.satuan || m[2] || "").toLowerCase();
+  if (!satuan) return null;
+  const angka = !mentah ? 1 : /^\d+$/.test(mentah) ? Number(mentah) : ANGKA_KATA_LUAS[mentah];
+  if (!Number.isFinite(angka)) return null; // "beberapa" - tidak dihitung
+  return { angka, satuan };
+}
+
+/** Bulan/tahun dari teks tanggal "12 Maret 2025" / "Maret 2025" / "2025". */
+function uraiBulanTahun(teks) {
+  const t = String(teks || "").trim();
+  const m = t.match(/(?:(\d{1,2})\s+)?([A-Za-z]+)\s+((?:19|20)\d{2})/);
+  if (m) {
+    const b = NAMA_BULAN.indexOf(m[2].toLowerCase().replace("pebruari", "februari").replace("nopember", "november"));
+    if (b >= 0) return { bulan: b, tahun: Number(m[3]) };
+  }
+  const y = t.match(/\b((?:19|20)\d{2})\b/);
+  return y ? { bulan: -1, tahun: Number(y[1]) } : null;
+}
+
+function teksBulanTahun(indeks, adaBulan) {
+  const tahun = Math.floor(indeks / 12);
+  if (!adaBulan) return `tahun ${tahun}`;
+  const nama = NAMA_BULAN[((indeks % 12) + 12) % 12];
+  return `bulan ${nama.charAt(0).toUpperCase()}${nama.slice(1)} ${tahun}`;
+}
+
+/** "N tahun/bulan yang lalu" dihitung mundur dari tanggal sidang (perkiraan). */
+function mundurDari(m, tanggalSidang) {
+  const a = angkaSatuan(m);
+  const s = uraiBulanTahun(tanggalSidang);
+  if (!a || !s || s.bulan < 0 || !/tahun|bulan/.test(a.satuan)) return null;
+  // "2 tahun 8 bulan yang lalu": gugus tahunDepan ikut dijumlah.
+  const depan = m.groups && m.groups.tahunDepan ? angkaSatuan({ groups: { angka: m.groups.tahunDepan, satuan: "tahun" } }) : null;
+  const indeks = s.tahun * 12 + s.bulan - (a.satuan === "tahun" ? a.angka * 12 : a.angka) - (depan ? depan.angka * 12 : 0);
+  return teksBulanTahun(indeks, a.satuan === "bulan");
+}
+
+/** "N bulan/tahun setelah menikah" dihitung maju dari tanggal nikah posita (perkiraan). */
+function majuDariNikah(m, tanggalNikah) {
+  const a = angkaSatuan(m);
+  const s = uraiBulanTahun(tanggalNikah);
+  if (!s) return null;
+  // "sejak awal pernikahan": TANPA perkiraan - terukur 0/5 sama dengan bulan nikah pada isian petugas.
+  if (!a) return null;
+  if (!/tahun|bulan|minggu|hari/.test(a.satuan)) return null;
+  if (s.bulan < 0) return a.satuan === "tahun" ? `tahun ${s.tahun + a.angka}` : null;
+  const tambah = a.satuan === "tahun" ? a.angka * 12 : a.satuan === "bulan" ? a.angka : 0;
+  return teksBulanTahun(s.tahun * 12 + s.bulan + tambah, a.satuan !== "tahun");
+}
+
+/** Tanggal nikah dari posita (kalimat pertama yang menyebut menikah + tanggal) - untuk perkiraan "setelah menikah". */
+function tanggalNikahDari(butirPosita) {
+  for (const b of butirPosita || []) {
+    if (!/menikah|pernikahan|perkawinan|akad\s+nikah|melangsungkan/i.test(b)) continue;
+    const m = String(b).match(/\b(\d{1,2}\s+)?(Januari|Februari|Pebruari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Nopember|Desember)\s+((?:19|20)\d{2})\b/i);
+    if (m) return m[0];
+  }
+  return "";
+}
+/* === AKHIR KDL2 === */
 
 const NAMA_BULAN = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
 const ANGKA_KATA = { satu: 1, se: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6, tujuh: 7, delapan: 8, sembilan: 9, sepuluh: 10, sebelas: 11 };
@@ -525,6 +659,12 @@ module.exports = {
   kesesuaianHuruf,
   kesesuaianFakta,
   petunjukWaktu,
+  /* === KDL2 11 Okt === */
+  tanggalNikahDari,
+  mundurDari,
+  majuDariNikah,
+  rentangPenyangkal,
+  /* === AKHIR KDL2 === */
   pelakuPerKalimat,
   deteksiPerkara,
   HURUF_LANGSUNG,

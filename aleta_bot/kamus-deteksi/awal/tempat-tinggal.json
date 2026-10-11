@@ -1,0 +1,904 @@
+{
+  "kelompok": "tempat-tinggal",
+  "versi": 1,
+  "catatan": "Pola tempat tinggal BERSAMA Penggugat & Tergugat semasa rukun (KDL2 11 Okt 2026). jenis 'struktur' = memilih kalimat riwayat & memotong ruas tempat; jenis 'jenis' = jenis/pemilik tempat (kunci: orang-tua, milik-pihak, bersama, sewa, keluarga, dinas, rumah-saksi), dicoba menurut 'urut', gugus bernama 'sebutan' -> sisi (pelaku = Tergugat/Termohon = 0047, lawan = Penggugat/Pemohon = 0046); jenis 'fakta' = berpindah, tidak serumah, alamat, lama. Dibaca deteksiTempatTinggalService.js -> usulan ABT 1006 (Tempat tinggal setelah nikah, dipakai 389 tempat di blangko) dan 8570 (Kediaman bersama terakhir, paket ABT abt-tempat-tinggal).",
+  "pola": [
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 34,
+        "tepat": 31,
+        "salahTangkap": 3,
+        "awalBunyiSama": 23,
+        "cakupanPosita": {
+          "n": 2277,
+          "beriwayat": 1978
+        },
+        "cakupanSaksi": {
+          "n": 3505,
+          "beruas": 3179
+        },
+        "cara": "usulan 1006 dari posita vs isian 1006 petugas (ruas pertama sama jenis & pemilik); cakupan atas seluruh perkara",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-kalimat-sesudah-nikah",
+      "label": "kalimat riwayat: 'setelah menikah ...'",
+      "kunci": "sesudah-nikah",
+      "jenis": "struktur",
+      "regex": "\\b(?:setelah|sesudah|selama|pasca|sejak)\\s+(?:(?:penggugat|tergugat|pemohon|termohon|dan|para|keduanya)\\s+){0,4}(?:s?menikah|pernikahan|perkawinan|akad(?:\\s+nikah)?|melangsungkan\\s+(?:pernikahan|perkawinan|akad))",
+      "contohBenar": [
+        "Setelah menikah Penggugat dan Tergugat tinggal bersama di rumah orang tua Penggugat"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat telah berpisah rumah"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 34,
+        "tepat": 31,
+        "salahTangkap": 3,
+        "awalBunyiSama": 23,
+        "cakupanPosita": {
+          "n": 2277,
+          "beriwayat": 1978
+        },
+        "cakupanSaksi": {
+          "n": 3505,
+          "beruas": 3179
+        },
+        "cara": "usulan 1006 dari posita vs isian 1006 petugas (ruas pertama sama jenis & pemilik); cakupan atas seluruh perkara",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-kata-tinggal",
+      "label": "kata tinggal bersama / membina rumah tangga",
+      "kunci": "kata-tinggal",
+      "jenis": "struktur",
+      "regex": "\\b(?:bertempat\\s+tinggal|tinggal|menetap|berdiam|membina\\s+rumah\\s+tangga|berumah\\s+tangga|hidup\\s+bersama|mengambil\\s+(?:tempat\\s+)?(?:di\\s+)?kediaman|mengambil\\s+tempat)\\b",
+      "contohBenar": [
+        "membina rumah tangga di rumah orang tua Penggugat",
+        "tinggal bersama di Desa Wani"
+      ],
+      "contohSalah": [
+        "Penggugat pergi meninggalkan Tergugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 15,
+        "tepat": 15,
+        "salahTangkap": 0,
+        "cara": "dibaca bersama sampel ruas (lama tinggal ikut tampil)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-bukan-riwayat",
+      "label": "kalimat SESUDAH pisah (masing-masing tinggal) - bukan riwayat bersama",
+      "kunci": "bukan-riwayat",
+      "jenis": "struktur",
+      "regex": "\\b(?:masing-masing|setelah\\s+(?:ber)?pisah|sesudah\\s+(?:ber)?pisah|sejak\\s+(?:ber)?pisah|saat\\s+ini|sekarang\\s+ini|kini)\\b",
+      "contohBenar": [
+        "Penggugat dan Tergugat masing-masing bertempat tinggal di rumah orang tuanya",
+        "saat ini Penggugat tinggal di Desa Labuan"
+      ],
+      "contohSalah": [
+        "setelah menikah tinggal di rumah orang tua Penggugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 34,
+        "tepat": 31,
+        "salahTangkap": 3,
+        "awalBunyiSama": 23,
+        "cakupanPosita": {
+          "n": 2277,
+          "beriwayat": 1978
+        },
+        "cakupanSaksi": {
+          "n": 3505,
+          "beruas": 3179
+        },
+        "cara": "usulan 1006 dari posita vs isian 1006 petugas (ruas pertama sama jenis & pemilik); cakupan atas seluruh perkara",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Tiap kecocokan membuka satu ruas tempat. 'pergi ke' sengaja tidak - itu perpisahan.",
+      "kode": "tt-awal-tempat",
+      "label": "awal ruas tempat: tinggal/pindah/kembali ... di/ke",
+      "kunci": "awal-tempat",
+      "jenis": "struktur",
+      "regex": "\\b(?:(?:bertempat\\s+tinggal|tinggal|menetap|berdiam|membina\\s+rumah\\s+tangga|berumah\\s+tangga|pindah|berpindah|kembali|hidup\\s+bersama|mengambil\\s+(?:tempat\\s+)?(?:di\\s+)?kediaman|mengambil\\s+tempat(?:\\s+tinggal)?)(?:\\s+(?:bersama|bersama-sama|bersamanya|lagi|kembali|serumah|sendiri|tinggal|semula|awalnya|pertama))*\\s+(?:(?:dengan\\s+saya\\s+)?(?:didi|di|ke)(?:\\s+|(?=rumah|kediaman))|dengan\\s+saya\\b)|terakhir\\s+(?:di|ke)(?:\\s+|(?=rumah|kediaman)))",
+      "contohBenar": [
+        "tinggal bersama di rumah orang tua Penggugat",
+        "kemudian pindah kerumah sendiri",
+        "tinggal bersama dengan saya di Desa Labuan"
+      ],
+      "contohSalah": [
+        "Tergugat pergi ke rumah orang tuanya"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 34,
+        "tepat": 31,
+        "salahTangkap": 3,
+        "awalBunyiSama": 23,
+        "cakupanPosita": {
+          "n": 2277,
+          "beriwayat": 1978
+        },
+        "cakupanSaksi": {
+          "n": 3505,
+          "beruas": 3179
+        },
+        "cara": "usulan 1006 dari posita vs isian 1006 petugas (ruas pertama sama jenis & pemilik); cakupan atas seluruh perkara",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-batas-tempat",
+      "label": "akhir nama tempat (selama/hingga/kurang lebih/tanda baca)",
+      "kunci": "batas-tempat",
+      "jenis": "struktur",
+      "regex": "\\s+(?:selama|sellama|selam|hingga|sampai|samapi|sampe|kurang\\s+lebih|lebih\\s+kurang|sekitar|kira-kira|karena|sejak|untuk|namun|tetapi|lalu|kemudian|setelah|sesudah|langsung|sebagai|pernah\\s+juga|dan\\s+(?:terakhir|setelah|kemudian|pernah|sempat|selanjutnya|sejak|tidak|sudah|telah|belum|di\\s*karuniai|dikaruniai|memiliki|mempunyai|dari\\s+perkawinan))\\b|\\s*[,;.()]",
+      "contohBenar": [
+        "rumah orang tua Penggugat selama 3 tahun",
+        "rumah bersama hingga pisah"
+      ],
+      "contohSalah": [
+        "rumah orang tua Penggugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 34,
+        "tepat": 31,
+        "salahTangkap": 3,
+        "awalBunyiSama": 23,
+        "cakupanPosita": {
+          "n": 2277,
+          "beriwayat": 1978
+        },
+        "cakupanSaksi": {
+          "n": 3505,
+          "beruas": 3179
+        },
+        "cara": "usulan 1006 dari posita vs isian 1006 petugas (ruas pertama sama jenis & pemilik); cakupan atas seluruh perkara",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-ekor-pisah",
+      "label": "akhir riwayat: hingga pisah / saat ini",
+      "kunci": "ekor-pisah",
+      "jenis": "struktur",
+      "regex": "\\s*,?\\s*\\b(?:hingga|sampai|samapi|sampe)\\s+(?:dengan\\s+)?(?:(?:mereka|keduanya)\\s+)?(?:pisah|berpisah|sekarang|saat\\s+ini|terjadi\\s+pisah)|\\s*,?\\s*\\b(?:dan\\s+)?(?:saat\\s+ini|sekarang\\s+ini)\\b|(?<!\\b\\d{1,2})\\.\\s+(?=Bahwa\\b)",
+      "contohBenar": [
+        "di rumah bersama hingga pisah rumah",
+        "di Desa Sipi sampai berpisah"
+      ],
+      "contohSalah": [
+        "di rumah bersama di Desa Sipi"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 2872,
+        "tepat": 2222,
+        "salahTangkap": 650,
+        "cara": "ruas terakhir posita vs ruas terakhir jawaban saksi (kesepakatan sumber)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-terakhir",
+      "label": "ruas terakhir ('dan terakhir ...')",
+      "kunci": "terakhir",
+      "jenis": "struktur",
+      "regex": "\\bterakhir\\b",
+      "contohBenar": [
+        "dan terakhir tinggal di rumah bersama"
+      ],
+      "contohSalah": [
+        "setelah itu tinggal di rumah bersama"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 297,
+        "tepat": 108,
+        "salahTangkap": 189,
+        "cara": "salah satu sumber menyebut berpindah-pindah: berapa yang keduanya menyebut (kesepakatan sumber, bukan ketepatan pola)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Pola tepat (frasa jelas); kesepakatan posita-saksi rendah karena saksi sering hanya menyebut tempat pertama & terakhir.",
+      "kode": "tt-berpindah",
+      "label": "berpindah-pindah tempat tinggal",
+      "kunci": "berpindah",
+      "jenis": "fakta",
+      "regex": "\\b(?:berpindah-pindah|pindah-pindah|berpindah\\s+pindah|sering\\s+(?:ber)?pindah|berpindah\\s+tempat\\s+tinggal|tidak\\s+menetap)\\b",
+      "contohBenar": [
+        "kemudian sering berpindah-pindah tempat tinggal",
+        "sering pindah tempat tinggal"
+      ],
+      "contohSalah": [
+        "pindah kerumah sendiri"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 3,
+        "tepat": 3,
+        "salahTangkap": 0,
+        "cara": "posita 'setelah menikah tidak pernah tinggal bersama' dibaca",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-tidak-serumah",
+      "label": "tidak pernah tinggal bersama sejak menikah",
+      "kunci": "tidak-serumah",
+      "jenis": "fakta",
+      "regex": "\\btidak\\s+pernah\\s+(?:tinggal\\s+(?:bersama|serumah|satu\\s+rumah)|serumah|bersama|berkumpul|kumpul|hidup\\s+bersama|satu\\s+rumah)",
+      "contohBenar": [
+        "setelah menikah Penggugat dan Tergugat tidak pernah bersama",
+        "tidak pernah tinggal serumah"
+      ],
+      "contohSalah": [
+        "tidak lagi tinggal bersama"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 1285,
+        "tepat": 1204,
+        "salahTangkap": 81,
+        "cara": "nama desa/kelurahan ruas pertama posita vs jawaban saksi",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-alamat",
+      "label": "awal alamat (Desa/Kelurahan/Kecamatan/Kota/Jalan/BTN ...)",
+      "kunci": "alamat",
+      "jenis": "fakta",
+      "regex": "\\b(?:desa|kelurahan|kel\\.|dusun|kecamatan|kec\\.|kota|kabupaten|kab\\.|jalan|jl\\.?|btn|perumahan|lorong|kampung|lingkungan|provinsi|kompleks)\\s+[a-z0-9]",
+      "contohBenar": [
+        "rumah orang tua Penggugat di Desa Kotapulu",
+        "di Kota Palu"
+      ],
+      "contohSalah": [
+        "rumah orang tua Penggugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 15,
+        "tepat": 15,
+        "salahTangkap": 0,
+        "cara": "dibaca bersama sampel ruas (lama tinggal ikut tampil)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "",
+      "kode": "tt-lama",
+      "label": "lama tinggal ('selama kurang lebih 3 tahun')",
+      "kunci": "lama",
+      "jenis": "fakta",
+      "regex": "\\b(?:selama|sellama|selam|sekitar|kurang\\s+lebih)\\s+(?:(?:kurang\\s+lebih|lebih\\s+kurang|sekitar|kira-kira|±)\\s*)?(?:\\d{1,2}|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|se|beberapa)\\s*(?:\\([^)]{1,20}\\)\\s*)?(?:tahun|bulan|minggu|hari|malam)(?:\\s+(?:lamanya|lebih))?",
+      "contohBenar": [
+        "selama kurang lebih 1 (satu) tahun",
+        "selama 3 hari"
+      ],
+      "contohSalah": [
+        "selama menikah"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 18,
+        "tepat": 18,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-tergugat",
+      "label": "ejaan petugas -> Tergugat",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\bte\\s+rgugat\\b|\\bterguat\\b|\\bteegugat\\b|\\bterggugat\\b",
+      "ganti": "Tergugat",
+      "contohBenar": [
+        "rumah orang tua Te rgugat",
+        "rumah Keluarga Teegugat"
+      ],
+      "contohSalah": [
+        "Tergugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 66,
+        "tepat": 66,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-penggugat",
+      "label": "ejaan petugas -> Penggugat",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\bpengguga\\b|\\bpengugat\\b|\\bpengguat\\b|\\bpenggugta\\b",
+      "ganti": "Penggugat",
+      "contohBenar": [
+        "rumah orang tua Pengguga pernah juga",
+        "rumah Pengugat"
+      ],
+      "contohSalah": [
+        "Penggugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 11,
+        "tepat": 11,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-orang-tua",
+      "label": "ejaan petugas -> orang tua",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:0rang|oarang|orng)\\s*tua\\b|\\borang\\s+trua\\b|\\brang\\s+tua\\b",
+      "ganti": "orang tua",
+      "contohBenar": [
+        "rumah 0rang tua Penggugat",
+        "rumah orang trua Penggugat"
+      ],
+      "contohSalah": [
+        "rumah orang tua"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 6,
+        "tepat": 6,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-rumah-rapat",
+      "label": "ejaan petugas -> rumah",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "(?:\\b|(?<=\\b(?:di|ke)))rumah(?=pribadi|sendiri|bersama|orang|kontrakan|kos)",
+      "ganti": "rumah ",
+      "contohBenar": [
+        "rumahpribadi Penggugat",
+        "tinggal dirumahkos"
+      ],
+      "contohSalah": [
+        "rumah pribadi"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 11,
+        "tepat": 11,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-orang-tua-2",
+      "label": "ejaan petugas -> orang tua",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\borantua\\b|\\borang\\s*tuanya\\s+(?=penggugat|tergugat|pemohon|termohon)",
+      "ganti": "orang tua ",
+      "contohBenar": [
+        "rumah orantua Tergugat"
+      ],
+      "contohSalah": [
+        "rumah orang tua"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 10,
+        "tepat": 10,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-rumah-orang-pihak",
+      "label": "ejaan petugas -> rumah orang tua",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\brumah\\s+orang\\s+(?=(?:penggugat|tergugat|pemohon|termohon)\\b)",
+      "ganti": "rumah orang tua ",
+      "contohBenar": [
+        "rumah orang Tergugat di Desa Tibo"
+      ],
+      "contohSalah": [
+        "rumah orang tua Tergugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 19,
+        "tepat": 19,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-sebutan-lain",
+      "label": "ejaan petugas -> Tergugat",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\btegugat\\b|\\btergugta\\b",
+      "ganti": "Tergugat",
+      "contohBenar": [
+        "rumah Tegugat"
+      ],
+      "contohSalah": [
+        "rumah Tergugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 7,
+        "tepat": 7,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-pemohon",
+      "label": "ejaan petugas -> Pemohon",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\bpermohon\\b|\\bpemohn\\b|\\bpenohon\\b",
+      "ganti": "Pemohon",
+      "contohBenar": [
+        "rumah Permohon"
+      ],
+      "contohSalah": [
+        "rumah Pemohon"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 22,
+        "tepat": 22,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-kontrakan",
+      "label": "ejaan petugas -> kontrakan",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\b(?:kotrakan|kontarakan|kontrakkan|kontrkan)\\b",
+      "ganti": "kontrakan",
+      "contohBenar": [
+        "rumah kotrakan di Desa Batusuya",
+        "rumah kontarakan"
+      ],
+      "contohSalah": [
+        "rumah kontrakan"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 9,
+        "tepat": 9,
+        "salahTangkap": 0,
+        "cara": "teks posita+jawaban yang dicocokkan; contoh dibaca (salah ketik nyata)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Dijalankan atas kalimat riwayat sebelum diurai (nilai usulan ikut terbetulkan; kutipan sumber tetap asli).",
+      "kode": "tt-ejaan-tinggal",
+      "label": "ejaan petugas -> tinggal",
+      "kunci": "ejaan",
+      "jenis": "ejaan",
+      "regex": "\\bting{3,}al\\b|\\btingal\\b",
+      "ganti": "tinggal",
+      "contohBenar": [
+        "tingggal dirumah"
+      ],
+      "contohSalah": [
+        "tinggal"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 360,
+        "tepat": 290,
+        "salahTangkap": 70,
+        "pasangan": {
+          "posita": {
+            "n": 0,
+            "tepat": 0
+          },
+          "saksi": {
+            "n": 360,
+            "tepat": 290
+          }
+        },
+        "cara": "pasangan posita vs jawaban saksi (rumah saksi dipetakan lewat Keterangan saksi SIPP)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Hanya dari jawaban saksi; pemiliknya = saksi (dibaca lewat hubungan saksi bila ada). Terukur: sesuai sumber lain posita 0/0, saksi 290/360.",
+      "kode": "tt-jenis-rumah-saksi",
+      "label": "jenis tempat: rumah-saksi",
+      "kunci": "rumah-saksi",
+      "jenis": "jenis",
+      "urut": 1,
+      "regex": "(?:\\b|\\bdi|\\bke)rumah\\s+(?:saya|saksi|kami)\\b|\\b(?:bersama|dengan)\\s+(?:saya|saksi|kami)\\b",
+      "contohBenar": [
+        "tinggal bersama di rumah saya di Desa Lalombi",
+        "tinggal bersama dengan saya di Desa Labuan"
+      ],
+      "contohSalah": [
+        "rumah orang tua Penggugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 15,
+        "tepat": 15,
+        "salahTangkap": 0,
+        "pasangan": {
+          "posita": {
+            "n": 3913,
+            "tepat": 3505
+          },
+          "saksi": {
+            "n": 3527,
+            "tepat": 2993
+          }
+        },
+        "cara": "15 ruas tersebar dibaca satu per satu (jenis & pemilik benar); 'pasangan' = posita vs jawaban saksi perkara yang sama (beda sumber, termasuk perbedaan data)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Pemilik = orang tua pihak yang disebut (sebutan -> sisi). Terukur: 15/15 ruas dibaca benar; sesuai sumber lain posita 3505/3913, saksi 2993/3527.",
+      "kode": "tt-jenis-orang-tua",
+      "label": "jenis tempat: orang-tua",
+      "kunci": "orang-tua",
+      "jenis": "jenis",
+      "urut": 2,
+      "regex": "\\b(?:rumah\\s+)?(?:kediaman\\s+)?(?:(?:orang|oarang|rang|orng)\\s*tua|orangtua|ortu|bapak|ibu|mertua)\\s+(?:kandung\\s+)?(?:dari\\s+)?(?<sebutan>penggugat|tergugat|pemohon|termohon|pengugat|terggugat)\\b",
+      "contohBenar": [
+        "rumah orang tua Penggugat di Desa Sipi",
+        "rumah orangtua Termohon",
+        "rumah oarang tua Penggugat"
+      ],
+      "contohSalah": [
+        "rumah Penggugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 15,
+        "tepat": 15,
+        "salahTangkap": 0,
+        "pasangan": {
+          "posita": {
+            "n": 177,
+            "tepat": 114
+          },
+          "saksi": {
+            "n": 136,
+            "tepat": 106
+          }
+        },
+        "cara": "15 ruas tersebar dibaca satu per satu (jenis & pemilik benar); 'pasangan' = posita vs jawaban saksi perkara yang sama (beda sumber, termasuk perbedaan data)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Terukur: 15/15 ruas dibaca benar; sesuai sumber lain posita 114/177, saksi 106/136.",
+      "kode": "tt-jenis-keluarga",
+      "label": "jenis tempat: keluarga",
+      "kunci": "keluarga",
+      "jenis": "jenis",
+      "urut": 3,
+      "regex": "(?:\\b|\\bdi|\\bke)rumah\\s+(?:keluarga|kerabat|saudara|kakak|adik|paman|om|tante|bibi|nenek|kakek|sepupu|ipar)(?:\\s+\\w+)?(?:\\s+(?:dari\\s+)?(?<sebutan>penggugat|tergugat|pemohon|termohon))?",
+      "contohBenar": [
+        "rumah keluarga Penggugat di Desa Watubula",
+        "rumah kerabat",
+        "rumah nenek Tergugat"
+      ],
+      "contohSalah": [
+        "rumah orang tua Penggugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 15,
+        "tepat": 15,
+        "salahTangkap": 0,
+        "pasangan": {
+          "posita": {
+            "n": 430,
+            "tepat": 280
+          },
+          "saksi": {
+            "n": 327,
+            "tepat": 275
+          }
+        },
+        "cara": "15 ruas tersebar dibaca satu per satu (jenis & pemilik benar); 'pasangan' = posita vs jawaban saksi perkara yang sama (beda sumber, termasuk perbedaan data)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Pemilik = pihak yang disebut. Terukur: 15/15 ruas dibaca benar; sesuai sumber lain posita 280/430, saksi 275/327.",
+      "kode": "tt-jenis-milik-pihak",
+      "label": "jenis tempat: milik-pihak",
+      "kunci": "milik-pihak",
+      "jenis": "jenis",
+      "urut": 4,
+      "regex": "(?:\\b|\\bdi|\\bke)rumah\\s+(?:(?:milik|pribadi|sendiri|kediaman)\\s+){0,2}(?<sebutan>penggugat|tergugat|pemohon|termohon)\\b(?!\\s+dan\\s+(?:penggugat|tergugat|pemohon|termohon))",
+      "contohBenar": [
+        "rumah Tergugat di Desa Karya Mukti",
+        "rumah pribadi Penggugat"
+      ],
+      "contohSalah": [
+        "rumah orang tua Tergugat",
+        "rumah Penggugat dan Tergugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 15,
+        "tepat": 15,
+        "salahTangkap": 0,
+        "pasangan": {
+          "posita": {
+            "n": 924,
+            "tepat": 644
+          },
+          "saksi": {
+            "n": 845,
+            "tepat": 631
+          }
+        },
+        "cara": "15 ruas tersebar dibaca satu per satu (jenis & pemilik benar); 'pasangan' = posita vs jawaban saksi perkara yang sama (beda sumber, termasuk perbedaan data)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Rumah sendiri/bersama Penggugat & Tergugat. Terukur: 15/15 ruas dibaca benar; sesuai sumber lain posita 644/924, saksi 631/845.",
+      "kode": "tt-jenis-bersama",
+      "label": "jenis tempat: bersama",
+      "kunci": "bersama",
+      "jenis": "jenis",
+      "urut": 5,
+      "regex": "(?:\\b|\\bdi|\\bke)rumah\\s+(?:kediaman\\s+)?bersama\\b|\\bkediaman\\s+bersama\\b|(?:\\b|\\bdi|\\bke)rumah\\s+(?:sendiri|pribadi|milik)\\s+(?:penggugat|tergugat|pemohon|termohon)\\s+dan\\s+(?:penggugat|tergugat|pemohon|termohon)|(?:\\b|\\bdi|\\bke)(?:rumah|kediaman)\\s+(?:milik\\s+)?(?:sendiri|pribadi|bersama)\\b(?!\\s+(?:penggugat|tergugat|pemohon|termohon)\\b)|(?:\\b|\\bdi|\\bke)rumah\\s+(?:penggugat|tergugat|pemohon|termohon)\\s+dan\\s+(?:penggugat|tergugat|pemohon|termohon)",
+      "contohBenar": [
+        "tinggal di rumah bersama di Desa Talaga",
+        "pindah kerumah sendiri",
+        "rumah pribadi Penggugat dan Tergugat"
+      ],
+      "contohSalah": [
+        "rumah orang tua Penggugat"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 15,
+        "tepat": 15,
+        "salahTangkap": 0,
+        "pasangan": {
+          "posita": {
+            "n": 243,
+            "tepat": 175
+          },
+          "saksi": {
+            "n": 218,
+            "tepat": 168
+          }
+        },
+        "cara": "15 ruas tersebar dibaca satu per satu (jenis & pemilik benar); 'pasangan' = posita vs jawaban saksi perkara yang sama (beda sumber, termasuk perbedaan data)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Terukur: 15/15 ruas dibaca benar; sesuai sumber lain posita 175/243, saksi 168/218.",
+      "kode": "tt-jenis-sewa",
+      "label": "jenis tempat: sewa",
+      "kunci": "sewa",
+      "jenis": "jenis",
+      "urut": 6,
+      "regex": "\\b(?:rumah\\s+)?(?:kontrakan|kontrak|sewaan|sewa|kost|kos|kos-kosan|kosan|kamar\\s+kos)\\b",
+      "contohBenar": [
+        "tinggal dirumah Kontrakan di Desa Oti",
+        "rumah kost di Kabupaten Morowali",
+        "rumah kosan di Kelurahan"
+      ],
+      "contohSalah": [
+        "rumah bersama"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 15,
+        "tepat": 15,
+        "salahTangkap": 0,
+        "pasangan": {
+          "posita": {
+            "n": 53,
+            "tepat": 31
+          },
+          "saksi": {
+            "n": 34,
+            "tepat": 31
+          }
+        },
+        "cara": "15 ruas tersebar dibaca satu per satu (jenis & pemilik benar); 'pasangan' = posita vs jawaban saksi perkara yang sama (beda sumber, termasuk perbedaan data)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Terukur: 15/15 ruas dibaca benar; sesuai sumber lain posita 31/53, saksi 31/34.",
+      "kode": "tt-jenis-dinas",
+      "label": "jenis tempat: dinas",
+      "kunci": "dinas",
+      "jenis": "jenis",
+      "urut": 7,
+      "regex": "\\b(?:rumah\\s+dinas|asrama|mess|mes|barak|rumah\\s+perusahaan|camp|rumah\\s+jabatan|tempat\\s+(?:kerja|bekerja))\\b",
+      "contohBenar": [
+        "tinggal bersama di asrama ditempat Tergugat bekerja",
+        "Mess Perusahaan di Tikke",
+        "rumah dinas Pemohon"
+      ],
+      "contohSalah": [
+        "rumah bersama"
+      ]
+    },
+    {
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "ukur": {
+        "n": 332,
+        "tepat": 282,
+        "salahTangkap": 50,
+        "pasangan": {
+          "posita": {
+            "n": 41,
+            "tepat": 35
+          },
+          "saksi": {
+            "n": 291,
+            "tepat": 247
+          }
+        },
+        "cara": "15 ruas tersebar dibaca satu per satu (jenis & pemilik benar); 'pasangan' = posita vs jawaban saksi perkara yang sama (beda sumber, termasuk perbedaan data)",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (tools/ukur-deteksi-tempat-tinggal.js; 2.277 perkara diputus, 3.505 jawaban saksi)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "Orang tua tanpa sebutan pihak - sisi tidak diketahui. Terukur: 15/15 ruas dibaca benar; sesuai sumber lain posita 35/41, saksi 247/291.",
+      "kode": "tt-jenis-orang-tua-tanpa-sebutan",
+      "label": "jenis tempat: orang-tua",
+      "kunci": "orang-tua",
+      "jenis": "jenis",
+      "urut": 8,
+      "regex": "(?:\\b|\\bdi|\\bke)rumah\\s+(?:kediaman\\s+)?(?:(?:orang|oarang|rang)\\s*tua|orangtua|mertua)(?:nya)?\\b",
+      "contohBenar": [
+        "tinggal dirumah orang tua sampai sekarang"
+      ],
+      "contohSalah": [
+        "rumah bersama"
+      ]
+    }
+  ],
+  "templat": []
+}
