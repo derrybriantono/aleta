@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.194.0",
+    dirilis: "2026-10-11T22:00:00+08:00",
+    judul: "Pekerjaan pihak terbaca dinamis: PNS, PPPK, TNI, POLRI, BUMN/BUMD dari isian Lain-Lain",
+    butir: [
+      "Panel ABT menampilkan kartu \"Pekerjaan terbaca\" tiap pihak: kategori dibaca dari pilihan SIPP atau, bila Lain-Lain, dari uraian pekerjaannya (PPPK dihitung terpisah dari PNS; honorer, CPNS, PPPK paruh waktu, dan pensiunan tidak dihitung pegawai).",
+      "Blangko pihak SIPP mengusulkan pilihan pekerjaan yang sesuai bila petugas mengisi Lain-Lain padahal uraiannya PNS/TNI/POLRI/BUMN/BUMD - dicentang dulu, petugas yang menyimpan.",
+      "Butuh paket ABT abt-pekerjaan-dinamis: kalimat izin atasan (PNS / Aparatur Sipil Negara (PPPK) / TNI / POLRI / BUMN / BUMD / aparat desa) ikut terbaca dari uraian Lain-Lain, dan pertimbangan kewajiban pemberitahuan bagi Tergugat/Termohon PNS, PPPK, TNI, POLRI.",
+    ],
+  },
+  {
     versi: "1.193.0",
     dirilis: "2026-10-11T21:00:00+08:00",
     judul: "Kasir per kejadian & tampilan per peran, masuk otomatis dari SIPP, deteksi semua jenis perkara, kontak e-Court",
