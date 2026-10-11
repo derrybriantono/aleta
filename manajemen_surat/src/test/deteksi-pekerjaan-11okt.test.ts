@@ -328,14 +328,15 @@ describe("panel ABT: kartu 'Pekerjaan terbaca' (blok PEKERJAAN abt.js)", () => {
     expect(teks).toContain("Kalimat izin atasan (#8510# duduk perkara, #8524# pertimbangan, #8533# BAS) dipakai untuk PNS");
   });
 
-  it("Tergugat PNS/PPPK: kartu menyebut kalimat kewajiban pemberitahuan gugatan kepada atasan di #8524# (perlu ditinjau); Tergugat pensiunan/BUMN tidak", () => {
+  it("Tergugat PNS/PPPK: kartu menyebut kalimat kewajiban pemberitahuan gugatan kepada atasan di #8524# dan BAS #8533# (dasar hukum, tanpa tanda perlu ditinjau - revisi 3); Tergugat pensiunan/BUMN/desa tidak", () => {
     const p = pasang({ "0046": "Penggugat", "0047": "Tergugat" });
     const orang = (pihakKe: number, pekerjaan: string) => ({ pihakKe, urutan: 1, nama: "X", pekerjaan, ...svc.klasifikasiPekerjaan(pekerjaan), kalimat: svc.kalimatTerbaca(pekerjaan) });
     const w1 = document.createElement("div");
     p.pkGambarPekerjaan(w1, { sipp: { pekerjaanPihak: [orang(1, "Petani"), orang(2, "PPPK (Guru SDN 2)")] } });
-    expect(w1.textContent).toContain("#0047# ASN (PPPK): #8524# juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan #0047#");
-    expect(w1.textContent).toContain("mohon ditinjau hakim");
-    for (const kerja of ["Pensiunan PNS", "Karyawan BUMN", "CPNS Guru"]) {
+    expect(w1.textContent).toContain("#0047# ASN (PPPK): #8524# (pertimbangan) dan #8533# (BAS) juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan #0047#");
+    expect(w1.textContent).toContain("(dasar: Pasal 3 ayat (2)(3) PP 10/1983 jo PP 45/1990)");
+    expect(w1.textContent).not.toMatch(/ditinjau/i);
+    for (const kerja of ["Pensiunan PNS", "Karyawan BUMN", "Karyawan PDAM", "Perangkat Desa Sipeso", "CPNS Guru"]) {
       const w = document.createElement("div");
       p.pkGambarPekerjaan(w, { sipp: { pekerjaanPihak: [orang(1, "Petani"), orang(2, kerja)] } });
       expect(w.textContent, kerja).not.toContain("pemberitahuan adanya gugatan");
