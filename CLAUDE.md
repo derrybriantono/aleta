@@ -2,12 +2,18 @@
 
 Prioritas: **hasil benar/terverifikasi > hemat token > cepat.** Jangan hemat token dengan melewati verifikasi.
 
-## Pilih model (oleh pengguna, lewat pemilih model / `/model`)
-| Tugas | Model | Catatan |
+## Pilih model & effort (oleh pengguna: pemilih model / `/model`, dan pengaturan effort)
+| Kasus di ALETA | Model | Effort |
 | :--- | :--- | :--- |
-| Arsitektur, debugging sulit, keputusan berisiko | Opus 5.5 (`/model opus`) | Rencanakan dulu (Plan Mode, `Shift+Tab`) |
-| Coding harian, fitur, perbaikan | Sonnet 5.5 (`/model sonnet`) | Bawaan untuk sebagian besar tugas |
-| Rutin: uji tunggal, git, skrip kecil | Haiku 4.5 (`/model haiku`) | Langsung kerjakan, tanpa teori |
+| Insiden/data rusak di SIPP-ABT, forensik, pemulihan server | Opus 5.5 (`/model opus`) | max |
+| Rancang fitur besar, debugging lintas portal-bot-ekstensi, aturan hukum (deteksi alasan, amar, penetapan), tinjau sebelum rilis | Opus 5.5 | high (Plan Mode, `Shift+Tab`) |
+| Kode yang MENULIS ke SIPP/ABT, transaksi, migrasi Drizzle, paket ABT (MariaDB 5.5) | Sonnet 5.5 (`/model sonnet`) | high |
+| Fitur & perbaikan harian (panel ekstensi, rute portal, layanan bot) | Sonnet 5.5 | medium |
+| Ubahan UI/teks kecil, catatan rilis, dokumen ide | Sonnet 5.5 | low |
+| Rutin: satu berkas uji, git, salin rilis, papan kemajuan, cari berkas | Haiku 5.5 (`/model haiku`) | low |
+| Subagen: penelusuran (Explore) → Haiku 5.5 low; pengerjaan kode → Sonnet 5.5 high | — | — |
+
+Naikkan effort bila hasil pertama salah; jangan turunkan di bawah "high" untuk kode yang menulis ke SIPP/ABT.
 
 Kebersihan sesi (dijalankan pengguna): `/compact` saat percakapan panjang, `/clear` saat ganti tugas, `/resume` untuk melanjutkan sesi.
 
