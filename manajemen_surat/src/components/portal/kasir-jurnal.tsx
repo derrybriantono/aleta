@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
 import {
-  bolehKasir,
+  bolehMengerjakanKasir,
   hitungSisaOtomatis,
   periksaBarisKasir,
   rupiah,
@@ -768,7 +768,7 @@ export function TombolKasirJurnal({ daftar }: { daftar: PerkaraPilihan[] }) {
   const { currentUser } = usePortal();
   const [buka, setBuka] = useState(false);
   const tutup = useCallback(() => setBuka(false), []);
-  if (!bolehKasir(currentUser)) return null;
+  if (!bolehMengerjakanKasir(currentUser)) return null;
   return (
     <>
       <Button

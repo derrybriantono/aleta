@@ -109,7 +109,7 @@ function jawabanContoh(ubah: Record<string, unknown> = {}) {
   return {
     ok: true,
     data: {
-      pengguna: { nama: "Hakim Uji", peran: ["hakim", "ketua"] },
+      pengguna: { nama: "Hakim Uji", peran: ["hakim", "ketua"], superAdmin: true },
       peranTersedia: [
         { kunci: "hakim", label: "Hakim" },
         { kunci: "ketua", label: "Ketua" },
@@ -217,7 +217,13 @@ function buka(p: { alamat?: string; simpanan?: Record<string, unknown>; jawab?: 
   let terbang = 0;
   terbuka.push({ dom, terbang: () => terbang });
   const w = dom.window as any;
-  const { simpanan, tulisan, storage } = penyimpananTiruan(p.simpanan ?? {});
+  // 12 Okt: widget BAWAAN TERTUTUP bagi sesi tanpa posisi tersimpan; uji ini menguji isi yang
+  // terbentang, jadi dimulai dari posisi tersimpan "terbentang" kecuali berkas ini menyebutnya.
+  const awalSimpanan: Record<string, unknown> = { ...(p.simpanan ?? {}) };
+  for (const k of ["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"]) {
+    if (!(k in awalSimpanan)) awalSimpanan[k] = { kecil: false };
+  }
+  const { simpanan, tulisan, storage } = penyimpananTiruan(awalSimpanan);
   w.chrome = {
     runtime: {
       id: "aleta-uji",

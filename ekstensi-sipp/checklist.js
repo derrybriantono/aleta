@@ -599,6 +599,7 @@
       cursor: pointer;
     }
     .aleta-cm-alat button:hover { background: var(--aleta-latar); color: var(--aleta-tulisan); }
+    .aleta-cm-hanya-baca { color: var(--aleta-tulisan-lembut); font-size: calc(11px * var(--aleta-skala-huruf, 1)); font-style: italic; }
     .aleta-cm-berputar { display: inline-block; animation: aleta-cm-putar 0.9s linear infinite; }
     @keyframes aleta-cm-putar { to { transform: rotate(360deg); } }
 
@@ -2366,7 +2367,23 @@
     gambar();
   }
 
+  /**
+   * Butir pengingat yang hanya dibaca (pengingat kasir bagi panitera, 12 Okt):
+   * portal menandainya hanyaBaca - tanpa Kerjakan, Selesai, Tunda; yang ada
+   * hanya keterangan bahwa tugas itu dikerjakan petugas lain.
+   */
+  function hanyaBaca(butir) {
+    return Boolean(butir && butir.hanyaBaca === true);
+  }
+
+  function susunKeteranganHanyaBaca() {
+    const k = el("span", "aleta-cm-hanya-baca", "Hanya pengingat");
+    k.title = "Tugas ini dikerjakan kasir atau petugas keuangan - Anda hanya melihat pengingatnya.";
+    return k;
+  }
+
   function susunKerjakan(butir) {
+    if (hanyaBaca(butir)) return susunKeteranganHanyaBaca();
     const t = tautanKerjakan(butir);
     if (!t.href) {
       const mati = el("span", "aleta-cm-kerjakan aleta-cm-kerjakan-mati", t.label);
@@ -2447,6 +2464,7 @@
    * pekerjaan yang tidak pernah dilihat orangnya.
    */
   function bolehDitandai(b) {
+    if (hanyaBaca(b)) return false;
     const id = String((b && b.id) ?? "");
     return Boolean(id) && !/:lainnya$/.test(id);
   }
@@ -3251,6 +3269,9 @@
   /** Indikator berlaku di tampilan ini: UI Baru, atau Baru dengan saklar portal-7. Lama tidak pernah. */
   function sdBerlaku() {
     if (modeUji() === "lama") return false;
+    // CHECKLIST-POSISI 12 Okt (keputusan pengguna): strip RAM/Disk/GPU HANYA Super Admin,
+    // Admin pun tidak. Selama jawaban checklist belum tiba, tidak berlaku (dan tidak meminta).
+    if (!(keadaan.data && keadaan.data.pengguna && keadaan.data.pengguna.superAdmin === true)) return false;
     return modern() || fitur(KODE_SD);
   }
 

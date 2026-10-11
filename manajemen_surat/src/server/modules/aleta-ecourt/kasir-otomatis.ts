@@ -1,4 +1,4 @@
-import { bolehKasir } from "@/lib/kasir-jurnal";
+import { bolehKasir, pengawasKasir } from "@/lib/kasir-jurnal";
 import {
   periodeSah,
   rentangPeriode,
@@ -27,6 +27,19 @@ export async function pastikanHakKasir(db: AletaDatabase, actorUserId: string | 
   const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
   if (!bolehKasir(aktor)) {
     throw new ApiError(403, "Kasir hanya dapat dibuka kasir, bendahara, panitera, dan admin.");
+  }
+  return aktor;
+}
+
+/**
+ * Hak MENULIS lewat Kasir (setoran PNBP, jurnal): pelaksana dan admin. Panitera
+ * dan panitera muda (pengawas) hanya membaca - 403 di sini, bukan hanya tombol
+ * yang disembunyikan (keputusan pengguna 12 Okt).
+ */
+export async function pastikanHakKasirTulis(db: AletaDatabase, actorUserId: string | null) {
+  const aktor = await pastikanHakKasir(db, actorUserId);
+  if (pengawasKasir(aktor)) {
+    throw new ApiError(403, "Panitera hanya dapat membaca Kasir - mencatat jurnal dan setoran dikerjakan kasir atau petugas keuangan.");
   }
   return aktor;
 }

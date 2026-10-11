@@ -22,7 +22,7 @@ import { getGatewayChecklistMilestone } from "@/server/modules/aleta-bot/whatsap
 import { KEADAAN_KREDENSIAL } from "@/server/modules/external-apps/service";
 import { type requireActorUser } from "@/server/modules/organization/service";
 
-import { bolehPengingatKasir } from "@/lib/kasir-jurnal";
+import { bolehPengingatKasir, pengawasKasir } from "@/lib/kasir-jurnal";
 import { butirChecklistKasir } from "@/lib/kasir-otomatis";
 
 import { bacaPengingatKasir } from "./kasir-otomatis";
@@ -512,7 +512,9 @@ async function tempelKasir(jawaban: JawabanChecklist, aktor: Aktor, opsi: OpsiCh
   const tambahan = butirChecklistKasir(pengingat.data);
   if (!tambahan.length) return jawaban;
   const ada = new Set(jawaban.butir.map((b) => b.id));
-  const baru = tambahan.filter((b) => !ada.has(b.id)) as ButirChecklist[];
+  // Pengawas (panitera): pengingat tampil, tanpa tombol eksekusi - ekstensi membacanya dari hanyaBaca.
+  const hanyaBaca = pengawasKasir(aktor);
+  const baru = tambahan.filter((b) => !ada.has(b.id)).map((b) => (hanyaBaca ? { ...b, hanyaBaca: true } : b)) as ButirChecklist[];
   const hitung = (k: string) => baru.filter((b) => b.kelompok === k).length;
   return {
     ...jawaban,
