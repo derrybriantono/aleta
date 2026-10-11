@@ -348,7 +348,9 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // sipp-sesi lalu baca akun ALETA), Kasir di detil_biaya (cari perkara dari
     // nomor, ringkasan untuk lencana tab Kasir), dan kontak e-Court di blangko
     // pihak SIPP. Semuanya berbicara ke petugas dan gagalnya harus kalimat.
-    expect(lewatAlat).toBe(46);
+    // 47 sejak deteksi pekerjaan (PEKERJAAN, 11 Okt 2026): kategori pekerjaan
+    // pihak (PNS/PPPK/TNI/POLRI/BUMN/BUMD) untuk usulan pilihan blangko pihak SIPP.
+    expect(lewatAlat).toBe(47);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU
@@ -386,6 +388,7 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     //                         boleh ditahan mode coba/latihan.
     //   kontak e-Court (KONTAK-EC, 1.193.0) - fetch hanya CADANGAN bila
     //                         alatAmbil tidak ada; jalur utamanya alatAmbil.
-    expect(mentah).toBe(9);
+    //   kategori pekerjaan (PEKERJAAN, 11 Okt) - sama: fetch hanya cadangan.
+    expect(mentah).toBe(10);
   });
 });
