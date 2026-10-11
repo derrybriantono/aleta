@@ -282,6 +282,9 @@ function bahanDariKunci(baitKunci) {
     // _add_cipher_noise: $this->hash($key) atas kunci md5 heksa - sha1 heksa,
     // 40 karakter, dipakai bait-bait ASCII-nya.
     derau: Buffer.from(crypto.createHash("sha1").update(kunciSandi).digest("hex"), "latin1"),
+    // MASUK-SESI-SIPP 11 Okt: tanda HMAC cookie sesi CI memakai kunci config
+    // MENTAH (Session.php: hash_hmac('sha1', $data, $this->encryption_key)).
+    hmac: Buffer.from(baitKunci),
   };
 }
 
@@ -758,9 +761,85 @@ function nilaiPilihanSipp(teks) {
   return { ok: true, nilai: segmenUntuk(t, kunci.bahan) };
 }
 
+/* === MASUK-SESI-SIPP 11 Okt === */
+/**
+ * Membuka cookie sesi SIPP (ci_session) - SATU-SATUNYA bukti bahwa peramban
+ * ini sedang masuk SIPP sebagai seseorang.
+ *
+ * SIPP (CodeIgniter 2.2.0, sess_use_database FALSE) menyimpan SELURUH data
+ * sesinya - userid, username, fullname, is_logged_in - di dalam cookie itu,
+ * dengan dua pengaman (system/libraries/Session.php):
+ *
+ *   _set_cookie : data = encrypt->encode(serialize(userdata));
+ *                 cookie = data . hash_hmac('sha1', data, encryption_key)
+ *   sess_read   : tanda 40 huruf terakhir diperiksa (perbandingan aman
+ *                 waktu), baru dibuka, lalu last_activity & user_agent.
+ *
+ * Langkah yang sama diulang di sini dengan kunci config SIPP yang SUDAH dibaca
+ * berkas ini untuk tautan perkara. Tanpa kunci itu tidak seorang pun dapat
+ * membuat cookie yang lolos - teks kepala halaman SIPP, yang dapat ditulis
+ * siapa saja, tidak pernah dipakai sebagai bukti.
+ *
+ * Kuncinya tetap tidak keluar: yang dipulangkan hanya teks serial PHP yang
+ * memang milik peramban pemegang cookie itu sendiri. Pemeriksaan isinya
+ * (kedaluwarsa, user_agent, is_logged_in, akun diblokir) di sesiSippService.js.
+ *
+ * Pulang { ok: true, serial, kedaluwarsaDetik } atau { ok: false, sebab }.
+ */
+const POLA_KEDALUWARSA_SESI = /^[ \t]*\$config\s*\[\s*(['"])sess_expiration\1\s*\]\s*=\s*(\d+)\s*;/gm;
+
+function kedaluwarsaSesiDariConfig(isi) {
+  const cocok = [...String(isi || "").replace(/\/\*[\s\S]*?\*\//g, "").matchAll(POLA_KEDALUWARSA_SESI)];
+  if (cocok.length === 0) return 7200; // bawaan CodeIgniter 2
+  const nilai = Number(cocok[cocok.length - 1][2]);
+  // 0 di CI2 = "dua tahun"; ALETA tidak mengikuti selonggar itu.
+  return nilai > 0 ? nilai : 7200;
+}
+
+function kedaluwarsaSesiSipp() {
+  const tegas = Number(process.env.ALETA_SIPP_SESS_EXPIRATION || 0);
+  if (tegas > 0) return tegas;
+  for (const jalur of jalurConfigCalon()) {
+    try {
+      return kedaluwarsaSesiDariConfig(fs.readFileSync(jalur, "latin1"));
+    } catch {
+      /* calon berikutnya */
+    }
+  }
+  return 7200;
+}
+
+function bukaCookieSesiSipp(nilaiCookie, bahanTegas) {
+  const kunci = bahanTegas ? { ok: true, bahan: bahanTegas } : bahanKunci();
+  if (!kunci.ok) return { ok: false, sebab: "kunci_sipp_tidak_terbaca" };
+  if (!kunci.bahan.hmac) return { ok: false, sebab: "kunci_sipp_tidak_terbaca" };
+
+  let teks = String(nilaiCookie === null || nilaiCookie === undefined ? "" : nilaiCookie);
+  if (!teks || teks.length > 16384) return { ok: false, sebab: "cookie_kosong" };
+  // $_COOKIE PHP = urldecode (setcookie menulisnya dengan urlencode).
+  try {
+    teks = decodeURIComponent(teks.replace(/\+/g, " "));
+  } catch {
+    return { ok: false, sebab: "cookie_rusak" };
+  }
+  if (teks.length <= 40) return { ok: false, sebab: "cookie_tanpa_tanda" };
+
+  const data = teks.slice(0, -40);
+  const tanda = Buffer.from(teks.slice(-40), "latin1");
+  const harap = Buffer.from(crypto.createHmac("sha1", kunci.bahan.hmac).update(Buffer.from(data, "latin1")).digest("hex"), "latin1");
+  if (tanda.length !== harap.length || !crypto.timingSafeEqual(tanda, harap)) {
+    return { ok: false, sebab: "tanda_tidak_sah" };
+  }
+  const serial = decodeCi(data, kunci.bahan);
+  if (serial === null || !serial) return { ok: false, sebab: "sandi_tidak_terbuka" };
+  return { ok: true, serial, kedaluwarsaDetik: bahanTegas ? 7200 : kedaluwarsaSesiSipp() };
+}
+/* === AKHIR MASUK-SESI-SIPP === */
+
 module.exports = {
   tautanPerkara,
   nilaiPilihanSipp,
+  bukaCookieSesiSipp,
   // Pola segmen dibuka supaya portal dan uji memeriksa bentuk yang sama.
   POLA_SEGMEN_AMAN,
   PINTU_MENURUT_JENIS,
@@ -780,6 +859,7 @@ module.exports = {
     jalurConfigCalon,
     ujiDiri,
     VEKTOR_UJI_DIRI,
+    kedaluwarsaSesiDariConfig,
     lupakan() {
       singgahKunci = null;
       singgahPintu = null;

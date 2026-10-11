@@ -33,6 +33,9 @@ type ExternalCredentialRow = {
   password_updated_at: string | null;
   created_at: string;
   updated_at: string;
+  // 0062 (11 Okt 2026) - bisa tidak ada pada baris yang dibaca dengan SELECT lama.
+  tautan_sumber?: string | null;
+  tautan_ditinjau_pada?: string | null;
 };
 
 type ExternalAppConfig = {
@@ -164,6 +167,8 @@ function mapCredential(row: ExternalCredentialRow): ExternalAppCredentialSummary
     lastVerifiedAt: row.last_verified_at,
     lastVerifiedStatus: row.last_verified_status,
     lastLaunchAt: row.last_launch_at,
+    tautanSumber: String(row.tautan_sumber ?? ""),
+    tautanDitinjauPada: row.tautan_ditinjau_pada ?? null,
   };
 }
 
@@ -248,7 +253,7 @@ export async function getExternalCredentialSummariesByUserIds(db: AletaDatabase,
   const rows = await db.prepare(
     `SELECT id, user_id, app_id, external_username, encrypted_password, password_md5_hash,
       is_enabled, last_verified_at, last_verified_status, last_launch_at, password_updated_at,
-      created_at, updated_at
+      created_at, updated_at, tautan_sumber, tautan_ditinjau_pada
      FROM external_app_credentials
      WHERE user_id IN (${placeholders})
      ORDER BY app_id ASC`
@@ -286,14 +291,14 @@ export async function upsertExternalCredentialsForUser(
     for (const input of credentials) {
       const normalized = normalizeCredentialInput(input);
       const existing = await tx.prepare(
-        `SELECT id, external_username, encrypted_password, password_md5_hash
+        `SELECT id, external_username, encrypted_password, password_md5_hash, is_enabled, tautan_sumber
          FROM external_app_credentials
          WHERE user_id = ? AND app_id = ?
          LIMIT 1`
       ).get<
         Pick<
           ExternalCredentialRow,
-          "id" | "external_username" | "encrypted_password" | "password_md5_hash"
+          "id" | "external_username" | "encrypted_password" | "password_md5_hash" | "is_enabled" | "tautan_sumber"
         >
       >(userId, normalized.appId);
 
@@ -312,7 +317,19 @@ export async function upsertExternalCredentialsForUser(
           ? hashMd5(normalized.password ?? "")
           : existing?.password_md5_hash ?? "";
       const passwordUpdatedAt = passwordChanged || normalized.clearPassword ? timestamp : null;
-      const enabled = normalized.isEnabled && Boolean(normalized.username && encryptedPassword);
+      /* === MASUK-SESI-SIPP 11 Okt === */
+      // Tautan TANPA password (dibuat masuk otomatis dari SIPP lewat nama/NIP/
+      // sesi, atau akun uji) tetap aktif bila Admin menyimpan akun ini tanpa
+      // mengubah username-nya - dahulu menyimpan apa pun di dialog akun
+      // mematikan tautan itu diam-diam. Username diganti = tautan buatan ALETA
+      // berakhir (tautan_sumber dikosongkan, kini milik manusia).
+      const usernameSama =
+        Boolean(existing) && normalized.username.trim().toLowerCase() === String(existing?.external_username ?? "").trim().toLowerCase();
+      const tautanTanpaSandiTetap =
+        Boolean(existing) && Number(existing?.is_enabled) === 1 && !encryptedPassword && usernameSama && Boolean(normalized.username);
+      const enabled = normalized.isEnabled && (Boolean(normalized.username && encryptedPassword) || tautanTanpaSandiTetap);
+      const sumberTautanBaru = usernameSama ? String(existing?.tautan_sumber ?? "") : "";
+      /* === AKHIR MASUK-SESI-SIPP === */
 
       if (existing) {
         // Vonis pemeriksaan yang lama DIBATALKAN begitu sandi atau usernamenya
@@ -328,6 +345,7 @@ export async function upsertExternalCredentialsForUser(
              is_enabled = ?, password_updated_at = COALESCE(?, password_updated_at),
              last_verified_status = CASE WHEN ? = 1 THEN 'not_tested' ELSE last_verified_status END,
              last_verified_at = CASE WHEN ? = 1 THEN NULL ELSE last_verified_at END,
+             tautan_sumber = ?,
              updated_by = ?, updated_at = ?
            WHERE id = ?`
         ).run(
@@ -338,6 +356,7 @@ export async function upsertExternalCredentialsForUser(
           passwordUpdatedAt,
           perluDiujiUlang ? 1 : 0,
           perluDiujiUlang ? 1 : 0,
+          sumberTautanBaru,
           actor.id,
           timestamp,
           existing.id
@@ -892,3 +911,107 @@ function buildExternalAppMessageHtml(label: string, title: string, message: stri
 </body>
 </html>`;
 }
+
+/* === MASUK-SESI-SIPP 11 Okt === */
+// ============================================================================
+// TAUTAN AKUN SIPP YANG DITULIS ALETA SENDIRI (masuk otomatis dari SIPP)
+// ============================================================================
+//
+// Ditulis HANYA oleh masuk-sipp-nama.ts sesudah identitas SIPP terbukti (cookie
+// sesi SIPP atau password SIPP) dan akun ALETA-nya terpilih tunggal lewat
+// NIP/nama, atau ditautkan pegawai sendiri dari panel (dua sesi terbukti).
+// Tanpa password: tidak ada yang dapat dibuka kembali dari baris ini. Satu
+// baris per pengguna per aplikasi (uq_external_app_credentials_user_app):
+// baris yang SUDAH punya username lain tidak pernah ditimpa di sini.
+
+export type SumberTautanSipp = "nama-sipp" | "nip-sipp" | "sesi-sipp";
+
+export async function tulisTautanSippOtomatis(
+  db: AletaDatabase,
+  { userId, usernameSipp, sumber }: { userId: string; usernameSipp: string; sumber: SumberTautanSipp }
+): Promise<boolean> {
+  const username = String(usernameSipp ?? "").trim().slice(0, 60);
+  if (!userId || !username) return false;
+  const waktu = nowIso();
+  // Tautan pilihan nama/NIP menunggu tinjauan (bobot "belum diuji"); tautan
+  // yang ditekan pegawai sendiri dengan dua sesi terbukti = teruji sah.
+  const keadaan = sumber === "sesi-sipp" ? KEADAAN_KREDENSIAL.SAH : KEADAAN_KREDENSIAL.BELUM_DIUJI;
+  return withTransaction(db, async (tx) => {
+    const ada = await tx.prepare(
+      `SELECT id, external_username FROM external_app_credentials WHERE user_id = ? AND app_id = 'sipp' LIMIT 1`
+    ).get<{ id: string; external_username: string }>(userId);
+    if (ada) {
+      const lama = String(ada.external_username ?? "").trim();
+      if (lama && lama.toLowerCase() !== username.toLowerCase()) return false;
+      await tx.prepare(
+        `UPDATE external_app_credentials
+         SET external_username = ?, is_enabled = 1, last_verified_status = ?, last_verified_at = ?,
+           tautan_sumber = ?, tautan_ditinjau_oleh = NULL, tautan_ditinjau_pada = NULL, updated_at = ?
+         WHERE id = ?`
+      ).run(username, keadaan, waktu, sumber, waktu, ada.id);
+    } else {
+      await tx.prepare(
+        `INSERT INTO external_app_credentials (
+          id, user_id, app_id, external_username, encrypted_password, password_md5_hash,
+          is_enabled, last_verified_status, last_verified_at, created_by, updated_by, created_at, updated_at, tautan_sumber
+        ) VALUES (?, ?, 'sipp', ?, '', '', 1, ?, ?, NULL, NULL, ?, ?, ?)`
+      ).run(await nextPrefixedId(tx, "external_app_credentials", "eac"), userId, username, keadaan, waktu, waktu, waktu, sumber);
+    }
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: userId,
+      action: "LINK_SIPP_ACCOUNT_AUTO",
+      entityType: "user",
+      entityId: userId,
+      payload: { appId: "sipp", username, sumber, perluDitinjau: sumber !== "sesi-sipp" },
+    });
+    return true;
+  });
+}
+
+/**
+ * Admin menyetujui (tautan tetap, teruji sah) atau mencabut (dinonaktifkan;
+ * username tetap tercatat supaya tidak dibuat ulang otomatis) tautan buatan
+ * ALETA. Hanya Admin/Super Admin (diperiksa pemanggil); Admin tidak menyentuh
+ * akun Super Admin.
+ */
+export async function tinjauTautanSipp(
+  db: AletaDatabase,
+  { actor, userId, aksi }: { actor: Pick<UserPersona, "id" | "roleId">; userId: string; aksi: "setujui" | "cabut" }
+) {
+  const baris = await db.prepare(
+    `SELECT e.id, e.external_username, e.tautan_sumber, u.role_id
+     FROM external_app_credentials e JOIN users u ON u.id = e.user_id
+     WHERE e.user_id = ? AND e.app_id = 'sipp' LIMIT 1`
+  ).get<{ id: string; external_username: string; tautan_sumber: string | null; role_id: string }>(userId);
+  if (!baris) throw new ApiError(404, "Akun ini tidak punya tautan SIPP.");
+  if (actor.roleId !== "super-admin" && baris.role_id === "super-admin") {
+    throw new ApiError(403, "Admin tidak dapat mengubah tautan akun Super Admin.");
+  }
+  const waktu = nowIso();
+  if (aksi === "setujui") {
+    await db.prepare(
+      `UPDATE external_app_credentials
+       SET tautan_ditinjau_oleh = ?, tautan_ditinjau_pada = ?,
+         last_verified_status = CASE WHEN last_verified_status = ? THEN ? ELSE last_verified_status END,
+         updated_by = ?, updated_at = ?
+       WHERE id = ?`
+    ).run(actor.id, waktu, KEADAAN_KREDENSIAL.BELUM_DIUJI, KEADAAN_KREDENSIAL.SAH, actor.id, waktu, baris.id);
+  } else {
+    await db.prepare(
+      `UPDATE external_app_credentials
+       SET is_enabled = 0, tautan_ditinjau_oleh = ?, tautan_ditinjau_pada = ?, updated_by = ?, updated_at = ?
+       WHERE id = ?`
+    ).run(actor.id, waktu, actor.id, waktu, baris.id);
+  }
+  await appendAuditLog(db, {
+    id: await nextPrefixedId(db, "audit_logs", "adt"),
+    actorUserId: actor.id,
+    action: aksi === "setujui" ? "APPROVE_SIPP_ACCOUNT_LINK" : "REVOKE_SIPP_ACCOUNT_LINK",
+    entityType: "user",
+    entityId: userId,
+    payload: { appId: "sipp", username: baris.external_username, sumber: baris.tautan_sumber ?? "" },
+  });
+  return { ok: true as const, aksi };
+}
+/* === AKHIR MASUK-SESI-SIPP === */

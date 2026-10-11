@@ -99,6 +99,18 @@ export type DepsMasukSipp = {
   verifikasiSipp: (usernameSipp: string, sandi: string) => Promise<JawabanVerifikasiSipp>;
   verifikasiSandiAleta: (userId: string, sandi: string) => Promise<boolean>;
   catatJejak: (baris: BarisJejakMasuk) => Promise<void>;
+  /* === MASUK-SESI-SIPP 11 Okt === */
+  /**
+   * Akun ALETA untuk akun SIPP yang password-nya SUDAH terbukti cocok, bila
+   * yang diketik bukan identitas ALETA yang bertautan: tautan Manajemen Akun,
+   * lalu NIP, lalu nama SIPP yang sama dan tunggal (masuk-sipp-nama.ts).
+   * Tidak diisi = perilaku 7 Okt apa adanya ("bukan-sipp").
+   */
+  akunAletaDariSipp?: (
+    usernameSipp: string,
+    sippUserId: string
+  ) => Promise<{ ok: true; userId: string; tautanBaru: string | null } | { ok: false; sebab: string; pesan: string }>;
+  /* === AKHIR MASUK-SESI-SIPP === */
 };
 
 export type KonteksMasuk = {
@@ -224,9 +236,14 @@ export async function putuskanMasukSipp(
   }
 
   const pengguna = await deps.cariPengguna(identitas);
-  if (!pengguna) return { jenis: "bukan-sipp", sebab: "tidak-ditemukan" };
+  if (!pengguna) {
+    return (await cobaLewatNamaSipp(deps, null, identitas, sandi, permintaan, jejak)) ?? { jenis: "bukan-sipp", sebab: "tidak-ditemukan" };
+  }
 
   const milik = await deps.akunSippMilik(pengguna.id);
+  if (milik.length === 0) {
+    return (await cobaLewatNamaSipp(deps, pengguna, identitas, sandi, permintaan, jejak)) ?? { jenis: "bukan-sipp", sebab: "tanpa-tautan" };
+  }
   if (milik.length !== 1) return { jenis: "bukan-sipp", sebab: "tanpa-tautan" };
   const usernameSipp = milik[0];
 
@@ -297,6 +314,78 @@ export async function putuskanMasukSipp(
   }
   return gagal(data.ditemukan ? "sandi_salah" : "sipp_tidak_terdaftar", sippUserId, PESAN_SANDI_SALAH);
 }
+
+/* === MASUK-SESI-SIPP 11 Okt === */
+// ---------------------------------------------------------------------------
+// IDENTITAS YANG DIKETIK BUKAN AKUN ALETA BERTAUTAN: COBA SEBAGAI USERNAME SIPP
+// ---------------------------------------------------------------------------
+//
+// Sebelum 11 Okt, pegawai yang akun ALETA-nya belum bertaut (24 dari 42 akun
+// aktif di data server 9 Okt) dan mengetik username + password SIPP-nya di
+// layar masuk ALETA selalu jatuh ke jalur lama dan ditolak "password salah" -
+// padahal password SIPP-nya benar. Di sini username itu dicocokkan ke
+// sys_users dengan sidik SIPP (bukti identitas); bila cocok dan aktif, akun
+// ALETA-nya dipilih lewat tautan/NIP/nama (deps.akunAletaDariSipp). Selain
+// itu - password SIPP salah, akun SIPP nonaktif, bot mati - pulang null dan
+// jalur lama berjalan PERSIS seperti dulu.
+async function cobaLewatNamaSipp(
+  deps: DepsMasukSipp,
+  pengguna: PenggunaMasuk | null,
+  identitas: string,
+  sandi: string,
+  permintaan: NextRequest,
+  jejak: (baris: Omit<BarisJejakMasuk, "identitas" | "alamatIp" | "agenPeramban">) => Promise<void>
+): Promise<KeputusanMasuk | null> {
+  if (!deps.akunAletaDariSipp) return null;
+  const usernameSipp = identitas;
+  if (sippDitahan(usernameSipp)) {
+    await jejak({ aletaUserId: pengguna?.id ?? null, usernameSipp, sippUserId: "", lewat: "", hasil: "dibatasi", alasan: "batas_percobaan_sipp" });
+    return { jenis: "tolak", status: 429, kode: "DIBATASI", pesan: PESAN_DIBATASI };
+  }
+  const jawaban = await deps.verifikasiSipp(usernameSipp, sandi);
+  if (!jawaban.ok) return null;
+  const data = jawaban.data ?? {};
+  if (!data.ditemukan) return null;
+  if (!data.cocok) {
+    // Dihitung pada batas per username SIPP; jalur lama mencatat batas "login".
+    catatGagalSipp(usernameSipp);
+    return null;
+  }
+  if (data.diblokir || data.kedaluwarsa) return null;
+  const sippUserId = String(data.sippUserId ?? "").slice(0, 40);
+
+  const akun = await deps.akunAletaDariSipp(usernameSipp, sippUserId);
+  if (!akun.ok) {
+    // Password ALETA akun yang diketik tetap berlaku - jalur lama.
+    if (pengguna && (await deps.verifikasiSandiAleta(pengguna.id, sandi))) return null;
+    await jejak({ aletaUserId: pengguna?.id ?? null, usernameSipp, sippUserId, lewat: "", hasil: "ditolak", alasan: `akun_aleta_${akun.sebab}`.slice(0, 80) });
+    return { jenis: "tolak", status: 401, kode: "AKUN_ALETA_RAGU", pesan: `Password SIPP Anda benar. ${akun.pesan}` };
+  }
+  // Identitas yang diketik menunjuk akun ALETA LAIN dari yang dipilih SIPP:
+  // jangan memilih di antara keduanya - jalur lama.
+  if (pengguna && pengguna.id !== akun.userId) return null;
+
+  clearRateLimit("login", permintaan, identitas);
+  batasSipp.delete(kunciSipp(usernameSipp));
+  await jejak({
+    aletaUserId: akun.userId,
+    usernameSipp,
+    sippUserId,
+    lewat: "sipp",
+    hasil: "berhasil",
+    alasan: akun.tautanBaru ? `sandi_sipp_cocok_tautan_${akun.tautanBaru === "nip-sipp" ? "nip" : "nama"}` : "sandi_sipp_cocok",
+  });
+  return {
+    jenis: "masuk",
+    userId: akun.userId,
+    lewat: "sipp",
+    usernameSipp,
+    catatan: akun.tautanBaru
+      ? "Akun SIPP Anda kini tertaut ke akun ALETA ini (dicocokkan lewat nama/NIP SIPP). Admin akan meninjaunya di Manajemen Akun."
+      : "",
+  };
+}
+/* === AKHIR MASUK-SESI-SIPP === */
 
 // ---------------------------------------------------------------------------
 // JALUR LAMA (/sign-in/email) IKUT TERTUTUP BAGI AKUN SIPP NONAKTIF (9 Okt 2026)
