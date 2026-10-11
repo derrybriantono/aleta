@@ -127,6 +127,8 @@ export type HasilIsiGugatan = {
   diabaikan: unknown[];
   dokumen: Array<{ judul: string; peran: PeranDokumen; baca: "teks" | "ocr"; halaman: number; terbaca: boolean; sebab: string }>;
   catatan: string[];
+  /** KONTAK-EC 11 Okt: email/HP pihak & kuasa dari e-Court (bot kontakEcourtService) - null bila bot lama. */
+  kontak?: Record<string, unknown> | null;
 };
 
 /** Baca berkas e-Court perkara -> usulan bot. OCR paling banyak sekali. */
@@ -195,6 +197,8 @@ export async function bacaIsiGugatan(
     diabaikan: larik("diabaikan"),
     dokumen: daftar,
     catatan: [...catatan, ...larik("catatan").map(String)],
+    // KONTAK-EC 11 Okt
+    kontak: jawaban.kontak && typeof jawaban.kontak === "object" ? (jawaban.kontak as Record<string, unknown>) : null,
   };
 }
 

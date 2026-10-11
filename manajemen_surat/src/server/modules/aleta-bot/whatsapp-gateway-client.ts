@@ -4743,3 +4743,23 @@ export async function postGatewayIsiGugatan(muatan: {
   });
 }
 /* === AKHIR P4P7B2 === */
+
+/* === KONTAK-EC 11 Okt === */
+/**
+ * KONTAK-EC (11 Okt 2026): email & nomor HP/WA pihak dan kuasa dari e-Court
+ * (akun e-Court + teks berkas) dibanding isian SIPP. Bot menulis ringkasannya
+ * ke aleta_bot_ecourt_ringkasan (dibaca variabel ABT 8800-8811); SIPP/ABT
+ * tidak ditulis.
+ */
+export async function postGatewayKontakEcourt(muatan: {
+  nomorPerkara?: string;
+  nama?: string;
+  dokumen?: Array<{ judul: string; peran: string; teks: string; penuntutKode: string }>;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/abt/kontak-ecourt", {
+    method: "POST",
+    body: JSON.stringify(muatan),
+    timeoutMs: 30_000,
+  });
+}
+/* === AKHIR KONTAK-EC === */

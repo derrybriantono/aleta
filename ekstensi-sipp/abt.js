@@ -14445,6 +14445,8 @@ function soreGambarIsi(k, data) {
   }
   // P4P7B2 10 Okt: tuntutan, anak, jawab-menjawab, dan kalimat hakim dari berkas e-Court.
   p4GambarEcourt(w.usulan, data);
+  // KONTAK-EC 11 Okt: kontak & domisili elektronik dari e-Court (lihat k5GambarKontak).
+  if (typeof k5GambarKontak === "function") k5GambarKontak(w.usulan, data);
   // Perbaikan 1 Okt butir 8 (UI Baru saja): posita & keterangan saksi rapi.
   const rapiPilihan = t6Modern() ? a1GambarRapi(k, w.usulan, data.rapi) : [];
   soreBarisInput(k, pilih, hurufPilihan, rapiPilihan);
@@ -17152,7 +17154,9 @@ const ALETA_API_ISI_GUGATAN = "/aleta/api/aleta-ecourt/isi-gugatan";
 async function p4BacaGugatan(data) {
   const peta = barisVariabel();
   const nomor = nomorPerkaraAbt();
-  if (!nomor || !P4_VAR_ECOURT.some((k) => peta.has(k))) return;
+  // KONTAK-EC 11 Okt: variabel kontak/domisili elektronik (K5_VAR_KONTAK) ikut memicu bacaan e-Court.
+  const k5Var = typeof K5_VAR_KONTAK !== "undefined" ? K5_VAR_KONTAK : [];
+  if (!nomor || ![...P4_VAR_ECOURT, ...k5Var].some((k) => peta.has(k))) return;
   try {
     const q = new URLSearchParams({ nomor, lawan: nilaiVariabel(VAR_PIHAK_LAWAN) || "", pelaku: nilaiVariabel(VAR_PIHAK_PELAKU) || "" });
     const majelis = String(nilaiVariabel("8554") || "").trim();
@@ -17171,6 +17175,8 @@ async function p4BacaGugatan(data) {
       kalimat: larik("kalimat"),
       diabaikan: larik("diabaikan"),
       dokumen: larik("dokumen"),
+      // KONTAK-EC 11 Okt: email/HP pihak & kuasa dari e-Court (bot kontakEcourtService).
+      kontak: isi && isi.kontak && typeof isi.kontak === "object" ? isi.kontak : null,
     };
     for (const c of larik("catatan")) data.catatan.push(`Berkas e-Court: ${String(c)}`);
   } catch (galat) {
@@ -17747,3 +17753,98 @@ function p3PetaJenis(keadaan, s) {
   const h = alatPetaUntukPerkara(keadaan.peta, s.jenis, s.statusPutusan || (st && st.statusPutusan) || "", Boolean(s.verstek) || Boolean(st && st.verstek));
   return h ? h.baris : undefined;
 }
+
+/* === KONTAK-EC 11 Okt === */
+/**
+ * ============================================================================
+ * KONTAK-EC (11 Okt 2026, agen 5): KONTAK & DOMISILI ELEKTRONIK DARI e-COURT DI PANEL ABT
+ * ============================================================================
+ *
+ * Permintaan pengguna: "buat otomatis abt mengambil data juga dari aleta
+ * e-court" dan "deteksi email dan nomor whatsapp dari e-court untuk
+ * dimasukkan datanya ke sipp dan abt".
+ *
+ * Bacaan e-Court (p4BacaGugatan, dijalankan OTOMATIS bersama "Isi dari SIPP")
+ * kini juga memulangkan `kontak` - email/HP tiap pihak dan kuasa menurut
+ * e-Court dibanding isian SIPP. Variabel ABT kontak bertipe kueri (data_sql),
+ * jadi tidak dapat diisi panel: nilainya masuk blangko lewat
+ *
+ *   8800-8811, 8813 (paket ABT abt-data-ecourt): SIPP lebih dulu, kosong =
+ *   ringkasan e-Court berkeyakinan pasti/cukup yang ditulis bot ke database
+ *   aleta_bot (server MySQL yang sama dengan SIPP) - terisi walau panel ini
+ *   tidak pernah dibuka;
+ *   0027/0045/8175/8179/8180/0370/0372 (variabel lama, SIPP saja) - terisi
+ *   begitu petugas menyimpan kontaknya di blangko Data Pihak SIPP (lajur
+ *   "Kontak dari e-Court" di SIPP menawarkan isiannya).
+ *
+ * Lipatan ini hanya MENAMPILKAN - tidak menulis apa pun.
+ */
+const K5_VAR_KONTAK = Object.freeze([
+  "0027", "0045", "8175", "8179", "8180", "0370", "0372", "0123", "7139", "8548", "8549",
+  "8800", "8801", "8802", "8803", "8804", "8805", "8806", "8807", "8808", "8809", "8810", "8811", "8813",
+]);
+const K5_ROMAWI = ["", "", " II", " III", " IV", " V"];
+const K5_TERHADAP_SIPP = { kosong: "SIPP kosong", sama: "sama dengan SIPP", beda: "BERBEDA dengan SIPP" };
+
+/** Sebutan orang: 0046 = Penggugat/Pemohon (pihak ke-1), 0047 = Tergugat/Termohon (pihak ke-2). */
+function k5Sebutan(o) {
+  const dasar = Number(o && o.pihakKe) === 1 ? String(nilaiVariabel("0046") || "").trim() || "Penggugat" : String(nilaiVariabel("0047") || "").trim() || "Tergugat";
+  const ke = o && o.jenis === "pihak" ? K5_ROMAWI[Number(o.urutan) || 1] || "" : "";
+  return o && o.jenis === "kuasa" ? `Kuasa ${dasar}` : `${dasar}${ke}`;
+}
+
+/** Baris ringkas satu orang (murni). Kosong bila e-Court tidak mengusulkan apa pun. */
+function k5RingkasOrang(o) {
+  const bagian = [];
+  for (const kolom of ["email", "hp"]) {
+    const u = o && o.usulan && o.usulan[kolom];
+    if (!u || !u.nilai) continue;
+    const label = kolom === "email" ? "email" : u.jenisNomor === "telepon" ? "telepon" : "HP/WA";
+    bagian.push(`${label} ${u.nilai} (${K5_TERHADAP_SIPP[u.terhadapSipp] || u.terhadapSipp}; ${u.keyakinan})`);
+  }
+  return bagian.length ? `${k5Sebutan(o)} - ${o.nama || "?"}: ${bagian.join(" · ")}` : "";
+}
+
+/** Lipatan "Kontak & domisili elektronik dari e-Court" di bawah kartu usulan. */
+function k5GambarKontak(wadah, data) {
+  const k = data && data.gugatan && data.gugatan.kontak;
+  if (!wadah || !k || !k.ada) return;
+  const orang = Array.isArray(k.orang) ? k.orang : [];
+  const baris = orang.map((o) => ({ o, teks: k5RingkasOrang(o) })).filter((x) => x.teks);
+  const domisili = k.domisili && typeof k.domisili === "object" ? k.domisili : {};
+  const adaDomisili = [1, 2].some((s) => domisili[s] && domisili[s].email);
+  if (!baris.length && !adaDomisili) return;
+  const kotak = document.createElement("details");
+  kotak.className = "aleta-abt-kartu aleta-k5-kontak";
+  const kosongSipp = baris.filter((x) => ["email", "hp"].some((c) => x.o.usulan[c] && x.o.usulan[c].terhadapSipp === "kosong")).length;
+  kotak.appendChild(
+    buatElemen("summary", "aleta-abt-nama", `Kontak & domisili elektronik dari e-Court: ${baris.length} orang${kosongSipp ? ` · ${kosongSipp} belum ada di SIPP` : ""}`)
+  );
+  for (const x of baris) {
+    const el = buatElemen("div", "aleta-abt-kutipan", x.teks);
+    const sumber = ["email", "hp"].map((c) => x.o.usulan[c] && x.o.usulan[c].sumber && x.o.usulan[c].sumber[0]).filter(Boolean);
+    if (sumber.length) el.title = sumber.map((s) => `${s.label}${s.kutipan ? `: "${s.kutipan}"` : ""}`).join("\n");
+    kotak.appendChild(el);
+  }
+  for (const sisi of [1, 2]) {
+    const d = domisili[sisi];
+    if (!d || !d.email) continue;
+    const sebutan = k5Sebutan({ pihakKe: sisi, jenis: "pihak", urutan: 1 });
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-kutipan",
+        `Domisili elektronik ${sebutan}: ${d.email} (${d.milik === "kuasa" ? "email kuasa" : "email pihak"}, dari ${d.asal === "sipp" ? "SIPP" : "e-Court"}${d.keyakinan && d.asal !== "sipp" ? `, ${d.keyakinan}` : ""})`
+      )
+    );
+  }
+  kotak.appendChild(
+    buatElemen(
+      "div",
+      "aleta-t6-lembut aleta-teknis",
+      "Masuk ke blangko lewat variabel 8800-8811 (SIPP lebih dulu; kosong = e-Court berkeyakinan cukup). Variabel lama 0027/0045/8179/8180/0370/0372 membaca SIPP saja - simpan kontaknya di SIPP (Data Pihak / Pengacara: lajur \"Kontak dari e-Court\" menawarkan isiannya). Tidak ada yang ditulis dari sini."
+    )
+  );
+  wadah.appendChild(kotak);
+}
+/* === AKHIR KONTAK-EC === */

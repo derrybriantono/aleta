@@ -6569,12 +6569,68 @@ router.post("/abt/isi-gugatan", requireInternalToken, async (req, res) => {
       majelis: /^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(String(req.body?.majelis || "")) ? String(req.body.majelis) : undefined,
       dokumen: Array.isArray(req.body?.dokumen) ? req.body.dokumen : [],
     });
+    // KONTAK-EC 11 Okt: kontak pihak/kuasa dari teks yang sama + ringkasan untuk variabel ABT.
+    hasil.kontak = await kontakDariIsiGugatan(req.body, hasil);
     res.json({ ...hasil, nomorPerkara: String(req.body?.nomorPerkara || "").slice(0, 80) });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
 });
 /* === AKHIR P4P7B2 === */
+
+/* === KONTAK-EC 11 Okt === */
+/**
+ * KONTAK-EC (11 Okt 2026, agen 5): email & nomor HP/WA pihak dan kuasa dari
+ * e-Court -> usulan blangko Data Pihak/Pengacara SIPP (diisi ekstensi atas klik
+ * petugas) dan ringkasan aleta_bot_ecourt_ringkasan yang dibaca variabel ABT
+ * 8800-8811. Lihat services/kontakEcourtService.js.
+ *
+ *   POST /abt/kontak-ecourt  { nomorPerkara?, nama?, dokumen?: [{judul, peran, teks, penuntutKode}] }
+ *     -> { ok, ada, perkaraId, nomorPerkara, orang[], domisili{1,2}, tanpaPemilik[], tersimpan }
+ *
+ * Tidak menulis SIPP/ABT. Nilai kontak tidak pernah dicatat ke log.
+ */
+const kontakEcourtService = require("../services/kontakEcourtService");
+
+function dokumenKontak(body) {
+  return (Array.isArray(body?.dokumen) ? body.dokumen : []).slice(0, 10).map((d) => ({
+    judul: String(d?.judul || "").slice(0, 160),
+    peran: String(d?.peran || "").slice(0, 40),
+    penuntutKode: d?.penuntutKode === "0046" || d?.penuntutKode === "0047" ? d.penuntutKode : "",
+    teks: String(d?.teks || "").slice(0, 200000),
+  }));
+}
+
+/** Dipanggil rute /abt/isi-gugatan: kontak dari teks yang sudah dibaca + ringkasan usulan ABT. Tidak pernah melempar. */
+async function kontakDariIsiGugatan(body, hasilIsi) {
+  try {
+    const nomorPerkara = String(body?.nomorPerkara || "").trim().slice(0, 80);
+    if (!nomorPerkara) return null;
+    const k = await kontakEcourtService.kontakPerkara({ nomorPerkara, dokumen: dokumenKontak(body) });
+    if (k && k.ada && hasilIsi && Array.isArray(hasilIsi.usulan)) {
+      await kontakEcourtService
+        .simpanRingkasan(k.perkaraId, k.nomorPerkara, kontakEcourtService.barisDariUsulanAbt(hasilIsi.usulan), { awalan: "abt.", hapusAsal: ["teks"] })
+        .catch(() => null);
+    }
+    return k;
+  } catch (error) {
+    return { ok: false, ada: false, sebab: String(error?.code || "kontak_gagal").slice(0, 60) };
+  }
+}
+
+router.post("/abt/kontak-ecourt", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await kontakEcourtService.kontakPerkara({
+      nomorPerkara: String(req.body?.nomorPerkara || "").trim().slice(0, 80),
+      nama: String(req.body?.nama || "").trim().slice(0, 200),
+      dokumen: dokumenKontak(req.body),
+    });
+    res.json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 120) });
+  }
+});
+/* === AKHIR KONTAK-EC === */
 
 router.setRuntimeLifecycleHandlers = setRuntimeLifecycleHandlers;
 

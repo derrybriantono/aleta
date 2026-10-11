@@ -1071,6 +1071,14 @@ antrianWaktuService.mulai();
 // ALETA_ECOURT_VERIFIKASI_AKTIF=0. Lihat ecourtVerifikasiHarianService.
 require("./services/ecourtVerifikasiHarianService").mulai();
 
+/* === KONTAK-EC 11 Okt === */
+// Ringkasan kontak e-Court (email/HP pihak & kuasa dari SIPP + akun e-Court) ke
+// aleta_bot_ecourt_ringkasan tiap jam - dibaca variabel ABT 8800-8811 sehingga
+// blangko terisi walau panel ABT tidak dibuka. Hanya SELECT ke SIPP. Dimatikan
+// dengan ALETA_RINGKASAN_ECOURT_AKTIF=0; lihat kontakEcourtService.
+require("./services/kontakEcourtService").mulai();
+/* === AKHIR KONTAK-EC === */
+
 // Menilai nomor yang pesannya tidak pernah sampai, lalu menghentikannya.
 // Dijalankan sekali sehari saja: penilaiannya memang menunggu lebih dari
 // sehari sebelum menyimpulkan, jadi memeriksanya lebih sering tidak menambah
