@@ -30,6 +30,9 @@ Kebersihan sesi (dijalankan pengguna): `/compact` saat percakapan panjang, `/cle
 - Data: `D:/aleta-dev/kerja/kemajuan/rencana/<sesi>.json` → `paket[].tahap[].langkah[]` (`id, judul, status: selesai|jalan|menunggu, persen, menit, catatan`).
   Ubah lewat skrip Python (baca–ubah–tulis JSON utuh, `ensure_ascii=False`), bukan suntingan tangan.
 - Perbarui SETIAP: tugas/agen mulai atau selesai, commit/rilis/paket, hasil uji (hijau/merah), keputusan pengguna, dan saat pengguna bertanya kemajuan. Catatan berisi jam + fakta (commit, angka uji), bukan perkiraan kosong.
+- Tiap langkah juga mencatat `model` (mis. "Opus 5.5"), `effort` (low|medium|high|max), `pelaku` ("sesi utama" / "agen X") dan
+  `token` (angka `subagent_tokens` dari laporan selesai agen; kosong bila tidak terukur - jangan menebak). Model & effort sesi:
+  `get_session self`; agen mewarisi pengaturan sesi kecuali diberi lain. Papan menjumlahkan token per tahap.
 - Langkah `menunggu` atau rencana yang belum diperintahkan: `menit: 0, persen: 0` (tidak ikut perkiraan selesai). Persen `jalan` dari kemajuan nyata (commit/berkas), bukan tebakan.
 - Sesudah menulis, pastikan `/data` memuat perubahan.
 
