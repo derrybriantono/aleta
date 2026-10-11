@@ -157,13 +157,14 @@ export function uraiBingkai(b: Buffer): Map<string, Buffer> {
 }
 
 /** Pembantu sungguhan: node scripts/ktp-gambar.mjs <mode> lewat stdin/stdout. */
-export const pembantuAnak: PembantuGambar = (mode, data, batasMs) =>
+function buatPembantuAnak(maksHalaman: number): PembantuGambar {
+  return (mode, data, batasMs) =>
   new Promise((selesai) => {
     const skrip = skripAnak();
     if (!existsSync(skrip)) return selesai(null);
     let anak: ReturnType<typeof spawnAsli>;
     try {
-      anak = spawnAsli(process.execPath, [skrip, mode, "2"], { stdio: ["pipe", "pipe", "ignore"], windowsHide: true });
+      anak = spawnAsli(process.execPath, [skrip, mode, String(maksHalaman)], { stdio: ["pipe", "pipe", "ignore"], windowsHide: true });
     } catch {
       return selesai(null);
     }
@@ -200,6 +201,9 @@ export const pembantuAnak: PembantuGambar = (mode, data, batasMs) =>
       akhiri(null);
     }
   });
+}
+
+export const pembantuAnak: PembantuGambar = buatPembantuAnak(2);
 
 // ─── Gabungan lintasan ───────────────────────────────────────────────────────
 
@@ -377,3 +381,82 @@ export async function bacaKtpDariBerkas(buffer: Buffer, jenis?: string, opsi: Op
   }
   return jadiHasil(r.lintasan, "ocr", tahunKini);
 }
+
+/* === KTP-PIHAK 12 Okt === */
+/**
+ * Berkas KTP e-Court dapat memuat KTP lebih dari satu orang (Pemohon I dan II
+ * dalam satu PDF): SATU KTP PER HALAMAN. Fungsi ini membaca tiap halaman
+ * sendiri-sendiri - lapisan teks PDF lebih dulu, lalu OCR halaman pindaian
+ * (paling banyak 4) - dan memulangkan satu hasil per orang (NIK berbeda).
+ * Bukan PDF (foto) = satu hasil dari bacaKtpDariBerkas. Satu halaman berisi
+ * dua kartu sekaligus TIDAK dipisah (terbaca sebagai satu hasil).
+ */
+const HALAMAN_MAKS_BANYAK = 4;
+const pembantuAnakBanyak: PembantuGambar = buatPembantuAnak(HALAMAN_MAKS_BANYAK);
+
+export async function bacaKtpBanyak(buffer: Buffer, opsi: OpsiBacaKtp = {}): Promise<HasilBacaKtp[]> {
+  const tahunKini = opsi.tahunKini ?? new Date().getFullYear();
+  const bentuk = jenisBerkasKtp(buffer);
+  if (bentuk !== "pdf") return [await bacaKtpDariBerkas(buffer, undefined, opsi)];
+  const batasSampai = Date.now() + (opsi.batasMs ?? 90_000);
+
+  const isi = await bacaPdfDariBita(new Uint8Array(buffer), "ktp.pdf", HALAMAN_MAKS_BANYAK + 1);
+  if (!isi.ada || !isi.jumlahHalaman) return [kosongKtp("teks-pdf", "pdf_rusak", "Berkas PDF tidak dapat dibuka.")];
+
+  const unikNik = (daftar: Array<{ hasil: HasilBacaKtp; skor: number }>): HasilBacaKtp[] => {
+    const peta = new Map<string, { hasil: HasilBacaKtp; skor: number }>();
+    daftar.forEach((x, i) => {
+      const kunci = x.hasil.medan.nik || `tanpa-nik-${i}`;
+      const lama = peta.get(kunci);
+      if (!lama || x.skor > lama.skor) peta.set(kunci, x);
+    });
+    return [...peta.values()].map((x) => x.hasil);
+  };
+
+  // 1. Lapisan teks per halaman.
+  const dariTeks: Array<{ hasil: HasilBacaKtp; skor: number }> = [];
+  for (const h of isi.halaman.slice(0, HALAMAN_MAKS_BANYAK + 1)) {
+    if (!h.teks.trim()) continue;
+    const urai = uraiTeksIdentitas(h.teks, tahunKini);
+    const skor = skorUrai(urai);
+    if (skor < SKOR_TEKS_PDF) continue;
+    dariTeks.push({
+      skor,
+      hasil: { ok: true, teks: h.teks, medan: urai.medan, nik: urai.nik, catatan: urai.catatan, terbaca: urai.terbaca, sumber: "teks-pdf" },
+    });
+  }
+  if (dariTeks.length) return unikNik(dariTeks);
+
+  // 2. Pindaian: OCR tiap halaman.
+  if (!(await mesinOcrAda(opsi.spawn))) return [kosongKtp("ocr-pdf", "ocr_belum_tersedia", PESAN_OCR_BELUM_ADA)];
+  const pembantu = opsi.pembantu ?? pembantuAnakBanyak;
+  const gambar = await pembantu("pdf", buffer, batasSampai - Date.now());
+  if (!gambar) {
+    return [kosongKtp("ocr-pdf", "pdf_tanpa_kanvas", "PDF ini berupa pindaian, tetapi halamannya tidak dapat digambar untuk dibaca.")];
+  }
+  const dariOcr: Array<{ hasil: HasilBacaKtp; skor: number }> = [];
+  let gagal: { alasan: HasilBacaKtp["alasan"]; pesan: string } | undefined;
+  try {
+    for (let hal = 1; gambar.has(`hal${hal}-abu`); hal += 1) {
+      if (batasSampai - Date.now() < 2500) break;
+      const varian = new Map<string, Buffer>();
+      for (const v of ["abu", "biner"]) {
+        const b = gambar.get(`hal${hal}-${v}`);
+        if (b) varian.set(v, b);
+      }
+      const r = await ocrLintasan(varian, LINTASAN_PRA, batasSampai, opsi, hal);
+      if (r.gagal) gagal = r.gagal;
+      if (r.gagal && r.gagal.alasan === "ocr_belum_tersedia") break;
+      if (!r.lintasan.length) continue;
+      const hasil = jadiHasil(r.lintasan, "ocr-pdf", tahunKini);
+      if (hasil.ok && (hasil.medan.nik || hasil.medan.tanggalTerbit)) {
+        dariOcr.push({ hasil, skor: Math.max(...r.lintasan.map((l) => l.skor)) });
+      }
+    }
+  } finally {
+    hapusVarian(gambar);
+  }
+  if (dariOcr.length) return unikNik(dariOcr);
+  return [kosongKtp("ocr-pdf", gagal?.alasan ?? "tidak_terbaca", gagal?.pesan ?? "Tidak satu pun halaman terbaca sebagai KTP.")];
+}
+/* === AKHIR KTP-PIHAK === */

@@ -788,11 +788,15 @@ async function recordFile({
   // Kolom lama diisi jalur berkas TERAKHIR tiap format, sehingga seluruh kode
   // yang sudah ada - pekerja notifikasi, menu verifikasi hakim - tetap
   // berjalan tanpa satu baris pun diubah.
-  const kolom = String(format) === "word" ? "berkas_word" : "berkas_pdf";
-  await botDb.query(
-    `UPDATE aleta_bot_ecourt_documents SET ${kolom} = ?, updated_at = ? WHERE document_key = ?`,
-    [String(jalurBerkas || ""), sekarang, String(documentKey || "")]
-  );
+  // 12 Okt (KTP-PIHAK): foto KTP ("gambar") TIDAK dicerminkan ke kolom lama - kode lama menganggap
+  // isinya PDF/Word (lampiran WhatsApp, menu verifikasi); foto dibaca lewat ktpPihakService.
+  if (String(format) !== "gambar") {
+    const kolom = String(format) === "word" ? "berkas_word" : "berkas_pdf";
+    await botDb.query(
+      `UPDATE aleta_bot_ecourt_documents SET ${kolom} = ?, updated_at = ? WHERE document_key = ?`,
+      [String(jalurBerkas || ""), sekarang, String(documentKey || "")]
+    );
+  }
 
   return { baru: true, sudahAda: false };
 }

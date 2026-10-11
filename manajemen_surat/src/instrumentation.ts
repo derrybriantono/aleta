@@ -20,6 +20,12 @@ export async function register() {
     mulaiSelarasBerkala(getDatabase);
   }
   /* === AKHIR KAMUS-DB === */
+  /* === KTP-PIHAK 12 Okt === penyapu latar tanggal KTP pihak (ALETA_KTP_PIHAK_LATAR=0 mematikan). */
+  if (process.env.ALETA_KTP_PIHAK_LATAR !== "0") {
+    const { mulaiPindaiKtpBerkala } = await import("@/server/modules/aleta-ecourt/ktp-pihak");
+    mulaiPindaiKtpBerkala();
+  }
+  /* === AKHIR KTP-PIHAK === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

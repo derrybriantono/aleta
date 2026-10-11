@@ -2846,6 +2846,67 @@ router.post("/sipp/penanda-jawaban", requireInternalToken, async (req, res) => {
   }
 });
 
+/* === KTP-PIHAK 12 Okt === */
+// Tanggal KTP pihak dari berkas KTP e-Court (butir 14-15). Portal yang membaca
+// (pdfjs + tesseract ada di citranya); bot menyerahkan berkas, mencocokkan ke
+// pihak SIPP, dan menyimpan di aleta_bot_ktp_pihak. Lihat services/ktpPihakService.js.
+const ktpPihakService = require("../services/ktpPihakService");
+
+router.get("/sipp/ktp-pihak/antrian", requireInternalToken, async (req, res) => {
+  try {
+    const nomor = String(req.query.nomor || "")
+      .split("|")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const berkas = await ktpPihakService.antrian({
+      nomor,
+      batas: Number(req.query.batas) || 6,
+      versi: Number(req.query.versi) || ktpPihakService.VERSI_KTP_PIHAK,
+    });
+    res.json({ ok: true, berkas, versi: ktpPihakService.VERSI_KTP_PIHAK });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.get("/sipp/ktp-pihak/berkas", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ktpPihakService.berkas(String(req.query.fileId || ""));
+    if (!hasil.ok) {
+      res.status(404).json({ ok: false, alasan: hasil.alasan });
+      return;
+    }
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Length", String(hasil.isi.length));
+    res.send(hasil.isi);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/sipp/ktp-pihak", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ktpPihakService.simpan(Array.isArray(req.body?.hasil) ? req.body.hasil : []);
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Tanggal KTP tiap pihak satu perkara: ?nomor=535/Pdt.G/2026/PA.Dgl (atau ?perkaraId=). */
+router.get("/sipp/ktp-pihak/perkara", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ktpPihakService.perkaraKtp({
+      nomorPerkara: String(req.query.nomor || ""),
+      perkaraId: Number(req.query.perkaraId) || undefined,
+    });
+    res.json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/* === AKHIR KTP-PIHAK === */
+
 /** Daftar sidang pada rentang tanggal. */
 router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
   try {

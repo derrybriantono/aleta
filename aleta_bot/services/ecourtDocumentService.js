@@ -103,7 +103,7 @@ function jalurDiDalamArsip(storedPath) {
  * @param {{ batasByte?: number }} [pilihan]
  * @returns {{ ok: boolean, reason?: string, absolutePath?: string, fileName?: string, size?: number }}
  */
-function describeEcourtDocument(storedPath, { batasByte = Infinity } = {}) {
+function describeEcourtDocument(storedPath, { batasByte = Infinity, ekstensiTambahan = null } = {}) {
   const raw = String(storedPath || "").trim();
   if (!raw) return { ok: false, reason: "Path berkas kosong." };
 
@@ -119,7 +119,8 @@ function describeEcourtDocument(storedPath, { batasByte = Infinity } = {}) {
   }
 
   const extension = path.extname(absolutePath).toLowerCase();
-  if (!ALLOWED_EXTENSIONS.has(extension)) {
+  // 12 Okt (KTP-PIHAK): pembaca KTP boleh membaca foto (.jpg/.png) yang bukan lampiran WhatsApp.
+  if (!ALLOWED_EXTENSIONS.has(extension) && !(ekstensiTambahan && ekstensiTambahan.has(extension))) {
     return { ok: false, reason: `Ekstensi berkas tidak didukung: ${extension || "tanpa ekstensi"}.` };
   }
 

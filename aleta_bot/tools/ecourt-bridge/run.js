@@ -417,7 +417,8 @@ async function downloadFile(page, url, targetPath) {
  * tidak tertimpa, dan berkas yang isinya sama persis tidak tersimpan dua kali.
  */
 async function simpanBerkas({ folder, judul, format, unduh, documentKey, nomorPerkara, sumberUrl }) {
-  const ekstensi = guessExtension(sumberUrl, unduh.contentType);
+  // 12 Okt (KTP-PIHAK): foto KTP berekstensi menurut ISINYA (bait awal), bukan menurut alamat/tipe kiriman.
+  const ekstensi = format === "gambar" ? ekstensiGambar(unduh.isi) : guessExtension(sumberUrl, unduh.contentType);
   const nama = safeFileName(`${judul || "dokumen"}__${unduh.sidikJari.slice(0, 8)}`, ekstensi);
   const target = path.join(folder, nama);
 
@@ -468,6 +469,13 @@ async function simpanBerkas({ folder, judul, format, unduh, documentKey, nomorPe
 
   return { ...catatan, nama, target, ditulis };
 }
+
+/* === KTP-PIHAK 12 Okt === */
+/** .png untuk PNG, selain itu .jpg (isinya sudah diperiksa berkasIntegritasService.gambarKtp). */
+function ekstensiGambar(isi) {
+  return Buffer.isBuffer(isi) && isi.length > 4 && isi[0] === 0x89 && isi[1] === 0x50 ? ".png" : ".jpg";
+}
+/* === AKHIR KTP-PIHAK === */
 
 /** Menebak ekstensi berkas dari alamat atau tipe isinya. */
 function guessExtension(url, contentType = "") {
@@ -1140,7 +1148,20 @@ async function processCase(page, url, ringkasan, args, acuan) {
           // Menyimpannya berarti mencatat perkara itu SUDAH LENGKAP, sehingga
           // penarikan berikutnya melewatinya - dan kerusakannya baru ketahuan
           // saat ada yang membukanya, kadang berbulan kemudian.
-          const periksa = berkasIntegritasService.periksaIsi(unduh.isi, { format: item.format });
+          let periksa = berkasIntegritasService.periksaIsi(unduh.isi, { format: item.format });
+          /* === KTP-PIHAK 12 Okt === */
+          // Foto KTP (JPEG/PNG) yang diunggah pihak: bukan PDF, tetapi bahan pembaca tanggal KTP. Hanya untuk
+          // dokumen berjudul KTP dan isi yang benar-benar gambar utuh; disimpan sebagai format "gambar".
+          let formatSimpan = item.format;
+          if (!periksa.ok) {
+            const gambar = berkasIntegritasService.gambarKtp(unduh.isi, dokumen.judul);
+            if (gambar.ok) {
+              periksa = gambar;
+              formatSimpan = "gambar";
+              log(`    "${dokumen.judul}" berupa gambar (${gambar.jenis}) - disimpan sebagai gambar KTP.`);
+            }
+          }
+          /* === AKHIR KTP-PIHAK === */
           if (!periksa.ok) {
             log(`    Berkas ditolak ${item.format} "${dokumen.judul}": ${periksa.alasan}`);
             ringkasan.jumlahGalat += 1;
@@ -1153,7 +1174,7 @@ async function processCase(page, url, ringkasan, args, acuan) {
           const simpan = await simpanBerkas({
             folder,
             judul: dokumen.judul,
-            format: item.format,
+            format: formatSimpan,
             unduh,
             documentKey,
             nomorPerkara: detail.nomorPerkara,
