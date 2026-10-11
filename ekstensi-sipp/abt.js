@@ -17861,14 +17861,15 @@ function k5GambarKontak(wadah, data) {
  * kalimat izin atasan PNS/POLRI/TNI/BUMN-BUMD/perangkat desa - kini membaca
  * kategori pekerjaan #0046# secara DINAMIS (paket abt-pekerjaan-dinamis):
  * pilihan SIPP baku tetap seperti dulu; "Lain-Lain" dibaca dari uraiannya
- * (PNS/ASN/CPNS/PPPK -> PNS, Anggota Polri -> POLRI, ...; pensiunan, honorer,
+ * (PNS/ASN -> PNS, PPPK -> "Aparatur Sipil Negara (PPPK)", Anggota Polri -> POLRI, ...; pensiunan, CPNS, PPPK paruh waktu, honorer,
  * kontrak, swasta -> bukan). Kartu ini MENAMPILKAN hasil baca itu untuk tiap
  * pihak (bot: data.sipp.pekerjaanPihak - aturan yang sama, kamus
  * pekerjaan.json) agar petugas tahu MENGAPA kalimat izin atasan muncul atau
  * tidak. Tidak menulis apa pun.
  */
 const PK_ROMAWI = ["", "", " II", " III", " IV", " V"];
-const PK_KATEGORI_IZIN = Object.freeze(["PNS", "POLRI", "TNI", "BUMN", "BUMD", "DESA"]);
+const PK_KATEGORI_IZIN = Object.freeze(["PNS", "PPPK", "POLRI", "TNI", "BUMN", "BUMD", "DESA"]);
+const PK_KATEGORI_TERGUGAT = Object.freeze(["PNS", "PPPK", "POLRI", "TNI"]);
 
 /** Satu baris kartu (murni). */
 function pkBarisPihak(o) {
@@ -17881,7 +17882,7 @@ function pkBarisPihak(o) {
     o.kunci === "KOSONG"
       ? "pekerjaan belum diisi di SIPP"
       : kategori
-        ? `${kategori}${o.asal === "pppk" ? " (PPPK, digabung ke PNS)" : ""} (dari teks '${o.pekerjaan}', ${pilihan})`
+        ? `${kategori} (dari teks '${o.pekerjaan}', ${pilihan})`
         : `${o.kalimat || o.pekerjaan}`;
   return `${sebutan}${o.nama ? ` - ${o.nama}` : ""}: ${isi}`;
 }
@@ -17908,6 +17909,18 @@ function pkGambarPekerjaan(wadah, data) {
         : "Kalimat izin atasan (#8510#/#8524#/#8533#) TIDAK dipakai untuk pekerjaan #0046# ini. Hanya dibaca, tidak ada yang ditulis dari sini."
     )
   );
+  // Keputusan pengguna 11 Okt (5): Tergugat/Termohon PNS/PPPK/POLRI/TNI -> kalimat kewajiban pemberitahuan gugatan
+  // kepada atasannya disambung di #8524# (disusun dari PP 45/1990 Pasal 3 - perlu ditinjau hakim).
+  const p2 = daftar.find((o) => Number(o.pihakKe) === 2 && Number(o.urutan) === 1) || null;
+  if (p2 && PK_KATEGORI_TERGUGAT.includes(p2.kunci)) {
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-t6-lembut aleta-teknis",
+        `#0047# ${p2.label || p2.kunci}: #8524# juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan #0047# (disusun dari PP 10/1983 jo. PP 45/1990 Pasal 3 - mohon ditinjau hakim).`
+      )
+    );
+  }
   wadah.appendChild(kotak);
 }
 /* === AKHIR PEKERJAAN === */
