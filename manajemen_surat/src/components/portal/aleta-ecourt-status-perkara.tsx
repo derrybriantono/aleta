@@ -36,6 +36,9 @@ import {
 import { AletaPromptPutusan } from "@/components/portal/aleta-prompt-putusan";
 import { NomorSidang, TombolUnduh } from "@/components/portal/aleta-ecourt-sidang";
 import { TombolUnduhZip } from "@/components/portal/tombol-unduh-zip";
+/* === STATUS-ZIP 12 Okt === */
+import { KontakPihak } from "@/components/portal/kontak-para-pihak";
+/* === AKHIR STATUS-ZIP === */
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -3370,6 +3373,12 @@ function IsiStatus({
                     {bolehBertanda(orang) ? (
                       <PenandaRiwayatPihak nama={orang.nama} pihakKe={orang.pihakKe} />
                     ) : null}
+                    {/* === STATUS-ZIP 12 Okt === Email, nomor WhatsApp, dan kesediaan
+                        sidang elektronik (e-Litigasi) pihak dan kuasa. Saksi tidak. */}
+                    {orang.pihakKe === 1 || orang.pihakKe === 2 ? (
+                      <KontakPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} />
+                    ) : null}
+                    {/* === AKHIR STATUS-ZIP === */}
                     {terbuka ? (
                       <KartuIdentitasPihak
                         orang={identitas.cari(orang.nama)}

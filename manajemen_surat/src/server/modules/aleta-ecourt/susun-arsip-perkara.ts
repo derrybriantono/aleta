@@ -8,6 +8,26 @@ import {
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { type BerkasZip } from "@/server/shared/zip";
 import { tabelCsv } from "@/lib/csv";
+/* === STATUS-ZIP 12 Okt === */
+// Daftar kategori hidup di lib/ supaya dialog pilihan di peramban memakai yang
+// sama dengan penyusun ini; diekspor ulang agar pemanggil lama tidak berubah.
+import {
+  FOLDER_KATEGORI_ARSIP,
+  KATEGORI_ARSIP,
+  LABEL_KATEGORI_ARSIP,
+  kategoriDariNama,
+  uraiKategoriArsip,
+  type KategoriArsip,
+} from "@/lib/kategori-zip";
+export {
+  FOLDER_KATEGORI_ARSIP,
+  KATEGORI_ARSIP,
+  LABEL_KATEGORI_ARSIP,
+  kategoriDariNama,
+  uraiKategoriArsip,
+  type KategoriArsip,
+};
+/* === AKHIR STATUS-ZIP === */
 // Kalimat ringkasan yang SAMA dengan tombol "Salin ringkasan" di layar Status
 // Perkara. ringkasStatus fungsi murni tanpa DOM, jadi ia dapat dipanggil di
 // peladen - dan menulis kalimat kedua di sini berarti dua sumber kebenaran yang
@@ -123,6 +143,116 @@ export const BATAS_SELURUH_MS = Number(process.env.ALETA_ZIP_TIMEOUT_TOTAL_MS ||
  */
 export const BATAS_SELURUH_ALIR_MS = Number(process.env.ALETA_ZIP_TIMEOUT_ALIR_MS || 600_000);
 
+/* === STATUS-ZIP 12 Okt === */
+
+/**
+ * ============================================================================
+ * BATAS UNTUK ZIP YANG DIALIRKAN - DAN KENAPA 200 MB MENGHILANGKAN BERKAS
+ * (12 Oktober 2026, butir 10 "download semua perkara tidak terdownload semua")
+ * ============================================================================
+ *
+ * Jejak audit ECOURT_PERKARA_ZIP_LENGKAP atas 273/Pdt.G/2026/PA.Dgl, tiga kali
+ * (7 Oktober 2026): jumlahBerkas 66, totalByte 209.690.308, jumlahDilewati 74.
+ * Batas ukuran lama 200 MB = 209.715.200 byte - ZIP-nya berhenti 24 KB di
+ * bawah batas itu. Pemindaian resi pos dan relaas (2-4 MB sebuah, 98 berkas)
+ * menghabiskan jatah lebih dahulu; berita acara sidang, penetapan, dan seluruh
+ * dokumen e-Court datang SESUDAHNYA dan ditolak "melewati batas ukuran ZIP".
+ * Yang lolos hanya yang cukup kecil untuk muat di sisa 24 KB: dua BAS (16 KB
+ * dan 28 KB) - persis isi ZIP pada tangkapan layar pengguna.
+ *
+ * Batas 200 MB itu dibuat ketika ZIP disusun PENUH di memori. Sejak 6 Oktober
+ * 2026 ZIP dialirkan (buatPenulisZip): memori portal hanya memegang SATU berkas
+ * dan antrian paling banyak 8 MB, jadi batas itu tidak lagi menjaga apa pun -
+ * ia hanya membuang berkas. Untuk jalur alir batasnya kini ditentukan oleh
+ * bentuk ZIP sendiri: penulis ZIP ini ZIP32 (tanpa ZIP64), sehingga isinya
+ * harus di bawah 4 GiB dan di bawah 65.535 entri. Batas bawaan sengaja di
+ * bawahnya (3,5 GiB, 5.000 entri) dan dapat diubah lewat ALETA_ZIP_MAKS_BYTE /
+ * ALETA_ZIP_MAKS_BERKAS - tidak pernah melewati batas ZIP32.
+ *
+ * Jalur yang MENAMPUNG isi di memori (sinkron Google Drive, tanpa `alir`)
+ * tetap memakai BATAS_BERKAS / BATAS_TOTAL_BYTE di atas.
+ */
+const BATAS_ZIP32_BYTE = 0xf0000000; // di bawah 4 GiB: sisa untuk daftar isi + kepala
+export const BATAS_TOTAL_BYTE_ALIR = Math.min(
+  Number(process.env.ALETA_ZIP_MAKS_BYTE || 3.5 * 1024 * 1024 * 1024),
+  BATAS_ZIP32_BYTE
+);
+export const BATAS_BERKAS_ALIR = Math.min(Number(process.env.ALETA_ZIP_MAKS_BERKAS || 5000), 60_000);
+
+/**
+ * Subfolder e-Court menurut JENIS dokumen (butir 10: "e-Court/<jenis>").
+ *
+ * Jenis resmi dari e-Court dipakai apa adanya (Jawaban, Replik, Duplik,
+ * Kesimpulan, Rereplik, Perbaikan Gugatan, ...). Dokumen yang jenisnya kosong -
+ * terukur 2.070 dari 2.151 dokumen di aleta_bot_ecourt_documents: gugatan,
+ * KTP, surat kuasa, alat bukti - dikelompokkan dari judulnya; yang tetap tidak
+ * terbaca masuk "Lainnya". Tidak pernah dibuang.
+ */
+export function folderJenisEcourt(item: { jenisDokumen?: string; judulDokumen?: string }): string {
+  const jenis = String(item.jenisDokumen ?? "").trim();
+  if (jenis) return namaAman(jenis, "Lainnya");
+  const judul = String(item.judulDokumen ?? "").toLowerCase();
+  if (/rereplik/.test(judul)) return "Rereplik";
+  if (/reduplik|rerduplik/.test(judul)) return "Reduplik";
+  if (/duplik/.test(judul)) return "Duplik";
+  if (/replik/.test(judul)) return "Replik";
+  if (/jawaban/.test(judul)) return "Jawaban";
+  if (/kesimpulan/.test(judul)) return "Kesimpulan";
+  if (/gugatan|permohonan/.test(judul)) return "Gugatan dan permohonan";
+  if (/kuasa/.test(judul)) return "Surat kuasa";
+  if (/bukti|ktp|kartu|sumpah|penyumpahan|saksi|akta|surat\s+(nikah|keterangan)|foto/.test(judul)) return "Alat bukti";
+  return "Lainnya";
+}
+
+/** Satu berkas yang tercatat tetapi tidak ikut - dan SEBABNYA (butir 10). */
+export type BarisGagal = {
+  kategori: KategoriArsip | "umum";
+  nama: string;
+  sebab: string;
+  /** "gagal" = diminta tetapi tidak terambil; "tidak diminta" = sengaja tidak ikut. */
+  status: "gagal" | "tidak diminta";
+};
+
+/** Kategori sebuah jenis berkas SIPP - untuk catatan gagal yang tidak punya nama entri ZIP. */
+function kategoriJenisSipp(jenis: JenisBerkasSipp): KategoriArsip {
+  switch (jenis) {
+    case "relaas":
+    case "resi":
+      return "relaas";
+    case "bas":
+      return "bas";
+    case "putusan":
+    case "putusan-anonim":
+      return "putusan";
+    case "penetapan":
+    case "ikrar-talak":
+      return "penetapan";
+    case "arsip":
+      return "arsip";
+    case "petitum":
+      return "gugatan";
+    default:
+      return "lainnya";
+  }
+}
+
+/**
+ * Kalimat awam untuk alasan penolakan bot - "HTTP 404 - berkas_tidak_ditemukan_di_server"
+ * tidak menjawab apa yang harus diperiksa petugas. Alasan yang tidak dikenal
+ * dibiarkan apa adanya (tanpa tambahan).
+ */
+function keteranganAlasanBot(alasan: string): string {
+  const peta: Record<string, string> = {
+    berkas_tidak_ditemukan_di_server:
+      " (tercatat di SIPP, tetapi berkasnya tidak ada di folder SIPP yang terpasang pada bot - periksa mount SIPP)",
+    berkas_tidak_tercatat: " (tidak tercatat pada database SIPP)",
+    jenis_tidak_dikenali: " (jenis berkas ditolak bot - bot lebih lama dari portal?)",
+  };
+  return peta[alasan] ?? "";
+}
+
+/* === AKHIR STATUS-ZIP === */
+
 /**
  * Jalur ALIR: tiap entri diserahkan ke pemanggil begitu lolos batas, bukan
  * ditampung di isiZip. Dipakai rute unduh supaya ZIP mengalir ke peramban
@@ -200,6 +330,13 @@ export type OpsiArsipPerkara = {
   batasSeluruhMs?: number;
   /** Bila ada: entri dialirkan lewat alir.kirim dan isiZip pulang kosong. */
   alir?: AlirArsip;
+  /* === STATUS-ZIP 12 Okt === */
+  /**
+   * Kategori yang dipilih (butir 11). Tidak disebut = perilaku lama: seluruh
+   * kategori, dan arsip fisik hanya bila sertakanArsip.
+   */
+  kategori?: KategoriArsip[] | null;
+  /* === AKHIR STATUS-ZIP === */
 };
 
 export type HasilArsipPerkara = {
@@ -218,6 +355,10 @@ export type HasilArsipPerkara = {
   jumlahSippTercatat: number;
   jumlahEcourtTercatat: number;
   mulai: number;
+  /* === STATUS-ZIP 12 Okt === */
+  /** Berkas yang tercatat tetapi tidak ikut, beserta sebabnya (juga ada di DAFTAR ISI.csv). */
+  gagal?: BarisGagal[];
+  /* === AKHIR STATUS-ZIP === */
 };
 
 /**
@@ -228,18 +369,38 @@ export type HasilArsipPerkara = {
  */
 export function namaBerkasArsipPerkara(
   nomor: string,
-  pilihan: { lengkap: boolean; sumber: "semua" | "ecourt" | "sipp" }
+  pilihan: {
+    lengkap: boolean;
+    sumber: "semua" | "ecourt" | "sipp";
+    /** Bila hanya sebagian kategori: namanya ikut disebut ("perkara-273-...-bas-relaas.zip"). */
+    kategori?: KategoriArsip[] | null;
+  }
 ) {
   const awalan = pilihan.lengkap ? "perkara" : pilihan.sumber === "ecourt" ? "ecourt" : "berkas";
-  return `${awalan}-${namaAman(nomor, "perkara").replace(/[^\w.-]+/g, "-")}.zip`;
+  const dasar = `${awalan}-${namaAman(nomor, "perkara").replace(/[^\w.-]+/g, "-")}`;
+  const sebagian =
+    pilihan.kategori && pilihan.kategori.length > 0
+      ? pilihan.kategori.length === KATEGORI_ARSIP.length - 1 && !pilihan.kategori.includes("arsip")
+        ? ""
+        : `-${pilihan.kategori.join("-")}`
+      : "";
+  return `${dasar}${sebagian}.zip`;
 }
 
 export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilArsipPerkara> {
   const { nomor, sumber, lengkap, sertakanArsip } = opsi;
   const ambilEcourt = sumber !== "sipp";
   const ambilSipp = sumber !== "ecourt";
-  const batasBerkas = opsi.batasBerkas ?? BATAS_BERKAS;
-  const batasTotalByte = opsi.batasTotalByte ?? BATAS_TOTAL_BYTE;
+  /* === STATUS-ZIP 12 Okt === */
+  // Jalur alir tidak menampung isinya di memori - batasnya BATAS_*_ALIR (lihat
+  // catatan di atas). Jalur yang menampung (sinkron Drive) tetap BATAS_*.
+  const batasBerkas = opsi.batasBerkas ?? (opsi.alir ? BATAS_BERKAS_ALIR : BATAS_BERKAS);
+  const batasTotalByte = opsi.batasTotalByte ?? (opsi.alir ? BATAS_TOTAL_BYTE_ALIR : BATAS_TOTAL_BYTE);
+  const pilih = opsi.kategori && opsi.kategori.length > 0 ? new Set<KategoriArsip>(opsi.kategori) : null;
+  /** Apakah kategori ini diminta. Tanpa pilihan = perilaku lama; arsip fisik hanya bila sertakanArsip. */
+  const dapat = (k: KategoriArsip) => (pilih ? pilih.has(k) : k === "arsip" ? sertakanArsip : true);
+  const arsipDiminta = lengkap && dapat("arsip");
+  /* === AKHIR STATUS-ZIP === */
   const batasSatuBerkasMs = opsi.batasSatuBerkasMs ?? BATAS_SATU_BERKAS_MS;
   const batasSeluruhMs = opsi.batasSeluruhMs ?? BATAS_SELURUH_MS;
   {
@@ -255,6 +416,23 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
     const isiZip: BerkasZip[] = [];
     const daftar: BarisDaftar[] = [];
     const dilewati: string[] = [];
+    /* === STATUS-ZIP 12 Okt === */
+    const gagal: BarisGagal[] = [];
+    /**
+     * Mencatat satu berkas yang tidak ikut - SEKALI, dua tempat: kalimat pada
+     * KETERANGAN.txt (dilewati) dan baris terstruktur pada DAFTAR ISI.csv
+     * (gagal). Tidak ada berkas yang tercatat tetapi tidak ikut tanpa sebab.
+     */
+    const catat = (
+      kategori: KategoriArsip | "umum",
+      nama: string,
+      sebab: string,
+      status: BarisGagal["status"] = "gagal"
+    ) => {
+      dilewati.push(`${nama}: ${sebab}`);
+      gagal.push({ kategori, nama, sebab, status });
+    };
+    /* === AKHIR STATUS-ZIP === */
     let totalByte = 0;
     // Jumlah dan nama entri dihitung sendiri, bukan dibaca dari isiZip: pada
     // jalur alir isiZip tetap kosong karena tiap entri langsung dikirim.
@@ -281,15 +459,19 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       keterangan: { jenis: string; tanggal: string; asal: string }
     ): boolean => {
       if (isi.byteLength === 0) {
-        dilewati.push(`${nama}: berkasnya kosong`);
+        catat(kategoriDariNama(nama), nama, "berkasnya kosong");
         return false;
       }
       if (jumlahIsi >= batasBerkas) {
-        dilewati.push(`${nama}: melewati batas ${batasBerkas} berkas`);
+        catat(kategoriDariNama(nama), nama, `melewati batas ${batasBerkas} berkas`);
         return false;
       }
       if (totalByte + isi.byteLength > batasTotalByte) {
-        dilewati.push(`${nama}: melewati batas ukuran ZIP`);
+        catat(
+          kategoriDariNama(nama),
+          nama,
+          `melewati batas ukuran ZIP (${Math.round(batasTotalByte / 1048576)} MB; sudah ${Math.round(totalByte / 1048576)} MB)`
+        );
         return false;
       }
       simpan({ nama, isi });
@@ -322,19 +504,25 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
      */
     const tarikSipp = async (
       jenis: JenisBerkasSipp,
-      id: string
+      id: string,
+      /* === STATUS-ZIP 12 Okt === */
+      // Uraian yang DIBACA orang untuk catatan gagal ("Relaas 2026-05-01 - Penggugat
+      // - Fulan"), bukan hanya "relaas #13329". Nomor barisnya tetap ikut di
+      // belakang supaya dapat dilacak ke SIPP.
+      uraian = ""
+      /* === AKHIR STATUS-ZIP === */
     ): Promise<{ isi: Buffer; nama: string } | null> => {
+      const katGagal = kategoriJenisSipp(jenis);
+      const sebutGagal = uraian ? `${uraian} [${jenis} #${id}]` : `${jenis} #${id}`;
       if (waktuHabis()) {
-        dilewati.push(
-          `${jenis} #${id}: batas waktu ${Math.round(batasSeluruhMs / 1000)} detik terlampaui`
-        );
+        catat(katGagal, sebutGagal, `batas waktu ${Math.round(batasSeluruhMs / 1000)} detik terlampaui`);
         return null;
       }
       try {
         // Jalur alir: tunggu peramban menghabiskan antrian dulu.
         await alir?.tunggu?.();
       } catch (galat) {
-        dilewati.push(`${jenis} #${id}: ${String((galat as Error)?.message || galat).slice(0, 120)}`);
+        catat(katGagal, sebutGagal, String((galat as Error)?.message || galat).slice(0, 120));
         return null;
       }
       const pembatal = new AbortController();
@@ -349,7 +537,11 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
             .json()
             .then((x) => String(x?.alasan || x?.error || "").slice(0, 120))
             .catch(() => "");
-          dilewati.push(`${jenis} #${id}: HTTP ${respons.status}${alasan ? ` - ${alasan}` : ""}`);
+          catat(
+            katGagal,
+            sebutGagal,
+            `HTTP ${respons.status}${alasan ? ` - ${alasan}` : ""}${keteranganAlasanBot(alasan)}`
+          );
           return null;
         }
         return {
@@ -359,7 +551,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       } catch (galat) {
         // Satu berkas yang tidak terbaca tidak menggagalkan seluruh ZIP - dan
         // di peladen ini ada satu inode XFS rusak yang memang begitu.
-        dilewati.push(`${jenis} #${id}: ${String((galat as Error)?.message || galat).slice(0, 120)}`);
+        catat(katGagal, sebutGagal, String((galat as Error)?.message || galat).slice(0, 120));
         return null;
       } finally {
         clearTimeout(jam);
@@ -399,15 +591,17 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       sebutan: string
     ): Promise<{ isi: Buffer; nama: string } | null> => {
       if (waktuHabis()) {
-        dilewati.push(
-          `${sebutan} (${bentuk}): batas waktu ${Math.round(batasSeluruhMs / 1000)} detik terlampaui`
+        catat(
+          "ecourt",
+          `${sebutan} (${bentuk})`,
+          `batas waktu ${Math.round(batasSeluruhMs / 1000)} detik terlampaui`
         );
         return null;
       }
       try {
         await alir?.tunggu?.();
       } catch (galat) {
-        dilewati.push(`${sebutan} (${bentuk}): ${String((galat as Error)?.message || galat).slice(0, 120)}`);
+        catat("ecourt", `${sebutan} (${bentuk})`, String((galat as Error)?.message || galat).slice(0, 120));
         return null;
       }
       const pembatal = new AbortController();
@@ -417,7 +611,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         if (!respons.ok) {
           // Satu berkas gagal tidak menggagalkan seluruh ZIP: yang lain tetap
           // berguna, dan yang gagal disebutkan namanya.
-          dilewati.push(`${sebutan} (${bentuk}): HTTP ${respons.status}`);
+          catat("ecourt", `${sebutan} (${bentuk})`, `HTTP ${respons.status}`);
           return null;
         }
         return {
@@ -425,9 +619,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           nama: namaDariDisposisi(respons.headers.get("content-disposition")),
         };
       } catch (galat) {
-        dilewati.push(
-          `${sebutan} (${bentuk}): ${String((galat as Error)?.message || galat).slice(0, 120)}`
-        );
+        catat("ecourt", `${sebutan} (${bentuk})`, String((galat as Error)?.message || galat).slice(0, 120));
         return null;
       } finally {
         clearTimeout(jam);
@@ -455,11 +647,12 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
     // penetapan ikrar talak, dan berkas pindaian arsip - ketiganya sudah punya
     // tombol satuan di layar Status Perkara, tetapi tidak pernah ikut ZIP.
     let statusPerkara: Record<string, any> | null = null;
-    if (lengkap) {
+    // Tanpa kategori yang membutuhkannya (data, penetapan, arsip fisik) status
+    // perkara tidak perlu ditarik sama sekali.
+    if (lengkap && (dapat("data") || dapat("penetapan") || dapat("arsip"))) {
       const jawab = await getGatewayStatusPerkara(nomor);
-      if (!jawab.ok) dilewati.push(`Data SIPP: ${jawab.error || "tidak terbaca"}`);
-      else if (!jawab.data?.ok)
-        dilewati.push(`Data SIPP: ${String(jawab.data?.alasan || "tidak terbaca")}`);
+      if (!jawab.ok) catat("data", "Data SIPP", String(jawab.error || "tidak terbaca"));
+      else if (!jawab.data?.ok) catat("data", "Data SIPP", String(jawab.data?.alasan || "tidak terbaca"));
       else statusPerkara = jawab.data as Record<string, any>;
     }
 
@@ -529,7 +722,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
     // Letaknya di SINI, sebelum satu berkas pun ditarik, karena taruh()
     // menegakkan BATAS_BERKAS menurut urutan pemanggilan - lihat catatan pada
     // BATAS_BERKAS di atas.
-    if (statusPerkara) {
+    if (statusPerkara && dapat("data")) {
       const s = statusPerkara;
 
       const json = Buffer.from(JSON.stringify(statusPerkara, null, 2), "utf8");
@@ -1050,9 +1243,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           asal: "lib/ringkas-status",
         });
       } catch (galat) {
-        dilewati.push(
-          `RINGKASAN.txt: ${String((galat as Error)?.message || galat).slice(0, 120)}`
-        );
+        catat("data", "RINGKASAN.txt", String((galat as Error)?.message || galat).slice(0, 120));
       }
     }
 
@@ -1060,21 +1251,21 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
     // SUMBER 1 - BERKAS YANG TERSIMPAN DI SIPP
     // ========================================================================
     let jumlahSippTercatat = 0;
-    if (ambilSipp) {
+    if (ambilSipp && (dapat("gugatan") || dapat("relaas") || dapat("bas") || dapat("putusan") || dapat("lainnya"))) {
       const sidang = await getGatewayRincianSidang(nomor, "");
       if (!sidang.ok) {
-        dilewati.push(`Berkas SIPP: ${sidang.error || "tidak terbaca"}`);
+        catat("umum", "Berkas SIPP", String(sidang.error || "tidak terbaca"));
       } else if (!sidang.data.ok) {
-        dilewati.push(`Berkas SIPP: ${sidang.data.alasan || "tidak terbaca"}`);
+        catat("umum", "Berkas SIPP", String(sidang.data.alasan || "tidak terbaca"));
       } else {
         const r = sidang.data;
         const perkaraId = String(r.perkaraId || "");
 
         // 01 Gugatan - berkas yang paling sering dicari, dan tempatnya bukan
         // perkara_dokumen melainkan kolom petitum_dok pada tabel perkara.
-        if (r.petitum?.ada && perkaraId) {
+        if (dapat("gugatan") && r.petitum?.ada && perkaraId) {
           jumlahSippTercatat += 1;
-          const berkas = await tarikSipp("petitum", perkaraId);
+          const berkas = await tarikSipp("petitum", perkaraId, "Surat gugatan atau permohonan");
           if (berkas) {
             // Nama dari bot lebih dipercaya daripada kolomnya: yang dikirim
             // itulah yang dibaca. Cadangannya kolom petitum, lalu "docx" -
@@ -1090,7 +1281,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
 
         // 02 Relaas - urut tanggal panggilan, sebab urutan itulah yang
         // dibaca ketika kepatutan panggilan dipersoalkan.
-        const relaas = [...(r.relaas ?? [])].sort((a, b) =>
+        const relaas = [...(dapat("relaas") ? (r.relaas ?? []) : [])].sort((a, b) =>
           String(a.tanggalRelaas || "").localeCompare(String(b.tanggalRelaas || "")) ||
           String(a.id).localeCompare(String(b.id))
         );
@@ -1100,7 +1291,11 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           if (baris.adaDokumen) {
             jumlahSippTercatat += 1;
             nomorRelaas += 1;
-            const berkas = await tarikSipp("relaas", String(baris.id));
+            const berkas = await tarikSipp(
+              "relaas",
+              String(baris.id),
+              `Relaas ${baris.tanggalRelaas || "tanpa tanggal"} - ${baris.peran || "pihak"} - ${baris.namaPihak || ""}`.trim()
+            );
             if (berkas) {
               const judul = namaAman(
                 `${baris.tanggalRelaas || "tanpa tanggal"} - ${baris.peran || "pihak"} - ${baris.namaPihak || ""}`,
@@ -1116,7 +1311,11 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           if (baris.adaResi) {
             jumlahSippTercatat += 1;
             nomorResi += 1;
-            const berkas = await tarikSipp("resi", String(baris.id));
+            const berkas = await tarikSipp(
+              "resi",
+              String(baris.id),
+              `Resi pos ${baris.tanggalKirimPos || baris.tanggalRelaas || "tanpa tanggal"} - ${baris.namaPihak || ""}`.trim()
+            );
             if (berkas) {
               const judul = namaAman(
                 `${baris.tanggalKirimPos || baris.tanggalRelaas || "tanpa tanggal"} - ${baris.namaPihak || ""}`,
@@ -1138,7 +1337,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         // 03 BAS - urut sidang keberapa, bukan urutan baris yang kebetulan
         // terbaca lebih dulu. Perkara yang sidangnya pernah dijadwalkan ulang
         // menyimpan barisnya tidak berurutan di SIPP.
-        const jadwal = [...(r.jadwalPerkara ?? [])].sort(
+        const jadwal = [...(dapat("bas") ? (r.jadwalPerkara ?? []) : [])].sort(
           (a, b) =>
             (Number(a.urutanSidang) || 0) - (Number(b.urutanSidang) || 0) ||
             String(a.tanggalSidang || "").localeCompare(String(b.tanggalSidang || ""))
@@ -1148,7 +1347,11 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           if (!s.adaBas) continue;
           jumlahSippTercatat += 1;
           nomorBas += 1;
-          const berkas = await tarikSipp("bas", String(s.sidangId));
+          const berkas = await tarikSipp(
+            "bas",
+            String(s.sidangId),
+            `BAS sidang ke-${s.urutanSidang || nomorBas} (${s.tanggalSidang || "tanpa tanggal"}) - ${s.agenda || ""}`.trim()
+          );
           if (berkas) {
             const judul = namaAman(
               `Sidang ke-${s.urutanSidang || nomorBas} - ${s.tanggalSidang || ""} - ${s.agenda || ""}`,
@@ -1163,9 +1366,9 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         }
 
         // 04 Putusan dan salinan anonimnya.
-        if (r.putusan?.adaBerkasPutusan && perkaraId) {
+        if (dapat("putusan") && r.putusan?.adaBerkasPutusan && perkaraId) {
           jumlahSippTercatat += 1;
-          const berkas = await tarikSipp("putusan", perkaraId);
+          const berkas = await tarikSipp("putusan", perkaraId, "Putusan");
           if (berkas) {
             taruh(`04 Putusan/01 - Putusan.${ekstensiDari(berkas.nama, "rtf")}`, berkas.isi, {
               jenis: "Putusan",
@@ -1174,9 +1377,9 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
             });
           }
         }
-        if (r.putusan?.adaBerkasAnonim && perkaraId) {
+        if (dapat("putusan") && r.putusan?.adaBerkasAnonim && perkaraId) {
           jumlahSippTercatat += 1;
-          const berkas = await tarikSipp("putusan-anonim", perkaraId);
+          const berkas = await tarikSipp("putusan-anonim", perkaraId, "Putusan anonimisasi");
           if (berkas) {
             taruh(`04 Putusan/02 - Putusan anonimisasi.${ekstensiDari(berkas.nama, "rtf")}`, berkas.isi, {
               jenis: "Putusan anonimisasi",
@@ -1189,10 +1392,10 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         // 05 Lampiran lain. Kosong di satker ini - perkara_dokumen nol baris
         // dari 10.120 perkara - dan kekosongan itu bukan tanda kodenya rusak.
         let nomorLampiran = 0;
-        for (const d of r.dokumenSipp ?? []) {
+        for (const d of dapat("lainnya") ? (r.dokumenSipp ?? []) : []) {
           jumlahSippTercatat += 1;
           nomorLampiran += 1;
-          const berkas = await tarikSipp("dokumen", String(d.id));
+          const berkas = await tarikSipp("dokumen", String(d.id), `Lampiran ${d.namaDokumen || d.namaFile || ""}`.trim());
           if (!berkas) continue;
           const judul = namaAman(d.namaDokumen || d.namaFile, `lampiran-${d.id}`);
           // Nama dari bot lebih dipercaya daripada kolom nama_file: yang
@@ -1211,10 +1414,10 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
     // SUMBER 2 - ARSIP e-COURT
     // ========================================================================
     let jumlahEcourtTercatat = 0;
-    if (ambilEcourt) {
+    if (ambilEcourt && dapat("ecourt")) {
       const rincian = await getGatewayArsipRincian(nomor);
       if (!rincian.ok) {
-        dilewati.push(`Arsip e-Court: ${rincian.error || "tidak terbaca"}`);
+        catat("ecourt", "Arsip e-Court", String(rincian.error || "tidak terbaca"));
       } else {
         const dokumen = rincian.data?.dokumen ?? [];
         jumlahEcourtTercatat = dokumen.length;
@@ -1224,7 +1427,11 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           if (item.adaPdf) format.push("pdf");
           if (item.adaWord) format.push("word");
           if (format.length === 0) {
-            dilewati.push(`${item.judulDokumen || item.documentKey}: berkasnya belum tersimpan`);
+            catat(
+              "ecourt",
+              String(item.judulDokumen || item.documentKey),
+              "berkasnya belum tersimpan di server - tarik dari menu Kendali Berkas"
+            );
             continue;
           }
 
@@ -1237,7 +1444,9 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
             // ketika Content-Disposition benar-benar tidak ada.
             const ekstensi = ekstensiDari(berkas.nama, bentuk === "word" ? "docx" : "pdf");
             const judul = namaAman(item.judulDokumen, item.documentKey);
-            let nama = `06 e-Court/${duaAngka(urutan)} - ${judul}.${ekstensi}`;
+            // Subfolder menurut JENIS dokumen (butir 10, 12 Okt 2026).
+            const sub = folderJenisEcourt(item);
+            let nama = `06 e-Court/${sub}/${duaAngka(urutan)} - ${judul}.${ekstensi}`;
             // Dulu pdf selalu .pdf dan word selalu .docx, jadi dua bentuk satu
             // dokumen tidak mungkin bernama sama. Sesudah ekstensinya dibaca,
             // mungkin: ALLOWED_EXTENSIONS bot menerima .pdf untuk KEDUA bentuk
@@ -1245,7 +1454,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
             // satu ZIP membuat Windows mengeluarkan hanya salah satunya, tanpa
             // peringatan, jadi bentuknya disebutkan ketika namanya bentrok.
             if (namaTerpakai.has(nama)) {
-              nama = `06 e-Court/${duaAngka(urutan)} - ${judul} (${bentuk}).${ekstensi}`;
+              nama = `06 e-Court/${sub}/${duaAngka(urutan)} - ${judul} (${bentuk}).${ekstensi}`;
             }
             taruh(nama, berkas.isi, {
               jenis: "Dokumen e-Court",
@@ -1265,16 +1474,20 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
     // arsip. Ketiganya sudah punya tombol satuan di layar Status Perkara sejak
     // lama, tetapi getGatewayRincianSidang tidak memulangkannya sehingga
     // penyusun ZIP tidak pernah melihatnya sama sekali.
-    if (statusPerkara) {
+    if (statusPerkara && (dapat("penetapan") || arsipDiminta)) {
       const s = statusPerkara;
 
       // 07 Penetapan - terukur pada sipp_donggala: 3.336 berkas penetapan pada
       // 784 perkara (rata 4,26 sebuah, maksimum 7), ikrar talak 871.
       let nomorPenetapan = 0;
-      for (const tahap of larik(s.tahapan?.tahap)) {
+      for (const tahap of dapat("penetapan") ? larik(s.tahapan?.tahap) : []) {
         if (!tahap?.adaBerkas || !tahap?.dokumenId) continue;
         nomorPenetapan += 1;
-        const berkas = await tarikSipp("penetapan", String(tahap.dokumenId));
+        const berkas = await tarikSipp(
+          "penetapan",
+          String(tahap.dokumenId),
+          `Penetapan ${tahap.tanggal || ""} - ${tahap.label || tahap.kunci || ""}`.trim()
+        );
         if (!berkas) continue;
         // Tanggal pada NAMA berkas tetap ISO - itulah yang membuat penjelajah
         // berkas mengurutkannya dengan benar; yang dibaca orang ada di DAFTAR
@@ -1293,8 +1506,8 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           }
         );
       }
-      if (s.ikrarTalak?.adaBerkas && s.ikrarTalak?.ikrarId) {
-        const berkas = await tarikSipp("ikrar-talak", String(s.ikrarTalak.ikrarId));
+      if (dapat("penetapan") && s.ikrarTalak?.adaBerkas && s.ikrarTalak?.ikrarId) {
+        const berkas = await tarikSipp("ikrar-talak", String(s.ikrarTalak.ikrarId), "Penetapan ikrar talak");
         if (berkas) {
           taruh(
             `07 Penetapan/99 - Penetapan ikrar talak.${ekstensiDari(berkas.nama, "rtf")}`,
@@ -1324,12 +1537,12 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       // satu pun dilewati.push dijalankan. Hasilnya: tidak ada folder 08 DAN
       // tidak ada satu kalimat pun sebabnya, padahal itu justru satu-satunya
       // keadaan di mana petugas SUDAH memintanya.
-      if (sertakanArsip) {
+      if (arsipDiminta) {
         let nomorArsip = 0;
         for (const a of barisArsip) {
           if (!a?.adaBerkas || !a?.arsipId) continue;
           nomorArsip += 1;
-          const berkas = await tarikSipp("arsip", String(a.arsipId));
+          const berkas = await tarikSipp("arsip", String(a.arsipId), `Arsip fisik ${a.nomor || nomor}`);
           if (!berkas) continue;
           taruh(
             `08 Arsip fisik/${duaAngka(nomorArsip)} - ${namaAman(
@@ -1349,8 +1562,10 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           // hanya sebab ketiga yang berarti "perkaranya memang belum
           // diarsipkan", tiga lainnya menuntut seseorang memeriksa peladen.
           const alasanBerkas = String(s.arsipKeterangan?.alasanBerkas ?? "").trim();
-          dilewati.push(
-            `08 Arsip fisik: diminta, tetapi tidak ada berkas yang dapat ditarik - ${
+          catat(
+            "arsip",
+            "08 Arsip fisik",
+            `diminta, tetapi tidak ada berkas yang dapat ditarik - ${
               s.arsipKeterangan?.terbaca === false
                 ? `keterangan arsip tidak terbaca (${String(s.arsipKeterangan?.alasan ?? "sebab tidak disebutkan")})`
                 : s.arsipKeterangan?.berkasTerbaca === false
@@ -1362,7 +1577,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
           );
         }
       } else if (barisArsip.some((a) => a?.adaBerkas)) {
-        dilewati.push("Berkas pindaian arsip: tidak diminta (2 MB sampai 28 MB sebuah)");
+        catat("arsip", "Berkas pindaian arsip", "tidak diminta (2 MB sampai 28 MB sebuah)", "tidak diminta");
       }
     }
 
@@ -1379,6 +1594,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
         jumlahSippTercatat,
         jumlahEcourtTercatat,
         mulai,
+        gagal,
       };
     }
 
@@ -1402,8 +1618,38 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       "",
       `Jumlah berkas: ${daftar.length}`,
       `Jumlah byte  : ${totalByte.toLocaleString("id-ID")}`,
+      /* === STATUS-ZIP 12 Okt === */
+      // Yang tercatat tetapi TIDAK ikut disebut di sini juga (bukan hanya di
+      // KETERANGAN.txt) - daftar isi yang hanya memuat yang berhasil membuat
+      // yang gagal tampak seperti yang memang tidak pernah ada.
+      ...(gagal.length > 0
+        ? [
+            "",
+            `TERCATAT TETAPI TIDAK IKUT (${gagal.length}) - sebab lengkapnya di DAFTAR ISI.csv:`,
+            ...gagal.map((g) => `- [${g.status}] ${g.nama}: ${g.sebab}`),
+          ]
+        : ["", "Tidak ada berkas tercatat yang gagal diambil."]),
+      /* === AKHIR STATUS-ZIP === */
     ].join("\r\n");
     simpan({ nama: "DAFTAR ISI.txt", isi: Buffer.from(daftarIsi, "utf8") });
+
+    /* === STATUS-ZIP 12 Okt === */
+    // Daftar isi yang dapat DISARING di Excel: satu baris per berkas yang masuk
+    // DAN per berkas yang gagal/tidak ikut, dengan statusnya dan sebabnya.
+    simpan({
+      nama: "DAFTAR ISI.csv",
+      isi: Buffer.from(
+        tabelCsv(
+          ["kategori", "berkas", "jenis", "tanggal", "asal", "ukuran_byte", "status", "sebab"],
+          [
+            ...daftar.map((b) => [kategoriDariNama(b.nama), b.nama, b.jenis, b.tanggal, b.asal, b.byte, "masuk", ""]),
+            ...gagal.map((g) => [g.kategori, g.nama, "", "", "", "", g.status, g.sebab]),
+          ]
+        ),
+        "utf8"
+      ),
+    });
+    /* === AKHIR STATUS-ZIP === */
 
     // Keterangan SELALU ikut, juga ketika tidak ada yang dilewati - penerima
     // ZIP perlu tahu berapa yang seharusnya ada, bukan hanya berapa yang ada.
@@ -1412,6 +1658,15 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       `Disusun ${tanggalHariPanjang(hariIni, hariIni)}`,
       `Sumber yang diminta: ${sumber}`,
       `Isi yang diminta: ${lengkap ? "data SIPP + berkas" : "berkas saja"}`,
+      /* === STATUS-ZIP 12 Okt === */
+      `Kategori yang diminta: ${
+        pilih
+          ? KATEGORI_ARSIP.filter((k) => pilih.has(k))
+              .map((k) => LABEL_KATEGORI_ARSIP[k])
+              .join("; ")
+          : "seluruhnya"
+      }`,
+      /* === AKHIR STATUS-ZIP === */
       `Berkas dalam arsip ini: ${daftar.length}`,
       `Berkas SIPP yang tercatat: ${jumlahSippTercatat}`,
       `Dokumen e-Court yang tercatat: ${jumlahEcourtTercatat}`,
@@ -1461,6 +1716,7 @@ export async function susunArsipPerkara(opsi: OpsiArsipPerkara): Promise<HasilAr
       jumlahSippTercatat,
       jumlahEcourtTercatat,
       mulai,
+      gagal,
     };
   }
 }

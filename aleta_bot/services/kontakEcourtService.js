@@ -672,6 +672,199 @@ async function kontakPerkara(masukan) {
   return { ok: true, ada: true, perkaraId: perkara.perkaraId, nomorPerkara: perkara.nomorPerkara, dariNama: Boolean(dariNama), tersimpan, ...susun };
 }
 
+/* === STATUS-ZIP 12 Okt === */
+
+/* ─── 4b. Kontak para pihak untuk layar Status Perkara (butir 12, 12 Okt 2026) ─── */
+
+/**
+ * "tambahkan identitas email dan nomor whatsapp pihak pada kolom para pihak, sama
+ * keterangan bersedia sidang secara elektronik (dari e-court yang bersedia
+ * bersidang secara e-litigasi) di status perkara".
+ *
+ * SUMBER (jujur, per ruas):
+ *   email, HP/WhatsApp  SIPP dulu (pihak.email / pihak.telepon lewat perkara_pihakN dan
+ *                       perkara_pengacara); bila kosong, usulan e-Court dari akun
+ *                       (aleta_bot_ecourt_pihak, surel pengunggah) - dengan TANDA SUMBER.
+ *                       Bila SIPP dan e-Court berbeda, nilai e-Court ikut disebut (`lain`).
+ *   bersedia e-Litigasi aleta_bot_ecourt_pihak.persetujuan = bagian "Persetujuan Pihak
+ *                       Menggunakan Saluran Elektronik" pada Detil Pendaftaran e-Court yang
+ *                       ditarik jembatan e-Court: setuju (centang hijau) = ya, tidak_setuju =
+ *                       tidak, belum = belum menjawab. Yang tidak terbaca TIDAK DITEBAK:
+ *                       "tidak-diketahui" beserta sebabnya (bukan perkara e-Court, pihak
+ *                       belum ditarik, tabel tidak terbaca). Kuasa tidak punya persetujuan
+ *                       sendiri ("tidak-berlaku").
+ *
+ * Hanya SELECT; tidak menulis SIPP, ABT, maupun aleta_bot_ecourt_ringkasan. Nilai kontak
+ * TIDAK dicatat ke log. Hak lihat dijaga PORTAL (data pribadi).
+ */
+/**
+ * Dua nama sama bila nama bakunya sama (tanpa "bin/binti ..." dan gelar) ATAU seluruh
+ * kata namanya sama dengan "bin/binti" dibuang - e-Court kerap menulis "JOKO SAMIN"
+ * sedangkan SIPP "JOKO bin SAMIN".
+ */
+function samaNamaPihak(a, b) {
+  const x = bakuNama(a);
+  const y = bakuNama(b);
+  if (x && x === y) return true;
+  const kata = (t) =>
+    String(t || "")
+      .toLowerCase()
+      .replace(/[^a-z]+/g, " ")
+      .split(" ")
+      .filter((k) => k && k !== "bin" && k !== "binti" && k !== "bte")
+      .join(" ");
+  const p = kata(a);
+  return Boolean(p) && p === kata(b);
+}
+
+function nilaiKosongSipp(teks) {
+  return /^[-0.\s]*$/.test(String(teks == null ? "" : teks));
+}
+
+/** Nilai kontak untuk tampilan: yang baku bila sah, selain itu apa adanya dengan tanda tak lazim. */
+function emailTampil(asli) {
+  if (nilaiKosongSipp(asli)) return null;
+  const baku = bakuEmail(asli);
+  return baku ? { nilai: baku, lazim: true } : { nilai: String(asli).trim().slice(0, 120), lazim: false };
+}
+
+function hpTampil(asli) {
+  if (nilaiKosongSipp(asli)) return null;
+  const daftar = nomorSipp(asli);
+  if (daftar.length) return { nilai: daftar.map((x) => x.nilai).join(" / "), jenis: daftar[0].jenis, lazim: true };
+  return { nilai: String(asli).trim().slice(0, 60), jenis: "", lazim: false };
+}
+
+/**
+ * Murni: dari hasil susunKontak (`orang`) dan baris persetujuan e-Court menjadi baris layar.
+ * @param {{ orang: object[], ecourtPihak: Array<{nama,peran,email,telp,persetujuan,terakhirTerlihat}>,
+ *           ecourtTerbaca: boolean, lewatEcourt: boolean }} m
+ */
+function susunKontakStatus(m) {
+  const orang = Array.isArray(m && m.orang) ? m.orang : [];
+  const ecourt = Array.isArray(m && m.ecourtPihak) ? m.ecourtPihak : [];
+  const ecourtTerbaca = !(m && m.ecourtTerbaca === false);
+  const lewatEcourt = Boolean(m && m.lewatEcourt);
+
+  const persetujuanDari = (o) => {
+    if (o.jenis === "kuasa") {
+      const kuasa = ecourt.find((e) => /kuasa|advokat|pengacara/i.test(String(e.peran || "")) && samaNamaPihak(e.nama, o.nama));
+      if (!kuasa) {
+        return { status: "tidak-berlaku", sumber: "", label: "Kuasa tidak mengisi persetujuan sendiri - lihat pihak yang diwakilinya.", terakhirTerlihat: null };
+      }
+      return jawabPersetujuan(kuasa);
+    }
+    if (!lewatEcourt) {
+      return { status: "tidak-diketahui", sumber: "", label: "Bukan perkara e-Court - tidak ada data persetujuan e-Litigasi.", terakhirTerlihat: null };
+    }
+    if (!ecourtTerbaca) {
+      return { status: "tidak-diketahui", sumber: "", label: "Tabel persetujuan e-Court tidak terbaca dari ALETA Bot.", terakhirTerlihat: null };
+    }
+    const cocok = o.nama ? ecourt.find((e) => !/kuasa|advokat|pengacara/i.test(String(e.peran || "")) && samaNamaPihak(e.nama, o.nama)) : null;
+    if (!cocok) {
+      return {
+        status: "tidak-diketahui",
+        sumber: "",
+        label: "Pihak ini belum terbaca pada persetujuan e-Court - tarik perkara dari Kendali Berkas bila ingin memastikan.",
+        terakhirTerlihat: null,
+      };
+    }
+    return jawabPersetujuan(cocok);
+  };
+  const jawabPersetujuan = (e) => {
+    const nilai = String(e.persetujuan || "belum");
+    const status = nilai === "setuju" ? "ya" : nilai === "tidak_setuju" ? "tidak" : "belum";
+    return {
+      status,
+      sumber: "ecourt",
+      label:
+        status === "ya"
+          ? "Bersedia sidang elektronik (persetujuan saluran elektronik e-Court)."
+          : status === "tidak"
+            ? "Menolak sidang elektronik (persetujuan saluran elektronik e-Court)."
+            : "Belum menjawab persetujuan sidang elektronik di e-Court.",
+      terakhirTerlihat: e.terakhirTerlihat || null,
+    };
+  };
+
+  return orang.map((o) => {
+    // Pada keluaran susunKontak, sipp.email / sipp.telepon = isian SIPP APA ADANYA.
+    const emailSipp = emailTampil(o.sipp && o.sipp.email);
+    const hpSipp = hpTampil(o.sipp && o.sipp.telepon);
+    const uEmail = o.usulan && o.usulan.email;
+    const uHp = o.usulan && o.usulan.hp;
+    const labelEcourt = (u) => (u && u.sumber && u.sumber[0] ? String(u.sumber[0].label || "e-Court") : "e-Court");
+
+    const email = emailSipp
+      ? { nilai: emailSipp.nilai, lazim: emailSipp.lazim, sumber: "sipp", label: "SIPP", lain: uEmail && uEmail.nilai && uEmail.nilai !== emailSipp.nilai ? [{ nilai: uEmail.nilai, sumber: "ecourt", label: labelEcourt(uEmail) }] : [] }
+      : uEmail && uEmail.nilai
+        ? { nilai: uEmail.nilai, lazim: true, sumber: "ecourt", label: labelEcourt(uEmail), keyakinan: uEmail.keyakinan || "ragu", lain: [] }
+        : { nilai: "", lazim: true, sumber: "", label: "", lain: [] };
+    const hp = hpSipp
+      ? {
+          nilai: hpSipp.nilai,
+          jenis: hpSipp.jenis,
+          lazim: hpSipp.lazim,
+          sumber: "sipp",
+          label: "SIPP",
+          lain: uHp && uHp.nilai && !hpSipp.nilai.split(" / ").includes(uHp.nilai) ? [{ nilai: uHp.nilai, sumber: "ecourt", label: labelEcourt(uHp) }] : [],
+        }
+      : uHp && uHp.nilai
+        ? { nilai: uHp.nilai, jenis: uHp.jenisNomor || "hp", lazim: true, sumber: "ecourt", label: labelEcourt(uHp), keyakinan: uHp.keyakinan || "ragu", lain: [] }
+        : { nilai: "", jenis: "", lazim: true, sumber: "", label: "", lain: [] };
+
+    return {
+      jenis: o.jenis,
+      pihakKe: o.pihakKe,
+      urutan: o.urutan,
+      nama: o.nama,
+      email,
+      // "WhatsApp" hanya untuk nomor HP (08...); telepon rumah/kantor bukan WhatsApp.
+      hp: { ...hp, bisaWhatsApp: hp.jenis === "hp" },
+      elitigasi: persetujuanDari(o),
+    };
+  });
+}
+
+async function kontakParaPihak(nomorPerkara) {
+  const perkara = await cariPerkara({ nomorPerkara }).catch(() => null);
+  if (!perkara) return { ok: true, ada: false, sebab: "perkara_tidak_ditemukan", orang: [] };
+  const bahan = await bahanPerkara(perkara);
+  const susun = susunKontak({ ...bahan, dokumen: [] });
+
+  let ecourtPihak = [];
+  let ecourtTerbaca = true;
+  try {
+    const { normalizeCaseNumber } = require("./ecourtTextService");
+    ecourtPihak = await botDb().query(
+      "SELECT nama, peran, email, telp, persetujuan, terakhir_terlihat AS terakhirTerlihat FROM aleta_bot_ecourt_pihak WHERE nomor_perkara = ?",
+      [normalizeCaseNumber(perkara.nomorPerkara)]
+    );
+  } catch {
+    ecourtTerbaca = false;
+  }
+  let lewatEcourt = false;
+  try {
+    const r = await sippQuery("SELECT 1 AS ada FROM perkara_efiling_id WHERE perkara_id = ? AND efiling_id <> '' LIMIT 1", [perkara.perkaraId]);
+    lewatEcourt = Array.isArray(r) && r.length > 0;
+  } catch {
+    lewatEcourt = ecourtPihak.length > 0;
+  }
+
+  return {
+    ok: true,
+    ada: true,
+    perkaraId: perkara.perkaraId,
+    nomorPerkara: perkara.nomorPerkara,
+    lewatEcourt,
+    ecourtTerbaca,
+    jumlahPersetujuanEcourt: ecourtPihak.length,
+    orang: susunKontakStatus({ orang: susun.orang, ecourtPihak, ecourtTerbaca, lewatEcourt }),
+  };
+}
+
+/* === AKHIR STATUS-ZIP === */
+
 /* ─── 5. Penjadwal ringkasan (tanpa panel) ──────────────────────────────── */
 
 const SELA_MS = Math.max(5 * 60 * 1000, Number(process.env.ALETA_RINGKASAN_ECOURT_SELA_MS || 60 * 60 * 1000));
@@ -737,6 +930,10 @@ module.exports = {
   barisDariUsulanAbt,
   simpanRingkasan,
   kontakPerkara,
+  /* === STATUS-ZIP 12 Okt === */
+  kontakParaPihak,
+  susunKontakStatus,
+  /* === AKHIR STATUS-ZIP === */
   jalankanRingkasan,
   mulai,
   DDL_RINGKASAN,
