@@ -58,6 +58,7 @@ import {
   uraiKunciBas,
   type FormatBasTanpaHadir,
 } from "@/lib/pemetaan-blangko";
+import { tentukanAlurBas } from "@/lib/alur-bas";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
 
@@ -181,6 +182,27 @@ export type PilihanBlangkoBas = {
 
 export type RingkasLembar = { jumlah: number; selesai: number; draf: number };
 
+/* === ALURBAS 12 Okt === */
+/**
+ * Alur sidang perkara ini dan BAS langkah berikutnya dari folder alurnya di ABT (paket abt-bas-alur-sidang; peta di
+ * lib/alur-bas.ts). KETERANGAN saja: tidak mengubah `blangko` (pilihan BAS massal yang sudah ada).
+ */
+export type AlurBasBaris = {
+  id: string;
+  nama: string;
+  /** Folder ABT (relatif _blangko_abt), mis. "derry_briantono/ALUR 02 Cerai Verstek - ...". */
+  folder: string;
+  /** Awalan langkah di nama berkas: "1", "2a" ... */
+  kode: string;
+  berkas: string;
+  keterangan: string;
+  /** Berkas lain yang mungkin pada alur yang sama (varian saksi dsb.). */
+  alternatif: string[];
+  perkiraan: boolean;
+  sebab: string;
+};
+/* === AKHIR ALURBAS === */
+
 export type BarisBasMassal = {
   sidangId: string;
   perkaraId: string;
@@ -215,6 +237,8 @@ export type BarisBasMassal = {
   /** null = lembar ALETA tidak terbaca. */
   lembar: RingkasLembar | null;
   blangko: { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string };
+  /** 12 Okt 2026: alur sidang dan BAS langkahnya di folder alur ABT; null = jenis perkara tanpa folder alur. */
+  alurBas: AlurBasBaris | null;
 };
 
 /**
@@ -782,6 +806,25 @@ function pilihBlangkoBasOtomatis(masukan: Parameters<typeof pilihBlangkoBas>[0])
   return { usulan: null, pilihan, sebab };
 }
 
+/* === ALURBAS 12 Okt === */
+/** Alur + langkah BAS untuk satu sidang, dalam bentuk ringkas yang dikirim ke ekstensi; null bila jenis perkara tanpa folder alur. */
+export function alurBasBaris(masukan: Parameters<typeof tentukanAlurBas>[0]): AlurBasBaris | null {
+  const h = tentukanAlurBas(masukan);
+  if (!h.alur || !h.langkah) return null;
+  return {
+    id: h.alur.id,
+    nama: h.alur.nama,
+    folder: h.alur.folder,
+    kode: h.langkah.kode,
+    berkas: h.langkah.berkas,
+    keterangan: h.langkah.keterangan,
+    alternatif: h.alternatif.map((l) => l.berkas),
+    perkiraan: h.perkiraan,
+    sebab: h.sebab,
+  };
+}
+/* === AKHIR ALURBAS === */
+
 /** Ringkasan lembar ALETA satu perkara dari baris aleta_bas_lembar. */
 export function ringkasLembar(baris: Array<{ keadaan?: unknown }>): RingkasLembar {
   const selesai = baris.filter((b) => teks(b.keadaan) === "selesai").length;
@@ -971,6 +1014,16 @@ export function susunBarisBasMassal(
         ...(k.keadaan === "tercatat" ? {} : { kehadiranPt: k.pt, perkiraan: true }),
         format: k.format,
       }),
+      /* === ALURBAS 12 Okt === */
+      alurBas: alurBasBaris({
+        jenisPerkara,
+        urutanSidang,
+        dihadiriOleh: dihadiriOleh ?? (k.keadaan === "antrian" ? sandiDariPt(k.pt) : null),
+        agenda: teks(s.agenda),
+        tergugatPernahHadir: s.panggilan?.tergugatPernahHadir,
+        sidangIkrarTalak: s.sidangIkrarTalak === true,
+      }),
+      /* === AKHIR ALURBAS === */
     });
   }
   const jumlahSaya = semua.filter((b) => b.milikSaya).length;

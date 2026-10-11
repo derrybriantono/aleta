@@ -1237,6 +1237,19 @@ function basmassalGambarBaris(daftar, baris, konteks) {
   } else {
     status.appendChild(basmassalTanda(baris.kehadiran, "", "Kehadiran menurut jadwal sidang SIPP."));
   }
+  // 12 Okt 2026 (paket abt-bas-alur-sidang): alur sidang perkara ini dan BAS langkahnya di folder alur ABT.
+  // Keterangan saja - pilihan blangko tetap yang di bawah. Server lama tanpa alurBas: tidak ada tanda.
+  const al = baris.alurBas;
+  if (al && al.id && al.berkas) {
+    const nomorAlur = String(al.id).replace(/^alur-/, "");
+    status.appendChild(
+      basmassalTanda(
+        `alur ${nomorAlur} [${al.kode}]`,
+        al.perkiraan ? "belum" : "",
+        `${al.nama} - langkah [${al.kode}] ${al.berkas}${al.perkiraan ? " (perkiraan menurut urutan sidang dan kehadiran)" : ""}. Folder ABT: ${al.folder}. ${al.sebab || ""}`.trim()
+      )
+    );
+  }
   const saksi = baris.saksi || { pihak1: 0, pihak2: 0, nama1: [], nama2: [] };
   if (saksi.pihak1 + saksi.pihak2 > 0) {
     status.appendChild(
