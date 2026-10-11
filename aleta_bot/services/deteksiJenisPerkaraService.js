@@ -103,6 +103,7 @@ function polosSatuBaris(posita) {
 const KATA_DEPAN_BUANG = new Set([
   "bahwa", "almarhum", "almarhumah", "alm", "almh", "pewaris", "yaitu", "yakni", "bernama", "saudara", "sdr", "sdri",
   "bapak", "ibu", "ayah", "pemohon", "termohon", "penggugat", "tergugat", "anak", "suami", "istri", "isteri", "dan", "para",
+  "menyatakan", "menetapkan", "mohon", "memohon", "dimana", "sedangkan", "kemudian", "selanjutnya",
 ]);
 
 /** Membersihkan nilai menurut bentuknya. */
@@ -154,7 +155,13 @@ function faktaPenguraiLama(posita, jenis, sebutan) {
     for (const u of (h && h.usulan) || []) {
       if (!u.nilai) continue;
       const kalimat = u.sumber && u.sumber[0] ? u.sumber[0].kalimat : "";
-      peta[u.kode] = { nilai: u.nilai, kalimat, kodePola: `pengurai-itsbat-${u.kode}`, yakin: "ragu", label: u.nama, asal: "pengurai-itsbat" };
+      let nilai = String(u.nilai);
+      // Untuk JAWABAN SAKSI (bukan usulan variabel itsbat, yang tetap lewat jalurnya sendiri):
+      // "Desa X di wilayah hukum Kantor Urusan Agama Kecamatan Y" -> "Desa X, Kecamatan Y" seperti
+      // saksi menuturkannya; sisa ",-" pada mahar dibuang.
+      if (u.kode === "5105") nilai = nilai.replace(/\s+(?:di\s+)?wilayah\s+hukum\s+(?:Kantor\s+Urusan\s+Agama\s+|KUA\s+)?(?=Kecamatan\b)/i, ", ");
+      if (u.kode === "1001") nilai = nilai.replace(/\s*,-\s*/g, " ").replace(/\s+/g, " ").trim();
+      peta[u.kode] = { nilai, kalimat, kodePola: `pengurai-itsbat-${u.kode}`, yakin: "ragu", label: u.nama, asal: "pengurai-itsbat" };
     }
   }
   const aturan = (lainService.ATURAN_LAIN || {})[jenis.kunci];
@@ -642,6 +649,15 @@ function tambahUsulanJenis(hasil, posita, opsi = {}) {
 function lengkapiSaksiJenis(saksiSdg, isiJenis, opsi = {}) {
   if (!saksiSdg || !saksiSdg.ok || !isiJenis || !isiJenis.jenis) return saksiSdg;
   saksiSdg.jenisPerkara = { kunci: isiJenis.jenis, nama: isiJenis.namaJenis };
+  // Alasan PERCERAIAN yang terbaca dari posita non-cerai (34 dari 40 posita permohonan 2026
+  // terbaca "pihak lain (wanita/pria idaman lain)" karena kalimat baku "tidak ada pihak ketiga
+  // yang mengganggu gugat pernikahan")
+  // tidak berarti apa-apa di sini dan tidak mengubah satu jawaban pun - dibuang dari tampilan.
+  if (saksiSdg.asalAlasan === "posita" && Array.isArray(saksiSdg.alasan) && saksiSdg.alasan.length) {
+    saksiSdg.alasanDibuangJenis = saksiSdg.alasan;
+    saksiSdg.alasan = [];
+    saksiSdg.asalAlasan = "";
+  }
   saksiSdg.terisiDariJenis = isiJenis.terisi || [];
   saksiSdg.tertahanJenis = isiJenis.tertahan || [];
   if (!Array.isArray(saksiSdg.terisiDariPosita)) saksiSdg.terisiDariPosita = [];

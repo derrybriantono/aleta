@@ -38,6 +38,7 @@ const POSITA_ITSBAT = `<ol>
 <li>Bahwa pada saat pernikahan tersebut Pemohon I berstatus Jejaka dalam usia 23 tahun, dan Pemohon II berstatus Perawan dalam usia 19 tahun;</li>
 <li>Bahwa pernikahan tersebut tidak terdaftar di Kantor Urusan Agama Kecamatan Bbbb, Kabupaten Donggala, Provinsi Sulawesi Tengah, sehingga pernikahan tersebut tidak dicatatkan di KUA yang berwenang, sementara saat ini para Pemohon I dan Pemohon II membutuhkan Akta Nikah tersebut untuk mengurus Buku Nikah dan untuk kepentingan hukum lainnya;</li>
 <li>Bahwa sejak menikah para Pemohon tidak pernah bercerai dan telah dikaruniai 2 (dua) orang anak;</li>
+<li>Bahwa selama pernikahan tersebut tidak ada pihak ketiga yang mengganggu gugat pernikahan Pemohon I dan Pemohon II tersebut;</li>
 </ol>`;
 
 const POSITA_PAW = `1. Bahwa Xxxa binti Yyyb telah meninggal dunia pada tanggal 06 Mei 2026 dikarenakan sakit sesuai dengan Surat Keterangan Kematian Nomor : 7210-KM-08052026-0061;
@@ -158,19 +159,20 @@ describe("usulan variabel per jenis dari kamus", () => {
 });
 
 describe("templat saksi per jenis - variabel '...' diisi dari posita, bergerbang ukur", () => {
-  it("itsbat IN2: tanggal, wali, saksi nikah, status Pemohon II terisi; mahar/yang menikahkan/tujuan tertahan", () => {
+  it("itsbat IN2: tanggal, wali, saksi nikah, status kedua pemohon terisi; mahar/yang menikahkan/tujuan/tempat tertahan", () => {
     const h = J.isiTemplatSaksi(templatAbt(), { posita: POSITA_ITSBAT, jenisPerkara: "360", alur: "16" });
     const jawab = Object.fromEntries(h.templat.map((b: { no: string; jawab: string }) => [b.no, b.jawab]));
     expect(jawab["4"]).toBe("Pemohon I dengan Pemohon II menikah di ..., pada tanggal 21 November 1996;");
     expect(jawab["5"]).toContain("adalah Ayah Kandung bernama Xxxa");
     expect(jawab["7"]).toBe("Yang bertindak sebagai saksi nikah pada saat terjadinya ijab kabul adalah Zzzc dan Wwwd;");
-    expect(jawab["9"]).toBe("Sebelum menikah Pemohon I berstatus ... dan Pemohon II berstatus Perawan;");
+    expect(jawab["9"]).toBe("Sebelum menikah Pemohon I berstatus Jejaka dan Pemohon II berstatus Perawan;");
     // belum lulus gerbang: tidak ditulis
     expect(jawab["8"]).toBe("Mahar yang diberikan Pemohon I kepada Pemohon II berupa ...;");
     expect(jawab["6"]).toMatch(/^Yang menikahkan Pemohon I dengan Pemohon II adalah \.\.\.;/);
     expect(jawab["14"]).toBe("Itsbat nikah para Pemohon dimaksudkan untuk  untuk ...;");
     const tertahan = h.tertahan.map((t: { kunci: string }) => t.kunci);
-    expect(tertahan).toEqual(expect.arrayContaining(["1001", "8087", "8171", "5105", "1002"]));
+    expect(tertahan).toEqual(expect.arrayContaining(["1001", "8087", "8171", "5105"]));
+    expect(tertahan).not.toContain("1002");
     // tiap isian membawa kodePola
     for (const t of h.terisi) expect(t.kodePola).toBeTruthy();
     // masukan tidak diubah
@@ -252,8 +254,13 @@ describe("susunan saksi lengkap untuk perkara itsbat (layanan sungguhan)", () =>
     expect(sdg.ok).toBe(true);
     Object.assign(sdg, D.lengkapiSusunan(sdg, { identitas: null, lawan: "Pemohon", pelaku: "Termohon", kelompokTanya: require_(path.join(akar, "aleta_bot", "services", "pemilihRagam.js")).kelompokTanya }));
     sdg.peringatanSaksi = [...(sdg.peringatanSaksi || []), { kode: "syiqaq-tanpa-keluarga", tingkat: "ringan", pesan: "x" }];
+    // posita itsbat terbaca beralasan perceraian ("pihak lain ... keberatan") - itu yang dibuang
+    expect(sdg.asalAlasan).toBe("posita");
+    expect(sdg.alasan.length).toBeGreaterThan(0);
     J.lengkapiSaksiJenis(sdg, isi, { posita: POSITA_ITSBAT, jenisPerkara: "360", alur: "16" });
     expect(sdg.jenisPerkara).toEqual({ kunci: "itsbat-nikah", nama: "Itsbat Nikah" });
+    expect(sdg.alasan).toEqual([]);
+    expect(sdg.alasanDibuangJenis.length).toBeGreaterThan(0);
     const wali = sdg.saksi1.find((b: { no: string }) => b.no === "5");
     expect(wali.jawab).toMatch(/Xxxa/);
     expect(sdg.terisiDariPosita.map((x: { no: string }) => String(x.no))).toEqual(expect.arrayContaining(["4", "5", "7", "9"]));

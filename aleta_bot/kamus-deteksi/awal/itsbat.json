@@ -293,8 +293,8 @@
       ],
       "ukur": {
         "n": 334,
-        "tepat": 142,
-        "salahTangkap": 192,
+        "tepat": 202,
+        "salahTangkap": 132,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },
@@ -341,8 +341,8 @@
       ],
       "ukur": {
         "n": 82,
-        "tepat": 40,
-        "salahTangkap": 42,
+        "tepat": 44,
+        "salahTangkap": 38,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },
@@ -428,7 +428,7 @@
       "regex": "(?:apa\\s+)?status\\s+[^?]{0,60}?(?:saat|sebelum|ketika)\\s+menikah",
       "flags": "i",
       "status": "aktif",
-      "yakin": "ragu",
+      "yakin": "pasti",
       "contohBenar": [
         "Apa status Pemohon I dan Pemohon II sebelum menikah?"
       ],
@@ -437,8 +437,8 @@
       ],
       "ukur": {
         "n": 259,
-        "tepat": 211,
-        "salahTangkap": 48,
+        "tepat": 251,
+        "salahTangkap": 8,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },
@@ -524,7 +524,7 @@
       "regex": "(?:apa\\s+)?status\\s+[^?]{0,60}?(?:saat|sebelum|ketika)\\s+menikah",
       "flags": "i",
       "status": "aktif",
-      "yakin": "ragu",
+      "yakin": "pasti",
       "contohBenar": [
         "Apa status Pemohon I dan Pemohon II saat menikah?"
       ],
@@ -533,8 +533,8 @@
       ],
       "ukur": {
         "n": 294,
-        "tepat": 184,
-        "salahTangkap": 110,
+        "tepat": 291,
+        "salahTangkap": 3,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },

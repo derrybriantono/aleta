@@ -300,23 +300,47 @@
     },
     {
       "kode": "dispensasi-tanya-calon",
-      "label": "Pertanyaan: calon pasangan",
+      "label": "Pertanyaan: calon suami",
       "kunci": "tanya-0600",
       "jenis": "tanya",
-      "regex": "mengenal\\s+calon\\s+(?:suami|isteri|istri)",
+      "regex": "mengenal\\s+calon\\s+suami",
       "flags": "i",
       "status": "aktif",
-      "yakin": "ragu",
+      "yakin": "pasti",
       "contohBenar": [
         "Apakah Saudara mengenal calon suami anak para Pemohon?"
       ],
       "contohSalah": [
-        "Apakah Saudara mengenal anak para Pemohon?"
+        "Apakah Saudara mengenal calon isteri anak para Pemohon?"
       ],
       "ukur": {
-        "n": 69,
-        "tepat": 63,
-        "salahTangkap": 6,
+        "n": 64,
+        "tepat": 62,
+        "salahTangkap": 2,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-calon-istri",
+      "label": "Pertanyaan: calon istri",
+      "kunci": "tanya-0606",
+      "jenis": "tanya",
+      "regex": "mengenal\\s+calon\\s+ist?e?ri",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Apakah Saudara mengenal calon isteri anak para Pemohon?"
+      ],
+      "contohSalah": [
+        "Apakah Saudara mengenal calon suami anak para Pemohon?"
+      ],
+      "ukur": {
+        "n": 5,
+        "tepat": 4,
+        "salahTangkap": 1,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },
@@ -324,10 +348,10 @@
     },
     {
       "kode": "dispensasi-tanya-umur-calon",
-      "label": "Pertanyaan: umur calon pasangan",
+      "label": "Pertanyaan: umur calon suami",
       "kunci": "tanya-0601",
       "jenis": "tanya",
-      "regex": "umur\\s+calon\\s+(?:suami|isteri|istri)",
+      "regex": "umur\\s+calon\\s+suami",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
@@ -335,12 +359,36 @@
         "Berapa umur calon suami anak Pemohon sekarang?"
       ],
       "contohSalah": [
-        "Berapa umur anak para Pemohon?"
+        "Berapa umur calon isteri anak Pemohon sekarang?"
       ],
       "ukur": {
-        "n": 8,
-        "tepat": 5,
-        "salahTangkap": 3,
+        "n": 4,
+        "tepat": 4,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "dispensasi-tanya-umur-calon-istri",
+      "label": "Pertanyaan: umur calon istri",
+      "kunci": "tanya-0607",
+      "jenis": "tanya",
+      "regex": "umur\\s+calon\\s+ist?e?ri",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Berapa umur calon isteri anak para Pemohon sekarang?"
+      ],
+      "contohSalah": [
+        "Berapa umur calon suami anak Pemohon sekarang?"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 2,
+        "salahTangkap": 1,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },

@@ -5730,7 +5730,8 @@ function susunPanelAbt(jatiDiri) {
         const hasil = isiJawaban.saksiSdg || {};
         if (hasil.ok === false) throw new Error(hasil.alasan === "templat_kosong" ? "Templat kosong." : "Keterangan tidak tersusun.");
         const kabarAkhir = [...catatanMentah];
-        if (centangSdg.checked && !(hasil.alasan || []).length) {
+        // JENIS3 11 Okt: perkara non-cerai (hasil.jenisPerkara) memang tidak beralasan perceraian.
+        if (centangSdg.checked && !(hasil.alasan || []).length && !hasil.jenisPerkara) {
           kabarAkhir.push("Tidak satu pun alasan terbaca dari posita; jawaban tentang penyebab diambil apa adanya dari templat.");
         }
         if (Array.isArray(isiJawaban.saksiDitolak) && isiJawaban.saksiDitolak.length) {

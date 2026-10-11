@@ -218,8 +218,8 @@
       ],
       "ukur": {
         "n": 21,
-        "tepat": 10,
-        "salahTangkap": 11,
+        "tepat": 12,
+        "salahTangkap": 9,
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },
