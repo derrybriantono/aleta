@@ -4283,13 +4283,15 @@
       "sebab": "pihak lain (wanita/pria idaman lain)",
       "jenis": "penyangkal",
       "cakupan": "letak",
-      "regex": "\\btidak\\s+(?:ada|pernah\\s+ada)\\s+(?:pihak\\s+ketiga|orang\\s+ketiga|wanita\\s+lain|perempuan\\s+lain|laki-laki\\s+lain|pria\\s+lain|WIL|PIL)|\\btidak\\s+pernah\\s+(?:ber)?selingkuh",
+      "regex": "\\b(?:tidak|tak|belum)\\s+(?:ada\\s+|pernah\\s+(?:ada\\s+)?)?(?:pihak\\s+(?:ketiga|lain)|orang\\s+(?:ketiga|lain)|wanita\\s+lain|perempuan\\s+lain|laki-laki\\s+lain|pria\\s+lain|WIL|PIL)|\\btidak\\s+pernah\\s+(?:ber)?selingkuh|\\bpihak\\s+ketiga\\s+yang\\s+mengg?ang?gu\\s+gugat",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "sejak pernikahan sampai sekarang tidak ada pihak ketiga yang mengganggu",
-        "Tergugat tidak pernah selingkuh"
+        "Tergugat tidak pernah selingkuh",
+        "selama pernikahan tersebut tidak pihak ketiga yang mengganggu gugat pernikahan para Pemohon",
+        "tidak ada pihak lain yang keberatan"
       ],
       "contohSalah": [
         "Tergugat selingkuh dengan wanita lain"
@@ -4298,14 +4300,14 @@
         "n": 20,
         "tepat": 20,
         "salahTangkap": 0,
-        "kalimat": 172,
-        "perkara": 167,
-        "padam": 172,
+        "kalimat": 182,
+        "perkara": 173,
+        "padam": 174,
         "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
         "tanggal": "2026-10-11"
       },
-      "catatan": "KDL2 11 Okt (agen 2 batch B). Hampir seluruhnya posita itsbat 'tidak ada pihak ketiga yang mengganggu gugat pernikahan'."
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Temuan agen 3 (11 Okt): posita itsbat baku 'tidak (ada) pihak ketiga yang mengganggu gugat' dibaca sebab pihak lain pada 2.167 dari 3.442 posita Pdt.P/itsbat; dengan penyangkal ini 3 - ketiganya dispensasi kawin 'berpacaran'/'pernah menikah', bukan kalimat itsbat (ukur cek-itsbat-pihak-lain.js). Juga 'tidak ada pihak lain yang keberatan'."
     },
     {
       "kode": "sangkal-keluar-malam-tidak-suka",
@@ -4396,6 +4398,72 @@
         "tanggal": "2026-10-11"
       },
       "catatan": "KDL2 11 Okt (agen 2 batch B)."
+    },
+    {
+      "kode": "sangkal-a-judi-dalam-nama",
+      "label": "bukan judi: potongan nama orang (Sirajudin, Alidjudi, Judia)",
+      "kunci": "A",
+      "sebab": "judi",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b\\w*judin\\w*|\\b\\w+djudi\\b|\\bjudia\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "NURDIN BIN SIRAJUDIN",
+        "Amir bin Ali Alidjudi",
+        "Judia binti Sandai"
+      ],
+      "contohSalah": [
+        "Tergugat suka berjudi",
+        "Tergugat main judi online",
+        "perjudian"
+      ],
+      "ukur": {
+        "n": 9,
+        "tepat": 9,
+        "salahTangkap": 0,
+        "kalimat": 9,
+        "perkara": 5,
+        "padam": 9,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). Ciri lama 'judi' adalah POTONGAN kata (5227) - menyala pada nama Sirajudin/Tajudin/Mahijudin (9 kalimat cerai/itsbat, semua nama); itsbat Pdt.P: lihat `node tools/ukur-deteksi-alasan.js itsbat`."
+    },
+    {
+      "kode": "sangkal-a-obat-dalam-nama",
+      "label": "bukan narkoba: potongan nama orang (Lamadate, ashabul Kahfi)",
+      "kunci": "A",
+      "sebab": "obat terlarang",
+      "jenis": "penyangkal",
+      "cakupan": "letak",
+      "regex": "\\b\\w*madate\\w*|\\blamadat\\w*|\\bashab\\w*",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Agustin binti Lamadate",
+        "ashabul Kahfi bin Jumardi"
+      ],
+      "contohSalah": [
+        "Tergugat seorang pemadat",
+        "Tergugat memakai sabu"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 2,
+        "salahTangkap": 0,
+        "kalimat": 1,
+        "perkara": 1,
+        "padam": 0,
+        "cara": "kalimat yang sebabnya padam, sampel tersebar dibaca satu per satu",
+        "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (2.277 perkara diputus, 89.727 kalimat saksi+posita)",
+        "tanggal": "2026-10-11"
+      },
+      "catatan": "KDL2 11 Okt (agen 2 batch B). 0 kalimat di korpus cerai; di posita Pdt.P 'Lamadate' & 'ashabul Kahfi' (2 dibaca, nama) - ciri lama 'madat'/'shabu' potongan kata."
     },
     {
       "kode": "tambah-c-lapas-rutan",

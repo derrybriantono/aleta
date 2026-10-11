@@ -325,8 +325,50 @@ function ukur(data) {
   return hasil;
 }
 
+/* === KDL2 11 Okt === */
+/**
+ * Salah tangkap di posita BUKAN perceraian (temuan agen 3): kalimat baku itsbat "tidak (ada) pihak ketiga
+ * yang mengganggu gugat" tidak boleh menjadi sebab "pihak lain". Dihitung dengan & tanpa penyangkal letak.
+ * node tools/ukur-deteksi-alasan.js itsbat
+ */
+async function ukurItsbat() {
+  const mysql = require("mysql");
+  const usulan = require("../services/abtUsulanService");
+  const deteksi = require("../services/deteksiAlasanService");
+  const kamus = require("../services/kamusDeteksi");
+  const db = mysql.createConnection({
+    host: process.env.UKUR_MYSQL_HOST || "127.0.0.1",
+    user: process.env.UKUR_MYSQL_USER || "root",
+    password: process.env.UKUR_MYSQL_PASSWORD || "",
+    database: process.env.UKUR_DB_SIPP || "sipp_donggala",
+  });
+  const r = await new Promise((ok, no) =>
+    db.query("SELECT nomor_perkara, posita FROM perkara WHERE (nomor_perkara LIKE '%Pdt.P%' OR jenis_perkara_text LIKE '%sbat%') AND posita IS NOT NULL", (e, x) => (e ? no(e) : ok(x)))
+  );
+  db.end();
+  const semua = kamus.polaKelompok("alasan");
+  const tanpa = semua.filter((p) => !(p.jenis === "penyangkal" && p.cakupan === "letak"));
+  const hasil = {};
+  for (const p of r) {
+    const b = usulan.butirKeterangan(usulan.polosPosita(p.posita));
+    const a = new Set(deteksi.sebabDariButir(b, { pola: tanpa }).map((s) => s.sebab));
+    const s = new Set(deteksi.sebabDariButir(b, { pola: semua }).map((x) => x.sebab));
+    for (const k of new Set([...a, ...s])) {
+      const w = (hasil[k] = hasil[k] || { tanpaPenyangkal: 0, sekarang: 0 });
+      if (a.has(k)) w.tanpaPenyangkal += 1;
+      if (s.has(k)) w.sekarang += 1;
+    }
+  }
+  console.log(`posita Pdt.P/itsbat ${r.length} - sebab yang menyala (salah tangkap: posita ini bukan gugatan cerai):`);
+  console.log(JSON.stringify(hasil, null, 1));
+}
+/* === AKHIR KDL2 === */
+
 async function utama() {
   const [perintah, berkas, keluaran] = process.argv.slice(2);
+  /* === KDL2 11 Okt === */
+  if (perintah === "itsbat") return ukurItsbat();
+  /* === AKHIR KDL2 === */
   if (perintah === "ambil") {
     const data = await ambil();
     fs.writeFileSync(berkas, JSON.stringify(data));
