@@ -560,10 +560,15 @@
       cursor: grab;
       user-select: none;
       touch-action: none;
+      /* CHECKLIST-POSISI 12 Okt: kepala yang sempit membungkus kendalinya ke
+         baris kedua - judul dan pilihan peran tidak lagi terpotong menjadi
+         "Checklist mi" / "o..". */
+      flex-wrap: wrap;
+      row-gap: 2px;
     }
     .aleta-cm-menggeser .aleta-cm-kepala, .aleta-cm-menggeser .aleta-cm-pil { cursor: grabbing; }
     .aleta-cm-ikon { width: 18px; height: 18px; flex: none; display: block; }
-    .aleta-cm-judul { font-weight: 700; white-space: nowrap; }
+    .aleta-cm-judul { font-weight: 700; white-space: nowrap; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .aleta-cm-peran {
       min-width: 0;
       max-width: 128px;
@@ -578,7 +583,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    select.aleta-cm-peran { cursor: pointer; appearance: auto; }
+    select.aleta-cm-peran { cursor: pointer; appearance: auto; flex: 0 1 auto; min-width: 84px; }
     select.aleta-cm-peran option { background: var(--aleta-latar); color: var(--aleta-tulisan); }
     .aleta-cm-alat { margin-left: auto; display: inline-flex; gap: 2px; flex: none; }
     .aleta-cm-alat button {
@@ -1533,6 +1538,18 @@
     }
     return hasil;
   }
+
+  /* === CHECKLIST-POSISI 12 Okt === */
+  /**
+   * Bawaan TERTUTUP: sesi baru (belum ada posisi tersimpan) memulai widget
+   * sebagai lencana/pil - daftarnya tidak menutupi halaman sebelum diminta.
+   * Yang pernah membentangkannya (kecil:false tersimpan) tetap terbentang -
+   * pilihan petugas diingat.
+   */
+  function sedangKecil() {
+    return keadaan.posisi ? keadaan.posisi.kecil === true : true;
+  }
+  /* === AKHIR CHECKLIST-POSISI === */
 
   function lipatanBersih(x) {
     const hasil = {};
@@ -2604,6 +2621,22 @@
     keadaan.sambungan = { keadaan: k, lamaMs };
   }
 
+  /* === CHECKLIST-POSISI 12 Okt === */
+  /**
+   * Keterangan teknis di pita widget (jumlah tugas + arti cincin, sudut yang
+   * diingat, "butir hilang sendiri...") hanya untuk Super Admin - petugas
+   * lain cukup dengan angka di lencana dan daftarnya. Penandanya datang dari
+   * portal (pengguna.superAdmin); portal lama tidak mengirimnya = disembunyikan.
+   * Galat dan peringatan (susunKabar) tetap tampil untuk semua.
+   */
+  function bolehKeteranganTeknis() {
+    // Lama: persis sebelumnya - tidak ada pita, dan kakinya tidak berubah.
+    if (modeUji() === "lama") return true;
+    const d = keadaan.data;
+    return Boolean(d && d.pengguna && d.pengguna.superAdmin === true);
+  }
+  /* === AKHIR CHECKLIST-POSISI === */
+
   function teksSambungan() {
     const s = keadaan.sambungan;
     if (s.keadaan === "baik") return "cincin hijau: portal tersambung";
@@ -3008,9 +3041,9 @@
     const baris = el("div", "aleta-cm-kaki-baris");
     const waktu = keadaan.data ? waktuData() : "";
     if (waktu) baris.appendChild(el("span", "aleta-cm-waktu", `Diperbarui ${waktu}`));
-    baris.appendChild(teknis(el("span", "aleta-cm-catatan", "butir hilang sendiri saat datanya lengkap")));
+    if (bolehKeteranganTeknis()) baris.appendChild(teknis(el("span", "aleta-cm-catatan", "butir hilang sendiri saat datanya lengkap")));
     // popup-9 dalam kulit Klasik; di dok UI Baru disebut di samping lencana.
-    if (sudutAktif() && !modern()) baris.appendChild(teknis(el("span", "aleta-cm-sudut", teksSudut())));
+    if (sudutAktif() && !modern() && bolehKeteranganTeknis()) baris.appendChild(teknis(el("span", "aleta-cm-sudut", teksSudut())));
     kaki.appendChild(baris);
     // K5: saklar penjelasan teknis - dalam Baru (kulit Klasik) di kaki
     // checklist; dalam UI Baru di "Atur widget". Lama: tidak ada.
@@ -3165,7 +3198,7 @@
       t.appendChild(n);
     }
     const ringkas = keadaan.data ? `${a.belum} tugas belum selesai (${a.lewat} lewat tenggat)` : teksPil();
-    const judul = `${ringkas} · ${teksSambungan()}. ${kecil ? "Bentangkan widget" : "Ciutkan menjadi lencana"} - geser untuk memindahkan.`;
+    const judul = `${ringkas}${bolehKeteranganTeknis() ? ` · ${teksSambungan()}` : ""}. ${kecil ? "Bentangkan widget" : "Ciutkan menjadi lencana"} - geser untuk memindahkan.`;
     t.title = judul;
     t.setAttribute("aria-label", judul);
     t.setAttribute("aria-expanded", kecil ? "false" : "true");
@@ -3508,8 +3541,11 @@
     if (!kecil) {
       const ket = el("div", "aleta-cmw-lencana-ket");
       const a = angkaBelum();
-      ket.appendChild(el("span", "aleta-cmw-lencana-teks", `${keadaan.data ? `${a.belum} tugas · ` : ""}${teksSambungan()}`));
-      if (sudutAktif()) ket.appendChild(teknis(el("span", "aleta-cm-sudut", teksSudut())));
+      // CHECKLIST-POSISI 12 Okt: kotaknya tetap ada (tata letak), isinya hanya Super Admin.
+      if (bolehKeteranganTeknis()) {
+        ket.appendChild(el("span", "aleta-cmw-lencana-teks", `${keadaan.data ? `${a.belum} tugas · ` : ""}${teksSambungan()}`));
+      }
+      if (sudutAktif() && bolehKeteranganTeknis()) ket.appendChild(teknis(el("span", "aleta-cm-sudut", teksSudut())));
       baris.appendChild(ket);
       const atur = tombol(
         "aleta-cmw-tombol aleta-cmw-atur-buka",
@@ -3912,7 +3948,7 @@
     const tinggi = kotak.height || 0;
     const kiri = nama.startsWith("kiri") ? TEPI : Math.max((window.innerWidth || 0) - lebar - TEPI, 0);
     const bawah = nama.endsWith("bawah") ? TEPI : Math.max((window.innerHeight || 0) - tinggi - TEPI, 0);
-    keadaan.posisi = { kiri: Math.round(kiri), bawah: Math.round(bawah), kecil: Boolean(keadaan.posisi && keadaan.posisi.kecil) };
+    keadaan.posisi = { kiri: Math.round(kiri), bawah: Math.round(bawah), kecil: sedangKecil() };
     simpanPosisi();
     terapkanPosisi();
   }
@@ -4911,10 +4947,54 @@
    * tik dan gulungan daftar dipulihkan supaya penyegaran lima menitan tidak
    * mencabut tempat orang sedang membaca.
    */
+  /* === CHECKLIST-POSISI 12 Okt === */
+  //
+  // KLIK YANG HILANG: "kadang saya klik minimize tidak mau minimize".
+  //
+  // Sebabnya bukan tombolnya, melainkan penggambaran ulang. gambar() membuang
+  // seluruh isi wadah dan membuatnya lagi - dan itu terjadi sendiri di tengah
+  // jalan: mengklik jendela yang baru kembali fokus memicu segarkan() (event
+  // focus datang pada TEKANAN, sebelum tombol dilepas), penyegaran lima menit,
+  // jawaban portal, tulisan tanda/susunan dari tab lain. Tombol yang ditekan
+  // lalu dilepas ADALAH SIMPUL LAIN: peramban hanya mengirim click bila tekan
+  // dan lepas jatuh pada simpul yang sama, jadi kliknya lenyap tanpa galat.
+  //
+  // Selama penunjuk masih menekan di dalam widget, penggambaran DITUNDA dan
+  // dikerjakan sesudah dilepas (dan sesudah click-nya terkirim).
+  const BATAS_TEKAN_MS = 5000;
+  let tekanSejak = 0;
+  let gambarTertunda = false;
+
+  function sedangDitekan() {
+    return tekanSejak > 0 && Date.now() - tekanSejak < BATAS_TEKAN_MS;
+  }
+
+  function mulaiTekan() {
+    tekanSejak = Date.now();
+  }
+
+  function lepasTekan() {
+    if (!tekanSejak) return;
+    tekanSejak = 0;
+    if (!gambarTertunda) return;
+    // click menyusul pointerup secara sinkron; gambar ulang sesudahnya.
+    setTimeout(() => {
+      if (!gambarTertunda || sedangDitekan()) return;
+      gambarTertunda = false;
+      gambar();
+    }, 0);
+  }
+  /* === AKHIR CHECKLIST-POSISI === */
+
   function gambar() {
     if (!bayang) return;
     const wadah = bayang.querySelector(".aleta-cm-wadah");
     if (!wadah) return;
+    if (sedangDitekan()) {
+      gambarTertunda = true;
+      return;
+    }
+    gambarTertunda = false;
     const fokus = kunciFokus();
     const isiLama = wadah.querySelector(".aleta-cm-isi");
     const gulung = isiLama ? isiLama.scrollTop : 0;
@@ -4922,7 +5002,7 @@
     // dipasang kembali - letak kursornya diingat dulu.
     const pilihanCatatan = catatanDisunting() ? [kotakCatatan.selectionStart, kotakCatatan.selectionEnd] : null;
     wadah.textContent = "";
-    const kecil = Boolean(keadaan.posisi && keadaan.posisi.kecil);
+    const kecil = sedangKecil();
     const mode = modeUji();
     // Lama: jalan yang sama persis seperti sebelum tahap 3.
     if (mode === "lama") wadah.appendChild(kecil ? susunPil() : susunPanel());
@@ -5126,7 +5206,7 @@
 
   function simpanPosisi() {
     const p = keadaan.posisi || {};
-    const isi = { kecil: Boolean(p.kecil) };
+    const isi = { kecil: sedangKecil() };
     if (Number.isFinite(p.kiri) && Number.isFinite(p.bawah)) {
       isi.kiri = p.kiri;
       isi.bawah = p.bawah;
@@ -5211,7 +5291,7 @@
       keadaan.posisi = {
         kiri: parseFloat(akar.style.left) || 0,
         bawah: parseFloat(akar.style.bottom) || 0,
-        kecil: Boolean(keadaan.posisi && keadaan.posisi.kecil),
+        kecil: sedangKecil(),
       };
       simpanPosisi();
       if (fitur("popup-9")) tempelKeSudut();
@@ -5235,13 +5315,17 @@
     const wadah = el("div", "aleta-cm-wadah");
     bayang.appendChild(wadah);
     pasangGeser(wadah);
+    // CHECKLIST-POSISI 12 Okt: penggambaran ditunda selama penunjuk menekan.
+    // Di akar bayangan, bukan di wadah: jendela melayang (data-lepasan) hidup
+    // di wadah saudaranya dan menggambar ulang dirinya sama seperti dok.
+    bayang.addEventListener("pointerdown", mulaiTekan, true);
     // Butir 11 (2 Okt, UI Baru): klik dua kali di sudut = pindah ke sudut itu.
     try {
       if (typeof alatPasangSudut === "function") {
         alatPasangSudut(wadah, {
           saatPindah: pindahKeSudutLayar,
           wadahSorot: bayang,
-          gerbang: () => modern() && !(keadaan.posisi && keadaan.posisi.kecil),
+          gerbang: () => modern() && !sedangKecil(),
         });
       }
     } catch {
@@ -5641,6 +5725,10 @@
   // selama pembacaan pertama tidak boleh hilang.
   dengarkan();
   window.addEventListener("focus", saatKembali);
+  // CHECKLIST-POSISI 12 Okt: lepas/batal di mana pun - juga di luar widget.
+  window.addEventListener("pointerup", lepasTekan, true);
+  window.addEventListener("pointercancel", lepasTekan, true);
+  window.addEventListener("blur", lepasTekan);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") saatKembali();
   });

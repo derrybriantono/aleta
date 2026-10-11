@@ -161,7 +161,7 @@ describe("GET /api/aleta-ecourt/checklist", () => {
     expect(Object.keys(data).sort()).toEqual(
       ["butir", "dibuat", "galat", "jenisTidakTersedia", "pengguna", "peranAktif", "peranTersedia", "ringkas"].sort()
     );
-    expect(Object.keys(data.pengguna as object).sort()).toEqual(["nama", "peran"]);
+    expect(Object.keys(data.pengguna as object).sort()).toEqual(["nama", "peran", "superAdmin"]);
     expect(Object.keys(data.ringkas as object).sort()).toEqual(["hariIni", "lewat", "mingguIni", "selesaiHariIni", "totalHariIni"].sort());
     expect(new Date(String(data.dibuat)).toISOString()).toBe(data.dibuat);
     for (const p of data.peranTersedia as Array<Record<string, unknown>>) expect(Object.keys(p).sort()).toEqual(["kunci", "label"]);

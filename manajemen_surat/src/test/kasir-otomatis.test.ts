@@ -407,9 +407,9 @@ describe("4-5. rekap, PDF, pengingat", () => {
     expect(kelompokTenggat("2026-10-12", "2026-10-09")).toBe("minggu-ini");
   });
 
-  it("5. pengingat ditempel ke checklist milestone hanya bagi yang boleh Kasir, dan alamat portalnya membuka Kasir harian", () => {
+  it("5. pengingat ditempel ke checklist milestone hanya bagi yang MENGERJAKANNYA (kasir/keuangan - bukan admin/panitera, 12 Okt), dan alamat portalnya membuka Kasir harian", () => {
     const modul = readFileSync(path.join(process.cwd(), "src/server/modules/aleta-ecourt/checklist-milestone.ts"), "utf8");
-    expect(modul).toMatch(/if \(opsi\.tanpaKasir \|\| !bolehKasir\(aktor\)\) return jawaban;/);
+    expect(modul).toMatch(/if \(opsi\.tanpaKasir \|\| !bolehPengingatKasir\(aktor\)\) return jawaban;/);
     expect(ALAMAT_KASIR_PORTAL.startsWith("/aleta/")).toBe(true);
     const halaman = readFileSync(path.join(process.cwd(), "src/components/portal/aleta-ecourt-pengguna.tsx"), "utf8");
     expect(halaman).toMatch(/if \(jangkar === "kasir"\) setMenu\("sidang"\)/);
