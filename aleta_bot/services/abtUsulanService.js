@@ -2905,6 +2905,10 @@ function alasanDariPosita(posita) {
  * Menyusun keterangannya seolah ia tahu pertengkaran membuatnya patah oleh
  * satu pertanyaan silang.
  */
+/* === SAKSI-N 12 Okt === */
+/** Saksi yang dilayani penyusun per pihak (cermin BATAS_SAKSI_SDG di ekstensi-sipp/abt.js dan PENANDA_SAKSI di portal). */
+const BATAS_SAKSI_SDG = Object.freeze({ P: 5, T: 4 });
+/* === AKHIR SAKSI-N === */
 const MODUS_SAKSI = new Set([
   "sama",
   "sebagian",
@@ -4717,7 +4721,11 @@ function susunKeteranganSaksiSdg(opsi) {
   let banyakP = 0;
   let banyakT = 0;
   const tambahSaksi = (m, pihakSaksi) => {
-    if (pihakSaksi === "T" ? banyakT >= 2 : banyakP >= 4) return;
+    /* === SAKSI-N 12 Okt === */
+    // Dahulu 4 saksi P dan 2 saksi T. Kini sampai BATAS_SAKSI_SDG.P (5) dan .T (4): variabel ABT 8920-8943
+    // (paket abt-saksi-pertanyaan) melengkapi saksi P ke-5 dan T ke-3/ke-4; saksi 1-2 P tidak berubah.
+    if (pihakSaksi === "T" ? banyakT >= BATAS_SAKSI_SDG.T : banyakP >= BATAS_SAKSI_SDG.P) return;
+    /* === AKHIR SAKSI-N === */
     if (pihakSaksi === "T") banyakT++;
     else banyakP++;
     daftarSaksi.push({ m: m || {}, pihak: pihakSaksi, urutPihak: pihakSaksi === "T" ? banyakT : banyakP });
@@ -5066,6 +5074,7 @@ module.exports = {
   bulanNomorRegister,
   dariPositaItsbat,
   susunKeteranganSaksiSdg,
+  BATAS_SAKSI_SDG,
   // Butir 28 (30 Sep 2026) - diuji langsung.
   sumberUpayaDamai,
   isiUpayaRukun,

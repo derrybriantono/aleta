@@ -206,7 +206,12 @@ describe("lembar menjadi penanda blangko", () => {
     const peta = penandaDariLembar([lembarUji(3, "Orang Ketiga")]);
     expect(peta.get("6132")?.nilai).toBe("Orang Ketiga");
     for (const milikLain of ["1197", "1203", "5058", "5059"]) expect(peta.has(milikLain)).toBe(false);
-    expect(penandaDariLembar([lembarUji(5, "Orang Kelima")]).size).toBe(0);
+    // 12 Okt 2026 (paket abt-saksi-pertanyaan): saksi kelima kini punya tempat sendiri (#8924#-#8929#, #8931#);
+    // yang keenam tetap tidak menumpang siapa pun.
+    const kelima = penandaDariLembar([lembarUji(5, "Orang Kelima")]);
+    expect(kelima.get("8924")?.nilai).toBe("Orang Kelima");
+    for (const milikLain of ["1197", "1203", "6132", "6144", "5058", "5059", "5060", "6122", "6124"]) expect(kelima.has(milikLain)).toBe(false);
+    expect(penandaDariLembar([lembarUji(6, "Orang Keenam")]).size).toBe(0);
   });
 
   it("lembar tanpa jawaban tidak mengisi penanda tanya-jawab", async () => {

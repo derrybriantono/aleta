@@ -99,7 +99,7 @@ type Lembar = {
  * saksi Tergugat. Disalin dari PENANDA_SAKSI keterangan-abt.ts sebagai angka
  * saja - cukup untuk memberi tahu, bukan untuk mengisi.
  */
-const TEMPAT_SAKSI_BLANGKO: Record<"P" | "T", number> = { P: 4, T: 2 };
+const TEMPAT_SAKSI_BLANGKO: Record<"P" | "T", number> = { P: 5, T: 4 };
 
 type KeadaanAcc = "belum-selesai" | "menunggu-acc" | "dikembalikan" | "diacc";
 
@@ -312,7 +312,7 @@ export function LembarIsian({
               onChange={(event) => setSaksiKe(Number(event.target.value) || 1)}
               aria-label="Saksi ke berapa"
             >
-              {[1, 2, 3, 4].map((n) => (
+              {[1, 2, 3, 4, 5].slice(0, TEMPAT_SAKSI_BLANGKO[lembar.pihakSaksi === "T" ? "T" : "P"]).map((n) => (
                 <option key={n} value={n}>
                   Saksi ke-{n}
                 </option>

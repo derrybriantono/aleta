@@ -237,7 +237,7 @@ describe("rute /abt/usulan - sebutan pencerita sampai ke berita acara", () => {
     }
   });
 
-  it("saksi N: sampai enam, pihak P/T; yang tidak sah disebut, bukan ditelan", async () => {
+  it("saksi N: sampai lima P dan empat T, pihak P/T; yang tidak sah disebut, bukan ditelan", async () => {
     panggilan.length = 0;
     const saksi = [
       { ke: 1, pihak: "P", modus: "sama", sumber: "", sumberNama: "", alasan: [] },
@@ -255,16 +255,16 @@ describe("rute /abt/usulan - sebutan pencerita sampai ke berita acara", () => {
     expect(opsi.saksi[2].sumberNama).toBe("Tergugat");
     expect(isi.data.saksiDitolak).toEqual([
       { indeks: 3, alasan: "pihak_bukan_P_atau_T" },
-      { indeks: 4, alasan: "ke_di_luar_1_sampai_6" },
+      { indeks: 4, alasan: "ke_di_luar_1_sampai_4" },
     ]);
   });
 
-  it("portal memotong saksi[] menjadi enam sebelum ke bot", async () => {
+  it("portal memotong saksi[] menjadi sembilan (5 P + 4 T) sebelum ke bot", async () => {
     panggilan.length = 0;
-    const saksi = Array.from({ length: 9 }, (_, i) => ({ ke: (i % 4) + 1, pihak: i < 4 ? "P" : "T", modus: "sama" }));
+    const saksi = Array.from({ length: 12 }, (_, i) => ({ ke: (i % 4) + 1, pihak: i < 4 ? "P" : "T", modus: "sama" }));
     await mintaSdg({ saksi1: { modus: "sama" }, saksi2: { modus: "sama" } }, { saksi });
     const opsi = panggilan.find((p) => p.fungsi === "susunKeteranganSaksiSdg")?.argumen[0] as { saksi: unknown[] };
-    expect(opsi.saksi.length).toBeLessThanOrEqual(6);
+    expect(opsi.saksi.length).toBeLessThanOrEqual(9);
   });
 });
 

@@ -79,9 +79,9 @@ describe("tabel penanda saksi", () => {
     expect(PENANDA_SAKSI.T[2].tanyaJawab).toEqual(["6121"]);
     expect(PENANDA_SAKSI.T[1].sumpah).toBe("7031");
     expect(PENANDA_SAKSI.T[2].sumpah).toBe("7032");
-    // Empat saksi Penggugat dan dua saksi Tergugat - tidak lebih.
-    expect(Object.keys(PENANDA_SAKSI.P)).toEqual(["1", "2", "3", "4"]);
-    expect(Object.keys(PENANDA_SAKSI.T)).toEqual(["1", "2"]);
+    // 12 Okt 2026 (paket abt-saksi-pertanyaan): lima saksi Penggugat dan empat saksi Tergugat - tidak lebih.
+    expect(Object.keys(PENANDA_SAKSI.P)).toEqual(["1", "2", "3", "4", "5"]);
+    expect(Object.keys(PENANDA_SAKSI.T)).toEqual(["1", "2", "3", "4"]);
   });
 
   it("pihak dibaca dari kumpulan: A2/A2a dan 'Saksi T' = Tergugat; Jawaban Lisan T bukan saksi Tergugat", () => {
@@ -125,8 +125,16 @@ describe("lembar ALETA mengisi blangko nyata", () => {
     expect(nilai.get("6120")?.asal).toContain("saksi Tergugat ke-1");
   });
 
-  it("saksi Tergugat ketiga tidak punya tempat - tidak menumpang tempat siapa pun", () => {
-    expect(penandaDariLembar([lembar("A2a", "Pertanyaan Saksi T CG", 3, "T3")]).size).toBe(0);
+  it("saksi Tergugat ketiga dan keempat punya tempat sendiri (8921/8941, paket 12 Okt); yang kelima tidak - tidak menumpang tempat siapa pun", () => {
+    const t3 = penandaDariLembar([lembar("A2a", "Pertanyaan Saksi T CG", 3, "T3")]);
+    expect(t3.get("6138")?.nilai).toBe("T3");
+    expect(t3.get("8921")?.nilai).toContain("Kenal;");
+    expect(t3.has("6122")).toBe(false); // 6122 menunjuk saksi 3 PENGGUGAT
+    const t4 = penandaDariLembar([lembar("A2a", "Pertanyaan Saksi T CG", 4, "T4")]);
+    expect(t4.get("8934")?.nilai).toBe("T4");
+    expect(t4.get("8941")?.nilai).toContain("Kenal;");
+    expect(penandaDariLembar([lembar("A2a", "Pertanyaan Saksi T CG", 5, "T5")]).size).toBe(0);
+    expect(penandaDariLembar([lembar("A1a", "Pertanyaan Saksi P CG", 6, "P6")]).size).toBe(0);
   });
 
   it("lembar saksi Tergugat ke-1 tidak menyingkirkan rekaman ABT saksi Penggugat ke-1", () => {
