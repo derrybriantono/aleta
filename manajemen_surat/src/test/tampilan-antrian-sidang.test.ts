@@ -272,7 +272,12 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // rekap, pengingat; dijaga kasir-otomatis.test.ts).
     // 53 sejak 12 Okt 2026: + penanda-perkara, penanda-pekerjaan, kumulasi-perkara,
     // mediator-majelis, panggil-saksi, kartu-ruang (antrian sidang butir 1-7).
-    expect(SAKLAR_TAMPILAN.length).toBe(53);
+    // 60 sejak agen C (12 Okt 2026, butir 7 - audit fitur tanpa saklar): + penanda-verzet,
+    // lencana-putusan-ecourt, pihak-turut-intervensi, tombol-status-perkara,
+    // tombol-ruang-sidang, tombol-selesai-sidang, tombol-cetak-relaas (7 saklar,
+    // dijaga jadwal-sidang-12okt-agen-c.test.tsx). Hitungan 53 + 7: BELUM memuat
+    // tambahan agen A/B bila ada saklar baru dari mereka - jumlahkan saat menggabung.
+    expect(SAKLAR_TAMPILAN.length).toBe(60);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {
