@@ -325,6 +325,25 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Penanda netral bila semua pihak hadir pada sidang sebelumnya. Hanya tampil di mode Ringkas.",
     kelompok: "penanda",
   },
+  // === 12OKT-C: saklar hasil audit butir 7 - penanda ===
+  // Penanda yang SUDAH digambar tetapi belum punya saklar (diaudit 12 Okt 2026
+  // dengan membandingkan SAKLAR_TAMPILAN dengan yang digambar layar). Bawaannya
+  // MENYALA: tidak ada yang hilang bagi pemakai lama.
+  {
+    kunci: "penanda-verzet",
+    label: "Verzet",
+    keterangan:
+      "Lencana merah \"verzet\" di samping nomor perkara bila perkaranya perlawanan terhadap putusan verstek (tenggang dan pihak yang melawan berbeda dari perkara biasa).",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "lencana-putusan-ecourt",
+    label: "Putusan e-Court belum beres",
+    keterangan:
+      "Lencana di baris penanda kolom Perkara (di bawah jenis perkara) pada perkara yang sudah putus: putusannya belum diunggah ke e-Court atau belum bertanda tangan elektronik. Diam bila tidak ada yang perlu dikerjakan. Mematikannya juga menghentikan pemeriksaan keadaan putusan ke e-Court per baris.",
+    kelompok: "penanda",
+  },
+  // === AKHIR 12OKT-C ===
   // 12 Okt 2026 (antrian sidang butir 5): ghaib, prodeo, dan non e-Court di
   // samping nomor perkara; e-Court tidak diberi tanda karena itu yang lazim.
   {
@@ -408,6 +427,16 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Jam ambil tiap sisi (P, T, Saksi) dan nama petugas pelayanan di bawah nomor antrian. Nomor antriannya dan tulisan \"dipanggil\" tetap tampil.",
     kelompok: "keterangan",
   },
+
+  // === 12OKT-C: saklar hasil audit butir 7 - keterangan ===
+  {
+    kunci: "pihak-turut-intervensi",
+    label: "Turut Tergugat & intervensi",
+    keterangan:
+      "Baris \"Turut T:\" dan \"Int:\" di bawah P dan T pada kolom Perkara, untuk perkara yang memiliki turut tergugat atau pihak intervensi. P dan T tetap tampil.",
+    kelompok: "keterangan",
+  },
+  // === AKHIR 12OKT-C ===
 
   // ==========================================================================
   // DUA SAKLAR YANG BAWAANNYA MATI - PENGECUALIAN, DAN SEBABNYA DITULIS
@@ -514,6 +543,32 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kelompok: "alat",
   },
 
+  // === 12OKT-C: saklar hasil audit butir 7 - tombol pada baris ===
+  // Tiga tombol di kolom paling kanan. Hak memakainya tetap mengikuti peran
+  // (sidang.jalannya); saklar ini hanya pilihan tampilan, bukan izin.
+  {
+    kunci: "tombol-status-perkara",
+    label: "Tombol Status",
+    keterangan:
+      "Tombol \"Status\" di bawah Rincian pada kolom paling kanan: membuka Status Perkara. Rincian dan nomor perkara tidak terpengaruh.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "tombol-ruang-sidang",
+    label: "Tombol jalannya sidang",
+    keterangan:
+      "Tombol Skors, Lompat ke sini, Lanjutkan, dan Tandai berjalan di kolom paling kanan. Hanya bagi yang berwenang menjalankan sidang; yang tidak berwenang memang tidak melihatnya.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "tombol-selesai-sidang",
+    label: "Tombol Selesai",
+    keterangan:
+      "Tombol Selesai di dasar kolom paling kanan (tersinkron dengan antrian sidang). Tanda hijau baris yang sudah selesai tidak terpengaruh. Hanya bagi yang berwenang menjalankan sidang.",
+    kelompok: "alat",
+  },
+  // === AKHIR 12OKT-C ===
+
   // --- Di atas tabel -------------------------------------------------------
   {
     kunci: "skor-kesiapan",
@@ -560,6 +615,15 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Tombol Kasir harian (jurnal otomatis massal satu hari menurut keadaan tiap perkara, rekap pengeluaran harian s.d. tahunan dengan PDF, dan pengingat tugas kasir) beserta tombol pengingatnya. Hanya bagi kasir/keuangan/panitera/admin.",
     kelompok: "atas",
   },
+  // === 12OKT-C: saklar hasil audit butir 7 - di atas tabel ===
+  {
+    kunci: "tombol-cetak-relaas",
+    label: "Tombol Cetak relaas",
+    keterangan:
+      "Tombol Cetak relaas di deretan tombol: mencetak relaas panggilan dan pemberitahuan putusan yang lahir pada hari itu lewat ekstensi ALETA. Hanya bagi yang berwenang mencetak relaas.",
+    kelompok: "atas",
+  },
+  // === AKHIR 12OKT-C ===
   {
     kunci: "saring-ruang",
     label: "Tombol ruang sidang",

@@ -40,6 +40,11 @@ import {
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
 import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
+/* === 12OKT-C: kartu ruang sidang & mediator === */
+import { KartuRuangSidang } from "@/components/portal/kartu-ruang-sidang";
+import { keteranganPerluDiperiksa, susunKartuRuang } from "@/lib/kartu-ruang-sidang";
+import { mediatorBaris } from "@/lib/mediator-jadwal";
+/* === AKHIR 12OKT-C === */
 import { KUNCI_VERSI_BAWAAN, pilihanSesudahBawaan, type BawaanDiterima } from "@/lib/tampilan-bawaan";
 import { DuaKeadaan, InfoContohSaklar } from "@/components/portal/contoh-tampilan";
 import {
@@ -5096,7 +5101,28 @@ export function AletaEcourtSidang({
   // Butir 5 (6 Okt 2026): saringan ruang sidang - PALING akhir, sesudah
   // "Perkara saya", dan hanya bila saklarnya menyala. Lihat @/lib/ruang-sidang-saring.
   const ruangAktif = useMemo(() => daftarRuangAktif(sidang), [sidang]);
-  const ruangSaring = tampil(tampilan, "saring-ruang") ? ruangPilihanBerlaku(ruangDipilih, ruangAktif) : null;
+  // 12OKT-C: kartu ruang memakai saringan yang SAMA - menekan kartu saat tombol
+  // ruangnya dimatikan tetap harus menyaring, jadi salah satu saklar cukup.
+  const ruangSaring =
+    tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang")
+      ? ruangPilihanBerlaku(ruangDipilih, ruangAktif)
+      : null;
+  /* === 12OKT-C: kartu ruang sidang (butir 3) ===
+     "Perlu diperiksa" per ruang = predikat kotak gabungan "Perlu diperiksa"
+     milik layar ini (KEADAAN_PERLU_DIPERIKSA) - bukan aturan kedua. Dihitung
+     dari SELURUH sidang pada rentang, bukan yang sudah tersaring. */
+  const kartuRuang = useMemo(
+    () =>
+      susunKartuRuang(sidang, (baris) =>
+        KEADAAN_PERLU_DIPERIKSA.some((keadaan) => keadaan.cocok(baris, antrian.peta, saat))
+      ),
+    [sidang, antrian.peta, saat]
+  );
+  const keteranganPerluKartu = keteranganPerluDiperiksa(
+    KEADAAN_MENUNTUT_TINDAKAN.map((x) => x.label),
+    JAM_BATAS_HASIL_SIDANG.slice(0, 5)
+  );
+  /* === AKHIR 12OKT-C === */
   const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring);
   // Butir 8 (6 Okt 2026): "Ciutkan perkara yang sudah selesai" - bawaannya mati.
   // Selesai = tanda hijau yang sama dengan kolom Putusan (selesaiPerKunciWaktu).
@@ -6366,7 +6392,7 @@ export function AletaEcourtSidang({
                   pada hari itu - termasuk perkara yang baru didaftarkan.
                   TIDAK bergantung pada daftar sidang yang tampil: hari tanpa
                   sidang pun dapat berisi perkara baru yang harus dipanggil. */}
-              {bolehCetakRelaas ? (
+              {bolehCetakRelaas && tampil(tampilan, "tombol-cetak-relaas") ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -6438,6 +6464,21 @@ export function AletaEcourtSidang({
             ) : null}
           </div>
 
+          {/* === 12OKT-C: kartu ruang sidang (butir 3) ===
+              Di BAWAH deretan Hitung skor dst., bawaan diciutkan. Tidak ikut
+              disembunyikan oleh alatCiut (deretan alat bawaannya sudah
+              terciut - panel ini justru harus tetap terlihat sebagai satu
+              baris ringkas); hanya Kendali yang diciutkan yang
+              menyembunyikannya. */}
+          {tampil(tampilan, "kartu-ruang") && !kendaliCiut && kartuRuang.length > 0 ? (
+            <KartuRuangSidang
+              kartu={kartuRuang}
+              ruangPilihan={ruangSaring}
+              onPilih={setRuangDipilih}
+              keteranganPerlu={keteranganPerluKartu}
+            />
+          ) : null}
+          {/* === AKHIR 12OKT-C === */}
         </div>
 
 
@@ -7271,6 +7312,9 @@ export function AletaEcourtSidang({
                   });
                   // Butir 33/36 (5 Okt 2026): nama petugas & pihak dapat diklik untuk dipanggil.
                   const konteksPanggil = { perkaraId: String(baris.perkaraId), tanggal: baris.tanggalSidang.slice(0, 10), nomorPerkara: baris.nomorPerkara, ruang: baris.ruangan, agenda: baris.agenda };
+                  /* === 12OKT-C: mediator di Majelis & Petugas (butir 6) === */
+                  const mediatorIni = tampil(tampilan, "mediator-majelis") ? mediatorBaris(baris) : "";
+                  /* === AKHIR 12OKT-C === */
                   return (
                     <Fragment key={kunci}>
                       {/* ==================================================
@@ -7474,7 +7518,7 @@ export function AletaEcourtSidang({
                               Merah - bukan karena buruk, melainkan karena ia
                               menuntut perlakuan yang berbeda dari perkara di
                               sekitarnya, dan itulah arti merah di layar ini. */}
-                          {perkaraVerzetDari(baris.jenisPerkara) ? (
+                          {tampil(tampilan, "penanda-verzet") && perkaraVerzetDari(baris.jenisPerkara) ? (
                             <Badge
                               variant="danger"
                               className="ml-2 align-middle"
@@ -7559,13 +7603,13 @@ export function AletaEcourtSidang({
                               {/* Butir 23 (6 Okt 2026): turut tergugat dan
                                   intervensi di bawah P dan T, dapat diklik
                                   (WhatsApp) seperti pihak lain. */}
-                              {(baris.pihak.turutTergugat ?? []).length > 0 ? (
+                              {tampil(tampilan, "pihak-turut-intervensi") && (baris.pihak.turutTergugat ?? []).length > 0 ? (
                                 <div className="break-words" title={`Turut Tergugat: ${(baris.pihak.turutTergugat ?? []).join(", ")}`} data-pihak-turut="">
                                   <span className="font-medium text-foreground/70">Turut T:</span>{" "}
                                   <NamaDapatDipanggil golongan="pihak4" {...konteksPanggil}>{(baris.pihak.turutTergugat ?? []).join(", ")}</NamaDapatDipanggil>
                                 </div>
                               ) : null}
-                              {(baris.pihak.intervensi ?? []).length > 0 ? (
+                              {tampil(tampilan, "pihak-turut-intervensi") && (baris.pihak.intervensi ?? []).length > 0 ? (
                                 <div className="break-words" title={`Intervensi: ${(baris.pihak.intervensi ?? []).join(", ")}`} data-pihak-intervensi="">
                                   <span className="font-medium text-foreground/70">Int:</span>{" "}
                                   <NamaDapatDipanggil golongan="pihak3" {...konteksPanggil}>{(baris.pihak.intervensi ?? []).join(", ")}</NamaDapatDipanggil>
@@ -7795,6 +7839,13 @@ export function AletaEcourtSidang({
                                 <NamaDapatDipanggil golongan="js" {...konteksPanggil}>{baris.jurusitaNama}</NamaDapatDipanggil>
                               </span>
                             ) : null}
+                            {/* === 12OKT-C: mediator di bawah JS, di atas ruang === */}
+                            {mediatorIni ? (
+                              <span title={`Mediator: ${mediatorIni}`} data-mediator-majelis="">
+                                <span className="font-medium text-foreground/70">Mediator</span> {mediatorIni}
+                              </span>
+                            ) : null}
+                            {/* === AKHIR 12OKT-C === */}
                             {/* Ruang ikut ke sini sejak kolomnya dihapus. Ia
                                 hampir selalu sama sepanjang satu hari, tetapi
                                 pada hari yang memakai lebih dari satu ruang,
@@ -8047,7 +8098,7 @@ export function AletaEcourtSidang({
                                 TTE - kontrak K5 (komponen milik agen E). Hanya
                                 pada perkara yang sudah putus; komponennya diam
                                 bila tidak ada yang perlu dikerjakan. */}
-                            {baris.sudahPutus || sudahPutusHariIni(baris) ? (
+                            {tampil(tampilan, "lencana-putusan-ecourt") && (baris.sudahPutus || sudahPutusHariIni(baris)) ? (
                               <EcourtLencanaPutusan
                                 nomorPerkara={baris.nomorPerkara}
                                 perkaraId={baris.perkaraId}
@@ -8305,6 +8356,15 @@ export function AletaEcourtSidang({
                             {baris.jurusitaNama ? <NamaDapatDipanggil golongan="js" {...konteksPanggil}>{baris.jurusitaNama}</NamaDapatDipanggil> : "—"}
                           </div>
 
+                          {/* === 12OKT-C: mediator di bawah JS, di atas ruang === */}
+                          {mediatorIni ? (
+                            <div className="mt-0.5" title={`Mediator: ${mediatorIni}`} data-mediator-majelis="">
+                              <span className="text-muted-foreground">Mediator </span>
+                              {mediatorIni}
+                            </div>
+                          ) : null}
+                          {/* === AKHIR 12OKT-C === */}
+
                           {baris.ruangan ? (
                             <div className="mt-0.5 text-xs text-muted-foreground">
                               {baris.ruangan}
@@ -8556,7 +8616,7 @@ export function AletaEcourtSidang({
                                 bawah Rincian, bukan dengan menarik pulang
                                 kotak nomornya: keduanya dibutuhkan, dan yang
                                 satu tidak boleh menggantikan yang lain. */}
-                            {onBukaStatus ? (
+                            {tampil(tampilan, "tombol-status-perkara") && onBukaStatus ? (
                               <button
                                 type="button"
                                 onClick={() => onBukaStatus(baris.nomorPerkara)}
@@ -8577,7 +8637,7 @@ export function AletaEcourtSidang({
                             {/* Skors / Lompat ke sini / Lanjutkan / Tandai berjalan - butir 10
                                 (2 Okt 2026). Tidak pernah pada baris hijau. */}
                             {/* HAK-PERAN 12 Okt: hanya golongan sidang.jalannya / sidang.antrian */}
-                            {bolehJalannya ? (
+                            {bolehJalannya && tampil(tampilan, "tombol-ruang-sidang") ? (
                             <TombolRuangSidang
                               baris={baris}
                               aksi={aksiRuang}
@@ -8594,7 +8654,7 @@ export function AletaEcourtSidang({
                             ) : null}
                             {/* Selesai - sinkron dua arah dengan antrian sidang
                                 (perbaikan 1 Okt 2026, J2). */}
-                            {bolehJalannya ? (
+                            {bolehJalannya && tampil(tampilan, "tombol-selesai-sidang") ? (
                             <TombolSelesaiSidang
                               baris={baris}
                               keadaan={selesaiTanda}
@@ -8686,6 +8746,7 @@ export function AletaEcourtSidang({
                                   perkaraId={baris.perkaraId}
                                   sidangId={baris.sidangId}
                                   tunjukan={tunjukan[String(baris.perkaraId)]}
+                                  mediator={mediatorIni} /* 12OKT-C */
                                   tampilCatatanHitung={tampil(tampilan, "catatan-cara-hitung")}
                                   durasi={baris.durasi}
                                   pembebanan={sidangIkrar(baris) ? baris.pembebanan ?? null : null}
@@ -8761,6 +8822,7 @@ export function RincianSidang({
   perkaraId,
   sidangId,
   tunjukan,
+  mediator = "", /* 12OKT-C */
   tampilCatatanHitung,
   durasi,
   tandaOnline = null,
@@ -8782,6 +8844,12 @@ export function RincianSidang({
   sidangId: string;
   /** Tunjukan konseptor sementara perkara ini - lihat SelKonseptorSementara. */
   tunjukan?: KonseptorSementara;
+  /**
+   * 12OKT-C (butir 6): nama mediator untuk bagian Majelis dan petugas. Sudah
+   * dihitung di baris (mediatorBaris + saklar mediator-majelis); "" = tidak
+   * ada / saklar mati / belum ditunjuk pada hari sidang ini.
+   */
+  mediator?: string;
   /** Catatan cara menghitung digambar atau tidak - lihat CatatanCaraHitung. */
   tampilCatatanHitung: boolean;
   /**
@@ -9055,6 +9123,14 @@ export function RincianSidang({
               ? sipp.jurusita.map((orang) => orang.nama).join(", ")
               : "—"}
           </p>
+          {/* === 12OKT-C: mediator di bawah jurusita (butir 6) === */}
+          {mediator ? (
+            <p className="text-sm" data-rincian-mediator="">
+              <span className="text-xs text-muted-foreground">Mediator: </span>
+              {mediator}
+            </p>
+          ) : null}
+          {/* === AKHIR 12OKT-C === */}
         </Bagian>
 
         {/* --- Para pihak --- */}

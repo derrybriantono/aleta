@@ -133,6 +133,36 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   cetak: { letak: "deretan tombol di atas tabel", contoh: tombol("Cetak") },
   "daftar-antrian": { letak: "deretan tombol di atas tabel", contoh: tombol("Daftarkan ke antrian") },
   "saring-ruang": { letak: "ujung kanan deretan tombol", contoh: tombol("Ruang Sidang 1 · 17") },
+  // === 12OKT-C: contoh untuk saklar kartu ruang, mediator, dan hasil audit butir 7 ===
+  "kartu-ruang": {
+    letak: "di bawah deretan tombol (bawaan diciutkan)",
+    contoh: (
+      <span className="inline-flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center gap-1 rounded-3xl border border-sky-300 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-950 dark:border-sky-700 dark:bg-sky-950/50 dark:text-sky-50">
+          Ruang Sidang 1 · 17 perkara
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-3xl border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-50">
+          Ruang Sidang 2 · 4 perkara
+        </span>
+        {lencana("bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200", "2 perlu diperiksa")}
+      </span>
+    ),
+  },
+  "mediator-majelis": {
+    letak: "kolom Majelis & Petugas, di bawah JS dan di atas ruang",
+    contoh: redup("Mediator Massadi, S.Ag., M.H."),
+  },
+  "penanda-verzet": { letak: "kolom Perkara, di samping nomor", contoh: lencana("bg-red-600 text-white", "verzet") },
+  "lencana-putusan-ecourt": {
+    letak: "kolom Perkara, baris penanda di bawah jenis perkara",
+    contoh: lencana("bg-amber-400 text-amber-950", "putusan belum diunggah"),
+  },
+  "pihak-turut-intervensi": { letak: "kolom Perkara, di bawah P dan T", contoh: redup("Turut T: Kepala Desa Contoh · Int: Fulan") },
+  "tombol-status-perkara": { letak: "kolom paling kanan, di bawah Rincian", contoh: tombol("Status") },
+  "tombol-ruang-sidang": { letak: "kolom paling kanan", contoh: tombol("Skors · Lanjutkan · Tandai berjalan") },
+  "tombol-selesai-sidang": { letak: "kolom paling kanan, paling bawah", contoh: tombol("Selesai") },
+  "tombol-cetak-relaas": { letak: "deretan tombol di atas tabel", contoh: tombol("Cetak relaas") },
+  // === AKHIR 12OKT-C ===
   "ciutkan-selesai": { letak: "di atas tabel", contoh: redup("5 perkara yang sudah selesai diciutkan · tampilkan") },
   "tombol-penetapan-kembali": { letak: "deretan tombol di atas tabel", contoh: tombol("Penetapan kembali") },
   "tombol-kasir": { letak: "deretan tombol di atas tabel", contoh: tombol("Kasir") },

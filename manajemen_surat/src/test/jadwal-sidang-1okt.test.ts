@@ -759,7 +759,9 @@ describe("K5 - aksi dan lencana e-Court milik agen E terpasang", () => {
   it("EcourtAksiPerkara konteks jadwal di rincian; EcourtLencanaPutusan di baris perkara yang sudah putus", () => {
     expect(SIDANG).toContain('import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";');
     expect(SIDANG).toMatch(/<EcourtAksiPerkara\s+konteks="jadwal"\s+nomorPerkara=\{nomorPerkara\}\s+perkaraId=\{perkaraId\}/);
-    expect(SIDANG).toMatch(/baris\.sudahPutus \|\| sudahPutusHariIni\(baris\) \? \(\s+<EcourtLencanaPutusan/);
+    // 12 Okt 2026 (agen C, butir 7): lencana ini kini punya saklar lencana-putusan-ecourt.
+    expect(SIDANG).toMatch(/\(baris\.sudahPutus \|\| sudahPutusHariIni\(baris\)\) \? \(\s+<EcourtLencanaPutusan/);
+    expect(SIDANG).toContain('tampil(tampilan, "lencana-putusan-ecourt") && (baris.sudahPutus');
   });
 });
 
