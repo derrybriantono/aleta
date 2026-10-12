@@ -10940,3 +10940,15 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="kasirKel"] .aleta
   display: none !important;
 }
 /* === AKHIR R 11 Okt === */
+
+/* === PSAKSI 12 Okt === set pertanyaan saksi baku di borang Susun keterangan saksi (Baru/UI Baru) */
+.aleta-sdg-set-huruf {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px dashed var(--aleta-garis);
+  border-radius: 6px;
+}
+.aleta-sdg-baris-set-aleta .aleta-sdg-set-aleta { flex: 1 1 200px; min-width: 0; }
+/* === AKHIR PSAKSI === */

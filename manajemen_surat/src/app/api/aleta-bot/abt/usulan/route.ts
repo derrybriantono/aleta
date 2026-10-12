@@ -54,7 +54,8 @@ const BATAS_TEKS = 20000;
  * kumpulan ABT, dua keterangan saksi, dan posita sungguhan jauh di bawahnya.
  */
 const BATAS_MUATAN = 64 * 1024;
-const BATAS_SAKSI = 6;
+// 12 Okt 2026: sampai 5 saksi Penggugat + 4 saksi Tergugat (dahulu 6 seluruhnya) - cermin BATAS_SAKSI_SDG di bot & ekstensi.
+const BATAS_SAKSI = 9;
 
 type BadanUsulan = {
   nomorPerkara?: unknown;
@@ -77,7 +78,24 @@ type BadanUsulan = {
   jenisPerkara?: unknown;
   alur?: unknown;
   saksi?: unknown;
+  /** Sumber 'pertanyaan-saksi' (12 Okt 2026): { aksi: daftar|ambil, namaSet, pihak, huruf[], tambahan[] }. */
+  pertanyaanSaksi?: unknown;
 };
+
+/** Set pertanyaan saksi baku - bentuknya dibatasi di sini, disaring lagi di bot. */
+function saringPertanyaanSaksi(x: unknown) {
+  if (!x || typeof x !== "object") return undefined;
+  const r = x as Record<string, unknown>;
+  const daftar = (v: unknown, batas: number, panjang: number) =>
+    Array.isArray(v) ? (v as unknown[]).slice(0, batas).map((a) => String(a).slice(0, panjang)) : undefined;
+  return {
+    aksi: r.aksi === "ambil" ? ("ambil" as const) : ("daftar" as const),
+    namaSet: String(r.namaSet || "").slice(0, 80),
+    pihak: String(r.pihak || "").slice(0, 1).toUpperCase(),
+    huruf: daftar(r.huruf, 8, 1),
+    tambahan: daftar(r.tambahan, 6, 80),
+  };
+}
 
 /** Modus satu saksi - dibatasi bentuknya di sini, dan disaring sekali lagi di bot. */
 function saringModus(x: unknown) {
@@ -208,7 +226,7 @@ export async function POST(request: NextRequest) {
 
     // "alasan-posita" (butir 12, 6 Okt 2026): alasan yang terbaca dari posita,
     // untuk centang modus saksi "Hanya sebagian alasan" sebelum disusun.
-    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain", "alasan-posita"] as const;
+    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain", "alasan-posita", "pertanyaan-saksi"] as const;
     type Sumber = (typeof SUMBER_DIKENAL)[number] | "semua";
     const sumber: Sumber = (SUMBER_DIKENAL as readonly string[]).includes(sumberMinta)
       ? (sumberMinta as Sumber)
@@ -262,6 +280,7 @@ export async function POST(request: NextRequest) {
             })()
           : undefined,
       saksi: saringSaksi(body.saksi),
+      pertanyaanSaksi: saringPertanyaanSaksi(body.pertanyaanSaksi),
       tipeKeluaran: tipe.tipeKeluaran,
       // Templat tanya-jawab, diambil ekstensi dari halaman penyunting ABT
       // (POST load_template) - ALETA tetap tidak membaca basis data ABT.
@@ -338,6 +357,7 @@ export async function POST(request: NextRequest) {
       saksi: hasil.data?.saksi ?? null,
       itsbat: hasil.data?.itsbat ?? null,
       saksiSdg: hasil.data?.saksiSdg ?? null,
+      pertanyaanSaksi: hasil.data?.pertanyaanSaksi ?? null,
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

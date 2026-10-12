@@ -99,8 +99,19 @@ export type PenandaSaksi = {
  * Saksi 4 P: pekerjaannya #6151#, BUKAN #6147# (#6147# pendidikan) - urutan
  * nomornya tidak berurutan seperti saksi lain.
  *
- * Yang dilayani: 4 saksi Penggugat dan 2 saksi Tergugat. Saksi 3 T (#6138#)
- * tidak punya tempat tanya-jawab di abt_variabel, dan tidak ada di blangko.
+ * ----------------------------------------------------------------------------
+ * 12 Okt 2026 (paket ABT abt-saksi-pertanyaan, variabel 8920-8943): saksi 3 T,
+ * 4 T dan 5 P kini punya tempat sendiri.
+ *   8921 -> 6138 (saksi 3 T, TanyaJwb; sebelumnya TIDAK ada - 6122 menunjuk
+ *                 saksi 3 P)   sumpah 7040 (diperbaiki paket; agama #6140#)
+ *   8941 -> 8934 (saksi 4 T)   8931 -> 8924 (saksi 5 P)
+ * Hubungan dengan pihak: 8923 (saksi 4 P; 6150 salah), 8922 (saksi 3 T),
+ * 8930 (saksi 5 P), 8940 (saksi 4 T). Keterangan (bentuk "- Bahwa ..." untuk
+ * putusan): 8920 (saksi 4 P), 8932 (5 P), 8942 (4 T).
+ *
+ * Yang dilayani: 5 saksi Penggugat dan 4 saksi Tergugat. Saksi P ke-6 dan T ke-5
+ * (2 dan 1 perkara dari 8.200) belum punya variabel - satu saksi tambahan = 10
+ * variabel dengan pola tabel ini.
  */
 export const PENANDA_SAKSI: Record<PihakSaksi, Record<number, PenandaSaksi>> = {
   P: {
@@ -108,10 +119,13 @@ export const PENANDA_SAKSI: Record<PihakSaksi, Record<number, PenandaSaksi>> = {
     2: { nama: "1203", umur: "1204", agama: "1205", pendidikan: "1206", pekerjaan: "1207", alamat: "1208", tanyaJawab: ["5059"], sumpah: "7030" },
     3: { nama: "6132", umur: "6133", agama: "6134", pendidikan: "6135", pekerjaan: "6136", alamat: "6137", tanyaJawab: ["5060", "6122"], sumpah: "7038" },
     4: { nama: "6144", umur: "6145", agama: "6146", pendidikan: "6147", pekerjaan: "6151", alamat: "6148", tanyaJawab: ["6124"], sumpah: "7039" },
+    5: { nama: "8924", umur: "8925", agama: "8926", pendidikan: "8927", pekerjaan: "8928", alamat: "8929", tanyaJawab: ["8931"], sumpah: "8933" },
   },
   T: {
     1: { nama: "6100", umur: "6101", agama: "6102", pendidikan: "6103", pekerjaan: "6104", alamat: "6105", tanyaJawab: ["6120"], sumpah: "7031" },
     2: { nama: "6106", umur: "6107", agama: "6108", pendidikan: "6109", pekerjaan: "6110", alamat: "6111", tanyaJawab: ["6121"], sumpah: "7032" },
+    3: { nama: "6138", umur: "6139", agama: "6140", pendidikan: "6141", pekerjaan: "6142", alamat: "6143", tanyaJawab: ["8921"], sumpah: "7040" },
+    4: { nama: "8934", umur: "8935", agama: "8936", pendidikan: "8937", pekerjaan: "8938", alamat: "8939", tanyaJawab: ["8941"], sumpah: "8943" },
   },
 };
 

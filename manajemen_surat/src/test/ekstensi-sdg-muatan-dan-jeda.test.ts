@@ -499,6 +499,9 @@ const EKSPOR_ABT_VARIABEL: Array<{ noVar: string; nama: string; referensi: strin
   { noVar: "6124", nama: "TanyaJwb Saksi 4 P", referensi: "6144", kueriReferensi: "saksi_pihak_ke=1 ... limit 3,2" },
   // Cacat data ABT: namanya saksi 3 T, referensinya nama saksi 3 P.
   { noVar: "6122", nama: "TanyaJwb Saksi 3 T", referensi: "6132", kueriReferensi: "saksi_pihak_ke=1 ... limit 2,1" },
+  // 12 Okt 2026 - paket ABT abt-saksi-pertanyaan (variabel 8920-8943): saksi P ke-5 dan T ke-4.
+  { noVar: "8932", nama: "Keterangan Saksi 5 P", referensi: "8924", kueriReferensi: "saksi_pihak_ke=1 ... limit 4,1" },
+  { noVar: "8942", nama: "Keterangan Saksi 4 T", referensi: "8934", kueriReferensi: "saksi_pihak_ke=2 ... limit 3,1" },
 ];
 
 describe("pemetaan variabel saksi = ekspor abt_variabel", () => {
@@ -508,11 +511,11 @@ describe("pemetaan variabel saksi = ekspor abt_variabel", () => {
     return { pihak: m[1] === "1" ? "P" : "T", ke: Number(m[2]) + 1 };
   };
 
-  it("0 salah kode untuk saksi P 1-4 dan T 1-3; 6122 (referensinya saksi P) tidak pernah dipakai", () => {
+  it("0 salah kode untuk saksi P 1-5 dan T 1-4; 6122 (referensinya saksi P) tidak pernah dipakai", () => {
     const w = bukaBlangko(KODE_BLANGKO, ISI_BLANGKO, jaringan().fetch);
     let salah = 0;
     let diperiksa = 0;
-    for (const [pihak, n] of [["P", 4], ["T", 3]] as const) {
+    for (const [pihak, n] of [["P", 5], ["T", 4]] as const) {
       for (let ke = 1; ke <= n; ke += 1) {
         const kode = w.__uji.variabelSaksiSdg(pihak, ke);
         const baris = EKSPOR_ABT_VARIABEL.find((e) => e.noVar === kode);
@@ -525,13 +528,13 @@ describe("pemetaan variabel saksi = ekspor abt_variabel", () => {
         if (t.pihak !== pihak || t.ke !== ke) salah += 1;
       }
     }
-    expect(diperiksa).toBe(7);
+    expect(diperiksa).toBe(9);
     expect(salah).toBe(0);
-    expect(w.__uji.variabelSaksiSdg("P", 5)).toBe("");
-    expect(w.__uji.variabelSaksiSdg("T", 4)).toBe("");
+    expect(w.__uji.variabelSaksiSdg("P", 6)).toBe("");
+    expect(w.__uji.variabelSaksiSdg("T", 5)).toBe("");
     expect(JSON.stringify(w.__uji.VAR_SAKSI_TANYA_JAWAB)).not.toContain("6122");
     // Variabel nama yang dipakai menebak jumlah saksi = referensi yang sama.
-    for (const [pihak, n] of [["P", 4], ["T", 3]] as const) {
+    for (const [pihak, n] of [["P", 5], ["T", 4]] as const) {
       for (let ke = 1; ke <= n; ke += 1) {
         const baris = EKSPOR_ABT_VARIABEL.find((e) => e.noVar === w.__uji.variabelSaksiSdg(pihak, ke))!;
         expect(w.__uji.VAR_NAMA_SAKSI[pihak][ke - 1], `${pihak}${ke}`).toBe(baris.referensi);

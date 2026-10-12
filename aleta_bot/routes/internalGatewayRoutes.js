@@ -2137,7 +2137,11 @@ function lengkapiSumberNamaAbt(m, pelaku, lawan) {
   return m;
 }
 
-const BATAS_SAKSI_ABT = 6;
+/* === SAKSI-N 12 Okt === */
+// Total saksi satu permintaan: sampai 5 saksi P + 4 saksi T (BATAS_SAKSI_SDG di abtUsulanService). Dahulu 6.
+const BATAS_SAKSI_PIHAK_ABT = Object.freeze({ P: 5, T: 4 });
+const BATAS_SAKSI_ABT = BATAS_SAKSI_PIHAK_ABT.P + BATAS_SAKSI_PIHAK_ABT.T;
+/* === AKHIR SAKSI-N === */
 
 /** Daftar saksi N (kontrak K6): {ke, pihak 'P'|'T', modus, sumber, sumberNama, alasan}. */
 function saringSaksiAbt(masuk, pelaku, lawan) {
@@ -2152,8 +2156,8 @@ function saringSaksiAbt(masuk, pelaku, lawan) {
       ditolak.push({ indeks, alasan: "pihak_bukan_P_atau_T" });
       return;
     }
-    if (!Number.isInteger(ke) || ke < 1 || ke > BATAS_SAKSI_ABT) {
-      ditolak.push({ indeks, alasan: `ke_di_luar_1_sampai_${BATAS_SAKSI_ABT}` });
+    if (!Number.isInteger(ke) || ke < 1 || ke > BATAS_SAKSI_PIHAK_ABT[pihak]) {
+      ditolak.push({ indeks, alasan: `ke_di_luar_1_sampai_${BATAS_SAKSI_PIHAK_ABT[pihak]}` });
       return;
     }
     if (saksi.length >= BATAS_SAKSI_ABT) {
@@ -2409,6 +2413,44 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     // Keterangan saksi SDG - disusun dari templat pertanyaan yang ekstensi
     // ambil lewat halaman penyunting ABT sendiri (load_template). Dua saksi,
     // satu substansi, dua bentuk kalimat.
+    /* === PSAKSI 12 Okt === */
+    // Set pertanyaan saksi baku (kamus pertanyaan-saksi): aksi "daftar" = set yang cocok dengan jenis perkara (+ huruf alasan
+    // dari posita), aksi "ambil" = baris pertanyaan satu set (templat tanya-jawab untuk "Susun keterangan saksi").
+    if (sumber === "pertanyaan-saksi") {
+      const svc = require("../services/pertanyaanSaksiService");
+      const m = req.body?.pertanyaanSaksi && typeof req.body.pertanyaanSaksi === "object" ? req.body.pertanyaanSaksi : {};
+      const jenisId = svc.idJenis(req.body?.jenisPerkara);
+      const hurufKirim = Array.isArray(m.huruf) ? m.huruf.map((x) => String(x).toUpperCase().slice(0, 1)).filter((x) => /^[A-H]$/.test(x)) : null;
+      let huruf = hurufKirim;
+      let hurufAsal = "dipilih";
+      if (!huruf) {
+        try {
+          huruf = svc.hurufDariTeks(String(req.body?.posita || "").slice(0, 20000));
+        } catch (_) {
+          huruf = [];
+        }
+        hurufAsal = huruf.length ? "posita" : "";
+      }
+      const tanpaContoh = huruf.filter((h) => svc.TANPA_CONTOH.includes(h));
+      if (m.aksi === "ambil") {
+        jawaban.pertanyaanSaksi = {
+          ...svc.ambilSet(String(m.namaSet || ""), { huruf, tambahan: Array.isArray(m.tambahan) ? m.tambahan.map(String).slice(0, 6) : [] }),
+          huruf,
+          hurufAsal,
+          tanpaContoh,
+        };
+      } else {
+        jawaban.pertanyaanSaksi = {
+          ok: true,
+          jenisPerkaraId: jenisId,
+          huruf,
+          hurufAsal,
+          tanpaContoh,
+          daftar: svc.daftarSet({ jenisPerkaraId: jenisId, pihak: m.pihak === "T" ? "T" : undefined }),
+        };
+      }
+    }
+    /* === AKHIR PSAKSI === */
     if (sumber === "saksi-sdg") {
       // Modus tiap saksi - "sama", "sebagian", "tidak-tahu", "tidak-melihat",
       // "dari-cerita" - beserta alasan pilihannya dan siapa yang bercerita.

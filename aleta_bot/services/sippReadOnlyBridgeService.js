@@ -1677,6 +1677,36 @@ LIMIT 400`;
   // tempat saksi kedua tanpa satu pun tanda di layar.
   const saksi = [...perSaksi.values()].map((item, urutan) => ({ ...item, saksiKe: urutan + 1 }));
 
+  /* === SAKSI-N 12 Okt === */
+  // Pihak (P = Penggugat/Pemohon, T = Tergugat/Termohon) dan urutan DI PIHAK ITU, dinyatakan dari perkara_pihak5
+  // (saksi_id ABT = perkara_pihak5.id). Tanpa ini portal hanya memetakan saksi ke-1 dan ke-2 (sebagai saksi P) dan
+  // MENOLAK menebak saksi ke-3+ (sepertiga saksi urutan ketiga adalah saksi Tergugat). Gagal membaca = perilaku lama.
+  try {
+    const pihak5 = await runReadOnly(
+      connectionKey,
+      "SELECT id, saksi_pihak_ke, urutan FROM perkara_pihak5 WHERE perkara_id = ? AND saksi_pihak_ke IN (1, 2) ORDER BY saksi_pihak_ke, urutan, id",
+      [perkaraId]
+    );
+    const peta = new Map();
+    const hitung = { 1: 0, 2: 0 };
+    for (const baris of Array.isArray(pihak5) ? pihak5 : []) {
+      const sisi = Number(baris.saksi_pihak_ke);
+      if (sisi !== 1 && sisi !== 2) continue;
+      hitung[sisi] += 1;
+      peta.set(safeString(baris.id), { pihak: sisi === 2 ? "T" : "P", saksiKePihak: hitung[sisi] });
+    }
+    for (const item of saksi) {
+      const letak = peta.get(item.saksiId);
+      if (letak) {
+        item.pihak = letak.pihak;
+        item.saksiKePihak = letak.saksiKePihak;
+      }
+    }
+  } catch {
+    /* tanpa pihak yang dinyatakan: portal memakai pemetaan lama */
+  }
+  /* === AKHIR SAKSI-N === */
+
   return {
     ada: saksi.length > 0,
     sumber: `${skema}.abt_keterangan_saksi`,
@@ -1703,8 +1733,17 @@ LIMIT 400`;
  */
 async function getKatalogTanyaJawab(params = {}) {
   const connectionKey = normalizeConnectionKey(params.connectionKey);
+  /* === PSAKSI 12 Okt === */
+  // Set pertanyaan saksi baku ALETA (kamus pertanyaan-saksi) ikut ditawarkan di samping kumpulan ABT.
+  let setAleta = [];
+  try {
+    setAleta = require("./pertanyaanSaksiService").untukKatalog(safeNumericId(params.jenisPerkaraId));
+  } catch (_) {
+    setAleta = [];
+  }
+  /* === AKHIR PSAKSI === */
   const skema = await cariSkemaAbt(connectionKey);
-  if (!skema) return { ada: false, sebab: "Basis data APS Badilag tidak ditemukan.", kumpulan: [] };
+  if (!skema) return { ada: setAleta.length > 0, sebab: "Basis data APS Badilag tidak ditemukan.", kumpulan: setAleta };
 
   const jenisPerkaraId = safeNumericId(params.jenisPerkaraId);
   const syarat = jenisPerkaraId ? "WHERE t.`jenis_perkara_id` = ?" : "";
@@ -1729,9 +1768,10 @@ LIMIT 200`;
       jenisPerkaraId: safeString(row.jenis_perkara_id),
       jumlahPertanyaan: Number(row.jumlah_pertanyaan) || 0,
     }));
+    kumpulan.push(...setAleta); // PSAKSI 12 Okt
     return { ada: kumpulan.length > 0, sumber: `${skema}.abt_tanyajawab_id`, kumpulan };
   } catch (error) {
-    return { ada: false, sebab: externalDbService.sanitizeError(error), kumpulan: [] };
+    return { ada: setAleta.length > 0, sebab: externalDbService.sanitizeError(error), kumpulan: setAleta };
   }
 }
 
@@ -1756,6 +1796,16 @@ async function getTanyaJawab(params = {}) {
   const connectionKey = normalizeConnectionKey(params.connectionKey);
   const kode = safeString(params.kode);
   if (!kode) return { ada: false, sebab: "kode tanya-jawab kosong", pertanyaan: [], variabel: [] };
+  /* === PSAKSI 12 Okt === */
+  // Kumpulan "ALETA:<namaSet>" berasal dari kamus pertanyaan-saksi, bukan dari ABT (tidak menyentuh basis data).
+  if (kode.startsWith("ALETA:")) {
+    try {
+      return require("./pertanyaanSaksiService").untukTanyaJawab(kode, { huruf: Array.isArray(params.huruf) ? params.huruf : [] });
+    } catch (error) {
+      return { ada: false, sebab: String((error && error.message) || error).slice(0, 200), pertanyaan: [], variabel: [] };
+    }
+  }
+  /* === AKHIR PSAKSI === */
 
   const skema = await cariSkemaAbt(connectionKey);
   if (!skema) return { ada: false, sebab: "Basis data APS Badilag tidak ditemukan.", pertanyaan: [], variabel: [] };
