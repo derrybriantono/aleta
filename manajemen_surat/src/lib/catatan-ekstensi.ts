@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.196.0",
+    dirilis: "2026-10-12T15:00:00+08:00",
+    judul: "Blangko putusan cerai per status, set pertanyaan & saksi lebih dari dua, alur sidang di BAS massal",
+    butir: [
+      "Putusan cerai: blangko yang ditawarkan kini mengikuti status putusan SIPP (kabul verstek/kontradiktoir, tolak, NO, gugur, cabut, coret), tidak lagi selalu kabul verstek; butuh paket ABT abt-cerai-lengkap yang juga membetulkan beberapa kesalahan blangko.",
+      "Susun keterangan saksi: pilih set pertanyaan saksi baku (dari praktik BAS satker, per jenis perkara & huruf alasan) dan dukungan saksi ke-3 sampai ke-5 Penggugat serta ke-4 Tergugat (butuh paket ABT abt-saksi-pertanyaan).",
+      "BAS massal menampilkan alur sidang perkara (mis. verstek 2 sidang, kontradiktoir) sebagai petunjuk; folder BAS per alur tersedia di blangko Derry (butuh paket ABT abt-bas-alur-sidang).",
+    ],
+  },
+  {
     versi: "1.195.0",
     dirilis: "2026-10-12T12:00:00+08:00",
     judul: "Tampilan & hak per peran, widget per akun, checklist & panel, ZIP Status Perkara lengkap, tanggal KTP dari e-Court",
