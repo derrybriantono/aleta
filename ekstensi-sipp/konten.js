@@ -5762,13 +5762,77 @@ async function kirimBadanUnggahSipp(badan, batasMs) {
       respons.status !== 401 && respons.status !== 403 && jawab
         ? jawab.sebab || jawab.pesan || jawab.alasan || jawab.error || ""
         : "";
-    throw new Error(kalimat ? String(kalimat) : alatPesanGagal(null, respons.status, "Mengunggah putusan ke SIPP"));
+    const galat = new Error(kalimat ? String(kalimat) : alatPesanGagal(null, respons.status, "Mengunggah putusan ke SIPP"));
+    // 12OKT-I: penolakan beralasan (409) ikut dibawa - "Tetap unggah" membaca bolehTetapUnggah & nama.
+    if (respons.status === 409 && jawab && typeof jawab === "object") galat.tolak = jawab;
+    throw galat;
   }
   if (!jawab) {
     throw new Error(`Jawaban ALETA atas unggahan tidak terbaca: ${String((galatBaca && galatBaca.message) || "kosong")}.`);
   }
   return jawab;
 }
+
+/* === 12OKT-I: "Tetap unggah" anonimisasi yang tersamar sebagian === */
+/**
+ * kirimBadanUnggahSipp + keputusan petugas atas sisa nama di anonimisasi.
+ *
+ *   - opsi.tetapUnggah ({nama}) = petugas SUDAH merelakan nama-nama itu di
+ *     dialog pemeriksa ekstensi; diteruskan supaya server tidak menolak lagi
+ *     nama yang sama.
+ *   - Server tetap menilai sendiri: bila ia menemukan nama yang belum dilihat
+ *     petugas, atau tidak satu pun nama tersamar, ia menolak 409. Bila
+ *     penolakannya membolehkan (bolehTetapUnggah) dan ada wadah, daftar
+ *     sisanya ditampilkan dengan tombol "Tetap unggah" - dikonfirmasi, lalu
+ *     dikirim ulang SEKALI. Tanpa penyamaran sama sekali tidak ada tombolnya.
+ * Hak unggah tetap di server (Hakim/Admin/Super Admin).
+ */
+async function kirimUnggahSippTetap(badan, batasMs, opsi) {
+  const o = opsi || {};
+  const pasang = (nama) => {
+    badan.set("tetapUnggah", "1");
+    badan.set("tetapUnggahNama", JSON.stringify(nama.slice(0, 50)));
+  };
+  if (o.tetapUnggah && Array.isArray(o.tetapUnggah.nama) && o.tetapUnggah.nama.length) pasang(o.tetapUnggah.nama);
+  try {
+    return await kirimBadanUnggahSipp(badan, batasMs);
+  } catch (galat) {
+    const tolak = galat && galat.tolak;
+    if (!tolak || tolak.alasan !== "slot_anonim_memuat_nama" || !tolak.bolehTetapUnggah || !o.wadah) throw galat;
+    const nama = [].concat(tolak.nama || []).map(String);
+    if (o.kabar) {
+      o.kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      o.kabar.textContent = "Anonimisasi masih memuat nama pihak - pilih di bawah: samarkan dulu, atau tetap unggah.";
+    }
+    const ya = await a30Tanya(o.wadah, {
+      judul: "Anonimisasi masih memuat nama pihak",
+      baris: [
+        String(tolak.sebab || galat.message || ""),
+        "Berkas anonimisasi ini TERBIT di Direktori Putusan dan dapat dibaca umum, apa adanya. " +
+          "Bila dilanjutkan, edoc putusan dan edoc anonimisasi diunggah sekaligus, dan keputusan Anda " +
+          "(nama yang dibiarkan, akun, waktu) tercatat di jejak ALETA.",
+      ],
+      daftar: nama.map((n) => `nama pihak "${n}" masih tertulis`),
+      centang: "Saya sudah memeriksa, dan sisa nama ini memang dibiarkan terbit",
+      ya: "Tetap unggah",
+      tidak: "Batalkan, samarkan dulu",
+    });
+    try {
+      alatCatat("a30-anonim", ya ? "tetap unggah dipilih sesudah penolakan server" : "tetap unggah tidak dipilih", nama.join(", "));
+    } catch {
+      /* kotak hitam hanya catatan */
+    }
+    if (!ya) throw galat;
+    const sebelumnya = (o.tetapUnggah && o.tetapUnggah.nama) || [];
+    pasang(Array.from(new Set(sebelumnya.concat(nama))));
+    if (o.kabar) {
+      o.kabar.className = "aleta-abt-kabar";
+      o.kabar.textContent = "Mengunggah ulang dengan keputusan tetap unggah…";
+    }
+    return kirimBadanUnggahSipp(badan, batasMs);
+  }
+}
+/* === AKHIR 12OKT-I === */
 
 /**
  * ============================================================================
@@ -6164,6 +6228,7 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
   tombol.addEventListener("click", async () => {
     const putusan = slot.putusan.berkas;
     let anonimisasi = slot.anonimisasi.berkas;
+    let tetapUnggah = null; // 12OKT-I: nama yang direlakan petugas di dialog pemeriksa
     if ((!putusan && !anonimisasi) || berkasSama()) return;
     tombol.disabled = true;
     tombol.dataset.sibuk = "ya";
@@ -6183,6 +6248,7 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
         return;
       }
       anonimisasi = buat.berkas;
+      tetapUnggah = buat.tetapUnggah || null;
     }
     const badan = new FormData();
     badan.append("perkaraId", perkaraIdDariHalaman());
@@ -6199,7 +6265,12 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
           : "Mengunggah edoc anonimisasi…";
     let hasil = { adaYangMasuk: false, semuaMasuk: false };
     try {
-      const jawab = await kirimBadanUnggahSipp(badan, putusan && anonimisasi ? BATAS_UNGGAH_SIPP_MS * 2 : BATAS_UNGGAH_SIPP_MS);
+      // 12OKT-I: penolakan "masih memuat nama" yang membolehkan ditawari "Tetap unggah".
+      const batas = putusan && anonimisasi ? BATAS_UNGGAH_SIPP_MS * 2 : BATAS_UNGGAH_SIPP_MS;
+      const jawab =
+        typeof kirimUnggahSippTetap === "function"
+          ? await kirimUnggahSippTetap(badan, batas, { tetapUnggah, wadah: isi, kabar })
+          : await kirimBadanUnggahSipp(badan, batas);
       if (!jawab.ok) throw new Error(jawab.sebab || jawab.pesan || jawab.alasan || "Unggahannya tidak dapat dikerjakan.");
       hasil = laporkan(jawab);
       if (hasil.semuaMasuk) {
@@ -20797,7 +20868,15 @@ function a30SamarkanSisaRtf(rtf, data) {
   const peta = a30PetaRtf(asal);
   const t = peta.teks;
   const sasaran = []
-    .concat(((data && data.nama) || []).map((n) => ({ jenis: "nama pihak", teks: String((n && n.teks) || "") })))
+    .concat(
+      ((data && data.nama) || []).map((n) => ({
+        jenis: "nama pihak",
+        teks: String((n && n.teks) || ""),
+        // 12OKT-I: potongan nama depan hanya sesudah "bernama"/"nama" (a30PolaSasaran).
+        depan: Boolean(n && n.depan),
+        lanjut: String((n && n.lanjut) || ""),
+      }))
+    )
     .concat(((data && data.alamat) || []).map((a) => ({ jenis: "alamat", teks: String((a && a.teks) || "") })))
     .filter((x) => x.teks.trim().length >= 4 && !A30_BUKAN_SAMARAN.test(x.teks.trim()))
     // Yang panjang lebih dulu: "Sulfiani binti H. Abd Hamid" sebelum "Sulfiani".
@@ -20808,8 +20887,20 @@ function a30SamarkanSisaRtf(rtf, data) {
     for (let k = dari; k < sampai; k += 1) if (terpakai[k]) return false;
     return true;
   };
+  /* === 12OKT-I: NIK 16 angka ikut disamarkan === */
+  // Bukti P.1 menulis "KTP-el atas nama ..., NIK 72032567...": ABT tidak
+  // menyentuh NIK, dan pemeriksa hanya menanyakannya. Bentuk samarannya sama
+  // dengan anonimisasi satker yang sudah terbit ("NIK xxxxxxxxxxxxxxxx").
+  for (const m of t.matchAll(/(^|[^\d])(\d{16})(?=[^\d]|$)/g)) {
+    const mulai = m.index + m[1].length;
+    const akhir = mulai + 16;
+    if (!bebas(mulai, akhir)) continue;
+    for (let k = mulai; k < akhir; k += 1) terpakai[k] = 1;
+    ganti.push({ mulai, akhir, menjadi: "x".repeat(16), jenis: "NIK", kata: m[2] });
+  }
+  /* === AKHIR 12OKT-I === */
   for (const satu of sasaran) {
-    const pola = new RegExp(a30PolaKata(satu.teks).source, "giu");
+    const pola = new RegExp(a30PolaSasaran(satu).source, "giu");
     for (const m of t.matchAll(pola)) {
       let mulai = m.index + m[1].length;
       let akhir = mulai + m[2].length;
@@ -20817,6 +20908,7 @@ function a30SamarkanSisaRtf(rtf, data) {
       // untuk pemeriksa, tidak ditebak.
       if (t.slice(mulai, akhir).includes("\n")) continue;
       if (!bebas(mulai, akhir)) continue;
+      if (satu.depan && !a30DepanMilikPihak(t, akhir, satu.lanjut)) continue;
       let menjadi = "xxx";
       const kiri = /\(\s*$/.exec(t.slice(Math.max(0, mulai - 3), mulai));
       const kanan = /^\s*\)/.exec(t.slice(akhir, akhir + 3));
@@ -20853,6 +20945,89 @@ function a30SamarkanSisaRtf(rtf, data) {
   return { rtf: keluar, diganti: ganti.map((g) => ({ jenis: g.jenis, kata: g.kata, menjadi: g.menjadi })) };
 }
 
+/* === 12OKT-I: bentuk nama pihak (salinan aturan src/lib/anonim-nama-pihak.ts) === */
+/**
+ * Nama SIPP dipotong di " alias ". Ruas pertama selalu nama orang itu; ruas
+ * sesudah "alias" juga namanya BILA ruas sebelumnya belum ber-bin/binti, atau
+ * bila ruas itu sendiri ber-bin/binti. "Mariana binti Sapri alias Sapri M.
+ * Arif" - alias itu milik nama ayah, tidak disamarkan sebagai nama pihak.
+ * Nama diri = ruas sebelum bin/binti, minimal empat huruf. Aturannya SATU
+ * dengan penjaga unggah di server; uji anonim-nama-pihak-12okt mengadu keduanya.
+ * @returns {{utuh: string, ruas: string[], diri: string[]}}
+ */
+function a30BentukNamaPihak(nama) {
+  const rapi = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
+  const utuh = rapi(nama);
+  const ruas = [];
+  let sebelumnyaBerbin = false;
+  utuh
+    .split(/\s+alias\s+/i)
+    .map(rapi)
+    .filter(Boolean)
+    .forEach((satu, i) => {
+      const berbin = /\s+(?:bin|binti)\s+/i.test(satu);
+      if (i === 0 || !sebelumnyaBerbin || berbin) ruas.push(satu);
+      sebelumnyaBerbin = berbin;
+    });
+  const diri = [];
+  const lihat = new Set();
+  for (const satu of ruas) {
+    const inti = rapi(satu.split(/\s+(?:bin|binti)\s+/i)[0]);
+    if (inti.length >= 4 && !lihat.has(inti.toLowerCase())) {
+      lihat.add(inti.toLowerCase());
+      diri.push(inti);
+    }
+  }
+  return { utuh, ruas, diri };
+}
+
+/**
+ * Potongan DEPAN nama diri yang bermakna: "Musdiman Lahauwa" -> "Musdiman",
+ * "Moh. Nurnas Islam" -> "Moh. Nurnas". Keterangan saksi menulis "suami
+ * Penggugat bernama Musdiman" (terukur pada 3 dari 108 putusan Donggala).
+ * Potongan BELAKANG tidak dipakai: di naskah ia hampir selalu nama orang
+ * lain ("Arjun Lahauwa", nama anak) atau kata biasa ("Mahkamah Agung",
+ * "agama Islam", "Kartu Tanda Penduduk").
+ * @returns {Array<{teks: string, lanjut: string}>}
+ */
+function a30PotonganDepan(diri) {
+  // Gelar/sebutan yang sendirian bukan nama: "bernama Andi" tidak menunjuk siapa pun.
+  const bukanNama = /^(?:andi|siti|sitti|moh|muh|mohd|muhammad|mohammad|mohamad|muhamad|muhammat|abd|abdul|haji|hajjah|hajah|daeng|dg|nur|sri|ni|la|wa|h|hj|ir|dr|drs|i)\.?$/i;
+  const kata = String(diri || "").replace(/\s+/g, " ").trim().split(" ");
+  const hasil = [];
+  for (let k = 1; k < kata.length; k += 1) {
+    const depan = kata.slice(0, k);
+    if (depan.every((x) => bukanNama.test(x))) continue;
+    if (depan.join("").replace(/[^\p{L}]/gu, "").length < 4) continue;
+    hasil.push({ teks: depan.join(" "), lanjut: kata[k] });
+  }
+  return hasil;
+}
+
+/**
+ * Pola satu sasaran samaran/pemeriksa. Nama utuh: di mana pun, spasi antar
+ * kata lentur ("Sri Devi" = "SRIDEVI", "Alma Ningsi" = "Almaningsi").
+ * Potongan depan: HANYA tepat sesudah "bernama"/"nama".
+ */
+function a30PolaSasaran(x) {
+  if (!x || !x.depan) return a30PolaKata(x ? x.teks : "", Boolean(x) && x.jenis !== "alamat");
+  return new RegExp(`((?:^|[^\\p{L}\\p{N}])(?:bernama|nama)\\s*:?\\s*)(${a30AmanKata(x.teks, true)})(?=[^\\p{L}\\p{N}]|$)`, "iu");
+}
+
+/**
+ * Potongan depan yang disusul kata ber-huruf-besar LAIN, atau bin/binti,
+ * adalah nama orang lain ("bernama Musdiman Saleh", "bernama Musdiman bin
+ * Ladu") - tidak disamarkan.
+ */
+function a30DepanMilikPihak(teks, akhir, lanjut) {
+  const m = /^[ \t]+([\p{L}][\p{L}.'-]*)/u.exec(String(teks || "").slice(akhir, akhir + 60));
+  if (!m) return true;
+  if (/^(?:bin|binti)$/i.test(m[1])) return false;
+  if (/^\p{Lu}/u.test(m[1]) && m[1].toLowerCase() !== String(lanjut || "").toLowerCase()) return false;
+  return true;
+}
+/* === AKHIR 12OKT-I === */
+
 /**
  * Nama pihak dan penggalan alamat yang TERBACA di halaman SIPP ini (tabel
  * pihak, baris label-nilai) dan di konteks ALETA. Yang tidak terbaca tidak
@@ -20865,8 +21040,24 @@ function a30DataPribadiHalaman() {
     const t = String(teks || "").replace(/\s+/g, " ").trim();
     if (t.length < 4 || t.length > 80 || /\d/.test(t) || /^(penggugat|tergugat|pemohon|termohon|nama|tidak ada)$/i.test(t)) return;
     nama.set(t.toLowerCase(), { teks: t, dari });
-    const inti = t.split(/\s+(?:bin|binti)\s+/i)[0].trim();
-    if (inti && inti !== t && inti.length >= 4) nama.set(inti.toLowerCase(), { teks: inti, dari });
+    /* === 12OKT-I: bentuk nama ber-"alias" ikut disamarkan === */
+    // Dahulu hanya dipotong di bin/binti: "Almaningsi Astuti alias Alma Ningsi
+    // Astuti binti Asmin Y" tidak pernah menjadikan "Almaningsi Astuti" sasaran,
+    // padahal bukti P.1 (ABT 1214) menulis "atas nama ALMANINGSI ASTUTI" (564/
+    // Pdt.G/2026). Tiap ruas alias dan nama dirinya kini ikut - lihat a30BentukNamaPihak.
+    const bentuk = a30BentukNamaPihak(t);
+    for (const x of bentuk.ruas.concat(bentuk.diri)) {
+      if (x && x.length >= 4 && !nama.has(x.toLowerCase())) nama.set(x.toLowerCase(), { teks: x, dari });
+    }
+    // Potongan depan ("suami Penggugat bernama Musdiman") - hanya sesudah
+    // "bernama"/"nama"; kuncinya berawalan supaya tidak menimpa nama utuh.
+    for (const d of bentuk.diri) {
+      for (const p of a30PotonganDepan(d)) {
+        const kunci = `depan:${p.teks.toLowerCase()}`;
+        if (!nama.has(p.teks.toLowerCase()) && !nama.has(kunci)) nama.set(kunci, { teks: p.teks, dari, depan: true, lanjut: p.lanjut });
+      }
+    }
+    /* === AKHIR 12OKT-I === */
   };
   const tambahAlamat = (teks, dari) => {
     for (const potong of String(teks || "").split(/[,;\n]/)) {
@@ -20928,16 +21119,21 @@ function a30DataPribadiHalaman() {
   return { nama: Array.from(nama.values()).filter((x) => !dilindungi(x)), alamat: Array.from(alamat.values()) };
 }
 
-function a30PolaKata(teks) {
+function a30PolaKata(teks, spasiLentur) {
+  return new RegExp(`(^|[^\\p{L}\\p{N}])(${a30AmanKata(teks, spasiLentur)})(?=[^\\p{L}\\p{N}]|$)`, "iu");
+}
+
+function a30AmanKata(teks, spasiLentur) {
   // Titik singkatan dan spasi sesudahnya lentur: "Muh. Rizal", "MUH.RIZAL",
   // dan "Muh Rizal" orang yang sama (7 Okt 2026). Besar-kecil huruf: bendera i.
-  const aman = String(teks)
+  // 12OKT-I: untuk NAMA, spasi antar kata pun lentur - "Alma Ningsi Astuti"
+  // ditulis "ALMANINGSI ASTUTI", "Sri Devi" ditulis "Sridevi" (465/Pdt.G/2026).
+  return String(teks)
     .trim()
     .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
     .replace(/\\\.\s+/g, "\\.?\\s*")
-    .replace(/\s+/g, "\\s+")
+    .replace(/\s+/g, spasiLentur ? "\\s*" : "\\s+")
     .replace(/\\\.(?!\?)/g, "\\.?");
-  return new RegExp(`(^|[^\\p{L}\\p{N}])(${aman})(?=[^\\p{L}\\p{N}]|$)`, "iu");
 }
 
 /** Data pribadi yang masih utuh di teks anonim, beserta potongan kalimat di sekitarnya. */
@@ -20956,8 +21152,15 @@ function a30PeriksaAnonim(teks, data) {
   };
   for (const m of t.matchAll(/(?<!\d)\d{16}(?!\d)/g)) catat("NIK", m[0], m.index, "");
   for (const n of (data && data.nama) || []) {
-    const m = a30PolaKata(n.teks).exec(t);
-    if (m) catat("nama pihak", m[2], m.index + m[1].length, n.dari);
+    // 12OKT-I: pola yang SAMA dengan penyamar (spasi lentur; potongan depan
+    // hanya sesudah "bernama") - yang dicari pemeriksa = yang disamarkan.
+    const pola = new RegExp(a30PolaSasaran({ ...n, jenis: "nama pihak" }).source, "giu");
+    for (const m of t.matchAll(pola)) {
+      const mulai = m.index + m[1].length;
+      if (n.depan && !a30DepanMilikPihak(t, mulai + m[2].length, n.lanjut)) continue;
+      catat("nama pihak", m[2], mulai, n.dari);
+      break;
+    }
   }
   for (const a of (data && data.alamat) || []) {
     const m = a30PolaKata(a.teks).exec(t);
@@ -21227,6 +21430,8 @@ async function a30SiapkanAnonimisasi(p) {
                 ? `ALETA sudah menyamarkan ${disamarkan.length} sisa yang ditinggalkan ABT (pada salinan anonimisasi saja; edoc putusan tidak diubah). ` +
                   "Yang di bawah ini TIDAK dapat disamarkan otomatis. Bila dibatalkan: samarkan di ABT, lalu ulangi."
                 : "Yang di bawah ini TIDAK dapat disamarkan otomatis. Bila dibatalkan: samarkan di ABT, lalu ulangi.",
+              // 12OKT-I
+              "Bila tetap diunggah, berkas anonimisasi ini TERBIT apa adanya di Direktori Putusan, dan keputusan Anda tercatat di jejak ALETA.",
             ],
             daftar: periksa.temuan
               .slice(0, 12)
@@ -21259,7 +21464,17 @@ async function a30SiapkanAnonimisasi(p) {
       hasil = new File([k.berkas], a30NamaAnonim(nama, bentuk), { type: k.berkas.type || A30_MIME[bentuk] });
     }
     lapor(`Anonimisasi siap: ${hasil.name}${disamarkan.length ? ` (${disamarkan.length} sisa disamarkan ALETA)` : ""}.`);
-    return { ok: true, berkas: hasil, temuan: periksa.temuan.length, diperiksa: periksa.diperiksa, disamarkan: disamarkan.length };
+    // 12OKT-I: nama yang SUDAH dilihat dan direlakan petugas di dialog di atas
+    // diteruskan ke server ("Tetap unggah"), supaya tidak ditolak lagi.
+    const namaDirelakan = Array.from(new Set(periksa.temuan.filter((x) => x.jenis === "nama pihak").map((x) => String(x.kata))));
+    return {
+      ok: true,
+      berkas: hasil,
+      temuan: periksa.temuan.length,
+      diperiksa: periksa.diperiksa,
+      disamarkan: disamarkan.length,
+      ...(namaDirelakan.length ? { tetapUnggah: { nama: namaDirelakan } } : {}),
+    };
   } catch (galat) {
     return { ok: false, pesan: `Anonimisasi tidak dibuat: ${String((galat && galat.message) || galat)}` };
   }
@@ -21333,7 +21548,19 @@ async function a30UnggahEdoc(p) {
   badan.append("putusan", p.putusan);
   if (p.anonimisasi) badan.append("anonimisasi", p.anonimisasi);
   try {
-    const jawab = await kirimBadanUnggahSipp(badan, p.anonimisasi ? BATAS_UNGGAH_SIPP_MS * 2 : BATAS_UNGGAH_SIPP_MS);
+    // 12OKT-I: keputusan "Tetap unggah" dari dialog pemeriksa ikut; penolakan
+    // server yang membolehkan ditawarkan di wadah pemanggil (bila ada). Hanya
+    // wadah yang disebut pemanggil: antrean massal tidak punya wadah, dan
+    // dialog tanpa orang di depannya akan menahan antrean selamanya.
+    const batas = p.anonimisasi ? BATAS_UNGGAH_SIPP_MS * 2 : BATAS_UNGGAH_SIPP_MS;
+    const jawab =
+      typeof kirimUnggahSippTetap === "function"
+        ? await kirimUnggahSippTetap(badan, batas, {
+            tetapUnggah: p.anonimisasi ? p.tetapUnggah || null : null,
+            wadah: p.wadah || null,
+            kabar: p.kabar || null,
+          })
+        : await kirimBadanUnggahSipp(badan, batas);
     if (!jawab.ok) return { ok: false, bunyi: `Edoc tidak terunggah: ${jawab.sebab || jawab.pesan || jawab.alasan || "ditolak"}.` };
     const semua = jawab.berkas || [];
     const gagal = semua.filter((b) => !b.ok);
@@ -21542,7 +21769,14 @@ async function a30OpsiSimpanPutusan(p) {
     return opsi;
   }
   opsi.sesudahTersimpan = (kabar) =>
-    a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: anon.berkas, kabar });
+    a30UnggahEdoc({
+      nomorPerkara: p.nomorPerkara,
+      putusan: p.edoc.asli,
+      anonimisasi: anon.berkas,
+      kabar,
+      tetapUnggah: anon.tetapUnggah || null,
+      wadah: p.wadah || null,
+    });
   return opsi;
 }
 
