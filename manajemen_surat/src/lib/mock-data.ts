@@ -1375,6 +1375,23 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "Backup",
   },
   {
+    // 12OKT-J: butir sidebar admin kelompok Sistem. Halaman /admin/sumber-daya
+    // sudah ada (6 Okt); hak mengikuti halamannya: Super Admin dan Admin
+    // (halaman, rute /api/admin/sumber-daya, dan modul ini sama-sama menjaganya).
+    id: "server-resources",
+    label: "Sumber Daya Server",
+    description: "RAM, CPU, disk, dan GPU server, ALETA dibanding seluruh server.",
+    href: "/admin/sumber-daya",
+    icon: "server",
+    roleIds: ["super-admin", "admin"],
+    showInHub: false,
+    showInSidebar: true,
+    iconBgClass: "bg-sky-100",
+    iconFgClass: "text-sky-700",
+    cardClass: "border-sky-200/80 bg-sky-50/70",
+    badgeLabel: "Pemantau",
+  },
+  {
     id: "database-viewer",
     label: "Database",
     description: "Lihat dan edit data PostgreSQL aktif secara terbatas.",
@@ -1854,6 +1871,7 @@ export const moduleVisibility: ModuleVisibility[] = [
     "feedback",
     "system-updates",
     "backup-system",
+    "server-resources", // 12OKT-J
     "database-viewer",
     "notifikasi",
     "notifikasi-wa",

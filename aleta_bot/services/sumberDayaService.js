@@ -60,6 +60,10 @@ const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
 
+/* === 12OKT-J: CPU (pengurai dan pembaca di berkas sendiri) === */
+const cpuSvc = require("./sumberDayaCpuService");
+/* === AKHIR 12OKT-J === */
+
 const KIB = 1024;
 const MIB = 1024 * 1024;
 const GIB = 1024 * 1024 * 1024;
@@ -69,6 +73,7 @@ const AMBANG = Object.freeze({
   ram: Object.freeze({ kuning: 75, merah: 90 }),
   disk: Object.freeze({ kuning: 80, merah: 90 }),
   gpu: Object.freeze({ kuning: 70, merah: 90 }),
+  cpu: cpuSvc.AMBANG_CPU, // 12OKT-J
 });
 
 const SINGGAH_RINGKAS_MS = 3000;
@@ -442,8 +447,10 @@ function partisiPenentu(partisi) {
  *   partisi:  [{ titik, totalByte, terpakaiByte }]
  *   diskAleta:{ byte, rincian: [...] }
  *   gpu:      nilaiGpu
+ *   cpu:      ukurCpuServer (opsional; tanpanya keping CPU "tidak terbaca")
+ *   cpuSebagian: true bila CPU ALETA hanya dari container bot (tanpa netdata)
  */
-function hitungRingkas({ memori, rincian, partisi, diskAleta, gpu }) {
+function hitungRingkas({ memori, rincian, partisi, diskAleta, gpu, cpu, cpuSebagian }) {
   const totalRam = memori ? memori.totalByte : null;
   const aletaRam = (rincian && rincian.aleta ? rincian.aleta : []).reduce((s, b) => s + (b.ramByte || 0), 0);
   const adaRamAleta = Boolean(rincian && rincian.aleta && rincian.aleta.length);
@@ -459,8 +466,12 @@ function hitungRingkas({ memori, rincian, partisi, diskAleta, gpu }) {
   const ramAletaPersen = adaRamAleta ? persen(aletaRam, totalRam) : null;
   const diskAletaPersen = diskAleta && diskAleta.byte !== null ? persen(diskAleta.byte, kapasitas) : null;
   const ramServerPersen = memori ? persen(memori.terpakaiByte, memori.totalByte) : null;
+  /* === 12OKT-J: keping CPU === */
+  const kepingCpu = cpuSvc.susunKepingCpu({ cpu: cpu || null, rincianAleta: rincian && rincian.aleta, aletaSebagian: cpuSebagian });
+  /* === AKHIR 12OKT-J === */
   return {
     aleta: {
+      cpu: kepingCpu.aleta, // 12OKT-J
       ram: { byte: adaRamAleta ? aletaRam : null, totalByte: totalRam, persen: ramAletaPersen, warna: warnaAmbang(ramAletaPersen, AMBANG.ram) },
       disk: {
         byte: diskAleta ? diskAleta.byte : null,
@@ -472,6 +483,7 @@ function hitungRingkas({ memori, rincian, partisi, diskAleta, gpu }) {
       gpu: { ...kepingGpu, keterangan: kepingGpu.ada ? "Pemakaian GPU per aplikasi tidak terbaca." : kepingGpu.keterangan },
     },
     server: {
+      cpu: kepingCpu.server, // 12OKT-J
       ram: {
         byte: memori ? memori.terpakaiByte : null,
         totalByte: totalRam,
@@ -757,7 +769,16 @@ async function kumpulkan() {
   if (!singgah.folder || sekarang - singgah.folderPada > SINGGAH_FOLDER_MS) void ukurFolderAleta().catch(() => undefined);
   if (!singgah.skema || sekarang - singgah.skemaPada > SINGGAH_SKEMA_MS) void ukurSkemaAletaBot().catch(() => undefined);
 
-  const [meminfoTeks, nd, gpu, docker] = await Promise.all([bacaTeks("/proc/meminfo"), bacaNetdata(), bacaGpu(), bacaCuplikanDocker()]);
+  /* === 12OKT-J: CPU diukur serentak (selisih dua cuplikan; panggilan pertama menunggu 1 dtk) === */
+  const [meminfoTeks, nd, gpu, docker, cpuServer, cpuBotSendiri] = await Promise.all([
+    bacaTeks("/proc/meminfo"),
+    bacaNetdata(),
+    bacaGpu(),
+    bacaCuplikanDocker(),
+    cpuSvc.ukurCpuServer(),
+    cpuSvc.ukurCpuContainerSendiri(),
+  ]);
+  /* === AKHIR 12OKT-J === */
   const memori = uraiMeminfo(meminfoTeks);
   if (!memori) catatan.push("RAM server tidak terbaca (/proc/meminfo).");
 
@@ -769,9 +790,17 @@ async function kumpulkan() {
     partisi = partisiNetdata(nd.grafik);
     sumber.rincian = "netdata (cgroup host)";
     sumber.disk = "netdata disk_space";
+    /* === 12OKT-J: CPU per container dan layanan === */
+    await cpuSvc.terapkanCpuNetdata(rincian, nd.grafik, cpuServer.inti, ALAMAT_NETDATA);
+    sumber.cpuRincian = `netdata cgroup_*.cpu / systemd_*.cpu (rata-rata ${cpuSvc.JENDELA_NETDATA_DETIK} dtk)`;
+    /* === AKHIR 12OKT-J === */
   } else {
     rincian = await bacaRincianCadangan();
     sumber.rincian = "cgroup container bot saja";
+    /* === 12OKT-J === */
+    cpuSvc.terapkanCpuContainerSendiri(rincian.aleta[0], cpuBotSendiri, cpuServer.inti);
+    sumber.cpuRincian = "cgroup container bot saja (cpuacct v1 / cpu.stat v2, selisih dua cuplikan)";
+    /* === AKHIR 12OKT-J === */
     catatan.push(`Rincian per container dan layanan butuh netdata di host - ${nd.alasan}. Yang terukur hanya container bot.`);
   }
   if (!partisi.length) {
@@ -781,7 +810,11 @@ async function kumpulkan() {
   if (!docker) catatan.push("Citra dan build cache Docker belum terukur: jalankan scripts/aleta-sumber-daya-docker.sh di host (bot tidak memegang soket Docker).");
 
   const diskAleta = susunDiskAleta({ docker, folder: singgah.folder, skema: singgah.skema });
-  const ringkas = hitungRingkas({ memori, rincian, partisi, diskAleta, gpu });
+  /* === 12OKT-J === */
+  sumber.cpuServer = cpuServer.persen === null ? "tidak terbaca (/proc/stat)" : `/proc/stat (selisih dua cuplikan, ${cpuServer.jendelaDetik} dtk)`;
+  if (cpuServer.persen === null) catatan.push("CPU server tidak terbaca: /proc/stat tidak ada atau penghitungnya tidak maju.");
+  const ringkas = hitungRingkas({ memori, rincian, partisi, diskAleta, gpu, cpu: cpuServer, cpuSebagian: !nd.ok });
+  /* === AKHIR 12OKT-J === */
   const ramDikenal = [...rincian.aleta, ...rincian.lain].reduce((s, b) => s + (b.ramByte || 0), 0);
   return {
     ok: true,
@@ -804,6 +837,7 @@ async function kumpulkan() {
       docker: docker ? { dibuat: docker.dibuat } : null,
       folderDiukurPada: singgah.folder ? singgah.folder.diukurPada : null,
       gpu,
+      cpu: { inti: cpuServer.inti, beban: cpuServer.beban, jendelaDetik: cpuServer.jendelaDetik }, // 12OKT-J
     },
     catatan,
   };

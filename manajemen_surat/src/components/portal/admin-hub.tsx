@@ -351,7 +351,7 @@ export function AdminHub() {
             <AdminMenuAction
               href="/admin/sumber-daya"
               title="Sumber daya server"
-              description="RAM, disk, dan GPU yang dipakai ALETA dibanding seluruh server, dengan rincian tiap aplikasi (ALETA dipisah dari SIPP, ABT, MariaDB, dan layanan lain)."
+              description="RAM, CPU, disk, dan GPU yang dipakai ALETA dibanding seluruh server, dengan rincian tiap aplikasi (ALETA dipisah dari SIPP, ABT, MariaDB, dan layanan lain)."
               icon={<Server className="h-5 w-5 text-sky-600" />}
               badge="Pemantau"
             />
