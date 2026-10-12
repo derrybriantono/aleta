@@ -16,7 +16,7 @@
  * tidak boleh memanggil apa pun. Saklar tanpa contoh di daftar ini tetap
  * mendapat ikon "i" berisi keterangannya - tidak ada saklar yang tanpa bantuan.
  */
-import { Info, Smartphone } from "lucide-react";
+import { Info, RefreshCw, Smartphone } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { KELAS_PENANDA_JAWABAN } from "@/lib/penanda-jawaban";
@@ -171,6 +171,17 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
     ),
   },
   /* === AKHIR 12OKT-H === */
+  /* === 12OKT-L: pernah diskors === */
+  "pernah-diskors": {
+    letak: "kolom tombol, tepat di bawah tombol Selesai",
+    contoh: (
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/70 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:border-amber-400/70 dark:text-amber-200">
+        <RefreshCw className="h-3 w-3 animate-spin [animation-duration:2.4s] motion-reduce:animate-none" aria-hidden />
+        Diskors 09:40
+      </span>
+    ),
+  },
+  /* === AKHIR 12OKT-L === */
   "panggil-saksi": { letak: "kolom Perkara, nama saksi (Saksi P / Saksi T)", contoh: tombol("Saksi Satu, Saksi Dua", "border-dotted") },
   /* === AKHIR 12OKT-B === */
   "ambil-antrian": { letak: "kolom Antrian / Jam", contoh: tombol("☰ Antrian") },

@@ -125,8 +125,13 @@ import {
 import { JenisDenganKumulasi, RincianKumulasi } from "@/components/portal/kumulasi-perkara";
 import type { KumulasiPerkara } from "@/lib/kumulasi-perkara";
 /* === AKHIR 12OKT-A === */
+/* === 12OKT-L: penanda pernah diskors === */
+import { PenandaPernahDiskorsView } from "@/components/portal/pernah-diskors";
+import { penandaPernahDiskors } from "@/lib/pernah-diskors";
+/* === AKHIR 12OKT-L === */
 import {
   keadaanSelesai,
+  kunciSelesai,
   modeTampilanAktif,
   namaBerkasRelaas,
   namaDokumenRelaas,
@@ -4688,6 +4693,18 @@ export function AletaEcourtSidang({
   const hadirIni = (b: { perkaraId: string; tanggalSidang: string }) =>
     aktifPihakHadir ? pihakHadirHariIni(antrianUntuk(antrian.peta, b), b.tanggalSidang, hariIni()) : { pihak1: false, pihak2: false };
   /* === AKHIR 12OKT-H === */
+  /* === 12OKT-L: penanda pernah diskors (di bawah tombol Selesai) === */
+  const aktifPernahDiskors = tampil(tampilan, "pernah-diskors");
+  const pernahDiskorsIni = (b: { perkaraId: string; tanggalSidang: string }) =>
+    aktifPernahDiskors
+      ? penandaPernahDiskors({
+          riwayat: tandaSelesai.riwayatSkors,
+          aktif: tandaSelesai.skors[kunciSelesai(b.perkaraId, b.tanggalSidang)] ?? null,
+          baris: b,
+          hariIni: hariIni(),
+        })
+      : null;
+  /* === AKHIR 12OKT-L === */
   const [panelTampilan, setPanelTampilan] = useState(false);
 
   // Layar penuh berjendela (perbaikan 1 Okt 2026, J4) - Esc keluar.
@@ -8711,6 +8728,9 @@ export function AletaEcourtSidang({
                               onBerubah={tandaSelesai.muatUlang}
                             />
                             ) : null}
+                            {/* === 12OKT-L: pernah diskors - tepat di bawah tombol Selesai === */}
+                            <PenandaPernahDiskorsView penanda={pernahDiskorsIni(baris)} />
+                            {/* === AKHIR 12OKT-L === */}
                           </div>
                         </td>
                       </tr>

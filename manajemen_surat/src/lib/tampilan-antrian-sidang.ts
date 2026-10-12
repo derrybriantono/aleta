@@ -371,6 +371,15 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Nama penggugat/pemohon atau tergugat/termohon yang sudah tercatat hadir hari ini di antrian diberi warna hijau dan tulisan \"(hadir)\" di kolom Perkara & Para Pihak dan di rincian. Jamnya tetap di kolom Antrian. Dibatalkan lewat Reset kehadiran = kembali normal.",
     kelompok: "penanda",
   },
+  // === 12OKT-L: penanda pernah diskors (butir 25) ===
+  {
+    kunci: "pernah-diskors",
+    label: "Pernah diskors",
+    keterangan:
+      "Ikon panah melingkar yang berputar di bawah tombol Selesai bila sidang perkara ini hari ini pernah diskors (walau sudah berjalan lagi atau selesai) atau sidang sebelumnya pernah diskors. Tooltip menyebut kapan diskors, berapa lama, catatannya, dan sidang tanggal berapa. Lencana \"diskors\" yang lama (selama masih diskors) tetap ada. Diam bila pengguna mematikan gerak di perangkatnya.",
+    kelompok: "penanda",
+  },
+  // === AKHIR 12OKT-L ===
 
   // --- Keterangan tambahan -------------------------------------------------
   {
