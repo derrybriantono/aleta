@@ -18,8 +18,15 @@ const awalNada = sumber.indexOf("const NADA_KEYAKINAN = {");
 const kartuKode = sumber.slice(awalNada, sumber.indexOf("/* === KAMUS-DB 10 Okt === */", awalNada));
 
 function pasang(): Apa {
-  const f = new Function("document", "suntingLangsungSekarang", `${buatKode}\n${kartuKode}\nreturn { kartuUsulan };`);
-  return f(document, async () => true);
+  // penyegarSunting & suntingLangsungNyala: keadaan saklar sunting langsung (Agen G, 12 Okt) yang dibaca kartuUsulan.
+  const f = new Function(
+    "document",
+    "suntingLangsungSekarang",
+    "penyegarSunting",
+    "suntingLangsungNyala",
+    `${buatKode}\n${kartuKode}\nreturn { kartuUsulan };`
+  );
+  return f(document, async () => true, new Set(), true);
 }
 const K = pasang();
 
