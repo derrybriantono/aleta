@@ -117,6 +117,11 @@
     background: var(--latar-lembut);
   }
   .uji-kepala { display: flex; align-items: center; gap: 8px; }
+  /* 13 (12 Okt sore): blok tampilan uji bawaannya diciutkan; ringkasannya satu baris. */
+  .uji-ringkas > summary { cursor: pointer; font-size: 11px; color: var(--tulisan-lembut); }
+  .uji-ringkas > summary:focus-visible { outline: 2px solid var(--merek); outline-offset: 1px; }
+  .uji-ringkas > summary[data-nyata="ya"] { color: #d99a1e; font-weight: 700; }
+  .uji-ringkas[open] > summary { margin-bottom: 5px; }
   .uji-seg {
     display: inline-flex;
     margin-left: auto;
@@ -162,6 +167,37 @@
   .uji-kode { font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; color: var(--tulisan-lembut); }
   .uji-tanda { font-size: 10px; color: var(--tulisan-lembut); font-style: italic; }
   .uji-pesan-lain { margin: 0; font-size: 11px; color: var(--tulisan-lembut); }
+
+  /* === 12OKT-F: baris "Tarik data e-Court" (Super Admin dan Admin) ===
+     Warna keadaan lewat --tarik-warna: hijau = aktif, kuning = aktif tetapi
+     perlu perhatian, kelabu = tidak aktif, merah = bot tidak terjangkau. */
+  .tarik-ecourt { --tarik-warna: var(--tulisan-lembut); border-left: 3px solid var(--tarik-warna); }
+  .tarik-ecourt[data-keadaan="aktif"] { --tarik-warna: #2e9d62; }
+  .tarik-ecourt[data-keadaan="perhatian"] { --tarik-warna: #d99a1e; }
+  .tarik-ecourt[data-keadaan="tidak-terjangkau"] { --tarik-warna: #d4483b; }
+  .tarik-baris { display: flex; align-items: center; gap: 7px; }
+  .tarik-titik { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--tarik-warna); }
+  .tarik-ecourt[data-keadaan="mati"] .tarik-titik { background: transparent; border: 2px solid var(--tarik-warna); box-sizing: border-box; }
+  .tarik-nama { font-size: 12px; font-weight: 700; }
+  .tarik-status {
+    margin-left: auto;
+    padding: 2px 10px;
+    border: 1px solid var(--tarik-warna);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tarik-warna) 16%, transparent);
+    color: var(--tulisan);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tarik-status:hover:not(:disabled) { background: color-mix(in srgb, var(--tarik-warna) 30%, transparent); }
+  .tarik-status:focus-visible { outline: 2px solid var(--merek); outline-offset: 1px; }
+  .tarik-status:disabled { cursor: default; opacity: 0.75; }
+  .tarik-yakin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 5px 0 0; font-size: 11.5px; }
+  .tarik-yakin[hidden] { display: none; }
+  .tarik-ecourt .saklar-ket { margin: 3px 0 0; }
+  /* === AKHIR 12OKT-F === */
 
   /* Kulit Modern (UI Baru) untuk jendela ini - token yang sama dengan blok
      KULIT MODERN di panel.css. Hanya berlaku bila popup.js memasang
@@ -714,27 +750,32 @@
      menyala: kirim WhatsApp dan simpan ke SIPP/ABT/ALETA ditahan, kecuali
      "Izinkan tindakan nyata" dicentang. Lihat popup.js dan panel-alat.js
      (bagian 3b). Tersembunyi bagi yang bukan Super Admin. -->
+<!-- 13 (12 Okt sore): BAWAAN DICIUTKAN. Ringkasan satu baris (tampilan yang
+     dicoba + tindakan nyata) selalu terlihat; isinya dibuka dengan menekannya. -->
 <div id="bagianUji" class="bagian-uji" hidden>
-  <div class="uji-kepala">
-    <span class="baris-warna-label">tampilan uji</span>
-    <span class="uji-seg" role="group" aria-label="Tampilan yang dicoba">
-      <button type="button" id="ujiLama" data-uji-mode="lama" aria-pressed="true">Lama</button>
-      <button type="button" id="ujiBaru" data-uji-mode="baru" aria-pressed="false">Baru</button>
-      <button type="button" id="ujiUi" data-uji-mode="ui" aria-pressed="false">UI Baru</button>
-    </span>
-  </div>
-  <p id="ujiKet" class="saklar-ket"></p>
-  <label class="uji-nyata" id="ujiNyataBaris" hidden>
-    <input type="checkbox" id="ujiIzinkanNyata">
-    <span>Izinkan tindakan nyata - kirim WhatsApp dan simpan ke SIPP, ABT, ALETA berlaku sungguhan</span>
-  </label>
-  <details id="ujiFiturLaci" class="uji-fitur">
-    <summary>Saklar fitur ide · <span id="ujiFiturHitung">0 nyala</span></summary>
-    <div class="uji-fitur-aksi">
-      <button type="button" id="ujiSemuaNyala" class="uji-kecil">nyalakan semua</button>
-      <button type="button" id="ujiSemuaMati" class="uji-kecil">matikan semua</button>
+  <details id="ujiBagianLaci" class="uji-ringkas">
+    <summary id="ujiRingkasan">Tampilan uji</summary>
+    <div class="uji-kepala">
+      <span class="baris-warna-label">tampilan uji</span>
+      <span class="uji-seg" role="group" aria-label="Tampilan yang dicoba">
+        <button type="button" id="ujiLama" data-uji-mode="lama" aria-pressed="true">Lama</button>
+        <button type="button" id="ujiBaru" data-uji-mode="baru" aria-pressed="false">Baru</button>
+        <button type="button" id="ujiUi" data-uji-mode="ui" aria-pressed="false">UI Baru</button>
+      </span>
     </div>
-    <div id="ujiFiturDaftar" class="uji-daftar"></div>
+    <p id="ujiKet" class="saklar-ket"></p>
+    <label class="uji-nyata" id="ujiNyataBaris" hidden>
+      <input type="checkbox" id="ujiIzinkanNyata">
+      <span>Izinkan tindakan nyata - kirim WhatsApp dan simpan ke SIPP, ABT, ALETA berlaku sungguhan</span>
+    </label>
+    <details id="ujiFiturLaci" class="uji-fitur">
+      <summary>Saklar fitur ide · <span id="ujiFiturHitung">0 nyala</span></summary>
+      <div class="uji-fitur-aksi">
+        <button type="button" id="ujiSemuaNyala" class="uji-kecil">nyalakan semua</button>
+        <button type="button" id="ujiSemuaMati" class="uji-kecil">matikan semua</button>
+      </div>
+      <div id="ujiFiturDaftar" class="uji-daftar"></div>
+    </details>
   </details>
 </div>
 
@@ -757,6 +798,27 @@
 <div id="latihanLainBaris" class="bagian-uji" hidden>
   <p class="uji-pesan-lain">Mode latihan menyala di PC ini: tidak ada yang ditulis ke SIPP maupun ALETA. Hanya Admin atau Super Admin yang dapat mematikannya.</p>
 </div>
+
+<!-- === 12OKT-F: Tarik data e-Court - SUPER ADMIN DAN ADMIN SAJA ===
+     Satu saklar dengan Penjadwal di Integrasi e-Court (tersimpan di server,
+     berlaku tanpa memulai ulang). Hanya menarik (membaca) dari e-Court yang
+     sudah ada. Disembunyikan bagi peran lain; popup.js memutuskan sesudah
+     portal menjawab siapa yang masuk, dan rute server menolak peran lain.
+     Statusnya TOMBOL: klik = aktifkan / matikan, dengan konfirmasi singkat. -->
+<div id="bagianTarikEcourt" class="bagian-uji tarik-ecourt" data-keadaan="memuat" hidden>
+  <div class="tarik-baris">
+    <span class="tarik-titik" aria-hidden="true"></span>
+    <span class="tarik-nama">Tarik data e-Court</span>
+    <button type="button" id="tarikEcourtStatus" class="tarik-status" disabled>memuat…</button>
+  </div>
+  <p id="tarikEcourtKet" class="saklar-ket" aria-live="polite"></p>
+  <div id="tarikEcourtYakin" class="tarik-yakin" hidden>
+    <span id="tarikEcourtTanya"></span>
+    <button type="button" id="tarikEcourtYa" class="uji-kecil">Ya</button>
+    <button type="button" id="tarikEcourtBatal" class="uji-kecil">Batal</button>
+  </div>
+</div>
+<!-- === AKHIR 12OKT-F === -->
 
 <!-- Bagi yang BUKAN Super Admin, bila Super Admin meninggalkan tampilan uji
      menyala di PC ini: disebut, dan dapat dikembalikan ke Lama. Kembali ke
