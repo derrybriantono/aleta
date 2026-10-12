@@ -125,6 +125,11 @@ import {
 import { JenisDenganKumulasi, RincianKumulasi } from "@/components/portal/kumulasi-perkara";
 import type { KumulasiPerkara } from "@/lib/kumulasi-perkara";
 /* === AKHIR 12OKT-A === */
+/* === 12OKT-K: sita, eksekusi, eksepsi/rekonvensi === */
+import { PenandaSitaAgenda, RincianJawabanSitaEksekusi, type BahanRincianJawabanSita } from "@/components/portal/penanda-sita-agenda";
+import type { PenandaJawabanPerkara } from "@/lib/penanda-jawaban";
+import type { EksekusiPerkara, SitaPerkara } from "@/lib/penanda-sita";
+/* === AKHIR 12OKT-K === */
 import {
   keadaanSelesai,
   modeTampilanAktif,
@@ -461,6 +466,13 @@ type SidangBaris = {
   penandaPerkara?: PenandaPerkaraBaris | null;
   penandaPihak?: LencanaPekerjaanPihak[] | null;
   /* === AKHIR 12OKT-B === */
+  /* === 12OKT-K: eksepsi/rekonvensi (sudah dikirim sejak 6 Okt), sita, eksekusi (ruas opsional) === */
+  penandaJawaban?: PenandaJawabanPerkara | null;
+  penandaJawabanTerbaca?: boolean;
+  sita?: SitaPerkara | null;
+  eksekusi?: EksekusiPerkara[];
+  sitaTerbaca?: boolean;
+  /* === AKHIR 12OKT-K === */
 };
 
 /**
@@ -8319,6 +8331,16 @@ export function AletaEcourtSidang({
                             />
                           ) : null}
 
+                          {/* === 12OKT-K: Sita (Jaminan/Revindikasi/Marital/Eksekusi/lain) dari
+                              petitum + SIPP, di bawah Eksepsi/Rekonvensi. Lihat lib/penanda-sita. === */}
+                          {tampil(tampilan, "penanda-sita") ? (
+                            <PenandaSitaAgenda
+                              baris={baris}
+                              onBuka={onBukaStatus ? () => onBukaStatus(baris.nomorPerkara) : undefined}
+                            />
+                          ) : null}
+                          {/* === AKHIR 12OKT-K === */}
+
                           {/* Umur perkara, tepat di bawah agendanya - diminta
                               pengguna 23 September 2026. Hari mediasi tidak
                               dihitung; warnanya pita Waktu Putus SK Dirjen
@@ -8807,6 +8829,11 @@ export function AletaEcourtSidang({
                                   /* === 12OKT-A: kumulasi perkara === */
                                   kumulasi={tampil(tampilan, "kumulasi-perkara") && baris.kumulasiTerbaca ? baris.kumulasi ?? null : undefined}
                                   /* === AKHIR 12OKT-A === */
+                                  /* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi di rincian === */
+                                  jawabanSita={baris}
+                                  tampilJawaban={tampil(tampilan, "penanda-jawaban")}
+                                  tampilSita={tampil(tampilan, "penanda-sita")}
+                                  /* === AKHIR 12OKT-K === */
                                   tandaOnline={
                                     tampil(tampilan, "tanda-antrian-online")
                                       ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
@@ -8891,6 +8918,11 @@ export function RincianSidang({
   /* === 12OKT-A: kumulasi perkara === */
   kumulasi = undefined,
   /* === AKHIR 12OKT-A === */
+  /* === 12OKT-K === */
+  jawabanSita = undefined,
+  tampilJawaban = false,
+  tampilSita = false,
+  /* === AKHIR 12OKT-K === */
 }: {
   /* === 12OKT-B: penanda perkara & pihak di rincian (dikirim dari barisnya) === */
   penanda?: BahanPenandaBaris;
@@ -8907,6 +8939,11 @@ export function RincianSidang({
    */
   kumulasi?: KumulasiPerkara | null;
   /* === AKHIR 12OKT-A === */
+  /* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi (dari barisnya) === */
+  jawabanSita?: BahanRincianJawabanSita;
+  tampilJawaban?: boolean;
+  tampilSita?: boolean;
+  /* === AKHIR 12OKT-K === */
   rincian: Rincian | null;
   nomorPerkara: string;
   perkaraId: string;
@@ -9112,6 +9149,12 @@ export function RincianSidang({
       {/* === 12OKT-A: kumulasi perkara === */}
       <RincianKumulasi kumulasi={kumulasi} />
       {/* === AKHIR 12OKT-A === */}
+
+      {/* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */}
+      {jawabanSita ? (
+        <RincianJawabanSitaEksekusi bahan={jawabanSita} tampilJawaban={tampilJawaban} tampilSita={tampilSita} />
+      ) : null}
+      {/* === AKHIR 12OKT-K === */}
 
       {identitas ? (
         <div className="flex flex-wrap gap-1">

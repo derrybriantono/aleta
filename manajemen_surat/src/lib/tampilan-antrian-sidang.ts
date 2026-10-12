@@ -272,6 +272,15 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Penanda \"eksepsi\" (jingga berbingkai) dan \"rekonvensi\" (biru tua) di kolom Agenda bila jawaban atau duplik Tergugat/Termohon di arsip e-Court mengajukannya - dibaca ALETA dari naskahnya, pindaian lewat OCR. Tooltip menyebut dokumen dan kalimat pemicunya; ditekan = membuka Status Perkara. Yang belum atau tidak dapat dibaca tidak diberi penanda apa pun (bukan berarti tidak ada).",
     kelompok: "penanda",
   },
+  /* === 12OKT-K: penanda Sita (butir 22-24) === */
+  {
+    kunci: "penanda-sita",
+    label: "Sita & eksekusi",
+    keterangan:
+      "Lencana kuning \"Sita Jaminan\", \"Sita Revindikasi\", \"Sita Marital\", \"Sita Eksekusi\" (atau \"Sita\" + sebutan aslinya) di kolom Agenda, di bawah Eksepsi/Rekonvensi - dibaca dari petitum primer (permohonan sita / \"sah dan berharga sita\") dan dari catatan sita SIPP. Tooltip memuat kutipan butir petitumnya; ditekan = membuka Status Perkara. Juga bagian Sita & Eksekusi (register eksekusi SIPP: nomor, permohonan, jenis, tahapan) di rincian dan Status Perkara.",
+    kelompok: "penanda",
+  },
+  /* === AKHIR 12OKT-K === */
   {
     kunci: "pembebanan-ikrar",
     label: "Pembebanan ikrar talak",

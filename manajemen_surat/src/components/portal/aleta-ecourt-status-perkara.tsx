@@ -80,6 +80,11 @@ import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
 import { JenisDenganKumulasi, RincianKumulasi, useSaklarKumulasi } from "@/components/portal/kumulasi-perkara";
 import type { KumulasiPerkara } from "@/lib/kumulasi-perkara";
 /* === AKHIR 12OKT-A === */
+/* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */
+import { RincianJawabanSitaEksekusi, useSaklarTampilanAntrian } from "@/components/portal/penanda-sita-agenda";
+import type { PenandaJawabanPerkara } from "@/lib/penanda-jawaban";
+import { KUNCI_SAKLAR_JAWABAN, KUNCI_SAKLAR_SITA, type EksekusiPerkara, type SitaPerkara } from "@/lib/penanda-sita";
+/* === AKHIR 12OKT-K === */
 import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
 import { EcourtAksiPerkara } from "@/components/portal/ecourt-aksi-perkara";
 import { DaftarMajelisPetugas, NamaMediatorTertaut, type MajelisIkrar } from "@/components/portal/tautan-petugas";
@@ -481,6 +486,13 @@ export type Status = {
   kumulasi?: KumulasiPerkara | null;
   kumulasiTerbaca?: boolean;
   /* === AKHIR 12OKT-A === */
+  /* === 12OKT-K: sumber sama dengan kolom Agenda Jadwal Sidang; bot lama: tidak ada === */
+  penandaJawaban?: PenandaJawabanPerkara | null;
+  penandaJawabanTerbaca?: boolean;
+  sita?: SitaPerkara | null;
+  eksekusi?: EksekusiPerkara[];
+  sitaTerbaca?: boolean;
+  /* === AKHIR 12OKT-K === */
   jadwal: Array<{
     sidangId: string;
     tanggalSidang: string;
@@ -2915,6 +2927,10 @@ function IsiStatus({
   const saklarKumulasi = useSaklarKumulasi();
   const kumulasiBaru = saklarKumulasi && status.kumulasiTerbaca === true;
   /* === AKHIR 12OKT-A === */
+  /* === 12OKT-K: saklar panel Tampilan Jadwal Sidang (penanda-jawaban, penanda-sita) === */
+  const saklarJawaban = useSaklarTampilanAntrian(KUNCI_SAKLAR_JAWABAN);
+  const saklarSita = useSaklarTampilanAntrian(KUNCI_SAKLAR_SITA);
+  /* === AKHIR 12OKT-K === */
   const bolehBebanKonseptor = useMemo(
     () => accessibleModules.some((m) => m.id === "beban-konseptor"),
     [accessibleModules]
@@ -3105,6 +3121,10 @@ function IsiStatus({
       {/* === 12OKT-A: kumulasi perkara === */}
       {kumulasiBaru ? <RincianKumulasi kumulasi={status.kumulasi} /> : null}
       {/* === AKHIR 12OKT-A === */}
+
+      {/* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */}
+      <RincianJawabanSitaEksekusi bahan={status} tampilJawaban={saklarJawaban} tampilSita={saklarSita} />
+      {/* === AKHIR 12OKT-K === */}
 
       {/* --- Jajaran angka --- */}
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
