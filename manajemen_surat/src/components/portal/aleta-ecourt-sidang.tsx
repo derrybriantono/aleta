@@ -8853,6 +8853,7 @@ export function AletaEcourtSidang({
                                   jawabanSita={baris}
                                   tampilJawaban={tampil(tampilan, "penanda-jawaban")}
                                   tampilSita={tampil(tampilan, "penanda-sita")}
+                                  tampilEksekusi={tampil(tampilan, "penanda-eksekusi") /* 12OKT-N */}
                                   /* === AKHIR 12OKT-K === */
                                   tandaOnline={
                                     tampil(tampilan, "tanda-antrian-online")
@@ -8942,6 +8943,7 @@ export function RincianSidang({
   jawabanSita = undefined,
   tampilJawaban = false,
   tampilSita = false,
+  tampilEksekusi = false /* 12OKT-N */,
   /* === AKHIR 12OKT-K === */
 }: {
   /* === 12OKT-B: penanda perkara & pihak di rincian (dikirim dari barisnya) === */
@@ -8963,6 +8965,7 @@ export function RincianSidang({
   jawabanSita?: BahanRincianJawabanSita;
   tampilJawaban?: boolean;
   tampilSita?: boolean;
+  tampilEksekusi?: boolean; /* 12OKT-N: saklar penanda-eksekusi */
   /* === AKHIR 12OKT-K === */
   rincian: Rincian | null;
   nomorPerkara: string;
@@ -9172,7 +9175,7 @@ export function RincianSidang({
 
       {/* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */}
       {jawabanSita ? (
-        <RincianJawabanSitaEksekusi bahan={jawabanSita} tampilJawaban={tampilJawaban} tampilSita={tampilSita} />
+        <RincianJawabanSitaEksekusi bahan={jawabanSita} tampilJawaban={tampilJawaban} tampilSita={tampilSita} tampilEksekusi={tampilEksekusi} />
       ) : null}
       {/* === AKHIR 12OKT-K === */}
 

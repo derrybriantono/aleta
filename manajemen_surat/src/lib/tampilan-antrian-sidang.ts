@@ -275,11 +275,20 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
   /* === 12OKT-K: penanda Sita (butir 22-24) === */
   {
     kunci: "penanda-sita",
-    label: "Sita & eksekusi",
+    label: "Sita",
     keterangan:
-      "Lencana kuning \"Sita Jaminan\", \"Sita Revindikasi\", \"Sita Marital\", \"Sita Eksekusi\" (atau \"Sita\" + sebutan aslinya) di kolom Agenda, di bawah Eksepsi/Rekonvensi - dibaca dari petitum primer (permohonan sita / \"sah dan berharga sita\") dan dari catatan sita SIPP. Tooltip memuat kutipan butir petitumnya; ditekan = membuka Status Perkara. Juga bagian Sita & Eksekusi (register eksekusi SIPP: nomor, permohonan, jenis, tahapan) di rincian dan Status Perkara.",
+      "Lencana kuning \"Sita Jaminan\", \"Sita Revindikasi\", \"Sita Marital\", \"Sita Eksekusi\" (atau \"Sita\" + sebutan aslinya) di kolom Agenda, di bawah Eksepsi/Rekonvensi - dibaca dari petitum primer (permohonan sita / \"sah dan berharga sita\") dan dari catatan sita SIPP. Tooltip memuat kutipan butir petitumnya; ditekan = membuka Status Perkara. Juga bagian Sita di rincian dan Status Perkara. Bagian Eksekusi punya saklar sendiri (Eksekusi).",
     kelompok: "penanda",
   },
+  /* === 12OKT-N: Eksekusi dipisah dari Sita (keputusan 5) === */
+  {
+    kunci: "penanda-eksekusi",
+    label: "Eksekusi",
+    keterangan:
+      "Bagian Eksekusi di rincian Jadwal Sidang dan Status Perkara: register eksekusi SIPP (nomor, permohonan, jenis, tahapan) beserta putusan yang dieksekusi. Terpisah dari lencana Sita di kolom Agenda.",
+    kelompok: "penanda",
+  },
+  /* === AKHIR 12OKT-N === */
   /* === AKHIR 12OKT-K === */
   {
     kunci: "pembebanan-ikrar",
