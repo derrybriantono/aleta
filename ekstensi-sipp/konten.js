@@ -15913,7 +15913,10 @@ chrome.storage.onChanged.addListener((perubahan, wilayah) => {
   // pemeriksaan di bawah, dan membiarkannya basi berarti saklarnya seolah
   // tidak berfungsi sampai halaman dimuat ulang.
   if (perubahan.aktif) saklar.aktif = perubahan.aktif.newValue !== false;
-  if (perubahan.tandaiHalaman) saklar.tandaiHalaman = perubahan.tandaiHalaman.newValue === true;
+  // 17 (12 Okt sore): kunci yang DIHAPUS (newValue tak ada) kembali ke bawaan MENYALA -
+  // sama dengan muatSaklar ("!== false"). Dulu "=== true" membuat penghapusan kunci
+  // mematikan penanda sampai halaman dimuat ulang, padahal bacaan awalnya menyala.
+  if (perubahan.tandaiHalaman) saklar.tandaiHalaman = perubahan.tandaiHalaman.newValue !== false;
   if (perubahan.sisipJadwal) saklar.sisipJadwal = perubahan.sisipJadwal.newValue === true;
 
   // ==========================================================================
