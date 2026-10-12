@@ -884,7 +884,7 @@ describe("E. panel ABT: kartu tanggal KTP per pihak (blok KTP-PIHAK abt.js)", ()
     expect(p.A3_VAR_TANGGAL_KTP_P).toEqual(["2222", "0364", "0365", "0366"]);
   });
 
-  it("tiap variabel mendapat tanggal pihaknya: 0364 & 2222 = Pemohon I, 0366 = Pemohon II, 0365 = Termohon; sumber 'e-Court: KTP'; keyakinan ocr (tidak dicentang), ragu bila ragu", async () => {
+  it("tiap variabel mendapat tanggal pihaknya: 0364 & 2222 = Pemohon I, 0366 = Pemohon II, 0365 = Termohon; sumber 'e-Court: KTP'; isian kosong + bacaan cukup = keyakinan cukup & tercentang sendiri (12 Okt D), ragu bila ragu", async () => {
     const diminta: string[] = [];
     const p = pasang(["2222", "0364", "0365", "0366"], async (url) => {
       diminta.push(url);
@@ -893,10 +893,10 @@ describe("E. panel ABT: kartu tanggal KTP per pihak (blok KTP-PIHAK abt.js)", ()
     const r = await p.a3UsulanTanggalKtp("652/Pdt.G/2026/PA.Dgl");
     expect(diminta).toEqual(["/aleta/api/aleta-ecourt/ktp-pihak?nomor=652%2FPdt.G%2F2026%2FPA.Dgl&tunggu=1"]);
     const peta = Object.fromEntries(r.usulan.map((u: Apa) => [u.kode, u]));
-    expect(peta["2222"]).toMatchObject({ nilai: "18/02/2012", keyakinan: "ocr" });
-    expect(peta["0364"]).toMatchObject({ nilai: "18/02/2012", keyakinan: "ocr", nama: "Tanggal KTP Pemohon I" });
-    expect(peta["0366"]).toMatchObject({ nilai: "07/09/2014", keyakinan: "ocr", nama: "Tanggal KTP Pemohon II" });
-    expect(peta["0365"]).toMatchObject({ nilai: "01/01/2013", keyakinan: "ragu" });
+    expect(peta["2222"]).toMatchObject({ nilai: "18/02/2012", keyakinan: "cukup", awal: true });
+    expect(peta["0364"]).toMatchObject({ nilai: "18/02/2012", keyakinan: "cukup", awal: true, nama: "Tanggal KTP Pemohon I" });
+    expect(peta["0366"]).toMatchObject({ nilai: "07/09/2014", keyakinan: "cukup", awal: true, nama: "Tanggal KTP Pemohon II" });
+    expect(peta["0365"]).toMatchObject({ nilai: "01/01/2013", keyakinan: "ragu", awal: false });
     for (const u of r.usulan) expect(u.sumber[0].asal).toBe("ktp-ecourt");
     expect(peta["0364"].sumber[0].keterangan).toContain("e-Court: KTP Pemohon I (Siti)");
     expect(peta["0364"].sumber[0].keterangan).toContain("NIK sama dengan SIPP");
@@ -917,7 +917,7 @@ describe("E. panel ABT: kartu tanggal KTP per pihak (blok KTP-PIHAK abt.js)", ()
   it("keyakinan 'pasti' (setelah terukur >= 95%) membawa tingkat 'pasti' agar ikut 'Input semua yang pasti'", async () => {
     const p = pasang(["0364"], async () => jawab({ ada: true, pihak: [{ ...PIHAK[0], yakin: "pasti" }], catatan: [] }));
     const r = await p.a3UsulanTanggalKtp("1/Pdt.G/2026/PA.Dgl");
-    expect(r.usulan[0]).toMatchObject({ kode: "0364", keyakinan: "ocr", tingkat: "pasti" });
+    expect(r.usulan[0]).toMatchObject({ kode: "0364", keyakinan: "cukup", tingkat: "pasti", awal: true });
   });
 
   it("server ALETA lama (rute ktp-pihak 404): jatuh ke rute ktp-terbit, HANYA untuk 2222/0364 (Penggugat/Pemohon) - bukan 0365/0366", async () => {
