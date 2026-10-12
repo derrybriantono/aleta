@@ -517,6 +517,18 @@ async function susunSaksi(h: Halaman) {
   return hasil;
 }
 
+/**
+ * 12 Okt (butir 15-16): sel ABT disunting dengan klik DUA kali dan HANYA bila
+ * saklar "Sunting langsung (klik dua kali)" menyala. Sebelumnya satu klik
+ * membuka penyunting tanpa menengok saklar. Uji yang menyunting sel menyalakan
+ * saklarnya (NYALA_SUNTING) lalu memakai bukaSel: klik + klik dua kali - abt.js
+ * lama membukanya pada klik, abt.js kini pada klik dua kali.
+ */
+const NYALA_SUNTING = { suntingLangsungAbt: true };
+const bukaSel = (h: Halaman, sel: any) => {
+  sel.click();
+  sel.dispatchEvent(new h.w.MouseEvent("dblclick", { bubbles: true, cancelable: true }));
+};
 /** Isi panel tanpa unsur yang berubah tiap detik (tidak ada di panel ABT - dijaga tetap). */
 const potret = (h: Halaman) => String(panelDari(h)?.outerHTML || "");
 const atributAkar = (h: Halaman) =>
@@ -553,7 +565,7 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
     hasil.push(potret(h));
     // Sunting di tempat pada halaman ABT.
     const sel = h.w.document.getElementById("0222").parentElement.children[2];
-    sel.click();
+    bukaSel(h, sel);
     const ketik = await sampai(() => sel.querySelector("textarea"), "penyunting di tempat");
     ketik.value = "sejak November 2022";
     sel.querySelector(".aleta-abt-simpan").click();
@@ -564,6 +576,7 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
   }
 
   const SEMUA_T6_TERSIMPAN = {
+    ...NYALA_SUNTING,
     ujiFitur: fitur(SEMUA_ABT),
     abtModeBaca: true,
     abtVariabelSematan: ["0222"],
@@ -580,7 +593,15 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
     it(`${nama}: DOM tiap langkah, atribut <html>, penyimpanan, dan permintaan sama persis`, async () => {
       const lama = buka({ sumber: SUMBER_ABT_LAMA, simpanan });
       const kini = buka({ simpanan });
-      const [a, b] = await Promise.all([jalani(lama), jalani(kini)]);
+      const [a, b0] = await Promise.all([jalani(lama), jalani(kini)]);
+      // 12 Okt (butir 16): satu-satunya selisih yang disengaja - petunjuk/label
+      // teks usulan kini berbunyi "klik dua kali" (isi dan perilaku lain sama).
+      const b = b0.map((x) =>
+        x
+          .replace(/Klik dua kali untuk menyunting sebelum dimasukkan ke ABT/g, "Klik untuk menyunting sebelum dimasukkan ke ABT")
+          .replace(/aria-label="Sunting usulan ([^"]*?) \(klik dua kali\)"/g, 'aria-label="Sunting usulan $1"')
+          .replace(/\(kosong - klik dua kali untuk mengisi\)/g, "(kosong - klik untuk mengisi)")
+      );
       expect(b).toEqual(a);
       await tunggu(40);
       expect(tanpaCap(kini.simpanan)).toEqual(tanpaCap(lama.simpanan));
@@ -1063,10 +1084,10 @@ describe("abt-26: pemeriksa anonimisasi = peringatan dengan konfirmasi, dan leta
 // ============================================================================
 describe("abt-27: saran dasar hukum - hanya yang disahkan yang dapat disisipkan", () => {
   it("DRAF bertanda 'DRAF - belum disahkan' dan tombol Sisipkan mati; yang disahkan tersisip ke kotak yang terakhir disunting", async () => {
-    const h = buka({ simpanan: baru(["abt-27"]) });
+    const h = buka({ simpanan: baru(["abt-27"], NYALA_SUNTING) });
     await panelLahir(h);
     const sel = h.w.document.getElementById("5227").parentElement.children[2];
-    sel.click();
+    bukaSel(h, sel);
     const ketik = await sampai(() => sel.querySelector("textarea"), "penyunting 5227");
     ketik.dispatchEvent(new h.w.FocusEvent("focusin", { bubbles: true }));
     (await sampai(() => tombol(h, "Saran dasar hukum"), "alat pasal")).click();
@@ -1217,18 +1238,18 @@ describe("alat baca: konsistensi (abt-13), pratinjau (abt-12/24), perkara sebelu
 
 // ============================================================================
 describe("penyimpanan lokal: sematan (abt-22), mode baca (abt-25), draf (abt-29), templat (abt-28), ditolak (abt-6)", () => {
-  it("abt-25: mode baca tersimpan dan klik isi blangko tidak membuka penyunting", async () => {
-    const h = buka({ simpanan: baru(["abt-25"]) });
+  it("abt-25: mode baca tersimpan dan klik dua kali isi blangko tidak membuka penyunting", async () => {
+    const h = buka({ simpanan: baru(["abt-25"], NYALA_SUNTING) });
     const b = await sampai(() => q(h, ".aleta-t6-tombol-baca"), "tombol baca");
     b.click();
     expect(panelDari(h).getAttribute("data-t6-baca")).toBe("ya");
     await sampai(() => h.simpanan.abtModeBaca === true, "tersimpan");
     const sel = h.w.document.getElementById("0222").parentElement.children[2];
-    sel.click();
-    await tunggu(30);
+    bukaSel(h, sel);
+    await tunggu(60);
     expect(sel.querySelector("textarea")).toBeNull();
     b.click();
-    sel.click();
+    bukaSel(h, sel);
     await sampai(() => sel.querySelector("textarea"), "penyunting kembali");
   });
 
@@ -1296,7 +1317,7 @@ describe("penyimpanan lokal: sematan (abt-22), mode baca (abt-25), draf (abt-29)
 describe("abt-23 dan abt-9: urungkan, ulangi, dan pulihkan menulis lewat jalur simpan ABT yang sama - dan tunduk mode coba", () => {
   async function suntingTangan(h: Halaman, kode: string, nilai: string) {
     const sel = h.w.document.getElementById(kode).parentElement.children[2];
-    sel.click();
+    bukaSel(h, sel);
     const ketik = await sampai(() => sel.querySelector("textarea"), "penyunting");
     ketik.value = nilai;
     sel.querySelector(".aleta-abt-simpan").click();
@@ -1305,7 +1326,7 @@ describe("abt-23 dan abt-9: urungkan, ulangi, dan pulihkan menulis lewat jalur s
   }
 
   it("Ctrl+Z mengembalikan isi sebelumnya ke ABT; Ctrl+Y mengulanginya", async () => {
-    const h = buka({ simpanan: baru(["abt-23"], nyata) });
+    const h = buka({ simpanan: baru(["abt-23"], { ...nyata, ...NYALA_SUNTING }) });
     const urung = await sampai(() => q(h, ".aleta-t6-kepala-tombol:not(.aleta-t6-tombol-baca)"), "tombol urungkan");
     expect(urung.disabled).toBe(true);
     const sel = await suntingTangan(h, "0222", "sejak November 2022");

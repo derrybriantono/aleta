@@ -858,10 +858,18 @@ describe("butir 14 + 16: tulisan ke ABT TANPA jeda (5 Okt), tanpa penanda ALETA"
   });
 
   it("sel variabel ABT tidak lagi bertooltip ALETA", async () => {
+    // 12 Okt: saklar sunting langsung MATI (bawaan) = sel tanpa petunjuk sunting;
+    // MENYALA = petunjuk "klik dua kali". Tidak pernah menyebut ALETA.
     const h = buka({ simpanan: baru([]) });
     await siapPeran(h);
     const sel = await sampai(() => h.w.document.querySelector(".aleta-abt-dapat-disunting"), "sel dapat disunting");
-    expect(sel.title).toBe("Klik untuk menyunting di tempat. Ctrl+Enter menyimpan, Esc membatalkan.");
+    expect(sel.title).toBe("");
+    const hidup = buka({ simpanan: baru([], { suntingLangsungAbt: true }) });
+    await siapPeran(hidup);
+    const selHidup = await sampai(() => hidup.w.document.querySelector(".aleta-abt-dapat-disunting"), "sel dapat disunting");
+    await sampai(() => selHidup.title, "petunjuk sel");
+    expect(selHidup.title).toBe("Klik dua kali untuk menyunting di tempat. Ctrl+Enter menyimpan, Esc membatalkan.");
+    expect(selHidup.title).not.toMatch(/ALETA/i);
   });
 });
 

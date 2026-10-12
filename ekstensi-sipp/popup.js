@@ -1728,7 +1728,7 @@ const RINGKAS_SAKLAR = {
   aktif: "Saklar induk: mati = tidak ada apa pun dari ALETA.",
   tandaiHalaman: "Penanda ghaib, izin atasan, verzet, prodeo, panjar.",
   checklistMilestone: "Widget kiri bawah: pekerjaan penting peran Anda.",
-  suntingLangsungAbt: "Mati: sunting lewat tombol Sunting.",
+  suntingLangsungAbt: "Mati: sel ABT tak bisa disunting. Nyala: klik dua kali.",
   cetakTigaBerkas: "Putusan .rtf + PDF + anonim .rtf · bawaan mati.",
   sisipJadwal: "Jawaban, replik, duplik di baris sidangnya.",
 };
