@@ -18078,7 +18078,7 @@ async function ktpBacaTeksAsli(kode, jatiDiri) {
   const kotak = /<textarea\b[^>]*\bname="value"[^>]*>([\s\S]*?)<\/textarea>/i.exec(html);
   if (!tipe || !kotak) {
     const sebab = typeof a3SebabBukanAbt === "function" ? a3SebabBukanAbt(html) : "";
-    throw new Error(sebab || "borang sunting ABT tidak terbaca");
+    throw new Error(sebab || "halaman sunting ABT tidak terbaca");
   }
   // tipe dari borang ABT sendiri menggantikan "belum diketahui" (dipakai a3BolehDiisi)
   if (typeof tipeVariabel !== "undefined" && tipe[1]) tipeVariabel.set(kode, tipe[1]);

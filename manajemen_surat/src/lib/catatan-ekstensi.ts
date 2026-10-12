@@ -57,8 +57,26 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.197.0",
+    dirilis: "2026-10-12T13:30:00+08:00",
+    judul: "Jadwal Sidang: kumulasi, penanda pihak & perkara, panggil saksi, ruang, Sita; tanggal KTP otomatis; anonimisasi beralias",
+    butir: [
+      "ALETA e-Court langsung membuka Jadwal Sidang.",
+      "Jadwal Sidang, Jadwal Mediasi, dan Status Perkara menulis jenis perkara beserta kumulasinya (mis. Cerai Gugat Kumulasi Hak Asuh Anak); bila tidak diisi di SIPP, dibaca dari petitum dan ditandai \"dari petitum\".",
+      "Penanda Ghaib, Prodeo, dan Non e-Court di samping nomor perkara; lencana PNS, PPPK, TNI, POLRI, BUMN, BUMD di samping nama pihak; nama pihak yang sudah hadir hari ini hijau dengan tanda (hadir).",
+      "Klik nama saksi untuk memanggil saksi ke ruang sidang (pilih satu, beberapa, atau semua saksi satu pihak).",
+      "Kartu ruang sidang berwarna di bawah Hitung skor (bawaan diciutkan), nama mediator di bawah juru sita, penanda pernah diskors (ikon berputar di bawah tombol Selesai), dan tujuh saklar baru di panel Tampilan.",
+      "Lencana Eksepsi dan Rekonvensi berhuruf awal kapital; lencana Sita (Jaminan, Revindikasi, Marital, Eksekusi) dari petitum di kolom Agenda; bagian Eksepsi, Rekonvensi, Sita, dan Eksekusi di rincian dan Status Perkara.",
+      "Tanggal KTP pihak di Status Perkara, pengaturan & histori penarikan tanggal KTP di Integrasi e-Court; tanggal KTP terisi otomatis di variabel tanggal dan kalimat alat bukti ABT (1214, 9958, dll.) saat Isi dari SIPP & input ke ABT (paket ABT abt-tanggal-ktp-2 menambah #2223#).",
+      "Panel ABT: kartu huruf alasan 8503 diciutkan dengan penanda kuning; saklar Sunting langsung yang mati kini benar-benar mematikan sunting, dan bila menyala sunting dibuka dengan klik dua kali (klik di luar = batal).",
+      "Widget: saklar Tarik data e-Court berwarna (Super Admin & Admin), blok tampilan uji diciutkan, saklar Tandai halaman SIPP diperbaiki.",
+      "Anonimisasi putusan menyamarkan nama pihak beralias dan NIK; bila masih tersisa sebagian, tersedia tombol Tetap unggah (tetap ditolak bila tidak ada yang tersamar).",
+      "Sumber daya server: CPU per server, ALETA, dan aplikasi; menu Sumber Daya Server di kelompok Sistem.",
+    ],
+  },
+  {
     versi: "1.196.0",
-    dirilis: "2026-10-12T15:00:00+08:00",
+    dirilis: "2026-10-12T09:33:00+08:00",
     judul: "Blangko putusan cerai per status, set pertanyaan & saksi lebih dari dua, alur sidang di BAS massal",
     butir: [
       "Putusan cerai: blangko yang ditawarkan kini mengikuti status putusan SIPP (kabul verstek/kontradiktoir, tolak, NO, gugur, cabut, coret), tidak lagi selalu kabul verstek; butuh paket ABT abt-cerai-lengkap yang juga membetulkan beberapa kesalahan blangko.",
@@ -68,7 +86,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.195.0",
-    dirilis: "2026-10-12T12:00:00+08:00",
+    dirilis: "2026-10-12T01:12:00+08:00",
     judul: "Tampilan & hak per peran, widget per akun, checklist & panel, ZIP Status Perkara lengkap, tanggal KTP dari e-Court",
     butir: [
       "Tampilan & hak per peran: tiap peran hanya melihat menu, tab, dan tombol yang menjadi tugasnya (portal, e-Court, ekstensi); aplikasi yang belum siap hanya untuk Super Admin.",
