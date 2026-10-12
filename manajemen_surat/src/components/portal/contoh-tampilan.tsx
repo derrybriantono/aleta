@@ -126,6 +126,29 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
       </span>
     ),
   },
+  /* === 12OKT-B: contoh saklar penanda perkara & pihak, panggil saksi === */
+  "penanda-perkara": {
+    letak: "kolom Perkara, di samping nomor (dan di rincian)",
+    contoh: (
+      <span className="inline-flex flex-wrap gap-1">
+        {lencana("bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200", "Ghaib")}
+        {lencana("bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200", "Prodeo")}
+        {lencana("border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300", "Non e-Court")}
+      </span>
+    ),
+  },
+  "penanda-pekerjaan": {
+    letak: "kolom Perkara, di samping nama pihak (dan di rincian)",
+    contoh: (
+      <span className="inline-flex flex-wrap gap-1">
+        {["PNS", "PPPK", "TNI", "POLRI", "BUMN/BUMD"].map((k) => (
+          <span key={k}>{lencana("bg-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-200", k)}</span>
+        ))}
+      </span>
+    ),
+  },
+  "panggil-saksi": { letak: "kolom Perkara, nama saksi (Saksi P / Saksi T)", contoh: tombol("Saksi Satu, Saksi Dua", "border-dotted") },
+  /* === AKHIR 12OKT-B === */
   "ambil-antrian": { letak: "kolom Antrian / Jam", contoh: tombol("☰ Antrian") },
   "tunjuk-konseptor": { letak: "kolom Putusan", contoh: tombol("✎ tunjuk konseptor", "border-dashed") },
   "keterangan-perkara": { letak: "kolom Putusan", contoh: tombol("▢ keterangan", "border-dashed") },

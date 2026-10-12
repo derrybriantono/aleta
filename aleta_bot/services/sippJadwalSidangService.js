@@ -52,6 +52,8 @@ const pembebananIkrarService = require("./pembebananIkrarService");
 // Butir 4 (6 Okt 2026): eksepsi/rekonvensi dari jawaban & duplik Tergugat -
 // singgahan di basis data BOT (bukan SIPP); lihat berkasnya.
 const penandaJawabanService = require("./penandaJawabanService");
+// 12 Okt 2026 (butir 5): ghaib, prodeo, dan lencana pekerjaan pihak - lihat berkasnya.
+const penandaPerkaraPihakService = require("./penandaPerkaraPihakService");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -228,6 +230,10 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     }
   };
 
+  /* === 12OKT-B: penanda perkara & pihak (dimulai bersamaan, ditunggu sesudah peta lain) === */
+  const janjiBahanPenandaB = penandaPerkaraPihakService.bahanPenanda(idPerkara).catch(() => null);
+  /* === AKHIR 12OKT-B === */
+
   const [
     petaPihak,
     petaPetugas,
@@ -268,7 +274,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     // peta kosong berarti tidak ada perkara yang ditandai e-Litigasi, bukan
     // seluruhnya ditandai. Menandai saat ragu berarti menyalakan penanda pada
     // perkara yang mungkin tidak pernah menyentuh e-Court.
-    aman(() => ecourtBanyakPerkara(idPerkara)),
+    aman(() => ecourtBanyakPerkara(idPerkara), "ecourt"), // 12OKT-B: dicatat bila gagal (penanda non e-Court)
     // Umur perkara, dengan hari mediasi dikeluarkan sebagaimana PERMA 1/2016
     // Pasal 24. Gagal-terbuka: jadwal sidang tetap berguna tanpa angka umur,
     // dan pemasangan yang tabel mediasinya berbeda tidak boleh menjatuhkannya.
@@ -325,6 +331,15 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       "penanda-jawaban"
     ),
   ]);
+
+  /* === 12OKT-B === */
+  const bahanPenandaB = (await janjiBahanPenandaB) || {
+    ghaib: {},
+    prodeo: {},
+    pekerjaan: {},
+    terbaca: { prodeo: false, pekerjaan: false },
+  };
+  /* === AKHIR 12OKT-B === */
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
   // petaPutusan di atas: yang diperiksa hanya perkara yang SIPP-nya sudah
@@ -472,6 +487,13 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // keduanya - agendanya tahapan yang dipertukarkan elektronik - diperiksa
       // di layar, karena di sanalah daftar agendanya dirawat.
       lewatEcourt: Boolean(petaEcourt[String(row.perkaraId)]),
+      /* === 12OKT-B: penanda perkara & pihak === */
+      // false = peta e-Court gagal dibaca: portal TIDAK menandai "non e-Court"
+      // (peta kosong karena gagal bukan berarti perkaranya non e-Court).
+      ecourtTerbaca: !gagal.has("ecourt"),
+      // penandaPerkara {ghaib, ghaibSumber, prodeo}; penandaPihak [{sisi, nama, kunci, label, ragu, kalimat}]
+      ...penandaPerkaraPihakService.ruasBaris(bahanPenandaB, row.perkaraId),
+      /* === AKHIR 12OKT-B === */
       // Naskah sudah diunggah tetapi minutasi belum bertanggal: yang menagih
       // bukan hakimnya lagi, melainkan panitera penggantinya.
       adaBerkasPutusan: Boolean((petaPutusan[String(row.perkaraId)] || {}).adaBerkasPutusan),

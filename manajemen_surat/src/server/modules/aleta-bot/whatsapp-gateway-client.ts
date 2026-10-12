@@ -1570,6 +1570,16 @@ export type SidangBaris = {
    * pemeriksanya menerima ruas opsional, sehingga undefined lolos begitu saja.
    */
   lewatEcourt: boolean;
+  /* === 12OKT-B: penanda perkara & pihak (butir 5) - ruas opsional, bot lama tidak mengirimnya === */
+  /** Peta e-Court terbaca; tanpanya "non e-Court" tidak ditandai (peta gagal = kosong). */
+  ecourtTerbaca?: boolean;
+  /** ghaib/prodeo - lihat aleta_bot/services/penandaPerkaraPihakService.js. */
+  penandaPerkara?: { ghaib: boolean; ghaibSumber?: string[]; prodeo: boolean } | null;
+  /** Pihak berlencana pekerjaan (PNS, PPPK, POLRI, TNI, BUMN, BUMD) menurut penggolongan ABT. */
+  penandaPihak?: Array<{ sisi: number; nama: string; kunci: string; label: string; ragu?: boolean; kalimat?: string }> | null;
+  penandaProdeoTerbaca?: boolean;
+  penandaPekerjaanTerbaca?: boolean;
+  /* === AKHIR 12OKT-B === */
 };
 
 export type RincianSidang = {

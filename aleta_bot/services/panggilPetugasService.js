@@ -7,9 +7,10 @@
  *
  * Diminta pengguna: dari Jadwal Sidang, Hasil Sidang, dan Jadwal Mediasi, nama
  * petugas (hakim ketua, hakim anggota, panitera pengganti, juru sita,
- * mediator) dan nama pihak (pihak pertama, pihak kedua, kuasa masing-masing -
- * BUKAN saksi) dapat diklik untuk memanggilnya lewat chat WhatsApp, dan
- * petugas juga lewat pengumuman suara di pengeras suara.
+ * mediator) dan nama pihak (pihak pertama, pihak kedua, kuasa masing-masing)
+ * dapat diklik untuk memanggilnya lewat chat WhatsApp, dan petugas juga lewat
+ * pengumuman suara di pengeras suara. SAKSI (perkara_pihak5) ikut sejak 12 Okt
+ * 2026 (butir 4) sebagai golongan saksi1/saksi2 - hanya diminta pop-up saksi.
  *
  * Berkas ini mengerjakan tiga hal, dan HANYA tiga:
  *
@@ -179,7 +180,7 @@ function buatLayanan(deps = {}) {
     const tidakTerbaca = [];
     const tgl = /^\d{4}-\d{2}-\d{2}$/.test(bersih(tanggal).slice(0, 10)) ? bersih(tanggal).slice(0, 10) : "";
 
-    const [perkara, hakim, panitera, jurusita, mediator, pihak1, pihak2, kuasa, jadwal, pihak3, pihak4] = await Promise.all([
+    const [perkara, hakim, panitera, jurusita, mediator, pihak1, pihak2, kuasa, jadwal, pihak3, pihak4, pihak5] = await Promise.all([
       kueriAman(
         `SELECT nomor_perkara AS nomorPerkara, alur_perkara_id AS alurPerkaraId,
                 jenis_perkara_id AS jenisPerkaraId, jenis_perkara_nama AS jenisPerkaraNama
@@ -252,6 +253,16 @@ function buatLayanan(deps = {}) {
           WHERE x.perkara_id = ? ORDER BY x.urutan`,
         [id]
       ),
+      /* === 12OKT-B: saksi (perkara_pihak5) dapat dipanggil dari Jadwal Sidang === */
+      // saksi_pihak_ke = sisi yang menghadirkan (1 penggugat/pemohon, 2 tergugat/termohon);
+      // golongannya saksi1/saksi2 supaya pop-up pihak biasa tidak pernah memuat saksi.
+      kueriAman(
+        `SELECT x.pihak_id AS id, x.nama AS nama, x.urutan AS urutan, x.saksi_pihak_ke AS sisi, p.telepon AS telepon
+           FROM perkara_pihak5 x LEFT JOIN pihak p ON p.id = x.pihak_id
+          WHERE x.perkara_id = ? ORDER BY x.urutan`,
+        [id]
+      ),
+      /* === AKHIR 12OKT-B === */
     ]);
 
     const catat = (nama, hasil) => {
@@ -267,6 +278,7 @@ function buatLayanan(deps = {}) {
     catat("kuasa", kuasa);
     catat("intervensi", pihak3);
     catat("turut tergugat", pihak4);
+    catat("saksi", pihak5); // 12OKT-B
 
     const satuPerkara = perkara.baris[0] || {};
 
@@ -359,6 +371,15 @@ function buatLayanan(deps = {}) {
       susunPihak(kuasa4, "pihak4", "kuasa4", "kuasa"),
     ]);
 
+    /* === 12OKT-B: saksi === */
+    const saksiSisi2 = pihak5.baris.filter((b) => Number(b.sisi) === 2);
+    const saksiSisi1 = pihak5.baris.filter((b) => Number(b.sisi) !== 2);
+    const [s1, s2] = await Promise.all([
+      susunPihak(saksiSisi1, "saksi1", "saksi1", "pihak"),
+      susunPihak(saksiSisi2, "saksi2", "saksi2", "pihak"),
+    ]);
+    /* === AKHIR 12OKT-B === */
+
     const satuJadwal = jadwal.baris[0] || {};
     return {
       ok: true,
@@ -372,7 +393,7 @@ function buatLayanan(deps = {}) {
         agenda: bersih(satuJadwal.agenda),
       },
       petugas: { majelis, pp, js, mediator: daftarMediator },
-      pihak: [...p1, ...k1, ...p2, ...k2, ...p4, ...k4, ...p3, ...k3],
+      pihak: [...p1, ...k1, ...p2, ...k2, ...p4, ...k4, ...p3, ...k3, ...s1, ...s2],
       tidakTerbaca,
     };
   }

@@ -77,6 +77,11 @@ import { TombolPenetapanKembali } from "@/components/portal/penetapan-kembali";
 import { TombolKasirJurnal } from "@/components/portal/kasir-jurnal";
 import { TombolKasirHarian } from "@/components/portal/kasir-otomatis";
 import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
+/* === 12OKT-B: penanda perkara & pihak, panggil saksi === */
+import { LencanaPekerjaanBaris, LencanaPerkaraBaris } from "@/components/portal/penanda-perkara-pihak";
+import { DaftarNamaSaksi } from "@/components/portal/panggil-saksi";
+import type { BahanPenandaBaris, LencanaPekerjaanPihak, PenandaPerkaraBaris } from "@/lib/penanda-perkara-pihak";
+/* === AKHIR 12OKT-B === */
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
 import { pitaJarak, sebutanJarak } from "@/lib/jarak-antar-sidang";
@@ -434,6 +439,12 @@ type SidangBaris = {
   saksiNamaPihak2?: string[];
   /** Terdaftar lewat e-Court - syarat pertama penanda e-Litigasi. */
   lewatEcourt?: boolean;
+  /* === 12OKT-B: penanda perkara & pihak (ruas opsional; bot lama tidak mengirimnya) === */
+  /** Peta e-Court terbaca - tanpa ini "non e-Court" TIDAK ditandai. */
+  ecourtTerbaca?: boolean;
+  penandaPerkara?: PenandaPerkaraBaris | null;
+  penandaPihak?: LencanaPekerjaanPihak[] | null;
+  /* === AKHIR 12OKT-B === */
 };
 
 /**
@@ -4648,6 +4659,11 @@ export function AletaEcourtSidang({
   const tampilan = useMemo(() => saringSaklarSidang(tampilanPilihan, currentUser), [tampilanPilihan, currentUser]);
   const bolehJalannya = bolehAksi(currentUser, "sidang.jalannya");
   /* === AKHIR HAK-PERAN === */
+  /* === 12OKT-B: saklar penanda perkara & pihak, panggil saksi === */
+  const aktifPenandaPerkara = tampil(tampilan, "penanda-perkara");
+  const aktifPenandaPekerjaan = tampil(tampilan, "penanda-pekerjaan");
+  const aktifPanggilSaksi = tampil(tampilan, "panggil-saksi");
+  /* === AKHIR 12OKT-B === */
   const [panelTampilan, setPanelTampilan] = useState(false);
 
   // Layar penuh berjendela (perbaikan 1 Okt 2026, J4) - Esc keluar.
@@ -7483,6 +7499,9 @@ export function AletaEcourtSidang({
                               verzet
                             </Badge>
                           ) : null}
+                          {/* === 12OKT-B: Ghaib / Prodeo / Non e-Court di samping nomor === */}
+                          <LencanaPerkaraBaris baris={baris} aktif={aktifPenandaPerkara} className="ml-2 align-middle" />
+                          {/* === AKHIR 12OKT-B === */}
                           {/* Penanda panggilan tepat di samping nomor perkara:
                               itulah yang dicari mata saat menelusuri jadwal. */}
                           <span className="ml-2 inline-flex gap-1 align-middle">
@@ -7545,6 +7564,7 @@ export function AletaEcourtSidang({
                                 >
                                   <span className="font-medium text-foreground/70">P:</span>{" "}
                                   <NamaDapatDipanggil golongan="pihak1" {...konteksPanggil}>{baris.pihak.penggugat.join(", ")}</NamaDapatDipanggil>
+                                  <LencanaPekerjaanBaris baris={baris} nama={baris.pihak.penggugat} aktif={aktifPenandaPekerjaan} />{/* 12OKT-B */}
                                 </div>
                               ) : null}
                               {pihakTampil(baris.pihak).tergugat.length > 0 ? (
@@ -7554,6 +7574,7 @@ export function AletaEcourtSidang({
                                 >
                                   <span className="font-medium text-foreground/70">T:</span>{" "}
                                   <NamaDapatDipanggil golongan="pihak2" {...konteksPanggil}>{pihakTampil(baris.pihak).tergugat.join(", ")}</NamaDapatDipanggil>
+                                  <LencanaPekerjaanBaris baris={baris} nama={pihakTampil(baris.pihak).tergugat} aktif={aktifPenandaPekerjaan} />{/* 12OKT-B */}
                                 </div>
                               ) : null}
                               {/* Butir 23 (6 Okt 2026): turut tergugat dan
@@ -7563,12 +7584,14 @@ export function AletaEcourtSidang({
                                 <div className="break-words" title={`Turut Tergugat: ${(baris.pihak.turutTergugat ?? []).join(", ")}`} data-pihak-turut="">
                                   <span className="font-medium text-foreground/70">Turut T:</span>{" "}
                                   <NamaDapatDipanggil golongan="pihak4" {...konteksPanggil}>{(baris.pihak.turutTergugat ?? []).join(", ")}</NamaDapatDipanggil>
+                                  <LencanaPekerjaanBaris baris={baris} nama={baris.pihak.turutTergugat ?? []} aktif={aktifPenandaPekerjaan} />{/* 12OKT-B */}
                                 </div>
                               ) : null}
                               {(baris.pihak.intervensi ?? []).length > 0 ? (
                                 <div className="break-words" title={`Intervensi: ${(baris.pihak.intervensi ?? []).join(", ")}`} data-pihak-intervensi="">
                                   <span className="font-medium text-foreground/70">Int:</span>{" "}
                                   <NamaDapatDipanggil golongan="pihak3" {...konteksPanggil}>{(baris.pihak.intervensi ?? []).join(", ")}</NamaDapatDipanggil>
+                                  <LencanaPekerjaanBaris baris={baris} nama={baris.pihak.intervensi ?? []} aktif={aktifPenandaPekerjaan} />{/* 12OKT-B */}
                                 </div>
                               ) : null}
                             </div>
@@ -7970,7 +7993,8 @@ export function AletaEcourtSidang({
                                     Saksi P ({baris.saksiPihak1}):
                                   </span>{" "}
                                   <span title={(baris.saksiNamaPihak1 ?? []).join(", ")}>
-                                    {(baris.saksiNamaPihak1 ?? []).join(", ") || "nama belum tercatat"}
+                                    {/* 12OKT-B: nama saksi dapat diklik untuk memanggil (saklar panggil-saksi) */}
+                                    <DaftarNamaSaksi aktif={aktifPanggilSaksi} golongan="saksi1" nama={baris.saksiNamaPihak1 ?? []} konteks={konteksPanggil} />
                                   </span>
                                 </div>
                               ) : null}
@@ -7980,7 +8004,8 @@ export function AletaEcourtSidang({
                                     Saksi T ({baris.saksiPihak2}):
                                   </span>{" "}
                                   <span title={(baris.saksiNamaPihak2 ?? []).join(", ")}>
-                                    {(baris.saksiNamaPihak2 ?? []).join(", ") || "nama belum tercatat"}
+                                    {/* 12OKT-B */}
+                                    <DaftarNamaSaksi aktif={aktifPanggilSaksi} golongan="saksi2" nama={baris.saksiNamaPihak2 ?? []} konteks={konteksPanggil} />
                                   </span>
                                 </div>
                               ) : null}
@@ -8689,6 +8714,9 @@ export function AletaEcourtSidang({
                                   tampilCatatanHitung={tampil(tampilan, "catatan-cara-hitung")}
                                   durasi={baris.durasi}
                                   pembebanan={sidangIkrar(baris) ? baris.pembebanan ?? null : null}
+                                  penanda={baris} /* 12OKT-B */
+                                  aktifPenandaPerkara={aktifPenandaPerkara}
+                                  aktifPenandaPekerjaan={aktifPenandaPekerjaan}
                                   tandaOnline={
                                     tampil(tampilan, "tanda-antrian-online")
                                       ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
@@ -8765,7 +8793,15 @@ export function RincianSidang({
   durasi,
   tandaOnline = null,
   pembebanan = null,
+  penanda,
+  aktifPenandaPerkara = false,
+  aktifPenandaPekerjaan = false,
 }: {
+  /* === 12OKT-B: penanda perkara & pihak di rincian (dikirim dari barisnya) === */
+  penanda?: BahanPenandaBaris;
+  aktifPenandaPerkara?: boolean;
+  aktifPenandaPekerjaan?: boolean;
+  /* === AKHIR 12OKT-B === */
   rincian: Rincian | null;
   nomorPerkara: string;
   perkaraId: string;
@@ -8947,6 +8983,9 @@ export function RincianSidang({
             verzet
           </Badge>
         ) : null}
+        {/* === 12OKT-B: Ghaib / Prodeo / Non e-Court di rincian === */}
+        <LencanaPerkaraBaris baris={penanda ?? {}} aktif={aktifPenandaPerkara} />
+        {/* === AKHIR 12OKT-B === */}
         {sipp ? (
           <span className="text-xs text-muted-foreground">{sipp.majelis.length} hakim</span>
         ) : null}
@@ -9102,6 +9141,7 @@ export function RincianSidang({
                       {pihak.map((orang, urutan) => (
                         <li key={`${orang.nama}-${urutan}`}>
                           <span className="font-medium">{orang.nama}</span>
+                          <LencanaPekerjaanBaris baris={penanda ?? {}} nama={[orang.nama]} aktif={aktifPenandaPekerjaan} />{/* 12OKT-B */}
                           <span className="text-xs text-muted-foreground">
                             {orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor"}
                           </span>

@@ -73,7 +73,7 @@ type BotPetugas = {
 
 type BotPihak = {
   kunci: string;
-  golongan: "pihak1" | "pihak2" | "pihak3" | "pihak4";
+  golongan: "pihak1" | "pihak2" | "pihak3" | "pihak4" | "saksi1" | "saksi2";
   jenis: "pihak" | "kuasa";
   nama: string;
   nomor: string;
@@ -339,6 +339,9 @@ export async function bacaSasaran(
  */
 function peranPihak(golongan: BotPihak["golongan"], bahan: Parameters<typeof sebutanSatuPihak>[1], jenis: string) {
   const kuasa = String(jenis || "").toLowerCase() === "kuasa" ? "Kuasa " : "";
+  // 12 Okt 2026 (butir 4): saksi disebut menurut sisi yang menghadirkannya.
+  if (golongan === "saksi1") return `Saksi ${sebutanSatuPihak(1, bahan)}`;
+  if (golongan === "saksi2") return `Saksi ${sebutanSatuPihak(2, bahan)}`;
   if (golongan === "pihak4") return `${kuasa}Turut ${sebutanSatuPihak(2, bahan)}`;
   if (golongan === "pihak3") return `${kuasa}Intervensi`;
   return sebutanSatuPihak(golongan === "pihak2" ? 2 : 1, bahan, jenis);
@@ -435,9 +438,10 @@ export async function lakukanPanggilan(db: AletaDatabase, pelaku: Pelaku, masuka
       pesan: "Orang ini tidak (lagi) tercatat pada perkara ini di SIPP - muat ulang jadwalnya.",
     });
   }
-  // Saksi tidak pernah ada di daftar sasaran. Pihak SEJAK 6 Okt 2026 (lanjutan
-  // butir 23) dapat diumumkan lewat pengeras suara atas permintaan pengguna -
-  // saklarnya (panggil-pihak-audio) bawaannya mati di peramban.
+  // Saksi ada di daftar sasaran SEJAK 12 Okt 2026 (butir 4, golongan saksi1/saksi2,
+  // dari perkara_pihak5) dan diperlakukan seperti pihak. Pihak SEJAK 6 Okt 2026
+  // (lanjutan butir 23) dapat diumumkan lewat pengeras suara atas permintaan
+  // pengguna - saklarnya (panggil-pihak-audio) bawaannya mati di peramban.
 
   const nomorPerkara = sasaran.perkara.nomorPerkara || String(masukan.nomorPerkara ?? "").slice(0, 64);
   const ruang = String(masukan.ruang ?? "").trim().slice(0, 128) || sasaran.perkara.ruang;
