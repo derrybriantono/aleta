@@ -325,6 +325,24 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Penanda netral bila semua pihak hadir pada sidang sebelumnya. Hanya tampil di mode Ringkas.",
     kelompok: "penanda",
   },
+  // 12 Okt 2026 (antrian sidang butir 5): ghaib, prodeo, dan non e-Court di
+  // samping nomor perkara; e-Court tidak diberi tanda karena itu yang lazim.
+  {
+    kunci: "penanda-perkara",
+    label: "Ghaib, prodeo, non e-Court",
+    keterangan:
+      "Lencana di samping nomor perkara: Ghaib (alamat pihak tidak diketahui), Prodeo (dibebaskan dari biaya), dan Non e-Court (perkara didaftarkan langsung di PTSP). Perkara e-Court tidak diberi tanda. Juga di rincian perkara.",
+    kelompok: "penanda",
+  },
+  // 12 Okt 2026 (butir 5): pekerjaan pihak yang membawa kewajiban hukum
+  // sendiri (izin/pemberitahuan atasan) - penggolongan sama dengan ABT.
+  {
+    kunci: "penanda-pekerjaan",
+    label: "PNS, PPPK, TNI, POLRI, BUMN/BUMD",
+    keterangan:
+      "Lencana pekerjaan di samping nama pihak: PNS, PPPK, TNI, POLRI, BUMN, BUMD. Pensiunan, CPNS, dan PPPK paruh waktu tidak diberi lencana. Juga di rincian perkara.",
+    kelompok: "penanda",
+  },
 
   // --- Keterangan tambahan -------------------------------------------------
   {
@@ -332,6 +350,23 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     label: "Majelis, PP, juru sita, ruang",
     keterangan:
       "Baris Majelis, PP, JS, dan Ruang di bawah nomor perkara. Hanya tampil di mode Ringkas; di Lengkap keterangannya punya kolom sendiri (Majelis & Petugas).",
+    kelompok: "keterangan",
+  },
+  // 12 Okt 2026 (butir 1): nama jenis perkara dengan kumulasinya, dari SIPP
+  // atau - bila petugas lupa mengisinya - dibaca dari petitum.
+  {
+    kunci: "kumulasi-perkara",
+    label: "Kumulasi perkara",
+    keterangan:
+      "Jenis perkara ditulis bersama kumulasinya, mis. \"Cerai Gugat Kumulasi Hak Asuh Anak\". Bila kumulasi tidak diisi di SIPP, ALETA membacanya dari petitum dan menandainya \"dari petitum\". Juga di Jadwal Mediasi, Status Perkara, dan rincian.",
+    kelompok: "keterangan",
+  },
+  // 12 Okt 2026 (butir 6): mediator di bawah JS, di atas ruang.
+  {
+    kunci: "mediator-majelis",
+    label: "Mediator di Majelis & Petugas",
+    keterangan:
+      "Nama mediator di bawah juru sita (di atas ruang) pada Majelis & Petugas, dan di rincian perkara. Hanya untuk perkara yang sudah ditunjuk mediatornya.",
     kelompok: "keterangan",
   },
   {
@@ -429,6 +464,14 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Tombol Mediator (menunjuk mediator) - sejak 6 Okt 2026 HANYA pada sidang yang dihadiri kedua belah pihak untuk pertama kali. Keterangan mediasinya tetap ada di Status Perkara, bagian Mediasi.",
     kelompok: "alat",
   },
+  // 12 Okt 2026 (butir 4): panggil saksi ke ruang sidang lewat layar panggil.
+  {
+    kunci: "panggil-saksi",
+    label: "Panggil saksi",
+    keterangan:
+      "Nama saksi dapat ditekan untuk memanggilnya ke ruang sidang; pilih saksi mana yang dipanggil (satu, beberapa, atau semua saksi satu pihak).",
+    kelompok: "alat",
+  },
   {
     kunci: "court-calendar",
     label: "Court Calendar",
@@ -522,6 +565,14 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     label: "Tombol ruang sidang",
     keterangan:
       "Di ujung kanan deretan tombol: satu tombol per ruang sidang yang dipakai pada jadwal ini. Ditekan = hanya perkara di ruang itu; ditekan lagi = semua. Tidak tampil bila ruangnya tidak terbaca.",
+    kelompok: "atas",
+  },
+  // 12 Okt 2026 (butir 3): kartu ruang sidang berwarna, bawaan tertutup.
+  {
+    kunci: "kartu-ruang",
+    label: "Kartu ruang sidang",
+    keterangan:
+      "Di bawah deretan tombol (Hitung skor dan lainnya): satu kartu berwarna per ruang sidang yang dipakai, berisi nama ruang, jumlah perkara, dan jumlah yang perlu diperiksa. Bawaannya diciutkan; ditekan = buka.",
     kelompok: "atas",
   },
   {
