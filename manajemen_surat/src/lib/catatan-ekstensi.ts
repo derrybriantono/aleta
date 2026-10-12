@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.198.0",
+    dirilis: "2026-10-12T14:50:00+08:00",
+    judul: "Tanggal KTP pasti menimpa, KTP Elektronik dari Berlaku Hingga, saklar Sita & Eksekusi terpisah, CPU di widget",
+    butir: [
+      "Tanggal KTP e-Court berkeyakinan pasti yang berbeda dari isian petugas kini langsung menimpa isian ABT (kartu menyebut isian lama yang ditimpa); cukup tetap hanya mengisi yang kosong.",
+      "Variabel ABT 11114 (KTP Elektronik) dibaca dari baris Berlaku Hingga berkas KTP e-Court: seumur hidup = KTP-el (butuh paket ABT abt-tanggal-ktp-2).",
+      "Saklar Sita dan Eksekusi di panel Tampilan Jadwal Sidang dipisah.",
+      "Strip sumber daya widget (Super Admin) menampilkan CPU: RAM, CPU, Disk, GPU.",
+      "Saklar fitur ide yang fiturnya belum dibangun diberi keterangan \"belum ada\".",
+    ],
+  },
+  {
     versi: "1.197.0",
     dirilis: "2026-10-12T13:30:00+08:00",
     judul: "Jadwal Sidang: kumulasi, penanda pihak & perkara, panggil saksi, ruang, Sita; tanggal KTP otomatis; anonimisasi beralias",
