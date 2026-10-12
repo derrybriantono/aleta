@@ -6812,6 +6812,7 @@ function alatTipeSaring(daftar, entri, asal) {
 function alatTipeTertanamPeta() {
   return Object.entries(ALAT_PETA_BAWAAN).map(([kunci, b], urutan) => {
     const data = { jenisAsli: b.jenisAsli };
+    if (b.statusAsli) data.statusAsli = b.statusAsli; // P 12 Okt: baris status cerai bawaan
     if (b.blangko) data.blangko = b.blangko;
     if (b.blangkoLain) data.blangkoLain = [...b.blangkoLain];
     if (b.catatan) data.catatan = b.catatan;
@@ -8071,6 +8072,81 @@ Object.assign(ALAT_PETA_BAWAAN, {
 });
 /* === AKHIR 4B === */
 
+/* === P 12 Okt === */
+/**
+ * BLANGKO CERAI PER STATUS PUTUSAN - bawaan, bukan lagi satu blangko untuk semua status.
+ *
+ * Sebelum ini cerai gugat/talak hanya punya baris JENIS ("[01] [Kabul Verstek] Cerai (Format Lengkap)"), jadi perkara
+ * yang dicabut, digugurkan, ditolak, NO, dicoret, atau dikabulkan kontradiktoir tetap ditawari blangko kabul verstek
+ * kecuali admin mengaturnya satu per satu di Pemetaan blangko server. Baris di bawah memakai kunci yang sama dengan baris
+ * status buatan admin ("<jenis>|<status>[|verstek]", lihat alatPetaUntukPerkara), sehingga urutan pencariannya tetap:
+ * status+verstek -> status -> jenis, dan pemetaan admin tetap menang (alatTerapkanPemetaanServer).
+ *
+ * Nama berkas = folder derry_briantono "1 Perceraian CG" / "1a Perceraian CT" (diperiksa 12 Okt 2026). Untuk status yang
+ * punya beberapa varian dipilih yang PALING SERING dipakai pada putusan PA Donggala 2025-2026 di PC (mis. cabut 1a: 54
+ * putusan); varian lain disebut di catatan supaya dapat dipilih per perkara. "Dikabulkan" WAJIB berpasangan dengan baris
+ * "|verstek": tanpa itu perkara verstek jatuh ke baris "dikabulkan" (kontradiktoir) sebelum sampai ke baris jenis.
+ * Status SIPP: status_putusan jenis_pengadilan 4 (62 Dikabulkan, 63 Ditolak, 64 Tidak Dapat Diterima, 65 Digugurkan,
+ * 66 Dicoret dari Register, 67 Dicabut, 93 Gugur). Perdamaian (85) tidak pernah terjadi pada perkara cerai satker.
+ * Blangko [02b] dan [98] [NO] 4b berasal dari paket ABT abt-cerai-lengkap (Agen P).
+ */
+function alatBarisStatusCerai(jenis, status, berkas, catatan) {
+  const gugat = jenis === "Cerai Gugat";
+  return {
+    jenisAsli: jenis,
+    statusAsli: status,
+    berkas,
+    blangko: gugat ? ALAT_KELOMPOK_CERAI_GUGAT : ALAT_KELOMPOK_CERAI_TALAK,
+    blangkoLain: [...(gugat ? ALAT_KELOMPOK_LAIN_CERAI_GUGAT : ALAT_KELOMPOK_LAIN_CERAI_TALAK)],
+    bawaan: true,
+    ...(catatan ? { catatan } : {}),
+  };
+}
+const ALAT_BERKAS_STATUS_CERAI = {
+  verstekKabul: [ALAT_BERKAS_CERAI_BAWAAN, ""],
+  // "Unus Testis Nullus Testis" hanya ada di folder CG (diperiksa 12 Okt) - catatan CT tidak menyebutnya.
+  tolakVerstek: ["[01ab] [Tolak Verstek] Cerai - Tidak ada bukti", "varian: [01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022"],
+  tolak: ["[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti", ""],
+  no: [
+    "[98] [NO] 4. Cerai P & T Tidak Hadir - Alamat T Tidak Diketahui",
+    "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah & T Tidak Hadir",
+  ],
+  gugur: ["[98] [Gugur] 3. Cerai P & T Tidak Hadir", "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir"],
+  cabut: [
+    "[98] [Cabut] 1a. Cerai P Hadir & T Tidak Hadir - Tanpa Mediasi (Alamat T Tidak Diketahui)",
+    "varian: [98] [Cabut] 1. Cerai P Hadir & T Tidak Hadir - Tanpa Mediasi (P & T Damai); [98] [Cabut] 2. Cerai P & T Hadir- Setelah Mediasi (Sebelum Jawaban); [98] [Cabut] 5. Cerai P Hadir & T Tidak Hadir - Setelah Pembuktian",
+  ],
+  coret: ["[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+};
+function alatPetaStatusCerai(jenis, kodeJenis) {
+  const k = jenis.toLowerCase();
+  const B = ALAT_BERKAS_STATUS_CERAI;
+  const kabul = [
+    `[02] [Kabul] ${kodeJenis} - F`,
+    `varian: [02a] [Kabul] ${kodeJenis} - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] ${kodeJenis} - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar)` +
+      (kodeJenis === "CT" ? "; [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak)" : ""),
+  ];
+  const baris = {
+    [`${k}|dikabulkan|verstek`]: alatBarisStatusCerai(jenis, "Dikabulkan", ...B.verstekKabul),
+    [`${k}|dikabulkan`]: alatBarisStatusCerai(jenis, "Dikabulkan", ...kabul),
+    [`${k}|ditolak|verstek`]: alatBarisStatusCerai(
+      jenis,
+      "Ditolak",
+      B.tolakVerstek[0],
+      kodeJenis === "CG" ? `${B.tolakVerstek[1]}; [01ab] [Tolak Verstek] Cerai - Unus Testis Nullus Testis` : B.tolakVerstek[1]
+    ),
+    [`${k}|ditolak`]: alatBarisStatusCerai(jenis, "Ditolak", ...B.tolak),
+    [`${k}|tidak dapat diterima`]: alatBarisStatusCerai(jenis, "Tidak Dapat Diterima", ...B.no),
+    [`${k}|digugurkan`]: alatBarisStatusCerai(jenis, "Digugurkan", ...B.gugur),
+    [`${k}|gugur`]: alatBarisStatusCerai(jenis, "Gugur", ...B.gugur),
+    [`${k}|dicabut`]: alatBarisStatusCerai(jenis, "Dicabut", ...B.cabut),
+    [`${k}|dicoret dari register`]: alatBarisStatusCerai(jenis, "Dicoret dari Register", ...B.coret),
+  };
+  return baris;
+}
+Object.assign(ALAT_PETA_BAWAAN, alatPetaStatusCerai("Cerai Gugat", "CG"), alatPetaStatusCerai("Cerai Talak", "CT"));
+/* === AKHIR P === */
+
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah
  * disentuh. Yang pernah disunting - termasuk yang sengaja dihapus lalu
@@ -8092,6 +8168,7 @@ function alatPetaBawaanDariEntri(entri) {
     const d = e.data || {};
     hasil[e.kunci] = {
       jenisAsli: d.jenisAsli,
+      ...(d.statusAsli ? { statusAsli: d.statusAsli } : {}), // P 12 Okt: baris status cerai bawaan
       berkas: e.nilai,
       ...(d.blangko ? { blangko: d.blangko } : {}),
       ...(Array.isArray(d.blangkoLain) ? { blangkoLain: [...d.blangkoLain] } : {}),

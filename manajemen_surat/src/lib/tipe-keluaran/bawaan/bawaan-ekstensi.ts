@@ -112,6 +112,116 @@ export const CERMIN_EKSTENSI = {
       urutan: 6,
     },
     /* === AKHIR 4B === */
+    /* === P 12 Okt === cermin blok alatPetaStatusCerai panel-alat.js (blangko cerai per status putusan; paket ABT abt-cerai-lengkap) */
+    {
+      kunci: "cerai gugat|dikabulkan|verstek",
+      nilai: "[01] [Kabul Verstek] Cerai (Format Lengkap)",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"] },
+      urutan: 7,
+    },
+    {
+      kunci: "cerai gugat|dikabulkan",
+      nilai: "[02] [Kabul] CG - F",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar)" },
+      urutan: 8,
+    },
+    {
+      kunci: "cerai gugat|ditolak|verstek",
+      nilai: "[01ab] [Tolak Verstek] Cerai - Tidak ada bukti",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Ditolak", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022; [01ab] [Tolak Verstek] Cerai - Unus Testis Nullus Testis" },
+      urutan: 9,
+    },
+    {
+      kunci: "cerai gugat|ditolak",
+      nilai: "[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Ditolak", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"] },
+      urutan: 10,
+    },
+    {
+      kunci: "cerai gugat|tidak dapat diterima",
+      nilai: "[98] [NO] 4. Cerai P & T Tidak Hadir - Alamat T Tidak Diketahui",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah & T Tidak Hadir" },
+      urutan: 11,
+    },
+    {
+      kunci: "cerai gugat|digugurkan",
+      nilai: "[98] [Gugur] 3. Cerai P & T Tidak Hadir",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Digugurkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir" },
+      urutan: 12,
+    },
+    {
+      kunci: "cerai gugat|gugur",
+      nilai: "[98] [Gugur] 3. Cerai P & T Tidak Hadir",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Gugur", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir" },
+      urutan: 13,
+    },
+    {
+      kunci: "cerai gugat|dicabut",
+      nilai: "[98] [Cabut] 1a. Cerai P Hadir & T Tidak Hadir - Tanpa Mediasi (Alamat T Tidak Diketahui)",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dicabut", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [98] [Cabut] 1. Cerai P Hadir & T Tidak Hadir - Tanpa Mediasi (P & T Damai); [98] [Cabut] 2. Cerai P & T Hadir- Setelah Mediasi (Sebelum Jawaban); [98] [Cabut] 5. Cerai P Hadir & T Tidak Hadir - Setelah Pembuktian" },
+      urutan: 14,
+    },
+    {
+      kunci: "cerai gugat|dicoret dari register",
+      nilai: "[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dicoret dari Register", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"] },
+      urutan: 15,
+    },
+    {
+      kunci: "cerai talak|dikabulkan|verstek",
+      nilai: "[01] [Kabul Verstek] Cerai (Format Lengkap)",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"] },
+      urutan: 16,
+    },
+    {
+      kunci: "cerai talak|dikabulkan",
+      nilai: "[02] [Kabul] CT - F",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar); [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak)" },
+      urutan: 17,
+    },
+    {
+      kunci: "cerai talak|ditolak|verstek",
+      nilai: "[01ab] [Tolak Verstek] Cerai - Tidak ada bukti",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Ditolak", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022" },
+      urutan: 18,
+    },
+    {
+      kunci: "cerai talak|ditolak",
+      nilai: "[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Ditolak", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"] },
+      urutan: 19,
+    },
+    {
+      kunci: "cerai talak|tidak dapat diterima",
+      nilai: "[98] [NO] 4. Cerai P & T Tidak Hadir - Alamat T Tidak Diketahui",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah & T Tidak Hadir" },
+      urutan: 20,
+    },
+    {
+      kunci: "cerai talak|digugurkan",
+      nilai: "[98] [Gugur] 3. Cerai P & T Tidak Hadir",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Digugurkan", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir" },
+      urutan: 21,
+    },
+    {
+      kunci: "cerai talak|gugur",
+      nilai: "[98] [Gugur] 3. Cerai P & T Tidak Hadir",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Gugur", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir" },
+      urutan: 22,
+    },
+    {
+      kunci: "cerai talak|dicabut",
+      nilai: "[98] [Cabut] 1a. Cerai P Hadir & T Tidak Hadir - Tanpa Mediasi (Alamat T Tidak Diketahui)",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Dicabut", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [98] [Cabut] 1. Cerai P Hadir & T Tidak Hadir - Tanpa Mediasi (P & T Damai); [98] [Cabut] 2. Cerai P & T Hadir- Setelah Mediasi (Sebelum Jawaban); [98] [Cabut] 5. Cerai P Hadir & T Tidak Hadir - Setelah Pembuktian" },
+      urutan: 23,
+    },
+    {
+      kunci: "cerai talak|dicoret dari register",
+      nilai: "[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Dicoret dari Register", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"] },
+      urutan: 24,
+    },
+    /* === AKHIR P === */
   ],
   "putusan.padanan-jenis": [
     { kunci: "itsbat nikah", nilai: "pengesahan perkawinan/istbat nikah", urutan: 0 },
