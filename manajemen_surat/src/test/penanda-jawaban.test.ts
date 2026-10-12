@@ -405,7 +405,7 @@ describe("penanda di kolom Agenda", () => {
       penandaJawaban: perkara({ eksepsi: temuan("ada"), rekonvensi: temuan("ada", "ocr") }),
       penandaJawabanTerbaca: true,
     });
-    expect(ada.map((x) => x.label)).toEqual(["eksepsi", "rekonvensi"]);
+    expect(ada.map((x) => x.label)).toEqual(["Eksepsi", "Rekonvensi"]); // huruf awal kapital (12 Okt 2026)
     // Warna terbedakan.
     expect(ada[0].kelas).not.toBe(ada[1].kelas);
     // Title: dokumen sumber + kalimat pemicu; OCR disebut.

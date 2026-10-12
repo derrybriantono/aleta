@@ -76,7 +76,7 @@ export function penandaJawabanBaris(baris: BarisPenandaJawaban): PenandaJawaban[
   for (const jenis of ["eksepsi", "rekonvensi"] as const) {
     const t = p[jenis];
     if (!t || t.keadaan !== "ada") continue;
-    hasil.push({ kunci: jenis, label: jenis, kelas: KELAS_PENANDA_JAWABAN[jenis], keterangan: keterangan(jenis, t) });
+    hasil.push({ kunci: jenis, label: jenis === "eksepsi" ? "Eksepsi" : "Rekonvensi", kelas: KELAS_PENANDA_JAWABAN[jenis], keterangan: keterangan(jenis, t) });
   }
   return hasil;
 }

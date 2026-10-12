@@ -94,8 +94,8 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
     letak: "kolom Agenda (dari jawaban/duplik Tergugat)",
     contoh: (
       <span className="inline-flex flex-wrap gap-1">
-        {lencana(KELAS_PENANDA_JAWABAN.eksepsi, "eksepsi")}
-        {lencana(KELAS_PENANDA_JAWABAN.rekonvensi, "rekonvensi")}
+        {lencana(KELAS_PENANDA_JAWABAN.eksepsi, "Eksepsi")}
+        {lencana(KELAS_PENANDA_JAWABAN.rekonvensi, "Rekonvensi")}
       </span>
     ),
   },
