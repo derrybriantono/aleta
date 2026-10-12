@@ -610,7 +610,7 @@ describe("butir 5, 6, 7: satu daftar, huruf dengan sebabnya, satu tombol", () =>
     expect(kode).toEqual(["0222", "7035", "5227", "0246", "1268"]);
     for (const wajib of ["5227", "0246", "1268"]) {
       const kartu = qs(h, ".aleta-abt-kartu").find((k) => k.querySelector(".aleta-abt-kode")?.textContent === wajib);
-      expect(kartu.querySelector(".aleta-abt-isi-sunting").textContent).toBe("(kosong - klik untuk mengisi)");
+      expect(kartu.querySelector(".aleta-abt-isi-sunting").textContent).toBe("(kosong - tekan Sunting untuk mengisi)");
       const c = kartu.querySelector("input.aleta-abt-centang");
       expect(c.checked).toBe(false);
       expect(c.disabled).toBe(true);
@@ -836,7 +836,7 @@ describe("9 Okt (KUASA butir 1-4): kuasa hukum dari surat gugatan e-Court di Isi
     const h = buka({ simpanan: ui([]), peran: "Hakim", isi: ISI_KUASA, ganti: jawab(tanpaKantor, SIPP_KUASA) });
     await selesaiIsi(h);
     const k = kartu(h, "0156");
-    expect(k.querySelector(".aleta-abt-isi-sunting").textContent).toBe("(kosong - klik untuk mengisi)");
+    expect(k.querySelector(".aleta-abt-isi-sunting").textContent).toBe("(kosong - tekan Sunting untuk mengisi)");
     expect(k.querySelector("input.aleta-abt-centang").disabled).toBe(true);
     expect(Array.from(k.querySelectorAll("button")).some((b: any) => b.textContent === "Sunting")).toBe(true);
     expect(k.querySelector(".aleta-abt-catatan").textContent).toContain("kuasa perorangan");

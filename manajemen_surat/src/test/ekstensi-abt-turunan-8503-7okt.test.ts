@@ -496,3 +496,69 @@ describe("5. CETAK tetap dijaga selama turunan berbunyi error", () => {
     expect(tirai.textContent).toContain("Sudah saya periksa");
   });
 });
+
+// ============================================================================
+// 12 Okt (butir 14, agen G): kartu 8503 ciut bawaan + penanda kuning
+// ============================================================================
+describe("6. kartu 'Isi huruf alasan perceraian (8503)' ciut bawaan dengan penanda kuning", () => {
+  const kepala8503 = (h: Halaman) => q(h, ".aleta-t6-8503-kepala");
+  const badan8503 = (h: Halaman) => q(h, ".aleta-t6-8503-badan");
+
+  it("bawaan ciut: judul + tanda kuning + 'Perlu dikerjakan' + ringkasan tetap terbaca; isian tersembunyi; belum ada tulisan ke ABT", async () => {
+    const h = buka({ huruf: [] });
+    const p = await siapButir(h);
+    expect(p.classList.contains("aleta-t6-8503-ciut")).toBe(true);
+    expect(badan8503(h).hidden).toBe(true);
+    const kepala = kepala8503(h);
+    expect(kepala.getAttribute("role")).toBe("button");
+    expect(kepala.getAttribute("aria-expanded")).toBe("false");
+    expect(kepala.querySelector(".aleta-t6-pita-judul").textContent).toBe("Isi huruf alasan perceraian (8503)");
+    expect(kepala.querySelector(".aleta-t6-8503-tanda").textContent).toBe("!");
+    expect(kepala.querySelector(".aleta-t6-8503-perlu").textContent).toBe("Perlu dikerjakan");
+    const ringkas = kepala.querySelector(".aleta-t6-8503-ringkas");
+    expect(ringkas.hidden).toBe(false);
+    expect(ringkas.textContent).toContain("huruf alasan tidak terdeteksi dari gugatan maupun keterangan saksi - isi sendiri sesuai pertimbangan majelis");
+    expect(ringkas.textContent).toContain("8503 masih kosong, 9 variabel turunan");
+    // Isian ada di badan yang tersembunyi.
+    expect(badan8503(h).contains(kotakKetik(h))).toBe(true);
+    await tunggu(100);
+    expect(tulisAbt(h)).toEqual([]);
+  });
+
+  it("klik kepala membuka (aria-expanded, ringkasan disembunyikan), klik lagi menciutkan; ketikan tidak hilang; Enter/Spasi sama dengan klik", async () => {
+    const h = buka({ huruf: [] });
+    const p = await siapButir(h);
+    kepala8503(h).click();
+    expect(badan8503(h).hidden).toBe(false);
+    expect(p.classList.contains("aleta-t6-8503-ciut")).toBe(false);
+    expect(kepala8503(h).getAttribute("aria-expanded")).toBe("true");
+    expect(kepala8503(h).querySelector(".aleta-t6-8503-ringkas").hidden).toBe(true);
+    ketik(h, "AF");
+    kepala8503(h).click();
+    expect(badan8503(h).hidden).toBe(true);
+    expect(p.classList.contains("aleta-t6-8503-ciut")).toBe(true);
+    // Papan ketik.
+    kepala8503(h).dispatchEvent(new h.w.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(badan8503(h).hidden).toBe(false);
+    kepala8503(h).dispatchEvent(new h.w.KeyboardEvent("keydown", { key: " ", bubbles: true }));
+    expect(badan8503(h).hidden).toBe(true);
+    kepala8503(h).click();
+    expect(kotakKetik(h).value).toBe("AF");
+    // Pilihan petugas bertahan di antara penyegaran panel (sidik memuat keadaan buka).
+    await tunggu(150);
+    expect(badan8503(h).hidden).toBe(false);
+    expect(tulisAbt(h)).toEqual([]);
+  });
+
+  it("Simpan ke ABT tetap menulis lewat jalur yang sama dari kartu yang dibuka", async () => {
+    const h = buka({ huruf: [] });
+    await siapButir(h);
+    kepala8503(h).click();
+    ketik(h, "F");
+    simpan8503(h).click();
+    await sampai(() => tulisAbt(h).length > 0, "tulisan 8503");
+    const t = tulisAbt(h)[0];
+    expect(t.url).toContain("edit_data");
+    expect(decodeURIComponent(t.badan)).toContain("F");
+  });
+});

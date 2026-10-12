@@ -1403,8 +1403,128 @@ async function simpanKeteranganSaksi(kode) {
  * catatan pada alatSuntingLangsung di panel-alat.js.
  */
 let suntingLangsungNyala = false;
+
+/* === 12OKT-G: sunting langsung (klik dua kali) - satu pintu === */
+//
+// Saklar "Sunting langsung (klik dua kali)" MATI = tidak satu pun sel ABT dan
+// tidak satu pun teks usulan membuka penyunting lewat klik atau papan ketik
+// (hanya tombol "Sunting" eksplisit pada kartu usulan yang tersisa - ia
+// menyunting USULAN di panel, bukan sel ABT). Sebelum 12 Okt, sel tabel ABT
+// membuka penyunting pada SATU klik tanpa menengok saklar sama sekali.
+//
+// Keadaannya tidak hanya dibaca saat dipakai: setiap perubahan (onChanged,
+// fokus tab, pembacaan ulang di suntingLangsungSekarang) lewat
+// aturSuntingLangsung - ia memasang atribut di <body> yang menggerakkan CSS
+// (kursor, sorot, tombol), menyegarkan petunjuk, dan MENUTUP (membatalkan,
+// tanpa simpan) penyunting langsung yang sedang terbuka.
+const KUNCI_ATRIBUT_SUNTING = "data-aleta-sunting-langsung";
+/** Tempat atribut keadaan: <body> (bukan <html> - atribut akar tampilan Lama dijaga identik dengan sebelum Tahap 6). */
+const akarSunting = () => document.body || document.documentElement;
+/** Penyunting terbuka: {batal, langsung}. langsung = dibuka lewat klik dua kali/papan ketik. */
+const penyuntingTerbuka = new Set();
+/** Penyegar petunjuk (title, role, tabindex) milik sel dan kartu; yang lepas dari dokumen dibuang. */
+const penyegarSunting = new Set();
+
+function terapkanSuntingLangsung() {
+  try {
+    akarSunting().setAttribute(KUNCI_ATRIBUT_SUNTING, suntingLangsungNyala ? "ya" : "tidak");
+  } catch {
+    /* tanpa dokumen, tidak ada yang digerakkan */
+  }
+  if (!suntingLangsungNyala) {
+    for (const terbuka of Array.from(penyuntingTerbuka)) {
+      if (terbuka.langsung && !terbuka.sibuk()) {
+        try {
+          terbuka.batal();
+        } catch {
+          /* penyunting yang sudah lepas */
+        }
+      }
+    }
+  }
+  for (const segar of Array.from(penyegarSunting)) {
+    try {
+      if (segar() === false) penyegarSunting.delete(segar);
+    } catch {
+      penyegarSunting.delete(segar);
+    }
+  }
+}
+
+/** Menetapkan keadaan saklar; perubahan (atau pemakaian pertama) diterapkan seketika. */
+function aturSuntingLangsung(nyala) {
+  const berubah = suntingLangsungNyala !== (nyala === true) || !akarSunting().hasAttribute(KUNCI_ATRIBUT_SUNTING);
+  suntingLangsungNyala = nyala === true;
+  if (berubah) terapkanSuntingLangsung();
+}
+
+/**
+ * Penyunting yang membatalkan dirinya sendiri: klik/sentuh DI LUAR kotaknya
+ * = BATAL (tanpa simpan), Esc = batal. Hanya tombol Simpan yang menyimpan.
+ * `sibuk()` benar selama simpan berjalan - saat itu klik di luar diabaikan
+ * supaya tampilan tidak dikembalikan di tengah penulisan ke ABT.
+ */
+function batalBilaKlikDiLuar(wadah, batal, sibuk, langsung) {
+  let aktif = true;
+  const sibukKini = () => {
+    try {
+      return typeof sibuk === "function" && sibuk() === true;
+    } catch {
+      return false;
+    }
+  };
+  const entri = { batal: () => selesai(), langsung: langsung === true, sibuk: sibukKini };
+  const saatTekan = (e) => {
+    const t = e.target;
+    if (t instanceof Node && wadah.contains(t)) return;
+    // Bilah gulir halaman bukan "di luar": menggulir tidak boleh membuang ketikan.
+    const akar = document.documentElement;
+    if (t === akar && (e.clientX >= akar.clientWidth || e.clientY >= akar.clientHeight)) return;
+    if (sibukKini()) return;
+    selesai();
+  };
+  const saatKunci = (e) => {
+    if (e.key !== "Escape" || e.defaultPrevented || sibukKini()) return;
+    e.preventDefault();
+    selesai();
+  };
+  function selesai() {
+    if (!aktif) return;
+    aktif = false;
+    document.removeEventListener("pointerdown", saatTekan, true);
+    document.removeEventListener("mousedown", saatTekan, true);
+    document.removeEventListener("keydown", saatKunci, true);
+    penyuntingTerbuka.delete(entri);
+    batal();
+  }
+  // Pemanggil memegang `lepas` untuk menutup tanpa memanggil batal (mis. sesudah Simpan berhasil).
+  const lepas = () => {
+    if (!aktif) return;
+    aktif = false;
+    document.removeEventListener("pointerdown", saatTekan, true);
+    document.removeEventListener("mousedown", saatTekan, true);
+    document.removeEventListener("keydown", saatKunci, true);
+    penyuntingTerbuka.delete(entri);
+  };
+  document.addEventListener("pointerdown", saatTekan, true);
+  document.addEventListener("mousedown", saatTekan, true);
+  document.addEventListener("keydown", saatKunci, true);
+  penyuntingTerbuka.add(entri);
+  return lepas;
+}
+
+/** Mode baca (abt-25) melarang penyunting terbuka; melaporkannya. */
+function suntingDicegahModeBaca() {
+  try {
+    return typeof t6BacaMencegahSunting === "function" && t6BacaMencegahSunting();
+  } catch {
+    return false;
+  }
+}
+/* === AKHIR 12OKT-G === */
+
 void alatSuntingLangsung().then((n) => {
-  suntingLangsungNyala = n;
+  aturSuntingLangsung(n === true);
 });
 
 /**
@@ -1418,19 +1538,30 @@ void alatSuntingLangsung().then((n) => {
 async function suntingLangsungSekarang() {
   try {
     const nyala = await alatSuntingLangsung();
-    suntingLangsungNyala = nyala === true;
+    aturSuntingLangsung(nyala === true);
     return suntingLangsungNyala;
   } catch {
+    aturSuntingLangsung(false);
     return false;
   }
 }
 try {
   chrome.storage.onChanged.addListener((perubahan, wilayah) => {
     if (wilayah !== "local" || !perubahan[KUNCI_SUNTING_LANGSUNG]) return;
-    suntingLangsungNyala = perubahan[KUNCI_SUNTING_LANGSUNG].newValue === true;
+    aturSuntingLangsung(perubahan[KUNCI_SUNTING_LANGSUNG].newValue === true);
   });
 } catch {
   /* di luar konteks ekstensi */
+}
+// Tab yang dibekukan tidak menerima onChanged: saat tab kembali dilihat,
+// keadaannya dibaca ULANG dari penyimpanan.
+try {
+  window.addEventListener("focus", () => void suntingLangsungSekarang());
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void suntingLangsungSekarang();
+  });
+} catch {
+  /* tanpa jendela */
 }
 
 const KUNCI_CETAK_TIGA = "cetakTigaBerkas";
@@ -2095,7 +2226,7 @@ async function bacaRiwayat(perkaraId) {
  * sembul yang menutupi variabel lain. Nilai lamanya disimpan supaya Batal
  * benar-benar mengembalikan tampilan - bukan sekadar menutup kotaknya.
  */
-function sunting(item, jatiDiri, sesudahSimpan) {
+function sunting(item, jatiDiri, sesudahSimpan, langsung) {
   if (item.selNilai.querySelector("textarea")) return;
 
   const nilaiLama = item.selNilai.textContent.replace(/\s+/g, " ").trim();
@@ -2125,13 +2256,23 @@ function sunting(item, jatiDiri, sesudahSimpan) {
   item.selNilai.appendChild(kotak);
   ketik.focus();
 
+  // 12 Okt (butir 16): klik di luar kotak = BATAL otomatis (tanpa simpan);
+  // Esc = batal; hanya tombol Simpan yang menulis ke ABT. `menyimpan` menahan
+  // pembatalan otomatis selama penulisan berjalan.
+  let menyimpan = false;
+  let tertutup = false;
+  let lepas = () => {};
   const tutup = (isiBaru) => {
+    if (tertutup) return;
+    tertutup = true;
+    lepas();
     if (isiBaru === undefined) {
       item.selNilai.innerHTML = tampilanLama;
       return;
     }
     item.selNilai.textContent = isiBaru || "DATA_TIDAK_ADA";
   };
+  lepas = batalBilaKlikDiLuar(kotak, () => tutup(), () => menyimpan, langsung === true);
 
   batal.addEventListener("click", () => tutup());
 
@@ -2150,17 +2291,26 @@ function sunting(item, jatiDiri, sesudahSimpan) {
   });
 
   simpan.addEventListener("click", async () => {
+    if (menyimpan || tertutup) return;
+    menyimpan = true;
     simpan.disabled = true;
     batal.disabled = true;
     kabar.textContent = "Menyimpan…";
     kabar.className = "aleta-abt-kabar";
+    // Gagal: kotak tetap terbuka supaya ketikannya tidak hilang - kecuali
+    // saklar sunting langsung sudah dimatikan selagi menyimpan.
+    const gagalTetapBuka = () => {
+      menyimpan = false;
+      simpan.disabled = false;
+      batal.disabled = false;
+      if (langsung === true && !suntingLangsungNyala) tutup();
+    };
     try {
       const hasil = await simpanVariabel(item.kode, ketik.value, jatiDiri);
       if (!hasil.ok) {
         kabar.textContent = hasil.pesan;
         kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-        simpan.disabled = false;
-        batal.disabled = false;
+        gagalTetapBuka();
         return;
       }
       const tersimpan = String(hasil.nilaiTersimpan ?? ketik.value).trim();
@@ -2173,13 +2323,13 @@ function sunting(item, jatiDiri, sesudahSimpan) {
         cara: "sunting tangan",
         pada: new Date().toISOString(),
       });
+      menyimpan = false;
       tutup(tersimpan);
       if (typeof sesudahSimpan === "function") sesudahSimpan(item.kode, tersimpan);
     } catch (galat) {
       kabar.textContent = String((galat && galat.message) || galat);
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      simpan.disabled = false;
-      batal.disabled = false;
+      gagalTetapBuka();
     }
   });
 }
@@ -2199,11 +2349,34 @@ function pasangSunting(jatiDiri) {
 
     item.selNilai.setAttribute(TANDA_ABT, "siap");
     item.selNilai.classList.add("aleta-abt-dapat-disunting");
-    item.selNilai.title = "Klik untuk menyunting di tempat. Ctrl+Enter menyimpan, Esc membatalkan.";
-    item.selNilai.addEventListener("click", (peristiwa) => {
-      if (peristiwa.target.closest(".aleta-abt-sunting")) return;
-      sunting(item, jatiDiri);
+    /* === 12OKT-G: sel ABT disunting dengan KLIK DUA KALI, hanya bila saklar menyala === */
+    // Petunjuk (tooltip) hanya ada selama saklar menyala; rupa "dapat disunting"
+    // digerakkan CSS atas atribut di <html>. Satu klik tidak membuka apa pun.
+    const sel = item.selNilai;
+    const TEKS_PETUNJUK = "Klik dua kali untuk menyunting di tempat. Ctrl+Enter menyimpan, Esc membatalkan.";
+    const segarPetunjuk = () => {
+      if (!sel.isConnected) return false;
+      if (suntingLangsungNyala) sel.title = TEKS_PETUNJUK;
+      else if (sel.title === TEKS_PETUNJUK) sel.removeAttribute("title");
+      return true;
+    };
+    penyegarSunting.add(segarPetunjuk);
+    segarPetunjuk();
+    sel.addEventListener("dblclick", (peristiwa) => {
+      const sasaran = peristiwa.target instanceof Element ? peristiwa.target : null;
+      if (!sasaran) return;
+      if (sasaran.closest(".aleta-abt-sunting")) return;
+      // Kontrol di dalam sel (tombol, tautan, isian) bukan undangan menyunting.
+      if (sasaran.closest("button, a, input, select, textarea, summary, label")) return;
+      void (async () => {
+        // Dibaca ULANG dari penyimpanan - saklar yang dimatikan saat tab
+        // dibekukan tidak boleh tetap membuka penyunting.
+        if (!(await suntingLangsungSekarang())) return;
+        if (suntingDicegahModeBaca()) return;
+        sunting(item, jatiDiri, undefined, true);
+      })();
     });
+    /* === AKHIR 12OKT-G === */
   }
 }
 
@@ -2327,12 +2500,36 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   const usul = buatElemen("div", "aleta-abt-usul");
   usul.appendChild(buatElemen("span", "aleta-abt-label", "usulan"));
 
-  const isi = buatElemen("span", "aleta-abt-isi aleta-abt-isi-sunting", nilaiTerkini || "(kosong - klik untuk mengisi)");
+  /* === 12OKT-G: teks usulan disunting dengan KLIK DUA KALI, hanya bila saklar menyala === */
+  // Saklar mati: teks tidak berisyarat apa pun (tanpa garis putus-putus, tanpa
+  // tabindex/role) dan klik/Enter tidak membuka penyunting; jalan yang tersisa
+  // hanya tombol "Sunting" di bawah.
+  const teksKosong = () =>
+    suntingLangsungNyala ? "(kosong - klik dua kali untuk mengisi)" : "(kosong - tekan Sunting untuk mengisi)";
+  const isi = buatElemen("span", "aleta-abt-isi aleta-abt-isi-sunting", nilaiTerkini || teksKosong());
   if (!nilaiTerkini) isi.classList.add("aleta-abt-isi-kosong");
-  isi.title = "Klik untuk menyunting sebelum dimasukkan ke ABT";
-  isi.tabIndex = 0;
-  isi.setAttribute("role", "button");
-  isi.setAttribute("aria-label", `Sunting usulan ${u.nama}`);
+  let pernahTerpasang = false;
+  const segarPetunjukIsi = () => {
+    // Kartu yang belum sempat dipasang tetap dilayani; yang sudah pernah
+    // terpasang lalu lepas (panel dibangun ulang) dibuang dari penyegar.
+    if (kartu.isConnected) pernahTerpasang = true;
+    else if (pernahTerpasang) return false;
+    const nyala = suntingLangsungNyala;
+    if (nyala) {
+      isi.title = "Klik dua kali untuk menyunting sebelum dimasukkan ke ABT";
+      isi.tabIndex = 0;
+      isi.setAttribute("role", "button");
+      isi.setAttribute("aria-label", `Sunting usulan ${u.nama} (klik dua kali)`);
+    } else {
+      isi.removeAttribute("title");
+      isi.removeAttribute("tabindex");
+      isi.removeAttribute("role");
+      isi.removeAttribute("aria-label");
+    }
+    if (!nilaiTerkini && !usul.querySelector("textarea")) isi.textContent = teksKosong();
+    return true;
+  };
+  /* === AKHIR 12OKT-G === */
 
   // Jalan yang SELALU ada, menyala atau mati saklarnya. Saat menyala ia
   // sekadar jalan kedua; saat mati ia satu-satunya - dan tekanan itulah yang
@@ -2340,14 +2537,14 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   const tombolSunting = buatElemen("button", "aleta-perkakas-pulih", "Sunting");
   tombolSunting.type = "button";
   tombolSunting.title = "Sunting usulan ini sebelum dimasukkan ke ABT.";
-  tombolSunting.addEventListener("click", () => mulaiSunting());
+  tombolSunting.addEventListener("click", () => mulaiSunting(false));
 
   const tandaSunting = buatElemen("span", "aleta-tanda aleta-tanda-sunting", "disunting");
   tandaSunting.hidden = true;
 
   /** Menggambar ulang teks yang tampak beserta keadaan centangnya. */
   function segarkanTampilan() {
-    isi.textContent = nilaiTerkini || "(kosong - klik untuk mengisi)";
+    isi.textContent = nilaiTerkini || teksKosong();
     isi.classList.toggle("aleta-abt-isi-kosong", !nilaiTerkini);
     tandaSunting.hidden = !disunting;
     // Centang mengikuti ADA-TIDAKNYA isi, bukan usulan semula. Kotak yang
@@ -2357,17 +2554,44 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     if (!nilaiTerkini) centang.checked = false;
   }
 
-  function mulaiSunting() {
+  /**
+   * Membuka penyunting usulan. `langsung` = dibuka klik dua kali / papan
+   * ketik (ikut ditutup bila saklar dimatikan); tombol "Sunting" = false.
+   *
+   * 12 Okt (butir 16): klik di luar kotak = BATAL otomatis (suntingan
+   * dibuang), Esc = batal, dan hanya tombol Simpan (atau Ctrl+Enter, yang
+   * menekan Simpan) yang menerapkan ketikan ke usulan. Dulu keluar fokus
+   * menerapkannya diam-diam. Menerapkan di sini TIDAK menulis ke ABT - itu
+   * tetap tugas Terapkan/Input seperti semula.
+   */
+  function mulaiSunting(langsung) {
     if (usul.querySelector("textarea")) return;
+    const bungkus = buatElemen("div", "aleta-abt-sunting-bungkus");
     const kotak = document.createElement("textarea");
     kotak.className = "aleta-abt-sunting-kotak";
     kotak.value = nilaiTerkini;
     kotak.rows = Math.min(6, Math.max(2, Math.ceil((nilaiTerkini.length || 1) / 60)));
-    isi.replaceWith(kotak);
+    const baris = buatElemen("div", "aleta-abt-tombol");
+    const simpanKartu = buatElemen("button", "aleta-abt-simpan", "Simpan");
+    simpanKartu.type = "button";
+    simpanKartu.title = "Terapkan ketikan ini ke usulan (Ctrl+Enter). Belum menulis ke ABT.";
+    const batalKartu = buatElemen("button", "aleta-abt-batal", "Batal");
+    batalKartu.type = "button";
+    batalKartu.title = "Buang suntingan (Esc, atau klik di luar kotak)";
+    baris.appendChild(simpanKartu);
+    baris.appendChild(batalKartu);
+    bungkus.appendChild(kotak);
+    bungkus.appendChild(baris);
+    isi.replaceWith(bungkus);
     kotak.focus();
     kotak.setSelectionRange(kotak.value.length, kotak.value.length);
 
+    let tertutup = false;
+    let lepas = () => {};
     const selesai = (batal) => {
+      if (tertutup) return;
+      tertutup = true;
+      lepas();
       if (!batal) {
         const baru = kotak.value.trim();
         if (baru !== nilaiTerkini) {
@@ -2378,20 +2602,22 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
           if (nilaiTerkini) centang.checked = true;
         }
       }
-      kotak.replaceWith(isi);
+      bungkus.replaceWith(isi);
       segarkanTampilan();
     };
+    lepas = batalBilaKlikDiLuar(bungkus, () => selesai(true), null, langsung === true);
 
-    kotak.addEventListener("blur", () => selesai(false));
+    simpanKartu.addEventListener("click", () => selesai(false));
+    batalKartu.addEventListener("click", () => selesai(true));
     kotak.addEventListener("keydown", (peristiwa) => {
-      // Escape membatalkan, Ctrl+Enter menyelesaikan. Enter biasa dibiarkan
+      // Escape membatalkan, Ctrl+Enter menekan Simpan. Enter biasa dibiarkan
       // membuat baris baru: usulan blangko kerap lebih dari satu kalimat.
       if (peristiwa.key === "Escape") {
         peristiwa.preventDefault();
         selesai(true);
       } else if (peristiwa.key === "Enter" && (peristiwa.ctrlKey || peristiwa.metaKey)) {
         peristiwa.preventDefault();
-        selesai(false);
+        simpanKartu.click();
       }
     });
   }
@@ -2404,7 +2630,7 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // ini. Yang berubah bukan kemampuannya melainkan seberapa mudah ia terbuka
   // TANPA DIMAKSUD, dan pada halaman tempat naskah putusan disusun perbedaan
   // itu yang menentukan.
-  isi.addEventListener("click", () => {
+  isi.addEventListener("dblclick", () => {
     // Dibaca ULANG dari penyimpanan, bukan dari salinan di memori. Salinan itu
     // dapat basi tanpa satu pun tanda - tab yang dibekukan peramban tidak
     // menerima onChanged, dan ekstensi yang dimuat ulang meninggalkan tab lama
@@ -2415,17 +2641,24 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     // putusan disusun.
     void (async () => {
       if (!(await suntingLangsungSekarang())) return;
-      mulaiSunting();
+      mulaiSunting(true);
     })();
   });
   isi.addEventListener("keydown", (peristiwa) => {
-    if (peristiwa.key === "Enter" || peristiwa.key === " ") {
-      peristiwa.preventDefault();
-      mulaiSunting();
-    }
+    // Papan ketik: Enter/Spasi pada teks yang sedang fokus. Saat saklar mati
+    // teks ini bahkan tidak dapat difokus (tanpa tabindex), tetapi saklarnya
+    // dibaca ULANG juga di sini.
+    if (peristiwa.key !== "Enter" && peristiwa.key !== " ") return;
+    peristiwa.preventDefault();
+    void (async () => {
+      if (!(await suntingLangsungSekarang())) return;
+      mulaiSunting(true);
+    })();
   });
 
   usul.appendChild(isi);
+  penyegarSunting.add(segarPetunjukIsi);
+  segarPetunjukIsi();
   // Tombolnya sebelum tandanya: yang dicari mata saat hendak menyunting adalah
   // tombolnya, dan tanda "disunting" baru berarti sesudah ada yang disunting.
   usul.appendChild(tombolSunting);
@@ -9080,6 +9313,17 @@ function t6SaatFokus(e) {
 }
 
 /**
+ * abt-25: mode baca menyala = penyunting sel tidak dibuka. Melapor ke panel
+ * dan mengembalikan true bila sunting harus dicegah.
+ */
+function t6BacaMencegahSunting() {
+  const k = t6Keadaan;
+  if (!k || !t6Aktif() || !k.baca || !t6Nyala("abt-25")) return false;
+  t6Lapor(k, "Mode baca menyala - penyunting tidak dibuka. Matikan dengan ▤ di kepala panel.");
+  return true;
+}
+
+/**
  * Klik di halaman, fase tangkap - mendahului pendengar penjaga CETAK lama yang
  * terpasang pada tautannya sendiri.
  */
@@ -9089,13 +9333,9 @@ function t6SaatKlik(e) {
   const t = e.target instanceof Element ? e.target : null;
   if (!t) return;
 
-  // abt-25: dalam mode baca, klik isi blangko tidak membuka penyunting.
-  if (k.baca && t6Nyala("abt-25") && t.closest(".aleta-abt-dapat-disunting") && !t.closest(".aleta-abt-sunting")) {
-    e.preventDefault();
-    e.stopPropagation();
-    t6Lapor(k, "Mode baca menyala - penyunting tidak dibuka. Matikan dengan ▤ di kepala panel.");
-    return;
-  }
+  // abt-25: dalam mode baca, isi blangko tidak membuka penyunting. Sejak 12 Okt
+  // penyunting sel dibuka klik DUA kali - larangannya ada di dblclick sel
+  // (suntingDicegahModeBaca -> t6BacaMencegahSunting), bukan lagi di klik.
 
   const tautan = t.closest('a[href*="abt/preview"]');
   if (!tautan) return;
@@ -9694,6 +9934,83 @@ function t6PantauGanti8503(k) {
   void t6HitungUlangTurunan(k, nilai);
 }
 
+/* === 12OKT-G: kartu huruf alasan (8503) ciut bawaan === */
+
+/**
+ * Kartu terbuka? Pilihan petugas (k.buka8503) menang. Tanpa pilihan: ciut,
+ * kecuali ada yang tidak boleh terlewat - simpan sedang berjalan atau kabar
+ * kegagalan menyimpan.
+ */
+function t6Buka8503(k) {
+  if (typeof k.buka8503 === "boolean") return k.buka8503;
+  return Boolean(k.simpan8503Jalan || (k.kabar8503 && k.kabar8503.gagal));
+}
+
+/** Ringkasan satu baris untuk kartu yang ciut: apa yang harus dikerjakan. */
+function t6Ringkas8503(kosong, nilai, usulan, jumlah) {
+  const sebab = kosong ? "8503 masih kosong" : `8503 berisi "${nilai}" (tidak dikenali ABT)`;
+  let tindak;
+  if (usulan === undefined) tindak = "usulan huruf belum terbaca - isi sendiri";
+  else if (!usulan || (!usulan.yakin && !usulan.ragu)) tindak = "huruf alasan tidak terdeteksi dari gugatan maupun keterangan saksi - isi sendiri sesuai pertimbangan majelis";
+  else if (usulan.yakin) tindak = `usulan ALETA ${usulan.yakin} - buka untuk memeriksa dan menyimpan`;
+  else tindak = `usulan ragu ${usulan.ragu} - buka untuk memeriksa`;
+  return `${sebab}, ${jumlah} variabel turunan berbunyi "TIDAK BENAR QUERY NYA" - ${tindak}.`;
+}
+
+/**
+ * Kepala kartu: tombol buka/tutup berisi ikon peringatan kuning, judul
+ * (tetap terbaca saat ciut), tanda "Perlu dikerjakan" dan ringkasan. Klik
+ * hanya membalik `hidden` pada badan dan mengingat pilihan di keadaan panel -
+ * kartu tidak dibangun ulang, isian yang sudah diketik tetap ada.
+ */
+function t6Kepala8503(k, kotak, badan, kosong, nilai, usulan, jumlah) {
+  // Bukan <button>: tema gelap SIPP memaksa latar semua tombol di halaman ABT.
+  const kepala = t6El("div", "aleta-t6-8503-kepala");
+  kepala.setAttribute("role", "button");
+  kepala.tabIndex = 0;
+  const ikon = t6El("span", "aleta-t6-8503-tanda", "!");
+  ikon.setAttribute("aria-hidden", "true");
+  const teks = t6El("span", "aleta-t6-8503-kepala-teks");
+  const judulBaris = t6El("span", "aleta-t6-8503-kepala-judul");
+  judulBaris.appendChild(t6El("span", "aleta-t6-pita-judul", "Isi huruf alasan perceraian (8503)"));
+  judulBaris.appendChild(t6El("span", "aleta-t6-8503-perlu", "Perlu dikerjakan"));
+  teks.appendChild(judulBaris);
+  const ringkas = t6El("span", "aleta-t6-lembut aleta-t6-8503-ringkas", t6Ringkas8503(kosong, nilai, usulan, jumlah));
+  teks.appendChild(ringkas);
+  const panah = t6El("span", "aleta-t6-8503-panah", "▸");
+  panah.setAttribute("aria-hidden", "true");
+  kepala.appendChild(ikon);
+  kepala.appendChild(teks);
+  kepala.appendChild(panah);
+  const atur = (buka) => {
+    kepala.setAttribute("aria-expanded", buka ? "true" : "false");
+    kepala.title = buka ? "Ciutkan kartu huruf alasan (8503)" : "Buka kartu huruf alasan (8503) untuk mengisinya";
+    ringkas.hidden = buka;
+  };
+  atur(!badan.hidden);
+  kepala.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      kepala.click();
+    }
+  });
+  kepala.addEventListener("click", () => {
+    const buka = badan.hidden;
+    k.buka8503 = buka;
+    badan.hidden = !buka;
+    kotak.classList.toggle("aleta-t6-8503-ciut", !buka);
+    atur(buka);
+    // Sidik ikut berubah supaya segar berikutnya tidak membangun ulang kartu.
+    const bagian = String(kotak.dataset.sidik || "").split("|");
+    if (bagian.length) {
+      bagian[bagian.length - 1] = buka ? "buka" : "ciut";
+      kotak.dataset.sidik = bagian.join("|");
+    }
+  });
+  return kepala;
+}
+/* === AKHIR 12OKT-G === */
+
 function t6Segarkan8503(k, kesatuan) {
   const kotak = k.pita8503;
   if (!kotak) return;
@@ -9708,6 +10025,7 @@ function t6Segarkan8503(k, kesatuan) {
     paket ? 1 : 0,
     k.kabar8503 ? `${k.kabar8503.gagal ? 1 : 0}${k.kabar8503.teks}` : "",
     k.simpan8503Jalan ? 1 : 0,
+    kesatuan.length ? (t6Buka8503(k) ? "buka" : "ciut") : "",
   ].join("|");
   if (kotak.dataset.sidik === sidik) return;
   kotak.dataset.sidik = sidik;
@@ -9740,8 +10058,18 @@ function t6Segarkan8503(k, kesatuan) {
   kotak.hidden = false;
 
   const kosong = keadaanNilai(nilai) !== "terisi";
-  kotak.appendChild(t6El("div", "aleta-t6-pita-judul", "Isi huruf alasan perceraian (8503)"));
-  kotak.appendChild(
+  /* === 12OKT-G: kartu 8503 ciut bawaan + penanda kuning === */
+  // Judul + garis/ikon kuning selalu terbaca; isinya (tombol huruf, isian,
+  // usulan, kabar) ada di `badan` dan hanya tampak saat dibuka. Bawaan ciut -
+  // buka/tutup tidak menulis apa pun ke ABT dan tidak membangun ulang kartu.
+  const badan = t6El("div", "aleta-t6-8503-badan");
+  badan.hidden = !t6Buka8503(k);
+  const kepala = t6Kepala8503(k, kotak, badan, kosong, nilai, usulan, kesatuan.length);
+  kotak.appendChild(kepala);
+  kotak.appendChild(badan);
+  kotak.classList.toggle("aleta-t6-8503-ciut", badan.hidden);
+  /* === AKHIR 12OKT-G === */
+  badan.appendChild(
     t6El(
       "div",
       "aleta-t6-lembut",
@@ -9756,7 +10084,7 @@ function t6Segarkan8503(k, kesatuan) {
   const keping = t6El("div", "aleta-t6-keping-deret");
   for (const x of kesatuan) keping.appendChild(t6KepingKode(x.kode, t6Pendek(x.nama, 28)));
   rinci.appendChild(keping);
-  kotak.appendChild(rinci);
+  badan.appendChild(rinci);
 
   // ── Isian: tombol huruf A-H + kotak ketik, satu nilai ──────────────────
   const hurufKini = kosong ? "" : t6Periksa8503(nilai);
@@ -9784,7 +10112,7 @@ function t6Segarkan8503(k, kesatuan) {
     deretHuruf.appendChild(b);
     tombolHuruf.set(h, b);
   }
-  kotak.appendChild(deretHuruf);
+  badan.appendChild(deretHuruf);
 
   const baris = t6El("div", "aleta-t6-8503-baris");
   const kotakKetik = document.createElement("input");
@@ -9797,9 +10125,9 @@ function t6Segarkan8503(k, kesatuan) {
   const simpan = t6Tombol("Simpan ke ABT", "Menyimpan huruf alasan ke variabel 8503 di ABT, lalu menghitung ulang seluruh turunannya", "aleta-t6-8503-simpan");
   baris.appendChild(kotakKetik);
   baris.appendChild(simpan);
-  kotak.appendChild(baris);
+  badan.appendChild(baris);
   const periksa = t6El("div", "aleta-t6-lembut aleta-t6-8503-periksa");
-  kotak.appendChild(periksa);
+  badan.appendChild(periksa);
 
   const segar = () => {
     const p = t6Periksa8503(kotakKetik.value);
@@ -9867,9 +10195,9 @@ function t6Segarkan8503(k, kesatuan) {
       usul.appendChild(tombolPakai(usulan.ragu, `Menambahkan huruf ${usulan.ragu} ke isian 8503 (belum menyimpan)`));
     }
   }
-  kotak.appendChild(usul);
+  badan.appendChild(usul);
   if (!paket) {
-    kotak.appendChild(
+    badan.appendChild(
       t6El(
         "div",
         "aleta-t6-lembut aleta-teknis",
@@ -9877,7 +10205,7 @@ function t6Segarkan8503(k, kesatuan) {
       )
     );
   }
-  kotak.appendChild(gambarKabar());
+  badan.appendChild(gambarKabar());
 
   simpan.addEventListener("click", async () => {
     const p = t6Periksa8503(kotakKetik.value);

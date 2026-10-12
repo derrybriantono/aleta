@@ -3026,13 +3026,15 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
    Warnanya mengikuti halaman ABT - putih dengan hijau - bukan mengikuti panel
    ALETA: yang disunting ini isi tabel milik ABT, dan kotak gelap di tengah
    tabel terang terbaca sebagai kerusakan tampilan. */
-.aleta-abt-dapat-disunting {
+/* 12 Okt (butir 15): hanya tampak bisa disunting bila saklar "Sunting langsung
+   (klik dua kali)" MENYALA - atribut di <body> dipasang abt.js seketika. */
+body[data-aleta-sunting-langsung="ya"] .aleta-abt-dapat-disunting {
   cursor: text;
   border-left: 3px solid transparent !important;
   transition: border-color 0.12s, background-color 0.12s;
 }
 
-.aleta-abt-dapat-disunting:hover {
+body[data-aleta-sunting-langsung="ya"] .aleta-abt-dapat-disunting:hover {
   border-left-color: #1c6f46 !important;
   background-color: rgba(28, 111, 70, 0.06) !important;
 }
@@ -3210,14 +3212,14 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
    Garis putus-putus di bawahnya satu-satunya penanda bahwa teks ini dapat
    diklik. Tanpa penanda apa pun, kemampuan menyunting hanya diketahui orang
    yang kebetulan mengkliknya - dan itu bukan kemampuan, melainkan rahasia. */
-.aleta-abt-isi-sunting {
+body[data-aleta-sunting-langsung="ya"] .aleta-abt-isi-sunting {
   cursor: text;
   border-bottom: 1px dashed var(--aleta-garis);
   padding-bottom: 1px;
 }
 
-.aleta-abt-isi-sunting:hover,
-.aleta-abt-isi-sunting:focus-visible {
+body[data-aleta-sunting-langsung="ya"] .aleta-abt-isi-sunting:hover,
+body[data-aleta-sunting-langsung="ya"] .aleta-abt-isi-sunting:focus-visible {
   border-bottom-color: var(--aleta-merek);
   background: var(--aleta-latar-naik);
 }
@@ -3227,6 +3229,9 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   font-style: italic;
   color: var(--aleta-tulisan-lembut) !important;
 }
+
+/* 12 Okt (butir 16): penyunting usulan memuat kotak + Simpan/Batal. */
+.aleta-abt-sunting-bungkus { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 
 .aleta-abt-sunting-kotak {
   flex: 1;
@@ -5637,7 +5642,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-abt-ketik {
   color: var(--s-tulisan) !important;
 }
 
-html[data-aleta-tema-sipp="gelap"] .aleta-abt-dapat-disunting:hover {
+html[data-aleta-tema-sipp="gelap"] body[data-aleta-sunting-langsung="ya"] .aleta-abt-dapat-disunting:hover {
   border-left-color: var(--s-hijau-terang) !important;
   background-color: var(--s-sorot) !important;
 }
@@ -10816,6 +10821,56 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-p5-ktp-buka { width: 10
 .aleta-t6-8503-simpan:disabled { opacity: 0.5; cursor: not-allowed; }
 .aleta-t6-8503-kabar.aleta-t6-gagal,
 .aleta-t6-8503-periksa.aleta-t6-gagal { color: var(--aleta-mendesak); }
+/* === 12OKT-G: kartu huruf alasan 8503 ciut bawaan + penanda kuning === */
+.aleta-t6-pita-8503.aleta-t6-8503-isian { padding: 0; gap: 0; overflow: hidden; border-left-width: 6px; border-left-color: var(--aleta-mendesak); }
+.aleta-t6-pita-8503.aleta-t6-8503-ciut { background: color-mix(in srgb, var(--aleta-mendesak) 12%, var(--aleta-latar-naik)); border-color: color-mix(in srgb, var(--aleta-mendesak) 55%, var(--aleta-garis)); }
+.aleta-t6-8503-kepala {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.aleta-t6-8503-kepala:hover { background: color-mix(in srgb, var(--aleta-mendesak) 10%, transparent); }
+.aleta-t6-8503-kepala:focus-visible { outline: 2px solid var(--aleta-mendesak); outline-offset: -2px; }
+.aleta-t6-8503-tanda {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--aleta-mendesak);
+  color: var(--aleta-latar);
+  font-weight: 800;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  line-height: 1;
+}
+.aleta-t6-8503-kepala-teks { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.aleta-t6-8503-kepala-judul { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.aleta-t6-8503-perlu {
+  padding: 0 7px;
+  border: 1px solid var(--aleta-mendesak);
+  border-radius: 999px;
+  color: var(--aleta-mendesak);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  line-height: 1.5;
+}
+.aleta-t6-8503-ringkas { overflow-wrap: anywhere; }
+.aleta-t6-8503-ringkas[hidden] { display: none; }
+.aleta-t6-8503-panah { flex: 0 0 auto; transition: transform 0.12s; color: var(--aleta-tulisan-lembut); }
+.aleta-t6-8503-kepala[aria-expanded="true"] .aleta-t6-8503-panah { transform: rotate(90deg); }
+.aleta-t6-8503-badan { display: flex; flex-direction: column; gap: 5px; padding: 2px 10px 8px; }
+.aleta-t6-8503-badan[hidden] { display: none; }
+/* === AKHIR 12OKT-G === */
 /* === AKHIR 7 OKT 8503 === */
 
 /* === 1.189.x BUTIR 10-12: BANTU DATA SAKSI (saksiscan.js bagian 10) ===

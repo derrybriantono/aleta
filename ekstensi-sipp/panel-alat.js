@@ -507,6 +507,17 @@ function alatPasangJalanKeluar(panel, kunci, opsi) {
     "dblclick",
     (peristiwa) => {
       if (alatTingkapHalamanTerbuka()) return;
+      /* === 12OKT-G: klik dua kali untuk menyunting sel ABT bukan permintaan menyingkir === */
+      // Saklar "Sunting langsung (klik dua kali)" menyala: klik dua kali pada sel
+      // ABT membuka penyunting, dan klik dua kali di dalam kotak penyunting
+      // memilih kata - panel tidak boleh ikut menciut. (suntingLangsungNyala
+      // milik abt.js; belum ada di halaman tanpa abt.js.)
+      const sasaranDua = peristiwa.target && typeof peristiwa.target.closest === "function" ? peristiwa.target : null;
+      if (sasaranDua) {
+        if (sasaranDua.closest(".aleta-abt-sunting")) return;
+        if (sasaranDua.closest(".aleta-abt-dapat-disunting") && typeof suntingLangsungNyala !== "undefined" && suntingLangsungNyala) return;
+      }
+      /* === AKHIR 12OKT-G === */
       // Butir 11 (2 Okt, UI Baru): klik dua kali di SUDUT panel/widget ALETA
       // memindahkannya - bukan permintaan menyingkir bagi panel lain.
       if (typeof alatSudutCari === "function" && alatSudutCari(peristiwa.clientX, peristiwa.clientY, ALAT_SUDUT_ZONA, 0)) return;
