@@ -175,8 +175,14 @@ export function bersihkanButir(jenis: JenisPemetaan, masukan: unknown): { simpan
 export function saranPemetaan(jenis: JenisPemetaan): { kunci: string; namaBerkas: string; catatan: string }[] {
   if (jenis !== "putusan") return [];
   return CERMIN_EKSTENSI["putusan.peta-blangko"].map((e) => {
-    const data = (e.data ?? {}) as { jenisAsli?: string; catatan?: string };
-    return { kunci: String(data.jenisAsli || e.kunci), namaBerkas: String(e.nilai), catatan: String(data.catatan || "") };
+    const data = (e.data ?? {}) as { jenisAsli?: string; statusAsli?: string; catatan?: string };
+    // P 12 Okt: baris status bawaan ("cerai gugat|dikabulkan|verstek") disarankan dengan kunci admin yang sama bentuknya
+    // ("Cerai Gugat|Dikabulkan|verstek"), sehingga normalkanKunciPutusan & alatKunciPetaDariAdmin memetakannya kembali.
+    const verstek = String(e.kunci).split("|")[2] === "verstek";
+    const kunci = data.statusAsli
+      ? `${String(data.jenisAsli || "")}|${data.statusAsli}${verstek ? "|verstek" : ""}`
+      : String(data.jenisAsli || e.kunci);
+    return { kunci, namaBerkas: String(e.nilai), catatan: String(data.catatan || "") };
   });
 }
 

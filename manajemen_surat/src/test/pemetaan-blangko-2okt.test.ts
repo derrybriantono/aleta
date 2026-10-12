@@ -454,7 +454,10 @@ describe("butir 1 - pembaca pemetaan server bersama: singgahan 1 menit, tanpa Re
     expect(peta["cerai talak"]).toMatchObject({ berkas: "[01] CT", a: "tokenAAAAAAAA2" });
     expect((h.simpanan.petaBlangkoPutusan as any)["cerai gugat"].berkas).toBe("[01] Baru Admin");
     expect(h.p.untuk(peta, "Cerai Gugat", "DIKABULKAN (verstek)", false).kunci).toBe("cerai gugat|dikabulkan|verstek");
-    expect(h.p.untuk(peta, "Cerai Gugat", "Ditolak", false).kunci).toBe("cerai gugat");
+    // P 12 Okt: cerai kini punya baris status BAWAAN (alatPetaStatusCerai) - "Ditolak" mendarat di baris statusnya;
+    // status tanpa baris (Perdamaian: 0 perkara cerai satker) tetap jatuh ke baris jenis yang diatur admin.
+    expect(h.p.untuk(peta, "Cerai Gugat", "Ditolak", false).kunci).toBe("cerai gugat|ditolak");
+    expect(h.p.untuk(peta, "Cerai Gugat", "Perdamaian", false).kunci).toBe("cerai gugat");
 
     // Admin menghapus baris status; sesudah singgahan habis barisnya dilepas.
     server.putusan = [{ kunci: "Cerai Gugat", namaBerkas: "[01] Baru Admin" }];

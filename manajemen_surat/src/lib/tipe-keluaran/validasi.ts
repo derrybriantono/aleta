@@ -325,7 +325,11 @@ export function validasiEntri(daftar: unknown, masukan: MasukanEntri): HasilVali
       teksWajib("Jenis perkara", k, alasan, 80);
       if (k && bakuJenis(k) !== k) alasan.push("Kunci jenis harus huruf kecil dengan satu spasi.");
       teksWajib("Berkas blangko", v, alasan, 200);
-      kunciDataDikenal(data, ["jenisAsli", "blangko", "blangkoLain", "catatan"], alasan);
+      // statusAsli (P 12 Okt): baris status putusan bawaan, kunci "<jenis>|<status>[|verstek]".
+      kunciDataDikenal(data, ["jenisAsli", "statusAsli", "blangko", "blangkoLain", "catatan"], alasan);
+      if (data.statusAsli !== undefined && (typeof data.statusAsli !== "string" || !data.statusAsli.trim())) {
+        alasan.push("statusAsli harus teks berisi.");
+      }
       if (typeof data.jenisAsli !== "string" || !data.jenisAsli.trim()) alasan.push("data.jenisAsli wajib diisi.");
       if (data.blangko !== undefined && typeof data.blangko !== "string") alasan.push("blangko harus teks.");
       if (
