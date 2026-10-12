@@ -58,24 +58,24 @@ describe("menu e-Court dibuka dari tautan berjangkar", () => {
     await waitFor(() => expect(tombol.getAttribute("aria-current")).toBe("page"));
   });
 
-  it("panitera pengganti: #ttd tetap di Dasbor dan menu Tanda Tangan tidak ada", async () => {
+  it("panitera pengganti: #ttd tetap di Jadwal Sidang (bawaan 12 Okt) dan menu Tanda Tangan tidak ada", async () => {
     keadaan.peran = "panitera-pengganti";
     vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})));
     window.history.replaceState(null, "", "/aleta-ecourt#ttd");
     render(<AletaEcourtPengguna />);
-    const dasbor = await screen.findByRole("button", { name: /Dasbor/ });
+    const jadwal = await screen.findByRole("button", { name: /Jadwal Sidang/ });
     await new Promise((r) => setTimeout(r, 30));
-    expect(dasbor.getAttribute("aria-current")).toBe("page");
+    expect(jadwal.getAttribute("aria-current")).toBe("page");
     expect(screen.queryByRole("button", { name: /Tanda Tangan/ })).toBeNull();
   });
 
-  it("tanpa jangkar: tetap Dasbor (perilaku lama)", async () => {
+  it("tanpa jangkar: Jadwal Sidang (bawaan sejak 12 Okt 2026)", async () => {
     keadaan.peran = "admin";
     vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})));
     window.history.replaceState(null, "", "/aleta-ecourt");
     render(<AletaEcourtPengguna />);
-    const dasbor = await screen.findByRole("button", { name: /Dasbor/ });
+    const jadwal = await screen.findByRole("button", { name: /Jadwal Sidang/ });
     await new Promise((r) => setTimeout(r, 30));
-    expect(dasbor.getAttribute("aria-current")).toBe("page");
+    expect(jadwal.getAttribute("aria-current")).toBe("page");
   });
 });

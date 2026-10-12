@@ -168,9 +168,11 @@ export function AletaEcourtPengguna() {
   // tertutup untuk umum; Riwayat ALETA menuntut kemampuan penunjukan.
   const tabBoleh = (tab: TabEcourt) => tabEcourtTampil(currentUser, tab);
   /* === AKHIR HAK-PERAN === */
+  // 12 Okt 2026: halaman bawaan = Jadwal Sidang (tab "semua" golongan, jadi
+  // selalu boleh); Dasbor tetap satu klik di bilah samping.
   const [menu, setMenu] = useState<
     "dasbor" | "sidang" | "mediasi" | "status" | "berkas" | "riwayat" | "ttd" | "ekstensi"
-  >("dasbor");
+  >("sidang");
   const [sidebarCiut, setSidebarCiut] = useState(false);
   // Lebar halaman (butir 12, 2 Okt 2026): "nyaman" bawaan, "penuh" = lebar
   // J3 1.177.0. Diingat per peramban; penyimpanan yang tertutup (jendela

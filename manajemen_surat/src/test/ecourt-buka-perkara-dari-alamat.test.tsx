@@ -70,14 +70,14 @@ describe("halaman ALETA e-Court membaca ?perkara=", () => {
     expect(url.searchParams.get("nomor")).toBe("12/Pdt.G/2026/PA.Ctt");
   }, 30_000);
 
-  it("tanpa ?perkara=: tetap di Dasbor, tidak ada perkara yang diminta", async () => {
+  it("tanpa ?perkara=: Jadwal Sidang (bawaan 12 Okt), tidak ada perkara yang diminta", async () => {
     window.history.replaceState({}, "", "/aleta-ecourt");
     const ambil = pasangFetch();
     const { AletaEcourtPengguna } = await import("@/components/portal/aleta-ecourt-pengguna");
     render(createElement(AletaEcourtPengguna));
     const menu = screen.getByRole("navigation", { name: "Menu ALETA e-Court" });
     await new Promise((r) => setTimeout(r, 50));
-    expect(within(menu).getByRole("button", { name: /Dasbor/ }).getAttribute("aria-current")).toBe("page");
+    expect(within(menu).getByRole("button", { name: /Jadwal Sidang/ }).getAttribute("aria-current")).toBe("page");
     expect(memintaStatus(ambil)).toHaveLength(0);
   }, 30_000);
 });
