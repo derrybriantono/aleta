@@ -158,6 +158,19 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
       </span>
     ),
   },
+  /* === 12OKT-H: pihak yang sudah hadir === */
+  "pihak-hadir": {
+    letak: "kolom Perkara & Para Pihak, nama P/T (dan di rincian)",
+    contoh: (
+      <span className="text-sm">
+        <span className="font-medium text-foreground/70">P:</span>{" "}
+        <span className="font-medium text-emerald-700 dark:text-emerald-400">
+          Fulan bin Fulan <span className="text-xs font-semibold">(hadir)</span>
+        </span>
+      </span>
+    ),
+  },
+  /* === AKHIR 12OKT-H === */
   "panggil-saksi": { letak: "kolom Perkara, nama saksi (Saksi P / Saksi T)", contoh: tombol("Saksi Satu, Saksi Dua", "border-dotted") },
   /* === AKHIR 12OKT-B === */
   "ambil-antrian": { letak: "kolom Antrian / Jam", contoh: tombol("☰ Antrian") },

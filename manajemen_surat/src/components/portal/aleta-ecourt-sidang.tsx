@@ -84,6 +84,8 @@ import { TombolKasirHarian } from "@/components/portal/kasir-otomatis";
 import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
 /* === 12OKT-B: penanda perkara & pihak, panggil saksi === */
 import { LencanaPekerjaanBaris, LencanaPerkaraBaris } from "@/components/portal/penanda-perkara-pihak";
+import { NamaPihakHadir } from "@/components/portal/pihak-hadir"; /* 12OKT-H */
+import { pihakHadirHariIni } from "@/lib/pihak-hadir"; /* 12OKT-H */
 import { DaftarNamaSaksi } from "@/components/portal/panggil-saksi";
 import type { BahanPenandaBaris, LencanaPekerjaanPihak, PenandaPerkaraBaris } from "@/lib/penanda-perkara-pihak";
 /* === AKHIR 12OKT-B === */
@@ -4681,6 +4683,11 @@ export function AletaEcourtSidang({
   const aktifPenandaPekerjaan = tampil(tampilan, "penanda-pekerjaan");
   const aktifPanggilSaksi = tampil(tampilan, "panggil-saksi");
   /* === AKHIR 12OKT-B === */
+  /* === 12OKT-H: pihak yang sudah hadir hari ini (hijau + "(hadir)") === */
+  const aktifPihakHadir = tampil(tampilan, "pihak-hadir");
+  const hadirIni = (b: { perkaraId: string; tanggalSidang: string }) =>
+    aktifPihakHadir ? pihakHadirHariIni(antrianUntuk(antrian.peta, b), b.tanggalSidang, hariIni()) : { pihak1: false, pihak2: false };
+  /* === AKHIR 12OKT-H === */
   const [panelTampilan, setPanelTampilan] = useState(false);
 
   // Layar penuh berjendela (perbaikan 1 Okt 2026, J4) - Esc keluar.
@@ -7619,7 +7626,7 @@ export function AletaEcourtSidang({
                                   title={baris.pihak.penggugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">P:</span>{" "}
-                                  <NamaDapatDipanggil golongan="pihak1" {...konteksPanggil}>{baris.pihak.penggugat.join(", ")}</NamaDapatDipanggil>
+                                  <NamaPihakHadir aktif={aktifPihakHadir} hadir={hadirIni(baris).pihak1}>{/* 12OKT-H */}<NamaDapatDipanggil golongan="pihak1" {...konteksPanggil}>{baris.pihak.penggugat.join(", ")}</NamaDapatDipanggil></NamaPihakHadir>
                                   <LencanaPekerjaanBaris baris={baris} nama={baris.pihak.penggugat} aktif={aktifPenandaPekerjaan} />{/* 12OKT-B */}
                                 </div>
                               ) : null}
@@ -7629,7 +7636,7 @@ export function AletaEcourtSidang({
                                   title={pihakTampil(baris.pihak).tergugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">T:</span>{" "}
-                                  <NamaDapatDipanggil golongan="pihak2" {...konteksPanggil}>{pihakTampil(baris.pihak).tergugat.join(", ")}</NamaDapatDipanggil>
+                                  <NamaPihakHadir aktif={aktifPihakHadir} hadir={hadirIni(baris).pihak2}>{/* 12OKT-H */}<NamaDapatDipanggil golongan="pihak2" {...konteksPanggil}>{pihakTampil(baris.pihak).tergugat.join(", ")}</NamaDapatDipanggil></NamaPihakHadir>
                                   <LencanaPekerjaanBaris baris={baris} nama={pihakTampil(baris.pihak).tergugat} aktif={aktifPenandaPekerjaan} />{/* 12OKT-B */}
                                 </div>
                               ) : null}
@@ -8796,6 +8803,7 @@ export function AletaEcourtSidang({
                                   penanda={baris} /* 12OKT-B */
                                   aktifPenandaPerkara={aktifPenandaPerkara}
                                   aktifPenandaPekerjaan={aktifPenandaPekerjaan}
+                                  pihakHadir={hadirIni(baris)} /* 12OKT-H */
                                   /* === 12OKT-A: kumulasi perkara === */
                                   kumulasi={tampil(tampilan, "kumulasi-perkara") && baris.kumulasiTerbaca ? baris.kumulasi ?? null : undefined}
                                   /* === AKHIR 12OKT-A === */
@@ -8879,6 +8887,7 @@ export function RincianSidang({
   penanda,
   aktifPenandaPerkara = false,
   aktifPenandaPekerjaan = false,
+  pihakHadir = { pihak1: false, pihak2: false }, /* 12OKT-H */
   /* === 12OKT-A: kumulasi perkara === */
   kumulasi = undefined,
   /* === AKHIR 12OKT-A === */
@@ -8887,6 +8896,8 @@ export function RincianSidang({
   penanda?: BahanPenandaBaris;
   aktifPenandaPerkara?: boolean;
   aktifPenandaPekerjaan?: boolean;
+  /** 12OKT-H: sisi yang sudah hadir hari ini (kosong bila saklar pihak-hadir mati). */
+  pihakHadir?: { pihak1: boolean; pihak2: boolean };
   /* === AKHIR 12OKT-B === */
   /* === 12OKT-A: kumulasi perkara === */
   /**
@@ -9254,7 +9265,9 @@ export function RincianSidang({
                     <ul className="space-y-0.5">
                       {pihak.map((orang, urutan) => (
                         <li key={`${orang.nama}-${urutan}`}>
-                          <span className="font-medium">{orang.nama}</span>
+                          <NamaPihakHadir aktif hadir={kelompok.sisi === 1 ? pihakHadir.pihak1 : pihakHadir.pihak2}>{/* 12OKT-H */}
+                            <span className="font-medium">{orang.nama}</span>
+                          </NamaPihakHadir>
                           <LencanaPekerjaanBaris baris={penanda ?? {}} nama={[orang.nama]} aktif={aktifPenandaPekerjaan} />{/* 12OKT-B */}
                           <span className="text-xs text-muted-foreground">
                             {orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor"}

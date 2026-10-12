@@ -362,6 +362,15 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Lencana pekerjaan di samping nama pihak: PNS, PPPK, TNI, POLRI, BUMN, BUMD. Pensiunan, CPNS, dan PPPK paruh waktu tidak diberi lencana. Juga di rincian perkara.",
     kelompok: "penanda",
   },
+  // 12 Okt 2026 (butir 18): nama pihak yang SUDAH hadir hari ini berwarna hijau
+  // dan diberi "(hadir)". Jam kehadiran tetap di kolom Antrian ("P 09:21 T 08:37").
+  {
+    kunci: "pihak-hadir",
+    label: "Pihak yang sudah hadir",
+    keterangan:
+      "Nama penggugat/pemohon atau tergugat/termohon yang sudah tercatat hadir hari ini di antrian diberi warna hijau dan tulisan \"(hadir)\" di kolom Perkara & Para Pihak dan di rincian. Jamnya tetap di kolom Antrian. Dibatalkan lewat Reset kehadiran = kembali normal.",
+    kelompok: "penanda",
+  },
 
   // --- Keterangan tambahan -------------------------------------------------
   {
