@@ -2990,6 +2990,12 @@ async function statusLengkap(nomorPerkaraMentah) {
     saksi: rincian && rincian.ok ? rincian.saksi : { ada: false, jumlahSaksi: 0, jumlahKeterangan: 0 },
     pihak: nomorPihak,
     identitasPihak: konteks && konteks.ok ? konteks.identitas : null,
+    /* === 12OKT-A: kumulasi perkara === */
+    // Dari SIPP, atau dari petitum bila SIPP kosong (kumulasiPerkaraService,
+    // lewat rincianSidang). null = tidak berkumulasi atau tidak terbaca.
+    kumulasi: rincian && rincian.ok ? rincian.kumulasi || null : null,
+    kumulasiTerbaca: Boolean(rincian && rincian.ok && rincian.kumulasiTerbaca),
+    /* === AKHIR 12OKT-A === */
     jadwal,
     penundaan,
     relaas: rincian && rincian.ok ? rincian.relaas : [],

@@ -232,6 +232,12 @@ const TABEL = [
   // jumlah bawaannya (get_jenis_biaya_all SIPP).
   "perkara_biaya_jurusita",
   "biaya_perkara",
+  /* === 12OKT-A: kumulasi perkara === */
+  // Kumulasi per perkara (perkara_id, jenis_perkara_id) - 86 perkara di
+  // sipp_donggala, 36 di sipp Bungku (12 Okt 2026). Dibaca
+  // kumulasiPerkaraService untuk Jadwal Sidang/Mediasi/Status Perkara.
+  "perkara_kumulasi",
+  /* === AKHIR 12OKT-A === */
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */

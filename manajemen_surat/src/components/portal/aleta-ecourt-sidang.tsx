@@ -109,6 +109,10 @@ import {
   tampilanSemuaMati,
   type PilihanTampilan,
 } from "@/lib/tampilan-antrian-sidang";
+/* === 12OKT-A: kumulasi perkara === */
+import { JenisDenganKumulasi, RincianKumulasi } from "@/components/portal/kumulasi-perkara";
+import type { KumulasiPerkara } from "@/lib/kumulasi-perkara";
+/* === AKHIR 12OKT-A === */
 import {
   keadaanSelesai,
   modeTampilanAktif,
@@ -233,6 +237,11 @@ type SidangBaris = {
   perkaraId: string;
   nomorPerkara: string;
   jenisPerkara: string;
+  /* === 12OKT-A: kumulasi perkara === */
+  /** Kumulasi dari SIPP, atau dari petitum bila SIPP kosong; null = tidak ada. Bot lama: tidak ada. */
+  kumulasi?: KumulasiPerkara | null;
+  kumulasiTerbaca?: boolean;
+  /* === AKHIR 12OKT-A === */
   alurPerkaraId: number;
   sudahPutus: boolean;
   tanggalPutusan: string;
@@ -1502,6 +1511,9 @@ function cocokCariCepat(baris: SidangBaris, kata: string) {
   const semua = [
     baris.nomorPerkara,
     baris.jenisPerkara,
+    /* === 12OKT-A: kumulasi perkara === */
+    ...(baris.kumulasi?.daftar ?? []).map((x) => x.nama),
+    /* === AKHIR 12OKT-A === */
     baris.agenda,
     baris.majelisKode,
     baris.majelisNama,
@@ -7613,7 +7625,13 @@ export function AletaEcourtSidang({
                               tidak pernah disidangkan. */}
                           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span className="text-sm font-extrabold text-foreground/90">
-                              {baris.jenisPerkara || "—"}
+                              {/* === 12OKT-A: kumulasi perkara === */}
+                              {!tampil(tampilan, "kumulasi-perkara") ? (
+                                <>{baris.jenisPerkara || "—"}</>
+                              ) : (
+                                <JenisDenganKumulasi jenis={baris.jenisPerkara} kumulasi={baris.kumulasi} />
+                              )}
+                              {/* === AKHIR 12OKT-A === */}
                             </span>
                             {/* ================================================
                                 BELUM DITUNDA - MERAH, SEJAK PUKUL 15:00 WITA
@@ -8689,6 +8707,9 @@ export function AletaEcourtSidang({
                                   tampilCatatanHitung={tampil(tampilan, "catatan-cara-hitung")}
                                   durasi={baris.durasi}
                                   pembebanan={sidangIkrar(baris) ? baris.pembebanan ?? null : null}
+                                  /* === 12OKT-A: kumulasi perkara === */
+                                  kumulasi={tampil(tampilan, "kumulasi-perkara") && baris.kumulasiTerbaca ? baris.kumulasi ?? null : undefined}
+                                  /* === AKHIR 12OKT-A === */
                                   tandaOnline={
                                     tampil(tampilan, "tanda-antrian-online")
                                       ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
@@ -8765,7 +8786,18 @@ export function RincianSidang({
   durasi,
   tandaOnline = null,
   pembebanan = null,
+  /* === 12OKT-A: kumulasi perkara === */
+  kumulasi = undefined,
+  /* === AKHIR 12OKT-A === */
 }: {
+  /* === 12OKT-A: kumulasi perkara === */
+  /**
+   * Kumulasi dari baris (12 Okt 2026). undefined = saklar mati: badge lama
+   * "Kumulasi: ..." dari identitas SIPP tetap tergambar seperti dulu.
+   * null = saklar menyala, tidak berkumulasi.
+   */
+  kumulasi?: KumulasiPerkara | null;
+  /* === AKHIR 12OKT-A === */
   rincian: Rincian | null;
   nomorPerkara: string;
   perkaraId: string;
@@ -8959,6 +8991,10 @@ export function RincianSidang({
           malam, butir 1f) - bahan tanggal tunda karena ketidakhadiran. */}
       <KontakPihakRincian perkaraId={perkaraId} nomorPerkara={nomorPerkara} />
 
+      {/* === 12OKT-A: kumulasi perkara === */}
+      <RincianKumulasi kumulasi={kumulasi} />
+      {/* === AKHIR 12OKT-A === */}
+
       {identitas ? (
         <div className="flex flex-wrap gap-1">
           {/* Jenis perkara ditebalkan: ia menentukan jalan perkaranya, dan
@@ -8968,9 +9004,11 @@ export function RincianSidang({
               {identitas.jenisPerkara}
             </Badge>
           ) : null}
-          {identitas.adaKumulasi ? (
+          {/* === 12OKT-A: kumulasi perkara === */}
+          {identitas.adaKumulasi && kumulasi === undefined ? (
             <Badge variant="muted">Kumulasi: {identitas.kumulasi.join(", ")}</Badge>
           ) : null}
+          {/* === AKHIR 12OKT-A === */}
           {identitas.adaKuasa ? (
             <Badge variant="default">
               Kuasa:{" "}

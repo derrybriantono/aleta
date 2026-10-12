@@ -73,6 +73,10 @@ import {
   type TagPerkara,
 } from "@/lib/tag-perkara";
 import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
+/* === 12OKT-A: kumulasi perkara === */
+import { JenisDenganKumulasi, RincianKumulasi, useSaklarKumulasi } from "@/components/portal/kumulasi-perkara";
+import type { KumulasiPerkara } from "@/lib/kumulasi-perkara";
+/* === AKHIR 12OKT-A === */
 import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
 import { EcourtAksiPerkara } from "@/components/portal/ecourt-aksi-perkara";
 import { DaftarMajelisPetugas, NamaMediatorTertaut, type MajelisIkrar } from "@/components/portal/tautan-petugas";
@@ -469,6 +473,11 @@ export type Status = {
     kuasaPenggugat: boolean;
     kuasaTergugat: boolean;
   } | null;
+  /* === 12OKT-A: kumulasi perkara === */
+  /** Kumulasi dari SIPP, atau dari petitum bila SIPP kosong; bot lama: tidak ada. */
+  kumulasi?: KumulasiPerkara | null;
+  kumulasiTerbaca?: boolean;
+  /* === AKHIR 12OKT-A === */
   jadwal: Array<{
     sidangId: string;
     tanggalSidang: string;
@@ -2897,6 +2906,12 @@ function IsiStatus({
    * bukan untuk dia.
    */
   const { accessibleModules } = usePortal();
+  /* === 12OKT-A: kumulasi perkara === */
+  // Saklar "Kumulasi perkara" panel Tampilan Jadwal Sidang; hanya bila bot
+  // sudah mengirim ruasnya (kumulasiTerbaca) - selain itu tampilan lama.
+  const saklarKumulasi = useSaklarKumulasi();
+  const kumulasiBaru = saklarKumulasi && status.kumulasiTerbaca === true;
+  /* === AKHIR 12OKT-A === */
   const bolehBebanKonseptor = useMemo(
     () => accessibleModules.some((m) => m.id === "beban-konseptor"),
     [accessibleModules]
@@ -2956,7 +2971,16 @@ function IsiStatus({
         <div>
           <h3 className="text-lg font-semibold">{status.identitas.nomorPerkara}</h3>
           <p className="text-sm text-muted-foreground">
-            {status.identitas.jenisPerkaraLengkap || status.identitas.jenisPerkara}
+            {/* === 12OKT-A: kumulasi perkara === */}
+            {kumulasiBaru ? (
+              <JenisDenganKumulasi
+                jenis={status.identitas.jenisPerkaraLengkap || status.identitas.jenisPerkara}
+                kumulasi={status.kumulasi}
+              />
+            ) : (
+              status.identitas.jenisPerkaraLengkap || status.identitas.jenisPerkara
+            )}
+            {/* === AKHIR 12OKT-A === */}
           </p>
         </div>
         {/* ==============================================================
@@ -3062,16 +3086,22 @@ function IsiStatus({
           </Badge>
         ))}
 
-        {status.identitasPihak?.adaKumulasi ? (
+        {/* === 12OKT-A: kumulasi perkara === */}
+        {status.identitasPihak?.adaKumulasi && !kumulasiBaru ? (
           <Badge variant="muted" title={status.identitasPihak.kumulasi.join(", ")}>
             kumulasi
           </Badge>
         ) : null}
+        {/* === AKHIR 12OKT-A === */}
 
         <Badge variant="muted">
           {status.identitasPihak?.adaKuasa ? "dengan kuasa" : "tanpa kuasa"}
         </Badge>
       </div>
+
+      {/* === 12OKT-A: kumulasi perkara === */}
+      {kumulasiBaru ? <RincianKumulasi kumulasi={status.kumulasi} /> : null}
+      {/* === AKHIR 12OKT-A === */}
 
       {/* --- Jajaran angka --- */}
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
