@@ -693,11 +693,48 @@ describe("C. peta fitur ide: tiap kode punya pembaca, atau tercatat belum dibang
   ];
 
   const BERKAS = ["popup.js", "panel-alat.js", "konten.js", "abt.js", "aleta.js", "checklist.js", "latar.js"];
-  const isi = Object.fromEntries(BERKAS.map((b) => [b, baca(b)]));
+  // 12OKT-N: daftar FITUR_BELUM_ADA di popup.js hanya menyebut kodenya untuk keterangan "belum ada" -
+  // itu bukan pembaca fitur, jadi blok berlabelnya dibuang sebelum mencari pembaca.
+  const isi = Object.fromEntries(
+    BERKAS.map((b) => [b, baca(b).replace(/const FITUR_BELUM_ADA = new Set\(\[[\s\S]*?\]\);/, "")])
+  );
   const kodeDaftar = [...DAFTAR_FITUR.matchAll(/"kode":"([a-z]+-\d+)"/g)].map((m) => m[1]);
 
   it("daftar-fitur.js memuat 120 kode", () => {
     expect(kodeDaftar).toHaveLength(120);
+  });
+
+  // 12OKT-N (keputusan 4): 21 saklar tanpa pembaca tetap tampil di popup tetapi diberi keterangan "belum ada".
+  it("popup.js menyimpan daftar 'belum ada' yang SAMA dengan BELUM_DIBANGUN (tidak ada daftar kedua yang melenceng)", () => {
+    const blok = /const FITUR_BELUM_ADA = new Set\(\[([\s\S]*?)\]\)/.exec(POPUP_JS);
+    expect(blok).not.toBeNull();
+    const kode = [...blok![1].matchAll(/"([a-z]+-\d+)"/g)].map((m) => m[1]);
+    expect(kode.sort()).toEqual([...BELUM_DIBANGUN].sort());
+    expect(BELUM_DIBANGUN).toHaveLength(21);
+  });
+
+  it("popup (Super Admin): tepat 21 kotak bertanda 'belum ada' - kotaknya tetap ada dan tetap dapat dinyalakan; yang sudah ada fiturnya tidak bertanda", async () => {
+    const gudang = new Gudang({ ujiTampilan: "ui" });
+    const p = bukaPopup(gudang, "Super Admin");
+    await p.siap();
+    (p.d.getElementById("ujiFiturLaci") as HTMLDetailsElement).open = true;
+    p.d.getElementById("ujiFiturLaci")!.dispatchEvent(new p.w.Event("toggle"));
+    await sampai(() => p.d.querySelectorAll("#ujiFiturDaftar input[data-kode]").length === 120, "120 kotak fitur tersusun");
+    const belum = Array.from(p.d.querySelectorAll<HTMLElement>("#ujiFiturDaftar .uji-baris[data-belum-ada]"));
+    const kodeBelum = belum.map((b) => b.querySelector("input")!.getAttribute("data-kode")!);
+    expect(kodeBelum.sort()).toEqual([...BELUM_DIBANGUN].sort());
+    for (const b of belum) {
+      expect(b.querySelector(".uji-belum")?.textContent).toContain("belum ada");
+      expect(b.title).toMatch(/belum dibangun/);
+    }
+    // Yang punya pembaca: tanpa keterangan.
+    const ada = p.d.querySelector("#uji-fitur-sipp-5")!.closest(".uji-baris")!;
+    expect(ada.querySelector(".uji-belum")).toBeNull();
+    // Kodenya tidak diubah: kotak "belum ada" tetap menulis kodenya seperti saklar lain.
+    const kotak = p.d.getElementById("uji-fitur-sipp-3") as HTMLInputElement;
+    kotak.checked = true;
+    kotak.dispatchEvent(new p.w.Event("change", { bubbles: true }));
+    await sampai(() => (gudang.data.ujiFitur as Record<string, boolean> | undefined)?.["sipp-3"] === true, "sipp-3 tertulis");
   });
 
   it("kode yang disebut di berkas pembaca (selain daftar-fitur.js) = 120 - belum dibangun; sisanya tidak punya pembaca", () => {

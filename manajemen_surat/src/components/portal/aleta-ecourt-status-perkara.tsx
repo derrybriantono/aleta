@@ -83,7 +83,7 @@ import type { KumulasiPerkara } from "@/lib/kumulasi-perkara";
 /* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */
 import { RincianJawabanSitaEksekusi, useSaklarTampilanAntrian } from "@/components/portal/penanda-sita-agenda";
 import type { PenandaJawabanPerkara } from "@/lib/penanda-jawaban";
-import { KUNCI_SAKLAR_JAWABAN, KUNCI_SAKLAR_SITA, type EksekusiPerkara, type SitaPerkara } from "@/lib/penanda-sita";
+import { KUNCI_SAKLAR_EKSEKUSI, KUNCI_SAKLAR_JAWABAN, KUNCI_SAKLAR_SITA, type EksekusiPerkara, type SitaPerkara } from "@/lib/penanda-sita";
 /* === AKHIR 12OKT-K === */
 import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
 import { EcourtAksiPerkara } from "@/components/portal/ecourt-aksi-perkara";
@@ -2930,6 +2930,7 @@ function IsiStatus({
   /* === 12OKT-K: saklar panel Tampilan Jadwal Sidang (penanda-jawaban, penanda-sita) === */
   const saklarJawaban = useSaklarTampilanAntrian(KUNCI_SAKLAR_JAWABAN);
   const saklarSita = useSaklarTampilanAntrian(KUNCI_SAKLAR_SITA);
+  const saklarEksekusi = useSaklarTampilanAntrian(KUNCI_SAKLAR_EKSEKUSI); /* 12OKT-N */
   /* === AKHIR 12OKT-K === */
   const bolehBebanKonseptor = useMemo(
     () => accessibleModules.some((m) => m.id === "beban-konseptor"),
@@ -3123,7 +3124,7 @@ function IsiStatus({
       {/* === AKHIR 12OKT-A === */}
 
       {/* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */}
-      <RincianJawabanSitaEksekusi bahan={status} tampilJawaban={saklarJawaban} tampilSita={saklarSita} />
+      <RincianJawabanSitaEksekusi bahan={status} tampilJawaban={saklarJawaban} tampilSita={saklarSita} tampilEksekusi={saklarEksekusi} />
       {/* === AKHIR 12OKT-K === */}
 
       {/* --- Jajaran angka --- */}

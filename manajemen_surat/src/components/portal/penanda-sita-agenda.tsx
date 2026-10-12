@@ -91,27 +91,32 @@ export type BahanRincianJawabanSita = {
 
 /**
  * Bagian rincian: Eksepsi & Rekonvensi (saklar penanda-jawaban), Sita dan
- * Eksekusi (saklar penanda-sita). Kedua saklar mati = tidak digambar.
+ * Eksekusi (saklar penanda-eksekusi, terpisah sejak 12 Okt sore). Semua
+ * saklar mati = tidak digambar.
  * Bot lama yang belum mengirim ruasnya (Terbaca undefined) = bagiannya diam.
  */
 export function RincianJawabanSitaEksekusi({
   bahan,
   tampilJawaban,
   tampilSita,
+  tampilEksekusi = false,
 }: {
   bahan: BahanRincianJawabanSita;
   tampilJawaban: boolean;
   tampilSita: boolean;
+  /** 12OKT-N: saklar penanda-eksekusi, terpisah dari penanda-sita. */
+  tampilEksekusi?: boolean;
 }) {
   const adaJawaban = tampilJawaban && bahan.penandaJawabanTerbaca !== undefined;
   const adaSita = tampilSita && bahan.sitaTerbaca !== undefined;
-  if (!adaJawaban && !adaSita) return null;
+  const adaEksekusi = tampilEksekusi && bahan.sitaTerbaca !== undefined;
+  if (!adaJawaban && !adaSita && !adaEksekusi) return null;
   const sita = butirSita(bahan.sita);
   const eksekusi = Array.isArray(bahan.eksekusi) ? bahan.eksekusi : [];
   return (
     <div className="rounded-md border border-border/70 bg-card/60 p-2 text-xs" data-rincian-jawaban-sita="">
       <div className="mb-1 font-semibold">
-        {[adaJawaban ? "Eksepsi & rekonvensi" : "", adaSita ? "sita & eksekusi" : ""].filter(Boolean).join(", ")}
+        {[adaJawaban ? "Eksepsi & rekonvensi" : "", adaSita ? "sita" : "", adaEksekusi ? "eksekusi" : ""].filter(Boolean).join(", ")}
       </div>
       <ul className="space-y-1">
         {adaJawaban
@@ -146,7 +151,7 @@ export function RincianJawabanSitaEksekusi({
             )}
           </li>
         ) : null}
-        {adaSita ? (
+        {adaEksekusi ? (
           <li data-rincian-eksekusi="">
             <span className="font-medium">Eksekusi:</span>{" "}
             {bahan.sitaTerbaca === false ? (

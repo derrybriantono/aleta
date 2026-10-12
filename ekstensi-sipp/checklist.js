@@ -922,7 +922,7 @@
       font-size: calc(11px * var(--aleta-skala-huruf, 1));
     }
 
-    /* Butir 3 (6 Okt): indikator sumber daya server - RAM, Disk, GPU */
+    /* Butir 3 (6 Okt): indikator sumber daya server - RAM, CPU, Disk, GPU */
     .aleta-cmw-lencana-baris:has(.aleta-cmw-sd) { flex-wrap: wrap; }
     .aleta-cmw-sd {
       display: inline-flex;
@@ -3232,7 +3232,7 @@
 
   // ─── Butir 3 (6 Okt 2026): indikator sumber daya server ────────────────────
   //
-  // Tiga titik berwarna - RAM, Disk, GPU - di samping lencana dok (UI Baru)
+  // Empat titik berwarna - RAM, CPU, Disk, GPU - di samping lencana dok (UI Baru)
   // atau di atas checklist (Baru, hanya bila saklar portal-7 "Lencana SERVER
   // yang bercerita" menyala). Lama: tidak ada apa pun, tidak ada permintaan.
   //
@@ -3251,7 +3251,9 @@
   const DETAK_SD_MS = 5000;
   const BATAS_TUNGGU_SD_MS = 4500;
   const LINGKUP_SD = { aleta: "ALETA", server: "Server" };
-  const NAMA_SD = { ram: "RAM", disk: "Disk", gpu: "GPU" };
+  const NAMA_SD = { ram: "RAM", cpu: "CPU", disk: "Disk", gpu: "GPU" };
+  /* 12OKT-N: urutan titik di strip - RAM, CPU, Disk, GPU. */
+  const URUTAN_SD = ["ram", "cpu", "disk", "gpu"];
   const WARNA_SD = ["hijau", "kuning", "merah", "kelabu"];
 
   const sd = {
@@ -3269,7 +3271,7 @@
   /** Indikator berlaku di tampilan ini: UI Baru, atau Baru dengan saklar portal-7. Lama tidak pernah. */
   function sdBerlaku() {
     if (modeUji() === "lama") return false;
-    // CHECKLIST-POSISI 12 Okt (keputusan pengguna): strip RAM/Disk/GPU HANYA Super Admin,
+    // CHECKLIST-POSISI 12 Okt (keputusan pengguna): strip RAM/CPU/Disk/GPU HANYA Super Admin,
     // Admin pun tidak. Selama jawaban checklist belum tiba, tidak berlaku (dan tidak meminta).
     if (!(keadaan.data && keadaan.data.pengguna && keadaan.data.pengguna.superAdmin === true)) return false;
     return modern() || fitur(KODE_SD);
@@ -3277,6 +3279,13 @@
 
   function lingkupSdBersih(x) {
     return x === "server" ? "server" : "aleta";
+  }
+
+  /** 12OKT-N: beban rata-rata {m1,m5,m15}; bentuk lain = null. */
+  function sdBeban(b) {
+    const o = objek(b);
+    const [m1, m5, m15] = [o.m1, o.m5, o.m15].map((v) => (v === null || v === undefined || v === "" ? NaN : Number(v)));
+    return Number.isFinite(m1) && Number.isFinite(m5) && Number.isFinite(m15) ? { m1, m5, m15 } : null;
   }
 
   /** Jawaban portal -> bentuk yang dipercaya titik. null bila bentuknya tidak dikenal. */
@@ -3294,9 +3303,14 @@
         keterangan: String(o.keterangan || ""),
         partisi: o.partisi ? String(o.partisi) : "",
         sebagian: o.sebagian === true,
+        /* 12OKT-N: CPU (agen J) - inti dan beban hanya untuk tooltip. */
+        inti: Number.isFinite(Number(o.inti)) && o.inti !== null && o.inti !== "" ? Number(o.inti) : null,
+        intiTerpakai: Number.isFinite(Number(o.intiTerpakai)) && o.intiTerpakai !== null && o.intiTerpakai !== "" ? Number(o.intiTerpakai) : null,
+        beban: sdBeban(o.beban),
       };
     };
-    const lingkup = (l) => ({ ram: keping(objek(l).ram), disk: keping(objek(l).disk), gpu: keping(objek(l).gpu) });
+    // CPU: portal/bot lama tanpa ruas cpu = keping kosong (persen null, kelabu) - "tidak terbaca", bukan 0%.
+    const lingkup = (l) => ({ ram: keping(objek(l).ram), cpu: keping(objek(l).cpu), disk: keping(objek(l).disk), gpu: keping(objek(l).gpu) });
     return {
       diukurPada: String(x.diukurPada || ""),
       ringkas: { aleta: lingkup(r.aleta), server: lingkup(r.server) },
@@ -3319,7 +3333,14 @@
     }
     let isi;
     if (jenis === "gpu" && !k.ada) isi = k.keterangan || "tidak ada GPU";
+    else if (jenis === "cpu" && k.persen === null) isi = "tidak terbaca";
     else isi = `${k.persen === null ? "tidak terukur" : `${String(k.persen).replace(".", ",")}%`}`;
+    if (jenis === "cpu" && k.persen !== null) {
+      const f = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
+      if (k.intiTerpakai !== null && k.inti !== null) isi += ` (${f(k.intiTerpakai)} dari ${f(k.inti)} inti)`;
+      if (k.beban) isi += `, beban rata-rata ${f(k.beban.m1)} / ${f(k.beban.m5)} / ${f(k.beban.m15)}`;
+      if (k.sebagian) isi += " - sebagian: tidak semua aplikasi terukur";
+    }
     if (jenis === "disk" && k.partisi) isi += ` (partisi ${k.partisi})`;
     if (jenis === "disk" && k.sebagian) isi += " - sebagian: citra Docker belum terukur";
     return `${NAMA_SD[jenis]} ${siapa}: ${isi}. Klik untuk beralih ke ${sd.lingkup === "server" ? "ALETA saja" : "seluruh server"}.`;
@@ -3343,11 +3364,12 @@
     chip.setAttribute("aria-pressed", sd.lingkup === "server" ? "true" : "false");
     strip.appendChild(chip);
     const r = sd.data ? sd.data.ringkas[sd.lingkup] : null;
-    for (const jenis of ["ram", "disk", "gpu"]) {
+    for (const jenis of URUTAN_SD) {
       const k = r ? r[jenis] : null;
       const t = tombol("aleta-cmw-sd-titik", "", sdJudulTitik(jenis, k), ganti, `sd-${jenis}`);
       t.setAttribute("data-sd", jenis);
-      t.setAttribute("data-warna", k ? k.warna : "kelabu");
+      // CPU yang tidak terbaca selalu kelabu dengan "–" (bukan 0%), apa pun warna kirimannya.
+      t.setAttribute("data-warna", k && !(jenis === "cpu" && k.persen === null) ? k.warna : "kelabu");
       t.setAttribute("aria-label", sdJudulTitik(jenis, k));
       t.appendChild(el("span", "aleta-cmw-sd-bulat"));
       t.appendChild(el("span", "aleta-cmw-sd-nama", NAMA_SD[jenis]));

@@ -24,6 +24,8 @@ import type { PenandaJawabanPerkara, TemuanJawaban } from "@/lib/penanda-jawaban
 import { tanggalIndonesia } from "@/lib/rangkaian-sidang";
 
 export const KUNCI_SAKLAR_SITA = "penanda-sita";
+/** 12OKT-N: bagian Eksekusi di rincian & Status Perkara punya saklar sendiri, terpisah dari Sita. */
+export const KUNCI_SAKLAR_EKSEKUSI = "penanda-eksekusi";
 export const KUNCI_SAKLAR_JAWABAN = "penanda-jawaban";
 
 export type KodeSita = "jaminan" | "revindikasi" | "marital" | "eksekusi" | "lain";

@@ -102,7 +102,7 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   },
   /* === 12OKT-K: penanda Sita === */
   "penanda-sita": {
-    letak: "kolom Agenda, di bawah Eksepsi/Rekonvensi (dari petitum); rincian & Status Perkara",
+    letak: "kolom Agenda, di bawah Eksepsi/Rekonvensi (dari petitum); bagian Sita di rincian & Status Perkara",
     contoh: (
       <span className="inline-flex flex-wrap gap-1">
         {lencana(KELAS_PENANDA_SITA, "Sita Jaminan")}
@@ -111,6 +111,12 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
     ),
   },
   /* === AKHIR 12OKT-K === */
+  /* === 12OKT-N: Eksekusi dipisah dari Sita === */
+  "penanda-eksekusi": {
+    letak: "rincian Jadwal Sidang & Status Perkara (bagian Eksekusi)",
+    contoh: <span className="text-[11px]"><b>Eksekusi:</b> 1/Pdt.Eks/2024/PA.Dgl · Pelaksanaan Teguran Eksekusi</span>,
+  },
+  /* === AKHIR 12OKT-N === */
   "pembebanan-ikrar": { letak: "kolom Putusan (sidang ikrar talak)", contoh: lencana("bg-violet-600 text-white", "pembebanan Rp 14,5 jt") },
   "umur-perkara": { letak: "kolom Agenda, di bawah sidang ke-N", contoh: pil("border-emerald-500 text-emerald-700 dark:text-emerald-300", "35 hari") },
   "menunggu-lama": { letak: "kolom Antrian / Jam", contoh: lencana("bg-amber-100 text-amber-900", "menunggu 45 menit") },

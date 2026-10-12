@@ -92,11 +92,15 @@ function jawabanSd(bolehRinci = true) {
       ringkas: {
         aleta: {
           ram: keping(42.4, "hijau"),
+          // 12OKT-N: CPU (agen J) - laju, persen dari seluruh kapasitas server.
+          cpu: { persen: 37.5, warna: "hijau", inti: 4, intiTerpakai: 1.5, beban: null, jendelaDetik: 5 },
           disk: keping(81, "kuning", { sebagian: true }),
           gpu: { ada: false, persen: null, warna: "kelabu", keterangan: "Tidak ada GPU di server ini." },
         },
         server: {
           ram: keping(93.2, "merah"),
+          // Sudut pandang server: belum terbaca (persen null) -> kelabu "–", bukan 0%.
+          cpu: { persen: null, warna: "merah", inti: 4, intiTerpakai: null, beban: { m1: 0.52, m5: 0.61, m15: 0.7 }, jendelaDetik: null },
           disk: keping(60.6, "hijau", { partisi: "/home" }),
           gpu: { ada: false, persen: null, warna: "kelabu", keterangan: "Tidak ada GPU di server ini." },
         },
@@ -278,6 +282,37 @@ describe("UI Baru: titik berwarna di samping lencana", () => {
     expect(["ram", "disk", "gpu"].map((j) => nilai(h, j))).toEqual(["42%", "81%", "–"]);
     expect(titik(h, "disk").title).toMatch(/sebagian/);
     expect(titik(h, "gpu").title).toMatch(/Tidak ada GPU/);
+  });
+
+  it("12OKT-N: CPU di strip, urutan RAM · CPU · Disk · GPU; tooltip memuat inti terpakai", async () => {
+    const h = buka({ ...NYALA, ujiTampilan: "ui" });
+    await sampai(() => nilai(h, "ram") === "42%", "nilai RAM");
+    const urut = qs(h, ".aleta-cmw-sd-titik").map((t) => t.getAttribute("data-sd"));
+    expect(urut).toEqual(["ram", "cpu", "disk", "gpu"]);
+    expect(nilai(h, "cpu")).toBe("38%");
+    expect(titik(h, "cpu").getAttribute("data-warna")).toBe("hijau");
+    expect(titik(h, "cpu").title).toMatch(/CPU ALETA: 37,5% \(1,5 dari 4 inti\)/);
+    expect(titik(h, "cpu").querySelector(".aleta-cmw-sd-nama")?.textContent).toBe("CPU");
+  });
+
+  it("12OKT-N: CPU tidak terbaca = kelabu dan '–' (bukan 0%), meski kiriman memberi warna; beban tampil di tooltip", async () => {
+    const h = buka({ ...NYALA, ujiTampilan: "ui", lingkupSumberDaya: "server" });
+    await sampai(() => nilai(h, "ram") === "93%", "nilai RAM server");
+    expect(nilai(h, "cpu")).toBe("–");
+    expect(titik(h, "cpu").getAttribute("data-warna")).toBe("kelabu");
+    expect(titik(h, "cpu").title).toMatch(/CPU seluruh server: tidak terbaca/);
+    expect(nilai(h, "cpu")).not.toMatch(/0%/);
+  });
+
+  it("12OKT-N: portal lama tanpa ruas cpu: titik CPU kelabu '–', titik lain tetap", async () => {
+    const h = buka({ ...NYALA, ujiTampilan: "ui" });
+    const lama = jawabanSd() as { data: { ringkas: Record<string, Record<string, unknown>> } };
+    delete lama.data.ringkas.aleta.cpu;
+    delete lama.data.ringkas.server.cpu;
+    h.setelJawabSd(() => ({ status: 200, isi: lama }));
+    await sampai(() => titik(h, "cpu") && nilai(h, "cpu") === "–" && nilai(h, "ram") === "42%", "cpu kelabu, ram tetap");
+    expect(titik(h, "cpu").getAttribute("data-warna")).toBe("kelabu");
+    expect(nilai(h, "disk")).toBe("81%");
   });
 
   it("klik titik: beralih ke seluruh server DI TEMPAT (dok yang sama), diingat; klik chip: kembali ke ALETA", async () => {

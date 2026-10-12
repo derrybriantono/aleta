@@ -12,6 +12,7 @@ import { PenandaSitaAgenda, RincianJawabanSitaEksekusi } from "@/components/port
 import type { PenandaJawabanPerkara, TemuanJawaban } from "@/lib/penanda-jawaban";
 import {
   KELAS_PENANDA_SITA,
+  KUNCI_SAKLAR_EKSEKUSI,
   keadaanJawaban,
   penandaSitaBaris,
   ringkasanEksekusi,
@@ -274,10 +275,10 @@ describe("layar: lencana Agenda, rincian, Status Perkara", () => {
     expect(keadaanJawaban({ ...jawaban, eksepsi: null, belumDibaca: 2 }, true)[0].isi).toContain("2 berkas belum dibaca");
   });
 
-  it("rincian: bagian eksepsi/rekonvensi ikut saklar penanda-jawaban, sita & eksekusi ikut penanda-sita", () => {
+  it("rincian: eksepsi/rekonvensi ikut penanda-jawaban, sita ikut penanda-sita, eksekusi ikut penanda-eksekusi (terpisah)", () => {
     const eks = layanan.ringkasEksekusi({ nomor_register_eksekusi: "1/Pdt.Eks/2024/PA.Dgl", permohonan_eksekusi: "2024-12-09", status_eksekusi_text: "Pelaksanaan Teguran Eksekusi" });
     const bahan = { penandaJawaban: jawaban, penandaJawabanTerbaca: true, sita, eksekusi: [eks], sitaTerbaca: true };
-    const penuh = renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: true, tampilSita: true }));
+    const penuh = renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: true, tampilSita: true, tampilEksekusi: true }));
     expect(penuh).toContain("Eksepsi:");
     expect(penuh).toContain("Rekonvensi:");
     expect(penuh).toContain("Sita Jaminan");
@@ -288,15 +289,27 @@ describe("layar: lencana Agenda, rincian, Status Perkara", () => {
     expect(tanpaSita).toContain("Eksepsi:");
     expect(tanpaSita).not.toContain("data-rincian-sita");
     expect(tanpaSita).not.toContain("data-rincian-eksekusi");
-    const tanpaJawaban = renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: false, tampilSita: true }));
+    const tanpaJawaban = renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: false, tampilSita: true, tampilEksekusi: true }));
     expect(tanpaJawaban).not.toContain("Eksepsi:");
     expect(tanpaJawaban).toContain("data-rincian-eksekusi");
-    expect(renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: false, tampilSita: false }))).toBe("");
+    // 12OKT-N: Sita dan Eksekusi saling lepas.
+    const hanyaSita = renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: false, tampilSita: true, tampilEksekusi: false }));
+    expect(hanyaSita).toContain("data-rincian-sita");
+    expect(hanyaSita).not.toContain("data-rincian-eksekusi");
+    expect(hanyaSita).not.toContain("1/Pdt.Eks/2024/PA.Dgl");
+    const hanyaEksekusi = renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: false, tampilSita: false, tampilEksekusi: true }));
+    expect(hanyaEksekusi).toContain("data-rincian-eksekusi");
+    expect(hanyaEksekusi).toContain("1/Pdt.Eks/2024/PA.Dgl");
+    expect(hanyaEksekusi).not.toContain("data-rincian-sita");
+    expect(hanyaEksekusi).not.toContain("Sita Jaminan");
+    // Bawaan komponen: tampilEksekusi tidak diberikan = bagian Eksekusi tidak digambar.
+    expect(renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: false, tampilSita: true }))).not.toContain("data-rincian-eksekusi");
+    expect(renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan, tampilJawaban: false, tampilSita: false, tampilEksekusi: false }))).toBe("");
     // Bot lama (ruas tidak dikirim): diam.
-    expect(renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan: {}, tampilJawaban: true, tampilSita: true }))).toBe("");
+    expect(renderToStaticMarkup(createElement(RincianJawabanSitaEksekusi, { bahan: {}, tampilJawaban: true, tampilSita: true, tampilEksekusi: true }))).toBe("");
     // Tanpa sita/eksekusi: keadaan "tidak ada" tertulis.
     const kosong = renderToStaticMarkup(
-      createElement(RincianJawabanSitaEksekusi, { bahan: { sita: null, eksekusi: [], sitaTerbaca: true }, tampilJawaban: false, tampilSita: true })
+      createElement(RincianJawabanSitaEksekusi, { bahan: { sita: null, eksekusi: [], sitaTerbaca: true }, tampilJawaban: false, tampilSita: true, tampilEksekusi: true })
     );
     expect(kosong).toContain("tidak ada permohonan sita");
     expect(kosong).toContain("tidak ada permohonan eksekusi");
@@ -318,6 +331,8 @@ describe("layar: lencana Agenda, rincian, Status Perkara", () => {
   it("rincian Jadwal Sidang dan Status Perkara memasang bagiannya; bot mengirim ruasnya dari sumber yang sama", () => {
     expect(layar).toContain("<RincianJawabanSitaEksekusi");
     expect(layar).toContain('tampilSita={tampil(tampilan, "penanda-sita")}');
+    expect(layar).toContain('tampilEksekusi={tampil(tampilan, "penanda-eksekusi")');
+    expect(status).toContain("useSaklarTampilanAntrian(KUNCI_SAKLAR_EKSEKUSI)");
     expect(status).toContain("<RincianJawabanSitaEksekusi bahan={status}");
     expect(status).toContain("useSaklarTampilanAntrian(KUNCI_SAKLAR_SITA)");
     expect(jadwalBot).toContain("sitaEksekusiPerkaraService.sitaEksekusiBanyakPerkara(idPerkara)");
@@ -336,5 +351,17 @@ describe("layar: lencana Agenda, rincian, Status Perkara", () => {
     // Tepat sesudah penanda-jawaban di panel.
     const urut = SAKLAR_TAMPILAN.map((x) => x.kunci);
     expect(urut.indexOf("penanda-sita")).toBe(urut.indexOf("penanda-jawaban") + 1);
+    // 12OKT-N: label kembali "Sita"; Eksekusi saklar sendiri tepat sesudahnya.
+    expect(s?.label).toBe("Sita");
+    expect(urut.indexOf("penanda-eksekusi")).toBe(urut.indexOf("penanda-sita") + 1);
+  });
+
+  it("saklar penanda-eksekusi: kelompok penanda, menyala bawaan, tidak wajib, punya contoh", () => {
+    const s = SAKLAR_TAMPILAN.find((x) => x.kunci === "penanda-eksekusi");
+    expect(s).toMatchObject({ kelompok: "penanda", label: "Eksekusi" });
+    expect(s?.wajib ?? false).toBe(false);
+    expect(tampil(tampilanBawaan(), "penanda-eksekusi")).toBe(true);
+    expect(CONTOH_TAMPILAN["penanda-eksekusi"]).toBeTruthy();
+    expect(KUNCI_SAKLAR_EKSEKUSI).toBe("penanda-eksekusi");
   });
 });

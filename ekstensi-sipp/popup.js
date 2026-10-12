@@ -1002,6 +1002,21 @@ function simpanFiturUji() {
   jadwalkanSusunan();
 }
 
+/* === 12OKT-N: keterangan "belum ada" pada saklar fitur ide yang belum dibangun === */
+/**
+ * Kode saklar yang TIDAK punya pembaca di berkas ekstensi mana pun (fiturnya
+ * belum dibangun). Tetap tampil di popup, diberi keterangan "belum ada" supaya
+ * menyalakannya tidak disangka berfungsi. Dijaga uji ekstensi-saklar-widget-
+ * audit-12okt (BELUM_DIBANGUN): fitur yang kelak dibangun keluar dari daftar ini
+ * bersama daftar di uji itu.
+ */
+const FITUR_BELUM_ADA = new Set([
+  "sipp-3", "sipp-4", "sipp-9", "sipp-12", "sipp-15", "sipp-18", "sipp-19", "sipp-20", "sipp-24", "sipp-25", "sipp-26", "sipp-28",
+  "portal-15", "portal-17", "portal-21", "portal-24", "portal-30",
+  "popup-25", "popup-28", "popup-29", "popup-30",
+]);
+/* === AKHIR 12OKT-N === */
+
 /** Seratus dua puluh saklar, disusun sekali saat laci pertama dibuka. */
 function susunDaftarFiturUji() {
   const wadah = document.getElementById("ujiFiturDaftar");
@@ -1039,6 +1054,17 @@ function susunDaftarFiturUji() {
       tanda.textContent = " · perlu keputusan";
       teks.appendChild(tanda);
     }
+    /* === 12OKT-N: keterangan "belum ada" === */
+    if (FITUR_BELUM_ADA.has(x.kode)) {
+      const belum = document.createElement("span");
+      belum.className = "uji-belum";
+      belum.textContent = " · belum ada";
+      belum.title = "Fiturnya belum dibangun; menyalakan saklar ini belum mengubah apa pun.";
+      teks.appendChild(belum);
+      baris.setAttribute("data-belum-ada", "ya");
+      baris.title = belum.title;
+    }
+    /* === AKHIR 12OKT-N === */
     baris.appendChild(kotak);
     baris.appendChild(teks);
     wadah.appendChild(baris);
