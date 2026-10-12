@@ -277,7 +277,10 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // tombol-ruang-sidang, tombol-selesai-sidang, tombol-cetak-relaas (7 saklar,
     // dijaga jadwal-sidang-12okt-agen-c.test.tsx). Hitungan 53 + 7: BELUM memuat
     // tambahan agen A/B bila ada saklar baru dari mereka - jumlahkan saat menggabung.
-    expect(SAKLAR_TAMPILAN.length).toBe(60);
+    // 61 sejak agen H (12 Okt 2026, butir 18): + pihak-hadir (nama pihak hijau + "(hadir)",
+    // dijaga pihak-hadir-12okt.test.tsx). Angka ini hanya menambah satu atas 60; saklar
+    // agen A/B yang baru, bila ada, dijumlahkan saat menggabung.
+    expect(SAKLAR_TAMPILAN.length).toBe(61);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {
