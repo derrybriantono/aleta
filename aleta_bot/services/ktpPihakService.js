@@ -49,6 +49,7 @@
  */
 
 const fs = require("fs");
+const { catatRiwayat, pemicuSah } = require("./ktpPihakRiwayatService");
 
 /** Naikkan bila aturan baca/cocok membaik: berkas versi lama dibaca ulang. */
 const VERSI_KTP_PIHAK = 1;
@@ -502,7 +503,7 @@ async function asalBerkas(fileId) {
  * Cocokkan & simpan sekumpulan KTP terbaca untuk SATU berkas (satu perkara).
  * Dipakai simpan() (hasil portal) dan salinKembaran() (berkas berisi sama).
  */
-async function simpanKtpBerkas({ fileId, asal, ktp, sumberBaca, versi, hariIniIso }) {
+async function simpanKtpBerkas({ fileId, asal, ktp, sumberBaca, versi, hariIniIso, pemicu }) {
   const perkara = await cariPerkara({ perkaraId: asal.perkaraId || null, nomorPerkara: asal.nomorPerkara }).catch(() => null);
   const pihak = perkara ? await pihakPerkara(perkara.perkaraId).catch(() => []) : [];
   const sebutan = perkara ? sebutanPerkara(perkara) : null;
@@ -535,6 +536,20 @@ async function simpanKtpBerkas({ fileId, asal, ktp, sumberBaca, versi, hariIniIs
   });
   await botDb().query("DELETE FROM aleta_bot_ktp_pihak WHERE file_id = ?", [fileId]);
   for (const b of baris) await tulisBaris(b, 0);
+  /* === KTP-RIWAYAT 12 Okt === histori per nomor perkara (butir 11); tidak pernah menggagalkan simpan. */
+  await catatRiwayat({
+    fileId,
+    documentKey: asal.documentKey,
+    nomorPerkara: perkara ? perkara.nomorPerkara : asal.nomorPerkara,
+    perkaraId: perkara ? perkara.perkaraId : asal.perkaraId,
+    pemicu,
+    status: baris.some((b) => b.status === "terbaca") ? "terbaca" : "tidak_terbaca",
+    sebab: "",
+    percobaan: 0,
+    sumberBaca,
+    baris,
+  });
+  /* === AKHIR KTP-RIWAYAT === */
   return baris.length;
 }
 
@@ -557,6 +572,7 @@ async function simpan(daftar = []) {
     const status = ["terbaca", "tidak_terbaca", "bukan_ktp"].includes(h.status) ? h.status : "tidak_terbaca";
     const ktp = (Array.isArray(h.ktp) ? h.ktp : []).filter((k) => k && (k.nik || k.tanggalTerbit || k.nama));
     const sumberBaca = ["teks-pdf", "ocr", "ocr-pdf"].includes(h.sumber) ? h.sumber : "";
+    const pemicuAsal = pemicuSah(h.pemicu);
     // Semua berkas dengan isi yang sama (KTP orang yang sama di banyak perkara).
     const semua = asal.sidikJari
       ? await botDb().query(
@@ -568,12 +584,29 @@ async function simpan(daftar = []) {
       : [{ fileId, ...asal }];
     for (const s of Array.isArray(semua) ? semua : []) {
       const sId = String(s.fileId);
+      const pemicu = sId !== fileId ? "salinan" : pemicuAsal;
       if (status === "terbaca" && ktp.length) {
-        await simpanKtpBerkas({ fileId: sId, asal: s, ktp, sumberBaca, versi });
+        await simpanKtpBerkas({ fileId: sId, asal: s, ktp, sumberBaca, versi, pemicu });
       } else {
         const lama = await botDb().query("SELECT percobaan, status FROM aleta_bot_ktp_pihak WHERE file_id = ? AND urut = 1", [sId]);
         const sebab = bersih(status === "bukan_ktp" ? "bukan_berkas_ktp" : h.sebab || "tidak_terbaca", 255);
         const percobaan = sebab === SEBAB_TANPA_OCR ? 0 : ((Array.isArray(lama) && lama[0] && Number(lama[0].percobaan)) || 0) + 1;
+        /* === KTP-RIWAYAT 12 Okt === bacaan ulang yang GAGAL tidak boleh menghapus bacaan lama yang sudah
+           terbaca: tanggal lama dipertahankan, berkas ditandai sudah diperiksa (agar tidak diantre tiap
+           putaran), dan kegagalannya dicatat di riwayat. */
+        if (Array.isArray(lama) && lama[0] && lama[0].status === "terbaca") {
+          await botDb().query("UPDATE aleta_bot_ktp_pihak SET versi = ?, percobaan = 0, dibaca_pada = UTC_TIMESTAMP() WHERE file_id = ?", [
+            versi,
+            sId,
+          ]);
+          await catatRiwayat({
+            fileId: sId, documentKey: s.documentKey, nomorPerkara: s.nomorPerkara, perkaraId: s.perkaraId, pemicu,
+            status: "tidak_terbaca", sebab: `bacaan_ulang_gagal: ${sebab}`, percobaan, sumberBaca, baris: [],
+          });
+          if (sId !== fileId) kembaran += 1;
+          continue;
+        }
+        /* === AKHIR KTP-RIWAYAT === */
         await botDb().query("DELETE FROM aleta_bot_ktp_pihak WHERE file_id = ?", [sId]);
         await tulisBaris(
           {
@@ -584,6 +617,10 @@ async function simpan(daftar = []) {
           },
           percobaan
         );
+        await catatRiwayat({
+          fileId: sId, documentKey: s.documentKey, nomorPerkara: s.nomorPerkara, perkaraId: s.perkaraId, pemicu,
+          status: "tidak_terbaca", sebab, percobaan, sumberBaca, baris: [],
+        });
       }
       if (sId !== fileId) kembaran += 1;
     }
@@ -626,6 +663,7 @@ async function salinKembaran(batas = 50) {
       ktp,
       sumberBaca: (bacaan[0] && bacaan[0].sumber_baca) || "",
       versi: VERSI_KTP_PIHAK,
+      pemicu: "salinan",
     });
     salinan += 1;
   }
@@ -691,12 +729,20 @@ async function perkaraKtp({ nomorPerkara, perkaraId } = {}) {
     const nilai = (x) => PERINGKAT_YAKIN[x.yakin] || 0;
     if (!lama || nilai(r) > nilai(lama) || (nilai(r) === nilai(lama) && String(r.dibaca_pada) > String(lama.dibaca_pada))) terbaik.set(kunci, r);
   }
+  /* === KTP-RIWAYAT 12 Okt === nama pihak di SIPP (bukan nama pada KTP) agar layar Status Perkara mencocokkan
+     dengan pasti per pihak, bukan menebak dari urutan. Gagal membaca = tanpa namaSipp, bukan galat. */
+  const namaSipp = new Map();
+  if (perkara) {
+    for (const p of await pihakPerkara(perkara.perkaraId).catch(() => [])) namaSipp.set(`${p.cabang}.${p.urutan}`, p.nama);
+  }
+  /* === AKHIR KTP-RIWAYAT === */
   const pihak = [...terbaik.values()]
     .map((r) => ({
       cabang: Number(r.cabang),
       urutan: Number(r.urutan),
       peran: r.peran,
       nama: r.nama,
+      namaSipp: namaSipp.get(`${r.cabang}.${r.urutan}`) || "",
       tanggalKtp: isoKeDmy(tanggalIso(r.tanggal_ktp)),
       tanggalKtpIso: tanggalIso(r.tanggal_ktp),
       kota: r.kota_ktp,

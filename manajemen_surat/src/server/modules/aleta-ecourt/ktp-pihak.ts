@@ -9,6 +9,8 @@ import {
   type KtpTerbaca,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
+import { pengaturanKtpDariEnv, pengaturanKtpEfektif, type PengaturanKtpEfektif, type PengaturanKtpTersimpan } from "@/lib/ktp-pihak-pengaturan";
+
 import { bacaKtpBanyak, type HasilBacaKtp } from "./ktp-ocr";
 
 /**
@@ -40,6 +42,11 @@ import { bacaKtpBanyak, type HasilBacaKtp } from "./ktp-ocr";
  *   (c) dipicu panel ABT untuk satu perkara (route ktp-pihak?nomor=&tunggu=1).
  *
  *   ALETA_KTP_PIHAK_LATAR=0 mematikan penyapu latar (panel tetap dapat memicu).
+ *
+ *   12 Okt (butir 11): Admin/Super Admin mengatur nyala/mati, berkas per putaran,
+ *   dan jeda dari Pengaturan > Integrasi e-Court. Pengaturan layar MENANG atas env
+ *   dan berlaku tanpa restart (penyapu membacanya ulang tiap detak, 30 detik).
+ *   Lihat lib/ktp-pihak-pengaturan.ts dan ktp-pihak-pengaturan.ts.
  *
  * TIDAK ADA YANG DITULIS KE SIPP/ABT/e-COURT. Berkas tidak disimpan di portal: bufer
  * ditimpa nol sesudah dibaca. NIK dan nama tidak dicatat ke log.
@@ -127,7 +134,7 @@ export const depsKtpAsli: DepsKtp = {
 export async function pindaiKtpPihak(
   nomor: string[],
   deps: DepsKtp = depsKtpAsli,
-  { batas = 2, batasMs = 240_000, batasBacaMs = 90_000 }: { batas?: number; batasMs?: number; batasBacaMs?: number } = {}
+  { batas = 2, batasMs = 240_000, batasBacaMs = 90_000, pemicu }: { batas?: number; batasMs?: number; batasBacaMs?: number; pemicu?: PemicuKtp } = {}
 ): Promise<{ dibaca: number; terbaca: number; terkirim: boolean; antrianTerjangkau: boolean }> {
   const mulai = deps.sekarang();
   const isi = await deps.antrian(nomor, batas);
@@ -154,6 +161,7 @@ export async function pindaiKtpPihak(
         }
       }
     }
+    if (pemicu) hasil.pemicu = pemicu;
     dibaca += 1;
     if (hasil.status === "terbaca") terbaca += 1;
     if (!(await deps.kirim([hasil]))) terkirim = false;
@@ -165,10 +173,33 @@ export async function pindaiKtpPihak(
 // PENYAPU LATAR + PEMICU
 // ---------------------------------------------------------------------------
 
-type Wadah = { jalan: boolean; detak: NodeJS.Timeout | null };
+export type PemicuKtp = "latar" | "panel" | "manual";
+
+/** Putaran terakhir di proses ini (hilang saat portal hidup ulang - hanya untuk layar Admin). */
+export type PutaranTerakhirKtp = {
+  pemicu: PemicuKtp;
+  mulaiPada: string;
+  selesaiPada: string;
+  dibaca: number;
+  terbaca: number;
+  terkirim: boolean;
+  antrianTerjangkau: boolean;
+};
+
+type Wadah = {
+  jalan: boolean;
+  detak: NodeJS.Timeout | null;
+  terakhir: PutaranTerakhirKtp | null;
+  /** Kapan penyapu terakhir memulai putaran terjadwal (ms); dasar menghitung jeda. */
+  terakhirJalan: number;
+  efektif: PengaturanKtpEfektif | null;
+};
 const SIMPAN = globalThis as unknown as { __aletaKtpPihak?: Wadah };
+function wadahBaru(): Wadah {
+  return { jalan: false, detak: null, terakhir: null, terakhirJalan: 0, efektif: null };
+}
 function wadah(): Wadah {
-  SIMPAN.__aletaKtpPihak ??= { jalan: false, detak: null };
+  SIMPAN.__aletaKtpPihak ??= wadahBaru();
   return SIMPAN.__aletaKtpPihak;
 }
 
@@ -176,7 +207,20 @@ function wadah(): Wadah {
 export function aturUlangKtpPihak() {
   const w = wadah();
   if (w.detak) clearInterval(w.detak);
-  SIMPAN.__aletaKtpPihak = { jalan: false, detak: null };
+  SIMPAN.__aletaKtpPihak = wadahBaru();
+}
+
+/** Keadaan penyapu di proses ini untuk layar Admin. */
+export function keadaanPenyapuKtp() {
+  const w = wadah();
+  return {
+    menyala: w.detak !== null,
+    sedangMembaca: w.jalan,
+    terakhir: w.terakhir,
+    efektif: w.efektif,
+    putaranBerikutnyaPada:
+      w.detak && w.efektif?.aktif && w.terakhirJalan ? new Date(w.terakhirJalan + w.efektif.jedaMs).toISOString() : null,
+  };
 }
 
 export function ktpPihakSedangMembaca(): boolean {
@@ -184,12 +228,20 @@ export function ktpPihakSedangMembaca(): boolean {
 }
 
 /** Satu putaran, hanya bila tidak ada putaran lain di proses ini. Mengembalikan null bila sibuk. */
-export async function putaranKtpPihak(nomor: string[], deps: DepsKtp = depsKtpAsli, opsi?: { batas?: number; batasMs?: number; batasBacaMs?: number }) {
+export async function putaranKtpPihak(
+  nomor: string[],
+  deps: DepsKtp = depsKtpAsli,
+  opsi?: { batas?: number; batasMs?: number; batasBacaMs?: number; pemicu?: PemicuKtp }
+) {
   const w = wadah();
   if (w.jalan) return null;
   w.jalan = true;
+  const pemicu: PemicuKtp = opsi?.pemicu ?? (nomor.length ? "panel" : "latar");
+  const mulaiPada = new Date().toISOString();
   try {
-    return await pindaiKtpPihak(nomor, deps, opsi);
+    const hasil = await pindaiKtpPihak(nomor, deps, { ...opsi, pemicu });
+    w.terakhir = { pemicu, mulaiPada, selesaiPada: new Date().toISOString(), ...hasil };
+    return hasil;
   } catch {
     return null;
   } finally {
@@ -197,27 +249,53 @@ export async function putaranKtpPihak(nomor: string[], deps: DepsKtp = depsKtpAs
   }
 }
 
+/** Pengaturan dari env saja (perilaku 1.195.0). */
 export function pengaturanLatar(env: NodeJS.ProcessEnv = process.env) {
-  return {
-    aktif: String(env.ALETA_KTP_PIHAK_LATAR ?? "").trim() !== "0",
-    batas: Math.max(1, Math.min(10, Number(env.ALETA_KTP_PIHAK_BATAS) || 2)),
-    jedaMs: Math.max(30_000, Number(env.ALETA_KTP_PIHAK_JEDA_MS) || 120_000),
-  };
+  const { aktif, batas, jedaMs } = pengaturanKtpDariEnv(env);
+  return { aktif, batas, jedaMs };
 }
+
+/** Pengaturan tersimpan dari layar Admin; null = ikuti env. Disuntikkan (modul ini tidak menyentuh basis data). */
+export type SumberPengaturanKtp = () => Promise<PengaturanKtpTersimpan | null>;
+
+/** Selang antar pemeriksaan penyapu; jeda sungguhan diambil dari pengaturan. */
+export const DETAK_PENYAPU_MS = 30_000;
 
 /**
  * Detak penyapu: pertama sesudah satu jeda, lalu tiap jeda. Dinyalakan
- * instrumentation.ts sekali saat portal berdiri. Mati dengan ALETA_KTP_PIHAK_LATAR=0.
+ * instrumentation.ts sekali saat portal berdiri.
+ *
+ * Tanpa `sumber` (uji, atau pemanggil lama): hanya env - ALETA_KTP_PIHAK_LATAR=0 tidak
+ * menyalakan apa pun. DENGAN `sumber`: detak SELALU berdiri dan tiap 30 detik
+ * membaca pengaturan yang berlaku (layar menang atas env), jadi Admin dapat
+ * menyalakan, mematikan, atau mengubah jeda tanpa restart.
  */
-export function mulaiPindaiKtpBerkala(deps: DepsKtp = depsKtpAsli, env: NodeJS.ProcessEnv = process.env) {
+export function mulaiPindaiKtpBerkala(deps: DepsKtp = depsKtpAsli, env: NodeJS.ProcessEnv = process.env, sumber?: SumberPengaturanKtp) {
   const w = wadah();
-  const p = pengaturanLatar(env);
-  if (!p.aktif || w.detak) return false;
-  const jalan = () => {
-    void putaranKtpPihak([], deps, { batas: p.batas }).catch(() => undefined);
+  if (w.detak) return false;
+  if (!sumber && !pengaturanLatar(env).aktif) return false;
+  w.terakhirJalan = Date.now();
+  const periksa = async () => {
+    let tersimpan: PengaturanKtpTersimpan | null = null;
+    if (sumber) {
+      try {
+        tersimpan = await sumber();
+      } catch {
+        tersimpan = null; // pengaturan tak terbaca: jatuh ke env, bukan berhenti
+      }
+    }
+    const p = pengaturanKtpEfektif(env, tersimpan);
+    w.efektif = p;
+    if (!p.aktif) return;
+    // Toleransi 1 detik: detak 30 detik tidak boleh melompati jeda 30 detik karena jitter.
+    if (Date.now() - w.terakhirJalan < p.jedaMs - 1000) return;
+    w.terakhirJalan = Date.now();
+    await putaranKtpPihak([], deps, { batas: p.batas, pemicu: "latar" });
   };
   // Putaran pertama sesudah satu jeda (portal baru berdiri), lalu tiap jeda.
-  w.detak = setInterval(jalan, p.jedaMs);
+  w.detak = setInterval(() => {
+    void periksa().catch(() => undefined);
+  }, DETAK_PENYAPU_MS);
   w.detak.unref?.();
   return true;
 }

@@ -4884,6 +4884,8 @@ export type HasilBacaKtpPihak = {
   sumber: string;
   versi: number;
   ktp: KtpTerbaca[];
+  /** Siapa yang memicu bacaan ini (catatan histori): penyapu latar, panel ABT, atau tombol Admin. */
+  pemicu?: "latar" | "panel" | "manual";
 };
 
 export type KtpPihakPerkara = {
@@ -4896,6 +4898,8 @@ export type KtpPihakPerkara = {
     urutan: number;
     peran: string;
     nama: string;
+    /** Nama pihak di SIPP (bot 12 Okt ke atas); dipakai Status Perkara mencocokkan per pihak. */
+    namaSipp?: string;
     tanggalKtp: string;
     tanggalKtpIso: string;
     kota: string;

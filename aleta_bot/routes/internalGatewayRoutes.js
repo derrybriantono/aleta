@@ -2949,6 +2949,51 @@ router.get("/sipp/ktp-pihak/perkara", requireInternalToken, async (req, res) => 
 });
 /* === AKHIR KTP-PIHAK === */
 
+/* === KTP-RIWAYAT 12 Okt === */
+// Histori penarikan tanggal KTP per nomor perkara + bacaan ulang satu perkara (butir 11).
+// Hanya membaca tabel bot; NIK tidak pernah keluar. Lihat services/ktpPihakRiwayatService.js.
+const ktpPihakRiwayatService = require("../services/ktpPihakRiwayatService");
+
+router.get("/sipp/ktp-pihak/riwayat/ringkasan", requireInternalToken, async (_req, res) => {
+  try {
+    res.json({ ok: true, ringkasan: await ktpPihakRiwayatService.ringkasanRiwayat() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.get("/sipp/ktp-pihak/riwayat", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ktpPihakRiwayatService.daftarPerkara({
+      cari: String(req.query.cari || ""),
+      batas: Number(req.query.batas) || 30,
+      mulai: Number(req.query.mulai) || 0,
+    });
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.get("/sipp/ktp-pihak/riwayat/perkara", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ktpPihakRiwayatService.riwayatPerkara(String(req.query.nomor || ""));
+    res.json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/sipp/ktp-pihak/baca-ulang", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ktpPihakRiwayatService.bacaUlangPerkara(String(req.body?.nomor || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/* === AKHIR KTP-RIWAYAT === */
+
 /** Daftar sidang pada rentang tanggal. */
 router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
   try {

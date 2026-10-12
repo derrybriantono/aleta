@@ -39,6 +39,9 @@ import { TombolUnduhZip } from "@/components/portal/tombol-unduh-zip";
 /* === STATUS-ZIP 12 Okt === */
 import { KontakPihak } from "@/components/portal/kontak-para-pihak";
 /* === AKHIR STATUS-ZIP === */
+/* === 12OKT-E: tanggal KTP pihak === */
+import { TanggalKtpPihak } from "@/components/portal/status-perkara-ktp-pihak";
+/* === AKHIR 12OKT-E === */
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -3409,6 +3412,9 @@ function IsiStatus({
                       <KontakPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} />
                     ) : null}
                     {/* === AKHIR STATUS-ZIP === */}
+                    {/* === 12OKT-E: Tanggal KTP pihak (dari berkas KTP e-Court) === */}
+                    <TanggalKtpPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} semuaPihak={status.pihak} />
+                    {/* === AKHIR 12OKT-E === */}
                     {terbuka ? (
                       <KartuIdentitasPihak
                         orang={identitas.cari(orang.nama)}
