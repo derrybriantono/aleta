@@ -687,7 +687,7 @@ export const AKSI = {
     crud: "R",
     golongan: [...PEMEGANG_PERKARA, "kasir", "ptsp", "mediator"],
     lingkup: "semua",
-    rute: ["GET /api/aleta-ecourt/identitas-pihak", "GET /api/aleta-ecourt/riwayat-pihak", "GET /api/aleta-ecourt/kontak-para-pihak"],
+    rute: ["GET /api/aleta-ecourt/identitas-pihak", "GET /api/aleta-ecourt/riwayat-pihak", "GET /api/aleta-ecourt/kontak-para-pihak", "GET /api/aleta-ecourt/ktp-pihak-status"],
     alasan:
       "Data pribadi pihak (NIK, alamat, riwayat perkara lain, email/WA & kesediaan e-Litigasi) - hanya yang melayani perkara (UU PDP); kesekretariatan/TI/pelaksana/petugas sidang tidak.",
   },

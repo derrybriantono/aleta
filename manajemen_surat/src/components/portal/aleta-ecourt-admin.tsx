@@ -30,6 +30,9 @@ import { AletaEcourtPanggilanPengaturan } from "@/components/portal/aleta-ecourt
 import { AletaEcourtPenarikan } from "@/components/portal/aleta-ecourt-penarikan";
 import { AletaEcourtSkMajelis } from "@/components/portal/aleta-ecourt-sk-majelis";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
+/* === 12OKT-E === */
+import { AletaEcourtKtpPihak } from "@/components/portal/aleta-ecourt-ktp-pihak";
+/* === AKHIR 12OKT-E === */
 import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-tampilan-ekstensi";
 import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templat-hukum";
 import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
@@ -174,6 +177,10 @@ export function AletaEcourtAdmin() {
       {/* Penarikan tepat setelah arsip: keduanya menjawab pertanyaan yang
           sama - berkas mana yang belum ada, dan bagaimana melengkapinya. */}
       <AletaEcourtPenarikan />
+      {/* === 12OKT-E === Penarikan tanggal KTP pihak: pengaturan penyapu latar + histori per nomor perkara.
+          Sesudah penarikan: berkas KTP datang dari arsip yang ditarik di atas. Jangkar #ktp-pihak. */}
+      <AletaEcourtKtpPihak />
+      {/* === AKHIR 12OKT-E === */}
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">

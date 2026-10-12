@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { catatanKtpPerkara } from "@/lib/ktp-pihak-tampil";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { ktpPihakPerkara } from "@/server/modules/aleta-ecourt/ktp-pihak";
@@ -44,19 +45,8 @@ export async function GET(request: NextRequest) {
     if (!r.ok) return ok({ ada: false, sebab: r.sebab, pihak: [], catatan: [] });
 
     const d = r.data;
-    const catatan: string[] = [];
-    if (d.dokumenKtp === 0) catatan.push("Tidak ada dokumen KTP di arsip e-Court perkara ini.");
-    else if (!d.ada) {
-      if (d.belumDibaca > 0) {
-        catatan.push(
-          r.sedangDibaca
-            ? `${d.belumDibaca} berkas KTP e-Court sedang/akan dibaca ALETA di latar - buka lagi sebentar lagi.`
-            : `${d.belumDibaca} berkas KTP e-Court belum terbaca.`
-        );
-      } else if (d.tidakTerbaca > 0) catatan.push(`${d.tidakTerbaca} berkas KTP e-Court tidak terbaca (OCR/berkas) - tanggal diketik petugas.`);
-      else if (d.takBertuan > 0) catatan.push("KTP terbaca, tetapi NIK/namanya tidak cocok dengan pihak mana pun di SIPP - periksa.");
-      else catatan.push("Berkas KTP e-Court perkara ini belum diunduh ALETA (atau tidak disediakan e-Court).");
-    }
+    // Kalimat keadaan: satu sumber dengan layar Status Perkara (lib/ktp-pihak-tampil.ts).
+    const catatan = catatanKtpPerkara(d, r.sedangDibaca);
     return ok({ ...d, sedangDibaca: r.sedangDibaca, catatan });
   } catch (error) {
     return handleAdminRouteError(error, request, {

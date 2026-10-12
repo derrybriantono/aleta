@@ -20,10 +20,15 @@ export async function register() {
     mulaiSelarasBerkala(getDatabase);
   }
   /* === AKHIR KAMUS-DB === */
-  /* === KTP-PIHAK 12 Okt === penyapu latar tanggal KTP pihak (ALETA_KTP_PIHAK_LATAR=0 mematikan). */
-  if (process.env.ALETA_KTP_PIHAK_LATAR !== "0") {
-    const { mulaiPindaiKtpBerkala } = await import("@/server/modules/aleta-ecourt/ktp-pihak");
-    mulaiPindaiKtpBerkala();
+  /* === KTP-PIHAK 12 Okt === penyapu latar tanggal KTP pihak. Sejak butir 11 detaknya SELALU berdiri dan
+     membaca pengaturan layar Admin (menang atas env ALETA_KTP_PIHAK_LATAR/BATAS/JEDA_MS) tiap 30 detik,
+     jadi menyalakan/mematikan/mengubah jeda dari Integrasi e-Court berlaku tanpa restart. */
+  {
+    const [{ mulaiPindaiKtpBerkala }, { sumberPengaturanKtp }] = await Promise.all([
+      import("@/server/modules/aleta-ecourt/ktp-pihak"),
+      import("@/server/modules/aleta-ecourt/ktp-pihak-pengaturan"),
+    ]);
+    mulaiPindaiKtpBerkala(undefined, process.env, sumberPengaturanKtp);
   }
   /* === AKHIR KTP-PIHAK === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
