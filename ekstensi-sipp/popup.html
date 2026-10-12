@@ -117,6 +117,11 @@
     background: var(--latar-lembut);
   }
   .uji-kepala { display: flex; align-items: center; gap: 8px; }
+  /* 13 (12 Okt sore): blok tampilan uji bawaannya diciutkan; ringkasannya satu baris. */
+  .uji-ringkas > summary { cursor: pointer; font-size: 11px; color: var(--tulisan-lembut); }
+  .uji-ringkas > summary:focus-visible { outline: 2px solid var(--merek); outline-offset: 1px; }
+  .uji-ringkas > summary[data-nyata="ya"] { color: #d99a1e; font-weight: 700; }
+  .uji-ringkas[open] > summary { margin-bottom: 5px; }
   .uji-seg {
     display: inline-flex;
     margin-left: auto;
@@ -745,27 +750,32 @@
      menyala: kirim WhatsApp dan simpan ke SIPP/ABT/ALETA ditahan, kecuali
      "Izinkan tindakan nyata" dicentang. Lihat popup.js dan panel-alat.js
      (bagian 3b). Tersembunyi bagi yang bukan Super Admin. -->
+<!-- 13 (12 Okt sore): BAWAAN DICIUTKAN. Ringkasan satu baris (tampilan yang
+     dicoba + tindakan nyata) selalu terlihat; isinya dibuka dengan menekannya. -->
 <div id="bagianUji" class="bagian-uji" hidden>
-  <div class="uji-kepala">
-    <span class="baris-warna-label">tampilan uji</span>
-    <span class="uji-seg" role="group" aria-label="Tampilan yang dicoba">
-      <button type="button" id="ujiLama" data-uji-mode="lama" aria-pressed="true">Lama</button>
-      <button type="button" id="ujiBaru" data-uji-mode="baru" aria-pressed="false">Baru</button>
-      <button type="button" id="ujiUi" data-uji-mode="ui" aria-pressed="false">UI Baru</button>
-    </span>
-  </div>
-  <p id="ujiKet" class="saklar-ket"></p>
-  <label class="uji-nyata" id="ujiNyataBaris" hidden>
-    <input type="checkbox" id="ujiIzinkanNyata">
-    <span>Izinkan tindakan nyata - kirim WhatsApp dan simpan ke SIPP, ABT, ALETA berlaku sungguhan</span>
-  </label>
-  <details id="ujiFiturLaci" class="uji-fitur">
-    <summary>Saklar fitur ide · <span id="ujiFiturHitung">0 nyala</span></summary>
-    <div class="uji-fitur-aksi">
-      <button type="button" id="ujiSemuaNyala" class="uji-kecil">nyalakan semua</button>
-      <button type="button" id="ujiSemuaMati" class="uji-kecil">matikan semua</button>
+  <details id="ujiBagianLaci" class="uji-ringkas">
+    <summary id="ujiRingkasan">Tampilan uji</summary>
+    <div class="uji-kepala">
+      <span class="baris-warna-label">tampilan uji</span>
+      <span class="uji-seg" role="group" aria-label="Tampilan yang dicoba">
+        <button type="button" id="ujiLama" data-uji-mode="lama" aria-pressed="true">Lama</button>
+        <button type="button" id="ujiBaru" data-uji-mode="baru" aria-pressed="false">Baru</button>
+        <button type="button" id="ujiUi" data-uji-mode="ui" aria-pressed="false">UI Baru</button>
+      </span>
     </div>
-    <div id="ujiFiturDaftar" class="uji-daftar"></div>
+    <p id="ujiKet" class="saklar-ket"></p>
+    <label class="uji-nyata" id="ujiNyataBaris" hidden>
+      <input type="checkbox" id="ujiIzinkanNyata">
+      <span>Izinkan tindakan nyata - kirim WhatsApp dan simpan ke SIPP, ABT, ALETA berlaku sungguhan</span>
+    </label>
+    <details id="ujiFiturLaci" class="uji-fitur">
+      <summary>Saklar fitur ide · <span id="ujiFiturHitung">0 nyala</span></summary>
+      <div class="uji-fitur-aksi">
+        <button type="button" id="ujiSemuaNyala" class="uji-kecil">nyalakan semua</button>
+        <button type="button" id="ujiSemuaMati" class="uji-kecil">matikan semua</button>
+      </div>
+      <div id="ujiFiturDaftar" class="uji-daftar"></div>
+    </details>
   </details>
 </div>
 

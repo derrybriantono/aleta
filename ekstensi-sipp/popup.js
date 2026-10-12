@@ -963,6 +963,17 @@ function tulisKetUji() {
   }
   if (barisNyata) barisNyata.hidden = lama;
   if (kotakNyata) kotakNyata.checked = ujiKeadaan.nyata;
+  // 13 (12 Okt sore): blok ini bawaannya diciutkan; ringkasan satu baris
+  // memberi tahu tampilan yang dicoba dan apakah tindakan nyata menyala.
+  const ringkasan = document.getElementById("ujiRingkasan");
+  if (ringkasan) {
+    const nama = { lama: "Lama", baru: "Baru", ui: "UI Baru" }[ujiKeadaan.mode] || "Lama";
+    ringkasan.textContent = lama
+      ? `Tampilan uji · ${nama}`
+      : `Tampilan uji · ${nama} · tindakan nyata ${ujiKeadaan.nyata ? "NYALA" : "mati"}`;
+    if (!lama && ujiKeadaan.nyata) ringkasan.setAttribute("data-nyata", "ya");
+    else ringkasan.removeAttribute("data-nyata");
+  }
   if (hitung) {
     const semua = daftarFiturUji();
     const nyala = semua.filter((x) => ujiKeadaan.fitur[x.kode] === true).length;
