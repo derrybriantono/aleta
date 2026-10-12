@@ -657,6 +657,59 @@ function cariTerbit(baris: string[], indeksBerlaku: number, tanggalLahir: string
   return { tanggal: p.tanggal, kota };
 }
 
+/* === 12OKT-M: BERLAKU HINGGA (penanda KTP Elektronik, variabel ABT 11114) === */
+/**
+ * "Berlaku Hingga" pada KTP, dibaca dari teks (lapisan teks PDF atau hasil OCR):
+ *
+ *   "seumur_hidup"  KTP-el tanpa kedaluwarsa ("SEUMUR HIDUP", salah baca OCR yang lazim ikut diterima)
+ *   "dd/mm/yyyy"    tanggal kedaluwarsa yang tertulis (KTP bentuk lama)
+ *   ""              tidak terbaca / meragukan - TIDAK ditebak
+ *
+ * Aturan (sengaja sempit, karena hasilnya menentukan "Elektronik (KTP-el)" di putusan):
+ *   1. baris berlabel "Berlaku Hingga": "SEUMUR HIDUP" di barisnya (atau baris sesudahnya bila barisnya
+ *      hanya label) = seumur hidup. Pada --psm 6 baris itu kerap memuat blok kanan-bawah
+ *      ("SEUMUR HIDUP 18-02-2012") - tanggal sesudah "seumur hidup" adalah tanggal terbit, bukan kedaluwarsa;
+ *   2. tanpa "seumur hidup" di baris itu, tanggal pertamanya adalah kedaluwarsa - TETAPI hanya bila tanggal itu
+ *      muncul sekali di seluruh teks dan "SEUMUR HIDUP" tidak ada di mana pun. Tanggal yang sama muncul lagi di
+ *      blok penerbitan = tanggal terbit yang terseret ke baris itu (KTP-el yang tulisan "seumur hidup"-nya
+ *      rusak), bukan kedaluwarsa: dijawab "" (tidak terbaca);
+ *   3. tanpa baris berlabel (OCR tak menangkapnya): "SEUMUR HIDUP" di mana pun dalam teks = seumur hidup
+ *      (tulisan itu hanya ada pada KTP-el); selain itu "".
+ */
+const POLA_SEUMUR_HIDUP = /S\s*[EF3]\s*U\s*M\s*[UO]\s*R\s*H\s*[I1l|!]\s*D\s*[UO]\s*[PF]/i;
+const POLA_LABEL_BERLAKU = /Ber[l1iI|]aku\s*Hin[gq]{1,2}a\b\s*[:;=.]?/i;
+
+export type BerlakuHingga = "" | "seumur_hidup" | string;
+
+export function uraiBerlakuHingga(teksMasuk: string, tahunKini = new Date().getFullYear()): BerlakuHingga {
+  const baris = String(teksMasuk || "")
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((b) => b.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  if (!baris.length) return "";
+  const semua = baris.join("\n");
+  const seumurDimana = POLA_SEUMUR_HIDUP.test(semua);
+  const indeks = baris.findIndex((b) => POLA_LABEL_BERLAKU.test(b));
+  if (indeks >= 0) {
+    const label = POLA_LABEL_BERLAKU.exec(baris[indeks]);
+    let lingkup = label ? baris[indeks].slice(label.index + label[0].length) : "";
+    // Label berdiri sendiri: nilainya di baris sesudahnya (lapisan teks PDF kerap memisah label dan nilai).
+    if (!/[A-Za-z0-9]/.test(lingkup) && indeks + 1 < baris.length) lingkup = baris[indeks + 1];
+    if (POLA_SEUMUR_HIDUP.test(lingkup)) return "seumur_hidup";
+    const tgl = cariTanggal(lingkup);
+    if (tgl) {
+      const tahun = Number(tgl.tanggal.slice(6));
+      const kali = semuaTanggal(semua).filter((t) => t.tanggal === tgl.tanggal).length;
+      if (!seumurDimana && kali === 1 && tahun >= 1990 && tahun <= tahunKini + 15) return tgl.tanggal;
+      if (seumurDimana) return "seumur_hidup";
+      return "";
+    }
+  }
+  return seumurDimana ? "seumur_hidup" : "";
+}
+/* === AKHIR 12OKT-M === */
+
 /**
  * Teks KTP atau blangko identitas -> usulan medan.
  *

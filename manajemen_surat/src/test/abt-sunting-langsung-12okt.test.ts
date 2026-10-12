@@ -658,6 +658,35 @@ describe("kartu usulan: teks usulan menurut saklar; tombol Sunting; di luar = ba
     expect(nonGetAbt(h)).toEqual([]);
   });
 
+  it("12OKT-M: saklar MATI, tombol Sunting tetap ada, dan hasilnya DITULIS ke ABT: Input ke ABT mengirim isi suntingan (bukan usulan semula); Batal/Esc tidak menulis apa pun", async () => {
+    const h = buka({ simpanan: ui([], nyata), peran: "Hakim" });
+    const kartu = await siapKartu(h);
+    const input = await selesaiIsi(h);
+    await sampai(() => attr(h) === "tidak", "saklar sunting langsung mati");
+    const usulanSemula = isiKartu(kartu).textContent;
+    const centang = kartu.querySelector("input.aleta-abt-centang");
+    // Batal tidak mengubah apa pun dan tidak menulis.
+    tombolSunting(kartu).click();
+    buatKetik(h, kotakKartu(kartu), "dibatalkan");
+    tombolKartu(kartu, "Batal").click();
+    expect(isiKartu(kartu).textContent).toBe(usulanSemula);
+    // Simpan di kartu = hanya menerapkan ke usulan; belum menulis ke ABT.
+    tombolSunting(kartu).click();
+    buatKetik(h, kotakKartu(kartu), "bulan Mei 2023");
+    tombolKartu(kartu, "Simpan").click();
+    expect(isiKartu(kartu).textContent).toBe("bulan Mei 2023");
+    expect(centang.checked).toBe(true);
+    await tunggu(80);
+    expect(nonGetAbt(h)).toEqual([]);
+    // Input ke ABT menulis isi suntingan lewat jalur edit_data yang sama.
+    input.click();
+    await sampai(() => tulisEdit(h).some((m) => m.url.includes("no_var=0222")), "0222 ditulis ke ABT");
+    const tulis = tulisEdit(h).filter((m) => m.url.includes("no_var=0222"));
+    expect(tulis).toHaveLength(1);
+    expect(new URLSearchParams(tulis[0].badan).get("value")).toBe("bulan Mei 2023");
+    expect(new URLSearchParams(tulis[0].badan).get("value")).not.toBe(usulanSemula);
+  });
+
   it("MENYALA: teks berpetunjuk klik dua kali, dapat difokus; klik dua kali dan Enter membuka; satu klik tidak", async () => {
     const h = buka({ simpanan: ui([], NYALA), peran: "Hakim" });
     const kartu = await siapKartu(h);

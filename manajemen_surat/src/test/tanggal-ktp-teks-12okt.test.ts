@@ -445,11 +445,13 @@ describe("E. a3UsulanTanggalKtp: variabel tanggal + teks, terisi otomatis", () =
     expect(per["0366"].sumber[0].keterangan).toContain("isian sekarang 20 Mei 2020");
   });
 
-  it("'pasti' (setelah terukur) membawa tingkat 'pasti' hanya untuk isian kosong", async () => {
+  it("'pasti' (setelah terukur) membawa tingkat 'pasti' untuk isian kosong DAN (12OKT-M, 'langsung timpa') untuk isian petugas yang beda; 'cukup' beda tidak", async () => {
     const p = pasang({ sel: { "0364": "..." } }, async () => jawab({ ada: true, pihak: [{ ...P_RIZKA, yakin: "pasti" }], catatan: [] }));
     expect((await p.a3UsulanTanggalKtp("1/Pdt.G/2026/PA.Dgl")).usulan[0]).toMatchObject({ keyakinan: "cukup", tingkat: "pasti", awal: true });
     const q = pasang({ sel: { "0364": "20 Mei 2020" } }, async () => jawab({ ada: true, pihak: [{ ...P_RIZKA, yakin: "pasti" }], catatan: [] }));
-    expect((await q.a3UsulanTanggalKtp("1/Pdt.G/2026/PA.Dgl")).usulan[0].tingkat).toBeUndefined();
+    expect((await q.a3UsulanTanggalKtp("1/Pdt.G/2026/PA.Dgl")).usulan[0]).toMatchObject({ keyakinan: "cukup", tingkat: "pasti", awal: true, timpa: [{ dari: "20 Mei 2020", ke: "18/02/2012" }] });
+    const r = pasang({ sel: { "0364": "20 Mei 2020" } }, async () => jawab({ ada: true, pihak: [{ ...P_RIZKA, yakin: "cukup" }], catatan: [] }));
+    expect((await r.a3UsulanTanggalKtp("1/Pdt.G/2026/PA.Dgl")).usulan[0].tingkat).toBeUndefined();
   });
 
   it("teks dengan petik: usulan memuat peringatan penggantian; server lama (404) tanpa rute = catatan, tanpa galat", async () => {
