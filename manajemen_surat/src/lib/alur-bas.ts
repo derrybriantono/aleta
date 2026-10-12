@@ -11,7 +11,7 @@
  *
  * Berkas ini adalah PETA yang sama dengan isi paket (dibangkitkan dari spec paket; dijaga alur-bas.test.ts) dan penebak alur
  * dari keadaan sidang. Tidak mengubah pemilihan blangko BAS massal yang sudah ada - hanya menambah keterangan alur pada baris.
- * Frekuensi alur sungguhan (SIPP PA Donggala, 10.078 perkara berstatus): paket-satker/../hasil/alur-final.md.
+ * Frekuensi alur sungguhan (SIPP PA Donggala, 10.078 perkara berstatus): D:/aleta-dev/kerja/abt-bas-alur-sidang/hasil/alur-bas-frekuensi.md.
  */
 
 /** Nomor sidang yang dilayani langkah; 0 = sidang terakhir (putusan / penetapan) - nomornya tidak tetap. */
