@@ -2454,7 +2454,20 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // 12 Okt (12OKT-D): tanggal KTP yang bacaannya cukup/pasti dan akan diisi sendiri.
   const dariKtp = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber[0] && u.sumber[0].asal === "ktp-ecourt";
   const nadaS5 = typeof u.kesepakatan === "string" && u.nilai ? NADA_KESEPAKATAN[u.kesepakatan] : null;
-  const nada = nadaS5
+  // 12OKT-M ("langsung timpa"): tanggal KTP yang MENIMPA isian petugas diberi lencana kuning yang menyebut isian lamanya.
+  const daftarTimpa = dariKtp && Array.isArray(u.timpa) ? u.timpa.filter((t) => t && t.dari) : [];
+  const nadaTimpa = daftarTimpa.length
+    ? {
+        kelas: "aleta-tanda-kuning",
+        teks:
+          daftarTimpa.length === 1
+            ? `menimpa isian lama (${String(daftarTimpa[0].dari).slice(0, 40)})`
+            : `menimpa ${daftarTimpa.length} isian lama`,
+      }
+    : null;
+  const nada = nadaTimpa
+    ? nadaTimpa
+    : nadaS5
     ? nadaS5
     : dariKtp && u.keyakinan === "cukup"
       ? { kelas: "aleta-tanda-hijau", teks: "dari berkas KTP e-Court" }
@@ -2466,6 +2479,12 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
       ? { kelas: "aleta-tanda-kuning", teks: "dari gugatan e-Court — periksa" }
       : NADA_KEYAKINAN[u.keyakinan] || NADA_KEYAKINAN.kosong;
   const lencana = buatElemen("span", `aleta-tanda ${nada.kelas}`, nada.teks);
+  if (daftarTimpa.length) {
+    lencana.title = `Bacaan KTP e-Court berkeyakinan pasti BERBEDA dari isian lama dan menimpanya saat Input ke ABT: ${daftarTimpa
+      .map((t) => `${t.label ? `${t.label}: ` : ""}${t.dari} → ${t.ke}`)
+      .join("; ")}. Hilangkan centang bila isian lama yang benar.`;
+    kartu.classList.add("aleta-abt-kartu-timpa");
+  }
   kepala.appendChild(lencana);
   if (nadaS5 && NADA_TINGKAT[u.tingkat]) {
     const yakin = buatElemen("span", `aleta-tanda aleta-s5-yakin ${NADA_TINGKAT[u.tingkat].kelas}`, NADA_TINGKAT[u.tingkat].teks);
@@ -2828,7 +2847,9 @@ async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor, opsi) {
         // manusia dan mana yang lolos begitu saja.
         const asalUsulan =
           x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "ktp-ecourt"
-            ? "usulan dari berkas KTP e-Court (dibaca mesin)"
+            ? Array.isArray(x.usulan.timpa) && x.usulan.timpa.length
+              ? "usulan dari berkas KTP e-Court (dibaca mesin, pasti), MENIMPA isian lama"
+              : "usulan dari berkas KTP e-Court (dibaca mesin)"
             : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "gugatan-ecourt"
             ? `usulan dari surat gugatan e-Court (${x.usulan.keyakinan})`
             : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
@@ -17558,9 +17579,12 @@ const ALETA_API_KTP_PIHAK = "/aleta/api/aleta-ecourt/ktp-pihak";
  * oleh variabel ABT 8870-8872). Panel hanya menanyakan hasilnya per perkara:
  *   GET /aleta/api/aleta-ecourt/ktp-pihak?nomor=&tunggu=1 -> { ada, pihak: [{ cabang, urutan, peran, nama,
  *   tanggalKtp "dd/mm/yyyy", yakin, cocok, sebab }], catatan[] }
- * Sumber kartu: "e-Court: KTP". Bacaan cukup/pasti + isian kosong = tercentang sendiri; isian petugas yang beda =
- * keyakinan "ocr", tidak dicentang (lihat catatan 12 Okt di bawah); "pasti" (hanya setelah terukur >= 95% di
- * server dan dinyalakan) ikut "Input semua yang pasti". Isian petugas tidak pernah ditimpa tanpa centang petugas.
+ * Sumber kartu: "e-Court: KTP". Bacaan cukup/pasti + isian kosong = tercentang sendiri; isian petugas yang beda dengan
+ * bacaan "cukup" = keyakinan "ocr", tidak dicentang (lihat catatan 12 Okt di bawah); "pasti" (hanya setelah terukur >= 95%
+ * di server dan dinyalakan) ikut "Input semua yang pasti".
+ * 12OKT-M ("langsung timpa", keputusan pengguna): bacaan "pasti" yang BERBEDA dari isian petugas MENIMPANYA - tercentang
+ * sendiri dan ditulis saat Input; kartu menyebut "menimpa isian lama (...)" dan riwayat mencatatnya. "cukup" tidak pernah
+ * menimpa, "ragu" tidak pernah dipakai.
  */
 const KTP_KODE_PIHAK = Object.freeze({
   "2222": { cabang: 1, urutan: 1, sebutan: "Penggugat/Pemohon" },
@@ -17906,9 +17930,10 @@ function ktpTeksTampil(t) {
  * -> { ada, nilai, otomatis, perubahan[], tetap[] }
  *   ada       true bila ada butir KTP ber-bagian-tanggal
  *   nilai     teks baru ("" bila tak ada yang diubah)
- *   otomatis  true bila nilai memuat bagian KOSONG yang diisi dan pihaknya dikenali KUAT (boleh tercentang
- *             sendiri); false bila hanya tawaran (tanggal BEDA, atau kosong tetapi pihak dikenali lemah)
- *   perubahan [{ label, dari, ke, aksi: 'isi'|'beda', kuat, cara, konteks }]
+ *   otomatis  true bila nilai memuat bagian KOSONG yang diisi dan pihaknya dikenali KUAT, ATAU tanggal petugas yang
+ *             BEDA ditimpa oleh bacaan PASTI untuk pihak yang dikenali KUAT (12OKT-M); boleh tercentang sendiri.
+ *             false bila hanya tawaran (tanggal BEDA berkeyakinan cukup, atau kosong tetapi pihak dikenali lemah)
+ *   perubahan [{ label, dari, ke, aksi: 'isi'|'timpa'|'beda', kuat, cara, konteks }]
  *   tetap     [{ label, alasan }] butir yang dibiarkan (sama / ragu / pihak tak dikenal)
  */
 function ktpTeksSusun(teks, kode, daftarPihak) {
@@ -17951,11 +17976,18 @@ function ktpTeksSusun(teks, kode, daftarPihak) {
     const konteks = `${t.slice(Math.max(b.mulai, mutlakAwal - 40), mutlakAwal)}[${dari || "kosong"} → ${ke}]${t.slice(mutlakAkhir, mutlakAkhir + 30)}`
       .replace(/\s+/g, " ")
       .trim();
+    /* === 12OKT-M: "langsung timpa" ===
+       Bacaan e-Court berkeyakinan PASTI, pihaknya dikenali KUAT, dan tulisan petugas adalah TANGGAL UTUH yang BERBEDA
+       (tulis/angka/iso) = ditimpa (tercentang sendiri, kartu menyebut "menimpa isian lama"). Tulisan yang rusak
+       (salah ketik yang bisa menelan teks lain) tetap hanya ditawarkan; "cukup" hanya mengisi yang kosong. */
+    const tanggalUtuh = slot.jenis === "tulis" || slot.jenis === "angka" || slot.jenis === "iso";
+    const timpa = tanggalUtuh && yakin === "pasti" && Boolean(pilih.kuat);
+    /* === AKHIR 12OKT-M === */
     const ubah = {
       label: `Tanggal KTP ${nama}${p.nama ? ` (${p.nama})` : ""}`,
       dari,
       ke,
-      aksi: slot.jenis === "kosong" ? "isi" : "beda",
+      aksi: slot.jenis === "kosong" ? "isi" : timpa ? "timpa" : "beda",
       konteks,
       cara: pilih.cara,
       kuat: Boolean(pilih.kuat),
@@ -17965,7 +17997,7 @@ function ktpTeksSusun(teks, kode, daftarPihak) {
     };
     // Hanya yang KOSONG dan pihaknya dikenali KUAT (peran, urutan baku variabel, atau nama penuh/>= 2 kata)
     // yang boleh tercentang sendiri; sisanya ditawarkan saja.
-    (ubah.aksi === "isi" && ubah.kuat ? isi : tawar).push(ubah);
+    ((ubah.aksi === "isi" && ubah.kuat) || ubah.aksi === "timpa" ? isi : tawar).push(ubah);
   }
   // Bila ada yang boleh diisi otomatis, nilai HANYA memuat itu dan sisanya dicatat; bila tidak, nilai memuat
   // tawaran (tidak tercentang) agar petugas dapat memilih.
@@ -17996,7 +18028,8 @@ function ktpTeksSusun(teks, kode, daftarPihak) {
  *   - bacaan e-Court berkeyakinan "cukup"/"pasti" DAN isian di blangko KOSONG ("...", "DATA_TIDAK_ADA", tanda
  *     kosong di dalam kalimat) -> tercentang sendiri (`awal: true`);
  *   - isian petugas sudah ada dan SAMA -> tidak ditampilkan; sudah ada dan BEDA -> ditampilkan, tidak
- *     dicentang (`awal: false`, petugas yang menimbang): isian petugas tidak pernah ditimpa diam-diam;
+ *     dicentang (`awal: false`, petugas yang menimbang) KECUALI bacaan "pasti" (12OKT-M): itu tercentang dan
+ *     menimpa, dengan `timpa: [{ dari, ke }]` agar kartu menyebut isian lama (tidak pernah diam-diam);
  *   - bacaan "ragu" (nama saja yang cocok, tanggal mustahil, NIK tak sah) -> tidak dicentang, alasan disebut.
  * Yang tercentang tetap baru tertulis ke ABT saat "Input ke ABT" ditekan (jalur tulis yang sama, jejak sama).
  */
@@ -18027,12 +18060,20 @@ function ktpUsulanTanggal(pihak, kode) {
     let keyakinan = ragu ? "ragu" : "cukup";
     let awal = !ragu;
     let petugas = "";
+    let timpa = null;
     if (terisi) {
       const ada = ktpTeksTanggalDiAwal(kini);
       if (ada && ada.jenis !== "kosong" && baru && ktpTeksSama(ada, baru)) continue; // isian petugas sudah sama
-      awal = false; // isian petugas tidak ditimpa tanpa centang dari petugas
-      if (!ragu) keyakinan = "ocr";
-      petugas = `; isian sekarang ${kini.slice(0, 40)} (tidak ditimpa tanpa dicentang)`;
+      if (pasti && baru) {
+        // 12OKT-M ("langsung timpa"): bacaan e-Court PASTI yang BEDA dari isian petugas menimpanya - tercentang sendiri,
+        // kartu menyebut "menimpa isian lama (…)". Yang "cukup" tetap tidak menimpa (hanya mengisi yang kosong).
+        timpa = { dari: kini.slice(0, 40), ke: String(p.tanggalKtp) };
+        petugas = `; MENIMPA isian lama ${timpa.dari} (bacaan e-Court pasti)`;
+      } else {
+        awal = false; // isian petugas tidak ditimpa tanpa centang dari petugas
+        if (!ragu) keyakinan = "ocr";
+        petugas = `; isian sekarang ${kini.slice(0, 40)} (tidak ditimpa tanpa dicentang)`;
+      }
     }
     usulan.push({
       kode: k,
@@ -18040,7 +18081,8 @@ function ktpUsulanTanggal(pihak, kode) {
       nilai: String(p.tanggalKtp),
       keyakinan,
       awal,
-      ...(pasti && !terisi ? { tingkat: "pasti" } : {}),
+      ...(pasti && (!terisi || timpa) ? { tingkat: "pasti" } : {}),
+      ...(timpa ? { timpa: [timpa], ringkas: `${p.tanggalKtp} — menimpa isian lama (${timpa.dari})` } : {}),
       sumber: [
         {
           asal: "ktp-ecourt",
@@ -18131,12 +18173,15 @@ async function ktpUsulanTeks(pihak, kodeTeks) {
     }
     if (!s.nilai) continue;
     const ringkas = s.perubahan.map((x) => `${x.label}: ${x.dari || "(kosong)"} → ${x.ke}`).join("; ");
+    // 12OKT-M: bagian yang MENIMPA tulisan petugas (bacaan pasti) - kartu dan riwayat menyebutnya terang.
+    const ditimpa = s.perubahan.filter((x) => x.aksi === "timpa").map((x) => ({ label: x.label, dari: x.dari, ke: x.ke }));
     hasil.usulan.push({
       kode,
       nama: item.nama || kode,
       nilai: s.nilai,
       keyakinan: s.otomatis ? "cukup" : "ocr",
       awal: s.otomatis,
+      ...(ditimpa.length ? { timpa: ditimpa } : {}),
       // dipanggil terapkanUsulanBerurutan tepat sebelum menulis: isi di ABT harus masih sama dengan yang ditambal
       sebelumTulis: async (jatiTulis) => {
         try {
@@ -18146,11 +18191,11 @@ async function ktpUsulanTeks(pihak, kodeTeks) {
           return `isi variabel di ABT tidak dapat diperiksa sebelum menulis (${String((g && g.message) || g)})`;
         }
       },
-      ringkas: `${s.otomatis ? "isi" : "betulkan"} tanggal KTP — ${ringkas}`,
+      ringkas: `${ditimpa.length ? "timpa" : s.otomatis ? "isi" : "betulkan"} tanggal KTP — ${ringkas}${ditimpa.length ? ` (menimpa isian lama: ${ditimpa.map((x) => x.dari).join("; ")})` : ""}`,
       sumber: [
         ...s.perubahan.map((x) => ({
           asal: "ktp-ecourt",
-          keterangan: `${x.label}${x.aksi === "beda" ? " (BEDA dari tulisan petugas, tidak dicentang)" : !x.kuat ? " (pihak dikenali dari nama saja, tidak dicentang)" : ""}: …${x.konteks}…`,
+          keterangan: `${x.label}${x.aksi === "timpa" ? ` (MENIMPA isian lama ${x.dari}: bacaan e-Court pasti, tercentang)` : x.aksi === "beda" ? " (BEDA dari tulisan petugas, tidak dicentang)" : !x.kuat ? " (pihak dikenali dari nama saja, tidak dicentang)" : ""}: …${x.konteks}…`,
         })),
         ...s.tetap
           .filter((t) => /tidak diganti otomatis/.test(t.alasan))

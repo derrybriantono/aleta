@@ -637,7 +637,7 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     const orang = await pihak(1, p2.perkara_id, 1);
     const tglKtp = ktpSebelum(p1.tanggal_pendaftaran, p2.tanggal_pendaftaran);
     const ktp = { nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: dmyIso(tglKtp), kotaTerbit: "Donggala", sumber: "teks-pdf" };
-    const r = await K.simpan([{ fileId: f2, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: 1, ktp: [ktp] }]);
+    const r = await K.simpan([{ fileId: f2, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [ktp] }]);
     expect(r).toMatchObject({ tersimpan: 1, kembaran: 1 });
     const baris = await bot("SELECT file_id, perkara_id, cabang, urutan, peran, cocok, yakin, tanggal_ktp, status FROM aleta_bot_ktp_pihak WHERE file_id LIKE ? ORDER BY file_id", [AWAL + "%"]);
     expect(baris).toHaveLength(2);
@@ -666,7 +666,7 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     const orang = await pihak(1, p1.perkara_id, 1);
     const tglKtp = ktpSebelum(p1.tanggal_pendaftaran, p2.tanggal_pendaftaran);
     const ktp = { nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: dmyIso(tglKtp), kotaTerbit: "Donggala", sumber: "ocr" };
-    await K.simpan([{ fileId: f1, status: "terbaca", sebab: "", sumber: "ocr", versi: 1, ktp: [ktp] }]);
+    await K.simpan([{ fileId: f1, status: "terbaca", sebab: "", sumber: "ocr", versi: K.VERSI_KTP_PIHAK, ktp: [ktp] }]);
     // berkas e-Court baru: perkara lain, isi sama
     const f2 = await buatBerkas("C2", p2.nomor_perkara, p2.perkara_id, H("kembarc"));
     expect(await K.salinKembaran()).toBeGreaterThanOrEqual(1);
@@ -684,7 +684,7 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     const mk = (o: Apa, tgl: string) => ({ nik: String(o.nik), nikSah: true, nama: String(o.nama), tanggalLahir: dmy(o.tanggal_lahir), tanggalTerbit: tgl, kotaTerbit: "Donggala", sumber: "teks-pdf" });
     const t2 = ktpSebelum(p.tanggal_pendaftaran);
     const t1 = ktpSebelum(new Date(new Date(`${t2}T12:00:00Z`).getTime() - 30 * 86400000).toISOString().slice(0, 10));
-    await K.simpan([{ fileId: f, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: 1, ktp: [mk(b, dmyIso(t2)), mk(a, dmyIso(t1))] }]);
+    await K.simpan([{ fileId: f, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [mk(b, dmyIso(t2)), mk(a, dmyIso(t1))] }]);
     const jawab = await K.perkaraKtp({ perkaraId: p.perkara_id });
     const peta = Object.fromEntries(jawab.pihak.map((x: Apa) => [`${x.cabang}.${x.urutan}`, x]));
     expect(peta["1.1"]).toMatchObject({ tanggalKtp: dmyIso(t1), yakin: "cukup" });
@@ -694,9 +694,62 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     const pt = await perkara(Number(tergugat.perkara_id));
     const ft = await buatBerkas("D2", pt.nomor_perkara, pt.perkara_id, H("tergugat"));
     const t = await pihak(2, pt.perkara_id, 1);
-    await K.simpan([{ fileId: ft, status: "terbaca", sebab: "", sumber: "ocr-pdf", versi: 1, ktp: [mk(t, dmyIso(ktpSebelum(pt.tanggal_pendaftaran)))] }]);
+    await K.simpan([{ fileId: ft, status: "terbaca", sebab: "", sumber: "ocr-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [mk(t, dmyIso(ktpSebelum(pt.tanggal_pendaftaran)))] }]);
     const jt = await K.perkaraKtp({ nomorPerkara: pt.nomor_perkara });
     expect(jt.pihak.find((x: Apa) => x.cabang === 2 && x.urutan === 1)).toMatchObject({ tanggalKtp: dmyIso(ktpSebelum(pt.tanggal_pendaftaran)), yakin: "cukup" });
+  });
+
+  it("12OKT-M berlaku-hingga: kolom disusulkan bot sendiri; simpan -> tabel -> perkaraKtp; disalin ke kembaran; kueri 11114 baru menjawab Elektronik hanya untuk seumur hidup", async () => {
+    if (!ada) return;
+    const kolom = await bot("SHOW COLUMNS FROM aleta_bot_ktp_pihak LIKE 'berlaku_hingga'");
+    expect(kolom).toHaveLength(1);
+    const p1 = await perkara(Number(kembar.p1));
+    const p2 = await perkara(Number(kembar.p2));
+    const f1 = await buatBerkas("M1", p1.nomor_perkara, p1.perkara_id, H("berlaku"));
+    const orang = await pihak(1, p1.perkara_id, 1);
+    const tglKtp = ktpSebelum(p1.tanggal_pendaftaran, p2.tanggal_pendaftaran);
+    const ktp = (berlakuHingga: string) => ({ nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: dmyIso(tglKtp), kotaTerbit: "Donggala", berlakuHingga, sumber: "teks-pdf" });
+    const simpan = (berlakuHingga: string) => K.simpan([{ fileId: f1, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [ktp(berlakuHingga)] }]);
+
+    // kueri 11114 BARU dari paket (ada di folder kerja, bukan di repo): dibaca dari PASANG.sql
+    const paket = "D:/aleta-dev/kerja/abt-tanggal-ktp-2/paket-satker/abt-tanggal-ktp-2-PASANG.sql";
+    let q11: string | null = null;
+    if (existsSync(paket)) {
+      const m = /UPDATE abt_variabel SET sql_query = UNHEX\('([0-9A-F]+)'\) WHERE no_var = 11114/.exec(readFileSync(paket, "latin1"));
+      if (m) q11 = Buffer.from(m[1], "hex").toString("latin1");
+    }
+    const jawab11114 = async (perkaraId: number) => {
+      if (!q11) return null;
+      const baris = await sipp(q11.replace(/#perkara_id#/g, String(perkaraId)));
+      return baris.length ? String(baris[0].data) : null;
+    };
+
+    await simpan("seumur_hidup");
+    let [b] = await bot("SELECT berlaku_hingga, yakin, cocok FROM aleta_bot_ktp_pihak WHERE file_id = ?", [f1]);
+    expect(b).toMatchObject({ berlaku_hingga: "seumur_hidup", yakin: "cukup", cocok: "nik" });
+    let jawab = await K.perkaraKtp({ nomorPerkara: p1.nomor_perkara });
+    expect(jawab.pihak[0]).toMatchObject({ cabang: 1, urutan: 1, berlakuHingga: "seumur_hidup" });
+    expect(await jawab11114(p1.perkara_id)).toBe(q11 ? "Elektronik (KTP-el)" : null);
+
+    await simpan("31/12/2017"); // KTP bentuk lama: ada tanggal kedaluwarsa
+    [b] = await bot("SELECT berlaku_hingga FROM aleta_bot_ktp_pihak WHERE file_id = ?", [f1]);
+    expect(isoDari(b.berlaku_hingga)).toBe("2017-12-31");
+    jawab = await K.perkaraKtp({ nomorPerkara: p1.nomor_perkara });
+    expect(jawab.pihak[0].berlakuHingga).toBe("31/12/2017");
+    expect(await jawab11114(p1.perkara_id)).toBe(q11 ? "" : null);
+
+    await simpan(""); // tidak terbaca (bot tidak menebak)
+    [b] = await bot("SELECT berlaku_hingga FROM aleta_bot_ktp_pihak WHERE file_id = ?", [f1]);
+    expect(b.berlaku_hingga).toBe("");
+    expect((await K.perkaraKtp({ nomorPerkara: p1.nomor_perkara })).pihak[0].berlakuHingga).toBe("");
+    expect(await jawab11114(p1.perkara_id)).toBe(q11 ? "" : null);
+
+    await simpan("seumur_hidup");
+    const f2 = await buatBerkas("M2", p2.nomor_perkara, p2.perkara_id, H("berlaku"));
+    expect(await K.salinKembaran()).toBeGreaterThanOrEqual(1);
+    const [salinan] = await bot("SELECT berlaku_hingga FROM aleta_bot_ktp_pihak WHERE file_id = ?", [f2]);
+    expect(salinan.berlaku_hingga).toBe("seumur_hidup");
+    expect(await jawab11114(p2.perkara_id)).toBe(q11 ? "Elektronik (KTP-el)" : null);
   });
 
   it("ALUR PENUH: portal membaca PDF KTP (pdf-lib, lapisan teks) lewat kontrak asli -> bot mencocokkan ke pihak SIPP nyata -> tanggal KTP tersimpan; dua pihak dalam satu PDF", async () => {
@@ -752,6 +805,9 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     expect(peta["1.2"]).toMatchObject({ tanggalKtpIso: tgl2, cocok: "nik", sumberBaca: "teks-pdf" });
     expect(["cukup", "ragu"]).toContain(peta["1.1"].yakin); // 'cukup' bila NIK SIPP berbentuk sah, selain itu ragu - tidak pernah 'pasti'
     expect(peta["1.1"].yakin).not.toBe("pasti");
+    // 12OKT-M: "Berlaku Hingga : SEUMUR HIDUP" ikut terbaca portal -> tersimpan di bot -> dijawab per pihak (penanda KTP Elektronik)
+    expect(peta["1.1"].berlakuHingga).toBe("seumur_hidup");
+    expect(peta["1.2"].berlakuHingga).toBe("seumur_hidup");
     // sudah terbaca: putaran berikutnya tidak membacanya lagi
     expect((await K.antrian({ nomor: [p.nomor_perkara], batas: 30 })).some((x: Apa) => x.fileId === f)).toBe(false);
   });
@@ -760,7 +816,7 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     if (!ada) return;
     const p = await perkara(Number(kembar.p2));
     const f1 = await buatBerkas("E1", p.nomor_perkara, p.perkara_id, H("asing"));
-    await K.simpan([{ fileId: f1, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: 1, ktp: [{ nik: "7299990101010001", nikSah: true, nama: "ORANG ASING TOTALITAS", tanggalLahir: "01/01/1970", tanggalTerbit: "01/01/2015", kotaTerbit: "Palu", sumber: "teks-pdf" }] }]);
+    await K.simpan([{ fileId: f1, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [{ nik: "7299990101010001", nikSah: true, nama: "ORANG ASING TOTALITAS", tanggalLahir: "01/01/1970", tanggalTerbit: "01/01/2015", kotaTerbit: "Palu", sumber: "teks-pdf" }] }]);
     let jawab = await K.perkaraKtp({ perkaraId: p.perkara_id });
     expect(jawab).toMatchObject({ ada: false, takBertuan: 1 });
     const [asing] = await bot("SELECT cabang, yakin, sebab, status FROM aleta_bot_ktp_pihak WHERE file_id = ?", [f1]);
@@ -769,7 +825,7 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     await bersihkan();
     const f2 = await buatBerkas("E2", p.nomor_perkara, p.perkara_id, H("mustahil"));
     const orang = await pihak(1, p.perkara_id, 1);
-    await K.simpan([{ fileId: f2, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: 1, ktp: [{ nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: "01/01/2090", kotaTerbit: "", sumber: "teks-pdf" }] }]);
+    await K.simpan([{ fileId: f2, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [{ nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: "01/01/2090", kotaTerbit: "", sumber: "teks-pdf" }] }]);
     jawab = await K.perkaraKtp({ perkaraId: p.perkara_id });
     expect(jawab.pihak[0]).toMatchObject({ yakin: "ragu", sebab: "tanggal_di_masa_depan" });
     const dipakaiAbt = await bot("SELECT COUNT(*) AS n FROM aleta_bot_ktp_pihak WHERE file_id = ? AND yakin IN ('pasti','cukup')", [f2]);
@@ -782,17 +838,17 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     const f = await buatBerkas("F1", p.nomor_perkara, p.perkara_id, H("gagal"));
     const hitung = async () => (await K.antrian({ nomor: [p.nomor_perkara], batas: 30 })).filter((b: Apa) => b.fileId === f).length;
     expect(await hitung()).toBe(1); // belum pernah dibaca
-    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "galat_baca", sumber: "", versi: 1, ktp: [] }]);
+    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "galat_baca", sumber: "", versi: K.VERSI_KTP_PIHAK, ktp: [] }]);
     expect(await hitung()).toBe(0); // baru saja gagal: tunggu
     await bot("UPDATE aleta_bot_ktp_pihak SET dibaca_pada = UTC_TIMESTAMP() - INTERVAL 13 HOUR WHERE file_id = ?", [f]);
     expect(await hitung()).toBe(1); // 12 jam x 1 percobaan sudah lewat
-    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "galat_baca", sumber: "", versi: 1, ktp: [] }]);
+    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "galat_baca", sumber: "", versi: K.VERSI_KTP_PIHAK, ktp: [] }]);
     await bot("UPDATE aleta_bot_ktp_pihak SET dibaca_pada = UTC_TIMESTAMP() - INTERVAL 13 HOUR WHERE file_id = ?", [f]);
     expect(await hitung()).toBe(0); // percobaan ke-2 butuh 24 jam
     await bot("UPDATE aleta_bot_ktp_pihak SET percobaan = 5, dibaca_pada = UTC_TIMESTAMP() - INTERVAL 400 HOUR WHERE file_id = ?", [f]);
     expect(await hitung()).toBe(0); // sudah 5 kali: berhenti
     // OCR belum terpasang: bukan salah berkas
-    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "ocr_belum_tersedia", sumber: "", versi: 1, ktp: [] }]);
+    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "ocr_belum_tersedia", sumber: "", versi: K.VERSI_KTP_PIHAK, ktp: [] }]);
     const [baris] = await bot("SELECT percobaan, sebab FROM aleta_bot_ktp_pihak WHERE file_id = ?", [f]);
     expect(baris).toMatchObject({ percobaan: 0, sebab: "ocr_belum_tersedia" });
     expect(await hitung()).toBe(0);
@@ -828,10 +884,10 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     const p = await perkara(Number(kembar.p2));
     const f = await buatBerkas("G1", p.nomor_perkara, p.perkara_id, H("versi"));
     const orang = await pihak(1, p.perkara_id, 1);
-    await K.simpan([{ fileId: f, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: 1, ktp: [{ nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: dmyIso(ktpSebelum(p.tanggal_pendaftaran)), kotaTerbit: "", sumber: "teks-pdf" }] }]);
+    await K.simpan([{ fileId: f, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [{ nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: dmyIso(ktpSebelum(p.tanggal_pendaftaran)), kotaTerbit: "", sumber: "teks-pdf" }] }]);
     const ada1 = async (v: number) => (await K.antrian({ nomor: [p.nomor_perkara], batas: 30, versi: v })).filter((b: Apa) => b.fileId === f).length;
-    expect(await ada1(1)).toBe(0);
-    expect(await ada1(2)).toBe(1);
+    expect(await ada1(K.VERSI_KTP_PIHAK)).toBe(0);
+    expect(await ada1(K.VERSI_KTP_PIHAK + 1)).toBe(1);
   });
 
   it("variabel ABT 8870-8872 (paket abt-tanggal-ktp) membaca tabel yang sama; isian petugas didahulukan; DDL paket = DDL bot", async () => {
@@ -845,7 +901,7 @@ describe.skipIf(!dbAda)("D. bot sungguhan (basis data laptop: aleta_bot + sipp_d
     const p = await perkara(Number(kembar.p2));
     const f = await buatBerkas("H1", p.nomor_perkara, p.perkara_id, H("abt"));
     const orang = await pihak(1, p.perkara_id, 1);
-    await K.simpan([{ fileId: f, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: 1, ktp: [{ nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: dmyIso(ktpSebelum(p.tanggal_pendaftaran)), kotaTerbit: "", sumber: "teks-pdf" }] }]);
+    await K.simpan([{ fileId: f, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [{ nik: String(orang.nik), nikSah: true, nama: String(orang.nama), tanggalLahir: dmy(orang.tanggal_lahir), tanggalTerbit: dmyIso(ktpSebelum(p.tanggal_pendaftaran)), kotaTerbit: "", sumber: "teks-pdf" }] }]);
     const jalankan = async (no: number) => {
       const [q] = await sipp("SELECT sql_query FROM aps_badilag.abt_variabel WHERE no_var = ?", [no]);
       const baris = await sipp(String(q.sql_query).replace(/#perkara_id#/g, String(p.perkara_id)));

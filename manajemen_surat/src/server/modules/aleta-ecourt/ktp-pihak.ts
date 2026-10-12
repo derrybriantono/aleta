@@ -78,6 +78,7 @@ export function hasilDariBacaan(fileId: string, daftar: HasilBacaKtp[], versi: n
       tanggalLahir: m.tanggalLahir || "",
       tanggalTerbit: m.tanggalTerbit || "",
       kotaTerbit: m.kotaTerbit || "",
+      berlakuHingga: h.berlakuHingga || "",
       sumber: h.sumber,
     });
   }

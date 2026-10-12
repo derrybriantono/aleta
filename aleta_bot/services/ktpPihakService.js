@@ -51,8 +51,12 @@
 const fs = require("fs");
 const { catatRiwayat, pemicuSah } = require("./ktpPihakRiwayatService");
 
-/** Naikkan bila aturan baca/cocok membaik: berkas versi lama dibaca ulang. */
-const VERSI_KTP_PIHAK = 1;
+/**
+ * Naikkan bila aturan baca/cocok membaik: berkas versi lama dibaca ulang.
+ * 2 (12 Okt 2026, 12OKT-M): + "Berlaku Hingga" (kolom berlaku_hingga) - berkas yang dibaca versi 1 dibaca ulang
+ * supaya penanda KTP Elektronik (ABT 11114) terisi; bacaan ulang yang gagal TIDAK menghapus bacaan lama.
+ */
+const VERSI_KTP_PIHAK = 2;
 
 /** Judul dokumen e-Court yang dianggap KTP. */
 const POLA_JUDUL_KTP = /\b(?:e-?ktp|ktp(?:-?el)?|kartu\s+tanda\s+penduduk)\b/i;
@@ -97,6 +101,16 @@ const DDL_KTP_PIHAK = `CREATE TABLE IF NOT EXISTS aleta_bot_ktp_pihak (
   INDEX idx_abkp_status (status, dibaca_pada)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`;
 
+/**
+ * 12OKT-M: kolom yang DISUSULKAN sesudah tabel dibuat paket abt-tanggal-ktp / versi 1.195.0-1.197.0. DDL_KTP_PIHAK
+ * sengaja TIDAK diubah (paket ABT yang sudah terpasang memuat salinannya dan diuji sama persis); kolomnya
+ * ditambahkan di sini bila belum ada. MariaDB 5.5: tanpa "ADD COLUMN IF NOT EXISTS", jadi diperiksa dulu.
+ *   berlaku_hingga  'seumur_hidup' | 'yyyy-mm-dd' (tanggal kedaluwarsa KTP) | '' (tidak terbaca)
+ */
+const KOLOM_SUSULAN = Object.freeze([
+  Object.freeze({ nama: "berlaku_hingga", bentuk: "VARCHAR(16) NOT NULL DEFAULT '' AFTER kota_ktp" }),
+]);
+
 let skemaJanji = null;
 
 function botDb() {
@@ -115,6 +129,16 @@ async function pastikanSkema() {
       const siap = await db.ensureSchema();
       if (!siap) throw new Error("Basis data bot belum siap.");
       await db.query(DDL_KTP_PIHAK);
+      for (const k of KOLOM_SUSULAN) {
+        const ada = await db.query("SHOW COLUMNS FROM aleta_bot_ktp_pihak LIKE ?", [k.nama]);
+        if (Array.isArray(ada) && ada.length > 0) continue;
+        try {
+          await db.query(`ALTER TABLE aleta_bot_ktp_pihak ADD COLUMN ${k.nama} ${k.bentuk}`);
+        } catch (galat) {
+          // Proses lain menambahkannya lebih dulu (galat 1060 = kolom kembar): tidak apa-apa.
+          if (!(galat && (galat.errno === 1060 || galat.code === "ER_DUP_FIELDNAME"))) throw galat;
+        }
+      }
       return true;
     })().catch((galat) => {
       skemaJanji = null;
@@ -144,6 +168,23 @@ function isoDariDmy(teks) {
   const d = new Date(Date.UTC(t, b - 1, h));
   if (d.getUTCFullYear() !== t || d.getUTCMonth() !== b - 1 || d.getUTCDate() !== h) return "";
   return `${String(t).padStart(4, "0")}-${String(b).padStart(2, "0")}-${String(h).padStart(2, "0")}`;
+}
+
+/**
+ * "Berlaku Hingga" dari pembaca KTP / dari kolom -> bentuk simpanan: 'seumur_hidup', 'yyyy-mm-dd', atau ''.
+ * Menerima 'seumur_hidup', 'dd/mm/yyyy' dan 'yyyy-mm-dd'; selain itu '' (tidak pernah ditebak).
+ */
+function berlakuBersih(x) {
+  const t = bersih(x, 20).toLowerCase();
+  if (t === "seumur_hidup") return "seumur_hidup";
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(t) ? isoDariDmy(`${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}`) : isoDariDmy(t);
+  return iso;
+}
+
+/** Bentuk simpanan -> bentuk untuk portal/panel: 'seumur_hidup', 'dd/mm/yyyy', atau ''. */
+function berlakuTampil(x) {
+  const b = berlakuBersih(x);
+  return b === "seumur_hidup" || !b ? b : isoKeDmy(b);
 }
 
 function isoKeDmy(iso) {
@@ -325,6 +366,7 @@ function susunBaris({ ktp, cocok, pihakDiCabang, sebutan, perkara, fileId, urut,
     tanggalLahirIso,
     tanggalKtpIso,
     kotaKtp: bersih(ktp.kotaTerbit, 100),
+    berlakuHingga: berlakuBersih(ktp.berlakuHingga),
     cabang: p ? p.cabang : null,
     urutan: p ? p.urutan : null,
     pihakId: p ? p.pihakId : null,
@@ -472,7 +514,7 @@ async function berkas(fileId) {
 
 const KOLOM_TULIS = [
   "file_id", "urut", "document_key", "nomor_perkara", "perkara_id", "status", "sebab", "nik", "nik_sah", "nama",
-  "tanggal_lahir", "tanggal_ktp", "kota_ktp", "cabang", "urutan", "pihak_id", "peran", "cocok", "yakin", "sumber_baca",
+  "tanggal_lahir", "tanggal_ktp", "kota_ktp", "berlaku_hingga", "cabang", "urutan", "pihak_id", "peran", "cocok", "yakin", "sumber_baca",
   "percobaan", "versi",
 ];
 
@@ -482,7 +524,7 @@ async function tulisBaris(b, percobaan) {
      VALUES (${KOLOM_TULIS.map(() => "?").join(", ")}, UTC_TIMESTAMP())`,
     [
       b.fileId, b.urut, b.documentKey, b.nomorPerkara, b.perkaraId, b.status, b.sebab, b.nik, b.nikSah, b.nama,
-      b.tanggalLahirIso || null, b.tanggalKtpIso || null, b.kotaKtp, b.cabang, b.urutan, b.pihakId, b.peran, b.cocok,
+      b.tanggalLahirIso || null, b.tanggalKtpIso || null, b.kotaKtp, b.berlakuHingga || "", b.cabang, b.urutan, b.pihakId, b.peran, b.cocok,
       b.yakin, b.sumberBaca, percobaan, b.versi,
     ]
   );
@@ -649,12 +691,12 @@ async function salinKembaran(batas = 50) {
   let salinan = 0;
   for (const r of Array.isArray(rows) ? rows : []) {
     const bacaan = await botDb().query(
-      "SELECT nik, nik_sah, nama, tanggal_lahir, tanggal_ktp, kota_ktp, sumber_baca, versi FROM aleta_bot_ktp_pihak WHERE file_id = ? ORDER BY urut",
+      "SELECT nik, nik_sah, nama, tanggal_lahir, tanggal_ktp, kota_ktp, berlaku_hingga, sumber_baca, versi FROM aleta_bot_ktp_pihak WHERE file_id = ? ORDER BY urut",
       [r.sumberId]
     );
     const ktp = (Array.isArray(bacaan) ? bacaan : []).map((b) => ({
       nik: b.nik, nikSah: Boolean(b.nik_sah), nama: b.nama, tanggalLahir: isoKeDmy(tanggalIso(b.tanggal_lahir)),
-      tanggalTerbit: isoKeDmy(tanggalIso(b.tanggal_ktp)), kotaTerbit: b.kota_ktp, sumber: b.sumber_baca,
+      tanggalTerbit: isoKeDmy(tanggalIso(b.tanggal_ktp)), kotaTerbit: b.kota_ktp, berlakuHingga: b.berlaku_hingga, sumber: b.sumber_baca,
     }));
     if (!ktp.length) continue;
     await simpanKtpBerkas({
@@ -673,7 +715,7 @@ async function salinKembaran(batas = 50) {
 /** Cocokkan ulang baris perkara ini yang belum bertuan (pihak SIPP baru ditambahkan / diperbaiki). */
 async function cocokkanUlangPerkara(perkara) {
   const rows = await botDb().query(
-    `SELECT file_id, urut, document_key, nomor_perkara, nik, nik_sah, nama, tanggal_lahir, tanggal_ktp, kota_ktp, sumber_baca, versi
+    `SELECT file_id, urut, document_key, nomor_perkara, nik, nik_sah, nama, tanggal_lahir, tanggal_ktp, kota_ktp, berlaku_hingga, sumber_baca, versi
        FROM aleta_bot_ktp_pihak
       WHERE (perkara_id = ? OR nomor_perkara = ?) AND status = 'terbaca' AND cabang IS NULL`,
     [perkara.perkaraId, perkara.nomorPerkara]
@@ -688,7 +730,7 @@ async function cocokkanUlangPerkara(perkara) {
   for (const r of belum) {
     const ktp = {
       nik: r.nik, nikSah: Boolean(r.nik_sah), nama: r.nama, tanggalLahir: isoKeDmy(tanggalIso(r.tanggal_lahir)),
-      tanggalTerbit: isoKeDmy(tanggalIso(r.tanggal_ktp)), kotaTerbit: r.kota_ktp, sumber: r.sumber_baca,
+      tanggalTerbit: isoKeDmy(tanggalIso(r.tanggal_ktp)), kotaTerbit: r.kota_ktp, berlakuHingga: r.berlaku_hingga, sumber: r.sumber_baca,
     };
     const cocok = cocokkanKtp({ nik: r.nik, nama: r.nama, tanggalLahirIso: tanggalIso(r.tanggal_lahir) }, pihak);
     if (!cocok.pihak) continue;
@@ -716,7 +758,7 @@ async function perkaraKtp({ nomorPerkara, perkaraId } = {}) {
   const nomor = perkara ? perkara.nomorPerkara : bersih(nomorPerkara, 191);
   if (perkara) await cocokkanUlangPerkara(perkara).catch(() => 0);
   const rows = await botDb().query(
-    `SELECT file_id, urut, status, sebab, nik, nama, tanggal_ktp, kota_ktp, cabang, urutan, peran, cocok, yakin, sumber_baca, dibaca_pada
+    `SELECT file_id, urut, status, sebab, nik, nama, tanggal_ktp, kota_ktp, berlaku_hingga, cabang, urutan, peran, cocok, yakin, sumber_baca, dibaca_pada
        FROM aleta_bot_ktp_pihak WHERE ${perkara ? "(perkara_id = ? OR nomor_perkara = ?)" : "nomor_perkara = ?"}`,
     perkara ? [perkara.perkaraId, nomor] : [nomor]
   );
@@ -746,6 +788,8 @@ async function perkaraKtp({ nomorPerkara, perkaraId } = {}) {
       tanggalKtp: isoKeDmy(tanggalIso(r.tanggal_ktp)),
       tanggalKtpIso: tanggalIso(r.tanggal_ktp),
       kota: r.kota_ktp,
+      // 12OKT-M: 'seumur_hidup' | 'dd/mm/yyyy' | '' - dasar penanda KTP Elektronik (ABT 11114).
+      berlakuHingga: berlakuTampil(r.berlaku_hingga),
       yakin: r.yakin,
       cocok: r.cocok,
       sebab: r.sebab || "",
@@ -800,8 +844,11 @@ module.exports = {
   SQL_KANDIDAT,
   DDL_KTP_PIHAK,
   pastikanSkema,
+  KOLOM_SUSULAN,
   isoDariDmy,
   isoKeDmy,
+  berlakuBersih,
+  berlakuTampil,
   namaBaku,
   namaSerupa,
   bedaNik,

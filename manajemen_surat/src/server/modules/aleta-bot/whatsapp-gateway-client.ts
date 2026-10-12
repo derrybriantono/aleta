@@ -4874,6 +4874,8 @@ export type KtpTerbaca = {
   /** dd/mm/yyyy - tanggal KTP dikeluarkan */
   tanggalTerbit: string;
   kotaTerbit: string;
+  /** 12OKT-M: "Berlaku Hingga" - "seumur_hidup" | "dd/mm/yyyy" | "" (tidak terbaca). */
+  berlakuHingga?: string;
   sumber?: string;
 };
 
@@ -4903,6 +4905,8 @@ export type KtpPihakPerkara = {
     tanggalKtp: string;
     tanggalKtpIso: string;
     kota: string;
+    /** 12OKT-M: "seumur_hidup" | "dd/mm/yyyy" | "" (tidak terbaca) - penanda KTP Elektronik (ABT 11114). */
+    berlakuHingga?: string;
     yakin: "pasti" | "cukup" | "ragu" | "";
     cocok: string;
     sebab: string;

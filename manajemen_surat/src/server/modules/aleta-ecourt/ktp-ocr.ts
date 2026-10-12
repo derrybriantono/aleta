@@ -6,6 +6,7 @@ import { bacaGambar, mesinOcrAda, PESAN_OCR_BELUM_ADA } from "@/app/api/aleta-ec
 import {
   periksaNik,
   skorUrai,
+  uraiBerlakuHingga,
   uraiTeksIdentitas,
   type HasilUrai,
   type MedanIdentitas,
@@ -86,6 +87,8 @@ export type HasilBacaKtp = {
   pesan?: string;
   /** Ringkasan lintasan OCR (tanpa isi teks) - untuk diagnosis. */
   lintasan?: Array<{ varian: string; psm: string; skor: number; halaman?: number }>;
+  /** 12OKT-M: "Berlaku Hingga" - "seumur_hidup" | "dd/mm/yyyy" | "" (tidak terbaca). Lihat uraiBerlakuHingga. */
+  berlakuHingga?: string;
 };
 
 type Spawn = Parameters<typeof bacaGambar>[1];
@@ -285,7 +288,14 @@ function hapusVarian(varian: Map<string, Buffer> | null) {
 function jadiHasil(lintasan: Lintasan[], sumber: SumberKtp, tahunKini: number): HasilBacaKtp {
   const g = gabungkan(lintasan, tahunKini);
   const ok = g.urai.terbaca.length > 0;
+  // 12OKT-M: lintasan terbaik yang MEMUAT jawaban "Berlaku Hingga" (lintasan lain boleh tak menangkap barisnya).
+  let berlakuHingga = "";
+  for (const l of lintasan.slice().sort((a, b) => b.skor - a.skor)) {
+    berlakuHingga = uraiBerlakuHingga(l.teks, tahunKini);
+    if (berlakuHingga) break;
+  }
   return {
+    berlakuHingga,
     ok,
     teks: g.teks,
     medan: g.urai.medan,
@@ -314,7 +324,10 @@ async function bacaPdfKtp(data: Buffer, opsi: OpsiBacaKtp, batasSampai: number):
   if (teks) {
     const urai = uraiTeksIdentitas(teks, tahunKini);
     if (skorUrai(urai) >= SKOR_TEKS_PDF) {
-      return { ok: true, teks, medan: urai.medan, nik: urai.nik, catatan: urai.catatan, terbaca: urai.terbaca, sumber: "teks-pdf" };
+      return {
+        ok: true, teks, medan: urai.medan, nik: urai.nik, catatan: urai.catatan, terbaca: urai.terbaca, sumber: "teks-pdf",
+        berlakuHingga: uraiBerlakuHingga(teks, tahunKini),
+      };
     }
   }
   if (!(await mesinOcrAda(opsi.spawn))) return kosongKtp("ocr-pdf", "ocr_belum_tersedia", PESAN_OCR_BELUM_ADA);
@@ -422,7 +435,10 @@ export async function bacaKtpBanyak(buffer: Buffer, opsi: OpsiBacaKtp = {}): Pro
     if (skor < SKOR_TEKS_PDF) continue;
     dariTeks.push({
       skor,
-      hasil: { ok: true, teks: h.teks, medan: urai.medan, nik: urai.nik, catatan: urai.catatan, terbaca: urai.terbaca, sumber: "teks-pdf" },
+      hasil: {
+        ok: true, teks: h.teks, medan: urai.medan, nik: urai.nik, catatan: urai.catatan, terbaca: urai.terbaca, sumber: "teks-pdf",
+        berlakuHingga: uraiBerlakuHingga(h.teks, tahunKini),
+      },
     });
   }
   if (dariTeks.length) return unikNik(dariTeks);

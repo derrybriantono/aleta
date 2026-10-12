@@ -649,7 +649,7 @@ describe.skipIf(!dbAda)("E. riwayat & bacaan ulang atas bot sungguhan (aleta_bot
     const f = await buatBerkas("R1", p.nomor_perkara, p.perkara_id, H("1"));
     const orang = await pihak(p.perkara_id);
     const tgl = ktpSebelum(400, p.tanggal_pendaftaran);
-    await K.simpan([{ fileId: f, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: 1, pemicu: "manual", ktp: [ktpDari(orang, tgl)] }]);
+    await K.simpan([{ fileId: f, status: "terbaca", sebab: "", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, pemicu: "manual", ktp: [ktpDari(orang, tgl)] }]);
 
     const r = await R.riwayatPerkara(p.nomor_perkara);
     expect(r.ok).toBe(true);
@@ -673,8 +673,8 @@ describe.skipIf(!dbAda)("E. riwayat & bacaan ulang atas bot sungguhan (aleta_bot
     if (!ada) return;
     const p = await perkara(Number(kembar.p2));
     const f = await buatBerkas("R2", p.nomor_perkara, p.perkara_id, H("2"));
-    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "ocr_gagal", sumber: "", versi: 1, pemicu: "latar", ktp: [] }]);
-    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "ocr_gagal", sumber: "", versi: 1, pemicu: "panel", ktp: [] }]);
+    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "ocr_gagal", sumber: "", versi: K.VERSI_KTP_PIHAK, pemicu: "latar", ktp: [] }]);
+    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "ocr_gagal", sumber: "", versi: K.VERSI_KTP_PIHAK, pemicu: "panel", ktp: [] }]);
     const r = await R.riwayatPerkara(p.nomor_perkara);
     const b = r.berkas.find((x: Apa) => x.fileId === f);
     expect(b).toMatchObject({ status: "tidak_terbaca", sebab: "ocr_gagal", percobaan: 2, pihak: [] });
@@ -701,7 +701,7 @@ describe.skipIf(!dbAda)("E. riwayat & bacaan ulang atas bot sungguhan (aleta_bot
     const orang = await pihak(p.perkara_id);
     const lama = ktpSebelum(400, p.tanggal_pendaftaran);
     const baru = ktpSebelum(500, p.tanggal_pendaftaran);
-    await K.simpan([{ fileId: f, status: "terbaca", sumber: "teks-pdf", versi: 1, ktp: [ktpDari(orang, lama)] }]);
+    await K.simpan([{ fileId: f, status: "terbaca", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [ktpDari(orang, lama)] }]);
     expect((await K.antrian({ nomor: [p.nomor_perkara], batas: 30 })).filter((x: Apa) => x.fileId === f)).toHaveLength(0);
 
     // minta baca ulang: berkas masuk antrian lagi, tanggal lama masih ada
@@ -712,7 +712,7 @@ describe.skipIf(!dbAda)("E. riwayat & bacaan ulang atas bot sungguhan (aleta_bot
     expect((await K.perkaraKtp({ nomorPerkara: p.nomor_perkara })).pihak[0].tanggalKtp).toBe(dmyIso(lama));
 
     // bacaan ulang GAGAL: tanggal lama tetap, tidak diantre lagi, kegagalan tercatat
-    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "ocr_gagal", sumber: "", versi: 1, pemicu: "manual", ktp: [] }]);
+    await K.simpan([{ fileId: f, status: "tidak_terbaca", sebab: "ocr_gagal", sumber: "", versi: K.VERSI_KTP_PIHAK, pemicu: "manual", ktp: [] }]);
     const sesudahGagal = await K.perkaraKtp({ nomorPerkara: p.nomor_perkara });
     expect(sesudahGagal.pihak[0].tanggalKtp).toBe(dmyIso(lama));
     expect((await K.antrian({ nomor: [p.nomor_perkara], batas: 30 })).filter((x: Apa) => x.fileId === f)).toHaveLength(0);
@@ -722,7 +722,7 @@ describe.skipIf(!dbAda)("E. riwayat & bacaan ulang atas bot sungguhan (aleta_bot
 
     // bacaan ulang BERHASIL dengan tanggal lain: menggantikan
     await R.bacaUlangPerkara(p.nomor_perkara);
-    await K.simpan([{ fileId: f, status: "terbaca", sumber: "ocr", versi: 1, pemicu: "manual", ktp: [{ ...ktpDari(orang, baru), sumber: "ocr" }] }]);
+    await K.simpan([{ fileId: f, status: "terbaca", sumber: "ocr", versi: K.VERSI_KTP_PIHAK, pemicu: "manual", ktp: [{ ...ktpDari(orang, baru), sumber: "ocr" }] }]);
     expect((await K.perkaraKtp({ nomorPerkara: p.nomor_perkara })).pihak[0].tanggalKtp).toBe(dmyIso(baru));
   });
 
@@ -734,7 +734,7 @@ describe.skipIf(!dbAda)("E. riwayat & bacaan ulang atas bot sungguhan (aleta_bot
     const f2 = await buatBerkas("R5B", p2.nomor_perkara, p2.perkara_id, H("5"));
     const orang = await pihak(p2.perkara_id);
     const tgl = ktpSebelum(400, p1.tanggal_pendaftaran, p2.tanggal_pendaftaran);
-    await K.simpan([{ fileId: f2, status: "terbaca", sumber: "teks-pdf", versi: 1, pemicu: "latar", ktp: [ktpDari(orang, tgl)] }]);
+    await K.simpan([{ fileId: f2, status: "terbaca", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, pemicu: "latar", ktp: [ktpDari(orang, tgl)] }]);
     const r1 = await R.riwayatPerkara(p1.nomor_perkara);
     const per = r1.percobaan.filter((x: Apa) => x.fileId === f1);
     expect(per).toHaveLength(1);
@@ -748,7 +748,7 @@ describe.skipIf(!dbAda)("E. riwayat & bacaan ulang atas bot sungguhan (aleta_bot
     const p = await perkara(Number(kembar.p2));
     const f = await buatBerkas("R6", p.nomor_perkara, p.perkara_id, H("6"));
     const orang = await pihak(p.perkara_id);
-    await K.simpan([{ fileId: f, status: "terbaca", sumber: "teks-pdf", versi: 1, ktp: [ktpDari(orang, ktpSebelum(400, p.tanggal_pendaftaran))] }]);
+    await K.simpan([{ fileId: f, status: "terbaca", sumber: "teks-pdf", versi: K.VERSI_KTP_PIHAK, ktp: [ktpDari(orang, ktpSebelum(400, p.tanggal_pendaftaran))] }]);
     const angka = String(p.nomor_perkara).split("/")[0];
     const a = await R.daftarPerkara({ cari: angka, batas: 100 });
     const ini = a.perkara.find((x: Apa) => x.nomorPerkara === p.nomor_perkara);
