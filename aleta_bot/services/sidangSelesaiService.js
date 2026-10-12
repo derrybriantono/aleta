@@ -342,6 +342,20 @@ function buatLayanan(deps = {}) {
       sumber.skors.alasan = sebutGalat(galat);
     }
 
+    /* === 12OKT-L: riwayat skors (penanda "pernah diskors") === */
+    // Tabel skors tidak pernah menghapus: tiap skors tetap sebagai satu baris
+    // (diberi dilanjutkan_pada saat dilanjutkan), jadi riwayatnya bertahan lintas
+    // hari. Dibaca per perkara untuk jendela 400 hari sampai akhir rentang.
+    let riwayatSkors = {};
+    sumber.riwayatSkors = { terbaca: false, alasan: "" };
+    try {
+      riwayatSkors = await bacaRiwayatSkors(awal, akhir);
+      sumber.riwayatSkors.terbaca = true;
+    } catch (galat) {
+      sumber.riwayatSkors.alasan = sebutGalat(galat);
+    }
+    /* === AKHIR 12OKT-L === */
+
     // Sedang berjalan: tanda manual ALETA + "proses sidang" mesin (bila disetel).
     // Peta tersendiri - berjalan BUKAN selesai dan bukan skors.
     const berjalan = { manual: {}, proses: [] };
@@ -401,8 +415,49 @@ function buatLayanan(deps = {}) {
       sumber.antrianProses.alasan = "nilai_proses_belum_disetel";
     }
 
-    return { ok: true, dari: awal, sampai: akhir, peta, skors, berjalan, sumber };
+    return { ok: true, dari: awal, sampai: akhir, peta, skors, riwayatSkors, berjalan, sumber };
   }
+
+  /* === 12OKT-L: riwayat skors === */
+  const JENDELA_RIWAYAT_SKORS_HARI = 400;
+  const BATAS_RIWAYAT_SKORS_PER_PERKARA = 5;
+  /**
+   * Semua skors (yang masih berlaku DAN yang sudah dilanjutkan) per perkara,
+   * dari tanggal sidang paling awal ke paling akhir, sampai `akhir`.
+   * { [perkaraId]: [{ tanggalSidang, diskorsPada, dilanjutkanPada, alasan, oleh }] }
+   * Hanya membaca tabel ALETA sendiri.
+   */
+  async function bacaRiwayatSkors(awal, akhir) {
+    await pastikanTabelSkors();
+    const baris = await kueriBot(
+      `SELECT perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
+              alasan, oleh, DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
+              DATE_FORMAT(dilanjutkan_pada, '%Y-%m-%d %H:%i:%s') AS dilanjutkanPada
+         FROM ${TABEL_SKORS}
+        WHERE tanggal_sidang BETWEEN DATE_SUB(?, INTERVAL ${JENDELA_RIWAYAT_SKORS_HARI} DAY) AND ?
+        ORDER BY id DESC LIMIT 3000`,
+      [awal, akhir]
+    );
+    const hasil = {};
+    for (const b of Array.isArray(baris) ? baris : []) {
+      const id = bersih(b.perkaraId);
+      const tanggal = tanggalSah(b.tanggalSidang);
+      if (!id || !tanggal) continue;
+      const daftar = hasil[id] || (hasil[id] = []);
+      if (daftar.length >= BATAS_RIWAYAT_SKORS_PER_PERKARA) continue;
+      daftar.push({
+        tanggalSidang: tanggal,
+        diskorsPada: bersih(b.diskorsPada),
+        dilanjutkanPada: bersih(b.dilanjutkanPada),
+        alasan: bersih(b.alasan),
+        oleh: bersih(b.oleh),
+      });
+    }
+    // Urut dari yang terlama ke yang terbaru (pembacaan tadi terbaru dulu).
+    for (const id of Object.keys(hasil)) hasil[id].reverse();
+    return hasil;
+  }
+  /* === AKHIR 12OKT-L === */
 
   let tabelBerjalanSiap = false;
   async function pastikanTabelBerjalan() {

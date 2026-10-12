@@ -31,6 +31,7 @@ import {
   type ProsesMediasi,
 } from "@/lib/jadwal-sidang-1okt";
 import { DATA_BERJALAN_KOSONG, type DataBerjalan, type PetaSkors } from "@/lib/jadwal-sidang-2okt";
+import type { PetaRiwayatSkors } from "@/lib/pernah-diskors"; // 12OKT-L
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { usePesanSementara } from "@/lib/pesan-sementara";
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
@@ -61,6 +62,9 @@ export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) 
   // Skors yang berlaku (perbaikan 2 Okt 2026, butir 10) - ikut di bacaan
   // yang sama; bot lama yang belum mengirimnya = tidak ada skors.
   const [skors, setSkors] = useState<PetaSkors>({});
+  /* === 12OKT-L: riwayat skors (penanda "pernah diskors"); bot lama = kosong === */
+  const [riwayatSkors, setRiwayatSkors] = useState<PetaRiwayatSkors>({});
+  /* === AKHIR 12OKT-L === */
   // Tanda "sedang berjalan" manual + "proses sidang" mesin antrian (2 Okt 2026
   // malam, butir 3) - bacaan yang sama; bot lama = tidak ada.
   const [berjalan, setBerjalan] = useState<DataBerjalan>(DATA_BERJALAN_KOSONG);
@@ -81,6 +85,7 @@ export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) 
         }
         setPeta((data.peta as PetaSelesai) ?? {});
         setSkors((data.skors as PetaSkors) ?? {});
+        setRiwayatSkors(data.riwayatSkors && typeof data.riwayatSkors === "object" ? (data.riwayatSkors as PetaRiwayatSkors) : {}); // 12OKT-L
         const mentah = (data.berjalan as Partial<DataBerjalan> | undefined) ?? {};
         setBerjalan({
           manual: mentah.manual && typeof mentah.manual === "object" ? mentah.manual : {},
@@ -97,7 +102,7 @@ export function useSelesaiSidang(dari: string, sampai: string, pemicu: unknown) 
   }, [dari, sampai, pemicu, versi]);
 
   const muatUlang = useCallback(() => setVersi((n) => n + 1), []);
-  return { peta, skors, berjalan, alasan, muatUlang };
+  return { peta, skors, riwayatSkors, berjalan, alasan, muatUlang };
 }
 
 /**
