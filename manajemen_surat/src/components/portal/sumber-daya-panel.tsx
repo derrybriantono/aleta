@@ -1,6 +1,6 @@
 "use client";
 
-import { Cpu, HardDrive, Loader2, MemoryStick, Pause, RefreshCw, Server, Sparkles } from "lucide-react";
+import { Cpu, Gpu, HardDrive, Loader2, MemoryStick, Pause, RefreshCw, Server, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -10,12 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
-import type { ButirDisk, ButirMemori, Keping, KepingGpu, SumberDaya, Warna } from "@/server/modules/sumber-daya/layanan";
+import type { ButirDisk, ButirMemori, Keping, KepingCpu, KepingGpu, SumberDaya, Warna } from "@/server/modules/sumber-daya/layanan";
 
 /**
  * Admin > Sumber daya server (butir 3, 6 Oktober 2026).
  *
- * Rincian di balik tiga indikator widget ekstensi: RAM, disk, dan GPU untuk
+ * Rincian di balik indikator widget ekstensi: RAM, CPU, disk, dan GPU untuk
  * ALETA saja dan untuk seluruh server, lalu pemakaian tiap aplikasi -
  * ALETA (container dan Docker) DIPISAH dari aplikasi lain (Apache + PHP,
  * MariaDB, layanan host). Berdetak tiap 5 detik selama tab terlihat; berhenti
@@ -69,7 +69,35 @@ function Bilah({ persen, warna }: { persen: number | null; warna: Warna }) {
   );
 }
 
-function Meter({ ikon, label, keping, bawah }: { ikon: ReactNode; label: string; keping: Keping | KepingGpu; bawah: string }) {
+/* === 12OKT-J: CPU === */
+/** Jawaban bot lama tanpa CPU: tampil "tidak terbaca", tidak pernah 0%. */
+const CPU_KOSONG: KepingCpu = { persen: null, warna: "kelabu", inti: null, intiTerpakai: null, beban: null, jendelaDetik: null };
+
+/** 0,96 -> "0,96"; 8 -> "8". Inti yang dipakai boleh pecahan. */
+export function formatInti(n: number | null | undefined) {
+  if (n === null || n === undefined || !Number.isFinite(n)) return "-";
+  return n.toLocaleString("id-ID", { maximumFractionDigits: 2, minimumFractionDigits: Number.isInteger(n) ? 0 : 1 });
+}
+
+/**
+ * Keterangan di bawah meter CPU: "0,96 inti terpakai dari 8 inti" + beban
+ * rata-rata 1/5/15 menit (hanya seluruh server) + peringatan SEBAGIAN.
+ * Persen CPU = laju antara dua cuplikan, bukan angka sesaat.
+ */
+export function keteranganCpu(k: KepingCpu, adalahAleta: boolean) {
+  if (k.persen === null) return "CPU tidak terbaca (bot belum mendapat dua cuplikan /proc/stat, atau tidak dapat membacanya).";
+  const bagian = [`${formatInti(k.intiTerpakai)} inti terpakai dari ${formatInti(k.inti)} inti`];
+  if (k.beban) {
+    const f = (x: number) => x.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    bagian.push(`beban rata-rata ${f(k.beban.m1)} / ${f(k.beban.m5)} / ${f(k.beban.m15)} (1 / 5 / 15 menit)`);
+  }
+  if (k.jendelaDetik) bagian.push(`selisih ${k.jendelaDetik} detik terakhir`);
+  const dasar = bagian.join(" · ");
+  return adalahAleta && k.sebagian ? `${dasar} - SEBAGIAN: hanya container yang terukur tanpa netdata` : dasar;
+}
+/* === AKHIR 12OKT-J === */
+
+function Meter({ ikon, label, keping, bawah }: { ikon: ReactNode; label: string; keping: Keping | KepingGpu | KepingCpu; bawah: string }) {
   return (
     <div className="space-y-1.5" data-meter={label}>
       <div className="flex items-center justify-between gap-2 text-sm">
@@ -78,7 +106,7 @@ function Meter({ ikon, label, keping, bawah }: { ikon: ReactNode; label: string;
           {label}
         </span>
         <span className={cn("font-semibold tabular-nums", WARNA_TEKS[keping.warna])} data-warna={keping.warna}>
-          {"ada" in keping && !keping.ada ? "tidak ada" : formatPersen(keping.persen)}
+          {"ada" in keping && !keping.ada ? "tidak ada" : "inti" in keping && keping.persen === null ? "tidak terbaca" : formatPersen(keping.persen)}
         </span>
       </div>
       <Bilah persen={keping.persen} warna={keping.warna} />
@@ -104,6 +132,14 @@ function KartuLingkup({ judul, ket, r, adalahAleta }: { judul: string; ket: stri
           keping={r.ram}
           bawah={`${formatByte(r.ram.byte)} dari ${formatByte(r.ram.totalByte)}${"sebagian" in r.ram && r.ram.sebagian ? " - SEBAGIAN: hanya container portal yang terukur" : ""}`}
         />
+        {/* === 12OKT-J: CPU === */}
+        <Meter
+          ikon={<Cpu className="h-4 w-4 text-muted-foreground" />}
+          label="CPU"
+          keping={r.cpu ?? CPU_KOSONG}
+          bawah={keteranganCpu(r.cpu ?? CPU_KOSONG, adalahAleta)}
+        />
+        {/* === AKHIR 12OKT-J === */}
         <Meter
           ikon={<HardDrive className="h-4 w-4 text-muted-foreground" />}
           label="Disk"
@@ -114,13 +150,13 @@ function KartuLingkup({ judul, ket, r, adalahAleta }: { judul: string; ket: stri
               : `${formatByte(r.disk.byte)} dari ${formatByte(r.disk.totalByte)} - partisi terpenuh ${r.disk.partisi ?? "-"}`
           }
         />
-        <Meter ikon={<Cpu className="h-4 w-4 text-muted-foreground" />} label="GPU" keping={r.gpu} bawah={r.gpu.keterangan} />
+        <Meter ikon={<Gpu className="h-4 w-4 text-muted-foreground" />} label="GPU" keping={r.gpu} bawah={r.gpu.keterangan} />
       </CardContent>
     </Card>
   );
 }
 
-function TabelMemori({ butir, totalByte, kosong }: { butir: ButirMemori[]; totalByte: number | null; kosong: string }) {
+function TabelMemori({ butir, totalByte, kosong, inti }: { butir: ButirMemori[]; totalByte: number | null; kosong: string; inti?: number | null }) {
   if (!butir.length) return <p className="text-sm text-muted-foreground">{kosong}</p>;
   return (
     <div className="overflow-x-auto">
@@ -130,6 +166,9 @@ function TabelMemori({ butir, totalByte, kosong }: { butir: ButirMemori[]; total
             <th className="py-2 pr-3 font-semibold">Aplikasi</th>
             <th className="py-2 pr-3 text-right font-semibold">RAM (proses)</th>
             <th className="py-2 pr-3 text-right font-semibold">% server</th>
+            <th className="py-2 pr-3 text-right font-semibold" title="Laju CPU, persen dari seluruh kapasitas server (100% = semua inti)">
+              CPU %
+            </th>
             <th className="py-2 pr-3 text-right font-semibold">Cache berkas</th>
             <th className="py-2 text-right font-semibold">Swap</th>
           </tr>
@@ -145,6 +184,26 @@ function TabelMemori({ butir, totalByte, kosong }: { butir: ButirMemori[]; total
               <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">
                 {totalByte ? formatPersen(Math.round((b.ramByte / totalByte) * 1000) / 10) : "-"}
               </td>
+              {/* === 12OKT-J: CPU per aplikasi === */}
+              <td
+                className="py-2 pr-3 text-right tabular-nums"
+                data-cpu={b.cpuPersen === null || b.cpuPersen === undefined ? "tidak-terbaca" : String(b.cpuPersen)}
+                title={
+                  b.cpuInti === null || b.cpuInti === undefined
+                    ? "CPU aplikasi ini tidak terbaca"
+                    : `${formatInti(b.cpuInti)} inti${inti ? ` dari ${formatInti(inti)} inti` : ""}${b.cpuSumber === "sesaat" ? " (angka sesaat: rata-rata belum tersedia)" : ""}`
+                }
+              >
+                {b.cpuPersen === null || b.cpuPersen === undefined ? (
+                  <span className="text-muted-foreground">-</span>
+                ) : (
+                  <>
+                    {formatPersen(b.cpuPersen)}
+                    {b.cpuSumber === "sesaat" ? <span className="ml-0.5 text-xs text-muted-foreground">*</span> : null}
+                  </>
+                )}
+              </td>
+              {/* === AKHIR 12OKT-J === */}
               <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">{formatByte(b.cacheByte)}</td>
               <td className="py-2 text-right tabular-nums text-muted-foreground">{formatByte(b.swapByte)}</td>
             </tr>
@@ -249,13 +308,14 @@ export function SumberDayaPanel() {
   const totalRam = data?.rincian.memori?.totalByte ?? data?.ringkas.server.ram.totalByte ?? null;
   const ramAleta = data ? data.rincian.aleta.reduce((s, b) => s + b.ramByte, 0) : 0;
   const ramLain = data ? data.rincian.lain.reduce((s, b) => s + b.ramByte, 0) : 0;
+  const intiServer = data?.rincian.cpu?.inti ?? null; // 12OKT-J
 
   return (
     <div className="space-y-8">
       <PageIntro
         eyebrow="Pengaturan Admin"
         title="Sumber daya server"
-        description="RAM, disk, dan GPU yang dipakai ALETA dibanding seluruh server, beserta pemakaian tiap aplikasi. Diperbarui tiap 5 detik selama halaman ini terbuka."
+        description="RAM, CPU, disk, dan GPU yang dipakai ALETA dibanding seluruh server, beserta pemakaian tiap aplikasi. Diperbarui tiap 5 detik selama halaman ini terbuka."
         actions={
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             {tersembunyi ? (
@@ -304,20 +364,21 @@ export function SumberDayaPanel() {
 
           <Card className="border-border/80">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">RAM per aplikasi - ALETA</CardTitle>
+              <CardTitle className="text-base">RAM dan CPU per aplikasi - ALETA</CardTitle>
               <p className="text-xs text-muted-foreground">
                 Jumlah {formatByte(ramAleta)}. RAM = memori proses (RSS); cache berkas disebut terpisah karena dapat dilepas
-                kernel kapan saja.
+                kernel kapan saja. CPU % = laju rata-rata beberapa detik terakhir, persen dari seluruh kapasitas server
+                {intiServer ? ` (${formatInti(intiServer)} inti)` : ""}.
               </p>
             </CardHeader>
             <CardContent>
-              <TabelMemori butir={data.rincian.aleta} totalByte={totalRam} kosong="Tidak ada container ALETA yang terbaca." />
+              <TabelMemori butir={data.rincian.aleta} totalByte={totalRam} inti={intiServer} kosong="Tidak ada container ALETA yang terbaca." />
             </CardContent>
           </Card>
 
           <Card className="border-border/80">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">RAM per aplikasi - aplikasi lain</CardTitle>
+              <CardTitle className="text-base">RAM dan CPU per aplikasi - aplikasi lain</CardTitle>
               <p className="text-xs text-muted-foreground">
                 Jumlah {formatByte(ramLain)}
                 {data.rincian.ramLainnyaByte !== null
@@ -330,6 +391,7 @@ export function SumberDayaPanel() {
               <TabelMemori
                 butir={data.rincian.lain}
                 totalByte={totalRam}
+                inti={intiServer}
                 kosong="Rincian aplikasi lain belum terbaca (butuh netdata di host - lihat catatan di bawah)."
               />
             </CardContent>
@@ -405,7 +467,7 @@ export function SumberDayaPanel() {
                 ))}
                 <li>
                   <span className="font-semibold text-foreground">ambang warna</span>: RAM kuning {data.ambang.ram.kuning}% / merah{" "}
-                  {data.ambang.ram.merah}% · disk {data.ambang.disk.kuning}% / {data.ambang.disk.merah}% · GPU {data.ambang.gpu.kuning}% /{" "}
+                  {data.ambang.ram.merah}% · CPU {data.ambang.cpu?.kuning ?? 70}% / {data.ambang.cpu?.merah ?? 90}% · disk {data.ambang.disk.kuning}% / {data.ambang.disk.merah}% · GPU {data.ambang.gpu.kuning}% /{" "}
                   {data.ambang.gpu.merah}%
                 </li>
               </ul>

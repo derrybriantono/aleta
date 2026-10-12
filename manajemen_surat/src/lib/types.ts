@@ -77,6 +77,7 @@ export type ModuleId =
   | "whatsapp-settings"
   | "system-updates"
   | "backup-system"
+  | "server-resources" // 12OKT-J: Sumber daya server
   | "database-viewer"
   | "aleta-bot"
   | "aleta-sipp"

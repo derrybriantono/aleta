@@ -32,6 +32,7 @@ import {
   Scale,
   Search,
   Send,
+  Server,
   Settings,
   PanelLeftClose,
   PanelLeftOpen,
@@ -109,6 +110,7 @@ const iconMap = {
   bot: Bot,
   database: Database,
   "database-backup": DatabaseBackup,
+  server: Server, // 12OKT-J
   "calendar-days": CalendarDays,
   settings: Settings,
   globe: Globe,
@@ -200,6 +202,7 @@ const adminSidebarIds: ReadonlySet<ModuleId> = new Set([
   "whatsapp-settings",
   "system-updates",
   "backup-system",
+  "server-resources", // 12OKT-J
   "database-viewer",
   "aleta-bot",
   "aleta-ecourt-admin",
@@ -232,7 +235,7 @@ const adminSidebarGroups = [
   {
     id: "system",
     label: "Sistem",
-    moduleIds: ["system-updates", "backup-system"],
+    moduleIds: ["system-updates", "backup-system", "server-resources"], // 12OKT-J: Sumber daya server
   },
 ] as const satisfies ReadonlyArray<{
   id: string;
@@ -258,6 +261,7 @@ const compactAdminSidebarDescriptions: Partial<Record<ModuleId, string>> = {
   "judicia-legal-form-settings": "Legal Form, SIPP, AI, KB, dan audit.",
   "system-updates": "Versi dan paket update.",
   "backup-system": "Backup database dan aplikasi.",
+  "server-resources": "RAM, CPU, disk, dan GPU server.", // 12OKT-J
 };
 const DESKTOP_SIDEBAR_STORAGE_KEY = "aleta:portal-sidebar-collapsed";
 const primarySidebarOrder = [
