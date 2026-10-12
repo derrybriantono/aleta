@@ -163,6 +163,37 @@
   .uji-tanda { font-size: 10px; color: var(--tulisan-lembut); font-style: italic; }
   .uji-pesan-lain { margin: 0; font-size: 11px; color: var(--tulisan-lembut); }
 
+  /* === 12OKT-F: baris "Tarik data e-Court" (Super Admin dan Admin) ===
+     Warna keadaan lewat --tarik-warna: hijau = aktif, kuning = aktif tetapi
+     perlu perhatian, kelabu = tidak aktif, merah = bot tidak terjangkau. */
+  .tarik-ecourt { --tarik-warna: var(--tulisan-lembut); border-left: 3px solid var(--tarik-warna); }
+  .tarik-ecourt[data-keadaan="aktif"] { --tarik-warna: #2e9d62; }
+  .tarik-ecourt[data-keadaan="perhatian"] { --tarik-warna: #d99a1e; }
+  .tarik-ecourt[data-keadaan="tidak-terjangkau"] { --tarik-warna: #d4483b; }
+  .tarik-baris { display: flex; align-items: center; gap: 7px; }
+  .tarik-titik { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--tarik-warna); }
+  .tarik-ecourt[data-keadaan="mati"] .tarik-titik { background: transparent; border: 2px solid var(--tarik-warna); box-sizing: border-box; }
+  .tarik-nama { font-size: 12px; font-weight: 700; }
+  .tarik-status {
+    margin-left: auto;
+    padding: 2px 10px;
+    border: 1px solid var(--tarik-warna);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tarik-warna) 16%, transparent);
+    color: var(--tulisan);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tarik-status:hover:not(:disabled) { background: color-mix(in srgb, var(--tarik-warna) 30%, transparent); }
+  .tarik-status:focus-visible { outline: 2px solid var(--merek); outline-offset: 1px; }
+  .tarik-status:disabled { cursor: default; opacity: 0.75; }
+  .tarik-yakin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 5px 0 0; font-size: 11.5px; }
+  .tarik-yakin[hidden] { display: none; }
+  .tarik-ecourt .saklar-ket { margin: 3px 0 0; }
+  /* === AKHIR 12OKT-F === */
+
   /* Kulit Modern (UI Baru) untuk jendela ini - token yang sama dengan blok
      KULIT MODERN di panel.css. Hanya berlaku bila popup.js memasang
      data-kulit="modern", yaitu ketika tampilan yang dicoba "UI Baru". */
@@ -757,6 +788,27 @@
 <div id="latihanLainBaris" class="bagian-uji" hidden>
   <p class="uji-pesan-lain">Mode latihan menyala di PC ini: tidak ada yang ditulis ke SIPP maupun ALETA. Hanya Admin atau Super Admin yang dapat mematikannya.</p>
 </div>
+
+<!-- === 12OKT-F: Tarik data e-Court - SUPER ADMIN DAN ADMIN SAJA ===
+     Satu saklar dengan Penjadwal di Integrasi e-Court (tersimpan di server,
+     berlaku tanpa memulai ulang). Hanya menarik (membaca) dari e-Court yang
+     sudah ada. Disembunyikan bagi peran lain; popup.js memutuskan sesudah
+     portal menjawab siapa yang masuk, dan rute server menolak peran lain.
+     Statusnya TOMBOL: klik = aktifkan / matikan, dengan konfirmasi singkat. -->
+<div id="bagianTarikEcourt" class="bagian-uji tarik-ecourt" data-keadaan="memuat" hidden>
+  <div class="tarik-baris">
+    <span class="tarik-titik" aria-hidden="true"></span>
+    <span class="tarik-nama">Tarik data e-Court</span>
+    <button type="button" id="tarikEcourtStatus" class="tarik-status" disabled>memuat…</button>
+  </div>
+  <p id="tarikEcourtKet" class="saklar-ket" aria-live="polite"></p>
+  <div id="tarikEcourtYakin" class="tarik-yakin" hidden>
+    <span id="tarikEcourtTanya"></span>
+    <button type="button" id="tarikEcourtYa" class="uji-kecil">Ya</button>
+    <button type="button" id="tarikEcourtBatal" class="uji-kecil">Batal</button>
+  </div>
+</div>
+<!-- === AKHIR 12OKT-F === -->
 
 <!-- Bagi yang BUKAN Super Admin, bila Super Admin meninggalkan tampilan uji
      menyala di PC ini: disebut, dan dapat dikembalikan ke Lama. Kembali ke

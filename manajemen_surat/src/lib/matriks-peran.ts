@@ -664,6 +664,16 @@ export const AKSI = {
     rute: ["POST /api/aleta-ecourt/ecourt-aksi/tte"],
     alasan: "Salinan putusan ditandatangani panitera (atau panmud yang ditunjuk).",
   },
+  // === 12OKT-F: saklar "Tarik data e-Court" di widget ekstensi ===
+  "ecourt.tarik-data": {
+    label: "Menyalakan / mematikan penarikan berkala e-Court (widget ekstensi)",
+    crud: "U",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET|POST /api/aleta-ecourt/ekstensi/tarik-ecourt"],
+    alasan: "Satu saklar penjadwal untuk seluruh satker (sama dengan Integrasi e-Court) - Admin/Super Admin saja.",
+  },
+  // === AKHIR 12OKT-F ===
   // Jadwal Mediasi
   "mediasi.catat": {
     label: "Catat kehadiran & status mediasi",

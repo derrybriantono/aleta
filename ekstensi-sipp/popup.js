@@ -698,6 +698,8 @@ async function periksaAkunAleta(asal) {
     void pasangUjiTampilan(peran);
     // Mode latihan (sipp-28) - Super Admin DAN Admin, diputuskan di sini pula.
     void pasangModeLatihan(peran);
+    // 12OKT-F: baris "Tarik data e-Court" - Super Admin dan Admin; server menjaga juga.
+    void pasangTarikEcourt(asal, peran);
 
     // Versi yang disajikan portal ikut datang pada jawaban yang sama - satu
     // permintaan, dua pertanyaan terjawab.
@@ -1176,6 +1178,155 @@ async function pasangModeLatihan(peran) {
 }
 
 void pasangModeLatihan("");
+
+/* === 12OKT-F: baris "Tarik data e-Court" (SUPER ADMIN DAN ADMIN SAJA) === */
+/*
+ * Status penjadwal penarikan e-Court, berwarna, dan BISA DIKLIK untuk
+ * menyalakan / mematikannya. Satu saklar dengan Penjadwal di Integrasi
+ * e-Court; keadaannya disimpan di SERVER (bukan chrome.storage) sehingga
+ * berlaku tanpa memulai ulang dan terlihat sama di PC mana pun.
+ *
+ * Warna dan kalimatnya DIPUTUSKAN SERVER (src/lib/tarik-ecourt-status.ts):
+ * berkas ini hanya menggambar. Peran lain tidak melihat barisnya, dan rute
+ * server menolak mereka sendiri (aksi "ecourt.tarik-data") - menyembunyikan
+ * baris bukan penjagaan. Hanya menarik (membaca) dari e-Court yang sudah ada;
+ * tidak ada yang dikirim ke e-Court.
+ *
+ * Dipanggil dari periksaAkunAleta SESUDAH portal menjawab siapa yang masuk -
+ * tidak dari tingkat atas, sehingga tidak ada pembacaan let/const yang belum lahir.
+ */
+const ALAMAT_TARIK_ECOURT = "/api/aleta-ecourt/ekstensi/tarik-ecourt";
+const tarikEcourt = { asal: "", ringkas: null, memuat: true, sibuk: false, tanya: "", kabar: "" };
+
+function waktuTarikEcourt(iso) {
+  const t = Date.parse(String(iso || ""));
+  if (!Number.isFinite(t)) return "";
+  const d = new Date(t);
+  const jam = jamMenit(t);
+  if (d.toDateString() === new Date().toDateString()) return `hari ini ${jam}`;
+  let tgl = "";
+  try {
+    tgl = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  } catch {
+    tgl = d.toISOString().slice(0, 10);
+  }
+  return `${tgl} ${jam}`;
+}
+
+/** { data } bila server menjawab, { galat, status } bila tidak. Batas waktu 6 detik. */
+async function panggilTarikEcourt(cara, badan) {
+  const pembatal = new AbortController();
+  const penghenti = setTimeout(() => pembatal.abort(), 6000);
+  try {
+    const r = await fetch(`${tarikEcourt.asal}${ALAMAT_TARIK_ECOURT}`, {
+      method: cara,
+      credentials: "include",
+      cache: "no-store",
+      signal: pembatal.signal,
+      ...(badan ? { headers: { "content-type": "application/json" }, body: JSON.stringify(badan) } : {}),
+    });
+    if (r.status === 401) return { status: 401, galat: "Belum masuk portal ALETA." };
+    if (r.status === 403) return { status: 403, galat: "Hanya Super Admin dan Admin." };
+    if (!r.ok) return { status: r.status, galat: `Server menjawab ${r.status}.` };
+    const isi = await r.json().catch(() => ({}));
+    return { status: r.status, data: (isi && isi.data) || isi || {} };
+  } catch (galat) {
+    return { status: 0, galat: galat && galat.name === "AbortError" ? "Server tidak menjawab." : "Server tidak terjangkau." };
+  } finally {
+    clearTimeout(penghenti);
+  }
+}
+
+function gambarTarikEcourt() {
+  const bagian = document.getElementById("bagianTarikEcourt");
+  const tombol = document.getElementById("tarikEcourtStatus");
+  const ket = document.getElementById("tarikEcourtKet");
+  const yakin = document.getElementById("tarikEcourtYakin");
+  const tanya = document.getElementById("tarikEcourtTanya");
+  if (!bagian || !tombol || !ket) return;
+  const r = tarikEcourt.ringkas;
+  const keadaan = tarikEcourt.memuat ? "memuat" : r ? r.keadaan : "tidak-terjangkau";
+  bagian.setAttribute("data-keadaan", keadaan);
+  tombol.textContent = tarikEcourt.memuat ? "memuat…" : r ? String(r.label || "") : "Tidak terjangkau";
+  const bisaDiklik = !tarikEcourt.memuat && !tarikEcourt.sibuk && r && (r.keadaan === "mati" || r.aktif === true);
+  tombol.disabled = !bisaDiklik;
+  tombol.title = bisaDiklik ? (r.aktif === true ? "Klik untuk mematikan penarikan e-Court" : "Klik untuk mengaktifkan penarikan e-Court") : "";
+  let teks = tarikEcourt.kabar || (r ? String(r.keterangan || "") : "");
+  if (!tarikEcourt.kabar && r && r.terakhirSelesai) teks += ` Tarikan terakhir: ${waktuTarikEcourt(r.terakhirSelesai)}.`;
+  else if (!tarikEcourt.kabar && r && r.aktif === true && !r.sedangJalan) teks += " Belum ada tarikan sejak server dinyalakan.";
+  ket.textContent = teks.trim();
+  if (yakin && tanya) {
+    yakin.hidden = !tarikEcourt.tanya;
+    tanya.textContent = tarikEcourt.tanya
+      ? tarikEcourt.tanya === "aktifkan"
+        ? "Aktifkan penarikan berkala e-Court untuk seluruh satker?"
+        : "Matikan penarikan berkala e-Court untuk seluruh satker?"
+      : "";
+  }
+}
+
+async function ubahTarikEcourt(aktif) {
+  tarikEcourt.tanya = "";
+  tarikEcourt.sibuk = true;
+  tarikEcourt.kabar = "Menyimpan di server…";
+  gambarTarikEcourt();
+  const j = await panggilTarikEcourt("POST", { aktif });
+  tarikEcourt.sibuk = false;
+  if (j.galat) {
+    tarikEcourt.kabar = `Tidak tersimpan: ${j.galat}`;
+  } else if (j.data && j.data.ringkas && typeof j.data.ringkas === "object") {
+    tarikEcourt.ringkas = j.data.ringkas;
+    tarikEcourt.kabar = j.data.berhasil === true ? String(j.data.pesan || "") : String(j.data.pesan || "Tidak tersimpan.");
+  } else {
+    tarikEcourt.kabar = "Tidak tersimpan: jawaban server tidak terbaca.";
+  }
+  gambarTarikEcourt();
+}
+
+async function pasangTarikEcourt(asal, peran) {
+  const bagian = document.getElementById("bagianTarikEcourt");
+  const tombol = document.getElementById("tarikEcourtStatus");
+  if (!bagian || !tombol) return;
+  if (!asal || !(popupAdmin() || peranBolehLatihan(peran))) {
+    bagian.hidden = true;
+    return;
+  }
+  tarikEcourt.asal = asal;
+  if (!bagian.dataset.terpasang) {
+    bagian.dataset.terpasang = "ya";
+    tombol.addEventListener("click", () => {
+      const r = tarikEcourt.ringkas;
+      if (tarikEcourt.sibuk || tarikEcourt.memuat || !r || r.keadaan === "tidak-terjangkau") return;
+      tarikEcourt.kabar = "";
+      tarikEcourt.tanya = r.aktif === true ? "matikan" : "aktifkan";
+      gambarTarikEcourt();
+    });
+    document.getElementById("tarikEcourtBatal")?.addEventListener("click", () => {
+      tarikEcourt.tanya = "";
+      gambarTarikEcourt();
+    });
+    document.getElementById("tarikEcourtYa")?.addEventListener("click", () => {
+      const r = tarikEcourt.ringkas;
+      if (!tarikEcourt.tanya || !r) return;
+      void ubahTarikEcourt(tarikEcourt.tanya === "aktifkan");
+    });
+  }
+  bagian.hidden = false;
+  tarikEcourt.memuat = true;
+  gambarTarikEcourt();
+  const j = await panggilTarikEcourt("GET");
+  if (j.status === 403) {
+    // Server menolak peran ini: baris tidak ditampilkan sama sekali.
+    bagian.hidden = true;
+    return;
+  }
+  tarikEcourt.memuat = false;
+  const r = j.data && j.data.ringkas && typeof j.data.ringkas === "object" ? j.data.ringkas : null;
+  tarikEcourt.ringkas = r;
+  tarikEcourt.kabar = r ? "" : j.galat || (j.data && j.data.pesan) || "Jawaban server tidak terbaca.";
+  gambarTarikEcourt();
+}
+/* === AKHIR 12OKT-F === */
 
 const tombolTema = document.getElementById("tombolTema");
 let temaPopup = "ikut";
