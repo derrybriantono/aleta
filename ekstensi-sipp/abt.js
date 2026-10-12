@@ -2265,6 +2265,9 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // posita) masuk ke blangko hanya bila petugas mencentangnya.
   centang.checked =
     Boolean(u.nilai) && u.keyakinan !== "bentrok" && u.keyakinan !== "ragu" && u.keyakinan !== "ocr" && u.tingkat !== "ragu";
+  // 12 Okt (12OKT-D): usulan yang menyebut `awal` menentukan centang awalnya sendiri (tanggal KTP: tercentang
+  // hanya bila isian blangko kosong dan bacaan e-Court cukup/pasti - lihat ktpUsulanTanggal/ktpUsulanTeks).
+  if (typeof u.awal === "boolean") centang.checked = u.awal && Boolean(u.nilai) && u.keyakinan !== "ragu" && u.keyakinan !== "bentrok";
   centang.disabled = !u.nilai;
   kepala.appendChild(centang);
   kepala.appendChild(buatElemen("span", "aleta-abt-kode", u.kode));
@@ -2275,10 +2278,14 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   const dariPosita = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber.every((s) => s && s.asal === "posita");
   // 9 Okt (KUASA): usulan dari surat gugatan e-Court membawa tanda sumbernya sendiri.
   const dariGugatan = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber[0] && u.sumber[0].asal === "gugatan-ecourt";
+  // 12 Okt (12OKT-D): tanggal KTP yang bacaannya cukup/pasti dan akan diisi sendiri.
+  const dariKtp = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber[0] && u.sumber[0].asal === "ktp-ecourt";
   const nadaS5 = typeof u.kesepakatan === "string" && u.nilai ? NADA_KESEPAKATAN[u.kesepakatan] : null;
   const nada = nadaS5
     ? nadaS5
-    : dariPosita && u.keyakinan === "cukup"
+    : dariKtp && u.keyakinan === "cukup"
+      ? { kelas: "aleta-tanda-hijau", teks: "dari berkas KTP e-Court" }
+      : dariPosita && u.keyakinan === "cukup"
       ? { kelas: "aleta-tanda-kuning", teks: "dari posita" }
       : dariGugatan && u.keyakinan === "cukup"
       ? { kelas: "aleta-tanda-hijau", teks: "dari gugatan e-Court" }
@@ -2494,7 +2501,7 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
       buatElemen(
         "span",
         "aleta-abt-asal",
-        s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.saksi ? `Saksi ${s.saksi}` : "SIPP"
+        s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.asal === "ktp-ecourt" ? "KTP e-Court" : s.saksi ? `Saksi ${s.saksi}` : "SIPP"
       )
     );
     kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", s.kalimat || s.keterangan || ""));
@@ -2569,6 +2576,16 @@ async function terapkanUsulanBerurutan(dipilih, jatiDiri, lapor, opsi) {
     try {
       const nilaiDipakai = x.nilai();
       const sebelum = (barisVariabel().get(x.usulan.kode) || {}).nilai || "";
+      // 12 Okt (12OKT-D): usulan yang MENAMBAL teks yang sudah ada (tanggal KTP di dalam kalimat alat bukti) menolak
+      // menulis bila isi di ABT sudah berubah sejak dibaca - penambalnya bekerja atas salinan teks lama, dan
+      // menulisnya akan menimpa suntingan orang lain. Usulan yang disunting petugas sendiri tidak diperiksa.
+      if (typeof x.usulan.sebelumTulis === "function" && !(typeof x.disunting === "function" && x.disunting())) {
+        const tolak = await x.usulan.sebelumTulis(jatiDiri);
+        if (tolak) {
+          ringkasan.gagal.push(`${x.usulan.kode}: ${tolak}`);
+          continue;
+        }
+      }
       const hasil = await simpanVariabel(x.usulan.kode, nilaiDipakai, jatiDiri);
       if (hasil.ok) {
         ringkasan.berhasil += 1;
@@ -14263,7 +14280,8 @@ async function soreBacaIsi(k) {
     );
   }
   // 1.184.0 (butir 2): #2222#/#0364# dari berkas KTP e-Court.
-  if (A3_VAR_TANGGAL_KTP_P.some((k) => barisVariabel().has(k))) {
+  // 12 Okt (12OKT-D): + bagian tanggal KTP di dalam variabel TEKS (1214, 9958, dst.), terisi otomatis.
+  if (A3_VAR_TANGGAL_KTP_P.some((k) => barisVariabel().has(k)) || ktpKandidatTeks(barisVariabel()).length) {
     tugas.push(
       a3UsulanTanggalKtp(nomorPerkaraAbt())
         .then((r) => {
@@ -14597,7 +14615,9 @@ function soreGambarIsi(k, data) {
     const item = peta.get(String(u.kode));
     w.usulan.appendChild(kartuUsulan(u, item.nilai, pilih));
     // Blangko yang sudah berisi lain: diganti hanya bila petugas mencentangnya.
-    if (keadaanNilai(item.nilai) === "terisi") pilih[pilih.length - 1].centang.checked = false;
+    // 12 Okt (12OKT-D): usulan yang membawa `awal` (tanggal KTP) menentukan centangnya sendiri - variabel teks
+    // alat bukti memang SELALU berisi, yang diisi hanyalah bagian tanggalnya.
+    if (typeof u.awal !== "boolean" && keadaanNilai(item.nilai) === "terisi") pilih[pilih.length - 1].centang.checked = false;
   }
   if (tidakAda.length || sama.length || dihitung.length) {
     const bagian = [];
@@ -17210,8 +17230,9 @@ const ALETA_API_KTP_PIHAK = "/aleta/api/aleta-ecourt/ktp-pihak";
  * oleh variabel ABT 8870-8872). Panel hanya menanyakan hasilnya per perkara:
  *   GET /aleta/api/aleta-ecourt/ktp-pihak?nomor=&tunggu=1 -> { ada, pihak: [{ cabang, urutan, peran, nama,
  *   tanggalKtp "dd/mm/yyyy", yakin, cocok, sebab }], catatan[] }
- * Sumber kartu: "e-Court: KTP". Keyakinan "ocr" (tidak dicentang sendiri); "pasti" (hanya setelah terukur
- * >= 95% di server dan dinyalakan) ikut "Input semua yang pasti". Isian petugas tidak pernah ditimpa di sini.
+ * Sumber kartu: "e-Court: KTP". Bacaan cukup/pasti + isian kosong = tercentang sendiri; isian petugas yang beda =
+ * keyakinan "ocr", tidak dicentang (lihat catatan 12 Okt di bawah); "pasti" (hanya setelah terukur >= 95% di
+ * server dan dinyalakan) ikut "Input semua yang pasti". Isian petugas tidak pernah ditimpa tanpa centang petugas.
  */
 const KTP_KODE_PIHAK = Object.freeze({
   "2222": { cabang: 1, urutan: 1, sebutan: "Penggugat/Pemohon" },
@@ -17235,37 +17256,600 @@ const KTP_LABEL_COCOK = Object.freeze({
   nama: "nama sama dengan SIPP",
 });
 
-async function ktpUsulanDariPihak(nomor, kode) {
+/* === KTP-TEKS 12OKT-D === */
+/**
+ * ============================================================================
+ * 12 Okt 2026 (butir 9-10, Agen D): TANGGAL KTP DI DALAM VARIABEL TEKS
+ * ============================================================================
+ *
+ * Tanggal KTP tidak hanya hidup di variabel tanggalnya sendiri (0364, 0365, 0366, 2222). Petugas juga
+ * menyimpannya DI DALAM kalimat alat bukti - "Fotokopi Kartu Tanda Penduduk ... NIK ... tanggal 03 Mei
+ * 2025, yang dikeluarkan oleh ..." - pada variabel data_teks seperti 1214 (Alat-alat bukti CG/CT), 0378,
+ * 9958 (Alat Bukti Itsbat Terpadu), 9955, 9956, 9957, 9911, 8131-8133. Teks itu disimpan apa adanya per
+ * perkara, sehingga tanggalnya bisa "...", salah ketik, atau berbeda dari berkas KTP e-Court.
+ *
+ * Diukur atas ABT lokal (aps_badilag, 2.674 isian bertanda KTP pada 11 variabel): pola penulisan tanggal
+ * beragam ("03 Mei 2025", "3 Juli 2019", "08-11-2025", "April2019", "20- 10- 1970", "..." , ",,,,,,,", "_"),
+ * nama pihak ditulis "atas nama X", "an. X", "a.n. X", "atas nama Penggugat" atau tanpa nama, dan satu teks
+ * dapat memuat dua KTP (Pemohon I dan II).
+ *
+ * Aturan yang dipakai (semuanya murni - diuji tanpa DOM):
+ *   1. Satu butir = kalimat yang diawali "Kartu Tanda Penduduk"/"KTP" (didahului "Fotokopi"/"Fotocopy"/
+ *      "Salinan" atau nomor butir) sampai batas butir berikutnya. Hanya BAGIAN TANGGAL di butir itu yang
+ *      disentuh; sisa kalimat tidak diubah satu huruf pun.
+ *   2. Bagian tanggal = kata "tanggal"/"tgl" pertama di butir yang diikuti tanggal ATAU tanda kosong
+ *      ("...", ",,,", "_"). "tanggal lahir", "berlaku sampai tanggal", "diberi tanggal dan paraf" dilewati.
+ *   3. Butir dikenali milik pihak mana lewat: sebutan peran ("(Pemohon II)", "atas nama Penggugat"), nama,
+ *      lalu - hanya bila butir tak memuat keduanya - urutan butir menurut variabelnya (KTP_TEKS_URUTAN).
+ *      Peran dan nama yang bertentangan, atau nama yang tak cocok dengan KTP e-Court mana pun, = dilewati.
+ *   4. Hanya bacaan e-Court berkeyakinan "cukup"/"pasti" yang dipakai ("ragu" tidak pernah).
+ *   5. DIISI OTOMATIS (tercentang) hanya bagian yang KOSONG ("...", ",,,", "_"). Tanggal yang sudah diisi
+ *      petugas dan BERBEDA dari e-Court ditawarkan tanpa dicentang (petugas yang memutuskan); yang sama
+ *      dibiarkan.
+ */
+const KTP_TEKS_BULAN = Object.freeze([
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+]);
+const KTP_TEKS_P1 = Object.freeze({ cabang: 1, urutan: 1 });
+const KTP_TEKS_P2 = Object.freeze({ cabang: 1, urutan: 2 });
+const KTP_TEKS_T1 = Object.freeze({ cabang: 2, urutan: 1 });
+/** Urutan butir KTP di teks bawaan variabelnya (dipakai HANYA bila butir tak menyebut peran maupun nama). */
+const KTP_TEKS_URUTAN = Object.freeze({
+  "1214": [KTP_TEKS_P1],
+  "9955": [KTP_TEKS_P1],
+  "9957": [KTP_TEKS_P1],
+  "0378": [KTP_TEKS_P1, KTP_TEKS_P2],
+  "9958": [KTP_TEKS_P1, KTP_TEKS_P2],
+  "9956": [KTP_TEKS_P1, KTP_TEKS_P2],
+  "9911": [KTP_TEKS_T1],
+});
+
+const KTP_TEKS_BULAN_POLA =
+  "januari|pebruari|februari|maret|april|mei|juni|juli|agustus|september|oktober|nopember|november|desember|" +
+  "jan|peb|feb|mar|apr|jun|jul|agu|ags|agt|sept|sep|okt|nop|nov|des";
+
+/** Nomor bulan (1-12) dari penulisan petugas ("Nopember", "Agt", "mei"); 0 bila bukan bulan. */
+function ktpTeksNomorBulan(nama) {
+  const n = String(nama || "").toLowerCase().replace(/\.$/, "");
+  const t = n.slice(0, 3);
+  const peta = { jan: 1, peb: 2, feb: 2, mar: 3, apr: 4, mei: 5, jun: 6, jul: 7, agu: 8, ags: 8, agt: 8, sep: 9, okt: 10, nop: 11, nov: 11, des: 12 };
+  return peta[t] || 0;
+}
+
+function ktpTeksDua(n) {
+  return String(n).padStart(2, "0");
+}
+
+/** "dd/mm/yyyy" -> { h, b, y } bila tanggal sungguh ada; null bila tidak. */
+function ktpTeksUraiDmy(dmy) {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(dmy || "").trim());
+  if (!m) return null;
+  return ktpTeksSah(Number(m[1]), Number(m[2]), Number(m[3]));
+}
+
+function ktpTeksSah(h, b, y) {
+  const d = new Date(y, b - 1, h);
+  if (d.getFullYear() !== y || d.getMonth() !== b - 1 || d.getDate() !== h) return null;
+  if (y < 1900) return null;
+  return { h, b, y };
+}
+
+/**
+ * Tanggal di AWAL teks `sisa`: { panjang, jenis: 'tulis'|'angka'|'iso'|'kosong', h, b, y, gaya } atau null.
+ * 'kosong' = tanda isian belum diisi ("...", "…", ",,,", "_", "--"); 'rusak' = tulisan salah ketik yang tak
+ * terbaca sebagai tanggal.
+ */
+function ktpTeksTanggalDiAwal(sisa) {
+  const s = String(sisa || "");
+  // bulan = kata yang tiga huruf awalnya menamai bulan (menampung salah ketik: "Septemer", "Novemver", "Desembe")
+  let m = /^(\d{1,2})\s*[-./]?\s*([A-Za-z]{3,10})\.?(?![A-Za-z])\s*[-.,/]?\s*(\d{4})(?!\d)/.exec(s);
+  if (m) {
+    const bulan = ktpTeksNomorBulan(m[2]);
+    const t = bulan && ktpTeksSah(Number(m[1]), bulan, Number(m[3]));
+    if (t) return { panjang: m[0].length, jenis: "tulis", ...t, gaya: { pad: m[1].length === 2 } };
+  }
+  m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)/.exec(s);
+  if (m) {
+    const t = ktpTeksSah(Number(m[3]), Number(m[2]), Number(m[1]));
+    if (t) return { panjang: m[0].length, jenis: "iso", ...t, gaya: {} };
+  }
+  // angka: pemisah "-", "/", "." atau hanya spasi ("02 06 2020")
+  m = /^(\d{1,2})\s*([-/.\s])\s*(\d{1,2})\s*[-/.\s]\s*(\d{4})(?!\d)/.exec(s);
+  if (m) {
+    const t = ktpTeksSah(Number(m[1]), Number(m[3]), Number(m[4]));
+    if (t) return { panjang: m[0].length, jenis: "angka", ...t, gaya: { sep: /\s/.test(m[2]) ? "" : m[2] } };
+  }
+  // tanda kosong: titik/elipsis/garis bawah/strip berderet, atau koma berderet (",,,,,,,")
+  m = /^(?:\.{2,}|…+|_+|-{2,}|,{2,})/.exec(s);
+  if (m) return { panjang: m[0].length, jenis: "kosong", h: 0, b: 0, y: 0, gaya: {} };
+  // tanggal yang salah ketik ("29-092020", "03 Juli 202", "13012025", NIK yang tertempel): diganti HANYA bila
+  // bagian itu berawal angka dan berhenti di koma/"yang dikeluarkan"/titik - ditawarkan, tidak dicentang.
+  m = /^\d[\dA-Za-z\s\-/.,]{3,24}?(?=\s*,\s|\s+yang\b|\s+dikeluarkan|\s+diterbitkan|\s*\.\s|\s*$)/.exec(s);
+  if (m) return { panjang: m[0].length, jenis: "rusak", h: 0, b: 0, y: 0, gaya: {} };
+  return null;
+}
+
+/**
+ * Bagian tanggal di dalam satu butir: { awal, akhir, teks, ...tanggal } atau null.
+ * `awal`/`akhir` relatif terhadap `butir`. Kata "tanggal" yang didahului lahir/berlaku/sampai dilewati.
+ */
+function ktpTeksCariTanggal(butir) {
+  const b = String(butir || "");
+  const kata = /(?:ter)?tanggal(?![a-z])|\btgl(?![a-z])\.?/gi;
+  let m;
+  while ((m = kata.exec(b))) {
+    const sebelum = b.slice(Math.max(0, m.index - 30), m.index);
+    if (/(?:lahir|berlaku|sampai|hingga|s\/d|s\.d\.?)\s*$/i.test(sebelum)) continue;
+    const awalKata = m.index + m[0].length;
+    // satu koma/titik dua sesudah kata "tanggal" hanya tanda baca ("tanggal, 12 Mei"); deretan koma = tanda kosong
+    const lead = /^\s*(?::|,(?!,))?\s*/.exec(b.slice(awalKata))[0];
+    const awal = awalKata + lead.length;
+    const t = ktpTeksTanggalDiAwal(b.slice(awal));
+    if (t) return { awal, akhir: awal + t.panjang, teks: b.slice(awal, awal + t.panjang), ...t };
+    // "tanggal yang dikeluarkan ..." - tanggalnya terhapus, kata "tanggal" tertinggal: disisipkan sesudah kata itu.
+    if (lead.length > 0 && /^(?:yang\s+)?(?:dikeluarkan|diterbitkan)\b/i.test(b.slice(awal))) {
+      return { awal, akhir: awal, teks: "", panjang: 0, jenis: "kosong", hampa: true, h: 0, b: 0, y: 0, gaya: {} };
+    }
+  }
+  return null;
+}
+
+/** Awal butir KTP: didahului Fotokopi/Fotocopy/Salinan/nomor butir (bukan sembarang kata "KTP" di narasi). */
+const KTP_TEKS_POLA_KTP =
+  /(?:Kartu\s+Tanda\s+Penduduk(?:\s+Elektronik)?(?:\s*\(\s*KTP(?:-el)?\s*\))?|\bKTP(?:-el)?\b)/gi;
+const KTP_TEKS_POLA_AWAL_BUTIR = /(?:Foto\s?kopi|Fotocopy|Photocopy|Salinan|Bukti(?:\s+surat)?)\s*(?:dari\s+)?[:,]?\s*$|(?:^|\n)\s*\d+\s*[.)]?\s*$/i;
+const KTP_TEKS_POLA_BATAS_BUTIR =
+  /\n|;\s*(?=\d+\s*[.)]|Foto\s?kopi|Fotocopy)|\s(?=\d+\s*[.)]\s*(?:Foto|Kutipan|Surat|Kartu|Salinan|Duplikat))|(?:^|[\s.;])(?=Foto\s?kopi\b|Fotocopy\b|Photocopy\b)/i;
+
+/**
+ * Butir KTP di `teks`: [{ ke, mulai, akhir, teks }] - `mulai`/`akhir` mutlak di `teks`.
+ * Hanya butir yang punya bagian tanggal yang dipentingkan pemanggil; di sini semua butir KTP dikembalikan
+ * (`ke` = urutan butir KTP, mulai 0, dipakai KTP_TEKS_URUTAN).
+ */
+function ktpTeksButir(teks) {
+  const t = String(teks || "");
+  const hasil = [];
+  KTP_TEKS_POLA_KTP.lastIndex = 0;
+  let m;
+  let dari = 0;
+  while ((m = KTP_TEKS_POLA_KTP.exec(t))) {
+    if (m.index < dari) continue;
+    const sebelum = t.slice(Math.max(0, m.index - 45), m.index);
+    if (!KTP_TEKS_POLA_AWAL_BUTIR.test(sebelum)) continue;
+    const mulai = m.index;
+    const sesudah = t.slice(mulai + m[0].length);
+    const batas = KTP_TEKS_POLA_BATAS_BUTIR.exec(sesudah);
+    let akhir = mulai + m[0].length + (batas ? batas.index : Math.min(sesudah.length, 700));
+    akhir = Math.min(akhir, mulai + 700);
+    hasil.push({ ke: hasil.length, mulai, akhir, teks: t.slice(mulai, akhir) });
+    dari = akhir;
+    KTP_TEKS_POLA_KTP.lastIndex = akhir;
+  }
+  return hasil;
+}
+
+/** Ada butir KTP ber-bagian-tanggal di `teks`? (penyaring murah atas isi sel yang sudah dirapatkan). */
+function ktpTeksAdaTanggal(teks) {
+  return ktpTeksButir(teks).some((b) => ktpTeksCariTanggal(b.teks));
+}
+
+const KTP_TEKS_ROMAWI = Object.freeze({ i: 1, ii: 2, iii: 3, iv: 4, "1": 1, "2": 2, "3": 3, "4": 4 });
+
+/** Peran yang disebut butir: { cabang, urutan|null } atau null. */
+function ktpTeksPeranDiButir(butir) {
+  const b = String(butir || "");
+  const m =
+    /\(\s*(penggugat|pemohon|tergugat|termohon)\s*(i{1,3}|iv|[1-4])?\s*\)/i.exec(b) ||
+    /(?:atas\s+nama|\ba\.?\s?n\b\.?)\s*[:,]?\s+(penggugat|pemohon|tergugat|termohon)\b(?:\s+(i{1,3}|iv|[1-4])\b)?/i.exec(b);
+  if (!m) return null;
+  const kata = m[1].toLowerCase();
+  const urutan = m[2] ? KTP_TEKS_ROMAWI[m[2].toLowerCase()] || null : null;
+  return { cabang: kata === "penggugat" || kata === "pemohon" ? 1 : 2, urutan };
+}
+
+/** Nama yang disebut butir ("atas nama X", "an. X", "a.n. X"), tanpa peran; "" bila tak ada. */
+function ktpTeksNamaDiButir(butir) {
+  const m = /(?:atas\s+nama|\ba\.?\s?n\.?)\s*[:,.]?\s*([^,(\n;]{2,70})/i.exec(String(butir || ""));
+  if (!m) return "";
+  // nama berhenti sebelum kata penanda berikutnya atau angka ("Sutarmin tanggal 13 Januari ...", "Ince Lolu, ...")
+  let nama = m[1].replace(/(?:^|\s)(?:NIK|Nomor|No\.?|tanggal|tgl\.?|yang|dengan|telah|dikeluarkan|diterbitkan|bertempat)\b[\s\S]*$/i, "").replace(/\d[\s\S]*$/, "").replace(/[.\s]+$/, "").trim();
+  if (/^(?:penggugat|pemohon|tergugat|termohon)\b/i.test(nama)) return "";
+  return nama.length >= 2 ? nama : "";
+}
+
+/** Token nama sampai "bin/binti" (nama ayah tidak ikut: "Abd. Hakim" yang wali bukan "Nurhayati binti Abd. Hakim"). */
+function ktpTeksTokenNama(nama) {
+  const token = String(nama || "")
+    .toUpperCase()
+    .replace(/[^A-Z ]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  const potong = token.findIndex((x) => /^(?:BIN|BINTI|BT)$/.test(x));
+  return (potong > 0 ? token.slice(0, potong) : token).filter((x) => x.length >= 2 && !/^(?:BIN|BINTI|BT|ALIAS|ALS)$/.test(x));
+}
+
+function ktpTeksJarak(a, b) {
+  const x = String(a);
+  const y = String(b);
+  if (Math.abs(x.length - y.length) > 2) return 3;
+  const d = Array.from({ length: x.length + 1 }, (_, i) => [i, ...new Array(y.length).fill(0)]);
+  for (let j = 1; j <= y.length; j++) d[0][j] = j;
+  for (let i = 1; i <= x.length; i++) {
+    for (let j = 1; j <= y.length; j++) {
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1));
+    }
+  }
+  return d[x.length][y.length];
+}
+
+/**
+ * Kemiripan nama: { s: 0..1 bagian token terpendek yang ada di yang lain (galat OCR <= 1 huruf pada token >= 5),
+ * n: banyak token cocok, penuh: kedua nama sama banyak token dan semuanya cocok }.
+ */
+function ktpTeksKemiripanNama(a, b) {
+  const ta = ktpTeksTokenNama(a);
+  const tb = ktpTeksTokenNama(b);
+  if (!ta.length || !tb.length) return { s: 0, n: 0, penuh: false };
+  const [kecil, besar] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  let cocok = 0;
+  for (const k of kecil) {
+    if (besar.some((x) => x === k || (k.length >= 5 && x.length >= 5 && ktpTeksJarak(k, x) <= 1))) cocok++;
+  }
+  return { s: cocok / kecil.length, n: cocok, penuh: cocok === kecil.length && kecil.length === besar.length };
+}
+
+/**
+ * Pihak e-Court yang dimaksud satu butir. `ke` = urutan butir KTP di teks, `kode` = nomor variabel.
+ * -> { pihak, cara: 'peran'|'nama'|'urutan' } atau { pihak: null, alasan }.
+ */
+function ktpTeksPilihPihak(butir, ke, kode, daftarPihak) {
+  const semua = Array.isArray(daftarPihak) ? daftarPihak : [];
+  const peran = ktpTeksPeranDiButir(butir.teks);
+  const nama = ktpTeksNamaDiButir(butir.teks);
+
+  let dariPeran = null;
+  if (peran) {
+    const kandidat = semua.filter((p) => Number(p.cabang) === peran.cabang && (peran.urutan == null || Number(p.urutan) === peran.urutan));
+    if (kandidat.length === 1) {
+      // "Pemohon" tanpa angka hanya sah bila sebutan pihak e-Court memang tunggal (tanpa angka Romawi).
+      const tunggal = !/\b(?:I{1,3}|IV)\s*$/.test(String(kandidat[0].peran || ""));
+      if (peran.urutan != null || tunggal) dariPeran = kandidat[0];
+    }
+  }
+  let dariNama = null;
+  let namaTakCocok = false;
+  let namaKuat = false;
+  if (nama) {
+    const skor = semua.map((p) => ({ p, ...ktpTeksKemiripanNama(nama, p.nama) })).sort((x, y) => y.s - x.s || y.n - x.n);
+    if (skor.length && skor[0].s >= 0.6 && (skor.length === 1 || skor[0].s > skor[1].s)) {
+      dariNama = skor[0].p;
+      // nama kuat = sama penuh atau >= 2 token cocok; satu kata yang kebetulan mirip (mis. wali) tidak cukup
+      // untuk mengisi otomatis - hanya ditawarkan.
+      namaKuat = skor[0].penuh || skor[0].n >= 2;
+    } else namaTakCocok = true;
+  }
+  if (dariPeran && dariNama) {
+    if (dariPeran === dariNama) return { pihak: dariNama, cara: "nama", kuat: true };
+    return { pihak: null, alasan: "peran dan nama di teks menunjuk pihak yang berbeda" };
+  }
+  if (dariNama) return { pihak: dariNama, cara: "nama", kuat: namaKuat };
+  if (dariPeran && !namaTakCocok) return { pihak: dariPeran, cara: "peran", kuat: true };
+  if (dariPeran && namaTakCocok) return { pihak: null, alasan: "nama di teks tidak cocok dengan KTP e-Court pihak itu" };
+  if (nama) return { pihak: null, alasan: "nama di teks tidak cocok dengan KTP e-Court mana pun" };
+  if (peran) return { pihak: null, alasan: "peran di teks ambigu atau KTP pihak itu belum terbaca" };
+  const urutan = KTP_TEKS_URUTAN[String(kode)];
+  const slot = urutan && urutan[ke];
+  if (slot) {
+    const p = semua.find((x) => Number(x.cabang) === slot.cabang && Number(x.urutan) === slot.urutan);
+    if (p) return { pihak: p, cara: "urutan", kuat: true };
+    return { pihak: null, alasan: "KTP pihak urutan ini belum terbaca dari e-Court" };
+  }
+  return { pihak: null, alasan: "butir tidak menyebut pihak dan urutannya tak dikenal" };
+}
+
+/** Tanggal e-Court ditulis mengikuti gaya yang sudah ada di teks (atau "dd Bulan yyyy" bila kosong). */
+function ktpTeksTulisTanggal(t, ada) {
+  const dua = ktpTeksDua;
+  if (ada && ada.jenis === "iso") return `${t.y}-${dua(t.b)}-${dua(t.h)}`;
+  if (ada && ada.jenis === "angka" && ada.gaya && ada.gaya.sep) {
+    const s = ada.gaya.sep;
+    return `${dua(t.h)}${s}${dua(t.b)}${s}${t.y}`;
+  }
+  const hari = ada && ada.jenis === "tulis" && ada.gaya && ada.gaya.pad === false ? String(t.h) : dua(t.h);
+  return `${hari} ${KTP_TEKS_BULAN[t.b - 1]} ${t.y}`;
+}
+
+function ktpTeksSama(a, b) {
+  return a && b && a.h === b.h && a.b === b.b && a.y === b.y;
+}
+
+/** "dd Bulan yyyy" untuk tampilan. */
+function ktpTeksTampil(t) {
+  return t ? `${ktpTeksDua(t.h)} ${KTP_TEKS_BULAN[t.b - 1]} ${t.y}` : "";
+}
+
+/**
+ * Menyusun usulan untuk SATU variabel teks.
+ *
+ *   teks        isi variabel apa adanya (dengan baris baru)
+ *   kode        nomor variabel
+ *   daftarPihak [{ cabang, urutan, peran, nama, tanggalKtp "dd/mm/yyyy", yakin, cocok, kota }]
+ *
+ * -> { ada, nilai, otomatis, perubahan[], tetap[] }
+ *   ada       true bila ada butir KTP ber-bagian-tanggal
+ *   nilai     teks baru ("" bila tak ada yang diubah)
+ *   otomatis  true bila nilai memuat bagian KOSONG yang diisi dan pihaknya dikenali KUAT (boleh tercentang
+ *             sendiri); false bila hanya tawaran (tanggal BEDA, atau kosong tetapi pihak dikenali lemah)
+ *   perubahan [{ label, dari, ke, aksi: 'isi'|'beda', kuat, cara, konteks }]
+ *   tetap     [{ label, alasan }] butir yang dibiarkan (sama / ragu / pihak tak dikenal)
+ */
+function ktpTeksSusun(teks, kode, daftarPihak) {
+  const t = String(teks || "");
+  const hasil = { ada: false, nilai: "", otomatis: false, perubahan: [], tetap: [] };
+  const butir = ktpTeksButir(t);
+  const isi = [];
+  const tawar = [];
+  for (const b of butir) {
+    const slot = ktpTeksCariTanggal(b.teks);
+    if (!slot) continue;
+    hasil.ada = true;
+    const label = `KTP butir ${b.ke + 1}`;
+    const pilih = ktpTeksPilihPihak(b, b.ke, kode, daftarPihak);
+    if (!pilih.pihak) {
+      hasil.tetap.push({ label, alasan: pilih.alasan });
+      continue;
+    }
+    const p = pilih.pihak;
+    const nama = p.peran || "pihak";
+    const yakin = String(p.yakin || "");
+    if (yakin !== "cukup" && yakin !== "pasti") {
+      hasil.tetap.push({ label: `KTP ${nama}`, alasan: "bacaan e-Court ragu - tidak dipakai" });
+      continue;
+    }
+    const baru = ktpTeksUraiDmy(p.tanggalKtp);
+    if (!baru) {
+      hasil.tetap.push({ label: `KTP ${nama}`, alasan: "tanggal e-Court tidak terbaca" });
+      continue;
+    }
+    const mutlakAwal = b.mulai + slot.awal;
+    const mutlakAkhir = b.mulai + slot.akhir;
+    const dari = slot.jenis === "kosong" ? "" : slot.teks;
+    if (slot.jenis !== "kosong" && ktpTeksSama(slot, baru)) {
+      hasil.tetap.push({ label: `KTP ${nama}`, alasan: "sudah sama dengan e-Court" });
+      continue;
+    }
+    const ke = ktpTeksTulisTanggal(baru, slot);
+    const sisip = slot.hampa ? `${ke} ` : ke;
+    const konteks = `${t.slice(Math.max(b.mulai, mutlakAwal - 40), mutlakAwal)}[${dari || "kosong"} → ${ke}]${t.slice(mutlakAkhir, mutlakAkhir + 30)}`
+      .replace(/\s+/g, " ")
+      .trim();
+    const ubah = {
+      label: `Tanggal KTP ${nama}${p.nama ? ` (${p.nama})` : ""}`,
+      dari,
+      ke,
+      aksi: slot.jenis === "kosong" ? "isi" : "beda",
+      konteks,
+      cara: pilih.cara,
+      kuat: Boolean(pilih.kuat),
+      awal: mutlakAwal,
+      akhir: mutlakAkhir,
+      sisip,
+    };
+    // Hanya yang KOSONG dan pihaknya dikenali KUAT (peran, urutan baku variabel, atau nama penuh/>= 2 kata)
+    // yang boleh tercentang sendiri; sisanya ditawarkan saja.
+    (ubah.aksi === "isi" && ubah.kuat ? isi : tawar).push(ubah);
+  }
+  // Bila ada yang boleh diisi otomatis, nilai HANYA memuat itu dan sisanya dicatat; bila tidak, nilai memuat
+  // tawaran (tidak tercentang) agar petugas dapat memilih.
+  const pakai = isi.length ? isi : tawar;
+  hasil.otomatis = isi.length > 0;
+  if (isi.length) {
+    for (const u of tawar) {
+      hasil.tetap.push({
+        label: u.label,
+        alasan: u.dari ? `di teks ${u.dari}, e-Court ${u.ke} - tidak diganti otomatis` : "kosong di teks, tetapi pihaknya hanya dikenali dari nama - tidak diisi otomatis",
+      });
+    }
+  }
+  if (!pakai.length) return hasil;
+  let nilai = t;
+  for (const u of pakai.slice().sort((x, y) => y.awal - x.awal)) nilai = nilai.slice(0, u.awal) + u.sisip + nilai.slice(u.akhir);
+  hasil.nilai = nilai;
+  hasil.perubahan = pakai.map((u) => ({ ...u })); // awal/akhir/sisip = posisi pada teks asli (dipakai uji)
+  return hasil;
+}
+/* === AKHIR KTP-TEKS === */
+
+/**
+ * 12 Okt (Agen D): TERISI OTOMATIS. Alur "Isi dari SIPP & input ke ABT" (hakim) dan "(BAS)" (panitera) memberi
+ * centang sendiri pada usulan yang bukan "ragu"; tanggal KTP kini ikut aturan itu, dengan ambang yang SAMA
+ * untuk variabel tanggal (0364/0365/0366/2222) maupun bagian tanggal di variabel teks:
+ *
+ *   - bacaan e-Court berkeyakinan "cukup"/"pasti" DAN isian di blangko KOSONG ("...", "DATA_TIDAK_ADA", tanda
+ *     kosong di dalam kalimat) -> tercentang sendiri (`awal: true`);
+ *   - isian petugas sudah ada dan SAMA -> tidak ditampilkan; sudah ada dan BEDA -> ditampilkan, tidak
+ *     dicentang (`awal: false`, petugas yang menimbang): isian petugas tidak pernah ditimpa diam-diam;
+ *   - bacaan "ragu" (nama saja yang cocok, tanggal mustahil, NIK tak sah) -> tidak dicentang, alasan disebut.
+ * Yang tercentang tetap baru tertulis ke ABT saat "Input ke ABT" ditekan (jalur tulis yang sama, jejak sama).
+ */
+async function ktpAmbilPihak(nomor) {
   const respons = await fetch(`${ALETA_API_KTP_PIHAK}?nomor=${encodeURIComponent(nomor)}&tunggu=1`, { credentials: "include", cache: "no-store" });
   if (respons.status === 404) return null; // server ALETA lama: rute belum ada
   if (!respons.ok) throw new Error(`server ALETA menjawab ${respons.status}`);
   const luar = await respons.json();
   const isi = luar && luar.data ? luar.data : luar;
-  const pihak = Array.isArray(isi && isi.pihak) ? isi.pihak : [];
+  return { isi: isi || {}, pihak: Array.isArray(isi && isi.pihak) ? isi.pihak : [] };
+}
+
+/** Usulan variabel TANGGAL (0364/0365/0366/2222) dari pihak e-Court. */
+function ktpUsulanTanggal(pihak, kode) {
   const usulan = [];
+  const peta = barisVariabel();
   for (const k of kode) {
     const peran = KTP_KODE_PIHAK[k];
     const p = peran && pihak.find((x) => Number(x.cabang) === peran.cabang && Number(x.urutan) === peran.urutan);
     if (!p || !p.tanggalKtp) continue;
     const pasti = p.yakin === "pasti";
     const ragu = p.yakin === "ragu";
+    const baru = ktpTeksUraiDmy(p.tanggalKtp);
+    const item = peta.get(k);
+    if (item && /VARIABEL_TIDAK_TERSEDIA/.test(String(item.nama || ""))) continue; // variabel belum didefinisikan di ABT ini
+    const kini = item ? String(item.nilai || "") : "";
+    const terisi = typeof keadaanNilai === "function" ? keadaanNilai(kini) === "terisi" : Boolean(kini.trim());
+    let keyakinan = ragu ? "ragu" : "cukup";
+    let awal = !ragu;
+    let petugas = "";
+    if (terisi) {
+      const ada = ktpTeksTanggalDiAwal(kini);
+      if (ada && ada.jenis !== "kosong" && baru && ktpTeksSama(ada, baru)) continue; // isian petugas sudah sama
+      awal = false; // isian petugas tidak ditimpa tanpa centang dari petugas
+      if (!ragu) keyakinan = "ocr";
+      petugas = `; isian sekarang ${kini.slice(0, 40)} (tidak ditimpa tanpa dicentang)`;
+    }
     usulan.push({
       kode: k,
       nama: `Tanggal KTP ${p.peran || peran.sebutan}`,
       nilai: String(p.tanggalKtp),
-      keyakinan: ragu ? "ragu" : "ocr",
-      ...(pasti ? { tingkat: "pasti" } : {}),
+      keyakinan,
+      awal,
+      ...(pasti && !terisi ? { tingkat: "pasti" } : {}),
       sumber: [
         {
           asal: "ktp-ecourt",
           keterangan:
             `e-Court: KTP ${p.peran || peran.sebutan}${p.nama ? ` (${p.nama})` : ""} — ${KTP_LABEL_COCOK[p.cocok] || "dicocokkan ke pihak SIPP"}` +
-            `${p.kota ? `, dikeluarkan ${p.kota}` : ""}${ragu ? `; ragu: ${KTP_SEBAB_RAGU[p.sebab] || "periksa"}` : ""}`,
+            `${p.kota ? `, dikeluarkan ${p.kota}` : ""}${ragu ? `; ragu: ${KTP_SEBAB_RAGU[p.sebab] || "periksa"}` : ""}${petugas}`,
         },
       ],
     });
   }
-  const catatan = usulan.length ? "" : (Array.isArray(isi && isi.catatan) && isi.catatan.length ? isi.catatan.join(" ") : (isi && isi.sebab) || "");
+  return usulan;
+}
+
+/** Variabel TEKS di halaman yang memuat butir KTP ber-bagian-tanggal (disaring dari isi sel, murah). */
+function ktpKandidatTeks(peta) {
+  const hasil = [];
+  for (const [kode, item] of peta || barisVariabel()) {
+    if (A3_VAR_TANGGAL_KTP_P.includes(kode)) continue;
+    if (a3BolehDiisi(kode) === false) continue; // dihitung ABT (data_sql/data_sipp/...), bukan isian
+    if (typeof keadaanNilai === "function" && keadaanNilai(item.nilai) !== "terisi") continue;
+    if (ktpTeksAdaTanggal(item.nilai)) hasil.push(kode);
+  }
+  return hasil;
+}
+
+/** Isi variabel teks APA ADANYA (baris baru utuh) dari borang sunting ABT; tipe ikut dikembalikan. */
+async function ktpBacaTeksAsli(kode, jatiDiri) {
+  const alamat =
+    `${asalAbt()}/edit_data?no_var=${encodeURIComponent(kode)}` +
+    `&perkara_id=${encodeURIComponent(jatiDiri.perkaraId)}&e=${encodeURIComponent(jatiDiri.perkTemp)}`;
+  const respons = await fetch(alamat, { credentials: "include", cache: "no-store" });
+  if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
+  const html = await respons.text();
+  const tipe = /name="var_type"\s+value="([^"]*)"/.exec(html);
+  const kotak = /<textarea\b[^>]*\bname="value"[^>]*>([\s\S]*?)<\/textarea>/i.exec(html);
+  if (!tipe || !kotak) {
+    const sebab = typeof a3SebabBukanAbt === "function" ? a3SebabBukanAbt(html) : "";
+    throw new Error(sebab || "borang sunting ABT tidak terbaca");
+  }
+  // tipe dari borang ABT sendiri menggantikan "belum diketahui" (dipakai a3BolehDiisi)
+  if (typeof tipeVariabel !== "undefined" && tipe[1]) tipeVariabel.set(kode, tipe[1]);
+  return { tipe: tipe[1], teks: kotak[1] };
+}
+
+/** Huruf dan angka saja, huruf kecil - pembanding isi sel (dirapatkan) dengan isi borang (baris baru utuh). */
+function ktpTeksInti(teks) {
+  return String(teks || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** Usulan variabel TEKS: tanggal KTP di dalam kalimat alat bukti. { usulan[], catatan[] } */
+async function ktpUsulanTeks(pihak, kodeTeks) {
+  const hasil = { usulan: [], catatan: [] };
+  if (!kodeTeks.length) return hasil;
+  const jati = typeof jatiDiriPerkara === "function" ? jatiDiriPerkara() : null;
+  if (!jati) {
+    hasil.catatan.push("Perkara blangko ini tidak terbaca - tanggal KTP di dalam teks tidak diperiksa.");
+    return hasil;
+  }
+  try {
+    if (typeof muatTipeHalaman === "function") await muatTipeHalaman();
+  } catch {
+    /* tipe dibaca per variabel di bawah */
+  }
+  const peta = barisVariabel();
+  for (const kode of kodeTeks.slice(0, 16)) {
+    const item = peta.get(kode);
+    if (!item) continue;
+    if (typeof a3BolehDiisi === "function" && a3BolehDiisi(kode) === false) continue; // tipe sudah dibaca: dihitung ABT
+    let asli;
+    try {
+      asli = await ktpBacaTeksAsli(kode, jati);
+    } catch (g) {
+      hasil.catatan.push(`Variabel ${kode}: isi tidak terbaca (${String((g && g.message) || g)}).`);
+      continue;
+    }
+    if (asli.tipe !== "data_teks") continue; // dihitung ABT / bukan isian
+    if (asli.teks.indexOf("\uFFFD") >= 0) {
+      hasil.catatan.push(`Variabel ${kode}: teks memuat karakter rusak - tanggal KTP di dalamnya disunting tangan.`);
+      continue;
+    }
+    if (ktpTeksInti(asli.teks) !== ktpTeksInti(item.nilai)) {
+      hasil.catatan.push(`Variabel ${kode}: isi di ABT berbeda dari yang tampil - tanggal KTP di dalamnya tidak diubah.`);
+      continue;
+    }
+    const s = ktpTeksSusun(asli.teks, kode, pihak);
+    for (const t of s.tetap) {
+      if (/belum terbaca|tak dikenal|ambigu|ragu|tidak terbaca/.test(t.alasan)) hasil.catatan.push(`Variabel ${kode}: ${t.label} dibiarkan - ${t.alasan}.`);
+    }
+    if (!s.nilai) continue;
+    const ringkas = s.perubahan.map((x) => `${x.label}: ${x.dari || "(kosong)"} → ${x.ke}`).join("; ");
+    hasil.usulan.push({
+      kode,
+      nama: item.nama || kode,
+      nilai: s.nilai,
+      keyakinan: s.otomatis ? "cukup" : "ocr",
+      awal: s.otomatis,
+      // dipanggil terapkanUsulanBerurutan tepat sebelum menulis: isi di ABT harus masih sama dengan yang ditambal
+      sebelumTulis: async (jatiTulis) => {
+        try {
+          const kini = await ktpBacaTeksAsli(kode, jatiTulis || jati);
+          return kini.teks === asli.teks ? "" : "isi variabel di ABT berubah sejak dibaca (mungkin disunting orang lain) - tidak ditimpa; tekan Baca ulang";
+        } catch (g) {
+          return `isi variabel di ABT tidak dapat diperiksa sebelum menulis (${String((g && g.message) || g)})`;
+        }
+      },
+      ringkas: `${s.otomatis ? "isi" : "betulkan"} tanggal KTP — ${ringkas}`,
+      sumber: [
+        ...s.perubahan.map((x) => ({
+          asal: "ktp-ecourt",
+          keterangan: `${x.label}${x.aksi === "beda" ? " (BEDA dari tulisan petugas, tidak dicentang)" : !x.kuat ? " (pihak dikenali dari nama saja, tidak dicentang)" : ""}: …${x.konteks}…`,
+        })),
+        ...s.tetap
+          .filter((t) => /tidak diganti otomatis/.test(t.alasan))
+          .map((t) => ({ asal: "ktp-ecourt", keterangan: `${t.label}: ${t.alasan}` })),
+        ...(/["'\\]/.test(asli.teks) ? [{ asal: "ktp-ecourt", keterangan: 'Teks memuat petik/garis miring terbalik: saat disimpan ALETA menggantinya (’ dan /) agar kueri ABT tidak patah.' }] : []),
+      ],
+    });
+  }
+  return hasil;
+}
+
+/** Semua usulan tanggal KTP satu perkara: variabel tanggal + bagian tanggal di variabel teks. */
+async function ktpUsulanDariPihak(nomor, kode) {
+  const dasar = await ktpAmbilPihak(nomor);
+  if (!dasar) return null;
+  const { isi, pihak } = dasar;
+  const usulan = ktpUsulanTanggal(pihak, kode);
+  const kodeTeks = ktpKandidatTeks(barisVariabel());
+  const teks = await ktpUsulanTeks(pihak, kodeTeks);
+  usulan.push(...teks.usulan);
+  const kosong = !usulan.length;
+  const catatan = [
+    ...(kosong ? [Array.isArray(isi && isi.catatan) && isi.catatan.length ? isi.catatan.join(" ") : (isi && isi.sebab) || ""] : []),
+    ...teks.catatan,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return { usulan, catatan };
 }
 /* === AKHIR KTP-PIHAK === */
@@ -17273,9 +17857,11 @@ async function ktpUsulanDariPihak(nomor, kode) {
 async function a3UsulanTanggalKtp(nomor) {
   const peta = barisVariabel();
   const kode = A3_VAR_TANGGAL_KTP_P.filter((k) => peta.has(k));
-  if (!kode.length || !nomor) return { usulan: [], catatan: "" };
+  if (!nomor || (!kode.length && !ktpKandidatTeks(peta).length)) return { usulan: [], catatan: "" };
   // 12 Okt (KTP-PIHAK): jalur baru per pihak; server lama (tanpa rute) jatuh ke jalur 5 Okt di bawah.
   const baru = await ktpUsulanDariPihak(nomor, kode);
+  if (baru) return baru;
+  if (!kode.length) return { usulan: [], catatan: "Server ALETA belum punya rute tanggal KTP per pihak - tanggal KTP di dalam teks tidak diperiksa." };
   if (baru) return baru;
   const respons = await fetch(`${ALETA_API_KTP_TERBIT}?nomor=${encodeURIComponent(nomor)}`, { credentials: "include", cache: "no-store" });
   if (!respons.ok) throw new Error(`server ALETA menjawab ${respons.status}`);
@@ -17750,7 +18336,7 @@ async function p7UsulanTambahan(nomor, catatan) {
         })
     );
   }
-  if (A3_VAR_TANGGAL_KTP_P.some((k) => peta.has(k))) {
+  if (A3_VAR_TANGGAL_KTP_P.some((k) => peta.has(k)) || ktpKandidatTeks(peta).length) {
     tugas.push(
       a3UsulanTanggalKtp(nomor)
         .then((r) => {
@@ -17862,9 +18448,11 @@ function p7PasangBas(k) {
       c.className = "aleta-abt-centang";
       // 1.184.0 (butir 1): yang tipenya belum diketahui tidak dicentang sendiri.
       c.checked = p7VariabelKosong(item) && a3BolehDiisi(u.kode) === true;
+      // 12 Okt (12OKT-D): tanggal KTP membawa `awal` - variabel teks alat bukti selalu berisi, hanya tanggalnya diisi.
+      if (typeof u.awal === "boolean") c.checked = u.awal && a3BolehDiisi(u.kode) === true && u.keyakinan !== "ragu";
       c.addEventListener("change", segarkanTombol);
       baris.appendChild(c);
-      const teks = buatElemen("span", "aleta-abt-nama", `${u.nama || u.kode}: ${u.nilai}`);
+      const teks = buatElemen("span", "aleta-abt-nama", `${u.nama || u.kode}: ${u.ringkas || u.nilai}`);
       teks.title = `Variabel ${u.kode} · sekarang: ${(item && item.nilai) || "(kosong)"}`;
       baris.appendChild(teks);
       daftar.appendChild(baris);
