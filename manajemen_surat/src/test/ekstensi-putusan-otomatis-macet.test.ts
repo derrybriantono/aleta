@@ -344,6 +344,12 @@ function pasang(o: { abt: Abt; batasTungguMs?: number; batasAbtMs?: number }) {
           "s1BacaUsulanBorangCepat",
           "s1TungguBerubah",
           "a30PetaRtf",
+          // 12 Okt 2026 (butir 19): bentuk nama ber-"alias", potongan depan, spasi lentur.
+          "a30BentukNamaPihak",
+          "a30PotonganDepan",
+          "a30AmanKata",
+          "a30PolaSasaran",
+          "a30DepanMilikPihak",
           "a30SamarkanSisaRtf",
           "a30BitaKeTeks",
           "a30TeksKeBita",
@@ -416,8 +422,12 @@ describe("butir 3: Putusan otomatis tidak lagi macet di 'Menunggu anonimisasi si
     expect(h.jejak.some((x) => /sisa disamarkan ALETA pada salinan anonimisasi/.test(x))).toBe(true);
   });
 
-  it("B: sisa yang TIDAK dapat disamarkan (NIK) -> dialog tepat di bawah kabar Isikan, bukan di puncak; Tetap unggah -> selesai", async () => {
-    const h = pasang({ abt: { rtf: RTF_ABT_BOCOR.replace("umur 43 tahun", `NIK ${NIK}, umur 43 tahun`) } });
+  it("B: sisa yang TIDAK dapat disamarkan (nama terbelah ganti paragraf) -> dialog tepat di bawah kabar Isikan, bukan di puncak; Tetap unggah -> selesai", async () => {
+    // 12 Okt 2026 (butir 19): NIK 16 angka kini DISAMARKAN ALETA. Yang tetap
+    // tidak dapat disamarkan otomatis: nama yang terbelah ganti paragraf.
+    const h = pasang({
+      abt: { rtf: RTF_ABT_BOCOR.replace("umur 43 tahun", `NIK ${NIK}, umur 43 tahun, ipar dari Siti\\par Lestari`) },
+    });
     const { kotak, terap } = await jalankanSampaiIsikan(h);
     const tanya = await sampai(() => kotak.querySelector(".aleta-a30-tanya") as HTMLElement | null, "dialog pemeriksa", 8000);
     // Dialog harus SESUDAH tombol Isikan (terlihat dari tempat petugas menunggu).
@@ -428,9 +438,10 @@ describe("butir 3: Putusan otomatis tidak lagi macet di 'Menunggu anonimisasi si
     ).catch(() => {
       throw new Error("Dialog pemeriksa tergambar DI ATAS tombol Isikan (kotak naskah) - petugas tidak melihatnya dan penantian tampak macet.");
     });
-    expect(tanya.textContent).toContain(NIK);
-    // Nama pihak/saksi/alamat sudah disamarkan; yang tersisa hanya NIK.
-    expect(tanya.textContent).not.toMatch(/nama pihak "/);
+    // NIK, nama pihak/saksi/alamat yang utuh sudah disamarkan; yang tersisa
+    // hanya nama yang terbelah ganti paragraf.
+    expect(tanya.textContent).not.toContain(NIK);
+    expect(tanya.textContent).toMatch(/nama pihak "Siti\s+Lestari"/);
     expect(tanya.textContent).not.toMatch(/alamat "/);
     expect(tanya.textContent).toMatch(/ALETA sudah menyamarkan \d+ sisa/);
     await sampai(() => /menunggu jawaban Anda/.test(kotak.textContent || ""), "kabar menunjuk dialog", 3000);

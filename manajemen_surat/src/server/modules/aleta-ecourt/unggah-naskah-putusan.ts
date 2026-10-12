@@ -1,5 +1,12 @@
 import type { AletaDatabase } from "@/server/db/client";
 
+import {
+  PANJANG_NAMA_DIRI_MIN,
+  namaDiriPihak,
+  nilaiPenyamaran,
+  polaNama,
+  type NilaiPenyamaran,
+} from "@/lib/anonim-nama-pihak";
 import { bacaRtfDariBita, tampakRtf } from "@/lib/baca-rtf";
 import {
   isiMenunjukPerkara,
@@ -344,9 +351,21 @@ export type TolakUnggahSipp = {
   nomorIsi?: string;
   /** Nama inti pihak yang ditemukan di slot anonimisasi. */
   nama?: string[];
+  /**
+   * 12OKT-I: slot anonimisasi yang SEBAGIAN tersamar boleh diunggah atas
+   * keputusan petugas ("Tetap unggah"). Salah bila tidak satu pun nama
+   * tersamar - berkas itu tetap ditolak.
+   */
+  bolehTetapUnggah?: boolean;
+  penyamaran?: NilaiPenyamaran;
 };
 
+/** Keputusan petugas yang diteruskan ekstensi: nama yang SUDAH ia lihat dan ia relakan. */
+export type PermintaanTetapUnggah = { nama: string[] };
+
 export type PemeriksaanUnggahSipp = {
+  /** 12OKT-I: diisi bila slot anonimisasi diloloskan oleh "Tetap unggah". */
+  tetapUnggah?: { nama: string[]; penyamaran: NilaiPenyamaran } | null;
   tolak: TolakUnggahSipp | null;
   peringatan: string[];
   /** Nomor perkara dari isi tiap slot RTF yang terbaca. */
@@ -373,22 +392,20 @@ export function namaIntiPihak(nama: string): string {
 }
 
 /** Nama pendek (di bawah empat huruf) terlalu mudah muncul sebagai kata lain. */
-const PANJANG_NAMA_INTI_MIN = 4;
+const PANJANG_NAMA_INTI_MIN = PANJANG_NAMA_DIRI_MIN;
 
 /**
- * Nama inti pihak yang TERTULIS di naskah - berbatas kata, tanpa peduli
+ * Nama diri pihak yang TERTULIS di naskah - berbatas kata, tanpa peduli
  * besar-kecil huruf. Berbatas kata supaya "Rina" tidak ditemukan di dalam
  * "Marina", dan "Untung" tidak di dalam "keuntungan".
+ *
+ * 12OKT-I: tiap bentuk nama ber-"alias" ikut dicari (bentukNamaPihak) -
+ * aturan bentuknya SATU dengan penyamar ekstensi, sehingga yang dicari
+ * penjaga ini sudah lebih dulu disamarkan di sana.
  */
 export function namaIntiDalamNaskah(naskah: string, namaPihak: string[]): string[] {
   const teks = String(naskah ?? "");
-  const inti = [
-    ...new Set(namaPihak.map(namaIntiPihak).filter((n) => n.length >= PANJANG_NAMA_INTI_MIN)),
-  ];
-  return inti.filter((nama) => {
-    const lolos = nama.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+");
-    return new RegExp(`(?<![\\p{L}\\p{N}])${lolos}(?![\\p{L}\\p{N}])`, "iu").test(teks);
-  });
+  return namaDiriPihak(namaPihak).filter((nama) => polaNama(nama).test(teks));
 }
 
 export function periksaBerkasUnggahSipp(masukan: {
@@ -397,16 +414,20 @@ export function periksaBerkasUnggahSipp(masukan: {
   /** Nama pihak dari SIPP; null berarti tidak terbaca (sebabnya di sebabPihak). */
   namaPihak: string[] | null;
   sebabPihak?: string;
+  /** 12OKT-I: petugas memilih "Tetap unggah" atas nama-nama ini. */
+  tetapUnggah?: PermintaanTetapUnggah | null;
 }): PemeriksaanUnggahSipp {
   const peringatan: string[] = [];
   const nomorIsi: Partial<Record<SlotUnggahSipp, string>> = {};
   const diperiksa: SlotUnggahSipp[] = [];
   const terbaca: Array<{ slot: SlotUnggahSipp; teks: string }> = [];
+  let diloloskan: PemeriksaanUnggahSipp["tetapUnggah"] = null;
   const selesai = (tolak: TolakUnggahSipp | null): PemeriksaanUnggahSipp => ({
     tolak,
     peringatan,
     nomorIsi,
     diperiksa,
+    ...(diloloskan && !tolak ? { tetapUnggah: diloloskan } : {}),
   });
   const nomorPerkara = String(masukan.nomorPerkara ?? "").trim();
 
@@ -472,7 +493,7 @@ export function periksaBerkasUnggahSipp(masukan: {
   if (terbaca.length === 0) return selesai(null);
 
   const nama = (masukan.namaPihak ?? []).filter(Boolean);
-  const adaNamaInti = nama.some((n) => namaIntiPihak(n).length >= PANJANG_NAMA_INTI_MIN);
+  const adaNamaInti = namaDiriPihak(nama).some((n) => n.length >= PANJANG_NAMA_INTI_MIN);
   if (!masukan.namaPihak || !adaNamaInti) {
     peringatan.push(
       `Nama pihak tidak terbaca dari SIPP${masukan.sebabPihak ? ` (${masukan.sebabPihak})` : ""}, jadi ` +
@@ -484,15 +505,37 @@ export function periksaBerkasUnggahSipp(masukan: {
   for (const { slot, teks } of terbaca) {
     const temu = namaIntiDalamNaskah(teks, nama);
     if (slot === "anonimisasi" && temu.length > 0) {
+      /* === 12OKT-I: sisa sebagian boleh "Tetap unggah"; tanpa penyamaran tetap ditolak === */
+      const teksPutusan = terbaca.find((x) => x.slot === "putusan")?.teks ?? null;
+      const penyamaran = nilaiPenyamaran({ teksAnonim: teks, teksPutusan, namaPihak: nama });
+      const rata = (s: string) => String(s ?? "").toLowerCase().replace(/[\s.]+/g, "");
+      const dilihat = (masukan.tetapUnggah?.nama ?? []).map(rata).filter(Boolean);
+      // Hanya nama yang SUDAH dilihat petugas yang direlakan - nama lain yang
+      // ditemukan di sini ditanyakan lagi, tidak ikut lolos diam-diam.
+      const semuaDilihat = temu.every((n) => dilihat.some((d) => d.includes(rata(n))));
+      if (masukan.tetapUnggah && penyamaran.ada && semuaDilihat) {
+        diloloskan = { nama: temu, penyamaran };
+        peringatan.push(
+          `Tetap diunggah atas keputusan petugas: berkas anonimisasi masih memuat ${temu.join(", ")} dan ` +
+            "terbit apa adanya di Direktori Putusan. Keputusan ini tercatat di jejak ALETA."
+        );
+        continue;
+      }
       return selesai({
         alasan: "slot_anonim_memuat_nama",
         slot,
         nama: temu,
-        sebab:
-          `Berkas anonimisasi masih memuat nama pihak: ${temu.join(", ")}. Berkas inilah yang terbit di ` +
-          "Direktori Putusan. Periksa apakah berkasnya tertukar dengan putusan asli, atau samarkan nama itu " +
-          "lebih dulu. Tidak ada berkas yang dikirim ke SIPP.",
+        bolehTetapUnggah: penyamaran.ada,
+        penyamaran,
+        sebab: penyamaran.ada
+          ? `Berkas anonimisasi masih memuat nama pihak: ${temu.join(", ")}. Berkas inilah yang terbit di ` +
+            "Direktori Putusan. Sebagian nama sudah tersamar; samarkan sisanya lebih dulu, atau pilih " +
+            '"Tetap unggah" bila sisa itu memang dibiarkan. Tidak ada berkas yang dikirim ke SIPP.'
+          : `Berkas anonimisasi masih memuat nama pihak: ${temu.join(", ")}, dan tidak satu pun nama pihak ` +
+            "tersamar - berkas ini tampaknya putusan asli, bukan anonimisasinya. Berkas inilah yang terbit di " +
+            "Direktori Putusan, jadi tidak dapat diunggah. Tidak ada berkas yang dikirim ke SIPP.",
       });
+      /* === AKHIR 12OKT-I === */
     }
     if (slot === "putusan" && temu.length === 0) {
       peringatan.push(

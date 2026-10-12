@@ -99,7 +99,12 @@ type Jawab = { status?: number; isi?: unknown; bita?: Uint8Array; url?: string }
 type Penjawab = (url: string, cara: string, badan: unknown, ke: number) => Jawab | undefined;
 
 const RTF_ANONIM = "{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\f0 Menimbang bahwa Penggugat ( xxx ) melawan Tergugat ( xxx );\\par}";
-const RTF_BOCOR = "{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\f0 NIK 7203111072023001 atas nama Isabella binti Muhamad Aini\\par}";
+// 12 Okt 2026 (butir 19): NIK 16 angka kini DISAMARKAN ALETA. Yang tetap tidak
+// dapat disamarkan otomatis - dan karena itu ditanyakan - nama pihak yang
+// terbelah ganti paragraf ("Taufik\par Qurahman", Tergugat dari tabel SIPP).
+const RTF_BOCOR =
+  "{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\f0 NIK 7203111072023001 atas nama Isabella binti Muhamad Aini, Tergugat Taufik\\par Qurahman\\par}";
+const TABEL_TERGUGAT = "<table><tr><td>No</td><td>Tergugat</td></tr><tr><td>1</td><td>Taufik Qurahman bin Dasril</td></tr></table>";
 const b64 = (s: string) => Buffer.from(s, "latin1").toString("base64");
 
 function jawabBaku(peran: string): Penjawab {
@@ -654,19 +659,21 @@ describe("butir 11: anonimisasi otomatis dalam BENTUK YANG SAMA, lalu dua slot s
     expect(u.tombol.disabled).toBe(false);
   });
 
-  it("pemeriksa menemukan NIK/nama utuh: konfirmasi di panel; Batalkan = tidak ada yang diunggah", async () => {
+  it("pemeriksa menemukan nama utuh: konfirmasi di panel; Batalkan = tidak ada yang diunggah", async () => {
     const h = buka({ simpanan: BARU, jawab: penjawabAnonim({ abt: { bita: new TextEncoder().encode(RTF_BOCOR) } }) });
     const u = await bukaUnggahEdoc(h);
+    h.d.getElementById("konten")!.insertAdjacentHTML("beforeend", TABEL_TERGUGAT);
     pilihBerkas(h, u.slot("putusan"), [berkas(h, "PA.Dgl_2026_Pdt.G_450_putusan_akhir.rtf")]);
     u.tombol.click();
     const tanya = await sampai(() => u.bag.querySelector(".aleta-a30-tanya") as any, "kartu konfirmasi");
-    expect(tanya.textContent).toContain("NIK");
-    expect(tanya.textContent).toContain("7203111072023001");
+    expect(tanya.textContent).toMatch(/nama pihak "Taufik\s+Qurahman"/);
+    // 12 Okt 2026: NIK disamarkan, tidak lagi ditanyakan.
+    expect(tanya.textContent).not.toContain("7203111072023001");
     // 7 Okt 2026 (butir 4): nama pihak yang ditinggalkan ABT kini disamarkan
-    // ALETA pada salinan anonimisasi; yang tidak dapat disamarkan (NIK) tetap
+    // ALETA pada salinan anonimisasi; yang tidak dapat disamarkan tetap
     // ditanyakan. Dahulu: nama pihak "Isabella binti Muhamad Aini" ikut terdaftar.
     expect(tanya.textContent).not.toMatch(/nama pihak "Isabella/);
-    expect(tanya.textContent).toMatch(/ALETA sudah menyamarkan 1 sisa yang ditinggalkan ABT/);
+    expect(tanya.textContent).toMatch(/ALETA sudah menyamarkan 2 sisa yang ditinggalkan ABT/);
     // "Tetap unggah" mati sampai "Sudah saya periksa" dicentang.
     expect(tanya.querySelector(".aleta-a30-tanya-ya").disabled).toBe(true);
     tanya.querySelector(".aleta-a30-tanya-tidak").click();
@@ -677,6 +684,7 @@ describe("butir 11: anonimisasi otomatis dalam BENTUK YANG SAMA, lalu dua slot s
   it("pemeriksa: dicentang lalu 'Tetap unggah' = dua slot terkirim", async () => {
     const h = buka({ simpanan: BARU, jawab: penjawabAnonim({ abt: { bita: new TextEncoder().encode(RTF_BOCOR) } }) });
     const u = await bukaUnggahEdoc(h);
+    h.d.getElementById("konten")!.insertAdjacentHTML("beforeend", TABEL_TERGUGAT);
     pilihBerkas(h, u.slot("putusan"), [berkas(h, "PA.Dgl_2026_Pdt.G_450_putusan_akhir.rtf")]);
     u.tombol.click();
     const tanya = await sampai(() => u.bag.querySelector(".aleta-a30-tanya") as any, "kartu konfirmasi");
@@ -688,6 +696,10 @@ describe("butir 11: anonimisasi otomatis dalam BENTUK YANG SAMA, lalu dua slot s
     const unggah = h.minta.find((m) => m.url.includes("/putusan/unggah-sipp"))!;
     expect((unggah.badan as any).has("putusan")).toBe(true);
     expect((unggah.badan as any).has("anonimisasi")).toBe(true);
+    // 12 Okt 2026 (butir 19): nama yang direlakan petugas diteruskan ke server
+    // ("Tetap unggah") supaya penjaga server tidak menolak nama yang sama lagi.
+    expect((unggah.badan as any).get("tetapUnggah")).toBe("1");
+    expect(JSON.parse((unggah.badan as any).get("tetapUnggahNama"))[0]).toMatch(/^Taufik\s+Qurahman$/);
   });
 
   it("centang dilepas: putusan saja, tanpa ABT", async () => {

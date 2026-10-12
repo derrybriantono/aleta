@@ -13,8 +13,10 @@ import {
   getGatewayStatusPerkara,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
+import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { nextPrefixedId } from "@/server/shared/ids";
 import { alamatIpPeramban } from "@/server/shared/request";
 
 import { selaraskanPerkaraDariId } from "../perkara-dari-id";
@@ -24,6 +26,16 @@ export const dynamic = "force-dynamic";
 
 /** Putusan yang khas di bawah 1 MB; batas ini longgar sepuluh kali lipat. */
 const BATAS_SATU_BERKAS = 10 * 1024 * 1024;
+
+/** 12OKT-I: nama yang dilihat petugas saat memilih "Tetap unggah" (larik JSON, paling banyak 50). */
+function bacaNamaTetapUnggah(formulir: FormData): string[] {
+  try {
+    const isi = JSON.parse(String(formulir.get("tetapUnggahNama") ?? "[]"));
+    return Array.isArray(isi) ? isi.map((x) => String(x ?? "").slice(0, 120)).filter(Boolean).slice(0, 50) : [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Mengunggah putusan akhir dan anonimisasinya ke SIPP sekaligus.
@@ -188,7 +200,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const periksa = periksaBerkasUnggahSipp({ nomorPerkara, berkas, namaPihak, sebabPihak });
+    /* === 12OKT-I: "Tetap unggah" anonimisasi yang tersamar sebagian === */
+    // Ekstensi meneruskan keputusan petugas beserta nama yang SUDAH ia lihat.
+    // Rute ini tetap menilai sendiri apakah ada penyamaran sama sekali
+    // (periksaBerkasUnggahSipp) - tanpa penyamaran, berkasnya tetap ditolak.
+    const tetapUnggah = String(formulir.get("tetapUnggah") ?? "") === "1" ? { nama: bacaNamaTetapUnggah(formulir) } : null;
+    /* === AKHIR 12OKT-I === */
+    const periksa = periksaBerkasUnggahSipp({ nomorPerkara, berkas, namaPihak, sebabPihak, tetapUnggah });
     if (periksa.tolak) {
       // 409: isinya bertentangan dengan perkara yang dituju. Bentuk badannya
       // memuat `data` seperti jawaban lain rute ini (ekstensi membaca
@@ -202,6 +220,42 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
+
+    /* === 12OKT-I: jejak ALETA untuk "Tetap unggah" - dicatat SEBELUM menulis ke SIPP === */
+    // Siapa, kapan, perkara mana, dan nama apa yang dibiarkan terbit. Bila
+    // jejaknya tidak dapat dicatat, unggahan TIDAK dijalankan: melewati
+    // penjaga anonimisasi tanpa jejak lebih buruk daripada menunda unggahan.
+    if (periksa.tetapUnggah) {
+      try {
+        await appendAuditLog(db, {
+          id: await nextPrefixedId(db, "audit_logs", "adt"),
+          actorUserId: aktor?.id ?? actorUserId,
+          action: "PUTUSAN_ANONIM_TETAP_UNGGAH",
+          entityType: "perkara",
+          entityId: nomorPerkara,
+          payload: {
+            nomorPerkara,
+            perkaraId,
+            namaTersisa: periksa.tetapUnggah.nama,
+            penyamaran: periksa.tetapUnggah.penyamaran,
+            oleh: operator,
+            peran: peranPenekan,
+            akunSipp: olehUsername,
+            ip: alamatIpPeramban(request),
+          },
+        });
+      } catch (galatJejak) {
+        console.warn("[ALETA AUDIT] Gagal mencatat tetap unggah anonimisasi:", galatJejak);
+        return ok({
+          ok: false,
+          alasan: "jejak_gagal",
+          sebab:
+            "Keputusan \"Tetap unggah\" tidak dapat dicatat di jejak ALETA, jadi unggahannya tidak dijalankan. " +
+            "Tidak ada berkas yang dikirim ke SIPP. Coba lagi sebentar lagi.",
+        });
+      }
+    }
+    /* === AKHIR 12OKT-I === */
 
     const bitaSlot = (slot: SlotUnggahSipp) => berkas.find((b) => b.slot === slot)?.bita;
     const putusan = bitaSlot("putusan");
@@ -233,7 +287,12 @@ export async function POST(request: NextRequest) {
         peringatan: periksa.peringatan,
       });
     }
-    return ok({ ...hasil.data, nomorIsi: periksa.nomorIsi, peringatan: periksa.peringatan });
+    return ok({
+      ...hasil.data,
+      nomorIsi: periksa.nomorIsi,
+      peringatan: periksa.peringatan,
+      ...(periksa.tetapUnggah ? { tetapUnggah: { nama: periksa.tetapUnggah.nama } } : {}),
+    });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,
