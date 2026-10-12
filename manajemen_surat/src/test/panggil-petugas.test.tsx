@@ -10,7 +10,7 @@
  *   - pop-up MELAYANG di document.body (bukan sisipan di tabel), menyebut bot
  *     nonaktif, dan tombol audio hanya ada bila saklarnya dinyalakan;
  *   - bot: sasaran per orang (Hakim Ketua / Anggota masing-masing), baris
- *     kembar SIPP disatukan, kuasa dicabut tidak ikut, saksi tidak pernah ada,
+ *     kembar SIPP disatukan, kuasa dicabut tidak ikut, saksi hanya golongan saksi1/saksi2,
  *     nomor pihak + verifikasinya; riwayat menolak panggilan beruntun;
  *     pengumuman suara tidak memutar ulang yang lama;
  *   - portal: nomor petugas dari tautan akun SIPP / nama yang tunggal; bot
@@ -245,8 +245,10 @@ describe("bot: sasaran panggilan dari SIPP", () => {
     expect(pihak[0]).toMatchObject({ nomor: "6281234567890", statusNomor: "belum-terverifikasi" });
     expect(pihak[1]).toMatchObject({ nomor: "", statusNomor: "bermasalah" });
     expect(pihak[2]).toMatchObject({ statusNomor: "bermasalah", jenis: "kuasa", golongan: "pihak2" });
-    // Saksi tidak pernah dibaca.
-    expect(sipp.catatan.some((c) => /saksi/i.test(c.sql))).toBe(false);
+    // Saksi dibaca (12 Okt 2026, butir 4) HANYA dari perkara_pihak5, dan bergolongan
+    // saksi1/saksi2 - tidak pernah bercampur dengan pihak1/pihak2 di atas.
+    expect(sipp.catatan.filter((c) => /saksi/i.test(c.sql)).every((c) => c.sql.includes("FROM perkara_pihak5"))).toBe(true);
+    expect(pihak.some((p) => String(p.golongan).startsWith("saksi"))).toBe(false); // sippTiruan tanpa saksi
   });
 
   it("isian telepon SIPP: yang tidak sah dianggap tidak ada, bukan ditebak", () => {

@@ -12,7 +12,10 @@ import type { GolonganSasaran } from "@/lib/panggil-petugas";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const GOLONGAN: GolonganSasaran[] = ["majelis", "pp", "js", "mediator", "pihak1", "pihak2"];
+// pihak3/pihak4 dan saksi1/saksi2 ditambahkan 12 Okt 2026: golongan yang tidak dikenal
+// dibuang, dan daftar kosong berarti SEMUA orang - pop-up turut tergugat/intervensi
+// lalu ikut memuat saksi.
+const GOLONGAN: GolonganSasaran[] = ["majelis", "pp", "js", "mediator", "pihak1", "pihak2", "pihak3", "pihak4", "saksi1", "saksi2"];
 
 /**
  * Siapa yang dapat dipanggil pada satu perkara - isi pop-up nama petugas/pihak.

@@ -791,6 +791,8 @@ export const SAKLAR_SIDANG_PER_AKSI: Readonly<Record<string, KunciAksi>> = {
   "tarik-belum-upload": "sidang.tarik-belum-upload",
   "ambil-antrian": "sidang.antrian",
   "daftar-antrian": "sidang.antrian",
+  // 12 Okt 2026 (butir 4): memanggil saksi memakai rute panggil yang sama (sidang.antrian).
+  "panggil-saksi": "sidang.antrian",
   "tunjuk-konseptor": "sidang.konseptor",
   "keterangan-perkara": "sidang.keterangan",
   "tombol-kasir": "sidang.kasir",
