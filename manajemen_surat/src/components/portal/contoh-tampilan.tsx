@@ -20,6 +20,7 @@ import { Info, RefreshCw, Smartphone } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { KELAS_PENANDA_JAWABAN } from "@/lib/penanda-jawaban";
+import { KELAS_PENANDA_SITA } from "@/lib/penanda-sita"; /* 12OKT-K */
 import { cn } from "@/lib/utils";
 
 const lencana = (kelas: string, isi: ReactNode) => (
@@ -99,6 +100,17 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
       </span>
     ),
   },
+  /* === 12OKT-K: penanda Sita === */
+  "penanda-sita": {
+    letak: "kolom Agenda, di bawah Eksepsi/Rekonvensi (dari petitum); rincian & Status Perkara",
+    contoh: (
+      <span className="inline-flex flex-wrap gap-1">
+        {lencana(KELAS_PENANDA_SITA, "Sita Jaminan")}
+        {lencana(KELAS_PENANDA_SITA, "Sita Marital")}
+      </span>
+    ),
+  },
+  /* === AKHIR 12OKT-K === */
   "pembebanan-ikrar": { letak: "kolom Putusan (sidang ikrar talak)", contoh: lencana("bg-violet-600 text-white", "pembebanan Rp 14,5 jt") },
   "umur-perkara": { letak: "kolom Agenda, di bawah sidang ke-N", contoh: pil("border-emerald-500 text-emerald-700 dark:text-emerald-300", "35 hari") },
   "menunggu-lama": { letak: "kolom Antrian / Jam", contoh: lencana("bg-amber-100 text-amber-900", "menunggu 45 menit") },

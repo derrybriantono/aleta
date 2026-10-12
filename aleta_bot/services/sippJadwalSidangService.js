@@ -57,6 +57,9 @@ const penandaPerkaraPihakService = require("./penandaPerkaraPihakService");
 /* === 12OKT-A: kumulasi perkara === */
 const kumulasiPerkaraService = require("./kumulasiPerkaraService");
 /* === AKHIR 12OKT-A === */
+/* === 12OKT-K: sita & eksekusi === */
+const sitaEksekusiPerkaraService = require("./sitaEksekusiPerkaraService");
+/* === AKHIR 12OKT-K === */
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -242,6 +245,12 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
   // keterangan lain; gagal-terbuka dan dicatat (kumulasiTerbaca false).
   const janjiKumulasi = aman(() => kumulasiPerkaraService.kumulasiBanyakPerkara(idPerkara), "kumulasi");
   /* === AKHIR 12OKT-A === */
+  /* === 12OKT-K: sita & eksekusi === */
+  // Sita dari petitum + SIPP (putusan sela, register eksekusi) dan register
+  // eksekusi - lihat sitaEksekusiPerkaraService. Gagal-terbuka dan dicatat
+  // (sitaTerbaca false = tidak terbaca, bukan "tidak ada sita").
+  const janjiSitaEksekusi = aman(() => sitaEksekusiPerkaraService.sitaEksekusiBanyakPerkara(idPerkara), "sita");
+  /* === AKHIR 12OKT-K === */
 
   const [
     petaPihak,
@@ -375,6 +384,11 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
   /* === 12OKT-A: kumulasi perkara === */
   const petaKumulasi = await janjiKumulasi;
   /* === AKHIR 12OKT-A === */
+  /* === 12OKT-K: sita & eksekusi === */
+  const petaSitaEksekusi = await janjiSitaEksekusi;
+  const petaSita = (petaSitaEksekusi && petaSitaEksekusi.sita) || {};
+  const petaEksekusi = (petaSitaEksekusi && petaSitaEksekusi.eksekusi) || {};
+  /* === AKHIR 12OKT-K === */
 
   return {
     dari: mulai,
@@ -520,6 +534,13 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       kumulasi: petaKumulasi[String(row.perkaraId)] || null,
       kumulasiTerbaca: !gagal.has("kumulasi"),
       /* === AKHIR 12OKT-A === */
+      /* === 12OKT-K: sita & eksekusi === */
+      // { daftar: [{kode, nama, sumber: "petitum"|"sipp"|"keduanya", kutipan?,
+      // catatanSipp?}] } atau null; eksekusi: [] register eksekusi perkara ini.
+      sita: petaSita[String(row.perkaraId)] || null,
+      eksekusi: petaEksekusi[String(row.perkaraId)] || [],
+      sitaTerbaca: !gagal.has("sita"),
+      /* === AKHIR 12OKT-K === */
     })),
   };
 }
@@ -3371,6 +3392,23 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     .then((peta) => peta[String(perkara.perkaraId)] || null)
     .catch(() => undefined);
   /* === AKHIR 12OKT-A === */
+  /* === 12OKT-K: sita, eksekusi, eksepsi/rekonvensi untuk rincian & Status Perkara === */
+  // undefined = gagal dibaca. Eksepsi/rekonvensi dari SUMBER YANG SAMA dengan
+  // kolom Agenda (penandaJawabanService.petaBanyakPerkara) - bukan aturan kedua.
+  const [sitaEksekusiIni, penandaJawabanIni] = await Promise.all([
+    sitaEksekusiPerkaraService
+      .sitaEksekusiBanyakPerkara([perkara.perkaraId])
+      .then((peta) => ({
+        sita: peta.sita[String(perkara.perkaraId)] || null,
+        eksekusi: peta.eksekusi[String(perkara.perkaraId)] || [],
+      }))
+      .catch(() => undefined),
+    penandaJawabanService
+      .petaBanyakPerkara([nomorPerkara])
+      .then((peta) => peta[nomorPerkara] || null)
+      .catch(() => undefined),
+  ]);
+  /* === AKHIR 12OKT-K === */
 
   const jurusitaPerkara = (petugas.jurusita || []).map((x) => x.nama).filter(Boolean);
   const relaasLengkap = (Array.isArray(relaas) ? relaas : []).map((baris) =>
@@ -3416,6 +3454,14 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     kumulasi,
     kumulasiTerbaca: kumulasi !== undefined,
     /* === AKHIR 12OKT-A === */
+    /* === 12OKT-K: sita, eksekusi, eksepsi/rekonvensi === */
+    // Bentuknya sama dengan ruas baris jadwal; dipakai Status Perkara.
+    sita: sitaEksekusiIni ? sitaEksekusiIni.sita : null,
+    eksekusi: sitaEksekusiIni ? sitaEksekusiIni.eksekusi : [],
+    sitaTerbaca: sitaEksekusiIni !== undefined,
+    penandaJawaban: penandaJawabanIni || null,
+    penandaJawabanTerbaca: penandaJawabanIni !== undefined,
+    /* === AKHIR 12OKT-K === */
   };
 }
 

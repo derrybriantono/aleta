@@ -281,8 +281,9 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // dijaga pihak-hadir-12okt.test.tsx). Angka ini hanya menambah satu atas 60; saklar
     // agen A/B yang baru, bila ada, dijumlahkan saat menggabung.
     // 62 sejak agen L (12 Okt 2026, butir 25): + pernah-diskors (dijaga pernah-diskors-12okt.test.tsx).
-    // Agen K juga menambah satu (penanda-sita) dari 61 yang sama: jumlahkan saat menggabung (63).
-    expect(SAKLAR_TAMPILAN.length).toBe(62);
+    // 63 sejak agen K (12 Okt 2026, butir 22-24): + penanda-sita (lencana Sita di kolom
+    // Agenda + bagian sita & eksekusi di rincian/Status Perkara, dijaga penanda-sita-12okt.test.ts).
+    expect(SAKLAR_TAMPILAN.length).toBe(63);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {

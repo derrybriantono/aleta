@@ -2996,6 +2996,16 @@ async function statusLengkap(nomorPerkaraMentah) {
     kumulasi: rincian && rincian.ok ? rincian.kumulasi || null : null,
     kumulasiTerbaca: Boolean(rincian && rincian.ok && rincian.kumulasiTerbaca),
     /* === AKHIR 12OKT-A === */
+    /* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */
+    // Lewat rincianSidang - sumber yang sama dengan kolom Agenda Jadwal
+    // Sidang (penandaJawabanService, sitaEksekusiPerkaraService).
+    // *Terbaca false = gagal dibaca, bukan "tidak ada".
+    penandaJawaban: rincian && rincian.ok ? rincian.penandaJawaban || null : null,
+    penandaJawabanTerbaca: Boolean(rincian && rincian.ok && rincian.penandaJawabanTerbaca),
+    sita: rincian && rincian.ok ? rincian.sita || null : null,
+    eksekusi: rincian && rincian.ok && Array.isArray(rincian.eksekusi) ? rincian.eksekusi : [],
+    sitaTerbaca: Boolean(rincian && rincian.ok && rincian.sitaTerbaca),
+    /* === AKHIR 12OKT-K === */
     jadwal,
     penundaan,
     relaas: rincian && rincian.ok ? rincian.relaas : [],

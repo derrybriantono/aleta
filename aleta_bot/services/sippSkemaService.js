@@ -238,6 +238,13 @@ const TABEL = [
   // kumulasiPerkaraService untuk Jadwal Sidang/Mediasi/Status Perkara.
   "perkara_kumulasi",
   /* === AKHIR 12OKT-A === */
+  /* === 12OKT-K: sita & eksekusi === */
+  // Penetapan/pelaksanaan sita jaminan pada putusan sela (34 dan 32 baris,
+  // 0 bertanggal sita di data lokal 12 Okt 2026). Dibaca
+  // sitaEksekusiPerkaraService sebagai sumber kedua penanda Sita, di samping
+  // petitum. perkara_eksekusi sudah terdaftar di atas.
+  "perkara_putusan_sela",
+  /* === AKHIR 12OKT-K === */
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */
