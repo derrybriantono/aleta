@@ -76,7 +76,7 @@
  * Seluruh kueri SELECT; tidak ada tulisan ke SIPP.
  */
 
-const { diktumPetitum } = require("./kumulasiPerkaraService");
+const { diktumPetitum, rapikanKepalaPrimer } = require("./kumulasiPerkaraService");
 
 // ---------------------------------------------------------------------------
 // Petitum -> sita
@@ -154,17 +154,7 @@ function kutipanSekitar(diktum, indeks) {
   return `${awal > 0 ? "..." : ""}${diktum.slice(awal, akhir).trim()}${akhir < diktum.length ? "..." : ""}`;
 }
 
-/**
- * "SUBSIDER: PRIMER: ..." (terukur 253/Pdt.G/2024/PA.Buk): kepala subsider
- * yang tertulis SEBELUM kata primer membuat seluruh petitum terbuang oleh
- * pemotong subsider. Kepala subsider di depan "primer" dibuang lebih dulu.
- */
-function rapikanKepalaPrimer(html) {
-  const teks = String(html || "");
-  const i = teks.search(/\bprim(?:ai|e)r\b/i);
-  if (i <= 0) return teks;
-  return teks.slice(0, i).replace(/\bsubsid\w*/gi, " ") + teks.slice(i);
-}
+// rapikanKepalaPrimer: satu sumber di kumulasiPerkaraService (dipakai juga pembaca kumulasi).
 
 /**
  * Sita yang diminta / dinyatakan sah di petitum.

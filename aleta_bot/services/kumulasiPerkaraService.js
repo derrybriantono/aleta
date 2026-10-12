@@ -171,8 +171,21 @@ const POLA_SUBSIDER = /\bsubsid\w*|\bex\s+aequo\s+et\s+bono\b/i;
  * ditulis dalam satu paragraf tanpa titik koma ("...seluruhnya. Menetapkan
  * sah...") dipotong lagi pada nomor butir dan titik di depan kata kerja.
  */
+/**
+ * "SUBSIDER: PRIMER: ..." (terukur 253/Pdt.G/2024/PA.Buk, agen K 12 Okt): kepala
+ * subsider yang tertulis SEBELUM kata primer membuat seluruh petitum terbuang
+ * oleh pemotong subsider. Kepala subsider di depan "primer" dibuang lebih dulu.
+ * Dipakai juga pembaca sita (sitaEksekusiPerkaraService).
+ */
+function rapikanKepalaPrimer(html) {
+  const teks = String(html || "");
+  const i = teks.search(/\bprim(?:ai|e)r\b/i);
+  if (i <= 0) return teks;
+  return teks.slice(0, i).replace(/\bsubsid\w*/gi, " ") + teks.slice(i);
+}
+
 function butirPetitum(html) {
-  const potongan = potongAmar(String(html || ""));
+  const potongan = potongAmar(rapikanKepalaPrimer(html));
   const teksUtuh = potongan.map((p) => p.teks).join(" ;; ");
   // Bagian primer saja.
   const m = POLA_SUBSIDER.exec(teksUtuh);
@@ -357,6 +370,7 @@ async function kumulasiBanyakPerkara(daftarPerkaraId = [], opsi = {}) {
 }
 
 module.exports = {
+  rapikanKepalaPrimer,
   JENIS_KUMULASI,
   JENIS_DIANALISA,
   SEBUTAN_JENIS_SIPP,

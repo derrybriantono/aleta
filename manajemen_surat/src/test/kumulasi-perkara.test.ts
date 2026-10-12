@@ -83,6 +83,14 @@ const petitum = (...butir: string[]) =>
   `<p>Primer</p>${butir.map((b, i) => `<p>${i + 1}. ${b};</p>`).join("")}<p>Subsider:</p><p>Jika Majelis Hakim berpendapat lain, mohon putusan yang seadil-adilnya (ex aequo et bono);</p>`;
 
 describe("analisa petitum - hanya tuntutan yang sungguh diminta", () => {
+  it("kepala SUBSIDER yang ditulis SEBELUM PRIMER tidak membuang seluruh petitum (253/Pdt.G/2024/PA.Buk)", () => {
+    const html =
+      "<p>SUBSIDER:</p><p>PRIMER:</p><p>1. Mengabulkan gugatan Penggugat;</p>" +
+      "<p>2. Menetapkan anak bernama Ani berada dalam hadhanah (pemeliharaan) Penggugat;</p>" +
+      "<p>SUBSIDER: Mohon putusan yang seadil-adilnya</p>";
+    expect(kode(html)).toEqual(["hak-asuh-anak"]);
+  });
+
   it("mengenali hak asuh, itsbat, nafkah anak, iddah, mut'ah, madliyah, harta bersama, mahar", () => {
     const html = petitum(
       "Mengabulkan Gugatan Penggugat",
