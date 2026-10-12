@@ -57,6 +57,10 @@ import {
   tampilanMediasiBawaan,
   type PilihanTampilanMediasi,
 } from "@/lib/tampilan-jadwal-mediasi";
+/* === 12OKT-A: kumulasi perkara === */
+import { JenisDenganKumulasi, RincianKumulasi, useSaklarKumulasi } from "@/components/portal/kumulasi-perkara";
+import { namaJenisDenganKumulasi, type KumulasiPerkara } from "@/lib/kumulasi-perkara";
+/* === AKHIR 12OKT-A === */
 
 import {
   ChipSaring,
@@ -93,6 +97,11 @@ type Mediasi = {
   tenggatPerma: string;
   sisaHariTenggat: number | null;
   lewatTenggang: boolean;
+  /* === 12OKT-A: kumulasi perkara === */
+  /** Kumulasi dari SIPP atau petitum (bot 12 Okt 2026); null = tidak ada. */
+  kumulasi?: KumulasiPerkara | null;
+  kumulasiTerbaca?: boolean;
+  /* === AKHIR 12OKT-A === */
   /** Bahan sebutan pihak; bot lama tidak mengirimnya - lihat susunanPihak. */
   alurPerkaraId?: number | null;
   jenisPerkaraId?: number | null;
@@ -249,6 +258,10 @@ function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCat
   // Butir 3 (5 Okt 2026): "Tersimpan N catatan" hilang sendiri; yang gagal menetap.
   const [pesan, setPesan] = usePesanSementara();
   const [putaran, setPutaran] = useState(0);
+  /* === 12OKT-A: kumulasi perkara === */
+  // Saklar "Kumulasi perkara" milik panel Tampilan Jadwal Sidang.
+  const saklarKumulasi = useSaklarKumulasi();
+  /* === AKHIR 12OKT-A === */
 
   useEffect(() => {
     let batal = false;
@@ -325,7 +338,9 @@ function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCat
 
   const keterangan: Array<[string, string]> = [
     ["Nomor perkara", baris.nomorPerkara || "—"],
-    ["Jenis perkara", baris.jenisPerkara || "—"],
+    /* === 12OKT-A: kumulasi perkara === */
+    ["Jenis perkara", saklarKumulasi ? namaJenisDenganKumulasi(baris.jenisPerkara, baris.kumulasi) : baris.jenisPerkara || "—"],
+    /* === AKHIR 12OKT-A === */
     ["Tanggal pertemuan", baris.tanggal || "—"],
     [
       "Waktu",
@@ -372,6 +387,14 @@ function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCat
             </div>
           ))}
         </dl>
+
+        {/* === 12OKT-A: kumulasi perkara === */}
+        {saklarKumulasi ? (
+          <div className="mt-2">
+            <RincianKumulasi kumulasi={baris.kumulasi} />
+          </div>
+        ) : null}
+        {/* === AKHIR 12OKT-A === */}
 
         {/* Sebutan tiap sisi menurut perkaranya, sama dengan sel tabel -
             bukan "Penggugat / Pemohon" yang membiarkan pembaca menebak. */}
@@ -723,6 +746,9 @@ function cocokCariCepatMediasi(baris: Mediasi, kata: string) {
   const semua = [
     baris.nomorPerkara,
     baris.jenisPerkara,
+    /* === 12OKT-A: kumulasi perkara === */
+    ...(baris.kumulasi?.daftar ?? []).map((x) => x.nama),
+    /* === AKHIR 12OKT-A === */
     ...namaTiapMediator(baris.mediator),
     baris.mediator || baris.statusMediator ? sebutanMediator(baris.statusMediator) : "",
     baris.tempat,
@@ -749,6 +775,9 @@ export function AletaEcourtMediasi({
   // HAK-PERAN 12 Okt: catat kehadiran/status mediasi hanya golongan mediasi.catat.
   const penggunaAktif = usePenggunaAktifOpsional();
   const bolehCatatMediasi = bolehAksiLayar(penggunaAktif, "mediasi.catat");
+  /* === 12OKT-A: kumulasi perkara === */
+  const saklarKumulasi = useSaklarKumulasi();
+  /* === AKHIR 12OKT-A === */
   const [dari, setDari] = useState(hariIni());
   const [sampai, setSampai] = useState(hariIni());
   const [cari, setCari] = useState("");
@@ -1299,7 +1328,13 @@ export function AletaEcourtMediasi({
                         </dl>
                       ) : null}
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {baris.jenisPerkara || "—"}
+                        {/* === 12OKT-A: kumulasi perkara === */}
+                        {saklarKumulasi ? (
+                          <JenisDenganKumulasi jenis={baris.jenisPerkara} kumulasi={baris.kumulasi} />
+                        ) : (
+                          baris.jenisPerkara || "—"
+                        )}
+                        {/* === AKHIR 12OKT-A === */}
                       </div>
                     </td>
 

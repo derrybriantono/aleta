@@ -46,6 +46,17 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   "belum-minutasi": { letak: "kolom Putusan", contoh: lencana("bg-rose-600 text-white", "belum minutasi") },
   "belum-unggah-putusan": { letak: "kotak saring di atas tabel", contoh: pil("border-rose-400 text-rose-700", "1 Belum unggah") },
   "hari-putusan": { letak: "kolom Perkara, di bawah jenis perkara", contoh: lencana("bg-amber-700 text-amber-50", "Hari Putusan") },
+  /* === 12OKT-A: kumulasi perkara === */
+  "kumulasi-perkara": {
+    letak: "kolom Perkara (jenis perkara), Jadwal Mediasi, Status Perkara, dan rincian",
+    contoh: (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        <span className="text-[11px] font-extrabold">Cerai Gugat Kumulasi Hak Asuh Anak</span>
+        {lencana("bg-amber-100 text-amber-800 ring-1 ring-amber-300 dark:bg-amber-950/70 dark:text-amber-300", "dari petitum")}
+      </span>
+    ),
+  },
+  /* === AKHIR 12OKT-A === */
   "ikrar-talak": { letak: "kolom Perkara, di bawah jenis perkara", contoh: lencana("bg-sky-700 text-white", "Ikrar Talak") },
   "agenda-elitigasi": { letak: "kolom Agenda", contoh: <span className="text-sm font-semibold text-red-700 dark:text-red-400">Replik</span> },
   "verifikasi-majelis": {

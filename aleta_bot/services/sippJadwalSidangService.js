@@ -54,6 +54,9 @@ const pembebananIkrarService = require("./pembebananIkrarService");
 const penandaJawabanService = require("./penandaJawabanService");
 // 12 Okt 2026 (butir 5): ghaib, prodeo, dan lencana pekerjaan pihak - lihat berkasnya.
 const penandaPerkaraPihakService = require("./penandaPerkaraPihakService");
+/* === 12OKT-A: kumulasi perkara === */
+const kumulasiPerkaraService = require("./kumulasiPerkaraService");
+/* === AKHIR 12OKT-A === */
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -233,6 +236,12 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
   /* === 12OKT-B: penanda perkara & pihak (dimulai bersamaan, ditunggu sesudah peta lain) === */
   const janjiBahanPenandaB = penandaPerkaraPihakService.bahanPenanda(idPerkara).catch(() => null);
   /* === AKHIR 12OKT-B === */
+  /* === 12OKT-A: kumulasi perkara === */
+  // Kumulasi dari SIPP (perkara_kumulasi), atau dari petitum bila SIPP
+  // kosong - lihat kumulasiPerkaraService. Dimulai bersamaan dengan
+  // keterangan lain; gagal-terbuka dan dicatat (kumulasiTerbaca false).
+  const janjiKumulasi = aman(() => kumulasiPerkaraService.kumulasiBanyakPerkara(idPerkara), "kumulasi");
+  /* === AKHIR 12OKT-A === */
 
   const [
     petaPihak,
@@ -362,6 +371,10 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       return {};
     }
   })();
+
+  /* === 12OKT-A: kumulasi perkara === */
+  const petaKumulasi = await janjiKumulasi;
+  /* === AKHIR 12OKT-A === */
 
   return {
     dari: mulai,
@@ -501,6 +514,12 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // atau keadaan e-Courtnya memang tidak dapat dibaca - dua hal yang
       // sama-sama BUKAN masalah putusan.
       putusanEcourt: petaPutusanEcourt[cleanText(row.nomorPerkara)] || null,
+      /* === 12OKT-A: kumulasi perkara === */
+      // { daftar: [{kode, nama, sumber: "sipp"|"petitum", kutipan?}], sumber }
+      // atau null bila tidak berkumulasi. kumulasiTerbaca false = gagal dibaca.
+      kumulasi: petaKumulasi[String(row.perkaraId)] || null,
+      kumulasiTerbaca: !gagal.has("kumulasi"),
+      /* === AKHIR 12OKT-A === */
     })),
   };
 }
@@ -1875,6 +1894,10 @@ async function daftarJadwalMediasi({ dari = "", sampai = "", cari = "", batas = 
   // kedudukan yang keliru. 8 dari 752 perkara bermediasi di sipp_donggala
   // (Kewarisan, Harta Bersama) punya turut tergugat.
   const petaPihak = await pihakBanyakPerkara(idPerkara, { pisahkanTurut: true }).catch(() => ({}));
+  /* === 12OKT-A: kumulasi perkara === */
+  // null = gagal dibaca (kumulasiTerbaca false), bukan "tidak berkumulasi".
+  const petaKumulasiMediasi = await kumulasiPerkaraService.kumulasiBanyakPerkara(idPerkara).catch(() => null);
+  /* === AKHIR 12OKT-A === */
 
   // Lama mediasi menurut view SIPP - dipakai menghitung sisa tenggang.
   const petaDurasi = {};
@@ -1935,6 +1958,10 @@ async function daftarJadwalMediasi({ dari = "", sampai = "", cari = "", batas = 
         // pekerjaan yang sudah beres.
         lewatTenggang: sisaHari !== null && sisaHari < 0,
         pihak: petaPihak[String(row.perkaraId)] || { penggugat: [], tergugat: [] },
+        /* === 12OKT-A: kumulasi perkara === */
+        kumulasi: (petaKumulasiMediasi || {})[String(row.perkaraId)] || null,
+        kumulasiTerbaca: petaKumulasiMediasi !== null,
+        /* === AKHIR 12OKT-A === */
       };
     }),
   };
@@ -3337,6 +3364,14 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
   // ditugaskan pada perkara belum tentu jurusita yang melaksanakan relaas ini,
   // dan menyamarkan perbedaannya berarti menaruh nama orang pada pekerjaan
   // yang mungkin bukan miliknya.
+  /* === 12OKT-A: kumulasi perkara === */
+  // undefined = gagal dibaca; null = tidak berkumulasi.
+  const kumulasi = await kumulasiPerkaraService
+    .kumulasiBanyakPerkara([perkara.perkaraId])
+    .then((peta) => peta[String(perkara.perkaraId)] || null)
+    .catch(() => undefined);
+  /* === AKHIR 12OKT-A === */
+
   const jurusitaPerkara = (petugas.jurusita || []).map((x) => x.nama).filter(Boolean);
   const relaasLengkap = (Array.isArray(relaas) ? relaas : []).map((baris) =>
     baris.jurusitaNama || jurusitaPerkara.length === 0
@@ -3376,6 +3411,11 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     // konseptornya terbaca dari jejak tahapan, bukan dari tabel putusan, dan
     // dapat kosong pada perkara yang tahapannya tidak pernah dicatat.
     konseptor,
+    /* === 12OKT-A: kumulasi perkara === */
+    // Sama dengan ruas kumulasi baris jadwal; dipakai Status Perkara.
+    kumulasi,
+    kumulasiTerbaca: kumulasi !== undefined,
+    /* === AKHIR 12OKT-A === */
   };
 }
 
