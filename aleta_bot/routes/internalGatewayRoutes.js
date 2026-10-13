@@ -5242,6 +5242,13 @@ router.post("/ecourt/jadwal", requireInternalToken, (req, res) => {
       jamMulai: req.body?.jamMulai,
       jamSelesai: req.body?.jamSelesai,
       maksPerkara: req.body?.maksPerkara,
+      // 13 Okt 2026: selang acak putaran berkala dan tarikan pagi. Ruas yang
+      // tidak dikirim (pengirim lama) dipertahankan dari pengaturan sekarang.
+      selangMinMenit: req.body?.selangMinMenit,
+      selangMaksMenit: req.body?.selangMaksMenit,
+      pagiAktif: typeof req.body?.pagiAktif === "boolean" ? req.body.pagiAktif : undefined,
+      jamPagi: req.body?.jamPagi,
+      menitPagi: req.body?.menitPagi,
       olehSiapa: String(req.body?.olehSiapa || ""),
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);

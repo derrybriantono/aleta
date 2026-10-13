@@ -37,17 +37,19 @@ const AKAR = path.resolve(process.cwd(), "..");
 const require_ = createRequire(path.join(AKAR, "aleta_bot/package.json"));
 
 // Catatan keamanan bot tidak boleh menyentuh basis data mana pun dari uji.
-const jalurLog = require_.resolve(path.join(AKAR, "aleta_bot/services/logService.js"));
+// Pemeriksaan arsip & permintaan titipan juga ditiru: penjadwal yang menyala
+// (akun utama sah) memanggil pemeriksaan arsip yang MENULIS ke MySQL bot.
 const catatan: Array<Record<string, unknown>> = [];
-require_.cache[jalurLog] = {
-  id: jalurLog,
-  filename: jalurLog,
-  loaded: true,
-  exports: {
-    logSecurityEvent: async (d: Record<string, unknown>) => void catatan.push(d),
-    logSystemEvent: async (d: Record<string, unknown>) => void catatan.push(d),
-  },
-} as unknown as NodeJS.Module;
+function tiru(rel: string, exports: Record<string, unknown>) {
+  const jalur = require_.resolve(path.join(AKAR, rel));
+  require_.cache[jalur] = { id: jalur, filename: jalur, loaded: true, exports } as unknown as NodeJS.Module;
+}
+tiru("aleta_bot/services/logService.js", {
+  logSecurityEvent: async (d: Record<string, unknown>) => void catatan.push(d),
+  logSystemEvent: async (d: Record<string, unknown>) => void catatan.push(d),
+});
+tiru("aleta_bot/services/ecourtAuditArsipService.js", { periksaArsip: async () => ({ diperiksa: 0, dibuang: 0 }) });
+tiru("aleta_bot/services/ecourtPermintaanService.js", { ambilBerikutnya: async () => null, tandaiSelesai: async () => ({}) });
 
 type AkunUtama = { slot: string; sah: boolean; alasan: string; bawaan: boolean; pesan: string };
 const akunSvc = require_(path.join(AKAR, "aleta_bot/services/ecourtAkunService.js")) as {
@@ -62,7 +64,7 @@ const akunSvc = require_(path.join(AKAR, "aleta_bot/services/ecourtAkunService.j
 const penjadwal = require_(path.join(AKAR, "aleta_bot/services/ecourtSchedulerService.js")) as {
   getSettings: () => { aktif: boolean; aktifTersimpan: boolean; selaluAktif: boolean };
   dalamJamKerja: (t: Date, p: Record<string, unknown>) => boolean;
-  hitungJadwalBerikutnya: (o: Record<string, unknown>) => string | null;
+  jadwalBerkalaBerikutnya: (o: Record<string, unknown>) => string | null;
   berhenti: () => void;
 };
 const statusSvc = require_(path.join(AKAR, "aleta_bot/services/ecourtPenarikanStatusService.js")) as {
@@ -151,28 +153,21 @@ describe("butir 11: akun utama penarikan selalu aktif", () => {
     expect(penjadwal.dalamJamKerja(new Date("2026-10-17T01:00:00Z"), p)).toBe(false);
   });
 
-  it("jadwal putaran berikutnya: detak pertama sesudah jarak dan di jam kerja", () => {
+  it("jadwal putaran berkala berikutnya: waktu acak yang ditetapkan, digeser ke jam kerja", () => {
     const p = { jamMulai: 7, jamSelesai: 17 };
-    const mulai = Date.parse("2026-10-12T22:50:00Z"); // Selasa 06.50 WITA
+    // Selasa 10.40 WITA: di jam kerja - tetap.
     expect(
-      penjadwal.hitungJadwalBerikutnya({ aktif: true, timerMulaiMs: mulai, jarakJam: 2, sekarangMs: Date.parse("2026-10-12T22:55:00Z"), pengaturan: p })
-    ).toBe("2026-10-12T23:05:00.000Z");
+      penjadwal.jadwalBerkalaBerikutnya({ aktif: true, berikutnyaMs: Date.parse("2026-10-13T02:40:00Z"), sekarangMs: Date.parse("2026-10-13T02:00:00Z"), pengaturan: p })
+    ).toBe("2026-10-13T02:40:00.000Z");
+    // Selasa 17.20 WITA -> Rabu 07.00 WITA.
     expect(
-      penjadwal.hitungJadwalBerikutnya({
-        aktif: true,
-        timerMulaiMs: mulai,
-        terakhirPutaranMs: Date.parse("2026-10-12T23:05:00Z"),
-        jarakJam: 2,
-        sekarangMs: Date.parse("2026-10-12T23:10:00Z"),
-        pengaturan: p,
-      })
-    ).toBe("2026-10-13T01:05:00.000Z");
-    // Jumat 16.50 WITA -> Senin 07.05 WITA.
-    const jumat = Date.parse("2026-10-16T08:50:00Z");
+      penjadwal.jadwalBerkalaBerikutnya({ aktif: true, berikutnyaMs: Date.parse("2026-10-13T09:20:00Z"), sekarangMs: Date.parse("2026-10-13T09:00:00Z"), pengaturan: p })
+    ).toBe("2026-10-13T23:00:00.000Z");
+    // Jumat 16.50 + 40 menit -> Senin 07.00 WITA.
     expect(
-      penjadwal.hitungJadwalBerikutnya({ aktif: true, timerMulaiMs: jumat, jarakJam: 2, sekarangMs: jumat + 60000, pengaturan: p })
-    ).toBe("2026-10-18T23:05:00.000Z");
-    expect(penjadwal.hitungJadwalBerikutnya({ aktif: false, timerMulaiMs: mulai, jarakJam: 2, pengaturan: p })).toBeNull();
+      penjadwal.jadwalBerkalaBerikutnya({ aktif: true, berikutnyaMs: Date.parse("2026-10-16T09:30:00Z"), sekarangMs: Date.parse("2026-10-16T08:50:00Z"), pengaturan: p })
+    ).toBe("2026-10-18T23:00:00.000Z");
+    expect(penjadwal.jadwalBerkalaBerikutnya({ aktif: false, berikutnyaMs: 1, pengaturan: p })).toBeNull();
   });
 });
 
