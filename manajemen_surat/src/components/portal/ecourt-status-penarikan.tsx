@@ -18,6 +18,7 @@ import {
   NADA_HASIL,
   angkaPenarikan,
   kalimatBerikutnya,
+  kalimatPagi,
   kalimatPenarikan,
   keadaanSesi,
   peringatanPenarikan,
@@ -113,7 +114,8 @@ export function EcourtStatusPenarikan() {
                 ))}
               </ul>
             ) : null}
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-3">
+              <BarisTerakhir judul="Tarikan pagi terakhir" r={status.terakhirPagi ?? null} zona={zona} />
               <BarisTerakhir judul="Tarikan berkala terakhir" r={status.terakhirBerkala} zona={zona} />
               <BarisTerakhir judul="Tarikan per perkara terakhir" r={status.terakhirPerkara} zona={zona} />
             </div>
@@ -125,6 +127,11 @@ export function EcourtStatusPenarikan() {
                   ? ` · sedang dipakai: ${status.penjadwal.akunBerjalan}`
                   : ""}
               </p>
+              {kalimatPagi(status) ? (
+                <p>
+                  <span className="font-medium text-foreground">Pagi:</span> {kalimatPagi(status)}
+                </p>
+              ) : null}
               <p>
                 <span className="font-medium text-foreground">Jadwal:</span> {kalimatBerikutnya(status)}
                 {status.penjadwal.jamMulai !== null && status.penjadwal.jamSelesai !== null

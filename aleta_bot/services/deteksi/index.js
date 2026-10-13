@@ -36,7 +36,8 @@
  * pemuat ini tidak pernah menggagalkan usulan.
  */
 
-const DAFTAR = Object.freeze(["itsbat", "cerai"]);
+// Agen X/W/Y (13 Okt): DK, poligami, waris, harta bersama, perwalian, asal usul, pengangkatan anak, wali adhol, hadhanah, Lain-Lain.
+const DAFTAR = Object.freeze(["itsbat", "cerai", "dispensasiKawin", "poligami", "waris", "hartaBersama", "perwalian", "asalUsul", "pengangkatanAnak", "waliAdhol", "hadhanah", "lainLain"]);
 
 let tembolok = null;
 

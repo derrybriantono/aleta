@@ -2441,6 +2441,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // 12 Okt (12OKT-D): usulan yang menyebut `awal` menentukan centang awalnya sendiri (tanggal KTP: tercentang
   // hanya bila isian blangko kosong dan bacaan e-Court cukup/pasti - lihat ktpUsulanTanggal/ktpUsulanTeks).
   if (typeof u.awal === "boolean") centang.checked = u.awal && Boolean(u.nilai) && u.keyakinan !== "ragu" && u.keyakinan !== "bentrok";
+  // PWH 13 Okt: usulan modul poligami/harta bersama/waris tidak menimpa isian petugas yang sudah ada.
+  if (u.jagaIsianLama && !pwhIsianKosong(keadaanSekarang)) centang.checked = false;
   centang.disabled = !u.nilai;
   kepala.appendChild(centang);
   kepala.appendChild(buatElemen("span", "aleta-abt-kode", u.kode));
@@ -3709,10 +3711,60 @@ const J3_VARIABEL_JENIS = Object.freeze({
 function j3BlangkoMemuatVariabelJenis(petaVariabel, namaAtauId) {
   if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
   const id = idJenisPerkaraSipp(String(namaAtauId || "").replace(/\s+/g, " ").trim());
-  const daftar = J3_VARIABEL_JENIS[id];
-  return Boolean(daftar) && daftar.some((k) => petaVariabel.has(k));
+  const daftar = [...(J3_VARIABEL_JENIS[id] || []), ...(PWH_VARIABEL_JENIS[id] || [])];
+  return daftar.length > 0 && daftar.some((k) => petaVariabel.has(k));
 }
 /* === AKHIR JENIS3 === */
+
+/* === PWH 13 Okt (butir 16) === */
+/**
+ * Variabel blangko izin poligami (341), harta bersama (348), kewarisan (364/365) dan penetapan ahli
+ * waris (371) yang dideteksi modul aleta_bot/services/deteksi/{poligami,hartaBersama,waris}.js -
+ * cermin `variabel` modul itu, dijaga uji deteksi-poligami-waris-hb.test.ts. Hanya untuk menggambar
+ * tombol "Isi dari posita permohonan"; yang diusulkan dan keyakinannya tetap diputuskan bot.
+ */
+const PWH_VARIABEL_JENIS = Object.freeze({
+  341: Object.freeze(["8723", "8724", "8725", "1152", "8720", "8722", "8726"]),
+  348: Object.freeze(["8730", "8706"]),
+  364: Object.freeze(["1025", "1246", "1247", "1509", "8717", "8718"]),
+  365: Object.freeze(["1025", "1246", "1247", "1509", "8717", "8718"]),
+  371: Object.freeze(["1025", "1246", "1247", "1509", "5197", "8610", "8613", "8614", "8608"]),
+});
+
+/**
+ * Isian blangko yang BOLEH diisi usulan bertanda `jagaIsianLama`: kosong, "...", atau bawaan ABT
+ * bergaris bawah ("_ binti _", "Rp_,00 (_ rupiah)"). Isian petugas yang lain tidak ditimpa diam-diam.
+ */
+function pwhIsianKosong(teks) {
+  const t = String(teks == null ? "" : teks).replace(/\s+/g, " ").trim();
+  if (!t || t === "(kosong)" || /^(?:\.{2,}|…+|-+)$/.test(t)) return true;
+  return /(?:^|[\s(.,;:/])_+(?=$|[\s),.;:/])/.test(t);
+}
+/* === AKHIR PWH === */
+/* === DETEKSI-Y 13 Okt === */
+/**
+ * Variabel yang dideteksi modul per jenis agen Y (aleta_bot/services/deteksi: perwalian, asalUsul,
+ * pengangkatanAnak, waliAdhol, hadhanah, lainLain) dari posita/petitum - cermin, dijaga uji
+ * deteksi-perwalian-anak-umum.test.ts. Hanya untuk menggambar tombol "Isi dari posita permohonan"
+ * (juga bila tombol itsbat tampil: blangko perwalian/asal usul memuat #5197#). Keyakinannya diputuskan bot.
+ */
+const Y_VARIABEL_JENIS = Object.freeze({
+  349: Object.freeze(["0709", "0711", "2004", "8603"]),
+  352: Object.freeze(["8603", "8618", "8619", "8622", "8623"]),
+  354: Object.freeze(["0007", "0709", "0712", "1025", "1230", "5105", "5110", "5178", "5197", "8171"]),
+  358: Object.freeze(["8603", "8605"]),
+  363: Object.freeze(["1014", "1029", "1030", "1046", "1217", "3333", "6087"]),
+  369: Object.freeze(["0007", "0709", "0711", "0712", "1025", "1230", "2004", "5105", "5110", "5178", "5197", "8171", "8603", "8618", "8619", "8622", "8623"]),
+});
+
+/** Blangko memuat variabel modul deteksi agen Y untuk jenis perkara ini (nama atau id SIPP)? */
+function yBlangkoMemuatVariabelJenis(petaVariabel, namaAtauId) {
+  if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
+  const id = idJenisPerkaraSipp(String(namaAtauId || "").replace(/\s+/g, " ").trim());
+  const daftar = Y_VARIABEL_JENIS[id];
+  return Boolean(daftar) && daftar.some((k) => petaVariabel.has(k));
+}
+/* === AKHIR DETEKSI-Y === */
 
 /** Blangko ini memuat sekurang-kurangnya satu variabel siap MILIK jenis perkara ini? */
 function blangkoMemuatVariabelSiapLain(petaVariabel, kunciJenis) {
@@ -4260,6 +4312,11 @@ function susunPanelAbt(jatiDiri) {
     tombolPositaLain.hidden = false;
   }
   /* === AKHIR JENIS3 === */
+  /* === DETEKSI-Y 13 Okt === */
+  // Perwalian/asal usul/pengangkatan anak/wali adhol/hadhanah/Lain-Lain: modul per jenis membaca posita +
+  // petitum SIPP - tombol tergambar walau tombol itsbat juga tampil (blangko perwalian memuat #5197#).
+  if (tombolPositaLain.hidden && yBlangkoMemuatVariabelJenis(petaAwal, jenisAwal)) tombolPositaLain.hidden = false;
+  /* === AKHIR DETEKSI-Y === */
   if (!tombolPositaLain.hidden && !tombolItsbat.hidden) tombolPositaLain.textContent = "Isi dari posita permohonan (perkara lain)";
   tombolPositaLain.title =
     "Variabel perkara lain yang lulus gerbang ukur (presisi ≥ 0,9 atas isian manusia) dan tidak lebih buruk dari " +
@@ -18728,6 +18785,15 @@ function p7GabungUsulan(dariBot, dariSidang, peta) {
   return [...per.values()].filter((u) => rapi((peta.get(String(u.kode)) || {}).nilai) !== rapi(u.nilai));
 }
 
+/* === DK 13 Okt === */
+/** Blangko dispensasi kawin tanpa posita (BAS ALUR 12) yang memuat variabel DK siap? */
+function dkBasTanpaPosita(peta, nomor) {
+  if (!peta || peta.has(VAR_POSITA)) return false;
+  const jenis = (peta.get(VAR_JENIS_PERKARA) || {}).nilai || sebutJenisPerkara(nomor);
+  return kunciJenisLain(jenis) === "dispensasi-kawin" && blangkoMemuatVariabelSiapLain(peta, "dispensasi-kawin");
+}
+/* === AKHIR DK === */
+
 /**
  * 1.184.0 (butir 1): usulan tambahan untuk variabel data_teks/data_tanggal di
  * blangko BAS - sumber yang sama dengan panel hakim: posita (itsbat, perkara
@@ -18756,6 +18822,18 @@ async function p7UsulanTambahan(nomor, catatan) {
           return [];
         })
     );
+  } else if (dkBasTanpaPosita(peta, nomor)) {
+    /* === DK 13 Okt === */
+    // BAS dispensasi kawin tidak memuat 5125: posita kosong dikirim, bot membacanya dari SIPP.
+    tugas.push(
+      mintaUsulan(muatanUsulanLain("", nomor))
+        .then((j) => (j && j.positaLain && j.positaLain.ok && Array.isArray(j.positaLain.usulan) ? j.positaLain.usulan : []))
+        .catch((g) => {
+          catatan.push(`Posita dispensasi kawin (SIPP): ${sorePesan(g)}.`);
+          return [];
+        })
+    );
+    /* === AKHIR DK === */
   }
   if (A3_VAR_TANGGAL_KTP_P.some((k) => peta.has(k)) || ktpKandidatTeks(peta).length) {
     tugas.push(

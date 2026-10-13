@@ -348,8 +348,10 @@ describe("rute /abt/usulan - sumber 'posita-lain' (dispensasi kawin, perwalian)"
   function bentukK6(h: HasilLain) {
     expect(Object.keys(h)).toEqual(expect.arrayContaining(["ok", "jenis", "usulan", "belumSiap"]));
     for (const u of h.usulan) {
-      expect(Object.keys(u).sort()).toEqual(["keyakinan", "kode", "nama", "nilai", "siap", "sumber"]);
-      expect(u.siap).toBe(true);
+      // Butir 15 (13 Okt 2026): usulan DK tambahan membawa kodePola (dan catatan bila ada);
+      // yang belum lulus gerbang ukur dikirim "ragu" - tidak tercentang di panel.
+      expect(Object.keys(u)).toEqual(expect.arrayContaining(["keyakinan", "kode", "nama", "nilai", "siap", "sumber"]));
+      if (!u.siap) expect(u.keyakinan).toBe("ragu");
     }
     for (const b of h.belumSiap) expect(Object.keys(b).sort()).toEqual(["alasan", "kode", "n", "presisi"]);
   }

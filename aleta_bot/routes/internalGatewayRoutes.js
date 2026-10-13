@@ -2369,6 +2369,15 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     }
     // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
     // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.
+    /* === DK 13 Okt === */
+    // Blangko BAS dispensasi kawin tidak memuat 5125: ekstensi mengirim posita
+    // kosong dan posita dibaca dari SIPP (HANYA SELECT, 2,5 detik).
+    if (sumber === "posita-lain") {
+      req.body.posita = await require("../services/deteksiDispensasiKawinService")
+        .positaCadanganSipp(req.body)
+        .catch(() => String(req.body?.posita || ""));
+    }
+    /* === AKHIR DK === */
     if (sumber === "posita-lain") {
       jawaban.positaLain = abtUsulanLainService.dariPositaLain(String(req.body?.posita || ""), {
         jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
@@ -2393,7 +2402,54 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // tambahan per jenis tidak pernah menggagalkan usulan perkara lain
       }
       /* === AKHIR JENIS3 === */
+      /* === PWH 13 Okt (butir 16) === */
+      // Izin poligami, harta bersama, kewarisan, penetapan ahli waris: modul deteksi/<jenis>.js dari
+      // posita + petitum + SIPP (alasan & penghasilan poligami, nama pemohon) - SIPP hanya dibaca.
+      try {
+        const pwh = require("../services/deteksi/sambunganPwh");
+        const jenisMasuk = String(req.body?.jenisPerkara || "").slice(0, 80);
+        const sippPwh = nomorPerkara ? await pwh.bacaSipp(nomorPerkara).catch(() => null) : null;
+        if (pwh.idJenis(jenisMasuk) || (sippPwh && pwh.JENIS_PWH.has(sippPwh.jenisPerkaraId))) {
+          jawaban.positaLain = pwh.tambahUsulanPwh(jawaban.positaLain, String(req.body?.posita || ""), {
+            jenisPerkara: jenisMasuk,
+            alur: String(req.body?.alur || "").slice(0, 20),
+            sipp: sippPwh,
+          });
+        }
+      } catch {
+        // modul per jenis tidak pernah menggagalkan usulan perkara lain
+      }
+      /* === AKHIR PWH === */
+      /* === DETEKSI-Y 13 Okt === */
+      // Modul per jenis (perwalian, asal usul, pengangkatan anak, wali adhol, hadhanah, Lain-Lain 369):
+      // posita + petitum/pihak dari SIPP (HANYA SELECT) - lihat services/deteksi/sambungPositaLain.js.
+      try {
+        jawaban.positaLain = await require("../services/deteksi/sambungPositaLain").lengkapiPositaLain(jawaban.positaLain, {
+          posita: String(req.body?.posita || ""),
+          nomorPerkara,
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+          alur: String(req.body?.alur || "").slice(0, 20),
+        });
+      } catch (_galatY) {
+        // deteksi per jenis tidak pernah menggagalkan usulan perkara lain
+      }
+      /* === AKHIR DETEKSI-Y === */
     }
+    /* === DK 13 Okt === */
+    // Dispensasi kawin: peran anak/calon pasangan, umur, identitas, kehamilan,
+    // perkenalan, puskesmas - lihat services/deteksiDispensasiKawinService.js.
+    if (sumber === "posita-lain") {
+      try {
+        jawaban.positaLain = require("../services/deteksiDispensasiKawinService").lengkapiUsulanDk(
+          jawaban.positaLain,
+          String(req.body?.posita || ""),
+          { jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80) }
+        );
+      } catch (_galatDk) {
+        // tambahan DK tidak pernah menggagalkan usulan perkara lain
+      }
+    }
+    /* === AKHIR DK === */
     // Butir 12 (6 Okt 2026): alasan yang terbaca dari posita - SUMBER YANG SAMA
     // dengan "Alasan yang dipakai" penyusun saksi (alasanDariPosita) - supaya
     // centang modus "Hanya sebagian alasan" dapat mendahulukan alasan yang
@@ -5242,6 +5298,13 @@ router.post("/ecourt/jadwal", requireInternalToken, (req, res) => {
       jamMulai: req.body?.jamMulai,
       jamSelesai: req.body?.jamSelesai,
       maksPerkara: req.body?.maksPerkara,
+      // 13 Okt 2026: selang acak putaran berkala dan tarikan pagi. Ruas yang
+      // tidak dikirim (pengirim lama) dipertahankan dari pengaturan sekarang.
+      selangMinMenit: req.body?.selangMinMenit,
+      selangMaksMenit: req.body?.selangMaksMenit,
+      pagiAktif: typeof req.body?.pagiAktif === "boolean" ? req.body.pagiAktif : undefined,
+      jamPagi: req.body?.jamPagi,
+      menitPagi: req.body?.menitPagi,
       olehSiapa: String(req.body?.olehSiapa || ""),
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);

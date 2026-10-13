@@ -64,6 +64,11 @@ export async function POST(request: NextRequest) {
       jamMulai?: number;
       jamSelesai?: number;
       maksPerkara?: number;
+      selangMinMenit?: number;
+      selangMaksMenit?: number;
+      pagiAktif?: boolean;
+      jamPagi?: number;
+      menitPagi?: number;
     };
 
     if (body.aksi === "jalankan") {
@@ -78,6 +83,13 @@ export async function POST(request: NextRequest) {
       jamMulai: Number(body.jamMulai),
       jamSelesai: Number(body.jamSelesai),
       maksPerkara: Number(body.maksPerkara),
+      // 13 Okt 2026: selang acak berkala + tarikan pagi. Tidak dikirim = bot
+      // mempertahankan nilai sekarang.
+      ...(body.selangMinMenit !== undefined ? { selangMinMenit: Number(body.selangMinMenit) } : {}),
+      ...(body.selangMaksMenit !== undefined ? { selangMaksMenit: Number(body.selangMaksMenit) } : {}),
+      ...(typeof body.pagiAktif === "boolean" ? { pagiAktif: body.pagiAktif } : {}),
+      ...(body.jamPagi !== undefined ? { jamPagi: Number(body.jamPagi) } : {}),
+      ...(body.menitPagi !== undefined ? { menitPagi: Number(body.menitPagi) } : {}),
       olehSiapa: actor.name,
     });
 

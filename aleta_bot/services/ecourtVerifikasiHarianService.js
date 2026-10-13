@@ -33,6 +33,10 @@
  *     esok hari.
  *
  * Mematikan: ALETA_ECOURT_VERIFIKASI_AKTIF=0.
+ *
+ * 13 Okt 2026: pewaktunya sendiri tidak lagi menyala (bawaan) - penjadwal
+ * e-Court menarik sidang hari ini di tarikan pagi dan di tiap putaran berkala
+ * 30-60 menit (sidangHari / sidangPerluDiperiksa / catatTarik).
  */
 
 const { normalizeCaseNumber, cleanText } = require("./ecourtTextService");
@@ -357,7 +361,7 @@ function buatLayanan(deps = {}) {
   }
 
   /** Perkara e-Litigasi gugatan yang bersidang pada tanggal itu - SIPP. */
-  async function perkaraElitigasi(tanggal) {
+  async function perkaraElitigasi(tanggal, { semuaJenis = false } = {}) {
     // Agenda sidang hari itu dan tanggal sidang SEBELUMNYA ikut dibaca: keduanya
     // menentukan keadaan "belum upload" (lihat keadaanPerkara).
     const baris = await kueriSipp(
@@ -379,7 +383,9 @@ function buatLayanan(deps = {}) {
         agenda: cleanText(b.agenda),
         sidangLalu: waktuTeks(b.sidangLalu).slice(0, 10) || bersih(b.sidangLalu).slice(0, 10),
       }))
-      .filter((b) => b.nomorPerkara && POLA_GUGATAN.test(b.nomorPerkara));
+      // semuaJenis (tarikan pagi, 13 Okt 2026): seluruh perkara e-Court yang
+      // bersidang hari itu, bukan hanya gugatan.
+      .filter((b) => b.nomorPerkara && (semuaJenis || POLA_GUGATAN.test(b.nomorPerkara)));
 
     // 13 Okt 2026: riwayat agenda sidang sebelumnya - awal babak agenda hari
     // ini (sidang yang ditunda dengan agenda yang sama dilompati). Gagal
@@ -580,6 +586,70 @@ function buatLayanan(deps = {}) {
       penarik.alasanTakTersambung = hasil.kode === 2 ? "sesi e-Court habis" : bersih(hasil.catatan) || "penarikan gagal";
     }
     return { jalan: true, nomorPerkara: target.nomorPerkara, kode: hasil.kode };
+  }
+
+  // ==========================================================================
+  // SIDANG HARI INI UNTUK PENJADWAL (13 Okt 2026)
+  // ==========================================================================
+  //
+  // Penarik verifikasi 15 menit (satu perkara per tarikan, tiap tarikan
+  // menyapu seluruh daftar e-Court) diganti: penjadwal menarik perkara sidang
+  // hari ini DI DALAM putaran berkalanya (jembatan --utamakan) dan di tarikan
+  // pagi. Di sini hanya daftarnya dan catatan hasilnya.
+
+  /** Nomor perkara e-Court yang bersidang pada tanggal itu. */
+  async function sidangHari(tanggal, { semuaJenis = false } = {}) {
+    const hari = bersih(tanggal).slice(0, 10) || tanggalLokal(sekarang());
+    return (await perkaraElitigasi(hari, { semuaJenis })).map((p) => p.nomorPerkara);
+  }
+
+  /**
+   * Gugatan e-Litigasi sidang hari itu yang masih perlu dibuka: belum ditarik
+   * hari ini, atau keadaannya belum "sudah" (menunggu majelis/belum upload).
+   */
+  async function sidangPerluDiperiksa(tanggal) {
+    const hari = bersih(tanggal).slice(0, 10) || tanggalLokal(sekarang());
+    gantiHari(hari);
+    const daftar = await perkaraElitigasi(hari);
+    if (daftar.length === 0) return [];
+    const { dokumen } = await dataTersimpan(daftar.map((d) => d.nomorPerkara));
+    return daftar
+      .filter((p) => {
+        const k = normalizeCaseNumber(p.nomorPerkara);
+        if (!penarik.berhasil.has(k)) return true;
+        return (
+          keadaanPerkara({
+            dokumen: dokumen.get(k) || [],
+            diperiksaHariIni: true,
+            menunggu,
+            perluUnggah: agendaPerluUnggah(p.agenda),
+            sidangLalu: p.sidangLalu,
+            agenda: p.agenda,
+            awalBabak: p.awalBabak,
+          }).keadaan !== "sudah"
+        );
+      })
+      .map((p) => p.nomorPerkara);
+  }
+
+  /** Mencatat hasil tarikan penjadwal untuk perkara-perkara itu. */
+  function catatTarik(daftar, kode) {
+    const kini = sekarang();
+    gantiHari(tanggalLokal(kini));
+    penarik.terakhirPutaran = waktuTeks(kini);
+    for (const nomor of Array.isArray(daftar) ? daftar : []) {
+      const k = normalizeCaseNumber(nomor);
+      penarik.dicoba.set(k, kini.getTime());
+      if (kode === 0) penarik.berhasil.set(k, kini.getTime());
+    }
+    penarik.jumlahTarik += 1;
+    if (kode === 0) {
+      penarik.tersambung = true;
+      penarik.alasanTakTersambung = "";
+    } else if (kode !== undefined && kode !== null) {
+      penarik.tersambung = false;
+      penarik.alasanTakTersambung = kode === 2 ? "sesi e-Court habis" : "penarikan gagal";
+    }
   }
 
   function status() {
@@ -920,6 +990,9 @@ function buatLayanan(deps = {}) {
   return {
     keadaanHari,
     putaran,
+    sidangHari,
+    sidangPerluDiperiksa,
+    catatTarik,
     status,
     perkaraElitigasi,
     dataTersimpan,
@@ -944,6 +1017,11 @@ const pewaktuInfo = { mulaiMs: 0, ms: 0 };
 function mulai() {
   if (pewaktu) return false;
   if (bersih(process.env.ALETA_ECOURT_VERIFIKASI_AKTIF || "1") === "0") return false;
+  // 13 Okt 2026: pewaktu 15 menit sendiri DIGANTI putaran berkala penjadwal
+  // (sidang hari ini ikut diutamakan di tiap putaran) - dua jadwal yang saling
+  // bertumpuk tidak dijalankan. Jalur lama hanya dengan
+  // ALETA_ECOURT_VERIFIKASI_TERPISAH=1.
+  if (bersih(process.env.ALETA_ECOURT_VERIFIKASI_TERPISAH) !== "1") return false;
   const jeda = Number(process.env.ALETA_ECOURT_VERIFIKASI_JEDA_MS);
   const ms = Number.isFinite(jeda) && jeda >= 60 * 1000 ? jeda : JEDA_BAWAAN_MS;
   const detak = () => {
@@ -984,6 +1062,9 @@ module.exports = {
   hentikan,
   keadaanHari: (tanggal) => layanan().keadaanHari(tanggal),
   putaran: () => layanan().putaran(),
+  sidangHari: (tanggal, opsi) => layanan().sidangHari(tanggal, opsi),
+  sidangPerluDiperiksa: (tanggal) => layanan().sidangPerluDiperiksa(tanggal),
+  catatTarik: (daftar, kode) => layanan().catatTarik(daftar, kode),
   status: () => {
     const s = layanan().status();
     const k = pewaktu && pewaktuInfo.ms ? Math.floor((Date.now() - pewaktuInfo.mulaiMs) / pewaktuInfo.ms) + 1 : 0;
