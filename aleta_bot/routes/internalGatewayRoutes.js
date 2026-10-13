@@ -2420,6 +2420,20 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // modul per jenis tidak pernah menggagalkan usulan perkara lain
       }
       /* === AKHIR PWH === */
+      /* === DETEKSI-Y 13 Okt === */
+      // Modul per jenis (perwalian, asal usul, pengangkatan anak, wali adhol, hadhanah, Lain-Lain 369):
+      // posita + petitum/pihak dari SIPP (HANYA SELECT) - lihat services/deteksi/sambungPositaLain.js.
+      try {
+        jawaban.positaLain = await require("../services/deteksi/sambungPositaLain").lengkapiPositaLain(jawaban.positaLain, {
+          posita: String(req.body?.posita || ""),
+          nomorPerkara,
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+          alur: String(req.body?.alur || "").slice(0, 20),
+        });
+      } catch (_galatY) {
+        // deteksi per jenis tidak pernah menggagalkan usulan perkara lain
+      }
+      /* === AKHIR DETEKSI-Y === */
     }
     /* === DK 13 Okt === */
     // Dispensasi kawin: peran anak/calon pasangan, umur, identitas, kehamilan,

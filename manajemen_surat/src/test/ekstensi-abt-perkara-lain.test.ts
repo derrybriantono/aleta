@@ -103,6 +103,16 @@ const semestinyaTampak = (folder: string, kode: string[]) => {
   const kunci = KUNCI_FOLDER[folder];
   return Boolean(kunci) && (SIAP_BOT[kunci as string] || []).some((v) => kode.includes(v));
 };
+// 13 Okt (deteksi agen Y): modul per jenis (perwalian, asal usul, ...) juga memunculkan tombol bila
+// blangko memuat variabel yang dideteksinya - id jenis SIPP -> variabel modul (posita/petitum).
+const ID_FOLDER: Record<string, number> = { "6 Perwalian": 354, "- BAS ASAL USUL ANAK -": 358 };
+const tampakModulY = (folder: string, kode: string[]) => {
+  const m = require_("../services/deteksi/index").modulUntuk(ID_FOLDER[folder]);
+  if (!m) return false;
+  return (m.variabel as Array<{ kode: string; sumber: string; deteksi?: boolean }>).some(
+    (v) => /^(posita|petitum)$/.test(v.sumber) && v.deteksi !== false && kode.includes(v.kode)
+  );
+};
 
 // Posita berbentuk templat PA Donggala, disamarkan (sama dengan
 // abt-usulan-rute-sumber-cerita.test.ts): nama 'Xxxa', KUA/kecamatan 'Aaaa'.
@@ -276,7 +286,7 @@ describe("tombol 'Isi dari posita permohonan' perkara lain - hanya pada blangko 
       // masing tampak hanya pada blangkonya.
       expect(tombol).toHaveLength(2);
       const tampak = tombol.filter((t) => !t.hidden);
-      expect(tampak).toHaveLength(Number(siap) + Number(itsbat));
+      expect(tampak).toHaveLength(Number(siap || tampakModulY(folder, kode)) + Number(itsbat));
       const peta = new Map(kode.map((k) => [k, {}]));
       expect(w.__uji.blangkoMemuatVariabelSiapLain(peta, w.__uji.kunciJenisLain(JENIS_FOLDER[folder]))).toBe(siap);
     });
@@ -295,8 +305,9 @@ describe("tombol 'Isi dari posita permohonan' perkara lain - hanya pada blangko 
       const w = bukaBlangko(d.split(" "), { isi: { "0048": JENIS_FOLDER[folder] } });
       await tunggu(() => panelDari(w), "panel");
       const lainTampak = tombolBertulis(w, /^Isi dari posita permohonan/).filter((t) => !t.hidden);
-      // Yang tampak hanya tombol itsbat (#5197#), satu.
-      expect(lainTampak, folder).toHaveLength(1);
+      // Yang tampak tombol itsbat (#5197#), ditambah tombol perkara lain HANYA bila modul deteksi
+      // jenisnya membaca variabel blangko itu (perwalian, 13 Okt) - bukan karena 5178.
+      expect(lainTampak, folder).toHaveLength(1 + Number(tampakModulY(folder, d.split(" "))));
       expect(w.__uji.blangkoMemuatVariabelSiapLain(new Map(d.split(" ").map((k) => [k, {}])), w.__uji.kunciJenisLain(JENIS_FOLDER[folder]))).toBe(false);
     }
   });
