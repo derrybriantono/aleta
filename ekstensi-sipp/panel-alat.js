@@ -9075,6 +9075,17 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
   const pilihan = opsi || {};
   const tua = panel.querySelector(":scope > .aleta-gembok-baris");
   if (tua) tua.remove();
+  // SYARAT MUTLAK (tahap 7): tampilan Lama identik dengan fd9aad7 - gembok &
+  // kepala ringkas hanya di Baru dan UI Baru (pola alatTerapkanUkuranAwal).
+  // Panel SIPP tidak pernah memakai alatUjiMode; panel ALETA tidak memuat
+  // panel-alat uji, jadi galat = bukan Lama.
+  if (situs === "sipp") {
+    try {
+      if (alatUjiMode() === "lama") return null;
+    } catch {
+      return null;
+    }
+  }
   panel.setAttribute("data-aleta-gembok-situs", situs);
   const baris = alatEl("div", "aleta-gembok-baris");
   const tombol = alatEl("button", "aleta-gembok");

@@ -642,6 +642,14 @@ describe("SYARAT MUTLAK: tampilan Lama identik dengan fd9aad7", () => {
         panel.removeAttribute("data-tinggi-sendiri");
         if (!panel.getAttribute("style")) panel.removeAttribute("style");
       }
+      // Perbedaan DISENGAJA kelima (13 Okt butir 2, ekstensi-gembok-gulir-13okt.test.ts): gembok
+      // di bawah kepala + penanda kepala ringkas hanya di Baru & UI Baru. Baris & penandanya dibuang.
+      for (const el of Array.from(d.querySelectorAll(".aleta-gembok-baris"))) el.remove();
+      for (const el of Array.from(d.querySelectorAll("[data-aleta-gembok], [data-aleta-gembok-situs], [data-aleta-kepala-ringkas]"))) {
+        el.removeAttribute("data-aleta-gembok");
+        el.removeAttribute("data-aleta-gembok-situs");
+        el.removeAttribute("data-aleta-kepala-ringkas");
+      }
       for (const el of Array.from(d.querySelectorAll("[data-a30-info], [data-a30-fitur]"))) el.remove();
       for (const el of Array.from(d.querySelectorAll("[data-t7-a30], [data-a30-lipat]"))) {
         el.removeAttribute("data-t7-a30");

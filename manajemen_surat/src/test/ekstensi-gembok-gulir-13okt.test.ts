@@ -94,6 +94,9 @@ function buka(awal: Record<string, unknown> = {}) {
   w.fetch = () => Promise.resolve({ ok: false, status: 404, json: async () => ({}) });
   const ctx = dom.getInternalVMContext();
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
+  // Gembok hanya di Baru/UI Baru (SYARAT MUTLAK tahap 7: Lama identik fd9aad7). Pegawai
+  // selain Super Admin selalu UI Baru (UIBARU-WAJIB 12 Okt) - uji memakai UI Baru kecuali diminta Lama.
+  vm.runInContext(`alatUji.mode = ${JSON.stringify(awal.ujiTampilan === "lama" ? "lama" : "ui")};`, ctx);
   const doc = w.document as Document;
   const kotak = (el: Element, r: { left: number; top: number; right: number; bottom: number }) => {
     (el as any).getBoundingClientRect = () => ({ ...r, width: r.right - r.left, height: r.bottom - r.top, x: r.left, y: r.top });
@@ -120,6 +123,16 @@ function buka(awal: Record<string, unknown> = {}) {
 }
 
 describe("butir 2: gembok di bawah kepala, bawaan terbuka = kepala ringkas", () => {
+  it("tampilan Lama: tidak ada gembok sama sekali (Lama identik fd9aad7)", () => {
+    const h = buka({ ujiTampilan: "lama" });
+    const { panel, kepala } = h.panelBaru();
+    h.w.__p = panel;
+    h.w.__k = kepala;
+    expect(h.jalankan('alatPasangGembok(__p, __k, "sipp")')).toBeNull();
+    expect(panel.querySelector(".aleta-gembok-baris")).toBeNull();
+    expect(panel.hasAttribute("data-aleta-gembok")).toBe(false);
+  });
+
   it("bawaan (belum pernah memilih): gembok terbuka, baris gembok tepat di bawah kepala, panel yang menutupi tabel meringkas", async () => {
     const h = buka();
     const { panel, kepala } = h.panelBaru();
