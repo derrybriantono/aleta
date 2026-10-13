@@ -24,7 +24,54 @@ const AKAR = path.resolve(process.cwd(), "..");
 const K = createRequire(path.join(AKAR, "aleta_bot/package.json"))(path.join(AKAR, "aleta_bot/services/ktpPihakService.js")) as {
   bacaKetat: (judul: string) => boolean;
   SQL_KANDIDAT: string;
+  yakinBukti: () => string;
+  susunBaris: (a: Record<string, unknown>) => { yakin: string; sebab: string; tanggalKtpIso: string };
 };
+
+describe("keputusan 13 Okt: bacaan Dokumen Bukti ditahan 'ragu' sampai diukur (saklar ALETA_KTP_BUKTI_YAKIN)", () => {
+  const dasar = {
+    ktp: { nik: "7210010101010001", nikSah: true, nama: "XXX YYY", tanggalLahir: "01/01/1990", tanggalTerbit: "12/05/2019", sumber: "ocr-pdf" },
+    cocok: { pihak: { cabang: 1, urutan: 1, pihakId: 1, tanggalLahirIso: "1990-01-01" }, cocok: "nik", kuat: true, ambigu: false },
+    pihakDiCabang: { 1: 2 },
+    sebutan: { satu: "Pemohon", dua: "Termohon" },
+    perkara: { perkaraId: 10167, tanggalDaftarIso: "2026-09-23" },
+    fileId: "f",
+    urut: 1,
+    documentKey: "d",
+    nomorPerkara: "228/Pdt.P/2026/PA.Dgl",
+    sumberBaca: "ocr-pdf",
+    versi: 2,
+    hariIniIso: "2026-10-13",
+  };
+  const lama = process.env.ALETA_KTP_BUKTI_YAKIN;
+  const pulihkan = () => {
+    if (lama === undefined) delete process.env.ALETA_KTP_BUKTI_YAKIN;
+    else process.env.ALETA_KTP_BUKTI_YAKIN = lama;
+  };
+
+  it("bawaan: Dokumen Bukti = ragu dengan sebabnya; berkas berjudul KTP tetap cukup", () => {
+    delete process.env.ALETA_KTP_BUKTI_YAKIN;
+    try {
+      expect(K.yakinBukti()).toBe("ragu");
+      const bukti = K.susunBaris({ ...dasar, dariBukti: true });
+      expect(bukti).toMatchObject({ yakin: "ragu", sebab: "dokumen_bukti_belum_diukur", tanggalKtpIso: "2019-05-12" });
+      expect(K.susunBaris({ ...dasar, dariBukti: false }).yakin).toBe("cukup");
+    } finally {
+      pulihkan();
+    }
+  });
+
+  it("ALETA_KTP_BUKTI_YAKIN=cukup menaikkan bacaan bukti; nilai tak dikenal tetap ragu", () => {
+    try {
+      process.env.ALETA_KTP_BUKTI_YAKIN = "cukup";
+      expect(K.susunBaris({ ...dasar, dariBukti: true })).toMatchObject({ yakin: "cukup", sebab: "" });
+      process.env.ALETA_KTP_BUKTI_YAKIN = "ya";
+      expect(K.susunBaris({ ...dasar, dariBukti: true }).yakin).toBe("ragu");
+    } finally {
+      pulihkan();
+    }
+  });
+});
 
 const KTP = [
   "PROVINSI SULAWESI TENGAH",

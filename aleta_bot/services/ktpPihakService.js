@@ -65,7 +65,8 @@ const POLA_JUDUL_KTP = /\b(?:e-?ktp|ktp(?:-?el)?|kartu\s+tanda\s+penduduk)\b/i;
  * "KTP" hampir tidak pernah punya berkas - terukur di server 10 dari 385 (gugatan) dan 0 dari 115
  * (permohonan), sebab "berkas pdf tidak disediakan e-Court". Fotokopi KTP para pihak ada di "Dokumen
  * Bukti" (476 dari 482 berberkas). Berkas bukti ikut dibaca, KETAT: portal hanya memakai halaman berciri
- * KTP (bukan KK/akta/surat keterangan) - lihat halamanBercirKtp di portal ktp-ocr.ts.
+ * KTP (bukan KK/akta/surat keterangan) - lihat halamanBercirKtp di portal ktp-ocr.ts. Hasilnya ditahan "ragu"
+ * sampai diukur (yakinBukti, saklar ALETA_KTP_BUKTI_YAKIN).
  */
 const POLA_JUDUL_BUKTI = /^\s*(?:dokumen\s+)?(?:alat\s+)?bukti(?:\s+surat)?\s*$/i;
 const SQL_JUDUL_KTP = `LOWER(d.judul_dokumen) REGEXP 'ktp|kartu tanda penduduk'`;
@@ -339,6 +340,17 @@ function tanggalMasukAkal({ tanggalKtpIso, tanggalLahirIso, tanggalDaftarIso, ha
   return { ok: true, sebab: "" };
 }
 
+/**
+ * 13 Okt 2026 (keputusan pengguna): bacaan dari "Dokumen Bukti" (berkas bukan berjudul KTP, dibaca ketat) BELUM
+ * diukur atas isian petugas - ditahan "ragu" (tidak tercentang; ABT 8870/8872 dan panel tidak memakainya untuk
+ * isian otomatis) sampai diukur dengan tools/ukur-tanggal-ktp.js. Dinaikkan lewat env ALETA_KTP_BUKTI_YAKIN=cukup
+ * (atau =pasti, tetap dibatasi yakinTertinggi). Berkas berjudul KTP tidak terpengaruh.
+ */
+function yakinBukti() {
+  const v = String(process.env.ALETA_KTP_BUKTI_YAKIN || "").trim().toLowerCase();
+  return v === "pasti" || v === "cukup" ? v : "ragu";
+}
+
 /** Keyakinan tertinggi yang boleh diberikan - "pasti" hanya bila dinyalakan setelah diukur. */
 function yakinTertinggi() {
   return String(process.env.ALETA_KTP_PIHAK_YAKIN || "").trim().toLowerCase() === "pasti" ? "pasti" : "cukup";
@@ -348,7 +360,7 @@ function yakinTertinggi() {
  * Susun SATU baris tabel dari satu KTP terbaca + hasil pencocokan + konteks perkara.
  * Murni - diuji tanpa basis data.
  */
-function susunBaris({ ktp, cocok, pihakDiCabang, sebutan, perkara, fileId, urut, documentKey, nomorPerkara, sumberBaca, versi, hariIniIso }) {
+function susunBaris({ ktp, cocok, pihakDiCabang, sebutan, perkara, fileId, urut, documentKey, nomorPerkara, sumberBaca, versi, hariIniIso, dariBukti }) {
   const tanggalKtpIso = isoDariDmy(ktp.tanggalTerbit);
   const tanggalLahirIso = isoDariDmy(ktp.tanggalLahir);
   const nik = nikBersih(ktp.nik);
@@ -367,6 +379,14 @@ function susunBaris({ ktp, cocok, pihakDiCabang, sebutan, perkara, fileId, urut,
   else if (!cocok.kuat) sebab = "hanya_nama_cocok";
   else if (!ktp.nikSah && cocok.cocok !== "nik") sebab = "nik_tidak_sah";
   else yakin = yakinTertinggi();
+  // Dokumen Bukti: dibatasi saklar ALETA_KTP_BUKTI_YAKIN (bawaan "ragu").
+  if (dariBukti && yakin !== "ragu") {
+    const batas = yakinBukti();
+    if (batas === "ragu") {
+      yakin = "ragu";
+      sebab = "dokumen_bukti_belum_diukur";
+    } else if (batas === "cukup" && yakin === "pasti") yakin = "cukup";
+  }
   return {
     fileId,
     urut,
@@ -549,7 +569,7 @@ async function tulisBaris(b, percobaan) {
 /** Berkas -> konteks (dokumen + perkara) untuk satu id berkas. */
 async function asalBerkas(fileId) {
   const rows = await botDb().query(
-    `SELECT f.document_key AS documentKey, f.sidik_jari AS sidikJari, d.nomor_perkara AS nomorPerkara, d.perkara_id AS perkaraId
+    `SELECT f.document_key AS documentKey, f.sidik_jari AS sidikJari, d.nomor_perkara AS nomorPerkara, d.perkara_id AS perkaraId, d.judul_dokumen AS judul
        FROM aleta_bot_ecourt_files f JOIN aleta_bot_ecourt_documents d ON d.document_key = f.document_key
       WHERE f.id = ? AND ${SQL_KANDIDAT} LIMIT 1`,
     [fileId]
@@ -589,6 +609,7 @@ async function simpanKtpBerkas({ fileId, asal, ktp, sumberBaca, versi, hariIniIs
         sumberBaca,
         versi,
         hariIniIso,
+        dariBukti: bacaKetat(asal.judul),
       })
     );
   });
@@ -634,7 +655,7 @@ async function simpan(daftar = []) {
     // Semua berkas dengan isi yang sama (KTP orang yang sama di banyak perkara).
     const semua = asal.sidikJari
       ? await botDb().query(
-          `SELECT f.id AS fileId, f.document_key AS documentKey, d.nomor_perkara AS nomorPerkara, d.perkara_id AS perkaraId
+          `SELECT f.id AS fileId, f.document_key AS documentKey, d.nomor_perkara AS nomorPerkara, d.perkara_id AS perkaraId, d.judul_dokumen AS judul
              FROM aleta_bot_ecourt_files f JOIN aleta_bot_ecourt_documents d ON d.document_key = f.document_key
             WHERE f.sidik_jari = ? AND f.dihapus_retensi IS NULL AND ${SQL_KANDIDAT} LIMIT 200`,
           [asal.sidikJari]
@@ -693,7 +714,7 @@ async function simpan(daftar = []) {
  */
 async function salinKembaran(batas = 50) {
   const rows = await botDb().query(
-    `SELECT f.id AS fileId, f.document_key AS documentKey, d.nomor_perkara AS nomorPerkara, d.perkara_id AS perkaraId,
+    `SELECT f.id AS fileId, f.document_key AS documentKey, d.nomor_perkara AS nomorPerkara, d.perkara_id AS perkaraId, d.judul_dokumen AS judul,
             (SELECT k2.file_id FROM aleta_bot_ecourt_files f2 JOIN aleta_bot_ktp_pihak k2 ON k2.file_id = f2.id AND k2.urut = 1
               WHERE f2.sidik_jari = f.sidik_jari AND f2.id <> f.id AND k2.status = 'terbaca' AND k2.versi >= ? LIMIT 1) AS sumberId
        FROM aleta_bot_ecourt_documents d
@@ -717,7 +738,7 @@ async function salinKembaran(batas = 50) {
     if (!ktp.length) continue;
     await simpanKtpBerkas({
       fileId: String(r.fileId),
-      asal: { documentKey: r.documentKey, nomorPerkara: r.nomorPerkara, perkaraId: r.perkaraId },
+      asal: { documentKey: r.documentKey, nomorPerkara: r.nomorPerkara, perkaraId: r.perkaraId, judul: r.judul },
       ktp,
       sumberBaca: (bacaan[0] && bacaan[0].sumber_baca) || "",
       versi: VERSI_KTP_PIHAK,
@@ -731,9 +752,11 @@ async function salinKembaran(batas = 50) {
 /** Cocokkan ulang baris perkara ini yang belum bertuan (pihak SIPP baru ditambahkan / diperbaiki). */
 async function cocokkanUlangPerkara(perkara) {
   const rows = await botDb().query(
-    `SELECT file_id, urut, document_key, nomor_perkara, nik, nik_sah, nama, tanggal_lahir, tanggal_ktp, kota_ktp, berlaku_hingga, sumber_baca, versi
-       FROM aleta_bot_ktp_pihak
-      WHERE (perkara_id = ? OR nomor_perkara = ?) AND status = 'terbaca' AND cabang IS NULL`,
+    `SELECT k.file_id, k.urut, k.document_key, k.nomor_perkara, k.nik, k.nik_sah, k.nama, k.tanggal_lahir, k.tanggal_ktp, k.kota_ktp,
+            k.berlaku_hingga, k.sumber_baca, k.versi,
+            (SELECT d.judul_dokumen FROM aleta_bot_ecourt_documents d WHERE d.document_key = k.document_key LIMIT 1) AS judul
+       FROM aleta_bot_ktp_pihak k
+      WHERE (k.perkara_id = ? OR k.nomor_perkara = ?) AND k.status = 'terbaca' AND k.cabang IS NULL`,
     [perkara.perkaraId, perkara.nomorPerkara]
   );
   const belum = Array.isArray(rows) ? rows : [];
@@ -753,6 +776,7 @@ async function cocokkanUlangPerkara(perkara) {
     const b = susunBaris({
       ktp, cocok, pihakDiCabang: perCabang, sebutan, perkara, fileId: String(r.file_id), urut: Number(r.urut),
       documentKey: r.document_key, nomorPerkara: perkara.nomorPerkara, sumberBaca: r.sumber_baca, versi: Number(r.versi) || VERSI_KTP_PIHAK,
+      dariBukti: bacaKetat(r.judul),
     });
     await tulisBaris(b, 0);
     diperbarui += 1;
@@ -874,6 +898,7 @@ module.exports = {
   cocokkanKtp,
   tanggalMasukAkal,
   yakinTertinggi,
+  yakinBukti,
   susunBaris,
   antrian,
   berkas,
