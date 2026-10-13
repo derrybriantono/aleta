@@ -57,11 +57,16 @@ const perkaraLengkap = {
   adaSmartMajelis: 10113,
 };
 
+const { jawabPejabat } = require("./_penadah-pejabat");
+
 const dbPath = require.resolve("../db_config");
 require("../db_config");
 require.cache[dbPath].exports = {
   query: (sql, params, selesai) => {
     const teks = String(sql);
+    // Butir 17 (13 Okt 2026): akun pejabat, majelis, dan jam SIPP.
+    const pejabat = jawabPejabat(teks, { username: "sudarmin" });
+    if (pejabat !== undefined) return selesai(null, pejabat);
     if (/FROM perkara p\b/.test(teks)) return selesai(null, [perkaraLengkap]);
     if (/FROM sys_users/.test(teks)) {
       return selesai(null, [{ username: "sudarmin", fullname: "Sudarmin H.I.M. Tang, S.H.I., M.H." }]);
@@ -82,7 +87,7 @@ const layanan = require("../services/penetapanTulisService");
 const dasar = {
   perkaraId: 10113,
   olehUsername: "sudarmin",
-  // Butir 39: akun SIPP yang sedang masuk - yang dicatat SIPP saat membongkar.
+  // Butir 17: dibongkar atas akun pejabat yang tercatat; akun yang masuk = jejak ALETA.
   akunSippMasuk: "sudarmin",
   operator: "SUPER ADMIN DERRY",
   ip: "127.0.0.1",

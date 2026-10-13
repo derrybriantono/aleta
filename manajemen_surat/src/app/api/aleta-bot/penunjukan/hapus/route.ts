@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { kirimPenetapanHapusGateway } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pejabatSahUntukTanggal, saringPejabatPembatalan } from "@/server/modules/aleta-ecourt/rencana-penetapan";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { alamatIpPeramban } from "@/server/shared/request";
@@ -62,8 +63,15 @@ export async function POST(request: NextRequest) {
       return Response.json({ ok: false, alasan: "perkara_tidak_sah" }, { status: 400 });
     }
 
-    const olehUsername = String(badan.olehUsername || "").trim();
-    // Butir 39: akun SIPP petugas yang sedang masuk - yang dicatat SIPP.
+    // Butir 17 (13 Okt 2026): pembatalan tercatat di SIPP atas akun pejabat
+    // yang tercatat pada penetapan itu; olehUsername (pejabat pilihan panel)
+    // hanya cadangan, dan yang tidak sah dibuang. akunSippMasuk = penekan
+    // sebenarnya, untuk jejak ALETA.
+    let olehUsername = String(badan.olehUsername || "").trim();
+    if (olehUsername && jenis !== "phs") {
+      const baca = await pejabatSahUntukTanggal(db, new Date().toISOString().slice(0, 10));
+      olehUsername = baca.ok ? saringPejabatPembatalan(baca.sah, jenis, olehUsername) : "";
+    }
     const akunSippMasuk = String(badan.akunSippMasuk || "").trim().slice(0, 150);
     if (!olehUsername && !akunSippMasuk) {
       return Response.json({ ok: false, alasan: "akun_sipp_belum_terbaca" }, { status: 400 });

@@ -412,312 +412,247 @@ function tanggalIso(nilai) {
 
 /**
  * ============================================================================
- * JAM YANG DICATAT PADA TIAP LANGKAH PENETAPAN
+ * JAM SIPP - ZONA YANG DIPAKAI SIPP SENDIRI, BUKAN ZONA BASIS DATA (butir 17)
  * ============================================================================
  *
- * Keempat penetapan ditulis dalam hitungan detik oleh satu tekanan tombol.
- * Dicatat apa adanya, tab Riwayat Perkara memperlihatkan PMH, PPP, PJS, dan
- * PHS terjadi pada detik yang berdempetan - yang pada berkas perkara terbaca
- * ganjil, sebab keempatnya empat keputusan yang berbeda.
+ * SIPP tidak memakai NOW() basis data. Tiap diinput_tanggal dan tiap
+ * sys_audittrail.datetime ditulis PHP date() sesudah
+ * date_default_timezone_set("Asia/Jakarta") (models/default_setting.php,
+ * views/header.php) - WIB - sedangkan basis datanya berzona sistem WITA.
  *
- * Yang disetel di sini HANYA jam yang disimpan ke basis data SIPP. Jam
- * peladen, jam basis data, dan tanggal penetapannya sendiri tidak disentuh
- * sama sekali.
+ * Terukur di server 13 Okt 2026: baris audit ALETA 507558 (NOW() basis data)
+ * bertanggal 10:46:08, lalu baris 507574 yang ditulis SIPP SESUDAHNYA (petugas
+ * menghapus penetapan itu) bertanggal 09:46:38. Menulis NOW() berarti menulis
+ * satu jam di depan tiap baris SIPP - di layar SIPP itu jam yang belum terjadi.
  *
- * Tiga aturan yang menentukan bentuknya:
- *
- *   1. TANGGALNYA SAMA. Keempat langkah selalu jatuh pada tanggal_penetapan
- *      yang sama - itu satu hari kerja, dan penetapan yang tanggalnya
- *      berpencar akan salah pada tiap laporan yang menghitung per hari.
- *
- *   2. JARAKNYA SATU SAMPAI SEPULUH MENIT, berurutan menurut langkahnya.
- *      PMH selalu paling awal, PHS selalu paling akhir.
- *
- *   3. TIDAK PERNAH MELAMPAUI JAM SEKARANG. Bila tanggal penetapannya hari
- *      ini dan urutannya akan jatuh di masa depan, seluruh rangkaiannya
- *      digeser mundur. Jam yang lebih awal daripada peladen tidak apa-apa;
- *      jam yang belum terjadi tidak pernah dapat dibenarkan.
- *
- * Benihnya dari perkara_id, jadi dua perkara yang ditetapkan pada hari yang
- * sama tidak pernah jatuh pada menit yang sama - dan perkara yang sama selalu
- * menghasilkan jam yang sama betapa pun sering dihitung ulang.
+ * Karena itu "sekarang" bagi baris SIPP = UTC basis data, dibaca dalam zona
+ * SIPP (ALETA_ZONA_WAKTU_SIPP, bawaan Asia/Jakarta). Tanggal penetapan dan
+ * pagar "tanggal masa depan" tetap memakai tanggal setempat (waktuBasisData).
  */
-const URUTAN_LANGKAH_WAKTU = { pmh: 0, ppp: 1, pjs: 2, phs: 3 };
-/** Jam kerja paling awal yang dipakai sebagai titik mulai. */
-const JAM_MULAI_PALING_AWAL = 8 * 60;
-/**
- * Lebar jendela titik mulai, dalam menit - 08:00 sampai 14:00.
- *
- * Mula-mula 96 menit, dan itu terlalu sempit: diukur atas 2.000 perkara pada
- * tanggal yang sama, 1.520 di antaranya jatuh pada jam mulai yang PERSIS
- * sama. Jam yang berulang-ulang sama antar perkara justru menjadi pola
- * tersendiri - yang hendak dihindari sejak awal.
- */
-const LEBAR_JENDELA_MULAI = 360;
-const JEDA_MINIMUM = 1;
-const JEDA_MAKSIMUM = 10;
-/**
- * Sebaran mundur terjauh, dalam detik, bagi rangkaian yang harus digeser
- * karena ujungnya melampaui jam peladen - lihat waktuLangkah.
- *
- * Sebelum ada sebaran ini, tiap rangkaian yang digeser dipatok ujungnya TEPAT
- * pada menit peladen. Diukur atas sepuluh perkara pada jam peladen 09:00:
- * delapan PHS jatuh pada menit 09:00 yang sama. Untuk satu perkara itu tidak
- * terlihat; untuk penetapan massal dua puluh perkara pada pagi hari, dua puluh
- * PHS pada menit yang sama oleh akun yang sama adalah pola mesin.
- */
-const SEBARAN_GESER_MAKSIMUM = 120 * 60;
-/** Ujung jendela titik mulai - 14:00, sebagaimana sebelumnya. */
-const AKHIR_JENDELA_MULAI = JAM_MULAI_PALING_AWAL + LEBAR_JENDELA_MULAI;
-/**
- * ============================================================================
- * TIDAK PERNAH MENDAHULUI PENDAFTARAN PERKARANYA
- * ============================================================================
- *
- * Jendela 08:00-14:00 disusun tanpa mengetahui jam berapa kasir mendaftarkan
- * perkaranya, dan itu melanggar urutan yang paling dasar: penetapan majelis
- * dikerjakan SESUDAH Pendaftaran Perkara selesai, tidak pernah sebelumnya.
- *
- * Diukur pada basis data peladen, 825 perkara tahun 2026: PMH selalu sesudah
- * kasir - nol perkara yang mendahului. Jedanya di bawah 15 menit pada 189
- * perkara, 15-60 menit pada 361, 1-3 jam pada 218, 3-24 jam pada 57.
- *
- * Diukur pada sepuluh perkara uji yang ditetapkan ALETA di salinan setempat:
- * SATU di antaranya melanggar - perkara 571 didaftarkan pukul 09.34 dan
- * penetapannya tercatat pukul 08.27.40, satu jam enam menit sebelum perkaranya
- * ada. Dan itu bukan kejanggalan yang tersembunyi di dalam basis data: tab
- * Riwayat Perkara SIPP mengurut menurut tanggal, sehingga baris Penetapan
- * duduk DI ATAS baris Pendaftaran Perkara, terbaca siapa pun yang membukanya.
- *
- * Risikonya tidak kecil: 350 dari 799 perkara 2026 didaftarkan pukul 10.00 ke
- * atas, dan bagi seluruhnya jendela lama dapat mendarat sebelum pendaftaran.
- *
- * Karena itu titik mulainya kini LANTAI, bukan jam tetap: yang lebih akhir di
- * antara 08:00 dan "sepuluh menit sesudah kasir". Lantai itu hanya berlaku
- * bila pendaftarannya SETANGGAL dengan penetapannya - perkara yang didaftarkan
- * hari-hari sebelumnya tidak menahan apa pun.
- */
-const JEDA_SESUDAH_DAFTAR = 10;
-/**
- * Lebar jendela paling sempit, dalam menit.
- *
- * Perkara yang didaftarkan sore hari mendorong lantainya melewati 14:00.
- * Jendela yang menyempit menjadi nol membuat seluruh perkara sore itu jatuh
- * pada menit yang sama - pola mesin yang justru dihindari sejak awal.
- */
-const LEBAR_JENDELA_MINIMUM = 30;
+const ZONA_SIPP_BAWAAN = "Asia/Jakarta";
 
-/** Benih tetap dari satu bilangan - sama tiap kali dihitung. */
-function benihDari(angka) {
-  let benih = Number(angka) || 0;
-  benih = (benih * 2654435761) % 4294967296;
-  return benih < 0 ? benih + 4294967296 : benih;
-}
-
-function duaAngkaWaktu(n) {
-  return String(n).padStart(2, "0");
-}
-
-/**
- * Jeda menit antara langkah ke-i dan langkah sesudahnya - selalu 1 sampai 10.
- *
- * Dihitung dengan PEMBAGIAN, bukan pergeseran bit. Benihnya sampai 4,29 miliar,
- * sedangkan operator >> memaksa bilangan menjadi int32 bertanda: benih di atas
- * 2,14 miliar berubah menjadi negatif, sisa baginya ikut negatif, dan jeda yang
- * dihasilkan MUNDUR. Diuji atas delapan perkara, enam di antaranya menghasilkan
- * urutan yang PHS-nya lebih awal daripada PMH-nya.
- */
-function jedaLangkah(benih, i) {
-  const lebar = JEDA_MAKSIMUM - JEDA_MINIMUM + 1;
-  const bagi = Math.floor(benih / Math.pow(lebar + 1, i + 1));
-  return JEDA_MINIMUM + (bagi % lebar);
-}
-
-/**
- * Jam yang dicatat untuk satu langkah.
- *
- * @returns {string} "YYYY-MM-DD HH:mm:ss"
- */
-/**
- * ============================================================================
- * JAM TIAP LANGKAH BONGKAR - SATU TEKANAN, EMPAT PEJABAT, EMPAT MENIT BERBEDA
- * ============================================================================
- *
- * Jalur tulis sudah lama memberi tiap pejabat jamnya sendiri (waktuLangkah).
- * Jalur bongkar tidak: keempat penetapan dibongkar dengan satu detik yang
- * sama, atas nama tiga akun berbeda. Di Audit Trail SIPP itu terbaca sebagai
- * tiga orang bekerja dalam detik yang sama - yang tidak pernah terjadi pada
- * pekerjaan tangan, dan karena itu langsung menandai pekerjaan mesin.
- *
- * Bongkar berjalan PHS -> PJS -> PPP -> PMH (URUTAN_BONGKAR), sebab yang
- * belakangan ditulis harus lebih dahulu dicabut. Jamnya mengikuti urutan
- * itu: PHS paling awal, PMH paling akhir - dan yang paling akhir adalah jam
- * SEKARANG, sehingga tidak satu pun baris bertanggal masa depan. Di Audit
- * Trail, yang terurut dari yang terbaru, ia terbaca PMH, PPP, PJS, PHS.
- *
- * Jedanya 1-10 menit dari benih perkara yang sama dengan jalur tulis, digeser
- * sedikit supaya pola jedanya tidak identik dengan pola saat penetapannya
- * ditulis - dua rangkaian dengan jeda persis sama pun sebuah tanda.
- *
- * @returns {Promise<Record<string, string>>} jenis -> "YYYY-MM-DD HH:mm:ss"
- */
-async function waktuBongkar(perkaraId) {
-  const akhir = await waktuBasisData();
-  const dasar = new Date(akhir.replace(" ", "T"));
-  const benih = benihDari(Number(perkaraId) * 3 + 1);
-  const hasil = {};
-  let mundurMenit = 0;
-  // Dibalik: pmh, ppp, pjs, phs - pmh mendapat jam sekarang, sisanya mundur.
-  const dariAkhir = [...URUTAN_BONGKAR].reverse();
-  dariAkhir.forEach((jenis, i) => {
-    if (i > 0) mundurMenit += jedaLangkah(benih, i - 1);
-    hasil[jenis] = waktuMysql(new Date(dasar.getTime() - mundurMenit * 60000));
-  });
-  return hasil;
-}
-
-/**
- * Detik di dalam menit untuk jeda ke-i - 0..59.
- *
- * Dari benih yang sama dengan jedaLangkah, tetapi dibagi pada pangkat yang
- * berbeda (61, bukan 11) supaya detik dan menitnya tidak seiring: dua perkara
- * yang kebetulan berjeda menit sama tidak lalu berjeda detik sama pula.
- */
-function detikJeda(benih, i) {
-  return (Math.floor(benih / Math.pow(61, i + 1)) + i * 17 + 5) % 60;
-}
-
-/**
- * Keempat jam satu perkara dalam DETIK sejak tengah malam, sebelum geseran:
- * [pmh, ppp, pjs, phs]. Titik mulainya di jendela 08:00-14:00 dengan detik
- * dari benihnya sendiri; tiap langkah berikutnya berjarak
- * jedaLangkah menit + detikJeda detik dari langkah sebelumnya.
- */
-function rangkaianDetik(benih, lantaiMenit = JAM_MULAI_PALING_AWAL, lebarMenit = LEBAR_JENDELA_MULAI) {
-  const lebar = Math.max(1, Math.floor(lebarMenit));
-  const mulai = (lantaiMenit + (benih % lebar)) * 60 + (Math.floor(benih / lebar) % 60);
-  const detik = [mulai];
-  for (let i = 0; i < 3; i += 1) {
-    detik.push(detik[i] + jedaLangkah(benih, i) * 60 + detikJeda(benih, i));
+function zonaSipp() {
+  const zona = String(process.env.ALETA_ZONA_WAKTU_SIPP || "").trim() || ZONA_SIPP_BAWAAN;
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: zona });
+    return zona;
+  } catch {
+    return ZONA_SIPP_BAWAAN;
   }
-  return detik;
+}
+
+/** Milidetik UTC -> "YYYY-MM-DD HH:mm:ss" pada zona tertentu. */
+function waktuPadaZona(ms, zona) {
+  const bagian = {};
+  for (const p of new Intl.DateTimeFormat("en-CA", {
+    timeZone: zona,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(ms))) {
+    bagian[p.type] = p.value;
+  }
+  return `${bagian.year}-${bagian.month}-${bagian.day} ${bagian.hour}:${bagian.minute}:${bagian.second}`;
+}
+
+/** Jam SEKARANG menurut jam SIPP - lihat catatan di atas. */
+async function waktuSipp() {
+  const baris = await runQuery("SELECT DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-%d %H:%i:%s') AS utc").catch(() => []);
+  const utc = Array.isArray(baris) && baris[0] ? String(baris[0].utc || "") : "";
+  const ms = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(utc) ? Date.parse(`${utc.replace(" ", "T")}Z`) : Date.now();
+  return waktuPadaZona(ms, zonaSipp());
 }
 
 /**
  * ============================================================================
- * DIHITUNG DALAM DETIK, BUKAN MENIT - DAN INILAH SEBABNYA
+ * JAM TIAP LANGKAH SEPERTI ORANG BEKERJA (butir 17, 13 Okt 2026)
  * ============================================================================
  *
- * Bentuk sebelumnya menghitung MENIT tiap langkah, lalu menempelkan detik yang
- * diacak terpisah. "Berjeda 1 sampai 10 menit" karena itu hanya benar pada
- * angka menitnya: PPP 12:13:34 disusul PJS 12:14:08 berjeda satu menit di
- * layar dan 34 detik pada kenyataannya. Diukur atas sepuluh perkara, tiga di
- * antaranya berjeda nyata di bawah semenit (20, 27, dan 34 detik). Bukti
- * lamanya membandingkan menit, sehingga hijau.
+ * Keputusan pengguna: "untuk jam dibuat seperti manusia yang kerja (jadi tidak
+ * sama jamnya, ini hanya yang tercatat di database SIPP)". Satu tekanan tombol
+ * menulis PMH, PPP, PJS, PHS dalam hitungan detik; yang dicatat di SIPP disusun
+ * seperti petugas yang mengetiknya satu per satu. Jam SEBENARNYA tetap dicatat
+ * di jejak ALETA (aleta_bot_jejak_penetapan.waktu).
  *
- * Kini seluruhnya detik: jeda tiap langkah = jedaLangkah menit + detikJeda
- * detik, sehingga selisih nyatanya SELALU 60 sampai 659 detik dan detiknya
- * ikut menaik menurut langkahnya. Yang dijaga tetap sama: PMH paling awal,
- * PHS paling akhir, tanggalnya tanggal penetapan.
+ * Mesin ini MENGGANTIKAN mesin lama (waktuLangkah/rangkaianDetik/waktuBongkar:
+ * benih tetap per perkara, jendela 08:00-14:00 pada tanggal penetapan, mundur
+ * dari jam server) - yang menenggelamkan baris di Audit Trail dan polanya
+ * berulang. Yang sekarang:
  *
- * ============================================================================
- * TIDAK MELAMPAUI JAM PELADEN - SAMPAI KE DETIKNYA
- * ============================================================================
- *
- * Geseran lama pun bekerja pada menit: PHS dipatok pada MENIT peladen dan
- * detiknya dibiarkan bebas, sehingga pada jam peladen 09:00:00 PHS dapat
- * tercatat 09:00:21 - dua puluh satu detik sebelum terjadi. Kini yang
- * dibandingkan detik penuh.
- *
- * ============================================================================
- * GESERAN YANG DISEBAR PER PERKARA - MONOTON WALAU EMPAT PANGGILAN TERPISAH
- * ============================================================================
- *
- * Keempat langkah dihitung pada EMPAT panggilan HTTP yang berbeda, beberapa
- * detik berselang, masing-masing dengan jam peladennya sendiri. Rumus geseran
- * karena itu harus MONOTON terhadap jam peladen: panggilan yang lebih
- * belakangan tidak boleh menghasilkan jam yang lebih awal, atau PPP jatuh
- * sebelum PMH. Sebaran acak dari modulus yang bergantung pada jam peladen
- * melanggar itu - moduli yang berubah sedetik mengubah hasilnya sembarang.
- *
- * Rumus yang dipakai: mundur = f * min(S, ruang), dengan f pecahan tetap per
- * perkara (0..1), S sebaran terjauh, dan ruang = jam peladen - 08:00 - panjang
- * rangkaian (supaya PMH tidak jatuh sebelum jam kerja). Turunannya terhadap
- * jam peladen tidak pernah di bawah 1 - f > 0, jadi ia monoton; dan karena
- * mundur tidak pernah negatif, tidak satu pun jam melampaui peladen.
- *
- * @returns {string} "YYYY-MM-DD HH:mm:ss"
+ *   1. URUT menurut urutan kerja; tiap langkah jamnya sendiri (detik berbeda).
+ *   2. JEDA ACAK, tidak berpola, dari sebaran yang DIUKUR pada penetapan tangan
+ *      2026 di server (763 perkara, Jan-Agu, perkara_proses):
+ *        PMH -> PPP  median 30 mnt, p25 8 mnt, p10 4 mnt (orang berbeda)
+ *        PPP -> PJS  median 8 dtk, p90 19 dtk, p95 41 dtk (Panitera sekaligus)
+ *        PJS -> PHS  median 5 mnt, p25 2 mnt, p75 14 mnt
+ *        daftar -> PMH median 31 mnt, p10 6 mnt
+ *      Rentang di bawah dipangkas dari ekor panjangnya supaya satu rangkaian
+ *      tidak berjam-jam mundur dari tekanan tombolnya.
+ *   3. TIDAK PERNAH DI MASA DEPAN: langkah terakhir <= jam SIPP sekarang.
+ *   4. TIDAK MENDAHULUI KEJADIAN SEBELUMNYA di perkara itu (pendaftaran,
+ *      penetapan/riwayat sebelumnya, suntingan perkara) - lantaiKejadianPerkara.
+ *   5. JAM KERJA: PMH tangan terukur pukul 07.00-16.59 WIB. Ditekan sesudah
+ *      16.30 (jam SIPP), rangkaiannya diakhiri sebelum 16.30 bila lantainya
+ *      memberi ruang; tidak pernah dimulai sebelum 07.00 bila ruangnya ada.
+ *   6. Ruang yang sempit (perkara baru didaftarkan) MERAPATKAN jedanya, tidak
+ *      pernah melanggar butir 3 dan 4. Bila kejadian sebelumnya justru tercatat
+ *      di depan jam SIPP (baris lama ber-NOW() WITA), butir 3 yang menang dan
+ *      itu dicatat pada `catatan`.
  */
-/**
- * Menit sejak tengah malam yang menjadi LANTAI titik mulai rangkaian.
- *
- * Bawaannya jam kerja paling awal. Bila perkaranya didaftarkan pada tanggal
- * yang SAMA dengan penetapannya, lantainya naik ke sepuluh menit sesudah
- * kasir: penetapan tidak pernah mendahului pendaftarannya.
- *
- * Pendaftaran hari-hari sebelumnya tidak menahan apa pun - penetapan susulan
- * atas perkara kemarin memang dikerjakan pagi ini.
- */
-function lantaiMulaiMenit(tanggalPenetapan, didaftar) {
-  const cocok = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(
-    didaftar instanceof Date ? waktuMysql(didaftar) : String(didaftar || "")
+const JAM_KERJA_SIPP = { mulai: 7 * 3600, akhir: 16 * 3600 + 30 * 60 };
+/** Rentang jeda antarlangkah, detik [min, maks] - ditarik log-seragam. */
+const JEDA_ANTARLANGKAH = Object.freeze({
+  "pmh>ppp": [90, 1800],
+  "ppp>pjs": [5, 45],
+  "pjs>phs": [40, 900],
+  // Membongkar berjalan terbalik; orangnya sama dengan yang menetapkan.
+  "phs>pjs": [40, 900],
+  "pjs>ppp": [5, 45],
+  "ppp>pmh": [90, 1800],
+});
+const JEDA_LANGKAH_LAIN = [60, 900];
+/** Jeda sesudah kejadian terakhir di perkara itu sebelum langkah pertama. */
+const JEDA_SESUDAH_KEJADIAN = [60, 600];
+/** Langkah terakhir selesai sedikit sebelum tombolnya ditekan. */
+const JEDA_UJUNG = [5, 120];
+/** Ditekan sesudah jam kerja: rangkaian diakhiri 0-20 menit sebelum 16.30. */
+const SEBARAN_SESUDAH_JAM_KERJA = 20 * 60;
+
+function detikNaif(teks) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(
+    teks instanceof Date ? waktuMysql(teks) : String(teks || "")
   );
-  if (!cocok || cocok[1] !== tanggalPenetapan) return JAM_MULAI_PALING_AWAL;
-  const menitDaftar = Number(cocok[2]) * 60 + Number(cocok[3]);
-  return Math.max(JAM_MULAI_PALING_AWAL, menitDaftar + JEDA_SESUDAH_DAFTAR);
+  if (!m) return NaN;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) / 1000;
 }
 
-function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer, didaftar }) {
-  const urutan = URUTAN_LANGKAH_WAKTU[jenis];
-  // Data Umum bukan penetapan dan tidak ikut dalam rangkaian ini.
-  if (urutan === undefined || !tanggalSah(tanggalPenetapan)) return saatServer;
+function teksNaif(detik) {
+  const d = new Date(detik * 1000);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(
+    d.getUTCMinutes()
+  )}:${p(d.getUTCSeconds())}`;
+}
 
-  const benih = benihDari(perkaraId);
-  const lantaiMenit = lantaiMulaiMenit(tanggalPenetapan, didaftar);
-  const lantaiDetik = lantaiMenit * 60;
-  const lebar = Math.max(LEBAR_JENDELA_MINIMUM, AKHIR_JENDELA_MULAI - lantaiMenit);
-  const rangkaian = rangkaianDetik(benih, lantaiMenit, lebar);
-  let detik = rangkaian[urutan];
+function tarikLog([min, maks], acak) {
+  const u = Math.min(Math.max(Number(acak()) || 0, 0), 1);
+  return Math.max(1, Math.round(min * Math.pow(maks / min, u)));
+}
 
-  const cocokServer = /^(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(String(saatServer || ""));
-  if (cocokServer && cocokServer[1] === tanggalPenetapan) {
-    const detikServer =
-      Number(cocokServer[2]) * 3600 + Number(cocokServer[3]) * 60 + Number(cocokServer[4]);
-    const akhir = rangkaian[3];
-    const panjang = akhir - rangkaian[0];
-    if (lantaiDetik + panjang > detikServer) {
-      // ==================================================================
-      // SELANYA TERLALU SEMPIT - DIRAPATKAN, BUKAN DIMUNDURKAN
-      // ==================================================================
-      //
-      // Perkara yang baru saja didaftarkan tidak menyisakan ruang untuk
-      // rangkaian selebar 3 sampai 33 menit. Memundurkannya berarti
-      // mendahului pendaftaran; memaksakan lebarnya berarti mencatat jam
-      // yang belum terjadi. Keduanya salah, jadi keempat langkahnya
-      // dirapatkan merata ke sela yang benar-benar ada.
-      //
-      // Itu pun bentuk yang wajar: pada perkara 600 petugas menyelesaikan
-      // keempat langkahnya dalam 1 menit 43 detik.
-      const sela = Math.max(0, detikServer - lantaiDetik);
-      detik = lantaiDetik + Math.round((sela * urutan) / 3);
-    } else if (akhir > detikServer) {
-      const ruang = detikServer - lantaiDetik - panjang;
-      // Pecahan tetap per perkara, dari benih yang berbeda dari benih jam
-      // mulainya - supaya perkara yang jam mulainya berdekatan tidak ikut
-      // berdekatan sebarannya.
-      const pecahan = (benihDari(Number(perkaraId) * 7 + 3) % 1000) / 1000;
-      const mundur = Math.floor(pecahan * Math.min(SEBARAN_GESER_MAKSIMUM, Math.max(0, ruang)));
-      detik = detikServer - mundur - (akhir - rangkaian[urutan]);
-      // Tidak pernah turun di bawah lantainya - dahulu batasnya tengah malam,
-      // dan itulah yang membiarkan penetapan mendahului pendaftarannya.
-      if (detik < lantaiDetik) detik = lantaiDetik + (rangkaian[urutan] - rangkaian[0]);
+/**
+ * Jam tiap langkah satu rangkaian, dalam jam SIPP.
+ *
+ * @param {object} p
+ * @param {string[]} p.urutan  jenis menurut urutan kerja (tulis: pmh..phs; bongkar: phs..pmh)
+ * @param {string} p.sekarang  jam SIPP sekarang "YYYY-MM-DD HH:mm:ss"
+ * @param {string} [p.lantai]  kejadian terakhir di perkara itu (jam SIPP)
+ * @param {() => number} [p.acak]
+ * @returns {{ jam: Record<string,string>, jeda: number[], catatan: string[] }}
+ */
+function jamRangkaianManusia({ urutan, sekarang, lantai = "", acak = Math.random }) {
+  const jenis = [...new Set((urutan || []).map((x) => String(x || "").toLowerCase()).filter(Boolean))];
+  const kini = detikNaif(sekarang);
+  const catatan = [];
+  if (!Number.isFinite(kini) || jenis.length === 0) return { jam: {}, jeda: [], catatan };
+
+  const k = jenis.length;
+  const awalHari = kini - (((kini % 86400) + 86400) % 86400);
+  const mulaiKerja = awalHari + JAM_KERJA_SIPP.mulai;
+  const akhirKerja = awalHari + JAM_KERJA_SIPP.akhir;
+  const kejadian = detikNaif(lantai);
+
+  let jeda = [];
+  for (let i = 0; i < k - 1; i += 1) {
+    jeda.push(tarikLog(JEDA_ANTARLANGKAH[`${jenis[i]}>${jenis[i + 1]}`] || JEDA_LANGKAH_LAIN, acak));
+  }
+  const jumlah = (d) => d.reduce((a, b) => a + b, 0);
+
+  // Batas atas: sekarang, atau akhir jam kerja bila ditekan sesudahnya.
+  let ujung = kini - tarikLog(JEDA_UJUNG, acak);
+  if (kini > akhirKerja) {
+    ujung = akhirKerja - Math.floor(Math.min(Math.max(Number(acak()) || 0, 0), 1) * SEBARAN_SESUDAH_JAM_KERJA);
+  }
+  let lantaiEfektif = Math.max(
+    Number.isFinite(kejadian) ? kejadian + tarikLog(JEDA_SESUDAH_KEJADIAN, acak) : -Infinity,
+    mulaiKerja
+  );
+
+  if (ujung - jumlah(jeda) < lantaiEfektif && kini > akhirKerja) {
+    // Jam kerja tidak menyisakan ruang - kembali ke jam sekarang.
+    ujung = kini - tarikLog(JEDA_UJUNG, acak);
+  }
+  if (ujung - jumlah(jeda) < lantaiEfektif) {
+    let ruang = ujung - lantaiEfektif;
+    if (ruang < k - 1) {
+      // Lepaskan jeda sesudah kejadian dan jam kerja; tetap SESUDAH kejadiannya.
+      lantaiEfektif = Number.isFinite(kejadian) ? kejadian + 1 : -Infinity;
+      ujung = kini;
+      ruang = ujung - lantaiEfektif;
+    }
+    if (ruang >= k - 1) {
+      const sisa = ruang - (k - 1);
+      const total = jumlah(jeda) || 1;
+      jeda = jeda.map((d) => 1 + Math.floor((d * sisa) / total));
+      catatan.push("jeda_dirapatkan");
+    } else {
+      // Kejadian sebelumnya tercatat DI DEPAN jam SIPP. Tidak pernah menulis
+      // masa depan: rangkaian berakhir tepat pada jam sekarang.
+      jeda = jeda.map(() => 1);
+      ujung = kini;
+      catatan.push("kejadian_sebelumnya_di_depan_jam_sipp");
     }
   }
 
-  const jam = Math.floor(detik / 3600) % 24;
-  const menit = Math.floor((detik % 3600) / 60);
-  const sisa = detik % 60;
-  return `${tanggalPenetapan} ${duaAngkaWaktu(jam)}:${duaAngkaWaktu(menit)}:${duaAngkaWaktu(sisa)}`;
+  const detik = new Array(k);
+  detik[k - 1] = ujung;
+  for (let i = k - 2; i >= 0; i -= 1) detik[i] = detik[i + 1] - jeda[i];
+  const jam = {};
+  jenis.forEach((x, i) => {
+    jam[x] = teksNaif(detik[i]);
+  });
+  return { jam, jeda, catatan };
+}
+
+/**
+ * Kejadian TERAKHIR yang sudah tercatat SIPP pada perkara itu - lantai jam
+ * langkah pertama. Riwayat (perkara_proses, termasuk Pendaftaran Perkara) dan
+ * cap waktu baris perkara (diinput/diperbaharui) - semuanya jam SIPP.
+ */
+async function lantaiKejadianPerkara(perkaraId) {
+  const baris = await runQuery(
+    `SELECT DATE_FORMAT(GREATEST(
+              COALESCE((SELECT MAX(pr.diinput_tanggal) FROM perkara_proses pr WHERE pr.perkara_id = p.perkara_id), '1000-01-01'),
+              COALESCE(p.diinput_tanggal, '1000-01-01'),
+              COALESCE(p.diperbaharui_tanggal, '1000-01-01')), '%Y-%m-%d %H:%i:%s') AS lantai
+       FROM perkara p WHERE p.perkara_id = ? LIMIT 1`,
+    [Number(perkaraId) || 0]
+  ).catch(() => []);
+  const teks = Array.isArray(baris) && baris[0] ? String(baris[0].lantai || "") : "";
+  return /^1000-/.test(teks) ? "" : teks;
+}
+
+/**
+ * Jadwal jam SIPP untuk langkah-langkah satu perkara yang AKAN ditulis atau
+ * dibongkar sekarang. `saring`: "belum" (tulis - hanya yang belum ada di SIPP)
+ * atau "ada" (bongkar - hanya yang masih ada).
+ */
+async function jadwalJamSipp(perkaraId, urutan, { saring = "", acak } = {}) {
+  let daftar = (urutan || []).map((x) => String(x || "").toLowerCase());
+  if (saring) {
+    const perkara = await keadaanPerkara(perkaraId);
+    if (perkara) daftar = daftar.filter((x) => (saring === "ada" ? Boolean(perkara[x]) : !perkara[x]));
+  }
+  const [sekarang, lantai] = await Promise.all([waktuSipp(), lantaiKejadianPerkara(perkaraId)]);
+  return { sekarang, lantai, ...jamRangkaianManusia({ urutan: daftar, sekarang, lantai, acak }) };
+}
+
+/** Jam SIPP yang diserahkan pemanggil dalam (rantai) - bentuknya diperiksa. */
+function jamSippSah(teks) {
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(teks || ""));
 }
 
 /**
@@ -1045,6 +980,144 @@ async function akunPetugasMasuk(nama, ip = "") {
   return { ganda: true, calon: calon.map((x) => String(x.username)) };
 }
 
+/**
+ * ============================================================================
+ * AKUN SIPP PEJABAT YANG MENETAPKAN (butir 17, 13 Okt 2026)
+ * ============================================================================
+ *
+ * Keputusan pengguna 13 Okt menggantikan butir 39 (5 Okt) KHUSUS untuk PMH,
+ * PPP, PJS, PHS dan pembatalannya: "di riwayat dan sys_audittrail itu tetap
+ * pejabatnya yang terinput namanya walaupun yang login akun apapun". Perkara
+ * 660/Pdt.G/2026 tercatat "admin" di Riwayat Perkara karena petugasnya masuk
+ * SIPP sebagai admin.
+ *
+ * Kebiasaan satker, diukur di server (perkara_proses, Jan-Agu 2026, 763
+ * perkara): PMH 763/763 atas akun Ketua/Wakil Ketua, PPP dan PJS 763/763 atas
+ * akun Panitera, PHS 758/763 atas akun ketua majelis perkara itu.
+ *
+ * Akunnya dipastikan, tidak ditebak: username persis (sys_users.username UNIK),
+ * tidak diblokir, tidak kedaluwarsa, dan tertaut ke pejabat (user_hakim atau
+ * user_panitera) - akun admin/meja/kasir ditolak. Tidak ada jalan jatuh ke
+ * akun yang sedang masuk; akun itu hanya dicatat di jejak ALETA.
+ */
+function akunHidup(baris) {
+  if (!baris) return false;
+  if (String(baris.block ?? "0") === "1") return false;
+  const habis = baris.kedaluwarsa ? new Date(baris.kedaluwarsa) : null;
+  return !(habis instanceof Date && !Number.isNaN(habis.valueOf()) && habis.valueOf() < Date.now());
+}
+
+async function akunPejabatPasti(username) {
+  const nama = cleanText(username);
+  if (!nama) return { ok: false, alasan: "pejabat_belum_dipilih" };
+  const baris = await runQuery(
+    `SELECT userid, username, fullname, block, user_expired AS kedaluwarsa FROM sys_users WHERE username = ?`,
+    [nama]
+  ).catch(() => []);
+  // Kolasi SIPP tidak membedakan huruf besar-kecil; yang dipakai hanya yang PERSIS.
+  const persis = (Array.isArray(baris) ? baris : []).filter((x) => x && String(x.username) === nama);
+  if (persis.length === 0) return { ok: false, alasan: "akun_pejabat_tidak_ketemu", username: nama };
+  if (persis.length > 1) return { ok: false, alasan: "akun_pejabat_ganda", username: nama };
+  const akun = persis[0];
+  if (!akunHidup(akun)) return { ok: false, alasan: "akun_pejabat_diblokir", username: nama };
+  const taut = await runQuery(
+    `SELECT 'hakim' AS jabatan, hakim_id AS id FROM user_hakim WHERE userid = ?
+     UNION ALL SELECT 'panitera' AS jabatan, panitera_id AS id FROM user_panitera WHERE userid = ?`,
+    [akun.userid, akun.userid]
+  ).catch(() => []);
+  const daftar = Array.isArray(taut) ? taut : [];
+  if (daftar.length === 0) return { ok: false, alasan: "akun_bukan_pejabat", username: nama };
+  return {
+    ok: true,
+    username: String(akun.username),
+    fullname: cleanText(akun.fullname),
+    hakimId: daftar.filter((x) => x.jabatan === "hakim").map((x) => Number(x.id)),
+    paniteraId: daftar.filter((x) => x.jabatan === "panitera").map((x) => Number(x.id)),
+  };
+}
+
+/** Majelis aktif perkara itu dari perkara_hakim_pn - ketua = jabatan 1 / tunggal 3. */
+async function majelisPerkara(perkaraId) {
+  const baris = await runQuery(
+    `SELECT hakim_id AS hakimId, jabatan_hakim_id AS jabatanId FROM perkara_hakim_pn
+      WHERE perkara_id = ? AND tahapan_id = ? AND aktif = 'Y'`,
+    [perkaraId, TAHAPAN_TINGKAT_PERTAMA]
+  ).catch(() => []);
+  const daftar = Array.isArray(baris) ? baris : [];
+  const ketua = daftar.find((x) => [1, 3].includes(Number(x.jabatanId)));
+  return { hakimId: daftar.map((x) => Number(x.hakimId)), ketuaId: ketua ? Number(ketua.hakimId) : 0 };
+}
+
+/** Satu-satunya akun hidup milik seorang hakim (user_hakim) - atau penolakan. */
+async function akunUntukHakim(hakimId) {
+  const baris = await runQuery(
+    `SELECT su.userid, su.username, su.fullname, su.block, su.user_expired AS kedaluwarsa
+       FROM user_hakim uh JOIN sys_users su ON su.userid = uh.userid WHERE uh.hakim_id = ?`,
+    [hakimId]
+  ).catch(() => []);
+  const hidup = (Array.isArray(baris) ? baris : []).filter(akunHidup);
+  if (hidup.length === 0) return { ok: false, alasan: "akun_ketua_majelis_tidak_ada", hakimId };
+  if (hidup.length > 1) {
+    return { ok: false, alasan: "akun_ketua_majelis_ganda", hakimId, calon: hidup.map((x) => String(x.username)) };
+  }
+  return akunPejabatPasti(hidup[0].username);
+}
+
+/**
+ * Akun SIPP yang DICATAT untuk satu langkah penetapan.
+ *
+ *   PMH       Ketua / Wakil / Plh Ketua yang dipilih di panel (pejabatUsername)
+ *   PPP, PJS  Panitera / Plh Panitera yang dipilih di panel
+ *   PHS       ketua majelis perkara itu (perkara_hakim_pn) - atau anggota
+ *             majelis yang dipilih di panel; hakim di luar majelis ditolak
+ *
+ * Penyaringan calon yang sah untuk PMH/PPP/PJS (Ketua/Wakil/Plh; Panitera/Plh)
+ * dikerjakan portal, yang tahu penugasan Plh. Di sini akunnya dipastikan.
+ */
+async function akunPejabatPenetapan(jenis, perkaraId, pejabatUsername, { majelisMenyusul = false } = {}) {
+  if (jenis !== "phs") return akunPejabatPasti(pejabatUsername);
+  const majelis = await majelisPerkara(perkaraId);
+  const dipilih = cleanText(pejabatUsername);
+  if (majelis.hakimId.length === 0) {
+    // Hanya uji kering yang PMH-nya menyusul pada rantai yang sama.
+    if (!majelisMenyusul) return { ok: false, alasan: "pmh_belum_ada" };
+    return akunPejabatPasti(dipilih);
+  }
+  if (!dipilih) {
+    if (!majelis.ketuaId) return { ok: false, alasan: "akun_ketua_majelis_tidak_ada" };
+    return akunUntukHakim(majelis.ketuaId);
+  }
+  const akun = await akunPejabatPasti(dipilih);
+  if (!akun.ok) return akun;
+  if (!akun.hakimId.some((id) => majelis.hakimId.includes(id))) {
+    return { ok: false, alasan: "pejabat_phs_bukan_majelis", username: akun.username };
+  }
+  return akun;
+}
+
+/**
+ * Akun pembatalan: SAMA dengan akun yang tercatat pada penetapan yang
+ * dibatalkan (Riwayat Perkara, perkara_proses.diinput_oleh), bila akun itu
+ * akun pejabat yang hidup. Penetapan yang dahulu tercatat atas akun bukan
+ * pejabat (admin, 660/Pdt.G/2026) dibatalkan atas pejabat pilihan panel -
+ * dengan aturan tolak yang sama. Tidak pernah atas akun yang sedang masuk.
+ */
+async function akunPembatalan(jenis, perkaraId, pejabatUsername) {
+  const jejak = JEJAK_PROSES[jenis];
+  const baris = await runQuery(
+    `SELECT diinput_oleh AS oleh FROM perkara_proses WHERE perkara_id = ? AND tahapan_id = ? AND proses_id = ? LIMIT 1`,
+    [perkaraId, jejak.tahapanId, jejak.prosesId]
+  ).catch(() => []);
+  const tercatat = cleanText(Array.isArray(baris) && baris[0] ? baris[0].oleh : "");
+  if (tercatat) {
+    const akun = await akunPejabatPasti(tercatat);
+    if (akun.ok) return { ...akun, sumber: "tercatat" };
+  }
+  const pilihan = await akunPejabatPenetapan(jenis, perkaraId, pejabatUsername);
+  if (!pilihan.ok) return { ...pilihan, tercatat };
+  return { ...pilihan, sumber: "pilihan" };
+}
+
 /** Sabtu atau Minggu - SIPP menolak keduanya untuk tanggal penetapan dan hari sidang. */
 function hariLibur(iso) {
   if (!tanggalSah(iso)) return false;
@@ -1364,14 +1437,17 @@ async function susunRencanaTulis(minta) {
   const ip = String(minta.ip || "");
 
   // ==========================================================================
-  // DICATAT ATAS NAMA PETUGAS YANG MASUK SIPP DAN MENEKAN TOMBOLNYA
+  // AKUN SIPP YANG SEDANG MASUK - PENEKAN SEBENARNYA, UNTUK JEJAK ALETA SAJA
   // ==========================================================================
   //
-  // olehUsername kini AKUN SIPP PETUGAS YANG SEDANG MASUK (nama pada kepala
-  // halaman SIPP), bukan pemetaan jabatan pejabat. Lihat akunPetugasMasuk.
-  // Jalur data umum memakai bentuk yang sama sejak awal.
-  const akun = await akunPetugasMasuk(minta.olehUsername, ip);
-  if (!akun) {
+  // olehUsername = nama pada kepala halaman SIPP yang dibuka petugas. Ia tetap
+  // harus terbaca pasti (akunPetugasMasuk) - itulah penjagaan yang sudah ada
+  // sejak butir 39 dan tidak dilonggarkan - tetapi sejak butir 17 (13 Okt
+  // 2026) ia TIDAK dicatat di SIPP untuk penetapan: yang dicatat di Riwayat
+  // Perkara dan sys_audittrail adalah akun pejabatnya (akunPejabatPenetapan).
+  // Data Umum bukan penetapan dan tetap atas akun yang masuk.
+  const akunMasuk = await akunPetugasMasuk(minta.olehUsername, ip);
+  if (!akunMasuk) {
     // Nama yang dicari IKUT disebutkan - tanpa itu yang membacanya tidak tahu
     // akun mana yang tidak ditemukan.
     return {
@@ -1380,40 +1456,23 @@ async function susunRencanaTulis(minta) {
       username: String(minta.olehUsername || ""),
     };
   }
-  if (akun.ganda) {
+  if (akunMasuk.ganda) {
     // Dua akun bernama lengkap sama, dan tidak satu pun terbaca masuk dari
-    // peramban ini hari ini. Memilihkan salah satunya berarti mungkin menulis
-    // atas nama petugas LAIN - yang justru dilarang.
+    // peramban ini hari ini - penekannya tidak dapat dicatat dengan pasti.
     return {
       ok: false,
       alasan: "akun_sipp_ganda",
       username: String(minta.olehUsername || ""),
-      calon: akun.calon,
+      calon: akunMasuk.calon,
     };
   }
 
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
 
-  // ==========================================================================
-  // JAM SUNGGUHAN - DIAMBIL SAAT LANGKAH INI DITULIS
-  // ==========================================================================
-  //
-  // Sampai 5 Oktober jam yang dicatat DISUSUN (waktuLangkah): satu rangkaian
-  // 08:00-14:00 per perkara, mundur bila perlu. Perkara 630/Pdt.G/2026 yang
-  // ditetapkan pukul ±13.02 karena itu tercatat 12:26:22, 12:35:46, 12:45:02,
-  // dan 12:54:22 - nomor audit 505555-505570 duduk SESUDAH baris 13:02:11
-  // milik petugas lain. Layar Audit Trail SIPP mengurut menurut datetime
-  // (audit_trail.php: ORDER BY datetime DESC), sehingga baris-baris itu
-  // terkubur di halaman yang sudah lewat, atas nama pejabat yang tidak
-  // menekan apa pun: "tidak ada satu baris pun".
-  //
-  // Sekarang jamnya jam basis data SIPP SAAT INI - jam yang sama yang dipakai
-  // SIPP ketika petugas menekan Simpan - dan jeda antarlangkahnya jeda
-  // sungguhan (lihat rute /penetapan/tulis dan rantaiPenetapan di ekstensi).
-  // Tanggal penetapan - tanggal substantif - tidak disentuh.
+  // Tanggal setempat (WITA) - untuk pagar tanggal penetapan saja. Jam yang
+  // DICATAT di SIPP disusun di bawah, dalam jam SIPP (lihat waktuSipp).
   const saatServer = await waktuBasisData();
-  const saat = saatServer;
   const hariIni = saatServer.slice(0, 10);
 
   // ==========================================================================
@@ -1523,6 +1582,53 @@ async function susunRencanaTulis(minta) {
   // Diteruskan apa adanya ke panel supaya yang membacanya tahu rencana ini
   // dinilai atas keadaan yang BELUM ada, bukan yang sudah.
   const andaian = [];
+
+  // Langkah yang sudah ada dijawab LEBIH DAHULU - tulisRantaiUtuh melewatinya
+  // lewat akhiran _sudah_ada, dan itu tidak boleh tertutup penolakan akun.
+  if (penetapan && perkara[jenis]) return { ok: false, alasan: `${jenis}_sudah_ada` };
+
+  // ==========================================================================
+  // AKUN YANG DICATAT DI SIPP: PEJABATNYA (butir 17, 13 Okt 2026)
+  // ==========================================================================
+  //
+  // Riwayat Perkara (perkara_proses.diinput_oleh), kolom diinput_oleh /
+  // diperbaharui_oleh tabel penetapan, dan sys_audittrail.username - seluruhnya
+  // akun pejabat, apa pun akun SIPP/ALETA yang sedang masuk. Data Umum tetap
+  // atas akun yang masuk.
+  let akun = akunMasuk;
+  if (penetapan) {
+    const pmhMenyusulKering =
+      jenis === "phs" &&
+      minta.kering === true &&
+      Array.isArray(minta.rantaiSebelum) &&
+      minta.rantaiSebelum.map((x) => String(x).toLowerCase()).includes("pmh");
+    const pejabat = await akunPejabatPenetapan(jenis, perkara.perkaraId, minta.pejabatUsername, {
+      majelisMenyusul: pmhMenyusulKering,
+    });
+    if (!pejabat.ok) return { ...pejabat, jenis };
+    akun = pejabat;
+    if (jenis === "phs" && pmhMenyusulKering && !perkara.pmh) {
+      andaian.push(
+        `Akun PHS ${pejabat.username} belum dapat dicocokkan dengan majelis perkara - dipastikan ulang saat menulis, sesudah PMH tersimpan.`
+      );
+    }
+  }
+
+  // ==========================================================================
+  // JAM YANG DICATAT DI SIPP - SEPERTI ORANG BEKERJA, DALAM JAM SIPP
+  // ==========================================================================
+  //
+  // Rantai (tulisRantaiUtuh) menyerahkan jam yang sudah disusun untuk seluruh
+  // langkahnya sekaligus (saatSipp); langkah tunggal menyusunnya sendiri.
+  // Riwayat Perkara dan sys_audittrail satu langkah berbagi jam yang SAMA,
+  // sebagaimana satu tekanan Simpan di SIPP. Data Umum: jam basis data apa
+  // adanya, seperti sebelumnya.
+  let saat = saatServer;
+  if (penetapan) {
+    saat = jamSippSah(minta.saatSipp)
+      ? String(minta.saatSipp)
+      : (await jadwalJamSipp(perkara.perkaraId, [jenis])).jam[jenis] || (await waktuSipp());
+  }
 
   // ==========================================================================
   // SATU BARIS AUDIT, BENTUK SIPP - DIBACA DARI SUMBER SIPP SENDIRI
@@ -2342,6 +2448,8 @@ async function susunRencanaTulis(minta) {
     jenis,
     perkara: { perkaraId: perkara.perkaraId, nomorPerkara: perkara.nomorPerkara },
     atasNama: { username: akun.username, namaLengkap: akun.fullname },
+    // Penekan sebenarnya - hanya untuk jejak ALETA, tidak pernah ditulis ke SIPP.
+    akunMasuk: { username: akunMasuk.username, namaLengkap: akunMasuk.fullname },
     operator,
     tanggalPenetapan: minta.tanggalPenetapan,
     saat,
@@ -2595,47 +2703,38 @@ async function susunRencanaHapus(minta) {
   }
 
   // ==========================================================================
-  // MEMBONGKAR PUN ATAS NAMA PETUGAS YANG SEDANG MASUK (butir 39, 5 Okt 2026)
+  // MEMBATALKAN ATAS AKUN PEJABAT YANG SAMA (butir 17, 13 Okt 2026)
   // ==========================================================================
   //
-  // Sampai 5 Oktober pembongkaran tercatat atas nama PEJABAT penetapnya, sama
-  // seperti jalur tulis dulu. Yang dicatat SIPP kini akun petugas yang masuk
-  // SIPP dan menekan tombolnya (akunSippMasuk = nama di kepala halaman SIPP),
-  // diterjemahkan lewat akunPetugasMasuk. olehUsername (pejabat) hanya
-  // dipakai untuk uji kering pemanggil lama yang belum mengirim akun masuk -
-  // membongkar sungguhan tanpa akun masuk DITOLAK, tidak pernah jatuh ke
-  // akun pejabat.
+  // Akun yang dicatat SIPP = akun yang tercatat pada penetapan yang dibatalkan
+  // (Riwayat Perkara), bila itu akun pejabat yang hidup; selain itu pejabat
+  // pilihan panel (olehUsername) dengan aturan tolak yang sama - lihat
+  // akunPembatalan. Akun SIPP yang sedang masuk (akunSippMasuk) tetap WAJIB
+  // terbaca pasti untuk membongkar sungguhan, tetapi hanya dicatat di jejak
+  // ALETA - tidak pernah di SIPP.
   const namaMasuk = cleanText(minta.akunSippMasuk);
-  let akun = null;
+  let akunMasuk = null;
   if (namaMasuk) {
-    akun = await akunPetugasMasuk(namaMasuk, String(minta.ip || ""));
-    if (akun && akun.ganda) {
-      return { ok: false, alasan: "akun_sipp_ganda", nama: namaMasuk, calon: akun.calon };
+    akunMasuk = await akunPetugasMasuk(namaMasuk, String(minta.ip || ""));
+    if (akunMasuk && akunMasuk.ganda) {
+      return { ok: false, alasan: "akun_sipp_ganda", nama: namaMasuk, calon: akunMasuk.calon };
     }
-    if (!akun) return { ok: false, alasan: "akun_sipp_tidak_ketemu", nama: namaMasuk };
-  } else if (minta.kering === true) {
-    akun = await akunSipp(minta.olehUsername);
-    if (!akun) {
-      // Nama akunnya IKUT disebutkan. Tanpa itu, yang membacanya hanya tahu
-      // "akun pejabat tidak ketemu" dan tidak punya satu pun petunjuk akun mana
-      // yang dicari.
-      return {
-        ok: false,
-        alasan: "akun_pejabat_tidak_ketemu",
-        username: String(minta.olehUsername || ""),
-      };
-    }
-  } else {
+    if (!akunMasuk) return { ok: false, alasan: "akun_sipp_tidak_ketemu", nama: namaMasuk };
+  } else if (minta.kering !== true) {
     return { ok: false, alasan: "akun_sipp_belum_terbaca" };
   }
+
+  const akun = await akunPembatalan(jenis, perkara.perkaraId, minta.olehUsername);
+  if (!akun.ok) return { ...akun, jenis };
 
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
 
-  // Jam basis data SIPP SAAT INI - jam sungguhan, sama seperti jalur tulis
-  // sejak butir 39. Jam susunan (jam kiriman pemanggil, dari waktuBongkar) tidak lagi
-  // dipakai: ia memundurkan jam dan menenggelamkan barisnya di Audit Trail.
-  const saat = await waktuBasisData();
+  // Jam SIPP seperti orang bekerja - rantai bongkar (hapus-semua) menyerahkan
+  // jam yang sudah disusun untuk seluruh langkahnya (saatSipp).
+  const saat = jamSippSah(minta.saatSipp)
+    ? String(minta.saatSipp)
+    : (await jadwalJamSipp(perkara.perkaraId, [jenis])).jam[jenis] || (await waktuSipp());
   // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
   const ip = String(minta.ip || "");
   const langkah = [];
@@ -2765,7 +2864,9 @@ async function susunRencanaHapus(minta) {
     jenis,
     membongkar: true,
     perkara: { perkaraId: perkara.perkaraId, nomorPerkara: perkara.nomorPerkara },
-    atasNama: { username: akun.username, namaLengkap: akun.fullname },
+    atasNama: { username: akun.username, namaLengkap: akun.fullname, sumber: akun.sumber },
+    // Penekan sebenarnya - hanya untuk jejak ALETA.
+    akunMasuk: akunMasuk ? { username: akunMasuk.username, namaLengkap: akunMasuk.fullname } : null,
     operator,
     saat,
     langkah,
@@ -2897,8 +2998,8 @@ async function jalankanRencana(rencana, opsi = {}) {
  * transaksi. Rencana tiap langkah disusun DI DALAM transaksi itu
  * (kueriTransaksi), sehingga PPP/PJS/PHS melihat PMH yang baru ditulis. Gagal
  * di langkah mana pun -> ROLLBACK: nol baris tertulis, dan perkara dapat
- * dicoba lagi. Jeda manusia dan jam audit tetap per langkah (jam diambil
- * sesudah jeda, NOW() per pernyataan).
+ * dicoba lagi. Jam SIPP tiap langkah disusun sekali di awal transaksi
+ * (jadwalJamSipp, butir 17); jeda manusia sungguhan tetap dijalani.
  *
  * Langkah yang ternyata SUDAH ada (keadaan panel basi) dilewati, bukan gagal.
  *
@@ -2964,6 +3065,15 @@ async function tulisRantaiUtuh(minta, alat = {}) {
   try {
     await lewat("START TRANSACTION");
     await kueriTransaksi.run(lewat, async () => {
+      // Jam SIPP seluruh langkah yang BELUM ada disusun SEKALI di awal (butir
+      // 17): berurutan, berjeda seperti orang bekerja, langkah terakhir tidak
+      // melewati jam SIPP sekarang, langkah pertama tidak mendahului kejadian
+      // terakhir perkara itu. Jam sebenarnya tetap di jejak ALETA.
+      const jadwal = await jadwalJamSipp(
+        umum.perkaraId,
+        langkahMinta.map((x) => x.jenis),
+        { saring: "belum", acak: alat.acak }
+      );
       for (const [i, satu] of langkahMinta.entries()) {
         if (i > 0) await jeda("pindah");
         await jeda("simpan");
@@ -2976,6 +3086,7 @@ async function tulisRantaiUtuh(minta, alat = {}) {
           ip: String(umum.ip || ""),
           kering: false,
           rantaiSebelum: [],
+          saatSipp: jadwal.jam[satu.jenis] || "",
         });
         if (!rencana.ok) {
           const alasan = String(rencana.alasan || "ditolak");
@@ -3039,12 +3150,14 @@ module.exports = {
   jalankanRencana,
   // Sisa penetapan satu perkara dalam satu transaksi (uji rilis U1, 9 Okt 2026).
   tulisRantaiUtuh,
-  waktuBongkar,
+  // Jam SIPP seperti orang bekerja (butir 17) - dipakai rute bongkar-semua.
+  jadwalJamSipp,
   // Dipakai Kasir jurnal (kasirJurnalService): nama lengkap SIPP -> username.
   akunPetugasMasuk,
   // Diekspor untuk diuji satuan.
-  waktuLangkah,
-  rangkaianDetik,
+  jamRangkaianManusia,
+  waktuSipp,
+  akunPejabatPasti,
   majelisTetapUntuk,
   kompetensiMenurutPerkara,
   // Diekspor untuk diuji satuan.

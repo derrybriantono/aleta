@@ -948,8 +948,12 @@ router.post("/penetapan/tulis-rantai", requireInternalToken, async (req, res) =>
         perkaraId: badan.perkaraId,
         nomorPerkara: (r.perkara && r.perkara.nomorPerkara) || "",
         tanggalPenetapan: String(badan.tanggalPenetapan || ""),
-        akunSipp: (r.atasNama && r.atasNama.username) || String(badan.olehUsername || ""),
-        namaPejabat: pejabat || (r.atasNama && r.atasNama.namaLengkap) || "",
+        // Butir 17: akun yang DICATAT di SIPP (pejabat), jam yang dicatat di
+        // SIPP, dan penekan sebenarnya (akun SIPP yang masuk + operator ALETA).
+        akunSipp: (r.atasNama && r.atasNama.username) || pejabat,
+        namaPejabat: (r.atasNama && r.atasNama.namaLengkap) || pejabat,
+        akunSippMasuk: (r.akunMasuk && r.akunMasuk.username) || String(badan.olehUsername || ""),
+        jamSipp: r.saat || "",
         operator,
         ip,
         berhasil: hasil.ok === true && satu.ok === true,
@@ -964,6 +968,11 @@ router.post("/penetapan/tulis-rantai", requireInternalToken, async (req, res) =>
       utuh: hasil.utuh === true,
       alasan: hasil.alasan || "",
       jenisGagal: hasil.jenis || "",
+      // Akun yang ditolak (butir 17) - supaya panel menyebut akun pejabatnya,
+      // bukan akun yang sedang masuk.
+      usernameGagal:
+        ((hasil.hasil || []).find((x) => x && !x.ok && !x.sudahAda && x.rencana && x.rencana.username) || { rencana: {} })
+          .rencana.username || "",
       pesan: hasil.pesan || "",
       dipulihkan: hasil.dipulihkan === true,
       hasil: (hasil.hasil || []).map((satu) => ({
@@ -1027,15 +1036,16 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       ruanganId: badan.ruanganId,
       jamSidang: String(badan.jamSidang || ""),
       // Akun SIPP petugas yang SEDANG MASUK dan menekan tombolnya (nama pada
-      // kepala halaman SIPP) - bukan pejabat penetapnya. Lihat
-      // akunPetugasMasuk di penetapanTulisService.
+      // kepala halaman SIPP) - penekan sebenarnya, untuk jejak ALETA.
       olehUsername: String(badan.olehUsername || ""),
+      // Butir 17 (13 Okt 2026): akun SIPP pejabat penetap (Ketua/Wakil/Plh,
+      // Panitera/Plh, ketua majelis) - INILAH yang dicatat di Riwayat Perkara
+      // dan sys_audittrail untuk PMH/PPP/PJS/PHS.
+      pejabatUsername: String(badan.pejabatUsername || "").trim().slice(0, 150),
       operator,
       ip: alamatAudit(req),
     });
 
-    // Pejabat penanda tangan penetapan (Ketua/Wakil/Plh, Panitera, ketua
-    // majelis) - HANYA untuk jejak jujur ALETA. Tidak pernah ditulis ke SIPP.
     const pejabatPenetap = String(badan.pejabatUsername || "").trim().slice(0, 150);
 
     if (!rencana.ok) {
@@ -1047,8 +1057,9 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
         jenis: String(badan.jenis || ""),
         perkaraId: badan.perkaraId,
         tanggalPenetapan: String(badan.tanggalPenetapan || ""),
-        akunSipp: String(badan.olehUsername || ""),
+        akunSipp: pejabatPenetap,
         namaPejabat: pejabatPenetap,
+        akunSippMasuk: String(badan.olehUsername || ""),
         operator,
         ip: alamatAudit(req),
         berhasil: false,
@@ -1072,7 +1083,9 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
       tanggalPenetapan: String(badan.tanggalPenetapan || ""),
       akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
-      namaPejabat: pejabatPenetap || (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || pejabatPenetap,
+      akunSippMasuk: (rencana.akunMasuk && rencana.akunMasuk.username) || String(badan.olehUsername || ""),
+      jamSipp: rencana.saat || "",
       operator: rencana.operator,
       ip: alamatAudit(req),
       berhasil: hasil.ok === true,
@@ -1323,8 +1336,10 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
     const rencana = await penetapanTulisService.susunRencanaHapus({
       jenis: String(badan.jenis || ""),
       perkaraId: badan.perkaraId,
+      // Pejabat pilihan panel - dipakai bila penetapan yang dibatalkan tidak
+      // tercatat atas akun pejabat (butir 17, lihat akunPembatalan).
       olehUsername: String(badan.olehUsername || ""),
-      // Akun SIPP petugas yang sedang masuk - yang dicatat di sys_audittrail.
+      // Akun SIPP petugas yang sedang masuk - penekan sebenarnya, jejak ALETA.
       akunSippMasuk: String(badan.akunSippMasuk || ""),
       operator,
       kering,
@@ -1348,6 +1363,8 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
       nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
       akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
       namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+      akunSippMasuk: (rencana.akunMasuk && rencana.akunMasuk.username) || String(badan.akunSippMasuk || ""),
+      jamSipp: rencana.saat || "",
       operator: rencana.operator,
       ip: alamatAudit(req),
       berhasil: hasil.ok === true,
@@ -1421,10 +1438,14 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
     const rantaiDibongkar = [];
     let berhentiKarena = null;
 
-    // Butir 39: tiap langkah tercatat atas akun SIPP petugas yang sedang
-    // masuk, pada jam sungguhan sesudah jeda sungguhan - bukan jam susunan
-    // waktuBongkar yang memundurkan barisnya, bukan akun pejabat.
+    // Butir 17 (13 Okt 2026): tiap langkah tercatat di SIPP atas akun pejabat
+    // yang sama dengan penetapan yang dibatalkan, pada jam SIPP yang disusun
+    // SEKALI untuk seluruh rangkaian (PHS -> PMH) seperti orang bekerja.
+    // Akun SIPP yang sedang masuk hanya untuk jejak ALETA.
     const akunSippMasuk = String(badan.akunSippMasuk || "").trim();
+    const jadwal = await penetapanTulisService.jadwalJamSipp(perkaraId, penetapanTulisService.URUTAN_BONGKAR, {
+      saring: "ada",
+    });
 
     for (const jenis of penetapanTulisService.URUTAN_BONGKAR) {
       const olehUsername = String(akun[jenis] || "").trim();
@@ -1439,6 +1460,7 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
         ip,
         kering,
         rantaiDibongkar: [...rantaiDibongkar],
+        saatSipp: jadwal.jam[jenis] || "",
       });
 
       if (!rencana.ok) {
@@ -1476,6 +1498,8 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
         nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
         akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
         namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+        akunSippMasuk: (rencana.akunMasuk && rencana.akunMasuk.username) || akunSippMasuk,
+        jamSipp: rencana.saat || "",
         operator: rencana.operator,
         ip,
         berhasil: hasil.ok === true,

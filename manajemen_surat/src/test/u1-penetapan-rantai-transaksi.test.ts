@@ -29,7 +29,19 @@ type Baris = Record<string, unknown>;
 type Tulisan = { sql: string; params: unknown[] };
 type Keadaan = { pmh: string | null; ppp: string | null; pjs: string | null; phs: string | null; adaPenetapan: number; adaSmartMajelis: number };
 
-const PENGGUNA = [{ userid: 11, username: "derry briantono", fullname: "Derry Briantono, S.H.", block: 0 }];
+const PENGGUNA = [
+  { userid: 11, username: "derry briantono", fullname: "Derry Briantono, S.H.", block: 0 },
+  // Butir 17 (13 Okt 2026): akun pejabat yang dicatat SIPP.
+  { userid: 85, username: "fahri", fullname: "Fahri Saifuddin, S.H.I., M.H.", block: 0 },
+  { userid: 81, username: "Sri Susilowati", fullname: "Sri Susilowati, S.H.", block: 0 },
+  { userid: 72, username: "Himawan", fullname: "Himawan Tatura Wijaya, S.H.I.,M.H.", block: 0 },
+];
+const TAUT: Record<number, Array<{ jabatan: string; id: number }>> = {
+  85: [{ jabatan: "hakim", id: 32 }],
+  81: [{ jabatan: "panitera", id: 26 }],
+  72: [{ jabatan: "hakim", id: 26 }],
+  11: [{ jabatan: "hakim", id: 31 }],
+};
 const HAKIM: Record<number, Baris> = {
   32: { hakimId: 32, kode: "A", nip: "198208312007041001", nama: "Fahri Saifuddin, S.H.I., M.H.", namaPolos: "Fahri Saifuddin" },
   26: { hakimId: 26, kode: "C1", nip: "197806052005021002", nama: "Himawan Tatura Wijaya, S.H.I.,M.H.", namaPolos: "Himawan Tatura Wijaya" },
@@ -54,6 +66,16 @@ function sippBertransaksi(awal: Partial<Keadaan> = {}) {
     if (max) return [{ berikutnya: idBerikutnya[max[1]] || 1 }];
     if (/COALESCE\(MAX\(urutan\), 0\) \+ 1/.test(sql)) return [{ berikutnya: 1 }];
     if (/DATE_FORMAT\(NOW\(\)/.test(sql)) return [{ saat: "2026-10-09 09:02:11" }];
+    if (/UTC_TIMESTAMP/.test(sql)) return [{ utc: "2026-10-09 01:02:11" }];
+    if (/AS lantai/.test(sql)) return [{ lantai: "2026-10-09 07:40:00" }];
+    if (/FROM user_hakim WHERE userid/.test(sql)) return TAUT[Number(p[0])] || [];
+    if (/FROM user_hakim uh JOIN sys_users/.test(sql)) {
+      return PENGGUNA.filter((u) => (TAUT[u.userid] || []).some((t) => t.jabatan === "hakim" && t.id === Number(p[0])));
+    }
+    // Majelis tercatat: ketua 26 (Himawan) sesudah PMH tertulis.
+    if (/FROM perkara_hakim_pn\s+WHERE/.test(sql)) {
+      return keadaan.pmh ? [{ hakimId: 26, jabatanId: 1 }, { hakimId: 32, jabatanId: 2 }, { hakimId: 31, jabatanId: 2 }] : [];
+    }
     if (/FROM perkara p\b/.test(sql)) {
       return [{ perkaraId: 10222, nomorPerkara: "653/Pdt.G/2026/PA.Dgl", jenisPerkaraId: 347, tanggalDaftar: "2026-10-09", didaftar: "2026-10-09 08:40:00", ...keadaan }];
     }
@@ -167,9 +189,9 @@ function muatLayanan(db: unknown): Layanan {
 }
 
 const LANGKAH: Record<string, Record<string, unknown>> = {
-  pmh: { jenis: "pmh", hakimId: [26, 32, 31] },
-  ppp: { jenis: "ppp", petugasId: 21 },
-  pjs: { jenis: "pjs", petugasId: 28 },
+  pmh: { jenis: "pmh", hakimId: [26, 32, 31], pejabatUsername: "fahri" },
+  ppp: { jenis: "ppp", petugasId: 21, pejabatUsername: "Sri Susilowati" },
+  pjs: { jenis: "pjs", petugasId: 28, pejabatUsername: "Sri Susilowati" },
   phs: { jenis: "phs", tanggalSidang: "2026-10-21", ruanganId: 3 },
 };
 

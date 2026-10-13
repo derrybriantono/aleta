@@ -6,6 +6,7 @@ import {
   kirimPenetapanTulisRantaiGateway,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanPejabatLangkah, pejabatSahUntukTanggal } from "@/server/modules/aleta-ecourt/rencana-penetapan";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { alamatIpPeramban } from "@/server/shared/request";
@@ -19,10 +20,14 @@ export const dynamic = "force-dynamic";
  * MENULIS PENETAPAN KE SIPP - RUTE YANG PALING BERAT AKIBATNYA
  * ============================================================================
  *
- * Seluruh rute lain di ALETA membaca SIPP. Rute ini menulis, dan yang ditulis
- * tercatat di SIPP atas nama AKUN SIPP PETUGAS YANG SEDANG MASUK dan menekan
- * tombolnya, dari alamat peramban petugas itu, pada jam sungguhan (keputusan
- * pengguna 2 Okt 2026, butir 39). Nama petugas lain tidak pernah ditulis.
+ * Seluruh rute lain di ALETA membaca SIPP. Rute ini menulis. Sejak butir 17
+ * (13 Okt 2026) PMH/PPP/PJS/PHS tercatat di SIPP (Riwayat Perkara dan
+ * sys_audittrail) atas AKUN SIPP PEJABAT yang dipilih di panel - Ketua/Wakil/
+ * Plh, Panitera/Plh, ketua majelis - apa pun akun yang sedang masuk, pada jam
+ * yang disusun seperti orang bekerja. Akun SIPP yang masuk (olehUsername) dan
+ * operator ALETA hanya dicatat di jejak ALETA. Pilihan pejabat dari peramban
+ * dipastikan di sini (pejabatSahPenetapan); PHS dipastikan bot terhadap
+ * majelis perkara itu.
  *
  * ============================================================================
  * KERING SEBAGAI BAWAAN
@@ -123,6 +128,8 @@ export async function POST(request: NextRequest) {
       if (langkah.length === 0 || langkah.some((x) => !RANTAI_SAH.has(x.jenis))) {
         return Response.json({ ok: false, alasan: "jenis_tidak_didukung" }, { status: 400 });
       }
+      const tolak = await isiPejabatSah(db, String(badan.tanggalPenetapan || ""), langkah);
+      if (tolak) return tolak;
       const responsRantai = await kirimPenetapanTulisRantaiGateway({
         perkaraId: perkaraIdRantai,
         tanggalPenetapan: String(badan.tanggalPenetapan || ""),
@@ -149,18 +156,24 @@ export async function POST(request: NextRequest) {
     }
 
     // ========================================================================
-    // AKUN SIPP PETUGAS YANG SEDANG MASUK - BUKAN PEJABATNYA (butir 39)
+    // AKUN SIPP YANG MASUK (penekan) DAN AKUN PEJABAT (yang dicatat SIPP)
     // ========================================================================
     //
-    // olehUsername = nama pada kepala halaman SIPP yang sedang dibuka petugas.
-    // Itulah akun yang dicatat SIPP sendiri ketika petugas menekan Simpan, dan
-    // satu-satunya nama yang boleh tercatat di sys_audittrail. Pejabat penanda
-    // tangan (pejabatUsername) hanya diteruskan untuk jejak ALETA.
+    // olehUsername = nama pada kepala halaman SIPP yang sedang dibuka petugas -
+    // penekan sebenarnya, wajib terbaca, dicatat di jejak ALETA. Sejak butir 17
+    // (13 Okt 2026) yang dicatat di Riwayat Perkara dan sys_audittrail untuk
+    // PMH/PPP/PJS/PHS adalah pejabatUsername (dipastikan isiPejabatSah). Data
+    // Umum tetap atas akun yang masuk.
     const olehUsername = String(badan.olehUsername || "").trim();
     if (!olehUsername) {
       return Response.json({ ok: false, alasan: "akun_sipp_belum_terbaca" }, { status: 400 });
     }
-    const pejabatUsername = String(badan.pejabatUsername || "").trim().slice(0, 150);
+    const tunggal = [{ jenis, pejabatUsername: String(badan.pejabatUsername || "").trim().slice(0, 150) || undefined }];
+    if (jenis !== "dataUmum") {
+      const tolak = await isiPejabatSah(db, String(badan.tanggalPenetapan || ""), tunggal);
+      if (tolak) return tolak;
+    }
+    const pejabatUsername = tunggal[0].pejabatUsername || "";
 
     // Menulis HARUS diminta tegas. Permintaan yang lupa menyebutnya
     // menghasilkan hasil kering, bukan tulisan.
@@ -234,4 +247,28 @@ export async function POST(request: NextRequest) {
       feature: "aleta_ecourt",
     });
   }
+}
+
+/**
+ * Memastikan akun pejabat tiap langkah PMH/PPP/PJS (butir 17) dan mengisi
+ * pilihan otomatis bila panel tidak memilih. Pulang Response penolakan, atau
+ * null bila seluruhnya sah. PHS diteruskan apa adanya - bot memastikannya
+ * terhadap majelis perkara itu.
+ */
+async function isiPejabatSah(
+  db: Awaited<ReturnType<typeof getDatabase>>,
+  tanggal: string,
+  langkah: Array<{ jenis: string; pejabatUsername?: string }>
+): Promise<Response | null> {
+  if (!langkah.some((x) => ["pmh", "ppp", "pjs"].includes(x.jenis))) return null;
+  const baca = await pejabatSahUntukTanggal(db, tanggal);
+  if (!baca.ok) {
+    return Response.json({ ok: false, alasan: "pemetaan_jabatan_tidak_terbaca", pesan: baca.galat }, { status: 503 });
+  }
+  for (const satu of langkah) {
+    const hasil = pastikanPejabatLangkah(baca.sah, satu.jenis, satu.pejabatUsername || "");
+    if (!hasil.ok) return Response.json(hasil, { status: 409 });
+    if (hasil.username) satu.pejabatUsername = hasil.username;
+  }
+  return null;
 }

@@ -45,12 +45,17 @@ const kueri = [];
 /** MAX(id)+1 yang dijawab penadah, per tabel. */
 const idBerikutnya = { perkara_jurusita: 10274, perkara_jadwal_sidang: 20099 };
 
+const { jawabPejabat } = require("./_penadah-pejabat");
+
 const dbPath = require.resolve("../db_config");
 require("../db_config");
 require.cache[dbPath].exports = {
   query: (sql, params, selesai) => {
     const teks = String(sql);
     kueri.push({ sql: teks.replace(/\s+/g, " ").trim(), params: Array.isArray(params) ? params : [] });
+    // Butir 17 (13 Okt 2026): akun pejabat, majelis, dan jam SIPP.
+    const pejabat = jawabPejabat(teks, { username: "Sri Susilowati" });
+    if (pejabat !== undefined) return selesai(null, pejabat);
 
     if (/COALESCE\(MAX\(id\), 0\) \+ 1/.test(teks)) {
       const tabel = (/FROM (\w+)/.exec(teks) || [])[1];
@@ -88,6 +93,8 @@ const dasar = {
   perkaraId: 10113,
   tanggalPenetapan: "2026-09-14",
   olehUsername: "Sri Susilowati",
+  // Butir 17: akun pejabat yang dicatat SIPP.
+  pejabatUsername: "Sri Susilowati",
   operator: "SUPER ADMIN DERRY",
   ip: "127.0.0.1",
 };
