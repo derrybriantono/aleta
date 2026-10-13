@@ -291,7 +291,7 @@ describe("rute /abt/usulan memakai deteksi per jenis", () => {
   it("posita-lain: penetapan ahli waris kini berusulan", async () => {
     const j = await panggil({ sumber: "posita-lain", posita: POSITA_PAW, jenisPerkara: "371", alur: "16" });
     expect(j.positaLain.ok).toBe(true);
-    expect(j.positaLain.usulan.map((u: { kode: string }) => u.kode).sort()).toEqual(["1025", "1247", "8171"]);
+    expect(j.positaLain.usulan.map((u: { kode: string }) => u.kode).sort()).toEqual(["1025", "1246", "1247", "8171"]); // 1246: modul deteksi/waris.js (13 Okt)
   });
 
   it("itsbat: 8171 ikut sebagai usulan ragu di belakang usulan pengurai", async () => {

@@ -2402,6 +2402,24 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // tambahan per jenis tidak pernah menggagalkan usulan perkara lain
       }
       /* === AKHIR JENIS3 === */
+      /* === PWH 13 Okt (butir 16) === */
+      // Izin poligami, harta bersama, kewarisan, penetapan ahli waris: modul deteksi/<jenis>.js dari
+      // posita + petitum + SIPP (alasan & penghasilan poligami, nama pemohon) - SIPP hanya dibaca.
+      try {
+        const pwh = require("../services/deteksi/sambunganPwh");
+        const jenisMasuk = String(req.body?.jenisPerkara || "").slice(0, 80);
+        const sippPwh = nomorPerkara ? await pwh.bacaSipp(nomorPerkara).catch(() => null) : null;
+        if (pwh.idJenis(jenisMasuk) || (sippPwh && pwh.JENIS_PWH.has(sippPwh.jenisPerkaraId))) {
+          jawaban.positaLain = pwh.tambahUsulanPwh(jawaban.positaLain, String(req.body?.posita || ""), {
+            jenisPerkara: jenisMasuk,
+            alur: String(req.body?.alur || "").slice(0, 20),
+            sipp: sippPwh,
+          });
+        }
+      } catch {
+        // modul per jenis tidak pernah menggagalkan usulan perkara lain
+      }
+      /* === AKHIR PWH === */
     }
     /* === DK 13 Okt === */
     // Dispensasi kawin: peran anak/calon pasangan, umur, identitas, kehamilan,

@@ -2441,6 +2441,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // 12 Okt (12OKT-D): usulan yang menyebut `awal` menentukan centang awalnya sendiri (tanggal KTP: tercentang
   // hanya bila isian blangko kosong dan bacaan e-Court cukup/pasti - lihat ktpUsulanTanggal/ktpUsulanTeks).
   if (typeof u.awal === "boolean") centang.checked = u.awal && Boolean(u.nilai) && u.keyakinan !== "ragu" && u.keyakinan !== "bentrok";
+  // PWH 13 Okt: usulan modul poligami/harta bersama/waris tidak menimpa isian petugas yang sudah ada.
+  if (u.jagaIsianLama && !pwhIsianKosong(keadaanSekarang)) centang.checked = false;
   centang.disabled = !u.nilai;
   kepala.appendChild(centang);
   kepala.appendChild(buatElemen("span", "aleta-abt-kode", u.kode));
@@ -3709,10 +3711,36 @@ const J3_VARIABEL_JENIS = Object.freeze({
 function j3BlangkoMemuatVariabelJenis(petaVariabel, namaAtauId) {
   if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
   const id = idJenisPerkaraSipp(String(namaAtauId || "").replace(/\s+/g, " ").trim());
-  const daftar = J3_VARIABEL_JENIS[id];
-  return Boolean(daftar) && daftar.some((k) => petaVariabel.has(k));
+  const daftar = [...(J3_VARIABEL_JENIS[id] || []), ...(PWH_VARIABEL_JENIS[id] || [])];
+  return daftar.length > 0 && daftar.some((k) => petaVariabel.has(k));
 }
 /* === AKHIR JENIS3 === */
+
+/* === PWH 13 Okt (butir 16) === */
+/**
+ * Variabel blangko izin poligami (341), harta bersama (348), kewarisan (364/365) dan penetapan ahli
+ * waris (371) yang dideteksi modul aleta_bot/services/deteksi/{poligami,hartaBersama,waris}.js -
+ * cermin `variabel` modul itu, dijaga uji deteksi-poligami-waris-hb.test.ts. Hanya untuk menggambar
+ * tombol "Isi dari posita permohonan"; yang diusulkan dan keyakinannya tetap diputuskan bot.
+ */
+const PWH_VARIABEL_JENIS = Object.freeze({
+  341: Object.freeze(["8723", "8724", "8725", "1152", "8720", "8722", "8726"]),
+  348: Object.freeze(["8730", "8706"]),
+  364: Object.freeze(["1025", "1246", "1247", "1509", "8717", "8718"]),
+  365: Object.freeze(["1025", "1246", "1247", "1509", "8717", "8718"]),
+  371: Object.freeze(["1025", "1246", "1247", "1509", "5197", "8610", "8613", "8614", "8608"]),
+});
+
+/**
+ * Isian blangko yang BOLEH diisi usulan bertanda `jagaIsianLama`: kosong, "...", atau bawaan ABT
+ * bergaris bawah ("_ binti _", "Rp_,00 (_ rupiah)"). Isian petugas yang lain tidak ditimpa diam-diam.
+ */
+function pwhIsianKosong(teks) {
+  const t = String(teks == null ? "" : teks).replace(/\s+/g, " ").trim();
+  if (!t || t === "(kosong)" || /^(?:\.{2,}|…+|-+)$/.test(t)) return true;
+  return /(?:^|[\s(.,;:/])_+(?=$|[\s),.;:/])/.test(t);
+}
+/* === AKHIR PWH === */
 
 /** Blangko ini memuat sekurang-kurangnya satu variabel siap MILIK jenis perkara ini? */
 function blangkoMemuatVariabelSiapLain(petaVariabel, kunciJenis) {

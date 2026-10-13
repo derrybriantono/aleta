@@ -36,7 +36,7 @@
  * pemuat ini tidak pernah menggagalkan usulan.
  */
 
-const DAFTAR = Object.freeze(["itsbat", "cerai", "dispensasiKawin"]);
+const DAFTAR = Object.freeze(["itsbat", "cerai", "dispensasiKawin", "poligami", "waris", "hartaBersama"]);
 
 let tembolok = null;
 
