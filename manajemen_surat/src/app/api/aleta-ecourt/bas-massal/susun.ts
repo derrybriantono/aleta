@@ -59,6 +59,7 @@ import {
   type FormatBasTanpaHadir,
 } from "@/lib/pemetaan-blangko";
 import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
+import { padananBasArsip, type PadananBas } from "@/lib/alur-bas";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
 
@@ -180,6 +181,11 @@ export type PilihanBlangkoBas = {
   perkiraan?: boolean;
   /** 9 Okt 2026: blangko format lewat 14.00 tanpa kehadiran. */
   format?: FormatBasTanpaHadir;
+  /**
+   * S 13 Okt: berkas yang SAMA di folder ALUR (paket ABT abt-blangko-derry-rapi menyembunyikan menu BAS lama) -
+   * ekstensi memakai tokennya bila token berkas folder lama tidak dapat dipanen dari ABT. Tanpa = tidak perlu.
+   */
+  padanan?: PadananBas[];
 };
 
 export type RingkasLembar = { jumlah: number; selesai: number; draf: number };
@@ -526,10 +532,24 @@ export function pilihBlangkoBas(masukan: {
   /** 9 Okt 2026: lewat 14.00 tanpa kehadiran - blangko format gugur / tunda panggil para pihak. */
   format?: FormatTanpaHadir | null;
 }): { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string } {
-  if (masukan.format) return pilihBlangkoFormat(masukan, masukan.format);
-  const otomatis = pilihBlangkoBasOtomatis(masukan);
-  return terapkanPetaBas(otomatis, masukan);
+  const hasil = masukan.format
+    ? pilihBlangkoFormat(masukan, masukan.format)
+    : terapkanPetaBas(pilihBlangkoBasOtomatis(masukan), masukan);
+  return denganPadanan(hasil);
 }
+
+/* === S 13 Okt === */
+/** Lengkapi tiap pilihan dengan padanan folder ALUR-nya (bila ada) - pilihan dan usulan tetap objek yang sama bentuknya. */
+function denganPadanan<T extends { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[] }>(h: T): T {
+  const tambah = (p: PilihanBlangkoBas): PilihanBlangkoBas => {
+    const padanan = padananBasArsip(p.folder, p.berkas);
+    return padanan.length ? { ...p, padanan } : p;
+  };
+  const pilihan = h.pilihan.map(tambah);
+  const usulan = h.usulan ? pilihan.find((p) => p.folder === h.usulan!.folder && p.berkas === h.usulan!.berkas) ?? tambah(h.usulan) : null;
+  return { ...h, pilihan, usulan };
+}
+/* === AKHIR S === */
 
 /**
  * ============================================================================

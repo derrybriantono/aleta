@@ -15,6 +15,9 @@
  * satu waktu - dan tiap pertanyaannya memang pertanyaan yang sudah ada
  * jawabannya di kepalanya sebelum ia membuka ALETA.
  *
+ * Tugas tiap set (putusan -> hakim, BAS -> panitera, relaas -> juru sita) dibaca
+ * dari nama foldernya - lihat lib/tugas-blangko.ts dan setBlangkoGabung().
+ *
  * ============================================================================
  * JENJANGNYA DIBACA DARI NAMA BERKAS
  * ============================================================================
@@ -28,6 +31,8 @@
  * Yang memang ditulis di sini hanyalah SET mana untuk jenis perkara apa - itu
  * penilaian, bukan data, dan tidak dapat dibaca dari nama folder.
  */
+
+import { folderTugas, tugasBlangko, type TugasBlangko } from "@/lib/tugas-blangko";
 
 export type BlangkoItem = {
   berkas: string;
@@ -159,6 +164,42 @@ export const SET_BLANGKO: SetBlangko[] = [
   },
 ];
 
+/* === S 13 Okt === */
+/**
+ * TUGAS tiap set dibaca dari folder-nya dengan aturan lib/tugas-blangko.ts (putusan -> hakim, BAS -> panitera,
+ * relaas -> juru sita). Daftar tulisan tangan di atas TIDAK lagi satu-satunya: folder grup Derry yang ditemukan di
+ * server (blangko.katalog atas derry_briantono) dan belum tertulis di sini menjadi set baru menurut aturan yang sama -
+ * blangko yang ditambah kemudian (mis. putusan per jenis x status) ikut terpetakan tanpa menyunting berkas ini.
+ */
+export function tugasSet(set: Pick<SetBlangko, "folder">): TugasBlangko | "" {
+  return tugasBlangko(set.folder);
+}
+
+/** Set dari satu folder grup Derry menurut aturan; null bila bukan putusan/BAS/relaas (mis. PTSP) atau tak terbaca. */
+export function setDariFolder(direktori: string, akar: string = AKAR): SetBlangko | null {
+  const f = folderTugas(direktori, akar);
+  if (!f || f.jenis === "ptsp") return null;
+  const id = `${f.jenis}-${direktori.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`;
+  return { id, nama: `${f.jenis === "putusan" ? "Putusan" : f.jenis === "bas" ? "BAS" : "Relaas"} ${f.nama}`.replace(/^(Putusan|BAS) \1 /i, "$1 "), folder: f.folder, jenis: f.jenis, untuk: f.untuk };
+}
+
+/**
+ * SET_BLANGKO + set dari folder yang ditemukan dan belum tertulis (urutan: tertulis dulu, lalu temuan menurut
+ * urutan alami). Folder yang sama tidak pernah dua kali; folder tersembunyi ("_...") dan PTSP dilewati.
+ */
+export function setBlangkoGabung(direktoriDitemukan: string[], akar: string = AKAR): SetBlangko[] {
+  const ada = new Set(SET_BLANGKO.map((s) => s.folder));
+  const baru: SetBlangko[] = [];
+  for (const d of [...(direktoriDitemukan || [])].sort((a, b) => a.localeCompare(b, "id", { numeric: true }))) {
+    const s = setDariFolder(d, akar);
+    if (!s || ada.has(s.folder)) continue;
+    ada.add(s.folder);
+    baru.push(s);
+  }
+  return [...SET_BLANGKO, ...baru];
+}
+/* === AKHIR S === */
+
 /**
  * Set yang sesuai jenis perkara, diurutkan yang paling cocok lebih dulu.
  *
@@ -268,6 +309,11 @@ export const FOLDER_RELAAS_IKRAR = "_ikrar_talak/2 Relaas Ikrar Talak";
  * menu 981 "Relaas dan PBT": hak_akses_menu mengambil baris pertama dari
  * `direktori="Relaas" or direktori="derry_briantono"`, dan collation tanpa
  * beda huruf besar-kecil menaruh 900 lebih dulu. Keduanya berentang 80-220.
+ *
+ * 13 Okt 2026: paket ABT abt-blangko-derry-rapi membuka baris 900 untuk juru
+ * sita (600|650) dan PTSP, proses 20-1000 - sesudah paket itu terpasang ABT
+ * tidak lagi menolak juru sita di folder ini, dan relaas e-Court serta amplop
+ * dari grup "Blangko Jurusita Donggala" ikut berada di folder Relaas ([JS] 5-8).
  */
 const MENU_RELAAS = { nama: "Relaas dan PBT (Blangko Derry)", prosesMin: 80, prosesMax: 220 } as const;
 const MENU_RELAAS_IKRAR = { nama: "Relaas Ikrar Talak", prosesMin: 290, prosesMax: 600 } as const;

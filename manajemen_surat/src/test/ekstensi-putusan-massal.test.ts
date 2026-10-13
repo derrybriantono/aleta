@@ -750,7 +750,9 @@ describe("pemetaan diisi dari pohon blangko portal (1.133.0)", () => {
     expect(rute).toContain('callAletaBotSippBridge("blangko.katalog", { folder: set.folder })');
     expect(rute).toContain('await pastikanKapabilitas(db, actorUserId, "panel");');
     expect(rute).toContain("for (const satu of daftarSet) set.push(await isiSet(satu));");
-    expect(rute).toContain('SET_BLANGKO.filter((set) => set.jenis === "putusan")');
+    // 13 Okt (butir 7): set tertulis + folder grup Derry yang ditemukan di server (aturan tugas-blangko.ts).
+    expect(rute).toContain("setBlangkoGabung(await folderDitemukan(), AKAR_DERRY)");
+    expect(rute).toContain('semua.filter((set) => set.jenis === "putusan")');
   });
 
   it("popup dan panel ABT punya tombolnya, dan panel ABT langsung mencari tokennya", () => {

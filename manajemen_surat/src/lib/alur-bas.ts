@@ -180,10 +180,11 @@ export function tentukanAlurBas(m: MasukanAlurBas): HasilAlurBas {
     return hasil("alur-04", kode, true, "P dan T hadir: kontradiktoir (sidang ke-" + dilihat + ").", dilihat === 5 ? ["5a"] : []);
   }
 
-  // T pernah hadir tetapi sidang ini tidak hadir (mis. sesudah mediasi): verstek setelah mediasi.
+  // T pernah hadir tetapi sidang ini tidak hadir (mis. sesudah mediasi): "verstek setelah mediasi" sebutan pengguna, putusannya
+  // kontradiktoir (T pernah hadir) - BAS [3] ALUR 06 sejak paket abt-blangko-derry-rapi beramar tanpa "verstek".
   return dilihat <= 2
     ? hasil("alur-06", "2", true, "T pernah hadir (mediasi) tetapi sekarang tidak hadir: laporan mediasi, tunda panggil T.", ["3"])
-    : hasil("alur-06", "3", true, `T pernah hadir, sekarang tidak hadir (sidang ke-${dilihat}): saksi dan putusan verstek.`, ["3a", "3b", "2"]);
+    : hasil("alur-06", "3", true, `T pernah hadir, sekarang tidak hadir (sidang ke-${dilihat}): saksi dan putusan tanpa hadirnya T (kontradiktoir, bukan verstek - T pernah hadir).`, ["3a", "3b", "2"]);
 }
 
 /** Dibangkitkan dari alat/spec_alur.py paket abt-bas-alur-sidang - jangan disunting tangan. */
@@ -596,39 +597,39 @@ export const ALUR_BAS: AlurBas[] = [
       },
       {
         "kode": "3",
-        "berkas": "[3] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi).rtf",
+        "berkas": "[3] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan (2 Saksi).rtf",
         "ke": 0,
         "peran": "terakhir",
-        "keterangan": "2 saksi",
+        "keterangan": "2 saksi, putusan tanpa hadirnya T (kontradiktoir - T pernah hadir)",
         "asal": "derry",
-        "turunan": false
+        "turunan": true
       },
       {
         "kode": "3a",
-        "berkas": "[3a] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (3 Saksi).rtf",
+        "berkas": "[3a] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan (3 Saksi).rtf",
         "ke": 0,
         "peran": "varian",
-        "keterangan": "3 saksi",
+        "keterangan": "3 saksi, putusan tanpa hadirnya T (kontradiktoir - T pernah hadir)",
         "asal": "derry",
-        "turunan": false
+        "turunan": true
       },
       {
         "kode": "3b",
-        "berkas": "[3b] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (4 Saksi).rtf",
+        "berkas": "[3b] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan (4 Saksi).rtf",
         "ke": 0,
         "peran": "varian",
-        "keterangan": "4 saksi",
+        "keterangan": "4 saksi, putusan tanpa hadirnya T (kontradiktoir - T pernah hadir)",
         "asal": "derry",
-        "turunan": false
+        "turunan": true
       },
       {
         "kode": "3c",
-        "berkas": "[3c] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (5 Saksi).rtf",
+        "berkas": "[3c] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan (5 Saksi).rtf",
         "ke": 0,
         "peran": "varian",
-        "keterangan": "5 saksi",
+        "keterangan": "5 saksi, putusan tanpa hadirnya T (kontradiktoir - T pernah hadir)",
         "asal": "derry",
-        "turunan": false
+        "turunan": true
       }
     ]
   },
@@ -890,3 +891,56 @@ export const ALUR_BAS: AlurBas[] = [
     ]
   }
 ];
+
+/* === S 13 Okt === */
+/**
+ * PADANAN BAS FOLDER LAMA -> FOLDER ALUR (paket ABT abt-blangko-derry-rapi, 13 Okt 2026).
+ *
+ * Paket itu menyembunyikan menu BAS lama Derry (951 "- BAS VERSTEK PERCERAIAN -", 952 CONTRA, 954 ITSTBAT, 955 ASAL USUL)
+ * karena seluruh isinya sudah ada - bita demi bita (md5 server) - di folder ALUR. Berkasnya tetap di server dan katalog
+ * BAS massal tetap membacanya, tetapi token ABT-nya tidak lagi dapat dipanen dari halaman ABT (menunya tidak tampil):
+ * tombol "Buka di ABT" lalu memakai berkas PADANANNYA di folder ALUR. CONTRA [99] berbeda md5 dari VERSTEK [99] hanya
+ * karena #6031# dan satu baris variabel kuasa tersembunyi - padanannya padanan VERSTEK [99]. Dibangkitkan dari
+ * D:/aleta-dev/kerja/abt-blangko-derry-rapi/hasil/padanan-bas.json (alat/padanan_bas.py).
+ */
+export type PadananBas = { folder: string; berkas: string };
+
+export const PADANAN_BAS_ARSIP: Record<string, PadananBas[]> = {
+  "derry_briantono/- BAS ASAL USUL ANAK -/[01a] BAS 1 Asal Usul Anak - Kabul.rtf": [{ folder: "derry_briantono/ALUR 13 Asal Usul Anak", berkas: "[1] BAS 1 Asal Usul Anak - Kabul.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[1] BAS 1 P & T Hadir - Mediasi.rtf" }, { folder: "derry_briantono/ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)", berkas: "[1] BAS 1 P & T Hadir - Mediasi.rtf" }, { folder: "derry_briantono/ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir", berkas: "[1] BAS 1 P & T Hadir - Mediasi.rtf" }, { folder: "derry_briantono/ALUR 08 Cerai Dicabut", berkas: "[C1] BAS 1 P & T Hadir - Mediasi.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 2 P & T Hadir Laporan Mediasi dan Pemeriksaan Pokok Perkara PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[2] BAS 2 P & T Hadir - Laporan Mediasi dan Pemeriksaan Pokok Perkara.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 3 P & T Hadir Jawaban dan (Apabila ada Gugatan Rekonvensi) PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[3] BAS 3 P & T Hadir - Jawaban (dan Gugatan Rekonvensi bila ada).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 4 P & T Hadir Replik dan (Apabila ada Jawaban Rekonvensi) PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[4] BAS 4 P & T Hadir - Replik (dan Jawaban Rekonvensi bila ada).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 5 P & T Hadir Duplik dan (Apabila ada Replik Rekonvensi) PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[5] BAS 5 P & T Hadir - Duplik (dan Replik Rekonvensi bila ada).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 5a P & T Hadir Duplik Rekonvensi PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[5a] BAS 5a P & T Hadir - Duplik Rekonvensi.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan Dirjen 1465 - (3 Saksi).rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[6a] BAS 6 P & T Hadir - Pembuktian P (3 Saksi).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan Dirjen 1465 - (4 Saksi).rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[6b] BAS 6 P & T Hadir - Pembuktian P (4 Saksi).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan Dirjen 1465 - (5 Saksi).rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[6c] BAS 6 P & T Hadir - Pembuktian P (5 Saksi).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[6] BAS 6 P & T Hadir - Pembuktian P.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465 - (3 Saksi).rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[7a] BAS 7 P & T Hadir - Pembuktian T (3 Saksi).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465 - (4 Saksi).rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[7b] BAS 7 P & T Hadir - Pembuktian T (4 Saksi).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[7] BAS 7 P & T Hadir - Pembuktian T.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 8 P & T Hadir Kesimpulan PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[8] BAS 8 P & T Hadir - Kesimpulan.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 9 P & T Hadir Penyampaian Putusan PERMA 7 2022 & Keputusan Dirjen 1465.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[9] BAS 9 P & T Hadir - Penyampaian Putusan.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[99] BAS 1 P & T Tidak Hadir - Tunda Panggil P & T.rtf": [{ folder: "derry_briantono/ALUR 07 Cerai Gugur", berkas: "[1] BAS 1 P & T Tidak Hadir - Tunda Panggil P & T.rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[99] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas Atau Luar Batas Antar.rtf": [{ folder: "derry_briantono/ALUR 02 Cerai Verstek 2 Sidang", berkas: "[1a] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas atau Luar Batas Antar.rtf" }, { folder: "derry_briantono/ALUR 03 Cerai Verstek 3 Sidang atau Lebih", berkas: "[1a] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas atau Luar Batas Antar.rtf" }, { folder: "derry_briantono/ALUR 09 Cerai Tidak Dapat Diterima (NO)", berkas: "[1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T (Alamat Tidak Jelas).rtf" }],
+  "derry_briantono/- BAS CONTRA PERCERAIAN -/[99] BAS 2 P & T Tidak Hadir - Tunda Panggil P & T.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[T] BAS P & T Tidak Hadir - Tunda Panggil P & T (kapan saja).rtf" }, { folder: "derry_briantono/ALUR 07 Cerai Gugur", berkas: "[2] BAS 2 P & T Tidak Hadir - Tunda Panggil P & T (bila masih dipanggil).rtf" }],
+  "derry_briantono/- BAS ITSTBAT NIKAH -/[01a] BAS 1 IN - Kabul.rtf": [{ folder: "derry_briantono/ALUR 11 Itsbat Nikah 1 Sidang", berkas: "[1] BAS 1 IN - Kabul (1x Sidang).rtf" }],
+  "derry_briantono/- BAS ITSTBAT NIKAH -/[01ab] BAS 1 IN - Kabul Syahadah Istifadhah.rtf": [{ folder: "derry_briantono/ALUR 11 Itsbat Nikah 1 Sidang", berkas: "[1a] BAS 1 IN - Kabul Syahadah Istifadhah (1x Sidang).rtf" }],
+  "derry_briantono/- BAS VERSTEK PERCERAIAN -/[01a] (E-Court) BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf": [{ folder: "derry_briantono/ALUR 02 Cerai Verstek 2 Sidang", berkas: "[1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf" }, { folder: "derry_briantono/ALUR 03 Cerai Verstek 3 Sidang atau Lebih", berkas: "[1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf" }],
+  "derry_briantono/- BAS VERSTEK PERCERAIAN -/[01b] (E-Court) BAS 2 P Hadir & T Tidak Hadir Pokok Perkara - Putusan Verstek.rtf": [{ folder: "derry_briantono/ALUR 02 Cerai Verstek 2 Sidang", berkas: "[2] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi).rtf" }, { folder: "derry_briantono/ALUR 03 Cerai Verstek 3 Sidang atau Lebih", berkas: "[3] BAS Terakhir P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi).rtf" }],
+  "derry_briantono/- BAS VERSTEK PERCERAIAN -/[09] (E-Court) BAS 2 P Hadir & T Tidak Hadir - Putusan Verstek - (3 Saksi).rtf": [{ folder: "derry_briantono/ALUR 02 Cerai Verstek 2 Sidang", berkas: "[2a] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (3 Saksi).rtf" }, { folder: "derry_briantono/ALUR 03 Cerai Verstek 3 Sidang atau Lebih", berkas: "[3a] BAS Terakhir P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (3 Saksi).rtf" }],
+  "derry_briantono/- BAS VERSTEK PERCERAIAN -/[09] (E-Court) BAS 2 P Hadir & T Tidak Hadir - Putusan Verstek - (4 Saksi).rtf": [{ folder: "derry_briantono/ALUR 02 Cerai Verstek 2 Sidang", berkas: "[2b] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (4 Saksi).rtf" }, { folder: "derry_briantono/ALUR 03 Cerai Verstek 3 Sidang atau Lebih", berkas: "[3b] BAS Terakhir P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (4 Saksi).rtf" }],
+  "derry_briantono/- BAS VERSTEK PERCERAIAN -/[09] (E-Court) BAS 2 P Hadir & T Tidak Hadir - Putusan Verstek - (5 Saksi).rtf": [{ folder: "derry_briantono/ALUR 02 Cerai Verstek 2 Sidang", berkas: "[2c] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (5 Saksi).rtf" }, { folder: "derry_briantono/ALUR 03 Cerai Verstek 3 Sidang atau Lebih", berkas: "[3c] BAS Terakhir P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (5 Saksi).rtf" }],
+  "derry_briantono/- BAS VERSTEK PERCERAIAN -/[99] BAS 1 P & T Tidak Hadir - Tunda Panggil P & T.rtf": [{ folder: "derry_briantono/ALUR 07 Cerai Gugur", berkas: "[1] BAS 1 P & T Tidak Hadir - Tunda Panggil P & T.rtf" }],
+  "derry_briantono/- BAS VERSTEK PERCERAIAN -/[99] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas Atau Luar Batas Antar.rtf": [{ folder: "derry_briantono/ALUR 02 Cerai Verstek 2 Sidang", berkas: "[1a] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas atau Luar Batas Antar.rtf" }, { folder: "derry_briantono/ALUR 03 Cerai Verstek 3 Sidang atau Lebih", berkas: "[1a] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas atau Luar Batas Antar.rtf" }, { folder: "derry_briantono/ALUR 09 Cerai Tidak Dapat Diterima (NO)", berkas: "[1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T (Alamat Tidak Jelas).rtf" }],
+  "derry_briantono/- BAS VERSTEK PERCERAIAN -/[99] BAS 2 P & T Tidak Hadir - Tunda Panggil P & T.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[T] BAS P & T Tidak Hadir - Tunda Panggil P & T (kapan saja).rtf" }, { folder: "derry_briantono/ALUR 07 Cerai Gugur", berkas: "[2] BAS 2 P & T Tidak Hadir - Tunda Panggil P & T (bila masih dipanggil).rtf" }],
+};
+
+/** Padanan ALUR untuk satu berkas BAS folder lama (kunci "folder/berkas", ".rtf" boleh ada atau tidak); [] bila tidak ada. */
+export function padananBasArsip(folder: string, berkas: string): PadananBas[] {
+  const b = String(berkas || "").trim();
+  const k = `${String(folder || "").trim()}/${/\.rtf$/i.test(b) ? b : `${b}.rtf`}`;
+  return PADANAN_BAS_ARSIP[k] ?? [];
+}
+/* === AKHIR S === */
