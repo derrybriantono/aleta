@@ -606,6 +606,84 @@ router.post("/kasir/setor-pnbp", wajibToken, async (req, res) => {
   }
 });
 
+/**
+ * ============================================================================
+ * KASIR OTOMATIS - SAKLAR HARI PUTUS (13 Okt 2026, kasirOtomatisService)
+ * ============================================================================
+ *
+ *   GET  /kasir/otomatis?tanggal     perkara putus hari itu + keadaan tiap
+ *                                    butir (sudah/akan/dilewati) - hanya SELECT
+ *   POST /kasir/otomatis/setelan     saklar + butir (basis data ALETA bot)
+ *   POST /kasir/otomatis             tulis butir hari putus SATU perkara atas
+ *                                    akun SIPP petugas; saklar dibaca di sini -
+ *                                    mati = tidak menulis apa pun
+ * Hak (kasir/keuangan menulis, panitera membaca) diperiksa rute portal.
+ */
+router.get("/kasir/otomatis", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/kasirOtomatisService").daftar(String(req.query.tanggal || ""), { batas: req.query.batas });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post("/kasir/otomatis/setelan", wajibToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await require("../services/kasirOtomatisService").simpanSetelan({
+      nyala: typeof badan.nyala === "boolean" ? badan.nyala : undefined,
+      butir: Array.isArray(badan.butir) ? badan.butir : undefined,
+      operator: badan.operator,
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post("/kasir/otomatis", wajibToken, async (req, res) => {
+  let jejak = null;
+  try {
+    jejak = require("../services/jejakAletaService");
+  } catch {
+    jejak = null;
+  }
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    const kering = badan.kering !== false;
+    const ip = alamatAudit(req);
+    const hasil = await require("../services/kasirOtomatisService").jalankanPerkara({
+      perkaraId: badan.perkaraId,
+      akunSipp: badan.akunSipp,
+      operator,
+      ip,
+      kering,
+    });
+    if (jejak && Array.isArray(hasil.langkahDatar) && hasil.langkahDatar.length) {
+      void jejak.catat({
+        aksi: "tulis",
+        jenis: "kasir-otomatis",
+        perkaraId: hasil.perkara ? hasil.perkara.perkaraId : badan.perkaraId,
+        nomorPerkara: hasil.perkara ? hasil.perkara.nomorPerkara : "",
+        akunSipp: hasil.akunSipp ? hasil.akunSipp.username : String(badan.akunSipp || ""),
+        namaPejabat: hasil.akunSipp ? hasil.akunSipp.namaLengkap : "",
+        operator,
+        ip,
+        berhasil: hasil.ok === true,
+        kering,
+        alasan: hasil.ok ? "" : String(hasil.alasan || hasil.pesan || "sebagian tidak tersimpan"),
+        langkah: hasil.langkahDatar,
+      });
+    }
+    const { langkahDatar: _abaikan, ...jawab } = hasil;
+    res.status(hasil.ok || hasil.kosong || kering ? 200 : hasil.alasan === "saklar_mati" ? 409 : 400).json(jawab);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
 // ============================================================================
 // 7 Okt 2026: penanda "belum upload" dapat ditekan - tarik ulang e-Court HANYA
 // untuk perkara itu. Kunci ganda, jeda per perkara, dan penolakan bila ada

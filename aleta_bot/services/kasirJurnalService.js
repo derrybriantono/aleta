@@ -126,6 +126,8 @@ const JB_TAMBAH_PANJAR = 224;
 const TAMBAH_PANJAR_MINIMUM = 10000;
 const JB_PANGGIL_MEDIASI = 381;
 /* === AKHIR K-KEJADIAN === */
+/** Kasir otomatis 13 Okt: jenis hari putus yang sekali PER PIHAK (pemberitahuan), bukan sekali per perkara. */
+const JENIS_PER_PIHAK_OTOMATIS = new Set([29, 389]);
 const JENIS_PANGGILAN = new Set([12, 13, 14, 15]);
 const JENIS_PNBP_PERTAMA = new Set([236, 237, 253, 388]);
 const KATEGORI_JURUSITA = new Set([4, 5, 6]);
@@ -1894,7 +1896,8 @@ function buatLayanan(deps = {}) {
     const akun = await akunPetugas(minta.akunSipp, ip);
     if (!akun.ok) return { ok: false, alasan: akun.alasan, akunSipp: akun.username || bersih(minta.akunSipp), calon: akun.calon };
 
-    const baca = await bacaKeadaan(minta.perkaraId);
+    // deps.bacaKeadaan: pola daftarHarian (uji dan kasir otomatis memberi keadaan tiruan).
+    const baca = await (deps.bacaKeadaan || bacaKeadaan)(minta.perkaraId);
     if (!baca.ok) return { ok: false, alasan: baca.alasan };
     const k = baca.keadaan;
     if (Number(k.pembiayaan) !== 1) {
@@ -2052,15 +2055,63 @@ function buatLayanan(deps = {}) {
         /* jeda gagal - simpanan tetap berjalan */
       }
       dikirim += 1;
+      /* === KASIR OTOMATIS 13 Okt === Pengembalian Sisa Panjar (opsi.periksaSisa):
+       * ditulis hanya bila seluruh baris sebelumnya pada kiriman ini tercatat
+       * (terkirim/sudah ada) DAN saldo jurnal SIPP saat ini persis sama dengan
+       * jumlahnya - baris yang ditambah tangan di sela itu tidak membuat
+       * pengembalian keliru jumlah. */
+      if (opsi.periksaSisa && Number(l.nilai.jenisBiayaId) === JB.SISA) {
+        const belum = hasil.filter((h) => h.keadaan !== "terkirim" && h.keadaan !== "sudah-ada");
+        if (belum.length) {
+          hasil.push({ ke: l.ke, id: 0, keadaan: "dilewati", pesan: "sisa panjar ditahan - baris lain pada kiriman ini belum tercatat" });
+          continue;
+        }
+        const s = await satu(
+          "SELECT COALESCE(SUM(jenis_transaksi * jumlah), 0) AS saldo FROM perkara_biaya WHERE perkara_id = ? AND tahapan_id = ?",
+          [perkaraId, TAHAPAN]
+        ).catch(() => null);
+        const saldoKini = s ? Math.round(Number(s.saldo)) : NaN;
+        if (saldoKini !== Math.round(Number(l.nilai.jumlah))) {
+          hasil.push({
+            ke: l.ke,
+            id: 0,
+            keadaan: "dilewati",
+            pesan: Number.isFinite(saldoKini)
+              ? `sisa panjar tidak ditulis - saldo jurnal SIPP sekarang Rp${saldoKini.toLocaleString("id-ID")}, bukan Rp${Number(l.nilai.jumlah).toLocaleString("id-ID")}`
+              : "sisa panjar tidak ditulis - saldo jurnal SIPP tidak terbaca",
+          });
+          continue;
+        }
+      }
+      /* === AKHIR KASIR OTOMATIS === */
       // Penekan kedua / tab SIPP yang menambah baris yang sama di sela itu
-      // tidak melahirkan baris ganda.
-      const kembar = await satu(
-        `SELECT id FROM perkara_biaya WHERE perkara_id = ? AND tahapan_id = ? AND jenis_biaya_id = ? AND pihak_id = ?
+      // tidak melahirkan baris ganda. Kasir otomatis (opsi.sekaliPerJenis):
+      // satu jenis biaya hari putus sekali per perkara (pemberitahuan: sekali
+      // per pihak) - apa pun uraian/jumlahnya.
+      const perPihak = JENIS_PER_PIHAK_OTOMATIS.has(Number(l.nilai.jenisBiayaId));
+      const kembar = await (opsi.sekaliPerJenis
+        ? satu(
+            `SELECT id FROM perkara_biaya WHERE perkara_id = ? AND tahapan_id = ? AND jenis_biaya_id = ?${perPihak ? " AND pihak_id = ?" : ""} LIMIT 1`,
+            perPihak ? [perkaraId, TAHAPAN, l.nilai.jenisBiayaId, l.nilai.pihakId] : [perkaraId, TAHAPAN, l.nilai.jenisBiayaId]
+          )
+        : satu(
+            `SELECT id FROM perkara_biaya WHERE perkara_id = ? AND tahapan_id = ? AND jenis_biaya_id = ? AND pihak_id = ?
             AND tanggal_transaksi = ? AND jumlah = ? AND uraian = ? LIMIT 1`,
-        [perkaraId, TAHAPAN, l.nilai.jenisBiayaId, l.nilai.pihakId, l.nilai.tanggal, l.nilai.jumlah, l.nilai.uraian]
-      ).catch(() => null);
+            [perkaraId, TAHAPAN, l.nilai.jenisBiayaId, l.nilai.pihakId, l.nilai.tanggal, l.nilai.jumlah, l.nilai.uraian]
+          )
+      ).catch(() => (opsi.sekaliPerJenis ? { id: -1 } : null));
       if (kembar) {
-        hasil.push({ ke: l.ke, id: Number(kembar.id), keadaan: "sudah-ada", pesan: "baris yang sama persis sudah ada di jurnal SIPP - tidak dikirim lagi" });
+        hasil.push({
+          ke: l.ke,
+          id: Number(kembar.id),
+          keadaan: "sudah-ada",
+          pesan:
+            Number(kembar.id) < 0
+              ? "jurnal SIPP tidak terbaca - baris ini tidak dikirim (kasir otomatis tidak menebak)"
+              : opsi.sekaliPerJenis
+                ? "jenis biaya ini sudah tercatat untuk perkara ini - tidak dikirim lagi"
+                : "baris yang sama persis sudah ada di jurnal SIPP - tidak dikirim lagi",
+        });
         continue;
       }
       let id = 0;
@@ -2146,6 +2197,8 @@ function buatLayanan(deps = {}) {
         sudahAda: jumlah("sudah-ada"),
         sebagian: jumlah("sebagian"),
         gagal: jumlah("gagal"),
+        // Kasir otomatis 13 Okt: sisa panjar yang ditahan (opsi.periksaSisa).
+        dilewati: jumlah("dilewati"),
       },
     };
   }
@@ -2180,6 +2233,12 @@ module.exports = {
   teksLatin1,
   keteranganAudit,
   judulAudit,
+  /* === KASIR OTOMATIS 13 Okt === */
+  JENIS_PER_PIHAK_OTOMATIS,
+  putusanDariSidang,
+  tanggalSah,
+  layanan: () => layananBawaan(),
+  /* === AKHIR KASIR OTOMATIS === */
   cariPerkara: (teks) => layananBawaan().cariPerkara(teks),
   usulanPerkara: (perkaraId) => layananBawaan().usulanPerkara(perkaraId),
   daftarHarian: (tanggal, opsi) => layananBawaan().daftarHarian(tanggal, opsi),

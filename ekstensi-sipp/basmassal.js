@@ -2601,6 +2601,298 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     return muat;
   }
 
+  // ─── Kasir otomatis: saklar hari putus (13 Okt, butir 10) ─────────────────
+
+  /*
+   * Saklar utama (bawaan MATI) + butir yang dikerjakan (Redaksi, Meterai,
+   * PNBP cabut, PNBP pemberitahuan, biaya pemberitahuan, sisa panjar) +
+   * daftar perkara PUTUS hari itu dengan keadaan tiap butir. Setelan disimpan
+   * di server ALETA (satu untuk satker) - panitera melihatnya, tidak dapat
+   * mengubah atau menjalankan (rute menolak 403; di sini kendalinya mati).
+   *
+   * Menyala + pelaksana kasir + hari ini + bukan mode kering: perkara yang
+   * punya baris "akan diisi" ditulis SENDIRI satu per satu dengan jeda, saat
+   * bagian ini terbuka dan tiap 10 menit selama halaman ini terbuka. Yang
+   * ditulis, saklar dan butirnya dibaca bot dari setelan - bukan dari sini.
+   */
+  const JUDUL_STATUS_BUTIR = { sudah: "sudah tercatat", akan: "akan diisi", dilewati: "dilewati", "tidak-berlaku": "tidak berlaku" };
+  const SELANG_OTOMATIS_MS = 10 * 60 * 1000;
+
+  function bagianOtomatis(isi, ringkasJudul) {
+    const kepala = el("div", "aleta-kasir-otomatis-kepala");
+    const saklar = el("button", "aleta-kasir-saklar");
+    saklar.type = "button";
+    saklar.setAttribute("role", "switch");
+    saklar.setAttribute("aria-checked", "false");
+    saklar.appendChild(el("span", "aleta-kasir-saklar-tombol"));
+    const saklarTeks = el("span", "aleta-kasir-saklar-teks", "Kasir otomatis: MATI");
+    saklar.appendChild(saklarTeks);
+    kepala.appendChild(saklar);
+    const tgl = el("input", "aleta-basmassal-pilih");
+    tgl.type = "date";
+    tgl.value = hariIni();
+    tgl.setAttribute("aria-label", "Tanggal putus");
+    kepala.appendChild(tgl);
+    const tSegar = tombol("Segarkan", "", () => void baca());
+    kepala.appendChild(tSegar);
+    isi.appendChild(kepala);
+    const keterangan = el("div", "aleta-basmassal-lembut");
+    isi.appendChild(keterangan);
+    const butirWadah = el("div", "aleta-kasir-otomatis-butir");
+    isi.appendChild(butirWadah);
+    const akunWadah = el("div");
+    isi.appendChild(akunWadah);
+    const daftar = el("div", "aleta-basmassal-daftar");
+    isi.appendChild(daftar);
+    const aksi = el("div", "aleta-basmassal-aksi");
+    isi.appendChild(aksi);
+    const kotakKabar = el("div");
+    isi.appendChild(kotakKabar);
+
+    let data = null;
+    let akun = null;
+    let berjalan = false;
+    let yakinNyala = false;
+    let penunda = 0;
+    const laporan = new Map();
+
+    const bolehUbah = () => Boolean(data && data.bolehUbah === true);
+    const nyala = () => Boolean(data && data.setelan && data.setelan.nyala === true);
+    const hariItu = () => Boolean(data && data.tanggal && data.hariIni && data.tanggal === data.hariIni);
+    const perluDiisi = () => (data && Array.isArray(data.perkara) ? data.perkara.filter((p) => Array.isArray(p.kirim) && p.kirim.length) : []);
+
+    const gambarSaklar = () => {
+      const n = nyala();
+      saklar.setAttribute("aria-checked", n ? "true" : "false");
+      saklar.classList.toggle("aleta-kasir-saklar-nyala", n);
+      saklar.disabled = !bolehUbah() || berjalan;
+      saklarTeks.textContent = yakinNyala ? "Tekan sekali lagi: nyalakan Kasir otomatis" : `Kasir otomatis: ${n ? "MENYALA" : "MATI"}`;
+      if (ringkasJudul) ringkasJudul.textContent = data ? ` (${n ? "menyala" : "mati"})` : "";
+      const s = (data && data.setelan) || {};
+      keterangan.textContent = !data
+        ? ""
+        : `${n ? "Menyala: jurnal hari putus perkara di bawah diisi sendiri saat bagian ini dibuka dan tiap 10 menit selama halaman ini terbuka, atas akun SIPP kasir yang masuk." : "Mati: tidak ada yang ditulis - daftar di bawah hanya pratinjau."}${s.diubahOleh ? ` Diubah ${s.diubahOleh}${s.diubah ? ` ${s.diubah}` : ""}.` : ""}${bolehUbah() ? "" : " Panitera hanya melihat - mengubah dan menjalankan dikerjakan kasir/keuangan."}`;
+    };
+
+    const simpanSetelan = async (perubahan) => {
+      try {
+        const j = await ambil(`${API}/otomatis`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aksi: "setelan", ...perubahan }) });
+        if (j.ok === false || j.available === false) return kabar(kotakKabar, String(j.pesan || j.alasan || "Setelan tidak tersimpan."), "salah");
+        if (data && j.setelan) data.setelan = j.setelan;
+        await baca();
+      } catch (galat) {
+        kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
+      }
+    };
+
+    saklar.addEventListener("click", () => {
+      if (!bolehUbah() || berjalan) return;
+      if (nyala()) {
+        yakinNyala = false;
+        void simpanSetelan({ nyala: false });
+        return;
+      }
+      if (!yakinNyala) {
+        yakinNyala = true;
+        gambarSaklar();
+        clearTimeout(penunda);
+        penunda = setTimeout(() => {
+          yakinNyala = false;
+          gambarSaklar();
+        }, 8000);
+        return;
+      }
+      yakinNyala = false;
+      clearTimeout(penunda);
+      void simpanSetelan({ nyala: true });
+    });
+
+    const gambarButir = () => {
+      butirWadah.textContent = "";
+      if (!data) return;
+      butirWadah.appendChild(el("div", "aleta-basmassal-judul-teks", "Butir yang dikerjakan otomatis"));
+      const terpilih = new Set((data.setelan && data.setelan.butir) || []);
+      for (const b of Array.isArray(data.butirDaftar) ? data.butirDaftar : []) {
+        const lab = el("label", "aleta-kasir-otomatis-pilih");
+        const cek = el("input");
+        cek.type = "checkbox";
+        cek.checked = terpilih.has(b.kunci);
+        cek.disabled = !bolehUbah() || berjalan;
+        cek.setAttribute("data-butir", b.kunci);
+        cek.addEventListener("change", () => {
+          const baru = new Set(terpilih);
+          if (cek.checked) baru.add(b.kunci);
+          else baru.delete(b.kunci);
+          void simpanSetelan({ butir: [...baru] });
+        });
+        lab.appendChild(cek);
+        lab.appendChild(el("span", "", ` ${b.nama}`));
+        if (b.ukur) lab.appendChild(el("span", "aleta-basmassal-lembut", ` - ${b.ukur}`));
+        butirWadah.appendChild(lab);
+      }
+    };
+
+    const gambarDaftar = () => {
+      daftar.textContent = "";
+      if (!data) return;
+      const perkara = Array.isArray(data.perkara) ? data.perkara : [];
+      const r = data.ringkas || {};
+      daftar.appendChild(
+        el(
+          "div",
+          "aleta-basmassal-lembut",
+          `${perkara.length} perkara putus ${tanggalTeks(data.tanggal)}: ${Number(r.akanDiisi) || 0} punya baris yang akan diisi (${Number(r.baris) || 0} baris)${Array.isArray(data.gagal) && data.gagal.length ? `, ${data.gagal.length} tidak terbaca` : ""}${data.terpotong ? " (terpotong)" : ""}.`
+        )
+      );
+      for (const p of perkara) {
+        const d = el("details", "aleta-basmassal-rinci aleta-kasir-otomatis-perkara");
+        d.setAttribute("data-perkara", String(p.perkaraId));
+        d.open = Array.isArray(p.kirim) && p.kirim.length > 0;
+        const s = el("summary");
+        s.appendChild(el("span", "aleta-basmassal-nomor", p.nomorPerkara));
+        s.appendChild(el("span", "aleta-kasir-keadaan", p.keadaan && p.keadaan.nama ? p.keadaan.nama : "-"));
+        s.appendChild(el("span", `aleta-basmassal-tanda${p.kirim && p.kirim.length ? " aleta-basmassal-tanda-belum" : " aleta-basmassal-tanda-baik"}`, p.kirim && p.kirim.length ? `${p.kirim.length} akan diisi` : "tidak ada yang diisi"));
+        const l = laporan.get(p.perkaraId);
+        if (l) s.appendChild(el("span", `aleta-basmassal-tanda ${l.ok ? "aleta-basmassal-tanda-baik" : "aleta-basmassal-tanda-belum"}`, l.pesan));
+        d.appendChild(s);
+        const t = el("table", "aleta-kasir-tabel");
+        const tb = el("tbody");
+        for (const b of Array.isArray(p.butir) ? p.butir : []) {
+          const tr = el("tr");
+          tr.setAttribute("data-butir", b.kunci);
+          tr.setAttribute("data-status", b.status);
+          tr.appendChild(el("td", "", b.nama));
+          const tdS = el("td");
+          tdS.appendChild(el("span", `aleta-basmassal-tanda${b.status === "sudah" ? " aleta-basmassal-tanda-baik" : b.status === "akan" ? " aleta-basmassal-tanda-belum" : ""}`, JUDUL_STATUS_BUTIR[b.status] || b.status));
+          tr.appendChild(tdS);
+          const rinci = (Array.isArray(b.baris) ? b.baris : [])
+            .map((x) => `${x.status === "sudah" ? "tercatat" : x.status === "akan" ? "diisi" : "dilewati"}: ${x.uraian} ${x.jumlah === null ? "jumlah?" : rupiah(x.jumlah)}${x.alasan ? ` - ${x.alasan}` : ""}`)
+            .join("; ");
+          tr.appendChild(el("td", "aleta-basmassal-lembut", rinci || b.alasan || ""));
+          tb.appendChild(tr);
+        }
+        t.appendChild(tb);
+        d.appendChild(t);
+        if (p.alasan && !(p.kirim && p.kirim.length)) d.appendChild(el("div", "aleta-basmassal-lembut", p.alasan));
+        daftar.appendChild(d);
+      }
+    };
+
+    const gambarAksi = () => {
+      aksi.textContent = "";
+      if (!data || !bolehUbah()) return;
+      if (berjalan) {
+        aksi.appendChild(el("span", "aleta-basmassal-lembut", "Kasir otomatis sedang menulis…"));
+        return;
+      }
+      const n = perluDiisi().length;
+      const t = tombol(nyala() ? `Jalankan sekarang (${n} perkara)` : "Jalankan sekarang (saklar mati)", "", () => void jalankan("tombol"));
+      t.disabled = !nyala() || !n || !hariItu() || !(akun && akun.keadaan.username);
+      aksi.appendChild(t);
+      if (!hariItu()) aksi.appendChild(el("span", "aleta-basmassal-lembut", " Hanya perkara yang putus HARI INI yang diisi otomatis."));
+    };
+
+    const gambar = () => {
+      gambarSaklar();
+      gambarButir();
+      gambarDaftar();
+      gambarAksi();
+    };
+
+    /** Menulis perkara yang punya baris "akan diisi" - satu per satu, berjeda. */
+    const jalankan = async (sebab) => {
+      if (berjalan || !data || !nyala() || !bolehUbah() || !hariItu()) return;
+      const antre = perluDiisi();
+      if (!antre.length) return;
+      if (!(akun && akun.keadaan.username)) return kabar(kotakKabar, "Akun SIPP Anda belum tertaut - Kasir otomatis tidak menulis apa pun.", "salah");
+      if (kering()) {
+        return kabar(kotakKabar, `Mode kering menyala - Kasir otomatis tidak mengirim apa pun. Yang akan diisi: ${antre.map((p) => `${p.nomorPerkara} (${p.kirim.length} baris)`).join(", ")}.`, "peringatan");
+      }
+      berjalan = true;
+      laporan.clear();
+      gambar();
+      let ke = 0;
+      for (const p of antre) {
+        if (!isi.isConnected) break;
+        if (ke > 0) await tidur(1800 + Math.round(Math.random() * 2400));
+        ke += 1;
+        kabar(kotakKabar, `Kasir otomatis ${ke}/${antre.length}: ${p.nomorPerkara}…`);
+        try {
+          const j = await ambil(`${API}/otomatis`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ aksi: "jalankan", perkaraId: String(p.perkaraId), akunSipp: akun.keadaan.username, kering: false }),
+          });
+          const r = j.ringkas || {};
+          const ditolak = Array.isArray(j.ditolak) ? j.ditolak.length : 0;
+          const pesan = [r.tersimpan ? `${r.tersimpan} tersimpan` : "", r.sudahAda ? `${r.sudahAda} sudah ada` : "", r.dilewati ? `${r.dilewati} ditahan` : "", ditolak ? `${ditolak} ditolak` : "", r.gagal ? `${r.gagal} gagal` : ""]
+            .filter(Boolean)
+            .join(", ");
+          laporan.set(p.perkaraId, { ok: j.ok === true || j.kosong === true, pesan: pesan || String(j.pesan || j.alasan || "tidak ada yang ditulis") });
+          if (r.tersimpan) {
+            try {
+              document.dispatchEvent(new CustomEvent("aleta-kasir-berubah", { detail: { perkaraId: String(p.perkaraId) } }));
+            } catch {
+              /* lencana disegarkan saat tab dibuka lagi */
+            }
+          }
+          if (j.alasan === "saklar_mati") break;
+        } catch (galat) {
+          // Satu perkara gagal TIDAK menghentikan yang lain.
+          laporan.set(p.perkaraId, { ok: false, pesan: String((galat && galat.message) || galat).slice(0, 160) });
+        }
+      }
+      berjalan = false;
+      const semua = [...laporan.values()];
+      await baca();
+      kabar(
+        kotakKabar,
+        `Kasir otomatis${sebab === "tombol" ? "" : " (sendiri)"} selesai: ${semua.filter((x) => x.ok).length} perkara tertulis, ${semua.filter((x) => !x.ok).length} tidak.`,
+        semua.every((x) => x.ok) ? "baik" : "peringatan"
+      );
+    };
+
+    const baca = async () => {
+      try {
+        const j = await ambil(`${API}/otomatis?tanggal=${encodeURIComponent(tgl.value || hariIni())}`);
+        if (j.available === false || j.ok === false) {
+          data = null;
+          gambar();
+          return kabar(kotakKabar, String(j.alasan || "Kasir otomatis tidak terbaca."), "salah");
+        }
+        data = j;
+        akunWadah.textContent = "";
+        akun = null;
+        if (bolehUbah()) {
+          akun = barisAkun(j.akun);
+          akunWadah.appendChild(akun.kotak);
+        }
+        gambar();
+      } catch (galat) {
+        kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
+      }
+    };
+    tgl.addEventListener("change", () => void baca());
+
+    /** Dibuka pertama kali: baca, lalu bila menyala jalankan sendiri; ulang tiap 10 menit. */
+    let jam = 0;
+    const mulai = async () => {
+      await baca();
+      void jalankan("buka");
+      if (jam) return;
+      jam = setInterval(async () => {
+        if (!isi.isConnected) {
+          clearInterval(jam);
+          return;
+        }
+        if (berjalan) return;
+        await baca();
+        void jalankan("selang");
+      }, SELANG_OTOMATIS_MS);
+    };
+    return mulai;
+  }
+
   /** Massal + rekap + pengingat sebagai tiga bagian berlipat. */
   async function pasangHarian(wadah, opsi) {
     const o = opsi || {};
@@ -2626,9 +2918,13 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       akar.appendChild(d);
       return { d, isi, tambahan };
     };
+    // 13 Okt (butir 10): saklar Kasir otomatis hari putus - paling atas.
+    const bOtomatis = bagian("Kasir otomatis (perkara putus hari ini)", true);
+    bOtomatis.d.setAttribute("data-kasir-bagian", "otomatis");
     const bPengingat = bagian("Pengingat tugas kasir", true);
     const bMassal = bagian("Kasir otomatis massal (satu hari)", false);
     const bRekap = bagian("Rekap pengeluaran", false);
+    const mulaiOtomatis = bagianOtomatis(bOtomatis.isi, bOtomatis.tambahan);
     const muatPengingat = bagianPengingat(bPengingat.isi, bPengingat.tambahan);
     const bacaMassal = bagianMassal(bMassal.isi);
     const segarRekap = bagianRekap(bRekap.isi);
@@ -2648,6 +2944,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     });
     wadah.appendChild(akar);
     void muatPengingat(false);
+    void mulaiOtomatis();
     return true;
   }
 
