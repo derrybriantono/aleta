@@ -444,7 +444,7 @@ const GERBANG = { presisiMinimal: 0.9, nMinimal: 10 };
  *   0007 anak     jumlah anak sama (belum = 0);
  *   lainnya       nama/rapat seperti sebelumnya.
  * Hasilnya ke-14 variabel lulus: 5105 ALETA 300/321 lawan ABT 274/321, 5178 255
- * lawan 257 (setara, selisih 0,008), 1046 279 lawan 180, 1002 309 lawan 309,
+ * lawan 257 (setara, selisih 0,008), 1046 279 lawan 180, 1002 305 lawan 309 (setara),
  * 0007 254 lawan 39. dipangkas tidak diukur ulang (0).
  */
 const GERBANG_ITSBAT = { presisiMinimal: 0.5, nMinimal: 10, selisihAbtMaks: 0.02, jenisWakil: "itsbat-nikah" };
@@ -505,8 +505,8 @@ const UKUR_SUMBER = {
   itsbat: {
     "itsbat-nikah": {
       "1001": { aleta: { n: 643, benar: 285 }, abt: { acuan: "10112", n: 307, benar: 207, kosong: 0, nMentah: 307, benarMentah: 207, dipangkas: 0 }, pasang: { n: 282, aleta: 213, abt: 206 } },
-      "1002": { aleta: { n: 670, benar: 655 }, abt: { acuan: "10106", n: 311, benar: 309, kosong: 1, nMentah: 311, benarMentah: 309, dipangkas: 0 }, pasang: { n: 310, aleta: 309, abt: 309 } },
-      "1003": { aleta: { n: 670, benar: 652 }, abt: { acuan: "10107", n: 311, benar: 309, kosong: 1, nMentah: 311, benarMentah: 309, dipangkas: 0 }, pasang: { n: 310, aleta: 309, abt: 309 } },
+      "1002": { aleta: { n: 670, benar: 655 }, abt: { acuan: "10106", n: 311, benar: 309, kosong: 1, nMentah: 311, benarMentah: 309, dipangkas: 0 }, pasang: { n: 310, aleta: 305, abt: 309 } },
+      "1003": { aleta: { n: 670, benar: 654 }, abt: { acuan: "10107", n: 311, benar: 309, kosong: 1, nMentah: 311, benarMentah: 309, dipangkas: 0 }, pasang: { n: 310, aleta: 305, abt: 309 } },
       "1046": { aleta: { n: 631, benar: 614 }, abt: { acuan: "10108", n: 309, benar: 191, kosong: 78, nMentah: 309, benarMentah: 191, dipangkas: 0 }, pasang: { n: 290, aleta: 279, abt: 180 } },
       "1217": { aleta: { n: 637, benar: 578 }, abt: { acuan: "1177", n: 285, benar: 196, kosong: 9, nMentah: 285, benarMentah: 196, dipangkas: 0 }, pasang: { n: 280, aleta: 244, abt: 193 } },
       "5105": { aleta: { n: 675, benar: 627 }, abt: { acuan: "10102", n: 322, benar: 274, kosong: 0, nMentah: 322, benarMentah: 274, dipangkas: 0 }, pasang: { n: 321, aleta: 300, abt: 274 } },

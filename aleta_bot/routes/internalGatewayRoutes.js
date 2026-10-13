@@ -2366,6 +2366,31 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // tambahan per jenis tidak pernah menggagalkan usulan itsbat
       }
       /* === AKHIR JENIS3 === */
+      /* === ITSBAT KONTENTIUS 13 Okt (agen V) === */
+      // Pasangan yang telah meninggal (1025/1246/1247/1509, blangko "2a Itsbat Nikah Kontensius"): "ragu", tidak
+      // tercentang - isian manusia baru 7 perkara. Hanya kode yang belum ada.
+      try {
+        const f = require("../services/deteksi/itsbat").deteksi(String(req.body?.posita || ""), {});
+        const it = jawaban.itsbat;
+        if (it && Array.isArray(it.usulan)) {
+          for (const kode of ["1025", "1246", "1247", "1509"]) {
+            if (!f[kode] || it.usulan.some((u) => u && u.kode === kode)) continue;
+            it.usulan.push({
+              kode,
+              nama: { 1025: "Nama almarhum/almarhumah", 1246: "Tanggal meninggal", 1247: "Sebab meninggal", 1509: "Tempat meninggal" }[kode],
+              nilai: f[kode].nilai,
+              keyakinan: "ragu",
+              bentrok: "",
+              catatan: "pasangan yang telah meninggal (itsbat kontentius) - periksa kalimat sumbernya",
+              dihitung: false,
+              sumber: [{ saksi: 0, asal: "posita", kalimat: String(f[kode].kalimat).slice(0, 400) }],
+            });
+          }
+        }
+      } catch (_galatKontentius) {
+        // tidak pernah menggagalkan usulan itsbat
+      }
+      /* === AKHIR ITSBAT KONTENTIUS === */
     }
     // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
     // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.

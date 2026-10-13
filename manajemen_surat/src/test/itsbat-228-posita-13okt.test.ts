@@ -91,6 +91,25 @@ describe("bentuk posita lain (nyata, nama diganti)", () => {
     expect(f["7211"].nilai).toBe("39 tahun");
     expect(f["7212"].nilai).toBe("35 tahun");
   });
+  it("itsbat kontentius: status yang DISEBUT untuk #0046# (Pemohon = janda) dipakai apa adanya; lawannya menurut kata status", () => {
+    const p =
+      "Bahwa pada saat pernikahan tersebut almarhum Xxx berstatus Duda dalam usia 45 tahun dan Pemohon berstatus Janda dalam usia 40 tahun;";
+    const f = I.deteksi(p, { pemohon: "Pemohon" });
+    expect(f["1002"].nilai).toBe("Janda");
+    expect(f["1003"].nilai).toBe("Duda");
+    expect(f["7211"].nilai).toBe("45 tahun");
+    expect(f["7212"].nilai).toBe("40 tahun");
+  });
+  it("itsbat kontentius: pasangan yang telah meninggal (1025/1246/1247) - ragu, nama di awal kalimat", () => {
+    const f = I.deteksi(
+      "Bahwa Xxxa bin Yyya telah meninggal lebih dulu karena sakit pada tanggal 19 November 2025 sesuai dengan Kutipan Akta Kematian Nomor : 7203-KM-27112025-0004;",
+      { pemohon: "Pemohon" }
+    ) as Record<string, { nilai: string; yakin: string }>;
+    expect(f["1025"]).toMatchObject({ nilai: "Xxxa bin Yyya", yakin: "ragu" });
+    expect(f["1246"].nilai).toBe("19 November 2025");
+    expect(f["1247"].nilai).toBe("sakit");
+    expect(I.deteksi("Bahwa Pemohon telah meninggalkan rumah;", {})["1025"]).toBeUndefined();
+  });
   it("tempat menikah: sebutan terakhir menang, ruas kosong dilengkapi; posita tanpa tempat = kosong", () => {
     const p =
       "Bahwa pada tanggal 1 Mei 2020 Pemohon I dan Pemohon II melangsungkan pernikahan di Desa Doda, Kecamatan Kinovaro, Kabupaten Donggala; " +
