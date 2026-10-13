@@ -70,6 +70,12 @@ function basisSipp(perkara: Perkara, opsi: { jam: string; id: Record<string, num
     const max = /COALESCE\(MAX\(id\), 0\) \+ 1 AS berikutnya FROM (\w+)/.exec(sql);
     if (max) return [{ berikutnya: id[max[1]] || 1 }];
     if (/DATE_FORMAT\(NOW\(\)/.test(sql)) return [{ saat: opsi.jam }];
+    // 13 Okt 2026: jam yang DITULIS = jam SIPP (WIB) = UTC + 7 jam. UTC-nya
+    // dijawab sedemikian rupa sehingga jam SIPP = jam baris SIPP yang ditiru.
+    if (/UTC_TIMESTAMP/.test(sql)) {
+      const d = new Date(Date.parse(`${opsi.jam.replace(" ", "T")}Z`) - 7 * 3600 * 1000);
+      return [{ utc: d.toISOString().slice(0, 19).replace("T", " ") }];
+    }
     if (/FROM perkara p\b/.test(sql)) return [{ ...perkara }];
     if (/FROM sys_users WHERE username = \?/.test(sql)) return PENGGUNA.filter((u) => u.username === String(p[0]));
     if (/FROM sys_users WHERE TRIM\(fullname\) = \?/.test(sql)) return PENGGUNA.filter((u) => u.fullname === String(p[0]));

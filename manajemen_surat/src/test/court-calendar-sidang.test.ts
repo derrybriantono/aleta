@@ -338,12 +338,12 @@ describe("penulis Court Calendar SIPP (bot)", () => {
     const upd = rencana.langkah.find((x: { aksi: string }) => x.aksi === "UPDATE");
     expect(ins.sql).toBe(
       "INSERT INTO perkara_court_calendar (perkara_id, rencana_tanggal, rencana_jam, rencana_agenda, keterangan, diinput_oleh, diinput_tanggal) " +
-        "VALUES (?,?,?,?,?,?,DATE_FORMAT(NOW(), '%Y-%m-%d %h:%i:%s'))"
+        "VALUES (?,?,?,?,?,?,DATE_FORMAT(DATE_ADD(UTC_TIMESTAMP(), INTERVAL 420 MINUTE), '%Y-%m-%d %h:%i:%s'))"
     );
     expect(ins.params).toEqual([10049, "2026-10-13", "15:00", "Replik Penggugat", "Elitigasi", "munifa,SH."]);
     expect(upd.sql).toBe(
       "UPDATE perkara_court_calendar SET rencana_tanggal = ?, rencana_jam = ?, rencana_agenda = ?, keterangan = ?, " +
-        "diperbaharui_oleh = ?, diperbaharui_tanggal = DATE_FORMAT(NOW(), '%Y-%m-%d %h:%i:%s') WHERE id = ? AND perkara_id = ?"
+        "diperbaharui_oleh = ?, diperbaharui_tanggal = DATE_FORMAT(DATE_ADD(UTC_TIMESTAMP(), INTERVAL 420 MINUTE), '%Y-%m-%d %h:%i:%s') WHERE id = ? AND perkara_id = ?"
     );
     expect(upd.params).toEqual(["2026-09-09", "09:00", "Sidang Pertama", "Panggil Tergugat", "munifa,SH.", 8717, 10049]);
     // Jam dua belas ala date("h") - bukan %H; diedit_* tidak disentuh.

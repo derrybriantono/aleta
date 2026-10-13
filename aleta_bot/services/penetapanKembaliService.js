@@ -267,8 +267,10 @@ async function susunRencanaKembali(minta) {
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
 
   // Jam basis data SIPP SAAT INI (sesudah jeda nyata di rute) - butir 39.
-  const saat = await tulis.waktuBasisData();
-  const hariIni = saat.slice(0, 10);
+  // Pagar tanggal: tanggal setempat. Jam yang DITULIS: jam SIPP (WIB) - SIPP
+  // menulis jamnya dengan PHP Asia/Jakarta, NOW() basis data WITA (13 Okt 2026).
+  const hariIni = (await tulis.waktuBasisData()).slice(0, 10);
+  const saat = await tulis.waktuSipp();
 
   // ==========================================================================
   // PAGAR TANGGAL MILIK KEEMPAT CONTROLLER KEMBALI

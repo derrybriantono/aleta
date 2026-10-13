@@ -495,7 +495,9 @@ describe("B. simpanKeSipp: berkas + baris perkara_dokumen_penetapan SEPERTI ungg
       expect(d.KUERI_BARIS_PETUGAS.pmh).toMatch(/ORDER BY \(urutan = 1\) DESC/);
       const saat = new Date(2026, 9, 6, 9, 15, 30);
       const pdf = Buffer.from("%PDF-1.4 penetapan");
-      const h = await d.simpanKeSipp({ perkaraId: 10126, nomorPerkara: "574/Pdt.G/2026/PA.Dgl", jenis: "pmh", pdf, olehUsername: "fahri", saat });
+      // 13 Okt 2026: diinput_tanggal = jam SIPP (WIB) dari basis data, bukan jam
+      // container; saatSipp menirukannya. Jalur berkasnya tetap dari saat.
+      const h = await d.simpanKeSipp({ perkaraId: 10126, nomorPerkara: "574/Pdt.G/2026/PA.Dgl", jenis: "pmh", pdf, olehUsername: "fahri", saat, saatSipp: "2026-10-06 08:15:30" });
       const epoch = Math.floor(saat.getTime() / 1000);
       const jalur = `resources/file/doc/2026/10/574_PdtG_2026_PADgl/574_PdtG_2026_PADgl_Dokumen_PMH_${epoch}.pdf`;
       expect(h).toMatchObject({ ok: true, jalur, perkaraPenetapanId: 29014 });
@@ -503,7 +505,7 @@ describe("B. simpanKeSipp: berkas + baris perkara_dokumen_penetapan SEPERTI ungg
       const pilih = kueri.find((k) => /FROM perkara_hakim_pn/.test(k.sql))!;
       expect(pilih.sql).toContain("(urutan = 1) DESC");
       const sisip = kueri.find((k) => /INSERT INTO perkara_dokumen_penetapan/.test(k.sql))!;
-      expect(sisip.params).toEqual([10126, 29014, 1, 1, "PMH", jalur, "fahri", "2026-10-06 09:15:30"]);
+      expect(sisip.params).toEqual([10126, 29014, 1, 1, "PMH", jalur, "fahri", "2026-10-06 08:15:30"]);
       expect(JSON.stringify(sisip.params)).not.toMatch(/aleta/i);
     } finally {
       if (lama === undefined) delete process.env.ALETA_SIPP_ROOT;

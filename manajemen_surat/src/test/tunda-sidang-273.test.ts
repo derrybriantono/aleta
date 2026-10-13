@@ -94,6 +94,8 @@ function jawab(sqlMentah: string, params: unknown[] = []): unknown {
     return [{ tabel: "ruangan_sidang", kolom: "id" }, { tabel: "ruangan_sidang", kolom: "nama" }];
   }
   if (/DATE_FORMAT\(NOW\(\)/.test(sql)) return [{ saat: "2026-10-07 13:34:56" }];
+  // 13 Okt 2026: jam SIPP (WIB) = UTC + 7 jam = 12:34:56 - jam yang DITULIS.
+  if (/UTC_TIMESTAMP/.test(sql)) return [{ utc: "2026-10-07 05:34:56" }];
   if (/FROM perkara_jadwal_sidang j JOIN perkara p/.test(sql)) {
     const b = sipp.jadwal.get(Number(p[0]));
     if (!b) return [];
@@ -171,7 +173,7 @@ function jawab(sqlMentah: string, params: unknown[] = []): unknown {
     return { affectedRows: 1, insertId: 0 };
   }
   if (/^INSERT INTO sys_audittrail/.test(sql)) {
-    sipp.audit.push({ username: p[2], tablename: p[3], action: p[5], title: p[6] });
+    sipp.audit.push({ datetime: p[0], username: p[2], tablename: p[3], action: p[5], title: p[6] });
     return { affectedRows: 1, insertId: sipp.audit.length };
   }
   if (/^CALL perkara_proses_update/.test(sql)) {
@@ -315,6 +317,15 @@ describe("kasus 273: tunda tidak boleh setengah jadi", () => {
     // Bendera 'T' tegas, tidak pernah NULL - sebab langsung kegagalan 273.
     expect([baru.verzet, baru.keberatan, baru.ikrar_talak]).toEqual(["T", "T", "T"]);
     expect(sipp.audit.map((a) => a.action)).toEqual(["UPDATE", "INSERT", "UPDATE"]);
+  });
+
+  it("13 Okt 2026: jam yang ditulis = jam SIPP (WIB), bukan NOW() basis data (WITA)", async () => {
+    const rencana = await layanan.susunRencanaTunda({ ...MINTA_273 });
+    const hasil = await layanan.jalankanRencana(rencana, { kering: false });
+    expect(hasil.ok).toBe(true);
+    expect(new Set(sipp.audit.map((a) => a.datetime))).toEqual(new Set(["2026-10-07 12:34:56"]));
+    const baru = [...sipp.jadwal.values()].find((b) => b.perkara_id === 9729 && Number(b.urutan) === 11)!;
+    expect(baru.diinput_tanggal).toBe("2026-10-07 12:34:56");
   });
 
   it("langkah yang gagal di tengah membatalkan seluruhnya - tidak ada 'keterangan tunda tanpa sidang berikutnya'", async () => {

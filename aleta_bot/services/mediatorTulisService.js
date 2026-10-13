@@ -205,9 +205,10 @@ function buatLayanan(deps = {}) {
   const transaksi =
     deps.transaksi ||
     (deps.kueri ? (kerja) => kerja(kueri) : (kerja) => require("./transaksiSipp").denganTransaksi(kerja));
-  // Jam basis data SIPP (24 jam) - bukan jam container. Lihat waktuBasisData.
+  // Jam SIPP (WIB, 24 jam) - bukan jam container, bukan NOW() basis data yang
+  // WITA (13 Okt 2026). Lihat waktuSipp di penetapanTulisService.
   const waktu =
-    deps.waktu || (() => require("./penetapanTulisService").waktuBasisData());
+    deps.waktu || (() => require("./penetapanTulisService").waktuSipp());
 
   async function satu(sql, params) {
     const baris = await kueri(sql, params);

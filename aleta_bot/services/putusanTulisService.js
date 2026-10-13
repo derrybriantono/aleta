@@ -224,8 +224,10 @@ async function susunRencanaPutus(minta = {}) {
   const tanggalPutusan = bersih(minta.tanggalPutusan);
   if (!tanggalSah(tanggalPutusan)) return { ok: false, alasan: "tanggal_putusan_tidak_sah" };
 
-  const saat = await penetapan.waktuBasisData();
-  const hariIni = saat.slice(0, 10);
+  // Pagar tanggal: tanggal setempat. Jam yang DITULIS: jam SIPP (WIB) - SIPP
+  // menulis jamnya dengan PHP Asia/Jakarta, NOW() basis data WITA (13 Okt 2026).
+  const hariIni = (await penetapan.waktuBasisData()).slice(0, 10);
+  const saat = await penetapan.waktuSipp();
   // Putusan bertanggal esok hari adalah putusan yang belum diucapkan. Yang
   // bertanggal lampau boleh - putusan memang sering diketik beberapa hari
   // sesudah diucapkan.

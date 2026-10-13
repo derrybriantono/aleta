@@ -444,7 +444,7 @@ function samakanPemilikSipp(jalurPenuh, akar) {
  * membuat SIPP menawarkan tombol cetak yang berujung galat; berkas tanpa baris
  * hanya menjadi berkas yang tidak terpakai, dan itu jauh lebih ringan.
  */
-async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername, saat = new Date() }) {
+async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername, saat = new Date(), saatSipp = "" }) {
   const kunci = String(jenis || "").toLowerCase();
   const jenisId = JENIS_DOKUMEN_ID[kunci];
   if (!jenisId) return { ok: false, alasan: "jenis_tidak_didukung" };
@@ -498,7 +498,9 @@ async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername,
       kunci.toUpperCase(),
       relatif,
       String(olehUsername || "").slice(0, 30),
-      waktuMysqlSekarang(saat),
+      // Jam SIPP (WIB), bukan jam container - SIPP menulis diinput_tanggal
+      // dengan PHP Asia/Jakarta (13 Okt 2026). saatSipp hanya dari uji.
+      saatSipp || (await require("./penetapanTulisService").waktuSipp()),
     ]
   );
 

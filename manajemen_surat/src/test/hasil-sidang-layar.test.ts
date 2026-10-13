@@ -278,7 +278,11 @@ describe("10. bentuk tulisannya sama dengan aplikasi antrian", () => {
     // benar. Penulis penetapan sudah memakai jam basis data sejak lama; penulis
     // hasil sidang tertinggal, dan tertinggalnya tidak berbunyi apa pun.
     expect(kodeLayanan).not.toContain("penetapan.waktuMysql()");
-    expect(kodeLayanan).toContain("const saat = await penetapan.waktuBasisData();");
+    // 13 Okt 2026: jam yang DITULIS = jam SIPP (WIB) - SIPP menulis jamnya
+    // dengan PHP Asia/Jakarta, NOW() basis data WITA. Keduanya tetap dari basis
+    // data, bukan dari container.
+    expect(kodeLayanan).toContain("const saat = await penetapan.waktuSipp();");
+    expect(kodeLayanan).toContain("const saatSetempat = await penetapan.waktuBasisData();");
     expect(kodeLayanan).toContain("const tanggalSekarang = (await penetapan.waktuBasisData()).slice(0, 10);");
   });
 
@@ -288,8 +292,9 @@ describe("10. bentuk tulisannya sama dengan aplikasi antrian", () => {
     // pengaturan ketat ia ditolak sama sekali. Tulisan kosong lebih buruk lagi:
     // ia masuk sebagai 00:00:00 tanpa satu pun galat berbunyi.
     expect(kodeLayanan).toContain("function jamDariCap(cap)");
-    expect(kodeLayanan).toContain("sampai_jam: jamDariCap(saat),");
-    expect(kodeLayanan).toContain('bersih(keadaan.sampaiJam) || jamDariCap(saat),');
+    // Jam sidang SETEMPAT (WITA), sama dengan NOW() aplikasi antrian.
+    expect(kodeLayanan).toContain("sampai_jam: jamDariCap(saatSetempat),");
+    expect(kodeLayanan).toContain('bersih(keadaan.sampaiJam) || jamDariCap(saatSetempat),');
     expect(kodeLayanan).not.toContain("sampai_jam: saat,");
   });
 
