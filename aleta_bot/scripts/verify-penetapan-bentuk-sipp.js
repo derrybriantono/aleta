@@ -46,11 +46,16 @@ let keadaan = { pmh: "2026-09-15", ppp: null, pjs: null, phs: null };
 /** ref_majelis_tetap dijawab kosong - untuk menguji jalur "di luar rekomendasi". */
 let refKosong = false;
 
+const { jawabPejabat } = require("./_penadah-pejabat");
+
 const dbPath = require.resolve("../db_config");
 require("../db_config");
 require.cache[dbPath].exports = {
   query: (sql, params, selesai) => {
     const teks = String(sql);
+    // Butir 17 (13 Okt 2026): akun pejabat, majelis, dan jam SIPP.
+    const pejabat = jawabPejabat(teks, { username: "sudarmin", punyaMajelis: () => Boolean(keadaan.pmh) });
+    if (pejabat !== undefined) return selesai(null, pejabat);
     if (/COALESCE\(MAX\(id\), 0\) \+ 1/.test(teks)) {
       const tabel = (/FROM (\w+)/.exec(teks) || [])[1];
       return selesai(null, [{ berikutnya: idBerikutnya[tabel] || 1 }]);
@@ -111,7 +116,8 @@ const dasar = {
   perkaraId: 10119,
   tanggalPenetapan: "2026-09-15",
   olehUsername: "sudarmin",
-  // Butir 39: akun SIPP yang sedang masuk - yang dicatat SIPP saat membongkar.
+  // Butir 17: akun pejabat yang dicatat SIPP; akun yang masuk hanya jejak ALETA.
+  pejabatUsername: "sudarmin",
   akunSippMasuk: "sudarmin",
   operator: "SUPER ADMIN DERRY",
   ip: "192.168.9.121",

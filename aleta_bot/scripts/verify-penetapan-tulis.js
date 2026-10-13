@@ -44,12 +44,18 @@ function benar(nama, syarat) {
  * Menjawab kueri baca yang dipakai penyusun rencana, dan MEREKAM tiap
  * pernyataan tulis tanpa menjalankannya.
  */
+const { jawabPejabat } = require("./_penadah-pejabat");
+
 function buatDb({ perkara = {}, akun = true, hakim = [], petugas = null, ruangan = null } = {}) {
   const direkam = [];
   return {
     direkam,
     query(sql, params, callback) {
       direkam.push({ sql: String(sql), params });
+
+      // Butir 17 (13 Okt 2026): akun pejabat, majelis, dan jam SIPP.
+      const pejabat = jawabPejabat(String(sql), { username: "fahri", punyaMajelis: () => Boolean(perkara && perkara.pmh) });
+      if (pejabat !== undefined) return callback(null, pejabat);
 
       // MAX(id)+1 - sejak butir 39 juga dihitung untuk perkara_hakim_pn,
       // perkara_panitera_pn, dan perkara_penetapan_hari_sidang, seperti SIPP.
@@ -95,7 +101,12 @@ function muat(dbTiruan) {
   // skema - itu sudah punya ujinya sendiri.
   skema.tabelAda = async () => true;
 
-  return require("../services/penetapanTulisService");
+  const layanan = require("../services/penetapanTulisService");
+  // Butir 17: akun yang dicatat SIPP = pejabatUsername; bukti ini memakai
+  // akun yang sama dengan akun yang masuk, seperti sebelumnya.
+  const asli = layanan.susunRencanaTulis;
+  layanan.susunRencanaTulis = (m) => asli({ pejabatUsername: m && m.olehUsername, ...m });
+  return layanan;
 }
 
 const HAKIM = [
