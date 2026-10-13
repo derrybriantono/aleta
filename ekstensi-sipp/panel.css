@@ -11007,3 +11007,68 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="kasirKel"] .aleta
 }
 .aleta-sdg-baris-set-aleta .aleta-sdg-set-aleta { flex: 1 1 200px; min-width: 0; }
 /* === AKHIR PSAKSI === */
+
+/* === KASIR OTOMATIS 13 Okt (agen R) === */
+/* Butir 10: saklar Kasir otomatis hari putus (basmassal.js bagianOtomatis). */
+.aleta-kasir-otomatis-kepala { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 2px 0 6px; }
+.aleta-kasir-saklar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px 3px 4px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 999px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  cursor: pointer;
+}
+.aleta-kasir-saklar:disabled { cursor: not-allowed; opacity: 0.7; }
+.aleta-kasir-saklar-tombol {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--aleta-garis-kuat);
+  transition: background 0.15s ease;
+}
+.aleta-kasir-saklar-tombol::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--aleta-latar);
+  transition: left 0.15s ease;
+}
+.aleta-kasir-saklar.aleta-kasir-saklar-nyala { border-color: var(--aleta-aman); }
+.aleta-kasir-saklar.aleta-kasir-saklar-nyala .aleta-kasir-saklar-tombol { background: var(--aleta-aman); }
+.aleta-kasir-saklar.aleta-kasir-saklar-nyala .aleta-kasir-saklar-tombol::after { left: 16px; }
+.aleta-kasir-otomatis-butir { display: grid; gap: 2px; margin: 6px 0; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-kasir-otomatis-pilih { display: block; overflow-wrap: anywhere; }
+.aleta-kasir-otomatis-perkara > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+@media (prefers-reduced-motion: reduce) {
+  .aleta-kasir-saklar-tombol,
+  .aleta-kasir-saklar-tombol::after { transition: none; }
+}
+/* Butir 3: bagian Kasir di daftar Jurnal Keuangan Perkara dan di Buku Jurnal
+   (detil_biaya) berkartu bulat seperti hakim/panitera; tag peran "Kasir" di
+   kiri kepalanya dipasang s2TandaiPeranSemua (konten.js S2_PERAN_*). */
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kasir-harian > details.aleta-kasir-bagian {
+  margin: 6px 0;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 8px;
+  background: var(--aleta-latar);
+}
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kasir-harian > details.aleta-kasir-bagian > .aleta-kasir-isi { padding: 2px 10px 10px; }
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kelompok[data-kunci="kasirKel"] .aleta-bagian[data-kunci="kasirPerkara"] {
+  margin: 6px 0;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 8px;
+}
+/* === AKHIR KASIR OTOMATIS 13 Okt === */

@@ -20341,18 +20341,24 @@ function a30Kasir(panel, konteks, ui) {
   const sendiri = ui || Boolean(menu);
   const wadahan = sendiri ? kelompok("Kasir", "kasirKel", !ui) : bagian("Kasir", "kasir", true);
   wadahan.setAttribute("data-a30-fitur", "kasir");
+  // R 13 Okt (butir 3): di UI Baru isi tab Kasir menjadi SATU bagian berkepala
+  // seperti tab hakim/panitera ("Hakim | Putusan otomatis") - kepalanya diberi
+  // tag peran bulat "Kasir" oleh s2TandaiPeranSemua (S2_PERAN_BAGIAN).
+  const bagianKasir = ui ? bagian("Jurnal keuangan perkara", "kasirPerkara", false) : null;
+  if (bagianKasir) wadahan.isi.appendChild(bagianKasir);
+  const tempatKasir = bagianKasir ? bagianKasir.isi : wadahan.isi;
   const perkaraId = String((konteks.identitas && konteks.identitas.perkaraId) || perkaraIdDariHalaman() || "");
   let dipasang = false;
   const pasang = () => {
     if (dipasang) return;
     dipasang = true;
     const memuat = buatElemen("div", "aleta-memuat", "Memuat Kasir…");
-    wadahan.isi.appendChild(memuat);
+    tempatKasir.appendChild(memuat);
     // R 11 Okt: halaman jurnal per perkara (detil_biaya) tidak memuat perkara_id
     // polos - dicari dari nomor perkara lewat rute Kasir yang sudah ada (?cari=).
     Promise.resolve()
       .then(() => perkaraId || r11CariPerkaraId(String(konteks.nomorPerkara || "")))
-      .then((id) => globalThis.aletaKasirPasang(wadahan.isi, { perkaraId: id || "", nomorPerkara: String(konteks.nomorPerkara || "") }))
+      .then((id) => globalThis.aletaKasirPasang(tempatKasir, { perkaraId: id || "", nomorPerkara: String(konteks.nomorPerkara || "") }))
       .then((ok) => {
         memuat.remove();
         if (!ok) return a30LepasKasir(panel, wadahan);
@@ -20363,7 +20369,7 @@ function a30Kasir(panel, konteks, ui) {
       })
       .catch((galat) => {
         memuat.remove();
-        wadahan.isi.appendChild(buatElemen("div", "aleta-gagal", `Kasir tidak dapat dimuat: ${String((galat && galat.message) || galat)}`));
+        tempatKasir.appendChild(buatElemen("div", "aleta-gagal", `Kasir tidak dapat dimuat: ${String((galat && galat.message) || galat)}`));
       });
   };
   const terbuka = () => wadahan.isi.style.display !== "none" && !wadahan.hasAttribute("data-mps-sembunyi");
@@ -23771,6 +23777,8 @@ const S2_PERAN_BAGIAN = {
   antreanSipp: "Hakim",
   juruSita: "Jurusita",
   courtCalendarOtomatis: "Panitera",
+  // R 13 Okt (butir 3): Kasir per perkara (halaman detil_biaya) seperti hakim/panitera.
+  kasirPerkara: "Kasir",
 };
 /** Butir 7: tag peran per menu massal halaman daftar (data-mps-massal). */
 const S2_PERAN_MASSAL = {
@@ -23778,6 +23786,8 @@ const S2_PERAN_MASSAL = {
   "putusan-massal": "Hakim",
   "bas-massal": "Panitera",
   "relaas-pbt-massal": "Jurusita",
+  // R 13 Okt (butir 3): Kasir otomatis, pengingat, massal, rekap di daftar Jurnal Keuangan Perkara.
+  "kasir-harian": "Kasir",
 };
 /**
  * Butir 19: bagian UTAMA tiap tab (kelompok) - yang pertama ADA dari daftarnya
