@@ -2190,6 +2190,8 @@ const PENANDA_TIPE_BOT = Object.freeze({
   "putusan.upaya-damai.bunyi": Object.freeze(["{pelaku}", "{lawan}"]),
 });
 const BATAS_ENTRI_TIPE_ABT = 200;
+// Butir 9 (13 Okt 2026): jawaban-modus bawaannya 280 kalimat (20 bank x 14) - cermin abtUsulanService BATAS_ENTRI_KHUSUS.
+const BATAS_ENTRI_KHUSUS_ABT = Object.freeze({ "bas.saksi.jawaban-modus": 400 });
 const BATAS_TEKS_TIPE_ABT = 400;
 const BATAS_DATA_TIPE_ABT = 4000;
 
@@ -2270,7 +2272,8 @@ function saringTipeKeluaranAbt(tipe, templat) {
     const sah = new Set(PENANDA_TIPE_BOT[kunciDaftar]);
     if (kunciDaftar === "bas.saksi.bentuk") for (const p of penandaDasar) sah.add(p);
     const bersih = [];
-    mentah.slice(0, BATAS_ENTRI_TIPE_ABT).forEach((e) => {
+    const batasEntri = BATAS_ENTRI_KHUSUS_ABT[kunciDaftar] || BATAS_ENTRI_TIPE_ABT;
+    mentah.slice(0, batasEntri).forEach((e) => {
       const alasan = periksaEntriTipeAbt(e, sah);
       if (!alasan) {
         bersih.push(e);
@@ -2279,12 +2282,12 @@ function saringTipeKeluaranAbt(tipe, templat) {
       const kunci = e && typeof e === "object" ? String(e.kunci === undefined || e.kunci === null ? "" : e.kunci) : "";
       ditolak.push({ daftar: kunciDaftar, kunci: kunci.slice(0, 80), alasan });
     });
-    if (mentah.length > BATAS_ENTRI_TIPE_ABT) {
+    if (mentah.length > batasEntri) {
       ditolak.push({
         daftar: kunciDaftar,
         kunci: "",
-        alasan: `lebih_dari_${BATAS_ENTRI_TIPE_ABT}_entri`,
-        jumlah: mentah.length - BATAS_ENTRI_TIPE_ABT,
+        alasan: `lebih_dari_${batasEntri}_entri`,
+        jumlah: mentah.length - batasEntri,
       });
     }
     daftar[kunciDaftar] = bersih;
