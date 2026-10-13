@@ -2369,6 +2369,15 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     }
     // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
     // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.
+    /* === DK 13 Okt === */
+    // Blangko BAS dispensasi kawin tidak memuat 5125: ekstensi mengirim posita
+    // kosong dan posita dibaca dari SIPP (HANYA SELECT, 2,5 detik).
+    if (sumber === "posita-lain") {
+      req.body.posita = await require("../services/deteksiDispensasiKawinService")
+        .positaCadanganSipp(req.body)
+        .catch(() => String(req.body?.posita || ""));
+    }
+    /* === AKHIR DK === */
     if (sumber === "posita-lain") {
       jawaban.positaLain = abtUsulanLainService.dariPositaLain(String(req.body?.posita || ""), {
         jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
@@ -2394,6 +2403,21 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       }
       /* === AKHIR JENIS3 === */
     }
+    /* === DK 13 Okt === */
+    // Dispensasi kawin: peran anak/calon pasangan, umur, identitas, kehamilan,
+    // perkenalan, puskesmas - lihat services/deteksiDispensasiKawinService.js.
+    if (sumber === "posita-lain") {
+      try {
+        jawaban.positaLain = require("../services/deteksiDispensasiKawinService").lengkapiUsulanDk(
+          jawaban.positaLain,
+          String(req.body?.posita || ""),
+          { jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80) }
+        );
+      } catch (_galatDk) {
+        // tambahan DK tidak pernah menggagalkan usulan perkara lain
+      }
+    }
+    /* === AKHIR DK === */
     // Butir 12 (6 Okt 2026): alasan yang terbaca dari posita - SUMBER YANG SAMA
     // dengan "Alasan yang dipakai" penyusun saksi (alasanDariPosita) - supaya
     // centang modus "Hanya sebagian alasan" dapat mendahulukan alasan yang

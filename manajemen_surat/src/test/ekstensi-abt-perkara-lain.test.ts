@@ -221,7 +221,7 @@ function bukaBlangko(kode: string[], opsi: { nomor?: string; isi?: Record<string
     SUMBER_ALAT +
       "\n;\n" +
       SUMBER_ABT +
-      "\n;\nwindow.__uji = { VARIABEL_SIAP_POSITA_LAIN, blangkoMemuatVariabelSiapLain, kunciJenisLain, kabarPositaLain, idJenisPerkaraSipp, idAlurPerkaraSipp };" +
+      "\n;\nwindow.__uji = { VARIABEL_SIAP_POSITA_LAIN, blangkoMemuatVariabelSiapLain, kunciJenisLain, kabarPositaLain, idJenisPerkaraSipp, idAlurPerkaraSipp, dkBasTanpaPosita };" +
       '\n;\nif (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);'
   );
   return w;
@@ -244,6 +244,18 @@ describe("cermin variabel siap = abtUsulanLainService.VARIABEL_SIAP", () => {
     const w = bukaBlangko(["0001"]);
     const bot = require_("../services/abtUsulanLainService").VARIABEL_SIAP;
     expect(JSON.parse(JSON.stringify(w.__uji.VARIABEL_SIAP_POSITA_LAIN))).toEqual(JSON.parse(JSON.stringify(bot)));
+  });
+});
+
+describe("BAS dispensasi kawin tanpa 5125 - posita dibaca bot dari SIPP (butir 15, 13 Okt 2026)", () => {
+  // Variabel isian BAS ALUR 12 [1] (RTF _blangko_abt derry_briantono, 13 Okt 2026).
+  const BAS_DK = ["0048", "0606", "0600", "0607", "0601", "1666", "0999", "2030", "2029", "5178", "6331", "1551", "1552", "9956", "0609"];
+  const peta = (kode: string[], jenis: string) => new Map(kode.map((k) => [k, { nilai: k === "0048" ? jenis : "" }]));
+  it("BAS DK tanpa posita: ya; blangko berposita atau jenis lain: tidak", () => {
+    const w = bukaBlangko(["0001"]);
+    expect(w.__uji.dkBasTanpaPosita(peta(BAS_DK, "Dispensasi Kawin"), "1/Pdt.P/2026/PA.Dgl")).toBe(true);
+    expect(w.__uji.dkBasTanpaPosita(peta([...BAS_DK, "5125"], "Dispensasi Kawin"), "1/Pdt.P/2026/PA.Dgl")).toBe(false);
+    expect(w.__uji.dkBasTanpaPosita(peta(BAS_DK, "Pengesahan Perkawinan/Istbat Nikah"), "1/Pdt.P/2026/PA.Dgl")).toBe(false);
   });
 });
 
@@ -327,11 +339,18 @@ describe("posita-lain lewat panel dan bot sungguhan", () => {
     expect(hasil.jenis).toBe("dispensasi-kawin");
     const kode = (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu .aleta-abt-kode")) as any[]).map((x) => x.textContent);
     expect(kode.sort()).toEqual(hasil.usulan.map((u: any) => u.kode).filter((k: string) => DK[2].split(" ").includes(k)).sort());
-    for (const k of kode) expect(SIAP_BOT["dispensasi-kawin"]).toContain(k);
+    // Variabel siap (lulus gerbang) atau usulan DK "ragu" berkalimat sumber (butir 15, 13 Okt 2026).
+    for (const k of kode) {
+      const u = hasil.usulan.find((x: any) => x.kode === k);
+      if (!SIAP_BOT["dispensasi-kawin"].includes(k)) expect(u.keyakinan).toBe("ragu");
+    }
     // Lencananya menyebut sumbernya - posita - bukan "satu saksi".
     const lencana = (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu-kepala .aleta-tanda")) as any[]).map((x) => x.textContent);
     expect(lencana.length).toBe(kode.length);
-    for (const l of lencana) expect(l).toBe("dari posita");
+    // Usulan DK "ragu" (butir 15) berlencana "ragu — periksa dulu"; sisanya "dari posita".
+    const ragu = kode.filter((k) => hasil.usulan.find((x: any) => x.kode === k)?.keyakinan === "ragu").length;
+    for (const l of lencana) expect(["ragu — periksa dulu", "dari posita"]).toContain(l);
+    expect(lencana.filter((l) => l === "dari posita").length).toBe(kode.length - ragu);
     const kabar = String(panelDari(w).querySelector(".aleta-abt-kabar").textContent);
     for (const b of hasil.belumSiap) expect(kabar).toContain(`${b.kode} (${b.alasan})`);
     // 5178 (KUA yang menolak): ALETA terukur lebih tepat dari bawaan #10103#
@@ -354,7 +373,8 @@ describe("posita-lain lewat panel dan bot sungguhan", () => {
     await tunggu(() => panelDari(w).querySelector(".aleta-abt-kartu"), "kartu usulan");
     const hasil = j.c.jawabanBot[0].positaLain;
     // Bot tetap menjawab seluruh aturan DK - penyaringnya di panel.
-    expect(hasil.belumSiap.map((b: any) => b.kode)).toEqual(["1666", "1551", "0999"]);
+    // Yang kini terbaca modul DK ("ragu") keluar dari belumSiap; sisanya tetap disebut.
+    for (const b of hasil.belumSiap) expect(["1666", "1551", "0999"]).toContain(b.kode);
     const kabar = String(panelDari(w).querySelector(".aleta-abt-kabar").textContent);
     for (const k of ["5178", "1666", "1551", "0999"]) expect(kabar).not.toContain(k);
     const kode = (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu .aleta-abt-kode")) as any[]).map((x) => x.textContent);
