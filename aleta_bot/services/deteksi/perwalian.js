@@ -24,8 +24,22 @@
 const B = require("./bantuAnak");
 const wilayah = require("./wilayah");
 
+// Ukuran 13 Okt 2026 atas 91 perkara perwalian (ukur-y.js): terisi = perkara berusulan (cukup);
+// manusia = isian ABT server n (banding/tepat); amar = nama anak di amar kabul (banding/tepat; cukup b/t).
+// Sebelum modul ini: 0 usulan perwalian sampai ke panel (semua di belumSiap, n < 10).
+// 5110 cukup yang "meleset" dari amar (5/43) seluruhnya ejaan petitum lain dari amar (Rendy/Rendi,
+// Thalita/Talita) atau hakim mengabulkan sebagian anak - petitum tetap sumber "yang dimohonkan".
 const UKUR_PERWALIAN = Object.freeze({
-  // diisi dari keluaran ukur-y.js - lihat laporan commit
+  "5110": { terisi: 88, cukup: 52, manusia: "4/4", amar: "73/62", amarCukup: "43/38" },
+  "1025": { terisi: 43, cukup: 30, manusia: "5/5" },
+  "1230": { terisi: 43, cukup: 30, manusia: "4/4" },
+  "0709": { terisi: 30, cukup: 30, manusia: "5/5" },
+  "0712": { terisi: 30, cukup: 30, manusia: "5/5" },
+  "5197": { terisi: 67, cukup: 0, manusia: "3/3" },
+  "5105": { terisi: 54, cukup: 0, manusia: "3/3" },
+  "5178": { terisi: 53, cukup: 0, manusia: "3/2" },
+  "0007": { terisi: 61, cukup: 0, manusia: "3/2" },
+  "8171": { terisi: 23, cukup: 0, manusia: "6/1" },
 });
 
 const variabel = Object.freeze([
@@ -152,6 +166,9 @@ function pilihAnak(petitum, positaPolos, namaPihak) {
   const pet = tanpaPihak(namaAnakDariWali(petitum) || namaAnakBeradaDiBawah(petitum), namaPihak);
   const pos = tanpaPihak(namaAnakPosita(positaPolos), namaPihak);
   const posAnak = pos && pos.adaKataAnak ? pos : null;
+  // Nama tertempel ("LiciaBinti Johan" - 96/2021) terbaca terpotong: tidak pernah "cukup".
+  const tempel = (h) => h && h.daftar.some((d) => /[a-z](?:Binti?|BINTI?)\b/.test(d.nama));
+  if (tempel(pet)) return { ...pet, yakin: "ragu", asal: "petitum" };
   if (pet && pet.adaKataAnak) {
     if (posAnak && !samaDaftar(pet.daftar, posAnak.daftar)) return { ...pet, yakin: "ragu", asal: "petitum" };
     return { ...pet, yakin: "cukup", asal: "petitum" };
