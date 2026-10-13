@@ -10,6 +10,7 @@ import {
   getGatewayEcourtJadwal,
   getGatewayPantauSesi,
   getGatewaySasaranPenarikan,
+  getGatewayStatusPenarikan,
   jalankanGatewayAuditArsip,
   saveGatewayPantauSesi,
   hentikanGatewayPenarikan,
@@ -79,6 +80,17 @@ export async function GET(request: NextRequest) {
     // hanya SELECT ke SIPP dan ke basis data bot. Karena itu cukup kapabilitas
     // panel, sama seperti membaca daftar log, dan boleh ditekan sesering apa
     // pun termasuk ketika sesi e-Court sedang habis.
+    // Butir 12 (13 Okt 2026): status penarikan untuk dasbor ALETA e-Court -
+    // tarikan terakhir (berkala & per perkara), jadwal berikutnya, akun, sesi.
+    // Hanya membaca log dan keadaan bot; tidak menyentuh e-Court.
+    if (String(request.nextUrl.searchParams.get("bagian") || "") === "status") {
+      const hasil = await getGatewayStatusPenarikan();
+      if (!hasil.ok) {
+        return ok({ available: false, message: hasil.error || "ALETA Bot belum dapat dihubungi." });
+      }
+      return ok({ available: true, status: hasil.data });
+    }
+
     if (String(request.nextUrl.searchParams.get("bagian") || "") === "sasaran") {
       const hasil = await getGatewaySasaranPenarikan(20);
       if (!hasil.ok) {

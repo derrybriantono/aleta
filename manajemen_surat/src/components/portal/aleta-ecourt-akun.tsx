@@ -42,6 +42,18 @@ type Akun = {
   gagalTerakhir: string | null;
   alasanGagal: string;
   terakhirDipakai: boolean;
+  /** Butir 11 (13 Okt 2026): akun utama - penarikannya selalu jalan. */
+  utama?: boolean;
+};
+
+type AkunUtama = {
+  slot: string;
+  label: string;
+  dipilih: boolean;
+  sah: boolean;
+  bawaan: boolean;
+  alasan: string;
+  pesan: string;
 };
 
 /** Keadaan sesi tiap akun, dibaca terpisah supaya daftarnya tetap cepat tampil. */
@@ -54,6 +66,9 @@ type KeadaanAkun = {
   umurDetik: number | null;
   emailTersimpan: string;
   isiOtomatis: boolean;
+  /** Butir 13: "ringan" = satu permintaan HTTPS bercookie, "peramban" = Chrome. */
+  cara?: "ringan" | "peramban";
+  lamaMs?: number;
 };
 
 const NADA_KEADAAN: Record<string, "default" | "warning" | "muted"> = {
@@ -66,6 +81,7 @@ const NADA_KEADAAN: Record<string, "default" | "warning" | "muted"> = {
 
 export function AletaEcourtAkun() {
   const [akun, setAkun] = useState<Akun[]>([]);
+  const [akunUtama, setAkunUtama] = useState<AkunUtama | null>(null);
   const [memuat, setMemuat] = useState(true);
   const [galat, setGalat] = useState("");
   const [sibuk, setSibuk] = useState("");
@@ -99,6 +115,7 @@ export function AletaEcourtAkun() {
         return;
       }
       setAkun(Array.isArray(data.akun) ? data.akun : []);
+      setAkunUtama(data.akunUtama ?? null);
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca daftar akun.");
     } finally {
@@ -240,6 +257,11 @@ export function AletaEcourtAkun() {
             akun_terakhir_tidak_dapat_dihapus:
               "Akun terakhir tidak dapat dihapus - harus ada sedikitnya satu.",
             akun_tidak_ditemukan: "Akun tidak ditemukan.",
+            akun_utama_selalu_aktif:
+              "Akun utama selalu aktif dan tidak dapat dimatikan. Pilih akun lain sebagai akun utama, atau lepas tanda akun utama lebih dulu.",
+            akun_utama_tidak_dapat_dihapus:
+              "Akun utama tidak dapat dihapus. Pilih akun lain sebagai akun utama lebih dulu.",
+            perlu_kata_penegas: "Tanda akun utama tidak dilepas - kata penegas LEPAS tidak diketik.",
           };
           setGalat(sebab[String(data?.alasan)] || String(data?.message || data?.alasan || "Tidak berhasil."));
         }
@@ -273,7 +295,7 @@ export function AletaEcourtAkun() {
             variant="outline"
             disabled={memeriksa || sibuk !== ""}
             onClick={() => void muatKeadaan(true)}
-            title="Membuka e-Court untuk tiap akun, berurutan. Perlu beberapa detik per akun."
+            title="Pemeriksaan ringan (satu permintaan ke e-Court) lebih dulu; Chrome hanya dibuka bila hasilnya ragu."
           >
             {memeriksa ? "Memeriksa…" : "Periksa semua sesi"}
           </Button>
@@ -281,6 +303,20 @@ export function AletaEcourtAkun() {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Butir 11 (13 Okt 2026): akun utama penarikan - selalu aktif.
+            Peringatan jelas bila belum dipilih atau belum sah. */}
+        {akunUtama && !akunUtama.sah ? (
+          <p className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100">
+            Peringatan: {akunUtama.pesan || "Akun utama penarikan belum sah."} Selama akun utama tidak sah,
+            penarikan data e-Court otomatis tidak dijamin berjalan.
+          </p>
+        ) : akunUtama?.sah ? (
+          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100">
+            Akun utama: <span className="font-medium">{akunUtama.label || akunUtama.slot}</span> - penarikan
+            berkala dan pemeriksaan sidang hari ini SELALU berjalan memakai akun ini (jam kerja, Senin-Jumat).
+            Akun utama tidak dapat dimatikan atau dihapus.
+          </p>
+        ) : null}
         {galat ? (
           <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             {galat}
@@ -310,6 +346,11 @@ export function AletaEcourtAkun() {
                   <tr key={baris.slot} className="border-t border-border">
                     <td className="px-3 py-2">
                       <span className="font-medium">{baris.label}</span>
+                      {baris.utama ? (
+                        <Badge variant="success" className="ml-2 align-middle" title="Penarikannya selalu jalan">
+                          akun utama · selalu aktif
+                        </Badge>
+                      ) : null}
                       {baris.terakhirDipakai ? (
                         <Badge variant="muted" className="ml-2 align-middle">
                           terakhir dipakai
@@ -373,22 +414,68 @@ export function AletaEcourtAkun() {
                       {baris.istirahat && baris.alasanGagal ? (
                         <p className="mt-1 text-xs text-muted-foreground">{baris.alasanGagal}</p>
                       ) : null}
+                      {keadaan[baris.slot]?.cara ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {keadaan[baris.slot].cara === "ringan" ? "diperiksa ringan" : "diperiksa dengan Chrome"}
+                          {typeof keadaan[baris.slot].lamaMs === "number"
+                            ? ` (${(Number(keadaan[baris.slot].lamaMs) / 1000).toFixed(1)} dtk)`
+                            : ""}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={sibuk !== ""}
-                          onClick={() =>
-                            void kirim(
-                              { slot: baris.slot, label: baris.label, aktif: !baris.aktif },
-                              baris.slot
-                            )
-                          }
-                        >
-                          {baris.aktif ? "Matikan" : "Nyalakan"}
-                        </Button>
+                        {baris.utama ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={sibuk !== ""}
+                            title="Melepas tanda akun utama menghentikan jaminan penarikan otomatis - harus disengaja."
+                            onClick={() => {
+                              const kata = window.prompt(
+                                `Melepas tanda akun utama "${baris.label}" membuat penarikan otomatis kembali mengikuti saklar Penarikan Berkala (bisa mati). Ketik LEPAS untuk melanjutkan.`
+                              );
+                              if (kata === null) return;
+                              void kirim({ tindakan: "lepas-utama", slot: baris.slot, konfirmasi: kata }, baris.slot);
+                            }}
+                          >
+                            Lepas akun utama
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={sibuk !== ""}
+                              onClick={() =>
+                                void kirim(
+                                  { slot: baris.slot, label: baris.label, aktif: !baris.aktif },
+                                  baris.slot
+                                )
+                              }
+                            >
+                              {baris.aktif ? "Matikan" : "Nyalakan"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={sibuk !== ""}
+                              title="Penarikan memakai akun ini lebih dulu dan SELALU berjalan."
+                              onClick={() => {
+                                if (
+                                  !window.confirm(
+                                    `Jadikan "${baris.label}" akun utama? Penarikan data e-Court otomatis akan selalu berjalan memakai akun ini.`
+                                  )
+                                ) {
+                                  return;
+                                }
+                                void kirim({ tindakan: "utama", slot: baris.slot }, baris.slot);
+                              }}
+                            >
+                              Jadikan akun utama
+                            </Button>
+                          </>
+                        )}
 
                         <Button
                           size="sm"
@@ -428,7 +515,7 @@ export function AletaEcourtAkun() {
                           </Button>
                         ) : null}
 
-                        {akun.length > 1 ? (
+                        {akun.length > 1 && !baris.utama ? (
                           <Button
                             size="sm"
                             variant="outline"

@@ -193,6 +193,16 @@ function parseArgs(argv) {
   return args;
 }
 
+/**
+ * Apakah perkara yang berkasnya "sudah lengkap" boleh dilewati putaran ini.
+ * Tidak untuk --paksa-ulang, dan TIDAK untuk penarikan tertarget (--perkara):
+ * kelengkapan diukur dari simpanan, sedangkan dokumen yang baru diunggah pihak
+ * belum ada di simpanan (13 Okt 2026, 497/Pdt.G/2026/PA.Dgl).
+ */
+function saringYangLengkap(args) {
+  return !args.paksaUlang && !String(args.perkara || "").trim();
+}
+
 function log(pesan) {
   const waktu = new Date().toLocaleTimeString("id-ID");
   console.log(`[${waktu}] ${pesan}`);
@@ -1569,7 +1579,17 @@ async function utama() {
     // Sekarang penyaringan dikerjakan lebih dulu, sehingga dua puluh lima itu
     // seluruhnya diberikan kepada perkara yang memang perlu diperiksa, dan
     // sapuannya maju dari putaran ke putaran.
-    if (!args.paksaUlang && acuan.petaNomor && acuan.petaNomor.size > 0) {
+    //
+    // PENARIKAN TERTARGET TIDAK PERNAH DISARING (13 Okt 2026). "Lengkap" di
+    // sini diukur dari dokumen yang SUDAH tersimpan - dokumen yang baru
+    // diunggah pihak justru belum ada di simpanan, jadi tidak dapat membuat
+    // perkaranya "tidak lengkap". 12 Okt: Jawaban 497/Pdt.G/2026/PA.Dgl
+    // diunggah 08.15 WITA, tombol "belum upload" ditekan 13.59 dan 16.35 WITA (log
+    // bot dalam UTC: 05.59 dan 08.35) - dua-duanya
+    // "1 perkara berkasnya sudah lengkap, tidak dibuka", 0 perkara diperiksa,
+    // dan lencananya tetap "belum upload" (517/Pdt.G/2026 sama, dua kali).
+    // Orang yang meminta satu perkara ingin perkara itu DIBUKA.
+    if (saringYangLengkap(args) && acuan.petaNomor && acuan.petaNomor.size > 0) {
       // ====================================================================
       // SATU KUERI UNTUK SELURUH DAFTAR
       // ====================================================================
@@ -1821,6 +1841,7 @@ module.exports = {
   downloadFile,
   guessExtension,
   parseArgs,
+  saringYangLengkap,
   simpanBerkas,
   susunGiliran,
   // Diekspor supaya penjaga uji dapat MEMBANDINGKANNYA dengan taksiran waktu di

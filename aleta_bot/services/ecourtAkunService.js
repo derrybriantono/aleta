@@ -57,9 +57,32 @@ const keadaan = {
   terakhirDipakai: "",
 };
 
-function bacaDaftar() {
-  const tersimpan = (readRuntimeConfig() || {}).ecourtAkun;
-  if (!Array.isArray(tersimpan) || tersimpan.length === 0) return [...BAWAAN];
+/**
+ * ============================================================================
+ * AKUN UTAMA - PENARIKANNYA SELALU JALAN (13 Okt 2026, butir 11)
+ * ============================================================================
+ *
+ * Terukur di server 13 Okt: runtime config TIDAK punya ecourtJadwal, jadi
+ * penjadwal berkala memakai bawaannya (aktif: false) dan penarik verifikasi
+ * harian - yang ikut syarat penjadwal - tidak pernah jalan. 12 Okt satu-satunya
+ * penarikan adalah tombol "belum upload" yang ditekan orang.
+ *
+ * Satu akun ditandai AKUN UTAMA. Selama akun itu sah (terdaftar dan pernah
+ * login - folder sesinya ada), penarikan berkala dan penarik verifikasi harian
+ * SELALU menyala, apa pun saklar penjadwalnya; akunnya sendiri tidak dapat
+ * dimatikan atau dihapus. Menghentikannya harus disengaja: melepas tanda akun
+ * utama dengan kata penegas.
+ *
+ * Bawaan: slot "utama" (labelnya memang "Akun utama") bila terdaftar, sampai
+ * admin memilih akun lain atau melepasnya. Yang disimpan hanya NAMA SLOT -
+ * bukan surel, bukan sandi.
+ */
+const SLOT_UTAMA_BAWAAN = "utama";
+const KATA_PENEGAS_LEPAS = "LEPAS";
+
+function bacaDaftar(runtimeConfig) {
+  const tersimpan = (runtimeConfig || readRuntimeConfig() || {}).ecourtAkun;
+  if (!Array.isArray(tersimpan) || tersimpan.length === 0) return BAWAAN.map((a) => ({ ...a }));
 
   const hasil = [];
   const terlihat = new Set();
@@ -73,7 +96,124 @@ function bacaDaftar() {
       aktif: item ? item.aktif !== false : true,
     });
   }
-  return hasil.length > 0 ? hasil : [...BAWAAN];
+  return hasil.length > 0 ? hasil : BAWAAN.map((a) => ({ ...a }));
+}
+
+/** Slot akun utama yang berlaku ("" = belum dipilih atau sengaja dilepas). */
+function slotAkunUtama(runtimeConfig) {
+  const config = runtimeConfig || readRuntimeConfig() || {};
+  const t = config.ecourtAkunUtama;
+  if (t && typeof t === "object" && t.dilepas === true) return "";
+  const pilihan = t && typeof t === "object" ? String(t.slot || "") : typeof t === "string" ? t : "";
+  if (pilihan.trim()) return sesiEcourt.bersihkanSlot(pilihan);
+  return bacaDaftar(config).some((a) => a.slot === SLOT_UTAMA_BAWAAN) ? SLOT_UTAMA_BAWAAN : "";
+}
+
+/**
+ * Keadaan akun utama - untuk penjadwal (sah = selalu menyala) dan peringatan
+ * di layar admin.
+ *
+ * @returns {{ slot: string, label: string, dipilih: boolean, sah: boolean, alasan: string, pesan: string, bawaan: boolean }}
+ */
+function keadaanAkunUtama(runtimeConfig) {
+  const config = runtimeConfig || readRuntimeConfig() || {};
+  const t = config.ecourtAkunUtama;
+  const slot = slotAkunUtama(config);
+  const bawaan = !(t && typeof t === "object" && (t.slot || t.dilepas)) && typeof t !== "string";
+  if (!slot) {
+    const dilepas = Boolean(t && typeof t === "object" && t.dilepas === true);
+    return {
+      slot: "",
+      label: "",
+      dipilih: false,
+      sah: false,
+      bawaan,
+      alasan: dilepas ? "dilepas" : "belum_dipilih",
+      pesan: dilepas
+        ? "Akun utama sengaja dilepas - penarikan otomatis hanya mengikuti saklar Penarikan Berkala."
+        : "Akun utama belum dipilih - penarikan otomatis tidak dijamin jalan. Pilih satu akun sebagai akun utama.",
+    };
+  }
+  const akun = bacaDaftar(config).find((a) => a.slot === slot);
+  if (!akun) {
+    return {
+      slot,
+      label: "",
+      dipilih: true,
+      sah: false,
+      bawaan,
+      alasan: "akun_tidak_terdaftar",
+      pesan: `Akun utama "${slot}" tidak ada di daftar akun - pilih ulang akun utama.`,
+    };
+  }
+  if (!sesiEcourt.sessionExists(slot)) {
+    return {
+      slot,
+      label: akun.label,
+      dipilih: true,
+      sah: false,
+      bawaan,
+      alasan: "belum_login",
+      pesan: `Akun utama "${akun.label}" belum pernah login e-Court - login sekali dari kartu Login e-Court.`,
+    };
+  }
+  return { slot, label: akun.label, dipilih: true, sah: true, bawaan, alasan: "", pesan: "" };
+}
+
+/** Penjadwal dimuat malas - ia sendiri memuat berkas ini. */
+function mulaiUlangPenjadwal() {
+  try {
+    require("./ecourtSchedulerService").mulaiUlang();
+  } catch {
+    // Penjadwal tidak termuat (uji) - perubahan berlaku saat bot menyala.
+  }
+}
+
+/** Menandai satu akun terdaftar sebagai akun utama (dan menyalakannya). */
+function pilihAkunUtama(slot, { olehSiapa = "" } = {}) {
+  const nama = sesiEcourt.bersihkanSlot(slot);
+  const config = readRuntimeConfig() || {};
+  const daftar = bacaDaftar(config);
+  const i = daftar.findIndex((a) => a.slot === nama);
+  if (!slot || i < 0) return { ok: false, alasan: "akun_tidak_ditemukan" };
+  daftar[i] = { ...daftar[i], aktif: true };
+  writeRuntimeConfig({
+    ...config,
+    ecourtAkun: daftar,
+    ecourtAkunUtama: { slot: nama, dipilihPada: new Date().toISOString(), olehSiapa: String(olehSiapa || "") },
+  });
+  void logService.logSecurityEvent({
+    eventType: "ecourt_akun_utama_dipilih",
+    severity: "warning",
+    message: `Akun e-Court "${nama}" ditandai akun utama - penarikannya selalu jalan.`,
+    metadata: { slot: nama, olehSiapa: String(olehSiapa || "") },
+  });
+  mulaiUlangPenjadwal();
+  return { ok: true, alasan: "", akunUtama: keadaanAkunUtama(), akun: daftarAkun() };
+}
+
+/**
+ * Melepas tanda akun utama. HARUS disengaja: kata penegas "LEPAS" wajib ikut,
+ * supaya satu klik yang keliru tidak menghentikan penarikan otomatis.
+ */
+function lepasAkunUtama({ konfirmasi = "", olehSiapa = "" } = {}) {
+  if (String(konfirmasi || "").trim().toUpperCase() !== KATA_PENEGAS_LEPAS) {
+    return { ok: false, alasan: "perlu_kata_penegas" };
+  }
+  const config = readRuntimeConfig() || {};
+  const sebelumnya = slotAkunUtama(config);
+  writeRuntimeConfig({
+    ...config,
+    ecourtAkunUtama: { dilepas: true, dilepasPada: new Date().toISOString(), olehSiapa: String(olehSiapa || "") },
+  });
+  void logService.logSecurityEvent({
+    eventType: "ecourt_akun_utama_dilepas",
+    severity: "critical",
+    message: `Tanda akun utama e-Court "${sebelumnya || "-"}" dilepas - penarikan otomatis kembali mengikuti saklar penjadwal.`,
+    metadata: { slot: sebelumnya, olehSiapa: String(olehSiapa || "") },
+  });
+  mulaiUlangPenjadwal();
+  return { ok: true, alasan: "", akunUtama: keadaanAkunUtama(), akun: daftarAkun() };
 }
 
 function tulisDaftar(daftar) {
@@ -90,10 +230,15 @@ function sedangIstirahat(slot) {
 
 /** Daftar akun beserta keadaan sesinya. */
 function daftarAkun() {
-  return bacaDaftar().map((akun) => {
+  const config = readRuntimeConfig() || {};
+  const utama = slotAkunUtama(config);
+  return bacaDaftar(config).map((akun) => {
     const catatan = keadaan.gagal.get(akun.slot);
     return {
       ...akun,
+      // Akun utama selalu aktif, apa pun yang tersimpan.
+      aktif: akun.slot === utama ? true : akun.aktif,
+      utama: akun.slot === utama,
       adaSesi: sesiEcourt.sessionExists(akun.slot),
       istirahat: sedangIstirahat(akun.slot),
       gagalTerakhir: catatan ? new Date(catatan.gagalPada).toISOString() : null,
@@ -113,8 +258,16 @@ function daftarAkun() {
  * @returns {{ ok: boolean, slot: string, alasan: string }}
  */
 function pilihAkunSiap() {
-  const daftar = bacaDaftar().filter((akun) => akun.aktif);
+  const config = readRuntimeConfig() || {};
+  const utama = slotAkunUtama(config);
+  const daftar = bacaDaftar(config).filter((akun) => akun.aktif || akun.slot === utama);
   if (daftar.length === 0) return { ok: false, slot: "", alasan: "tidak_ada_akun_aktif" };
+
+  // Akun utama didahulukan selama sesinya ada dan tidak sedang diistirahatkan
+  // (butir 11, 13 Okt 2026); akun lain menjadi cadangan bergiliran.
+  if (utama && sesiEcourt.sessionExists(utama) && !sedangIstirahat(utama)) {
+    return { ok: true, slot: utama, alasan: "" };
+  }
 
   const mulaiDari = Math.max(
     0,
@@ -170,6 +323,10 @@ function simpanAkun({ slot, label, aktif, olehSiapa = "" }) {
   const nama = sesiEcourt.bersihkanSlot(slot);
   const daftar = bacaDaftar();
 
+  if (aktif === false && nama === slotAkunUtama()) {
+    return { ok: false, alasan: "akun_utama_selalu_aktif" };
+  }
+
   const adaIndeks = daftar.findIndex((akun) => akun.slot === nama);
   const isi = {
     slot: nama,
@@ -210,12 +367,16 @@ function hapusAkun(slot, { olehSiapa = "" } = {}) {
   if (daftar.length <= 1) {
     return { ok: false, alasan: "akun_terakhir_tidak_dapat_dihapus" };
   }
+  if (nama === slotAkunUtama()) {
+    return { ok: false, alasan: "akun_utama_tidak_dapat_dihapus" };
+  }
 
   const sisa = daftar.filter((akun) => akun.slot !== nama);
   if (sisa.length === daftar.length) return { ok: false, alasan: "akun_tidak_ditemukan" };
 
   tulisDaftar(sisa);
   const hasilHapus = sesiEcourt.clearSession(nama);
+  require("./ecourtSesiRinganService").hapusKuki(nama);
   keadaan.gagal.delete(nama);
 
   void logService.logSecurityEvent({
@@ -231,9 +392,14 @@ function hapusAkun(slot, { olehSiapa = "" } = {}) {
 module.exports = {
   BAWAAN,
   ISTIRAHAT_MS,
+  KATA_PENEGAS_LEPAS,
   daftarAkun,
   hapusAkun,
+  keadaanAkunUtama,
+  lepasAkunUtama,
   pilihAkunSiap,
+  pilihAkunUtama,
+  slotAkunUtama,
   simpanAkun,
   tandaiBerhasil,
   tandaiGagal,

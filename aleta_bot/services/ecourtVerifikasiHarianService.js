@@ -61,6 +61,18 @@ function bersih(nilai) {
 
 /** "YYYY-MM-DD" dari Date lokal. */
 function tanggalLokal(t = new Date()) {
+  // 13 Okt 2026: proses bot di container berjalan dalam UTC - "hari ini" pukul
+  // 07.00-08.00 WITA terbaca kemarin. Tanggal dibaca menurut zona pengadilan.
+  try {
+    const zona = String(process.env.ALETA_ZONA_WAKTU || "Asia/Makassar").trim() || "Asia/Makassar";
+    const b = {};
+    for (const x of new Intl.DateTimeFormat("en-US", { timeZone: zona, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(t)) {
+      b[x.type] = x.value;
+    }
+    if (b.year && b.month && b.day) return `${b.year}-${b.month}-${b.day}`;
+  } catch {
+    // Zona tidak dikenal: jatuh ke waktu lokal proses.
+  }
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
 }
 
@@ -92,9 +104,16 @@ function keadaanPerkara({
   menunggu,
   perluUnggah = false,
   sidangLalu = "",
+  agenda = "",
+  awalBabak,
 }) {
+  // 13 Okt 2026: dengan agenda, dokumen dihitung menurut JENISNYA (Jawaban
+  // untuk agenda jawaban, dst.) sejak awal babak agenda itu - lihat
+  // unggahUntukAgenda. Tanpa agenda: aturan lama (unggahan sesudah sidang lalu).
+  const hitung = () =>
+    bersih(agenda) ? unggahUntukAgenda(dokumen, { agenda, sidangLalu, awalBabak }) : unggahSesudah(dokumen, sidangLalu);
   const belum = dokumen.filter((d) => menunggu(d)).length;
-  if (belum > 0) return { keadaan: "belum", belum, unggahBaru: unggahSesudah(dokumen, sidangLalu) };
+  if (belum > 0) return { keadaan: "belum", belum, unggahBaru: hitung() };
   // Tidak ada yang menunggu menurut data tersimpan. Itu "sudah" bila datanya
   // segar (ditarik hari ini) atau memang ada dokumen yang sudah dibaca dan
   // tidak satu pun menunggu; tanpa data sama sekali dan penarik tidak
@@ -104,7 +123,7 @@ function keadaanPerkara({
     // (jawaban, replik, duplik, kesimpulan) tetapi sejak sidang sebelumnya
     // belum ada satu pun dokumen persidangan yang diunggah - "sudah
     // diverifikasi" di sana menyesatkan, sebab yang diverifikasi dokumen lama.
-    const unggahBaru = unggahSesudah(dokumen, sidangLalu);
+    const unggahBaru = hitung();
     if (perluUnggah && sidangLalu && unggahBaru === 0) return { keadaan: "belum-upload", belum: 0, unggahBaru };
     return { keadaan: "sudah", belum: 0, unggahBaru };
   }
@@ -133,6 +152,107 @@ function unggahSesudah(dokumen, sidangLalu) {
     if (bersih(d.statusVerifikasi) === "tidak_perlu") return false;
     const tgl = waktuTeks(d.diunggahPada).slice(0, 10);
     return Boolean(tgl) && tgl > batas;
+  }).length;
+}
+
+/**
+ * ============================================================================
+ * JENIS DOKUMEN <-> AGENDA (13 Okt 2026)
+ * ============================================================================
+ *
+ * e-Court menamai jenis tiap dokumen persidangan sendiri (kolom jenis_dokumen:
+ * Jawaban, Replik, Duplik, Rereplik, Kesimpulan, Perbaikan Gugatan, ...;
+ * terukur di server 13 Okt: 81 dokumen persidangan, seluruhnya berjenis).
+ * Agenda SIPP menyebut babak jawab-menjawabnya ("Jawaban Tergugat", "Duplik
+ * Konvensi/Replik Rekonvensi", "Kesimpulan Penggugat dan Tergugat").
+ *
+ * Aturan lama menghitung dokumen APA PUN yang diunggah SESUDAH hari sidang
+ * sebelumnya. Dua kelemahannya:
+ *   - sidang yang DITUNDA dengan agenda yang sama: Jawaban yang diunggah
+ *     sebelum sidang yang ditunda itu tidak terhitung lagi, padahal memang
+ *     itulah dokumen agenda ini;
+ *   - dokumen babak lain (Jawaban yang terlambat pada agenda Replik) membuat
+ *     agenda Replik tampak sudah diunggah.
+ *
+ * Sekarang: dokumen berjenis jawab-menjawab dihitung HANYA bila jenisnya
+ * sesuai agenda, sejak awal babak agenda itu (awalBabakAgenda). Dokumen
+ * berjenis lain atau tanpa jenis tetap memakai aturan lama, supaya jenis yang
+ * tidak dikenal tidak memunculkan "belum upload" palsu.
+ */
+const BABAK_AGENDA = [
+  // Label dikumpulkan (agenda gabungan menyebut dua babak), bukan dipilih satu.
+  { label: "kesimpulan", pola: /kesimpulan/i, jenis: ["kesimpulan"] },
+  { label: "rereplik", pola: /re-?\s?replik/i, jenis: ["rereplik", "duplik"] },
+  // "Duplik Rekonvensi" diunggah pihak sebagai jenis "Rereplik" (terukur).
+  { label: "duplik", pola: /duplik/i, jenis: ["duplik", "rereplik"] },
+  { label: "replik", pola: /replik/i, jenis: ["replik", "rereplik"] },
+  { label: "jawaban", pola: /jawab/i, jenis: ["jawaban"] },
+];
+
+/** Jenis dokumen jawab-menjawab menurut e-Court (dinormalkan). */
+const JENIS_JAWAB_MENJAWAB = new Set(["jawaban", "replik", "duplik", "rereplik", "kesimpulan"]);
+
+function normalJenis(jenis) {
+  return bersih(jenis).toLowerCase().replace(/[^a-z]/g, "");
+}
+
+/** Label babak yang disebut agenda, terurut - [] bila bukan jawab-menjawab. */
+function babakAgenda(agenda) {
+  const teks = bersih(agenda);
+  return BABAK_AGENDA.filter((b) => b.pola.test(teks))
+    .map((b) => b.label)
+    .sort();
+}
+
+/** Jenis dokumen e-Court yang memenuhi agenda itu. */
+function jenisUntukAgenda(agenda) {
+  const teks = bersih(agenda);
+  const hasil = new Set();
+  for (const b of BABAK_AGENDA) if (b.pola.test(teks)) b.jenis.forEach((j) => hasil.add(j));
+  return hasil;
+}
+
+/**
+ * Awal babak agenda hari ini: tanggal sidang terakhir SEBELUM hari ini yang
+ * agendanya BUKAN babak yang sama. Sidang yang ditunda dengan agenda yang
+ * sama dilompati - dokumen yang diunggah untuknya tetap milik agenda ini.
+ * "" bila seluruh riwayat sebelumnya babak yang sama (tanpa batas bawah).
+ *
+ * @param {string} agenda agenda hari ini
+ * @param {Array<{tanggalSidang: string, agenda: string}>} riwayat sidang sebelum hari ini
+ */
+function awalBabakAgenda(agenda, riwayat = []) {
+  const kini = babakAgenda(agenda).join(",");
+  const urut = (Array.isArray(riwayat) ? riwayat : [])
+    .map((r) => ({ tanggal: (waktuTeks(r.tanggalSidang) || bersih(r.tanggalSidang)).slice(0, 10), agenda: r.agenda }))
+    .filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.tanggal))
+    .sort((a, b) => (a.tanggal < b.tanggal ? 1 : a.tanggal > b.tanggal ? -1 : 0));
+  if (!kini) return urut[0] ? urut[0].tanggal : "";
+  for (const r of urut) if (babakAgenda(r.agenda).join(",") !== kini) return r.tanggal;
+  return "";
+}
+
+/**
+ * Jumlah dokumen persidangan yang terhitung untuk agenda hari ini:
+ *   - jenis jawab-menjawab yang SESUAI agenda, diunggah sesudah awal babak;
+ *   - jenis jawab-menjawab yang TIDAK sesuai: tidak dihitung;
+ *   - jenis lain / tanpa jenis: diunggah sesudah sidang lalu (aturan lama).
+ * awalBabak tidak diberikan = sama dengan sidang lalu.
+ */
+function unggahUntukAgenda(dokumen, { agenda = "", sidangLalu = "", awalBabak } = {}) {
+  const diterima = jenisUntukAgenda(agenda);
+  const lalu = bersih(sidangLalu).slice(0, 10);
+  const babak = awalBabak === undefined || awalBabak === null ? lalu : bersih(awalBabak).slice(0, 10);
+  return (Array.isArray(dokumen) ? dokumen : []).filter((d) => {
+    if (bersih(d.statusVerifikasi) === "tidak_perlu") return false;
+    const tgl = waktuTeks(d.diunggahPada).slice(0, 10);
+    if (!tgl) return false;
+    const jenis = normalJenis(d.jenisDokumen);
+    if (diterima.size > 0 && JENIS_JAWAB_MENJAWAB.has(jenis)) {
+      if (!diterima.has(jenis)) return false;
+      return !babak || tgl > babak;
+    }
+    return /^\d{4}-\d{2}-\d{2}$/.test(lalu) && tgl > lalu;
   }).length;
 }
 
@@ -252,7 +372,7 @@ function buatLayanan(deps = {}) {
         GROUP BY p.perkara_id, p.nomor_perkara`,
       [tanggal, tanggal]
     );
-    return (Array.isArray(baris) ? baris : [])
+    const daftar = (Array.isArray(baris) ? baris : [])
       .map((b) => ({
         perkaraId: bersih(b.perkaraId),
         nomorPerkara: cleanText(b.nomorPerkara),
@@ -260,6 +380,34 @@ function buatLayanan(deps = {}) {
         sidangLalu: waktuTeks(b.sidangLalu).slice(0, 10) || bersih(b.sidangLalu).slice(0, 10),
       }))
       .filter((b) => b.nomorPerkara && POLA_GUGATAN.test(b.nomorPerkara));
+
+    // 13 Okt 2026: riwayat agenda sidang sebelumnya - awal babak agenda hari
+    // ini (sidang yang ditunda dengan agenda yang sama dilompati). Gagal
+    // dibaca = awal babak sama dengan sidang lalu (aturan lama).
+    const perluRiwayat = daftar.filter((d) => agendaPerluUnggah(d.agenda) && d.perkaraId);
+    const riwayat = new Map();
+    if (perluRiwayat.length > 0) {
+      try {
+        const ids = [...new Set(perluRiwayat.map((d) => d.perkaraId))];
+        const baris2 = await kueriSipp(
+          `SELECT perkara_id AS perkaraId, tanggal_sidang AS tanggalSidang, agenda
+             FROM perkara_jadwal_sidang
+            WHERE perkara_id IN (${ids.map(() => "?").join(", ")}) AND tanggal_sidang < ?`,
+          [...ids, tanggal]
+        );
+        for (const r of Array.isArray(baris2) ? baris2 : []) {
+          const k = bersih(r.perkaraId);
+          if (!riwayat.has(k)) riwayat.set(k, []);
+          riwayat.get(k).push({ tanggalSidang: r.tanggalSidang, agenda: cleanText(r.agenda) });
+        }
+      } catch {
+        riwayat.clear();
+      }
+    }
+    return daftar.map((d) => ({
+      ...d,
+      awalBabak: riwayat.has(d.perkaraId) ? awalBabakAgenda(d.agenda, riwayat.get(d.perkaraId)) : d.sidangLalu,
+    }));
   }
 
   /** Dokumen tersimpan + siapa yang memverifikasi lewat ALETA, per nomor dinormalkan. */
@@ -270,7 +418,7 @@ function buatLayanan(deps = {}) {
     if (nomor.length === 0) return { dokumen, oleh };
     const isian = nomor.map(() => "?").join(", ");
     const baris = await kueriBot(
-      `SELECT nomor_perkara AS nomorPerkara, judul_dokumen AS judulDokumen, diunggah_pada AS diunggahPada,
+      `SELECT nomor_perkara AS nomorPerkara, judul_dokumen AS judulDokumen, jenis_dokumen AS jenisDokumen, diunggah_pada AS diunggahPada,
               status_verifikasi AS statusVerifikasi, terakhir_terlihat AS terakhirTerlihat
          FROM aleta_bot_ecourt_documents
         WHERE nomor_perkara IN (${isian})`,
@@ -324,6 +472,8 @@ function buatLayanan(deps = {}) {
         menunggu,
         perluUnggah: agendaPerluUnggah(p.agenda),
         sidangLalu: p.sidangLalu,
+        agenda: p.agenda,
+        awalBabak: p.awalBabak,
       });
       perkara[p.nomorPerkara] = {
         perkaraId: p.perkaraId,
@@ -338,6 +488,9 @@ function buatLayanan(deps = {}) {
         diverifikasiOleh: oleh.get(k) || [],
         agenda: p.agenda,
         sidangLalu: p.sidangLalu,
+        // Sidang yang ditunda dengan agenda yang sama dilompati (13 Okt 2026).
+        awalBabak: p.awalBabak,
+        jenisDituntut: [...jenisUntukAgenda(p.agenda)],
         unggahSejakSidangLalu: k1.unggahBaru,
       };
     }
@@ -390,6 +543,8 @@ function buatLayanan(deps = {}) {
           menunggu,
           perluUnggah: agendaPerluUnggah(p.agenda),
           sidangLalu: p.sidangLalu,
+          agenda: p.agenda,
+          awalBabak: p.awalBabak,
         }).keadaan !== "sudah"
       );
     });
@@ -782,6 +937,8 @@ function layanan() {
 
 let pewaktu = null;
 let sedangPutaran = false;
+/** Butir 12 (13 Okt 2026): kapan pewaktu dinyalakan dan selangnya - detak berikutnya. */
+const pewaktuInfo = { mulaiMs: 0, ms: 0 };
 
 /** Menyalakan penarik berkala. */
 function mulai() {
@@ -800,6 +957,8 @@ function mulai() {
       });
   };
   pewaktu = setInterval(detak, ms);
+  pewaktuInfo.mulaiMs = Date.now();
+  pewaktuInfo.ms = ms;
   if (pewaktu.unref) pewaktu.unref();
   return true;
 }
@@ -817,12 +976,24 @@ module.exports = {
   keadaanPerkara,
   agendaPerluUnggah,
   unggahSesudah,
+  unggahUntukAgenda,
+  awalBabakAgenda,
+  jenisUntukAgenda,
   tanggalLokal,
   mulai,
   hentikan,
   keadaanHari: (tanggal) => layanan().keadaanHari(tanggal),
   putaran: () => layanan().putaran(),
-  status: () => layanan().status(),
+  status: () => {
+    const s = layanan().status();
+    const k = pewaktu && pewaktuInfo.ms ? Math.floor((Date.now() - pewaktuInfo.mulaiMs) / pewaktuInfo.ms) + 1 : 0;
+    return {
+      ...s,
+      menyala: Boolean(pewaktu),
+      jedaMs: pewaktuInfo.ms,
+      detakBerikutnya: k ? new Date(pewaktuInfo.mulaiMs + k * pewaktuInfo.ms).toISOString() : null,
+    };
+  },
   tarikSekarang: (isi) => layanan().tarikSekarang(isi),
   statusTarikan: (nomorPerkara) => layanan().statusTarikan(nomorPerkara),
 };

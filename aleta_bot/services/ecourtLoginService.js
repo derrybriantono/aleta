@@ -430,6 +430,10 @@ async function kirimLogin({ email, sandi, captcha } = {}) {
       // itulah pemeriksaan lambat yang justru sedang dihindari.
       const namaPengguna = await page.evaluate(bacaNamaPengguna).catch(() => "");
       if (namaPengguna) catatNamaPengguna(sesiAktif.slotDipakai || "", namaPengguna);
+      // Butir 13: salinan cookie sesi untuk pemeriksaan ringan (tersandi).
+      await require("./ecourtSesiRinganService")
+        .simpanDariHalaman(sesiAktif.slotDipakai || "", page)
+        .catch(() => false);
 
       // Peramban ditutup agar cookie tersimpan ke folder profil. Sesi yang
       // tersimpan itulah yang dipakai jembatan pada penjalanan berikutnya.
@@ -556,6 +560,9 @@ async function periksaSesi({ cepat = true, slot = "" } = {}) {
     // lain. Penegasan itu hanya dilakukan saat petugas benar-benar meminta
     // login dari portal.
     const diGerbang = scraper.isGateUrl(alamatSesi);
+    // Butir 13 (13 Okt 2026): cookie sesi yang TERBUKTI masuk disalin
+    // (tersandi) untuk pemeriksaan ringan tanpa Chrome berikutnya.
+    if (berlaku) await require("./ecourtSesiRinganService").simpanDariHalaman(slot, page).catch(() => false);
     await browser.close().catch(() => {});
 
     // Nama yang terbaca disimpan supaya layar pengaturan tetap dapat
@@ -586,6 +593,8 @@ async function periksaSesi({ cepat = true, slot = "" } = {}) {
 function keluar({ slot = "" } = {}) {
   bersihkanSesiAktif();
   const hasil = sesiEcourt.clearSession(slot);
+  // Salinan cookie pemeriksaan ringan ikut dibuang bersama sesinya.
+  require("./ecourtSesiRinganService").hapusKuki(slot);
 
   void logService.logSecurityEvent({
     eventType: "ecourt_sesi_dihapus",

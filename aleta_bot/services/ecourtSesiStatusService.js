@@ -62,6 +62,43 @@ const simpanan = new Map();
 /** slot -> Promise yang sedang berjalan. */
 const sedangDiperiksa = new Map();
 
+/**
+ * Butir 13 (13 Okt 2026): pemeriksaan RINGAN lebih dulu - satu permintaan
+ * HTTPS bercookie (ecourtSesiRinganService), tanpa Chrome. Hanya jawaban
+ * pasti-berlaku yang dipakai; selebihnya kembali ke Chrome seperti dulu.
+ * Dapat ditukar oleh uji.
+ */
+const alat = {
+  ringan: (slot) => require("./ecourtSesiRinganService").periksaRingan(slot),
+  periksaSesi: (opsi) => ecourtLoginService.periksaSesi(opsi),
+};
+
+function aturAlat(baru = {}) {
+  Object.assign(alat, baru);
+}
+
+/** Hasil berlaku dari pemeriksaan ringan, dalam bentuk yang sama dengan Chrome. */
+function hasilRingan(kunci, ringan) {
+  return {
+    slot: kunci,
+    ...susunKeadaan({ tersimpan: true, berlaku: true }, { diperiksa: true }),
+    namaPengguna: ecourtLoginService.namaTersimpan ? ecourtLoginService.namaTersimpan(kunci) : "",
+    alasan: "",
+    diperiksaPada: new Date().toISOString(),
+    cara: "ringan",
+    lamaMs: ringan.ms,
+  };
+}
+
+async function cobaRingan(kunci) {
+  try {
+    const r = await alat.ringan(kunci);
+    return r && r.pasti && r.berlaku === true ? r : null;
+  } catch {
+    return null;
+  }
+}
+
 function kunciSlot(slot) {
   return sesiEcourt.bersihkanSlot(slot) || "utama";
 }
@@ -137,7 +174,18 @@ async function keadaanSlot(slot, { paksa = false, dalam = false } = {}) {
   // Tanpa izin memeriksa sungguhan, yang dikembalikan hanya apa yang dapat
   // diketahui tanpa membuka peramban.
   if (!paksa && !dalam) {
-    const cepat = await ecourtLoginService.periksaSesi({ cepat: true, slot: kunci });
+    const cepat = await alat.periksaSesi({ cepat: true, slot: kunci });
+    // Butir 13: folder sesi ada -> pemeriksaan ringan (satu permintaan HTTPS)
+    // menjawab dengan pasti tanpa Chrome bila sesinya sah. Ragu = tetap
+    // "belum diperiksa", seperti dulu.
+    if (cepat.tersimpan) {
+      const ringan = await cobaRingan(kunci);
+      if (ringan) {
+        const hasil = hasilRingan(kunci, ringan);
+        simpanan.set(kunci, { hasil, padaMs: Date.now() });
+        return { ...hasil, dariSimpanan: false, umurDetik: 0 };
+      }
+    }
     const keadaan = susunKeadaan(cepat, { diperiksa: false });
     return {
       slot: kunci,
@@ -156,7 +204,15 @@ async function keadaanSlot(slot, { paksa = false, dalam = false } = {}) {
 
   const kerja = (async () => {
     try {
-      const mentah = await ecourtLoginService.periksaSesi({ cepat: false, slot: kunci });
+      // Ringan lebih dulu; Chrome hanya bila hasilnya ragu.
+      const ringan = sesiEcourt.sessionExists(kunci) ? await cobaRingan(kunci) : null;
+      if (ringan) {
+        const hasil = hasilRingan(kunci, ringan);
+        simpanan.set(kunci, { hasil, padaMs: Date.now() });
+        return { ...hasil, dariSimpanan: false, umurDetik: 0 };
+      }
+      const mulaiMs = Date.now();
+      const mentah = await alat.periksaSesi({ cepat: false, slot: kunci });
       const keadaan = susunKeadaan(mentah, { diperiksa: true });
       const hasil = {
         slot: kunci,
@@ -164,6 +220,8 @@ async function keadaanSlot(slot, { paksa = false, dalam = false } = {}) {
         namaPengguna: mentah.namaPengguna || "",
         alasan: mentah.alasan || "",
         diperiksaPada: mentah.diperiksaPada || new Date().toISOString(),
+        cara: "peramban",
+        lamaMs: Date.now() - mulaiMs,
       };
       simpanan.set(kunci, { hasil, padaMs: Date.now() });
       return { ...hasil, dariSimpanan: false, umurDetik: 0 };
@@ -215,8 +273,16 @@ function lupakan(slot = "") {
   simpanan.delete(kunciSlot(slot));
 }
 
+/** Hasil pemeriksaan terakhir satu slot (tanpa memeriksa) - untuk status penarikan. */
+function terakhirDiketahui(slot = "") {
+  const t = simpanan.get(kunciSlot(slot));
+  return t ? { ...t.hasil, umurDetik: Math.round((Date.now() - t.padaMs) / 1000) } : null;
+}
+
 module.exports = {
   SEGAR_MS,
+  aturAlat,
+  terakhirDiketahui,
   keadaanSemua,
   keadaanSlot,
   lupakan,
