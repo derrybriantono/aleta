@@ -292,6 +292,12 @@ function basisDataTiruan(jurnalAwal: Jurnal[], pilihan: { gagalAudit?: boolean; 
   const kueri = async (sql: string, params: unknown[] = []) => {
     rekaman.push({ sql, params });
     const s = sql.replace(/\s+/g, " ").trim();
+    // 13 Okt 2026: jam yang DITULIS = jam SIPP (WIB, UTC_TIMESTAMP + 7 jam);
+    // NOW() (WITA) hanya untuk pagar tanggal.
+    if (/UTC_TIMESTAMP/.test(s)) {
+      urutan.push("SIPP");
+      return [{ saat: "2026-10-01 13:52:53" }];
+    }
     if (/DATE_FORMAT\(NOW\(\)/.test(s)) {
       urutan.push("NOW");
       return [{ saat: "2026-10-01 14:52:53" }];
@@ -427,13 +433,13 @@ describe("penulis jurnal SIPP (bot)", () => {
       [101201, "tersimpan"],
     ]);
     // Jam diambil SESUDAH jeda, tiap baris.
-    expect(t.urutan.join(" ")).toMatch(/^NOW .*JEDA:klik:sungguh NOW INSERT JEDA:simpan:sungguh NOW INSERT/);
+    expect(t.urutan.join(" ")).toMatch(/^NOW .*JEDA:klik:sungguh SIPP INSERT JEDA:simpan:sungguh SIPP INSERT/);
     const audit = t.tulisan().filter((x) => /sys_audittrail/.test(x.sql));
-    expect(audit.map((x) => x.params[0])).toEqual(["2026-10-01 14:52:53", "2026-10-01 14:52:53"]);
+    expect(audit.map((x) => x.params[0])).toEqual(["2026-10-01 13:52:53", "2026-10-01 13:52:53"]);
     expect(String(audit[1].params[6])).toMatch(/\[ID=101201\]$/);
     expect(String(audit[1].params[7])).toContain("<tr><td>id</td><td>101201</td></tr>");
     const biaya = t.tulisan().filter((x) => /INSERT INTO perkara_biaya /.test(x.sql));
-    expect(biaya.map((x) => x.params[17])).toEqual(["2026-10-01 14:52:53", "2026-10-01 14:52:53"]);
+    expect(biaya.map((x) => x.params[17])).toEqual(["2026-10-01 13:52:53", "2026-10-01 13:52:53"]);
     expect(t.tulisan().find((x) => /^REPLACE/.test(x.sql))?.params).toEqual([101201, 22]);
   });
 

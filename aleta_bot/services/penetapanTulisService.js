@@ -459,6 +459,30 @@ function waktuPadaZona(ms, zona) {
   return `${bagian.year}-${bagian.month}-${bagian.day} ${bagian.hour}:${bagian.minute}:${bagian.second}`;
 }
 
+/**
+ * Selisih zona SIPP terhadap UTC, dalam menit, saat ini (Asia/Jakarta: +420).
+ * Dihitung dari Intl, bukan dipatok - zona lain yang dipasang lewat env tetap
+ * benar.
+ */
+function selisihMenitZonaSipp(ms = Date.now()) {
+  const teks = waktuPadaZona(ms, zonaSipp());
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(teks);
+  if (!m) return 420;
+  const naif = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+  return Math.round((naif - Math.floor(ms / 1000) * 1000) / 60000);
+}
+
+/**
+ * Ungkapan SQL "jam SIPP sekarang" untuk pernyataan yang mengambil jamnya di
+ * dalam pernyataan itu sendiri (pengganti NOW()). Contoh:
+ * sqlJamSipp("%Y-%m-%d %h:%i:%s") untuk kolom berjam dua belas ala date("h").
+ * Tanpa tabel zona MySQL: UTC_TIMESTAMP() digeser selisih zona SIPP.
+ */
+function sqlJamSipp(format = "%Y-%m-%d %H:%i:%s") {
+  const f = String(format).replace(/[^%A-Za-z0-9 :\-]/g, "");
+  return `DATE_FORMAT(DATE_ADD(UTC_TIMESTAMP(), INTERVAL ${selisihMenitZonaSipp()} MINUTE), '${f}')`;
+}
+
 /** Jam SEKARANG menurut jam SIPP - lihat catatan di atas. */
 async function waktuSipp() {
   const baris = await runQuery("SELECT DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-%d %H:%i:%s') AS utc").catch(() => []);
@@ -1621,9 +1645,10 @@ async function susunRencanaTulis(minta) {
   // Rantai (tulisRantaiUtuh) menyerahkan jam yang sudah disusun untuk seluruh
   // langkahnya sekaligus (saatSipp); langkah tunggal menyusunnya sendiri.
   // Riwayat Perkara dan sys_audittrail satu langkah berbagi jam yang SAMA,
-  // sebagaimana satu tekanan Simpan di SIPP. Data Umum: jam basis data apa
-  // adanya, seperti sebelumnya.
-  let saat = saatServer;
+  // sebagaimana satu tekanan Simpan di SIPP.
+  // Data Umum: jam SIPP sekarang, tanpa disusun (13 Okt 2026 - SIPP menulis
+  // jamnya dalam WIB, NOW() basis data WITA).
+  let saat = penetapan ? saatServer : await waktuSipp();
   if (penetapan) {
     saat = jamSippSah(minta.saatSipp)
       ? String(minta.saatSipp)
@@ -3156,7 +3181,9 @@ module.exports = {
   akunPetugasMasuk,
   // Diekspor untuk diuji satuan.
   jamRangkaianManusia,
+  // Jam SIPP (WIB) - dipakai SELURUH penulis ALETA ke tabel SIPP (13 Okt 2026).
   waktuSipp,
+  sqlJamSipp,
   akunPejabatPasti,
   majelisTetapUntuk,
   kompetensiMenurutPerkara,

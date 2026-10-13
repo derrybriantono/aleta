@@ -82,7 +82,9 @@
 const DAFTAR_TABEL_COURT_CALENDAR = new Set(["perkara_court_calendar"]);
 
 /** date("Y-m-d h:i:s") PHP = jam DUA BELAS - dihitung basis data saat pernyataannya berjalan. */
-const SAAT_SIPP_SQL = "DATE_FORMAT(NOW(), '%Y-%m-%d %h:%i:%s')";
+// Jam SIPP (WIB) - SIPP menulis jamnya dengan PHP Asia/Jakarta, NOW() basis
+// data WITA (13 Okt 2026). Tetap berjam dua belas, seperti date("h") SIPP.
+const SAAT_SIPP_SQL = require("./penetapanTulisService").sqlJamSipp("%Y-%m-%d %h:%i:%s");
 
 /** Batas baris per permintaan - satu perkara jarang lebih dari 12 rencana. */
 const BATAS_BARIS = 30;

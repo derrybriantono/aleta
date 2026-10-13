@@ -272,6 +272,15 @@ function deskripsiAudit(rincian) {
   );
 }
 
+/**
+ * Jam yang DITULIS ke SIPP: jam tiruan uji bila diberikan, selain itu jam SIPP
+ * (WIB) dari basis data - bukan jam container (13 Okt 2026).
+ */
+async function waktuTulisSipp(jam) {
+  if (typeof jam === "function") return waktuMysql(jam());
+  return require("./penetapanTulisService").waktuSipp();
+}
+
 /** Satu baris sys_audittrail untuk satu kolom e-Doc pada perkara_putusan. */
 function barisAudit({ username, jenis = "putusan", perkaraId, rincian, ip, saat }) {
   const borang = BORANG_UNGGAH[jenis] || BORANG_UNGGAH.putusan;
@@ -370,8 +379,9 @@ async function unggahSatu({
   // Konversi yang sudah dimulai pemanggil bersamaan dengan berkas lainnya
   // (mulaiUbahKePdf). Tanpa itu konversinya dimulai di sini.
   ubahan = null,
-  // Jam dinding. Dapat ditiru uji; di produksi selalu waktu sungguhan.
-  jam = () => new Date(),
+  // Jam dinding. Dapat ditiru uji; di produksi (null) jam SIPP (WIB) dari
+  // basis data - SIPP menulis jamnya dengan PHP Asia/Jakarta (13 Okt 2026).
+  jam = null,
 }) {
   const kolom = KOLOM_DOK[jenis];
   if (!kolom) return { jenis, ok: false, alasan: "jenis_tidak_didukung" };
@@ -478,8 +488,7 @@ async function unggahSatu({
   // keliru. Kini jam dibaca tepat sebelum tiap tulisan. Tidak digeser dan
   // tidak dikarang: bila dua tulisan terjadi pada detik yang sama, itulah yang
   // tercatat.
-  const saat = jam();
-  const waktu = waktuMysql(saat);
+  const waktu = await waktuTulisSipp(jam);
   const tabelDisentuh = [];
 
   // 1. Kolom dokumen pada perkara_putusan.
@@ -605,7 +614,8 @@ async function unggahPutusan({
   // jejak ALETA, TIDAK PERNAH ditulis ke SIPP.
   operator = "",
   // Jam dinding, dibaca PER BERKAS saat berkas itu ditulis (lihat unggahSatu).
-  jam = () => new Date(),
+  // null = jam SIPP (WIB) dari basis data.
+  jam = null,
   // Pencatat jejak ALETA - ditiru uji.
   catatJejak = catatJejakBawaan,
 }) {
@@ -705,7 +715,7 @@ async function unggahPutusan({
     ).catch(() => []);
     if (!(Array.isArray(menunggu) && menunggu.length > 0)) {
       // tgl_masuk = waktu baris ini ditulis, seperti insert_antrian_upload.
-      const tglMasuk = waktuMysql(jam());
+      const tglMasuk = await waktuTulisSipp(jam);
       await runQuery(
         `INSERT INTO dirput_antrian (perkara_id, status, keterangan, tgl_masuk) VALUES (?, 0, NULL, ?)`,
         [id, tglMasuk]

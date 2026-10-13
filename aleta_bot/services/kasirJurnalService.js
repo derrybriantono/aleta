@@ -1441,6 +1441,18 @@ function buatLayanan(deps = {}) {
     return saat;
   }
 
+  /**
+   * Jam yang DITULIS ke perkara_biaya/sys_audittrail: jam SIPP (WIB). SIPP
+   * menulis jamnya dengan PHP Asia/Jakarta, NOW() basis data WITA (13 Okt
+   * 2026). Pagar tanggal tetap memakai saatBasisData (tanggal setempat).
+   */
+  async function saatSipp() {
+    const b = await satu(`SELECT ${require("./penetapanTulisService").sqlJamSipp()} AS saat`, []);
+    const saat = bersih(b && b.saat);
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(saat)) throw new Error("jam_basis_data_tidak_terbaca");
+    return saat;
+  }
+
   /** Mencari perkara menurut nomornya (atau bagian depannya). Hanya SELECT. */
   async function cariPerkara(teks) {
     const t = bersih(teks).slice(0, 60);
@@ -2118,7 +2130,7 @@ function buatLayanan(deps = {}) {
       let saat = "";
       let langkahSelesai = 0;
       try {
-        saat = await saatBasisData();
+        saat = await saatSipp();
         // Sekelompok tulisan satu baris jurnal = satu transaksi (lihat transaksi()).
         await transaksi(async (lewat) => {
           const satuLewat = async (sql, params) => {

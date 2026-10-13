@@ -289,7 +289,9 @@ describe("pelaku dan alamat: petugas yang memicu, tidak pernah dikarang", () => 
 });
 
 describe("waktu audit = waktu tulisan itu sungguh terjadi", () => {
-  it("tanpa jam tiruan, cap waktunya jam dinding saat itu - tidak digeser", async () => {
+  // 13 Okt 2026: jam yang ditulis = jam SIPP (WIB, Asia/Jakarta) - SIPP
+  // menulis jamnya dengan PHP Asia/Jakarta. Tidak digeser selain zonanya.
+  it("tanpa jam tiruan, cap waktunya jam dinding saat itu dalam jam SIPP (WIB) - tidak digeser", async () => {
     const { layanan, kueri } = muatLayanan();
     const sebelum = Date.now();
     await layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN, pdfAnonimisasi: RTF_ANONIM });
@@ -298,7 +300,8 @@ describe("waktu audit = waktu tulisan itu sungguh terjadi", () => {
       const [tgl, pukul] = baris.datetime.split(" ");
       const [y, m, d] = tgl.split("-").map(Number);
       const [hh, mm, ss] = pukul.split(":").map(Number);
-      const t = new Date(y, m - 1, d, hh, mm, ss).getTime();
+      // WIB = UTC+7.
+      const t = Date.UTC(y, m - 1, d, hh - 7, mm, ss);
       expect(t).toBeGreaterThanOrEqual(Math.floor(sebelum / 1000) * 1000);
       expect(t).toBeLessThanOrEqual(sesudah);
     }
@@ -314,7 +317,12 @@ describe("waktu audit = waktu tulisan itu sungguh terjadi", () => {
     await layanan.unggahPutusan({ ...MASUKAN, pdfAnonimisasi: RTF_ANONIM });
 
     const kolom = auditDari(kueri).filter((a) => a.tablename === "perkara_putusan");
-    expect(kolom.map((a) => a.datetime)).toEqual(["2026-09-09 14:59:48", "2026-09-09 15:00:13"]);
+    const wib = (ms: number) =>
+      new Date(ms + 7 * 3600 * 1000).toISOString().slice(0, 19).replace("T", " ");
+    expect(kolom.map((a) => a.datetime)).toEqual([
+      wib(new Date(2026, 8, 9, 14, 59, 48).getTime()),
+      wib(new Date(2026, 8, 9, 15, 0, 13).getTime()),
+    ]);
     // Tanggal dirput_dokumen pun dari saat berkas masing-masing.
     const dirput = kueri.filter((q) => q.sql.includes("INSERT INTO dirput_dokumen"));
     expect(dirput.map((q) => q.params[4])).toEqual(["2026-09-09", "2026-09-09"]);

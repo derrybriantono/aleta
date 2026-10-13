@@ -144,6 +144,8 @@ describe("2. kasir otomatis massal satu hari", () => {
   it("daftarHarian (bot): calon dari sidang/putusan/ikrar/PHS/surat ke Pos; usulan per keadaan; yang lengkap disebut; satu perkara gagal tidak menjatuhkan yang lain", async () => {
     const kueri = async (sql: string, params: unknown[]) => {
       if (/DATE_FORMAT\(NOW\(\)/.test(sql)) return [{ saat: "2026-10-09 10:00:00" }];
+      // 13 Okt 2026: jam yang DITULIS ke SIPP = jam SIPP (WIB).
+      if (/UTC_TIMESTAMP/.test(sql)) return [{ saat: "2026-10-09 09:00:00" }];
       if (/GROUP_CONCAT\(DISTINCT x\.sebab/.test(sql)) {
         // Surat ke Pos dibaca hari kerja SEBELUMNYA (Kamis 8 Okt untuk Jumat 9 Okt).
         expect(params.slice(0, 5)).toEqual(["2026-10-09", "2026-10-09", "2026-10-09", "2026-10-09", "2026-10-08"]);

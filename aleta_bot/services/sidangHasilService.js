@@ -852,7 +852,12 @@ async function susunRencanaTunda(minta = {}) {
   const jenisPengadilan = Number(minta.jenisPengadilan) || 0;
   const { prosesId, perbaruiRiwayat } = prosesUntukTunda(keadaan, jenisPengadilan);
 
-  const saat = await penetapan.waktuBasisData();
+  // Jam SIPP (WIB) - SIPP menulis jamnya dengan PHP Asia/Jakarta, NOW() basis
+  // data WITA (13 Okt 2026). Lihat waktuSipp di penetapanTulisService.
+  const saat = await penetapan.waktuSipp();
+  // sampai_jam = jam sidang SETEMPAT (WITA), sama dengan NOW() aplikasi antrian
+  // dan jam_sidang yang diketik petugas - bukan jam cap SIPP.
+  const saatSetempat = await penetapan.waktuBasisData();
   // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
   const ip = bersih(minta.ip) || "";
   const langkah = [];
@@ -869,7 +874,7 @@ async function susunRencanaTunda(minta = {}) {
     jam_sidang: jamMulai,
     // Jam selesainya sidang. Kosong bukan pilihan: "" masuk ke kolom TIME
     // sebagai 00:00:00 tanpa satu pun galat - lihat jamDariCap.
-    sampai_jam: bersih(minta.sampaiJamSekarang) || bersih(keadaan.sampaiJam) || jamDariCap(saat),
+    sampai_jam: bersih(minta.sampaiJamSekarang) || bersih(keadaan.sampaiJam) || jamDariCap(saatSetempat),
     agenda: bersih(minta.agendaSekarang) || bersih(keadaan.agenda),
     // ------------------------------------------------------------------
     // KEHADIRAN PIHAK - ANGKANYA MILIK SIPP, DAN BUKAN 0..3
@@ -1236,7 +1241,12 @@ async function susunRencanaPutus(minta = {}) {
   const verstek = bersih(minta.verstek).toUpperCase() === "Y" ? "Y" : "T";
   // Pilihan blangko, lalu kehadiran yang tercatat di antrian sidang.
   const dihadiri = Number(minta.dihadiriOleh) || Number((antrian && antrian.dihadiriOleh) || 0);
-  const saat = await penetapan.waktuBasisData();
+  // Jam SIPP (WIB) - SIPP menulis jamnya dengan PHP Asia/Jakarta, NOW() basis
+  // data WITA (13 Okt 2026). Lihat waktuSipp di penetapanTulisService.
+  const saat = await penetapan.waktuSipp();
+  // sampai_jam = jam sidang SETEMPAT (WITA), sama dengan NOW() aplikasi antrian
+  // dan jam_sidang yang diketik petugas - bukan jam cap SIPP.
+  const saatSetempat = await penetapan.waktuBasisData();
   // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
   const ip = bersih(minta.ip) || "";
   const andaian = [];
@@ -1256,7 +1266,7 @@ async function susunRencanaPutus(minta = {}) {
   const nilaiJadwal = {
     // Jam saja - kolomnya TIME. Cap waktu utuh "2026-09-18 05:15:21" dibaca
     // MySQL sebagai bentuk 'D HH:MM:SS' dan hasilnya bukan jam yang dimaksud.
-    sampai_jam: jamDariCap(saat),
+    sampai_jam: jamDariCap(saatSetempat),
     alasan_ditunda: `putus ${namaStatus}${verstek === "Y" ? " (verstek)" : ""}`,
     // Jam masuk ruang di antrian sidang, seperti aplikasi antrian.
     jam_sidang: (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
