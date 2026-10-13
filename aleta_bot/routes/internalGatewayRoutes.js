@@ -2688,6 +2688,22 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         }
       }
       /* === AKHIR KDL2 === */
+      /* === CERAI 13 Okt (agen V, butir 16) === */
+      // Hanya cerai gugat/talak (jenis dari SIPP): 5105 tempat menikah, 0007 anak, 1267 komunikasi dari posita,
+      // 5127 = salinan 5227 - lihat services/deteksi/cerai.js. HANYA modul cerai (bukan semua DAFTAR deteksi/index.js:
+      // modul jenis lain disambung agen W/X/Y di bagian posita-lain). Hanya menambah kartu yang belum ada.
+      if (jawaban.saksi && Array.isArray(jawaban.saksi.usulan) && nomorPerkara) {
+        try {
+          const konteksCr = await abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null);
+          if (konteksCr && [346, 347].includes(konteksCr.jenisPerkaraId)) {
+            const positaCr = String(req.body?.posita || "").replace(/<[^>]*>/g, " ").trim().length >= 50 ? String(req.body?.posita || "") : konteksCr.posita;
+            jawaban.saksi.usulan = require("../services/deteksi/cerai").tambahUsulanCerai(jawaban.saksi.usulan, positaCr);
+          }
+        } catch (galatCr) {
+          jawaban.saksi.ceraiGalat = String((galatCr && galatCr.message) || galatCr).slice(0, 200);
+        }
+      }
+      /* === AKHIR CERAI 13 Okt === */
     }
 
     // Entri pengaturan yang ditolak - oleh penyaring di atas maupun oleh
