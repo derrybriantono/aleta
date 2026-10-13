@@ -225,14 +225,14 @@ export const CERMIN_EKSTENSI = {
     /* === T 13 Okt === cermin blok kumulasi panel-alat.js (blangko putusan perkara kumulasi; paket ABT abt-putusan-bas-lengkap) */
     {
       kunci: "cerai gugat+itsbat-nikah|dikabulkan|verstek",
-      nilai: "[01aa] [Kabul Verstek] IN + CG - F",
-      data: { jenisAsli: "Cerai Gugat Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat"], catatan: "varian: [01aa] [Kabul Verstek] IN + CG - B & F" },
+      nilai: "[01aa] [Kabul Verstek] Putusan CG Kumulasi Itsbat Nikah - Format Lengkap",
+      data: { jenisAsli: "Cerai Gugat Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat"], catatan: "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503 (pengganti [01aa] IN + CG - F / B & F)" },
       urutan: 25,
     },
     {
       kunci: "cerai talak+itsbat-nikah|dikabulkan|verstek",
-      nilai: "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - F",
-      data: { jenisAsli: "Cerai Talak Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Talak Kumulasi Itsbat Nikah", blangkoLain: ["Putusan CT Kumulasi Itsbat"], catatan: "paket ABT abt-putusan-bas-lengkap" },
+      nilai: "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - Format Lengkap",
+      data: { jenisAsli: "Cerai Talak Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat"], catatan: "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503" },
       urutan: 26,
     },
     {

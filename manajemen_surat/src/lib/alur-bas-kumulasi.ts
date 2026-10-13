@@ -12,8 +12,10 @@
  *   946  "BAS Itsbat Nikah Gugur dan Cabut" - itsbat gugur 269 perkara & dicabut 113+ (SIPP PA Donggala) tanpa BAS Derry.
  *
  * Berkas ini TIDAK mengubah peta alur hasil bangkitan (alur-bas.ts / ALUR_BAS); ia membungkus tentukanAlurBas:
- * perkara cerai gugat ber-kumulasi hak asuh yang jatuh ke langkah "putus verstek" (alur 02/03/06) diarahkan ke folder 945,
- * langkah aslinya tetap menjadi alternatif. Kumulasi itsbat tidak mengubah langkah - BAS putus verstek alur 02/03/06 sudah
+ * perkara cerai gugat ber-kumulasi hak asuh yang jatuh ke langkah "putus verstek" (alur 02/03) diarahkan ke folder 945,
+ * langkah aslinya tetap menjadi alternatif. Alur 06 (Tergugat pernah hadir lalu tidak hadir) TIDAK diarahkan: putusannya
+ * kontradiktoir (paket agen S 13 Okt: BAS ALUR 06 [3] "Saksi dan Putusan"), sedangkan BAS 945 berbunyi verstek.
+ * Kumulasi itsbat tidak mengubah langkah - BAS putus verstek alur 02/03 sudah
  * memuat #7184# - tetapi bila itsbatnya hanya terbaca dari petitum, sebabnya memperingatkan agar kumulasi dicatat di SIPP
  * (tanpa itu amar "Menetapkan sah perkawinan" tidak tercetak di BAS).
  */
@@ -110,11 +112,11 @@ function langkahK(alurId: string, kode: string): { alur: AlurBas; langkah: Langk
   return { alur, langkah: alur.langkah.find((l) => l.kode === kode)! };
 }
 
-/** Langkah "putus verstek dengan saksi" pada alur cerai verstek (02 [2..2c], 03 [3..3c], 06 [3..3c]). */
+/** Langkah "putus verstek dengan saksi" pada alur cerai verstek (02 [2..2c], 03 [3..3c]). */
 function langkahPutusVerstek(h: HasilAlurBas): boolean {
   if (!h.alur || !h.langkah) return false;
   if (h.alur.id === "alur-02") return /^2[a-c]?$/.test(h.langkah.kode);
-  if (h.alur.id === "alur-03" || h.alur.id === "alur-06") return /^3[a-c]?$/.test(h.langkah.kode);
+  if (h.alur.id === "alur-03") return /^3[a-c]?$/.test(h.langkah.kode); // alur 06 = kontradiktoir, tidak ikut
   return false;
 }
 

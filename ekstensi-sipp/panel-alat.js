@@ -8184,8 +8184,10 @@ Object.assign(ALAT_PETA_BAWAAN, alatPetaStatusCerai("Cerai Gugat", "CG"), alatPe
  * Kumulasi = keterangan bot (kumulasiPerkaraService: SIPP perkara_kumulasi, dan petitum perkara cerai bila SIPP kosong -
  * keputusan pengguna 12 Okt: keduanya digabung). Diukur 13 Okt atas sipp_donggala (5.655 perkara cerai, 256 berkumulasi):
  * CG + itsbat kabul verstek 87, CG + hak asuh kabul verstek 37 (+ nafkah anak 7), CT + itsbat kabul verstek 13.
- * Folder derry_briantono: "1c Perceraian Kumulasi Itsbat Nikah" (sudah ada, CG), dan dari paket ABT abt-putusan-bas-lengkap
- * (Agen T): "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak" & "1e Putusan Cerai Talak Kumulasi Itsbat Nikah".
+ * Blangko dari paket ABT abt-putusan-bas-lengkap (Agen T): menu 903 "Putusan Cerai Kumulasi Itsbat Nikah" berisi blangko itsbat
+ * kumulasi CG & CT BARU (pengganti blangko lama "[01aa] IN + CG - F / B & F" yang salah sebutan istri/suami untuk cerai talak,
+ * status, dan pertimbangan - keputusan pengguna 13 Okt: diperbaiki; blangko lama disingkirkan paket), dan folder
+ * "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak".
  * Hanya status yang punya blangkonya; status lain (cabut/gugur/NO/tolak) tetap jatuh ke baris status cerai biasa.
  * Kode gabungan dicoba lebih dulu (mis. hak-asuh-anak+nafkah-anak), lalu tiap kode sendiri-sendiri.
  */
@@ -8218,18 +8220,18 @@ Object.assign(ALAT_PETA_BAWAAN, {
   "cerai gugat+itsbat-nikah|dikabulkan|verstek": alatBarisKumulasi(
     "Cerai Gugat Kumulasi Itsbat Nikah",
     "Dikabulkan",
-    "[01aa] [Kabul Verstek] IN + CG - F",
+    "[01aa] [Kabul Verstek] Putusan CG Kumulasi Itsbat Nikah - Format Lengkap",
     "Putusan Cerai Kumulasi Itsbat Nikah",
     ["Putusan Cerai Kumulasi Itsbat"],
-    "varian: [01aa] [Kabul Verstek] IN + CG - B & F"
+    "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503 (pengganti [01aa] IN + CG - F / B & F)"
   ),
   "cerai talak+itsbat-nikah|dikabulkan|verstek": alatBarisKumulasi(
     "Cerai Talak Kumulasi Itsbat Nikah",
     "Dikabulkan",
-    "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - F",
-    "Putusan Cerai Talak Kumulasi Itsbat Nikah",
-    ["Putusan CT Kumulasi Itsbat"],
-    "paket ABT abt-putusan-bas-lengkap"
+    "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - Format Lengkap",
+    "Putusan Cerai Kumulasi Itsbat Nikah",
+    ["Putusan Cerai Kumulasi Itsbat"],
+    "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503"
   ),
   "cerai gugat+hak-asuh-anak|dikabulkan|verstek": alatBarisKumulasi(
     "Cerai Gugat Kumulasi Hak Asuh Anak",
