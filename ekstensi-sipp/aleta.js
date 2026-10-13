@@ -989,6 +989,11 @@ function t4AturPengecil(panel) {
       sedangDitunjuk = false;
     }
     if (sedangDitunjuk) return;
+    // 13 Okt butir 2: gembok terkunci = kepala & isi tidak pernah disembunyikan.
+    if (panel.getAttribute("data-aleta-gembok") === "kunci") {
+      panel.removeAttribute("data-t4-menutupi");
+      return;
+    }
     const kecil = panel.getAttribute("data-t4-menutupi") === "ya";
     let kotak = null;
     if (kecil && panel.aletaKotakPenuh) kotak = panel.aletaKotakPenuh;
@@ -2831,6 +2836,10 @@ async function susunPanelPortal(siapa) {
   // mengambil warnanya. Sama persis dengan panel SIPP dan ABT.
   alatTandaiPeranPanel(panel, siapa && siapa.peran);
   panel.appendChild(kepala);
+  // 13 Okt butir 2: gembok tepat di bawah kepala. Yang meringkas panel ini
+  // tetap t4AturPengecil (letak "Mengecil sendiri"); gembok terkunci
+  // mencegahnya - kepala & isi selalu penuh. Bawaan terbuka.
+  if (typeof alatPasangGembok === "function") alatPasangGembok(panel, kepala, "aleta", { ringkas: false });
 
   const isi = buatElemen("div", "aleta-isi");
   isi.appendChild(bagianEkstensi(siapa));

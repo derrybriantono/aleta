@@ -12396,6 +12396,9 @@ function susunPanel(konteks) {
   pasangTombolKepala(panel, kepala, keadaanPanel);
 
   panel.appendChild(kepala);
+  // 13 Okt butir 2: gembok tepat di bawah kepala - bawaan terbuka = panel
+  // meringkas ke kepalanya saat menutupi tabel; terkunci = selalu penuh.
+  if (typeof alatPasangGembok === "function") alatPasangGembok(panel, kepala, "sipp");
   pasangGeser(panel, kepala);
   pasangUbahUkuran(panel);
   pasangPengingatUkuran(panel);
@@ -13634,6 +13637,8 @@ function susunPanelDaftar(ringkasan) {
   // panelnya tidak dapat diciutkan maupun dilayarpenuhkan sama sekali.
   pasangTombolKepala(panel, kepala, null);
   panel.appendChild(kepala);
+  // 13 Okt butir 2: gembok kepala ringkas, sama dengan panel perkara.
+  if (typeof alatPasangGembok === "function") alatPasangGembok(panel, kepala, "sipp");
   pasangGeser(panel, kepala);
   pasangUbahUkuran(panel);
 
