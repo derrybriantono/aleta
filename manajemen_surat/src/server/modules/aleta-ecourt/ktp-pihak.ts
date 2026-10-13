@@ -101,7 +101,8 @@ export type DepsKtp = {
   antrian: (nomor: string[], batas: number) => Promise<{ berkas: BerkasKtpAntri[]; versi: number } | null>;
   ambil: (fileId: string) => Promise<Buffer | null>;
   kirim: (hasil: HasilBacaKtpPihak[]) => Promise<boolean>;
-  baca: (data: Buffer, batasMs?: number) => Promise<HasilBacaKtp[]>;
+  /** ketat: berkas bukan berjudul KTP ("Dokumen Bukti") - hanya halaman berciri KTP (ktp-ocr halamanBercirKtp). */
+  baca: (data: Buffer, batasMs?: number, ketat?: boolean) => Promise<HasilBacaKtp[]>;
   sekarang: () => number;
 };
 
@@ -124,7 +125,7 @@ export const depsKtpAsli: DepsKtp = {
     }
   },
   kirim: async (hasil) => (await kirimHasilKtpGateway(hasil)).ok,
-  baca: (data, batasMs) => bacaKtpBanyak(data, batasMs ? { batasMs } : {}),
+  baca: (data, batasMs, ketat) => bacaKtpBanyak(data, { ...(batasMs ? { batasMs } : {}), ...(ketat ? { ketat: true } : {}) }),
   sekarang: () => Date.now(),
 };
 
@@ -154,7 +155,7 @@ export async function pindaiKtpPihak(
         hasil = { fileId: berkas.fileId, status: "tidak_terbaca", sebab: "berkas_tidak_terambil", sumber: "", versi: isi.versi, ktp: [] };
       } else {
         try {
-          hasil = hasilDariBacaan(berkas.fileId, await deps.baca(data, batasBacaMs), isi.versi);
+          hasil = hasilDariBacaan(berkas.fileId, await deps.baca(data, batasBacaMs, Boolean(berkas.ketat)), isi.versi);
         } catch {
           hasil = { fileId: berkas.fileId, status: "tidak_terbaca", sebab: "galat_baca", sumber: "", versi: isi.versi, ktp: [] };
         } finally {

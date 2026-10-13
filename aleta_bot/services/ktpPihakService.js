@@ -60,7 +60,22 @@ const VERSI_KTP_PIHAK = 2;
 
 /** Judul dokumen e-Court yang dianggap KTP. */
 const POLA_JUDUL_KTP = /\b(?:e-?ktp|ktp(?:-?el)?|kartu\s+tanda\s+penduduk)\b/i;
-const SQL_KANDIDAT = `LOWER(d.judul_dokumen) REGEXP 'ktp|kartu tanda penduduk'`;
+/**
+ * 13 Okt 2026 (butir 14, 228/Pdt.P/2026: 0364/0366/9958 "KTP belum terdeteksi"): dokumen e-Court berjudul
+ * "KTP" hampir tidak pernah punya berkas - terukur di server 10 dari 385 (gugatan) dan 0 dari 115
+ * (permohonan), sebab "berkas pdf tidak disediakan e-Court". Fotokopi KTP para pihak ada di "Dokumen
+ * Bukti" (476 dari 482 berberkas). Berkas bukti ikut dibaca, KETAT: portal hanya memakai halaman berciri
+ * KTP (bukan KK/akta/surat keterangan) - lihat halamanBercirKtp di portal ktp-ocr.ts.
+ */
+const POLA_JUDUL_BUKTI = /^\s*(?:dokumen\s+)?(?:alat\s+)?bukti(?:\s+surat)?\s*$/i;
+const SQL_JUDUL_KTP = `LOWER(d.judul_dokumen) REGEXP 'ktp|kartu tanda penduduk'`;
+// Tanpa tanda tanya di SQL: driver mysql membacanya sebagai tempat parameter.
+const SQL_KANDIDAT = `(${SQL_JUDUL_KTP} OR LOWER(TRIM(d.judul_dokumen)) IN ('dokumen bukti', 'bukti', 'bukti surat', 'alat bukti', 'alat bukti surat', 'dokumen alat bukti'))`;
+
+/** Berkas bukan berjudul KTP dibaca ketat (hanya halaman berciri KTP). */
+function bacaKetat(judul) {
+  return !POLA_JUDUL_KTP.test(String(judul || "")) && POLA_JUDUL_BUKTI.test(String(judul || ""));
+}
 
 /** Foto KTP yang disimpan jembatan sebagai format "gambar". */
 const EKSTENSI_GAMBAR = new Set([".jpg", ".jpeg", ".png"]);
@@ -465,7 +480,7 @@ async function antrian({ nomor = [], batas = 6, versi = VERSI_KTP_PIHAK } = {}) 
              OR (k.status = 'tidak_terbaca' AND k.sebab <> ? AND k.percobaan < ?
                  AND k.dibaca_pada < UTC_TIMESTAMP() - INTERVAL (k.percobaan * ?) HOUR)
              OR (k.status <> 'tidak_terbaca' AND k.versi < ?))
-      ORDER BY (d.nomor_perkara IN (?)) DESC, d.perkara_id DESC, f.document_key, f.format
+      ORDER BY (d.nomor_perkara IN (?)) DESC, d.perkara_id DESC, (${SQL_JUDUL_KTP}) DESC, f.document_key, f.format
       LIMIT 300`,
     [SEBAB_TANPA_OCR, SEBAB_TANPA_OCR, BATAS_PERCOBAAN, JEDA_JAM_PER_PERCOBAAN, Number(versi) || VERSI_KTP_PIHAK, utama.length ? utama : [""]]
   );
@@ -483,6 +498,7 @@ async function antrian({ nomor = [], batas = 6, versi = VERSI_KTP_PIHAK } = {}) 
       ukuran: Number(r.ukuran) || 0,
       nomorPerkara: bersih(r.nomorPerkara, 191),
       judul: bersih(r.judul, 255),
+      ketat: bacaKetat(r.judul),
     });
     if (hasil.length >= batasAkhir) break;
   }
@@ -841,6 +857,8 @@ async function ringkasan() {
 module.exports = {
   VERSI_KTP_PIHAK,
   POLA_JUDUL_KTP,
+  POLA_JUDUL_BUKTI,
+  bacaKetat,
   SQL_KANDIDAT,
   DDL_KTP_PIHAK,
   pastikanSkema,

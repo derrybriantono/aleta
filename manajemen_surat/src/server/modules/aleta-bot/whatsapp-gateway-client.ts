@@ -4954,6 +4954,8 @@ export type BerkasKtpAntri = {
   ukuran: number;
   nomorPerkara: string;
   judul: string;
+  /** 13 Okt 2026: berkas bukan berjudul KTP ("Dokumen Bukti") - dibaca ketat, hanya halaman berciri KTP. */
+  ketat?: boolean;
 };
 
 export type KtpTerbaca = {

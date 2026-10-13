@@ -101,7 +101,38 @@ export type OpsiBacaKtp = {
   spawn?: Spawn;
   /** Untuk uji: pengganti proses anak praproses/gambar PDF. */
   pembantu?: PembantuGambar;
+  /**
+   * 13 Okt 2026: berkas BUKAN berjudul KTP ("Dokumen Bukti" e-Court) - halaman hanya dipakai bila
+   * teksnya berciri KTP dan bukan KK/akta/surat keterangan (lihat halamanBercirKtp).
+   */
+  ketat?: boolean;
 };
+
+/**
+ * ============================================================================
+ * HALAMAN BERCIRI KTP (13 Okt 2026, butir 14 - 228/Pdt.P/2026)
+ * ============================================================================
+ *
+ * Berkas e-Court berjudul "KTP" hampir tidak pernah berisi: 10 dari 385 perkara
+ * gugatan dan 0 dari 115 perkara permohonan punya berkasnya ("berkas pdf tidak
+ * disediakan e-Court"). Fotokopi KTP para pihak ada di "Dokumen Bukti" (476 dari
+ * 482 tersedia) bersama KK, buku nikah, dan surat keterangan desa. Halaman lain
+ * itu BERBAHAYA bagi cariTerbit: tanggal di 3 baris terakhir ("Dikeluarkan
+ * tanggal" KK, tanggal surat keterangan) akan terbaca sebagai tanggal KTP, dan
+ * NIK pihak yang sama membuatnya cocok. Karena itu untuk berkas bukti sebuah
+ * halaman hanya dipakai bila memuat label khas KTP (Berlaku Hingga / Gol. Darah
+ * / Kewarganegaraan) DAN tidak memuat ciri dokumen lain.
+ */
+const CIRI_KTP = /berlaku\s*h[il]n[gq]{1,2}a|gol\.?\s*darah|kewarganegaraan/i;
+const CIRI_BUKAN_KTP =
+  /kartu\s*keluarga|no\.?\s*kk\b|kepala\s*keluarga|kutipan|akta|buku\s*nikah|surat\s*keterangan|keterangan\s*domisili|dikeluarkan\s*tanggal|pas\s*foto/i;
+
+const PESAN_BUKAN_KTP = "Tidak satu pun halaman berkas bukti ini berciri KTP.";
+
+export function halamanBercirKtp(teks: string): boolean {
+  const t = String(teks || "");
+  return CIRI_KTP.test(t) && !CIRI_BUKAN_KTP.test(t);
+}
 
 /** mode "gambar" -> {abu, biner}; mode "pdf" -> {hal1-abu, hal1-biner, ...}; null = gagal. */
 export type PembantuGambar = (mode: "gambar" | "pdf", data: Buffer, batasMs: number) => Promise<Map<string, Buffer> | null>;
@@ -410,7 +441,11 @@ const pembantuAnakBanyak: PembantuGambar = buatPembantuAnak(HALAMAN_MAKS_BANYAK)
 export async function bacaKtpBanyak(buffer: Buffer, opsi: OpsiBacaKtp = {}): Promise<HasilBacaKtp[]> {
   const tahunKini = opsi.tahunKini ?? new Date().getFullYear();
   const bentuk = jenisBerkasKtp(buffer);
-  if (bentuk !== "pdf") return [await bacaKtpDariBerkas(buffer, undefined, opsi)];
+  if (bentuk !== "pdf") {
+    const satu = await bacaKtpDariBerkas(buffer, undefined, opsi);
+    if (opsi.ketat && satu.ok && !halamanBercirKtp(satu.teks)) return [kosongKtp(satu.sumber, "bukan_berkas_ktp", PESAN_BUKAN_KTP)];
+    return [satu];
+  }
   const batasSampai = Date.now() + (opsi.batasMs ?? 90_000);
 
   const isi = await bacaPdfDariBita(new Uint8Array(buffer), "ktp.pdf", HALAMAN_MAKS_BANYAK + 1);
@@ -433,6 +468,7 @@ export async function bacaKtpBanyak(buffer: Buffer, opsi: OpsiBacaKtp = {}): Pro
     const urai = uraiTeksIdentitas(h.teks, tahunKini);
     const skor = skorUrai(urai);
     if (skor < SKOR_TEKS_PDF) continue;
+    if (opsi.ketat && !halamanBercirKtp(h.teks)) continue;
     dariTeks.push({
       skor,
       hasil: {
@@ -451,6 +487,7 @@ export async function bacaKtpBanyak(buffer: Buffer, opsi: OpsiBacaKtp = {}): Pro
     return [kosongKtp("ocr-pdf", "pdf_tanpa_kanvas", "PDF ini berupa pindaian, tetapi halamannya tidak dapat digambar untuk dibaca.")];
   }
   const dariOcr: Array<{ hasil: HasilBacaKtp; skor: number }> = [];
+  let adaBukanKtp = false;
   let gagal: { alasan: HasilBacaKtp["alasan"]; pesan: string } | undefined;
   try {
     for (let hal = 1; gambar.has(`hal${hal}-abu`); hal += 1) {
@@ -465,6 +502,10 @@ export async function bacaKtpBanyak(buffer: Buffer, opsi: OpsiBacaKtp = {}): Pro
       if (r.gagal && r.gagal.alasan === "ocr_belum_tersedia") break;
       if (!r.lintasan.length) continue;
       const hasil = jadiHasil(r.lintasan, "ocr-pdf", tahunKini);
+      if (opsi.ketat && !halamanBercirKtp(hasil.teks)) {
+        adaBukanKtp = true;
+        continue;
+      }
       if (hasil.ok && (hasil.medan.nik || hasil.medan.tanggalTerbit)) {
         dariOcr.push({ hasil, skor: Math.max(...r.lintasan.map((l) => l.skor)) });
       }
@@ -473,6 +514,7 @@ export async function bacaKtpBanyak(buffer: Buffer, opsi: OpsiBacaKtp = {}): Pro
     hapusVarian(gambar);
   }
   if (dariOcr.length) return unikNik(dariOcr);
+  if (opsi.ketat && adaBukanKtp) return [kosongKtp("ocr-pdf", "bukan_berkas_ktp", PESAN_BUKAN_KTP)];
   return [kosongKtp("ocr-pdf", gagal?.alasan ?? "tidak_terbaca", gagal?.pesan ?? "Tidak satu pun halaman terbaca sebagai KTP.")];
 }
 /* === AKHIR KTP-PIHAK === */
