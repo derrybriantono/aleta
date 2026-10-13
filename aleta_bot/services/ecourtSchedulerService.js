@@ -42,11 +42,24 @@ const ecourtDocumentService = require("./ecourtDocumentService");
 /** Nilai bawaan bila belum pernah diatur. */
 const BAWAAN = {
   aktif: false,
-  jarakJam: 2,
+  // Turunan untuk pembaca lama (widget, checklist) - jadwal tidak lagi memakai
+  // jarak jam tetap sejak 13 Okt 2026; lihat selang acak di bawah.
+  jarakJam: 1,
   jamMulai: 7,
   jamSelesai: 17,
   maksPerkara: 25,
+  // 13 Okt 2026 (permintaan pengguna 10.05): putaran berkala tiap 30-60 menit,
+  // selangnya diacak tiap putaran; dan tarikan pagi 08.00 WITA Senin-Jumat.
+  selangMinMenit: 30,
+  selangMaksMenit: 60,
+  pagiAktif: true,
+  jamPagi: 8,
+  menitPagi: 0,
 };
+
+/** Batas wajar selang acak (menit). */
+const SELANG_BATAS_BAWAH = 15;
+const SELANG_BATAS_ATAS = 240;
 
 /** Keadaan dalam memori. Tidak perlu bertahan antar penyalaan ulang. */
 const keadaan = {
@@ -70,10 +83,33 @@ const keadaan = {
   // berkala terakhir dimulai - untuk menghitung jadwal tarikan berikutnya.
   timerMulaiMs: 0,
   terakhirPutaranMs: 0,
+  // 13 Okt 2026: waktu putaran berkala berikutnya - DITETAPKAN (acak dalam
+  // rentang) saat putaran sebelumnya dimulai, supaya layar dapat menyebutnya.
+  berkalaBerikutnyaMs: 0,
+  // Putaran terjadwal (pagi/berkala) sedang disiapkan atau berjalan - detak
+  // berikutnya tidak memulai yang lain (kueri SIPP berjalan sebelum kunci).
+  sedangPutaranTerjadwal: false,
 };
 
-/** Detak penjadwal - pemeriksaan jarak putaran dan jam kerja. */
-const DETAK_PENJADWAL_MS = 15 * 60 * 1000;
+/**
+ * Detak penjadwal: tiap menit memeriksa apakah tarikan pagi atau putaran
+ * berkala sudah jatuh tempo. Murah - hanya membaca jam dan pengaturan.
+ */
+const DETAK_PENJADWAL_MS = 60 * 1000;
+
+/** Ketergantungan yang dapat ditukar uji (pembangkit acak, daftar sidang, jembatan). */
+const alat = {
+  acak: () => Math.random(),
+  sidangHari: (tanggal, opsi) => require("./ecourtVerifikasiHarianService").sidangHari(tanggal, opsi),
+  sidangPerluDiperiksa: (tanggal) => require("./ecourtVerifikasiHarianService").sidangPerluDiperiksa(tanggal),
+  catatTarik: (daftar, kode) => require("./ecourtVerifikasiHarianService").catatTarik(daftar, kode),
+  jalankan: (opsi) => jalankanSatuPutaran(opsi),
+  ambilPermintaan: () => ecourtPermintaanService.ambilBerikutnya(),
+};
+
+function aturAlat(baru = {}) {
+  Object.assign(alat, baru);
+}
 
 /**
  * Folder log, dibagi dengan host lewat pemasangan volume.
@@ -158,71 +194,125 @@ function getSettings(runtimeConfig = readRuntimeConfig()) {
     akunUtama = null;
   }
   const selaluAktif = Boolean(akunUtama && akunUtama.sah);
+  const selangMinMenit = angka(p.selangMinMenit, BAWAAN.selangMinMenit, SELANG_BATAS_BAWAH, SELANG_BATAS_ATAS);
+  const selangMaksMenit = Math.max(
+    selangMinMenit,
+    angka(p.selangMaksMenit, BAWAAN.selangMaksMenit, SELANG_BATAS_BAWAH, SELANG_BATAS_ATAS)
+  );
   return {
     aktif: p.aktif === true || selaluAktif,
     aktifTersimpan: p.aktif === true,
     selaluAktif,
     akunUtama,
-    jarakJam: angka(p.jarakJam, BAWAAN.jarakJam, 1, 24),
+    // Turunan (pembulatan ke atas dari selang maksimum) untuk pembaca lama.
+    jarakJam: Math.max(1, Math.ceil(selangMaksMenit / 60)),
     jamMulai: angka(p.jamMulai, BAWAAN.jamMulai, 0, 23),
     jamSelesai: angka(p.jamSelesai, BAWAAN.jamSelesai, 1, 24),
     maksPerkara: angka(p.maksPerkara, BAWAAN.maksPerkara, 1, 200),
+    selangMinMenit,
+    selangMaksMenit,
+    pagiAktif: p.pagiAktif !== false,
+    jamPagi: angka(p.jamPagi, BAWAAN.jamPagi, 0, 23),
+    menitPagi: angka(p.menitPagi, BAWAAN.menitPagi, 0, 59),
   };
+}
+
+/**
+ * Memeriksa satu set pengaturan - fungsi murni. "" = sah, selain itu alasan.
+ */
+function periksaPengaturan({ jamMulai, jamSelesai, maksPerkara, selangMinMenit, selangMaksMenit, jamPagi, menitPagi, jarakJam }) {
+  const n = (x) => Number(x);
+  const bulat = (x) => Number.isFinite(n(x));
+  if (jarakJam !== undefined && jarakJam !== null && (!bulat(jarakJam) || n(jarakJam) < 1 || n(jarakJam) > 24)) {
+    return "jarak_jam_di_luar_1_sampai_24";
+  }
+  if (!bulat(jamMulai) || n(jamMulai) < 0 || n(jamMulai) > 23) return "jam_mulai_di_luar_0_sampai_23";
+  if (!bulat(jamSelesai) || n(jamSelesai) < 1 || n(jamSelesai) > 24) return "jam_selesai_di_luar_1_sampai_24";
+  if (n(jamSelesai) <= n(jamMulai)) return "jam_selesai_harus_setelah_jam_mulai";
+  if (!bulat(maksPerkara) || n(maksPerkara) < 1 || n(maksPerkara) > 200) return "maks_perkara_di_luar_1_sampai_200";
+  for (const [x, alasan] of [
+    [selangMinMenit, "selang_min_di_luar_15_sampai_240"],
+    [selangMaksMenit, "selang_maks_di_luar_15_sampai_240"],
+  ]) {
+    if (!bulat(x) || n(x) < SELANG_BATAS_BAWAH || n(x) > SELANG_BATAS_ATAS) return alasan;
+  }
+  if (n(selangMinMenit) > n(selangMaksMenit)) return "selang_min_lebih_dari_maks";
+  if (!bulat(jamPagi) || n(jamPagi) < 0 || n(jamPagi) > 23) return "jam_pagi_di_luar_0_sampai_23";
+  if (!bulat(menitPagi) || n(menitPagi) < 0 || n(menitPagi) > 59) return "menit_pagi_di_luar_0_sampai_59";
+  if (n(jamPagi) >= n(jamSelesai)) return "jam_pagi_harus_sebelum_jam_selesai";
+  return "";
 }
 
 /**
  * Menyimpan pengaturan penjadwal.
  *
- * Nilai di luar akal ditolak, bukan dipaksa masuk. Jarak satu jam sekali ke
- * sistem Mahkamah Agung sudah cukup sering; lebih rapat dari itu menambah
- * beban tanpa menambah manfaat, karena dokumen e-Litigasi tidak masuk tiap
- * menit.
+ * Nilai di luar akal ditolak, bukan dipaksa masuk. Ruas yang TIDAK dikirim
+ * dipertahankan dari pengaturan sekarang (widget ekstensi hanya mengirim
+ * saklar dan ruas lama). jarakJam diterima untuk pengirim lama, tetapi tidak
+ * lagi menentukan jadwal sejak 13 Okt 2026 - selang acak yang menentukan.
  */
-function saveSettings({ aktif, jarakJam, jamMulai, jamSelesai, maksPerkara, olehSiapa = "" } = {}) {
-  const jarak = Number(jarakJam);
-  const mulai = Number(jamMulai);
-  const selesai = Number(jamSelesai);
-  const maks = Number(maksPerkara);
+function saveSettings(isian = {}) {
+  const olehSiapa = String((isian && isian.olehSiapa) || "");
+  const tersimpan = (readRuntimeConfig() || {}).ecourtJadwal || {};
+  const kini = getSettings();
+  const ambil = (kunci) => (isian[kunci] === undefined || isian[kunci] === null || isian[kunci] === "" ? kini[kunci] : Number(isian[kunci]));
+  const baru = {
+    jamMulai: ambil("jamMulai"),
+    jamSelesai: ambil("jamSelesai"),
+    maksPerkara: ambil("maksPerkara"),
+    selangMinMenit: ambil("selangMinMenit"),
+    selangMaksMenit: ambil("selangMaksMenit"),
+    jamPagi: ambil("jamPagi"),
+    menitPagi: ambil("menitPagi"),
+  };
+  const alasan = periksaPengaturan({ ...baru, jarakJam: isian.jarakJam });
+  if (alasan) return { ok: false, alasan };
 
-  if (!Number.isFinite(jarak) || jarak < 1 || jarak > 24) {
-    return { ok: false, alasan: "jarak_jam_di_luar_1_sampai_24" };
-  }
-  if (!Number.isFinite(mulai) || mulai < 0 || mulai > 23) {
-    return { ok: false, alasan: "jam_mulai_di_luar_0_sampai_23" };
-  }
-  if (!Number.isFinite(selesai) || selesai < 1 || selesai > 24) {
-    return { ok: false, alasan: "jam_selesai_di_luar_1_sampai_24" };
-  }
-  if (selesai <= mulai) {
-    return { ok: false, alasan: "jam_selesai_harus_setelah_jam_mulai" };
-  }
-  if (!Number.isFinite(maks) || maks < 1 || maks > 200) {
-    return { ok: false, alasan: "maks_perkara_di_luar_1_sampai_200" };
-  }
-
+  const aktif = isian.aktif === undefined ? tersimpan.aktif === true : isian.aktif === true;
+  const pagiAktif = isian.pagiAktif === undefined ? kini.pagiAktif : isian.pagiAktif !== false;
   const sekarang = readRuntimeConfig();
   writeRuntimeConfig({
     ...sekarang,
     ecourtJadwal: {
-      aktif: aktif === true,
-      jarakJam: Math.floor(jarak),
-      jamMulai: Math.floor(mulai),
-      jamSelesai: Math.floor(selesai),
-      maksPerkara: Math.floor(maks),
+      aktif,
+      jamMulai: Math.floor(baru.jamMulai),
+      jamSelesai: Math.floor(baru.jamSelesai),
+      maksPerkara: Math.floor(baru.maksPerkara),
+      selangMinMenit: Math.floor(baru.selangMinMenit),
+      selangMaksMenit: Math.floor(baru.selangMaksMenit),
+      pagiAktif,
+      jamPagi: Math.floor(baru.jamPagi),
+      menitPagi: Math.floor(baru.menitPagi),
     },
   });
 
   void logService.logSecurityEvent({
     eventType: "ecourt_jadwal_disunting",
     severity: "warning",
-    message: aktif === true ? "Penjadwal e-Court dinyalakan." : "Penjadwal e-Court dimatikan.",
-    metadata: { aktif: aktif === true, jarakJam: Math.floor(jarak), olehSiapa: String(olehSiapa || "") },
+    message: aktif ? "Penjadwal e-Court dinyalakan." : "Penjadwal e-Court dimatikan.",
+    metadata: {
+      aktif,
+      selangMinMenit: Math.floor(baru.selangMinMenit),
+      selangMaksMenit: Math.floor(baru.selangMaksMenit),
+      pagiAktif,
+      olehSiapa,
+    },
   });
+  if (kini.pagiAktif && !pagiAktif) {
+    void logService.logSecurityEvent({
+      eventType: "ecourt_tarikan_pagi_dimatikan",
+      severity: "warning",
+      message: "Tarikan pagi e-Court dimatikan dari portal.",
+      metadata: { olehSiapa },
+    });
+  }
 
-  // Perubahan berlaku pada putaran berikutnya tanpa menyalakan ulang bot.
+  // Perubahan berlaku tanpa menyalakan ulang bot. Putaran berkala yang sudah
+  // ditetapkan dipendekkan bila rentang barunya lebih rapat.
   mulaiUlang();
-  // Akun utama sah: saklar mati tersimpan, tetapi penarikan tetap menyala.
   const berlaku = getSettings();
+  const batasBaru = Date.now() + berlaku.selangMaksMenit * 60 * 1000;
+  if (keadaan.berkalaBerikutnyaMs > batasBaru) keadaan.berkalaBerikutnyaMs = batasBaru;
   return { ok: true, alasan: "", selaluAktif: berlaku.selaluAktif, aktif: berlaku.aktif };
 }
 
@@ -245,6 +335,7 @@ function bagianWaktu(sekarang = new Date(), zona = ZONA_WAKTU) {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
+      minute: "2-digit",
       hourCycle: "h23",
       weekday: "short",
     }).formatToParts(sekarang)) {
@@ -253,11 +344,12 @@ function bagianWaktu(sekarang = new Date(), zona = ZONA_WAKTU) {
     const jam = Number(bagian.hour) % 24;
     const hari = HARI_SINGKAT[bagian.weekday];
     if (!Number.isFinite(jam) || hari === undefined) throw new Error("zona");
-    return { jam, hari, tanggal: `${bagian.year}-${bagian.month}-${bagian.day}` };
+    return { jam, menit: Number(bagian.minute) || 0, hari, tanggal: `${bagian.year}-${bagian.month}-${bagian.day}` };
   } catch {
     const d = (n) => String(n).padStart(2, "0");
     return {
       jam: sekarang.getHours(),
+      menit: sekarang.getMinutes(),
       hari: sekarang.getDay(),
       tanggal: `${sekarang.getFullYear()}-${d(sekarang.getMonth() + 1)}-${d(sekarang.getDate())}`,
     };
@@ -322,7 +414,12 @@ function jalankanSatuPutaran({
   // ecourtKemajuanTarik) diteruskan ke sini - tarikan satu perkara memakainya
   // untuk persen + tahap yang nyata. Gagal di sini tidak menyentuh penarikan.
   padaKemajuan = null,
+  // 13 Okt 2026: perkara yang bersidang hari ini - dibuka lebih dulu dalam
+  // putaran yang sama (--utamakan); hanyaUtamakan = HANYA itu (tarikan pagi).
+  utamakan = [],
+  hanyaUtamakan = false,
 } = {}) {
+  const daftarUtama = (Array.isArray(utamakan) ? utamakan : []).map((x) => String(x || "").trim()).filter(Boolean);
   return new Promise((selesai) => {
     if (keadaan.sedangJalan) {
       selesai({ dilewati: true, alasan: "putaran_sebelumnya_belum_selesai" });
@@ -368,7 +465,8 @@ function jalankanSatuPutaran({
       tulisLog = fs.createWriteStream(berkasLog, { flags: "a" });
       tulisLog.write(
         `=== Penarikan e-Court dimulai ${new Date().toISOString()} (sumber: ${sumber}` +
-          `${nomorPerkara ? `, perkara: ${nomorPerkara}` : ""}${slotAkun ? `, akun: ${slotAkun}` : ""}) ===\n`
+          `${nomorPerkara ? `, perkara: ${nomorPerkara}` : ""}${slotAkun ? `, akun: ${slotAkun}` : ""}` +
+          `${daftarUtama.length ? `, sidang: ${daftarUtama.length}` : ""}) ===\n`
       );
     } catch {
       // Tanpa log pun penarikan tetap berjalan. Yang hilang hanya
@@ -391,8 +489,10 @@ function jalankanSatuPutaran({
     if (tanpaUnduh) argumen.push("--tanpa-unduh");
     if (nomorPerkara) {
       argumen.push("--perkara", String(nomorPerkara));
-    } else if (batas > 0) {
-      argumen.push("--maks-perkara", String(batas));
+    } else {
+      if (daftarUtama.length) argumen.push("--utamakan", daftarUtama.join(","));
+      if (daftarUtama.length && hanyaUtamakan) argumen.push("--hanya-utamakan");
+      else if (batas > 0) argumen.push("--maks-perkara", String(batas));
     }
 
     const anak = spawn(process.execPath, argumen, {
@@ -618,28 +718,222 @@ async function periksaArsipBerkala() {
   }
 }
 
-/** Satu detak penjadwal. */
-async function detak() {
-  const pengaturan = getSettings();
-  if (!pengaturan.aktif) return;
-  if (!dalamJamKerja(new Date(), pengaturan)) return;
+/**
+ * ============================================================================
+ * JADWAL: TARIKAN PAGI + PUTARAN BERKALA BERSELANG ACAK (13 Okt 2026)
+ * ============================================================================
+ *
+ * Permintaan pengguna 13 Okt 10.05: "penarikan data setiap jam 8, dan
+ * jadwalkan penarikan tiap 30 menit - 60 menit secara default".
+ *
+ *   TARIKAN PAGI   jam tetap (bawaan 08.00 WITA), Senin-Jumat. Membuka SEMUA
+ *                  perkara e-Court yang bersidang hari itu, dengan akun utama.
+ *                  Bot yang baru menyala sesudah jam itu - dan tarikan pagi
+ *                  hari ini belum jalan - menyusulkannya SEKALI, segera
+ *                  (sampai jam selesai kerja). Tanggalnya disimpan di berkas
+ *                  supaya bot yang dinyalakan ulang tidak mengulanginya.
+ *   BERKALA        tiap putaran menetapkan putaran berikutnya pada selang ACAK
+ *                  antara selangMinMenit dan selangMaksMenit (bawaan 30-60),
+ *                  hanya di jam kerja WITA. Perkara sidang hari ini yang belum
+ *                  "sudah" ikut dibuka lebih dulu DI PUTARAN YANG SAMA -
+ *                  pengganti penarik verifikasi harian 15 menit (satu perkara
+ *                  per tarikan, tiap tarikan menyapu seluruh daftar e-Court).
+ *
+ * Tidak bertumpuk: satu putaran pada satu waktu (sedangPutaranTerjadwal +
+ * kunci jalankanSatuPutaran yang juga dipakai tombol portal dan "belum
+ * upload"); putaran apa pun yang dimulai penjadwal menggeser putaran berkala
+ * berikutnya ke satu selang acak dari sekarang, jadi tarikan pagi tidak
+ * langsung disusul putaran berkala.
+ */
 
-  // Permintaan titipan didahulukan.
-  //
-  // Di baliknya ada petugas yang sedang membuka perkara itu di SIPP dan
-  // menunggu datanya. Penarikan menyeluruh tidak ditunggu siapa pun, dan
-  // kehilangan satu putaran tidak merugikan - perkaranya akan terambil di
-  // putaran berikutnya.
-  const permintaan = await ecourtPermintaanService.ambilBerikutnya().catch(() => null);
-  if (permintaan) {
-    await jalankanSatuPutaran({
-      nomorPerkara: permintaan.nomorPerkara,
-      permintaanId: permintaan.id,
-    });
-    return;
+function berkasPagi() {
+  const dasar = process.env.ALETA_BOT_DATA_DIR
+    ? path.resolve(process.env.ALETA_BOT_DATA_DIR)
+    : path.resolve(__dirname, "..", "data");
+  return path.join(dasar, "ecourt-tarikan-pagi.json");
+}
+
+/** Catatan tarikan pagi terakhir ({tanggal, mulai, kode, catatan, jumlahPerkara, susulan}) atau {}. */
+function bacaPagi() {
+  try {
+    const isi = JSON.parse(fs.readFileSync(berkasPagi(), "utf8"));
+    return isi && typeof isi === "object" ? isi : {};
+  } catch {
+    return {};
   }
+}
 
-  await jalankanSatuPutaran();
+function tulisPagi(catatan) {
+  try {
+    const jalur = berkasPagi();
+    fs.mkdirSync(path.dirname(jalur), { recursive: true });
+    const sementara = `${jalur}.${process.pid}.tmp`;
+    fs.writeFileSync(sementara, JSON.stringify(catatan));
+    fs.renameSync(sementara, jalur);
+  } catch {
+    // Gagal menyimpan: paling buruk tarikan pagi disusulkan sekali lagi
+    // sesudah bot menyala ulang - bukan kehilangan tarikan.
+  }
+}
+
+/** Selang acak (ms) dalam rentang pengaturan - pembangkit acak dapat disuntik. */
+function selangAcakMs(pengaturan, acak = alat.acak) {
+  const min = Number(pengaturan.selangMinMenit);
+  const maks = Math.max(min, Number(pengaturan.selangMaksMenit));
+  const r = Math.min(Math.max(Number(acak()) || 0, 0), 1);
+  return Math.round((min + r * (maks - min)) * 60 * 1000);
+}
+
+/** Waktu (ms) dari tanggal + jam:menit menurut zona pengadilan. */
+function waktuZona(tanggal, jam, menit, zona = ZONA_WAKTU) {
+  const [y, m, d] = String(tanggal).split("-").map(Number);
+  const sasaran = Date.UTC(y, m - 1, d, jam, menit);
+  let tebak = sasaran;
+  for (let i = 0; i < 2; i += 1) {
+    const b = bagianWaktu(new Date(tebak), zona);
+    const [by, bm, bd] = b.tanggal.split("-").map(Number);
+    tebak -= Date.UTC(by, bm - 1, bd, b.jam, b.menit) - sasaran;
+  }
+  return tebak;
+}
+
+/**
+ * Perlukah tarikan pagi SEKARANG? - fungsi murni.
+ * @returns {{perlu: boolean, susulan: boolean, tanggal: string, alasan: string}}
+ */
+function perluTarikanPagi({ sekarangMs = Date.now(), pengaturan, terakhirTanggal = "" }) {
+  const b = bagianWaktu(new Date(sekarangMs));
+  const tidak = (alasan) => ({ perlu: false, susulan: false, tanggal: b.tanggal, alasan });
+  if (!pengaturan.pagiAktif) return tidak("pagi_dimatikan");
+  if (b.hari === 0 || b.hari === 6) return tidak("akhir_pekan");
+  if (terakhirTanggal === b.tanggal) return tidak("sudah_hari_ini");
+  const menitKini = b.jam * 60 + b.menit;
+  const menitPagi = pengaturan.jamPagi * 60 + pengaturan.menitPagi;
+  if (menitKini < menitPagi) return tidak("belum_waktunya");
+  if (menitKini >= pengaturan.jamSelesai * 60) return tidak("lewat_jam_kerja");
+  // Lebih dari dua detak sesudah jamnya = bot baru menyala / sempat mati.
+  return { perlu: true, susulan: menitKini > menitPagi + 2, tanggal: b.tanggal, alasan: "" };
+}
+
+/** Waktu tarikan pagi berikutnya (ISO) dan apakah itu susulan segera - fungsi murni. */
+function jadwalPagiBerikutnya({ sekarangMs = Date.now(), pengaturan, terakhirTanggal = "" }) {
+  if (!pengaturan.pagiAktif) return { waktu: null, susulan: false };
+  const kini = perluTarikanPagi({ sekarangMs, pengaturan, terakhirTanggal });
+  if (kini.perlu) return { waktu: new Date(sekarangMs).toISOString(), susulan: kini.susulan };
+  for (let d = 0; d <= 8; d += 1) {
+    const b = bagianWaktu(new Date(sekarangMs + d * 24 * 60 * 60 * 1000));
+    if (b.hari === 0 || b.hari === 6) continue;
+    if (d === 0 && (terakhirTanggal === b.tanggal || kini.alasan !== "belum_waktunya")) continue;
+    return { waktu: new Date(waktuZona(b.tanggal, pengaturan.jamPagi, pengaturan.menitPagi)).toISOString(), susulan: false };
+  }
+  return { waktu: null, susulan: false };
+}
+
+/**
+ * Waktu putaran berkala berikutnya (ISO) - fungsi murni. Waktu yang sudah
+ * ditetapkan (acak), digeser ke awal jam kerja berikutnya bila jatuh di luar.
+ */
+function jadwalBerkalaBerikutnya({ aktif, berikutnyaMs, sekarangMs = Date.now(), pengaturan }) {
+  if (!aktif || !berikutnyaMs) return null;
+  let t = Math.max(berikutnyaMs, sekarangMs);
+  for (let i = 0; i < 24 * 9; i += 1) {
+    if (dalamJamKerja(new Date(t), pengaturan)) return new Date(t).toISOString();
+    // Zona pengadilan berselisih jam bulat dari UTC: awal jam UTC berikutnya
+    // adalah awal jam berikutnya di zona itu juga.
+    t = Math.floor(t / 3600000) * 3600000 + 3600000;
+  }
+  return null;
+}
+
+/**
+ * Apa yang dijalankan detak ini - fungsi murni. Pagi didahulukan; satu saja.
+ * @returns {{jalan: "pagi"|"berkala"|null, alasan: string, susulan?: boolean}}
+ */
+function putuskanDetak({ sekarangMs = Date.now(), pengaturan, berkalaBerikutnyaMs, terakhirPagiTanggal = "", sibuk = false }) {
+  if (!pengaturan.aktif) return { jalan: null, alasan: "penjadwal_mati" };
+  if (sibuk) return { jalan: null, alasan: "penarikan_lain_berjalan" };
+  const pagi = perluTarikanPagi({ sekarangMs, pengaturan, terakhirTanggal: terakhirPagiTanggal });
+  if (pagi.perlu) return { jalan: "pagi", alasan: "", susulan: pagi.susulan };
+  if (!dalamJamKerja(new Date(sekarangMs), pengaturan)) return { jalan: null, alasan: "di_luar_jam_kerja" };
+  if (berkalaBerikutnyaMs && sekarangMs < berkalaBerikutnyaMs) return { jalan: null, alasan: "belum_waktunya" };
+  return { jalan: "berkala", alasan: "" };
+}
+
+async function jalankanPagi(kini, susulan) {
+  const tanggal = bagianWaktu(kini).tanggal;
+  const daftar = await Promise.resolve(alat.sidangHari(tanggal, { semuaJenis: true })).catch(() => null);
+  if (daftar === null) return { dilewati: true, alasan: "daftar_sidang_tidak_terbaca" };
+  const catatan = { tanggal, mulai: kini.toISOString(), susulan: Boolean(susulan), jumlahPerkara: daftar.length };
+  if (daftar.length === 0) {
+    tulisPagi({ ...catatan, kode: 0, catatan: "Tidak ada perkara e-Court yang bersidang hari ini." });
+    return { dilewati: false, kode: 0, jumlahPerkara: 0 };
+  }
+  const hasil = (await alat.jalankan({ sumber: "pagi", utamakan: daftar, hanyaUtamakan: true, maksPerkara: 0 })) || {};
+  if (hasil.dilewati) return hasil;
+  tulisPagi({ ...catatan, kode: hasil.kode, catatan: hasil.catatan || "" });
+  try {
+    alat.catatTarik(daftar, hasil.kode);
+  } catch {
+    // Catatan penanda verifikasi bukan syarat.
+  }
+  return { ...hasil, jumlahPerkara: daftar.length };
+}
+
+async function jalankanBerkala(kini) {
+  // Permintaan titipan didahulukan: di baliknya ada petugas yang menunggu.
+  const permintaan = await Promise.resolve(alat.ambilPermintaan()).catch(() => null);
+  if (permintaan) {
+    return alat.jalankan({ nomorPerkara: permintaan.nomorPerkara, permintaanId: permintaan.id });
+  }
+  const tanggal = bagianWaktu(kini).tanggal;
+  const daftar = (await Promise.resolve(alat.sidangPerluDiperiksa(tanggal)).catch(() => [])) || [];
+  const hasil = (await alat.jalankan({ sumber: "jadwal", utamakan: daftar })) || {};
+  if (!hasil.dilewati && daftar.length) {
+    try {
+      alat.catatTarik(daftar, hasil.kode);
+    } catch {
+      // Catatan penanda verifikasi bukan syarat.
+    }
+  }
+  return { ...hasil, sidangDiutamakan: daftar.length };
+}
+
+/** Satu detak penjadwal (tiap menit). */
+async function detakPenjadwal(kini = new Date()) {
+  const pengaturan = getSettings();
+  if (!pengaturan.aktif) return { jalan: null, alasan: "penjadwal_mati" };
+
+  // Pemeriksaan arsip berdiri di luar jam kerja dan di luar jadwal tarikan:
+  // tidak menyentuh e-Court, hanya membaca disk (gerbang 6 jamnya sendiri).
+  void periksaArsipBerkala();
+
+  const keputusan = putuskanDetak({
+    sekarangMs: kini.getTime(),
+    pengaturan,
+    berkalaBerikutnyaMs: keadaan.berkalaBerikutnyaMs,
+    terakhirPagiTanggal: String(bacaPagi().tanggal || ""),
+    sibuk: keadaan.sedangPutaranTerjadwal || keadaan.sedangJalan || kunciMasihHidup(),
+  });
+  if (!keputusan.jalan) return keputusan;
+
+  keadaan.sedangPutaranTerjadwal = true;
+  const sebelumnya = keadaan.berkalaBerikutnyaMs;
+  // Putaran apa pun yang dimulai menggeser putaran berkala berikutnya satu
+  // selang acak dari sekarang - dua tarikan tidak bertumpuk.
+  keadaan.berkalaBerikutnyaMs = kini.getTime() + selangAcakMs(pengaturan);
+  try {
+    const hasil =
+      keputusan.jalan === "pagi" ? await jalankanPagi(kini, keputusan.susulan) : await jalankanBerkala(kini);
+    if (hasil && hasil.dilewati) {
+      // Kalah cepat dari tarikan tombol: dicoba lagi pada detak berikutnya.
+      keadaan.berkalaBerikutnyaMs = sebelumnya;
+    } else if (keputusan.jalan === "berkala") {
+      keadaan.terakhirPutaranMs = kini.getTime();
+    }
+    return { ...keputusan, hasil };
+  } finally {
+    keadaan.sedangPutaranTerjadwal = false;
+  }
 }
 
 function berhenti() {
@@ -650,11 +944,9 @@ function berhenti() {
 }
 
 /**
- * Menyalakan penjadwal.
- *
- * Detaknya tiap 15 menit, bukan tiap jarakJam. Detak yang sering dengan
- * pemeriksaan jam kerja membuat perubahan pengaturan berlaku cepat, dan
- * membuat putaran tidak terlewat ketika bot sempat mati sebentar.
+ * Menyalakan penjadwal: detak tiap menit (lihat detakPenjadwal). Putaran
+ * berkala pertama satu selang acak sesudah menyala - tarikan pagi (atau
+ * susulannya) yang didahulukan.
  */
 function mulai() {
   berhenti();
@@ -662,41 +954,17 @@ function mulai() {
   const pengaturan = getSettings();
   if (!pengaturan.aktif) return;
 
-  const detakMs = DETAK_PENJADWAL_MS;
   keadaan.timerMulaiMs = Date.now();
+  if (!keadaan.berkalaBerikutnyaMs) keadaan.berkalaBerikutnyaMs = Date.now() + selangAcakMs(pengaturan);
 
-  // Sekali segera sesudah bot menyala, bukan menunggu detak pertama lima
-  // belas menit lagi. Justru saat inilah arsip paling mungkin baru saja
-  // lenyap: bot yang baru menyala hampir selalu berarti container yang baru
-  // dibuat, dan itu persis kejadian yang menghapus folder yang tidak
-  // ter-mount. Mengetahuinya sekarang jauh lebih berguna daripada seperempat
-  // jam kemudian.
+  // Sekali segera sesudah bot menyala: bot yang baru menyala hampir selalu
+  // berarti container yang baru dibuat - saat arsip yang tidak ter-mount
+  // paling mungkin baru saja lenyap.
   void periksaArsipBerkala();
 
   keadaan.timer = setInterval(() => {
-    const p = getSettings();
-    if (!p.aktif) return;
-
-    // ======================================================================
-    // PEMERIKSAAN ARSIP BERDIRI DI LUAR JAM KERJA DAN DI LUAR JARAK PUTARAN
-    // ======================================================================
-    //
-    // Ia tidak menuntut sesi e-Court dan tidak menyentuh Mahkamah Agung sama
-    // sekali - hanya membaca berkas yang sudah ada di disk. Menaruhnya di
-    // dalam detak() berarti ia ikut berhenti di luar jam kerja dan ikut
-    // menunggu jarakJam, padahal berkas hilang justru paling sering terjadi
-    // di luar jam kerja: container dibuat ulang saat pemasangan malam hari,
-    // dan seluruh arsip yang tidak ter-mount lenyap bersamanya.
-    void periksaArsipBerkala();
-
-    const jarakMs = p.jarakJam * 60 * 60 * 1000;
-    if (Date.now() - keadaan.terakhirPutaranMs < jarakMs) return;
-    // Di luar jam kerja detak() tidak menarik apa pun - jaraknya tidak
-    // dihabiskan, supaya putaran pertama di jam kerja tidak tertunda.
-    if (!dalamJamKerja(new Date(), p)) return;
-    keadaan.terakhirPutaranMs = Date.now();
-    void detak();
-  }, detakMs);
+    void detakPenjadwal().catch(() => {});
+  }, DETAK_PENJADWAL_MS);
 
   if (typeof keadaan.timer.unref === "function") keadaan.timer.unref();
 }
@@ -704,33 +972,6 @@ function mulai() {
 function mulaiUlang() {
   berhenti();
   mulai();
-}
-
-/**
- * Waktu putaran berkala berikutnya (ISO) - fungsi murni atas keadaan pewaktu.
- * Detak pertama yang jaraknya sudah lewat DAN jatuh di jam kerja. null bila
- * penjadwal tidak menyala atau tidak ada detak cocok dalam 8 hari.
- */
-function hitungJadwalBerikutnya({
-  aktif,
-  timerMulaiMs,
-  terakhirPutaranMs = 0,
-  jarakJam,
-  sekarangMs = Date.now(),
-  pengaturan,
-  detakMs = DETAK_PENJADWAL_MS,
-}) {
-  if (!aktif || !timerMulaiMs) return null;
-  const jarakMs = Number(jarakJam) * 60 * 60 * 1000;
-  const k0 = Math.max(1, Math.floor((sekarangMs - timerMulaiMs) / detakMs) + 1);
-  const batas = Math.ceil((8 * 24 * 60 * 60 * 1000) / detakMs);
-  for (let k = k0; k < k0 + batas; k += 1) {
-    const t = timerMulaiMs + k * detakMs;
-    if (terakhirPutaranMs && t - terakhirPutaranMs < jarakMs) continue;
-    if (!dalamJamKerja(new Date(t), pengaturan)) continue;
-    return new Date(t).toISOString();
-  }
-  return null;
 }
 
 /** Keadaan penjadwal untuk ditampilkan portal. */
@@ -746,16 +987,22 @@ function getStatus() {
     terakhirKode: keadaan.terakhirKode,
     terakhirCatatan: keadaan.terakhirCatatan,
     jumlahPutaran: keadaan.jumlahPutaran,
-    // Butir 12: jadwal putaran berkala berikutnya (null = tidak menyala).
+    // Butir 12 + 13 Okt 10.05: putaran berkala berikutnya (waktu acak yang
+    // SUDAH ditetapkan; null = tidak menyala) dan tarikan pagi.
     berikutnya: keadaan.timer
-      ? hitungJadwalBerikutnya({
-          aktif: pengaturan.aktif,
-          timerMulaiMs: keadaan.timerMulaiMs,
-          terakhirPutaranMs: keadaan.terakhirPutaranMs,
-          jarakJam: pengaturan.jarakJam,
-          pengaturan,
-        })
+      ? jadwalBerkalaBerikutnya({ aktif: pengaturan.aktif, berikutnyaMs: keadaan.berkalaBerikutnyaMs, pengaturan })
       : null,
+    pagi: (() => {
+      const catatan = bacaPagi();
+      const j = jadwalPagiBerikutnya({ pengaturan, terakhirTanggal: String(catatan.tanggal || "") });
+      return {
+        aktif: pengaturan.pagiAktif && pengaturan.aktif,
+        jam: `${String(pengaturan.jamPagi).padStart(2, "0")}:${String(pengaturan.menitPagi).padStart(2, "0")}`,
+        berikutnya: pengaturan.aktif ? j.waktu : null,
+        susulan: j.susulan,
+        terakhir: catatan.tanggal ? catatan : null,
+      };
+    })(),
     zonaWaktu: ZONA_WAKTU,
     // Keterangan putaran yang sedang berjalan, untuk layar pemantauan.
     sumber: keadaan.sumber,
@@ -929,8 +1176,17 @@ module.exports = {
   DETAK_PENJADWAL_MS,
   ZONA_WAKTU,
   bagianWaktu,
+  aturAlat,
+  bacaPagi,
   berhenti,
-  hitungJadwalBerikutnya,
+  detakPenjadwal,
+  jadwalBerkalaBerikutnya,
+  jadwalPagiBerikutnya,
+  periksaPengaturan,
+  perluTarikanPagi,
+  putuskanDetak,
+  selangAcakMs,
+  waktuZona,
   dalamJamKerja,
   getSettings,
   getStatus,

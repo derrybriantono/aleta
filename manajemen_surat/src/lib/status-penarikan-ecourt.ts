@@ -16,7 +16,8 @@ export type RingkasPenarikan = {
   sumber: string;
   labelSumber: string;
   otomatis: boolean;
-  jenis: "berkala" | "perkara";
+  jenis: "berkala" | "perkara" | "pagi";
+  sidangDiutamakan?: number;
   perkara: string;
   akun: string;
   labelAkun: string;
@@ -39,6 +40,22 @@ export type AkunUtama = {
   pesan: string;
 };
 
+/** Tarikan pagi (13 Okt 10.05). */
+export type TarikanPagi = {
+  aktif: boolean;
+  jam: string;
+  berikutnya: string | null;
+  susulan: boolean;
+  terakhir: {
+    tanggal: string;
+    mulai: string;
+    kode?: number | null;
+    catatan?: string;
+    jumlahPerkara?: number;
+    susulan?: boolean;
+  } | null;
+};
+
 export type StatusPenarikan = {
   dibaca: string;
   akunUtama: AkunUtama;
@@ -56,6 +73,9 @@ export type StatusPenarikan = {
     akunBerjalan: string;
     berikutnya: string | null;
     zonaWaktu: string;
+    selangMinMenit?: number | null;
+    selangMaksMenit?: number | null;
+    pagi?: TarikanPagi | null;
   };
   verifikasiHarian: {
     menyala: boolean;
@@ -67,6 +87,7 @@ export type StatusPenarikan = {
   } | null;
   terakhirBerkala: RingkasPenarikan | null;
   terakhirPerkara: RingkasPenarikan | null;
+  terakhirPagi?: RingkasPenarikan | null;
   riwayat: RingkasPenarikan[];
   sesi: { berlaku: boolean | null; pada: string; sumber: string };
 };
@@ -143,12 +164,43 @@ export function keadaanSesi(sesi: StatusPenarikan["sesi"], zona?: string): { tek
   return { teks: "Sesi e-Court belum diperiksa", nada: "muted" };
 }
 
+/** "acak 30-60 menit" - rentang selang putaran berkala. */
+export function rentangSelang(s: StatusPenarikan): string {
+  const { selangMinMenit: min, selangMaksMenit: maks } = s.penjadwal;
+  if (typeof min !== "number" || typeof maks !== "number") return "";
+  return min === maks ? `tiap ${min} menit` : `acak ${min}-${maks} menit`;
+}
+
+/** Kalimat tarikan pagi: jam tetap, berikutnya / susulan, dan hasil terakhir. */
+export function kalimatPagi(s: StatusPenarikan): string {
+  const pagi = s.penjadwal.pagi;
+  const z = s.penjadwal.zonaWaktu || undefined;
+  if (!pagi) return "";
+  if (!pagi.aktif) return `Tarikan pagi (${pagi.jam.replace(":", ".")}) tidak menyala.`;
+  const jam = pagi.jam.replace(":", ".");
+  const berikut = pagi.berikutnya
+    ? pagi.susulan
+      ? "susulan hari ini segera dijalankan (bot menyala sesudah jamnya)"
+      : `berikutnya ${waktuPendek(pagi.berikutnya, z)}`
+    : "belum terjadwal";
+  const t = pagi.terakhir;
+  const terakhir = t
+    ? ` Terakhir ${waktuPendek(t.mulai, z)}${t.susulan ? " (susulan)" : ""}: ${
+        typeof t.jumlahPerkara === "number" ? `${t.jumlahPerkara} perkara sidang` : ""
+      }${t.kode === 0 ? ", berhasil" : t.kode === 2 ? ", sesi habis" : typeof t.kode === "number" ? ", gagal" : ""}.`
+    : "";
+  return `Tarikan pagi ${jam} WITA Senin-Jumat (semua perkara e-Court yang bersidang hari itu) - ${berikut}.${terakhir}`;
+}
+
 /** Kalimat jadwal tarikan berikutnya. */
 export function kalimatBerikutnya(s: StatusPenarikan): string {
   const z = s.penjadwal.zonaWaktu || undefined;
   if (!s.penjadwal.aktif) return "Penarikan berkala tidak menyala.";
+  const rentang = rentangSelang(s);
   const bagian = [
-    s.penjadwal.berikutnya ? `Berkala berikutnya ${waktuPendek(s.penjadwal.berikutnya, z)}` : "Berkala berikutnya belum terjadwal",
+    s.penjadwal.berikutnya
+      ? `Berkala berikutnya ${waktuPendek(s.penjadwal.berikutnya, z)}${rentang ? ` (selang ${rentang}, sidang hari ini ikut diperiksa)` : ""}`
+      : "Berkala berikutnya belum terjadwal",
   ];
   if (s.verifikasiHarian?.menyala && s.verifikasiHarian.detakBerikutnya) {
     bagian.push(`pemeriksaan sidang hari ini berikutnya ${waktuPendek(s.verifikasiHarian.detakBerikutnya, z)}`);

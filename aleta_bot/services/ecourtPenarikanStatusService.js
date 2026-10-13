@@ -34,10 +34,11 @@ const EKOR_BYTE = 8192;
 const AMBANG_HIDUP_MS = 3 * 60 * 1000;
 
 /** Sumber yang dijalankan sendiri oleh bot (bukan ditekan orang). */
-const SUMBER_OTOMATIS = new Set(["jadwal", "verifikasi"]);
+const SUMBER_OTOMATIS = new Set(["jadwal", "verifikasi", "pagi"]);
 
 const LABEL_SUMBER = {
   jadwal: "penjadwal berkala",
+  pagi: "tarikan pagi (sidang hari ini)",
   verifikasi: "penarik verifikasi harian",
   "jadwal-belum-upload": "tombol belum upload (Jadwal Sidang)",
   "portal-perkara": "tarik satu perkara (portal)",
@@ -70,12 +71,20 @@ function waktuDariNama(nama) {
  * @param {{nama: string, kepala: string, ekor: string, diubahMs: number, sekarangMs?: number}} o
  */
 function ringkasLog({ nama, kepala = "", ekor = "", diubahMs = 0, sekarangMs = Date.now() }) {
-  const kep = /^=== Penarikan e-Court dimulai (\S+) \(sumber: ([^,)]+)(?:, perkara: ([^,)]+))?(?:, akun: ([^,)]+))?\) ===/m.exec(
-    kepala
-  );
-  const sumber = kep ? kep[2].trim() : "server-skrip";
-  const perkara = kep && kep[3] ? kep[3].trim() : "";
-  const akun = kep && kep[4] ? kep[4].trim() : "";
+  // Kepala: "(sumber: X, perkara: Y, akun: Z, sidang: N)" - ruas boleh absen
+  // dan boleh bertambah; dibaca sebagai pasangan kunci: nilai.
+  const kep = /^=== Penarikan e-Court dimulai (\S+) \((.*)\) ===/m.exec(kepala);
+  const ruas = {};
+  if (kep) {
+    for (const bagian of kep[2].split(", ")) {
+      const i = bagian.indexOf(": ");
+      if (i > 0) ruas[bagian.slice(0, i).trim()] = bagian.slice(i + 2).trim();
+    }
+  }
+  const sumber = ruas.sumber || "server-skrip";
+  const perkara = ruas.perkara || "";
+  const akun = ruas.akun || "";
+  const sidangDiutamakan = Number(ruas.sidang) || 0;
   const mulai = kep ? kep[1] : waktuDariNama(nama);
 
   const penutupSemua = [...String(ekor).matchAll(/^=== (.+?) \((\d{4}-\d{2}-\d{2}T[^)]+)\) ===\s*$/gm)];
@@ -126,7 +135,8 @@ function ringkasLog({ nama, kepala = "", ekor = "", diubahMs = 0, sekarangMs = D
     sumber,
     labelSumber: LABEL_SUMBER[sumber] || sumber,
     otomatis: SUMBER_OTOMATIS.has(sumber),
-    jenis: perkara ? "perkara" : "berkala",
+    jenis: perkara ? "perkara" : sumber === "pagi" ? "pagi" : "berkala",
+    sidangDiutamakan,
     perkara,
     akun,
     hasil,
@@ -251,6 +261,10 @@ function statusPenarikan(deps = {}) {
       akunBerjalan: jadwal.akun ? labelAkun(jadwal.akun) : "",
       berikutnya: jadwal.berikutnya || null,
       zonaWaktu: jadwal.zonaWaktu || "",
+      // 13 Okt 10.05: selang acak putaran berkala dan tarikan pagi.
+      selangMinMenit: jadwal.pengaturan ? jadwal.pengaturan.selangMinMenit ?? null : null,
+      selangMaksMenit: jadwal.pengaturan ? jadwal.pengaturan.selangMaksMenit ?? null : null,
+      pagi: jadwal.pagi || null,
     },
     verifikasiHarian: verif
       ? {
@@ -264,6 +278,7 @@ function statusPenarikan(deps = {}) {
       : null,
     terakhirBerkala: riwayat.find((r) => r.jenis === "berkala") || null,
     terakhirPerkara: riwayat.find((r) => r.jenis === "perkara") || null,
+    terakhirPagi: riwayat.find((r) => r.jenis === "pagi") || null,
     riwayat,
     sesi: sesiTerbaru({ pemeriksaan, pantau: pantauStatus, riwayat }),
   };

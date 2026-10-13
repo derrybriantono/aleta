@@ -167,6 +167,8 @@ function parseArgs(argv) {
     // sekali didahulukan, dan penariknya beristirahat tiap beberapa puluh
     // perkara.
     hanyaBelumAda: false,
+    utamakan: [],
+    hanyaUtamakan: false,
     // Kosong berarti slot bawaan - lihat sesi.js.
     akun: "",
   };
@@ -178,6 +180,15 @@ function parseArgs(argv) {
     // register, dan memaksa satu di antaranya hanya menyusahkan.
     else if (item === "--perkara") args.perkara = String(argv[++i] || "").trim();
     else if (item === "--paksa-ulang") args.paksaUlang = true;
+    // 13 Okt 2026: perkara yang bersidang hari ini, dipisah koma - selalu
+    // dibuka lebih dulu (tidak disaring "sudah lengkap", tidak memakan jatah
+    // --maks-perkara). --hanya-utamakan: HANYA daftar itu (tarikan pagi).
+    else if (item === "--utamakan") {
+      args.utamakan = String(argv[++i] || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    } else if (item === "--hanya-utamakan") args.hanyaUtamakan = true;
     else if (item === "--hanya-belum-ada") args.hanyaBelumAda = true;
     // Slot akun e-Court. Tiap akun punya folder profil sendiri; tanpa ini,
     // seluruh akun berbagi satu profil dan saling menimpa sesinya.
@@ -201,6 +212,38 @@ function parseArgs(argv) {
  */
 function saringYangLengkap(args) {
   return !args.paksaUlang && !String(args.perkara || "").trim();
+}
+
+/**
+ * Alamat e-Court perkara yang diutamakan (sidang hari ini) - dari acuan SIPP
+ * dan peta alamat sapuan. Yang tidak ketemu dilaporkan, bukan ditebak.
+ */
+function alamatDiutamakan(acuan, daftar) {
+  const hasil = [];
+  const tidakKetemu = [];
+  const petaAlamat = (acuan && acuan.petaAlamat) || new Map();
+  const semua = acuan && acuan.perkara ? [...acuan.perkara.values()] : [];
+  for (const nomor of Array.isArray(daftar) ? daftar : []) {
+    const kunci = kunciPerkara(nomor);
+    const p = semua.find((x) => kunciPerkara(x.nomorPerkara) === kunci);
+    const alamat = p ? petaAlamat.get(String(p.nomorRegister || "").toUpperCase()) : "";
+    if (alamat && !hasil.includes(alamat)) hasil.push(alamat);
+    else if (!alamat) tidakKetemu.push(nomor);
+  }
+  return { alamat: hasil, tidakKetemu };
+}
+
+/**
+ * Daftar tautan akhir satu putaran - fungsi murni. Yang diutamakan selalu di
+ * depan dan tidak memakan jatah maksPerkara; sisanya dipotong maksPerkara
+ * (0 = tanpa batas). hanyaUtama: hanya yang diutamakan.
+ */
+function susunTautanAkhir({ tautan = [], utama = [], maksPerkara = 0, hanyaUtama = false }) {
+  const setUtama = new Set(utama);
+  if (hanyaUtama) return { tautan: [...utama], tertunda: 0 };
+  const sisa = tautan.filter((u) => !setUtama.has(u));
+  const dipotong = maksPerkara > 0 ? sisa.slice(0, maksPerkara) : sisa;
+  return { tautan: [...utama, ...dipotong], tertunda: Math.max(sisa.length - dipotong.length, 0) };
 }
 
 function log(pesan) {
@@ -1486,7 +1529,9 @@ async function utama() {
     // dokumen persidangan selalu di luar jendela pendek - dan tombol "Tarik
     // perkara ini" di Kendali Berkas karena itu tidak pernah berhasil untuknya.
     const acuan = await muatAcuanSipp(args.maksPerkara, {
-      seluruhArsip: args.hanyaBelumAda || Boolean(args.perkara),
+      // Perkara lama pun dapat bersidang hari ini - acuan dibuka lebar bila
+      // ada yang diutamakan (kueri SIPP setempat, bukan beban e-Court).
+      seluruhArsip: args.hanyaBelumAda || Boolean(args.perkara) || args.utamakan.length > 0,
     });
 
     log("Membuka daftar perkara...");
@@ -1703,9 +1748,25 @@ async function utama() {
       tautan = perluDiperiksa;
     }
 
-    const sebelumDibatasi = tautan.length;
-    if (args.maksPerkara > 0) tautan = tautan.slice(0, args.maksPerkara);
-    ringkasan.tertundaKarenaBatas = Math.max(sebelumDibatasi - tautan.length, 0);
+    if (args.utamakan.length > 0 && !args.perkara) {
+      // Sidang hari ini (13 Okt 2026): dibuka lebih dulu, tidak disaring dan
+      // tidak memakan jatah - satu putaran, satu peramban, satu kunci.
+      const { alamat, tidakKetemu } = alamatDiutamakan(acuan, args.utamakan);
+      log(`Diutamakan (sidang hari ini): ${alamat.length} dari ${args.utamakan.length} perkara.`);
+      if (tidakKetemu.length) log(`  Tidak ketemu di daftar e-Court: ${tidakKetemu.slice(0, 10).join(", ")}`);
+      const akhir = susunTautanAkhir({
+        tautan,
+        utama: alamat,
+        maksPerkara: args.maksPerkara,
+        hanyaUtama: args.hanyaUtamakan,
+      });
+      tautan = akhir.tautan;
+      ringkasan.tertundaKarenaBatas = akhir.tertunda;
+    } else {
+      const sebelumDibatasi = tautan.length;
+      if (args.maksPerkara > 0) tautan = tautan.slice(0, args.maksPerkara);
+      ringkasan.tertundaKarenaBatas = Math.max(sebelumDibatasi - tautan.length, 0);
+    }
     log(`Ditemukan ${tautan.length} perkara untuk diperiksa.`);
     if (ringkasan.tertundaKarenaBatas > 0) {
       log(
@@ -1842,6 +1903,8 @@ module.exports = {
   guessExtension,
   parseArgs,
   saringYangLengkap,
+  alamatDiutamakan,
+  susunTautanAkhir,
   simpanBerkas,
   susunGiliran,
   // Diekspor supaya penjaga uji dapat MEMBANDINGKANNYA dengan taksiran waktu di

@@ -1130,7 +1130,14 @@ export type GatewayEcourtJadwal = {
     aktifTersimpan?: boolean;
     selaluAktif?: boolean;
     akunUtama?: GatewayAkunUtama | null;
+    /** 13 Okt 10.05: selang acak putaran berkala dan tarikan pagi. */
+    selangMinMenit?: number;
+    selangMaksMenit?: number;
+    pagiAktif?: boolean;
+    jamPagi?: number;
+    menitPagi?: number;
   };
+  pagi?: GatewayTarikanPagi;
   berjalan: boolean;
   sedangJalan: boolean;
   dalamJamKerja: boolean;
@@ -1196,6 +1203,11 @@ export async function saveGatewayEcourtJadwal(payload: {
   jamMulai: number;
   jamSelesai: number;
   maksPerkara: number;
+  selangMinMenit?: number;
+  selangMaksMenit?: number;
+  pagiAktif?: boolean;
+  jamPagi?: number;
+  menitPagi?: number;
   olehSiapa: string;
 }): Promise<GatewayResult<{ ok: boolean; alasan?: string }>> {
   return gatewayFetch("/internal/aleta-bot/ecourt/jadwal", { method: "POST", body: JSON.stringify(payload) });
@@ -1397,6 +1409,22 @@ export async function simpanGatewayAkunUtama(payload: {
   });
 }
 
+/** Tarikan pagi (13 Okt 10.05): jam tetap, susulan bila bot baru menyala. */
+export type GatewayTarikanPagi = {
+  aktif: boolean;
+  jam: string;
+  berikutnya: string | null;
+  susulan: boolean;
+  terakhir: {
+    tanggal: string;
+    mulai: string;
+    kode?: number | null;
+    catatan?: string;
+    jumlahPerkara?: number;
+    susulan?: boolean;
+  } | null;
+};
+
 /** Satu penarikan menurut log-nya (butir 12). */
 export type GatewayRingkasPenarikan = {
   nama: string;
@@ -1405,7 +1433,8 @@ export type GatewayRingkasPenarikan = {
   sumber: string;
   labelSumber: string;
   otomatis: boolean;
-  jenis: "berkala" | "perkara";
+  jenis: "berkala" | "perkara" | "pagi";
+  sidangDiutamakan?: number;
   perkara: string;
   akun: string;
   labelAkun: string;
@@ -1437,6 +1466,9 @@ export type GatewayStatusPenarikan = {
     akunBerjalan: string;
     berikutnya: string | null;
     zonaWaktu: string;
+    selangMinMenit?: number | null;
+    selangMaksMenit?: number | null;
+    pagi?: GatewayTarikanPagi | null;
   };
   verifikasiHarian: {
     menyala: boolean;
@@ -1448,6 +1480,7 @@ export type GatewayStatusPenarikan = {
   } | null;
   terakhirBerkala: GatewayRingkasPenarikan | null;
   terakhirPerkara: GatewayRingkasPenarikan | null;
+  terakhirPagi?: GatewayRingkasPenarikan | null;
   riwayat: GatewayRingkasPenarikan[];
   sesi: { berlaku: boolean | null; pada: string; sumber: string };
 };

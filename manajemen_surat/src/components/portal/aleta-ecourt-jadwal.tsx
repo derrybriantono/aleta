@@ -36,7 +36,14 @@ type Jadwal = {
     aktifTersimpan?: boolean;
     selaluAktif?: boolean;
     akunUtama?: { slot: string; label: string; sah: boolean; pesan: string } | null;
+    /** 13 Okt 10.05: selang acak putaran berkala (menit) dan tarikan pagi. */
+    selangMinMenit?: number;
+    selangMaksMenit?: number;
+    pagiAktif?: boolean;
+    jamPagi?: number;
+    menitPagi?: number;
   };
+  pagi?: { aktif: boolean; jam: string; berikutnya: string | null; susulan: boolean } | null;
   /** Butir 12: putaran berkala berikutnya (ISO). */
   berikutnya?: string | null;
   berjalan: boolean;
@@ -51,6 +58,12 @@ type Jadwal = {
 
 const ALASAN: Record<string, string> = {
   jarak_jam_di_luar_1_sampai_24: "Jarak antar putaran harus antara 1 dan 24 jam.",
+  selang_min_di_luar_15_sampai_240: "Selang paling cepat harus antara 15 dan 240 menit.",
+  selang_maks_di_luar_15_sampai_240: "Selang paling lama harus antara 15 dan 240 menit.",
+  selang_min_lebih_dari_maks: "Selang paling cepat tidak boleh lebih dari selang paling lama.",
+  jam_pagi_di_luar_0_sampai_23: "Jam tarikan pagi harus antara 0 dan 23.",
+  menit_pagi_di_luar_0_sampai_59: "Menit tarikan pagi harus antara 0 dan 59.",
+  jam_pagi_harus_sebelum_jam_selesai: "Tarikan pagi harus sebelum jam selesai kerja.",
   jam_mulai_di_luar_0_sampai_23: "Jam mulai harus antara 0 dan 23.",
   jam_selesai_di_luar_1_sampai_24: "Jam selesai harus antara 1 dan 24.",
   jam_selesai_harus_setelah_jam_mulai: "Jam selesai harus setelah jam mulai.",
@@ -67,7 +80,11 @@ export function AletaEcourtJadwal() {
   const [catatan, setCatatan] = useState("");
 
   const [aktif, setAktif] = useState(false);
-  const [jarakJam, setJarakJam] = useState("2");
+  // 13 Okt 2026: jarak jam tetap diganti selang acak (menit) + tarikan pagi.
+  const [selangMin, setSelangMin] = useState("30");
+  const [selangMaks, setSelangMaks] = useState("60");
+  const [pagiAktif, setPagiAktif] = useState(true);
+  const [jamPagi, setJamPagi] = useState("08:00");
   const [jamMulai, setJamMulai] = useState("7");
   const [jamSelesai, setJamSelesai] = useState("17");
   const [maksPerkara, setMaksPerkara] = useState("25");
@@ -88,7 +105,10 @@ export function AletaEcourtJadwal() {
         // Yang disunting adalah saklar TERSIMPAN; menyala-tidaknya dibaca dari
         // pengaturan.aktif (akun utama sah = selalu menyala).
         setAktif((p.aktifTersimpan ?? p.aktif) === true);
-        setJarakJam(String(p.jarakJam));
+        setSelangMin(String(p.selangMinMenit ?? 30));
+        setSelangMaks(String(p.selangMaksMenit ?? 60));
+        setPagiAktif(p.pagiAktif !== false);
+        setJamPagi(`${String(p.jamPagi ?? 8).padStart(2, "0")}:${String(p.menitPagi ?? 0).padStart(2, "0")}`);
         setJamMulai(String(p.jamMulai));
         setJamSelesai(String(p.jamSelesai));
         setMaksPerkara(String(p.maksPerkara));
@@ -220,6 +240,14 @@ export function AletaEcourtJadwal() {
                 {" · "}
                 {jadwal.dalamJamKerja ? "sekarang di dalam jam kerja" : "sekarang di luar jam kerja"}
                 {jadwal.berikutnya ? <> · putaran berikutnya {formatDateTime(jadwal.berikutnya)}</> : null}
+                {jadwal.pagi?.aktif && jadwal.pagi.berikutnya ? (
+                  <>
+                    {" · "}
+                    {jadwal.pagi.susulan
+                      ? "tarikan pagi hari ini disusulkan segera"
+                      : `tarikan pagi berikutnya ${formatDateTime(jadwal.pagi.berikutnya)}`}
+                  </>
+                ) : null}
               </>
             ) : null}
           </div>
@@ -227,20 +255,32 @@ export function AletaEcourtJadwal() {
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium" htmlFor="jadwal-jarak">
-              Jarak antar putaran
+            <label className="text-sm font-medium" htmlFor="jadwal-selang-min">
+              Selang acak antar putaran
             </label>
             <div className="flex items-center gap-2">
               <Input
-                id="jadwal-jarak"
+                id="jadwal-selang-min"
                 type="number"
-                min={1}
-                max={24}
-                value={jarakJam}
-                onChange={(event) => setJarakJam(event.target.value)}
+                min={15}
+                max={240}
+                value={selangMin}
+                onChange={(event) => setSelangMin(event.target.value)}
                 className="w-20"
+                aria-label="Selang paling cepat (menit)"
               />
-              <span className="text-sm text-muted-foreground">jam</span>
+              <span className="text-sm text-muted-foreground">-</span>
+              <Input
+                id="jadwal-selang-maks"
+                type="number"
+                min={15}
+                max={240}
+                value={selangMaks}
+                onChange={(event) => setSelangMaks(event.target.value)}
+                className="w-20"
+                aria-label="Selang paling lama (menit)"
+              />
+              <span className="text-sm text-muted-foreground">menit</span>
             </div>
           </div>
 
@@ -294,6 +334,41 @@ export function AletaEcourtJadwal() {
           <input type="checkbox" checked={aktif} onChange={(event) => setAktif(event.target.checked)} />
           Nyalakan penarikan berkala
         </label>
+
+        <div className="flex flex-wrap items-center gap-3 rounded border border-border p-3">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={pagiAktif}
+              onChange={(event) => {
+                // Mematikan tarikan pagi harus disengaja.
+                if (
+                  !event.target.checked &&
+                  !window.confirm(
+                    "Matikan tarikan pagi? Perkara yang bersidang hari ini tidak lagi ditarik serentak tiap pagi (berlaku setelah Simpan Penjadwal)."
+                  )
+                ) {
+                  return;
+                }
+                setPagiAktif(event.target.checked);
+              }}
+            />
+            Tarikan pagi
+          </label>
+          <Input
+            id="jadwal-pagi"
+            type="time"
+            value={jamPagi}
+            onChange={(event) => setJamPagi(event.target.value)}
+            className="w-28"
+            aria-label="Jam tarikan pagi (WITA)"
+            disabled={!pagiAktif}
+          />
+          <span className="text-xs text-muted-foreground">
+            WITA, Senin-Jumat - membuka semua perkara e-Court yang bersidang hari itu dengan akun utama. Bila bot baru
+            menyala sesudah jam itu, tarikan pagi hari itu disusulkan sekali.
+          </span>
+        </div>
         {jadwal?.pengaturan.selaluAktif ? (
           <p className="rounded border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100">
             Akun utama {jadwal.pengaturan.akunUtama?.label || jadwal.pengaturan.akunUtama?.slot || ""} sah, jadi
@@ -318,7 +393,11 @@ export function AletaEcourtJadwal() {
             void kirim(
               {
                 aktif,
-                jarakJam: Number(jarakJam),
+                selangMinMenit: Number(selangMin),
+                selangMaksMenit: Number(selangMaks),
+                pagiAktif,
+                jamPagi: Number(jamPagi.split(":")[0]),
+                menitPagi: Number(jamPagi.split(":")[1] ?? 0),
                 jamMulai: Number(jamMulai),
                 jamSelesai: Number(jamSelesai),
                 maksPerkara: Number(maksPerkara),

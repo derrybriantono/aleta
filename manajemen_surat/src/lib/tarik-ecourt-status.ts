@@ -36,6 +36,9 @@ export type JadwalTarikEcourt = {
     jamMulai: number;
     jamSelesai: number;
     maksPerkara: number;
+    /** 13 Okt 2026: selang acak putaran berkala (menit). */
+    selangMinMenit?: number;
+    selangMaksMenit?: number;
   };
   sedangJalan?: boolean;
   dalamJamKerja?: boolean;
@@ -115,11 +118,16 @@ export function ringkasTarikEcourt(jadwal: JadwalTarikEcourt | null | undefined)
   }
 
   const rentang = `jam ${dua(p.jamMulai)}.00-${dua(p.jamSelesai)}.00, Senin-Jumat`;
+  // Sejak 13 Okt 2026 jadwalnya selang acak (menit); jarakJam hanya turunan.
+  const selang =
+    typeof p.selangMinMenit === "number" && typeof p.selangMaksMenit === "number"
+      ? `tiap ${p.selangMinMenit}-${p.selangMaksMenit} menit (acak)`
+      : `tiap ${p.jarakJam} jam`;
   const keterangan = sedangJalan
     ? "Sedang menarik berkas sekarang."
     : jadwal.dalamJamKerja === false
-      ? `Menunggu jam kerja (${rentang}); tiap ${p.jarakJam} jam.`
-      : `Menarik tiap ${p.jarakJam} jam, ${rentang}.`;
+      ? `Menunggu jam kerja (${rentang}); ${selang}.`
+      : `Menarik ${selang}, ${rentang}.`;
   return { keadaan: "aktif", aktif: true, label: "Aktif", keterangan, sedangJalan, terakhirSelesai };
 }
 
