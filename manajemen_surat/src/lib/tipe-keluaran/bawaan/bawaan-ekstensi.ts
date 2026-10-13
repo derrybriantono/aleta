@@ -222,6 +222,32 @@ export const CERMIN_EKSTENSI = {
       urutan: 24,
     },
     /* === AKHIR P === */
+    /* === T 13 Okt === cermin blok kumulasi panel-alat.js (blangko putusan perkara kumulasi; paket ABT abt-putusan-bas-lengkap) */
+    {
+      kunci: "cerai gugat+itsbat-nikah|dikabulkan|verstek",
+      nilai: "[01aa] [Kabul Verstek] IN + CG - F",
+      data: { jenisAsli: "Cerai Gugat Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat"], catatan: "varian: [01aa] [Kabul Verstek] IN + CG - B & F" },
+      urutan: 25,
+    },
+    {
+      kunci: "cerai talak+itsbat-nikah|dikabulkan|verstek",
+      nilai: "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - F",
+      data: { jenisAsli: "Cerai Talak Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Talak Kumulasi Itsbat Nikah", blangkoLain: ["Putusan CT Kumulasi Itsbat"], catatan: "paket ABT abt-putusan-bas-lengkap" },
+      urutan: 26,
+    },
+    {
+      kunci: "cerai gugat+hak-asuh-anak|dikabulkan|verstek",
+      nilai: "[01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz",
+      data: { jenisAsli: "Cerai Gugat Kumulasi Hak Asuh Anak", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat Kumulasi Hak Asuh Anak", blangkoLain: ["Putusan CG Kumulasi Hak Asuh"], catatan: "varian: [01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz" },
+      urutan: 27,
+    },
+    {
+      kunci: "cerai gugat+hak-asuh-anak+nafkah-anak|dikabulkan|verstek",
+      nilai: "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz",
+      data: { jenisAsli: "Cerai Gugat Kumulasi Hak Asuh Anak dan Nafkah Anak", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat Kumulasi Hak Asuh Anak", blangkoLain: ["Putusan CG Kumulasi Hak Asuh"], catatan: "varian: [01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz" },
+      urutan: 28,
+    },
+    /* === AKHIR T === */
   ],
   "putusan.padanan-jenis": [
     { kunci: "itsbat nikah", nilai: "pengesahan perkawinan/istbat nikah", urutan: 0 },

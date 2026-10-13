@@ -262,6 +262,55 @@ function kodeAleta(kode) {
   return String(kode || "").startsWith(AWALAN_KODE);
 }
 
+/* === T 13 Okt === */
+/**
+ * USULAN SET UNTUK PERKARA KUMULASI (butir 4, 13 Okt 2026).
+ *
+ * Kumulasi = keterangan kumulasiPerkaraService (SIPP perkara_kumulasi + petitum perkara cerai; keputusan pengguna 12 Okt:
+ * digabung, petitum hanya untuk cerai). Saksi perkara kumulasi harus menerangkan pokok kumulasinya juga:
+ *   - itsbat nikah  -> set templat ABT A3a (cerai gugat) / A3 (cerai talak): pertanyaan rukun & syarat nikah + perceraian;
+ *   - hak asuh anak / nafkah anak / nafkah iddah / mut'ah / madliyah -> set dasar + tambahan "anak & nafkah"
+ *     (kode gabungan "<set>+anak-nafkah", diurai ambilSet - pertanyaan tambahan disisipkan sebelum penutup).
+ * Hanya cerai (346/347): jenis lain tidak punya kumulasi di SIPP satker (86/86 perkara kumulasi = cerai, 12 Okt).
+ * Pulang null bila tidak ada usulan. USULAN - petugas tetap memilih; tidak ada yang dipilih diam-diam di luar borang.
+ *
+ * @param {string|number} jenisPerkaraId
+ * @param {{kode: string, nama?: string, sumber?: string}[]|string[]} kumulasi
+ */
+const KUMULASI_ANAK_NAFKAH = Object.freeze(["hak-asuh-anak", "nafkah-anak", "nafkah-iddah", "mutah", "nafkah-madliyah"]);
+function usulanSetKumulasi(jenisPerkaraId, kumulasi) {
+  const jenis = idJenis(jenisPerkaraId);
+  if (jenis !== "346" && jenis !== "347") return null;
+  const butirK = (Array.isArray(kumulasi) ? kumulasi : [])
+    .map((k) => (typeof k === "string" ? { kode: k, nama: k, sumber: "" } : k && typeof k === "object" ? k : null))
+    .filter((k) => k && typeof k.kode === "string" && k.kode);
+  if (!butirK.length) return null;
+  const ada = (kode) => butirK.some((k) => k.kode === kode);
+  const gugat = jenis === "347";
+  const itsbat = ada("itsbat-nikah");
+  const anakNafkah = butirK.filter((k) => KUMULASI_ANAK_NAFKAH.includes(k.kode));
+  if (!itsbat && !anakNafkah.length) return null;
+  const dasar = itsbat ? (gugat ? "cerai-gugat-itsbat-saksi-p" : "cerai-talak-itsbat-saksi-p") : gugat ? "cerai-gugat-praktik" : "cerai-talak-praktik";
+  const { set } = butir();
+  if (!set.some((s) => s.namaSet === dasar)) return null;
+  const namaSet = anakNafkah.length ? `${dasar}+anak-nafkah` : dasar;
+  const disebut = butirK.filter((k) => k.kode === "itsbat-nikah" || KUMULASI_ANAK_NAFKAH.includes(k.kode));
+  const dariPetitum = disebut.filter((k) => k.sumber === "petitum").map((k) => k.nama || k.kode);
+  const label =
+    `Usulan kumulasi (${disebut.map((k) => k.nama || k.kode).join(", ")}): ` +
+    (itsbat ? `templat ABT ${gugat ? "A3a" : "A3"} (cerai + itsbat nikah)` : "praktik BAS satker") +
+    (anakNafkah.length ? " + pertanyaan anak & nafkah" : "");
+  return {
+    namaSet,
+    label,
+    kumulasi: disebut.map((k) => ({ kode: k.kode, nama: k.nama || k.kode, sumber: k.sumber || "" })),
+    catatan: dariPetitum.length
+      ? `${dariPetitum.join(", ")} terbaca dari petitum (belum dicatat di SIPP) - periksa dan lengkapi data kumulasi di SIPP.`
+      : "",
+  };
+}
+/* === AKHIR T === */
+
 module.exports = {
   KELOMPOK,
   AWALAN_KODE,
@@ -272,6 +321,8 @@ module.exports = {
   untukKatalog,
   untukTanyaJawab,
   kodeAleta,
+  usulanSetKumulasi,
+  KUMULASI_ANAK_NAFKAH,
   TAMBAHAN_HURUF,
   TANPA_CONTOH,
 };

@@ -58,7 +58,7 @@ import {
   uraiKunciBas,
   type FormatBasTanpaHadir,
 } from "@/lib/pemetaan-blangko";
-import { tentukanAlurBas } from "@/lib/alur-bas";
+import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
 
@@ -86,6 +86,8 @@ export type BarisSidangBas = {
   /** 15 = Pdt.G (gugatan), 16 = Pdt.P (permohonan). 0/tidak ada = dibaca dari nomor perkara. */
   alurPerkaraId?: unknown;
   sidangIkrarTalak?: unknown;
+  /** T 13 Okt: keterangan kumulasi bot ({daftar:[{kode, sumber}]}) - BAS putus verstek kumulasi hak asuh. */
+  kumulasi?: unknown;
   panggilan?: {
     tergugatPernahHadir?: unknown;
     /** true / false / null - bot sejak 9 Okt 2026; tidak ada = bot lama. */
@@ -808,8 +810,9 @@ function pilihBlangkoBasOtomatis(masukan: Parameters<typeof pilihBlangkoBas>[0])
 
 /* === ALURBAS 12 Okt === */
 /** Alur + langkah BAS untuk satu sidang, dalam bentuk ringkas yang dikirim ke ekstensi; null bila jenis perkara tanpa folder alur. */
-export function alurBasBaris(masukan: Parameters<typeof tentukanAlurBas>[0]): AlurBasBaris | null {
-  const h = tentukanAlurBas(masukan);
+export function alurBasBaris(masukan: Parameters<typeof tentukanAlurBasKumulasi>[0]): AlurBasBaris | null {
+  // T 13 Okt: pembungkus kumulasi (hak asuh -> folder BAS kumulasi) dan itsbat gugur/cabut; tanpa kumulasi = tentukanAlurBas.
+  const h = tentukanAlurBasKumulasi(masukan);
   if (!h.alur || !h.langkah) return null;
   return {
     id: h.alur.id,
@@ -1022,6 +1025,7 @@ export function susunBarisBasMassal(
         agenda: teks(s.agenda),
         tergugatPernahHadir: s.panggilan?.tergugatPernahHadir,
         sidangIkrarTalak: s.sidangIkrarTalak === true,
+        kumulasi: s.kumulasi, // T 13 Okt
       }),
       /* === AKHIR ALURBAS === */
     });

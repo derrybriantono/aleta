@@ -24162,7 +24162,8 @@ function s2BlangkoMassal() {
     const st = k.status[nomor] || {};
     const status = String((s && s.statusPutusan) || st.statusPutusan || "");
     const verstek = Boolean(s && s.verstek) || Boolean(st.verstek);
-    if (typeof alatPetaUntukPerkara === "function") return alatPetaUntukPerkara(k.peta, s && s.jenis, status, verstek);
+    // T 13 Okt: kumulasi perkara (SIPP + petitum) ikut menentukan blangko putusan.
+    if (typeof alatPetaUntukPerkara === "function") return alatPetaUntukPerkara(k.peta, s && s.jenis, status, verstek, s && s.kumulasi);
     const jenis = typeof alatKunciJenis === "function" ? alatKunciJenis(s && s.jenis) : String((s && s.jenis) || "").toLowerCase();
     return k.peta[jenis] ? { baris: k.peta[jenis], kunci: jenis, tingkat: "jenis" } : null;
   };

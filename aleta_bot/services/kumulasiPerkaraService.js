@@ -369,7 +369,29 @@ async function kumulasiBanyakPerkara(daftarPerkaraId = [], opsi = {}) {
   return hasil;
 }
 
+/* === T 13 Okt === */
+/**
+ * Kumulasi SATU perkara menurut nomornya (borang ABT hanya tahu nomor perkara). null = tidak berkumulasi / tidak terbaca.
+ * Gagal-terbuka: galat basis data menjawab null, bukan melempar (dipakai usulan set pertanyaan saksi).
+ */
+async function kumulasiNomorPerkara(nomorPerkara, opsi = {}) {
+  const nomor = String(nomorPerkara || "").trim();
+  if (!nomor) return null;
+  try {
+    const db = opsi.db || require("../db_config");
+    const baris = await runQuery(db, "SELECT perkara_id AS perkaraId FROM perkara WHERE nomor_perkara = ? LIMIT 1", [nomor]);
+    const id = baris[0] && Number(baris[0].perkaraId);
+    if (!id) return null;
+    const peta = await kumulasiBanyakPerkara([id], opsi);
+    return peta[String(id)] || null;
+  } catch (_) {
+    return null;
+  }
+}
+/* === AKHIR T === */
+
 module.exports = {
+  kumulasiNomorPerkara,
   rapikanKepalaPrimer,
   JENIS_KUMULASI,
   JENIS_DIANALISA,

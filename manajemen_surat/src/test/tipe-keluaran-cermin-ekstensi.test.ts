@@ -147,8 +147,9 @@ describe("putusan.peta-blangko dan putusan.padanan-jenis = panel-alat.js yang di
 
   // 4 jenis lama + 3 jenis gugatan lain (blok 4B 11 Okt: harta bersama, kewarisan, poligami)
   // + 18 baris status cerai (blok P 12 Okt: 9 status x CG/CT, kunci "<jenis>|<status>[|verstek]").
-  it("ALAT_PETA_BAWAAN: 7 jenis + 18 baris status cerai, isi sama persis ('bawaan: true' = asal bawaan)", () => {
-    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(25);
+  it("ALAT_PETA_BAWAAN: 7 jenis + 18 baris status cerai + 4 baris kumulasi (T 13 Okt), isi sama persis ('bawaan: true' = asal bawaan)", () => {
+    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(29);
+    expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => k.includes("+"))).toHaveLength(4);
     expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => !k.includes("|"))).toHaveLength(7);
     const cermin = CERMIN_EKSTENSI["putusan.peta-blangko"];
     const dariCermin = Object.fromEntries(
