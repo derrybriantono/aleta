@@ -125,6 +125,8 @@ function sippTiruan(kunci: string) {
   const KOLOM = kasir.KOLOM_BIAYA as string[];
   const keBaris = (b: Baris) => ({ ...b, tanggal: String(b.tanggal).slice(0, 10), jumlah: Number(b.jumlah) });
   const kueri = async (sql: string, params: any[] = []) => {
+    // 13 Okt 2026 (agen Z): jam yang DITULIS = jam SIPP (WIB, UTC_TIMESTAMP + 7 jam); NOW() hanya pagar tanggal.
+    if (/UTC_TIMESTAMP/.test(sql)) return [{ saat: `${hari} 09:00:00`, hari }];
     if (/DATE_FORMAT\(NOW\(\)/.test(sql)) return [{ saat: `${hari} 10:00:00`, hari }];
     if (/FROM sys_users WHERE username/.test(sql)) return params[0] === "kasir" ? [{ username: "kasir", fullname: "Kasir Satu", block: "0" }] : [];
     if (/COALESCE\(SUM\(jenis_transaksi \* jumlah\)/.test(sql)) return [{ saldo: biaya.reduce((s, b) => s + Number(b.jenisTransaksi) * Number(b.jumlah), 0) }];

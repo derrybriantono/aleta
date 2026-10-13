@@ -181,17 +181,19 @@ describe("keutuhan arsip e-Court diperiksa sendiri", () => {
     // Ia tidak menyentuh Mahkamah Agung sama sekali - hanya membaca disk.
     // Berkas hilang justru paling sering terjadi di luar jam kerja: container
     // dibuat ulang saat pemasangan malam hari.
-    const badan = penjadwal.slice(penjadwal.indexOf("function mulai()"));
-    const periksa = badan.indexOf("void periksaArsipBerkala();");
-    const jarak = badan.indexOf("if (Date.now() - terakhirPutaran < jarakMs) return;");
+    // 13 Okt 2026 (agen P): penjadwal berdetak tiap menit (detakPenjadwal) dan putuskanDetak yang
+    // menimbang jam kerja, tarikan pagi, dan selang berkala. Pemeriksaan arsip dipanggil SEBELUM
+    // keputusan itu - jadi tetap jalan di luar jam kerja dan di luar jarak putaran - dan sekali saat mulai().
+    const mulaiBadan = penjadwal.slice(penjadwal.indexOf("function mulai()"), penjadwal.indexOf("function mulaiUlang()"));
+    expect(mulaiBadan).toContain("void periksaArsipBerkala();");
+    const detak = penjadwal.slice(penjadwal.indexOf("async function detakPenjadwal("), penjadwal.indexOf("function berhenti()"));
+    const periksa = detak.indexOf("void periksaArsipBerkala();");
+    const putus = detak.indexOf("putuskanDetak(");
     expect(periksa).toBeGreaterThan(-1);
-    expect(jarak).toBeGreaterThan(periksa);
-    // Dan TIDAK di dalam detak(), yang berhenti di luar jam kerja.
-    const detak = penjadwal.slice(
-      penjadwal.indexOf("async function detak("),
-      penjadwal.indexOf("function berhenti()")
-    );
-    expect(detak).not.toContain("periksaArsipBerkala");
+    expect(putus).toBeGreaterThan(periksa);
+    // Dan TIDAK di dalam putuskanDetak, yang menolak di luar jam kerja.
+    const putuskan = penjadwal.slice(penjadwal.indexOf("function putuskanDetak("));
+    expect(putuskan.slice(0, putuskan.indexOf("\n}\n"))).not.toContain("periksaArsipBerkala");
   });
 
   it("bergilir - ada jeda, supaya satu putaran tidak membaca seluruh arsip", () => {

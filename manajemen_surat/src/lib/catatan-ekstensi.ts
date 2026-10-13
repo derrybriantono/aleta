@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.199.0",
+    dirilis: "2026-10-13T14:00:00+08:00",
+    judul: "Gembok kepala panel, ABT bisa digulir, Kasir otomatis bersaklar, deteksi posita semua jenis perkara, penetapan atas akun pejabat",
+    butir: [
+      "Panel SIPP meringkas ke kepalanya saat menutupi tabel (seperti panel ALETA); tombol gembok di bawah kepala mengunci panel agar selalu penuh, diingat per situs. Hanya di tampilan Baru & UI Baru.",
+      "Halaman ABT kembali bisa digulir dengan roda tetikus di atas panel yang isinya pendek.",
+      "Kasir: saklar Kasir otomatis (bawaan mati) mengisi Redaksi, Meterai, PNBP cabut, PNBP & biaya pemberitahuan putusan (verstek & cerai talak) dan sisa panjar untuk perkara putus hari itu, dengan daftar keadaan tiap butir; tampilan Kasir berkartu bulat.",
+      "Tombol \"belum upload\" kini benar-benar membuka perkaranya di e-Court; dokumen jawab-menjawab dicocokkan menurut jenisnya dengan agenda sidang.",
+      "Penetapan PMH/PPP/PJS/PHS dan pembatalannya tercatat di SIPP atas akun pejabat yang dipilih (bukan akun yang masuk), dengan jam seperti petugas bekerja.",
+      "Isi dari SIPP & input ke ABT membaca posita lebih lengkap: itsbat (status, wali, tempat menikah, KUA), dispensasi kawin, cerai, izin poligami, kewarisan & penetapan ahli waris, harta bersama, perwalian, asal usul, wali adhol, pengangkatan anak, hadhanah; tanggal KTP juga dibaca dari Dokumen Bukti e-Court.",
+      "Pemilihan blangko putusan, BAS massal, dan set pertanyaan saksi ikut membaca kumulasi; 10 varian kalimat jawaban saksi tambahan per keadaan pengetahuan saksi.",
+    ],
+  },
+  {
     versi: "1.198.0",
     dirilis: "2026-10-12T14:50:00+08:00",
     judul: "Tanggal KTP pasti menimpa, KTP Elektronik dari Berlaku Hingga, saklar Sita & Eksekusi terpisah, CPU di widget",

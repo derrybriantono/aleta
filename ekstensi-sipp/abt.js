@@ -1453,7 +1453,10 @@ function terapkanSuntingLangsung() {
 
 /** Menetapkan keadaan saklar; perubahan (atau pemakaian pertama) diterapkan seketika. */
 function aturSuntingLangsung(nyala) {
-  const berubah = suntingLangsungNyala !== (nyala === true) || !akarSunting().hasAttribute(KUNCI_ATRIBUT_SUNTING);
+  // Halaman yang belum punya akar (atau tiruan uji tanpa atribut) dianggap belum pernah diterapkan.
+  const akar = akarSunting();
+  const sudahDiterapkan = Boolean(akar && typeof akar.hasAttribute === "function" && akar.hasAttribute(KUNCI_ATRIBUT_SUNTING));
+  const berubah = suntingLangsungNyala !== (nyala === true) || !sudahDiterapkan;
   suntingLangsungNyala = nyala === true;
   if (berubah) terapkanSuntingLangsung();
 }

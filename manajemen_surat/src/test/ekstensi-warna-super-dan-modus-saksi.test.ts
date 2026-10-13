@@ -255,7 +255,8 @@ describe("modus keterangan saksi", () => {
     // Yang dijaga: saksi menyatakan ada bagian yang TIDAK ia ketahui - bukan
     // bahwa ia mengatakannya dengan kalimat tertentu.
     expect(jawab(h.saksi2, "2")).toMatch(
-      /selebihnya saya tidak tahu|penyebab lainnya saya tidak mengetahui|selain itu saya tidak dapat menerangkan/
+      // 13 Okt (agen U): 14 varian per bank - semuanya menyatakan ada bagian yang tidak diketahui.
+      /(?:selebihnya|selain itu|penyebab lain(?:nya)?|hal lain|di luar itu)[^.]*?(?:tidak tahu|tidak mengetahui|tidak dapat menerangkan|tidak saya ketahui)/
     );
   });
 
@@ -269,7 +270,7 @@ describe("modus keterangan saksi", () => {
     expect(jawab(h.saksi1, "3")).toMatch(
       /tidak pernah (?:menyaksikan|melihat)|tidak pernah saya saksikan/
     );
-    expect(jawab(h.saksi1, "4")).toMatch(/keluarga|tetangga|orang-orang di sekitar|warga sekitar|berdekatan/);
+    expect(jawab(h.saksi1, "4")).toMatch(/keluarga|tetangga|kerabat|orang-orang|orang lain|warga|kampung|berdekatan/);
   });
 
   it("modus yang salah eja jatuh ke 'sama' - dan itu DISEBUTKAN pada hasilnya", () => {

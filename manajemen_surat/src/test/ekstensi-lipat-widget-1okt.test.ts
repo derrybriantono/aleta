@@ -869,6 +869,8 @@ describe("permintaan agen M: alatSidangPadaTanggal meneruskan bahan aletaMassalP
         alasanDitunda: "Musyawarah majelis",
         tanggalPutusan: "",
         tanggalSidang: "2026-10-01",
+        // T 13 Okt: kode kumulasi untuk pemilih blangko putusan kumulasi (kosong bila tidak ada).
+        kumulasi: [],
       },
       {
         nomor: "11/Pdt.G/2026/PA.Dgl",
@@ -885,6 +887,7 @@ describe("permintaan agen M: alatSidangPadaTanggal meneruskan bahan aletaMassalP
         tanggalPutusan: "2026-10-01",
         // Baris tanpa tanggalSidang: tanggal yang diminta.
         tanggalSidang: "2026-10-01",
+        kumulasi: [],
       },
     ]);
     // Urutan ruas lama tidak berubah - tambahan di belakang.

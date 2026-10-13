@@ -799,8 +799,10 @@ describe("rute portal sidang/selesai dan sidang/mediator", () => {
     // 10 Okt 2026 (Kasir otomatis, 1.189.x butir 1-5): GET /kasir/harian,
     // GET /kasir/rekap, GET /kasir/pengingat, POST /kasir/setor-pnbp - ke-19
     // s.d. ke-22; keempatnya bertoken (baris di bawah tetap menuntutnya).
+    // 13 Okt 2026 (Kasir otomatis bersaklar, butir 10): GET /kasir/otomatis,
+    // POST /kasir/otomatis/setelan, POST /kasir/otomatis - ke-23 s.d. ke-25.
     const jumlahRute = rute.match(/router\.(get|post)\(/g)?.length ?? 0;
-    expect(jumlahRute).toBe(22);
+    expect(jumlahRute).toBe(25);
     expect(rute.match(/wajibToken, async/g)?.length).toBe(jumlahRute);
     expect(rute).toContain("kering: badan.kering !== false");
   });
