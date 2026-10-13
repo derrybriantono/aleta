@@ -5,7 +5,7 @@
  * Terukur di server (hanya baca):
  *   - aleta_bot_ecourt_documents untuk 497 hanya 4 berkas pendaftaran
  *     (tidak_perlu), terakhir terlihat 5 Okt - Jawaban tidak pernah tercatat;
- *   - tombol "belum upload" ditekan 05.59 dan 08.35: log jembatan keduanya
+ *   - tombol "belum upload" ditekan 13.59 dan 16.35 WITA (log bot UTC 05.59 & 08.35): keduanya
  *     "1 perkara berkasnya sudah lengkap, tidak dibuka" -> 0 perkara
  *     diperiksa. Penarikan tertarget ikut disaring "sudah lengkap" padahal
  *     kelengkapan diukur dari simpanan yang belum memuat dokumen baru.

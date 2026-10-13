@@ -5370,7 +5370,7 @@ router.post("/ecourt/penarikan/hentikan", requireInternalToken, (req, res) => {
 /** Daftar akun e-Court beserta keadaan sesinya. */
 router.get("/ecourt/akun", requireInternalToken, (req, res) => {
   try {
-    res.json({ ok: true, akun: ecourtAkunService.daftarAkun() });
+    res.json({ ok: true, akun: ecourtAkunService.daftarAkun(), akunUtama: ecourtAkunService.keadaanAkunUtama() });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -5398,6 +5398,38 @@ router.post("/ecourt/akun/hapus", requireInternalToken, (req, res) => {
       olehSiapa: String(req.body?.olehSiapa || ""),
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Akun utama penarikan (butir 11, 13 Okt 2026): penarikannya selalu jalan.
+ * Memilih = menandai satu akun terdaftar. Melepas wajib membawa kata penegas.
+ */
+router.post("/ecourt/akun/utama", requireInternalToken, (req, res) => {
+  try {
+    const olehSiapa = String(req.body?.olehSiapa || "");
+    const hasil =
+      String(req.body?.tindakan || "") === "lepas"
+        ? ecourtAkunService.lepasAkunUtama({ konfirmasi: String(req.body?.konfirmasi || ""), olehSiapa })
+        : ecourtAkunService.pilihAkunUtama(String(req.body?.slot || ""), { olehSiapa });
+    // Penolakan (kata penegas, akun tidak ada) dijawab 200 + ok:false supaya
+    // portal dapat menyebut sebabnya, bukan "bot tidak terjangkau".
+    res.json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Status penarikan data e-Court untuk dasbor (butir 12, 13 Okt 2026): tarikan
+ * terakhir berkala & per perkara dari log, jadwal berikutnya, akun, sesi.
+ * Hanya membaca - tidak menyentuh e-Court.
+ */
+router.get("/ecourt/penarikan/status", requireInternalToken, (req, res) => {
+  try {
+    res.json(require("../services/ecourtPenarikanStatusService").statusPenarikan());
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

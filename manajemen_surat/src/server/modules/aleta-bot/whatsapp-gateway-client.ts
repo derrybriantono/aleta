@@ -1126,10 +1126,16 @@ export type GatewayEcourtJadwal = {
     jamMulai: number;
     jamSelesai: number;
     maksPerkara: number;
+    /** Butir 11: saklar yang dipilih orang, dan apakah akun utama menyalakannya. */
+    aktifTersimpan?: boolean;
+    selaluAktif?: boolean;
+    akunUtama?: GatewayAkunUtama | null;
   };
   berjalan: boolean;
   sedangJalan: boolean;
   dalamJamKerja: boolean;
+  /** Butir 12: putaran berkala berikutnya (ISO), null bila tidak menyala. */
+  berikutnya?: string | null;
   terakhirMulai: string | null;
   terakhirSelesai: string | null;
   terakhirKode: number | null;
@@ -1356,13 +1362,98 @@ export type GatewayEcourtAkun = {
   gagalTerakhir: string | null;
   alasanGagal: string;
   terakhirDipakai: boolean;
+  /** Butir 11 (13 Okt 2026): akun utama - penarikannya selalu jalan. */
+  utama?: boolean;
+};
+
+/** Keadaan akun utama penarikan (butir 11). */
+export type GatewayAkunUtama = {
+  slot: string;
+  label: string;
+  dipilih: boolean;
+  sah: boolean;
+  bawaan: boolean;
+  alasan: string;
+  pesan: string;
 };
 
 /** Daftar akun e-Court beserta keadaan sesinya. */
 export async function getGatewayEcourtAkun(): Promise<
-  GatewayResult<{ ok: boolean; akun: GatewayEcourtAkun[] }>
+  GatewayResult<{ ok: boolean; akun: GatewayEcourtAkun[]; akunUtama?: GatewayAkunUtama }>
 > {
   return gatewayFetch("/internal/aleta-bot/ecourt/akun");
+}
+
+/** Memilih akun utama, atau melepasnya (wajib kata penegas). */
+export async function simpanGatewayAkunUtama(payload: {
+  tindakan: "pilih" | "lepas";
+  slot?: string;
+  konfirmasi?: string;
+  olehSiapa: string;
+}): Promise<GatewayResult<{ ok: boolean; alasan?: string; akunUtama?: GatewayAkunUtama }>> {
+  return gatewayFetch("/internal/aleta-bot/ecourt/akun/utama", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Satu penarikan menurut log-nya (butir 12). */
+export type GatewayRingkasPenarikan = {
+  nama: string;
+  mulai: string;
+  selesai: string;
+  sumber: string;
+  labelSumber: string;
+  otomatis: boolean;
+  jenis: "berkala" | "perkara";
+  perkara: string;
+  akun: string;
+  labelAkun: string;
+  hasil: "berhasil" | "gagal" | "sesi-habis" | "berjalan" | "terputus";
+  sebab: string;
+  perkaraDiperiksa: number | null;
+  dokumenTerlihat: number | null;
+  dokumenBaru: number | null;
+  berkasTerunduh: number | null;
+  galat: number | null;
+};
+
+/** Status penarikan data e-Court untuk dasbor (butir 12). */
+export type GatewayStatusPenarikan = {
+  ok: boolean;
+  dibaca: string;
+  akunUtama: GatewayAkunUtama;
+  penjadwal: {
+    aktif: boolean;
+    aktifTersimpan: boolean;
+    selaluAktif: boolean;
+    jarakJam: number | null;
+    jamMulai: number | null;
+    jamSelesai: number | null;
+    dalamJamKerja: boolean;
+    sedangJalan: boolean;
+    sumberBerjalan: string;
+    perkaraBerjalan: string;
+    akunBerjalan: string;
+    berikutnya: string | null;
+    zonaWaktu: string;
+  };
+  verifikasiHarian: {
+    menyala: boolean;
+    detakBerikutnya: string | null;
+    terakhirPutaran: string;
+    tersambung: boolean;
+    alasan: string;
+    jumlahTarik: number;
+  } | null;
+  terakhirBerkala: GatewayRingkasPenarikan | null;
+  terakhirPerkara: GatewayRingkasPenarikan | null;
+  riwayat: GatewayRingkasPenarikan[];
+  sesi: { berlaku: boolean | null; pada: string; sumber: string };
+};
+
+export async function getGatewayStatusPenarikan(): Promise<GatewayResult<GatewayStatusPenarikan>> {
+  return gatewayFetch("/internal/aleta-bot/ecourt/penarikan/status");
 }
 
 /** Menambah atau menyunting satu akun e-Court. */

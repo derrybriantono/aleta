@@ -61,6 +61,18 @@ function bersih(nilai) {
 
 /** "YYYY-MM-DD" dari Date lokal. */
 function tanggalLokal(t = new Date()) {
+  // 13 Okt 2026: proses bot di container berjalan dalam UTC - "hari ini" pukul
+  // 07.00-08.00 WITA terbaca kemarin. Tanggal dibaca menurut zona pengadilan.
+  try {
+    const zona = String(process.env.ALETA_ZONA_WAKTU || "Asia/Makassar").trim() || "Asia/Makassar";
+    const b = {};
+    for (const x of new Intl.DateTimeFormat("en-US", { timeZone: zona, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(t)) {
+      b[x.type] = x.value;
+    }
+    if (b.year && b.month && b.day) return `${b.year}-${b.month}-${b.day}`;
+  } catch {
+    // Zona tidak dikenal: jatuh ke waktu lokal proses.
+  }
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
 }
 
@@ -925,6 +937,8 @@ function layanan() {
 
 let pewaktu = null;
 let sedangPutaran = false;
+/** Butir 12 (13 Okt 2026): kapan pewaktu dinyalakan dan selangnya - detak berikutnya. */
+const pewaktuInfo = { mulaiMs: 0, ms: 0 };
 
 /** Menyalakan penarik berkala. */
 function mulai() {
@@ -943,6 +957,8 @@ function mulai() {
       });
   };
   pewaktu = setInterval(detak, ms);
+  pewaktuInfo.mulaiMs = Date.now();
+  pewaktuInfo.ms = ms;
   if (pewaktu.unref) pewaktu.unref();
   return true;
 }
@@ -968,7 +984,16 @@ module.exports = {
   hentikan,
   keadaanHari: (tanggal) => layanan().keadaanHari(tanggal),
   putaran: () => layanan().putaran(),
-  status: () => layanan().status(),
+  status: () => {
+    const s = layanan().status();
+    const k = pewaktu && pewaktuInfo.ms ? Math.floor((Date.now() - pewaktuInfo.mulaiMs) / pewaktuInfo.ms) + 1 : 0;
+    return {
+      ...s,
+      menyala: Boolean(pewaktu),
+      jedaMs: pewaktuInfo.ms,
+      detakBerikutnya: k ? new Date(pewaktuInfo.mulaiMs + k * pewaktuInfo.ms).toISOString() : null,
+    };
+  },
   tarikSekarang: (isi) => layanan().tarikSekarang(isi),
   statusTarikan: (nomorPerkara) => layanan().statusTarikan(nomorPerkara),
 };

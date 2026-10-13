@@ -66,7 +66,14 @@ const keadaan = {
   // Butir 8 (1.189.x): kemajuan nyata putaran yang sedang berjalan (dari
   // baris @@ALETA-KEMAJUAN jembatan) - { tahap, label, persen, i, n, teks }.
   kemajuan: null,
+  // Butir 12 (13 Okt 2026): kapan pewaktu dinyalakan dan kapan putaran
+  // berkala terakhir dimulai - untuk menghitung jadwal tarikan berikutnya.
+  timerMulaiMs: 0,
+  terakhirPutaranMs: 0,
 };
+
+/** Detak penjadwal - pemeriksaan jarak putaran dan jam kerja. */
+const DETAK_PENJADWAL_MS = 15 * 60 * 1000;
 
 /**
  * Folder log, dibagi dengan host lewat pemasangan volume.
@@ -140,9 +147,22 @@ function angka(nilai, bawaan, min, maks) {
 
 /** Pengaturan penjadwal yang berlaku sekarang. */
 function getSettings(runtimeConfig = readRuntimeConfig()) {
-  const p = runtimeConfig.ecourtJadwal || {};
+  const p = (runtimeConfig && runtimeConfig.ecourtJadwal) || {};
+  // Butir 11 (13 Okt 2026): akun utama yang sah membuat penarikan SELALU
+  // menyala - saklar yang tersimpan tidak dapat mematikannya. aktifTersimpan
+  // tetap dilaporkan supaya layar tahu apa yang dipilih orang.
+  let akunUtama = null;
+  try {
+    akunUtama = ecourtAkunService.keadaanAkunUtama(runtimeConfig);
+  } catch {
+    akunUtama = null;
+  }
+  const selaluAktif = Boolean(akunUtama && akunUtama.sah);
   return {
-    aktif: p.aktif === true,
+    aktif: p.aktif === true || selaluAktif,
+    aktifTersimpan: p.aktif === true,
+    selaluAktif,
+    akunUtama,
     jarakJam: angka(p.jarakJam, BAWAAN.jarakJam, 1, 24),
     jamMulai: angka(p.jamMulai, BAWAAN.jamMulai, 0, 23),
     jamSelesai: angka(p.jamSelesai, BAWAAN.jamSelesai, 1, 24),
@@ -201,13 +221,52 @@ function saveSettings({ aktif, jarakJam, jamMulai, jamSelesai, maksPerkara, oleh
 
   // Perubahan berlaku pada putaran berikutnya tanpa menyalakan ulang bot.
   mulaiUlang();
-  return { ok: true, alasan: "" };
+  // Akun utama sah: saklar mati tersimpan, tetapi penarikan tetap menyala.
+  const berlaku = getSettings();
+  return { ok: true, alasan: "", selaluAktif: berlaku.selaluAktif, aktif: berlaku.aktif };
+}
+
+/**
+ * Zona waktu jam kerja. Terukur 13 Okt 2026: proses bot di container berjalan
+ * dalam UTC (TZ tidak disetel), sehingga getHours() membaca jam 07-17 sebagai
+ * 15.00-01.00 WITA. Jam kerja dibaca menurut zona pengadilan, bukan zona
+ * proses.
+ */
+const ZONA_WAKTU = String(process.env.ALETA_ZONA_WAKTU || "Asia/Makassar").trim() || "Asia/Makassar";
+const HARI_SINGKAT = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+/** Jam (0-23), hari (0 Minggu) dan tanggal YYYY-MM-DD menurut zona pengadilan. */
+function bagianWaktu(sekarang = new Date(), zona = ZONA_WAKTU) {
+  try {
+    const bagian = {};
+    for (const b of new Intl.DateTimeFormat("en-US", {
+      timeZone: zona,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hourCycle: "h23",
+      weekday: "short",
+    }).formatToParts(sekarang)) {
+      bagian[b.type] = b.value;
+    }
+    const jam = Number(bagian.hour) % 24;
+    const hari = HARI_SINGKAT[bagian.weekday];
+    if (!Number.isFinite(jam) || hari === undefined) throw new Error("zona");
+    return { jam, hari, tanggal: `${bagian.year}-${bagian.month}-${bagian.day}` };
+  } catch {
+    const d = (n) => String(n).padStart(2, "0");
+    return {
+      jam: sekarang.getHours(),
+      hari: sekarang.getDay(),
+      tanggal: `${sekarang.getFullYear()}-${d(sekarang.getMonth() + 1)}-${d(sekarang.getDate())}`,
+    };
+  }
 }
 
 /** Apakah sekarang di dalam jam kerja yang diatur? */
 function dalamJamKerja(sekarang = new Date(), pengaturan = getSettings()) {
-  const jam = sekarang.getHours();
-  const hari = sekarang.getDay(); // 0 Minggu, 6 Sabtu
+  const { jam, hari } = bagianWaktu(sekarang); // hari: 0 Minggu, 6 Sabtu
 
   // Akhir pekan dilewati: pihak dan kuasa hukum mengunggah pada hari kerja,
   // dan menarik di akhir pekan hanya membebani server pengadilan.
@@ -309,7 +368,7 @@ function jalankanSatuPutaran({
       tulisLog = fs.createWriteStream(berkasLog, { flags: "a" });
       tulisLog.write(
         `=== Penarikan e-Court dimulai ${new Date().toISOString()} (sumber: ${sumber}` +
-          `${nomorPerkara ? `, perkara: ${nomorPerkara}` : ""}) ===\n`
+          `${nomorPerkara ? `, perkara: ${nomorPerkara}` : ""}${slotAkun ? `, akun: ${slotAkun}` : ""}) ===\n`
       );
     } catch {
       // Tanpa log pun penarikan tetap berjalan. Yang hilang hanya
@@ -603,8 +662,8 @@ function mulai() {
   const pengaturan = getSettings();
   if (!pengaturan.aktif) return;
 
-  const detakMs = 15 * 60 * 1000;
-  let terakhirPutaran = 0;
+  const detakMs = DETAK_PENJADWAL_MS;
+  keadaan.timerMulaiMs = Date.now();
 
   // Sekali segera sesudah bot menyala, bukan menunggu detak pertama lima
   // belas menit lagi. Justru saat inilah arsip paling mungkin baru saja
@@ -631,8 +690,11 @@ function mulai() {
     void periksaArsipBerkala();
 
     const jarakMs = p.jarakJam * 60 * 60 * 1000;
-    if (Date.now() - terakhirPutaran < jarakMs) return;
-    terakhirPutaran = Date.now();
+    if (Date.now() - keadaan.terakhirPutaranMs < jarakMs) return;
+    // Di luar jam kerja detak() tidak menarik apa pun - jaraknya tidak
+    // dihabiskan, supaya putaran pertama di jam kerja tidak tertunda.
+    if (!dalamJamKerja(new Date(), p)) return;
+    keadaan.terakhirPutaranMs = Date.now();
     void detak();
   }, detakMs);
 
@@ -642,6 +704,33 @@ function mulai() {
 function mulaiUlang() {
   berhenti();
   mulai();
+}
+
+/**
+ * Waktu putaran berkala berikutnya (ISO) - fungsi murni atas keadaan pewaktu.
+ * Detak pertama yang jaraknya sudah lewat DAN jatuh di jam kerja. null bila
+ * penjadwal tidak menyala atau tidak ada detak cocok dalam 8 hari.
+ */
+function hitungJadwalBerikutnya({
+  aktif,
+  timerMulaiMs,
+  terakhirPutaranMs = 0,
+  jarakJam,
+  sekarangMs = Date.now(),
+  pengaturan,
+  detakMs = DETAK_PENJADWAL_MS,
+}) {
+  if (!aktif || !timerMulaiMs) return null;
+  const jarakMs = Number(jarakJam) * 60 * 60 * 1000;
+  const k0 = Math.max(1, Math.floor((sekarangMs - timerMulaiMs) / detakMs) + 1);
+  const batas = Math.ceil((8 * 24 * 60 * 60 * 1000) / detakMs);
+  for (let k = k0; k < k0 + batas; k += 1) {
+    const t = timerMulaiMs + k * detakMs;
+    if (terakhirPutaranMs && t - terakhirPutaranMs < jarakMs) continue;
+    if (!dalamJamKerja(new Date(t), pengaturan)) continue;
+    return new Date(t).toISOString();
+  }
+  return null;
 }
 
 /** Keadaan penjadwal untuk ditampilkan portal. */
@@ -657,6 +746,17 @@ function getStatus() {
     terakhirKode: keadaan.terakhirKode,
     terakhirCatatan: keadaan.terakhirCatatan,
     jumlahPutaran: keadaan.jumlahPutaran,
+    // Butir 12: jadwal putaran berkala berikutnya (null = tidak menyala).
+    berikutnya: keadaan.timer
+      ? hitungJadwalBerikutnya({
+          aktif: pengaturan.aktif,
+          timerMulaiMs: keadaan.timerMulaiMs,
+          terakhirPutaranMs: keadaan.terakhirPutaranMs,
+          jarakJam: pengaturan.jarakJam,
+          pengaturan,
+        })
+      : null,
+    zonaWaktu: ZONA_WAKTU,
     // Keterangan putaran yang sedang berjalan, untuk layar pemantauan.
     sumber: keadaan.sumber,
     berkasLog: keadaan.berkasLog,
@@ -826,7 +926,11 @@ function hentikanPenarikan({ olehSiapa = "" } = {}) {
 module.exports = {
   BAWAAN,
   MAKS_BELUM_ADA,
+  DETAK_PENJADWAL_MS,
+  ZONA_WAKTU,
+  bagianWaktu,
   berhenti,
+  hitungJadwalBerikutnya,
   dalamJamKerja,
   getSettings,
   getStatus,

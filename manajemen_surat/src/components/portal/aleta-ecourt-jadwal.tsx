@@ -26,7 +26,19 @@ import { apiPath } from "@/lib/base-path";
 import { formatDateTime } from "@/lib/format";
 
 type Jadwal = {
-  pengaturan: { aktif: boolean; jarakJam: number; jamMulai: number; jamSelesai: number; maksPerkara: number };
+  pengaturan: {
+    aktif: boolean;
+    jarakJam: number;
+    jamMulai: number;
+    jamSelesai: number;
+    maksPerkara: number;
+    /** Butir 11 (13 Okt 2026): saklar yang dipilih orang; akun utama sah = selalu menyala. */
+    aktifTersimpan?: boolean;
+    selaluAktif?: boolean;
+    akunUtama?: { slot: string; label: string; sah: boolean; pesan: string } | null;
+  };
+  /** Butir 12: putaran berkala berikutnya (ISO). */
+  berikutnya?: string | null;
   berjalan: boolean;
   sedangJalan: boolean;
   dalamJamKerja: boolean;
@@ -73,7 +85,9 @@ export function AletaEcourtJadwal() {
         setPesan("");
         setJadwal(isi.jadwal);
         const p = isi.jadwal.pengaturan;
-        setAktif(p.aktif === true);
+        // Yang disunting adalah saklar TERSIMPAN; menyala-tidaknya dibaca dari
+        // pengaturan.aktif (akun utama sah = selalu menyala).
+        setAktif((p.aktifTersimpan ?? p.aktif) === true);
         setJarakJam(String(p.jarakJam));
         setJamMulai(String(p.jamMulai));
         setJamSelesai(String(p.jamSelesai));
@@ -142,7 +156,11 @@ export function AletaEcourtJadwal() {
             {memuat ? null : jadwal ? (
               <>
                 <Badge variant={jadwal.pengaturan.aktif ? "default" : "muted"}>
-                  {jadwal.pengaturan.aktif ? "Menyala" : "Dimatikan"}
+                  {jadwal.pengaturan.selaluAktif
+                    ? "Selalu menyala (akun utama)"
+                    : jadwal.pengaturan.aktif
+                      ? "Menyala"
+                      : "Dimatikan"}
                 </Badge>
                 {jadwal.sedangJalan ? <Badge variant="warning">Sedang menarik</Badge> : null}
                 {sesiHabis ? <Badge variant="danger">Sesi habis</Badge> : null}
@@ -201,6 +219,7 @@ export function AletaEcourtJadwal() {
               <>
                 {" · "}
                 {jadwal.dalamJamKerja ? "sekarang di dalam jam kerja" : "sekarang di luar jam kerja"}
+                {jadwal.berikutnya ? <> · putaran berikutnya {formatDateTime(jadwal.berikutnya)}</> : null}
               </>
             ) : null}
           </div>
@@ -275,6 +294,17 @@ export function AletaEcourtJadwal() {
           <input type="checkbox" checked={aktif} onChange={(event) => setAktif(event.target.checked)} />
           Nyalakan penarikan berkala
         </label>
+        {jadwal?.pengaturan.selaluAktif ? (
+          <p className="rounded border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100">
+            Akun utama {jadwal.pengaturan.akunUtama?.label || jadwal.pengaturan.akunUtama?.slot || ""} sah, jadi
+            penarikan berkala SELALU menyala walau saklar di atas tidak dicentang. Untuk menghentikannya, lepas
+            tanda akun utama di kartu Akun e-Court (harus disengaja).
+          </p>
+        ) : jadwal?.pengaturan.akunUtama && !jadwal.pengaturan.akunUtama.sah ? (
+          <p className="rounded border border-rose-300 bg-rose-50 p-2.5 text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100">
+            {jadwal.pengaturan.akunUtama.pesan} Penarikan berkala hanya mengikuti saklar di atas.
+          </p>
+        ) : null}
 
         <p className="rounded bg-muted/50 p-2.5 text-xs text-muted-foreground">
           Akhir pekan selalu dilewati. Pihak dan kuasa hukum mengunggah pada hari kerja, dan menarik di akhir pekan

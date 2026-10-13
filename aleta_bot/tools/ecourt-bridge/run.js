@@ -1584,7 +1584,8 @@ async function utama() {
     // sini diukur dari dokumen yang SUDAH tersimpan - dokumen yang baru
     // diunggah pihak justru belum ada di simpanan, jadi tidak dapat membuat
     // perkaranya "tidak lengkap". 12 Okt: Jawaban 497/Pdt.G/2026/PA.Dgl
-    // diunggah 08.15, tombol "belum upload" ditekan 05.59 dan 08.35 - dua-duanya
+    // diunggah 08.15 WITA, tombol "belum upload" ditekan 13.59 dan 16.35 WITA (log
+    // bot dalam UTC: 05.59 dan 08.35) - dua-duanya
     // "1 perkara berkasnya sudah lengkap, tidak dibuka", 0 perkara diperiksa,
     // dan lencananya tetap "belum upload" (517/Pdt.G/2026 sama, dua kali).
     // Orang yang meminta satu perkara ingin perkara itu DIBUKA.

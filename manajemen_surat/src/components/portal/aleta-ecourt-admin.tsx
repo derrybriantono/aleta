@@ -28,6 +28,7 @@ import { AletaEcourtArsip } from "@/components/portal/aleta-ecourt-arsip";
 import { AletaEcourtAkun } from "@/components/portal/aleta-ecourt-akun";
 import { AletaEcourtPanggilanPengaturan } from "@/components/portal/aleta-ecourt-panggilan-pengaturan";
 import { AletaEcourtPenarikan } from "@/components/portal/aleta-ecourt-penarikan";
+import { EcourtStatusPenarikan } from "@/components/portal/ecourt-status-penarikan";
 import { AletaEcourtSkMajelis } from "@/components/portal/aleta-ecourt-sk-majelis";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 /* === 12OKT-E === */
@@ -158,6 +159,8 @@ export function AletaEcourtAdmin() {
       {/* Tepat setelah login: penjadwal hanya berjalan selama sesinya hidup,
           jadi keduanya dibaca bersama. */}
       <AletaEcourtJadwal />
+      {/* Butir 12 (13 Okt 2026): status penarikan nyata (dari log) tepat di bawah penjadwal. */}
+      <EcourtStatusPenarikan />
 
       {/* Akun tepat setelah jadwal: penjadwal memilih akun mana yang dipakai,
           dan tanpa akun bersesi ia tidak akan menarik apa pun. */}

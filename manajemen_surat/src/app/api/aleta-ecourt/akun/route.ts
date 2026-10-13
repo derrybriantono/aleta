@@ -9,6 +9,7 @@ import {
   simpanGatewayKredensial,
   hapusGatewayEcourtAkun,
   simpanGatewayEcourtAkun,
+  simpanGatewayAkunUtama,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
         akun: [],
       });
     }
-    return ok({ available: true, akun: hasil.data?.akun ?? [] });
+    return ok({ available: true, akun: hasil.data?.akun ?? [], akunUtama: hasil.data?.akunUtama ?? null });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,
@@ -115,7 +116,24 @@ export async function POST(request: NextRequest) {
       slot?: string;
       label?: string;
       aktif?: boolean;
+      konfirmasi?: string;
     }>(request);
+
+    // Butir 11 (13 Okt 2026): akun utama - memilih, atau melepas dengan kata
+    // penegas (bot menolak tanpa "LEPAS").
+    const tindakan = String(body.tindakan || "");
+    if (tindakan === "utama" || tindakan === "lepas-utama") {
+      const utama = await simpanGatewayAkunUtama({
+        tindakan: tindakan === "utama" ? "pilih" : "lepas",
+        slot: String(body.slot || "").trim(),
+        konfirmasi: String(body.konfirmasi || ""),
+        olehSiapa: actor.name,
+      });
+      if (!utama.ok) {
+        return ok({ available: false, ok: false, message: utama.error || "ALETA Bot belum dapat dihubungi." });
+      }
+      return ok({ available: true, ...(utama.data ?? { ok: false }) });
+    }
 
     const slot = String(body.slot || "").trim();
     if (!slot) return ok({ available: true, ok: false, alasan: "slot_kosong" });
