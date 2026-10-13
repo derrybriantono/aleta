@@ -2366,6 +2366,17 @@ const DAFTAR_BAS = Object.freeze({
   profil: "bas.saksi.profil",
 });
 const KUNCI_JAWABAN_MODUS = Object.freeze(Object.keys(ragamBawaan.JAWABAN_MODUS));
+/**
+ * Batas entri per daftar (K6). Umumnya 200; jawaban-modus 400 sejak butir 9
+ * (13 Okt 2026): bawaannya sendiri 280 kalimat (20 bank x 14), dan cermin
+ * portal mengirim seluruhnya - batas 200 akan memotong bank belakangan.
+ * Cerminnya: rute bot BATAS_ENTRI_KHUSUS_ABT, portal BATAS_DAFTAR.
+ */
+const BATAS_ENTRI_BAS = 200;
+const BATAS_ENTRI_KHUSUS = Object.freeze({ "bas.saksi.jawaban-modus": 400 });
+function batasEntriBas(kunciDaftar) {
+  return BATAS_ENTRI_KHUSUS[kunciDaftar] || BATAS_ENTRI_BAS;
+}
 const POLA_KATA_POLOS_BAS = /^[a-z]+( [a-z]+)*$/;
 const POLA_KUNCI_TANYA_BAS = /^[a-z0-9#]+( [a-z0-9#]+)*$/;
 
@@ -2408,8 +2419,9 @@ function bacaBankBas(opsi) {
     const hasil = [];
     mentah.forEach((e, indeks) => {
       const kunciMentah = e && typeof e === "object" ? String(e.kunci || "").slice(0, 80) : "";
-      if (indeks >= 200) {
-        ditolak.push({ daftar: kunciDaftar, kunci: kunciMentah, alasan: "lebih_dari_200_entri" });
+      const batas = batasEntriBas(kunciDaftar);
+      if (indeks >= batas) {
+        ditolak.push({ daftar: kunciDaftar, kunci: kunciMentah, alasan: `lebih_dari_${batas}_entri` });
         return;
       }
       if (!e || typeof e !== "object") {

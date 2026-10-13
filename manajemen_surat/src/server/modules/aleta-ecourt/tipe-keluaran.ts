@@ -8,7 +8,7 @@ import {
   type BarisGabung,
 } from "@/lib/tipe-keluaran/gabung";
 import {
-  BATAS_DAFTAR,
+  batasEntriDaftar,
   DAFTAR_BOT,
   DAFTAR_EKSTENSI,
   DAFTAR_TIPE,
@@ -726,10 +726,10 @@ export async function usul(db: AletaDatabase, actorUserId: string | null | undef
       "SELECT COUNT(*) AS n FROM aleta_tipe_keluaran WHERE daftar = ? AND asal = 'tambahan' AND keadaan IN ('usulan', 'disahkan')",
       [daftar]
     );
-    if (angka(jumlah?.n) + (cerminDaftar(daftar)?.length ?? 0) >= BATAS_DAFTAR.entriPerDaftar) {
+    if (angka(jumlah?.n) + (cerminDaftar(daftar)?.length ?? 0) >= batasEntriDaftar(daftar)) {
       return {
         ok: false as const,
-        alasan: [`Daftar ${daftar} sudah mencapai ${BATAS_DAFTAR.entriPerDaftar} entri - batas yang disaring bot.`],
+        alasan: [`Daftar ${daftar} sudah mencapai ${batasEntriDaftar(daftar)} entri - batas yang disaring bot.`],
       };
     }
 

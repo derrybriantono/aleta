@@ -391,4 +391,15 @@ export const AMBANG_UKUR = {
 export const BATAS_DAFTAR = {
   entriPerDaftar: 200,
   hurufNilai: 400,
+  /**
+   * Butir 9 (13 Okt 2026): bawaan jawaban-modus 280 kalimat (20 bank x 14).
+   * Cerminnya di bot: abtUsulanService BATAS_ENTRI_KHUSUS dan rute
+   * BATAS_ENTRI_KHUSUS_ABT - ketiganya harus sama.
+   */
+  entriKhusus: { "bas.saksi.jawaban-modus": 400 } as Partial<Record<KunciDaftar, number>>,
 } as const;
+
+/** Batas entri satu daftar (cermin + tambahan) yang diterima bot. */
+export function batasEntriDaftar(daftar: KunciDaftar): number {
+  return BATAS_DAFTAR.entriKhusus[daftar] ?? BATAS_DAFTAR.entriPerDaftar;
+}

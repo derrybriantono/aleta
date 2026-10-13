@@ -116,9 +116,9 @@ describe("CERMIN_BAS_SAKSI = ragamBasBawaan.js bot", () => {
     expect(Object.keys(cermin).sort()).toEqual([...DAFTAR].sort());
   });
 
-  it("isinya sungguh ada: 4 pembuka manusia, 80 kalimat modus (butir 27), bentuk dan profil tidak kosong", () => {
+  it("isinya sungguh ada: 4 pembuka manusia, 280 kalimat modus (butir 27 + butir 9 13 Okt), bentuk dan profil tidak kosong", () => {
     expect((cermin["bas.saksi.pembuka"] ?? []).map((e) => e.nilai)).toEqual(["Ya, ", "Setahu saya, ", "Sepengetahuan saya, ", "Yang saya ketahui, "]);
-    expect(cermin["bas.saksi.jawaban-modus"]).toHaveLength(80);
+    expect(cermin["bas.saksi.jawaban-modus"]).toHaveLength(280);
     expect((cermin["bas.saksi.bentuk"] ?? []).length).toBeGreaterThanOrEqual(20);
     expect((cermin["bas.saksi.profil"] ?? []).length).toBeGreaterThanOrEqual(8);
   });
