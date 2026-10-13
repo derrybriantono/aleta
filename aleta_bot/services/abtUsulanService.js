@@ -2176,8 +2176,7 @@ function dariPositaItsbat(posita, pihak) {
     /\bdi\s+(?:wilayah\s+)?((?:Desa|Kelurahan|Kecamatan|Kec\.|Kabupaten|rumah|Masjid|KUA|Kantor)\b.{2,90}?)(?=\s+(?:dan|serta|yang|pada|oleh|dengan|sampai|hingga|sejak)\b|[;,.]|$)/i
   );
   const alamatNikah = tempat ? tempat[1].replace(/\s+/g, " ").trim() : "";
-  const kec = String(kNikah || "").match(/\bKec(?:amatan|\.)\s+([A-Z][A-Za-z' -]{2,40}?)(?=\s+(?:dan|Kabupaten|Kab\.|serta|,)|[,;.]|$)/);
-  const kua = kec ? kec[1].trim() : "";
+  // 5178 (KUA) kini hanya dari deteksi/itsbat.js: bentuk lama ("Palolo" saja) 0 dari 249 sama dengan isian petugas.
 
   // Wali nikah - "dengan wali nikah saudara kandung Pemohon II bernama X",
   // atau bentuk satker "wali nikah yaitu Ludin (Ayah Kandung Pemohon II)".
@@ -2196,9 +2195,7 @@ function dariPositaItsbat(posita, pihak) {
     // "wali nikah Ashar (Ayah kandung Pemohon I)" - nama langsung sesudahnya.
     // Kata bukan-nama ("wali nikah Ayah kandung ...") menghentikannya.
     namaSesudah(kWali, "wali nikah(?:nya)?");
-  const statusWali = String(kWali || "").match(
-    new RegExp(`wali(?: nikah)?(?:nya)?\\s+(?:adalah\\s+|yaitu\\s+)?([a-z][a-z ]{2,40}?)\\s+(?:${lolos(sebut2)}|${lolos(sebut1)}|Pemohon|bernama)`, "i")
-  );
+  // Status wali (1046) kini di deteksi/itsbat.js (statusWali) - pola lama di sini menangkap "yang"/"nikah".
 
   // ==========================================================================
   // YANG MENIKAHKAN - DUA BENTUK POSITA, SATU BENTUK ISIAN
@@ -2292,21 +2289,38 @@ function dariPositaItsbat(posita, pihak) {
     ? "telah dikaruniai 1 orang anak"
     : "";
 
+  // 13 Okt 2026 (butir 14, 228/Pdt.P/2026): tempat menikah lengkap, KUA domisili, status wali (juga dalam
+  // kurung sesudah nama), status tanpa "berstatus", dan bunyi anak - aturan di deteksi/itsbat.js.
+  const d = require("./deteksi/itsbat").deteksi(posita, { kalimat, pemohon: sebut1, pemohon2: sebut2 });
+  const dari = (kode, lama, kLama) => (d[kode] ? { nilai: d[kode].nilai, k: d[kode].kalimat } : { nilai: lama, k: kLama });
+  const t5105 = dari("5105", alamatNikah, kNikah);
+  const t5178 = d["5178"] ? { nilai: d["5178"].nilai, k: d["5178"].kalimat } : { nilai: "", k: "" };
+  // 1046: hanya aturan baru - pola lama menangkap "yang", "nikah", "orang tua dari" (ukur 13 Okt).
+  const t1046 = dari("1046", "", kWali);
+  const t0007 = dari("0007", anak, kAnak);
+  // 1002/1003: aturan baru memeriksa kata status menurut jenis kelamin (#1002# suami, #1003# istri).
+  const t1002 = dari("1002", "", "");
+  const t1003 = dari("1003", "", "");
+  // 7211 = umur LAKI-LAKI, 7212 = PEREMPUAN (nama variabelnya) - bukan menurut sebutan pihak.
+  const sebutIstri = /^penggugat\b/i.test(sebut1);
+  const t7211 = dari("7211", !sebutIstri && status1 && status1[2] ? `${status1[2]} tahun` : "", kStatus);
+  const t7212 = dari("7212", !sebutIstri && status2 && status2[2] ? `${status2[2]} tahun` : "", kStatus);
+
   const usulanSemua = [
     usulan("5197", "Tanggal nikah", hasilItsbat(tanggalNikah, kNikah), sumber(kNikah)),
-    usulan("5105", "Alamat tempat menikah", hasilItsbat(alamatNikah, kNikah), sumber(kNikah)),
-    usulan("5178", "KUA kecamatan", hasilItsbat(kua, kNikah, kua ? "" : "posita tidak menyebut kecamatan"), sumber(kNikah)),
+    usulan("5105", "Alamat tempat menikah", hasilItsbat(t5105.nilai, t5105.k), sumber(t5105.k)),
+    usulan("5178", "KUA kecamatan", hasilItsbat(t5178.nilai, t5178.k, t5178.nilai ? "" : "posita tidak menyebut KUA/kecamatan"), sumber(t5178.k)),
     usulan("1217", "Nama wali nikah", hasilItsbat(namaWali, kWali), sumber(kWali)),
-    usulan("1046", "Status wali nikah", hasilItsbat(statusWali ? statusWali[1].trim() : "", kWali), sumber(kWali)),
+    usulan("1046", "Status wali nikah", hasilItsbat(t1046.nilai, t1046.k), sumber(t1046.k)),
     usulan("8087", "Yang menikahkan", hasilItsbat(yangMenikahkan, kMenikahkan), sumber(kMenikahkan)),
     usulan("0650", "Saksi nikah 1", hasilItsbat(saksi1, kSaksi), sumber(kSaksi)),
     usulan("0651", "Saksi nikah 2", hasilItsbat(saksi2, kSaksi), sumber(kSaksi)),
     usulan("1001", "Mas kawin", hasilItsbat(mahar, kMahar), sumber(kMahar)),
-    usulan("1002", `Status ${sebut1} sebelum nikah`, hasilItsbat(status1 ? status1[1] : "", kStatus), sumber(kStatus)),
-    usulan("1003", `Status ${sebut2} sebelum nikah`, hasilItsbat(status2 ? status2[1] : "", kStatus), sumber(kStatus)),
-    usulan("7211", `Umur ${sebut1} saat menikah`, hasilItsbat(status1 && status1[2] ? `${status1[2]} tahun` : "", kStatus), sumber(kStatus)),
-    usulan("7212", `Umur ${sebut2} saat menikah`, hasilItsbat(status2 && status2[2] ? `${status2[2]} tahun` : "", kStatus), sumber(kStatus)),
-    usulan("0007", "Telah dikaruniai anak", hasilItsbat(anak, kAnak), sumber(kAnak)),
+    usulan("1002", `Status ${sebut1} sebelum nikah`, hasilItsbat(t1002.nilai, t1002.k), sumber(t1002.k)),
+    usulan("1003", `Status ${sebut2} sebelum nikah`, hasilItsbat(t1003.nilai, t1003.k), sumber(t1003.k)),
+    usulan("7211", `Umur ${sebutIstri ? "suami" : sebut1} saat menikah`, hasilItsbat(t7211.nilai, t7211.k), sumber(t7211.k)),
+    usulan("7212", `Umur ${sebutIstri ? sebut1 : sebut2} saat menikah`, hasilItsbat(t7212.nilai, t7212.k), sumber(t7212.k)),
+    usulan("0007", "Telah dikaruniai anak", hasilItsbat(t0007.nilai, t0007.k), sumber(t0007.k)),
   ];
 
   const ditemukan = usulanSemua.filter((u) => u.nilai).length;
@@ -5055,7 +5069,7 @@ async function konteksPerkaraSaksi(nomorPerkara) {
   const nomor = String(nomorPerkara || "").trim();
   if (!nomor) return null;
   const kueri = runQuery(
-    `SELECT p.posita AS posita,
+    `SELECT p.posita AS posita, p.jenis_perkara_id AS jenis_perkara_id,
             (SELECT DATE_FORMAT(j.tanggal_sidang, '%Y-%m-%d') FROM perkara_jadwal_sidang j
               WHERE j.perkara_id = p.perkara_id
               ORDER BY ABS(DATEDIFF(j.tanggal_sidang, CURDATE())) ASC, j.tanggal_sidang DESC LIMIT 1) AS tanggal_sidang
@@ -5066,7 +5080,8 @@ async function konteksPerkaraSaksi(nomorPerkara) {
   const baris = await Promise.race([kueri, batas]);
   const r = Array.isArray(baris) && baris[0];
   if (!r) return null;
-  return { posita: String(r.posita || ""), tanggalSidang: String(r.tanggal_sidang || "") };
+  // 13 Okt: jenis perkara ikut - deteksi/cerai.js hanya ditambahkan untuk cerai gugat/talak (346/347).
+  return { posita: String(r.posita || ""), tanggalSidang: String(r.tanggal_sidang || ""), jenisPerkaraId: Number(r.jenis_perkara_id) || null };
 }
 
 module.exports = {

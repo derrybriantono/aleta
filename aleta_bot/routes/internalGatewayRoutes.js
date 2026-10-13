@@ -2374,9 +2374,9 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         pemohon: String(req.body?.pemohon || req.body?.pelaku || "").slice(0, 40),
         pemohon2: String(req.body?.pemohon2 || ""),
       });
-      // Variabel yang bawaan ABT-nya terukur lebih tepat (5178, 5105, 1046,
-      // 1002, 0007) dikirim sebagai tawaran ABT, bukan usulan ALETA - lihat
-      // GERBANG_ITSBAT di abtUsulanLainService.
+      // Variabel yang bawaan ABT-nya terukur lebih tepat dikirim sebagai tawaran
+      // ABT, bukan usulan ALETA - lihat GERBANG_ITSBAT di abtUsulanLainService
+      // (sejak ukur ulang 13 Okt 2026 ke-14 variabel itsbat diusulkan ALETA).
       jawaban.itsbat = abtUsulanLainService.saringUsulanItsbat(itsbat, String(req.body?.jenisPerkara || "").slice(0, 80));
       /* === JENIS3 11 Okt === */
       // Variabel itsbat tambahan dari kamus per jenis (8171 tujuan itsbat, 1357 alasan wali, 1025
@@ -2390,6 +2390,31 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // tambahan per jenis tidak pernah menggagalkan usulan itsbat
       }
       /* === AKHIR JENIS3 === */
+      /* === ITSBAT KONTENTIUS 13 Okt (agen V) === */
+      // Pasangan yang telah meninggal (1025/1246/1247/1509, blangko "2a Itsbat Nikah Kontensius"): "ragu", tidak
+      // tercentang - isian manusia baru 7 perkara. Hanya kode yang belum ada.
+      try {
+        const f = require("../services/deteksi/itsbat").deteksi(String(req.body?.posita || ""), {});
+        const it = jawaban.itsbat;
+        if (it && Array.isArray(it.usulan)) {
+          for (const kode of ["1025", "1246", "1247", "1509"]) {
+            if (!f[kode] || it.usulan.some((u) => u && u.kode === kode)) continue;
+            it.usulan.push({
+              kode,
+              nama: { 1025: "Nama almarhum/almarhumah", 1246: "Tanggal meninggal", 1247: "Sebab meninggal", 1509: "Tempat meninggal" }[kode],
+              nilai: f[kode].nilai,
+              keyakinan: "ragu",
+              bentrok: "",
+              catatan: "pasangan yang telah meninggal (itsbat kontentius) - periksa kalimat sumbernya",
+              dihitung: false,
+              sumber: [{ saksi: 0, asal: "posita", kalimat: String(f[kode].kalimat).slice(0, 400) }],
+            });
+          }
+        }
+      } catch (_galatKontentius) {
+        // tidak pernah menggagalkan usulan itsbat
+      }
+      /* === AKHIR ITSBAT KONTENTIUS === */
     }
     // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
     // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.
@@ -2712,6 +2737,22 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         }
       }
       /* === AKHIR KDL2 === */
+      /* === CERAI 13 Okt (agen V, butir 16) === */
+      // Hanya cerai gugat/talak (jenis dari SIPP): 5105 tempat menikah, 0007 anak, 1267 komunikasi dari posita,
+      // 5127 = salinan 5227 - lihat services/deteksi/cerai.js. HANYA modul cerai (bukan semua DAFTAR deteksi/index.js:
+      // modul jenis lain disambung agen W/X/Y di bagian posita-lain). Hanya menambah kartu yang belum ada.
+      if (jawaban.saksi && Array.isArray(jawaban.saksi.usulan) && nomorPerkara) {
+        try {
+          const konteksCr = await abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null);
+          if (konteksCr && [346, 347].includes(konteksCr.jenisPerkaraId)) {
+            const positaCr = String(req.body?.posita || "").replace(/<[^>]*>/g, " ").trim().length >= 50 ? String(req.body?.posita || "") : konteksCr.posita;
+            jawaban.saksi.usulan = require("../services/deteksi/cerai").tambahUsulanCerai(jawaban.saksi.usulan, positaCr);
+          }
+        } catch (galatCr) {
+          jawaban.saksi.ceraiGalat = String((galatCr && galatCr.message) || galatCr).slice(0, 200);
+        }
+      }
+      /* === AKHIR CERAI 13 Okt === */
     }
 
     // Entri pengaturan yang ditolak - oleh penyaring di atas maupun oleh
