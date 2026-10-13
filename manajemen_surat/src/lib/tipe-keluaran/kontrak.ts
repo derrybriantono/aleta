@@ -259,7 +259,8 @@ export const DAFTAR_TIPE = {
     jenis: "tulis",
     pemakai: ["ekstensi"],
     judul: "Peta jenis perkara ke blangko putusan ABT",
-    bentukKunci: "kunci jenis baku (huruf kecil), atau <jenis>|<status>[|verstek] untuk baris status putusan",
+    bentukKunci:
+      "kunci jenis baku (huruf kecil), atau <jenis>|<status>[|verstek] untuk baris status putusan, atau <jenis>+<kode kumulasi>|<status>[|verstek] untuk perkara kumulasi",
     bentukNilai: "nama berkas blangko; data {jenisAsli, statusAsli?, blangko?, blangkoLain?, catatan?}",
     pemilikCermin: "CERMIN_EKSTENSI",
     dapatDitambah: true,

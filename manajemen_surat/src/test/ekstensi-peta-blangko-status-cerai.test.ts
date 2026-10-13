@@ -119,7 +119,7 @@ describe("pemilih blangko cerai per status (panel-alat.js yang dijalankan)", () 
 
   it("tipe keluaran tertanam membawa statusAsli dan kembali utuh lewat alatPetaBawaanDariEntri", () => {
     const tertanam = jalan("alatTipeTertanamPeta()") as { kunci: string; data: { statusAsli?: string } }[];
-    const status = tertanam.filter((e) => e.kunci.includes("|"));
+    const status = tertanam.filter((e) => e.kunci.includes("|") && !e.kunci.includes("+")); // "+" = baris kumulasi (T 13 Okt)
     expect(status).toHaveLength(18);
     expect(status.every((e) => typeof e.data.statusAsli === "string" && e.data.statusAsli)).toBe(true);
     const balik = jalan("alatPetaBawaanDariEntri(alatTipeTertanamPeta())");
@@ -130,7 +130,7 @@ describe("pemilih blangko cerai per status (panel-alat.js yang dijalankan)", () 
   it.skipIf(!folderAda)("tiap nama berkas status ada di folder derry_briantono laptop (paket abt-cerai-lengkap terpasang)", () => {
     const peta = jalan("ALAT_PETA_BAWAAN") as Record<string, Baris>;
     for (const [kunci, b] of Object.entries(peta)) {
-      if (!kunci.includes("|")) continue;
+      if (!kunci.includes("|") || kunci.includes("+")) continue; // baris kumulasi (T 13 Okt) dijaga putusan-bas-kumulasi-13okt.test.ts
       const folder = b.jenisAsli === "Cerai Gugat" ? "1 Perceraian CG" : "1a Perceraian CT";
       expect(existsSync(path.join(ABT_DERRY, folder, `${b.berkas}.rtf`)), `${kunci}: ${b.berkas}`).toBe(true);
       for (const varian of (b.catatan || "").replace(/^varian: /, "").split("; ").filter(Boolean)) {

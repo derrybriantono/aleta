@@ -2443,6 +2443,18 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           tanpaContoh,
         };
       } else {
+        /* === T 13 Okt === */
+        // Perkara kumulasi (SIPP + petitum): set yang memuat pokok kumulasinya diusulkan (itsbat -> A3/A3a, hak asuh/nafkah ->
+        // + pertanyaan anak & nafkah). Gagal dibaca = tanpa usulan, daftar tetap seperti semula.
+        const kumulasi =
+          m.pihak === "T" || !nomorPerkara || (jenisId !== "346" && jenisId !== "347")
+            ? null
+            : await Promise.race([
+                require("../services/kumulasiPerkaraService").kumulasiNomorPerkara(nomorPerkara),
+                new Promise((selesai) => setTimeout(() => selesai(null), 2500)),
+              ]).catch(() => null);
+        const usulanKumulasi = kumulasi ? svc.usulanSetKumulasi(jenisId, kumulasi.daftar) : null;
+        /* === AKHIR T === */
         jawaban.pertanyaanSaksi = {
           ok: true,
           jenisPerkaraId: jenisId,
@@ -2450,6 +2462,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           hurufAsal,
           tanpaContoh,
           daftar: svc.daftarSet({ jenisPerkaraId: jenisId, pihak: m.pihak === "T" ? "T" : undefined }),
+          ...(usulanKumulasi ? { usulanKumulasi } : {}),
         };
       }
     }

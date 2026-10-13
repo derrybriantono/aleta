@@ -7311,14 +7311,27 @@ function alatKunciPetaDariAdmin(kunciAdmin) {
   return /verstek/i.test(tanda) || /verstek/i.test(status) ? `${j}|${s}|verstek` : `${j}|${s}`;
 }
 
-/** Baris peta untuk satu perkara: status+verstek -> status -> jenis. Pulang { baris, kunci, tingkat } atau null. */
-function alatPetaUntukPerkara(peta, jenis, status, verstek) {
+/**
+ * Baris peta untuk satu perkara: [kumulasi+status+verstek -> kumulasi+status ->] status+verstek -> status -> jenis.
+ * Pulang { baris, kunci, tingkat } atau null. `kumulasi` (T 13 Okt, opsional) = daftar kode kumulasi perkara (SIPP + petitum,
+ * kumulasiPerkaraService) - lihat alatKodeKumulasi; baris kumulasi berkunci "<jenis>+<kode>[+<kode>]|<status>[|verstek]".
+ */
+function alatPetaUntukPerkara(peta, jenis, status, verstek, kumulasi) {
   const p = peta && typeof peta === "object" ? peta : {};
   const j = alatKunciJenis(jenis);
   if (!j) return null;
   const s = alatKunciStatusPutusan(status);
   const v = Boolean(verstek) || /verstek/i.test(String(status || ""));
   const ada = (k) => p[k] && alatBlangkoTerpetakan(p[k]);
+  /* === T 13 Okt === */
+  if (s) {
+    for (const kode of alatCalonKunciKumulasi(kumulasi)) {
+      const jk = `${j}+${kode}`;
+      if (v && ada(`${jk}|${s}|verstek`)) return { baris: p[`${jk}|${s}|verstek`], kunci: `${jk}|${s}|verstek`, tingkat: "kumulasi-verstek" };
+      if (ada(`${jk}|${s}`)) return { baris: p[`${jk}|${s}`], kunci: `${jk}|${s}`, tingkat: "kumulasi" };
+    }
+  }
+  /* === AKHIR T === */
   if (s && v && ada(`${j}|${s}|verstek`)) return { baris: p[`${j}|${s}|verstek`], kunci: `${j}|${s}|verstek`, tingkat: "status-verstek" };
   if (s && ada(`${j}|${s}`)) return { baris: p[`${j}|${s}`], kunci: `${j}|${s}`, tingkat: "status" };
   if (p[j]) return { baris: p[j], kunci: j, tingkat: "jenis" };
@@ -7789,6 +7802,8 @@ async function alatSidangPadaTanggal(tanggalIso) {
       alasanDitunda: String(s.alasanDitunda || ""),
       tanggalPutusan: String(s.tanggalPutusan || ""),
       tanggalSidang: String(s.tanggalSidang || tanggalIso || ""),
+      // T 13 Okt: kode kumulasi (SIPP + petitum) - dipakai pemilih blangko putusan kumulasi (alatPetaUntukPerkara).
+      kumulasi: alatKodeKumulasi(s.kumulasi),
     });
   }
   return [...per.values()];
@@ -8160,6 +8175,79 @@ function alatPetaStatusCerai(jenis, kodeJenis) {
 }
 Object.assign(ALAT_PETA_BAWAAN, alatPetaStatusCerai("Cerai Gugat", "CG"), alatPetaStatusCerai("Cerai Talak", "CT"));
 /* === AKHIR P === */
+
+/* === T 13 Okt === */
+/**
+ * BLANGKO PUTUSAN PERKARA KUMULASI (butir 4) - baris bawaan "<jenis>+<kode kumulasi>|<status>[|verstek]".
+ *
+ * Kumulasi = keterangan bot (kumulasiPerkaraService: SIPP perkara_kumulasi, dan petitum perkara cerai bila SIPP kosong -
+ * keputusan pengguna 12 Okt: keduanya digabung). Diukur 13 Okt atas sipp_donggala (5.655 perkara cerai, 256 berkumulasi):
+ * CG + itsbat kabul verstek 87, CG + hak asuh kabul verstek 37 (+ nafkah anak 7), CT + itsbat kabul verstek 13.
+ * Folder derry_briantono: "1c Perceraian Kumulasi Itsbat Nikah" (sudah ada, CG), dan dari paket ABT abt-putusan-bas-lengkap
+ * (Agen T): "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak" & "1e Putusan Cerai Talak Kumulasi Itsbat Nikah".
+ * Hanya status yang punya blangkonya; status lain (cabut/gugur/NO/tolak) tetap jatuh ke baris status cerai biasa.
+ * Kode gabungan dicoba lebih dulu (mis. hak-asuh-anak+nafkah-anak), lalu tiap kode sendiri-sendiri.
+ */
+const ALAT_URUT_KUMULASI = ["itsbat-nikah", "hak-asuh-anak", "nafkah-anak"];
+
+/** Kode kumulasi dari keterangan bot ({daftar:[{kode}]}), daftar kode, atau null -> daftar kode bersih berurutan. */
+function alatKodeKumulasi(kumulasi) {
+  const daftar = Array.isArray(kumulasi) ? kumulasi : kumulasi && Array.isArray(kumulasi.daftar) ? kumulasi.daftar : [];
+  const kode = daftar
+    .map((x) => (typeof x === "string" ? x : x && typeof x.kode === "string" ? x.kode : ""))
+    .map((x) => x.trim().toLowerCase())
+    .filter((x) => /^[a-z0-9-]{2,40}$/.test(x));
+  return [...new Set(kode)];
+}
+
+/** Kunci kumulasi yang dicoba, dari yang paling khusus: gabungan semua kode yang dikenal, lalu tiap kode. */
+function alatCalonKunciKumulasi(kumulasi) {
+  const kode = alatKodeKumulasi(kumulasi).filter((k) => ALAT_URUT_KUMULASI.includes(k));
+  kode.sort((a, b) => ALAT_URUT_KUMULASI.indexOf(a) - ALAT_URUT_KUMULASI.indexOf(b));
+  const hasil = [];
+  if (kode.length > 1) hasil.push(kode.join("+"));
+  for (const k of kode) hasil.push(k);
+  return hasil;
+}
+
+function alatBarisKumulasi(jenisAsli, statusAsli, berkas, blangko, blangkoLain, catatan) {
+  return { jenisAsli, statusAsli, berkas, blangko, blangkoLain: [...blangkoLain], bawaan: true, ...(catatan ? { catatan } : {}) };
+}
+Object.assign(ALAT_PETA_BAWAAN, {
+  "cerai gugat+itsbat-nikah|dikabulkan|verstek": alatBarisKumulasi(
+    "Cerai Gugat Kumulasi Itsbat Nikah",
+    "Dikabulkan",
+    "[01aa] [Kabul Verstek] IN + CG - F",
+    "Putusan Cerai Kumulasi Itsbat Nikah",
+    ["Putusan Cerai Kumulasi Itsbat"],
+    "varian: [01aa] [Kabul Verstek] IN + CG - B & F"
+  ),
+  "cerai talak+itsbat-nikah|dikabulkan|verstek": alatBarisKumulasi(
+    "Cerai Talak Kumulasi Itsbat Nikah",
+    "Dikabulkan",
+    "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - F",
+    "Putusan Cerai Talak Kumulasi Itsbat Nikah",
+    ["Putusan CT Kumulasi Itsbat"],
+    "paket ABT abt-putusan-bas-lengkap"
+  ),
+  "cerai gugat+hak-asuh-anak|dikabulkan|verstek": alatBarisKumulasi(
+    "Cerai Gugat Kumulasi Hak Asuh Anak",
+    "Dikabulkan",
+    "[01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz",
+    "Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    ["Putusan CG Kumulasi Hak Asuh"],
+    "varian: [01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz"
+  ),
+  "cerai gugat+hak-asuh-anak+nafkah-anak|dikabulkan|verstek": alatBarisKumulasi(
+    "Cerai Gugat Kumulasi Hak Asuh Anak dan Nafkah Anak",
+    "Dikabulkan",
+    "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz",
+    "Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    ["Putusan CG Kumulasi Hak Asuh"],
+    "varian: [01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz"
+  ),
+});
+/* === AKHIR T === */
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah
