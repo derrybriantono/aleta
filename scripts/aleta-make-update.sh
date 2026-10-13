@@ -49,7 +49,38 @@ copy_path() {
 #
 # File .env yang berisi rahasia TETAP tidak ikut - dihapus oleh find di
 # bawah, yang hanya menyisakan .env.example.
+#
+# 13 Okt 2026: KODE dan DATA BACA yang di-require/dibaca bot tetapi selama ini
+# tidak ikut dipaketkan - server menjalankan salinan lama, atau tidak punya
+# sama sekali:
+#   kamus-deteksi/   kamus deteksi + set pertanyaan saksi (kamusDeteksi.js,
+#                    pertanyaanSaksiService) - TIDAK ADA di server, sehingga
+#                    "Set pertanyaan ALETA" kosong dan deteksi berbasis kamus
+#                    lebih lemah daripada hasil ukur di laptop
+#   helpers/, whatsapp.js            di-require app.js
+#   mis.js, select.js                di-require query.js
+#   bot_db_config.js                 di-require botDbService/jejakAleta/kasir
+#   db_config4.js, db_config5.js     di-require notifikasi.js/query.js
+#   penyandingan/                    dibaca penyandinganService (catatan baca)
+#   .dockerignore (bot & portal)     menentukan isi image
+#   manajemen_surat/Dockerfile       image portal (tesseract-ocr untuk OCR KTP,
+#                                    98da3c3) - sebelumnya tidak pernah ikut
+# Semua berkas config di atas membaca kredensial dari env, bukan berisi sandi.
+# aleta_bot/data/ TETAP tidak ikut: itu antrean & arsip e-Court yang ditulis
+# saat berjalan.
 for item in \
+  aleta_bot/kamus-deteksi \
+  aleta_bot/helpers \
+  aleta_bot/penyandingan \
+  aleta_bot/whatsapp.js \
+  aleta_bot/mis.js \
+  aleta_bot/select.js \
+  aleta_bot/bot_db_config.js \
+  aleta_bot/db_config4.js \
+  aleta_bot/db_config5.js \
+  aleta_bot/.dockerignore \
+  manajemen_surat/Dockerfile \
+  manajemen_surat/.dockerignore \
   scripts \
   docs \
   manajemen_surat/src \
@@ -112,6 +143,9 @@ rm -rf \
 #
 # Yang dibuang hanya berkas setelannya; kodenya tetap ikut.
 rm -f "$PACKAGE_ROOT/aleta_bot/config/aleta-runtime.json"
+# Lapis kamus deteksi juga DITULIS bot saat berjalan (kamusDeteksiLapis.js, di
+# samping aleta-runtime.json) - lapis hidup server tidak boleh tertimpa.
+rm -f "$PACKAGE_ROOT/aleta_bot/config/kamus-deteksi-lapis.json" "$PACKAGE_ROOT/aleta_bot/config/"*.tmp
 
 find "$PACKAGE_ROOT" -type f \( -name ".env" -o -name ".env.*" \) \
   ! -name ".env.example" \

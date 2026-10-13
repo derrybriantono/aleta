@@ -71,6 +71,18 @@ export type HasilArsip = {
 
 /** Daftar isi paket pembaruan - SAMA dengan scripts/aleta-make-update.sh. */
 export const ISI_PAKET_PEMBARUAN = [
+  "aleta_bot/kamus-deteksi",
+  "aleta_bot/helpers",
+  "aleta_bot/penyandingan",
+  "aleta_bot/whatsapp.js",
+  "aleta_bot/mis.js",
+  "aleta_bot/select.js",
+  "aleta_bot/bot_db_config.js",
+  "aleta_bot/db_config4.js",
+  "aleta_bot/db_config5.js",
+  "aleta_bot/.dockerignore",
+  "manajemen_surat/Dockerfile",
+  "manajemen_surat/.dockerignore",
   "scripts",
   "docs",
   "manajemen_surat/src",
