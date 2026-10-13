@@ -38,6 +38,8 @@ function rapatWilayah(teks) {
   return String(teks || "")
     .replace(/(Desa|Kelurahan|Kecamatan|Kabupaten|Provinsi|Propinsi)(?=[A-Z][a-z])/g, "$1 ")
     .replace(/([a-z])(?=(?:Desa|Kelurahan|Kecamatan|Kabupaten|Kota|Provinsi|Propinsi|Kantor)\b)/g, "$1 ")
+    // "Sigi Biromaru,Kabupaten Sigi" - koma tanpa spasi.
+    .replace(/,(?=[A-Za-z])/g, ", ")
     .replace(/[ \s]+/g, " ");
 }
 

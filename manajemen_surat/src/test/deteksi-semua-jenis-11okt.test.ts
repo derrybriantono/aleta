@@ -163,7 +163,8 @@ describe("templat saksi per jenis - variabel '...' diisi dari posita, bergerbang
     const h = J.isiTemplatSaksi(templatAbt(), { posita: POSITA_ITSBAT, jenisPerkara: "360", alur: "16" });
     const jawab = Object.fromEntries(h.templat.map((b: { no: string; jawab: string }) => [b.no, b.jawab]));
     expect(jawab["4"]).toBe("Pemohon I dengan Pemohon II menikah di ..., pada tanggal 21 November 1996;");
-    expect(jawab["5"]).toContain("adalah Ayah Kandung bernama Xxxa");
+    // 13 Okt: status wali lengkap dengan sebutan ("Ayah Kandung Pemohon II" - 381 dari 680 isian 1046 manusia).
+    expect(jawab["5"]).toContain("adalah Ayah Kandung Pemohon II bernama Xxxa");
     expect(jawab["7"]).toBe("Yang bertindak sebagai saksi nikah pada saat terjadinya ijab kabul adalah Zzzc dan Wwwd;");
     expect(jawab["9"]).toBe("Sebelum menikah Pemohon I berstatus Jejaka dan Pemohon II berstatus Perawan;");
     // belum lulus gerbang: tidak ditulis
@@ -272,7 +273,7 @@ describe("susunan saksi lengkap untuk perkara itsbat (layanan sungguhan)", () =>
     // gaya lengkap: satu butir "- Bahwa ..." per baris, wali dengan hubungannya
     const butir = sdg.kalimatPokokJenis.lengkap.split("\n");
     expect(butir.every((b: string) => b.startsWith("- Bahwa "))).toBe(true);
-    expect(butir).toContain("- Bahwa yang menjadi wali nikah adalah Ayah Kandung bernama Xxxa;");
+    expect(butir).toContain("- Bahwa yang menjadi wali nikah adalah Ayah Kandung Pemohon II bernama Xxxa;");
     expect(butir.some((b: string) => /mahar/i.test(b))).toBe(false);
   });
 });

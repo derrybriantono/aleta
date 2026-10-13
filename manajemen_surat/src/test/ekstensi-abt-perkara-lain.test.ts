@@ -422,18 +422,11 @@ describe("itsbat: sebutan pemohon (0046) dikirim, label 'Status Pemohon sebelum 
     const kartuKode = (kode: string) =>
       (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu")) as any[]).find((k) => k.querySelector(".aleta-abt-kode")?.textContent === kode);
     expect(kartuKode("7211").querySelector(".aleta-abt-nama").textContent).toBe("Umur Pemohon saat menikah");
-    // Sejak 26 September 2026 bawaan ABT yang terukur lebih tepat (5178,
-    // 5105, 1046, 1002, 0007) tidak lagi diusulkan ALETA: tanpa kartu, dan
-    // disebut di kabar sebagai tawaran ABT - hanya yang ada di blangko ini.
-    for (const kode of ["5178", "5105", "1046", "1002", "0007"]) expect(kartuKode(kode), kode).toBeUndefined();
+    // 26 Sep - 12 Okt 2026: 5178, 5105, 1046, 1002, 0007 diserahkan ke "bawaan ABT" (tanpa kartu). Bawaan itu
+    // tidak pernah tersimpan (228/Pdt.P/2026: baris tetap DATA_TIDAK_ADA); sejak ukur ulang 13 Okt semuanya
+    // usulan ALETA - kartunya ada, dan kabar tidak lagi menyebut tawaran ABT.
+    expect(kartuKode("5105")?.querySelector(".aleta-abt-kode")?.textContent).toBe("5105");
     const kabar = panelDari(w).querySelector(".aleta-abt-kabar").textContent as string;
-    expect(kabar).toMatch(/ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: /);
-    const diBlangko = new Set(IN[2].split(" "));
-    const acuan: Record<string, string> = { "5178": "10103", "5105": "10102", "1046": "10108", "1002": "10106", "0007": "8492" };
-    for (const [kode, kueri] of Object.entries(acuan)) {
-      if (diBlangko.has(kode)) expect(kabar).toContain(`${kode} dari kueri #${kueri}#`);
-      else expect(kabar).not.toContain(`${kode} dari kueri`);
-    }
-    expect([...diBlangko].some((k) => k in acuan), "blangko IN memuat sekurang-kurangnya satu variabel tawaran ABT").toBe(true);
+    expect(kabar).not.toMatch(/ABT menawarkan isian bawaan/);
   });
 });

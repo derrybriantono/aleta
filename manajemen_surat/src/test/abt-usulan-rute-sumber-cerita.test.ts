@@ -283,8 +283,8 @@ describe("rute /abt/usulan - itsbat memakai sebutan pemohon (0046)", () => {
     });
     const itsbat = isi.data.itsbat as { usulan: { kode: string; nama: string }[]; bawaanAbt: { kode: string; nama: string }[] };
     expect(itsbat.usulan.find((u) => u.kode === "7211")?.nama).toBe("Umur Pemohon saat menikah");
-    // 1002 kini tawaran bawaan ABT (#10106#), labelnya tetap bersebutan pemohon.
-    expect(itsbat.bawaanAbt.find((u) => u.kode === "1002")?.nama).toBe("Status Pemohon sebelum nikah");
+    // 1002 kembali usulan ALETA (ukur ulang 13 Okt), labelnya tetap bersebutan pemohon.
+    expect(itsbat.usulan.find((u) => u.kode === "1002")?.nama).toBe("Status Pemohon sebelum nikah");
   });
 
   it("ekstensi lama tanpa pemohon: cadangan pelaku tetap berlaku (perilaku lama, bukan kosong)", async () => {
@@ -296,7 +296,7 @@ describe("rute /abt/usulan - itsbat memakai sebutan pemohon (0046)", () => {
     });
     const itsbat = isi.data.itsbat as { usulan: { kode: string; nama: string }[]; bawaanAbt: { kode: string; nama: string }[] };
     expect(itsbat.usulan.find((u) => u.kode === "7211")?.nama).toBe("Umur Pemohon I saat menikah");
-    expect(itsbat.bawaanAbt.find((u) => u.kode === "1002")?.nama).toBe("Status Pemohon I sebelum nikah");
+    expect(itsbat.usulan.find((u) => u.kode === "1002")?.nama).toBe("Status Pemohon I sebelum nikah");
   });
 
   /**
@@ -305,7 +305,9 @@ describe("rute /abt/usulan - itsbat memakai sebutan pemohon (0046)", () => {
    * usulan ALETA, melainkan sebagai tawaran ABT beserta kuerinya. Pengurainya
    * sendiri tetap mengurai ke-14 variabel.
    */
-  it("usulan ALETA hanya sembilan variabel; lima diserahkan ke bawaan ABT beserta kuerinya", async () => {
+  // 13 Okt 2026 (butir 14, 228/Pdt.P/2026): "bawaan ABT" tidak pernah tersimpan (baris tetap DATA_TIDAK_ADA);
+  // sesudah pengurai diperbaiki dan diukur ulang, ke-14 variabel diusulkan ALETA dan tidak ada yang diserahkan.
+  it("usulan ALETA ke-14 variabel itsbat; tidak ada yang diserahkan ke bawaan ABT", async () => {
     panggilan.length = 0;
     const { isi } = await mintaPortal({ nomorPerkara: "45/Pdt.P/2025/PA.Dgl", sumber: "itsbat", posita: POSITA_ITSBAT, pemohon: "Pemohon" });
     const itsbat = isi.data.itsbat as {
@@ -313,15 +315,9 @@ describe("rute /abt/usulan - itsbat memakai sebutan pemohon (0046)", () => {
       bawaanAbt: { kode: string; acuan: string; alasan: string }[];
       belumSiap: unknown[];
     };
-    expect(itsbat.usulan.map((u) => u.kode).sort()).toEqual(["0650", "0651", "1001", "1003", "1217", "5197", "7211", "7212", "8087"]);
-    expect(Object.fromEntries(itsbat.bawaanAbt.map((b) => [b.kode, b.acuan]))).toEqual({
-      "0007": "8492",
-      "1002": "10106",
-      "1046": "10108",
-      "5105": "10102",
-      "5178": "10103",
-    });
-    for (const b of itsbat.bawaanAbt) expect(b.alasan).toMatch(/ABT menawarkan isian bawaan dari kueri #\d+#|terukur lebih tepat/);
+    const empatBelas = ["0007", "0650", "0651", "1001", "1002", "1003", "1046", "1217", "5105", "5178", "5197", "7211", "7212", "8087"];
+    expect(itsbat.usulan.map((u) => u.kode).filter((k) => empatBelas.includes(k)).sort()).toEqual(empatBelas);
+    expect(itsbat.bawaanAbt).toEqual([]);
     expect(itsbat.belumSiap).toEqual([]);
     const urai = panggilan.find((p) => p.fungsi === "dariPositaItsbat");
     expect(urai, "pengurai tetap dipanggil").toBeTruthy();

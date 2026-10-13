@@ -2350,9 +2350,9 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         pemohon: String(req.body?.pemohon || req.body?.pelaku || "").slice(0, 40),
         pemohon2: String(req.body?.pemohon2 || ""),
       });
-      // Variabel yang bawaan ABT-nya terukur lebih tepat (5178, 5105, 1046,
-      // 1002, 0007) dikirim sebagai tawaran ABT, bukan usulan ALETA - lihat
-      // GERBANG_ITSBAT di abtUsulanLainService.
+      // Variabel yang bawaan ABT-nya terukur lebih tepat dikirim sebagai tawaran
+      // ABT, bukan usulan ALETA - lihat GERBANG_ITSBAT di abtUsulanLainService
+      // (sejak ukur ulang 13 Okt 2026 ke-14 variabel itsbat diusulkan ALETA).
       jawaban.itsbat = abtUsulanLainService.saringUsulanItsbat(itsbat, String(req.body?.jenisPerkara || "").slice(0, 80));
       /* === JENIS3 11 Okt === */
       // Variabel itsbat tambahan dari kamus per jenis (8171 tujuan itsbat, 1357 alasan wali, 1025

@@ -427,6 +427,25 @@ const GERBANG = { presisiMinimal: 0.9, nMinimal: 10 };
  * itsbat tampil karena blangkonya memuat #5197#), tetapi n-nya 0-2. Selama
  * begitu, keputusannya dipinjam dari ukuran itsbat nikah - bukti terbaik atas
  * pengurai yang sama - dan alasannya menyebut peminjaman itu.
+ *
+ * DIUKUR ULANG 13 Oktober 2026 (butir 14, 228/Pdt.P/2026): "bawaan ABT" ternyata
+ * hanya tampil di jendela sembul dan TIDAK PERNAH tersimpan - baris 1002, 1046,
+ * 5105, 5178 tetap DATA_TIDAK_ADA, dan panel berkata "tidak ada data baru".
+ * Pengurainya diperbaiki (deteksi/itsbat.js) dan baris itsbat-nikah di bawah
+ * diukur ulang (D:/aleta-dev/kerja/agen-v-itsbat/ukur-itsbat.js, sipp_donggala
+ * lokal 9 Okt, isian manusia sebelum 1 Sep 2026) dengan PEMBANDING MAKNA per
+ * variabel, sama untuk ALETA dan bawaan ABT:
+ *   5105 tempat   ruas wilayah (desa/kecamatan/kabupaten) yang ada di keduanya
+ *                 sama, dan desa atau kecamatan bertemu - ALETA tidak menambah
+ *                 desa yang tidak tertulis di posita;
+ *   5178 KUA      kecamatan sama (+ kabupaten bila manusia menyebutnya);
+ *   1002/1003     golongan status sama (jejaka=perjaka=bujang=lajang; perawan=gadis; duda; janda);
+ *   1046 wali     hubungan sama (ayah=bapak; kakak=adik=saudara; paman; kakek; sepupu; hakim);
+ *   0007 anak     jumlah anak sama (belum = 0);
+ *   lainnya       nama/rapat seperti sebelumnya.
+ * Hasilnya ke-14 variabel lulus: 5105 ALETA 300/321 lawan ABT 274/321, 5178 255
+ * lawan 257 (setara, selisih 0,008), 1046 279 lawan 180, 1002 309 lawan 309,
+ * 0007 254 lawan 39. dipangkas tidak diukur ulang (0).
  */
 const GERBANG_ITSBAT = { presisiMinimal: 0.5, nMinimal: 10, selisihAbtMaks: 0.02, jenisWakil: "itsbat-nikah" };
 
@@ -485,20 +504,20 @@ const UKUR_SUMBER = {
   // memuat #5197#, jadi tombol itsbat tampil di sana dan perkaranya diukur.
   itsbat: {
     "itsbat-nikah": {
-      "1001": { aleta: { n: 643, benar: 285 }, abt: { acuan: "10112", n: 307, benar: 207, kosong: 0, nMentah: 307, benarMentah: 207, dipangkas: 2 }, pasang: { n: 282, aleta: 213, abt: 206 } },
-      "1002": { aleta: { n: 544, benar: 98 }, abt: { acuan: "10106", n: 312, benar: 234, kosong: 1, nMentah: 312, benarMentah: 234, dipangkas: 0 }, pasang: { n: 308, aleta: 85, abt: 231 } },
-      "1003": { aleta: { n: 522, benar: 310 }, abt: { acuan: "10107", n: 312, benar: 305, kosong: 1, nMentah: 312, benarMentah: 305, dipangkas: 0 }, pasang: { n: 301, aleta: 293, abt: 296 } },
-      "1046": { aleta: { n: 174, benar: 91 }, abt: { acuan: "10108", n: 309, benar: 187, kosong: 78, nMentah: 309, benarMentah: 187, dipangkas: 0 }, pasang: { n: 15, aleta: 0, abt: 1 } },
+      "1001": { aleta: { n: 643, benar: 285 }, abt: { acuan: "10112", n: 307, benar: 207, kosong: 0, nMentah: 307, benarMentah: 207, dipangkas: 0 }, pasang: { n: 282, aleta: 213, abt: 206 } },
+      "1002": { aleta: { n: 670, benar: 655 }, abt: { acuan: "10106", n: 311, benar: 309, kosong: 1, nMentah: 311, benarMentah: 309, dipangkas: 0 }, pasang: { n: 310, aleta: 309, abt: 309 } },
+      "1003": { aleta: { n: 670, benar: 652 }, abt: { acuan: "10107", n: 311, benar: 309, kosong: 1, nMentah: 311, benarMentah: 309, dipangkas: 0 }, pasang: { n: 310, aleta: 309, abt: 309 } },
+      "1046": { aleta: { n: 631, benar: 614 }, abt: { acuan: "10108", n: 309, benar: 191, kosong: 78, nMentah: 309, benarMentah: 191, dipangkas: 0 }, pasang: { n: 290, aleta: 279, abt: 180 } },
       "1217": { aleta: { n: 637, benar: 578 }, abt: { acuan: "1177", n: 285, benar: 196, kosong: 9, nMentah: 285, benarMentah: 196, dipangkas: 0 }, pasang: { n: 280, aleta: 244, abt: 193 } },
-      "5105": { aleta: { n: 300, benar: 10 }, abt: { acuan: "10102", n: 322, benar: 137, kosong: 0, nMentah: 322, benarMentah: 137, dipangkas: 3 }, pasang: { n: 260, aleta: 10, abt: 107 } },
-      "5178": { aleta: { n: 249, benar: 0 }, abt: { acuan: "10103", n: 264, benar: 245, kosong: 0, nMentah: 264, benarMentah: 245, dipangkas: 2 }, pasang: { n: 247, aleta: 0, abt: 232 } },
-      "5197": { aleta: { n: 297, benar: 233 }, abt: { acuan: "10101", n: 338, benar: 62, kosong: 0, nMentah: 338, benarMentah: 62, dipangkas: 37 }, pasang: { n: 297, aleta: 233, abt: 47 } },
-      "7211": { aleta: { n: 224, benar: 175 }, abt: { acuan: "10104", n: 264, benar: 205, kosong: 0, nMentah: 264, benarMentah: 205, dipangkas: 41 }, pasang: { n: 218, aleta: 173, abt: 175 } },
-      "7212": { aleta: { n: 219, benar: 170 }, abt: { acuan: "10105", n: 264, benar: 202, kosong: 0, nMentah: 264, benarMentah: 202, dipangkas: 39 }, pasang: { n: 213, aleta: 169, abt: 168 } },
-      "8087": { aleta: { n: 517, benar: 266 }, abt: { acuan: "10109", n: 310, benar: 192, kosong: 0, nMentah: 310, benarMentah: 192, dipangkas: 31 }, pasang: { n: 298, aleta: 196, abt: 189 } },
-      "0007": { aleta: { n: 496, benar: 62 }, abt: { acuan: "8492", n: 334, benar: 50, kosong: 0, nMentah: 334, benarMentah: 50, dipangkas: 0 }, pasang: { n: 277, aleta: 33, abt: 39 } },
-      "0650": { aleta: { n: 569, benar: 509 }, abt: { acuan: "10110", n: 307, benar: 133, kosong: 0, nMentah: 307, benarMentah: 133, dipangkas: 67 }, pasang: { n: 302, aleta: 265, abt: 133 } },
-      "0651": { aleta: { n: 543, benar: 476 }, abt: { acuan: "10111", n: 306, benar: 96, kosong: 0, nMentah: 306, benarMentah: 96, dipangkas: 6 }, pasang: { n: 286, aleta: 248, abt: 92 } },
+      "5105": { aleta: { n: 675, benar: 627 }, abt: { acuan: "10102", n: 322, benar: 274, kosong: 0, nMentah: 322, benarMentah: 274, dipangkas: 0 }, pasang: { n: 321, aleta: 300, abt: 274 } },
+      "5178": { aleta: { n: 269, benar: 260 }, abt: { acuan: "10103", n: 263, benar: 257, kosong: 0, nMentah: 263, benarMentah: 257, dipangkas: 0 }, pasang: { n: 263, aleta: 255, abt: 257 } },
+      "5197": { aleta: { n: 296, benar: 232 }, abt: { acuan: "10101", n: 337, benar: 62, kosong: 0, nMentah: 337, benarMentah: 62, dipangkas: 0 }, pasang: { n: 296, aleta: 232, abt: 47 } },
+      "7211": { aleta: { n: 230, benar: 183 }, abt: { acuan: "10104", n: 264, benar: 205, kosong: 0, nMentah: 264, benarMentah: 205, dipangkas: 0 }, pasang: { n: 224, aleta: 181, abt: 178 } },
+      "7212": { aleta: { n: 231, benar: 180 }, abt: { acuan: "10105", n: 264, benar: 202, kosong: 0, nMentah: 264, benarMentah: 202, dipangkas: 0 }, pasang: { n: 225, aleta: 179, abt: 176 } },
+      "8087": { aleta: { n: 517, benar: 266 }, abt: { acuan: "10109", n: 310, benar: 192, kosong: 0, nMentah: 310, benarMentah: 192, dipangkas: 0 }, pasang: { n: 298, aleta: 196, abt: 189 } },
+      "0007": { aleta: { n: 560, benar: 511 }, abt: { acuan: "8492", n: 333, benar: 50, kosong: 0, nMentah: 333, benarMentah: 50, dipangkas: 0 }, pasang: { n: 284, aleta: 254, abt: 39 } },
+      "0650": { aleta: { n: 569, benar: 509 }, abt: { acuan: "10110", n: 307, benar: 133, kosong: 0, nMentah: 307, benarMentah: 133, dipangkas: 0 }, pasang: { n: 302, aleta: 265, abt: 133 } },
+      "0651": { aleta: { n: 543, benar: 476 }, abt: { acuan: "10111", n: 306, benar: 96, kosong: 0, nMentah: 306, benarMentah: 96, dipangkas: 0 }, pasang: { n: 286, aleta: 248, abt: 92 } },
     },
     "asal-usul": {
       "1001": { aleta: { n: 2, benar: 2 }, abt: { acuan: "10112", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },

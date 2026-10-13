@@ -321,7 +321,7 @@ describe("keputusan sumber terukur (ALETA vs bawaan ABT)", () => {
    * Gerbang 0,9 jalur posita-lain akan menghentikan ke-14 variabel, padahal
    * ALETA jauh lebih tepat untuk 5197, 0650, 0651, dan 1217.
    */
-  it("jalur itsbat: sembilan variabel tetap ALETA, lima diserahkan ke bawaan ABT", () => {
+  it("jalur itsbat: ke-14 variabel diusulkan ALETA (ukur ulang 13 Okt, pengurai deteksi/itsbat.js)", () => {
     const itsbat = { jalur: "itsbat" };
     expect(lain.GERBANG_ITSBAT).toMatchObject({ presisiMinimal: 0.5, nMinimal: 10, selisihAbtMaks: 0.02 });
     const keputusan = Object.fromEntries(
@@ -329,27 +329,27 @@ describe("keputusan sumber terukur (ALETA vs bawaan ABT)", () => {
     );
     expect(keputusan).toEqual({
       "1001": "aleta",
-      "1002": "abt",
+      "1002": "aleta",
       "1003": "aleta",
-      "1046": "abt",
+      "1046": "aleta",
       "1217": "aleta",
-      "5105": "abt",
-      "5178": "abt",
+      "5105": "aleta",
+      "5178": "aleta",
       "5197": "aleta",
       "7211": "aleta",
       "7212": "aleta",
       "8087": "aleta",
-      "0007": "abt",
+      "0007": "aleta",
       "0650": "aleta",
       "0651": "aleta",
     });
-    // 1003 dan 7211 kalah tipis (0,973 lawan 0,983; 0,794 lawan 0,803):
-    // setara, dan alasannya berkata begitu.
-    const k1003 = lain.sumberUsulanTerukur(360, "1003", itsbat);
-    expect(k1003).toMatchObject({ sumber: "aleta", acuan: "10107", presisiAleta: 0.973, ketepatanAbt: 0.983, n: 301 });
-    expect(k1003.alasan).toMatch(/setara dengan bawaan ABT #10107#/);
-    // 0007: ABT hanya 0,141 tetapi ALETA 0,119 - di bawah ketepatan minimal.
-    expect(lain.sumberUsulanTerukur(360, "0007", itsbat).alasan).toMatch(/presisi<0\.5.*kueri #8492#/);
+    // 5178 kalah tipis (255/263 = 0,970 lawan 257/263 = 0,977): setara, dan alasannya berkata begitu.
+    const k5178 = lain.sumberUsulanTerukur(360, "5178", itsbat);
+    expect(k5178).toMatchObject({ sumber: "aleta", acuan: "10103", presisiAleta: 0.97, ketepatanAbt: 0.977, n: 263 });
+    expect(k5178.alasan).toMatch(/setara dengan bawaan ABT #10103#/);
+    // 5105 (228/Pdt.P/2026): ALETA 300/321 lawan bawaan ABT 274/321; 0007 254/284 lawan 39/284.
+    expect(lain.sumberUsulanTerukur(360, "5105", itsbat)).toMatchObject({ sumber: "aleta", presisiAleta: 0.935, ketepatanAbt: 0.854 });
+    expect(lain.sumberUsulanTerukur(360, "0007", itsbat).alasan).toMatch(/tidak lebih buruk dari bawaan ABT #8492#/);
     // 1217: 578/637 = 0,907 sepanjang masa, tetapi 244/280 = 0,871 di masa
     // bawaan ABT - dihitung di masa bawaan, pada perkara yang sama.
     expect(lain.UKUR_SUMBER.itsbat["itsbat-nikah"]["1217"].aleta).toEqual({ n: 637, benar: 578 });
@@ -360,31 +360,32 @@ describe("keputusan sumber terukur (ALETA vs bawaan ABT)", () => {
       ketepatanAbt: 0.689,
       jenisUkur: "itsbat-nikah",
     });
-    expect(lain.sumberUsulanTerukur(360, "#5197#", itsbat)).toMatchObject({ sumber: "aleta", presisiAleta: 0.785, ketepatanAbt: 0.158, acuan: "10101" });
+    expect(lain.sumberUsulanTerukur(360, "#5197#", itsbat)).toMatchObject({ sumber: "aleta", presisiAleta: 0.784, ketepatanAbt: 0.159, acuan: "10101" });
     // Asal usul lewat jalur itsbat (tombol itsbat tampil karena #5197#): n-nya
     // 2, jadi keputusan dipinjam dari itsbat nikah - pengurai yang sama.
     const asalUsul = lain.sumberUsulanTerukur(358, "8087", itsbat);
     expect(asalUsul).toMatchObject({ sumber: "aleta", acuan: "10109", n: 298, jenis: "asal-usul", jenisUkur: "itsbat-nikah" });
     expect(asalUsul.alasan).toMatch(/^diukur pada itsbat-nikah - pengurai yang sama, asal-usul baru n 2; /);
-    expect(lain.sumberUsulanTerukur(358, "5178", itsbat)).toMatchObject({ sumber: "abt", jenisUkur: "itsbat-nikah" });
+    expect(lain.sumberUsulanTerukur(358, "5178", itsbat)).toMatchObject({ sumber: "aleta", jenisUkur: "itsbat-nikah" });
     // Jalur bawaan (posita-lain) tidak mengukur itsbat nikah, dan gerbangnya
     // tetap 0,9 - VARIABEL_SIAP tidak berubah oleh gerbang itsbat.
     expect(lain.sumberUsulanTerukur(360, "1003")).toMatchObject({ sumber: "belum-terukur", alasan: "belum diukur" });
     expect(lain.VARIABEL_SIAP["dispensasi-kawin"]).toEqual(["0606", "0600", "0607", "0601", "5178"]);
   });
 
-  it("saringUsulanItsbat: pengurai tetap 14 variabel, yang dikirim ke panel disaring", () => {
+  it("saringUsulanItsbat: pengurai 14 variabel, semuanya sampai ke panel sesudah ukur ulang 13 Okt", () => {
     const POSITA =
       "Bahwa pada tanggal 07 Mei 2017 telah terjadi pernikahan antara Pemohon I dengan Pemohon II di Desa Aaaa Kecamatan Bbbb Kabupaten Donggala, dengan wali nikah ayah kandung bernama Xxxa dan disaksikan oleh Yyya dan Zzza dengan mahar seperangkat alat sholat;";
     const urai = usulanService.dariPositaItsbat(POSITA, { pemohon: "Pemohon I", pemohon2: "Pemohon II" });
     expect(urai.usulan).toHaveLength(14);
     const h = lain.saringUsulanItsbat(urai);
-    expect(h.usulan.map((u: { kode: string }) => u.kode).sort()).toEqual(["0650", "0651", "1001", "1003", "1217", "5197", "7211", "7212", "8087"]);
-    expect(h.bawaanAbt.map((b: { kode: string }) => b.kode).sort()).toEqual(["0007", "1002", "1046", "5105", "5178"]);
-    expect(h.bawaanAbt.find((b: { kode: string }) => b.kode === "5178")).toMatchObject({ acuan: "10103", nama: "KUA kecamatan" });
+    expect(h.usulan).toHaveLength(14);
+    expect(h.bawaanAbt).toEqual([]);
+    expect(h.usulan.find((u: { kode: string }) => u.kode === "5105")).toMatchObject({ nilai: "Desa Aaaa, Kecamatan Bbbb, Kabupaten Donggala" });
+    expect(h.usulan.find((u: { kode: string }) => u.kode === "1046")).toMatchObject({ nilai: "Ayah Kandung" });
     expect(h.belumSiap).toEqual([]);
     expect(h.ditemukan).toBe(h.usulan.filter((u: { nilai: string }) => u.nilai).length);
-    expect(h.catatan).toMatch(/dari 9 variabel usulan ALETA terbaca dari posita.*5 variabel diserahkan ke isian bawaan ABT/);
+    expect(h.catatan).toMatch(/dari 14 variabel usulan ALETA terbaca dari posita; sisanya dikosongkan, bukan ditebak\.$/);
     // Posita yang bukan itsbat: kabar pengurai dipertahankan.
     const bukan = lain.saringUsulanItsbat(usulanService.dariPositaItsbat("Bahwa Penggugat dan Tergugat sering bertengkar;", {}));
     expect(bukan.catatan).toMatch(/^Tidak satu pun fakta pernikahan terbaca/);
