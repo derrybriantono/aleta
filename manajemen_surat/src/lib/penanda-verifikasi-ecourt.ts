@@ -39,7 +39,19 @@ export type VerifikasiPerkara = {
   /** Tanggal sidang sebelumnya (YYYY-MM-DD) dan unggahan sesudahnya - keadaan belum-upload. */
   sidangLalu?: string;
   unggahSejakSidangLalu?: number;
+  /**
+   * 13 Okt 2026: awal babak agenda (sidang yang ditunda dengan agenda yang
+   * sama dilompati) dan jenis dokumen e-Court yang dituntut agenda itu.
+   */
+  awalBabak?: string;
+  jenisDituntut?: string[];
 };
+
+/** "Jawaban", "Replik/Rereplik" - jenis dokumen yang dituntut, untuk keterangan. */
+function sebutJenis(jenis: string[] | undefined): string {
+  const daftar = (jenis ?? []).map((j) => String(j || "").trim()).filter(Boolean);
+  return daftar.map((j) => j.charAt(0).toUpperCase() + j.slice(1)).join("/");
+}
 
 export type DataVerifikasi = {
   /** Jawaban bot terbaca. false = bot/rute tidak tersambung -> semua tidak konek. */
@@ -114,6 +126,13 @@ export function penandaVerifikasi(
     bagian.push("Perkara ini belum terbaca sebagai e-Litigasi di data e-Court ALETA.");
   } else if (item.keadaan === "belum") {
     bagian.push(`${item.menunggu} dokumen persidangan menunggu verifikasi majelis.`);
+  } else if (item.keadaan === "belum-upload" && item.jenisDituntut?.length) {
+    const sejak = item.awalBabak || item.sidangLalu;
+    bagian.push(
+      `Pihak belum mengunggah dokumen ${sebutJenis(item.jenisDituntut)} di e-Court${
+        sejak ? ` sejak sidang ${sejak}` : ""
+      }, sehingga belum ada yang dapat diverifikasi hakim. Agenda hari ini menuntut dokumen itu lewat e-Court.`
+    );
   } else if (item.keadaan === "belum-upload") {
     bagian.push(
       `Pihak belum mengunggah dokumennya di e-Court - belum ada dokumen persidangan yang diunggah sejak sidang sebelumnya${
