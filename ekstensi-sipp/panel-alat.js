@@ -1722,6 +1722,9 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   alatPasangPetunjuk(panel);
   alatPasangGeser(panel, kepala, kunci);
   alatPasangUbahUkuran(panel, kunci);
+  // 13 Okt butir 5: roda tetikus di atas panel yang isinya tidak meluap
+  // menggulir halaman di bawahnya (lihat alatJagaGulirHalaman).
+  alatJagaGulirHalaman(panel);
 
   // Lencana dipasang pada panel yang SAMA. Gesernya TIDAK didaftarkan lagi:
   // alatPasangGeser memasang pendengarnya pada `panel`, bukan pada argumen
@@ -8784,4 +8787,262 @@ try {
   }
 } catch {
   /* di luar konteks halaman */
+}
+
+/*
+ * ============================================================================
+ * 13 OKT BUTIR 2 - KEPALA RINGKAS DAN GEMBOK DI BAWAH KEPALA (SIPP & ALETA)
+ * ============================================================================
+ *
+ * Pengguna 12 Okt: "tampilan header di hide seperti ekstensi di aleta untuk
+ * ekstensi sipp dan aleta", lalu "ada tombol logo lock dibawah untuk tidak
+ * hide tampilan dibawah headernya ekstensi apabila di lock (defaultnya unlock
+ * seperti yang dibuat sekarang)".
+ *
+ * Polanya pola "Mengecil sendiri" panel ALETA (aleta.js t4AturPengecil):
+ * panel yang MENUTUPI tabel halaman tinggal kepalanya (satu baris, 46px)
+ * selama kursor/fokus tidak di dalamnya, dan membentang lagi begitu ditunjuk.
+ * Semua tombol kepala tetap di kepala yang selalu tampak - tidak ada yang
+ * dikurangi; isi di bawahnya kembali begitu panel ditunjuk.
+ *
+ *   GEMBOK TERBUKA (bawaan)  perilaku ringkas di atas
+ *   GEMBOK TERKUNCI          kepala & isi TIDAK pernah disembunyikan
+ *
+ * Keadaannya di chrome.storage.local, satu kunci per situs, dan diikuti
+ * perubahannya (tab lain ikut berganti). Tidak disimpan di variabel modul:
+ * yang hidup lintas halaman hanya penyimpanan.
+ */
+const ALAT_GEMBOK_KUNCI = { sipp: "gembokKepalaSipp", aleta: "gembokKepalaAleta" };
+const ALAT_GEMBOK_ATRIBUT = "data-aleta-gembok";
+const ALAT_RINGKAS_ATRIBUT = "data-aleta-kepala-ringkas";
+const ALAT_RINGKAS_SELANG = 1200;
+let alatGembokPendengar = false;
+
+function alatGembokKunci(situs) {
+  return ALAT_GEMBOK_KUNCI[situs] || ALAT_GEMBOK_KUNCI.sipp;
+}
+
+/** Bawaan TIDAK terkunci: yang belum pernah memilih mendapat kepala ringkas. */
+async function alatGembokTerkunci(situs) {
+  try {
+    const kunci = alatGembokKunci(situs);
+    const simpan = await chrome.storage.local.get([kunci]);
+    return Boolean(simpan && simpan[kunci] === true);
+  } catch {
+    return false;
+  }
+}
+
+function alatPanelTerkunci(panel) {
+  return Boolean(panel && panel.getAttribute(ALAT_GEMBOK_ATRIBUT) === "kunci");
+}
+
+/** Menggambar keadaan gembok pada panel dan tombolnya (tanpa menyimpan). */
+function alatTerapkanGembok(panel, terkunci) {
+  if (!panel) return;
+  panel.setAttribute(ALAT_GEMBOK_ATRIBUT, terkunci ? "kunci" : "buka");
+  if (terkunci) panel.removeAttribute(ALAT_RINGKAS_ATRIBUT);
+  const tombol = panel.querySelector(":scope > .aleta-gembok-baris .aleta-gembok");
+  if (!tombol) return;
+  tombol.setAttribute("aria-pressed", terkunci ? "true" : "false");
+  const ikon = tombol.querySelector(".aleta-gembok-ikon");
+  const label = tombol.querySelector(".aleta-gembok-label");
+  if (ikon) ikon.textContent = terkunci ? "🔒" : "🔓";
+  if (label) label.textContent = terkunci ? "Terkunci: tampil penuh" : "Ringkas otomatis";
+  tombol.title = terkunci
+    ? "Gembok TERKUNCI: kepala dan isi panel selalu tampil penuh. Klik untuk membuka gembok (panel meringkas ke kepalanya saat menutupi tabel dan tidak ditunjuk)."
+    : "Gembok TERBUKA: panel meringkas ke kepalanya saat menutupi tabel dan tidak ditunjuk, lalu membentang lagi saat ditunjuk. Klik untuk mengunci agar selalu tampil penuh.";
+}
+
+/** Mengubah keadaan gembok satu situs - disimpan, panel yang tampak ikut. */
+async function alatSetelGembok(panel, situs, terkunci) {
+  alatTerapkanGembok(panel, terkunci === true);
+  try {
+    await chrome.storage.local.set({ [alatGembokKunci(situs)]: terkunci === true });
+  } catch {
+    /* di luar konteks ekstensi: keadaan berlaku sampai halaman dimuat ulang */
+  }
+}
+
+/**
+ * Apakah kotak panel menutupi salah satu tabel halaman. `kotak` = kotak
+ * TERBENTANG panel; kotak yang sudah meringkas tidak lagi menutupi, dan
+ * membandingkannya membuat panel membesar-mengecil tanpa henti (sama dengan
+ * t4AturPengecil).
+ */
+function alatPanelMenutupiTabel(panel, kotak) {
+  for (const tabel of Array.from(document.querySelectorAll("table")).slice(0, 40)) {
+    if (panel.contains(tabel)) continue;
+    const r = tabel.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) continue;
+    if (r.left < kotak.kanan && r.right > kotak.kiri && r.top < kotak.bawah && r.bottom > kotak.atas) return true;
+  }
+  return false;
+}
+
+/** Satu pemeriksaan kepala ringkas; dipanggil pewaktu, dipisah supaya teruji. */
+function alatPeriksaRingkas(panel) {
+  if (!panel || !panel.isConnected) return false;
+  if (alatPanelTerkunci(panel) || panel.classList.contains("aleta-panel-lencana") || panel.classList.contains("aleta-panel-penuh")) {
+    panel.removeAttribute(ALAT_RINGKAS_ATRIBUT);
+    return true;
+  }
+  let ditunjuk = false;
+  try {
+    ditunjuk = panel.matches(":hover") || panel.matches(":focus-within");
+  } catch {
+    ditunjuk = false;
+  }
+  if (ditunjuk) return true;
+  const ringkas = panel.getAttribute(ALAT_RINGKAS_ATRIBUT) === "ya";
+  let kotak = ringkas && panel.aletaKotakTerbentang ? panel.aletaKotakTerbentang : null;
+  if (!kotak) {
+    const r = panel.getBoundingClientRect();
+    kotak = { kiri: r.left, kanan: r.right, atas: r.top, bawah: r.bottom };
+    panel.aletaKotakTerbentang = kotak;
+  }
+  if (alatPanelMenutupiTabel(panel, kotak)) panel.setAttribute(ALAT_RINGKAS_ATRIBUT, "ya");
+  else panel.removeAttribute(ALAT_RINGKAS_ATRIBUT);
+  return true;
+}
+
+function alatDengarkanGembok() {
+  if (alatGembokPendengar) return;
+  alatGembokPendengar = true;
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local") return;
+      for (const situs of Object.keys(ALAT_GEMBOK_KUNCI)) {
+        const u = ubah[ALAT_GEMBOK_KUNCI[situs]];
+        if (!u) continue;
+        for (const p of Array.from(document.querySelectorAll(`[data-aleta-gembok-situs="${situs}"]`))) {
+          alatTerapkanGembok(p, u.newValue === true);
+        }
+      }
+    });
+  } catch {
+    /* di luar konteks ekstensi */
+  }
+}
+
+/**
+ * Memasang baris gembok TEPAT di bawah kepala, membaca keadaannya dari
+ * penyimpanan, dan (bila opsi.ringkas tidak false) menjalankan pemeriksa
+ * kepala ringkas. Panel ALETA memakai pemeriksa miliknya sendiri
+ * (t4AturPengecil) - di sana opsi.ringkas = false.
+ */
+function alatPasangGembok(panel, kepala, situs, opsi) {
+  if (!panel || !kepala) return null;
+  const pilihan = opsi || {};
+  const tua = panel.querySelector(":scope > .aleta-gembok-baris");
+  if (tua) tua.remove();
+  panel.setAttribute("data-aleta-gembok-situs", situs);
+  const baris = alatEl("div", "aleta-gembok-baris");
+  const tombol = alatEl("button", "aleta-gembok");
+  tombol.type = "button";
+  tombol.appendChild(alatEl("span", "aleta-gembok-ikon", "🔓"));
+  tombol.appendChild(alatEl("span", "aleta-gembok-label", "Ringkas otomatis"));
+  tombol.addEventListener("click", () => {
+    void alatSetelGembok(panel, situs, !alatPanelTerkunci(panel));
+  });
+  baris.appendChild(tombol);
+  if (kepala.parentNode === panel) panel.insertBefore(baris, kepala.nextSibling);
+  else panel.insertBefore(baris, panel.firstChild);
+  alatTerapkanGembok(panel, false);
+  const siap = alatGembokTerkunci(situs).then((terkunci) => {
+    alatTerapkanGembok(panel, terkunci);
+    return terkunci;
+  });
+  alatDengarkanGembok();
+  if (pilihan.ringkas !== false) {
+    if (panel.aletaPewaktuRingkas) clearInterval(panel.aletaPewaktuRingkas);
+    const periksa = () => {
+      let hidup = false;
+      try {
+        hidup = alatPeriksaRingkas(panel);
+      } catch {
+        hidup = true;
+      }
+      if (!hidup && panel.aletaPewaktuRingkas) {
+        clearInterval(panel.aletaPewaktuRingkas);
+        panel.aletaPewaktuRingkas = 0;
+      }
+    };
+    panel.aletaPewaktuRingkas = setInterval(periksa, ALAT_RINGKAS_SELANG);
+    void siap.then(periksa);
+  }
+  return siap;
+}
+
+/*
+ * ============================================================================
+ * 13 OKT BUTIR 5 - HALAMAN ABT TIDAK DAPAT DIGULIR DI BAWAH PANEL
+ * ============================================================================
+ *
+ * Pengguna 12 Okt: "pada abt tidak bisa di scroll dibawah (sepertinya dibuat
+ * fit to screen makanya tidak bisa discroll)".
+ *
+ * Sebabnya diukur di replika ABT (Chromium, roda tetikus sungguhan): panel
+ * ABT bawaannya setinggi layar, dan .aleta-panel serta .aleta-isi memakai
+ * overscroll-behavior: contain. Contain memutus rantai gulir ke halaman
+ * BAHKAN ketika isi panel tidak meluap sama sekali - roda di atas panel
+ * (seperempat layar ABT) tidak menggerakkan apa pun: scrollY tetap 0. Begitu
+ * keduanya auto, roda yang sama menggulir halaman 500px.
+ *
+ * Contain tetap berguna selama isi panel sungguh dapat digulir (sampai di
+ * ujung daftar panjang, halaman tidak ikut melompat). Karena itu ia hanya
+ * berlaku selama ada yang meluap: panel ditandai data-aleta-meluap="ya" /
+ * "tidak", dan panel.css melepas contain pada "tidak". Penandanya disegarkan
+ * saat penunjuk bergerak di atas panel - sebelum roda diputar - dan pada
+ * tiap roda, sehingga isi yang baru dimuat ikut terhitung.
+ */
+function alatGulirMeluap(el) {
+  if (!el || el.clientHeight <= 0) return false;
+  let oy = "";
+  try {
+    oy = getComputedStyle(el).overflowY;
+  } catch {
+    oy = "";
+  }
+  return (oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight + 1;
+}
+
+function alatSegarkanMeluap(panel) {
+  if (!panel) return false;
+  let meluap = alatGulirMeluap(panel);
+  if (!meluap) {
+    for (const el of Array.from(panel.querySelectorAll(".aleta-isi, .aleta-perkakas-isi"))) {
+      if (alatGulirMeluap(el)) {
+        meluap = true;
+        break;
+      }
+    }
+  }
+  const nilai = meluap ? "ya" : "tidak";
+  if (panel.getAttribute("data-aleta-meluap") !== nilai) panel.setAttribute("data-aleta-meluap", nilai);
+  return meluap;
+}
+
+function alatJagaGulirHalaman(panel) {
+  if (!panel || panel.aletaJagaGulir) return;
+  panel.aletaJagaGulir = true;
+  let antre = false;
+  const segarkan = () => {
+    if (antre) return;
+    antre = true;
+    const jalan = () => {
+      antre = false;
+      try {
+        alatSegarkanMeluap(panel);
+      } catch {
+        /* panel yang sedang dibuang */
+      }
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(jalan);
+    else setTimeout(jalan, 0);
+  };
+  panel.addEventListener("pointermove", segarkan, { passive: true });
+  panel.addEventListener("pointerover", segarkan, { passive: true });
+  panel.addEventListener("wheel", segarkan, { passive: true });
+  alatSegarkanMeluap(panel);
 }
