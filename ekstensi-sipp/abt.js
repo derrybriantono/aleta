@@ -18697,6 +18697,15 @@ function p7GabungUsulan(dariBot, dariSidang, peta) {
   return [...per.values()].filter((u) => rapi((peta.get(String(u.kode)) || {}).nilai) !== rapi(u.nilai));
 }
 
+/* === DK 13 Okt === */
+/** Blangko dispensasi kawin tanpa posita (BAS ALUR 12) yang memuat variabel DK siap? */
+function dkBasTanpaPosita(peta, nomor) {
+  if (!peta || peta.has(VAR_POSITA)) return false;
+  const jenis = (peta.get(VAR_JENIS_PERKARA) || {}).nilai || sebutJenisPerkara(nomor);
+  return kunciJenisLain(jenis) === "dispensasi-kawin" && blangkoMemuatVariabelSiapLain(peta, "dispensasi-kawin");
+}
+/* === AKHIR DK === */
+
 /**
  * 1.184.0 (butir 1): usulan tambahan untuk variabel data_teks/data_tanggal di
  * blangko BAS - sumber yang sama dengan panel hakim: posita (itsbat, perkara
@@ -18725,6 +18734,18 @@ async function p7UsulanTambahan(nomor, catatan) {
           return [];
         })
     );
+  } else if (dkBasTanpaPosita(peta, nomor)) {
+    /* === DK 13 Okt === */
+    // BAS dispensasi kawin tidak memuat 5125: posita kosong dikirim, bot membacanya dari SIPP.
+    tugas.push(
+      mintaUsulan(muatanUsulanLain("", nomor))
+        .then((j) => (j && j.positaLain && j.positaLain.ok && Array.isArray(j.positaLain.usulan) ? j.positaLain.usulan : []))
+        .catch((g) => {
+          catatan.push(`Posita dispensasi kawin (SIPP): ${sorePesan(g)}.`);
+          return [];
+        })
+    );
+    /* === AKHIR DK === */
   }
   if (A3_VAR_TANGGAL_KTP_P.some((k) => peta.has(k)) || ktpKandidatTeks(peta).length) {
     tugas.push(

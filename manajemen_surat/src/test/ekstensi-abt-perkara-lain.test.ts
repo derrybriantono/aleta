@@ -221,7 +221,7 @@ function bukaBlangko(kode: string[], opsi: { nomor?: string; isi?: Record<string
     SUMBER_ALAT +
       "\n;\n" +
       SUMBER_ABT +
-      "\n;\nwindow.__uji = { VARIABEL_SIAP_POSITA_LAIN, blangkoMemuatVariabelSiapLain, kunciJenisLain, kabarPositaLain, idJenisPerkaraSipp, idAlurPerkaraSipp };" +
+      "\n;\nwindow.__uji = { VARIABEL_SIAP_POSITA_LAIN, blangkoMemuatVariabelSiapLain, kunciJenisLain, kabarPositaLain, idJenisPerkaraSipp, idAlurPerkaraSipp, dkBasTanpaPosita };" +
       '\n;\nif (typeof alatSetelJedaSkala === "function") alatSetelJedaSkala(0);'
   );
   return w;
@@ -244,6 +244,18 @@ describe("cermin variabel siap = abtUsulanLainService.VARIABEL_SIAP", () => {
     const w = bukaBlangko(["0001"]);
     const bot = require_("../services/abtUsulanLainService").VARIABEL_SIAP;
     expect(JSON.parse(JSON.stringify(w.__uji.VARIABEL_SIAP_POSITA_LAIN))).toEqual(JSON.parse(JSON.stringify(bot)));
+  });
+});
+
+describe("BAS dispensasi kawin tanpa 5125 - posita dibaca bot dari SIPP (butir 15, 13 Okt 2026)", () => {
+  // Variabel isian BAS ALUR 12 [1] (RTF _blangko_abt derry_briantono, 13 Okt 2026).
+  const BAS_DK = ["0048", "0606", "0600", "0607", "0601", "1666", "0999", "2030", "2029", "5178", "6331", "1551", "1552", "9956", "0609"];
+  const peta = (kode: string[], jenis: string) => new Map(kode.map((k) => [k, { nilai: k === "0048" ? jenis : "" }]));
+  it("BAS DK tanpa posita: ya; blangko berposita atau jenis lain: tidak", () => {
+    const w = bukaBlangko(["0001"]);
+    expect(w.__uji.dkBasTanpaPosita(peta(BAS_DK, "Dispensasi Kawin"), "1/Pdt.P/2026/PA.Dgl")).toBe(true);
+    expect(w.__uji.dkBasTanpaPosita(peta([...BAS_DK, "5125"], "Dispensasi Kawin"), "1/Pdt.P/2026/PA.Dgl")).toBe(false);
+    expect(w.__uji.dkBasTanpaPosita(peta(BAS_DK, "Pengesahan Perkawinan/Istbat Nikah"), "1/Pdt.P/2026/PA.Dgl")).toBe(false);
   });
 });
 
