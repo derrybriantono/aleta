@@ -270,15 +270,19 @@ function nikahOrangTua(daftarKalimat) {
 function keperluan(petitum, positaKalimat) {
   const sumberPetitum = String(petitum || "");
   const p = /\bwali\b[^;]{0,250}?\s(?:untuk|guna|khusus\s+(?:untuk|dalam)?)\s+(?:keperluan\s+|kepentingan\s+)?(?:pemberian\s+izin\s+(?:untuk\s+)?)?([a-z][^;]{5,220}?)(?=\s*;|\s+Membebankan|\s+SUBSID|\s+\d\.\s|$)/i.exec(sumberPetitum);
-  if (p) return { nilai: rapikanKeperluan(p[1]), kalimat: p[0], asal: "petitum" };
+  if (p && AWAL_KEPERLUAN.test(p[1].trim())) return { nilai: rapikanKeperluan(p[1]), kalimat: p[0], asal: "petitum" };
   for (const k of positaKalimat) {
     const m = /\b(?:ingin|hendak|bermaksud)\s+(mengurus|melakukan|mencairkan|menjual|membalik\s+nama|mengajukan)\s+([^;]{5,200}?)\s+(?:maka|sehingga|namun)\b/i.exec(k);
-    if (m) return { nilai: rapikanKeperluan(`${m[1]} ${m[2]}`), kalimat: k, asal: "posita" };
+    if (m && !/^\s*(?:maka|sehingga)/i.test(m[2])) return { nilai: rapikanKeperluan(`${m[1]} ${m[2]}`), kalimat: k, asal: "posita" };
   }
   return null;
 }
 
 /** "mengurus X" -> "pengurusan X" (blangko: "bertindak hukum dalam #8171# atas nama anak"). */
+/** Keperluan hanya bila diawali kata tindakan; selain itu potongan acak ("Bangunan No. 00741/...") - 88/2022. */
+const AWAL_KEPERLUAN =
+  /^(?:pengurusan|mengurus|pencairan|mencairkan|penjualan|menjual|balik\s+nama|membalik\s+nama|klaim|pengambilan|mengambil|pendaftaran|mendaftar|pengajuan|mengajukan|menandatangani|penandatanganan|perbuatan\s+hukum|bertindak|mewakili|menerima|penerimaan|peralihan|keperluan|persyaratan|memenuhi|administrasi|menjaminkan|pinjaman|peminjaman|pemberian|izin)\b/i;
+
 function rapikanKeperluan(s) {
   return String(s || "")
     .replace(/\s+/g, " ")

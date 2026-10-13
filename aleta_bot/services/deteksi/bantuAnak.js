@@ -106,19 +106,25 @@ function daftarNama(potongan) {
       .replace(/^(?:[a-h]|\d{1,2}(?:\.\d)?)\s*[.)]\s+/, "");
     if (!s || BUKAN_NAMA_DAFTAR.test(s) || /^(?:menetapkan|membebankan|mengabulkan|menyatakan)/i.test(s)) continue;
     const nama = potongEkorBukanNama(usulanService.namaDiAwal(s));
-    if (!nama || nama.length < 3 || BUKAN_NAMA_DAFTAR.test(nama)) continue;
+    if (!nama || nama.length < 3 || BUKAN_NAMA_DAFTAR.test(nama) || KATA_DOKUMEN.test(nama)) continue;
     const u = s.slice(nama.length).match(/^[\s,]*(?:\(?\s*)?(?:umur|usia|berumur|berusia)\s+(\d{1,2})\s*(?:\([^)]*\)\s*)?tahun/i);
     if (!hasil.some((h) => sama(h.nama, nama))) hasil.push({ nama, umur: u ? Number(u[1]) : null });
   }
   return hasil;
 }
 
+/** Kata dokumen/wilayah - potongan yang memuatnya bukan nama orang ("Sesuai Kutipan Akta Kelahiran Nomor"). */
+const KATA_DOKUMEN = /\b(?:Sesuai|Kutipan|Akta|Nomor|Kependudukan|Propinsi|Provinsi|Kabupaten|Kecamatan|Desa|Kelurahan|Sertifikat|Surat|Keterangan|Dinas|Kantor|Pengadilan|Agama)\b/i;
+
 /** "DEA PUSPITA Jenis Kelamin Perempuan" / "Irnatul Karima Binti Iwan Lahir" -> nama saja. */
 function potongEkorBukanNama(nama) {
   const kata = String(nama || "").split(" ");
-  const i = kata.findIndex((k, n) => n > 0 && /^(?:lahir|jenis|umur|usia|no|nik|tempat|tanggal|agama|laki-laki|perempuan|pendidikan|pekerjaan|anak)\.?$/i.test(k));
+  const i = kata.findIndex(
+    (k, n) => n > 0 && /^(?:lahir|jenis|umur|usia|no|nik|tempat|tanggal|agama|laki-laki|perempuan|pendidikan|pekerjaan|anak|bahwa|adapun|dengan|selanjutnya|yang)\.?$/i.test(k)
+  );
   const hasil = (i > 0 ? kata.slice(0, i) : kata).join(" ");
-  return hasil.replace(/\s+(?:bin|binti|alias)$/i, "");
+  // "Bustamin bin Yod. Bahwa" - titik penutup kalimat sebelum kata yang dibuang ikut dibuang bila kata itu >= 3 huruf.
+  return hasil.replace(/\s+(?:bin|binti|alias)$/i, "").replace(/([A-Za-z]{3,})\.$/, i > 0 ? "$1" : "$1.");
 }
 
 /** Bentuk banding nama: huruf kecil, hanya huruf/angka. */
@@ -177,6 +183,7 @@ function cariKalimat(daftar, ...wajib) {
 
 module.exports = {
   BULAN,
+  potongEkorBukanNama,
   polos,
   kalimat,
   angkaBulan,

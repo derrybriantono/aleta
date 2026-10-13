@@ -2393,6 +2393,20 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // tambahan per jenis tidak pernah menggagalkan usulan perkara lain
       }
       /* === AKHIR JENIS3 === */
+      /* === DETEKSI-Y 13 Okt === */
+      // Modul per jenis (perwalian, asal usul, pengangkatan anak, wali adhol, hadhanah, Lain-Lain 369):
+      // posita + petitum/pihak dari SIPP (HANYA SELECT) - lihat services/deteksi/sambungPositaLain.js.
+      try {
+        jawaban.positaLain = await require("../services/deteksi/sambungPositaLain").lengkapiPositaLain(jawaban.positaLain, {
+          posita: String(req.body?.posita || ""),
+          nomorPerkara,
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+          alur: String(req.body?.alur || "").slice(0, 20),
+        });
+      } catch (_galatY) {
+        // deteksi per jenis tidak pernah menggagalkan usulan perkara lain
+      }
+      /* === AKHIR DETEKSI-Y === */
     }
     // Butir 12 (6 Okt 2026): alasan yang terbaca dari posita - SUMBER YANG SAMA
     // dengan "Alasan yang dipakai" penyusun saksi (alasanDariPosita) - supaya

@@ -36,7 +36,8 @@
  * pemuat ini tidak pernah menggagalkan usulan.
  */
 
-const DAFTAR = Object.freeze(["itsbat", "cerai"]);
+// Agen Y (13 Okt): perwalian, asalUsul, pengangkatanAnak, waliAdhol, hadhanah, lainLain (369 dipilah menurut isinya).
+const DAFTAR = Object.freeze(["itsbat", "cerai", "perwalian", "asalUsul", "pengangkatanAnak", "waliAdhol", "hadhanah", "lainLain"]);
 
 let tembolok = null;
 

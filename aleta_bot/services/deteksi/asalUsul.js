@@ -87,6 +87,11 @@ function nikahTercatat(kalimat) {
 }
 
 function deteksi(posita, opsi = {}) {
+  // 0010 & 0011/Pdt.P/2016 didaftar Asal Usul Anak padahal petitumnya "Menyatakan sah pengangkatan anak".
+  const pengangkatan = require("./pengangkatanAnak");
+  if (pengangkatan.cocokTeks(B.polos(opsi.petitum || "")) && !/asal\s*-?\s*usul/i.test(B.polos(opsi.petitum || ""))) {
+    return pengangkatan.deteksi(posita, opsi);
+  }
   const peta = {};
   const polos = B.polos(posita);
   const pet = anakPetitum(B.polos(opsi.petitum || ""));
