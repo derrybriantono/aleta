@@ -187,6 +187,22 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
     }
   });
 
+  it.skipIf(!folderAda)("D. status sebelum menikah: #1002# = pihak pertama (#0046#), #1003# = pihak kedua (#0047#) - blangko itsbat kumulasi CG & CT dan set saksi A3/A3a sama", () => {
+    // Ukur server 13 Okt (abt_data_teks x jenis perkara): CG #1002# wanita 20/24 (Penggugat), #1003# pria 18/21; CT #1002# pria 3/3.
+    const folder = path.join(ABT_DERRY, "1c Perceraian Kumulasi Itsbat Nikah");
+    for (const kode of ["CG", "CT"]) {
+      const isi = readFileSync(path.join(folder, `[01aa] [Kabul Verstek] Putusan ${kode} Kumulasi Itsbat Nikah - Format Lengkap.rtf`), "latin1");
+      expect(isi, kode).toContain("#0046# berstatus #1002# dan #0047# berstatus #1003#");
+      expect(isi, kode).not.toContain("#9052#");
+      expect(isi, kode).not.toMatch(/#0046# berstatus #1003#|#0047# berstatus #1002#/);
+    }
+    const kamus = JSON.parse(readFileSync(path.join(AKAR, "aleta_bot", "kamus-deteksi", "awal", "pertanyaan-saksi.json"), "utf8")) as {
+      templat: { kode: string; jawabContoh?: string }[];
+    };
+    const a3a = kamus.templat.find((t) => t.kode === "ps-a3a-10");
+    expect(a3a?.jawabContoh).toContain("#0046# berstatus #1002# dan #0047# berstatus #1003#");
+  });
+
   it.skipIf(!folderAda)("D. beban pembuktian: tidak ada lagi 'Pasal 1685 KUHPerdata' (pasal hibah) di Blangko Derry - Pasal 1865 (paket tambal)", () => {
     const salah: string[] = [];
     let benar = 0;
