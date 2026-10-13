@@ -41,7 +41,7 @@ describe("PHS boleh dipilih penanda tangannya", () => {
   });
 });
 
-describe("bongkar: akun petugas yang masuk, jam sungguhan, jeda sungguhan (butir 39)", () => {
+describe("bongkar: akun pejabat yang sama, jam SIPP seperti orang bekerja (butir 17)", () => {
   const hapus = gerbang.slice(
     gerbang.indexOf('router.post("/penetapan/hapus"'),
     gerbang.indexOf('router.post("/penetapan/hapus-semua"')
@@ -49,12 +49,11 @@ describe("bongkar: akun petugas yang masuk, jam sungguhan, jeda sungguhan (butir
   const semua = gerbang.slice(gerbang.indexOf('router.post("/penetapan/hapus-semua"'));
   const susun = tulis.slice(tulis.indexOf("async function susunRencanaHapus(minta) {"));
 
-  it("rangkaian bongkar tidak lagi memakai jam susunan yang dimundurkan", () => {
-    // Jam susunan menenggelamkan barisnya di Audit Trail SIPP (ORDER BY datetime).
+  it("rangkaian bongkar-semua disusun SEKALI dan diserahkan per langkah", () => {
     expect(semua).not.toContain("waktuBongkar(");
-    expect(semua).not.toContain("saat: jamBongkar");
-    expect(susun.slice(0, 6000)).not.toContain("minta.saat");
-    expect(susun).toContain("const saat = await waktuBasisData();");
+    expect(semua).toContain("penetapanTulisService.jadwalJamSipp(perkaraId, penetapanTulisService.URUTAN_BONGKAR");
+    expect(semua).toContain('saatSipp: jadwal.jam[jenis] || "",');
+    expect(susun).toContain("jamSippSah(minta.saatSipp)");
   });
 
   it("jeda sungguhan sebelum tiap tulisan, tidak pada uji kering", () => {
@@ -62,13 +61,11 @@ describe("bongkar: akun petugas yang masuk, jam sungguhan, jeda sungguhan (butir
     expect(semua).toContain('if (!kering) await jedaManusiaService.jeda("simpan", { kering });');
   });
 
-  it("yang dicatat akun SIPP petugas yang masuk; tanpa itu membongkar sungguhan ditolak", () => {
+  it("dicatat atas akun pejabat (akunPembatalan); akun yang masuk tetap wajib untuk membongkar sungguhan", () => {
     expect(hapus).toContain('akunSippMasuk: String(badan.akunSippMasuk || ""),');
     expect(semua).toContain("akunSippMasuk,");
-    expect(susun).toContain("akun = await akunPetugasMasuk(namaMasuk, String(minta.ip || \"\"));");
+    expect(susun).toContain("const akun = await akunPembatalan(jenis, perkara.perkaraId, minta.olehUsername);");
     expect(susun).toContain('return { ok: false, alasan: "akun_sipp_belum_terbaca" };');
-    // Akun pejabat hanya untuk uji kering pemanggil lama.
-    expect(susun).toContain("} else if (minta.kering === true) {");
   });
 
   it("ekstensi mengirim nama akun SIPP yang masuk pada kedua jalur bongkar", () => {

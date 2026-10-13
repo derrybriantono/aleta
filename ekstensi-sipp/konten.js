@@ -1446,11 +1446,51 @@ const KALIMAT_ALASAN = [
       "Perbaiki pemetaan jabatan di ALETA - yang disimpan di sana harus NAMA AKUN SIPP " +
       "(seperti ketua, hakim1, panitera), bukan nama orangnya.",
   },
-  // Butir 39: penetapan tercatat atas nama akun SIPP yang SEDANG MASUK.
+  // Butir 17 (13 Okt 2026): penetapan tercatat atas akun SIPP PEJABATNYA -
+  // akun yang tidak pasti DITOLAK, tidak pernah jatuh ke akun yang masuk.
+  {
+    pola: /^pejabat_belum_dipilih$/,
+    kalimat: () =>
+      "Pejabat penetapnya belum dipilih. Pilih pejabat pada \"Pejabat yang menetapkan\" - penetapan dicatat di SIPP atas nama akun pejabat itu.",
+  },
+  {
+    pola: /^pejabat_tidak_sah$/,
+    kalimat: (akun) =>
+      `Akun ${akun ? `"${akun}"` : "pilihan"} bukan pejabat yang berwenang untuk langkah ini (PMH: Ketua/Wakil/Plh Ketua; PPP/PJS: Panitera/Plh Panitera). Pilih pejabat lain.`,
+  },
+  {
+    pola: /^akun_pejabat_ganda$|^akun_ketua_majelis_ganda$/,
+    kalimat: () =>
+      "Pejabat ini punya lebih dari satu akun SIPP yang hidup, sehingga akun yang dicatat tidak dapat dipastikan. ALETA tidak memilihkannya - blokir akun lama di SIPP lebih dulu.",
+  },
+  {
+    pola: /^akun_pejabat_diblokir$/,
+    kalimat: (akun) =>
+      `Akun SIPP ${akun ? `"${akun}"` : "pejabat"} diblokir atau kedaluwarsa - penetapan tidak dicatat atas akun mati. Pilih pejabat lain atau aktifkan akunnya di SIPP.`,
+  },
+  {
+    pola: /^akun_bukan_pejabat$/,
+    kalimat: (akun) =>
+      `Akun SIPP ${akun ? `"${akun}"` : "itu"} tidak tertaut ke hakim maupun panitera di SIPP, jadi bukan akun pejabat. Penetapan tidak dicatat atas akun admin/meja.`,
+  },
+  {
+    pola: /^akun_ketua_majelis_tidak_ada$/,
+    kalimat: () =>
+      "Ketua majelis perkara ini belum punya akun SIPP yang hidup - PHS tidak dapat dicatat atas namanya. Tautkan akunnya di SIPP (user_hakim) lebih dulu.",
+  },
+  {
+    pola: /^pejabat_phs_bukan_majelis$/,
+    kalimat: (akun) =>
+      `Akun ${akun ? `"${akun}"` : "pilihan"} bukan anggota majelis perkara ini - PHS hanya dicatat atas ketua/anggota majelisnya.`,
+  },
+  {
+    pola: /^pemetaan_jabatan_tidak_terbaca$/,
+    kalimat: () => "Daftar akun pejabat SIPP tidak terbaca dari ALETA Bot - coba lagi sebentar.",
+  },
   {
     pola: /^akun_sipp_belum_terbaca$/,
     kalimat: () =>
-      "Akun SIPP Anda tidak terbaca di halaman ini. Masuk ke SIPP lebih dulu di peramban ini - penetapan dicatat SIPP atas nama akun yang sedang masuk, bukan atas nama pejabat.",
+      "Akun SIPP Anda tidak terbaca di halaman ini. Masuk ke SIPP lebih dulu di peramban ini - akun yang masuk dicatat ALETA sebagai penekan; di SIPP penetapan tercatat atas nama pejabatnya.",
   },
   {
     pola: /^akun_sipp_tidak_ketemu$/,
@@ -1677,19 +1717,17 @@ async function rantaiPenetapan(usulan, data, kering) {
   const rantaiSebelum = [];
 
   // ==========================================================================
-  // TERCATAT ATAS NAMA AKUN SIPP YANG SEDANG MASUK - BUKAN PEJABATNYA
+  // TERCATAT DI SIPP ATAS AKUN PEJABAT; AKUN YANG MASUK = PENEKAN (jejak ALETA)
   // ==========================================================================
   //
-  // Butir 39 (5 Okt 2026): yang dikirim dahulu username PEJABAT penetap -
-  // "fahri" untuk PMH/PHS, "Sri Susilowati" untuk PPP/PJS - sehingga Audit
-  // Trail SIPP mencatat orang yang tidak menekan apa pun. Keputusan pengguna
-  // 2 Okt: yang tercatat di SIPP adalah petugas sesi sungguhan, dan nama
-  // petugas lain tidak pernah ditulis.
+  // Butir 17 (13 Okt 2026, menggantikan butir 39 untuk penetapan): "di riwayat
+  // dan sys_audittrail itu tetap pejabatnya yang terinput namanya walaupun
+  // yang login akun apapun". pejabatUsername tiap langkah (pilihan "Pejabat
+  // yang menetapkan", bawaan pilihan ALETA) itulah yang dicatat SIPP; portal
+  // dan bot memastikannya dan menolak akun yang tidak pasti.
   //
-  // Akunnya dibaca dari kepala halaman SIPP yang sedang terbuka, sama seperti
-  // jalur Data Umum; bot menerjemahkan nama lengkap itu ke username SIPP.
-  // Tanpa akun yang terbaca rantainya tidak dimulai - menebak akun berarti
-  // mungkin menulis atas nama orang lain.
+  // Akun yang sedang masuk tetap dibaca dari kepala halaman SIPP dan WAJIB
+  // ada: ALETA mencatatnya sebagai penekan sebenarnya di jejak ALETA.
   const akunMasuk = typeof namaPenggunaSipp === "function" ? String(namaPenggunaSipp() || "").trim() : "";
   if (!akunMasuk) {
     return [
@@ -1757,9 +1795,8 @@ async function rantaiPenetapan(usulan, data, kering) {
       }
     }
 
-    // Pejabat penetapnya (penanda tangan): pilihan petugas bila ada, kalau
-    // tidak yang dipilih mesin. Ia TIDAK lagi menentukan akun yang tercatat
-    // di SIPP - hanya diteruskan untuk jejak jujur ALETA.
+    // Pejabat penetapnya: pilihan petugas bila ada, kalau tidak yang dipilih
+    // mesin. Sejak butir 17 INILAH akun yang dicatat di SIPP.
     const langkah = rencana.find((x) => x.jenis === jenis);
     const otomatis = langkah && langkah.akun ? langkah.akun.username : "";
     const pejabatUsername = pejabat[jenis] || otomatis || "";
@@ -1843,7 +1880,7 @@ async function rantaiPenetapan(usulan, data, kering) {
       // Dan bunyinya, untuk dibaca orang.
       bunyi: berhasil
         ? ""
-        : kalimatAlasan(kode, (jawab && jawab.username) || olehUsername),
+        : kalimatAlasan(kode, (jawab && jawab.username) || pejabatUsername || olehUsername),
       atasNama: jawab && jawab.atasNama,
       langkah: (jawab && jawab.langkah) || [],
       andaian: (jawab && jawab.andaian) || [],
@@ -1987,7 +2024,7 @@ async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre) {
   // membawa sebabnya; yang lain disebut dibatalkan bersamanya.
   const jenisGagal = String(jawab.jenisGagal || "") || antre[0].tempat.jenis;
   const kodeGagal = String(jawab.alasan || "ditolak");
-  const bunyiGagal = jawab.bunyiTetap || kalimatAlasan(kodeGagal, akunMasuk);
+  const bunyiGagal = jawab.bunyiTetap || kalimatAlasan(kodeGagal, String(jawab.usernameGagal || "") || akunMasuk);
   // Jawaban yang hilang (bunyiTetap) sudah menyebut "belum pasti" - tidak
   // ditimpa "Tidak ada yang tertulis" yang belum tentu benar.
   const peringatan = jawab.bunyiTetap
@@ -2077,7 +2114,8 @@ async function mintaBongkar(perkaraId, jenis, olehUsername, kering) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        // akunSippMasuk: akun SIPP yang sedang masuk - yang dicatat SIPP (butir 39).
+        // akunSippMasuk: akun SIPP yang sedang masuk - penekan, dicatat di jejak
+        // ALETA. Yang dicatat SIPP: akun pejabat penetapan itu (butir 17).
         body: JSON.stringify({ jenis, perkaraId, olehUsername, akunSippMasuk: namaPenggunaSipp(), kering }),
       },
       kering ? "Menyusun rencana pembatalan" : "Membatalkan penetapan"
@@ -2132,6 +2170,14 @@ async function cariLangkahDibongkar(perkaraId, akunPerJenis) {
   return null;
 }
 
+/** "Nama Pejabat (akun SIPP username)" - akun yang DICATAT di SIPP (butir 17). */
+function sebutAtasNama(atasNama, cadangan) {
+  const username = String((atasNama && atasNama.username) || cadangan || "");
+  const nama = String((atasNama && atasNama.namaLengkap) || "");
+  if (!username) return nama;
+  return nama ? `${nama} (akun SIPP ${username})` : `akun SIPP ${username}`;
+}
+
 function bagianBatalkanPenetapan(usulan, data) {
   const perkaraId = Number((usulan.perkara && usulan.perkara.perkaraId) || 0);
   const kotak = buatElemen("div", "aleta-tetap-kaki");
@@ -2174,7 +2220,7 @@ function bagianBatalkanPenetapan(usulan, data) {
       siapDibongkar = ketemu;
       const jumlah = (ketemu.rencana.rencana || []).length;
       kabar.textContent =
-        `${ketemu.jenis.toUpperCase()} akan dibongkar atas nama ${ketemu.oleh} - ${jumlah} pernyataan, ` +
+        `${ketemu.jenis.toUpperCase()} akan dibongkar dan dicatat atas nama ${sebutAtasNama(ketemu.rencana.atasNama, ketemu.oleh)} - ${jumlah} pernyataan, ` +
         "termasuk baris Riwayat Perkara. Belum ada yang dihapus. Tekan sekali lagi untuk membatalkan.";
       tombol.textContent = `Batalkan ${ketemu.jenis.toUpperCase()} sekarang`;
       tombol.disabled = false;
@@ -2246,7 +2292,7 @@ function tombolBongkarSemua(perkaraId, akunPerJenis) {
         )
       );
       for (const x of langkah) {
-        const nama = (x.atasNama && x.atasNama.namaLengkap) || (x.atasNama && x.atasNama.username) || "";
+        const nama = x.atasNama ? sebutAtasNama(x.atasNama, "") : "";
         daftar.appendChild(
           buatElemen(
             "div",
@@ -2415,15 +2461,16 @@ function raporPraperiksa(usulan, data, hasilKering) {
   // memilih pejabat lain tidak punya cara memastikan pilihannya sampai -
   // dan pilihan yang tidak sampai tidak berbunyi apa pun.
   //
-  // Sejak butir 39 (5 Okt 2026) pejabat ini PENANDA TANGAN penetapannya saja.
-  // Akun yang tercatat di SIPP - kolom diinput_oleh dan Audit Trail - adalah
-  // akun SIPP yang sedang masuk di peramban ini, dan baris di bawah inilah
-  // yang menyebutnya sebelum tombolnya ditekan.
+  // Butir 17 (13 Okt 2026, menggantikan butir 39 untuk penetapan): yang
+  // DICATAT di SIPP - Riwayat Perkara "Diinput Oleh" dan Audit Trail - adalah
+  // akun SIPP PEJABAT tiap langkah, apa pun akun yang sedang masuk. Akun yang
+  // masuk hanya dicatat di jejak ALETA sebagai penekan sebenarnya. Keduanya
+  // disebut di sini sebelum tombolnya ditekan.
   const akunTercatat = typeof namaPenggunaSipp === "function" ? String(namaPenggunaSipp() || "").trim() : "";
   baris.push({
-    label: "Tercatat di SIPP atas nama",
+    label: "Ditekan oleh",
     nilai: akunTercatat || "akun SIPP belum terbaca - masuk ke SIPP lebih dulu",
-    sebab: akunTercatat ? "akun SIPP yang sedang masuk" : "",
+    sebab: akunTercatat ? "akun SIPP yang sedang masuk - dicatat di jejak ALETA saja, tidak di SIPP" : "",
   });
   const pejabatDipilih = (data && data.pejabatDipilih) || {};
   for (const langkah of (data && data.rencana && data.rencana.langkah) || []) {
@@ -2431,12 +2478,19 @@ function raporPraperiksa(usulan, data, hasilKering) {
     if (!jenis) continue;
     const tangan = pejabatDipilih[String(langkah.jenis)];
     const akun = (langkah && langkah.akun) || {};
-    const username = tangan || akun.username || "";
+    // Jawaban uji kering bot menang: itulah akun yang sungguh akan dicatat.
+    const dariBot = (hasilKering || []).find((x) => x && String(x.jenis) === String(langkah.jenis) && x.atasNama);
+    const calonTangan =
+      tangan && Array.isArray(langkah.calon) ? langkah.calon.find((x) => x && x.username === tangan) : null;
+    const username = (dariBot && dariBot.atasNama.username) || tangan || akun.username || "";
     if (!username) continue;
-    const nama = akun.namaLengkap || akun.nama || "";
+    const nama =
+      (dariBot && dariBot.atasNama.namaLengkap) ||
+      (calonTangan && calonTangan.namaLengkap) ||
+      (tangan && tangan !== akun.username ? "" : akun.namaLengkap || akun.nama || "");
     baris.push({
       label: `Penetap ${jenis}`,
-      nilai: nama ? `${nama} (${username})` : username,
+      nilai: `akan dicatat atas nama ${nama || username} (akun SIPP ${username})`,
       sebab: tangan ? "pilihan Anda" : "",
     });
   }

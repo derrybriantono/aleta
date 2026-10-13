@@ -65,6 +65,8 @@ function pastikanTabel() {
       tanggal_penetapan DATE NULL,
       akun_sipp VARCHAR(60) NOT NULL DEFAULT '',
       nama_pejabat VARCHAR(150) NOT NULL DEFAULT '',
+      akun_sipp_masuk VARCHAR(60) NOT NULL DEFAULT '',
+      jam_sipp DATETIME NULL,
       operator VARCHAR(120) NOT NULL DEFAULT '',
       ip VARCHAR(45) NOT NULL DEFAULT '',
       lewat VARCHAR(20) NOT NULL DEFAULT 'ALETA',
@@ -103,6 +105,12 @@ async function lengkapiKolom() {
     // di basis data ALETA, sebab kolom audit SIPP/ABT/e-Court tidak lagi
     // memuat penanda ALETA apa pun.
     ["lewat", "VARCHAR(20) NOT NULL DEFAULT 'ALETA' AFTER ip"],
+    // Butir 17 (13 Okt 2026): penetapan tercatat di SIPP atas akun PEJABAT
+    // (akun_sipp) pada jam yang disusun seperti orang bekerja (jam_sipp).
+    // Penekan sebenarnya - akun SIPP yang sedang masuk - dan jam sebenarnya
+    // (waktu) hanya ada di sini.
+    ["akun_sipp_masuk", "VARCHAR(60) NOT NULL DEFAULT '' AFTER nama_pejabat"],
+    ["jam_sipp", "DATETIME NULL AFTER akun_sipp_masuk"],
   ];
   for (const [nama, bentuk] of susulan) {
     const ada = await kueri(`SHOW COLUMNS FROM ${TABEL} LIKE ?`, [nama]);
@@ -149,6 +157,11 @@ function waktuMysqlSekarang() {
 }
 
 /** Tanggal "YYYY-MM-DD" saja yang diterima; selain itu NULL. */
+function jamSaja(nilai) {
+  const teks = String(nilai || "").slice(0, 19);
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(teks) ? teks : null;
+}
+
 function tanggalSaja(nilai) {
   const teks = String(nilai || "").slice(0, 10);
   return /^\d{4}-\d{2}-\d{2}$/.test(teks) ? teks : null;
@@ -184,9 +197,9 @@ async function catat(jejak) {
     await kueri(
       `INSERT INTO ${TABEL}
          (waktu, aksi, jenis, perkara_id, nomor_perkara, tanggal_penetapan, akun_sipp,
-          nama_pejabat, operator, ip, lewat, berhasil, kering, alasan, jumlah_langkah,
-          tabel_disentuh, rincian)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          nama_pejabat, akun_sipp_masuk, jam_sipp, operator, ip, lewat, berhasil, kering, alasan,
+          jumlah_langkah, tabel_disentuh, rincian)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         waktuMysqlSekarang(),
         potong(j.aksi || "tulis", 12),
@@ -196,6 +209,8 @@ async function catat(jejak) {
         tanggalSaja(j.tanggalPenetapan),
         potong(j.akunSipp, 60),
         potong(j.namaPejabat, 150),
+        potong(j.akunSippMasuk, 60),
+        jamSaja(j.jamSipp),
         potong(j.operator, 120),
         potong(j.ip, 45),
         // Selalu ALETA: tabel ini hanya mencatat perbuatan ALETA.

@@ -168,12 +168,13 @@ describe("penetapan massal mengirim andaian dan memperlihatkan rinciannya", () =
 });
 
 describe("bukti luring bot yang menyertai rilis ini", () => {
-  it("bukti waktu mengukur detik, bukan menit", () => {
-    const bukti = baca("aleta_bot/scripts/verify-waktu-penetapan.js");
-    expect(bukti).toContain("const JEDA_MIN = 60;");
-    expect(bukti).toContain("const JEDA_MAKS = 10 * 60 + 59;");
-    expect(bukti).toContain("tidak ada yang melampaui, sampai detiknya");
-    expect(bukti).toContain("panggilan berselang: tidak pernah mundur");
+  it("jam penetapan diukur sampai detik oleh mesin satu-satunya (butir 17)", () => {
+    // Bukti luring verify-waktu-*.js ikut dibuang bersama mesin lamanya; yang
+    // menjalankan mesin barunya: jam-penetapan-sesudah-pendaftaran.test.ts dan
+    // penetapan-atas-akun-pejabat.test.ts.
+    const tulis = baca("aleta_bot/services/penetapanTulisService.js");
+    expect(tulis).toContain('"ppp>pjs": [5, 45],');
+    expect(tulis).toContain("function teksNaif(detik)");
   });
 
   it("bukti bentuk SIPP menuntut judul Smart Majelis dan tanpa baris kembar", () => {

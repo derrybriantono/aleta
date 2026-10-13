@@ -1,170 +1,98 @@
+// @vitest-environment node
 /**
  * ============================================================================
  * JAM PENETAPAN TIDAK PERNAH MENDAHULUI PENDAFTARAN PERKARANYA
  * ============================================================================
  *
- * Dijalankan, bukan dibaca. Penjaga teks di berkas lain menahan kodenya agar
- * tidak hilang; ia tidak dapat menjawab pertanyaan yang sesungguhnya diajukan:
- * "kalau kasir mendaftarkan perkara ini pukul 13.32, jam berapa penetapannya
- * tercatat?"
+ * Dijalankan, bukan dibaca. Diukur pada basis data server, 825 perkara 2026:
+ * PMH selalu sesudah kasir, nol yang mendahului. Perkara 571 pernah tercatat
+ * penetapannya pukul 08.27.40 padahal didaftarkan 09.34 - tab Riwayat Perkara
+ * SIPP mengurut menurut tanggal, sehingga baris Penetapan duduk DI ATAS baris
+ * Pendaftaran Perkara.
  *
- * Sebabnya nyata. Diukur pada basis data peladen, 825 perkara 2026: PMH selalu
- * sesudah kasir, nol yang mendahului. Diukur pada sepuluh perkara uji yang
- * ditetapkan ALETA di salinan setempat: SATU yang melanggar - perkara 571,
- * didaftarkan pukul 09.34, penetapannya tercatat pukul 08.27.40. Jendela lama
- * 08:00-14:00 disusun tanpa mengetahui jam pendaftarannya.
- *
- * Dan itu bukan kejanggalan yang tersembunyi: tab Riwayat Perkara SIPP
- * mengurut menurut tanggal, sehingga baris Penetapan duduk DI ATAS baris
- * Pendaftaran Perkara - terbaca siapa pun yang membuka perkaranya.
+ * Sejak butir 17 (13 Okt 2026) mesinnya jamRangkaianManusia (menggantikan
+ * waktuLangkah/rangkaianDetik/waktuBongkar): jam SIPP disusun seperti orang
+ * bekerja, berakhir <= jam SIPP sekarang, dan dimulai SESUDAH kejadian
+ * terakhir perkara itu (lantaiKejadianPerkara - pendaftaran termasuk).
  */
+import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 const AKAR = path.resolve(process.cwd(), "..");
-const sumber = readFileSync(
-  path.join(AKAR, "aleta_bot/services/penetapanTulisService.js"),
-  "utf8"
-).replace(/\r\n/g, "\n");
+const require_ = createRequire(path.join(AKAR, "aleta_bot/package.json"));
+const sumber = readFileSync(path.join(AKAR, "aleta_bot/services/penetapanTulisService.js"), "utf8").replace(/\r\n/g, "\n");
 
-/** Tetapan puncak - satu baris, dibuka di kolom nol. */
-function potongTetapan(nama: string[]): string {
-  const baris = sumber.split("\n");
-  const hasil: string[] = [];
-  for (const n of nama) {
-    const cocok = baris.find((b) => new RegExp(`^const ${n}\\s*=`).test(b));
-    if (!cocok) throw new Error(`tetapan tidak ditemukan: ${n}`);
-    hasil.push(cocok);
-  }
-  return hasil.join("\n");
+type Jam = (p: { urutan: string[]; sekarang: string; lantai?: string; acak?: () => number }) => {
+  jam: Record<string, string>;
+  catatan: string[];
+};
+
+function muat(): Jam {
+  const jalurDb = require_.resolve(path.join(AKAR, "aleta_bot/db_config.js"));
+  require_.cache[jalurDb] = { id: jalurDb, filename: jalurDb, loaded: true, exports: { query() {} } } as unknown as NodeJS.Module;
+  const jalur = require_.resolve(path.join(AKAR, "aleta_bot/services/penetapanTulisService.js"));
+  delete require_.cache[jalur];
+  return (require_(jalur) as { jamRangkaianManusia: Jam }).jamRangkaianManusia;
 }
 
-/** Fungsi puncak - dibuka di kolom nol, ditutup "}" di kolom nol. */
-function potongFungsi(nama: string[]): string {
-  const baris = sumber.split("\n");
-  const hasil: string[] = [];
-  const ketemu = new Set<string>();
-
-  for (let i = 0; i < baris.length; i += 1) {
-    const cocok = baris[i].match(/^(?:async )?function ([A-Za-z_$][\w$]*)\(/);
-    if (!cocok || !nama.includes(cocok[1])) continue;
-    let j = i;
-    while (j < baris.length && baris[j] !== "}") j += 1;
-    if (j >= baris.length) throw new Error(`penutup fungsi ${cocok[1]} tidak ditemukan`);
-    hasil.push(baris.slice(i, j + 1).join("\n"));
-    ketemu.add(cocok[1]);
-  }
-
-  const hilang = nama.filter((n) => !ketemu.has(n));
-  if (hilang.length) throw new Error(`fungsi tidak ditemukan: ${hilang.join(", ")}`);
-  return hasil.join("\n\n");
-}
-
-type Waktu = (arg: {
-  perkaraId: number;
-  tanggalPenetapan: string;
-  jenis: string;
-  saatServer: string;
-  didaftar?: string | Date;
-}) => string;
-
-function muat(): Waktu {
-  const kode = [
-    potongTetapan([
-      "URUTAN_LANGKAH_WAKTU",
-      "JAM_MULAI_PALING_AWAL",
-      "LEBAR_JENDELA_MULAI",
-      "JEDA_MINIMUM",
-      "JEDA_MAKSIMUM",
-      "SEBARAN_GESER_MAKSIMUM",
-      "AKHIR_JENDELA_MULAI",
-      "JEDA_SESUDAH_DAFTAR",
-      "LEBAR_JENDELA_MINIMUM",
-    ]),
-    potongFungsi([
-      "waktuMysql",
-      "tanggalSah",
-      "benihDari",
-      "duaAngkaWaktu",
-      "jedaLangkah",
-      "detikJeda",
-      "rangkaianDetik",
-      "lantaiMulaiMenit",
-      "waktuLangkah",
-    ]),
-  ].join("\n\n");
-  return new Function(`${kode}\nreturn waktuLangkah;`)() as Waktu;
+function acak(benih: number) {
+  let x = Math.imul((benih ^ 0x9e3779b9) >>> 0, 2654435761) >>> 0 || 1;
+  return () => {
+    x ^= x << 13;
+    x >>>= 0;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    x >>>= 0;
+    return x / 4294967296;
+  };
 }
 
 const URUT = ["pmh", "ppp", "pjs", "phs"];
-
-function rangkaian(
-  perkaraId: number,
-  tanggal: string,
-  server: string,
-  didaftar?: string | Date
-): string[] {
-  const waktuLangkah = muat();
-  return URUT.map((jenis) =>
-    waktuLangkah({ perkaraId, tanggalPenetapan: tanggal, jenis, saatServer: server, didaftar })
-  );
-}
-
-const jam = (teks: string) => teks.slice(11);
+const rangkaian = (sekarang: string, lantai: string, benih = 1) => {
+  const h = muat()({ urutan: URUT, sekarang, lantai, acak: acak(benih) });
+  return URUT.map((j) => h.jam[j]);
+};
 
 describe("lantai jam penetapan", () => {
-  it("perkara 571 yang dahulu melanggar kini tertahan pendaftarannya", () => {
-    const w = rangkaian(10123, "2026-09-16", "2026-09-16 13:46:00", "2026-09-16 09:34:00");
-    for (const satu of w) expect(jam(satu) >= "09:34:00", w.join(" ")).toBe(true);
-    expect(jam(w[0]) >= "09:44:00", w[0]).toBe(true);
+  it("perkara 571: tidak satu pun mendahului pendaftaran 09.34", () => {
+    const w = rangkaian("2026-09-16 13:46:00", "2026-09-16 09:34:00");
+    for (const satu of w) expect(satu > "2026-09-16 09:34:00", w.join(" ")).toBe(true);
   });
 
-  it("didaftarkan sore hari, jendela lama sudah lewat seluruhnya", () => {
-    const w = rangkaian(10151, "2026-09-16", "2026-09-16 17:30:00", "2026-09-16 15:30:00");
+  it("didaftarkan sore hari: di antara pendaftaran dan sekarang", () => {
+    const w = rangkaian("2026-09-16 16:20:00", "2026-09-16 15:30:00");
     for (const satu of w) {
-      expect(jam(satu) >= "15:30:00", w.join(" ")).toBe(true);
-      expect(jam(satu) <= "17:30:00", w.join(" ")).toBe(true);
+      expect(satu > "2026-09-16 15:30:00", w.join(" ")).toBe(true);
+      expect(satu <= "2026-09-16 16:20:00", w.join(" ")).toBe(true);
     }
   });
 
-  it("sela tiga menit: dirapatkan, tetap menaik, tidak melampaui server", () => {
-    const w = rangkaian(10152, "2026-09-16", "2026-09-16 10:15:00", "2026-09-16 10:00:00");
+  it("sela tiga menit: dirapatkan, tetap menaik, tidak melampaui sekarang", () => {
+    const w = rangkaian("2026-09-16 10:03:00", "2026-09-16 10:00:00");
     for (const satu of w) {
-      expect(jam(satu) >= "10:00:00", w.join(" ")).toBe(true);
-      expect(jam(satu) <= "10:15:00", w.join(" ")).toBe(true);
+      expect(satu > "2026-09-16 10:00:00", w.join(" ")).toBe(true);
+      expect(satu <= "2026-09-16 10:03:00", w.join(" ")).toBe(true);
     }
-    for (let i = 1; i < w.length; i += 1) expect(w[i] >= w[i - 1], w.join(" ")).toBe(true);
+    for (let i = 1; i < w.length; i += 1) expect(w[i] > w[i - 1], w.join(" ")).toBe(true);
   });
 
-  it("didaftarkan kemarin tidak menahan apa pun - perilaku lama utuh", () => {
-    const dengan = rangkaian(10153, "2026-09-16", "2026-09-16 13:00:00", "2026-09-15 14:00:00");
-    const tanpa = rangkaian(10153, "2026-09-16", "2026-09-16 13:00:00");
-    expect(dengan.join()).toBe(tanpa.join());
+  it("didaftarkan kemarin: hanya jam kerja hari ini yang menahan (07.00)", () => {
+    const w = rangkaian("2026-09-16 07:40:00", "2026-09-15 14:00:00");
+    expect(w[0] >= "2026-09-16 07:00:00", w.join(" ")).toBe(true);
+    expect(w[3] <= "2026-09-16 07:40:00", w.join(" ")).toBe(true);
   });
 
-  it("pendaftaran berbentuk Date - sebagaimana dipulangkan penggerak mysql", () => {
-    const w = rangkaian(10123, "2026-09-16", "2026-09-16 13:46:00", new Date(2026, 8, 16, 9, 34, 0));
-    for (const satu of w) expect(jam(satu) >= "09:34:00", w.join(" ")).toBe(true);
-  });
-
-  it("250 rangkaian: nol yang mendahului pendaftarannya", () => {
-    const waktuLangkah = muat();
+  it("250 rangkaian: nol yang mendahului pendaftarannya, nol yang mundur, nol di masa depan", () => {
     let melanggar = 0;
     for (const pukul of ["07:15:00", "09:34:00", "11:05:00", "13:32:33", "15:30:00"]) {
-      for (let id = 10100; id < 10150; id += 1) {
-        const w = URUT.map((jenis) =>
-          waktuLangkah({
-            perkaraId: id,
-            tanggalPenetapan: "2026-09-16",
-            jenis,
-            saatServer: "2026-09-16 16:45:00",
-            didaftar: `2026-09-16 ${pukul}`,
-          })
-        );
-        if (w.some((x) => jam(x) < pukul)) melanggar += 1;
-        if (w.some((x, i) => i > 0 && x < w[i - 1])) melanggar += 1;
+      for (let i = 0; i < 50; i += 1) {
+        const w = rangkaian("2026-09-16 16:45:00", `2026-09-16 ${pukul}`, i + 1);
+        if (w.some((x) => x <= `2026-09-16 ${pukul}`)) melanggar += 1;
+        if (w.some((x, k) => k > 0 && x <= w[k - 1])) melanggar += 1;
+        if (w.some((x) => x > "2026-09-16 16:45:00")) melanggar += 1;
       }
     }
     expect(melanggar).toBe(0);
@@ -172,32 +100,18 @@ describe("lantai jam penetapan", () => {
 });
 
 describe("penjaga sumbernya", () => {
-  // ==========================================================================
-  // DIGANTI 5 OKT 2026 (butir 39): JAM PENETAPAN TIDAK LAGI DISUSUN
-  // ==========================================================================
-  //
-  // waktuLangkah menyusun jam rangkaian 08:00-14:00 dan memundurkannya - pada
-  // perkara 630/Pdt.G/2026 yang ditetapkan ±13.02, audit tercatat 12:26:22
-  // sampai 12:54:22. Keputusan pengguna: jam yang dicatat jam SUNGGUHAN tiap
-  // tulisan, berjeda sungguhan. Penulisnya tidak memanggil waktuLangkah lagi;
-  // fungsinya (dan uji di atas) tinggal sebagai pustaka. Penetapan tetap
-  // tidak mendahului pendaftaran - kini karena jamnya jam sekarang, dan
-  // addMajelis_c-nya ditiru: tanggal penetapan sebelum tanggal pendaftaran
-  // ditolak.
-  it("penulis penetapan memakai jam basis data sekarang, bukan waktuLangkah", () => {
-    const tulis = sumber.slice(sumber.indexOf("async function susunRencanaTulis("), sumber.indexOf("async function susunRencanaHapus("));
-    expect(tulis).not.toContain("waktuLangkah(");
-    expect(tulis).toContain("const saatServer = await waktuBasisData();");
-    expect(tulis).toContain("const saat = saatServer;");
-    expect(tulis).toContain('alasan: "tanggal_penetapan_sebelum_pendaftaran"');
+  it("mesin lama dibuang - satu mesin jam saja", () => {
+    expect(sumber).not.toContain("function waktuLangkah(");
+    expect(sumber).not.toContain("function rangkaianDetik(");
+    expect(sumber).not.toContain("async function waktuBongkar(");
+    expect(sumber).toContain("function jamRangkaianManusia(");
   });
 
-  it("bukti luringnya ikut menguji lantai itu", () => {
-    const bukti = readFileSync(
-      path.join(AKAR, "aleta_bot/scripts/verify-waktu-penetapan.js"),
-      "utf8"
-    );
-    expect(bukti).toContain("250 rangkaian: nol yang mendahului pendaftarannya");
-    expect(bukti).toContain("didaftarkan kemarin: sama persis dengan tanpa pendaftaran");
+  it("penulis penetapan dan pembongkar memakai jam SIPP yang disusun, bukan NOW() basis data", () => {
+    const tulis = sumber.slice(sumber.indexOf("async function susunRencanaTulis("), sumber.indexOf("async function susunRencanaHapus("));
+    expect(tulis).toContain("(await jadwalJamSipp(perkara.perkaraId, [jenis])).jam[jenis]");
+    expect(tulis).toContain('alasan: "tanggal_penetapan_sebelum_pendaftaran"');
+    const hapus = sumber.slice(sumber.indexOf("async function susunRencanaHapus("));
+    expect(hapus).toContain("(await jadwalJamSipp(perkara.perkaraId, [jenis])).jam[jenis]");
   });
 });

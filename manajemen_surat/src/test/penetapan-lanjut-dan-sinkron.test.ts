@@ -97,10 +97,11 @@ describe("butir 1 - rantai boleh dilanjutkan, dan yang ditolak hanya yang mustah
     // Perilaku yang sudah ada. Dijaga di sini karena permintaan penggunanya
     // menyebutnya lagi ("ingat buatnya seperti manusia"), dan karena rantai
     // yang kini boleh melintasi hari melewati jalur yang sama.
-    expect(tulis).toContain("function waktuLangkah(");
-    expect(tulis).toContain("const rangkaian = rangkaianDetik(benih, lantaiMenit, lebar);");
-    // Tidak pernah mencatat jam yang belum terjadi.
-    expect(tulis).toContain("lantaiDetik + panjang > detikServer");
+    // Butir 17 (13 Okt 2026): satu mesin - jamRangkaianManusia - berjeda acak
+    // dari sebaran terukur, dan tidak pernah mencatat jam yang belum terjadi
+    // (dijalankan di jam-penetapan-sesudah-pendaftaran.test.ts).
+    expect(tulis).toContain("function jamRangkaianManusia(");
+    expect(tulis).toContain("ujung = kini;");
   });
 });
 
@@ -137,8 +138,9 @@ describe("butir 2 - yang dipilih tangan terbaca SEBELUM ditekan", () => {
     // di sini - sebelum tertulis, bukan sesudah.
     //
     // Diputuskan pengguna 22 September 2026: nama + akun, bukan nama saja.
+    // Butir 17 (13 Okt 2026): "akan dicatat atas nama <pejabat> (akun SIPP x)".
     expect(rapor).toContain("`Penetap ${jenis}`");
-    expect(rapor).toContain("`${nama} (${username})`");
+    expect(rapor).toContain("`akan dicatat atas nama ${nama || username} (akun SIPP ${username})`");
   });
 
   it("yang dipilih tangan DITANDAI, yang dari mesin tidak", () => {

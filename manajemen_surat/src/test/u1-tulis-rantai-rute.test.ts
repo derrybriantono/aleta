@@ -22,6 +22,19 @@ vi.mock("@/server/shared/admin-access-audit", () => ({
     throw galat;
   },
 }));
+// Butir 17 (13 Okt 2026): pejabat yang sah dicatat SIPP dibaca dari pemetaan
+// jabatan + PLH pada tanggal itu - di sini ditiru langsung.
+vi.mock("@/server/modules/aleta-ecourt/rencana-penetapan", async (asli) => ({
+  ...(await asli<Record<string, unknown>>()),
+  pejabatSahUntukTanggal: async () => ({
+    ok: true,
+    sah: {
+      pmh: { bawaan: "fahri", sah: new Set(["fahri", "sudarmin"]) },
+      ppp: { bawaan: "Sri Susilowati", sah: new Set(["Sri Susilowati", "plhpanitera"]) },
+      pjs: { bawaan: "Sri Susilowati", sah: new Set(["Sri Susilowati", "plhpanitera"]) },
+    },
+  }),
+}));
 vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
   kirimPenetapanTulisGateway: async (m: Record<string, unknown>) => {
     keadaan.tunggal.push(m);
@@ -83,5 +96,32 @@ describe("cabang rantai rute tulis", () => {
     const { status, badan } = await kirim({ rantai: [{ jenis: "ppp" }, { jenis: "pjs" }], perkaraId: 1, olehUsername: "x", kering: false });
     expect(status).toBe(409);
     expect(badan).toMatchObject({ ok: false, jenisGagal: "pjs", dipulihkan: true });
+  });
+
+  it("butir 17: pejabat PMH/PPP/PJS dipastikan - kosong diisi bawaan, yang tidak sah ditolak sebelum ke bot", async () => {
+    const { status } = await kirim({
+      rantai: [{ jenis: "pmh", hakimId: [26], pejabatUsername: "sudarmin" }, { jenis: "ppp", petugasId: 21 }, { jenis: "phs", pejabatUsername: "Himawan" }],
+      perkaraId: 10229,
+      tanggalPenetapan: "2026-10-13",
+      olehUsername: "Super Administrator",
+      kering: false,
+    });
+    expect(status).toBe(200);
+    const langkah = keadaan.rantai[0].langkah as Array<{ jenis: string; pejabatUsername?: string }>;
+    expect(langkah.map((x) => x.pejabatUsername)).toEqual(["sudarmin", "Sri Susilowati", "Himawan"]);
+
+    const tolak = await kirim({
+      rantai: [{ jenis: "pmh", hakimId: [26], pejabatUsername: "admin" }],
+      perkaraId: 10229,
+      olehUsername: "Super Administrator",
+      kering: false,
+    });
+    expect(tolak.status).toBe(409);
+    expect(tolak.badan).toMatchObject({ ok: false, alasan: "pejabat_tidak_sah", jenis: "pmh", username: "admin" });
+    expect(keadaan.rantai).toHaveLength(1);
+
+    const tunggal = await kirim({ jenis: "ppp", perkaraId: 10229, petugasId: 21, olehUsername: "meja1g", pejabatUsername: "meja1g" });
+    expect(tunggal.badan).toMatchObject({ alasan: "pejabat_tidak_sah" });
+    expect(keadaan.tunggal).toHaveLength(0);
   });
 });

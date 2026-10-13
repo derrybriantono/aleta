@@ -488,6 +488,124 @@ export function calonPenetap(
 
 /**
  * ============================================================================
+ * AKUN PEJABAT YANG SAH DICATAT DI SIPP (butir 17, 13 Okt 2026)
+ * ============================================================================
+ *
+ * Sejak 13 Okt PMH/PPP/PJS (dan pembatalannya) tercatat di Riwayat Perkara dan
+ * sys_audittrail atas akun SIPP PEJABAT yang dipilih di panel - apa pun akun
+ * yang sedang masuk. Pilihan itu datang dari peramban, jadi yang sah
+ * dipastikan di sini, tidak dipercaya begitu saja:
+ *
+ *   PMH       akun Ketua/Wakil Ketua (grup SIPP "Ketua/Wakil Ketua", tertaut
+ *             hakim) + akun pemegang PLH/PLT Ketua pada tanggal itu
+ *   PPP, PJS  akun Panitera (peran ALETA panitera) + akun pemegang PLH/PLT
+ *             Panitera pada tanggal itu. Panitera Muda/Pengganti TIDAK -
+ *             mereka bukan wakil Panitera (lihat akunPanitera). Bila belum
+ *             ada akun bertanda Panitera sama sekali: hanya pilihan otomatis.
+ *
+ * `bawaan` = pilihan otomatis (akunPimpinan/akunPanitera), dipakai bila panel
+ * tidak mengirim pilihan. PHS dipastikan bot terhadap majelis perkara itu.
+ */
+export type JenisPejabatSah = "pmh" | "ppp" | "pjs";
+export type PejabatSah = Record<JenisPejabatSah, { bawaan: string; sah: Set<string> }>;
+
+export function pejabatSahPenetapan(
+  akun: AkunSiapPakai[],
+  keadaanPimpinan?: KeadaanPejabat | null,
+  keadaanPanitera?: KeadaanPejabat | null
+): PejabatSah {
+  const hidup = (x: AkunSiapPakai) => !x.diblokir && !x.kedaluwarsa;
+  const pemegang = (p: KeadaanPejabat | null | undefined) =>
+    p?.penunjukan ? akun.filter((x) => hidup(x) && x.pemilikUserId === p.penunjukan!.userId) : [];
+
+  const pimpinan = akunPimpinan(akun, keadaanPimpinan).akun;
+  const sahPimpinan = new Set(
+    [...akun.filter((x) => hidup(x) && x.jabatan === "hakim" && /ketua/i.test(x.grup)), ...pemegang(keadaanPimpinan)].map(
+      (x) => x.username
+    )
+  );
+  if (pimpinan && hidup(pimpinan)) sahPimpinan.add(pimpinan.username);
+
+  const panitera = akunPanitera(akun, keadaanPanitera).akun;
+  const sahPanitera = new Set(
+    [
+      ...akun.filter((x) => hidup(x) && x.jabatan === "panitera" && x.peranAleta === "panitera"),
+      ...pemegang(keadaanPanitera),
+    ].map((x) => x.username)
+  );
+  if (panitera && hidup(panitera)) sahPanitera.add(panitera.username);
+
+  const bawaanPimpinan = pimpinan && hidup(pimpinan) ? pimpinan.username : "";
+  const bawaanPanitera = panitera && hidup(panitera) ? panitera.username : "";
+  return {
+    pmh: { bawaan: bawaanPimpinan, sah: sahPimpinan },
+    ppp: { bawaan: bawaanPanitera, sah: sahPanitera },
+    pjs: { bawaan: bawaanPanitera, sah: new Set(sahPanitera) },
+  };
+}
+
+/**
+ * Akun yang akan dicatat untuk satu langkah: pilihan panel bila sah, bawaan
+ * bila panel tidak memilih, atau penolakan bersebab. PHS dan jenis lain
+ * diteruskan apa adanya (dipastikan bot).
+ */
+export function pastikanPejabatLangkah(
+  sah: PejabatSah,
+  jenis: string,
+  dipilih: string
+): { ok: true; username: string } | { ok: false; alasan: string; jenis: string; username: string } {
+  const j = String(jenis || "").toLowerCase();
+  const nama = String(dipilih || "").trim();
+  if (j !== "pmh" && j !== "ppp" && j !== "pjs") return { ok: true, username: nama };
+  const aturan = sah[j];
+  if (!nama) {
+    return aturan.bawaan
+      ? { ok: true, username: aturan.bawaan }
+      : { ok: false, alasan: "pejabat_belum_dipilih", jenis: j, username: "" };
+  }
+  if (!aturan.sah.has(nama)) return { ok: false, alasan: "pejabat_tidak_sah", jenis: j, username: nama };
+  return { ok: true, username: nama };
+}
+
+/**
+ * Pejabat pilihan panel untuk PEMBATALAN. Bot lebih dahulu memakai akun yang
+ * tercatat pada penetapan yang dibatalkan; pilihan panel hanya cadangan bila
+ * itu bukan akun pejabat. Pilihan yang tidak sah DIBUANG (bukan ditolak) -
+ * supaya pembatalan atas akun tercatat yang sah tetap berjalan, dan cadangan
+ * yang tidak sah tidak pernah sampai ke SIPP.
+ */
+export function saringPejabatPembatalan(sah: PejabatSah, jenis: string, dipilih: string): string {
+  const j = String(jenis || "").toLowerCase();
+  const nama = String(dipilih || "").trim();
+  if (j !== "pmh" && j !== "ppp" && j !== "pjs") return nama;
+  return nama && sah[j].sah.has(nama) ? nama : "";
+}
+
+/** pejabatSahPenetapan untuk satu tanggal - membaca pemetaan, PLH, dan cuti. */
+export async function pejabatSahUntukTanggal(
+  db: AletaDatabase,
+  tanggal: string
+): Promise<{ ok: true; sah: PejabatSah } | { ok: false; galat: string }> {
+  const pemetaan = await bacaPemetaanJabatan(db);
+  if (!pemetaan.ok) return { ok: false, galat: pemetaan.galat };
+  const hari = /^\d{4}-\d{2}-\d{2}$/.test(String(tanggal || "")) ? tanggal : new Date().toISOString().slice(0, 10);
+  const [penunjukan, penunjukanPanitera, sedangCuti] = await Promise.all([
+    pejabatBertugas(db, JABATAN_KETUA, hari),
+    pejabatBertugas(db, JABATAN_PANITERA, hari),
+    yangSedangCuti(db, hari),
+  ]);
+  return {
+    ok: true,
+    sah: pejabatSahPenetapan(
+      pemetaan.akun,
+      { penunjukan, sedangCuti },
+      { penunjukan: penunjukanPanitera, sedangCuti }
+    ),
+  };
+}
+
+/**
+ * ============================================================================
  * PHS BOLEH DIPILIH PENANDA TANGANNYA - DI ANTARA ANGGOTA MAJELIS ITU SAJA
  * ============================================================================
  *
@@ -653,6 +771,9 @@ export function rakitRencana(args: {
   const pimpinan = pilihan.akun;
   const pilihanPanitera = akunPanitera(akunPemetaan, args.keadaanPanitera);
   const panitera = pilihanPanitera.akun;
+  // Calon yang ditawarkan panel = yang sah dicatat di SIPP (butir 17). Rute
+  // tulis memeriksa ulang dengan aturan yang sama.
+  const sahPejabat = pejabatSahPenetapan(akunPemetaan, args.keadaanPimpinan, args.keadaanPanitera);
   // ------------------------------------------------------------------------
   // PELAKSANA PHS: YANG TERCATAT MENGALAHKAN YANG DIUSULKAN
   // ------------------------------------------------------------------------
@@ -682,12 +803,16 @@ export function rakitRencana(args: {
     let calon: CalonPenetap[] = [];
     if (JABATAN_LANGKAH[jenis] === "pimpinan") {
       akun = jadiAkunLangkah(pimpinan, false, pilihan.sebutan);
-      calon = calonPenetap(akunPemetaan, "pimpinan", pimpinan, pilihan.sebutan);
+      calon = calonPenetap(akunPemetaan, "pimpinan", pimpinan, pilihan.sebutan).filter(
+        (x) => x.otomatis || sahPejabat.pmh.sah.has(x.username)
+      );
       if (!pimpinan) catatan.push("Belum ada akun SIPP pimpinan (Ketua/Wakil Ketua).");
       for (const c of pilihan.catatan) catatanPenetap.push(c);
     } else if (JABATAN_LANGKAH[jenis] === "panitera") {
       akun = jadiAkunLangkah(panitera, false, pilihanPanitera.sebutan);
-      calon = calonPenetap(akunPemetaan, "panitera", panitera, pilihanPanitera.sebutan);
+      calon = calonPenetap(akunPemetaan, "panitera", panitera, pilihanPanitera.sebutan).filter(
+        (x) => x.otomatis || sahPejabat.ppp.sah.has(x.username)
+      );
       if (!panitera) catatan.push("Belum ada akun SIPP Panitera.");
       for (const c of pilihanPanitera.catatan) catatanPenetap.push(c);
     } else if (JABATAN_LANGKAH[jenis] === "hakim") {

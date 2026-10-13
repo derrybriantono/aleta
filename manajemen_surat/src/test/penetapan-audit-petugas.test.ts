@@ -45,6 +45,12 @@ const PENGGUNA = [
   { userid: 21, username: "meja1g", fullname: "Tiffany RS", block: 0 },
   { userid: 22, username: "meja1p", fullname: "Tiffany RS", block: 0 },
 ];
+// Butir 17 (13 Okt 2026): tautan akun -> pejabat (user_hakim / user_panitera).
+const TAUT: Record<number, Array<{ jabatan: string; id: number }>> = {
+  11: [{ jabatan: "hakim", id: 31 }],
+  12: [{ jabatan: "hakim", id: 32 }],
+  13: [{ jabatan: "panitera", id: 26 }],
+};
 
 const HAKIM: Record<number, Baris> = {
   32: { hakimId: 32, kode: "A", nip: "198208312007041001", nama: "Fahri Saifuddin, S.H.I., M.H.", namaPolos: "Fahri Saifuddin" },
@@ -55,6 +61,9 @@ const HAKIM: Record<number, Baris> = {
 function basisSipp() {
   const keadaan = {
     jam: "2026-10-05 13:02:11",
+    // UTC basis data; jam SIPP (WIB) = 12:02:11.
+    utc: "2026-10-05 05:02:11",
+    lantai: "2026-10-05 08:43:21",
     perkara: {
       perkaraId: 10187,
       nomorPerkara: "630/Pdt.G/2026/PA.Dgl",
@@ -88,6 +97,15 @@ function basisSipp() {
     if (max) return [{ berikutnya: keadaan.idBerikutnya[max[1]] || 1 }];
     if (/COALESCE\(MAX\(urutan\), 0\) \+ 1/.test(sql)) return [{ berikutnya: 1 }];
     if (/DATE_FORMAT\(NOW\(\)/.test(sql)) return [{ saat: keadaan.jam }];
+    if (/UTC_TIMESTAMP/.test(sql)) return [{ utc: keadaan.utc }];
+    if (/AS lantai/.test(sql)) return [{ lantai: keadaan.lantai }];
+    if (/FROM user_hakim WHERE userid/.test(sql)) return TAUT[Number(p[0])] || [];
+    if (/FROM user_hakim uh JOIN sys_users/.test(sql)) {
+      return PENGGUNA.filter((u) => (TAUT[u.userid] || []).some((t) => t.jabatan === "hakim" && t.id === Number(p[0])));
+    }
+    if (/FROM perkara_hakim_pn\s+WHERE/.test(sql)) {
+      return keadaan.perkara.pmh ? [{ hakimId: 32, jabatanId: 1 }, { hakimId: 26, jabatanId: 2 }, { hakimId: 31, jabatanId: 2 }] : [];
+    }
     if (/FROM perkara p\b/.test(sql)) return [{ ...keadaan.perkara }];
     if (/FROM sys_user_online/.test(sql)) {
       const [nama, host] = p.map(String);
@@ -107,6 +125,8 @@ function basisSipp() {
       tulisan.push({ sql: sql.replace(/\s+/g, " ").trim(), params: [...p] });
       const ke = /^\s*INSERT INTO (\w+)/i.exec(sql);
       if (ke && keadaan.idBerikutnya[ke[1]] !== undefined) keadaan.idBerikutnya[ke[1]] += 1;
+      // Riwayat yang ditulis menjadi kejadian terakhir perkara itu.
+      if (/^\s*REPLACE INTO perkara_proses/i.test(sql) && String(p[8]) > keadaan.lantai) keadaan.lantai = String(p[8]);
       return { affectedRows: 1, insertId: 0 };
     }
     return [];
@@ -207,15 +227,17 @@ async function jalankanRantai(olehUsername = "Derry Briantono, S.H.", ip = "192.
     ip,
   };
   const minta: Record<string, Record<string, unknown>> = {
-    pmh: { hakimId: [32, 26, 31] },
-    ppp: { petugasId: 21 },
-    pjs: { petugasId: 28 },
+    pmh: { hakimId: [32, 26, 31], pejabatUsername: "fahri" },
+    ppp: { petugasId: 21, pejabatUsername: "Sri Susilowati" },
+    pjs: { petugasId: 28, pejabatUsername: "Sri Susilowati" },
     // Butir 38: tanggal yang DIPILIH dari kalender, bukan usulan 21 Okt.
     phs: { tanggalSidang: "2026-10-15", ruanganId: 3 },
   };
   const hasil: Record<string, any> = {};
   for (const jenis of ["pmh", "ppp", "pjs", "phs"] as const) {
     sipp.keadaan.jam = JAM[jenis];
+    // Waktu berjalan di antara langkah: UTC = WITA - 8 jam.
+    sipp.keadaan.utc = JAM[jenis].replace(/ (\d{2})/, (_m, j) => ` ${String(Number(j) - 8).padStart(2, "0")}`);
     const rencana = await layanan.susunRencanaTulis({ ...dasar, jenis, ...minta[jenis], kering: false });
     hasil[jenis] = rencana;
     if (!rencana.ok) break;
@@ -247,31 +269,33 @@ describe("butir 39 - baris audit SIPP untuk penetapan lewat ALETA", () => {
     expect(r.audit.map(({ tablename, action, formname, title }) => ({ tablename, action, formname, title }))).toEqual(HARAPAN);
   });
 
-  it("username = akun SIPP petugas yang sedang masuk (derry briantono), tidak pernah pejabat", () => {
-    expect(new Set(r.audit.map((x) => x.username))).toEqual(new Set(["derry briantono"]));
-    const semua = JSON.stringify(r.tulisan);
-    expect(semua).not.toContain('"fahri"');
-    expect(semua).not.toContain("Sri Susilowati");
+  it("butir 17: username = akun SIPP PEJABAT tiap langkah, tidak pernah akun yang masuk (derry briantono)", () => {
+    const harap: Record<string, string> = { [PMH]: "fahri", [PPP]: "Sri Susilowati", [PJS]: "Sri Susilowati", [PHS]: "fahri" };
+    for (const [formulir, akun] of Object.entries(harap)) {
+      expect(new Set(r.audit.filter((x) => x.formname === formulir).map((x) => x.username)), formulir).toEqual(new Set([akun]));
+    }
     // Kolom pengguna di tabel datanya pun sama - SIPP menulis session
     // username ke diinput_oleh/diperbaharui_oleh.
-    const pengguna = r.tulisan.filter((t) => !/sys_audittrail/.test(t.sql)).flatMap((t) => t.params.filter((x) => x === "derry briantono"));
-    expect(pengguna.length).toBeGreaterThan(10);
+    for (const t of r.tulisan) expect(t.params, t.sql).not.toContain("derry briantono");
+    // Penekan sebenarnya tetap terbaca - untuk jejak ALETA.
+    expect(r.hasil.pmh.akunMasuk.username).toBe("derry briantono");
   });
 
   it("alamat IP = alamat peramban petugas", () => {
     expect(new Set(r.audit.map((x) => x.ipaddress))).toEqual(new Set(["192.168.9.109"]));
   });
 
-  it("jam = jam basis data SAAT langkah ditulis - tidak disusun, tidak mundur", () => {
+  it("butir 17: jam SIPP (WIB) seperti orang bekerja - satu jam per langkah, urut, tidak melewati sekarang", () => {
     const perLangkah = { pmh: r.audit.slice(0, 5), ppp: r.audit.slice(5, 8), pjs: r.audit.slice(8, 11), phs: r.audit.slice(11) };
-    for (const [jenis, baris] of Object.entries(perLangkah)) {
-      expect(new Set(baris.map((x) => x.datetime)), jenis).toEqual(new Set([JAM[jenis as keyof typeof JAM]]));
-    }
-    const jam = r.audit.map((x) => x.datetime);
-    expect([...jam].sort()).toEqual(jam);
-    // Jam yang dikarang dahulu jatuh di jendela 08:00-14:00 dan mundur dari
-    // jam peladen; kini tidak satu pun sebelum jam langkahnya.
-    expect(jam.every((x) => x >= JAM.pmh)).toBe(true);
+    const jamLangkah = Object.entries(perLangkah).map(([jenis, baris]) => {
+      const himpun = new Set(baris.map((x) => x.datetime));
+      expect(himpun.size, jenis).toBe(1);
+      return [...himpun][0];
+    });
+    expect(new Set(jamLangkah).size).toBe(4);
+    expect([...jamLangkah].sort()).toEqual(jamLangkah);
+    // Jam SIPP = WIB: tidak satu pun melewati 12:03:07 (jam basis data 13:03:07 WITA).
+    expect(jamLangkah.every((x) => x <= "2026-10-05 12:03:07" && x > "2026-10-05 08:43:21")).toBe(true);
   });
 
   it("tidak ada kata ALETA di baris audit mana pun", () => {
@@ -334,7 +358,8 @@ describe("butir 39 - baris audit SIPP untuk penetapan lewat ALETA", () => {
   it("riwayat dan jadwal ditulis dalam bentuk SIPP (keterangan '', agenda bawaan borang)", () => {
     const riwayat = r.tulisan.filter((t) => /^REPLACE INTO perkara_proses/.test(t.sql));
     expect(riwayat.map((t) => t.params[3])).toEqual([20, 30, 40, 80, 81]);
-    expect(riwayat.every((t) => t.params[6] === "" && t.params[7] === "derry briantono")).toBe(true);
+    expect(riwayat.map((t) => t.params[7])).toEqual(["fahri", "Sri Susilowati", "Sri Susilowati", "fahri", "fahri"]);
+    expect(riwayat.every((t) => t.params[6] === "")).toBe(true);
     const jadwal = r.tulisan.find((t) => /^INSERT INTO perkara_jadwal_sidang/.test(t.sql))!;
     expect(jadwal.sql).not.toMatch(/sampai_jam|sifat_sidang|ikrar_talak/);
     expect(jadwal.params).toContain("Sidang Pertama");
@@ -345,7 +370,9 @@ describe("butir 39 - akun yang tercatat tidak pernah ditebak", () => {
   it("nama lengkap ganda dipersempit lewat sesi SIPP dari alamat yang sama", async () => {
     const r = await jalankanRantai("Tiffany RS", "192.168.9.82");
     expect(r.hasil.pmh.ok).toBe(true);
-    expect(new Set(r.audit.map((x) => x.username))).toEqual(new Set(["meja1g"]));
+    // Penekannya meja1g (jejak ALETA), yang dicatat SIPP pejabatnya.
+    expect(r.hasil.pmh.akunMasuk.username).toBe("meja1g");
+    expect(r.audit.some((x) => x.username === "meja1g")).toBe(false);
   });
 
   it("nama lengkap ganda tanpa sesi yang cocok DITOLAK, tidak dipilihkan", async () => {
@@ -534,7 +561,7 @@ describe("rantai penetapan di ekstensi (butir 38 + 39)", () => {
     expect(kirim.olehUsername).toBe("Derry Briantono, S.H.");
     expect(kirim.kering).toBe(false);
     expect(kirim.rantai.map((x) => x.jenis)).toEqual(["pmh", "ppp", "pjs", "phs"]);
-    // Pejabat penanda tangan tetap diteruskan - untuk jejak ALETA saja.
+    // Butir 17: pejabat tiap langkah - INILAH akun yang dicatat SIPP.
     expect(kirim.rantai.map((x) => x.pejabatUsername)).toEqual(["fahri", "Sri Susilowati", "Sri Susilowati", "fahri"]);
     expect(kirim.rantai[3].tanggalSidang).toBe("2026-10-15");
     expect(ling.jeda).toEqual([]);
