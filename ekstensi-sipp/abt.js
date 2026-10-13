@@ -3714,6 +3714,31 @@ function j3BlangkoMemuatVariabelJenis(petaVariabel, namaAtauId) {
 }
 /* === AKHIR JENIS3 === */
 
+/* === DETEKSI-Y 13 Okt === */
+/**
+ * Variabel yang dideteksi modul per jenis agen Y (aleta_bot/services/deteksi: perwalian, asalUsul,
+ * pengangkatanAnak, waliAdhol, hadhanah, lainLain) dari posita/petitum - cermin, dijaga uji
+ * deteksi-perwalian-anak-umum.test.ts. Hanya untuk menggambar tombol "Isi dari posita permohonan"
+ * (juga bila tombol itsbat tampil: blangko perwalian/asal usul memuat #5197#). Keyakinannya diputuskan bot.
+ */
+const Y_VARIABEL_JENIS = Object.freeze({
+  349: Object.freeze(["0709", "0711", "2004", "8603"]),
+  352: Object.freeze(["8603", "8618", "8619", "8622", "8623"]),
+  354: Object.freeze(["0007", "0709", "0712", "1025", "1230", "5105", "5110", "5178", "5197", "8171"]),
+  358: Object.freeze(["8603", "8605"]),
+  363: Object.freeze(["1014", "1029", "1030", "1046", "1217", "3333", "6087"]),
+  369: Object.freeze(["0007", "0709", "0711", "0712", "1025", "1230", "2004", "5105", "5110", "5178", "5197", "8171", "8603", "8618", "8619", "8622", "8623"]),
+});
+
+/** Blangko memuat variabel modul deteksi agen Y untuk jenis perkara ini (nama atau id SIPP)? */
+function yBlangkoMemuatVariabelJenis(petaVariabel, namaAtauId) {
+  if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
+  const id = idJenisPerkaraSipp(String(namaAtauId || "").replace(/\s+/g, " ").trim());
+  const daftar = Y_VARIABEL_JENIS[id];
+  return Boolean(daftar) && daftar.some((k) => petaVariabel.has(k));
+}
+/* === AKHIR DETEKSI-Y === */
+
 /** Blangko ini memuat sekurang-kurangnya satu variabel siap MILIK jenis perkara ini? */
 function blangkoMemuatVariabelSiapLain(petaVariabel, kunciJenis) {
   if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
@@ -4260,6 +4285,11 @@ function susunPanelAbt(jatiDiri) {
     tombolPositaLain.hidden = false;
   }
   /* === AKHIR JENIS3 === */
+  /* === DETEKSI-Y 13 Okt === */
+  // Perwalian/asal usul/pengangkatan anak/wali adhol/hadhanah/Lain-Lain: modul per jenis membaca posita +
+  // petitum SIPP - tombol tergambar walau tombol itsbat juga tampil (blangko perwalian memuat #5197#).
+  if (tombolPositaLain.hidden && yBlangkoMemuatVariabelJenis(petaAwal, jenisAwal)) tombolPositaLain.hidden = false;
+  /* === AKHIR DETEKSI-Y === */
   if (!tombolPositaLain.hidden && !tombolItsbat.hidden) tombolPositaLain.textContent = "Isi dari posita permohonan (perkara lain)";
   tombolPositaLain.title =
     "Variabel perkara lain yang lulus gerbang ukur (presisi ≥ 0,9 atas isian manusia) dan tidak lebih buruk dari " +

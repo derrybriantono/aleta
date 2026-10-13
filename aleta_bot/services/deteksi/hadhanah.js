@@ -32,8 +32,8 @@ const variabel = Object.freeze([
   { kode: "2004", nama: "Anak kini diasuh oleh", sumber: "posita", blangko: ["putusan", "bas"] },
   { kode: "8603", nama: "Nama anak", sumber: "posita", blangko: ["putusan"] },
   { kode: "0708", nama: "Tergugat menjenguk anak", sumber: "saksi-sipp", blangko: ["putusan", "bas"] },
-  { kode: "0710", nama: "Kepentingan Penggugat", sumber: "posita", blangko: ["putusan"] },
-  { kode: "5171", nama: "Penghasilan Penggugat", sumber: "posita", blangko: ["putusan"] },
+  { kode: "0710", nama: "Kepentingan Penggugat", sumber: "posita", blangko: ["putusan"], deteksi: false },
+  { kode: "5171", nama: "Penghasilan Penggugat", sumber: "posita", blangko: ["putusan"], deteksi: false },
 ]);
 
 function deteksi(posita) {

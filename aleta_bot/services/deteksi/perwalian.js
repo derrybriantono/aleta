@@ -348,7 +348,7 @@ function deteksi(posita, opsi = {}) {
   }
 
   // 0007 - "4 (empat) orang anak".
-  const kAnak = kal.find((k) => /dikaruni/i.test(k)) || "";
+  const kAnak = kal.find((k) => /di\s*karuni/i.test(k)) || "";
   B.taruh(peta, "0007", B.fakta(B.jumlahAnak(kAnak), kAnak, "ragu", "perwalian-0007-jumlah"));
 
   // 8171 - keperluan.

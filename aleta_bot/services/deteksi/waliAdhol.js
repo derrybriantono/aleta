@@ -36,9 +36,9 @@ const variabel = Object.freeze([
   { kode: "1217", nama: "Nama wali nikah", sumber: "posita", blangko: ["bas", "putusan"] },
   { kode: "6087", nama: "Alasan wali nikah menolak", sumber: "posita", blangko: ["bas"] },
   { kode: "3333", nama: "KUA kecamatan tempat menikah", sumber: "posita", blangko: ["bas"] },
-  { kode: "1002", nama: "Status Pemohon sebelum nikah", sumber: "posita", blangko: ["bas"] },
-  { kode: "1003", nama: "Status calon sebelum nikah", sumber: "posita", blangko: ["bas"] },
-  { kode: "1357", nama: "Alasan wali nikah (bila bukan ayah)", sumber: "posita", blangko: ["bas"] },
+  { kode: "1002", nama: "Status Pemohon sebelum nikah", sumber: "posita", blangko: ["bas"], deteksi: false },
+  { kode: "1003", nama: "Status calon sebelum nikah", sumber: "posita", blangko: ["bas"], deteksi: false },
+  { kode: "1357", nama: "Alasan wali nikah (bila bukan ayah)", sumber: "posita", blangko: ["bas"], deteksi: false },
   { kode: "1262", nama: "Alat bukti", sumber: "berkas-ecourt", blangko: ["bas"] },
 ]);
 

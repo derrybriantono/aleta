@@ -34,8 +34,8 @@ const wilayah = require("./wilayah");
 const variabel = Object.freeze([
   { kode: "8603", nama: "Nama anak yang dimohonkan (isian bila SIPP kosong)", sumber: "petitum", blangko: ["putusan", "bas"] },
   { kode: "8605", nama: "Pernikahan resmi/tercatat para Pemohon", sumber: "posita", blangko: ["putusan"] },
-  { kode: "5197", nama: "Tanggal nikah", sumber: "posita", blangko: ["putusan", "bas"], catatan: "jalur itsbat" },
-  { kode: "0007", nama: "Telah dikaruniai anak", sumber: "posita", blangko: ["bas"], catatan: "jalur itsbat" },
+  { kode: "5197", nama: "Tanggal nikah", sumber: "posita", blangko: ["putusan", "bas"], catatan: "jalur itsbat", deteksi: false },
+  { kode: "0007", nama: "Telah dikaruniai anak", sumber: "posita", blangko: ["bas"], catatan: "jalur itsbat", deteksi: false },
   { kode: "0378", nama: "Bukti surat", sumber: "berkas-ecourt", blangko: ["putusan"] },
   { kode: "8607", nama: "Fakta tambahan keterangan saksi", sumber: "saksi-sipp", blangko: ["putusan"] },
 ]);
