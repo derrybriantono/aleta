@@ -17757,6 +17757,9 @@ function ktpTeksCariTanggal(butir) {
     if (t) return { awal, akhir: awal + t.panjang, teks: b.slice(awal, awal + t.panjang), ...t };
     // "tanggal yang dikeluarkan ..." - tanggalnya terhapus, kata "tanggal" tertinggal: disisipkan sesudah kata itu.
     if (lead.length > 0 && /^(?:yang\s+)?(?:dikeluarkan|diterbitkan)\b/i.test(b.slice(awal))) {
+      // 13 Okt: bawaan ABT 9958 dengan #8870# kosong berbunyi "tanggal , yang dikeluarkan" - koma ikut diganti
+      // supaya hasilnya "tanggal 18 Februari 2012, yang dikeluarkan".
+      if (/,/.test(lead)) return { awal: awalKata, akhir: awal, teks: "", panjang: 0, jenis: "kosong", hampa: true, koma: true, h: 0, b: 0, y: 0, gaya: {} };
       return { awal, akhir: awal, teks: "", panjang: 0, jenis: "kosong", hampa: true, h: 0, b: 0, y: 0, gaya: {} };
     }
   }
@@ -17989,7 +17992,7 @@ function ktpTeksSusun(teks, kode, daftarPihak) {
       continue;
     }
     const ke = ktpTeksTulisTanggal(baru, slot);
-    const sisip = slot.hampa ? `${ke} ` : ke;
+    const sisip = slot.hampa ? (slot.koma ? ` ${ke}, ` : `${ke} `) : ke;
     const konteks = `${t.slice(Math.max(b.mulai, mutlakAwal - 40), mutlakAwal)}[${dari || "kosong"} → ${ke}]${t.slice(mutlakAkhir, mutlakAkhir + 30)}`
       .replace(/\s+/g, " ")
       .trim();
@@ -18119,6 +18122,13 @@ function ktpKandidatTeks(peta) {
   for (const [kode, item] of peta || barisVariabel()) {
     if (A3_VAR_TANGGAL_KTP_P.includes(kode)) continue;
     if (a3BolehDiisi(kode) === false) continue; // dihitung ABT (data_sql/data_sipp/...), bukan isian
+    // 13 Okt (butir 14, 228/Pdt.P/2026): variabel alat bukti KTP yang dikenal (9958, 1214, 0378, ...) dan
+    // masih DATA_TIDAK_ADA ikut diperiksa - isinya diambil dari borang sunting ABT (bawaan yang sudah diolah ABT).
+    const kosong = typeof keadaanNilai === "function" && keadaanNilai(item.nilai) === "kosong";
+    if (kosong && Object.prototype.hasOwnProperty.call(KTP_TEKS_URUTAN, kode)) {
+      hasil.push(kode);
+      continue;
+    }
     if (typeof keadaanNilai === "function" && keadaanNilai(item.nilai) !== "terisi") continue;
     if (ktpTeksAdaTanggal(item.nilai)) hasil.push(kode);
   }
@@ -18180,13 +18190,34 @@ async function ktpUsulanTeks(pihak, kodeTeks) {
       hasil.catatan.push(`Variabel ${kode}: teks memuat karakter rusak - tanggal KTP di dalamnya disunting tangan.`);
       continue;
     }
-    if (ktpTeksInti(asli.teks) !== ktpTeksInti(item.nilai)) {
+    // 13 Okt: baris DATA_TIDAK_ADA - dasarnya bawaan ABT di borang sunting (bukan isi sel).
+    const barisKosong = typeof keadaanNilai === "function" && keadaanNilai(item.nilai) === "kosong";
+    if (barisKosong && /#\d{4,5}#/.test(asli.teks)) {
+      hasil.catatan.push(`Variabel ${kode}: bawaan ABT masih memuat variabel yang belum diolah - diisi tangan.`);
+      continue;
+    }
+    if (!barisKosong && ktpTeksInti(asli.teks) !== ktpTeksInti(item.nilai)) {
       hasil.catatan.push(`Variabel ${kode}: isi di ABT berbeda dari yang tampil - tanggal KTP di dalamnya tidak diubah.`);
       continue;
     }
     const s = ktpTeksSusun(asli.teks, kode, pihak);
     for (const t of s.tetap) {
       if (/belum terbaca|tak dikenal|ambigu|ragu|tidak terbaca/.test(t.alasan)) hasil.catatan.push(`Variabel ${kode}: ${t.label} dibiarkan - ${t.alasan}.`);
+    }
+    if (barisKosong && !s.nilai) {
+      // Bawaan ABT yang tanggal KTP-nya SUDAH lengkap (8870/8872 membaca tabel KTP e-Court): disimpan apa
+      // adanya supaya baris tidak lagi DATA_TIDAK_ADA. Tanggal yang masih kosong = tidak diusulkan.
+      const butir = ktpTeksButir(asli.teks);
+      const lengkap = butir.length > 0 && butir.every((b) => {
+        const slot = ktpTeksCariTanggal(b.teks);
+        return slot && ["tulis", "angka", "iso"].includes(slot.jenis);
+      });
+      if (!lengkap) {
+        hasil.catatan.push(`Variabel ${kode}: KTP belum terdeteksi - tanggal KTP di bawaan ABT masih kosong.`);
+        continue;
+      }
+      s.nilai = asli.teks;
+      s.otomatis = true;
     }
     if (!s.nilai) continue;
     const ringkas = s.perubahan.map((x) => `${x.label}: ${x.dari || "(kosong)"} → ${x.ke}`).join("; ");

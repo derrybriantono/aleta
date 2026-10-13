@@ -405,10 +405,30 @@ describe("E. a3UsulanTanggalKtp: variabel tanggal + teks, terisi otomatis", () =
         return jawab({ ada: true, pihak: PIHAK, catatan: [] });
       }
     );
-    expect(p.ktpKandidatTeks()).toEqual([]);
+    // 13 Okt (butir 14, 228/Pdt.P/2026): variabel alat bukti KTP yang DIKENAL (1214, 9958, ...) dan masih
+    // kosong kini ikut diperiksa (dasarnya bawaan ABT di borang sunting); 0315 (data_sql) dan 5105 (tanpa KTP) tidak.
+    expect(p.ktpKandidatTeks()).toEqual(["1214"]);
     const r = await p.a3UsulanTanggalKtp("1/Pdt.G/2026/PA.Dgl");
-    expect(r.usulan).toEqual([]);
-    expect(dipanggil).toEqual([]); // tanpa kandidat dan tanpa variabel tanggal: tidak ada permintaan sama sekali
+    expect(r.usulan).toEqual([]); // borang ABT tiruan tidak berisi bawaan: tidak ada yang diusulkan
+    expect(dipanggil.length).toBeGreaterThan(0);
+  });
+
+  it("13 Okt: 9958 masih DATA_TIDAK_ADA - bawaan ABT di borang (tanggal kosong) diisi dari KTP e-Court; variabel bawaan belum diolah tidak", async () => {
+    const BAWAAN_9958 =
+      "Fotokopi Kartu Tanda Penduduk atas nama RIZKA, NIK 7203144107930512 tanggal , yang dikeluarkan oleh Pemerintah Kabupaten Donggala, Provinsi Sulawesi Tengah, telah diberi meterai cukup, lalu oleh Pemohon diberi tanda P.1 serta diberi tanggal dan paraf Ketua Majelis;";
+    const buat = (teks: string) =>
+      pasang({ sel: { "9958": "DATA_TIDAK_ADA" }, tipe: { "9958": "data_teks" } }, async (u) =>
+        /edit_data/.test(u) ? jawab(borang("data_teks", teks)) : jawab({ ada: true, pihak: [P_RIZKA], catatan: [] })
+      );
+    const p = buat(BAWAAN_9958);
+    expect(p.ktpKandidatTeks()).toEqual(["9958"]);
+    const r = await p.a3UsulanTanggalKtp("228/Pdt.P/2026/PA.Dgl");
+    expect(r.usulan).toHaveLength(1);
+    expect(r.usulan[0].kode).toBe("9958");
+    expect(r.usulan[0].nilai).toContain("NIK 7203144107930512 tanggal 18 Februari 2012, yang dikeluarkan");
+    const belum = await buat(BAWAAN_9958.replace("RIZKA", "#4048#")).a3UsulanTanggalKtp("228/Pdt.P/2026/PA.Dgl");
+    expect(belum.usulan).toEqual([]);
+    expect(belum.catatan).toMatch(/belum diolah/);
   });
 
   it("tipe yang baru diketahui SESUDAH dibaca halaman (data_sql) menggugurkan kandidat sebelum borang ABT diminta; variabel belum didefinisikan dilewati", async () => {
@@ -628,7 +648,8 @@ describe.skipIf(!dbAda)("G. atas isian ABT lokal (aps_badilag.abt_data_teks): pe
       let rakit = "";
       for (const x of s.perubahan.slice().sort((a: Apa, b: Apa) => a.awal - b.awal)) {
         if (x.dari) expect(asli.slice(x.awal, x.akhir)).toBe(x.dari);
-        else expect(asli.slice(x.awal, x.akhir)).toMatch(/^[.,_…\-]*$/); // tanda kosong, atau sisipan tanpa teks
+        // tanda kosong, sisipan tanpa teks, atau (13 Okt) "tanggal , yang" - spasi+koma yang diganti " <tanggal>, "
+        else expect(asli.slice(x.awal, x.akhir)).toMatch(/^[.,_…\-]*$|^\s*,\s*$/);
         expect(x.akhir - x.awal).toBeLessThanOrEqual(30);
         expect(asli.slice(x.awal, x.akhir)).toMatch(/^[\dA-Za-z\s\-/.,_…]*$/);
         rakit += asli.slice(kursor, x.awal) + x.sisip;
