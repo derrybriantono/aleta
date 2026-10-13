@@ -99,15 +99,17 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
     expect(n!.baris.berkas).toContain("[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak");
   });
 
-  it("itsbat: cerai gugat -> 1c [01aa] IN + CG - F (sudah ada); cerai talak -> 1e [01aa] Putusan CT Kumulasi Itsbat Nikah - F", () => {
+  it("itsbat: blangko BARU pengganti 1c [01aa] IN + CG (menu 903) - CG dan CT masing-masing; blangko lama tidak dirujuk lagi", () => {
     const g = pilih("Cerai Gugat", "Dikabulkan (verstek)", false, KUM(["itsbat-nikah"]));
-    expect(g!.baris.berkas).toBe("[01aa] [Kabul Verstek] IN + CG - F");
+    expect(g!.baris.berkas).toBe("[01aa] [Kabul Verstek] Putusan CG Kumulasi Itsbat Nikah - Format Lengkap");
     expect(g!.baris.blangko).toBe("Putusan Cerai Kumulasi Itsbat Nikah");
     const t = pilih("Cerai Talak", "Dikabulkan", true, ["itsbat-nikah"]);
-    expect(t!.baris.berkas).toBe("[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - F");
-    expect(t!.baris.blangko).toBe("Putusan Cerai Talak Kumulasi Itsbat Nikah");
+    expect(t!.baris.berkas).toBe("[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - Format Lengkap");
+    expect(t!.baris.blangko).toBe("Putusan Cerai Kumulasi Itsbat Nikah");
     // dua kumulasi tanpa blangko gabungan: itsbat didahulukan (urutan ALAT_URUT_KUMULASI)
-    expect(pilih("Cerai Gugat", "Dikabulkan", true, KUM(["hak-asuh-anak"], ["itsbat-nikah"]))!.baris.berkas).toBe("[01aa] [Kabul Verstek] IN + CG - F");
+    expect(pilih("Cerai Gugat", "Dikabulkan", true, KUM(["hak-asuh-anak"], ["itsbat-nikah"]))!.baris.berkas).toContain("Putusan CG Kumulasi Itsbat Nikah");
+    const berkas = Object.values(jalan("ALAT_PETA_BAWAAN") as Record<string, Baris>).map((b) => b.berkas);
+    expect(berkas.filter((b) => b.includes("IN + CG"))).toEqual([]);
   });
 
   it("status/keadaan tanpa blangko kumulasi tetap ke baris status cerai biasa; tanpa kumulasi = perilaku P 12 Okt", () => {
@@ -164,7 +166,6 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
   it.skipIf(!folderAda)("D. tiap berkas kumulasi (dan variannya) ada di folder derry_briantono laptop (paket terpasang)", () => {
     const folder: Record<string, string> = {
       "Putusan Cerai Kumulasi Itsbat Nikah": "1c Perceraian Kumulasi Itsbat Nikah",
-      "Putusan Cerai Talak Kumulasi Itsbat Nikah": "1e Putusan Cerai Talak Kumulasi Itsbat Nikah",
       "Putusan Cerai Gugat Kumulasi Hak Asuh Anak": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
     };
     const peta = jalan("ALAT_PETA_BAWAAN") as Record<string, Baris>;
@@ -176,6 +177,10 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
       for (const varian of (b.catatan || "").startsWith("varian: ") ? b.catatan!.slice(8).split("; ") : []) {
         expect(existsSync(path.join(ABT_DERRY, d, `${varian}.rtf`)), `${kunci} varian: ${varian}`).toBe(true);
       }
+    }
+    // blangko lama 1c [01aa] IN + CG (salah sebutan istri/suami pada cerai talak, dll.) disingkirkan paket - tidak ada lagi di menu 903
+    for (const lama of ["[01aa] [Kabul Verstek] IN + CG - F.rtf", "[01aa] [Kabul Verstek] IN + CG - B & F.rtf"]) {
+      expect(existsSync(path.join(ABT_DERRY, "1c Perceraian Kumulasi Itsbat Nikah", lama)), lama).toBe(false);
     }
     for (const a of ALUR_BAS_KUMULASI) {
       for (const l of a.langkah) expect(existsSync(path.join(path.dirname(ABT_DERRY), a.folder, l.berkas)), `${a.id} ${l.berkas}`).toBe(true);
@@ -201,9 +206,10 @@ describe("B. alur BAS kumulasi", () => {
     const n = tentukanAlurBasKumulasi({ ...dasar, kumulasi: KUM(["hak-asuh-anak", "petitum"], ["nafkah-anak", "petitum"]) });
     expect(n.langkah!.kode).toBe("2b");
     expect(n.sebab).toContain("lengkapi data kumulasi di SIPP");
-    // alur 03 (sidang ke-3, agenda saksi) dan 06 (T pernah hadir) juga
+    // alur 03 (sidang ke-3, agenda saksi) juga; alur 06 (T pernah hadir = putusan kontradiktoir) TIDAK ke BAS verstek
     expect(tentukanAlurBasKumulasi({ ...dasar, urutanSidang: 3, agenda: "Pembuktian saksi", kumulasi: ["hak-asuh-anak"] }).alur!.id).toBe("alur-k1");
-    expect(tentukanAlurBasKumulasi({ ...dasar, urutanSidang: 3, tergugatPernahHadir: true, kumulasi: ["hak-asuh-anak"] }).alur!.id).toBe("alur-k1");
+    const a06 = { ...dasar, urutanSidang: 3, tergugatPernahHadir: true };
+    expect(tentukanAlurBasKumulasi({ ...a06, kumulasi: ["hak-asuh-anak"] })).toEqual(tentukanAlurBas(a06));
   });
 
   it("langkah selain putus verstek, cerai talak, dan tanpa kumulasi tidak berubah", () => {
