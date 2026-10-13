@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import vm from "node:vm";
@@ -185,6 +185,25 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
     for (const a of ALUR_BAS_KUMULASI) {
       for (const l of a.langkah) expect(existsSync(path.join(path.dirname(ABT_DERRY), a.folder, l.berkas)), `${a.id} ${l.berkas}`).toBe(true);
     }
+  });
+
+  it.skipIf(!folderAda)("D. beban pembuktian: tidak ada lagi 'Pasal 1685 KUHPerdata' (pasal hibah) di Blangko Derry - Pasal 1865 (paket tambal)", () => {
+    const salah: string[] = [];
+    let benar = 0;
+    const jelajah = (d: string) => {
+      for (const e of readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) jelajah(p);
+        else if (/\.rtf$/i.test(e.name)) {
+          const isi = readFileSync(p, "latin1");
+          if (isi.includes("1685 KUHPerdata")) salah.push(path.relative(ABT_DERRY, p));
+          if (isi.includes("1865 KUHPerdata")) benar += 1;
+        }
+      }
+    };
+    jelajah(ABT_DERRY);
+    expect(salah).toEqual([]);
+    expect(benar).toBeGreaterThanOrEqual(30); // 28 blangko lama ditambal + A1/A2 paket ini
   });
 });
 
