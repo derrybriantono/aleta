@@ -8,13 +8,13 @@ import { resolveActorUserId } from "@/server/shared/auth";
 import { getSearchParam } from "@/server/shared/request";
 import { ok } from "@/server/shared/http";
 import {
-  SET_BLANGKO,
   jenjangkan,
-  setPutusanUntukPerkara,
+  setBlangkoGabung,
   usulanPutusanDariJenjang,
   type BlangkoItem,
   type SetBlangko,
 } from "@/lib/pohon-blangko";
+import { petaStatusDariBerkas, tugasBlangko, type BarisStatusOtomatis } from "@/lib/tugas-blangko";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,17 +39,42 @@ export const dynamic = "force-dynamic";
  * hanya bawaan, dan tiap perkara di daftar massal masih memilih blangkonya
  * sendiri. Folder yang tidak terbaca di peladen dilaporkan apa adanya pada
  * setnya, bukan ditelan menjadi set kosong.
+ *
+ * 13 Okt 2026 (butir 7, peta per tugas): set putusan = SET_BLANGKO + folder grup
+ * Derry yang DITEMUKAN di server dan bertugas hakim menurut lib/tugas-blangko.ts
+ * (folder "<nomor><huruf> <Jenis>"), dan tiap set membawa `petaStatus` - satu
+ * berkas per status SIPP (+verstek) dari tanda "[Kabul]", "[Cabut]" ... di nama
+ * berkasnya. Ekstensi memakainya HANYA untuk baris status yang belum ada.
  */
 type SetTerisi = {
   id: string;
   nama: string;
   folder: string;
   untuk: string[];
+  tugas: string;
   ada: boolean;
   sebab: string;
   jenjang: Array<{ kunci: string; label: string; blangko: BlangkoItem[] }>;
   usulan: { berkas: string; kategori: string; kunciJenjang: string } | null;
+  petaStatus: BarisStatusOtomatis[];
 };
+
+const AKAR_DERRY = "derry_briantono";
+
+/** Subfolder grup Derry di server (nama saja); kosong bila bot tidak menjawab - set tertulis tetap dipakai. */
+async function folderDitemukan(): Promise<string[]> {
+  const k = await callAletaBotSippBridge("blangko.katalog", { folder: AKAR_DERRY });
+  const data = k.ok ? (k.data as { set?: Array<{ nama?: string }> }) : null;
+  return Array.isArray(data?.set) ? data!.set!.map((s) => String(s?.nama ?? "")).filter(Boolean) : [];
+}
+
+/** Set putusan yang cocok dengan jenis perkara; set KUMULASI di belakang (cermin alatSetCocokJenis ekstensi). */
+function setPutusanCocok(daftar: SetBlangko[], jenis: string): SetBlangko[] {
+  const j = jenis.toLowerCase();
+  const cocok = daftar.filter((s) => s.jenis === "putusan" && (!j || s.untuk.some((kata) => j.includes(kata))));
+  const kumulasi = (s: SetBlangko) => /kumulasi/i.test(`${s.nama} ${s.folder}`);
+  return [...cocok.filter((s) => !kumulasi(s)), ...cocok.filter(kumulasi)];
+}
 
 async function isiSet(set: SetBlangko): Promise<SetTerisi> {
   const katalog = await callAletaBotSippBridge("blangko.katalog", { folder: set.folder });
@@ -61,10 +86,12 @@ async function isiSet(set: SetBlangko): Promise<SetTerisi> {
     nama: set.nama,
     folder: set.folder,
     untuk: set.untuk,
+    tugas: tugasBlangko(set.folder),
     ada: Boolean(data?.ada) && blangko.length > 0,
     sebab: katalog.ok ? String(data?.sebab ?? "") : String(katalog.error ?? "Katalog blangko tidak terbaca."),
     jenjang: jenjangPenuh.map((j) => ({ kunci: j.kunci, label: j.label, blangko: j.blangko })),
     usulan: usulanPutusanDariJenjang(jenjangPenuh),
+    petaStatus: petaStatusDariBerkas(blangko.map((b) => String(b.berkas ?? ""))),
   };
 }
 
@@ -77,7 +104,8 @@ export async function GET(request: NextRequest) {
     await pastikanKapabilitas(db, actorUserId, "panel");
 
     const jenis = String(getSearchParam(request, "jenis") ?? "").trim();
-    const daftarSet = jenis ? setPutusanUntukPerkara(jenis) : SET_BLANGKO.filter((set) => set.jenis === "putusan");
+    const semua = setBlangkoGabung(await folderDitemukan(), AKAR_DERRY);
+    const daftarSet = jenis ? setPutusanCocok(semua, jenis) : semua.filter((set) => set.jenis === "putusan");
 
     // Berurutan, bukan serentak: tiap set adalah satu pembacaan folder di
     // peladen lewat jembatan bot, dan tujuh pembacaan sekaligus tidak lebih

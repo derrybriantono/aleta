@@ -8134,7 +8134,8 @@ function alatPetaStatusCerai(jenis, kodeJenis) {
   const B = ALAT_BERKAS_STATUS_CERAI;
   const kabul = [
     `[02] [Kabul] ${kodeJenis} - F`,
-    `varian: [02a] [Kabul] ${kodeJenis} - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] ${kodeJenis} - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar)` +
+    // S 13 Okt: [01c] = format lengkap alur 06 (T hadir mediasi lalu tidak hadir; kontradiktoir) - paket ABT abt-blangko-derry-rapi.
+    `varian: [01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi; [02a] [Kabul] ${kodeJenis} - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] ${kodeJenis} - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar)` +
       (kodeJenis === "CT" ? "; [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak)" : ""),
   ];
   const baris = {
@@ -8555,12 +8556,58 @@ async function alatAmbilPohonBlangko(asal) {
   return set;
 }
 
-/** Set yang cocok untuk satu jenis - aturan yang sama dengan setUntukPerkara di portal. */
+/**
+ * Set yang cocok untuk satu jenis - aturan yang sama dengan setUntukPerkara di portal.
+ * S 13 Okt: set KUMULASI ("1c Perceraian Kumulasi Itsbat Nikah", "1e ... Kumulasi ...") turun ke belakang - ia cocok
+ * dengan dua jenis sekaligus, dan perkara itsbat/cerai biasa tidak boleh mendapat blangko kumulasi sebagai bawaan.
+ */
 function alatSetCocokJenis(set, jenis) {
   const j = alatKunciJenis(jenis);
   if (!j) return [];
-  return (set || []).filter((s) => Array.isArray(s.untuk) && s.untuk.some((kata) => j.includes(String(kata).toLowerCase())));
+  const cocok = (set || []).filter((s) => Array.isArray(s.untuk) && s.untuk.some((kata) => j.includes(String(kata).toLowerCase())));
+  const kumulasi = (s) => /kumulasi/i.test(`${s.nama || ""} ${s.folder || ""}`);
+  return cocok.filter((s) => !kumulasi(s)).concat(cocok.filter(kumulasi));
 }
+
+/* === S 13 Okt === */
+/**
+ * BARIS STATUS DARI POHON (butir 7, peta blangko per tugas). Rute pohon membawa `petaStatus` per set putusan: satu
+ * berkas per status SIPP (+verstek), dibaca dari tanda "[Kabul]", "[Kabul Verstek]", "[Cabut]", "[NO]" ... di nama
+ * berkas (lib/tugas-blangko.ts petaStatusDariBerkas). Diisi HANYA untuk kunci "<jenis>|<status>[|verstek]" yang
+ * belum punya baris sama sekali - bawaan ekstensi (pilihan terukur agen P) dan pemetaan admin tidak pernah ditimpa,
+ * dan baris bersumber pohon boleh diperbarui. Blangko putusan baru per jenis x status ikut terpetakan tanpa kode baru.
+ */
+function alatIsiStatusDariPohon(peta, set, label, terisi) {
+  const j = alatKunciJenis(label);
+  if (!j) return;
+  for (const s of alatSetCocokJenis(set, label)) {
+    // Set kumulasi tidak memberi baris status: kunci status berjenis tunggal ("itsbat nikah|dikabulkan|verstek") dipakai
+    // juga oleh perkara itsbat biasa, dan blangko kumulasi untuk perkara biasa adalah blangko yang keliru.
+    if (/kumulasi/i.test(`${(s && s.nama) || ""} ${(s && s.folder) || ""}`)) continue;
+    for (const b of Array.isArray(s && s.petaStatus) ? s.petaStatus : []) {
+      const st = alatKunciStatusPutusan(b && b.status);
+      if (!st || !b.berkas) continue;
+      const kunci = b.verstek ? `${j}|${st}|verstek` : `${j}|${st}`;
+      const ada = peta[kunci];
+      if (ada && ada.sumber !== "pohon") continue;
+      const berkas = alatNamaBerkasTampil(b.berkas);
+      if (ada && alatKunciBerkas(ada.berkas) === alatKunciBerkas(berkas)) continue;
+      if (terisi.some((x) => x.kunci === kunci)) continue;
+      peta[kunci] = {
+        jenisAsli: label,
+        statusAsli: String(b.status),
+        berkas,
+        blangko: String(s.nama || ""),
+        bawaan: false,
+        sumber: "pohon",
+        catatan: `dari pohon blangko (status dari nama berkas "[${String(b.tanda || "")}]"): ${String(s.nama || "")}`,
+        disimpanPada: new Date().toISOString(),
+      };
+      terisi.push({ kunci, jenis: `${label} · ${b.status}${b.verstek ? " (verstek)" : ""}`, berkas, blangko: String(s.nama || "") });
+    }
+  }
+}
+/* === AKHIR S === */
 
 /**
  * Usulan untuk satu jenis: dari set cocok PERTAMA yang punya usulan.
@@ -8603,11 +8650,13 @@ function alatIsiPetaDariPohon(peta, set, pilihan) {
   for (const k of Object.keys(peta || {})) jenisSemua.add(k);
   const terisi = [];
   for (const kunci of jenisSemua) {
+    if (kunci.includes("|")) continue; // baris status: diisi alatIsiStatusDariPohon di bawah
     const ada = peta[kunci];
+    const label = (ada && ada.jenisAsli) || ALAT_JENIS_LAZIM.find((x) => alatKunciJenis(x) === kunci) || kunci;
+    alatIsiStatusDariPohon(peta, set, label, terisi);
     const bolehDiisi =
       !ada || !alatBlangkoTerpetakan(ada) || ada.bawaan === true || ada.sumber === "pohon" || opsi.timpa === true;
     if (!bolehDiisi) continue;
-    const label = (ada && ada.jenisAsli) || ALAT_JENIS_LAZIM.find((x) => alatKunciJenis(x) === kunci) || kunci;
     const usulan = alatUsulanDariPohon(set, label);
     if (!usulan) continue;
     // Nama yang sama tidak ditulis ulang - tokennya yang sudah terisi tetap.

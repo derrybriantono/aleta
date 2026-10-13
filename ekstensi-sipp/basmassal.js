@@ -987,7 +987,7 @@ async function basmassalPanenTokenAbt() {
  * sama di dua kelompok tidak ditebak). Kelompok saja bila berkasnya belum
  * pernah terbaca.
  */
-function basmassalTokenUntuk(peta, folder, namaBerkas) {
+function basmassalTokenUntuk(peta, folder, namaBerkas, padanan) {
   const kunciKel = basmassalKunciFolder(folder);
   const kunciBerkas = basmassalKunciNama(namaBerkas);
   let berkas = peta.berkas[`${kunciKel}|${kunciBerkas}`] || null;
@@ -995,7 +995,35 @@ function basmassalTokenUntuk(peta, folder, namaBerkas) {
     const sama = Object.entries(peta.berkas).filter(([k]) => k.split("|")[1] === kunciBerkas);
     if (sama.length === 1) berkas = sama[0][1];
   }
-  const kelompok = peta.kelompok[kunciKel] || null;
+  let kelompok = peta.kelompok[kunciKel] || null;
+  /* === S 13 Okt === */
+  // Menu BAS lama Derry disembunyikan paket ABT abt-blangko-derry-rapi: tokennya tidak lagi terpanen. Server mengirim
+  // berkas yang SAMA di folder ALUR (pilihan.padanan) - kelompok ALUR di ABT bernama "BAS Alur NN ..." (h3 = nama menu),
+  // jadi kunci kelompok dicocokkan juga dengan awalan "bas ".
+  for (const p of Array.isArray(padanan) ? padanan : []) {
+    if (berkas && kelompok) break;
+    if (!p || !p.folder || !p.berkas) continue;
+    const kKel = basmassalKunciFolder(p.folder);
+    const kBer = basmassalKunciNama(p.berkas);
+    const cari = (kel) => peta.berkas[`${kel}|${kBer}`] || null;
+    // Nama menu ALUR tidak selalu sama dengan foldernya ("BAS Alur 04 - Cerai Kontradiktoir Tertulis" untuk folder
+    // "ALUR 04 Cerai Kontra Tertulis ..."): yang pasti sama hanya "alur NN" - dipakai bila nama lengkapnya tidak cocok.
+    const nomorAlur = (kKel.match(/^alur \d+/) || [""])[0];
+    const diAlur = (k) => Boolean(nomorAlur) && k.split("|")[0].includes(nomorAlur);
+    if (!berkas) {
+      const sama = Object.entries(peta.berkas).filter(([k]) => k.split("|")[1] === kBer);
+      const tepat = sama.filter(([k]) => diAlur(k));
+      berkas = cari(kKel) || cari(`bas ${kKel}`) || (tepat.length === 1 ? tepat[0][1] : null) || (sama.length === 1 ? sama[0][1] : null);
+    }
+    if (!kelompok) {
+      kelompok =
+        peta.kelompok[kKel] ||
+        peta.kelompok[`bas ${kKel}`] ||
+        (Object.entries(peta.kelompok).find(([k]) => diAlur(k)) || [null, null])[1] ||
+        null;
+    }
+  }
+  /* === AKHIR S === */
   return { berkas, kelompok };
 }
 
@@ -1359,7 +1387,7 @@ function basmassalGambarBaris(daftar, baris, konteks) {
     if (!bisa) centang.checked = false;
     tPratinjau.disabled = !bisa;
     tUnduh.disabled = !bisa;
-    const token = p ? basmassalTokenUntuk(konteks.token, p.folder, p.berkas) : { berkas: null, kelompok: null };
+    const token = p ? basmassalTokenUntuk(konteks.token, p.folder, p.berkas, p.padanan) : { berkas: null, kelompok: null };
     tokenBerkas = bisa ? token.berkas : null;
     tAbt.hidden = !tokenBerkas;
     if (tokenBerkas) {

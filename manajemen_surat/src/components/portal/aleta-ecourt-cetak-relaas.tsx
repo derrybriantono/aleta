@@ -371,7 +371,7 @@ export const KALIMAT_ATUR_AKSES_ABT =
   "grup 1 (Super Administrator), 10 (Ketua/Wakil Ketua), dan 20 (Hakim), dan ABT membaca baris itu lebih " +
   'dahulu daripada "Relaas dan PBT" (abt_menu 981). ' +
   "Tambahkan grup Juru Sita (600) dan Koordinator Delegasi (650) ke baris 900 - seperti baris 981 - lalu " +
-  "tekan Lanjutkan. ALETA tidak mengubah pengaturan ABT.";
+  "tekan Lanjutkan (paket ABT abt-blangko-derry-rapi sudah memuat pengaturan ini). ALETA tidak mengubah pengaturan ABT.";
 
 /** Lama waktu yang terbaca orang - menit bulat, bukan milidetik. */
 export function lamaWaktu(ms: number) {
