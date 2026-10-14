@@ -18,6 +18,7 @@ import {
   type PenggunaSippDaftar,
 } from "@/lib/tautan-akun-sipp";
 import { akunPastiUntukNama, cocokkanTtdKeAkun, type AkunTtd } from "@/lib/tautan-ttd-akun";
+import { AKSI, bolehAksi, golonganMenuEkstensi, golonganPengguna, golonganUtama, type KunciAksi } from "@/lib/matriks-peran";
 import { type AletaDatabase, createAletaDatabase } from "@/server/db/client";
 import { bacaKredensialSipp } from "@/server/modules/aleta-ecourt/checklist-milestone";
 import { akunSippMilik } from "@/server/modules/aleta-ecourt/court-calendar-akun";
@@ -652,6 +653,44 @@ describe("D. tanda tangan bernama -> akun", () => {
       delete cache[jalurLayanan];
       if (lama) cache[jalurDb] = lama;
       else delete cache[jalurDb];
+    }
+  });
+});
+
+// ============================================================================
+// E. MENU PETUGAS MEJA (sub-peran dari SIPP -> golongan yang ada)
+// ============================================================================
+
+describe("E. sub-peran petugas meja menambah golongan menu, tidak lebih", () => {
+  const dasar = { id: "u", roleId: "pelaksana", positionId: "pos-pengadministrasi-umum" };
+  const dengan = (sub: string[]) => ({ ...dasar, additionalRoleIds: sub });
+  const ptspAcuan = dengan(["petugas_ptsp"]);
+  const analisAcuan = { id: "a", roleId: "analis-perkara", positionId: "pos-analis-perkara" };
+
+  it("Meja 1 -> PTSP; Meja 2/3 -> staf kepaniteraan (analis-perkara); peran utama tetap", () => {
+    expect(golonganPengguna(dengan(["petugas_meja_1_gugatan"]))).toEqual([...golonganPengguna(dasar), "ptsp"]);
+    expect(golonganPengguna(dengan(["petugas_meja_1_permohonan"]))).toContain("ptsp");
+    expect(golonganPengguna(dengan(["petugas_meja_2_gugatan"]))).toEqual([...golonganPengguna(dasar), "analis-perkara"]);
+    expect(golonganPengguna(dengan(["petugas_meja_3_permohonan"]))).toContain("analis-perkara");
+    for (const s of ["petugas_meja_1_gugatan", "petugas_meja_2_gugatan", "petugas_meja_3_permohonan"]) {
+      expect(golonganUtama(dengan([s]))).toBe(golonganUtama(dasar));
+      expect(golonganPengguna(dengan([s]))).not.toContain("panitera");
+      expect(golonganPengguna(dengan([s]))).not.toContain("pp");
+    }
+    expect(golonganMenuEkstensi(dengan(["petugas_meja_1_gugatan"]))).toContain("ptsp");
+    expect(golonganMenuEkstensi(dengan(["petugas_meja_2_permohonan"]))).toContain("analis");
+    // Pejabat yang juga petugas meja tetap pejabatnya (menu hanya bertambah).
+    expect(
+      golonganUtama({ id: "h", roleId: "panitera-pengganti", positionId: "pos-panitera-pengganti", additionalRoleIds: ["petugas_meja_3_gugatan"] })
+    ).toBe("pp");
+  });
+
+  it("tidak ada aksi yang terbuka melebihi golongan dasar + golongan tujuan", () => {
+    for (const aksi of Object.keys(AKSI) as KunciAksi[]) {
+      const m1 = bolehAksi(dengan(["petugas_meja_1_gugatan"]), aksi);
+      expect(m1, `meja1 ${aksi}`).toBe(bolehAksi(dasar, aksi) || bolehAksi(ptspAcuan, aksi));
+      const m2 = bolehAksi(dengan(["petugas_meja_2_gugatan"]), aksi);
+      expect(m2 && !(bolehAksi(dasar, aksi) || bolehAksi(analisAcuan, aksi)), `meja2 ${aksi}`).toBe(false);
     }
   });
 });

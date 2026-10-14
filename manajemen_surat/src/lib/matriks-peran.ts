@@ -102,6 +102,22 @@ export const PERAN_TAMBAHAN_PTSP_HAK: readonly string[] = [
 
 export const PERAN_TAMBAHAN_MEDIATOR_HAK: readonly string[] = ["mediator", "mediator_non_hakim"];
 
+/* === MEJA-SIPP 14 Okt === */
+/**
+ * Sub-peran petugas meja dari akun SIPP (lib/tautan-akun-sipp.ts
+ * subPeranDariSipp: petugas_meja_<1-3>_<gugatan|permohonan|jinayat|...>).
+ * Keputusan pengguna 14 Okt 2026:
+ *   - Meja 1 (penerimaan perkara/pendaftaran)          -> golongan PTSP;
+ *   - Meja 2 (registrasi) & Meja 3 (penyerahan produk/arsip) -> golongan
+ *     kepaniteraan, yaitu golongan STAF kepaniteraan "analis-perkara" -
+ *     bukan panitera/panmud/pp/jurusita yang memegang kewenangan pejabat.
+ * Seperti peran tambahan lain: hanya MENAMBAH golongan (menu), tidak pernah
+ * mengganti golongan utama dan tidak memberi hak di atas golongan itu.
+ */
+export const POLA_SUB_PERAN_MEJA_PTSP = /^petugas_meja_1_[a-z]+$/;
+export const POLA_SUB_PERAN_MEJA_KEPANITERAAN = /^petugas_meja_[23]_[a-z]+$/;
+/* === AKHIR MEJA-SIPP === */
+
 export const PERAN_TAMBAHAN_PETUGAS_SIDANG_HAK: readonly string[] = [
   "penjaga_sidang",
   "operator_antrian_sidang",
@@ -176,6 +192,9 @@ export function golonganPengguna(pengguna: PenggunaGolongan | null | undefined):
   // Peran tambahan (hanya menambah)
   if (PERAN_TAMBAHAN_KASIR_HAK.some((x) => tambahan.has(x))) tambah("kasir");
   if (PERAN_TAMBAHAN_PTSP_HAK.some((x) => tambahan.has(x)) || tambahan.has("operator")) tambah("ptsp");
+  // MEJA-SIPP 14 Okt: Meja 1 -> PTSP; Meja 2/3 -> staf kepaniteraan (analis-perkara).
+  if ([...tambahan].some((x) => POLA_SUB_PERAN_MEJA_PTSP.test(x))) tambah("ptsp");
+  if ([...tambahan].some((x) => POLA_SUB_PERAN_MEJA_KEPANITERAAN.test(x))) tambah("analis-perkara");
   if (PERAN_TAMBAHAN_MEDIATOR_HAK.some((x) => tambahan.has(x))) tambah("mediator");
   // Operator = penjaga sidang yang mengoperasikan SIPP dari ruang sidang (mock-data roles).
   if (PERAN_TAMBAHAN_PETUGAS_SIDANG_HAK.some((x) => tambahan.has(x)) || peran === "operator" || tambahan.has("operator"))
