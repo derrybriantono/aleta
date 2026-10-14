@@ -483,8 +483,8 @@ describe("kalender perkara digambar", () => {
     expect(screen.getByText("1 terlaksana")).toBeTruthy();
     expect(screen.getByText("1 menunggu")).toBeTruthy();
     // Ketiga rencana disebut, masing-masing dengan bunyi keadaannya.
-    expect(screen.getByText("lewat tanpa sidang")).toBeTruthy();
-    expect(screen.getByText("menunggu dijadwalkan")).toBeTruthy();
+    expect(screen.getByText("Lewat tanpa sidang")).toBeTruthy();
+    expect(screen.getByText("Menunggu dijadwalkan")).toBeTruthy();
     expect(screen.getByText("Pembuktian")).toBeTruthy();
   });
 
@@ -579,9 +579,9 @@ describe("relaas panggilan digambar runut per sidang", () => {
   it("jejak pos, retur, dan hasil relaas ikut tergambar", () => {
     render(<RelaasPanggilan status={status()} />);
     expect(screen.getByText(/dikirim pos Sab, 25-07-2026 · resi RESI-77/)).toBeTruthy();
-    expect(screen.getByText("surat RETUR")).toBeTruthy();
+    expect(screen.getByText("Surat RETUR")).toBeTruthy();
     expect(screen.getByText("Disampaikan lewat Kepala Desa")).toBeTruthy();
-    expect(screen.getByText("bertemu orangnya")).toBeTruthy();
+    expect(screen.getByText("Bertemu orangnya")).toBeTruthy();
     // Dua relaas dilaksanakan jurusita yang sama - keduanya harus menyebutnya.
     expect(screen.getAllByText(/oleh Munir, S.H./)).toHaveLength(2);
   });
@@ -602,7 +602,7 @@ describe("relaas panggilan digambar runut per sidang", () => {
 
   it("alasan kepatutan berbunyi kalimat, bukan kode", () => {
     render(<RelaasPanggilan status={status()} />);
-    expect(screen.getByText(/dikirim setelah hari sidang/)).toBeTruthy();
+    expect(screen.getByText(/dikirim setelah hari sidang/i)).toBeTruthy();
     expect(screen.queryByText(/dikirim_setelah_hari_sidang/)).toBeNull();
   });
 
@@ -771,7 +771,7 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
     ) as HTMLElement;
     expect(baris).toBeTruthy();
     // Bersidang, tetapi harinya memuat dua sidang - nomor mana pun tebakan.
-    expect(within(baris).getByText("terlaksana")).toBeTruthy();
+    expect(within(baris).getByText("Terlaksana")).toBeTruthy();
     expect(within(baris).queryByText(/^sidang ke-/)).toBeNull();
     // Pembanding: dengan satu sidang pada hari itu keterangannya ADA.
     cleanup();

@@ -220,7 +220,7 @@ describe("portal: keterangan lencana menyebut jenis dokumen yang dituntut", () =
       data,
       "2026-10-12"
     );
-    expect(p?.label).toBe("belum upload");
+    expect(p?.label).toBe("Belum upload");
     expect(p?.keterangan).toContain("dokumen Jawaban di e-Court sejak sidang 2026-10-05");
   });
 });

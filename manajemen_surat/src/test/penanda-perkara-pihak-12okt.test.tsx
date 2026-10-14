@@ -177,7 +177,7 @@ describe("bot: bahan penanda dari SIPP (hanya SELECT, gagal sendiri-sendiri)", (
       },
       tahapan: () => ({ penandaGhaibBanyakPerkara: async () => ({ "6": { ghaib: true, sumber: ["jarak PHS ke sidang pertama 130 hari"], jarakPhsHari: 130 } }) }),
     });
-    expect(bahan.terbaca).toEqual({ prodeo: false, pekerjaan: true });
+    expect(bahan.terbaca).toEqual({ prodeo: false, pekerjaan: true, izinCerai: true });
     const lima = svc.ruasBaris(bahan, 5);
     const enam = svc.ruasBaris(bahan, 6);
     expect(lima.penandaPerkara).toEqual({ ghaib: false, ghaibSumber: [], prodeo: false });

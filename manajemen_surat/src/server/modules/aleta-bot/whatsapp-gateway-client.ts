@@ -1703,6 +1703,13 @@ export type SidangBaris = {
   penandaPihak?: Array<{ sisi: number; nama: string; kunci: string; label: string; ragu?: boolean; kalimat?: string }> | null;
   penandaProdeoTerbaca?: boolean;
   penandaPekerjaanTerbaca?: boolean;
+  /** 14 Okt 2026: izin cerai PNS/ASN (PPPK)/TNI/POLRI - aleta_bot/services/izinCeraiService.js; "ada" tanpa lencana. */
+  izinCerai?: {
+    keadaan: "ada" | "belum-dicatat" | "belum-ada" | "belum-terbaca";
+    label?: string;
+    judul?: string;
+    sumber?: string;
+  } | null;
   /* === AKHIR 12OKT-B === */
 };
 

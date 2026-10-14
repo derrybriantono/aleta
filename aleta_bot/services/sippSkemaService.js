@@ -74,6 +74,8 @@ const TABEL = [
   // Verzet - perlawanan terhadap putusan verstek. Tingkat pertama upaya
   // hukum, dan selama ini tidak dibaca sama sekali.
   "perkara_verzet",
+  // Izin cerai PNS/ASN/TNI/POLRI (14 Okt 2026) - penanda "Izin cerai belum ada".
+  "perkara_izin_cerai",
   "perkara_pemberitahuan",
   "perkara_mediasi",
   "perkara_data_dukung_mediasi",

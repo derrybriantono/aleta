@@ -249,6 +249,6 @@ describe("penandanya sungguh terpasang di layar", () => {
     // Bukan kerapian bahasa. Nama di Donggala berulang, dan penanda yang
     // pernah salah menuduh adalah penanda yang dipelajari orang untuk
     // dilewati.
-    expect(berkas).toContain("diterima pihak lawan?");
+    expect(berkas).toContain("Diterima pihak lawan?");
   });
 });

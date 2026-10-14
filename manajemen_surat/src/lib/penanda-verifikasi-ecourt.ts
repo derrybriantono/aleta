@@ -12,6 +12,10 @@
  *                       dokumen persidangan yang diunggah (6 Okt 2026)
  *   tidak-konek  abu    data e-Court tidak terbaca / bot tidak tersambung /
  *                       sesi e-Court habis
+ *   sudah-upload hijau  (14 Okt 2026) agenda KESIMPULAN: kesimpulan tidak
+ *                       melewati verifikasi majelis, jadi yang dinilai hanya
+ *                       sudah/belum diunggah - "sudah diupload" atau
+ *                       "belum upload", tidak pernah "belum diverifikasi".
  *
  * Hanya baris yang SIDANGNYA e-Litigasi - aturan yang sama dengan penanda
  * e-Litigasi Jadwal Sidang (sidangElitigasi: terdaftar e-Court, bukan sidang
@@ -23,9 +27,10 @@
  * tarikan e-Court saat halaman dimuat.
  */
 
+import { formatLencana } from "@/lib/format-lencana";
 import { sidangElitigasi } from "@/lib/keadaan-sidang";
 
-export type KeadaanVerifikasi = "sudah" | "belum" | "belum-upload" | "tidak-konek";
+export type KeadaanVerifikasi = "sudah" | "belum" | "belum-upload" | "sudah-upload" | "tidak-konek";
 
 export type VerifikasiPerkara = {
   perkaraId?: string;
@@ -79,18 +84,41 @@ export type Penanda = {
 };
 
 const LABEL: Record<KeadaanVerifikasi, string> = {
-  sudah: "sudah diverifikasi",
-  belum: "belum diverifikasi",
-  "belum-upload": "belum upload",
-  "tidak-konek": "tidak konek",
+  sudah: formatLencana("sudah diverifikasi"),
+  belum: formatLencana("belum diverifikasi"),
+  "belum-upload": formatLencana("belum upload"),
+  "sudah-upload": formatLencana("sudah diupload"),
+  "tidak-konek": formatLencana("tidak konek"),
 };
 
 const KELAS: Record<KeadaanVerifikasi, string> = {
   sudah: "bg-emerald-600 text-white",
   belum: "bg-amber-400 text-amber-950",
   "belum-upload": "bg-orange-600 text-white",
+  "sudah-upload": "bg-emerald-600 text-white",
   "tidak-konek": "bg-slate-300 text-slate-800 dark:bg-slate-600 dark:text-slate-100",
 };
+
+/**
+ * Agenda yang HANYA babak kesimpulan (14 Okt 2026) - sama dengan
+ * agendaHanyaKesimpulan di aleta_bot/services/ecourtVerifikasiHarianService.js:
+ * menyebut kesimpulan dan tidak menyebut babak jawab-menjawab lain.
+ */
+export function agendaHanyaKesimpulan(agenda: string | undefined | null): boolean {
+  const t = String(agenda ?? "");
+  return /kesimpulan/i.test(t) && !/jawab|replik|duplik/i.test(t);
+}
+
+/**
+ * Bot yang belum diperbarui masih mengirim "belum"/"sudah" untuk agenda
+ * kesimpulan. Jumlah unggahan untuk agenda itu (unggahSejakSidangLalu) sudah
+ * dihitung bot menurut jenis Kesimpulan, jadi keadaannya dapat diturunkan di
+ * sini tanpa menunggu bot dibangun ulang.
+ */
+function keadaanKesimpulan(item: VerifikasiPerkara): KeadaanVerifikasi {
+  if (item.keadaan === "tidak-konek" || item.keadaan === "sudah-upload" || item.keadaan === "belum-upload") return item.keadaan;
+  return (item.unggahSejakSidangLalu ?? 0) > 0 ? "sudah-upload" : "belum-upload";
+}
 
 function jamMenit(waktu: string): string {
   const c = /(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})/.exec(String(waktu || ""));
@@ -117,13 +145,24 @@ export function penandaVerifikasi(
     const k = kunciNomor(baris.nomorPerkara);
     item = Object.values(data.perkara).find((p) => kunciNomor(p.nomorPerkara) === k);
   }
-  const keadaan: KeadaanVerifikasi = item ? item.keadaan : "tidak-konek";
+  const kesimpulan = agendaHanyaKesimpulan(baris.agenda);
+  const keadaan: KeadaanVerifikasi = item ? (kesimpulan ? keadaanKesimpulan(item) : item.keadaan) : "tidak-konek";
 
   const bagian: string[] = [];
   if (!data.terbaca) {
     bagian.push(`Data verifikasi e-Court tidak terbaca${data.alasan ? ` (${data.alasan})` : ""}.`);
   } else if (!item) {
     bagian.push("Perkara ini belum terbaca sebagai e-Litigasi di data e-Court ALETA.");
+  } else if (kesimpulan && keadaan === "sudah-upload") {
+    const n = item.unggahSejakSidangLalu ?? 0;
+    bagian.push(
+      `Kesimpulan sudah diunggah di e-Court${n > 0 ? ` (${n} dokumen)` : ""}. Agenda kesimpulan tidak melewati verifikasi majelis.`
+    );
+  } else if (kesimpulan && keadaan === "belum-upload") {
+    const sejak = item.awalBabak || item.sidangLalu;
+    bagian.push(
+      `Pihak belum mengunggah Kesimpulan di e-Court${sejak ? ` sejak sidang ${sejak}` : ""}. Agenda kesimpulan tidak melewati verifikasi majelis.`
+    );
   } else if (item.keadaan === "belum") {
     bagian.push(`${item.menunggu} dokumen persidangan menunggu verifikasi majelis.`);
   } else if (item.keadaan === "belum-upload" && item.jenisDituntut?.length) {
@@ -152,10 +191,10 @@ export function penandaVerifikasi(
         : `Data e-Court belum terbaca${data.penarik?.alasan ? `: ${data.penarik.alasan}` : ""}.`
     );
   }
-  if (item?.diverifikasiOleh?.length) bagian.push(`Diverifikasi oleh ${item.diverifikasiOleh.join(", ")} (lewat ALETA).`);
+  if (item?.diverifikasiOleh?.length && !kesimpulan) bagian.push(`Diverifikasi oleh ${item.diverifikasiOleh.join(", ")} (lewat ALETA).`);
   const jam = jamMenit(item?.terakhirDiperiksa ?? "");
   bagian.push(jam ? `Terakhir diperiksa pukul ${jam}.` : "Belum pernah diperiksa.");
-  if (data.penarik && !data.penarik.tersambung && data.penarik.alasan && item && item.keadaan !== "tidak-konek") {
+  if (data.penarik && !data.penarik.tersambung && data.penarik.alasan && item && keadaan !== "tidak-konek") {
     bagian.push(`Penarik e-Court: ${data.penarik.alasan} - keadaan ini bisa sudah berubah.`);
   }
 

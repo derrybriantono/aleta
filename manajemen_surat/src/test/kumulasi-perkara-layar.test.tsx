@@ -39,7 +39,7 @@ describe("JenisDenganKumulasi", () => {
   it("menulis 'Cerai Gugat Kumulasi Hak Asuh Anak' dan menandai yang dari petitum", () => {
     render(<JenisDenganKumulasi jenis="Cerai Gugat" kumulasi={dariPetitum} />);
     expect(screen.getByText("Cerai Gugat Kumulasi Hak Asuh Anak")).toBeTruthy();
-    expect(screen.getByText("dari petitum")).toBeTruthy();
+    expect(screen.getByText("Dari petitum")).toBeTruthy();
   });
 
   it("kumulasi dari SIPP tanpa tanda petitum; tanpa kumulasi hanya jenisnya", () => {

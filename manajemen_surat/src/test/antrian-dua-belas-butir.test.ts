@@ -265,7 +265,7 @@ describe("butir 8 - urutan bagian di panel Rincian", () => {
 
 describe("butir 7 - penandanya merah, dan tetap bertanda tanya", () => {
   it("merah, sesuai permintaan", () => {
-    const i = LAYAR.indexOf("diterima pihak lawan?");
+    const i = LAYAR.indexOf("Diterima pihak lawan?");
     expect(i).toBeGreaterThan(-1);
     const sebelum = LAYAR.slice(Math.max(0, i - 700), i);
     expect(sebelum).toContain("bg-red-600");
@@ -273,7 +273,7 @@ describe("butir 7 - penandanya merah, dan tetap bertanda tanya", () => {
   });
 
   it("tanda tanyanya tetap - warnanya boleh menuntut, kalimatnya tidak menuduh", () => {
-    expect(LAYAR).toContain("diterima pihak lawan?");
+    expect(LAYAR).toContain("Diterima pihak lawan?");
   });
 });
 

@@ -376,7 +376,7 @@ export function JlfBasQaPage() {
                       <p className="font-medium text-foreground">{template.name}</p>
                       <div className="flex flex-wrap justify-end gap-1">
                         <Badge variant={getTemplateScenario(template) === "Verstek" ? "warning" : "outline"}>{getTemplateScenario(template)}</Badge>
-                        <Badge variant="outline">{template.code}</Badge>
+                        <Badge variant="outline" teksAsli>{template.code}</Badge>
                       </div>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{template.items.length} item pertanyaan</p>

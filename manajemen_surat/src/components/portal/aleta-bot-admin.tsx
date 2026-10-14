@@ -5212,7 +5212,7 @@ export function AletaBotAdminPanel() {
                           </td>
                           <td className="break-words py-4 pr-4"><Badge variant="outline">{query.category}</Badge></td>
                           <td className="break-words py-4 pr-4 text-muted-foreground">{query.usedByNotifications.join(", ") || "-"}</td>
-                          <td className="break-words py-4 pr-4"><Badge variant="outline">{query.connectionKey}</Badge></td>
+                          <td className="break-words py-4 pr-4"><Badge variant="outline" teksAsli>{query.connectionKey}</Badge></td>
                           <td className="break-words py-4 pr-4"><code className="line-clamp-4 break-words text-xs text-muted-foreground">{query.sqlText}</code></td>
                           <td className="break-words py-4 pr-4">
                             <p>{query.outputColumns.length} kolom</p>
@@ -5306,7 +5306,7 @@ export function AletaBotAdminPanel() {
                           <p className="font-medium text-foreground">{connection.name}</p>
                           <p className="mt-1 text-xs leading-5 text-muted-foreground">{connection.description || connection.legacySource || "-"}</p>
                         </td>
-                        <td className="min-w-0 break-words py-4 pr-3"><Badge variant="outline">{connection.key}</Badge></td>
+                        <td className="min-w-0 break-words py-4 pr-3"><Badge variant="outline" teksAsli>{connection.key}</Badge></td>
                         <td className="min-w-0 break-words py-4 pr-3">
                           <p>{connection.host}:{connection.port}</p>
                           <p className="text-xs text-muted-foreground">{connection.databaseName}</p>
@@ -5453,7 +5453,7 @@ export function AletaBotAdminPanel() {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant={statusVariant(log.status || "fallback")}>{log.status || "fallback"}</Badge>
-                            <Badge variant="outline">{log.matched_intent_key || "fallback"}</Badge>
+                            <Badge variant="outline" teksAsli>{log.matched_intent_key || "fallback"}</Badge>
                             <Badge variant="outline">{log.matched_method || "-"}</Badge>
                           </div>
                           <span className="text-xs text-muted-foreground">{log.created_at ? formatDateTime(log.created_at) : "-"}</span>
@@ -5466,7 +5466,7 @@ export function AletaBotAdminPanel() {
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant={statusVariant(log.status)}>{log.status}</Badge>
-                            <Badge variant="outline">{log.matchedIntentKey || "fallback"}</Badge>
+                            <Badge variant="outline" teksAsli>{log.matchedIntentKey || "fallback"}</Badge>
                             <Badge variant="outline">{log.matchedMethod}</Badge>
                             {log.needsHumanReview ? <Badge variant="warning">Perlu Tinjauan</Badge> : null}
                           </div>

@@ -111,7 +111,7 @@ export function AuditTrailBoard() {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold text-foreground">{formatActionLabel(item.action)}</p>
                     <Badge variant="outline">{item.entityType}</Badge>
-                    {item.actorRoleId ? <Badge variant="muted">{item.actorRoleId}</Badge> : null}
+                    {item.actorRoleId ? <Badge variant="muted" teksAsli>{item.actorRoleId}</Badge> : null}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {item.actorName} | {item.entityId}

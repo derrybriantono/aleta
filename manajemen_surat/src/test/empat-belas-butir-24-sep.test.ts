@@ -213,7 +213,8 @@ describe("butir 2 & 3 - pukul 15:00:00 menurut WITA, bukan zona peramban", () =>
 function selAgenda(): string {
   const akhir = LAYAR.indexOf("<UmurPerkara durasi={baris.durasi} telahIkrar={ikrarSelesai(baris)} />");
   expect(akhir, "umur perkara di bawah agenda hilang").toBeGreaterThan(-1);
-  const awal = LAYAR.lastIndexOf('<td className="px-2 py-2 align-top text-sm">', akhir);
+  // 14 Okt 2026: sel Agenda membawa LEBAR_KOLOM_AGENDA (kolom Agenda dilebarkan).
+  const awal = LAYAR.lastIndexOf('<td className={cn("px-2 py-2 align-top text-sm", LEBAR_KOLOM_AGENDA)}>', akhir);
   expect(awal, "sel Agenda tidak ditemukan").toBeGreaterThan(-1);
   return LAYAR.slice(awal, akhir).replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 }
@@ -374,7 +375,7 @@ describe("butir 6 - lencana hari tidak menyebut mediasi, rinciannya tetap", () =
     // BARIS, sebab baris itulah yang dipindai panitera. Terukur: tanpa
     // lencana ini, 232/Pdt.G/2026 yang berjalan 163 hari tidak meninggalkan
     // jejak apa pun, dan Antrian hari itu kosong dari tanda merah.
-    expect(tubuh).toContain("lewat 5 bulan");
+    expect(tubuh).toContain("Lewat 5 bulan");
     expect(LAYAR).toContain("Kelonggaran perkara khusus</dt>");
     expect(LAYAR).toContain("Dihitung untuk SEMA 2/2014</dt>");
   });

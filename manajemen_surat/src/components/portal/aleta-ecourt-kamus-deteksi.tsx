@@ -1024,7 +1024,7 @@ export function AletaEcourtKamusDeteksi() {
                       <span className="text-muted-foreground">
                         {k.petugasNama} · {k.jalur} · {k.pada.slice(0, 16).replace("T", " ")}
                       </span>
-                      {k.kodePola ? <Badge variant="outline">{k.kodePola}</Badge> : null}
+                      {k.kodePola ? <Badge variant="outline" teksAsli>{k.kodePola}</Badge> : null}
                     </div>
                     <div className="mt-1 grid gap-1 sm:grid-cols-2">
                       <div>

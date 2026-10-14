@@ -68,7 +68,7 @@ describe("Pemetaan blangko - layar admin (2 Okt sore)", () => {
       return b as HTMLElement;
     });
     expect(baris.textContent).toContain("Dikabulkan (verstek)");
-    expect(baris.textContent).toContain("ikut jenis");
+    expect(baris.textContent).toContain("Ikut jenis");
     expect(document.querySelector('tr[data-kunci="Cerai Gugat|Dicoret dari Register"]')).toBeTruthy();
     fireEvent.change(baris.querySelector("input") as HTMLInputElement, { target: { value: "[01] Kabul Verstek Khusus" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan pemetaan" }));
@@ -107,7 +107,7 @@ describe("Pemetaan blangko - layar admin (2 Okt sore)", () => {
       return b as HTMLElement;
     });
     expect(baris.textContent).toContain("Sidang pertama - hanya P hadir (T tidak hadir)");
-    expect(baris.textContent).toContain("otomatis");
+    expect(baris.textContent).toContain("Otomatis");
     expect((baris.querySelector("input") as HTMLInputElement).placeholder).toBe("kosong = usulan otomatis BAS massal");
   });
 });

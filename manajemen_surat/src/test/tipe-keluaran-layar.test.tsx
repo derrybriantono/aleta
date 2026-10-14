@@ -113,7 +113,7 @@ describe("tombol sahkan hanya untuk Super Admin", () => {
     sebagai("usr-super");
     const { unmount } = render(<AletaEcourtTipeKeluaran />);
     let u = await butirBernilai("bas.kehadiran.bunyi", "hadir melalui telekonferensi");
-    expect(u.getByText("usulan")).toBeInTheDocument();
+    expect(u.getByText("Usulan")).toBeInTheDocument();
     expect(u.getByRole("button", { name: "Sahkan" })).toBeEnabled();
     unmount();
 
@@ -154,11 +154,11 @@ describe("daftar deteksi tidak dapat disahkan", () => {
     render(<AletaEcourtTipeKeluaran />);
     await userEvent.click(screen.getByRole("tab", { name: "Putusan" }));
     const k = await kartu("putusan.alasan.ciri");
-    expect(k.getByText("butuh ukur")).toBeInTheDocument();
+    expect(k.getByText("Butuh ukur")).toBeInTheDocument();
     const u = await butirBernilai("putusan.alasan.ciri", "bentrok");
     expect(u.getByRole("button", { name: "Sahkan" })).toBeDisabled();
     // Daftar 'tulis' di tab yang sama tidak bertanda.
-    expect((await kartu("putusan.medan-borang")).queryByText("butuh ukur")).toBeNull();
+    expect((await kartu("putusan.medan-borang")).queryByText("Butuh ukur")).toBeNull();
   });
 });
 

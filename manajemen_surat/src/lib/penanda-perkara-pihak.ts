@@ -45,15 +45,43 @@ export type LencanaPekerjaanPihak = {
   kalimat?: string;
 };
 
+/**
+ * Izin cerai PNS/ASN (PPPK)/TNI/POLRI (14 Okt 2026) - dihitung bot
+ * (aleta_bot/services/izinCeraiService.js): perkara_izin_cerai SIPP, posita,
+ * judul dokumen e-Court. "ada" tidak diberi lencana.
+ */
+export type KeadaanIzinCerai = "ada" | "belum-dicatat" | "belum-ada" | "belum-terbaca";
+
+export type IzinCeraiBaris = {
+  keadaan: KeadaanIzinCerai;
+  label?: string;
+  judul?: string;
+  sumber?: string;
+};
+
 /** Ruas baris jadwal yang dibaca berkas ini - seluruhnya opsional (bot lama tidak mengirimnya). */
 export type BahanPenandaBaris = {
   lewatEcourt?: boolean;
   ecourtTerbaca?: boolean;
   penandaPerkara?: PenandaPerkaraBaris | null;
   penandaPihak?: LencanaPekerjaanPihak[] | null;
+  izinCerai?: IzinCeraiBaris | null;
 };
 
-export type KunciLencanaPerkara = "ghaib" | "prodeo" | "non-ecourt";
+export type KunciLencanaPerkara =
+  | "ghaib"
+  | "prodeo"
+  | "non-ecourt"
+  | "izin-cerai-belum-ada"
+  | "izin-cerai-belum-dicatat"
+  | "izin-cerai-belum-terbaca";
+
+/** Tulisan bawaan bila bot tidak mengirim label (tetap satu sumber kata dengan bot). */
+const LABEL_IZIN_CERAI: Record<Exclude<KeadaanIzinCerai, "ada">, string> = {
+  "belum-ada": "Izin cerai belum ada",
+  "belum-dicatat": "Izin cerai belum dicatat SIPP",
+  "belum-terbaca": "Izin cerai belum terbaca",
+};
 
 export type LencanaPerkara = {
   kunci: KunciLencanaPerkara;
@@ -62,8 +90,8 @@ export type LencanaPerkara = {
 };
 
 /**
- * Lencana di samping nomor perkara, dalam urutan tetap: ghaib, prodeo, non e-Court.
- * Daftar kosong bila tidak satu pun berlaku.
+ * Lencana di samping nomor perkara, dalam urutan tetap: ghaib, prodeo, non e-Court,
+ * izin cerai (14 Okt 2026). Daftar kosong bila tidak satu pun berlaku.
  */
 export function lencanaPerkara(baris: BahanPenandaBaris): LencanaPerkara[] {
   const hasil: LencanaPerkara[] = [];
@@ -90,6 +118,14 @@ export function lencanaPerkara(baris: BahanPenandaBaris): LencanaPerkara[] {
       kunci: "non-ecourt",
       label: "Non e-Court",
       judul: "Perkara tidak terdaftar lewat e-Court (didaftarkan langsung). Perkara e-Court tidak diberi tanda.",
+    });
+  }
+  const izin = baris.izinCerai;
+  if (izin && izin.keadaan !== "ada" && izin.keadaan in LABEL_IZIN_CERAI) {
+    hasil.push({
+      kunci: `izin-cerai-${izin.keadaan}` as KunciLencanaPerkara,
+      label: izin.label || LABEL_IZIN_CERAI[izin.keadaan],
+      judul: izin.judul || LABEL_IZIN_CERAI[izin.keadaan],
     });
   }
   return hasil;
