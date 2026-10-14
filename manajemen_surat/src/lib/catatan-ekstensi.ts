@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.200.0",
+    dirilis: "2026-10-14T13:30:00+08:00",
+    judul: "Unduhan tidak diblokir & bernama baku, Salinan putusan ber-TTD Panitera, Set pertanyaan sekali klik, panel ringkas mulus, juru sita mencentang yang tidak hadir, pengumuman itsbat",
+    butir: [
+      "Semua unduhan dari panel diterbitkan ekstensi sendiri - tidak lagi diblokir Chrome di SIPP/ABT http - dan selalu bernama \"nomor perkara - nama blangko\" (cetak tiga berkas tetap).",
+      "Putusan otomatis: edoc putusan tetap diunggah ke SIPP walau anonimisasi gagal/dibatalkan; anonim menyusul.",
+      "PDF SALINAN langsung terbuka: tulisan SALINAN di kanan atas, ttd di tiap pejabat, tanda tangan Panitera di blok Untuk Salinan.",
+      "Set pertanyaan ALETA terbuka dengan satu klik dan berukuran satu baris; panel yang meringkas sendiri kini menunggu sejenak dan bertoleransi bila kursor sedikit di luar panel.",
+      "Juru sita: pihak yang tidak hadir tercentang bawaan (panggilan & PBT); sidang pertama itsbat voluntair menambah Pengumuman Permohonan Itsbat Nikah.",
+      "Panel ALETA di portal tertutup bawaan untuk semua profil.",
+      "Naskah ALETA (BAS massal, putusan, relaas, penetapan) mengisi SEMUA variabel blangko Derry seperti ABT; tanya-jawab saksi berbentuk tabel ABT; tombol Isi dari posita juga untuk harta bersama 5032.",
+    ],
+  },
+  {
     versi: "1.199.0",
     dirilis: "2026-10-13T14:00:00+08:00",
     judul: "Gembok kepala panel, ABT bisa digulir, Kasir otomatis bersaklar, deteksi posita semua jenis perkara, penetapan atas akun pejabat",
