@@ -423,7 +423,11 @@ function buka(
       id: "aleta-uji",
       getManifest: () => ({ version: "1.173.1" }),
       getURL: (x: string) => `chrome-extension://aleta-uji/${x}`,
-      sendMessage: (_p: unknown, balik?: (x: unknown) => void) => balik && balik({ ok: true }),
+      sendMessage: (p: any, balik?: (x: unknown) => void) => {
+        // 14 Okt: CETAK satu berkas diterbitkan ekstensi (pesan "unduh"), bukan navigasi http.
+        if (p && p.jenis === "unduh") navigasi.push(CETAK);
+        return balik && balik({ ok: true });
+      },
       lastError: undefined,
     },
     storage: {
@@ -438,7 +442,14 @@ function buka(
     const cara = String(opsi?.method || "GET").toUpperCase();
     const badan = typeof opsi?.body === "string" ? opsi.body : opsi?.body ? String(opsi.body) : "";
     minta.push({ url, cara, badan });
+    // 14 Okt: CETAK satu berkas diambil isinya lalu diterbitkan ekstensi (cetakSatuLewatEkstensi).
     const j = (p.ganti && p.ganti(url, cara, badan)) || jawabBaku(url, cara, badan);
+    if (url === CETAK && j.mentah !== undefined) {
+      return new Response(Buffer.from(j.mentah, "latin1"), {
+        status: j.status ?? 200,
+        headers: { "content-type": j.jenis || "application/rtf", "content-disposition": 'attachment; filename="Blangko B.rtf"' },
+      });
+    }
     return tanggapan(j);
   };
   w.Response = Response;

@@ -607,7 +607,7 @@ function buatMesin(p) {
     for (const n of nomor) {
       const d = await detil(ctx, n, tumpuk);
       if (d.status === "galat") {
-        const g = new Error(`bergantung pada #${n}# yang galat (${d.sebab})`);
+        const g = new Error(`bergantung pada #${n}# yang gagal diisi (${d.sebab})`);
         g.turunan = true;
         throw g;
       }

@@ -8702,7 +8702,7 @@ function kalimatSalinan(k) {
     );
   else bagian.push(`Tanda tangan Panitera ${k.namaPanitera} tidak dapat dibubuhkan (${k.alasanTanpaGambar || "sebab tidak diketahui"}).`);
   if (k.ttdDitambah) bagian.push(`"ttd" ditambahkan pada ${k.ttdDitambah} tempat tanda tangan.`);
-  if (k.galatTtd) bagian.push(`Galat membaca tanda tangan: ${k.galatTtd}.`);
+  if (k.galatTtd) bagian.push(`Tanda tangan gagal dibaca: ${k.galatTtd}.`);
   return bagian.join(" ");
 }
 

@@ -250,11 +250,14 @@ export function AletaEcourtTandaTangan() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tindakan: "tautkan-otomatis", terapkan }),
         });
-        const isi = (await respons.json().catch(() => null)) as
-          | (HasilTautOto & { ok?: boolean; diterapkan?: Array<{ ok: boolean }>; error?: string | { message?: string } })
+        const bungkus = (await respons.json().catch(() => null)) as
+          | { ok?: boolean; data?: unknown; error?: string | { message?: string } }
           | null;
-        if (!respons.ok || !isi || isi.ok === false) {
-          const sebab = typeof isi?.error === "string" ? isi.error : isi?.error?.message;
+        const isi = (bungkus ? bungkus.data ?? bungkus : null) as
+          | (HasilTautOto & { ok?: boolean; diterapkan?: Array<{ ok: boolean }> })
+          | null;
+        if (!respons.ok || !bungkus || !isi || bungkus.ok === false || isi.ok === false) {
+          const sebab = typeof bungkus?.error === "string" ? bungkus.error : bungkus?.error?.message;
           throw new Error(sebab ? kalimatTandaTangan(sebab) : `ALETA menjawab ${respons.status}.`);
         }
         if (terapkan) {

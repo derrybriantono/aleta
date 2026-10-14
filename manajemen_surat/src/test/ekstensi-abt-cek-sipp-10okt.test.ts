@@ -266,7 +266,8 @@ describe("1-2. beda data inti: pengingat muncul, CETAK tetap jalan", () => {
   it("klik CETAK tidak dicegah: tanpa dialog 'Sudah saya periksa', tanpa confirm", async () => {
     const h = buka({ sipp: () => ganti(SIPP_SAMA, "0102", "Budi Santoso") });
     await kotakSelesai(h, /berbeda dengan SIPP/);
-    expect(klikCetak(h)).toBe(false);
+    // 14 Okt: klik CETAK diambil alih ekstensi (unduhan aman bernama baku) - yang dijaga: pemeriksaan SIPP tidak menahan cetak.
+    klikCetak(h);
     await tunggu(50);
     expect(h.w.document.querySelector(".aleta-t6-tirai")).toBeNull();
     expect(h.konfirmasi).toEqual([]);
@@ -281,7 +282,8 @@ describe("3. semua sama", () => {
     expect(k.textContent).toContain("✓ Data inti blangko sama dengan SIPP (6 diperiksa)");
     expect(k.classList.contains("aleta-t6-cek-sipp-beda")).toBe(false);
     expect(penandaCetak(h)).toBeNull();
-    expect(klikCetak(h)).toBe(false);
+    // 14 Okt: klik CETAK diambil alih ekstensi (unduhan aman bernama baku) - yang dijaga: pemeriksaan SIPP tidak menahan cetak.
+    klikCetak(h);
   });
 
   it("pembanding: tanggal, nominal, huruf besar, tanda baca ujung", () => {
