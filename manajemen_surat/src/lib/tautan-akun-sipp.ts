@@ -47,6 +47,7 @@ import {
   type PegawaiSipp,
 } from "@/lib/nama-pegawai-sipp";
 import type { RoleId } from "@/lib/types";
+import { normalizeAdditionalRoleIds } from "@/lib/user-additional-roles";
 
 // ============================================================================
 // BAHAN
@@ -68,7 +69,17 @@ export type AkunAletaTautan = {
   roleId: string;
   isActive: boolean;
   dihapus?: boolean;
+  /** Sub-peran / tugas (users.additional_role_ids_json) - diisi, tidak pernah dikurangi. */
+  subPeran?: string[];
 };
+
+/**
+ * Keputusan pengguna atas satu nama (mis. 14 Okt 2026: "Munifa, S.H." ->
+ * `munifa,SH.`). Menjadikan pasangan itu pasti/tercentang walau namanya
+ * ganda di SIPP - hanya bila akun SIPP-nya aktif dan tidak diklaim akun
+ * ALETA lain, dan nama itu milik paling banyak SATU akun ALETA aktif.
+ */
+export type KetetapanPengguna = { nama: string; usernameSipp: string; catatan: string };
 
 export type KredensialTautan = {
   userId: string;
@@ -83,6 +94,7 @@ export type BahanTautan = {
   akun: AkunAletaTautan[];
   kredensial: KredensialTautan[];
   sipp: PenggunaSippDaftar[];
+  ketetapan?: KetetapanPengguna[];
 };
 
 // ============================================================================
@@ -99,6 +111,8 @@ export type CalonSipp = {
   aktif: boolean;
   keadaan: "aktif" | "diblokir" | "kedaluwarsa";
   grup: string[];
+  /** Sub-peran/tugas ALETA yang dipetakan dari akun SIPP ini (subPeranDariSipp). */
+  subPeran: string[];
 };
 
 export type KelompokTautan =
@@ -137,6 +151,12 @@ export type BarisTautan = {
   masalah: string;
   /** tautan_sumber tautan yang ada ('admin-massal' = boleh dibatalkan di sini). */
   sumberTautan: string;
+  /** Sub-peran yang SUDAH dimiliki akun ALETA ini. */
+  subPeranAda: string[];
+  /** Sub-peran dari akun SIPP tujuan yang BELUM dimiliki (pasti / sudah tanpa masalah). Peran utama tidak pernah diubah. */
+  subPeranUsulan: string[];
+  /** Pasangan ini ditetapkan pengguna sendiri (KetetapanPengguna). */
+  ditetapkanPengguna: boolean;
 };
 
 export type UsulanPeran = {
@@ -168,6 +188,8 @@ export type SippTanpaAkun = {
   nip: string;
   grup: string[];
   usulan: UsulanPeran;
+  /** Sub-peran/tugas yang diisikan ke akun baru (subPeranDariSipp). */
+  subPeran: string[];
   kelompok: "buat" | "ganda" | "bentrok";
   sebab: string;
 };
@@ -270,8 +292,11 @@ function usulanDari(aturan: AturanGrup, dasar: string): UsulanPeran {
     jabatanPadanan: aturan.jabatan,
     peranPadanan: aturan.peran,
     tinggi,
-    jabatanAman: tinggi ? JABATAN_AMAN : aturan.jabatan,
-    peranAman: tinggi ? PERAN_AMAN : aturan.peran,
+    // 14 Okt 2026 (keputusan pengguna): peran UTAMA ditentukan pengguna
+    // sendiri. Akun baru SELALU memakai peran paling rendah; padanan di atas
+    // hanya keterangan. Tugasnya diisi lewat sub-peran (subPeranDariSipp).
+    jabatanAman: JABATAN_AMAN,
+    peranAman: PERAN_AMAN,
     dasar,
   };
 }
@@ -286,6 +311,62 @@ export function usulanPeranDariGrup(grup: string[], jabatanPejabat: string[] = [
     if (jabatanPejabat.includes(j)) return usulanDari(PETA_JABATAN_PEJABAT[j], `pejabat SIPP (${j})`);
   }
   return usulanDari({ pola: /./, jabatan: JABATAN_AMAN, peran: PERAN_AMAN, tinggi: false }, "tanpa grup SIPP");
+}
+
+// ============================================================================
+// PEMETAAN AKUN SIPP -> SUB-PERAN / TUGAS ALETA (14 Okt 2026)
+// ============================================================================
+//
+// Peran UTAMA akun ditentukan pengguna sendiri dan tidak pernah diubah alat
+// ini. Yang dipetakan hanya SUB-PERAN (users.additional_role_ids_json -
+// struktur yang sudah ada, lib/user-additional-roles.ts), dari username dan
+// grup akun SIPP. Sub-peran hanya DITAMBAHKAN, tidak pernah dikurangi.
+//
+//   username meja1g / meja2p / ...       -> petugas_meja_1_gugatan / petugas_meja_2_permohonan
+//   grup "Meja I Gugatan", "Meja III Permohonan", "Meja II Jinayat", ...
+//                                        -> petugas_meja_<1-3>_<jenis>
+//   grup "Kasir"                         -> kasir
+//   grup "Bagian/Staf Bagian Keuangan"   -> petugas_keuangan_perkara
+//   grup "Koordinator Delegasi"          -> operator_delegasi
+//   grup "Informasi"                     -> petugas_meja_informasi
+//
+// Grup yang sama dengan PERAN UTAMA (Hakim, Panitera, Panmud, PP, Jurusita,
+// Ketua) tidak dijadikan sub-peran. Sub-peran petugas_meja_* belum memberi
+// hak menu apa pun di matriks-peran (hanya label tugas) - memasukkannya ke
+// golongan hak adalah keputusan pengguna.
+
+const ROMAWI: Record<string, number> = { i: 1, ii: 2, iii: 3 };
+
+export const PETA_SUB_PERAN_GRUP: ReadonlyArray<{ pola: RegExp; subPeran: string }> = [
+  { pola: /^kasir$/i, subPeran: "kasir" },
+  { pola: /^(staf )?bagian keuangan$/i, subPeran: "petugas_keuangan_perkara" },
+  { pola: /^koordinator delegasi$/i, subPeran: "operator_delegasi" },
+  { pola: /^informasi$/i, subPeran: "petugas_meja_informasi" },
+];
+
+/** Sub-peran/tugas ALETA dari username + grup satu akun SIPP. */
+export function subPeranDariSipp(s: { username: string; grup: string[] }): string[] {
+  const hasil: string[] = [];
+  const meja = /^meja\s*([123])\s*([gpj])$/i.exec(String(s.username ?? "").trim());
+  if (meja) {
+    const jenis = { g: "gugatan", p: "permohonan", j: "jinayat" }[meja[2].toLowerCase() as "g" | "p" | "j"];
+    hasil.push(`petugas_meja_${meja[1]}_${jenis}`);
+  }
+  for (const mentah of s.grup ?? []) {
+    const g = String(mentah ?? "").trim();
+    const m = /^meja\s+(i{1,3})\s+(\S+)/i.exec(g);
+    if (m) {
+      hasil.push(`petugas_meja_${ROMAWI[m[1].toLowerCase()]}_${m[2].toLowerCase()}`);
+      continue;
+    }
+    for (const aturan of PETA_SUB_PERAN_GRUP) if (aturan.pola.test(g)) hasil.push(aturan.subPeran);
+  }
+  return normalizeAdditionalRoleIds(hasil);
+}
+
+function kurangi(usulan: string[], ada: string[]): string[] {
+  const sudah = new Set(normalizeAdditionalRoleIds(ada));
+  return usulan.filter((x) => !sudah.has(x));
 }
 
 // ============================================================================
@@ -358,6 +439,7 @@ function calonDari(s: PenggunaSippDaftar, dasar: DasarCocok[]): CalonSipp {
     aktif: keadaan === "aktif",
     keadaan,
     grup: s.grup,
+    subPeran: subPeranDariSipp(s),
   };
 }
 
@@ -428,9 +510,19 @@ export function susunPratinjauTautanSipp(bahan: BahanTautan): PratinjauTautan {
     }
   }
 
+  // Ketetapan pengguna: nama -> username SIPP. Berlaku hanya bila akun SIPP-nya
+  // ada & aktif dan nama itu milik paling banyak satu akun ALETA aktif.
+  const akunAktifSemua = akunHidup.filter((a) => a.isActive);
+  const ketetapanSah = (bahan.ketetapan ?? []).filter((k) => {
+    const s = sippPerUsername.get(kunciUser(k.usernameSipp));
+    return Boolean(s && !s.diblokir && !s.kedaluwarsa) && akunAktifSemua.filter((a) => namaSama(a.name, k.nama)).length <= 1;
+  });
+  const ketetapanUntuk = (akun: AkunAletaTautan) => ketetapanSah.find((k) => namaSama(akun.name, k.nama));
+
   const baris: BarisTautan[] = [];
   for (const akun of akunHidup) {
     const kred = bahan.kredensial.find((k) => k.userId === akun.id && k.username.trim());
+    const subPeranAda = normalizeAdditionalRoleIds(akun.subPeran ?? []);
     const dasarBaris = {
       userId: akun.id,
       nama: akun.name,
@@ -439,7 +531,11 @@ export function susunPratinjauTautanSipp(bahan: BahanTautan): PratinjauTautan {
       usernameSipp: kred?.username.trim() ?? "",
       masalah: "",
       sumberTautan: kred?.sumber ?? "",
+      subPeranAda,
+      subPeranUsulan: [] as string[],
+      ditetapkanPengguna: false,
     };
+    const tetap = akun.isActive && akun.roleId !== "super-admin" ? ketetapanUntuk(akun) : undefined;
 
     if (akun.roleId === "super-admin") {
       baris.push({ ...dasarBaris, kelompok: "super-admin", sebab: "Super Admin tidak diubah oleh alat ini.", calon: [] });
@@ -466,12 +562,17 @@ export function susunPratinjauTautanSipp(bahan: BahanTautan): PratinjauTautan {
                 : namaSippSemua(s).some((n) => namaSama(akun.name, n))
                   ? "NIP pejabat pada akun SIPP tertaut BERBEDA dari NIP akun ALETA ini - periksa data pejabat di SIPP."
                   : `Nama akun SIPP tertaut (${s.namaLengkap || "-"}) tidak sama dengan nama akun ALETA ini - periksa apakah tautannya benar.`;
+      const dikonfirmasi = Boolean(tetap && s && kunciUser(tetap.usernameSipp) === kunci && pengklaim <= 1);
+      const calonTaut = s ? [calonDari(s, ["username"])] : [];
+      const bersih = dikonfirmasi || !masalah;
       baris.push({
         ...dasarBaris,
         kelompok: "sudah",
-        sebab: "Sudah bertaut.",
-        masalah,
-        calon: s ? [calonDari(s, ["username"])] : [],
+        sebab: dikonfirmasi ? `Sudah bertaut - dikonfirmasi pengguna (${tetap?.catatan}).` : "Sudah bertaut.",
+        masalah: dikonfirmasi ? "" : masalah,
+        ditetapkanPengguna: dikonfirmasi,
+        subPeranUsulan: bersih && calonTaut[0]?.aktif ? kurangi(calonTaut[0].subPeran, subPeranAda) : [],
+        calon: calonTaut,
       });
       continue;
     }
@@ -486,6 +587,24 @@ export function susunPratinjauTautanSipp(bahan: BahanTautan): PratinjauTautan {
     }
 
     const calon = calonSippUntukAkun(akun, bahan.sipp);
+    if (tetap) {
+      const kunciTetap = kunciUser(tetap.usernameSipp);
+      const diklaimLain = [...(klaimAktif.get(kunciTetap) ?? [])].some((id) => id !== akun.id);
+      if (!diklaimLain) {
+        const s = sippPerUsername.get(kunciTetap)!;
+        const c = calon.find((x) => kunciUser(x.username) === kunciTetap) ?? calonDari(s, []);
+        baris.push({
+          ...dasarBaris,
+          kelompok: "pasti",
+          usernameSipp: s.username,
+          sebab: `Ditetapkan pengguna (${tetap.catatan}).`,
+          ditetapkanPengguna: true,
+          subPeranUsulan: kurangi(c.subPeran, subPeranAda),
+          calon: [c, ...calon.filter((x) => x !== c)],
+        });
+        continue;
+      }
+    }
     const aktif = calon.filter((c) => c.aktif);
     if (aktif.length === 0) {
       if (calon.length > 0) {
@@ -555,6 +674,7 @@ export function susunPratinjauTautanSipp(bahan: BahanTautan): PratinjauTautan {
       kelompok: "pasti",
       usernameSipp: pilihan.username,
       sebab: `Cocok pasti lewat ${pilihan.dasar.join(" + ")}.`,
+      subPeranUsulan: kurangi(pilihan.subPeran, subPeranAda),
       calon,
     });
   }
@@ -571,12 +691,13 @@ export function susunPratinjauTautanSipp(bahan: BahanTautan): PratinjauTautan {
     }
   }
   for (const b of baris) {
-    if (b.kelompok !== "pasti") continue;
+    if (b.kelompok !== "pasti" || b.ditetapkanPengguna) continue;
     const daftar = pemakai.get(kunciUser(b.usernameSipp)) ?? [];
     if (daftar.length < 2) continue;
     b.kelompok = "ganda";
     b.sebab = `Akun SIPP ${b.usernameSipp} cocok ke ${daftar.length} akun ALETA (${daftar.map((x) => x.nama).join(" / ")}).`;
     b.usernameSipp = "";
+    b.subPeranUsulan = [];
   }
 
   // Petugas SIPP aktif yang belum punya akun ALETA.
@@ -619,13 +740,17 @@ export function susunPratinjauTautanSipp(bahan: BahanTautan): PratinjauTautan {
       nip: nipTunggal.length === 1 ? nipTunggal[0] : "",
       grup: s.grup,
       usulan: usulanPeranDariGrup(s.grup, s.pejabat.map((p) => p.jabatan)),
+      subPeran: subPeranDariSipp(s),
     };
+    const tetapBaru = ketetapanSah.find((k) => kunciUser(k.usernameSipp) === kunciUser(s.username));
     if (usernameDipakai.length > 0) {
       sippTanpaAkun.push({
         ...dasar,
         kelompok: "bentrok",
         sebab: `Username "${s.username}" sudah dipakai akun ALETA lain (${usernameDipakai.map((a) => a.name).join(", ")}${usernameDipakai.some((a) => a.dihapus) ? ", termasuk yang dihapus" : ""}).`,
       });
+    } else if (tetapBaru) {
+      sippTanpaAkun.push({ ...dasar, kelompok: "buat", sebab: `Ditetapkan pengguna (${tetapBaru.catatan}) - dibuatkan akun bertautan.` });
     } else if (kembar.length > 0) {
       sippTanpaAkun.push({
         ...dasar,

@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
  * src/server/modules/portal/tautan-semua-sipp.ts.
  *
  *   GET  /api/users/tautan-sipp-semua                      -> pratinjau (tidak menulis)
- *   POST { aksi: "terapkan", tautkan: [{userId, usernameSipp}], buat: [usernameSipp] }
+ *   POST { aksi: "terapkan", tautkan: [{userId, usernameSipp}], buat: [usernameSipp], subPeran: [userId] }
  *   POST { aksi: "batal", userId }
  *
  * Hanya Admin / Super Admin. Tidak ada password di permintaan maupun jawaban.
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       userId?: unknown;
       tautkan?: unknown;
       buat?: unknown;
+      subPeran?: unknown;
     };
     if (badan.aksi === "batal") {
       const userId = String(badan.userId ?? "").trim();
@@ -86,7 +87,8 @@ export async function POST(request: NextRequest) {
           usernameSipp: String((p as { usernameSipp?: unknown })?.usernameSipp ?? "").slice(0, 60),
         }));
       const buat = (Array.isArray(badan.buat) ? badan.buat : []).slice(0, 500).map((u) => String(u ?? "").slice(0, 60));
-      return ok(await terapkanTautanSemua(sesi.db, deps, aktor, { tautkan, buat }));
+      const subPeran = (Array.isArray(badan.subPeran) ? badan.subPeran : []).slice(0, 500).map((u) => String(u ?? "").slice(0, 80));
+      return ok(await terapkanTautanSemua(sesi.db, deps, aktor, { tautkan, buat, subPeran }));
     }
     throw new ApiError(400, "Aksi harus 'terapkan' atau 'batal'.");
   } catch (error) {
