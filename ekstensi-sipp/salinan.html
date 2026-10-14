@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF Salinan - ALETA</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f4f5f7; color: #1f2937; font: 14px/1.4 system-ui, "Segoe UI", sans-serif; }
+  body { display: flex; flex-direction: column; }
+  #kepala { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 8px 16px; background: #fff; border-bottom: 1px solid #d1d5db; }
+  #judul { font-weight: 600; word-break: break-word; }
+  #pesan { flex: 1 1 320px; }
+  #pesan.awas { color: #9a3412; }
+  #unduh { padding: 6px 14px; border: 1px solid #1d4ed8; border-radius: 6px; background: #1d4ed8; color: #fff; cursor: pointer; font: inherit; }
+  #unduh:disabled { opacity: .5; cursor: default; }
+  #penampil { flex: 1; width: 100%; border: 0; background: #525659; }
+  #kosong { padding: 24px 16px; }
+</style>
+</head>
+<body>
+  <div id="kepala">
+    <span id="judul">PDF Salinan</span>
+    <span id="pesan">Memuat…</span>
+    <button id="unduh" type="button" disabled>Unduh PDF salinan</button>
+  </div>
+  <iframe id="penampil" title="PDF Salinan"></iframe>
+  <script src="salinan.js"></script>
+</body>
+</html>

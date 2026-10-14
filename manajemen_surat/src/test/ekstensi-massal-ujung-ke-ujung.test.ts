@@ -1682,7 +1682,7 @@ describe("J. edoc putusan + edoc anonimisasi sesudah Simpan antrean (butir 6, 6 
     expect(e.idb.isi(...RAK).size).toBe(0);
   });
 
-  it("anonimisasi ABT gagal: putusan TETAP tersimpan, edoc tidak diunggah, sebabnya di butir, antrean LANJUT ke perkara berikutnya", async () => {
+  it("anonimisasi ABT gagal: putusan TETAP tersimpan, edoc PUTUSAN tetap diunggah (anonim menyusul), sebabnya di butir, antrean LANJUT ke perkara berikutnya", async () => {
     const dunia = buatDunia(tigaPerkara());
     const simpanan: Record<string, unknown> = {};
     const e = edocUji("gagal");
@@ -1708,8 +1708,13 @@ describe("J. edoc putusan + edoc anonimisasi sesudah Simpan antrean (butir 6, 6 
       [N1, true],
       [N2, true],
     ]);
-    expect(e.unggah).toEqual([]);
-    // Naskah yang belum menjadi edoc tetap di rak - dapat diunggah dari panel perkara.
+    // 14 Okt (perkara 473): anonimisasi gagal TIDAK menahan edoc PUTUSAN -
+    // putusan diunggah sendirian, anonimisasinya menyusul.
+    expect(e.unggah.map((u) => [u.nomor, u.anonimisasi])).toEqual([
+      [N1, ""],
+      [N2, ""],
+    ]);
+    // Naskahnya tetap di rak - anonimisasi yang menyusul masih memerlukannya.
     expect(e.idb.isi(...RAK).size).toBe(2);
   });
 

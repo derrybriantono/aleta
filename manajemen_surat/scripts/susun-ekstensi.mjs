@@ -95,6 +95,9 @@ const BERKAS = [
   // Daftar 120 saklar fitur ide (tahap 1, 1.172.0) - dimuat popup.html
   // sebelum popup.js. Disusun dari berkas ide, bukan disunting tangan.
   "daftar-fitur.js",
+  // Penampil PDF SALINAN (14 Okt 2026) - dibuka latar.js lewat chrome.tabs.create.
+  "salinan.html",
+  "salinan.js",
   "PASANG.md",
 ];
 

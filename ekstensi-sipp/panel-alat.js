@@ -2057,6 +2057,186 @@ function alatKunciPermintaan(alamat, opsi) {
 }
 
 /**
+ * ============================================================================
+ * UNDUHAN DITERBITKAN EKSTENSI, BUKAN HALAMAN HTTP (14 Okt 2026)
+ * ============================================================================
+ *
+ * Keluhan: "Chrome blocked this download because the site isn't using a
+ * secure connection" pada BAS dari BAS massal, sementara unduhan lain lolos
+ * "From http://192.168.10.10". Riwayat unduhan Chrome petugas (tabel
+ * downloads, Chrome 153) menunjukkan polanya: 13 unduhan SIPP/ABT berakhir
+ * FILE_BLOCKED (interrupt_reason 41), sebelas di antaranya beralamat
+ * blob:http://192.168.10.10/... - tautan <a download> yang dibuat skrip konten.
+ * Alamat blob mewarisi asal HALAMAN-nya (http), jadi Chrome menilainya unduhan
+ * tak aman; jalur yang sama kadang lolos, kadang ditahan, menurut penilaian
+ * Chrome sendiri. Sebaliknya, NOL dari unduhan beralamat data: yang
+ * diterbitkan pekerja latar lewat chrome.downloads (asal chrome-extension://,
+ * tepercaya) - relaas massal, paket pembaruan - pernah ditahan.
+ *
+ * Karena itu SEMUA unduhan panel melewati alatUnduh: isinya sudah di memori
+ * (diambil fetch berkredensial yang sama), dijadikan data: URL, lalu
+ * diterbitkan latar.js (pesan "unduh" -> terbitkanUnduhan). Tautan halaman
+ * hanya cadangan bila pekerja latar tidak menjawab.
+ */
+async function alatBlobKeData(blob) {
+  // Lewat arrayBuffer bila ada: Blob dari Response.blob() tetap terbaca walau
+  // bukan buatan jendela yang sama. FileReader hanya cadangan.
+  if (typeof blob.arrayBuffer !== "function") {
+    return await new Promise((selesai, gagal) => {
+      const pembaca = new FileReader();
+      pembaca.onload = () => selesai(String(pembaca.result || ""));
+      pembaca.onerror = () => gagal(pembaca.error || new Error("berkas tidak terbaca"));
+      pembaca.readAsDataURL(blob);
+    });
+  }
+  const byte = new Uint8Array(await blob.arrayBuffer());
+  let biner = "";
+  for (let i = 0; i < byte.length; i += 0x8000) {
+    biner += String.fromCharCode.apply(null, byte.subarray(i, i + 0x8000));
+  }
+  const tipe = String(blob.type || "application/octet-stream").split(";")[0];
+  return `data:${tipe};base64,${btoa(biner)}`;
+}
+
+/** Cadangan terakhir: tautan halaman (dapat ditahan Chrome di situs http). */
+function alatUnduhLewatTautan(blob, nama) {
+  const alamat = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = alamat;
+  a.download = nama;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => {
+    try {
+      URL.revokeObjectURL(alamat);
+    } catch {
+      /* sudah dilepas */
+    }
+  }, 60000);
+}
+
+/**
+ * Nama unduhan yang pasti layak: karakter terlarang Windows diganti "_",
+ * ekstensi sesuai jenis isi bila belum ada, panjang ≤180 tanpa memakan
+ * ekstensinya. Pulang "" bila namanya GENERIK ("download.rtf", "berkas.pdf",
+ * kosong) - Chrome/latar akan menamainya "download (n)", dan itu ditolak
+ * (penegasan pengguna 14 Okt: selalu nama baku).
+ */
+const ALAT_AKHIRAN_TIPE = {
+  "application/rtf": "rtf",
+  "text/rtf": "rtf",
+  "application/msword": "doc",
+  "application/pdf": "pdf",
+  "application/zip": "zip",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/json": "json",
+};
+const ALAT_POLA_NAMA_GENERIK = /^(?:download|unduhan|berkas|file|dokumen|untitled|blob)(?:\s*\(\d+\))?$/i;
+
+function alatNamaUnduhanLayak(nama, tipe) {
+  let n = String(nama || "")
+    .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "_")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[. ]+$/, "");
+  const titik = n.lastIndexOf(".");
+  let batang = n;
+  let akhiran = "";
+  if (titik > 0 && /^[A-Za-z0-9]{2,5}$/.test(n.slice(titik + 1))) {
+    batang = n.slice(0, titik).trim();
+    akhiran = n.slice(titik + 1).toLowerCase();
+  }
+  if (!akhiran) akhiran = ALAT_AKHIRAN_TIPE[String(tipe || "").split(";")[0].trim().toLowerCase()] || "";
+  if (!batang || ALAT_POLA_NAMA_GENERIK.test(batang) || !akhiran) return "";
+  const batas = 180 - akhiran.length - 1;
+  if (batang.length > batas) batang = batang.slice(0, batas).trim();
+  return `${batang}.${akhiran}`;
+}
+
+/**
+ * Menyimpan satu blob lewat pekerja latar. Pulang { ok, lewat, pesan? };
+ * lewat = "ekstensi" (aman) atau "halaman" (cadangan, mungkin ditahan Chrome).
+ * Nama generik ditolak ({ ok: false }) - tidak ada unduhan "download.rtf".
+ */
+async function alatUnduh(blob, namaMentah) {
+  const nama = alatNamaUnduhanLayak(namaMentah, blob && blob.type);
+  if (!nama) {
+    const pesan = `nama berkas "${String(namaMentah || "")}" generik/tanpa ekstensi - unduhan tidak diterbitkan`;
+    try {
+      if (typeof alatCatat === "function") alatCatat("unduh-nama-generik", pesan, "");
+    } catch {
+      /* catatan saja */
+    }
+    return { ok: false, lewat: "", pesan };
+  }
+  let sebab = "";
+  try {
+    const alamat = await alatBlobKeData(blob);
+    const jawab = await new Promise((selesai) => {
+      // Pekerja latar menjawab paling lama ±2,5 dtk sesudah unduhannya mulai
+      // (ikutiUnduhan). Tanpa jawaban sama sekali, jangan menggantung panel.
+      const jam = setTimeout(() => selesai(null), 20000);
+      try {
+        chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis: "unduh", nama, alamat }, (hasil) => {
+          void chrome.runtime.lastError;
+          clearTimeout(jam);
+          selesai(hasil);
+        });
+      } catch {
+        clearTimeout(jam);
+        selesai(null);
+      }
+    });
+    if (jawab && jawab.ok) return { ok: true, lewat: "ekstensi", id: jawab.id };
+    sebab = (jawab && jawab.pesan) || "pekerja latar tidak menjawab";
+  } catch (galat) {
+    sebab = String((galat && galat.message) || galat);
+  }
+  try {
+    if (typeof alatCatat === "function") alatCatat("unduh-cadangan", `unduhan lewat ekstensi gagal: ${sebab}`, nama);
+  } catch {
+    /* catatan saja */
+  }
+  alatUnduhLewatTautan(blob, nama);
+  return { ok: true, lewat: "halaman", pesan: sebab };
+}
+
+/**
+ * ============================================================================
+ * NAMA BAKU UNDUHAN BLANGKO
+ * ============================================================================
+ *
+ * "<nomor perkara, / jadi _> - <nama berkas blangko tanpa ekstensi>.<ekstensi
+ * asli>" - bentuk yang sudah dipakai ABT sendiri ("630_Pdt.G_2026_PA.Dgl -
+ * [01] [Kabul Verstek] Cerai (Format Lengkap).rtf") dan BAS massal. Nama yang
+ * sudah diawali nomornya (header ABT/portal) tidak diberi nomor dua kali.
+ * Pengecualian disengaja: cetak tiga berkas (namaBerkas di abt.js).
+ */
+function alatNamaUnduhanBlangko(nomorPerkara, berkasBlangko, akhiranBawaan) {
+  const bersih = (s) =>
+    String(s || "")
+      .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "_")
+      .replace(/\s+/g, " ")
+      .trim();
+  const nomor = bersih(nomorPerkara);
+  let batang = String(berkasBlangko || "").trim();
+  let akhiran = String(akhiranBawaan || "rtf").replace(/^\./, "").toLowerCase();
+  const titik = batang.lastIndexOf(".");
+  if (titik > 0 && /^[A-Za-z0-9]{2,5}$/.test(batang.slice(titik + 1))) {
+    akhiran = batang.slice(titik + 1).toLowerCase();
+    batang = batang.slice(0, titik);
+  }
+  batang = bersih(batang).replace(/[. ]+$/, "");
+  if (nomor && batang.toLowerCase().startsWith(`${nomor.toLowerCase()} - `)) batang = batang.slice(nomor.length + 3).trim();
+  // Tanpa nomor DAN tanpa blangko tidak ada nama baku - "" (alatUnduh menolak
+  // nama kosong; tidak pernah "berkas.rtf"/"download.rtf").
+  const dasar = [nomor, batang].filter(Boolean).join(" - ");
+  return dasar ? `${dasar}.${akhiran}` : "";
+}
+
+/**
  * Satu permintaan, dengan batas waktunya sendiri.
  *
  * batasMs boleh disebut pemanggil untuk pekerjaan yang memang lebih lama

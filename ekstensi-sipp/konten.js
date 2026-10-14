@@ -640,18 +640,13 @@ function tombolUnduh(dokumen, format, label) {
         return;
       }
 
-      const url = URL.createObjectURL(blob);
-      const tautan = document.createElement("a");
-      tautan.href = url;
-      tautan.download = namaBerkasDari(respons, dokumen, format);
-      document.body.appendChild(tautan);
-      tautan.click();
-      tautan.remove();
-
-      // Alamat obyek TIDAK dilepas seketika. Peramban membaca blobnya setelah
-      // klik selesai diproses, dan melepasnya di baris yang sama membatalkan
-      // sebagian unduhan tanpa pesan apa pun - berkas yang seolah hilang.
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      // Diterbitkan pekerja latar, bukan tautan blob:http halaman SIPP - yang
+      // kedua ditahan Chrome "site isn't using a secure connection" (14 Okt).
+      const u = await alatUnduh(blob, String(namaBerkasDari(respons, dokumen, format)));
+      if (!u.ok) {
+        tandaiGagal(u.pesan || "Berkas tidak dapat disimpan.");
+        return;
+      }
 
       tombol.textContent = semula;
       tombol.disabled = false;
@@ -21618,14 +21613,47 @@ async function a30UnggahEdoc(p) {
     // wadah yang disebut pemanggil: antrean massal tidak punya wadah, dan
     // dialog tanpa orang di depannya akan menahan antrean selamanya.
     const batas = p.anonimisasi ? BATAS_UNGGAH_SIPP_MS * 2 : BATAS_UNGGAH_SIPP_MS;
-    const jawab =
-      typeof kirimUnggahSippTetap === "function"
-        ? await kirimUnggahSippTetap(badan, batas, {
-            tetapUnggah: p.anonimisasi ? p.tetapUnggah || null : null,
-            wadah: p.wadah || null,
-            kabar: p.kabar || null,
-          })
-        : await kirimBadanUnggahSipp(badan, batas);
+    let jawab;
+    try {
+      jawab =
+        typeof kirimUnggahSippTetap === "function"
+          ? await kirimUnggahSippTetap(badan, batas, {
+              tetapUnggah: p.anonimisasi ? p.tetapUnggah || null : null,
+              wadah: p.wadah || null,
+              kabar: p.kabar || null,
+            })
+          : await kirimBadanUnggahSipp(badan, batas);
+    } catch (galat) {
+      // ======================================================================
+      // 14 Okt: PENOLAKAN SLOT ANONIMISASI TIDAK MENAHAN EDOC PUTUSAN
+      // ======================================================================
+      //
+      // Perkara 564 (12 Okt): unggah-sipp 409 dua kali - slot anonimisasi
+      // ditolak pemeriksa isi, dan karena satu kiriman memuat keduanya, edoc
+      // PUTUSAN ikut tidak masuk. Kiriman yang ditolak 409 belum menulis apa
+      // pun ke SIPP, jadi putusan dikirim ulang SENDIRIAN (setara
+      // unggahBerkasAbt di abt.js); anonimisasinya menyusul.
+      const tolak = galat && galat.tolak;
+      if (!p.anonimisasi || !tolak || tolak.slot !== "anonimisasi") throw galat;
+      try {
+        alatCatat("a30-anonim", "anonimisasi ditolak server - edoc putusan dikirim sendirian", String(tolak.alasan || ""));
+      } catch {
+        /* kotak hitam hanya catatan */
+      }
+      if (p.kabar) p.kabar.textContent = "Anonimisasi ditolak server - mengunggah edoc putusan sendirian…";
+      badan.delete("anonimisasi");
+      badan.delete("tetapUnggah");
+      badan.delete("tetapUnggahNama");
+      const sendiri = await kirimBadanUnggahSipp(badan, BATAS_UNGGAH_SIPP_MS);
+      const masuk = Boolean(sendiri && sendiri.ok) && (sendiri.berkas || []).some((b) => b.ok);
+      return {
+        ok: false,
+        bunyi: masuk
+          ? `Edoc putusan terunggah; edoc anonimisasi TIDAK diunggah: ${String(galat.message || "ditolak")} ` +
+            'Perbaiki anonimisasinya lalu unggah lewat bagian "Unggah putusan ke SIPP".'
+          : `Edoc tidak terunggah: ${(sendiri && (sendiri.sebab || sendiri.pesan)) || galat.message}.`,
+      };
+    }
     if (!jawab.ok) return { ok: false, bunyi: `Edoc tidak terunggah: ${jawab.sebab || jawab.pesan || jawab.alasan || "ditolak"}.` };
     const semua = jawab.berkas || [];
     const gagal = semua.filter((b) => !b.ok);
@@ -21640,7 +21668,9 @@ async function a30UnggahEdoc(p) {
     }
     // Butir 6 (6 Okt): naskah yang disimpan di peramban untuk edoc antrean
     // tidak disimpan lebih lama dari perlunya - edocnya sudah masuk.
-    if (typeof a30HapusNaskahEdoc === "function") {
+    // 14 Okt: hanya bila anonimisasinya IKUT masuk - putusan yang terunggah
+    // sendirian masih memerlukan naskahnya untuk anonimisasi yang menyusul.
+    if (p.anonimisasi && typeof a30HapusNaskahEdoc === "function") {
       try {
         await a30HapusNaskahEdoc(p.nomorPerkara);
       } catch {
@@ -21811,9 +21841,15 @@ async function a30OpsiSimpanPutusan(p) {
           masihBerlaku: p.masihBerlaku,
         })
       : await janjiAnon;
-  if (anon && anon.dilewati) {
-    // Pilihan petugas sesudah batas waktu: putusan disimpan, edoc putusan
-    // tetap diunggah, anonimisasinya menyusul lewat "Unggah putusan ke SIPP".
+  // 14 Okt: anonimisasi yang GAGAL (ABT 500 - perkara 473, 13 Okt: "Maximum
+  // execution time of 30 seconds exceeded" di Anonimisasi.php atas RTF hasil
+  // DOCX) atau dibatalkan petugas tidak lagi menahan edoc PUTUSAN. Dahulu
+  // cabang !anon.ok menjawab "Edoc TIDAK diunggah" tanpa mengirim apa pun,
+  // sehingga putusan yang sudah tersimpan tidak punya edoc sama sekali.
+  if (anon && (anon.dilewati || !anon.ok)) {
+    // Pilihan petugas sesudah batas waktu, atau anonimisasi gagal: putusan
+    // disimpan, edoc putusan tetap diunggah, anonimisasinya menyusul lewat
+    // "Unggah putusan ke SIPP".
     opsi.sesudahTersimpan = async (kabar) => {
       const unggah = await a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: null, kabar });
       return {
@@ -21825,12 +21861,9 @@ async function a30OpsiSimpanPutusan(p) {
     };
     return opsi;
   }
-  if (!anon.ok) {
-    const sebab = anon.pesan;
-    opsi.sesudahTersimpan = async () => ({
-      ok: false,
-      bunyi: `Edoc TIDAK diunggah - ${sebab} Unggah lewat bagian "Unggah putusan ke SIPP" sesudah itu beres.`,
-    });
+  if (!anon) {
+    opsi.sesudahTersimpan = (kabar) =>
+      a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: null, kabar });
     return opsi;
   }
   opsi.sesudahTersimpan = (kabar) =>

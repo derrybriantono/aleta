@@ -365,7 +365,14 @@ describe("(c) setiap kegagalan terbaca beserta sebabnya", () => {
 
   it("penjaga teks: latar.js dan jembatan aleta.js tidak lagi memuat rute PDF ataupun pilihan bentuk relaas", () => {
     const akar = path.resolve(__dirname, "../../../ekstensi-sipp");
-    const latar = readFileSync(path.join(akar, "latar.js"), "utf8");
+    // 14 Okt: penampil PDF SALINAN (tampilkanPdfTitipan) memang memeriksa
+    // alamat data:application/pdf - itu bukan jalur relaas, jadi dikeluarkan
+    // dari penyapuan; selebihnya latar.js tetap tanpa PDF.
+    const latarUtuh = readFileSync(path.join(akar, "latar.js"), "utf8").replace(/\r\n/g, "\n");
+    const awalTitipan = latarUtuh.indexOf("async function tampilkanPdfTitipan(");
+    const akhirTitipan = latarUtuh.indexOf("\n}\n", awalTitipan);
+    expect(awalTitipan).toBeGreaterThan(0);
+    const latar = latarUtuh.slice(0, awalTitipan) + latarUtuh.slice(akhirTitipan);
     const jembatan = readFileSync(path.join(akar, "aleta.js"), "utf8");
     expect(latar).not.toMatch(/aleta-bot\/abt\/pdf/);
     expect(latar).not.toMatch(/data:application\/pdf/);

@@ -46,9 +46,12 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "blangko-abt");
 
-    const body = await readJsonBody<{ rtfBase64?: unknown }>(request).catch(
-      () => ({}) as { rtfBase64?: unknown }
+    const body = await readJsonBody<{ rtfBase64?: unknown; salinan?: unknown }>(request).catch(
+      () => ({}) as { rtfBase64?: unknown; salinan?: unknown }
     );
+    // 14 Okt: PDF SALINAN - "SALINAN" kanan atas, "ttd", blok Untuk Salinan
+    // tampak, dan tanda tangan Panitera yang sudah disahkan (dibubuhkan bot).
+    const salinan = body.salinan === true;
     const rtfBase64 = String(body.rtfBase64 || "");
     if (!rtfBase64) {
       return ok({ available: false, message: "Berkas RTF tidak terkirim." });
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const hasil = await getGatewayAbtPdf(rtfBase64);
+    const hasil = await getGatewayAbtPdf(rtfBase64, { salinan });
     if (!hasil.ok) {
       return ok({
         available: false,
@@ -77,6 +80,7 @@ export async function POST(request: NextRequest) {
       pdfBase64: hasil.data?.pdfBase64 ?? "",
       byte: hasil.data?.byte ?? 0,
       versiMesin: hasil.data?.versiMesin ?? "",
+      ...(salinan ? { salinan: hasil.data?.salinan ?? null } : {}),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

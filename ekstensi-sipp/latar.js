@@ -567,6 +567,39 @@ function terbitkanUnduhan(alamatMentah, nama) {
   });
 }
 
+/**
+ * PDF SALINAN ditampilkan di tab ekstensi (14 Okt 2026).
+ *
+ * Pulang { ok, tab } atau { ok: false, pesan } - tidak pernah melempar ke
+ * pemanggil. Titipan yang lebih tua dari satu jam dibuang di tiap panggilan:
+ * tab yang tidak pernah dibuka tidak meninggalkan PDF putusan selamanya.
+ */
+const UMUR_TITIPAN_PDF = 60 * 60 * 1000;
+const BATAS_TITIPAN_PDF = 9 * 1024 * 1024;
+
+async function tampilkanPdfTitipan(pesan) {
+  const alamat = String((pesan && pesan.alamat) || "");
+  if (!alamat.startsWith("data:application/pdf;base64,")) return { ok: false, pesan: "bukan PDF - tidak ditampilkan" };
+  if (alamat.length > BATAS_TITIPAN_PDF) return { ok: false, pesan: "PDF terlalu besar untuk ditampilkan langsung" };
+  if (!chrome.storage || !chrome.storage.session || !chrome.tabs) return { ok: false, pesan: "peramban tidak mendukung penampil salinan" };
+  const nama = potongNamaBerkas(String(pesan.nama || "SALINAN.pdf").replace(/[\\/:*?"<>|]+/g, "_"), 180);
+  try {
+    const semua = await chrome.storage.session.get(null);
+    const basi = Object.keys(semua || {}).filter(
+      (k) => k.startsWith("aletaPdf:") && Date.now() - Number((semua[k] && semua[k].saat) || 0) > UMUR_TITIPAN_PDF
+    );
+    if (basi.length) await chrome.storage.session.remove(basi);
+  } catch {
+    /* pembersihan hanya pembantu */
+  }
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  await chrome.storage.session.set({
+    [`aletaPdf:${id}`]: { nama, alamat, pesan: String(pesan.pesan || "").slice(0, 600), awas: pesan.awas === true, saat: Date.now() },
+  });
+  const tab = await chrome.tabs.create({ url: chrome.runtime.getURL(`salinan.html#${id}`) });
+  return { ok: true, tab: tab && tab.id };
+}
+
 chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
 
@@ -693,6 +726,13 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
     return false;
   }
 
+  // 14 Okt: PDF SALINAN langsung tampil - dititipkan di storage.session lalu
+  // dibuka di salinan.html (asal chrome-extension://). Lihat salinan.js.
+  if (pesan.jenis === "tampilkan-pdf") {
+    void tampilkanPdfTitipan(pesan).then(jawab, (e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 200) }));
+    return true;
+  }
+
   if (pesan.jenis === "unduh") {
     // Dipotong pada BATANGNYA, bukan dari belakang: memotong nama utuh
     // membuang akhiran ".rtf" atau ".pdf"-nya, dan berkas tanpa akhiran tidak
@@ -701,6 +741,12 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
       String(pesan.nama || "berkas").replace(/[\\/:*?"<>|]+/g, "_"),
       180
     );
+    // 14 Okt: nama generik ("download.rtf", tanpa ekstensi) DITOLAK - panel
+    // wajib menyebut nama baku. Tanpa ini Chrome menamainya "download (n)".
+    if (POLA_NAMA_UMUM.test(nama) || !/\.[A-Za-z0-9]{2,5}$/.test(nama) || /^berkas\./i.test(nama)) {
+      jawab({ ok: false, pesan: `nama berkas generik ditolak: ${nama}` });
+      return false;
+    }
     // Satu jalur dengan putaran relaas massal - lihat terbitkanUnduhan.
     void terbitkanUnduhan(pesan.alamat, nama).then(jawab);
     return true; // jawaban menyusul

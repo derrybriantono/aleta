@@ -1417,7 +1417,10 @@ describe("nomor 9 - satu tekanan CETAK, tiga berkas", () => {
     // SEKARANG apakah tautannya ditahan.
     const isi = abtJs();
     expect(isi).toContain("let cetakTigaMenyala = false;");
-    expect(isi).toContain("if (!cetakTigaMenyala) return;");
+    // 14 Okt: saklar mati pun klik ditahan - satu berkas diterbitkan ekstensi
+    // (bukan unduhan http halaman); saklarnya dibaca ULANG dari penyimpanan.
+    expect(isi).toContain("if (await saklarCetakSekarang())");
+    expect(isi).toContain("if (await cetakSatuLewatEkstensi(tautan.href)) return;");
     expect(popupJs()).toContain("simpan.cetakTigaBerkas === true");
   });
 
