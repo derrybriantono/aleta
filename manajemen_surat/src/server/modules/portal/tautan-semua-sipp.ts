@@ -25,12 +25,15 @@
  * jalan masuk adalah password SIPP yang cocok dengan sidik sys_users (bot).
  * Bot mati = akun baru tidak dapat masuk (bukan masuk tanpa password).
  *
- * Super Admin tidak diubah. Peran akun baru selalu peran AMAN dari pemetaan
- * grup SIPP (lib/tautan-akun-sipp.ts PETA_GRUP_SIPP) - peran tinggi
- * ditetapkan admin sendiri sesudahnya.
+ * Super Admin tidak diubah. PERAN UTAMA (14 Okt 2026, keputusan pengguna):
+ * akun yang sudah ada TIDAK PERNAH diubah peran utamanya; akun baru selalu
+ * pelaksana (Pengadministrasi Umum). Yang dipetakan dari SIPP hanya SUB-PERAN
+ * (users.additional_role_ids_json, lib/tautan-akun-sipp.ts subPeranDariSipp) -
+ * ditambahkan, tidak pernah dikurangi.
  */
 
 import {
+  type KetetapanPengguna,
   saringBuatAkun,
   saringPilihanTerapkan,
   susunPratinjauTautanSipp,
@@ -45,6 +48,18 @@ import { KEADAAN_KREDENSIAL } from "@/server/modules/external-apps/service";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
+import { normalizeAdditionalRoleIds } from "@/lib/user-additional-roles";
+
+/**
+ * Pasangan yang DITETAPKAN pengguna (14 Okt 2026) - tercentang di pratinjau
+ * walau namanya ganda di SIPP. Nama ganda/tautan curiga lain (Narti, Rahma,
+ * Tiffany, Karmin, Rahma->meja1g, "admin" di dua akun) sengaja TIDAK ada di
+ * sini: pengguna memeriksanya sendiri di tab Tautan SIPP.
+ */
+export const KETETAPAN_PENGGUNA: KetetapanPengguna[] = [
+  { nama: "Munifa, S.H.", usernameSipp: "munifa,SH.", catatan: "ditetapkan pengguna 14 Okt 2026" },
+  { nama: "Fikrianto, S.H.", usernameSipp: "fikri", catatan: "ditetapkan pengguna 14 Okt 2026" },
+];
 
 export const SUMBER_MASSAL = "admin-massal";
 export const SUMBER_MASSAL_BARU = "admin-massal-baru";
@@ -71,7 +86,8 @@ export async function bacaBahanAleta(db: AletaDatabase): Promise<Pick<BahanTauta
       role_id: string | null;
       is_active: number | boolean | null;
       deleted_at: string | null;
-    }>(`SELECT id, username, name, nip, role_id, is_active, deleted_at FROM users`, []),
+      additional_role_ids_json: string | null;
+    }>(`SELECT id, username, name, nip, role_id, is_active, deleted_at, additional_role_ids_json FROM users`, []),
     db.queryAll<{
       user_id: string | null;
       external_username: string | null;
@@ -93,6 +109,7 @@ export async function bacaBahanAleta(db: AletaDatabase): Promise<Pick<BahanTauta
       roleId: String(a.role_id ?? ""),
       isActive: a.is_active === true || Number(a.is_active) === 1,
       dihapus: Boolean(a.deleted_at),
+      subPeran: bacaSubPeran(a.additional_role_ids_json),
     })),
     kredensial: kred.map((k) => ({
       userId: String(k.user_id ?? ""),
@@ -102,6 +119,14 @@ export async function bacaBahanAleta(db: AletaDatabase): Promise<Pick<BahanTauta
       sumber: String(k.tautan_sumber ?? ""),
     })),
   };
+}
+
+function bacaSubPeran(json: string | null | undefined): string[] {
+  try {
+    return normalizeAdditionalRoleIds(JSON.parse(String(json || "[]")));
+  } catch {
+    return [];
+  }
 }
 
 function rapikanSipp(baris: Array<Partial<PenggunaSippDaftar>>): PenggunaSippDaftar[] {
@@ -126,11 +151,13 @@ export async function pratinjauTautanSemua(db: AletaDatabase, deps: DepsTautanSe
   if (!sipp.ok) {
     throw new ApiError(502, `Daftar akun SIPP belum dapat dibaca lewat ALETA Bot${sipp.error ? `: ${sipp.error}` : "."}`);
   }
-  return susunPratinjauTautanSipp({ ...aleta, sipp: rapikanSipp(sipp.data?.pengguna ?? []) });
+  return susunPratinjauTautanSipp({ ...aleta, sipp: rapikanSipp(sipp.data?.pengguna ?? []), ketetapan: KETETAPAN_PENGGUNA });
 }
 
 export type HasilTerapkan = {
   ditautkan: PilihanTautan[];
+  /** Sub-peran yang DITAMBAHKAN per akun (peran utama tidak disentuh). */
+  subPeran: Array<{ userId: string; tambah: string[] }>;
   dibuat: Array<{ userId: string; usernameSipp: string; peran: string; jabatan: string }>;
   ditolak: Array<PilihanDitolak | { usernameSipp: string; sebab: string }>;
 };
@@ -151,7 +178,7 @@ export async function terapkanTautanSemua(
   db: AletaDatabase,
   deps: DepsTautanSemua,
   aktor: AktorTautan,
-  masukan: { tautkan?: PilihanTautan[]; buat?: string[] }
+  masukan: { tautkan?: PilihanTautan[]; buat?: string[]; subPeran?: string[] }
 ): Promise<HasilTerapkan> {
   wajibAdmin(aktor);
   const pratinjau = await pratinjauTautanSemua(db, deps);
@@ -169,7 +196,27 @@ export async function terapkanTautanSemua(
       .filter((s) => dipakaiTaut.has(s.username.toLowerCase()))
       .map((s) => ({ usernameSipp: s.username, sebab: "Akun SIPP ini sekaligus dipilih untuk ditautkan ke akun ALETA yang ada." })),
   ];
-  if (tautkan.diterima.length === 0 && buatSah.length === 0) return { ditautkan: [], dibuat: [], ditolak };
+  // Sub-peran untuk akun yang ADA: dari akun SIPP yang ditautkan sekarang, atau
+  // dari tautan yang sudah ada dan bersih (tanpa masalah). Dihitung ulang di
+  // sini - bukan dari pratinjau peramban.
+  const perAkun = new Map(pratinjau.baris.map((b) => [b.userId, b]));
+  const calonPer = new Map(pratinjau.baris.flatMap((b) => b.calon).map((c) => [c.username.toLowerCase(), c]));
+  const subPeranSah: Array<{ userId: string; tambah: string[] }> = [];
+  for (const userId of new Set((masukan.subPeran ?? []).map((x) => String(x ?? "")))) {
+    const b = perAkun.get(userId);
+    if (!b || b.kelompok === "super-admin" || b.kelompok === "nonaktif") continue;
+    const taut = tautkan.diterima.find((p) => p.userId === userId)?.usernameSipp
+      ?? (b.kelompok === "sudah" && !b.masalah ? b.usernameSipp : "");
+    const c = taut ? calonPer.get(taut.toLowerCase()) : undefined;
+    if (!c || !c.aktif) continue;
+    const ada = new Set(b.subPeranAda);
+    const tambah = c.subPeran.filter((x) => !ada.has(x));
+    if (tambah.length) subPeranSah.push({ userId, tambah });
+  }
+
+  if (tautkan.diterima.length === 0 && buatSah.length === 0 && subPeranSah.length === 0) {
+    return { ditautkan: [], subPeran: [], dibuat: [], ditolak };
+  }
 
   const waktu = new Date().toISOString();
   const dibuat: HasilTerapkan["dibuat"] = [];
@@ -258,6 +305,7 @@ export async function terapkanTautanSemua(
         throw new ApiError(409, `Jabatan ${s.usulan.jabatanAman} / peran ${s.usulan.peranAman} belum ada di ALETA - akun ${s.username} tidak dapat dibuat.`);
       }
       const userId = await nextPrefixedId(tx, "users", "usr");
+      const subPeranBaru = normalizeAdditionalRoleIds(s.subPeran);
       // Surel wajib & unik di tabel users; akun SIPP tidak punya surel, jadi
       // dipakai alamat ber-TLD .invalid (RFC 2606) yang tidak pernah terkirim.
       const surel = `sipp-${s.sippUserId || userId}@aleta.invalid`;
@@ -265,8 +313,19 @@ export async function terapkanTautanSemua(
         `INSERT INTO users (
            id, username, password_hash, name, nip, email, email_verified, whatsapp_number, profile_photo_url,
            role_id, position_id, additional_role_ids_json, is_active, can_bypass_hierarchy, deleted_at, created_at, updated_at
-         ) VALUES (?, ?, '', ?, ?, ?, TRUE, '', NULL, ?, ?, '[]', 1, 0, NULL, ?, ?)`,
-        [userId, s.username, s.namaLengkap || s.username, s.nip || null, surel, s.usulan.peranAman, s.usulan.jabatanAman, waktu, waktu]
+         ) VALUES (?, ?, '', ?, ?, ?, TRUE, '', NULL, ?, ?, ?, 1, 0, NULL, ?, ?)`,
+        [
+          userId,
+          s.username,
+          s.namaLengkap || s.username,
+          s.nip || null,
+          surel,
+          s.usulan.peranAman,
+          s.usulan.jabatanAman,
+          JSON.stringify(subPeranBaru),
+          waktu,
+          waktu,
+        ]
       );
       // SENGAJA tanpa baris accounts 'credential': tidak ada password ALETA.
       await tx.run(
@@ -302,6 +361,7 @@ export async function terapkanTautanSemua(
           positionId: s.usulan.jabatanAman,
           peranPadanan: s.usulan.peranPadanan,
           peranTinggiPerluKeputusan: s.usulan.tinggi,
+          subPeran: subPeranBaru,
           dasar: s.usulan.dasar,
           tanpaPasswordAleta: true,
           sumber: SUMBER_MASSAL_BARU,
@@ -311,17 +371,38 @@ export async function terapkanTautanSemua(
       dibuat.push({ userId, usernameSipp: s.username, peran: s.usulan.peranAman, jabatan: s.usulan.jabatanAman });
     }
 
+    // Sub-peran akun yang ADA: digabung (tidak pernah dikurangi), role_id dan
+    // position_id TIDAK disentuh.
+    for (const sp of subPeranSah) {
+      const u = await tx.queryOne<{ role_id: string; additional_role_ids_json: string | null }>(
+        `SELECT role_id, additional_role_ids_json FROM users WHERE id = ? AND deleted_at IS NULL`,
+        [sp.userId]
+      );
+      if (!u || u.role_id === "super-admin") throw new ApiError(409, `Akun ALETA ${sp.userId} berubah sesudah pratinjau. Muat ulang pratinjau.`);
+      const lama = bacaSubPeran(u.additional_role_ids_json);
+      const gabung = normalizeAdditionalRoleIds([...lama, ...sp.tambah]);
+      await tx.run(`UPDATE users SET additional_role_ids_json = ?, updated_at = ? WHERE id = ?`, [JSON.stringify(gabung), waktu, sp.userId]);
+      await appendAuditLog(tx, {
+        id: await nextPrefixedId(tx, "audit_logs", "adt"),
+        actorUserId: aktor.id,
+        action: "ADD_SUB_ROLE_FROM_SIPP",
+        entityType: "user",
+        entityId: sp.userId,
+        payload: { sebelum: lama, tambah: sp.tambah, sesudah: gabung, pada: waktu },
+      });
+    }
+
     await appendAuditLog(tx, {
       id: await nextPrefixedId(tx, "audit_logs", "adt"),
       actorUserId: aktor.id,
       action: "SIPP_BULK_LINK_APPLY",
       entityType: "user",
       entityId: "massal",
-      payload: { ditautkan: tautkan.diterima.length, dibuat: dibuat.length, ditolak: ditolak.length, pada: waktu },
+      payload: { ditautkan: tautkan.diterima.length, subPeran: subPeranSah.length, dibuat: dibuat.length, ditolak: ditolak.length, pada: waktu },
     });
   });
 
-  return { ditautkan: tautkan.diterima, dibuat, ditolak };
+  return { ditautkan: tautkan.diterima, subPeran: subPeranSah, dibuat, ditolak };
 }
 
 /**

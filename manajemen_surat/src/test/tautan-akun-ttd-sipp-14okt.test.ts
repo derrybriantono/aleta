@@ -9,6 +9,7 @@ import {
   namaMirip,
   saringBuatAkun,
   saringPilihanTerapkan,
+  subPeranDariSipp,
   susunPratinjauTautanSipp,
   usulanPeranDariGrup,
   type AkunAletaTautan,
@@ -23,6 +24,7 @@ import { akunSippMilik } from "@/server/modules/aleta-ecourt/court-calendar-akun
 import { tautanSaatUnggah, tautkanTtdOtomatis } from "@/server/modules/aleta-ecourt/tautan-ttd";
 import { kosongkanBatasMasukSipp, putuskanMasukSipp } from "@/server/modules/portal/masuk-sipp";
 import {
+  KETETAPAN_PENGGUNA,
   batalkanTautanMassal,
   pratinjauTautanSemua,
   terapkanTautanSemua,
@@ -226,18 +228,68 @@ describe("B. petugas SIPP tanpa akun ALETA", () => {
     expect(p.namaGandaSipp.map((g) => g.nama).sort()).toEqual(["Narti", "Rahma Anggorosiwi"]);
   });
 
-  it("peran tinggi TIDAK pernah diberikan otomatis", () => {
-    for (const grup of ["Hakim", "Ketua/Wakil Ketua", "Panitera/Wakil Panitera", "Panmud Gugatan", "Administrator", "Super Administrator"]) {
+  it("peran UTAMA akun baru selalu pelaksana (keputusan pengguna 14 Okt); padanan grup hanya keterangan", () => {
+    for (const grup of ["Hakim", "Ketua/Wakil Ketua", "Panmud Gugatan", "Administrator", "Panitera Pengganti", "Jurusita", "Meja I Gugatan", "Kasir"]) {
       const u = usulanPeranDariGrup([grup]);
-      expect(u.tinggi, grup).toBe(true);
       expect(u.peranAman, grup).toBe("pelaksana");
       expect(u.jabatanAman, grup).toBe("pos-pengadministrasi-umum");
     }
-    expect(usulanPeranDariGrup(["Panitera Pengganti"])).toMatchObject({ tinggi: false, peranAman: "panitera-pengganti" });
-    expect(usulanPeranDariGrup(["Jurusita"])).toMatchObject({ tinggi: false, peranAman: "jurusita" });
-    expect(usulanPeranDariGrup(["Meja I Gugatan"])).toMatchObject({ tinggi: false, peranAman: "analis-perkara" });
-    expect(usulanPeranDariGrup([], ["hakim"])).toMatchObject({ tinggi: true, peranAman: "pelaksana" });
-    expect(usulanPeranDariGrup([])).toMatchObject({ tinggi: false, peranAman: "pelaksana" });
+    expect(usulanPeranDariGrup(["Hakim"])).toMatchObject({ tinggi: true, peranPadanan: "hakim" });
+    expect(usulanPeranDariGrup(["Panitera Pengganti"])).toMatchObject({ tinggi: false, peranPadanan: "panitera-pengganti" });
+  });
+
+  it("sub-peran/tugas dari username + grup SIPP (struktur additional_role_ids yang ada)", () => {
+    expect(subPeranDariSipp({ username: "meja1g", grup: ["Meja I Gugatan"] })).toEqual(["petugas_meja_1_gugatan"]);
+    expect(subPeranDariSipp({ username: "meja2p", grup: [] })).toEqual(["petugas_meja_2_permohonan"]);
+    expect(subPeranDariSipp({ username: "x", grup: ["Meja III Permohonan", "Kasir"] })).toEqual(["petugas_meja_3_permohonan", "kasir"]);
+    expect(subPeranDariSipp({ username: "deleg", grup: ["Koordinator Delegasi"] })).toEqual(["operator_delegasi"]);
+    // Grup yang sama dengan peran utama tidak menjadi sub-peran.
+    expect(subPeranDariSipp({ username: "Idris", grup: ["Hakim"] })).toEqual([]);
+    expect(subPeranDariSipp({ username: "andini", grup: ["Panitera Pengganti"] })).toEqual([]);
+  });
+
+  it("ketetapan pengguna: Munifa -> munifa,SH. dikonfirmasi; Fikrianto -> fikri dibuatkan; selebihnya tetap ganda", () => {
+    expect(KETETAPAN_PENGGUNA.map((k) => k.usernameSipp)).toEqual(["munifa,SH.", "fikri"]);
+    const p = susunPratinjauTautanSipp({
+      akun: [
+        akun("usr-munifa", "MUNIFA, S.H.", { nip: "198000000000122001" }),
+        akun("usr-narti", "NARTI"),
+      ],
+      kredensial: [kred("usr-munifa", "munifa,SH.")],
+      sipp: [
+        sipp("munifa,SH.", "Munifa, S.H.", { pejabat: [{ jabatan: "panitera", nama: "Munifa", nip: "198000000000122003" }] }),
+        sipp("munifa", "Munifa,SH"),
+        sipp("jsp3", "Fikrianto, S.H.", { diblokir: true }),
+        sipp("fikri", "Fikrianto, S.H.", { grup: ["Panmud Permohonan"] }),
+        sipp("waka", "Drs. H. Karmin, M.H."),
+        sipp("karmin", "Drs. H. Karmin, M.H.", { diblokir: true }),
+        sipp("meja2p", "Narti"),
+        sipp("meja2g", "Narti"),
+      ],
+      ketetapan: KETETAPAN_PENGGUNA,
+    });
+    const munifa = p.baris.find((b) => b.userId === "usr-munifa")!;
+    expect(munifa).toMatchObject({ kelompok: "sudah", masalah: "", ditetapkanPengguna: true });
+    expect(p.baris.find((b) => b.userId === "usr-narti")?.kelompok).toBe("ganda");
+    const k = Object.fromEntries(p.sippTanpaAkun.map((s) => [s.username, s.kelompok]));
+    expect(k).toMatchObject({ fikri: "buat", waka: "ganda" });
+    expect(p.sippTanpaAkun.find((s) => s.username === "fikri")?.usulan).toMatchObject({ peranAman: "pelaksana", peranPadanan: "panitera-muda" });
+
+    // Ketetapan ke akun SIPP yang diblokir / diklaim akun lain tidak berlaku.
+    const blokir = susunPratinjauTautanSipp({
+      akun: [akun("usr-f", "FIKRIANTO, S.H.")],
+      kredensial: [],
+      sipp: [sipp("fikri", "Fikrianto, S.H.", { diblokir: true })],
+      ketetapan: KETETAPAN_PENGGUNA,
+    });
+    expect(blokir.baris[0].kelompok).toBe("sipp-nonaktif");
+    const diklaim = susunPratinjauTautanSipp({
+      akun: [akun("usr-f", "FIKRIANTO, S.H."), akun("usr-lain", "ORANG LAIN")],
+      kredensial: [kred("usr-lain", "fikri")],
+      sipp: [sipp("fikri", "Fikrianto, S.H.")],
+      ketetapan: KETETAPAN_PENGGUNA,
+    });
+    expect(diklaim.baris.find((b) => b.userId === "usr-f")?.kelompok).toBe("ganda");
   });
 
   it("penyaring: pasti hanya ke padanannya, ganda hanya ke calon aktif, satu SIPP satu akun", () => {
@@ -305,7 +357,8 @@ function depsSipp(daftar: PenggunaSippDaftar[]): DepsTautanSemua {
 }
 
 const SIPP_UJI = [
-  sipp("qadariyah", "Qadariyah, S.H.", { sippUserId: "11" }),
+  sipp("qadariyah", "Qadariyah, S.H.", { sippUserId: "11", grup: ["Kasir"] }),
+  sipp("meja1g", "Tiffany RS", { sippUserId: "16", grup: ["Meja I Gugatan"] }),
   sipp("sitti", "Sitti Nurhidayah, S.H.I.", { sippUserId: "12", grup: ["Panitera Pengganti"] }),
   sipp("hakimbaru", "Hakim Baru Sekali", { sippUserId: "13", grup: ["Hakim"] }),
   sipp("meja2p", "Narti", { sippUserId: "14" }),
@@ -323,11 +376,26 @@ describe("C. basis data", () => {
     await expect(pratinjauTautanSemua(db, { daftarSipp: async () => ({ ok: false, error: "bot mati" }) })).rejects.toThrow(/bot mati/);
   });
 
-  it("terapkan: tautan + akun baru dalam satu transaksi, tanpa password, dengan audit; non-admin ditolak", async () => {
+  it("terapkan: tautan + sub-peran + akun baru dalam satu transaksi, tanpa password, peran utama tidak diubah, dengan audit", async () => {
     db = await createAletaDatabase({ useInMemory: true, seed: true });
-    await buatPengguna(db, "usr-qa", "QADARIYAH, S.H.");
+    await buatPengguna(db, "usr-qa", "QADARIYAH, S.H.", "panitera-pengganti");
+    await buatPengguna(db, "usr-tif", "TIFFANY RS", "analis-perkara");
+    await db.run(`UPDATE users SET additional_role_ids_json = '["operator_sipp"]' WHERE id = 'usr-tif'`, []);
+    await db.run(
+      `INSERT INTO external_app_credentials (id, user_id, app_id, external_username, is_enabled, last_verified_status, created_at, updated_at)
+       VALUES ('eac-tif', 'usr-tif', 'sipp', 'meja1g', 1, 'verified', 'x', 'x')`,
+      []
+    );
     await buatPengguna(db, "usr-uji-admin", "ADMIN UJI", "admin");
     const aktor = { id: "usr-uji-admin", roleId: "admin" };
+    const posisiSebelum = await db.queryAll<{ id: string; role_id: string; position_id: string }>(
+      `SELECT id, role_id, position_id FROM users WHERE id IN ('usr-qa', 'usr-tif') ORDER BY id`,
+      []
+    );
+
+    const pr = await pratinjauTautanSemua(db, depsSipp(SIPP_UJI));
+    expect(pr.baris.find((b) => b.userId === "usr-tif")).toMatchObject({ kelompok: "sudah", subPeranUsulan: ["petugas_meja_1_gugatan"] });
+    expect(pr.baris.find((b) => b.userId === "usr-qa")).toMatchObject({ kelompok: "pasti", subPeranUsulan: ["kasir"] });
 
     await expect(
       terapkanTautanSemua(db, depsSipp(SIPP_UJI), { id: "usr-qa", roleId: "pelaksana" }, { tautkan: [{ userId: "usr-qa", usernameSipp: "qadariyah" }] })
@@ -336,14 +404,30 @@ describe("C. basis data", () => {
     const hasil = await terapkanTautanSemua(db, depsSipp(SIPP_UJI), aktor, {
       tautkan: [{ userId: "usr-qa", usernameSipp: "qadariyah" }],
       buat: ["sitti", "hakimbaru", "meja2p", "meja2g"],
+      subPeran: ["usr-qa", "usr-tif", "usr-uji-admin"],
     });
     expect(hasil.ditautkan).toEqual([{ userId: "usr-qa", usernameSipp: "qadariyah" }]);
-    expect(hasil.dibuat.map((d) => [d.usernameSipp, d.peran])).toEqual([
-      ["sitti", "panitera-pengganti"],
-      ["hakimbaru", "pelaksana"],
-      ["meja2p", "pelaksana"],
+    expect(hasil.subPeran).toEqual([
+      { userId: "usr-qa", tambah: ["kasir"] },
+      { userId: "usr-tif", tambah: ["petugas_meja_1_gugatan"] },
+    ]);
+    expect(hasil.dibuat.map((d) => [d.usernameSipp, d.peran, d.jabatan])).toEqual([
+      ["sitti", "pelaksana", "pos-pengadministrasi-umum"],
+      ["hakimbaru", "pelaksana", "pos-pengadministrasi-umum"],
+      ["meja2p", "pelaksana", "pos-pengadministrasi-umum"],
     ]);
     expect(hasil.ditolak.map((d) => d.usernameSipp)).toEqual(["meja2g"]);
+
+    // Peran utama & jabatan akun yang ada TIDAK berubah; sub-peran digabung, tidak dikurangi.
+    expect(
+      await db.queryAll(`SELECT id, role_id, position_id FROM users WHERE id IN ('usr-qa', 'usr-tif') ORDER BY id`, [])
+    ).toEqual(posisiSebelum);
+    expect(
+      JSON.parse(String((await db.queryOne<{ j: string }>(`SELECT additional_role_ids_json AS j FROM users WHERE id = 'usr-tif'`))?.j))
+    ).toEqual(["operator_sipp", "petugas_meja_1_gugatan"]);
+    expect(
+      JSON.parse(String((await db.queryOne<{ j: string }>(`SELECT additional_role_ids_json AS j FROM users WHERE username = 'meja2p'`))?.j))
+    ).toEqual(["petugas_meja_2_permohonan"]);
 
     const tautan = await db.queryOne<Record<string, unknown>>(
       `SELECT external_username, encrypted_password, password_md5_hash, is_enabled, tautan_sumber, tautan_ditinjau_oleh FROM external_app_credentials WHERE user_id = 'usr-qa'`
@@ -362,7 +446,15 @@ describe("C. basis data", () => {
       /SIPP/.test(a.action)
     );
     expect(audit.map((a) => a.action).sort()).toEqual(
-      ["CREATE_USER_FROM_SIPP", "CREATE_USER_FROM_SIPP", "CREATE_USER_FROM_SIPP", "LINK_SIPP_ACCOUNT_BULK", "SIPP_BULK_LINK_APPLY"].sort()
+      [
+        "ADD_SUB_ROLE_FROM_SIPP",
+        "ADD_SUB_ROLE_FROM_SIPP",
+        "CREATE_USER_FROM_SIPP",
+        "CREATE_USER_FROM_SIPP",
+        "CREATE_USER_FROM_SIPP",
+        "LINK_SIPP_ACCOUNT_BULK",
+        "SIPP_BULK_LINK_APPLY",
+      ].sort()
     );
     expect(new Set(audit.map((a) => a.actor_user_id))).toEqual(new Set(["usr-uji-admin"]));
   });

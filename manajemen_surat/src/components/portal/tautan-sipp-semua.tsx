@@ -22,6 +22,9 @@ import { apiPath } from "@/lib/base-path";
 import { getRoleLabel } from "@/lib/permissions";
 import type { BarisTautan, KelompokTautan, PratinjauTautan } from "@/lib/tautan-akun-sipp";
 import type { RoleId } from "@/lib/types";
+import { getAdditionalRoleLabel } from "@/lib/user-additional-roles";
+
+const sebutSub = (ids: string[]) => ids.map(getAdditionalRoleLabel).join(", ");
 
 const SEBUT_KELOMPOK: Record<KelompokTautan, { label: string; varian: "success" | "warning" | "danger" | "muted" | "info" | "default" }> = {
   pasti: { label: "Cocok pasti", varian: "success" },
@@ -54,6 +57,8 @@ export function TautanSippSemua() {
   /** userId -> username SIPP yang dipilih (kosong = tidak dicentang). */
   const [pilihTaut, setPilihTaut] = useState<Record<string, string>>({});
   const [pilihBuat, setPilihBuat] = useState<Record<string, boolean>>({});
+  /** userId -> tambahkan sub-peran dari akun SIPP-nya (peran utama tidak pernah diubah). */
+  const [pilihSub, setPilihSub] = useState<Record<string, boolean>>({});
 
   const muat = useCallback(async () => {
     setMemuat(true);
@@ -66,6 +71,7 @@ export function TautanSippSemua() {
       // Hanya yang PASTI dicentang lebih dulu; ganda/ragu menunggu pilihan admin.
       setPilihTaut(Object.fromEntries(p.baris.filter((b) => b.kelompok === "pasti").map((b) => [b.userId, b.usernameSipp])));
       setPilihBuat(Object.fromEntries(p.sippTanpaAkun.map((s) => [s.username, s.kelompok === "buat"])));
+      setPilihSub(Object.fromEntries(p.baris.filter((b) => b.subPeranUsulan.length > 0).map((b) => [b.userId, true])));
     } catch (e) {
       setGalat(e instanceof Error ? e.message : "Pratinjau tidak dapat dimuat.");
     } finally {
@@ -75,6 +81,7 @@ export function TautanSippSemua() {
 
   const jumlahTaut = useMemo(() => Object.values(pilihTaut).filter(Boolean).length, [pilihTaut]);
   const jumlahBuat = useMemo(() => Object.values(pilihBuat).filter(Boolean).length, [pilihBuat]);
+  const jumlahSub = useMemo(() => Object.values(pilihSub).filter(Boolean).length, [pilihSub]);
 
   const terapkan = useCallback(async () => {
     if (!pratinjau) return;
@@ -84,9 +91,12 @@ export function TautanSippSemua() {
     const buat = Object.entries(pilihBuat)
       .filter(([, v]) => v)
       .map(([u]) => u);
+    const subPeran = Object.entries(pilihSub)
+      .filter(([, v]) => v)
+      .map(([u]) => u);
     if (
       !window.confirm(
-        `Tautkan ${tautkan.length} akun ALETA ke SIPP dan buat ${buat.length} akun ALETA baru (tanpa password ALETA - masuk dengan password SIPP)?`
+        `Tautkan ${tautkan.length} akun ALETA ke SIPP, tambahkan sub-peran pada ${subPeran.length} akun (peran utama tidak diubah), dan buat ${buat.length} akun ALETA baru (peran Pelaksana, tanpa password ALETA - masuk dengan password SIPP)?`
       )
     )
       return;
@@ -94,16 +104,21 @@ export function TautanSippSemua() {
     setGalat("");
     setPesan("");
     try {
-      const hasil = await baca<{ ditautkan: unknown[]; dibuat: unknown[]; ditolak: Array<{ usernameSipp: string; sebab: string }> }>(
+      const hasil = await baca<{
+        ditautkan: unknown[];
+        subPeran: unknown[];
+        dibuat: unknown[];
+        ditolak: Array<{ usernameSipp: string; sebab: string }>;
+      }>(
         await fetch(apiPath("/api/users/tautan-sipp-semua"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ aksi: "terapkan", tautkan, buat }),
+          body: JSON.stringify({ aksi: "terapkan", tautkan, buat, subPeran }),
         })
       );
       setPesan(
-        `Ditautkan ${hasil.ditautkan.length}, akun baru ${hasil.dibuat.length}, ditolak ${hasil.ditolak.length}` +
+        `Ditautkan ${hasil.ditautkan.length}, sub-peran ditambahkan ${hasil.subPeran.length}, akun baru ${hasil.dibuat.length}, ditolak ${hasil.ditolak.length}` +
           (hasil.ditolak.length ? `: ${hasil.ditolak.map((d) => `${d.usernameSipp} (${d.sebab})`).join("; ")}` : ".")
       );
       await muat();
@@ -112,7 +127,7 @@ export function TautanSippSemua() {
     } finally {
       setMemuat(false);
     }
-  }, [pratinjau, pilihTaut, pilihBuat, muat]);
+  }, [pratinjau, pilihTaut, pilihBuat, pilihSub, muat]);
 
   const batal = useCallback(
     async (b: BarisTautan) => {
@@ -149,7 +164,8 @@ export function TautanSippSemua() {
         </CardTitle>
         <CardDescription>
           Setiap petugas masuk ALETA dengan username dan password SIPP-nya sendiri. Password tidak pernah disalin - dicocokkan
-          ke SIPP saat masuk. Pratinjau tidak menulis apa pun; hanya yang dicentang yang diterapkan.
+          ke SIPP saat masuk. Peran utama akun tidak diubah; yang diambil dari SIPP hanya sub-peran/tugas (mis. Petugas Meja 1
+          Gugatan). Pratinjau tidak menulis apa pun; hanya yang dicentang yang diterapkan.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -159,8 +175,8 @@ export function TautanSippSemua() {
             {pratinjau ? "Muat ulang pratinjau" : "Muat pratinjau"}
           </Button>
           {pratinjau ? (
-            <Button size="sm" onClick={() => void terapkan()} disabled={memuat || jumlahTaut + jumlahBuat === 0}>
-              <UserPlus className="mr-1 h-4 w-4" /> Terapkan ({jumlahTaut} tautan, {jumlahBuat} akun baru)
+            <Button size="sm" onClick={() => void terapkan()} disabled={memuat || jumlahTaut + jumlahBuat + jumlahSub === 0}>
+              <UserPlus className="mr-1 h-4 w-4" /> Terapkan ({jumlahTaut} tautan, {jumlahSub} sub-peran, {jumlahBuat} akun baru)
             </Button>
           ) : null}
         </div>
@@ -266,6 +282,26 @@ export function TautanSippSemua() {
                       <td className="p-2">
                         {b.sebab}
                         {b.masalah ? <div className="font-semibold text-rose-700 dark:text-rose-300">{b.masalah}</div> : null}
+                        {b.ditetapkanPengguna ? <Badge variant="info">Ditetapkan pengguna</Badge> : null}
+                        {(() => {
+                          const dipilihCalon = (b.kelompok === "ganda" || b.kelompok === "ragu") && dipilih
+                            ? b.calon.find((c) => c.username === dipilih)
+                            : null;
+                          const usulan = dipilihCalon
+                            ? dipilihCalon.subPeran.filter((x) => !b.subPeranAda.includes(x))
+                            : b.subPeranUsulan;
+                          if (usulan.length === 0) return null;
+                          return (
+                            <label className="mt-1 flex items-center gap-1" data-sub-peran-usulan="1">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(pilihSub[b.userId])}
+                                onChange={(e) => setPilihSub((lama) => ({ ...lama, [b.userId]: e.target.checked }))}
+                              />
+                              Tambah sub-peran: {sebutSub(usulan)}
+                            </label>
+                          );
+                        })()}
                         {b.kelompok !== "pasti" && b.kelompok !== "sudah" && b.calon.length > 0 ? (
                           <div className="text-muted-foreground">
                             Calon: {b.calon.map((c) => `${c.username} [${c.keadaan}${c.dasar.length ? `; ${c.dasar.join("+")}` : "; mirip"}]`).join(", ")}
@@ -294,7 +330,7 @@ export function TautanSippSemua() {
                   <th className="p-2">Buat</th>
                   <th className="p-2">Akun SIPP</th>
                   <th className="p-2">Grup SIPP</th>
-                  <th className="p-2">Peran diberikan</th>
+                  <th className="p-2">Peran utama / sub-peran</th>
                   <th className="p-2">Keterangan</th>
                 </tr>
               </thead>
@@ -318,9 +354,10 @@ export function TautanSippSemua() {
                     <td className="p-2">{s.grup.join(", ") || "-"}</td>
                     <td className="p-2">
                       {getRoleLabel(s.usulan.peranAman)}
-                      {s.usulan.tinggi ? (
-                        <div className="text-amber-700 dark:text-amber-300">
-                          Padanan {getRoleLabel(s.usulan.peranPadanan)} - peran tinggi, tetapkan sendiri sesudahnya.
+                      {s.subPeran.length ? <div>+ {sebutSub(s.subPeran)}</div> : null}
+                      {s.usulan.peranPadanan !== s.usulan.peranAman ? (
+                        <div className="text-muted-foreground">
+                          Padanan grup SIPP: {getRoleLabel(s.usulan.peranPadanan)} - peran utama ditentukan sendiri sesudahnya.
                         </div>
                       ) : null}
                     </td>
