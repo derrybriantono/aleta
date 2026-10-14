@@ -261,9 +261,9 @@ const POLA_PRIA = /\b(jejaka|perjaka|bujang|lajang|duda(?:\s+(?:cerai\s+)?(?:mat
 const POLA_WANITA = /\b(perawan|gadis|janda(?:\s+(?:cerai\s+)?(?:mati|hidup))?)\b/i;
 
 /**
- * #1002# = status SUAMI, #1003# = status ISTRI (blangko itsbat & kumulasi). Sebutan pihak tidak selalu
- * menunjuk suami (cerai gugat: Penggugat = istri), jadi status dibaca menurut KATA-nya: jejaka/perjaka/
- * bujang/lajang/duda = suami, perawan/gadis/janda = istri - di kalimat yang menyebut status.
+ * Status SUAMI dan status ISTRI di kalimat yang menyebut status, dibaca menurut KATA-nya: jejaka/perjaka/
+ * bujang/lajang/duda = suami, perawan/gadis/janda = istri. Pemetaannya ke #1002# (status pihak #0046#) dan
+ * #1003# (pihak lawan / Pemohon II) di bawah - cerai gugat: #0046# = istri (keputusan 14 Okt 2026).
  */
 function statusMenurutJenisKelamin(kalimat) {
   const hasil = { pria: { nilai: "", kalimat: "" }, wanita: { nilai: "", kalimat: "" } };

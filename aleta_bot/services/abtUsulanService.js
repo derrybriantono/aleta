@@ -2298,7 +2298,8 @@ function dariPositaItsbat(posita, pihak) {
   // 1046: hanya aturan baru - pola lama menangkap "yang", "nikah", "orang tua dari" (ukur 13 Okt).
   const t1046 = dari("1046", "", kWali);
   const t0007 = dari("0007", anak, kAnak);
-  // 1002/1003: aturan baru memeriksa kata status menurut jenis kelamin (#1002# suami, #1003# istri).
+  // 1002/1003: #1002# = status pihak #0046#, #1003# = status pihak lawan / Pemohon II (keputusan 14 Okt 2026,
+  // sama dengan bawaan ABT 10106/10107 paket abt-variabel-k6); kata status dibaca menurut jenis kelamin pihaknya.
   const t1002 = dari("1002", "", "");
   const t1003 = dari("1003", "", "");
   // 7211 = umur LAKI-LAKI, 7212 = PEREMPUAN (nama variabelnya) - bukan menurut sebutan pihak.
