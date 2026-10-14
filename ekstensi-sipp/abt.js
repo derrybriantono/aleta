@@ -3540,6 +3540,24 @@ async function mintaPertanyaanSaksi(pertanyaanSaksi) {
   return (isi && isi.pertanyaanSaksi) || null;
 }
 
+/**
+ * Membuka daftar sebuah <select> yang baru ditampilkan (14 Okt): fokus tanpa menggulir panel, lalu showPicker.
+ * showPicker menuntut aktivasi pengguna yang masih berlaku; bila sudah lewat atau tidak didukung, pilihan
+ * tetap terfokus dan tidak ada galat yang naik.
+ */
+function bukaDaftarPilihan(pilih) {
+  try {
+    pilih.focus({ preventScroll: true });
+  } catch {
+    /* fokus hanya kenyamanan */
+  }
+  try {
+    if (typeof pilih.showPicker === "function") pilih.showPicker();
+  } catch {
+    /* tanpa aktivasi pengguna: cukup terfokus, klik berikutnya membuka */
+  }
+}
+
 /** Daftar set pertanyaan yang cocok dengan jenis perkara halaman ini (+ huruf alasan dari posita), atau null. */
 async function muatDaftarSetAleta() {
   const j = await mintaPertanyaanSaksi({ aksi: "daftar" });
@@ -5920,6 +5938,10 @@ function susunPanelAbt(jatiDiri) {
         /* === AKHIR T === */
         pilihSetAleta.hidden = false;
         tombolMuatSet.hidden = true;
+        // 14 Okt: tombol "Pilih dari set..." yang ditekan SEKALI langsung membuka daftar set. Dulu tekanan itu hanya
+        // memuat daftar lalu menukar tombol dengan pilihan tertutup, sehingga daftar baru keluar pada klik KEDUA.
+        // showPicker memakai aktivasi pengguna dari klik tombol tadi; tanpa aktivasi (muat lama) cukup terfokus.
+        bukaDaftarPilihan(pilihSetAleta);
         const HURUF_TAMBAHAN = [
           ["A", "huruf A (zina/mabuk/judi/obat/pihak idaman lain)"],
           ["B", "huruf B (meninggalkan 2 tahun)"],
