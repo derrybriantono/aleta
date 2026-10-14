@@ -118,7 +118,15 @@ function buka(p: Pilihan = {}) {
       getManifest: () => ({ version: "1.188.0" }),
       getURL: (x: string) => `chrome-extension://aleta-uji/${x}`,
       lastError: undefined,
-      sendMessage: (_m: unknown, balik?: (x: unknown) => void) => setTimeout(() => balik && balik({ ok: true }), 0),
+      // 14 Okt: unduhan BAS diterbitkan pekerja latar (pesan "unduh" berisi
+      // data: URL), bukan tautan blob:http halaman - dicatat di sini.
+      sendMessage: (m: { jenis?: string; nama?: string; alamat?: string }, balik?: (x: unknown) => void) => {
+        if (m && m.jenis === "unduh") {
+          unduhan.push(String(m.nama));
+          if (!String(m.alamat || "").startsWith("data:")) unduhanBukanData.push(String(m.nama));
+        }
+        setTimeout(() => balik && balik({ ok: true }), 0);
+      },
     },
     storage: {
       local: {
@@ -138,6 +146,9 @@ function buka(p: Pilihan = {}) {
     },
   };
   const minta: Array<{ url: string; cara: string }> = [];
+  const unduhan: string[] = [];
+  const unduhanBukanData: string[] = [];
+  const tautanHalaman: string[] = [];
   const hitung = new Map<string, number>();
   w.fetch = async (alamat: string, opsi?: { method?: string }) => {
     const url = String(alamat);
@@ -166,7 +177,8 @@ function buka(p: Pilihan = {}) {
       const id = new URL(url, ASAL).searchParams.get("perkaraId");
       return new Response(`{\\rtf1 perkara ${id}}`, {
         status: 200,
-        headers: { "content-type": "application/rtf", "content-disposition": `attachment; filename="${id} - BAS 2.rtf"`, "x-aleta-tersisa": "" },
+        // Bentuk header rute naskah sungguhan: "<nomor, / jadi _> - <berkas blangko>".
+        headers: { "content-type": "application/rtf", "content-disposition": `attachment; filename="${id}_Pdt.G_2026_PA.Dgl - BAS 2.rtf"`, "x-aleta-tersisa": "" },
       });
     }
     return new Response("{}", { status: 404 });
@@ -174,14 +186,13 @@ function buka(p: Pilihan = {}) {
   w.Response = Response;
   w.console.warn = () => {};
   w.Element.prototype.scrollIntoView = function () {};
-  const unduhan: string[] = [];
   w.HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
-    if (this.download) unduhan.push(this.download);
+    if (this.download) tautanHalaman.push(this.download);
   };
   w.URL.createObjectURL = () => "blob:uji-bas";
   w.URL.revokeObjectURL = () => undefined;
   w.eval(`${SUMBER_ALAT}\n;\n${SUMBER_BAS}\n;\nwindow.__uji = { mode: () => alatUjiMode() };`);
-  return { w, minta, unduhan, wadah: w.document.getElementById("wadah") as HTMLElement };
+  return { w, minta, unduhan, unduhanBukanData, tautanHalaman, wadah: w.document.getElementById("wadah") as HTMLElement };
 }
 
 type H = ReturnType<typeof buka>;
@@ -239,7 +250,10 @@ describe("U2b BAS massal - daftar campuran", () => {
     tombol(h.wadah, /^Kerjakan/).click();
     await sampai(() => /^Selesai/.test(kemajuan(h)), "selesai");
     expect(basDiminta(h)).toEqual(["periksa:11", "naskah:11", "periksa:12", "naskah:12"]);
-    expect(h.unduhan).toEqual(["11 - BAS 2.rtf", "12 - BAS 2.rtf"]);
+    expect(h.unduhan).toEqual(["11_Pdt.G_2026_PA.Dgl - BAS 2.rtf", "12_Pdt.G_2026_PA.Dgl - BAS 2.rtf"]);
+    // Tidak satu pun lewat tautan blob:http halaman (yang ditahan Chrome).
+    expect(h.tautanHalaman).toEqual([]);
+    expect(h.unduhanBukanData).toEqual([]);
     expect(nonGet(h)).toEqual([]);
   });
 });
@@ -269,7 +283,7 @@ describe("U2b BAS massal - satu perkara gagal di tengah, yang lain jalan terus",
     expect(barisNomor(h, 22).textContent).toMatch(/Pratinjau BAS gagal: server ALETA tidak terjangkau/);
     // 23: sebab dari server ditampilkan apa adanya.
     expect(barisNomor(h, 23).textContent).toContain("Tidak diunduh: Blangko tidak ditemukan di folder APS Badilag.");
-    expect(h.unduhan).toEqual(["21 - BAS 2.rtf", "24 - BAS 2.rtf"]);
+    expect(h.unduhan).toEqual(["21_Pdt.G_2026_PA.Dgl - BAS 2.rtf", "24_Pdt.G_2026_PA.Dgl - BAS 2.rtf"]);
     expect(nonGet(h)).toEqual([]);
   }, 30000);
 
@@ -294,7 +308,7 @@ describe("U2b BAS massal - satu perkara gagal di tengah, yang lain jalan terus",
     // Batas waktu TIDAK diulang (yang sudah menunggu 9 detik tidak ditolong dengan 9 detik lagi).
     expect(basDiminta(h).filter((x) => x === "periksa:31")).toHaveLength(1);
     expect(barisNomor(h, 32).textContent).toMatch(/Mengunduh BAS gagal: belum masuk portal ALETA di peramban ini/);
-    expect(h.unduhan).toEqual(["33 - BAS 2.rtf"]);
+    expect(h.unduhan).toEqual(["33_Pdt.G_2026_PA.Dgl - BAS 2.rtf"]);
   }, 30000);
 
   it("Hentikan di tengah pratinjau yang lambat: perkara yang sedang dikerjakan selesai, sisanya 'belum dikerjakan'", async () => {

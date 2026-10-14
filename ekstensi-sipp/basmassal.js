@@ -1129,8 +1129,10 @@ async function basmassalPeriksa(baris, pilihan) {
 function basmassalNamaUnduhan(respons, baris, pilihan) {
   const cd = String((respons.headers && respons.headers.get && respons.headers.get("content-disposition")) || "");
   const cocok = cd.match(/filename="([^"]+)"/i);
-  const nama = cocok ? cocok[1] : `${baris.nomorPerkara} - ${pilihan.berkas}`;
-  return nama.replace(/[\\/:*?"<>|]+/g, "_");
+  // Pola baku (14 Okt): "<nomor> - <nama blangko>.<ekstensi asli blangko>" -
+  // lihat alatNamaUnduhanBlangko. Header portal sudah berbentuk itu; nomornya
+  // tidak diulang.
+  return alatNamaUnduhanBlangko(baris.nomorPerkara, cocok ? cocok[1] : pilihan.berkas, "rtf");
 }
 
 /** Unduh blangko terisi (RTF). Membaca, lalu menyerahkan berkasnya ke peramban. */
@@ -1160,22 +1162,11 @@ async function basmassalUnduh(baris, pilihan) {
   } catch (e) {
     return { ok: false, sebab: `Berkas tidak terbaca: ${String((e && e.message) || e)}` };
   }
-  if (typeof URL.createObjectURL !== "function") return { ok: false, sebab: "Peramban ini tidak dapat menyimpan unduhan dari panel." };
-  const alamat = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = alamat;
-  a.download = nama;
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => {
-    try {
-      URL.revokeObjectURL(alamat);
-    } catch {
-      /* sudah dilepas */
-    }
-  }, 60000);
+  // Diterbitkan pekerja latar (data: dari chrome-extension://), bukan tautan
+  // blob:http halaman SIPP - yang kedua itulah yang ditahan Chrome "site
+  // isn't using a secure connection" (14 Okt). Lihat alatUnduh.
+  const u = await alatUnduh(blob, nama);
+  if (!u.ok) return { ok: false, sebab: u.pesan || "Berkas tidak dapat disimpan." };
   return { ok: true, nama, tersisa };
 }
 
@@ -2493,13 +2484,9 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
             const jawab = await alatAmbil(`${API}/rekap/pdf?periode=${periode}&tanggal=${encodeURIComponent(tanggal)}`, { credentials: "include", cache: "no-store", batasMs: 60000 }, "PDF rekap kasir");
             if (!String(jawab.headers.get("content-type") || "").includes("application/pdf")) throw new Error("PDF rekap tidak terbentuk.");
             const berkas = await jawab.blob();
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(berkas);
-            a.download = `Rekap kasir ${periode} ${r.dari}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            // Lewat pekerja latar - blob:http halaman ditahan Chrome (14 Okt).
+            const u = await alatUnduh(berkas, `Rekap kasir ${periode} ${r.dari}.pdf`);
+            if (!u.ok) throw new Error(u.pesan);
           } catch (galat) {
             wadah.appendChild(el("div", "aleta-basmassal-salah", String((galat && galat.message) || galat)));
           } finally {

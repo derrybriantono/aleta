@@ -640,18 +640,13 @@ function tombolUnduh(dokumen, format, label) {
         return;
       }
 
-      const url = URL.createObjectURL(blob);
-      const tautan = document.createElement("a");
-      tautan.href = url;
-      tautan.download = namaBerkasDari(respons, dokumen, format);
-      document.body.appendChild(tautan);
-      tautan.click();
-      tautan.remove();
-
-      // Alamat obyek TIDAK dilepas seketika. Peramban membaca blobnya setelah
-      // klik selesai diproses, dan melepasnya di baris yang sama membatalkan
-      // sebagian unduhan tanpa pesan apa pun - berkas yang seolah hilang.
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      // Diterbitkan pekerja latar, bukan tautan blob:http halaman SIPP - yang
+      // kedua ditahan Chrome "site isn't using a secure connection" (14 Okt).
+      const u = await alatUnduh(blob, String(namaBerkasDari(respons, dokumen, format)));
+      if (!u.ok) {
+        tandaiGagal(u.pesan || "Berkas tidak dapat disimpan.");
+        return;
+      }
 
       tombol.textContent = semula;
       tombol.disabled = false;

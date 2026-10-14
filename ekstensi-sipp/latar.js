@@ -701,6 +701,12 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
       String(pesan.nama || "berkas").replace(/[\\/:*?"<>|]+/g, "_"),
       180
     );
+    // 14 Okt: nama generik ("download.rtf", tanpa ekstensi) DITOLAK - panel
+    // wajib menyebut nama baku. Tanpa ini Chrome menamainya "download (n)".
+    if (POLA_NAMA_UMUM.test(nama) || !/\.[A-Za-z0-9]{2,5}$/.test(nama) || /^berkas\./i.test(nama)) {
+      jawab({ ok: false, pesan: `nama berkas generik ditolak: ${nama}` });
+      return false;
+    }
     // Satu jalur dengan putaran relaas massal - lihat terbitkanUnduhan.
     void terbitkanUnduhan(pesan.alamat, nama).then(jawab);
     return true; // jawaban menyusul

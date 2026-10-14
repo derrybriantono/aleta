@@ -379,7 +379,12 @@ function buka(p: PilihanDom = {}) {
       getManifest: () => ({ version: "1.175.0" }),
       getURL: (x: string) => `chrome-extension://aleta-uji/${x}`,
       lastError: undefined,
-      sendMessage: (_m: unknown, balik?: (x: unknown) => void) => setTimeout(() => balik && balik({ ok: true }), 0),
+      // 14 Okt: unduhan BAS diterbitkan pekerja latar (pesan "unduh"), bukan
+      // tautan blob:http halaman - dicatat sebagai unduhan juga.
+      sendMessage: (m: { jenis?: string; nama?: string; alamat?: string }, balik?: (x: unknown) => void) => {
+        if (m && m.jenis === "unduh") unduhan.push({ href: String(m.alamat), download: String(m.nama) });
+        setTimeout(() => balik && balik({ ok: true }), 0);
+      },
     },
     storage: {
       local: {

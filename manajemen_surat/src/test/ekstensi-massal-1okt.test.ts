@@ -241,7 +241,15 @@ function buka(p: Pilihan = {}) {
   const w = dom.window as any;
   const simpanan: Record<string, unknown> = { ujiTampilan: p.mode ?? "ui" };
   w.chrome = {
-    runtime: { id: "aleta-uji", getManifest: () => ({ version: "1.176.0" }), getURL: (x: string) => x, lastError: undefined, sendMessage: () => undefined },
+    runtime: { id: "aleta-uji", getManifest: () => ({ version: "1.176.0" }), getURL: (x: string) => x, lastError: undefined,
+      // 14 Okt: unduhan diterbitkan pekerja latar (pesan "unduh").
+      sendMessage: (m: { jenis?: string; nama?: string }, balik?: (x: unknown) => void) => {
+        if (!m || m.jenis !== "unduh") return undefined;
+        unduhan.push(String(m.nama));
+        if (balik) setTimeout(() => balik({ ok: true }), 0);
+        return undefined;
+      },
+    },
     storage: {
       local: {
         get: async (kunci?: string | string[] | null) => {

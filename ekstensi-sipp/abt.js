@@ -2088,6 +2088,43 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
   return hasil;
 }
 
+/**
+ * CETAK satu berkas (saklar tiga berkas mati) - 14 Okt 2026.
+ *
+ * Isinya diambil dari alamat CETAK itu sendiri (fetch berkredensial yang sama
+ * dengan tautannya), lalu diterbitkan ekstensi lewat unduhBlob - bukan unduhan
+ * http halaman ABT, yang dapat ditahan Chrome "site isn't using a secure
+ * connection". Namanya pola baku blangko dari header ABT sendiri
+ * ("<nomor> - <blangko>.rtf", lihat alatNamaUnduhanBlangko).
+ *
+ * Pulang false - dan pemanggil menjalankan tautan ABT asli - bila jawabannya
+ * bukan RTF (halaman masuk, pesan galat ABT) atau tanpa nama berkas: petugas
+ * tetap melihat apa yang dahulu dilihatnya.
+ */
+async function cetakSatuLewatEkstensi(alamatPreview) {
+  try {
+    const respons = await fetch(alamatPreview, { credentials: "include", cache: "no-store" });
+    if (!respons.ok) return false;
+    const isi = await respons.arrayBuffer();
+    const awal = new TextDecoder("latin1").decode(new Uint8Array(isi).subarray(0, 5));
+    if (!awal.startsWith("{\\rtf")) return false;
+    const cd = String(respons.headers.get("content-disposition") || "");
+    const cocok = cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    let namaAbt = cocok ? cocok[1] : "";
+    try {
+      namaAbt = decodeURIComponent(namaAbt);
+    } catch {
+      /* nama apa adanya */
+    }
+    const nama = namaAbt.trim() ? alatNamaUnduhanBlangko(nomorPerkaraAbt(), namaAbt, "rtf") : "";
+    if (!nama) return false;
+    await unduhBlob(new Blob([isi], { type: "application/rtf" }), nama);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ─── Riwayat dan urungkan ────────────────────────────────────────────────────
 
 /**
@@ -3075,7 +3112,11 @@ function pasangPenjagaCetak(jatiDiri, lapor) {
       // Karena itu jawabannya sudah ada sebelum klik: dibaca sekali saat
       // panel dibangun, dan diperbarui sendiri bila saklarnya diubah dari
       // popup - lihat cetakTigaMenyala.
-      if (!cetakTigaMenyala) return;
+      //
+      // 14 Okt: saklar mati pun klik DITAHAN - satu berkas diambil fetch lalu
+      // diterbitkan ekstensi (cetakSatuLewatEkstensi), bukan unduhan http
+      // halaman ABT yang dapat ditahan Chrome ("site isn't using a secure
+      // connection"). Gagal mengambil -> tautan ABT asli dijalankan di bawah.
 
       // ====================================================================
       // DITAHAN DULU, DIBUKTIKAN KEMUDIAN - DAN URUTAN ITU DISENGAJA
@@ -3100,6 +3141,9 @@ function pasangPenjagaCetak(jatiDiri, lapor) {
           void terbitkanTigaBerkas(tautan.href, jatiDiri, lapor);
           return;
         }
+        // 14 Okt: satu berkas pun diterbitkan EKSTENSI (bukan unduhan http
+        // halaman yang dapat ditahan Chrome). Cadangannya tautan ABT asli.
+        if (await cetakSatuLewatEkstensi(tautan.href)) return;
         // Dijalankan seperti tautan biasa - bukan window.open, yang tertahan
         // pemblokir popup, dan bukan location.assign, yang menukar halaman
         // blangko yang sedang dikerjakan petugas dengan halaman unduhan.
