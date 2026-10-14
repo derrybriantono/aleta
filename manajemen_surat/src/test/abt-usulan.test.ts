@@ -660,7 +660,9 @@ describe("nomor 9 - pustaka kalimat baku", () => {
   it("pelakunya Termohon pada cerai talak, bukan dipatok Tergugat", () => {
     // Dibaca dari variabel 0047 di halaman ABT, bukan diturunkan dari
     // klasifikasi perkara.
-    const kalimat = pustaka.susunAlasan(["tidak memberi nafkah", "perselisihan terus-menerus"], {
+    // R2 14 Okt: contohnya dahulu "tidak memberi nafkah" - perbuatan yang pada
+    // cerai talak keliru dituduhkan kepada istri; kini cemburu.
+    const kalimat = pustaka.susunAlasan(["cemburu", "perselisihan terus-menerus"], {
       pelaku: "Termohon",
       lawan: "Pemohon",
     });

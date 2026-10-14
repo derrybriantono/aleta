@@ -244,18 +244,47 @@ function susunIsiGugatan(masukan) {
 
   // 5227 - bunyi pilihan dari dalil gugatan (templat hakim)
   const v5227 = ciri.length ? K.varian5227(ciri, sebutan) : { varian: [], tanpaFrasa: [] };
-  if (v5227.varian.length && gugatan) {
+  // R2 14 Okt: sebab yang tidak tertangkap ciri lama (cerai talak: keluarga Termohon ikut campur,
+  // merendahkan Pemohon, tidak merasa cukup dengan nafkah, ...) - satu bunyi "sebab saja" di depan.
+  let sebabGugatan = null;
+  try {
+    sebabGugatan = posita
+      ? require("./deteksi/sebabCerai").perluas5227({
+          ciri: [],
+          ciriPositaPelaku: ciri,
+          b1: [],
+          b2: [],
+          butirPosita: U.kalimatPosita(posita),
+          pihak: sebutan,
+          peta: require("./abtKalimatBaku").frasaCiriEfektif().peta,
+          lama: { nilai: "", dariPosita: false, hanyaPerselisihan: false },
+        })
+      : null;
+  } catch (_) {
+    sebabGugatan = null;
+  }
+  const pilihanSebab =
+    sebabGugatan && sebabGugatan.kodePola
+      ? [{ keadaan: "sebab dari dalil gugatan (sesudah 'yang disebabkan')", nilai: sebabGugatan.nilai, kodePola: sebabGugatan.kodePola }]
+      : [];
+  if ((v5227.varian.length || pilihanSebab.length) && gugatan) {
     usulan.push({
       kode: VAR.alasan,
       nama: "Alasan-Alasan Cerai",
       nilai: "",
       keyakinan: "ragu",
       bentrok: "",
-      pilihan: v5227.varian.map((v) => ({ keadaan: `templat hakim - ${v.label.replace(/^5227 - /, "")}`, nilai: v.nilai, kodePola: v.kode })),
+      // Bunyi templat hakim lebih dulu (urutan lama); bunyi sebab dari deteksi/sebabCerai di belakang -
+      // pada cerai talak sering satu-satunya (ciri lama tanpa frasa / nafkah bukan kewajiban istri).
+      pilihan: [...v5227.varian.map((v) => ({ keadaan: `templat hakim - ${v.label.replace(/^5227 - /, "")}`, nilai: v.nilai, kodePola: v.kode })), ...pilihanSebab],
       // Tiap bunyi membawa kode templatnya sendiri (pilihan[].kodePola); kartunya semua kode.
-      kodePola: v5227.varian.map((v) => v.kode).join(","),
-      sumber: [{ asal: "gugatan-ecourt", kalimat: `${labelSumber(gugatan, null)} - dalil: ${ciri.join(", ")}` }],
-      catatan: `Bunyi disusun dari dalil surat gugatan e-Court dengan templat hakim satker - pilih lalu sunting.${v5227.tanpaFrasa.length ? ` Dalil tanpa frasa baku: ${v5227.tanpaFrasa.join(", ")}.` : ""}`,
+      kodePola: [...v5227.varian.map((v) => v.kode), ...pilihanSebab.map((p) => p.kodePola)].join(","),
+      sumber: [{ asal: "gugatan-ecourt", kalimat: `${labelSumber(gugatan, null)} - dalil: ${[...ciri, ...(sebabGugatan ? sebabGugatan.butir.map((b) => b.sebab) : [])].join(", ")}` }],
+      catatan: `Bunyi disusun dari dalil surat gugatan e-Court dengan templat hakim satker - pilih lalu sunting.${
+        v5227.tanpaFrasa.filter((c) => !(sebabGugatan && sebabGugatan.tertutup.includes(c))).length
+          ? ` Dalil tanpa frasa baku: ${v5227.tanpaFrasa.filter((c) => !(sebabGugatan && sebabGugatan.tertutup.includes(c))).join(", ")}.`
+          : ""
+      }`,
     });
   }
 

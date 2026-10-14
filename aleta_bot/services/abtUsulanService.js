@@ -71,6 +71,8 @@ const pemilih = require("./pemilihRagam");
 // Pola deteksi alasan/waktu/pelaku dibaca dari kamus (kamus-deteksi/awal + lapis database).
 const deteksiAlasan = require("./deteksiAlasanService");
 /* === AKHIR P1-P3-S6 === */
+// R2 14 Okt: sebab perselisihan 5227 yang tidak tertangkap ciri lama (cerai talak).
+const sebabCerai = require("./deteksi/sebabCerai");
 
 /** Kueri baca-saja ke SIPP. Satu-satunya cara berkas ini menyentuh SIPP. */
 function runQuery(sql, params) {
@@ -1411,6 +1413,52 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     }
   }
 
+  /* === R2 14 Okt: SEBAB 5227 DIPERLUAS (deteksi/sebabCerai.js) === */
+  // Cerai talak: kewajiban nafkah ada pada suami - ciri nafkah tidak pernah
+  // menjadi "Termohon melalaikan ..." (abtKalimatBaku.susunAlasanRinci).
+  // Disebut di catatan bila ia satu-satunya yang tertinggal.
+  const catatanNafkahCt = (alasanTersusun.tidakBerlaku || []).length
+    ? `Cerai talak: kewajiban nafkah lahir ada pada ${sebutanPenggugat} (suami) - "${sebutanTergugat} melalaikan kewajiban nafkah lahir" tidak diusulkan.`
+    : "";
+  if (catatanNafkahCt) hasil5227.catatan = [hasil5227.catatan, catatanNafkahCt].filter(Boolean).join(" ");
+  // Sebab yang tidak tertangkap ciri lama (keluarga ikut campur, merendahkan
+  // / tidak menghargai sebagai kepala keluarga, tidak taat, ...). Galat di
+  // sini tidak boleh mematahkan usulan lama.
+  let sebab5227 = null;
+  try {
+    sebab5227 = sebabCerai.perluas5227({
+      ciri,
+      ciriPositaPelaku,
+      b1,
+      b2,
+      butirPosita,
+      pihak: { pelaku: sebutanTergugat, lawan: sebutanPenggugat },
+      peta: kalimatBaku.frasaCiriEfektif(opsi).peta,
+      susunLama: (daftar) => kalimatBaku.susunAlasanRinci(daftar, pihak, opsi).kalimat,
+      lama: {
+        nilai: hasil5227.nilai,
+        dariPosita: Boolean(hasil5227.dariPosita),
+        hanyaPerselisihan:
+          hasil5227.nilai === kalimatBaku.isiPenandaPihak(kalimatBaku.KALIMAT.hanyaPerselisihan, sebutanTergugat, sebutanPenggugat),
+      },
+    });
+  } catch (_) {
+    sebab5227 = null;
+  }
+  if (sebab5227) {
+    hasil5227.nilai = sebab5227.nilai;
+    hasil5227.dariPosita = sebab5227.dariPosita;
+    // Ciri tanpa frasa yang kini terwakili sebab baru tidak lagi "tertinggal".
+    for (let i = ciriTanpaFrasa.length - 1; i >= 0; i--) if (sebab5227.tertutup.includes(ciriTanpaFrasa[i])) ciriTanpaFrasa.splice(i, 1);
+    const sisaTanpaFrasa = ciriTanpaFrasa.length
+      ? `Kedua saksi juga menerangkan ${ciriTanpaFrasa.join(", ")}, tetapi belum ada frasa bakunya - kalimat di atas TIDAK memuatnya; tambahkan sendiri bila terbukti.`
+      : "";
+    hasil5227.keyakinan = sisaTanpaFrasa ? "ragu" : sebab5227.keyakinan;
+    hasil5227.catatan = [sisaTanpaFrasa, sebab5227.catatan, catatanNafkahCt].filter(Boolean).join(" ");
+    sumber5227 = sebab5227.sumber;
+  }
+  /* === AKHIR R2 === */
+
   // Entri daftar dari pengaturan yang ditolak penyaring - disebut, bukan
   // ditelan. Ruasnya hanya ada bila memang ada yang ditolak.
   const tipeKeluaranDitolak = [
@@ -1652,6 +1700,13 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     hasil.deteksiAlasanGalat = String((galat && galat.message) || galat);
   }
   /* === AKHIR P1-P3-S6 === */
+  /* === R2 14 Okt === */
+  if (sebab5227) {
+    hasil.sebab5227 = sebab5227.butir;
+    const u = hasil.usulan.find((x) => x.kode === "5227");
+    if (u && u.nilai && sebab5227.kodePola) u.kodePola = sebab5227.kodePola;
+  }
+  /* === AKHIR R2 === */
   return hasil;
 }
 
@@ -4714,8 +4769,15 @@ function susunKeteranganSaksiSdg(opsi) {
   // malam;"). Kini ditolak dan disebut di alasanDitolak - tidak dikarang
   // bunyinya, tidak ditelan diam-diam.
   const alasanDitolak = [];
+  // R2 14 Okt: cerai talak - saksi tidak pernah diusulkan berkata "Termohon
+  // melalaikan kewajiban nafkah lahir"; kewajiban nafkah ada pada suami.
+  const ceraiTalakSdg = sebabCerai.jenisCerai({ pelaku: o.pelaku, lawan: o.lawan }) === "CT";
   const saringSdg = (daftar) =>
     daftar.filter((kunci) => {
+      if (ceraiTalakSdg && kalimatBaku.CIRI_KEWAJIBAN_SUAMI.includes(kunci)) {
+        if (!alasanDitolak.some((x) => x.kunci === kunci)) alasanDitolak.push({ kunci, sebab: "kewajiban_suami" });
+        return false;
+      }
       if (!KUNCI_HANYA_DETEKSI.has(kunci)) return true;
       if (!alasanDitolak.some((x) => x.kunci === kunci)) alasanDitolak.push({ kunci, sebab: "hanya_deteksi" });
       return false;
@@ -4726,7 +4788,7 @@ function susunKeteranganSaksiSdg(opsi) {
   // Posita hanya menggantikan pilihan yang memang KOSONG - pilihan yang
   // seluruhnya ditolak tidak diam-diam berubah menjadi "sama dengan gugatan".
   if (!alasanMasuk.length && o.posita) {
-    alasan = alasanDariPosita(o.posita);
+    alasan = saringSdg(alasanDariPosita(o.posita));
     asalAlasan = alasan.length ? "posita" : "";
   }
   if (templat.length === 0) {
