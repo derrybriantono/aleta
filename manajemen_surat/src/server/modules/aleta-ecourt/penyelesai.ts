@@ -237,6 +237,49 @@ export async function selesaikanPenanda(
   return { ok: gagal.length === 0, nilai, gagal, lingkaran, takDikenal, jumlahKueri };
 }
 
+/** Tanda isian yang tetap kosong sesudah ABT pun ditanya - sama dengan "..." yang dicetak ABT. */
+export const TANDA_KOSONG = "...";
+
+/**
+ * Melengkapi yang GAGAL diselesaikan kamus ALETA dengan mesin variabel ABT
+ * (bot: abt.nilaiPenanda - katalog abt_variabel dibaca saat berjalan, isian
+ * tangan abt_data_teks/abt_data_tanggal ikut terbaca).
+ *
+ * Q2 14 Okt 2026: naskah ALETA tidak boleh lagi memuat penanda #NNNN# mentah.
+ * Yang ABT pun tidak punya diisi TANDA_KOSONG dan dipulangkan di `kosong`
+ * (tetap dihitung "tersisa" oleh pemanggil) - petugas melengkapinya, dan
+ * pembaca naskah tidak pernah melihat nomor variabel.
+ */
+export async function lengkapiDariAbt(
+  perkaraId: string,
+  hasil: HasilSelesai,
+  diminta: string[]
+): Promise<{ kosong: Array<{ noVar: string; nama: string; sebab: string }> }> {
+  const kurang = [...new Set(diminta.map(teks))].filter((n) => n && !hasil.nilai.has(n));
+  if (kurang.length === 0) return { kosong: [] };
+
+  type JawabanAbt = { ok?: boolean; nilai?: Record<string, { status?: string; teks?: string; nama?: string; sebab?: string }> };
+  const jawaban = await callAletaBotSippBridge<JawabanAbt>("abt.nilaiPenanda", { perkaraId, penanda: kurang }, { timeoutMs: 90_000 });
+  const peta = (jawaban.ok && jawaban.data?.ok && jawaban.data.nilai) || {};
+
+  const kosong: Array<{ noVar: string; nama: string; sebab: string }> = [];
+  for (const noVar of kurang) {
+    const v = peta[noVar];
+    if (v && v.status === "terisi") {
+      hasil.nilai.set(noVar, { noVar, nilai: String(v.teks ?? ""), asal: `ABT - katalog #${noVar}#` });
+      continue;
+    }
+    hasil.nilai.set(noVar, { noVar, nilai: TANDA_KOSONG, asal: "Kosong - belum ada di ALETA maupun ABT" });
+    kosong.push({
+      noVar,
+      nama: teks(v?.nama),
+      sebab: teks(v?.sebab) || (jawaban.ok ? "ABT tidak memulangkan nilai." : `mesin ABT tidak terjangkau: ${teks("error" in jawaban ? jawaban.error : "")}`),
+    });
+  }
+  hasil.gagal = hasil.gagal.filter((g) => !hasil.nilai.has(g.noVar) || kosong.some((k) => k.noVar === g.noVar));
+  return { kosong };
+}
+
 /**
  * Mengisi sebuah naskah dengan nilai yang sudah diselesaikan.
  *

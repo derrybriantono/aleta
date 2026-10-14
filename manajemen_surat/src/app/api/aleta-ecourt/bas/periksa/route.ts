@@ -8,6 +8,7 @@ import { penandaDariLembar, pihakLembar, saksiBerlembar, semuaLembar } from "@/s
 import { penandaDariSidang, sidangKe, susunRangkaian } from "@/lib/rangkaian-sidang";
 import { muatKehadiran, penandaDariKehadiran } from "@/server/modules/aleta-ecourt/bas-kehadiran";
 import { bacaSaksiAbt, kunciSaksi, letakSaksiAbt, penandaDariAbt } from "@/lib/keterangan-abt";
+import { susunIsianNaskahBas } from "@/server/modules/aleta-ecourt/bas-isian-naskah";
 import { cariPedoman, kataKunciBlangko } from "@/server/modules/aleta-ecourt/pustaka-pedoman";
 import { periksaKesiapan, ringkasPemeriksaan, type LembarRingkas } from "@/lib/pemeriksaan-bas";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -68,24 +69,48 @@ export async function GET(request: NextRequest) {
 
     const sidang = sidangKe(susunRangkaian(isiBerkas.riwayatSidang.nilai), nomorSidang);
 
-    const terisi = new Set<string>();
-    for (const [noVar] of petaPenanda(isiBerkas)) terisi.add(noVar);
-    for (const [noVar] of penandaDariSidang(sidang)) terisi.add(noVar);
-    for (const [noVar] of penandaDariKehadiran(kehadiran)) terisi.add(noVar);
-
     const punyaLembar = saksiBerlembar(lembar);
     const saksiAbt = bacaSaksiAbt(isiBerkas.pemeriksaanSaksi.nilai);
-    for (const [noVar] of penandaDariAbt(saksiAbt, punyaLembar)) terisi.add(noVar);
 
-    for (const [noVar] of penandaDariLembar(lembar)) terisi.add(noVar);
-
-    const tersisa = penandaBlangko.filter((noVar) => !terisi.has(noVar));
+    // Q2 14 Okt: pratinjau = pengisian SUNGGUHAN tanpa berkas (tanpaRtf) oleh
+    // mesin variabel ABT yang sama dengan Unduh - "tersisa" adalah isian yang
+    // benar-benar akan tercetak "..." bersorot, bukan tebakan dari daftar
+    // penanda yang ALETA kenal. Bot lama (tanpa mesin) jatuh ke hitungan lama.
+    type HasilIsi = { ok?: boolean; tersisa?: string[]; kosong?: Array<{ noVar: string; nama?: string }> };
+    const isian = await susunIsianNaskahBas(db, perkaraId, nomorSidang, { isiBerkas, lembar, kehadiran });
+    const dicoba = await callAletaBotSippBridge<HasilIsi>(
+      "blangko.isi",
+      {
+        folder,
+        berkas,
+        perkaraId,
+        sidangKe: nomorSidang,
+        nilai: isian.timpa,
+        cadangan: isian.cadangan,
+        tanyaJawabSaksi: isian.tanyaJawabSaksi,
+        tanpaRtf: true,
+      },
+      { timeoutMs: 90_000 }
+    );
+    const namaPenanda: Record<string, string> = {};
+    let tersisa: string[];
+    if (dicoba.ok && dicoba.data?.ok && Array.isArray(dicoba.data.kosong)) {
+      tersisa = dicoba.data.tersisa ?? dicoba.data.kosong.map((k) => k.noVar);
+      for (const k of dicoba.data.kosong) if (k.nama) namaPenanda[k.noVar] = k.nama;
+    } else {
+      const terisi = new Set<string>();
+      for (const [noVar] of petaPenanda(isiBerkas)) terisi.add(noVar);
+      for (const [noVar] of penandaDariSidang(sidang)) terisi.add(noVar);
+      for (const [noVar] of penandaDariKehadiran(kehadiran)) terisi.add(noVar);
+      for (const [noVar] of penandaDariAbt(saksiAbt, punyaLembar)) terisi.add(noVar);
+      for (const [noVar] of penandaDariLembar(lembar)) terisi.add(noVar);
+      tersisa = penandaBlangko.filter((noVar) => !terisi.has(noVar));
+    }
 
     // Nama variabel hanya diminta untuk yang tersisa - itulah yang perlu
     // disebutkan. Meminta seluruhnya menambah beban tanpa menambah keterangan.
     type Variabel = { variabel?: Array<{ noVar: string; nama: string }> };
-    const namaPenanda: Record<string, string> = {};
-    if (tersisa.length > 0) {
+    if (tersisa.some((noVar) => !namaPenanda[noVar])) {
       const jawaban = await callAletaBotSippBridge<Variabel>("abt.namaVariabel", { noVar: tersisa });
       for (const item of jawaban.data?.variabel ?? []) namaPenanda[item.noVar] = item.nama;
     }

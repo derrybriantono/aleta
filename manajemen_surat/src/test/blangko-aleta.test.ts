@@ -168,9 +168,12 @@ describe("menerbitkan naskah", () => {
     const gabung = hasil.alinea.map((a) => a.teks).join("\n");
     expect(gabung).toContain("Reka Febrianti binti Rajab sebagai Penggugat");
     expect(gabung).toContain("Cerai Gugat");
-    // #1001# Kelas B belum diisi - penandanya harus MASIH TERLIHAT.
-    expect(gabung).toContain("#1001#");
+    // #1001# Kelas B belum diisi, ABT pun tidak memulangkannya: dicetak "..."
+    // (Q2 14 Okt - tidak ada penanda mentah di naskah) dan TETAP disebut tersisa.
+    expect(gabung).not.toMatch(/#\d{3,5}#/);
+    expect(gabung).toContain("berupa ...");
     expect(hasil.tersisa).toEqual(["1001"]);
+    expect(panggil).toHaveBeenCalledWith("abt.nilaiPenanda", expect.objectContaining({ perkaraId: "10096", penanda: ["1001"] }));
   });
 
   it("isian Kelas B yang sudah tersimpan ikut terpakai", async () => {
