@@ -11005,7 +11005,10 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="kasirKel"] .aleta
   border: 1px dashed var(--aleta-garis);
   border-radius: 6px;
 }
-.aleta-sdg-baris-set-aleta .aleta-sdg-set-aleta { flex: 1 1 200px; min-width: 0; }
+/* 14 Okt: .aleta-sdg-ruas berarah KOLOM, jadi flex-basis 200px dulu menjadi TINGGI - pilihan tampil sebagai kotak
+   setinggi 200px dengan tulisan di tengah (diukur di replika ABT, Chromium: 608x200 sebelum, 608x30 sesudah). Kini
+   setinggi isinya dan selebar kolom, sama dengan "Templat pertanyaan" di atasnya. */
+.aleta-sdg-baris-set-aleta .aleta-sdg-set-aleta { flex: 0 0 auto; min-width: 0; }
 /* === AKHIR PSAKSI === */
 
 /* ==========================================================================
