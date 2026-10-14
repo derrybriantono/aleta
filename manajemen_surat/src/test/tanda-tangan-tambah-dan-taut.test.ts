@@ -148,12 +148,14 @@ describe("daftar pengguna dikirim rute tanda tangan sendiri", () => {
     // Kewenangannya berbeda: layar ini menuntut "blangko-abt", /api/users
     // menuntut aktor modul pengguna. Pemilih yang kosong akan terbaca sebagai
     // "tidak ada pegawai", bukan "Anda tidak berhak melihatnya".
-    expect(rute).toContain("listUsersFromDb(sesi.db, sesi.actorUserId)");
+    expect(rute).toContain("listUsersFromDb(db, actorUserId");
+    expect(rute).toContain("daftarPenggunaTaut(sesi.db, sesi.actorUserId)");
     expect(layar).not.toContain("/api/users");
   });
 
   it("seperlunya saja - tanpa surel, NIP, atau nomor WhatsApp", () => {
-    const potongan = rute.slice(rute.indexOf("pengguna = (daftar ?? [])"), rute.indexOf("} catch (galat)"));
+    const potongan = rute.slice(rute.indexOf("async function daftarPenggunaTaut"), rute.indexOf("function statusUbah"));
+    expect(potongan).toContain("(daftar ?? [])");
     for (const bocor of ["email", "nip", "whatsapp", "password"]) {
       expect(potongan.toLowerCase(), bocor).not.toContain(bocor);
     }

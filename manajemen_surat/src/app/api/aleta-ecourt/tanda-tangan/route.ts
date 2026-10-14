@@ -7,7 +7,11 @@ import {
   kirimTandaTanganNama,
   kirimTandaTanganSahkan,
   kirimTandaTanganTambah,
+  kirimTandaTanganTautkanAkun,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { tautanSaatUnggah, tautkanTtdOtomatis } from "@/server/modules/aleta-ecourt/tautan-ttd";
+import { appendAuditLog } from "@/server/shared/audit";
+import { nextPrefixedId } from "@/server/shared/ids";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -63,6 +67,26 @@ async function pengesah(request: NextRequest) {
  * waktu) atau menjawab 5xx menjadi 502: dulu semuanya 400, sehingga bot mati
  * terbaca seperti isian yang salah.
  */
+/**
+ * Pengguna yang dapat ditautkan ke tanda tangan - SEPERLUNYA saja: nama,
+ * peran, jabatan, sub-peran (tanpa surel, WhatsApp, atau NIP).
+ */
+async function daftarPenggunaTaut(db: Awaited<ReturnType<typeof getDatabase>>, actorUserId: string | null) {
+  const [daftar, jabatan] = await Promise.all([listUsersFromDb(db, actorUserId ?? ""), getPositionsFromDb(db)]);
+  const namaJabatan = new Map(jabatan.map((j) => [String(j.id), String(j.name ?? "")]));
+  return (daftar ?? [])
+    .filter((u) => u.isActive !== false)
+    .map((u) => ({
+      id: String(u.id),
+      nama: String(u.name ?? ""),
+      peran: String(u.roleId ?? ""),
+      peranLabel: getRoleLabel(u.roleId),
+      jabatan: namaJabatan.get(String(u.positionId ?? "")) ?? "",
+      subPeran: (u.additionalRoleIds ?? []).map((r) => getRoleLabel(r as RoleId)).join(", "),
+    }))
+    .sort((a, b) => a.nama.localeCompare(b.nama));
+}
+
 function statusUbah(respons: { ok: boolean; status?: number } | null | undefined): number {
   if (!respons || respons.ok !== false) return 200;
   const s = Number(respons.status ?? 0);
@@ -96,22 +120,7 @@ export async function GET(request: NextRequest) {
     let pengguna: Array<Record<string, string>> = [];
     let penggunaAlasan = "";
     try {
-      const [daftar, jabatan] = await Promise.all([
-        listUsersFromDb(sesi.db, sesi.actorUserId),
-        getPositionsFromDb(sesi.db),
-      ]);
-      const namaJabatan = new Map(jabatan.map((j) => [String(j.id), String(j.name ?? "")]));
-      pengguna = (daftar ?? [])
-        .filter((u) => u.isActive !== false)
-        .map((u) => ({
-          id: String(u.id),
-          nama: String(u.name ?? ""),
-          peran: String(u.roleId ?? ""),
-          peranLabel: getRoleLabel(u.roleId),
-          jabatan: namaJabatan.get(String(u.positionId ?? "")) ?? "",
-          subPeran: (u.additionalRoleIds ?? []).map((r) => getRoleLabel(r as RoleId)).join(", "),
-        }))
-        .sort((a, b) => a.nama.localeCompare(b.nama));
+      pengguna = await daftarPenggunaTaut(sesi.db, sesi.actorUserId);
     } catch (galat) {
       // Gagalnya daftar pengguna TIDAK menjatuhkan layar tanda tangan -
       // menamai dengan mengetik tangan tetap jalan, dan itu memang yang
@@ -152,18 +161,90 @@ export async function POST(request: NextRequest) {
     // id di bawah, yang kalau tidak akan menolaknya dengan "id_tidak_sah",
     // alasan yang sama sekali tidak menerangkan apa yang salah.
     if (tindakan === "tambah") {
-      const respons = await kirimTandaTanganTambah({
-        isiBase64: String(badan.isiBase64 ?? ""),
-        jenisBerkas: String(badan.jenisBerkas ?? ""),
-        namaPejabat: String(badan.namaPejabat ?? "").slice(0, 150),
-        jabatan: String(badan.jabatan ?? "").slice(0, 120),
+      const namaPejabat = String(badan.namaPejabat ?? "").slice(0, 150);
+      let taut = {
         penggunaId: String(badan.penggunaId ?? "").slice(0, 64),
         peran: String(badan.peran ?? "").slice(0, 64),
         subPeran: String(badan.subPeran ?? "").slice(0, 255),
+      };
+      // 14 Okt 2026: berkas baru TANPA akun dipilih ditautkan otomatis bila
+      // namanya sama persis dengan tepat satu akun aktif. Daftar pengguna yang
+      // gagal dibaca tidak menggagalkan unggahan - ia hanya tidak ditautkan.
+      let tautOtomatis: { penggunaId: string; namaAkun: string } | null = null;
+      if (!taut.penggunaId && namaPejabat.trim()) {
+        const otomatis = tautanSaatUnggah(
+          { namaPejabat, penggunaId: "" },
+          await daftarPenggunaTaut(sesi.db, sesi.actorUserId).catch(() => [])
+        );
+        if (otomatis) {
+          taut = { penggunaId: otomatis.penggunaId, peran: otomatis.peran, subPeran: otomatis.subPeran };
+          tautOtomatis = { penggunaId: otomatis.penggunaId, namaAkun: otomatis.namaAkun };
+        }
+      }
+      const respons = await kirimTandaTanganTambah({
+        isiBase64: String(badan.isiBase64 ?? ""),
+        jenisBerkas: String(badan.jenisBerkas ?? ""),
+        namaPejabat,
+        jabatan: String(badan.jabatan ?? "").slice(0, 120),
+        ...taut,
         asal: `unggahan layar oleh ${sesi.nama}`,
         oleh: sesi.nama,
       });
-      return Response.json(respons, { status: statusUbah(respons) });
+      return Response.json(
+        respons && (respons as { ok?: boolean }).ok !== false && tautOtomatis
+          ? { ...(respons as Record<string, unknown>), tautOtomatis }
+          : respons,
+        { status: statusUbah(respons) }
+      );
+    }
+
+    // 14 Okt 2026: "TTD sudah ada namanya, langsung ditautkan saja dengan
+    // akunnya". terapkan=false = PRATINJAU (tidak menulis apa pun); true =
+    // hanya baris "pasti" (yang dipilih bila ids dikirim), dihitung ulang di sini.
+    if (tindakan === "tautkan-otomatis") {
+      const terapkan = badan.terapkan === true;
+      const ids = Array.isArray(badan.ids) ? badan.ids.map(Number).filter((n) => Number.isFinite(n) && n > 0) : undefined;
+      const hasil = await tautkanTtdOtomatis(
+        {
+          daftarBerkas: async () => {
+            const r = (await getGatewayTandaTangan(false)) as {
+              ok?: boolean;
+              error?: string;
+              data?: { baris?: Array<Record<string, unknown>> };
+              baris?: Array<Record<string, unknown>>;
+            };
+            if (r?.ok === false) throw new Error(String(r.error ?? "Daftar tanda tangan tidak terbaca."));
+            const baris = r?.data?.baris ?? r?.baris ?? [];
+            return baris.map((b) => ({
+              id: Number(b.id),
+              namaPejabat: String(b.namaPejabat ?? ""),
+              penggunaId: String(b.penggunaId ?? ""),
+              disahkan: b.disahkan === true,
+            }));
+          },
+          daftarAkun: () => daftarPenggunaTaut(sesi.db, sesi.actorUserId),
+          tulisTautan: async (id, p) => {
+            const r = (await kirimTandaTanganTautkanAkun(id, p)) as { ok?: boolean; error?: string; alasan?: string };
+            return { ok: r?.ok !== false, alasan: String(r?.alasan ?? r?.error ?? "") };
+          },
+        },
+        { terapkan, ids }
+      );
+      if (terapkan && hasil.diterapkan.length > 0) {
+        await appendAuditLog(sesi.db, {
+          id: await nextPrefixedId(sesi.db, "audit_logs", "adt"),
+          actorUserId: sesi.actorUserId,
+          action: "TTD_TAUTKAN_AKUN_OTOMATIS",
+          entityType: "tanda_tangan",
+          entityId: "massal",
+          payload: {
+            oleh: sesi.nama,
+            berhasil: hasil.diterapkan.filter((d) => d.ok).map((d) => ({ id: d.id, penggunaId: d.penggunaId })),
+            gagal: hasil.diterapkan.filter((d) => !d.ok).map((d) => ({ id: d.id, alasan: d.alasan })),
+          },
+        });
+      }
+      return Response.json({ ok: true, terapkan, ...hasil });
     }
 
     const id = Number(badan.id);

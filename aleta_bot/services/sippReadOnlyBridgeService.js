@@ -1067,6 +1067,81 @@ async function sesiSippMasuk(params = {}) {
 }
 /* === AKHIR MASUK-SESI-SIPP === */
 
+/* === TAUTAN-SEMUA-SIPP 14 Okt === */
+/**
+ * SELURUH akun SIPP untuk pratinjau "Tautkan semua ke SIPP" di Manajemen
+ * Akun: username, nama lengkap, keadaan (diblokir/kedaluwarsa), grup, dan
+ * nama + NIP pejabat tertaut. Murni membaca. Sidik password dan kode aktivasi
+ * TIDAK PERNAH ikut - kolomnya tidak disebut di kueri.
+ */
+async function daftarPenggunaSipp(params = {}) {
+  const connectionKey = normalizeConnectionKey(params.connectionKey);
+  const cols = await getTableColumns(connectionKey, "sys_users");
+  if (cols.size === 0) throw new Error("tabel sys_users tidak terbaca");
+  const kolomUsername = columnExpr("u", cols, ["username"], "''");
+  const kolomNama = columnExpr("u", cols, ["fullname", "nama"], "''");
+  const kolomBlokir = columnExpr("u", cols, ["block"], "0");
+  const kolomKedaluwarsa = columnExpr("u", cols, ["user_expired"], "NULL");
+
+  const kolomGrupUser = await getTableColumns(connectionKey, "sys_user_group");
+  const kolomGrup = await getTableColumns(connectionKey, "sys_groups");
+  const adaGrup = kolomGrupUser.size > 0 && kolomGrup.size > 0;
+  // Anak kueri, bukan join: akun dengan beberapa grup tetap SATU baris.
+  const grup = adaGrup
+    ? `(SELECT GROUP_CONCAT(g.${quoteIdentifier("name")} ORDER BY g.${quoteIdentifier("groupid")} SEPARATOR '|')
+         FROM ${quoteIdentifier("sys_user_group")} ug
+         JOIN ${quoteIdentifier("sys_groups")} g ON g.${quoteIdentifier("groupid")} = ug.${quoteIdentifier("groupid")}
+        WHERE ug.${quoteIdentifier("userid")} = u.${quoteIdentifier("userid")})`
+    : "''";
+  const rows = await runReadOnly(
+    connectionKey,
+    `SELECT u.${quoteIdentifier("userid")} AS userid, ${kolomUsername} AS username, ${kolomNama} AS nama_lengkap,
+       ${kolomBlokir} AS diblokir, ${kolomKedaluwarsa} AS kedaluwarsa_pada, ${grup} AS grup
+     FROM ${quoteIdentifier("sys_users")} u
+     ORDER BY ${kolomNama}`,
+    []
+  );
+
+  const pejabatPer = new Map();
+  for (const [tabelTaut, kolomTaut, tabelPejabat, jabatan] of [
+    ["user_hakim", "hakim_id", "hakim_pn", "hakim"],
+    ["user_panitera", "panitera_id", "panitera_pn", "panitera"],
+    ["user_jurusita", "jurusita_id", "jurusita", "jurusita"],
+  ]) {
+    const kolomTautAda = await getTableColumns(connectionKey, tabelTaut);
+    const kolomPejabat = await getTableColumns(connectionKey, tabelPejabat);
+    if (kolomTautAda.size === 0 || kolomPejabat.size === 0) continue;
+    const nama = columnExpr("p", kolomPejabat, ["nama"], "''");
+    const nip = columnExpr("p", kolomPejabat, ["nip"], "''");
+    const hasil = await runReadOnly(
+      connectionKey,
+      `SELECT t.${quoteIdentifier("userid")} AS userid, ${nama} AS nama, ${nip} AS nip
+       FROM ${quoteIdentifier(tabelTaut)} t
+       JOIN ${quoteIdentifier(tabelPejabat)} p ON p.${quoteIdentifier("id")} = t.${quoteIdentifier(kolomTaut)}`,
+      []
+    );
+    for (const r of Array.isArray(hasil) ? hasil : []) {
+      if (!safeString(r.nama)) continue;
+      const kunci = String(r.userid);
+      if (!pejabatPer.has(kunci)) pejabatPer.set(kunci, []);
+      pejabatPer.get(kunci).push({ jabatan, nama: safeString(r.nama), nip: safeString(r.nip) });
+    }
+  }
+
+  return {
+    pengguna: (Array.isArray(rows) ? rows : []).map((b) => ({
+      sippUserId: String(b.userid),
+      username: safeString(b.username),
+      namaLengkap: safeString(b.nama_lengkap),
+      diblokir: akunSippDiblokir(b.diblokir),
+      kedaluwarsa: akunSippKedaluwarsa(b.kedaluwarsa_pada),
+      grup: safeString(b.grup).split("|").map((x) => x.trim()).filter(Boolean),
+      pejabat: pejabatPer.get(String(b.userid)) || [],
+    })),
+  };
+}
+/* === AKHIR TAUTAN-SEMUA-SIPP === */
+
 /**
  * Menautkan akun SIPP dengan jabatannya - hakim, panitera, juru sita.
  *
@@ -2882,6 +2957,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "user.sesiSipp": sesiSippMasuk,
     "user.identitasSipp": identitasPenggunaSipp,
     /* === AKHIR MASUK-SESI-SIPP === */
+    "user.daftarSipp": daftarPenggunaSipp, // TAUTAN-SEMUA-SIPP 14 Okt
     "estatus.candidates": getEStatusCandidates,
     "schema.introspect": introspectSchema,
     "ecourt.caseList": listEcourtCases,

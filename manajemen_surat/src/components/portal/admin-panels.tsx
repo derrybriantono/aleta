@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUpDown, Camera, CheckCircle2, Eye, EyeOff, KeyRound, LoaderCircle, Save, Shield, ShieldAlert, ShieldCheck, Smartphone, UserPlus, UserRound, XCircle } from "lucide-react";
 
 import { AksesMenuMatriks } from "@/components/portal/akses-menu-matriks";
+import { TautanSippSemua } from "@/components/portal/tautan-sipp-semua";
 import { UserAvatar } from "@/components/portal/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -192,6 +193,8 @@ const SEBUT_SUMBER_TAUTAN: Record<string, string> = {
   "nama-sipp": "dicocokkan lewat NAMA di SIPP",
   "nip-sipp": "dicocokkan lewat NIP pejabat SIPP",
   "sesi-sipp": "ditautkan pegawai sendiri dari panel SIPP (sesi ALETA + SIPP)",
+  "admin-massal": "ditautkan Admin lewat 'Tautkan semua ke SIPP'",
+  "admin-massal-baru": "akun dibuat dari akun SIPP lewat 'Tautkan semua ke SIPP' (tanpa password ALETA)",
 };
 /* === AKHIR MASUK-SESI-SIPP === */
 
@@ -820,11 +823,18 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
 
       <div className="xl:sticky xl:top-4">
       <Tabs defaultValue="edit" onValueChange={(value) => setRequestsTab(value === "requests")}>
-        <TabsList className={`grid w-full ${isAdmin ? "grid-cols-3" : "grid-cols-2"}`}>
+        <TabsList className={`grid w-full ${isAdmin ? "grid-cols-4" : "grid-cols-2"}`}>
           <TabsTrigger value="edit">Edit Akun</TabsTrigger>
           <TabsTrigger value="create">Buat Akun Baru</TabsTrigger>
           {isAdmin ? <TabsTrigger value="requests">Permintaan Reset</TabsTrigger> : null}
+          {isAdmin ? <TabsTrigger value="tautan-sipp">Tautan SIPP</TabsTrigger> : null}
         </TabsList>
+
+        {isAdmin ? (
+          <TabsContent value="tautan-sipp">
+            <TautanSippSemua />
+          </TabsContent>
+        ) : null}
 
         <TabsContent value="edit">
           <Card className="border-border/80">

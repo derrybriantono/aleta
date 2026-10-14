@@ -460,6 +460,38 @@ async function namai(
   return { ok: true, id: nomor, namaPejabat: nama, pengesahanDibatalkan: berubah && sudahDisahkan, oleh };
 }
 
+/**
+ * Menautkan satu tanda tangan BERNAMA ke akun portal pemiliknya (14 Okt 2026,
+ * "TTD sudah ada namanya, langsung ditautkan saja dengan akunnya").
+ *
+ * Hanya mengisi pengguna_id/peran/sub_peran, dan HANYA bila:
+ *   - berkasnya belum bertaut (pengguna_id kosong) - tautan manusia tidak
+ *     pernah ditimpa;
+ *   - namanya masih sama dengan nama yang dicocokkan portal (namaPejabat) -
+ *     bila ada yang mengganti namanya di sela pratinjau dan penerapan,
+ *     penautannya batal.
+ * Nama tidak diubah, jadi pengesahan tidak disentuh: yang sudah disahkan tetap
+ * sah, yang belum tetap belum dapat dipakai.
+ */
+async function tautkanAkun(id, { penggunaId = "", peran = "", subPeran = "", namaPejabat = "" } = {}) {
+  await pastikanTabel();
+  const nomor = Number(id);
+  if (!Number.isFinite(nomor) || nomor <= 0) return { ok: false, alasan: "id_tidak_sah" };
+  const idAkun = potong(penggunaId, 64).trim();
+  if (!idAkun) return { ok: false, alasan: "akun_kosong" };
+  const nama = potong(namaPejabat, 150).trim();
+  if (!nama) return { ok: false, alasan: "nama_pejabat_kosong" };
+
+  const hasil = await kueri(
+    `UPDATE ${TABEL} SET pengguna_id = ?, peran = ?, sub_peran = ?
+      WHERE id = ? AND pengguna_id = '' AND nama_pejabat = ?`,
+    [idAkun, potong(peran, 64).trim(), potong(subPeran, 255).trim(), nomor, nama]
+  );
+  const berubah = Number(hasil && hasil.affectedRows) || 0;
+  if (berubah === 0) return { ok: false, alasan: "sudah_bertaut_atau_nama_berubah", id: nomor };
+  return { ok: true, id: nomor, penggunaId: idAkun };
+}
+
 /** Mengesahkan - sesudah ini, dan hanya sesudah ini, ia boleh dipakai. */
 async function sahkan(id, { oleh = "" } = {}) {
   await pastikanTabel();
@@ -553,6 +585,7 @@ module.exports = {
   daftar,
   gambar,
   namai,
+  tautkanAkun,
   sahkan,
   hapus,
   untukPejabat,

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
+import type { HasilTtd, ringkasTtd } from "@/lib/tautan-ttd-akun";
 
 import { AletaEcourtCap } from "./aleta-ecourt-cap";
 
@@ -84,6 +85,12 @@ const KALIMAT_TANDA_TANGAN: Record<string, string> = {
   tindakan_tidak_dikenali: "Tindakan tidak dikenali.",
 };
 
+/** Jawaban pratinjau "Tautkan otomatis ke akun" (lib/tautan-ttd-akun.ts). */
+type HasilTautOto = {
+  hasil: HasilTtd[];
+  ringkasan: ReturnType<typeof ringkasTtd>;
+};
+
 function kalimatTandaTangan(kode: string): string {
   const k = String(kode || "").trim();
   if (KALIMAT_TANDA_TANGAN[k]) return KALIMAT_TANDA_TANGAN[k];
@@ -109,6 +116,7 @@ export function AletaEcourtTandaTangan() {
   const [tautBaru, setTautBaru] = useState("");
   const [namaBaru, setNamaBaru] = useState("");
   const [jabatanBaru, setJabatanBaru] = useState("");
+  const [tautOto, setTautOto] = useState<HasilTautOto | null>(null);
 
   const muat = useCallback(async () => {
     setMemuat(true);
@@ -226,6 +234,46 @@ export function AletaEcourtTandaTangan() {
     [muat]
   );
 
+  /**
+   * Tautan otomatis berkas BERNAMA ke akun pemiliknya (14 Okt 2026, "TTD sudah
+   * ada namanya, langsung ditautkan saja dengan akunnya"). terapkan=false =
+   * pratinjau; true = hanya yang cocok pasti, dihitung ulang di server.
+   */
+  const tautkanOtomatis = useCallback(
+    async (terapkan: boolean) => {
+      setSibuk((n) => n + 1);
+      setGalat("");
+      try {
+        const respons = await fetch(apiPath("/api/aleta-ecourt/tanda-tangan"), {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tindakan: "tautkan-otomatis", terapkan }),
+        });
+        const isi = (await respons.json().catch(() => null)) as
+          | (HasilTautOto & { ok?: boolean; diterapkan?: Array<{ ok: boolean }>; error?: string | { message?: string } })
+          | null;
+        if (!respons.ok || !isi || isi.ok === false) {
+          const sebab = typeof isi?.error === "string" ? isi.error : isi?.error?.message;
+          throw new Error(sebab ? kalimatTandaTangan(sebab) : `ALETA menjawab ${respons.status}.`);
+        }
+        if (terapkan) {
+          const gagal = (isi.diterapkan ?? []).filter((d) => !d.ok).length;
+          if (gagal > 0) setGalat(`${gagal} tanda tangan tidak ditautkan (sudah bertaut atau namanya berubah).`);
+          setTautOto(null);
+          await muat();
+        } else {
+          setTautOto({ hasil: isi.hasil, ringkasan: isi.ringkasan });
+        }
+      } catch (kesalahan) {
+        setGalat(kesalahan instanceof Error ? kesalahan.message : "Tautan otomatis gagal.");
+      } finally {
+        setSibuk((n) => n - 1);
+      }
+    },
+    [muat]
+  );
+
   const belumSah = useMemo(() => baris.filter((x) => !x.disahkan).length, [baris]);
   const petaPengguna = useMemo(() => new Map(pengguna.map((u) => [u.id, u])), [pengguna]);
 
@@ -318,6 +366,10 @@ export function AletaEcourtTandaTangan() {
             <Upload className="mr-1.5 h-3.5 w-3.5" />
             {bukaTambah ? "Tutup blangko" : "Tambah tanda tangan"}
           </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => void tautkanOtomatis(false)} disabled={sibuk > 0}>
+            <Link2 className="mr-1.5 h-3.5 w-3.5" />
+            Tautkan otomatis ke akun
+          </Button>
           <p className="text-xs text-muted-foreground">
             Impor gambar baru dijalankan dari server:{" "}
             <code className="rounded bg-muted px-1 py-0.5">
@@ -325,6 +377,45 @@ export function AletaEcourtTandaTangan() {
             </code>
           </p>
         </div>
+
+        {/* TAUTAN OTOMATIS (14 Okt 2026): pratinjau dulu, terapkan hanya "pasti". */}
+        {tautOto ? (
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3 text-xs" data-ttd-tautan-otomatis="1">
+            <p>
+              Berkas bernama <strong>{tautOto.ringkasan.bernama}</strong> dari {tautOto.ringkasan.jumlah}: sudah bertaut{" "}
+              {tautOto.ringkasan.sudah}, cocok pasti <strong>{tautOto.ringkasan.pasti}</strong>, ganda {tautOto.ringkasan.ganda},
+              tidak ketemu {tautOto.ringkasan["tidak-ketemu"]}
+              {tautOto.ringkasan["sudah-beda"] ? `, tertaut ke akun bernama lain ${tautOto.ringkasan["sudah-beda"]}` : ""}. Hanya
+              yang cocok PASTI (nama sama persis dengan tepat satu akun aktif) yang ditautkan; nama dan pengesahan tidak berubah.
+            </p>
+            <ul className="list-disc pl-5">
+              {tautOto.hasil
+                .filter((h) => h.kelompok !== "tanpa-nama" && h.kelompok !== "sudah")
+                .map((h) => (
+                  <li key={h.id} data-kelompok-ttd={h.kelompok}>
+                    #{h.id} {h.namaPejabat} - <strong>{h.kelompok}</strong>
+                    {h.akun ? ` -> ${h.akun.nama}` : ""}
+                    {h.calon.length ? `: ${h.calon.map((c) => c.nama).join(" / ")}` : ""}
+                    {h.mirip.length ? ` (mirip: ${h.mirip.map((c) => c.nama).join(" / ")})` : ""}
+                    {h.kelompok !== "pasti" ? ` - ${h.sebab}` : ""}
+                  </li>
+                ))}
+            </ul>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={sibuk > 0 || tautOto.ringkasan.pasti === 0}
+                onClick={() => void tautkanOtomatis(true)}
+              >
+                Tautkan {tautOto.ringkasan.pasti} yang pasti
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setTautOto(null)}>
+                Tutup
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {/* ==================================================================
             BORANG UNGGAH

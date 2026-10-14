@@ -1690,6 +1690,22 @@ router.post("/tanda-tangan/tambah", requireInternalToken, async (req, res) => {
   }
 });
 
+/** Tautan otomatis ke akun pemilik (14 Okt 2026) - hanya berkas yang belum bertaut. */
+router.post("/tanda-tangan/:id/tautkan-akun", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await tandaTanganService.tautkanAkun(req.params.id, {
+      penggunaId: String(badan.penggunaId || ""),
+      peran: String(badan.peran || ""),
+      subPeran: String(badan.subPeran || ""),
+      namaPejabat: String(badan.namaPejabat || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.post("/tanda-tangan/:id/sahkan", requireInternalToken, async (req, res) => {
   try {
     const hasil = await tandaTanganService.sahkan(req.params.id, { oleh: String((req.body || {}).oleh || "") });
