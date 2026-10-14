@@ -3803,7 +3803,7 @@ function j3BlangkoMemuatVariabelJenis(petaVariabel, namaAtauId) {
  */
 const PWH_VARIABEL_JENIS = Object.freeze({
   341: Object.freeze(["8723", "8724", "8725", "1152", "8720", "8722", "8726"]),
-  348: Object.freeze(["8730", "8706"]),
+  348: Object.freeze(["8730", "8706", "5032"]),
   364: Object.freeze(["1025", "1246", "1247", "1509", "8717", "8718"]),
   365: Object.freeze(["1025", "1246", "1247", "1509", "8717", "8718"]),
   371: Object.freeze(["1025", "1246", "1247", "1509", "5197", "8610", "8613", "8614", "8608"]),

@@ -27,12 +27,36 @@ const P = require("./pembantuKebendaan");
 const variabel = Object.freeze([
   { kode: "8730", nama: "Objek harta bersama", sumber: "posita+petitum", blangko: ["putusan"] },
   { kode: "8706", nama: "Dasar putusnya perkawinan para pihak", sumber: "posita", blangko: ["putusan"] },
+  // "4 Kebendaan/[00] [E-Court] HB Kabul": "harta bersama yang pada dasarnya terdiri dari #5032#" dan "memiliki
+  // harta benda berupa #5032#" - benda yang DIDALILKAN, satu kalimat (isian teks sejak paket abt-hb-kebendaan 14 Okt).
+  { kode: "5032", nama: "Harta bersama/gono-gini (benda yang didalilkan, satu kalimat)", sumber: "posita+petitum", blangko: ["putusan [00] HB Kabul"] },
 ]);
 
-const UKUR = Object.freeze({});
+/**
+ * 5032 diukur 14 Okt 2026 atas 13 posita harta bersama SERVER: 11 terbaca (2 posita tanpa daftar benda), daftar
+ * dibandingkan dengan butir benda posita/petitum (dibaca manusia): 7 bersih, 4 ikut membawa kalimat cerita
+ * (agunan bank, perjanjian investasi, "Dengan rincian harga", judul "Alat-alat rumah tangga berupa") - "ragu".
+ * Rincian: D:/aleta-dev/kerja/abt-hb-kebendaan/ukur/hb-5032.txt.
+ */
+const UKUR = Object.freeze({
+  5032: { n: 11, tepat: 7, pembanding: "butir benda posita/petitum" },
+});
+
+/** Benda -> satu kalimat: "A; B; dan C" (rincian batas di dalam butir tetap ber-koma). */
+function satuKalimat(benda) {
+  const b = benda.map((x) => String(x).replace(/[\s;,.\-–]+$/, ""));
+  if (b.length <= 1) return b[0] || "";
+  return `${b.slice(0, -1).join("; ")}; dan ${b[b.length - 1]}`;
+}
+
+function yakinUkur(kode) {
+  const u = UKUR[kode];
+  return u && u.n >= 10 && u.tepat / u.n >= 0.9 ? "cukup" : "ragu";
+}
 
 const PEMBUKA_HB =
-  /(?:memperoleh|mendapatkan|memiliki|mempunyai|telah\s+(?:mendapat|memperoleh))\s+(?:harta|barang)(?:[-\s]+(?:bersama|gono[-\s]*gini|benda))?[^:;]{0,60}?(?:berupa|sebagai\s+berikut|yaitu|antara\s+lain|:)|harta\s+bersama(?:\s*\([^)]*\))?\s+(?:Penggugat\s+dan\s+Tergugat\s+)?(?:berupa|sebagai\s+berikut|yaitu|adalah)\s*:?/i;
+  // "telah diperoleh harta kekayaan bersama, yaitu berupa :" (506/Pdt.G/2026) - "diperoleh" & "kekayaan" sejak 14 Okt.
+  /(?:memperoleh|mendapatkan|memiliki|mempunyai|telah\s+(?:mendapat|memperoleh)|(?:telah\s+)?diperoleh)\s+(?:harta|barang)(?:[-\s]+(?:kekayaan|bersama|gono[-\s]*gini|benda)){0,2}[^:;]{0,60}?(?:berupa|sebagai\s+berikut|yaitu|antara\s+lain|:)|harta\s+bersama(?:\s*\([^)]*\))?\s+(?:Penggugat\s+dan\s+Tergugat\s+)?(?:berupa|sebagai\s+berikut|yaitu|adalah)\s*:?/i;
 const PEMBUKA_HB_PETITUM =
   /(?:Menyatakan|Menetapkan)[^:;]{0,80}?harta[^:;]{0,80}?(?:berupa|sebagai\s+berikut|yaitu|masing-masing|:)/i;
 
@@ -78,6 +102,14 @@ function deteksi(posita, opsi = {}) {
       catatan: "Benda yang DIDALILKAN - hapus yang tidak terbukti/tidak ditetapkan sebelum dipakai di amar.",
       kodePola: `harta-bersama-objek-${asal}`,
     };
+    hasil["5032"] = {
+      nilai: satuKalimat(benda),
+      kalimat: d.kalimat,
+      asal,
+      yakin: yakinUkur("5032"),
+      catatan: "Benda yang DIDALILKAN (bukan yang ditetapkan) - sesuaikan bila gugatan diubah/dikurangi.",
+      kodePola: `harta-bersama-5032-${asal}`,
+    };
   }
   const putus = dasarPutus(satu);
   if (putus) hasil["8706"] = { nilai: putus.nilai, kalimat: putus.kalimat, yakin: "ragu", kodePola: "harta-bersama-dasar-putus" };
@@ -91,4 +123,5 @@ module.exports = {
   UKUR,
   deteksi,
   dasarPutus,
+  satuKalimat,
 };
