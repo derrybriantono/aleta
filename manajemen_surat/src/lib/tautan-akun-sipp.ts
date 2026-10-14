@@ -331,9 +331,9 @@ export function usulanPeranDariGrup(grup: string[], jabatanPejabat: string[] = [
 //   grup "Informasi"                     -> petugas_meja_informasi
 //
 // Grup yang sama dengan PERAN UTAMA (Hakim, Panitera, Panmud, PP, Jurusita,
-// Ketua) tidak dijadikan sub-peran. Sub-peran petugas_meja_* belum memberi
-// hak menu apa pun di matriks-peran (hanya label tugas) - memasukkannya ke
-// golongan hak adalah keputusan pengguna.
+// Ketua) tidak dijadikan sub-peran. Menu petugas meja (disetujui pengguna
+// 14 Okt): Meja 1 -> golongan PTSP, Meja 2/3 -> staf kepaniteraan
+// (analis-perkara) - lihat lib/matriks-peran.ts MEJA-SIPP. Hanya menambah.
 
 const ROMAWI: Record<string, number> = { i: 1, ii: 2, iii: 3 };
 
