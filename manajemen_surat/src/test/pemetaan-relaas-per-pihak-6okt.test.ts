@@ -27,6 +27,9 @@ const ABT_SATKER = [
   "[JS] 3.a. Permohonan Bantuan Panggilan Delegasi.rtf",
   "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf",
   "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf",
+  // 14 Okt: paket ABT abt-pengumuman-itsbat (pengumuman itsbat nikah voluntair).
+  "[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf",
+  "[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf",
 ];
 const GABUNGAN = "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf";
 

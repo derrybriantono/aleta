@@ -908,7 +908,9 @@ const RELAAS_NAMA_MAKS = 120;
 const RELAAS_FOLDER_MAKS = 60;
 const RELAAS_JURUSITA_KOSONG = "Juru sita tidak tercatat";
 /** Golongan yang dikenal kontrak K1; hanya pemberitahuan yang tanpa sidang. */
-const RELAAS_GOLONGAN = ["sidang-pertama", "sidang-ditunda", "sidang-lanjutan", "ikrar-talak", "pemberitahuan-putusan"];
+// "pengumuman-itsbat" (14 Okt 2026): pengumuman itsbat nikah voluntair, dicetak bersama
+// panggilan sidang pertama - d = sidang pertama (blangkonya tidak memakai variabel sidang).
+const RELAAS_GOLONGAN = ["sidang-pertama", "sidang-ditunda", "sidang-lanjutan", "ikrar-talak", "pemberitahuan-putusan", "pengumuman-itsbat"];
 
 /** Putaran sedang berjalan DI PEKERJA INI. Sengaja variabel modul - lihat di atas. */
 let pelariRelaasHidup = false;

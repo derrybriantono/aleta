@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { tambahPengumumanItsbat } from "@/lib/pengumuman-itsbat";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { petaPemetaanBerlaku } from "@/server/modules/aleta-ecourt/pemetaan-blangko";
@@ -113,14 +114,17 @@ export async function GET(request: NextRequest) {
         ikutPilihSemua: nilai.ikutPilihSemua,
       };
     };
-    const dokumen: DokumenRelaasCetakPortal[] = data.dokumen.map(nilaiSatu);
+    // 14 Okt: sidang pertama itsbat nikah voluntair (360, alur 16) diikuti
+    // dokumen PENGUMUMAN itsbat (lib/pengumuman-itsbat.ts) - satu sumber untuk
+    // dialog Cetak relaas portal dan panel massal ekstensi.
+    const dokumen: DokumenRelaasCetakPortal[] = tambahPengumumanItsbat(data.dokumen).map(nilaiSatu);
 
     // Kelompok "dari hari kerja sebelumnya" (tambahan bot di luar K1) dinilai
     // dengan aturan yang SAMA. Bot lama tanpa ruas ini -> tidak ada kelompoknya.
     const kemarin = data.hariKerjaSebelumnya;
     const hariKerjaSebelumnya =
       kemarin && Array.isArray(kemarin.dokumen)
-        ? { tanggal: String(kemarin.tanggal || ""), dokumen: kemarin.dokumen.map(nilaiSatu) }
+        ? { tanggal: String(kemarin.tanggal || ""), dokumen: tambahPengumumanItsbat(kemarin.dokumen).map(nilaiSatu) }
         : undefined;
 
     // Dokumen "keduanya" TIDAK dipecah di sini: panel massal ekstensi membaca
