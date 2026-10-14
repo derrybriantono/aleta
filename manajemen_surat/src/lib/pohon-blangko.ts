@@ -148,13 +148,9 @@ export const SET_BLANGKO: SetBlangko[] = [
     jenis: "putusan",
     untuk: ["dispensasi kawin"],
   },
-  {
-    id: "putusan-kebendaan",
-    nama: "Putusan Kebendaan",
-    folder: `${AKAR}/4 Kebendaan`,
-    jenis: "putusan",
-    untuk: ["harta bersama", "kewarisan", "waris", "p3hp", "ahli waris", "wasiat"],
-  },
+  // F3 14 Okt: set "Putusan Kebendaan" (folder "4 Kebendaan") dihapus - paket ABT abt-susunan-satu-folder memindahkan
+  // satu-satunya isinya (HB Kabul) ke "4a Harta Bersama" dan menghapus folder lamanya. "4a Harta Bersama", "4b Kewarisan",
+  // "9 Penetapan Ahli Waris" kini datang dari folder yang ditemukan di server (setBlangkoGabung), dengan jenis perkara masing-masing.
   {
     id: "putusan-perwalian",
     nama: "Penetapan Perwalian",

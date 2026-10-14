@@ -27,9 +27,9 @@ const P = require("./pembantuKebendaan");
 const variabel = Object.freeze([
   { kode: "8730", nama: "Objek harta bersama", sumber: "posita+petitum", blangko: ["putusan"] },
   { kode: "8706", nama: "Dasar putusnya perkawinan para pihak", sumber: "posita", blangko: ["putusan"] },
-  // "4 Kebendaan/[00] [E-Court] HB Kabul": "harta bersama yang pada dasarnya terdiri dari #5032#" dan "memiliki
+  // "4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan" (dulu 4 Kebendaan/[00]): "harta bersama yang pada dasarnya terdiri dari #5032#" dan "memiliki
   // harta benda berupa #5032#" - benda yang DIDALILKAN, satu kalimat (isian teks sejak paket abt-hb-kebendaan 14 Okt).
-  { kode: "5032", nama: "Harta bersama/gono-gini (benda yang didalilkan, satu kalimat)", sumber: "posita+petitum", blangko: ["putusan [00] HB Kabul"] },
+  { kode: "5032", nama: "Harta bersama/gono-gini (benda yang didalilkan, satu kalimat)", sumber: "posita+petitum", blangko: ["putusan [01] HB Kabul"] },
 ]);
 
 /**

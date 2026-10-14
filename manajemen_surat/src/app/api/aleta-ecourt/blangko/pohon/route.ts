@@ -14,7 +14,7 @@ import {
   type BlangkoItem,
   type SetBlangko,
 } from "@/lib/pohon-blangko";
-import { petaStatusDariBerkas, tugasBlangko, type BarisStatusOtomatis } from "@/lib/tugas-blangko";
+import { berkasBasSalinan, petaStatusDariBerkas, tugasBlangko, type BarisStatusOtomatis } from "@/lib/tugas-blangko";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,7 +79,8 @@ function setPutusanCocok(daftar: SetBlangko[], jenis: string): SetBlangko[] {
 async function isiSet(set: SetBlangko): Promise<SetTerisi> {
   const katalog = await callAletaBotSippBridge("blangko.katalog", { folder: set.folder });
   const data = katalog.ok ? (katalog.data as { ada?: boolean; sebab?: string; blangko?: BlangkoItem[] }) : null;
-  const blangko = Array.isArray(data?.blangko) ? data!.blangko! : [];
+  // F3 14 Okt: folder jenis kini memuat BAS salinan ("BAS ALUR nn ...", paket abt-susunan-satu-folder) - itu tugas panitera, bukan putusan.
+  const blangko = (Array.isArray(data?.blangko) ? data!.blangko! : []).filter((b) => !berkasBasSalinan(String(b.berkas ?? "")));
   const jenjangPenuh = jenjangkan("putusan", blangko);
   return {
     id: set.id,

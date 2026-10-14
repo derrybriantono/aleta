@@ -60,6 +60,7 @@ import {
 } from "@/lib/pemetaan-blangko";
 import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { padananBasArsip, type PadananBas } from "@/lib/alur-bas";
+import { salinanBasJenis, type SalinanBas } from "@/lib/salinan-bas-jenis";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
 
@@ -186,6 +187,12 @@ export type PilihanBlangkoBas = {
    * ekstensi memakai tokennya bila token berkas folder lama tidak dapat dipanen dari ABT. Tanpa = tidak perlu.
    */
   padanan?: PadananBas[];
+  /**
+   * F3 14 Okt: SALINAN berkas ini di folder jenis perkaranya (paket ABT abt-susunan-satu-folder) beserta nama menu ABT-nya
+   * ("Putusan Cerai Talak"). Hanya folder yang cocok dengan jenis perkara barisnya - ABT menolak token folder CG untuk perkara
+   * CT. Tanpa = jenis tidak terbaca atau tidak ada salinan: ekstensi memakai jalur lama (tidak menebak).
+   */
+  salinan?: SalinanBas[];
 };
 
 export type RingkasLembar = { jumlah: number; selesai: number; draf: number };
@@ -535,15 +542,17 @@ export function pilihBlangkoBas(masukan: {
   const hasil = masukan.format
     ? pilihBlangkoFormat(masukan, masukan.format)
     : terapkanPetaBas(pilihBlangkoBasOtomatis(masukan), masukan);
-  return denganPadanan(hasil);
+  return denganPadanan(hasil, masukan.jenisPerkara);
 }
 
 /* === S 13 Okt === */
 /** Lengkapi tiap pilihan dengan padanan folder ALUR-nya (bila ada) - pilihan dan usulan tetap objek yang sama bentuknya. */
-function denganPadanan<T extends { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[] }>(h: T): T {
+function denganPadanan<T extends { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[] }>(h: T, jenisPerkara = ""): T {
   const tambah = (p: PilihanBlangkoBas): PilihanBlangkoBas => {
     const padanan = padananBasArsip(p.folder, p.berkas);
-    return padanan.length ? { ...p, padanan } : p;
+    // F3 14 Okt: salinan di folder jenis yang SESUAI jenis perkara (lib/salinan-bas-jenis.ts).
+    const salinan = salinanBasJenis(p.folder, p.berkas, jenisPerkara);
+    return padanan.length || salinan.length ? { ...p, ...(padanan.length ? { padanan } : {}), ...(salinan.length ? { salinan } : {}) } : p;
   };
   const pilihan = h.pilihan.map(tambah);
   const usulan = h.usulan ? pilihan.find((p) => p.folder === h.usulan!.folder && p.berkas === h.usulan!.berkas) ?? tambah(h.usulan) : null;

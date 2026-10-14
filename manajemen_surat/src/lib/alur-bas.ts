@@ -937,6 +937,11 @@ export const PADANAN_BAS_ARSIP: Record<string, PadananBas[]> = {
   "derry_briantono/- BAS VERSTEK PERCERAIAN -/[99] BAS 2 P & T Tidak Hadir - Tunda Panggil P & T.rtf": [{ folder: "derry_briantono/ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)", berkas: "[T] BAS P & T Tidak Hadir - Tunda Panggil P & T (kapan saja).rtf" }, { folder: "derry_briantono/ALUR 07 Cerai Gugur", berkas: "[2] BAS 2 P & T Tidak Hadir - Tunda Panggil P & T (bila masih dipanggil).rtf" }],
 };
 
+/**
+ * F3 14 Okt: menu ALUR 960-972 juga disembunyikan paket abt-susunan-satu-folder (BAS disalin ke folder jenis). Padanan ini TETAP
+ * dipakai untuk token ALUR yang sudah tersimpan; salinan di folder jenis dihitung lib/salinan-bas-jenis.ts (rantai: folder lama
+ * -> padanan ALUR -> salinan) dan dikirim bersama pilihan BAS massal.
+ */
 /** Padanan ALUR untuk satu berkas BAS folder lama (kunci "folder/berkas", ".rtf" boleh ada atau tidak); [] bila tidak ada. */
 export function padananBasArsip(folder: string, berkas: string): PadananBas[] {
   const b = String(berkas || "").trim();

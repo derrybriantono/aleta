@@ -146,13 +146,13 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai gugat|digugurkan",
       nilai: "[98] [Gugur] 3. Cerai P & T Tidak Hadir",
-      data: { jenisAsli: "Cerai Gugat", statusAsli: "Digugurkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir" },
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Digugurkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir; [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah (P Tidak Pernah Hadir)" },
       urutan: 12,
     },
     {
       kunci: "cerai gugat|gugur",
       nilai: "[98] [Gugur] 3. Cerai P & T Tidak Hadir",
-      data: { jenisAsli: "Cerai Gugat", statusAsli: "Gugur", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir" },
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Gugur", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir; [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah (P Tidak Pernah Hadir)" },
       urutan: 13,
     },
     {
@@ -200,13 +200,13 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai talak|digugurkan",
       nilai: "[98] [Gugur] 3. Cerai P & T Tidak Hadir",
-      data: { jenisAsli: "Cerai Talak", statusAsli: "Digugurkan", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir" },
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Digugurkan", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir; [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah (P Tidak Pernah Hadir)" },
       urutan: 21,
     },
     {
       kunci: "cerai talak|gugur",
       nilai: "[98] [Gugur] 3. Cerai P & T Tidak Hadir",
-      data: { jenisAsli: "Cerai Talak", statusAsli: "Gugur", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir" },
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Gugur", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT"], catatan: "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir; [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah (P Tidak Pernah Hadir)" },
       urutan: 22,
     },
     {

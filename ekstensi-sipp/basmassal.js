@@ -83,7 +83,10 @@ const BASMASSAL_API_PERIKSA = "/aleta/api/aleta-ecourt/bas/periksa";
 const BASMASSAL_API_NASKAH = "/aleta/api/aleta-ecourt/bas/naskah";
 const BASMASSAL_KUNCI_TOKEN = "tokenBlangkoBas";
 const BASMASSAL_PENANDA = "aleta-basmassal";
-const BASMASSAL_TOKEN_MAKS = 400;
+/* === F3 14 Okt === */
+// 800 (dulu 400): salinan BAS di 11 folder jenis (233 berkas) kini ikut terpanen di samping token ALUR yang sudah tersimpan.
+const BASMASSAL_TOKEN_MAKS = 800;
+/* === AKHIR F3 === */
 const BASMASSAL_JEDA_BERUNTUN_MS = 400;
 /** Golongan peran (alatGolonganPeran) yang boleh - sama dengan matriks K1 "bas-massal". */
 const BASMASSAL_GOLONGAN_BOLEH = ["admin", "panitera"];
@@ -897,6 +900,18 @@ function basmassalKunciFolder(folder) {
   return basmassalKunciNama(potong[potong.length - 1]);
 }
 
+/* === F3 14 Okt === */
+/** Kunci nama kelompok "Putusan <jenis>" (menu folder jenis di ABT)? */
+function basmassalKelompokPutusan(kunci) {
+  return /^putusan( |$)/.test(String(kunci || ""));
+}
+
+/** Berkas BAS salinan di folder jenis: nama diawali "BAS" (kata utuh). */
+function basmassalBerkasSalinanBas(namaBerkas) {
+  return /^bas( |$)/.test(basmassalKunciNama(namaBerkas));
+}
+/* === AKHIR F3 === */
+
 /** Alamat dasar ABT (".../aps_badilag/abt") di halaman ini. */
 function basmassalAsalAbt() {
   const cocok = location.pathname.match(/^(.*?\/abt)\//);
@@ -942,14 +957,21 @@ async function basmassalPanenTokenAbt() {
     const tokenA = u.searchParams.get("a");
     const nama = String(a.textContent || "").replace(/\s+/g, " ").trim();
     const kunci = basmassalKunciNama(nama);
-    if (!tokenA || !/(^| )bas( |$)/.test(kunci)) continue;
+    /* === F3 14 Okt === */
+    // Menu "Putusan <jenis>" juga: sejak paket abt-susunan-satu-folder BAS-nya ada di folder jenis itu (menu ALUR tersembunyi).
+    if (!tokenA || !(/(^| )bas( |$)/.test(kunci) || basmassalKelompokPutusan(kunci))) continue;
+    /* === AKHIR F3 === */
     kelompok[kunci] = { a: tokenA, nama, asal, diambil: kini };
   }
   for (const h3 of Array.from(document.querySelectorAll(".pricing-top h3"))) {
     // h3 = nama kelompok + "<br>" + jenis dan nomor perkara - hanya simpul pertamanya.
     const nama = String((h3.firstChild && h3.firstChild.textContent) || h3.textContent || "").replace(/\s+/g, " ").trim();
     const kunciKel = basmassalKunciNama(nama);
-    if (!/(^| )bas( |$)/.test(kunciKel)) continue;
+    /* === F3 14 Okt === */
+    // Kelompok BAS: semua berkas. Kelompok "Putusan <jenis>" (atau kelompok lain mana pun): hanya berkas yang namanya
+    // diawali "BAS" - salinan BAS di folder jenis ("BAS ALUR 04 [2] ...", "BAS KUMULASI ...", "BAS IN GUGUR CABUT ...").
+    const kelompokBas = /(^| )bas( |$)/.test(kunciKel);
+    /* === AKHIR F3 === */
     const kartu = h3.closest(".pricing_inner_w3ls") || h3.parentElement;
     if (!kartu) continue;
     for (const t of Array.from(kartu.querySelectorAll(".pricing-bottom-bottom a[onclick], .pricing-bottom-bottom a[href*='abt/preview']"))) {
@@ -958,6 +980,9 @@ async function basmassalPanenTokenAbt() {
       const span = t.querySelector("span");
       const namaBerkas = String((span || t).textContent || "").replace(/^#\s*/, "").replace(/\s+/g, " ").trim();
       if (!namaBerkas) continue;
+      /* === F3 14 Okt === */
+      if (!kelompokBas && !basmassalBerkasSalinanBas(namaBerkas)) continue;
+      /* === AKHIR F3 === */
       berkas[`${kunciKel}|${basmassalKunciNama(namaBerkas)}`] = { a: token.a, b: token.b, berkas: namaBerkas, kelompok: nama, asal, diambil: kini };
     }
   }
@@ -987,7 +1012,7 @@ async function basmassalPanenTokenAbt() {
  * sama di dua kelompok tidak ditebak). Kelompok saja bila berkasnya belum
  * pernah terbaca.
  */
-function basmassalTokenUntuk(peta, folder, namaBerkas, padanan) {
+function basmassalTokenUntuk(peta, folder, namaBerkas, padanan, salinan) {
   const kunciKel = basmassalKunciFolder(folder);
   const kunciBerkas = basmassalKunciNama(namaBerkas);
   let berkas = peta.berkas[`${kunciKel}|${kunciBerkas}`] || null;
@@ -996,6 +1021,24 @@ function basmassalTokenUntuk(peta, folder, namaBerkas, padanan) {
     if (sama.length === 1) berkas = sama[0][1];
   }
   let kelompok = peta.kelompok[kunciKel] || null;
+  /* === F3 14 Okt === */
+  // Menu ALUR/945/946 disembunyikan paket abt-susunan-satu-folder: yang tampil di ABT adalah SALINAN BAS di folder jenis
+  // ("Putusan Cerai Gugat"). Server hanya mengirim salinan yang foldernya cocok dengan jenis perkara barisnya (ABT menolak
+  // token folder CG untuk perkara CT), beserta nama menunya. Dicocokkan TEPAT pada nama menu + nama salinan - tanpa
+  // jalan pintas "nama berkas yang satu-satunya": nama salinan CG dan CT sama, sehingga tebakan bisa tertukar. Tidak
+  // ada salinan yang cocok = jatuh ke jalur lama di bawah.
+  for (const s of Array.isArray(salinan) ? salinan : []) {
+    if (berkas && kelompok) break;
+    if (!s || !s.berkas || !s.menu) continue;
+    const kBer = basmassalKunciNama(s.berkas);
+    for (const namaMenu of [s.menu, s.alias]) {
+      const kKel = basmassalKunciNama(namaMenu);
+      if (!kKel) continue;
+      if (!berkas && peta.berkas[`${kKel}|${kBer}`]) berkas = peta.berkas[`${kKel}|${kBer}`];
+      if (!kelompok && peta.kelompok[kKel]) kelompok = peta.kelompok[kKel];
+    }
+  }
+  /* === AKHIR F3 === */
   /* === S 13 Okt === */
   // Menu BAS lama Derry disembunyikan paket ABT abt-blangko-derry-rapi: tokennya tidak lagi terpanen. Server mengirim
   // berkas yang SAMA di folder ALUR (pilihan.padanan) - kelompok ALUR di ABT bernama "BAS Alur NN ..." (h3 = nama menu),
@@ -1378,7 +1421,7 @@ function basmassalGambarBaris(daftar, baris, konteks) {
     if (!bisa) centang.checked = false;
     tPratinjau.disabled = !bisa;
     tUnduh.disabled = !bisa;
-    const token = p ? basmassalTokenUntuk(konteks.token, p.folder, p.berkas, p.padanan) : { berkas: null, kelompok: null };
+    const token = p ? basmassalTokenUntuk(konteks.token, p.folder, p.berkas, p.padanan, p.salinan) : { berkas: null, kelompok: null };
     tokenBerkas = bisa ? token.berkas : null;
     tAbt.hidden = !tokenBerkas;
     if (tokenBerkas) {

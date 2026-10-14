@@ -29,6 +29,19 @@
  * Hak ABT per tugas = abt_menu.user_grup_id yang DIUKUR di server satker 13 Okt
  * 2026 (baris 901/951/981/991); paket ABT abt-blangko-derry-rapi menyamakan baris
  * induk 900 - yang dibaca ABT untuk folder Relaas & PTSP - dengan tugas ini.
+ *
+ * ============================================================================
+ * FOLDER JENIS = DUA TUGAS (F3, 14 Okt 2026; paket ABT abt-susunan-satu-folder)
+ * ============================================================================
+ *
+ * Keputusan pengguna 14 Okt: "putusan dan BAS satu folder per jenis". Paket itu
+ * MENYALIN 233 BAS ke folder jenis ("1 Perceraian CG" dst.) dengan nama
+ * "BAS ALUR nn <nama lama>.rtf", "BAS KUMULASI ...", "BAS IN GUGUR CABUT ...",
+ * dan memberi baris abt_menu folder jenis hak GABUNGAN (GRUP_ABT_FOLDER_JENIS).
+ * Karena itu NAMA BERKAS "^BAS" diperiksa lebih dulu daripada folder: berkas BAS
+ * di folder jenis tetap tugas panitera, bukan putusan (hakim). Folder jenisnya
+ * sendiri tetap terbaca "putusan" - folder itu kini memuat dua tugas.
+ * Menu ALUR 960-972, 945, 946 disembunyikan tetapi foldernya TETAP (jenisnya "bas").
  */
 
 export type TugasBlangko = "hakim" | "panitera" | "jurusita" | "ptsp";
@@ -61,6 +74,29 @@ export const GRUP_ABT_TUGAS: Record<TugasBlangko, { grup: string; top: string }>
   ptsp: { grup: "30|500|430|1000|1010|1020|1032|1001|1011", top: "1|30" },
 };
 
+/* === F3 14 Okt === */
+/**
+ * Hak abt_menu folder JENIS sesudah paket abt-susunan-satu-folder (901-905, 910, 911, 913-915, 920-923, 940): gabungan
+ * grup putusan (hakim) + BAS (panitera). user_top_id "1|10|20|30": siapa pun yang dulu boleh SEMUA perkara di salah satu
+ * dari dua tugas itu tetap boleh (super admin, ketua/waka, hakim, panitera); PP/panmud tetap hanya perkara yang ia
+ * tangani (user_cek 3). Rinci: D:/aleta-dev/kerja/batch-14okt-sore/a3-susunan/HAK-GABUNGAN.md.
+ */
+export const GRUP_ABT_FOLDER_JENIS: { grup: string; top: string } = {
+  grup: "1|10|20|30|500|430|1000|1010|1020",
+  top: "1|10|20|30",
+};
+
+/** Tugas yang dimuat satu folder jenis (putusan + BAS): hakim dan panitera. */
+export const TUGAS_FOLDER_JENIS: TugasBlangko[] = ["hakim", "panitera"];
+
+/** Grup yang boleh membuka folder jenis: gabungan grup kedua tugasnya, tanpa pengulangan. */
+export function grupFolderJenis(): string[] {
+  const hasil: string[] = [];
+  for (const t of TUGAS_FOLDER_JENIS) for (const g of grupTugas(t)) if (!hasil.includes(g)) hasil.push(g);
+  return hasil;
+}
+/* === AKHIR F3 === */
+
 /** Grup ABT yang menjadi pemilik tugas (tanpa pejabat puncak 1/10/30 yang boleh semuanya). */
 export function grupTugas(tugas: TugasBlangko): string[] {
   return GRUP_ABT_TUGAS[tugas].grup.split("|").filter(Boolean);
@@ -69,7 +105,11 @@ export function grupTugas(tugas: TugasBlangko): string[] {
 const RX_RELAAS = /\brela+s\b|\brelas{1,2}\b|\bPBT\b|pemberitahuan\s+(isi\s+)?putusan|\bamplop\b|\bdelegasi\b|^\[JS\]/i;
 const RX_PTSP = /\bPTSP\b|^@\s*\d|\bPMH\b|\bPHS\b|penetapan\s+hari\s+sidang|penetapan\s+majelis\s+hakim|penunjukan\s+(panitera|juru\s*sita)/i;
 const RX_BAS = /^ALUR\s+\d+\b|\bBAS\b|berita\s+acara\s+sidang/i;
-const RX_FOLDER_PUTUSAN = /^\d+[a-z]{0,2}\s+\S/i;
+/* === F3 14 Okt === */
+// Nama berkas BAS salinan di folder jenis: "BAS ALUR 04 [2] ...", "BAS KUMULASI ...", "BAS IN GUGUR CABUT ...".
+const RX_BERKAS_BAS_SALINAN = /^BAS\b/;
+/* === AKHIR F3 === */
+const RX_FOLDER_PUTUSAN =/^\d+[a-z]{0,2}\s+\S/i;
 const RX_TAG_STATUS = /^\s*\[[^\]]+\]\s*\[(kabul(?:\s+verstek)?|tolak(?:\s+verstek)?|no|gugur|cabut|coret|perdamaian)\]/i;
 const RX_PUTUSAN = /\bputusan\b|\bpenetapan\b|akta\s+perdamaian/i;
 
@@ -90,6 +130,10 @@ function bagian(jalur: string): { folder: string; berkas: string } {
  */
 export function jenisDokumenBlangko(jalur: string): JenisDokumenBlangko | "" {
   const { folder, berkas } = bagian(jalur);
+  /* === F3 14 Okt === */
+  // BAS salinan di folder jenis ("1 Perceraian CG/BAS ALUR 04 ...") menang atas folder yang menyatakan putusan.
+  if (berkas && RX_BERKAS_BAS_SALINAN.test(berkas)) return "bas";
+  /* === AKHIR F3 === */
   for (const nama of [folder, berkas]) {
     if (!nama) continue;
     const n = nama.replace(/\.(rtf|doc|docx|odt)$/i, "");
@@ -101,6 +145,13 @@ export function jenisDokumenBlangko(jalur: string): JenisDokumenBlangko | "" {
   }
   return "";
 }
+
+/* === F3 14 Okt === */
+/** Berkas BAS salinan di folder jenis (nama diawali "BAS")? Untuk menyaring BAS dari daftar blangko PUTUSAN. */
+export function berkasBasSalinan(berkas: string): boolean {
+  return RX_BERKAS_BAS_SALINAN.test(String(berkas || "").trim());
+}
+/* === AKHIR F3 === */
 
 /** Tugas pemilik blangko menurut jalurnya; "" bila tidak terbaca. */
 export function tugasBlangko(jalur: string): TugasBlangko | "" {

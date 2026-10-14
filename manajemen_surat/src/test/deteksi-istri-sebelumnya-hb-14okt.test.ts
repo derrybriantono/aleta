@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
  *   1021/5015/5016 - blangko itsbat [99aa] Cerai Hidup/Mati Pasangan Sebelumnya: istri SEBELUMNYA Pemohon I, dari
  *                    kurung butir status posita ("Pemohon I berstatus Duda (isteri sebelumnya bernama X telah
  *                    meninggal dunia pada ...)") atau dari SIPP lewat nomor akta cerai PA.Dgl yang disebut posita.
- *   5032           - blangko "4 Kebendaan/[00] [E-Court] HB Kabul": benda harta bersama yang didalilkan, satu kalimat.
+ *   5032           - blangko "4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan" (dulu 4 Kebendaan/[00]): benda harta bersama yang didalilkan, satu kalimat.
  *
  * Nama dalam contoh posita disamarkan; bentuk kalimatnya dari posita itsbat/HB server.
  */
