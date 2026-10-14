@@ -152,8 +152,14 @@ const JURUSITA_BLANGKO_T_LANJUTAN = "[JS] 1. Relaas Panggilan Sidang T (Sidang L
 const JURUSITA_BLANGKO_PBT_P = "[JS] 2. Relaas Pemberitahuan Putusan P.rtf";
 const JURUSITA_BLANGKO_PBT_T = "[JS] 2. Relaas Pemberitahuan Putusan T.rtf";
 const JURUSITA_BLANGKO_IKRAR = "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf";
+// 14 Okt: pengumuman itsbat nikah voluntair (paket ABT abt-pengumuman-itsbat) - cermin BLANGKO_RELAAS.
+const JURUSITA_BLANGKO_PENGUMUMAN_2P = "[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf";
+const JURUSITA_BLANGKO_PENGUMUMAN_1P = "[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf";
+const JURUSITA_GOLONGAN_PENGUMUMAN = "pengumuman-itsbat";
 const JURUSITA_TERTANAM = {
   relaas: {
+    "pengumuman-itsbat": JURUSITA_BLANGKO_PENGUMUMAN_2P,
+    "pengumuman-itsbat-1p": JURUSITA_BLANGKO_PENGUMUMAN_1P,
     "relaas-panggilan-sidang-pertama-penggugat": JURUSITA_BLANGKO_PERTAMA_P,
     "relaas-panggilan-sidang-pertama-pemohon": JURUSITA_BLANGKO_PERTAMA_P,
     "relaas-panggilan-sidang-pertama-tergugat": JURUSITA_BLANGKO_PERTAMA_T,
@@ -355,6 +361,10 @@ const JURUSITA_KATA_DIKENAL = new Set([
   "penggugat", "tergugat", "pemohon", "termohon", "delegasi", "amplop", "ikrar", "talak", "pertama", "lanjutan",
   "tundaan", "ditunda",
 ]);
+/** 14 Okt: kata kunci pengumuman itsbat - hanya dikenal pada kunci berkata "pengumuman" (KATA_PENGUMUMAN server). */
+const JURUSITA_KATA_PENGUMUMAN = new Set([
+  "pengumuman", "permohonan", "itsbat", "isbat", "istbat", "nikah", "pengesahan", "perkawinan", "voluntair", "pemohon", "1p", "2p",
+]);
 
 /** Kunci relaas/PBT dinormalkan seperti server: huruf kecil, tanda hubung. */
 function jurusitaNormalKunci(kunci) {
@@ -370,6 +380,11 @@ function jurusitaNormalKunci(kunci) {
 function jurusitaUraiKunci(kunci) {
   const kata = jurusitaNormalKunci(kunci).split("-").filter(Boolean);
   const ada = (x) => kata.includes(x);
+  // 14 Okt: pengumuman itsbat - keadaan = jumlah Pemohon ("1p", selainnya "2p").
+  if (ada("pengumuman")) {
+    const asingP = kata.filter((k) => !JURUSITA_KATA_PENGUMUMAN.has(k));
+    return { awalan: "pengumuman", keadaan: ada("1p") ? "1p" : "2p", pihak: "", dikenal: asingP.length === 0, asing: asingP };
+  }
   const awalan = ada("pbt") || ada("pemberitahuan") ? "pbt" : ada("delegasi") ? "delegasi" : ada("amplop") ? "amplop" : "panggilan";
   let keadaan = ada("ikrar") ? "ikrar" : ada("pertama") ? "pertama" : ada("lanjutan") || ada("tundaan") || ada("ditunda") ? "lanjutan" : "";
   const pihak = JURUSITA_KATA_PIHAK.find((p) => ada(p)) || "";
@@ -461,6 +476,83 @@ function jurusitaPermintaanDariDaftar(jenis, daftar) {
   const u = jurusitaUraiKunci(daftar[0] || "");
   const umum = daftar.map((k) => jurusitaUraiKunci(k).pihak).find((p) => p === "penggugat" || p === "tergugat") || "";
   return { jenis, awalan: u.awalan, keadaan: u.keadaan, khusus: u.pihak, umum: umum || u.pihak, tertanam: daftar };
+}
+
+/*
+ * ============================================================================
+ * PENGUMUMAN ITSBAT NIKAH VOLUNTAIR (14 OKT 2026)
+ * ============================================================================
+ *
+ * Sidang PERTAMA perkara itsbat nikah (jenis 360) VOLUNTAIR (alur 16, Pdt.P):
+ * juru sita mencetak panggilan Pemohon I, panggilan Pemohon II (blangko T -
+ * #7109# alur 16 = Pemohon II), DAN pengumuman itsbat nikah (14 hari di papan
+ * pengumuman). Satu Pemohon (pasangan telah meninggal): panggilan Pemohon dan
+ * pengumuman 1 Pemohon. Kontensius (alur 15) dan sidang lanjutan: tanpa
+ * pengumuman. Cermin lib/pengumuman-itsbat.ts (portal).
+ */
+function jurusitaItsbatVoluntair(x) {
+  return Boolean(x) && Number(x.jenisPerkaraId) === 360 && Number(x.alurPerkaraId) === 16;
+}
+
+/** Jumlah Pemohon dari rincian (jumlahPihakPertama, bot 14 Okt) atau dokumen rute (jumlahPihak.pertama); 0 = tak terbaca. */
+function jurusitaJumlahPemohon(x) {
+  const n = Number(x && (x.jumlahPihakPertama !== undefined ? x.jumlahPihakPertama : x.jumlahPihak && x.jumlahPihak.pertama));
+  return Number.isInteger(n) && n > 0 ? n : 0;
+}
+
+/** Itsbat voluntair yang Pemohonnya terbaca SATU orang (dokumen rute atau rincian). */
+function jurusitaSatuPemohonItsbat(x) {
+  return jurusitaItsbatVoluntair(x) && jurusitaJumlahPemohon(x) === 1;
+}
+
+/** Sebutan sisi untuk itsbat voluntair: Pemohon I / Pemohon II (satu Pemohon: "Pemohon"). Lainnya apa adanya. */
+function jurusitaSebutanItsbat(sebutan, x) {
+  if (!jurusitaItsbatVoluntair(x)) return sebutan;
+  return { ...sebutan, pertama: jurusitaJumlahPemohon(x) === 1 ? "Pemohon" : "Pemohon I", kedua: "Pemohon II" };
+}
+
+/** Permintaan blangko pengumuman: 1 Pemohon -> kunci ...-1p, selainnya (termasuk tak terbaca) 2 Pemohon. */
+function jurusitaPermintaanPengumuman(satuPemohon) {
+  return {
+    jenis: "relaas",
+    awalan: "pengumuman",
+    keadaan: satuPemohon ? "1p" : "2p",
+    khusus: "",
+    umum: "",
+    tertanam: [satuPemohon ? "pengumuman-itsbat-1p" : "pengumuman-itsbat"],
+  };
+}
+
+/** Nama unduhan baku "<nomor _> - <nama blangko>" tanpa .rtf (alatNamaUnduhanBlangko; latar.js menambah .rtf). */
+function jurusitaNamaBaku(nomorPerkara, berkas, cadangan) {
+  let nama = "";
+  try {
+    nama = typeof alatNamaUnduhanBlangko === "function" ? alatNamaUnduhanBlangko(nomorPerkara, berkas, "rtf") : "";
+  } catch {
+    nama = "";
+  }
+  return (nama ? nama.replace(/\.rtf$/i, "") : String(cadangan || "")).slice(0, JURUSITA_NAMA_MAKS);
+}
+
+/** Dokumen pengumuman untuk satu perkara (bentuk kontrak mesin relaas) - atau null bila blangkonya tidak ada. */
+function jurusitaDokPengumuman(o, petaBerlaku) {
+  const satu = Number(o.jumlahPemohon) === 1;
+  const blangko = jurusitaPilihBlangko(petaBerlaku, "relaas", jurusitaPermintaanPengumuman(satu));
+  if (!blangko) return null;
+  const nomor = String(o.nomorPerkara || "");
+  return {
+    kunci: `${JURUSITA_GOLONGAN_PENGUMUMAN}:${o.perkaraId}:${o.d}:0`.slice(0, 160),
+    perkaraId: String(o.perkaraId),
+    nomorPerkara: nomor,
+    golongan: JURUSITA_GOLONGAN_PENGUMUMAN,
+    label: `Pengumuman itsbat nikah (${satu ? "1 Pemohon" : "2 Pemohon"})`,
+    d: Number(o.d),
+    berkas: blangko.berkas,
+    nama: jurusitaNamaBaku(nomor, blangko.berkas, `${jurusitaNomorAman(nomor, o.perkaraId)} - pengumuman itsbat nikah`),
+    jurusita: String(o.jurusita || "").slice(0, 120),
+    sumberBlangko: blangko.sumber,
+    kunciBlangko: blangko.kunci,
+  };
 }
 
 /* ─── 3. Perkara: sebutan pihak, golongan, dokumen ────────────────────────── */
@@ -565,11 +657,15 @@ function jurusitaSisiTidakHadir(sandi) {
  */
 function jurusitaCentangBawaan(jadwal, urutan, rincian) {
   const daftar = Array.isArray(jadwal) ? jadwal : [];
-  const hasil = { panggilan: [], pbt: [] };
+  // pengumuman (14 Okt): sidang pertama itsbat voluntair; satu Pemohon = hanya panggilan Pemohon.
+  const hasil = { panggilan: [], pbt: [], pengumuman: false };
   const tujuan = daftar.find((s) => Number(s.urutanSidang) === Number(urutan));
   if (tujuan) {
     const gol = jurusitaGolonganSidang(tujuan, rincian);
-    if (gol === "sidang-pertama" || gol === "ikrar-talak") hasil.panggilan = [1, 2];
+    if (gol === "sidang-pertama" && jurusitaItsbatVoluntair(rincian)) {
+      hasil.panggilan = jurusitaJumlahPemohon(rincian) === 1 ? [1] : [1, 2];
+      hasil.pengumuman = true;
+    } else if (gol === "sidang-pertama" || gol === "ikrar-talak") hasil.panggilan = [1, 2];
     else {
       const sebelum = daftar
         .filter((s) => Number(s.urutanSidang) < Number(urutan))
@@ -627,7 +723,11 @@ function jurusitaSatukanPdanT(calon) {
  */
 function jurusitaSusunDokumen(konteks, pilihan, petaBerlaku) {
   const { perkaraId, nomorPerkara, rincian, sidang, jurusita } = konteks;
-  const sebutan = jurusitaSebutan(nomorPerkara, rincian && rincian.jenisPerkara, rincian && rincian.alurPerkaraId, rincian && rincian.jenisPerkaraId);
+  // Itsbat voluntair (14 Okt): sisi kedua = Pemohon II (blangko T memuat #7109# = Pemohon II pada alur 16).
+  const sebutan = jurusitaSebutanItsbat(
+    jurusitaSebutan(nomorPerkara, rincian && rincian.jenisPerkara, rincian && rincian.alurPerkaraId, rincian && rincian.jenisPerkaraId),
+    rincian
+  );
   const nomorAman = jurusitaNomorAman(nomorPerkara, perkaraId);
   const calon = [];
   const tanpaBlangko = [];
@@ -693,6 +793,17 @@ function jurusitaSusunDokumen(konteks, pilihan, petaBerlaku) {
       kunciBlangko: c.blangko.kunci,
     };
   });
+
+  // Pengumuman itsbat (14 Okt): hanya sidang pertama itsbat voluntair - pilihan
+  // lama/salah tempat diabaikan, bukan dicetak dengan d sidang lain.
+  if (pilihan && pilihan.pengumuman && sidang && jurusitaItsbatVoluntair(rincian) && jurusitaGolonganSidang(sidang, rincian) === "sidang-pertama") {
+    const p = jurusitaDokPengumuman(
+      { perkaraId, nomorPerkara, d: Number(sidang.urutanSidang), jurusita, jumlahPemohon: jurusitaJumlahPemohon(rincian) },
+      petaBerlaku
+    );
+    if (p) dokumen.push(p);
+    else tanpaBlangko.push("Pengumuman itsbat nikah");
+  }
   return { dokumen, tanpaBlangko };
 }
 
@@ -723,6 +834,11 @@ function jurusitaNamaCocok(namaAkun, namaPetugas) {
 /** Kunci pemetaan untuk satu dokumen jawaban relaas-massal/cetak. */
 function jurusitaKunciMassal(dok, sisiPaksa) {
   const golongan = String(dok.golongan || "");
+  if (golongan === JURUSITA_GOLONGAN_PENGUMUMAN) {
+    // Rute membawa jumlah Pemohon lewat pihakDipanggil: "pertama" = satu Pemohon (lib/pengumuman-itsbat.ts).
+    const minta = jurusitaPermintaanPengumuman(String(dok.pihakDipanggil || "") === "pertama");
+    return { jenis: minta.jenis, kunci: minta.tertanam, minta };
+  }
   const sebutanPertama = String((dok.sebutanPihak && dok.sebutanPihak.pertama) || "");
   const sebutan = /pemohon/i.test(sebutanPertama)
     ? { k1: "pemohon", k2: "termohon" }
@@ -770,6 +886,25 @@ function jurusitaPilahMassal(dokumen, opsi) {
     }
     const golongan = String(dok.golongan || "");
     const d = golongan === "pemberitahuan-putusan" ? 0 : Number(dok.d);
+    if (golongan === JURUSITA_GOLONGAN_PENGUMUMAN) {
+      // Pengumuman itsbat (14 Okt): satu dokumen per perkara, tidak dipecah per pihak, nama baku blangko.
+      const k = jurusitaKunciMassal(dok);
+      const dariPeta = jurusitaPilihBlangko(opsi && opsi.peta, k.jenis, k.minta);
+      const berkas = dariPeta && dariPeta.sumber !== "bawaan" ? dariPeta.berkas : blangkoRute;
+      siap.push({
+        kunci: String(dok.kunci || "").slice(0, 160),
+        perkaraId: String(dok.perkaraId || ""),
+        nomorPerkara: String(dok.nomorPerkara || ""),
+        golongan,
+        label: `pengumuman itsbat nikah - ${berkas}`.slice(0, 200),
+        d,
+        berkas,
+        nama: jurusitaNamaBaku(dok.nomorPerkara, berkas, `${jurusitaNomorAman(dok.nomorPerkara, dok.perkaraId)} - pengumuman itsbat nikah`),
+        jurusita: (namaJs || "tidak tercatat").slice(0, 120),
+        sumberBlangko: dariPeta && dariPeta.sumber !== "bawaan" ? dariPeta.sumber : "rute",
+      });
+      continue;
+    }
     const bagian =
       golongan === "pemberitahuan-putusan"
         ? "pemberitahuan putusan"
@@ -1263,7 +1398,8 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
       '"ALETA relaas/<tanggal>/<juru sita>". Tidak ada yang ditulis ke SIPP. Tiap pihak memakai blangkonya ' +
       "sendiri: Penggugat/Pemohon blangko P, Tergugat/Termohon blangko T (sidang pertama, sidang lanjutan, PBT). " +
       "Blangko gabungan P dan T hanya bila memang hanya itu yang ada (ikrar talak). PBT hanya untuk perkara " +
-      "yang sudah diputus."
+      "yang sudah diputus. Itsbat nikah voluntair (Pdt.P): sidang pertama juga mencetak pengumuman itsbat " +
+      "(2 Pemohon atau 1 Pemohon)."
   );
   bagian.appendChild(judul);
   const isi = jurusitaEl("div", "aleta-jurusita-isi");
@@ -1289,7 +1425,12 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
     const perkaraId = /^\d+$/.test(String(konteksAwal.perkaraId || "")) && !/^0+$/.test(String(konteksAwal.perkaraId))
       ? String(konteksAwal.perkaraId)
       : String(rincian.perkaraId || "");
-    const sebutan = jurusitaSebutan(konteksAwal.nomorPerkara, rincian.jenisPerkara, rincian.alurPerkaraId, rincian.jenisPerkaraId);
+    const sebutan = jurusitaSebutanItsbat(
+      jurusitaSebutan(konteksAwal.nomorPerkara, rincian.jenisPerkara, rincian.alurPerkaraId, rincian.jenisPerkaraId),
+      rincian
+    );
+    const itsbatVoluntair = jurusitaItsbatVoluntair(rincian);
+    const satuPemohon = itsbatVoluntair && jurusitaJumlahPemohon(rincian) === 1;
     const jadwal = (Array.isArray(rincian.jadwalPerkara) ? rincian.jadwalPerkara : [])
       .filter((s) => Number(s.urutanSidang) > 0)
       .sort((a, b) => Number(a.urutanSidang) - Number(b.urutanSidang));
@@ -1335,10 +1476,21 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
     const belumPutus = sudahPutus ? "" : "Perkara belum diputus.";
     const kotakCentang = jurusitaEl("div", "aleta-jurusita-centang-kotak");
     const pP1 = jurusitaCentang(`Panggilan ${sebutan.pertama}`, "p1", Boolean(tanpaSidang), tanpaSidang);
-    const pP2 = jurusitaCentang(`Panggilan ${sebutan.kedua}`, "p2", Boolean(tanpaSidang), tanpaSidang);
+    // Itsbat voluntair satu Pemohon (14 Okt): tidak ada Pemohon II untuk dipanggil.
+    const hanyaSatu = satuPemohon ? "Perkara ini hanya punya satu Pemohon." : "";
+    const pP2 = jurusitaCentang(`Panggilan ${sebutan.kedua}`, "p2", Boolean(tanpaSidang || hanyaSatu), tanpaSidang || hanyaSatu);
     const pB1 = jurusitaCentang(`PBT ${sebutan.pertama}`, "b1", !sudahPutus, belumPutus);
     const pB2 = jurusitaCentang(`PBT ${sebutan.kedua}`, "b2", !sudahPutus, belumPutus);
-    for (const x of [pP1, pP2, pB1, pB2]) kotakCentang.appendChild(x.l);
+    // Pengumuman itsbat nikah (14 Okt): hanya perkara itsbat voluntair, hanya sidang pertama.
+    const pPi = itsbatVoluntair
+      ? jurusitaCentang(
+          `Pengumuman itsbat${satuPemohon ? " (1 Pemohon)" : ""}`,
+          "pi",
+          true,
+          "Pengumuman permohonan itsbat nikah - dicetak untuk sidang pertama, ditempel 14 hari di papan pengumuman."
+        )
+      : null;
+    for (const x of [pP1, pP2, pB1, pB2, pPi].filter(Boolean)) kotakCentang.appendChild(x.l);
     isi.appendChild(kotakCentang);
 
     // Blangko yang dipakai
@@ -1363,8 +1515,9 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
       const urutan = Number(pilihSidang.value);
       const sidang = jadwal.find((s) => Number(s.urutanSidang) === urutan) || null;
       const pilihan = {
-        panggilan: [pP1.c.checked ? 1 : 0, pP2.c.checked ? 2 : 0].filter(Boolean),
+        panggilan: [pP1.c.checked ? 1 : 0, pP2.c.checked && !pP2.c.disabled ? 2 : 0].filter(Boolean),
         pbt: [pB1.c.checked ? 1 : 0, pB2.c.checked ? 2 : 0].filter(Boolean),
+        pengumuman: Boolean(pPi && pPi.c.checked && !pPi.c.disabled),
       };
       return jurusitaSusunDokumen(
         { perkaraId, nomorPerkara: konteksAwal.nomorPerkara, rincian, sidang, jurusita: namaJs },
@@ -1404,8 +1557,15 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
         pB1.c.checked = !pB1.c.disabled && b.pbt.includes(1);
         pB2.c.checked = !pB2.c.disabled && b.pbt.includes(2);
       }
+      if (pPi) {
+        // Hanya sidang pertama yang boleh; sidang lain mematikan centangnya.
+        const s = jadwal.find((x) => Number(x.urutanSidang) === Number(pilihSidang.value));
+        const pertama = Boolean(s) && jurusitaGolonganSidang(s, rincian) === "sidang-pertama";
+        pPi.c.disabled = !pertama;
+        pPi.c.checked = pertama && b.pengumuman;
+      }
     };
-    for (const x of [pP1, pP2, pB1, pB2]) x.c.addEventListener("change", segarkan);
+    for (const x of [pP1, pP2, pB1, pB2, pPi].filter(Boolean)) x.c.addEventListener("change", segarkan);
     pilihSidang.addEventListener("change", () => {
       terapkanBawaan(false);
       segarkan();
@@ -1700,13 +1860,16 @@ function jurusitaBarisMassal(dokumen, kelompok) {
         jurusitaNip: String((dok.jurusita && dok.jurusita.nip) || "").trim(),
         // dariPenunjukan false = bot menulis "tidak tercatat" (bukan nama orang).
         jurusitaTercatat: Boolean(dok.jurusita && dok.jurusita.nama && dok.jurusita.dariPenunjukan !== false),
-        sebutan: jurusitaSebutanDok(dok),
+        // Itsbat voluntair (14 Okt): sisi kedua = Pemohon II.
+        sebutan: jurusitaSebutanItsbat(jurusitaSebutanDok(dok), dok),
         panggilan: [],
         pbt: [],
+        pengumuman: [],
       });
     }
     const p = perPerkara.get(id);
     if (String(dok.golongan || "") === "pemberitahuan-putusan") p.pbt.push(dok);
+    else if (String(dok.golongan || "") === JURUSITA_GOLONGAN_PENGUMUMAN) p.pengumuman.push(dok);
     else p.panggilan.push(dok);
     if (!p.jurusita && dok.jurusita && dok.jurusita.nama) p.jurusita = String(dok.jurusita.nama);
     if (!p.jurusitaTercatat && dok.jurusita && dok.jurusita.nama && dok.jurusita.dariPenunjukan !== false) {
@@ -1718,6 +1881,12 @@ function jurusitaBarisMassal(dokumen, kelompok) {
   const baris = [];
   for (const p of perPerkara.values()) {
     const panggilan = p.panggilan.length > 0 ? p.panggilan : [null];
+    // Pengumuman itsbat menempel di baris sidang PERTAMA yang sama nomornya; tanpa itu di baris pertama.
+    const pgPertama = (pg) => Boolean(pg) && String(pg.golongan || "") === "sidang-pertama";
+    const iPengumuman = Math.max(
+      0,
+      panggilan.findIndex((pg) => pgPertama(pg) && p.pengumuman.some((x) => Number(x.d) === Number(pg.d)))
+    );
     panggilan.forEach((pg, i) => {
       baris.push({
         kunciBaris: `${kelompok}:${p.perkaraId}:${pg ? String(pg.kunci || pg.d || i) : "pbt"}`,
@@ -1730,6 +1899,7 @@ function jurusitaBarisMassal(dokumen, kelompok) {
         sebutan: p.sebutan,
         panggilan: pg,
         pbt: i === 0 ? p.pbt : [],
+        pengumuman: i === iPengumuman ? p.pengumuman[0] || null : null,
       });
     });
   }
@@ -1740,13 +1910,16 @@ function jurusitaBarisMassal(dokumen, kelompok) {
 
 /** Centang bawaan "Pilih semua" satu baris. */
 function jurusitaPilihanBawaan(baris) {
-  const pilih = { p1: false, p2: false, b1: false, b2: false };
+  const pilih = { p1: false, p2: false, b1: false, b2: false, pi: false };
   const kp = jurusitaKeadaanDok(baris.panggilan, baris.kelompok);
   if (kp) for (const s of kp.bawaan) pilih[`p${s}`] = true;
   for (const s of [1, 2]) {
     const k = jurusitaKeadaanDok(jurusitaDokPbtSisi(baris.pbt, s), baris.kelompok);
     if (k && k.bawaan.includes(s)) pilih[`b${s}`] = true;
   }
+  // Pengumuman itsbat (14 Okt): ikut "Pilih semua" bila dokumennya siap (sisi = jumlah Pemohon, selalu ada).
+  const ki = jurusitaKeadaanDok(baris.pengumuman, baris.kelompok);
+  if (ki && ki.bawaan.length > 0) pilih.pi = true;
   return pilih;
 }
 
@@ -1767,7 +1940,7 @@ function jurusitaDokumenBarisMassal(baris, pilih, peta) {
   const tanpaBlangko = [];
   const pg = baris.panggilan;
   const kp = jurusitaKeadaanDok(pg, baris.kelompok);
-  const sisiP = [1, 2].filter((s) => pilih && pilih[`p${s}`]);
+  const sisiP = [1, 2].filter((s) => pilih && pilih[`p${s}`] && !(s === 2 && jurusitaSatuPemohonItsbat(pg)));
   if (pg && kp && kp.boleh && sisiP.length > 0) {
     const golongan = String(pg.golongan || "");
     const lanjutan = golongan === "sidang-ditunda" || golongan === "sidang-lanjutan";
@@ -1835,6 +2008,29 @@ function jurusitaDokumenBarisMassal(baris, pilih, peta) {
       sumberBlangko: c.blangko.sumber,
     };
   });
+
+  // Pengumuman itsbat (14 Okt): satu dokumen, blangko menurut jumlah Pemohon dari rute.
+  const pi = baris.pengumuman;
+  const ki = jurusitaKeadaanDok(pi, baris.kelompok);
+  if (pilih && pilih.pi && pi && ki && ki.boleh) {
+    const minta = jurusitaPermintaanPengumuman(String(pi.pihakDipanggil || "") === "pertama");
+    const blangko = jurusitaBlangkoBagian(pi, "relaas", minta, pi.bisaDicetak === true, peta);
+    if (!blangko) tanpaBlangko.push("Pengumuman itsbat nikah");
+    else {
+      dokumen.push({
+        kunci: String(pi.kunci || `${JURUSITA_GOLONGAN_PENGUMUMAN}:${baris.perkaraId}:${Number(pi.d)}:0`).slice(0, 160),
+        perkaraId: String(baris.perkaraId),
+        nomorPerkara: String(baris.nomorPerkara || ""),
+        golongan: JURUSITA_GOLONGAN_PENGUMUMAN,
+        label: `Pengumuman itsbat nikah (${minta.keadaan === "1p" ? "1 Pemohon" : "2 Pemohon"})`,
+        d: Number(pi.d),
+        berkas: blangko.berkas,
+        nama: jurusitaNamaBaku(baris.nomorPerkara, blangko.berkas, `${nomorAman} - pengumuman itsbat nikah`),
+        jurusita: (baris.jurusita || "tidak tercatat").slice(0, 120),
+        sumberBlangko: blangko.sumber,
+      });
+    }
+  }
   return { dokumen, tanpaBlangko };
 }
 
@@ -1862,6 +2058,7 @@ function jurusitaKeteranganBaris(baris) {
     const status = String((baris.pbt[0] && baris.pbt[0].statusPutusanNama) || "").trim();
     bagian.push(`Pemberitahuan putusan${status ? ` (${status})` : ""}`);
   }
+  if (baris.pengumuman) bagian.push("Pengumuman itsbat nikah");
   return bagian.join(" · ");
 }
 
@@ -1892,7 +2089,9 @@ function jurusitaGambarBarisMassal(baris, pilih, tampilJurusita, ubah) {
   const kp = jurusitaKeadaanDok(baris.panggilan, baris.kelompok);
   if (kp) {
     pasangCentang("p1", `Panggilan ${seb.pertama}`, kp);
-    pasangCentang("p2", `Panggilan ${seb.kedua}`, kp);
+    // Itsbat voluntair satu Pemohon (14 Okt): tidak ada Pemohon II.
+    const satu = jurusitaSatuPemohonItsbat(baris.panggilan);
+    pasangCentang("p2", `Panggilan ${seb.kedua}`, satu ? { ...kp, boleh: false, sebab: "Perkara ini hanya punya satu Pemohon." } : kp);
     if (kp.sebab) pesan.push({ teks: `Panggilan: ${kp.sebab}`, salah: true });
     for (const c of kp.catatan) pesan.push({ teks: `Panggilan: ${c}`, salah: false });
   }
@@ -1906,6 +2105,14 @@ function jurusitaGambarBarisMassal(baris, pilih, tampilJurusita, ubah) {
     sudahDisebut.add(dok);
     if (k.sebab) pesan.push({ teks: `PBT: ${k.sebab}`, salah: true });
     for (const c of k.catatan) pesan.push({ teks: `PBT: ${c}`, salah: false });
+  }
+  // Pengumuman itsbat nikah voluntair (14 Okt) - hanya bila rute melampirkannya (sidang pertama).
+  const ki = jurusitaKeadaanDok(baris.pengumuman, baris.kelompok);
+  if (ki) {
+    const satu = String(baris.pengumuman.pihakDipanggil || "") === "pertama";
+    pasangCentang("pi", `Pengumuman itsbat${satu ? " (1 Pemohon)" : ""}`, ki);
+    if (ki.sebab) pesan.push({ teks: `Pengumuman: ${ki.sebab}`, salah: true });
+    for (const c of ki.catatan) pesan.push({ teks: `Pengumuman: ${c}`, salah: false });
   }
   el.appendChild(kotak);
   for (const p of pesan) el.appendChild(jurusitaEl("div", p.salah ? "aleta-jurusita-salah" : "aleta-jurusita-catatan", p.teks));
@@ -2016,7 +2223,7 @@ function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau, opsiPanel) {
   let sebabGagal = "";
   let peta = null;
   let urutanMuat = 0;
-  /** kunciBaris -> { p1, p2, b1, b2 } - bertahan selama tanggalnya sama. */
+  /** kunciBaris -> { p1, p2, b1, b2, pi } - bertahan selama tanggalnya sama (pi = pengumuman itsbat, 14 Okt). */
   const pilihan = new Map();
 
   const muat = async () => {
@@ -2045,7 +2252,7 @@ function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau, opsiPanel) {
     const barisHariIni = jurusitaBarisMassal(data.dokumen, "hari-ini").filter(lolos);
     const barisKemarin = jurusitaBarisMassal(jurusitaDokumenKemarin(data), "kemarin").filter(lolos);
     const semuaBaris = [...barisHariIni, ...barisKemarin];
-    for (const b of semuaBaris) if (!pilihan.has(b.kunciBaris)) pilihan.set(b.kunciBaris, { p1: false, p2: false, b1: false, b2: false });
+    for (const b of semuaBaris) if (!pilihan.has(b.kunciBaris)) pilihan.set(b.kunciBaris, { p1: false, p2: false, b1: false, b2: false, pi: false });
 
     // Ringkasan: berapa perkara, panggilan (berapa tundaan), PBT.
     const panggilan = barisHariIni.filter((b) => b.panggilan);
@@ -2088,7 +2295,7 @@ function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau, opsiPanel) {
         gambar();
       });
       kosong.addEventListener("click", () => {
-        for (const b of semuaBaris) pilihan.set(b.kunciBaris, { p1: false, p2: false, b1: false, b2: false });
+        for (const b of semuaBaris) pilihan.set(b.kunciBaris, { p1: false, p2: false, b1: false, b2: false, pi: false });
         gambar();
       });
       alat.appendChild(semua);
@@ -2115,7 +2322,7 @@ function jurusitaGambarPanelMassal(akar, kotakPutaran, pantau, opsiPanel) {
               centangPerkara.set(b.kunciBaris, m);
               m.c.addEventListener("change", () => {
                 // Centang perkara = "Pilih semua" untuk perkara ini (atau kosongkan).
-                const isi = m.c.checked ? { ...m.bawaan } : { p1: false, p2: false, b1: false, b2: false };
+                const isi = m.c.checked ? { ...m.bawaan } : { p1: false, p2: false, b1: false, b2: false, pi: false };
                 pilihan.set(b.kunciBaris, isi);
                 for (const x of g.el.querySelectorAll("input[data-baris]")) {
                   if (x.getAttribute("data-baris") !== b.kunciBaris) continue;

@@ -73,6 +73,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { GOLONGAN_PENGUMUMAN_ITSBAT, namaUnduhanBlangko } from "@/lib/pengumuman-itsbat";
 import { namaCocokSatu } from "@/lib/perkara-sendiri";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { tanggalHariPanjang, tanggalHariPendek } from "@/lib/tanggal-indonesia";
@@ -237,6 +238,8 @@ export function kirimKeEkstensi(
 
 const GOLONGAN_LABEL: Record<string, string> = {
   "sidang-pertama": "Sidang pertama",
+  // 14 Okt: dokumen tambahan rute untuk sidang pertama itsbat voluntair (lib/pengumuman-itsbat.ts).
+  "pengumuman-itsbat": "Pengumuman itsbat nikah",
   "sidang-ditunda": "Sidang ditunda",
   "ikrar-talak": "Ikrar talak",
   "pemberitahuan-putusan": "Pemberitahuan putusan",
@@ -388,7 +391,12 @@ export function lamaWaktu(ms: number) {
  * bersarang. Nomor sidang ikut disebut supaya dua panggilan satu perkara pada
  * hari yang sama tidak saling menimpa.
  */
-export function namaBerkasDokumen(dok: Pick<DokumenRelaasCetakPortal, "nomorPerkara" | "perkaraId" | "golongan" | "d" | "pihakKe">) {
+export function namaBerkasDokumen(
+  dok: Pick<DokumenRelaasCetakPortal, "nomorPerkara" | "perkaraId" | "golongan" | "d" | "pihakKe">,
+  berkas?: string
+) {
+  // 14 Okt: pengumuman itsbat bernama baku "<nomor _> - <nama blangko>" (alatNamaUnduhanBlangko ekstensi).
+  if (dok.golongan === GOLONGAN_PENGUMUMAN_ITSBAT && berkas) return namaUnduhanBlangko(dok.nomorPerkara, berkas);
   const nomor = String(dok.nomorPerkara || `perkara ${dok.perkaraId}`)
     .replace(/[\\/:*?"<>|]+/g, "-")
     .trim();
@@ -841,7 +849,7 @@ export function DialogCetakRelaas({
           d: dok.golongan === "pemberitahuan-putusan" ? (dok.d ?? 0) : dok.d,
           // APA ADANYA dari pohon-blangko.ts - termasuk spasi sebelum ".rtf".
           berkas: n.blangko?.berkas ?? "",
-          nama: namaBerkasDokumen(dok),
+          nama: namaBerkasDokumen(dok, n.blangko?.berkas ?? ""),
           jurusita: String(dok.jurusita?.nama || NAMA_TIDAK_TERCATAT),
         };
       });
@@ -1450,6 +1458,7 @@ export function BarisDokumen({
   sebabMasukTeks?: string;
 }) {
   const pemberitahuan = dok.golongan === "pemberitahuan-putusan";
+  const pengumuman = dok.golongan === GOLONGAN_PENGUMUMAN_ITSBAT;
   const perluPilih = String(dok.pihakDipanggil) === "tidak-diketahui";
   const idCentang = `cetak-relaas-${dok.kunci}`;
 
@@ -1472,7 +1481,7 @@ export function BarisDokumen({
           <Badge variant={pemberitahuan ? "netral" : "info"}>{labelGolonganCetak(dok.golongan)}</Badge>
           {dok.jenisPerkara ? <span className="text-xs text-muted-foreground">{dok.jenisPerkara}</span> : null}
           {dok.sudahAdaRelaas === true ? <Badge variant="muted">sudah tercatat di SIPP</Badge> : null}
-          {dok.sudahAdaRelaas === null ? (
+          {dok.sudahAdaRelaas === null && !pengumuman ? (
             <span className="text-xs text-muted-foreground">tercatat tidaknya di SIPP belum dapat dinilai</span>
           ) : null}
         </div>
@@ -1490,13 +1499,20 @@ export function BarisDokumen({
           ) : null}
         </p>
 
-        <p className="text-xs">
-          <span className="text-muted-foreground">{pemberitahuan ? "Diberi tahu: " : "Dipanggil: "}</span>
-          <span className={nilai.pihak === "tidak-diketahui" ? "font-medium text-amber-700 dark:text-amber-400" : "font-medium"}>
-            {labelPihak(nilai.pihak, pemberitahuan)}
-          </span>
-          {perluPilih && pilihan ? <span className="text-muted-foreground"> (dipilih petugas)</span> : null}
-        </p>
+        {pengumuman ? (
+          <p className="text-xs">
+            <span className="text-muted-foreground">Pengumuman: </span>
+            <span className="font-medium">{nilai.pihak === "pertama" ? "1 Pemohon" : "2 Pemohon"}</span>
+          </p>
+        ) : (
+          <p className="text-xs">
+            <span className="text-muted-foreground">{pemberitahuan ? "Diberi tahu: " : "Dipanggil: "}</span>
+            <span className={nilai.pihak === "tidak-diketahui" ? "font-medium text-amber-700 dark:text-amber-400" : "font-medium"}>
+              {labelPihak(nilai.pihak, pemberitahuan)}
+            </span>
+            {perluPilih && pilihan ? <span className="text-muted-foreground"> (dipilih petugas)</span> : null}
+          </p>
+        )}
 
         {!perluPilih && Array.isArray(dok.keterangan) && dok.keterangan.length > 0 ? (
           <p className="text-xs text-muted-foreground">{dok.keterangan.join(" ")}</p>

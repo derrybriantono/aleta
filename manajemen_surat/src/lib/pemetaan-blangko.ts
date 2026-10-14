@@ -68,6 +68,12 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     { kunci: "panggilan-ikrar", sebutan: "Relaas panggilan sidang ikrar talak" },
     { kunci: "delegasi", sebutan: "Permohonan bantuan panggilan (delegasi)" },
     { kunci: "amplop", sebutan: "Amplop panggilan surat tercatat" },
+    // 14 Okt: pengumuman itsbat nikah voluntair (360, alur 16) sidang pertama.
+    { kunci: "pengumuman-itsbat", sebutan: "Pengumuman permohonan itsbat nikah voluntair - 2 Pemohon (sidang pertama)" },
+    {
+      kunci: "pengumuman-itsbat-1p",
+      sebutan: "Pengumuman permohonan itsbat nikah voluntair - 1 Pemohon, pasangan telah meninggal (sidang pertama)",
+    },
   ],
   pbt: [
     { kunci: "pbt-penggugat", sebutan: "Pemberitahuan isi putusan - Penggugat" },
@@ -214,7 +220,9 @@ export function saranPemetaan(jenis: JenisPemetaan): { kunci: string; namaBerkas
  * hanya untuk kunci tanpa pihak (panggilan-sidang-pertama) dan ikrar talak -
  * satu-satunya blangko ikrar di folder derry memang "P dan T".
  */
-const BAWAAN_KEADAAN: Record<string, { keadaan: KeadaanRelaas; pihak?: "pertama" | "kedua" | "keduanya" }> = {
+const BAWAAN_KEADAAN: Record<string, { keadaan: KeadaanRelaas; pihak?: "pertama" | "kedua" | "keduanya"; pemohon?: 1 | 2 }> = {
+  "pengumuman-itsbat": { keadaan: "pengumuman-itsbat", pemohon: 2 },
+  "pengumuman-itsbat-1p": { keadaan: "pengumuman-itsbat", pemohon: 1 },
   "relaas-panggilan-sidang-pertama-penggugat": { keadaan: "sidang-pertama", pihak: "pertama" },
   "relaas-panggilan-sidang-pertama-pemohon": { keadaan: "sidang-pertama", pihak: "pertama" },
   "relaas-panggilan-sidang-pertama-tergugat": { keadaan: "sidang-pertama", pihak: "kedua" },
@@ -240,11 +248,15 @@ export function bawaanPemetaan(jenis: JenisPemetaan): { kunci: string; sebutan: 
     const aturan = BAWAAN_KEADAAN[kunci];
     // Berpihak: HANYA blangko pihak itu (tidak jatuh ke gabungan). Tanpa pihak:
     // blangko pertama keadaannya (ikrar, delegasi, amplop - masing-masing satu).
+    // Pengumuman itsbat (14 Okt): menurut jumlah Pemohon blangkonya.
     const blangko = !aturan
       ? undefined
-      : aturan.pihak
-        ? BLANGKO_RELAAS.find((b) => b.keadaan === aturan.keadaan && b.pihak === aturan.pihak)
-        : BLANGKO_RELAAS.find((b) => b.keadaan === aturan.keadaan);
+      : BLANGKO_RELAAS.find(
+          (b) =>
+            b.keadaan === aturan.keadaan &&
+            (!aturan.pihak || b.pihak === aturan.pihak) &&
+            (!aturan.pemohon || b.pemohon === aturan.pemohon)
+        );
     if (!blangko) continue;
     hasil.push({ kunci, sebutan, namaBerkas: blangko.berkas, catatan: blangko.label });
   }
@@ -275,8 +287,14 @@ export function bawaanPemetaan(jenis: JenisPemetaan): { kunci: string; sebutan: 
  * memakai aturan yang SAMA; uji pemetaan-blangko-2okt.test.ts menjalankan
  * keduanya atas daftar kunci yang sama dan menuntut jawaban yang sama.
  */
-export type AwalanRelaas = "panggilan" | "pbt" | "delegasi" | "amplop";
-export type KeadaanKunci = "pertama" | "lanjutan" | "ikrar" | "";
+/*
+ * 14 Okt: awalan "pengumuman" (pengumuman itsbat nikah voluntair). Keadaannya
+ * JUMLAH PEMOHON: kunci berkata "1p" = 1 Pemohon, selainnya = 2 Pemohon
+ * ("pengumuman-itsbat" baku = 2P). Keduanya harus tepat - blangko 2P tidak
+ * pernah dipakai untuk perkara satu Pemohon, dan sebaliknya.
+ */
+export type AwalanRelaas = "panggilan" | "pbt" | "delegasi" | "amplop" | "pengumuman";
+export type KeadaanKunci = "pertama" | "lanjutan" | "ikrar" | "1p" | "2p" | "";
 export type PihakKunci = "penggugat" | "tergugat" | "pemohon" | "termohon" | "";
 export type UraianKunciRelaas = { awalan: AwalanRelaas; keadaan: KeadaanKunci; pihak: PihakKunci; dikenal: boolean; asing: string[] };
 
@@ -308,10 +326,29 @@ const KATA_DIKENAL = new Set([
   "tundaan",
   "ditunda",
 ]);
+/** Kata kunci pengumuman itsbat (14 Okt) - hanya dikenal pada kunci berkata "pengumuman". */
+const KATA_PENGUMUMAN = new Set([
+  "pengumuman",
+  "permohonan",
+  "itsbat",
+  "isbat",
+  "istbat",
+  "nikah",
+  "pengesahan",
+  "perkawinan",
+  "voluntair",
+  "pemohon",
+  "1p",
+  "2p",
+]);
 
 export function uraiKunciRelaas(kunci: string): UraianKunciRelaas {
   const kata = normalkanKunci("relaas", kunci).split("-").filter(Boolean);
   const ada = (x: string) => kata.includes(x);
+  if (ada("pengumuman")) {
+    const asingP = kata.filter((k) => !KATA_PENGUMUMAN.has(k));
+    return { awalan: "pengumuman", keadaan: ada("1p") ? "1p" : "2p", pihak: "", dikenal: asingP.length === 0, asing: asingP };
+  }
   const awalan: AwalanRelaas =
     ada("pbt") || ada("pemberitahuan") ? "pbt" : ada("delegasi") ? "delegasi" : ada("amplop") ? "amplop" : "panggilan";
   let keadaan: KeadaanKunci = ada("ikrar")
@@ -369,6 +406,8 @@ const SEBUT_KEADAAN: Record<KeadaanKunci, string> = {
   pertama: "sidang pertama",
   lanjutan: "sidang lanjutan (tundaan)",
   ikrar: "sidang ikrar talak",
+  "1p": "1 Pemohon",
+  "2p": "2 Pemohon",
   "": "",
 };
 
@@ -394,6 +433,14 @@ export function kapanDipakaiRelaas(kunci: string): { dikenal: boolean; dipakai: 
   }
   if (u.awalan === "amplop") {
     return { dikenal: true, dipakai: "Amplop panggilan surat tercatat - cetak dari portal; ekstensi belum punya jalur cetak amplop." };
+  }
+  if (u.awalan === "pengumuman") {
+    return {
+      dikenal: true,
+      dipakai:
+        `Pengumuman permohonan itsbat nikah voluntair (jenis 360, alur 16) - sidang pertama, ${SEBUT_KEADAAN[u.keadaan]}` +
+        `${u.keadaan === "1p" ? " (pasangan telah meninggal)" : ""}.`,
+    };
   }
   const keadaan = u.keadaan ? SEBUT_KEADAAN[u.keadaan] : "sidang mana pun (cadangan terakhir)";
   const ekor = pihak ? ` - ${pihak}` : u.keadaan === "pertama" || u.keadaan === "ikrar" ? " - P dan T" : "";

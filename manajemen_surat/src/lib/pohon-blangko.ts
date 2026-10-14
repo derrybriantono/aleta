@@ -266,7 +266,11 @@ export type KeadaanRelaas =
   | "pemberitahuan-putusan"
   | "ikrar-talak"
   | "delegasi"
-  | "amplop";
+  | "amplop"
+  // 14 Okt 2026: pengumuman permohonan itsbat nikah VOLUNTAIR (jenis 360, alur
+  // 16) - dicetak bersama panggilan sidang pertama. Bukan relaas kepada pihak:
+  // blangkonya dipilih menurut JUMLAH PEMOHON (lib/pengumuman-itsbat.ts).
+  | "pengumuman-itsbat";
 
 /**
  * "tidak-perlu" BUKAN "tidak-diketahui": yang pertama jawaban SIPP (semua pihak
@@ -299,6 +303,8 @@ export type BlangkoRelaas = {
    * (abt_menu.proses_id_min/max). Di luar rentang itu ABT menolak mencetak.
    */
   menuAbt: { nama: string; prosesMin: number; prosesMax: number };
+  /** Pengumuman itsbat saja: jumlah Pemohon yang dimuat blangko (2 = suami & istri, 1 = pasangan telah meninggal). */
+  pemohon?: 1 | 2;
 };
 
 const FOLDER_RELAAS = `${AKAR}/Relaas`;
@@ -439,7 +445,42 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     folder: FOLDER_RELAAS,
     menuAbt: MENU_RELAAS,
   },
+  // 14 Okt 2026 (paket ABT abt-pengumuman-itsbat, variabel 9100-9104): pengumuman
+  // permohonan itsbat nikah voluntair, 14 hari di papan pengumuman, dicetak juru
+  // sita bersama panggilan sidang pertama. Pihaknya "tidak-diketahui" seperti
+  // delegasi/amplop - bukan relaas kepada satu pihak; yang membedakan kedua
+  // blangko adalah jumlah Pemohon (perkara_pihak1).
+  {
+    keadaan: "pengumuman-itsbat",
+    berkas: "[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf",
+    label: "Pengumuman itsbat nikah (2 Pemohon)",
+    pihak: "tidak-diketahui",
+    keterangan:
+      "Itsbat nikah voluntair (Pdt.P) sidang pertama - suami Pemohon I dan istri Pemohon II; " +
+      "ditempel 14 hari di papan pengumuman pengadilan.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+    pemohon: 2,
+  },
+  {
+    keadaan: "pengumuman-itsbat",
+    berkas: "[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf",
+    label: "Pengumuman itsbat nikah (1 Pemohon)",
+    pihak: "tidak-diketahui",
+    keterangan:
+      "Itsbat nikah voluntair (Pdt.P) sidang pertama dengan satu Pemohon - pasangannya telah meninggal " +
+      "(nama almarhum/almarhumah dari isian ABT 1025).",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+    pemohon: 1,
+  },
 ];
+
+/** Blangko pengumuman itsbat menurut jumlah Pemohon: satu Pemohon = 1P, selebihnya (termasuk tak terbaca) = 2P. */
+export function blangkoPengumumanItsbat(jumlahPemohon: unknown): BlangkoRelaas {
+  const satu = Number(jumlahPemohon) === 1;
+  return BLANGKO_RELAAS.find((x) => x.keadaan === "pengumuman-itsbat" && x.pemohon === (satu ? 1 : 2))!;
+}
 
 /**
  * Sandi kehadiran SIPP -> pihak yang harus dipanggil pada sidang berikutnya.
@@ -473,6 +514,10 @@ export function blangkoRelaas(
   keadaan: KeadaanRelaas,
   pihak: PihakDipanggil = "tidak-diketahui"
 ): BlangkoRelaas | null {
+  // Pengumuman itsbat (14 Okt): dokumennya membawa jumlah Pemohon lewat
+  // pihakDipanggil - "pertama" = satu Pemohon (1P), selain itu 2P. Lihat
+  // dokumenPengumumanItsbat di lib/pengumuman-itsbat.ts.
+  if (keadaan === "pengumuman-itsbat") return blangkoPengumumanItsbat(pihak === "pertama" ? 1 : 2);
   // Semua pihak hadir: tidak ada yang dipanggil ulang dan tidak ada yang perlu
   // diberi tahu isi putusan yang dibacakan di hadapannya. Sidang pertama dan
   // ikrar talak TIDAK tunduk pada aturan ini - blangkonya selalu dua pihak,
@@ -524,6 +569,8 @@ export function keadaanUntukGolongan(golongan: unknown): KeadaanRelaas | null {
       return "ikrar-talak";
     case "pemberitahuan-putusan":
       return "pemberitahuan-putusan";
+    case "pengumuman-itsbat":
+      return "pengumuman-itsbat";
     default:
       return null;
   }

@@ -45,6 +45,10 @@ function sebutanKhusus(teks: unknown): PihakKunci {
 /** Permintaan kunci untuk satu dokumen; null = keadaan yang tidak dipetakan admin. */
 export function permintaanUntukDokumen(dokumen: DokumenPetakan): PermintaanRelaas | null {
   const keadaan = keadaanUntukGolongan(dokumen.golongan);
+  // 14 Okt: pengumuman itsbat - pihakDipanggil "pertama" = satu Pemohon (1P).
+  if (keadaan === "pengumuman-itsbat") {
+    return { awalan: "pengumuman", keadaan: String(dokumen.pihakDipanggil ?? "") === "pertama" ? "1p" : "2p", khusus: "", umum: "" };
+  }
   let awalan: PermintaanRelaas["awalan"];
   let k: KeadaanKunci;
   if (keadaan === "sidang-pertama") [awalan, k] = ["panggilan", "pertama"];

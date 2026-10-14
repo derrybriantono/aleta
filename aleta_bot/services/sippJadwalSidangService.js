@@ -3310,7 +3310,11 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
   const barisPerkara = await runQuery(
     // alur/jenis_perkara_id (9 Okt 2026): sebutan pihak tab Juru Sita dari
     // NOMOR, bukan kata - Izin Poligami (341) bernomor /Pdt.G/ tetapi Pemohon.
+    // jumlahPihakPertama (14 Okt 2026): jumlah Pemohon itsbat voluntair - tab
+    // Juru Sita memilih pengumuman 1 Pemohon / 2 Pemohon dan mematikan panggilan
+    // Pemohon II bila hanya ada satu Pemohon.
     `SELECT p.perkara_id AS perkaraId, p.alur_perkara_id AS alurPerkaraId, p.jenis_perkara_id AS jenisPerkaraId,
+            (SELECT COUNT(*) FROM perkara_pihak1 pp WHERE pp.perkara_id = p.perkara_id) AS jumlahPihakPertama,
             p.jenis_perkara_nama AS jenisPerkara
        FROM perkara p WHERE p.nomor_perkara = ? ORDER BY p.perkara_id DESC LIMIT 1`,
     [nomorPerkara]
@@ -3433,6 +3437,8 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     // jurusita.js (jurusitaSebutan). null bila kolomnya kosong.
     alurPerkaraId: Number(perkara.alurPerkaraId) || null,
     jenisPerkaraId: Number(perkara.jenisPerkaraId) || null,
+    // Baris perkara_pihak1 (Penggugat/Pemohon); null bila tak terbaca.
+    jumlahPihakPertama: Number(perkara.jumlahPihakPertama) || null,
     majelis,
     panitera: petugas.panitera,
     jurusita: petugas.jurusita,
