@@ -2498,7 +2498,7 @@ export default function AletaSippPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3 rounded-xl border border-border/80 p-3">
                     <span>Koneksi ALETA Bot</span>
-                    <Badge variant={summary.datasource.productionReady ? "success" : "warning"}>{summary.datasource.connectionKey}</Badge>
+                    <Badge variant={summary.datasource.productionReady ? "success" : "warning"} teksAsli>{summary.datasource.connectionKey}</Badge>
                   </div>
                   <div className="flex items-center justify-between gap-3 rounded-xl border border-border/80 p-3">
                     <span>Import terakhir</span>
@@ -3839,7 +3839,7 @@ export default function AletaSippPage() {
                           {pendukungFeatureDetail.noQueryReason ? <p className="mt-2 text-muted-foreground">{pendukungFeatureDetail.noQueryReason}</p> : null}
                           {pendukungFeatureDetail.availableActions?.length ? (
                             <div className="mt-3 flex flex-wrap gap-2">
-                              {pendukungFeatureDetail.availableActions.map((action) => <Badge key={action} variant="outline">{action}</Badge>)}
+                              {pendukungFeatureDetail.availableActions.map((action) => <Badge key={action} variant="outline" teksAsli>{action}</Badge>)}
                             </div>
                           ) : null}
                         </div>
@@ -3865,7 +3865,7 @@ export default function AletaSippPage() {
                                   <td className="px-3 py-3 text-muted-foreground">{subFeature.reason}</td>
                                   <td className="px-3 py-3">
                                     <div className="flex flex-wrap gap-2">
-                                      {subFeature.actions.map((action) => <Badge key={action} variant="outline">{action}</Badge>)}
+                                      {subFeature.actions.map((action) => <Badge key={action} variant="outline" teksAsli>{action}</Badge>)}
                                     </div>
                                   </td>
                                 </tr>
@@ -4571,7 +4571,7 @@ export default function AletaSippPage() {
                     <CardTitle>Temuan dan Rekomendasi</CardTitle>
                     <CardDescription>Drill-down perkara/item dari hasil monitoring, termasuk status tindak lanjut.</CardDescription>
                   </div>
-                  {selectedResultItemFilter ? <Badge variant="outline">Result {selectedResultItemFilter}</Badge> : selectedRunKey ? <Badge variant="outline">{selectedRunKey}</Badge> : null}
+                  {selectedResultItemFilter ? <Badge variant="outline">Result {selectedResultItemFilter}</Badge> : selectedRunKey ? <Badge variant="outline" teksAsli>{selectedRunKey}</Badge> : null}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

@@ -130,12 +130,13 @@ describe("bot: keadaan belum upload (6 Okt 2026)", () => {
     w.dokumen.push({ nomorPerkara: "609/Pdt.G/2026/PA.Dgl", judulDokumen: "Duplik", diunggahPada: "2026-09-28 14:00:00", statusVerifikasi: "valid", terakhirTerlihat: "2026-10-04 09:00:00" });
     expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("belum-upload");
 
-    // Kesimpulan diunggah sesudahnya dan belum diverifikasi: belum diverifikasi.
+    // 14 Okt 2026: agenda KESIMPULAN tidak melewati verifikasi majelis. Kesimpulan
+    // diunggah sesudahnya (status e-Court "belum") -> "sudah-upload", BUKAN "belum".
     w.dokumen.push({ nomorPerkara: "609/Pdt.G/2026/PA.Dgl", judulDokumen: "Kesimpulan Penggugat", diunggahPada: "2026-10-02 09:00:00", statusVerifikasi: "belum", terakhirTerlihat: "2026-10-04 09:00:00" });
-    expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("belum");
-    // ... lalu diverifikasi: sudah.
+    expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("sudah-upload");
+    // ... diverifikasi pun tetap "sudah-upload" (tidak pernah "sudah diverifikasi").
     w.dokumen[w.dokumen.length - 1].statusVerifikasi = "valid";
-    expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("sudah");
+    expect((await w.L.keadaanHari(HARI)).perkara["609/Pdt.G/2026/PA.Dgl"].keadaan).toBe("sudah-upload");
   });
 
   it("agenda yang tidak menuntut unggahan pihak (pembacaan putusan) tidak pernah belum-upload", async () => {
@@ -176,13 +177,13 @@ describe("portal: penanda satu lencana empat keadaan, hanya sidang e-Litigasi", 
 
   it("hijau / kuning / abu, tooltip menyebut jam periksa dan yang memverifikasi", () => {
     const sudah = penandaVerifikasi(baris, data("sudah"), HARI)!;
-    expect(sudah).toMatchObject({ keadaan: "sudah", label: "sudah diverifikasi" });
+    expect(sudah).toMatchObject({ keadaan: "sudah", label: "Sudah diverifikasi" });
     expect(sudah.kelas).toContain("emerald");
     expect(sudah.keterangan).toContain("09:45");
     expect(sudah.keterangan).toContain("Himawan");
-    expect(penandaVerifikasi(baris, data("belum"), HARI)).toMatchObject({ keadaan: "belum", label: "belum diverifikasi" });
+    expect(penandaVerifikasi(baris, data("belum"), HARI)).toMatchObject({ keadaan: "belum", label: "Belum diverifikasi" });
     // Bot tidak tersambung: abu.
-    expect(penandaVerifikasi(baris, { terbaca: false, tanggal: "", perkara: {} }, HARI)).toMatchObject({ keadaan: "tidak-konek", label: "tidak konek" });
+    expect(penandaVerifikasi(baris, { terbaca: false, tanggal: "", perkara: {} }, HARI)).toMatchObject({ keadaan: "tidak-konek", label: "Tidak konek" });
   });
 
   it("tidak diberi penanda: bukan e-Litigasi, permohonan, atau bukan hari ini", () => {
@@ -203,7 +204,7 @@ describe("portal: penanda satu lencana empat keadaan, hanya sidang e-Litigasi", 
     const d = data("belum-upload");
     d.perkara["609/Pdt.G/2026/PA.Dgl"].sidangLalu = "2026-09-28";
     const p = penandaVerifikasi(baris, d, HARI)!;
-    expect(p).toMatchObject({ keadaan: "belum-upload", label: "belum upload" });
+    expect(p).toMatchObject({ keadaan: "belum-upload", label: "Belum upload" });
     expect(p.kelas).toContain("orange");
     expect(p.keterangan).toContain("sejak sidang sebelumnya (2026-09-28)");
   });
@@ -211,7 +212,7 @@ describe("portal: penanda satu lencana empat keadaan, hanya sidang e-Litigasi", 
   it("lencananya dirender di Jadwal Sidang", () => {
     const html = renderToStaticMarkup(createElement(LencanaVerifikasiMajelis, { penanda: penandaVerifikasi(baris, data("belum"), HARI) }));
     expect(html).toContain('data-verifikasi-majelis="belum"');
-    expect(html).toContain("belum diverifikasi");
+    expect(html).toContain("Belum diverifikasi");
     expect(html).toContain("2 dokumen persidangan menunggu verifikasi majelis.");
   });
 });

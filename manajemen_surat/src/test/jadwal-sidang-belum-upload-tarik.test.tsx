@@ -515,7 +515,7 @@ describe("LencanaVerifikasiMajelis dapat ditekan", () => {
     );
     const tombol = container.querySelector("button[data-tarik-belum-upload]") as HTMLButtonElement;
     expect(tombol).not.toBeNull();
-    expect(tombol.textContent).toBe("belum upload");
+    expect(tombol.textContent).toBe("Belum upload");
     expect(tombol.title).toContain("Tekan untuk memeriksa e-Court sekarang - hanya perkara ini.");
     fireEvent.click(tombol);
     expect(onTarik).toHaveBeenCalledTimes(1);
@@ -530,7 +530,7 @@ describe("LencanaVerifikasiMajelis dapat ditekan", () => {
     }
     const { container } = render(createElement(LencanaVerifikasiMajelis, { penanda: penandaVerifikasi(BARIS, data("belum-upload"), HARI) }));
     expect(container.querySelector("button")).toBeNull();
-    expect(container.querySelector('[data-verifikasi-majelis="belum-upload"]')?.textContent).toBe("belum upload");
+    expect(container.querySelector('[data-verifikasi-majelis="belum-upload"]')?.textContent).toBe("Belum upload");
   });
 
   it("sedang berjalan: tombol terkunci, kemajuan tampil; masalah tampil merah", () => {
@@ -543,7 +543,7 @@ describe("LencanaVerifikasiMajelis dapat ditekan", () => {
     );
     const tombol = container.querySelector("button") as HTMLButtonElement;
     expect(tombol.disabled).toBe(true);
-    expect(tombol.textContent).toBe("memeriksa...");
+    expect(tombol.textContent).toBe("Memeriksa...");
     expect(container.querySelector('[data-kemajuan-tarik="berjalan"]')?.textContent).toBe("Memeriksa e-Court...");
 
     rerender(

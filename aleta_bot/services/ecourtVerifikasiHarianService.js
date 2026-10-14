@@ -116,6 +116,17 @@ function keadaanPerkara({
   // unggahUntukAgenda. Tanpa agenda: aturan lama (unggahan sesudah sidang lalu).
   const hitung = () =>
     bersih(agenda) ? unggahUntukAgenda(dokumen, { agenda, sidangLalu, awalBabak }) : unggahSesudah(dokumen, sidangLalu);
+  // 14 Okt 2026: agenda KESIMPULAN tidak melewati verifikasi majelis (keputusan
+  // pengguna). Dokumen Kesimpulan e-Court berstatus "belum" diverifikasi
+  // (terukur 14 Okt: 39 dari 39), sehingga penanda "belum diverifikasi" menyala
+  // pada setiap sidang kesimpulan. Yang ditanyakan di sana hanya: sudah diunggah?
+  if (agendaHanyaKesimpulan(agenda)) {
+    if (!(diperiksaHariIni || dokumen.length > 0)) {
+      return { keadaan: penarikTersambung ? "belum-diperiksa" : "tidak-konek", belum: 0, unggahBaru: 0 };
+    }
+    const unggahBaru = hitung();
+    return { keadaan: unggahBaru > 0 ? "sudah-upload" : "belum-upload", belum: 0, unggahBaru };
+  }
   const belum = dokumen.filter((d) => menunggu(d)).length;
   if (belum > 0) return { keadaan: "belum", belum, unggahBaru: hitung() };
   // Tidak ada yang menunggu menurut data tersimpan. Itu "sudah" bila datanya
@@ -142,6 +153,19 @@ const POLA_AGENDA_UNGGAH = /jawab|replik|duplik|kesimpulan/i;
 
 function agendaPerluUnggah(agenda) {
   return POLA_AGENDA_UNGGAH.test(bersih(agenda));
+}
+
+/**
+ * Agenda yang HANYA babak kesimpulan (14 Okt 2026) - tanpa verifikasi majelis.
+ * Agenda gabungan ("Duplik dan Kesimpulan") tetap memakai aturan biasa.
+ */
+function agendaHanyaKesimpulan(agenda) {
+  return babakAgenda(agenda).join(",") === "kesimpulan";
+}
+
+/** Keadaan yang tidak perlu ditarik lagi hari ini. */
+function keadaanTuntas(keadaan) {
+  return keadaan === "sudah" || keadaan === "sudah-upload";
 }
 
 /**
@@ -542,7 +566,7 @@ function buatLayanan(deps = {}) {
       // (datanya mungkin basi); sesudahnya hanya yang masih menunggu majelis
       // atau yang dokumennya belum diunggah pihak (dapat masuk sepanjang hari).
       if (!penarik.berhasil.has(k)) return true;
-      return (
+      return !keadaanTuntas(
         keadaanPerkara({
           dokumen: dok,
           diperiksaHariIni: true,
@@ -551,7 +575,7 @@ function buatLayanan(deps = {}) {
           sidangLalu: p.sidangLalu,
           agenda: p.agenda,
           awalBabak: p.awalBabak,
-        }).keadaan !== "sudah"
+        }).keadaan
       );
     });
     if (perlu.length === 0) {
@@ -617,7 +641,7 @@ function buatLayanan(deps = {}) {
       .filter((p) => {
         const k = normalizeCaseNumber(p.nomorPerkara);
         if (!penarik.berhasil.has(k)) return true;
-        return (
+        return !keadaanTuntas(
           keadaanPerkara({
             dokumen: dokumen.get(k) || [],
             diperiksaHariIni: true,
@@ -626,7 +650,7 @@ function buatLayanan(deps = {}) {
             sidangLalu: p.sidangLalu,
             agenda: p.agenda,
             awalBabak: p.awalBabak,
-          }).keadaan !== "sudah"
+          }).keadaan
         );
       })
       .map((p) => p.nomorPerkara);
@@ -1053,6 +1077,8 @@ module.exports = {
   buatLayanan,
   keadaanPerkara,
   agendaPerluUnggah,
+  agendaHanyaKesimpulan,
+  keadaanTuntas,
   unggahSesudah,
   unggahUntukAgenda,
   awalBabakAgenda,

@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority";
 
+import { formatAnakLencana } from "@/lib/format-lencana";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
@@ -27,10 +28,25 @@ const badgeVariants = cva(
   }
 );
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
+export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {
+  /**
+   * Tulisan apa adanya - tanpa huruf awal kapital otomatis (14 Okt 2026). Untuk
+   * lencana yang memuat nilai mentah (nama pengguna, kode) yang tidak boleh diubah.
+   */
+  teksAsli?: boolean;
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
+/**
+ * Lencana. Sejak 14 Okt 2026 tulisannya berhuruf awal kapital lewat satu aturan
+ * (@/lib/format-lencana): "potensi verstek" -> "Potensi verstek"; singkatan,
+ * "e-Court", angka, dan kode dibiarkan.
+ */
+function Badge({ className, variant, teksAsli, children, ...props }: BadgeProps) {
+  return (
+    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+      {teksAsli ? children : formatAnakLencana(children)}
+    </div>
+  );
 }
 
 export { Badge, badgeVariants };

@@ -1357,7 +1357,7 @@ export function EStatusPanel() {
                     <p className="rounded-lg bg-muted/60 p-3">{aiAssist.outputText}</p>
                     <div className="flex flex-wrap gap-2">
                       {aiAssist.guardrails.map((guardrail) => (
-                        <Badge key={guardrail} variant="outline">{guardrail}</Badge>
+                        <Badge key={guardrail} variant="outline" teksAsli>{guardrail}</Badge>
                       ))}
                     </div>
                   </CardContent>

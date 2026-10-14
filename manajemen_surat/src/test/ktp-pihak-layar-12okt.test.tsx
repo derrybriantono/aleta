@@ -265,7 +265,7 @@ describe("AletaEcourtKtpPihak (Pengaturan > Integrasi e-Court)", () => {
     expect(dalam.getAllByText("18/02/2012").length).toBeGreaterThanOrEqual(1);
     expect(dalam.getAllByText(/mesin OCR belum terpasang di server/).length).toBeGreaterThanOrEqual(1);
     expect(dalam.getAllByText("percobaan ke-2").length).toBeGreaterThanOrEqual(1);
-    expect(dalam.getByText("belum dibaca")).toBeInTheDocument();
+    expect(dalam.getByText("Belum dibaca")).toBeInTheDocument();
     expect(dalam.getByText(/dipicu tombol Admin/)).toBeInTheDocument();
     expect(dalam.getByText(/dipicu penyapu latar/)).toBeInTheDocument();
     expect(rincian.textContent).not.toContain(NIK_RAHASIA);

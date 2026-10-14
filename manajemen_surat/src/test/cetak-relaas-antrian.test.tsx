@@ -1075,7 +1075,7 @@ describe("telaah 25 September 2026 - penilaian K2 dan dialog", () => {
     const b402 = centangUntuk("402/Pdt.G/2026/PA.Dgl");
     expect(b401.checked).toBe(false);
     expect(b402.checked).toBe(false);
-    expect(within(b401.parentElement!).getByText("sudah tercatat di SIPP")).toBeTruthy();
+    expect(within(b401.parentElement!).getByText("Sudah tercatat di SIPP")).toBeTruthy();
     expect(within(b402.parentElement!).getByText(/pukul 16\.55/)).toBeTruthy();
     // Sebab masuknya menyebut sidang kemarin, bukan "sidang pada tanggal ini".
     expect(within(b402.parentElement!).queryByText(/sidang pada tanggal ini ditunda/)).toBeNull();

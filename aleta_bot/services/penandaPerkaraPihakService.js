@@ -31,12 +31,16 @@
  *              PPPK berlencana sendiri; aparat desa bukan PNS). Aturan kedua
  *              tidak dibuat: yang diberi lencana hanya kunci PNS, PPPK, POLRI,
  *              TNI, BUMN, BUMD.
+ *   IZIN CERAI izinCeraiService (14 Okt 2026) - perkara cerai yang pihaknya
+ *              PNS/PPPK/TNI/POLRI: perkara_izin_cerai SIPP, posita, judul
+ *              dokumen e-Court. Lihat berkas itu untuk ukuran dan keadaannya.
  *
  * SIPP hanya DIBACA. Gagal sendiri-sendiri: jadwal tetap tampil tanpa lencana.
  */
 
 const { cleanText } = require("./ecourtTextService");
 const pekerjaanPihakService = require("./pekerjaanPihakService");
+const izinCeraiService = require("./izinCeraiService");
 
 /** Kunci penggolongan pekerjaan yang diberi lencana (DESA, BUKAN, LAIN, KOSONG tidak). */
 const KUNCI_BERLENCANA = Object.freeze(["PNS", "PPPK", "POLRI", "TNI", "BUMN", "BUMD"]);
@@ -152,11 +156,11 @@ async function pekerjaanPihakBanyakPerkara(daftarPerkaraId, deps = {}) {
  * `terbaca` memuat bagian yang SELURUHNYA terbaca (false = jangan menyimpulkan
  * apa pun dari ketiadaan lencana).
  *
- * @returns {Promise<{ghaib: Object, prodeo: Object, pekerjaan: Object, terbaca: {prodeo: boolean, pekerjaan: boolean}}>}
+ * @returns {Promise<{ghaib: Object, prodeo: Object, pekerjaan: Object, izinCerai: Object, terbaca: {prodeo: boolean, pekerjaan: boolean, izinCerai: boolean}}>}
  */
 async function bahanPenanda(daftarPerkaraId, deps = {}) {
   const id = idBersih(daftarPerkaraId);
-  const terbaca = { prodeo: true, pekerjaan: true };
+  const terbaca = { prodeo: true, pekerjaan: true, izinCerai: true };
   const aman = async (kerja, nama) => {
     try {
       return await kerja();
@@ -172,7 +176,20 @@ async function bahanPenanda(daftarPerkaraId, deps = {}) {
     aman(() => prodeoBanyakPerkara(id, deps), "prodeo"),
     aman(() => pekerjaanPihakBanyakPerkara(id, deps), "pekerjaan"),
   ]);
-  return { ghaib, prodeo, pekerjaan, terbaca };
+  // Izin cerai bergantung pada lencana pekerjaan; pekerjaan tak terbaca = tidak menyimpulkan apa pun.
+  const izinCerai = terbaca.pekerjaan
+    ? await aman(
+        () =>
+          izinCeraiService.izinCeraiBanyakPerkara(id, pekerjaan, {
+            kueri: deps.kueri || runQueryBawaan,
+            skema: deps.skema,
+            judulEcourt: deps.judulEcourt || izinCeraiService.judulEcourtBawaan,
+          }),
+        "izinCerai"
+      )
+    : {};
+  if (!terbaca.pekerjaan) terbaca.izinCerai = false;
+  return { ghaib, prodeo, pekerjaan, izinCerai, terbaca };
 }
 
 /**
@@ -191,6 +208,9 @@ function ruasBaris(bahan, perkaraId) {
     penandaPihak: bahan.pekerjaan[kunci] || [],
     penandaProdeoTerbaca: bahan.terbaca.prodeo,
     penandaPekerjaanTerbaca: bahan.terbaca.pekerjaan,
+    // 14 Okt 2026: {keadaan: ada|belum-dicatat|belum-ada|belum-terbaca, label, judul, sumber}
+    // atau null (bukan cerai / tidak ada pihak wajib izin / tidak terbaca).
+    izinCerai: (bahan.izinCerai && bahan.izinCerai[kunci]) || null,
   };
 }
 

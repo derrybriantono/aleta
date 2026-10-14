@@ -69,6 +69,7 @@ import {
   useUrutan,
   urutkan,
 } from "@/components/portal/tabel-kendali";
+import { formatLencana } from "@/lib/format-lencana";
 import { cn } from "@/lib/utils";
 import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 import { Bagian } from "@/components/portal/bagian-ciut";
@@ -87,7 +88,7 @@ import { LencanaPekerjaanBaris, LencanaPerkaraBaris } from "@/components/portal/
 import { NamaPihakHadir } from "@/components/portal/pihak-hadir"; /* 12OKT-H */
 import { pihakHadirHariIni } from "@/lib/pihak-hadir"; /* 12OKT-H */
 import { DaftarNamaSaksi } from "@/components/portal/panggil-saksi";
-import type { BahanPenandaBaris, LencanaPekerjaanPihak, PenandaPerkaraBaris } from "@/lib/penanda-perkara-pihak";
+import type { BahanPenandaBaris, IzinCeraiBaris, LencanaPekerjaanPihak, PenandaPerkaraBaris } from "@/lib/penanda-perkara-pihak";
 /* === AKHIR 12OKT-B === */
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
@@ -470,6 +471,8 @@ type SidangBaris = {
   ecourtTerbaca?: boolean;
   penandaPerkara?: PenandaPerkaraBaris | null;
   penandaPihak?: LencanaPekerjaanPihak[] | null;
+  /** 14 Okt 2026: izin cerai pihak PNS/ASN (PPPK)/TNI/POLRI - lihat aleta_bot/services/izinCeraiService.js. */
+  izinCerai?: IzinCeraiBaris | null;
   /* === AKHIR 12OKT-B === */
   /* === 12OKT-K: eksepsi/rekonvensi (sudah dikirim sejak 6 Okt), sita, eksekusi (ruas opsional) === */
   penandaJawaban?: PenandaJawabanPerkara | null;
@@ -805,7 +808,7 @@ function PenandaPenerimaLawan({
       className="ml-1 inline-flex items-center rounded-full border border-red-500 bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white dark:border-red-400 dark:bg-red-700 dark:text-red-50"
       title={`Keterangan relaas menyebut "${hasil.kataPemicu}", mirip nama pihak lawan: ${hasil.namaLawan}. Perlu diperiksa sebelum verstek - boleh jadi hanya kebetulan senama.`}
     >
-      diterima pihak lawan?
+      Diterima pihak lawan?
     </span>
   );
 }
@@ -2406,7 +2409,7 @@ function UmurPerkara({ durasi, telahIkrar = false }: { durasi: SidangBaris["dura
           className="inline-flex items-center rounded-full border border-red-500 bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-900 dark:bg-red-500/15 dark:text-red-200"
           title={`Sudah ${hariSema} hari di luar mediasi - lewat ${Math.abs(durasi.sisaHari ?? 0)} hari dari batas lima bulan SEMA 2/2014. Majelis melapor kepada Ketua Pengadilan dengan tembusan kepada Ketua Mahkamah Agung.`}
         >
-          lewat 5 bulan
+          Lewat 5 bulan
         </span>
       ) : null}
     </div>
@@ -2449,7 +2452,7 @@ export function LencanaVerifikasiMajelis({
           onTarik();
         }}
       >
-        {berjalan ? "memeriksa..." : penanda.label}
+        {berjalan ? "Memeriksa..." : formatLencana(penanda.label)}
       </button>
     ) : (
       <span data-verifikasi-majelis={penanda.keadaan} className={kelas} title={penanda.keterangan}>
@@ -2540,7 +2543,7 @@ function PenandaPanggilan({
             .filter(Boolean)
             .join(" ")}
         >
-          belum dipanggil
+          Belum dipanggil
           {sebutanSisiPendek(panggilan.sisiBelumDipanggil)}
         </span>
       ) : null}
@@ -3026,8 +3029,8 @@ function SelKeteranganPerkara({
           <StickyNote className="h-3 w-3 shrink-0" aria-hidden="true" />
           <span className="truncate">
             {adaIsi
-              ? `keterangan${(keadaan?.jumlahRevisi ?? 1) > 1 ? ` (${keadaan?.jumlahRevisi}× diubah)` : ""}`
-              : "keterangan"}
+              ? `Keterangan${(keadaan?.jumlahRevisi ?? 1) > 1 ? ` (${keadaan?.jumlahRevisi}× diubah)` : ""}`
+              : "Keterangan"}
           </span>
         </button>
       </div>
@@ -3795,7 +3798,7 @@ export function SelAntrianJam({
               antrian.menitMenunggu
             )} yang lalu dan belum dipanggil masuk.`}
           >
-            menunggu {sebutanJarak(antrian.menitMenunggu)}
+            Menunggu {sebutanJarak(antrian.menitMenunggu)}
           </span>
         </div>
       ) : null}
@@ -3984,7 +3987,7 @@ export function LencanaCourtCalendarSinkron({ baris }: { baris: Parameters<typeo
       className="whitespace-nowrap rounded bg-rose-600 px-1.5 py-0.5 text-[11px] font-semibold text-white"
       title={k.sebab}
     >
-      court calendar tidak sinkron
+      Court calendar tidak sinkron
     </span>
   );
 }
@@ -4031,6 +4034,17 @@ export function PenandaMediasiAgenda({
  * satunya. Lihat catatan pada kepala kolomnya.
  */
 export const LEBAR_KOLOM_MAJELIS = "w-[17rem] max-w-[17rem]";
+
+/**
+ * Kolom Agenda dilebarkan (14 Okt 2026, permintaan pengguna). Tanpa batas, tabel
+ * otomatis membagi sisa lebar menurut lebar IDEAL tiap kolom - "Perkara & Para
+ * Pihak" (nama + lencana) merebutnya, dan agenda pendek terjepit: terukur di
+ * replika Chromium 1366 px kolom Agenda 131 px. Batas BAWAH (min-w) di kepala DAN
+ * sel: 1366 px -> 198 px (Perkara 240 -> 200 px, tanpa isi yang meluap),
+ * 1920 px -> 303 px (Perkara 492 -> 472 px). Bukan w- tetap: agenda panjang
+ * tetap boleh melebar.
+ */
+export const LEBAR_KOLOM_AGENDA = "min-w-[12rem] 2xl:min-w-[18rem]";
 
 /** Lencana keadaan verifikasi majelis - sejalan dengan Kendali Berkas. */
 function LencanaVerifikasi({ status }: { status: string }) {
@@ -6118,7 +6132,7 @@ export function AletaEcourtSidang({
                               {saklar.label}
                               {saklar.wajib ? (
                                 <span className="ml-1 rounded bg-rose-100 px-1 text-[10px] font-semibold text-rose-900 dark:bg-rose-950 dark:text-rose-200">
-                                  tetap
+                                  Tetap
                                 </span>
                               ) : null}
                             </span>
@@ -7238,7 +7252,7 @@ export function AletaEcourtSidang({
                 <KepalaUrut className="px-2" kunci="perkara" urutan={urutTabel} onTekan={tekanUrut}>
                   Perkara &amp; Para Pihak
                 </KepalaUrut>
-                <KepalaUrut className="px-2" kunci="agenda" urutan={urutTabel} onTekan={tekanUrut}>
+                <KepalaUrut className={cn("px-2", LEBAR_KOLOM_AGENDA)} kunci="agenda" urutan={urutTabel} onTekan={tekanUrut}>
                   Agenda
                 </KepalaUrut>
                 {/* ==============================================================
@@ -8152,7 +8166,7 @@ export function AletaEcourtSidang({
                                   " Buka rincian perkara untuk daftar lengkap berkas yang masih kurang."
                                 }
                               >
-                                belum minutasi
+                                Belum minutasi
                               </span>
                             ) : null}
                             {tampil(tampilan, "belum-bas") && !baris.adaBas ? (
@@ -8160,7 +8174,7 @@ export function AletaEcourtSidang({
                                 className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
                                 title="Berita acara sidang belum diunggah ke SIPP."
                               >
-                                belum ada BAS
+                                Belum ada BAS
                               </span>
                             ) : null}
                             {/* Penanda saksi TIDAK di sini: ia kini berdiri
@@ -8193,7 +8207,7 @@ export function AletaEcourtSidang({
                                   "Sudah putus, tetapi putusannya belum beres di e-Court."
                                 }
                               >
-                                {baris.putusanEcourt.sebutan || "putusan e-Court"}
+                                {formatLencana(baris.putusanEcourt.sebutan || "putusan e-Court")}
                               </span>
                             ) : null}
                             {tampil(tampilan, "tidak-dipanggil") &&
@@ -8203,7 +8217,7 @@ export function AletaEcourtSidang({
                                 className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
                                 title="Semua pihak hadir pada sidang sebelumnya - tidak ada yang wajib dipanggil."
                               >
-                                tidak perlu dipanggil
+                                Tidak perlu dipanggil
                               </span>
                             ) : null}
                           </div>
@@ -8275,7 +8289,7 @@ export function AletaEcourtSidang({
                           ) : null}
                         </td>
 
-                        <td className="px-2 py-2 align-top text-sm">
+                        <td className={cn("px-2 py-2 align-top text-sm", LEBAR_KOLOM_AGENDA)}>
                           {/* ==================================================
                               AGENDA e-LITIGASI BERTULISAN MERAH
                               ==================================================
@@ -9462,7 +9476,7 @@ export function RincianSidang({
                           tindakan, sedangkan "tidak bertemu" belum tentu. */}
                       {baris.retur ? (
                         <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                          retur
+                          Retur
                         </span>
                       ) : baris.caraRelaas?.cara ? (
                         // Warnanya mengikuti SAMPAI atau tidaknya, bukan
@@ -9585,7 +9599,7 @@ export function RincianSidang({
                 </span>
                 {baris.retur ? (
                   <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                    retur
+                    Retur
                   </span>
                 ) : baris.bertemu ? (
                   <Badge variant="success">bertemu</Badge>
@@ -10725,7 +10739,7 @@ export function RincianSidang({
                     pitaSk.kelasKotak
                   )}
                 >
-                  {pitaSk.warna} - {durasi.waktuPutusSk.sebutan}, nilai {durasi.waktuPutusSk.nilai}{" "}
+                  {formatLencana(pitaSk.warna)} - {durasi.waktuPutusSk.sebutan}, nilai {durasi.waktuPutusSk.nilai}{" "}
                   dari 5
                 </span>
               ) : (

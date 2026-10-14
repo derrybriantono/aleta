@@ -7,7 +7,7 @@
  *
  * Dua komponen kecil yang dipakai Jadwal Sidang (baris dan rincian):
  *
- *   <LencanaPerkaraBaris>      Ghaib, Prodeo, Non e-Court di samping NOMOR perkara;
+ *   <LencanaPerkaraBaris>      Ghaib, Prodeo, Non e-Court, izin cerai (14 Okt) di samping NOMOR perkara;
  *   <LencanaPekerjaanBaris>    PNS, PPPK, POLRI, TNI, BUMN/BUMD di samping NAMA pihak.
  *
  * Pemilihan lencananya ada di @/lib/penanda-perkara-pihak (murni, diuji). Saklar
@@ -17,7 +17,10 @@
  *
  * Warna sengaja BUKAN merah/kuning: di layar ini merah berarti menuntut tindakan
  * dan kuning berarti perlu dicermati. Keterangan hukum (ghaib, prodeo, jabatan)
- * hanya memberi tahu perlakuan perkaranya, tidak menuntut apa pun.
+ * hanya memberi tahu perlakuan perkaranya, tidak menuntut apa pun. Pengecualiannya
+ * izin cerai: "belum ada" merah (perkara cerai PNS/ASN/TNI/POLRI tanpa izin atasan
+ * menuntut tindakan), "belum dicatat SIPP" kuning, "belum terbaca" abu (sumbernya
+ * memang tidak ada - lihat aleta_bot/services/izinCeraiService.js).
  */
 
 import {
@@ -36,6 +39,10 @@ const KELAS_PERKARA: Record<KunciLencanaPerkara, string> = {
   ghaib: "bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200",
   prodeo: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
   "non-ecourt": "border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300",
+  "izin-cerai-belum-ada": "bg-rose-600 text-white dark:bg-rose-700 dark:text-rose-50",
+  "izin-cerai-belum-dicatat": "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+  "izin-cerai-belum-terbaca":
+    "border border-dashed border-slate-400 bg-slate-50 text-slate-700 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-300",
 };
 
 const KELAS_PEKERJAAN = "bg-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-200";
