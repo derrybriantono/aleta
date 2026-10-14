@@ -51,21 +51,10 @@ function defDari(noVar: string): Record<string, unknown> | null {
 }
 
 /** Penanda tanpa jalur pengisian - cacat blangko/katalog yang SUDAH diketahui (ABT pun mencetak "..."). */
+// 14 Okt (paket ABT abt-hb-kebendaan, agen T2): 10 penanda HB Kabul dibereskan - 0225 -> 8893 dan 0888 -> 1108 di
+// RTF, 0218/0219/0226/0242/0889/9951/9952 (+9110) dibuat di katalog, 0244 sudah dibuat K6; 1021/5015/5016/5032
+// menjadi data_teks. Fixture mengikuti katalog & RTF sesudah paket itu.
 const CACAT_DIKETAHUI: Record<string, string> = {
-  "0218": "4 Kebendaan/[00] [E-Court] HB Kabul - tidak ada di katalog",
-  "0219": "HB Kabul - tidak ada di katalog",
-  "0225": "HB Kabul - tidak ada di katalog",
-  "0226": "HB Kabul - tidak ada di katalog",
-  "0242": "HB Kabul - tidak ada di katalog",
-  "0244": "HB Kabul - tidak ada di katalog",
-  "0888": "HB Kabul - tidak ada di katalog",
-  "0889": "HB Kabul - tidak ada di katalog",
-  "9951": "HB Kabul - tidak ada di katalog",
-  "9952": "HB Kabul - tidak ada di katalog",
-  "5032": "HB Kabul - Harta bersama/gono-gini, katalog tanpa data_type",
-  "1021": "Itsbat [99aa] - Nama Istri Pertama, katalog tanpa data_type",
-  "5015": "Itsbat [99aa] Cerai Mati - Tgl meninggal, katalog tanpa data_type",
-  "5016": "Itsbat [99aa] Cerai Mati - Sebab meninggal, katalog tanpa data_type",
   "5120": "ALUR 05 [4] - Mengadili/Menetapkan, katalog tanpa data_type",
 };
 
