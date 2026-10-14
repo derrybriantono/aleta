@@ -2099,25 +2099,25 @@ const PROFIL_GOLONGAN = {
   panitera: {
     nama: "Panitera / Panmud",
     saklar: { tandaiHalaman: true, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
-    panel: { aleta: true, sipp: true, abt: true },
+    panel: { aleta: false, sipp: true, abt: true },
     relevan: ["tandaiHalaman", "sisipJadwal", "checklistMilestone"],
   },
   kasir: {
     nama: "Kasir",
     saklar: { tandaiHalaman: false, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
-    panel: { aleta: true, sipp: true, abt: false },
+    panel: { aleta: false, sipp: true, abt: false },
     relevan: ["checklistMilestone"],
   },
   ptsp: {
     nama: "PTSP",
     saklar: { tandaiHalaman: true, sisipJadwal: false, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
-    panel: { aleta: true, sipp: true, abt: false },
+    panel: { aleta: false, sipp: true, abt: false },
     relevan: ["tandaiHalaman", "checklistMilestone"],
   },
   mediator: {
     nama: "Mediator",
     saklar: { tandaiHalaman: true, sisipJadwal: true, cetakTigaBerkas: false, suntingLangsungAbt: false, checklistMilestone: true },
-    panel: { aleta: true, sipp: true, abt: false },
+    panel: { aleta: false, sipp: true, abt: false },
     relevan: ["tandaiHalaman", "sisipJadwal", "checklistMilestone"],
   },
   operator: {

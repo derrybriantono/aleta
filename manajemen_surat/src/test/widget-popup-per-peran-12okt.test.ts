@@ -310,11 +310,15 @@ describe("butir 3 - profil saklar: bug dan perbedaan nyata per peran", () => {
       const panel = p.simpanan.panelBawaanTampil as { aleta: boolean; sipp: boolean; abt: boolean };
       tandaTangan.set(kode, `${nilaiSaklar(p)}|${panel.aleta ? 1 : 0}${panel.sipp ? 1 : 0}${panel.abt ? 1 : 0}`);
     }
-    expect(new Set(tandaTangan.values()).size).toBe(8);
+    // 14 Okt (permintaan pengguna): panel ALETA di portal TERTUTUP bawaan untuk SEMUA profil - Panitera
+    // kini sama dengan Juru Sita (tadinya beda hanya di panel ALETA terbuka). Tujuh tanda tangan berbeda.
+    expect(new Set(tandaTangan.values()).size).toBe(7);
+    expect(tandaTangan.get("panitera")).toBe(tandaTangan.get("jurusita"));
+    for (const v of tandaTangan.values()) expect(v.split("|")[1].startsWith("0")).toBe(true);
     // Nilai di penyimpanan = nilai di kotak centang (satu penulis); profil terakhir = Operator.
     expect(p.simpanan.checklistMilestone).toBe((p.d.getElementById("checklistMilestone") as HTMLInputElement).checked);
     expect(p.simpanan.checklistMilestone).toBe(false);
-    expect(tandaTangan.get("kasir")).toBe("00001|110");
+    expect(tandaTangan.get("kasir")).toBe("00001|010");
     expect(tandaTangan.get("hakim")).toBe("11001|011");
     expect(tandaTangan.get("pp")).toBe("11101|011");
     expect(tandaTangan.get("jurusita")).toBe("10001|011");

@@ -221,6 +221,19 @@ function centang(h: ReturnType<typeof buka>, nilai: string) {
   c.dispatchEvent(new h.w.Event("change", { bubbles: true }));
 }
 
+function lepas(h: ReturnType<typeof buka>, nilai: string) {
+  const c = h.wadah.querySelector(`input[type=checkbox][value="${nilai}"]`) as HTMLInputElement;
+  expect(c, `centang ${nilai}`).toBeTruthy();
+  c.checked = false;
+  c.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+}
+
+function tercentang(h: ReturnType<typeof buka>) {
+  return Array.from(h.wadah.querySelectorAll(".aleta-jurusita-centang-kotak input[type=checkbox]"))
+    .filter((c) => (c as HTMLInputElement).checked)
+    .map((c) => (c as HTMLInputElement).value);
+}
+
 function tombolCetak(h: ReturnType<typeof buka>) {
   return h.wadah.querySelector(".aleta-jurusita-bagian .aleta-jurusita-aksi .aleta-jurusita-tombol-utama") as HTMLButtonElement;
 }
@@ -446,10 +459,33 @@ describe("pemetaan blangko K3 - server, simpanan, bawaan", () => {
     const pilih = await sampai(() => h.wadah.querySelector("select.aleta-jurusita-sidang") as HTMLSelectElement, "pilihan");
     pilih.value = "1";
     pilih.dispatchEvent(new h.w.Event("change"));
+    // 14 Okt: sidang pertama mencentang kedua pihak secara bawaan - uji ini hanya Tergugat.
+    lepas(h, "p1");
     centang(h, "p2");
     tombolCetak(h).click();
     await sampai(() => pesanMulai(h).length === 1, "relaas-mulai");
     expect(pesanMulai(h)[0].pekerjaan.dokumen[0].berkas).toBe(PERTAMA_T);
+  });
+
+  it("14 Okt: pihak yang tidak hadir tercentang bawaan (sidang pertama keduanya; tundaan menurut sidang sebelumnya; PBT pihak yang tidak hadir saat putus)", async () => {
+    const jadwal = [
+      { sidangId: "1", urutanSidang: 1, tanggalSidang: "2026-09-01", agenda: "Pemeriksaan", dihadiriOleh: 2 },
+      { sidangId: "2", urutanSidang: 2, tanggalSidang: "2026-09-15", agenda: "Panggil Tergugat", dihadiriOleh: 4 },
+      { sidangId: "3", urutanSidang: 3, tanggalSidang: "2026-09-20", agenda: "Putusan", dihadiriOleh: 2 },
+    ];
+    const h = buka({ rincian: rincianBaku({ jadwalPerkara: jadwal, putusan: { sudahPutus: true, tanggalPutusan: "2026-09-20" } }) });
+    await siapBaru(h);
+    await pasang(h);
+    const pilih = await sampai(() => h.wadah.querySelector("select.aleta-jurusita-sidang") as HTMLSelectElement, "pilihan");
+    const ke = async (n: string) => {
+      pilih.value = n;
+      pilih.dispatchEvent(new h.w.Event("change"));
+      return tercentang(h);
+    };
+    // PBT: sidang putusan (ke-3) hanya dihadiri pihak pertama -> PBT pihak kedua.
+    expect((await ke("1")).sort()).toEqual(["b2", "p1", "p2"]);
+    expect((await ke("2")).sort()).toEqual(["b2", "p2"]); // sidang ke-1 hanya pihak pertama -> panggil pihak kedua
+    expect((await ke("3")).sort()).toEqual(["b2", "p1", "p2"]); // sidang ke-2 tidak dihadiri -> keduanya
   });
 
   it("jalan ke pengaturan hanya untuk admin dan super admin", async () => {

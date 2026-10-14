@@ -524,8 +524,8 @@ const JURUSITA_SEBUTAN_JENIS_SIDANG = {
  * Kalimat pendek: siapa yang perlu dipanggil ke sidang tundaan ke-urutan,
  * menurut kehadiran sidang SEBELUMNYA (perkara_jadwal_sidang.dihadiri_oleh -
  * 1 semua pihak, 2 hanya pihak pertama, 3 hanya pihak kedua, 4 tidak ada;
- * sandi yang sama dengan pihakDipanggil di pohon-blangko.ts). Hanya
- * memberi tahu - tidak mencentang apa pun. "" bila tidak ada yang dapat
+ * sandi yang sama dengan pihakDipanggil di pohon-blangko.ts). Centangnya
+ * diatur jurusitaCentangBawaan (14 Okt). "" bila tidak ada yang dapat
  * dikatakan (sidang pertama, ikrar, sandi kosong).
  */
 function jurusitaPetunjukTundaan(jadwal, urutan, sebutan, rincian) {
@@ -542,6 +542,50 @@ function jurusitaPetunjukTundaan(jadwal, urutan, sebutan, rincian) {
   if (sandi === 3) return `${ke} hanya dihadiri ${sebutan.kedua} - yang dipanggil ${sebutan.pertama}.`;
   if (sandi === 4) return `${ke} tidak dihadiri pihak - yang dipanggil ${sebutan.pertama} dan ${sebutan.kedua}.`;
   return "";
+}
+
+/** Sisi yang TIDAK hadir menurut sandi dihadiri_oleh (1 semua, 2 hanya pertama, 3 hanya kedua, 4 tidak ada). */
+function jurusitaSisiTidakHadir(sandi) {
+  const s = Number(sandi);
+  if (s === 1) return [];
+  if (s === 2) return [2];
+  if (s === 3) return [1];
+  if (s === 4) return [1, 2];
+  return [];
+}
+
+/**
+ * 14 Okt (permintaan pengguna): centang BAWAAN panel juru sita satu perkara.
+ *   panggilan  sidang pertama & sidang ikrar: kedua pihak dipanggil; tundaan:
+ *              pihak yang TIDAK hadir pada sidang sebelumnya (pihak yang hadir
+ *              biasanya diperintahkan hadir, tanpa relaas).
+ *   pbt        sesudah putus: pihak yang tidak hadir pada sidang putusan
+ *              (sidang terakhir yang tidak lewat dari tanggal putusan).
+ * Sandi kosong = tidak ada yang dicentang (juru sita memilih sendiri).
+ */
+function jurusitaCentangBawaan(jadwal, urutan, rincian) {
+  const daftar = Array.isArray(jadwal) ? jadwal : [];
+  const hasil = { panggilan: [], pbt: [] };
+  const tujuan = daftar.find((s) => Number(s.urutanSidang) === Number(urutan));
+  if (tujuan) {
+    const gol = jurusitaGolonganSidang(tujuan, rincian);
+    if (gol === "sidang-pertama" || gol === "ikrar-talak") hasil.panggilan = [1, 2];
+    else {
+      const sebelum = daftar
+        .filter((s) => Number(s.urutanSidang) < Number(urutan))
+        .sort((a, b) => Number(b.urutanSidang) - Number(a.urutanSidang))[0];
+      if (sebelum) hasil.panggilan = jurusitaSisiTidakHadir(sebelum.dihadiriOleh);
+    }
+  }
+  const putusan = rincian && rincian.putusan;
+  if (putusan && putusan.sudahPutus) {
+    const tgl = String(putusan.tanggalPutusan || "").slice(0, 10);
+    const sidangPutus = daftar
+      .filter((s) => !jurusitaSidangIkrar(s, rincian) && (!tgl || String(s.tanggalSidang || "").slice(0, 10) <= tgl))
+      .sort((a, b) => Number(b.urutanSidang) - Number(a.urutanSidang))[0];
+    if (sidangPutus) hasil.pbt = jurusitaSisiTidakHadir(sidangPutus.dihadiriOleh);
+  }
+  return hasil;
 }
 
 function jurusitaNomorAman(nomor, perkaraId) {
@@ -1350,8 +1394,23 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
       cetak.disabled = dokumen.length === 0 || !/^\d+$/.test(perkaraId);
       cetak.textContent = dokumen.length > 1 ? `Cetak ${dokumen.length} dokumen` : "Cetak";
     };
+    // 14 Okt: pihak yang tidak hadir tercentang bawaan (jurusitaCentangBawaan);
+    // juru sita tetap dapat mengubahnya. Mengganti sidang menata ulang panggilan.
+    const terapkanBawaan = (pbtJuga) => {
+      const b = jurusitaCentangBawaan(jadwal, Number(pilihSidang.value), rincian);
+      pP1.c.checked = !pP1.c.disabled && b.panggilan.includes(1);
+      pP2.c.checked = !pP2.c.disabled && b.panggilan.includes(2);
+      if (pbtJuga) {
+        pB1.c.checked = !pB1.c.disabled && b.pbt.includes(1);
+        pB2.c.checked = !pB2.c.disabled && b.pbt.includes(2);
+      }
+    };
     for (const x of [pP1, pP2, pB1, pB2]) x.c.addEventListener("change", segarkan);
-    pilihSidang.addEventListener("change", segarkan);
+    pilihSidang.addEventListener("change", () => {
+      terapkanBawaan(false);
+      segarkan();
+    });
+    terapkanBawaan(true);
     segarkan();
 
     cetak.addEventListener("click", async () => {
