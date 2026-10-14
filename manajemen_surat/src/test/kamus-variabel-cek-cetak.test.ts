@@ -197,14 +197,17 @@ const defBenih = (b: BenihKamus["variabel"][number]): DefinisiAbt => ({
 });
 
 describe("D1 - isi awal dari salinan lokal abt_variabel (9 Okt 2026)", () => {
-  it("1.285 variabel terurai; angka status sama dengan laporan", () => {
+  // 14 Okt 2026 (paket abt-variabel-k6): 25 definisi diganti rumusan K6 + 0244/8564 baru. Rumusan K6 dibangun di atas
+  // isi server (sudah kebal petik, paket abt-sinkron-1), jadi 7090/8508/8521/8522/8528/8529/8531 tidak lagi rawan-petik;
+  // 5120 dan 0244 jadi otomatis, 0670 dan 8564 jadi isian manual.
+  it("1.287 variabel terurai; angka status sama dengan laporan", () => {
     const peta = new Map(BENIH.variabel.map((b) => [b.k, defBenih(b)]));
     const semua = BENIH.variabel.map((b) => uraiVariabel(defBenih(b), peta));
     const r = rekapUraian(semua);
-    expect(r.jumlah).toBe(1285);
-    expect(r.perStatus).toEqual({ otomatis: 487, manual: 241, "rawan-petik": 97, "tanpa-sumber": 460 });
+    expect(r.jumlah).toBe(1287);
+    expect(r.perStatus).toEqual({ otomatis: 496, manual: 243, "rawan-petik": 90, "tanpa-sumber": 458 });
     const dipakai = BENIH.variabel.map((b, i) => ({ b, u: semua[i] })).filter((x) => (x.b.b ?? 0) > 0);
-    expect(rekapUraian(dipakai.map((x) => x.u)).perStatus).toEqual({ otomatis: 375, manual: 222, "rawan-petik": 81, "tanpa-sumber": 59 });
+    expect(rekapUraian(dipakai.map((x) => x.u)).perStatus).toEqual({ otomatis: 383, manual: 222, "rawan-petik": 74, "tanpa-sumber": 58 });
     // Kasus rencana A8: 7080 rawan atas 0156.
     const i7080 = BENIH.variabel.findIndex((b) => b.k === "7080");
     expect(semua[i7080].status).toBe("rawan-petik");
