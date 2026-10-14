@@ -39,6 +39,8 @@ const SUMBER_ABT = readFileSync(process.env.ALETA_UJI_ABT || path.join(AKAR, "ab
 
 type Konteks = Record<string, any>;
 type Permintaan = {
+  /** 14 Okt: permintaan /abt/pdf ber-{ salinan: true } (PDF SALINAN). */
+  salinan?: boolean;
   pada: number;
   selesai: number;
   cara: string;
@@ -189,6 +191,7 @@ function muatAbt(latensi: Latensi = {}, tiruan: Tiruan = {}) {
   const simpanan: Record<string, unknown> = {};
   const permintaan: Permintaan[] = [];
   const unduhan: string[] = [];
+  const ditampilkan: string[] = [];
   // Permintaan persiapan (ABT dan draf) yang sedang terbang - untuk memastikan
   // persiapan tidak pernah berjalan serentak dengan persiapan lain.
   let terbang = 0;
@@ -236,6 +239,7 @@ function muatAbt(latensi: Latensi = {}, tiruan: Tiruan = {}) {
         lastError: undefined,
         sendMessage: (pesan: any, balik?: (x: unknown) => void) => {
           if (pesan && pesan.jenis === "unduh") unduhan.push(String(pesan.nama));
+          if (pesan && pesan.jenis === "tampilkan-pdf") ditampilkan.push(String(pesan.nama));
           if (balik) balik({ ok: true });
         },
       },
@@ -252,6 +256,7 @@ function muatAbt(latensi: Latensi = {}, tiruan: Tiruan = {}) {
       const cara = String(opsi.method || "GET").toUpperCase();
       const a = String(alamat);
       const catatan: Permintaan = { pada: jam.sekarang(), selesai: 0, cara, alamat: a, berkas: [] };
+      if (typeof opsi.body === "string" && opsi.body.includes('"salinan":true')) catatan.salinan = true;
       if (opsi.body instanceof FormData) {
         for (const medan of ["putusan", "anonimisasi", "berkas", "file_putusan"]) {
           const f = opsi.body.get(medan);
@@ -313,7 +318,7 @@ function muatAbt(latensi: Latensi = {}, tiruan: Tiruan = {}) {
   vm.runInContext(SUMBER_ABT, k, { filename: "abt.js" });
   // Tetapan (const) tidak menjadi sifat objek konteks - dibaca lewat vm.
   const jedaMassal = Number(vm.runInContext("ALAT_JEDA_MASSAL_MS", k));
-  return { k, jam, simpanan, permintaan, unduhan, pantau, jedaMassal };
+  return { k, jam, simpanan, permintaan, unduhan, ditampilkan, pantau, jedaMassal };
 }
 
 const PETA = { blangko: "Putusan Cerai Gugat", berkas: "[01] [Kabul Verstek] Cerai (Format Lengkap)", a: "AAAAAAAA", b: "BBBBBBBB", d: "3" };
@@ -330,7 +335,7 @@ function jalur(p: Permintaan[]) {
       if (x.alamat.includes("/abt/preview?")) return "GET pratinjau ABT";
       if (x.alamat.endsWith("/putusan/unggah-naskah")) return "POST draf";
       if (x.alamat.endsWith("/main/anonim")) return "POST anonim ABT";
-      if (x.alamat.endsWith("/aleta-bot/abt/pdf")) return "POST /abt/pdf";
+      if (x.alamat.endsWith("/aleta-bot/abt/pdf")) return x.salinan ? "POST /abt/pdf (salinan)" : "POST /abt/pdf";
       if (x.alamat.endsWith("/putusan/unggah-sipp")) return `POST unggah-sipp (${x.berkas.map((b) => b.medan).join("+")})`;
       return `${x.cara} ${x.alamat}`;
     });
@@ -374,11 +379,13 @@ describe("satu perkara - permintaan yang hasilnya dipakai saja", () => {
     expect(h.ringkas).not.toContain("dilewati");
   });
 
-  it("unduh nyala tanpa unggah: PDF dibuat SEKALI, tiga berkas diunduh, tidak ada tulisan ke SIPP", async () => {
-    const { k, jam, permintaan, unduhan } = muatAbt();
+  it("unduh nyala tanpa unggah: PDF putusan dibuat SEKALI (+ satu PDF SALINAN yang ditampilkan), tiga berkas diunduh, tidak ada tulisan ke SIPP", async () => {
+    const { k, jam, permintaan, unduhan, ditampilkan } = muatAbt();
     const opsi = { draf: false, pdf: true, anonim: true, unduh: true, unggah: false };
     const h = await jam.sampaiSelesai(k.kerjakanSatuPerkaraAbt(butirKe(1), PETA, opsi, "petugas", () => {}));
-    expect(jalur(permintaan)).toEqual(["GET pratinjau ABT", "POST anonim ABT", "POST /abt/pdf"]);
+    // 14 Okt: sesudah PDF putusan, PDF SALINAN langsung ditampilkan (tab), bukan diunduh.
+    expect(jalur(permintaan)).toEqual(["GET pratinjau ABT", "POST anonim ABT", "POST /abt/pdf", "POST /abt/pdf (salinan)"]);
+    expect(ditampilkan).toEqual(["101_Pdt.G_2026_PA.Dgl - [01] [Kabul Verstek] Cerai (Format Lengkap) - SALINAN.pdf"]);
     expect(unduhan).toHaveLength(3);
     expect(unduhan.filter((n) => n.endsWith(".rtf"))).toHaveLength(2);
     expect(unduhan.filter((n) => n.endsWith(".pdf"))).toHaveLength(1);

@@ -72,6 +72,7 @@ const sidangHasilAlur = require("../services/sidangHasilAlur");
 const selisihHarianService = require("../services/selisihHarianService");
 const tandaTanganService = require("../services/tandaTanganService");
 const dokumenPenetapanService = require("../services/dokumenPenetapanService");
+const salinanPutusanService = require("../services/salinanPutusanService");
 const penetapanTulisService = require("../services/penetapanTulisService");
 const sidangHasilService = require("../services/sidangHasilService");
 const putusanTulisService = require("../services/putusanTulisService");
@@ -2787,7 +2788,26 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
       res.status(400).json({ ok: false, error: "rtfBase64 kosong." });
       return;
     }
-    const isi = Buffer.from(base64, "base64");
+    let isi = Buffer.from(base64, "base64");
+    // 14 Okt: { salinan: true } -> PDF SALINAN: "SALINAN" kanan atas, "ttd"
+    // di tempat tanda tangan pejabat, blok Untuk Salinan tampak, dan gambar
+    // tanda tangan Panitera (HANYA yang sudah disahkan, dicocokkan dengan
+    // nama di blok itu). Lihat salinanPutusanService.
+    let salinan = null;
+    if (req.body && req.body.salinan === true && isi.subarray(0, 5).toString("latin1").startsWith("{\\rtf")) {
+      const teks = isi.toString("latin1");
+      const namaPanitera = salinanPutusanService.namaPaniteraSalinan(teks);
+      let ttd = null;
+      let galatTtd = "";
+      try {
+        ttd = namaPanitera ? await tandaTanganService.untukPejabat(namaPanitera) : null;
+      } catch (e) {
+        galatTtd = String((e && e.message) || e).slice(0, 160);
+      }
+      const susun = salinanPutusanService.susunSalinan(teks, { ttd });
+      isi = Buffer.from(susun.rtf, "latin1");
+      salinan = { ...susun.laporan, ttdTerdaftar: Boolean(ttd), galatTtd };
+    }
     const hasil = await abtCetakService.rtfKePdf(isi);
     if (!hasil.ok) {
       res.status(422).json({ ok: false, error: hasil.alasan });
@@ -2798,6 +2818,7 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
       pdfBase64: hasil.pdf.toString("base64"),
       byte: hasil.pdf.length,
       versiMesin: hasil.versiMesin || "",
+      ...(salinan ? { salinan } : {}),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

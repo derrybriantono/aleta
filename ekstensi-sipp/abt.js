@@ -1997,6 +1997,8 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
 
   const nomor = nomorPerkaraAbt();
   const hasil = { rtf: "", pdf: "", anonim: "" };
+  // Nama blangko dari header CETAK ABT - menamai PDF SALINAN (langkah 4).
+  let namaBlangkoAbt = "";
 
   // ── 1. RTF, dari alamat yang sama dengan tautan CETAK ─────────────────────
   lapor("Mengambil putusan dari ABT…");
@@ -2005,6 +2007,7 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
     const respons = await fetch(alamatPreview, { credentials: "include", cache: "no-store" });
     if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
     isiRtf = await respons.arrayBuffer();
+    namaBlangkoAbt = (String(respons.headers.get("content-disposition") || "").match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i) || [])[1] || "";
     if (isiRtf.byteLength < 32) throw new Error("berkasnya kosong");
     // Uji 9 Okt: dulu hanya panjangnya yang diperiksa - halaman masuk (sesi
     // ABT habis) atau "ERROR Variabel #x#" tersimpan sebagai putusan .rtf dan
@@ -2083,8 +2086,18 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
     hasil.anonim = `gagal: ${String((galat && galat.message) || galat)}`;
   }
 
-  const ringkas = `RTF ${hasil.rtf} · PDF ${hasil.pdf} · anonim ${hasil.anonim}`;
-  lapor(ringkas, /gagal/.test(ringkas));
+  // ── 4. PDF SALINAN langsung tampil (14 Okt) - hanya bila PDF putusan jadi ──
+  let kabarSalinan = "";
+  if (hasil.pdf === "tersimpan") {
+    lapor("Menyusun PDF SALINAN…");
+    const s = await tampilkanPdfSalinan(isiRtf, namaPdfSalinan(nomor, namaBlangkoAbt), (teks) => {
+      kabarSalinan = teks;
+    });
+    hasil.salinan = s.ok ? "ditampilkan" : "gagal";
+  }
+
+  const ringkas = `RTF ${hasil.rtf} · PDF ${hasil.pdf} · anonim ${hasil.anonim}${kabarSalinan ? ` · ${kabarSalinan}` : ""}`;
+  lapor(ringkas, /gagal|BELUM|tidak dibuat/.test(ringkas));
   return hasil;
 }
 
@@ -8629,7 +8642,111 @@ async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
     return hasilPerkaraAbt(siap);
   }
   if (siap.ok && o.unggah) await unggahBerkasAbt(siap, olehUsername, lapor);
+  // 14 Okt: PDF putusan sudah dirender untuk perkara ini -> PDF SALINAN
+  // langsung tampil (satu perkara saja; putusan massal tidak membuka tab).
+  if (siap.isiRtf && siap.dokumen && siap.dokumen.pdf === "ok") {
+    const s = await tampilkanPdfSalinan(siap.isiRtf, namaPdfSalinan(butir.nomor, peta && peta.berkas), lapor);
+    siap.dokumen.salinan = s.ok ? "ditampilkan" : "tidak dibuat";
+    // Bukan kata "gagal": salinan yang tidak jadi tidak menggagalkan putusan.
+    siap.ringkas.push(s.ok ? "PDF salinan ditampilkan" : "PDF salinan tidak dibuat");
+  }
   return hasilPerkaraAbt(siap);
+}
+
+/**
+ * ============================================================================
+ * PDF SALINAN LANGSUNG TAMPIL (14 Okt 2026)
+ * ============================================================================
+ *
+ * Sesudah PDF putusan dirender, RTF yang SAMA dikirim sekali lagi dengan
+ * { salinan: true }: bot menaruh "SALINAN" di kanan atas, "ttd" di tempat
+ * tanda tangan pejabat, menampakkan blok Untuk Salinan, dan membubuhkan
+ * gambar tanda tangan Panitera yang SUDAH DISAHKAN di "Berkas tanda tangan"
+ * (dicocokkan dengan nama di blok itu). Tanpa tanda tangan terdaftar PDF-nya
+ * tetap dibuat, dan sebabnya disebut.
+ *
+ * Hasilnya dibuka di tab ekstensi (salinan.html) - bukan diunduh diam-diam.
+ */
+function kalimatSalinan(k) {
+  if (!k) return "Keterangan salinan tidak terbaca dari bot (bot belum diperbarui?).";
+  const bagian = [];
+  if (k.salinan === "tidak_ditemukan") bagian.push('Tulisan "SALINAN" tidak ditemukan di blangko.');
+  if (k.gambarTtdPanitera) bagian.push(`Tanda tangan Panitera ${k.namaPanitera} tertempel.`);
+  else if (!k.namaPanitera) bagian.push('Blok "Untuk Salinan / Panitera," tidak ditemukan di blangko - tanda tangan tidak dibubuhkan.');
+  else if (!k.ttdTerdaftar)
+    bagian.push(
+      `Tanda tangan Panitera ${k.namaPanitera} BELUM terdaftar/disahkan di "Berkas tanda tangan" ALETA e-Court - ` +
+        "PDF salinan dibuat tanpa gambar tanda tangan."
+    );
+  else bagian.push(`Tanda tangan Panitera ${k.namaPanitera} tidak dapat dibubuhkan (${k.alasanTanpaGambar || "sebab tidak diketahui"}).`);
+  if (k.ttdDitambah) bagian.push(`"ttd" ditambahkan pada ${k.ttdDitambah} tempat tanda tangan.`);
+  if (k.galatTtd) bagian.push(`Galat membaca tanda tangan: ${k.galatTtd}.`);
+  return bagian.join(" ");
+}
+
+async function buatPdfSalinan(isiRtf) {
+  const respons = await alatAmbil(
+    ALETA_API_PDF,
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rtfBase64: base64DariBuffer(isiRtf), salinan: true }),
+      batasMs: BATAS_UNGGAH_MASSAL_MS,
+    },
+    "Membuat PDF salinan"
+  );
+  if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membuat PDF salinan"));
+  const luar = await respons.json();
+  const isi = luar && luar.data ? luar.data : luar;
+  if (!isi || !isi.available) throw new Error((isi && isi.message) || "pengubah PDF tidak tersedia");
+  const biner = Uint8Array.from(atob(isi.pdfBase64), (c) => c.charCodeAt(0));
+  return { blob: new Blob([biner], { type: "application/pdf" }), keterangan: isi.salinan || null };
+}
+
+/**
+ * Nama PDF SALINAN - pola baku blangko: "<nomor _> - <blangko> - SALINAN.pdf"
+ * (alatNamaUnduhanBlangko). Ekstensi blangko (.rtf/.doc) dibuang. Tanpa nama
+ * blangko jatuh ke bentuk cetak tiga berkas (namaBerkas) - tidak generik.
+ */
+function namaPdfSalinan(nomor, blangko) {
+  const batang = String(blangko || "").trim().replace(/\.(rtf|docx?|pdf)$/i, "");
+  const nama = batang ? alatNamaUnduhanBlangko(nomor, `${batang} - SALINAN.pdf`, "pdf") : "";
+  return nama || namaBerkas(nomor, "pdf", "salinan");
+}
+
+/** Membuat lalu MENAMPILKAN PDF salinan. Tidak pernah melempar. */
+async function tampilkanPdfSalinan(isiRtf, nama, lapor) {
+  const kabar = typeof lapor === "function" ? lapor : () => {};
+  try {
+    kabar("Menyusun PDF SALINAN…");
+    const { blob, keterangan } = await buatPdfSalinan(isiRtf);
+    const kalimat = kalimatSalinan(keterangan);
+    const awas = !(keterangan && keterangan.gambarTtdPanitera);
+    const alamat = await alatBlobKeData(blob);
+    const jawab = await new Promise((selesai) => {
+      try {
+        chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis: "tampilkan-pdf", nama, alamat, pesan: kalimat, awas }, (h) => {
+          void chrome.runtime.lastError;
+          selesai(h);
+        });
+      } catch {
+        selesai(null);
+      }
+    });
+    if (!jawab || !jawab.ok) {
+      // Penampil tidak terbuka - salinannya tetap sampai ke tangan petugas.
+      await unduhBlob(blob, nama);
+      kabar(`PDF SALINAN diunduh (penampil tidak terbuka: ${(jawab && jawab.pesan) || "tanpa jawaban"}). ${kalimat}`, awas);
+      return { ok: true, keterangan };
+    }
+    kabar(`PDF SALINAN dibuka di tab baru. ${kalimat}`, awas);
+    return { ok: true, keterangan };
+  } catch (galat) {
+    kabar(`PDF SALINAN tidak dibuat: ${String((galat && galat.message) || galat)}`, true);
+    return { ok: false };
+  }
 }
 
 /** RTF -> PDF lewat bot ALETA. Pulang Blob PDF, atau melempar sebabnya. */

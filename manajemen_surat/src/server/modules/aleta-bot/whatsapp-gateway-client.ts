@@ -3662,12 +3662,25 @@ export async function getGatewaySippPositaRapikan(perkaraId: string, ujiKering: 
     body: JSON.stringify({ perkaraId, ujiKering }),
   });
 }
-export async function getGatewayAbtPdf(rtfBase64: string) {
-  return gatewayFetch<{ pdfBase64: string; byte: number; versiMesin: string }>(
+/** Keterangan PDF SALINAN dari bot (14 Okt 2026) - lihat salinanPutusanService. */
+export type KeteranganSalinanPdf = {
+  salinan: string;
+  untukSalinan: boolean;
+  ttdDitambah: number;
+  ttdSudahAda: number;
+  namaPanitera: string;
+  gambarTtdPanitera: boolean;
+  alasanTanpaGambar: string;
+  ttdTerdaftar: boolean;
+  galatTtd: string;
+};
+
+export async function getGatewayAbtPdf(rtfBase64: string, opsi: { salinan?: boolean } = {}) {
+  return gatewayFetch<{ pdfBase64: string; byte: number; versiMesin: string; salinan?: KeteranganSalinanPdf }>(
     "/internal/aleta-bot/abt/pdf",
     {
       method: "POST",
-      body: JSON.stringify({ rtfBase64 }),
+      body: JSON.stringify(opsi.salinan ? { rtfBase64, salinan: true } : { rtfBase64 }),
       // ======================================================================
       // BATAS 8 DETIK TERLALU PENDEK UNTUK MENJALANKAN LibreOffice
       // ======================================================================
