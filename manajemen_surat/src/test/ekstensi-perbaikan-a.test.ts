@@ -838,11 +838,14 @@ describe("butir 10 & 19: simpan lebih cepat, bukti tetap; edoc sesudah Simpan te
     expect(typeof opsi.sesudahTersimpan).toBe("function");
     const hasil = await h.w.simpanPutusanLaluBuka(NOMOR, wadah, opsi);
     expect(hasil.ok).toBe(true);
-    expect(hasil.bunyi).toMatch(/Edoc TIDAK diunggah - Masuk ABT dulu/);
+    // 14 Okt (perkara 473): anonimisasi gagal TIDAK menahan edoc putusan -
+    // putusan diunggah sendirian, anonimisasinya menyusul dan sebabnya terbaca.
+    expect(hasil.bunyi).toMatch(/Edoc putusan terunggah/);
+    expect(hasil.bunyi).toMatch(/Edoc anonimisasi BELUM diunggah \([^)]*Masuk ABT dulu/);
     expect(hasil.bunyi).toMatch(/Halaman TIDAK dimuat ulang/);
     await tunggu(1100);
     expect(muat).toEqual([]);
-    expect(h.minta.some((m) => m.url.includes("/putusan/unggah-sipp"))).toBe(false);
+    expect(h.minta.filter((m) => m.url.includes("/putusan/unggah-sipp"))).toHaveLength(1);
   });
 });
 
