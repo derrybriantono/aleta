@@ -4107,6 +4107,19 @@ export async function kirimTandaTanganNama(id: number, payload: {
   });
 }
 
+/** Tautan otomatis berkas tanda tangan bernama ke akun pemiliknya (14 Okt 2026). */
+export async function kirimTandaTanganTautkanAkun(id: number, payload: {
+  penggunaId: string;
+  peran?: string;
+  subPeran?: string;
+  namaPejabat: string;
+}) {
+  return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/${id}/tautkan-akun`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function kirimTandaTanganSahkan(id: number, oleh: string) {
   return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/${id}/sahkan`, {
     method: "POST",

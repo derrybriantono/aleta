@@ -134,6 +134,38 @@ export function kunciNama(nama: unknown): string {
   return kataIntiNama(nama).join("");
 }
 
+/**
+ * Kunci nama yang TIDAK berhenti di koma pertama bila yang sesudah koma masih
+ * bagian nama (14 Okt 2026): berkas tanda tangan menulis "SUDARMIN, H.I.M.
+ * TANG, S.H.I., M.H" sedangkan akunnya "SUDARMIN H.I.M. TANG, S.H.I.,M.H".
+ * kunciNama memotong yang pertama menjadi "sudarmin" saja. Di sini potongan
+ * sesudah koma ikut dipakai sampai potongan pertama yang SELURUHNYA gelar.
+ *
+ * Hanya PELENGKAP kunciNama (lihat kunciNamaSemua) - kunciNama tidak diubah,
+ * supaya gelar yang tidak dikenal ("A.Md.M") tidak memutus kecocokan lama.
+ */
+export function kunciNamaLengkap(nama: unknown): string {
+  const potong = String(nama ?? "")
+    .replace(/\([^)]*\)/g, " ")
+    .split(",");
+  let teks = potong[0] ?? "";
+  for (const bagian of potong.slice(1)) {
+    const token = bagian
+      .split(/[\s\-_/]+/)
+      .map((t) => t.toLowerCase().replace(/[^a-z]/g, ""))
+      .filter(Boolean);
+    if (token.length === 0) continue;
+    if (token.every((t) => GELAR_BELAKANG.has(t) || GELAR_DEPAN.has(t))) break;
+    teks += ` ${bagian}`;
+  }
+  return kunciNama(teks);
+}
+
+/** Semua kunci pembanding sebuah nama (yang cukup panjang). Dua nama SAMA bila kuncinya beririsan. */
+export function kunciNamaSemua(nama: unknown): Set<string> {
+  return new Set([kunciNama(nama), kunciNamaLengkap(nama)].filter((k) => k.length >= PANJANG_KUNCI_MINIMUM));
+}
+
 /** Kunci yang terlalu pendek tidak pernah dipakai mencocokkan ("Ali", "Ani"). */
 export const PANJANG_KUNCI_MINIMUM = 4;
 
