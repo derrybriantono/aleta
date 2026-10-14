@@ -6,7 +6,7 @@ import { naskahDariBagian, pilihBagian, type BagianBlangko, type SyaratBagian } 
 import { penandaDalam } from "@/lib/penyelesai-variabel";
 import { uraikanDimensi, type DimensiBlangko } from "@/lib/taksonomi-blangko";
 import { isianPerkara } from "@/server/modules/aleta-ecourt/isian-perkara";
-import { isiNaskah, selesaikanPenanda } from "@/server/modules/aleta-ecourt/penyelesai";
+import { isiNaskah, lengkapiDariAbt, selesaikanPenanda } from "@/server/modules/aleta-ecourt/penyelesai";
 import type { AletaDatabase } from "@/server/db/client";
 
 /**
@@ -144,8 +144,9 @@ export type HasilTerbit = {
  * Menerbitkan naskah sebuah blangko untuk satu perkara.
  *
  * Tiga lapis, berurutan: pilih bagian menurut keadaan, selesaikan penandanya,
- * lalu isi naskahnya. Penanda yang tidak selesai TETAP TERLIHAT - aturan yang
- * sama dengan seluruh ALETA.
+ * lalu isi naskahnya. Sejak 14 Okt 2026 (Q2) yang tidak selesai di kamus
+ * ALETA ditanyakan ke mesin variabel ABT; yang tetap kosong dicetak "..." -
+ * tidak pernah sebagai #NNNN# - dan tetap disebut di `tersisa`.
  */
 export async function terbitkanNaskah(
   db: AletaDatabase,
@@ -186,9 +187,12 @@ export async function terbitkanNaskah(
   const penanda = [...new Set(susunan.flatMap((a) => penandaDalam(a.teks)))];
   const isian = await isianPerkara(db, perkaraId);
   const hasil = await selesaikanPenanda(db, { perkaraId, penanda, isian });
+  // Q2 14 Okt: yang tidak selesai di kamus ALETA ditanyakan ke mesin variabel
+  // ABT; yang tetap kosong dicetak "..." (bukan #NNNN#) dan tetap "tersisa".
+  const { kosong: isianKosong } = await lengkapiDariAbt(perkaraId, hasil, penanda);
 
   const alinea: AlineaDocx[] = [];
-  const tersisa = new Set<string>();
+  const tersisa = new Set<string>(isianKosong.map((k) => k.noVar));
   for (const a of susunan) {
     const isi = isiNaskah(a.teks, hasil);
     for (const t of isi.tersisa) tersisa.add(t);

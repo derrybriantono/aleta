@@ -2560,11 +2560,62 @@ async function bacaBlangko(params = {}) {
   }
 }
 
+/* === Q2 14 Okt: mesin variabel ABT === */
+/**
+ * Mesin variabel ABT (abtMesinVariabel.js) atas sambungan SIPP baca-saja.
+ *
+ * Nilai kolom dipulangkan sebagai TEKS - seperti mysqli PHP yang dipakai ABT.
+ * Tanpa itu DECIMAL "229000.00" menjadi bilangan 229000 dan ABT-nya mencetak
+ * "229.000" sementara ALETA mencetak "229000"; DATE menjadi obyek Date.
+ */
+let mesinAbt = null;
+const ingatanIsi = new Map();
+function mesinVariabelAbt() {
+  if (!mesinAbt) {
+    const { buatMesin } = require("./abtMesinVariabel");
+    mesinAbt = buatMesin({
+      kueri: (sql, params, opsi) =>
+        externalDbService.query(
+          DEFAULT_CONNECTION_KEY,
+          { sql, timeout: (opsi && opsi.timeoutMs) || undefined, typeCast: (field) => field.string() },
+          params || []
+        ),
+    });
+  }
+  return mesinAbt;
+}
+
+/**
+ * Nilai penanda ABT untuk naskah yang BUKAN RTF blangko (Blangko ALETA: DOCX/PDF).
+ * Pulang teks polos per penanda + statusnya ("terisi" / "kosong" / "galat").
+ */
+async function nilaiPenandaAbt(params = {}) {
+  const perkaraId = safeNumericId(params.perkaraId);
+  if (!perkaraId) return { ok: false, sebab: "Perkara tidak disebut.", nilai: {} };
+  const penanda = (Array.isArray(params.penanda) ? params.penanda : []).map(safeString).filter((x) => /^\d{3,5}$/.test(x)).slice(0, 600);
+  const peta = await mesinVariabelAbt().nilaiPenanda({ perkaraId, sidangKe: Number(params.sidangKe) || 0 }, penanda);
+  const nilai = {};
+  for (const [noVar, v] of peta) nilai[noVar] = { status: v.status, nama: v.nama, sebab: v.sebab, teks: v.polos };
+  return { ok: true, nilai };
+}
+
+/**
+ * Mengisi blangko RTF seperti ABT mengisinya.
+ *
+ * Dengan `perkaraId`: SEMUA penanda diisi mesin variabel ABT (katalog dibaca
+ * saat berjalan); `nilai` dari ALETA (lembar BAS, kehadiran) menang atas ABT,
+ * `cadangan` dipakai bila ABT kosong. Yang benar-benar kosong (isian tangan
+ * yang belum diisi di ABT) dicetak "..." bersorot dan disebut di `kosong` -
+ * tidak ada lagi penanda #NNNN# mentah di naskah.
+ *
+ * Tanpa `perkaraId` (portal lama): perilaku lama - hanya `nilai`.
+ */
 async function isiBlangko(params = {}) {
   const jalur = jalurBerkasBlangko(params.folder, params.berkas);
   if (!jalur) return { ok: false, sebab: "Nama folder atau berkas tidak sah." };
 
   const nilai = params.nilai && typeof params.nilai === "object" ? params.nilai : {};
+  const perkaraId = safeNumericId(params.perkaraId);
 
   try {
     const info = await fs.stat(jalur);
@@ -2572,6 +2623,41 @@ async function isiBlangko(params = {}) {
       return { ok: false, sebab: `Blangko terlalu besar (${Math.round(info.size / 1024)} KB).` };
     }
     const rtf = await fs.readFile(jalur, "latin1");
+
+    if (perkaraId) {
+      const opsi = {
+        perkaraId,
+        sidangKe: Number(params.sidangKe) || 0,
+        timpa: nilai,
+        cadangan: params.cadangan && typeof params.cadangan === "object" ? params.cadangan : {},
+        tanyaJawabSaksi: params.tanyaJawabSaksi && typeof params.tanyaJawabSaksi === "object" ? params.tanyaJawabSaksi : {},
+      };
+      // Pratinjau lalu Unduh atas blangko & isian yang sama berselang detik: hasil
+      // pertama dipakai ulang (60 dtk) - puluhan kueri SIPP tidak dijalankan dua kali.
+      const kunci = crypto
+        .createHash("sha1")
+        .update(JSON.stringify([jalur, info.mtimeMs, opsi]))
+        .digest("hex");
+      const lama = ingatanIsi.get(kunci);
+      const h = lama && Date.now() - lama.saat < 60000 ? lama.hasil : await mesinVariabelAbt().isiRtf(rtf, opsi);
+      ingatanIsi.set(kunci, { saat: lama ? lama.saat : Date.now(), hasil: h });
+      for (const [k, v] of ingatanIsi) if (Date.now() - v.saat >= 60000 || ingatanIsi.size > 40) ingatanIsi.delete(k);
+      return {
+        ok: true,
+        berkas: path.basename(jalur),
+        jumlahTerisi: h.terisi.length,
+        terisi: h.terisi,
+        // "tersisa" kini = isian yang KOSONG (dicetak "..." bersorot), bukan penanda mentah.
+        tersisa: h.kosong.map((k) => k.noVar),
+        kosong: h.kosong,
+        sumber: h.sumber,
+        terpecahDisatukan: h.terpecahDisatukan,
+        jumlahKueri: h.jumlahKueri,
+        mesinGalat: h.mesinGalat,
+        rtfBase64: params.tanpaRtf ? "" : Buffer.from(h.rtf, "latin1").toString("base64"),
+      };
+    }
+/* === AKHIR Q2 === */
 
     const terisi = new Set();
     const hasil = rtf.replace(/#(\d{3,5})#/g, (utuh, noVar) => {
@@ -2866,6 +2952,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "ecourt.dokumenPerkara": getDokumenECourt,
     "blangko.baca": bacaBlangko,
     "blangko.isi": isiBlangko,
+    "abt.nilaiPenanda": nilaiPenandaAbt,
     "blangko.pohon": getPohonBlangko,
     "blangko.alinea": getAlineaBlangko,
     "kamus.jalankanKueri": jalankanKueriKamus,

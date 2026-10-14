@@ -2,12 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
-import { rakitBerkasPerkara } from "@/server/modules/aleta-ecourt/berkas-perkara";
-import { petaPenanda } from "@/server/modules/aleta-ecourt/bas-tanya-jawab";
-import { penandaDariLembar, saksiBerlembar, semuaLembar } from "@/server/modules/aleta-ecourt/bas-lembar";
-import { penandaDariSidang, sidangKe, susunRangkaian } from "@/lib/rangkaian-sidang";
-import { muatKehadiran, penandaDariKehadiran } from "@/server/modules/aleta-ecourt/bas-kehadiran";
-import { bacaSaksiAbt, penandaDariAbt } from "@/lib/keterangan-abt";
+import { susunIsianNaskahBas } from "@/server/modules/aleta-ecourt/bas-isian-naskah";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -23,8 +18,12 @@ type HasilIsi = {
   jumlahTerisi?: number;
   terisi?: string[];
   tersisa?: string[];
+  kosong?: Array<{ noVar: string; nama?: string; sebab?: string }>;
   rtfBase64?: string;
 };
+
+/** Mesin variabel ABT menjalankan puluhan kueri SIPP per blangko - batas jembatan biasa (10 dtk) terlalu pendek. */
+const BATAS_ISI_MS = 90_000;
 
 /**
  * Blangko yang sudah terisi dari berkas perkara, siap diunduh.
@@ -41,11 +40,13 @@ type HasilIsi = {
  * YANG BELUM TERISI IKUT DILAPORKAN DI KEPALA JAWABAN
  * ============================================================================
  *
- * Penanda yang tersisa disebutkan di header X-Aleta-Tersisa. Panitera membuka
- * berkasnya di Word dan langsung melihat penanda yang tertinggal - tetapi
- * mengetahuinya SEBELUM membuka jauh lebih berguna, dan penanda yang tertinggal
- * di naskah resmi lebih mudah dibereskan sekarang daripada sesudah
- * ditandatangani.
+ * Sejak 14 Okt 2026 (Q2) tidak ada lagi penanda #NNNN# mentah di naskah:
+ * yang ABT pun tidak punya nilainya (isian tangan yang belum diisi di ABT,
+ * saksi yang belum tercatat) dicetak "..." BERSOROT kuning, persis tempat ABT
+ * mencetak "...". Nomornya disebut di X-Aleta-Tersisa (ekstensi menyebutnya
+ * "isian masih kosong, lengkapi di Word") dan namanya di X-Aleta-Kosong -
+ * mengetahuinya SEBELUM membuka Word jauh lebih berguna, dan isian kosong di
+ * naskah resmi lebih mudah dibereskan sekarang daripada sesudah ditandatangani.
  */
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -66,38 +67,25 @@ export async function GET(request: NextRequest) {
       return Response.json({ ok: false, sebab: "Perkara dan blangko harus disebutkan." }, { status: 400 });
     }
 
-    // Berkas perkara dan lembar BAS diambil BERSAMAAN - keduanya tidak saling
-    // bergantung, dan yang menunggu adalah petugas yang sedang mencetak.
-    const [isiBerkas, lembar, kehadiran] = await Promise.all([
-      rakitBerkasPerkara(perkaraId),
-      semuaLembar(db, perkaraId),
-      muatKehadiran(db, perkaraId, nomorSidang),
-    ]);
+    // Seluruh penanda diisi mesin variabel ABT di bot (katalog abt_variabel
+    // dibaca saat berjalan). ALETA mengirim yang diketik hari ini (timpa),
+    // bacaannya sendiri sebagai cadangan, dan baris tanya-jawab lembar mentah
+    // supaya bot membentuknya persis seperti ABT (tabel tanya kiri, jawab kanan).
+    const isian = await susunIsianNaskahBas(db, perkaraId, nomorSidang);
 
-    const nilai: Record<string, string> = {};
-    // Berkas perkara lebih dulu, lalu lembar BAS di atasnya. Urutan ini
-    // disengaja: keterangan yang diketik panitera di persidangan adalah yang
-    // benar-benar terjadi hari itu, dan ia berhak menimpa apa pun yang terbaca
-    // dari sistem lain untuk penanda yang sama.
-    for (const [noVar, item] of petaPenanda(isiBerkas)) nilai[noVar] = item.nilai;
-    // Hari, tanggal, dan sebutan sidang berubah dari satu BAS ke BAS
-    // berikutnya - ketiganya bertipe multi_sidang di ABT. Diambil dari sidang
-    // yang nomornya cocok dengan blangkonya, bukan dari sidang terakhir.
-    const sidang = sidangKe(susunRangkaian(isiBerkas.riwayatSidang.nilai), nomorSidang);
-    for (const [noVar, item] of penandaDariSidang(sidang)) nilai[noVar] = item.nilai;
-    for (const [noVar, item] of penandaDariKehadiran(kehadiran)) nilai[noVar] = item.nilai;
-
-    // Rekaman ABT dipakai untuk saksi yang BELUM punya lembar di ALETA -
-    // perkara yang pemeriksaannya sudah berlangsung tidak dimulai dari kosong.
-    // Ia ditaruh SEBELUM lembar supaya lembar ALETA selalu menang: yang diketik
-    // hari ini adalah yang benar-benar terjadi hari ini.
-    const punyaLembar = saksiBerlembar(lembar);
-    const saksiAbt = bacaSaksiAbt(isiBerkas.pemeriksaanSaksi.nilai);
-    for (const [noVar, item] of penandaDariAbt(saksiAbt, punyaLembar)) nilai[noVar] = item.nilai;
-
-    for (const [noVar, item] of penandaDariLembar(lembar)) nilai[noVar] = item.nilai;
-
-    const hasil = await callAletaBotSippBridge<HasilIsi>("blangko.isi", { folder, berkas, nilai });
+    const hasil = await callAletaBotSippBridge<HasilIsi>(
+      "blangko.isi",
+      {
+        folder,
+        berkas,
+        perkaraId,
+        sidangKe: nomorSidang,
+        nilai: isian.timpa,
+        cadangan: isian.cadangan,
+        tanyaJawabSaksi: isian.tanyaJawabSaksi,
+      },
+      { timeoutMs: BATAS_ISI_MS }
+    );
     const data = hasil.data;
 
     if (!hasil.ok || !data?.ok || !data.rtfBase64) {
@@ -108,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     const rtf = Buffer.from(data.rtfBase64, "base64");
-    const namaUnduhan = `${isiBerkas.nomorPerkara || perkaraId} - ${data.berkas ?? berkas}`.replace(/[\\/:*?"<>|]/g, "_");
+    const namaUnduhan = `${isian.nomorPerkara || perkaraId} - ${data.berkas ?? berkas}`.replace(/[\\/:*?"<>|]/g, "_");
 
     return new Response(new Uint8Array(rtf), {
       status: 200,
@@ -118,7 +106,11 @@ export async function GET(request: NextRequest) {
         "Content-Length": String(rtf.length),
         "Cache-Control": "no-store",
         "X-Aleta-Terisi": String(data.jumlahTerisi ?? 0),
+        // Isian yang KOSONG (dicetak "..." bersorot) - bukan lagi penanda mentah.
         "X-Aleta-Tersisa": (data.tersisa ?? []).join(","),
+        "X-Aleta-Kosong": encodeURIComponent(
+          (data.kosong ?? []).map((k) => `#${k.noVar}# ${k.nama ?? ""}`.trim()).join("; ")
+        ),
       },
     });
   } catch (error) {
