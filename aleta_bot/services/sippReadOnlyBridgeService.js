@@ -2544,7 +2544,8 @@ async function bacaBlangko(params = {}) {
     if (info.size > BATAS_BLANGKO_BYTE) {
       return { ada: false, sebab: `Blangko terlalu besar (${Math.round(info.size / 1024)} KB).` };
     }
-    const rtf = await fs.readFile(jalur, "latin1");
+    // Penanda yang terpecah kode RTF ikut dihitung (Q2) - mesin pengisi menyatukannya juga.
+    const rtf = require("./abtMesinVariabel").satukanPenandaTerpecah(await fs.readFile(jalur, "latin1")).rtf;
     const penanda = [...new Set([...rtf.matchAll(/#(\d{3,5})#/g)].map((c) => c[1]))].sort();
 
     return {
