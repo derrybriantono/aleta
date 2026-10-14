@@ -984,7 +984,8 @@ function t4AturPengecil(panel) {
     }
     let sedangDitunjuk = false;
     try {
-      sedangDitunjuk = panel.matches(":hover") || panel.matches(":focus-within");
+      sedangDitunjuk =
+        panel.getAttribute("data-aleta-ditunjuk") === "ya" || panel.matches(":hover") || panel.matches(":focus-within");
     } catch {
       sedangDitunjuk = false;
     }
@@ -1015,6 +1016,17 @@ function t4AturPengecil(panel) {
     if (menutupi) panel.setAttribute("data-t4-menutupi", "ya");
     else panel.removeAttribute("data-t4-menutupi");
   };
+  // 14 Okt: jeda, toleransi jarak, dan tirai menciut/membentang - pengatur yang sama dengan panel SIPP (panel-alat.js).
+  if (typeof alatPasangTunjukHalus === "function") {
+    alatPasangTunjukHalus(
+      panel,
+      () =>
+        document.documentElement.getAttribute("data-aleta-portal-letak") === "mengecil" &&
+        panel.getAttribute("data-t4-menutupi") === "ya" &&
+        panel.getAttribute("data-aleta-gembok") !== "kunci" &&
+        !panel.classList.contains("aleta-panel-lencana")
+    );
+  }
   t4PengecilPewaktu = setInterval(() => {
     try {
       periksa();

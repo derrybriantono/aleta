@@ -6956,7 +6956,7 @@ html[data-aleta-senyap="ya"] aleta-cm-kabar {
 
 /* Mengecil sendiri: tinggal kepalanya selama menutupi tabel dan tidak
    ditunjuk; membentang lagi begitu kursor masuk atau fokus di dalamnya. */
-html[data-aleta-portal-letak="mengecil"] #aleta-panel-portal[data-t4-menutupi="ya"]:not([data-aleta-gembok="kunci"]):not(:hover):not(:focus-within):not(.aleta-panel-lencana) {
+html[data-aleta-portal-letak="mengecil"] #aleta-panel-portal[data-t4-menutupi="ya"]:not([data-aleta-gembok="kunci"]):not(:hover):not(:focus-within):not(.aleta-panel-lencana):not([data-aleta-ditunjuk="ya"]) {
   height: 46px !important;
   min-height: 0 !important;
   max-height: 46px !important;
@@ -11044,12 +11044,23 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp[data-t7-tab="kasirKel"] .aleta
 .aleta-gembok[aria-pressed="true"] { color: var(--aleta-merek); border-color: var(--aleta-garis-kuat); }
 .aleta-gembok-ikon { font-size: calc(12.5px * var(--aleta-skala-huruf, 1)); }
 
-#aleta-panel-sipp[data-aleta-kepala-ringkas="ya"]:not([data-aleta-gembok="kunci"]):not(:hover):not(:focus-within):not(.aleta-panel-lencana):not(.aleta-panel-penuh) {
+#aleta-panel-sipp[data-aleta-kepala-ringkas="ya"]:not([data-aleta-gembok="kunci"]):not(:hover):not(:focus-within):not(.aleta-panel-lencana):not(.aleta-panel-penuh):not([data-aleta-ditunjuk="ya"]) {
   height: 46px !important;
   min-height: 0 !important;
   max-height: 46px !important;
   overflow: hidden !important;
   opacity: 0.92;
+}
+
+/* 14 Okt: "ditunjuk" = data-aleta-ditunjuk (alatPasangTunjukHalus, panel-alat.js) - jeda ±700 ms dan toleransi 28 px
+   sebelum menciut; tinggi dibuka/ditutup dengan tirai clip-path 200 ms oleh skrip, keburaman ikut bergeser halus. */
+#aleta-panel-sipp[data-aleta-gembok-situs],
+#aleta-panel-portal[data-aleta-gembok-situs] {
+  transition: opacity 200ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  #aleta-panel-sipp[data-aleta-gembok-situs],
+  #aleta-panel-portal[data-aleta-gembok-situs] { transition: none; }
 }
 
 /* Panel ALETA hanya meringkas pada letak "Mengecil sendiri" - di letak lain

@@ -9028,7 +9028,7 @@ function alatPeriksaRingkas(panel) {
   }
   let ditunjuk = false;
   try {
-    ditunjuk = panel.matches(":hover") || panel.matches(":focus-within");
+    ditunjuk = alatPanelDitunjuk(panel) || panel.matches(":hover") || panel.matches(":focus-within");
   } catch {
     ditunjuk = false;
   }
@@ -9120,8 +9120,209 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
     };
     panel.aletaPewaktuRingkas = setInterval(periksa, ALAT_RINGKAS_SELANG);
     void siap.then(periksa);
+    alatPasangTunjukHalus(
+      panel,
+      () =>
+        panel.getAttribute(ALAT_RINGKAS_ATRIBUT) === "ya" &&
+        !alatPanelTerkunci(panel) &&
+        !panel.classList.contains("aleta-panel-lencana") &&
+        !panel.classList.contains("aleta-panel-penuh")
+    );
   }
   return siap;
+}
+
+/*
+ * ============================================================================
+ * 14 OKT - KEPALA RINGKAS YANG MULUS: JEDA, TOLERANSI JARAK, ANIMASI
+ * ============================================================================
+ *
+ * Pengguna 14 Okt: panel yang meringkas "langsung hilang" begitu kursor keluar
+ * sepiksel saja. Dengan :hover murni tidak ada jeda dan tidak ada ampun bagi
+ * kursor yang meleset sedikit di luar tepi.
+ *
+ * Kini "ditunjuk" adalah atribut data-aleta-ditunjuk yang diatur di sini dan
+ * dibaca CSS di samping :hover/:focus-within (yang tetap ada sebagai jaring):
+ *   - MASUK ke kotak panel (atau fokus masuk): seketika "ya"; bila tadinya
+ *     tampil ringkas, isinya dibuka dengan tirai singkat (clip-path), bukan
+ *     ditunda.
+ *   - KELUAR: tetap "ya" selama kursor masih dalam ALAT_TUNJUK_TOLERANSI piksel
+ *     dari tepi. Sesudah itu ALAT_TUNJUK_JEDA_MS menunggu; kembali di dalam
+ *     jeda membatalkannya. Lewat jeda, panel menciut dengan tirai
+ *     ALAT_TUNJUK_ANIMASI_MS, baru kemudian atributnya dilepas.
+ *   - Fokus di dalam panel (termasuk <select> yang daftarnya sedang terbuka -
+ *     selama itu halaman tidak menerima gerak penunjuk) menahan panel penuh.
+ * Gerak penunjuk dibaca sekali per bingkai (requestAnimationFrame) dan tidak
+ * satu pun peristiwa dibatalkan - klik pada isi panel tidak tersentuh.
+ */
+const ALAT_TUNJUK_ATRIBUT = "data-aleta-ditunjuk";
+const ALAT_TUNJUK_JEDA_MS = 700;
+const ALAT_TUNJUK_TOLERANSI = 28;
+const ALAT_TUNJUK_ANIMASI_MS = 200;
+const ALAT_TUNJUK_TINGGI_RINGKAS = 46;
+
+function alatPanelDitunjuk(panel) {
+  return Boolean(panel && panel.getAttribute(ALAT_TUNJUK_ATRIBUT) === "ya");
+}
+
+/**
+ * Memasang pengatur data-aleta-ditunjuk pada panel (sekali per panel).
+ * `akanRingkas()` = true bila panel AKAN tampil ringkas begitu tidak ditunjuk
+ * (menutupi tabel, gembok terbuka, ...) - hanya untuk memutuskan animasi.
+ */
+function alatPasangTunjukHalus(panel, akanRingkas) {
+  if (!panel || panel.aletaTunjukHalus) return panel ? panel.aletaTunjukHalus || null : null;
+  let x = null;
+  let y = null;
+  let bingkai = 0;
+  let jam = 0;
+  let animasi = null;
+  const ringkasKini = () => {
+    try {
+      return typeof akanRingkas === "function" && akanRingkas() === true;
+    } catch {
+      return false;
+    }
+  };
+  const halus = () => {
+    if (typeof panel.animate !== "function") return false;
+    try {
+      return !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    } catch {
+      return true;
+    }
+  };
+  const tirai = `inset(0 0 calc(100% - ${ALAT_TUNJUK_TINGGI_RINGKAS}px) 0)`;
+  const batalAnimasi = () => {
+    if (!animasi) return;
+    const a = animasi;
+    animasi = null;
+    try {
+      a.cancel();
+    } catch {
+      /* animasi sudah selesai */
+    }
+  };
+  const fokusDiDalam = () => {
+    const a = document.activeElement;
+    return Boolean(a && a !== document.body && a !== document.documentElement && panel.contains(a));
+  };
+  const dalamKotak = (toleransi) => {
+    if (x === null || y === null) return false;
+    const r = panel.getBoundingClientRect();
+    return x >= r.left - toleransi && x <= r.right + toleransi && y >= r.top - toleransi && y <= r.bottom + toleransi;
+  };
+  const tunjuk = () => {
+    clearTimeout(jam);
+    jam = 0;
+    if (alatPanelDitunjuk(panel)) {
+      // Kembali saat tirai sedang menutup: dibatalkan, panel tetap penuh.
+      batalAnimasi();
+      return;
+    }
+    const tadinyaRingkas = ringkasKini();
+    panel.setAttribute(ALAT_TUNJUK_ATRIBUT, "ya");
+    if (tadinyaRingkas && halus()) {
+      batalAnimasi();
+      try {
+        animasi = panel.animate([{ clipPath: tirai }, { clipPath: "inset(0 0 0 0)" }], {
+          duration: ALAT_TUNJUK_ANIMASI_MS,
+          easing: "ease-out",
+        });
+        const ini = animasi;
+        animasi.onfinish = () => {
+          if (animasi === ini) animasi = null;
+        };
+      } catch {
+        animasi = null;
+      }
+    }
+  };
+  const lepas = () => {
+    jam = 0;
+    if (!panel.isConnected || !alatPanelDitunjuk(panel)) return;
+    if (fokusDiDalam() || dalamKotak(ALAT_TUNJUK_TOLERANSI)) return;
+    if (!ringkasKini() || !halus()) {
+      panel.removeAttribute(ALAT_TUNJUK_ATRIBUT);
+      return;
+    }
+    batalAnimasi();
+    try {
+      const ini = panel.animate([{ clipPath: "inset(0 0 0 0)" }, { clipPath: tirai }], {
+        duration: ALAT_TUNJUK_ANIMASI_MS,
+        easing: "ease-in",
+      });
+      animasi = ini;
+      ini.onfinish = () => {
+        if (animasi !== ini) return; // dibatalkan karena kursor kembali
+        animasi = null;
+        if (!fokusDiDalam() && !dalamKotak(0)) panel.removeAttribute(ALAT_TUNJUK_ATRIBUT);
+        try {
+          ini.cancel();
+        } catch {
+          /* sudah selesai */
+        }
+      };
+    } catch {
+      panel.removeAttribute(ALAT_TUNJUK_ATRIBUT);
+    }
+  };
+  const nilai = () => {
+    bingkai = 0;
+    if (!panel.isConnected) return;
+    if (fokusDiDalam()) {
+      tunjuk();
+      return;
+    }
+    const ditunjuk = alatPanelDitunjuk(panel);
+    // Masuk = kotak sungguhan; bertahan = kotak + toleransi.
+    if (dalamKotak(ditunjuk && !animasi ? ALAT_TUNJUK_TOLERANSI : 0)) {
+      tunjuk();
+      return;
+    }
+    if (ditunjuk && !jam && !animasi) jam = setTimeout(lepas, ALAT_TUNJUK_JEDA_MS);
+  };
+  const jadwal = () => {
+    if (bingkai) return;
+    if (typeof requestAnimationFrame === "function") bingkai = requestAnimationFrame(nilai);
+    else bingkai = setTimeout(nilai, 16);
+  };
+  const saatGerak = (e) => {
+    if (!panel.isConnected) {
+      lepasPendengar();
+      return;
+    }
+    x = e.clientX;
+    y = e.clientY;
+    jadwal();
+  };
+  const saatKeluarJendela = (e) => {
+    if (e.relatedTarget) return;
+    x = null;
+    y = null;
+    jadwal();
+  };
+  const saatMasuk = (e) => {
+    x = e.clientX;
+    y = e.clientY;
+    // Sinkron, bukan per bingkai: tirai pembuka harus terpasang sebelum
+    // bingkai berikutnya tergambar.
+    tunjuk();
+  };
+  const saatFokusKeluar = () => setTimeout(jadwal, 0);
+  function lepasPendengar() {
+    document.removeEventListener("pointermove", saatGerak, true);
+    document.removeEventListener("mouseout", saatKeluarJendela, true);
+    clearTimeout(jam);
+    batalAnimasi();
+  }
+  document.addEventListener("pointermove", saatGerak, { capture: true, passive: true });
+  document.addEventListener("mouseout", saatKeluarJendela, { capture: true, passive: true });
+  panel.addEventListener("pointerenter", saatMasuk);
+  panel.addEventListener("focusin", tunjuk);
+  panel.addEventListener("focusout", saatFokusKeluar);
+  panel.aletaTunjukHalus = { nilai: () => nilai(), lepas: lepasPendengar };
+  return panel.aletaTunjukHalus;
 }
 
 /*
