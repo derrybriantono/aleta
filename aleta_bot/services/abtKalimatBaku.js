@@ -468,6 +468,9 @@ function isiPenandaPihak(teks, pelaku, lawan) {
  * Kini ciri itu dipulangkan pada `tanpaFrasa`, dan pemakainya wajib
  * menyebutkannya.
  */
+/** Ciri yang hanya dapat dilakukan SUAMI - tidak pernah menjadi perbuatan Termohon (istri) pada cerai talak. */
+const CIRI_KEWAJIBAN_SUAMI = Object.freeze(["tidak memberi nafkah"]);
+
 function susunAlasanRinci(daftarCiri, pihak, opsi) {
   const pelaku = String((pihak && pihak.pelaku) || "Tergugat").trim() || "Tergugat";
   const lawan = String((pihak && pihak.lawan) || "Penggugat").trim() || "Penggugat";
@@ -475,7 +478,19 @@ function susunAlasanRinci(daftarCiri, pihak, opsi) {
 
   const dikenal = [];
   const tanpaFrasa = [];
+  // R2 14 Okt 2026: pada cerai talak pelakunya istri (Termohon). Kewajiban
+  // nafkah lahir ada pada suami (Pasal 80 ayat (4) KHI) - "Termohon
+  // melalaikan kewajiban nafkah lahir" keliru secara hukum dan TIDAK PERNAH
+  // disusun. Cirinya dipulangkan pada `tidakBerlaku`; sebab yang benar
+  // ("tidak pernah merasa cukup dengan nafkah yang diberikan Pemohon")
+  // dibaca deteksi/sebabCerai.js.
+  const ceraiTalak = pelaku.toLowerCase() === "termohon" && lawan.toLowerCase() === "pemohon";
+  const tidakBerlaku = [];
   for (const nama of daftarCiri || []) {
+    if (ceraiTalak && CIRI_KEWAJIBAN_SUAMI.includes(nama)) {
+      if (!tidakBerlaku.includes(nama)) tidakBerlaku.push(nama);
+      continue;
+    }
     const aturan = Object.prototype.hasOwnProperty.call(peta, nama) ? peta[nama] : null;
     if (aturan) dikenal.push({ nama, aturan });
     else if (!tanpaFrasa.includes(nama)) tanpaFrasa.push(nama);
@@ -487,7 +502,7 @@ function susunAlasanRinci(daftarCiri, pihak, opsi) {
 
   if (perbuatan.length === 0) {
     const kalimat = akibat ? isiPenandaPihak(KALIMAT.hanyaPerselisihan, pelaku, lawan) : "";
-    return { kalimat, tanpaFrasa, ditolak };
+    return { kalimat, tanpaFrasa, ditolak, tidakBerlaku };
   }
 
   const penyambungAkhir =
@@ -502,7 +517,7 @@ function susunAlasanRinci(daftarCiri, pihak, opsi) {
         perbuatan[perbuatan.length - 1];
 
   const penutup = akibat ? ` yang ${isiPenandaPihak(akibat.aturan.frasa, pelaku, lawan)}` : "";
-  return { kalimat: `${pelaku} ${daftar}${penutup}`, tanpaFrasa, ditolak };
+  return { kalimat: `${pelaku} ${daftar}${penutup}`, tanpaFrasa, ditolak, tidakBerlaku };
 }
 
 /** Kalimat 5227 saja - bentuk lama, dipertahankan untuk pemakai yang sudah ada. */
@@ -542,6 +557,8 @@ module.exports = {
   KALIMAT,
   DAFTAR_TIPE,
   KEADAAN_UPAYA_DAMAI,
+  CIRI_KEWAJIBAN_SUAMI,
+  isiPenandaPihak,
   susunAlasan,
   susunAlasanRinci,
   kalimatUpayaDamai,
