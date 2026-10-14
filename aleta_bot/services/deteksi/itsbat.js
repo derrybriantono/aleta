@@ -45,6 +45,10 @@ const VARIABEL = Object.freeze([
   { kode: "8171", nama: "Tujuan itsbat (untuk ...)", sumber: "posita", blangko: ["bas"] },
   { kode: "1357", nama: "Alasan wali nikah", sumber: "posita", blangko: ["bas"] },
   { kode: "0228", nama: "Alasan syahadah istifadhah", sumber: "saksi-sipp", blangko: ["putusan [01a]"] },
+  // [99aa] Pertimbangan - Cerai Hidup/Mati P1 P2 Pasangan Sebelumnya (isian teks sejak paket abt-hb-kebendaan 14 Okt).
+  { kode: "1021", nama: "Nama istri sebelumnya Pemohon I", sumber: "posita+sipp", blangko: ["putusan [99aa]"] },
+  { kode: "5015", nama: "Tanggal meninggal istri sebelumnya Pemohon I", sumber: "posita", blangko: ["putusan [99aa] Cerai Mati"] },
+  { kode: "5016", nama: "Sebab meninggal istri sebelumnya Pemohon I", sumber: "posita", blangko: ["putusan [99aa] Cerai Mati"] },
   { kode: "1197", nama: "Identitas & keterangan saksi (1197-1208, 1241, 1242)", sumber: "dihitung-abt", blangko: ["putusan", "bas"] },
   { kode: "1358", nama: "Alasan tiada buku nikah", sumber: "dihitung-abt", blangko: ["putusan"] },
   { kode: "0098", nama: "Identitas, nomor, majelis, biaya, tanggal sidang (0001-0312, 6032-8505)", sumber: "dihitung-abt", blangko: ["putusan", "bas"] },
@@ -348,6 +352,84 @@ function pasanganWafat(kalimat) {
   return null;
 }
 
+/* ---------------------------------------------------------------------------
+ * ISTRI SEBELUMNYA PEMOHON I (1021, 5015, 5016) - 14 Okt 2026, agen T2
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Blangko "[99aa] Pertimbangan - Cerai Hidup/Mati P1 P2 Pasangan Sebelumnya": "Akta Cerai atas nama #1021# dan
+ * #0098#" / "Kutipan Akta Kematian atas nama #1021# ... meninggal dunia dikarenakan #5016# pada tanggal #5015#".
+ * #1021# = istri SEBELUMNYA Pemohon I (suami, #0098#). Posita satker menuliskannya di butir status, dalam kurung
+ * sesudah "Pemohon I berstatus Duda":
+ *   "Pemohon I berstatus Duda Mati (isteri sebelumnya atas nama Indoca telah meninggal pada 05 Juli 2013 sesuai ...)"
+ *   "Pemohon I berstatus Duda (Isteri terdahulu bernama Helmin telah meninggal dunia pada tanggal 26 April 2016 ...)"
+ *   "Pemohon I berstatus Duda (Akta Cerai Nomor : 00635/AC/2021/PA.Pal)"           -> nama dari SIPP bila PA.Dgl
+ * HANYA bagian milik Pemohon I yang dibaca (berhenti di "dan Pemohon II"): "Suami sebelumnya bernama X" milik
+ * Pemohon II (#1513#). Kalimat "X telah meninggal lebih dulu ..." pada itsbat KONTENTIUS adalah pasangan yang
+ * dimohonkan itsbatnya (#1025#), bukan istri sebelumnya - tidak dibaca di sini.
+ */
+const POLA_STATUS_P1 = /\bPemohon\s+I\b(?!\s*I)[^;]{0,30}?\b(?:berstatus|status(?:nya)?)\b/i;
+const POLA_AKHIR_P1 = /,?\s*(?:dan|sedangkan|sementara)\s+Pemohon\s*I\s*I\b|\bPemohon\s+II\b|,?\s*dan\s+Pemohon\s+I(?=berstatus)/i;
+const POLA_NAMA_ISTRI_DULU =
+  /\biste?ri\s+(?:(?:dari\s+)?Pemohon(?:\s+I)?\s+)?(?:(?:sebelumnya|terdahulu|pertama(?:nya)?|almarhumah)\s*)?(?:\(?\s*dari\s+Pemohon\s+I\s*\)?\s*)?(?:yang\s+)?(?:bernama|atas\s+nama|an\.)\s*:?\s*([^,;()]{2,70}?)(?=\s+(?:telah|yang|sesuai|meninggal|wafat|pada|sejak|dalam|berdasarkan|dengan|karena)\b|\s*[,;()]|\s*$)/i;
+const POLA_CERAI_DENGAN = /\bbercerai\s+dengan\s+(?:iste?ri\s+(?:sebelumnya|terdahulu|pertama)(?:nya)?\s+)?(?:yang\s+)?(?:bernama\s+)?([A-Z][^,;()]{1,69}?)(?=\s+(?:pada|sesuai|berdasarkan|di|dengan|sejak|dan)\b|\s*[,;()]|\s*$)/;
+const POLA_AKTA_CERAI = /(\d{1,5})\s*\/\s*AC\s*\/\s*(\d{4})\s*\/\s*PA\s*[./]?\s*([A-Za-z]{2,5})\b/i;
+
+/** Nama orang yang masuk akal (bukan sebutan pihak/kata sambung). */
+function namaWajar(t) {
+  const s = String(t || "").replace(/\s+/g, " ").replace(/[\s.,:]+$/, "").trim();
+  if (s.length < 2 || s.length > 70 || !/^[A-Z]/.test(s)) return "";
+  if (/^(?:Pemohon|Termohon|Penggugat|Tergugat|almarhum(?:ah)?|alm\b|yang|telah|dan|tidak)\b/i.test(s)) return "";
+  return s;
+}
+
+/**
+ * @param {string[]} kalimat kalimat posita
+ * @returns {null | {jenis: 'mati'|'cerai'|'', nama: string, tanggal: string, sebab: string,
+ *          aktaCerai: null|{urut: number, tahun: number, kodePa: string, teks: string}, kalimat: string}}
+ */
+function istriSebelumnyaP1(kalimat) {
+  for (const k of kalimat || []) {
+    const m = POLA_STATUS_P1.exec(k);
+    if (!m) continue;
+    const sisa = k.slice(m.index);
+    const akhir = sisa.slice(12).search(POLA_AKHIR_P1);
+    const seg = akhir < 0 ? sisa : sisa.slice(0, akhir + 12);
+    if (!/\bduda\b/i.test(seg)) continue;
+    const mati = /\b(?:mati|meninggal|wafat|kematian|almarhumah)\b/i.test(seg);
+    const cerai = !mati && /\b(?:cerai|bercerai|perceraian)\b/i.test(seg);
+    const n = POLA_NAMA_ISTRI_DULU.exec(seg) || (cerai ? POLA_CERAI_DENGAN.exec(seg) : null);
+    const nama = n ? namaWajar(n[1]) : "";
+    let tanggal = "";
+    let sebab = "";
+    if (mati) {
+      try {
+        const f = require("./waris").faktaWafat([seg], "");
+        tanggal = (f && f.tanggal) || "";
+        sebab = (f && f.sebab) || "";
+      } catch (_) {
+        // pengurai waris tidak ada - tanggal/sebab dikosongkan
+      }
+    }
+    const a = POLA_AKTA_CERAI.exec(seg);
+    const aktaCerai = a ? { urut: Number(a[1]), tahun: Number(a[2]), kodePa: a[3], teks: a[0].replace(/\s+/g, "") } : null;
+    return { jenis: mati ? "mati" : cerai ? "cerai" : "", nama, tanggal, sebab, aktaCerai, kalimat: k };
+  }
+  return null;
+}
+
+/**
+ * Ketepatan aturan 1021/5015/5016 atas 3.108 posita itsbat SERVER (14 Okt 2026): tiap temuan dibandingkan dengan
+ * kalimat status Pemohon I-nya sendiri (belum ada isian hakim - variabelnya baru dapat diisi sejak paket
+ * abt-hb-kebendaan). 22 posita menyebut istri sebelumnya dalam kurung; 5 tanpa nama/tanggal lengkap ("istri
+ * meninggal dunia", "pada tahun 2016") dikosongkan; 0 temuan pada 3.089 posita lain.
+ */
+const UKUR_ISTRI_SEBELUMNYA = Object.freeze({
+  1021: { n: 5, tepat: 5, pembanding: "kalimat status Pemohon I" },
+  5015: { n: 10, tepat: 10, pembanding: "kalimat status Pemohon I" },
+  5016: { n: 0, tepat: 0, pembanding: "sebab tidak pernah tertulis" },
+});
+
 /**
  * Fakta itsbat dari posita - murni.
  * @param {string} posita
@@ -399,7 +481,20 @@ function deteksi(posita, opsi = {}) {
     if (wafat.sebab) hasil["1247"] = r(wafat.sebab, "itsbat-sebab-wafat");
     if (wafat.tempat) hasil["1509"] = r(wafat.tempat, "itsbat-tempat-wafat");
   }
+  // [99aa]: istri sebelumnya Pemohon I - keyakinan menurut ukuran (n >= 10 dan tepat >= 90%), selain itu "ragu".
+  const dulu = istriSebelumnyaP1(kalimat);
+  if (dulu) {
+    const r = (kode, nilai, kodePola) => ({ nilai, kalimat: dulu.kalimat, yakin: yakinUkur(kode), kodePola });
+    if (dulu.nama) hasil["1021"] = r("1021", dulu.nama, `itsbat-istri-dulu-${dulu.jenis || "nama"}`);
+    if (dulu.jenis === "mati" && dulu.tanggal) hasil["5015"] = r("5015", dulu.tanggal, "itsbat-istri-dulu-tanggal-wafat");
+    if (dulu.jenis === "mati" && dulu.sebab) hasil["5016"] = r("5016", dulu.sebab, "itsbat-istri-dulu-sebab-wafat");
+  }
   return hasil;
+}
+
+function yakinUkur(kode) {
+  const u = UKUR_ISTRI_SEBELUMNYA[kode];
+  return u && u.n >= 10 && u.tepat / u.n >= 0.9 ? "cukup" : "ragu";
 }
 
 module.exports = {
@@ -415,4 +510,6 @@ module.exports = {
   anakDariPosita,
   pasanganWafat,
   jumlahAnak,
+  istriSebelumnyaP1,
+  UKUR_ISTRI_SEBELUMNYA,
 };

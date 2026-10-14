@@ -2432,6 +2432,18 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // tidak pernah menggagalkan usulan itsbat
       }
       /* === AKHIR ITSBAT KONTENTIUS === */
+      /* === ISTRI SEBELUMNYA 14 Okt (agen T2) === */
+      // Blangko [99aa] Cerai Hidup/Mati Pasangan Sebelumnya: 1021 nama (posita, atau SIPP dari nomor akta cerai PA.Dgl
+      // yang disebut posita - HANYA SELECT), 5015/5016 tanggal & sebab meninggal. Lihat deteksi/sambungItsbatPasangan.js.
+      try {
+        jawaban.itsbat = await require("../services/deteksi/sambungItsbatPasangan").lengkapiIstriSebelumnya(jawaban.itsbat, {
+          posita: String(req.body?.posita || ""),
+          nomorPerkara,
+        });
+      } catch (_galatIstriDulu) {
+        // tidak pernah menggagalkan usulan itsbat
+      }
+      /* === AKHIR ISTRI SEBELUMNYA === */
     }
     // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
     // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.
