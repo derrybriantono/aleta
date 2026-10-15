@@ -11,7 +11,7 @@
  *   C. tiap jenis baru memilih BAS yang benar untuk keadaan sidang nyata; jenis lama (cerai biasa, hak asuh verstek,
  *      itsbat gugur/cabut, sidang 1 itsbat/DK/AUA) tidak berubah;
  *   D. baris BAS massal: usulan/pilihan/salinan menunjuk folder jenis + nama menu ABT; Pemetaan admin tetap menang;
- *   E. ekstensi menemukan token berkas BAS baru lewat nama menu (folder "9 Penetapan Ahli Waris" = menu 913).
+ *   E. ekstensi menemukan token berkas BAS baru lewat nama menu (folder "9 Penetapan Ahli Waris - BAS" = menu "Penetapan Ahli Waris (P3HP) - BAS", id 1117 PERKIRAAN).
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -40,7 +40,7 @@ describe("A. data", () => {
     const semua = new Set<string>();
     for (const a of ALUR_BAS_BARU) {
       expect(a.folder.startsWith(A)).toBe(true);
-      expect(a.menu.id).toBeGreaterThanOrEqual(903);
+      expect(a.menu.id).toBeGreaterThanOrEqual(1101);
       expect(new Set(a.langkah.map((l) => l.kode)).size, a.id).toBe(a.langkah.length);
       for (const l of a.langkah) {
         expect(l.berkas, l.berkas).toMatch(new RegExp(`^BAS ALUR ${a.nomor} .+\\.rtf$`));
@@ -51,8 +51,8 @@ describe("A. data", () => {
       }
     }
     expect(semua.size).toBe(93);
-    expect(jenisDokumenBlangko(`${A}7 Wali Adhal/${ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.langkah[0].berkas}`)).toBe("bas");
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.menu).toMatchObject({ id: 924, nama: "Putusan dan BAS Wali Adhal" });
+    expect(jenisDokumenBlangko(`${A}7 Wali Adhal - BAS/${ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.langkah[0].berkas}`)).toBe("bas");
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.menu).toMatchObject({ id: 1113, nama: "Wali Adhal - BAS" });
   });
 
   const daftar = [
@@ -69,7 +69,8 @@ describe("A. data", () => {
         dari.add(`${folder.startsWith(A) ? folder : A + folder}/${berkas}`);
       }
     }
-    const data = new Set(ALUR_BAS_BARU.flatMap((a) => a.langkah.map((l) => `${a.folder}/${l.berkas}`)));
+    // K3: daftar-rtf.tsv paket D3/E3 memuat folder putusan (sebelum dipindah ke "... - BAS"); folder BAS = folder itu + " - BAS".
+    const data = new Set(ALUR_BAS_BARU.flatMap((a) => a.langkah.map((l) => `${a.folder.replace(/ - BAS$/, "")}/${l.berkas}`)));
     expect([...data].sort()).toEqual([...dari].sort());
   });
 });
@@ -115,20 +116,20 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     expect(t("Dispensasi Kawin", { akhir: "cabut" })).toMatchObject({ id: "alur-12l", kode: "C" });
     expect(t("P3HP/Penetapan Ahli Waris", { akhir: "gugur" })).toMatchObject({ id: "alur-15", kode: "G" });
     expect(t("Perwalian", { akhir: "no" })).toMatchObject({ id: "alur-15", kode: "N" });
-    expect(t("Perwalian", { dihadiriOleh: 4 }).h!.alur.folder).toBe(`${A}9b Permohonan Umum`);
-    expect(t("Perwalian", { dihadiriOleh: 4 }).h!.alur.menu.id).toBe(915);
+    expect(t("Perwalian", { dihadiriOleh: 4 }).h!.alur.folder).toBe(`${A}9b Permohonan Umum - BAS`);
+    expect(t("Perwalian", { dihadiriOleh: 4 }).h!.alur.menu.id).toBe(1121);
   });
 
   it("perwalian, wali adhal, pengangkatan anak: folder & menu masing-masing", () => {
     const pw = t("Perwalian", { urutanSidang: 3 });
     expect(pw).toMatchObject({ id: "alur-16", kode: "3" });
-    expect(pw.h!.alur).toMatchObject({ folder: `${A}6 Perwalian`, menu: { id: 910 } });
+    expect(pw.h!.alur).toMatchObject({ folder: `${A}6 Perwalian - BAS`, menu: { id: 1112 } });
     const wa = t("Wali Adhol", { urutanSidang: 2, agenda: "Pemeriksaan saksi" });
     expect(wa).toMatchObject({ id: "alur-19", kode: "2" });
-    expect(wa.h!.alur).toMatchObject({ folder: `${A}7 Wali Adhal`, menu: { id: 924, nama: "Putusan dan BAS Wali Adhal" } });
+    expect(wa.h!.alur).toMatchObject({ folder: `${A}7 Wali Adhal - BAS`, menu: { id: 1113, nama: "Wali Adhal - BAS" } });
     expect(t("Wali Adhol", { agenda: "Perbaikan" }).kode).toBe("1a"); // wali adhal tanpa [1c]: jatuh ke default sidang 1
     expect(t("Lain-Lain", { agenda: "Menghadirkan orang tua kandung calon anak angkat" })).toMatchObject({ id: "alur-18", kode: "1d" });
-    expect(t("Lain-Lain", { urutanSidang: 2 }).h!.alur.menu.id).toBe(914);
+    expect(t("Lain-Lain", { urutanSidang: 2 }).h!.alur.menu.id).toBe(1119);
   });
 
   it("itsbat permohonan: sidang 1 tidak berubah (hanya ditawarkan), sidang 2+ = ALUR 17, tidak hadir = ALUR 15, gugur/cabut tetap peta 946", () => {
@@ -140,7 +141,7 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { urutanSidang: 2, dihadiriOleh: 4 }).h).toBeNull(); // 946 [G] tetap
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { akhir: "gugur" }).h).toBeNull();
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { akhir: "cabut" }).h).toBeNull();
-    expect(t("Pengesahan Perkawinan/Istbat Nikah", { urutanSidang: 2 }).h!.alur.folder).toBe(`${A}2 Itsbat Nikah`);
+    expect(t("Pengesahan Perkawinan/Istbat Nikah", { urutanSidang: 2 }).h!.alur.folder).toBe(`${A}2 Itsbat Nikah - BAS`);
   });
 
   it("dispensasi kawin & asal usul anak: sidang 1 hanya ditawarkan, lanjutan = [3]; AUA saksi/perbaikan", () => {
@@ -150,7 +151,7 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     expect(t("Asal Usul Anak")).toMatchObject({ id: "alur-13l", kode: "1a", mode: "tambah" });
     expect(t("Asal Usul Anak", { urutanSidang: 2 })).toMatchObject({ id: "alur-13l", kode: "3", mode: "ganti" });
     expect(t("Asal Usul Anak", { urutanSidang: 2, agenda: "Pemeriksaan saksi" })).toMatchObject({ kode: "2" });
-    expect(t("Asal Usul Anak", { urutanSidang: 2 }).h!.alur.folder).toBe(`${A}8 Asal Usul Anak`);
+    expect(t("Asal Usul Anak", { urutanSidang: 2 }).h!.alur.folder).toBe(`${A}8 Asal Usul Anak - BAS`);
   });
 
   it("harta bersama & kewarisan: insidentil/putusan sela/setempat (30/32), damai/cabut/P tidak hadir/NO (31/33), selebihnya ALUR 04 salinan", () => {
@@ -164,14 +165,14 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     expect(t(hb, { akhir: "cabut" })).toMatchObject({ id: "alur-31", kode: "CB" });
     expect(t("Kewarisan", { agenda: "Pemeriksaan Setempat" })).toMatchObject({ id: "alur-32", kode: "PS" });
     expect(t("Kewarisan", { urutanSidang: 2, dihadiriOleh: 3 })).toMatchObject({ id: "alur-33", kode: "TP" });
-    expect(t("Kewarisan", { agenda: "Pemeriksaan Setempat" }).h!.alur.folder).toBe(`${A}4b Kewarisan`);
+    expect(t("Kewarisan", { agenda: "Pemeriksaan Setempat" }).h!.alur.folder).toBe(`${A}4b Kewarisan - BAS`);
     // sidang biasa: BAS kontradiktoir ALUR 04 yang disalin ke folder jenis
     const biasa = t(hb, { urutanSidang: 3, agenda: "Jawaban" });
     expect(biasa).toMatchObject({ id: "alur-04", kode: "3" });
-    expect(biasa.h!.alur.folder).toBe(`${A}4a Harta Bersama`);
+    expect(biasa.h!.alur.folder).toBe(`${A}4a Harta Bersama - BAS`);
     expect(biasa.h!.langkah.berkas).toMatch(/^BAS ALUR 04 \[3\] BAS 3 P & T Hadir/);
     expect(t("Kewarisan", { urutanSidang: 6, agenda: "Pembuktian Penggugat" }).h!.langkah.berkas).toMatch(/^BAS ALUR 04 \[6\]/);
-    expect(t("Kewarisan", { urutanSidang: 6 }).h!.alur.folder).toBe(`${A}4b Kewarisan`);
+    expect(t("Kewarisan", { urutanSidang: 6 }).h!.alur.folder).toBe(`${A}4b Kewarisan - BAS`);
   });
 
   it("izin poligami 1-3 sidang & cabut; itsbat kontensius (Pdt.G) 1-2 sidang, P tidak hadir, cabut, NO", () => {
@@ -186,7 +187,7 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { ...IN, urutanSidang: 2, dihadiriOleh: 3 })).toMatchObject({ kode: "TP" });
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { ...IN, urutanSidang: 3, dihadiriOleh: 4, akhir: "no" })).toMatchObject({ kode: "NO" });
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { ...IN, akhir: "cabut" })).toMatchObject({ kode: "CB" });
-    expect(t("Pengesahan Perkawinan/Istbat Nikah", IN).h!.alur).toMatchObject({ folder: `${A}2a Itsbat Nikah Kontensius`, menu: { id: 922 } });
+    expect(t("Pengesahan Perkawinan/Istbat Nikah", IN).h!.alur).toMatchObject({ folder: `${A}2a Itsbat Nikah Kontensius - BAS`, menu: { id: 1127 } });
   });
 
   it("cerai kumulasi itsbat verstek -> ALUR 36 (1c); hak asuh kontradiktoir -> ALUR 37 (1d); kumulasi lain & cerai biasa tidak berubah", () => {
@@ -194,12 +195,12 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     const k = (m: object) => tentukanBasBaru({ urutanSidang: 1, ...cg, ...m } as Parameters<typeof tentukanBasBaru>[0]);
     expect(k({ kumulasi: KUM("itsbat-nikah") })).toMatchObject({ alur: { id: "alur-36" }, langkah: { kode: "S1" } });
     expect(k({ urutanSidang: 2, kumulasi: KUM("itsbat-nikah") })).toMatchObject({ langkah: { kode: "P2" } });
-    expect(k({ urutanSidang: 2, kumulasi: KUM("itsbat-nikah") })!.alur.folder).toBe(`${A}1c Perceraian Kumulasi Itsbat Nikah`);
+    expect(k({ urutanSidang: 2, kumulasi: KUM("itsbat-nikah") })!.alur.folder).toBe(`${A}1c Perceraian Kumulasi Itsbat Nikah - BAS`);
     expect(k({ urutanSidang: 2, kumulasi: KUM("itsbat-nikah"), jenisPerkara: "Cerai Talak" })).toMatchObject({ langkah: { kode: "P2" } });
     expect(k({ urutanSidang: 3, kumulasi: KUM("itsbat-nikah"), tergugatPernahHadir: false, agenda: "Panggil Tergugat" })).toMatchObject({ langkah: { kode: "L" } });
     // hak asuh kontradiktoir
     const ha = k({ urutanSidang: 6, dihadiriOleh: 1, kumulasi: KUM("hak-asuh-anak"), agenda: "Pembuktian Penggugat" });
-    expect(ha).toMatchObject({ alur: { id: "alur-37", folder: `${A}1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak` }, langkah: { kode: "6" } });
+    expect(ha).toMatchObject({ alur: { id: "alur-37", folder: `${A}1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS` }, langkah: { kode: "6" } });
     expect(k({ urutanSidang: 2, dihadiriOleh: 1, kumulasi: KUM("hak-asuh-anak"), agenda: "Mediasi berhasil sebagian hak asuh" })).toMatchObject({ langkah: { kode: "2m" } });
     // tidak berubah
     expect(k({ kumulasi: KUM("hak-asuh-anak") })).toBeNull(); // verstek sidang 1 hak asuh: peta lama
@@ -232,15 +233,15 @@ describe("D. baris BAS massal (susun.ts sungguhan)", () => {
   const susun = (b: BarisSidangBas[], petaBas?: Record<string, string>) =>
     susunBarisBasMassal(b, { namaAkun: "PP Satu", saringan: "semua", katalog: {}, lembar: {}, saat: null, petaBas }).baris;
 
-  it("PAW: usulan = BAS di folder jenis dengan salinan (menu 913) menunjuk dirinya sendiri; alurBas alur-14", () => {
+  it("PAW: usulan = BAS di folder jenis dengan salinan (menu 1117) menunjuk dirinya sendiri; alurBas alur-14", () => {
     const [b] = susun([dasar]);
-    expect(b.blangko.usulan).toMatchObject({ folder: `${A}9 Penetapan Ahli Waris`, perkiraan: true });
+    expect(b.blangko.usulan).toMatchObject({ folder: `${A}9 Penetapan Ahli Waris - BAS`, perkiraan: true });
     expect(b.blangko.usulan!.berkas).toMatch(/^BAS ALUR 14 PAW - \[1a\]/);
     expect(b.blangko.usulan!.salinan).toEqual([
-      { folder: `${A}9 Penetapan Ahli Waris`, berkas: b.blangko.usulan!.berkas, menu: "Putusan Penetapan Ahli Waris (P3HP)", alias: "Putusan PAW/P3HP" },
+      { folder: `${A}9 Penetapan Ahli Waris - BAS`, berkas: b.blangko.usulan!.berkas, menu: "Penetapan Ahli Waris (P3HP) - BAS", alias: "PAW/P3HP - BAS" },
     ]);
     expect(b.blangko.pilihan.map((p) => p.berkas)).toContain(ALUR_BAS_BARU.find((a) => a.id === "alur-14")!.langkah.find((l) => l.kode === "1")!.berkas);
-    expect(b.alurBas).toMatchObject({ id: "alur-14", kode: "1a", perkiraan: true, folder: `${A}9 Penetapan Ahli Waris` });
+    expect(b.alurBas).toMatchObject({ id: "alur-14", kode: "1a", perkiraan: true, folder: `${A}9 Penetapan Ahli Waris - BAS` });
     // pasti (agenda menyebut pembacaan penetapan sidang 2): tidak ditandai perkiraan
     const [c] = susun([{ ...dasar, urutanSidang: 2, agenda: "Pembacaan Penetapan" }]);
     expect(c.blangko.usulan!.perkiraan).toBeUndefined();
@@ -258,7 +259,7 @@ describe("D. baris BAS massal (susun.ts sungguhan)", () => {
     expect(dk.alurBas).toMatchObject({ id: "alur-12", kode: "1" }); // keterangan alur lama tetap
     expect(dk.blangko.pilihan.map((p) => p.setId)).toEqual(["alur-12l", "alur-12l", "alur-12l", "alur-12l"]);
     const [dk2] = susun([{ ...dasar, jenisPerkara: "Dispensasi Kawin", urutanSidang: 2, agenda: "Pembacaan Penetapan" }]);
-    expect(dk2.blangko.usulan).toMatchObject({ folder: `${A}3 Dispensasi Kawin` });
+    expect(dk2.blangko.usulan).toMatchObject({ folder: `${A}3 Dispensasi Kawin - BAS` });
     expect(dk2.blangko.usulan!.berkas).toMatch(/^BAS ALUR 12 DK - \[3\]/);
     expect(dk2.alurBas).toMatchObject({ id: "alur-12l", kode: "3" });
   });
@@ -282,10 +283,10 @@ describe("D. baris BAS massal (susun.ts sungguhan)", () => {
       { ...dasar, jenisPerkara: "Harta Bersama", nomorPerkara: "308/Pdt.G/2026/PA.Dgl", agenda: "Sidang Insidentil Sita", perkaraId: "1" },
       { ...dasar, jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", nomorPerkara: "498/Pdt.G/2025/PA.Dgl", perkaraId: "2" },
     ]);
-    expect(hb.blangko.usulan).toMatchObject({ folder: `${A}4a Harta Bersama`, salinan: [expect.objectContaining({ menu: "Putusan Harta Bersama" })] });
+    expect(hb.blangko.usulan).toMatchObject({ folder: `${A}4a Harta Bersama - BAS`, salinan: [expect.objectContaining({ menu: "Harta Bersama - BAS" })] });
     expect(hb.alurBas).toMatchObject({ id: "alur-30", kode: "I1" });
     expect(inK.alurBas).toMatchObject({ id: "alur-35" });
-    expect(inK.blangko.usulan!.salinan![0].menu).toBe("Putusan Itsbat Nikah Kontensius");
+    expect(inK.blangko.usulan!.salinan![0].menu).toBe("Itsbat Nikah Kontensius - BAS");
   });
 });
 
@@ -316,19 +317,20 @@ describe("E. ekstensi: token berkas BAS baru lewat nama menu", () => {
     berkas.map(([nama, a, b]) => `<a onclick='x({a:"${a}", b:"${b}"})'><span># ${nama}</span></a>`).join("") +
     `</div></div>`;
 
-  it("PAW (menu 913) dan wali adhal (menu 924 'Putusan dan BAS ...'): berkas BAS terpanen dan ditemukan lewat salinan menu", async () => {
+  it("PAW (menu 1117) dan wali adhal (menu 1113 'Wali Adhal - BAS'): berkas BAS terpanen dan ditemukan lewat salinan menu", async () => {
     const paw = tentukanBasBaru({ jenisPerkara: "P3HP/Penetapan Ahli Waris", urutanSidang: 1, dihadiriOleh: 1 })!;
     const wa = tentukanBasBaru({ jenisPerkara: "Wali Adhol", urutanSidang: 2, dihadiriOleh: 1, agenda: "saksi" })!;
     const html =
       `<html><body><div id="navbar"><div class="accordion">` +
       `<a href="/x?a=K_PAW">${paw.alur.menu.nama}</a><a href="/x?a=K_WA">${wa.alur.menu.nama}</a></div></div>` +
-      kartu(paw.alur.menu.nama, [[paw.langkah.berkas, "A_PAW", "B_PAW"], ["[01] [Kabul] PAW.rtf", "A_PUT", "B_PUT"]]) +
+      kartu(paw.alur.menu.nama, [[paw.langkah.berkas, "A_PAW", "B_PAW"]]) +
+      kartu("Penetapan Ahli Waris - Putusan", [["[01] [Kabul] PAW.rtf", "A_PUT", "B_PUT"]]) +
       kartu(wa.alur.menu.nama, [[wa.langkah.berkas, "A_WA", "B_WA"]]) +
       `</body></html>`;
     const { k, simpanan } = muat(html);
     expect(await k.basmassalPanenTokenAbt()).toBeGreaterThan(0);
     const peta = (simpanan as any).tokenBlangkoBas;
-    // hanya berkas BAS yang dipanen dari kartu "Putusan ...": berkas putusan lain tidak
+    // hanya menu "... - BAS" yang dipanen: kartu "... - Putusan" (berkas putusan) tidak
     expect(Object.keys(peta.berkas)).toHaveLength(2);
     const salinan = (h: typeof paw) => [{ folder: h.alur.folder, berkas: h.langkah.berkas, menu: h.alur.menu.nama, alias: h.alur.menu.alias }];
     const tp = k.basmassalTokenUntuk(peta, paw.alur.folder, paw.langkah.berkas, [], salinan(paw));

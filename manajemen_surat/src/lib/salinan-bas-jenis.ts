@@ -1,7 +1,11 @@
 /**
  * ============================================================================
- * SALINAN BAS DI FOLDER JENIS - petunjuk untuk tombol "Buka di ABT" (F3, 14 Okt 2026)
+ * SALINAN BAS DI FOLDER BAS PASANGAN - petunjuk untuk tombol "Buka di ABT" (F3, 14 Okt 2026; disesuaikan K3 15 Okt 2026)
  * ============================================================================
+ *
+ * K3 15 Okt: keputusan "satu folder" diganti susunan berpasangan - salinan BAS berada di folder "<folder putusan> - BAS"
+ * (mis. "1 Perceraian CG - BAS", menu "Cerai Gugat - BAS" / alias "CG - BAS"); folder putusan tidak lagi memuat BAS.
+ * Isi tabel di bawah sudah memakai folder & menu BAS itu. Teks selanjutnya menggambarkan asal-usul paket A3 (14 Okt).
  *
  * Paket ABT abt-susunan-satu-folder (keputusan pengguna 14 Okt: "putusan dan BAS satu folder per jenis") menyalin 233
  * BAS ke folder jenis dan menyembunyikan menu ALUR 960-972, 945, 946. Token ABT berkas ALUR tidak lagi dapat dipanen
@@ -19,13 +23,13 @@ import { AKAR_SALINAN_BAS, MENU_FOLDER_JENIS, SALINAN_BAS_JENIS } from "@/lib/sa
 import { jenisPerkaraDariFolder } from "@/lib/tugas-blangko";
 
 export type SalinanBas = {
-  /** Jalur relatif _blangko_abt, mis. "derry_briantono/1 Perceraian CG". */
+  /** Jalur relatif _blangko_abt, mis. "derry_briantono/1 Perceraian CG - BAS". */
   folder: string;
   /** Nama berkas salinan (dengan .rtf), mis. "BAS ALUR 04 [2] BAS 2 P & T Hadir - ....rtf". */
   berkas: string;
-  /** abt_menu.nama folder jenis itu ("Putusan Cerai Gugat") - nama kelompok di ABT. */
+  /** abt_menu.nama folder BAS itu ("Cerai Gugat - BAS") - nama kelompok di ABT. */
   menu: string;
-  /** abt_menu.nama_alias ("Putusan CG"). */
+  /** abt_menu.nama_alias ("CG - BAS"). */
   alias: string;
 };
 

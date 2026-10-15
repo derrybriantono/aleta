@@ -958,7 +958,8 @@ async function basmassalPanenTokenAbt() {
     const nama = String(a.textContent || "").replace(/\s+/g, " ").trim();
     const kunci = basmassalKunciNama(nama);
     /* === F3 14 Okt === */
-    // Menu "Putusan <jenis>" juga: sejak paket abt-susunan-satu-folder BAS-nya ada di folder jenis itu (menu ALUR tersembunyi).
+    // K3 15 Okt: BAS salinan kini di menu berpasangan "<Jenis> - BAS" (kunci memuat kata bas, terpanen seperti menu BAS lama);
+    // menu "Putusan <jenis>" tetap diterima untuk pemasangan paket satu-folder yang belum diganti (hanya berkas ^BAS yang diambil).
     if (!tokenA || !(/(^| )bas( |$)/.test(kunci) || basmassalKelompokPutusan(kunci))) continue;
     /* === AKHIR F3 === */
     kelompok[kunci] = { a: tokenA, nama, asal, diambil: kini };
@@ -1023,7 +1024,7 @@ function basmassalTokenUntuk(peta, folder, namaBerkas, padanan, salinan) {
   let kelompok = peta.kelompok[kunciKel] || null;
   /* === F3 14 Okt === */
   // Menu ALUR/945/946 disembunyikan paket abt-susunan-satu-folder: yang tampil di ABT adalah SALINAN BAS di folder jenis
-  // ("Putusan Cerai Gugat"). Server hanya mengirim salinan yang foldernya cocok dengan jenis perkara barisnya (ABT menolak
+  // ("Cerai Gugat - BAS" sejak susunan berpasangan 15 Okt; dulu "Putusan Cerai Gugat"). Server hanya mengirim salinan yang foldernya cocok dengan jenis perkara barisnya (ABT menolak
   // token folder CG untuk perkara CT), beserta nama menunya. Dicocokkan TEPAT pada nama menu + nama salinan - tanpa
   // jalan pintas "nama berkas yang satu-satunya": nama salinan CG dan CT sama, sehingga tebakan bisa tertukar. Tidak
   // ada salinan yang cocok = jatuh ke jalur lama di bawah.

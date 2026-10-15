@@ -23,11 +23,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-14",
     "nomor": 14,
     "nama": "Penetapan Ahli Waris (P3HP)",
-    "folder": "derry_briantono/9 Penetapan Ahli Waris",
+    "folder": "derry_briantono/9 Penetapan Ahli Waris - BAS",
     "menu": {
-      "id": 913,
-      "nama": "Putusan Penetapan Ahli Waris (P3HP)",
-      "alias": "Putusan PAW/P3HP"
+      "id": 1117,
+      "nama": "Penetapan Ahli Waris (P3HP) - BAS",
+      "alias": "PAW/P3HP - BAS"
     },
     "jenisMin": 371,
     "jenisMaks": 371,
@@ -83,11 +83,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-15",
     "nomor": 15,
     "nama": "Permohonan Umum (Tidak Hadir, Gugur, NO, Cabut)",
-    "folder": "derry_briantono/9b Permohonan Umum",
+    "folder": "derry_briantono/9b Permohonan Umum - BAS",
     "menu": {
-      "id": 915,
-      "nama": "Putusan Permohonan Umum (Cabut/Gugur/NO)",
-      "alias": "Putusan Permohonan Umum"
+      "id": 1121,
+      "nama": "Permohonan Umum - BAS",
+      "alias": "Permohonan Umum - BAS"
     },
     "jenisMin": 16,
     "jenisMaks": 16,
@@ -118,11 +118,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-16",
     "nomor": 16,
     "nama": "Perwalian",
-    "folder": "derry_briantono/6 Perwalian",
+    "folder": "derry_briantono/6 Perwalian - BAS",
     "menu": {
-      "id": 910,
-      "nama": "Putusan Perwalian",
-      "alias": "Putusan Perwalian"
+      "id": 1112,
+      "nama": "Perwalian - BAS",
+      "alias": "Perwalian - BAS"
     },
     "jenisMin": 354,
     "jenisMaks": 354,
@@ -173,11 +173,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-17",
     "nomor": 17,
     "nama": "Itsbat Nikah 2+ Sidang",
-    "folder": "derry_briantono/2 Itsbat Nikah",
+    "folder": "derry_briantono/2 Itsbat Nikah - BAS",
     "menu": {
-      "id": 904,
-      "nama": "Putusan Itsbat Nikah",
-      "alias": "Putusan Itsbat"
+      "id": 1108,
+      "nama": "Itsbat Nikah - BAS",
+      "alias": "Itsbat - BAS"
     },
     "jenisMin": 360,
     "jenisMaks": 360,
@@ -223,11 +223,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-18",
     "nomor": 18,
     "nama": "Pengangkatan Anak",
-    "folder": "derry_briantono/9a Lain-Lain (Pengangkatan Anak)",
+    "folder": "derry_briantono/9a Lain-Lain (Pengangkatan Anak) - BAS",
     "menu": {
-      "id": 914,
-      "nama": "Putusan Lain-Lain (Pengangkatan Anak)",
-      "alias": "Putusan Pengangkatan Anak"
+      "id": 1119,
+      "nama": "Pengangkatan Anak - BAS",
+      "alias": "Pengangkatan Anak - BAS"
     },
     "jenisMin": 369,
     "jenisMaks": 369,
@@ -278,11 +278,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-19",
     "nomor": 19,
     "nama": "Wali Adhal",
-    "folder": "derry_briantono/7 Wali Adhal",
+    "folder": "derry_briantono/7 Wali Adhal - BAS",
     "menu": {
-      "id": 924,
-      "nama": "Putusan dan BAS Wali Adhal",
-      "alias": "Putusan & BAS Wali Adhal"
+      "id": 1113,
+      "nama": "Wali Adhal - BAS",
+      "alias": "Wali Adhal - BAS"
     },
     "jenisMin": 363,
     "jenisMaks": 363,
@@ -323,11 +323,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-13l",
     "nomor": 13,
     "nama": "Asal Usul Anak (Lanjutan)",
-    "folder": "derry_briantono/8 Asal Usul Anak",
+    "folder": "derry_briantono/8 Asal Usul Anak - BAS",
     "menu": {
-      "id": 911,
-      "nama": "Putusan Asal Usul Anak",
-      "alias": "Putusan Asal Usul Anak"
+      "id": 1115,
+      "nama": "Asal Usul Anak - BAS",
+      "alias": "Asal Usul Anak - BAS"
     },
     "jenisMin": 358,
     "jenisMaks": 358,
@@ -373,11 +373,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-12l",
     "nomor": 12,
     "nama": "Dispensasi Kawin (Lanjutan)",
-    "folder": "derry_briantono/3 Dispensasi Kawin",
+    "folder": "derry_briantono/3 Dispensasi Kawin - BAS",
     "menu": {
-      "id": 905,
-      "nama": "Putusan Dispensasi Kawin",
-      "alias": "Putusan Diska/DK"
+      "id": 1110,
+      "nama": "Dispensasi Kawin - BAS",
+      "alias": "Diska/DK - BAS"
     },
     "jenisMin": 362,
     "jenisMaks": 362,
@@ -418,11 +418,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-30",
     "nomor": 30,
     "nama": "Harta Bersama (Insidentil dan Pemeriksaan Setempat)",
-    "folder": "derry_briantono/4a Harta Bersama",
+    "folder": "derry_briantono/4a Harta Bersama - BAS",
     "menu": {
-      "id": 920,
-      "nama": "Putusan Harta Bersama",
-      "alias": "Putusan HB"
+      "id": 1123,
+      "nama": "Harta Bersama - BAS",
+      "alias": "HB - BAS"
     },
     "jenisMin": 348,
     "jenisMaks": 348,
@@ -448,11 +448,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-31",
     "nomor": 31,
     "nama": "Harta Bersama (Perdamaian, Cabut, P Tidak Hadir, NO)",
-    "folder": "derry_briantono/4a Harta Bersama",
+    "folder": "derry_briantono/4a Harta Bersama - BAS",
     "menu": {
-      "id": 920,
-      "nama": "Putusan Harta Bersama",
-      "alias": "Putusan HB"
+      "id": 1123,
+      "nama": "Harta Bersama - BAS",
+      "alias": "HB - BAS"
     },
     "jenisMin": 348,
     "jenisMaks": 348,
@@ -483,11 +483,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-32",
     "nomor": 32,
     "nama": "Kewarisan (Insidentil dan Pemeriksaan Setempat)",
-    "folder": "derry_briantono/4b Kewarisan",
+    "folder": "derry_briantono/4b Kewarisan - BAS",
     "menu": {
-      "id": 921,
-      "nama": "Putusan Kewarisan",
-      "alias": "Putusan Waris"
+      "id": 1125,
+      "nama": "Kewarisan - BAS",
+      "alias": "Waris - BAS"
     },
     "jenisMin": 364,
     "jenisMaks": 364,
@@ -513,11 +513,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-33",
     "nomor": 33,
     "nama": "Kewarisan (Perdamaian, Cabut, P Tidak Hadir, NO)",
-    "folder": "derry_briantono/4b Kewarisan",
+    "folder": "derry_briantono/4b Kewarisan - BAS",
     "menu": {
-      "id": 921,
-      "nama": "Putusan Kewarisan",
-      "alias": "Putusan Waris"
+      "id": 1125,
+      "nama": "Kewarisan - BAS",
+      "alias": "Waris - BAS"
     },
     "jenisMin": 364,
     "jenisMaks": 364,
@@ -548,11 +548,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-34",
     "nomor": 34,
     "nama": "Izin Poligami",
-    "folder": "derry_briantono/5 Izin Poligami",
+    "folder": "derry_briantono/5 Izin Poligami - BAS",
     "menu": {
-      "id": 923,
-      "nama": "Putusan Izin Poligami",
-      "alias": "Putusan Poligami"
+      "id": 1129,
+      "nama": "Izin Poligami - BAS",
+      "alias": "Poligami - BAS"
     },
     "jenisMin": 341,
     "jenisMaks": 341,
@@ -583,11 +583,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-35",
     "nomor": 35,
     "nama": "Itsbat Nikah Kontensius",
-    "folder": "derry_briantono/2a Itsbat Nikah Kontensius",
+    "folder": "derry_briantono/2a Itsbat Nikah Kontensius - BAS",
     "menu": {
-      "id": 922,
-      "nama": "Putusan Itsbat Nikah Kontensius",
-      "alias": "Putusan IN Kontensius"
+      "id": 1127,
+      "nama": "Itsbat Nikah Kontensius - BAS",
+      "alias": "IN Kontensius - BAS"
     },
     "jenisMin": 360,
     "jenisMaks": 360,
@@ -628,11 +628,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-36",
     "nomor": 36,
     "nama": "Cerai Kumulasi Itsbat Nikah (Verstek)",
-    "folder": "derry_briantono/1c Perceraian Kumulasi Itsbat Nikah",
+    "folder": "derry_briantono/1c Perceraian Kumulasi Itsbat Nikah - BAS",
     "menu": {
-      "id": 903,
-      "nama": "Putusan Cerai Kumulasi Itsbat Nikah",
-      "alias": "Putusan Cerai Kumulasi Itsbat"
+      "id": 1106,
+      "nama": "Cerai Kumulasi Itsbat Nikah - BAS",
+      "alias": "Cerai Kumulasi Itsbat - BAS"
     },
     "jenisMin": 346,
     "jenisMaks": 347,
@@ -663,11 +663,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
     "id": "alur-37",
     "nomor": 37,
     "nama": "Cerai Gugat Kumulasi Hak Asuh Anak (Kontradiktoir)",
-    "folder": "derry_briantono/1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "folder": "derry_briantono/1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
     "menu": {
-      "id": 940,
-      "nama": "Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-      "alias": "Putusan CG Kumulasi Hak Asuh"
+      "id": 1131,
+      "nama": "Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+      "alias": "CG Kumulasi Hak Asuh - BAS"
     },
     "jenisMin": 347,
     "jenisMaks": 347,

@@ -31,17 +31,13 @@
  * induk 900 - yang dibaca ABT untuk folder Relaas & PTSP - dengan tugas ini.
  *
  * ============================================================================
- * FOLDER JENIS = DUA TUGAS (F3, 14 Okt 2026; paket ABT abt-susunan-satu-folder)
+ * FOLDER PUTUSAN DAN FOLDER BAS BERPASANGAN (K3, 15 Okt 2026; menggantikan "satu folder" F3 14 Okt)
  * ============================================================================
  *
- * Keputusan pengguna 14 Okt: "putusan dan BAS satu folder per jenis". Paket itu
- * MENYALIN 233 BAS ke folder jenis ("1 Perceraian CG" dst.) dengan nama
- * "BAS ALUR nn <nama lama>.rtf", "BAS KUMULASI ...", "BAS IN GUGUR CABUT ...",
- * dan memberi baris abt_menu folder jenis hak GABUNGAN (GRUP_ABT_FOLDER_JENIS).
- * Karena itu NAMA BERKAS "^BAS" diperiksa lebih dulu daripada folder: berkas BAS
- * di folder jenis tetap tugas panitera, bukan putusan (hakim). Folder jenisnya
- * sendiri tetap terbaca "putusan" - folder itu kini memuat dua tugas.
- * Menu ALUR 960-972, 945, 946 disembunyikan tetapi foldernya TETAP (jenisnya "bas").
+ * Keputusan pengguna 15 Okt sore: tiap jenis DUA menu berdampingan. Folder putusan tetap ("1 Perceraian CG": hakim, hak
+ * putusan 1|10|20) dan BAS-nya di folder pasangan "<folder putusan> - BAS" ("1 Perceraian CG - BAS": panitera, hak BAS).
+ * Nama folder "... - BAS" terbaca "bas" oleh RX_BAS; tidak perlu hak gabungan. Aturan "nama berkas ^BAS menang atas folder"
+ * (F3) dipertahankan sebagai pengaman bila ada BAS tertinggal di folder putusan. Menu ALUR 960-972, 945, 946 tetap tersembunyi.
  */
 
 export type TugasBlangko = "hakim" | "panitera" | "jurusita" | "ptsp";
@@ -74,28 +70,6 @@ export const GRUP_ABT_TUGAS: Record<TugasBlangko, { grup: string; top: string }>
   ptsp: { grup: "30|500|430|1000|1010|1020|1032|1001|1011", top: "1|30" },
 };
 
-/* === F3 14 Okt === */
-/**
- * Hak abt_menu folder JENIS sesudah paket abt-susunan-satu-folder (901-905, 910, 911, 913-915, 920-923, 940): gabungan
- * grup putusan (hakim) + BAS (panitera). user_top_id "1|10|20|30": siapa pun yang dulu boleh SEMUA perkara di salah satu
- * dari dua tugas itu tetap boleh (super admin, ketua/waka, hakim, panitera); PP/panmud tetap hanya perkara yang ia
- * tangani (user_cek 3). Rinci: D:/aleta-dev/kerja/batch-14okt-sore/a3-susunan/HAK-GABUNGAN.md.
- */
-export const GRUP_ABT_FOLDER_JENIS: { grup: string; top: string } = {
-  grup: "1|10|20|30|500|430|1000|1010|1020",
-  top: "1|10|20|30",
-};
-
-/** Tugas yang dimuat satu folder jenis (putusan + BAS): hakim dan panitera. */
-export const TUGAS_FOLDER_JENIS: TugasBlangko[] = ["hakim", "panitera"];
-
-/** Grup yang boleh membuka folder jenis: gabungan grup kedua tugasnya, tanpa pengulangan. */
-export function grupFolderJenis(): string[] {
-  const hasil: string[] = [];
-  for (const t of TUGAS_FOLDER_JENIS) for (const g of grupTugas(t)) if (!hasil.includes(g)) hasil.push(g);
-  return hasil;
-}
-/* === AKHIR F3 === */
 
 /** Grup ABT yang menjadi pemilik tugas (tanpa pejabat puncak 1/10/30 yang boleh semuanya). */
 export function grupTugas(tugas: TugasBlangko): string[] {
@@ -239,7 +213,10 @@ export type FolderTugas = {
 function namaTampil(direktori: string): string {
   const d = String(direktori || "").trim();
   if (/^ALUR\s+\d+/i.test(d)) return d;
-  return d.replace(/^\d+[a-z]{0,2}\s+/i, "").replace(/^-\s*(.*?)\s*-$/, "$1").trim() || d;
+  /* === K3 15 Okt === */
+  // Folder BAS berpasangan: "1 Perceraian CG - BAS" tampil "Perceraian CG" (jenisnya "BAS" sudah terbaca dari folder).
+  return d.replace(/^\d+[a-z]{0,2}\s+/i, "").replace(/\s+-\s+BAS$/i, "").replace(/^-\s*(.*?)\s*-$/, "$1").trim() || d;
+  /* === AKHIR K3 === */
 }
 
 export function folderTugas(direktori: string, akar = "derry_briantono"): FolderTugas | null {

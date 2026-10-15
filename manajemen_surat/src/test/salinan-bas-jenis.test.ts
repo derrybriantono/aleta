@@ -6,11 +6,11 @@
  *
  * Paket ABT abt-susunan-satu-folder menyalin 233 BAS ke folder jenis dan menyembunyikan menu ALUR/945/946: token berkas
  * ALUR tidak lagi dapat dipanen. Yang dijaga (semuanya DIJALANKAN, bukan menyisir teks):
- *   A. tabel salinan (salinan-bas-jenis-data.ts) = persis 233 BAS di fixtures/blangko-derry-susunan-14okt.json, sumbernya ada;
+ *   A. tabel salinan (salinan-bas-jenis-data.ts) = persis 233 BAS di fixtures/blangko-derry-berpasangan-15okt.json (folder "... - BAS"), sumbernya ada;
  *   B. server memilih salinan di folder jenis yang SESUAI jenis perkara (CG vs CT), lewat berkas ALUR maupun folder lama,
  *      dan tidak menebak bila jenis tidak terbaca;
  *   C. pilihBlangkoBas membawa `salinan` pada tiap pilihan;
- *   D. ekstensi memanen berkas "BAS ..." di kartu "Putusan <jenis>" + token kelompok "Putusan ...", memakai salinan yang
+ *   D. ekstensi memanen menu BAS berpasangan "<Jenis> - BAS" (dan, bila paket lama masih terpasang, berkas ^BAS di kartu "Putusan <jenis>"), memakai salinan yang
  *      TEPAT (CG tidak dipakai untuk CT), tidak menebak, dan tetap memakai token ALUR yang sudah tersimpan.
  */
 import { readFileSync } from "node:fs";
@@ -25,7 +25,7 @@ import { SET_BLANGKO } from "@/lib/pohon-blangko";
 import { awalanSalinanBas, folderJenisCocok, salinanBasJenis, semuaSalinanBas } from "@/lib/salinan-bas-jenis";
 import { AKAR_SALINAN_BAS, MENU_FOLDER_JENIS, SALINAN_BAS_JENIS } from "@/lib/salinan-bas-jenis-data";
 
-const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-susunan-14okt.json"), "utf8")) as {
+const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-berpasangan-15okt.json"), "utf8")) as {
   berkas: string[];
   menu: Array<{ id: number; nama: string; nama_alias: string; direktori: string }>;
 };
@@ -75,13 +75,13 @@ describe("A. tabel salinan = 233 BAS paket A3 di fixture", () => {
 describe("B. salinan menurut jenis perkara", () => {
   it("ALUR 04 [2]: perkara CG -> hanya '1 Perceraian CG', CT -> hanya '1a Perceraian CT', menu bernama", () => {
     const cg = salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, "Cerai Gugat");
-    expect(cg).toEqual([{ folder: `${A}1 Perceraian CG`, berkas: SALIN_04, menu: "Putusan Cerai Gugat", alias: "Putusan CG" }]);
+    expect(cg).toEqual([{ folder: `${A}1 Perceraian CG - BAS`, berkas: SALIN_04, menu: "Cerai Gugat - BAS", alias: "CG - BAS" }]);
     const ct = salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, "Cerai Talak");
-    expect(ct).toEqual([{ folder: `${A}1a Perceraian CT`, berkas: SALIN_04, menu: "Putusan Cerai Talak", alias: "Putusan CT" }]);
+    expect(ct).toEqual([{ folder: `${A}1a Perceraian CT - BAS`, berkas: SALIN_04, menu: "Cerai Talak - BAS", alias: "CT - BAS" }]);
     // HB / waris / poligami memegang salinan yang sama di folder masing-masing
-    expect(salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, "Harta Bersama").map((s) => s.folder)).toEqual([`${A}4a Harta Bersama`]);
-    expect(salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, "Kewarisan").map((s) => s.folder)).toEqual([`${A}4b Kewarisan`]);
-    expect(salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, "Izin Poligami").map((s) => s.folder)).toEqual([`${A}5 Izin Poligami`]);
+    expect(salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, "Harta Bersama").map((s) => s.folder)).toEqual([`${A}4a Harta Bersama - BAS`]);
+    expect(salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, "Kewarisan").map((s) => s.folder)).toEqual([`${A}4b Kewarisan - BAS`]);
+    expect(salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, "Izin Poligami").map((s) => s.folder)).toEqual([`${A}5 Izin Poligami - BAS`]);
   });
 
   it("berkas khusus cerai gugat tidak dialihkan ke CT (dan sebaliknya); jenis tak terbaca/tak dikenal -> tidak menebak", () => {
@@ -89,7 +89,7 @@ describe("B. salinan menurut jenis perkara", () => {
     const cgSaja = "[1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf";
     expect(salinanBasJenis(alur01, cgSaja, "Cerai Gugat")).toHaveLength(1);
     expect(salinanBasJenis(alur01, cgSaja, "Cerai Talak")).toEqual([]);
-    expect(semuaSalinanBas(alur01, cgSaja).map((s) => s.folder)).toEqual([`${A}1 Perceraian CG`]);
+    expect(semuaSalinanBas(alur01, cgSaja).map((s) => s.folder)).toEqual([`${A}1 Perceraian CG - BAS`]);
     for (const jenis of ["", "   ", "Ekonomi Syariah", "Jenis yang tidak ada"]) {
       expect(salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, jenis), JSON.stringify(jenis)).toEqual([]);
     }
@@ -105,8 +105,8 @@ describe("B. salinan menurut jenis perkara", () => {
       "BAS ALUR 02 [1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
       "BAS ALUR 03 [1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
     ]);
-    expect(new Set(cg.map((s) => s.folder))).toEqual(new Set([`${A}1 Perceraian CG`]));
-    expect(new Set(salinanBasJenis(lama, nama, "Cerai Talak").map((s) => s.folder))).toEqual(new Set([`${A}1a Perceraian CT`]));
+    expect(new Set(cg.map((s) => s.folder))).toEqual(new Set([`${A}1 Perceraian CG - BAS`]));
+    expect(new Set(salinanBasJenis(lama, nama, "Cerai Talak").map((s) => s.folder))).toEqual(new Set([`${A}1a Perceraian CT - BAS`]));
   });
 
   it("kumulasi hak asuh dan itsbat gugur-cabut: folder jenisnya masing-masing", () => {
@@ -114,9 +114,9 @@ describe("B. salinan menurut jenis perkara", () => {
     const semua = Object.keys(SALINAN_BAS_JENIS["BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"]);
     expect(semua.length).toBe(2);
     const s = salinanBasJenis(kum, semua[0], "Cerai Gugat");
-    expect(s.map((x) => x.folder)).toEqual([`${A}1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak`]);
+    expect(s.map((x) => x.folder)).toEqual([`${A}1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS`]);
     expect(s[0].berkas.startsWith("BAS KUMULASI ")).toBe(true);
-    expect(s[0].menu).toBe("Putusan Cerai Gugat Kumulasi Hak Asuh Anak");
+    expect(s[0].menu).toBe("Cerai Gugat Kumulasi Hak Asuh Anak - BAS");
     expect(salinanBasJenis(kum, semua[0], "Cerai Talak")).toEqual([]);
     const itsbat = `${A}BAS Itsbat Nikah Gugur dan Cabut`;
     const bi = Object.keys(SALINAN_BAS_JENIS["BAS Itsbat Nikah Gugur dan Cabut"])[0];
@@ -137,12 +137,12 @@ describe("C. pilihBlangkoBas membawa salinan", () => {
   const pilih = (jenisPerkara: string) => pilihBlangkoBas({ jenisPerkara, urutanSidang: 1, dihadiriOleh: 2, katalog });
 
   it("CG dan CT mendapat salinan di folder jenisnya masing-masing (di pilihan DAN usulan); padanan ALUR lama tetap ada", () => {
-    for (const [jenis, folder] of [["Cerai Gugat", "1 Perceraian CG"], ["Cerai Talak", "1a Perceraian CT"]]) {
+    for (const [jenis, folder] of [["Cerai Gugat", "1 Perceraian CG - BAS"], ["Cerai Talak", "1a Perceraian CT - BAS"]]) {
       const h = pilih(jenis);
       expect(h.usulan, jenis).toBeTruthy();
       for (const p of [h.usulan!, ...h.pilihan.filter((x) => x.berkas === berkas)]) {
         expect(p.salinan!.map((s) => s.folder), jenis).toEqual([`${A}${folder}`, `${A}${folder}`]);
-        expect(p.salinan![0].menu).toBe(jenis === "Cerai Gugat" ? "Putusan Cerai Gugat" : "Putusan Cerai Talak");
+        expect(p.salinan![0].menu).toBe(jenis === "Cerai Gugat" ? "Cerai Gugat - BAS" : "Cerai Talak - BAS");
         expect(p.padanan!.length).toBe(2);
       }
     }
@@ -196,12 +196,26 @@ const kartu = (kelompok: string, berkas: Array<[string, string, string]>) =>
   `</div></div>`;
 const HALAMAN = (isi: string) =>
   `<html><body><div id="navbar"><div class="accordion">` +
-  `<a href="/aps_badilag/abt/main/beranda?a=K_CG">Putusan Cerai Gugat</a><a href="/aps_badilag/abt/main/beranda?a=K_CT">Putusan Cerai Talak</a>` +
+  `<a href="/aps_badilag/abt/main/beranda?a=K_CG">Cerai Gugat - BAS</a><a href="/aps_badilag/abt/main/beranda?a=K_CT">Cerai Talak - BAS</a>` +
   `<a href="/aps_badilag/abt/main/beranda?a=K_REL">Relaas Panggilan Sidang</a><a href="/aps_badilag/abt/main/beranda?a=K_ALUR">BAS Alur 04 - Cerai Kontradiktoir Tertulis</a>` +
   `</div></div>${isi}</body></html>`;
 
 describe("D. ekstensi: panen salinan BAS & pemilihan token", () => {
-  it("memanen berkas 'BAS ...' di kartu Putusan (bukan berkas putusannya) dan token kelompok Putusan; relaas diabaikan", async () => {
+  it("K3: menu berpasangan '<Jenis> - BAS' terpanen seperti menu BAS lama (kunci memuat kata bas); menu '<Jenis> - Putusan' diabaikan", async () => {
+    const { k, simpanan } = muatEkstensi(
+      HALAMAN(
+        kartu("Cerai Gugat - BAS", [[SALIN_04, "A_CG", "B_CG"]]) +
+          kartu("Cerai Gugat - Putusan", [["[01] [Kabul Verstek] Cerai (Format Lengkap).rtf", "A_PUT", "B_PUT"]])
+      )
+    );
+    expect(await k.basmassalPanenTokenAbt()).toBeGreaterThan(0);
+    const peta = (simpanan as any).tokenBlangkoBas;
+    expect(Object.keys(peta.berkas)).toEqual([expect.stringMatching(/^cerai gugat bas\|bas alur 04 2 bas 2 /)]);
+    expect(Object.keys(peta.kelompok).sort()).toEqual(["bas alur 04 cerai kontradiktoir tertulis", "cerai gugat bas", "cerai talak bas"]);
+    expect(peta.kelompok["cerai gugat bas"].a).toBe("K_CG");
+  });
+
+  it("pemasangan paket satu-folder yang belum diganti: kartu 'Putusan <jenis>' hanya memberi berkas ^BAS, bukan berkas putusannya", async () => {
     const { k, simpanan } = muatEkstensi(
       HALAMAN(
         kartu("Putusan Cerai Gugat", [
@@ -213,14 +227,12 @@ describe("D. ekstensi: panen salinan BAS & pemilihan token", () => {
     expect(await k.basmassalPanenTokenAbt()).toBeGreaterThan(0);
     const peta = (simpanan as any).tokenBlangkoBas;
     expect(Object.keys(peta.berkas)).toEqual([expect.stringMatching(/^putusan cerai gugat\|bas alur 04 2 bas 2 /)]);
-    expect(Object.keys(peta.kelompok).sort()).toEqual(["bas alur 04 cerai kontradiktoir tertulis", "putusan cerai gugat", "putusan cerai talak"]);
-    expect(peta.kelompok["putusan cerai gugat"].a).toBe("K_CG");
   });
 
   async function petaDua() {
     const { k, simpanan } = muatEkstensi(
       HALAMAN(
-        kartu("Putusan Cerai Gugat", [[SALIN_04, "A_CG", "B_CG"]]) + kartu("Putusan Cerai Talak", [[SALIN_04, "A_CT", "B_CT"]])
+        kartu("Cerai Gugat - BAS", [[SALIN_04, "A_CG", "B_CG"]]) + kartu("Cerai Talak - BAS", [[SALIN_04, "A_CT", "B_CT"]])
       )
     );
     await k.basmassalPanenTokenAbt();
@@ -231,18 +243,18 @@ describe("D. ekstensi: panen salinan BAS & pemilihan token", () => {
 
   it("perkara CT memakai token CT, perkara CG token CG - nama salinan sama, tidak tertukar", async () => {
     const { k, peta } = await petaDua();
-    const ct = k.basmassalTokenUntuk(peta, lamaFolder, BERKAS_04, [], salinan("1a Perceraian CT", "Putusan Cerai Talak", "Putusan CT"));
+    const ct = k.basmassalTokenUntuk(peta, lamaFolder, BERKAS_04, [], salinan("1a Perceraian CT - BAS", "Cerai Talak - BAS", "CT - BAS"));
     expect(ct.berkas).toMatchObject({ a: "A_CT", b: "B_CT" });
     expect(ct.kelompok).toMatchObject({ a: "K_CT" });
-    const cg = k.basmassalTokenUntuk(peta, lamaFolder, BERKAS_04, [], salinan("1 Perceraian CG", "Putusan Cerai Gugat", "Putusan CG"));
+    const cg = k.basmassalTokenUntuk(peta, lamaFolder, BERKAS_04, [], salinan("1 Perceraian CG - BAS", "Cerai Gugat - BAS", "CG - BAS"));
     expect(cg.berkas).toMatchObject({ a: "A_CG", b: "B_CG" });
   });
 
   it("hanya token CG terpanen + perkara CT: TIDAK memakai token CG (berkas null; kelompok CT bila ada)", async () => {
-    const { k, simpanan } = muatEkstensi(HALAMAN(kartu("Putusan Cerai Gugat", [[SALIN_04, "A_CG", "B_CG"]])));
+    const { k, simpanan } = muatEkstensi(HALAMAN(kartu("Cerai Gugat - BAS", [[SALIN_04, "A_CG", "B_CG"]])));
     await k.basmassalPanenTokenAbt();
     const peta = (simpanan as any).tokenBlangkoBas;
-    const ct = k.basmassalTokenUntuk(peta, lamaFolder, BERKAS_04, [], salinan("1a Perceraian CT", "Putusan Cerai Talak", "Putusan CT"));
+    const ct = k.basmassalTokenUntuk(peta, lamaFolder, BERKAS_04, [], salinan("1a Perceraian CT - BAS", "Cerai Talak - BAS", "CT - BAS"));
     expect(ct.berkas).toBeNull();
     expect(ct.kelompok).toMatchObject({ a: "K_CT" }); // tautan kelompok CT, bukan berkas CG
   });
@@ -266,9 +278,9 @@ describe("D. ekstensi: panen salinan BAS & pemilihan token", () => {
     const lama = k.basmassalTokenUntuk(peta, `${A}- BAS CONTRA PERCERAIAN -`, "x.rtf", padanan, []);
     expect(lama.berkas).toMatchObject({ a: "A_ALUR" });
     // salinan CG terpanen kemudian: menang atas token ALUR
-    peta.berkas["putusan cerai gugat|bas alur 04 2 bas 2 p t hadir laporan mediasi dan pemeriksaan pokok perkara"] = { a: "A_CG", b: "B_CG" };
-    peta.kelompok["putusan cerai gugat"] = { a: "K_CG" };
-    const baru = k.basmassalTokenUntuk(peta, `${A}- BAS CONTRA PERCERAIAN -`, "x.rtf", padanan, salinan("1 Perceraian CG", "Putusan Cerai Gugat", "Putusan CG"));
+    peta.berkas["cerai gugat bas|bas alur 04 2 bas 2 p t hadir laporan mediasi dan pemeriksaan pokok perkara"] = { a: "A_CG", b: "B_CG" };
+    peta.kelompok["cerai gugat bas"] = { a: "K_CG" };
+    const baru = k.basmassalTokenUntuk(peta, `${A}- BAS CONTRA PERCERAIAN -`, "x.rtf", padanan, salinan("1 Perceraian CG - BAS", "Cerai Gugat - BAS", "CG - BAS"));
     expect(baru.berkas).toMatchObject({ a: "A_CG" });
   });
 });

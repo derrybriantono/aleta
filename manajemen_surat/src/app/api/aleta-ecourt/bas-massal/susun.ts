@@ -190,7 +190,7 @@ export type PilihanBlangkoBas = {
   padanan?: PadananBas[];
   /**
    * F3 14 Okt: SALINAN berkas ini di folder jenis perkaranya (paket ABT abt-susunan-satu-folder) beserta nama menu ABT-nya
-   * ("Putusan Cerai Talak"). Hanya folder yang cocok dengan jenis perkara barisnya - ABT menolak token folder CG untuk perkara
+   * ("Cerai Talak - BAS", folder "1a Perceraian CT - BAS"; susunan berpasangan K3 15 Okt). Hanya folder yang cocok dengan jenis perkara barisnya - ABT menolak token folder CG untuk perkara
    * CT. Tanpa = jenis tidak terbaca atau tidak ada salinan: ekstensi memakai jalur lama (tidak menebak).
    */
   salinan?: SalinanBas[];
@@ -863,7 +863,7 @@ export function alurBasBaris(masukan: Parameters<typeof tentukanAlurBasKumulasi>
  * BAS baru di folder jenis (paket D3 abt-bas-paw / abt-bas-permohonan, E3 abt-bas-gugatan; lib/alur-bas-baru.ts) masuk ke pilihan
  * blangko baris: langkah yang ditebak menjadi usulan (mode "ganti") atau hanya ditawarkan (mode "tambah"); alternatifnya
  * ikut sebagai pilihan. Berkasnya BUKAN salinan - langsung di folder jenis - jadi `salinan` menunjuk dirinya sendiri beserta
- * nama menu ABT ("Putusan Penetapan Ahli Waris (P3HP)") agar "Buka di ABT" menemukan tokennya. Pemetaan blangko admin dan
+ * nama menu ABT ("Penetapan Ahli Waris (P3HP) - BAS") agar "Buka di ABT" menemukan tokennya. Pemetaan blangko admin dan
  * blangko format tanpa-kehadiran tetap menang atas usulan baru.
  */
 function pilihanDariBasBaru(h: HasilBasBaru, l: LangkahBasBaru, perkiraan: boolean): PilihanBlangkoBas {
