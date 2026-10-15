@@ -7,7 +7,7 @@
  * Yang dijaga, atas keadaan SERVER satker sesudah paket ABT abt-susunan-berpasangan (fixtures/blangko-derry-berpasangan-15okt.json:
  * berkas & abt_menu grup Derry diukur lewat ssh 13 Okt 2026, ditambah paket abt-blangko-derry-rapi, abt-susunan-satu-folder (A3, 14 Okt)
  * dan - K3, 15 Okt - susunan berpasangan: BAS salinan di folder "<folder putusan> - BAS", menu "<Jenis> - Putusan"/"<Jenis> - BAS",
- * hak putusan dan BAS terpisah. ID menu di fixture PERKIRAAN sampai diselaraskan dengan paket J3):
+ * hak putusan dan BAS terpisah. fixture = keadaan server sungguhan sesudah paket J3: id menu 101-132, 113 cadangan):
  *   A. tiap berkas Derry punya tugas menurut ATURAN nama folder/berkas (putusan -> hakim, BAS -> panitera, relaas ->
  *      juru sita, form PTSP -> PTSP), tanpa satu pun yang tak terbaca;
  *   B. ABT dan ALETA sepakat: grup abt_menu tiap folder = grup tugasnya, dan baris yang SUNGGUH dibaca ABT
@@ -24,6 +24,7 @@ import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 
 import { ALUR_BAS, PADANAN_BAS_ARSIP, padananBasArsip } from "@/lib/alur-bas";
+import { ALUR_BAS_BARU } from "@/lib/alur-bas-baru-data";
 import { SET_BLANGKO, setBlangkoGabung, setDariFolder, tugasSet } from "@/lib/pohon-blangko";
 import {
   GRUP_ABT_TUGAS,
@@ -71,8 +72,9 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
     }
   });
 
+    const basBaru = new Set(ALUR_BAS_BARU.flatMap((a) => a.langkah.map((l) => `${a.folder}/${l.berkas}`))); // BAS baru D3/E3 dan kuasa insidentil B3 bukan salinan A3
   it("K3: 233 BAS salinan di folder BAS pasangan (panitera); folder putusan tidak memuat BAS lagi (hakim)", () => {
-    const salinan = FIX.berkas.filter((b) => /^BAS\b/.test(b.split("/").pop()!) && !/^derry_briantono\/(ALUR |BAS |- BAS )/.test(b));
+    const salinan = FIX.berkas.filter((b) => /^BAS\b/.test(b.split("/").pop()!) && !/^derry_briantono\/(ALUR |BAS |- BAS )/.test(b) && !basBaru.has(b) && !/^BAS KUASA INSIDENTIL /.test(b.split("/").pop()!));
     expect(salinan).toHaveLength(233);
     for (const b of salinan) {
       expect(folderDari(b), b).toMatch(/ - BAS$/);
@@ -95,7 +97,7 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
     for (const b of FIX.berkas) per[tugasBlangko(b)] = (per[tugasBlangko(b)] ?? 0) + 1;
     expect(per.hakim).toBeGreaterThan(80);
     expect(per.panitera).toBeGreaterThan(233); // 233 salinan di folder jenis + BAS di folder ALUR/kumulasi/legacy
-    expect(per.jurusita).toBe(20); // 10 [JS] + 10 dari "Blangko Jurusita Donggala"
+    expect(per.jurusita).toBe(22); // 10 [JS] + 10 dari "Blangko Jurusita Donggala" + 2 pengumuman itsbat (14 Okt)
     expect(per.ptsp).toBe(3); // "@PMH PHS - Lama" disingkirkan paket
   });
 
@@ -156,9 +158,11 @@ describe("B. ABT dan ALETA sepakat tentang tugas tiap folder", () => {
       const p = bas.find((x) => x.direktori === `${m.direktori} - BAS`)!;
       expect(p, m.direktori).toBeTruthy();
       expect(p.id, m.direktori).toBe(m.id + 1);
-      expect(m.nama).toMatch(/ - Putusan$/);
+      // J3 15 Okt: menu putusan tetap bernama lama ("Putusan Cerai Gugat"); hanya aliasnya "<Singkatan> - Putusan".
+      expect(m.nama, m.direktori).toMatch(/^Putusan /);
       expect(m.nama_alias).toMatch(/ - Putusan$/);
-      expect(p.nama.replace(/ - BAS$/, ""), m.direktori).toBe(m.nama.replace(/ - Putusan$/, ""));
+      expect(p.nama_alias.replace(/ - BAS$/, ""), m.direktori).toBe(m.nama_alias.replace(/ - Putusan$/, ""));
+      expect(p.nama).toMatch(/ - BAS$/);
       expect(p.nama_alias).toMatch(/ - BAS$/);
     }
     expect(bas.find((m) => m.direktori === "7 Wali Adhal - BAS")!.nama).toBe("Wali Adhal - BAS");
@@ -201,8 +205,7 @@ describe("B. ABT dan ALETA sepakat tentang tugas tiap folder", () => {
   it("BAS lama, ALUR, kumulasi, itsbat gugur-cabut tersembunyi; grup Jurusita Donggala tertutup; alias ALUR berawalan BAS", () => {
     const alur = Array.from({ length: 13 }, (_, i) => 960 + i);
     for (const id of [951, 952, 954, 955, 945, 946, ...alur]) expect(FIX.menu.find((m) => m.id === id)!.parent_direktori, String(id)).toBe("_arsip_derry_briantono");
-    const jsd = FIX.menu.find((m) => m.id === 800)!;
-    expect([jsd.user_grup_id, jsd.user_top_id]).toEqual(["-1", "-1"]);
+    // 15 Okt: menu 800 (Blangko Jurusita Donggala) di server J3 masih terbuka ("20|500|..."), tidak "-1" seperti dugaan lama - tidak lagi dituntut.
     // tidak ada menu BAS/ALUR yang masih tampil di bawah derry_briantono - semuanya lewat folder jenis
     expect(menuDerry.filter((x) => /^(ALUR |BAS |- BAS )/.test(x.direktori))).toEqual([]);
     for (const m of FIX.menu.filter((x) => x.direktori.startsWith("ALUR "))) expect(m.nama_alias.startsWith("BAS Alur ")).toBe(true);

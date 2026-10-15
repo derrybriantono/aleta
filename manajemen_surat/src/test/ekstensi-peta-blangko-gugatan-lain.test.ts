@@ -75,7 +75,7 @@ describe("peta blangko gugatan lain - pemilih panel-alat.js yang dijalankan", ()
     expect(h.tingkat).toBe("jenis");
     expect(h.baris.berkas).toBe("[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi");
     expect(h.baris.blangko).toBe("Putusan Harta Bersama");
-    expect(h.baris.blangkoLain).toEqual(["Putusan HB"]);
+    expect(h.baris.blangkoLain).toEqual(["Putusan HB", "HB - Putusan"]);
   });
 
   it("Kewarisan -> [01] [Kabul] Kewarisan - Kontradiktur di menu Putusan Kewarisan", () => {

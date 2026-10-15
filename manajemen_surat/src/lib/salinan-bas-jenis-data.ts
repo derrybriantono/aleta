@@ -13,17 +13,17 @@ export const AKAR_SALINAN_BAS = "derry_briantono";
 
 /** Folder jenis tujuan -> nama & alias menu ABT-nya (abt_menu.nama / nama_alias; h3 kartu & bilah kiri ABT). */
 export const MENU_FOLDER_JENIS: Record<string, { id: number; nama: string; alias: string }> = {
-  "1 Perceraian CG - BAS": {"id": 1102, "nama": "Cerai Gugat - BAS", "alias": "CG - BAS"},
-  "1a Perceraian CT - BAS": {"id": 1104, "nama": "Cerai Talak - BAS", "alias": "CT - BAS"},
-  "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS": {"id": 1131, "nama": "Cerai Gugat Kumulasi Hak Asuh Anak - BAS", "alias": "CG Kumulasi Hak Asuh - BAS"},
-  "2 Itsbat Nikah - BAS": {"id": 1108, "nama": "Itsbat Nikah - BAS", "alias": "Itsbat - BAS"},
-  "2a Itsbat Nikah Kontensius - BAS": {"id": 1127, "nama": "Itsbat Nikah Kontensius - BAS", "alias": "IN Kontensius - BAS"},
-  "3 Dispensasi Kawin - BAS": {"id": 1110, "nama": "Dispensasi Kawin - BAS", "alias": "Diska/DK - BAS"},
-  "4a Harta Bersama - BAS": {"id": 1123, "nama": "Harta Bersama - BAS", "alias": "HB - BAS"},
-  "4b Kewarisan - BAS": {"id": 1125, "nama": "Kewarisan - BAS", "alias": "Waris - BAS"},
-  "5 Izin Poligami - BAS": {"id": 1129, "nama": "Izin Poligami - BAS", "alias": "Poligami - BAS"},
-  "8 Asal Usul Anak - BAS": {"id": 1115, "nama": "Asal Usul Anak - BAS", "alias": "Asal Usul Anak - BAS"},
-  "9b Permohonan Umum - BAS": {"id": 1121, "nama": "Permohonan Umum - BAS", "alias": "Permohonan Umum - BAS"},
+  "1 Perceraian CG - BAS": {"id": 102, "nama": "Cerai Gugat - BAS", "alias": "CG - BAS"},
+  "1a Perceraian CT - BAS": {"id": 104, "nama": "Cerai Talak - BAS", "alias": "CT - BAS"},
+  "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS": {"id": 132, "nama": "Cerai Gugat Kumulasi Hak Asuh Anak - BAS", "alias": "CG Kumulasi Hak Asuh - BAS"},
+  "2 Itsbat Nikah - BAS": {"id": 108, "nama": "Itsbat Nikah - BAS", "alias": "Itsbat - BAS"},
+  "2a Itsbat Nikah Kontensius - BAS": {"id": 128, "nama": "Itsbat Nikah Kontensius - BAS", "alias": "IN Kontensius - BAS"},
+  "3 Dispensasi Kawin - BAS": {"id": 110, "nama": "Dispensasi Kawin - BAS", "alias": "Diska/DK - BAS"},
+  "4a Harta Bersama - BAS": {"id": 124, "nama": "Harta Bersama - BAS", "alias": "HB - BAS"},
+  "4b Kewarisan - BAS": {"id": 126, "nama": "Kewarisan - BAS", "alias": "Waris - BAS"},
+  "5 Izin Poligami - BAS": {"id": 130, "nama": "Izin Poligami - BAS", "alias": "Poligami - BAS"},
+  "8 Asal Usul Anak - BAS": {"id": 116, "nama": "Asal Usul Anak - BAS", "alias": "Asal Usul Anak - BAS"},
+  "9b Permohonan Umum - BAS": {"id": 122, "nama": "Permohonan Umum (Cabut/Gugur/NO) - BAS", "alias": "Permohonan Umum - BAS"},
 };
 
 /** Folder sumber (tanpa akar) -> berkas sumber -> folder jenis tujuan (tanpa akar) yang menerima salinannya. */

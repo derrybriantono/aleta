@@ -8192,9 +8192,13 @@ const ALAT_KELOMPOK_CERAI_TALAK = "Putusan Cerai Talak";
  * adalah yang KEDUA. Menyebut satu saja membuat separuh kodenya tidak pernah
  * cocok - dan diamnya tidak terlihat, ia hanya membuat pencarian memindai
  * seluruh kelompok dengan urutan apa adanya.
+ *
+ * Susunan berpasangan (paket abt-susunan-berpasangan, 15 Okt 2026): nama menu putusan TETAP ("Putusan Cerai Talak"),
+ * tetapi aliasnya berganti "<Singkatan> - Putusan" ("CT - Putusan"). Daftar ini memuat KEDUANYA - alias lama untuk ABT
+ * yang belum dipasangi paket, alias baru untuk yang sudah.
  */
-const ALAT_KELOMPOK_LAIN_CERAI_GUGAT = ["Putusan CG"];
-const ALAT_KELOMPOK_LAIN_CERAI_TALAK = ["Putusan CT"];
+const ALAT_KELOMPOK_LAIN_CERAI_GUGAT = ["Putusan CG", "CG - Putusan"];
+const ALAT_KELOMPOK_LAIN_CERAI_TALAK = ["Putusan CT", "CT - Putusan"];
 /** Seri yang sama di peladen: "[01] [Kabul] IN" untuk itsbat nikah. */
 const ALAT_BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";
 /**
@@ -8258,7 +8262,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     jenisAsli: "Harta Bersama",
     berkas: "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi",
     blangko: "Putusan Harta Bersama",
-    blangkoLain: ["Putusan HB"],
+    blangkoLain: ["Putusan HB", "HB - Putusan"],
     bawaan: true,
     catatan: "paket ABT abt-blangko-gugatan-lain - varian: [97] [Perdamaian] Akta Perdamaian; [98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban",
   },
@@ -8266,7 +8270,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     jenisAsli: "Kewarisan",
     berkas: "[01] [Kabul] Kewarisan - Kontradiktur",
     blangko: "Putusan Kewarisan",
-    blangkoLain: ["Putusan Waris"],
+    blangkoLain: ["Putusan Waris", "Waris - Putusan"],
     bawaan: true,
     catatan: "paket ABT abt-blangko-gugatan-lain - varian: [97] [Perdamaian] Akta Perdamaian",
   },
@@ -8274,7 +8278,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     jenisAsli: "Izin Poligami",
     berkas: "[01] [Kabul] Izin Poligami",
     blangko: "Putusan Izin Poligami",
-    blangkoLain: ["Putusan Poligami"],
+    blangkoLain: ["Putusan Poligami", "Poligami - Putusan"],
     bawaan: true,
     catatan: "paket ABT abt-blangko-gugatan-lain - varian: [98] [Cabut] Permohonan - P & T Hadir Sebelum Jawaban",
   },
@@ -8403,7 +8407,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "Dikabulkan",
     "[01aa] [Kabul Verstek] Putusan CG Kumulasi Itsbat Nikah - Format Lengkap",
     "Putusan Cerai Kumulasi Itsbat Nikah",
-    ["Putusan Cerai Kumulasi Itsbat"],
+    ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"],
     "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503 (pengganti [01aa] IN + CG - F / B & F)"
   ),
   "cerai talak+itsbat-nikah|dikabulkan|verstek": alatBarisKumulasi(
@@ -8411,7 +8415,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "Dikabulkan",
     "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - Format Lengkap",
     "Putusan Cerai Kumulasi Itsbat Nikah",
-    ["Putusan Cerai Kumulasi Itsbat"],
+    ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"],
     "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503"
   ),
   "cerai gugat+hak-asuh-anak|dikabulkan|verstek": alatBarisKumulasi(
@@ -8419,7 +8423,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "Dikabulkan",
     "[01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz",
     "Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    ["Putusan CG Kumulasi Hak Asuh"],
+    ["Putusan CG Kumulasi Hak Asuh", "CG Kumulasi Hak Asuh - Putusan"],
     "varian: [01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz"
   ),
   "cerai gugat+hak-asuh-anak+nafkah-anak|dikabulkan|verstek": alatBarisKumulasi(
@@ -8427,7 +8431,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "Dikabulkan",
     "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz",
     "Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    ["Putusan CG Kumulasi Hak Asuh"],
+    ["Putusan CG Kumulasi Hak Asuh", "CG Kumulasi Hak Asuh - Putusan"],
     "varian: [01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz"
   ),
 });

@@ -21,6 +21,7 @@ import { describe, expect, it } from "vitest";
 
 import { pilihBlangkoBas } from "@/app/api/aleta-ecourt/bas-massal/susun";
 import { PADANAN_BAS_ARSIP } from "@/lib/alur-bas";
+import { ALUR_BAS_BARU } from "@/lib/alur-bas-baru-data";
 import { SET_BLANGKO } from "@/lib/pohon-blangko";
 import { awalanSalinanBas, folderJenisCocok, salinanBasJenis, semuaSalinanBas } from "@/lib/salinan-bas-jenis";
 import { AKAR_SALINAN_BAS, MENU_FOLDER_JENIS, SALINAN_BAS_JENIS } from "@/lib/salinan-bas-jenis-data";
@@ -49,7 +50,9 @@ describe("A. tabel salinan = 233 BAS paket A3 di fixture", () => {
         }
       }
     }
-    const diFixture = FIX.berkas.filter((b) => /\/BAS (ALUR|KUMULASI|IN GUGUR CABUT) /.test(b) && !/^derry_briantono\/(ALUR |BAS |- BAS )/.test(b));
+    // Server 15 Okt memuat juga BAS BARU D3/E3 (ALUR_BAS_BARU, berkas "BAS ALUR nn ..." di folder BAS pasangan): bukan salinan A3.
+    const basBaru = new Set(ALUR_BAS_BARU.flatMap((a) => a.langkah.map((l) => `${a.folder}/${l.berkas}`)));
+    const diFixture = FIX.berkas.filter((b) => /\/BAS (ALUR|KUMULASI|IN GUGUR CABUT) /.test(b) && !/^derry_briantono\/(ALUR |BAS |- BAS )/.test(b) && !basBaru.has(b));
     expect(turunan.size).toBe(233);
     expect([...turunan].sort()).toEqual([...diFixture].sort());
   });

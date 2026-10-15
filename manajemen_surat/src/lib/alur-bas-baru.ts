@@ -8,7 +8,7 @@
  * menyembunyikan menu ALUR):
  *   D3 abt-bas-paw         ALUR 14 (Penetapan Ahli Waris, folder "9 Penetapan Ahli Waris")
  *   D3 abt-bas-permohonan  ALUR 15 permohonan umum (9b), 16 perwalian, 17 itsbat 2+ sidang, 18 pengangkatan anak, 19 wali adhal
- *                          (folder baru "7 Wali Adhal", menu 924), lanjutan ALUR 12 dispensasi kawin dan ALUR 13 asal usul anak
+ *                          (folder baru "7 Wali Adhal", menu 114), lanjutan ALUR 12 dispensasi kawin dan ALUR 13 asal usul anak
  *   E3 abt-bas-gugatan     ALUR 30/31 harta bersama, 32/33 kewarisan, 34 poligami, 35 itsbat kontensius,
  *                          36 cerai kumulasi itsbat (verstek), 37 cerai gugat kumulasi hak asuh (kontradiktoir)
  * Daftar berkasnya dibangkitkan ke alur-bas-baru-data.ts; berkas ini memilih langkahnya menurut jenis perkara + keadaan sidang

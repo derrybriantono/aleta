@@ -899,6 +899,11 @@ describe("cerai talak diambil dari menu cerai talak, bukan cerai gugat", () => {
     expect(
       k.alatDahulukanKelompok(kelompok, ["Putusan Cerai Talak", "Putusan CT"]).map((x: any) => x.kelompok)
     ).toEqual(["Putusan CT", "Putusan CG", "Putusan Itsbat"]);
+    // Susunan berpasangan 15 Okt: nama menu tetap, alias bilah kiri berganti "<Singkatan> - Putusan" - alias baru dan lama sama-sama dikenali.
+    const baru = [{ kelompok: "CG - Putusan" }, { kelompok: "Itsbat - Putusan" }, { kelompok: "CT - Putusan" }];
+    expect(
+      k.alatDahulukanKelompok(baru, ["Putusan Cerai Talak", "Putusan CT", "CT - Putusan"]).map((x: any) => x.kelompok)
+    ).toEqual(["CT - Putusan", "CG - Putusan", "Itsbat - Putusan"]);
     // Tanpa sebutan - urutan ABT tidak diusik.
     expect(k.alatDahulukanKelompok(kelompok, []).map((x: any) => x.kelompok)).toEqual([
       "Putusan CG",
@@ -911,9 +916,9 @@ describe("cerai talak diambil dari menu cerai talak, bukan cerai gugat", () => {
     const k = jalankanAlat();
     const peta = await k.alatMuatPetaBlangkoLengkap();
     expect(peta["cerai talak"].blangko).toBe("Putusan Cerai Talak");
-    expect(peta["cerai talak"].blangkoLain).toEqual(["Putusan CT"]);
+    expect(peta["cerai talak"].blangkoLain).toEqual(["Putusan CT", "CT - Putusan"]);
     expect(peta["cerai gugat"].blangko).toBe("Putusan Cerai Gugat");
-    expect(peta["cerai gugat"].blangkoLain).toEqual(["Putusan CG"]);
+    expect(peta["cerai gugat"].blangkoLain).toEqual(["Putusan CG", "CG - Putusan"]);
     // Justru inilah sebabnya menunya harus disebut: namanya tidak membedakan.
     expect(peta["cerai talak"].berkas).toBe(peta["cerai gugat"].berkas);
   });
@@ -1021,6 +1026,7 @@ describe("cerai talak diambil dari menu cerai talak, bukan cerai gugat", () => {
     expect(sumberAlat).toContain('"Putusan Cerai Gugat"');
     expect(sumberAlat).toContain('"Putusan Cerai Talak"');
     expect(sumberAlat).toContain('"Putusan CT"');
+    expect(sumberAlat).toContain('"CT - Putusan"');
     expect(popup).not.toContain('"Putusan Cerai Talak"');
   });
 });
