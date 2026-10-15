@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.200.1",
+    dirilis: "2026-10-15T16:30:00+08:00",
+    judul: "Putusan dan BAS satu folder per jenis perkara, BAS massal mengenali BAS baru (PAW, permohonan, HB, kewarisan, poligami, kumulasi)",
+    butir: [
+      "Blangko Derry: BAS kini juga ada di folder jenis perkaranya bersama putusan; tombol Buka di ABT pada BAS massal memilih salinan yang sesuai jenis perkara (CG/CT tidak tertukar).",
+      "BAS massal mengusulkan BAS baru: Penetapan Ahli Waris, perwalian, wali adhal, pengangkatan anak, itsbat 2 sidang atau lebih, permohonan tidak hadir/gugur/NO/cabut, HB & kewarisan (sita, putusan sela, pemeriksaan setempat, damai), poligami, itsbat kontensius, cerai kumulasi itsbat dan kumulasi hak asuh kontradiktoir.",
+      "Panel alat: putusan Gugur 3b kuasa insidentil tidak sah ditambahkan; nama blangko NO 4b disesuaikan.",
+      "Peta tugas: BAS di folder jenis tercatat sebagai blangko panitera, tidak tampil di pohon putusan hakim.",
+    ],
+  },
+  {
     versi: "1.200.0",
     dirilis: "2026-10-14T13:30:00+08:00",
     judul: "Unduhan tidak diblokir & bernama baku, Salinan putusan ber-TTD Panitera, Set pertanyaan sekali klik, panel ringkas mulus, juru sita mencentang yang tidak hadir, pengumuman itsbat",
