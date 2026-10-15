@@ -527,7 +527,9 @@ async function mysqlHidup(): Promise<boolean> {
 const dbAda = await mysqlHidup();
 
 describe.skipIf(!dbAda)("E. riwayat & bacaan ulang atas bot sungguhan (aleta_bot + sipp_donggala)", () => {
-  const AWAL = "UJI-KTP12-";
+  // Awalan sendiri: tanggal-ktp-ecourt-12okt.test.ts menghapus "UJI-KTP12-%" di tabel yang sama; bila berjalan
+  // paralel di uji penuh, data berkas ini ikut terhapus di tengah uji.
+  const AWAL = "UJI-KTPRW-";
   const ROOT = path.join("D:/Aplikasi/aleta/tmp", `ktp-riwayat-uji-${process.pid}`);
   let K: Apa;
   let R: Apa;
