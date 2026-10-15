@@ -8318,7 +8318,7 @@ const ALAT_BERKAS_STATUS_CERAI = {
   tolak: ["[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti", ""],
   no: [
     "[98] [NO] 4. Cerai P & T Tidak Hadir - Alamat T Tidak Diketahui",
-    "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah & T Tidak Hadir",
+    "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah",
   ],
   // F3 14 Okt: 3b = paket ABT abt-kuasa-insidentil (agen B3), ada di folder CG dan CT.
   gugur: ["[98] [Gugur] 3. Cerai P & T Tidak Hadir", "varian: [98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir; [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah (P Tidak Pernah Hadir)"],

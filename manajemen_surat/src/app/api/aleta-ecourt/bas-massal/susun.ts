@@ -61,6 +61,7 @@ import {
 import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { padananBasArsip, type PadananBas } from "@/lib/alur-bas";
 import { salinanBasJenis, type SalinanBas } from "@/lib/salinan-bas-jenis";
+import { tentukanBasBaru, type HasilBasBaru, type LangkahBasBaru } from "@/lib/alur-bas-baru";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
 
@@ -857,6 +858,62 @@ export function alurBasBaris(masukan: Parameters<typeof tentukanAlurBasKumulasi>
 }
 /* === AKHIR ALURBAS === */
 
+/* === G3 15 Okt === */
+/**
+ * BAS baru di folder jenis (paket D3 abt-bas-paw / abt-bas-permohonan, E3 abt-bas-gugatan; lib/alur-bas-baru.ts) masuk ke pilihan
+ * blangko baris: langkah yang ditebak menjadi usulan (mode "ganti") atau hanya ditawarkan (mode "tambah"); alternatifnya
+ * ikut sebagai pilihan. Berkasnya BUKAN salinan - langsung di folder jenis - jadi `salinan` menunjuk dirinya sendiri beserta
+ * nama menu ABT ("Putusan Penetapan Ahli Waris (P3HP)") agar "Buka di ABT" menemukan tokennya. Pemetaan blangko admin dan
+ * blangko format tanpa-kehadiran tetap menang atas usulan baru.
+ */
+function pilihanDariBasBaru(h: HasilBasBaru, l: LangkahBasBaru, perkiraan: boolean): PilihanBlangkoBas {
+  return {
+    folder: h.alur.folder,
+    berkas: l.berkas,
+    setId: h.alur.id,
+    setNama: `ALUR ${h.alur.id.replace(/^alur-/, "").toUpperCase()} ${h.alur.nama}`,
+    basKe: 0,
+    label: `[${l.kode}] ${l.keterangan}`.trim(),
+    kehadiran: perkiraan ? "tidak-diketahui" : "cocok",
+    ...(perkiraan ? { perkiraan: true } : {}),
+    salinan: [{ folder: h.alur.folder, berkas: l.berkas, menu: h.alur.menu.nama, alias: h.alur.menu.alias }],
+  };
+}
+
+export function gabungBasBaru(
+  dasar: { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string },
+  baru: HasilBasBaru | null,
+  /** true = baris berformat tanpa-kehadiran (lewat 14.00): usulan format/sebabnya tidak disentuh, BAS baru hanya ditawarkan. */
+  tahan = false
+): { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string } {
+  if (!baru) return dasar;
+  const kunci = (p: { folder: string; berkas: string }) => `${p.folder}|${kunciBerkasBas(p.berkas)}`;
+  const utama = pilihanDariBasBaru(baru, baru.langkah, baru.perkiraan);
+  const lain = baru.alternatif.map((l) => pilihanDariBasBaru(baru, l, true));
+  const semua = [utama, ...lain];
+  const sudah = new Set(semua.map(kunci));
+  const lama = dasar.pilihan.filter((p) => !sudah.has(kunci(p)));
+  const terkunci = tahan || Boolean(dasar.usulan && (dasar.usulan.dariPemetaan || dasar.usulan.format));
+  const batas = BATAS_PILIHAN_BLANGKO + semua.length;
+  if (baru.mode === "tambah" || terkunci) return { ...dasar, pilihan: [...lama, ...semua].slice(0, batas) };
+  return { usulan: utama, pilihan: [...semua, ...lama].slice(0, batas), sebab: baru.perkiraan ? baru.sebab : "" };
+}
+
+export function alurBasBarisDariBaru(h: HasilBasBaru): AlurBasBaris {
+  return {
+    id: h.alur.id,
+    nama: h.alur.nama,
+    folder: h.alur.folder,
+    kode: h.langkah.kode,
+    berkas: h.langkah.berkas,
+    keterangan: h.langkah.keterangan,
+    alternatif: h.alternatif.map((l) => l.berkas),
+    perkiraan: h.perkiraan,
+    sebab: h.sebab,
+  };
+}
+/* === AKHIR G3 === */
+
 /** Ringkasan lembar ALETA satu perkara dari baris aleta_bas_lembar. */
 export function ringkasLembar(baris: Array<{ keadaan?: unknown }>): RingkasLembar {
   const selesai = baris.filter((b) => teks(b.keadaan) === "selesai").length;
@@ -1004,6 +1061,27 @@ export function susunBarisBasMassal(
       antrian: opsi.antrian,
       saat: opsi.saat,
     });
+    // G3 15 Okt: BAS baru di folder jenis (lib/alur-bas-baru.ts) - dihitung sekali, dipakai blangko dan alurBas.
+    const sandiHadir = dihadiriOleh ?? (k.keadaan === "antrian" ? sandiDariPt(k.pt) : null);
+    const baru = tentukanBasBaru({
+      jenisPerkara,
+      urutanSidang,
+      dihadiriOleh: sandiHadir,
+      agenda: teks(s.agenda),
+      tergugatPernahHadir: s.panggilan?.tergugatPernahHadir,
+      sidangIkrarTalak: s.sidangIkrarTalak === true,
+      kumulasi: s.kumulasi,
+      nomorPerkara: nomor,
+    });
+    const alurDasar = alurBasBaris({
+      jenisPerkara,
+      urutanSidang,
+      dihadiriOleh: sandiHadir,
+      agenda: teks(s.agenda),
+      tergugatPernahHadir: s.panggilan?.tergugatPernahHadir,
+      sidangIkrarTalak: s.sidangIkrarTalak === true,
+      kumulasi: s.kumulasi, // T 13 Okt
+    });
     semua.push({
       sidangId: teks(s.sidangId),
       perkaraId,
@@ -1032,7 +1110,7 @@ export function susunBarisBasMassal(
         nama2: daftarTeks(s.saksiNamaPihak2),
       },
       lembar: perkaraId && opsi.lembar[perkaraId] !== undefined ? (opsi.lembar[perkaraId] ?? null) : null,
-      blangko: pilihBlangkoBas({
+      blangko: gabungBasBaru(pilihBlangkoBas({
         jenisPerkara,
         urutanSidang,
         // Pemetaan blangko memakai sandi kehadiran: dari SIPP, atau dari
@@ -1045,17 +1123,9 @@ export function susunBarisBasMassal(
         // Kehadiran tercatat di SIPP: perilaku lama, tanpa perkiraan.
         ...(k.keadaan === "tercatat" ? {} : { kehadiranPt: k.pt, perkiraan: true }),
         format: k.format,
-      }),
+      }), baru, k.format !== null), // G3 15 Okt
       /* === ALURBAS 12 Okt === */
-      alurBas: alurBasBaris({
-        jenisPerkara,
-        urutanSidang,
-        dihadiriOleh: dihadiriOleh ?? (k.keadaan === "antrian" ? sandiDariPt(k.pt) : null),
-        agenda: teks(s.agenda),
-        tergugatPernahHadir: s.panggilan?.tergugatPernahHadir,
-        sidangIkrarTalak: s.sidangIkrarTalak === true,
-        kumulasi: s.kumulasi, // T 13 Okt
-      }),
+      alurBas: baru && (baru.mode === "ganti" || !alurDasar) ? alurBasBarisDariBaru(baru) : alurDasar, // G3 15 Okt
       /* === AKHIR ALURBAS === */
     });
   }

@@ -226,7 +226,7 @@ describe("C. baris BAS massal membawa alurBas dan tidak mengubah usulan blangko"
   });
 
   it("jenis tanpa folder alur -> alurBas null; blangko tetap seperti sebelumnya (tanpa katalog = tanpa pilihan)", () => {
-    const [x] = susun([{ ...dasar, jenisPerkara: "Harta Bersama" }]);
+    const [x] = susun([{ ...dasar, jenisPerkara: "Ekonomi Syariah" }]); // G3 15 Okt: Harta Bersama kini punya BAS (alur-bas-baru)
     expect(x.alurBas).toBeNull();
     const [y] = susun([dasar]);
     expect(y.blangko.pilihan).toEqual([]);
@@ -262,7 +262,7 @@ describe("D. ekstensi BAS massal menampilkan alur (jsdom, basmassal.js sungguhan
       [
         dasar,
         { ...dasar, nomorPerkara: "2/Pdt.G/2026/PA.Dgl", perkaraId: "2", urutanSidang: 2, agenda: "Pembuktian" },
-        { ...dasar, nomorPerkara: "3/Pdt.G/2026/PA.Dgl", perkaraId: "3", jenisPerkara: "Harta Bersama" },
+        { ...dasar, nomorPerkara: "3/Pdt.G/2026/PA.Dgl", perkaraId: "3", jenisPerkara: "Ekonomi Syariah" },
       ],
       { namaAkun: "Siti Aminah", saringan: "saya", katalog: {}, lembar: {}, saat: null }
     ).baris;

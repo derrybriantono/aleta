@@ -391,7 +391,7 @@ describe("F. ekstensi: baris status dari pohon & set kumulasi", () => {
         expect(peta[kunci].catatan).toContain("[98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah (P Tidak Pernah Hadir)");
       }
       // [98] [NO] 4b tetap di baris NO
-      expect(peta[`${jenis.toLowerCase()}|tidak dapat diterima`].catatan).toContain("[98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah & T Tidak Hadir");
+      expect(peta[`${jenis.toLowerCase()}|tidak dapat diterima`].catatan).toContain("[98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah");
     }
   });
 
