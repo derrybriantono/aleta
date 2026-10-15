@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.200.2",
+    dirilis: "2026-10-15T20:30:00+08:00",
+    judul: "Blangko Derry berpasangan: menu Putusan dan BAS per jenis perkara",
+    butir: [
+      "BAS massal dan tombol Buka di ABT mengikuti menu baru \"<Jenis> - BAS\" (CG/CT tidak tertukar); panel alat menemukan blangko putusan dengan nama menu lama maupun baru.",
+      "Peta tugas: folder \"- BAS\" milik panitera, folder putusan milik hakim.",
+    ],
+  },
+  {
     versi: "1.200.1",
     dirilis: "2026-10-15T16:30:00+08:00",
     judul: "Putusan dan BAS satu folder per jenis perkara, BAS massal mengenali BAS baru (PAW, permohonan, HB, kewarisan, poligami, kumulasi)",
