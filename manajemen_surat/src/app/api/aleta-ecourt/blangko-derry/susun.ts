@@ -37,8 +37,19 @@ export type ButirIsian = {
   dipakaiOleh: string[];
   khusus: "" | "bukti";
   pihak: "" | "P" | "T";
+  /**
+   * Keadaan perkara yang membuat isian ini berlaku ("" = selalu). Kuasa/prodeo/alasan C-H dinilai lewat pemicu
+   * ABT (#11111# dst.); ghaib dan e-Court dari data perkara SIPP di ekstensi; kuasa insidentil hanya bila
+   * isiannya tertulis langsung di blangko atau sudah terisi.
+   */
+  keadaan: Keadaan;
+  /** "penting" = masuk naskah/amar/pertimbangan; "tambahan" = berbawaan atau keterangan tambahan (pengingat cetak). */
+  tingkat: "penting" | "tambahan";
+  /** Pilihan bernilai (mis. 7139: "1"/"2") - layar menampilkan label, ABT menyimpan nilai. */
+  opsi: Array<{ nilai: string; label: string }>;
   tj: null | { kunci: string; sebutan: string; peran: "tanyajawab" | "keterangan"; kodeSunting: string };
 };
+export type Keadaan = "" | "kuasaP" | "kuasaT" | "prodeo" | "alasanC" | "alasanH" | "ghaib" | "ecourt" | "insidentil";
 export type Susunan = {
   penanda: string[];
   isian: ButirIsian[];
@@ -55,7 +66,7 @@ const POLA_PEMICU = /#(111\d\d)#/;
 /** Urutan tampil isian perceraian (dari rancangan v12); yang tidak disebut mengikuti urutan di RTF. */
 const URUTAN = [
   "8503", "5227", "0222", "7035", "0246", "9944", "1268", "0007", "1006", "1267", "7139", "8433", "7178", "8436", "8437", "8536", "0227",
-  "0156", "0184", "0157", "0185", "0661", "0663", "0182", "8894", "8895", "8896", "9123", "0303",
+  "0156", "8537", "8538", "0184", "0132", "8892", "0157", "0185", "0661", "0663", "8564", "0670", "0182", "8894", "8895", "8896", "9123", "0303",
 ];
 
 export const PILIHAN_ALASAN = [
@@ -67,8 +78,11 @@ export const PILIHAN_ALASAN = [
   "H · murtad (beralih agama)",
 ];
 
-/** Label bahasa mudah + pilihan + saran. Nama di ABT tetap; ini hanya tampilan. */
-const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string }> = {
+/**
+ * Label bahasa mudah + pilihan + saran. Nama di ABT tetap; ini hanya tampilan. {P}/{T} diganti sebutan pihak
+ * perkara (Penggugat/Pemohon, Tergugat/Termohon). opsi = pilihan bernilai: layar menampilkan label, ABT menyimpan nilai.
+ */
+const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?: Array<{ nilai: string; label: string }> }> = {
   "8503": { nm: "Alasan perceraian", pil: PILIHAN_ALASAN, saran: PILIHAN_ALASAN[0] },
   "5227": { nm: "Rincian alasan cerai (sesuai gugatan)" },
   "0222": { nm: "Awal perselisihan", pil: ["awal tahun 2024", "tahun 2023", "akhir tahun 2024"] },
@@ -82,27 +96,43 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string }> = {
   "0007": { nm: "Anak dari pernikahan ini", saran: "belum dikaruniai anak" },
   "1006": { nm: "Tempat tinggal setelah menikah", saran: "di rumah orang tua Penggugat" },
   "1267": { nm: "Masih berkomunikasi atau tidak", pil: ["sudah tidak berkomunikasi", "masih berkomunikasi"] },
-  "7139": { nm: "Beracara secara elektronik (1 = sepakat, 2 = tidak)", pil: ["1", "2"] },
-  "8536": { nm: "Putusan pidana Tergugat (nomor, tanggal, lama hukuman)" },
-  "0227": { nm: "Tanggal Tergugat berpindah agama" },
-  "0156": { nm: "Nama kantor advokat Penggugat" },
-  "0184": { nm: "Tanggal surat kuasa Penggugat" },
-  "0157": { nm: "Nama kantor advokat Tergugat" },
-  "0185": { nm: "Tanggal surat kuasa Tergugat" },
+  "7139": {
+    nm: "Beracara secara elektronik",
+    opsi: [
+      { nilai: "1", label: "Sepakat beracara secara elektronik" },
+      { nilai: "2", label: "Tidak sepakat beracara secara elektronik" },
+    ],
+  },
+  "8536": { nm: "Putusan pidana {T} (nomor, tanggal, lama hukuman)" },
+  "0227": { nm: "Tanggal {T} berpindah agama" },
+  "0156": { nm: "Nama kantor advokat {P}" },
+  "8537": { nm: "Nama advokat {P}" },
+  "8538": { nm: "Alamat kantor advokat {P}" },
+  "8539": { nm: "Nomor register surat kuasa {P}" },
+  "0132": { nm: "Tanggal register surat kuasa {P} di kepaniteraan" },
+  "0184": { nm: "Tanggal surat kuasa {P}" },
+  "8892": { nm: "Pengadilan Tinggi tempat advokat {P} disumpah", saran: "Pengadilan Tinggi Sulawesi Tengah" },
+  "0157": { nm: "Nama kantor advokat {T}" },
+  "0185": { nm: "Tanggal surat kuasa {T}" },
   "0661": { nm: "Nomor penetapan prodeo" },
   "0663": { nm: "Tanggal penetapan prodeo" },
-  "8436": { nm: "Kesimpulan Penggugat", saran: "tetap pada gugatan semula untuk bercerai dengan Tergugat" },
-  "8437": { nm: "Kesimpulan Tergugat" },
+  "8564": { nm: "Tanggal pengumuman panggilan ghaib pertama dan kedua", saran: "22 Januari 2026 dan 24 Februari 2026" },
+  "0670": { nm: "Media pengumuman panggilan ghaib", saran: "siaran RRI Pro 1 Palu 90,8 FM" },
+  "8436": { nm: "Kesimpulan {P}", saran: "tetap pada gugatan semula untuk bercerai dengan Tergugat" },
+  "8437": { nm: "Kesimpulan {T}" },
   "8433": { nm: "Alasan pencabutan perkara" },
   "7178": { nm: "Alasan panggilan dianggap tidak patut" },
   "0182": { nm: "Tanggal izin kuasa insidentil" },
+  "0183": { nm: "Tanggal izin kuasa insidentil {T}" },
   "8894": { nm: "Nama penerima kuasa insidentil" },
-  "8895": { nm: "Hubungan penerima kuasa dengan Penggugat" },
+  "8895": { nm: "Hubungan penerima kuasa dengan {P}" },
   "8896": { nm: "Nomor izin Ketua Pengadilan" },
+  "9120": { nm: "Panggilan ulang karena kuasa insidentil tidak sah" },
   "9123": { nm: "Sebab kuasa insidentil tidak sah (huruf a sampai d)" },
+  "9125": { nm: "Keadaan kuasa insidentil tidak sah" },
   "0303": { nm: "Tanggal pengumuman" },
-  "1214": { nm: "Alat bukti surat Penggugat" },
-  "9911": { nm: "Alat bukti surat Tergugat" },
+  "1214": { nm: "Alat bukti surat {P}" },
+  "9911": { nm: "Alat bukti surat {T}" },
   "1154": { nm: "Nomor surat permintaan bantuan panggilan" },
   "1232": { nm: "Tanggal surat" },
   "5230": { nm: "Ongkos panggilan permintaan bantuan" },
@@ -123,7 +153,49 @@ const PEMICU_TEKS: Record<string, string> = {
   "11117": "alasan perceraian huruf H dipilih",
 };
 
+/** Keterangan keadaan untuk layar ("muncul karena ..." dan daftar isian yang disembunyikan). */
+export const KEADAAN_TEKS: Record<Exclude<Keadaan, "">, string> = {
+  kuasaP: "Penggugat/Pemohon memakai kuasa hukum",
+  kuasaT: "Tergugat/Termohon memakai kuasa hukum",
+  prodeo: "perkara ini prodeo",
+  alasanC: "alasan perceraian huruf C dipilih",
+  alasanH: "alasan perceraian huruf H dipilih",
+  ghaib: "Tergugat/Termohon dipanggil secara ghaib",
+  ecourt: "perkara ini terdaftar lewat e-Court",
+  insidentil: "ada kuasa insidentil",
+};
+
 const BUKTI_KODE: Record<string, "P" | "T"> = { "1214": "P", "9911": "T" };
+
+/** Pemicu ABT per keadaan - nilainya dihitung mesin variabel ABT untuk perkara itu. */
+const PEMICU_KEADAAN: Record<string, Keadaan> = { "11111": "kuasaP", "11113": "kuasaT", "11112": "prodeo", "11116": "alasanC", "11117": "alasanH" };
+const KEADAAN_PEMICU: Partial<Record<Keadaan, string>> = Object.fromEntries(Object.entries(PEMICU_KEADAAN).map(([k, v]) => [v, k]));
+
+/**
+ * Keadaan sebuah isian tangan dari namanya di katalog ABT. Nama ABT memang menuliskan syaratnya:
+ * "Tgl. Surat Kuasa #0047# (Isi Apabila #0047# Pakai Kuasa)", "TANGGAL PENGUMUMAN PANGGILAN GHAIB ...",
+ * "NO KUASA INSIDENTIL: ...", "SEPAKAT BERACARA SECARA ELEKTRONIK". Penanda #111xx# di nama didahulukan.
+ */
+export function keadaanIsian(namaPolos: string): Keadaan {
+  const n = String(namaPolos || "");
+  const pem = (n.match(POLA_PEMICU) || [])[1] || "";
+  if (pem && PEMICU_KEADAAN[pem]) return PEMICU_KEADAAN[pem];
+  if (/insidentil/i.test(n)) return "insidentil";
+  if (/prodeo|pembebasan biaya/i.test(n)) return "prodeo";
+  if (/ghaib|gaib/i.test(n)) return "ghaib";
+  if (/beracara secara elektronik|e-?litigasi|e-?court/i.test(n)) return "ecourt";
+  if (/\b(kuasa|advokat|pengacara)\b/i.test(n)) {
+    const pihakT = /#0047#|tergugat|termohon/i.test(n);
+    const pihakP = /#0046#|penggugat|pemohon/i.test(n);
+    return pihakT && !pihakP ? "kuasaT" : "kuasaP";
+  }
+  return "";
+}
+
+/** Isian yang hanya keterangan tambahan (tidak masuk amar/pertimbangan) - pengingat cetak menyebutnya "tidak wajib". */
+const TAMBAHAN = new Set(["8436", "8437"]);
+const POLA_BAGIAN_PENTING = /amar|pertimbangan|duduk perkara|petitum|mengadili|menimbang|menetapkan/i;
+const POLA_BERBAWAAN = /kosong\s*=|bila sipp tidak memuat|bila ada\b|jika ada\b|opsional/i;
 
 export const SEBUTAN_BAWAAN = { P: "Penggugat/Pemohon", T: "Tergugat/Termohon", gugatan: "gugatan/permohonan" };
 
@@ -137,9 +209,27 @@ function polosHtml(s: string): string {
 }
 
 /** Nama ABT -> bahasa mudah: tag dan #111xx# dibuang, sebutan pihak diganti, keterangan dalam kurung disingkat. */
+const SINGKATAN = new Set(["SIPP", "ABT", "KTP", "KTP-EL", "NIK", "KK", "PNS", "PPPK", "TNI", "POLRI", "BUMN", "BUMD", "KUA", "RBG", "SEMA", "PERMA", "PA", "PN", "SK", "HP", "WA", "RT", "RW", "I", "II", "III", "IV"]);
+/** Nama yang (hampir) seluruhnya huruf kapital -> huruf biasa; singkatan dan #NNNN# dibiarkan. */
+function hurufBiasa(t: string): string {
+  const huruf = t.replace(/#\d{4,5}#/g, "").replace(/[^A-Za-z]/g, "");
+  if (huruf.length < 6) return t;
+  const kapital = huruf.replace(/[^A-Z]/g, "").length;
+  if (kapital / huruf.length < 0.7) return t;
+  const hasil = t.replace(/[A-Za-z][A-Za-z-]*/g, (w) => (SINGKATAN.has(w.toUpperCase()) ? w.toUpperCase() : w.toLowerCase()));
+  return hasil.charAt(0).toUpperCase() + hasil.slice(1);
+}
+
 export function rapikanNama(nama: string, sebutan: { P: string; T: string; gugatan?: string } = SEBUTAN_BAWAAN): string {
-  let t = polosHtml(nama)
-    .replace(/#111\d\d#/g, "")
+  let t = hurufBiasa(
+    polosHtml(nama)
+      .replace(/#111\d\d#/g, "")
+      // Contoh, petunjuk bawaan dan syarat pengisian hanya memanjangkan label (syaratnya kini diterapkan sendiri).
+      .replace(/\s*\((contoh|mis\.?|misal|kosong\s*=|isi apabila|isi bila|bawaan)[^)]*\)/gi, "")
+      .replace(/\s+-\s+isian\b.*$/i, "")
+      .replace(/,?\s*contoh\s*:.*$/i, "")
+      .replace(/^no kuasa insidentil\s*:\s*/i, "")
+  )
     .replace(/#0046#/g, sebutan.P)
     .replace(/#0047#/g, sebutan.T)
     .replace(/#0053#/g, sebutan.gugatan || SEBUTAN_BAWAAN.gugatan)
@@ -185,6 +275,10 @@ function sebutSaksi(sisa: string): string {
   const m = sisa.match(/^Saksi\s*(\d+)\s*([PT])\b/i);
   if (m) return `Saksi ${m[1]} ${m[2].toUpperCase() === "P" ? "Penggugat" : "Tergugat"}`;
   return sisa;
+}
+
+function pihakBuktiDari(k: string, namaPolos: string): "" | "P" | "T" {
+  return BUKTI_KODE[k] || (/^alat-alat bukti/i.test(namaPolos) ? "P" : /pembuktian tergugat/i.test(namaPolos) ? "T" : "");
 }
 
 function urutanKode(b: ButirIsian, urutanRtf: Map<string, number>): number {
@@ -245,6 +339,24 @@ export function susunIsian(
     if (t.peran === "tanyajawab" && t.kunci && !penyunting.has(t.kunci)) penyunting.set(t.kunci, d.kode);
   }
 
+  /** Dibaca (sampai 3 lapis) oleh bagian yang tertulis langsung di naskah atau bagian amar/pertimbangan/duduk perkara? */
+  const pemakaiPenting = (kode: string): boolean => {
+    let lapis = [kode];
+    const lewat = new Set<string>([kode]);
+    for (let i = 0; i < 3 && lapis.length; i++) {
+      const berikut: string[] = [];
+      for (const x of lapis) {
+        for (const o of dipakaiOleh.get(x) || []) {
+          if (lewat.has(o)) continue;
+          lewat.add(o);
+          if (urutanRtf.has(o) || POLA_BAGIAN_PENTING.test(katalog.get(o)?.nama || "")) return true;
+          berikut.push(o);
+        }
+      }
+      lapis = berikut;
+    }
+    return false;
+  };
   const pemicuDipakai = new Map<string, string>();
   const isian: ButirIsian[] = [];
   const tjAda = new Set<string>();
@@ -256,7 +368,16 @@ export function susunIsian(
     if (pem) pemicuDipakai.set(pem, katalog.get(pem)?.nama || "");
     const teknis = /^penanda\b/i.test(namaPolos);
     const pilihanSipp = /kosong\s*=\s*dari\s*sipp/i.test(namaPolos) || /\(otomatis/i.test(namaPolos);
+    // Keadaan dari nama: kuasa/prodeo/alasan C-H memakai pemicu ABT yang sama walau namanya tidak bertanda #111xx#.
+    const keadaan = keadaanIsian(namaPolos);
+    const pemKeadaan = KEADAAN_PEMICU[keadaan] || "";
+    let pemicuAkhir = pem;
+    if (!pemicuAkhir && pemKeadaan && katalog.has(pemKeadaan)) {
+      pemicuAkhir = pemKeadaan;
+      pemicuDipakai.set(pemKeadaan, katalog.get(pemKeadaan)?.nama || "");
+    }
     const r = RAMAH[k];
+    const isiSebutan = (x: string) => x.replace(/\{P\}/g, sebutan.P).replace(/\{T\}/g, sebutan.T);
     const bawaanLiteral = d.bawaan && !/#\d{4,5}#/.test(d.bawaan) ? d.bawaan.trim() : "";
     let tj: ButirIsian["tj"] = null;
     if (jenis === "tj") {
@@ -269,22 +390,36 @@ export function susunIsian(
       tjAda.add(t.kunci);
       tj = { kunci: t.kunci, sebutan: t.sebutan, peran: t.peran, kodeSunting };
     }
-    const pihakBukti = BUKTI_KODE[k] || (/^alat-alat bukti/i.test(namaPolos) ? "P" : /pembuktian tergugat/i.test(namaPolos) ? "T" : "");
+    const pihakBukti = pihakBuktiDari(k, namaPolos);
+    const pemakai = [...(dipakaiOleh.get(k) || [])];
+    // Penting: tertulis langsung di naskah, atau dibaca bagian yang tertulis langsung / amar / pertimbangan / duduk
+    // perkara. Tambahan: berbawaan ("kosong = ...", "bila SIPP tidak memuat") atau keterangan tambahan (kesimpulan).
+    const tingkat: ButirIsian["tingkat"] =
+      jenis === "tj" || pihakBukti
+        ? "penting"
+        : TAMBAHAN.has(k) || POLA_BERBAWAAN.test(namaPolos)
+          ? "tambahan"
+          : urutanRtf.has(k) || pemakaiPenting(k)
+            ? "penting"
+            : "tambahan";
     isian.push({
       kode: k,
-      nama: r ? r.nm : rapikanNama(d.nama, sebutan),
+      nama: r ? isiSebutan(r.nm) : rapikanNama(d.nama, sebutan),
       namaAsli: namaPolos,
       jenis,
-      pemicu: pem,
+      pemicu: pemicuAkhir,
       wajib: !teknis && !pilihanSipp,
       langsung: urutanRtf.has(k),
       bawaan: d.bawaan || "",
       pilihan: (r && r.pil) || [],
       saran: (r && r.saran) || bawaanLiteral,
-      dipakaiOleh: [...(dipakaiOleh.get(k) || [])].sort(),
+      dipakaiOleh: pemakai.sort(),
       khusus: pihakBukti ? "bukti" : "",
       pihak: pihakBukti,
       tj,
+      keadaan,
+      tingkat,
+      opsi: (r && r.opsi) || [],
     });
   }
   isian.sort((a, b) => urutanKode(a, urutanRtf) - urutanKode(b, urutanRtf) || a.kode.localeCompare(b.kode));
