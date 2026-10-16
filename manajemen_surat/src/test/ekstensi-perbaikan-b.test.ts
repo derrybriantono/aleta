@@ -673,19 +673,20 @@ describe("butir 3 dan 4: satu langkah 'Isi dari SIPP & input ke ABT', yang seles
     expect(q(h, ".aleta-t6-langkah-semua").textContent).toBe("lihat semua langkah (3)");
   });
 
-  it("penyunting keterangan saksi yang belum disimpan tidak dibuang diam-diam: ditanyakan, dan Batal tidak menjalankan apa pun", async () => {
+  it("penyunting keterangan saksi yang belum disimpan TIDAK terbuang: kini punya wadah sendiri, jadi langkah 'gabung' jalan tanpa bertanya (F1.1, 16 Okt)", async () => {
+    // Dahulu langkah ini menanyakan "Penyunting keterangan saksi masih terbuka" karena usulan
+    // menggambar di wadah yang sama dan menghapus penyunting. Sejak F1.1 penyunting di wadahnya sendiri.
     const h = buka({ simpanan: ui(["abt-10"]) });
     await panelUi(h);
     await peranTerpasang(h);
     await susunSaksi(h);
+    const hasil = q(h, ".aleta-sdg-hasil");
     h.minta.length = 0;
     langkahDari(h, "gabung").click();
-    const tirai = await sampai(() => h.w.document.querySelector(".aleta-t6-tirai"), "dialog");
-    expect(tirai.textContent).toContain("Penyunting keterangan saksi masih terbuka");
-    tirai.querySelector(".aleta-t6-dialog-tidak").click();
+    await sampai(() => h.minta.filter((m) => m.url.includes("/abt/usulan")).length > 0, "usulan Isi dibaca");
     await tunggu(80);
-    expect(h.minta.filter((m) => m.url.includes("/abt/usulan"))).toEqual([]);
-    expect(q(h, ".aleta-sdg-hasil")).not.toBeNull();
+    expect(h.w.document.querySelector(".aleta-t6-tirai")).toBeNull();
+    expect(q(h, ".aleta-sdg-hasil")).toBe(hasil);
   });
 });
 

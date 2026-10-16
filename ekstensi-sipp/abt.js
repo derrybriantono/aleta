@@ -4654,6 +4654,17 @@ function susunPanelAbt(jatiDiri) {
   isi.appendChild(wadahHuruf);
   const wadahUsulan = buatElemen("div", "aleta-abt-daftar");
   isi.appendChild(wadahUsulan);
+  // 16 Okt (F1.1): penyunting keterangan saksi (Susun) punya wadahnya SENDIRI.
+  // Dahulu ia berbagi wadah usulan dengan "Isi dari SIPP": Isi menolak
+  // menggambar bila penyunting terbuka (hanya menyisakan satu baris status -
+  // "tab tidak merespons"), dan Susun menghapus kartu usulan Isi tanpa bertanya.
+  //
+  // Tampilan Lama TIDAK diubah sedikit pun (SYARAT MUTLAK fd9aad7: DOM-nya
+  // identik): di sana wadah sendiri tidak dibuat dan penyunting tetap berbagi
+  // wadah usulan seperti dahulu. Lapisan perbaikan 30 Sep sore (Baru & UI Baru)
+  // membuat wadah sendiri itu dan menyerahkannya lewat panel.pakaiWadahSdg;
+  // wadahSdg !== wadahUsulan menandai panel yang sudah memilikinya.
+  let wadahSdg = wadahUsulan;
 
   /**
    * NOMOR 4 - selisih antara dua saksi.
@@ -5972,7 +5983,7 @@ function susunPanelAbt(jatiDiri) {
   }
 
   function gambarFormSdg(daftarTemplat, urutanAwal, sudahAda, alasanSdg) {
-    wadahUsulan.textContent = "";
+    wadahSdg.textContent = "";
     const form = buatElemen("div", "aleta-sdg-form");
     const pilihanAlasan =
       alasanSdg && Array.isArray(alasanSdg.pilihan) && alasanSdg.pilihan.length
@@ -6290,10 +6301,10 @@ function susunPanelAbt(jatiDiri) {
     form.appendChild(susun);
     const kabarForm = buatElemen("div", "aleta-abt-kabar");
     form.appendChild(kabarForm);
-    wadahUsulan.appendChild(form);
+    wadahSdg.appendChild(form);
 
     const wadahPratinjau = buatElemen("div", "aleta-abt-daftar");
-    wadahUsulan.appendChild(wadahPratinjau);
+    wadahSdg.appendChild(wadahPratinjau);
 
     susun.addEventListener("click", async () => {
       susun.disabled = true;
@@ -6430,9 +6441,15 @@ function susunPanelAbt(jatiDiri) {
       if (!daftarTemplat.length) {
         throw new Error("ABT tidak menawarkan templat tanya-jawab untuk jenis perkara ini.");
       }
-      gambarSelisih([]);
-      gambarSepihak(null);
-      gambarHuruf([], []);
+      // 16 Okt (F1.1): bila penyunting saksi punya wadahnya sendiri (tampilan
+      // Baru / UI Baru), hasil "Isi dari SIPP" (selisih saksi, alasan sepihak,
+      // huruf alasan, usulan) TIDAK dihapus di sini - keduanya hidup
+      // berdampingan. Tampilan Lama (wadah dipakai bersama) tetap menghapusnya.
+      if (wadahSdg === wadahUsulan) {
+        gambarSelisih([]);
+        gambarSepihak(null);
+        gambarHuruf([], []);
+      }
       // Pilihan alasan dari portal (bas.saksi.alasan-pilihan); sembilan
       // tertanam bila portal dan singgahan tidak menjawab. Gagal membacanya
       // tidak menghentikan borang - tetapi disebut.
@@ -6463,6 +6480,9 @@ function susunPanelAbt(jatiDiri) {
   // Pelapor keadaan dipinjamkan ke penjaga cetak: penerbitan tiga berkas
   // memakan beberapa detik, dan tanpa satu baris yang mengabarkan tahapnya,
   // yang menekan CETAK hanya melihat halaman yang tidak berbuat apa-apa.
+  panel.pakaiWadahSdg = (el) => {
+    if (el && el !== wadahUsulan) wadahSdg = el;
+  };
   panel.lapor = (teks, gagal) => {
     kabar.className = gagal ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
     kabar.textContent = teks;
@@ -9817,7 +9837,7 @@ async function t6Tata(panel, jatiDiri) {
       riwayat: tombolAksi[5] || null,
       rapikan: tombolAksi[6] || null,
     },
-    wadah: { riwayat: daftar[0] || null, selisih: daftar[1] || null, sepihak: daftar[2] || null, huruf: daftar[3] || null, usulan: daftar[4] || null },
+    wadah: { riwayat: daftar[0] || null, selisih: daftar[1] || null, sepihak: daftar[2] || null, huruf: daftar[3] || null, usulan: daftar[4] || null, sdg: daftar[5] || null },
     sematan: Array.isArray(simpan[T6_KUNCI_SEMATAN]) ? simpan[T6_KUNCI_SEMATAN].map(String) : [],
     baca: simpan[T6_KUNCI_BACA] === true,
     draf: objek(simpan[T6_KUNCI_DRAF]),
@@ -11352,7 +11372,8 @@ function t6BacaPenyunting(hasil) {
 
 function t6SimpanDraf(k) {
   if (t6Keadaan !== k) return;
-  const hasil = k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-hasil");
+  const wadahSdg = t6WadahSdg(k);
+  const hasil = wadahSdg && wadahSdg.querySelector(".aleta-sdg-hasil");
   if (!hasil) return;
   const kolom = t6BacaPenyunting(hasil);
   if (!kolom.length) return;
@@ -11476,6 +11497,15 @@ function t6YakinKartu(kartu) {
   if (teks === "saksi berselisih") return "bentrok";
   if (teks.startsWith("ragu")) return "ragu";
   return "kosong";
+}
+
+/** Wadah penyunting keterangan saksi (Susun). Panel tanpa wadah sendiri jatuh ke wadah usulan. */
+function t6WadahSdg(k) {
+  if (!k.wadah) return null;
+  if (k.wadah.sdg) return k.wadah.sdg;
+  // Wadah itu lahir belakangan (lapisan sore): dicari di panel.
+  const lahir = k.isi && k.isi.querySelector(":scope > .aleta-abt-daftar-sdg");
+  return lahir || k.wadah.usulan || null;
 }
 
 /** Wadah kartu usulan: keterangan saksi, dan "Dari SIPP" bila langkah gabung memindahkannya. */
@@ -11757,7 +11787,11 @@ async function t6JalankanLangkah(k, l) {
 async function t6JalankanGabung(k) {
   // Penyunting keterangan saksi yang belum disimpan akan terhapus oleh
   // gambar usulan berikutnya - ditanyakan, bukan dibuang diam-diam.
-  const hasil = k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-hasil");
+  // 16 Okt (F1.1): penyunting keterangan saksi kini punya wadahnya sendiri
+  // (wadah.sdg) dan tidak ikut terhapus oleh usulan - tidak ada lagi yang
+  // perlu ditanyakan. Panel tanpa wadah sendiri (jatuh ke wadah usulan) masih
+  // ditanyakan seperti dahulu.
+  const hasil = k.wadah.sdg ? null : k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-hasil");
   if (hasil && !t6SdgTersimpan(hasil)) {
     const ya = await t6Dialog({
       judul: "Penyunting keterangan saksi masih terbuka",
@@ -12976,6 +13010,7 @@ function t6Amati(k, sasaran, pilihan, kerja, jedaMs) {
 function t6PasangPengamat(k) {
   const daftar = { childList: true, subtree: true };
   t6Amati(k, k.wadah.usulan, daftar, () => t6HiasSemua(k), 0);
+  if (k.wadah.sdg) t6Amati(k, k.wadah.sdg, daftar, () => t6HiasSemua(k), 0);
   t6Amati(k, k.wadah.sepihak, daftar, () => t6HiasSepihak(k), 0);
   t6Amati(k, k.wadah.huruf, daftar, () => t6HiasHuruf(k), 0);
   // Tabel variabel halaman ABT: kemajuan, pita galat, dan variabel wajib
@@ -13187,14 +13222,14 @@ async function t6TambahPertanyaan(k, nama) {
     t6Lapor(k, "Penyusun keterangan saksi hanya untuk panitera sidang/PP.", true);
     return;
   }
-  let form = k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-form");
+  let form = t6WadahSdg(k) && t6WadahSdg(k).querySelector(".aleta-sdg-form");
   if (!form) {
     if (!k.tombol.sdg || k.tombol.sdg.hidden) {
       t6Lapor(k, "Penyusun keterangan saksi tidak tersedia di blangko ini.", true);
       return;
     }
     k.tombol.sdg.click();
-    form = await t6Tunggu(() => k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-form"), 10000);
+    form = await t6Tunggu(() => t6WadahSdg(k) && t6WadahSdg(k).querySelector(".aleta-sdg-form"), 10000);
   }
   if (!form) {
     t6Lapor(k, "Penyunting keterangan saksi tidak terbuka - lihat pesan di atas.", true);
@@ -13324,7 +13359,7 @@ function t6IsiPasalHuruf(k, saran, huruf) {
 // ─── Borang dan penyunting keterangan saksi ─────────────────────────────────
 
 function t6HiasSdg(k) {
-  const w = k.wadah.usulan;
+  const w = t6WadahSdg(k);
   if (!w) return;
   const form = w.querySelector(".aleta-sdg-form");
   if (form) t6HiasFormSdg(k, form);
@@ -14629,6 +14664,22 @@ function soreSusun(panel, jatiDiri, isi) {
   const aksi = t6Anak(isi, "aleta-abt-aksi");
   const lama = aksi ? Array.from(aksi.children).filter((c) => c.tagName === "BUTTON" && !c.classList.contains("aleta-t6")) : [];
   const daftar = Array.from(isi.children).filter((c) => c.classList.contains("aleta-abt-daftar") && !c.classList.contains("aleta-t6-usulan-sipp"));
+  // 16 Okt (F1.1): wadah penyunting keterangan saksi tersendiri - dibuat di sini
+  // (lapisan sore, ikut dikupas uji "Lama identik"), dipakai borang Susun.
+  let wadahSdg = daftar.find((c) => c.classList.contains("aleta-abt-daftar-sdg")) || null;
+  if (!wadahSdg && daftar[4] && typeof panel.pakaiWadahSdg === "function") {
+    // Sengaja BUKAN soreEl: kelas aleta-t6 membuat pengamat Tahap 6 menganggap
+    // perubahan di dalamnya tulisannya sendiri dan mengabaikannya.
+    wadahSdg = buatElemen("div", "aleta-sore aleta-abt-daftar aleta-abt-daftar-sdg");
+    isi.insertBefore(wadahSdg, daftar[4].nextSibling);
+    daftar.push(wadahSdg);
+  }
+  if (wadahSdg && typeof panel.pakaiWadahSdg === "function") panel.pakaiWadahSdg(wadahSdg);
+  // Tahap 6 menata lebih dulu dengan keadaannya sendiri - ia ikut diberi tahu.
+  if (wadahSdg && t6Keadaan && t6Keadaan.panel === panel && !t6Keadaan.wadah.sdg) {
+    t6Keadaan.wadah.sdg = wadahSdg;
+    t6Amati(t6Keadaan, wadahSdg, { childList: true, subtree: true }, () => t6HiasSemua(t6Keadaan), 0);
+  }
   return {
     panel,
     jatiDiri: jatiDiri || { perkaraId: "", perkTemp: "" },
@@ -14647,7 +14698,7 @@ function soreSusun(panel, jatiDiri, isi) {
       riwayat: lama[5] || null,
       rapikan: lama[6] || null,
     },
-    wadah: { riwayat: daftar[0] || null, selisih: daftar[1] || null, sepihak: daftar[2] || null, huruf: daftar[3] || null, usulan: daftar[4] || null },
+    wadah: { riwayat: daftar[0] || null, selisih: daftar[1] || null, sepihak: daftar[2] || null, huruf: daftar[3] || null, usulan: daftar[4] || null, sdg: daftar[5] || null },
     peran: "",
     golongan: "",
     menu: undefined,
@@ -15231,13 +15282,17 @@ function soreKartuHuruf(k, saksi, pilihan, adaRinci) {
 
 /** Penyunting keterangan saksi yang sedang terbuka tidak pernah ditimpa. */
 function soreAdaPekerjaanSaksi(k) {
-  return Boolean(k.wadah.usulan && k.wadah.usulan.querySelector(".aleta-sdg-form, .aleta-sdg-hasil"));
+  const w = t6WadahSdg(k);
+  return Boolean(w && w.querySelector(".aleta-sdg-form, .aleta-sdg-hasil"));
 }
 
 function soreGambarIsi(k, data) {
   const w = k.wadah;
   if (!w.usulan || !w.huruf || !w.sepihak || !w.selisih) return;
-  if (soreAdaPekerjaanSaksi(k)) {
+  // 16 Okt (F1.1): penyunting keterangan saksi punya wadahnya sendiri, jadi
+  // hasil Isi tetap digambar walau penyunting terbuka. Hanya panel TANPA wadah
+  // sendiri (wadah.sdg kosong, wadah usulan dipakai bersama) yang masih menahan.
+  if (!k.wadah.sdg && soreAdaPekerjaanSaksi(k)) {
     soreStatus(k.statusIsi, "Penyunting keterangan saksi sedang terbuka - hasil Isi dari SIPP tidak digambar di atasnya. Tekan \"Baca ulang\" sesudah selesai.");
     return;
   }
@@ -15685,7 +15740,8 @@ async function soreJalankanSusun(k, opsi) {
     return;
   }
   const w = k.wadah.usulan;
-  if (w && w.querySelector(".aleta-sdg-hasil")) {
+  const wSdg = t6WadahSdg(k);
+  if (wSdg && wSdg.querySelector(".aleta-sdg-hasil")) {
     soreStatus(k.statusSusun, "Penyunting keterangan saksi sudah terbuka di bawah.");
     return;
   }
@@ -15715,7 +15771,7 @@ async function soreJalankanSusun(k, opsi) {
     soreStatus(k.statusSusun, "Membaca templat ABT dan menyusun keterangan saksi…");
     const kabarGagal = () => Boolean(k.kabar && k.kabar.classList.contains("aleta-abt-gagal") && k.kabar.textContent.trim());
     soreTekan(k, t);
-    const form = await t6Tunggu(() => (w.querySelector(".aleta-sdg-form") ? w.querySelector(".aleta-sdg-form") : !t.disabled && kabarGagal() ? "gagal" : null), 30000);
+    const form = await t6Tunggu(() => (wSdg.querySelector(".aleta-sdg-form") ? wSdg.querySelector(".aleta-sdg-form") : !t.disabled && kabarGagal() ? "gagal" : null), 30000);
     if (soreKeadaan !== k) return;
     if (!form || form === "gagal") {
       soreStatus(k.statusSusun, `Blangko susun saksi tidak terbuka${k.kabar && k.kabar.textContent.trim() ? `: ${k.kabar.textContent.trim()}` : "."}`, true);
@@ -15725,7 +15781,7 @@ async function soreJalankanSusun(k, opsi) {
     if (!susun) return;
     susun.click();
     const hasil = await t6Tunggu(() => {
-      if (w.querySelector(".aleta-sdg-hasil")) return "ada";
+      if (wSdg.querySelector(".aleta-sdg-hasil")) return "ada";
       const kabarForm = form.querySelector(".aleta-abt-kabar.aleta-abt-gagal");
       return !susun.disabled && kabarForm && kabarForm.textContent.trim() ? "gagal" : null;
     }, 60000);
@@ -15813,6 +15869,7 @@ function soreKelola(k) {
   for (const el of [k.wadah.selisih, k.wadah.huruf]) if (el) hasil.push([el, isiInput]);
   if (k.wadah.sepihak) hasil.push([k.wadah.sepihak, [...isiInput, ...(k.adaRinci ? ["rinci"] : [])]]);
   if (k.wadah.usulan) hasil.push([k.wadah.usulan, peranSalah(["isi-input", "susun-saksi"])]);
+  if (k.wadah.sdg) hasil.push([k.wadah.sdg, peranSalah(["susun-saksi"])]);
   for (const el of anak("aleta-t6-usulan-sipp")) hasil.push([el, isiInput]);
   for (const el of anak("aleta-t6-segmen")) hasil.push([el, isiInput]);
   for (const el of Array.from(isi.children).filter((c) => c.classList.contains("aleta-t6-usulan-judul"))) hasil.push([el, isiInput]);
@@ -17235,7 +17292,13 @@ function a2AnggotaBagian(k) {
   const susun = [];
   const w = k.wadah || {};
   for (const el of [w.selisih, w.sepihak, w.huruf]) if (el) isi.push(el);
-  if (w.usulan) (w.usulan.querySelector(".aleta-sdg-form, .aleta-sdg-hasil") ? susun : isi).push(w.usulan);
+  if (w.sdg) {
+    // 16 Okt (F1.1): wadah sendiri - penyunting saksi selalu milik Susun, usulan selalu milik Isi.
+    susun.push(w.sdg);
+    if (w.usulan) isi.push(w.usulan);
+  } else if (w.usulan) {
+    (w.usulan.querySelector(".aleta-sdg-form, .aleta-sdg-hasil") ? susun : isi).push(w.usulan);
+  }
   for (const el of Array.from(k.isi.children)) {
     if (el.classList.contains("aleta-t6-usulan-sipp") || el.classList.contains("aleta-t6-usulan-judul")) isi.push(el);
   }
@@ -17277,6 +17340,7 @@ function a2AmatiLipat(k) {
     // usulan) - diselaraskan seketika, tidak menunggu penataan berjeda.
     // Penyelarasan hanya mengubah atribut, jadi pengamat ini tidak berputar.
     if (k.wadah && k.wadah.usulan) p.observe(k.wadah.usulan, { childList: true });
+    if (k.wadah && k.wadah.sdg) p.observe(k.wadah.sdg, { childList: true });
     k.pengamat.push(p);
   } catch {
     /* tanpa pengamat: diselaraskan pada penataan berikutnya */

@@ -3120,6 +3120,11 @@ body[data-aleta-sunting-langsung="ya"] .aleta-abt-dapat-disunting:hover {
   margin-top: 8px;
 }
 
+/* 16 Okt (F1.1): wadah penyunting keterangan saksi - kosong tidak memakan tempat. */
+.aleta-abt-daftar-sdg:empty {
+  display: none;
+}
+
 /* Satu usulan = satu kartu. Kutipan sumbernya bukan hiasan: tanpa itu,
    memeriksa satu usulan berarti membaca ulang dua blok keterangan saksi
    sepanjang layar - dan yang tidak dapat diperiksa dengan murah pada akhirnya
