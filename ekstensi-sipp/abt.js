@@ -8538,6 +8538,8 @@ async function unggahBerkasAbt(siap, olehUsername, lapor) {
     if (!hasil.ok) throw new Error(hasil.sebab);
     siap.dokumen.unggah = "ok";
     siap.ringkas.push(`SIPP ok (${isinya})`);
+    const samar = kalimatSisaDisamarkan(hasil.jawab);
+    if (samar) siap.ringkas.push(samar);
     alatCatatTindakan({
       jenis: "unggah-sipp",
       penunjuk: b.nomor,
@@ -8571,6 +8573,11 @@ async function kirimUnggahSippAbt(siap, olehUsername, denganAnonim) {
   badan.append("putusan", new Blob([siap.isiRtf], { type: "application/rtf" }), `${siap.namaDasar}.rtf`);
   if (denganAnonim) {
     badan.append("anonimisasi", new Blob([siap.isiAnonim], { type: "application/rtf" }), `${siap.namaDasar} - anonim.rtf`);
+    // 16 Okt (F1.2): ABT hanya menyamarkan nama SIPP utuh persis hurufnya; nasab anak,
+    // keterangan saksi, dan bukti lolos dan membuat anonimisasi ditolak penjaga di rute
+    // (54% dari 251 pasangan nyata). Rute menyamarkan sisanya pada salinan anonimisasi
+    // (putusan asli tidak diubah) - hanya bila anonimisasi itu memang sudah tersamar sebagian.
+    badan.append("samarkanSisa", "1");
   }
   const respons = await alatAmbil(
     ALETA_API_UNGGAH_SIPP_ABT,
@@ -8605,6 +8612,16 @@ async function kirimUnggahSippAbt(siap, olehUsername, denganAnonim) {
   }
   if (!jawab.ok) return { ok: false, sebab: String(jawab.sebab || jawab.pesan || jawab.alasan || "ditolak"), tolak: null };
   return { ok: true, jawab };
+}
+
+/** Kalimat ringkasan bila rute menyamarkan sisa pada salinan anonimisasi ("" bila tidak ada). */
+function kalimatSisaDisamarkan(jawab) {
+  const d = jawab && jawab.disamarkan;
+  if (!d || !(Number(d.jumlah) > 0)) return "";
+  const bagian = [];
+  if (Number(d.nama) > 0) bagian.push(`${d.nama} sisa nama pihak`);
+  if (Number(d.nik) > 0) bagian.push(`${d.nik} NIK`);
+  return `ALETA menyamarkan ${bagian.join(" dan ")} yang ditinggalkan ABT pada salinan anonimisasi (putusan asli tidak diubah)`;
 }
 
 /** Ringkasan satu perkara: berhasil bila RTF ada dan tidak satu langkah pun gagal. */

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { samarkanSisaBilaTersamar, type PenggantiSamaran } from "@/lib/samarkan-sisa-rtf";
 import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import {
   kenaliBentuk,
@@ -200,6 +201,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    /* === 16OKT-F12: sisa nama pada anonimisasi ABT disamarkan (alur otomatis) === */
+    // Alur putusan massal di ABT mengunggah anonimisasi ABT apa adanya, padahal ABT hanya
+    // menyamarkan nama SIPP utuh persis hurufnya - nasab anak, keterangan saksi, dan
+    // bukti lolos (54% dari 251 pasangan nyata ditolak penjaga di bawah). Bila ekstensi
+    // meminta (samarkanSisa=1) dan anonimisasi itu SUNGGUH pernah disamarkan (bukan putusan
+    // asli yang salah slot), sisa nama pihak dan NIK disamarkan pada salinan anonimisasi.
+    // Putusan asli tidak disentuh; penjaga tetap memeriksa hasilnya.
+    let disamarkan: PenggantiSamaran[] = [];
+    const indeksAnonim = berkas.findIndex((b) => b.slot === "anonimisasi");
+    if (String(formulir.get("samarkanSisa") ?? "") === "1" && namaPihak && namaPihak.length > 0 && indeksAnonim >= 0) {
+      const hasilSamar = samarkanSisaBilaTersamar({
+        anonim: berkas[indeksAnonim].bita,
+        putusan: berkas.find((b) => b.slot === "putusan")?.bita ?? null,
+        namaPihak,
+      });
+      if (hasilSamar.diganti.length > 0) {
+        berkas[indeksAnonim] = { slot: "anonimisasi", bita: hasilSamar.bita };
+        disamarkan = hasilSamar.diganti;
+      }
+    }
+    /* === AKHIR 16OKT-F12 === */
+
     /* === 12OKT-I: "Tetap unggah" anonimisasi yang tersamar sebagian === */
     // Ekstensi meneruskan keputusan petugas beserta nama yang SUDAH ia lihat.
     // Rute ini tetap menilai sendiri apakah ada penyamaran sama sekali
@@ -257,6 +280,18 @@ export async function POST(request: NextRequest) {
     }
     /* === AKHIR 12OKT-I === */
 
+    // Yang dilaporkan ke ekstensi hanya jumlahnya per jenis - bukan nama yang disamarkan.
+    const ringkasSamar = {
+      jumlah: disamarkan.length,
+      nama: disamarkan.filter((x) => x.jenis === "nama pihak").length,
+      nik: disamarkan.filter((x) => x.jenis === "NIK").length,
+    };
+    if (disamarkan.length > 0) {
+      periksa.peringatan.push(
+        `ALETA menyamarkan ${ringkasSamar.nama} sisa nama pihak dan ${ringkasSamar.nik} NIK yang ditinggalkan ABT pada salinan anonimisasi ` +
+          "(putusan asli tidak diubah)."
+      );
+    }
     const bitaSlot = (slot: SlotUnggahSipp) => berkas.find((b) => b.slot === slot)?.bita;
     const putusan = bitaSlot("putusan");
     const anonimisasi = bitaSlot("anonimisasi");
@@ -291,6 +326,7 @@ export async function POST(request: NextRequest) {
       ...hasil.data,
       nomorIsi: periksa.nomorIsi,
       peringatan: periksa.peringatan,
+      ...(disamarkan.length > 0 ? { disamarkan: ringkasSamar } : {}),
       ...(periksa.tetapUnggah ? { tetapUnggah: { nama: periksa.tetapUnggah.nama } } : {}),
     });
   } catch (error) {
