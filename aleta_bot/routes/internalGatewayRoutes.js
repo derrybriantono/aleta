@@ -3937,6 +3937,20 @@ router.get("/sipp/identitas-pihak", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * 16OKT-F43: data pribadi satu perkara untuk anonimisasi mandiri portal (SELECT
+ * saja). Nilainya utuh - hanya untuk portal sisi server; lihat kepala
+ * entitasAnonimService.
+ */
+router.get("/sipp/entitas-anonim", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/entitasAnonimService").entitasAnonim(String(req.query.nomorPerkara || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
  * Wilayah SIPP bertingkat untuk isian pihak/saksi dari foto KTP (perbaikan
  * 2 Okt 2026 butir 16, kontrak K5). ?induk= anak satu wilayah (kosong =
  * provinsi), ?kode= rantai sampai satu kode. SELECT saja; nilai pilihan

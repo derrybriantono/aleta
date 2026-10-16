@@ -129,9 +129,9 @@ function amanKata(teks: string, spasiLentur: boolean): string {
     .replace(/\\\.(?!\?)/g, "\\.?");
 }
 
-type Sasaran = { jenis: string; teks: string; depan: boolean; lanjut: string };
+export type Sasaran = { jenis: string; teks: string; depan: boolean; lanjut: string };
 
-function polaSasaran(x: Sasaran): RegExp {
+export function polaSasaran(x: Sasaran): RegExp {
   if (!x.depan) {
     return new RegExp(`(^|[^\\p{L}\\p{N}])(${amanKata(x.teks, true)})(?=[^\\p{L}\\p{N}]|$)`, "iu");
   }
@@ -156,7 +156,7 @@ function potonganDepan(diri: string): Array<{ teks: string; lanjut: string }> {
 }
 
 /** Potongan depan yang disusul kata ber-huruf-besar LAIN, atau bin/binti, adalah nama orang lain. */
-function depanMilikPihak(teks: string, akhir: number, lanjut: string): boolean {
+export function depanMilikPihak(teks: string, akhir: number, lanjut: string): boolean {
   const m = /^[ \t]+([\p{L}][\p{L}.'-]*)/u.exec(String(teks || "").slice(akhir, akhir + 60));
   if (!m) return true;
   if (/^(?:bin|binti)$/i.test(m[1])) return false;

@@ -2721,6 +2721,20 @@ export async function getGatewayIdentitasPihak(
 }
 
 /**
+ * 16OKT-F43: data pribadi satu perkara (pihak, saksi, anak, nama pelindung) untuk
+ * anonimisasi mandiri. Nilainya UTUH - hanya dipakai di sisi server portal, tidak
+ * pernah diteruskan ke peramban.
+ */
+export type GatewayEntitasAnonim = import("@/lib/anonimisasi-putusan").EntitasAnonim & {
+  ok: boolean;
+  perkara?: { nomor: string; jenis: string };
+};
+export async function getGatewaySippEntitasAnonim(nomorPerkara: string): Promise<GatewayResult<GatewayEntitasAnonim>> {
+  const kueri = new URLSearchParams({ nomorPerkara });
+  return gatewayFetch(`/internal/aleta-bot/sipp/entitas-anonim?${kueri.toString()}`);
+}
+
+/**
  * Wilayah SIPP bertingkat (perbaikan 2 Okt 2026 butir 16): `induk` = anak
  * satu wilayah (kosong = provinsi), `kode` = rantai sampai kode itu. Hanya
  * membaca - lihat sippWilayahService di bot.
