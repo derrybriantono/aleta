@@ -19752,3 +19752,924 @@ function alatPratinjauAnonim(h, o) {
   });
 }
 /* === AKHIR 16OKT-F43 === */
+
+/* === 17OKT-F41: UNGGAH MASSAL e-DOC PUTUSAN & BAS KE SIPP (panel ABT) === */
+/*
+ * Layar "Unggah massal": perkara MILIK akun yang e-Doc-nya belum ada di SIPP
+ * (hakim: putusan + anonimisasi; PP/panitera: BAS sidang), centang banyak,
+ * "Periksa" (pratinjau ringkas per berkas), lalu "Unggah" berurutan dengan
+ * kemajuan per baris. Berhenti sendiri pada kegagalan pertama; e-Doc yang
+ * ternyata sudah ada = "dobel", dilewati tanpa diganti (selaras L1). Ringkasan
+ * putaran dicatat ke riwayat ALETA.
+ *
+ *   daftar     GET  /unggah-massal                (portal -> bot, SELECT saja)
+ *   blangko    putusan: pemetaan blangko jenis/status (alatPetaUntukPerkara);
+ *              BAS: usulan BAS massal tanggal itu (/bas-massal) + token ABT
+ *   hak ABT    POST main/cari redirect manual (abtKlien.periksaHakBuka) - ABT
+ *              preview sendiri TIDAK memeriksa hak (A-PETA-ABT 4.2)
+ *   berkas     GET  abt/preview?a&b&c&d (abtKlien.cetak) - RTF jadi
+ *   anonim     penyamar ALETA (alatAnonimMandiri), ABT main/anonim cadangan
+ *   cek dobel  GET  /unggah-massal/cek tepat sebelum tiap unggahan
+ *   tulis      POST /putusan/unggah-sipp (putusan) | /bas/unggah-sipp (BAS)
+ *   riwayat    POST/GET /unggah-massal/jejak
+ *
+ * Tidak memanggil rute templat tanya-jawab ABT (apalagi yang menghapus). Antrean dilaporkan
+ * ke latar (alatAntreanKerja) - tombol Perbarui ekstensi ditahan selama jalan.
+ */
+const F41_API = {
+  daftar: "/aleta/api/aleta-ecourt/unggah-massal",
+  cek: "/aleta/api/aleta-ecourt/unggah-massal/cek",
+  jejak: "/aleta/api/aleta-ecourt/unggah-massal/jejak",
+  putusan: "/aleta/api/aleta-ecourt/putusan/unggah-sipp",
+  bas: "/aleta/api/aleta-ecourt/bas/unggah-sipp",
+  basMassal: "/aleta/api/aleta-ecourt/bas-massal",
+};
+const F41_HASH = "aleta-unggah-massal";
+const F41_BATAS_UNGGAH_MS = 150000;
+const F41_BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+function f41Esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+/** "2026-10-15" -> "15 Okt 2026". Murni. */
+function f41Tanggal(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+  return m ? `${Number(m[3])} ${F41_BULAN[Number(m[2]) - 1] || m[2]} ${m[1]}` : "";
+}
+/** Badan JSON portal ({ok,data}) -> data; tolakan -> kalimatnya. Murni. */
+async function f41Baca(r) {
+  let luar = null;
+  try {
+    luar = await r.json();
+  } catch {
+    luar = null;
+  }
+  const data = luar && luar.data !== undefined ? luar.data : luar;
+  const pesan =
+    (data && typeof data === "object" && (data.sebab || data.alasan || data.pesan)) ||
+    (luar && luar.error && typeof luar.error === "object" ? luar.error.message : luar && luar.error) ||
+    (luar && luar.alasan) ||
+    "";
+  return { status: r.status, okHttp: r.ok, data, pesan: String(pesan || "") };
+}
+
+/** Kebergantungan bawaan - semuanya fungsi yang sudah ada di panel-alat.js/abt.js/basmassal.js/abt-klien.js. */
+function f41Bawaan() {
+  let klien = null;
+  const petaBas = new Map();
+  let petaPutusan = null;
+  return {
+    ambil: (url, opsi, sebut) => (typeof alatAmbil === "function" ? alatAmbil(url, opsi, sebut) : fetch(url, opsi)),
+    klien: () => {
+      if (klien) return klien;
+      if (typeof abtKlienBuat !== "function") throw new Error("abt-klien.js belum termuat.");
+      klien = abtKlienBuat({ ambil: (u, i) => fetch(u, i), asal: asalAbt() });
+      return klien;
+    },
+    async blangkoPutusan(baris, lapor) {
+      if (typeof alatMuatPetaBlangkoLengkap !== "function" || typeof alatPetaUntukPerkara !== "function") return { sebab: "pemetaan blangko belum termuat" };
+      if (!petaPutusan) petaPutusan = await alatMuatPetaBlangkoLengkap();
+      const cari = () => {
+        const h = alatPetaUntukPerkara(petaPutusan, baris.jenisPerkara, baris.statusPutusan || "", Boolean(baris.verstek), null, []);
+        return h && h.baris ? h.baris : null;
+      };
+      let b = cari();
+      if (b && !alatBlangkoLengkap(b) && alatBlangkoTerpetakan(b) && typeof lengkapiTokenPeta === "function") {
+        await lengkapiTokenPeta(petaPutusan, lapor || (() => {}));
+        if (typeof alatSimpanPetaBlangko === "function") await alatSimpanPetaBlangko(petaPutusan).catch(() => {});
+        b = cari();
+      }
+      if (!b || !alatBlangkoTerpetakan(b)) return { sebab: `blangko putusan untuk ${baris.jenisPerkara || "jenis ini"} belum dipetakan (Pemetaan blangko putusan)` };
+      if (!alatBlangkoLengkap(b)) return { sebab: `blangko "${b.berkas}" tidak ditemukan di ABT ini` };
+      return { a: b.a, b: b.b, berkas: b.berkas, blangko: b.blangko || b.jenisAsli || "" };
+    },
+    async blangkoBas(baris, lapor) {
+      const tgl = baris.tanggal;
+      if (!petaBas.has(tgl)) {
+        const r = await (typeof alatAmbil === "function" ? alatAmbil : fetch)(`${F41_API.basMassal}?tanggal=${encodeURIComponent(tgl)}&saringan=semua`, { credentials: "include", cache: "no-store" }, "Membaca usulan blangko BAS");
+        const j = await f41Baca(r);
+        petaBas.set(tgl, j.okHttp && j.data && Array.isArray(j.data.sidang) ? j.data.sidang : { sebab: j.pesan || `ALETA menjawab ${j.status}` });
+      }
+      const sidang = petaBas.get(tgl);
+      if (!Array.isArray(sidang)) return { sebab: `usulan blangko BAS tidak terbaca (${sidang.sebab})` };
+      const s = sidang.find((x) => String(x.sidangId) === String(baris.sidangId)) || sidang.find((x) => String(x.perkaraId) === String(baris.perkaraId));
+      const u = s && s.blangko && s.blangko.usulan;
+      if (!u) return { sebab: (s && s.blangko && s.blangko.sebab) || "belum ada usulan blangko BAS untuk sidang ini - pilih di BAS massal" };
+      let token = null;
+      if (typeof basmassalTokenUntuk === "function" && typeof basmassalBacaToken === "function") {
+        if (typeof basmassalPanenTokenAbt === "function") await basmassalPanenTokenAbt().catch(() => 0);
+        token = basmassalTokenUntuk(await basmassalBacaToken(), u.folder, u.berkas, u.padanan, u.salinan).berkas;
+      }
+      if (!token && typeof cariTokenBlangko === "function") {
+        const kelompok = [...(Array.isArray(u.salinan) ? u.salinan.map((x) => x && x.menu).filter(Boolean) : []), u.folder].filter(Boolean);
+        token = await cariTokenBlangko(u.berkas, lapor, kelompok);
+      }
+      if (!token || !token.a || !token.b) return { sebab: `blangko BAS "${u.berkas}" tidak ditemukan di ABT ini` };
+      return { a: token.a, b: token.b, berkas: u.berkas, blangko: u.label || u.berkas };
+    },
+    anonim: (rtf, nomor, lapor) => (typeof alatAnonimMandiri === "function" ? alatAnonimMandiri(rtf, nomor, lapor) : Promise.resolve({ ok: false, sebab: "penyamar ALETA belum termuat" })),
+    pratinjauAnonim: (h, o) => (typeof alatPratinjauAnonim === "function" ? alatPratinjauAnonim(h, o) : Promise.resolve("batal")),
+    namaBaku: (nomor, berkas) =>
+      (typeof alatNamaUnduhanBlangko === "function" && alatNamaUnduhanBlangko(nomor, berkas, "rtf")) || `${String(nomor).replace(/[\\/:*?"<>|]+/g, "_")} - ${berkas}.rtf`,
+    olehUsername: () => (typeof namaPenggunaAbt === "function" ? namaPenggunaAbt() : ""),
+    jeda: (ms) => (typeof alatJeda === "function" ? alatJeda(ms) : new Promise((r) => setTimeout(r, ms))),
+    jedaMs: typeof ALAT_JEDA_MASSAL_MS === "number" ? ALAT_JEDA_MASSAL_MS : 1500,
+    catat: (j, r) => {
+      try {
+        if (typeof alatCatat === "function") alatCatat(j, r, "");
+      } catch {
+        /* kotak hitam hanya kenyamanan */
+      }
+    },
+    antrean: (n) => (typeof alatAntreanKerja === "function" ? alatAntreanKerja("unggah-massal-edoc", "unggah massal e-Doc", n) : null),
+    sekarang: () => new Date().toISOString(),
+  };
+}
+
+/**
+ * Mesin unggah massal - tanpa DOM, semua jaringan lewat `deps` (diuji dengan tiruan).
+ * Status baris: siap | halangan | dobel; hasil: berhasil | gagal | dilewati | dobel.
+ */
+function f41Mesin(depsMasuk) {
+  const d = depsMasuk || f41Bawaan();
+
+  async function daftar(saringan) {
+    const q = new URLSearchParams();
+    if (saringan && saringan.putusan) q.set("putusan", saringan.putusan);
+    if (saringan && saringan.bas) q.set("bas", saringan.bas);
+    const r = await d.ambil(`${F41_API.daftar}${q.toString() ? `?${q}` : ""}`, { credentials: "include", cache: "no-store" }, "Membaca daftar unggah massal");
+    const j = await f41Baca(r);
+    if (!j.okHttp || !j.data || j.data.ok === false) throw new Error(j.pesan || `ALETA menjawab ${j.status}`);
+    return j.data;
+  }
+
+  async function cek(baris) {
+    const q = new URLSearchParams({ jenis: baris.jenis, perkaraId: String(baris.perkaraId) });
+    if (baris.jenis === "bas") q.set("sidangId", String(baris.sidangId));
+    const r = await d.ambil(`${F41_API.cek}?${q}`, { credentials: "include", cache: "no-store" }, "Memeriksa e-Doc di SIPP");
+    const j = await f41Baca(r);
+    if (!j.okHttp || !j.data || j.data.ok === false) throw new Error(j.pesan || `ALETA menjawab ${j.status}`);
+    return j.data;
+  }
+
+  /** Slot yang masih kosong di SIPP menurut bacaan cek. Murni. */
+  function slotKosong(baris, c) {
+    if (baris.jenis === "bas") return { bas: !c.adaBas };
+    return { putusan: !c.adaPutusan, anonim: !c.adaAnonim };
+  }
+
+  /** Pratinjau satu baris: cek dobel, blangko, hak ABT, RTF, nama baku, anonim. Tidak menulis apa pun. */
+  async function siapkan(baris, lapor) {
+    const kabar = typeof lapor === "function" ? lapor : () => {};
+    const s = { baris, keadaan: "halangan", halangan: "", catatan: [], nama: "", blangko: "", rtf: null, anonim: null, keputusanAnonim: "", perlu: null, ukuran: 0 };
+    try {
+      kabar("memeriksa e-Doc di SIPP…");
+      const c = await cek(baris);
+      if (baris.jenis === "putusan" && c.adaBaris === false) {
+        s.halangan = "Putusan Akhir belum diisi di SIPP - isi dulu, baru e-Doc dapat diunggah.";
+        return s;
+      }
+      s.perlu = slotKosong(baris, c);
+      if (baris.jenis === "bas" ? !s.perlu.bas : !s.perlu.putusan && !s.perlu.anonim) {
+        s.keadaan = "dobel";
+        s.halangan = `Sudah ada di SIPP${c.jalur || c.jalurPutusan ? ` (${c.jalur || c.jalurPutusan})` : ""} - tidak diganti.`;
+        return s;
+      }
+      if (baris.jenis === "putusan" && !s.perlu.putusan) s.catatan.push(`e-Doc putusan sudah ada${c.jalurPutusan ? ` (${c.jalurPutusan})` : ""} - hanya anonimisasi yang diunggah.`);
+      if (baris.jenis === "putusan" && !s.perlu.anonim) s.catatan.push("e-Doc anonimisasi sudah ada - hanya putusan yang diunggah.");
+
+      kabar("mencari blangko…");
+      const b = baris.jenis === "bas" ? await d.blangkoBas(baris, kabar) : await d.blangkoPutusan(baris, kabar);
+      if (!b || !b.a || !b.b) {
+        s.halangan = `Blangko belum siap: ${(b && b.sebab) || "tidak ditemukan"}.`;
+        return s;
+      }
+      s.blangko = b.berkas;
+      const klien = d.klien();
+      kabar("memeriksa hak buka blangko di ABT…");
+      const hak = await klien.periksaHakBuka({ a: b.a, b: b.b, perkaraId: baris.perkaraId });
+      if (!hak || hak.ok === false) {
+        s.halangan = `ABT menolak blangko ini: ${(hak && (hak.pesan || hak.sebab)) || "alasan tidak terbaca"}.`;
+        return s;
+      }
+      kabar("mencetak dari ABT…");
+      const cetak = await klien.cetak({ a: b.a, b: b.b, perkaraId: baris.perkaraId, sidang: baris.jenis === "bas" ? String(baris.urutan || "") : "" });
+      if (!cetak || !cetak.ok || !cetak.rtf) {
+        s.halangan = `ABT tidak mengembalikan berkas: ${(cetak && (cetak.pesan || cetak.sebab)) || "tanpa keterangan"}.`;
+        return s;
+      }
+      s.rtf = cetak.rtf;
+      s.ukuran = cetak.ukuran || (cetak.rtf.byteLength || 0);
+      s.nama = d.namaBaku(baris.nomorPerkara, b.berkas);
+      const sisaPenanda = cetak.periksa && Number(cetak.periksa.penandaSisa) > 0 ? Number(cetak.periksa.penandaSisa) : 0;
+      if (sisaPenanda) s.catatan.push(`${sisaPenanda} isian blangko masih kosong di naskah - periksa sebelum diunggah.`);
+
+      if (baris.jenis === "putusan" && s.perlu.anonim) {
+        const an = await d.anonim(s.rtf, baris.nomorPerkara, kabar);
+        if (an && an.ok && an.rtf) {
+          s.anonim = { ...an, sumber: "ALETA" };
+          s.keputusanAnonim = (an.sisa || []).length ? "" : "unggah";
+        } else {
+          kabar("penyamar ALETA gagal - memakai anonimisasi ABT…");
+          const abt = await klien.anonim({ perkaraId: baris.perkaraId, nomor: baris.nomorPerkara, rtf: s.rtf, namaBerkas: s.nama });
+          if (abt && abt.ok && abt.rtf) {
+            s.anonim = { ok: true, rtf: abt.rtf, sumber: "ABT", ringkas: {}, sisa: [], potongan: [] };
+            s.keputusanAnonim = "unggah";
+            s.catatan.push(`Anonimisasi dari ABT (penyamar ALETA: ${(an && an.sebab) || "gagal"}); sisa nama disamarkan lagi saat diunggah.`);
+          } else {
+            s.catatan.push(`Anonimisasi belum dapat dibuat (${(an && an.sebab) || "penyamar ALETA gagal"}; ABT: ${(abt && (abt.pesan || abt.sebab)) || "gagal"}).`);
+          }
+        }
+      }
+      s.keadaan = "siap";
+      return s;
+    } catch (e) {
+      s.halangan = `Pemeriksaan gagal: ${String((e && e.message) || e)}`;
+      return s;
+    }
+  }
+
+  /** Yang akan dikirim untuk baris siap. Murni. */
+  function kiriman(s) {
+    if (!s || s.keadaan !== "siap" || s.hasil === "berhasil" || s.hasil === "dobel") return null;
+    if (s.baris.jenis === "bas") return s.perlu && s.perlu.bas && s.rtf ? { bas: true } : null;
+    const putusan = Boolean(s.perlu && s.perlu.putusan && s.rtf);
+    const anonim = Boolean(s.perlu && s.perlu.anonim && s.anonim && s.anonim.rtf && s.keputusanAnonim === "unggah");
+    return putusan || anonim ? { putusan, anonim } : null;
+  }
+
+  /** Satu unggahan. Pulang { hasil, catatan, berkas }. */
+  async function unggah(s, lapor) {
+    const kabar = typeof lapor === "function" ? lapor : () => {};
+    const b = s.baris;
+    let k = kiriman(s);
+    if (!k) {
+      const sebab = b.jenis === "putusan" && s.perlu && s.perlu.anonim && s.anonim && !s.keputusanAnonim
+        ? "naskah anonim masih memuat data pribadi dan belum diperiksa - buka \"Periksa naskah anonim\""
+        : "tidak ada berkas yang perlu diunggah";
+      return { hasil: "dilewati", catatan: sebab };
+    }
+    // Cek dobel TEPAT sebelum menulis: e-Doc yang diisi orang lain sejak pratinjau tidak diganti.
+    kabar("cek dobel di SIPP…");
+    let c;
+    try {
+      c = await cek(b);
+    } catch (e) {
+      return { hasil: "gagal", catatan: `cek dobel gagal: ${String((e && e.message) || e)}` };
+    }
+    const kosong = slotKosong(b, c);
+    if (b.jenis === "bas") {
+      if (!kosong.bas) return { hasil: "dobel", catatan: `e-Doc BAS sudah ada di SIPP${c.jalur ? ` (${c.jalur})` : ""} - tidak diganti` };
+    } else {
+      k = { putusan: k.putusan && kosong.putusan, anonim: k.anonim && kosong.anonim };
+      if (!k.putusan && !k.anonim) return { hasil: "dobel", catatan: "e-Doc putusan/anonimisasi sudah ada di SIPP - tidak diganti" };
+    }
+
+    const badan = new FormData();
+    badan.append("perkaraId", String(b.perkaraId));
+    badan.append("nomorPerkara", b.nomorPerkara);
+    badan.append("olehUsername", d.olehUsername() || "");
+    const blob = (x) => new Blob([x], { type: "application/rtf" });
+    let alamat;
+    let isinya;
+    if (b.jenis === "bas") {
+      alamat = F41_API.bas;
+      badan.append("sidangId", String(b.sidangId));
+      badan.append("bas", blob(s.rtf), s.nama);
+      isinya = `BAS sidang ke-${b.urutan || "?"}`;
+    } else {
+      alamat = F41_API.putusan;
+      if (k.putusan) badan.append("putusan", blob(s.rtf), s.nama);
+      if (k.anonim) {
+        badan.append("anonimisasi", blob(s.anonim.rtf), s.nama.replace(/\.rtf$/i, " - anonim.rtf"));
+        badan.append("samarkanSisa", "1");
+      }
+      isinya = k.putusan && k.anonim ? "putusan + anonimisasi" : k.putusan ? "putusan" : "anonimisasi";
+    }
+    kabar(`mengunggah ${isinya}…`);
+    let j;
+    try {
+      const r = await d.ambil(alamat, { method: "POST", body: badan, credentials: "include", batasMs: F41_BATAS_UNGGAH_MS }, `Mengunggah ${isinya} ke SIPP`);
+      j = await f41Baca(r);
+    } catch (e) {
+      return { hasil: "gagal", catatan: `${isinya}: ${String((e && e.message) || e)}` };
+    }
+    if (j.status === 409 && j.data && j.data.alasan === "sudah_ada") return { hasil: "dobel", catatan: j.pesan || "sudah ada di SIPP - tidak diganti" };
+    // Anonimisasi ditolak penjaga rute (409, belum ada yang ditulis): putusan dikirim sendirian, anonimnya disebut gagal.
+    if (j.status === 409 && b.jenis === "putusan" && k.putusan && k.anonim && j.data && j.data.slot === "anonimisasi") {
+      const ulang = { ...s, anonim: null, keputusanAnonim: "" };
+      const r2 = await unggah({ ...ulang, perlu: { putusan: true, anonim: false } }, kabar);
+      return r2.hasil === "berhasil"
+        ? { hasil: "gagal", catatan: `putusan masuk; anonimisasi ditolak: ${j.pesan} - samarkan lalu unggah anonimnya sendiri`, berkas: s.nama }
+        : r2;
+    }
+    if (!j.okHttp || !j.data || j.data.ok === false) return { hasil: "gagal", catatan: `${isinya}: ${j.pesan || `ALETA menjawab ${j.status}`}` };
+    const tambahan = [];
+    if (b.jenis === "putusan" && typeof kalimatSisaDisamarkan === "function") {
+      const samar = kalimatSisaDisamarkan(j.data);
+      if (samar) tambahan.push(samar);
+    }
+    const sebagian = Array.isArray(j.data.berkas) ? j.data.berkas.filter((x) => x && x.ok === false) : [];
+    if (sebagian.length) return { hasil: "gagal", catatan: `${isinya}: sebagian gagal (${sebagian.map((x) => `${x.jenis}: ${x.pesan || x.alasan}`).join("; ")})`, berkas: s.nama };
+    return { hasil: "berhasil", catatan: [`${isinya} masuk ke e-Doc SIPP`, ...tambahan].join(" · "), berkas: (j.data && j.data.nama) || s.nama };
+  }
+
+  /**
+   * Unggah berurutan. Berhenti pada kegagalan PERTAMA (sisanya "dilewati" beserta sebabnya);
+   * dobel dan halangan pratinjau tidak menghentikan. `sinyal` = AbortSignal "Hentikan".
+   */
+  async function jalankan(daftarSiap, o) {
+    const opsi = o || {};
+    const lapor = typeof opsi.lapor === "function" ? opsi.lapor : () => {};
+    const jenis = daftarSiap[0] ? daftarSiap[0].baris.jenis : "putusan";
+    const ringkas = { jenis, mulai: d.sekarang(), selesai: "", berhenti: false, sebabBerhenti: "", butir: [] };
+    const antre = d.antrean(daftarSiap.length);
+    let menulis = 0;
+    try {
+      for (let i = 0; i < daftarSiap.length; i += 1) {
+        const s = daftarSiap[i];
+        const b = s.baris;
+        let h;
+        if (ringkas.berhenti) h = { hasil: "dilewati", catatan: `tidak dikerjakan - ${ringkas.sebabBerhenti}` };
+        else if (opsi.sinyal && opsi.sinyal.aborted) {
+          ringkas.berhenti = true;
+          ringkas.sebabBerhenti = "dihentikan petugas";
+          h = { hasil: "dilewati", catatan: "tidak dikerjakan - dihentikan petugas" };
+        } else if (s.keadaan === "dobel") h = { hasil: "dobel", catatan: s.halangan };
+        else if (s.keadaan !== "siap") h = { hasil: "dilewati", catatan: s.halangan || "belum siap" };
+        else {
+          if (menulis > 0) await d.jeda(d.jedaMs);
+          lapor(s, "jalan", "mulai…");
+          h = await unggah(s, (t) => lapor(s, "jalan", t));
+          if (h.hasil === "berhasil" || h.hasil === "gagal") menulis += 1;
+          if (h.hasil === "gagal") {
+            ringkas.berhenti = true;
+            ringkas.sebabBerhenti = `${b.nomorPerkara} gagal: ${h.catatan}`;
+          }
+        }
+        s.hasil = h.hasil;
+        s.catatanHasil = h.catatan;
+        ringkas.butir.push({ nomor: b.nomorPerkara, ...(b.jenis === "bas" ? { sidang: Number(b.urutan) || undefined } : {}), hasil: h.hasil, catatan: String(h.catatan || ""), ...(h.berkas ? { berkas: h.berkas } : {}) });
+        lapor(s, h.hasil, h.catatan);
+        d.catat(h.hasil === "gagal" ? "massal-galat" : "massal", `unggah massal ${b.nomorPerkara}${b.jenis === "bas" ? ` sidang ${b.urutan}` : ""}: ${h.hasil} - ${h.catatan}`);
+        if (antre) antre.maju(i + 1, daftarSiap.length);
+      }
+    } finally {
+      if (antre) antre.selesai();
+    }
+    ringkas.selesai = d.sekarang();
+    return ringkas;
+  }
+
+  async function catatRiwayat(ringkas) {
+    try {
+      const r = await d.ambil(F41_API.jejak, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ringkas) }, "Mencatat riwayat unggah massal");
+      const j = await f41Baca(r);
+      return j.okHttp && j.data && j.data.id ? { ok: true } : { ok: false, sebab: j.pesan || `ALETA menjawab ${j.status}` };
+    } catch (e) {
+      return { ok: false, sebab: String((e && e.message) || e) };
+    }
+  }
+
+  async function riwayat() {
+    const r = await d.ambil(F41_API.jejak, { credentials: "include", cache: "no-store" }, "Membaca riwayat unggah massal");
+    const j = await f41Baca(r);
+    if (!j.okHttp || !j.data) throw new Error(j.pesan || `ALETA menjawab ${j.status}`);
+    return j.data;
+  }
+
+  return { daftar, cek, siapkan, kiriman, unggah, jalankan, catatRiwayat, riwayat, deps: d };
+}
+
+/** Hitung hasil putaran. Murni. */
+function f41Hitung(ringkas) {
+  const n = (h) => ringkas.butir.filter((b) => b.hasil === h).length;
+  return { berhasil: n("berhasil"), gagal: n("gagal"), dilewati: n("dilewati"), dobel: n("dobel"), total: ringkas.butir.length };
+}
+/** "3 berhasil · 1 gagal · 2 dilewati · 1 sudah ada (dobel)". Murni. */
+function f41KalimatHasil(h) {
+  const bagian = [`${h.berhasil} berhasil`];
+  if (h.gagal) bagian.push(`${h.gagal} gagal`);
+  if (h.dilewati) bagian.push(`${h.dilewati} dilewati`);
+  if (h.dobel) bagian.push(`${h.dobel} sudah ada (dobel)`);
+  return bagian.join(" · ");
+}
+
+function f41PasangGaya() {
+  if (document.getElementById("aleta-f41-gaya")) return;
+  const g = document.createElement("style");
+  g.id = "aleta-f41-gaya";
+  g.textContent = `
+.aleta-f41-tirai{position:fixed;inset:0;z-index:2147483500;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:16px;font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0f172a}
+.aleta-f41-kotak{background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);width:min(1000px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden}
+.aleta-f41-kepala{display:flex;gap:12px;align-items:flex-start;padding:16px 20px 8px}
+.aleta-f41-kepala h2{margin:0 0 2px;font-size:19px;font-weight:700}
+.aleta-f41-kepala p{margin:0;color:#475569}
+.aleta-f41-kepala .aleta-f41-tutup{margin-left:auto;border:0;background:transparent;font-size:24px;line-height:1;cursor:pointer;color:#475569;padding:2px 8px;border-radius:8px}
+.aleta-f41-tab{display:flex;gap:6px;padding:0 20px;border-bottom:1px solid #e2e8f0}
+.aleta-f41-tab button{font:600 15px system-ui,sans-serif;border:0;border-bottom:3px solid transparent;background:transparent;padding:8px 12px;cursor:pointer;color:#475569}
+.aleta-f41-tab button[aria-selected="true"]{color:#1d4ed8;border-bottom-color:#1d4ed8}
+.aleta-f41-alat{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 20px;border-bottom:1px solid #f1f5f9}
+.aleta-f41-alat select,.aleta-f41-alat button,.aleta-f41-kaki button,.aleta-f41-baris button{font:600 14px system-ui,sans-serif;border-radius:9px;padding:6px 12px;cursor:pointer;border:1px solid #cbd5e1;background:#fff;color:#0f172a}
+.aleta-f41-alat .aleta-f41-hitung{color:#475569;margin-left:auto}
+.aleta-f41-badan{padding:10px 20px;overflow:auto;flex:1 1 auto}
+.aleta-f41-baris{border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;margin:0 0 8px;background:#fff}
+.aleta-f41-baris[data-keadaan="berhasil"]{border-color:#22c55e;background:#f0fdf4}
+.aleta-f41-baris[data-keadaan="gagal"]{border-color:#ef4444;background:#fef2f2}
+.aleta-f41-baris[data-keadaan="dobel"],.aleta-f41-baris[data-keadaan="halangan"]{border-color:#f59e0b;background:#fffbeb}
+.aleta-f41-baris[data-keadaan="jalan"]{border-color:#3b82f6;background:#eff6ff}
+.aleta-f41-baris label{display:flex;gap:10px;align-items:center;cursor:pointer;flex-wrap:wrap}
+.aleta-f41-baris input[type=checkbox]{width:18px;height:18px}
+.aleta-f41-kecil{color:#475569;font-size:14px}
+.aleta-f41-chip{display:inline-block;border-radius:999px;padding:1px 10px;font-size:13px;font-weight:600;background:#e2e8f0;color:#334155;margin:2px 4px 0 0}
+.aleta-f41-chip.kuning{background:#fef3c7;color:#92400e}.aleta-f41-chip.hijau{background:#dcfce7;color:#166534}.aleta-f41-chip.biru{background:#dbeafe;color:#1e40af}.aleta-f41-chip.merah{background:#fee2e2;color:#991b1b}
+.aleta-f41-rinci{margin:6px 0 0 28px;font-size:14px}
+.aleta-f41-rinci div{margin:2px 0}
+.aleta-f41-kemajuan{margin:4px 0 0 28px;font-size:14px;font-weight:600}
+.aleta-f41-pesan{border-radius:10px;padding:10px 12px;margin:0 0 10px}
+.aleta-f41-pesan.awas{background:#fef3c7;border:1px solid #f59e0b}.aleta-f41-pesan.baik{background:#dcfce7;border:1px solid #22c55e}.aleta-f41-pesan.buruk{background:#fee2e2;border:1px solid #ef4444}.aleta-f41-pesan.info{background:#eff6ff;border:1px solid #93c5fd}
+.aleta-f41-kaki{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-top:1px solid #e2e8f0;background:#f8fafc}
+.aleta-f41-kaki .aleta-f41-status{margin-right:auto;color:#334155}
+.aleta-f41-kaki button.utama{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.aleta-f41-kaki button.bahaya{background:#fff;border-color:#ef4444;color:#b91c1c}
+.aleta-f41-kaki button:disabled,.aleta-f41-alat button:disabled{opacity:.5;cursor:not-allowed}
+.aleta-f41-tirai button:focus-visible,.aleta-f41-tirai input:focus-visible,.aleta-f41-tirai select:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+.aleta-f41-kosong{color:#475569;padding:24px 4px;text-align:center}
+@media (max-width:640px){.aleta-f41-tirai{padding:0}.aleta-f41-kotak{border-radius:0;max-height:100vh;height:100vh}.aleta-f41-rinci,.aleta-f41-kemajuan{margin-left:0}}
+@media (prefers-color-scheme: dark){.aleta-f41-tirai{color:#e2e8f0}.aleta-f41-kotak{background:#0f172a}.aleta-f41-kepala p,.aleta-f41-kecil,.aleta-f41-alat .aleta-f41-hitung,.aleta-f41-kaki .aleta-f41-status{color:#94a3b8}.aleta-f41-tab,.aleta-f41-alat,.aleta-f41-kaki{border-color:#334155}.aleta-f41-kaki{background:#111827}.aleta-f41-baris{background:#111827;border-color:#334155}.aleta-f41-alat select,.aleta-f41-alat button,.aleta-f41-kaki button,.aleta-f41-baris button{background:#1e293b;color:#e2e8f0;border-color:#475569}.aleta-f41-kaki button.utama{background:#2563eb;border-color:#2563eb;color:#fff}.aleta-f41-baris[data-keadaan="berhasil"]{background:#052e16}.aleta-f41-baris[data-keadaan="gagal"]{background:#450a0a}.aleta-f41-baris[data-keadaan="dobel"],.aleta-f41-baris[data-keadaan="halangan"]{background:#422006}.aleta-f41-baris[data-keadaan="jalan"]{background:#172554}.aleta-f41-chip{background:#334155;color:#e2e8f0}.aleta-f41-pesan.awas{background:#422006}.aleta-f41-pesan.baik{background:#052e16}.aleta-f41-pesan.buruk{background:#450a0a}.aleta-f41-pesan.info{background:#172554}}
+`;
+  (document.head || document.documentElement).appendChild(g);
+}
+
+let f41Terbuka = null;
+
+/**
+ * Membuka layar Unggah massal. `jenisAwal` "putusan" | "bas" | "" (= jenis pertama yang menjadi hak akun).
+ * Pulang elemen tirai (untuk uji) - atau yang sudah terbuka.
+ */
+function aletaUnggahMassalBuka(jenisAwal, depsMasuk) {
+  if (f41Terbuka && f41Terbuka.isConnected) return f41Terbuka;
+  f41PasangGaya();
+  const mesin = f41Mesin(depsMasuk);
+  const S = { data: null, tab: "", saringan: {}, centang: new Set(), siap: new Map(), jalan: false, pembatal: null, ringkas: null, riwayat: null, galatMuat: "" };
+  const tirai = document.createElement("div");
+  tirai.className = "aleta-f41-tirai";
+  tirai.setAttribute("role", "dialog");
+  tirai.setAttribute("aria-modal", "true");
+  tirai.setAttribute("aria-labelledby", "aleta-f41-judul");
+  tirai.innerHTML =
+    `<div class="aleta-f41-kotak">` +
+    `<div class="aleta-f41-kepala"><div><h2 id="aleta-f41-judul">Unggah massal ke e-Doc SIPP</h2>` +
+    `<p>Putusan dan BAS yang belum ada di SIPP. Centang, periksa, lalu unggah - satu per satu, berhenti sendiri bila ada yang gagal.</p></div>` +
+    `<button type="button" class="aleta-f41-tutup" data-f41="tutup" aria-label="Tutup" title="Tutup">×</button></div>` +
+    `<div class="aleta-f41-tab" role="tablist"></div>` +
+    `<div class="aleta-f41-alat"></div>` +
+    `<div class="aleta-f41-badan" tabindex="0"></div>` +
+    `<div class="aleta-f41-kaki"><span class="aleta-f41-status" aria-live="polite"></span>` +
+    `<button type="button" data-f41="periksa">Periksa yang dicentang</button>` +
+    `<button type="button" class="utama" data-f41="unggah" disabled>Unggah</button>` +
+    `<button type="button" class="bahaya" data-f41="henti" hidden>Hentikan</button></div>` +
+    `</div>`;
+  const q = (s) => tirai.querySelector(s);
+  const elTab = q(".aleta-f41-tab");
+  const elAlat = q(".aleta-f41-alat");
+  const elBadan = q(".aleta-f41-badan");
+  const elStatus = q(".aleta-f41-status");
+  const tPeriksa = q('[data-f41="periksa"]');
+  const tUnggah = q('[data-f41="unggah"]');
+  const tHenti = q('[data-f41="henti"]');
+
+  const daftarTab = () => (S.data ? S.data[S.tab] || [] : []);
+  const barisDicentang = () => daftarTab().filter((b) => S.centang.has(b.kunci));
+  const status = (t) => {
+    elStatus.textContent = t;
+  };
+
+  function chipBaris(b) {
+    const c = [];
+    if (b.jenis === "putusan") {
+      if (b.perlu && b.perlu.putusan && b.perlu.anonim) c.push(["Putusan & anonim belum di SIPP", "kuning"]);
+      else if (b.perlu && b.perlu.anonim) c.push(["Anonim belum di SIPP", "kuning"]);
+      else if (b.perlu && b.perlu.putusan) c.push(["Putusan belum di SIPP", "kuning"]);
+    } else {
+      c.push([`Sidang ke-${b.urutan || "?"} · ${f41Tanggal(b.tanggal)}`, "biru"]);
+      if (b.hariIni) c.push(["Hari ini", ""]);
+      if (b.bukti && b.bukti.length) c.push(["Sudah disusun di ABT", "hijau"]);
+    }
+    if (S.saringan[S.tab] === "semua" && !b.milikSaya && b.petugas && b.petugas.length) c.push([b.jenis === "bas" ? `PP: ${b.petugas[0]}` : `Majelis: ${b.petugas[0]}`, ""]);
+    return c.map(([t, w]) => `<span class="aleta-f41-chip ${w}">${f41Esc(t)}</span>`).join("");
+  }
+
+  function keteranganBaris(b) {
+    if (b.jenis === "putusan") {
+      const st = [b.statusPutusan, b.verstek ? "verstek" : ""].filter(Boolean).join(", ");
+      return `${b.jenisPerkara || ""} · diputus ${f41Tanggal(b.tanggal)}${st ? ` · ${st}` : ""}`;
+    }
+    return `${b.jenisPerkara || ""}${b.agenda ? ` · ${b.agenda}` : ""}${b.ditunda ? " · ditunda" : ""}`;
+  }
+
+  function rinciPratinjau(s) {
+    if (!s) return "";
+    const r = [];
+    if (s.keadaan === "siap") {
+      r.push(`<div>Nama berkas: <b>${f41Esc(s.nama)}</b>${s.ukuran ? ` <span class="aleta-f41-kecil">(${Math.max(1, Math.round(s.ukuran / 1024))} KB)</span>` : ""}</div>`);
+      r.push(`<div>Cek dobel: <span class="aleta-f41-chip hijau">belum ada di SIPP</span></div>`);
+      if (s.baris.jenis === "putusan" && s.perlu && s.perlu.anonim) {
+        if (!s.anonim) r.push(`<div>Anonim: <span class="aleta-f41-chip merah">belum dapat dibuat</span> - putusan saja yang diunggah.</div>`);
+        else {
+          const ringkas =
+            s.anonim.sumber === "ABT"
+              ? "dibuat ABT (cadangan)"
+              : typeof alatRingkasAnonim === "function"
+                ? `${alatRingkasAnonim(s.anonim)} disamarkan`
+                : "disamarkan ALETA";
+          const sisa = (s.anonim.sisa || []).length;
+          const kep = s.keputusanAnonim === "unggah" ? "" : s.keputusanAnonim === "tanpa" ? " · anonim TIDAK diunggah (pilihan Anda)" : "";
+          r.push(
+            `<div>Naskah anonim: ${f41Esc(ringkas)}. ${sisa ? `<span class="aleta-f41-chip kuning">masih ada ${sisa} data pribadi</span>` : `<span class="aleta-f41-chip hijau">tidak ada nama tersisa</span>`}${f41Esc(kep)} ` +
+              `<button type="button" data-f41-anonim="${f41Esc(s.baris.kunci)}">Periksa naskah anonim</button></div>`
+          );
+        }
+      }
+    } else if (s.halangan) {
+      r.push(`<div><span class="aleta-f41-chip ${s.keadaan === "dobel" ? "kuning" : "merah"}">${s.keadaan === "dobel" ? "Sudah ada" : "Belum bisa"}</span> ${f41Esc(s.halangan)}</div>`);
+    }
+    for (const c of s.catatan || []) r.push(`<div class="aleta-f41-kecil">${f41Esc(c)}</div>`);
+    return r.join("");
+  }
+
+  function gambarTab() {
+    const tab = [];
+    if (S.data && S.data.hak.putusan) tab.push(["putusan", `Putusan (${S.data.putusan.length})`]);
+    if (S.data && S.data.hak.bas) tab.push(["bas", `BAS (${S.data.bas.length})`]);
+    tab.push(["riwayat", "Riwayat"]);
+    elTab.innerHTML = tab.map(([k, t]) => `<button type="button" role="tab" data-f41-tab="${k}" aria-selected="${S.tab === k}">${f41Esc(t)}</button>`).join("");
+  }
+
+  function gambarAlat() {
+    if (S.tab === "riwayat" || !S.data) {
+      elAlat.innerHTML = "";
+      elAlat.hidden = true;
+      return;
+    }
+    elAlat.hidden = false;
+    const bolehSemua = S.data.hak.semua[S.tab];
+    const sar = S.saringan[S.tab] || "saya";
+    elAlat.innerHTML =
+      (bolehSemua
+        ? `<label class="aleta-f41-kecil">Tampilkan <select data-f41="saringan" aria-label="Saringan"><option value="saya" ${sar === "saya" ? "selected" : ""}>Milik saya</option><option value="semua" ${sar === "semua" ? "selected" : ""}>Semua</option></select></label>`
+        : "") +
+      `<button type="button" data-f41="semua" ${S.jalan ? "disabled" : ""}>Centang semua</button>` +
+      `<button type="button" data-f41="bersih" ${S.jalan ? "disabled" : ""}>Hapus centang</button>` +
+      `<button type="button" data-f41="muat" ${S.jalan ? "disabled" : ""}>Muat ulang</button>` +
+      `<span class="aleta-f41-hitung">${barisDicentang().length} dari ${daftarTab().length} dicentang</span>`;
+  }
+
+  function gambarBadan() {
+    if (S.galatMuat) {
+      elBadan.innerHTML = `<div class="aleta-f41-pesan buruk" role="alert">${f41Esc(S.galatMuat)}</div>`;
+      return;
+    }
+    if (!S.data) {
+      elBadan.innerHTML = `<div class="aleta-f41-kosong">Membaca daftar dari SIPP…</div>`;
+      return;
+    }
+    if (S.tab === "riwayat") return gambarRiwayat();
+    const atas = [];
+    if (S.ringkas && S.ringkas.jenis === S.tab) {
+      const h = f41Hitung(S.ringkas);
+      atas.push(
+        `<div class="aleta-f41-pesan ${h.gagal ? "buruk" : "baik"}" role="status"><b>Selesai: ${f41Esc(f41KalimatHasil(h))}.</b>` +
+          (S.ringkas.berhenti ? `<div>Berhenti: ${f41Esc(S.ringkas.sebabBerhenti)}</div>` : "") +
+          `<div class="aleta-f41-kecil">${S.ringkas.riwayat === false ? "Riwayat belum tercatat di ALETA." : "Tercatat di Riwayat."}</div></div>`
+      );
+    }
+    for (const g of S.data.galat || []) atas.push(`<div class="aleta-f41-pesan awas">${f41Esc(g)}</div>`);
+    if (S.tab === "putusan" && S.data.tertahan && S.data.tertahan.length) {
+      atas.push(
+        `<div class="aleta-f41-pesan info">${S.data.tertahan.length} perkara sudah dibacakan putusannya tetapi Putusan Akhir belum diisi di SIPP, jadi e-Doc-nya belum dapat diunggah: ` +
+          `${f41Esc(S.data.tertahan.slice(0, 6).map((t) => t.nomorPerkara).join(", "))}${S.data.tertahan.length > 6 ? ", …" : ""}.</div>`
+      );
+    }
+    const daftar = daftarTab();
+    if (!daftar.length) {
+      elBadan.innerHTML =
+        atas.join("") +
+        `<div class="aleta-f41-kosong">${S.tab === "putusan" ? "Tidak ada putusan yang menunggu e-Doc." : "Tidak ada BAS yang menunggu e-Doc."} Semua sudah ada di SIPP${S.saringan[S.tab] === "saya" ? " untuk perkara Anda" : ""}.</div>`;
+      return;
+    }
+    elBadan.innerHTML =
+      atas.join("") +
+      daftar
+        .map((b) => {
+          const s = S.siap.get(b.kunci);
+          const keadaan = s && s.hasil ? s.hasil : s ? s.keadaan : "";
+          return (
+            `<div class="aleta-f41-baris" data-kunci="${f41Esc(b.kunci)}" data-keadaan="${f41Esc(keadaan)}">` +
+            `<label><input type="checkbox" data-f41-centang="${f41Esc(b.kunci)}" ${S.centang.has(b.kunci) ? "checked" : ""} ${S.jalan ? "disabled" : ""}>` +
+            `<b>${f41Esc(b.nomorPerkara)}</b><span class="aleta-f41-kecil">${f41Esc(keteranganBaris(b))}</span></label>` +
+            `<div style="margin-left:28px">${chipBaris(b)}</div>` +
+            `<div class="aleta-f41-rinci">${rinciPratinjau(s)}</div>` +
+            `<div class="aleta-f41-kemajuan" data-f41-kemajuan="${f41Esc(b.kunci)}">${s && s.catatanHasil ? f41Esc(s.catatanHasil) : ""}</div>` +
+            `</div>`
+          );
+        })
+        .join("");
+  }
+
+  function gambarRiwayat() {
+    if (!S.riwayat) {
+      elBadan.innerHTML = `<div class="aleta-f41-kosong">Membaca riwayat…</div>`;
+      mesin
+        .riwayat()
+        .then((r) => {
+          S.riwayat = r;
+          if (S.tab === "riwayat") gambarRiwayat();
+        })
+        .catch((e) => {
+          S.riwayat = { riwayat: [], galat: String((e && e.message) || e) };
+          if (S.tab === "riwayat") gambarRiwayat();
+        });
+      return;
+    }
+    const daftar = S.riwayat.riwayat || [];
+    if (S.riwayat.galat) {
+      elBadan.innerHTML = `<div class="aleta-f41-pesan buruk">Riwayat belum dapat dibaca: ${f41Esc(S.riwayat.galat)}</div>`;
+      return;
+    }
+    if (!daftar.length) {
+      elBadan.innerHTML = `<div class="aleta-f41-kosong">Belum ada unggah massal yang tercatat.</div>`;
+      return;
+    }
+    elBadan.innerHTML = daftar
+      .map((x) => {
+        const h = x.jumlah || f41Hitung(x);
+        const jam = String(x.dicatat || x.selesai || "").replace("T", " ").slice(0, 16);
+        return (
+          `<details class="aleta-f41-baris"><summary><b>${f41Esc(jam)}</b> · ${x.jenis === "bas" ? "BAS" : "Putusan"} · ${f41Esc(f41KalimatHasil(h))}` +
+          `${S.riwayat.semua && x.oleh ? ` · ${f41Esc(x.oleh)}` : ""}${x.berhenti ? ` · <span class="aleta-f41-chip merah">berhenti</span>` : ""}</summary>` +
+          (x.berhenti ? `<div class="aleta-f41-kecil">${f41Esc(x.sebabBerhenti)}</div>` : "") +
+          `<div class="aleta-f41-rinci">${(x.butir || [])
+            .map((b) => `<div>${f41Esc(b.nomor)}${b.sidang ? ` sidang ke-${b.sidang}` : ""}: <b>${f41Esc(b.hasil)}</b> - ${f41Esc(b.catatan)}</div>`)
+            .join("")}</div></details>`
+        );
+      })
+      .join("");
+  }
+
+  function segarkanTombol() {
+    const dicentang = barisDicentang();
+    const siapKirim = dicentang.filter((b) => mesin.kiriman(S.siap.get(b.kunci)));
+    tPeriksa.hidden = S.tab === "riwayat";
+    tUnggah.hidden = S.tab === "riwayat";
+    tPeriksa.disabled = S.jalan || dicentang.length === 0;
+    tUnggah.disabled = S.jalan || siapKirim.length === 0;
+    tUnggah.textContent = siapKirim.length ? `Unggah ${siapKirim.length} berkas` : "Unggah";
+    tHenti.hidden = !S.jalan;
+  }
+
+  function gambar() {
+    gambarTab();
+    gambarAlat();
+    gambarBadan();
+    segarkanTombol();
+  }
+
+  async function muat() {
+    S.data = null;
+    S.galatMuat = "";
+    S.siap.clear();
+    S.centang.clear();
+    gambar();
+    try {
+      S.data = await mesin.daftar(S.saringan);
+      S.saringan = { ...S.data.saringan };
+      if (!S.tab || (S.tab !== "riwayat" && !S.data.hak[S.tab])) S.tab = jenisAwal && S.data.hak[jenisAwal] ? jenisAwal : S.data.hak.putusan ? "putusan" : "bas";
+      status(`${S.data.putusan.length + S.data.bas.length} menunggu unggah · dibaca ${f41Tanggal(S.data.hariIni)}`);
+    } catch (e) {
+      S.galatMuat = `Daftar belum dapat dibaca: ${String((e && e.message) || e)}`;
+      status("");
+    }
+    gambar();
+  }
+
+  function laporBaris(s, keadaan, teks) {
+    const el = elBadan.querySelector(`[data-kunci="${f41Esc(s.baris.kunci)}"]`);
+    if (!el) return;
+    el.setAttribute("data-keadaan", keadaan);
+    const k = el.querySelector("[data-f41-kemajuan]");
+    if (k) k.textContent = teks || "";
+  }
+
+  async function periksa() {
+    const dipilih = barisDicentang();
+    if (!dipilih.length || S.jalan) return;
+    S.jalan = true;
+    S.ringkas = null;
+    gambar();
+    let i = 0;
+    for (const b of dipilih) {
+      i += 1;
+      status(`Memeriksa ${i} dari ${dipilih.length}: ${b.nomorPerkara}…`);
+      laporBaris({ baris: b }, "jalan", "memeriksa…");
+      const s = await mesin.siapkan(b, (t) => laporBaris({ baris: b }, "jalan", t));
+      S.siap.set(b.kunci, s);
+      const el = elBadan.querySelector(`[data-kunci="${f41Esc(b.kunci)}"]`);
+      if (el) {
+        el.setAttribute("data-keadaan", s.keadaan);
+        el.querySelector(".aleta-f41-rinci").innerHTML = rinciPratinjau(s);
+        el.querySelector("[data-f41-kemajuan]").textContent = "";
+      }
+    }
+    S.jalan = false;
+    const siap = dipilih.filter((b) => mesin.kiriman(S.siap.get(b.kunci))).length;
+    const perluLihat = dipilih.filter((b) => {
+      const s = S.siap.get(b.kunci);
+      return s && s.keadaan === "siap" && s.anonim && !s.keputusanAnonim;
+    }).length;
+    status(`${siap} siap diunggah dari ${dipilih.length} yang diperiksa${perluLihat ? ` · ${perluLihat} naskah anonim perlu Anda lihat dulu` : ""}.`);
+    gambar();
+  }
+
+  async function unggah() {
+    // Yang sudah berhasil/dobel pada putaran sebelumnya tidak diikutkan lagi.
+    const dipilih = barisDicentang()
+      .map((b) => S.siap.get(b.kunci))
+      .filter((s) => s && s.hasil !== "berhasil" && s.hasil !== "dobel");
+    const siap = dipilih.filter((s) => mesin.kiriman({ ...s, hasil: undefined }));
+    if (!siap.length || S.jalan) return;
+    let setuju = true;
+    try {
+      setuju = window.confirm(
+        `Unggah ${siap.length} berkas ke e-Doc SIPP sekarang?\n\nBerkas dikirim satu per satu. e-Doc yang sudah ada tidak diganti. Bila satu gagal, sisanya tidak dikerjakan.`
+      );
+    } catch {
+      setuju = true;
+    }
+    if (!setuju) return;
+    S.jalan = true;
+    S.pembatal = new AbortController();
+    for (const s of dipilih) {
+      delete s.hasil;
+      delete s.catatanHasil;
+    }
+    gambar();
+    let n = 0;
+    const ringkas = await mesin.jalankan(dipilih, {
+      sinyal: S.pembatal.signal,
+      lapor: (s, keadaan, teks) => {
+        if (keadaan !== "jalan") n += 1;
+        status(`Mengunggah… ${n} dari ${dipilih.length} selesai`);
+        laporBaris(s, keadaan, teks);
+      },
+    });
+    const catat = await mesin.catatRiwayat(ringkas);
+    ringkas.riwayat = catat.ok;
+    S.ringkas = ringkas;
+    S.riwayat = null;
+    S.jalan = false;
+    S.pembatal = null;
+    status(f41KalimatHasil(f41Hitung(ringkas)));
+    gambar();
+  }
+
+  async function lihatAnonim(kunci) {
+    const s = S.siap.get(kunci);
+    if (!s || !s.anonim) return;
+    const pilih = await mesin.deps.pratinjauAnonim(s.anonim, { nomor: s.baris.nomorPerkara });
+    if (pilih === "unggah") s.keputusanAnonim = "unggah";
+    else if (pilih === "tanpa") s.keputusanAnonim = "tanpa";
+    gambar();
+  }
+
+  function tutup() {
+    if (S.jalan) {
+      status("Tunggu sampai unggahan berhenti - tekan Hentikan lebih dulu.");
+      return;
+    }
+    document.removeEventListener("keydown", tombol, true);
+    tirai.remove();
+    f41Terbuka = null;
+  }
+  function tombol(e) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      tutup();
+    }
+  }
+
+  tirai.addEventListener("click", (e) => {
+    const t = e.target;
+    const c = (s) => (t && t.closest ? t.closest(s) : null);
+    if (t === tirai) return tutup();
+    const aksi = c("[data-f41]");
+    const kode = aksi ? aksi.getAttribute("data-f41") : "";
+    if (kode === "tutup") return tutup();
+    if (kode === "periksa") return void periksa();
+    if (kode === "unggah") return void unggah();
+    if (kode === "henti" && S.pembatal) {
+      S.pembatal.abort();
+      status("Berhenti sesudah berkas yang sedang dikirim selesai…");
+      return;
+    }
+    if (kode === "semua" && !S.jalan) {
+      for (const b of daftarTab()) S.centang.add(b.kunci);
+      return gambar();
+    }
+    if (kode === "bersih" && !S.jalan) {
+      for (const b of daftarTab()) S.centang.delete(b.kunci);
+      return gambar();
+    }
+    if (kode === "muat" && !S.jalan) return void muat();
+    const tab = c("[data-f41-tab]");
+    if (tab && !S.jalan) {
+      S.tab = tab.getAttribute("data-f41-tab");
+      return gambar();
+    }
+    const an = c("[data-f41-anonim]");
+    if (an && !S.jalan) return void lihatAnonim(an.getAttribute("data-f41-anonim"));
+  });
+  tirai.addEventListener("change", (e) => {
+    const t = e.target;
+    if (t && t.getAttribute && t.getAttribute("data-f41-centang")) {
+      const k = t.getAttribute("data-f41-centang");
+      if (t.checked) S.centang.add(k);
+      else S.centang.delete(k);
+      gambarAlat();
+      segarkanTombol();
+    } else if (t && t.getAttribute && t.getAttribute("data-f41") === "saringan") {
+      S.saringan = { ...S.saringan, [S.tab]: t.value };
+      void muat();
+    }
+  });
+  document.addEventListener("keydown", tombol, true);
+  document.body.appendChild(tirai);
+  f41Terbuka = tirai;
+  const tutupTombol = q('[data-f41="tutup"]');
+  if (tutupTombol) tutupTombol.focus();
+  tirai.__f41 = { S, muat, periksa, unggah, mesin };
+  void muat();
+  return tirai;
+}
+
+/** Tombol "Unggah massal" di panel massal ABT (UI Baru/Baru saja), Blangko Derry, dan alamat #aleta-unggah-massal. */
+function f41Pasang() {
+  try {
+    globalThis.aletaUnggahMassal = { buka: aletaUnggahMassalBuka };
+  } catch {
+    /* tanpa globalThis */
+  }
+  // Blangko ABT by Derry Briantono: alat "Unggah massal" (hakim & PP) - didaftarkan begitu API-nya ada.
+  let coba = 0;
+  const daftarkanBd = () => {
+    const bd = globalThis.aletaBlangkoDerry;
+    if (bd && typeof bd.daftarkanAlat === "function") {
+      bd.daftarkanAlat("massal:unggah", () => aletaUnggahMassalBuka(""));
+      return;
+    }
+    if ((coba += 1) < 40) setTimeout(daftarkanBd, 500);
+  };
+  daftarkanBd();
+  // Dari SIPP (penyatu M2): .../abt/main/beranda#aleta-unggah-massal=bas
+  const dariHash = () => {
+    const m = String(location.hash || "").match(new RegExp(`${F41_HASH}(?:=(putusan|bas))?`));
+    if (m) aletaUnggahMassalBuka(m[1] || "");
+  };
+  window.addEventListener("hashchange", dariHash);
+  setTimeout(dariHash, 800);
+  // Bagian di panel massal ABT (beranda) - Tampilan Lama tidak berubah.
+  let ulang = 0;
+  const sisip = () => {
+    if (typeof alatUjiMode === "function" && alatUjiMode() === "lama") return;
+    const panel = document.getElementById(typeof PENANDA_MASSAL_ABT === "string" ? PENANDA_MASSAL_ABT : "aleta-panel-abt-massal");
+    if (!panel) {
+      if ((ulang += 1) < 30) setTimeout(sisip, 1000);
+      return;
+    }
+    if (panel.querySelector(".aleta-f41-bagian")) return;
+    const kotak = document.createElement("div");
+    kotak.className = "aleta-bagian aleta-f41-bagian";
+    const tombolBuka = document.createElement("button");
+    tombolBuka.type = "button";
+    tombolBuka.className = "aleta-perkakas-aksi";
+    tombolBuka.textContent = "Unggah massal ke e-Doc SIPP";
+    tombolBuka.title = "Putusan (hakim) atau BAS (panitera pengganti) yang belum ada di SIPP - centang, periksa, unggah berurutan.";
+    tombolBuka.addEventListener("click", () => aletaUnggahMassalBuka(""));
+    kotak.appendChild(tombolBuka);
+    const isi = panel.querySelector(".aleta-isi") || panel;
+    isi.insertBefore(kotak, isi.firstChild);
+  };
+  setTimeout(sisip, 1500);
+}
+if (typeof window !== "undefined" && typeof document !== "undefined" && /\/abt(\/|$)/.test(String((typeof location !== "undefined" && location.pathname) || "")) && !globalThis.__aletaF41Uji) {
+  try {
+    void (typeof sedangAktif === "function" ? sedangAktif() : Promise.resolve(true))
+      .then((aktif) => {
+        if (aktif) f41Pasang();
+      })
+      .catch(() => {});
+  } catch (e) {
+    if (typeof alatCatat === "function") alatCatat("galat", `unggah massal tidak terpasang: ${String((e && e.message) || e)}`, "");
+  }
+}
+/* === AKHIR 17OKT-F41 === */

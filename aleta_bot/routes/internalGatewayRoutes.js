@@ -5004,6 +5004,64 @@ router.post("/sipp/putusan-unggah", requireInternalToken, async (req, res) => {
   }
 });
 
+/* === 17OKT-F41: UNGGAH MASSAL e-DOC (putusan & BAS) === */
+// Daftar e-Doc yang menunggu dan cek dobel satu e-Doc: SELECT saja
+// (unggahMassalService). Unggah BAS satu sidang: menulis berkas + satu kolom
+// edoc_bas meniru fileupload_c.php SIPP (basUnggahService), hak lapis kedua di sini.
+router.get("/sipp/unggah-massal/daftar", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/unggahMassalService").daftar({ sejakHari: Number(req.query.sejak || 0) || undefined });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+router.get("/sipp/unggah-massal/cek", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/unggahMassalService").cek({
+      jenis: String(req.query.jenis || ""),
+      perkaraId: String(req.query.perkaraId || ""),
+      sidangId: String(req.query.sidangId || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+router.post("/sipp/bas-unggah", requireInternalToken, async (req, res) => {
+  try {
+    const basUnggahService = require("../services/basUnggahService");
+    const hak = basUnggahService.periksaHakUnggahBas(req.body || {});
+    if (!hak.ok) {
+      res.status(hak.status).json({ ok: false, alasan: hak.alasan, pesan: hak.pesan, error: hak.pesan });
+      return;
+    }
+    const badan = req.body || {};
+    let isi = null;
+    try {
+      isi = badan.basBase64 ? Buffer.from(String(badan.basBase64), "base64") : null;
+    } catch {
+      isi = null;
+    }
+    const hasil = await basUnggahService.unggahBas({
+      perkaraId: badan.perkaraId,
+      sidangId: badan.sidangId,
+      nomorPerkara: String(badan.nomorPerkara || ""),
+      isi,
+      olehUsername: String(badan.olehUsername || ""),
+      operator: String(badan.operator || ""),
+      ip: String(badan.ip || ""),
+      ganti: badan.ganti === true,
+    });
+    // Penolakan yang wajar (sudah_ada dll.) membawa `kode` + `error` - gatewayFetch portal
+    // meneruskan keduanya, sehingga "sudah ada" dapat dibedakan dari bot yang mati.
+    res.status(200).json(hasil.ok ? hasil : { ...hasil, kode: hasil.alasan, error: hasil.pesan || hasil.alasan });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/* === AKHIR 17OKT-F41 === */
+
 router.get("/sipp/status-perkara", requireInternalToken, async (req, res) => {
   try {
     const hasil = await sippStatusPerkaraService.statusLengkap(String(req.query.nomor || ""));
