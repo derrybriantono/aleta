@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.202.0",
+    dirilis: "2026-10-16T22:30:00+08:00",
+    judul: "Blangko ABT by Derry Briantono lengkap: isian, bukti, tanya jawab, pratinjau dan cetak",
+    butir: [
+      "Jendela pilih blangko dua kolom: saran dari keterangan dan agenda sidang serta keadaan perkara, lalu kelompok blangko urut yang paling sering dipakai.",
+      "Perlu diisi: isian yang bergantung pada kuasa, prodeo, dan alasan C/H muncul otomatis; saran samar bisa dipakai dengan Tab; ikon i menunjukkan sumber datanya; tiap isian tersimpan langsung ke ABT.",
+      "Alat bukti surat dengan kode P otomatis, pilihan meterai dan pencocokan; tanya jawab saksi tunggal atau berdampingan dengan Susun Keterangan Saksi.",
+      "Pratinjau bisa dilipat dan disunting; cetak RTF, PDF, PDF SALINAN, PDF anonim (putusan), unggah e-Doc putusan, tambah tanda tangan per akun, dan pengingat isian kosong sebelum cetak.",
+      "BAS massal dan putusan memilih blangko menurut keadaan perkara (verstek, mediasi, cabut, NO, gugur); relaas e-Court terpetakan; blangko baru Wali Adhal, ikrar talak, dan mediasi dikenali.",
+      "Super Admin: alat rekam susunan halaman SIPP (tanpa data pribadi) dan tautan Edit variabel ini ke menu portal Pengaturan SIPP & ABT.",
+    ],
+  },
+  {
     versi: "1.201.0",
     dirilis: "2026-10-16T19:30:00+08:00",
     judul: "Blangko ABT by Derry Briantono (kerangka) dan perbaikan saksi, e-Doc anonim, petitum",

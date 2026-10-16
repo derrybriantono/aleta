@@ -145,17 +145,16 @@ describe("rekam susunan halaman SIPP - tanpa data pribadi", () => {
     );
   });
 
-  it("unduhan berupa JSON lewat tautan sementara", () => {
+  it("unduhan berupa JSON lewat alatUnduh (jalur unduh aman ekstensi)", async () => {
     const w = buka();
-    const dibuat: string[] = [];
-    w.URL.createObjectURL = () => "blob:uji";
-    w.URL.revokeObjectURL = () => {};
-    w.HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
-      dibuat.push(this.download);
+    const dibuat: Array<{ nama: string; tipe: string }> = [];
+    w.alatUnduh = async (blob: Blob, nama: string) => {
+      dibuat.push({ nama, tipe: blob.type });
+      return { ok: true, lewat: "ekstensi" };
     };
-    const nama = w.alatRekamUnduh(w.alatRekamSusunan(w.document, {}));
+    const nama = await w.alatRekamUnduh(w.alatRekamSusunan(w.document, {}));
     expect(nama).toMatch(/^rekam-sipp-perkara_detil_agama-\d{8}-\d{4}\.json$/);
-    expect(dibuat).toEqual([nama]);
+    expect(dibuat).toEqual([{ nama, tipe: "application/json" }]);
   });
 });
 

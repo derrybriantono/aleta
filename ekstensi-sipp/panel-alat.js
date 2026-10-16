@@ -6437,20 +6437,17 @@ function alatRekamNamaBerkas(rekaman) {
   return `rekam-${r.situs || "sipp"}-${halaman}-${w}.json`;
 }
 
-/** Mengunduh rekaman sebagai berkas JSON lewat tautan sementara. */
-function alatRekamUnduh(rekaman) {
+/**
+ * Mengunduh rekaman sebagai berkas JSON lewat alatUnduh (jalur unduh aman
+ * ekstensi, sama dengan unduhan lain di halaman http SIPP). Pulang nama berkas.
+ */
+async function alatRekamUnduh(rekaman) {
   const teks = JSON.stringify(rekaman, null, 1);
   const blob = new Blob([teks], { type: "application/json" });
-  const alamat = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = alamat;
-  a.download = alatRekamNamaBerkas(rekaman);
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(alamat), 4000);
-  return a.download;
+  const nama = alatRekamNamaBerkas(rekaman);
+  const hasil = await alatUnduh(blob, nama);
+  if (hasil && hasil.ok === false && hasil.pesan) throw new Error(hasil.pesan);
+  return nama;
 }
 
 /* ─── LACI PERKAKAS: SATU TEMPAT, BUKAN TUJUH TOMBOL ────────────────────────
@@ -6582,10 +6579,10 @@ function alatLaciPerkakas(panel, opsi) {
     tombolRekam.type = "button";
     const tombolRekamSalin = alatEl("button", "aleta-perkakas-aksi aleta-rekam-salin", "Rekam & salin");
     tombolRekamSalin.type = "button";
-    tombolRekam.addEventListener("click", () => {
+    tombolRekam.addEventListener("click", async () => {
       try {
         const rekaman = alatRekamSusunan(document, { catatan: pilihan.perkara ? "perkara terbuka" : "" });
-        const nama = alatRekamUnduh(rekaman);
+        const nama = await alatRekamUnduh(rekaman);
         alatCatat("rekam", `rekam susunan ${rekaman.halaman}`, `${rekaman.elemen.length} elemen`);
         beritahu(`Berkas ${nama} diunduh: ${rekaman.elemen.length} bagian halaman${rekaman.jendelaTerbuka.length ? `, jendela ${rekaman.jendelaTerbuka.join(", ")}` : ""}.`);
       } catch (galat) {
