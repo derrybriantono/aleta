@@ -101,6 +101,11 @@ const BERKAS = [
   // ALETA di Tunda/Edit Jadwal, Relaas, Putusan Sela, Rekonvensi, Saksi
   // Putusan, Tambah Biaya (Kasir), dan Arsip.
   "sipp-ide-m1.js",
+  // SIPP dengan Ide ALETA gelombang 2 (tahap M2, 16 Okt 2026) - skrip konten
+  // SIPP sesudah L1: kotak penyatu SIPP-ABT-ALETA di halaman perkara (status
+  // blangko, BAS belum diunggah, tugas, selisih 3 sumber) dan penyembunyi
+  // tombol ALETA yang dobel penuh (saklar sippTampilDobel memunculkannya).
+  "sipp-ide-m2.js",
   "blangko-derry.css",
   "tema-awal.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat

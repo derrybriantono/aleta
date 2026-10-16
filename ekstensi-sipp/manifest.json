@@ -58,7 +58,8 @@
         "checklist.js",
         "sipp-ide-l1.js",
         "sipp-ide-l2.js",
-        "sipp-ide-m1.js"
+        "sipp-ide-m1.js",
+        "sipp-ide-m2.js"
       ],
       "css": [
         "panel.css"

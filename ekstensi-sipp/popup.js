@@ -24,6 +24,11 @@ const SAKLAR_DERRY = {
   derrySaran: ["blangkoDerrySaran", true],
   derryIngat: ["blangkoDerryIngat", true],
 };
+/* SIPP dengan Ide ALETA gelombang 2 (tahap M2): penyatu SIPP-ABT-ALETA dan tombol ALETA yang dobel. */
+const SAKLAR_SIPP_IDE = {
+  sippPenyatu: ["sippPenyatu", true],
+  sippTampilDobel: ["sippTampilDobel", false],
+};
 
 /**
  * Penyimpanan ekstensi, bila memang sedang berjalan sebagai ekstensi.
@@ -68,6 +73,8 @@ const KUNCI_SETELAN_AKUN = [
   "blangkoDerryTawar",
   "blangkoDerrySaran",
   "blangkoDerryIngat",
+  "sippPenyatu",
+  "sippTampilDobel",
   "skalaHuruf",
   "temaPopup",
   "temaPanel",
@@ -93,6 +100,8 @@ const BAWAAN_AKUN = {
   blangkoDerryTawar: true,
   blangkoDerrySaran: true,
   blangkoDerryIngat: true,
+  sippPenyatu: true,
+  sippTampilDobel: false,
   skalaHuruf: 100,
   temaPopup: "ikut",
   temaPanel: "gelap",
@@ -218,7 +227,7 @@ function pasangNilai(simpan) {
   if (kotakChecklist) kotakChecklist.checked = simpan.checklistMilestone === true;
   // Bawaan MATI (tampilan baru dipilih orangnya); tawaran, saran Tab, dan
   // pengingat isian kosong bawaannya MENYALA.
-  for (const [id, [kunci, bawaan]] of Object.entries(SAKLAR_DERRY)) {
+  for (const [id, [kunci, bawaan]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE })) {
     const k = document.getElementById(id);
     if (k) k.checked = bawaan ? simpan[kunci] !== false : simpan[kunci] === true;
   }
@@ -240,7 +249,7 @@ function pasangNilai(simpan) {
 
 if (penyimpanan) {
   penyimpanan
-    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI, ...Object.values(SAKLAR_DERRY).map((x) => x[0])])
+    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI, ...Object.values(SAKLAR_DERRY).map((x) => x[0]), ...Object.values(SAKLAR_SIPP_IDE).map((x) => x[0])])
     .then(pasangNilai)
     .catch(() => pasangNilai({}));
 } else {
@@ -461,7 +470,7 @@ if (kotakCetak) {
     kotakSunting.addEventListener("change", () => simpan("suntingLangsungAbt", kotakSunting.checked, kotakSunting));
   }
 }
-for (const [id, [kunci]] of Object.entries(SAKLAR_DERRY)) {
+for (const [id, [kunci]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE })) {
   const k = document.getElementById(id);
   if (k) k.addEventListener("change", () => simpan(kunci, k.checked, k));
 }
