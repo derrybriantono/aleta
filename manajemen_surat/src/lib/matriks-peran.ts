@@ -914,4 +914,15 @@ export function golonganMenuEkstensi(pengguna: PenggunaGolongan | null | undefin
   const urut = (tanpaLain.length ? tanpaLain : hasil.length ? (["lain"] as GolonganMenuEkstensi[]) : []).slice();
   return urut.sort((x, y) => URUTAN_GOLONGAN_EKSTENSI.indexOf(x) - URUTAN_GOLONGAN_EKSTENSI.indexOf(y));
 }
+
+/**
+ * BAS massal (16 Okt 2026 malam, hak putusan/BAS per peran): golongan yang sama
+ * dengan matriks menu ekstensi "bas-massal" (panel-alat.js ALAT_MENU_PERAN.*.daftar:
+ * pp, panitera-utama, panmud, analis) + admin. Hakim, Ketua/Wakil, juru sita,
+ * dan peran lain tidak - rute menolak 403 walau kemampuan "panel" menyala.
+ */
+const GOLONGAN_BAS_MASSAL: GolonganMenuEkstensi[] = ["admin", "panitera", "panmud", "pp", "analis"];
+export function bolehBasMassal(pengguna: PenggunaGolongan | null | undefined): boolean {
+  return golonganMenuEkstensi(pengguna).some((g) => GOLONGAN_BAS_MASSAL.includes(g));
+}
 /* === AKHIR HAK-PERAN === */

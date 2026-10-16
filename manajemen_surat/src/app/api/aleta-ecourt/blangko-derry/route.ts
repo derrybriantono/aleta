@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
+import { bacaHakBlangko } from "@/server/modules/pengaturan-abt/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -21,6 +22,12 @@ const BATAS_NILAI = 600;
  * BAHAN "PERLU DIISI" BLANGKO ABT BY DERRY BRIANTONO (TAHAP F) - BACA SAJA
  * ============================================================================
  *
+ *   GET ?hak=1
+ *       (16 Okt malam) saklar Pengaturan SIPP & ABT "Hakim boleh membuka
+ *       folder BAS" / "PP boleh membuka folder putusan" + hak per folder Derry
+ *       (nama_alias, grup, grup selalu-boleh). Ekstensi membatasi jenis
+ *       dokumen per peran dengannya, juga saat admin "Lihat sebagai akun".
+ *       Bot tidak menjawab = { ada: false } (ekstensi: saklar dianggap mati).
  *   GET ?indeks=1
  *       folder Derry di server beserta nama berkasnya (bot blangko.pohon,
  *       cadangan blangko.katalog per folder) - ekstensi mencocokkan kelompok
@@ -171,6 +178,13 @@ export async function GET(request: NextRequest) {
     await pastikanKapabilitas(db, actorUserId, "panel");
     const q = request.nextUrl.searchParams;
 
+    if (q.get("hak") === "1") {
+      try {
+        return ok(await bacaHakBlangko());
+      } catch (e) {
+        return ok({ ada: false, sebab: teks((e as Error)?.message) || "Hak menu ABT tidak terbaca." });
+      }
+    }
     if (q.get("indeks") === "1") return ok(await indeksDerry());
 
     const folder = teks(q.get("folder")).replace(/^\/+|\/+$/g, "");

@@ -391,7 +391,7 @@ describe("F. perlu diisi", () => {
     expect(mintaKe(h, /main\/view/)).toEqual([]);
   });
 
-  it("huruf di luar cp1252 ditolak tanpa menulis; PP pada blangko putusan hanya melihat", async () => {
+  it("huruf di luar cp1252 ditolak tanpa menulis; PP tidak dapat membuka blangko putusan", async () => {
     const h = buka();
     await pilihPutusan(h);
     const i = q(h, "#bd-i8503") as HTMLInputElement;
@@ -408,15 +408,16 @@ describe("F. perlu diisi", () => {
     await sampaiPerkara(h2);
     await sampai(() => h2.w.aletaBlangkoDerryIsian.keadaan().terpasang, "terpasang");
     // Kelompok Putusan dimuat lewat api (PP tidak melihatnya di jendela), lalu blangko putusan dipaksa dipilih.
+    // 16 Okt malam (hak putusan/BAS per peran): PP tidak lagi membuka putusan sama sekali - ditolak sebelum
+    // POST main/cari dan sebelum isian dibaca; tidak ada yang ditulis.
     await isian(h2).muatKelompok("Putusan CG");
     await isian(h2).pilihBlangko(BLANGKO_PUT, "Putusan CG");
-    await sampai(() => q(h2, "#bd-i8503"), "pilih");
-    expect((q(h2, "#bd-i8503") as HTMLInputElement).readOnly).toBe(true);
-    ketik(h2, q(h2, "#bd-i8503") as HTMLInputElement, "G");
     await tunggu(30);
+    expect(q(h2, "#bd-toast")!.textContent).toContain("bukan untuk peran");
+    expect(isian(h2).keadaan().blangko).toBeNull();
+    expect(q(h2, "#bd-i8503")).toBeNull();
+    expect(mintaKe(h2, /main\/cari/, "POST")).toEqual([]);
     expect(mintaKe(h2, /edit_data\?no_var=8503/, "POST")).toEqual([]);
-    expect(akar(h2).textContent).toContain("hanya dapat melihat");
-    expect(q(h2, '[data-status="8503"]')!.textContent).toContain("hanya ditulis Hakim");
   });
 
   it("Edit variabel ini (tahap H): hanya Super Admin/Admin, ke Pengaturan SIPP & ABT portal di tab baru (akar portal /aleta)", async () => {

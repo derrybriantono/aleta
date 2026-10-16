@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { bolehBasMassal } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
@@ -83,6 +84,13 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const actor = await pastikanKapabilitas(db, actorUserId, "panel");
+    // 16 Okt malam: BAS massal milik panitera sidang (PP, Panitera, Panmud, Analis) dan admin - hakim tidak.
+    if (!isPrivilegedAdmin(actor) && !bolehBasMassal(actor)) {
+      return Response.json(
+        { ok: false, alasan: "BAS massal hanya untuk Panitera Pengganti, Panitera, Panitera Muda, Admin, dan Super Admin." },
+        { status: 403 }
+      );
+    }
 
     const tanggalMinta = (request.nextUrl.searchParams.get("tanggal") || "").trim();
     if (tanggalMinta && !/^\d{4}-\d{2}-\d{2}$/.test(tanggalMinta)) {

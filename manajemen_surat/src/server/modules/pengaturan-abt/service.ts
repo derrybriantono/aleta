@@ -4,11 +4,14 @@ import {
   hakPengaturanAbt,
   hurufDiluarLatin1,
   periksaKueriVariabel,
+  periksaPeranMenuKosong,
   periksaTemplat,
   ringkasBedaTemplat,
+  ringkasHakBlangko,
   susunSaklar,
   type BarisTemplat,
   type DataMenuAbt,
+  type HakBlangkoEkstensi,
   type HakPengaturanAbt,
   type JenisSuntingan,
 } from "@/lib/pengaturan-abt";
@@ -210,6 +213,21 @@ export async function bacaMenu() {
   return { ...isi, saklar: susunSaklar(isi) };
 }
 
+/**
+ * Hak blangko Derry untuk ekstensi (semua pemegang "panel"; baca saja, 16 Okt malam):
+ * saklar hakim/PP + hak per folder. Disinggahkan 60 detik - tiap pembukaan Blangko
+ * Derry tidak boleh mengeroyok bot; sesudah admin menyimpan hak menu singgahan dibuang.
+ */
+let singgahHakBlangko: { saat: number; isi: HakBlangkoEkstensi } | null = null;
+const UMUR_HAK_BLANGKO_MS = 60 * 1000;
+export async function bacaHakBlangko(): Promise<HakBlangkoEkstensi> {
+  if (singgahHakBlangko && Date.now() - singgahHakBlangko.saat < UMUR_HAK_BLANGKO_MS) return singgahHakBlangko.isi;
+  const data = await bot<DataMenuAbt & { ok: boolean }>("/menu");
+  const isi = ringkasHakBlangko(data);
+  singgahHakBlangko = { saat: Date.now(), isi };
+  return isi;
+}
+
 type BarisUbahMenu = { id: number; lama: Record<string, unknown>; baru: Record<string, unknown> };
 type BarisConfig = { name: string; lama: string; baru: string };
 
@@ -232,11 +250,15 @@ function bacaUbahMenu(badan: Record<string, unknown>): { ubah: BarisUbahMenu[]; 
 export async function simpanMenu(db: AletaDatabase, aktor: AktorPengaturan, ip: string, badan: Record<string, unknown>, pulihDari = "") {
   wajibHak(hakPengaturanAbt(aktor.roleId), "ubahMenu", "mengubah hak menu ABT");
   const { ubah, config } = bacaUbahMenu(badan);
+  // 16 Okt malam: daftar peran kosong = ABT membuka folder untuk SEMUA pengguna (menu_cek CONCAT NULL).
+  const kosong = periksaPeranMenuKosong(ubah);
+  if (kosong) throw new ApiError(400, kosong);
   const ringkas =
     String(badan.ringkas ?? "").trim() ||
     [ubah.length ? `${ubah.length} folder diubah haknya` : "", config.length ? `pengaturan ABT ${config.map((c) => c.name).join(", ")}` : ""]
       .filter(Boolean)
       .join("; ");
+  singgahHakBlangko = null;
   return denganCatatan(
     db,
     {
@@ -254,6 +276,7 @@ export async function simpanMenu(db: AletaDatabase, aktor: AktorPengaturan, ip: 
         "/menu/simpan",
         { method: "POST", body: { ubah, config } }
       );
+      singgahHakBlangko = null;
       return { hasil: { sebelum: h.sebelum, sesudah: h.sesudah }, baru: { ubah: h.sesudah, config: h.configSesudah } };
     }
   );

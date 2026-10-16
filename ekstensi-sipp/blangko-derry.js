@@ -63,6 +63,9 @@
   const API_SIAPA = "/aleta/api/aleta-ecourt/ekstensi/siapa";
   const API_PERKARA = "/aleta/api/aleta-ecourt/perkara-saya";
   const API_SIDANG = "/aleta/api/aleta-ecourt/sidang";
+  /** Hak folder Blangko Derry + saklar Pengaturan SIPP & ABT (baca saja, 16 Okt malam). */
+  const API_HAK = "/aleta/api/aleta-ecourt/blangko-derry?hak=1";
+  const UMUR_HAK_MS = 5 * 60 * 1000;
   const K = {
     bawaan: "blangkoDerryBawaan",
     tawar: "blangkoDerryTawar",
@@ -192,6 +195,61 @@
       else if (x === "ptsp") hasil.add("ptsp");
     }
     return hasil;
+  }
+
+  // ── HAK PUTUSAN/BAS PER PERAN (16 Okt 2026 malam) ─────────────────────────
+  // Keluhan pengguna: "role hakim masih bisa akses BAS dan begitupun sebaliknya".
+  // Sebabnya di sini: Super Admin/Admin yang memilih "Lihat sebagai akun" tetap
+  // mendapat ketiga jenis dokumen dan boleh menulis (adm() menang atas akun yang
+  // ditiru). Kini satu aturan untuk semua: Super Admin/Admin TANPA "Lihat
+  // sebagai" = semuanya; selain itu jenis dokumen peran (hakim putusan, PP BAS,
+  // juru sita relaas) DITAMBAH jenis yang dibuka saklar Pengaturan SIPP & ABT
+  // ("Hakim boleh membuka folder BAS", "Panitera Pengganti boleh membuka folder
+  // putusan") - keadaannya dibaca dari hak menu ABT lewat portal, gagal = mati.
+  // Akun yang ditiru juga dibatasi per FOLDER seperti ABT (menu_cek: grup ATAU
+  // grup "selalu boleh"; kosong = semua pengguna).
+  const PERAN_JENIS_DOK = { hakim: "put", pp: "bas", js: "rel" };
+  const SAKLAR_JENIS_DOK = { hakim: ["bas", "hakimBas"], pp: ["put", "ppPutusan"] };
+  /** Grup SIPP yang ditiru per peran tampilan: hakim = Hakim + Ketua/Wakil, PP, Juru Sita. */
+  const GRUP_ABT_PERAN = { hakim: ["20", "10"], pp: ["500"], js: ["600"] };
+  const pecahGrup = (s) => String(s == null ? "" : s).split("|").map((x) => x.trim()).filter(Boolean);
+  const samaNamaMenu = (a, b) => String(a || "").replace(/\s+/g, " ").trim().toLowerCase() === String(b || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+  /** Folder ABT terbuka untuk salah satu grup? Cermin Abt_model::menu_cek (CONCAT dengan NULL = semua). */
+  function folderTerbukaUntuk(f, grup) {
+    if (!f) return false;
+    if (f.user_grup_id == null || f.user_top_id == null || f.user_grup_id === "" || f.user_top_id === "") return true;
+    const ada = [...pecahGrup(f.user_grup_id), ...pecahGrup(f.user_top_id)];
+    return (grup || []).some((g) => ada.includes(String(g)));
+  }
+
+  /**
+   * Jenis dokumen yang boleh dibuka/ditulis. o = { admin, sebagaiPeran, peran: ["hakim"|"pp"|"js"],
+   * hak: { saklar: { hakimBas, ppPutusan }, folder } | null }.
+   */
+  function jenisDokumenBoleh(o) {
+    if (o.admin && !o.sebagaiPeran) return ["put", "bas", "rel"];
+    const peran = o.admin ? [o.sebagaiPeran] : (o.peran || []).filter((x) => PERAN_JENIS_DOK[x]);
+    const saklar = (o.hak && o.hak.saklar) || {};
+    const boleh = new Set();
+    for (const p of peran) {
+      if (PERAN_JENIS_DOK[p]) boleh.add(PERAN_JENIS_DOK[p]);
+      const s = SAKLAR_JENIS_DOK[p];
+      if (s && saklar[s[1]] === true) boleh.add(s[0]);
+    }
+    return ["put", "bas", "rel"].filter((j) => boleh.has(j));
+  }
+
+  /** Kelompok (menu) Blangko Derry boleh tampil/dibuka? k = { nama (nama_alias ABT), jenis }. */
+  function kelompokBoleh(k, o) {
+    if (!k) return false;
+    if (o.admin && !o.sebagaiPeran) return true;
+    if (!jenisDokumenBoleh(o).includes(k.jenis)) return false;
+    // Akun biasa: menunya sudah disaring ABT menurut grup akun ABT-nya sendiri.
+    if (!o.admin) return true;
+    const folder = o.hak && Array.isArray(o.hak.folder) ? o.hak.folder : null;
+    const f = folder && folder.find((x) => samaNamaMenu(x.namaAlias, k.nama) || samaNamaMenu(x.nama, k.nama));
+    return f ? folderTerbukaUntuk(f, GRUP_ABT_PERAN[o.sebagaiPeran] || []) : true;
   }
 
   /** Admin ABT dikenali dari kepala halaman ABT ("Administrator" / "Super Administrator"). */
@@ -359,6 +417,9 @@
     siapaGalat: "",
     peranSet: new Set(),
     adminAbt: false,
+    /** { saklar: { hakimBas, ppPutusan }, folder: [...] } dari portal; null = belum/gagal (saklar dianggap mati). */
+    hak: null,
+    hakSaat: 0,
     aktif: false,
     sebagai: { peran: "", nama: "" },
     mode: "hari",
@@ -401,6 +462,28 @@
     return ["hakim", "pp", "js", "kasir", "ptsp"].filter((x) => S.peranSet.has(x));
   }
   const berhakDaftar = () => adm() || ["hakim", "pp", "js"].some((x) => S.peranSet.has(x));
+  /** Bahan aturan hak dokumen untuk keadaan sekarang (akun + "Lihat sebagai" + saklar). */
+  const bahanHak = () => ({ admin: adm(), sebagaiPeran: adm() ? S.sebagai.peran : "", peran: ["hakim", "pp", "js"].filter((x) => S.peranSet.has(x)), hak: S.hak });
+  const jenisDokumen = () => jenisDokumenBoleh(bahanHak());
+  /** Hak folder & saklar dari portal (paling lama 5 menit); gagal = null, saklar dianggap mati. */
+  let janjiHak = null;
+  function muatHak(paksa) {
+    if (!paksa && S.hak && Date.now() - S.hakSaat < UMUR_HAK_MS) return Promise.resolve(S.hak);
+    if (janjiHak) return janjiHak;
+    janjiHak = ambil(API_HAK, "Membaca hak blangko")
+      .then((d) => {
+        S.hak = d && d.ada ? { saklar: d.saklar || {}, folder: Array.isArray(d.folder) ? d.folder : [] } : null;
+      })
+      .catch(() => {
+        S.hak = null;
+      })
+      .then(() => {
+        S.hakSaat = Date.now();
+        janjiHak = null;
+        return S.hak;
+      });
+    return janjiHak;
+  }
 
   function hitungPeran() {
     const s = S.siapa;
@@ -501,6 +584,8 @@
       S.siapaGalat = String((e && e.message) || e);
     }
     hitungPeran();
+    // Saklar Pengaturan SIPP & ABT hanya mengubah hak hakim/PP; admin butuh hak folder untuk "Lihat sebagai".
+    if (S.siapa && (adm() || S.peranSet.has("hakim") || S.peranSet.has("pp"))) void muatHak();
     return S.siapa;
   }
 
@@ -1451,6 +1536,11 @@
     toast,
     adm,
     peranDokumen,
+    /** Jenis dokumen (put/bas/rel) yang boleh dibuka & ditulis sekarang - "Lihat sebagai" ikut membatasi. */
+    jenisDokumen,
+    /** Kelompok menu Blangko Derry { nama, jenis } boleh tampil/dibuka/ditulis sekarang? */
+    kelompokBoleh: (k) => kelompokBoleh(k, bahanHak()),
+    muatHak,
     siapa: () => (S.siapa ? { ...S.siapa, sebagai: { ...S.sebagai } } : null),
     /** Tahap F-G sudah mengisi wadah ini: tanda "menyusul" dan isi penampung dihapus. */
     tahapSiap(nama) {
@@ -1515,7 +1605,7 @@
       tema: S.tema,
       cfg: { ...S.cfg },
     }),
-    murni: { ringkasan, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI },
+    murni: { ringkasan, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk },
   };
   globalThis.aletaBlangkoDerry = api;
   void mulai();

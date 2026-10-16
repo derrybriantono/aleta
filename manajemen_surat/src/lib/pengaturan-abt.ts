@@ -340,6 +340,52 @@ export function rancanganSaklar(
   return hasil;
 }
 
+/**
+ * Hak blangko untuk ekstensi (Blangko ABT by Derry Briantono, 16 Okt 2026 malam):
+ * saklar "Hakim boleh membuka folder BAS" / "PP boleh membuka folder putusan"
+ * sebagai benar/salah ("sebagian" = benar: ABT tetap menyaring per folder) dan
+ * hak per folder (nama tampil ABT = nama_alias) untuk "Lihat sebagai akun".
+ * Tanpa kueri, validator, maupun rentang tahapan - hanya yang dibutuhkan layar.
+ */
+export type HakBlangkoEkstensi = {
+  ada: true;
+  saklar: { hakimBas: boolean; ppPutusan: boolean };
+  folder: Array<Pick<FolderMenuAbt, "id" | "nama" | "namaAlias" | "user_grup_id" | "user_top_id">>;
+};
+
+export function ringkasHakBlangko(d: Pick<DataMenuAbt, "folder" | "config">): HakBlangkoEkstensi {
+  const saklar = susunSaklar(d);
+  const nyala = (k: KunciSaklar) => {
+    const s = saklar.find((x) => x.kunci === k);
+    return Boolean(s && s.keadaan !== "mati");
+  };
+  return {
+    ada: true,
+    saklar: { hakimBas: nyala("hakim-lihat-bas"), ppPutusan: nyala("pp-lihat-putusan") },
+    folder: (d.folder || []).map((f) => ({ id: f.id, nama: f.nama, namaAlias: f.namaAlias, user_grup_id: f.user_grup_id, user_top_id: f.user_top_id })),
+  };
+}
+
+/**
+ * Daftar peran kosong DIBUKA ABT untuk SEMUA pengguna: Abt_model::menu_cek
+ * membaca CONCAT(user_grup_id,'|',user_top_id) - NULL bila salah satu kosong -
+ * dan user_grup_id() memulangkan TRUE untuk nilai kosong; akses_pengguna juga
+ * meloloskan "semua user" bila user_grup_id kosong. Jadi mengosongkan kolom
+ * itu bukan "tidak ada yang boleh" melainkan "semua boleh". Pulang sebab
+ * (bahasa sehari-hari) atau "".
+ */
+export function periksaPeranMenuKosong(ubah: Array<{ id: number; baru: Partial<Record<KolomMenu, unknown>> }>): string {
+  for (const u of ubah) {
+    for (const k of ["user_grup_id", "user_top_id"] as const) {
+      if (!(k in u.baru)) continue;
+      if (!pecahPeran(u.baru[k] as string | null).length) {
+        return `Folder ${u.id}: "${LABEL_KOLOM_MENU[k]}" tidak boleh kosong - ABT membaca daftar kosong sebagai SEMUA pengguna boleh membuka folder ini. Sisakan sedikitnya Super Administrator.`;
+      }
+    }
+  }
+  return "";
+}
+
 // ---------------------------------------------------------------------------
 // Variabel & template
 // ---------------------------------------------------------------------------
