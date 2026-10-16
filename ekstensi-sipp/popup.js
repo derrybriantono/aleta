@@ -488,7 +488,8 @@ for (const [id, [kunci]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE
 // F1.5 (17 Okt): gembok ABT juga diubah dari panel dan Widget ALETA - centang ikut seketika.
 try {
   chrome.storage.onChanged.addListener((ubah, tempat) => {
-    if (tempat !== "local") return;
+    // Popup yang sudah ditutup tidak lagi punya document - kabar yang datang sesudahnya diabaikan.
+    if (tempat !== "local" || typeof document === "undefined" || !document) return;
     for (const [id, [kunci]] of Object.entries(SAKLAR_ABT)) {
       const k = document.getElementById(id);
       if (k && ubah[kunci]) k.checked = ubah[kunci].newValue === true;

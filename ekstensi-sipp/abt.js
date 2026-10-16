@@ -20724,7 +20724,10 @@ if (typeof window !== "undefined" && typeof document !== "undefined" && /\/abt(\
  *      (pola peringatan cetak Blangko Derry). "Simpan yang pasti lalu cetak"
  *      membuka pratinjau Input semua yang pasti (tidak ada yang tertulis tanpa
  *      persetujuan), lalu memeriksa ulang dan mencetak. "Tetap cetak" atau
- *      menekan Cetak sekali lagi = cetak apa adanya;
+ *      menekan Cetak sekali lagi = cetak apa adanya. Isian "Tidak wajib" yang
+ *      kosong TIDAK menahan cetak (keputusan 17 Okt): bila hanya itu temuannya,
+ *      cetak langsung jalan dengan catatan kecil "n isian tidak wajib masih
+ *      kosong"; daftarnya tetap ikut tampil bila ada temuan lain;
  *   4. dicetak lewat jalur yang sudah ada: saklar "Cetak tiga berkas" menyala
  *      -> RTF + PDF + anonim (terbitkanTigaBerkas); mati -> satu .rtf
  *      (cetakSatuLewatEkstensi); keduanya memakai RTF yang sudah diambil di
@@ -20879,7 +20882,9 @@ async function f15AmbilRtf(alamat) {
 function f15Kabar(ctx, teks, gagal) {
   if (!ctx || !ctx.kabar) return;
   ctx.kabar.className = gagal ? "aleta-abt-kabar aleta-f15-kabar aleta-abt-gagal" : "aleta-abt-kabar aleta-f15-kabar";
-  ctx.kabar.textContent = teks || "";
+  // Cetak yang jalan meski ada isian Tidak wajib kosong: catatan kecil menyertai tiap kabar.
+  const n = Number(ctx.tidakWajib) || 0;
+  ctx.kabar.textContent = teks && !gagal && n > 0 ? `${teks} (${n} isian tidak wajib masih kosong)` : teks || "";
 }
 
 /** Tanda kuning + getar pada baris tabel ABT - hanya saat Cetak, diulang tiap tekanan. */
@@ -21070,6 +21075,7 @@ async function f15Cetak(ctx, paksa) {
   }
   const lewati = Boolean(paksa) || ctx.peringat;
   ctx.sibuk = true;
+  ctx.tidakWajib = 0;
   f15Sibuk(ctx, true);
   try {
     f15BersihkanTanda();
@@ -21087,12 +21093,15 @@ async function f15Cetak(ctx, paksa) {
       const pasti = s5DaftarPasti(ctx.pilih);
       const sunting = f15SuntingTerbuka();
       const { penting, tambahan } = f15Pilah(ctx.k, await f15IngatNyala());
-      if (pasti.length || sunting.length || penting.length || tambahan.length || siap.penanda.length) {
+      // Hanya Penting (termasuk isian berpesan error), penanda # tersisa, dan
+      // tulisan yang belum tersimpan yang menahan cetak; Tidak wajib tidak.
+      if (pasti.length || sunting.length || penting.length || siap.penanda.length) {
         ctx.peringat = true;
         f15Kabar(ctx, "");
         f15TampilIngat(ctx, { pasti, sunting, penting, tambahan, penanda: siap.penanda });
         return;
       }
+      ctx.tidakWajib = tambahan.length;
     }
     ctx.peringat = false;
     ctx.ingat.hidden = true;

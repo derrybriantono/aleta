@@ -274,8 +274,10 @@ function halamanHtml(isi: Record<string, string>, tanpaCetak = false) {
 
 type Halaman = { w: any; minta: Minta[]; tersimpan: Record<string, string>; pesan: any[]; simpanan: Record<string, unknown> };
 
-function buka(opsi: { simpanan?: Record<string, unknown>; tanpaCetak?: boolean } = {}): Halaman {
-  const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${halamanHtml(ISI, opsi.tanpaCetak)}</body></html>`, {
+function buka(opsi: { simpanan?: Record<string, unknown>; tanpaCetak?: boolean; isi?: Record<string, string>; rtf?: string } = {}): Halaman {
+  const isiHalaman = opsi.isi || ISI;
+  const naskah = opsi.rtf ?? RTF;
+  const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${halamanHtml(isiHalaman, opsi.tanpaCetak)}</body></html>`, {
     url: ALAMAT,
     runScripts: "outside-only",
     pretendToBeVisual: true,
@@ -344,12 +346,12 @@ function buka(opsi: { simpanan?: Record<string, unknown>; tanpaCetak?: boolean }
       return html('<input type="hidden" name="var_type" value="data_teks">');
     }
     if (url === CETAK && cara === "GET") {
-      return new Response(Buffer.from(RTF, "latin1"), {
+      return new Response(Buffer.from(naskah, "latin1"), {
         status: 200,
         headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="${NAMA_RTF}"` },
       });
     }
-    if (url === ALAMAT && cara === "GET") return html(`<html><body>${halamanHtml({ ...ISI, ...tersimpan })}</body></html>`);
+    if (url === ALAMAT && cara === "GET") return html(`<html><body>${halamanHtml({ ...isiHalaman, ...tersimpan })}</body></html>`);
     if (url.includes("/aps_badilag/") && cara === "GET") return html("<html><body></body></html>");
     return json({ ok: false, error: { message: "tidak ada" } }, 404);
   };
@@ -478,6 +480,29 @@ describe("B. tombol Cetak di samping 'Input semua yang pasti'", () => {
     expect(unduhan(h)).toEqual([]);
     (Array.from(ingat.querySelectorAll("button")).find((b: any) => b.textContent === "Tetap cetak") as any).click();
     await sampai(() => unduhan(h).length === 1, "unduhan sesudah simpan");
+  });
+
+  it("keputusan 17 Okt: hanya isian Tidak wajib yang kosong -> TIDAK menahan cetak; langsung tercetak dengan catatan kecil", async () => {
+    const isi = {
+      ...ISI,
+      "0222": "tahun 2024",
+      "5227": "perselisihan dan pertengkaran terus-menerus",
+      "0246": "bulan Mei 2025",
+      "9944": "1 tahun 5 bulan",
+      "0156": "Kantor Hukum Ma'ruf & Rekan",
+    };
+    const h = buka({ isi, rtf: "{\\rtf1\\ansi Putusan Nomor 533/Pdt.G/2026/PA.Dgl ... }" });
+    // Tidak ada usulan pasti (semua sudah sama) - tombol Input pasti tersembunyi, Cetak tetap terpasang.
+    const cetak = await sampai(() => q(h, ".aleta-f15-cetak"), "tombol Cetak terpasang");
+    await sampai(() => h.minta.some((m) => m.url.includes("/aleta-bot/abt/usulan") && JSON.parse(m.badan || "{}").sumber === "saksi"), "usulan termuat");
+    await tunggu(300);
+    cetak.click();
+    await sampai(() => unduhan(h).length === 1, "unduhan tanpa pemberitahuan");
+    expect(q(h, ".aleta-f15-ingat").hidden).toBe(true);
+    await sampai(() => /Dicetak \d\d\.\d\d/.test(q(h, ".aleta-f15-kabar").textContent), "kabar dicetak");
+    expect(q(h, ".aleta-f15-kabar").textContent).toContain("(1 isian tidak wajib masih kosong)");
+    expect(ambilCetak(h).length).toBe(1);
+    expect(tulisAbt(h)).toEqual([]);
   });
 
   it("saklar pengingat isian kosong mati: isian kosong tidak disebut; penanda # tetap diperiksa", async () => {

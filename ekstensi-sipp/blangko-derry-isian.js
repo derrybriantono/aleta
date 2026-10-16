@@ -2524,14 +2524,19 @@
       const rtf = await ambilRtf(S.prat.kotor);
       const kos = cfg().ingat !== false ? kosongRinci() : [];
       const hs = S.prat.penanda.map(namaPenanda);
-      if ((kos.length || hs.length) && !S.peringat && !paksa) {
+      // Keputusan 17 Okt (F1.5): hanya isian Penting dan penanda # tersisa yang menahan cetak; isian Tidak wajib
+      // yang kosong tidak - cetak langsung jalan dengan catatan kecil. Bila ada yang menahan, daftar Tidak wajib tetap ikut tampil.
+      const penting = kos.filter((x) => x.tingkat !== "tambahan");
+      if ((penting.length || hs.length) && !S.peringat && !paksa) {
         S.peringat = true;
         S.sibuk = false;
         renderCetak();
         tampilIngat(kos, hs);
         return;
       }
+      const tidakWajib = !S.peringat && !paksa ? kos.length - penting.length : 0;
       await lakukanCetak(rtf);
+      if (tidakWajib) catatLog(`catatan: ${tidakWajib} isian tidak wajib masih kosong (tercetak titik-titik)`);
     } catch (e) {
       catatLog(`gagal: ${String((e && e.message) || e)}`);
       toast(`Cetak gagal: ${String((e && e.message) || e)}`);
