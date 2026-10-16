@@ -487,6 +487,119 @@
   }
 
   // ──────────────────────────────────────────────────────────────────────────
+  // Sambungan rekomendasi Tahap E (portal lib/rekomendasi-blangko.ts) -> titik sambung F-G (16 Okt)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Jadwal sidang portal (?rekomendasi=1) mengembalikan rekomendasiBlangko per baris: BAS, putusan, relaas menurut keterangan/alasan tunda
+  // sidang (agenda bila kosong) + keadaan perkara (status, verstek, kumulasi, mediasi, e-Court). Satu sumber dengan BAS massal dan putusan.
+  // Fungsi titik sambung serempak, maka jawabannya disinggahkan per sidang: permintaan pertama dimulai di latar dan mengembalikan [] (cadangan
+  // sederhana di atas yang tampil), lalu jendela dan ringkasan digambar ulang begitu jawaban portal tiba.
+  const API_SIDANG_PORTAL = "/aleta/api/aleta-ecourt/sidang";
+  const JENIS_DARI_PORTAL = { putusan: "put", bas: "bas", relaas: "rel" };
+  const BATAS_ALTERNATIF_SARAN = 3;
+  const ULANG_GAGAL_MS = 60 * 1000;
+  const rekPortal = new Map(); // kunci sidang -> { status: "memuat"|"siap"|"galat", hasil, saat }
+  const rapiNama = (s) => String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+  /** Kelompok (nama menu Derry di ABT) untuk satu rekomendasi portal: nama menu, alias, atau nama folder (dengan/tanpa nomor urut). */
+  function kelompokUntukSaran(menu, r) {
+    const calon = new Set([r.menu, ...(Array.isArray(r.alias) ? r.alias : [])].map(rapiNama).filter(Boolean));
+    const folder = String(r.folder || "").split("/").pop();
+    if (folder) {
+      calon.add(rapiNama(folder));
+      calon.add(rapiNama(folder.replace(/^\d+[a-z]{0,2}\s+/i, "")));
+    }
+    const k = (Array.isArray(menu) ? menu : []).find((x) => x && calon.has(rapiNama(x.nama)));
+    return k ? k.nama : "";
+  }
+
+  /**
+   * HasilRekomendasi portal -> bentuk titik sambung [{ berkas, kelompok, jenis, alasan, utama }] (murni, diuji).
+   * Tiap jenis: semua yang `utama` + paling banyak tiga alternatif; jenis yang boleh dipakai akun (opsi.jenis) lebih dulu.
+   */
+  function saranDariPortal(hasil, menu, opsi) {
+    if (!hasil || typeof hasil !== "object") return [];
+    const o = opsi || {};
+    const sumber = hasil.sumberTeks === "alasan-tunda" ? "keterangan" : hasil.sumberTeks === "agenda" ? "agenda" : "";
+    const dasar = sumber && hasil.teksDasar ? `dari ${sumber} sidang${o.urutan ? ` ke-${o.urutan}` : ""}: "${potong(String(hasil.teksDasar).trim(), 60)}"` : "dari keadaan perkara";
+    const out = [];
+    const lihat = new Set();
+    for (const [kunci, kode] of Object.entries(JENIS_DARI_PORTAL)) {
+      const daftar = Array.isArray(hasil[kunci]) ? hasil[kunci] : [];
+      let alternatif = 0;
+      for (const r of daftar) {
+        if (!r || !r.berkas) continue;
+        if (!r.utama) {
+          if (alternatif >= BATAS_ALTERNATIF_SARAN) continue;
+          alternatif += 1;
+        }
+        const berkas = String(r.berkas).replace(/\.rtf$/i, "").trim();
+        if (!berkas || lihat.has(`${kode}|${berkas}`)) continue;
+        lihat.add(`${kode}|${berkas}`);
+        const sebab = String(r.alasan || "").trim().replace(/\.$/, "");
+        out.push({ berkas, kelompok: kelompokUntukSaran(menu, r), jenis: kode, alasan: `${dasar}${sebab ? ` - ${sebab}` : ""}${r.perkiraan ? " (perkiraan, periksa kembali)" : ""}`, utama: Boolean(r.utama) });
+      }
+    }
+    const boleh = Array.isArray(o.jenis) ? o.jenis : [];
+    if (boleh.length) out.sort((a, b) => (boleh.includes(a.jenis) ? 0 : 1) - (boleh.includes(b.jenis) ? 0 : 1));
+    return out;
+  }
+
+  const kunciSidangSaran = (ctx) => {
+    const s = (ctx && ctx.sidangDipilih) || null;
+    const nomor = String((ctx && ctx.nomorPerkara) || "").trim();
+    const tanggal = s ? String(s.tanggal || s.tanggalSidang || "").slice(0, 10) : "";
+    return nomor && /^\d{4}-\d{2}-\d{2}$/.test(tanggal) ? { kunci: `${nomor}|${tanggal}|${(s && s.sidangId) || ""}`, nomor, tanggal, sidangId: String((s && s.sidangId) || "") } : null;
+  };
+
+  /** Baris jadwal sidang perkara ini pada tanggal itu: sidang yang sama (sidangId) lebih dulu, lalu tanggal yang sama. */
+  function barisSidangSaran(sidang, k) {
+    const milik = (Array.isArray(sidang) ? sidang : []).filter((x) => x && String(x.nomorPerkara || "").trim() === k.nomor);
+    return (
+      (k.sidangId && milik.find((x) => String(x.sidangId || "") === k.sidangId)) ||
+      milik.find((x) => String(x.tanggalSidang || "").slice(0, 10) === k.tanggal) ||
+      milik[0] ||
+      null
+    );
+  }
+
+  async function muatSaranPortal(k) {
+    rekPortal.set(k.kunci, { status: "memuat", hasil: null, saat: Date.now() });
+    try {
+      const alamat = `${API_SIDANG_PORTAL}?dari=${k.tanggal}&sampai=${k.tanggal}&cari=${encodeURIComponent(k.nomor)}&batas=20&rekomendasi=1`;
+      const d = await ambilPortal(alamat, {}, "Membaca saran blangko");
+      const b = barisSidangSaran(d && d.sidang, k);
+      rekPortal.set(k.kunci, { status: "siap", hasil: (b && b.rekomendasiBlangko) || null, saat: Date.now() });
+    } catch {
+      rekPortal.set(k.kunci, { status: "galat", hasil: null, saat: Date.now() });
+    }
+    const sekarang = S.pk ? kunciSidangSaran({ nomorPerkara: nomorPerkara(), sidangDipilih: S.pk.sidangDipilih }) : null;
+    if (!sekarang || sekarang.kunci !== k.kunci) return;
+    // Kelompok yang disarankan dimuat lebih dulu supaya tombolnya langsung dapat dipilih, lalu jendela & ringkasan digambar ulang.
+    const rek = rekomendasi();
+    if (S.menu) for (const r of rek) {
+      const kel = S.menu.kelompok.find((x) => x.nama === r.kelompok);
+      if (kel && !kel.berkas) await muatBerkasKelompok(kel);
+    }
+    renderModal();
+    renderRingkasBlangko();
+  }
+
+  /** Fungsi yang dipasang ke aletaBlangkoDerry.pasangRekomendasi: saran portal untuk sidang yang dipilih, [] selama belum tiba. */
+  function rekomendasiPortal(ctx) {
+    const k = kunciSidangSaran(ctx);
+    if (!k) return [];
+    const c = rekPortal.get(k.kunci);
+    if (!c || (c.status === "galat" && Date.now() - c.saat > ULANG_GAGAL_MS)) {
+      void muatSaranPortal(k);
+      return [];
+    }
+    if (c.status !== "siap") return [];
+    const s = ctx.sidangDipilih || {};
+    const urutan = Number(s.urutan) > 0 ? Number(s.urutan) : (Number(ctx.sidangKe) || 0) + 1;
+    return saranDariPortal(c.hasil, ctx.menu, { jenis: ctx.jenis, urutan });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
   // Jendela pilih blangko (dua kolom)
   // ──────────────────────────────────────────────────────────────────────────
   const kodeDari = (n) => (String(n || "").match(/\[([^\]]+)\]/) || [])[1] || "";
@@ -2924,6 +3037,8 @@
     const a = globalThis.aletaBlangkoDerry;
     if (!a) return false;
     S.api = a;
+    // Sambungan Tahap E: saran blangko dari portal (jadwal sidang ?rekomendasi=1) lewat titik sambung kerangka.
+    if (typeof a.pasangRekomendasi === "function") a.pasangRekomendasi(rekomendasiPortal);
     document.addEventListener("aleta-bd-perkara", saatPerkara);
     daftarkanAlat();
     const ada = typeof a.perkaraTerpilih === "function" ? a.perkaraTerpilih() : null;
@@ -2939,6 +3054,8 @@
       rekomendasiLuar = typeof fn === "function" ? fn : null;
     },
     rekomendasi,
+    /** Fungsi yang dipasang ke aletaBlangkoDerry.pasangRekomendasi (saran portal Tahap E). */
+    rekomendasiPortal,
     pilihBlangko,
     bukaModal,
     cetak,
@@ -2968,7 +3085,7 @@
       log: S.log.slice(),
       hitung: S.susunan ? hitung() : null,
     }),
-    murni: { rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, jenisKelompok, namaTampil },
+    murni: { rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {
