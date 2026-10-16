@@ -8843,6 +8843,10 @@ const ALAT_MENU_PUTUSAN = {
   pol: { blangko: "Putusan Izin Poligami", lain: ["Putusan Poligami", "Poligami - Putusan"] },
   // I2 16 Okt: paket ABT abt-wali-adhal - menu 113 "Putusan Wali Adhal" (alias "Wali Adhal - Putusan"), folder derry_briantono/7 Wali Adhal.
   wa: { blangko: "Putusan Wali Adhal", lain: ["Wali Adhal - Putusan"] },
+  // F21 17 Okt: paket ABT abt-hak-asuh-derry (menu 133), abt-pembatalan-perkawinan-derry (135), abt-ekonomi-syariah-derry (137).
+  ha: { blangko: "Putusan Hak Asuh Anak (Hadhanah)", lain: ["Hak Asuh - Putusan"] },
+  pb: { blangko: "Putusan Pembatalan Perkawinan", lain: ["Pembatalan Nikah - Putusan"] },
+  es: { blangko: "Putusan Ekonomi Syariah", lain: ["Ekonomi Syariah - Putusan"] },
 };
 function alatBarisPutusanLain(menu, jenisAsli, statusAsli, berkas, catatan) {
   const m = ALAT_MENU_PUTUSAN[menu];
@@ -8971,6 +8975,80 @@ Object.assign(ALAT_PETA_BAWAAN, {
   ...alatBarisPermohonanUmum("wali adhal", "Wali Adhal", { tanpaCabut: true }),
 });
 /* === AKHIR I2 === */
+
+/* === F21 17 Okt === */
+/**
+ * PUTUSAN HAK ASUH ANAK, PEMBATALAN PERKAWINAN, EKONOMI SYARIAH (gugatan sederhana) versi Derry - tiga paket ABT terpasang 17 Okt 2026
+ * (folder "6a Hak Asuh Anak (Hadhanah)", "5a Pembatalan Perkawinan", "10 Ekonomi Syariah"; menu 133/135/137 berpasangan dengan BAS 134/136/138).
+ *
+ * Jenis SIPP: hak asuh = 349 "Penguasaan Anak" (PA Donggala mendaftarkan gugatan hak asuh di 369 "Lain-Lain" Pdt.G: keadaan "hak-asuh" /
+ * "hak-asuh-verstek", lib/keadaan-putusan.ts, supaya Lain-Lain permohonan pengangkatan anak (Pdt.P) tidak terganggu); pembatalan = 344; ES = 370.
+ * Pilihan bawaan menurut keadaan (nama berkas diperiksa di server 17 Okt): kabul kontradiktoir [01] / T tidak hadir setelah mediasi [01a] /
+ * verstek [01b] (hak asuh: anak mumayyiz memilih [01c] dan pemegang hadhanah dialihkan [01d] hanya dapat dipilih per perkara - butuh data anak),
+ * tolak [03], akta perdamaian [97] (hak asuh dan ES), cabut [98], gugur [98a], NO [99]. ES gugatan acara biasa belum punya blangko.
+ */
+const ALAT_BERKAS_HAK_ASUH = {
+  kabul: "[01] [Kabul] Hak Asuh - Kontradiktoir - Anak Belum Mumayyiz",
+  setelahMediasi: "[01a] [Kabul] Hak Asuh - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz",
+  verstek: "[01b] [Kabul Verstek] Hak Asuh - Anak Belum Mumayyiz",
+  tolak: "[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
+  damai: "[97] [Perdamaian] Akta Perdamaian",
+  cabut: "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban",
+  gugur: "[98a] [Gugur] Gugatan - P Tidak Hadir Sidang Pertama",
+  no: "[99] [NO] Gugatan - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+};
+const ALAT_CATATAN_HAK_ASUH =
+  "varian: [01a] [Kabul] Hak Asuh - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Hak Asuh - Kontradiktoir - Anak Mumayyiz Memilih; " +
+  "[01d] [Kabul] Hak Asuh - Kontradiktoir - Pemegang Hadhanah Tidak Menjamin Keselamatan Anak";
+/** Baris hak asuh menurut kunci jenis: "penguasaan anak" (jenis 349) atau "lain-lain" dengan akhiran keadaan "hak-asuh" (369 Pdt.G). */
+function alatPetaHakAsuh(kunci, jenisAsli, keadaan) {
+  const B = ALAT_BERKAS_HAK_ASUH;
+  const k = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  const baris = {};
+  if (keadaan) {
+    const dasar = "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G)";
+    baris[k("dikabulkan", "hak-asuh-verstek")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.verstek, `${dasar}, putusan verstek`);
+    baris[k("dikabulkan", "hak-asuh")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.kabul, `${dasar}; ${ALAT_CATATAN_HAK_ASUH}`);
+  } else {
+    baris[kunci] = alatBarisPutusanLain("ha", jenisAsli, "", B.kabul, ALAT_CATATAN_HAK_ASUH);
+    baris[k("dikabulkan", "verstek")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.verstek);
+    baris[k("dikabulkan")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.kabul, ALAT_CATATAN_HAK_ASUH);
+    baris[k("dikabulkan", "t-tidak-hadir-setelah-mediasi")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.setelahMediasi, "keadaan: T hadir mediasi lalu tidak hadir");
+  }
+  baris[k("ditolak", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Ditolak", B.tolak);
+  baris[k("perdamaian", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Perdamaian", B.damai);
+  baris[k("dicabut", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Dicabut", B.cabut);
+  baris[k("digugurkan", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Digugurkan", B.gugur);
+  baris[k("gugur", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Gugur", B.gugur);
+  baris[k("tidak dapat diterima", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Tidak Dapat Diterima", B.no);
+  return baris;
+}
+const ALAT_PB_KABUL = "[01] [Kabul] Pembatalan Perkawinan - Kontradiktoir";
+const ALAT_PB_GUGUR = "[98a] [Gugur] Pembatalan Perkawinan - P Tidak Hadir Sidang Pertama";
+const ALAT_ES_GUGUR = "[98a] [Gugur] ES Gugatan Sederhana - P Tidak Hadir Sidang Pertama";
+Object.assign(ALAT_PETA_BAWAAN, alatPetaHakAsuh("penguasaan anak", "Penguasaan Anak", ""), alatPetaHakAsuh("lain-lain", "Lain-Lain", "hak-asuh"), {
+  // --- Pembatalan perkawinan (jenis 344, Pdt.G) ---
+  "pembatalan perkawinan": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "", ALAT_PB_KABUL, "varian: [01a] [Kabul] Pembatalan Perkawinan - T Tidak Hadir Setelah Mediasi; [01b] [Kabul Verstek] Pembatalan Perkawinan"),
+  "pembatalan perkawinan|dikabulkan|verstek": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Dikabulkan", "[01b] [Kabul Verstek] Pembatalan Perkawinan"),
+  "pembatalan perkawinan|dikabulkan": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Dikabulkan", ALAT_PB_KABUL, "varian: [01a] [Kabul] Pembatalan Perkawinan - T Tidak Hadir Setelah Mediasi"),
+  "pembatalan perkawinan|dikabulkan|t-tidak-hadir-setelah-mediasi": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Dikabulkan", "[01a] [Kabul] Pembatalan Perkawinan - T Tidak Hadir Setelah Mediasi", "keadaan: T hadir mediasi lalu tidak hadir"),
+  "pembatalan perkawinan|ditolak": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Ditolak", "[03] [Tolak] Pembatalan Perkawinan - Kontradiktoir - Alasan Tidak Terbukti"),
+  "pembatalan perkawinan|dicabut": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Dicabut", "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban"),
+  "pembatalan perkawinan|digugurkan": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Digugurkan", ALAT_PB_GUGUR),
+  "pembatalan perkawinan|gugur": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Gugur", ALAT_PB_GUGUR),
+  "pembatalan perkawinan|tidak dapat diterima": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Tidak Dapat Diterima", "[99] [NO] Pembatalan Perkawinan - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)"),
+  // --- Ekonomi syariah gugatan sederhana (jenis 370, Pdt.G.S) ---
+  "ekonomi syariah": alatBarisPutusanLain("es", "Ekonomi Syariah", "", "[01] [Kabul] ES Gugatan Sederhana - Wanprestasi - P & T Hadir", "khusus gugatan sederhana (Pdt.G.S); varian: [01b] [Kabul Verstek] ES Gugatan Sederhana - Wanprestasi - T Tidak Hadir Sidang Kedua"),
+  "ekonomi syariah|dikabulkan|verstek": alatBarisPutusanLain("es", "Ekonomi Syariah", "Dikabulkan", "[01b] [Kabul Verstek] ES Gugatan Sederhana - Wanprestasi - T Tidak Hadir Sidang Kedua"),
+  "ekonomi syariah|dikabulkan": alatBarisPutusanLain("es", "Ekonomi Syariah", "Dikabulkan", "[01] [Kabul] ES Gugatan Sederhana - Wanprestasi - P & T Hadir"),
+  "ekonomi syariah|ditolak": alatBarisPutusanLain("es", "Ekonomi Syariah", "Ditolak", "[03] [Tolak] ES Gugatan Sederhana - Wanprestasi Tidak Terbukti"),
+  "ekonomi syariah|perdamaian": alatBarisPutusanLain("es", "Ekonomi Syariah", "Perdamaian", "[97] [Perdamaian] ES Gugatan Sederhana - Akta Perdamaian di Hadapan Hakim"),
+  "ekonomi syariah|dicabut": alatBarisPutusanLain("es", "Ekonomi Syariah", "Dicabut", "[98] [Cabut] ES Gugatan Sederhana - Sebelum Jawaban"),
+  "ekonomi syariah|digugurkan": alatBarisPutusanLain("es", "Ekonomi Syariah", "Digugurkan", ALAT_ES_GUGUR),
+  "ekonomi syariah|gugur": alatBarisPutusanLain("es", "Ekonomi Syariah", "Gugur", ALAT_ES_GUGUR),
+  "ekonomi syariah|tidak dapat diterima": alatBarisPutusanLain("es", "Ekonomi Syariah", "Tidak Dapat Diterima", "[99] [NO] ES Gugatan Sederhana - Tergugat Tidak Diketahui Tempat Tinggalnya", "Pasal 4 ayat (2) PERMA gugatan sederhana"),
+});
+/* === AKHIR F21 === */
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah

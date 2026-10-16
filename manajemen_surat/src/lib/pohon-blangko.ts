@@ -175,6 +175,31 @@ export const SET_BLANGKO: SetBlangko[] = [
     jenis: "putusan",
     untuk: ["wali adhal", "wali adhol", "wali adlal"],
   },
+  // F21 17 Okt 2026 (paket ABT abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry): tiga jenis baru, masing-masing
+  // sepasang folder "<jenis>" (menu putusan 133/135/137, hakim) dan "<jenis> - BAS" (menu 134/136/138, panitera).
+  {
+    // Hak asuh anak (gugatan penguasaan anak): jenis SIPP 349 "Penguasaan Anak"; PA Donggala mendaftarkannya di 369 "Lain-Lain" (Pdt.G).
+    id: "putusan-hak-asuh",
+    nama: "Putusan Hak Asuh Anak (Hadhanah)",
+    folder: `${AKAR}/6a Hak Asuh Anak (Hadhanah)`,
+    jenis: "putusan",
+    untuk: ["penguasaan anak", "hak asuh", "hadhanah"],
+  },
+  {
+    id: "putusan-pembatalan-perkawinan",
+    nama: "Putusan Pembatalan Perkawinan",
+    folder: `${AKAR}/5a Pembatalan Perkawinan`,
+    jenis: "putusan",
+    untuk: ["pembatalan perkawinan"],
+  },
+  {
+    // Gugatan sederhana (Pdt.G.S, PERMA 2/2015 jo. 4/2019); gugatan ekonomi syariah acara biasa belum punya blangko.
+    id: "putusan-ekonomi-syariah",
+    nama: "Putusan Ekonomi Syariah (Gugatan Sederhana)",
+    folder: `${AKAR}/10 Ekonomi Syariah`,
+    jenis: "putusan",
+    untuk: ["ekonomi syariah"],
+  },
 ];
 
 /* === S 13 Okt === */

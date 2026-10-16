@@ -4,6 +4,8 @@
  * BAS BARU DI FOLDER JENIS -> BAS massal (G3, 15 Okt 2026)
  * ============================================================================
  *
+ * F21 17 Okt: + ALUR 38 (hak asuh, 6), 39 (pembatalan perkawinan, 5), 40 (ekonomi syariah gugatan sederhana, 9) = 19 alur, 113 langkah.
+ *
  * 93 BAS paket ABT D3 (abt-bas-paw, abt-bas-permohonan) dan E3 (abt-bas-gugatan) berada LANGSUNG di folder jenis. Yang dijaga
  * (semuanya dijalankan):
  *   A. data (alur-bas-baru-data.ts) = daftar-rtf.tsv ketiga paket (bila folder kerja ada), nama berkas ^BAS ALUR nn;
@@ -34,9 +36,9 @@ function t(jenisPerkara: string, m: Partial<Parameters<typeof tentukanBasBaru>[0
 }
 
 describe("A. data", () => {
-  it("16 alur, 93 langkah, kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
-    expect(ALUR_BAS_BARU).toHaveLength(16);
-    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(93);
+  it("19 alur, 113 langkah (93 D3/E3 + 20 F21), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
+    expect(ALUR_BAS_BARU).toHaveLength(19);
+    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(113);
     const semua = new Set<string>();
     for (const a of ALUR_BAS_BARU) {
       expect(a.folder.startsWith(A)).toBe(true);
@@ -50,7 +52,7 @@ describe("A. data", () => {
         semua.add(`${a.folder}/${l.berkas}`);
       }
     }
-    expect(semua.size).toBe(93);
+    expect(semua.size).toBe(113);
     expect(jenisDokumenBlangko(`${A}7 Wali Adhal - BAS/${ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.langkah[0].berkas}`)).toBe("bas");
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.menu).toMatchObject({ id: 114, nama: "Wali Adhal - BAS" });
   });
@@ -70,7 +72,8 @@ describe("A. data", () => {
       }
     }
     // K3: daftar-rtf.tsv paket D3/E3 memuat folder putusan (sebelum dipindah ke "... - BAS"); folder BAS = folder itu + " - BAS".
-    const data = new Set(ALUR_BAS_BARU.flatMap((a) => a.langkah.map((l) => `${a.folder.replace(/ - BAS$/, "")}/${l.berkas}`)));
+    // ALUR 38-40 berasal dari paket F21 (17 Okt), bukan D3/E3: dijaga di bagian F di bawah terhadap pohon server.
+    const data = new Set(ALUR_BAS_BARU.filter((a) => a.nomor < 38).flatMap((a) => a.langkah.map((l) => `${a.folder.replace(/ - BAS$/, "")}/${l.berkas}`)));
     expect([...data].sort()).toEqual([...dari].sort());
   });
 });
@@ -89,7 +92,14 @@ describe("B. jenis perkara", () => {
     expect(jenisBasBaru("Pengesahan Perkawinan/Istbat Nikah", "3/Pdt.P/2026/PA.Dgl")).toBe("itsbat");
     expect(jenisBasBaru("Pengesahan Perkawinan/Istbat Nikah", "3/Pdt.G/2026/PA.Dgl")).toBe("itsbat-kontensius");
     expect(jenisBasBaru("Cerai Gugat")).toBe("cerai-gugat");
-    expect(jenisBasBaru("Ekonomi Syariah")).toBe("");
+    // F21 17 Okt: hak asuh (349 "Penguasaan Anak"; Lain-Lain bernomor Pdt.G), pembatalan perkawinan, ekonomi syariah gugatan sederhana (Pdt.G.S).
+    expect(jenisBasBaru("Penguasaan Anak", "3/Pdt.G/2026/PA.Dgl")).toBe("hak-asuh");
+    expect(jenisBasBaru("Lain-Lain", "3/Pdt.G/2026/PA.Dgl")).toBe("hak-asuh");
+    expect(jenisBasBaru("Lain-Lain", "3/Pdt.P/2026/PA.Dgl")).toBe("angkat-anak");
+    expect(jenisBasBaru("Pembatalan Perkawinan", "3/Pdt.G/2026/PA.Dgl")).toBe("pembatalan");
+    expect(jenisBasBaru("Ekonomi Syariah", "3/Pdt.G.S/2026/PA.Dgl")).toBe("es");
+    expect(jenisBasBaru("Ekonomi Syariah", "3/Pdt.G/2026/PA.Dgl")).toBe(""); // acara biasa belum punya blangko BAS
+    expect(jenisBasBaru("Ekonomi Syariah")).toBe(""); // nomor tak diketahui: tidak ditebak
     expect(jenisBasBaru(null)).toBe("");
   });
 });

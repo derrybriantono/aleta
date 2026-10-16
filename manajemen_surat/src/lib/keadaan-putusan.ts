@@ -15,6 +15,8 @@
  *   p-tidak-hadir-t-hadir            T hadir, P tidak                            gugur   -> [98] [Gugur] 3a (CT 3)
  *   kontradiktoir                    T hadir pada sidang putusan                 HB/Waris kabul -> [01] kontradiktoir
  *   kontensius                       itsbat dengan nomor Pdt.G                   IN kontensius -> folder "2a Itsbat Nikah Kontensius"
+ *   hak-asuh / hak-asuh-verstek      "Lain-Lain" bernomor Pdt.G (gugatan hak     hak asuh anak (F21 17 Okt) -> folder "6a Hak Asuh Anak (Hadhanah)";
+ *                                    asuh PA Donggala terdaftar 369)             "-verstek" didahulukan bila putusan verstek / verstek tanpa bendera
  *
  * Fungsi ini MURNI (tanpa jaringan/basis data) dan dipanggil route jadwal sidang untuk tiap baris; kode-kodenya dikirim ke ekstensi
  * sebagai `keadaanPutusan` dan dipakai `alatPetaUntukPerkara` (ekstensi-sipp/panel-alat.js, argumen ke-6). Urutan kode = urutan
@@ -31,7 +33,9 @@ export type KodeKeadaanPutusan =
   | "sesudah-mediasi"
   | "sema-1-2022"
   | "p-tidak-hadir-t-hadir"
-  | "kontensius";
+  | "kontensius"
+  | "hak-asuh"
+  | "hak-asuh-verstek";
 
 export type MasukanKeadaanPutusan = {
   jenisPerkara?: unknown;
@@ -66,6 +70,15 @@ function jenisItsbat(j: string) {
   return j.includes("istbat") || j.includes("itsbat") || j.includes("pengesahan perkawinan");
 }
 
+/** F21 17 Okt: hak asuh anak (349 Penguasaan Anak), pembatalan perkawinan, ekonomi syariah - gugatan yang mengenal mediasi dan verstek seperti cerai. */
+function jenisGugatanBaru(j: string) {
+  return j.includes("penguasaan anak") || j.includes("hak asuh") || j.includes("pembatalan perkawinan") || j.includes("ekonomi syariah");
+}
+/** Gugatan hak asuh anak yang didaftarkan sebagai "Lain-Lain" (369) bernomor Pdt.G; pengangkatan anak (Pdt.P) bukan. */
+function hakAsuhTerdaftarLainLain(j: string, nomor: unknown) {
+  return j.includes("lain-lain") && /\/pdt\.g\//i.test(String(nomor ?? ""));
+}
+
 /** Kode keadaan putusan satu perkara menurut baris sidang yang dilihat, berurut dari yang paling khusus. */
 export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   const j = kecil(m.jenisPerkara);
@@ -80,7 +93,7 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   const hasilMediasi = kecil(m.mediasi?.hasil).toUpperCase();
   const verstekBendera = m.verstekPutusan === true;
 
-  if (jenisCerai(j) || j.includes("harta bersama") || j.includes("kewarisan") || /\bwaris\b/.test(j) || j.includes("poligami")) {
+  if (jenisCerai(j) || j.includes("harta bersama") || j.includes("kewarisan") || /\bwaris\b/.test(j) || j.includes("poligami") || jenisGugatanBaru(j) || hakAsuhTerdaftarLainLain(j, m.nomorPerkara)) {
     if (pernahMediasi && hasilMediasi === "S") hasil.push("mediasi-sebagian");
     if (pernahMediasi && tPernah && hadir === 2) hasil.push("t-tidak-hadir-setelah-mediasi");
     if (tHadirKini) hasil.push("kontradiktoir");
@@ -96,5 +109,9 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   if (hadir === 3 || sebelumnya === 3) hasil.push("p-tidak-hadir-t-hadir");
 
   if (jenisItsbat(j) && /\/pdt\.g\//i.test(String(m.nomorPerkara ?? ""))) hasil.push("kontensius");
+  if (hakAsuhTerdaftarLainLain(j, m.nomorPerkara)) {
+    if (verstekBendera || hasil.includes("verstek-tanpa-bendera")) hasil.push("hak-asuh-verstek");
+    hasil.push("hak-asuh");
+  }
   return hasil;
 }
