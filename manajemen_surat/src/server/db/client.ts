@@ -362,6 +362,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_kamus_deteksi_templat",
   "aleta_jejak_koreksi",
   "aleta_kamus_deteksi_calon",
+  // 16 Oktober 2026 (0066): cadangan & riwayat suntingan ABT dari halaman
+  // Pengaturan SIPP & ABT. Tanpa kunci asing - urutannya bebas.
+  "aleta_abt_suntingan",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

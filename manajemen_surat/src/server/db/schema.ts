@@ -453,6 +453,38 @@ export const DDL_KAMUS_RUAS_TAMBAHAN = {
   ],
 } as const;
 
+/**
+ * Cadangan dan riwayat suntingan atas ABT dari halaman "Pengaturan SIPP & ABT"
+ * (0066, 16 Okt 2026, Tahap H). Cermin PERSIS dari
+ * drizzle/0066_aleta_abt_suntingan.sql; penjaga
+ * pengaturan-sipp-abt-16okt.test.ts membandingkan keduanya.
+ */
+export const DDL_ABT_SUNTINGAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_abt_suntingan (
+  id TEXT PRIMARY KEY,
+  jenis TEXT NOT NULL,
+  kunci TEXT NOT NULL,
+  ringkas TEXT NOT NULL DEFAULT '',
+  nilai_lama TEXT NOT NULL DEFAULT '{}',
+  nilai_baru TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'menunggu',
+  galat TEXT NOT NULL DEFAULT '',
+  pulih_dari TEXT NOT NULL DEFAULT '',
+  oleh_id TEXT NOT NULL DEFAULT '',
+  oleh_nama TEXT NOT NULL DEFAULT '',
+  oleh_peran TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  selesai_at TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_abt_suntingan_kunci ON aleta_abt_suntingan(jenis, kunci, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_suntingan_pada ON aleta_abt_suntingan(pada)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1458,6 +1490,8 @@ const schemaStatements = [
   ...DDL_MASUK_JEJAK.tabel,
   // Kamus deteksi & kalimat, jejak koreksi, calon dari koreksi (0060).
   ...DDL_KAMUS_DETEKSI.tabel,
+  // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
+  ...DDL_ABT_SUNTINGAN.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3403,6 +3437,7 @@ const indexStatements = [
   ...DDL_MASUK_JEJAK.indeks,
   ...DDL_KAMUS_SUMBER.indeks,
   ...DDL_KAMUS_DETEKSI.indeks,
+  ...DDL_ABT_SUNTINGAN.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

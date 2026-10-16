@@ -442,6 +442,13 @@
       "when": 1790611201001,
       "tag": "0063_aleta_kamus_ruas_tambahan",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1792152000001,
+      "tag": "0066_aleta_abt_suntingan",
+      "breakpoints": true
     }
   ]
 }
