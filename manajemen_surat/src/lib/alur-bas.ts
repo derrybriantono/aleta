@@ -77,12 +77,19 @@ export type MasukanAlurBas = {
   akhir?: "gugur" | "cabut" | "no" | null;
 };
 
+export type LangkahLainAlur = { alur: AlurBas; langkah: LangkahAlurBas };
+
 export type HasilAlurBas = {
   alur: AlurBas | null;
   /** Langkah yang diusulkan (null = alur dikenal tetapi langkahnya belum ada contoh). */
   langkah: LangkahAlurBas | null;
   /** Langkah lain yang mungkin pada alur yang sama (mis. varian 3/4 saksi) - urut. */
   alternatif: LangkahAlurBas[];
+  /**
+   * Q3 16 Okt: langkah di ALUR LAIN yang juga mungkin (mis. verstek sidang 2 bisa ternyata ALUR 03 [2]; kontradiktoir 1-4 sidang bisa
+   * ternyata lisan ALUR 05; semua cerai bisa berujung cabut/NO/gugur). Dipakai BAS massal sebagai pilihan tambahan.
+   */
+  lainAlur?: LangkahLainAlur[];
   /** true = alur ditebak dari urutan sidang dan kehadiran; ujungnya baru diketahui sesudah sidang. */
   perkiraan: boolean;
   sebab: string;
@@ -96,18 +103,93 @@ function ambil(alurId: string, kode: string): { alur: AlurBas; langkah: LangkahA
   return alur && langkah ? { alur, langkah } : null;
 }
 
-function hasil(alurId: string, kode: string, perkiraan: boolean, sebab: string, alternatifKode: string[] = []): HasilAlurBas {
+function hasil(
+  alurId: string,
+  kode: string,
+  perkiraan: boolean,
+  sebab: string,
+  alternatifKode: string[] = [],
+  /** Q3 16 Okt: [alurId, kode] di alur lain - yang tidak ada di peta dilewati. */
+  lain: Array<[string, string]> = []
+): HasilAlurBas {
   const utama = ambil(alurId, kode);
   if (!utama) return { ...TIDAK_DIKENAL, sebab: `Peta alur BAS rusak: ${alurId}[${kode}] tidak ada.` };
   const alternatif = alternatifKode
     .map((k) => alurBasMenurutId(alurId)?.langkah.find((l) => l.kode === k))
     .filter((l): l is LangkahAlurBas => Boolean(l));
-  return { alur: utama.alur, langkah: utama.langkah, alternatif, perkiraan, sebab };
+  const lainAlur: LangkahLainAlur[] = [];
+  const lihat = new Set<string>([`${alurId}|${kode}`]);
+  for (const [a, k] of lain) {
+    if (lihat.has(`${a}|${k}`)) continue;
+    lihat.add(`${a}|${k}`);
+    const x = ambil(a, k);
+    if (x) lainAlur.push(x);
+  }
+  return { alur: utama.alur, langkah: utama.langkah, alternatif, ...(lainAlur.length ? { lainAlur } : {}), perkiraan, sebab };
 }
 
 const AGENDA_TERTULIS = /tertulis|e-?litigasi|court calendar|replik|duplik|rekonvensi/i;
 const AGENDA_LISAN = /lisan/i;
 const AGENDA_AKHIR = /putus|musyawarah|penetapan|bukti|pembuktian|saksi/i;
+
+/**
+ * Q3 16 Okt: langkah ALUR 04 (kontradiktoir tertulis) dari AGENDA sidang, bila agenda menyebutnya; selain itu dari urutan sidang.
+ * Urutan kata kunci SAMA dengan penyusun peta perkara L3 (peta.py langkah_kt): mediasi|laporan|pokok -> [2]; jawab -> [3]; replik -> [4];
+ * duplik rekonvensi -> [5a]; duplik -> [5]; kesimpulan -> [8]; musyawarah|putusan -> [9]; pembuktian/saksi Tergugat -> [7]; pembuktian/saksi
+ * (Penggugat, atau tak disebut) -> [6]. Sidang pertama selalu [1] dan sidang kedua [2] (laporan mediasi). Varian saksi (6a-c, 7a-b)
+ * selalu ikut sebagai alternatif karena jumlah saksi tidak ada di SIPP.
+ */
+export function langkahAlur04(dilihat: number, agendaMentah: string): { kode: string; alternatif: string[]; dariAgenda: boolean } {
+  const ag = String(agendaMentah ?? "").toLowerCase();
+  const urutan = dilihat >= 9 ? "9" : String(Math.max(1, dilihat));
+  const dariUrutan = () => ({
+    kode: urutan,
+    alternatif: urutan === "5" ? ["5a"] : urutan === "6" ? ["6a", "6b", "6c"] : urutan === "7" ? ["7a", "7b"] : [],
+    dariAgenda: false,
+  });
+  if (dilihat <= 1) return { kode: "1", alternatif: [], dariAgenda: false };
+  if (dilihat === 2) return { kode: "2", alternatif: [], dariAgenda: false };
+  if (!ag.trim()) return dariUrutan();
+  if (/mediasi|laporan|pokok/.test(ag)) return { kode: "2", alternatif: [], dariAgenda: true };
+  if (/jawab/.test(ag)) return { kode: "3", alternatif: [], dariAgenda: true };
+  if (/replik/.test(ag)) return { kode: "4", alternatif: [], dariAgenda: true };
+  if (/duplik\s+rekonvensi/.test(ag)) return { kode: "5a", alternatif: ["5"], dariAgenda: true };
+  if (/duplik/.test(ag)) return { kode: "5", alternatif: ["5a"], dariAgenda: true };
+  if (/kesimpulan/.test(ag)) return { kode: "8", alternatif: [], dariAgenda: true };
+  if (/musyawarah|putusan/.test(ag)) return { kode: "9", alternatif: [], dariAgenda: true };
+  if (/bukti|pembuktian|saksi/.test(ag)) {
+    const sisiT = /tergugat|termohon/.test(ag);
+    const sisiP = /penggugat|pemohon/.test(ag);
+    if (sisiT && !sisiP) return { kode: "7", alternatif: ["7a", "7b"], dariAgenda: true };
+    if (sisiP && !sisiT) return { kode: "6", alternatif: ["6a", "6b", "6c"], dariAgenda: true };
+    // Sisi tak disebut: pembuktian pertama = P. Sesudah sidang ke-6 lebih mungkin T; sisi lainnya ikut ditawarkan.
+    return dilihat >= 7
+      ? { kode: "7", alternatif: ["7a", "7b", "6"], dariAgenda: true }
+      : { kode: "6", alternatif: ["6a", "6b", "6c", "7"], dariAgenda: true };
+  }
+  return dariUrutan();
+}
+
+/**
+ * Q3 16 Okt: akhir perkara cerai yang MUNGKIN tetapi belum diketahui saat BAS massal (cabut, tidak dapat diterima, gugur) ditawarkan
+ * sebagai pilihan - dulu hanya terjangkau bila `akhir` diketahui (jarang). Mengembalikan [alurId, kode] di luar alur utama.
+ * `adaMediasi` = T pernah hadir sehingga cabut sesudah mediasi (C2) juga mungkin.
+ */
+function akhirLain(grup: GrupJenisAlur, dilihat: number, adaMediasi: boolean, utamaAlur: string): Array<[string, string]> {
+  if (grup !== "cerai-gugat" && grup !== "cerai-talak") return [];
+  const lain: Array<[string, string]> = [];
+  if (utamaAlur !== "alur-08") {
+    lain.push(["alur-08", dilihat <= 1 ? "A" : "B"]);
+    if (adaMediasi && dilihat >= 2) lain.push(["alur-08", "C2"]);
+  }
+  // NO: sidang sebelum yang memutus memakai [1] (tunda panggil T, alamat tidak jelas), sidang yang memutus [2].
+  if (utamaAlur !== "alur-09") {
+    lain.push(["alur-09", "1"]);
+    if (dilihat >= 2) lain.push(["alur-09", "2"]);
+  }
+  if (utamaAlur !== "alur-07" && dilihat >= 2) lain.push(["alur-07", "3"]);
+  return lain;
+}
 
 /**
  * ALUR SIDANG sebuah perkara menurut keadaan sidang ini, dan BAS langkah berikut dari folder alurnya.
@@ -156,17 +238,30 @@ export function tentukanAlurBas(m: MasukanAlurBas): HasilAlurBas {
   if (semuaTidakHadir && !tPernah) {
     // P dan T tidak hadir: sidang pertama tunda panggil; kedua kalinya putus gugur (data: 'XX' = 2 sidang).
     return dilihat <= 1
-      ? hasil("alur-07", "1", true, "P dan T tidak hadir: tunda panggil P dan T.", ["3"])
-      : hasil("alur-07", "3", true, "P dan T tidak hadir lagi: putus gugur (atau tunda panggil lagi bila Majelis memanggil sekali lagi).", ["2"]);
+      ? hasil("alur-07", "1", true, "P dan T tidak hadir: tunda panggil P dan T.", ["3"], akhirLain(grup, dilihat, false, "alur-07"))
+      : hasil("alur-07", "3", true, "P dan T tidak hadir lagi: putus gugur (atau tunda panggil lagi bila Majelis memanggil sekali lagi).", ["2"], akhirLain(grup, dilihat, false, "alur-07"));
   }
 
   if (!tPernah) {
     // Verstek: T tidak pernah hadir.
-    if (dilihat <= 1) return hasil("alur-02", "1", true, "T tidak hadir: tunda panggil T. (Putus di sidang pertama: folder alur 01.)", ["1a"]);
-    if (dilihat === 2) return hasil("alur-02", "2", true, "Sidang kedua, T tidak hadir: pembuktian saksi dan putusan verstek (2 saksi; 3/4 saksi tersedia). Bila T dipanggil lagi: alur 03 [2].", ["2a", "2b"]);
+    // Q3 16 Okt: ALUR 01 (putus verstek di sidang pertama; 1a Cerai Gugat / 1b Cerai Talak) kini ikut ditawarkan; varian saksi lengkap.
+    if (dilihat <= 1) {
+      return hasil("alur-02", "1", true, "T tidak hadir: tunda panggil T. (Putus di sidang pertama: folder alur 01.)", ["1a"], [
+        ["alur-01", grup === "cerai-talak" ? "1b" : "1a"],
+        ...akhirLain(grup, dilihat, false, "alur-02"),
+      ]);
+    }
+    if (dilihat === 2) {
+      // Diukur atas 656 sidang ke-2 verstek PA Donggala 2024-2026: 81% tuntas di sidang itu (ALUR 02 [2]) walau agendanya masih
+      // "panggil tergugat" (agenda sidang ke-2 ditulis sewaktu menunda sidang 1) - maka agenda tunda TIDAK menggeser usulan; ALUR 03 [2] hanya ditawarkan.
+      return hasil("alur-02", "2", true, "Sidang kedua, T tidak hadir: pembuktian saksi dan putusan verstek (2 saksi; 3/4/5 saksi tersedia). Bila T dipanggil lagi: alur 03 [2].", ["2a", "2b", "2c"], [
+        ["alur-03", "2"],
+        ...akhirLain(grup, dilihat, false, "alur-02"),
+      ]);
+    }
     return AGENDA_AKHIR.test(agenda)
-      ? hasil("alur-03", "3", true, `Sidang ke-${dilihat}, T tidak hadir: saksi dan putusan verstek.`, ["3a", "3b", "2"])
-      : hasil("alur-03", "2", true, `Sidang ke-${dilihat}, T tidak hadir: tunda panggil T lagi.`, ["3", "3a", "3b"]);
+      ? hasil("alur-03", "3", true, `Sidang ke-${dilihat}, T tidak hadir: saksi dan putusan verstek.`, ["3a", "3b", "3c", "2"], akhirLain(grup, dilihat, false, "alur-03"))
+      : hasil("alur-03", "2", true, `Sidang ke-${dilihat}, T tidak hadir: tunda panggil T lagi.`, ["3", "3a", "3b", "3c"], akhirLain(grup, dilihat, false, "alur-03"));
   }
 
   if (tHadirKini) {
@@ -174,17 +269,31 @@ export function tentukanAlurBas(m: MasukanAlurBas): HasilAlurBas {
     const lisan = AGENDA_LISAN.test(agenda) && !AGENDA_TERTULIS.test(agenda);
     if (lisan) {
       const kode = dilihat <= 1 ? "1" : dilihat === 2 ? "2" : dilihat === 3 ? "3" : "4";
-      return hasil("alur-05", kode, true, "P dan T hadir, jawab-menjawab lisan.", kode === "3" ? ["3a"] : []);
+      return hasil("alur-05", kode, true, "P dan T hadir, jawab-menjawab lisan.", kode === "3" ? ["3a"] : [], akhirLain(grup, dilihat, true, "alur-05"));
     }
-    const kode = dilihat >= 9 ? "9" : String(dilihat);
-    return hasil("alur-04", kode, true, "P dan T hadir: kontradiktoir (sidang ke-" + dilihat + ").", dilihat === 5 ? ["5a"] : []);
+    // Q3 16 Okt: langkah ALUR 04 ditebak dari AGENDA lebih dulu (peta L3: urutan saja meleset 10-40% per langkah), baru dari urutan sidang.
+    const l4 = langkahAlur04(dilihat, agenda);
+    // ALUR 05 (lisan) ditawarkan untuk sidang awal yang agendanya tak menyebut penanda tertulis (14 CG + 12 CT lisan, <= 5 sidang).
+    const lisanLain: Array<[string, string]> =
+      dilihat <= 4 && !AGENDA_TERTULIS.test(agenda)
+        ? (dilihat <= 1 ? ["1"] : dilihat === 2 ? ["2"] : dilihat === 3 ? ["3", "3a"] : ["4", "3"]).map((k): [string, string] => ["alur-05", k])
+        : [];
+    // Sidang mediasi (T pertama kali hadir) bisa jatuh di sidang ke-2..4 bila sidang sebelumnya tunda panggil: ALUR 06 [1] (T hadir mediasi lalu tidak hadir).
+    const mediasiLain: Array<[string, string]> = dilihat >= 2 && dilihat <= 4 ? [["alur-06", "1"]] : [];
+    return hasil("alur-04", l4.kode, true, "P dan T hadir: kontradiktoir (sidang ke-" + dilihat + ")" + (l4.dariAgenda ? ", langkah dibaca dari agenda." : "."), l4.alternatif, [
+      ...lisanLain,
+      ...mediasiLain,
+      ...akhirLain(grup, dilihat, true, "alur-04"),
+    ]);
   }
 
   // T pernah hadir tetapi sidang ini tidak hadir (mis. sesudah mediasi): "verstek setelah mediasi" sebutan pengguna, putusannya
   // kontradiktoir (T pernah hadir) - BAS [3] ALUR 06 sejak paket abt-blangko-derry-rapi beramar tanpa "verstek".
+  // Semua pihak tidak hadir sesudah T pernah hadir: sidang tunda panggil P & T (ALUR 04 [T] / ALUR 07 [1]-[2]) menggantikan langkah ALUR 06.
+  const tidakHadirLagi: Array<[string, string]> = h === 4 ? [["alur-04", "T"], ["alur-07", dilihat <= 1 ? "1" : "2"]] : [];
   return dilihat <= 2
-    ? hasil("alur-06", "2", true, "T pernah hadir (mediasi) tetapi sekarang tidak hadir: laporan mediasi, tunda panggil T.", ["3"])
-    : hasil("alur-06", "3", true, `T pernah hadir, sekarang tidak hadir (sidang ke-${dilihat}): saksi dan putusan tanpa hadirnya T (kontradiktoir, bukan verstek - T pernah hadir).`, ["3a", "3b", "2"]);
+    ? hasil("alur-06", "2", true, "T pernah hadir (mediasi) tetapi sekarang tidak hadir: laporan mediasi, tunda panggil T.", ["3"], [...tidakHadirLagi, ...akhirLain(grup, dilihat, true, "alur-06")])
+    : hasil("alur-06", "3", true, `T pernah hadir, sekarang tidak hadir (sidang ke-${dilihat}): saksi dan putusan tanpa hadirnya T (kontradiktoir, bukan verstek - T pernah hadir).`, ["3a", "3b", "3c", "2"], [...tidakHadirLagi, ...akhirLain(grup, dilihat, true, "alur-06")]);
 }
 
 /** Dibangkitkan dari alat/spec_alur.py paket abt-bas-alur-sidang - jangan disunting tangan. */

@@ -58,8 +58,8 @@ import {
   uraiKunciBas,
   type FormatBasTanpaHadir,
 } from "@/lib/pemetaan-blangko";
-import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
-import { padananBasArsip, type PadananBas } from "@/lib/alur-bas";
+import { ALUR_BAS_KUMULASI, tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
+import { ALUR_BAS, padananBasArsip, type AlurBas, type HasilAlurBas, type LangkahAlurBas, type PadananBas } from "@/lib/alur-bas";
 import { salinanBasJenis, type SalinanBas } from "@/lib/salinan-bas-jenis";
 import { tentukanBasBaru, type HasilBasBaru, type LangkahBasBaru } from "@/lib/alur-bas-baru";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
@@ -842,7 +842,11 @@ function pilihBlangkoBasOtomatis(masukan: Parameters<typeof pilihBlangkoBas>[0])
 /** Alur + langkah BAS untuk satu sidang, dalam bentuk ringkas yang dikirim ke ekstensi; null bila jenis perkara tanpa folder alur. */
 export function alurBasBaris(masukan: Parameters<typeof tentukanAlurBasKumulasi>[0]): AlurBasBaris | null {
   // T 13 Okt: pembungkus kumulasi (hak asuh -> folder BAS kumulasi) dan itsbat gugur/cabut; tanpa kumulasi = tentukanAlurBas.
-  const h = tentukanAlurBasKumulasi(masukan);
+  return ringkasAlurBas(tentukanAlurBasKumulasi(masukan));
+}
+
+/** Q3 16 Okt: bentuk ringkas hasil penebak alur (dipisah supaya hasil lengkapnya dapat dipakai untuk pilihan blangko). */
+export function ringkasAlurBas(h: HasilAlurBas): AlurBasBaris | null {
   if (!h.alur || !h.langkah) return null;
   return {
     id: h.alur.id,
@@ -898,6 +902,99 @@ export function gabungBasBaru(
   if (baru.mode === "tambah" || terkunci) return { ...dasar, pilihan: [...lama, ...semua].slice(0, batas) };
   return { usulan: utama, pilihan: [...semua, ...lama].slice(0, batas), sebab: baru.perkiraan ? baru.sebab : "" };
 }
+
+/* === Q3 16 Okt === */
+/**
+ * ALUR SIDANG (ALUR 01-13, kumulasi 945, itsbat gugur/cabut 946) MENJADI PILIHAN BERKAS (peta perkara L3 15 Okt, usulan 1).
+ *
+ * Dulu hasil penebak alur hanya berupa keterangan ("alur 04 [3]") tanpa dapat dipilih: 732 dari 5.501 pasangan sidang x langkah
+ * (13%) tidak terjangkau pilihan sama sekali dan 38 berkas BAS Derry hanya tersambung sebagai tag. Sekarang usulan langkah, varian
+ * saksi (alternatif satu alur), dan langkah di alur lain (ALUR 01, ALUR 03 [2], ALUR 05, cabut/NO/gugur) masuk `blangko.pilihan`
+ * lewat SALINANNYA di folder "<jenis> - BAS" (salinanBasJenis; menu "Cerai Gugat - BAS" dst.). Langkah yang tak punya salinan
+ * di folder jenis perkaranya dilewati - ia tak bisa dibuka di ABT.
+ *
+ * Aturan gabung (mengikuti gabungBasBaru mode "tambah"): usulan yang sudah ada (katalog arsip, pemetaan admin, format tanpa-kehadiran)
+ * TIDAK diganti - pilihan baru ditambahkan di belakang; bila belum ada usulan sama sekali, langkah utama penebak alur menjadi
+ * usulan PERKIRAAN. Pilihan yang berkas salinannya sama dengan pilihan yang sudah ada tidak digandakan.
+ */
+function alurPemilikLangkah(h: HasilAlurBas, l: LangkahAlurBas): AlurBas | null {
+  if (h.alur && h.alur.langkah.includes(l)) return h.alur;
+  for (const a of [...ALUR_BAS, ...ALUR_BAS_KUMULASI]) if (a.langkah.includes(l)) return a;
+  // Objek langkah yang tersalin (bukan rujukan yang sama): cocokkan lewat nama berkas.
+  for (const a of [...ALUR_BAS, ...ALUR_BAS_KUMULASI]) if (a.langkah.some((x) => x.berkas === l.berkas)) return a;
+  return null;
+}
+
+function kunciSalinan(p: { folder: string; berkas: string; salinan?: SalinanBas[] }): string[] {
+  const s = (p.salinan ?? []).map((x) => `${x.folder}|${x.berkas}`);
+  return s.length ? s : [`${p.folder}|${kunciBerkasBas(p.berkas)}`];
+}
+
+function pilihanDariAlurLama(alur: AlurBas, l: LangkahAlurBas, perkiraan: boolean, jenisPerkara: string): PilihanBlangkoBas | null {
+  const dasar: PilihanBlangkoBas = {
+    folder: alur.folder,
+    berkas: l.berkas,
+    setId: alur.id,
+    setNama: /^alur-\d+$/.test(alur.id) ? `ALUR ${String(alur.nomor).padStart(2, "0")} ${alur.nama}` : alur.nama,
+    basKe: l.ke > 0 ? l.ke : 0,
+    label: `[${l.kode}] ${l.keterangan || l.berkas.replace(/^\[[^\]]+\]\s*/, "").replace(/\.rtf$/i, "")}`.trim(),
+    kehadiran: perkiraan ? "tidak-diketahui" : "cocok",
+    ...(perkiraan ? { perkiraan: true } : {}),
+  };
+  const lengkap = denganPadanan({ usulan: null as PilihanBlangkoBas | null, pilihan: [dasar] }, jenisPerkara).pilihan[0];
+  return lengkap.salinan && lengkap.salinan.length ? lengkap : null;
+}
+
+export function gabungAlurLama(
+  dasar: { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string },
+  h: HasilAlurBas | null,
+  jenisPerkara: string,
+  /** true = baris berformat tanpa-kehadiran (lewat 14.00): usulan/sebabnya tidak disentuh. */
+  tahan = false
+): { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string } {
+  if (!h || !h.alur || !h.langkah) return dasar;
+  const daftar: Array<{ alur: AlurBas; l: LangkahAlurBas; utama: boolean }> = [{ alur: h.alur, l: h.langkah, utama: true }];
+  for (const l of h.alternatif) {
+    const a = alurPemilikLangkah(h, l);
+    if (a) daftar.push({ alur: a, l, utama: false });
+  }
+  for (const x of h.lainAlur ?? []) daftar.push({ alur: x.alur, l: x.langkah, utama: false });
+
+  const ada = new Set(dasar.pilihan.flatMap(kunciSalinan));
+  const baru: PilihanBlangkoBas[] = [];
+  let utamaBaru: PilihanBlangkoBas | null = null;
+  for (const d of daftar) {
+    // Semua pilihan dari penebak alur adalah PERKIRAAN (ditebak dari urutan sidang, agenda, kehadiran) - petugas memeriksa.
+    const p = pilihanDariAlurLama(d.alur, d.l, true, jenisPerkara);
+    if (!p) continue;
+    const kunci = kunciSalinan(p);
+    if (kunci.some((k) => ada.has(k))) continue;
+    kunci.forEach((k) => ada.add(k));
+    baru.push(p);
+    if (d.utama) utamaBaru = p;
+  }
+  if (baru.length === 0) return dasar;
+  const batas = BATAS_PILIHAN_BLANGKO + baru.length;
+  if (dasar.usulan || tahan || !utamaBaru) return { ...dasar, pilihan: [...dasar.pilihan, ...baru].slice(0, batas) };
+  const utama: PilihanBlangkoBas = utamaBaru;
+  return { usulan: utama, pilihan: [utama, ...baru.filter((p) => p !== utama), ...dasar.pilihan].slice(0, batas), sebab: h.sebab };
+}
+/**
+ * Gabungan G3 + Q3: BAS baru di folder jenis lebih dulu; bila ia mengganti (mode "ganti"), alur lama sudah tak berlaku untuk baris ini;
+ * selain itu pilihan dari alur lama ditambahkan.
+ */
+export function gabungSemuaBas(
+  dasar: { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string },
+  baru: HasilBasBaru | null,
+  alur: HasilAlurBas | null,
+  jenisPerkara: string,
+  tahan = false
+): { usulan: PilihanBlangkoBas | null; pilihan: PilihanBlangkoBas[]; sebab: string } {
+  const g3 = gabungBasBaru(dasar, baru, tahan);
+  if (baru && baru.mode === "ganti") return g3;
+  return gabungAlurLama(g3, alur, jenisPerkara, tahan);
+}
+/* === AKHIR Q3 === */
 
 export function alurBasBarisDariBaru(h: HasilBasBaru): AlurBasBaris {
   return {
@@ -1073,7 +1170,8 @@ export function susunBarisBasMassal(
       kumulasi: s.kumulasi,
       nomorPerkara: nomor,
     });
-    const alurDasar = alurBasBaris({
+    // Q3 16 Okt: hasil lengkap penebak alur (bukan hanya ringkasannya) - dipakai juga untuk pilihan blangko.
+    const hasilAlurDasar = tentukanAlurBasKumulasi({
       jenisPerkara,
       urutanSidang,
       dihadiriOleh: sandiHadir,
@@ -1082,6 +1180,7 @@ export function susunBarisBasMassal(
       sidangIkrarTalak: s.sidangIkrarTalak === true,
       kumulasi: s.kumulasi, // T 13 Okt
     });
+    const alurDasar = ringkasAlurBas(hasilAlurDasar);
     semua.push({
       sidangId: teks(s.sidangId),
       perkaraId,
@@ -1110,7 +1209,7 @@ export function susunBarisBasMassal(
         nama2: daftarTeks(s.saksiNamaPihak2),
       },
       lembar: perkaraId && opsi.lembar[perkaraId] !== undefined ? (opsi.lembar[perkaraId] ?? null) : null,
-      blangko: gabungBasBaru(pilihBlangkoBas({
+      blangko: gabungSemuaBas(pilihBlangkoBas({
         jenisPerkara,
         urutanSidang,
         // Pemetaan blangko memakai sandi kehadiran: dari SIPP, atau dari
@@ -1123,7 +1222,7 @@ export function susunBarisBasMassal(
         // Kehadiran tercatat di SIPP: perilaku lama, tanpa perkiraan.
         ...(k.keadaan === "tercatat" ? {} : { kehadiranPt: k.pt, perkiraan: true }),
         format: k.format,
-      }), baru, k.format !== null), // G3 15 Okt
+      }), baru, hasilAlurDasar, jenisPerkara, k.format !== null), // G3 15 Okt; Q3 16 Okt
       /* === ALURBAS 12 Okt === */
       alurBas: baru && (baru.mode === "ganti" || !alurDasar) ? alurBasBarisDariBaru(baru) : alurDasar, // G3 15 Okt
       /* === AKHIR ALURBAS === */

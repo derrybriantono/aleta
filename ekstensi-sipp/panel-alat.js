@@ -7491,17 +7491,29 @@ function alatKunciPetaDariAdmin(kunciAdmin) {
   return /verstek/i.test(tanda) || /verstek/i.test(status) ? `${j}|${s}|verstek` : `${j}|${s}`;
 }
 
+/** Kode keadaan putusan bersih dari bentuk apa pun yang dikirim portal / disimpan (daftar string), urutan dipertahankan. */
+function alatKodeKeadaan(keadaan) {
+  const daftar = Array.isArray(keadaan) ? keadaan : [];
+  const kode = daftar.map((x) => String(x || "").trim().toLowerCase()).filter((x) => /^[a-z0-9-]{2,40}$/.test(x));
+  return [...new Set(kode)];
+}
+
 /**
- * Baris peta untuk satu perkara: [kumulasi+status+verstek -> kumulasi+status ->] status+verstek -> status -> jenis.
+ * Baris peta untuk satu perkara: [kumulasi+status+verstek -> kumulasi+status ->] [status+keadaan ->] status+verstek -> status -> jenis.
  * Pulang { baris, kunci, tingkat } atau null. `kumulasi` (T 13 Okt, opsional) = daftar kode kumulasi perkara (SIPP + petitum,
  * kumulasiPerkaraService) - lihat alatKodeKumulasi; baris kumulasi berkunci "<jenis>+<kode>[+<kode>]|<status>[|verstek]".
  */
-function alatPetaUntukPerkara(peta, jenis, status, verstek, kumulasi) {
+function alatPetaUntukPerkara(peta, jenis, status, verstek, kumulasi, keadaan) {
   const p = peta && typeof peta === "object" ? peta : {};
   const j = alatKunciJenis(jenis);
   if (!j) return null;
   const s = alatKunciStatusPutusan(status);
-  const v = Boolean(verstek) || /verstek/i.test(String(status || ""));
+  /* === Q3 16 Okt === */
+  // Keadaan putusan (portal: lib/keadaan-putusan.ts, dikirim sebagai keadaanPutusan pada baris sidang): kode berurut dari yang paling khusus.
+  const kodeKeadaan = alatKodeKeadaan(keadaan);
+  // Bendera verstek di SIPP kosong padahal T tak pernah hadir dan tak ada mediasi (56 perkara kabul, 2 tolak di PA Donggala): dianggap verstek.
+  const v = Boolean(verstek) || /verstek/i.test(String(status || "")) || kodeKeadaan.includes("verstek-tanpa-bendera");
+  /* === AKHIR Q3 === */
   const ada = (k) => p[k] && alatBlangkoTerpetakan(p[k]);
   /* === T 13 Okt === */
   if (s) {
@@ -7512,6 +7524,15 @@ function alatPetaUntukPerkara(peta, jenis, status, verstek, kumulasi) {
     }
   }
   /* === AKHIR T === */
+  /* === Q3 16 Okt === */
+  // Baris berkeadaan "<jenis>|<status>|<kode keadaan>" (mis. cerai gugat|dikabulkan|mediasi-sebagian -> [02b]) menang atas baris status.
+  if (s) {
+    for (const kode of kodeKeadaan) {
+      if (kode === "verstek-tanpa-bendera") continue; // sudah diwujudkan sebagai verstek di atas
+      if (ada(`${j}|${s}|${kode}`)) return { baris: p[`${j}|${s}|${kode}`], kunci: `${j}|${s}|${kode}`, tingkat: "keadaan" };
+    }
+  }
+  /* === AKHIR Q3 === */
   if (s && v && ada(`${j}|${s}|verstek`)) return { baris: p[`${j}|${s}|verstek`], kunci: `${j}|${s}|verstek`, tingkat: "status-verstek" };
   if (s && ada(`${j}|${s}`)) return { baris: p[`${j}|${s}`], kunci: `${j}|${s}`, tingkat: "status" };
   if (p[j]) return { baris: p[j], kunci: j, tingkat: "jenis" };
@@ -7524,7 +7545,8 @@ function alatSebutKunciPeta(kunci, baris) {
   const jenis = (baris && baris.jenisAsli) || j;
   if (!s) return jenis;
   const status = (baris && baris.statusAsli) || s;
-  return `${jenis} · ${status}${v ? " (verstek)" : ""}`;
+  // Q3 16 Okt: bagian ketiga bisa "verstek" atau kode keadaan (mis. "mediasi-sebagian").
+  return `${jenis} · ${status}${v === "verstek" ? " (verstek)" : v ? ` (${String(v).replace(/-/g, " ")})` : ""}`;
 }
 
 /**
@@ -7984,6 +8006,8 @@ async function alatSidangPadaTanggal(tanggalIso) {
       tanggalSidang: String(s.tanggalSidang || tanggalIso || ""),
       // T 13 Okt: kode kumulasi (SIPP + petitum) - dipakai pemilih blangko putusan kumulasi (alatPetaUntukPerkara).
       kumulasi: alatKodeKumulasi(s.kumulasi),
+      // Q3 16 Okt: keadaan putusan (portal lib/keadaan-putusan.ts) - dipakai alatPetaUntukPerkara (mediasi sebagian, T tidak hadir setelah mediasi, dst.).
+      keadaan: alatKodeKeadaan(s.keadaanPutusan),
     });
   }
   return [...per.values()];
@@ -8356,6 +8380,34 @@ function alatPetaStatusCerai(jenis, kodeJenis) {
     [`${k}|gugur`]: alatBarisStatusCerai(jenis, "Gugur", ...B.gugur),
     [`${k}|dicabut`]: alatBarisStatusCerai(jenis, "Dicabut", ...B.cabut),
     [`${k}|dicoret dari register`]: alatBarisStatusCerai(jenis, "Dicoret dari Register", ...B.coret),
+    /* === Q3 16 Okt: baris per KEADAAN (peta perkara L3: ALETA memilih berkas yang tepat hanya 84%) === */
+    [`${k}|dikabulkan|mediasi-sebagian`]: alatBarisStatusCerai(
+      jenis,
+      "Dikabulkan",
+      `[02b] [Kabul] ${kodeJenis} - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar)`,
+      `varian: [02] [Kabul] ${kodeJenis} - F` // keadaan: hasil mediasi "berhasil sebagian" (CG 32+, CT 38 dari 45 kontradiktoir)
+    ),
+    [`${k}|dikabulkan|t-tidak-hadir-setelah-mediasi`]: alatBarisStatusCerai(
+      jenis,
+      "Dikabulkan",
+      "[01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi",
+      `varian: [02a] [Kabul] ${kodeJenis} - T Tidak Hadir Setelah Mediasi - F` // keadaan: T hadir mediasi lalu tidak hadir; [01c] punya varian 3/4/5 Saksi${kodeJenis === "CT" ? " dan Mut'ah Iddah" : ""}
+    ),
+    [`${k}|dicabut|sesudah-mediasi`]: alatBarisStatusCerai(
+      jenis,
+      "Dicabut",
+      "[98] [Cabut] 2. Cerai P & T Hadir- Setelah Mediasi (Sebelum Jawaban)",
+      "varian: [98] [Cabut] 5. Cerai P Hadir & T Tidak Hadir - Setelah Pembuktian" // keadaan: dicabut sesudah mediasi (CG 18, CT 3)
+    ),
+    [`${k}|tidak dapat diterima|sema-1-2022`]: alatBarisStatusCerai(
+      jenis,
+      "Tidak Dapat Diterima",
+      "[98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022)"
+      // keadaan: P hadir sidang pertama lalu dua kali tidak hadir (CG 10, CT 2)
+    ),
+    [`${k}|digugurkan|p-tidak-hadir-t-hadir`]: alatBarisStatusCerai(jenis, "Digugurkan", "[98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir"), // keadaan: P tidak hadir, T hadir
+    [`${k}|gugur|p-tidak-hadir-t-hadir`]: alatBarisStatusCerai(jenis, "Gugur", "[98] [Gugur] 3a. Cerai P Tidak Hadir & T Hadir"), // keadaan: P tidak hadir, T hadir
+    /* === AKHIR Q3 === */
   };
   return baris;
 }
@@ -8436,6 +8488,135 @@ Object.assign(ALAT_PETA_BAWAAN, {
   ),
 });
 /* === AKHIR T === */
+
+/* === Q3 16 Okt === */
+/**
+ * BLANGKO PUTUSAN PER STATUS UNTUK PERMOHONAN & GUGATAN LAIN (peta perkara L3 15 Okt, kesenjangan bagian 3 butir 1-5).
+ *
+ * Sebelum ini Itsbat Nikah, Dispensasi Kawin, Harta Bersama, Kewarisan, dan Poligami hanya punya baris JENIS (satu blangko "Kabul"
+ * untuk semua status): itsbat gugur 39, cabut 14, NO 8, tolak 5 mendapat blangko KABUL. Penetapan Ahli Waris (36), Perwalian (33),
+ * Pengangkatan Anak, Asal Usul Anak, dan permohonan umum yang dicabut/gugur/NO tidak punya baris sama sekali. Nama berkas dan menu
+ * diambil dari folder derry_briantono sesudah susunan berpasangan (diperiksa 16 Okt 2026; menu putusan: nama TETAP, alias "<Singkatan> - Putusan").
+ * Kunci: "<jenis>|<status>" dan "<jenis>|<status>|<keadaan>" (keadaan: lib/keadaan-putusan.ts). Wali Adhal belum punya blangko putusan Derry.
+ */
+const ALAT_MENU_PUTUSAN = {
+  in: { blangko: "Putusan Itsbat Nikah", lain: ["Itsbat - Putusan"] },
+  ink: { blangko: "Putusan Itsbat Nikah Kontensius", lain: ["IN Kontensius - Putusan"] },
+  dk: { blangko: "Putusan Dispensasi Kawin", lain: ["Diska/DK - Putusan"] },
+  pwl: { blangko: "Putusan Perwalian", lain: ["Perwalian - Putusan"] },
+  aua: { blangko: "Putusan Asal Usul Anak", lain: ["Asal Usul Anak - Putusan"] },
+  paw: { blangko: "Putusan Penetapan Ahli Waris (P3HP)", lain: ["PAW/P3HP - Putusan"] },
+  pa: { blangko: "Putusan Lain-Lain (Pengangkatan Anak)", lain: ["Pengangkatan Anak - Putusan"] },
+  um: { blangko: "Putusan Permohonan Umum (Cabut/Gugur/NO)", lain: ["Permohonan Umum - Putusan"] },
+  hb: { blangko: "Putusan Harta Bersama", lain: ["Putusan HB", "HB - Putusan"] },
+  waris: { blangko: "Putusan Kewarisan", lain: ["Putusan Waris", "Waris - Putusan"] },
+  pol: { blangko: "Putusan Izin Poligami", lain: ["Putusan Poligami", "Poligami - Putusan"] },
+};
+function alatBarisPutusanLain(menu, jenisAsli, statusAsli, berkas, catatan) {
+  const m = ALAT_MENU_PUTUSAN[menu];
+  return { jenisAsli, ...(statusAsli ? { statusAsli } : {}), berkas, blangko: m.blangko, blangkoLain: [...m.lain], bawaan: true, ...(catatan ? { catatan } : {}) };
+}
+const ALAT_BERKAS_UMUM = {
+  cabut: "[98] [Cabut] Permohonan",
+  gugur: "[98] [Gugur] Permohonan - Pemohon Tidak Pernah Hadir",
+  no: "[99] [NO] Permohonan - Pemohon Tidak Hadir Lagi (SEMA 1 2022)",
+};
+/** Cabut / gugur (dua nama status SIPP) / NO untuk permohonan yang tak punya blangko sendiri -> folder 9b Permohonan Umum. */
+function alatBarisPermohonanUmum(kunci, jenisAsli, opsi) {
+  const o = opsi || {};
+  const baris = {};
+  if (!o.tanpaCabut) baris[`${kunci}|dicabut`] = alatBarisPutusanLain("um", jenisAsli, "Dicabut", ALAT_BERKAS_UMUM.cabut, "permohonan umum (9b)");
+  if (!o.tanpaGugur) {
+    baris[`${kunci}|digugurkan`] = alatBarisPutusanLain("um", jenisAsli, "Digugurkan", ALAT_BERKAS_UMUM.gugur, "permohonan umum (9b)");
+    baris[`${kunci}|gugur`] = alatBarisPutusanLain("um", jenisAsli, "Gugur", ALAT_BERKAS_UMUM.gugur, "permohonan umum (9b)");
+  }
+  if (!o.tanpaNo) baris[`${kunci}|tidak dapat diterima`] = alatBarisPutusanLain("um", jenisAsli, "Tidak Dapat Diterima", ALAT_BERKAS_UMUM.no, "permohonan umum (9b) - pola SEMA 1/2022");
+  return baris;
+}
+Object.assign(ALAT_PETA_BAWAAN, {
+  // --- Itsbat Nikah (permohonan) ---
+  "itsbat nikah|digugurkan": alatBarisPutusanLain("in", "Itsbat Nikah", "Digugurkan", "[98] [Gugur] IN"),
+  "itsbat nikah|gugur": alatBarisPutusanLain("in", "Itsbat Nikah", "Gugur", "[98] [Gugur] IN"),
+  "itsbat nikah|dicabut": alatBarisPutusanLain("in", "Itsbat Nikah", "Dicabut", "[98] [Cabut] IN"),
+  "itsbat nikah|ditolak": alatBarisPutusanLain("in", "Itsbat Nikah", "Ditolak", "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah)"),
+  "itsbat nikah|tidak dapat diterima": alatBarisPutusanLain(
+    "in",
+    "Itsbat Nikah",
+    "Tidak Dapat Diterima",
+    "[99] [NO] IN - Dibawah Umur",
+    "varian: [99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai)"
+  ),
+  "itsbat nikah|tidak dapat diterima|sema-1-2022": alatBarisPutusanLain(
+    "um",
+    "Itsbat Nikah",
+    "Tidak Dapat Diterima",
+    ALAT_BERKAS_UMUM.no,
+    "keadaan: pemohon dua kali tidak hadir (SEMA 1/2022) - 9b Permohonan Umum"
+  ),
+  // --- Itsbat Nikah kontensius (nomor Pdt.G; jenis SIPP sama dengan permohonan) ---
+  "itsbat nikah|dikabulkan|kontensius": alatBarisPutusanLain(
+    "ink",
+    "Itsbat Nikah Kontensius",
+    "Dikabulkan",
+    "[01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris Mengakui",
+    "keadaan: nomor perkara Pdt.G (gugatan)"
+  ),
+  "itsbat nikah|dicabut|kontensius": alatBarisPutusanLain("ink", "Itsbat Nikah Kontensius", "Dicabut", "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban", "keadaan: nomor perkara Pdt.G"),
+  "itsbat nikah|tidak dapat diterima|kontensius": alatBarisPutusanLain(
+    "ink",
+    "Itsbat Nikah Kontensius",
+    "Tidak Dapat Diterima",
+    "[99] [NO] IN Kontensius - P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022)",
+    "keadaan: nomor perkara Pdt.G"
+  ),
+  // --- Dispensasi Kawin ---
+  "dispensasi kawin|ditolak": alatBarisPutusanLain("dk", "Dispensasi Kawin", "Ditolak", "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil"),
+  "dispensasi kawin|dicabut": alatBarisPutusanLain("dk", "Dispensasi Kawin", "Dicabut", "[98] [Cabut] DK"),
+  "dispensasi kawin|tidak dapat diterima": alatBarisPutusanLain("dk", "Dispensasi Kawin", "Tidak Dapat Diterima", "[99] [NO] DK - Pemohon Tidak Hadir Lagi (SEMA 1 2022)"),
+  ...alatBarisPermohonanUmum("dispensasi kawin", "Dispensasi Kawin", { tanpaCabut: true, tanpaNo: true }),
+  // --- Penetapan Ahli Waris (P3HP) ---
+  "penetapan ahli waris": alatBarisPutusanLain(
+    "paw",
+    "Penetapan Ahli Waris",
+    "",
+    "[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal)",
+    "satu susunan ahli waris (anak kandung) - susunan lain belum ada"
+  ),
+  "penetapan ahli waris|tidak dapat diterima": alatBarisPutusanLain("paw", "Penetapan Ahli Waris", "Tidak Dapat Diterima", "[99] [NO] PAW - Permohonan Kabur (Obscuur Libel)"),
+  "penetapan ahli waris|tidak dapat diterima|sema-1-2022": alatBarisPutusanLain(
+    "um",
+    "Penetapan Ahli Waris",
+    "Tidak Dapat Diterima",
+    ALAT_BERKAS_UMUM.no,
+    "keadaan: pemohon dua kali tidak hadir (SEMA 1/2022) - 9b Permohonan Umum"
+  ),
+  ...alatBarisPermohonanUmum("penetapan ahli waris", "Penetapan Ahli Waris", { tanpaNo: true }),
+  // --- Perwalian ---
+  perwalian: alatBarisPutusanLain("pwl", "Perwalian", "", "Perwalian Anak oleh ortu kandung Kabul", "tanpa tanda status di nama berkas"),
+  "perwalian|ditolak": alatBarisPutusanLain("pwl", "Perwalian", "Ditolak", "Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider"),
+  ...alatBarisPermohonanUmum("perwalian", "Perwalian"),
+  // --- Pengangkatan Anak (SIPP: "Lain-Lain") ---
+  "lain-lain|dikabulkan": alatBarisPutusanLain("pa", "Lain-Lain (Pengangkatan Anak)", "Dikabulkan", "[01] [Kabul] Pengangkatan Anak"),
+  ...alatBarisPermohonanUmum("lain-lain", "Lain-Lain (Pengangkatan Anak)"),
+  // --- Asal Usul Anak ---
+  "asal usul anak|dicabut": alatBarisPutusanLain("aua", "Asal Usul Anak", "Dicabut", "[98] [Cabut] AUA - Setelah Pembuktian"),
+  "asal usul anak|tidak dapat diterima": alatBarisPutusanLain("aua", "Asal Usul Anak", "Tidak Dapat Diterima", "[99] [NO] AUA - Poliandri (Pemohon II Masih Terikat Perkawinan)"),
+  ...alatBarisPermohonanUmum("asal usul anak", "Asal Usul Anak", { tanpaCabut: true, tanpaNo: true }),
+  // --- Harta Bersama / Kewarisan / Poligami: jenis saja -> per status ---
+  "harta bersama|dikabulkan|kontradiktoir": alatBarisPutusanLain(
+    "hb",
+    "Harta Bersama",
+    "Dikabulkan",
+    "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan",
+    "keadaan: T hadir pada sidang putusan; bila T tidak hadir setelah mediasi: [02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi"
+  ),
+  "harta bersama|perdamaian": alatBarisPutusanLain("hb", "Harta Bersama", "Perdamaian", "[97] [Perdamaian] Akta Perdamaian"),
+  "harta bersama|dicabut": alatBarisPutusanLain("hb", "Harta Bersama", "Dicabut", "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban"),
+  "kewarisan|perdamaian": alatBarisPutusanLain("waris", "Kewarisan", "Perdamaian", "[97] [Perdamaian] Akta Perdamaian"),
+  "kewarisan|dicabut": alatBarisPutusanLain("hb", "Kewarisan", "Dicabut", "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban", "folder 4b Kewarisan tidak punya [98]; dipakai milik 4a Harta Bersama"),
+  "poligami|dicabut": alatBarisPutusanLain("pol", "Izin Poligami", "Dicabut", "[98] [Cabut] Permohonan - P & T Hadir Sebelum Jawaban"),
+});
+/* === AKHIR Q3 === */
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah

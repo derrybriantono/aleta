@@ -66,6 +66,23 @@ function jalankanPanelAlat() {
   return (kode: string) => JSON.parse(JSON.stringify(vm.runInContext(kode, konteks) ?? null));
 }
 
+/** Menu putusan (abt_menu.nama, J3 MENU-FINAL.tsv) -> folder derry_briantono. */
+const FOLDER_MENU_PUTUSAN: Record<string, string> = {
+  "Putusan Cerai Gugat": "1 Perceraian CG",
+  "Putusan Cerai Talak": "1a Perceraian CT",
+  "Putusan Itsbat Nikah": "2 Itsbat Nikah",
+  "Putusan Itsbat Nikah Kontensius": "2a Itsbat Nikah Kontensius",
+  "Putusan Dispensasi Kawin": "3 Dispensasi Kawin",
+  "Putusan Harta Bersama": "4a Harta Bersama",
+  "Putusan Kewarisan": "4b Kewarisan",
+  "Putusan Izin Poligami": "5 Izin Poligami",
+  "Putusan Perwalian": "6 Perwalian",
+  "Putusan Asal Usul Anak": "8 Asal Usul Anak",
+  "Putusan Penetapan Ahli Waris (P3HP)": "9 Penetapan Ahli Waris",
+  "Putusan Lain-Lain (Pengangkatan Anak)": "9a Lain-Lain (Pengangkatan Anak)",
+  "Putusan Permohonan Umum (Cabut/Gugur/NO)": "9b Permohonan Umum",
+};
+
 type Baris = { berkas: string; blangko: string; statusAsli?: string; jenisAsli: string; catatan?: string };
 type Hasil = { baris: Baris; kunci: string; tingkat: string } | null;
 
@@ -111,16 +128,19 @@ describe("pemilih blangko cerai per status (panel-alat.js yang dijalankan)", () 
     expect(lama!.baris.berkas).toBe("[01] [Kabul Verstek] Cerai (Format Lengkap)");
   });
 
-  it("baris status tidak menyentuh jenis lain (itsbat tetap baris jenis)", () => {
-    const h = pilih("Pengesahan Perkawinan/Istbat Nikah", "Dicabut", false);
+  it("baris status tidak menyentuh jenis lain (poligami dikabulkan tetap baris jenis)", () => {
+    const h = pilih("Izin Poligami", "Dikabulkan", false);
     expect(h!.tingkat).toBe("jenis");
-    expect(h!.baris.berkas).toBe("[01] [Kabul] IN");
+    expect(h!.baris.berkas).toBe("[01] [Kabul] Izin Poligami");
   });
 
   it("tipe keluaran tertanam membawa statusAsli dan kembali utuh lewat alatPetaBawaanDariEntri", () => {
     const tertanam = jalan("alatTipeTertanamPeta()") as { kunci: string; data: { statusAsli?: string } }[];
     const status = tertanam.filter((e) => e.kunci.includes("|") && !e.kunci.includes("+")); // "+" = baris kumulasi (T 13 Okt)
-    expect(status).toHaveLength(18);
+    // 18 baris status cerai (9 status x CG/CT) + baris keadaan dan baris permohonan/gugatan lain (Q3 16 Okt), semuanya bernama status.
+    const cerai = status.filter((e) => /^cerai (gugat|talak)\|/.test(e.kunci) && [undefined, "verstek"].includes(e.kunci.split("|")[2]));
+    expect(cerai).toHaveLength(18);
+    expect(status.length).toBeGreaterThan(18);
     expect(status.every((e) => typeof e.data.statusAsli === "string" && e.data.statusAsli)).toBe(true);
     const balik = jalan("alatPetaBawaanDariEntri(alatTipeTertanamPeta())");
     expect(balik).toEqual(jalan("ALAT_PETA_BAWAAN"));
@@ -130,9 +150,15 @@ describe("pemilih blangko cerai per status (panel-alat.js yang dijalankan)", () 
   it.skipIf(!folderAda)("tiap nama berkas status ada di folder derry_briantono laptop (paket abt-cerai-lengkap terpasang)", () => {
     const peta = jalan("ALAT_PETA_BAWAAN") as Record<string, Baris>;
     for (const [kunci, b] of Object.entries(peta)) {
-      if (!kunci.includes("|") || kunci.includes("+")) continue; // baris kumulasi (T 13 Okt) dijaga putusan-bas-kumulasi-13okt.test.ts
-      const folder = b.jenisAsli === "Cerai Gugat" ? "1 Perceraian CG" : "1a Perceraian CT";
+      if (kunci.split("|")[0].includes("+")) continue; // baris kumulasi (T 13 Okt) dijaga putusan-bas-kumulasi-13okt.test.ts
+      // Q3 16 Okt: folder menurut MENU yang dipakai barisnya (menu putusan: nama TETAP sesudah susunan berpasangan).
+      const folder = FOLDER_MENU_PUTUSAN[b.blangko];
+      if (!folder) continue; // baris jenis lama tanpa menu (itsbat, dispensasi) - dijaga uji lain
+      // Folder laptop (PA Bungku) hanya memuat paket cerai; nama berkas permohonan/gugatan lain diperiksa terhadap daftar berkas server
+      // (peta perkara L3, 16 Okt 2026) saat dibangun - lihat putusan-per-keadaan-q3.test.ts untuk daftar tetapnya.
+      if (!/^Putusan Cerai (Gugat|Talak)$/.test(b.blangko)) continue;
       expect(existsSync(path.join(ABT_DERRY, folder, `${b.berkas}.rtf`)), `${kunci}: ${b.berkas}`).toBe(true);
+      if (!/^varian: /.test(b.catatan || "")) continue;
       for (const varian of (b.catatan || "").replace(/^varian: /, "").split("; ").filter(Boolean)) {
         // G3 15 Okt: 4b (nama baru, paket agen H3) ikut. F3 14 Okt: 3b (kuasa insidentil) milik paket ABT abt-kuasa-insidentil (agen B3) - ada di laptop hanya sesudah dipasang di sana.
         if (/(\[Gugur\] 3b|\[NO\] 4b)\. Cerai P Diwakili Kuasa Insidentil/.test(varian) && !existsSync(path.join(ABT_DERRY, folder, `${varian}.rtf`))) continue;

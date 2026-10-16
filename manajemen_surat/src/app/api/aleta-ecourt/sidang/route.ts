@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
 import { lengkapiPetaDariRekam, susunRekamAntrian } from "@/lib/rekam-antrian";
 import { hitungTigaJarak, kunciWaktu, WAKTU_ANTRIAN_KOSONG } from "@/lib/tiga-jarak-sidang";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
@@ -295,7 +296,9 @@ export async function GET(request: NextRequest) {
       dari: hasil.data?.dari ?? "",
       sampai: hasil.data?.sampai ?? "",
       diperiksaPada: hasil.data?.diperiksaPada ?? "",
-      sidang,
+      // Q3 16 Okt: keadaan putusan tiap baris (mediasi sebagian, T tidak hadir setelah mediasi, ...) untuk pemilihan blangko putusan
+      // per keadaan di ekstensi (lib/keadaan-putusan.ts). Ruas tambahan; ekstensi lama mengabaikannya.
+      sidang: sidang.map((baris) => ({ ...baris, keadaanPutusan: keadaanPutusan(baris as unknown as MasukanKeadaanPutusan) })),
       kesiapan,
       kesiapanDinilai,
       // Disebutkan apa adanya. Rekaman yang diam-diam tidak pernah tertulis -

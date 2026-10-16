@@ -178,9 +178,18 @@ export function bersihkanButir(jenis: JenisPemetaan, masukan: unknown): { simpan
 }
 
 /** Saran untuk layar admin: bawaan ekstensi untuk putusan (cermin tipe keluaran). */
+/**
+ * Q3 16 Okt: baris bawaan berkeadaan ("cerai gugat|dikabulkan|mediasi-sebagian") dipilih ekstensi dari keadaan perkara (lib/keadaan-putusan.ts);
+ * bukan kunci pemetaan admin (jenis|status[|verstek]) sehingga tidak disarankan di layar admin.
+ */
+function barisKeadaan(kunci: string): boolean {
+  const bagian = kunci.split("|");
+  return bagian.length === 3 && bagian[2] !== "verstek";
+}
+
 export function saranPemetaan(jenis: JenisPemetaan): { kunci: string; namaBerkas: string; catatan: string }[] {
   if (jenis !== "putusan") return [];
-  return CERMIN_EKSTENSI["putusan.peta-blangko"].map((e) => {
+  return CERMIN_EKSTENSI["putusan.peta-blangko"].filter((e) => !barisKeadaan(String(e.kunci))).map((e) => {
     const data = (e.data ?? {}) as { jenisAsli?: string; statusAsli?: string; catatan?: string };
     // P 12 Okt: baris status bawaan ("cerai gugat|dikabulkan|verstek") disarankan dengan kunci admin yang sama bentuknya
     // ("Cerai Gugat|Dikabulkan|verstek"), sehingga normalkanKunciPutusan & alatKunciPetaDariAdmin memetakannya kembali.
