@@ -587,6 +587,24 @@ describe("F. lencana ALETA di SIPP: satu gaya bersama rupa rancangan, UI Baru sa
     }
   });
 
+  it("tema gelap: lencana tetap berwarna (bukan latar gelap samar) - latar >= 2:1 terhadap baris SIPP gelap, tulisan >= 4,5:1", () => {
+    const lum = (h: string) => {
+      const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    const kontras = (a: string, b: string) => {
+      const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    };
+    const BARIS_GELAP = ["#0d1512", "#131c18", "#17211c"];
+    for (const w of ["merah", "kuning", "hijau", "abu", "jingga", "fuchsia", "biru", "ungu", "sita"]) {
+      const m = new RegExp(`\\[data-aleta-tema-sipp="gelap"\\] \\.aleta-tanda-${w}\\s*\\{ background: (#[0-9a-f]{6}); color: (#[0-9a-f]{6});`).exec(blok);
+      expect(m, w).not.toBeNull();
+      for (const r of BARIS_GELAP) expect(kontras(m![1], r), `${w} vs baris ${r}`).toBeGreaterThanOrEqual(2);
+      expect(kontras(m![1], m![2]), `${w} tulisan`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it("lencana lama konten.js (prodeo/GHAIB/kuasa...) ikut rupa rancangan di UI Baru tanpa diubah DOM-nya; Tampilan Lama: penandanya dicabut", async () => {
     const lencanaLama = `<div class="aleta-tanda-baris"><span class="aleta-tanda aleta-tanda-abu" data-aleta-tanda="1" title="ALETA: Dibebaskan biaya - tidak boleh ditagih panjar.">prodeo</span></div>`;
     const w = buka(halaman().replace("</body>", `${lencanaLama}</body>`));
