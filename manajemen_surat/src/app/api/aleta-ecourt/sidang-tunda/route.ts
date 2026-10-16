@@ -11,6 +11,7 @@ import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
+import { alamatIpPeramban } from "@/server/shared/request";
 import { bacaKehadiranSidang } from "@/server/modules/aleta-ecourt/kehadiran-rinci";
 
 export const runtime = "nodejs";
@@ -134,6 +135,9 @@ export async function POST(request: NextRequest) {
       operator: actorUserId || "portal",
       operatorNama: String(aktor.name || aktor.email || ""),
       operatorAkunSipp: akunPenekan && akunPenekan.milik.length ? akunPenekan.milik.join(", ") : "",
+      // Butir 45 (17 Okt): alamat PERAMBAN petugas untuk sys_audittrail - tanpa ini bot
+      // dulu mencatat alamat peti portal (172.18.0.2), penanda ALETA di audit SIPP.
+      ip: alamatIpPeramban(request),
       // Kering kecuali disebut tegas sebaliknya.
       kering: badan.kering !== false,
     });

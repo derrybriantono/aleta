@@ -95,7 +95,11 @@ function wajibToken(req, res, next) {
 function alamatAudit(req) {
   const dariPortal = String((req.body && req.body.ip) || "").trim();
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(dariPortal) && dariPortal.length <= 15) return dariPortal;
-  return String(req.ip || (req.socket && req.socket.remoteAddress) || "").replace(/^::ffff:/, "");
+  // Butir 45 (17 Okt 2026): TANPA jalan mundur ke alamat soket. Itu alamat peti portal
+  // (172.18.0.2) - 19 baris sys_audittrail 29 Sep-16 Okt memuatnya, alamat yang
+  // tidak pernah dipakai petugas mana pun, jadi penanda ALETA di audit SIPP.
+  // Kosong lebih jujur daripada alamat mesin ALETA (sama dengan putusanTulisService).
+  return "";
 }
 
 function galat500(res, galat) {

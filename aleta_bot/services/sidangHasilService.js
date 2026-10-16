@@ -815,6 +815,9 @@ async function susunRencanaTunda(minta = {}) {
 
   const agendaBerikut = bersih(minta.agendaBerikut);
   if (!agendaBerikut) return { ok: false, alasan: "agenda_berikut_kosong" };
+  // Butir 45 (17 Okt 2026): tidak ada kata ALETA di database SIPP - termasuk dari
+  // isian bebas (alasan_ditunda, agenda). Sama dengan penetapanKembaliService.
+  if (/aleta/i.test(alasanTunda) || /aleta/i.test(agendaBerikut)) return { ok: false, alasan: "teks_menyebut_aleta" };
 
   // ==========================================================================
   // TANGGALNYA DIPERIKSA DI SINI, BUKAN SESUDAH BARISNYA LAHIR

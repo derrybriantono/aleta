@@ -96,6 +96,8 @@ const PESAN = {
   tanggal: "Tanggal Persidangan wajib diisi (tgl/bln/tahun).",
   jam: "Jam Persidangan wajib diisi (JJ:MM).",
   tidakAda: "Data Rencana Sidang Tidak Ditemukan.",
+  // Butir 45 (17 Okt 2026): tidak ada kata ALETA di database SIPP.
+  aleta: "Agenda dan keterangan tersimpan di SIPP - jangan menyebut kata ALETA di sana.",
 };
 
 function bersih(nilai) {
@@ -132,6 +134,7 @@ function kunciBaris(x) {
 /** Pagar blangko SIPP atas satu baris. Pulang "" bila lolos. */
 function periksaBaris(b, tanggalDaftar) {
   if (!bersih(b.agenda)) return PESAN.agenda;
+  if (/aleta/i.test(bersih(b.agenda)) || /aleta/i.test(bersih(b.keterangan))) return PESAN.aleta;
   if (!tanggalSah(b.tanggal)) return PESAN.tanggal;
   if (!jamSah(b.jam)) return PESAN.jam;
   const h = hariDalamPekan(tanggalSah(b.tanggal));

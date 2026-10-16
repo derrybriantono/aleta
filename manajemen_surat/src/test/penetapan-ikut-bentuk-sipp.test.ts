@@ -179,12 +179,15 @@ describe("alamat pada baris audit - peramban petugas, bukan peti ALETA", () => {
     expect(fungsi).toContain('return "";');
   });
 
-  it("bot mendahulukan alamat kiriman portal, dengan jalan mundur", () => {
+  it("bot mendahulukan alamat kiriman portal; tanpa itu KOSONG, bukan alamat peti portal (butir 45, 17 Okt)", () => {
     expect(gerbang).toContain("function alamatAudit(req) {");
     expect(gerbang).toContain("const dariPortal = String((req.body && req.body.ip) || \"\").trim();");
-    // Jalan mundurnya tetap ada: portal lama yang belum mengirim alamat tidak
-    // boleh membuat penetapannya gagal.
-    expect(gerbang).toContain("return String(req.ip || (req.socket && req.socket.remoteAddress)");
+    // Portal lama yang belum mengirim alamat tetap tidak membuat penetapannya
+    // gagal - tetapi alamat peti portal (172.18.0.2) tidak lagi masuk audit SIPP:
+    // alamat itu penanda ALETA di sys_audittrail.
+    const fungsi = gerbang.slice(gerbang.indexOf("function alamatAudit(req) {"), gerbang.indexOf("\n}", gerbang.indexOf("function alamatAudit(req) {")));
+    expect(fungsi).not.toContain("req.ip");
+    expect(fungsi).toContain('return "";');
   });
 
   it("ketiga rute penetapan mengirimkannya", () => {
