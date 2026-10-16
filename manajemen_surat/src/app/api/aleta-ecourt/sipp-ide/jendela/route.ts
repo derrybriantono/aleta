@@ -12,6 +12,8 @@ import {
 } from "@/lib/sipp-ide-jendela";
 import type { KeadaanTundaMin, RencanaKalender, RiwayatTundaMin } from "@/lib/bawaan-tunda";
 import type { AntrianSidangRingkas } from "@/lib/antrian-hasil-sidang";
+import { antrianDariRingkas, bahanKehadiranDariKeadaan, kehadiranUntukJendela } from "@/lib/kehadiran-rinci"; /* F3.2 */
+import { bacaKehadiranSidang } from "@/server/modules/aleta-ecourt/kehadiran-rinci"; /* F3.2 */
 import { getDatabase } from "@/server/db/client";
 import {
   getGatewayArsipRincian,
@@ -137,7 +139,7 @@ async function bahanTunda(sidangId: string, perkaraId: string, jadwal: ReturnTyp
     riwayat?: Omit<RiwayatTundaMin, "kalender" | "kontak">;
     antrian?: AntrianSidangRingkas;
   } | null;
-  if (!isi || isi.ok === false || !isi.keadaan) return { usulan: null, kehadiranAntrian: null, cek: null, alasan: "Data sidang ini belum dapat dibaca ALETA - usulan tunda belum dapat disusun." };
+  if (!isi || isi.ok === false || !isi.keadaan) return { usulan: null, kehadiranAntrian: null, kehadiranRinci: null, cek: null, alasan: "Data sidang ini belum dapat dibaca ALETA - usulan tunda belum dapat disusun." };
 
   const id = /^\d{1,20}$/.test(perkaraId) ? perkaraId : String((isi.keadaan as { perkaraId?: unknown }).perkaraId || "");
   const [kal, kon] = isi.riwayat && id
@@ -152,6 +154,18 @@ async function bahanTunda(sidangId: string, perkaraId: string, jadwal: ReturnTyp
       : null;
   const kontak = kon && kon.ok && kon.data ? bacaBentukKontak(kon.data.kontak) : null;
 
+  // F3.2: kehadiran rinci per orang sidang ini -> usulan "Dihadiri oleh" yang
+  // menyebut siapa, untuk panel ekstensi. null = tidak ada yang tercatat.
+  const keadaanBahan = isi.keadaan as unknown as {
+    tanggalSidang?: string;
+    alurPerkaraId?: number | null;
+    jenisPerkaraId?: number | null;
+    jenisPerkara?: string;
+    nomorPerkara?: string;
+  };
+  const rinci = id ? await bacaKehadiranSidang(id, keadaanBahan.tanggalSidang) : null;
+  const kehadiranRinci = kehadiranUntukJendela(rinci, antrianDariRingkas(isi.antrian), bahanKehadiranDariKeadaan(keadaanBahan));
+
   const { usulan, kehadiranAntrian } = susunUsulanTunda({
     keadaan: isi.keadaan,
     riwayat: isi.riwayat,
@@ -165,5 +179,5 @@ async function bahanTunda(sidangId: string, perkaraId: string, jadwal: ReturnTyp
     const hari = rekap && rekap.ok && rekap.data && Array.isArray(rekap.data.hari) ? rekap.data.hari : null;
     cek = cekTanggalSidang(usulan.tanggal, { jadwal, kecualiSidangId: sidangId, rekapHari: hari });
   }
-  return { usulan, kehadiranAntrian, cek, alasan: usulan ? "" : "Riwayat sidang perkara ini belum terbaca - usulan tunda tidak disusun." };
+  return { usulan, kehadiranAntrian, kehadiranRinci, cek, alasan: usulan ? "" : "Riwayat sidang perkara ini belum terbaca - usulan tunda tidak disusun." };
 }

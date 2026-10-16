@@ -168,6 +168,8 @@ import {
   TombolRuangSidang,
 } from "@/components/portal/jadwal-sidang-2okt";
 import { tandaAntrianOnline, type TandaAntrianOnline as TandaOnline } from "@/lib/tanda-antrian-online";
+import { bahanKehadiranDariBaris, kunciKehadiran, ringkasKehadiran, susunKehadiran, type KehadiranOrang } from "@/lib/kehadiran-rinci"; /* F3.2 */
+import { DaftarHadirRinci, RingkasKehadiran, daftarPilihanHadir, type PilihanHadir } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
 import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";
 import { bolehAksi, saringSaklarSidang } from "@/lib/matriks-peran";
 import {
@@ -531,6 +533,8 @@ type KeadaanAntrian = {
   tanggal: string[];
   jumlahDiambil?: number;
   peta: Record<string, AntrianBaris>;
+  /** F3.2: kehadiran rinci per orang, kunci "perkaraId|YYYY-MM-DD" (bot 17 Okt 2026 ke atas). */
+  kehadiran?: Record<string, { hadir: KehadiranOrang[] }>;
 };
 
 type Penghambat = {
@@ -1821,13 +1825,13 @@ function sebutanSisiPendek(sisi: number[] | undefined) {
  * Saksi berdiri sendiri: ia bukan pihak, dan kehadirannya tidak menggeser
  * nomor antrian sisi mana pun.
  */
-const PERAN_ANTRIAN: Array<{ kunci: string; label: string; sisi: string; kuasa: boolean }> = [
-  { kunci: "penggugat", label: "Penggugat / Pemohon", sisi: "1", kuasa: false },
-  { kunci: "tergugat", label: "Tergugat / Termohon", sisi: "2", kuasa: false },
-  { kunci: "kuasa-penggugat", label: "Kuasa penggugat", sisi: "1", kuasa: true },
-  { kunci: "kuasa-tergugat", label: "Kuasa tergugat", sisi: "2", kuasa: true },
-  { kunci: "saksi", label: "Saksi", sisi: "", kuasa: false },
-];
+//
+// F3.2 (17 Okt 2026): daftar tetapnya (Penggugat/Pemohon, Tergugat/Termohon,
+// Kuasa penggugat, Kuasa tergugat, Saksi) diganti daftarPilihanHadir - sama
+// isinya, ditambah sebutan perkaranya sendiri, turut tergugat/intervensi bila
+// terdaftar, dan saksi tiap pihak satu per satu menurut SIPP. Kuasa kini
+// dikirim sebagai peran pihaknya + sebagaiKuasa: peran "kuasa-penggugat" lama
+// tidak dikenal bot dan ditolak "peran_tidak_dikenali".
 
 /**
  * Menu ke layar-layar antrian yang berdiri di luar portal.
@@ -2030,7 +2034,10 @@ function TombolAmbilAntrian({
   antrian,
   sudahAda,
   onSelesai,
+  kehadiran = [],
 }: {
+  /** F3.2: yang sudah tercatat hadir pada sidang ini (kehadiran rinci). */
+  kehadiran?: KehadiranOrang[];
   baris: SidangBaris;
   /** Baris antrian perkara ini - dipakai menentukan sisi mana yang dapat direset. */
   antrian?: AntrianBaris;
@@ -2091,7 +2098,12 @@ function TombolAmbilAntrian({
     }
   };
 
-  const ambil = async (peran: (typeof PERAN_ANTRIAN)[number]) => {
+  // F3.2: pilihan menurut perkaranya (lihat daftarPilihanHadir).
+  const bahanHadir = bahanKehadiranDariBaris(baris);
+  const pilihanHadir = daftarPilihanHadir(bahanHadir);
+  const susunHadir = susunKehadiran(kehadiran, antrian);
+
+  const ambil = async (peran: PilihanHadir) => {
     setSibuk(peran.kunci);
     setPesan(null);
     try {
@@ -2101,9 +2113,12 @@ function TombolAmbilAntrian({
         body: JSON.stringify({
           perkaraId: baris.perkaraId,
           nomorPerkara: baris.nomorPerkara,
-          peran: peran.kunci,
+          peran: peran.peran,
           sisi: peran.sisi,
-          sebagaiKuasa: peran.kuasa,
+          sebagaiKuasa: peran.sebagaiKuasa,
+          saksiUntuk: peran.saksiUntuk,
+          urutanPihak: peran.urutanPihak,
+          nama: peran.nama,
         }),
       });
       const isi = (await jawaban.json()) as {
@@ -2159,11 +2174,11 @@ function TombolAmbilAntrian({
           // bg-card karena alasan yang sama dengan menu Tampilan di atas:
           // token --popover tidak ada, dan bg-popover membuat menu ini tembus
           // pandang di atas baris jadwal.
-          className="absolute left-0 z-20 mt-1 w-52 rounded-md border bg-card text-card-foreground p-1 shadow-lg"
+          className="absolute left-0 z-20 mt-1 max-h-[70vh] w-64 overflow-y-auto rounded-md border bg-card text-card-foreground p-1 shadow-lg"
           onClick={(peristiwa) => peristiwa.stopPropagation()}
         >
           <p className="px-2 py-1 text-[11px] text-muted-foreground">Siapa yang hadir?</p>
-          {PERAN_ANTRIAN.map((peran) => (
+          {pilihanHadir.map((peran) => (
             <button
               key={peran.kunci}
               type="button"
@@ -2213,6 +2228,15 @@ function TombolAmbilAntrian({
               ))}
             </>
           ) : null}
+
+          {/* F3.2: yang sudah hadir - status per orang, Pulang / Diperiksa. */}
+          <DaftarHadirRinci
+            perkaraId={baris.perkaraId}
+            hadir={kehadiran}
+            susun={susunHadir}
+            bahan={bahanHadir}
+            onSelesai={onSelesai}
+          />
 
           {pesan ? (
             <p
@@ -7488,6 +7512,18 @@ export function AletaEcourtSidang({
                             tungguBerjalan={tigaBaris?.tunggu}
                             patokan={patokanWaktu}
                           />
+                          {/* F3.2: "Penggugat hadir 08.47 · Tergugat belum · Saksi P 1/2" */}
+                          {tampil(tampilan, "kehadiran-rinci") ? (
+                            <RingkasKehadiran
+                              potongan={ringkasKehadiran(
+                                susunKehadiran(
+                                  antrian.kehadiran?.[kunciKehadiran(baris.perkaraId, baris.tanggalSidang)]?.hadir,
+                                  antrianUntuk(antrian.peta, baris)
+                                ),
+                                bahanKehadiranDariBaris(baris)
+                              )}
+                            />
+                          ) : null}
                           {berjalanIni ? <LencanaSedangBerjalan berjalan={berjalanIni} /> : null}
                           {skorsIni && !berjalanIni ? <LencanaDiskors catatan={skorsIni} /> : null}
 
@@ -7500,6 +7536,7 @@ export function AletaEcourtSidang({
                             <div className="mt-1">
                               <TombolAmbilAntrian
                                 baris={baris}
+                                kehadiran={antrian.kehadiran?.[kunciKehadiran(baris.perkaraId, baris.tanggalSidang)]?.hadir}
                                 antrian={antrianUntuk(antrian.peta, baris)}
                                 sudahAda={antrianUntuk(antrian.peta, baris)?.nomor}
                                 onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}

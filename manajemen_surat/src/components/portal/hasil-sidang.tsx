@@ -34,6 +34,14 @@ import {
   type AtasNamaSipp,
 } from "@/lib/antrian-hasil-sidang";
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
+import {
+  antrianDariRingkas,
+  bahanKehadiranDariKeadaan,
+  susunKehadiran,
+  usulanDihadiriOleh,
+  type KehadiranOrang,
+} from "@/lib/kehadiran-rinci"; /* F3.2 */
+import { UsulanKehadiranBlangko } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
 import { IsianMediator } from "@/components/portal/jadwal-sidang-1okt";
 import { PapanRuangSidang } from "@/components/portal/jadwal-sidang-2okt";
 import { KartuPanggil } from "@/components/portal/panggil-petugas";
@@ -198,6 +206,25 @@ const KEHADIRAN = [
 
 const KEHADIRAN_BAWAAN = 4;
 
+/**
+ * F3.2 (17 Okt 2026): usulan 1-4 dari kehadiran rinci ALETA, dipakai bila
+ * aplikasi antrian tidak punya baris sidang ini (hari lampau, perkara yang
+ * tidak didaftarkan ke mesin) tetapi petugas mencatat kehadirannya di ALETA.
+ * Belum ada catatan = null, bukan "tidak hadir".
+ */
+function hadirDariRinci(
+  kehadiran: KehadiranOrang[] | null | undefined,
+  antrian: AntrianSidangRingkas | undefined,
+  keadaan: KeadaanSidang
+): number | null {
+  if (!kehadiran?.length) return null;
+  const usul = usulanDihadiriOleh(
+    susunKehadiran(kehadiran, antrianDariRingkas(antrian ?? null)),
+    bahanKehadiranDariKeadaan(keadaan)
+  ).sandi;
+  return usul !== null && KEHADIRAN.some((k) => k.nilai === usul) ? usul : null;
+}
+
 /** Gugatan dikenali dari nomor perkaranya - "Pdt.G" lawan "Pdt.P". */
 function perkaraGugatan(nomorPerkara: string) {
   return /pdt\.\s*g/i.test(String(nomorPerkara || ""));
@@ -279,6 +306,8 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
   const [keadaan, setKeadaan] = useState<KeadaanSidang | null>(null);
   // Antrian sidang + atas nama siapa tombolnya menulis ke SIPP (7 Okt 2026).
   const [antrian, setAntrian] = useState<AntrianSidangRingkas>(null);
+  /* F3.2: kehadiran rinci per orang sidang ini (null = tidak terbaca). */
+  const [kehadiranRinci, setKehadiranRinci] = useState<KehadiranOrang[] | null>(null);
   const [atasNama, setAtasNama] = useState<AtasNamaSipp>(null);
   const [galatMuat, setGalatMuat] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusPutusan[]>([]);
@@ -334,6 +363,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
         riwayat?: RiwayatTunda;
         antrian?: AntrianSidangRingkas;
         atasNama?: AtasNamaSipp;
+        kehadiranRinci?: KehadiranOrang[] | null;
       }>(balasan);
       if (!isi.ok || !isi.keadaan) {
         setGalatMuat(isi.alasan || "Jadwal sidang tidak ditemukan.");
@@ -341,6 +371,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
       }
       setKeadaan(isi.keadaan);
       setAntrian(isi.antrian ?? null);
+      setKehadiranRinci(isi.kehadiranRinci ?? null);
       setAtasNama(isi.atasNama ?? null);
       // Court Calendar dan email/persetujuan e-Court dibaca terpisah (null =
       // tak terbaca -> dua pekan / aturan tanpa email; tidak ditebak).
@@ -352,7 +383,8 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
       // Bawaan dari riwayat sidang perkaranya (butir 14, 30 Sep 2026) - hanya
       // mengisi kotak yang masih kosong; semuanya tetap dapat diganti.
       // Kehadiran mengikuti antrian sidang bila tercatat (7 Okt 2026).
-      const hadirAntrian = kehadiranDariAntrian(isi.antrian);
+      const hadirAntrian =
+        kehadiranDariAntrian(isi.antrian) ?? hadirDariRinci(isi.kehadiranRinci, isi.antrian, isi.keadaan); /* F3.2 */
       const usul = usulanTunda(isi.keadaan, riw, hadirAntrian);
       setUsulan(usul);
       if (usul) {
@@ -809,6 +841,16 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                   </NativeSelect>
                 </label>
 
+                {/* F3.2: siapa yang tercatat hadir + usulan Dihadiri oleh. */}
+                <UsulanKehadiranBlangko
+                  kehadiran={kehadiranRinci}
+                  antrian={antrianDariRingkas(antrian)}
+                  bahan={bahanKehadiranDariKeadaan(keadaan)}
+                  dihadiri={dihadiri}
+                  pilihanSah={KEHADIRAN.map((k) => k.nilai)}
+                  onPakai={gantiKehadiran}
+                />
+
                 {usulan ? (
                   <p className="flex items-start gap-2 text-xs text-muted-foreground" data-kontak-pihak="">
                     <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -1150,6 +1192,8 @@ export function CatatHasilRingkas({
   const [ruangPilih, setRuangPilih] = useState<BawaanRuangSidang>({ ruanganId: "", keliling: false });
   // Antrian sidang + atas nama siapa tombolnya menulis ke SIPP (7 Okt 2026).
   const [antrian, setAntrian] = useState<AntrianSidangRingkas>(null);
+  /* F3.2: kehadiran rinci per orang sidang ini (null = tidak terbaca). */
+  const [kehadiranRinci, setKehadiranRinci] = useState<KehadiranOrang[] | null>(null);
   const [atasNama, setAtasNama] = useState<AtasNamaSipp>(null);
   const [kelilingDisentuh, setKelilingDisentuh] = useState(false);
 
@@ -1168,6 +1212,7 @@ export function CatatHasilRingkas({
           ruangan?: Ruangan[];
           antrian?: AntrianSidangRingkas;
           atasNama?: AtasNamaSipp;
+          kehadiranRinci?: KehadiranOrang[] | null;
         }>(balasan);
         if (!isi.ok || !isi.keadaan) {
           setGalatMuat(isi.alasan || "Jadwal sidang tidak ditemukan.");
@@ -1175,6 +1220,7 @@ export function CatatHasilRingkas({
         }
         setKeadaan(isi.keadaan);
         setAntrian(isi.antrian ?? null);
+        setKehadiranRinci(isi.kehadiranRinci ?? null);
         setAtasNama(isi.atasNama ?? null);
         const daftar = Array.isArray(isi.ruangan) ? isi.ruangan : [];
         setDaftarRuangan(daftar);
@@ -1197,7 +1243,8 @@ export function CatatHasilRingkas({
         // Aturan tanggal dan jam BERSAMA dengan layar Hasil Sidang penuh -
         // @/lib/bawaan-tunda, bukan salinan di sini. Kehadiran mengikuti
         // antrian sidang bila tercatat (7 Okt 2026, kasus 273).
-        const hadirAntrian = kehadiranDariAntrian(isi.antrian);
+        const hadirAntrian =
+          kehadiranDariAntrian(isi.antrian) ?? hadirDariRinci(isi.kehadiranRinci, isi.antrian, isi.keadaan); /* F3.2 */
         const usul = usulanTunda(isi.keadaan, riw, hadirAntrian);
         setUsulan(usul);
         if (usul) {
@@ -1602,6 +1649,16 @@ export function CatatHasilRingkas({
           ))}
         </NativeSelect>
       </label>
+
+      {/* F3.2: siapa yang tercatat hadir + usulan Dihadiri oleh. */}
+      <UsulanKehadiranBlangko
+        kehadiran={kehadiranRinci}
+        antrian={antrianDariRingkas(antrian)}
+        bahan={bahanKehadiranDariKeadaan(keadaan)}
+        dihadiri={dihadiri}
+        pilihanSah={KEHADIRAN.map((k) => k.nilai)}
+        onPakai={gantiKehadiran}
+      />
 
       {usulan && jalan === "tunda" ? (
         <p className="flex items-start gap-1 text-[11px] text-muted-foreground">

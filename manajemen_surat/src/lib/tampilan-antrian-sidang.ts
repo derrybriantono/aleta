@@ -463,6 +463,15 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
       "Jam ambil tiap sisi (P, T, Saksi) dan nama petugas pelayanan di bawah nomor antrian. Nomor antriannya dan tulisan \"dipanggil\" tetap tampil.",
     kelompok: "keterangan",
   },
+  // F3.2 (17 Okt 2026): kehadiran rinci per orang - siapa, jam datang, saksi
+  // datang berapa dari berapa, sedang disidang/pulang. Bawaan MENYALA.
+  {
+    kunci: "kehadiran-rinci",
+    label: "Kehadiran rinci",
+    keterangan:
+      "Satu baris di kolom Antrian: \"Penggugat hadir 08.47 · Tergugat belum · Saksi P 1/2\" - pihak sendiri atau kuasanya, turut tergugat/intervensi, saksi tiap pihak dibanding yang diajukan di SIPP, sedang disidang, pulang. Dicatat lewat tombol Antrian (atau mesin antrian) dan menjadi usulan \"Dihadiri oleh\" saat Tunda/Putus serta usulan kehadiran BAS.",
+    kelompok: "keterangan",
+  },
 
   // === 12OKT-C: saklar hasil audit butir 7 - keterangan ===
   {

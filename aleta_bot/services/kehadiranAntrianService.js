@@ -136,8 +136,51 @@ async function ensureSchema() {
     // pernah dijalankan.
   }
 
+  // ==========================================================================
+  // F3.2 (17 Okt 2026): KEHADIRAN RINCI DAN DINAMIS PER ORANG
+  // ==========================================================================
+  //
+  // saksi_untuk  pihak_1 / pihak_2 - saksi siapa. Kolom antrian "saksi" hanya
+  //              satu waktu untuk semua saksi; majelis bertanya "saksi
+  //              Penggugat sudah datang berapa dari berapa".
+  // pulang_pada  orangnya sudah pulang (dicentang petugas). Bukan pembatalan:
+  //              ia tetap PERNAH hadir, dan BAS tetap menyebutnya hadir.
+  // diperiksa_pada saksi sudah diperiksa di persidangan - bahan BAS.
+  // keadaan_oleh siapa yang terakhir mengubah pulang/diperiksa.
+  //
+  // Satu ALTER per kolom, masing-masing boleh gagal diam: ALTER gabungan
+  // ditolak SELURUHNYA bila satu kolomnya sudah ada (MySQL 5.7 tanpa
+  // IF NOT EXISTS), sehingga pemasangan yang separuh jalan tidak pernah
+  // mendapat kolom sisanya.
+  for (const kolom of [
+    "ADD COLUMN saksi_untuk VARCHAR(16) NOT NULL DEFAULT ''",
+    "ADD COLUMN pulang_pada DATETIME NULL",
+    "ADD COLUMN diperiksa_pada DATETIME NULL",
+    "ADD COLUMN keadaan_oleh VARCHAR(191) NOT NULL DEFAULT ''",
+  ]) {
+    try {
+      await botDb.query(`ALTER TABLE aleta_bot_antrian_kehadiran ${kolom}`);
+    } catch {
+      // Kolomnya sudah ada.
+    }
+  }
+
   skemaSiap = true;
   return true;
+}
+
+/** Sisi yang diwakili saksi - hanya dua nilai yang sah; selain itu kosong (tidak diketahui). */
+function saksiUntukSah(nilai) {
+  const teks = String(nilai || "").trim();
+  return teks === "pihak_1" || teks === "pihak_2" ? teks : "";
+}
+
+/** Jam HH:MM dari DATETIME bot (UTC tersimpan, dibaca kembali sebagai Date). */
+function jamDari(nilai) {
+  const waktu = nilai ? botDb.fromMysqlDate(nilai) : null;
+  return waktu
+    ? `${String(waktu.getHours()).padStart(2, "0")}:${String(waktu.getMinutes()).padStart(2, "0")}`
+    : "";
 }
 
 /** Dipakai pengujian supaya skema tidak dianggap sudah terpasang. */
@@ -192,6 +235,7 @@ async function catatHadir({
   sumber = "aleta",
   waChatId = "",
   dicatatOleh = "",
+  saksiUntuk = "",
 } = {}) {
   const id = String(perkaraId || "").trim();
   if (!id) return { ok: false, alasan: "perkara_id_kosong" };
@@ -210,8 +254,8 @@ async function catatHadir({
   await botDb.query(
     `INSERT INTO aleta_bot_antrian_kehadiran
        (id, perkara_id, nomor_perkara, tanggal, peran, urutan_pihak, sebagai_kuasa,
-        nama, sisi, waktu_hadir, sumber, wa_chat_id, dicatat_oleh)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        nama, sisi, waktu_hadir, sumber, wa_chat_id, dicatat_oleh, saksi_untuk)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       // Kunci dari waktu SAJA dapat bentrok: dua tekanan yang jatuh pada
       // milidetik yang sama menghasilkan kunci yang sama persis, dan yang
@@ -230,6 +274,8 @@ async function catatHadir({
       ["aleta", "whatsapp", "mesin"].includes(String(sumber)) ? String(sumber) : "aleta",
       cleanText(waChatId).slice(0, 64),
       cleanText(dicatatOleh).slice(0, 191),
+      // Hanya saksi yang punya "saksi siapa"; peran lain selalu kosong.
+      acuan.kunci === "saksi" ? saksiUntukSah(saksiUntuk) : "",
     ]
   );
 
@@ -400,9 +446,10 @@ async function daftarKehadiran(daftarPerkaraId = [], tanggal = "") {
     const bagian = id.slice(mulai, mulai + 500);
     const isian = bagian.map(() => "?").join(", ");
     const rows = await botDb.query(
-      `SELECT perkara_id AS perkaraId, peran, urutan_pihak AS urutanPihak,
+      `SELECT id, perkara_id AS perkaraId, peran, urutan_pihak AS urutanPihak,
               sebagai_kuasa AS sebagaiKuasa, nama, sisi, waktu_hadir AS waktuHadir,
-              sumber, wa_chat_id AS waChatId
+              sumber, wa_chat_id AS waChatId, saksi_untuk AS saksiUntuk,
+              pulang_pada AS pulangPada, diperiksa_pada AS diperiksaPada
          FROM aleta_bot_antrian_kehadiran
         WHERE tanggal = ? AND perkara_id IN (${isian})
           -- Kehadiran yang SUDAH DIBATALKAN tidak ikut dibaca. Tanpa saringan
@@ -423,6 +470,8 @@ async function daftarKehadiran(daftarPerkaraId = [], tanggal = "") {
 
       const waktu = botDb.fromMysqlDate(row.waktuHadir);
       const satu = {
+        // F3.2: kunci baris - dipakai menandai pulang / sudah diperiksa.
+        id: String(row.id || ""),
         peran: String(row.peran || ""),
         urutanPihak: String(row.urutanPihak || ""),
         sebagaiKuasa: Number(row.sebagaiKuasa) === 1,
@@ -438,6 +487,10 @@ async function daftarKehadiran(daftarPerkaraId = [], tanggal = "") {
           urutanPihak: row.urutanPihak,
           sebagaiKuasa: Number(row.sebagaiKuasa) === 1,
         }),
+        // F3.2: saksi siapa, kapan pulang, kapan diperiksa ("" = belum).
+        saksiUntuk: saksiUntukSah(row.saksiUntuk),
+        pulangJam: jamDari(row.pulangPada),
+        diperiksaJam: jamDari(row.diperiksaPada),
       };
 
       peta[kunci].hadir.push(satu);
@@ -665,7 +718,52 @@ async function tandaiDiberitahu(perkaraId, waChatId, tanggal = "") {
   );
 }
 
+/**
+ * ============================================================================
+ * F3.2: KEADAAN SATU ORANG - PULANG, SUDAH DIPERIKSA, ATAU DIKEMBALIKAN
+ * ============================================================================
+ *
+ * Bukan pembatalan. Orang yang pulang tetap PERNAH hadir (BAS menyebutnya
+ * hadir), dan nomor antrian tidak disentuh sama sekali - kolom waktu aplikasi
+ * antrian hanya diubah oleh catatHadir/batalkanHadir.
+ *
+ *   pulang         pulang_pada = sekarang
+ *   kembali        pulang_pada = NULL (salah centang, atau orangnya kembali)
+ *   diperiksa      diperiksa_pada = sekarang (hanya saksi)
+ *   belum-diperiksa diperiksa_pada = NULL
+ *
+ * Disaring perkara_id DAN id: kunci baris saja cukup untuk menemukannya, tetapi
+ * pemanggil yang keliru perkara tidak boleh mengubah kehadiran perkara lain.
+ * Baris yang sudah dibatalkan tidak diubah.
+ */
+const KEADAAN_ORANG = {
+  pulang: { kolom: "pulang_pada", isi: true },
+  kembali: { kolom: "pulang_pada", isi: false },
+  diperiksa: { kolom: "diperiksa_pada", isi: true },
+  "belum-diperiksa": { kolom: "diperiksa_pada", isi: false },
+};
+
+async function ubahKeadaan({ perkaraId, id, keadaan, oleh = "" } = {}) {
+  const perkara = String(perkaraId || "").trim();
+  const kunci = String(id || "").trim();
+  if (!perkara || !kunci) return { ok: false, alasan: "kehadiran_tidak_disebut" };
+  const aturan = KEADAAN_ORANG[String(keadaan || "")];
+  if (!aturan) return { ok: false, alasan: "keadaan_tidak_dikenali" };
+
+  await ensureSchema();
+  const syaratSaksi = aturan.kolom === "diperiksa_pada" ? " AND peran = 'saksi'" : "";
+  const hasil = await botDb.query(
+    `UPDATE aleta_bot_antrian_kehadiran
+        SET ${aturan.kolom} = ?, keadaan_oleh = ?
+      WHERE id = ? AND perkara_id = ? AND dibatalkan_pada IS NULL${syaratSaksi}`,
+    [aturan.isi ? botDb.toMysqlDate(new Date()) : null, cleanText(oleh).slice(0, 191), kunci, perkara]
+  );
+  const diubah = Number(hasil && hasil.affectedRows) > 0;
+  return diubah ? { ok: true, keadaan: String(keadaan) } : { ok: false, alasan: "kehadiran_tidak_ditemukan" };
+}
+
 module.exports = {
+  KEADAAN_ORANG,
   KOLOM_SISI,
   KUNCI_KONEKSI,
   PERAN,
@@ -680,4 +778,5 @@ module.exports = {
   susunJawabanCekAntrian,
   susunPesanHampirGiliran,
   tandaiDiberitahu,
+  ubahKeadaan,
 };

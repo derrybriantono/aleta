@@ -3281,7 +3281,31 @@ router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
         baris: [],
       }));
 
-    res.json({ ok: true, ...hasil, antrian, waktuAntrian });
+    // ======================================================================
+    // F3.2: KEHADIRAN RINCI PER ORANG - HANYA UNTUK LAYAR JADWAL (?waktu=1)
+    // ======================================================================
+    //
+    // Dikunci "perkaraId|tanggal": jadwal dapat memuat rentang tanggal, dan
+    // perkara yang sama bersidang lagi pada tanggal lain. Gagalnya ditelan -
+    // kehadiran rinci keterangan tambahan, jadwal tetap tampil.
+    const kehadiranRinci = {};
+    try {
+      const perTanggal = new Map();
+      for (const baris of hasil.sidang || []) {
+        const hari = String(baris.tanggalSidang || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(hari)) continue;
+        if (!perTanggal.has(hari)) perTanggal.set(hari, new Set());
+        perTanggal.get(hari).add(String(baris.perkaraId || ""));
+      }
+      for (const [hari, kumpulan] of perTanggal) {
+        const peta = await kehadiranAntrianService.daftarKehadiran([...kumpulan], hari);
+        for (const [perkaraId, isi] of Object.entries(peta || {})) kehadiranRinci[`${perkaraId}|${hari}`] = isi;
+      }
+    } catch {
+      // Tabel kehadiran tidak terbaca: kolom antrian tetap seperti semula.
+    }
+
+    res.json({ ok: true, ...hasil, antrian: { ...antrian, kehadiran: kehadiranRinci }, waktuAntrian });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -3399,8 +3423,53 @@ router.post("/antrian/hadir", requireInternalToken, async (req, res) => {
       sumber: String(req.body?.sumber || "aleta"),
       waChatId: String(req.body?.waChatId || ""),
       dicatatOleh: String(req.body?.dicatatOleh || ""),
+      // F3.2: saksi siapa (pihak_1/pihak_2) - selain itu kosong.
+      saksiUntuk: String(req.body?.saksiUntuk || ""),
     });
 
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * F3.2: kehadiran rinci per orang untuk satu atau beberapa perkara pada satu
+ * tanggal (bawaan hari ini). Dipakai blangko Tunda/Putus, BAS, dan panel
+ * ekstensi di SIPP - termasuk sidang hari lampau, sebab tabel kehadiran ALETA
+ * menyimpan tanggalnya (aplikasi antrian hanya menyimpan hari ini).
+ * Hanya membaca.
+ */
+router.get("/antrian/kehadiran", requireInternalToken, async (req, res) => {
+  try {
+    const id = String(req.query.perkaraId || "")
+      .split(",")
+      .map((x) => x.trim())
+      .filter((x) => /^\d+$/.test(x))
+      .slice(0, 500);
+    if (id.length === 0) {
+      res.status(400).json({ ok: false, error: "perkaraId wajib diisi." });
+      return;
+    }
+    const kehadiran = await kehadiranAntrianService.daftarKehadiran(id, String(req.query.tanggal || ""));
+    res.json({ ok: true, kehadiran });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * F3.2: menandai satu orang pulang / kembali / saksi sudah diperiksa.
+ * Tidak menyentuh aplikasi antrian - nomor tidak bergeser.
+ */
+router.post("/antrian/kehadiran/keadaan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await kehadiranAntrianService.ubahKeadaan({
+      perkaraId: String(req.body?.perkaraId || ""),
+      id: String(req.body?.id || ""),
+      keadaan: String(req.body?.keadaan || ""),
+      oleh: String(req.body?.oleh || ""),
+    });
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

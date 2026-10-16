@@ -11,6 +11,7 @@ import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
+import { bacaKehadiranSidang } from "@/server/modules/aleta-ecourt/kehadiran-rinci";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,7 +64,15 @@ export async function GET(request: NextRequest) {
         alasan: hasil.error || "ALETA Bot belum dapat dihubungi.",
       });
     }
-    return ok({ available: true, ...(hasil.data as Record<string, unknown>) });
+    // F3.2: kehadiran rinci per orang sidang ini - usulan "Dihadiri oleh" &
+    // daftar yang hadir di blangko. null = tidak terbaca (bukan "tidak hadir").
+    const data = hasil.data as Record<string, unknown> & {
+      keadaan?: { perkaraId?: number | string; tanggalSidang?: string };
+    };
+    const kehadiranRinci = data?.keadaan
+      ? await bacaKehadiranSidang(data.keadaan.perkaraId, data.keadaan.tanggalSidang)
+      : null;
+    return ok({ available: true, ...data, kehadiranRinci });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

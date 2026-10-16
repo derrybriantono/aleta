@@ -77,6 +77,8 @@ type Masukan = {
   sebagaiKuasa?: boolean;
   nama?: string;
   sisi?: string;
+  /** F3.2: saksi siapa - pihak_1 / pihak_2. */
+  saksiUntuk?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -104,6 +106,7 @@ export async function POST(request: NextRequest) {
       sebagaiKuasa: masukan.sebagaiKuasa === true,
       nama: String(masukan.nama ?? "").slice(0, 120),
       sisi: masukan.sisi ? String(masukan.sisi) : undefined,
+      saksiUntuk: masukan.saksiUntuk === "pihak_1" || masukan.saksiUntuk === "pihak_2" ? masukan.saksiUntuk : undefined,
       // Nama petugasnya, bukan "mesin-antrian": inilah satu-satunya bedanya
       // dari rute publik, dan justru inilah alasan rute ini ada.
       dicatatOleh: aktor.name || String(actorUserId ?? "petugas"),

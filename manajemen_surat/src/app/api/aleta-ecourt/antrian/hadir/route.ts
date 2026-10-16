@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
       nama?: string;
       sisi?: string;
       waChatId?: string;
+      /** F3.2: saksi siapa - pihak_1 / pihak_2. */
+      saksiUntuk?: string;
     };
 
     if (!String(isi.perkaraId || "").trim()) {
@@ -91,6 +93,7 @@ export async function POST(request: NextRequest) {
       sisi: String(isi.sisi || ""),
       waChatId: String(isi.waChatId || ""),
       dicatatOleh: actor.name || actor.id,
+      saksiUntuk: isi.saksiUntuk === "pihak_1" || isi.saksiUntuk === "pihak_2" ? isi.saksiUntuk : undefined,
     });
 
     if (!hasil.ok) {

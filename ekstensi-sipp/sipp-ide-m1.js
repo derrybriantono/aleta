@@ -347,6 +347,34 @@
   // ──────────────────────────────────────────────────────────────────────────
   const kalimatKehadiran = (n) => KEHADIRAN[n] || "pilihan lain";
 
+  /**
+   * F3.2 (17 Okt 2026): usulan "Dihadiri oleh" - kehadiran RINCI per orang
+   * (siapa, jam datang, pribadi/kuasa; disusun portal) lebih dulu, lalu kolom
+   * antrian sidang. Hanya 1-3 yang ditawarkan, sama seperti sebelumnya; sandi
+   * SIPP yang lebih rinci (14, 9, 10 ...) hanya disebut di catatan.
+   */
+  function usulanHadir(t, form, nama, label) {
+    const r = t && t.kehadiranRinci;
+    const dariRinci = r ? Number(r.sandi) : NaN;
+    const hadir = dariRinci >= 1 && dariRinci <= 3 ? dariRinci : Number(t && t.kehadiranAntrian);
+    if (!(hadir >= 1 && hadir <= 3) || !medan(form, nama)) return null;
+    // "Tercatat di antrian ALETA" hanya bila memang ada orang yang tercatat rinci.
+    const pakaiRinci = dariRinci === hadir && Array.isArray(r.orang) && r.orang.length > 0;
+    return {
+      kunci: "hadir",
+      label,
+      nama,
+      nilai: String(hadir),
+      tampil: kalimatKehadiran(hadir),
+      // Kolom ini selalu bernilai (SIPP memilih baris pertama) - tidak pernah "kosong", jadi hanya ditawarkan.
+      pasti: false,
+      sumber: pakaiRinci ? `kehadiran tercatat di antrian ALETA - ${sebaris(r.alasan)}` : "antrian sidang (nomor antrian yang diambil para pihak)",
+      catatan: r
+        ? [sebaris(r.ringkas), r.sandiRinci ? `pilihan SIPP lebih rinci: ${sebaris(r.labelRinci)}` : ""].filter(Boolean).join("; ")
+        : "",
+    };
+  }
+
   /** Tunda (#frm_tunda_jadwal_sidang). */
   function usulanTunda(data, form) {
     const t = (data && data.tunda) || {};
@@ -376,30 +404,17 @@
       });
       daftar.push({ kunci: "jam", label: "Jam sidang berikutnya", nama: "jammulai", nilai: u.jam, tampil: u.jam, pasti: /^\d{2}:\d{2}$/.test(String(u.jam || "")), sumber: "jam menurut agenda (aturan tunda ALETA)" });
     }
-    const hadir = Number(t.kehadiranAntrian);
-    if (hadir >= 1 && hadir <= 3 && medan(form, "dihadiri_olehsblm")) {
-      daftar.push({
-        kunci: "hadir",
-        label: "Dihadiri oleh (sidang ini)",
-        nama: "dihadiri_olehsblm",
-        nilai: String(hadir),
-        tampil: kalimatKehadiran(hadir),
-        // Kolom ini selalu bernilai (SIPP memilih baris pertama) - tidak pernah "kosong", jadi hanya ditawarkan.
-        pasti: false,
-        sumber: "antrian sidang (nomor antrian yang diambil para pihak)",
-      });
-    }
+    const hadir = usulanHadir(t, form, "dihadiri_olehsblm", "Dihadiri oleh (sidang ini)");
+    if (hadir) daftar.push(hadir);
     return daftar;
   }
 
   /** Edit Jadwal (#frm_edit_jadwal_sidang): kehadiran menurut antrian sidang. */
   function usulanEdit(data, form) {
     const t = (data && data.tunda) || {};
-    const hadir = Number(t.kehadiranAntrian);
     const daftar = [];
-    if (hadir >= 1 && hadir <= 3 && medan(form, "dihadiri_oleh")) {
-      daftar.push({ kunci: "hadir", label: "Dihadiri Oleh", nama: "dihadiri_oleh", nilai: String(hadir), tampil: kalimatKehadiran(hadir), pasti: false, sumber: "antrian sidang (nomor antrian yang diambil para pihak)" });
-    }
+    const hadir = usulanHadir(t, form, "dihadiri_oleh", "Dihadiri Oleh");
+    if (hadir) daftar.push(hadir);
     const s = data && data.sidang;
     if (s && s.agenda && medan(form, "agenda")) {
       daftar.push({ kunci: "agenda", label: "Agenda", nama: "agenda", nilai: s.agenda, tampil: s.agenda, pasti: true, sumber: "jadwal sidang perkara di SIPP" });

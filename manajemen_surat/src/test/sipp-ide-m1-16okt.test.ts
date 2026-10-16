@@ -7,6 +7,8 @@ import { JSDOM } from "jsdom";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { kehadiranUntukJendela } from "@/lib/kehadiran-rinci"; /* F3.2 */
+
 import {
   cekTanggalSidang,
   dokumenJawaban,
@@ -318,6 +320,25 @@ describe("B. Tunda & Edit Jadwal Sidang", () => {
     w.document.querySelector('[data-m1-usulan="hadir"] [data-m1="pakai"]').click();
     expect(nilai(w, "dihadiri_olehsblm")).toBe("2");
     expect(pita(w, "tunda").querySelector('[data-m1="kabar"]').textContent).toMatch(/4 kolom diisi ALETA · 1 usulan perlu Anda periksa.*Simpan tetap Anda yang menekan/);
+  });
+
+  it("F3.2: kehadiran rinci per orang dipakai lebih dulu; siapa dan jamnya tertulis", async () => {
+    const data = bahanTunda({ antrian: 2 });
+    (data.tunda as Record<string, unknown>).kehadiranRinci = kehadiranUntukJendela(
+      [{ id: "b", peran: "tergugat", sebagaiKuasa: true, jam: "09:10", nama: "Budi, S.H." }],
+      null,
+      { sebutanSatu: "Penggugat", sebutanDua: "Tergugat" }
+    );
+    const w = buka(TUNDA(), { jawab: () => data });
+    w.aletaSippIdeM1.pasang(w.document);
+    await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_tunda_jadwal_sidang"));
+    const baris = w.document.querySelector('[data-m1-usulan="hadir"]').textContent;
+    // Rinci (kuasa Tergugat saja = 3) mengalahkan kolom antrian (2).
+    expect(baris).toMatch(/Pihak kedua saja/);
+    expect(baris).toMatch(/kuasa Tergugat 09\.10/);
+    expect(baris).toMatch(/Penggugat belum · Kuasa Tergugat hadir 09\.10/);
+    w.document.querySelector('[data-m1-usulan="hadir"] [data-m1="pakai"]').click();
+    expect(nilai(w, "dihadiri_olehsblm")).toBe("3");
   });
 
   it("isian petugas tidak ditimpa; tanggal usulan yang jatuh pada libur hanya ditawarkan", async () => {
@@ -935,10 +956,14 @@ describe("K. rute portal sipp-ide/jendela -> bot (siap pakai)", () => {
       "/internal/aleta-bot/sidang/keadaan",
       "/internal/aleta-bot/jadwal-sidang/kalender",
       "/internal/aleta-bot/jadwal-sidang/pihak-elektronik",
+      // F3.2 (17 Okt 2026): kehadiran rinci per orang sidang ini.
+      "/internal/aleta-bot/antrian/kehadiran",
       "/internal/aleta-bot/sipp/jadwal-sidang/kalender",
     ]);
     expect(botTiruan.minta[1]).toBe("/internal/aleta-bot/sidang/keadaan?jadwalId=106");
     expect(data.tunda.kehadiranAntrian).toBe(2);
+    // F3.2: tanpa catatan rinci, ringkasan tetap tersusun dari kolom antrian (Penggugat hadir).
+    expect(data.tunda.kehadiranRinci).toMatchObject({ sandi: 2, orang: [] });
     expect(data.tunda.usulan).toMatchObject({ kehadiran: 2, tanggalPasti: true });
     expect(data.tunda.cek.tanggal).toBe(data.tunda.usulan.tanggal);
     // Jawaban rute apa adanya -> ekstensi mengisi jendela Tunda.
@@ -1005,7 +1030,7 @@ describe("K. rute portal sipp-ide/jendela -> bot (siap pakai)", () => {
     pasangBot((j, q) => (j === "/internal/aleta-bot/sidang/keadaan" ? { status: 404, isi: { ok: false, alasan: "jadwal_tidak_ketemu" } } : botSehat(j, q)));
     const { data } = await mintaRute({ jendela: "tunda", nomor: NOMOR, tanggal: "2026-10-21" });
     expect(data.ok).toBe(true);
-    expect(data.tunda).toEqual({ usulan: null, kehadiranAntrian: null, cek: null, alasan: "Data sidang ini belum dapat dibaca ALETA - usulan tunda belum dapat disusun." });
+    expect(data.tunda).toEqual({ usulan: null, kehadiranAntrian: null, kehadiranRinci: null, cek: null, alasan: "Data sidang ini belum dapat dibaca ALETA - usulan tunda belum dapat disusun." });
     const w = buka(TUNDA(), { jawab: () => data });
     w.aletaSippIdeM1.pasang(w.document);
     await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_tunda_jadwal_sidang"));
