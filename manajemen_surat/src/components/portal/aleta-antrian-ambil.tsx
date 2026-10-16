@@ -51,7 +51,28 @@ type KehadiranBaris = {
   nama: string;
   jam: string;
   sumber: string;
+  /** F3.2 (bot 17 Okt 2026 ke atas). */
+  saksiUntuk?: string;
+  pulangJam?: string;
+  diperiksaJam?: string;
 };
+
+/** F3.2: pilihan "saksi untuk siapa" - sisi antrian, bukan nama peran. */
+const SAKSI_UNTUK = [
+  { kunci: "pihak_1", label: "Penggugat / Pemohon" },
+  { kunci: "pihak_2", label: "Tergugat / Termohon" },
+];
+
+/** F3.2: keterangan tambahan satu kehadiran - saksi siapa, pulang, diperiksa. */
+function keteranganHadir(satu: KehadiranBaris): string {
+  return [
+    satu.saksiUntuk === "pihak_1" ? "saksi pihak penggugat/pemohon" : satu.saksiUntuk === "pihak_2" ? "saksi pihak tergugat/termohon" : "",
+    satu.diperiksaJam ? `diperiksa ${satu.diperiksaJam}` : "",
+    satu.pulangJam ? `pulang ${satu.pulangJam}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
 
 type PeranPilihan = { kunci: string; label: string; sisi: string };
 
@@ -209,6 +230,8 @@ export function AletaAntrianAmbil() {
       urutanPihak: string;
       sebagaiKuasa: boolean;
       nama: string;
+      /** F3.2: saksi siapa - pihak_1 / pihak_2. */
+      saksiUntuk?: string;
     }) => {
       setPesan("");
       try {
@@ -367,12 +390,15 @@ function TampilanPihak({
     urutanPihak: string;
     sebagaiKuasa: boolean;
     nama: string;
+    /** F3.2: saksi siapa - pihak_1 / pihak_2. */
+    saksiUntuk?: string;
   }) => Promise<unknown>;
 }) {
   const [dipilih, setDipilih] = useState<SidangBaris | null>(null);
   const [peranDipilih, setPeranDipilih] = useState("");
   const [urutan, setUrutan] = useState("");
   const [kuasa, setKuasa] = useState(false);
+  const [saksiUntuk, setSaksiUntuk] = useState(""); /* F3.2 */
   const [menyimpan, setMenyimpan] = useState(false);
 
   /**
@@ -412,6 +438,7 @@ function TampilanPihak({
             setPeranDipilih("");
             setUrutan("");
             setKuasa(false);
+            setSaksiUntuk("");
           }}
         >
           Selesai
@@ -477,6 +504,28 @@ function TampilanPihak({
         ))}
       </div>
 
+      {/* F3.2: saksi untuk siapa - majelis membaca "saksi Penggugat 1 dari 2". */}
+      {peranDipilih === "saksi" ? (
+        <>
+          <p className="text-base">Saksi untuk siapa?</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {SAKSI_UNTUK.map((satu) => (
+              <button
+                key={satu.kunci}
+                type="button"
+                onClick={() => setSaksiUntuk(satu.kunci)}
+                className={cn(
+                  "rounded-xl border p-4 text-lg font-medium transition",
+                  saksiUntuk === satu.kunci ? "border-primary bg-primary/10" : "hover:bg-muted"
+                )}
+              >
+                Saksi {satu.label}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+
       {peranDipilih && peranDipilih !== "saksi" ? (
         <>
           <p className="text-base">Yang keberapa? (kosongkan bila hanya satu)</p>
@@ -524,6 +573,7 @@ function TampilanPihak({
               urutanPihak: urutan,
               sebagaiKuasa: kuasa,
               nama: "",
+              saksiUntuk: peranDipilih === "saksi" ? saksiUntuk : "",
             })) as { nomorAntrian?: number | null } | null;
 
             // Nomornya datang dari pencatatan itu sendiri, bukan dari keadaan
@@ -564,6 +614,8 @@ function TampilanPetugas({
     urutanPihak: string;
     sebagaiKuasa: boolean;
     nama: string;
+    /** F3.2: saksi siapa - pihak_1 / pihak_2. */
+    saksiUntuk?: string;
   }) => Promise<unknown>;
 }) {
   const [terbuka, setTerbuka] = useState("");
@@ -608,6 +660,9 @@ function TampilanPetugas({
                           <span className={urutan === 0 ? "font-semibold" : ""}>{satu.sebutan}</span>
                           {satu.nama ? ` — ${satu.nama}` : ""}
                           <span className="text-muted-foreground"> · {satu.jam}</span>
+                          {keteranganHadir(satu) ? (
+                            <span className="text-muted-foreground"> · {keteranganHadir(satu)}</span>
+                          ) : null}
                           {urutan === 0 ? (
                             <span className="ml-1 rounded bg-emerald-100 px-1 text-xs text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                               hadir pertama
@@ -660,12 +715,15 @@ function FormulirHadir({
     urutanPihak: string;
     sebagaiKuasa: boolean;
     nama: string;
+    /** F3.2: saksi siapa - pihak_1 / pihak_2. */
+    saksiUntuk?: string;
   }) => Promise<void>;
 }) {
   const [peranDipilih, setPeranDipilih] = useState(peran[0]?.kunci ?? "");
   const [urutan, setUrutan] = useState("");
   const [kuasa, setKuasa] = useState(false);
   const [nama, setNama] = useState("");
+  const [saksiUntuk, setSaksiUntuk] = useState(""); /* F3.2 */
 
   return (
     <div className="mt-2 space-y-2 rounded-lg border bg-muted/20 p-2 text-left">
@@ -684,6 +742,24 @@ function FormulirHadir({
           </button>
         ))}
       </div>
+      {peranDipilih === "saksi" ? (
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-sm text-muted-foreground">Saksi untuk:</span>
+          {SAKSI_UNTUK.map((satu) => (
+            <button
+              key={satu.kunci}
+              type="button"
+              onClick={() => setSaksiUntuk(satu.kunci)}
+              className={cn(
+                "rounded border px-2 py-1 text-sm",
+                saksiUntuk === satu.kunci ? "border-primary bg-primary/10" : "hover:bg-muted"
+              )}
+            >
+              {satu.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center gap-1">
         {URUTAN.map((satu) => (
           <button
@@ -721,6 +797,7 @@ function FormulirHadir({
             urutanPihak: urutan,
             sebagaiKuasa: kuasa,
             nama,
+            saksiUntuk: peranDipilih === "saksi" ? saksiUntuk : "",
           })
         }
       >

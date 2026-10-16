@@ -28,6 +28,8 @@ const SAKLAR_DERRY = {
 const SAKLAR_SIPP_IDE = {
   sippPenyatu: ["sippPenyatu", true],
   sippTampilDobel: ["sippTampilDobel", false],
+  /* F3.2: kotak kehadiran sidang hari ini di widget - bawaan mati (seperti widget tambahan lain). */
+  widgetKehadiran: ["widgetKehadiran", false],
 };
 
 /**
@@ -75,6 +77,7 @@ const KUNCI_SETELAN_AKUN = [
   "blangkoDerryIngat",
   "sippPenyatu",
   "sippTampilDobel",
+  "widgetKehadiran",
   "skalaHuruf",
   "temaPopup",
   "temaPanel",
@@ -102,6 +105,7 @@ const BAWAAN_AKUN = {
   blangkoDerryIngat: true,
   sippPenyatu: true,
   sippTampilDobel: false,
+  widgetKehadiran: false,
   skalaHuruf: 100,
   temaPopup: "ikut",
   temaPanel: "gelap",
@@ -1950,6 +1954,7 @@ const RINGKAS_SAKLAR = {
   aktif: "Saklar induk: mati = tidak ada apa pun dari ALETA.",
   tandaiHalaman: "Penanda ghaib, izin atasan, verzet, prodeo, panjar.",
   checklistMilestone: "Widget kiri bawah: pekerjaan penting peran Anda.",
+  widgetKehadiran: "Di widget: siapa yang sudah hadir di sidang Anda hari ini.",
   suntingLangsungAbt: "Mati: sel ABT tak bisa disunting. Nyala: klik dua kali.",
   cetakTigaBerkas: "Putusan .rtf + PDF + anonim .rtf · bawaan mati.",
   sisipJadwal: "Jawaban, replik, duplik di baris sidangnya.",
@@ -1996,7 +2001,7 @@ const KELOMPOK_SAKLAR = [
   { kode: "tampilan", judul: "Tampilan", isi: [] },
   { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal"] },
   { kode: "abt", judul: "ABT", isi: ["suntingLangsungAbt", "cetakTigaBerkas"] },
-  { kode: "portal", judul: "Portal", isi: ["checklistMilestone"] },
+  { kode: "portal", judul: "Portal", isi: ["checklistMilestone", "widgetKehadiran"] },
 ];
 
 function kartuSkalaHuruf() {

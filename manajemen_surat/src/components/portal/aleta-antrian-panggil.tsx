@@ -9,6 +9,8 @@ import { hentikanUcapan, useSuaraPanggilan } from "@/lib/suara-panggilan";
 import { usePengumumanSuara } from "@/lib/pengumuman-suara-layar";
 import { cn } from "@/lib/utils";
 import { KELAS_KODE_MAJELIS } from "@/lib/kode-majelis";
+import { kalimatRingkas, ringkasKehadiran, susunKehadiran, type KehadiranOrang } from "@/lib/kehadiran-rinci"; /* F3.2 */
+import { RingkasKehadiran } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
 
 /**
  * ============================================================================
@@ -49,10 +51,16 @@ type AntrianBaris = {
   majelisKode: string;
   waktuAmbil: string;
   online: boolean;
+  /* F3.2: jam tiap sisi dan keadaan ruang - bahan ringkasan kehadiran. */
+  pihak1?: string;
+  pihak2?: string;
+  saksi?: string;
+  diRuang?: number | null;
+  selesaiDisidang?: boolean;
 };
 
 type Kehadiran = {
-  hadir: Array<{ sebutan: string; nama: string; jam: string }>;
+  hadir: Array<KehadiranOrang & { sebutan: string; nama: string; jam: string }>;
   pertama: { sebutan: string } | null;
 };
 
@@ -443,12 +451,14 @@ export function AletaAntrianPanggil() {
                 ) : null}
               </p>
 
-              {/* Siapa yang sudah hadir - terbaca SEBELUM memanggil. */}
-              <p className="text-sm text-muted-foreground">
-                {berikutnya.hadir.length > 0
-                  ? `Hadir: ${berikutnya.hadir.map((x) => x.sebutan).join(", ")}`
-                  : "Belum ada keterangan kehadiran"}
-              </p>
+              {/* Siapa yang sudah hadir - terbaca SEBELUM memanggil. F3.2:
+                  rinci per orang ("Penggugat hadir 08.47 · Tergugat belum ·
+                  Saksi P 1"), dengan kolom mesin antrian sebagai cadangan. */}
+              {ringkasKehadiran(susunKehadiran(berikutnya.hadir, berikutnya)).length > 0 ? (
+                <RingkasKehadiran potongan={ringkasKehadiran(susunKehadiran(berikutnya.hadir, berikutnya))} ukuran="sedang" />
+              ) : (
+                <p className="text-sm text-muted-foreground">Belum ada keterangan kehadiran</p>
+              )}
 
               {berikutnya.waktuAmbil ? (
                 <p className="text-sm text-muted-foreground">
@@ -564,7 +574,7 @@ export function AletaAntrianPanggil() {
               <span
                 key={satu.perkaraId}
                 className="rounded-xl border px-3.5 py-2 font-mono text-lg tabular-nums"
-                title={satu.hadir.map((x) => x.sebutan).join(", ")}
+                title={kalimatRingkas(ringkasKehadiran(susunKehadiran(satu.hadir, satu))) || satu.hadir.map((x) => x.sebutan).join(", ")}
               >
                 {satu.nomor}
                 {ruang === 0 && satu.noRuang ? (
@@ -611,9 +621,12 @@ export function AletaAntrianPanggil() {
                     <span className="min-w-0 flex-1 text-muted-foreground">
                       {satu.noRuang ? `Ruang ${satu.noRuang}` : "Ruang —"}
                       {satu.jamPanggil ? ` · ${satu.jamPanggil}` : ""}
-                      {satu.hadir.length > 0
-                        ? ` · ${satu.hadir.map((x) => x.sebutan).join(", ")}`
-                        : ""}
+                      {/* F3.2: ringkasan rinci, cadangannya sebutan apa adanya. */}
+                      {kalimatRingkas(ringkasKehadiran(susunKehadiran(satu.hadir, satu)))
+                        ? ` · ${kalimatRingkas(ringkasKehadiran(susunKehadiran(satu.hadir, satu)))}`
+                        : satu.hadir.length > 0
+                          ? ` · ${satu.hadir.map((x) => x.sebutan).join(", ")}`
+                          : ""}
                     </span>
 
                     {/* Hitungan panggilan - inilah yang menentukan apakah

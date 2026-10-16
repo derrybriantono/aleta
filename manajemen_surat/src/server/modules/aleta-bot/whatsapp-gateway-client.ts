@@ -2302,6 +2302,8 @@ export async function getGatewayJadwalSidang(params: {
        * tidak pernah ada tanpa satu pun peringatan dari TypeScript.
        */
       peta: Record<string, AntrianBarisGateway>;
+      /** F3.2: kehadiran rinci per orang, kunci "perkaraId|YYYY-MM-DD" (hanya ?waktu=1). */
+      kehadiran?: Record<string, { hadir: KehadiranBaris[] }>;
     };
     /**
      * Waktu antrian berdetik untuk SELURUH perkara pada tanggal-tanggal yang
@@ -3248,6 +3250,11 @@ export type KehadiranBaris = {
   jam: string;
   /** "Kuasa Penggugat II", "Turut Tergugat I" - disusun bot, dipakai apa adanya. */
   sebutan: string;
+  /** F3.2 (bot 17 Okt 2026 ke atas): kunci baris, saksi siapa, jam pulang, jam diperiksa. */
+  id?: string;
+  saksiUntuk?: string;
+  pulangJam?: string;
+  diperiksaJam?: string;
 };
 
 export type PeranAntrian = { kunci: string; label: string; sisi: string };
@@ -3275,12 +3282,42 @@ export async function catatKehadiranAntrian(params: {
   sisi?: string;
   waChatId?: string;
   dicatatOleh: string;
+  /** F3.2: saksi siapa - pihak_1 / pihak_2. */
+  saksiUntuk?: string;
 }): Promise<
   GatewayResult<{ ok: boolean; alasan?: string; antrianDiisi: boolean; sebutan: string; sisi: string }>
 > {
   return gatewayFetch("/internal/aleta-bot/antrian/hadir", {
     method: "POST",
     body: JSON.stringify({ ...params, sumber: "aleta" }),
+  });
+}
+
+/**
+ * F3.2: kehadiran rinci per orang untuk satu/lebih perkara pada satu tanggal
+ * (bawaan hari ini). Hanya membaca.
+ */
+export async function getGatewayKehadiranRinci(params: {
+  perkaraId: string[];
+  tanggal?: string;
+}): Promise<
+  GatewayResult<{ ok: boolean; kehadiran: Record<string, { hadir: KehadiranBaris[]; pertama: KehadiranBaris | null }> }>
+> {
+  const kueri = new URLSearchParams({ perkaraId: params.perkaraId.join(",") });
+  if (params.tanggal) kueri.set("tanggal", params.tanggal);
+  return gatewayFetch(`/internal/aleta-bot/antrian/kehadiran?${kueri.toString()}`);
+}
+
+/** F3.2: menandai satu orang pulang / kembali / saksi diperiksa. Nomor antrian tidak bergeser. */
+export async function ubahKeadaanKehadiran(params: {
+  perkaraId: string;
+  id: string;
+  keadaan: "pulang" | "kembali" | "diperiksa" | "belum-diperiksa";
+  oleh: string;
+}): Promise<GatewayResult<{ ok: boolean; alasan?: string; keadaan?: string }>> {
+  return gatewayFetch("/internal/aleta-bot/antrian/kehadiran/keadaan", {
+    method: "POST",
+    body: JSON.stringify(params),
   });
 }
 

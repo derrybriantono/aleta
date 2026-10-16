@@ -10,6 +10,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiPath } from "@/lib/base-path";
 import { ringkasSebelumnya, sidangKe, susunRangkaian, tanggalIndonesia } from "@/lib/rangkaian-sidang";
+import { UsulanBasKehadiran } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
 
 /**
  * Sidang hari ini - siapa hadir, apa agendanya, apa hasilnya.
@@ -192,6 +193,14 @@ export function KehadiranSidang({
           </p>
         ) : (
           <>
+            {/* F3.2: usulan dari kehadiran yang dicatat di antrian pada tanggal sidang ini. */}
+            <UsulanBasKehadiran
+              perkaraId={perkaraId}
+              tanggal={sidang?.tanggal}
+              isiPenggugat={isi.kehadiranPenggugat}
+              isiTergugat={isi.kehadiranTergugat}
+              onIsi={(medan, bunyiUsul) => ubah(medan, bunyiUsul)}
+            />
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1">
                 <span className="text-xs text-muted-foreground">Kehadiran Penggugat/Pemohon</span>

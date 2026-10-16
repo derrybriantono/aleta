@@ -132,6 +132,17 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   "urutan-sidang": { letak: "kolom Agenda", contoh: redup("sidang ke-2") },
   "hasil-tundaan": { letak: "kolom Perkara, di bawah pihak", contoh: lencana("bg-amber-100 text-amber-900", "Ditunda sampai 13-10-2026") },
   "rincian-antrian": { letak: "kolom Antrian / Jam", contoh: <span className="text-[11px] font-semibold text-emerald-600">P 08:33 · Saksi 08:39</span> },
+  /* F3.2: kehadiran rinci per orang */
+  "kehadiran-rinci": {
+    letak: "kolom Antrian / Jam, di bawah jam ambil",
+    contoh: (
+      <span className="inline-flex flex-wrap gap-1 text-[10px] font-medium">
+        <span className="rounded bg-emerald-100 px-1 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">Penggugat hadir 08.47</span>
+        <span className="rounded bg-muted px-1 text-muted-foreground">Tergugat belum</span>
+        <span className="rounded bg-amber-100 px-1 text-amber-900 dark:bg-amber-950 dark:text-amber-200">Saksi P 1/2</span>
+      </span>
+    ),
+  },
   "kolom-siap": { letak: "kolom tersendiri (mode Lengkap)", contoh: pil("border-emerald-500 text-emerald-700", "Siap 92") },
   "catatan-cara-hitung": { letak: "di bawah penanda", contoh: redup("Tenggang dihitung dari tanggal relaas sampai hari sidang…") },
   "tombol-tunda-putus": {
