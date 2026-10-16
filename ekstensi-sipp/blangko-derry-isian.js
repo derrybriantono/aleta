@@ -3501,6 +3501,8 @@
     pilihBlangko,
     bukaModal,
     cetak,
+    /** F4.4 Putusan Advance (putusan-advance.js): RTF naskah blangko terpilih, sama dengan pratinjau/cetak; baca saja. */
+    naskahRtf: (paksa) => ambilRtf(paksa),
     /** Memuat daftar berkas satu kelompok Derry (untuk alat luar/uji); pulang [{berkas,a,b}] atau null. */
     async muatKelompok(nama) {
       await muatMenu();

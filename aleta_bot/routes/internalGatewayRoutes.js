@@ -4050,6 +4050,21 @@ router.get("/sipp/entitas-anonim", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * 17OKT-F44: putusan BHT hakim ketua yang sama, jenis sama - pembanding
+ * Putusan Advance (SELECT saja). Nama pihak ikut hanya untuk disamarkan portal.
+ */
+router.get("/sipp/putusan-serupa", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/putusanSerupaService").putusanSerupa(String(req.query.nomorPerkara || ""), {
+      batas: Number(req.query.batas) || undefined,
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
  * Wilayah SIPP bertingkat untuk isian pihak/saksi dari foto KTP (perbaikan
  * 2 Okt 2026 butir 16, kontrak K5). ?induk= anak satu wilayah (kosong =
  * provinsi), ?kode= rantai sampai satu kode. SELECT saja; nilai pilihan

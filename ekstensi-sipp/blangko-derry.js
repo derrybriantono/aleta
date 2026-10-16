@@ -1326,6 +1326,7 @@
       ["ktp", "Tanggal KTP dari bukti"],
       ["cek", "Cek kelengkapan sebelum putus"],
       ["konseptor", "Checklist konseptor putusan"],
+      ["advance", "Putusan Advance (periksa draf)"],
       ["unggah", "Unggah putusan ke e-Doc SIPP"],
       ["massal:unggah", "Unggah massal ke e-Doc SIPP"],
     ],

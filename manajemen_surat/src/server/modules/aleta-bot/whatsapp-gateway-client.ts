@@ -2737,6 +2737,30 @@ export async function getGatewaySippEntitasAnonim(nomorPerkara: string): Promise
 }
 
 /**
+ * 17OKT-F44: putusan BHT hakim ketua yang sama, jenis sama (Putusan Advance).
+ * `nama` hanya untuk disamarkan di portal - tidak pernah diteruskan ke peramban.
+ */
+export type GatewayPutusanSerupa = {
+  ok: boolean;
+  perkara?: { nomor: string; jenis: string };
+  hakim?: { nama: string } | null;
+  sebab?: string;
+  kandidat?: Array<{
+    nomor: string;
+    tanggalPutusan: string;
+    tanggalBht: string;
+    verstek: boolean;
+    pertimbangan: string;
+    amar: string;
+    nama: string[];
+  }>;
+};
+export async function getGatewaySippPutusanSerupa(nomorPerkara: string): Promise<GatewayResult<GatewayPutusanSerupa>> {
+  const kueri = new URLSearchParams({ nomorPerkara });
+  return gatewayFetch(`/internal/aleta-bot/sipp/putusan-serupa?${kueri.toString()}`, { timeoutMs: 20000 });
+}
+
+/**
  * Wilayah SIPP bertingkat (perbaikan 2 Okt 2026 butir 16): `induk` = anak
  * satu wilayah (kosong = provinsi), `kode` = rantai sampai kode itu. Hanya
  * membaca - lihat sippWilayahService di bot.

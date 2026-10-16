@@ -1203,7 +1203,8 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // tepat sebelum blangko-derry.js, blangko-derry-isian.js (perlu diisi, pratinjau, cetak) tepat sesudahnya.
     // Tahap L1 (16 Okt): sipp-ide-l1.js paling belakang - menerima serah terima "Buka di ABT" dari SIPP lewat aletaBlangkoDerry.
     // F1.6 (17 Okt): konseptor-langkah.js tepat sesudah blangko-derry-isian.js (mendengar peristiwa aleta-bd-isian).
-    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "basmassal.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-isian.js", "konseptor-langkah.js", "sipp-ide-l1.js"]);
+    // F4.4 (17 Okt): putusan-advance.js sesudah konseptor-langkah.js (alat Putusan Advance di Alat saya hakim).
+    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "basmassal.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-isian.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {
