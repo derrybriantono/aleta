@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.201.0",
+    dirilis: "2026-10-16T19:30:00+08:00",
+    judul: "Blangko ABT by Derry Briantono (kerangka) dan perbaikan saksi, e-Doc anonim, petitum",
+    butir: [
+      "Blangko ABT by Derry Briantono: tampilan baru di ABT dengan daftar perkara milik akun (per peran, prioritas, empat cara tampil); bisa dijadikan tampilan bawaan atau ditawarkan lewat kartu kecil.",
+      "Unggah e-Doc putusan: salinan anonimisasi yang tersamar sebagian kini ikut terunggah; sisa nama pihak dan NIK disamarkan otomatis. Putusan asli tidak diubah.",
+      "Susun Keterangan Saksi dan Isi dari SIPP tidak lagi saling menimpa, sehingga tab Isi dari SIPP tidak macet.",
+      "Kalimat penutup keterangan saksi (\"sudah cukup\", \"tidak ada lagi\", dan bentuk lainnya) dikenali dalam bentuk apa pun.",
+      "Petitum cerai: tuntutan nafkah anak \"biaya kebutuhan, perkembangan dan pendidikan\" ikut terbaca.",
+    ],
+  },
+  {
     versi: "1.200.2",
     dirilis: "2026-10-15T20:30:00+08:00",
     judul: "Blangko Derry berpasangan: menu Putusan dan BAS per jenis perkara",

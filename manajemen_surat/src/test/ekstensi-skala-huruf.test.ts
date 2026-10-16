@@ -133,7 +133,7 @@ describe("popup menawarkan angka yang benar-benar berlaku", () => {
 
     // Dan yang paling menentukan: baris .get(...) berjalan di tingkat modul,
     // jadi deklarasinya harus mendahuluinya.
-    const posGet = popup.indexOf('"asalPortal", SKALA_KUNCI]');
+    const posGet = popup.indexOf('"asalPortal", SKALA_KUNCI');
     expect(posGet).toBeGreaterThan(-1);
     expect(posDeklarasi).toBeLessThan(posGet);
 
@@ -153,7 +153,7 @@ describe("popup menawarkan angka yang benar-benar berlaku", () => {
   });
 
   it("nilainya ikut dibaca saat popup dibuka, bukan hanya saat diubah", () => {
-    expect(popup).toContain('"asalPortal", SKALA_KUNCI]');
+    expect(popup).toContain('"asalPortal", SKALA_KUNCI');
     expect(popup).toContain("skalaSekarang = rapikanSkala(");
   });
 
