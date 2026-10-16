@@ -81,15 +81,30 @@ export type FaktaBot = {
     hakim: Petugas[] | null;
     pp: Petugas[] | null;
     js: Petugas[] | null;
-    penetapan: { pmh: string; ppp: string; pjs: string; phs: string; sidangPertama: string } | null;
+    penetapan: {
+      pmh: string;
+      ppp: string;
+      pjs: string;
+      phs: string;
+      /** Sidang pertama menurut JADWAL SIPP (MIN tanggal_sidang); cadangan perkara_penetapan.sidang_pertama. */
+      sidangPertama: string;
+      /** perkara_penetapan.sidang_pertama - tertimpa penetapan hari sidang yang baru. */
+      sidangPertamaPenetapan?: string;
+      /** Penetapan PERTAMA dari riwayat per tabel (sama dengan penanda L2); null bila tidak terbaca. */
+      awal?: { pmh: string; ppp: string; pjs: string; phs: string } | null;
+    } | null;
     edocPenetapan: { pmh: boolean; ppp: boolean; pjs: boolean; phs: boolean } | null;
-    putusan: { ada: boolean; tanggal: string; statusNama: string; adaEdoc: boolean; adaAnonim: boolean; minutasi: string; bht: string } | null;
+    putusan: { ada: boolean; tanggal: string; statusNama: string; verstek?: boolean; adaEdoc: boolean; adaAnonim: boolean; minutasi: string; bht: string } | null;
+    /** Pemberitahuan putusan terakhir per pihak (1 = Penggugat/Pemohon, 2 = Tergugat/Termohon); null bila tidak terbaca. */
+    pemberitahuan?: { pihak1: string; pihak2: string } | null;
+    /** Daftar saksi SIPP (perkara_pihak5) + jumlah tanya-jawab saksi di SIPP; null bila tidak terbaca. */
+    saksi?: { daftar: Array<{ id: number; sisi: number }>; keterangan: number | null } | null;
     relaas: Array<{ sidangId: number; jumlah: number; berdokumen: number }> | null;
     mediasi: string[];
   };
   abt: {
     terbaca: boolean;
-    saksi: Array<{ sidangId: number; tanyaJawab: number; saksi: number; terakhir: string }> | null;
+    saksi: Array<{ sidangId: number; tanyaJawab: number; saksi: number; saksiId?: number[]; terakhir: string }> | null;
     validasiBas: Array<{ sidangKe: number; tanggal: string; sah: boolean; divalidasi: string }> | null;
     isian: Array<{ kode: string; jenis: "teks" | "tanggal"; nilai: string }> | null;
   };
@@ -124,7 +139,7 @@ export type FaktaPortal = {
 // ─────────────────────────────────────────────────────────────────────────────
 /** Tempat memperbaiki: tab halaman perkara SIPP, Blangko ABT, atau portal ALETA. */
 export type Tempat =
-  | { jenis: "tab"; tab: "tabs1" | "tabs2" | "tabs4" | "tabs10" | "tabs12"; label: string }
+  | { jenis: "tab"; tab: "tabs1" | "tabs2" | "tabs4" | "tabs10" | "tabs12" | "tabs23"; label: string }
   | { jenis: "abt"; label: string }
   | { jenis: "aleta"; label: string };
 
@@ -192,6 +207,20 @@ export function bakuNilai(x: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
+/** "2026-10-01" + n hari -> "YYYY-MM-DD" (UTC, tanpa zona). */
+function tambahHariIso(iso: string, n: number): string {
+  const t = Date.parse(`${iso}T00:00:00Z`);
+  if (!Number.isFinite(t)) return "";
+  return new Date(t + n * 86400000).toISOString().slice(0, 10);
+}
+
+/** Alur gugatan SIPP (perkara contentiosa) - verstek hanya ada di sini. */
+const ALUR_GUGATAN = 15;
+/** Ambang "pemberitahuan verstek terlambat" penanda L2 (360 dari 385 verstek 2026 diberitahukan dalam 14 hari). */
+const AMBANG_PEMBERITAHUAN_HARI = 14;
+/** Tenggang verzet sejak pemberitahuan sah (Pasal 153 RBg / 129 HIR). */
+const TENGGANG_VERZET_HARI = 14;
+
 /** Batas sidang lewat yang masih menjadi tugas unggah BAS (hari). */
 export const BATAS_TUGAS_BAS_HARI = 120;
 
@@ -201,6 +230,8 @@ const TAB = {
   jadwal: { jenis: "tab", tab: "tabs4", label: "Buka tab Jadwal Sidang" },
   putusan: { jenis: "tab", tab: "tabs10", label: "Buka tab Putusan" },
   riwayat: { jenis: "tab", tab: "tabs12", label: "Buka tab Riwayat Perkara" },
+  // Tab Saksi SIPP hanya ada bila perkara sudah punya saksi (detil_perkara_agama: $ada_data_saksi > 0).
+  saksi: { jenis: "tab", tab: "tabs23", label: "Buka tab Saksi" },
 } as const satisfies Record<string, Tempat>;
 const ABT: Tempat = { jenis: "abt", label: "Buka di ABT" };
 const ALETA: Tempat = { jenis: "aleta", label: "Buka di ALETA" };
@@ -260,12 +291,21 @@ export function susunPenyatu(m: MasukanSusun): JawabanPenyatu {
     const edocAleta = (j: JenisPen) => jejak.some((x) => x.aksi === "unggah" && x.jenis === `edoc_${j}`);
     const ditetapkan = JENIS_PEN.filter((j) => pen[j]);
     const tanpaEdoc = ditetapkan.filter((j) => !edoc[j]);
+    const awal = pen.awal || null;
     const rincian = JENIS_PEN.map((j) => {
       if (!pen[j]) return `${NAMA_PENETAPAN[j]}: belum ditetapkan di SIPP`;
       const asal = lewatAleta(j) ? " (ditulis lewat ALETA)" : "";
       const doc = edoc[j] ? `e-Doc ada${edocAleta(j) ? " (diunggah lewat ALETA dari blangko ABT)" : ""}` : "e-Doc belum ada";
-      return `${NAMA_PENETAPAN[j]}: ${tanggalAwam(pen[j])}${asal}, ${doc}`;
+      // Penetapan baru menimpa tanggal di SIPP; yang pertama tetap disebut (sama dengan penanda L2).
+      const pertama = awal && awal[j] && awal[j] < pen[j] ? `${tanggalAwam(awal[j])} (pertama), terakhir ${tanggalAwam(pen[j])}` : tanggalAwam(pen[j]);
+      return `${NAMA_PENETAPAN[j]}: ${pertama}${asal}, ${doc}`;
     });
+    if (pen.sidangPertama) {
+      const lain = pen.sidangPertamaPenetapan && pen.sidangPertamaPenetapan !== pen.sidangPertama;
+      rincian.push(
+        `Sidang pertama: ${tanggalAwam(pen.sidangPertama)}${lain ? ` (menurut jadwal sidang; isian sidang pertama di penetapan sudah tertimpa penetapan hari sidang yang baru: ${tanggalAwam(pen.sidangPertamaPenetapan || "")})` : ""}.`
+      );
+    }
     const semuaTanpaEdoc = ditetapkan.length > 0 && tanpaEdoc.length === ditetapkan.length;
     let keadaan: KeadaanBlangko;
     let ringkas: string;
@@ -362,6 +402,9 @@ export function susunPenyatu(m: MasukanSusun): JawabanPenyatu {
       : `${ada} dari ${lewat.length} sidang yang sudah lewat punya e-Doc BAS di SIPP.${basBelum.length ? ` ${basBelum.length} belum diunggah.` : ""}${basLama ? ` ${basLama} sidang lama (lebih dari ${BATAS_TUGAS_BAS_HARI} hari) juga tanpa BAS.` : ""}`;
     const rincian = [
       ...(f.abt.saksi && f.abt.saksi.length ? [`ABT: keterangan saksi tercatat pada ${f.abt.saksi.length} sidang.`] : []),
+      ...(f.abt.saksi && f.abt.saksi.length && s.saksi && s.saksi.keterangan === 0
+        ? [`SIPP: daftar saksi ${s.saksi.daftar.length} orang; tanya-jawab saksi tidak disimpan di SIPP (BAS dan putusan memakai tanya-jawab dari ABT).`]
+        : []),
       ...(lembar.length ? [`ALETA: ${lembar.length} lembar BAS.`] : []),
       ...(validasi.length ? [`ABT: ${validasi.length} BAS diajukan validasi (${validasi.filter((v) => v.sah).length} sah).`] : []),
     ];
@@ -391,6 +434,40 @@ export function susunPenyatu(m: MasukanSusun): JawabanPenyatu {
           "Tanya-jawab saksi di ABT disimpan per sidang. Sebagian tersimpan pada sidang yang tidak ada (lagi) di jadwal SIPP perkara ini - jadwalnya dihapus atau diganti, atau tersimpan di sidang perkara lain. Blangko BAS sidang yang benar tidak akan memuat keterangan itu. Periksa di ABT (tab Tanya Jawab perkara) dan pindahkan ke sidang yang benar.",
         perbaiki: [ABT, TAB.jadwal],
       });
+    }
+    // Selisih ABT vs SIPP: keterangan saksi ABT untuk saksi yang tidak (lagi) terdaftar di daftar saksi SIPP
+    // (perkara_pihak5; ABT menyimpan saksi_id = perkara_pihak5.id). Diukur 17 Okt atas server: 2026 = 31 dari 552
+    // perkara berketerangan saksi ABT (3 belum putus); 2022-2026 = 132 dari 2.329 (SIPP + ABT, baca saja). Tanya-jawab saksi SIPP
+    // (perkara_keterangan_saksi) TIDAK dijadikan selisih - 4 baris untuk seluruh register, akan kuning di semua perkara.
+    const daftarSaksi = s.saksi ? s.saksi.daftar : null;
+    const dariAbt = (f.abt.saksi || []).filter((k) => sidangById.has(k.sidangId));
+    if (daftarSaksi && dariAbt.length) {
+      const terdaftar = new Set(daftarSaksi.map((x) => x.id));
+      const idAbt = [...new Set(dariAbt.flatMap((k) => k.saksiId || []))];
+      const tak = idAbt.filter((id) => !terdaftar.has(id));
+      const tj = dariAbt.reduce((a, k) => a + k.tanyaJawab, 0);
+      const jumlahAbt = idAbt.length || dariAbt.reduce((a, k) => Math.max(a, k.saksi), 0);
+      if (!daftarSaksi.length) {
+        selisih.push({
+          kode: "saksi-sipp-kosong",
+          tingkat: "kuning",
+          judul: "Keterangan saksi ada di ABT, SIPP mencatat 0 saksi",
+          nilai: { abt: `keterangan ${jumlahAbt} saksi (${tj} tanya-jawab)`, sipp: "0 saksi di daftar saksi perkara" },
+          penjelasan:
+            "Tanya-jawab saksi sudah diisi di ABT, tetapi daftar saksi perkara ini di SIPP masih kosong. Nama dan identitas saksi pada BAS dan putusan diambil dari daftar saksi SIPP, jadi akan tercetak kosong. Tambahkan saksinya di SIPP lewat tombol \"Saksi Yang Dihadirkan\" di bagian atas halaman perkara, lalu periksa kembali tanya-jawabnya di ABT.",
+          perbaiki: [TAB.dataUmum, ABT],
+        });
+      } else if (tak.length) {
+        selisih.push({
+          kode: "saksi-tak-terdaftar",
+          tingkat: "kuning",
+          judul: `Keterangan ${tak.length} saksi di ABT tidak cocok dengan daftar saksi SIPP`,
+          nilai: { abt: `keterangan ${idAbt.length} saksi (${tj} tanya-jawab)`, sipp: `${daftarSaksi.length} saksi di daftar; ${tak.length} saksi ABT tidak ada di daftar itu` },
+          penjelasan:
+            "Sebagian tanya-jawab saksi di ABT tersimpan atas saksi yang tidak (lagi) ada di daftar saksi SIPP perkara ini - saksinya dihapus atau dimasukkan ulang di SIPP sesudah tanya-jawab diisi. Blangko BAS dan putusan tidak akan memuat keterangan saksi itu. Periksa daftar saksi di tab Saksi SIPP, lalu pindahkan atau isi ulang tanya-jawabnya di ABT untuk saksi yang benar.",
+          perbaiki: [TAB.saksi, ABT],
+        });
+      }
     }
     // Selisih ALETA: lembar BAS bertanggal yang tidak ada di jadwal SIPP.
     const lembarAsing = lembar.filter((l) => l.tanggalSidang && !tanggalSipp.has(l.tanggalSidang));
@@ -496,6 +573,33 @@ export function susunPenyatu(m: MasukanSusun): JawabanPenyatu {
       ringkas: kurang.length ? `Belum diunggah: ${kurang.join(" dan ")}.` : "Putusan dan anonimisasinya sudah diunggah ke SIPP.",
       rincian,
     });
+    // Verstek (keputusan pengguna 16 Okt, sama dengan penanda L2 "Menunggu pemberitahuan"): putusan
+    // dibacakan, lalu DIBERITAHUKAN kepada tergugat/termohon; tenggang verzet 14 hari dihitung sejak hari
+    // sesudah pemberitahuan sah, jadi BHT = pemberitahuan + 15 hari. BHT tidak dihitung dari tanggal putus.
+    if (f.perkara.alurPerkaraId === ALUR_GUGATAN && pu.verstek && !pu.bht && s.pemberitahuan !== undefined) {
+      const lawan = /talak/i.test(f.perkara.jenisPerkara) ? "Termohon" : "Tergugat";
+      const pbt = s.pemberitahuan ? s.pemberitahuan.pihak2 : "";
+      const sejak = selisihHari(pu.tanggal, hariIni);
+      if (!s.pemberitahuan) {
+        rincian.push("Pemberitahuan putusan verstek belum dapat dibaca dari SIPP.");
+      } else if (!pbt) {
+        rincian.push(`Putusan verstek: belum diberitahukan kepada ${lawan} (${sejak} hari sejak dibacakan).`);
+        tambahTugas({
+          kode: "pemberitahuan-verstek",
+          peran: "jurusita",
+          judul: sejak >= AMBANG_PEMBERITAHUAN_HARI ? `Pemberitahuan putusan verstek (sudah ${sejak} hari)` : "Pemberitahuan putusan verstek",
+          sebab:
+            `Putusan verstek ${tanggalAwam(pu.tanggal)} (${sejak} hari lalu) belum tercatat diberitahukan kepada ${lawan}. ` +
+            `Tenggang verzet 14 hari menuju BHT baru berjalan sejak pemberitahuan sah; catat relaas pemberitahuannya di tab Putusan SIPP.`,
+          tempat: [TAB.putusan],
+        });
+      } else {
+        const bht = tambahHariIso(pbt, TENGGANG_VERZET_HARI + 1);
+        rincian.push(
+          `Putusan verstek diberitahukan kepada ${lawan} ${tanggalAwam(pbt)}; tenggang verzet 14 hari berakhir ${tanggalAwam(tambahHariIso(pbt, TENGGANG_VERZET_HARI))}, BHT ${bht <= hariIni ? "jatuh" : "diperkirakan"} ${tanggalAwam(bht)} bila tidak ada verzet.`
+        );
+      }
+    }
     for (const [kode, judul, adaKah] of [
       ["edoc-putusan", "Unggah e-Doc putusan", pu.adaEdoc],
       ["edoc-anonim", "Unggah e-Doc putusan anonimisasi", pu.adaAnonim],

@@ -666,7 +666,10 @@ function ringkasSelisih(hasil = {}) {
   const tidakAdaDiSipp = Array.isArray(hasil.tidakAdaDiSipp) ? hasil.tidakAdaDiSipp : [];
   const registerBerbeda = Array.isArray(hasil.registerBerbeda) ? hasil.registerBerbeda : [];
 
-  if (tidakDitemukan.length === 0 && tidakAdaDiSipp.length === 0 && registerBerbeda.length === 0) {
+  // Diagnosa pihak elektronik (17 Okt 2026) - hitungan saja, lihat run.js catatPihakElektronik.
+  const pihakElektronik = hasil.pihakElektronik && hasil.pihakElektronik.halaman > 0 ? hasil.pihakElektronik : null;
+
+  if (tidakDitemukan.length === 0 && tidakAdaDiSipp.length === 0 && registerBerbeda.length === 0 && !pihakElektronik) {
     return null;
   }
 
@@ -674,6 +677,7 @@ function ringkasSelisih(hasil = {}) {
     tidakDitemukanDiEcourt: { jumlah: tidakDitemukan.length, contoh: tidakDitemukan.slice(0, 20) },
     tidakAdaDiSipp: { jumlah: tidakAdaDiSipp.length, contoh: tidakAdaDiSipp.slice(0, 20) },
     registerBerbeda: { jumlah: registerBerbeda.length, contoh: registerBerbeda.slice(0, 20) },
+    ...(pihakElektronik ? { pihakElektronik } : {}),
   }).slice(0, 8000);
 }
 

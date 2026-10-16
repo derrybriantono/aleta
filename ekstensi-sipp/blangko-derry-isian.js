@@ -52,8 +52,8 @@
   const BATAS_LAMA_MS = 150000;
   const NAMA_JENIS = { put: "Putusan", bas: "Berita acara sidang", rel: "Relaas", ptsp: "PTSP" };
   const PERAN_JENIS = { hakim: "put", pp: "bas", js: "rel" };
-  const JENIS_PERAN = { put: "hakim", bas: "pp", rel: "js" };
-  const NAMA_PERAN = { hakim: "Hakim", pp: "Panitera Pengganti", js: "Juru sita" };
+  const JENIS_PERAN = { put: "hakim", bas: "pp", rel: "js", ptsp: "ptsp" };
+  const NAMA_PERAN = { hakim: "Hakim", pp: "Panitera Pengganti", js: "Juru sita", ptsp: "petugas yang berhak atas folder PTSP di ABT" };
   /** Kelompok BAS yang paling sering dipakai (abt-bas-alur-sidang/hasil/alur-frekuensi, perkara 2024-2026). */
   const FREK_ALUR = { "02": 2494, "01": 404, "03": 389, "08": 205 };
   const PIL_METERAI = ["bermeterai cukup dan dinazegelen", "bermeterai cukup tetapi tidak dinazegelen", "tidak bermeterai dan tidak dinazegelen", "tanpa kalimat meterai"];
@@ -306,16 +306,23 @@
    * Jenis dokumen yang boleh dibuka & ditulis (16 Okt malam): dari kerangka - Super Admin/Admin tanpa
    * "Lihat sebagai" semuanya; akun yang ditiru dan akun biasa hanya jenis perannya + saklar Pengaturan SIPP & ABT.
    */
-  const jenisBoleh = () => {
+  const jenisPeran = () => {
     const a = api();
     if (a && typeof a.jenisDokumen === "function") return a.jenisDokumen();
     return adm() ? ["put", "bas", "rel"] : peranAkun().map((p) => PERAN_JENIS[p]).filter(Boolean);
+  };
+  // 99 PTSP (17 Okt): bukan dokumen satu peran - tabnya ada bila menu ABT memuat folder PTSP yang boleh dibuka
+  // akun ini (hak menu ABT, lihat kelompokBoleh di blangko-derry.js).
+  const jenisBoleh = () => {
+    const dasar = jenisPeran();
+    const adaPtsp = Boolean(S.menu && S.menu.kelompok && S.menu.kelompok.some((k) => k.jenis === "ptsp" && kelompokBoleh(k)));
+    return adaPtsp && !dasar.includes("ptsp") ? [...dasar, "ptsp"] : dasar;
   };
   /** Kelompok menu Derry { nama, jenis } boleh tampil/dibuka/ditulis untuk akun (atau akun yang ditiru) ini? */
   const kelompokBoleh = (k) => {
     const a = api();
     if (a && typeof a.kelompokBoleh === "function") return a.kelompokBoleh(k);
-    return Boolean(k) && jenisBoleh().includes(k.jenis);
+    return Boolean(k) && (k.jenis === "ptsp" || jenisPeran().includes(k.jenis));
   };
   /** Boleh MENULIS untuk blangko ini? Hanya bila kelompoknya boleh untuk akun (atau akun yang ditiru) ini. */
   const bolehTulis = () => Boolean(S.blangko) && kelompokBoleh({ nama: S.blangko.kelompok, jenis: S.blangko.jenis });

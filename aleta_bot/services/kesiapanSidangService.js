@@ -303,6 +303,30 @@ async function aman(kerja, cadangan) {
 }
 
 /**
+ * sidangId yang boleh dipakai untuk satu perkara. Murni.
+ *   jadwal tidak terbaca / kosong       -> dipakai apa adanya (tidak dapat diperiksa;
+ *                                          rincianSidang memulangkan [] bila gagal)
+ *   ada di jadwal perkara ini           -> dipakai
+ *   bukan milik perkara ini             -> sidang perkara ini pada tanggalSidang yang sama
+ *                                          (bila tepat satu), selain itu 0 (diabaikan)
+ * @returns {{ sidangId: number, diabaikan: boolean }}
+ */
+function sidangSahUntukPerkara(jadwal, sidangIdMentah, tanggalSidang) {
+  const sidangId = Number(sidangIdMentah) || 0;
+  if (!sidangId || !Array.isArray(jadwal) || !jadwal.length) return { sidangId, diabaikan: false };
+  if (jadwal.some((j) => Number(j && j.sidangId) === sidangId)) return { sidangId, diabaikan: false };
+  const tanggal = String(tanggalSidang || "").slice(0, 10);
+  const tgl = (x) => {
+    if (!x) return "";
+    if (x instanceof Date) return Number.isNaN(x.getTime()) ? "" : `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+    return String(x).slice(0, 10);
+  };
+  const samaHari = /^\d{4}-\d{2}-\d{2}$/.test(tanggal) ? jadwal.filter((j) => j && tgl(j.tanggalSidang) === tanggal) : [];
+  if (samaHari.length === 1 && Number(samaHari[0].sidangId)) return { sidangId: Number(samaHari[0].sidangId), diabaikan: true };
+  return { sidangId: 0, diabaikan: true };
+}
+
+/**
  * Mengumpulkan seluruh fakta satu sidang, lalu menilainya.
  *
  * Lima sumber diminta BERSAMAAN. Berurutan akan mengalikan waktu tunggu
@@ -331,6 +355,15 @@ async function nilaiKesiapanPerkara(
     // membuat sidangnya tampak tanpa masalah di layar.
     return nilaiKesiapan({ tanggalSidang, agenda });
   }
+
+  // sidangId milik perkara LAIN (17 Okt 2026, temuan pemeriksaan 1.203.0):
+  // keadaan panggilan dan relaas "sidang ini" lalu dihitung atas sidang yang
+  // salah dan memunculkan peringatan palsu. sidangId hanya dipakai bila ada di
+  // jadwal perkara ini; bila tidak, dicari sidang perkara ini pada tanggal yang
+  // sama, dan bila tidak ada juga, sidangnya diabaikan.
+  const sah = sidangSahUntukPerkara(rincian.jadwalPerkara, sidangId, tanggalSidang);
+  sidangId = sah.sidangId;
+  if (sah.diabaikan) keadaanPanggilanSiap = null;
 
   const [panggilanEcourt, dokumen, konteks, keadaanPanggilanSipp] = await Promise.all([
     aman(() => ecourtStoreService.bacaPanggilanPerkara(nomor), { pihak: [], panggilan: [] }),
@@ -425,4 +458,5 @@ module.exports = {
   nilaiKesiapan,
   nilaiKesiapanBanyak,
   nilaiKesiapanPerkara,
+  sidangSahUntukPerkara,
 };

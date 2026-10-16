@@ -187,6 +187,11 @@ function buatLayanan(depsMasuk) {
     const pp = await personel("perkara_panitera_pn", "panitera_nama", "", "panitera pengganti");
     const js = await personel("perkara_jurusita", "jurusita_nama", "", "juru sita");
 
+    // perkara_penetapan menyimpan penetapan TERAKHIR: PMH/PPP baru, atau PHS
+    // penetapan kembali, menimpa tanggal sebelumnya beserta sidang_pertama
+    // (273/G: sidang_pertama 29 Juli, padahal sidang ke-1 13 Mei). Sama dengan
+    // penanda L2 (sippIdeL2Service): penetapan PERTAMA dari riwayat per tabel
+    // dan sidang pertama dari jadwal sidang.
     const penetapan = await coba(
       "sipp",
       "penetapan",
@@ -200,7 +205,29 @@ function buatLayanan(depsMasuk) {
           [pid]
         );
         const r = b[0] || {};
-        return { pmh: tgl(r.pmh), ppp: tgl(r.ppp), pjs: tgl(r.pjs), phs: tgl(r.phs), sidangPertama: tgl(r.sidang_pertama) };
+        let awal = null;
+        const riwayat = ["perkara_hakim_pn", "perkara_panitera_pn", "perkara_jurusita", "perkara_penetapan_hari_sidang"];
+        if ((await Promise.all(riwayat.map((t) => d.tabelAda(t)))).every(Boolean)) {
+          const h = await d.kueriSipp(
+            `SELECT (SELECT DATE_FORMAT(MIN(tanggal_penetapan), '%Y-%m-%d') FROM perkara_hakim_pn WHERE perkara_id = ?) AS pmh,
+                    (SELECT DATE_FORMAT(MIN(tanggal_penetapan), '%Y-%m-%d') FROM perkara_panitera_pn WHERE perkara_id = ?) AS ppp,
+                    (SELECT DATE_FORMAT(MIN(tanggal_penetapan), '%Y-%m-%d') FROM perkara_jurusita WHERE perkara_id = ?) AS pjs,
+                    (SELECT DATE_FORMAT(MIN(tanggal_penetapan), '%Y-%m-%d') FROM perkara_penetapan_hari_sidang WHERE perkara_id = ?) AS phs`,
+            [pid, pid, pid, pid]
+          );
+          const a = h[0] || {};
+          awal = { pmh: tgl(a.pmh), ppp: tgl(a.ppp), pjs: tgl(a.pjs), phs: tgl(a.phs) };
+        }
+        const pertamaJadwal = (sidang || []).map((x) => x.tanggal).filter(Boolean).sort()[0] || "";
+        return {
+          pmh: tgl(r.pmh),
+          ppp: tgl(r.ppp),
+          pjs: tgl(r.pjs),
+          phs: tgl(r.phs),
+          sidangPertama: pertamaJadwal || tgl(r.sidang_pertama),
+          sidangPertamaPenetapan: tgl(r.sidang_pertama),
+          awal,
+        };
       },
       null
     );
@@ -227,7 +254,7 @@ function buatLayanan(depsMasuk) {
         if (!(await d.tabelAda("perkara_putusan"))) throw new Error("tabel perkara_putusan tidak terbaca");
         const adaStatus = await d.tabelAda("status_putusan");
         const b = await d.kueriSipp(
-          `SELECT DATE_FORMAT(pu.tanggal_putusan, '%Y-%m-%d') AS tanggal, ${adaStatus ? "sp.nama" : "NULL"} AS status_nama,
+          `SELECT DATE_FORMAT(pu.tanggal_putusan, '%Y-%m-%d') AS tanggal, ${adaStatus ? "sp.nama" : "NULL"} AS status_nama, pu.putusan_verstek AS verstek,
                   (pu.amar_putusan_dok IS NOT NULL AND pu.amar_putusan_dok <> '') AS ada_edoc,
                   (pu.amar_putusan_anonimisasi_dok IS NOT NULL AND pu.amar_putusan_anonimisasi_dok <> '') AS ada_anonim,
                   DATE_FORMAT(pu.tanggal_minutasi, '%Y-%m-%d') AS minutasi, DATE_FORMAT(pu.tanggal_bht, '%Y-%m-%d') AS bht
@@ -236,11 +263,12 @@ function buatLayanan(depsMasuk) {
           [pid]
         );
         const r = b[0];
-        if (!r) return { ada: false, tanggal: "", statusNama: "", adaEdoc: false, adaAnonim: false, minutasi: "", bht: "" };
+        if (!r) return { ada: false, tanggal: "", statusNama: "", verstek: false, adaEdoc: false, adaAnonim: false, minutasi: "", bht: "" };
         return {
           ada: Boolean(tgl(r.tanggal)),
           tanggal: tgl(r.tanggal),
           statusNama: teks(r.status_nama),
+          verstek: ya(r.verstek),
           adaEdoc: ya(r.ada_edoc),
           adaAnonim: ya(r.ada_anonim),
           minutasi: tgl(r.minutasi),
@@ -261,6 +289,50 @@ function buatLayanan(depsMasuk) {
           [pid]
         );
         return b.map((r) => ({ sidangId: angka(r.sidang_id), jumlah: angka(r.n), berdokumen: angka(r.berdokumen) }));
+      },
+      null
+    );
+
+    // Pemberitahuan putusan per pihak (1 = Penggugat/Pemohon, 2 = Tergugat/Termohon).
+    // MAX: pemberitahuan yang diulang - yang terakhir yang berlaku (sama dengan L2).
+    const pemberitahuan = await coba(
+      "sipp",
+      "pemberitahuan putusan",
+      async () => {
+        if (!(await d.tabelAda("perkara_putusan_pemberitahuan_putusan"))) throw new Error("tabel perkara_putusan_pemberitahuan_putusan tidak terbaca");
+        const b = await d.kueriSipp(
+          `SELECT pihak, DATE_FORMAT(MAX(tanggal_pemberitahuan_putusan), '%Y-%m-%d') AS tanggal
+             FROM perkara_putusan_pemberitahuan_putusan
+            WHERE perkara_id = ? AND tanggal_pemberitahuan_putusan IS NOT NULL GROUP BY pihak`,
+          [pid]
+        );
+        const hasil = { pihak1: "", pihak2: "" };
+        for (const r of b) {
+          const k = `pihak${angka(r.pihak)}`;
+          if (k === "pihak1" || k === "pihak2") hasil[k] = tgl(r.tanggal);
+        }
+        return hasil;
+      },
+      null
+    );
+
+    // Daftar saksi perkara di SIPP (perkara_pihak5) - pembanding keterangan
+    // saksi ABT, yang menyimpan saksi_id = perkara_pihak5.id. Tanya-jawab saksi
+    // SIPP (perkara_keterangan_saksi) hanya DIHITUNG: diukur 17 Okt, tabel itu
+    // 4 baris untuk seluruh register (satu perkara 2024) - membandingkannya
+    // akan merah pada setiap perkara.
+    const saksiSipp = await coba(
+      "sipp",
+      "daftar saksi",
+      async () => {
+        if (!(await d.tabelAda("perkara_pihak5"))) throw new Error("tabel perkara_pihak5 tidak terbaca");
+        const b = await d.kueriSipp("SELECT id, saksi_pihak_ke AS sisi FROM perkara_pihak5 WHERE perkara_id = ? LIMIT 100", [pid]);
+        let keterangan = null;
+        if (await d.tabelAda("perkara_keterangan_saksi")) {
+          const k = await d.kueriSipp("SELECT COUNT(*) AS n FROM perkara_keterangan_saksi WHERE perkara_id = ?", [pid]);
+          keterangan = angka(k[0] && k[0].n);
+        }
+        return { daftar: b.map((r) => ({ id: angka(r.id), sisi: angka(r.sisi) })).filter((x) => x.id > 0), keterangan };
       },
       null
     );
@@ -297,12 +369,21 @@ function buatLayanan(depsMasuk) {
       "keterangan saksi",
       async () => {
         const b = await d.kueriAbt(
-          `SELECT sidang_id, COUNT(*) AS n, COUNT(DISTINCT saksi_id) AS saksi,
+          `SELECT sidang_id, COUNT(*) AS n, COUNT(DISTINCT saksi_id) AS saksi, GROUP_CONCAT(DISTINCT saksi_id) AS saksi_id,
                   DATE_FORMAT(MAX(IFNULL(diperbaharui_tanggal, diinput_tanggal)), '%Y-%m-%d') AS terakhir
              FROM abt_keterangan_saksi WHERE perkara_id = ? GROUP BY sidang_id`,
           [pid]
         );
-        return b.map((r) => ({ sidangId: angka(r.sidang_id), tanyaJawab: angka(r.n), saksi: angka(r.saksi), terakhir: tgl(r.terakhir) }));
+        return b.map((r) => ({
+          sidangId: angka(r.sidang_id),
+          tanyaJawab: angka(r.n),
+          saksi: angka(r.saksi),
+          saksiId: teks(r.saksi_id)
+            .split(",")
+            .map(angka)
+            .filter((n) => n > 0),
+          terakhir: tgl(r.terakhir),
+        }));
       },
       null
     );
@@ -422,7 +503,7 @@ function buatLayanan(depsMasuk) {
         proses: teks(p.proses_terakhir_text),
         ecourt,
       },
-      sipp: { terbaca: terbaca("sipp"), sidang, hakim, pp, js, penetapan, edocPenetapan, putusan, relaas, mediasi },
+      sipp: { terbaca: terbaca("sipp"), sidang, hakim, pp, js, penetapan, edocPenetapan, putusan, pemberitahuan, saksi: saksiSipp, relaas, mediasi },
       abt: { terbaca: terbaca("abt"), saksi: abtSaksi, validasiBas: abtValidasi, isian: abtIsian },
       aleta: {
         terbaca: terbaca("aleta"),
