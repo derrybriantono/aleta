@@ -11182,6 +11182,22 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kelompok[data-kunci="ka
 @media (prefers-reduced-motion: reduce) {
   #aleta-panel-abt[data-aleta-gembok-situs] { transition: none; }
 }
+/* Keputusan 17 Okt butir 50-51: panel massal ABT (putusan & BAS massal) - gembok
+   yang sama (situs "abt"), arti sama dengan SIPP. */
+#aleta-panel-abt-massal[data-aleta-kepala-ringkas="ya"]:not([data-aleta-gembok="kunci"]):not(:hover):not(:focus-within):not(.aleta-panel-lencana):not(.aleta-panel-penuh):not([data-aleta-ditunjuk="ya"]) {
+  height: 46px !important;
+  min-height: 0 !important;
+  max-height: 46px !important;
+  overflow: hidden !important;
+  opacity: 0.92;
+}
+#aleta-panel-abt-massal[data-aleta-kepala-ringkas="ya"]:not([data-aleta-gembok="kunci"]):not(:hover):not(:focus-within):not(.aleta-panel-lencana):not(.aleta-panel-penuh):not([data-aleta-ditunjuk="ya"]) > :not(.aleta-kepala) {
+  display: none !important;
+}
+#aleta-panel-abt-massal[data-aleta-gembok-situs] { transition: opacity 200ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  #aleta-panel-abt-massal[data-aleta-gembok-situs] { transition: none; }
+}
 
 #aleta-panel-abt .aleta-f15-cetak[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
 #aleta-panel-abt .aleta-f15-ingat {

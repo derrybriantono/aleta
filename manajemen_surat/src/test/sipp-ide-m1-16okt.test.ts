@@ -402,6 +402,20 @@ describe("C. Putusan Sela", () => {
     expect(nilai(w, "tgl_sela")).toBe("26/08/2026");
   });
 
+  it("butir 58 (17 Okt): perkara NON-e-Court juga - pemberitahuan pihak hadir = tanggal baca, diisi pasti", async () => {
+    for (const lewatEcourt of [false, true]) {
+      const w = buka(SELA(), { jawab: () => bahan("sela", { lewatEcourt }) });
+      w.aletaSippIdeM1.pasang(w.document);
+      const r = await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_sela"));
+      expect(r.diisi, `lewatEcourt=${lewatEcourt}`).toBe(2);
+      expect([nilai(w, "tgl_pihak1"), nilai(w, "tgl_pihak2")]).toEqual(["26/08/2026", "26/08/2026"]);
+    }
+    // Penjaga: aturannya tidak bersyarat jalur pendaftaran.
+    const sumber = readFileSync(path.join(EKSTENSI, "sipp-ide-m1.js"), "utf8");
+    const mulai = sumber.indexOf("function usulanSela(data, form) {");
+    expect(sumber.slice(mulai, sumber.indexOf("\n  }", mulai))).not.toMatch(/ecourt|eCourt|elektronik/i);
+  });
+
   it("hanya pihak yang hadir: kehadiran Penggugat saja -> hanya Penggugat; Sebagian/tidak hadir -> tidak diisi; isian petugas tidak ditimpa", async () => {
     const dengan = (hadir: number | null) =>
       bahan("sela", { jadwal: JADWAL.map((s) => (/putusan sela/.test(s.agenda) ? { ...s, dihadiriOleh: hadir } : s)) });

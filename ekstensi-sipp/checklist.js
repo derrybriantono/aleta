@@ -3538,8 +3538,9 @@
   // sidang HARI INI milik akun (majelis/PP/JS; Admin: semua) dengan kalimat
   // yang sama dengan Jadwal Sidang - "Penggugat hadir 08.47 · Tergugat belum ·
   // Saksi P 1/2 · sedang disidang R1". Saklarnya sendiri di popup
-  // (widgetKehadiran, bawaan MATI - sama dengan widget tambahan lain: Baru
-  // tanpa saklar tetap sama dengan Lama). Lama: tidak ada apa pun, tidak meminta.
+  // (widgetKehadiran). Keputusan 17 Okt butir 41: bawaan MENYALA, tampil
+  // TERLIPAT di dok kiri bawah (judul + jumlah sidang; dibentangkan sendiri,
+  // buka/tutup diingat). Lama: tidak ada apa pun, tidak meminta.
   // Diminta tiap menit selama tab terlihat; satu GET, hanya membaca.
 
   const ALAMAT_KEHADIRAN = "/aleta/api/aleta-ecourt/antrian/kehadiran-saya";
@@ -3559,8 +3560,13 @@
     jam: null,
   };
 
+  /**
+   * Butir 41 (17 Okt): saklar yang belum pernah disentuh (null) = MENYALA di UI
+   * Baru (kotak terlipat di dok kiri bawah). Di Baru (kulit Klasik) tetap hanya
+   * bila dinyalakan sendiri - "Baru tanpa saklar sama dengan Lama" dipertahankan.
+   */
   function khBerlaku() {
-    return modeUji() !== "lama" && kh.nyala;
+    return modeUji() !== "lama" && (kh.nyala === true || (kh.nyala === null && modern()));
   }
 
   /** Jawaban portal -> bentuk yang dipercaya kotak. null bila bentuknya tidak dikenal. */
@@ -3639,7 +3645,8 @@
   }
 
   function susunKehadiranWidget() {
-    const w = kotakWidget("kehadiran", "Kehadiran sidang hari ini");
+    // Butir 41 (17 Okt): terlipat bawaan - jumlahnya tetap terbaca di kepala.
+    const w = kotakWidget("kehadiran", "Kehadiran sidang hari ini", { terbuka: false });
     w.kotak.setAttribute("data-kehadiran-widget", "");
     if (!kh.data) {
       const sebab =
@@ -3653,6 +3660,7 @@
       w.isi.appendChild(el("div", "aleta-cmw-ket", sebab));
       return w.kotak;
     }
+    w.ringkas(kh.data.jumlah ? `${kh.data.jumlah} sidang` : "tidak ada sidang");
     if (!kh.data.perkara.length) {
       w.isi.appendChild(el("div", "aleta-cmw-ket", "Tidak ada sidang Anda hari ini."));
       return w.kotak;
@@ -3692,7 +3700,8 @@
   // dengan Jadwal Sidang ("Draf H-7 85% - 3 perlu diisi"). Di ABT dengan Blangko
   // Derry dan perkara yang sama terpilih: tombol memasang draf sebagai SARAN
   // (pakaiDrafH7, tanpa menyimpan ke ABT); selain itu tautan ke Jadwal Sidang.
-  // Saklar sendiri di popup (widgetDrafH7, bawaan MATI). Lama: tidak meminta.
+  // Saklar sendiri di popup (widgetDrafH7) - keputusan 17 Okt butir 41: bawaan
+  // MENYALA, tampil TERLIPAT di dok kiri bawah. Lama: tidak meminta.
 
   const ALAMAT_DRAF_H7 = "/aleta/api/aleta-ecourt/agen-h7/saya";
   const KUNCI_DRAF_H7 = "widgetDrafH7";
@@ -3702,8 +3711,9 @@
 
   const h7 = { nyala: false, data: null, galat: "", jalan: false, terakhir: 0, jam: null };
 
+  /** Butir 41 (17 Okt): sama dengan khBerlaku - belum disentuh = menyala di UI Baru. */
   function h7Berlaku() {
-    return modeUji() !== "lama" && h7.nyala;
+    return modeUji() !== "lama" && (h7.nyala === true || (h7.nyala === null && modern()));
   }
 
   /** Jawaban portal -> bentuk yang dipercaya kotak. null bila bentuknya tidak dikenal. */
@@ -3788,7 +3798,8 @@
   }
 
   function susunDrafH7Widget() {
-    const w = kotakWidget("drafH7", "Draf putusan H-7");
+    // Butir 41 (17 Okt): terlipat bawaan - jumlahnya tetap terbaca di kepala.
+    const w = kotakWidget("drafH7", "Draf putusan H-7", { terbuka: false });
     w.kotak.setAttribute("data-draf-h7-widget", "");
     if (!h7.data) {
       const sebab =
@@ -3802,6 +3813,7 @@
       w.isi.appendChild(el("div", "aleta-cmw-ket", sebab));
       return w.kotak;
     }
+    w.ringkas(h7.data.jumlah ? `${h7.data.jumlah} perkara` : "tidak ada");
     if (!h7.data.perkara.length) {
       w.isi.appendChild(el("div", "aleta-cmw-ket", "Tidak ada Hari Putusan Anda dalam tujuh hari ke depan."));
       return w.kotak;
@@ -3860,6 +3872,10 @@
    * HIDE". Berlaku hanya selama BELUM ada susunan tersimpan (lokal maupun
    * akun) - yang sudah menyimpan tatanya sendiri tetap memakai tatanya.
    * Lama dan Baru tidak membaca susunan sama sekali.
+   *
+   * Keputusan 17 Okt butir 41: "hanya checklist" berlaku untuk widget galeri
+   * (Atur widget). Kehadiran sidang dan Draf putusan H-7 punya saklar sendiri
+   * di popup, bawaannya MENYALA dan tampil TERLIPAT di dok kiri bawah.
    */
   function susunanBawaan() {
     if (!modern()) return { urutan: [], mati: [] };
@@ -4000,15 +4016,22 @@
    * sama dengan panel SIPP, ABT, dan portal (alatLipat di panel-alat.js) -
    * panah, buka/tutup diingat per bagian ("widget:<id>"). Kepala tetap
    * pegangan geser di luar tombolnya. Atur widget tidak dilipat.
+   *
+   * opsi.terbuka = false: TERLIPAT selama orang belum pernah membentangkannya
+   * (kehadiran & draf H-7, keputusan 17 Okt butir 41). ringkas(teks) mengisi
+   * keterangan pendek di kepala - terbaca walau terlipat.
    */
-  function kotakWidget(id, judul) {
+  function kotakWidget(id, judul, opsi) {
+    const o = opsi && typeof opsi === "object" ? opsi : {};
     const lipat = modern() && id !== "atur" && typeof alatLipat === "function";
     let kotak;
     let isi;
     let tombolLipat = null;
+    let lipatan = null;
     const teksJudul = el("span", "aleta-cmw-judul", judul);
     if (lipat) {
-      const l = alatLipat(teksJudul, { kunci: `widget:${id}`, kelas: "aleta-cmw-kotak" });
+      const l = alatLipat(teksJudul, { kunci: `widget:${id}`, kelas: "aleta-cmw-kotak", ...(o.terbuka === false ? { terbuka: false } : {}) });
+      lipatan = l;
       kotak = l.akar;
       isi = l.isi;
       isi.classList.add("aleta-cmw-isi");
@@ -4028,7 +4051,10 @@
     kepala.appendChild(tombolLipat || teksJudul);
     kotak.insertBefore(kepala, kotak.firstChild);
     if (!isi.parentNode) kotak.appendChild(isi);
-    return { kotak, kepala, isi };
+    const ringkas = (teks) => {
+      if (lipatan && typeof lipatan.setelRingkas === "function") lipatan.setelRingkas(String(teks || ""));
+    };
+    return { kotak, kepala, isi, ringkas };
   }
 
   // ─── popup-20: catatan cepat ───────────────────────────────────────────────
@@ -6180,11 +6206,11 @@
           gambar();
         }
         if (ubah[KUNCI_KEHADIRAN]) {
-          kh.nyala = ubah[KUNCI_KEHADIRAN].newValue === true;
+          kh.nyala = typeof ubah[KUNCI_KEHADIRAN].newValue === "boolean" ? ubah[KUNCI_KEHADIRAN].newValue : null;
           gambar();
         }
         if (ubah[KUNCI_DRAF_H7]) {
-          h7.nyala = ubah[KUNCI_DRAF_H7].newValue === true;
+          h7.nyala = typeof ubah[KUNCI_DRAF_H7].newValue === "boolean" ? ubah[KUNCI_DRAF_H7].newValue : null;
           gambar();
         }
         if (ubah[KUNCI_SUSUNAN]) {
@@ -6256,8 +6282,9 @@
     if (lama(KUNCI_TANDA)) keadaan.tanda = tandaBersih(simpan[KUNCI_TANDA]);
     if (lama(KUNCI_CATATAN)) keadaan.catatan = catatanBersih(simpan[KUNCI_CATATAN]);
     if (lama(KUNCI_LAMA_SIDANG)) keadaan.lamaSidang = lamaSidangBersih(simpan[KUNCI_LAMA_SIDANG]);
-    if (lama(KUNCI_KEHADIRAN)) kh.nyala = simpan[KUNCI_KEHADIRAN] === true;
-    if (lama(KUNCI_DRAF_H7)) h7.nyala = simpan[KUNCI_DRAF_H7] === true;
+    // Butir 41 (17 Okt): tak tersimpan = null (menyala di UI Baru, lihat khBerlaku).
+    if (lama(KUNCI_KEHADIRAN)) kh.nyala = typeof simpan[KUNCI_KEHADIRAN] === "boolean" ? simpan[KUNCI_KEHADIRAN] : null;
+    if (lama(KUNCI_DRAF_H7)) h7.nyala = typeof simpan[KUNCI_DRAF_H7] === "boolean" ? simpan[KUNCI_DRAF_H7] : null;
     if (lama(KUNCI_SUSUNAN)) keadaan.susunan = susunanBersih(simpan[KUNCI_SUSUNAN]);
     if (lama(KUNCI_SUDUT)) keadaan.sudut = sudutBersih(simpan[KUNCI_SUDUT]);
     // Induk bawaannya MENYALA, widget ini bawaannya MATI - sama dengan popup.

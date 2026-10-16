@@ -242,8 +242,16 @@ describe("widget ALETA: kotak Kehadiran sidang hari ini", () => {
     await sampai(() => q(h, ".aleta-cmw-tumpuk-klasik [data-kehadiran-widget] .aleta-cmw-kh-chip"), "kotak di tumpukan Baru");
   });
 
-  it("saklar popup mati (bawaan): tanpa kotak dan tanpa permintaan; dinyalakan tanpa muat ulang", async () => {
+  it("butir 41 (17 Okt): saklar belum disentuh = MENYALA di UI Baru, kotak TERLIPAT di dok kiri bawah dengan jumlah di kepala", async () => {
     const h = buka({ ujiTampilan: "ui", widgetKehadiran: undefined });
+    const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-kehadiran-widget]"), "kotak di dok");
+    expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
+    await sampai(() => /1 sidang/.test(kotak.querySelector(".aleta-lipat-ringkas")?.textContent || ""), "jumlah di kepala");
+    expect(h.minta).toEqual([API_KH]);
+  });
+
+  it("saklar popup dimatikan: tanpa kotak dan tanpa permintaan; dinyalakan tanpa muat ulang", async () => {
+    const h = buka({ ujiTampilan: "ui", widgetKehadiran: false });
     await sampai(() => q(h, ".aleta-cmw-dok"), "dok UI Baru");
     await tunggu(150);
     expect(q(h, "[data-kehadiran-widget]")).toBeNull();

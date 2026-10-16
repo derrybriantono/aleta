@@ -28,10 +28,10 @@ const SAKLAR_DERRY = {
 const SAKLAR_SIPP_IDE = {
   sippPenyatu: ["sippPenyatu", true],
   sippTampilDobel: ["sippTampilDobel", false],
-  /* F3.2: kotak kehadiran sidang hari ini di widget - bawaan mati (seperti widget tambahan lain). */
-  widgetKehadiran: ["widgetKehadiran", false],
-  /* F4.2: kotak draf putusan H-7 di widget - bawaan mati. */
-  widgetDrafH7: ["widgetDrafH7", false],
+  /* F3.2: kotak kehadiran sidang hari ini di widget - keputusan 17 Okt butir 41: bawaan MENYALA, terlipat di kiri bawah. */
+  widgetKehadiran: ["widgetKehadiran", true],
+  /* F4.2: kotak draf putusan H-7 di widget - keputusan 17 Okt butir 41: bawaan MENYALA, terlipat di kiri bawah. */
+  widgetDrafH7: ["widgetDrafH7", true],
 };
 /* F1.5 (17 Okt): gembok panel ALETA di ABT biasa - kunci yang sama dengan tombol
    gembok di bawah kepala panel dan Widget ALETA. Menyala = terkunci (tampil penuh). */
@@ -114,8 +114,8 @@ const BAWAAN_AKUN = {
   blangkoDerryIngat: true,
   sippPenyatu: true,
   sippTampilDobel: false,
-  widgetKehadiran: false,
-  widgetDrafH7: false,
+  widgetKehadiran: true,
+  widgetDrafH7: true,
   gembokKepalaAbt: false,
   skalaHuruf: 100,
   temaPopup: "ikut",

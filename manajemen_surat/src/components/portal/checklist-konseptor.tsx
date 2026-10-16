@@ -19,7 +19,8 @@ import type { DrafH7Checklist } from "@/lib/agen-h7-putusan";
  * CHECKLIST KONSEPTOR SEMENTARA DI JADWAL SIDANG (F1.6)
  * ============================================================================
  *
- * Dua bagian, keduanya hanya untuk perkara yang konseptornya sudah ditunjuk:
+ * Dua bagian, untuk perkara yang konseptornya sudah ditunjuk ATAU sudah
+ * tercatat di SIPP (keputusan 17 Okt butir 38):
  *
  *   LencanaKesiapanPutusan  di samping penanda kuning "Hari Putusan" - draf
  *                           siap dibacakan atau baru berapa langkah.
@@ -29,7 +30,10 @@ import type { DrafH7Checklist } from "@/lib/agen-h7-putusan";
  *                           kosong. Majelis melihat kemajuan yang sama.
  *
  * Aturan statusnya di @/lib/konseptor-langkah (satu tempat untuk portal,
- * checklist milestone, dan ekstensi).
+ * checklist milestone, dan ekstensi). Langkah Putusan sela / Eksepsi /
+ * Rekonvensi hanya datang bila perkaranya memilikinya (butir 35); "Dikoreksi
+ * majelis" hanya dapat dicentang ketua/anggota majelis (butir 36) - kotaknya
+ * nonaktif untuk yang lain, dan rute menolaknya.
  */
 
 export function LencanaKesiapanPutusan({ kemajuan }: { kemajuan?: RingkasKemajuan }) {
@@ -58,11 +62,13 @@ type Props = {
   perkaraId: string;
   nomorPerkara: string;
   kemajuan?: RingkasKemajuan;
+  /** Butir 38: konseptor yang sudah tercatat di SIPP (tanpa tunjukan sementara). */
+  konseptorSipp?: string[];
   /** Dipanggil sesudah centang tersimpan - memuat ulang ringkasan di baris. */
   onBerubah?: () => void;
 };
 
-export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, onBerubah }: Props) {
+export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, konseptorSipp, onBerubah }: Props) {
   const [terbuka, setTerbuka] = useState(false);
   const [rinci, setRinci] = useState<KemajuanKonseptor | null>(null);
   // F4.2: draf H-7 dari agen ALETA untuk perkara ini (ikut jawaban GET checklist).
@@ -108,7 +114,9 @@ export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, onBeruba
         error?: { message?: string };
       };
       if (balasan.status === 403) {
-        setBolehCentang(false);
+        // Butir 36: "Dikoreksi majelis" ditolak untuk bukan majelis - langkah lain tetap boleh.
+        if (langkah === "koreksi") setGalat(isi?.data?.alasan || isi?.error?.message || "Hanya ketua/anggota majelis yang dapat mencentang langkah ini.");
+        else setBolehCentang(false);
         return;
       }
       if (!balasan.ok || isi?.data?.ok === false) {
@@ -160,6 +168,11 @@ export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, onBeruba
 
           {rinci ? (
             <>
+              {konseptorSipp && konseptorSipp.length ? (
+                <p className="mb-1 text-muted-foreground" data-konseptor-sipp>
+                  Konseptor tercatat di SIPP: <span className="font-medium text-foreground">{konseptorSipp.join(", ")}</span>
+                </p>
+              ) : null}
               <p className="mb-1 text-muted-foreground" data-blangko-derry>
                 {rinci.blangko
                   ? `Blangko Derry: ${rinci.blangko.berkas || "blangko putusan"} - ${rinci.blangko.terisi} dari ${rinci.blangko.jumlah} isian terisi` +
@@ -168,14 +181,18 @@ export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, onBeruba
                   : "Blangko putusan belum dibuka di Blangko ABT by Derry Briantono - isian kosong belum dapat diperiksa."}
               </p>
               <ul className="space-y-1">
-                {rinci.langkah.map((l) => (
-                  <li key={l.kode} className="flex items-start gap-1.5" data-langkah={l.kode} data-status={l.status}>
+                {rinci.langkah.map((l) => {
+                  // Butir 36: "Dikoreksi majelis" terkunci bagi yang bukan majelis perkara ini.
+                  const terkunciMajelis = l.hanyaMajelis && rinci.hakKoreksi === false;
+                  return (
+                  <li key={l.kode} className="flex items-start gap-1.5" data-langkah={l.kode} data-status={l.status} data-syarat={l.syarat || undefined}>
                     <input
                       type="checkbox"
                       className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-emerald-600"
                       checked={l.dicentang}
-                      disabled={!bolehCentang || sibuk === l.kode}
+                      disabled={!bolehCentang || terkunciMajelis || sibuk === l.kode}
                       aria-label={`Tandai selesai: ${l.judul}`}
+                      title={terkunciMajelis ? "Hanya ketua atau anggota majelis perkara ini yang dapat mencentang." : undefined}
                       onChange={(e) => void centang(l.kode, e.target.checked)}
                     />
                     <div className="min-w-0">
@@ -211,9 +228,15 @@ export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, onBeruba
                           - centang dicabut oleh {l.oleh}, {waktuSingkat(l.pada)}
                         </span>
                       ) : null}
+                      {terkunciMajelis && l.status !== "selesai" ? (
+                        <span className="block text-muted-foreground" data-hanya-majelis>
+                          Dicentang ketua atau anggota majelis.
+                        </span>
+                      ) : null}
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
               {rinci.siap ? (
                 <p className="mt-1 font-medium text-emerald-700 dark:text-emerald-300">Draf siap dibacakan.</p>

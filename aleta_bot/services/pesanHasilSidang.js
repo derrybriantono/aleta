@@ -75,6 +75,8 @@ function pesanHasilSidang(hasil, jalan = "tunda") {
       return "Alasan penundaan wajib diisi.";
     case "agenda_berikut_kosong":
       return "Agenda sidang berikutnya wajib diisi.";
+    case "teks_menyebut_aleta":
+      return "Alasan penundaan dan agenda berikutnya tersimpan di SIPP - jangan menyebut kata ALETA di sana. Tulis tanpa kata itu.";
     case "tanggal_berikut_tidak_sah":
       return "Tanggal sidang berikutnya belum diisi atau bentuknya tidak sah.";
     case "jam_berikut_tidak_sah":

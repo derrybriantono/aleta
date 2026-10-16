@@ -4351,6 +4351,10 @@ export function AletaEcourtSidang({
    * yang sama sekali tidak memerlukan SIPP.
    */
   const [tunjukan, setTunjukan] = useState<Record<string, KonseptorSementara>>({});
+  // Butir 38 (17 Okt): checklist untuk perkara TANPA tunjukan yang konseptornya sudah tercatat di SIPP.
+  const [checklistTanpaTunjukan, setChecklistTanpaTunjukan] = useState<
+    Record<string, { kemajuan?: KonseptorSementara["kemajuan"]; konseptorSipp: string[] }>
+  >({});
   /** F4.2: ringkas draf H-7 agen ALETA per perkara (hanya yang punya draf). */
   const [drafH7, setDrafH7] = useState<Record<string, RingkasDrafH7>>({});
   const [keterangan, setKeterangan] = useState<Record<string, KeteranganPerkara>>({});
@@ -5537,12 +5541,19 @@ export function AletaEcourtSidang({
         apiPath(`/api/aleta-ecourt/konseptor-sementara?perkaraId=${encodeURIComponent(perkaraTampil)}`),
         { cache: "no-store" }
       );
-      const isi = (await balasan.json()) as { data?: { peta?: Record<string, KonseptorSementara> } };
+      const isi = (await balasan.json()) as {
+        data?: {
+          peta?: Record<string, KonseptorSementara>;
+          checklist?: Record<string, { kemajuan?: KonseptorSementara["kemajuan"]; konseptorSipp: string[] }>;
+        };
+      };
       setTunjukan(isi?.data?.peta ?? {});
+      setChecklistTanpaTunjukan(isi?.data?.checklist ?? {});
     } catch {
       // Tunjukan yang gagal dimuat menyisakan kolomnya kosong - jadwalnya
       // tetap terbaca. Ia keterangan tambahan, bukan syarat layar ini hidup.
       setTunjukan({});
+      setChecklistTanpaTunjukan({});
     }
   }, [perkaraTampil]);
 
@@ -8709,12 +8720,21 @@ export function AletaEcourtSidang({
                           {drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
                             <PanelDrafH7 perkaraId={String(baris.perkaraId)} ringkas={drafH7[String(baris.perkaraId)]} />
                           ) : null}
-                          {/* F1.6: checklist draf putusan - hanya bila konseptornya sudah ditunjuk. */}
+                          {/* F1.6: checklist draf putusan - bila konseptornya sudah ditunjuk, ATAU
+                              (butir 38, 17 Okt) sudah tercatat di SIPP tanpa tunjukan sementara. */}
                           {tunjukan[String(baris.perkaraId)]?.nama ? (
                             <ChecklistKonseptor
                               perkaraId={String(baris.perkaraId)}
                               nomorPerkara={baris.nomorPerkara}
                               kemajuan={tunjukan[String(baris.perkaraId)]?.kemajuan}
+                              onBerubah={() => void muatTunjukan()}
+                            />
+                          ) : checklistTanpaTunjukan[String(baris.perkaraId)] ? (
+                            <ChecklistKonseptor
+                              perkaraId={String(baris.perkaraId)}
+                              nomorPerkara={baris.nomorPerkara}
+                              kemajuan={checklistTanpaTunjukan[String(baris.perkaraId)].kemajuan}
+                              konseptorSipp={checklistTanpaTunjukan[String(baris.perkaraId)].konseptorSipp}
                               onBerubah={() => void muatTunjukan()}
                             />
                           ) : null}
@@ -10086,6 +10106,17 @@ export function RincianSidang({
                       : "belum tercatat"}
                   </span>
                 )}
+                {/* Butir 38 (17 Okt): konseptor tercatat di SIPP tanpa tunjukan
+                    sementara - checklist draf putusannya tetap dapat dibuka di sini. */}
+                {!tunjukan?.nama && sipp.konseptor?.terbaca && sipp.konseptor.baris.length > 0 ? (
+                  <div className="mt-1.5 border-t pt-1.5 text-sm font-normal">
+                    <ChecklistKonseptor
+                      perkaraId={perkaraId}
+                      nomorPerkara={nomorPerkara}
+                      konseptorSipp={sipp.konseptor.baris.filter((o) => !o.dariAudit).map((o) => o.nama)}
+                    />
+                  </div>
+                ) : null}
 
                 {/* ==================================================
                     TUNJUKAN TANGAN, DAN SELISIHNYA DENGAN SIPP

@@ -12,13 +12,18 @@
  *   - PERKIRAAN LANJUT ("sekitar 10.30") dan hitung mundurnya;
  *   - LAMA SKORS dicatat saat Lanjutkan;
  *   - kalimat untuk LAYAR ANTRIAN PIHAK ("diskors, dilanjutkan sekitar 10.30");
- *   - USULAN KALIMAT BAS dari riwayat skors satu sidang.
+ *   - USULAN KALIMAT BAS dari riwayat skors satu sidang - keputusan 17 Okt
+ *     butir 49: HANYA skors sebelum pengucapan putusan (musyawarah majelis
+ *     pada sidang berangenda putusan, lihat skorsUntukBas). Skors lain tetap
+ *     tercatat di ALETA, tidak diusulkan ke BAS.
  *
  * Semua di berkas ini murni (tanpa jaringan) - dipakai portal dan dijaga uji.
  * Tidak ada yang ditulis ke SIPP: alasan, perkiraan, dan lama hanya di tabel
  * ALETA. Kode alasan di sini SAMA dengan KODE_ALASAN_SKORS di bot
  * (aleta_bot/services/sidangSelesaiService.js).
  */
+
+import { agendaMusyawarah } from "@/lib/keadaan-sidang";
 
 export type KodeAlasanSkors = "pihak" | "saksi" | "kuasa" | "istirahat" | "musyawarah" | "berkas" | "lainnya";
 
@@ -254,6 +259,20 @@ function frasaSebabBas(s: SkorsTercatat): string {
   }
   if (alasan && alasan.toLowerCase() !== "lainnya") return `karena ${alasan.charAt(0).toLowerCase()}${alasan.slice(1)}`;
   return "";
+}
+
+/**
+ * Skors yang dicatat di BAS (keputusan 17 Okt 2026 butir 49): HANYA skors
+ * sebelum pengucapan putusan - alasannya "Musyawarah majelis" pada sidang yang
+ * agendanya musyawarah/pembacaan putusan/penetapan (agendaMusyawarah, sama
+ * dengan penanda Hari Putusan). Agenda tidak diketahui (kosong): cukup
+ * alasannya. Skors lain (menunggu pihak/saksi, istirahat, ...) tetap tercatat
+ * di ALETA - riwayat, layar antrian, widget - tetapi tidak diusulkan ke BAS.
+ */
+export function skorsUntukBas(riwayat: readonly SkorsTercatat[] | null | undefined, agenda?: string | null): SkorsTercatat[] {
+  const teksAgenda = rapi(agenda);
+  if (teksAgenda && !agendaMusyawarah(teksAgenda)) return [];
+  return (Array.isArray(riwayat) ? riwayat : []).filter((s) => s && kodeAlasanSah(s.alasanKode) === "musyawarah");
 }
 
 /**

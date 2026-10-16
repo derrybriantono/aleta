@@ -43,6 +43,7 @@ const AKTOR = {
   pp: { id: "usr_p", name: "Andini Puspita Sari", roleId: "panitera-pengganti", additionalRoleIds: [] },
   panitera: { id: "usr_pn", name: "Panitera Satu", roleId: "panitera", additionalRoleIds: [] },
   js: { id: "usr_j", name: "JS Satu", roleId: "jurusita", additionalRoleIds: [] },
+  analis: { id: "usr_an", name: "Analis Satu", roleId: "analis-perkara", additionalRoleIds: [] },
   admin: { id: "usr_a", name: "Admin", roleId: "admin", additionalRoleIds: [] },
 } as const;
 
@@ -153,7 +154,7 @@ describe("B. bot basUnggahService - e-Doc BAS persis tingkap SIPP, dobel tidak d
     expect(svc.periksaHakUnggahBas({})).toMatchObject({ ok: false, alasan: "peran_penekan_tidak_disebut" });
   });
 
-  function tiruan(o: { edoc?: string; tanggal?: string; terubah?: number; akarTulis?: boolean } = {}) {
+  function tiruan(o: { edoc?: string; tanggal?: string; terubah?: number; akarTulis?: boolean; lamaAda?: boolean } = {}) {
     const kejadian: string[] = [];
     const jejak: Array<Record<string, unknown>> = [];
     const d = {
@@ -171,6 +172,11 @@ describe("B. bot basUnggahService - e-Doc BAS persis tingkap SIPP, dobel tidak d
       periksaAkar: () => (o.akarTulis === false ? { dapatDitulis: false, alasan: "akar_hanya_baca", pesan: "hanya baca" } : { dapatDitulis: true, akar: "/sipp" }),
       tulisBerkas: (penuh: string) => kejadian.push(`TULIS ${penuh.replace(/\\/g, "/")}`),
       hapusBerkas: (penuh: string) => kejadian.push(`HAPUS ${penuh.replace(/\\/g, "/")}`),
+      pindahBerkas: (dari: string, ke: string) => {
+        kejadian.push(`PINDAH ${dari.replace(/\\/g, "/")} -> ${ke.replace(/\\/g, "/")}`);
+        return o.lamaAda !== false;
+      },
+      sekarang: () => new Date("2026-10-17T01:02:03Z"),
       samakanPemilik: () => undefined,
       akunSipp: async (u: string) => ({ username: u ? "andini" : "", terpetakan: Boolean(u) }),
       catatJejak: async (j: Record<string, unknown>) => {
@@ -196,7 +202,7 @@ describe("B. bot basUnggahService - e-Doc BAS persis tingkap SIPP, dobel tidak d
     expect(t.jejak[0]).toMatchObject({ aksi: "unggah", jenis: "edoc_bas", berhasil: true, akunSipp: "andini", operator: "Andini (ALETA)" });
   });
 
-  it("e-Doc sudah ada -> TIDAK ditulis apa pun tanpa `ganti`; dengan ganti berkas lama dibiarkan", async () => {
+  it("e-Doc sudah ada -> TIDAK ditulis apa pun tanpa `ganti`; dengan ganti berkas lama DIPINDAH ke folder terhapus (butir 44)", async () => {
     const t = tiruan({ edoc: "resources/file/doc/2026/09/lama.rtf" });
     const h = await svc.buatLayanan(t.d).unggahBas(MASUK);
     expect(h).toMatchObject({ ok: false, alasan: "sudah_ada", jalurLama: "lama.rtf" });
@@ -206,6 +212,28 @@ describe("B. bot basUnggahService - e-Doc BAS persis tingkap SIPP, dobel tidak d
     expect(h2).toMatchObject({ ok: true, diganti: true, jalurLama: "lama.rtf" });
     expect(t2.kejadian).toContain("UPDATE-ganti");
     expect(t2.kejadian.some((k) => k.startsWith("HAPUS"))).toBe(false);
+    // Butir 44 (17 Okt): dipindah SESUDAH baris diganti, ke <folder>/terhapus/<nama>_<waktu WITA>.
+    const urut = t2.kejadian.map((k) => k.split(" ")[0]);
+    expect(urut.indexOf("UPDATE")).toBeLessThan(urut.indexOf("PINDAH"));
+    expect(t2.kejadian).toContain(
+      "PINDAH /sipp/resources/file/doc/2026/09/lama.rtf -> /sipp/resources/file/doc/2026/09/terhapus/lama_20261017-090203.rtf"
+    );
+    expect(h2).toMatchObject({ lamaDipindah: "resources/file/doc/2026/09/terhapus/lama_20261017-090203.rtf", peringatanLama: "" });
+    // Jejak hanya di ALETA - menyebut jalur lama & barunya.
+    expect(String((t2.jejak[0].langkah as Array<{ keterangan: string }>)[0].keterangan)).toContain("berkas lama dipindah ke resources/file/doc/2026/09/terhapus/");
+    // Berkas lama yang tidak ada di cakram: penggantian tetap jalan, sebabnya dilaporkan.
+    const t3 = tiruan({ edoc: "resources/file/doc/2026/09/lama.rtf", lamaAda: false });
+    const h3 = await svc.buatLayanan(t3.d).unggahBas({ ...MASUK, ganti: true });
+    expect(h3).toMatchObject({ ok: true, diganti: true, lamaDipindah: "" });
+    expect(h3.peringatanLama).toMatch(/tidak ditemukan/);
+  });
+
+  it("jalurTerhapus: folder dokumen yang sama, tanpa '..', di luar resources/file/doc ditolak", () => {
+    expect(svc.jalurTerhapus("resources/file/doc/2026/08/PADgl_2026_PdtG_497_bas_7_1792096162.pdf", new Date("2026-10-17T01:02:03Z"))).toBe(
+      "resources/file/doc/2026/08/terhapus/PADgl_2026_PdtG_497_bas_7_1792096162_20261017-090203.pdf"
+    );
+    expect(svc.jalurTerhapus("resources/file/doc/../../etc/x.rtf", new Date())).toBe("");
+    expect(svc.jalurTerhapus("/etc/passwd", new Date())).toBe("");
   });
 
   it("balapan dua tab (UPDATE 0 baris) -> berkas kita dibuang, milik orang lain dibiarkan, alasan sudah_ada", async () => {
@@ -253,6 +281,25 @@ describe("C. portal unggah-massal.ts - hak, milik saya, pemeriksa isi, riwayat",
     expect(hakUnggahMassal(AKTOR.panitera as never)).toMatchObject({ putusan: false, bas: true, semua: { bas: true }, peranBas: "panitera" });
     expect(hakUnggahMassal(AKTOR.admin as never)).toMatchObject({ putusan: true, bas: true, semua: { putusan: true, bas: true }, peranBas: "admin" });
     expect(hakUnggahMassal(AKTOR.js as never)).toMatchObject({ putusan: false, bas: false });
+  });
+
+  it("butir 46 (17 Okt): Analis Perkara boleh melihat SEMUA BAS (bukan putusan)", () => {
+    expect(hakUnggahMassal(AKTOR.analis as never)).toMatchObject({ putusan: false, bas: true, semua: { putusan: false, bas: true }, peranBas: "analis" });
+    const h = susunDaftarUnggahMassal({ data: DATA_BOT, hak: hakUnggahMassal(AKTOR.analis as never), namaAkun: "Analis Satu", saringanDiminta: { bas: "semua" } });
+    expect(h.saringan.bas).toBe("semua");
+    expect(h.bas.map((x) => x.kunci)).toEqual(["bas:501", "bas:502"]);
+    expect(h.putusan).toEqual([]);
+  });
+
+  it("butir 43 (17 Okt): BAS yang sudah ada (basAda) ikut bertanda adaBas, tetapi tidak dihitung menunggu", () => {
+    const data = {
+      ...DATA_BOT,
+      bas: [...(DATA_BOT.bas || []), { ...(DATA_BOT.bas || [])[0], sidangId: "503", urutan: 3, tanggalSidang: "2026-10-16", adaBas: true, jalurBas: "PADgl_2026_PdtG_582_bas_3_1.rtf" }],
+    } as UnggahMassalDaftarBot;
+    const h = susunDaftarUnggahMassal({ data, hak: hakUnggahMassal(AKTOR.pp as never), namaAkun: "Andini Puspita Sari" });
+    expect(h.bas.map((x) => [x.kunci, Boolean(x.adaBas)])).toEqual([["bas:501", false], ["bas:503", true]]);
+    expect(h.bas[1].jalurBas).toBe("PADgl_2026_PdtG_582_bas_3_1.rtf");
+    expect(h.jumlah).toMatchObject({ basSaya: 1, basTertunggak: 1 });
   });
 
   it("hakim: putusan majelisnya saja (saringan 'semua' diabaikan), BAS dikosongkan; tertahan disebut", () => {
@@ -528,6 +575,35 @@ describe("E. ekstensi abt.js 17OKT-F41 - mesin unggah massal", () => {
     expect(s3.halangan).toMatch(/Sudah ada di SIPP \(ada\.rtf\)/);
   });
 
+  it("butir 43-44 (17 Okt): Ganti - BAS yang sudah ada disiapkan sebagai PENGGANTI, dikirim dengan ganti=1; tanpa Ganti tetap dobel", async () => {
+    const { f } = bukaEkstensi();
+    const badan: any[] = [];
+    const t = depsTiruan({
+      cek: () => ({ adaBas: true, jalur: "lama.rtf" }),
+      unggah: (_u, b) => {
+        badan.push(b);
+        return { status: 200, isi: { ok: true, data: { ok: true, nama: "baru.rtf", diganti: true, lamaDipindah: "resources/file/doc/2026/09/terhapus/lama_20261017-090203.rtf", peringatanLama: "" } } };
+      },
+    });
+    const m = f.f41Mesin(t.deps);
+    const biasa = await m.siapkan(BARIS_BAS("504"));
+    expect(biasa.keadaan).toBe("dobel");
+    expect(biasa.halangan).toMatch(/Tekan Ganti/);
+    expect(m.kiriman(biasa)).toBeNull();
+    const s = await m.siapkan(BARIS_BAS("504"), undefined, { ganti: true });
+    expect(s).toMatchObject({ keadaan: "siap", ganti: true, jalurLama: "lama.rtf" });
+    expect(s.catatan.join(" ")).toMatch(/folder "terhapus"/);
+    expect(m.kiriman(s)).toEqual({ bas: true });
+    const r = await m.unggah(s);
+    expect(r.hasil).toBe("berhasil");
+    expect(r.catatan).toMatch(/MENGGANTI e-Doc lama.*folder terhapus/);
+    expect(badan[0].get("ganti")).toBe("1");
+    // Putusan tidak punya Ganti.
+    const tp = depsTiruan({ cek: () => ({ adaPutusan: true, adaAnonim: true, jalurPutusan: "p.rtf" }) });
+    const sp = await f.f41Mesin(tp.deps).siapkan(BARIS_PUT("350", { putusan: false, anonim: false }), undefined, { ganti: true });
+    expect(sp.keadaan).toBe("dobel");
+  });
+
   it("berhenti aman: kegagalan PERTAMA menghentikan putaran, sisanya dilewati beserta sebabnya; BAS dikirim dengan sidangId & urutan", async () => {
     const { f } = bukaEkstensi();
     const t = depsTiruan({ unggah: (_u, _b, kali) => (kali === 2 ? { status: 200, isi: { ok: true, data: { ok: false, sebab: "Folder e-Doc SIPP hanya-baca." } } } : { status: 200, isi: { ok: true, data: { ok: true, nama: "x.rtf" } } }) });
@@ -634,6 +710,41 @@ describe("E. ekstensi abt.js 17OKT-F41 - layar", () => {
     // Esc menutup bila tidak sedang berjalan
     d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(d.querySelector(".aleta-f41-tirai")).toBeNull();
+  });
+
+  it("butir 43 (17 Okt): 'Tampilkan juga yang sudah ada' -> baris bertanda Sudah ada + Ganti; Ganti meminta konfirmasi lalu siap MENGGANTI", async () => {
+    const { w, f } = bukaEkstensi();
+    const tanya: string[] = [];
+    w.confirm = (k: string) => {
+      tanya.push(k);
+      return true;
+    };
+    const t = depsTiruan({ cek: (q) => (q.get("sidangId") === "509" ? { adaBas: true, jalur: "lama_bas_3.rtf" } : {}) });
+    const asli = t.deps.ambil;
+    t.deps.ambil = async (url: string, opsi: any) => {
+      if (url.startsWith("/aleta/api/aleta-ecourt/unggah-massal?") && url.includes("basAda=1")) {
+        t.minta.push({ url, opsi });
+        return jsonRes(200, { ok: true, data: { ok: true, ...SUSUN_PP, bas: [...SUSUN_PP.bas, { ...BARIS_BAS("509", 3), adaBas: true, jalurBas: "lama_bas_3.rtf" }] } });
+      }
+      return asli(url, opsi);
+    };
+    f.aletaUnggahMassalBuka("", t.deps);
+    const d = w.document as Document;
+    await sampai(() => d.querySelector('[data-kunci="bas:501"]'), "daftar awal");
+    const saklar = d.querySelector('[data-f41="bas-ada"]') as HTMLInputElement;
+    expect(saklar).not.toBeNull();
+    saklar.checked = true;
+    saklar.dispatchEvent(new w.Event("change", { bubbles: true }));
+    const baris = await sampai(() => d.querySelector('[data-kunci="bas:509"]'), "BAS yang sudah ada tampil");
+    expect(baris.textContent).toContain("Sudah ada di SIPP: lama_bas_3.rtf");
+    // "Centang semua" tidak mencentang yang sudah ada.
+    (d.querySelector('[data-f41="semua"]') as HTMLElement).click();
+    expect((d.querySelector('[data-f41-centang="bas:509"]') as HTMLInputElement).checked).toBe(false);
+    (d.querySelector('[data-f41-ganti="bas:509"]') as HTMLElement).click();
+    await sampai(() => /MENGGANTI/.test(d.querySelector('[data-kunci="bas:509"] .aleta-f41-rinci')?.textContent || ""), "siap mengganti");
+    expect(tanya[0]).toMatch(/dipindah ke folder "terhapus"/);
+    expect((d.querySelector('[data-f41-centang="bas:509"]') as HTMLInputElement).checked).toBe(true);
+    expect(d.querySelector('[data-f41="unggah"]')!.textContent).toBe("Unggah 1 berkas");
   });
 });
 

@@ -679,8 +679,12 @@ function halamanWidget(simpanan: Record<string, unknown>, sumber = SUMBER_CHECKL
   const qs = (s: string) => (akar() && akar().shadowRoot ? (Array.from(akar().shadowRoot.querySelectorAll(s)) as any[]) : []);
   return { ...h, akar, q, qs };
 }
+// Widget GALERI saja; kehadiran & draf H-7 (saklar sendiri di popup) diperiksa terpisah.
 const tumpukWidget = (h: ReturnType<typeof halamanWidget>) =>
-  h.qs(".aleta-cmw-tumpuk > *").map((x: any) => x.getAttribute("data-widget-isi") || "checklist");
+  h
+    .qs(".aleta-cmw-tumpuk > *")
+    .map((x: any) => x.getAttribute("data-widget-isi") || "checklist")
+    .filter((id: string) => id !== "kehadiran" && id !== "drafH7");
 const dokSiap = (h: ReturnType<typeof halamanWidget>) => sampai(() => h.q(".aleta-cmw-dok") && h.q(".aleta-cm-kelompok"), "dok");
 
 describe("butir 13 - checklist milestone: bawaan hanya checklist", () => {
@@ -688,6 +692,23 @@ describe("butir 13 - checklist milestone: bawaan hanya checklist", () => {
     const h = halamanWidget({ ujiTampilan: "ui", ujiFitur: { ...SEMUA_WIDGET } });
     await dokSiap(h);
     expect(tumpukWidget(h)).toEqual(["checklist"]);
+  });
+
+  it("butir 41 (17 Okt): kehadiran & draf H-7 bawaan MENYALA di UI Baru, tampil TERLIPAT di dok kiri bawah; Baru tanpa saklar tidak", async () => {
+    const h = halamanWidget({ ujiTampilan: "ui", ujiFitur: {} });
+    await dokSiap(h);
+    const kotak = await sampai(() => {
+      const k = h.qs(".aleta-cmw-dok .aleta-cmw-tumpuk > [data-widget-isi]").filter((x: any) => ["kehadiran", "drafH7"].includes(x.getAttribute("data-widget-isi")));
+      return k.length === 2 ? k : null;
+    }, "dua kotak saklar sendiri");
+    for (const k of kotak) {
+      expect(k.getAttribute("data-terbuka"), k.getAttribute("data-widget-isi")).toBe("tidak");
+      expect(k.querySelector(".aleta-lipat-kepala").getAttribute("aria-expanded")).toBe("false");
+    }
+    const baru = halamanWidget({ ujiTampilan: "baru", ujiFitur: {} });
+    await sampai(() => baru.q(".aleta-cm-kelompok") || baru.q(".aleta-cm-isi"), "widget Baru");
+    expect(baru.q("[data-kehadiran-widget]")).toBeNull();
+    expect(baru.q("[data-draf-h7-widget]")).toBeNull();
   });
 
   it("susunan tersimpan (tata sendiri) tetap dipakai", async () => {

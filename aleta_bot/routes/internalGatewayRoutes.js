@@ -880,7 +880,11 @@ router.post("/penunjukan/periksa", requireInternalToken, async (req, res) => {
 function alamatAudit(req) {
   const dariPortal = String((req.body && req.body.ip) || "").trim();
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(dariPortal) && dariPortal.length <= 15) return dariPortal;
-  return String(req.ip || (req.socket && req.socket.remoteAddress) || "").replace(/^::ffff:/, "");
+  // Butir 45 (17 Okt 2026): TANPA jalan mundur ke alamat soket. Itu alamat peti portal
+  // (172.18.0.2) - 19 baris sys_audittrail 29 Sep-16 Okt memuatnya, alamat yang
+  // tidak pernah dipakai petugas mana pun, jadi penanda ALETA di audit SIPP.
+  // Kosong lebih jujur daripada alamat mesin ALETA (sama dengan putusanTulisService).
+  return "";
 }
 
 /** Hakim dan panitera aktif - dipakai layar pengaturan SK susunan majelis. */
@@ -5088,13 +5092,31 @@ router.post("/sipp/putusan-unggah", requireInternalToken, async (req, res) => {
   }
 });
 
+/* === 17OKT-F16: keadaan perkara untuk checklist konseptor (SELECT saja) === */
+router.get("/sipp/konseptor-keadaan", requireInternalToken, async (req, res) => {
+  try {
+    const id = String(req.query.perkaraId || "")
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    res.json(await require("../services/konseptorKeadaanService").keadaanBanyak(id));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/* === AKHIR 17OKT-F16 === */
+
 /* === 17OKT-F41: UNGGAH MASSAL e-DOC (putusan & BAS) === */
 // Daftar e-Doc yang menunggu dan cek dobel satu e-Doc: SELECT saja
 // (unggahMassalService). Unggah BAS satu sidang: menulis berkas + satu kolom
 // edoc_bas meniru fileupload_c.php SIPP (basUnggahService), hak lapis kedua di sini.
 router.get("/sipp/unggah-massal/daftar", requireInternalToken, async (req, res) => {
   try {
-    const hasil = await require("../services/unggahMassalService").daftar({ sejakHari: Number(req.query.sejak || 0) || undefined });
+    const hasil = await require("../services/unggahMassalService").daftar({
+      sejakHari: Number(req.query.sejak || 0) || undefined,
+      // Butir 43 (17 Okt): BAS yang sudah ada ikut, untuk tombol "Ganti".
+      basAda: String(req.query.basAda || "") === "1",
+    });
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

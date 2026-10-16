@@ -5259,6 +5259,9 @@ export type UnggahMassalBasBot = {
   ditunda: boolean;
   alasanDitunda: string;
   ikrar: boolean;
+  /** Butir 43 (17 Okt): hanya terisi bila diminta basAda - e-Doc BAS sudah ada (tombol Ganti). */
+  adaBas?: boolean;
+  jalurBas?: string;
   panitera: string[];
   majelis: string[];
   saksiAbt: { saksi: number; tanyaJawab: number } | null;
@@ -5275,8 +5278,11 @@ export type UnggahMassalDaftarBot = {
 };
 
 /** e-Doc putusan/BAS yang menunggu diunggah, seluruh satker (SELECT saja). */
-export async function getGatewayUnggahMassalDaftar(sejakHari?: number) {
-  const q = sejakHari ? `?sejak=${encodeURIComponent(String(sejakHari))}` : "";
+export async function getGatewayUnggahMassalDaftar(sejakHari?: number, basAda = false) {
+  const kueri = new URLSearchParams();
+  if (sejakHari) kueri.set("sejak", String(sejakHari));
+  if (basAda) kueri.set("basAda", "1"); // butir 43: BAS yang sudah ada ikut (tombol Ganti)
+  const q = kueri.toString() ? `?${kueri.toString()}` : "";
   return gatewayFetch<UnggahMassalDaftarBot>(`/internal/aleta-bot/sipp/unggah-massal/daftar${q}`, { timeoutMs: 30_000 });
 }
 
@@ -5309,4 +5315,22 @@ export async function gatewayUnggahBasSipp(muatan: {
   );
 }
 /* === AKHIR 17OKT-F41 === */
+
+/* === 17OKT-F16: keadaan perkara untuk checklist konseptor (SELECT saja) === */
+export type KeadaanKonseptorBot = {
+  nomorPerkara: string;
+  eksepsi: boolean;
+  rekonvensi: boolean;
+  sela: boolean;
+  majelis: Array<{ nama: string; jabatan: string }>;
+  konseptor: Array<{ pengguna: string; nama: string }>;
+};
+export async function getGatewayKonseptorKeadaan(perkaraId: string[]) {
+  const q = new URLSearchParams({ perkaraId: perkaraId.slice(0, 500).join(",") });
+  return gatewayFetch<{ ok: true; perkara: Record<string, KeadaanKonseptorBot>; gagal: Array<{ bagian: string; sebab: string }> }>(
+    `/internal/aleta-bot/sipp/konseptor-keadaan?${q.toString()}`,
+    { timeoutMs: 15_000 }
+  );
+}
+/* === AKHIR 17OKT-F16 === */
 

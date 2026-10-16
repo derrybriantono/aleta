@@ -80,4 +80,22 @@ describe("ChecklistKonseptor", () => {
     expect(document.body.textContent).toContain("centang hanya oleh majelis dan panitera pengganti");
     expect((screen.getByLabelText("Tandai selesai: Biaya perkara") as HTMLInputElement).disabled).toBe(true);
   });
+  it("17 Okt: langkah bersyarat tampil bila ada; 'Dikoreksi majelis' terkunci bagi bukan majelis; konseptor SIPP disebut", async () => {
+    const k = nilaiKemajuan({}, null, { eksepsi: true, rekonvensi: true, sela: false }, false);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ ok: true, data: { ada: true, peta: { "590": k } } }), { status: 200 }))
+    );
+    render(<ChecklistKonseptor perkaraId="590" nomorPerkara="590/Pdt.G/2026/PA.Dgl" konseptorSipp={["Siti Konseptor"]} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Checklist draf/ }));
+    });
+    expect(document.querySelector('[data-langkah="eksepsi"]')).not.toBeNull();
+    expect(document.querySelector('[data-langkah="rekonvensi"]')).not.toBeNull();
+    expect(document.querySelector('[data-langkah="sela"]')).toBeNull();
+    expect((screen.getByLabelText("Tandai selesai: Dikoreksi majelis") as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText("Tandai selesai: Eksepsi") as HTMLInputElement).disabled).toBe(false);
+    expect(document.querySelector("[data-hanya-majelis]")!.textContent).toBe("Dicentang ketua atau anggota majelis.");
+    expect(document.querySelector("[data-konseptor-sipp]")!.textContent).toContain("Siti Konseptor");
+  });
 });

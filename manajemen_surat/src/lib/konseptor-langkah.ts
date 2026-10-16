@@ -13,21 +13,39 @@
  * sambungan ke Blangko ABT by Derry Briantono - isian blangko putusan yang
  * masih kosong membuat langkahnya BELUM selesai, walau dicentang.
  *
+ * Keputusan 17 Okt 2026 (butir 35, 36, 38):
+ *   - langkah "Putusan sela", "Eksepsi", "Rekonvensi" BERSYARAT - hanya muncul
+ *     bila perkaranya memilikinya (keadaan dari SIPP/arsip e-Court ALETA lewat
+ *     bot konseptorKeadaanService) atau sudah pernah dicentang;
+ *   - "Dikoreksi majelis" hanya boleh dicentang ketua/anggota majelis perkara
+ *     itu (bukan PP) - bolehKoreksiMajelis, dijaga rute;
+ *   - checklist juga untuk perkara yang konseptornya sudah tercatat di SIPP
+ *     tanpa tunjukan sementara (rute konseptor-sementara, Rincian).
+ *
  * Aturannya di @/lib (bukan @/server) karena dipakai rute peladen, layar
  * Jadwal Sidang, dan checklist milestone sekaligus - satu aturan, satu
  * tempat. Ekstensi hanya mengirim daftar isian beserta keadaannya; pemetaan
  * isian ke langkah dikerjakan di sini.
  */
 
+import { namaCocokSatu } from "@/lib/perkara-sendiri";
+
 export type KodeLangkah =
   | "duduk"
   | "bukti"
   | "saksi"
   | "kesimpulan"
+  | "sela"
+  | "eksepsi"
   | "pertimbangan"
+  | "rekonvensi"
   | "amar"
   | "biaya"
   | "koreksi";
+
+/** Keadaan perkara yang memunculkan langkah bersyarat (butir 35). */
+export type SyaratLangkah = "sela" | "eksepsi" | "rekonvensi";
+export type KeadaanPerkara = Partial<Record<SyaratLangkah, boolean>>;
 
 export type LangkahKatalog = {
   kode: KodeLangkah;
@@ -35,6 +53,10 @@ export type LangkahKatalog = {
   keterangan: string;
   /** false = hanya dapat diselesaikan dengan centang tangan (tidak ada isian blangkonya). */
   dariBlangko: boolean;
+  /** Langkah BERSYARAT: hanya tampil bila perkaranya memiliki keadaan ini (atau sudah pernah dicentang). */
+  syarat?: SyaratLangkah;
+  /** Hanya ketua/anggota majelis yang boleh mencentang (butir 36). */
+  hanyaMajelis?: boolean;
 };
 
 /** Urutan = urutan menyusun draf putusan. */
@@ -48,14 +70,36 @@ export const LANGKAH_KONSEPTOR: readonly LangkahKatalog[] = [
   { kode: "bukti", judul: "Bukti surat", keterangan: "Daftar bukti surat kedua pihak beserta keterangannya.", dariBlangko: true },
   { kode: "saksi", judul: "Keterangan saksi", keterangan: "Keterangan saksi dari berita acara sidang.", dariBlangko: true },
   { kode: "kesimpulan", judul: "Kesimpulan para pihak", keterangan: "Kesimpulan yang disampaikan pada sidang terakhir.", dariBlangko: true },
+  {
+    kode: "sela",
+    judul: "Putusan sela",
+    keterangan: "Putusan sela yang sudah dibacakan disebut dan dirujuk dalam draf putusan akhir.",
+    dariBlangko: false,
+    syarat: "sela",
+  },
+  {
+    kode: "eksepsi",
+    judul: "Eksepsi",
+    keterangan: "Pertimbangan dan amar dalam eksepsi Tergugat/Termohon, sebelum pokok perkara.",
+    dariBlangko: true,
+    syarat: "eksepsi",
+  },
   { kode: "pertimbangan", judul: "Pertimbangan hukum", keterangan: "Fakta yang terbukti, alasan, dan dasar hukumnya.", dariBlangko: true },
+  {
+    kode: "rekonvensi",
+    judul: "Rekonvensi",
+    keterangan: "Gugatan balik: duduk perkara, pertimbangan, dan amar dalam rekonvensi.",
+    dariBlangko: true,
+    syarat: "rekonvensi",
+  },
   { kode: "amar", judul: "Amar putusan", keterangan: "Bunyi amar yang akan dibacakan.", dariBlangko: true },
   { kode: "biaya", judul: "Biaya perkara", keterangan: "Rincian biaya dan siapa yang dibebani.", dariBlangko: true },
   {
     kode: "koreksi",
     judul: "Dikoreksi majelis",
-    keterangan: "Draf sudah dibaca dan dikoreksi ketua/anggota majelis.",
+    keterangan: "Draf sudah dibaca dan dikoreksi ketua/anggota majelis. Hanya majelis yang dapat mencentang.",
     dariBlangko: false,
+    hanyaMajelis: true,
   },
 ] as const;
 
@@ -109,6 +153,11 @@ export function langkahUntukIsian(isian: IsianBlangkoLapor): KodeLangkah {
   if (KODE_KE_LANGKAH[kode]) return KODE_KE_LANGKAH[kode];
   const nama = String(isian.nama ?? "").toLowerCase();
   if (isian.jenis === "tj") return "saksi";
+  // Butir 35: isian dalam eksepsi/rekonvensi ke langkahnya sendiri. Bila
+  // perkaranya ternyata tanpa keadaan itu, nilaiKemajuan melipatnya ke
+  // Pertimbangan hukum - isiannya tetap dihitung.
+  if (/eksepsi|exceptie/.test(nama)) return "eksepsi";
+  if (/rekonvensi|rekonpensi|gugatan balik/.test(nama)) return "rekonvensi";
   if (isian.khusus === "bukti" || /\bbukti\b/.test(nama)) return "bukti";
   if (/kesimpulan/.test(nama)) return "kesimpulan";
   if (/\bamar\b|petitum|diktum/.test(nama)) return "amar";
@@ -161,6 +210,10 @@ export type KeadaanLangkah = {
   catatan: string;
   dicentang: boolean;
   blangko: { jumlah: number; terisi: number; kosong: string[] } | null;
+  /** Langkah bersyarat: keadaan yang memunculkannya; "" = langkah tetap. */
+  syarat: SyaratLangkah | "";
+  /** Hanya ketua/anggota majelis yang boleh mencentang. */
+  hanyaMajelis: boolean;
 };
 
 export type KemajuanKonseptor = {
@@ -170,6 +223,10 @@ export type KemajuanKonseptor = {
   /** Semua langkah selesai: draf siap dibacakan. */
   siap: boolean;
   blangko: Omit<LaporBlangko, "perLangkah"> | null;
+  /** Keadaan perkara yang dipakai (null = tidak terbaca - langkah bersyarat hanya yang sudah dicentang). */
+  keadaan: KeadaanPerkara | null;
+  /** Akun yang meminta boleh mencentang "Dikoreksi majelis"? null = tidak dinilai. */
+  hakKoreksi: boolean | null;
 };
 
 export type RingkasKemajuan = {
@@ -195,13 +252,40 @@ export type RingkasKemajuan = {
  * dan naskah dengan isian kosong belum dapat dibacakan siapa pun yang
  * mencentangnya.
  */
+/**
+ * Langkah yang berlaku untuk satu perkara: langkah tetap, ditambah langkah
+ * bersyarat yang keadaannya ada ATAU yang sudah pernah dicentang (centang
+ * tidak boleh hilang hanya karena bacaan keadaannya gagal). Murni.
+ */
+export function langkahBerlaku(tanda: Partial<Record<string, TandaLangkah>>, keadaan: KeadaanPerkara | null | undefined): LangkahKatalog[] {
+  return LANGKAH_KONSEPTOR.filter((l) => !l.syarat || keadaan?.[l.syarat] === true || tanda[l.kode] !== undefined);
+}
+
+/** Laporan blangko per langkah, dengan langkah bersyarat yang TIDAK berlaku dilipat ke Pertimbangan hukum. Murni. */
+function lipatBlangko(per: BlangkoPerLangkah, berlaku: Set<KodeLangkah>): BlangkoPerLangkah {
+  const hasil: BlangkoPerLangkah = {};
+  for (const [kode, v] of Object.entries(per) as Array<[KodeLangkah, { jumlah: number; terisi: number; kosong: string[] }]>) {
+    if (!v) continue;
+    const ke: KodeLangkah = berlaku.has(kode) ? kode : "pertimbangan";
+    const satu = (hasil[ke] ??= { jumlah: 0, terisi: 0, kosong: [] });
+    satu.jumlah += v.jumlah;
+    satu.terisi += v.terisi;
+    for (const n of v.kosong) if (satu.kosong.length < 8) satu.kosong.push(n);
+  }
+  return hasil;
+}
+
 export function nilaiKemajuan(
   tanda: Partial<Record<string, TandaLangkah>>,
-  blangko: LaporBlangko | null
+  blangko: LaporBlangko | null,
+  keadaan: KeadaanPerkara | null = null,
+  hakKoreksi: boolean | null = null
 ): KemajuanKonseptor {
-  const langkah: KeadaanLangkah[] = LANGKAH_KONSEPTOR.map((l) => {
+  const daftar = langkahBerlaku(tanda, keadaan);
+  const perLangkah = blangko ? lipatBlangko(blangko.perLangkah, new Set(daftar.map((l) => l.kode))) : null;
+  const langkah: KeadaanLangkah[] = daftar.map((l) => {
     const t = tanda[l.kode];
-    const b = l.dariBlangko && blangko ? blangko.perLangkah[l.kode] ?? null : null;
+    const b = l.dariBlangko && perLangkah ? perLangkah[l.kode] ?? null : null;
     const dicentang = Boolean(t?.selesai);
     let status: KeadaanLangkah["status"] = "belum";
     let sumber: KeadaanLangkah["sumber"] = "";
@@ -224,6 +308,8 @@ export function nilaiKemajuan(
       catatan: t?.catatan ?? "",
       dicentang,
       blangko: b ? { jumlah: b.jumlah, terisi: b.terisi, kosong: b.kosong.slice() } : null,
+      syarat: l.syarat ?? "",
+      hanyaMajelis: Boolean(l.hanyaMajelis),
     };
   });
   const selesai = langkah.filter((l) => l.status === "selesai").length;
@@ -235,10 +321,35 @@ export function nilaiKemajuan(
     blangko: blangko
       ? { berkas: blangko.berkas, terisi: blangko.terisi, jumlah: blangko.jumlah, oleh: blangko.oleh, pada: blangko.pada }
       : null,
+    keadaan: keadaan ? { ...keadaan } : null,
+    hakKoreksi,
   };
 }
 
+/**
+ * Boleh mencentang "Dikoreksi majelis" (butir 36)? Murni.
+ *   Admin/Super Admin           boleh (pengelola satker)
+ *   bukan hakim/Ketua/Wakil      TIDAK - panitera pengganti menyusun draf, majelis yang mengoreksi
+ *   hakim, majelis terbaca      hanya bila namanya ada di majelis AKTIF perkara itu
+ *   hakim, majelis tak terbaca  boleh (perannya hakim; SIPP sedang tidak terbaca)
+ */
+export function bolehKoreksiMajelis(p: { admin: boolean; hakim: boolean; namaAkun: string; majelis: string[] | null | undefined }): {
+  boleh: boolean;
+  alasan: string;
+} {
+  if (p.admin) return { boleh: true, alasan: "" };
+  if (!p.hakim) {
+    return { boleh: false, alasan: "\"Dikoreksi majelis\" hanya dapat dicentang ketua atau anggota majelis - bukan panitera pengganti." };
+  }
+  const majelis = Array.isArray(p.majelis) ? p.majelis.filter(Boolean) : [];
+  if (majelis.length && !majelis.some((n) => namaCocokSatu(p.namaAkun, n))) {
+    return { boleh: false, alasan: "\"Dikoreksi majelis\" hanya dapat dicentang ketua atau anggota majelis perkara ini." };
+  }
+  return { boleh: true, alasan: "" };
+}
+
 export function ringkasKemajuan(k: KemajuanKonseptor): RingkasKemajuan {
+  // (selesai/jumlah ikut langkah yang berlaku - bersyarat yang tidak berlaku tidak dihitung)
   return {
     selesai: k.selesai,
     jumlah: k.jumlah,

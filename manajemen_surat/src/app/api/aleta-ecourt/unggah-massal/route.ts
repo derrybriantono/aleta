@@ -17,7 +17,8 @@ export const dynamic = "force-dynamic";
  * UNGGAH MASSAL - DAFTAR e-DOC YANG MENUNGGU (F4.1, 17 OKT 2026) - BACA SAJA
  * ============================================================================
  *
- *   GET ?putusan=saya|semua&bas=saya|semua
+ *   GET ?putusan=saya|semua&bas=saya|semua[&basAda=1]
+ *     basAda=1 (butir 43, 17 Okt): BAS yang e-Doc-nya SUDAH ada ikut (adaBas) - tombol Ganti.
  *     -> { hariIni, sejak, hak, saringan, putusan[], bas[], tertahan[], jumlah, galat[] }
  *
  * Hakim: putusan majelisnya; PP: BAS sidangnya; Admin: keduanya. Jenis yang
@@ -44,7 +45,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const jawab = await getGatewayUnggahMassalDaftar(BATAS_TUGAS_BAS_HARI);
+    const basAda = request.nextUrl.searchParams.get("basAda") === "1" && hak.bas;
+    const jawab = await getGatewayUnggahMassalDaftar(BATAS_TUGAS_BAS_HARI, basAda);
     if (!jawab.ok) {
       return Response.json({ ok: false, alasan: jawab.error || "Daftar belum dapat dibaca dari ALETA Bot." }, { status: 502 });
     }

@@ -26,8 +26,11 @@
  *     sendiri bersyarat "masih kosong", jadi dua tab yang mengunggah sidang yang
  *     sama bersamaan tidak saling menimpa diam-diam.
  *   - Berkas lama TIDAK dihapus dari cakram saat diganti (SIPP meng-unlink-nya):
- *     menghapus berkas pengadilan bukan pekerjaan alat bantu. Jalurnya dicatat
- *     di jejak ALETA.
+ *     menghapus berkas pengadilan bukan pekerjaan alat bantu. Keputusan 17 Okt
+ *     butir 44: ia DIPINDAH ke folder terpisah "terhapus" di folder dokumen SIPP
+ *     yang sama (<folder>/terhapus/<nama>_<waktu WITA>.<ext>) - tidak dibiarkan
+ *     di tempatnya. Jalur lama & barunya hanya dicatat di jejak ALETA (butir 45:
+ *     tidak ada keterangan ALETA di SIPP).
  *   - Sidang yang belum berlangsung ditolak: BAS sidang esok hari pasti keliru.
  *
  * Tanpa baris sys_audittrail: SIPP sendiri tidak menulis audit untuk unggah
@@ -74,6 +77,29 @@ function namaBerkasBas(nomorPerkara, urutan, cap, ekstensi) {
   return `${dasar}.${ext}`;
 }
 
+/**
+ * Tempat berkas BAS lama yang DIGANTI (butir 44, 17 Okt 2026): folder "terhapus"
+ * di folder dokumen yang sama, nama lama + waktu WITA (UTC+8) supaya penggantian
+ * berulang tidak saling menimpa.
+ *   ("resources/file/doc/2026/08/PADgl_2026_PdtG_497_bas_7_1792096162.pdf", 2026-10-17T01:02:03Z)
+ *   -> "resources/file/doc/2026/08/terhapus/PADgl_2026_PdtG_497_bas_7_1792096162_20261017-090203.pdf"
+ * "" bila jalurnya di luar resources/file/doc atau memuat "..". Murni.
+ */
+function jalurTerhapus(jalurLama, waktu) {
+  const rel = String(jalurLama || "").replace(/\\/g, "/").trim();
+  if (!rel.startsWith(`${FOLDER_DOC}/`) || rel.split("/").some((x) => x === ".." || x === "")) return "";
+  const folder = path.posix.dirname(rel);
+  const dasar = path.posix.basename(rel);
+  const titik = dasar.lastIndexOf(".");
+  const nama = titik > 0 ? dasar.slice(0, titik) : dasar;
+  const ext = titik > 0 ? dasar.slice(titik) : "";
+  const t = waktu instanceof Date && !Number.isNaN(waktu.getTime()) ? waktu : new Date();
+  const w = new Date(t.getTime() + 8 * 3600 * 1000);
+  const d = (n) => String(n).padStart(2, "0");
+  const cap = `${w.getUTCFullYear()}${d(w.getUTCMonth() + 1)}${d(w.getUTCDate())}-${d(w.getUTCHours())}${d(w.getUTCMinutes())}${d(w.getUTCSeconds())}`;
+  return `${folder}/terhapus/${nama}_${cap}${ext}`;
+}
+
 /** Jalur relatif (tahun/bulan dari tanggal PENDAFTARAN, seperti SIPP). "" bila tak sah. Murni. */
 function jalurBas(nomorPerkara, tanggalDaftar, urutan, cap, ekstensi) {
   const nama = namaBerkasBas(nomorPerkara, urutan, cap, ekstensi);
@@ -107,6 +133,20 @@ function depsBawaan() {
       fs.mkdirSync(path.dirname(penuh), { recursive: true });
       fs.writeFileSync(penuh, isi, { flag: "wx" });
     },
+    /** Butir 44: berkas BAS lama ke folder "terhapus" (rename; lintas cakram = salin lalu hapus). */
+    pindahBerkas: (dari, ke) => {
+      if (!fs.existsSync(dari)) return false;
+      fs.mkdirSync(path.dirname(ke), { recursive: true });
+      try {
+        fs.renameSync(dari, ke);
+      } catch (e) {
+        if (!e || e.code !== "EXDEV") throw e;
+        fs.copyFileSync(dari, ke, fs.constants.COPYFILE_EXCL);
+        fs.unlinkSync(dari);
+      }
+      return true;
+    },
+    sekarang: () => new Date(),
     hapusBerkas: (penuh) => {
       try {
         fs.unlinkSync(penuh);
@@ -231,6 +271,34 @@ function buatLayanan(depsMasuk) {
       return gagal("sudah_ada", "Sementara ALETA menyiapkan berkas, e-Doc BAS sidang ini sudah diisi orang lain di SIPP. Tidak diganti.");
     }
 
+    // Butir 44 (17 Okt 2026): berkas lama TIDAK dibiarkan di tempatnya - dipindah ke
+    // <folder>/terhapus/. SESUDAH baris diganti: bila penggantian gagal, berkas lama
+    // tetap yang dipakai SIPP. Gagal memindah tidak membatalkan penggantian; sebabnya
+    // dilaporkan ke petugas dan dicatat di jejak ALETA.
+    let lamaDipindah = "";
+    let peringatanLama = "";
+    if (lama) {
+      const tujuan = jalurTerhapus(lama, typeof d.sekarang === "function" ? d.sekarang() : new Date());
+      if (!tujuan) peringatanLama = "Jalur berkas BAS lama tidak baku - berkasnya tidak dipindah.";
+      else if (typeof d.pindahBerkas !== "function") peringatanLama = "Berkas BAS lama belum dapat dipindah.";
+      else {
+        try {
+          const pindah = d.pindahBerkas(path.join(keadaanAkar.akar, lama), path.join(keadaanAkar.akar, tujuan));
+          if (pindah === false) peringatanLama = "Berkas BAS lama tidak ditemukan di folder SIPP - tidak ada yang dipindah.";
+          else {
+            lamaDipindah = tujuan;
+            try {
+              d.samakanPemilik(path.join(keadaanAkar.akar, tujuan), keadaanAkar.akar);
+            } catch {
+              /* pemilik berkas hanya kerapian */
+            }
+          }
+        } catch (e) {
+          peringatanLama = `Berkas BAS lama belum dapat dipindah ke folder terhapus: ${String((e && e.message) || e).slice(0, 160)}`;
+        }
+      }
+    }
+
     await Promise.resolve(
       d.catatJejak({
         ...jejakDasar,
@@ -241,13 +309,25 @@ function buatLayanan(depsMasuk) {
           {
             tabel: "perkara_jadwal_sidang",
             aksi: "UPDATE",
-            keterangan: `edoc_bas sidang ke-${urutan}: ${relatif}${lama ? ` (mengganti ${lama}; berkas lama dibiarkan)` : ""}`,
+            keterangan: `edoc_bas sidang ke-${urutan}: ${relatif}${
+              lama ? ` (mengganti ${lama}; ${lamaDipindah ? `berkas lama dipindah ke ${lamaDipindah}` : `berkas lama TIDAK dipindah: ${peringatanLama}`})` : ""
+            }`,
           },
         ],
       })
     ).catch(() => false);
 
-    return { ok: true, jalur: relatif, nama: path.basename(relatif), urutan, bentuk, diganti: Boolean(lama), jalurLama: lama ? lama.split("/").pop() : "" };
+    return {
+      ok: true,
+      jalur: relatif,
+      nama: path.basename(relatif),
+      urutan,
+      bentuk,
+      diganti: Boolean(lama),
+      jalurLama: lama ? lama.split("/").pop() : "",
+      lamaDipindah,
+      peringatanLama,
+    };
   }
 
   return { unggahBas };
@@ -261,6 +341,7 @@ module.exports = {
   periksaHakUnggahBas,
   namaBerkasBas,
   jalurBas,
+  jalurTerhapus,
   buatLayanan,
   unggahBas: (...a) => bawaan.unggahBas(...a),
 };

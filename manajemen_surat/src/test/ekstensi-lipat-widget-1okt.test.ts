@@ -373,8 +373,12 @@ const SEMUA_WIDGET = { "popup-20": true, "popup-21": true, "popup-22": true };
 // Perbaikan 2 Okt butir 13: bawaan UI Baru kini HANYA checklist yang tampil.
 // Uji di berkas ini menguji lipat/pisah/tinggi bagian lain, jadi susunan
 // "semua tampil" disimpan lebih dulu - seperti akun yang sudah menatanya.
+// Butir 41 (17 Okt): kehadiran & draf H-7 bawaan menyala di UI Baru - berkas ini
+// menguji widget galeri, jadi keduanya dimatikan (bawaannya dijaga uji F3.2/F4.2).
 const ui = (lain: Record<string, unknown> = {}) => ({
   checklistMilestone: true,
+  widgetKehadiran: false,
+  widgetDrafH7: false,
   ujiTampilan: "ui",
   ujiFitur: { ...SEMUA_WIDGET },
   susunanWidget: { semua: { urutan: [], mati: [] } },

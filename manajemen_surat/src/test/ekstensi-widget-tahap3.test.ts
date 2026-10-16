@@ -309,8 +309,13 @@ const baru = (kode: string[] = [], lain: Record<string, unknown> = {}) => ({
   ujiFitur: fiturDari(kode),
   ...lain,
 });
+// Butir 41 (17 Okt): kotak kehadiran & draf H-7 bawaan MENYALA di UI Baru. Uji
+// di berkas ini menguji widget galeri, jadi keduanya dimatikan di sini; bawaan
+// barunya dijaga kehadiran-widget-f32 / draf-h7-widget-f42 / ekstensi-bersama-2okt.
 const ui = (kode: string[] = [], lain: Record<string, unknown> = {}) => ({
   ...NYALA,
+  widgetKehadiran: false,
+  widgetDrafH7: false,
   ujiTampilan: "ui",
   ujiFitur: fiturDari(kode),
   ...lain,
@@ -1002,7 +1007,10 @@ describe("batas yang tidak berubah: mode coba, akar, layar publik", () => {
           c.url.includes("/api/aleta-ecourt/ekstensi/tampilan") ||
           c.url === "/aleta/api/aleta-ecourt/sumber-daya" ||
           c.url.startsWith("/aleta/api/aleta-ecourt/sipp-tautan?") ||
-          c.url.startsWith("/aleta/api/aleta-ecourt/sidang/skors?tanggal=")
+          c.url.startsWith("/aleta/api/aleta-ecourt/sidang/skors?tanggal=") ||
+          // Butir 41 (17 Okt): kehadiran & draf H-7 bawaan menyala di UI Baru (terlipat).
+          c.url === "/aleta/api/aleta-ecourt/antrian/kehadiran-saya" ||
+          c.url === "/aleta/api/aleta-ecourt/agen-h7/saya"
       )
     ).toBe(true);
     // Semuanya di dalam SATU akar - senyap 1 jam dan blok cetak panel.css
