@@ -369,6 +369,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // laporan isian Blangko Derry. Tanpa kunci asing - urutannya bebas.
   "aleta_konseptor_langkah",
   "aleta_konseptor_blangko",
+  // 17 Oktober 2026 (0068): agen H-7 draf putusan - draf per Hari Putusan dan
+  // catatan jalan agen. Tanpa kunci asing - urutannya bebas.
+  "aleta_agen_h7_draf",
+  "aleta_agen_h7_jalan",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

@@ -11,6 +11,8 @@ import {
   type RingkasKemajuan,
 } from "@/lib/konseptor-langkah";
 import { cn } from "@/lib/utils";
+import { BagianDrafH7 } from "@/components/portal/draf-h7"; /* F4.2 */
+import type { DrafH7Checklist } from "@/lib/agen-h7-putusan";
 
 /**
  * ============================================================================
@@ -63,6 +65,8 @@ type Props = {
 export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, onBerubah }: Props) {
   const [terbuka, setTerbuka] = useState(false);
   const [rinci, setRinci] = useState<KemajuanKonseptor | null>(null);
+  // F4.2: draf H-7 dari agen ALETA untuk perkara ini (ikut jawaban GET checklist).
+  const [h7, setH7] = useState<DrafH7Checklist | null>(null);
   const [memuat, setMemuat] = useState(false);
   const [sibuk, setSibuk] = useState("");
   const [galat, setGalat] = useState("");
@@ -77,8 +81,11 @@ export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, onBeruba
       const balasan = await fetch(apiPath(`/api/aleta-ecourt/konseptor-langkah?perkaraId=${encodeURIComponent(perkaraId)}`), {
         cache: "no-store",
       });
-      const isi = (await balasan.json()) as { data?: { peta?: Record<string, KemajuanKonseptor> } };
+      const isi = (await balasan.json()) as {
+        data?: { peta?: Record<string, KemajuanKonseptor>; drafH7?: Record<string, DrafH7Checklist> };
+      };
       setRinci(isi?.data?.peta?.[perkaraId] ?? null);
+      setH7(isi?.data?.drafH7?.[perkaraId] ?? null);
       if (!balasan.ok) setGalat("Checklist tidak terbaca.");
     } catch (e) {
       setGalat(e instanceof Error ? e.message : "Checklist tidak terbaca.");
@@ -211,6 +218,7 @@ export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, onBeruba
               {rinci.siap ? (
                 <p className="mt-1 font-medium text-emerald-700 dark:text-emerald-300">Draf siap dibacakan.</p>
               ) : null}
+              <BagianDrafH7 h7={h7} />
               {!bolehCentang ? (
                 <p className="mt-1 text-muted-foreground">Anda dapat melihat kemajuan ini; centang hanya oleh majelis dan panitera pengganti.</p>
               ) : null}

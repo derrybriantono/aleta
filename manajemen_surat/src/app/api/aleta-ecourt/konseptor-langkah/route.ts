@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { bacaDrafRingkasUntukChecklist } from "@/server/modules/aleta-ecourt/agen-h7-putusan";
 import {
   bacaKemajuanKonseptor,
   simpanLaporBlangko,
@@ -47,7 +48,17 @@ export async function GET(request: NextRequest) {
       .map((x) => x.trim())
       .filter(Boolean);
     if (daftar.length === 0) return ok({ ada: true, peta: {} });
-    return ok({ ada: true, peta: await bacaKemajuanKonseptor(db, daftar) });
+    const peta = await bacaKemajuanKonseptor(db, daftar);
+    // F4.2: draf H-7 dari agen (blangko, kesiapan, isian yang perlu manusia) ikut,
+    // supaya konseptor melihatnya di kartu checklist yang sama. Tabel 0068 belum
+    // terpasang = tanpa draf, checklist tetap terbaca.
+    let drafH7: Record<string, unknown> = {};
+    try {
+      drafH7 = await bacaDrafRingkasUntukChecklist(db, daftar);
+    } catch {
+      drafH7 = {};
+    }
+    return ok({ ada: true, peta, drafH7 });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

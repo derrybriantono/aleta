@@ -3294,6 +3294,7 @@ const KUNCI_SETELAN_AKUN = [
   "sippPenyatu",
   "sippTampilDobel",
   "widgetKehadiran",
+  "widgetDrafH7",
   "gembokKepalaAbt",
   "skalaHuruf",
   "temaPopup",

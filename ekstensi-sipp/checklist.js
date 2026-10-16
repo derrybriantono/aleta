@@ -988,6 +988,9 @@
     .aleta-cmw-kh-chip[data-nada="biru"] { border-left-color: #5aa9e6; font-weight: 700; }
     .aleta-cmw-kh-chip[data-nada="abu"] { color: var(--aleta-tulisan-lembut); }
     .aleta-cmw-kh-perkara[data-sedang="ya"] .aleta-cmw-kh-nomor { color: var(--aleta-merek); }
+    /* F4.2: draf H-7 - pola yang sama dengan kehadiran (garis kiri menurut kesiapan). */
+    .aleta-cmw-h7-aksi { display: inline-block; margin-top: 2px; padding: 1px 6px; color: var(--aleta-merek); background: none; border: 1px solid var(--aleta-garis); border-radius: 4px; cursor: pointer; font: inherit; font-size: calc(11px * var(--aleta-skala-huruf, 1)); text-decoration: none; align-self: flex-start; }
+    .aleta-cmw-h7-aksi:hover { text-decoration: underline; }
 
     /* D11 / popup-23: Atur widget */
     .aleta-cmw-atur-daftar { list-style: none; margin: 0; padding: 0; }
@@ -3681,6 +3684,169 @@
     return w.kotak;
   }
 
+  // ─── F4.2 (17 Okt 2026): draf putusan H-7 milik akun ───────────────────────
+  //
+  // Satu kotak di dok (UI Baru) atau di atas checklist (Baru): perkara milik akun
+  // (majelis/PP/konseptor sementara; Admin: semua) dengan Hari Putusan hari ini
+  // s.d. tujuh hari lagi, kesiapan draf yang disiapkan agen ALETA - kalimat sama
+  // dengan Jadwal Sidang ("Draf H-7 85% - 3 perlu diisi"). Di ABT dengan Blangko
+  // Derry dan perkara yang sama terpilih: tombol memasang draf sebagai SARAN
+  // (pakaiDrafH7, tanpa menyimpan ke ABT); selain itu tautan ke Jadwal Sidang.
+  // Saklar sendiri di popup (widgetDrafH7, bawaan MATI). Lama: tidak meminta.
+
+  const ALAMAT_DRAF_H7 = "/aleta/api/aleta-ecourt/agen-h7/saya";
+  const KUNCI_DRAF_H7 = "widgetDrafH7";
+  const DETAK_H7_MS = 5 * 60000;
+  const BATAS_TUNGGU_H7_MS = 8000;
+  const NADA_TINGKAT_H7 = { siap: "hijau", hampir: "kuning", belum: "merah" };
+
+  const h7 = { nyala: false, data: null, galat: "", jalan: false, terakhir: 0, jam: null };
+
+  function h7Berlaku() {
+    return modeUji() !== "lama" && h7.nyala;
+  }
+
+  /** Jawaban portal -> bentuk yang dipercaya kotak. null bila bentuknya tidak dikenal. */
+  function h7Bersihkan(isi) {
+    const x = objek(isi);
+    if (!Array.isArray(x.perkara)) return null;
+    return {
+      jumlah: Number(x.jumlah) || 0,
+      perkara: x.perkara.slice(0, 20).map((p) => {
+        const o = objek(p);
+        return {
+          perkaraId: String(o.perkaraId || ""),
+          nomorPerkara: String(o.nomorPerkara || ""),
+          tanggalSidang: String(o.tanggalSidang || "").slice(0, 10),
+          sisaHari: Number(o.sisaHari) || 0,
+          perkiraan: o.alasan === "verstek",
+          lencana: String(o.lencana || ""),
+          tingkat: NADA_TINGKAT_H7[o.tingkat] ? o.tingkat : "belum",
+          perlu: (Array.isArray(o.perlu) ? o.perlu : []).map((n) => String(n || "")).filter(Boolean).slice(0, 3),
+          checklist: o.checklist && typeof o.checklist === "object" ? o.checklist : null,
+        };
+      }),
+    };
+  }
+
+  async function mintaDrafH7() {
+    if (h7.jalan) return;
+    h7.jalan = true;
+    h7.terakhir = Date.now();
+    const pengendali = typeof AbortController === "function" ? new AbortController() : null;
+    const tunda = pengendali ? setTimeout(() => pengendali.abort(), BATAS_TUNGGU_H7_MS) : null;
+    try {
+      const r = await fetch(ALAMAT_DRAF_H7, { credentials: "include", cache: "no-store", ...(pengendali ? { signal: pengendali.signal } : {}) });
+      if (r.status === 401) h7.galat = "masuk";
+      else if (r.status === 403) h7.galat = "akses";
+      else if (!r.ok) h7.galat = "jawaban";
+      else {
+        const luar = await r.json();
+        const isi = h7Bersihkan(luar && typeof luar === "object" && luar.data ? luar.data : luar);
+        if (isi) {
+          h7.data = isi;
+          h7.galat = "";
+        } else h7.galat = "jawaban";
+      }
+    } catch {
+      h7.galat = "jaringan";
+    } finally {
+      if (tunda) clearTimeout(tunda);
+      h7.jalan = false;
+    }
+    if (h7.galat === "akses") hentikanJamH7();
+    if (akar && akar.isConnected) gambar();
+  }
+
+  function hentikanJamH7() {
+    if (h7.jam) clearInterval(h7.jam);
+    h7.jam = null;
+  }
+
+  /** Aman dipanggil berulang (sesudah tiap gambar): tidak pernah meminta rapat. */
+  function aturJamH7() {
+    const hidup = h7Berlaku() && h7.galat !== "akses" && akar && akar.isConnected && document.visibilityState !== "hidden";
+    if (!hidup) {
+      hentikanJamH7();
+      return;
+    }
+    if (!h7.jam) h7.jam = setInterval(() => aturJamH7(), DETAK_H7_MS);
+    if (!h7.jalan && Date.now() - h7.terakhir >= DETAK_H7_MS - 500) void mintaDrafH7();
+  }
+
+  /** "hari ini" / "besok" / "5 hari lagi". */
+  function sisaHariTeks(n) {
+    return n <= 0 ? "hari ini" : n === 1 ? "besok" : `${n} hari lagi`;
+  }
+
+  /** Blangko Derry di halaman ini dengan perkara yang sama terpilih? */
+  function blangkoDerryUntuk(perkaraId) {
+    const bd = globalThis.aletaBlangkoDerryIsian;
+    if (!bd || typeof bd.pakaiDrafH7 !== "function" || typeof bd.keadaan !== "function") return null;
+    const k = bd.keadaan();
+    return k && k.pk && String(k.pk.perkaraId) === String(perkaraId) ? bd : null;
+  }
+
+  function susunDrafH7Widget() {
+    const w = kotakWidget("drafH7", "Draf putusan H-7");
+    w.kotak.setAttribute("data-draf-h7-widget", "");
+    if (!h7.data) {
+      const sebab =
+        h7.galat === "masuk"
+          ? "Masuk ke portal ALETA dulu untuk melihat draf putusan."
+          : h7.galat === "akses"
+            ? "Akun ini belum berhak melihat draf putusan."
+            : h7.galat
+              ? "Draf putusan belum dapat dibaca. Dicoba lagi sebentar lagi."
+              : "Memuat draf putusan…";
+      w.isi.appendChild(el("div", "aleta-cmw-ket", sebab));
+      return w.kotak;
+    }
+    if (!h7.data.perkara.length) {
+      w.isi.appendChild(el("div", "aleta-cmw-ket", "Tidak ada Hari Putusan Anda dalam tujuh hari ke depan."));
+      return w.kotak;
+    }
+    const daftar = el("ul", "aleta-cmw-kh-daftar");
+    for (const p of h7.data.perkara) {
+      const li = el("li", "aleta-cmw-kh-perkara");
+      li.setAttribute("data-h7-perkara", p.perkaraId);
+      li.appendChild(el("span", "aleta-cmw-kh-nomor", p.nomorPerkara));
+      li.appendChild(el("span", "aleta-cmw-kh-ket", `${p.perkiraan ? "Perkiraan putusan verstek" : "Hari Putusan"} ${sisaHariTeks(p.sisaHari)}`));
+      const chips = el("div", "aleta-cmw-kh-chips");
+      const c = el("span", "aleta-cmw-kh-chip", p.lencana);
+      c.setAttribute("data-nada", NADA_TINGKAT_H7[p.tingkat]);
+      if (p.perlu.length) c.title = `Perlu perhatian: ${p.perlu.join(", ")}.`;
+      chips.appendChild(c);
+      li.appendChild(chips);
+      const bd = p.checklist && p.checklist.blangko ? blangkoDerryUntuk(p.perkaraId) : null;
+      if (bd) {
+        const tombol = el("button", "aleta-cmw-h7-aksi", "Buka blangko draf & pasang saran");
+        tombol.type = "button";
+        tombol.setAttribute("data-h7-pakai", p.perkaraId);
+        tombol.title = "Membuka blangko putusan draf di Blangko Derry; isian agen menjadi saran, belum tersimpan ke ABT.";
+        tombol.addEventListener("click", () => void bd.pakaiDrafH7(p.checklist));
+        li.appendChild(tombol);
+      } else {
+        const href = alamatPortal("/aleta-ecourt");
+        if (href) {
+          const a = el("a", "aleta-cmw-h7-aksi", "Lihat di Jadwal Sidang");
+          a.href = href;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.title = "Rincian draf (blangko, isian yang perlu diisi, ringkasan) di Jadwal Sidang ALETA.";
+          li.appendChild(a);
+        }
+      }
+      daftar.appendChild(li);
+    }
+    w.isi.appendChild(daftar);
+    if (h7.data.jumlah > h7.data.perkara.length) {
+      w.isi.appendChild(el("div", "aleta-cmw-ket", `Dan ${h7.data.jumlah - h7.data.perkara.length} perkara lain - lihat Jadwal Sidang ALETA.`));
+    }
+    w.isi.appendChild(teknis(el("div", "aleta-cmw-ket", "Disiapkan agen ALETA tiap pagi; belum disimpan ke ABT maupun SIPP.")));
+    return w.kotak;
+  }
+
   // ─── Tahap 3: dok dan tumpukan widget (D9, D11, popup-20..23) ──────────────
 
   /** Susunan dok yang berlaku di situs ini: per situs hanya bila popup-23 menyala. */
@@ -3763,6 +3929,8 @@
         }
         // F3.2: kehadiran sidang hari ini - saklar sendiri di popup.
         if (khBerlaku()) tumpuk.appendChild(susunKehadiranWidget());
+        // F4.2: draf putusan H-7 - saklar sendiri di popup.
+        if (h7Berlaku()) tumpuk.appendChild(susunDrafH7Widget());
         if (tumpuk.childNodes.length) dok.appendChild(tumpuk);
       }
     }
@@ -3809,7 +3977,7 @@
     const indikator = indikatorSdUntukGambar(false);
     if (indikator) frag.appendChild(indikator);
     const tambahan = WIDGET.filter((w) => w.id !== "checklist" && widgetTersedia(w));
-    if (tambahan.length || khBerlaku()) {
+    if (tambahan.length || khBerlaku() || h7Berlaku()) {
       const tumpuk = el("div", "aleta-cmw-tumpuk aleta-cmw-tumpuk-klasik");
       for (const w of tambahan) {
         const isi = susunWidget(w.id);
@@ -3817,6 +3985,8 @@
       }
       // F3.2: kehadiran sidang hari ini - saklar sendiri di popup.
       if (khBerlaku()) tumpuk.appendChild(susunKehadiranWidget());
+      // F4.2: draf putusan H-7 - saklar sendiri di popup.
+      if (h7Berlaku()) tumpuk.appendChild(susunDrafH7Widget());
       frag.appendChild(tumpuk);
     }
     frag.appendChild(susunPanel());
@@ -5407,6 +5577,7 @@
       aturSkorsPortal();
     }
     aturJamKh(); /* F3.2: berhenti sendiri di Lama atau bila saklarnya mati */
+    aturJamH7(); /* F4.2: idem */
   }
 
   // ─── Perbaikan 30 Sep: pita pembaruan (24) dan ⓘ (6) ─────────────────────
@@ -6012,6 +6183,10 @@
           kh.nyala = ubah[KUNCI_KEHADIRAN].newValue === true;
           gambar();
         }
+        if (ubah[KUNCI_DRAF_H7]) {
+          h7.nyala = ubah[KUNCI_DRAF_H7].newValue === true;
+          gambar();
+        }
         if (ubah[KUNCI_SUSUNAN]) {
           keadaan.susunan = susunanBersih(ubah[KUNCI_SUSUNAN].newValue);
           gambar();
@@ -6073,6 +6248,7 @@
       KUNCI_SUDUT,
       KUNCI_TATA,
       KUNCI_KEHADIRAN,
+      KUNCI_DRAF_H7,
     ]);
     const lama = (kunci) => !berubahSebelumSiap.has(kunci);
     if (lama(KUNCI_TATA)) keadaan.tata = tataBersih(simpan[KUNCI_TATA]);
@@ -6081,6 +6257,7 @@
     if (lama(KUNCI_CATATAN)) keadaan.catatan = catatanBersih(simpan[KUNCI_CATATAN]);
     if (lama(KUNCI_LAMA_SIDANG)) keadaan.lamaSidang = lamaSidangBersih(simpan[KUNCI_LAMA_SIDANG]);
     if (lama(KUNCI_KEHADIRAN)) kh.nyala = simpan[KUNCI_KEHADIRAN] === true;
+    if (lama(KUNCI_DRAF_H7)) h7.nyala = simpan[KUNCI_DRAF_H7] === true;
     if (lama(KUNCI_SUSUNAN)) keadaan.susunan = susunanBersih(simpan[KUNCI_SUSUNAN]);
     if (lama(KUNCI_SUDUT)) keadaan.sudut = sudutBersih(simpan[KUNCI_SUDUT]);
     // Induk bawaannya MENYALA, widget ini bawaannya MATI - sama dengan popup.
@@ -6119,6 +6296,7 @@
   // menyala lagi saat terlihat. Dalam Lama aturJamSd tidak menyalakan apa pun.
   document.addEventListener("visibilitychange", () => aturJamSd());
   document.addEventListener("visibilitychange", () => aturJamKh());
+  document.addEventListener("visibilitychange", () => aturJamH7());
   window.addEventListener("resize", () => terapkanPosisi());
   // Pengalih Lama / Baru / UI Baru di popup - kulitnya ikut seketika.
   document.addEventListener("aleta-uji-berubah", () => terapkanTema());
