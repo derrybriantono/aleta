@@ -258,7 +258,7 @@ describe("B. layanan bot: hanya SELECT, galat disebut", () => {
     expect(h.sipp.sidang[0]).toMatchObject({ ditunda: true, adaBas: true });
     expect(h.sipp.edocPenetapan).toEqual({ pmh: true, ppp: false, pjs: false, phs: true });
     expect(h.sipp.putusan).toMatchObject({ ada: true, adaEdoc: true, adaAnonim: false, bht: "" });
-    expect(h.abt.saksi).toEqual([{ sidangId: 502, tanyaJawab: 24, saksi: 2, terakhir: "2026-09-10" }]);
+    expect(h.abt.saksi).toEqual([{ sidangId: 502, tanyaJawab: 24, saksi: 2, saksiId: [], terakhir: "2026-09-10" }]);
     expect(h.aleta.ecourtPutusan).toMatchObject({ tanggalPutusan: "2026-10-06", adaPutusan: true });
     expect(h.galat).toEqual([]);
     expect(sql.length).toBeGreaterThan(10);
