@@ -174,7 +174,7 @@ const JENIS_FOLDER: Array<[RegExp, string, string[]]> = [
   [/perwalian/i, "Perwalian", ["perwalian"]],
   [/wali\s+adh?[ao]l/i, "Wali Adhal", ["wali adhal", "wali adhol"]],
   [/pengangkatan\s+anak/i, "Pengangkatan Anak", ["pengangkatan anak"]],
-  [/hadh?anah|hak\s+asuh/i, "Hak Asuh Anak (Hadhanah)", ["hadhanah", "hak asuh"]],
+  [/hadh?anah|hak\s+asuh/i, "Hak Asuh Anak (Hadhanah)", ["hadhanah", "hak asuh", "penguasaan anak"]],
   [/nafkah/i, "Nafkah", ["nafkah"]],
   [/pembatalan\s+perkawinan/i, "Pembatalan Perkawinan", ["pembatalan perkawinan"]],
   [/ekonomi\s+syari/i, "Ekonomi Syariah", ["ekonomi syariah"]],

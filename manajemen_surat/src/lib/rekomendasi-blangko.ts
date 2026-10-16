@@ -187,6 +187,10 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   "Putusan Permohonan Umum (Cabut/Gugur/NO)": "9b Permohonan Umum",
   // I2 16 Okt: paket ABT abt-wali-adhal - menu 113 "Putusan Wali Adhal" (alias "Wali Adhal - Putusan").
   "Putusan Wali Adhal": "7 Wali Adhal",
+  // F21 17 Okt: paket ABT abt-hak-asuh-derry (menu 133), abt-pembatalan-perkawinan-derry (135), abt-ekonomi-syariah-derry (137).
+  "Putusan Hak Asuh Anak (Hadhanah)": "6a Hak Asuh Anak (Hadhanah)",
+  "Putusan Pembatalan Perkawinan": "5a Pembatalan Perkawinan",
+  "Putusan Ekonomi Syariah": "10 Ekonomi Syariah",
 };
 
 /**

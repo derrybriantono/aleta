@@ -13,11 +13,11 @@ import { cariBerkasBasJenis } from "@/lib/salinan-bas-jenis";
  */
 
 describe("JENIS_BAS_BAKU mengikuti folder '<jenis> - BAS'", () => {
-  it("12 jenis; kunci baku 11 keadaan per jenis; kunci jenis baru dikenal dan dipilih menurut jenis perkara SIPP (dengan padanan ejaan)", () => {
-    expect(JENIS_BAS_BAKU).toHaveLength(12);
-    expect(KUNCI_BAKU_BAS).toHaveLength(12 * KEADAAN_BAS_BAKU.length);
-    expect(KUNCI_BAKU.bas).toHaveLength(12 * KEADAAN_BAS_BAKU.length);
-    for (const jenis of ["Dispensasi Kawin", "Penetapan Ahli Waris", "Perwalian", "Wali Adhal", "Lain-Lain", "Harta Bersama", "Kewarisan", "Poligami"]) {
+  it("15 jenis; kunci baku 11 keadaan per jenis; kunci jenis baru dikenal dan dipilih menurut jenis perkara SIPP (dengan padanan ejaan)", () => {
+    expect(JENIS_BAS_BAKU).toHaveLength(15); // 12 + Penguasaan Anak (hak asuh), Pembatalan Perkawinan, Ekonomi Syariah (F21 17 Okt)
+    expect(KUNCI_BAKU_BAS).toHaveLength(15 * KEADAAN_BAS_BAKU.length);
+    expect(KUNCI_BAKU.bas).toHaveLength(15 * KEADAAN_BAS_BAKU.length);
+    for (const jenis of ["Dispensasi Kawin", "Penetapan Ahli Waris", "Perwalian", "Wali Adhal", "Lain-Lain", "Harta Bersama", "Kewarisan", "Poligami", "Penguasaan Anak", "Pembatalan Perkawinan", "Ekonomi Syariah"]) {
       expect(JENIS_BAS_BAKU as readonly string[]).toContain(jenis);
       expect(KUNCI_BAKU_BAS.some((k) => k.kunci === `${jenis}|1|semua-hadir`)).toBe(true);
     }

@@ -4,7 +4,7 @@
  * PETA BLANGKO PER TUGAS (butir 7, 13 Okt 2026) + BLANGKO DERRY RAPI (butir 6)
  * ============================================================================
  *
- * Yang dijaga, atas keadaan SERVER satker sesudah paket ABT abt-susunan-berpasangan (fixtures/blangko-derry-berpasangan-15okt.json:
+ * Yang dijaga, atas keadaan SERVER satker sesudah paket ABT abt-susunan-berpasangan (fixtures/blangko-derry-server-17okt.json:
  * berkas & abt_menu grup Derry diukur lewat ssh 13 Okt 2026, ditambah paket abt-blangko-derry-rapi, abt-susunan-satu-folder (A3, 14 Okt)
  * dan - K3, 15 Okt - susunan berpasangan: BAS salinan di folder "<folder putusan> - BAS", menu "<Jenis> - Putusan"/"<Jenis> - BAS",
  * hak putusan dan BAS terpisah. fixture = keadaan server sungguhan sesudah paket J3: id menu 101-132, 113 cadangan):
@@ -52,7 +52,7 @@ type BarisMenu = {
   user_grup_id: string;
   user_top_id: string;
 };
-const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-berpasangan-15okt.json"), "utf8")) as {
+const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-server-17okt.json"), "utf8")) as {
   berkasSebelum: string[];
   berkas: string[];
   menu: BarisMenu[];
@@ -76,7 +76,8 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
     const basBaru = new Set(ALUR_BAS_BARU.flatMap((a) => a.langkah.map((l) => `${a.folder}/${l.berkas}`))); // BAS baru D3/E3 dan kuasa insidentil B3 bukan salinan A3
   it("K3: 233 BAS salinan di folder BAS pasangan (panitera); folder putusan tidak memuat BAS lagi (hakim)", () => {
     const salinan = FIX.berkas.filter((b) => /^BAS\b/.test(b.split("/").pop()!) && !/^derry_briantono\/(ALUR |BAS |- BAS )/.test(b) && !basBaru.has(b) && !/^BAS KUASA INSIDENTIL /.test(b.split("/").pop()!));
-    expect(salinan).toHaveLength(233);
+    // 233 (A3, 15 Okt) + 58 (F21 17 Okt: 29 BAS ALUR 04-09 di "5a Pembatalan Perkawinan - BAS" dan di "6a Hak Asuh Anak (Hadhanah) - BAS") + 1 (I2 16 Okt: BAS ALUR 10 [4] ikrar).
+    expect(salinan).toHaveLength(233 + 58 + 1);
     for (const b of salinan) {
       expect(folderDari(b), b).toMatch(/ - BAS$/);
       expect(jenisDokumenBlangko(b), b).toBe("bas");
@@ -84,9 +85,9 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
       expect(tugasBlangko(folderDari(b)), b).toBe("panitera");
       expect(berkasBasSalinan(b.split("/").pop()!)).toBe(true);
     }
-    // 11 folder BAS menerima salinan; folder putusan tetap hakim dan bersih dari BAS; HB Kabul tetap di 4a.
-    expect(new Set(salinan.map(folderDari)).size).toBe(11);
-    const putusan = FIX.berkas.filter((b) => /^derry_briantono\/\d/.test(b) && !/ - BAS\//.test(b));
+    // 13 folder BAS menerima salinan (11 + 5a Pembatalan Perkawinan + 6a Hak Asuh, F21 17 Okt); folder putusan tetap hakim dan bersih dari BAS; HB Kabul tetap di 4a.
+    expect(new Set(salinan.map(folderDari)).size).toBe(13);
+    const putusan = FIX.berkas.filter((b) => /^derry_briantono\/\d/.test(b) && !/ - BAS\//.test(b) && !/^derry_briantono\/(98 Relaas|99 PTSP)\//.test(b));
     expect(putusan.some((b) => /^BAS\b/.test(b.split("/").pop()!))).toBe(false);
     for (const f of new Set(putusan.map(folderDari))) expect(tugasBlangko(f), f).toBe("hakim");
     expect(FIX.berkas.some((b) => b.includes("/4 Kebendaan/"))).toBe(false);
@@ -98,8 +99,8 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
     for (const b of FIX.berkas) per[tugasBlangko(b)] = (per[tugasBlangko(b)] ?? 0) + 1;
     expect(per.hakim).toBeGreaterThan(80);
     expect(per.panitera).toBeGreaterThan(233); // 233 salinan di folder jenis + BAS di folder ALUR/kumulasi/legacy
-    expect(per.jurusita).toBe(22); // 10 [JS] + 10 dari "Blangko Jurusita Donggala" + 2 pengumuman itsbat (14 Okt)
-    expect(per.ptsp).toBe(3); // "@PMH PHS - Lama" disingkirkan paket
+    expect(per.jurusita).toBe(24); // 10 [JS] + 10 dari "Blangko Jurusita Donggala" + 2 pengumuman itsbat (14 Okt) + 2 panggilan mediasi (I2 16 Okt)
+    expect(per.ptsp).toBe(7); // 3 "@ 0/1/2" (PMH, PHS) + 4 blangko PTSP ikrar talak/mediator (folder "99 PTSP", paket 16 Okt)
   });
 
   it("urutan aturan: relaas/BAS yang menyebut 'putusan' tidak menjadi tugas hakim", () => {
@@ -149,11 +150,12 @@ const bolehGrup = (m: BarisMenu, g: string) => `${m.user_grup_id}|${m.user_top_i
 describe("B. ABT dan ALETA sepakat tentang tugas tiap folder", () => {
   it("menu Derry yang tampil: grup abt_menu = grup tugas folder; menu berpasangan Putusan (hakim) + BAS (panitera)", () => {
     expect(menuDerry.length).toBeGreaterThan(15);
-    const jenis = menuDerry.filter((m) => /^\d/.test(m.direktori));
+    // Sejak 16 Okt folder relaas/PTSP bernama "98 Relaas"/"99 PTSP" (awalan angka) - bukan folder jenis.
+    const jenis = menuDerry.filter((m) => /^\d/.test(m.direktori) && !/^(98 Relaas|99 PTSP)$/.test(m.direktori));
     const bas = jenis.filter((m) => / - BAS$/.test(m.direktori));
     const putusan = jenis.filter((m) => !/ - BAS$/.test(m.direktori));
-    expect(putusan).toHaveLength(15); // 7 Wali Adhal belum punya putusan
-    expect(bas).toHaveLength(16);
+    expect(putusan).toHaveLength(19); // 15 (J3) + 7 Wali Adhal (I2 16 Okt) + 6a Hak Asuh, 5a Pembatalan Perkawinan, 10 Ekonomi Syariah (F21 17 Okt)
+    expect(bas).toHaveLength(19);
     // pasangan: tiap folder putusan punya folder BAS; menu BAS tepat sesudah menu putusannya (ABT menampilkan menurut id)
     for (const m of putusan) {
       const p = bas.find((x) => x.direktori === `${m.direktori} - BAS`)!;
@@ -167,6 +169,15 @@ describe("B. ABT dan ALETA sepakat tentang tugas tiap folder", () => {
       expect(p.nama_alias).toMatch(/ - BAS$/);
     }
     expect(bas.find((m) => m.direktori === "7 Wali Adhal - BAS")!.nama).toBe("Wali Adhal - BAS");
+    // F21 17 Okt: tiga pasangan menu baru 133/134, 135/136, 137/138.
+    for (const [id, folder, nama] of [
+      [133, "6a Hak Asuh Anak (Hadhanah)", "Putusan Hak Asuh Anak (Hadhanah)"],
+      [135, "5a Pembatalan Perkawinan", "Putusan Pembatalan Perkawinan"],
+      [137, "10 Ekonomi Syariah", "Putusan Ekonomi Syariah"],
+    ] as const) {
+      expect(putusan.find((m) => m.id === id), folder).toMatchObject({ direktori: folder, nama });
+      expect(bas.find((m) => m.id === id + 1), folder).toMatchObject({ direktori: `${folder} - BAS` });
+    }
     for (const m of menuDerry) {
       const t = tugasBlangko(`derry_briantono/${m.direktori}`) as TugasBlangko;
       expect(t, m.direktori).toBeTruthy();
@@ -174,7 +185,8 @@ describe("B. ABT dan ALETA sepakat tentang tugas tiap folder", () => {
         // hak putusan kembali ke nilai sebelum paket A3: hakim saja.
         expect(t).toBe("hakim");
         expect(m.user_grup_id, m.direktori).toBe("1|10|20");
-        expect(m.user_cek, m.direktori).toBe(0);
+        // Server 17 Okt (sesudah paket abt-hak-putusan-majelis): menu putusan berhak cek 3 seperti menu BAS; grup tetap hakim saja.
+        expect(m.user_cek, m.direktori).toBe(3);
       } else if (bas.includes(m)) {
         expect(t).toBe("panitera");
         expect(new Set(m.user_grup_id.split("|")), m.direktori).toEqual(new Set(["1", ...GRUP_ABT_TUGAS.panitera.grup.split("|")]));

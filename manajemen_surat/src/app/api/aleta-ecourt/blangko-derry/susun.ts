@@ -143,6 +143,43 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "8899": { nm: "Pokok kesepakatan perdamaian sebagian" },
   "8901": { nm: "Amar kesepakatan perdamaian sebagian (satu butir per baris)" },
   "8902": { nm: "Isi pasal kesepakatan perdamaian sebagian" },
+  /* === F21 17 Okt: isian tangan paket hak asuh anak (9300-9310), pembatalan perkawinan (9320-9331), ekonomi syariah (9340-9355) === */
+  // Hak asuh anak: yang lain (9300-9302, 9304, 9306, 9308) otomatis dari SIPP.
+  "9303": { nm: "Identitas anak (nama, tempat dan tanggal lahir; satu anak satu baris)" },
+  "9305": { nm: "Keadaan pengasuhan anak saat ini (boleh dikosongkan, nanti memakai kalimat bawaan)" },
+  "9307": { nm: "Pilihan anak yang sudah mumayyiz di persidangan" },
+  "9309": { nm: "Mengapa pemegang hak asuh tidak dapat menjamin keselamatan anak" },
+  "9310": { nm: "Pertimbangan penolakan hak asuh" },
+  // Pembatalan perkawinan: 9320 mengubah dasar hukum otomatis 9321, 9322 dan 9331.
+  "9320": {
+    nm: "Alasan pembatalan perkawinan",
+    pil: [
+      "A · suami berpoligami tanpa izin pengadilan",
+      "B · istri masih terikat perkawinan lain atau masih dalam masa iddah",
+      "C · pernikahan dilakukan di bawah umur",
+      "D · pernikahan tanpa wali atau dengan wali yang tidak berhak",
+      "E · pernikahan di bawah paksaan",
+      "F · penipuan atau salah sangka mengenai diri suami atau istri",
+      "G · melanggar larangan kawin",
+    ],
+  },
+  "9324": { nm: "Kedudukan {P} (mis. ayah kandung {T}, istri pertama, Kepala KUA; kosong = suami atau istri {T})" },
+  "9326": { nm: "Waktu dan tempat perkawinan (kosong = dari SIPP)" },
+  "9328": { nm: "Akta nikah (nomor, tanggal, KUA penerbit; kosong = dari SIPP)" },
+  "9329": { nm: "Fakta alasan pembatalan yang terbukti di persidangan" },
+  "9330": { nm: "Pertimbangan penolakan pembatalan perkawinan" },
+  // Ekonomi syariah gugatan sederhana: 9341 mengubah 9342-9344 (angka murni, terbilang, angka bertitik).
+  "9340": { nm: "Akad yang disengketakan (jenis akad, nomor, tanggal)" },
+  "9341": { nm: "Jumlah kewajiban {T} yang dikabulkan (rupiah, angka saja)" },
+  "9345": { nm: "Fakta wanprestasi (sejak kapan tidak membayar, somasi, sisa kewajiban)" },
+  "9346": { nm: "Pertimbangan penolakan gugatan" },
+  "9347": { nm: "Wakil atau kuasa {P} yang berbadan hukum (nama, jabatan, dasar penunjukan)" },
+  "9348": { nm: "Wakil atau kuasa {T} yang berbadan hukum (nama, jabatan, dasar penunjukan)" },
+  "9352": { nm: "Isi kesepakatan perdamaian di hadapan hakim (pasal demi pasal)" },
+  "9353": { nm: "Tanggal kesepakatan perdamaian" },
+  "9354": { nm: "Pihak yang menanggung biaya perkara menurut kesepakatan", pil: ["Penggugat", "Tergugat", "kedua belah pihak secara tanggung renteng"] },
+  "9355": { nm: "Pokok jawaban {T} (satu kalimat)" },
+  /* === AKHIR F21 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {

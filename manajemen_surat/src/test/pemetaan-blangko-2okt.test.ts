@@ -232,7 +232,7 @@ describe("butir 6/8 - BAS (lib + susun.ts)", () => {
     // 4 jenis x 11 keadaan baku - sejak 9 Okt 2026 ditambah "gugur" dan
     // "tunda-panggil" (sidang lewat 14.00 tanpa kehadiran), sebelumnya 36.
     // Q3 16 Okt: 12 jenis (4 ber-set arsip + 8 jenis ber-folder "<jenis> - BAS") x 11 keadaan baku.
-    expect(KUNCI_BAKU.bas.length).toBe(12 * 11);
+    expect(KUNCI_BAKU.bas.length).toBe(15 * 11); // F21 17 Okt: 15 jenis x 11 keadaan
   });
 
   it("saran dari katalog BAS massal: kehadiran dan sidang ke- cocok", () => {
@@ -552,7 +552,7 @@ describe("butir 3/6 - rute pemetaan-blangko", () => {
     expect(bas.isi.data.kapan["Cerai Gugat|2|p-hadir"]).toEqual({ dikenal: true, dipakai: "BAS Cerai Gugat - sidang ke-2, hanya P hadir (T tidak hadir)." });
     expect(bas.isi.data.saran).toContainEqual(expect.objectContaining({ kunci: "Cerai Gugat|1|p-hadir", namaBerkas: "BAS 1 P Hadir & T Tidak Hadir.rtf" }));
     // 36 + 4 jenis x ("gugur", "tunda-panggil") sejak 9 Okt 2026.
-    expect(bas.isi.data.kunciBaku).toHaveLength(12 * 11); // Q3 16 Okt: 12 jenis x 11 keadaan
+    expect(bas.isi.data.kunciBaku).toHaveLength(15 * 11); // Q3 16 Okt: 12 jenis x 11 keadaan; F21 17 Okt: + hak asuh, pembatalan perkawinan, ekonomi syariah = 15
     const relaas = await panggil("GET", { query: "jenis=relaas" });
     expect(relaas.isi.data.butir.some((b: any) => b.kunci.startsWith("bas"))).toBe(false);
     expect(await petaPemetaanBerlaku(db!, "bas")).toEqual({ "Cerai Gugat|2|p-hadir": "BAS 2 khusus.rtf" });

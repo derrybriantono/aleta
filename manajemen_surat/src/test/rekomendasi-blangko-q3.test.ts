@@ -61,7 +61,10 @@ describe("BAS: langkah dari alasan tunda / agenda, selalu berkas di folder '<jen
     const pw = rekomendasiBlangko({ jenisPerkara: "Perwalian", urutanSidang: 1, dihadiriOleh: 1, agenda: "Pemeriksaan saksi" });
     expect(pw.bas.length).toBeGreaterThan(0);
     expect(pw.bas.every((x) => x.folder === "derry_briantono/6 Perwalian - BAS")).toBe(true);
+    // F21 17 Okt: ekonomi syariah GUGATAN SEDERHANA (Pdt.G.S) punya BAS ALUR 40; acara biasa (Pdt.G) dan nomor tak diketahui tetap tanpa BAS.
+    expect(rekomendasiBlangko({ jenisPerkara: "Ekonomi Syariah", urutanSidang: 1, dihadiriOleh: 1, nomorPerkara: "5/Pdt.G/2026/PA.Dgl" }).bas).toEqual([]);
     expect(rekomendasiBlangko({ jenisPerkara: "Ekonomi Syariah", urutanSidang: 1, dihadiriOleh: 1 }).bas).toEqual([]);
+    expect(rekomendasiBlangko({ jenisPerkara: "Wasiat", urutanSidang: 1, dihadiriOleh: 1, nomorPerkara: "5/Pdt.G/2026/PA.Dgl" }).bas).toEqual([]);
     expect(rekomendasiBlangko({ jenisPerkara: "", urutanSidang: 1 })).toMatchObject({ bas: [], putusan: [], relaas: [] });
   });
 });

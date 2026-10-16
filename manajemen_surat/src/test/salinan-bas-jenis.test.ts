@@ -6,7 +6,7 @@
  *
  * Paket ABT abt-susunan-satu-folder menyalin 233 BAS ke folder jenis dan menyembunyikan menu ALUR/945/946: token berkas
  * ALUR tidak lagi dapat dipanen. Yang dijaga (semuanya DIJALANKAN, bukan menyisir teks):
- *   A. tabel salinan (salinan-bas-jenis-data.ts) = persis 233 BAS di fixtures/blangko-derry-berpasangan-15okt.json (folder "... - BAS"), sumbernya ada;
+ *   A. tabel salinan (salinan-bas-jenis-data.ts) = persis 233 BAS di fixtures/blangko-derry-server-17okt.json (folder "... - BAS"), sumbernya ada;
  *   B. server memilih salinan di folder jenis yang SESUAI jenis perkara (CG vs CT), lewat berkas ALUR maupun folder lama,
  *      dan tidak menebak bila jenis tidak terbaca;
  *   C. pilihBlangkoBas membawa `salinan` pada tiap pilihan;
@@ -24,9 +24,9 @@ import { PADANAN_BAS_ARSIP } from "@/lib/alur-bas";
 import { ALUR_BAS_BARU } from "@/lib/alur-bas-baru-data";
 import { SET_BLANGKO } from "@/lib/pohon-blangko";
 import { awalanSalinanBas, folderJenisCocok, salinanBasJenis, semuaSalinanBas } from "@/lib/salinan-bas-jenis";
-import { AKAR_SALINAN_BAS, MENU_FOLDER_JENIS, SALINAN_BAS_JENIS } from "@/lib/salinan-bas-jenis-data";
+import { AKAR_SALINAN_BAS, MENU_FOLDER_JENIS, SALINAN_BAS_JENIS, SALINAN_BAS_LANGSUNG } from "@/lib/salinan-bas-jenis-data";
 
-const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-berpasangan-15okt.json"), "utf8")) as {
+const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-server-17okt.json"), "utf8")) as {
   berkas: string[];
   menu: Array<{ id: number; nama: string; nama_alias: string; direktori: string }>;
 };
@@ -36,7 +36,7 @@ const ALUR04 = "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)";
 const BERKAS_04 = "[2] BAS 2 P & T Hadir - Laporan Mediasi dan Pemeriksaan Pokok Perkara.rtf";
 const SALIN_04 = `BAS ALUR 04 ${BERKAS_04}`;
 
-describe("A. tabel salinan = 233 BAS paket A3 di fixture", () => {
+describe("A. tabel salinan = 233 BAS paket A3 + 58 salinan F21 + 1 BAS langsung ikrar di fixture", () => {
   it("setiap salinan turunan tabel ADA di fixture, dan semua BAS salinan fixture ada di tabel", () => {
     const turunan = new Set<string>();
     for (const [fs, berkas] of Object.entries(SALINAN_BAS_JENIS)) {
@@ -53,8 +53,17 @@ describe("A. tabel salinan = 233 BAS paket A3 di fixture", () => {
     // Server 15 Okt memuat juga BAS BARU D3/E3 (ALUR_BAS_BARU, berkas "BAS ALUR nn ..." di folder BAS pasangan): bukan salinan A3.
     const basBaru = new Set(ALUR_BAS_BARU.flatMap((a) => a.langkah.map((l) => `${a.folder}/${l.berkas}`)));
     const diFixture = FIX.berkas.filter((b) => /\/BAS (ALUR|KUMULASI|IN GUGUR CABUT) /.test(b) && !/^derry_briantono\/(ALUR |BAS |- BAS )/.test(b) && !basBaru.has(b));
-    expect(turunan.size).toBe(233);
-    expect([...turunan].sort()).toEqual([...diFixture].sort());
+    // 233 salinan paket A3 (15 Okt) + 58 salinan F21 (17 Okt: 29 BAS ALUR 04-09 ke "5a Pembatalan Perkawinan - BAS" dan ke "6a Hak Asuh Anak (Hadhanah) - BAS").
+    expect(turunan.size).toBe(233 + 58);
+    expect([...turunan].filter((b) => /^derry_briantono\/(5a Pembatalan Perkawinan|6a Hak Asuh Anak \(Hadhanah\)) - BAS\//.test(`${A}${b.slice(A.length)}`)).length).toBe(58);
+    // BAS yang dibuat paket langsung di folder jenis tanpa berkas sumber di folder ALUR (SALINAN_BAS_LANGSUNG: ALUR 10 [4] ikrar, paket I2 16 Okt).
+    const langsung = new Set<string>();
+    for (const [fs, berkas] of Object.entries(SALINAN_BAS_LANGSUNG)) {
+      const awalan = awalanSalinanBas(fs)!;
+      for (const [bs, tujuan] of Object.entries(berkas)) for (const ft of tujuan) langsung.add(`${A}${ft}/${awalan}${bs}`);
+    }
+    expect(langsung.size).toBe(1);
+    expect([...turunan, ...langsung].sort()).toEqual([...diFixture].sort());
   });
 
   it("nama menu tiap folder jenis = abt_menu.nama/nama_alias di fixture", () => {
