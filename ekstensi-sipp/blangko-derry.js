@@ -1322,6 +1322,7 @@
       ["ktp", "Tanggal KTP dari bukti"],
       ["cek", "Cek kelengkapan sebelum putus"],
       ["unggah", "Unggah putusan ke e-Doc SIPP"],
+      ["massal:unggah", "Unggah massal ke e-Doc SIPP"],
     ],
     pp: [
       ["massal:bas", "BAS massal hari ini"],
@@ -1329,6 +1330,7 @@
       ["saksi", "Set pertanyaan saksi"],
       ["ktp", "Tanggal KTP dari bukti"],
       ["unggah", "Unggah BAS ke e-Doc SIPP"],
+      ["massal:unggah", "Unggah massal ke e-Doc SIPP"],
     ],
     js: [
       ["massal:rel", "Relaas massal hari ini"],

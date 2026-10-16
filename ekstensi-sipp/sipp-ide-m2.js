@@ -621,6 +621,17 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m2-gagal{color:#ff9d92}
         b2.appendChild(baris);
       }
       if (d.basLama) b2.appendChild(el("div", "aleta-m2-kecil", `Ditambah ${d.basLama} sidang lama (lebih dari 120 hari) tanpa BAS di SIPP.`));
+      /* === 17OKT-F41: unggah massal BAS (layar di ABT, aturan "BAS belum" yang sama) === */
+      const massal = el("a", "btn btn-default btn-sm aleta-m2-tombol", "Unggah massal BAS di ABT");
+      massal.setAttribute("data-m2-tempat", "unggah-massal");
+      massal.target = "_blank";
+      massal.rel = "noopener";
+      massal.title = "Semua BAS Anda yang belum ada di SIPP - centang, periksa, unggah berurutan (tab baru)";
+      massal.href = String(alamatAbt(nomor || "")).replace(/#.*$/, "") + "#aleta-unggah-massal=bas";
+      const barisMassal = el("div", "aleta-m2-baris");
+      barisMassal.appendChild(massal);
+      b2.appendChild(barisMassal);
+      /* === AKHIR 17OKT-F41 === */
     }
     badan.appendChild(b2);
 

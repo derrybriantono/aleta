@@ -5171,3 +5171,81 @@ export async function getGatewayLimaBulanIdeL2() {
 }
 /* === AKHIR TAHAP L2 === */
 
+/* === 17OKT-F41: UNGGAH MASSAL e-DOC (putusan & BAS) === */
+export type UnggahMassalPutusanBot = {
+  perkaraId: string;
+  nomorPerkara: string;
+  jenisPerkara: string;
+  alurPerkaraId: number;
+  tanggalPutusan: string;
+  statusPutusan: string;
+  verstek: boolean;
+  adaPutusan: boolean;
+  adaAnonim: boolean;
+  majelis: string[];
+  panitera: string[];
+};
+export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
+export type UnggahMassalBasBot = {
+  sidangId: string;
+  perkaraId: string;
+  nomorPerkara: string;
+  jenisPerkara: string;
+  alurPerkaraId: number;
+  urutan: number;
+  tanggalSidang: string;
+  agenda: string;
+  ditunda: boolean;
+  alasanDitunda: string;
+  ikrar: boolean;
+  panitera: string[];
+  majelis: string[];
+  saksiAbt: { saksi: number; tanyaJawab: number } | null;
+};
+export type UnggahMassalDaftarBot = {
+  ok: true;
+  hariIni: string;
+  sejak: string;
+  putusan: UnggahMassalPutusanBot[] | null;
+  tertahan: UnggahMassalTertahanBot[] | null;
+  bas: UnggahMassalBasBot[] | null;
+  abtTerbaca: boolean;
+  galat: Array<{ sumber: string; langkah: string; sebab: string }>;
+};
+
+/** e-Doc putusan/BAS yang menunggu diunggah, seluruh satker (SELECT saja). */
+export async function getGatewayUnggahMassalDaftar(sejakHari?: number) {
+  const q = sejakHari ? `?sejak=${encodeURIComponent(String(sejakHari))}` : "";
+  return gatewayFetch<UnggahMassalDaftarBot>(`/internal/aleta-bot/sipp/unggah-massal/daftar${q}`, { timeoutMs: 30_000 });
+}
+
+/** Keadaan satu e-Doc saat ini - cek dobel tepat sebelum unggah (SELECT saja). */
+export async function getGatewayUnggahMassalCek(p: { jenis: "putusan" | "bas"; perkaraId: string; sidangId?: string }) {
+  const q = new URLSearchParams({ jenis: p.jenis, perkaraId: p.perkaraId, sidangId: p.sidangId ?? "" });
+  return gatewayFetch<Record<string, unknown> & { ok: true }>(`/internal/aleta-bot/sipp/unggah-massal/cek?${q.toString()}`, {
+    timeoutMs: 15_000,
+  });
+}
+
+/**
+ * Unggah e-Doc BAS satu sidang (MENULIS: berkas + perkara_jadwal_sidang.edoc_bas).
+ * peranPenekan = golongan yang memberi hak (admin/panitera/panmud/pp/analis); bot menolak 403 selain itu.
+ */
+export async function gatewayUnggahBasSipp(muatan: {
+  perkaraId: string;
+  sidangId: string;
+  nomorPerkara: string;
+  basBase64: string;
+  olehUsername: string;
+  operator?: string;
+  ip?: string;
+  peranPenekan: string;
+  ganti?: boolean;
+}) {
+  return gatewayFetch<{ ok: true; jalur: string; nama: string; urutan: number; bentuk: string; diganti: boolean; jalurLama: string }>(
+    "/internal/aleta-bot/sipp/bas-unggah",
+    { method: "POST", body: JSON.stringify(muatan), timeoutMs: 60_000 }
+  );
+}
+/* === AKHIR 17OKT-F41 === */
+
