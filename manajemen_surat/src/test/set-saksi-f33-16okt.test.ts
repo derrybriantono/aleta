@@ -188,7 +188,8 @@ describe("B. GET /aleta-ecourt/blangko-derry/set-saksi", () => {
     const j = await GET("?jenis=Cerai%20Talak&perkaraId=10154&sebutanP=Pemohon&sebutanT=Termohon");
     expect(bridge).toHaveBeenCalledWith("abt.nilaiPenanda", { perkaraId: "10154", sidangKe: 0, penanda: ["8503"] }, expect.anything());
     expect(j.data).toMatchObject({ jenis: "ct", huruf: "AF", sumberHuruf: "abt" });
-    expect(j.data.set[0].id).toBe("cerai-AF");
+    // 17 Okt: huruf A pada cerai talak memuat pertanyaan zina - id sendiri.
+    expect(j.data.set[0].id).toBe("cerai-AF-ct");
   });
 
   it("bot diam: tetap menjawab dengan F; bukan perkara cerai: bot tidak ditanya", async () => {

@@ -53,12 +53,28 @@
  *     dibahas di >= 95% putusan BHT (`lazimBawaan`); < 50% tidak ditandai.
  *   - 544 contoh alinea ditawarkan, 0 memuat nama pihak/saksi perkara asal.
  *
+ * ============================================================================
+ * 17 OKT - JENIS LAIN & HAK (keputusan pengguna butir 55-57)
+ * ============================================================================
+ *
+ * Tetap PEMERIKSA. Jenis selain cerai diperiksa per unsur set saksi F3.3
+ * (KATALOG_JENIS) bila amar MENGABULKAN. Salah tangkap (perhatian atas
+ * putusan BHT dikabulkan berpertimbangan utuh, sipp_donggala): itsbat 0/291,
+ * dispensasi 0/16, PAW 0/14 (4 catatan), perwalian 0/15 (1 catatan); jenis
+ * dengan < 5 putusan (HB, kewarisan, izin poligami, wali adhal, asal usul
+ * anak, pengangkatan anak, hak asuh, pembatalan, ekonomi syariah) hanya
+ * catatan "unsur yang diminta peraturan". Pertimbangan SIPP yang tersalin
+ * sebagian (itsbat 179) memang memicu perhatian (110) - batas atas, bukan
+ * mutu draf Blangko Derry yang utuh. Hak: hakPutusanAdvance (hakim DAN
+ * konseptor perkara itu + Super Admin/Admin).
+ *
  * Murni: tidak membaca basis data. Data dari rute
  * /api/aleta-ecourt/putusan/advance (naskah Blangko Derry + SIPP lewat bot).
  */
 import { bacaKeadaan } from "@/lib/amar-petitum";
 import { teksDariHtml } from "@/lib/alasan-perkara-sipp";
 import type { KodeLangkah } from "@/lib/konseptor-langkah";
+import { bandingkanKonseptor } from "@/lib/konseptor-sementara";
 import { hurufAlasan, kodeJenisSaksi, type KodeJenisSaksi } from "@/lib/set-pertanyaan-saksi";
 import { kenaliRujukan, slugDariSebutan } from "@/server/modules/aleta-ecourt/pemecah-pertimbangan";
 
@@ -159,6 +175,8 @@ export type MasukanAdvance = {
 export type RaporAdvance = {
   nomorPerkara: string;
   jenis: KodeJenisSaksi;
+  /** Kode pemeriksaan unsur (17 Okt: termasuk pembatalan perkawinan & ekonomi syariah). */
+  jenisPeriksa: KodeJenisAdvance;
   huruf: { didalilkan: string; dikutip: string; pp19: string; khi116: string };
   alasan: HasilAlasan[];
   kutipan: KutipanDraf[];
@@ -169,6 +187,60 @@ export type RaporAdvance = {
   tidakDiperiksa: string[];
   ringkas: string;
 };
+
+// ----------------------------------------------------------------------------
+// Hak (keputusan pengguna 17 Okt butir 57): hakim DAN konseptor + Super Admin/Admin
+// ----------------------------------------------------------------------------
+/** Peran yang menjadi hakim: hakim, dan Ketua/Wakil Ketua yang juga mengadili. */
+export const PERAN_HAKIM_ADVANCE = ["hakim", "ketua", "wakil-ketua"] as const;
+
+export type OrangKonseptor = { nama?: string; pengguna?: string };
+
+export type MasukanHakAdvance = {
+  /** Super Admin / Admin (peran berlaku). */
+  admin: boolean;
+  /** Peran berlaku + peran tertulis + peran tambahan akun. */
+  peran: string[];
+  /** Nama akun ALETA (dan nama akun SIPP yang tertaut). */
+  nama: string[];
+  /** Username SIPP milik akun ini. */
+  usernames: string[];
+  /** Konseptor sementara ALETA (F1.6) perkara ini, bila ada. */
+  konseptorSementara?: OrangKonseptor | null;
+  /** Konseptor tercatat SIPP (jejak tahapan putusan) perkara ini. */
+  konseptorSipp?: OrangKonseptor[];
+};
+
+export type HakAdvance = { boleh: boolean; sebagai: "admin" | "hakim" | "konseptor" | ""; sebab: string };
+
+function konseptorIni(k: OrangKonseptor | null | undefined, m: MasukanHakAdvance): boolean {
+  if (!k) return false;
+  const pengguna = String(k.pengguna ?? "").trim().toLowerCase();
+  if (pengguna && m.usernames.some((u) => u.trim().toLowerCase() === pengguna)) return true;
+  if (!String(k.nama ?? "").trim()) return false;
+  return m.nama.some((n) => {
+    if (!String(n ?? "").trim()) return false;
+    const b = bandingkanKonseptor({ nama: k.nama }, [{ nama: n }]);
+    return b.adaTunjukan && b.adaSipp && !b.berbeda;
+  });
+}
+
+/**
+ * Putusan Advance boleh dibuka: Super Admin/Admin, hakim (peran), atau
+ * konseptor perkara INI - konseptor sementara yang ditunjuk di ALETA (F1.6)
+ * atau konseptor yang tercatat SIPP. Pencocokan konseptor sama dengan
+ * checklist (username SIPP dulu, lalu nama yang dibakukan).
+ */
+export function hakPutusanAdvance(m: MasukanHakAdvance): HakAdvance {
+  if (m.admin) return { boleh: true, sebagai: "admin", sebab: "" };
+  if (m.peran.some((p) => (PERAN_HAKIM_ADVANCE as readonly string[]).includes(String(p)))) return { boleh: true, sebagai: "hakim", sebab: "" };
+  if (konseptorIni(m.konseptorSementara, m) || (m.konseptorSipp ?? []).some((k) => konseptorIni(k, m))) return { boleh: true, sebagai: "konseptor", sebab: "" };
+  return {
+    boleh: false,
+    sebagai: "",
+    sebab: "Putusan Advance hanya untuk hakim, konseptor perkara ini (ditunjuk di ALETA atau tercatat di SIPP), dan Admin.",
+  };
+}
 
 // ----------------------------------------------------------------------------
 // Teks
@@ -296,6 +368,195 @@ export const KATALOG_ALASAN: Record<string, AlasanCerai> = {
     unsur: [
       U("h-murtad", "peralihan agama / murtad", [/murtad|peralihan\s+agama|pindah\s+agama|beralih\s+agama|keluar\s+dari\s+(?:agama\s+)?Islam/i], 90),
       U("h-tidak-rukun", "menyebabkan ketidakrukunan", [/tidak\s+rukun|ketidakrukunan|ketidak\s+rukunan|perselisihan|pertengkaran/i], 80),
+    ],
+  },
+};
+
+// ----------------------------------------------------------------------------
+// Unsur jenis selain cerai (17 Okt, keputusan butir 56) - dari set saksi F3.3
+// ----------------------------------------------------------------------------
+/**
+ * Kode pemeriksaan: kode set saksi (lib/set-pertanyaan-saksi.ts), ditambah
+ * pembatalan perkawinan dan ekonomi syariah yang di set saksi masih "umum".
+ */
+export type KodeJenisAdvance = KodeJenisSaksi | "pembatalan" | "es";
+
+export function kodeJenisAdvance(namaJenis: string, nomor = "", sebutanP = ""): KodeJenisAdvance {
+  const k = kodeJenisSaksi(namaJenis, nomor, "", sebutanP);
+  if (k !== "umum") return k;
+  const j = String(namaJenis || "").toLowerCase();
+  if (/pembatalan\s+(?:perkawinan|nikah)/.test(j)) return "pembatalan";
+  if (/ekonomi\s+syar/.test(j)) return "es";
+  return k;
+}
+
+export type KatalogJenis = {
+  judul: string;
+  dasar: string[];
+  unsur: UnsurAlasan[];
+  /**
+   * Jumlah putusan BHT dikabulkan berpertimbangan lengkap yang dipakai
+   * mengukur lazimBawaan (sipp_donggala setempat, 17 Okt). Di bawah
+   * SAMPEL_PERHATIAN, unsur yang belum tampak paling jauh "catatan".
+   */
+  sampel: number;
+};
+
+/** Pola bersama: larangan kawin (UU 1/1974 Pasal 8; KHI Pasal 39-44). */
+const POLA_LARANGAN = /larangan\s+(?:perkawinan|kawin|nikah|menikah)|halangan|menghalangi|hubungan\s+(?:darah|nasab|semenda|sesusuan|mahram|keluarga)|sesusuan|sepersusuan|Pasal\s+8\s+Undang|Pasal\s+(?:39|40|44)\b/i;
+/** Pertimbangan yang menyimpulkan rukun nikah (KHI Pasal 14: calon, wali, dua saksi, ijab kabul) tanpa merinci. */
+const POLA_RUKUN = /Pasal\s+14\b|rukun\s+(?:dan\s+syarat\s+)?(?:nikah|perkawinan)|syarat\s+dan\s+rukun|rukun-rukun/i;
+
+export const SAMPEL_PERHATIAN = 20;
+/** Di bawah ini lazimBawaan tidak dipakai; unsur dianggap lazim LAZIM_BELUM_TERUKUR persen (catatan). */
+export const SAMPEL_TERUKUR = 5;
+export const LAZIM_BELUM_TERUKUR = 80;
+
+/**
+ * Unsur per jenis = unsur set pertanyaan saksi (F3.3) yang diuji di
+ * pertimbangan. lazimBawaan = persen putusan BHT DIKABULKAN berpertimbangan
+ * lengkap (>= 1.500 huruf) yang membahasnya, diukur 17 Okt atas sipp_donggala.
+ */
+export const KATALOG_JENIS: Partial<Record<KodeJenisAdvance, KatalogJenis>> = {
+  itsbat: {
+    judul: "itsbat nikah - rukun dan syarat perkawinan",
+    dasar: ["KHI Pasal 7 ayat (2)-(4), 14, 19-30, 39-44", "SEMA 3/2018 (itsbat poligami atas dasar nikah siri tidak dapat diterima)"],
+    sampel: 291,
+    unsur: [
+      U("i-wali", "wali nikah (KHI Pasal 19-23)", [/\bwali\b/i, POLA_RUKUN], 99),
+      U("i-saksi", "dua orang saksi nikah (KHI Pasal 24-26)", [/saksi\s+nikah|dua\s+orang\s+saksi|(?:2|dua)\s*(?:\(\s*dua\s*\)\s*)?orang\s+saksi|disaksikan\s+oleh|saksi-saksi\s+(?:nikah|perkawinan)/i, POLA_RUKUN], 99),
+      U("i-ijab", "ijab dan kabul (KHI Pasal 27-29)", [/ijab|qabul|kabul|kobul/i, POLA_RUKUN], 99),
+      U("i-mahar", "mahar (KHI Pasal 30)", [/mahar|mas\s*kawin|maskawin|Pasal\s+30\b/i, POLA_RUKUN], 99),
+      U("i-larangan", "tidak ada larangan kawin (KHI Pasal 39-44)", [POLA_LARANGAN, /tidak\s+(?:ada|terdapat)\s+(?:hal\s+yang\s+)?(?:menghalangi|halangan)/i], 99),
+      U("i-status", "tidak terikat perkawinan lain - bukan poligami tanpa izin (SEMA 3/2018)", [/terikat\s+(?:dalam\s+)?perkawinan|jejaka|perjaka|perawan|gadis|duda|janda|poligami|beristeri\s+lain|isteri\s+lain|istri\s+lain/i, POLA_LARANGAN], 99),
+      U("i-kepentingan", "kepentingan itsbat (KHI Pasal 7 ayat (3))", [/Pasal\s+7\s+ayat\s*\(?\s*3|keperluan|kepentingan|pengurusan|mengurus|akta\s+(?:nikah|kelahiran)|buku\s+nikah|kartu\s+keluarga/i], 99),
+    ],
+  },
+  dk: {
+    judul: "dispensasi kawin - alasan sangat mendesak dan kepentingan terbaik anak",
+    dasar: ["UU 1/1974 jo. UU 16/2019 Pasal 7", "PERMA 5/2019 Pasal 14-17"],
+    sampel: 16,
+    unsur: [
+      U("dk-umur", "anak belum berumur 19 tahun", [/19\s*\(?\s*(?:sembilan\s+belas)?\s*\)?\s*tahun|belum\s+(?:mencapai|cukup)\s+(?:umur|usia)|di\s+bawah\s+umur|batas\s+(?:minimal\s+)?usia/i], 99),
+      U("dk-mendesak", "alasan sangat mendesak", [/mendesak|dikhawatirkan|kekhawatiran|khawatir|hamil|kehamilan/i], 99),
+      U("dk-anak", "pendapat/persetujuan anak, tanpa paksaan (PERMA 5/2019 Pasal 14)", [/paksaan|dipaksa|kemauan\s+sendiri|keinginan\s+sendiri|kehendak\s+sendiri|sukarela|bersedia\s+(?:untuk\s+)?(?:menikah|dinikahkan)|siap\s+(?:untuk\s+)?(?:menikah|berumah\s+tangga)|mau\s+menikah|PERMA\s+(?:Nomor\s+)?5|Peraturan\s+Mahkamah\s+Agung\s+(?:RI\s+)?Nomor\s+5/i], 99),
+      U("dk-terbaik", "kepentingan terbaik anak", [/kepentingan\s+terbaik|perlindungan\s+anak|hak[-\s]hak\s+anak|hak\s+anak/i], 37),
+      U("dk-larangan", "tidak ada larangan kawin", [POLA_LARANGAN, /tidak\s+(?:ada|terdapat)\s+(?:hal\s+yang\s+)?(?:menghalangi|halangan)/i], 99),
+    ],
+  },
+  hb: {
+    judul: "harta bersama",
+    dasar: ["UU 1/1974 Pasal 35-37", "KHI Pasal 85-97"],
+    sampel: 1,
+    unsur: [
+      U("hb-perolehan", "diperoleh selama perkawinan (UU 1/1974 Pasal 35 ayat (1))", [/selama\s+(?:dalam\s+)?(?:masa\s+)?(?:perkawinan|pernikahan|ikatan\s+perkawinan)|dalam\s+(?:masa\s+)?perkawinan|Pasal\s+35/i], 0),
+      U("hb-bagian", "bagian masing-masing seperdua (KHI Pasal 97)", [/seperdua|setengah|½|1\/2|Pasal\s+97/i], 0),
+      U("hb-objek", "identitas objek (letak/batas/luas)", [/batas|berbatasan|terletak|luas/i], 0),
+    ],
+  },
+  waris: {
+    judul: "kewarisan",
+    dasar: ["KHI Pasal 171-193"],
+    sampel: 1,
+    unsur: [
+      U("w-pewaris", "kematian pewaris", [/meninggal\s+dunia|wafat|pewaris/i], 0),
+      U("w-islam", "pewaris dan ahli waris beragama Islam (KHI Pasal 171-172)", [/beragama\s+Islam|agama\s+Islam/i], 0),
+      U("w-ahli", "ahli waris dan bagiannya", [/ahli\s+waris/i], 0),
+      U("w-harta", "harta peninggalan", [/harta\s+(?:peninggalan|warisan)|tirkah|tirkah|boedel|objek\s+(?:sengketa|warisan)/i], 0),
+    ],
+  },
+  paw: {
+    judul: "penetapan ahli waris",
+    dasar: ["KHI Pasal 171-174, 185, 209"],
+    sampel: 14,
+    unsur: [
+      U("paw-pewaris", "kematian pewaris", [/meninggal\s+dunia|wafat/i], 99),
+      U("paw-islam", "pewaris dan ahli waris beragama Islam (KHI Pasal 171-172)", [/beragama\s+Islam|agama\s+Islam/i], 71),
+      U("paw-hubungan", "hubungan darah/perkawinan (KHI Pasal 174)", [/hubungan\s+(?:darah|perkawinan|nasab|kekerabatan)|Pasal\s+174|anak\s+kandung|isteri|istri|suami/i], 99),
+      U("paw-halangan", "tidak terhalang mewarisi (KHI Pasal 173)", [/Pasal\s+173|terhalang|halangan|membunuh|menganiaya/i], 99),
+    ],
+  },
+  ip: {
+    judul: "izin poligami",
+    dasar: ["UU 1/1974 Pasal 3 ayat (2), 4 ayat (2), 5 ayat (1)", "KHI Pasal 55-59, 94", "Buku II (harta bersama isteri terdahulu)"],
+    sampel: 0,
+    unsur: [
+      U("ip-alasan", "alasan alternatif (UU 1/1974 Pasal 4 ayat (2))", [/Pasal\s+4\s+ayat\s*\(?\s*2|tidak\s+dapat\s+(?:menjalankan|melahirkan|melayani)|cacat|penyakit|keturunan/i], 0),
+      U("ip-setuju", "persetujuan isteri (Pasal 5 ayat (1) huruf a)", [/persetujuan|menyetujui|setuju|tidak\s+keberatan|bersedia\s+dimadu|rela\s+dimadu/i], 0),
+      U("ip-mampu", "kemampuan menjamin keperluan hidup (huruf b)", [/mampu|kemampuan|penghasilan/i], 0),
+      U("ip-adil", "jaminan berlaku adil (huruf c)", [/\badil\b/i], 0),
+      U("ip-hb", "harta bersama dengan isteri terdahulu (KHI Pasal 94; Buku II)", [/harta\s+bersama/i], 0),
+    ],
+  },
+  perwalian: {
+    judul: "perwalian anak",
+    dasar: ["UU 1/1974 Pasal 50-54", "KHI Pasal 107-112"],
+    sampel: 15,
+    unsur: [
+      U("pw-umur", "anak belum 18 tahun / belum pernah kawin (UU 1/1974 Pasal 50)", [/18\s*\(?\s*(?:delapan\s+belas)?\s*\)?\s*tahun|belum\s+dewasa|di\s+bawah\s+umur|belum\s+(?:pernah\s+)?(?:menikah|kawin|melangsungkan\s+perkawinan)|belum\s+cakap/i], 99),
+      U("pw-ortu", "anak tidak di bawah kekuasaan orang tua", [/meninggal\s+dunia|wafat|kekuasaan\s+orang\s+tua|dicabut/i], 93),
+      U("pw-syarat", "syarat wali (KHI Pasal 107 ayat (4))", [/berkelakuan\s+baik|jujur|\badil\b|sehat|Pasal\s+107|cakap|dewasa/i], 99),
+      U("pw-kepentingan", "kepentingan anak", [/kepentingan\s+(?:terbaik\s+)?(?:bagi\s+)?(?:anak|si\s+anak)|untuk\s+(?:keperluan|kepentingan)|keperluan/i], 99),
+    ],
+  },
+  wa: {
+    judul: "wali adhal",
+    dasar: ["KHI Pasal 21-23", "PMA 30/2005"],
+    sampel: 1,
+    unsur: [
+      U("wa-wali", "wali nasab yang berhak (KHI Pasal 21)", [/wali\s+nasab|ayah\s+kandung|wali\s+(?:yang\s+)?berhak|Pasal\s+21/i], 0),
+      U("wa-menolak", "wali enggan menikahkan", [/enggan|menolak|tidak\s+(?:mau|bersedia)|adhal|adhol|'adhal/i], 0),
+      U("wa-alasan", "keengganan tanpa alasan yang sah", [/tidak\s+(?:beralasan|berdasar|dibenarkan|sah)|alasan|syar'?i/i], 0),
+      U("wa-larangan", "tidak ada larangan kawin", [POLA_LARANGAN, /tidak\s+(?:ada|terdapat)\s+(?:hal\s+yang\s+)?(?:menghalangi|halangan)/i], 0),
+    ],
+  },
+  aua: {
+    judul: "asal usul anak",
+    dasar: ["UU 1/1974 Pasal 42, 55", "KHI Pasal 99-103"],
+    sampel: 3,
+    unsur: [
+      U("aua-nikah", "perkawinan orang tua (rukun nikah)", [/akad\s+nikah|wali|saksi\s+nikah|ijab/i], 0),
+      U("aua-sah", "anak lahir dalam/akibat perkawinan sah (UU 1/1974 Pasal 42; KHI Pasal 99)", [/Pasal\s+42|Pasal\s+99|anak\s+(?:yang\s+)?sah|lahir\s+(?:dalam|dari|akibat|sebagai\s+akibat)/i], 0),
+    ],
+  },
+  angkat: {
+    judul: "pengangkatan anak",
+    dasar: ["UU 23/2002 jo. UU 35/2014 Pasal 39-41", "PP 54/2007", "Permensos 110/HUK/2009"],
+    sampel: 0,
+    unsur: [
+      U("an-terbaik", "kepentingan terbaik anak", [/kepentingan\s+terbaik|kesejahteraan|perlindungan\s+anak/i], 0),
+      U("an-agama", "seagama (UU 35/2014 Pasal 39 ayat (3))", [/seagama|agama\s+yang\s+sama|sama-sama\s+beragama|beragama\s+Islam/i], 0),
+      U("an-nasab", "tidak memutus hubungan darah (PP 54/2007 Pasal 4)", [/hubungan\s+darah|nasab/i], 0),
+      U("an-ortu", "persetujuan orang tua kandung", [/persetujuan|menyetujui|setuju|menyerahkan|izin/i], 0),
+    ],
+  },
+  hadhanah: {
+    judul: "hak asuh anak",
+    dasar: ["KHI Pasal 105, 156", "UU 23/2002 jo. UU 35/2014", "SEMA 1/2017 (akses orang tua lain)"],
+    sampel: 0,
+    unsur: [
+      U("hd-umur", "anak belum mumayyiz / 12 tahun (KHI Pasal 105)", [/mumayyiz|mumayiz|12\s*\(?\s*(?:dua\s+belas)?\s*\)?\s*tahun|Pasal\s+105/i], 0),
+      U("hd-terbaik", "kepentingan terbaik anak", [/kepentingan\s+terbaik|kepentingan\s+(?:si\s+)?anak/i], 0),
+      U("hd-layak", "kelayakan pemegang hak asuh", [/berkelakuan|perilaku|akhlak|layak|mampu\s+(?:mengasuh|merawat|memelihara)|kasih\s+sayang/i], 0),
+      U("hd-akses", "akses orang tua lain (SEMA 1/2017)", [/akses|bertemu|menjenguk|mengunjungi|SEMA\s+(?:Nomor\s+)?1\s+Tahun\s+2017/i], 0),
+    ],
+  },
+  pembatalan: {
+    judul: "pembatalan perkawinan",
+    dasar: ["UU 1/1974 Pasal 22-28", "KHI Pasal 70-76"],
+    sampel: 0,
+    unsur: [
+      U("pb-alasan", "alasan pembatalan (UU 1/1974 Pasal 22-27; KHI Pasal 70-71)", [/Pasal\s+2[2-7]|Pasal\s+7[01]|dapat\s+dibatalkan|batal\s+demi\s+hukum|tidak\s+memenuhi\s+syarat/i], 0),
+      U("pb-pihak", "pihak yang berhak mengajukan (UU 1/1974 Pasal 23; KHI Pasal 73)", [/Pasal\s+23|Pasal\s+73|berhak\s+mengajukan|legal\s+standing|kedudukan\s+hukum|persona\s+standi/i], 0),
+    ],
+  },
+  es: {
+    judul: "ekonomi syariah",
+    dasar: ["UU 7/1989 jo. UU 3/2006 Pasal 49 huruf i", "PERMA 14/2016"],
+    sampel: 0,
+    unsur: [
+      U("es-akad", "akad dan isinya", [/akad|perjanjian|pembiayaan|murabahah|musyarakah|mudharabah|ijarah/i], 0),
+      U("es-ingkar", "wanprestasi (ingkar janji)", [/wanprestasi|ingkar\s+janji|cidera\s+janji|tidak\s+memenuhi\s+kewajiban/i], 0),
     ],
   },
 };
@@ -698,6 +959,7 @@ const MIN_PEMBANDING = 5;
 
 export function susunRaporAdvance(m: MasukanAdvance): RaporAdvance {
   const jenis = kodeJenisSaksi(m.jenisPerkara || "", m.nomorPerkara || "", "", m.sebutanP || "");
+  const kodeAdv = kodeJenisAdvance(m.jenisPerkara || "", m.nomorPerkara || "", m.sebutanP || "");
   const cerai = jenis === "cg" || jenis === "ct";
   const pert = teksPolos(m.pertimbangan);
   const amar = teksPolos(m.amar);
@@ -789,7 +1051,47 @@ export function susunRaporAdvance(m: MasukanAdvance): RaporAdvance {
       }
     }
   } else {
-    tidakDiperiksa.push("Unsur per alasan baru tersedia untuk cerai gugat/cerai talak (huruf a-h); jenis lain diperiksa dasar hukum, konsistensi, dan pembandingnya saja.");
+    // 17 Okt (butir 56): jenis lain diperiksa per unsur set saksi F3.3 - hanya bila amar MENGABULKAN
+    // (amar menolak/tidak diterima memang tidak membahas semua unsur).
+    const kat = KATALOG_JENIS[kodeAdv];
+    if (!kat) {
+      tidakDiperiksa.push("Unsur per jenis belum tersedia untuk jenis perkara ini; diperiksa dasar hukum, konsistensi, dan pembandingnya saja.");
+    } else if (kDraf !== "dikabulkan") {
+      tidakDiperiksa.push(`Unsur ${kat.judul} diperiksa bila amar mengabulkan; amar draf ini ${kDraf === "takDikenali" ? "belum terbaca" : kDraf}.`);
+    } else {
+      const sumberContoh = pembanding.length ? pembanding : kandidat.map((x) => x.k);
+      const hasil: HasilUnsur[] = kat.unsur.map((u) => {
+        const dibahas = unsurDibahas(u, pertDatar);
+        const ada = pembanding.filter((k) => unsurDibahas(u, k.pert.replace(/\s+/g, " "))).length;
+        const lazim = pembanding.length >= 3 ? { ada, dari: pembanding.length } : null;
+        return { kode: u.kode, nama: u.nama, dasar: u.dasar || "", dipertimbangkan: dibahas, saksi: saksiAda ? unsurDibahas(u, saksi) : null, lazim, contoh: dibahas ? [] : contohDariKandidat(sumberContoh, u) };
+      });
+      alasan.push({ huruf: "", judul: kat.judul, dasar: kat.dasar, didalilkan: true, dipertimbangkan: true, unsur: hasil });
+      for (const [i, u] of hasil.entries()) {
+        if (u.dipertimbangkan || !pert) continue;
+        const pakaiHakim = Boolean(u.lazim && u.lazim.dari >= MIN_PEMBANDING);
+        // Belum cukup putusan BHT setempat (< SAMPEL_TERUKUR): unsur peraturan dianggap lazim 80% -> catatan.
+        const terukur = kat.sampel >= SAMPEL_TERUKUR;
+        const bawaan = terukur ? kat.unsur[i].lazimBawaan : LAZIM_BELUM_TERUKUR;
+        const rate = pakaiHakim && u.lazim ? u.lazim.ada / u.lazim.dari : bawaan / 100;
+        if (rate < 0.5) continue;
+        // Sampel satker kecil: tanpa pembanding hakim, paling jauh catatan.
+        const bolehPerhatian = pakaiHakim || kat.sampel >= SAMPEL_PERHATIAN;
+        const sumber =
+          pakaiHakim && u.lazim
+            ? `dibahas di ${u.lazim.ada} dari ${u.lazim.dari} putusan serupa Bapak/Ibu`
+            : terukur
+              ? `dibahas di ±${bawaan}% dari ${kat.sampel} putusan BHT PA Donggala`
+              : `unsur yang diminta peraturan (${kat.dasar.join("; ")}); putusan BHT PA Donggala jenis ini belum cukup untuk diukur (${kat.sampel})`;
+        temuan.push({
+          kode: `unsur-${u.kode}`,
+          tingkat: bolehPerhatian && rate >= (pakaiHakim ? AMBANG_LAZIM : AMBANG_BAWAAN) ? "perhatian" : "catatan",
+          langkah: "pertimbangan",
+          judul: `Unsur "${u.nama}" belum tampak di pertimbangan`,
+          rinci: `${sumber}.${u.saksi === true ? " Keterangan saksi sudah memuatnya - tinggal dipertimbangkan." : u.saksi === false ? " Keterangan saksi juga belum memuatnya." : ""}${u.contoh.length ? " Contoh alinea tersedia." : ""}`,
+        });
+      }
+    }
   }
 
   // 2. Dasar hukum
@@ -834,6 +1136,7 @@ export function susunRaporAdvance(m: MasukanAdvance): RaporAdvance {
   return {
     nomorPerkara: m.nomorPerkara,
     jenis,
+    jenisPeriksa: kodeAdv,
     huruf: { didalilkan, dikutip: h.gabung, pp19: h.pp19, khi116: h.khi116 },
     alasan,
     kutipan: kutDraf.sort((a, b) => b.jumlah - a.jumlah),

@@ -85,10 +85,10 @@ describe("huruf alasan dan unsur", () => {
     expect(unsur.contoh[0]).toMatchObject({ sumber: "putusan", label: expect.stringContaining("1/Pdt.G/2026/PA.Dgl") });
   });
 
-  it("perkara bukan cerai: unsur tidak diperiksa dan disebut di 'tidak diperiksa'", () => {
-    const r = susunRaporAdvance({ ...DASAR, jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", amar: "Mengabulkan permohonan Para Pemohon;" });
+  it("perkara bukan cerai tanpa katalog unsur: disebut di 'tidak diperiksa' (17 Okt: jenis lain lihat putusan-advance-jenis-17okt)", () => {
+    const r = susunRaporAdvance({ ...DASAR, nomorPerkara: "5/Pdt.P/2026/PA.Dgl", jenisPerkara: "Lain-Lain", amar: "Mengabulkan permohonan Para Pemohon;" });
     expect(r.alasan).toEqual([]);
-    expect(r.tidakDiperiksa.join(" ")).toMatch(/cerai gugat\/cerai talak/);
+    expect(r.tidakDiperiksa.join(" ")).toMatch(/Unsur per jenis belum tersedia/);
   });
 });
 
@@ -194,7 +194,8 @@ describe("contoh alinea disamarkan", () => {
 const keadaan = vi.hoisted(() => ({ serupa: null as unknown, galat: "", butir: [] as unknown[] }));
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
-vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: async () => ({}) }));
+// 17 Okt: hak = hakim/konseptor/Admin - pengguna uji seorang hakim.
+vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: async () => ({ id: "usr_uji", name: "Hakim Uji", roleId: "hakim" }) }));
 vi.mock("@/server/shared/admin-access-audit", () => ({
   handleAdminRouteError: (galat: unknown) => {
     throw galat;

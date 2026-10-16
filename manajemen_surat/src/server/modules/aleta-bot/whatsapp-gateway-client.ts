@@ -2742,7 +2742,9 @@ export async function getGatewaySippEntitasAnonim(nomorPerkara: string): Promise
  */
 export type GatewayPutusanSerupa = {
   ok: boolean;
-  perkara?: { nomor: string; jenis: string };
+  perkara?: { id?: string; nomor: string; jenis: string };
+  /** Konseptor SIPP (jejak tahapan putusan) - 17 Okt, hak Putusan Advance; bot lama tidak mengirimnya. */
+  konseptor?: Array<{ pengguna?: string; nama?: string }>;
   hakim?: { nama: string } | null;
   sebab?: string;
   kandidat?: Array<{

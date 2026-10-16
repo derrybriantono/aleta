@@ -35,6 +35,14 @@
  * Jawaban adalah KERANGKA: "..." diisi petugas menurut keterangan saksi.
  * Pelaku perbuatan pada alasan A-E dan H = {T} (Tergugat/Termohon).
  *
+ * Jawaban hukum pengguna 17 Okt 2026 (butir 23-30) sudah diterapkan: pisah
+ * rumah 6 bulan kecuali KDRT (SEMA 1/2022 jo. SEMA 3/2023); perwalian 18
+ * tahun; pengangkatan anak menurut Permensos 110/HUK/2009 (belum ditemukan
+ * penggantinya); itsbat menanyakan poligami tanpa izin (SEMA 3/2018); izin
+ * poligami menanyakan harta bersama isteri pertama; sighat taklik menurut
+ * tahun nikah (PMA 2/1990; sebelum 1990 bunyi buku nikah); zina hanya cerai
+ * talak. "perluDicek" yang tersisa = yang belum dijawab atau masih ragu.
+ *
  * Murni: dipakai rute /api/aleta-ecourt/blangko-derry/set-saksi (ekstensi
  * Blangko Derry, "Set pertanyaan saksi") dan halaman Pengaturan SIPP & ABT.
  * Tidak ada yang ditulis ke ABT dari sini; petugas memuat, menyunting, lalu
@@ -103,7 +111,11 @@ const INTI_F: ButirSaksi[] = [
   B("Apa yang menjadi penyebab perselisihan dan pertengkaran tersebut?", "Penyebabnya karena ...;", "sebab perselisihan"),
   B("Apakah Saudara pernah melihat atau mendengar sendiri {P} dan {T} bertengkar? Berapa kali dan di mana?", "Saya pernah melihat dan mendengar sendiri {P} dan {T} bertengkar sebanyak ... kali, di ...;", "pengetahuan langsung saksi"),
   B("Apakah ada kejadian yang menjadi puncak perselisihan dan pertengkaran tersebut? Kapan?", "Puncaknya terjadi pada ... ketika ...;", "puncak perselisihan"),
-  B("Apakah sekarang {P} dan {T} masih tinggal serumah?", "Tidak, {P} dan {T} sudah berpisah tempat tinggal sejak ..., sudah sekitar ... bulan/tahun;", "pisah tempat tinggal (SEMA 1/2022 jo. SEMA 3/2023)"),
+  B(
+    "Apakah sekarang {P} dan {T} masih tinggal serumah? Sejak kapan berpisah?",
+    "Tidak, {P} dan {T} sudah berpisah tempat tinggal sejak ..., sudah sekitar ... bulan/tahun;",
+    "pisah tempat tinggal paling singkat 6 bulan, kecuali terbukti ada KDRT (SEMA 1/2022 jo. SEMA 3/2023)"
+  ),
   B("Siapa yang meninggalkan tempat tinggal bersama, dan sekarang masing-masing tinggal di mana?", "Yang meninggalkan tempat tinggal bersama adalah ...; sekarang {P} tinggal di ... dan {T} tinggal di ...;", "pisah tempat tinggal"),
   B("Selama berpisah, apakah {P} dan {T} masih berkomunikasi atau saling mengunjungi?", "Selama berpisah {P} dan {T} tidak lagi berkomunikasi dan tidak saling mengunjungi;", "tidak ada harapan rukun"),
   B("Selama berpisah, apakah {suami} masih memberi nafkah kepada {isteri}?", "Selama berpisah {suami} tidak pernah lagi memberi nafkah kepada {isteri};", "keadaan nafkah selama pisah"),
@@ -115,10 +127,19 @@ const PENUTUP_CERAI: ButirSaksi[] = [
   ...PENUTUP_UMUM,
 ];
 
-/** Unsur khusus tiap huruf alasan (PP 9/1975 Pasal 19 = KHI Pasal 116). */
+/**
+ * Butir pertama huruf A. Keputusan pengguna 17 Okt (butir 29): pertanyaan ZINA
+ * hanya untuk cerai talak (suami menuduh isteri - jalurnya li'an, KHI Pasal
+ * 126-128); cerai gugat menanyakan mabuk, madat, judi, narkoba saja.
+ */
+const A_PERBUATAN: Record<"cg" | "ct", ButirSaksi> = {
+  cg: B("Menurut Saudara, kebiasaan buruk apa yang dilakukan {T}?", "{T} mempunyai kebiasaan ... (berjudi/mabuk-mabukan/memakai narkoba);", "perbuatan huruf a (pemabuk, pemadat, penjudi)"),
+  ct: B("Menurut Saudara, kebiasaan buruk apa yang dilakukan {T}?", "{T} mempunyai kebiasaan ... (berbuat zina/berjudi/mabuk-mabukan/memakai narkoba);", "perbuatan huruf a (zina, pemabuk, pemadat, penjudi)"),
+};
+
+/** Unsur khusus tiap huruf alasan (PP 9/1975 Pasal 19 = KHI Pasal 116). Butir pertama A dipasang setCerai menurut jenis. */
 const INTI_HURUF: Record<string, ButirSaksi[]> = {
   A: [
-    B("Menurut Saudara, kebiasaan buruk apa yang dilakukan {T}?", "{T} mempunyai kebiasaan ... (berjudi/mabuk-mabukan/memakai narkoba/berbuat zina);", "perbuatan huruf a (zina, pemabuk, pemadat, penjudi)"),
     B("Sejak kapan dan seberapa sering {T} melakukan kebiasaan tersebut?", "Sejak ..., hampir setiap ...;", "kebiasaan, bukan sekali"),
     B("Bagaimana Saudara mengetahui kebiasaan {T} tersebut? Apakah Saudara melihat sendiri?", "Saya melihat sendiri ketika ...;", "pengetahuan langsung saksi"),
     B("Apakah {T} pernah dinasihati agar berhenti, dan bagaimana hasilnya?", "Sudah dinasihati oleh ..., tetapi {T} tetap mengulanginya;", "sukar disembuhkan"),
@@ -154,12 +175,17 @@ const INTI_HURUF: Record<string, ButirSaksi[]> = {
     B("Apakah penyakit atau cacat itu sudah diobati, dan bagaimana hasilnya?", "Sudah diobati di ..., tetapi tidak sembuh;", "sukar disembuhkan"),
     B("Akibat penyakit atau cacat itu, kewajiban apa sebagai suami/isteri yang tidak dapat dijalankan {T}?", "Akibatnya {T} tidak dapat ...;", "tidak dapat menjalankan kewajiban suami/isteri"),
   ],
+  // Sighat taklik menurut PMA 2/1990 (bunyi buku nikah sekarang). Perkawinan sebelum 1990: lihat INTI_G_LAMA.
   G: [
-    B("Apakah setelah akad nikah {suami} mengucapkan sighat taklik talak?", "Ya, setelah akad nikah {suami} mengucapkan sighat taklik talak sebagaimana tercantum di buku nikah;", "ada taklik talak (KHI Pasal 45-46)"),
-    B("Apakah {suami} pernah meninggalkan {isteri} dua tahun berturut-turut? Sejak kapan?", "{suami} meninggalkan {isteri} sejak ... / tidak pernah;", "isi taklik: meninggalkan dua tahun berturut-turut"),
-    B("Apakah {suami} tidak memberi nafkah wajib kepada {isteri} tiga bulan lamanya? Sejak kapan?", "Sejak ... {suami} tidak memberi nafkah wajib kepada {isteri}, sudah ... bulan;", "isi taklik: tidak memberi nafkah wajib tiga bulan"),
-    B("Apakah {suami} pernah menyakiti badan atau jasmani {isteri}?", "{suami} pernah/tidak pernah menyakiti badan {isteri} ...;", "isi taklik: menyakiti badan/jasmani"),
-    B("Apakah {suami} membiarkan atau tidak memedulikan {isteri} enam bulan lamanya?", "{suami} tidak memedulikan {isteri} sejak ..., sudah ... bulan;", "isi taklik: membiarkan enam bulan"),
+    B(
+      "Kapan {suami} dan {isteri} menikah, dan apakah setelah akad nikah {suami} mengucapkan serta menandatangani sighat taklik talak?",
+      "{suami} dan {isteri} menikah pada tahun ...; setelah akad nikah {suami} mengucapkan dan menandatangani sighat taklik talak sebagaimana tercantum di buku nikah;",
+      "ada taklik talak (KHI Pasal 45-46); tahun perkawinan menentukan bunyi sighat"
+    ),
+    B("Apakah {suami} pernah meninggalkan {isteri} dua tahun berturut-turut? Sejak kapan?", "{suami} meninggalkan {isteri} sejak ... / tidak pernah;", "isi taklik (PMA 2/1990): meninggalkan dua tahun berturut-turut"),
+    B("Apakah {suami} tidak memberi nafkah wajib kepada {isteri} tiga bulan lamanya? Sejak kapan?", "Sejak ... {suami} tidak memberi nafkah wajib kepada {isteri}, sudah ... bulan;", "isi taklik (PMA 2/1990): tidak memberi nafkah wajib tiga bulan"),
+    B("Apakah {suami} pernah menyakiti badan atau jasmani {isteri}?", "{suami} pernah/tidak pernah menyakiti badan {isteri} ...;", "isi taklik (PMA 2/1990): menyakiti badan/jasmani"),
+    B("Apakah {suami} membiarkan atau tidak memedulikan {isteri} enam bulan lamanya?", "{suami} tidak memedulikan {isteri} sejak ..., sudah ... bulan;", "isi taklik (PMA 2/1990): membiarkan enam bulan"),
     B("Apakah {isteri} rela atas perlakuan {suami} tersebut?", "{isteri} tidak rela atas perlakuan {suami} tersebut;", "isteri tidak rela"),
   ],
   H: [
@@ -169,6 +195,27 @@ const INTI_HURUF: Record<string, ButirSaksi[]> = {
     B("Apa akibat perpindahan agama {T} terhadap kerukunan rumah tangga {P} dan {T}?", "Akibatnya rumah tangga {P} dan {T} tidak rukun karena ...;", "menyebabkan ketidakrukunan"),
   ],
 };
+
+/**
+ * Perkawinan SEBELUM 1990 (sebelum PMA 2/1990): bunyi sighat di buku nikah
+ * lama dapat berbeda (rumusan 1950/1956/1969/1975 - mis. 1950 "menyakiti
+ * dengan memukul"; besar iwadh berbeda). Butir mengikuti bunyi yang tertulis
+ * di buku nikah pihak, bukan bunyi sekarang.
+ */
+const INTI_G_LAMA: ButirSaksi[] = [
+  B(
+    "Kapan {suami} dan {isteri} menikah, dan apakah setelah akad nikah {suami} mengucapkan serta menandatangani sighat taklik talak?",
+    "{suami} dan {isteri} menikah pada tahun ...; setelah akad nikah {suami} mengucapkan dan menandatangani sighat taklik talak sebagaimana tercantum di buku nikah;",
+    "ada taklik talak (KHI Pasal 45-46); tahun perkawinan menentukan bunyi sighat"
+  ),
+  B("Bagaimana bunyi janji taklik talak yang tertulis di buku nikah {suami} dan {isteri}?", "Menurut buku nikah, {suami} berjanji bahwa ...;", "bunyi sighat menurut buku nikah tahun perkawinan itu (sebelum PMA 2/1990)"),
+  B("Janji taklik mana yang dilanggar {suami}? Sejak kapan dan sudah berapa lama?", "{suami} melanggar janji ..., sejak ..., sudah ...;", "pelanggaran butir taklik yang diucapkan"),
+  B("Bagaimana Saudara mengetahui pelanggaran tersebut? Apakah melihat sendiri?", "Saya mengetahuinya karena ...;", "pengetahuan langsung saksi"),
+  B("Apakah {isteri} rela atas perlakuan {suami} tersebut?", "{isteri} tidak rela atas perlakuan {suami} tersebut;", "isteri tidak rela"),
+];
+
+/** Tahun PMA 2/1990 - perkawinan sebelum tahun ini memakai INTI_G_LAMA. */
+export const TAHUN_SIGHAT_SEKARANG = 1990;
 
 const NAMA_HURUF: Record<string, string> = {
   A: "zina, mabuk, madat, judi (huruf A)",
@@ -181,47 +228,86 @@ const NAMA_HURUF: Record<string, string> = {
   H: "peralihan agama/murtad (huruf H)",
 };
 
+/** SEMA 1/2022 jo. SEMA 3/2023 (Rumusan Kamar Agama): syarat pisah 6 bulan dan pengecualian KDRT (keputusan pengguna 17 Okt, butir 23). */
+const DASAR_PISAH_6_BULAN =
+  "SEMA 1/2022 jo. SEMA 3/2023 (Rumusan Kamar Agama): perceraian karena perselisihan dan pertengkaran terus-menerus dapat dikabulkan bila diikuti pisah tempat tinggal paling singkat 6 bulan, kecuali ditemukan fakta hukum Tergugat/Penggugat melakukan KDRT";
+
 const DASAR_HURUF: Record<string, string[]> = {
   A: ["PP 9/1975 Pasal 19 huruf a; KHI Pasal 116 huruf a"],
   B: ["PP 9/1975 Pasal 19 huruf b; KHI Pasal 116 huruf b", "KHI Pasal 133: gugatan diajukan setelah lampau 2 tahun; dapat diterima bila Tergugat menyatakan/menunjukkan sikap tidak mau kembali"],
   C: ["PP 9/1975 Pasal 19 huruf c; KHI Pasal 116 huruf c", "KHI Pasal 135: bukti salinan putusan pidana yang berkekuatan hukum tetap"],
-  D: ["PP 9/1975 Pasal 19 huruf d; KHI Pasal 116 huruf d", "UU 23/2004 tentang Penghapusan KDRT Pasal 5-9"],
+  D: [
+    "PP 9/1975 Pasal 19 huruf d; KHI Pasal 116 huruf d",
+    "UU 23/2004 tentang Penghapusan KDRT Pasal 5-9 (kekerasan fisik, psikis, seksual, penelantaran rumah tangga)",
+    `${DASAR_PISAH_6_BULAN} - bila KDRT terbukti, syarat pisah 6 bulan tidak diberlakukan`,
+  ],
   E: ["PP 9/1975 Pasal 19 huruf e; KHI Pasal 116 huruf e"],
-  F: ["PP 9/1975 Pasal 19 huruf f; KHI Pasal 116 huruf f", "SEMA 1/2022 jo. SEMA 3/2023 (rumusan kamar agama): perselisihan terus-menerus diikuti pisah tempat tinggal paling singkat 6 bulan"],
-  G: ["KHI Pasal 116 huruf g; KHI Pasal 45-46 (taklik talak)"],
+  F: ["PP 9/1975 Pasal 19 huruf f; KHI Pasal 116 huruf f", DASAR_PISAH_6_BULAN],
+  G: ["KHI Pasal 116 huruf g; KHI Pasal 45-46 (taklik talak)", "PMA 2/1990: bunyi sighat taklik talak di buku nikah sejak 1990 (meninggalkan 2 tahun, tidak memberi nafkah wajib 3 bulan, menyakiti badan/jasmani, membiarkan 6 bulan)"],
   H: ["KHI Pasal 116 huruf h"],
 };
 
+/** Dasar tambahan huruf A pada cerai talak: tuduhan zina oleh suami (keputusan 17 Okt butir 29: zina hanya cerai talak). */
+const DASAR_A_CT = "KHI Pasal 125-128: tuduhan zina oleh suami terhadap isteri dapat ditempuh dengan li'an";
+
 const CEK_HURUF: Record<string, string[]> = {
-  A: ["Tuduhan zina oleh suami (cerai talak) dapat ditempuh dengan li'an (KHI Pasal 126-128) - pertanyaan zina kepada saksi perlu hati-hati."],
+  A: [],
   B: [],
   C: ["Saksi hanya menguatkan; bukti utama salinan putusan pidana (KHI Pasal 135)."],
-  D: ["Pengecualian KDRT atas syarat pisah 6 bulan pada SEMA 3/2023 - rumusan persisnya perlu dicek."],
+  D: [],
   E: ["Keterangan dokter lebih kuat daripada saksi awam untuk menilai penyakit/cacat."],
-  F: ["Rumusan persis syarat pisah 6 bulan (SEMA 1/2022 diubah SEMA 3/2023) perlu dicek."],
-  G: ["Bunyi sighat taklik di buku nikah berbeda menurut tahun perkawinan - sesuaikan butir dengan sighat yang diucapkan."],
+  F: [],
+  G: [],
   H: [],
 };
 
-function setCerai(huruf: string): SetSaksi {
+/** Ragu yang belum dapat dipastikan dari naskah resmi: bunyi sighat sebelum PMA 2/1990 per tahun. */
+const CEK_G_LAMA =
+  "Bunyi sighat taklik sebelum PMA 2/1990 (rumusan 1950, 1956, 1969, 1975) belum terverifikasi per tahun dari naskah resmi - bacakan bunyi yang tertulis di buku nikah pihak.";
+
+export type OpsiCerai = {
+  /** Cerai gugat/cerai talak; tanpa jenis = bentuk cerai gugat (tanpa pertanyaan zina). */
+  jenis?: "cg" | "ct";
+  /** Tahun akad nikah (huruf G): sebelum 1990 memakai butir sighat lama. */
+  tahunNikah?: number;
+};
+
+export function setCerai(huruf: string, opsi: OpsiCerai = {}): SetSaksi {
   const daftar = [...new Set(huruf.split(""))].filter((h) => INTI_HURUF[h] || h === "F");
+  const ct = opsi.jenis === "ct";
+  const sighatLama = Boolean(opsi.tahunNikah && opsi.tahunNikah < TAHUN_SIGHAT_SEKARANG);
   const inti: ButirSaksi[] = [];
-  for (const h of daftar) if (h !== "F") inti.push(...INTI_HURUF[h]);
+  for (const h of daftar) {
+    if (h === "F") continue;
+    if (h === "A") inti.push(A_PERBUATAN[ct ? "ct" : "cg"]);
+    inti.push(...(h === "G" && sighatLama ? INTI_G_LAMA : INTI_HURUF[h]));
+  }
   // Pola harian satker selalu memuat unsur F (perselisihan, pisah rumah): tetap disertakan.
   inti.push(...INTI_F);
   const satu = daftar.length === 1;
+  const dasarHuruf = daftar.flatMap((h) => {
+    const d = h === "G" && sighatLama ? DASAR_HURUF.G.slice(0, 1) : DASAR_HURUF[h];
+    return h === "A" && ct ? [...d, DASAR_A_CT] : d;
+  });
   return {
-    id: `cerai-${daftar.join("")}`,
-    judul: satu ? `Cerai - ${NAMA_HURUF[daftar[0]]}` : `Cerai - alasan ${daftar.join(", ")}`,
+    // Cerai talak huruf A berbeda butir (zina) - id sendiri supaya Pengaturan menampilkan keduanya.
+    id: `cerai-${daftar.join("")}${ct && daftar.includes("A") ? "-ct" : ""}${daftar.includes("G") && sighatLama ? "-sighat-lama" : ""}`,
+    judul: `${satu ? `Cerai - ${NAMA_HURUF[daftar[0]]}` : `Cerai - alasan ${daftar.join(", ")}`}${daftar.includes("A") ? (ct ? " - cerai talak" : " - cerai gugat") : ""}${
+      daftar.includes("G") && sighatLama ? " - nikah sebelum 1990" : ""
+    }`,
     untuk: satu
       ? daftar[0] === "F"
         ? "Cerai gugat/cerai talak dengan alasan perselisihan terus-menerus (paling sering di PA Donggala)."
-        : `Cerai gugat/cerai talak dengan alasan ${NAMA_HURUF[daftar[0]]}, ditambah pertanyaan perselisihan dan pisah rumah.`
+        : daftar[0] === "A"
+          ? ct
+            ? "Cerai talak dengan alasan zina, mabuk, madat, atau judi (pertanyaan zina hanya pada cerai talak), ditambah pertanyaan perselisihan dan pisah rumah."
+            : "Cerai gugat dengan alasan mabuk, madat, atau judi (tanpa pertanyaan zina), ditambah pertanyaan perselisihan dan pisah rumah."
+          : `Cerai gugat/cerai talak dengan alasan ${NAMA_HURUF[daftar[0]]}, ditambah pertanyaan perselisihan dan pisah rumah.`
       : `Cerai dengan beberapa alasan: ${daftar.map((h) => NAMA_HURUF[h]).join("; ")}.`,
-    jenis: daftar.includes("G") ? ["cg"] : ["cg", "ct"],
+    jenis: daftar.includes("G") ? ["cg"] : daftar.includes("A") ? [ct ? "ct" : "cg"] : ["cg", "ct"],
     huruf: daftar.join(""),
-    dasar: ["UU 1/1974 jo. UU 16/2019 Pasal 39 ayat (2): harus ada cukup alasan bahwa suami isteri tidak dapat hidup rukun", ...daftar.flatMap((h) => DASAR_HURUF[h]), DASAR_KELUARGA, DASAR_SAKSI],
-    perluDicek: daftar.flatMap((h) => CEK_HURUF[h]),
+    dasar: ["UU 1/1974 jo. UU 16/2019 Pasal 39 ayat (2): harus ada cukup alasan bahwa suami isteri tidak dapat hidup rukun", ...dasarHuruf, DASAR_KELUARGA, DASAR_SAKSI],
+    perluDicek: [...daftar.flatMap((h) => CEK_HURUF[h]), ...(daftar.includes("G") && sighatLama ? [CEK_G_LAMA] : [])],
     ukur:
       "ABT server: 2.034 perkara cerai; pertanyaan pisah rumah 89%, upaya damai 99%, nafkah 56%; unsur huruf lain hampir tidak ditanyakan (kekerasan 1%, judi/mabuk/zina 2%).",
     pembuka: PEMBUKA_CERAI,
@@ -306,9 +392,11 @@ const SET_ITSBAT: SetSaksi = {
   dasar: [
     "UU 1/1974 jo. UU 16/2019 Pasal 2, 6-10; KHI Pasal 7 ayat (2)-(4) (itsbat nikah)",
     "KHI Pasal 14 (rukun nikah), 19-23 (wali), 24-26 (saksi nikah), 30 (mahar), 39-44 (larangan kawin)",
+    "SEMA 3/2018 (Rumusan Kamar Agama): permohonan itsbat nikah poligami atas dasar nikah siri, meskipun untuk kepentingan anak, dinyatakan tidak dapat diterima; kepentingan anak ditempuh lewat permohonan asal usul anak",
+    "UU 1/1974 Pasal 3 ayat (2), 4, 9: suami yang masih terikat perkawinan hanya boleh menikah lagi dengan izin Pengadilan",
     DASAR_SAKSI,
   ],
-  perluDicek: ["SEMA 3/2018: itsbat nikah atas perkawinan poligami tidak dapat diterima - rumusan perlu dicek bila suami terikat perkawinan lain saat menikah."],
+  perluDicek: [],
   ukur: "ABT server: 177 perkara; pertanyaan terbanyak: penutup 90%, yang menikahkan 88%, status saat menikah 86%, tempat menikah/mahar/keberatan 83%, anak 79%, tujuan itsbat 72%, wali 71%.",
   pembuka: PEMBUKA_PERMOHONAN("memohon pengesahan nikah {P1} dengan {P2}"),
   inti: [
@@ -319,6 +407,17 @@ const SET_ITSBAT: SetSaksi = {
     B("Siapa saja yang menjadi saksi nikah pada saat itu?", "Saksi nikahnya dua orang, yaitu ... dan ...;", "dua orang saksi nikah (KHI Pasal 24-25)"),
     B("Apa mahar yang diberikan {P1} kepada {P2}?", "Maharnya berupa ... dibayar tunai;", "mahar (KHI Pasal 30)"),
     B("Apa status {P1} dan {P2} saat menikah?", "Saat menikah {P1} berstatus ... dan {P2} berstatus ...;", "tidak terikat perkawinan lain"),
+    // Keputusan 17 Okt butir 26: unsur yang membedakan poligami liar (itsbat-nya dilarang SEMA 3/2018).
+    B(
+      "Saat menikah dengan {P2}, apakah {P1} masih mempunyai isteri lain? Bila pernah beristeri, apakah perkawinan itu sudah putus karena cerai atau meninggal dunia, dan kapan?",
+      "Saat menikah {P1} ... (tidak mempunyai isteri lain / perkawinan dengan isteri sebelumnya sudah putus karena ... pada ...);",
+      "bukan poligami tanpa izin pengadilan (SEMA 3/2018)"
+    ),
+    B(
+      "Bila saat itu {P1} masih beristeri, apakah ada izin beristeri lebih dari seorang dari Pengadilan Agama, dan apakah isteri sebelumnya mengetahui pernikahan ini?",
+      "... (tidak ada isteri lain / ada izin Pengadilan Agama ... tanggal ...; isteri sebelumnya ... mengetahui);",
+      "izin poligami pengadilan (UU 1/1974 Pasal 3 ayat (2) dan 4)"
+    ),
     B("Berapa umur {P1} dan {P2} saat menikah?", "Saat menikah {P1} berumur sekitar ... tahun dan {P2} sekitar ... tahun;", "batas umur perkawinan"),
     B("Apakah antara {P1} dan {P2} ada hubungan darah, semenda, atau sesusuan yang menghalangi pernikahan?", "Tidak ada hubungan darah, semenda, maupun sesusuan;", "tidak ada larangan kawin (KHI Pasal 39)"),
     B("Apakah {P1} dan {P2} beragama Islam pada saat menikah?", "Ya, keduanya beragama Islam;", "beragama Islam (KHI Pasal 40, 44)"),
@@ -458,9 +557,10 @@ const SET_IP: SetSaksi = {
   dasar: [
     "UU 1/1974 Pasal 3 ayat (2), 4 ayat (2) (isteri tidak dapat menjalankan kewajiban / cacat atau penyakit tidak dapat disembuhkan / tidak dapat melahirkan keturunan - alternatif), 5 ayat (1) (persetujuan isteri, kemampuan menjamin keperluan hidup, jaminan berlaku adil - kumulatif)",
     "PP 9/1975 Pasal 40-43; KHI Pasal 55-59; KHI Pasal 41 (larangan memadu dengan saudara isteri)",
+    "KHI Pasal 94 (harta bersama perkawinan poligami berdiri sendiri-sendiri) dan Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama (KMA/032/SK/IV/2006, revisi 2013): penetapan harta bersama dengan isteri terdahulu diajukan bersama izin poligami - bila tidak diajukan suami maupun isteri (rekonvensi), permohonan dinyatakan tidak dapat diterima",
     DASAR_SAKSI,
   ],
-  perluDicek: ["Penetapan harta bersama dengan isteri pertama dalam permohonan izin poligami (KHI Pasal 94 dan pedoman teknis) - perlu dicek apakah wajib ditanyakan."],
+  perluDicek: [],
   ukur: `ABT server: 1 perkara izin poligami; set ABT "IP" 13 butir (alasan, calon isteri, penghasilan, persetujuan, harta bersama).`,
   pembuka: [
     B("Apakah Saudara kenal dengan {P} dan {T}? Apa hubungan Saudara dengan mereka?", "Ya, saya kenal dengan {P} dan {T} karena saya adalah ...;", "hubungan saksi dengan para pihak"),
@@ -476,7 +576,10 @@ const SET_IP: SetSaksi = {
     B("Apakah calon isteri ada hubungan darah, semenda, atau sesusuan dengan {P} atau dengan {T}?", "Tidak ada hubungan darah, semenda, maupun sesusuan;", "tidak ada larangan kawin (KHI Pasal 41)"),
     B("Berapa isteri {P} sekarang?", "{P} sekarang beristeri satu orang, yaitu {T};", "batas empat isteri (KHI Pasal 55 ayat (1))"),
     B("Apakah keluarga calon isteri dan keluarga {T} keberatan atas rencana tersebut?", "Tidak ada yang keberatan;", "tidak ada keberatan"),
-    B("Harta apa saja yang diperoleh {P} dan {T} selama perkawinan?", "Harta bersama {P} dan {T} berupa ...;", "harta bersama perkawinan pertama"),
+    // Keputusan 17 Okt butir 27: harta bersama dengan isteri pertama WAJIB ditanyakan.
+    B("Harta apa saja yang diperoleh {P} dan {T} selama perkawinan, dan di mana letaknya?", "Harta bersama {P} dan {T} berupa ..., terletak di ...;", "harta bersama perkawinan pertama (KHI Pasal 94; wajib)"),
+    B("Kapan dan dari penghasilan siapa harta tersebut diperoleh, dan atas nama siapa suratnya?", "Harta tersebut diperoleh pada ... dari penghasilan ..., atas nama ...;", "diperoleh selama perkawinan pertama"),
+    B("Apakah harta tersebut pernah dijaminkan, atau masih ada utang bersama {P} dan {T}?", "... (tidak pernah dijaminkan dan tidak ada utang / dijaminkan di ...);", "utang bersama perkawinan pertama (KHI Pasal 93)"),
   ],
   penutup: PENUTUP_UMUM,
 };
@@ -487,16 +590,18 @@ const SET_PERWALIAN: SetSaksi = {
   untuk: "Permohonan penetapan wali bagi anak (oleh orang tua kandung atau keluarga lain).",
   jenis: ["perwalian"],
   dasar: [
-    "UU 1/1974 Pasal 50-54: anak belum 18 tahun yang tidak di bawah kekuasaan orang tua berada di bawah kekuasaan wali; wali sedapat-dapatnya keluarga",
+    "UU 1/1974 Pasal 50-54: anak belum 18 tahun atau belum pernah kawin yang tidak di bawah kekuasaan orang tua berada di bawah kekuasaan wali; wali sedapat-dapatnya keluarga (batas 18 tahun dipakai - keputusan 17 Okt; UU 23/2002 jo. UU 35/2014 Pasal 1 angka 1)",
     "KHI Pasal 107-112 (Pasal 107 ayat (4): wali dewasa, berpikiran sehat, adil, jujur, berkelakuan baik)",
     "UU 23/2002 jo. UU 35/2014 Pasal 33 (perwalian dalam perlindungan anak)",
     DASAR_SAKSI,
   ],
-  perluDicek: ["Batas umur berbeda: UU 1/1974 Pasal 50 (18 tahun) dan KHI Pasal 107 ayat (1) (21 tahun) - perlu dicek mana yang dipakai di amar."],
+  // Keputusan 17 Okt butir 24: batas umur 18 tahun (UU 1/1974 Pasal 50), bukan 21 tahun KHI Pasal 107 ayat (1).
+  perluDicek: [],
   ukur: `ABT server: 30 perkara; set ABT "PA1"/"PA2" dipakai 60-100% per butir (kenal 100%, perilaku pemohon 73%, tujuan perwalian 67%, umur anak 63%).`,
   pembuka: PEMBUKA_PERMOHONAN("memohon ditetapkan sebagai wali bagi anak bernama ..."),
   inti: [
-    B("Siapa nama dan berapa umur anak yang dimohonkan perwalian?", "Anak tersebut bernama ..., berumur ... tahun;", "anak belum dewasa"),
+    B("Siapa nama dan berapa umur anak yang dimohonkan perwalian?", "Anak tersebut bernama ..., berumur ... tahun (belum 18 tahun);", "anak belum berumur 18 tahun (UU 1/1974 Pasal 50 ayat (1))"),
+    B("Apakah anak tersebut belum pernah menikah?", "Anak tersebut belum pernah menikah;", "belum pernah melangsungkan perkawinan (UU 1/1974 Pasal 50 ayat (1))"),
     B("Siapa ayah dan ibu kandung anak tersebut, dan apakah masih hidup?", "Ayah kandungnya ... dan ibu kandungnya ...; ... telah meninggal dunia pada ... karena ...;", "anak tidak di bawah kekuasaan orang tua"),
     B("Apa hubungan {Pp} dengan anak tersebut?", "{Pp} adalah ... anak tersebut;", "wali dari keluarga (UU 1/1974 Pasal 51 ayat (2))"),
     B("Siapa yang memelihara anak tersebut selama ini, dan bagaimana perlakuannya?", "Selama ini anak tersebut dipelihara oleh {Pp} dengan baik;", "pemeliharaan nyata"),
@@ -516,9 +621,10 @@ const SET_WA: SetSaksi = {
   dasar: [
     "KHI Pasal 21-23 (urutan wali nasab; Pasal 23 ayat (2): wali hakim bila wali adhal setelah ada putusan Pengadilan Agama)",
     "UU 1/1974 jo. UU 16/2019 Pasal 6-8 (syarat dan larangan perkawinan)",
+    "PMA 30/2005 tentang Wali Hakim (keputusan pengguna 17 Okt butir 19: tetap dipakai)",
     DASAR_SAKSI,
   ],
-  perluDicek: ["Peraturan Menteri Agama tentang wali hakim (PMA 30/2005) - perlu dicek apakah masih berlaku atau sudah diganti."],
+  perluDicek: [],
   ukur: `ABT server: 3 perkara; set ABT "WA" dipakai 100% (12 butir); sekufu ditanyakan di 1 perkara.`,
   pembuka: PEMBUKA_PERMOHONAN("memohon penetapan wali adhal karena walinya tidak mau menikahkan"),
   inti: [
@@ -571,18 +677,22 @@ const SET_ANGKAT: SetSaksi = {
   dasar: [
     "UU 23/2002 jo. UU 35/2014 Pasal 39-41: demi kepentingan terbaik anak, tidak memutus hubungan darah, seagama",
     "PP 54/2007 tentang Pelaksanaan Pengangkatan Anak Pasal 2-4 dan 12-13 (syarat anak dan calon orang tua angkat)",
+    "Permensos 110/HUK/2009 tentang Persyaratan Pengangkatan Anak: Pasal 4 (anak belum 18 tahun), Pasal 20 untuk pengangkatan langsung (calon orang tua angkat 30-55 tahun, menikah sah paling singkat 5 tahun, belum punya anak atau hanya satu, mampu ekonomi dan sosial, persetujuan anak dan izin tertulis orang tua kandung/wali, laporan sosial, rekomendasi Dinas Sosial kabupaten/kota, izin Instansi Sosial provinsi); Pasal 7 ayat (1) huruf l (lewat lembaga: diasuh paling singkat 6 bulan)",
     "KHI Pasal 171 huruf h dan 209 (anak angkat, wasiat wajibah)",
     DASAR_SAKSI,
   ],
-  perluDicek: ["Syarat lama pengasuhan (PP 54/2007 Pasal 20 / Permensos) dan peraturan menteri sosial yang berlaku sekarang - perlu dicek."],
+  // Keputusan 17 Okt butir 25 "Permensos terbaru": tidak ditemukan pengganti; status dicek di JDIH BPK 17 Okt 2026.
+  perluDicek: ["Permensos 110/HUK/2009 tercatat masih berlaku di JDIH BPK (peraturan.bpk.go.id, dicek 17 Okt 2026) dan belum ditemukan Permensos penggantinya - periksa lagi bila Kementerian Sosial menerbitkan aturan baru."],
   ukur: "ABT server: 1 perkara pengangkatan anak (di jenis Lain-Lain); tidak ada set ABT.",
   pembuka: PEMBUKA_PERMOHONAN("memohon penetapan pengangkatan anak"),
   inti: [
-    B("Siapa nama, umur, dan asal anak yang akan diangkat, dan siapa orang tua kandungnya?", "Anak tersebut bernama ..., umur ..., anak kandung dari ... dan ...;", "identitas anak dan orang tua kandung"),
-    B("Sejak kapan anak tersebut diasuh {Pp}, dan bagaimana tumbuh kembangnya selama diasuh?", "Sejak ..., anak tersebut tumbuh sehat dan ...;", "pengasuhan sebelumnya"),
-    B("Apakah orang tua kandung anak tersebut setuju anaknya diangkat {Pp}?", "Ya, orang tua kandungnya setuju dan menyerahkan anak tersebut secara sukarela;", "persetujuan orang tua kandung"),
+    B("Siapa nama, umur, dan asal anak yang akan diangkat, dan siapa orang tua kandungnya?", "Anak tersebut bernama ..., umur ... (belum 18 tahun), anak kandung dari ... dan ...;", "identitas anak, belum 18 tahun (Permensos 110/HUK/2009 Pasal 4)"),
+    B("Sejak kapan anak tersebut diasuh {Pp}, dan bagaimana tumbuh kembangnya selama diasuh?", "Sejak ..., anak tersebut tumbuh sehat dan ...;", "pengasuhan sebelumnya (lewat lembaga: paling singkat 6 bulan, Permensos 110/HUK/2009 Pasal 7)"),
+    B("Apakah orang tua kandung anak tersebut setuju anaknya diangkat {Pp}, dan apakah ada surat persetujuannya?", "Ya, orang tua kandungnya setuju, menyerahkan anak tersebut secara sukarela, dan membuat surat persetujuan;", "izin tertulis orang tua kandung/wali (Permensos 110/HUK/2009 Pasal 20 huruf i)"),
+    B("Bila anak tersebut sudah dapat menyampaikan pendapat, apakah ia mau diangkat {Pp}?", "Anak tersebut ... (belum dapat menyampaikan pendapat / mau tinggal bersama {Pp});", "persetujuan anak (Permensos 110/HUK/2009 Pasal 20 huruf i)"),
     B("Apa agama anak tersebut dan apa agama {Pp}?", "Anak tersebut dan {Pp} sama-sama beragama Islam;", "seagama (UU 35/2014 Pasal 39 ayat (3))"),
-    B("Berapa umur {Pp}, sudah berapa lama menikah, dan apakah sudah mempunyai anak kandung?", "{Pp} berumur ... tahun, menikah sejak ..., dan ... anak kandung;", "syarat calon orang tua angkat (PP 54/2007 Pasal 13)"),
+    B("Berapa umur {Pp}, sudah berapa lama menikah, dan apakah sudah mempunyai anak kandung?", "{Pp} berumur ... tahun, menikah sejak ... (sudah ... tahun), dan ... anak kandung;", "umur 30-55 tahun, menikah paling singkat 5 tahun, belum punya anak atau hanya satu (Permensos 110/HUK/2009 Pasal 20 huruf b, e, g)"),
+    B("Apakah petugas Dinas Sosial pernah datang memeriksa keadaan {Pp} dan anak tersebut?", "Ya, petugas Dinas Sosial ... datang pada ... / belum pernah;", "laporan sosial dan rekomendasi Dinas Sosial (Permensos 110/HUK/2009 Pasal 20 huruf k-m)"),
     B("Bagaimana kesehatan dan perilaku {Pp} di masyarakat? Apakah pernah dihukum?", "{Pp} sehat, berkelakuan baik, dan tidak pernah dihukum;", "syarat calon orang tua angkat"),
     B("Apa pekerjaan {Pp} dan apakah mampu membiayai anak tersebut?", "{Pp} bekerja sebagai ..., mampu membiayai hidup dan sekolah anak tersebut;", "kemampuan ekonomi"),
     B("Apakah {Pp} memahami bahwa pengangkatan anak tidak memutus hubungan darah anak dengan orang tua kandungnya?", "Ya, {Pp} memahami hal itu;", "tidak memutus nasab (PP 54/2007 Pasal 4)"),
@@ -616,6 +726,8 @@ export function semuaSetSaksi(): SetSaksi[] {
   return [
     setCerai("F"),
     ...["A", "B", "C", "D", "E", "G", "H"].map((h) => setCerai(h)),
+    setCerai("A", { jenis: "ct" }),
+    setCerai("G", { tahunNikah: TAHUN_SIGHAT_SEKARANG - 1 }),
     SET_HADHANAH,
     SET_NAFKAH,
     SET_ITSBAT,
@@ -721,7 +833,9 @@ export type TawaranSet = {
  * Tambahan hak asuh / nafkah / itsbat ditawarkan pada cerai, disarankan bila
  * folder blangko menyebut kumulasinya.
  */
-export function tawarkanSetSaksi(p: { namaJenis?: string; nomor?: string; folder?: string; huruf?: string } & KonteksSaksi): { jenis: KodeJenisSaksi; huruf: string; set: TawaranSet[] } {
+export function tawarkanSetSaksi(
+  p: { namaJenis?: string; nomor?: string; folder?: string; huruf?: string; /** Tahun akad nikah - huruf G sebelum 1990 memakai sighat lama. */ tahunNikah?: number } & KonteksSaksi
+): { jenis: KodeJenisSaksi; huruf: string; set: TawaranSet[] } {
   const jenis = kodeJenisSaksi(p.namaJenis || "", p.nomor || "", p.folder || "", p.sebutanP || "");
   const huruf = hurufAlasan(p.huruf || "");
   const folder = String(p.folder || "").toLowerCase();
@@ -733,12 +847,16 @@ export function tawarkanSetSaksi(p: { namaJenis?: string; nomor?: string; folder
   };
   if (jenis === "cg" || jenis === "ct") {
     const sah = huruf.split("").filter((h) => h !== "G" || jenis === "cg").join("");
-    if (sah) tawar(setCerai(sah), true, `alasan perkara ini huruf ${sah.split("").join(", ")}`);
-    else tawar(setCerai("F"), true, "alasan perkara belum diisi; huruf F paling sering di PA Donggala");
+    const tahun = Number(p.tahunNikah) || undefined;
+    const opsi: OpsiCerai = { jenis, tahunNikah: tahun };
+    if (sah) tawar(setCerai(sah, opsi), true, `alasan perkara ini huruf ${sah.split("").join(", ")}${sah.includes("G") && tahun && tahun < TAHUN_SIGHAT_SEKARANG ? `; nikah tahun ${tahun} (sighat sebelum PMA 2/1990)` : ""}`);
+    else tawar(setCerai("F", opsi), true, "alasan perkara belum diisi; huruf F paling sering di PA Donggala");
     if (/hak asuh|hadh?anah/.test(folder)) tawar(SET_HADHANAH, true, "blangko kumulasi hak asuh anak");
     if (/itsbat|istbat/.test(folder)) tawar({ ...SET_ITSBAT, id: "tambah-itsbat", judul: "Tambahan - itsbat nikah", tambahan: true }, true, "blangko kumulasi itsbat nikah", "itsbat");
-    tawar(setCerai("F"), false, "alasan perselisihan terus-menerus");
-    for (const h of ["A", "B", "C", "D", "E", "G", "H"]) if (h !== "G" || jenis === "cg") tawar(setCerai(h), false, `alasan huruf ${h}`);
+    tawar(setCerai("F", opsi), false, "alasan perselisihan terus-menerus");
+    for (const h of ["A", "B", "C", "D", "E", "G", "H"]) if (h !== "G" || jenis === "cg") tawar(setCerai(h, opsi), false, `alasan huruf ${h}`);
+    // Huruf G untuk nikah sebelum 1990 (bunyi sighat lama) - ditawarkan bila tahun nikah belum diketahui.
+    if (jenis === "cg" && !tahun) tawar(setCerai("G", { jenis, tahunNikah: TAHUN_SIGHAT_SEKARANG - 1 }), false, "alasan huruf G, perkawinan sebelum 1990 (bunyi sighat lama)");
     tawar(SET_HADHANAH, false, "bila ada tuntutan hak asuh anak");
     tawar(SET_NAFKAH, false, "bila ada tuntutan nafkah");
     tawar({ ...SET_ITSBAT, id: "tambah-itsbat", judul: "Tambahan - itsbat nikah", tambahan: true }, false, "bila digabung dengan itsbat nikah", "itsbat");

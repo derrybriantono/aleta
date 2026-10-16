@@ -12,7 +12,10 @@ import {
   susunDrafSaya,
   untukChecklistH7,
   usulanDariKtp,
+  varianTolakBerbeda,
   type BarisSidangH7,
+  type PilihanBlangkoH7,
+  type VarianDrafH7,
   type DrafH7Checklist,
   type KtpPihak,
   type DokumenEcourt,
@@ -219,27 +222,38 @@ export async function susunDrafSatu(
   const tanggalSidang = teks(baris.tanggalSidang).slice(0, 10);
   const kendala: string[] = [];
   const blangko = pilihBlangkoH7(baris, alasan);
+  // Varian tolak (keputusan 17 Okt butir 54): disiapkan bila blangko tolaknya ada dan berbeda.
+  const blangkoTolak = pilihBlangkoH7(baris, alasan, "ditolak");
+  const adaTolak = varianTolakBerbeda(blangko, blangkoTolak);
   const sebutan = sebutanPihak(jenisPerkara, nomorPerkara);
 
   // Blangko Derry -> isian tangan sungguhan.
-  let susunan: Susunan = { penanda: [], isian: [], pemicu: [], otomatis: [], takDikenal: [] };
-  if (blangko.utama) {
-    const b = await sumber.bacaBlangko(blangko.utama.folder.startsWith(AKAR_DERRY) ? blangko.utama.folder : `${AKAR_DERRY}/${blangko.utama.folder}`, blangko.utama.berkas);
-    if (b.ada) {
-      const katalog = await sumber.katalog(db);
-      if (katalog.size) susunan = susunIsian(b.penanda, katalog, sebutan);
-      else kendala.push("katalog variabel ABT");
-    } else kendala.push(`blangko ${blangko.utama.label} (${b.sebab})`);
-  }
+  const KOSONG: Susunan = { penanda: [], isian: [], pemicu: [], otomatis: [], takDikenal: [] };
+  const susunUntuk = async (pilihan: PilihanBlangkoH7): Promise<Susunan> => {
+    const u = pilihan.utama;
+    if (!u) return KOSONG;
+    const b = await sumber.bacaBlangko(u.folder.startsWith(AKAR_DERRY) ? u.folder : `${AKAR_DERRY}/${u.folder}`, u.berkas);
+    if (!b.ada) {
+      kendala.push(`blangko ${u.label} (${b.sebab})`);
+      return KOSONG;
+    }
+    const katalog = await sumber.katalog(db);
+    if (katalog.size) return susunIsian(b.penanda, katalog, sebutan);
+    if (!kendala.includes("katalog variabel ABT")) kendala.push("katalog variabel ABT");
+    return KOSONG;
+  };
+  const susunan = await susunUntuk(blangko);
+  const susunanTolak = adaTolak ? await susunUntuk(blangkoTolak) : KOSONG;
 
-  // Nilai ABT/SIPP untuk seluruh penanda blangko + bahan ringkasan.
+  // Nilai ABT/SIPP untuk seluruh penanda kedua blangko + bahan ringkasan (satu permintaan).
   const kode = [
-    ...new Set([
-      ...susunan.isian.map((i) => i.kode),
-      ...susunan.pemicu.map((p) => p.kode),
-      ...susunan.otomatis.filter((o) => o.langsung).map((o) => o.kode),
-      ...PENANDA_BAHAN,
-    ]),
+    ...new Set(
+      [susunan, susunanTolak].flatMap((s) => [
+        ...s.isian.map((i) => i.kode),
+        ...s.pemicu.map((p) => p.kode),
+        ...s.otomatis.filter((o) => o.langsung).map((o) => o.kode),
+      ]).concat(PENANDA_BAHAN)
+    ),
   ];
   const nilaiHasil = /^\d+$/.test(perkaraId) ? await sumber.nilaiPenanda(perkaraId, kode) : { ada: false, nilai: {}, sebab: "nomor perkara SIPP tidak dikenal" };
   if (!nilaiHasil.ada) kendala.push(`nilai isian ABT (${nilaiHasil.sebab || "tidak terbaca"})`);
@@ -248,7 +262,7 @@ export async function susunDrafSatu(
 
   // Deteksi ALETA - jalur yang sama dengan panel ABT ("Isi dari SIPP"), tanpa AI.
   const usulan: Array<{ jalur: string; usulan: UsulanDeteksi }> = [];
-  if (susunan.isian.length && nomorPerkara) {
+  if ((susunan.isian.length || susunanTolak.isian.length) && nomorPerkara) {
     const posita = polosTeks(v("5125")).slice(0, 20000);
     const tambah = (h: Awaited<ReturnType<SumberAgenH7["usulan"]>>) => {
       if (!h.ok) kendala.push(`deteksi ALETA (${h.galat})`);
@@ -291,6 +305,18 @@ export async function susunDrafSatu(
   };
   const isian = golongkanIsian({ susunan, nilai, usulan, perkara });
   const otomatis = susunan.otomatis.length && nilaiHasil.ada ? ringkasOtomatis(susunan, nilai) : null;
+  const varian: VarianDrafH7[] = [];
+  if (adaTolak) {
+    const isianTolak = golongkanIsian({ susunan: susunanTolak, nilai, usulan, perkara });
+    const otomatisTolak = susunanTolak.otomatis.length && nilaiHasil.ada ? ringkasOtomatis(susunanTolak, nilai) : null;
+    varian.push({
+      status: "ditolak",
+      blangko: blangkoTolak,
+      isian: isianTolak,
+      otomatis: otomatisTolak,
+      kesiapan: nilaiKesiapanH7(isianTolak, otomatisTolak, susunanTolak.isian.length + susunanTolak.otomatis.length > 0),
+    });
+  }
 
   const [riwayat, saksi, dokumen] = /^\d+$/.test(perkaraId)
     ? await Promise.all([sumber.riwayat(perkaraId), sumber.saksi(perkaraId), perkara.lewatEcourt === false ? Promise.resolve([]) : sumber.dokumen(perkaraId)])
@@ -318,6 +344,7 @@ export async function susunDrafSatu(
     otomatis,
     ringkasan,
     kesiapan: nilaiKesiapanH7(isian, otomatis, Boolean(blangko.utama) && susunan.isian.length + susunan.otomatis.length > 0),
+    varian,
     kendala,
     dibuatPada: kini.toISOString(),
   };
