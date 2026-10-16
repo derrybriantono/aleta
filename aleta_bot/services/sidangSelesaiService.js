@@ -180,6 +180,41 @@ function kunciSelesai(perkaraId, tanggalSidang) {
   return `${bersih(perkaraId)}|${tanggalSah(tanggalSidang)}`;
 }
 
+/* === F3.1 (17 Okt 2026): status skors utuh === */
+/**
+ * Kode alasan skors baku - sama dengan ALASAN_SKORS di portal
+ * (src/lib/skors-sidang.ts). Kode lain dibuang (jadi kosong), bukan disimpan.
+ */
+const KODE_ALASAN_SKORS = new Set(["pihak", "saksi", "kuasa", "istirahat", "musyawarah", "berkas", "lainnya"]);
+
+function kodeAlasanSkors(nilai) {
+  const kode = bersih(nilai).toLowerCase();
+  return KODE_ALASAN_SKORS.has(kode) ? kode : "";
+}
+
+/**
+ * Perkiraan sidang dilanjutkan -> "YYYY-MM-DD HH:MM:00" atau null.
+ * Menerima "HH:MM"/"HH.MM" (dianggap pada tanggal sidang) atau waktu penuh.
+ */
+function perkiraanLanjutSah(nilai, tanggalSidang) {
+  const teks = bersih(nilai);
+  if (!teks) return null;
+  const penuh = /^(\d{4}-\d{2}-\d{2})[ T](\d{2})[:.](\d{2})/.exec(teks);
+  const saja = /^(\d{1,2})[:.](\d{2})$/.exec(teks);
+  const tanggal = penuh ? penuh[1] : tanggalSah(tanggalSidang);
+  const jam = penuh ? Number(penuh[2]) : saja ? Number(saja[1]) : NaN;
+  const menit = penuh ? Number(penuh[3]) : saja ? Number(saja[2]) : NaN;
+  if (!tanggal || !(jam >= 0 && jam <= 23) || !(menit >= 0 && menit <= 59)) return null;
+  return `${tanggal} ${String(jam).padStart(2, "0")}:${String(menit).padStart(2, "0")}:00`;
+}
+
+/** "YYYY-MM-DD HH:MM:SS" sah? - penanda mulai sidang yang dapat dibandingkan. */
+function waktuPenuhSah(nilai) {
+  const teks = bersih(nilai);
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(teks) ? (teks.length === 16 ? `${teks}:00` : teks) : "";
+}
+/* === AKHIR F3.1 === */
+
 /**
  * Layanan dengan ketergantungan yang dapat ditukar - uji memakai basis data
  * tiruan; produksi memakai sambungan yang sama dengan layanan lain. Semua
@@ -318,7 +353,8 @@ function buatLayanan(deps = {}) {
       const baris = await kueriBot(
         `SELECT perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
                 nomor_perkara AS nomorPerkara, oleh, alasan, panggil_saat_skors AS panggilSaatSkors,
-                DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada
+                DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
+                alasan_kode AS alasanKode, DATE_FORMAT(perkiraan_lanjut, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut
            FROM ${TABEL_SKORS}
           WHERE tanggal_sidang BETWEEN ? AND ? AND dilanjutkan_pada IS NULL
           ORDER BY id ASC`,
@@ -335,6 +371,8 @@ function buatLayanan(deps = {}) {
           alasan: bersih(b.alasan),
           panggilSaatSkors: bersih(b.panggilSaatSkors),
           diskorsPada: bersih(b.diskorsPada),
+          alasanKode: kodeAlasanSkors(b.alasanKode),
+          perkiraanLanjut: bersih(b.perkiraanLanjut),
         };
       }
       sumber.skors.terbaca = true;
@@ -432,7 +470,9 @@ function buatLayanan(deps = {}) {
     const baris = await kueriBot(
       `SELECT perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
               alasan, oleh, DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
-              DATE_FORMAT(dilanjutkan_pada, '%Y-%m-%d %H:%i:%s') AS dilanjutkanPada
+              DATE_FORMAT(dilanjutkan_pada, '%Y-%m-%d %H:%i:%s') AS dilanjutkanPada,
+              alasan_kode AS alasanKode, DATE_FORMAT(perkiraan_lanjut, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut,
+              lama_detik AS lamaDetik
          FROM ${TABEL_SKORS}
         WHERE tanggal_sidang BETWEEN DATE_SUB(?, INTERVAL ${JENDELA_RIWAYAT_SKORS_HARI} DAY) AND ?
         ORDER BY id DESC LIMIT 3000`,
@@ -451,6 +491,9 @@ function buatLayanan(deps = {}) {
         dilanjutkanPada: bersih(b.dilanjutkanPada),
         alasan: bersih(b.alasan),
         oleh: bersih(b.oleh),
+        alasanKode: kodeAlasanSkors(b.alasanKode),
+        perkiraanLanjut: bersih(b.perkiraanLanjut),
+        lamaDetik: angkaAtauNull(b.lamaDetik),
       });
     }
     // Urut dari yang terlama ke yang terbaru (pembacaan tadi terbaru dulu).
@@ -458,6 +501,62 @@ function buatLayanan(deps = {}) {
     return hasil;
   }
   /* === AKHIR 12OKT-L === */
+
+  /* === F3.1: daftar skors per tanggal (dan perkara) - hanya membaca tabel ALETA === */
+  function angkaAtauNull(nilai) {
+    if (nilai === null || nilai === undefined || nilai === "") return null;
+    const n = Number(nilai);
+    return Number.isFinite(n) ? n : null;
+  }
+  /**
+   * Semua skors pada rentang tanggal sidang (paling banyak 31 hari), boleh
+   * dipersempit ke satu perkara - yang masih berlaku DAN yang sudah dilanjutkan,
+   * terlama dulu. Bahan layar antrian, widget ekstensi, dan usulan kalimat BAS.
+   * Tidak menyentuh SIPP maupun mesin antrian.
+   */
+  async function daftarSkors({ dari, sampai, perkaraId = "" } = {}) {
+    const awal = tanggalSah(dari);
+    const akhir = tanggalSah(sampai) || awal;
+    if (!awal || !akhir || akhir < awal) return { ok: false, alasan: "rentang_tidak_sah", skors: [] };
+    const selisihHari = (Date.parse(`${akhir}T00:00:00Z`) - Date.parse(`${awal}T00:00:00Z`)) / 86400000;
+    if (selisihHari > 31) return { ok: false, alasan: "rentang_terlalu_panjang", skors: [] };
+    const id = bersih(perkaraId);
+    if (id && !/^\d{1,20}$/.test(id)) return { ok: false, alasan: "perkara_tidak_sah", skors: [] };
+    await pastikanTabelSkors();
+    const baris = await kueriBot(
+      `SELECT id, perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
+              nomor_perkara AS nomorPerkara, alasan, alasan_kode AS alasanKode, oleh,
+              panggil_saat_skors AS panggilSaatSkors,
+              DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
+              DATE_FORMAT(perkiraan_lanjut, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut,
+              DATE_FORMAT(dilanjutkan_pada, '%Y-%m-%d %H:%i:%s') AS dilanjutkanPada,
+              dilanjutkan_oleh AS dilanjutkanOleh, lama_detik AS lamaDetik
+         FROM ${TABEL_SKORS}
+        WHERE tanggal_sidang BETWEEN ? AND ?${id ? " AND perkara_id = ?" : ""}
+        ORDER BY diskors_pada ASC, id ASC LIMIT 2000`,
+      id ? [awal, akhir, id] : [awal, akhir]
+    );
+    const skors = [];
+    for (const b of Array.isArray(baris) ? baris : []) {
+      if (!bersih(b.perkaraId) || !tanggalSah(b.tanggalSidang)) continue;
+      skors.push({
+        perkaraId: bersih(b.perkaraId),
+        tanggalSidang: tanggalSah(b.tanggalSidang),
+        nomorPerkara: bersih(b.nomorPerkara),
+        alasan: bersih(b.alasan),
+        alasanKode: kodeAlasanSkors(b.alasanKode),
+        oleh: bersih(b.oleh),
+        panggilSaatSkors: bersih(b.panggilSaatSkors),
+        diskorsPada: bersih(b.diskorsPada),
+        perkiraanLanjut: bersih(b.perkiraanLanjut),
+        dilanjutkanPada: bersih(b.dilanjutkanPada),
+        dilanjutkanOleh: bersih(b.dilanjutkanOleh),
+        lamaDetik: angkaAtauNull(b.lamaDetik),
+      });
+    }
+    return { ok: true, dari: awal, sampai: akhir, skors };
+  }
+  /* === AKHIR F3.1 === */
 
   let tabelBerjalanSiap = false;
   async function pastikanTabelBerjalan() {
@@ -699,11 +798,39 @@ function buatLayanan(deps = {}) {
         dilanjutkan_pada DATETIME NULL,
         dilanjutkan_oleh VARCHAR(191) NOT NULL DEFAULT '',
         dilanjutkan_ip VARCHAR(45) NOT NULL DEFAULT '',
+        alasan_kode VARCHAR(32) NOT NULL DEFAULT '',
+        perkiraan_lanjut DATETIME NULL,
+        lama_detik INT NULL,
         PRIMARY KEY (id),
         INDEX idx_sidang_skors_perkara (perkara_id, tanggal_sidang),
         INDEX idx_sidang_skors_tanggal (tanggal_sidang)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    // F3.1: tabel yang SUDAH ada di server tidak disentuh CREATE TABLE IF NOT
+    // EXISTS - kolom barunya ditambahkan di sini (MariaDB 5.5: tanpa
+    // "ADD COLUMN IF NOT EXISTS", jadi diperiksa dulu lewat information_schema).
+    const kolomBaru = [
+      ["alasan_kode", "VARCHAR(32) NOT NULL DEFAULT ''"],
+      ["perkiraan_lanjut", "DATETIME NULL"],
+      ["lama_detik", "INT NULL"],
+    ];
+    let ada = null;
+    try {
+      const baris = await kueriBot(
+        `SELECT COLUMN_NAME AS nama FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+        [TABEL_SKORS]
+      );
+      if (Array.isArray(baris) && baris.length > 0) ada = new Set(baris.map((b) => bersih(b.nama).toLowerCase()));
+    } catch {
+      ada = null; // information_schema tak terbaca: jangan menebak, jangan ALTER.
+    }
+    if (ada) {
+      const kurang = kolomBaru.filter(([nama]) => !ada.has(nama));
+      if (kurang.length > 0) {
+        await kueriBot(`ALTER TABLE ${TABEL_SKORS} ${kurang.map(([nama, bentuk]) => `ADD COLUMN ${nama} ${bentuk}`).join(", ")}`);
+      }
+    }
     tabelSkorsSiap = true;
   }
 
@@ -723,6 +850,8 @@ function buatLayanan(deps = {}) {
     ruangId = null,
     skors = true,
     alasan = "",
+    alasanKode = "",
+    perkiraanLanjut = "",
     panggilSaatSkors = "",
     hasilSidangSelesai = false,
     oleh = "",
@@ -735,6 +864,9 @@ function buatLayanan(deps = {}) {
     if (!tanggal) return { ok: false, alasan: "tanggal_tidak_sah" };
     const menskors = skors !== false;
     const ruang = /^\d{1,4}$/.test(bersih(ruangId)) ? Number(bersih(ruangId)) : null;
+    // F3.1: alasan baku + perkiraan lanjut. Hanya di tabel ALETA - tidak ke SIPP.
+    const kodeAlasan = kodeAlasanSkors(alasanKode);
+    const perkiraan = perkiraanLanjutSah(perkiraanLanjut, tanggal);
 
     if (menskors) {
       if (hasilSidangSelesai === true) {
@@ -791,6 +923,20 @@ function buatLayanan(deps = {}) {
     try {
       await pastikanTabelSkors();
       if (menskors) {
+        // F3.1: skors lama yang sidangnya SUDAH dimulai lagi lewat aplikasi
+        // antrian (tanpa Lanjutkan) ditutup pada saat sidang itu mulai lagi -
+        // penanda mulai sidang yang sekarang diskors (panggilSaatSkors) lebih
+        // baru daripada saat skors lama. Tanpa ini skors kedua pada hari yang
+        // sama tidak pernah tercatat, dan riwayat BAS kehilangan satu skors.
+        const mulaiLagi = waktuPenuhSah(panggilSaatSkors);
+        if (mulaiLagi) {
+          await kueriBot(
+            `UPDATE ${TABEL_SKORS} SET dilanjutkan_pada = ?, dilanjutkan_oleh = '(dipanggil lagi lewat antrian)',
+                    lama_detik = TIMESTAMPDIFF(SECOND, diskors_pada, ?)
+              WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL AND diskors_pada < ?`,
+            [mulaiLagi, mulaiLagi, id, tanggal, mulaiLagi]
+          );
+        }
         const aktif = await kueriBot(
           `SELECT id FROM ${TABEL_SKORS} WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL LIMIT 1`,
           [id, tanggal]
@@ -798,8 +944,8 @@ function buatLayanan(deps = {}) {
         if (!(Array.isArray(aktif) && aktif.length > 0)) {
           await kueriBot(
             `INSERT INTO ${TABEL_SKORS}
-               (perkara_id, tanggal_sidang, nomor_perkara, alasan, panggil_saat_skors, oleh, ip, lewat, diskors_pada)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'ALETA', NOW())`,
+               (perkara_id, tanggal_sidang, nomor_perkara, alasan, panggil_saat_skors, oleh, ip, lewat, diskors_pada, alasan_kode, perkiraan_lanjut)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'ALETA', NOW(), ?, ?)`,
             [
               id,
               tanggal,
@@ -808,12 +954,33 @@ function buatLayanan(deps = {}) {
               bersih(panggilSaatSkors).slice(0, 32),
               bersih(oleh).slice(0, 191),
               bersih(ip).slice(0, 45),
+              kodeAlasan,
+              perkiraan,
             ]
+          );
+        } else if (kodeAlasan || bersih(alasan) || perkiraan) {
+          // Sudah diskors: alasan / perkiraan boleh diperbarui (mis. perkiraan
+          // diundur). Yang tidak disebut tidak dikosongkan.
+          const ubah = [];
+          const nilai = [];
+          if (kodeAlasan || bersih(alasan)) {
+            ubah.push("alasan_kode = ?", "alasan = ?");
+            nilai.push(kodeAlasan, bersih(alasan).slice(0, 191));
+          }
+          if (perkiraan) {
+            ubah.push("perkiraan_lanjut = ?");
+            nilai.push(perkiraan);
+          }
+          await kueriBot(
+            `UPDATE ${TABEL_SKORS} SET ${ubah.join(", ")}
+              WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL`,
+            [...nilai, id, tanggal]
           );
         }
       } else {
         await kueriBot(
-          `UPDATE ${TABEL_SKORS} SET dilanjutkan_pada = NOW(), dilanjutkan_oleh = ?, dilanjutkan_ip = ?
+          `UPDATE ${TABEL_SKORS} SET dilanjutkan_pada = NOW(), dilanjutkan_oleh = ?, dilanjutkan_ip = ?,
+                  lama_detik = TIMESTAMPDIFF(SECOND, diskors_pada, NOW())
             WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL`,
           [bersih(oleh).slice(0, 191), bersih(ip).slice(0, 45), id, tanggal]
         );
@@ -859,7 +1026,24 @@ function buatLayanan(deps = {}) {
       }
     }
 
-    return { ok: true, kering: false, rencana, skors: menskors, antrianSipp, antrianRuangTunggu };
+    // F3.1: lama skors yang baru dilanjutkan - untuk pesan "lama skors 17 menit".
+    let lamaDetik = null;
+    if (!menskors) {
+      try {
+        const baris = await kueriBot(
+          `SELECT lama_detik AS lamaDetik FROM ${TABEL_SKORS}
+            WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NOT NULL
+            ORDER BY dilanjutkan_pada DESC, id DESC LIMIT 1`,
+          [id, tanggal]
+        );
+        const n = Array.isArray(baris) && baris[0] ? Number(baris[0].lamaDetik) : NaN;
+        lamaDetik = Number.isFinite(n) && n >= 0 ? n : null;
+      } catch {
+        lamaDetik = null;
+      }
+    }
+
+    return { ok: true, kering: false, rencana, skors: menskors, lamaDetik, antrianSipp, antrianRuangTunggu };
   }
 
   /**
@@ -1026,6 +1210,7 @@ function buatLayanan(deps = {}) {
     petaSelesai,
     setelSelesai,
     setelSkors,
+    daftarSkors,
     setelBerjalan,
     diagnosaRuangTunggu,
     pastikanTabel,
@@ -1056,6 +1241,9 @@ module.exports = {
   petaSelesai: (isi) => layananBawaan().petaSelesai(isi),
   setelSelesai: (isi) => layananBawaan().setelSelesai(isi),
   setelSkors: (isi) => layananBawaan().setelSkors(isi),
+  daftarSkors: (isi) => layananBawaan().daftarSkors(isi),
+  kodeAlasanSkors,
+  perkiraanLanjutSah,
   setelBerjalan: (isi) => layananBawaan().setelBerjalan(isi),
   diagnosaRuangTunggu: () => layananBawaan().diagnosaRuangTunggu(),
 };

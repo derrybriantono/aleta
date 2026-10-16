@@ -1568,6 +1568,8 @@ describe("butir 2/3 - komponen", () => {
     expect(container.textContent).not.toMatch(/Selesai\b(?! perkara)/);
 
     fireEvent.click(screen.getByRole("button", { name: /Skors/ }));
+    // F3.1: jendela alasan + perkiraan; "Skors sekarang" mengirimnya.
+    fireEvent.click(screen.getByRole("button", { name: /Skors sekarang/ }));
     await waitFor(() => expect(ambil.mock.calls.some((c) => String(c[0]).includes("/sidang/skors"))).toBe(true));
     const kiriman = ambil.mock.calls.find((c) => String(c[0]).includes("/sidang/skors"))!;
     expect(JSON.parse(String(kiriman[1]?.body))).toMatchObject({ perkaraId: "12", skors: true, kering: false, panggilSaatSkors: `${HARI} 09:40:00` });

@@ -67,6 +67,10 @@ export type CatatanSkors = {
   /** panggilTerakhir buku waktu antrian SAAT diskors - "" bila belum pernah dipanggil. */
   panggilSaatSkors?: string;
   diskorsPada?: string;
+  /** F3.1: kode alasan baku (lib/skors-sidang ALASAN_SKORS) - "" bila tidak dipilih. */
+  alasanKode?: string;
+  /** F3.1: perkiraan sidang dilanjutkan, "YYYY-MM-DD HH:MM:SS" - "" bila tidak disebut. */
+  perkiraanLanjut?: string;
 };
 
 /** Kunci peta = kunciSelesai (perkaraId|tanggal) - sama dengan bot. */
@@ -418,7 +422,16 @@ export function aksiRuangSidang(opsi: {
 }
 
 export type LangkahRuangSidang =
-  | { jenis: "skors"; perkaraId: string; tanggalSidang: string; panggilSaatSkors: string }
+  | {
+      jenis: "skors";
+      perkaraId: string;
+      tanggalSidang: string;
+      panggilSaatSkors: string;
+      /** F3.1: alasan & perkiraan lanjut dari jendela Skors (tidak ada pada skors karena Lompat). */
+      alasanKode?: string;
+      alasan?: string;
+      perkiraanLanjut?: string;
+    }
   | { jenis: "panggil"; perkaraId: string }
   | { jenis: "lanjut"; perkaraId: string; tanggalSidang: string };
 
@@ -576,6 +589,9 @@ export type DiskorsRingkas = {
   /** Jam diskorsnya, "HH:MM". */
   jam: string;
   oleh: string;
+  /** F3.1: alasan (teks) dan perkiraan lanjut - "" bila tidak dicatat. */
+  alasan?: string;
+  perkiraanLanjut?: string;
 };
 
 /**
@@ -605,6 +621,8 @@ export function daftarDiskors(
       ruang: ruang.ruangPerKunci?.[kunci] ?? "",
       jam: jamSingkat(catatan.diskorsPada),
       oleh: rapi(catatan.oleh),
+      alasan: rapi(catatan.alasan),
+      perkiraanLanjut: rapi(catatan.perkiraanLanjut),
     });
   }
   return hasil.sort((a, b) => a.jam.localeCompare(b.jam) || a.perkaraId.localeCompare(b.perkaraId, "id", { numeric: true }));

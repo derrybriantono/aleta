@@ -4,6 +4,7 @@ import {
   getGatewayAntrianSidang,
   getGatewayJadwalSidang,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { bacaSkorsBerlakuHariIni, keteranganSkorsPublik } from "@/server/modules/aleta-ecourt/skors-publik";
 import { ok } from "@/server/shared/http";
 
 export const runtime = "nodejs";
@@ -65,6 +66,8 @@ type PerkaraPapan = {
   tergugat: string;
   /** "lawan" untuk gugatan, "dan" untuk permohonan - mengikuti kebiasaan. */
   penghubung: string;
+  /** F3.1: "Diskors, dilanjutkan sekitar 10.30" bila sidangnya sedang diskors - "" bila tidak. */
+  diskors: string;
 };
 
 export async function GET(request: NextRequest) {
@@ -84,9 +87,10 @@ export async function GET(request: NextRequest) {
     }
 
     const hari = tanggalHariIni();
-    const [jadwal, antrian] = await Promise.all([
+    const [jadwal, antrian, skorsBerlaku] = await Promise.all([
       getGatewayJadwalSidang({ dari: hari, sampai: hari, cari: "", batas: 200 }),
       getGatewayAntrianSidang(),
+      bacaSkorsBerlakuHariIni(hari),
     ]);
 
     if (!jadwal.ok || !jadwal.data) {
@@ -123,6 +127,8 @@ export async function GET(request: NextRequest) {
           // Menyebut "lawan" pada permohonan keliru menurut hukum acaranya.
           penghubung: /\/Pdt\.G/i.test(String(satu.nomorPerkara || "")) ? "lawan" : "dan",
           keadaan: String(antre?.keadaan || ""),
+          // F3.1: hanya jam perkiraan - tanpa alasan, tanpa nama petugas.
+          diskors: keteranganSkorsPublik(skorsBerlaku, String(satu.perkaraId || ""), antre?.jamPanggil),
         };
         return perkara;
       });

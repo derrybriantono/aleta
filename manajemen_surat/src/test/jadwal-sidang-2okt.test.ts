@@ -274,7 +274,8 @@ describe("butir 10 - bot setelSkors (basis data tiruan)", () => {
     expect(hasil.ok).toBe(true);
     const sisip = bot.catatan.find((c) => c.sql.startsWith(`INSERT INTO ${selesaiMod.TABEL_SKORS}`));
     expect(sisip?.sql).toContain("'ALETA', NOW()");
-    expect(sisip?.params).toEqual(["5", HARI, "5/Pdt.G/2026/PA.Dgl", "", `${HARI} 09:40:00`, "Ani Panitera", "192.168.10.21"]);
+    // F3.1: dua kolom di belakang - alasan_kode dan perkiraan_lanjut (kosong bila tidak dipilih).
+    expect(sisip?.params).toEqual(["5", HARI, "5/Pdt.G/2026/PA.Dgl", "", `${HARI} 09:40:00`, "Ani Panitera", "192.168.10.21", "", null]);
     const tulis = sipp.catatan.filter((c) => c.sql.startsWith("UPDATE"));
     expect(tulis).toHaveLength(1);
     expect(tulis[0].sql).toBe("UPDATE antrian SET status = ? WHERE perkara_id = ? AND tanggal_sidang = ? AND status = ?");
@@ -376,7 +377,9 @@ describe("butir 10 - Jadwal Sidang dan Hasil Sidang", () => {
     expect(KOMPONEN).toContain("window.location.assign(withBasePath(`/sidang-tunda/${encodeURIComponent(tujuan.sidangId)}`));");
   });
 
-  it("menekan Skors: dikonfirmasi, lalu POST skors (kering: false) dengan jam panggilnya", async () => {
+  // F3.1 (17 Okt 2026): Skors membuka jendela alasan + perkiraan; "Skors
+  // sekarang" di jendela itulah konfirmasinya (tidak ada confirm() kedua).
+  it("menekan Skors: jendela alasan, lalu POST skors (kering: false) dengan jam panggilnya", async () => {
     const { TombolRuangSidang } = await import("@/components/portal/jadwal-sidang-2okt");
     vi.spyOn(window, "confirm").mockReturnValue(true);
     const ambil = vi.fn(async (_alamat: string, _init?: RequestInit) => new Response(JSON.stringify({ data: { available: true, ok: true } })));
@@ -393,7 +396,10 @@ describe("butir 10 - Jadwal Sidang dan Hasil Sidang", () => {
         onBerubah: berubah,
       })
     );
-    fireEvent.click(screen.getByRole("button", { name: /Skors/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Skors/ }));
+    expect(ambil).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Musyawarah majelis" }));
+    fireEvent.click(screen.getByRole("button", { name: /Skors sekarang/ }));
     await waitFor(() => expect(berubah).toHaveBeenCalled());
     expect(ambil).toHaveBeenCalledTimes(1);
     expect(String(ambil.mock.calls[0][0])).toContain("/api/aleta-ecourt/sidang/skors");
@@ -402,6 +408,8 @@ describe("butir 10 - Jadwal Sidang dan Hasil Sidang", () => {
       skors: true,
       kering: false,
       panggilSaatSkors: `${HARI} 09:40:00`,
+      alasanKode: "musyawarah",
+      alasan: "Musyawarah majelis",
     });
   });
 
