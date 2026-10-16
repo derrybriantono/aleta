@@ -578,40 +578,48 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Gaya
   // ──────────────────────────────────────────────────────────────────────────
+  // Rupa mengikuti rancangan "SIPP dengan Ide ALETA" (pita .ide-isi, lencana bulat
+  // berwarna dengan ikon i) dan tema SIPP 7.0.4 (hijau #008C4B / #007640); huruf
+  // mengikuti SIPP (font-family & ukuran inherit), tidak lebih kecil (M1, 16 Okt).
   const GAYA = `
-.aleta-l1-tautan{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle;white-space:nowrap}
-.aleta-l1-chip{display:inline-block;padding:0 6px;border:1px solid #3598db;border-radius:9px;font-size:10px;line-height:15px;color:#3598db!important;text-decoration:none!important;background:#fff;cursor:pointer}
-.aleta-l1-chip:hover{background:#3598db;color:#fff!important}
+.aleta-l1-tautan{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+.aleta-l1-chip{display:inline-block;padding:0 9px;border:1px solid #235b3e;border-radius:999px;font-size:inherit;font-family:inherit;line-height:1.6;font-weight:600;color:#fff!important;text-decoration:none!important;background:#16704a;cursor:pointer}
+.aleta-l1-chip:hover{background:#007640}
 .aleta-l1-chip[aria-disabled="true"],.aleta-l1-tombol-sipp[aria-disabled="true"]{opacity:.5;cursor:default}
-.aleta-l1-pita{margin:4px 2px 8px;padding:6px 8px;border:1px solid #9cc5a1;border-left:4px solid #2e8b57;border-radius:4px;background:#f3faf4;font-size:12px;color:#1f2d1f;text-align:left;line-height:1.4}
-.aleta-l1-baris{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.aleta-l1-judul{font-weight:bold;margin-right:4px}
-.aleta-l1-tombol{font-size:12px;padding:2px 8px;border:1px solid #2e8b57;border-radius:3px;background:#fff;color:#1f5f3a;cursor:pointer}
-.aleta-l1-tombol.aleta-l1-utama{background:#2e8b57;color:#fff}
+.aleta-l1-pita{clear:both;margin:4px 0 8px;padding:6px 10px;background:rgba(47,158,68,.12);border-left:3px solid #2f9e44;font-family:inherit;font-size:inherit;color:#333;text-align:left;line-height:1.5;letter-spacing:0}
+.aleta-l1-baris{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.aleta-l1-logo{display:inline-block;background:#007640;color:#fff;border-radius:999px;padding:0 9px;font-weight:700}
+.aleta-l1-judul{font-weight:600;color:#008c4b;margin-right:2px}
+.aleta-l1-tombol{font-family:inherit;font-size:inherit;padding:3px 12px;border:1px solid #c9d4ce;border-radius:999px;background:#fff;color:#333;cursor:pointer;line-height:1.4}
+.aleta-l1-tombol.aleta-l1-utama{background:#007640;border-color:#007640;color:#fff;border-radius:3px;font-weight:600}
 .aleta-l1-tombol:disabled{opacity:.55;cursor:default}
-.aleta-l1-hitung{padding:1px 7px;border-radius:8px;background:#e2efe4;cursor:pointer}
-.aleta-l1-hitung.aleta-l1-ada-kosong{background:#fff1c2;color:#6b4e00}
-.aleta-l1-kabar{margin-top:4px;color:#2b3a4a}
+.aleta-l1-hitung{display:inline-block;padding:1px 10px;border-radius:999px;background:#16704a;border:1px solid #235b3e;color:#fff;font-weight:600;cursor:pointer}
+.aleta-l1-hitung.aleta-l1-ada-kosong{background:#9a5b06;border-color:#74440a}
+.aleta-l1-kabar{margin-top:4px;color:#333}
 .aleta-l1-kabar:empty{display:none}
-.aleta-l1-kabar.aleta-l1-gagal,.aleta-l1-gagal{color:#a01b1b}
-.aleta-l1-unggah{margin-top:6px;padding:6px 8px;border:1px dashed #7aa883;border-radius:4px;background:#fff}
-.aleta-l1-unggah.aleta-l1-seret{background:#e3f3e6;border-color:#2e8b57}
-.aleta-l1-tabel{width:100%;border-collapse:collapse;margin-top:6px;background:#fff}
-.aleta-l1-tabel td,.aleta-l1-tabel th{border:1px solid #d6e4d8;padding:2px 5px;font-size:12px;vertical-align:top;text-align:left}
-.aleta-l1-tabel th{background:#e9f3eb}
-.aleta-l1-yakin{display:inline-block;padding:0 6px;border-radius:7px;font-size:11px;background:#eee;color:#555}
-.aleta-l1-yakin-hijau{background:#d9f2df;color:#185c2c}.aleta-l1-yakin-kuning{background:#fff1c2;color:#6b4e00}.aleta-l1-yakin-merah{background:#f8d7d7;color:#8a1c1c}
-.aleta-l1-beda{color:#8a4b00;font-size:11px}
-.aleta-l1-awas{margin:4px 0;padding:4px 6px;border-left:3px solid #d08b00;background:#fff7e0;color:#5c3d00}
-.aleta-l1-kecil{font-size:11px;color:#556}
+.aleta-l1-kabar.aleta-l1-gagal,.aleta-l1-gagal{color:#b42318;font-weight:600}
+.aleta-l1-unggah{margin-top:6px;padding:6px 8px;border:1px dashed #2f9e44;border-radius:4px;background:#fff}
+.aleta-l1-unggah.aleta-l1-seret{background:#e3f3e6;border-color:#007640}
+.aleta-l1-tabel{width:100%;border-collapse:collapse;margin-top:6px;background:#fff;font-family:inherit;font-size:inherit}
+.aleta-l1-tabel td,.aleta-l1-tabel th{border:1px solid #d6e4d8;padding:3px 6px;font-size:inherit;vertical-align:top;text-align:left}
+.aleta-l1-tabel th{background:#008c4b;color:#fff;font-weight:400}
+.aleta-l1-yakin{display:inline-flex;align-items:center;gap:5px;padding:1px 9px;border-radius:999px;font-weight:600;white-space:nowrap;line-height:1.6;background:#6b7a72;border:1px solid #6b7a72;color:#fff}
+.aleta-l1-yakin::after{content:"i";display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid currentColor;font:italic 700 10px/12px Georgia,serif;text-align:center;opacity:.9}
+.aleta-l1-yakin-hijau{background:#16704a;border-color:#235b3e}.aleta-l1-yakin-kuning{background:#9a5b06;border-color:#74440a}.aleta-l1-yakin-merah{background:#b42318;border-color:#8a1c13}
+.aleta-l1-beda{color:#8a4b00}
+.aleta-l1-awas{margin:4px 0;padding:3px 9px;border-left:3px solid #f59e0b;background:rgba(245,158,11,.12);color:#5c3d00}
+.aleta-l1-kecil{color:#555}
 .aleta-l1-sorot{outline:2px solid #e0a800!important;outline-offset:1px}
-.aleta-l1-kosong-chip{margin-right:6px;font-size:11px;padding:2px 6px;border:1px solid #d08b00;border-radius:8px;background:#fff7e0;color:#6b4e00;cursor:pointer}
-.aleta-l1-toast{position:fixed;right:16px;bottom:16px;z-index:2147483000;max-width:380px;padding:9px 12px;border-radius:6px;background:#1f2d1f;color:#fff;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
-html[data-aleta-tema-sipp="gelap"] .aleta-l1-pita{background:#1d2a21;color:#dfeee2;border-color:#3d6b48}
-html[data-aleta-tema-sipp="gelap"] .aleta-l1-tombol,html[data-aleta-tema-sipp="gelap"] .aleta-l1-unggah,html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel,html[data-aleta-tema-sipp="gelap"] .aleta-l1-chip{background:#16201a;color:#dfeee2!important}
-html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel th{background:#22362a}
-html[data-aleta-tema-sipp="gelap"] .aleta-l1-kabar{color:#c9d8e6}
-html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{background:#3a2f12;color:#f3e2b5}
+.aleta-l1-kosong-chip{margin-right:6px;font-family:inherit;font-size:inherit;padding:2px 10px;border:1px solid #74440a;border-radius:999px;background:#9a5b06;color:#fff;font-weight:600;cursor:pointer}
+.aleta-l1-toast{position:fixed;right:16px;bottom:16px;z-index:2147483000;max-width:380px;padding:9px 12px;border-radius:6px;background:#007640;color:#fff;font-family:inherit;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-pita{background:rgba(47,158,68,.10);color:#dfe8e2}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-tombol.aleta-l1-utama,html[data-aleta-tema-sipp="gelap"] .aleta-l1-chip,html[data-aleta-tema-sipp="gelap"] .aleta-l1-logo{background:#1c5539;border-color:#1c5539}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-judul{color:#7fd0a6}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-tombol,html[data-aleta-tema-sipp="gelap"] .aleta-l1-unggah,html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel{background:#17211c;color:#dfe8e2;border-color:#27342e}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel td,html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel th{border-color:#27342e}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel th{background:#143c29}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-kabar,html[data-aleta-tema-sipp="gelap"] .aleta-l1-kecil{color:#c9d8e6}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 `;
   function sisipkanGaya(doc) {
     if (doc.getElementById(ID_GAYA)) return;
@@ -740,7 +748,8 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{background:#3a2f12;color:#f3e2
     const pita = el("div", `${KELAS} aleta-l1-pita`);
     pita.setAttribute("data-l1-jendela", j.kode);
     const baris = el("div", "aleta-l1-baris");
-    const judul = el("span", "aleta-l1-judul", `ALETA · ${j.judul}`);
+    const judul = el("span", "aleta-l1-judul", j.judul);
+    const logo = el("span", "aleta-l1-logo", "ALETA");
     const hitung = el("span", "aleta-l1-hitung", "…");
     hitung.setAttribute("data-l1", "hitung");
     hitung.title = "Klik untuk melompat ke kolom yang masih kosong";
@@ -748,7 +757,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{background:#3a2f12;color:#f3e2
     tIsi.setAttribute("data-l1", "isi");
     const tKosong = tombol("Loncat ke yang kosong", "Sorot dan lompat ke kolom yang masih kosong (wajib lebih dulu)");
     tKosong.setAttribute("data-l1", "kosong");
-    baris.append(judul, hitung, tIsi, tKosong);
+    baris.append(logo, judul, tIsi, hitung, tKosong);
     const kabarEl = el("div", "aleta-l1-kabar");
     kabarEl.setAttribute("data-l1", "kabar");
     kabarEl.setAttribute("aria-live", "polite");

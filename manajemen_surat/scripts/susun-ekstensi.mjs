@@ -96,6 +96,11 @@ const BERKAS = [
   // dengan ALETA, Putusan Akhir dari berkas, cek dobel e-Doc; di ABT menerima
   // serah terima nomor perkara untuk Blangko ABT by Derry Briantono.
   "sipp-ide-l1.js",
+  // SIPP dengan Ide ALETA gelombang 2 (tahap M1, 16 Okt 2026) - skrip konten
+  // SIPP sesudah sipp-ide-l1.js (memakai penghitung kolom L1): Isi dengan
+  // ALETA di Tunda/Edit Jadwal, Relaas, Putusan Sela, Rekonvensi, Saksi
+  // Putusan, Tambah Biaya (Kasir), dan Arsip.
+  "sipp-ide-m1.js",
   "blangko-derry.css",
   "tema-awal.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
