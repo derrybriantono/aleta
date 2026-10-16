@@ -84,7 +84,7 @@ describe("B. penebak alur - keadaan sidang nyata", () => {
     expect(s1.h.alternatif.map((l) => l.kode)).toEqual(["1a"]);
     const s2 = tebak({ jenisPerkara: CT, urutanSidang: 2, dihadiriOleh: 2 });
     expect([s2.id, s2.kode]).toEqual(["alur-02", "2"]);
-    expect(s2.h.alternatif.map((l) => l.kode)).toEqual(["2a", "2b"]);
+    expect(s2.h.alternatif.map((l) => l.kode)).toEqual(["2a", "2b", "2c"]); // Q3 16 Okt: + 5 saksi
     expect(s2.h.langkah?.berkas).toContain("2 Saksi");
   });
 
@@ -211,7 +211,7 @@ describe("C. baris BAS massal membawa alurBas dan tidak mengubah usulan blangko"
     expect(a.alurBas?.folder).toBe("derry_briantono/ALUR 02 Cerai Verstek 2 Sidang");
     expect(a.alurBas?.berkas).toBe("[1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf");
     expect(b.alurBas).toMatchObject({ id: "alur-02", kode: "2" });
-    expect(b.alurBas?.alternatif).toHaveLength(2);
+    expect(b.alurBas?.alternatif).toHaveLength(3); // Q3 16 Okt: 2a, 2b, 2c
   });
 
   it("kontradiktoir dan ikrar talak dibaca dari baris bot (dihadiriOleh, panggilan, sidangIkrarTalak)", () => {
@@ -225,12 +225,17 @@ describe("C. baris BAS massal membawa alurBas dan tidak mengubah usulan blangko"
     expect(hib.alurBas).toMatchObject({ id: "alur-06", kode: "3" });
   });
 
-  it("jenis tanpa folder alur -> alurBas null; blangko tetap seperti sebelumnya (tanpa katalog = tanpa pilihan)", () => {
+  it("jenis tanpa folder alur -> alurBas null dan tanpa pilihan; tanpa katalog arsip, pilihan hanya dari penebak alur (Q3 16 Okt)", () => {
     const [x] = susun([{ ...dasar, jenisPerkara: "Ekonomi Syariah" }]); // G3 15 Okt: Harta Bersama kini punya BAS (alur-bas-baru)
     expect(x.alurBas).toBeNull();
+    expect(x.blangko.pilihan).toEqual([]);
+    expect(x.blangko.usulan).toBeNull();
+    // Q3 16 Okt: dulu tanpa katalog = tanpa pilihan; kini langkah alur menjadi pilihan lewat salinannya di "1 Perceraian CG - BAS".
     const [y] = susun([dasar]);
-    expect(y.blangko.pilihan).toEqual([]);
-    expect(y.blangko.usulan).toBeNull();
+    expect(y.blangko.usulan?.berkas).toBe("[1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf");
+    expect(y.blangko.usulan?.perkiraan).toBe(true);
+    expect(y.blangko.usulan?.salinan?.[0]).toMatchObject({ menu: "Cerai Gugat - BAS" });
+    expect(y.blangko.pilihan.length).toBeGreaterThan(1);
   });
 });
 

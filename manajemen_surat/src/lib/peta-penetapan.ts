@@ -103,6 +103,9 @@ const UKURAN_BAWAAN: Pick<AturPenetapan, KunciUkuran> = {
   capGeserAtasMm: 6,
 };
 
+/** Blangko gabungan PTSP di folder derry_briantono/PTSP: bagian 1 PMH, 2 PPP, 3 PJS, 4 PHS (cermin PETA_PTSP.berkasGabungan di bot). */
+export const BERKAS_PTSP_GABUNGAN = "@ 0 - PMH - PHS.rtf";
+
 const UMUM: Omit<AturPenetapan, "aktif" | "namaBerkas" | "otomatisUnggah" | "pakaiCap" | "penandatangan"> = {
   kelompok: "Form Bantu PTSP",
   pakaiTtd: true,
@@ -117,12 +120,17 @@ const UMUM: Omit<AturPenetapan, "aktif" | "namaBerkas" | "otomatisUnggah" | "pak
  * BAWAAN (butir 19): PMH -> "@ 1 - PMH", PHS -> "@ 2 - PHS" (blangko Derry,
  * "Form Bantu PTSP"), keduanya otomatis diunggah. PMH: tanda tangan Ketua +
  * cap kantor di atasnya. PHS: tanda tangan ketua majelis, tanpa cap.
+ *
+ * Q3 16 Okt (peta perkara L3, bagian 5): PPP dan PJS tidak punya berkas tunggal di Derry - keduanya bagian 2 dan 3 dari "@ 0 - PMH - PHS"
+ * (satu dokumen gabungan yang dipotong bot per bagian lewat cirinya, penetapanEdocService.ambilBagian). Sebelumnya peta mereka mati dan
+ * kosong sehingga bot melaporkan "alamat_blangko_ppp_belum_disetel" padahal blangkonya ada; kini aktif dengan alamat gabungan itu - satu
+ * sumber dengan bot. Unggah otomatis TETAP mati: jenis baru tidak diunggah ke SIPP tanpa keputusan admin.
  */
 export const BAWAAN_PETA_PENETAPAN: Record<JenisPetaPenetapan, AturPenetapan> = {
   pmh: { ...UMUM, aktif: true, namaBerkas: "@ 1 - PMH.rtf", otomatisUnggah: true, pakaiCap: true, penandatangan: "ketua" },
   phs: { ...UMUM, aktif: true, namaBerkas: "@ 2 - PHS.rtf", otomatisUnggah: true, pakaiCap: false, penandatangan: "ketua_majelis" },
-  ppp: { ...UMUM, aktif: false, namaBerkas: "", otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
-  pjs: { ...UMUM, aktif: false, namaBerkas: "", otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
+  ppp: { ...UMUM, aktif: true, namaBerkas: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
+  pjs: { ...UMUM, aktif: true, namaBerkas: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
 };
 
 export class GalatPetaPenetapan extends Error {}

@@ -30,6 +30,17 @@ const ABT_SATKER = [
   // 14 Okt: paket ABT abt-pengumuman-itsbat (pengumuman itsbat nikah voluntair).
   "[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf",
   "[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf",
+  // 16 Okt (Q3): set e-Court dan amplop yang sudah ada di folder Relaas server (peta perkara L3, 15 Okt).
+  "[JS] 5.1. Relaas Panggilan Sidang P (e-Court).rtf",
+  "[JS] 5.2. Relaas Panggilan Sidang T (e-Court).rtf",
+  "[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf",
+  "[JS] 7. Relaas Panggilan Ikrar Talak (e-Court).rtf",
+  "[JS] 8.1.1. Amplop Relaas Panggilan Sidang P.rtf",
+  "[JS] 8.1.2. Amplop Relaas Panggilan Sidang T.rtf",
+  "[JS] 8.2.1. Amplop Relaas Pemberitahuan Putusan P.rtf",
+  "[JS] 8.2.2. Amplop Relaas Pemberitahuan Putusan T.rtf",
+  "[JS] 8.3.1. Amplop Relaas Panggilan Ikrar Talak P.rtf",
+  "[JS] 8.3.2. Amplop Relaas Panggilan Ikrar Talak T.rtf",
 ];
 const GABUNGAN = "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf";
 
@@ -50,6 +61,19 @@ const HARAP: Record<string, string> = {
   "panggilan-ikrar": "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf",
   delegasi: "[JS] 3.a. Permohonan Bantuan Panggilan Delegasi.rtf",
   amplop: "[JS] --AMPLOP PANGGILAN SURAT TERCATAT--.rtf",
+  // 16 Okt (Q3): set e-Court dan amplop per pihak.
+  "relaas-panggilan-sidang-pertama-ecourt-penggugat": "[JS] 5.1. Relaas Panggilan Sidang P (e-Court).rtf",
+  "relaas-panggilan-sidang-pertama-ecourt-tergugat": "[JS] 5.2. Relaas Panggilan Sidang T (e-Court).rtf",
+  "panggilan-ecourt-penggugat": "[JS] 5.1. Relaas Panggilan Sidang P (e-Court).rtf",
+  "panggilan-ecourt-tergugat": "[JS] 5.2. Relaas Panggilan Sidang T (e-Court).rtf",
+  "panggilan-ikrar-ecourt": "[JS] 7. Relaas Panggilan Ikrar Talak (e-Court).rtf",
+  "pbt-ecourt-verstek-tergugat": "[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf",
+  "amplop-panggilan-penggugat": "[JS] 8.1.1. Amplop Relaas Panggilan Sidang P.rtf",
+  "amplop-panggilan-tergugat": "[JS] 8.1.2. Amplop Relaas Panggilan Sidang T.rtf",
+  "amplop-putusan-penggugat": "[JS] 8.2.1. Amplop Relaas Pemberitahuan Putusan P.rtf",
+  "amplop-putusan-tergugat": "[JS] 8.2.2. Amplop Relaas Pemberitahuan Putusan T.rtf",
+  "amplop-ikrar-penggugat": "[JS] 8.3.1. Amplop Relaas Panggilan Ikrar Talak P.rtf",
+  "amplop-ikrar-tergugat": "[JS] 8.3.2. Amplop Relaas Panggilan Ikrar Talak T.rtf",
 };
 
 const petaBawaan = (jenis: "relaas" | "pbt") =>
@@ -155,7 +179,7 @@ describe("ekstensi - bawaan tertanam mencerminkan bawaan server", () => {
       [...blok.matchAll(/"?([a-z-]+)"?: (JURUSITA_BLANGKO_[A-Z_]+),/g)].map((m) => [m[1], konstanta[m[2]]])
     );
     for (const [kunci, berkas] of Object.entries(HARAP)) {
-      if (kunci === "delegasi" || kunci === "amplop") continue;
+      if (kunci === "delegasi" || kunci.startsWith("amplop")) continue; // delegasi dan amplop: ekstensi belum punya jalur cetaknya
       expect(peta[kunci], kunci).toBe(berkas);
     }
     expect(peta["panggilan-sidang-pertama"]).toBe(GABUNGAN);

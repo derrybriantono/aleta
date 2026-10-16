@@ -251,8 +251,9 @@ describe("B. rute GET bas-massal", () => {
     expect(d.saringan).toBe("semua");
     expect(d.lihatSemua).toBe(true);
     expect(d.sidang).toHaveLength(2);
-    expect(d.sidang[1].blangko.usulan).toBeNull();
-    expect(d.sidang[1].blangko.sebab).toMatch(/Folder blangko tidak ditemukan/);
+    // Q3 16 Okt: katalog itsbat tak terbaca, tetapi penebak alur (ALUR 11 [1]) menyumbang usulan PERKIRAAN lewat salinannya.
+    expect(d.sidang[1].blangko.usulan).toMatchObject({ setId: "alur-11", perkiraan: true });
+    expect(d.sidang[1].blangko.sebab).toMatch(/Itsbat nikah/);
     expect(d.katalog[ITSBAT]).toEqual({ terbaca: false, sebab: "Folder blangko tidak ditemukan." });
     // K4 (1 Okt): admin yang melihat semua PP -> kelompokPerUser, pengguna per baris.
     expect(d.kelompokPerUser).toBe(true);

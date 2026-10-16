@@ -152,6 +152,11 @@ const JURUSITA_BLANGKO_T_LANJUTAN = "[JS] 1. Relaas Panggilan Sidang T (Sidang L
 const JURUSITA_BLANGKO_PBT_P = "[JS] 2. Relaas Pemberitahuan Putusan P.rtf";
 const JURUSITA_BLANGKO_PBT_T = "[JS] 2. Relaas Pemberitahuan Putusan T.rtf";
 const JURUSITA_BLANGKO_IKRAR = "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf";
+// Q3 16 Okt: set e-Court (perkara terdaftar lewat e-Court) - cermin BLANGKO_RELAAS entri `ecourt` (lib/pohon-blangko.ts).
+const JURUSITA_BLANGKO_ECOURT_P = "[JS] 5.1. Relaas Panggilan Sidang P (e-Court).rtf";
+const JURUSITA_BLANGKO_ECOURT_T = "[JS] 5.2. Relaas Panggilan Sidang T (e-Court).rtf";
+const JURUSITA_BLANGKO_ECOURT_PBT_VERSTEK_T = "[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf";
+const JURUSITA_BLANGKO_ECOURT_IKRAR = "[JS] 7. Relaas Panggilan Ikrar Talak (e-Court).rtf";
 // 14 Okt: pengumuman itsbat nikah voluntair (paket ABT abt-pengumuman-itsbat) - cermin BLANGKO_RELAAS.
 const JURUSITA_BLANGKO_PENGUMUMAN_2P = "[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf";
 const JURUSITA_BLANGKO_PENGUMUMAN_1P = "[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf";
@@ -170,12 +175,24 @@ const JURUSITA_TERTANAM = {
     "panggilan-tergugat": JURUSITA_BLANGKO_T_LANJUTAN,
     "panggilan-termohon": JURUSITA_BLANGKO_T_LANJUTAN,
     "panggilan-ikrar": JURUSITA_BLANGKO_IKRAR,
+    // Q3 16 Okt: set e-Court (kunci berkata "ecourt" - cermin KUNCI_BAKU lib/pemetaan-blangko.ts).
+    "relaas-panggilan-sidang-pertama-ecourt-penggugat": JURUSITA_BLANGKO_ECOURT_P,
+    "relaas-panggilan-sidang-pertama-ecourt-pemohon": JURUSITA_BLANGKO_ECOURT_P,
+    "relaas-panggilan-sidang-pertama-ecourt-tergugat": JURUSITA_BLANGKO_ECOURT_T,
+    "relaas-panggilan-sidang-pertama-ecourt-termohon": JURUSITA_BLANGKO_ECOURT_T,
+    "panggilan-ecourt-penggugat": JURUSITA_BLANGKO_ECOURT_P,
+    "panggilan-ecourt-pemohon": JURUSITA_BLANGKO_ECOURT_P,
+    "panggilan-ecourt-tergugat": JURUSITA_BLANGKO_ECOURT_T,
+    "panggilan-ecourt-termohon": JURUSITA_BLANGKO_ECOURT_T,
+    "panggilan-ikrar-ecourt": JURUSITA_BLANGKO_ECOURT_IKRAR,
   },
   pbt: {
     "pbt-penggugat": JURUSITA_BLANGKO_PBT_P,
     "pbt-pemohon": JURUSITA_BLANGKO_PBT_P,
     "pbt-tergugat": JURUSITA_BLANGKO_PBT_T,
     "pbt-termohon": JURUSITA_BLANGKO_PBT_T,
+    "pbt-ecourt-verstek-tergugat": JURUSITA_BLANGKO_ECOURT_PBT_VERSTEK_T,
+    "pbt-ecourt-verstek-termohon": JURUSITA_BLANGKO_ECOURT_PBT_VERSTEK_T,
   },
 };
 const JURUSITA_SEBUTAN_SUMBER = { server: "server", simpanan: "simpanan server terakhir", bawaan: "bawaan ekstensi" };
@@ -359,7 +376,7 @@ const JURUSITA_KATA_PIHAK = ["penggugat", "tergugat", "pemohon", "termohon"];
 const JURUSITA_KATA_DIKENAL = new Set([
   "relaas", "panggilan", "sidang", "pbt", "pemberitahuan", "putusan", "isi", "dan", "untuk", "ke", "p", "t",
   "penggugat", "tergugat", "pemohon", "termohon", "delegasi", "amplop", "ikrar", "talak", "pertama", "lanjutan",
-  "tundaan", "ditunda",
+  "tundaan", "ditunda", "ecourt", "verstek",
 ]);
 /** 14 Okt: kata kunci pengumuman itsbat - hanya dikenal pada kunci berkata "pengumuman" (KATA_PENGUMUMAN server). */
 const JURUSITA_KATA_PENGUMUMAN = new Set([
@@ -383,20 +400,32 @@ function jurusitaUraiKunci(kunci) {
   // 14 Okt: pengumuman itsbat - keadaan = jumlah Pemohon ("1p", selainnya "2p").
   if (ada("pengumuman")) {
     const asingP = kata.filter((k) => !JURUSITA_KATA_PENGUMUMAN.has(k));
-    return { awalan: "pengumuman", keadaan: ada("1p") ? "1p" : "2p", pihak: "", dikenal: asingP.length === 0, asing: asingP };
+    return { awalan: "pengumuman", keadaan: ada("1p") ? "1p" : "2p", pihak: "", dikenal: asingP.length === 0, asing: asingP, ecourt: false, verstek: false };
   }
+  // Q3 16 Okt: kunci khusus perkara e-Court ("ecourt" atau "e-court") dan putusan verstek - cermin uraiKunciRelaas.
+  const ecourt = ada("ecourt") || (ada("e") && ada("court"));
+  const verstek = ada("verstek");
   const awalan = ada("pbt") || ada("pemberitahuan") ? "pbt" : ada("delegasi") ? "delegasi" : ada("amplop") ? "amplop" : "panggilan";
   let keadaan = ada("ikrar") ? "ikrar" : ada("pertama") ? "pertama" : ada("lanjutan") || ada("tundaan") || ada("ditunda") ? "lanjutan" : "";
   const pihak = JURUSITA_KATA_PIHAK.find((p) => ada(p)) || "";
   if (awalan === "panggilan" && !keadaan && pihak) keadaan = "lanjutan";
-  const asing = kata.filter((k) => !JURUSITA_KATA_DIKENAL.has(k));
-  return { awalan, keadaan: awalan === "pbt" ? "" : keadaan, pihak, dikenal: asing.length === 0 && kata.length > 0, asing };
+  const asing = kata.filter((k) => !JURUSITA_KATA_DIKENAL.has(k) && !(ecourt && (k === "e" || k === "court")));
+  return { awalan, keadaan: awalan === "pbt" ? "" : keadaan, pihak, dikenal: asing.length === 0 && kata.length > 0, asing, ecourt, verstek };
 }
 
 function jurusitaNilaiKunci(kunci, minta) {
   const u = jurusitaUraiKunci(kunci);
   if (!u.dikenal || u.awalan !== minta.awalan) return -1;
   let nilai = 0;
+  // Q3 16 Okt: kunci e-Court/verstek hanya untuk dokumen e-Court/verstek dan menang atas kunci biasa (cermin nilaiKunciRelaas).
+  if (u.ecourt) {
+    if (!minta.ecourt) return -1;
+    nilai += 8;
+  }
+  if (u.verstek) {
+    if (!minta.verstek) return -1;
+    nilai += 16;
+  }
   if (u.keadaan) {
     if (u.keadaan !== minta.keadaan) return -1;
     nilai += 4;
@@ -431,19 +460,42 @@ function jurusitaPilihKunci(kunciDaftar, minta) {
  * (1 pihak pertama, 2 pihak kedua), dan sebutan perkaranya. `tertanam` =
  * daftar kunci lama untuk bawaan ekstensi.
  */
-function jurusitaPermintaan(golongan, sisi, sebutan) {
+function jurusitaPermintaan(golongan, sisi, sebutan, ec) {
   const khusus = sisi === 1 ? sebutan.k1 : sebutan.k2;
   const umum = sisi === 1 ? "penggugat" : "tergugat";
+  // Q3 16 Okt: perkara e-Court / putusan verstek memilih set e-Court ([JS] 5.1, 5.2, 6.2, 7). `ec` = { ecourt, verstek } (jurusitaEcOpsi).
+  const ecourt = Boolean(ec && ec.ecourt);
+  const verstek = Boolean(ec && ec.verstek);
+  const tambahEc = { ecourt, verstek };
+  const perPihakEc = (awalanKunci) => (ecourt ? [...new Set([khusus, umum].filter(Boolean))].map((p) => `${awalanKunci}-ecourt-${p}`) : []);
   if (golongan === "pemberitahuan-putusan") {
-    return { jenis: "pbt", awalan: "pbt", keadaan: "", khusus, umum, tertanam: jurusitaKunciPihak("pbt", sisi, sebutan) };
+    // [JS] 6.2 hanya untuk Tergugat/Termohon dan hanya bila putusannya verstek.
+    const ecKunci = ecourt && verstek && sisi === 2 ? [...new Set([khusus, umum].filter(Boolean))].map((p) => `pbt-ecourt-verstek-${p}`) : [];
+    return { jenis: "pbt", awalan: "pbt", keadaan: "", khusus, umum, ...tambahEc, tertanam: [...ecKunci, ...jurusitaKunciPihak("pbt", sisi, sebutan)] };
   }
-  if (golongan === "ikrar-talak") return { jenis: "relaas", awalan: "panggilan", keadaan: "ikrar", khusus, umum, tertanam: ["panggilan-ikrar"] };
+  if (golongan === "ikrar-talak") {
+    const ecKunci = ecourt && sisi === 2 ? ["panggilan-ikrar-ecourt"] : [];
+    return { jenis: "relaas", awalan: "panggilan", keadaan: "ikrar", khusus, umum, ...tambahEc, tertanam: [...ecKunci, "panggilan-ikrar"] };
+  }
   if (golongan === "sidang-pertama") {
     // Per pihak lebih dulu (6 Okt, butir 10); gabungan hanya cadangan terakhir.
     const perPihak = [...new Set([khusus, umum].filter(Boolean))].map((p) => `relaas-panggilan-sidang-pertama-${p}`);
-    return { jenis: "relaas", awalan: "panggilan", keadaan: "pertama", khusus, umum, tertanam: [...perPihak, "panggilan-sidang-pertama"] };
+    return {
+      jenis: "relaas", awalan: "panggilan", keadaan: "pertama", khusus, umum, ...tambahEc,
+      tertanam: [...perPihakEc("relaas-panggilan-sidang-pertama"), ...perPihak, "panggilan-sidang-pertama"],
+    };
   }
-  return { jenis: "relaas", awalan: "panggilan", keadaan: "lanjutan", khusus, umum, tertanam: jurusitaKunciPihak("panggilan", sisi, sebutan) };
+  return {
+    jenis: "relaas", awalan: "panggilan", keadaan: "lanjutan", khusus, umum, ...tambahEc,
+    tertanam: [...perPihakEc("panggilan"), ...jurusitaKunciPihak("panggilan", sisi, sebutan)],
+  };
+}
+
+/** Q3 16 Okt: opsi e-Court dari rincian perkara (rincian.lewatEcourt, rincian.putusan.verstek) atau dokumen rute (lewatEcourt, verstekPutusan). */
+function jurusitaEcOpsi(x) {
+  if (!x || typeof x !== "object") return { ecourt: false, verstek: false };
+  const verstekRincian = x.putusan && typeof x.putusan === "object" ? x.putusan.verstek === true : false;
+  return { ecourt: x.lewatEcourt === true, verstek: x.verstekPutusan === true || verstekRincian };
 }
 
 /**
@@ -463,8 +515,15 @@ function jurusitaPilihBlangko(petaBerlaku, jenis, minta) {
     }
   }
   const k = jurusitaPilihKunci([...sumberKunci.keys()], m);
-  if (k) return { berkas: sumberKunci.get(k).nama, kunci: k, sumber: sumberKunci.get(k).sumber };
   const tertanam = JURUSITA_TERTANAM[m.jenis || jenis] || {};
+  // Q3 16 Okt: bawaan e-Court menang atas kunci server/simpanan yang BUKAN kunci e-Court (kunci biasa tidak membedakan e-Court); admin
+  // menimpanya dengan kunci berkata "ecourt" (cermin blangkoMenurutPemetaan di portal).
+  if (m.ecourt && (!k || !jurusitaUraiKunci(k).ecourt)) {
+    for (const t of m.tertanam || []) {
+      if (tertanam[t] && jurusitaUraiKunci(t).ecourt) return { berkas: tertanam[t], kunci: t, sumber: "bawaan" };
+    }
+  }
+  if (k) return { berkas: sumberKunci.get(k).nama, kunci: k, sumber: sumberKunci.get(k).sumber };
   for (const t of m.tertanam || []) {
     if (tertanam[t]) return { berkas: tertanam[t], kunci: t, sumber: "bawaan" };
   }
@@ -737,7 +796,7 @@ function jurusitaSusunDokumen(konteks, pilihan, petaBerlaku) {
     const golongan = jurusitaGolonganSidang(sidang, rincian);
     const d = Number(sidang.urutanSidang);
     for (const sisi of panggilan) {
-      const blangko = jurusitaPilihBlangko(petaBerlaku, "relaas", jurusitaPermintaan(golongan, sisi, sebutan));
+      const blangko = jurusitaPilihBlangko(petaBerlaku, "relaas", jurusitaPermintaan(golongan, sisi, sebutan, jurusitaEcOpsi(rincian)));
       const pihak = sisi === 1 ? sebutan.pertama : sebutan.kedua;
       if (!blangko) {
         tanpaBlangko.push(`Panggilan ${pihak}`);
@@ -749,7 +808,7 @@ function jurusitaSusunDokumen(konteks, pilihan, petaBerlaku) {
 
   const pbt = Array.isArray(pilihan && pilihan.pbt) ? pilihan.pbt : [];
   for (const sisi of pbt) {
-    const blangko = jurusitaPilihBlangko(petaBerlaku, "pbt", jurusitaPermintaan("pemberitahuan-putusan", sisi, sebutan));
+    const blangko = jurusitaPilihBlangko(petaBerlaku, "pbt", jurusitaPermintaan("pemberitahuan-putusan", sisi, sebutan, jurusitaEcOpsi(rincian)));
     const pihak = sisi === 1 ? sebutan.pertama : sebutan.kedua;
     if (!blangko) {
       tanpaBlangko.push(`PBT ${pihak}`);
@@ -852,7 +911,7 @@ function jurusitaKunciMassal(dok, sisiPaksa) {
       : String(dok.pihakDipanggil || "") === "kedua"
         ? 2
         : 1;
-  const minta = jurusitaPermintaan(golongan, sisi, sebutan);
+  const minta = jurusitaPermintaan(golongan, sisi, sebutan, jurusitaEcOpsi(dok));
   return { jenis: minta.jenis, kunci: minta.tertanam, minta };
 }
 
@@ -1952,7 +2011,7 @@ function jurusitaDokumenBarisMassal(baris, pilih, peta) {
     const perPihak = lanjutan || golongan === "sidang-pertama";
     const ruteBerlaku = pg.bisaDicetak === true && (!perPihak || (sisiP.length === 1 && jurusitaSamaSisi(sisiP, kp.sisi)));
     for (const sisi of sisiP) {
-      const blangko = jurusitaBlangkoBagian(pg, "relaas", jurusitaPermintaan(golongan, sisi, seb), ruteBerlaku, peta);
+      const blangko = jurusitaBlangkoBagian(pg, "relaas", jurusitaPermintaan(golongan, sisi, seb, jurusitaEcOpsi(pg)), ruteBerlaku, peta);
       const pihak = sisi === 1 ? seb.pertama : seb.kedua;
       if (!blangko) {
         tanpaBlangko.push(`Panggilan ${pihak}`);
@@ -1965,7 +2024,7 @@ function jurusitaDokumenBarisMassal(baris, pilih, peta) {
     const dok = jurusitaDokPbtSisi(baris.pbt, sisi);
     const k = jurusitaKeadaanDok(dok, baris.kelompok);
     if (!dok || !k || !k.boleh) continue;
-    const blangko = jurusitaBlangkoBagian(dok, "pbt", jurusitaPermintaan("pemberitahuan-putusan", sisi, seb), dok.bisaDicetak === true, peta);
+    const blangko = jurusitaBlangkoBagian(dok, "pbt", jurusitaPermintaan("pemberitahuan-putusan", sisi, seb, jurusitaEcOpsi(dok)), dok.bisaDicetak === true, peta);
     const pihak = sisi === 1 ? seb.pertama : seb.kedua;
     if (!blangko) {
       tanpaBlangko.push(`PBT ${pihak}`);

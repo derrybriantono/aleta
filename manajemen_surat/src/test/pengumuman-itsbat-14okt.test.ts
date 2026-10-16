@@ -199,7 +199,7 @@ describe("pemetaan blangko: kunci pengumuman-itsbat / pengumuman-itsbat-1p", () 
     ];
     for (const k of kunci) {
       const ts = uraiKunciRelaas(k);
-      expect(polos(w.__k.urai(k)), k).toEqual({ awalan: ts.awalan, keadaan: ts.keadaan, pihak: ts.pihak, dikenal: ts.dikenal, asing: ts.asing });
+      expect(polos(w.__k.urai(k)), k).toEqual({ awalan: ts.awalan, keadaan: ts.keadaan, pihak: ts.pihak, dikenal: ts.dikenal, asing: ts.asing, ecourt: ts.ecourt, verstek: ts.verstek });
     }
     for (const keadaanMinta of ["1p", "2p"] as const) {
       const m = { awalan: "pengumuman" as const, keadaan: keadaanMinta, khusus: "" as const, umum: "" as const };

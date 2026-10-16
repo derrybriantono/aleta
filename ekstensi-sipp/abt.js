@@ -17003,6 +17003,8 @@ async function a1SidangPadaTanggal(tanggalIso) {
       majelisNama: String(s.majelisNama || ""),
       // T 13 Okt: kode kumulasi (SIPP + petitum) untuk blangko putusan kumulasi.
       kumulasi: typeof alatKodeKumulasi === "function" ? alatKodeKumulasi(s.kumulasi) : [],
+      // Q3 16 Okt: keadaan putusan (portal lib/keadaan-putusan.ts) untuk pemilihan blangko per keadaan.
+      keadaan: typeof alatKodeKeadaan === "function" ? alatKodeKeadaan(s.keadaanPutusan) : [],
       pengguna: { id: soreBakuNamaAkun(ketua) || "-", nama: ketua || "Majelis belum tercatat" },
       mentah: s,
     });
@@ -19396,7 +19398,7 @@ function p3PetaStatus(keadaan, s) {
   const statusPutusan = String(s.statusPutusan || (st && st.statusPutusan) || "");
   if (!statusPutusan) return null;
   // T 13 Okt: kumulasi (SIPP + petitum) ikut menentukan blangko - baris kumulasi menang atas baris status biasa.
-  const h = alatPetaUntukPerkara(keadaan.peta, s.jenis, statusPutusan, Boolean(s.verstek) || Boolean(st && st.verstek), s.kumulasi);
+  const h = alatPetaUntukPerkara(keadaan.peta, s.jenis, statusPutusan, Boolean(s.verstek) || Boolean(st && st.verstek), s.kumulasi, (s.keadaan && s.keadaan.length ? s.keadaan : st && st.keadaan) || []);
   return h && h.tingkat !== "jenis" && alatBlangkoTerpetakan(h.baris) ? h.baris : null;
 }
 
@@ -19404,7 +19406,7 @@ function p3PetaStatus(keadaan, s) {
 function p3PetaJenis(keadaan, s) {
   if (typeof alatPetaUntukPerkara !== "function") return keadaan.peta[alatKunciJenis(s.jenis)];
   const st = (keadaan.statusSipp && keadaan.statusSipp[s.nomor]) || null;
-  const h = alatPetaUntukPerkara(keadaan.peta, s.jenis, s.statusPutusan || (st && st.statusPutusan) || "", Boolean(s.verstek) || Boolean(st && st.verstek), s.kumulasi);
+  const h = alatPetaUntukPerkara(keadaan.peta, s.jenis, s.statusPutusan || (st && st.statusPutusan) || "", Boolean(s.verstek) || Boolean(st && st.verstek), s.kumulasi, (s.keadaan && s.keadaan.length ? s.keadaan : st && st.keadaan) || []);
   return h ? h.baris : undefined;
 }
 

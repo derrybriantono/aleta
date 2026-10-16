@@ -8,7 +8,7 @@
  * jawabannya disusun dengan aturan gabungan portal yang sesungguhnya.
  *
  * Yang dijaga:
- *   - satu jenis tambahan (Perwalian) yang disahkan di portal masuk ke peta
+ *   - satu jenis tambahan (Wasiat) yang disahkan di portal masuk ke peta
  *     KEDUA peramban tanpa penyuntingan per peramban: cakupan 4 -> 5 jenis;
  *   - token a/b tiap peramban tetap miliknya - tidak tertukar, tidak hilang;
  *   - bawaan yang dimatikan portal lenyap dari baris bawaan, tetapi baris yang
@@ -141,8 +141,8 @@ function portalDengan(barisPeta: BarisGabung[], barisPadanan: BarisGabung[] = []
   return () => ({ ok: true, status: 200, json: async () => polos(isi) }) as Jawab;
 }
 
-const PERWALIAN = { kunci: "perwalian", nilai: "[01] [Kabul] Perwalian", data: { jenisAsli: "Perwalian" }, urutan: 4 };
-const PADANAN_PERWALIAN = { kunci: "perwalian", nilai: "perwalian anak", urutan: 10 };
+const WASIAT = { kunci: "wasiat", nilai: "[01] [Kabul] Wasiat", data: { jenisAsli: "Wasiat" }, urutan: 4 };
+const PADANAN_WASIAT = { kunci: "wasiat", nilai: "wasiat khusus", urutan: 10 };
 const portalMati = () => Promise.reject(new TypeError("Failed to fetch"));
 
 /** Peta yang sudah pernah dipakai di satu peramban: cerai gugat bertoken. */
@@ -170,15 +170,15 @@ const KUNCI_BAWAAN = CERMIN_EKSTENSI["putusan.peta-blangko"].map((e) => e.kunci)
 
 // ============================================================================
 describe("satu jenis tambahan di portal berlaku untuk dua peramban, token tetap per peramban", () => {
-  // Jumlah bawaan dihitung dari cermin (4 jenis lama + 3 jenis gugatan lain blok 4B 11 Okt), bukan diketik.
-  it("tanpa portal: semua jenis bawaan; dengan Perwalian disahkan di portal: bawaan + 1 di KEDUA peramban", async () => {
+  // Jumlah bawaan dihitung dari cermin, bukan diketik. Jenis tambahan dipilih yang TIDAK berbawaan (Wasiat; Perwalian sudah bawaan sejak Q3 16 Okt).
+  it("tanpa portal: semua jenis bawaan; dengan Wasiat disahkan di portal: bawaan + 1 di KEDUA peramban", async () => {
     const tanpa = peramban(portalMati);
     const petaTanpa = await tanpa.muat();
     expect(Object.keys(petaTanpa).sort()).toEqual(KUNCI_BAWAAN);
 
     const portal = portalDengan(
-      [baris("putusan.peta-blangko", PERWALIAN, { asal: "tambahan" })],
-      [baris("putusan.padanan-jenis", PADANAN_PERWALIAN, { asal: "tambahan" })]
+      [baris("putusan.peta-blangko", WASIAT, { asal: "tambahan" })],
+      [baris("putusan.padanan-jenis", PADANAN_WASIAT, { asal: "tambahan" })]
     );
     const A = peramban(portal, petaBertoken("tokenAAAAAAAA~1", "tokenBBBBBBBB~1"));
     const B = peramban(portal, petaBertoken("tokenCCCCCCCC~2", "tokenDDDDDDDD~2"));
@@ -187,25 +187,25 @@ describe("satu jenis tambahan di portal berlaku untuk dua peramban, token tetap 
 
     for (const peta of [petaA, petaB]) {
       expect(Object.keys(peta)).toHaveLength(KUNCI_BAWAAN.length + 1);
-      expect(peta.perwalian).toMatchObject({ jenisAsli: "Perwalian", berkas: "[01] [Kabul] Perwalian", bawaan: true });
+      expect(peta.wasiat).toMatchObject({ jenisAsli: "Wasiat", berkas: "[01] [Kabul] Wasiat", bawaan: true });
     }
     // Token a/b milik masing-masing peramban, tidak tertukar dan tidak dilepas
     // (berkasnya berakhiran .RTF - nama yang SAMA menurut alatKunciBerkas).
     expect([petaA["cerai gugat"].a, petaA["cerai gugat"].b]).toEqual(["tokenAAAAAAAA~1", "tokenBBBBBBBB~1"]);
     expect([petaB["cerai gugat"].a, petaB["cerai gugat"].b]).toEqual(["tokenCCCCCCCC~2", "tokenDDDDDDDD~2"]);
     // Tersimpan di penyimpanan peramban masing-masing, bukan dikirim ke portal.
-    expect((A.simpanan[KUNCI_PETA] as any).perwalian.berkas).toBe("[01] [Kabul] Perwalian");
+    expect((A.simpanan[KUNCI_PETA] as any).wasiat.berkas).toBe("[01] [Kabul] Wasiat");
     expect((A.simpanan[KUNCI_PETA] as any)["cerai gugat"].a).toBe("tokenAAAAAAAA~1");
     // Satu permintaan per peramban: padanan lalu peta memakai versi yang sama.
     expect(A.permintaan).toHaveLength(1);
     expect(B.permintaan).toHaveLength(1);
     // Padanan dari portal ikut berlaku: nama lain SIPP menunjuk baris baru.
-    expect(A.k.alatKunciJenis("Perwalian Anak")).toBe("perwalian");
-    expect(petaA[A.k.alatKunciJenis("Perwalian Anak")].berkas).toBe("[01] [Kabul] Perwalian");
+    expect(A.k.alatKunciJenis("Wasiat Khusus")).toBe("wasiat");
+    expect(petaA[A.k.alatKunciJenis("Wasiat Khusus")].berkas).toBe("[01] [Kabul] Wasiat");
   });
 
   it("pemuatan kedua tidak mengubah apa pun - tidak ada putaran lepas-ambil token", async () => {
-    const portal = portalDengan([baris("putusan.peta-blangko", PERWALIAN, { asal: "tambahan" })]);
+    const portal = portalDengan([baris("putusan.peta-blangko", WASIAT, { asal: "tambahan" })]);
     const A = peramban(portal, petaBertoken("tokenAAAAAAAA~1", "tokenBBBBBBBB~1"));
     // Pemuatan pertama menyisipkan baris bawaan; yang kedua melengkapi
     // blangkoDiminta pada baris bawaan bermenu (perilaku lama, sebelum portal).

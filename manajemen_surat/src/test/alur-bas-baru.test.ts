@@ -249,15 +249,15 @@ describe("D. baris BAS massal (susun.ts sungguhan)", () => {
     expect(c.blangko.sebab).toBe("");
   });
 
-  it("jenis lama tidak berubah: cerai gugat biasa tanpa katalog = tanpa pilihan, alurBas alur-02; sidang 1 DK hanya menambah pilihan", () => {
+  it("jenis lama tidak berubah: cerai gugat biasa alurBas alur-02 (kini juga pilihan, Q3 16 Okt); sidang 1 DK: varian tunda baru ditawarkan, usulan dari penebak alur lama", () => {
     const [cg] = susun([{ ...dasar, jenisPerkara: "Cerai Gugat", nomorPerkara: "1/Pdt.G/2026/PA.Dgl", dihadiriOleh: 2 }]);
-    expect(cg.blangko.pilihan).toEqual([]);
-    expect(cg.blangko.usulan).toBeNull();
     expect(cg.alurBas).toMatchObject({ id: "alur-02", kode: "1" });
+    // Q3 16 Okt: tanpa katalog arsip, langkah alur menjadi usulan perkiraan (dulu: tanpa pilihan, hanya tag).
+    expect(cg.blangko.usulan).toMatchObject({ setId: "alur-02", perkiraan: true });
     const [dk] = susun([{ ...dasar, jenisPerkara: "Dispensasi Kawin" }]);
-    expect(dk.blangko.usulan).toBeNull(); // usulan lama (katalog) tidak digantikan
     expect(dk.alurBas).toMatchObject({ id: "alur-12", kode: "1" }); // keterangan alur lama tetap
-    expect(dk.blangko.pilihan.map((p) => p.setId)).toEqual(["alur-12l", "alur-12l", "alur-12l", "alur-12l"]);
+    expect(dk.blangko.usulan?.setId).toBe("alur-12"); // Q3: tanpa katalog, langkah alur lama = usulan perkiraan; varian tunda baru hanya ditawarkan
+    expect(dk.blangko.pilihan.filter((p) => p.setId === "alur-12l")).toHaveLength(4);
     const [dk2] = susun([{ ...dasar, jenisPerkara: "Dispensasi Kawin", urutanSidang: 2, agenda: "Pembacaan Penetapan" }]);
     expect(dk2.blangko.usulan).toMatchObject({ folder: `${A}3 Dispensasi Kawin - BAS` });
     expect(dk2.blangko.usulan!.berkas).toMatch(/^BAS ALUR 12 DK - \[3\]/);

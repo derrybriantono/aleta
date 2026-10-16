@@ -23673,6 +23673,8 @@ async function s1SidangPadaTanggal(tanggalIso) {
       tanggalSidang: String(s.tanggalSidang || tanggalIso).slice(0, 10),
       tanggalPutusan: String(s.tanggalPutusan || "").slice(0, 10),
       majelisNama: String(s.majelisNama || ""),
+      // Q3 16 Okt: keadaan putusan (portal lib/keadaan-putusan.ts) untuk pemilihan blangko putusan per keadaan.
+      keadaan: Array.isArray(s.keadaanPutusan) ? s.keadaanPutusan.map(String).slice(0, 8) : [],
       pengguna: { id: "", nama: ketua },
     };
     // Dua baris sidang perkara yang sama di satu hari (ditunda lalu
@@ -24264,8 +24266,8 @@ function s2BlangkoMassal() {
     const st = k.status[nomor] || {};
     const status = String((s && s.statusPutusan) || st.statusPutusan || "");
     const verstek = Boolean(s && s.verstek) || Boolean(st.verstek);
-    // T 13 Okt: kumulasi perkara (SIPP + petitum) ikut menentukan blangko putusan.
-    if (typeof alatPetaUntukPerkara === "function") return alatPetaUntukPerkara(k.peta, s && s.jenis, status, verstek, s && s.kumulasi);
+    // T 13 Okt: kumulasi perkara (SIPP + petitum) ikut menentukan blangko putusan. Q3 16 Okt: keadaan putusan juga.
+    if (typeof alatPetaUntukPerkara === "function") return alatPetaUntukPerkara(k.peta, s && s.jenis, status, verstek, s && s.kumulasi, (s && s.keadaan && s.keadaan.length ? s.keadaan : st.keadaan) || []);
     const jenis = typeof alatKunciJenis === "function" ? alatKunciJenis(s && s.jenis) : String((s && s.jenis) || "").toLowerCase();
     return k.peta[jenis] ? { baris: k.peta[jenis], kunci: jenis, tingkat: "jenis" } : null;
   };
@@ -24387,7 +24389,7 @@ function s2BlangkoMassal() {
 
   const pasangBaris = (s, wadah) => {
     if (!s || !s.nomor || !wadah) return null;
-    if (s.statusPutusan) k.status[s.nomor] = { statusPutusan: String(s.statusPutusan), verstek: Boolean(s.verstek) };
+    if (s.statusPutusan) k.status[s.nomor] = { statusPutusan: String(s.statusPutusan), verstek: Boolean(s.verstek), ...(Array.isArray(s.keadaan) && s.keadaan.length ? { keadaan: s.keadaan.slice(0, 8) } : {}) };
     let el = null;
     let gambar = () => {};
     const pembantu = globalThis.aletaMassalBarisBlangko;

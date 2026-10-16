@@ -167,12 +167,14 @@ describe("K3 - /api/aleta-ecourt/pemetaan-blangko", () => {
   it("GET pbt: per pihak, blangko Relaas Pemberitahuan Putusan", async () => {
     const r = await panggil("pemetaan", "GET", { query: "jenis=pbt" });
     const kunci = (r.isi.data.butir as { kunci: string; namaBerkas: string }[]).map((b) => b.kunci).sort();
-    expect(kunci).toEqual(["pbt-pemohon", "pbt-penggugat", "pbt-tergugat", "pbt-termohon"]);
+    expect(kunci).toEqual(["pbt-ecourt-verstek-tergugat", "pbt-pemohon", "pbt-penggugat", "pbt-tergugat", "pbt-termohon"]);
     const peta = Object.fromEntries((r.isi.data.butir as { kunci: string; namaBerkas: string }[]).map((b) => [b.kunci, b.namaBerkas]));
     expect(peta["pbt-penggugat"]).toBe("[JS] 2. Relaas Pemberitahuan Putusan P.rtf");
     expect(peta["pbt-pemohon"]).toBe("[JS] 2. Relaas Pemberitahuan Putusan P.rtf");
     expect(peta["pbt-tergugat"]).toBe("[JS] 2. Relaas Pemberitahuan Putusan T.rtf");
     expect(peta["pbt-termohon"]).toBe("[JS] 2. Relaas Pemberitahuan Putusan T.rtf");
+    // Q3 16 Okt: putusan verstek perkara e-Court
+    expect(peta["pbt-ecourt-verstek-tergugat"]).toBe("[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf");
   });
 
   it("GET putusan: HANYA yang diatur admin (kosong mula-mula) - bawaan ekstensi sebagai saran", async () => {

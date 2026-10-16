@@ -871,6 +871,8 @@ describe("permintaan agen M: alatSidangPadaTanggal meneruskan bahan aletaMassalP
         tanggalSidang: "2026-10-01",
         // T 13 Okt: kode kumulasi untuk pemilih blangko putusan kumulasi (kosong bila tidak ada).
         kumulasi: [],
+        // Q3 16 Okt: kode keadaan putusan dari portal (kosong bila bot/portal lama tidak mengirimnya).
+        keadaan: [],
       },
       {
         nomor: "11/Pdt.G/2026/PA.Dgl",
@@ -888,6 +890,7 @@ describe("permintaan agen M: alatSidangPadaTanggal meneruskan bahan aletaMassalP
         // Baris tanpa tanggalSidang: tanggal yang diminta.
         tanggalSidang: "2026-10-01",
         kumulasi: [],
+        keadaan: [],
       },
     ]);
     // Urutan ruas lama tidak berubah - tambahan di belakang.

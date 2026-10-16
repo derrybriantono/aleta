@@ -567,15 +567,16 @@ describe.skipIf(!adaSoffice)("B. PDF sungguhan lewat soffice (hanya bila soffice
 // C. PETA PENETAPAN
 // ===========================================================================
 describe("C. peta penetapan - aturan murni", () => {
-  it("bawaan: PMH -> '@ 1 - PMH.rtf' (ttd Ketua + cap), PHS -> '@ 2 - PHS.rtf' (ttd ketua majelis, tanpa cap), PPP/PJS mati", () => {
+  it("bawaan: PMH -> '@ 1 - PMH.rtf' (ttd Ketua + cap), PHS -> '@ 2 - PHS.rtf' (ttd ketua majelis, tanpa cap), PPP/PJS -> bagian '@ 0 - PMH - PHS.rtf' tanpa unggah otomatis (Q3 16 Okt)", () => {
     expect(BAWAAN_PETA_PENETAPAN.pmh).toMatchObject({ aktif: true, namaBerkas: "@ 1 - PMH.rtf", otomatisUnggah: true, pakaiTtd: true, pakaiCap: true, penandatangan: "ketua" });
     expect(BAWAAN_PETA_PENETAPAN.phs).toMatchObject({ aktif: true, namaBerkas: "@ 2 - PHS.rtf", otomatisUnggah: true, pakaiTtd: true, pakaiCap: false, penandatangan: "ketua_majelis" });
-    expect(BAWAAN_PETA_PENETAPAN.ppp).toMatchObject({ aktif: false, otomatisUnggah: false, penandatangan: "panitera" });
-    expect(BAWAAN_PETA_PENETAPAN.pjs).toMatchObject({ aktif: false, otomatisUnggah: false, penandatangan: "panitera" });
+    expect(BAWAAN_PETA_PENETAPAN.ppp).toMatchObject({ aktif: true, namaBerkas: "@ 0 - PMH - PHS.rtf", otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" });
+    expect(BAWAAN_PETA_PENETAPAN.pjs).toMatchObject({ aktif: true, namaBerkas: "@ 0 - PMH - PHS.rtf", otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" });
   });
   it("PPP cukup dinyalakan dari pengaturan (tanpa kode); aktif tanpa nama blangko DITOLAK; angka di luar batas DITOLAK; mati = otomatis mati", () => {
     expect(bersihkanAturPenetapan("ppp", { aktif: true, namaBerkas: "@ 3 - PPP.rtf", otomatisUnggah: true })).toMatchObject({ aktif: true, namaBerkas: "@ 3 - PPP.rtf", otomatisUnggah: true });
-    expect(() => bersihkanAturPenetapan("pjs", { aktif: true })).toThrow(GalatPetaPenetapan);
+    // Q3 16 Okt: PPP/PJS kini berbawaan blangko gabungan "@ 0"; menyalakan dengan nama KOSONG tetap ditolak.
+    expect(() => bersihkanAturPenetapan("pjs", { aktif: true, namaBerkas: "" })).toThrow(GalatPetaPenetapan);
     expect(() => bersihkanAturPenetapan("pmh", { lebarCapMm: 500 })).toThrow(/Lebar cap/);
     expect(() => bersihkanAturPenetapan("pmh", { namaBerkas: "../x/@ 1 - PMH.rtf" })).toThrow(/garis miring/);
     expect(bersihkanAturPenetapan("pmh", { aktif: false, otomatisUnggah: true })).toMatchObject({ aktif: false, otomatisUnggah: false });
@@ -655,11 +656,12 @@ describe("C. peta penetapan - rute dan penyimpanan", () => {
     const mentah = await db!.queryAll<{ jenis: string; kunci: string }>("SELECT jenis, kunci FROM aleta_pemetaan_blangko");
     expect(mentah).toEqual([{ jenis: "relaas", kunci: "penetapan|ppp" }]);
 
-    const salah = await rute("penetapan-edoc/peta-penetapan", "PUT", { butir: [{ jenis: "pjs", aktif: true }] });
+    const salah = await rute("penetapan-edoc/peta-penetapan", "PUT", { butir: [{ jenis: "pjs", aktif: true, namaBerkas: "" }] });
     expect(salah.status).toBe(400);
 
     const balik = await rute("penetapan-edoc/peta-penetapan", "PUT", { butir: [{ jenis: "ppp", kembalikanBawaan: true }] });
-    expect(balik.isi.data.butir.find((b: any) => b.jenis === "ppp")).toMatchObject({ aktif: false, sumber: "bawaan" });
+    // Q3 16 Okt: bawaan PPP = bagian dari blangko gabungan "@ 0 - PMH - PHS" (aktif, tanpa unggah otomatis).
+    expect(balik.isi.data.butir.find((b: any) => b.jenis === "ppp")).toMatchObject({ aktif: true, namaBerkas: "@ 0 - PMH - PHS.rtf", otomatisUnggah: false, sumber: "bawaan" });
   });
 
   it("unggah OTOMATIS: jenis yang unggah otomatisnya MATI tidak pernah sampai ke bot; yang menyala dikirim beserta pengaturan + cap hanya bila pakaiCap", async () => {

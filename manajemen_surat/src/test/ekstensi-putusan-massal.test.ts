@@ -845,9 +845,10 @@ describe("padanan nama jenis perkara - SIPP menamainya dengan kata yang lain", (
     const peta = await k.alatMuatPetaBlangkoLengkap();
     expect(peta["p3hp/penetapan ahli waris"]).toBeUndefined();
     expect(peta["penetapan ahli waris"].berkas).toBe("berkas pilihan petugas");
-    // Tetap satu baris untuk satu jenis - dua baris akan berselisih.
-    const kunciItsbat = Object.keys(peta).filter((x) => x.includes("ahli waris"));
+    // Tetap satu baris untuk satu jenis - dua baris akan berselisih. Baris per status (Q3 16 Okt) berkunci "<jenis>|<status>" dan sah.
+    const kunciItsbat = Object.keys(peta).filter((x) => x.includes("ahli waris") && !x.includes("|"));
     expect(kunciItsbat).toEqual(["penetapan ahli waris"]);
+    expect(Object.keys(peta).filter((x) => x.includes("p3hp"))).toEqual([]);
   });
 });
 

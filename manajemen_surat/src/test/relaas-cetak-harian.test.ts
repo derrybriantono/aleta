@@ -434,8 +434,8 @@ describe.skipIf(!ADA_MYSQL)("bentuk jawaban menurut kontrak", () => {
 
   it("jumlah kueri per tanggal tetap sedikit", () => {
     for (const tanggal of SEMUA_TANGGAL) {
-      // 5 jalan masuk (a)-(e) + penunjukan, NIP, pihak, relaas, pemberitahuan.
-      expect(kueriPerTanggal[tanggal], tanggal).toBeLessThanOrEqual(10);
+      // 5 jalan masuk (a)-(e) + penunjukan, NIP, pihak, relaas, pemberitahuan + (Q3 16 Okt) e-Court/verstek dalam satu kueri.
+      expect(kueriPerTanggal[tanggal], tanggal).toBeLessThanOrEqual(11);
       expect(kueriPerTanggal[tanggal], tanggal).toBeGreaterThanOrEqual(5);
     }
   });
