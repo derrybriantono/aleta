@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.204.1",
+    dirilis: "2026-10-17T07:00:00+08:00",
+    judul: "Agen draf putusan H-7, Putusan Advance, blangko jenis baru, dan perbaikan sinkron SIPP-ABT-ALETA",
+    butir: [
+      "Agen H-7 menyiapkan draf putusan tiap pagi untuk sidang 7 hari ke depan; kesiapannya tampil di Jadwal Sidang, checklist konseptor, ABT, dan widget.",
+      "Putusan Advance memeriksa draf putusan di Blangko Derry: unsur alasan cerai, dasar hukum, kecocokan pertimbangan dan amar, serta contoh alinea dari putusan serupa.",
+      "Blangko Hak Asuh Anak, Pembatalan Perkawinan, dan Ekonomi Syariah dikenali di Blangko Derry, saran blangko, dan BAS massal.",
+      "Kotak penyatu SIPP: sidang pertama dari riwayat, selisih saksi ABT dengan daftar saksi SIPP, dan tugas pemberitahuan putusan verstek untuk juru sita.",
+      "Folder PTSP mengikuti hak menu ABT; data putusan e-Court yang baru putus dibaca ulang lebih dulu; isian kosong tidak lagi tampil terisi.",
+    ],
+  },
+  {
     versi: "1.204.0",
     dirilis: "2026-10-17T05:00:00+08:00",
     judul: "Anonim ALETA, unggah massal, checklist konseptor, kehadiran rinci, skors, Gembok dan Cetak di ABT",
