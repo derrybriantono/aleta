@@ -138,7 +138,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(awal: Record<string, unknown>, opsi: { url?: string; status?: number; blangkoDerryPk?: string } = {}) {
+function buka(awal: Record<string, unknown>, opsi: { url?: string; status?: number; blangkoDerryPk?: string; jawabanH7?: unknown } = {}) {
   const dom = new JSDOM(`<!doctype html><html><head></head><body></body></html>`, {
     url: opsi.url ?? "http://192.168.10.10/SIPP/detil_perkara_agama",
     runScripts: "outside-only",
@@ -190,7 +190,7 @@ function buka(awal: Record<string, unknown>, opsi: { url?: string; status?: numb
     const url = String(alamat);
     if (url.includes(API_H7)) {
       minta.push(url);
-      return Promise.resolve(tanggapan(status, status === 200 ? JAWABAN_H7 : {}));
+      return Promise.resolve(tanggapan(status, status === 200 ? (opsi.jawabanH7 ?? JAWABAN_H7) : {}));
     }
     if (url.includes(API_CHECKLIST)) return Promise.resolve(tanggapan(200, jawabanChecklist()));
     return Promise.resolve(tanggapan(200, { ok: true, data: {} }));
@@ -274,6 +274,41 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
     expect(h.dipakai[0]).toMatchObject({ blangko: { menu: "Putusan Cerai Gugat" } });
     // Perkara lain (15) tetap bertautan ke Jadwal Sidang.
     expect(q(h, '[data-h7-perkara="15"] a.aleta-cmw-h7-aksi')).not.toBeNull();
+  });
+
+  it("17 Okt: draf bervarian - widget membuka varian dikabulkan DAN ditolak, kalimat sama dengan Jadwal Sidang", async () => {
+    const tolak = {
+      status: "ditolak" as const,
+      blangko: { utama: { jenis: "putusan", folder: "derry_briantono/1 Perceraian CG", berkas: "[05] [Tolak] CG.rtf", menu: "Putusan Cerai Gugat", alias: [], label: "[05] [Tolak] CG", alasan: "y", utama: true, perkiraan: true }, alternatif: [], perkiraanVerstek: false, alasan: "Tolak - varian bila majelis menolak." },
+      isian: [{ kode: "1234", nama: "Pertimbangan tolak", golongan: "usulan", nilai: "tidak terbukti", sumber: "deteksi", catatan: "" }],
+      otomatis: null,
+      kesiapan: { tingkat: "belum", jumlah: 5, terisi: 1, pasti: 1, usulan: 1, manusia: 2, persen: 40, perlu: [], dataSippKosong: 0, perLangkah: {} },
+    };
+    const perkara = susunDrafSaya([{ draf: draf("12", "2026-10-18", { varian: [tolak] } as unknown as Partial<DrafH7>) }], {
+      hariIni: "2026-10-17",
+      nama: "Hakim Satu",
+      lihatSemua: false,
+      cocokNama: namaAdaDi,
+    }).perkara;
+    const jawaban = { ok: true, data: { ok: true, jumlah: 1, perkara } };
+    // Tanpa Blangko Derry: ringkasan varian + tautan Jadwal Sidang.
+    const tanpa = buka({ ujiTampilan: "ui" }, { jawabanH7: jawaban });
+    const ket = await sampai(() => q(tanpa, '[data-h7-perkara="12"] [data-h7-varian-ket]'), "ringkasan varian");
+    expect(ket.textContent).toBe("Varian draf: Dikabulkan (75%), Ditolak (40%)");
+    expect(q(tanpa, '[data-h7-perkara="12"] a.aleta-cmw-h7-aksi')).not.toBeNull();
+    // ABT dengan Blangko Derry pada perkara yang sama: dua tombol, masing-masing memasang varian sendiri.
+    const h = buka({ ujiTampilan: "ui", posisiChecklistAbt: { kecil: false } }, { url: "http://192.168.10.10/aps_badilag/abt/main", blangkoDerryPk: "12", jawabanH7: jawaban });
+    await sampai(() => qs(h, '[data-h7-pakai="12"]').length === 2, "dua tombol varian");
+    expect(qs(h, '[data-h7-pakai="12"]').map((t) => [t.getAttribute("data-h7-varian"), t.textContent])).toEqual([
+      ["dikabulkan", "Buka draf varian dikabulkan"],
+      ["ditolak", "Buka draf varian ditolak (40%)"],
+    ]);
+    q(h, '[data-h7-varian="ditolak"]').click();
+    await sampai(() => h.dipakai.length === 1, "varian ditolak dipasang");
+    expect(h.dipakai[0]).toMatchObject({ status: "ditolak", blangko: { berkas: "[05] [Tolak] CG.rtf" }, saran: { "1234": { nilai: "tidak terbukti", golongan: "usulan" } } });
+    q(h, '[data-h7-varian="dikabulkan"]').click();
+    await sampai(() => h.dipakai.length === 2, "varian dikabulkan dipasang");
+    expect(h.dipakai[1]).toMatchObject({ blangko: { berkas: "[02] [Kabul] CG - F.rtf" } });
   });
 
   it("belum masuk portal: kalimat awam", async () => {

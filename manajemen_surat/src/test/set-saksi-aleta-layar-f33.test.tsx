@@ -15,7 +15,9 @@ describe("SetSaksiAleta", () => {
     render(<SetSaksiAleta />);
     expect(screen.getByText(/Cerai - perselisihan dan pertengkaran terus-menerus \(huruf F\)/, { selector: "option" })).toBeTruthy();
     expect(screen.getByText("1. Apakah Saudara kenal dengan Penggugat dan Tergugat?")).toBeTruthy();
-    expect(screen.getByText(/Perlu dicek: Rumusan persis syarat pisah 6 bulan/)).toBeTruthy();
+    // 17 Okt butir 23: syarat pisah 6 bulan sudah dijawab - jadi dasar hukum, bukan "perlu dicek".
+    expect(screen.getAllByText(/pisah tempat tinggal paling singkat 6 bulan/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Perlu dicek: Rumusan persis syarat pisah 6 bulan/)).toBeNull();
     fireEvent.change(screen.getByLabelText("Pilih set pertanyaan saksi"), { target: { value: "dk-anak-perempuan" } });
     expect(screen.getByText(/Apakah anak para Pemohon sendiri mau menikah, dan apakah ada paksaan dari siapa pun\?/)).toBeTruthy();
     expect(screen.getAllByText(/PERMA 5\/2019/).length).toBeGreaterThan(0);

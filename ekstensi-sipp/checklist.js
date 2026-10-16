@@ -991,6 +991,7 @@
     /* F4.2: draf H-7 - pola yang sama dengan kehadiran (garis kiri menurut kesiapan). */
     .aleta-cmw-h7-aksi { display: inline-block; margin-top: 2px; padding: 1px 6px; color: var(--aleta-merek); background: none; border: 1px solid var(--aleta-garis); border-radius: 4px; cursor: pointer; font: inherit; font-size: calc(11px * var(--aleta-skala-huruf, 1)); text-decoration: none; align-self: flex-start; }
     .aleta-cmw-h7-aksi:hover { text-decoration: underline; }
+    .aleta-cmw-h7-varian { display: flex; flex-wrap: wrap; gap: 4px; }
 
     /* D11 / popup-23: Atur widget */
     .aleta-cmw-atur-daftar { list-style: none; margin: 0; padding: 0; }
@@ -3732,6 +3733,7 @@
           perkiraan: o.alasan === "verstek",
           lencana: String(o.lencana || ""),
           tingkat: NADA_TINGKAT_H7[o.tingkat] ? o.tingkat : "belum",
+          persen: Number(o.persen) || 0,
           perlu: (Array.isArray(o.perlu) ? o.perlu : []).map((n) => String(n || "")).filter(Boolean).slice(0, 3),
           checklist: o.checklist && typeof o.checklist === "object" ? o.checklist : null,
         };
@@ -3797,6 +3799,28 @@
     return k && k.pk && String(k.pk.perkaraId) === String(perkaraId) ? bd : null;
   }
 
+  /**
+   * Varian selain "dikabulkan" yang punya blangko (17 Okt: "ditolak") dari
+   * checklist.varian portal. draf = { blangko, saran } apa adanya untuk
+   * pakaiDrafH7 - bentuknya sama dengan kartu utama.
+   */
+  function h7Varian(c) {
+    const daftar = c && Array.isArray(c.varian) ? c.varian : [];
+    return daftar
+      .filter((v) => v && typeof v === "object" && v.blangko && v.blangko.berkas)
+      .slice(0, 3)
+      .map((v) => {
+        const status = String(v.status || "varian");
+        return {
+          status,
+          teks: status === "ditolak" ? "Ditolak" : status.charAt(0).toUpperCase() + status.slice(1),
+          persen: Number(v.persen) || 0,
+          alasan: String(v.alasanBlangko || ""),
+          draf: v,
+        };
+      });
+  }
+
   function susunDrafH7Widget() {
     // Butir 41 (17 Okt): terlipat bawaan - jumlahnya tetap terbaca di kepala.
     const w = kotakWidget("drafH7", "Draf putusan H-7", { terbuka: false });
@@ -3830,14 +3854,34 @@
       if (p.perlu.length) c.title = `Perlu perhatian: ${p.perlu.join(", ")}.`;
       chips.appendChild(c);
       li.appendChild(chips);
+      // 17 Okt: varian draf (dikabulkan + ditolak) - sama dengan Jadwal Sidang
+      // ("Varian draf: Dikabulkan (75%) Ditolak (40%)") dan kartu checklist
+      // konseptor ("Buka draf varian dikabulkan" / "Buka draf varian ditolak (40%)").
+      const varian = h7Varian(p.checklist);
+      if (varian.length) {
+        const v = el("span", "aleta-cmw-kh-ket", `Varian draf: Dikabulkan (${p.persen}%), ${varian.map((x) => `${x.teks} (${x.persen}%)`).join(", ")}`);
+        v.setAttribute("data-h7-varian-ket", "");
+        li.appendChild(v);
+      }
       const bd = p.checklist && p.checklist.blangko ? blangkoDerryUntuk(p.perkaraId) : null;
       if (bd) {
-        const tombol = el("button", "aleta-cmw-h7-aksi", "Buka blangko draf & pasang saran");
-        tombol.type = "button";
-        tombol.setAttribute("data-h7-pakai", p.perkaraId);
-        tombol.title = "Membuka blangko putusan draf di Blangko Derry; isian agen menjadi saran, belum tersimpan ke ABT.";
-        tombol.addEventListener("click", () => void bd.pakaiDrafH7(p.checklist));
-        li.appendChild(tombol);
+        const judulTombol = "Membuka blangko putusan draf di Blangko Derry; isian agen menjadi saran, belum tersimpan ke ABT.";
+        const tombolH7 = (teks, status, draf, ket) => {
+          const t = el("button", "aleta-cmw-h7-aksi", teks);
+          t.type = "button";
+          t.setAttribute("data-h7-pakai", p.perkaraId);
+          t.setAttribute("data-h7-varian", status);
+          t.title = ket ? `${ket} ${judulTombol}` : judulTombol;
+          t.addEventListener("click", () => void bd.pakaiDrafH7(draf));
+          return t;
+        };
+        if (!varian.length) li.appendChild(tombolH7("Buka blangko draf & pasang saran", "dikabulkan", p.checklist, ""));
+        else {
+          const kotakVarian = el("div", "aleta-cmw-h7-varian");
+          kotakVarian.appendChild(tombolH7("Buka draf varian dikabulkan", "dikabulkan", p.checklist, String(p.checklist.alasanBlangko || "")));
+          for (const x of varian) kotakVarian.appendChild(tombolH7(`Buka draf varian ${x.teks.toLowerCase()} (${x.persen}%)`, x.status, x.draf, x.alasan));
+          li.appendChild(kotakVarian);
+        }
       } else {
         const href = alamatPortal("/aleta-ecourt");
         if (href) {
