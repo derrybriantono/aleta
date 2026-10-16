@@ -2302,6 +2302,8 @@ export async function getGatewayJadwalSidang(params: {
        * tidak pernah ada tanpa satu pun peringatan dari TypeScript.
        */
       peta: Record<string, AntrianBarisGateway>;
+      /** F3.2: kehadiran rinci per orang, kunci "perkaraId|YYYY-MM-DD" (hanya ?waktu=1). */
+      kehadiran?: Record<string, { hadir: KehadiranBaris[] }>;
     };
     /**
      * Waktu antrian berdetik untuk SELURUH perkara pada tanggal-tanggal yang

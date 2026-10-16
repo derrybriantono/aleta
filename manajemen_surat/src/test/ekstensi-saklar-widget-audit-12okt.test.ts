@@ -359,6 +359,8 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     // SIPP dengan Ide ALETA gelombang 2 (16 Okt, tahap M2).
     { id: "sippPenyatu", kunci: "sippPenyatu", bawaan: true },
     { id: "sippTampilDobel", kunci: "sippTampilDobel", bawaan: false },
+    // F3.2 (17 Okt): kotak kehadiran sidang hari ini di widget.
+    { id: "widgetKehadiran", kunci: "widgetKehadiran", bawaan: false },
   ];
 
   it.each(STATIS)("$id: kunci tak ada = bawaan ($bawaan); dibalik menulis $kunci, dibalik lagi kembali", async ({ id, kunci, bawaan }) => {

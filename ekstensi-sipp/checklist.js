@@ -966,6 +966,29 @@
     .aleta-cmw-sd-rinci { padding: 2px 6px; color: var(--aleta-merek); text-decoration: none; white-space: nowrap; }
     .aleta-cmw-sd-rinci:hover { text-decoration: underline; }
 
+    /* F3.2: kehadiran sidang hari ini - satu warna per keadaan, garis kiri saja supaya terbaca di semua tema. */
+    .aleta-cmw-kh-daftar { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+    .aleta-cmw-kh-perkara { display: flex; flex-direction: column; gap: 2px; padding-bottom: 5px; border-bottom: 1px solid var(--aleta-garis); }
+    .aleta-cmw-kh-perkara:last-child { border-bottom: 0; padding-bottom: 0; }
+    .aleta-cmw-kh-nomor { font-weight: 700; color: var(--aleta-tulisan); }
+    .aleta-cmw-kh-ket { color: var(--aleta-tulisan-lembut); font-size: calc(11px * var(--aleta-skala-huruf, 1)); }
+    .aleta-cmw-kh-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+    .aleta-cmw-kh-chip {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border-left: 3px solid var(--aleta-garis-kuat);
+      background: var(--aleta-latar-naik);
+      color: var(--aleta-tulisan);
+      font-size: calc(11px * var(--aleta-skala-huruf, 1));
+    }
+    .aleta-cmw-kh-chip[data-nada="hijau"] { border-left-color: var(--aleta-aman); }
+    .aleta-cmw-kh-chip[data-nada="kuning"] { border-left-color: var(--aleta-mendesak); }
+    .aleta-cmw-kh-chip[data-nada="merah"] { border-left-color: var(--aleta-lewat); }
+    .aleta-cmw-kh-chip[data-nada="biru"] { border-left-color: #5aa9e6; font-weight: 700; }
+    .aleta-cmw-kh-chip[data-nada="abu"] { color: var(--aleta-tulisan-lembut); }
+    .aleta-cmw-kh-perkara[data-sedang="ya"] .aleta-cmw-kh-nomor { color: var(--aleta-merek); }
+
     /* D11 / popup-23: Atur widget */
     .aleta-cmw-atur-daftar { list-style: none; margin: 0; padding: 0; }
     .aleta-cmw-atur-baris { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-top: 1px solid var(--aleta-garis); }
@@ -3493,6 +3516,158 @@
     return susunIndikatorSd(kecil);
   }
 
+  // ─── F3.2 (17 Okt 2026): kehadiran sidang hari ini milik akun ─────────────
+  //
+  // Satu kotak di dok (UI Baru) atau di atas checklist (Baru): tiap perkara
+  // sidang HARI INI milik akun (majelis/PP/JS; Admin: semua) dengan kalimat
+  // yang sama dengan Jadwal Sidang - "Penggugat hadir 08.47 · Tergugat belum ·
+  // Saksi P 1/2 · sedang disidang R1". Saklarnya sendiri di popup
+  // (widgetKehadiran, bawaan MATI - sama dengan widget tambahan lain: Baru
+  // tanpa saklar tetap sama dengan Lama). Lama: tidak ada apa pun, tidak meminta.
+  // Diminta tiap menit selama tab terlihat; satu GET, hanya membaca.
+
+  const ALAMAT_KEHADIRAN = "/aleta/api/aleta-ecourt/antrian/kehadiran-saya";
+  const KUNCI_KEHADIRAN = "widgetKehadiran";
+  const DETAK_KH_MS = 60000;
+  const BATAS_TUNGGU_KH_MS = 8000;
+  const NADA_KH = ["hijau", "abu", "kuning", "biru", "merah"];
+
+  const kh = {
+    nyala: false,
+    /** { jumlah, perkara: [...] } jawaban terakhir yang berhasil. */
+    data: null,
+    /** "" | "masuk" | "akses" | "jaringan" | "jawaban" */
+    galat: "",
+    jalan: false,
+    terakhir: 0,
+    jam: null,
+  };
+
+  function khBerlaku() {
+    return modeUji() !== "lama" && kh.nyala;
+  }
+
+  /** Jawaban portal -> bentuk yang dipercaya kotak. null bila bentuknya tidak dikenal. */
+  function khBersihkan(isi) {
+    const x = objek(isi);
+    if (!Array.isArray(x.perkara)) return null;
+    return {
+      jumlah: Number(x.jumlah) || 0,
+      perkara: x.perkara.slice(0, 40).map((p) => {
+        const o = objek(p);
+        const no = o.nomorAntrian === null || o.nomorAntrian === undefined || o.nomorAntrian === "" ? NaN : Number(o.nomorAntrian);
+        return {
+          nomorPerkara: String(o.nomorPerkara || ""),
+          jam: String(o.jam || ""),
+          ruangan: String(o.ruangan || ""),
+          nomorAntrian: Number.isFinite(no) ? no : null,
+          sedangDisidang: o.sedangDisidang === true,
+          ringkas: (Array.isArray(o.ringkas) ? o.ringkas : [])
+            .map((r) => {
+              const q = objek(r);
+              return { teks: String(q.teks || ""), nada: NADA_KH.includes(q.nada) ? q.nada : "abu", judul: String(q.judul || "") };
+            })
+            .filter((r) => r.teks),
+        };
+      }),
+    };
+  }
+
+  async function mintaKehadiran() {
+    if (kh.jalan) return;
+    kh.jalan = true;
+    kh.terakhir = Date.now();
+    const pengendali = typeof AbortController === "function" ? new AbortController() : null;
+    const tunda = pengendali ? setTimeout(() => pengendali.abort(), BATAS_TUNGGU_KH_MS) : null;
+    try {
+      const r = await fetch(ALAMAT_KEHADIRAN, {
+        credentials: "include",
+        cache: "no-store",
+        ...(pengendali ? { signal: pengendali.signal } : {}),
+      });
+      if (r.status === 401) kh.galat = "masuk";
+      else if (r.status === 403) kh.galat = "akses";
+      else if (!r.ok) kh.galat = "jawaban";
+      else {
+        const luar = await r.json();
+        const isi = khBersihkan(luar && typeof luar === "object" && luar.data ? luar.data : luar);
+        if (isi) {
+          kh.data = isi;
+          kh.galat = "";
+        } else kh.galat = "jawaban";
+      }
+    } catch {
+      kh.galat = "jaringan";
+    } finally {
+      if (tunda) clearTimeout(tunda);
+      kh.jalan = false;
+    }
+    if (kh.galat === "akses") hentikanJamKh();
+    if (akar && akar.isConnected) gambar();
+  }
+
+  function hentikanJamKh() {
+    if (kh.jam) clearInterval(kh.jam);
+    kh.jam = null;
+  }
+
+  /** Aman dipanggil berulang (sesudah tiap gambar): tidak pernah meminta rapat. */
+  function aturJamKh() {
+    const hidup = khBerlaku() && kh.galat !== "akses" && akar && akar.isConnected && document.visibilityState !== "hidden";
+    if (!hidup) {
+      hentikanJamKh();
+      return;
+    }
+    if (!kh.jam) kh.jam = setInterval(() => aturJamKh(), DETAK_KH_MS);
+    if (!kh.jalan && Date.now() - kh.terakhir >= DETAK_KH_MS - 500) void mintaKehadiran();
+  }
+
+  function susunKehadiranWidget() {
+    const w = kotakWidget("kehadiran", "Kehadiran sidang hari ini");
+    w.kotak.setAttribute("data-kehadiran-widget", "");
+    if (!kh.data) {
+      const sebab =
+        kh.galat === "masuk"
+          ? "Masuk ke portal ALETA dulu untuk melihat kehadiran."
+          : kh.galat === "akses"
+            ? "Akun ini belum berhak melihat jadwal sidang."
+            : kh.galat
+              ? "Kehadiran belum dapat dibaca. Dicoba lagi sebentar lagi."
+              : "Memuat kehadiran…";
+      w.isi.appendChild(el("div", "aleta-cmw-ket", sebab));
+      return w.kotak;
+    }
+    if (!kh.data.perkara.length) {
+      w.isi.appendChild(el("div", "aleta-cmw-ket", "Tidak ada sidang Anda hari ini."));
+      return w.kotak;
+    }
+    const daftar = el("ul", "aleta-cmw-kh-daftar");
+    for (const p of kh.data.perkara) {
+      const li = el("li", "aleta-cmw-kh-perkara");
+      if (p.sedangDisidang) li.setAttribute("data-sedang", "ya");
+      li.appendChild(el("span", "aleta-cmw-kh-nomor", p.nomorPerkara));
+      const ket = [p.nomorAntrian !== null ? `antrian ${p.nomorAntrian}` : "", p.jam ? `jadwal ${p.jam.replace(":", ".")}` : "", p.ruangan]
+        .filter(Boolean)
+        .join(" · ");
+      if (ket) li.appendChild(el("span", "aleta-cmw-kh-ket", ket));
+      const chips = el("div", "aleta-cmw-kh-chips");
+      for (const r of p.ringkas) {
+        const c = el("span", "aleta-cmw-kh-chip", r.teks);
+        c.setAttribute("data-nada", r.nada);
+        if (r.judul) c.title = r.judul;
+        chips.appendChild(c);
+      }
+      li.appendChild(chips);
+      daftar.appendChild(li);
+    }
+    w.isi.appendChild(daftar);
+    if (kh.data.jumlah > kh.data.perkara.length) {
+      w.isi.appendChild(el("div", "aleta-cmw-ket", `Dan ${kh.data.jumlah - kh.data.perkara.length} perkara lain - lihat Jadwal Sidang ALETA.`));
+    }
+    w.isi.appendChild(teknis(el("div", "aleta-cmw-ket", "Dari antrian sidang dan catatan petugas di ALETA. Diperbarui tiap menit.")));
+    return w.kotak;
+  }
+
   // ─── Tahap 3: dok dan tumpukan widget (D9, D11, popup-20..23) ──────────────
 
   /** Susunan dok yang berlaku di situs ini: per situs hanya bila popup-23 menyala. */
@@ -3573,6 +3748,8 @@
             tumpuk.appendChild(w);
           }
         }
+        // F3.2: kehadiran sidang hari ini - saklar sendiri di popup.
+        if (khBerlaku()) tumpuk.appendChild(susunKehadiranWidget());
         if (tumpuk.childNodes.length) dok.appendChild(tumpuk);
       }
     }
@@ -3619,12 +3796,14 @@
     const indikator = indikatorSdUntukGambar(false);
     if (indikator) frag.appendChild(indikator);
     const tambahan = WIDGET.filter((w) => w.id !== "checklist" && widgetTersedia(w));
-    if (tambahan.length) {
+    if (tambahan.length || khBerlaku()) {
       const tumpuk = el("div", "aleta-cmw-tumpuk aleta-cmw-tumpuk-klasik");
       for (const w of tambahan) {
         const isi = susunWidget(w.id);
         if (isi) tumpuk.appendChild(isi);
       }
+      // F3.2: kehadiran sidang hari ini - saklar sendiri di popup.
+      if (khBerlaku()) tumpuk.appendChild(susunKehadiranWidget());
       frag.appendChild(tumpuk);
     }
     frag.appendChild(susunPanel());
@@ -5075,6 +5254,7 @@
       aturJamSidang();
       aturJamSd();
     }
+    aturJamKh(); /* F3.2: berhenti sendiri di Lama atau bila saklarnya mati */
   }
 
   // ─── Perbaikan 30 Sep: pita pembaruan (24) dan ⓘ (6) ─────────────────────
@@ -5674,6 +5854,10 @@
           keadaan.lamaSidang = lamaSidangBersih(ubah[KUNCI_LAMA_SIDANG].newValue);
           gambar();
         }
+        if (ubah[KUNCI_KEHADIRAN]) {
+          kh.nyala = ubah[KUNCI_KEHADIRAN].newValue === true;
+          gambar();
+        }
         if (ubah[KUNCI_SUSUNAN]) {
           keadaan.susunan = susunanBersih(ubah[KUNCI_SUSUNAN].newValue);
           gambar();
@@ -5734,6 +5918,7 @@
       KUNCI_SUSUNAN,
       KUNCI_SUDUT,
       KUNCI_TATA,
+      KUNCI_KEHADIRAN,
     ]);
     const lama = (kunci) => !berubahSebelumSiap.has(kunci);
     if (lama(KUNCI_TATA)) keadaan.tata = tataBersih(simpan[KUNCI_TATA]);
@@ -5741,6 +5926,7 @@
     if (lama(KUNCI_TANDA)) keadaan.tanda = tandaBersih(simpan[KUNCI_TANDA]);
     if (lama(KUNCI_CATATAN)) keadaan.catatan = catatanBersih(simpan[KUNCI_CATATAN]);
     if (lama(KUNCI_LAMA_SIDANG)) keadaan.lamaSidang = lamaSidangBersih(simpan[KUNCI_LAMA_SIDANG]);
+    if (lama(KUNCI_KEHADIRAN)) kh.nyala = simpan[KUNCI_KEHADIRAN] === true;
     if (lama(KUNCI_SUSUNAN)) keadaan.susunan = susunanBersih(simpan[KUNCI_SUSUNAN]);
     if (lama(KUNCI_SUDUT)) keadaan.sudut = sudutBersih(simpan[KUNCI_SUDUT]);
     // Induk bawaannya MENYALA, widget ini bawaannya MATI - sama dengan popup.
@@ -5778,6 +5964,7 @@
   // Butir 3 (6 Okt): detak sumber daya berhenti saat tab disembunyikan dan
   // menyala lagi saat terlihat. Dalam Lama aturJamSd tidak menyalakan apa pun.
   document.addEventListener("visibilitychange", () => aturJamSd());
+  document.addEventListener("visibilitychange", () => aturJamKh());
   window.addEventListener("resize", () => terapkanPosisi());
   // Pengalih Lama / Baru / UI Baru di popup - kulitnya ikut seketika.
   document.addEventListener("aleta-uji-berubah", () => terapkanTema());
