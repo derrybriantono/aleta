@@ -83,10 +83,12 @@
         "jurusita.js",
         "basmassal.js",
         "abt.js",
-        "checklist.js"
+        "checklist.js",
+        "blangko-derry.js"
       ],
       "css": [
-        "panel.css"
+        "panel.css",
+        "blangko-derry.css"
       ],
       "run_at": "document_idle"
     },
