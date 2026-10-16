@@ -669,4 +669,24 @@ describe("murni", () => {
     expect(x.jenisKelompok("BAS Alur 02 - Cerai Verstek 2 Sidang")).toBe("bas");
     expect(x.namaTampil(BLANGKO_BAS, "bas")).toBe("BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi)");
   });
+  it("sisipkanTtdRtf: gambar masuk ke blok TTD (tabel paket I3), bukan ke paragraf 'Demikian ... oleh <nama>' atau kotak Untuk Salinan", () => {
+    const x = m();
+    const png = Uint8Array.from(Buffer.from(PNG_1X1, "base64")).buffer;
+    // bentuk keluaran #8500# paket I3: nama juga tertulis lebih dulu di paragraf kaki putusan, lalu di sel tabel TTD,
+    // lalu (Panitera = PP) di kotak "Untuk Salinan", dan penanda asal tersembunyi {\*\aletaasal ...} di ujung naskah.
+    const rtf =
+      "{\\rtf1 \\pard Demikian diputuskan oleh {\\b Hakim Satu, S.H.} sebagai Ketua Majelis, dibantu {\\b PP Satu} sebagai Panitera\\par " +
+      "\\trowd\\trqc\\trgaph85\\trleft0\\trkeep\\cellx8400\\pard\\intbl\\qc Ketua Majelis,\\par\\par\\par\\par \\b Hakim Satu, S.H.\\b0\\cell\\row" +
+      "\\trowd\\trqc\\trgaph85\\trleft0\\trkeep\\cellx8400\\pard\\intbl\\qc Panitera,\\par\\par\\par\\par \\b PP Satu\\b0\\cell\\row\\pard " +
+      "\\pard Untuk Salinan\\par Panitera,\\par PP Satu\\par{\\*\\aletaasal Hakim Satu, S.H.}}";
+    const h = x.sisipkanTtdRtf(rtf, [{ nama: "Hakim Satu, S.H.", png }, { nama: "PP Satu", png }]);
+    expect(h.dipasang).toEqual(["Hakim Satu, S.H.", "PP Satu"]);
+    const gambar = /\{\\pict\\pngblip[^}]*\}\\par /g;
+    expect(h.rtf.match(gambar)).toHaveLength(2);
+    expect(h.rtf).toContain("\\par\\par\\par\\par \\b {\\pict\\pngblip");
+    expect(h.rtf.replace(gambar, "")).toBe(rtf);
+    const tanpaSalinan = h.rtf.slice(0, h.rtf.indexOf("Untuk Salinan"));
+    expect(tanpaSalinan.indexOf("{\\pict")).toBeGreaterThan(tanpaSalinan.indexOf("\\trowd"));
+    expect(h.rtf.slice(h.rtf.indexOf("Untuk Salinan"))).not.toContain("\\pict");
+  });
 });

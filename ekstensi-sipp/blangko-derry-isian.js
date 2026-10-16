@@ -2016,11 +2016,23 @@
   /**
    * Menyisipkan gambar tanda tangan (PNG) ke RTF tepat di atas nama penandatangan.
    * Pulang { rtf, dipasang:[nama], tidakDitemukan:[nama] }. Lebar 3 cm (1701 twip).
+   *
+   * Nama hakim/PP juga tertulis LEBIH DULU di paragraf "Demikian ... oleh <nama> ..." (dan di kepala BAS); blok tanda tangan
+   * selalu di ujung naskah. Jadi yang dipakai kemunculan TERAKHIR sebelum kotak "Untuk Salinan" dan sebelum penanda asal
+   * tersembunyi {\*\aletaasal ...} (paket I3) - bukan kemunculan pertama, yang memecah paragraf "Demikian".
    */
   function sisipkanTtdRtf(rtfLatin1, daftar) {
     let rtf = String(rtfLatin1);
     const dipasang = [];
     const tidakDitemukan = [];
+    const cariTerakhir = (teks, kecil) => {
+      const sumber = kecil ? rtf.toLowerCase() : rtf;
+      const t = kecil ? teks.toLowerCase() : teks;
+      const pagar = [rtf.lastIndexOf("Untuk Salinan"), rtf.lastIndexOf("{\\*\\aletaasal")].filter((x) => x > 0);
+      const batas = pagar.length ? Math.min(...pagar) : rtf.length;
+      const i = sumber.lastIndexOf(t, batas);
+      return i >= 0 ? i : sumber.lastIndexOf(t);
+    };
     for (const d of daftar) {
       const ukuran = d.ukuran || ukuranPng(d.png);
       if (!ukuran) {
@@ -2033,13 +2045,13 @@
       const calon = [d.nama, d.nama.toUpperCase(), d.nama.replace(/\s*\(Ketua\)/i, "")].filter(Boolean);
       let idx = -1;
       for (const c of calon) {
-        idx = rtf.indexOf(c);
-        if (idx < 0) idx = rtf.toLowerCase().indexOf(c.toLowerCase());
+        idx = cariTerakhir(c, false);
+        if (idx < 0) idx = cariTerakhir(c, true);
         if (idx >= 0) break;
       }
       if (idx < 0) {
         const inti = namaInti(d.nama).split(" ").filter((k) => k.length > 3).slice(0, 2).join(" ");
-        if (inti) idx = rtf.toLowerCase().indexOf(inti);
+        if (inti) idx = cariTerakhir(inti, true);
       }
       if (idx < 0) {
         tidakDitemukan.push(d.nama);
