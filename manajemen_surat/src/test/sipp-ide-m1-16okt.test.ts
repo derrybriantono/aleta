@@ -628,7 +628,8 @@ describe("I. Tampilan Lama, jaringan, tanda ALETA, manifest", () => {
     const sipp = m.content_scripts.find((x) => (x.js || []).includes("konten.js"))!.js!;
     expect(sipp.indexOf("sipp-ide-m1.js")).toBeGreaterThan(sipp.indexOf("sipp-ide-l1.js"));
     for (const k of m.content_scripts.filter((x) => !(x.js || []).includes("konten.js"))) expect(k.js || []).not.toContain("sipp-ide-m1.js");
-    expect(m.version).toBe("1.201.0");
+    // Versi dinaikkan sesi rilis (dijaga ekstensi-versi-tanam), bukan dikunci di sini.
+    expect(m.version).toMatch(/^\d+\.\d+\.\d+$/);
     const susun = readFileSync(path.resolve(process.cwd(), "scripts/susun-ekstensi.mjs"), "utf8");
     expect(susun.indexOf('"sipp-ide-m1.js",')).toBeGreaterThan(susun.indexOf('"sipp-ide-l1.js",'));
   });
