@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.204.0",
+    dirilis: "2026-10-17T05:00:00+08:00",
+    judul: "Anonim ALETA, unggah massal, checklist konseptor, kehadiran rinci, skors, Gembok dan Cetak di ABT",
+    butir: [
+      "Putusan anonim dibuat ALETA sendiri sesuai pedoman pengaburan (nama pihak, saksi, anak, NIK, alamat), dengan pratinjau sebelum unggah; anonimisasi ABT menjadi cadangan.",
+      "Unggah massal ke e-Doc SIPP: hakim untuk putusan dan anonim, PP/panitera untuk BAS, dengan pemeriksaan dobel dan riwayat.",
+      "Checklist konseptor 8 langkah tersambung dengan isian Blangko Derry dan Jadwal Sidang (Draf siap dibacakan).",
+      "Kehadiran rinci per orang (pihak, kuasa, saksi) di Jadwal Sidang, antrian, usulan Dihadiri oleh dan BAS, serta di widget ALETA.",
+      "Skors sidang dengan alasan, perkiraan jam lanjut, hitung mundur, layar antrian, dan usulan kalimat BAS.",
+      "Panel ABT biasa: gembok ringkas otomatis dan tombol Cetak di samping Input semua yang pasti; isian tidak wajib yang kosong tidak menahan cetak.",
+    ],
+  },
+  {
     versi: "1.203.0",
     dirilis: "2026-10-17T02:30:00+08:00",
     judul: "SIPP dengan Ide ALETA, tampilan Blangko Derry sesuai rancangan, hak akses per peran",

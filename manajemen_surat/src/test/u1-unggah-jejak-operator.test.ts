@@ -49,6 +49,11 @@ function muatPenangan() {
       post: (jalur: string, _penjaga: unknown, penangan: (req: unknown, res: unknown) => Promise<void>) => {
         rute[jalur] = penangan;
       },
+      // Rute GET unggah massal (F4.1, 17 Okt) kini terdaftar di antara
+      // putusan-unggah dan status-perkara; cukup dicatat, tidak dijalankan.
+      get: (jalur: string, _penjaga: unknown, penangan: (req: unknown, res: unknown) => Promise<void>) => {
+        rute[`GET ${jalur}`] = penangan;
+      },
     },
   });
   vm.runInContext(isi.slice(awal, akhir), konteks, { filename: "internalGatewayRoutes.js#putusan-unggah" });
