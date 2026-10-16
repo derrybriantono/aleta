@@ -6872,6 +6872,11 @@ async function pasangMassalAbt() {
   await muatPenggunaAleta();
   const panel = await susunPanelMassalAbt();
   document.body.appendChild(panel);
+  // Keputusan 17 Okt butir 50-51: panel massal ABT (putusan massal & BAS massal)
+  // juga bergembok - arti SAMA dengan SIPP & panel ABT biasa (kunci gembokKepalaAbt):
+  // terbuka = meringkas ke kepala saat menutupi tabel dan tidak ditunjuk; terkunci =
+  // selalu tampil penuh. Lama: null (tampilan Lama tetap identik).
+  if (typeof alatPasangGembok === "function") alatPasangGembok(panel, panel.querySelector(":scope > .aleta-kepala"), "abt");
   // Perbaikan 30 Sep sore (Baru & UI Baru): menu beranda per peran.
   soreTataBerandaAman(panel);
 }

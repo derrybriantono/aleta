@@ -185,6 +185,20 @@ describe("A. gembok 'Ringkas otomatis' di panel ABT biasa", () => {
     expect(css).toMatch(/#aleta-panel-abt\[data-aleta-kepala-ringkas="ya"\]:not\(\[data-aleta-gembok="kunci"\]\)/);
     expect(SUMBER_ABT).toMatch(/alatPasangGembok\(panel, panel\.querySelector\(":scope > \.aleta-kepala"\), "abt"\)/);
   });
+  it("butir 50-51 (17 Okt): panel massal ABT (putusan & BAS massal) juga bergembok - kunci & arti sama", async () => {
+    // Pemasangnya di pasangMassalAbt, sesudah panel masuk halaman, situs "abt".
+    const mulai = SUMBER_ABT.indexOf("async function pasangMassalAbt()");
+    const fungsi = SUMBER_ABT.slice(mulai, SUMBER_ABT.indexOf("\n}", mulai));
+    expect(fungsi).toMatch(/document\.body\.appendChild\(panel\);[\s\S]*alatPasangGembok\(panel, panel\.querySelector\(":scope > \.aleta-kepala"\), "abt"\)/);
+    expect(baca("panel.css")).toMatch(/#aleta-panel-abt-massal\[data-aleta-kepala-ringkas="ya"\]:not\(\[data-aleta-gembok="kunci"\]\)/);
+    expect(baca("popup.html")).toContain("panel massal di halaman depan ABT");
+    // Perilakunya sama dengan panel ABT biasa: panel bernama massal, kunci gembokKepalaAbt.
+    const h = bukaAlat({ gembokKepalaAbt: true });
+    h.panel.id = "aleta-panel-abt-massal";
+    expect(await h.pasang(h.panel, h.kepala, "abt")).toBe(true);
+    expect(h.panel.getAttribute("data-aleta-gembok")).toBe("kunci");
+    expect(h.panel.getAttribute("data-aleta-gembok-situs")).toBe("abt");
+  });
 });
 
 // ─── B. Cetak di samping "Input semua yang pasti" (abt.js utuh) ─────────────
