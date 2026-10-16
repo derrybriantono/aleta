@@ -67,12 +67,18 @@ const UKUR = Object.freeze({
   8608: { amar: [10, 15] },
 });
 /**
- * Variabel yang lulus gerbang >= 95%, n >= 10 -> "cukup".
- * F2.3 (16 Okt 2026): 1247 sebab wafat diukur ulang atas isian petugas SERVER (rute ditiru penuh, pembanding
- * makna): 12/12, 11/11 untuk isian sebelum 1 Sep 2026 (bukan hasil ALETA) - lulus. 1025 dan 1246 14/15 (93%)
- * tetap "ragu". Rincian: D:/aleta-dev/kerja/batch-14okt-sore/f23-deteksi/ukur-sesudah.txt.
+ * Variabel yang lulus gerbang -> "cukup". Gerbang 95% diturunkan ke 90% (n >= 10) atas keputusan pengguna 16 Okt 2026
+ * (F2.3), dengan syarat tiap salah ditelusuri. Ukur ulang 16 Okt atas posita/petitum SIPP SERVER (91 PAW), pembanding
+ * makna, rincian D:/aleta-dev/kerja/batch-14okt-sore/f23-deteksi/ukur-waris-amar.js:
+ *   1247 sebab wafat   petugas 12/12 (11/11 isian sebelum 1 Sep 2026, bukan hasil ALETA)
+ *   1025 pewaris       tercentang: amar 54/55, petugas 11/11 - sisa 167/Pdt.P/2021: posita DAN petitum "Dolly",
+ *                      amar "Dolli" (ejaan dari bukti)
+ *   1246 tanggal wafat tercentang: amar 56/58, petugas 15/16 - sisa 5/Pdt.P/2018 dan 9/Pdt.P/2024: posita DAN
+ *                      petitum sepakat, amar memakai tanggal lain dari bukti (= tanggal di nomor akta kematian;
+ *                      tanggal itu berbeda dari tanggal wafat pada 63/64 perkara, jadi tidak dapat dijadikan aturan).
+ *                      506/Pdt.P/2019, 507/Pdt.P/2019, 153/Pdt.P/2025 kini "ragu" (posita & petitum berbeda).
  */
-const SIAP = new Set(["1247"]);
+const SIAP = new Set(["1247", "1025", "1246"]);
 /** Jenis tempat ukuran SIAP berlaku - kewarisan (364/365, Pdt.G) belum punya isian petugas untuk diukur. */
 const SIAP_JENIS = new Set([371]);
 
@@ -110,16 +116,29 @@ function pewarisPetitum(petitum) {
     const re = new RegExp(p.source, p.flags.includes("g") ? p.flags : `${p.flags}g`);
     let m;
     while ((m = re.exec(t)) !== null) {
-      const sisa = t.slice(m.index + m[0].length);
-      const nama = bersihNama(P.namaDiAwal(sisa));
+      // F2.3 (16 Okt): awalan "Alm . Bpk." (203/Pdt.P/2023) dibuang sebelum nama dibaca.
+      const mentah = t.slice(m.index + m[0].length);
+      const sisa = mentah.replace(AWALAN_SAPAAN, "");
+      let nama = bersihNama(P.namaDiAwal(sisa));
       if (!nama || /^(?:Pemohon|Para|Penggugat|Tergugat)/.test(nama)) continue;
       // Pola pertama hanya sah bila diikuti "telah meninggal" (bukan "Menetapkan X sebagai ahli waris").
-      if (p === pola[0] && !new RegExp(`^[^;]{0,${nama.length + 25}}?\\b(?:telah\\s+)?(?:meninggal|wafat)`, "i").test(sisa)) continue;
-      return { nama, kalimat: P.kalimatDi(t, m.index, m[0].length + nama.length), asal: "petitum" };
+      if (p === pola[0] && !new RegExp(`^[^;]{0,${nama.length + 25}}?\\b(?:telah\\s+)?(?:meninggal|wafat)`, "i").test(sisa)) {
+        // Nama bergelar berkoma: "Anna Rosyita, S.E.MM binti Anas Yalitoba (ALM) telah meninggal" (42/Pdt.P/2025).
+        const g = sisa.startsWith(nama) ? RE_GELAR_BIN.exec(sisa.slice(nama.length)) : null;
+        if (!g) continue;
+        nama = `${nama}${g[1]}`.replace(/\s+/g, " ").trim();
+      }
+      return { nama, kalimat: P.kalimatDi(t, m.index, m[0].length + (mentah.length - sisa.length) + nama.length), asal: "petitum" };
     }
   }
   return null;
 }
+
+/** Sapaan di depan nama pewaris yang tidak terbuang BUANG_DEPAN: "Alm . Bpk.", "Bpk.", "Almh ." */
+const AWALAN_SAPAAN = /^(?:(?:alm(?:h)?\s*\.|almarhum(?:ah)?|bpk\.?|bapak|ibu)\s*)+(?=[A-Z])/i;
+/** Ekor gelar berkoma + bin/binti sesudah nama, lalu "(ALM) telah meninggal". */
+const RE_GELAR_BIN =
+  /^((?:\s*,\s*[A-Z][A-Za-z.]{0,12}(?:\s*,?\s*[A-Z][A-Za-z.]{0,6})?)*\s+bin(?:ti)?\.?\s+(?:[A-Z][A-Za-z.'’-]*\s*){1,4}?)\s*(?:\(\s*[Aa][Ll][Mm](?:[Hh]|[Aa][Rr][Hh][Uu][Mm](?:[Aa][Hh])?)?\.?\s*\)\s*)?,?\s*(?:telah\s+)?(?:meninggal|wafat)/;
 
 /** Pewaris dari posita - beberapa bentuk nyata, yang pertama cocok dipakai. */
 function pewarisPosita(satu) {
@@ -421,7 +440,21 @@ function deteksi(posita, opsi = {}) {
     };
     const wafat = faktaWafat([...kalimatWafat(satu, pewaris.nama, { lanjutan: true }), ...kalimatWafat(P.satuBaris(petitum), pewaris.nama)], intiNama(pewaris.nama));
     if (wafat) {
-      if (wafat.tanggal) hasil["1246"] = { nilai: wafat.tanggal, kalimat: wafat.kalimat, yakin: yakinUntuk("1246", jenis), kodePola: "waris-tanggal-wafat" };
+      // F2.3 (16 Okt): posita dan petitum menyebut tanggal wafat BERBEDA (506/Pdt.P/2019 "16 30 Maret" lawan "16 Mei";
+      // 153/Pdt.P/2025 2025 lawan 2005) -> tanggal petitum (yang dimohonkan dinyatakan), "ragu", keduanya disebut.
+      const tglPosita = (faktaWafat(kalimatWafat(satu, pewaris.nama, { lanjutan: true }), intiNama(pewaris.nama)) || {}).tanggal || "";
+      const wafatPetitum = faktaWafat(kalimatWafat(P.satuBaris(petitum), pewaris.nama), intiNama(pewaris.nama));
+      const tglPetitum = (wafatPetitum || {}).tanggal || "";
+      if (tglPosita && tglPetitum && tglPosita !== tglPetitum) {
+        hasil["1246"] = {
+          nilai: tglPetitum,
+          kalimat: wafatPetitum.kalimat,
+          asal: "petitum",
+          yakin: "ragu",
+          catatan: `Posita menyebut ${tglPosita}, petitum ${tglPetitum} - cocokkan dengan akta/surat keterangan kematian.`,
+          kodePola: "waris-tanggal-wafat-berbeda",
+        };
+      } else if (wafat.tanggal) hasil["1246"] = { nilai: wafat.tanggal, kalimat: wafat.kalimat, yakin: yakinUntuk("1246", jenis), kodePola: "waris-tanggal-wafat" };
       if (wafat.sebab) hasil["1247"] = { nilai: wafat.sebab, kalimat: wafat.kalimat, yakin: yakinUntuk("1247", jenis), kodePola: "waris-sebab-wafat" };
       if (wafat.tempat) hasil["1509"] = { nilai: wafat.tempat, kalimat: wafat.kalimat, yakin: yakinUntuk("1509", jenis), kodePola: "waris-tempat-wafat" };
     }

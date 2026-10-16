@@ -16,15 +16,24 @@
  * Isian tangan blangko Derry yang dipetakan di sini (semua "ragu" = tampil
  * TIDAK tercentang, kalimat sumbernya ikut - n isian manusia masih 0):
  *
- *   Itsbat [99aa]   1321/1322/1324  nomor, tanggal, penerbit akta cerai Pemohon I
- *                   1325/1329/1331  idem Pemohon II - dari "(Kutipan) Akta Cerai
- *                                   Nomor 00635/AC/2021/PA.Pal" di kalimat status
- *                                   (Duda -> Pemohon I, Janda -> Pemohon II)
+ *   Itsbat [99aa]   1321/1322/1324  nomor, tanggal, penerbit akta cerai SUAMI dengan
+ *                                   istri sebelumnya ("istri sebelumnya #0046# I telah
+ *                                   bercerai")
+ *                   1325/1329/1331  idem ISTRI dengan suami sebelumnya - dari "(Kutipan)
+ *                                   Akta Cerai Nomor 00635/AC/2021/PA.Pal" di kalimat status
+ *                                   (Duda -> 1321, Janda -> 1325). Makna dibaca dari kalimat
+ *                                   blangko [99aa], bukan dari label "P I/P II": blangko 2a
+ *                                   kontensius tidak memakai 1321/1325, dan pada kontensius
+ *                                   Pemohon tunggal yang janda adalah ISTRI -> 1325.
  *   Wali Adhal      9203 hubungan wali, 9201 nama wali nasab (hanya bila wali
  *                   BUKAN ayah kandung - petunjuk variabelnya), 9206 wilayah KUA
  *                   wali hakim ("Kecamatan ..., Kabupaten ..."), 9204 status
  *                   calon suami - diturunkan dari bacaan waliAdhol.js
- *   Kewarisan/HB    9161 jenis sita yang dimohonkan, 9163 alasan permohonan sita
+ *   Kewarisan/HB    9161 jenis sita yang dimohonkan (+ dasar hukum menurut keadaan:
+ *                   sita jaminan Pasal 261 RBg; sita marital Pasal 95 KHI bila TANPA
+ *                   perceraian, Pasal 78 huruf c UU 7/1989 bila BERSAMA gugatan
+ *                   perceraian - cerai 346/347 berkumulasi harta bersama, dibaca dari
+ *                   SIPP/petitum), 9163 alasan permohonan sita
  *                   (kalimat posita), 9162 objek sita = objek sengketa yang dibaca
  *                   modul jenisnya (ragu: pemohon sita bisa memilih sebagian)
  *   Kewarisan       8719 bagian ahli waris HANYA bila petitum/posita menuliskan
@@ -54,14 +63,16 @@ const pemuat = require("./index");
 const JENIS_WARIS = new Set([371, 364, 365]);
 const KODE_PEWARIS = ["1025", "1246", "1247", "1509"];
 const JENIS_SITA = new Set([348, 364, 365]);
+/** Cerai yang ikut membaca sita bila berkumulasi harta bersama (Pasal 78 huruf c UU 7/1989). */
+const JENIS_CERAI = new Set([346, 347]);
 
 const NAMA = Object.freeze({
-  1321: "No. akta cerai Pemohon I (bukti)",
-  1322: "Tgl. akta cerai Pemohon I (bukti)",
-  1324: "Penerbit akta cerai Pemohon I (bukti)",
-  1325: "No. akta cerai Pemohon II (bukti)",
-  1329: "Tgl. akta cerai Pemohon II (bukti)",
-  1331: "Penerbit akta cerai Pemohon II (bukti)",
+  1321: "No. akta cerai suami dengan istri sebelumnya (bukti)",
+  1322: "Tgl. akta cerai suami dengan istri sebelumnya (bukti)",
+  1324: "Penerbit akta cerai suami dengan istri sebelumnya (bukti)",
+  1325: "No. akta cerai istri dengan suami sebelumnya (bukti)",
+  1329: "Tgl. akta cerai istri dengan suami sebelumnya (bukti)",
+  1331: "Penerbit akta cerai istri dengan suami sebelumnya (bukti)",
   9201: "Wali Adhal: nama wali nasab",
   9203: "Wali Adhal: hubungan wali dengan Pemohon",
   9204: "Wali Adhal: status calon suami sebelum menikah",
@@ -136,7 +147,7 @@ function deteksiItsbat(posita) {
     const a = akta.filter((x) => x.pihak === pihak);
     if (a.length !== 1) continue; // dua akta untuk satu pihak = tidak menebak
     const [no, tgl, terbit] = pihak === 1 ? ["1321", "1322", "1324"] : ["1325", "1329", "1331"];
-    const catatan = `akta cerai Pemohon ${pihak === 1 ? "I" : "II"} menurut posita - cocokkan dengan bukti suratnya`;
+    const catatan = `akta cerai ${pihak === 1 ? "suami (berstatus duda)" : "istri (berstatus janda)"} menurut posita - cocokkan dengan bukti suratnya`;
     B.taruh(peta, no, { ...B.fakta(a[0].nomor, a[0].kalimat, "ragu", `derry-itsbat-akta-${pihak}-nomor`), catatan });
     if (a[0].tanggal) B.taruh(peta, tgl, { ...B.fakta(a[0].tanggal, a[0].kalimat, "ragu", `derry-itsbat-akta-${pihak}-tanggal`), catatan });
     if (a[0].penerbit) B.taruh(peta, terbit, { ...B.fakta(a[0].penerbit, a[0].kalimat, "ragu", `derry-itsbat-akta-${pihak}-penerbit`), catatan });
@@ -210,17 +221,55 @@ function bagianTertulis(teks) {
   return k ? { nilai: k.replace(/^\s*(?:\d{1,2}\s*\.\s*)?(?:bahwa|menetapkan)\s*,?\s*/i, "").replace(/[;.\s]+$/, "").slice(0, 600), kalimat: k } : null;
 }
 
-function deteksiSita(posita, petitum, jenisId) {
+/**
+ * Dasar hukum tiap jenis sita menurut KEADAAN perkara (keputusan pengguna 16 Okt 2026):
+ * sita marital Pasal 95 KHI bila diajukan TANPA perceraian (gugatan harta bersama sendiri),
+ * Pasal 78 huruf c UU 7/1989 bila BERSAMAAN dengan gugatan perceraian (kumulasi).
+ * Sita revindikasi dan sita marital atas harta warisan belum diputuskan pengguna -> perlu dicek.
+ */
+function dasarSita(jenis, bersamaCerai, jenisId) {
+  return jenis
+    .map((j) => {
+      if (/jaminan/.test(j)) return "sita jaminan: Pasal 261 RBg";
+      if (/marital/.test(j)) {
+        if (bersamaCerai) return "sita marital bersamaan dengan gugatan perceraian: Pasal 78 huruf c UU 7/1989";
+        if (Number(jenisId) === 348) return "sita marital tanpa gugatan perceraian: Pasal 95 KHI";
+        return "sita marital atas harta warisan (bukan harta bersama) - perlu dicek pengguna";
+      }
+      return "sita revindikasi: Pasal 260 RBg - perlu dicek pengguna";
+    })
+    .join("; ");
+}
+
+/**
+ * Cerai berkumulasi harta bersama? `kumulasi` = daftar dari SIPP (perkara_kumulasi: {jenisPerkaraId}/{kode})
+ * bila ada; selain itu petitum primer dibaca kumulasiPerkaraService (aturan kumulasi 12 Okt).
+ */
+function kumulasiHartaBersama(petitum, kumulasi) {
+  const dariSipp = (Array.isArray(kumulasi) ? kumulasi : []).some(
+    (k) => k && (k.kode === "harta-bersama" || Number(k.jenisPerkaraId) === 348 || k === "harta-bersama" || Number(k) === 348)
+  );
+  if (dariSipp) return true;
+  try {
+    return require("../kumulasiPerkaraService").kumulasiDariPetitum(String(petitum || "")).some((k) => k.kode === "harta-bersama");
+  } catch (_) {
+    return false;
+  }
+}
+
+function deteksiSita(posita, petitum, jenisId, bersamaCerai = false) {
   const peta = {};
   const jenis = jenisSita(petitum).length ? jenisSita(petitum) : jenisSita(posita);
   if (!jenis.length) return peta;
   const kalJenis = (B.kalimat(B.polos(`${petitum} ${posita}`)).find((x) => /\bsita\b/i.test(x)) || "").slice(0, 400);
-  B.taruh(peta, "9161", { ...B.fakta(jenis.join(" dan "), kalJenis, "ragu", "derry-sita-jenis"), catatan: "dasar: Pasal 261 RBg (sita jaminan); sita marital atas harta bersama - perlu dicek pengguna" });
+  B.taruh(peta, "9161", { ...B.fakta(jenis.join(" dan "), kalJenis, "ragu", "derry-sita-jenis"), catatan: `dasar: ${dasarSita(jenis, bersamaCerai, jenisId)}` });
   const alasan = alasanSita(posita);
   if (alasan) B.taruh(peta, "9163", B.fakta(alasan.nilai, alasan.kalimat, "ragu", "derry-sita-alasan"));
-  const modul = pemuat.modulUntuk(jenisId);
+  // Cerai berkumulasi harta bersama: objek dibaca modul harta bersama.
+  const idObjek = JENIS_CERAI.has(Number(jenisId)) ? 348 : jenisId;
+  const modul = pemuat.modulUntuk(idObjek);
   if (modul) {
-    const f = modul.deteksi(posita, { petitum, jenisPerkara: jenisId }) || {};
+    const f = modul.deteksi(posita, { petitum, jenisPerkara: idObjek }) || {};
     const objek = f["8730"] || f["8718"];
     if (objek && objek.nilai) {
       const nilai = String(objek.nilai).replace(/(^|<br>)2\.(\d+)\s/g, "$1$2. ");
@@ -242,7 +291,8 @@ function deteksi(posita, opsi = {}) {
   const tambah = (p) => Object.entries(p).forEach(([k, v]) => B.taruh(peta, k, v));
   if (jenis === 360) tambah(deteksiItsbat(posita));
   if (jenis === 363) tambah(deteksiWaliAdhal(posita));
-  if (JENIS_SITA.has(jenis)) tambah(deteksiSita(posita, petitum, jenis));
+  if (JENIS_SITA.has(jenis)) tambah(deteksiSita(posita, petitum, jenis, false));
+  if (JENIS_CERAI.has(jenis) && kumulasiHartaBersama(petitum, opsi.kumulasi)) tambah(deteksiSita(posita, petitum, jenis, true));
   if (jenis === 364 || jenis === 365) {
     const b = bagianTertulis(petitum) || bagianTertulis(posita);
     if (b) {
@@ -299,6 +349,18 @@ async function lengkapiJenis(hasil, masukan = {}) {
     }
   }
   if (!jenis) return hasil;
+  // Cerai: kumulasi harta bersama dari SIPP (perkara_kumulasi) + petitum - penentu dasar sita marital.
+  let kumulasi = masukan.kumulasi;
+  if (JENIS_CERAI.has(jenis) && kumulasi === undefined && masukan.nomorPerkara) {
+    const bacaK =
+      typeof masukan.bacaKumulasi === "function" ? masukan.bacaKumulasi : (n) => require("../kumulasiPerkaraService").kumulasiNomorPerkara(n);
+    const batas = new Promise((selesai) => {
+      const t = setTimeout(() => selesai(null), 2500);
+      if (t && typeof t.unref === "function") t.unref();
+    });
+    const k = await Promise.race([Promise.resolve(bacaK(masukan.nomorPerkara)).catch(() => null), batas]);
+    kumulasi = k && Array.isArray(k.daftar) ? k.daftar : undefined;
+  }
   const dasar = hasil && typeof hasil === "object" && hasil.ok !== false && Array.isArray(hasil.usulan) ? hasil : null;
   let usulan = dasar ? dasar.usulan.slice() : [];
   const catatan = [];
@@ -320,12 +382,12 @@ async function lengkapiJenis(hasil, masukan = {}) {
   // 8171 jalur itsbat = kamus TUJUAN ITSBAT (rute memakai jenis 360 bila ekstensi tidak mengirim jenis). Pada
   // perwalian terukur 0/4, sedangkan jalur posita-lain (kamus jenisnya sendiri) 4/6 - dan blangko BAS
   // mendahulukan jawaban itsbat. Di luar itsbat nikah, 8171 diserahkan ke jalur posita-lain.
-  if (masukan.jalur === "itsbat" && jenis !== 360 && usulan.some((u) => u && String(u.kode) === "8171")) {
+  if (masukan.jalur === "itsbat" && jenis !== 360 && !JENIS_CERAI.has(jenis) && usulan.some((u) => u && String(u.kode) === "8171")) {
     usulan = usulan.filter((u) => !(u && String(u.kode) === "8171"));
     catatan.push("Alasan permohonan (8171) dibaca dengan aturan jenis perkaranya, bukan aturan itsbat.");
   }
 
-  const f = deteksi(posita, { jenisPerkara: jenis, petitum: petitum || "" });
+  const f = deteksi(posita, { jenisPerkara: jenis, petitum: petitum || "", kumulasi });
   const kodeBaru = [];
   for (const [kode, isi] of Object.entries(f)) {
     if (usulan.some((u) => u && String(u.kode) === kode)) continue;
@@ -352,6 +414,8 @@ module.exports = {
   deteksiItsbat,
   deteksiWaliAdhal,
   jenisSita,
+  dasarSita,
+  kumulasiHartaBersama,
   alasanSita,
   bagianTertulis,
   deteksiSita,
