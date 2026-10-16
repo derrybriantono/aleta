@@ -1118,7 +1118,7 @@
     S.tjRiw = { u: [], r: [] };
     const pas = S.tjSisi ? tjPasangan(kunci) : null;
     renderTj();
-    await Promise.all((pas || [kunci]).map((k) => muatTj(k)));
+    await Promise.all([...(pas || [kunci]).map((k) => muatTj(k)), muatSetSaksi()]);
     renderTj();
   }
   async function muatTj(kunci, paksa) {
@@ -1158,6 +1158,41 @@
     if (!h.ok) return toast(`Set pertanyaan tidak termuat: ${h.pesan || "ABT tidak menjawab"}`);
     t.rows = h.baris.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab }));
     t.berubah = true;
+  }
+  // Set pertanyaan saksi ALETA (F3.3): panduan per jenis perkara & huruf alasan dari portal
+  // (lib/set-pertanyaan-saksi.ts). Dimuat ke layar saja; tersimpan ke ABT hanya lewat "Simpan ke ABT".
+  async function muatSetSaksi() {
+    if (!S.blangko || !S.pk) return;
+    const sb = sebutan();
+    const pihakP = S.pk.perkara && S.pk.perkara.pihak && S.pk.perkara.pihak.penggugat;
+    const q = new URLSearchParams({ jenis: String(S.pk.jenisPerkara || ""), nomor: nomorPerkara(), folder: S.blangko.folder || S.blangko.kelompok || "", sebutanP: sb.P, sebutanT: sb.T, jumlahP: String(Array.isArray(pihakP) && pihakP.length ? pihakP.length : 1), huruf: alasanHuruf(), perkaraId: perkaraId() });
+    const kunci = q.toString();
+    if (S.setSaksi && S.setSaksi.kunci === kunci) return;
+    S.setSaksi = { kunci, daftar: [], memuat: true };
+    let daftar = [];
+    try {
+      const d = await ambilPortal(`${API_BLANGKO}/set-saksi?${kunci}`, {}, "Membaca set pertanyaan saksi");
+      daftar = d && Array.isArray(d.set) ? d.set.filter((x) => x && x.id && Array.isArray(x.baris)) : [];
+    } catch {
+      /* tanpa panduan ALETA - set ABT tetap tersedia */
+    }
+    if (S.setSaksi && S.setSaksi.kunci === kunci) S.setSaksi = { kunci, daftar, memuat: false };
+  }
+  /** Muat set ALETA ke penyunting: set utama mengganti daftar, set tambahan disisipkan sebelum pertanyaan penutup. */
+  function pakaiSetSaksi(kunci, id) {
+    const t = S.tj[kunci];
+    const s = S.setSaksi && S.setSaksi.daftar.find((x) => x.id === id);
+    if (!t || !s) return null;
+    const baru = s.baris.map((r) => ({ tanya: String(r.tanya || ""), jawab: String(r.jawab || "") }));
+    let rows = baru;
+    if (s.tambahan) {
+      const lama = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+      const akhir = lama.length && /masih ada (yang|keterangan|hal)/i.test(lama[lama.length - 1].tanya) ? lama.length - 1 : lama.length;
+      rows = [...lama.slice(0, akhir), ...baru, ...lama.slice(akhir)];
+    }
+    t.rows = rows.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab }));
+    t.berubah = true;
+    return s;
   }
   async function simpanTj(kunciDaftar) {
     if (!bolehTulis()) return toast(`Tanya jawab ${NAMA_JENIS[S.blangko.jenis].toLowerCase()} hanya disimpan ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]]}.`);
@@ -1417,6 +1452,19 @@
     if (bar) bar.style.width = `${h.t ? Math.round((h.a / h.t) * 100) : 100}%`;
   }
 
+  /** Pilihan set: panduan ALETA (disarankan dulu) lalu set yang tersimpan di ABT. */
+  function pilihanSetSaksi(t) {
+    const abt = (t && t.templates ? t.templates : []).map((x) => `<option value="${esc(x.nilai)}">${esc(x.kode === "#" ? `Salin dari ${x.nama}` : `${x.nama} (${x.kode})`)}</option>`).join("");
+    const aleta = S.setSaksi && S.setSaksi.daftar.length ? S.setSaksi.daftar : [];
+    if (!aleta.length) return abt;
+    const opsi = aleta.map((x) => `<option value="aleta:${esc(x.id)}" title="${esc(x.untuk || "")}">${esc(x.judul)}${x.utama ? " - disarankan" : ""}</option>`).join("");
+    return `<optgroup label="Panduan ALETA sesuai jenis perkara">${opsi}</optgroup>${abt ? `<optgroup label="Set yang tersimpan di ABT">${abt}</optgroup>` : ""}`;
+  }
+  function ketSetSaksi() {
+    const utama = S.setSaksi && S.setSaksi.daftar.filter((x) => x.utama);
+    if (!utama || !utama.length) return "";
+    return `<p class="bd-catat bd-setsaksi">Disarankan untuk perkara ini: <b>${esc(utama.map((x) => x.judul).join(" + "))}</b> (${esc(utama[0].sebab || "")}). Jawaban berisi titik-titik untuk dilengkapi menurut keterangan saksi; semua pertanyaan dapat diubah sebelum disimpan.</p>`;
+  }
   function renderTj() {
     const tombol = cari("#bd-tjtombol", wadah.isian);
     const wad = cari("#bd-tjwadah", wadah.isian);
@@ -1450,9 +1498,10 @@
     const alatAtas = (judul, kunciDaftar) =>
       `<div class="bd-tjalat"><b>${esc(judul)}</b><span class="bd-chip">${esc(sidangTeks)}</span>` +
       (tjPasangan(S.tjBuka) ? `<span class="bd-seg" role="tablist" aria-label="Cara menampilkan saksi"><button type="button" role="tab" data-tjmode="sisi" aria-selected="${S.tjSisi}">Berdampingan</button><button type="button" role="tab" data-tjmode="satu" aria-selected="${!S.tjSisi}">Satu per satu</button></span>` : "") +
-      `<label class="bd-lbl" for="bd-muattpl">Set pertanyaan</label><select id="bd-muattpl">${(t && t.templates ? t.templates : []).map((x) => `<option value="${esc(x.nilai)}">${esc(x.kode === "#" ? `Salin dari ${x.nama}` : `${x.nama} (${x.kode})`)}</option>`).join("")}</select>` +
+      `<label class="bd-lbl" for="bd-muattpl">Set pertanyaan</label><select id="bd-muattpl">${pilihanSetSaksi(t)}</select>` +
       `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}">Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}">Tambah baris</button>` +
-      `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>`;
+      `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>` +
+      ketSetSaksi();
     const status = (k) => {
       const x = S.tj[k];
       if (!x) return "";
@@ -2413,6 +2462,11 @@
       const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
       if (!sel || !sel.value) return toast("Pilih set pertanyaan dulu.");
       tjCatat(kunci);
+      if (sel.value.startsWith("aleta:")) {
+        const dipakai = kunci.map((k) => pakaiSetSaksi(k, sel.value.slice(6))).filter(Boolean);
+        renderTj();
+        return toast(dipakai.length ? `"${dipakai[0].judul}" dimuat (belum disimpan). Lengkapi titik-titik pada jawaban, lalu tekan Simpan ke ABT.` : "Set pertanyaan tidak ditemukan.");
+      }
       return void Promise.all(kunci.map((k) => muatTemplatTj(k, sel.value))).then(() => {
         renderTj();
         toast("Set pertanyaan dimuat (belum disimpan - tekan Simpan ke ABT).");
