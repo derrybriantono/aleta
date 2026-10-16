@@ -55,7 +55,8 @@
         "basmassal.js",
         "saksiscan.js",
         "konten.js",
-        "checklist.js"
+        "checklist.js",
+        "sipp-ide-l1.js"
       ],
       "css": [
         "panel.css"
@@ -86,7 +87,8 @@
         "checklist.js",
         "abt-klien.js",
         "blangko-derry.js",
-        "blangko-derry-isian.js"
+        "blangko-derry-isian.js",
+        "sipp-ide-l1.js"
       ],
       "css": [
         "panel.css",

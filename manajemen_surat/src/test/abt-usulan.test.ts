@@ -1201,7 +1201,8 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // blangko-derry.js (Blangko ABT by Derry Briantono, 16 Okt) paling belakang:
     // ia memakai api.daftarkanAlat yang disediakan abt.js. Tahap F-G (16 Okt): abt-klien.js (klien rute ABT)
     // tepat sebelum blangko-derry.js, blangko-derry-isian.js (perlu diisi, pratinjau, cetak) tepat sesudahnya.
-    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "basmassal.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-isian.js"]);
+    // Tahap L1 (16 Okt): sipp-ide-l1.js paling belakang - menerima serah terima "Buka di ABT" dari SIPP lewat aletaBlangkoDerry.
+    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "basmassal.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-isian.js", "sipp-ide-l1.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {
