@@ -463,6 +463,13 @@
       "when": 1792159200001,
       "tag": "0068_aleta_agen_h7_draf",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1792188000001,
+      "tag": "0069_aleta_identitas_satker",
+      "breakpoints": true
     }
   ]
 }

@@ -197,6 +197,10 @@ export function bersihkanAturPenetapan(jenis: JenisPetaPenetapan, masukan: unkno
     throw new GalatPetaPenetapan(`${SEBUTAN_JENIS_PENETAPAN[jenis]}: nama blangko ABT wajib diisi sebelum dinyalakan.`);
   }
   if (!hasil.aktif) hasil.otomatisUnggah = false;
+  // Mode tanda tangan elektronik (keputusan 17 Okt 2026 butir 5): penetapan yang
+  // dicetak/diunggah lewat ALETA tidak pernah membawa gambar cap/TTD statis
+  // blangko - kiriman false (pengaturan lama) tidak berlaku.
+  hasil.gantiGambarBawaan = true;
   return hasil;
 }
 
@@ -207,7 +211,8 @@ export function aturUntukBot(a: AturPenetapan) {
     pakaiCap: a.pakaiCap,
     penandatangan: a.penandatangan,
     labelPenandatangan: a.labelPenandatangan,
-    gantiGambarBawaan: a.gantiGambarBawaan,
+    // Selalu true - mode tanda tangan elektronik (bot juga memaksanya).
+    gantiGambarBawaan: true,
     tahanBilaTanpaTtd: a.tahanBilaTanpaTtd,
     lebarTtdMm: a.lebarTtdMm,
     tinggiTtdMaksMm: a.tinggiTtdMaksMm,
@@ -221,6 +226,8 @@ export function aturUntukBot(a: AturPenetapan) {
 
 /** Kalimat untuk peringatan bubuhan dari bot (hasil[].peringatan[].kode). */
 export const KALIMAT_PERINGATAN_PENETAPAN: Record<string, string> = {
+  kotak_ttd_elektronik:
+    "Blok tanda tangan blangko ini adalah kotak \"Ditandatangani secara elektronik\" - dipakai apa adanya; gambar tanda tangan/cap tidak ditempel.",
   label_penanda_tangan_tidak_ditemukan:
     "Label jabatan penanda tangan (mis. \"Ketua,\") tidak ditemukan di blok tanda tangan - dokumen disusun TANPA tanda tangan.",
   nama_penanda_tangan_tidak_terbaca: "Nama penanda tangan di bawah label tidak terbaca - dokumen disusun TANPA tanda tangan.",

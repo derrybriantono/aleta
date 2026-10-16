@@ -166,9 +166,15 @@ const BATAS_ANGKA = {
 function aturBerlaku(jenis, kiriman) {
   const hasil = { ...ATUR_BAWAAN, ...(ATUR_JENIS[jenis] || {}) };
   const k = kiriman && typeof kiriman === "object" ? kiriman : {};
-  for (const kunci of ["pakaiTtd", "pakaiCap", "gantiGambarBawaan", "tahanBilaTanpaTtd"]) {
+  for (const kunci of ["pakaiTtd", "pakaiCap", "tahanBilaTanpaTtd"]) {
     if (typeof k[kunci] === "boolean") hasil[kunci] = k[kunci];
   }
+  // MODE TANDA TANGAN ELEKTRONIK (keputusan pengguna 17 Okt 2026 butir 5):
+  // blangko PTSP tetap memuat gambar cap/TTD statis (untuk cetak ABT biasa),
+  // tetapi yang dicetak/diunggah LEWAT ALETA tidak pernah membawanya - yang
+  // dipakai tanda tangan sah ALETA atau kotak "Ditandatangani secara
+  // elektronik". Kiriman gantiGambarBawaan:false (pengaturan lama) diabaikan.
+  hasil.gantiGambarBawaan = true;
   if (typeof k.penandatangan === "string" && PENANDATANGAN[k.penandatangan]) hasil.penandatangan = k.penandatangan;
   if (typeof k.labelPenandatangan === "string") hasil.labelPenandatangan = k.labelPenandatangan.trim().slice(0, 80);
   for (const [kunci, [bawah, atas]] of Object.entries(BATAS_ANGKA)) {
@@ -490,6 +496,49 @@ function awalBlokTtd(rtf, indeksLabel) {
   return par >= 0 ? par : acuan;
 }
 
+/** Teks kasar potongan RTF (kendali & kurung dibuang). */
+function teksKasarRtf(s) {
+  return String(s || "")
+    .replace(/[0-9a-fA-F]{64,}/g, " ")
+    .replace(/\\'[0-9a-fA-F]{2}/g, "")
+    .replace(/\\[a-zA-Z]+-?\d* ?/g, " ")
+    .replace(/[{}\\]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Bentuk kotak teks "Ditandatangani secara elektronik ..." (blangko PTSP @ 0, bagian PPP/PJS). */
+function bentukKotakElektronik(isiBentuk) {
+  return /\\shptxt/.test(isiBentuk) && /ditandatangani\s+secara\s+elektronik/i.test(teksKasarRtf(isiBentuk));
+}
+
+/** RTF memuat kotak tanda tangan elektronik? */
+function adaKotakTtdElektronik(rtf) {
+  const s = String(rtf || "");
+  const re = /\{\\shp(?![a-z])/g;
+  let m;
+  while ((m = re.exec(s))) {
+    const akhir = akhirKelompok(s, m.index);
+    if (akhir < 0) break;
+    if (bentukKotakElektronik(s.slice(m.index, akhir + 1))) return true;
+    re.lastIndex = akhir + 1;
+  }
+  return false;
+}
+
+/**
+ * Gambar bentuk yang berakhir di `akhir` langsung diikuti kotak elektronik:
+ * logo satker di kotak TTD elektronik - bagian dari tanda tangan elektronik,
+ * bukan gambar cap/TTD statis.
+ */
+function gambarKotakElektronik(rtf, akhir) {
+  const potong = String(rtf || "").slice(akhir + 1, akhir + 9000);
+  const i = potong.search(/\{\\shp(?![a-z])/);
+  if (i < 0 || teksKasarRtf(potong.slice(0, i)).length > 200) return false;
+  const k = akhirKelompok(potong, i);
+  return bentukKotakElektronik(potong.slice(i, k < 0 ? potong.length : k + 1));
+}
+
 /**
  * Membuang gambar (bentuk bergambar, \shppict/\nonshppict, \pict lepas) di
  * blok tanda tangan. Bentuk TEKS (kotak "Ditandatangani secara elektronik"
@@ -517,6 +566,11 @@ function buangGambarBlokTtd(rtf, { dari } = {}) {
     const bentuk = /^\{\\shp/.test(kepala);
     if (bentuk && !/\{\\sn\s*pib\}/.test(isi)) {
       // Bentuk tanpa gambar (kotak teks, garis) dibiarkan.
+      i = akhir + 1;
+      continue;
+    }
+    if (bentuk && gambarKotakElektronik(s, akhir)) {
+      // Logo satker di kotak "Ditandatangani secara elektronik" dibiarkan (17 Okt 2026).
       i = akhir + 1;
       continue;
     }
@@ -751,9 +805,17 @@ async function bubuhkanPenetapan({ rtf, jenis, atur, cap, daftarTtd, ambilGambar
     gambarBawaan = { dibuang: buang.dibuang, uraian: buang.uraian };
     if (buang.dibuang) siapa = cariPenandaTangan(s, a);
   }
+  const kotakElektronik = adaKotakTtdElektronik(s);
   if (!siapa.ok) {
+    if (kotakElektronik && siapa.alasan === "label_penanda_tangan_tidak_ditemukan") {
+      // Blok tanda tangan bagian ini ADALAH kotak "Ditandatangani secara
+      // elektronik oleh: ..." (PPP/PJS di @ 0): tidak ada label untuk
+      // ditempeli gambar tanda tangan, dan memang tidak perlu.
+      peringatan.push({ kode: "kotak_ttd_elektronik" });
+      return { ok: true, rtf: s, tandaTangan: null, penandaTangan: null, cap: null, peringatan, gambarBawaan, atur: a, modeTtd: "kotak_elektronik" };
+    }
     peringatan.push({ kode: siapa.alasan, label: siapa.label || "", nama: siapa.nama || "", labelTerbaca: siapa.labelTerbaca || [] });
-    return { ok: true, rtf: s, tandaTangan: null, penandaTangan: null, cap: null, peringatan, gambarBawaan, atur: a };
+    return { ok: true, rtf: s, tandaTangan: null, penandaTangan: null, cap: null, peringatan, gambarBawaan, atur: a, modeTtd: kotakElektronik ? "kotak_elektronik" : "tanpa" };
   }
 
   let ttd = null;
@@ -789,6 +851,7 @@ async function bubuhkanPenetapan({ rtf, jenis, atur, cap, daftarTtd, ambilGambar
     peringatan,
     gambarBawaan,
     atur: a,
+    modeTtd: ttd ? "tanda_tangan_aleta" : kotakElektronik ? "kotak_elektronik" : "tanpa",
   };
 }
 
@@ -1186,6 +1249,7 @@ module.exports = {
   adaTransparansi,
   awalBlokTtd,
   buangGambarBlokTtd,
+  adaKotakTtdElektronik,
   cariPenandaTangan,
   cocokkanTandaTangan,
   tataParagraf,

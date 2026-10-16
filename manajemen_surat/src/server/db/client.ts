@@ -373,6 +373,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // catatan jalan agen. Tanpa kunci asing - urutannya bebas.
   "aleta_agen_h7_draf",
   "aleta_agen_h7_jalan",
+  // 17 Oktober 2026 (0069): identitas satker & logo kop untuk blangko ABT
+  // (satu baris). Tanpa kunci asing - urutannya bebas.
+  "aleta_identitas_satker",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

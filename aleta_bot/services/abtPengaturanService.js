@@ -62,6 +62,30 @@ const REFERENSI_SAH = new Set(["jenis_perkara_id", "alur_perkara_id"]);
 const CONFIG_BOLEH = { validasi_data_bas: ["0", "1"] };
 const KOLOM_VARIABEL_BOLEH = ["sql_query", "default_data"];
 
+/**
+ * IDENTITAS SATKER (17 Okt 2026, keputusan pengguna butir 3/4/7). Variabel
+ * 9271-9274 (paket abt-universal-satker-derry) berbentuk
+ *   SELECT CASE (SELECT TRIM(value) FROM sys_config WHERE name = 'KodePN' LIMIT 1)
+ *     WHEN 'PA.Dgl' THEN '<isian satker>' ELSE <data SIPP / ''> END AS data
+ * Halaman Identitas satker hanya mengubah CABANG `WHEN '<KodePN>' THEN '...'`
+ * milik satker ini; kerangka kueri lainnya wajib tetap (kerangkaSatker).
+ * #9275# (baris kontak kop) adalah gabungan 9272-9274 dan tidak disunting.
+ */
+const VARIABEL_SATKER = Object.freeze({ alamat: "9271", telepon: "9272", laman: "9273", surel: "9274" });
+const NO_VAR_SATKER = new Set(Object.values(VARIABEL_SATKER));
+const NO_VAR_IDENTITAS = ["9270", "9271", "9272", "9273", "9274", "9275", "9276"];
+const NO_VAR_KODE_SURAT = "1154";
+const KEPALA_CASE_SATKER = /CASE\s*\(\s*SELECT\s+TRIM\(\s*value\s*\)\s+FROM\s+sys_config\s+WHERE\s+name\s*=\s*'KodePN'\s+LIMIT\s+1\s*\)/i;
+const RE_CABANG_SATKER = /\s*WHEN\s+'((?:[^'\\]|''|\\.)*)'\s+THEN\s+'((?:[^'\\]|''|\\.)*)'/gi;
+
+/** Kueri tanpa cabang per satker - dua kueri yang kerangkanya sama hanya berbeda isian satker. */
+function kerangkaSatker(sql) {
+  return String(sql || "")
+    .replace(RE_CABANG_SATKER, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const UMUR_INDEKS_MS = 10 * 60 * 1000;
 const BATAS_UJI_MS = 20 * 1000;
 const BATAS_KUERI_UJI_MS = 10 * 1000;
@@ -220,6 +244,7 @@ function buatLayanan(d) {
   const akarBlangko = d.akarBlangko || process.env.ALETA_BOT_BLANGKO_DIR || "/usr/src/app/blangko_abt";
   const mesinVar = require("./abtMesinVariabel");
   const buatMesin = d.buatMesin || mesinVar.buatMesin;
+  const logoKop = () => d.logoKop || require("./logoKopService");
   const kueri = (sql, params = [], opsi = {}) => d.kueri(sql, params, opsi);
   const t = (nama) => `${skema}.${nama}`;
 
@@ -468,6 +493,10 @@ function buatLayanan(d) {
   async function ujiVariabel(badan = {}) {
     const no = noVarSah(badan.noVar);
     await pastikanDerry(no);
+    return ujiInti(no, badan);
+  }
+
+  async function ujiInti(no, badan = {}) {
     const perkaraId = Number(badan.perkaraId);
     if (!Number.isInteger(perkaraId) || perkaraId <= 0) throw galatTolak("Pilih perkara contoh dulu.");
     const timpa = {};
@@ -551,8 +580,14 @@ function buatLayanan(d) {
         throw g;
       }
     }
+    const hasil = await tulisVariabel(no, lama, rapi);
+    return { ...hasil, uji };
+  }
+
+  /** Satu transaksi: kunci baris, prasyarat nilai lama, tulis, baca kembali. */
+  async function tulisVariabel(no, lama, rapi) {
     const kosongJadiNull = (v) => (String(v ?? "") === "" ? null : v);
-    const hasil = await d.transaksi(async (q) => {
+    return d.transaksi(async (q) => {
       const kini = (await q(`SELECT no_var, sql_query, default_data, locked FROM ${t("abt_variabel")} WHERE no_var = ? FOR UPDATE`, [no]))[0];
       if (!kini) throw galatTolak(`Variabel #${no}# tidak ada di katalog ABT.`, "tidak_ada");
       if (Number(kini.locked) === 1) throw galatTolak("Variabel ini dikunci ABT dan tidak dapat diubah.", "dikunci");
@@ -567,7 +602,131 @@ function buatLayanan(d) {
         sesudah: Object.fromEntries(ks.map((k) => [k, teksDb(baca[k])])),
       };
     });
+  }
+
+  // ---- identitas satker (17 Okt 2026) -------------------------------------
+
+  /**
+   * Identitas satker menurut SIPP (sys_config) dan ABT (variabel 9270-9276 +
+   * #1154#), beserta NILAI yang dihasilkan variabel itu sekarang. Tidak menulis.
+   */
+  async function bacaSatker() {
+    const cfg = await kueri("SELECT name, value FROM sys_config WHERE name IN ('KodePN','NamaPN','NamaPT','AlamatPN','ZonaWaktu')").catch(() => []);
+    const sipp = Object.fromEntries(cfg.map((b) => [teksDb(b.name), teksDb(b.value).trim()]));
+    const nos = [...NO_VAR_IDENTITAS, NO_VAR_KODE_SURAT];
+    const baris = await kueri(
+      `SELECT no_var, nama, data_type, sql_query, default_data, locked FROM ${t("abt_variabel")} WHERE no_var IN (${nos.map(() => "?").join(",")})`,
+      nos.map(Number)
+    );
+    const peta = new Map(baris.map((b) => [teksDb(b.no_var).padStart(4, "0"), b]));
+    const perkara = await cariPerkara("").catch(() => null);
+    let nilai = new Map();
+    const ada = nos.filter((n) => peta.has(n) && n !== NO_VAR_KODE_SURAT);
+    if (perkara && ada.length) {
+      const mesin = buatMesin({
+        kueri: (sql, params, opsi) => kueri(sql, params, { timeoutMs: Math.min((opsi && opsi.timeoutMs) || BATAS_KUERI_UJI_MS, BATAS_KUERI_UJI_MS) }),
+        skemaAbt: skema,
+        umurKatalogMs: 0,
+        batasKueriMs: BATAS_KUERI_UJI_MS,
+      });
+      nilai = await mesin.nilaiPenanda({ perkaraId: perkara.perkaraId, sidangKe: 0 }, ada).catch(() => new Map());
+    }
+    const variabel = nos.map((no) => {
+      const b = peta.get(no);
+      const v = nilai.get(no);
+      return {
+        noVar: no,
+        ada: Boolean(b),
+        nama: b ? teksDb(b.nama) : "",
+        jenis: b ? teksDb(b.data_type) : "",
+        sql_query: b ? teksDb(b.sql_query) : "",
+        default_data: b ? teksDb(b.default_data) : "",
+        dikunci: b ? Number(b.locked) === 1 : false,
+        bentukSatker: Boolean(b) && NO_VAR_SATKER.has(no) && KEPALA_CASE_SATKER.test(teksDb(b.sql_query)),
+        nilai: v && v.status !== "galat" ? String(v.polos || "").slice(0, 1000) : "",
+      };
+    });
+    return {
+      sipp: {
+        kodePN: sipp.KodePN || "",
+        namaPN: sipp.NamaPN || "",
+        namaPT: sipp.NamaPT || "",
+        alamatPN: sipp.AlamatPN || "",
+        zonaWaktu: sipp.ZonaWaktu || "",
+      },
+      variabel,
+      perkaraContoh: perkara,
+    };
+  }
+
+  /**
+   * Mengubah CABANG satker pada kueri 9271-9274. Portal menyusun kueri baru;
+   * di sini dijaga: nomor hanya 9271-9274, kerangka kueri lama = baru (yang
+   * berubah hanya cabang WHEN '<KodePN>' THEN '...'), lolos pemeriksa kueri,
+   * lolos uji atas perkara terbaru, dan prasyarat nilai lama di transaksi.
+   */
+  async function simpanKueriSatker(badan = {}) {
+    const no = noVarSah(badan.noVar);
+    if (!NO_VAR_SATKER.has(no)) throw galatTolak(`Variabel #${no}# bukan isian identitas satker.`, "bukan_satker");
+    const lama = badan.lama && typeof badan.lama === "object" ? badan.lama : null;
+    const baru = badan.baru && typeof badan.baru === "object" ? badan.baru : null;
+    if (!lama || typeof lama.sql_query !== "string" || !baru || typeof baru.sql_query !== "string") {
+      throw galatTolak("Kueri lama dan baru wajib dikirim - muat ulang halaman.");
+    }
+    const kueriBaru = String(baru.sql_query).trim();
+    if (!KEPALA_CASE_SATKER.test(kueriBaru)) throw galatTolak("Kueri ini bukan bentuk isian satker (CASE KodePN) - ubah lewat Edit variabel.", "bukan_satker");
+    if (kerangkaSatker(lama.sql_query) !== kerangkaSatker(kueriBaru)) {
+      throw galatTolak("Kueri baru mengubah lebih dari isian satker - ditolak.", "bukan_satker");
+    }
+    const sebab = periksaKueriVariabel(kueriBaru, mesinVar.pagarBaca);
+    if (sebab) throw galatTolak(sebab, "kueri_ditolak");
+    const def = (await kueri(`SELECT data_type, locked FROM ${t("abt_variabel")} WHERE no_var = ?`, [no]))[0];
+    if (!def) throw galatTolak(`Variabel #${no}# tidak ada di katalog ABT - pasang paket abt-universal-satker-derry dulu.`, "tidak_ada");
+    if (Number(def.locked) === 1) throw galatTolak("Variabel ini dikunci ABT dan tidak dapat diubah.", "dikunci");
+    if (teksDb(def.data_type) !== "data_sql") throw galatTolak("Variabel ini bukan variabel berkueri.", "bukan_satker");
+    let uji = null;
+    if (badan.pulihkan !== true) {
+      const perkara = Number(badan.perkaraId) > 0 ? { perkaraId: Number(badan.perkaraId) } : await cariPerkara("");
+      if (!perkara) throw galatTolak("Belum ada perkara di SIPP untuk menguji kueri.", "uji_gagal");
+      uji = await ujiInti(no, { perkaraId: perkara.perkaraId, sidangKe: 0, sql_query: kueriBaru });
+      if (!uji.ok) {
+        const g = galatTolak(`Kueri baru gagal diuji: ${uji.sebab || uji.status}. Tidak ada yang disimpan.`, "uji_gagal");
+        g.uji = uji;
+        throw g;
+      }
+    }
+    const hasil = await tulisVariabel(no, { sql_query: String(lama.sql_query) }, { sql_query: kueriBaru });
     return { ...hasil, uji };
+  }
+
+  // ---- logo kop (17 Okt 2026) - HANYA BACA blangko; paket ditulis ke folder runtime ----
+
+  const akarDerry = () => path.resolve(akarBlangko, FOLDER_DERRY);
+
+  async function pindaiLogo() {
+    return logoKop().pindai(akarDerry());
+  }
+
+  async function gambarLogo(md5) {
+    return logoKop().ambilGambar(akarDerry(), md5);
+  }
+
+  async function paketLogo(badan = {}) {
+    const keluarAkar = d.paketDir || process.env.ALETA_BOT_PAKET_DIR || path.join(__dirname, "..", "runtime-data", "paket-abt");
+    const akarServer = `${String(process.env.ALETA_BOT_BLANGKO_HOST_DIR || "/var/www/html/aps_badilag/_blangko_abt").replace(/\/+$/, "")}/${FOLDER_DERRY}`;
+    const h = await logoKop().bangunPaket({
+      akar: akarDerry(),
+      keluarAkar,
+      md5: Array.isArray(badan.md5) ? badan.md5 : [],
+      logo: { base64: String(badan.logoBase64 || "") },
+      akarServer,
+      oleh: String(badan.oleh || "").slice(0, 120),
+    });
+    // Letak di server (host) - folder runtime bot terpasang dari sana.
+    const runtimeContainer = "/usr/src/app/runtime-data";
+    const runtimeHost = String(process.env.ALETA_BOT_RUNTIME_HOST_DIR || "/var/www/html/aleta-data/aleta-bot-runtime").replace(/\/+$/, "");
+    const folderServer = h.folder.startsWith(runtimeContainer) ? runtimeHost + h.folder.slice(runtimeContainer.length) : h.folder;
+    return { paket: { ...h, folderServer } };
   }
 
   // ---- template tanya jawab ------------------------------------------------
@@ -649,6 +808,11 @@ function buatLayanan(d) {
     daftarTemplat,
     bacaTemplat,
     simpanTemplat,
+    bacaSatker,
+    simpanKueriSatker,
+    pindaiLogo,
+    gambarLogo,
+    paketLogo,
     _lupakanIndeks: () => {
       indeksJanji = null;
     },
@@ -684,6 +848,9 @@ module.exports = {
   rapikanMenuBaru,
   rapikanBarisTemplat,
   FOLDER_DERRY,
+  VARIABEL_SATKER,
+  NO_VAR_KODE_SURAT,
+  kerangkaSatker,
   KOLOM_MENU,
   CONFIG_BOLEH,
 };

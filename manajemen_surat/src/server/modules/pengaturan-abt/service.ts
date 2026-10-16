@@ -15,6 +15,7 @@ import {
   type HakPengaturanAbt,
   type JenisSuntingan,
 } from "@/lib/pengaturan-abt";
+import { kerangkaSatker } from "@/lib/identitas-satker";
 import type { AletaDatabase } from "@/server/db/client";
 import { ApiError } from "@/server/shared/errors";
 
@@ -111,7 +112,7 @@ function galatBot(h: Extract<HasilBotPengaturan<unknown>, { ok: false }>): ApiEr
   return new ApiError(status, h.error, { kode: h.kode, uji: h.uji });
 }
 
-async function bot<T>(jalur: string, pilihan: Parameters<typeof panggilBotPengaturanAbt>[1] = {}): Promise<T> {
+export async function bot<T>(jalur: string, pilihan: Parameters<typeof panggilBotPengaturanAbt>[1] = {}): Promise<T> {
   const h = await panggilBotPengaturanAbt<T>(jalur, pilihan);
   if (!h.ok) throw galatBot(h);
   return h.data;
@@ -424,6 +425,48 @@ export async function simpanVariabel(db: AletaDatabase, aktor: AktorPengaturan, 
 }
 
 // ---------------------------------------------------------------------------
+// Identitas satker (17 Okt 2026) - cabang satker kueri 9271-9274
+// ---------------------------------------------------------------------------
+
+/**
+ * Menulis kueri isian satker (lihat lib/identitas-satker.ts). Super Admin dan
+ * Admin (sama dengan isian bawaan): yang berubah hanya cabang
+ * `WHEN '<KodePN>' THEN '...'`, dan bot menolak kueri yang kerangkanya lain.
+ * Dicatat jenis "satker" - Kembalikan menukar kueri lama/baru.
+ */
+export async function simpanKueriSatker(
+  db: AletaDatabase,
+  aktor: AktorPengaturan,
+  ip: string,
+  badan: { noVar: string; lama: string; baru: string; ringkas: string },
+  pulihDari = ""
+) {
+  if (!hakPengaturanAbt(aktor.roleId).ubahBawaan) throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat mengubah identitas satker di ABT.");
+  const noVar = String(badan.noVar ?? "").padStart(4, "0");
+  if (!/^927[1-4]$/.test(noVar)) throw new ApiError(400, "Variabel ini bukan isian identitas satker.");
+  if (kerangkaSatker(badan.lama) !== kerangkaSatker(badan.baru)) throw new ApiError(400, "Kueri baru mengubah lebih dari isian satker - ditolak.");
+  return denganCatatan(
+    db,
+    { jenis: "satker", kunci: noVar, ringkas: badan.ringkas, lama: { sql_query: badan.lama }, baru: { sql_query: badan.baru }, aktor, ip, pulihDari },
+    async () => {
+      const h = await bot<{ sebelum: Record<string, string>; sesudah: Record<string, string>; uji: unknown }>("/satker/simpan", {
+        method: "POST",
+        timeoutMs: 45000,
+        body: { noVar, lama: { sql_query: badan.lama }, baru: { sql_query: badan.baru }, pulihkan: Boolean(pulihDari) },
+      });
+      return { hasil: { sebelum: h.sebelum, sesudah: h.sesudah, uji: h.uji }, baru: h.sesudah };
+    }
+  );
+}
+
+/** Jejak paket logo kop di riwayat (bukan tulisan ke ABT - tidak dapat "dikembalikan" dari sini). */
+export async function catatPaketLogo(db: AletaDatabase, aktor: AktorPengaturan, ip: string, isi: { ringkas: string; lama: unknown; baru: unknown }) {
+  const id = await mulaiCatat(db, { jenis: "logo", kunci: "logo-kop", ringkas: isi.ringkas, lama: isi.lama, baru: isi.baru, aktor, ip });
+  await akhiriCatat(db, id, { status: "tersimpan" });
+  return id;
+}
+
+// ---------------------------------------------------------------------------
 // Template tanya jawab
 // ---------------------------------------------------------------------------
 
@@ -520,6 +563,12 @@ export async function kembalikanSuntingan(db: AletaDatabase, aktor: AktorPengatu
   }
   if (s.jenis === "templat") {
     return simpanTemplat(db, aktor, ip, { kode: s.kunci, lama: baru.baris, baru: lama.baris, ringkas }, s.id);
+  }
+  if (s.jenis === "satker") {
+    return simpanKueriSatker(db, aktor, ip, { noVar: s.kunci, lama: String(baru.sql_query ?? ""), baru: String(lama.sql_query ?? ""), ringkas }, s.id);
+  }
+  if (s.jenis === "logo") {
+    throw new ApiError(400, "Paket logo kop dikembalikan di server dengan pulih.sh di folder paketnya.");
   }
   throw new ApiError(400, "Jenis suntingan tidak dikenal.");
 }

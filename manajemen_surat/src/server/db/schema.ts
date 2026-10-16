@@ -554,6 +554,38 @@ export const DDL_AGEN_H7 = {
   ],
 } as const;
 
+/**
+ * Identitas satker untuk blangko ABT (0069, 17 Okt 2026, keputusan 17 Okt
+ * butir 3/4/7): satu baris berisi nama pengadilan, PT, alamat, telepon/WA,
+ * laman, surel, kode surat, zona waktu, dan logo kop. Cermin PERSIS dari
+ * drizzle/0069_aleta_identitas_satker.sql; penjaga
+ * identitas-satker-17okt.test.ts membandingkan keduanya.
+ */
+export const DDL_IDENTITAS_SATKER = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_identitas_satker (
+  id INTEGER PRIMARY KEY,
+  kode_satker TEXT NOT NULL DEFAULT '',
+  nama_pengadilan TEXT NOT NULL DEFAULT '',
+  pengadilan_tinggi TEXT NOT NULL DEFAULT '',
+  alamat TEXT NOT NULL DEFAULT '',
+  telepon TEXT NOT NULL DEFAULT '',
+  laman TEXT NOT NULL DEFAULT '',
+  surel TEXT NOT NULL DEFAULT '',
+  kode_surat TEXT NOT NULL DEFAULT '',
+  zona_waktu TEXT NOT NULL DEFAULT '',
+  logo_base64 TEXT NOT NULL DEFAULT '',
+  logo_jenis TEXT NOT NULL DEFAULT '',
+  logo_md5 TEXT NOT NULL DEFAULT '',
+  logo_lebar INTEGER NOT NULL DEFAULT 0,
+  logo_tinggi INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh_id TEXT NOT NULL DEFAULT '',
+  diubah_oleh_nama TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1565,6 +1597,8 @@ const schemaStatements = [
   ...DDL_KONSEPTOR_LANGKAH.tabel,
   // Agen H-7 draf putusan: draf per Hari Putusan & catatan jalan (0068).
   ...DDL_AGEN_H7.tabel,
+  // Identitas satker & logo kop untuk blangko ABT (0069).
+  ...DDL_IDENTITAS_SATKER.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

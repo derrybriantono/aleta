@@ -192,6 +192,8 @@ app.use("/internal/aleta-bot/penetapan-edoc/unggah", express.json({ limit: "28mb
 /* === KAMUS-DB 10 Okt === lapis kamus deteksi dapat melebihi 1 MB (ratusan pola + contoh). */
 app.use("/internal/aleta-bot/kamus-deteksi/lapis", express.json({ limit: "8mb" }));
 /* === AKHIR KAMUS-DB === */
+// Paket logo kop (17 Okt 2026): badan memuat logo satker (base64, <= 3 MB).
+app.use("/internal/aleta-bot/abt-pengaturan/logo/paket", express.json({ limit: "6mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static("public"));
 
