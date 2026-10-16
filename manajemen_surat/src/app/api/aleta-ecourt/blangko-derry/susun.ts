@@ -468,3 +468,19 @@ export function folderPalingCocok(
   }
   return terbaik;
 }
+
+export type NilaiPenanda = { status: string; teks: string; nama: string; sebab: string };
+
+/**
+ * Status nilai penanda UNTUK LAYAR Blangko Derry (17 Okt 2026, temuan pemeriksaan 1.203.0).
+ *
+ * Mesin variabel bot meniru ABT: kueri (data_sql/data_sipp) yang memulangkan baris berisi teks
+ * kosong berstatus "terisi" - ABT mencetaknya kosong, dan kueri bersarang memakai nilai kosong itu
+ * apa adanya, jadi di MESIN tidak diubah. Di layar itu terbaca "terisi" padahal kosong (#9272#
+ * telepon kantor: kuerinya sengaja memulangkan '' untuk PA.Dgl). Di sini statusnya menjadi "kosong"
+ * beserta sebabnya. Tanya-jawab (tj) dibiarkan: nilainya berupa tabel, teksnya memang kosong.
+ */
+export function statusNilaiLayar(v: NilaiPenanda, tanyaJawab: boolean): NilaiPenanda {
+  if (tanyaJawab || v.status !== "terisi" || String(v.teks ?? "").trim()) return v;
+  return { ...v, status: "kosong", sebab: v.sebab || "Kueri ABT tidak memulangkan isi untuk perkara ini (ABT mencetaknya kosong)." };
+}

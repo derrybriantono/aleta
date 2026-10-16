@@ -241,15 +241,33 @@
     return ["put", "bas", "rel"].filter((j) => boleh.has(j));
   }
 
+  /**
+   * Grup SIPP per peran tampilan untuk folder di luar putusan/BAS/relaas (99 PTSP, 17 Okt): PP = PP +
+   * Panitera + Panmud; PTSP = meja & panmud gugatan/permohonan/jinayat/perkara. Hakim/juru sita tetap
+   * GRUP_ABT_PERAN (Ketua/Wakil 10 ikut hakim).
+   */
+  const GRUP_ABT_PERAN_LAIN = {
+    pp: ["500", "30", "410", "430"],
+    ptsp: ["1000", "1001", "1002", "1003", "1010", "1011", "1012", "1013", "1020", "1022", "1023", "1030", "1031", "1032", "1033", "1034"],
+  };
+
   /** Kelompok (menu) Blangko Derry boleh tampil/dibuka? k = { nama (nama_alias ABT), jenis }. */
   function kelompokBoleh(k, o) {
     if (!k) return false;
     if (o.admin && !o.sebagaiPeran) return true;
+    const folder = o.hak && Array.isArray(o.hak.folder) ? o.hak.folder : null;
+    const f = folder && folder.find((x) => samaNamaMenu(x.namaAlias, k.nama) || samaNamaMenu(x.nama, k.nama));
+    // Folder PTSP (99 PTSP, 17 Okt 2026) bukan dokumen satu peran: haknya PERSIS hak menu ABT
+    // (abt_menu 991: grup 30|500|430|1000|1010|1020|1032|1001|1011, top 1|10|30). Akun biasa: menunya
+    // sudah disaring ABT sendiri. Akun yang ditiru: dicocokkan seperti menu_cek.
+    if (k.jenis === "ptsp") {
+      if (!o.admin) return true;
+      const grup = [...(GRUP_ABT_PERAN[o.sebagaiPeran] || []), ...(GRUP_ABT_PERAN_LAIN[o.sebagaiPeran] || [])];
+      return f ? folderTerbukaUntuk(f, grup) : o.sebagaiPeran === "pp" || o.sebagaiPeran === "ptsp";
+    }
     if (!jenisDokumenBoleh(o).includes(k.jenis)) return false;
     // Akun biasa: menunya sudah disaring ABT menurut grup akun ABT-nya sendiri.
     if (!o.admin) return true;
-    const folder = o.hak && Array.isArray(o.hak.folder) ? o.hak.folder : null;
-    const f = folder && folder.find((x) => samaNamaMenu(x.namaAlias, k.nama) || samaNamaMenu(x.nama, k.nama));
     return f ? folderTerbukaUntuk(f, GRUP_ABT_PERAN[o.sebagaiPeran] || []) : true;
   }
 
