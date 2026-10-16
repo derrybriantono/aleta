@@ -59,7 +59,7 @@ describe("A. isi peta", () => {
       // Tiap alur punya paling sedikit satu langkah yang menutup sidang (terakhir) atau pertama untuk alur 1 sidang.
       expect(a.langkah.some((l) => l.peran === "terakhir" || l.peran === "pertama"), a.id).toBe(true);
     }
-    expect(total).toBe(62);
+    expect(total).toBe(63); // I2 16 Okt: + ALUR 10 [4] ikrar P & T tidak hadir (paket abt-ikrar-derry)
   });
 
   it("jenis perkara: Cerai Gugat/Talak, Itsbat (dua tulisan SIPP), Dispensasi, Asal Usul Anak, permohonan lain", () => {

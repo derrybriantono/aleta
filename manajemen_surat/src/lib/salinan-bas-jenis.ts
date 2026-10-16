@@ -20,7 +20,7 @@
  */
 import { PADANAN_BAS_ARSIP } from "@/lib/alur-bas";
 import { ALUR_BAS_BARU } from "@/lib/alur-bas-baru-data";
-import { AKAR_SALINAN_BAS, MENU_FOLDER_JENIS, SALINAN_BAS_JENIS } from "@/lib/salinan-bas-jenis-data";
+import { AKAR_SALINAN_BAS, MENU_FOLDER_JENIS, SALINAN_BAS_JENIS, SALINAN_BAS_LANGSUNG } from "@/lib/salinan-bas-jenis-data";
 import { jenisPerkaraDariFolder } from "@/lib/tugas-blangko";
 
 export type SalinanBas = {
@@ -61,7 +61,7 @@ export function semuaSalinanBas(folder: string, berkas: string): SalinanBas[] {
   const hasil: SalinanBas[] = [];
   const lihat = new Set<string>();
   for (const [fs, bs] of sumber) {
-    const tujuan = SALINAN_BAS_JENIS[fs]?.[bs];
+    const tujuan = SALINAN_BAS_JENIS[fs]?.[bs] ?? SALINAN_BAS_LANGSUNG[fs]?.[bs]; // I2 16 Okt: BAS yang langsung di folder jenis
     const awalan = awalanSalinanBas(fs);
     if (!tujuan || !awalan) continue;
     for (const ft of tujuan) {
@@ -99,7 +99,7 @@ function semuaKandidatBas(): KandidatBas[] {
   if (kandidatBasCache) return kandidatBasCache;
   const hasil: KandidatBas[] = [];
   // (1) salinan berkas ALUR / kumulasi / itsbat gugur-cabut di folder jenis (233 berkas)
-  for (const [folderSumber, isi] of Object.entries(SALINAN_BAS_JENIS)) {
+  for (const [folderSumber, isi] of [...Object.entries(SALINAN_BAS_JENIS), ...Object.entries(SALINAN_BAS_LANGSUNG)]) {
     for (const berkasSumber of Object.keys(isi)) {
       for (const s of semuaSalinanBas(folderSumber, berkasSumber)) {
         hasil.push({ salinan: s, kunci: [kunciNama(s.berkas), kunciNama(berkasSumber)] });

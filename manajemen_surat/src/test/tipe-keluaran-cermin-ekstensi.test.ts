@@ -149,10 +149,11 @@ describe("putusan.peta-blangko dan putusan.padanan-jenis = panel-alat.js yang di
   // + 18 baris status cerai (blok P 12 Okt: 9 status x CG/CT, kunci "<jenis>|<status>[|verstek]").
   // Q3 16 Okt: + 12 baris cerai per keadaan (6 x CG/CT), + baris permohonan & gugatan lain per status/keadaan (itsbat, DK, PAW, perwalian,
   // pengangkatan anak, AUA, HB, kewarisan, poligami) termasuk 2 baris jenis baru (penetapan ahli waris, perwalian) = 82.
+  // I2 16 Okt: + 7 baris wali adhal (jenis + kabul/tolak/cabut + gugur/digugurkan/NO ke 9b) = 89; jenis tanpa status kini 10.
   it("ALAT_PETA_BAWAAN: 9 jenis + baris status cerai + keadaan + 4 baris kumulasi (T 13 Okt), isi sama persis ('bawaan: true' = asal bawaan)", () => {
-    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(82);
+    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(89);
     expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => k.includes("+") && k.split("|")[0].includes("+"))).toHaveLength(4);
-    expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => !k.includes("|"))).toHaveLength(9);
+    expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => !k.includes("|"))).toHaveLength(10);
     const cermin = CERMIN_EKSTENSI["putusan.peta-blangko"];
     const dariCermin = Object.fromEntries(
       cermin.map((e) => {

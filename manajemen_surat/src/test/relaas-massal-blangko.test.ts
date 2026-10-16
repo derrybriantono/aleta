@@ -184,12 +184,12 @@ beforeEach(() => {
 });
 
 describe("rute katalog blangko relaas - daftarnya dari satu sumber", () => {
-  it("memulangkan kedua puluh dua blangko (per pihak + pengumuman itsbat 14 Okt + set e-Court dan amplop 16 Okt) beserta folder dan aturan pihaknya", async () => {
+  it("memulangkan kedua puluh empat blangko (per pihak + pengumuman itsbat 14 Okt + set e-Court dan amplop + mediasi I2 16 Okt) beserta folder dan aturan pihaknya", async () => {
     keadaan.katalog = { ok: false, error: "bot tidak dijalankan pada uji ini" };
     const { data } = await isiRute();
 
     expect(data.jumlah).toBe(BLANGKO_RELAAS.length);
-    expect(data.jumlah).toBe(22);
+    expect(data.jumlah).toBe(24);
     expect(data.folder).toBe("derry_briantono/Relaas");
     expect(data.set?.id).toBe("relaas-jurusita");
 
@@ -236,7 +236,7 @@ describe("rute katalog blangko relaas - folder ABT punya TIGA jawaban", () => {
     // null, BUKAN false: yang belum diukur tidak boleh terbaca sebagai hilang.
     for (const satu of data.blangko) expect(satu.adaDiAbt).toBeNull();
     // Katalognya sendiri tidak ikut gagal - ia datang dari TypeScript.
-    expect(data.jumlah).toBe(22);
+    expect(data.jumlah).toBe(24);
   });
 
   it("folder ABT tidak ada di mesin ini: sebab dari bot diteruskan apa adanya", async () => {

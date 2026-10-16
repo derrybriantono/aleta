@@ -223,8 +223,9 @@ export function tentukanAlurBas(m: MasukanAlurBas): HasilAlurBas {
 
   // --- Cerai gugat / cerai talak ---
   if (grup === "cerai-talak" && m.sidangIkrarTalak) {
-    const kode = h === 1 ? "2" : h === 3 ? "3" : "1";
-    return hasil("alur-10", kode, h === null || h === 4, "Sidang ikrar talak.", ["1", "2", "2a", "3"].filter((k) => k !== kode));
+    // I2 16 Okt (paket abt-ikrar-derry): kehadiran 4 (P & T tidak hadir) -> [4] tunda tenggang waktu 6 bulan, bukan tebakan [1].
+    const kode = h === 1 ? "2" : h === 3 ? "3" : h === 4 ? "4" : "1";
+    return hasil("alur-10", kode, h === null, "Sidang ikrar talak.", ["1", "2", "2a", "3", "4"].filter((k) => k !== kode));
   }
   if (m.akhir === "gugur") return hasil("alur-07", n >= 2 ? "3" : "1", false, "Cerai gugur.", ["1", "2", "3"].filter((k) => k !== (n >= 2 ? "3" : "1")));
   if (m.akhir === "cabut") return hasil("alur-08", n >= 2 ? "B" : "A", false, "Cerai dicabut.", ["A", "B", "C1", "C2"].filter((k) => k !== (n >= 2 ? "B" : "A")));
@@ -899,6 +900,15 @@ export const ALUR_BAS: AlurBas[] = [
         "peran": "varian",
         "keterangan": "P tidak hadir, T hadir",
         "asal": "satker",
+        "turunan": false
+      },
+      {
+        "kode": "4",
+        "berkas": "[4] BAS Ikrar Talak - P & T Tidak Hadir, Tunda Tenggang Waktu 6 Bulan.rtf",
+        "ke": 0,
+        "peran": "varian",
+        "keterangan": "P dan T tidak hadir (paket abt-ikrar-derry 16 Okt: hanya di folder 1a Perceraian CT - BAS)",
+        "asal": "derry",
         "turunan": false
       }
     ]

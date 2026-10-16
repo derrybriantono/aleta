@@ -942,6 +942,13 @@ describe("4 Okt (1.183.0): Unggah putusan hanya di blangko putusan", () => {
     expect(jenis("PAW", { berkas: "CG Verstek", menu: "Putusan CG", grup: "" })).toBe("ragu");
     // Nama yang pasti bukan putusan menang atas submenu putusan.
     expect(jenis("@ Sampul Berkas Perkara 2023", { berkas: "@ Sampul Berkas Perkara 2023", menu: "Putusan & Penetapan", grup: "" })).toBe("bukan");
+    // I2 16 Okt (abt-ikrar-derry): penetapan ikrar Derry di folder putusan CT bukan putusan perkara walau submenunya "Putusan Cerai Talak".
+    const GRUP = "Blangko Derry (Daftar s.d. Produk)";
+    for (const n of ["[90] [Ikrar] Penetapan Ikrar Talak - P Hadir & T Tidak Hadir", "[90a] [Ikrar] Penetapan Ikrar Talak - P & T Hadir", "[91] [Ikrar Gugur] Penetapan Kekuatan Putusan Gugur - P Tidak Ikrar 6 Bulan"]) {
+      expect(jenis(n, { berkas: n, menu: "Putusan Cerai Talak", grup: GRUP }), n).toBe("bukan");
+    }
+    // abt-wali-adhal: penetapan wali adhal Derry = putusan (menu 113 "Putusan Wali Adhal").
+    expect(jenis("[01] [Kabul] Wali Adhal - Wali Tidak Hadir", { berkas: "[01] [Kabul] Wali Adhal - Wali Tidak Hadir", menu: "Putusan Wali Adhal", grup: GRUP })).toBe("putusan");
   });
 
   it("halaman daftar ABT: klik berkas mencatat submenu dan grupnya di sessionStorage, tanpa menulis ke ABT", async () => {

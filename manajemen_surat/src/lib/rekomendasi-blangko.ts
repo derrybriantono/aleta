@@ -185,7 +185,22 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   "Putusan Penetapan Ahli Waris (P3HP)": "9 Penetapan Ahli Waris",
   "Putusan Lain-Lain (Pengangkatan Anak)": "9a Lain-Lain (Pengangkatan Anak)",
   "Putusan Permohonan Umum (Cabut/Gugur/NO)": "9b Permohonan Umum",
+  // I2 16 Okt: paket ABT abt-wali-adhal - menu 113 "Putusan Wali Adhal" (alias "Wali Adhal - Putusan").
+  "Putusan Wali Adhal": "7 Wali Adhal",
 };
+
+/**
+ * I2 16 Okt (paket ABT abt-ikrar-derry): penetapan sidang ikrar talak Derry di folder "1a Perceraian CT" (menu "Putusan Cerai Talak").
+ * [90] Pemohon hadir & Termohon tidak, [90a] keduanya hadir, [91] penetapan putusan gugur karena Pemohon tidak mengikrarkan dalam 6 bulan.
+ */
+export const PENETAPAN_IKRAR = {
+  folder: `${AKAR}/1a Perceraian CT`,
+  menu: "Putusan Cerai Talak",
+  alias: ["Putusan CT", "CT - Putusan"],
+  pTidakHadirT: "[90] [Ikrar] Penetapan Ikrar Talak - P Hadir & T Tidak Hadir.rtf",
+  keduanyaHadir: "[90a] [Ikrar] Penetapan Ikrar Talak - P & T Hadir.rtf",
+  gugur: "[91] [Ikrar Gugur] Penetapan Kekuatan Putusan Gugur - P Tidak Ikrar 6 Bulan.rtf",
+} as const;
 
 /** Baris jenis lama tanpa menu (itsbat, dispensasi): menu menurut jenisnya. */
 const MENU_JENIS_TANPA_MENU: Record<string, string> = { "itsbat nikah": "Putusan Itsbat Nikah", "dispensasi kawin": "Putusan Dispensasi Kawin" };
@@ -247,7 +262,37 @@ export function pilihPutusanBawaan(
   return null;
 }
 
+/** Sidang ikrar talak: penetapan ikrar menurut kehadiran (Pemohon tidak hadir = belum ada penetapan; gugur hanya bila teks sidang menyebutnya). */
+function rekomendasiPenetapanIkrar(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
+  const i = PENETAPAN_IKRAR;
+  const r = (berkas: string, label: string, alasan: string, utama: boolean, perkiraan: boolean): Rekomendasi => ({
+    jenis: "putusan",
+    folder: i.folder,
+    berkas,
+    menu: i.menu,
+    alias: [...i.alias],
+    label,
+    alasan,
+    utama,
+    perkiraan,
+  });
+  const h = m.dihadiriOleh ?? null;
+  const hasil: Rekomendasi[] = [];
+  if (/gugur|6\s*bulan|enam\s+bulan|tidak\s+(?:meng)?ikrar/i.test(teks)) {
+    hasil.push(r(i.gugur, "Penetapan putusan gugur (tidak ikrar 6 bulan)", "Sidang ikrar talak: Pemohon tidak mengikrarkan talak dalam 6 bulan.", true, true));
+  }
+  if (h === 3 || h === 4) return hasil; // Pemohon tidak hadir: ikrar belum diucapkan (BAS tunda ALUR 10 [3]/[4])
+  const keduanya = h === 1;
+  hasil.push(
+    r(keduanya ? i.keduanyaHadir : i.pTidakHadirT, keduanya ? "Penetapan ikrar talak (P & T hadir)" : "Penetapan ikrar talak (T tidak hadir)",
+      `Sidang ikrar talak: ${keduanya ? "Pemohon dan Termohon hadir" : h === 2 ? "Pemohon hadir, Termohon tidak hadir" : "kehadiran belum tercatat"}.`, !hasil.length, h !== 1 && h !== 2),
+    r(keduanya ? i.pTidakHadirT : i.keduanyaHadir, keduanya ? "Penetapan ikrar talak (T tidak hadir)" : "Penetapan ikrar talak (P & T hadir)", "Varian kehadiran pada sidang ikrar.", false, true)
+  );
+  return hasil;
+}
+
 function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
+  if (m.sidangIkrarTalak === true && kunciJenisPerkara(m.jenisPerkara) === "cerai talak") return rekomendasiPenetapanIkrar(m, teks);
   let status = String(m.statusPutusan ?? "").trim();
   let perkiraan = false;
   if (!status) {
@@ -321,7 +366,7 @@ function dariRelaas(b: BlangkoRelaas, alasan: string, utama: boolean): Rekomenda
   };
 }
 
-function rekomendasiRelaas(m: MasukanRekomendasi): Rekomendasi[] {
+function rekomendasiRelaas(m: MasukanRekomendasi, teks = ""): Rekomendasi[] {
   const opsi = { lewatEcourt: m.lewatEcourt === true, verstek: m.verstekPutusan === true };
   const hasil: Rekomendasi[] = [];
   const tambah = (b: BlangkoRelaas | null, alasan: string, utama = true) => {
@@ -344,6 +389,10 @@ function rekomendasiRelaas(m: MasukanRekomendasi): Rekomendasi[] {
     for (const sisi of sisiDari(pihak)) {
       tambah(blangkoRelaas(keadaan, sisi, opsi), ikrar ? "Panggilan sidang ikrar talak." : "Panggilan sidang lanjutan kepada pihak yang tidak hadir.");
       tambah(blangkoAmplopPendamping(keadaan, sisi, opsi), "Amplop pendamping panggilan.", false);
+    }
+    // I2 16 Okt (paket abt-mediasi-derry): sidang ditunda untuk mediasi -> relaas panggilan pertemuan mediasi [JS] 10.1/10.2 sebagai alternatif.
+    if (!ikrar && /mediasi/i.test(teks) && !/laporan|berhasil|gagal/i.test(teks)) {
+      for (const sisi of sisiDari(pihak)) tambah(blangkoRelaas("mediasi", sisi, opsi), "Panggilan pertemuan mediasi kepada pihak yang tidak hadir.", false);
     }
   }
   return hasil;
@@ -384,6 +433,6 @@ export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {
   if (!String(m.jenisPerkara ?? "").trim()) return hasil;
   hasil.bas = rekomendasiBas(m, teks);
   hasil.putusan = rekomendasiPutusan(m, teks);
-  hasil.relaas = rekomendasiRelaas(m);
+  hasil.relaas = rekomendasiRelaas(m, teks);
   return hasil;
 }

@@ -126,3 +126,17 @@ export const SALINAN_BAS_JENIS: Record<string, Record<string, string[]>> = {
   },
 };
 /* === AKHIR F3 === */
+
+/* === I2 16 Okt === */
+/**
+ * BAS yang dibuat paket ABT LANGSUNG di folder jenis (tanpa berkas sumber di folder ALUR yang tersembunyi) - bentuk kunci sama dengan
+ * SALINAN_BAS_JENIS supaya nama salinannya ("BAS ALUR 10 [4] ...") dan menunya ikut aturan yang sama. Dipisah dari SALINAN_BAS_JENIS
+ * karena tabel itu dijaga persis sama dengan 233 salinan paket A3 di server 15 Okt (salinan-bas-jenis.test.ts).
+ *   abt-ikrar-derry (16 Okt): BAS ALUR 10 [4] ikrar talak P & T tidak hadir, tunda tenggang waktu 6 bulan.
+ */
+export const SALINAN_BAS_LANGSUNG: Record<string, Record<string, string[]>> = {
+  "ALUR 10 Cerai Talak Sidang Ikrar Talak": {
+    "[4] BAS Ikrar Talak - P & T Tidak Hadir, Tunda Tenggang Waktu 6 Bulan.rtf": ["1a Perceraian CT - BAS"],
+  },
+};
+/* === AKHIR I2 === */

@@ -56,6 +56,9 @@ const FOLDER_SERVER = [
   "[JS] 8.3.2. Amplop Relaas Panggilan Ikrar Talak T.rtf",
   "[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf",
   "[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf",
+  // I2 16 Okt: paket abt-mediasi-derry (terpasang; diperiksa di server 16 Okt) - panggilan pertemuan mediasi per pihak.
+  "[JS] 10.1. Relaas Panggilan Mediasi P.rtf",
+  "[JS] 10.2. Relaas Panggilan Mediasi T.rtf",
 ];
 
 const EC = { lewatEcourt: true };
@@ -63,9 +66,9 @@ const ECV = { lewatEcourt: true, verstek: true };
 const berkas = (x: ReturnType<typeof blangkoRelaas>) => x?.berkas ?? null;
 
 describe("daftar blangko relaas = isi folder server", () => {
-  it("22 nama persis; 10 yang baru berturut-turut di belakang, 5.1/5.2/6.2/7 bertanda ecourt", () => {
+  it("24 nama persis (22 + mediasi I2); 10 yang baru berturut-turut di belakang, 5.1/5.2/6.2/7 bertanda ecourt", () => {
     expect(BLANGKO_RELAAS.map((b) => b.berkas).sort()).toEqual([...FOLDER_SERVER].sort());
-    expect(BLANGKO_RELAAS).toHaveLength(22);
+    expect(BLANGKO_RELAAS).toHaveLength(24);
     expect(BLANGKO_RELAAS.filter((b) => b.ecourt).map((b) => b.berkas)).toEqual([
       "[JS] 5.1. Relaas Panggilan Sidang P (e-Court).rtf",
       "[JS] 5.2. Relaas Panggilan Sidang T (e-Court).rtf",

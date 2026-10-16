@@ -17870,6 +17870,8 @@ const A3_POLA_NO = /(^|[^A-Za-z])NO([^A-Za-z]|$)/;
 /** Submenu daftar ABT yang pasti bukan putusan (dicocokkan SESUDAH kata "putusan"). */
 const A3_POLA_MENU_BUKAN = /\bBAS\b|berita\s+acara|relaas|\bPBT\b|\bPMH\b|\bPHT\b|P\s*H\s*S|penunjukan|ikrar|mediasi|gugatan|permohonan|formulir|kuasa|akta|PTSP|sampul|jinayat|kepaniteraan/i;
 const A3_KUNCI_MENU = "aletaAbtMenuBlangko";
+/** "[90] [Ikrar] Penetapan Ikrar Talak ...", "[91] [Ikrar Gugur] ..." - tanda status kedua Derry untuk penetapan sidang ikrar. */
+const A3_POLA_PENETAPAN_IKRAR_DERRY = /^\s*\[[^\]]+\]\s*\[ikrar(?:\s+gugur)?\]/i;
 
 function a3Baku(teks) {
   return String(teks || "").replace(/\s+/g, " ").trim();
@@ -17944,6 +17946,9 @@ function a3JenisBlangkoHalaman() {
   if (p7HalamanBas()) return "bukan";
   const nama = p7NamaBlangko();
   if (A3_POLA_BUKAN_PUTUSAN.test(nama)) return "bukan";
+  // I2 16 Okt (paket abt-ikrar-derry): penetapan ikrar [90]/[90a] dan penetapan gugur ikrar [91] Derry berada di folder putusan CT
+  // (menu "Putusan Cerai Talak"), jadi submenu menyebut putusan - padahal berkasnya bukan putusan perkara. Tanda [Ikrar] menang.
+  if (A3_POLA_PENETAPAN_IKRAR_DERRY.test(nama)) return "bukan";
   const asal = a3MenuHalaman(nama);
   if (asal) {
     const menu = a3JenisMenu(asal.menu) || a3JenisMenu(asal.grup);

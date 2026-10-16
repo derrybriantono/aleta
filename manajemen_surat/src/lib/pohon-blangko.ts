@@ -156,7 +156,16 @@ export const SET_BLANGKO: SetBlangko[] = [
     nama: "Penetapan Perwalian",
     folder: `${AKAR}/6 Perwalian`,
     jenis: "putusan",
-    untuk: ["perwalian", "wali"],
+    // I2 16 Okt: "wali" dilepas - wali adhal kini punya set sendiri (di bawah) dan tidak boleh mendapat blangko perwalian lebih dulu.
+    untuk: ["perwalian"],
+  },
+  {
+    // I2 16 Okt (paket ABT abt-wali-adhal): folder baru, menu 113 "Putusan Wali Adhal" / alias "Wali Adhal - Putusan".
+    id: "putusan-wali-adhal",
+    nama: "Penetapan Wali Adhal",
+    folder: `${AKAR}/7 Wali Adhal`,
+    jenis: "putusan",
+    untuk: ["wali adhal", "wali adhol", "wali adlal"],
   },
 ];
 
@@ -267,6 +276,8 @@ export type KeadaanRelaas =
   | "amplop-panggilan"
   | "amplop-putusan"
   | "amplop-ikrar"
+  // I2 16 Okt 2026 (paket ABT abt-mediasi-derry): panggilan pertemuan mediasi per pihak ([JS] 10.1 / 10.2).
+  | "mediasi"
   // 14 Okt 2026: pengumuman permohonan itsbat nikah VOLUNTAIR (jenis 360, alur
   // 16) - dicetak bersama panggilan sidang pertama. Bukan relaas kepada pihak:
   // blangkonya dipilih menurut JUMLAH PEMOHON (lib/pengumuman-itsbat.ts).
@@ -596,6 +607,28 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     folder: FOLDER_RELAAS,
     menuAbt: MENU_RELAAS_LUAS,
   },
+  // ==========================================================================
+  // I2 16 OKT 2026 - RELAAS PANGGILAN MEDIASI (paket ABT abt-mediasi-derry)
+  // ==========================================================================
+  // Hari/tanggal/jam/tempat pertemuan otomatis dari SIPP perkara_jadwal_mediasi (jadwal terakhir); pihak berkuasa dipanggil lewat kuasanya.
+  {
+    keadaan: "mediasi",
+    berkas: "[JS] 10.1. Relaas Panggilan Mediasi P.rtf",
+    label: "Panggilan mediasi (P)",
+    pihak: "pertama",
+    keterangan: "Panggilan pertemuan mediasi untuk Penggugat/Pemohon yang tidak hadir saat mediasi dijadwalkan.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "mediasi",
+    berkas: "[JS] 10.2. Relaas Panggilan Mediasi T.rtf",
+    label: "Panggilan mediasi (T)",
+    pihak: "kedua",
+    keterangan: "Panggilan pertemuan mediasi untuk Tergugat/Termohon yang tidak hadir saat mediasi dijadwalkan.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
 ];
 
 /** Blangko non e-Court saja - pencarian bawaan lama tidak boleh mendarat di blangko e-Court (Q3 16 Okt). */
@@ -649,7 +682,7 @@ export function blangkoRelaas(
   // diberi tahu isi putusan yang dibacakan di hadapannya. Sidang pertama dan
   // ikrar talak TIDAK tunduk pada aturan ini - blangkonya selalu dua pihak,
   // dan kehadiran yang dibaca untuknya milik sidang yang belum terjadi.
-  if (pihak === "tidak-perlu" && (keadaan === "sidang-ditunda" || keadaan === "pemberitahuan-putusan")) {
+  if (pihak === "tidak-perlu" && (keadaan === "sidang-ditunda" || keadaan === "pemberitahuan-putusan" || keadaan === "mediasi")) {
     return null;
   }
   // Q3 16 Okt: perkara e-Court memakai set e-Court bila ada padanannya; yang tidak ada jatuh ke blangko biasa di bawah.

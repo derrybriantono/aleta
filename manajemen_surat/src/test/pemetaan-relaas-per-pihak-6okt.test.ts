@@ -41,6 +41,9 @@ const ABT_SATKER = [
   "[JS] 8.2.2. Amplop Relaas Pemberitahuan Putusan T.rtf",
   "[JS] 8.3.1. Amplop Relaas Panggilan Ikrar Talak P.rtf",
   "[JS] 8.3.2. Amplop Relaas Panggilan Ikrar Talak T.rtf",
+  // 16 Okt (I2): paket ABT abt-mediasi-derry - panggilan pertemuan mediasi per pihak (ada di server 16 Okt).
+  "[JS] 10.1. Relaas Panggilan Mediasi P.rtf",
+  "[JS] 10.2. Relaas Panggilan Mediasi T.rtf",
 ];
 const GABUNGAN = "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf";
 

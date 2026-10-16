@@ -550,6 +550,49 @@ export const CERMIN_EKSTENSI = {
       data: { jenisAsli: "Izin Poligami", statusAsli: "Dicabut", blangko: "Putusan Izin Poligami", blangkoLain: ["Putusan Poligami", "Poligami - Putusan"] },
       urutan: 81,
     },
+    // I2 16 Okt: penetapan wali adhal Derry (paket abt-wali-adhal, menu 113) - cermin blok I2 panel-alat.js.
+    {
+      kunci: "wali adhal",
+      nilai: "[01] [Kabul] Wali Adhal - Wali Tidak Hadir",
+      data: { jenisAsli: "Wali Adhal", blangko: "Putusan Wali Adhal", blangkoLain: ["Wali Adhal - Putusan"], catatan: "varian: [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan" },
+      urutan: 82,
+    },
+    {
+      kunci: "wali adhal|dikabulkan",
+      nilai: "[01] [Kabul] Wali Adhal - Wali Tidak Hadir",
+      data: { jenisAsli: "Wali Adhal", statusAsli: "Dikabulkan", blangko: "Putusan Wali Adhal", blangkoLain: ["Wali Adhal - Putusan"], catatan: "varian: [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan" },
+      urutan: 83,
+    },
+    {
+      kunci: "wali adhal|ditolak",
+      nilai: "[03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum",
+      data: { jenisAsli: "Wali Adhal", statusAsli: "Ditolak", blangko: "Putusan Wali Adhal", blangkoLain: ["Wali Adhal - Putusan"] },
+      urutan: 84,
+    },
+    {
+      kunci: "wali adhal|dicabut",
+      nilai: "[98] [Cabut] Wali Adhal",
+      data: { jenisAsli: "Wali Adhal", statusAsli: "Dicabut", blangko: "Putusan Wali Adhal", blangkoLain: ["Wali Adhal - Putusan"] },
+      urutan: 85,
+    },
+    {
+      kunci: "wali adhal|digugurkan",
+      nilai: "[98] [Gugur] Permohonan - Pemohon Tidak Pernah Hadir",
+      data: { jenisAsli: "Wali Adhal", statusAsli: "Digugurkan", blangko: "Putusan Permohonan Umum (Cabut/Gugur/NO)", blangkoLain: ["Permohonan Umum - Putusan"], catatan: "permohonan umum (9b)" },
+      urutan: 86,
+    },
+    {
+      kunci: "wali adhal|gugur",
+      nilai: "[98] [Gugur] Permohonan - Pemohon Tidak Pernah Hadir",
+      data: { jenisAsli: "Wali Adhal", statusAsli: "Gugur", blangko: "Putusan Permohonan Umum (Cabut/Gugur/NO)", blangkoLain: ["Permohonan Umum - Putusan"], catatan: "permohonan umum (9b)" },
+      urutan: 87,
+    },
+    {
+      kunci: "wali adhal|tidak dapat diterima",
+      nilai: "[99] [NO] Permohonan - Pemohon Tidak Hadir Lagi (SEMA 1 2022)",
+      data: { jenisAsli: "Wali Adhal", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Permohonan Umum (Cabut/Gugur/NO)", blangkoLain: ["Permohonan Umum - Putusan"], catatan: "permohonan umum (9b) - pola SEMA 1/2022" },
+      urutan: 88,
+    },
   ],
   "putusan.padanan-jenis": [
     { kunci: "itsbat nikah", nilai: "pengesahan perkawinan/istbat nikah", urutan: 0 },

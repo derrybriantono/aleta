@@ -8497,7 +8497,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
  * untuk semua status): itsbat gugur 39, cabut 14, NO 8, tolak 5 mendapat blangko KABUL. Penetapan Ahli Waris (36), Perwalian (33),
  * Pengangkatan Anak, Asal Usul Anak, dan permohonan umum yang dicabut/gugur/NO tidak punya baris sama sekali. Nama berkas dan menu
  * diambil dari folder derry_briantono sesudah susunan berpasangan (diperiksa 16 Okt 2026; menu putusan: nama TETAP, alias "<Singkatan> - Putusan").
- * Kunci: "<jenis>|<status>" dan "<jenis>|<status>|<keadaan>" (keadaan: lib/keadaan-putusan.ts). Wali Adhal belum punya blangko putusan Derry.
+ * Kunci: "<jenis>|<status>" dan "<jenis>|<status>|<keadaan>" (keadaan: lib/keadaan-putusan.ts). Wali Adhal: lihat blok I2 16 Okt di bawah.
  */
 const ALAT_MENU_PUTUSAN = {
   in: { blangko: "Putusan Itsbat Nikah", lain: ["Itsbat - Putusan"] },
@@ -8511,6 +8511,8 @@ const ALAT_MENU_PUTUSAN = {
   hb: { blangko: "Putusan Harta Bersama", lain: ["Putusan HB", "HB - Putusan"] },
   waris: { blangko: "Putusan Kewarisan", lain: ["Putusan Waris", "Waris - Putusan"] },
   pol: { blangko: "Putusan Izin Poligami", lain: ["Putusan Poligami", "Poligami - Putusan"] },
+  // I2 16 Okt: paket ABT abt-wali-adhal - menu 113 "Putusan Wali Adhal" (alias "Wali Adhal - Putusan"), folder derry_briantono/7 Wali Adhal.
+  wa: { blangko: "Putusan Wali Adhal", lain: ["Wali Adhal - Putusan"] },
 };
 function alatBarisPutusanLain(menu, jenisAsli, statusAsli, berkas, catatan) {
   const m = ALAT_MENU_PUTUSAN[menu];
@@ -8617,6 +8619,28 @@ Object.assign(ALAT_PETA_BAWAAN, {
   "poligami|dicabut": alatBarisPutusanLain("pol", "Izin Poligami", "Dicabut", "[98] [Cabut] Permohonan - P & T Hadir Sebelum Jawaban"),
 });
 /* === AKHIR Q3 === */
+
+/* === I2 16 Okt === */
+/**
+ * PENETAPAN WALI ADHAL versi Derry (paket ABT abt-wali-adhal, terpasang 16 Okt 2026): folder derry_briantono/7 Wali Adhal, menu 113
+ * "Putusan Wali Adhal" (alias "Wali Adhal - Putusan", berpasangan dengan 114 "Wali Adhal - BAS"), empat penetapan. Wali tidak hadir
+ * adalah keadaan terbanyak (SIPP: wali tidak tercatat sebagai pihak) sehingga [01] menjadi bawaan dan [01a] (wali hadir tetap enggan)
+ * variannya. Gugur dan NO tidak punya blangko sendiri -> 9b Permohonan Umum.
+ */
+Object.assign(ALAT_PETA_BAWAAN, {
+  "wali adhal": alatBarisPutusanLain("wa", "Wali Adhal", "", "[01] [Kabul] Wali Adhal - Wali Tidak Hadir", "varian: [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan"),
+  "wali adhal|dikabulkan": alatBarisPutusanLain(
+    "wa",
+    "Wali Adhal",
+    "Dikabulkan",
+    "[01] [Kabul] Wali Adhal - Wali Tidak Hadir",
+    "varian: [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan"
+  ),
+  "wali adhal|ditolak": alatBarisPutusanLain("wa", "Wali Adhal", "Ditolak", "[03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum"),
+  "wali adhal|dicabut": alatBarisPutusanLain("wa", "Wali Adhal", "Dicabut", "[98] [Cabut] Wali Adhal"),
+  ...alatBarisPermohonanUmum("wali adhal", "Wali Adhal", { tanpaCabut: true }),
+});
+/* === AKHIR I2 === */
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah

@@ -25,6 +25,7 @@ import { describe, expect, it } from "vitest";
 
 import { ALUR_BAS, PADANAN_BAS_ARSIP, padananBasArsip } from "@/lib/alur-bas";
 import { ALUR_BAS_BARU } from "@/lib/alur-bas-baru-data";
+import { SALINAN_BAS_LANGSUNG } from "@/lib/salinan-bas-jenis-data";
 import { SET_BLANGKO, setBlangkoGabung, setDariFolder, tugasSet } from "@/lib/pohon-blangko";
 import {
   GRUP_ABT_TUGAS,
@@ -314,7 +315,10 @@ describe("E. BAS lama tersembunyi -> padanan ALUR yang ada di server", () => {
 
   it("langkah ALUR di peta alur-bas ada di server sesudah paket (ALUR 06 [3] berputusan tanpa verstek)", () => {
     const ada = new Set(FIX.berkas);
-    for (const a of ALUR_BAS) for (const l of a.langkah) expect(ada.has(`${a.folder}/${l.berkas}`), `${a.folder}/${l.berkas}`).toBe(true);
+    // I2 16 Okt: BAS yang dibuat paket langsung di folder jenis (SALINAN_BAS_LANGSUNG, mis. ALUR 10 [4]) tidak punya sumber di folder ALUR
+    // dan belum ada di fixture 15 Okt - diperiksa ada di server 16 Okt (integrasi-1202-16okt.test.ts).
+    const langsung = (folder: string, berkas: string) => Boolean(SALINAN_BAS_LANGSUNG[folder.replace(/^derry_briantono\//, "")]?.[berkas]);
+    for (const a of ALUR_BAS) for (const l of a.langkah) if (!langsung(a.folder, l.berkas)) expect(ada.has(`${a.folder}/${l.berkas}`), `${a.folder}/${l.berkas}`).toBe(true);
     const a6 = ALUR_BAS.find((a) => a.id === "alur-06")!;
     expect(a6.langkah.filter((l) => /Putusan Verstek/.test(l.berkas))).toEqual([]);
   });
