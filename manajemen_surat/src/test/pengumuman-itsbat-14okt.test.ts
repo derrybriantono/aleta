@@ -41,7 +41,7 @@ import { Dunia, abtPalsu, jalankan, minta, namaRelatif, nyalakan, pesanMulai as 
 // ---------------------------------------------------------------------------
 const keadaan = vi.hoisted(() => ({ gateway: null as null | (() => unknown) }));
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
-vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: async () => ({ name: "Penguji" }) }));
+vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: async () => ({ name: "Penguji", roleId: "jurusita" }) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
 vi.mock("@/server/shared/admin-access-audit", () => ({
   handleAdminRouteError: (galat: unknown) => {
@@ -152,7 +152,7 @@ describe("aturan: hanya sidang pertama itsbat VOLUNTAIR", () => {
     expect(blangkoRelaas("pengumuman-itsbat", "keduanya")?.berkas).toBe(B2P);
     expect(blangkoRelaas("pengumuman-itsbat", "pertama")?.berkas).toBe(B1P);
     const dua = BLANGKO_RELAAS.filter((x) => x.keadaan === "pengumuman-itsbat");
-    expect(dua.map((x) => x.folder)).toEqual(["derry_briantono/Relaas", "derry_briantono/Relaas"]);
+    expect(dua.map((x) => x.folder)).toEqual(["derry_briantono/98 Relaas", "derry_briantono/98 Relaas"]);
   });
 });
 

@@ -395,7 +395,7 @@ const heks = (b: Buffer) => b.toString("hex");
 describe("butir 17 - peta blangko PTSP dan pemisahan bagian", () => {
   it("peta menyebut menu ABT 'Form Bantu PTSP' Derry dan bagian gabungan tiap jenis", () => {
     const m = modulEdoc();
-    expect(m.PETA_PTSP.menu).toMatchObject({ id: 991, nama: "Form Bantu PTSP", kelompok: "derry_briantono", direktori: "PTSP" });
+    expect(m.PETA_PTSP.menu).toMatchObject({ id: 991, nama: "Form Bantu PTSP", kelompok: "derry_briantono", direktori: "99 PTSP" });
     expect(m.PETA_PTSP.berkasGabungan).toBe("@ 0 - PMH - PHS.rtf");
     expect(["pmh", "ppp", "pjs", "phs"].map((j) => m.PETA_PTSP.jenis[j].bagianGabungan)).toEqual([1, 2, 3, 4]);
   });

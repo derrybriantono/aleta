@@ -65,6 +65,14 @@ export type SetBlangko = {
 };
 
 const AKAR = "derry_briantono";
+/**
+ * 16 Okt 2026 malam (paket ABT abt-ganti-nama-relaas-ptsp): folder "Relaas" -> "98 Relaas" dan "PTSP" -> "99 PTSP".
+ * ABT membaca hak folder lewat `direktori=<folder> OR direktori="derry_briantono" LIMIT 1` (urut indeks); nama tanpa
+ * awalan angka memakai baris 900 (hak longgar), bukan baris 981/991 sendiri. Bot menerima kedua nama selama peralihan
+ * (sippReadOnlyBridgeService jalurBlangkoAman), jadi portal yang terpasang lebih dulu/belakangan tetap membaca berkasnya.
+ */
+export const FOLDER_RELAAS_NAMA = "98 Relaas";
+export const FOLDER_PTSP_NAMA = "99 PTSP";
 
 /**
  * Set yang dipakai di pengadilan ini.
@@ -81,7 +89,7 @@ export const SET_BLANGKO: SetBlangko[] = [
     // putusan yang pihaknya tidak hadir harus diberitahukan.
     id: "relaas-jurusita",
     nama: "Relaas Juru Sita",
-    folder: `${AKAR}/Relaas`,
+    folder: `${AKAR}/${FOLDER_RELAAS_NAMA}`,
     jenis: "relaas",
     untuk: [],
   },
@@ -328,14 +336,16 @@ export type BlangkoRelaas = {
 /** Q3 16 Okt: keadaan perkara yang menentukan pilihan blangko relaas selain pihak (dari bot: lewatEcourt dan verstekPutusan). */
 export type OpsiBlangkoRelaas = { lewatEcourt?: boolean | null; verstek?: boolean | null };
 
-const FOLDER_RELAAS = `${AKAR}/Relaas`;
+const FOLDER_RELAAS = `${AKAR}/${FOLDER_RELAAS_NAMA}`;
 /** Menu ABT 25 "Relaas Ikrar Talak" - folder dibuat di laptop 26 Sep 2026. */
 export const FOLDER_RELAAS_IKRAR = "_ikrar_talak/2 Relaas Ikrar Talak";
 /**
- * Hak akses folder Relaas dibaca ABT dari menu 900 (derry_briantono), BUKAN
- * menu 981 "Relaas dan PBT": hak_akses_menu mengambil baris pertama dari
- * `direktori="Relaas" or direktori="derry_briantono"`, dan collation tanpa
- * beda huruf besar-kecil menaruh 900 lebih dulu. Keduanya berentang 80-220.
+ * SEJARAH (sampai 16 Okt 2026): hak akses folder "Relaas" dibaca ABT dari menu 900
+ * (derry_briantono), BUKAN menu 981 "Relaas dan PBT": hak_akses_menu mengambil baris
+ * pertama dari `direktori="Relaas" or direktori="derry_briantono"`, dan collation tanpa
+ * beda huruf besar-kecil menaruh 900 lebih dulu. Sejak paket abt-ganti-nama-relaas-ptsp
+ * foldernya "98 Relaas" dan baris 981 sendiri yang berlaku: HANYA juru sita (600) +
+ * Super Admin, tanpa cek penunjukan, proses 20-1000, alur 15-17 (= rentang yang berlaku).
  *
  * 13 Okt 2026: paket ABT abt-blangko-derry-rapi membuka baris 900 untuk juru
  * sita (600|650) dan PTSP, proses 20-1000 - sesudah paket itu terpasang ABT

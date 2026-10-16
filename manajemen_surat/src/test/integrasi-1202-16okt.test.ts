@@ -242,7 +242,7 @@ describe("A. saran portal Tahap E di jendela pilih blangko F-G", () => {
     expect(out[0]).toMatchObject({ jenis: "put", berkas: PUT_SARAN, kelompok: "Putusan Cerai Gugat", utama: true });
     for (const j of ["put", "bas", "rel"]) expect(out.filter((x) => x.jenis === j && !x.utama).length).toBeLessThanOrEqual(3);
     expect(out.filter((x) => x.jenis === "bas").every((x) => x.kelompok === "CG - BAS")).toBe(true);
-    // Relaas pemberitahuan putusan T: folder "derry_briantono/Relaas" dikenali dari nama foldernya.
+    // Relaas pemberitahuan putusan T: folder "derry_briantono/98 Relaas" dikenali dari nama foldernya.
     const rel = out.find((x) => x.jenis === "rel");
     expect(rel && rel.kelompok).toBe("Relaas");
     expect(polos(m.saranDariPortal(null, menu, {}))).toEqual([]);
@@ -343,19 +343,19 @@ describe("B. mediasi (abt-mediasi-derry)", () => {
     expect(blangkoRelaas("mediasi", "kedua")!.berkas).toBe(MEDIASI.t);
     expect(blangkoRelaas("mediasi", "tidak-perlu")).toBeNull();
     expect(BLANGKO_RELAAS.filter((b) => b.keadaan === "mediasi").map((b) => [b.folder, b.menuAbt.nama])).toEqual([
-      [`${A}Relaas`, "Relaas dan PBT (Blangko Derry)"],
-      [`${A}Relaas`, "Relaas dan PBT (Blangko Derry)"],
+      [`${A}98 Relaas`, "Relaas dan PBT (Blangko Derry)"],
+      [`${A}98 Relaas`, "Relaas dan PBT (Blangko Derry)"],
     ]);
     // Kunci pemetaan admin relaas tidak bertambah: tata kata kuncinya (portal = jurusita.js) belum mengenal "mediasi",
     // dan relaas massal tidak menyusun dokumen mediasi (jadwal mediasi bukan jadwal sidang).
     expect(bawaanPemetaan("relaas").some((x) => /mediasi/i.test(x.namaBerkas))).toBe(false);
-    for (const b of [MEDIASI.p, MEDIASI.t]) expect(tugasBlangko(`${A}Relaas/${b}`)).toBe("jurusita");
+    for (const b of [MEDIASI.p, MEDIASI.t]) expect(tugasBlangko(`${A}98 Relaas/${b}`)).toBe("jurusita");
   });
 
   it("rekomendasi: sidang ditunda untuk mediasi -> relaas mediasi pihak yang tidak hadir sebagai alternatif, panggilan sidang tetap utama", () => {
     const r = rekomendasiBlangko({ jenisPerkara: CG, urutanSidang: 1, dihadiriOleh: 2, ditunda: true, alasanDitunda: "Mediasi dengan mediator hakim" });
     const mediasi = r.relaas.find((x) => x.berkas === MEDIASI.t);
-    expect(mediasi).toMatchObject({ utama: false, folder: `${A}Relaas` });
+    expect(mediasi).toMatchObject({ utama: false, folder: `${A}98 Relaas` });
     expect(r.relaas[0].utama).toBe(true);
     expect(r.relaas.some((x) => x.berkas === MEDIASI.p)).toBe(false); // Penggugat hadir
     // Laporan/hasil mediasi bukan panggilan mediasi.

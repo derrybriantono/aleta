@@ -51,7 +51,7 @@ const keadaan = vi.hoisted(() => ({
 }));
 
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
-vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: async () => ({ name: "Penguji" }) }));
+vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: async () => ({ name: "Penguji", roleId: "jurusita" }) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
 vi.mock("@/server/shared/admin-access-audit", () => ({
   handleAdminRouteError: (galat: unknown) => {

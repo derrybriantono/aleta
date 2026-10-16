@@ -664,8 +664,8 @@ export const AKSI = {
     crud: "R",
     golongan: ["jurusita"],
     lingkup: "milik",
-    rute: ["GET /api/aleta-ecourt/relaas-massal/cetak"],
-    alasan: "Relaas disampaikan juru sita/JSP.",
+    rute: ["GET /api/aleta-ecourt/relaas-massal", "GET /api/aleta-ecourt/relaas-massal/cetak", "GET /api/aleta-ecourt/relaas-massal/blangko"],
+    alasan: "Relaas disampaikan juru sita/JSP. Keputusan pengguna 16 Okt 2026: HANYA juru sita, juru sita pengganti, Super Admin, Admin - Panitera, PP, Ketua/Wakil, Panmud, hakim tidak (ABT menu 981 '98 Relaas' grup 600 + Super Admin).",
   },
   "ecourt.verifikasi": {
     label: "Verifikasi dokumen e-Court (hakim)",
@@ -913,5 +913,16 @@ export function golonganMenuEkstensi(pengguna: PenggunaGolongan | null | undefin
   const tanpaLain = hasil.filter((g) => g !== "lain");
   const urut = (tanpaLain.length ? tanpaLain : hasil.length ? (["lain"] as GolonganMenuEkstensi[]) : []).slice();
   return urut.sort((x, y) => URUTAN_GOLONGAN_EKSTENSI.indexOf(x) - URUTAN_GOLONGAN_EKSTENSI.indexOf(y));
+}
+
+/**
+ * BAS massal (16 Okt 2026 malam, hak putusan/BAS per peran): golongan yang sama
+ * dengan matriks menu ekstensi "bas-massal" (panel-alat.js ALAT_MENU_PERAN.*.daftar:
+ * pp, panitera-utama, panmud, analis) + admin. Hakim, Ketua/Wakil, juru sita,
+ * dan peran lain tidak - rute menolak 403 walau kemampuan "panel" menyala.
+ */
+const GOLONGAN_BAS_MASSAL: GolonganMenuEkstensi[] = ["admin", "panitera", "panmud", "pp", "analis"];
+export function bolehBasMassal(pengguna: PenggunaGolongan | null | undefined): boolean {
+  return golonganMenuEkstensi(pengguna).some((g) => GOLONGAN_BAS_MASSAL.includes(g));
 }
 /* === AKHIR HAK-PERAN === */

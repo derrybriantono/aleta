@@ -296,9 +296,23 @@
     const p = a && typeof a.peranDokumen === "function" ? a.peranDokumen() : [];
     return Array.isArray(p) ? p : [];
   };
-  const jenisBoleh = () => peranAkun().map((p) => PERAN_JENIS[p]).filter(Boolean);
-  /** Boleh MENULIS untuk blangko ini? Admin selalu; selain itu peran harus sesuai jenis dokumen. */
-  const bolehTulis = () => Boolean(S.blangko) && (adm() || jenisBoleh().includes(S.blangko.jenis));
+  /**
+   * Jenis dokumen yang boleh dibuka & ditulis (16 Okt malam): dari kerangka - Super Admin/Admin tanpa
+   * "Lihat sebagai" semuanya; akun yang ditiru dan akun biasa hanya jenis perannya + saklar Pengaturan SIPP & ABT.
+   */
+  const jenisBoleh = () => {
+    const a = api();
+    if (a && typeof a.jenisDokumen === "function") return a.jenisDokumen();
+    return adm() ? ["put", "bas", "rel"] : peranAkun().map((p) => PERAN_JENIS[p]).filter(Boolean);
+  };
+  /** Kelompok menu Derry { nama, jenis } boleh tampil/dibuka/ditulis untuk akun (atau akun yang ditiru) ini? */
+  const kelompokBoleh = (k) => {
+    const a = api();
+    if (a && typeof a.kelompokBoleh === "function") return a.kelompokBoleh(k);
+    return Boolean(k) && jenisBoleh().includes(k.jenis);
+  };
+  /** Boleh MENULIS untuk blangko ini? Hanya bila kelompoknya boleh untuk akun (atau akun yang ditiru) ini. */
+  const bolehTulis = () => Boolean(S.blangko) && kelompokBoleh({ nama: S.blangko.kelompok, jenis: S.blangko.jenis });
 
   function asalAbtDerry() {
     if (typeof asalAbt === "function") return asalAbt();
@@ -412,7 +426,7 @@
   /** Memuat berkas kelompok yang belum termuat, tiga sekaligus (ABT satu per satu di mesin kecil). */
   async function muatSemuaKelompok(jenis) {
     if (!S.menu) return;
-    const antre = S.menu.kelompok.filter((k) => (!jenis || k.jenis === jenis) && !k.berkas && !k.memuat);
+    const antre = S.menu.kelompok.filter((k) => (!jenis || k.jenis === jenis) && kelompokBoleh(k) && !k.berkas && !k.memuat);
     for (let i = 0; i < antre.length; i += 3) await Promise.all(antre.slice(i, i + 3).map((k) => muatBerkasKelompok(k)));
   }
   async function muatIndeks() {
@@ -612,16 +626,19 @@
   };
   function bukaModal() {
     if (!S.pk) return toast("Pilih perkara dulu.");
-    const jenisAda = adm() ? ["put", "bas", "rel"] : jenisBoleh();
+    const jenisAda = jenisBoleh();
     if (!jenisAda.length) return toast("Peran akun Anda tidak punya blangko di tampilan ini.");
     const jenis = S.blangko && jenisAda.includes(S.blangko.jenis) ? S.blangko.jenis : jenisAda[0];
     S.modal = { jenis, kelompok: "", cari: "" };
     renderModal();
+    const a = api();
+    // Saklar Pengaturan SIPP & ABT dapat menambah jenis (hakim -> BAS, PP -> putusan): gambar ulang sesudah terbaca.
+    if (a && typeof a.muatHak === "function") void Promise.resolve(a.muatHak()).then(() => S.modal && renderModal());
     void muatMenu().then(() => {
       if (!S.menu || !S.modal) return;
       renderModal();
       const rek = rekomendasi();
-      const k = S.menu.kelompok.filter((x) => x.jenis === S.modal.jenis);
+      const k = S.menu.kelompok.filter((x) => x.jenis === S.modal.jenis && kelompokBoleh(x));
       // Kelompok yang disarankan dan yang paling sering dipakai dimuat lebih dulu, lalu sisanya di belakang.
       const dulu = k.filter((x) => rek.some((r) => r.kelompok === x.nama)).concat(k.slice().sort(urutKelompok).slice(0, 2));
       Promise.all([...new Set(dulu)].map((x) => muatBerkasKelompok(x))).then(() => muatSemuaKelompok(S.modal ? S.modal.jenis : jenis));
@@ -636,9 +653,10 @@
   function kelompokModal() {
     if (!S.menu || !S.modal) return [];
     const rek = rekomendasi();
-    const semua = S.menu.kelompok.filter((k) => k.jenis === S.modal.jenis).sort(urutKelompok);
+    const semua = S.menu.kelompok.filter((k) => k.jenis === S.modal.jenis && kelompokBoleh(k)).sort(urutKelompok);
     const daftar = [];
-    const rekDiJenis = rek.filter((r) => r.jenis === S.modal.jenis);
+    // Saran dari kelompok yang tidak boleh bagi akun (atau akun yang ditiru) ini tidak ditawarkan.
+    const rekDiJenis = rek.filter((r) => r.jenis === S.modal.jenis && !S.menu.kelompok.some((x) => x.nama === r.kelompok && !kelompokBoleh(x)));
     if (rekDiJenis.length) {
       const berkas = [];
       for (const r of rekDiJenis) {
@@ -673,7 +691,8 @@
       return;
     }
     m.hidden = false;
-    const jenisAda = adm() ? ["put", "bas", "rel"] : jenisBoleh();
+    const jenisAda = jenisBoleh();
+    if (!jenisAda.includes(S.modal.jenis) && jenisAda.length) S.modal.jenis = jenisAda[0];
     const q = S.modal.cari.trim().toLowerCase();
     const rek = rekomendasi();
     const daftar = kelompokModal();
@@ -718,6 +737,7 @@
     const k = S.menu && S.menu.kelompok.find((x) => x.nama === kelompokNama);
     const b = k && k.berkas ? k.berkas.find((x) => x.berkas === nama) : null;
     if (!b) return toast("Blangko itu belum terbaca dari ABT.");
+    if (!kelompokBoleh(k)) return toast(`${NAMA_JENIS[k.jenis] || "Blangko"} di menu ${k.nama} bukan untuk peran ${adm() ? "akun yang sedang dilihat" : "akun Anda"}.`);
     tutupModal();
     const blangko = { berkas: b.berkas, kelompok: k.nama, judul: k.judul || k.nama, a: b.a, b: b.b, jenis: k.jenis, folder: folderUntuk(k) };
     S.blangko = blangko;
