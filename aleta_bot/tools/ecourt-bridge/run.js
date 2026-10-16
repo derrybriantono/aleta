@@ -806,6 +806,33 @@ async function kumpulkanTautan(page, acuan, ringkasan) {
   return tautan;
 }
 
+/** Menambah diagnosa pihak elektronik satu halaman ke ringkasan putaran. Murni (mengubah ringkasan saja). */
+function catatPihakElektronik(ringkasan, diag, detail) {
+  if (!ringkasan || !diag) return;
+  const r = ringkasan.pihakElektronik || (ringkasan.pihakElektronik = {
+    halaman: 0,
+    judulPersetujuan: 0,
+    barisPersetujuan: 0,
+    terbacaPersetujuan: 0,
+    judulPanggilan: 0,
+    barisPanggilan: 0,
+    terbacaPanggilan: 0,
+    kataSummons: 0,
+    selPersetujuan: [],
+    tab: {},
+  });
+  r.halaman += 1;
+  if (diag.persetujuan.judul) r.judulPersetujuan += 1;
+  r.barisPersetujuan += diag.persetujuan.baris;
+  r.terbacaPersetujuan += Array.isArray(detail && detail.persetujuanPihak) ? detail.persetujuanPihak.length : 0;
+  if (diag.panggilan.judul) r.judulPanggilan += 1;
+  r.barisPanggilan += diag.panggilan.baris;
+  r.terbacaPanggilan += Array.isArray(detail && detail.panggilanElektronik) ? detail.panggilanElektronik.length : 0;
+  if (diag.adaKataSummons) r.kataSummons += 1;
+  for (const n of diag.persetujuan.sel || []) if (!r.selPersetujuan.includes(n) && r.selPersetujuan.length < 6) r.selPersetujuan.push(n);
+  for (const id of diag.tab || []) if (r.tab[id] || Object.keys(r.tab).length < 25) r.tab[id] = (r.tab[id] || 0) + 1;
+}
+
 /** Memproses satu halaman detail perkara. */
 async function processCase(page, url, ringkasan, args, acuan) {
   await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
@@ -859,6 +886,11 @@ async function processCase(page, url, ringkasan, args, acuan) {
       .recordPanggilanElektronik(detail.nomorPerkara, detail.panggilanElektronik)
       .catch((galat) => log(`  Panggilan e-Summons gagal disimpan: ${galat.message}`));
   }
+
+  // Diagnosa bagian pihak elektronik (17 Okt 2026): kedua tabel di atas 0 baris
+  // sejak 30 Agu. Hanya hitungan & id tab yang dicatat ke catatan putaran - bukan
+  // isi halaman - supaya putaran berikutnya menjawab sebabnya.
+  catatPihakElektronik(ringkasan, scraper.diagnosaPihakElektronik(html), detail);
 
   // Keadaan tab Putusan SELALU disimpan - termasuk saat tabnya kosong atau
   // tidak ada sama sekali. Justru keadaan itulah yang perlu diketahui:

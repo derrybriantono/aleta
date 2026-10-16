@@ -103,21 +103,41 @@ function catatHasil(gagalBeruntun, kode) {
 /**
  * Calon perkara: sudah putus di SIPP dalam rentangHari, dikenal sebagai
  * perkara e-Court, keadaannya belum lengkap, dan terakhir diperiksa sebelum
- * jedaUlangJam. Yang belum pernah diperiksa didahulukan, lalu yang paling lama.
+ * jedaUlangJam.
+ *
+ * URUTAN (17 Okt 2026, temuan pemeriksaan rilis 1.203.0): dulu hanya "yang
+ * paling lama diperiksa dulu". Perkara yang tinggal menunggu TTE panitera
+ * diperiksa ulang tiap 12 jam tanpa henti dan mendahului perkara yang putus
+ * SESUDAH pembacaan terakhirnya - 611/G putus 15 Okt, terakhir dibaca 15 Okt
+ * 08.09 (sebelum putusan), belum dibaca ulang sampai 17 Okt; di server 11
+ * dari 25 calon dalam keadaan itu. Sekarang bertingkat:
+ *   0  belum pernah diperiksa, atau terakhir dibaca pada/sebelum hari
+ *      putusnya (datanya basi - putusannya belum mungkin terlihat);
+ *   1  sudah dibaca sesudah putus, tetapi baris/dokumen putusan belum ada;
+ *   2  tinggal TTE panitera.
+ * Di dalam tiap tingkat: yang paling lama diperiksa dulu (tetap adil).
+ *
+ * putus: daftar nomor, atau {nomor, tanggal} (tanggal putusan YYYY-MM-DD).
  */
 function pilihCalon({ putus, dikenalEcourt, catatan, sekarang, jedaUlangJam }) {
   const batas = sekarang - jedaUlangJam * 60 * 60 * 1000;
   const calon = [];
-  for (const nomorMentah of putus) {
+  for (const butir of putus) {
+    const nomorMentah = butir && typeof butir === "object" ? butir.nomor : butir;
+    const tanggalPutus = butir && typeof butir === "object" ? String(butir.tanggal || "").slice(0, 10) : "";
     const nomor = normalizeCaseNumber(nomorMentah);
     if (!nomor || !dikenalEcourt.has(nomor)) continue;
     const c = catatan[nomor];
     if (c && c.adaBaris && c.dokumenAda && c.paniteraTte) continue; // sudah lengkap
     const waktu = c && c.diperiksaPada ? Date.parse(c.diperiksaPada) : 0;
     if (waktu && waktu > batas) continue;
-    calon.push({ nomor, waktu });
+    // Akhir hari putusan menurut jam pengadilan (WITA): dibaca sebelum itu = basi.
+    const akhirHariPutus = /^\d{4}-\d{2}-\d{2}$/.test(tanggalPutus) ? Date.parse(`${tanggalPutus}T23:59:59+08:00`) : 0;
+    const basi = !waktu || (akhirHariPutus && waktu <= akhirHariPutus);
+    const tingkat = basi ? 0 : !(c && c.adaBaris && c.dokumenAda) ? 1 : 2;
+    calon.push({ nomor, waktu, tingkat });
   }
-  calon.sort((a, b) => a.waktu - b.waktu);
+  calon.sort((a, b) => a.tingkat - b.tingkat || a.waktu - b.waktu);
   return calon.map((c) => c.nomor);
 }
 
@@ -161,12 +181,12 @@ function buatPemantau(depsMasuk = null) {
       keadaan.terakhirSebab = "sipp_tidak_terbaca";
       return { diperiksa: "", sebab: "sipp_tidak_terbaca" };
     }
-    const nomor = putus.map((n) => normalizeCaseNumber(n)).filter(Boolean);
+    const nomor = putus.map((n) => normalizeCaseNumber(n && typeof n === "object" ? n.nomor : n)).filter(Boolean);
     const [dikenal, catatan] = await Promise.all([
       d.dikenalEcourt(nomor).catch(() => new Set()),
       d.catatanPutusan(nomor).catch(() => ({})),
     ]);
-    const calon = pilihCalon({ putus: nomor, dikenalEcourt: dikenal, catatan, sekarang, jedaUlangJam: pengaturan.jedaUlangJam });
+    const calon = pilihCalon({ putus, dikenalEcourt: dikenal, catatan, sekarang, jedaUlangJam: pengaturan.jedaUlangJam });
     if (!calon.length) {
       keadaan.terakhirSebab = "tidak_ada_calon";
       return { diperiksa: "", sebab: "tidak_ada_calon" };
@@ -231,14 +251,15 @@ function depsBawaan() {
     perkaraPutus: (rentangHari) =>
       new Promise((resolve, reject) => {
         sippDb.query(
-          `SELECT p.nomor_perkara AS nomorPerkara
+          `SELECT p.nomor_perkara AS nomorPerkara, DATE_FORMAT(pu.tanggal_putusan, '%Y-%m-%d') AS tanggal
              FROM perkara_putusan pu JOIN perkara p ON p.perkara_id = pu.perkara_id
             WHERE pu.tanggal_putusan IS NOT NULL
               AND pu.tanggal_putusan >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
             ORDER BY pu.tanggal_putusan DESC
             LIMIT 500`,
           [rentangHari],
-          (galat, rows) => (galat ? reject(galat) : resolve((rows || []).map((r) => String(r.nomorPerkara))))
+          (galat, rows) =>
+            galat ? reject(galat) : resolve((rows || []).map((r) => ({ nomor: String(r.nomorPerkara), tanggal: String(r.tanggal || "") })))
         );
       }),
     dikenalEcourt: async (nomor) => {

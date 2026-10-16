@@ -493,6 +493,64 @@ function extractUploadDeadlines(html) {
   return hasil;
 }
 
+/** Judul bagian persetujuan saluran elektronik (ejaan e-Court berubah-ubah: "Para Pihak", "Persetujuan Pihak ... Elektronik"). */
+const POLA_JUDUL_PERSETUJUAN = /Persetujuan\s+(?:Para\s+)?Pihak[^<]{0,60}?(?:Saluran|Domisili|Persidangan)\s+Elektronik/i;
+/** Judul bagian panggilan elektronik: "Panggilan (e-Summons)", "Panggilan e-Summons", "e-Summons". */
+const POLA_JUDUL_PANGGILAN = /Panggilan\s*\(?\s*e\s*-?\s*Summons\s*\)?/i;
+const POLA_KEDUDUKAN = /\((Penggugat|Tergugat|Pemohon|Termohon|Pelawan|Terlawan|Pembanding|Terbanding|Turut\s+[A-Za-z]+|Kuasa[^)]*|Intervensi[^)]*)[^)]*\)/i;
+
+/** Satu baris tabel persetujuan berbentuk lain (3-4 sel). null bila tidak meyakinkan. Murni. */
+function barisPersetujuanLonggar(sel) {
+  if (!Array.isArray(sel) || sel.length < 3) return null;
+  const selNama = sel.find((x) => POLA_KEDUDUKAN.test(stripTags(x)));
+  if (!selNama) return null;
+  const namaMentah = stripTags(selNama);
+  const cocokPeran = namaMentah.match(/^([\s\S]*?)\s*\(([^)]+)\)\s*$/);
+  const nama = cleanText(cocokPeran ? cocokPeran[1] : namaMentah);
+  if (!nama) return null;
+  const semua = sel.join(" ");
+  const polos = stripTags(semua);
+  const email = (polos.match(/[\w.+-]+@[\w-]+\.[\w.-]+/) || [""])[0];
+  const telp = (polos.match(/(?:Telp|HP|WA)\s*\.?\s*:?\s*([0-9+][0-9\s-]{6,})/i) || ["", ""])[1].trim();
+  const persetujuan = /fa-check-circle/i.test(semua) ? "setuju" : /fa-times-circle/i.test(semua) ? "tidak_setuju" : "belum";
+  return { nama, peran: cleanText(cocokPeran ? cocokPeran[2] : ""), email, telp, persetujuan };
+}
+
+/**
+ * Diagnosa bagian pihak elektronik satu halaman detail (17 Okt 2026). Murni.
+ *
+ * Tabel aleta_bot_ecourt_pihak dan _panggilan berisi 0 baris walau penarik
+ * membaca 1.037 halaman detail sejak 30 Agu - pembacanya disusun tanpa contoh
+ * halaman nyata. Diagnosa ini menjawab sebabnya pada putaran berikutnya tanpa
+ * menyimpan isi halaman: apakah judulnya ada, berapa baris & sel tabelnya,
+ * dan tab apa saja yang ada di halaman (id tab-pane, bukan isinya).
+ */
+function diagnosaPihakElektronik(html) {
+  const teks = String(html || "");
+  const ukurTabel = (pola) => {
+    const awal = teks.search(pola);
+    if (awal < 0) return { judul: false, baris: 0, sel: [] };
+    const potongan = teks.slice(awal);
+    const mulai = potongan.search(/<table[^>]*>/i);
+    const selesai = potongan.search(/<\/table>/i);
+    if (mulai < 0 || selesai < 0) return { judul: true, baris: 0, sel: [], tanpaTabel: true };
+    const tabel = potongan.slice(mulai, selesai);
+    const baris = [...tabel.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map((m) => (m[1].match(/<td[^>]*>/gi) || []).length).filter((n) => n > 0);
+    return { judul: true, baris: baris.length, sel: [...new Set(baris)].slice(0, 5) };
+  };
+  const tab = [...teks.matchAll(/<div[^>]*class\s*=\s*["'][^"']*tab-pane[^"']*["'][^>]*>/gi)]
+    .map((m) => (m[0].match(/id\s*=\s*["']([^"']{1,40})["']/i) || ["", ""])[1])
+    .filter(Boolean)
+    .slice(0, 20);
+  return {
+    persetujuan: ukurTabel(POLA_JUDUL_PERSETUJUAN),
+    panggilan: ukurTabel(POLA_JUDUL_PANGGILAN),
+    adaKataSummons: /summons/i.test(teks),
+    adaKataPersetujuan: /persetujuan/i.test(teks),
+    tab,
+  };
+}
+
 /**
  * Membaca tabel persetujuan pihak memakai saluran elektronik.
  *
@@ -526,7 +584,7 @@ function extractPersetujuanPihak(html) {
   // Halaman detail memuat beberapa tabel berkelas sama, dan mengambil "tabel
   // ketiga" akan diam-diam membaca tabel yang keliru begitu e-Court menambah
   // satu bagian di atasnya.
-  const awal = teks.search(/Persetujuan\s+Pihak\s+Menggunakan\s+Saluran\s+Elektronik/i);
+  const awal = teks.search(POLA_JUDUL_PERSETUJUAN);
   if (awal < 0) return [];
 
   const potongan = teks.slice(awal);
@@ -550,7 +608,15 @@ function extractPersetujuanPihak(html) {
     const polaSel = /<td[^>]*>([\s\S]*?)<\/td>/gi;
     let satuSel;
     while ((satuSel = polaSel.exec(isi)) !== null) sel.push(satuSel[1]);
-    if (sel.length < 5) continue;
+    if (sel.length < 5) {
+      // Bentuk lain (17 Okt 2026): 0 baris tersimpan sejak 30 Agu walau 1.037
+      // halaman detail terbaca - bentuk tabel nyata belum pernah diukur. Baris
+      // 3-4 sel dibaca longgar: nama = sel ber-"(Kedudukan)", surel/telepon/ikon
+      // dicari di seluruh baris. Tetap hanya di tabel sesudah judulnya.
+      const longgar = barisPersetujuanLonggar(sel);
+      if (longgar) hasil.push(longgar);
+      continue;
+    }
 
     const namaMentah = stripTags(sel[1]);
     if (!namaMentah) continue;
@@ -588,7 +654,7 @@ function extractPersetujuanPihak(html) {
 function extractPanggilanElektronik(html) {
   const teks = String(html || "");
 
-  const awal = teks.search(/Panggilan\s*\(\s*e-?Summons\s*\)/i);
+  const awal = teks.search(POLA_JUDUL_PANGGILAN);
   if (awal < 0) return [];
 
   const potongan = teks.slice(awal);
@@ -976,6 +1042,8 @@ module.exports = {
   LOGIN_PATH_PATTERN,
   absoluteUrl,
   alamatBerkasDariJawabanViewDoc,
+  barisPersetujuanLonggar,
+  diagnosaPihakElektronik,
   diDalamEcourt,
   extractAgendas,
   extractCaseLinks,
