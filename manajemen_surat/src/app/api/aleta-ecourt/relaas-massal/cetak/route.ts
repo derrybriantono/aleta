@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { tambahPengumumanItsbat } from "@/lib/pengumuman-itsbat";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAksiAktor } from "@/server/modules/akses/hak-peran";
 import { petaPemetaanBerlaku } from "@/server/modules/aleta-ecourt/pemetaan-blangko";
 import {
   getGatewayRelaasCetak,
@@ -56,7 +57,9 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
+    // 16 Okt malam (keputusan pengguna): relaas HANYA juru sita/juru sita pengganti, Super Admin, Admin.
+    pastikanAksiAktor(aktor, "sidang.cetak-relaas");
 
     const tanggal = (request.nextUrl.searchParams.get("tanggal") || "").trim();
     if (tanggal && !/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) {

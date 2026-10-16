@@ -183,7 +183,8 @@ function aturBerlaku(jenis, kiriman) {
 /** Peta blangko PTSP Derry - lihat catatan kepala berkas. */
 const PETA_PTSP = Object.freeze({
   sumber: "ABT",
-  menu: { id: 991, nama: "Form Bantu PTSP", alias: "Form PTSP", kelompok: "derry_briantono", direktori: "PTSP" },
+  // direktori "99 PTSP" sejak paket ABT abt-ganti-nama-relaas-ptsp (16 Okt 2026; dulu "PTSP") - label saja, berkas dibaca lewat token ABT.
+  menu: { id: 991, nama: "Form Bantu PTSP", alias: "Form PTSP", kelompok: "derry_briantono", direktori: "99 PTSP" },
   berkasGabungan: "@ 0 - PMH - PHS.rtf",
   jenis: {
     pmh: {

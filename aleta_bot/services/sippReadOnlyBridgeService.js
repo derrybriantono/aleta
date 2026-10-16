@@ -2365,6 +2365,7 @@ WHERE t.${quoteIdentifier("data")} IS NOT NULL AND t.${quoteIdentifier("data")} 
  */
 const path = require("path");
 const fs = require("fs/promises");
+const fsSync = require("fs");
 
 const AKAR_BLANGKO = process.env.ALETA_BOT_BLANGKO_DIR || "/usr/src/app/blangko_abt";
 
@@ -2376,12 +2377,36 @@ const AKAR_BLANGKO = process.env.ALETA_BOT_BLANGKO_DIR || "/usr/src/app/blangko_
  * dipasang supaya bot membaca lebih banyak, bukan supaya membaca apa saja.
  */
 function jalurBlangkoAman(bagian) {
-  const bersih = String(bagian || "").trim();
+  const bersih = folderDerryBerlaku(String(bagian || "").trim());
   if (!bersih) return AKAR_BLANGKO;
   if (bersih.includes("\0")) return null;
   const gabung = path.resolve(AKAR_BLANGKO, bersih);
   const akar = path.resolve(AKAR_BLANGKO);
   return gabung === akar || gabung.startsWith(`${akar}${path.sep}`) ? gabung : null;
+}
+
+/**
+ * PERALIHAN NAMA FOLDER (16 Okt 2026 malam, paket ABT abt-ganti-nama-relaas-ptsp):
+ * derry_briantono/Relaas -> "98 Relaas", derry_briantono/PTSP -> "99 PTSP" (ABT membaca hak folder
+ * lewat LIMIT 1 berurut indeks; nama tanpa awalan angka memakai baris 900). Portal baru menyebut nama
+ * baru, portal lama nama lama, dan paket ABT bisa terpasang sebelum/sesudah rilis - jadi bila folder
+ * yang diminta TIDAK ADA, pasangannya dipakai. Folder yang ada selalu menang (tanpa tebakan).
+ */
+const PASANGAN_FOLDER_DERRY = [
+  ["derry_briantono/Relaas", "derry_briantono/98 Relaas"],
+  ["derry_briantono/PTSP", "derry_briantono/99 PTSP"],
+];
+function folderDerryBerlaku(bagian) {
+  const b = String(bagian || "").split("\\").join("/").replace(/\/+$/, "");
+  for (const [lama, baru] of PASANGAN_FOLDER_DERRY) {
+    for (const [dari, ke] of [[lama, baru], [baru, lama]]) {
+      if (b !== dari && !b.startsWith(`${dari}/`)) continue;
+      if (fsSync.existsSync(path.resolve(AKAR_BLANGKO, b))) return bagian;
+      const ganti = ke + b.slice(dari.length);
+      return fsSync.existsSync(path.resolve(AKAR_BLANGKO, ganti)) ? ganti : bagian;
+    }
+  }
+  return bagian;
 }
 
 /**

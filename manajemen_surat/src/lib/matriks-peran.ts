@@ -664,8 +664,8 @@ export const AKSI = {
     crud: "R",
     golongan: ["jurusita"],
     lingkup: "milik",
-    rute: ["GET /api/aleta-ecourt/relaas-massal/cetak"],
-    alasan: "Relaas disampaikan juru sita/JSP.",
+    rute: ["GET /api/aleta-ecourt/relaas-massal", "GET /api/aleta-ecourt/relaas-massal/cetak", "GET /api/aleta-ecourt/relaas-massal/blangko"],
+    alasan: "Relaas disampaikan juru sita/JSP. Keputusan pengguna 16 Okt 2026: HANYA juru sita, juru sita pengganti, Super Admin, Admin - Panitera, PP, Ketua/Wakil, Panmud, hakim tidak (ABT menu 981 '98 Relaas' grup 600 + Super Admin).",
   },
   "ecourt.verifikasi": {
     label: "Verifikasi dokumen e-Court (hakim)",

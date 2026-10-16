@@ -56,7 +56,7 @@ const keadaan = vi.hoisted(() => ({
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
 vi.mock("@/server/modules/aleta-ecourt/akses", () => ({
   // HANYA kewenangan yang dipalsukan - sisanya sungguhan.
-  pastikanKapabilitas: async () => ({ name: "Penguji" }),
+  pastikanKapabilitas: async () => ({ name: "Penguji", roleId: "jurusita" }),
 }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
 vi.mock("@/server/shared/admin-access-audit", () => ({

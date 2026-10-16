@@ -103,7 +103,7 @@ const UKURAN_BAWAAN: Pick<AturPenetapan, KunciUkuran> = {
   capGeserAtasMm: 6,
 };
 
-/** Blangko gabungan PTSP di folder derry_briantono/PTSP: bagian 1 PMH, 2 PPP, 3 PJS, 4 PHS (cermin PETA_PTSP.berkasGabungan di bot). */
+/** Blangko gabungan PTSP di folder derry_briantono/99 PTSP (dulu "PTSP", paket abt-ganti-nama-relaas-ptsp): bagian 1 PMH, 2 PPP, 3 PJS, 4 PHS (cermin PETA_PTSP.berkasGabungan di bot). */
 export const BERKAS_PTSP_GABUNGAN = "@ 0 - PMH - PHS.rtf";
 
 const UMUM: Omit<AturPenetapan, "aktif" | "namaBerkas" | "otomatisUnggah" | "pakaiCap" | "penandatangan"> = {

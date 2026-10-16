@@ -65,7 +65,8 @@ const GRUP_BAS = "1|30|500|430|1000|1010|1020";
 const FOLDER_SERVER: FolderMenuAbt[] = [
   F(101, "Putusan Cerai Gugat", "CG - Putusan", "1|10|20", "1", 0),
   F(102, "Cerai Gugat - BAS", "CG - BAS", GRUP_BAS, "1|30", 3),
-  F(981, "Relaas Panggilan Sidang dan Pemberitahuan Putusan", "Relaas dan PBT", "600|650", "1|30", 3),
+  // Sesudah paket abt-ganti-nama-relaas-ptsp (keputusan pengguna 16 Okt): folder "98 Relaas", HANYA juru sita + Super Admin.
+  F(981, "Relaas Panggilan Sidang dan Pemberitahuan Putusan", "Relaas dan PBT", "600", "1", 0),
 ];
 const hakDari = (folder: FolderMenuAbt[]) => ringkasHakBlangko({ folder, config: { validasi_data_bas: "0" } });
 
@@ -262,7 +263,10 @@ describe("M. matriks peran x folder (murni)", () => {
     expect(m.folderTerbukaUntuk(FOLDER_SERVER[1], ["20", "10"])).toBe(false);
     expect(m.folderTerbukaUntuk(FOLDER_SERVER[1], ["500"])).toBe(true);
     expect(m.folderTerbukaUntuk(FOLDER_SERVER[1], ["30"])).toBe(true);
-    expect(m.folderTerbukaUntuk(FOLDER_SERVER[2], ["500"])).toBe(false);
+    // Relaas: hanya juru sita (600) dan Super Admin - PP, Panitera, Ketua/Wakil, Panmud, hakim tidak.
+    for (const g of ["500", "30", "10", "20", "430", "1000", "1010", "650"]) expect(m.folderTerbukaUntuk(FOLDER_SERVER[2], [g])).toBe(false);
+    expect(m.folderTerbukaUntuk(FOLDER_SERVER[2], ["600"])).toBe(true);
+    expect(m.folderTerbukaUntuk(FOLDER_SERVER[2], ["1"])).toBe(true);
     expect(m.folderTerbukaUntuk({ ...FOLDER_SERVER[0], user_grup_id: null }, ["600"])).toBe(true);
   });
 });

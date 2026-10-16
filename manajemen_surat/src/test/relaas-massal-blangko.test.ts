@@ -65,7 +65,7 @@ const keadaan = vi.hoisted(() => ({
 
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
 vi.mock("@/server/modules/aleta-ecourt/akses", () => ({
-  pastikanKapabilitas: async () => ({ name: "Penguji" }),
+  pastikanKapabilitas: async () => ({ name: "Penguji", roleId: "jurusita" }),
 }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
 vi.mock("@/server/shared/admin-access-audit", () => ({
@@ -166,7 +166,7 @@ function katalogPalsu(namaBerkas: string[]): JawabanKatalog {
     ok: true,
     data: {
       ada: true,
-      folder: "derry_briantono/Relaas",
+      folder: "derry_briantono/98 Relaas",
       jumlahSet: 0,
       jumlahBlangko: namaBerkas.length,
       set: [],
@@ -190,7 +190,7 @@ describe("rute katalog blangko relaas - daftarnya dari satu sumber", () => {
 
     expect(data.jumlah).toBe(BLANGKO_RELAAS.length);
     expect(data.jumlah).toBe(24);
-    expect(data.folder).toBe("derry_briantono/Relaas");
+    expect(data.folder).toBe("derry_briantono/98 Relaas");
     expect(data.set?.id).toBe("relaas-jurusita");
 
     // Nama berkas PERSIS sama dengan pohon-blangko.ts, tidak dinormalkan dan
@@ -210,14 +210,14 @@ describe("rute katalog blangko relaas - daftarnya dari satu sumber", () => {
     // Dibaca `ls -b` di server satker 6 Okt 2026. Spasi sebelum ".rtf" milik
     // salinan laptop 25 Sep; nama yang salah satu huruf pun tidak pernah ketemu.
     expect(lanjutan!.berkas).toBe("[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf");
-    expect(lanjutan!.jalur).toBe(`derry_briantono/Relaas/${lanjutan!.berkas}`);
+    expect(lanjutan!.jalur).toBe(`derry_briantono/98 Relaas/${lanjutan!.berkas}`);
   });
 
   it("jalurnya menyebut folder blangko masing-masing: ikrar (biasa) di menu 25, selainnya - termasuk ikrar e-Court - di Relaas", async () => {
     keadaan.katalog = { ok: false, error: "bot mati" };
     const { data } = await isiRute();
     for (const satu of data.blangko) {
-      const folder = satu.keadaan === "ikrar-talak" && !satu.ecourt ? "_ikrar_talak/2 Relaas Ikrar Talak" : "derry_briantono/Relaas";
+      const folder = satu.keadaan === "ikrar-talak" && !satu.ecourt ? "_ikrar_talak/2 Relaas Ikrar Talak" : "derry_briantono/98 Relaas";
       expect(satu.jalur).toBe(`${folder}/${satu.berkas}`);
     }
   });
@@ -251,7 +251,7 @@ describe("rute katalog blangko relaas - folder ABT punya TIGA jawaban", () => {
 
   it("folder terbaca: yang ada true, yang tidak ada false, dan yang tidak ada didaftar", async () => {
     keadaan.katalogPerFolder = {
-      "derry_briantono/Relaas": katalogPalsu([BERKAS.sidangPertama, BERKAS.sidangDitunda, BERKAS.pemberitahuan]),
+      "derry_briantono/98 Relaas": katalogPalsu([BERKAS.sidangPertama, BERKAS.sidangDitunda, BERKAS.pemberitahuan]),
       // Folder ikrar terbaca tetapi berkas ikrarnya tidak ada di sana.
       "_ikrar_talak/2 Relaas Ikrar Talak": katalogPalsu(["blangko lain.rtf"]),
     };
@@ -294,14 +294,14 @@ describe("rute katalog blangko relaas - folder ABT punya TIGA jawaban", () => {
     expect(keadaan.panggilan).toHaveLength(2);
     expect(keadaan.panggilan.every((p) => p.operation === "blangko.katalog")).toBe(true);
     expect(keadaan.panggilan.map((p) => p.params.folder)).toEqual([
-      "derry_briantono/Relaas",
+      "derry_briantono/98 Relaas",
       "_ikrar_talak/2 Relaas Ikrar Talak",
     ]);
   });
 
   it("berkas ikrar hanya dicari di FOLDERNYA SENDIRI - ada di Relaas pun tetap tidak ditemukan", async () => {
     keadaan.katalogPerFolder = {
-      "derry_briantono/Relaas": katalogPalsu([BERKAS.sidangPertama, BERKAS.ikrarTalak]),
+      "derry_briantono/98 Relaas": katalogPalsu([BERKAS.sidangPertama, BERKAS.ikrarTalak]),
       "_ikrar_talak/2 Relaas Ikrar Talak": katalogPalsu(["blangko lain.rtf"]),
     };
     const { data } = await isiRute();

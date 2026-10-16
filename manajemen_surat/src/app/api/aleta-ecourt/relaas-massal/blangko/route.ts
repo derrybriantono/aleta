@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAksiAktor } from "@/server/modules/akses/hak-peran";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -179,7 +180,9 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
+    // 16 Okt malam (keputusan pengguna): relaas HANYA juru sita/juru sita pengganti, Super Admin, Admin.
+    pastikanAksiAktor(aktor, "sidang.cetak-relaas");
 
     const keadaanMinta = String(getSearchParam(request, "keadaan") ?? "").trim();
     const pihakMinta = String(getSearchParam(request, "pihak") ?? "").trim();
