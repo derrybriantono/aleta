@@ -4,16 +4,30 @@ import path from "node:path";
 import vm from "node:vm";
 
 import { JSDOM } from "jsdom";
-import { afterEach, describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   cekTanggalSidang,
   dokumenJawaban,
   jadwalDariRincian,
+  pesanGagalJendela,
   pilihSidang,
   ringkasPanggilan,
   susunUsulanTunda,
 } from "@/lib/sipp-ide-jendela";
+
+// Rute portal sipp-ide/jendela diuji dengan gerbang bot SUNGGUHAN (gatewayFetch,
+// panggilBotJadwalSidang); hanya HTTP ke bot yang ditiru (botTiruan, bagian K).
+vi.mock("@/server/db/client", async (asli) => ({ ...(await asli<typeof import("@/server/db/client")>()), getDatabase: async () => null }));
+vi.mock("@/server/modules/aleta-ecourt/akses", () => ({
+  pastikanKapabilitas: async () => ({ id: "usr_uji", name: "Penguji", roleId: "role_admin" }),
+}));
+vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
+vi.mock("@/server/shared/admin-access-audit", async () => {
+  const { handleRouteError } = await import("@/server/shared/http");
+  return { handleAdminRouteError: (galat: unknown) => handleRouteError(galat) };
+});
 
 /**
  * ============================================================================
@@ -346,18 +360,39 @@ describe("B. Tunda & Edit Jadwal Sidang", () => {
 
 // ============================================================================
 describe("C. Putusan Sela", () => {
-  it("tanggal bawaan SIPP (hari ini) tidak ditimpa; tanggal & pemberitahuan pihak yang hadir ditawarkan", async () => {
+  it("tanggal bawaan SIPP (hari ini) tidak ditimpa; pemberitahuan pihak yang HADIR = tanggal putusan sela, diisi pasti", async () => {
     const w = buka(SELA(), { jawab: () => bahan("sela") });
     w.aletaSippIdeM1.pasang(w.document);
     expect(pita(w, "sela").querySelector('[data-m1="penjelas"]').textContent).toMatch(/Pilih amar/);
     const r = await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_sela"));
     expect(nilai(w, "tgl_sela")).toBe("16/10/2026");
-    expect(r).toEqual({ diisi: 0, sama: 0, tawar: 3, gagal: 0 });
+    // Keputusan pengguna 16 Okt malam: pihak yang hadir saat dibacakan diberitahu pada hari itu juga.
+    expect(r).toEqual({ diisi: 2, sama: 0, tawar: 1, gagal: 0 });
+    expect([nilai(w, "tgl_pihak1"), nilai(w, "tgl_pihak2")]).toEqual(["26/08/2026", "26/08/2026"]);
     const t = (Array.from(w.document.querySelectorAll("[data-m1-usulan]")) as Element[]).map((x) => x.getAttribute("data-m1-usulan"));
     expect(t).toEqual(["tgl_sela", "tgl_pihak1", "tgl_pihak2"]);
-    expect(w.document.querySelector('[data-m1-usulan="tgl_pihak2"]').textContent).toMatch(/Rabu, 26 Agu 2026.*hadir saat putusan sela dibacakan \(Semua Pihak\)/);
+    expect(w.document.querySelector('[data-m1-usulan="tgl_pihak2"]').textContent).toMatch(/Rabu, 26 Agu 2026.*hadir saat putusan sela dibacakan \(Semua Pihak\).*Diisi ALETA/);
     w.document.querySelector('[data-m1-usulan="tgl_sela"] [data-m1="pakai"]').click();
     expect(nilai(w, "tgl_sela")).toBe("26/08/2026");
+  });
+
+  it("hanya pihak yang hadir: kehadiran Penggugat saja -> hanya Penggugat; Sebagian/tidak hadir -> tidak diisi; isian petugas tidak ditimpa", async () => {
+    const dengan = (hadir: number | null) =>
+      bahan("sela", { jadwal: JADWAL.map((s) => (/putusan sela/.test(s.agenda) ? { ...s, dihadiriOleh: hadir } : s)) });
+    const w = buka(SELA(), { jawab: () => dengan(2) });
+    w.aletaSippIdeM1.pasang(w.document);
+    await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_sela"));
+    expect([nilai(w, "tgl_pihak1"), nilai(w, "tgl_pihak2")]).toEqual(["26/08/2026", ""]);
+    for (const hadir of [4, 10, null]) {
+      const w2 = buka(SELA(), { jawab: () => dengan(hadir) });
+      w2.aletaSippIdeM1.pasang(w2.document);
+      await w2.aletaSippIdeM1.isiDenganAleta(p(w2, "#frm_sela"));
+      expect([nilai(w2, "tgl_pihak1"), nilai(w2, "tgl_pihak2")]).toEqual(["", ""]);
+    }
+    const w3 = buka(SELA({ p1: "28/08/2026" }), { jawab: () => dengan(1) });
+    w3.aletaSippIdeM1.pasang(w3.document);
+    await w3.aletaSippIdeM1.isiDenganAleta(p(w3, "#frm_sela"));
+    expect([nilai(w3, "tgl_pihak1"), nilai(w3, "tgl_pihak2")]).toEqual(["28/08/2026", "26/08/2026"]);
   });
 
   it("urutan tanggal: pemberitahuan sebelum putusan sela merah; tanggal tanpa sidang kuning", async () => {
@@ -699,5 +734,256 @@ describe("J. bahan portal (lib/sipp-ide-jendela.ts)", () => {
       ["Jawaban Tergugat", false],
       ["Duplik Rekonvensi", true],
     ]);
+  });
+});
+
+// ============================================================================
+// K. Rute portal sipp-ide/jendela -> bot: gerbang sungguhan, HTTP bot ditiru
+//    PERSIS seperti rute bot menjawab (internalGatewayRoutes.js,
+//    jadwalSidangRoutes.js), lalu jawabannya dipakai ekstensi.
+// ============================================================================
+type JawabBot = { status: number; isi: unknown } | "putus";
+const RINCIAN_BOT = {
+  ok: true,
+  alasan: "",
+  nomorPerkara: NOMOR,
+  perkaraId: "9806",
+  jenisPerkara: "Cerai Gugat",
+  majelis: [{ kode: "3", nama: "Hakim Contoh, S.H.I.", jabatan: "Ketua Majelis" }],
+  panitera: [{ kode: "12", nama: "Siti Contoh, S.H." }],
+  jurusita: [{ kode: "7", nama: "Juru Sita Contoh" }],
+  saksi: { ada: false, jumlahSaksi: 0, jumlahKeterangan: 0, diajukanPihak1: 0, diajukanPihak2: 0, adaDiajukan: false },
+  relaas: [
+    {
+      id: "1",
+      namaPihak: "SITI CONTOH BINTI FULAN",
+      peran: "Penggugat",
+      tanggalRelaas: "2026-06-02",
+      tanggalKirimPos: "",
+      statusPos: null,
+      retur: false,
+      bertemu: false,
+      caraRelaas: { sandi: "E", cara: "Panggilan elektronik", sampai: true, terbaca: true },
+      noResiPos: "",
+      jurusitaNama: "Juru Sita Contoh",
+      adaDokumen: false,
+      adaResi: false,
+    },
+  ],
+  dokumenSipp: [],
+  putusan: null,
+  lewatEcourt: true,
+  jadwalPerkara: RINCIAN.jadwalPerkara.map((s) => ({ ...s, jamSidang: "09:00" })),
+};
+const KEADAAN_BOT = {
+  ok: true,
+  keadaan: {
+    jadwalId: 106,
+    perkaraId: 9806,
+    tanggalSidang: "2026-10-21",
+    jamSidang: "09:00:00",
+    sampaiJam: null,
+    agenda: "Pembuktian Tergugat",
+    agendaId: null,
+    urutan: 6,
+    ditunda: "T",
+    alasanDitunda: null,
+    ruanganId: 1,
+    ruangan: "Ruang Sidang 1",
+    sidangKeliling: "T",
+    sifatSidang: "Y",
+    dihadiriOleh: null,
+    verzet: null,
+    keberatan: null,
+    ikrarTalak: "T",
+    nomorPerkara: NOMOR,
+    alurPerkaraId: 1,
+    jenisPerkaraId: 347,
+    jenisPerkara: "Cerai Gugat",
+  },
+  riwayat: {
+    sidang: JADWAL.map((s) => ({ jadwalId: Number(s.sidangId), tanggal: s.tanggal, agenda: s.agenda, ditunda: s.ditunda, alasan: s.alasan, dihadiriOleh: s.dihadiriOleh, ikrar: false })),
+    mediasi: { ada: true, selesai: true, berhasil: false },
+  },
+  ruangan: [{ id: 1, nama: "Ruang Sidang 1" }],
+  antrian: { jadwalId: 106, ruanganId: 1, keadaan: "selesai", jamMasuk: "09:20:00", hadirPihak1: true, hadirPihak2: false, dihadiriOleh: 2 },
+  atasNama: { ok: true, username: "pp_contoh", namaLengkap: "Siti Contoh, S.H.", peran: "panitera sidang" },
+};
+const KESIAPAN_BOT = {
+  ok: true,
+  kesiapan: {
+    skor: 80,
+    keadaan: "perhatian",
+    penghambat: [],
+    panggilan: {
+      pengaturan: { hariElektronik: 3, hariSuratTercatat: 3, hariBiasa: 3 },
+      jalur: {},
+      lewatEcourt: true,
+      sidangId: "101",
+      tanggalSidang: "2026-06-08",
+      pihak: [
+        {
+          nama: "SITI CONTOH BINTI FULAN",
+          peran: "Penggugat",
+          persetujuan: "setuju",
+          seharusnya: "elektronik",
+          terlaksana: "elektronik",
+          sudahDikirim: true,
+          belumDipanggil: false,
+          salahSaluran: false,
+          sandiRelaas: "E",
+          eSummonsTerkirim: true,
+          terbacaEcourt: true,
+          tanggalPanggilan: "2026-06-02",
+          diterima: true,
+          buktiPenerimaan: "e-Summons",
+          noResiPos: "",
+          tanggalPelaksanaanRelaas: "2026-06-02",
+          kepatutan: { dinilai: true, patut: true, selisih: 3, ambang: 3, hariKerja: true, dasarHukum: "Pasal 122 HIR", jalur: "elektronik", perluDiterima: false, alasan: "" },
+        },
+      ],
+      ringkasan: { jumlahPihak: 1, belumDipanggil: 0, salahSaluran: 0, tidakPatut: 0, penerimaanBelumTerbukti: 0, patut: 1 },
+    },
+  },
+};
+
+const botTiruan = vi.hoisted(() => ({ jawab: null as null | ((jalur: string, q: URLSearchParams) => unknown), minta: [] as string[] }));
+
+function pasangBot(atur: (jalur: string, q: URLSearchParams) => JawabBot | undefined) {
+  botTiruan.minta = [];
+  vi.stubGlobal("fetch", async (alamat: string) => {
+    const u = new URL(alamat);
+    botTiruan.minta.push(u.pathname + u.search);
+    const j = atur(u.pathname, u.searchParams);
+    if (j === "putus") throw Object.assign(new Error("fetch failed"), { cause: { code: "ECONNREFUSED" } });
+    const { status, isi } = j || { status: 404, isi: "<html>Cannot GET</html>" };
+    return new Response(typeof isi === "string" ? isi : JSON.stringify(isi), { status });
+  });
+}
+function botSehat(jalur: string, q: URLSearchParams): JawabBot | undefined {
+  if (jalur === "/internal/aleta-bot/sipp/jadwal-sidang/rincian") {
+    return q.get("nomor") === NOMOR ? { status: 200, isi: RINCIAN_BOT } : { status: 400, isi: { ok: false, alasan: "perkara_tidak_ditemukan" } };
+  }
+  if (jalur === "/internal/aleta-bot/sidang/keadaan") return { status: 200, isi: KEADAAN_BOT };
+  if (jalur === "/internal/aleta-bot/jadwal-sidang/kalender") return { status: 200, isi: { ok: true, kalender: [] } };
+  if (jalur === "/internal/aleta-bot/jadwal-sidang/pihak-elektronik") {
+    return { status: 200, isi: { ok: true, kontak: { ecourtTerbaca: true, sebab: "", penggugat: { adaEmail: true, sumber: "ecourt" }, tergugat: { adaEmail: false, persetujuan: "belum" } } } };
+  }
+  if (jalur === "/internal/aleta-bot/sipp/jadwal-sidang/kalender") {
+    return { status: 200, isi: { ok: true, bulan: q.get("bulan"), awal: "", akhir: "", hari: [{ tanggal: "2026-11-04", jumlah: 31, jumlahDitunda: 0 }] } };
+  }
+  if (jalur === "/internal/aleta-bot/sipp/jadwal-sidang/kesiapan") return { status: 200, isi: KESIAPAN_BOT };
+  if (jalur === "/internal/aleta-bot/ecourt/arsip/rincian") {
+    return { status: 200, isi: { ok: true, nomorPerkara: NOMOR, dokumen: [{ documentKey: "k1", judulDokumen: "Jawaban dan Gugatan Rekonvensi", jenisDokumen: "jawaban", tanggalSidang: "2026-07-22", diunggahPada: "2026-07-21T03:00:00.000Z" }] } };
+  }
+  return undefined;
+}
+
+async function mintaRute(q: Record<string, string>) {
+  const { GET } = await import("@/app/api/aleta-ecourt/sipp-ide/jendela/route");
+  const jawab = await GET(new NextRequest(`http://localhost/aleta/api/aleta-ecourt/sipp-ide/jendela?${new URLSearchParams(q).toString()}`));
+  const luar = (await jawab.json()) as { ok: boolean; data: Record<string, any> };
+  return { status: jawab.status, data: luar.data };
+}
+
+describe("K. rute portal sipp-ide/jendela -> bot (siap pakai)", () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("tunda: rincian -> keadaan sidang -> Court Calendar + kontak -> usulanTundaSidang -> rekap hari; jawaban dipakai ekstensi", async () => {
+    pasangBot(botSehat);
+    const { status, data } = await mintaRute({ jendela: "tunda", nomor: NOMOR, tanggal: "2026-10-21" });
+    expect(status).toBe(200);
+    expect(data).toMatchObject({ available: true, ok: true, jendela: "tunda", perkaraId: "9806", sidang: { sidangId: "106", tanggal: "2026-10-21" } });
+    expect(data.jadwal).toHaveLength(6);
+    expect(botTiruan.minta.map((m) => m.split("?")[0])).toEqual([
+      "/internal/aleta-bot/sipp/jadwal-sidang/rincian",
+      "/internal/aleta-bot/sidang/keadaan",
+      "/internal/aleta-bot/jadwal-sidang/kalender",
+      "/internal/aleta-bot/jadwal-sidang/pihak-elektronik",
+      "/internal/aleta-bot/sipp/jadwal-sidang/kalender",
+    ]);
+    expect(botTiruan.minta[1]).toBe("/internal/aleta-bot/sidang/keadaan?jadwalId=106");
+    expect(data.tunda.kehadiranAntrian).toBe(2);
+    expect(data.tunda.usulan).toMatchObject({ kehadiran: 2, tanggalPasti: true });
+    expect(data.tunda.cek.tanggal).toBe(data.tunda.usulan.tanggal);
+    // Jawaban rute apa adanya -> ekstensi mengisi jendela Tunda.
+    const w = buka(TUNDA(), { jawab: () => data });
+    w.aletaSippIdeM1.pasang(w.document);
+    const r = await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_tunda_jadwal_sidang"));
+    expect(r.diisi).toBe(4);
+    expect(nilai(w, "alasan_tunda")).toBe(data.tunda.usulan.alasan);
+  });
+
+  it("relaas: kesiapan sidang -> kepatutan per pihak; jawaban dipakai daftar pelaksanaan", async () => {
+    pasangBot(botSehat);
+    const { data } = await mintaRute({ jendela: "relaas", nomor: NOMOR, tanggal: "2026-06-08" });
+    expect(botTiruan.minta[1]).toBe(`/internal/aleta-bot/sipp/jadwal-sidang/kesiapan?nomor=${encodeURIComponent(NOMOR).replace(/%20/g, "+")}&sidangId=101&tanggalSidang=2026-06-08&agenda=Sidang+Pertama`);
+    expect(data.panggilan).toEqual([
+      expect.objectContaining({ nama: "SITI CONTOH BINTI FULAN", seharusnya: "elektronik", eSummonsTerkirim: true, tanggalPanggilan: "2026-06-02", patut: true, ambang: 3, hariKerja: true }),
+    ]);
+    expect(data.relaas[0]).toEqual({ namaPihak: "SITI CONTOH BINTI FULAN", peran: "Penggugat", tanggalRelaas: "2026-06-02", bertemu: false, cara: "Panggilan elektronik", sandi: "E", jurusitaNama: "Juru Sita Contoh" });
+    const w = buka(RELAAS_DAFTAR, { jawab: () => data });
+    w.aletaSippIdeM1.pasang(w.document);
+    const t = w.document.querySelector("#pelaks_relaas");
+    expect(await w.aletaSippIdeM1.periksaRelaas(t.__aletaM1)).toEqual({ n: 1, patut: 1, tidak: 0, belum: 0, lain: 2 });
+    // Kesiapan kosong (bot: ok:false) -> panggilan null -> kalimat awam di layar.
+    pasangBot((j, q) => (j.endsWith("/kesiapan") ? { status: 200, isi: { ok: false, kesiapan: null } } : botSehat(j, q)));
+    const kosong = await mintaRute({ jendela: "relaas", nomor: NOMOR, tanggal: "2026-06-08" });
+    expect(kosong.data.panggilan).toBeNull();
+    const w2 = buka(RELAAS_DAFTAR, { jawab: () => kosong.data });
+    w2.aletaSippIdeM1.pasang(w2.document);
+    const t2 = w2.document.querySelector("#pelaks_relaas");
+    await w2.aletaSippIdeM1.periksaRelaas(t2.__aletaM1);
+    expect(t2.__aletaM1.kabar.textContent).toBe("Kesiapan sidang ini belum dapat dibaca ALETA.");
+  });
+
+  it("rekonvensi & sela & arsip: bagian mahal hanya untuk jendela yang memakainya", async () => {
+    pasangBot(botSehat);
+    const rek = await mintaRute({ jendela: "rekonvensi", nomor: NOMOR });
+    expect(rek.data.jawabanEcourt).toEqual([{ judul: "Jawaban dan Gugatan Rekonvensi", tanggalSidang: "2026-07-22", diunggahPada: "2026-07-21", rekonvensi: true }]);
+    expect(botTiruan.minta.map((m) => m.split("?")[0])).toEqual(["/internal/aleta-bot/sipp/jadwal-sidang/rincian", "/internal/aleta-bot/ecourt/arsip/rincian"]);
+    for (const jendela of ["sela", "saksi", "arsip"]) {
+      pasangBot(botSehat);
+      const { data } = await mintaRute({ jendela, nomor: NOMOR });
+      expect(botTiruan.minta).toHaveLength(1);
+      expect(data).toMatchObject({ ok: true, putusan: null, panitera: [{ nama: "Siti Contoh, S.H." }] });
+    }
+  });
+
+  it("gagal: perkara tidak ada, bot mati, bot lama (404 HTML), bot galat 500 -> kalimat awam tanpa kode/alamat", async () => {
+    const kasus: Array<[string, (j: string, q: URLSearchParams) => JawabBot | undefined, string, boolean]> = [
+      ["tidak ada", botSehat, "Perkara ini tidak ditemukan di SIPP menurut ALETA. Periksa nomor perkaranya.", true],
+      ["bot mati", () => "putus", "", false],
+      ["bot lama", () => undefined, "", false],
+      ["galat", () => ({ status: 500, isi: { ok: false, error: "ER_NO_SUCH_TABLE: Table 'SIPP.perkara' doesn't exist" } }), "", false],
+    ];
+    for (const [, atur, harap, tersambung] of kasus) {
+      pasangBot(atur);
+      const { status, data } = await mintaRute({ jendela: "tunda", nomor: "999/Pdt.G/2026/PA.Dgl", tanggal: "2026-10-21" });
+      expect(status).toBe(200);
+      expect(data.ok).toBe(false);
+      expect(data.available).toBe(tersambung);
+      expect(data.alasan).toBe(harap || pesanGagalJendela("").pesan);
+      expect(data.alasan).not.toMatch(/_|HTTP|ECONN|internal|aleta_bot|127\.0|Table|fetch/i);
+    }
+    // Keadaan sidang tak terbaca: rute tetap menjawab jadwal, usulan tunda null + kalimat awam.
+    pasangBot((j, q) => (j === "/internal/aleta-bot/sidang/keadaan" ? { status: 404, isi: { ok: false, alasan: "jadwal_tidak_ketemu" } } : botSehat(j, q)));
+    const { data } = await mintaRute({ jendela: "tunda", nomor: NOMOR, tanggal: "2026-10-21" });
+    expect(data.ok).toBe(true);
+    expect(data.tunda).toEqual({ usulan: null, kehadiranAntrian: null, cek: null, alasan: "Data sidang ini belum dapat dibaca ALETA - usulan tunda belum dapat disusun." });
+    const w = buka(TUNDA(), { jawab: () => data });
+    w.aletaSippIdeM1.pasang(w.document);
+    await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_tunda_jadwal_sidang"));
+    expect(pita(w, "tunda").querySelector('[data-m1="kabar"]').textContent).toBe("Data sidang ini belum dapat dibaca ALETA - usulan tunda belum dapat disusun.");
+    // Masukan tidak sah ditolak tanpa memanggil bot.
+    pasangBot(botSehat);
+    expect((await mintaRute({ jendela: "hapus", nomor: NOMOR })).data.alasan).toBe("Jendela ini belum dibantu ALETA.");
+    expect((await mintaRute({ jendela: "tunda", nomor: "" })).data.alasan).toBe("Nomor perkara belum terbaca.");
+    expect(botTiruan.minta).toEqual([]);
   });
 });

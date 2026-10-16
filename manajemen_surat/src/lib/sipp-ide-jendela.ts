@@ -221,3 +221,21 @@ export function dokumenJawaban(dokumen: unknown): JawabanEcourt[] {
     .filter((d) => /jawaban|rekonvensi/i.test(d.judul))
     .sort((a, b) => (a.tanggalSidang || a.diunggahPada).localeCompare(b.tanggalSidang || b.diunggahPada));
 }
+
+/**
+ * Kalimat awam untuk kegagalan membaca perkara dari bot. Kode bot
+ * ("perkara_tidak_ditemukan"), "HTTP 500", alamat internal, dan pesan
+ * jaringan tidak pernah sampai ke layar SIPP. tersambung=false bila bot
+ * sendiri yang tidak dapat dihubungi/galat (bukan perkara yang tidak ada).
+ */
+export function pesanGagalJendela(galat: unknown): { tersambung: boolean; pesan: string } {
+  const g = String(galat ?? "").toLowerCase();
+  if (/perkara_tidak_ditemukan|tidak ditemukan/.test(g)) {
+    return { tersambung: true, pesan: "Perkara ini tidak ditemukan di SIPP menurut ALETA. Periksa nomor perkaranya." };
+  }
+  if (/nomor_perkara_kosong/.test(g)) return { tersambung: true, pesan: "Nomor perkara belum terbaca di halaman ini." };
+  return {
+    tersambung: false,
+    pesan: "Data perkara dari ALETA belum dapat dibaca. Coba lagi sebentar lagi; bila tetap begini, beri tahu admin ALETA.",
+  };
+}

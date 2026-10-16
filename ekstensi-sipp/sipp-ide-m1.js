@@ -63,7 +63,7 @@
   const POLA_NOMOR = /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4}){0,2}\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/;
   const POLA_NOMOR_PENUH = /^\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4}){0,2}\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6}$/;
   /** Sandi dihadiri_oleh SIPP (jadwal_sidang_p_edit.php) - lihat sandi-kehadiran-sidang-sipp. */
-  const KEHADIRAN = { 1: "Semua Pihak", 2: "Pihak pertama saja", 3: "Pihak kedua saja", 4: "Para Pihak Tidak Hadir" };
+  const KEHADIRAN = { 1: "Semua Pihak", 2: "Pihak pertama saja", 3: "Pihak kedua saja", 4: "Para Pihak Tidak Hadir", 7: "Pihak pertama dan Intervensi", 8: "Pihak kedua dan Intervensi", 9: "Pihak pertama dan kedua", 14: "Pihak pertama dan Turut Tergugat", 15: "Pihak kedua dan Turut Tergugat" };
   const CARA_RELAAS = { E: "Panggilan Elektronik", S: "Surat Tercatat POS", Y: "Bertemu", T: "Tidak Bertemu" };
   const NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
   const NAMA_BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
@@ -307,7 +307,8 @@
     }
     const luar = await r.json().catch(() => ({}));
     const isi = luar && luar.data ? luar.data : luar;
-    if (!r.ok) return { ok: false, alasan: String((luar && luar.error && (luar.error.message || luar.error)) || "Portal ALETA belum dapat menjawab. Coba lagi sebentar lagi.") };
+    // Pesan galat portal (bisa memuat kode/jalur) tidak ditampilkan apa adanya.
+    if (!r.ok) return { ok: false, alasan: "Portal ALETA belum dapat menjawab. Coba lagi sebentar lagi; bila tetap begini, beri tahu admin ALETA." };
     if (!isi || isi.available === false || isi.ok === false) return { ok: false, alasan: String((isi && (isi.alasan || isi.message)) || "ALETA belum dapat membaca data perkara ini.") };
     return { ok: true, data: isi };
   }
@@ -406,20 +407,29 @@
     return daftar;
   }
 
+  /**
+   * Pihak (tgl_pihakN: 1 pihak pertama, 2 pihak kedua) yang hadir menurut sandi
+   * dihadiri_oleh SIPP: 1 semua, 2 pertama saja, 3 kedua saja, 7 P+Intervensi,
+   * 8 T+Intervensi, 9 P+T, 14 P+Turut, 15 T+Turut.
+   */
+  const HADIR_SELA = { 1: [1, 2], 2: [1], 3: [2], 7: [1], 8: [2], 9: [1, 2], 14: [1], 15: [2] };
+
   /** Sidang yang berbunyi putusan sela (agenda atau alasan tunda). */
   const sidangSela = (jadwal) => (Array.isArray(jadwal) ? jadwal : []).filter((s) => /putusan\s+sela/i.test(`${s.agenda || ""} ${s.alasan || ""}`));
 
   /**
-   * Putusan Sela (#frm_sela): tanggal dari jadwal. Pemberitahuan hanya untuk
-   * pihak yang HADIR saat dibacakan (kehadiran sidang itu), ditawarkan - pihak
-   * yang tidak hadir dibiarkan kosong (diisi dari relaas pemberitahuannya).
+   * Putusan Sela (#frm_sela): tanggal dari jadwal. Pemberitahuan untuk pihak
+   * yang HADIR saat dibacakan (kehadiran sidang itu) = tanggal putusan sela -
+   * keputusan pengguna 16 Okt malam: isian PASTI (diisi bila kolomnya kosong).
+   * Pihak yang tidak hadir, Intervensi, dan Turut Tergugat dibiarkan kosong
+   * (diisi dari relaas pemberitahuannya). "Sebagian" (10/11) tidak diisi.
    */
   function usulanSela(data, form) {
     const calon = sidangSela(data && data.jadwal).filter((s) => /putusan\s+sela/i.test(s.agenda || ""));
     if (!calon.length) return [];
     const s = calon[calon.length - 1];
     const hadir = Number(s.dihadiriOleh);
-    const pihakHadir = hadir === 1 ? [1, 2] : hadir === 2 ? [1] : hadir === 3 ? [2] : [];
+    const pihakHadir = HADIR_SELA[hadir] || [];
     const pemberitahuan = pihakHadir
       .filter((i) => medan(form, `tgl_pihak${i}`))
       .map((i) => ({
@@ -428,7 +438,7 @@
         nama: `tgl_pihak${i}`,
         nilai: keInput(s.tanggal),
         tampil: teksTanggal(s.tanggal),
-        pasti: false,
+        pasti: true,
         sumber: `hadir saat putusan sela dibacakan (${kalimatKehadiran(hadir)})`,
       }));
     return [

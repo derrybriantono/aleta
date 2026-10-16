@@ -5,6 +5,7 @@ import {
   cekTanggalSidang,
   dokumenJawaban,
   jadwalDariRincian,
+  pesanGagalJendela,
   pilihSidang,
   ringkasPanggilan,
   susunUsulanTunda,
@@ -57,16 +58,17 @@ export async function GET(request: NextRequest) {
     const jendela = String(q.get("jendela") || "").trim();
     const nomor = String(q.get("nomor") || "").trim().slice(0, 60);
     const tanggal = String(q.get("tanggal") || "").trim().slice(0, 10);
-    if (!JENDELA.has(jendela)) return ok({ available: true, ok: false, alasan: "Jendela tidak dikenal." });
+    if (!JENDELA.has(jendela)) return ok({ available: true, ok: false, alasan: "Jendela ini belum dibantu ALETA." });
     if (!nomor) return ok({ available: true, ok: false, alasan: "Nomor perkara belum terbaca." });
 
-    const rincian = await getGatewayRincianSidang(nomor, "");
-    if (!rincian.ok) {
-      return ok({ available: false, ok: false, alasan: rincian.error || "ALETA Bot belum dapat dihubungi." });
+    // Galat bot (kode, alamat internal, "HTTP 500") TIDAK diteruskan ke layar
+    // petugas - hanya kalimat awam dari pesanGagalJendela.
+    const rincian = await getGatewayRincianSidang(nomor, "").catch(() => null);
+    if (!rincian || !rincian.ok || !rincian.data || rincian.data.ok === false) {
+      const g = pesanGagalJendela(rincian && !rincian.ok ? rincian.error : rincian && rincian.data ? rincian.data.alasan : "");
+      return ok({ available: g.tersambung, ok: false, alasan: g.pesan });
     }
-    if (!rincian.data) return ok({ available: false, ok: false, alasan: "ALETA Bot belum dapat dihubungi." });
     const r = rincian.data;
-    if (r.ok === false) return ok({ available: true, ok: false, alasan: r.alasan || "Perkara tidak ditemukan di SIPP." });
 
     const jadwal = jadwalDariRincian(r);
     const sidang = pilihSidang(jadwal, tanggal);
@@ -135,7 +137,7 @@ async function bahanTunda(sidangId: string, perkaraId: string, jadwal: ReturnTyp
     riwayat?: Omit<RiwayatTundaMin, "kalender" | "kontak">;
     antrian?: AntrianSidangRingkas;
   } | null;
-  if (!isi || isi.ok === false || !isi.keadaan) return { usulan: null, kehadiranAntrian: null, cek: null, alasan: "Keadaan sidang belum dapat dibaca." };
+  if (!isi || isi.ok === false || !isi.keadaan) return { usulan: null, kehadiranAntrian: null, cek: null, alasan: "Data sidang ini belum dapat dibaca ALETA - usulan tunda belum dapat disusun." };
 
   const id = /^\d{1,20}$/.test(perkaraId) ? perkaraId : String((isi.keadaan as { perkaraId?: unknown }).perkaraId || "");
   const [kal, kon] = isi.riwayat && id
