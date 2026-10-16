@@ -49,6 +49,9 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 
+// Butir 45 (17 Okt): metadata berkas yang masuk SIPP tanpa tanda ALETA.
+const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
+
 /** Putusan terpanjang belasan halaman; ini jauh di atasnya. */
 const BATAS_BYTE = 20 * 1024 * 1024;
 
@@ -190,7 +193,8 @@ async function rtfKePdf(isiRtf) {
   const berkasPdf = path.join(folder, "putusan.pdf");
 
   try {
-    await fs.writeFile(berkasRtf, isiRtf);
+    // Properti naskah ({\info}) tanpa tanda ALETA - Title PDF disalin dari sana.
+    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(isiRtf));
 
     // -env:UserInstallation memberi soffice profil tersendiri. Tanpa itu, dua
     // konversi yang berjalan bersamaan bertengkar atas profil yang sama dan
@@ -214,7 +218,7 @@ async function rtfKePdf(isiRtf) {
     if (!pdf.subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
       return { ok: false, alasan: "soffice selesai tetapi hasilnya bukan PDF." };
     }
-    return { ok: true, pdf, versiMesin: mesin.versi };
+    return { ok: true, pdf: tanpaTandaAletaMetadata(pdf), versiMesin: mesin.versi };
   } catch (galat) {
     if (galat.killed) {
       return { ok: false, alasan: `Konversi melewati ${BATAS_WAKTU_MS / 1000} detik dan dihentikan.` };
@@ -303,7 +307,7 @@ async function dokumenKePdf(isi) {
       alasan: "Isinya bukan PDF, RTF, DOC, maupun DOCX - dikenali dari kepala berkasnya.",
     };
   }
-  if (jenis === "pdf") return { ok: true, pdf: isi, jenis };
+  if (jenis === "pdf") return { ok: true, pdf: tanpaTandaAletaMetadata(isi), jenis };
 
   const mesin = await periksaMesin();
   if (!mesin.ada) return { ok: false, jenis, alasan: mesin.sebab };
@@ -313,7 +317,7 @@ async function dokumenKePdf(isi) {
   const berkasPdf = path.join(folder, "naskah.pdf");
 
   try {
-    await fs.writeFile(berkasAsal, isi);
+    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(isi));
     await jalankan(
       SOFFICE,
       [
@@ -335,7 +339,7 @@ async function dokumenKePdf(isi) {
     if (!pdf.subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
       return { ok: false, jenis, alasan: "soffice selesai tetapi hasilnya bukan PDF." };
     }
-    return { ok: true, pdf, jenis, versiMesin: mesin.versi };
+    return { ok: true, pdf: tanpaTandaAletaMetadata(pdf), jenis, versiMesin: mesin.versi };
   } catch (galat) {
     if (galat.killed) {
       return { ok: false, jenis, alasan: `Konversi melewati ${BATAS_WAKTU_MS / 1000} detik dan dihentikan.` };
@@ -427,7 +431,7 @@ async function dokumenKeBentuk(isi, ke, opsi = {}) {
   }
   // Sudah berbentuk tujuannya: dikembalikan apa adanya, tanpa satu kesempatan
   // gagal lagi di soffice.
-  if (bentukAsal === tujuan) return { ok: true, berkas: isi, bentukAsal, ke: tujuan };
+  if (bentukAsal === tujuan) return { ok: true, berkas: tanpaTandaAletaMetadata(isi), bentukAsal, ke: tujuan };
   if (bentukAsal === "pdf") {
     return {
       ok: false,
@@ -447,14 +451,14 @@ async function dokumenKeBentuk(isi, ke, opsi = {}) {
   const berkasHasil = path.join(folder, `naskah.${tujuan}`);
 
   try {
-    await fs.writeFile(berkasAsal, isi);
+    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(isi));
     await jalan(SOFFICE, argumenKonversi(tujuan, berkasAsal, folder), { cwd: folder });
     const hasil = await fs.readFile(berkasHasil);
     // Diperiksa HASILNYA: kepala berkasnya harus bentuk yang diminta.
     if (kenaliDokumen(hasil) !== tujuan) {
       return { ok: false, kode: "hasil_bukan_bentuk_tujuan", bentukAsal, alasan: `soffice selesai tetapi hasilnya bukan ${tujuan.toUpperCase()}.` };
     }
-    return { ok: true, berkas: hasil, bentukAsal, ke: tujuan, versiMesin: mesin.versi };
+    return { ok: true, berkas: tanpaTandaAletaMetadata(hasil), bentukAsal, ke: tujuan, versiMesin: mesin.versi };
   } catch (galat) {
     if (galat && galat.killed) {
       return { ok: false, kode: "waktu_habis", bentukAsal, alasan: `Konversi melewati ${BATAS_WAKTU_MS / 1000} detik dan dihentikan.` };
@@ -476,6 +480,7 @@ module.exports = {
   argumenKonversi,
   FILTER_KONVERSI,
   kenaliDokumen,
+  tanpaTandaAletaMetadata,
   periksaMesin,
   BATAS_BYTE,
   BATAS_WAKTU_MS,

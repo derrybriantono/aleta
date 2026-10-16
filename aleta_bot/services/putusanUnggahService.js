@@ -102,6 +102,7 @@ const dokumenPenetapanService = require("./dokumenPenetapanService");
 // berkasnya. Sudah dipakai dokumenPenetapanService sejak lama; lihat catatan
 // di kepala berkas ini tentang mengapa unggah putusan baru memakainya.
 const abtCetakService = require("./abtCetakService");
+const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
 
 /** urutan pada dirput_dokumen_ref - 99 putusan akhir, 100 anonimisasi. */
 const URUTAN_REF = { putusan: 99, anonimisasi: 100 };
@@ -416,6 +417,9 @@ async function unggahSatu({
   // soffice yang tidak ada TIDAK membatalkan unggahan. e-Doc tetap tersimpan
   // dan baris Direktori Putusan ditunda beserta sebabnya - persis urutan
   // SIPP, yang juga menyimpan berkasnya lebih dulu dan mengubah kemudian.
+  // Butir 45 (17 Okt): metadata berkas (Title/Author/Producer) tanpa tanda ALETA -
+  // naskah asli DAN PDF terbitannya (dokumenKePdf membersihkan hasilnya sendiri).
+  pdf = tanpaTandaAletaMetadata(pdf);
   let pdfTerbit = bentuk === "pdf" ? pdf : null;
   let sebabTanpaPdf = "";
   if (!pdfTerbit) {

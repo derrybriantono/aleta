@@ -85,6 +85,7 @@ const DAFTAR_TABEL_COURT_CALENDAR = new Set(["perkara_court_calendar"]);
 // Jam SIPP (WIB) - SIPP menulis jamnya dengan PHP Asia/Jakarta, NOW() basis
 // data WITA (13 Okt 2026). Tetap berjam dua belas, seperti date("h") SIPP.
 const SAAT_SIPP_SQL = require("./penetapanTulisService").sqlJamSipp("%Y-%m-%d %h:%i:%s");
+const { menyebutAleta } = require("./tandaAletaService");
 
 /** Batas baris per permintaan - satu perkara jarang lebih dari 12 rencana. */
 const BATAS_BARIS = 30;
@@ -134,7 +135,7 @@ function kunciBaris(x) {
 /** Pagar blangko SIPP atas satu baris. Pulang "" bila lolos. */
 function periksaBaris(b, tanggalDaftar) {
   if (!bersih(b.agenda)) return PESAN.agenda;
-  if (/aleta/i.test(bersih(b.agenda)) || /aleta/i.test(bersih(b.keterangan))) return PESAN.aleta;
+  if (menyebutAleta(bersih(b.agenda)) || menyebutAleta(bersih(b.keterangan))) return PESAN.aleta;
   if (!tanggalSah(b.tanggal)) return PESAN.tanggal;
   if (!jamSah(b.jam)) return PESAN.jam;
   const h = hariDalamPekan(tanggalSah(b.tanggal));

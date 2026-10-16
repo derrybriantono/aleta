@@ -143,7 +143,8 @@ export function naskahKeRtf(blok: Blok[]): string {
     "{\\rtf1\\ansi\\ansicpg1252\\deff0\\uc1\\deflang1057",
     "{\\fonttbl{\\f0\\fswiss\\fcharset0 Arial;}{\\f1\\froman\\fcharset0 Times New Roman;}}",
     "{\\colortbl;\\red0\\green0\\blue0;}",
-    "{\\info{\\title Laporan Mediasi}{\\author ALETA}}",
+    // Tanpa {\author ALETA}: laporan ini dapat diunggah petugas ke SIPP (keputusan 17 Okt butir 45).
+    "{\\info{\\title Laporan Mediasi}}",
     `${HALAMAN_TEGAK}\\widowctrl\\ftnbj\\viewkind1`,
     SEKSI_TEGAK
   );

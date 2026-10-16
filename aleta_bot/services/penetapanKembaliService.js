@@ -65,6 +65,7 @@
 const db = require("../db_config");
 const tulis = require("./penetapanTulisService");
 const { cleanText } = require("./ecourtTextService");
+const { menyebutAleta } = require("./tandaAletaService");
 
 const TAHAPAN_PENETAPAN = { tahapanId: 12, tahapanText: "Penetapan" };
 
@@ -133,7 +134,8 @@ function hariLibur(iso) {
 function alasanBersih(nilai) {
   const teks = cleanText(nilai).replace(/\s+/g, " ").trim();
   if (!teks) return { ok: false, alasan: "alasan_kosong" };
-  if (/aleta/i.test(teks)) return { ok: false, alasan: "alasan_menyebut_aleta" };
+  // 17 Okt: bentuk apa pun ("A L E T A", "Aleta", huruf lebar) - sama dengan penolak tunda.
+  if (menyebutAleta(teks)) return { ok: false, alasan: "alasan_menyebut_aleta" };
   if (teks.length > PANJANG_ALASAN) return { ok: false, alasan: "alasan_terlalu_panjang" };
   return { ok: true, teks };
 }

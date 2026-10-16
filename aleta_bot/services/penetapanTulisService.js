@@ -2254,11 +2254,13 @@ async function susunRencanaTulis(minta) {
   //                             no_kutipan_akta_nikah, kua_tempat_nikah
   //
   // Diperiksa pada sys_audittrail: perkara_data_pernikahan TIDAK PERNAH
-  // diaudit SIPP - nol baris sepanjang masa. ALETA tetap menuliskan baris
-  // auditnya. Itu penyimpangan dari kebiasaan SIPP, dan disengaja: seluruh
-  // dasar jalur tulis ini adalah dapat ditelusuri. Baris yang ditulis atas
-  // nama pejabat tanpa meninggalkan jejak sama sekali persis keadaan yang
-  // hendak dihindari sejak awal.
+  // diaudit SIPP - nol baris sepanjang masa. Dulu ALETA tetap menuliskan baris
+  // auditnya; audit 17 Okt menemukan baris itu sebagai satu-satunya baris
+  // perkara_data_pernikahan di sys_audittrail - bentuk yang tidak pernah
+  // dibuat SIPP sendiri, jadi menandai tulisan ALETA. Keputusan 17 Okt butir
+  // 45 (tanpa tanda ALETA di SIPP): ALETA mengikuti SIPP - TANPA baris audit
+  // untuk tabel ini. Jejaknya tetap ada di ALETA (catatan tulis penetapan) dan
+  // pada baris audit UPDATE perkara bila Data Umum perkara ikut diisi.
   //
   // ==========================================================================
   // YANG SUDAH TERISI TIDAK DITIMPA
@@ -2366,17 +2368,7 @@ async function susunRencanaTulis(minta) {
         params: [perkara.perkaraId, ...kolom.map((k) => isiNikah[k]), akun.username, saat],
         keterangan: `data pernikahan: ${kolom.join(", ")}`,
       });
-      langkah.push(
-        barisAudit({
-          username: akun.username,
-          tabel: "perkara_data_pernikahan",
-          formulir: jejak.formulir,
-          aksi: "INSERT",
-          nilai: { perkara_id: perkara.perkaraId, ...isiNikah, diinput_oleh: akun.username },
-          ip,
-          saat,
-        })
-      );
+      // Sengaja TANPA barisAudit - SIPP tidak pernah mengaudit tabel ini (lihat atas).
     }
 
     return {

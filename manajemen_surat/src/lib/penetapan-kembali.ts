@@ -24,6 +24,8 @@
  * menekan tombolnya.
  */
 
+import { menyebutAleta } from "@/lib/tanda-aleta";
+
 export const JENIS_KEMBALI = ["pmh", "ppp", "pjs", "phs"] as const;
 export type JenisKembali = (typeof JENIS_KEMBALI)[number];
 
@@ -60,7 +62,7 @@ export function teksAlasan(p: PilihanAlasan | null | undefined): string {
 /** Masalah pada teks alasan, sama dengan penjaga bot (alasanBersih). */
 export function masalahAlasan(teks: string): string {
   if (!teks) return "alasan belum dipilih";
-  if (/aleta/i.test(teks)) return "alasan tidak boleh menyebut ALETA (tertulis di SIPP)";
+  if (menyebutAleta(teks)) return "alasan tidak boleh menyebut ALETA (tertulis di SIPP)";
   if (teks.length > 450) return "alasan lebih dari 450 huruf";
   return "";
 }

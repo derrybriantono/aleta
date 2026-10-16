@@ -44,6 +44,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
 
 const PERAN_BOLEH_UNGGAH_BAS = Object.freeze(["super-admin", "admin", "panitera", "panmud", "pp", "analis"]);
 const PESAN_TOLAK_BAS =
@@ -131,7 +132,8 @@ function depsBawaan() {
     periksaAkar: () => dokumen.periksaAkarSipp(undefined, { relatif: FOLDER_DOC }),
     tulisBerkas: (penuh, isi) => {
       fs.mkdirSync(path.dirname(penuh), { recursive: true });
-      fs.writeFileSync(penuh, isi, { flag: "wx" });
+      // Butir 45 (17 Okt): metadata berkas tanpa tanda ALETA.
+      fs.writeFileSync(penuh, tanpaTandaAletaMetadata(isi), { flag: "wx" });
     },
     /** Butir 44: berkas BAS lama ke folder "terhapus" (rename; lintas cakram = salin lalu hapus). */
     pindahBerkas: (dari, ke) => {
