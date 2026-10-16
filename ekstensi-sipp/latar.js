@@ -3293,6 +3293,7 @@ const KUNCI_SETELAN_AKUN = [
   "blangkoDerryIngat",
   "sippPenyatu",
   "sippTampilDobel",
+  "gembokKepalaAbt",
   "skalaHuruf",
   "temaPopup",
   "temaPanel",

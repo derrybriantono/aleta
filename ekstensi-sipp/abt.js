@@ -2042,7 +2042,7 @@ function base64DariBuffer(buffer) {
  * diunduh. Menghentikan semuanya karena satu kegagalan berarti petugas
  * kehilangan berkas yang sebenarnya sudah siap.
  */
-async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
+async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor, siap) {
   // ==========================================================================
   // PAGAR TERAKHIR - DAN SENGAJA BERLAPIS DENGAN YANG DI PEMANGGILNYA
   // ==========================================================================
@@ -2065,10 +2065,17 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
   lapor("Mengambil putusan dari ABT…");
   let isiRtf = null;
   try {
-    const respons = await fetch(alamatPreview, { credentials: "include", cache: "no-store" });
-    if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
-    isiRtf = await respons.arrayBuffer();
-    namaBlangkoAbt = (String(respons.headers.get("content-disposition") || "").match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i) || [])[1] || "";
+    // F1.5 (17 Okt): tombol Cetak panel sudah mengambil RTF yang sama untuk
+    // memeriksa penanda # - dipakai ulang, tidak diminta dua kali.
+    if (siap && siap.isi) {
+      isiRtf = siap.isi;
+      namaBlangkoAbt = (String(siap.disposisi || "").match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i) || [])[1] || "";
+    } else {
+      const respons = await fetch(alamatPreview, { credentials: "include", cache: "no-store" });
+      if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
+      isiRtf = await respons.arrayBuffer();
+      namaBlangkoAbt = (String(respons.headers.get("content-disposition") || "").match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i) || [])[1] || "";
+    }
     if (isiRtf.byteLength < 32) throw new Error("berkasnya kosong");
     // Uji 9 Okt: dulu hanya panjangnya yang diperiksa - halaman masuk (sesi
     // ABT habis) atau "ERROR Variabel #x#" tersimpan sebagai putusan .rtf dan
@@ -2175,14 +2182,19 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
  * bukan RTF (halaman masuk, pesan galat ABT) atau tanpa nama berkas: petugas
  * tetap melihat apa yang dahulu dilihatnya.
  */
-async function cetakSatuLewatEkstensi(alamatPreview) {
+async function cetakSatuLewatEkstensi(alamatPreview, siap) {
   try {
-    const respons = await fetch(alamatPreview, { credentials: "include", cache: "no-store" });
-    if (!respons.ok) return false;
-    const isi = await respons.arrayBuffer();
+    // F1.5 (17 Okt): `siap` = RTF yang sudah diambil tombol Cetak panel.
+    let isi = siap && siap.isi ? siap.isi : null;
+    let cd = siap && siap.isi ? String(siap.disposisi || "") : "";
+    if (!isi) {
+      const respons = await fetch(alamatPreview, { credentials: "include", cache: "no-store" });
+      if (!respons.ok) return false;
+      isi = await respons.arrayBuffer();
+      cd = String(respons.headers.get("content-disposition") || "");
+    }
     const awal = new TextDecoder("latin1").decode(new Uint8Array(isi).subarray(0, 5));
     if (!awal.startsWith("{\\rtf")) return false;
-    const cd = String(respons.headers.get("content-disposition") || "");
     const cocok = cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
     let namaAbt = cocok ? cocok[1] : "";
     try {
@@ -3092,6 +3104,8 @@ function periksaKelengkapan() {
 const KELAS_PENANDA_CETAK = "aleta-cetak-tiga";
 
 function segarkanPenandaCetak() {
+  // F1.5 (17 Okt): label tombol Cetak panel ikut saklar tiga berkas.
+  if (typeof f15SegarkanLabel === "function") f15SegarkanLabel();
   for (const tautan of Array.from(document.querySelectorAll('a[href*="abt/preview"]'))) {
     const induk = tautan.parentElement || tautan;
     let tanda = induk.querySelector("." + KELAS_PENANDA_CETAK);
@@ -6581,6 +6595,10 @@ async function pasang() {
   pasangSunting(jatiDiri);
   const panel = susunPanelAbt(jatiDiri);
   document.body.appendChild(panel);
+  // F1.5 (17 Okt): gembok "Ringkas otomatis" tepat di bawah kepala - sama
+  // dengan panel SIPP. Dipasang SESUDAH panel masuk halaman: pemeriksa
+  // ringkasnya berhenti sendiri bila panel belum tersambung. Lama: null.
+  if (typeof alatPasangGembok === "function") alatPasangGembok(panel, panel.querySelector(":scope > .aleta-kepala"), "abt");
   pasangPenjagaCetak(jatiDiri, panel.lapor);
   // Tahap 6: menata panel yang sudah jadi. Dalam tampilan Lama hanya mencatat
   // tanda tampilannya di luar DOM, lalu pulang - lihat blok TAHAP 6.
@@ -15414,7 +15432,13 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
     pilih.filter((x) => x.centang.checked && !x.centang.disabled && x.nilai()).length +
     hurufPilihan.filter((x) => x.centang.checked && !x.centang.disabled).length +
     rapi.filter((x) => x.centang.checked && !x.centang.disabled).length;
-  if (!pilih.length && !hurufPilihan.length && !rapi.length) return;
+  if (!pilih.length && !hurufPilihan.length && !rapi.length) {
+    // F1.5 (17 Okt): tanpa usulan pun tombol Cetak tetap di tempatnya.
+    const barisCetak = soreEl("div", "aleta-abt-tindakan aleta-sore-tindakan");
+    w.appendChild(barisCetak);
+    f15PasangCetak(k, barisCetak, {});
+    return;
+  }
   const baris = soreEl("div", "aleta-abt-tindakan aleta-sore-tindakan");
   const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-sore-input", "Input ke ABT");
   tombol.type = "button";
@@ -15434,6 +15458,9 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
   w.appendChild(baris);
   w.appendChild(kabar);
   w.appendChild(wadahPasti);
+  // F1.5 (17 Okt): Cetak tepat di samping "Input semua yang pasti" - urutan
+  // aman input pasti -> simpan -> cetak (lihat f15Cetak).
+  f15PasangCetak(k, baris, { pilih, wadahPasti, sesudah: kabar, segar: () => segar() });
   // Perbaikan 2 Okt butir 9 (UI Baru): yang dirapikan tidak tampil, jadi tidak
   // ikut angka di tombol - tetap ikut tersimpan (lihat klik di bawah).
   const rapiTampak = () => !t6Modern() || Boolean(k.a2LihatRapi);
@@ -15616,9 +15643,11 @@ async function s5BacaUlang(kodes) {
  * dicentang (menimpa isi petugas harus dipilih sendiri); yang kosong dicentang.
  * "Baru" ditampilkan sebagaimana akan tersimpan (petik sudah menjadi ’).
  */
-function s5BukaPratinjau(k, daftar, wadah, sesudah) {
+function s5BukaPratinjau(k, daftar, wadah, sesudah, opsi) {
   wadah.textContent = "";
   if (!daftar.length) return;
+  // F1.5 (17 Okt): dibuka tombol Cetak - sesudah tersimpan, cetak berlanjut (opsi.lalu).
+  const o5 = opsi || {};
   const kotak = buatElemen("div", "aleta-s5-pratinjau");
   kotak.appendChild(buatElemen("div", "aleta-s5-judul", `Pratinjau: ${daftar.length} usulan pasti akan disimpan ke ABT`));
   const tabel = document.createElement("table");
@@ -15665,7 +15694,7 @@ function s5BukaPratinjau(k, daftar, wadah, sesudah) {
   wadah.appendChild(kotak);
   const segarTombol = () => {
     const n = barisan.filter((b) => b.centang.checked && !b.centang.disabled).length;
-    simpan.textContent = `Ya, simpan ${n} ke ABT`;
+    simpan.textContent = o5.lalu ? `Ya, simpan ${n} lalu cetak` : `Ya, simpan ${n} ke ABT`;
     simpan.disabled = !n;
   };
   for (const b of barisan) b.centang.addEventListener("change", segarTombol);
@@ -15725,6 +15754,7 @@ function s5BukaPratinjau(k, daftar, wadah, sesudah) {
     batal.disabled = false;
     batal.textContent = "Tutup";
     if (typeof sesudah === "function") sesudah();
+    if (typeof o5.lalu === "function") o5.lalu({ hijau, merah, berhasil: r.berhasil });
   });
 }
 
@@ -19583,3 +19613,448 @@ function pkGambarPekerjaan(wadah, data) {
   wadah.appendChild(kotak);
 }
 /* === AKHIR PEKERJAAN === */
+
+/* === F1.5 17 Okt === */
+/**
+ * ============================================================================
+ * F1.5 (17 OKT 2026) - TOMBOL CETAK DI SAMPING "INPUT SEMUA YANG PASTI"
+ * ============================================================================
+ *
+ * Untuk halaman ABT BIASA (daftar variabel blangko satu perkara), bukan
+ * Blangko ABT by Derry Briantono yang punya Cetak sendiri. Hidup di lapisan
+ * "sore" - jadi hanya di tampilan Baru dan UI Baru; tampilan Lama tidak
+ * berubah (SYARAT MUTLAK fd9aad7).
+ *
+ * Urutan aman satu tekanan:
+ *   1. naskah diambil dari tautan CETAK ABT halaman ini (GET preview - rute
+ *      yang sama dengan CETAK; tidak menulis apa pun);
+ *   2. diperiksa: usulan pasti yang belum disimpan, isian yang sedang
+ *      disunting dan belum disimpan, isian kosong (Penting / Tidak wajib),
+ *      variabel yang berbunyi error, dan penanda #NNNN# yang tersisa di naskah;
+ *   3. ada temuan -> pemberitahuan + tanda kuning & getar pada baris tabel ABT
+ *      (pola peringatan cetak Blangko Derry). "Simpan yang pasti lalu cetak"
+ *      membuka pratinjau Input semua yang pasti (tidak ada yang tertulis tanpa
+ *      persetujuan), lalu memeriksa ulang dan mencetak. "Tetap cetak" atau
+ *      menekan Cetak sekali lagi = cetak apa adanya;
+ *   4. dicetak lewat jalur yang sudah ada: saklar "Cetak tiga berkas" menyala
+ *      -> RTF + PDF + anonim (terbitkanTigaBerkas); mati -> satu .rtf
+ *      (cetakSatuLewatEkstensi); keduanya memakai RTF yang sudah diambil di
+ *      langkah 1 bila tabel tidak berubah sejak itu.
+ *
+ * Pengingat isian kosong mengikuti saklar yang sama dengan Blangko Derry
+ * ("Ingatkan isian yang masih kosong sebelum cetak" - popup dan Widget ALETA,
+ * kunci blangkoDerryIngat). Error dan penanda # selalu diperiksa.
+ */
+const F15_KUNCI_INGAT = "blangkoDerryIngat";
+/** RTF yang sudah diambil dipakai ulang paling lama selama ini, dan hanya bila isi tabel tidak berubah. */
+const F15_UMUR_RTF_MS = 5 * 60 * 1000;
+/** Tipe variabel yang diisi tangan di ABT - kosongnya tercetak titik-titik. */
+const F15_TIPE_TANGAN = new Set(["data_teks", "data_tanggal"]);
+/** Tidak wajib yang ditampilkan sebelum diringkas "dan N lainnya". */
+const F15_BATAS_TAMBAHAN = 8;
+
+function f15LabelCetak() {
+  return cetakTigaMenyala ? "Cetak · 3 berkas" : "Cetak";
+}
+
+function f15JudulCetak() {
+  return (
+    (cetakTigaMenyala
+      ? "Mencetak blangko yang terbuka untuk perkara ini: .rtf, PDF, dan .rtf anonim (saklar \"Cetak tiga berkas\" di popup ALETA menyala)."
+      : "Mencetak blangko yang terbuka untuk perkara ini sebagai .rtf - sama dengan CETAK di ABT. Tiga berkas (RTF, PDF, anonim) dinyalakan dari popup ALETA.") +
+    " Sebelum mencetak, ALETA memeriksa usulan pasti yang belum disimpan, isian yang masih kosong, dan bagian naskah yang belum terisi."
+  );
+}
+
+/** Label & keterangan tombol Cetak mengikuti saklar tiga berkas (dipanggil segarkanPenandaCetak). */
+function f15SegarkanLabel() {
+  for (const t of Array.from(document.querySelectorAll(".aleta-f15-cetak"))) {
+    if (t.getAttribute("aria-busy") === "true" || t.getAttribute("aria-disabled") === "true") continue;
+    t.textContent = f15LabelCetak();
+    t.title = f15JudulCetak();
+  }
+}
+
+/** Tautan CETAK milik ABT untuk blangko & perkara halaman ini (bukan tautan di dalam panel ALETA). */
+function f15TautanCetak() {
+  for (const a of Array.from(document.querySelectorAll('a[href*="abt/preview"]'))) {
+    if (a.closest(".aleta-panel")) continue;
+    return a;
+  }
+  return null;
+}
+
+/** Sidik isi tabel variabel - RTF yang diambil sebelum tabel berubah tidak dipakai ulang. */
+function f15Sidik() {
+  const bagian = [];
+  for (const [kode, item] of barisVariabel()) bagian.push(`${kode}=${item.nilai}`);
+  return bagian.join("\u0001");
+}
+
+/** Penyunting di tempat yang masih terbuka di tabel ABT (ketikan yang belum disimpan). */
+function f15SuntingTerbuka() {
+  const hasil = [];
+  for (const [kode, item] of barisVariabel()) {
+    if (item.selNilai && item.selNilai.querySelector(".aleta-abt-sunting")) hasil.push({ kode, nama: item.nama || kode, item });
+  }
+  return hasil;
+}
+
+async function f15IngatNyala() {
+  try {
+    const s = await chrome.storage.local.get([F15_KUNCI_INGAT]);
+    return !(s && s[F15_KUNCI_INGAT] === false);
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Isian yang belum siap dicetak, dipilah menurut beratnya (sama dengan
+ * Blangko Derry):
+ *   Penting     - berbunyi pesan error (ikut tercetak), kerangka fakta, variabel
+ *                 wajib jenis perkara ini (Tahap 6), atau isian tangan
+ *                 (data_teks/data_tanggal) yang kosong - tercetak titik-titik;
+ *   Tidak wajib - kosong yang disusun ABT sendiri (mis. pertimbangan kuasa
+ *                 pada perkara tanpa kuasa) - lazim kosong.
+ * `ingat` false = isian kosong tidak diperiksa (saklar pengingat mati); error
+ * tetap diperiksa.
+ */
+function f15Pilah(k, ingat) {
+  const penting = [];
+  const tambahan = [];
+  let wajib = new Set();
+  try {
+    if (t6Keadaan && k && t6Keadaan.panel === k.panel) wajib = new Set(t6WajibKosong(t6Keadaan).map((x) => String(x.kode)));
+  } catch {
+    wajib = new Set();
+  }
+  for (const [kode, item] of barisVariabel()) {
+    const keadaan = keadaanNilai(item.nilai);
+    if (keadaan === "terisi") continue;
+    const nama = item.nama || kode;
+    if (keadaan === "galat") {
+      let tunggu = false;
+      try {
+        tunggu = a1GalatDitunda(kode);
+      } catch {
+        tunggu = false;
+      }
+      penting.push({
+        kode,
+        nama,
+        item,
+        sebab: tunggu ? "diisi ABT sesudah Input ke ABT - muat ulang halaman" : "berbunyi pesan error dan ikut tercetak",
+      });
+      continue;
+    }
+    if (ingat === false) continue;
+    const tipe = tipeVariabel.get(kode) || "";
+    if (VARIABEL_SASARAN.includes(kode) || wajib.has(kode) || F15_TIPE_TANGAN.has(tipe)) {
+      penting.push({ kode, nama, item, sebab: "masih kosong" });
+    } else {
+      tambahan.push({ kode, nama, item, sebab: "kosong" });
+    }
+  }
+  return { penting, tambahan };
+}
+
+/** Mengambil naskah dari tautan CETAK ABT dan mencari penanda #NNNN# yang tersisa. */
+async function f15AmbilRtf(alamat) {
+  try {
+    const r = await fetch(alamat, { credentials: "include", cache: "no-store" });
+    if (!r.ok) return { ok: false, pesan: `ABT menjawab ${r.status}` };
+    const isi = await r.arrayBuffer();
+    const teks = new TextDecoder("latin1").decode(new Uint8Array(isi));
+    if (!teks.startsWith("{\\rtf")) {
+      const sebab = a3SebabBukanAbt(teks.slice(0, 6000));
+      return { ok: false, pesan: sebab || "ABT tidak mengembalikan naskah RTF" };
+    }
+    const periksa =
+      typeof abtKlienPeriksaRtf === "function"
+        ? abtKlienPeriksaRtf(teks)
+        : { penandaSisa: [...new Set([...teks.matchAll(/#(\d{4,5})#/g)].map((m) => m[1]))] };
+    return {
+      ok: true,
+      isi,
+      disposisi: String((r.headers && r.headers.get && r.headers.get("content-disposition")) || ""),
+      penanda: Array.isArray(periksa.penandaSisa) ? periksa.penandaSisa : [],
+      sidik: f15Sidik(),
+      pada: Date.now(),
+    };
+  } catch (galat) {
+    return { ok: false, pesan: String((galat && galat.message) || galat) };
+  }
+}
+
+function f15Kabar(ctx, teks, gagal) {
+  if (!ctx || !ctx.kabar) return;
+  ctx.kabar.className = gagal ? "aleta-abt-kabar aleta-f15-kabar aleta-abt-gagal" : "aleta-abt-kabar aleta-f15-kabar";
+  ctx.kabar.textContent = teks || "";
+}
+
+/** Tanda kuning + getar pada baris tabel ABT - hanya saat Cetak, diulang tiap tekanan. */
+function f15TandaiBaris(baris, tambahan) {
+  if (!baris || !baris.classList) return;
+  baris.classList.add("aleta-f15-kosong");
+  baris.classList.toggle("aleta-f15-tambahan", Boolean(tambahan));
+  baris.classList.remove("aleta-f15-getar");
+  void baris.offsetWidth;
+  baris.classList.add("aleta-f15-getar");
+}
+
+function f15BersihkanTanda() {
+  for (const el of Array.from(document.querySelectorAll("tr.aleta-f15-kosong, tr.aleta-f15-getar"))) {
+    el.classList.remove("aleta-f15-kosong", "aleta-f15-tambahan", "aleta-f15-getar");
+  }
+}
+
+/** Menggulir tabel ABT ke baris isian itu dan menggetarkannya sekali lagi. */
+function f15Tunjuk(x) {
+  if (!x || !x.item || !x.item.baris) return;
+  const b = x.item.baris;
+  try {
+    b.scrollIntoView({ block: "center", behavior: "smooth" });
+  } catch {
+    /* peramban lama */
+  }
+  f15TandaiBaris(b, b.classList.contains("aleta-f15-tambahan"));
+  const sunting = x.item.selAksi && x.item.selAksi.querySelector("a, button");
+  if (sunting && typeof sunting.focus === "function") sunting.focus({ preventScroll: true });
+}
+
+function f15Daftar(butir, kelas, batas) {
+  const ul = buatElemen("ul", kelas || "");
+  const tampil = batas ? butir.slice(0, batas) : butir;
+  for (const x of tampil) {
+    // Sebab hanya disebut bila bukan sekadar kosong (judul kelompoknya sudah berkata begitu).
+    const li = buatElemen("li", "", x.sebab && x.sebab !== "kosong" && x.sebab !== "masih kosong" ? `${x.nama} - ${x.sebab}` : x.nama);
+    li.title = "Tunjukkan barisnya di tabel ABT";
+    li.addEventListener("click", () => f15Tunjuk(x));
+    ul.appendChild(li);
+  }
+  if (batas && butir.length > batas) ul.appendChild(buatElemen("li", "", `dan ${butir.length - batas} lainnya (bertanda kuning di tabel)`));
+  return ul;
+}
+
+function f15Tombol(teks, utama, saat) {
+  const t = buatElemen("button", utama ? "aleta-permintaan-tombol" : "aleta-perkakas-pulih", teks);
+  t.type = "button";
+  t.addEventListener("click", saat);
+  return t;
+}
+
+/** Pemberitahuan sebelum cetak: penting dulu, yang tidak wajib menyusul dengan warna lembut. */
+function f15TampilIngat(ctx, d) {
+  const e = ctx.ingat;
+  e.textContent = "";
+  e.hidden = false;
+  if (d.sunting.length) {
+    e.appendChild(
+      buatElemen(
+        "p",
+        "",
+        `${d.sunting.length} isian sedang disunting di tabel ABT dan belum disimpan (${d.sunting.map((x) => x.nama).join(", ")}). Simpan atau batalkan dulu supaya yang tercetak isi terbaru.`
+      )
+    );
+  }
+  if (d.pasti.length) {
+    e.appendChild(buatElemen("p", "", `${d.pasti.length} usulan pasti dari SIPP belum disimpan ke ABT.`));
+  }
+  if (d.penting.length) {
+    e.appendChild(buatElemen("h4", "", `Penting - sebaiknya diisi sebelum cetak (${d.penting.length})`));
+    e.appendChild(f15Daftar(d.penting, "", 0));
+  }
+  if (d.tambahan.length) {
+    e.appendChild(buatElemen("h4", "aleta-f15-tidakwajib", `Tidak wajib (${d.tambahan.length})`));
+    e.appendChild(f15Daftar(d.tambahan, "aleta-f15-tidakwajib", F15_BATAS_TAMBAHAN));
+  }
+  if (d.penting.length || d.tambahan.length) e.appendChild(buatElemen("p", "aleta-f15-catat", "Isian yang kosong tercetak titik-titik."));
+  if (d.penanda.length) {
+    const admin = ctx.k && ctx.k.golongan === "admin";
+    const p = buatElemen("p", "");
+    p.appendChild(
+      buatElemen(
+        "b",
+        "",
+        `Ada ${d.penanda.length} bagian naskah yang belum terisi otomatis${admin ? `: ${d.penanda.map((x) => `#${x}#`).join(", ")}` : ""}.`
+      )
+    );
+    p.appendChild(document.createTextNode(" Bagian itu akan tercetak apa adanya."));
+    e.appendChild(p);
+  }
+  for (const x of d.sunting) f15TandaiBaris(x.item.baris, false);
+  for (const x of d.penting) f15TandaiBaris(x.item.baris, false);
+  for (const x of d.tambahan) f15TandaiBaris(x.item.baris, true);
+
+  const baris = buatElemen("div", "aleta-f15-baris");
+  if (d.pasti.length && ctx.wadahPasti) {
+    baris.appendChild(
+      f15Tombol(`Simpan ${d.pasti.length} yang pasti, lalu cetak`, true, () => {
+        e.hidden = true;
+        ctx.peringat = false;
+        s5BukaPratinjau(ctx.k, s5DaftarPasti(ctx.pilih), ctx.wadahPasti, ctx.segar, {
+          lalu: (h) => {
+            ctx.siap = null;
+            if (h && h.merah) {
+              f15Kabar(ctx, "Sebagian usulan belum terbukti tersimpan - periksa kolom Hasil, lalu tekan Cetak lagi.", true);
+              return;
+            }
+            void f15Cetak(ctx, false);
+          },
+        });
+        try {
+          ctx.wadahPasti.scrollIntoView({ block: "nearest" });
+        } catch {
+          /* peramban lama */
+        }
+      })
+    );
+  }
+  const pertama = d.sunting[0] || d.penting[0] || d.tambahan[0];
+  if (pertama) baris.appendChild(f15Tombol("Isi dulu", !(d.pasti.length && ctx.wadahPasti), () => f15Tunjuk(pertama)));
+  baris.appendChild(f15Tombol("Tetap cetak", false, () => void f15Cetak(ctx, true)));
+  baris.appendChild(buatElemen("span", "aleta-f15-catat", "atau tekan Cetak sekali lagi."));
+  e.appendChild(baris);
+  try {
+    e.scrollIntoView({ block: "nearest" });
+  } catch {
+    /* peramban lama */
+  }
+}
+
+function f15Sibuk(ctx, ya) {
+  const t = ctx.tombol;
+  if (!t) return;
+  t.disabled = Boolean(ya);
+  if (ya) {
+    t.setAttribute("aria-busy", "true");
+    t.textContent = "Sedang mencetak…";
+  } else {
+    t.removeAttribute("aria-busy");
+    t.textContent = f15LabelCetak();
+  }
+}
+
+/** Mencetak lewat jalur yang sudah ada - saklar tiga berkas menentukan RTF saja atau RTF + PDF + anonim. */
+async function f15Terbitkan(ctx, tautan, siap) {
+  const lapor = (teks, gagal) => f15Kabar(ctx, teks, gagal);
+  try {
+    if (typeof alatCatat === "function") alatCatat("abt-cetak", "Cetak dari panel ABT (F1.5)", nomorPerkaraAbt());
+  } catch {
+    /* kotak hitam hanya catatan */
+  }
+  if (await saklarCetakSekarang()) {
+    await terbitkanTigaBerkas(tautan.href, ctx.k.jatiDiri, lapor, siap);
+    return;
+  }
+  f15Kabar(ctx, "Mengunduh naskah .rtf…");
+  if (await cetakSatuLewatEkstensi(tautan.href, siap)) {
+    const j = new Date();
+    f15Kabar(ctx, `Dicetak ${String(j.getHours()).padStart(2, "0")}.${String(j.getMinutes()).padStart(2, "0")} - naskah .rtf diunduh.`);
+    return;
+  }
+  // Cadangan: tautan CETAK ABT asli. Dialog Tahap 6 tidak bertanya lagi -
+  // pemeriksaan di atas sudah dilakukan.
+  t6CetakLolos = true;
+  const pengganti = document.createElement("a");
+  pengganti.href = tautan.href;
+  pengganti.rel = "noopener";
+  if (tautan.target) pengganti.target = tautan.target;
+  document.body.appendChild(pengganti);
+  pengganti.click();
+  pengganti.remove();
+  t6CetakLolos = false;
+  f15Kabar(ctx, "Naskah diminta lewat CETAK ABT.");
+}
+
+/**
+ * Satu tekanan Cetak. `paksa` = "Tetap cetak" (atau tekanan kedua sesudah
+ * pemberitahuan): pemeriksaan dilewati, naskah dicetak apa adanya.
+ */
+async function f15Cetak(ctx, paksa) {
+  if (!ctx || ctx.sibuk) return;
+  const tautan = f15TautanCetak();
+  if (!tautan) {
+    f15Kabar(ctx, "Blangko ini belum dapat dicetak dari ABT - tombol CETAK ABT tidak ada di halaman (mis. BAS yang menunggu validasi hakim).", true);
+    return;
+  }
+  const lewati = Boolean(paksa) || ctx.peringat;
+  ctx.sibuk = true;
+  f15Sibuk(ctx, true);
+  try {
+    f15BersihkanTanda();
+    let siap = ctx.siap && ctx.siap.sidik === f15Sidik() && Date.now() - ctx.siap.pada < F15_UMUR_RTF_MS ? ctx.siap : null;
+    if (!siap) {
+      f15Kabar(ctx, "Menyiapkan naskah dari ABT…");
+      siap = await f15AmbilRtf(tautan.href);
+      if (!siap.ok) {
+        f15Kabar(ctx, `Naskah tidak dapat diambil dari ABT - ${siap.pesan}`, true);
+        return;
+      }
+      ctx.siap = siap;
+    }
+    if (!lewati) {
+      const pasti = s5DaftarPasti(ctx.pilih);
+      const sunting = f15SuntingTerbuka();
+      const { penting, tambahan } = f15Pilah(ctx.k, await f15IngatNyala());
+      if (pasti.length || sunting.length || penting.length || tambahan.length || siap.penanda.length) {
+        ctx.peringat = true;
+        f15Kabar(ctx, "");
+        f15TampilIngat(ctx, { pasti, sunting, penting, tambahan, penanda: siap.penanda });
+        return;
+      }
+    }
+    ctx.peringat = false;
+    ctx.ingat.hidden = true;
+    await f15Terbitkan(ctx, tautan, siap);
+  } catch (galat) {
+    f15Kabar(ctx, `Cetak gagal: ${String((galat && galat.message) || galat)}`, true);
+  } finally {
+    ctx.sibuk = false;
+    f15Sibuk(ctx, false);
+  }
+}
+
+/**
+ * Memasang tombol Cetak di ujung baris tombol Input (sesudah "Input semua
+ * yang pasti"), dan wadah pemberitahuannya tepat di bawah baris itu.
+ */
+function f15PasangCetak(k, baris, o) {
+  if (!k || !baris || !baris.parentNode) return null;
+  const opsi = o || {};
+  const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-f15-cetak", f15LabelCetak());
+  tombol.type = "button";
+  tombol.title = f15JudulCetak();
+  baris.appendChild(tombol);
+  const wadah = soreEl("div", "aleta-f15-wadah");
+  const ingat = buatElemen("div", "aleta-f15-ingat");
+  ingat.hidden = true;
+  ingat.setAttribute("role", "alert");
+  const kabar = buatElemen("div", "aleta-abt-kabar aleta-f15-kabar");
+  wadah.appendChild(ingat);
+  wadah.appendChild(kabar);
+  // Di bawah kabar tombol Input (bila ada) - kabar itu tetap tepat di bawah barisnya.
+  const acuan = opsi.sesudah && opsi.sesudah.parentNode === baris.parentNode ? opsi.sesudah : baris;
+  baris.parentNode.insertBefore(wadah, acuan.nextSibling);
+  const ctx = {
+    k,
+    tombol,
+    ingat,
+    kabar,
+    pilih: Array.isArray(opsi.pilih) ? opsi.pilih : [],
+    wadahPasti: opsi.wadahPasti || null,
+    segar: typeof opsi.segar === "function" ? opsi.segar : () => undefined,
+    peringat: false,
+    siap: null,
+    sibuk: false,
+  };
+  if (!f15TautanCetak()) {
+    tombol.setAttribute("aria-disabled", "true");
+    tombol.title = "Blangko ini belum dapat dicetak dari ABT - tombol CETAK ABT tidak ada di halaman (mis. BAS yang menunggu validasi hakim).";
+  }
+  tombol.addEventListener("click", () => void f15Cetak(ctx, false));
+  k.f15 = ctx;
+  return ctx;
+}
+/* === AKHIR F1.5 === */
