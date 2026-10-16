@@ -629,7 +629,7 @@ describe("murni", () => {
     expect(x.uraiBukti("Surat X, Nomor 9 tanggal 1 Januari 2020, yang dikeluarkan oleh Y, bukti surat tersebut tidak bermeterai dan tidak di-nazegelen, serta dicocokkan dari fotokopinya, lalu diberi tanda T.1;")[0]).toMatchObject({ meterai: 2, cocok: 2 });
     const ulang = x.susunKalimatBukti(rows, "P");
     expect(ulang).toContain("lalu diberi tanda P.2 serta diberi tanggal dan paraf oleh Ketua Majelis;");
-    expect(x.uraiBukti(ulang)).toEqual(rows.map((r) => ({ ...r })));
+    expect(x.uraiBukti(ulang)).toEqual(rows.map((r: Record<string, unknown>) => ({ ...r })));
   });
   it("sisipkanTtdRtf, hurufDiLuarAbt, keIso, namaUnduhan, bersihkanPenutup, gantiKalimat", () => {
     const x = m();

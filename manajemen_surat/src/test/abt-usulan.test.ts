@@ -1199,8 +1199,9 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // basmassal.js (BAS massal, 30 Sep sore U4) sesudah jurusita.js dan
     // SEBELUM abt.js: beranda ABT memanggil aletaBasMassalPasang.
     // blangko-derry.js (Blangko ABT by Derry Briantono, 16 Okt) paling belakang:
-    // ia memakai api.daftarkanAlat yang disediakan abt.js.
-    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "basmassal.js", "abt.js", "checklist.js", "blangko-derry.js"]);
+    // ia memakai api.daftarkanAlat yang disediakan abt.js. Tahap F-G (16 Okt): abt-klien.js (klien rute ABT)
+    // tepat sebelum blangko-derry.js, blangko-derry-isian.js (perlu diisi, pratinjau, cetak) tepat sesudahnya.
+    expect(entri?.js).toEqual(["panel-alat.js", "jurusita.js", "basmassal.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-isian.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {
