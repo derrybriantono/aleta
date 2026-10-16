@@ -40,6 +40,8 @@
   const API_PDF = "/aleta/api/aleta-bot/abt/pdf";
   const API_TTD = "/aleta/api/aleta-ecourt/tanda-tangan";
   const API_UNGGAH_SIPP = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
+  /** Akar portal (basePath) yang sama dengan alamat rute di atas: "/aleta". */
+  const AKAR_PORTAL = API_BLANGKO.replace(/\/api\/.*$/, "");
   const K_BERKAS = "blangkoDerryBerkas";
   const K_TTD = "blangkoDerryTtd";
   const K_CETAK = "blangkoDerryCetak";
@@ -1279,6 +1281,17 @@
       peringatanSidang;
   }
 
+  /**
+   * Tahap H 16 Okt: tautan "Edit variabel ini" ke Pengaturan SIPP & ABT portal - hanya Super Admin/Admin (adm()); petugas lain tidak melihatnya.
+   * Tab baru, rel noopener; alamat mengikuti akar portal (basePath) ekstensi.
+   */
+  function alamatEditVariabel(kode) {
+    return `${location.origin}${AKAR_PORTAL}/admin/pengaturan-sipp-abt?bagian=variabel&noVar=${encodeURIComponent(String(kode || ""))}`;
+  }
+  function tautanEditVariabel(kode) {
+    if (!adm() || !/^\d{3,6}$/.test(String(kode || ""))) return "";
+    return `<a class="bd-editvar" href="${esc(alamatEditVariabel(kode))}" target="_blank" rel="noopener" title="Buka pengaturan variabel #${esc(kode)}# di portal ALETA">Edit variabel ini</a>`;
+  }
   function ikonSumber(id, nm) {
     return `<button type="button" class="bd-ikon bd-sumber" data-sumber="${esc(id)}" aria-label="Dari mana isian ${esc(nm)} ini?" aria-haspopup="dialog">ⓘ</button>`;
   }
@@ -1315,7 +1328,7 @@
     const muncul = b.pemicu ? `<p class="bd-pemicuinfo">muncul karena <b>${esc(keteranganPemicu(b.pemicu))}</b></p>` : "";
     const penting = b.dipakaiOleh && b.dipakaiOleh.length >= 3 ? `<span class="bd-chip sebagian" title="Nilai ini dibaca ${b.dipakaiOleh.length} bagian lain di naskah">Penting · ikut mengubah ${b.dipakaiOleh.length} bagian</span>` : "";
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${penting ? " kunci" : ""}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}${penting}</div>${muncul}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${penting ? " kunci" : ""}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}${tautanEditVariabel(b.kode)}${penting}</div>${muncul}` +
       `<div class="bd-isiwadah"><input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>` +
       `${pil.length ? `<button type="button" class="bd-ikon" data-menu="${b.kode}" aria-label="Pilihan lain untuk ${esc(b.nama)}" tabindex="-1">▾</button>` : ""}</div>` +
       `${S.menuSaran === b.kode && pil.length ? `<div class="bd-saranmenu" role="listbox">${pil.map((o) => `<button type="button" role="option" data-ambil="${b.kode}" data-nilai="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}` +
@@ -1337,7 +1350,7 @@
     const w = b.pihak;
     if (!rows) return `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama)}</div><p class="bd-catat">Membaca bukti bawaan dari ABT…</p></div>`;
     return (
-      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama)}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>` +
+      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama)}${tautanEditVariabel(b.kode)}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>` +
       rows
         .map(
           (r, i) =>
@@ -3085,7 +3098,7 @@
       log: S.log.slice(),
       hitung: S.susunan ? hitung() : null,
     }),
-    murni: { rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran },
+    murni: { rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

@@ -419,6 +419,26 @@ describe("F. perlu diisi", () => {
     expect(q(h2, '[data-status="8503"]')!.textContent).toContain("hanya ditulis Hakim");
   });
 
+  it("Edit variabel ini (tahap H): hanya Super Admin/Admin, ke Pengaturan SIPP & ABT portal di tab baru (akar portal /aleta)", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    expect(qq(h, ".bd-editvar")).toEqual([]); // hakim tidak melihatnya
+
+    const a = buka({ orang: "admin" });
+    await sampaiPerkara(a);
+    await sampai(() => a.w.aletaBlangkoDerryIsian.keadaan().terpasang, "terpasang");
+    await isian(a).muatKelompok("Putusan CG");
+    await isian(a).pilihBlangko(BLANGKO_PUT, "Putusan CG");
+    const t = (await sampai(() => q(a, '[data-f="8503"] .bd-editvar'), "tautan edit variabel")) as HTMLAnchorElement;
+    expect(t.getAttribute("href")).toBe(`${ASAL}/aleta/admin/pengaturan-sipp-abt?bagian=variabel&noVar=8503`);
+    expect(t.getAttribute("target")).toBe("_blank");
+    expect(t.getAttribute("rel")).toBe("noopener");
+    expect(t.textContent).toBe("Edit variabel ini");
+    // Kartu bukti (1214) juga; tanya jawab saksi tidak (bukan satu variabel isian).
+    await sampai(() => q(a, '[data-f="1214"] .bd-editvar'), "tautan bukti");
+    expect(isian(a).murni.alamatEditVariabel("0007")).toBe(`${ASAL}/aleta/admin/pengaturan-sipp-abt?bagian=variabel&noVar=0007`);
+  });
+
   it("bukti: baris terstruktur dari bawaan ABT (KTP-el + Akta Nikah), kode P.n otomatis; mengubah nomor menulis kalimat ke 1214; tambah bukti cepat", async () => {
     const h = buka();
     await pilihPutusan(h);
