@@ -438,6 +438,10 @@
    * keputusan pengguna 16 Okt malam: isian PASTI (diisi bila kolomnya kosong).
    * Pihak yang tidak hadir, Intervensi, dan Turut Tergugat dibiarkan kosong
    * (diisi dari relaas pemberitahuannya). "Sebagian" (10/11) tidak diisi.
+   * Keputusan 17 Okt butir 58: berlaku untuk SEMUA perkara - e-Court maupun
+   * bukan. Pihak yang hadir mendengar putusan sela dibacakan di ruang sidang,
+   * jadi tanggal bacanya juga tanggal pemberitahuannya; jalur pendaftaran
+   * tidak ikut menentukan (sengaja tidak membaca lewatEcourt).
    */
   function usulanSela(data, form) {
     const calon = sidangSela(data && data.jadwal).filter((s) => /putusan\s+sela/i.test(s.agenda || ""));
