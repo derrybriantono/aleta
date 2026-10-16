@@ -392,7 +392,7 @@ describe("F. perlu diisi", () => {
     const opsi = await sampai(() => q(h, '[data-ambil="8503"][data-nilai^="C"]'), "pilihan C");
     opsi.click();
     await sampai(() => q(h, '.bd-f[data-f="8536"]'), "8536 muncul");
-    expect(q(h, '.bd-f[data-f="8536"] .bd-pemicuinfo')!.textContent).toContain("huruf C");
+    expect(q(h, '.bd-f[data-f="8536"] .bd-muncul')!.textContent).toContain("huruf C");
     await sampai(() => h.abt["8503"] && h.abt["8503"].startsWith("C"), "8503 tersimpan");
     expect(mintaKe(h, /main\/view/)).toEqual([]);
   });
@@ -436,13 +436,20 @@ describe("F. perlu diisi", () => {
     await sampai(() => a.w.aletaBlangkoDerryIsian.keadaan().terpasang, "terpasang");
     await isian(a).muatKelompok("Putusan CG");
     await isian(a).pilihBlangko(BLANGKO_PUT, "Putusan CG");
-    const t = (await sampai(() => q(a, '[data-f="8503"] .bd-editvar'), "tautan edit variabel")) as HTMLAnchorElement;
+    // 16 Okt malam: tidak lagi di kepala tiap kotak - kecil di keterangan ⓘ.
+    await sampai(() => q(a, '[data-f="8503"] .bd-sumber'), "kotak 8503");
+    expect(qq(a, "#bd-perlu .bd-editvar")).toEqual([]);
+    klik(a, '[data-f="8503"] .bd-sumber');
+    const t = (await sampai(() => q(a, "#bd-popsumber .bd-editvar"), "tautan edit variabel")) as HTMLAnchorElement;
     expect(t.getAttribute("href")).toBe(`${ASAL}/aleta/admin/pengaturan-sipp-abt?bagian=variabel&noVar=8503`);
     expect(t.getAttribute("target")).toBe("_blank");
     expect(t.getAttribute("rel")).toBe("noopener");
     expect(t.textContent).toBe("Edit variabel ini");
     // Kartu bukti (1214) juga; tanya jawab saksi tidak (bukan satu variabel isian).
-    await sampai(() => q(a, '[data-f="1214"] .bd-editvar'), "tautan bukti");
+    klik(a, "#bd-popsumber [data-bd2='tutupsumber']");
+    await sampai(() => q(a, '[data-f="1214"] .bd-sumber'), "kotak bukti");
+    klik(a, '[data-f="1214"] .bd-sumber');
+    await sampai(() => (q(a, "#bd-popsumber .bd-editvar") as HTMLAnchorElement | null)?.getAttribute("href")?.endsWith("noVar=1214"), "tautan bukti");
     expect(isian(a).murni.alamatEditVariabel("0007")).toBe(`${ASAL}/aleta/admin/pengaturan-sipp-abt?bagian=variabel&noVar=0007`);
   });
 
@@ -451,23 +458,29 @@ describe("F. perlu diisi", () => {
     await pilihPutusan(h);
     await sampai(() => q(h, '[data-bk="P.1"][data-isi="no"]'), "bukti tergambar");
     const nama = qq(h, ".bd-bnama").map((i) => (i as HTMLInputElement).value);
-    expect(nama[0]).toContain("Kartu Tanda Penduduk Elektronik (KTP-el) atas nama YULFIANI");
+    // 16 Okt malam: "atas nama" dan NIK menjadi kolom sendiri; kolom nomor bukti KTP berlabel NIK.
+    expect(nama[0]).toBe("Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el)");
+    expect((q(h, '[data-bk="P.0"][data-isi="an"]') as HTMLInputElement).value).toBe("YULFIANI");
+    expect((q(h, '[data-bk="P.0"][data-isi="no"]') as HTMLInputElement).value).toBe("7271036411920011");
+    expect((q(h, '[data-bk="P.0"][data-isi="no"]')!.closest("label") as HTMLElement).textContent).toBe("NIK");
     expect(nama[1]).toBe("Fotokopi Kutipan Akta Nikah");
     expect((q(h, '[data-bk="P.1"][data-isi="no"]') as HTMLInputElement).value).toBe("0114/04/IV/2021");
     expect((q(h, '[data-bk="P.1"][data-isi="tgl"]') as HTMLInputElement).value).toBe("2021-04-05");
     expect((q(h, '[data-bk="P.0"][data-isi="oleh"]') as HTMLInputElement).value).toBe("Pemerintah Kabupaten Sigi, Provinsi Sulawesi Tengah");
     expect(qq(h, ".bd-kodeP").map((k) => k.textContent)).toEqual(["P.1", "P.2"]);
     const no = q(h, '[data-bk="P.0"][data-isi="no"]') as HTMLInputElement;
-    no.value = "7271-01";
+    no.value = "7271036411920099";
     no.dispatchEvent(new h.w.Event("change", { bubbles: true }));
-    await sampai(() => h.abt["1214"] && h.abt["1214"].includes("Nomor 7271-01"), "1214 tersimpan");
-    expect(h.abt["1214"]).toMatch(/^Fotokopi Kartu Tanda Penduduk Elektronik \(KTP-el\) atas nama YULFIANI, NIK 7271036411920011, Nomor 7271-01 tanggal 23 April 2025, yang dikeluarkan oleh Pemerintah Kabupaten Sigi, Provinsi Sulawesi Tengah, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, serta telah dicocokkan dengan aslinya yang ternyata sesuai, lalu diberi tanda P\.1 serta diberi tanggal dan paraf oleh Ketua Majelis;\n/);
+    await sampai(() => h.abt["1214"] && h.abt["1214"].includes("NIK 7271036411920099"), "1214 tersimpan");
+    expect(h.abt["1214"]).toMatch(/^Fotokopi Kartu Tanda Penduduk Elektronik \(KTP-el\) atas nama YULFIANI, NIK 7271036411920099 tanggal 23 April 2025, yang dikeluarkan oleh Pemerintah Kabupaten Sigi, Provinsi Sulawesi Tengah, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, serta telah dicocokkan dengan aslinya yang ternyata sesuai, lalu diberi tanda P\.1 serta diberi tanggal dan paraf oleh Ketua Majelis;\n/);
     klik(h, '[data-bktambah="P"][data-nama="Fotokopi Kartu Keluarga"]');
     await sampai(() => qq(h, ".bd-kodeP").length === 3, "bukti ketiga");
     expect(qq(h, ".bd-kodeP").map((k) => k.textContent)).toEqual(["P.1", "P.2", "P.3"]);
     const meterai = q(h, '[data-bk="P.2"][data-isi="meterai"]') as HTMLSelectElement;
     expect(meterai.value).toBe("0");
     expect(meterai.options[0].textContent).toBe("bermeterai cukup dan dinazegelen");
+    expect((q(h, '[data-bk="P.2"][data-isi="no"]')!.closest("label") as HTMLElement).textContent).toBe("Nomor KK");
+    expect((q(h, '[data-bk="P.1"][data-isi="no"]')!.closest("label") as HTMLElement).textContent).toBe("Nomor surat");
   });
 
   it("tanya jawab: dua saksi berdampingan dari ABT per sidang, bersihkan penutup, muat templat, simpan lewat tanyajawab_perkara_edit?aksi=simpan (sidang diperiksa dulu)", async () => {
@@ -610,8 +623,13 @@ describe("G. pratinjau dan cetak", () => {
       const e = q(h, "#bd-ingat");
       return e && !e.hidden ? e : null;
     }, "pengingat");
-    expect(ingat.textContent).toContain("isian kosong");
-    expect(ingat.textContent).toContain("belum terisi otomatis: #9999#");
+    // Dikelompokkan menurut tingkat; kotak kosong ditandai kuning (hanya saat Cetak). Hakim tidak melihat kode penanda.
+    expect(ingat.textContent).toContain("Penting - sebaiknya diisi sebelum cetak");
+    expect(ingat.textContent).toContain("Anak dari pernikahan ini");
+    expect(ingat.textContent).toContain("belum terisi otomatis");
+    expect(ingat.textContent).not.toContain("#9999#");
+    expect(q(h, '.bd-f[data-f="0007"]')!.classList.contains("bd-kosongcetak")).toBe(true);
+    expect(q(h, '.bd-f[data-f="8503"]')!.classList.contains("bd-kosongcetak")).toBe(false);
     expect(q(h, '[data-bd2="isidulu"]')).not.toBeNull();
     expect(h.latar.filter((m) => m.jenis === "unduh")).toEqual([]);
     expect(mintaKe(h, /abt\/preview\?/).length).toBe(1);

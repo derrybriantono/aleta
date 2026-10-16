@@ -40,6 +40,7 @@
   const API_PDF = "/aleta/api/aleta-bot/abt/pdf";
   const API_TTD = "/aleta/api/aleta-ecourt/tanda-tangan";
   const API_UNGGAH_SIPP = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
+  const API_KTP_PIHAK = "/aleta/api/aleta-ecourt/ktp-pihak";
   /** Akar portal (basePath) yang sama dengan alamat rute di atas: "/aleta". */
   const AKAR_PORTAL = API_BLANGKO.replace(/\/api\/.*$/, "");
   const K_BERKAS = "blangkoDerryBerkas";
@@ -53,8 +54,9 @@
   const NAMA_PERAN = { hakim: "Hakim", pp: "Panitera Pengganti", js: "Juru sita" };
   /** Kelompok BAS yang paling sering dipakai (abt-bas-alur-sidang/hasil/alur-frekuensi, perkara 2024-2026). */
   const FREK_ALUR = { "02": 2494, "01": 404, "03": 389, "08": 205 };
-  const PIL_METERAI = ["bermeterai cukup dan dinazegelen", "bermeterai cukup tetapi tidak dinazegelen", "tidak bermeterai dan tidak dinazegelen"];
-  const PIL_COCOK = ["telah dicocokkan dengan aslinya dan ternyata sesuai", "tidak dapat dicocokkan dengan aslinya", "dicocokkan dari fotokopinya"];
+  const PIL_METERAI = ["bermeterai cukup dan dinazegelen", "bermeterai cukup tetapi tidak dinazegelen", "tidak bermeterai dan tidak dinazegelen", "tanpa kalimat meterai"];
+  // Nilai 0-2 tetap (baris tersimpan memakai nomor ini); 3-4 tambahan 16 Okt dari putusan PA Donggala.
+  const PIL_COCOK = ["telah dicocokkan dengan aslinya dan ternyata sesuai", "tidak dapat dicocokkan dengan aslinya", "dicocokkan dari fotokopinya", "dicocokkan dengan kopian sebelumnya dan ternyata sesuai", "tanpa kalimat pencocokan"];
   const BUKTI_CEPAT = [
     ["Fotokopi Kartu Keluarga", "Dinas Kependudukan dan Pencatatan Sipil"],
     ["Surat Keterangan Domisili", "Kepala Desa"],
@@ -270,6 +272,8 @@
     ttdSumber: null, // { aleta: [{id,nama}]|null, sendiri: {nama,png}|null }
     peringat: false,
     sibuk: false,
+    tampilTakBerlaku: false, // "tampilkan juga" isian yang keadaannya tidak berlaku
+    tandaKosong: new Set(), // kode isian yang ditandai kuning saat Cetak menemukan isian kosong
     log: [],
     cetakTercatat: {}, // "nomor|jenis" -> jam
   };
@@ -755,6 +759,8 @@
     S.prat = { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] };
     S.peringat = false;
     S.ttdPilih = new Set();
+    S.tampilTakBerlaku = false;
+    S.tandaKosong = new Set();
     renderRingkasBlangko();
     renderIsian();
     renderPratinjau();
@@ -882,17 +888,63 @@
     const p = S.susunan && S.susunan.pemicu.find((x) => x.kode === kode);
     return p ? p.keterangan : `penanda ${kode} menyala`;
   }
-  /** Isian yang tampil: wajib, pemicunya menyala. */
+  /** Keterangan keadaan untuk layar (sama dengan KEADAAN_TEKS di susun.ts portal). */
+  const KEADAAN_TEKS = {
+    kuasaP: "Penggugat/Pemohon memakai kuasa hukum",
+    kuasaT: "Tergugat/Termohon memakai kuasa hukum",
+    prodeo: "perkara ini prodeo",
+    alasanC: "alasan perceraian huruf C dipilih",
+    alasanH: "alasan perceraian huruf H dipilih",
+    ghaib: "Tergugat/Termohon dipanggil secara ghaib",
+    ecourt: "perkara ini terdaftar lewat e-Court",
+    insidentil: "ada kuasa insidentil",
+  };
+  const KEADAAN_SINGKAT = { kuasaP: "kuasa hukum", kuasaT: "kuasa hukum", prodeo: "prodeo", alasanC: "alasan C", alasanH: "alasan H", ghaib: "panggilan ghaib", ecourt: "e-Court", insidentil: "kuasa insidentil" };
+  const perkaraSipp = () => (S.pk && S.pk.perkara) || null;
+  const terisi = (b) => Boolean(String(S.isi[b.kode] || "").trim()) || Boolean(S.nilai[b.kode] && S.nilai[b.kode].status === "terisi" && String(S.nilai[b.kode].teks || "").trim());
+  /**
+   * Isian berlaku untuk perkara ini? Aturannya mengikuti cara blangko ABT memakai variabel pemicu:
+   *   kuasa P/T, prodeo, alasan C/H -> pemicu ABT (#11111#, #11113#, #11112#, #11116#, #11117#) yang dihitung
+   *     mesin variabel ABT dari SIPP (kuasa: perkara_pengacara aktif; prodeo: perkara.prodeo; C/H: huruf 8503);
+   *     prodeo juga dari data perkara SIPP di daftar perkara;
+   *   ghaib  -> perkara ghaib menurut SIPP (daftar perkara: relaas pengumuman/alamat tidak diketahui);
+   *   e-Court -> perkara terdaftar lewat e-Court (tidak diketahui = tetap tampil);
+   *   kuasa insidentil -> hanya bila isiannya tertulis langsung di blangko ini atau sudah terisi.
+   * Susunan lama tanpa "keadaan" tetap memakai pemicu saja.
+   */
+  function keadaanBerlakuMurni(b, ctx) {
+    const k = b.keadaan || "";
+    const p = ctx.perkara || null;
+    const terisi = ctx.terisi;
+    if (b.pemicu && ctx.menyala(b.pemicu)) return true;
+    if (k === "prodeo" && p && p.prodeo === true) return true;
+    if (b.pemicu) return false;
+    if (!k) return true;
+    if (k === "ghaib") return Boolean(p && p.ghaib === true);
+    if (k === "ecourt") return !p || p.lewatEcourt !== false;
+    if (k === "insidentil") return Boolean(b.langsung) || terisi(b);
+    if (k === "kuasaP" || k === "kuasaT" || k === "prodeo" || k === "alasanC" || k === "alasanH") return terisi(b);
+    return true;
+  }
+  const keadaanBerlaku = (b) => keadaanBerlakuMurni(b, { perkara: perkaraSipp(), menyala: pemicuMenyala, terisi });
+  const keteranganKeadaan = (b) => (b.keadaan && KEADAAN_TEKS[b.keadaan]) || (b.pemicu ? keteranganPemicu(b.pemicu).replace(/ \(terbaca dari SIPP\)/, "") : "");
+  /** Isian wajib yang keadaannya tidak berlaku untuk perkara ini (disembunyikan; dapat ditampilkan). */
+  function daftarTakBerlaku() {
+    if (!S.susunan) return [];
+    return S.susunan.isian.filter((b) => b.wajib && !keadaanBerlaku(b));
+  }
+  /** Isian yang tampil: wajib, keadaannya berlaku (atau petugas memilih "tampilkan juga"). */
   function daftarPerlu() {
     if (!S.susunan) return [];
-    return S.susunan.isian.filter((b) => b.wajib && (!b.pemicu || pemicuMenyala(b.pemicu)));
+    return S.susunan.isian.filter((b) => b.wajib && (S.tampilTakBerlaku || keadaanBerlaku(b)));
   }
   function nilaiTerisi(b) {
     if (b.khusus === "bukti") {
       const rows = S.bukti[b.pihak];
       if (!rows) return [0, 0];
-      const total = rows.length * 3;
-      const kosong = rows.reduce((n, r) => n + (!String(r.no || "").trim() ? 1 : 0) + (!r.tgl ? 1 : 0) + (!String(r.oleh || "").trim() || /\.\.\./.test(r.oleh) ? 1 : 0), 0);
+      // Tiap bagian bukti boleh kosong (bentuk bukti beragam): yang dihitung hanya nama buktinya.
+      const total = rows.length;
+      const kosong = rows.reduce((n, r) => n + (String(r.manual || r.nm || "").trim() ? 0 : 1), 0);
       return [total - kosong, total];
     }
     if (b.jenis === "tj") {
@@ -912,14 +964,16 @@
     }
     return { a, t };
   }
-  function kosongDaftar() {
+  /** Isian yang masih kosong: [{ b, nama, tingkat }] - tingkat "penting" atau "tambahan" (dari susunan portal). */
+  function kosongRinci() {
     const l = [];
     for (const b of daftarPerlu()) {
       const [x, y] = nilaiTerisi(b);
-      if (x < y) l.push(b.khusus === "bukti" ? `nomor, tanggal atau penerbit ${b.nama.toLowerCase()}` : b.jenis === "tj" ? `tanya jawab ${b.tj.sebutan.toLowerCase()}` : b.nama);
+      if (x < y) l.push({ b, nama: b.khusus === "bukti" ? `nama ${b.nama.toLowerCase()}` : b.jenis === "tj" ? `tanya jawab ${b.tj.sebutan.toLowerCase()}` : b.nama, tingkat: b.tingkat === "tambahan" ? "tambahan" : "penting" });
     }
     return l;
   }
+  const kosongDaftar = () => kosongRinci().map((x) => x.nama);
   function laporKeKerangka() {
     const a = api();
     if (!a || typeof a.laporIsian !== "function" || !S.pk) return;
@@ -975,60 +1029,145 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Alat bukti surat: baris terstruktur <-> kalimat ABT (variabel 1214 / 9911)
   // ──────────────────────────────────────────────────────────────────────────
-  const buktiBaru = (nm, oleh) => ({ nm: nm || "", no: "", tgl: "", oleh: oleh || "", meterai: 0, cocok: 0 });
-  /** Kalimat satu bukti sesuai pola ABT, kode P.n / T.n otomatis. */
+  const buktiBaru = (nm, oleh) => ({ nm: nm || "", an: "", no: "", tgl: "", oleh: oleh || "", meterai: 0, cocok: 0, manual: null });
+  /** Jenis bukti dari namanya: KTP -> kolom NIK, Kartu Keluarga -> Nomor KK, selainnya Nomor surat. */
+  function jenisBukti(nm) {
+    const n = String(nm || "");
+    if (/kartu tanda penduduk|\bktp\b|ktp-el/i.test(n)) return "ktp";
+    if (/kartu keluarga|\bkk\b/i.test(n)) return "kk";
+    return "";
+  }
+  const POLA_KODE_BUKTI = /(\btanda\s+)[PT]\.\s?\d+/gi;
+  /**
+   * Kalimat satu bukti sesuai pola ABT, kode P.n / T.n otomatis. Semua bagian (atas nama, nomor, tanggal,
+   * penerbit, meterai, pencocokan) boleh kosong - bagian kosong tidak ditulis. Bukti "tulis manual" dicetak
+   * apa adanya; kode di dalamnya ("tanda P.3") disesuaikan dengan urutannya, dan bila tidak ada kode
+   * ekor baku ditambahkan.
+   */
   function kalimatBukti(r, pihak, i) {
-    const bagian = [];
+    const kode = `${pihak}.${i + 1}`;
+    if (typeof r.manual === "string" && r.manual.trim()) {
+      let t = r.manual.trim().replace(/\s+/g, " ");
+      if (POLA_KODE_BUKTI.test(t)) t = t.replace(POLA_KODE_BUKTI, `$1${kode}`);
+      else t = `${t.replace(/[;.,\s]+$/, "")}, lalu diberi tanda ${kode} serta diberi tanggal dan paraf oleh Ketua Majelis`;
+      POLA_KODE_BUKTI.lastIndex = 0;
+      return /;$/.test(t) ? t : `${t.replace(/\s+$/, "")};`;
+    }
     const nm = String(r.nm || "").trim();
-    bagian.push(nm);
-    if (String(r.no || "").trim()) bagian.push(`Nomor ${String(r.no).trim()}`);
-    if (r.tgl) bagian.push(`tanggal ${tglIndo(r.tgl)}`);
-    let k = bagian.filter(Boolean).join(nm && /\bnomor\b/i.test(nm) ? " " : ", ").replace(/, tanggal/, " tanggal");
+    const an = String(r.an || "").trim();
+    const no = String(r.no || "").trim();
+    let k = nm;
+    if (an) k += `${k ? " " : ""}atas nama ${an}`;
+    if (no) k += `${k ? (nm && /\bnomor\b/i.test(nm) && !an ? " " : ", ") : ""}${jenisBukti(nm) === "ktp" ? "NIK" : "Nomor"} ${no}`;
+    if (r.tgl) k += ` tanggal ${tglIndo(r.tgl)}`;
+    else if (r.tglTeks) k += ` tanggal ${r.tglTeks}`;
     if (String(r.oleh || "").trim()) k += `, yang dikeluarkan oleh ${String(r.oleh).trim()}`;
     const m = Number(r.meterai) || 0;
     const c = Number(r.cocok) || 0;
-    k += m === 0 ? ", bukti surat tersebut telah diberi meterai cukup, di-nazegelen" : m === 1 ? ", bukti surat tersebut telah diberi meterai cukup, tetapi tidak di-nazegelen" : ", bukti surat tersebut tidak bermeterai dan tidak di-nazegelen";
-    k += c === 0 ? ", serta telah dicocokkan dengan aslinya yang ternyata sesuai" : c === 1 ? ", serta tidak dapat dicocokkan dengan aslinya" : ", serta dicocokkan dari fotokopinya";
-    k += `, lalu diberi tanda ${pihak}.${i + 1} serta diberi tanggal dan paraf oleh Ketua Majelis;`;
-    return k;
+    const METERAI = [", bukti surat tersebut telah diberi meterai cukup, di-nazegelen", ", bukti surat tersebut telah diberi meterai cukup, tetapi tidak di-nazegelen", ", bukti surat tersebut tidak bermeterai dan tidak di-nazegelen", ""];
+    const COCOK = ["telah dicocokkan dengan aslinya yang ternyata sesuai", "tidak dapat dicocokkan dengan aslinya", "dicocokkan dari fotokopinya", "telah dicocokkan dengan kopian sebelumnya dan ternyata sesuai", ""];
+    const tm = METERAI[m] !== undefined ? METERAI[m] : METERAI[0];
+    const tc = COCOK[c] !== undefined ? COCOK[c] : COCOK[0];
+    k += tm;
+    if (tc) k += tm ? `, serta ${tc}` : `, bukti surat tersebut ${tc}`;
+    k += `, lalu diberi tanda ${kode} serta diberi tanggal dan paraf oleh Ketua Majelis;`;
+    return k.replace(/^, /, "");
   }
   const susunKalimatBukti = (rows, pihak) => rows.map((r, i) => kalimatBukti(r, pihak, i)).join("\n");
-  /** Kalimat ABT (bawaan maupun tersimpan) -> baris terstruktur. */
+  /**
+   * Kalimat ABT (bawaan maupun tersimpan) -> baris terstruktur. Kalimat yang tidak berpola baku ALETA/ABT
+   * ("Bukti tersebut telah diberi meterai ... kemudian diberi tanda pada surat tersebut dengan tanda T.3.")
+   * dibuka sebagai "tulis manual" supaya tidak satu kata pun berubah.
+   */
   function uraiBukti(teks) {
     const rows = [];
     const potongan = String(teks || "")
       .replace(/\r\n/g, "\n")
-      .split(/\n+|(?<=;)\s+(?=Fotokopi|Asli|Surat|Kutipan|Akta|Buku|Foto)/)
+      .split(/\n+|(?<=;)\s+(?=Fotokopi|Fotocopy|Asli|Surat|Kutipan|Akta|Buku|Foto|Salinan)/)
       .map((x) => x.trim())
       .filter(Boolean);
     for (const p of potongan) {
       let s = p.replace(/\s+/g, " ").replace(/;$/, "");
       const r = buktiBaru("", "");
-      const meterai = /tidak bermeterai/i.test(s) ? 2 : /tidak di-?nazegelen/i.test(s) ? 1 : 0;
-      const cocok = /tidak dapat dicocokkan/i.test(s) ? 1 : /dari fotokopinya/i.test(s) ? 2 : 0;
+      if (!/bukti surat tersebut|,\s*lalu diberi tanda\s+[PT]\.\s?\d+\s+serta diberi tanggal/i.test(s)) {
+        r.nm = (s.match(/^[^,.;]+/) || [s])[0].trim();
+        r.manual = p.replace(/\s+/g, " ").trim();
+        rows.push(r);
+        continue;
+      }
+      const meterai = !/meterai/i.test(s) ? 3 : /tidak bermeterai/i.test(s) ? 2 : /tidak di-?nazegelen/i.test(s) ? 1 : 0;
+      const cocok = /kopian sebelumnya/i.test(s) ? 3 : /tidak dapat dicocokkan/i.test(s) ? 1 : /dari fotokopinya/i.test(s) ? 2 : /dicocokkan/i.test(s) ? 0 : 4;
       s = s.replace(/,?\s*bukti surat tersebut[\s\S]*$/i, "").replace(/,?\s*lalu diberi tanda[\s\S]*$/i, "");
-      const oleh = s.match(/,?\s*yang dikeluarkan oleh\s+(.+?)$/i);
+      const oleh = s.match(/,?\s*yang (?:dikeluarkan|diterbitkan) oleh\s+(.+?)$/i);
       if (oleh) {
         r.oleh = oleh[1].trim();
         s = s.slice(0, oleh.index);
       }
-      const tgl = s.match(/\btanggal\s+([0-9]{1,2}[-/ ][A-Za-z0-9]+[-/ ][0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2})\s*$/i);
+      s = s.replace(/[,\s]+$/, "");
+      const tgl = s.match(/,?\s*\b(?:ter)?tanggal\s+([0-9]{1,2}[-/ ][A-Za-z0-9]+[-/ ][0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[.…_,\s]+)\s*$/i);
       if (tgl) {
-        r.tgl = keIso(tgl[1].replace(/\s+/g, " "));
-        if (!r.tgl) r.tglTeks = tgl[1];
+        const tt = tgl[1].replace(/\s+/g, " ").trim();
+        r.tgl = keIso(tt);
+        if (!r.tgl && /[0-9]/.test(tt)) r.tglTeks = tt;
         s = s.slice(0, tgl.index);
       }
-      const no = s.match(/,?\s*Nomor\s+(.+?)\s*$/i);
+      s = s.replace(/[,\s]+$/, "");
+      const nik = s.match(/,?\s*\bNIK\.?\s*:?\s*([0-9][0-9 .]*[0-9])\s*$/i);
+      const no = nik || s.match(/,?\s*\bNomor\s*:?\s+(.+?)\s*$/i);
       if (no && !/^Nomor\s*$/i.test(s)) {
         r.no = no[1].trim();
         s = s.slice(0, no.index);
       }
+      s = s.replace(/[,\s]+$/, "");
+      const an = s.match(/\s+(?:atas nama|a\.\s?n\.)\s+(.+)$/i);
+      if (an) {
+        r.an = an[1].replace(/[,\s]+$/, "").trim();
+        s = s.slice(0, an.index);
+      }
       r.nm = s.replace(/[,\s]+$/, "").trim();
       r.meterai = meterai;
       r.cocok = cocok;
-      if (r.nm) rows.push(r);
+      if (r.nm || r.an || r.no) rows.push(r);
     }
     return rows;
+  }
+  /** "Ambil tanggal KTP dari bukti": tanggal KTP pihak yang terbaca dari berkas KTP e-Court -> kolom tanggal bukti KTP. */
+  async function ambilTanggalKtp() {
+    if (!S.pk) return toast("Pilih perkara dulu.");
+    const adaKtp = ["P", "T"].some((w) => (S.bukti[w] || []).some((r) => typeof r.manual !== "string" && jenisBukti(r.nm) === "ktp"));
+    if (!adaKtp) return toast("Belum ada bukti KTP di daftar alat bukti.");
+    toast("Membaca tanggal KTP dari berkas e-Court…");
+    let d;
+    try {
+      d = await ambilPortal(`${API_KTP_PIHAK}?nomor=${encodeURIComponent(nomorPerkara())}&tunggu=1`, { batasMs: BATAS_LAMA_MS }, "Membaca tanggal KTP");
+    } catch (e) {
+      return toast(`Tanggal KTP belum dapat dibaca: ${String((e && e.message) || e)}`);
+    }
+    const pihak = d && Array.isArray(d.pihak) ? d.pihak : [];
+    let n = 0;
+    for (const w of ["P", "T"]) {
+      const rows = S.bukti[w];
+      if (!rows) continue;
+      const calon = pihak
+        .filter((p) => Number(p.cabang) === (w === "P" ? 1 : 2) && p.tanggalKtp && String(p.yakin || "") !== "ragu")
+        .sort((a, b) => (Number(a.urutan) || 0) - (Number(b.urutan) || 0));
+      let j = 0;
+      let ubah = false;
+      for (const r of rows) {
+        if (typeof r.manual === "string" || jenisBukti(r.nm) !== "ktp") continue;
+        const c = calon[j++];
+        if (!c) break;
+        const iso = keIso(c.tanggalKtp);
+        if (!iso || r.tgl === iso) continue;
+        r.tgl = iso;
+        delete r.tglTeks;
+        n += 1;
+        ubah = true;
+      }
+      if (ubah) simpanBukti(w, true);
+    }
+    renderIsian();
+    toast(n ? `${n} tanggal KTP diisi dari berkas e-Court. Periksa sebelum cetak.` : pihak.length ? "Tanggal KTP pada bukti sudah sama dengan yang terbaca dari berkas e-Court." : "Belum ada tanggal KTP yang terbaca dari berkas e-Court perkara ini.");
   }
   async function siapkanBukti() {
     if (!S.susunan) return;
@@ -1317,19 +1456,23 @@
     const b = S.blangko;
     const rek = S.pk ? rekomendasi() : [];
     const disaran = b && rek.some((r) => r.berkas === b.berkas);
+    const saranPertama = rek[0];
     const peringatanSidang = b && b.jenis === "bas" && S.susunan && S.susunan.isian.some((x) => x.jenis !== "tj" && x.wajib)
       ? `<p class="bd-catat bd-ingatsidang">Isian ketikan di bawah ini tersimpan per perkara, <b>bukan per sidang</b>: BAS sidang lain memakai isian yang sama. Cetak segera sesudah mengisi.</p>`
       : "";
+    // Rancangan v12: [kelompok] [nama blangko] [disarankan] dalam satu kotak, lalu satu kalimat saran.
     w.innerHTML =
       `<div class="bd-tk"><div class="bd-ringkas" id="bd-blringkas">${
         b
-          ? `<span class="bd-chip">${esc(NAMA_JENIS[b.jenis] || b.jenis)}</span><span class="bd-potong" title="${esc(b.berkas)} (klik dua kali untuk mengganti blangko)">${esc(namaTampil(b.berkas, b.jenis))}</span>${disaran ? `<span class="bd-chip sebagian">disarankan</span>` : ""}<span class="bd-catat">${esc(b.judul || b.kelompok)}</span>`
+          ? `<span class="bd-chip">${esc(b.judul || b.kelompok || NAMA_JENIS[b.jenis] || b.jenis)}</span><span class="bd-potong" title="${esc(namaTampil(b.berkas, b.jenis))} (klik dua kali untuk mengganti blangko)">${esc(namaTampil(b.berkas, b.jenis))}</span>${disaran ? `<span class="bd-chip sebagian">disarankan</span>` : ""}`
           : `<span class="bd-catat">Belum ada blangko dipilih</span>`
       }</div><button type="button" class="bd-btn kecil${b ? "" : " utama"}" data-bd2="bukamodal">${b ? "Ganti blangko" : "Pilih blangko"}</button></div>` +
       (S.pk
         ? `<p class="bd-petunjuk" id="bd-saranblangko">${
-            rek.length
-              ? `Saran ALETA ${esc(rek[0].alasan || "")}: <b>${esc(namaTampil(rek[0].berkas, rek[0].jenis))}</b>${!b ? ` <button type="button" class="bd-btn kecil" data-bd2="pakairek">Pakai saran ini</button>` : ""}`
+            saranPertama
+              ? b && b.berkas === saranPertama.berkas
+                ? `Saran ALETA ${esc(saranPertama.alasan || "")}.`
+                : `Saran ALETA ${esc(saranPertama.alasan || "")}: <b>${esc(namaTampil(saranPertama.berkas, saranPertama.jenis))}</b>${!b || b.berkas !== saranPertama.berkas ? ` <button type="button" class="bd-btn kecil" data-bd2="pakairek">Pakai saran ini</button>` : ""}`
               : "Sidang ini belum memberi saran blangko untuk peran Anda; pilih sendiri lewat Pilih blangko."
           }</p>`
         : "") +
@@ -1338,7 +1481,7 @@
 
   /**
    * Tahap H 16 Okt: tautan "Edit variabel ini" ke Pengaturan SIPP & ABT portal - hanya Super Admin/Admin (adm()); petugas lain tidak melihatnya.
-   * Tab baru, rel noopener; alamat mengikuti akar portal (basePath) ekstensi.
+   * 16 Okt malam: tautannya pindah ke keterangan ⓘ (kecil, di bawah), tidak lagi di kepala tiap kotak.
    */
   function alamatEditVariabel(kode) {
     return `${location.origin}${AKAR_PORTAL}/admin/pengaturan-sipp-abt?bagian=variabel&noVar=${encodeURIComponent(String(kode || ""))}`;
@@ -1359,14 +1502,15 @@
       return out;
     }
     if (b.khusus === "bukti") {
-      out.push({ t: "sipp", nama: "Data SIPP", jelas: "Nama pihak dan NIK pada bukti KTP diambil ABT dari SIPP; nomor, tanggal, dan penerbit diketik petugas." });
-      out.push({ t: "tangan", nama: "Diketik petugas", jelas: "Nomor surat, tanggal, penerbit, serta pilihan meterai dan pencocokan diisi dari bukti yang diajukan." });
+      out.push({ t: "sipp", nama: "Data SIPP", jelas: "Nama pihak dan NIK pada bukti KTP diambil ABT dari SIPP; bagian lain diisi dari bukti yang diajukan." });
+      out.push({ t: "tangan", nama: "Diketik petugas", jelas: "Atas nama, nomor, tanggal, penerbit, meterai dan pencocokan boleh dikosongkan - kalimat bukti menyesuaikan. Bentuk bukti yang tidak biasa dapat ditulis manual." });
       return out;
     }
-    if (b.pemicu) out.push({ t: "sipp", nama: "Data SIPP", jelas: `Isian ini muncul karena ${keteranganPemicu(b.pemicu)}.` });
+    const alasan = keteranganKeadaan(b);
+    if (alasan) out.push({ t: "sipp", nama: "Data perkara", jelas: `Isian ini muncul karena ${alasan}.` });
     if (S.saran[b.kode]) out.push({ t: "posita", nama: "Bawaan ABT dari data perkara", jelas: `ABT menghitung saran dari data perkara di SIPP (termasuk gugatan): "${potong(S.saran[b.kode], 160)}". Tekan Tab di kotak kosong untuk memakainya.` });
     else if (b.saran) out.push({ t: "posita", nama: "Saran ALETA", jelas: `Saran umum untuk isian ini: "${potong(b.saran, 160)}". Periksa dengan gugatan sebelum dipakai.` });
-    if (b.dipakaiOleh && b.dipakaiOleh.length) out.push({ t: "rumus", nama: `Ikut mengubah ${b.dipakaiOleh.length} bagian`, jelas: `Nilai ini dibaca ${b.dipakaiOleh.length} bagian otomatis lain di naskah (mis. amar, pertimbangan), jadi isilah dengan teliti.` });
+    if (b.dipakaiOleh && b.dipakaiOleh.length) out.push({ t: "rumus", nama: "Dipakai juga di bagian lain", jelas: "Nilai ini juga dibaca bagian otomatis lain di naskah (mis. amar, pertimbangan), jadi isilah dengan teliti." });
     out.push({ t: "tangan", nama: "Diketik petugas", jelas: b.jenis === "tanggal" ? "Tanggal diketik petugas, tersimpan di ABT untuk perkara ini." : "Diketik petugas (atau dipilih dari pilihan), tersimpan di ABT untuk perkara ini." });
     return out;
   }
@@ -1380,13 +1524,30 @@
     const sr = cfg().saran ? saranUntuk(b) : "";
     const st = S.tersimpan[b.kode] || "";
     const pil = b.pilihan || [];
-    const muncul = b.pemicu ? `<p class="bd-pemicuinfo">muncul karena <b>${esc(keteranganPemicu(b.pemicu))}</b></p>` : "";
-    const penting = b.dipakaiOleh && b.dipakaiOleh.length >= 3 ? `<span class="bd-chip sebagian" title="Nilai ini dibaca ${b.dipakaiOleh.length} bagian lain di naskah">Penting · ikut mengubah ${b.dipakaiOleh.length} bagian</span>` : "";
+    const opsi = Array.isArray(b.opsi) ? b.opsi : [];
+    // e-Court adalah keadaan sebagian besar perkara: tanpa lencana "muncul karena" supaya kotak tetap ringkas.
+    const alasan = (b.keadaan || b.pemicu) && b.keadaan !== "ecourt" ? keteranganKeadaan(b) : "";
+    const muncul = alasan ? `<span class="bd-muncul">muncul karena ${esc(alasan)}</span>` : "";
+    const tanda = S.tandaKosong.has(b.kode) && !v.trim() ? ` bd-kosongcetak${b.tingkat === "tambahan" ? " tambahan" : ""}` : "";
+    const ro = bolehTulis() ? "" : "disabled";
+    let isian;
+    if (opsi.length) {
+      // Pilihan bernilai (mis. beracara elektronik: ABT menyimpan 1/2) - petugas hanya melihat kalimatnya.
+      const ada = opsi.some((o) => o.nilai === v);
+      isian =
+        `<div class="bd-isiwadah"><select id="bd-i${b.kode}" class="bd-opsi" data-k="${b.kode}" ${ro}><option value="" ${v ? "" : "selected"}>${esc(sr && !ada ? sr : "pilih…")}</option>` +
+        opsi.map((o) => `<option value="${esc(o.nilai)}" ${o.nilai === v ? "selected" : ""}>${esc(o.label)}</option>`).join("") +
+        (v && !ada ? `<option value="${esc(v)}" selected>${esc(v)}</option>` : "") +
+        `</select></div>`;
+    } else {
+      isian =
+        `<div class="bd-isiwadah"><input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>` +
+        `${pil.length ? `<button type="button" class="bd-ikon" data-menu="${b.kode}" aria-label="Pilihan lain untuk ${esc(b.nama)}" tabindex="-1">▾</button>` : ""}</div>` +
+        `${S.menuSaran === b.kode && pil.length ? `<div class="bd-saranmenu" role="listbox">${pil.map((o) => `<button type="button" role="option" data-ambil="${b.kode}" data-nilai="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}`;
+    }
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${penting ? " kunci" : ""}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}${tautanEditVariabel(b.kode)}${penting}</div>${muncul}` +
-      `<div class="bd-isiwadah"><input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>` +
-      `${pil.length ? `<button type="button" class="bd-ikon" data-menu="${b.kode}" aria-label="Pilihan lain untuk ${esc(b.nama)}" tabindex="-1">▾</button>` : ""}</div>` +
-      `${S.menuSaran === b.kode && pil.length ? `<div class="bd-saranmenu" role="listbox">${pil.map((o) => `<button type="button" role="option" data-ambil="${b.kode}" data-nilai="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
+      isian +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st))}</span></div>`
     );
   }
@@ -1398,22 +1559,41 @@
       e.classList.toggle("gagal", String(S.tersimpan[kode] || "").startsWith("gagal"));
     }
     const f = cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
-    if (f) f.classList.toggle("beres", Boolean(String(S.isi[kode] || "").trim()));
+    const ada = Boolean(String(S.isi[kode] || "").trim());
+    if (f) {
+      f.classList.toggle("beres", ada);
+      if (ada) f.classList.remove("bd-kosongcetak", "bd-getar", "tambahan");
+    }
   }
+  const LABEL_NOMOR = { ktp: ["NIK", "16 angka NIK"], kk: ["Nomor KK", "nomor Kartu Keluarga"], "": ["Nomor surat", "boleh kosong"] };
   function kotakBukti(b) {
     const rows = S.bukti[b.pihak];
     const w = b.pihak;
     if (!rows) return `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama)}</div><p class="bd-catat">Membaca bukti bawaan dari ABT…</p></div>`;
     return (
-      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama)}${tautanEditVariabel(b.kode)}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>` +
+      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama)}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>` +
       rows
-        .map(
-          (r, i) =>
-            `<div class="bd-bukti"><div class="bd-bkepala"><span class="bd-kodeP">${w}.${i + 1}</span><input class="bd-bnama" data-bk="${w}.${i}" data-isi="nm" value="${esc(r.nm)}" aria-label="Nama bukti ${w}.${i + 1}"><button type="button" class="bd-ikon" data-bkhapus="${w}.${i}" aria-label="Hapus bukti ${w}.${i + 1}">✕</button></div>` +
-            `<div class="bd-bgrid"><label>Nomor<input data-bk="${w}.${i}" data-isi="no" value="${esc(r.no)}" placeholder="nomor surat atau akta"></label><label>Tanggal<input type="date" data-bk="${w}.${i}" data-isi="tgl" value="${esc(r.tgl)}"></label><label class="dua2">Dikeluarkan oleh<input data-bk="${w}.${i}" data-isi="oleh" value="${esc(r.oleh)}"></label></div>` +
-            `<div class="bd-bgrid"><label>Meterai<select data-bk="${w}.${i}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label><label class="dua2">Pencocokan<select data-bk="${w}.${i}" data-isi="cocok">${PIL_COCOK.map((o, j) => `<option value="${j}" ${Number(r.cocok) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
-            `<p class="bd-catat">Kode ${w}.${i + 1}, tanggal dan paraf Ketua Majelis ditulis otomatis.</p></div>`
-        )
+        .map((r, i) => {
+          const kode = `${w}.${i + 1}`;
+          const id = `${w}.${i}`;
+          const manual = typeof r.manual === "string";
+          const [lblNo, phNo] = LABEL_NOMOR[jenisBukti(r.nm)];
+          const kepala =
+            `<div class="bd-bkepala"><span class="bd-kodeP">${kode}</span><input class="bd-bnama" data-bk="${id}" data-isi="nm" value="${esc(r.nm)}" aria-label="Nama bukti ${kode}" ${manual ? "disabled" : ""}>` +
+            `<button type="button" class="bd-btn kecil" data-bkmanual="${id}" aria-pressed="${manual}" title="${manual ? "Kembali menyusun kalimat dari isian" : "Sunting kalimat bukti ini bebas (bentuk bukti beragam)"}">${manual ? "Pakai isian" : "Tulis manual"}</button>` +
+            `<button type="button" class="bd-ikon" data-bkhapus="${id}" aria-label="Hapus bukti ${kode}">✕</button></div>`;
+          if (manual)
+            return (
+              `<div class="bd-bukti" data-manual="1">${kepala}<textarea class="bd-bmanual" data-bk="${id}" data-isi="manual" aria-label="Kalimat bukti ${kode}">${esc(r.manual)}</textarea>` +
+              `<p class="bd-catat">Kalimat ini dicetak apa adanya. Kode ${kode} diganti otomatis bila urutan bukti berubah; bila tidak ditulis, kode, tanggal dan paraf Ketua Majelis ditambahkan di akhir.</p></div>`
+            );
+          return (
+            `<div class="bd-bukti">${kepala}` +
+            `<div class="bd-bgrid"><label>Atas nama<input data-bk="${id}" data-isi="an" value="${esc(r.an || "")}" placeholder="boleh kosong"></label><label>${lblNo}<input data-bk="${id}" data-isi="no" value="${esc(r.no)}" placeholder="${esc(phNo)}"></label><label>Tanggal<input type="date" data-bk="${id}" data-isi="tgl" value="${esc(r.tgl)}"></label><label class="dua2">Dikeluarkan oleh<input data-bk="${id}" data-isi="oleh" value="${esc(r.oleh)}" placeholder="boleh kosong"></label></div>` +
+            `<div class="bd-bgrid"><label>Meterai<select data-bk="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label><label class="dua2">Dicocokkan dengan aslinya<select data-bk="${id}" data-isi="cocok">${PIL_COCOK.map((o, j) => `<option value="${j}" ${Number(r.cocok) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
+            `<p class="bd-catat">Kode ${kode}, tanggal dan paraf Ketua Majelis ditulis otomatis. Bagian yang kosong tidak ikut ditulis.</p></div>`
+          );
+        })
         .join("") +
       `<div class="bd-baris"><span class="bd-lbl">Tambah bukti</span>${BUKTI_CEPAT.map(([n, o]) => `<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="${esc(n)}" data-oleh="${esc(o)}">+ ${esc(n)}</button>`).join("")}<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="" data-oleh="">+ Bukti lain</button></div></div>`
     );
@@ -1430,27 +1610,32 @@
       return;
     }
     if (!S.susunan) {
-      w.innerHTML = `<p class="bd-catat" role="status">Membaca isian blangko ini (penanda blangko dan isian yang sudah tersimpan di ABT)…</p>`;
+      w.innerHTML = `<p class="bd-catat" role="status">Membaca isian blangko ini…</p>`;
       return;
     }
     const l = daftarPerlu();
     const grid = l.filter((x) => x.jenis !== "tj");
     const tj = l.filter((x) => x.jenis === "tj");
-    const sembunyi = S.susunan.isian.filter((b) => b.wajib && b.pemicu && !pemicuMenyala(b.pemicu));
+    const takBerlaku = daftarTakBerlaku();
     const pilihan = S.susunan.isian.filter((b) => !b.wajib);
-    const nilaiAbt = S.susunan.nilaiAda ? "" : ` <span class="bd-catat">(nilai dibaca langsung dari jendela ABT${S.susunan.nilaiSebab ? `: ${esc(S.susunan.nilaiSebab)}` : ""})</span>`;
+    const nilaiAbt = S.susunan.nilaiAda || !adm() ? "" : ` <span class="bd-catat">(nilai dibaca langsung dari jendela ABT${S.susunan.nilaiSebab ? `: ${esc(S.susunan.nilaiSebab)}` : ""})</span>`;
+    const alasanSembunyi = [...new Set(takBerlaku.map((b) => KEADAAN_SINGKAT[b.keadaan] || keteranganKeadaan(b)).filter(Boolean))];
     w.innerHTML =
-      `<p class="bd-petunjuk">Tulisan samar di kotak adalah saran. Tekan <kbd>Tab</kbd> untuk memakainya, <kbd>↓</kbd> untuk pilihan lain. Isian tersimpan ke ABT begitu Anda pindah kotak.${bolehTulis() ? "" : ` <b>Akun Anda hanya dapat melihat; ${esc(NAMA_JENIS[S.blangko.jenis].toLowerCase())} ditulis ${esc(NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara")}.</b>`}${nilaiAbt}</p>` +
+      `<p class="bd-petunjuk">Tulisan samar di kotak adalah saran ALETA. Tekan <kbd>Tab</kbd> untuk memakainya, atau <kbd>↓</kbd> untuk pilihan lain. Data lain sudah terisi sendiri.${bolehTulis() ? "" : ` <b>Akun Anda hanya dapat melihat; ${esc(NAMA_JENIS[S.blangko.jenis].toLowerCase())} ditulis ${esc(NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara")}.</b>`}${nilaiAbt}</p>` +
       `<div class="bd-bar"><span id="bd-barisi"></span></div><div class="bd-alatkecil" id="bd-alatisi"></div>` +
       `<div class="bd-pgrid" id="bd-perlu">${grid.length ? grid.map((b) => (b.khusus === "bukti" ? kotakBukti(b) : kotakIsian(b))).join("") : tj.length ? "" : `<p class="bd-ok">Blangko ini tidak perlu diisi tangan; semua terisi sendiri dari SIPP dan aturan ABT.</p>`}</div>` +
       `<div id="bd-tjtombol" class="bd-baris"></div><div id="bd-tjwadah"></div>` +
-      (sembunyi.length ? `<p class="bd-catat">${sembunyi.length} isian tidak berlaku untuk perkara ini (${esc([...new Set(sembunyi.map((b) => keteranganPemicu(b.pemicu).replace(/ \(terbaca dari SIPP\)/, "")))].join("; "))} tidak terjadi) dan disembunyikan.</p>` : "") +
-      `<div class="bd-baris"><button type="button" class="bd-btn kecil" data-bd2="semua" aria-expanded="${S.semuaBuka}">Lihat semua isi data (${S.susunan.otomatis.length + pilihan.length})</button>${S.susunan.takDikenal && S.susunan.takDikenal.length ? `<span class="bd-catat">${S.susunan.takDikenal.length} penanda blangko tidak ada di katalog ABT: ${esc(S.susunan.takDikenal.join(", "))}</span>` : ""}</div>` +
+      (takBerlaku.length
+        ? `<p class="bd-sembunyiinfo">${S.tampilTakBerlaku ? `${takBerlaku.length} isian yang biasanya tidak berlaku ikut ditampilkan.` : `${takBerlaku.length} isian tidak berlaku untuk perkara ini dan disembunyikan${alasanSembunyi.length ? ` (${esc(alasanSembunyi.join(", "))})` : ""}.`} <button type="button" class="bd-tautankecil" data-bd2="takberlaku" aria-pressed="${S.tampilTakBerlaku}">${S.tampilTakBerlaku ? "Sembunyikan lagi" : "Tampilkan juga"}</button></p>`
+        : "") +
+      `<div class="bd-baris"><button type="button" class="bd-btn kecil" data-bd2="semua" aria-expanded="${S.semuaBuka}">Lihat semua isi data (${S.susunan.otomatis.length + pilihan.length})</button>${adm() && S.susunan.takDikenal && S.susunan.takDikenal.length ? `<span class="bd-catat">${S.susunan.takDikenal.length} penanda blangko tidak ada di katalog ABT: ${esc(S.susunan.takDikenal.join(", "))}</span>` : ""}</div>` +
       `<div class="bd-vdaftar" id="bd-vdaftar" ${S.semuaBuka ? "" : "hidden"}></div>`;
+    // Rancangan v12: tiga alat ekstensi lama berjajar di atas kotak isian.
     const alat = [];
     if (S.blangko.jenis !== "rel" && bolehTulis()) {
-      if (grid.some((b) => saranUntuk(b) && !String(S.isi[b.kode] || "").trim())) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="pakaisaran">Pakai semua saran yang masih kosong</button>`);
+      alat.push(`<button type="button" class="bd-btn kecil" data-bd2="pakaisaran" title="Isi kotak yang masih kosong dengan saran dari gugatan dan data perkara">Isi dari gugatan (posita)</button>`);
       if (tj.length) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="bukatj">Set pertanyaan saksi</button>`);
+      if (grid.some((b) => b.khusus === "bukti")) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="ktpbukti" title="Tanggal KTP pihak dibaca dari berkas KTP e-Court">Ambil tanggal KTP dari bukti</button>`);
     }
     cari("#bd-alatisi", w).innerHTML = alat.join("");
     renderTj();
@@ -2207,14 +2392,36 @@
     const st = cari("#bd-statuscetak", wadah.cetak);
     if (st) st.textContent = teks;
   }
+  /**
+   * Pengingat cetak. Kotak yang masih kosong diberi tanda kuning + getar singkat (bingkai kuning per kotak HANYA
+   * di sini), lalu daftar dikelompokkan menurut tingkatnya:
+   *   Penting - isian yang tertulis langsung di naskah atau dibaca amar/pertimbangan/duduk perkara, bukti, saksi;
+   *   Tidak wajib - isian berbawaan ("kosong = ...", "bila SIPP tidak memuat") atau keterangan tambahan.
+   * kos: [{ b, nama, tingkat }] dari kosongRinci(); hs: penanda naskah yang belum terbaca.
+   */
   function tampilIngat(kos, hs) {
     const e = cari("#bd-ingat", wadah.cetak);
     if (!e) return;
+    const penting = kos.filter((x) => x.tingkat !== "tambahan");
+    const tambahan = kos.filter((x) => x.tingkat === "tambahan");
+    S.tandaKosong = new Set(kos.filter((x) => x.b.khusus !== "bukti" && x.b.jenis !== "tj").map((x) => x.b.kode));
+    for (const x of kos) {
+      const f = cari(`.bd-f[data-f="${x.b.kode}"]`, wadah.isian);
+      if (!f) continue;
+      f.classList.add("bd-kosongcetak");
+      f.classList.toggle("tambahan", x.tingkat === "tambahan");
+      f.classList.remove("bd-getar");
+      void f.offsetWidth; // getar diulang tiap Cetak
+      f.classList.add("bd-getar");
+    }
+    const daftar = (l) => `<ul>${l.map((x) => `<li>${esc(x.nama)}</li>`).join("")}</ul>`;
     e.hidden = false;
     e.innerHTML =
-      (kos.length ? `<b>Masih ada ${kos.length} isian kosong:</b> ${esc(kos.join(", "))}. Bagian itu akan tercetak titik-titik.<br>` : "") +
-      (hs.length ? `<b>Ada ${hs.length} bagian yang belum terisi otomatis:</b> ${esc(hs.join(", "))}. Bagian itu akan tercetak apa adanya (kode).<br>` : "") +
-      `Tekan <b>Cetak</b> sekali lagi untuk tetap mencetak. <div class="bd-baris" style="margin-top:6px">${kos.length ? `<button type="button" class="bd-btn kecil" data-bd2="isidulu">Isi dulu</button>` : ""}${hs.length ? `<button type="button" class="bd-btn kecil" data-bd2="lihatbagian">Lihat di pratinjau</button>` : ""}<button type="button" class="bd-btn kecil" data-bd2="tetapcetak">Tetap cetak</button></div>`;
+      (penting.length ? `<h4>Penting - sebaiknya diisi sebelum cetak (${penting.length})</h4>${daftar(penting)}` : "") +
+      (tambahan.length ? `<h4 class="tidakwajib">Tidak wajib (${tambahan.length})</h4><div class="tidakwajib">${daftar(tambahan)}</div>` : "") +
+      (kos.length ? `<p class="bd-catat">Isian yang kosong tercetak titik-titik.</p>` : "") +
+      (hs.length ? `<p><b>Ada ${hs.length} bagian naskah yang belum terisi otomatis${adm() ? `: ${esc(hs.join(", "))}` : ""}.</b> Bagian itu akan tercetak apa adanya.</p>` : "") +
+      `<div class="bd-baris" style="margin-top:6px">${kos.length ? `<button type="button" class="bd-btn kecil utama" data-bd2="isidulu">Isi dulu</button>` : ""}${hs.length ? `<button type="button" class="bd-btn kecil" data-bd2="lihatbagian">Lihat di pratinjau</button>` : ""}<button type="button" class="bd-btn kecil" data-bd2="tetapcetak">Tetap cetak</button><span class="bd-catat">atau tekan Cetak sekali lagi.</span></div>`;
     e.scrollIntoView && e.scrollIntoView({ block: "center" });
   }
   const namaPenanda = (k) => {
@@ -2230,7 +2437,7 @@
     try {
       catatLog("meminta naskah dari ABT…");
       const rtf = await ambilRtf(S.prat.kotor);
-      const kos = cfg().ingat !== false ? kosongDaftar() : [];
+      const kos = cfg().ingat !== false ? kosongRinci() : [];
       const hs = S.prat.penanda.map(namaPenanda);
       if ((kos.length || hs.length) && !S.peringat && !paksa) {
         S.peringat = true;
@@ -2366,12 +2573,15 @@
   // ──────────────────────────────────────────────────────────────────────────
   function taruhPop(pop, jangkar) {
     pop.hidden = false;
+    // Akar tampilan dapat ber-zoom (melawan zoom kecil halaman ABT): koordinat layar dibagi skala itu.
+    const a = api();
+    const z = a && typeof a.skala === "function" ? Number(a.skala()) || 1 : 1;
     const vw = document.documentElement.clientWidth || window.innerWidth;
     const vh = window.innerHeight || 600;
     const r = jangkar.getBoundingClientRect();
-    pop.style.maxHeight = `${vh - 16}px`;
-    const w = Math.min(pop.offsetWidth || 320, vw - 16);
-    const h = Math.min(pop.offsetHeight || 240, vh - 16);
+    pop.style.maxHeight = `${(vh - 16) / z}px`;
+    const w = Math.min((pop.offsetWidth || 320) * z, vw - 16);
+    const h = Math.min((pop.offsetHeight || 240) * z, vh - 16);
     let left = r.left;
     left = Math.max(8, Math.min(left, vw - w - 8));
     let top = r.bottom + 6;
@@ -2379,8 +2589,8 @@
       const atas = r.top - 6 - h;
       top = atas >= 8 ? atas : Math.max(8, vh - 8 - h);
     }
-    pop.style.left = `${left}px`;
-    pop.style.top = `${top}px`;
+    pop.style.left = `${left / z}px`;
+    pop.style.top = `${top / z}px`;
   }
   let popSumberJangkar = null;
   function bukaSumber(btn) {
@@ -2394,7 +2604,8 @@
     pop.innerHTML =
       `<div class="bd-pkepala"><b>Dari mana isian ini?</b><button type="button" class="bd-ikon" data-bd2="tutupsumber" aria-label="Tutup keterangan sumber">✕</button></div><p class="bd-sumnama">${esc(nama)}</p>` +
       l.map((x) => `<div class="bd-sumitem"><span class="bd-chip bd-sumchip ${x.t}">${esc(x.nama)}</span><p>${esc(x.jelas)}</p></div>`).join("") +
-      `<p class="bd-catat">Yang Anda ketik sendiri selalu didahulukan dan tersimpan di ABT.</p>`;
+      `<p class="bd-catat">Yang Anda ketik sendiri selalu didahulukan dan tersimpan di ABT.</p>` +
+      (it && it.jenis !== "tj" && adm() ? `<p class="bd-sumadmin">Admin: ${tautanEditVariabel(it.kode)}</p>` : "");
     popSumberJangkar = btn;
     cariSemua(".bd-sumber[aria-expanded]", wadah.akar).forEach((b) => b.setAttribute("aria-expanded", "false"));
     btn.setAttribute("aria-expanded", "true");
@@ -2419,7 +2630,7 @@
   function pakaiSemuaSaran() {
     let n = 0;
     for (const b of daftarPerlu()) {
-      if (b.jenis !== "teks" || String(S.isi[b.kode] || "").trim()) continue;
+      if (b.jenis !== "teks" || (b.opsi && b.opsi.length) || String(S.isi[b.kode] || "").trim()) continue;
       const sr = saranUntuk(b);
       if (!sr) continue;
       jadwalkanSimpan(b.kode, sr);
@@ -2463,6 +2674,13 @@
     }
     if (kode === "ulangsusunan") return void muatSusunan();
     if (kode === "pakaisaran") return pakaiSemuaSaran();
+    if (kode === "ktpbukti") return void ambilTanggalKtp();
+    if (kode === "takberlaku") {
+      S.tampilTakBerlaku = !S.tampilTakBerlaku;
+      renderIsian();
+      laporKeKerangka();
+      return;
+    }
     if (kode === "bukatj") {
       const it = daftarPerlu().find((x) => x.jenis === "tj");
       return it ? void bukaTj(it.tj.kunci) : undefined;
@@ -2549,7 +2767,10 @@
       const e2 = cari("#bd-ingat", wadah.cetak);
       if (e2) e2.hidden = true;
       S.peringat = false;
-      const kosong = cariSemua("#bd-perlu .bd-f:not(.beres) input", wadah.isian)[0];
+      // Loncat ke isian PENTING pertama yang kosong (bila tidak ada, isian kosong pertama).
+      const kosong =
+        cariSemua("#bd-perlu .bd-f.bd-kosongcetak:not(.tambahan) input, #bd-perlu .bd-f.bd-kosongcetak:not(.tambahan) select", wadah.isian)[0] ||
+        cariSemua("#bd-perlu .bd-f:not(.beres) input, #bd-perlu .bd-f:not(.beres) select", wadah.isian)[0];
       if (kosong) {
         kosong.focus();
         kosong.scrollIntoView && kosong.scrollIntoView({ block: "center" });
@@ -2609,6 +2830,20 @@
       S.bukti[w].push(buktiBaru(tambahBukti.getAttribute("data-nama"), tambahBukti.getAttribute("data-oleh")));
       simpanBukti(w, false);
       return renderIsian();
+    }
+    const manualBukti = c("[data-bkmanual]");
+    if (manualBukti) {
+      const [w, i] = manualBukti.getAttribute("data-bkmanual").split(".");
+      const r = S.bukti[w] && S.bukti[w][Number(i)];
+      if (!r) return;
+      // Tulis manual: kalimat utuh disunting bebas, isian terstruktur dikunci (tidak dibuang) dan dapat dipakai lagi.
+      if (typeof r.manual === "string") r.manual = null;
+      else r.manual = kalimatBukti({ ...r, manual: null }, w, Number(i));
+      simpanBukti(w, false);
+      renderIsian();
+      const el = cari(`[data-bk="${w}.${i}"][data-isi="${typeof r.manual === "string" ? "manual" : "nm"}"]`, wadah.isian);
+      if (el) el.focus();
+      return;
     }
     const hapusBukti = c("[data-bkhapus]");
     if (hapusBukti) {
@@ -2904,7 +3139,10 @@
     const t = e.target;
     const k = t.getAttribute && t.getAttribute("data-k");
     if (k) {
-      if (t.type === "date" || t.closest("#bd-vdaftar")) jadwalkanSimpan(k, t.value, true);
+      if (t.type === "date" || t.tagName === "SELECT" || t.closest("#bd-vdaftar")) {
+        jadwalkanSimpan(k, t.value, true);
+        if (t.tagName === "SELECT") renderStatusIsian(k);
+      }
       return;
     }
     const bk = t.getAttribute && t.getAttribute("data-bk");
@@ -2940,7 +3178,7 @@
   function saatBlur(e) {
     const t = e.target;
     const k = t.getAttribute && t.getAttribute("data-k");
-    if (!k || t.type === "date") return;
+    if (!k || t.type === "date" || t.tagName === "SELECT") return;
     const nilai = t.value;
     const lama = S.nilai[k] ? String(S.nilai[k].teks || "") : "";
     if (nilai === lama || (!nilai.trim() && !lama.trim())) return;
@@ -3066,6 +3304,8 @@
       S.peringat = false;
       S.ttdPilih = new Set();
       S.log = [];
+      S.tampilTakBerlaku = false;
+      S.tandaKosong = new Set();
       if (d) {
         void bacaPenyimpanan(null).then((s) => {
           for (const [k, v] of Object.entries(s || {})) if (k.startsWith(`${K_CETAK}:${d.nomorPerkara}|`)) S.cetakTercatat[k.slice(K_CETAK.length + 1)] = v;
@@ -3106,6 +3346,7 @@
       if (!it) return toast(S.blangko ? "Blangko ini tidak memakai tanya jawab saksi." : "Pilih blangko dulu.");
       void bukaTj(it.tj.kunci);
     });
+    a.daftarkanAlat("ktp", () => (S.susunan ? void ambilTanggalKtp() : toast("Pilih blangko dulu.")));
     a.daftarkanAlat("cek", () => {
       if (!S.susunan) return toast("Pilih blangko dulu.");
       const k = kosongDaftar();
@@ -3183,8 +3424,11 @@
       peringat: S.peringat,
       log: S.log.slice(),
       hitung: S.susunan ? hitung() : null,
+      perlu: daftarPerlu().map((b) => b.kode),
+      takBerlaku: daftarTakBerlaku().map((b) => b.kode),
+      tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
+    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

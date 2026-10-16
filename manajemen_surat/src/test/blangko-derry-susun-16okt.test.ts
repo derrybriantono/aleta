@@ -79,7 +79,7 @@ describe("A. susunIsian", () => {
   it("isian berpemicu memuat kode pemicu dan keterangannya; penanda teknis & 'kosong = dari SIPP' bukan wajib", () => {
     const h = susunIsian(["0156", "0184", "8537", "0661", "8536", "0227", "11115", "8505"], KATALOG);
     const by = (k: string) => h.isian.find((b) => b.kode === k)!;
-    expect(by("0156")).toMatchObject({ pemicu: "11111", nama: "Nama kantor advokat Penggugat", wajib: true });
+    expect(by("0156")).toMatchObject({ pemicu: "11111", nama: "Nama kantor advokat Penggugat/Pemohon", wajib: true });
     expect(by("0184")).toMatchObject({ pemicu: "11111", jenis: "tanggal" });
     expect(by("8537")).toMatchObject({ pemicu: "11111", wajib: false });
     expect(by("0661")).toMatchObject({ pemicu: "11112", wajib: true, dipakaiOleh: ["8505"] });
@@ -93,7 +93,7 @@ describe("A. susunIsian", () => {
 
   it("bukti P/T dikenali; tanya jawab satu tombol per saksi dengan kode penyunting TanyaJwb", () => {
     const h = susunIsian(["1214", "9911", "2021", "2022", "5058", "6112"], KATALOG);
-    expect(h.isian.find((b) => b.kode === "1214")).toMatchObject({ khusus: "bukti", pihak: "P", nama: "Alat bukti surat Penggugat" });
+    expect(h.isian.find((b) => b.kode === "1214")).toMatchObject({ khusus: "bukti", pihak: "P", nama: "Alat bukti surat Penggugat/Pemohon" });
     expect(h.isian.find((b) => b.kode === "9911")).toMatchObject({ khusus: "bukti", pihak: "T" });
     const tj = h.isian.filter((b) => b.jenis === "tj");
     // 2021 (Keterangan) dan 5058 (TanyaJwb) saksi 1 P = satu tombol; penyuntingnya 5058.

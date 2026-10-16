@@ -4009,24 +4009,26 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .w3l_header span {
 }
 
 /* --- Tabel variabel ------------------------------------------------------ */
-html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(table, .table-bordered, .table-hover) {
+/* 16 Okt malam: peta gelap ABT (!important) tidak berlaku di dalam Blangko ABT by Derry Briantono -
+   tampilan itu punya warna rancangannya sendiri (gelap/terang) di blangko-derry.css. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(table, .table-bordered, .table-hover):where(:not(#aleta-bd-akar *, #aleta-bd-tawar *)) {
   background: var(--s-permukaan) !important;
   border-color: var(--s-garis) !important;
 }
 
-html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(table td, table th, .table-bordered td, .table-bordered th) {
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(table td, table th, .table-bordered td, .table-bordered th):where(:not(#aleta-bd-akar *, #aleta-bd-tawar *)) {
   background-color: transparent !important;
   border-color: var(--s-garis) !important;
   color: var(--s-tulisan) !important;
 }
 
-html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(thead th, thead td) {
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(thead th, thead td):where(:not(#aleta-bd-akar *, #aleta-bd-tawar *)) {
   background: var(--s-hijau-tua) !important;
   color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
-html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] tbody tr:nth-child(even) td {
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] tbody tr:nth-child(even) td:where(:not(#aleta-bd-akar *, #aleta-bd-tawar *)) {
   background-color: var(--s-permukaan-2) !important;
 }
 
@@ -4077,14 +4079,14 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .delapan {
   color: #ffc9c4 !important;
 }
 
-html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.btn, button, input[type="submit"], input[type="button"]) {
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.btn, button, input[type="submit"], input[type="button"]):where(:not(#aleta-bd-akar *, #aleta-bd-tawar *)) {
   background-color: var(--s-permukaan-3) !important;
   color: var(--s-tulisan) !important;
   border-color: var(--s-garis) !important;
 }
 
 /* --- Isian borang -------------------------------------------------------- */
-html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(input, select, textarea) {
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(input, select, textarea):where(:not(#aleta-bd-akar *, #aleta-bd-tawar *)) {
   background-color: var(--s-permukaan-3) !important;
   color: var(--s-tulisan) !important;
   border-color: var(--s-garis) !important;

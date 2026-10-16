@@ -73,6 +73,7 @@
     ingat: "blangkoDerryIngat",
     tema: "temaPanel",
     daftar: "blangkoDerryDaftar",
+    ukuran: "blangkoDerryUkuran",
     aktif: "aktif",
   };
   const SESI_LAMA = "aleta-bd-lama";
@@ -442,6 +443,8 @@
     rekomendasi: null,
     floatBuka: null,
     nyala: false,
+    ukuran: "biasa",
+    skala: 1,
   };
   const singgah = new Map();
   let akar = null;
@@ -549,9 +552,10 @@
       ingat: s[K.ingat] !== false,
     };
     S.tema = s[K.tema] === "terang" ? "terang" : "gelap";
+    S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
   }
   async function muatSetelan() {
-    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tema, K.daftar, K.aktif]);
+    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tema, K.daftar, K.aktif, K.ukuran]);
     terapkanSetelan(s);
     const d = s[K.daftar];
     if (d && typeof d === "object") {
@@ -619,6 +623,7 @@
       `<button type="button" class="bd-tautan" data-bd="tawar-jangan">Jangan tawarkan lagi</button>`;
     tawar.setAttribute("data-tema", S.tema);
     document.body.appendChild(tawar);
+    terapkanSkala();
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -655,31 +660,36 @@
     akar.setAttribute("data-tema", S.tema);
     akar.setAttribute("role", "region");
     akar.setAttribute("aria-label", "Blangko ABT by Derry Briantono");
+    // Rancangan v12: satu "layar" selebar 1280px berbingkai, bilah atas hijau di dalamnya (judul + nama akun +
+    // Alat saya + Tampilan ABT lama). "Lihat sebagai akun" untuk admin dibuat kecil di bilah atas, tidak di badan.
     akar.innerHTML =
-      `<div class="bd-atas"><div><b>Blangko ABT by Derry Briantono</b> <small id="bd-siapa"></small></div>` +
+      `<div class="bd-layar">` +
+      `<div class="bd-atas"><div class="bd-atasnama"><b>Blangko ABT by Derry Briantono</b> <small id="bd-siapa"></small>` +
+      `<span class="bd-lihatwrap" id="bd-lihatwrap" hidden><label for="bd-lihat">Lihat sebagai</label><select id="bd-lihat" aria-label="Lihat sebagai akun"></select></span></div>` +
       `<div class="bd-baris"><button type="button" class="bd-btn kecil" id="bd-alat-btn" data-bd="alat" aria-expanded="false" aria-controls="bd-alat">Alat saya ▾</button>` +
-      `<button type="button" class="bd-btn kecil" id="bd-widget-btn" data-bd="widget" aria-expanded="false" aria-controls="bd-widget">Widget ALETA ▾</button>` +
+      `<button type="button" class="bd-btn kecil" id="bd-widget-btn" data-bd="widget" aria-expanded="false" aria-controls="bd-widget" title="Pengaturan ALETA untuk tampilan ini">Widget ALETA ▾</button>` +
       `<button type="button" class="bd-btn kecil" data-bd="keabt">Tampilan ABT lama</button></div></div>` +
       `<div class="bd-isi">` +
-      `<div class="bd-baris" id="bd-lihatwrap" hidden><label class="bd-lbl" for="bd-lihat">Lihat sebagai akun</label><select id="bd-lihat" aria-label="Lihat sebagai akun"></select></div>` +
       `<section class="bd-tahap" id="bd-t1"><div class="bd-tk"><span class="bd-tno">1</span><span class="bd-tj">Perkara</span>` +
       `<div class="bd-ringkas" id="bd-pkringkas" hidden></div><button type="button" class="bd-btn kecil" id="bd-ganti" data-bd="ganti" hidden>Ganti perkara</button></div>` +
       `<div id="bd-pkpilih"></div></section>` +
       `<div id="bd-setelah" class="bd-kolom" hidden>` +
-      `<section class="bd-tahap menyusul" id="bd-w-pilih-blangko" data-tahap="E"><div class="bd-tk"><span class="bd-tno">2</span><span class="bd-tj">Blangko</span><span class="bd-chip">menyusul · tahap E</span></div>` +
+      `<section class="bd-tahap bd-sebaris menyusul" id="bd-w-pilih-blangko" data-tahap="E"><div class="bd-tk"><span class="bd-tno">2</span><span class="bd-tj">Blangko</span><span class="bd-chip">menyusul · tahap E</span></div>` +
       `<div class="bd-wadahkosong" data-wadah="pilih-blangko"><b>Pilih blangko</b> akan tampil di sini: jendela dua kolom dengan saran dari keterangan sidang dan peta perkara.<div class="bd-menuderry" id="bd-menuderry"></div></div></section>` +
-      `<section class="bd-tahap menyusul" id="bd-w-perlu-diisi" data-tahap="F"><div class="bd-tk"><span class="bd-tno">3</span><span class="bd-tj">Perlu diisi</span><span class="bd-chip">menyusul · tahap F</span></div>` +
+      `<section class="bd-tahap bd-utama3 menyusul" id="bd-w-perlu-diisi" data-tahap="F"><div class="bd-tk"><span class="bd-tno">3</span><span class="bd-tj">Perlu diisi</span><span class="bd-chip">menyusul · tahap F</span></div>` +
       `<div class="bd-wadahkosong" data-wadah="perlu-diisi"><b>Isian yang perlu diisi tangan</b>, saran samar (Tab), dan tanya jawab saksi akan tampil di sini.</div></section>` +
       `<section class="bd-tahap menyusul" id="bd-w-pratinjau" data-tahap="G"><div class="bd-tk"><span class="bd-tno">4</span><span class="bd-tj">Pratinjau</span><span class="bd-chip">menyusul · tahap G</span></div>` +
       `<div class="bd-wadahkosong" data-wadah="pratinjau"><b>Pratinjau</b> naskah yang dapat disunting langsung akan tampil di sini.</div></section>` +
       `<section class="bd-tahap menyusul" id="bd-w-cetak" data-tahap="G"><div class="bd-tk"><span class="bd-tno">5</span><span class="bd-tj">Cetak</span><span class="bd-chip">menyusul · tahap G</span></div>` +
       `<div class="bd-wadahkosong" data-wadah="cetak"><b>Cetak</b> (RTF, PDF, PDF salinan, unggah e-Doc) akan tampil di sini.</div></section>` +
-      `</div></div>` +
+      `</div></div></div>` +
       `<div class="bd-float" id="bd-widget" hidden role="dialog" aria-label="Pengaturan ALETA"></div>` +
       `<div class="bd-float alat" id="bd-alat" hidden role="menu" aria-label="Alat saya"></div>` +
       `<div class="bd-tip" id="bd-tip" hidden role="tooltip"></div>` +
       `<div class="bd-toast" id="bd-toast" hidden role="status"></div>`;
     document.body.appendChild(akar);
+    pasangHuruf();
+    terapkanSkala();
     akar.addEventListener("click", saatKlik);
     akar.addEventListener("dblclick", saatKlikDua);
     akar.addEventListener("change", saatUbah);
@@ -694,7 +704,76 @@
         sembunyiTip();
       }
     });
-    window.addEventListener("resize", susunUlangFloat);
+    window.addEventListener("resize", () => {
+      terapkanSkala();
+      susunUlangFloat();
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Huruf dan ukuran: sama dengan rancangan v12 walau halaman ABT diperkecil
+  // ──────────────────────────────────────────────────────────────────────────
+  /**
+   * Huruf rancangan (IBM Plex Sans/Mono) dari Google Fonts - ABT tidak memasang Content-Security-Policy, jadi
+   * lembar gaya luar boleh dimuat. Tanpa jaringan keluar, tumpukan cadangan (Segoe UI) yang dipakai.
+   */
+  function pasangHuruf() {
+    if (document.getElementById("aleta-bd-huruf")) return;
+    try {
+      const l = document.createElement("link");
+      l.id = "aleta-bd-huruf";
+      l.rel = "stylesheet";
+      l.href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap";
+      (document.head || document.documentElement).appendChild(l);
+    } catch {
+      /* huruf cadangan */
+    }
+  }
+  const LEVEL_ZOOM = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+  const SKALA_LAYAR = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3];
+  /**
+   * Perkiraan zoom halaman Chrome (Ctrl -/+) - MURNI. Petugas biasa memperkecil ABT (mis. 67%) supaya tabelnya
+   * muat; tampilan ini lalu ikut mengecil sampai hurufnya ±9px. outerWidth (piksel jendela) / innerWidth (piksel
+   * CSS) memberi zoom kasar - panel samping Chrome membuatnya meleset - jadi dipadankan dengan devicePixelRatio
+   * (= skala layar Windows x zoom) ke tingkat zoom Chrome yang ada. Hanya zoom PERKECIL yang dilawan; zoom
+   * perbesar adalah pilihan petugas dan dibiarkan.
+   */
+  function perkiraanZoom(luar, dalam, dpr) {
+    if (!(luar > 0) || !(dalam > 0)) return 1;
+    const kasar = luar / dalam;
+    const r = Number(dpr) > 0 ? Number(dpr) : 1;
+    let terbaik = 1;
+    let skor = Infinity;
+    for (const z of LEVEL_ZOOM) {
+      const s = r / z;
+      const jarak = Math.min(...SKALA_LAYAR.map((x) => Math.abs(s - x) / x));
+      const nilai = jarak + (Math.abs(z - kasar) / kasar) * 0.5;
+      if (nilai < skor) {
+        skor = nilai;
+        terbaik = z;
+      }
+    }
+    return Math.min(1, terbaik);
+  }
+  const UKURAN = { kecil: 0.9, biasa: 1, besar: 1.12, lebihbesar: 1.25 };
+  function skalaSekarang() {
+    let z = 1;
+    try {
+      z = perkiraanZoom(window.outerWidth, window.innerWidth, window.devicePixelRatio);
+    } catch {
+      z = 1;
+    }
+    const k = UKURAN[S.ukuran] || 1;
+    return Math.round((k / z) * 1000) / 1000;
+  }
+  function terapkanSkala() {
+    const z = skalaSekarang();
+    for (const e of [akar, tawar]) {
+      if (!e) continue;
+      e.style.zoom = z === 1 ? "" : String(z);
+      e.style.setProperty("--bd-z", String(z));
+    }
+    S.skala = z;
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -713,8 +792,8 @@
 
   function sebutAkun() {
     if (!S.siapa) return S.siapaGalat ? "· belum terhubung ke ALETA" : "· memuat akun…";
-    const peran = namaPeranAkun();
-    let t = `· ${S.siapa.nama || "?"}${peran ? ` (${peran})` : ""}`;
+    // Rancangan v12: hanya nama akun; peran tidak ditulis (sudah tercermin dari Alat saya).
+    let t = `· ${S.siapa.nama || "?"}`;
     if (adm() && S.sebagai.nama) t += ` · dilihat sebagai ${S.sebagai.nama}`;
     return t;
   }
@@ -730,7 +809,7 @@
     const akun = (S.data && S.data.akun) || { hakim: [], pp: [], js: [] };
     const label = S.peranSet.has("admin") ? "Super Admin / Admin" : "Admin";
     sel.innerHTML =
-      `<option value="">Tampilan ${esc(label)} (semua)</option>` +
+      `<option value="" title="Tampilan ${esc(label)}: semua akun">Semua akun</option>` +
       ["hakim", "pp", "js"]
         .map((p) => `<optgroup label="${esc(NAMA_PERAN[p])}">${(akun[p] || []).map((n) => `<option value="${p}|${esc(n)}">${esc(n)}</option>`).join("")}</optgroup>`)
         .join("");
@@ -1033,10 +1112,17 @@
     wad.innerHTML =
       `<span class="bd-no" title="Klik dua kali untuk mengganti perkara">${esc(p.nomorPerkara)}</span><span>${esc(p.jenisPerkara)}${p.lewatEcourt ? " · e-Court" : ""}</span>` +
       `<span class="bd-pihak" tabindex="0" data-tipn="${esc(p.nomorPerkara)}">Para pihak ⓘ</span>` +
-      `<label class="bd-lbl" for="bd-sidang">Sidang</label><select id="bd-sidang" style="width:min(100%,520px)">${sid
+      `<label class="bd-lbl" for="bd-sidang">Sidang</label><select id="bd-sidang" style="width:min(100%,340px)" title="Sidang yang dipakai blangko">${sid
         .map((s, i) => `<option value="${i}" ${i === S.sidIdx ? "selected" : ""}>Ke-${i + 1} · ${tglS(s.tanggal)} · ${esc(s.agenda || "-")}${s.ket ? ` · ${esc(s.ket)}` : ""}</option>`)
         .join("")}</select>` +
-      `<span class="bd-chip">${esc(r.isiTxt)}</span><span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>`;
+      `<span class="bd-chip ${kelasIsian(r)}">${esc(r.isiTxt)}</span>${r.dokKelas === "ok" ? `<span class="bd-chip ok">${esc(r.dokTxt)}</span>` : ""}`;
+  }
+
+  /** Warna lencana isian seperti rancangan: lengkap hijau, sebagian kuning, belum diisi jingga. */
+  function kelasIsian(r) {
+    const lap = S.lapor.get(r.n);
+    if (!lap || typeof lap.t !== "number") return "";
+    return lap.t === 0 || lap.a >= lap.t ? "ok" : lap.a ? "sebagian" : "belum";
   }
 
   // ── Memilih perkara ───────────────────────────────────────────────────────
@@ -1117,15 +1203,17 @@
     const permohonan = /Pdt\.P/i.test(p.nomorPerkara);
     t.innerHTML = `<b>${permohonan ? "Pemohon" : "Penggugat/Pemohon"}</b>: ${esc(pg)}${tg ? `<br><b>Tergugat/Termohon</b>: ${esc(tg)}` : ""}`;
     t.hidden = false;
+    // Koordinat layar (getBoundingClientRect) dibagi skala tampilan: posisi elemen melayang di dalam akar ber-zoom.
+    const z = S.skala || 1;
     const r = el.getBoundingClientRect();
     const vw = document.documentElement.clientWidth || window.innerWidth;
     const vh = window.innerHeight || 600;
-    const w = Math.min(t.offsetWidth || 260, vw - 16);
-    const h = t.offsetHeight || 50;
-    t.style.left = `${Math.max(8, Math.min(r.left, vw - w - 8))}px`;
+    const w = Math.min((t.offsetWidth || 260) * z, vw - 16);
+    const h = (t.offsetHeight || 50) * z;
+    t.style.left = `${Math.max(8, Math.min(r.left, vw - w - 8)) / z}px`;
     let top = r.bottom + 6;
     if (top + h > vh - 8) top = Math.max(8, r.top - 6 - h);
-    t.style.top = `${top}px`;
+    t.style.top = `${top / z}px`;
   }
   function sembunyiTip() {
     const t = cari("#bd-tip", akar);
@@ -1146,12 +1234,13 @@
   // ── Melayang: Widget ALETA dan Alat saya ──────────────────────────────────
   function taruh(pop, jangkar) {
     pop.hidden = false;
+    const z = S.skala || 1;
     const vw = document.documentElement.clientWidth || window.innerWidth;
     const vh = window.innerHeight || 600;
     const r = jangkar.getBoundingClientRect();
-    pop.style.maxHeight = `${vh - 16}px`;
-    const w = Math.min(pop.offsetWidth || 320, vw - 16);
-    const h = Math.min(pop.offsetHeight || 240, vh - 16);
+    pop.style.maxHeight = `${(vh - 16) / z}px`;
+    const w = Math.min((pop.offsetWidth || 320) * z, vw - 16);
+    const h = Math.min((pop.offsetHeight || 240) * z, vh - 16);
     let left = r.right - w;
     if (left < 8) left = Math.min(r.left, vw - w - 8);
     left = Math.max(8, Math.min(left, vw - w - 8));
@@ -1161,8 +1250,8 @@
       top = atas >= 8 ? atas : Math.max(8, vh - 8 - h);
     }
     top = Math.max(8, Math.min(top, vh - 8 - h));
-    pop.style.left = `${left}px`;
-    pop.style.top = `${top}px`;
+    pop.style.left = `${left / z}px`;
+    pop.style.top = `${top / z}px`;
   }
   const JANGKAR = { widget: "#bd-widget-btn", alat: "#bd-alat-btn" };
   function tutupFloat(kecuali) {
@@ -1220,6 +1309,7 @@
         )
         .join("") +
       `<label class="bd-wbaris"><span>Tema<small>popup, panel SIPP, panel ABT, dan Blangko ABT by Derry Briantono</small></span><select data-cfgtema="1" aria-label="Tema"><option value="gelap" ${S.tema === "gelap" ? "selected" : ""}>Gelap</option><option value="terang" ${S.tema === "terang" ? "selected" : ""}>Terang</option></select></label>` +
+      `<label class="bd-wbaris"><span>Ukuran tampilan<small>huruf mengikuti rancangan walau halaman ABT diperkecil (Ctrl -)</small></span><select data-cfgukuran="1" aria-label="Ukuran tampilan">${[["kecil", "Kecil"], ["biasa", "Biasa"], ["besar", "Besar"], ["lebihbesar", "Lebih besar"]].map(([k, t]) => `<option value="${k}" ${S.ukuran === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>` +
       `<p class="bd-catat">Pengaturan disimpan di ekstensi dan berlaku di semua tab; saklar yang sama ada di popup ekstensi.</p>`
     );
   }
@@ -1400,6 +1490,13 @@
       return void muatDaftar();
     }
     if (t.hasAttribute && t.hasAttribute("data-cfg")) return ubahSaklar(t.getAttribute("data-cfg"), t.checked);
+    if (t.hasAttribute && t.hasAttribute("data-cfgukuran")) {
+      S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, t.value) ? t.value : "biasa";
+      terapkanSkala();
+      susunUlangFloat();
+      void tulisPenyimpanan({ [K.ukuran]: S.ukuran });
+      return;
+    }
     if (t.hasAttribute && t.hasAttribute("data-cfgtema")) {
       S.tema = t.value === "terang" ? "terang" : "gelap";
       terapkanTema();
@@ -1445,7 +1542,7 @@
     if (wilayah !== "local" || !ubah) return;
     const s = {};
     let berubah = false;
-    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tema]) {
+    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tema, K.ukuran]) {
       if (ubah[k]) {
         berubah = true;
         s[k] = ubah[k].newValue;
@@ -1459,9 +1556,11 @@
         [K.saran]: S.cfg.saran,
         [K.ingat]: S.cfg.ingat,
         [K.tema]: S.tema,
+        [K.ukuran]: S.ukuran,
       };
       terapkanSetelan({ ...dasar, ...s });
       terapkanTema();
+      terapkanSkala();
       if (lama.tawar !== S.cfg.tawar) segarkanTawar();
       const w = akar && cari("#bd-widget", akar);
       if (w && !w.hidden) w.innerHTML = isiWidget();
@@ -1584,6 +1683,8 @@
       return { perkara: p, sidang: sid.slice(), sidangKe: S.sidIdx, sidangDipilih: sid[S.sidIdx] || null };
     },
     setelan: () => ({ ...S.cfg, tema: S.tema }),
+    /** Skala tampilan (zoom CSS akar) - elemen melayang tahap F-G membagi koordinat layar dengannya. */
+    skala: () => S.skala || 1,
     /** Wadah kosong berlabel untuk tahap E-G. */
     wadah(nama) {
       return akar ? cari(`[data-wadah="${nama}"]`, akar) : null;
@@ -1605,7 +1706,7 @@
       tema: S.tema,
       cfg: { ...S.cfg },
     }),
-    murni: { ringkasan, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk },
+    murni: { ringkasan, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom },
   };
   globalThis.aletaBlangkoDerry = api;
   void mulai();
