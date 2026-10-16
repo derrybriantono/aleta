@@ -66,8 +66,21 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     { kunci: "panggilan-pemohon", sebutan: "Relaas panggilan sidang lanjutan - Pemohon" },
     { kunci: "panggilan-termohon", sebutan: "Relaas panggilan sidang lanjutan - Termohon" },
     { kunci: "panggilan-ikrar", sebutan: "Relaas panggilan sidang ikrar talak" },
+    // Q3 16 Okt: set e-Court (perkara terdaftar lewat e-Court) - dipilih HANYA untuk dokumen e-Court dan menang atas kunci biasa.
+    { kunci: "relaas-panggilan-sidang-pertama-ecourt-penggugat", sebutan: "Relaas panggilan sidang pertama e-Court - Penggugat/Pemohon" },
+    { kunci: "relaas-panggilan-sidang-pertama-ecourt-tergugat", sebutan: "Relaas panggilan sidang pertama e-Court - Tergugat/Termohon" },
+    { kunci: "panggilan-ecourt-penggugat", sebutan: "Relaas panggilan sidang lanjutan e-Court - Penggugat/Pemohon" },
+    { kunci: "panggilan-ecourt-tergugat", sebutan: "Relaas panggilan sidang lanjutan e-Court - Tergugat/Termohon" },
+    { kunci: "panggilan-ikrar-ecourt", sebutan: "Relaas panggilan sidang ikrar talak e-Court - Termohon" },
     { kunci: "delegasi", sebutan: "Permohonan bantuan panggilan (delegasi)" },
     { kunci: "amplop", sebutan: "Amplop panggilan surat tercatat" },
+    // Q3 16 Okt: amplop pendamping per pihak ([JS] 8.1.x, 8.2.x, 8.3.x).
+    { kunci: "amplop-panggilan-penggugat", sebutan: "Amplop relaas panggilan sidang - Penggugat/Pemohon" },
+    { kunci: "amplop-panggilan-tergugat", sebutan: "Amplop relaas panggilan sidang - Tergugat/Termohon" },
+    { kunci: "amplop-putusan-penggugat", sebutan: "Amplop relaas pemberitahuan putusan - Penggugat/Pemohon" },
+    { kunci: "amplop-putusan-tergugat", sebutan: "Amplop relaas pemberitahuan putusan - Tergugat/Termohon" },
+    { kunci: "amplop-ikrar-penggugat", sebutan: "Amplop relaas panggilan ikrar talak - Pemohon" },
+    { kunci: "amplop-ikrar-tergugat", sebutan: "Amplop relaas panggilan ikrar talak - Termohon" },
     // 14 Okt: pengumuman itsbat nikah voluntair (360, alur 16) sidang pertama.
     { kunci: "pengumuman-itsbat", sebutan: "Pengumuman permohonan itsbat nikah voluntair - 2 Pemohon (sidang pertama)" },
     {
@@ -80,6 +93,8 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     { kunci: "pbt-tergugat", sebutan: "Pemberitahuan isi putusan - Tergugat" },
     { kunci: "pbt-pemohon", sebutan: "Pemberitahuan isi putusan - Pemohon" },
     { kunci: "pbt-termohon", sebutan: "Pemberitahuan isi putusan - Termohon" },
+    // Q3 16 Okt: putusan VERSTEK perkara e-Court ([JS] 6.2) - hanya untuk Tergugat/Termohon.
+    { kunci: "pbt-ecourt-verstek-tergugat", sebutan: "Pemberitahuan isi putusan verstek e-Court - Tergugat/Termohon" },
   ],
   // Perbaikan 2 Okt sore butir 6: jenis perkara ber-set BAS x keadaan sidang.
   // Disusun di bawah (KUNCI_BAKU_BAS) - fungsi, bukan daftar ketikan.
@@ -229,7 +244,10 @@ export function saranPemetaan(jenis: JenisPemetaan): { kunci: string; namaBerkas
  * hanya untuk kunci tanpa pihak (panggilan-sidang-pertama) dan ikrar talak -
  * satu-satunya blangko ikrar di folder derry memang "P dan T".
  */
-const BAWAAN_KEADAAN: Record<string, { keadaan: KeadaanRelaas; pihak?: "pertama" | "kedua" | "keduanya"; pemohon?: 1 | 2 }> = {
+const BAWAAN_KEADAAN: Record<
+  string,
+  { keadaan: KeadaanRelaas; pihak?: "pertama" | "kedua" | "keduanya"; pemohon?: 1 | 2; ecourt?: true; verstek?: true }
+> = {
   "pengumuman-itsbat": { keadaan: "pengumuman-itsbat", pemohon: 2 },
   "pengumuman-itsbat-1p": { keadaan: "pengumuman-itsbat", pemohon: 1 },
   "relaas-panggilan-sidang-pertama-penggugat": { keadaan: "sidang-pertama", pihak: "pertama" },
@@ -242,6 +260,19 @@ const BAWAAN_KEADAAN: Record<string, { keadaan: KeadaanRelaas; pihak?: "pertama"
   "panggilan-tergugat": { keadaan: "sidang-ditunda", pihak: "kedua" },
   "panggilan-termohon": { keadaan: "sidang-ditunda", pihak: "kedua" },
   "panggilan-ikrar": { keadaan: "ikrar-talak" },
+  // Q3 16 Okt: set e-Court dan amplop per pihak.
+  "relaas-panggilan-sidang-pertama-ecourt-penggugat": { keadaan: "sidang-pertama", pihak: "pertama", ecourt: true },
+  "relaas-panggilan-sidang-pertama-ecourt-tergugat": { keadaan: "sidang-pertama", pihak: "kedua", ecourt: true },
+  "panggilan-ecourt-penggugat": { keadaan: "sidang-pertama", pihak: "pertama", ecourt: true },
+  "panggilan-ecourt-tergugat": { keadaan: "sidang-pertama", pihak: "kedua", ecourt: true },
+  "panggilan-ikrar-ecourt": { keadaan: "ikrar-talak", ecourt: true },
+  "pbt-ecourt-verstek-tergugat": { keadaan: "pemberitahuan-putusan", pihak: "kedua", ecourt: true, verstek: true },
+  "amplop-panggilan-penggugat": { keadaan: "amplop-panggilan", pihak: "pertama" },
+  "amplop-panggilan-tergugat": { keadaan: "amplop-panggilan", pihak: "kedua" },
+  "amplop-putusan-penggugat": { keadaan: "amplop-putusan", pihak: "pertama" },
+  "amplop-putusan-tergugat": { keadaan: "amplop-putusan", pihak: "kedua" },
+  "amplop-ikrar-penggugat": { keadaan: "amplop-ikrar", pihak: "pertama" },
+  "amplop-ikrar-tergugat": { keadaan: "amplop-ikrar", pihak: "kedua" },
   delegasi: { keadaan: "delegasi" },
   amplop: { keadaan: "amplop" },
   "pbt-penggugat": { keadaan: "pemberitahuan-putusan", pihak: "pertama" },
@@ -264,7 +295,9 @@ export function bawaanPemetaan(jenis: JenisPemetaan): { kunci: string; sebutan: 
           (b) =>
             b.keadaan === aturan.keadaan &&
             (!aturan.pihak || b.pihak === aturan.pihak) &&
-            (!aturan.pemohon || b.pemohon === aturan.pemohon)
+            (!aturan.pemohon || b.pemohon === aturan.pemohon) &&
+            Boolean(b.ecourt) === Boolean(aturan.ecourt) &&
+            Boolean(b.verstek) === Boolean(aturan.verstek)
         );
     if (!blangko) continue;
     hasil.push({ kunci, sebutan, namaBerkas: blangko.berkas, catatan: blangko.label });
@@ -305,7 +338,17 @@ export function bawaanPemetaan(jenis: JenisPemetaan): { kunci: string; sebutan: 
 export type AwalanRelaas = "panggilan" | "pbt" | "delegasi" | "amplop" | "pengumuman";
 export type KeadaanKunci = "pertama" | "lanjutan" | "ikrar" | "1p" | "2p" | "";
 export type PihakKunci = "penggugat" | "tergugat" | "pemohon" | "termohon" | "";
-export type UraianKunciRelaas = { awalan: AwalanRelaas; keadaan: KeadaanKunci; pihak: PihakKunci; dikenal: boolean; asing: string[] };
+export type UraianKunciRelaas = {
+  awalan: AwalanRelaas;
+  keadaan: KeadaanKunci;
+  pihak: PihakKunci;
+  dikenal: boolean;
+  asing: string[];
+  /** Q3 16 Okt: kunci khusus perkara e-Court (kata "ecourt" atau "e-court"). */
+  ecourt: boolean;
+  /** Q3 16 Okt: kunci khusus putusan verstek (kata "verstek"). */
+  verstek: boolean;
+};
 
 const KATA_PIHAK: PihakKunci[] = ["penggugat", "tergugat", "pemohon", "termohon"];
 /** Kata yang boleh ada tanpa mengubah arti kunci. */
@@ -334,6 +377,8 @@ const KATA_DIKENAL = new Set([
   "lanjutan",
   "tundaan",
   "ditunda",
+  "ecourt",
+  "verstek",
 ]);
 /** Kata kunci pengumuman itsbat (14 Okt) - hanya dikenal pada kunci berkata "pengumuman". */
 const KATA_PENGUMUMAN = new Set([
@@ -356,8 +401,11 @@ export function uraiKunciRelaas(kunci: string): UraianKunciRelaas {
   const ada = (x: string) => kata.includes(x);
   if (ada("pengumuman")) {
     const asingP = kata.filter((k) => !KATA_PENGUMUMAN.has(k));
-    return { awalan: "pengumuman", keadaan: ada("1p") ? "1p" : "2p", pihak: "", dikenal: asingP.length === 0, asing: asingP };
+    return { awalan: "pengumuman", keadaan: ada("1p") ? "1p" : "2p", pihak: "", dikenal: asingP.length === 0, asing: asingP, ecourt: false, verstek: false };
   }
+  // Q3 16 Okt: "ecourt" atau "e-court" (kata "e" + "court"); "verstek".
+  const ecourt = ada("ecourt") || (ada("e") && ada("court"));
+  const verstek = ada("verstek");
   const awalan: AwalanRelaas =
     ada("pbt") || ada("pemberitahuan") ? "pbt" : ada("delegasi") ? "delegasi" : ada("amplop") ? "amplop" : "panggilan";
   let keadaan: KeadaanKunci = ada("ikrar")
@@ -370,17 +418,34 @@ export function uraiKunciRelaas(kunci: string): UraianKunciRelaas {
   const pihak = (KATA_PIHAK.find((p) => ada(p)) ?? "") as PihakKunci;
   // "panggilan-<pihak>" tanpa keadaan = sidang lanjutan (arti 30 Sep).
   if (awalan === "panggilan" && !keadaan && pihak) keadaan = "lanjutan";
-  const asing = kata.filter((k) => !KATA_DIKENAL.has(k));
-  return { awalan, keadaan: awalan === "pbt" ? "" : keadaan, pihak, dikenal: asing.length === 0 && kata.length > 0, asing };
+  const asing = kata.filter((k) => !KATA_DIKENAL.has(k) && !(ecourt && (k === "e" || k === "court")));
+  return { awalan, keadaan: awalan === "pbt" ? "" : keadaan, pihak, dikenal: asing.length === 0 && kata.length > 0, asing, ecourt, verstek };
 }
 
-export type PermintaanRelaas = { awalan: AwalanRelaas; keadaan: KeadaanKunci; khusus: PihakKunci; umum: PihakKunci };
+export type PermintaanRelaas = {
+  awalan: AwalanRelaas;
+  keadaan: KeadaanKunci;
+  khusus: PihakKunci;
+  umum: PihakKunci;
+  /** Q3 16 Okt: dokumen perkara e-Court / putusan verstek - hanya kunci berkata "ecourt"/"verstek" yang dibolehkan bila true. */
+  ecourt?: boolean;
+  verstek?: boolean;
+};
 
 /** Nilai kecocokan satu kunci untuk satu permintaan; -1 = tidak boleh dipakai. */
 export function nilaiKunciRelaas(kunci: string, minta: PermintaanRelaas): number {
   const u = uraiKunciRelaas(kunci);
   if (!u.dikenal || u.awalan !== minta.awalan) return -1;
   let nilai = 0;
+  // Q3 16 Okt: kunci e-Court/verstek hanya untuk dokumen e-Court/verstek, dan menang atas kunci biasa.
+  if (u.ecourt) {
+    if (!minta.ecourt) return -1;
+    nilai += 8;
+  }
+  if (u.verstek) {
+    if (!minta.verstek) return -1;
+    nilai += 16;
+  }
   if (u.keadaan) {
     if (u.keadaan !== minta.keadaan) return -1;
     nilai += 4;
@@ -436,7 +501,12 @@ export function kapanDipakaiRelaas(kunci: string): { dikenal: boolean; dipakai: 
       ? `${besarAwal(u.pihak)} (juga ${u.pihak === "penggugat" ? "Pemohon" : "Termohon"} bila kunci ${u.pihak === "penggugat" ? "pemohon" : "termohon"}-nya tidak diatur)`
       : `${besarAwal(u.pihak)} (permohonan / cerai talak)`
     : "";
-  if (u.awalan === "pbt") return { dikenal: true, dipakai: `Pemberitahuan isi putusan${pihak ? ` kepada ${pihak}` : " - pihak mana pun (cadangan)"}.` };
+  if (u.awalan === "pbt") {
+    return {
+      dikenal: true,
+      dipakai: `Pemberitahuan isi putusan${pihak ? ` kepada ${pihak}` : " - pihak mana pun (cadangan)"}.${u.ecourt ? " Khusus perkara e-Court." : ""}${u.verstek ? " Khusus putusan verstek." : ""}`,
+    };
+  }
   if (u.awalan === "delegasi") {
     return { dikenal: true, dipakai: "Permohonan bantuan panggilan (delegasi) - cetak dari portal; ekstensi belum punya jalur cetak delegasi." };
   }
@@ -453,7 +523,7 @@ export function kapanDipakaiRelaas(kunci: string): { dikenal: boolean; dipakai: 
   }
   const keadaan = u.keadaan ? SEBUT_KEADAAN[u.keadaan] : "sidang mana pun (cadangan terakhir)";
   const ekor = pihak ? ` - ${pihak}` : u.keadaan === "pertama" || u.keadaan === "ikrar" ? " - P dan T" : "";
-  return { dikenal: true, dipakai: `Panggilan ${keadaan}${ekor}.` };
+  return { dikenal: true, dipakai: `Panggilan ${keadaan}${ekor}.${u.ecourt ? " Khusus perkara e-Court." : ""}` };
 }
 
 /**
@@ -667,8 +737,30 @@ export const KEADAAN_BAS_BAKU = [
   { kunci: "tunda-panggil|*", sebutan: "Lewat 14.00 tanpa kehadiran - tunda panggil para pihak" },
 ] as const;
 
-/** Jenis perkara yang punya set BAS di pohon-blangko.ts (SET_BLANGKO) - grup tab BAS. */
-export const JENIS_BAS_BAKU = ["Cerai Gugat", "Cerai Talak", "Itsbat Nikah", "Asal Usul Anak"] as const;
+/**
+ * Jenis perkara yang punya BAS Derry - grup tab BAS Pemetaan blangko.
+ *
+ * Empat yang pertama punya set ARSIP di katalog BAS massal (pohon-blangko.ts SET_BLANGKO). Q3 16 Okt (peta perkara L3, usulan 5): delapan
+ * lainnya menyusul mengikuti folder "<jenis> - BAS" yang ada di server (3 Dispensasi Kawin, 4a Harta Bersama, 4b Kewarisan, 5 Izin Poligami,
+ * 6 Perwalian, 7 Wali Adhal, 9 Penetapan Ahli Waris, 9a Lain-Lain/Pengangkatan Anak): tanpa set arsip, nama berkas yang dipetakan dicari di
+ * folder BAS-nya lewat cariBerkasBasJenis (salinan-bas-jenis.ts). Itsbat kontensius (jenis SIPP sama dengan itsbat), cerai kumulasi, dan
+ * permohonan umum 9b bukan jenis SIPP tersendiri sehingga tidak punya baris di sini.
+ * Nama = nama jenis perkara SIPP (kunciJenisPerkara memadankan ejaan lain: "P3HP/Penetapan Ahli Waris", "Izin Poligami", "Wali Adhol").
+ */
+export const JENIS_BAS_BAKU = [
+  "Cerai Gugat",
+  "Cerai Talak",
+  "Itsbat Nikah",
+  "Asal Usul Anak",
+  "Dispensasi Kawin",
+  "Penetapan Ahli Waris",
+  "Perwalian",
+  "Wali Adhal",
+  "Lain-Lain",
+  "Harta Bersama",
+  "Kewarisan",
+  "Poligami",
+] as const;
 
 function normalkanBagianSidang(x: string): string {
   const k = x.toLowerCase().replace(/\s+/g, " ").trim();

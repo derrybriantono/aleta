@@ -60,7 +60,7 @@ import {
 } from "@/lib/pemetaan-blangko";
 import { ALUR_BAS_KUMULASI, tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { ALUR_BAS, padananBasArsip, type AlurBas, type HasilAlurBas, type LangkahAlurBas, type PadananBas } from "@/lib/alur-bas";
-import { salinanBasJenis, type SalinanBas } from "@/lib/salinan-bas-jenis";
+import { cariBerkasBasJenis, salinanBasJenis, type SalinanBas } from "@/lib/salinan-bas-jenis";
 import { tentukanBasBaru, type HasilBasBaru, type LangkahBasBaru } from "@/lib/alur-bas-baru";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
@@ -721,6 +721,25 @@ function terapkanPetaBas(
       pilihan: [p, ...lain].slice(0, BATAS_PILIHAN_BLANGKO),
       sebab: p.perkiraan ? otomatis.sebab : "",
     };
+  }
+  // Q3 16 Okt: jenis tanpa set arsip (dispensasi kawin, ahli waris, perwalian, ...) - nama yang dipetakan dicari di folder "<jenis> - BAS".
+  const salinan = cariBerkasBasJenis(cocok.namaBerkas, masukan.jenisPerkara);
+  if (salinan) {
+    const p: PilihanBlangkoBas = {
+      folder: salinan.folder,
+      berkas: salinan.berkas,
+      setId: "bas-jenis",
+      setNama: salinan.menu,
+      basKe: 0,
+      label: salinan.berkas.replace(/\.rtf$/i, ""),
+      kehadiran: cocokKehadiran("", masukan.dihadiriOleh),
+      dariPemetaan: cocok.kunci,
+      ...(masukan.perkiraan && masukan.dihadiriOleh === null ? { perkiraan: true } : {}),
+      salinan: [salinan],
+    };
+    const kunciP = `${salinan.folder}|${salinan.berkas}`;
+    const lain = otomatis.pilihan.filter((x) => !(x.salinan ?? []).some((s) => `${s.folder}|${s.berkas}` === kunciP));
+    return { usulan: p, pilihan: [p, ...lain].slice(0, BATAS_PILIHAN_BLANGKO), sebab: p.perkiraan ? otomatis.sebab : "" };
   }
   return {
     usulan: null,

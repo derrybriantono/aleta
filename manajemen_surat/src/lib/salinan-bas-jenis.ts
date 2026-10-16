@@ -19,6 +19,7 @@
  *   3. berkas yang sudah berupa salinan ("BAS ALUR nn ...") di folder jenis: dirinya sendiri.
  */
 import { PADANAN_BAS_ARSIP } from "@/lib/alur-bas";
+import { ALUR_BAS_BARU } from "@/lib/alur-bas-baru-data";
 import { AKAR_SALINAN_BAS, MENU_FOLDER_JENIS, SALINAN_BAS_JENIS } from "@/lib/salinan-bas-jenis-data";
 import { jenisPerkaraDariFolder } from "@/lib/tugas-blangko";
 
@@ -80,6 +81,49 @@ export function folderJenisCocok(folderJenis: string, jenisPerkara: string): boo
   const j = String(jenisPerkara || "").toLowerCase();
   if (!j.trim()) return false;
   return jenisPerkaraDariFolder(tanpaAkar(folderJenis)).untuk.some((kata) => j.includes(kata));
+}
+
+/**
+ * Q3 16 Okt (peta perkara L3, usulan 5): berkas BAS di folder "<jenis> - BAS" menurut NAMA yang dipetakan admin (Pemetaan blangko > BAS),
+ * untuk jenis perkara yang tak punya set arsip di katalog BAS massal (dispensasi kawin, ahli waris, perwalian, wali adhal, pengangkatan
+ * anak, harta bersama, kewarisan, poligami). Nama boleh nama salinan ("BAS ALUR 04 [2] BAS 2 P & T Hadir ..."), nama asal di folder ALUR
+ * ("[2] BAS 2 P & T Hadir ..."), atau nama berkas BAS baru langsung ("BAS ALUR 14 PAW - [1] ..."); huruf besar/kecil, spasi ganda, dan
+ * ".rtf" tak dibedakan. Hanya berkas di folder yang melayani jenis perkara itu; tidak ada = null (tidak menebak).
+ */
+const kunciNama = (x: string) => String(x || "").replace(/\s+/g, " ").trim().replace(/\.rtf$/i, "").trim().toLowerCase();
+
+type KandidatBas = { salinan: SalinanBas; kunci: string[] };
+let kandidatBasCache: KandidatBas[] | null = null;
+
+function semuaKandidatBas(): KandidatBas[] {
+  if (kandidatBasCache) return kandidatBasCache;
+  const hasil: KandidatBas[] = [];
+  // (1) salinan berkas ALUR / kumulasi / itsbat gugur-cabut di folder jenis (233 berkas)
+  for (const [folderSumber, isi] of Object.entries(SALINAN_BAS_JENIS)) {
+    for (const berkasSumber of Object.keys(isi)) {
+      for (const s of semuaSalinanBas(folderSumber, berkasSumber)) {
+        hasil.push({ salinan: s, kunci: [kunciNama(s.berkas), kunciNama(berkasSumber)] });
+      }
+    }
+  }
+  // (2) BAS baru langsung di folder jenis (93 berkas D3/E3)
+  for (const alur of ALUR_BAS_BARU) {
+    for (const l of alur.langkah) {
+      hasil.push({ salinan: { folder: alur.folder, berkas: l.berkas, menu: alur.menu.nama, alias: alur.menu.alias }, kunci: [kunciNama(l.berkas)] });
+    }
+  }
+  kandidatBasCache = hasil;
+  return hasil;
+}
+
+export function cariBerkasBasJenis(nama: string, jenisPerkara: string): SalinanBas | null {
+  const dicari = kunciNama(nama);
+  if (!dicari) return null;
+  const cocok = semuaKandidatBas().filter((k) => k.kunci.includes(dicari) && folderJenisCocok(k.salinan.folder, jenisPerkara));
+  // Nama asal ("[2] BAS 2 ...") ada di beberapa folder ALUR yang sama isinya; yang dikembalikan hanya bila SATU berkas jelas (tidak menebak
+  // antara dua salinan yang berbeda ALUR).
+  const unik = [...new Map(cocok.map((k) => [`${k.salinan.folder}|${k.salinan.berkas}`, k.salinan])).values()];
+  return unik.length === 1 ? unik[0] : null;
 }
 
 /**

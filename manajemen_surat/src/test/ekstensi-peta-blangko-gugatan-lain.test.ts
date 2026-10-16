@@ -78,10 +78,13 @@ describe("peta blangko gugatan lain - pemilih panel-alat.js yang dijalankan", ()
     expect(h.baris.blangkoLain).toEqual(["Putusan HB", "HB - Putusan"]);
   });
 
-  it("Kewarisan -> [01] [Kabul] Kewarisan - Kontradiktur di menu Putusan Kewarisan", () => {
-    const h = pilih("Kewarisan", "Perdamaian");
+  it("Kewarisan -> [01] [Kabul] Kewarisan - Kontradiktur di menu Putusan Kewarisan; perdamaian -> [97] (Q3 16 Okt)", () => {
+    const h = pilih("Kewarisan", "Dikabulkan");
     expect(h.baris.berkas).toBe("[01] [Kabul] Kewarisan - Kontradiktur");
     expect(h.baris.blangko).toBe("Putusan Kewarisan");
+    const damai = pilih("Kewarisan", "Perdamaian");
+    expect(damai.baris.berkas).toBe("[97] [Perdamaian] Akta Perdamaian");
+    expect(damai.baris.blangko).toBe("Putusan Kewarisan");
   });
 
   it("Izin Poligami (nama SIPP) lewat padanan ke kunci poligami -> [01] [Kabul] Izin Poligami", () => {

@@ -52,7 +52,9 @@ import {
   type PihakDipanggil,
 } from "@/lib/pohon-blangko";
 
-import { blangkoMenurutPemetaan } from "./pemetaan-cetak";
+import { uraiKunciRelaas } from "@/lib/pemetaan-blangko";
+
+import { blangkoMenurutPemetaan, opsiEcourtDokumen } from "./pemetaan-cetak";
 
 /**
  * Peta pemetaan blangko admin yang BERLAKU (admin di atas bawaan) - dikirim
@@ -79,6 +81,9 @@ export type DokumenDinilai = {
   statusPutusanNama?: unknown;
   jumlahPihak?: { pertama?: unknown; kedua?: unknown; lain?: unknown } | null;
   sebutanPihak?: { pertama?: unknown; kedua?: unknown } | null;
+  /** Q3 16 Okt: perkara terdaftar lewat e-Court / putusannya verstek - bot relaasMassalService; kosong = bot lama (perilaku lama). */
+  lewatEcourt?: unknown;
+  verstekPutusan?: unknown;
 };
 
 export type PeringatanCetak = {
@@ -116,9 +121,13 @@ const PIHAK_DIKENAL = new Set<string>(["keduanya", "pertama", "kedua", "tidak-pe
 export const RENTANG_PROSES_MENU_RELAAS = { min: 80, max: 220 } as const;
 
 /** Menu ABT yang menentukan dokumen ini: menurut folder blangko golongannya. */
-function menuUntukGolongan(golongan: unknown): { nama: string; prosesMin: number; prosesMax: number } {
+function menuUntukGolongan(golongan: unknown, lewatEcourt = false): { nama: string; prosesMin: number; prosesMax: number } {
   const keadaan = keadaanUntukGolongan(golongan);
-  const b = keadaan ? BLANGKO_RELAAS.find((x) => x.keadaan === keadaan) : null;
+  // Q3 16 Okt: ikrar e-Court ([JS] 7) berada di folder Relaas (menu berentang lain dari ikrar biasa di _ikrar_talak).
+  const b = keadaan
+    ? BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && Boolean(x.ecourt) === (lewatEcourt && keadaan === "ikrar-talak")) ??
+      BLANGKO_RELAAS.find((x) => x.keadaan === keadaan)
+    : null;
   return b
     ? b.menuAbt
     : { nama: "Relaas dan PBT", prosesMin: RENTANG_PROSES_MENU_RELAAS.min, prosesMax: RENTANG_PROSES_MENU_RELAAS.max };
@@ -129,11 +138,11 @@ const POLA_STATUS_KONFIRMASI = /^\s*(dicabut|(dinyatakan\s+)?gugur|digugurkan)\s
 
 /** Sebab "tidak dapat dicetak" bila proses perkara di luar rentang menu ABT; "" bila di dalamnya/tak diketahui. */
 export function sebabProsesDiLuarMenu(
-  dokumen: Pick<DokumenDinilai, "prosesTerakhirId" | "prosesTerakhirNama"> & { golongan?: unknown }
+  dokumen: Pick<DokumenDinilai, "prosesTerakhirId" | "prosesTerakhirNama" | "lewatEcourt"> & { golongan?: unknown }
 ): string {
   const proses = angkaAtauNull(dokumen.prosesTerakhirId);
   if (proses === null) return "";
-  const menu = menuUntukGolongan(dokumen.golongan);
+  const menu = menuUntukGolongan(dokumen.golongan, dokumen.lewatEcourt === true);
   if (proses >= menu.prosesMin && proses <= menu.prosesMax) return "";
   const nama = String(dokumen.prosesTerakhirNama ?? "").trim();
   return (
@@ -270,10 +279,13 @@ export function nilaiCetakDokumen(
 
   const keadaan = keadaanUntukGolongan(dokumen.golongan);
   const pihakSah = (PIHAK_DIKENAL.has(pihak) ? pihak : "tidak-diketahui") as PihakDipanggil;
-  const pilih = keadaan ? blangkoRelaas(keadaan, pihakSah) : null;
+  // Q3 16 Okt: perkara e-Court / putusan verstek memilih set e-Court ([JS] 5.1, 5.2, 6.2, 7) bila bot mengirim penandanya.
+  const pilih = keadaan ? blangkoRelaas(keadaan, pihakSah, opsiEcourtDokumen(dokumen)) : null;
   // Pemetaan admin menang atas bawaan (kunci paling khusus - per pihak).
-  const dariPeta =
+  let dariPeta =
     pilih && peta ? blangkoMenurutPemetaan({ ...dokumen, pihakDipanggil: pihakSah }, peta.relaas, peta.pbt) : null;
+  // Bawaan e-Court menang atas kunci admin yang bukan kunci e-Court (tidak membedakan e-Court); admin menimpanya dengan kunci berkata "ecourt".
+  if (dariPeta && pilih?.ecourt && !uraiKunciRelaas(dariPeta.kunci).ecourt) dariPeta = null;
   const blangko = pilih ? { berkas: dariPeta ? dariPeta.berkas : pilih.berkas, label: pilih.label } : null;
   const peringatan = peringatanUntuk(dokumen, pihak, blangko);
 

@@ -2664,6 +2664,43 @@ async function relaasCetakHarian(tanggalDiminta = "") {
     }
   }
 
+  // ---- e-Court dan verstek (Q3 16 Okt) ---------------------------------------
+  //
+  // Set blangko relaas e-Court ([JS] 5.1, 5.2, 6.2, 7) dipilih portal menurut dua keterangan: perkaranya terdaftar lewat e-Court
+  // (perkara_efiling_id) dan - untuk pemberitahuan putusan - putusannya VERSTEK (perkara_putusan.putusan_verstek = 'Y').
+  // SATU kueri IN untuk seluruh dokumen (jumlah kueri per tanggal dijaga relaas-cetak-harian.test.ts). Gagal-terbuka: lewatEcourt = null
+  // ("tidak terbaca", BUKAN "bukan e-Court") dan portal memakai blangko biasa, seperti sebelum ruas ini ada.
+  const petaEcourtDok = new Set();
+  const petaVerstekDok = new Set();
+  let ecourtTerbaca = true;
+  {
+    const idDok = [...new Set(semua.map((x) => bilangan(x.perkaraId)).filter((n) => n > 0))];
+    for (let i = 0; i < idDok.length && ecourtTerbaca; i += 400) {
+      const potong = idDok.slice(i, i + 400);
+      const isian = potong.map(() => "?").join(", ");
+      try {
+        const barisEc = await kueri(
+          `SELECT p.perkara_id AS perkaraId,
+                  EXISTS(SELECT 1 FROM perkara_efiling_id e WHERE e.perkara_id = p.perkara_id) AS ec,
+                  EXISTS(SELECT 1 FROM perkara_putusan pu WHERE pu.perkara_id = p.perkara_id AND pu.putusan_verstek = 'Y') AS vs
+             FROM perkara p
+            WHERE p.perkara_id IN (${isian})`,
+          potong
+        );
+        for (const b of Array.isArray(barisEc) ? barisEc : []) {
+          if (bilangan(b.ec) > 0) petaEcourtDok.add(bilangan(b.perkaraId));
+          if (bilangan(b.vs) > 0) petaVerstekDok.add(bilangan(b.perkaraId));
+        }
+      } catch {
+        ecourtTerbaca = false;
+      }
+    }
+  }
+  for (const x of semua) {
+    x.lewatEcourt = ecourtTerbaca ? petaEcourtDok.has(bilangan(x.perkaraId)) : null;
+    x.verstekPutusan = ecourtTerbaca && x.golongan === "pemberitahuan-putusan" ? petaVerstekDok.has(bilangan(x.perkaraId)) : false;
+  }
+
   // ---- pihak dan yang sudah tercatat ---------------------------------------
   const pihakPerSisi = new Map(); // "perkaraId:sisi" -> [{ pihakId, barisId }]
   for (const s of sisiPihak) {

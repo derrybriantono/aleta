@@ -3050,6 +3050,13 @@ export type DokumenRelaasCetakGateway = {
   /** Baris pihak pada sisi yang DIPANGGIL; null bila pihaknya belum diketahui. */
   jumlahPihakSasaran?: number | null;
   sebutanPihak?: { pertama: string; kedua: string } | null;
+  /**
+   * Q3 16 Okt: perkara terdaftar lewat e-Court (perkara_efiling_id); null = tidak terbaca, bot lama tidak mengirimnya.
+   * Menentukan set blangko relaas e-Court ([JS] 5.1, 5.2, 6.2, 7) di pohon-blangko.ts.
+   */
+  lewatEcourt?: boolean | null;
+  /** Q3 16 Okt: putusan verstek (perkara_putusan.putusan_verstek = 'Y'); pemberitahuan putusan saja. Memilih [JS] 6.2 untuk T e-Court. */
+  verstekPutusan?: boolean;
 };
 
 export type TidakPerluRelaasCetak = {

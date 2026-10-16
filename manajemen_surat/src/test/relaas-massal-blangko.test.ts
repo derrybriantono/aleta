@@ -105,6 +105,8 @@ type IsiBlangko = {
   pihak: string;
   jalur: string;
   adaDiAbt: boolean | null;
+  ecourt?: boolean;
+  verstek?: boolean;
 };
 
 type IsiRute = {
@@ -182,12 +184,12 @@ beforeEach(() => {
 });
 
 describe("rute katalog blangko relaas - daftarnya dari satu sumber", () => {
-  it("memulangkan kedua belas blangko (per pihak + pengumuman itsbat 14 Okt) beserta folder dan aturan pihaknya", async () => {
+  it("memulangkan kedua puluh dua blangko (per pihak + pengumuman itsbat 14 Okt + set e-Court dan amplop 16 Okt) beserta folder dan aturan pihaknya", async () => {
     keadaan.katalog = { ok: false, error: "bot tidak dijalankan pada uji ini" };
     const { data } = await isiRute();
 
     expect(data.jumlah).toBe(BLANGKO_RELAAS.length);
-    expect(data.jumlah).toBe(12);
+    expect(data.jumlah).toBe(22);
     expect(data.folder).toBe("derry_briantono/Relaas");
     expect(data.set?.id).toBe("relaas-jurusita");
 
@@ -211,11 +213,11 @@ describe("rute katalog blangko relaas - daftarnya dari satu sumber", () => {
     expect(lanjutan!.jalur).toBe(`derry_briantono/Relaas/${lanjutan!.berkas}`);
   });
 
-  it("jalurnya menyebut folder blangko masing-masing: ikrar di menu 25, lima lainnya di Relaas", async () => {
+  it("jalurnya menyebut folder blangko masing-masing: ikrar (biasa) di menu 25, selainnya - termasuk ikrar e-Court - di Relaas", async () => {
     keadaan.katalog = { ok: false, error: "bot mati" };
     const { data } = await isiRute();
     for (const satu of data.blangko) {
-      const folder = satu.keadaan === "ikrar-talak" ? "_ikrar_talak/2 Relaas Ikrar Talak" : "derry_briantono/Relaas";
+      const folder = satu.keadaan === "ikrar-talak" && !satu.ecourt ? "_ikrar_talak/2 Relaas Ikrar Talak" : "derry_briantono/Relaas";
       expect(satu.jalur).toBe(`${folder}/${satu.berkas}`);
     }
   });
@@ -234,7 +236,7 @@ describe("rute katalog blangko relaas - folder ABT punya TIGA jawaban", () => {
     // null, BUKAN false: yang belum diukur tidak boleh terbaca sebagai hilang.
     for (const satu of data.blangko) expect(satu.adaDiAbt).toBeNull();
     // Katalognya sendiri tidak ikut gagal - ia datang dari TypeScript.
-    expect(data.jumlah).toBe(12);
+    expect(data.jumlah).toBe(22);
   });
 
   it("folder ABT tidak ada di mesin ini: sebab dari bot diteruskan apa adanya", async () => {

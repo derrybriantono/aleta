@@ -2,6 +2,7 @@ import { blangkoRelaasPerPihak, keadaanUntukGolongan } from "@/lib/pohon-blangko
 import {
   AWALAN_KUNCI_BAS_DB,
   pilihKunciRelaas,
+  uraiKunciRelaas,
   type KeadaanKunci,
   type PermintaanRelaas,
   type PihakKunci,
@@ -31,7 +32,15 @@ type DokumenPetakan = {
   pihakDipanggil: unknown;
   alurPerkaraId?: unknown;
   sebutanPihak?: { pertama?: unknown; kedua?: unknown } | null;
+  /** Q3 16 Okt: perkara terdaftar lewat e-Court / putusannya verstek (bot relaasMassalService); kosong = tidak diketahui (perilaku lama). */
+  lewatEcourt?: unknown;
+  verstekPutusan?: unknown;
 };
+
+/** Q3 16 Okt: opsi pemilihan blangko e-Court dari dokumen. */
+export function opsiEcourtDokumen(dokumen: Pick<DokumenPetakan, "lewatEcourt" | "verstekPutusan">) {
+  return { lewatEcourt: dokumen.lewatEcourt === true, verstek: dokumen.verstekPutusan === true };
+}
 
 function sebutanKhusus(teks: unknown): PihakKunci {
   const t = String(teks ?? "").toLowerCase();
@@ -57,8 +66,10 @@ export function permintaanUntukDokumen(dokumen: DokumenPetakan): PermintaanRelaa
   else if (keadaan === "pemberitahuan-putusan") [awalan, k] = ["pbt", ""];
   else return null;
 
+  // Q3 16 Okt: kunci berkata "ecourt"/"verstek" hanya untuk dokumen e-Court / putusan verstek.
+  const ec = { ecourt: dokumen.lewatEcourt === true, verstek: dokumen.verstekPutusan === true };
   const pihak = String(dokumen.pihakDipanggil ?? "");
-  if (pihak !== "pertama" && pihak !== "kedua") return { awalan, keadaan: k, khusus: "", umum: "" };
+  if (pihak !== "pertama" && pihak !== "kedua") return { awalan, keadaan: k, khusus: "", umum: "", ...ec };
   const umum: PihakKunci = pihak === "pertama" ? "penggugat" : "tergugat";
   const dariSebutan = sebutanKhusus(dokumen.sebutanPihak ? dokumen.sebutanPihak[pihak] : "");
   const alurPermohonan = Number(dokumen.alurPerkaraId) === 16;
@@ -70,7 +81,7 @@ export function permintaanUntukDokumen(dokumen: DokumenPetakan): PermintaanRelaa
           ? "pemohon"
           : "termohon"
         : umum;
-  return { awalan, keadaan: k, khusus, umum };
+  return { awalan, keadaan: k, khusus, umum, ...ec };
 }
 
 /**
@@ -132,8 +143,10 @@ function berkasSisi(
   const keadaan = keadaanUntukGolongan(dokumen.golongan);
   if (!keadaan) return "";
   const dariPeta = blangkoMenurutPemetaan({ ...dokumen, pihakDipanggil: sisi }, petaRelaas, petaPbt);
-  if (dariPeta) return dariPeta.berkas;
-  return blangkoRelaasPerPihak(keadaan, sisi)?.berkas ?? "";
+  const bawaan = blangkoRelaasPerPihak(keadaan, sisi, opsiEcourtDokumen(dokumen));
+  // Q3 16 Okt: bawaan set e-Court menang atas kunci admin yang bukan kunci e-Court (admin menimpa dengan kunci "ecourt").
+  if (dariPeta && !(bawaan?.ecourt && !uraiKunciRelaas(dariPeta.kunci).ecourt)) return dariPeta.berkas;
+  return bawaan?.berkas ?? "";
 }
 
 export function pecahDokumenPerPihak<T extends DokumenPecah>(

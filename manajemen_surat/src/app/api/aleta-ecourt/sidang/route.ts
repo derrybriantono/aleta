@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
+import { masukanRekomendasiDariBaris, rekomendasiBlangko } from "@/lib/rekomendasi-blangko";
 import { lengkapiPetaDariRekam, susunRekamAntrian } from "@/lib/rekam-antrian";
 import { hitungTigaJarak, kunciWaktu, WAKTU_ANTRIAN_KOSONG } from "@/lib/tiga-jarak-sidang";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
@@ -135,6 +136,7 @@ export async function GET(request: NextRequest) {
     }
 
     const sidang = hasil.data?.sidang ?? [];
+    const rekomendasiMinta = request.nextUrl.searchParams.get("rekomendasi") === "1";
 
     // Butir 4 (6 Okt 2026): baca jawaban/duplik Tergugat yang belum dibaca -
     // di LATAR, tidak ditunggu, berjeda semenit. Perkara yang tampil lebih dulu.
@@ -298,7 +300,12 @@ export async function GET(request: NextRequest) {
       diperiksaPada: hasil.data?.diperiksaPada ?? "",
       // Q3 16 Okt: keadaan putusan tiap baris (mediasi sebagian, T tidak hadir setelah mediasi, ...) untuk pemilihan blangko putusan
       // per keadaan di ekstensi (lib/keadaan-putusan.ts). Ruas tambahan; ekstensi lama mengabaikannya.
-      sidang: sidang.map((baris) => ({ ...baris, keadaanPutusan: keadaanPutusan(baris as unknown as MasukanKeadaanPutusan) })),
+      // Q3 16 Okt: ?rekomendasi=1 menambahkan rekomendasiBlangko (BAS, putusan, relaas menurut alasan tunda/agenda) per baris untuk tampilan Blangko ABT.
+      sidang: sidang.map((baris) => ({
+        ...baris,
+        keadaanPutusan: keadaanPutusan(baris as unknown as MasukanKeadaanPutusan),
+        ...(rekomendasiMinta ? { rekomendasiBlangko: rekomendasiBlangko(masukanRekomendasiDariBaris(baris as unknown as Record<string, unknown>)) } : {}),
+      })),
       kesiapan,
       kesiapanDinilai,
       // Disebutkan apa adanya. Rekaman yang diam-diam tidak pernah tertulis -

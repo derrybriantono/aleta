@@ -212,7 +212,8 @@ const PETA_PTSP = Object.freeze({
       kepala: "PENETAPAN",
       bagianGabungan: 4,
       berkasTunggal: "@ 2 - PHS.rtf",
-      penandatangan: "hakim",
+      // Q3 16 Okt: sama dengan ATUR_JENIS.phs dan peta penetapan portal (dulu "hakim" - bukan kunci PENANDATANGAN yang dikenal).
+      penandatangan: "ketua_majelis",
     },
   },
 });

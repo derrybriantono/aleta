@@ -134,6 +134,9 @@ type BlangkoTerdaftar = {
   menuAbt: { nama: string; prosesMin: number; prosesMax: number };
   /** true/false HANYA bila folder ABT terbaca; null bila belum terukur. */
   adaDiAbt: boolean | null;
+  /** Q3 16 Okt: blangko set e-Court (hanya untuk perkara e-Court) / khusus putusan verstek. */
+  ecourt: boolean;
+  verstek: boolean;
 };
 
 /**
@@ -181,6 +184,9 @@ export async function GET(request: NextRequest) {
     const keadaanMinta = String(getSearchParam(request, "keadaan") ?? "").trim();
     const pihakMinta = String(getSearchParam(request, "pihak") ?? "").trim();
     const dihadiriMinta = String(getSearchParam(request, "dihadiriOleh") ?? "").trim();
+    // Q3 16 Okt: ?ecourt=1 (perkara terdaftar lewat e-Court) dan ?verstek=1 (putusan verstek) memilih set e-Court ([JS] 5.1, 5.2, 6.2, 7).
+    const ecourtMinta = getSearchParam(request, "ecourt") === "1";
+    const verstekMinta = getSearchParam(request, "verstek") === "1";
     // Pemeriksaan folder ABT menyala bawaannya - itulah yang menangkap nama
     // berkas yang berselisih. Dapat dimatikan dengan ?periksaAbt=0 oleh
     // pemanggil yang hanya butuh daftarnya.
@@ -283,6 +289,8 @@ export async function GET(request: NextRequest) {
         // itu sendiri. Menormalkan spasi di sini akan menyembunyikan justru
         // selisih yang rute ini dibangun untuk menangkap.
         adaDiAbt: daftar ? daftar.includes(x.berkas) : null,
+        ecourt: x.ecourt === true,
+        verstek: x.verstek === true,
       };
     });
 
@@ -297,7 +305,9 @@ export async function GET(request: NextRequest) {
         ? pihakDipanggil(dihadiriMinta)
         : "tidak-diketahui";
 
-    const terpilih = keadaanMinta ? blangkoRelaas(keadaanMinta as KeadaanRelaas, pihakPilihan) : null;
+    const terpilih = keadaanMinta
+      ? blangkoRelaas(keadaanMinta as KeadaanRelaas, pihakPilihan, { lewatEcourt: ecourtMinta, verstek: verstekMinta })
+      : null;
 
     const pilihan = keadaanMinta
       ? {

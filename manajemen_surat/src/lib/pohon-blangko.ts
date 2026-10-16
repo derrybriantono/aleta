@@ -263,6 +263,10 @@ export type KeadaanRelaas =
   | "ikrar-talak"
   | "delegasi"
   | "amplop"
+  // Q3 16 Okt 2026: amplop pendamping per pihak ([JS] 8.1.x panggilan sidang, 8.2.x pemberitahuan putusan, 8.3.x panggilan ikrar).
+  | "amplop-panggilan"
+  | "amplop-putusan"
+  | "amplop-ikrar"
   // 14 Okt 2026: pengumuman permohonan itsbat nikah VOLUNTAIR (jenis 360, alur
   // 16) - dicetak bersama panggilan sidang pertama. Bukan relaas kepada pihak:
   // blangkonya dipilih menurut JUMLAH PEMOHON (lib/pengumuman-itsbat.ts).
@@ -301,7 +305,17 @@ export type BlangkoRelaas = {
   menuAbt: { nama: string; prosesMin: number; prosesMax: number };
   /** Pengumuman itsbat saja: jumlah Pemohon yang dimuat blangko (2 = suami & istri, 1 = pasangan telah meninggal). */
   pemohon?: 1 | 2;
+  /**
+   * Q3 16 Okt: blangko untuk perkara yang didaftarkan lewat e-Court (perkara_efiling_id) - tidak pernah dipilih untuk perkara non e-Court,
+   * dan blangko bukan e-Court tidak pernah dipilih untuk dokumen yang `lewatEcourt` bila ada padanan e-Court-nya (blangkoRelaas).
+   */
+  ecourt?: true;
+  /** Pemberitahuan putusan VERSTEK saja ([JS] 6.2): dipilih hanya bila putusannya verstek. */
+  verstek?: true;
 };
+
+/** Q3 16 Okt: keadaan perkara yang menentukan pilihan blangko relaas selain pihak (dari bot: lewatEcourt dan verstekPutusan). */
+export type OpsiBlangkoRelaas = { lewatEcourt?: boolean | null; verstek?: boolean | null };
 
 const FOLDER_RELAAS = `${AKAR}/Relaas`;
 /** Menu ABT 25 "Relaas Ikrar Talak" - folder dibuat di laptop 26 Sep 2026. */
@@ -319,6 +333,13 @@ export const FOLDER_RELAAS_IKRAR = "_ikrar_talak/2 Relaas Ikrar Talak";
  */
 const MENU_RELAAS = { nama: "Relaas dan PBT (Blangko Derry)", prosesMin: 80, prosesMax: 220 } as const;
 const MENU_RELAAS_IKRAR = { nama: "Relaas Ikrar Talak", prosesMin: 290, prosesMax: 600 } as const;
+/**
+ * Q3 16 Okt: relaas ikrar e-Court ([JS] 7) dan amplop ikrar ([JS] 8.3.x) berada di folder Relaas (bukan _ikrar_talak) dan dicetak untuk perkara
+ * yang SUDAH sampai tahap ikrar (proses 290 ke atas). Paket ABT abt-blangko-derry-rapi (13 Okt) membuka baris menu 900 untuk juru sita dan PTSP
+ * proses 20-1000 (lihat komentar MENU_RELAAS di atas) - rentang itu dipakai di sini. Bila ABT setempat belum terpasang paket itu, ABT menolak
+ * mencetak (sebabnya disebut nilaiCetakDokumen); diperiksa sesudah pemasangan.
+ */
+const MENU_RELAAS_LUAS = { nama: "Relaas dan PBT (Blangko Derry)", prosesMin: 20, prosesMax: 1000 } as const;
 
 // ===========================================================================
 // PERBAIKAN 6 OKT 2026 (BUTIR 10) - BLANGKO PER PIHAK, GABUNGAN HANYA CADANGAN
@@ -470,12 +491,120 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     menuAbt: MENU_RELAAS,
     pemohon: 1,
   },
+  // ==========================================================================
+  // Q3 16 OKT 2026 - SET e-COURT DAN AMPLOP (peta perkara L3 15 Okt, kesenjangan bagian 4)
+  // ==========================================================================
+  //
+  // Folder derry_briantono/Relaas memuat [JS] 5.1/5.2 (panggilan sidang e-Court), 6.2 (pemberitahuan putusan verstek T e-Court), 7 (panggilan
+  // ikrar e-Court), dan amplop 8.1.1-8.3.2, tetapi BLANGKO_RELAAS dulu hanya mengenal [JS] 0-4 dan 9: 10 berkas tak terpetakan, termasuk
+  // 2.196 perkara e-Court (84% perkara 2024-2026). Entri di bawah diberi `ecourt`; dipilih blangkoRelaas HANYA bila dokumennya lewatEcourt.
+  // Sidang lanjutan e-Court memakai 5.1/5.2 yang sama (tidak ada blangko lanjutan e-Court). Entri disimpan sesudah blangko lama supaya
+  // pencarian lama (urutan pertama) tetap mendarat di blangko non e-Court.
+  {
+    keadaan: "sidang-pertama",
+    berkas: "[JS] 5.1. Relaas Panggilan Sidang P (e-Court).rtf",
+    label: "Panggilan sidang e-Court (P)",
+    pihak: "pertama",
+    keterangan: "Perkara e-Court (domisili elektronik): panggilan sidang pertama dan lanjutan untuk Penggugat/Pemohon.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+    ecourt: true,
+  },
+  {
+    keadaan: "sidang-pertama",
+    berkas: "[JS] 5.2. Relaas Panggilan Sidang T (e-Court).rtf",
+    label: "Panggilan sidang e-Court (T)",
+    pihak: "kedua",
+    keterangan: "Perkara e-Court (surat tercatat): panggilan sidang pertama dan lanjutan untuk Tergugat/Termohon.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+    ecourt: true,
+  },
+  {
+    keadaan: "pemberitahuan-putusan",
+    berkas: "[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf",
+    label: "Pemberitahuan putusan verstek e-Court (T)",
+    pihak: "kedua",
+    keterangan: "Perkara e-Court yang diputus VERSTEK: pemberitahuan isi putusan kepada Tergugat/Termohon (1.072 perkara). Non-verstek: [JS] 2.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+    ecourt: true,
+    verstek: true,
+  },
+  {
+    keadaan: "ikrar-talak",
+    berkas: "[JS] 7. Relaas Panggilan Ikrar Talak (e-Court).rtf",
+    label: "Panggilan ikrar talak e-Court (T)",
+    pihak: "kedua",
+    keterangan:
+      "Perkara cerai talak e-Court: panggilan sidang ikrar talak kepada Termohon. Relaas ikrar untuk Pemohon e-Court belum ada di Derry.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS_LUAS,
+    ecourt: true,
+  },
+  {
+    keadaan: "amplop-panggilan",
+    berkas: "[JS] 8.1.1. Amplop Relaas Panggilan Sidang P.rtf",
+    label: "Amplop panggilan sidang (P)",
+    pihak: "pertama",
+    keterangan: "Amplop pendamping relaas panggilan sidang non e-Court untuk Penggugat/Pemohon (e-Court memakai amplop surat tercatat).",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "amplop-panggilan",
+    berkas: "[JS] 8.1.2. Amplop Relaas Panggilan Sidang T.rtf",
+    label: "Amplop panggilan sidang (T)",
+    pihak: "kedua",
+    keterangan: "Amplop pendamping relaas panggilan sidang non e-Court untuk Tergugat/Termohon.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "amplop-putusan",
+    berkas: "[JS] 8.2.1. Amplop Relaas Pemberitahuan Putusan P.rtf",
+    label: "Amplop pemberitahuan putusan (P)",
+    pihak: "pertama",
+    keterangan: "Amplop pendamping pemberitahuan isi putusan untuk Penggugat/Pemohon (2.070 perkara).",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "amplop-putusan",
+    berkas: "[JS] 8.2.2. Amplop Relaas Pemberitahuan Putusan T.rtf",
+    label: "Amplop pemberitahuan putusan (T)",
+    pihak: "kedua",
+    keterangan: "Amplop pendamping pemberitahuan isi putusan untuk Tergugat/Termohon (1.605 perkara).",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "amplop-ikrar",
+    berkas: "[JS] 8.3.1. Amplop Relaas Panggilan Ikrar Talak P.rtf",
+    label: "Amplop panggilan ikrar talak (P)",
+    pihak: "pertama",
+    keterangan: "Amplop pendamping panggilan sidang ikrar talak untuk Pemohon.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS_LUAS,
+  },
+  {
+    keadaan: "amplop-ikrar",
+    berkas: "[JS] 8.3.2. Amplop Relaas Panggilan Ikrar Talak T.rtf",
+    label: "Amplop panggilan ikrar talak (T)",
+    pihak: "kedua",
+    keterangan: "Amplop pendamping panggilan sidang ikrar talak untuk Termohon.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS_LUAS,
+  },
 ];
+
+/** Blangko non e-Court saja - pencarian bawaan lama tidak boleh mendarat di blangko e-Court (Q3 16 Okt). */
+const BLANGKO_BIASA = () => BLANGKO_RELAAS.filter((x) => !x.ecourt);
 
 /** Blangko pengumuman itsbat menurut jumlah Pemohon: satu Pemohon = 1P, selebihnya (termasuk tak terbaca) = 2P. */
 export function blangkoPengumumanItsbat(jumlahPemohon: unknown): BlangkoRelaas {
   const satu = Number(jumlahPemohon) === 1;
-  return BLANGKO_RELAAS.find((x) => x.keadaan === "pengumuman-itsbat" && x.pemohon === (satu ? 1 : 2))!;
+  return BLANGKO_BIASA().find((x) => x.keadaan === "pengumuman-itsbat" && x.pemohon === (satu ? 1 : 2))!;
 }
 
 /**
@@ -508,7 +637,9 @@ export function pihakDipanggil(dihadiriOleh: unknown): PihakDipanggil {
  */
 export function blangkoRelaas(
   keadaan: KeadaanRelaas,
-  pihak: PihakDipanggil = "tidak-diketahui"
+  pihak: PihakDipanggil = "tidak-diketahui",
+  /** Q3 16 Okt: perkara e-Court / putusan verstek memilih set e-Court ([JS] 5.1, 5.2, 6.2, 7); tanpa opsi = perilaku lama. */
+  opsi?: OpsiBlangkoRelaas
 ): BlangkoRelaas | null {
   // Pengumuman itsbat (14 Okt): dokumennya membawa jumlah Pemohon lewat
   // pihakDipanggil - "pertama" = satu Pemohon (1P), selain itu 2P. Lihat
@@ -521,25 +652,78 @@ export function blangkoRelaas(
   if (pihak === "tidak-perlu" && (keadaan === "sidang-ditunda" || keadaan === "pemberitahuan-putusan")) {
     return null;
   }
+  // Q3 16 Okt: perkara e-Court memakai set e-Court bila ada padanannya; yang tidak ada jatuh ke blangko biasa di bawah.
+  if (opsi?.lewatEcourt === true) {
+    const ec = blangkoEcourt(keadaan, pihak, opsi);
+    if (ec) return ec;
+  }
   // Per pihak lebih dulu (6 Okt, butir 10): blangko yang pihaknya TEPAT.
   if (pihak === "pertama" || pihak === "kedua") {
-    const tepat = BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && x.pihak === pihak);
+    const tepat = BLANGKO_BIASA().find((x) => x.keadaan === keadaan && x.pihak === pihak);
     if (tepat) return tepat;
   }
   // Satu dokumen untuk dua pihak (sidang ditunda yang tidak dihadiri siapa pun,
   // atau sidang pertama yang belum dipecah): hanya blangko gabungan yang memuat
   // keduanya - 3.b berkeadaan sidang-pertama.
   if (pihak === "keduanya" && (keadaan === "sidang-ditunda" || keadaan === "sidang-pertama")) {
-    return BLANGKO_RELAAS.find((x) => x.keadaan === "sidang-pertama" && x.pihak === "keduanya") ?? null;
+    return BLANGKO_BIASA().find((x) => x.keadaan === "sidang-pertama" && x.pihak === "keduanya") ?? null;
   }
   // Keadaan yang hanya punya satu blangko (ikrar - gabungan, delegasi, amplop)
   // atau pihak yang belum diketahui: blangko pertama keadaan itu.
-  return BLANGKO_RELAAS.find((x) => x.keadaan === keadaan) ?? null;
+  return BLANGKO_BIASA().find((x) => x.keadaan === keadaan) ?? null;
+}
+
+/**
+ * Q3 16 Okt: blangko set e-Court untuk satu keadaan dan pihak, atau null bila tidak ada padanannya (lalu dipakai blangko biasa).
+ *   - sidang pertama / ditunda: [JS] 5.1 (pihak pertama) / 5.2 (pihak kedua); dokumen "keduanya" dipecah per pihak lebih dulu oleh rute cetak;
+ *   - pemberitahuan putusan: [JS] 6.2 hanya untuk Tergugat/Termohon bila putusannya VERSTEK; selainnya [JS] 2 biasa;
+ *   - ikrar talak: [JS] 7 (Termohon). Relaas ikrar untuk Pemohon e-Court belum ada di Derry.
+ */
+function blangkoEcourt(keadaan: KeadaanRelaas, pihak: PihakDipanggil, opsi?: OpsiBlangkoRelaas): BlangkoRelaas | null {
+  const ec = BLANGKO_RELAAS.filter((x) => x.ecourt);
+  if (keadaan === "sidang-pertama" || keadaan === "sidang-ditunda") {
+    if (pihak !== "pertama" && pihak !== "kedua") return null;
+    return ec.find((x) => x.keadaan === "sidang-pertama" && x.pihak === pihak) ?? null;
+  }
+  if (keadaan === "pemberitahuan-putusan") {
+    if (pihak !== "kedua" || opsi?.verstek !== true) return null;
+    return ec.find((x) => x.keadaan === "pemberitahuan-putusan" && x.verstek) ?? null;
+  }
+  if (keadaan === "ikrar-talak") {
+    if (pihak !== "kedua" && pihak !== "keduanya") return null;
+    return ec.find((x) => x.keadaan === "ikrar-talak") ?? null;
+  }
+  return null;
+}
+
+/**
+ * Q3 16 Okt: amplop pendamping relaas ([JS] 8.1.x panggilan sidang, 8.2.x pemberitahuan putusan, 8.3.x ikrar talak) untuk satu sisi pihak.
+ * Perkara e-Court: Penggugat/Pemohon dipanggil elektronik (tanpa amplop), Tergugat/Termohon dengan surat tercatat -> amplop surat tercatat.
+ */
+export function blangkoAmplopPendamping(
+  keadaan: KeadaanRelaas,
+  sisi: "pertama" | "kedua",
+  opsi?: OpsiBlangkoRelaas
+): BlangkoRelaas | null {
+  const cari = (k: KeadaanRelaas) => BLANGKO_RELAAS.find((x) => x.keadaan === k && x.pihak === sisi) ?? null;
+  if (keadaan === "sidang-pertama" || keadaan === "sidang-ditunda") {
+    if (opsi?.lewatEcourt === true) {
+      return sisi === "kedua" ? (BLANGKO_RELAAS.find((x) => x.keadaan === "amplop") ?? null) : null;
+    }
+    return cari("amplop-panggilan");
+  }
+  if (keadaan === "pemberitahuan-putusan") return cari("amplop-putusan");
+  if (keadaan === "ikrar-talak") return cari("amplop-ikrar");
+  return null;
 }
 
 /** Blangko bawaan untuk satu keadaan dan satu sisi pihak (1 = P, 2 = T) - tanpa aturan kehadiran. */
-export function blangkoRelaasPerPihak(keadaan: KeadaanRelaas, sisi: "pertama" | "kedua"): BlangkoRelaas | null {
-  return BLANGKO_RELAAS.find((x) => x.keadaan === keadaan && x.pihak === sisi) ?? null;
+export function blangkoRelaasPerPihak(keadaan: KeadaanRelaas, sisi: "pertama" | "kedua", opsi?: OpsiBlangkoRelaas): BlangkoRelaas | null {
+  if (opsi?.lewatEcourt === true) {
+    const ec = blangkoEcourt(keadaan, sisi, opsi);
+    if (ec) return ec;
+  }
+  return BLANGKO_BIASA().find((x) => x.keadaan === keadaan && x.pihak === sisi) ?? null;
 }
 
 /**
