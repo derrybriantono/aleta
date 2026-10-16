@@ -5259,6 +5259,9 @@ export type UnggahMassalBasBot = {
   ditunda: boolean;
   alasanDitunda: string;
   ikrar: boolean;
+  /** Butir 43 (17 Okt): hanya terisi bila diminta basAda - e-Doc BAS sudah ada (tombol Ganti). */
+  adaBas?: boolean;
+  jalurBas?: string;
   panitera: string[];
   majelis: string[];
   saksiAbt: { saksi: number; tanyaJawab: number } | null;
@@ -5275,8 +5278,11 @@ export type UnggahMassalDaftarBot = {
 };
 
 /** e-Doc putusan/BAS yang menunggu diunggah, seluruh satker (SELECT saja). */
-export async function getGatewayUnggahMassalDaftar(sejakHari?: number) {
-  const q = sejakHari ? `?sejak=${encodeURIComponent(String(sejakHari))}` : "";
+export async function getGatewayUnggahMassalDaftar(sejakHari?: number, basAda = false) {
+  const kueri = new URLSearchParams();
+  if (sejakHari) kueri.set("sejak", String(sejakHari));
+  if (basAda) kueri.set("basAda", "1"); // butir 43: BAS yang sudah ada ikut (tombol Ganti)
+  const q = kueri.toString() ? `?${kueri.toString()}` : "";
   return gatewayFetch<UnggahMassalDaftarBot>(`/internal/aleta-bot/sipp/unggah-massal/daftar${q}`, { timeoutMs: 30_000 });
 }
 

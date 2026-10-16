@@ -102,6 +102,9 @@ export type BarisUnggahMassal = {
   ikrar?: boolean;
   hariIni?: boolean;
   bukti?: string[];
+  /** Butir 43 (17 Okt): e-Doc BAS SUDAH ada di SIPP (hanya bila diminta "tampilkan juga yang sudah ada") - tombol Ganti. */
+  adaBas?: boolean;
+  jalurBas?: string;
 };
 
 export type DaftarUnggahMassal = {
@@ -162,6 +165,7 @@ function barisBas(x: UnggahMassalBasBot, namaAkun: string, hariIni: string): Bar
     ikrar: x.ikrar,
     hariIni: x.tanggalSidang === hariIni,
     bukti: buktiBasAbt(x.saksiAbt),
+    ...(x.adaBas ? { adaBas: true, jalurBas: String(x.jalurBas || "") } : {}),
   };
 }
 
@@ -212,9 +216,10 @@ export function susunDaftarUnggahMassal(p: {
     jumlah: {
       putusanSaya: semuaPutusan.filter((x) => x.milikSaya).length,
       putusanSemua: hak.semua.putusan ? semuaPutusan.length : semuaPutusan.filter((x) => x.milikSaya).length,
-      basSaya: semuaBas.filter((x) => x.milikSaya).length,
-      basSemua: hak.semua.bas ? semuaBas.length : semuaBas.filter((x) => x.milikSaya).length,
-      basTertunggak: bas.filter((x) => !x.hariIni).length,
+      // Yang sudah ada (butir 43, hanya bila diminta) tidak ikut hitungan "menunggu".
+      basSaya: semuaBas.filter((x) => x.milikSaya && !x.adaBas).length,
+      basSemua: (hak.semua.bas ? semuaBas : semuaBas.filter((x) => x.milikSaya)).filter((x) => !x.adaBas).length,
+      basTertunggak: bas.filter((x) => !x.hariIni && !x.adaBas).length,
     },
     galat,
   };

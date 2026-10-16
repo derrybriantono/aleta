@@ -29,6 +29,9 @@
  * Bagian yang gagal dibaca DISEBUT di `galat` dan bagiannya null - bukan
  * daftar kosong, sebab kosong yang palsu terbaca "tidak ada yang menunggu".
  *
+ * `basAda` (butir 43, 17 Okt 2026): BAS yang e-Doc-nya SUDAH ada ikut didaftar
+ * (adaBas, jalurBas) supaya petugas dapat menekan "Ganti" - tetap SELECT saja.
+ *
  * `cek` membaca ulang SATU e-Doc tepat sebelum unggah (cek dobel, selaras
  * dengan L1: e-Doc yang sudah ada tidak diganti tanpa persetujuan).
  */
@@ -93,7 +96,7 @@ function buatLayanan(depsMasuk) {
    * Seluruh e-Doc yang menunggu. Pulang
    *   { ok:true, hariIni, sejak, putusan[]|null, tertahan[]|null, bas[]|null, galat[] }
    */
-  async function daftar({ sejakHari = HARI_BAWAAN } = {}) {
+  async function daftar({ sejakHari = HARI_BAWAAN, basAda = false } = {}) {
     const d = deps();
     const galat = [];
     const sebabDari = (e) => String((e && (e.sqlMessage || e.code || e.message)) || e || "tidak diketahui").slice(0, 160);
@@ -183,7 +186,7 @@ function buatLayanan(depsMasuk) {
       const b = await d.kueriSipp(
         `SELECT js.id, js.perkara_id, p.nomor_perkara, p.jenis_perkara_nama, p.alur_perkara_id, js.urutan,
                 DATE_FORMAT(js.tanggal_sidang, '%Y-%m-%d') AS tanggal, js.agenda, js.ditunda, js.alasan_ditunda,
-                js.ikrar_talak,
+                js.ikrar_talak, js.edoc_bas,
                 (SELECT GROUP_CONCAT(DISTINCT n.panitera_nama SEPARATOR '|')
                    FROM perkara_panitera_pn n WHERE n.perkara_id = js.perkara_id AND n.aktif = 'Y') AS panitera,
                 (SELECT GROUP_CONCAT(DISTINCT h.hakim_nama ORDER BY h.urutan SEPARATOR '|')
@@ -191,7 +194,7 @@ function buatLayanan(depsMasuk) {
            FROM perkara_jadwal_sidang js
            JOIN perkara p ON p.perkara_id = js.perkara_id
           WHERE js.tanggal_sidang <= ? AND js.tanggal_sidang >= ?
-            AND (js.edoc_bas IS NULL OR js.edoc_bas = '')
+            ${basAda ? "" : "AND (js.edoc_bas IS NULL OR js.edoc_bas = '')"}
           ORDER BY js.tanggal_sidang DESC, js.perkara_id DESC, js.urutan
           LIMIT ${BATAS_BAS}`,
         [hariIni, sejak]
@@ -208,6 +211,8 @@ function buatLayanan(depsMasuk) {
         ditunda: ya(r.ditunda),
         alasanDitunda: teks(r.alasan_ditunda).slice(0, 200),
         ikrar: ya(r.ikrar_talak),
+        adaBas: Boolean(teks(r.edoc_bas)),
+        jalurBas: teks(r.edoc_bas).split("/").pop() || "",
         panitera: daftarNama(r.panitera),
         majelis: daftarNama(r.majelis),
         saksiAbt: null,
