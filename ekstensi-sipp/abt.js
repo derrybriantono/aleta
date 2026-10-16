@@ -19583,3 +19583,172 @@ function pkGambarPekerjaan(wadah, data) {
   wadah.appendChild(kotak);
 }
 /* === AKHIR PEKERJAAN === */
+
+/* === 16OKT-F43: ANONIMISASI PUTUSAN MANDIRI ALETA (tanpa rute anonim ABT) === */
+// Blangko Derry "PDF anonim" dan unggah e-Doc anonim memakai penyamar ALETA lebih dulu
+// (portal: /putusan/anonim-mandiri - data pihak/saksi/anak dari SIPP + pola naskah);
+// anonimisasi ABT (main/anonim) hanya cadangan bila penyamar ALETA gagal. Sebelum
+// mengunggah, petugas melihat pratinjau naskah anonim (alatPratinjauAnonim).
+const ALETA_API_ANONIM_MANDIRI = "/aleta/api/aleta-ecourt/putusan/anonim-mandiri";
+const F43_NAMA_JENIS = {
+  "nama pihak": "nama para pihak",
+  "nama saksi": "nama saksi",
+  "nama anak": "nama anak",
+  "nama orang lain": "nama orang lain (orang tua, kerabat)",
+  NIK: "NIK",
+  "nomor telepon": "nomor telepon",
+  "nomor rekening": "nomor rekening",
+  email: "alamat email",
+  NIP: "NIP",
+  "tempat & tanggal lahir": "tempat/tanggal lahir",
+  alamat: "alamat (disisakan kabupaten/kota)",
+  pekerjaan: "pekerjaan",
+  sekolah: "nama sekolah",
+};
+
+function f43Esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+function f43KeBase64(buf) {
+  const b = new Uint8Array(buf);
+  let s = "";
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function f43DariBase64(b64) {
+  const s = atob(String(b64 || ""));
+  const b = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i += 1) b[i] = s.charCodeAt(i);
+  return b.buffer;
+}
+
+/** "12 nama para pihak, 3 NIK, ..." - kalimat ringkas untuk catatan cetak. */
+function alatRingkasAnonim(h) {
+  const r = (h && h.ringkas) || {};
+  const urut = Object.keys(F43_NAMA_JENIS).filter((k) => r[k]);
+  return urut.map((k) => `${r[k]} ${F43_NAMA_JENIS[k]}`).join(", ") || "tidak ada yang perlu disamarkan";
+}
+
+/**
+ * Samarkan RTF putusan lewat portal. Pulang { ok, rtf:ArrayBuffer, ringkas, sisa, dilewati,
+ * potongan, tidakTerbaca } atau { ok:false, sebab } - pemanggil lalu memakai ABT.
+ */
+async function alatAnonimMandiri(rtfBuf, nomorPerkara, catat) {
+  try {
+    if (typeof catat === "function") catat("menyamarkan naskah dengan penyamar ALETA…");
+    const opsi = {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rtfBase64: f43KeBase64(rtfBuf), nomorPerkara: String(nomorPerkara || "") }),
+      batasMs: 90000,
+    };
+    const r = typeof alatAmbil === "function" ? await alatAmbil(ALETA_API_ANONIM_MANDIRI, opsi, "Menyamarkan putusan") : await fetch(ALETA_API_ANONIM_MANDIRI, opsi);
+    const luar = await r.json().catch(() => null);
+    const d = luar && luar.data !== undefined ? luar.data : luar;
+    if (!r.ok || !d || !d.ok) {
+      return { ok: false, sebab: (d && (d.sebab || d.alasan)) || (luar && luar.error && luar.error.message) || `ALETA menjawab ${r.status}` };
+    }
+    return { ...d, ok: true, rtf: f43DariBase64(d.rtfBase64), rtfBase64: undefined };
+  } catch (e) {
+    return { ok: false, sebab: String((e && e.message) || e) };
+  }
+}
+
+function f43PasangGaya() {
+  if (document.getElementById("aleta-f43-gaya")) return;
+  const g = document.createElement("style");
+  g.id = "aleta-f43-gaya";
+  g.textContent = `
+.aleta-f43-tirai{position:fixed;inset:0;z-index:2147483600;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:16px;font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.aleta-f43-kotak{background:#fff;color:#0f172a;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);width:min(920px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden}
+.aleta-f43-kepala{padding:16px 20px 10px;border-bottom:1px solid #e2e8f0}
+.aleta-f43-kepala h2{margin:0 0 4px;font-size:19px;font-weight:700}
+.aleta-f43-kepala p{margin:0;color:#475569}
+.aleta-f43-badan{padding:12px 20px;overflow:auto;flex:1 1 auto}
+.aleta-f43-awas{background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:10px 12px;margin:0 0 10px}
+.aleta-f43-awas ul{margin:6px 0 0 18px;padding:0}
+.aleta-f43-awas li{margin:2px 0}
+.aleta-f43-baik{background:#dcfce7;border:1px solid #22c55e;border-radius:10px;padding:8px 12px;margin:0 0 10px}
+.aleta-f43-naskah{white-space:pre-wrap;font:15px/1.6 "Times New Roman",Georgia,serif;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;max-height:48vh;overflow:auto;background:#f8fafc}
+.aleta-f43-naskah mark{background:#bfdbfe;color:#1e3a8a;border-radius:3px;padding:0 2px;font-family:system-ui,sans-serif;font-size:13px;font-weight:600}
+.aleta-f43-naskah mark.pihak{background:#c7d2fe}.aleta-f43-naskah mark.orang{background:#e9d5ff;color:#581c87}
+.aleta-f43-kaki{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid #e2e8f0;background:#f8fafc}
+.aleta-f43-kaki button{font:600 15px system-ui,sans-serif;border-radius:9px;padding:9px 16px;cursor:pointer;border:1px solid #cbd5e1;background:#fff;color:#0f172a}
+.aleta-f43-kaki button.utama{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.aleta-f43-kaki button:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+.aleta-f43-badan details{margin:0 0 10px}
+@media (prefers-color-scheme: dark){.aleta-f43-kotak{background:#0f172a;color:#e2e8f0}.aleta-f43-kepala,.aleta-f43-kaki{border-color:#334155}.aleta-f43-kaki{background:#111827}.aleta-f43-kaki button{background:#1e293b;color:#e2e8f0;border-color:#475569}.aleta-f43-naskah{background:#111827;border-color:#334155}.aleta-f43-kepala p{color:#94a3b8}.aleta-f43-awas{background:#422006;border-color:#b45309}.aleta-f43-baik{background:#052e16;border-color:#15803d}}
+`;
+  (document.head || document.documentElement).appendChild(g);
+}
+
+/**
+ * Pratinjau naskah anonim sebelum diunggah ke e-Doc SIPP.
+ * Pulang "unggah" (putusan + anonim), "tanpa" (putusan saja), atau "batal".
+ */
+function alatPratinjauAnonim(h, o) {
+  return new Promise((selesai) => {
+    f43PasangGaya();
+    const tirai = document.createElement("div");
+    tirai.className = "aleta-f43-tirai";
+    tirai.setAttribute("role", "dialog");
+    tirai.setAttribute("aria-modal", "true");
+    tirai.setAttribute("aria-labelledby", "aleta-f43-judul");
+    const sisa = (h && h.sisa) || [];
+    const dilewati = (h && h.dilewati) || [];
+    const tidakTerbaca = (h && h.tidakTerbaca) || [];
+    const kelas = (j) => (j === "nama pihak" ? "pihak" : /^nama/.test(j || "") ? "orang" : "");
+    const naskah = ((h && h.potongan) || [])
+      .map((p) => (p.j ? `<mark class="${kelas(p.j)}" title="${f43Esc(F43_NAMA_JENIS[p.j] || p.j)}">${f43Esc(p.t)}</mark>` : f43Esc(p.t)))
+      .join("");
+    tirai.innerHTML =
+      `<div class="aleta-f43-kotak">` +
+      `<div class="aleta-f43-kepala"><h2 id="aleta-f43-judul">Periksa naskah anonim sebelum diunggah</h2>` +
+      `<p>${f43Esc((o && o.nomor) || "")} · Yang disamarkan: ${f43Esc(alatRingkasAnonim(h))}. Nama majelis, panitera, dan kuasa hukum tidak disamarkan.</p></div>` +
+      `<div class="aleta-f43-badan">` +
+      (sisa.length
+        ? `<div class="aleta-f43-awas" role="alert"><b>Masih ada ${sisa.length} bagian yang tampaknya data pribadi:</b><ul>${sisa
+            .slice(0, 12)
+            .map((x) => `<li><b>${f43Esc(x.kata)}</b> (${f43Esc(x.jenis)}) - "…${f43Esc(x.konteks)}…"</li>`)
+            .join("")}</ul>Bila diunggah, bagian itu ikut terbit di Direktori Putusan.</div>`
+        : `<div class="aleta-f43-baik">Tidak ada nama, NIK, atau nomor telepon dari data SIPP yang tersisa.</div>`) +
+      (tidakTerbaca.length
+        ? `<div class="aleta-f43-awas">Sebagian data SIPP tidak terbaca (${f43Esc(tidakTerbaca.join(", "))}) - periksa nama-nama itu sendiri di naskah.</div>`
+        : "") +
+      (dilewati.length
+        ? `<details><summary>${dilewati.length} nama dalam kutipan kitab/hadis dibiarkan (bukan orang dalam perkara)</summary><ul>${dilewati
+            .slice(0, 20)
+            .map((x) => `<li>${f43Esc(x.kata)} - "…${f43Esc(x.konteks)}…"</li>`)
+            .join("")}</ul></details>`
+        : "") +
+      `<div class="aleta-f43-naskah" tabindex="0" aria-label="Naskah anonim">${naskah}</div>` +
+      `</div>` +
+      `<div class="aleta-f43-kaki">` +
+      `<button type="button" data-f43="batal">Batal unggah</button>` +
+      `<button type="button" data-f43="tanpa">Unggah putusan saja</button>` +
+      `<button type="button" class="utama" data-f43="unggah">Unggah putusan + anonim</button>` +
+      `</div></div>`;
+    const tutup = (hasil) => {
+      document.removeEventListener("keydown", tombol, true);
+      tirai.remove();
+      selesai(hasil);
+    };
+    const tombol = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        tutup("batal");
+      }
+    };
+    tirai.addEventListener("click", (e) => {
+      const b = e.target && e.target.closest ? e.target.closest("[data-f43]") : null;
+      if (b) tutup(b.getAttribute("data-f43"));
+    });
+    document.addEventListener("keydown", tombol, true);
+    document.body.appendChild(tirai);
+    const utama = tirai.querySelector("button.utama");
+    if (utama) utama.focus();
+  });
+}
+/* === AKHIR 16OKT-F43 === */
