@@ -43,6 +43,7 @@
     "sisa-ikrar": "ideL2Ikrar",
     "akta-cerai": "ideL2AktaCerai",
     "lewat-5-bulan": "ideL2LimaBulan",
+    "ecourt-verifikasi": "ideL2EcourtVerifikasi",
   };
   const POLA = /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4}){0,2}\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/;
   const LABEL_NOMOR = /^nomor\s+perkara\s*:?$/i;

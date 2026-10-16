@@ -26,12 +26,20 @@
  *   Belum ditunda 15.00  dari 1.257 tundaan 2026, baris sidang berikutnya
  *                        dicatat sebelum 15.00 pada hari sidang: 1.020 (81%);
  *                        15.00-akhir hari: 158 (13%); hari berikutnya: 79 (6%).
+ *                        Dipisah (ukur ulang sesudah jawaban pengguna 16 Okt):
+ *                        e-Court jawab-menjawab/kesimpulan 196 tundaan - 115
+ *                        (59%) sebelum 15.00, 44 (22%) 15.00-16.29, 12 >= 16.30,
+ *                        25 hari berikutnya -> batas 16.30 menandai 19%, bukan
+ *                        41%; agenda lain 1.061 - 905 (85%) sebelum 15.00.
+ *                        (87 dari 253 sidang jawab-menjawab 2026 terjadwal 15.00.)
  *   Potensi verstek      gugatan putus 2025-2026 yang tergugatnya tidak pernah
  *                        hadir sebelum hari putus: 1.017, 909 (89%) berakhir
  *                        verstek (sisanya dicabut/gugur/NO); 909 dari 989
  *                        putusan verstek (92%) tertangkap.
  *   Penetapan awal       919 perkara 2026: keempat penetapan PERTAMA (tabel
- *                        riwayat perkara_hakim_pn dst.) setanggal pada 918.
+ *                        riwayat perkara_hakim_pn dst.) setanggal pada 918, dan
+ *                        918 lengkap PADA HARI PENDAFTARAN (1 lewat 3 hari kerja)
+ *                        -> ambang "lewat 1 hari kerja" hanya menandai yang ganjil.
  *                        perkara_penetapan menyimpan penetapan TERAKHIR - bila
  *                        majelis diganti (166 perkara) tanggalnya berbeda dari
  *                        PHS pada 119 perkara: membacanya akan memerahkan 13%
@@ -43,7 +51,16 @@
  *                        961 akta terbit hari itu juga, 12 dalam 7 hari, 3
  *                        dalam 8-14 hari; belum terbit kini 2 (> 30 hari).
  *   Pemberitahuan        verstek gugatan 2026: 360 dari 385 diberitahukan
- *                        dalam 14 hari; belum diberitahukan > 14 hari: 14.
+ *                        dalam 14 hari (ambang 14 hari dipertahankan). Verstek
+ *                        2025-2026: BHT dicatat hari ke-15 sesudah pemberitahuan
+ *                        pada 424 dari 750, hari ke-16..21 pada 270, > 21 pada 18
+ *                        -> "BHT belum dicatat" kuning 1-7 hari, merah > 7 hari.
+ *                        Kini (16 Okt): 33 menunggu pemberitahuan (< 14 hari),
+ *                        16 menunggu BHT (perkiraan), 0 terlambat.
+ *   Verifikasi e-Court   server 16 Okt 21.40 (arsip tarikan, baca saja): 58
+ *                        dokumen "belum" di 31 perkara gugatan - 28 sudah putus,
+ *                        3 agenda bukan jawab-menjawab -> 0 ditandai. Tanpa
+ *                        saringan babak/agenda/putus, 31 perkara salah tanda.
  *
  * SIPP hanya DIBACA. Bagian yang gagal dibaca dilaporkan di `terbaca`, dan
  * ketiadaan penanda dari bagian itu TIDAK berarti "baik".
@@ -105,6 +122,27 @@ function tanggalIndo(t) {
   return `${d} ${BULAN[m - 1]} ${y}`;
 }
 
+/** 0 = Minggu ... 6 = Sabtu. */
+function hariMinggu(t) {
+  return new Date(`${t}T00:00:00Z`).getUTCDay();
+}
+
+/**
+ * Hari kerja (Senin-Jumat) SESUDAH `dari` sampai dengan `sampai`. Libur nasional
+ * belum dikurangi (hanya Sabtu/Minggu) - penanda bisa menyala sehari lebih awal
+ * sesudah libur.
+ */
+function hariKerjaSesudah(dari, sampai) {
+  const n = hari(dari, sampai);
+  if (n === null || n <= 0) return 0;
+  let jumlah = 0;
+  for (let i = 1; i <= n; i += 1) {
+    const w = hariMinggu(tambahHari(dari, i));
+    if (w !== 0 && w !== 6) jumlah += 1;
+  }
+  return jumlah;
+}
+
 // ---------------------------------------------------------------------------
 // Katalog: kode saklar, nama, dasar hukum. Satu-satunya tempat teks dasar.
 // ---------------------------------------------------------------------------
@@ -120,9 +158,20 @@ const HADIR_TERGUGAT = new Set([1, 3, 8, 9, 11, 15]);
 const ABSEN_TERGUGAT = new Set([2, 4, 5, 7, 10, 13, 14]);
 
 const BATAS_TUNDA_MENIT = 15 * 60;
+/**
+ * Jawaban pengguna 16 Okt: sidang e-Court beragenda jawab-menjawab/kesimpulan dijadwalkan
+ * pukul 15.00 = batas akhir unggah dokumen e-Court, jadi tundaannya wajar SESUDAH 15.00.
+ * Bagi mereka batasnya akhir hari kerja: 16.30 WITA (Jumat 17.00) - jam ini asumsi.
+ */
+const AKHIR_HARI_KERJA_MENIT = 16 * 60 + 30;
+const AKHIR_JUMAT_MENIT = 17 * 60;
+const POLA_JAWAB_MENJAWAB = /jawab|replik|duplik|kesimpulan/i;
 const SEMA_HARI = 150;
-const AMBANG_PENETAPAN_HARI = 3;
+/** Jawaban pengguna 16 Okt: biasanya keempatnya sehari - ditandai bila lewat 1 hari kerja. */
+const AMBANG_PENETAPAN_HARI_KERJA = 1;
 const AMBANG_PEMBERITAHUAN_HARI = 14;
+/** Tenggang verzet sejak pemberitahuan sah (Pasal 153 RBg / 129 HIR) - lalu BHT. */
+const TENGGANG_VERZET_HARI = 14;
 const AKTA_CERAI_HARI = 7;
 
 const KATALOG = Object.freeze({
@@ -150,16 +199,14 @@ const KATALOG = Object.freeze({
   "penetapan-awal": {
     nama: "Penetapan awal (PMH/PPP/PJS/PHS)",
     dasar:
-      "Pasal 145 RBg / Pasal 121 HIR (hari sidang ditetapkan); praktik PA Donggala yang dikonfirmasi pengguna: PMH, PPP, PJS, PHS ditetapkan pada satu tanggal yang sama.",
+      "Pasal 145 RBg / Pasal 121 HIR (hari sidang ditetapkan); ketentuan pengguna (16 Okt 2026): PMH, PPP, PJS, PHS ditetapkan pada satu tanggal yang sama untuk semua jenis perkara, biasanya pada hari pendaftaran.",
     sumber: "Tanggal penetapan PERTAMA di riwayat SIPP (Penetapan Majelis Hakim, Panitera Pengganti, Juru Sita, Hari Sidang).",
-    perluDicek: true,
   },
   "belum-ditunda": {
     nama: "Belum ditunda sampai 15.00",
     dasar:
-      "Pasal 186 RBg / Pasal 159 HIR (sidang yang ditunda ditetapkan hari sidang berikutnya); batas pukul 15.00 WITA adalah aturan kerja satker, bukan undang-undang.",
-    sumber: "Jadwal Sidang SIPP hari ini: belum ada tundaan, sidang berikutnya, atau putusan.",
-    perluDicek: true,
+      "Pasal 186 RBg / Pasal 159 HIR (sidang yang ditunda ditetapkan hari sidang berikutnya); batas pukul 15.00 WITA ketentuan kerja satker. Perkara e-Court beragenda jawab-menjawab/kesimpulan: pukul 15.00 adalah batas unggah dokumen e-Court, jadi batas tundanya akhir hari kerja.",
+    sumber: "Jadwal Sidang SIPP hari ini (agenda, jam) dan tanda e-Court: belum ada tundaan, sidang berikutnya, atau putusan.",
   },
   "potensi-verstek": {
     nama: "Potensi verstek",
@@ -187,15 +234,21 @@ const KATALOG = Object.freeze({
   "akta-cerai": {
     nama: "Akta cerai & pemberitahuan putusan",
     dasar:
-      "Pasal 84 ayat (4) UU 7/1989: akta cerai diberikan paling lambat 7 hari setelah putusan berkekuatan hukum tetap diberitahukan (untuk cerai talak dihitung dari ikrar - perlu dicek). Pemberitahuan isi putusan verstek: Pasal 153 RBg / Pasal 129 HIR (tenggang verzet dihitung sejak pemberitahuan); batas 14 hari diambil dari kebiasaan satker.",
-    sumber: "SIPP Putusan (BHT), Ikrar Talak, Akta Cerai, dan Pemberitahuan Putusan.",
-    perluDicek: true,
+      "Pasal 84 ayat (4) UU 7/1989: akta cerai diberikan paling lambat 7 hari setelah putusan berkekuatan hukum tetap; cerai talak sesudah ikrar diucapkan (dihitung dari tanggal ikrar). Putusan verstek: diberitahukan kepada tergugat/termohon, lalu 14 hari sejak pemberitahuan sah (tenggang verzet, Pasal 153 RBg / Pasal 129 HIR) putusan berkekuatan hukum tetap.",
+    sumber: "SIPP Putusan (BHT), Ikrar Talak, Akta Cerai, dan Pemberitahuan Putusan (pihak kedua).",
   },
   "lewat-5-bulan": {
     nama: "Lewat 5 bulan (lapor Ketua)",
     dasar:
       "SEMA 2/2014: perkara tingkat pertama diselesaikan paling lambat 5 bulan; bila lewat, Ketua Majelis melaporkan alasannya kepada Ketua Pengadilan (tembusan Ketua PTA dan Ketua MA).",
     sumber: "Hari sejak pendaftaran dikurangi lama mediasi, tanpa kelonggaran ghaib.",
+  },
+  "ecourt-verifikasi": {
+    nama: "Dokumen e-Court belum diverifikasi",
+    dasar:
+      "Persidangan elektronik (PERMA 1/2019 jo. PERMA 7/2022): dokumen jawaban, replik, duplik, dan kesimpulan yang diunggah pihak diverifikasi majelis sebelum diteruskan kepada pihak lawan.",
+    sumber: "Arsip tarikan e-Court ALETA (status verifikasi tiap dokumen pihak) untuk perkara e-Court pada agenda jawab-menjawab/kesimpulan.",
+    perluDicek: true,
   },
 });
 
@@ -285,14 +338,21 @@ function nilaiPenetapan(f, kini) {
   const nama = { pmh: "PMH", ppp: "PPP", pjs: "PJS", phs: "PHS" };
   const kurang = Object.keys(nama).filter((k) => !t[k]);
   const umur = hari(f.tglDaftar, kini.tanggal);
+  const kerja = f.tglDaftar ? hariKerjaSesudah(f.tglDaftar, kini.tanggal) : 0;
   if (kurang.length) {
     const daftar = kurang.map((k) => nama[k]).join(", ");
-    if (umur !== null && umur >= AMBANG_PENETAPAN_HARI) {
+    if (kerja > AMBANG_PENETAPAN_HARI_KERJA) {
       return [
-        penanda("penetapan-awal", "kuning", `Belum ada ${daftar}`, `Perkara sudah ${umur} hari sejak didaftarkan, tetapi ${daftar} belum ditetapkan di SIPP.`, { angka: umur }),
+        penanda(
+          "penetapan-awal",
+          "kuning",
+          `Belum ada ${daftar}`,
+          `Perkara didaftarkan ${tanggalIndo(f.tglDaftar)} (${kerja} hari kerja lalu), tetapi ${daftar} belum ditetapkan di SIPP. Biasanya keempat penetapan selesai pada hari pendaftaran, paling lambat 1 hari kerja.`,
+          { angka: kerja }
+        ),
       ];
     }
-    return [penanda("penetapan-awal", "abu", `Menunggu ${daftar}`, `Perkara baru ${Math.max(0, umur || 0)} hari sejak didaftarkan; ${daftar} belum ditetapkan.`, { hanyaDetil: true })];
+    return [penanda("penetapan-awal", "abu", `Menunggu ${daftar}`, `Perkara baru ${Math.max(0, umur || 0)} hari sejak didaftarkan; ${daftar} belum ditetapkan (batas 1 hari kerja).`, { hanyaDetil: true })];
   }
   const semua = [t.pmh, t.ppp, t.pjs, t.phs];
   if (new Set(semua).size > 1) {
@@ -318,6 +378,32 @@ function nilaiBelumDitunda(f, kini) {
   if (f.ikrar && f.ikrar.ikrar === kini.tanggal) return [];
   const selesai = hariIni.some((j) => j.ditunda === "Y" || /\bputus|ikrar|cabut|gugur|damai|rukun/i.test(j.alasan || ""));
   if (selesai) return [];
+  // e-Court + agenda jawab-menjawab/kesimpulan: 15.00 = batas unggah dokumen e-Court
+  // (jawaban pengguna 16 Okt) - batas tundanya akhir hari kerja.
+  const unggahEcourt = Boolean(f.ecourt) && hariIni.some((j) => POLA_JAWAB_MENJAWAB.test(j.agenda || ""));
+  if (unggahEcourt) {
+    const akhir = hariMinggu(kini.tanggal) === 5 ? AKHIR_JUMAT_MENIT : AKHIR_HARI_KERJA_MENIT;
+    const jam = `${Math.floor(akhir / 60)}.${String(akhir % 60).padStart(2, "0")}`;
+    if (kini.menit < akhir) {
+      return [
+        penanda(
+          "belum-ditunda",
+          "abu",
+          "Batas unggah e-Court 15.00",
+          `Perkara e-Court dengan agenda jawab-menjawab/kesimpulan: batas unggah dokumen e-Court pukul 15.00, jadi tundaan wajar dicatat sesudah 15.00 - paling lambat akhir hari kerja (${jam}).`
+        ),
+      ];
+    }
+    return [
+      penanda(
+        "belum-ditunda",
+        "merah",
+        "Belum ditunda (lewat jam kerja)",
+        `Perkara e-Court ini bersidang hari ini (agenda jawab-menjawab/kesimpulan, batas unggah dokumen e-Court 15.00), sudah lewat akhir hari kerja (${jam}), tetapi tundaannya belum dicatat di SIPP.`,
+        { perluDicek: true }
+      ),
+    ];
+  }
   if (kini.menit < BATAS_TUNDA_MENIT) {
     return [penanda("belum-ditunda", "abu", "Sidang hari ini", "Sidang hari ini belum dicatat hasilnya (tunda atau putus). Batasnya pukul 15.00.", { hanyaDetil: true })];
   }
@@ -416,21 +502,86 @@ function nilaiAkta(f, kini) {
       );
     }
   }
-  if (Number(f.alur) === ALUR_GUGATAN && f.putus.verstek === "Y" && !f.putus.bht && !(f.pbt && f.pbt.pihak2)) {
-    const sejak = hari(f.putus.tanggal, kini.tanggal);
-    if (sejak !== null && sejak >= AMBANG_PEMBERITAHUAN_HARI) {
-      hasil.push(
-        penanda(
-          "akta-cerai",
-          "kuning",
-          "Putusan belum diberitahukan",
-          `Putusan verstek ${tanggalIndo(f.putus.tanggal)} (${sejak} hari lalu) belum tercatat diberitahukan kepada tergugat/termohon, sehingga BHT belum dapat dihitung.`,
-          { angka: sejak }
-        )
-      );
+  // Verstek (jawaban pengguna 16 Okt): putusan dibacakan, lalu diberitahukan; sejak
+  // pemberitahuan sah dihitung 14 hari -> BHT. BHT TIDAK dihitung dari tanggal putus.
+  if (Number(f.alur) === ALUR_GUGATAN && f.putus.verstek === "Y" && !f.putus.bht) {
+    const sejakPutus = hari(f.putus.tanggal, kini.tanggal);
+    const pbt = f.pbt && f.pbt.pihak2;
+    if (!pbt) {
+      if (sejakPutus !== null && sejakPutus >= AMBANG_PEMBERITAHUAN_HARI) {
+        hasil.push(
+          penanda(
+            "akta-cerai",
+            "kuning",
+            `Belum diberitahukan (${sejakPutus} hari)`,
+            `Putusan verstek ${tanggalIndo(f.putus.tanggal)} (${sejakPutus} hari lalu) belum tercatat diberitahukan kepada tergugat/termohon. Tenggang 14 hari menuju BHT baru berjalan sejak pemberitahuan sah.`,
+            { angka: sejakPutus }
+          )
+        );
+      } else if (sejakPutus !== null) {
+        hasil.push(
+          penanda("akta-cerai", "abu", "Menunggu pemberitahuan", `Putusan verstek ${tanggalIndo(f.putus.tanggal)} (${sejakPutus} hari lalu) belum diberitahukan kepada tergugat/termohon.`, {
+            angka: sejakPutus,
+            hanyaDetil: true,
+          })
+        );
+      }
+    } else {
+      const perkiraanBht = tambahHari(pbt, TENGGANG_VERZET_HARI);
+      const lewat = hari(perkiraanBht, kini.tanggal);
+      if (lewat <= 0) {
+        hasil.push(
+          penanda(
+            "akta-cerai",
+            "abu",
+            `Perkiraan BHT ${tanggalIndo(perkiraanBht)}`,
+            `Putusan verstek diberitahukan ${tanggalIndo(pbt)}; 14 hari sesudahnya (${tanggalIndo(perkiraanBht)}) tenggang verzet habis dan putusan berkekuatan hukum tetap bila tidak ada verzet.`,
+            { angka: -lewat || 0 }
+          )
+        );
+      } else {
+        hasil.push(
+          penanda(
+            "akta-cerai",
+            lewat > 7 ? "merah" : "kuning",
+            `BHT belum dicatat (lewat ${lewat} hari)`,
+            `Putusan verstek diberitahukan ${tanggalIndo(pbt)}; 14 hari sesudahnya (${tanggalIndo(perkiraanBht)}) sudah lewat ${lewat} hari, tetapi BHT belum dicatat di SIPP. Periksa apakah ada verzet; bila tidak, catat BHT.`,
+            { angka: lewat }
+          )
+        );
+      }
     }
   }
   return hasil;
+}
+
+// ---------------------------------------------------------------------------
+// Penanda ke-11: dokumen e-Court belum diverifikasi majelis (jawaban pengguna 16 Okt)
+// ---------------------------------------------------------------------------
+
+function nilaiVerifikasiEcourt(f, kini) {
+  if (f.putus || !f.ecourt || !Array.isArray(f.dokumenEcourt) || !f.dokumenEcourt.length) return [];
+  const pokok = barisPokok(f).sort((a, b) => (a.tanggal < b.tanggal ? -1 : a.tanggal > b.tanggal ? 1 : 0));
+  if (!pokok.length) return [];
+  // Sidang sasaran: hari ini/berikutnya; bila tidak ada, sidang terakhir.
+  const sasaran = pokok.find((j) => j.tanggal >= kini.tanggal) || pokok[pokok.length - 1];
+  if (!POLA_JAWAB_MENJAWAB.test(sasaran.agenda || "")) return [];
+  // Hanya dokumen untuk babak ini: diunggah SESUDAH sidang sebelum sidang sasaran.
+  const lalu = pokok.filter((j) => j.tanggal < sasaran.tanggal).map((j) => j.tanggal);
+  const batas = lalu.length ? lalu[lalu.length - 1] : "";
+  const belum = f.dokumenEcourt.filter((d) => d.menunggu && (!batas || (d.diunggah && d.diunggah > batas)));
+  if (!belum.length) return [];
+  const judul = [...new Set(belum.map((d) => d.judul).filter(Boolean))].slice(0, 4).join(", ");
+  const terakhir = f.dokumenEcourt.map((d) => d.terlihat).filter(Boolean).sort().pop();
+  return [
+    penanda(
+      "ecourt-verifikasi",
+      sasaran.tanggal <= kini.tanggal ? "merah" : "kuning",
+      `${belum.length} dokumen e-Court belum diverifikasi`,
+      `Agenda ${sasaran.agenda} (${tanggalIndo(sasaran.tanggal)}): ${belum.length} dokumen pihak belum diverifikasi majelis${judul ? ` (${judul})` : ""}, sehingga belum dapat diteruskan ke pihak lawan.${terakhir ? ` Data e-Court terakhir ditarik ${terakhir}.` : ""}`,
+      { angka: belum.length }
+    ),
+  ];
 }
 
 const WARNA_NILAI_SK = { 5: "hijau", 3: "kuning", 1: "oranye", 0: "merah" };
@@ -487,6 +638,7 @@ function nilaiPerkara(f, kini) {
     ...nilaiIkrar(f, kini),
     ...nilaiAkta(f, kini),
     ...nilaiLimaBulan(f),
+    ...nilaiVerifikasiEcourt(f, kini),
   ];
 }
 
@@ -529,7 +681,7 @@ async function faktaBanyakPerkara(id, deps = {}) {
     if (!adaTabel) throw new Error(`tabel ${tabel} tidak terdaftar`);
   };
 
-  const [putus, jadwal, tunjuk, ikrar, akta, pbt] = await Promise.all([
+  const [putus, jadwal, tunjuk, ikrar, akta, pbt, ecourt] = await Promise.all([
     aman("putusan", async () => {
       wajib(await skema.tabelAda("perkara_putusan"), "perkara_putusan");
       return kueri(
@@ -542,7 +694,7 @@ async function faktaBanyakPerkara(id, deps = {}) {
       wajib(await skema.tabelAda("perkara_jadwal_sidang"), "perkara_jadwal_sidang");
       return kueri(
         `SELECT perkara_id AS perkaraId, tanggal_sidang AS tanggal, urutan, ditunda, alasan_ditunda AS alasan, dihadiri_oleh AS hadir,
-                ikrar_talak AS ikrar, verzet, keberatan
+                ikrar_talak AS ikrar, verzet, keberatan, agenda, jam_sidang AS jam
            FROM perkara_jadwal_sidang WHERE perkara_id IN (${isian})`,
         id
       );
@@ -581,14 +733,46 @@ async function faktaBanyakPerkara(id, deps = {}) {
     aman("pemberitahuan", async () => {
       wajib(await skema.tabelAda("perkara_putusan_pemberitahuan_putusan"), "perkara_putusan_pemberitahuan_putusan");
       return kueri(
-        `SELECT perkara_id AS perkaraId, pihak, MIN(tanggal_pemberitahuan_putusan) AS tanggal
+        // MAX: pemberitahuan yang diulang (relaas pertama tidak sah) - yang terakhir yang berlaku.
+        `SELECT perkara_id AS perkaraId, pihak, MAX(tanggal_pemberitahuan_putusan) AS tanggal
            FROM perkara_putusan_pemberitahuan_putusan
           WHERE perkara_id IN (${isian}) AND tanggal_pemberitahuan_putusan IS NOT NULL
           GROUP BY perkara_id, pihak`,
         id
       );
     }, []),
+    aman("ecourt", async () => {
+      wajib(await skema.tabelAda("perkara_efiling_id"), "perkara_efiling_id");
+      return kueri(`SELECT DISTINCT perkara_id AS perkaraId FROM perkara_efiling_id WHERE perkara_id IN (${isian})`, id);
+    }, []),
   ]);
+
+  // Arsip tarikan e-Court ALETA (basis data bot, bukan SIPP): status verifikasi dokumen pihak.
+  const nomorPer = deps.nomorPer || {};
+  const daftarNomor = [...new Set(id.map((x) => nomorPer[String(x)]).filter(Boolean))];
+  const dokumen = daftarNomor.length
+    ? await aman(
+        "dokumenEcourt",
+        async () => {
+          const bacaBot = deps.botKueri || ((sql, p) => require("./botDbService").query(sql, p));
+          const store = deps.ecourtStore || require("./ecourtStoreService");
+          const baris = await bacaBot(
+            `SELECT nomor_perkara AS nomorPerkara, judul_dokumen AS judulDokumen, status_verifikasi AS statusVerifikasi,
+                    diunggah_pada AS diunggahPada, terakhir_terlihat AS terlihat
+               FROM aleta_bot_ecourt_documents WHERE nomor_perkara IN (${daftarNomor.map(() => "?").join(", ")})`,
+            daftarNomor
+          );
+          return (Array.isArray(baris) ? baris : []).map((b) => ({
+            nomor: cleanText(b.nomorPerkara).toLowerCase(),
+            judul: cleanText(b.judulDokumen),
+            menunggu: store.dokumenMenungguMajelis(b),
+            diunggah: tgl(b.diunggahPada),
+            terlihat: tgl(b.terlihat),
+          }));
+        },
+        []
+      )
+    : [];
 
   const sitaEks = await aman(
     "sita",
@@ -622,6 +806,8 @@ async function faktaBanyakPerkara(id, deps = {}) {
     eksekusi: sitaEks.eksekusi || {},
     izin: (bahanPihak && bahanPihak.izinCerai) || {},
     durasi: durasi || {},
+    ecourt: new Set(ecourt.map((b) => String(b.perkaraId))),
+    dokumen: petaPer(dokumen, "nomor"),
   };
 }
 
@@ -652,7 +838,11 @@ function susunFakta(p, kumpulan) {
       ikrar: cleanText(j.ikrar),
       verzet: cleanText(j.verzet),
       keberatan: cleanText(j.keberatan),
+      agenda: cleanText(j.agenda),
+      jam: cleanText(j.jam).slice(0, 5),
     })),
+    ecourt: kumpulan.ecourt ? kumpulan.ecourt.has(k) : false,
+    dokumenEcourt: (kumpulan.dokumen && kumpulan.dokumen[cleanText(p.nomor).toLowerCase()]) || [],
     tunjuk: { pmh: tgl(t.pmh), ppp: tgl(t.ppp), pjs: tgl(t.pjs), phs: tgl(t.phs) },
     ikrar: it ? { phs: tgl(it.phs), ikrar: tgl(it.ikrar), status: cleanText(it.status) } : null,
     aktaCerai: Boolean(ac),
@@ -670,13 +860,14 @@ const BAGIAN_PENANDA = Object.freeze({
   eksekusi: ["eksekusi"],
   "izin-cerai": ["izinCerai"],
   "penetapan-awal": ["penetapan", "putusan"],
-  "belum-ditunda": ["jadwal", "putusan", "ikrar"],
+  "belum-ditunda": ["jadwal", "putusan", "ikrar", "ecourt"],
   "potensi-verstek": ["jadwal", "putusan"],
   "umur-perkara": ["durasi", "putusan"],
   "tanpa-sidang-berikut": ["jadwal", "putusan"],
   "sisa-ikrar": ["ikrar", "putusan"],
   "akta-cerai": ["aktaCerai", "putusan", "ikrar", "pemberitahuan"],
   "lewat-5-bulan": ["durasi", "putusan"],
+  "ecourt-verifikasi": ["ecourt", "dokumenEcourt", "jadwal", "putusan"],
 });
 
 function kodeTerbaca(terbaca) {
@@ -701,7 +892,9 @@ async function penandaBanyakNomor(daftarNomor = [], deps = {}) {
     nomor
   );
   const id = [...new Set(baris.map((b) => Number(b.perkaraId)).filter((x) => x > 0))];
-  const kumpulan = id.length ? await faktaBanyakPerkara(id, deps) : null;
+  const nomorPer = {};
+  for (const b of baris) nomorPer[String(b.perkaraId)] = cleanText(b.nomor);
+  const kumpulan = id.length ? await faktaBanyakPerkara(id, { ...deps, nomorPer }) : null;
   const terbaca = kumpulan ? kodeTerbaca(kumpulan.terbaca) : {};
   const perkara = {};
   for (const p of baris) {
@@ -761,6 +954,8 @@ module.exports = {
   nilaiAkta,
   nilaiUmur,
   nilaiLimaBulan,
+  nilaiVerifikasiEcourt,
+  hariKerjaSesudah,
   susunFakta,
   kodeTerbaca,
   faktaBanyakPerkara,

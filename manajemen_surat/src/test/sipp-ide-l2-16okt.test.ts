@@ -52,6 +52,7 @@ type Layanan = {
   KATALOG: Record<string, { dasar: unknown; sumber: string }>;
   KODE_SAKLAR: string[];
   tambahBulan: (t: string, n: number) => string;
+  hariKerjaSesudah: (dari: string, sampai: string) => number;
   nilaiPerkara: (f: Record<string, unknown>, kini: Kini) => Penanda[];
   kodeTerbaca: (t: Record<string, boolean>) => Record<string, boolean>;
   penandaBanyakNomor: (
@@ -98,7 +99,7 @@ const sidang = (tanggal: string, lain: Record<string, unknown> = {}) => ({
 
 // ============================================================================
 describe("A. aturan penanda (bot, fungsi murni)", () => {
-  it("katalog: sebelas kode, tiap kode bersumber & berdasar; sama dengan portal", () => {
+  it("katalog: dua belas kode (11 penanda, Sita & Eksekusi terpisah), tiap kode bersumber & berdasar; sama dengan portal", () => {
     expect(layanan.KODE_SAKLAR).toEqual([...KODE_IDE_L2]);
     for (const k of layanan.KODE_SAKLAR) {
       expect(layanan.KATALOG[k].sumber.length, k).toBeGreaterThan(10);
@@ -117,6 +118,21 @@ describe("A. aturan penanda (bot, fungsi murni)", () => {
     expect(kode(fakta({ jadwal: [sidang("2026-10-15")] }), "belum-ditunda")).toEqual([]);
   });
 
+  it("belum ditunda e-Court jawab-menjawab/kesimpulan: 15.00 = batas unggah e-Court, batas tunda akhir hari kerja", () => {
+    const ecourt = (agenda: string) => fakta({ ecourt: true, jadwal: [sidang("2026-10-15", { agenda, jam: "15:00" })] });
+    const kamis = (menit: number) => ({ tanggal: "2026-10-15", menit });
+    expect(kode(ecourt("Replik"), "belum-ditunda", kamis(15 * 60 + 40))[0]).toMatchObject({ tingkat: "abu", label: "Batas unggah e-Court 15.00" });
+    expect(kode(ecourt("Replik"), "belum-ditunda", kamis(15 * 60 + 40))[0].jelas).toMatch(/batas unggah dokumen e-Court pukul 15\.00/);
+    expect(kode(ecourt("Kesimpulan"), "belum-ditunda", kamis(16 * 60 + 30))[0]).toMatchObject({ tingkat: "merah", label: "Belum ditunda (lewat jam kerja)" });
+    // Jumat: akhir hari kerja 17.00
+    const jumat = fakta({ ecourt: true, jadwal: [sidang("2026-10-16", { agenda: "Jawaban Tergugat" })] });
+    expect(kode(jumat, "belum-ditunda", { tanggal: "2026-10-16", menit: 16 * 60 + 40 })[0].tingkat).toBe("abu");
+    expect(kode(jumat, "belum-ditunda", { tanggal: "2026-10-16", menit: 17 * 60 })[0].tingkat).toBe("merah");
+    // e-Court agenda lain dan non e-Court berjawab-menjawab tetap 15.00
+    expect(kode(fakta({ ecourt: true, jadwal: [sidang("2026-10-15", { agenda: "Pembuktian" })] }), "belum-ditunda", kamis(15 * 60))[0].tingkat).toBe("merah");
+    expect(kode(fakta({ ecourt: false, jadwal: [sidang("2026-10-15", { agenda: "Replik" })] }), "belum-ditunda", kamis(15 * 60))[0].tingkat).toBe("merah");
+  });
+
   it("potensi verstek: gugatan belum putus, tergugat tidak pernah hadir (2/4), NULL tidak dihitung", () => {
     const absen = fakta({ jadwal: [sidang("2026-10-01", { hadir: 2 }), sidang("2026-10-08", { urutan: 2, hadir: 4 })] });
     expect(kode(absen, "potensi-verstek")[0]).toMatchObject({ tingkat: "kuning", angka: 2 });
@@ -132,11 +148,15 @@ describe("A. aturan penanda (bot, fungsi murni)", () => {
     expect(kode(fakta({ jenisId: 346, jadwal: [sidang("2026-10-01", { hadir: 2 })] }), "potensi-verstek")[0].jelas).toMatch(/^Termohon/);
   });
 
-  it("penetapan awal: kurang sesudah 3 hari = kuning; baru = abu (detil); tidak setanggal = kuning; lengkap = hijau (detil)", () => {
-    const kurang = fakta({ tglDaftar: "2026-10-10", tunjuk: { pmh: "2026-10-11", ppp: "2026-10-11", pjs: "2026-10-11", phs: "" } });
-    expect(kode(kurang, "penetapan-awal")[0]).toMatchObject({ tingkat: "kuning", label: "Belum ada PHS" });
-    const baru = fakta({ tglDaftar: "2026-10-15", tunjuk: { pmh: "", ppp: "", pjs: "", phs: "" } });
-    expect(kode(baru, "penetapan-awal")[0]).toMatchObject({ tingkat: "abu", hanyaDetil: true });
+  it("penetapan awal: kurang lewat 1 hari kerja = kuning; baru = abu (detil); tidak setanggal = kuning; lengkap = hijau (detil)", () => {
+    expect(layanan.hariKerjaSesudah("2026-10-16", "2026-10-19")).toBe(1); // Jumat -> Senin
+    expect(layanan.hariKerjaSesudah("2026-10-16", "2026-10-18")).toBe(0);
+    const kurang = (daftar: string) => fakta({ tglDaftar: daftar, tunjuk: { pmh: daftar, ppp: daftar, pjs: daftar, phs: "" } });
+    expect(kode(kurang("2026-10-14"), "penetapan-awal")[0]).toMatchObject({ tingkat: "kuning", label: "Belum ada PHS", angka: 2 });
+    expect(kode(kurang("2026-10-15"), "penetapan-awal")[0]).toMatchObject({ tingkat: "abu", hanyaDetil: true });
+    // daftar Jumat 9 Okt; Senin 12 Okt = 1 hari kerja: belum ditandai; Selasa 13 Okt: ditandai
+    expect(kode(kurang("2026-10-09"), "penetapan-awal", { tanggal: "2026-10-12", menit: 600 })[0].tingkat).toBe("abu");
+    expect(kode(kurang("2026-10-09"), "penetapan-awal", { tanggal: "2026-10-13", menit: 600 })[0].tingkat).toBe("kuning");
     const beda = fakta({ tunjuk: { pmh: "2026-09-02", ppp: "2026-09-02", pjs: "2026-09-03", phs: "2026-09-02" } });
     expect(kode(beda, "penetapan-awal")[0]).toMatchObject({ tingkat: "kuning", label: "Penetapan tidak setanggal" });
     expect(kode(fakta(), "penetapan-awal")[0]).toMatchObject({ tingkat: "hijau", hanyaDetil: true });
@@ -181,10 +201,39 @@ describe("A. aturan penanda (bot, fungsi murni)", () => {
     expect(kode(talak("1"), "akta-cerai")[0]).toMatchObject({ tingkat: "merah" });
     expect(kode(talak("2"), "akta-cerai")).toEqual([]);
     expect(kode(talak("3"), "akta-cerai")).toEqual([]);
-    const verstek = (lalu: string, pbt: Record<string, string> = {}) => fakta({ putus: { tanggal: lalu, verstek: "Y", statusId: 62, bht: "" }, pbt });
-    expect(kode(verstek("2026-09-20"), "akta-cerai")[0]).toMatchObject({ label: "Putusan belum diberitahukan", angka: 26 });
-    expect(kode(verstek("2026-10-10"), "akta-cerai")).toEqual([]);
-    expect(kode(verstek("2026-09-20", { pihak2: "2026-09-25" }), "akta-cerai")).toEqual([]);
+    const verstek = (lalu: string, pbt: Record<string, string> = {}, bht = "") => fakta({ putus: { tanggal: lalu, verstek: "Y", statusId: 62, bht }, pbt });
+    // belum diberitahukan: >= 14 hari kuning (jumlah hari sejak putus), < 14 hari abu (detil)
+    expect(kode(verstek("2026-09-20"), "akta-cerai")[0]).toMatchObject({ tingkat: "kuning", label: "Belum diberitahukan (26 hari)", angka: 26 });
+    expect(kode(verstek("2026-10-10"), "akta-cerai")[0]).toMatchObject({ tingkat: "abu", hanyaDetil: true, angka: 6 });
+    // sudah diberitahukan: perkiraan BHT = pemberitahuan + 14 hari (BUKAN dari tanggal putus)
+    expect(kode(verstek("2026-09-20", { pihak2: "2026-10-05" }), "akta-cerai")[0]).toMatchObject({ tingkat: "abu", label: "Perkiraan BHT 19 Oktober 2026" });
+    expect(kode(verstek("2026-09-20", { pihak2: "2026-10-02" }), "akta-cerai")[0]).toMatchObject({ tingkat: "abu", label: "Perkiraan BHT 16 Oktober 2026", angka: 0 });
+    expect(kode(verstek("2026-09-01", { pihak2: "2026-09-28" }), "akta-cerai")[0]).toMatchObject({ tingkat: "kuning", label: "BHT belum dicatat (lewat 4 hari)" });
+    expect(kode(verstek("2026-09-01", { pihak2: "2026-09-20" }), "akta-cerai")[0]).toMatchObject({ tingkat: "merah", angka: 12 });
+    // BHT sudah dicatat: penanda pemberitahuan hilang; akta cerai dihitung dari BHT
+    expect(kode(verstek("2026-09-01", { pihak2: "2026-09-20" }, "2026-10-14"), "akta-cerai").map((p) => p.label)).toEqual(["Akta cerai: sisa 5 hari"]);
+  });
+
+  it("dokumen e-Court belum diverifikasi: e-Court, belum putus, agenda jawab-menjawab, dokumen babak ini", () => {
+    const dok = (diunggah: string, menunggu = true) => ({ nomor: "x", judul: "Replik Penggugat", menunggu, diunggah, terlihat: "2026-10-16" });
+    const f = (ubah: Record<string, unknown> = {}) =>
+      fakta({
+        ecourt: true,
+        jadwal: [sidang("2026-10-09", { agenda: "Jawaban" }), sidang("2026-10-23", { urutan: 2, agenda: "Replik" })],
+        dokumenEcourt: [dok("2026-10-12"), dok("2026-09-01")],
+        ...ubah,
+      });
+    expect(kode(f(), "ecourt-verifikasi")[0]).toMatchObject({ tingkat: "kuning", label: "1 dokumen e-Court belum diverifikasi", angka: 1 });
+    expect(kode(f(), "ecourt-verifikasi")[0].jelas).toMatch(/Replik \(23 Oktober 2026\).*Replik Penggugat.*ditarik 2026-10-16/);
+    // sidang sasaran hari ini = merah
+    expect(kode(f({ jadwal: [sidang("2026-10-09", { agenda: "Jawaban" }), sidang("2026-10-16", { agenda: "Replik" })] }), "ecourt-verifikasi")[0].tingkat).toBe("merah");
+    // sudah diverifikasi / agenda bukan jawab-menjawab / bukan e-Court / sudah putus: tidak ada
+    expect(kode(f({ dokumenEcourt: [dok("2026-10-12", false)] }), "ecourt-verifikasi")).toEqual([]);
+    expect(kode(f({ jadwal: [sidang("2026-10-09", { agenda: "Jawaban" }), sidang("2026-10-23", { agenda: "Pembuktian" })] }), "ecourt-verifikasi")).toEqual([]);
+    expect(kode(f({ ecourt: false }), "ecourt-verifikasi")).toEqual([]);
+    expect(kode(f({ putus: { tanggal: "2026-10-10", verstek: "T", statusId: 62, bht: "" } }), "ecourt-verifikasi")).toEqual([]);
+    // hanya dokumen babak lalu (server 16 Okt: 28 dari 31 perkara ber-dokumen "belum" sudah putus)
+    expect(kode(f({ dokumenEcourt: [dok("2026-09-01")] }), "ecourt-verifikasi")).toEqual([]);
   });
 
   it("umur perkara & lewat 5 bulan memakai durasi bot (SK 048/2024 & SEMA 2/2014)", () => {
@@ -230,10 +279,15 @@ describe("A. aturan penanda (bot, fungsi murni)", () => {
     expect(kode(fakta({ izin: { keadaan: "belum-ada" }, putus: { tanggal: "2026-10-01", verstek: "T", statusId: 62, bht: "" } }), "izin-cerai")).toEqual([]);
   });
 
-  it("penanda berdasar belum pasti menyebut 'perlu dicek'", () => {
+  it("'perlu dicek' hanya pada yang belum dipastikan pengguna (jawaban 16 Okt)", () => {
     const semua = layanan.nilaiPerkara(fakta({ jadwal: [sidang("2026-10-16")], tglDaftar: "2026-10-10", tunjuk: {} }), KINI);
-    expect(semua.find((p) => p.kode === "belum-ditunda")!.perluDicek).toBe(true);
-    expect(semua.find((p) => p.kode === "penetapan-awal")!.perluDicek).toBe(true);
+    expect(semua.find((p) => p.kode === "belum-ditunda")!.perluDicek).toBe(false);
+    expect(semua.find((p) => p.kode === "penetapan-awal")!.perluDicek).toBe(false);
+    for (const k of ["penetapan-awal", "belum-ditunda", "akta-cerai", "umur-perkara", "lewat-5-bulan"]) {
+      expect((layanan.KATALOG[k] as { perluDicek?: boolean }).perluDicek, k).toBeFalsy();
+    }
+    // jam akhir hari kerja e-Court (16.30/Jumat 17.00) dan dasar verifikasi e-Court masih asumsi
+    expect((layanan.KATALOG["ecourt-verifikasi"] as { perluDicek?: boolean }).perluDicek).toBe(true);
   });
 });
 
@@ -264,6 +318,12 @@ describe("B. pengumpul fakta bot (kueri tiruan)", () => {
     sita: async () => ({ sita: {}, eksekusi: {} }),
     bahanPenanda: async () => ({ izinCerai: {}, terbaca: { izinCerai: true } }),
     durasi: async () => ({}),
+    // arsip e-Court (basis data bot): satu dokumen menunggu, perkara bukan e-Court -> tidak ada penanda
+    botKueri: async (sql: string) => {
+      expect(sql).toMatch(/^\s*SELECT[\s\S]*FROM aleta_bot_ecourt_documents/);
+      return [{ nomorPerkara: "601/Pdt.G/2026/PA.Dgl", judulDokumen: "Replik", statusVerifikasi: "belum", diunggahPada: new Date(2026, 9, 2) }];
+    },
+    ecourtStore: { dokumenMenungguMajelis: (b: { statusVerifikasi: string }) => b.statusVerifikasi === "belum" },
   });
 
   it("nomor -> penanda; nomor tak dikenal dilaporkan; hanya SELECT", async () => {

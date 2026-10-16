@@ -26,6 +26,7 @@ export const KODE_IDE_L2 = [
   "sisa-ikrar",
   "akta-cerai",
   "lewat-5-bulan",
+  "ecourt-verifikasi",
 ] as const;
 export type KodeIdeL2 = (typeof KODE_IDE_L2)[number];
 
@@ -42,6 +43,7 @@ export const KUNCI_SAKLAR_IDE_L2: Record<KodeIdeL2, string> = {
   "sisa-ikrar": "ideL2Ikrar",
   "akta-cerai": "ideL2AktaCerai",
   "lewat-5-bulan": "ideL2LimaBulan",
+  "ecourt-verifikasi": "ideL2EcourtVerifikasi",
 };
 
 type Golongan = Exclude<KodeGolonganPopup, "super-admin" | "admin">;
@@ -59,6 +61,7 @@ export const PERAN_IDE_L2: Record<KodeIdeL2, readonly Golongan[]> = {
   "sisa-ikrar": ["ketua", "hakim", "panitera-pengganti", "panitera"],
   "akta-cerai": ["ketua", "panitera", "panitera-pengganti", "ptsp"],
   "lewat-5-bulan": ["ketua"],
+  "ecourt-verifikasi": ["ketua", "hakim", "panitera-pengganti"],
 };
 
 /** Kode yang boleh dilihat pemilik golongan-golongan ini. */
