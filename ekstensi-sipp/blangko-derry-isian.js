@@ -37,6 +37,8 @@
   // Konstanta
   // ──────────────────────────────────────────────────────────────────────────
   const API_BLANGKO = "/aleta/api/aleta-ecourt/blangko-derry";
+  /** F3.1: riwayat skors satu sidang + usulan kalimat BAS (hanya baca). */
+  const API_SKORS_SIDANG = "/aleta/api/aleta-ecourt/sidang/skors";
   const API_PDF = "/aleta/api/aleta-bot/abt/pdf";
   const API_TTD = "/aleta/api/aleta-ecourt/tanda-tangan";
   const API_UNGGAH_SIPP = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
@@ -1633,6 +1635,7 @@
       `<div class="bd-bar"><span id="bd-barisi"></span></div><div class="bd-alatkecil" id="bd-alatisi"></div>` +
       `<div class="bd-pgrid" id="bd-perlu">${grid.length ? grid.map((b) => (b.khusus === "bukti" ? kotakBukti(b) : kotakIsian(b))).join("") : tj.length ? "" : `<p class="bd-ok">Blangko ini tidak perlu diisi tangan; semua terisi sendiri dari SIPP dan aturan ABT.</p>`}</div>` +
       `<div id="bd-tjtombol" class="bd-baris"></div><div id="bd-tjwadah"></div>` +
+      (S.blangko.jenis === "bas" ? `<div id="bd-skorsbas"></div>` : "") +
       (takBerlaku.length
         ? `<p class="bd-sembunyiinfo">${S.tampilTakBerlaku ? `${takBerlaku.length} isian yang biasanya tidak berlaku ikut ditampilkan.` : `${takBerlaku.length} isian tidak berlaku untuk perkara ini dan disembunyikan${alasanSembunyi.length ? ` (${esc(alasanSembunyi.join(", "))})` : ""}.`} <button type="button" class="bd-tautankecil" data-bd2="takberlaku" aria-pressed="${S.tampilTakBerlaku}">${S.tampilTakBerlaku ? "Sembunyikan lagi" : "Tampilkan juga"}</button></p>`
         : "") +
@@ -1649,6 +1652,80 @@
     renderTj();
     renderProgres();
     if (S.semuaBuka) renderSemua();
+    if (S.blangko.jenis === "bas") void muatSkorsBas();
+  }
+
+  // F3.1 (17 Okt 2026): skors sidang ini dari Jadwal Sidang ALETA -> usulan
+  // kalimat BAS ("Pada pukul 09.40 WITA sidang diskors ..."). Hanya dibaca
+  // (GET sidang/skors) dan hanya tampil bila sidang ini memang pernah diskors.
+  // Kalimatnya disalin petugas ke bagian BAS yang tepat - tidak ditulis ke ABT
+  // sendiri.
+  function kunciSkorsBas() {
+    const s = S.pk && S.pk.sidangDipilih;
+    const tanggal = s ? String(s.tanggal || s.tanggalSidang || "").slice(0, 10) : "";
+    const id = perkaraId();
+    return /^\d+$/.test(id) && /^\d{4}-\d{2}-\d{2}$/.test(tanggal) ? { kunci: `${id}|${tanggal}`, id, tanggal } : null;
+  }
+  async function muatSkorsBas() {
+    const k = kunciSkorsBas();
+    if (!k) {
+      S.skorsBas = null;
+      return renderSkorsBas();
+    }
+    // Dibaca ulang paling cepat tiap menit - skors dapat terjadi saat BAS sedang diketik.
+    if (S.skorsBas && S.skorsBas.kunci === k.kunci && (S.skorsBas.memuat || Date.now() - S.skorsBas.saat < 60000)) return renderSkorsBas();
+    S.skorsBas = { kunci: k.kunci, riwayat: S.skorsBas && S.skorsBas.kunci === k.kunci ? S.skorsBas.riwayat : [], kalimat: S.skorsBas && S.skorsBas.kunci === k.kunci ? S.skorsBas.kalimat : "", memuat: true, saat: Date.now() };
+    let riwayat = [];
+    let kalimat = "";
+    try {
+      const d = await ambilPortal(`${API_SKORS_SIDANG}?tanggal=${k.tanggal}&perkaraId=${encodeURIComponent(k.id)}`, {}, "Membaca skors sidang");
+      riwayat = d && Array.isArray(d.riwayat) ? d.riwayat.filter((x) => x && x.diskorsPada) : [];
+      kalimat = d && typeof d.kalimatBas === "string" ? d.kalimatBas : "";
+    } catch {
+      /* tanpa riwayat skors - BAS tetap dapat diisi seperti biasa */
+    }
+    if (!S.skorsBas || S.skorsBas.kunci !== k.kunci) return;
+    S.skorsBas = { kunci: k.kunci, riwayat, kalimat, memuat: false, saat: Date.now() };
+    renderSkorsBas();
+  }
+  function renderSkorsBas() {
+    const w = cari("#bd-skorsbas", wadah.isian);
+    if (!w) return;
+    const sb = S.skorsBas;
+    if (!sb || !sb.riwayat.length || !sb.kalimat) {
+      w.innerHTML = "";
+      return;
+    }
+    w.innerHTML =
+      `<div class="bd-skorsbas" data-skors-bas="">` +
+      `<span class="bd-lbl">Sidang ini pernah diskors</span>` +
+      `<ul class="bd-skorsdaftar">${sb.riwayat.map((r) => `<li>${esc(r.ringkas || r.diskorsPada)}</li>`).join("")}</ul>` +
+      `<p class="bd-catat">Usulan kalimat untuk BAS (dari catatan skors Jadwal Sidang ALETA). Salin lalu tempel di bagian jalannya sidang; dapat diubah sebelum dicetak.</p>` +
+      `<textarea class="bd-skorsteks" id="bd-skorsteks" rows="4" readonly>${esc(sb.kalimat)}</textarea>` +
+      `<div class="bd-baris"><button type="button" class="bd-btn kecil" data-bd2="salinskors">Salin kalimat</button></div>` +
+      `</div>`;
+  }
+  async function salinKalimatSkors() {
+    const t = cari("#bd-skorsteks", wadah.isian);
+    if (!t) return;
+    let berhasil = false;
+    try {
+      await navigator.clipboard.writeText(t.value);
+      berhasil = true;
+    } catch {
+      // SIPP/ABT satker bukan konteks aman: papan klip modern ditolak - pakai cara lama.
+      try {
+        t.removeAttribute("readonly");
+        t.select();
+        berhasil = document.execCommand("copy");
+      } catch {
+        berhasil = false;
+      } finally {
+        t.setAttribute("readonly", "");
+      }
+    }
+    toast(berhasil ? "Kalimat skors tersalin. Tempel di BAS." : "Tidak dapat menyalin otomatis - kalimatnya sudah tersorot, tekan Ctrl+C.");
+    if (!berhasil) t.select();
   }
   function renderProgres() {
     const p = cari("#bd-progres", wadah.akar);
@@ -2692,6 +2769,7 @@
       return;
     }
     if (kode === "ulangsusunan") return void muatSusunan();
+    if (kode === "salinskors") return void salinKalimatSkors();
     if (kode === "pakaisaran") return pakaiSemuaSaran();
     if (kode === "ktpbukti") return void ambilTanggalKtp();
     if (kode === "takberlaku") {

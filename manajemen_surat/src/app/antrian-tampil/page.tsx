@@ -37,6 +37,8 @@ type Baris = {
   pihak?: string;
   agenda?: string;
   majelis?: string;
+  /** F3.1: "Diskors, dilanjutkan sekitar 10.30" - hanya bila keadaan = "diskors". */
+  keteranganSkors?: string;
 };
 
 /** Sekitar satu kali per sepuluh detik - cukup rapat bagi layar ruang tunggu. */
@@ -174,8 +176,11 @@ export default function HalamanAntrianTampil() {
                   className={
                     b.keadaan === "dipanggil"
                       ? "border-b border-neutral-800 bg-emerald-950/40"
-                      : "border-b border-neutral-800"
+                      : b.keadaan === "diskors"
+                        ? "border-b border-neutral-800 bg-amber-950/40"
+                        : "border-b border-neutral-800"
                   }
+                  data-keadaan={b.keadaan || undefined}
                 >
                   {kolom.map((k) => (
                     <td
@@ -183,14 +188,18 @@ export default function HalamanAntrianTampil() {
                       className={
                         k.kunci === "nomor"
                           ? "px-3 py-3 text-2xl font-bold tabular-nums sm:text-4xl"
-                          : "px-3 py-3 text-base sm:text-xl"
+                          : k.kunci === "keadaan" && b.keadaan === "diskors"
+                            ? "px-3 py-3 text-base font-semibold text-amber-300 sm:text-xl"
+                            : "px-3 py-3 text-base sm:text-xl"
                       }
                     >
                       {k.kunci === "menitMenunggu"
                         ? b.menitMenunggu === null || b.menitMenunggu === undefined
                           ? "—"
                           : `${b.menitMenunggu} mnt`
-                        : (b[k.kunci] as string | number | null | undefined) || "—"}
+                        : k.kunci === "keadaan" && b.keadaan === "diskors"
+                          ? b.keteranganSkors || "Diskors sementara"
+                          : (b[k.kunci] as string | number | null | undefined) || "—"}
                     </td>
                   ))}
                 </tr>

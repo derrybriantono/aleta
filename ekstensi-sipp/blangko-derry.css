@@ -76,6 +76,10 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 }
 #aleta-bd-akar .bd-lbl { font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 #aleta-bd-akar .bd-catat { font-size: 12.8px; color: var(--muted); }
+/* F3.1: skors sidang ini -> usulan kalimat BAS */
+#aleta-bd-akar .bd-skorsbas { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--warn); background: var(--warnbg); border-radius: 12px; display: flex; flex-direction: column; gap: 6px; }
+#aleta-bd-akar .bd-skorsdaftar { margin: 0; padding-left: 18px; font-size: 14px; }
+#aleta-bd-akar .bd-skorsteks { width: 100%; box-sizing: border-box; min-height: 88px; font: inherit; font-size: 14px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; resize: vertical; }
 
 /* tahap */
 #aleta-bd-akar .bd-tahap {

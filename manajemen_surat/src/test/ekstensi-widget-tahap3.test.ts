@@ -791,6 +791,41 @@ describe("popup-20, 21, 22: catatan, lama sidang, kalender - lokal", () => {
     expect((h.simpanan.lamaSidang as any).riwayat.length).toBe(1);
   }, 10000);
 
+  it("F3.1: skors hari ini dari Jadwal Sidang ALETA ikut tampil di widget Lama sidang (hanya GET)", async () => {
+    const h = buka({ simpanan: baru(["popup-21"]) });
+    const fetchAsli = h.w.fetch;
+    const kini = new Date();
+    const t = `${kini.getFullYear()}-${String(kini.getMonth() + 1).padStart(2, "0")}-${String(kini.getDate()).padStart(2, "0")}`;
+    const nanti = new Date(kini.getTime() + 20 * 60000);
+    const jamNanti = `${String(nanti.getHours()).padStart(2, "0")}:${String(nanti.getMinutes()).padStart(2, "0")}`;
+    h.w.fetch = (alamat: string, opsi?: { method?: string }) => {
+      if (String(alamat).startsWith("/aleta/api/aleta-ecourt/sidang/skors?tanggal=")) {
+        h.cara.push({ url: String(alamat), cara: String((opsi && opsi.method) || "GET").toUpperCase() });
+        return Promise.resolve(
+          tanggapan(200, {
+            ok: true,
+            data: {
+              available: true,
+              ok: true,
+              skors: [
+                { perkaraId: "5", nomorPerkara: "5/Pdt.G/2026/PA.Dgl", tanggalSidang: t, diskorsPada: `${t} 09:40:00`, dilanjutkanPada: `${t} 10:05:00`, lamaDetik: 1500, alasan: "Menunggu saksi", oleh: "Ani" },
+                { perkaraId: "7", nomorPerkara: "7/Pdt.G/2026/PA.Dgl", tanggalSidang: t, diskorsPada: `${t} 10:20:00`, perkiraanLanjut: `${t} ${jamNanti}:00`, alasan: "Musyawarah majelis", oleh: "Ani" },
+              ],
+            },
+          })
+        );
+      }
+      return fetchAsli(alamat, opsi);
+    };
+    await siap(h);
+    const baris = await sampai(() => (qs(h, ".aleta-cmw-skors-baris").length === 2 ? qs(h, ".aleta-cmw-skors-baris") : null), "dua baris skors");
+    // Yang masih diskors lebih dulu, dengan alasan, perkiraan, dan hitung mundurnya.
+    expect(baris[0].getAttribute("data-skors-aktif")).toBe("ya");
+    expect(baris[0].textContent).toMatch(/7\/Pdt\.G\/2026\/PA\.Dgl diskors sejak 10\.20 · Musyawarah majelis · lanjut ±\d{2}\.\d{2} \((19|20) mnt lagi\)/);
+    expect(baris[1].textContent).toContain("5/Pdt.G/2026/PA.Dgl skors 09.40-10.05 (25 menit) · Menunggu saksi");
+    expect(h.cara.filter((c) => c.url.includes("/sidang/skors")).every((c) => c.cara === "GET")).toBe(true);
+  }, 10000);
+
   it("kalender tenggat: dua minggu dari Senin, dari data checklist yang SUDAH ada, tanpa permintaan baru", async () => {
     const h = buka({ simpanan: baru(["popup-22"]) });
     await siap(h);
@@ -958,14 +993,16 @@ describe("batas yang tidak berubah: mode coba, akar, layar publik", () => {
     expect(h.cara.filter((c) => c.cara !== "GET")).toEqual([]);
     // Selain checklist hanya tiga bacaan: tampilan yang diterapkan admin (tahap 5),
     // indikator sumber daya server di samping lencana (butir 3, 6 Okt 2026), dan
-    // alamat halaman perkara SIPP untuk tombol Kerjakan (7 Okt 2026).
+    // alamat halaman perkara SIPP untuk tombol Kerjakan (7 Okt 2026), dan skors
+    // hari ini dari Jadwal Sidang ALETA di widget Lama sidang (F3.1, 17 Okt 2026).
     expect(
       h.cara.every(
         (c) =>
           c.url.includes(API) ||
           c.url.includes("/api/aleta-ecourt/ekstensi/tampilan") ||
           c.url === "/aleta/api/aleta-ecourt/sumber-daya" ||
-          c.url.startsWith("/aleta/api/aleta-ecourt/sipp-tautan?")
+          c.url.startsWith("/aleta/api/aleta-ecourt/sipp-tautan?") ||
+          c.url.startsWith("/aleta/api/aleta-ecourt/sidang/skors?tanggal=")
       )
     ).toBe(true);
     // Semuanya di dalam SATU akar - senyap 1 jam dan blok cetak panel.css

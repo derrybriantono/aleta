@@ -195,6 +195,22 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       return json({ ok: true, data: { hariIni: HARI_INI, mode: "hari", dari: HARI_INI, sampai: HARI_INI, lihatSemua: admin, nama: orang.nama, sebagaiNama: "", sebagaiPeran: null, terpotong: false, jumlahSemua: 1, adaYangCocok: true, akun: admin ? AKUN : null, perkara: polos(DAFTAR) } });
     }
     if (url.includes("/aleta-ecourt/sidang?nomor=")) return json({ ok: true, data: { sipp: { jadwalPerkara: [{ sidangId: "s2026-10-01", tanggalSidang: "2026-10-01", jamSidang: "09:00:00", agenda: "Sidang Pertama", alasanDitunda: "Panggil Tergugat", urutanSidang: 1 }, { sidangId: "s2026-10-15", tanggalSidang: "2026-10-15", jamSidang: "09:00:00", agenda: "Pemeriksaan pokok perkara", alasanDitunda: "putus DIKABULKAN (verstek)", urutanSidang: 2 }] } } });
+    if (url.includes("/aleta-ecourt/sidang/skors?")) {
+      // F3.1: riwayat skors satu sidang + usulan kalimat BAS (rute sungguhan: lib/skors-sidang).
+      const q = new URL(url, ASAL).searchParams;
+      if (q.get("perkaraId") === "10154" && q.get("tanggal") === "2026-10-15") {
+        return json({
+          ok: true,
+          data: {
+            available: true,
+            ok: true,
+            riwayat: [{ perkaraId: "10154", tanggalSidang: "2026-10-15", diskorsPada: "2026-10-15 09:40:00", dilanjutkanPada: "2026-10-15 10:05:00", alasanKode: "saksi", alasan: "Menunggu saksi", ringkas: "09.40-10.05 (25 menit) · Menunggu saksi" }],
+            kalimatBas: "Pada pukul 09.40 WITA sidang diskors untuk menunggu kehadiran saksi, dan pada pukul 10.05 WITA skors dicabut dan sidang dibuka kembali.",
+          },
+        });
+      }
+      return json({ ok: true, data: { available: true, ok: true, riwayat: [], kalimatBas: "" } });
+    }
     if (url.includes("/aleta-ecourt/blangko-derry/set-saksi")) {
       // F3.3: set pertanyaan saksi ALETA (rute sungguhan memanggil fungsi murni yang sama).
       const q = new URL(url, ASAL).searchParams;
@@ -338,6 +354,29 @@ describe("F. jendela pilih blangko", () => {
     expect((q(h, '[data-fmt="anon"]') as HTMLInputElement).disabled).toBe(true);
     expect((q(h, '[data-fmt="edoc"]') as HTMLInputElement).disabled).toBe(true);
     expect(q(h, ".bd-ingatsidang")!.textContent).toContain("bukan per sidang");
+  });
+
+  it("F3.1 BAS: sidang yang pernah diskors memunculkan usulan kalimat skors (hanya dibaca dari portal, tidak ditulis ke ABT)", async () => {
+    const h = buka({ orang: "pp" });
+    await sampaiPerkara(h);
+    klik(h, '[data-bd2="bukamodal"]');
+    await sampai(() => q(h, `[data-bl="${BLANGKO_BAS}"]`), "berkas bas");
+    klik(h, `[data-bl="${BLANGKO_BAS}"]`);
+    const kartu = await sampai(() => q(h, "[data-skors-bas]"), "kartu skors");
+    expect(kartu.textContent).toContain("Sidang ini pernah diskors");
+    expect(kartu.textContent).toContain("09.40-10.05 (25 menit) · Menunggu saksi");
+    expect((q(h, "#bd-skorsteks") as HTMLTextAreaElement).value).toMatch(/^Pada pukul 09\.40 WITA sidang diskors untuk menunggu kehadiran saksi/);
+    const baca = mintaKe(h, /\/sidang\/skors\?/);
+    expect(baca.length).toBeGreaterThanOrEqual(1);
+    expect(baca.every((m) => m.cara === "GET")).toBe(true);
+    expect(new URL(baca[0].url, ASAL).searchParams.get("perkaraId")).toBe("10154");
+  });
+
+  it("F3.1: blangko putusan tidak memuat kartu skors", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    expect(q(h, "#bd-skorsbas")).toBeNull();
+    expect(mintaKe(h, /\/sidang\/skors\?/)).toEqual([]);
   });
 
   it("hak diperiksa lewat POST main/cari {a,b,c} sebelum isian dibaca; ditolak = sebab ABT ditampilkan, tanpa membaca isian", async () => {

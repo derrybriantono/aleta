@@ -6,6 +6,7 @@ import {
   getGatewayJadwalSidang,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { bacaPengaturanAntrianPublik, pengaturanTertutup } from "@/server/modules/antrian-publik/service";
+import { bacaSkorsBerlakuHariIni, keteranganSkorsPublik } from "@/server/modules/aleta-ecourt/skors-publik";
 import { getDatabase } from "@/server/db/client";
 import { ok } from "@/server/shared/http";
 
@@ -149,6 +150,9 @@ export async function GET(request: NextRequest) {
     // diloloskan. Yang tidak dapat dibuktikan milik hari ini tidak boleh
     // tampil di alamat yang terbuka.
     const hariIni = tanggalHariIni();
+    // F3.1: perkara yang DISKORS tampil "Diskors, dilanjutkan sekitar 10.30" -
+    // ikut izin ruas "keadaan". Urutan antrian TIDAK berubah (tetap nomor).
+    const skorsBerlaku = tampil.keadaan ? await bacaSkorsBerlakuHariIni(hariIni) : new Map();
     const semua = Object.entries(hasil.data.peta || {})
       .filter(([, baris]) => String(baris.tanggalSidang || "").slice(0, 10) === hariIni)
       .map(([perkaraId, baris]) => {
@@ -156,7 +160,11 @@ export async function GET(request: NextRequest) {
         const keluaran: Record<string, unknown> = {};
         if (tampil.nomorAntrian) keluaran.nomor = baris.nomor;
         if (tampil.noRuang) keluaran.noRuang = baris.noRuang;
-        if (tampil.keadaan) keluaran.keadaan = baris.keadaan;
+        if (tampil.keadaan) {
+          const skors = keteranganSkorsPublik(skorsBerlaku, perkaraId, baris.jamPanggil);
+          keluaran.keadaan = skors ? "diskors" : baris.keadaan;
+          if (skors) keluaran.keteranganSkors = skors;
+        }
         if (tampil.jamPanggil) keluaran.jamPanggil = baris.jamPanggil;
         if (tampil.menitMenunggu) keluaran.menitMenunggu = baris.menitMenunggu ?? null;
         if (tampil.nomorPerkara) keluaran.nomorPerkara = tambahan?.nomorPerkara ?? "";

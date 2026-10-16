@@ -243,8 +243,10 @@ describe("Jadwal Sidang: pesan tombol Skors", () => {
     const { container } = render(createElement(TombolRuangSidang, props));
     const awal = container.textContent ?? "";
     fireEvent.click(screen.getByRole("button", { name: /Skors/ }));
+    // F3.1: Skors membuka jendela alasan; "Skors sekarang" yang mengirim.
+    fireEvent.click(screen.getByRole("button", { name: /Skors sekarang/ }));
     await waitFor(() => expect((container.textContent ?? "").length).toBeGreaterThan(awal.length));
-    expect(container.querySelector(".text-emerald-700")).not.toBeNull();
+    await waitFor(() => expect(container.querySelector(".text-emerald-700")).not.toBeNull());
     await waitFor(() => expect(container.querySelector(".text-emerald-700")).toBeNull(), { timeout: LAMA_PESAN_BERHASIL_MS + 3000 });
   });
 
@@ -257,6 +259,7 @@ describe("Jadwal Sidang: pesan tombol Skors", () => {
     );
     const { container } = render(createElement(TombolRuangSidang, props));
     fireEvent.click(screen.getByRole("button", { name: /Skors/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Skors sekarang/ }));
     await waitFor(() => expect(container.querySelector(".text-rose-600")).not.toBeNull());
     await new Promise((r) => setTimeout(r, LAMA_PESAN_BERHASIL_MS + 500));
     expect(container.querySelector(".text-rose-600")).not.toBeNull();

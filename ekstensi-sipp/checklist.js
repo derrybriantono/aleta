@@ -1074,6 +1074,13 @@
       letter-spacing: 0.02em;
     }
     .aleta-cmw-jam[data-skors="ya"] { color: var(--aleta-mendesak); }
+    /* F3.1: skors hari ini dari Jadwal Sidang ALETA */
+    .aleta-cmw-skors { display: flex; flex-direction: column; gap: 3px; padding-top: 6px; border-top: 1px dashed var(--aleta-garis); }
+    .aleta-cmw-skors-judul { font-weight: 700; font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); }
+    .aleta-cmw-skors-baris { font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); line-height: 1.35; }
+    .aleta-cmw-skors-baris[data-skors-aktif="ya"] b { color: var(--aleta-mendesak); }
+    .aleta-cmw-skors-baris[data-skors-aktif="tidak"] { color: var(--aleta-tulisan-lembut); }
+    .aleta-cmw-skors-baris[data-skors-lewat="ya"] span { font-weight: 700; }
 
     /* popup-22: kalender tenggat */
     .aleta-cmw-kal {
@@ -1452,6 +1459,12 @@
   let abaikanKlikPil = false;
   let jamTunda = null;
   let jamSidang = null;
+  /* F3.1: skors hari ini dari Jadwal Sidang ALETA (blok di widget Lama sidang). */
+  const ALAMAT_SKORS = "/aleta/api/aleta-ecourt/sidang/skors";
+  const SKORS_SEGAR_MS = 60 * 1000;
+  const SKORS_TAMPIL_MAKS = 6;
+  const skorsPortal = { diterima: 0, daftar: null, galat: "", memuat: false };
+  let jamSkors = null;
   let jamCatatan = null;
   /** Elemen catatan dipakai ulang antar penggambaran - ketikan, kursor, dan urungkan tidak hilang. */
   let kotakCatatan = null;
@@ -3960,7 +3973,145 @@
       t("", "Batal", "Batalkan tanpa mencatat", "batal");
     }
     w.isi.appendChild(baris);
+    // F3.1: skors yang dicatat di Jadwal Sidang ALETA hari ini - sinkron dengan
+    // portal (alasan, perkiraan lanjut + hitung mundur, lama skors).
+    if (modeUji() !== "lama") w.isi.appendChild(susunBlokSkors());
     return w.kotak;
+  }
+
+  // ─── F3.1 (17 Okt 2026): skors hari ini dari Jadwal Sidang ALETA ───────────
+  //
+  // Jam "Lama sidang" di atas milik peramban ini saja. Skors yang SAH (yang
+  // menggerakkan antrian dan masuk BAS) dicatat di Jadwal Sidang ALETA - di
+  // sini hanya DIBACA (GET sidang/skors?tanggal=hari ini), satu permintaan
+  // per menit dan hanya selama widget ini terlihat. Tidak menulis apa pun.
+
+  function tanggalHariIniSkors() {
+    const t = new Date();
+    return `${t.getFullYear()}-${dua(t.getMonth() + 1)}-${dua(t.getDate())}`;
+  }
+
+  function waktuSkors(teks) {
+    const c = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(teks || ""));
+    return c ? new Date(Number(c[1]), Number(c[2]) - 1, Number(c[3]), Number(c[4]), Number(c[5])) : null;
+  }
+
+  function jamSkorsTitik(teks) {
+    const t = waktuSkors(teks);
+    return t ? jamMenit(t) : "";
+  }
+
+  /** Satu baris widget: { nomor, ket, lewat, aktif }. */
+  function kalimatSkorsWidget(s, kini) {
+    const alasan = String(s.alasan || "").trim();
+    const mulai = jamSkorsTitik(s.diskorsPada);
+    const nomor = String(s.nomorPerkara || "").trim() || `perkara ${s.perkaraId}`;
+    if (String(s.dilanjutkanPada || "").trim()) {
+      const akhir = jamSkorsTitik(s.dilanjutkanPada);
+      const detik = Number.isFinite(s.lamaDetik) ? s.lamaDetik : null;
+      const menit = detik !== null ? Math.max(1, Math.round(detik / 60)) : null;
+      return { nomor, aktif: false, lewat: false, ket: [`skors ${mulai}-${akhir}${menit ? ` (${menit} menit)` : ""}`, alasan].filter(Boolean).join(" · ") };
+    }
+    const perkiraan = waktuSkors(s.perkiraanLanjut);
+    let mundur = "";
+    let lewat = false;
+    if (perkiraan) {
+      const sisa = Math.round((perkiraan.getTime() - kini.getTime()) / 60000);
+      lewat = sisa < 0;
+      mundur = sisa > 0 ? ` (${sisa} mnt lagi)` : sisa === 0 ? " (sebentar lagi)" : ` (lewat ${-sisa} mnt)`;
+    }
+    return {
+      nomor,
+      aktif: true,
+      lewat,
+      ket: [`diskors sejak ${mulai}`, alasan, perkiraan ? `lanjut ±${jamMenit(perkiraan)}${mundur}` : ""].filter(Boolean).join(" · "),
+    };
+  }
+
+  function isiBlokSkors(blok) {
+    while (blok.firstChild) blok.removeChild(blok.firstChild);
+    blok.appendChild(el("div", "aleta-cmw-skors-judul", "Skors hari ini · Jadwal Sidang ALETA"));
+    if (skorsPortal.daftar === null) {
+      blok.appendChild(el("div", "aleta-cmw-ket", skorsPortal.galat || (skorsPortal.memuat ? "Membaca skors dari ALETA…" : "Menunggu data skors dari ALETA…")));
+      return;
+    }
+    // Yang masih diskors lebih dulu, lalu yang sudah dilanjutkan (terbaru dulu).
+    const kini = new Date();
+    const aktif = skorsPortal.daftar.filter((s) => !String(s.dilanjutkanPada || "").trim());
+    const usai = skorsPortal.daftar.filter((s) => String(s.dilanjutkanPada || "").trim()).reverse();
+    const semua = [...aktif, ...usai].slice(0, SKORS_TAMPIL_MAKS);
+    if (!semua.length) {
+      blok.appendChild(el("div", "aleta-cmw-ket", "Tidak ada sidang yang diskors hari ini."));
+    }
+    for (const s of semua) {
+      const k = kalimatSkorsWidget(s, kini);
+      const baris = el("div", "aleta-cmw-skors-baris");
+      baris.setAttribute("data-skors-aktif", k.aktif ? "ya" : "tidak");
+      if (k.lewat) baris.setAttribute("data-skors-lewat", "ya");
+      if (s.oleh) baris.title = `Diskors oleh ${s.oleh}${s.dilanjutkanOleh ? `, dilanjutkan oleh ${s.dilanjutkanOleh}` : ""}`;
+      baris.appendChild(el("b", "", k.nomor));
+      baris.appendChild(el("span", "", ` ${k.ket}`));
+      blok.appendChild(baris);
+    }
+    const lebih = aktif.length + usai.length - semua.length;
+    if (lebih > 0) blok.appendChild(el("div", "aleta-cmw-ket", `+${lebih} lainnya di Jadwal Sidang ALETA.`));
+    if (skorsPortal.galat) blok.appendChild(el("div", "aleta-cmw-ket", skorsPortal.galat));
+  }
+
+  function susunBlokSkors() {
+    const blok = el("div", "aleta-cmw-skors");
+    blok.setAttribute("data-skors-portal", "");
+    isiBlokSkors(blok);
+    return blok;
+  }
+
+  function gambarUlangBlokSkors() {
+    if (!bayang) return;
+    for (const b of Array.from(bayang.querySelectorAll(".aleta-cmw-skors"))) isiBlokSkors(b);
+  }
+
+  async function muatSkorsPortal() {
+    if (skorsPortal.memuat) return;
+    skorsPortal.memuat = true;
+    const ambil = typeof alatAmbil === "function" ? alatAmbil : (alamat, opsi) => fetch(alamat, opsi);
+    try {
+      const r = await ambil(
+        `${ALAMAT_SKORS}?tanggal=${tanggalHariIniSkors()}`,
+        { credentials: "include", cache: "no-store" },
+        "Membaca skors sidang hari ini"
+      );
+      const luar = await r.json().catch(() => null);
+      const isi = luar && typeof luar === "object" && luar.data && typeof luar.data === "object" ? luar.data : luar;
+      if (!r.ok || !isi || isi.available === false || !Array.isArray(isi.skors)) {
+        skorsPortal.galat = r.status === 401 || r.status === 403 ? "Skors hanya terbaca oleh petugas sidang yang masuk ALETA." : "Skors dari ALETA belum dapat dibaca.";
+      } else {
+        skorsPortal.daftar = isi.skors.filter((s) => s && typeof s === "object" && s.perkaraId);
+        skorsPortal.galat = "";
+      }
+    } catch {
+      skorsPortal.galat = "Skors dari ALETA belum dapat dibaca.";
+    } finally {
+      skorsPortal.memuat = false;
+      skorsPortal.diterima = Date.now();
+      gambarUlangBlokSkors();
+    }
+  }
+
+  /** Skors dibaca hanya selama bloknya terlihat; hitung mundurnya diperbarui tiap 30 detik. */
+  function aturSkorsPortal() {
+    const perlu = Boolean(bayang && bayang.querySelector(".aleta-cmw-skors") && akar && akar.isConnected);
+    if (!perlu) {
+      if (jamSkors) clearInterval(jamSkors);
+      jamSkors = null;
+      return;
+    }
+    if (Date.now() - skorsPortal.diterima >= SKORS_SEGAR_MS) void muatSkorsPortal();
+    if (jamSkors) return;
+    jamSkors = setInterval(() => {
+      if (!bayang || !bayang.querySelector(".aleta-cmw-skors") || !akar || !akar.isConnected) return aturSkorsPortal();
+      if (Date.now() - skorsPortal.diterima >= SKORS_SEGAR_MS) void muatSkorsPortal();
+      else gambarUlangBlokSkors();
+    }, 30 * 1000);
   }
 
   /** Jam berdetak hanya selama sidangnya berjalan, tidak diskors, dan jamnya terlihat. */
@@ -5253,6 +5404,7 @@
     if (mode !== "lama") {
       aturJamSidang();
       aturJamSd();
+      aturSkorsPortal();
     }
     aturJamKh(); /* F3.2: berhenti sendiri di Lama atau bila saklarnya mati */
   }
@@ -5585,6 +5737,8 @@
     jamTunda = null;
     if (jamSidang) clearInterval(jamSidang);
     jamSidang = null;
+    if (jamSkors) clearInterval(jamSkors);
+    jamSkors = null;
     if (akar) akar.remove();
   }
 

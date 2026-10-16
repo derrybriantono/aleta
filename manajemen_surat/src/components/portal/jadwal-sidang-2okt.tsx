@@ -60,6 +60,17 @@ import type { KontakPihak } from "@/lib/bawaan-tunda";
 import { kunciWaktu, WAKTU_ANTRIAN_KOSONG, type WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import { type TandaAntrianOnline as TandaOnline } from "@/lib/tanda-antrian-online";
 import { cn } from "@/lib/utils";
+import {
+  ALASAN_SKORS,
+  PERKIRAAN_CEPAT_MENIT,
+  hitungMundur,
+  jamTitik,
+  perkiraanDariJam,
+  perkiraanDariMenit,
+  susunAlasanSkors,
+  teksAlasanSkors,
+  teksLama,
+} from "@/lib/skors-sidang";
 
 async function bacaJson(jawaban: Response): Promise<Record<string, unknown>> {
   const isi = (await jawaban.json().catch(() => ({}))) as Record<string, unknown>;
@@ -118,6 +129,10 @@ export async function jalankanLangkahRuangSidang(
               nomorPerkara: i.nomorPerkara,
               skors: l.jenis === "skors",
               panggilSaatSkors: l.jenis === "skors" ? l.panggilSaatSkors : "",
+              // F3.1: alasan baku + perkiraan lanjut (hanya dari jendela Skors).
+              ...(l.jenis === "skors"
+                ? { alasanKode: l.alasanKode ?? "", alasan: l.alasan ?? "", perkiraanLanjut: l.perkiraanLanjut ?? "" }
+                : {}),
               kering: false,
             }),
           })
@@ -125,7 +140,14 @@ export async function jalankanLangkahRuangSidang(
         if (data.available === false || data.ok === false) {
           return gagal(`${nomor} - ${pesanTolakSkors(String(data.alasan || ""), data.pesan ? String(data.pesan) : undefined)}`);
         }
-        sudah.push(l.jenis === "skors" ? `${nomor} diskors (belum selesai).` : `Skors ${nomor} dilanjutkan.`);
+        // F3.1: lama skors dicatat bot saat Lanjutkan - disebut di pesannya.
+        const lama = teksLama(typeof data.lamaDetik === "number" ? data.lamaDetik : null);
+        const jamLanjut = l.jenis === "skors" ? jamTitik(l.perkiraanLanjut) : "";
+        sudah.push(
+          l.jenis === "skors"
+            ? `${nomor} diskors (belum selesai)${jamLanjut ? `, perkiraan lanjut ${jamLanjut}` : ""}.`
+            : `Skors ${nomor} dilanjutkan${lama ? ` - lama skors ${lama}` : ""}.`
+        );
       }
     } catch (galat) {
       return gagal(galat instanceof Error ? galat.message : "error");
@@ -164,19 +186,187 @@ export function LencanaSedangBerjalan({ berjalan, className }: { berjalan: Sidan
   );
 }
 
+/**
+ * Jam yang berdetak tiap `selangMs` - untuk hitung mundur skors. Hanya
+ * berdetak bila lencananya punya perkiraan lanjut.
+ */
+function useKini(nyala: boolean, selangMs = 30_000): Date {
+  const [kini, setKini] = useState(() => new Date());
+  useEffect(() => {
+    if (!nyala) return;
+    const id = window.setInterval(() => setKini(new Date()), selangMs);
+    return () => window.clearInterval(id);
+  }, [nyala, selangMs]);
+  return kini;
+}
+
 export function LencanaDiskors({ catatan, className }: { catatan: CatatanSkors; className?: string }) {
   const jam = jamSingkat(catatan.diskorsPada);
-  return (
+  // F3.1: alasan, perkiraan lanjut, dan hitung mundurnya - di bawah lencana.
+  const alasan = teksAlasanSkors(catatan);
+  const perkiraan = jamTitik(catatan.perkiraanLanjut);
+  const kini = useKini(Boolean(perkiraan));
+  const mundur = perkiraan ? hitungMundur(catatan.perkiraanLanjut, kini) : null;
+  const rinci = [alasan, perkiraan ? `lanjut ±${perkiraan}` : ""].filter(Boolean).join(" · ");
+  const judul =
+    `Diskors${jam ? ` pukul ${jam}` : ""}${catatan.oleh ? ` oleh ${catatan.oleh}` : ""}` +
+    `${alasan ? ` - ${alasan}` : ""}${perkiraan ? `, perkiraan dilanjutkan sekitar ${perkiraan}` : ""}` +
+    ". Sidangnya BELUM SELESAI dan dapat dilanjutkan.";
+  const lencana = (
     <span
       data-diskors=""
       className={cn(
         "mt-1 inline-flex w-fit items-center gap-1 rounded-full border border-amber-500 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-amber-800 dark:border-amber-400 dark:text-amber-200",
-        className
+        rinci ? "" : className
       )}
-      title={`Diskors${jam ? ` pukul ${jam}` : ""}${catatan.oleh ? ` oleh ${catatan.oleh}` : ""}. Sidangnya BELUM SELESAI dan dapat dilanjutkan.`}
+      title={judul}
     >
       <PauseCircle className="h-3 w-3" aria-hidden />
       diskors · belum selesai
+    </span>
+  );
+  if (!rinci) return lencana;
+  return (
+    <span className={cn("inline-flex flex-col gap-0.5", className)} data-diskors-rinci="">
+      {lencana}
+      <span className="text-[11px] leading-tight text-amber-800 dark:text-amber-200" title={judul}>
+        {jam ? `sejak ${jam} · ` : ""}
+        {rinci}
+        {mundur ? (
+          <span
+            data-hitung-mundur-skors={mundur.lewat ? "lewat" : "sisa"}
+            className={cn("ml-1 font-semibold tabular-nums", mundur.lewat ? "text-rose-600 dark:text-rose-400" : "")}
+          >
+            ({mundur.teks})
+          </span>
+        ) : null}
+      </span>
+    </span>
+  );
+}
+
+// ============================================================================
+// JENDELA SKORS - ALASAN + PERKIRAAN LANJUT (F3.1, 17 Okt 2026)
+// ============================================================================
+
+export type IsianSkors = { alasanKode: string; alasan: string; perkiraanLanjut: string };
+
+/**
+ * Isian kecil yang muncul saat Skors ditekan: alasan baku (satu ketukan),
+ * keterangan bebas, dan kira-kira jam berapa dilanjutkan. Semua boleh
+ * dikosongkan - "Skors sekarang" tetap menskors, seperti sebelum F3.1.
+ */
+export function JendelaSkors({
+  nomorPerkara,
+  tanggalSidang,
+  sibuk,
+  onBatal,
+  onSkors,
+}: {
+  nomorPerkara: string;
+  tanggalSidang: string;
+  sibuk: boolean;
+  onBatal: () => void;
+  onSkors: (isian: IsianSkors) => void;
+}) {
+  const [kode, setKode] = useState<string>("");
+  const [ket, setKet] = useState("");
+  const [menit, setMenit] = useState<number | null>(null);
+  const [jamManual, setJamManual] = useState("");
+  const perkiraanJam = jamManual ? perkiraanDariJam(jamManual, tanggalSidang) : "";
+  // Pilihan cepat dihitung SAAT ditekan (jam sekarang), bukan saat jendela dibuka.
+  const pratinjau = perkiraanJam || (menit !== null ? perkiraanDariMenit(menit) : "");
+  const pil = "rounded-full border px-2 py-0.5 text-xs transition";
+  const pilAktif = "border-amber-500 bg-amber-500/20 font-semibold text-amber-900 dark:text-amber-100";
+  const pilDiam = "border-border text-muted-foreground hover:bg-muted";
+  return (
+    <span
+      role="dialog"
+      aria-label={`Skors sidang ${nomorPerkara}`}
+      data-jendela-skors=""
+      className="flex w-[19rem] max-w-[85vw] flex-col gap-1.5 rounded-lg border border-amber-500/50 bg-card p-2 text-left text-xs shadow-md"
+    >
+      <span className="font-semibold text-foreground">Skors {nomorPerkara}</span>
+      <span className="text-xs text-muted-foreground">Sidang belum selesai dan dapat dilanjutkan nanti.</span>
+      <span className="text-xs font-medium text-foreground">Alasan</span>
+      <span className="flex flex-wrap gap-1">
+        {ALASAN_SKORS.map((a) => (
+          <button
+            key={a.kode}
+            type="button"
+            aria-pressed={kode === a.kode}
+            data-alasan-skors={a.kode}
+            onClick={() => setKode(kode === a.kode ? "" : a.kode)}
+            className={cn(pil, kode === a.kode ? pilAktif : pilDiam)}
+          >
+            {a.label}
+          </button>
+        ))}
+      </span>
+      <input
+        type="text"
+        value={ket}
+        maxLength={150}
+        onChange={(e) => setKet(e.target.value)}
+        placeholder={kode === "lainnya" ? "Tulis alasannya" : "Keterangan (boleh kosong)"}
+        aria-label="Keterangan alasan skors"
+        className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+      />
+      <span className="text-xs font-medium text-foreground">Kira-kira dilanjutkan</span>
+      <span className="flex flex-wrap items-center gap-1">
+        {PERKIRAAN_CEPAT_MENIT.map((m) => (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={!jamManual && menit === m}
+            data-perkiraan-skors={m}
+            onClick={() => {
+              setJamManual("");
+              setMenit(menit === m ? null : m);
+            }}
+            className={cn(pil, !jamManual && menit === m ? pilAktif : pilDiam)}
+          >
+            {m < 60 ? `${m} menit` : "1 jam"}
+          </button>
+        ))}
+        <input
+          type="time"
+          value={jamManual}
+          onChange={(e) => setJamManual(e.target.value)}
+          aria-label="Jam perkiraan dilanjutkan"
+          className="rounded-md border border-border bg-background px-1 py-0.5 text-xs"
+        />
+      </span>
+      <span className="text-xs text-muted-foreground">
+        {pratinjau
+          ? `Layar antrian pihak: "diskors, dilanjutkan sekitar ${jamTitik(pratinjau)}"`
+          : "Tanpa perkiraan jam lanjut - layar antrian pihak: \"diskors sementara\"."}
+      </span>
+      <span className="flex justify-end gap-1.5">
+        <button
+          type="button"
+          onClick={onBatal}
+          className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+        >
+          Batal
+        </button>
+        <button
+          type="button"
+          disabled={sibuk || (kode === "lainnya" && !ket.trim())}
+          data-skors-sekarang=""
+          onClick={() =>
+            onSkors({
+              alasanKode: kode,
+              alasan: kode || ket.trim() ? susunAlasanSkors(kode, ket) : "",
+              perkiraanLanjut: perkiraanJam || (menit !== null ? perkiraanDariMenit(menit) : ""),
+            })
+          }
+          className="inline-flex items-center gap-1 rounded-md border border-amber-500 bg-amber-500/15 px-2 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-500/25 disabled:opacity-60 dark:text-amber-100"
+        >
+          <PauseCircle className="h-3.5 w-3.5" aria-hidden />
+          {sibuk ? "…" : "Skors sekarang"}
+        </button>
+      </span>
     </span>
   );
 }
@@ -338,6 +528,8 @@ export function TombolRuangSidang({
   ruang?: string;
 }) {
   const [sibuk, setSibuk] = useState(false);
+  // F3.1: Skors membuka jendela alasan + perkiraan lanjut, bukan langsung confirm().
+  const [jendelaSkors, setJendelaSkors] = useState(false);
   // Butir 3 (5 Okt 2026): "Diskors", "Ditandai berjalan", dsb. hilang sendiri
   // sesudah beberapa detik; yang gagal menetap sampai ditutup / aksi berikutnya.
   const [pesan, setPesan] = usePesanSementara();
@@ -372,10 +564,11 @@ export function TombolRuangSidang({
     onBerubah({ ok: hasil.ok, tujuan: baris.perkaraId });
   };
 
-  const jalankan = async (langkah: LangkahRuangSidang[]) => {
+  const jalankan = async (langkah: LangkahRuangSidang[], tanpaTanya = false) => {
     if (langkah.length === 0) return;
     const kalimat = kalimatLangkah(langkah, (id) => info(id).nomorPerkara);
-    if (!window.confirm(`${kalimat.map((k, i) => `${i + 1}. ${k}`).join("\n")}\n\nLanjutkan?`)) return;
+    // Jendela Skors (F3.1) sudah menjadi konfirmasinya - tidak ditanya dua kali.
+    if (!tanpaTanya && !window.confirm(`${kalimat.map((k, i) => `${i + 1}. ${k}`).join("\n")}\n\nLanjutkan?`)) return;
     setSibuk(true);
     setPesan(null);
     const hasil = await jalankanLangkahRuangSidang(langkah, info);
@@ -393,22 +586,37 @@ export function TombolRuangSidang({
         <button
           type="button"
           disabled={sibuk}
-          onClick={() =>
-            void jalankan([
-              {
-                jenis: "skors",
-                perkaraId: baris.perkaraId,
-                tanggalSidang: baris.tanggalSidang,
-                panggilSaatSkors: berjalan.sejak,
-              },
-            ])
-          }
-          title="Skors: sidang ini BELUM SELESAI dan dapat dilanjutkan nanti. Tanda Selesai yang sah tidak tersentuh."
+          aria-expanded={jendelaSkors}
+          onClick={() => setJendelaSkors((x) => !x)}
+          title="Skors: sidang ini BELUM SELESAI dan dapat dilanjutkan nanti. Pilih alasan dan kira-kira jam dilanjutkan. Tanda Selesai yang sah tidak tersentuh."
           className={cn(tombol, "border-amber-500/60 text-amber-800 hover:bg-amber-500/10 dark:text-amber-200")}
         >
           <PauseCircle className="h-3.5 w-3.5" />
           {sibuk ? "…" : "Skors"}
         </button>
+      ) : null}
+      {aksi.skors && berjalan && jendelaSkors ? (
+        <JendelaSkors
+          nomorPerkara={baris.nomorPerkara || info(baris.perkaraId).nomorPerkara || "perkara ini"}
+          tanggalSidang={baris.tanggalSidang}
+          sibuk={sibuk}
+          onBatal={() => setJendelaSkors(false)}
+          onSkors={(isian) => {
+            setJendelaSkors(false);
+            void jalankan(
+              [
+                {
+                  jenis: "skors",
+                  perkaraId: baris.perkaraId,
+                  tanggalSidang: baris.tanggalSidang,
+                  panggilSaatSkors: berjalan.sejak,
+                  ...isian,
+                },
+              ],
+              true
+            );
+          }}
+        />
       ) : null}
       {aksi.lompat && aksi.asal ? (
         <button
@@ -531,12 +739,18 @@ export function RingkasRuangSidang({
               type="button"
               onClick={() => onLihat?.(d.kunci)}
               className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 bg-amber-500/10 px-1.5 py-0.5 text-left text-amber-900 transition hover:bg-amber-500/20 dark:text-amber-100"
-              title={`Tunjukkan barisnya${d.oleh ? ` - diskors oleh ${d.oleh}` : ""}. Sidangnya belum selesai dan dapat dilanjutkan.`}
+              title={`Tunjukkan barisnya${d.oleh ? ` - diskors oleh ${d.oleh}` : ""}${d.alasan ? ` (${d.alasan})` : ""}. Sidangnya belum selesai dan dapat dilanjutkan.`}
             >
               <PauseCircle className="h-3 w-3" aria-hidden />
               <span className="tabular-nums">{nomorPerkara(d.kunci) || `perkara ${d.perkaraId}`}</span>
               {d.ruang ? <span className="text-amber-800/80 dark:text-amber-200/80">{d.ruang}</span> : null}
               {d.jam ? <span className="text-amber-800/80 dark:text-amber-200/80">{d.jam}</span> : null}
+              {/* F3.1: perkiraan lanjut di ringkasan ruang sidang */}
+              {d.perkiraanLanjut ? (
+                <span className="font-semibold text-amber-800 dark:text-amber-200" data-ringkas-perkiraan="">
+                  lanjut ±{jamTitik(d.perkiraanLanjut)}
+                </span>
+              ) : null}
             </button>
           ))}
         </span>

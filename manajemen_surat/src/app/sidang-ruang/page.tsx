@@ -51,6 +51,8 @@ type Perkara = {
   penggugat: string;
   tergugat: string;
   penghubung: string;
+  /** F3.1: "Diskors, dilanjutkan sekitar 10.30" - kosong bila tidak diskors. */
+  diskors?: string;
 };
 
 type Jawaban = {
@@ -224,7 +226,14 @@ export default function SidangRuangPage() {
           berkedip ? "opacity-40" : "opacity-100",
         ].join(" ")}
       >
-        <p className="text-base uppercase tracking-[0.4em] text-slate-500">Sedang bersidang</p>
+        <p className="text-base uppercase tracking-[0.4em] text-slate-500">
+          {data?.sekarang?.diskors ? "Sidang diskors" : "Sedang bersidang"}
+        </p>
+        {data?.sekarang?.diskors ? (
+          <p className="mt-2 text-3xl font-semibold text-amber-300" data-papan-diskors="">
+            {data.sekarang.diskors}
+          </p>
+        ) : null}
 
         {data?.sekarang ? (
           <>
@@ -284,6 +293,9 @@ export default function SidangRuangPage() {
                     <span className="font-mono text-xl tabular-nums text-slate-500">
                       No. antrian {data.berikutnya.nomorAntrian}
                     </span>
+                  ) : null}
+                  {data.berikutnya.diskors ? (
+                    <span className="text-xl font-semibold text-amber-300">{data.berikutnya.diskors}</span>
                   ) : null}
                 </div>
                 <p className="mt-1 text-xl font-light text-slate-500">

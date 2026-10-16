@@ -15,7 +15,11 @@
  *   GET  /disidang                keadaan disidang hari ini, satu kueri ringan
  *                                 (6 Okt 2026) - "sedang berjalan" seketika
  *   POST /skors                   skors / lanjutkan sidang (kering bawaan) -
- *                                 perbaikan 2 Okt 2026, butir 10
+ *                                 perbaikan 2 Okt 2026, butir 10; F3.1 (17 Okt):
+ *                                 + alasanKode baku dan perkiraanLanjut
+ *   GET  /skors?dari&sampai[&perkaraId]  daftar skors (berlaku + sudah
+ *                                 dilanjutkan, beserta lamanya) - hanya tabel
+ *                                 ALETA, F3.1
  *   POST /berjalan                tandai / batalkan tanda "sedang berjalan"
  *                                 (kering bawaan) - 2 Okt 2026 malam, butir 3
  *   GET  /kalender?perkaraId      Court Calendar perkara (hanya SELECT) - bahan
@@ -169,11 +173,31 @@ router.post("/skors", wajibToken, async (req, res) => {
       ruangId: badan.ruangId,
       skors: badan.skors !== false,
       alasan: badan.alasan,
+      alasanKode: badan.alasanKode,
+      perkiraanLanjut: badan.perkiraanLanjut,
       panggilSaatSkors: badan.panggilSaatSkors,
       hasilSidangSelesai: badan.hasilSidangSelesai === true,
       oleh: operator,
       ip: alamatAudit(req),
       kering: badan.kering !== false,
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/**
+ * Daftar skors (F3.1, 17 Okt 2026) - satu tanggal atau rentang pendek, boleh
+ * satu perkara. Hanya SELECT pada tabel ALETA aleta_bot_sidang_skors.
+ */
+router.get("/skors", wajibToken, async (req, res) => {
+  try {
+    const dari = String(req.query.dari || "").slice(0, 10);
+    const hasil = await sidangSelesaiService.daftarSkors({
+      dari,
+      sampai: String(req.query.sampai || dari).slice(0, 10),
+      perkaraId: String(req.query.perkaraId || ""),
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (galat) {
