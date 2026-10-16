@@ -606,7 +606,8 @@ describe("F. Tampilan Lama tetap persis, tanpa jaringan, manifest & penyusun", (
     const sipp = m.content_scripts.find((x) => (x.js || []).includes("konten.js"))!.js!;
     const abt = m.content_scripts.find((x) => (x.js || []).includes("abt.js"))!.js!;
     const portal = m.content_scripts.find((x) => (x.js || []).includes("aleta.js"))!.js!;
-    expect(sipp[sipp.length - 1]).toBe("sipp-ide-l1.js");
+    // Gelombang berikutnya (sipp-ide-l2/m1/m2.js) boleh menyusul di belakangnya - semuanya skrip ide SIPP.
+    expect(sipp.slice(sipp.indexOf("sipp-ide-l1.js") + 1).every((x) => /^sipp-ide-[a-z]\d\.js$/.test(x))).toBe(true);
     expect(sipp.indexOf("sipp-ide-l1.js")).toBeGreaterThan(sipp.indexOf("konten.js"));
     expect(abt[abt.length - 1]).toBe("sipp-ide-l1.js");
     expect(abt.indexOf("sipp-ide-l1.js")).toBeGreaterThan(abt.indexOf("blangko-derry.js"));

@@ -11154,3 +11154,63 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kelompok[data-kunci="ka
   border-radius: 8px;
 }
 /* === AKHIR KASIR OTOMATIS 13 Okt === */
+
+/* ===========================================================================
+ * LENCANA ALETA DI SIPP - RUPA RANCANGAN "SIPP DENGAN IDE ALETA" (TAHAP M2)
+ * ===========================================================================
+ *
+ * Satu gaya bersama untuk SEMUA lencana ALETA di halaman SIPP (.aleta-tanda +
+ * warna - dari konten.js labelTanda, sipp-ide-m2.js, dan gelombang ide lain):
+ * bulat, berwarna penuh per jenis, huruf SIPP 13px (tidak lebih kecil dari
+ * SIPP), dan (i) penjelasan bila lencananya punya arti (title). Warna dari
+ * rancangan (_sdi/gaya.css + gaya-ide.css), terang dan gelap.
+ *
+ * HANYA UI Baru: berlaku bila html[data-aleta-lencana="rancangan"], yang
+ * dipasang sipp-ide-m2.js selama tampilan bukan Lama. Tampilan Lama tetap
+ * memakai aturan .aleta-tanda di atas apa adanya.
+ *
+ * Sebab abu dulu "polos": .aleta-tanda-abu memakai var(--aleta-garis-kuat)
+ * yang hanya terdefinisi di dalam panel - di baris tabel SIPP peubahnya tidak
+ * ada, sehingga latarnya kosong. Di sini warnanya ditulis tetap.
+ */
+html[data-aleta-lencana="rancangan"] .aleta-tanda {
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+html[data-aleta-lencana="rancangan"] .aleta-tanda[title]::after {
+  content: "i";
+  display: inline-block;
+  margin-left: 5px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font: italic 700 11px/13px Georgia, serif;
+  text-align: center;
+  vertical-align: middle;
+  opacity: 0.9;
+}
+html[data-aleta-lencana="rancangan"] .aleta-tanda[title] { cursor: help; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-merah   { background: #b42318; color: #fff; border: 1px solid #8a1c13; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-kuning  { background: #9a5b06; color: #fff; border: 1px solid #74440a; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-hijau   { background: #16704a; color: #fff; border: 1px solid #0f5334; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-abu     { background: #6b7a72; color: #fff; border: 1px solid #6b7a72; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-jingga  { background: #b45309; color: #fff; border: 1px solid #8a3f06; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-fuchsia { background: #a21caf; color: #fff; border: 1px solid #7e1689; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-biru    { background: #1f4fa3; color: #fff; border: 1px solid #173c7d; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-ungu    { background: #4b4fb0; color: #fff; border: 1px solid #363a8a; }
+html[data-aleta-lencana="rancangan"] .aleta-tanda-sita    { background: #f2b600; color: #2a1d00; border: 2px solid #8a6500; font-weight: 700; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-merah   { background: #43120f; color: #ffb4ab; border-color: #7f2a22; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-kuning  { background: #3a2a0b; color: #f0cb78; border-color: #6b4f14; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-hijau   { background: #0f2e1f; color: #7fd6a4; border-color: #235b3e; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-abu     { background: #1b2521; color: #b3c2ba; border-color: #33443c; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-jingga  { background: #4a2406; color: #ffc48a; border-color: #8a4a14; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-fuchsia { background: #44104a; color: #f3a8f8; border-color: #7a2a85; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-biru    { background: #10264d; color: #a9c8ff; border-color: #25488a; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-ungu    { background: #231f55; color: #bdb8ff; border-color: #4a45a0; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-sita    { background: #5c4300; color: #ffd54a; border-color: #a07a00; }
