@@ -17,6 +17,13 @@ const kotakSisip = document.getElementById("sisipJadwal");
 const kotakCetak = document.getElementById("cetakTigaBerkas");
 const kotakSunting = document.getElementById("suntingLangsungAbt");
 const kotakChecklist = document.getElementById("checklistMilestone");
+/* Blangko ABT by Derry Briantono (tahap C): empat saklar yang sama dengan "Widget ALETA" di tampilan itu. */
+const SAKLAR_DERRY = {
+  derryBawaan: ["blangkoDerryBawaan", false],
+  derryTawar: ["blangkoDerryTawar", true],
+  derrySaran: ["blangkoDerrySaran", true],
+  derryIngat: ["blangkoDerryIngat", true],
+};
 
 /**
  * Penyimpanan ekstensi, bila memang sedang berjalan sebagai ekstensi.
@@ -57,6 +64,10 @@ const KUNCI_SETELAN_AKUN = [
   "cetakTigaBerkas",
   "suntingLangsungAbt",
   "checklistMilestone",
+  "blangkoDerryBawaan",
+  "blangkoDerryTawar",
+  "blangkoDerrySaran",
+  "blangkoDerryIngat",
   "skalaHuruf",
   "temaPopup",
   "temaPanel",
@@ -78,6 +89,10 @@ const BAWAAN_AKUN = {
   cetakTigaBerkas: false,
   suntingLangsungAbt: false,
   checklistMilestone: false,
+  blangkoDerryBawaan: false,
+  blangkoDerryTawar: true,
+  blangkoDerrySaran: true,
+  blangkoDerryIngat: true,
   skalaHuruf: 100,
   temaPopup: "ikut",
   temaPanel: "gelap",
@@ -201,6 +216,12 @@ function pasangNilai(simpan) {
   // melayang di tiap halaman kerja; yang tidak pernah menyalakannya tidak
   // melihat apa pun berubah.
   if (kotakChecklist) kotakChecklist.checked = simpan.checklistMilestone === true;
+  // Bawaan MATI (tampilan baru dipilih orangnya); tawaran, saran Tab, dan
+  // pengingat isian kosong bawaannya MENYALA.
+  for (const [id, [kunci, bawaan]] of Object.entries(SAKLAR_DERRY)) {
+    const k = document.getElementById(id);
+    if (k) k.checked = bawaan ? simpan[kunci] !== false : simpan[kunci] === true;
+  }
 
   // Alamat portal dicatat skrip konten saat halaman SIPP dibuka. Popup
   // berjalan di origin chrome-extension://, sehingga tautan relatif di sini
@@ -219,7 +240,7 @@ function pasangNilai(simpan) {
 
 if (penyimpanan) {
   penyimpanan
-    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI])
+    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI, ...Object.values(SAKLAR_DERRY).map((x) => x[0])])
     .then(pasangNilai)
     .catch(() => pasangNilai({}));
 } else {
@@ -439,6 +460,10 @@ if (kotakCetak) {
   if (kotakSunting) {
     kotakSunting.addEventListener("change", () => simpan("suntingLangsungAbt", kotakSunting.checked, kotakSunting));
   }
+}
+for (const [id, [kunci]] of Object.entries(SAKLAR_DERRY)) {
+  const k = document.getElementById(id);
+  if (k) k.addEventListener("change", () => simpan(kunci, k.checked, k));
 }
 if (kotakChecklist) {
   kotakChecklist.addEventListener("change", () => simpan("checklistMilestone", kotakChecklist.checked, kotakChecklist));
