@@ -4377,6 +4377,9 @@ app.use("/internal/aleta-bot/sumber-daya", require("./routes/sumberDayaRoutes"))
 // Kamus deteksi & kalimat: benih + lapis database dari portal, uji pola atas sampel (paket deteksi lengkap).
 // Lapis terakhir dimuat dari runtime-data saat bot hidup lalu dibaca ulang berkala; tanpa berkas = benih murni.
 app.use("/internal/aleta-bot/kamus-deteksi", require("./routes/kamusDeteksiRoutes"));
+// Pengaturan SIPP & ABT (16 Okt 2026, Tahap H): hak menu folder Blangko Derry, saklar abt_config,
+// variabel & template tanya jawab ABT - transaksi + prasyarat nilai lama; peran dijaga portal.
+app.use("/internal/aleta-bot/abt-pengaturan", require("./routes/abtPengaturanRoutes"));
 try {
   const muatKamus = require("./services/kamusDeteksiLapis").mulaiPemuatLapis();
   console.log(

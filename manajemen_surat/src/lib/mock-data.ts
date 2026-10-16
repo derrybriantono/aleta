@@ -1154,6 +1154,24 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "SIPP",
   },
   {
+    // Tahap H (16 Okt 2026): hak menu ABT folder Blangko Derry, saklar
+    // kebijakan (hakim melihat BAS, dll.), variabel & template tanya jawab
+    // ABT. Dibuka Super Admin dan Admin; hak menu & kueri Super Admin saja
+    // (rute /api/pengaturan-sipp-abt yang menjaganya).
+    id: "pengaturan-sipp-abt",
+    label: "Pengaturan SIPP & ABT",
+    description: "Hak menu ABT, saklar kebijakan, isian blangko, dan template tanya jawab ABT.",
+    href: "/admin/pengaturan-sipp-abt",
+    icon: "settings",
+    roleIds: ["super-admin", "admin"],
+    showInHub: false,
+    showInSidebar: true,
+    iconBgClass: "bg-amber-100",
+    iconFgClass: "text-amber-700",
+    cardClass: "border-amber-200/80 bg-amber-50/70",
+    badgeLabel: "ABT",
+  },
+  {
     id: "judicia-legal-form-settings",
     label: "ALETA Judicia (Legal Form)",
     description: "Pengaturan modul JLF: template, variabel, SIPP, AI, ALETA Bot, KB hukum, QR, audit, dan importer legacy.",
@@ -1847,6 +1865,7 @@ export const moduleVisibility: ModuleVisibility[] = [
   buildVisibility("super-admin", modules.map((module) => module.id)),
   buildVisibility("admin", [
     "aleta-ecourt-admin",
+    "pengaturan-sipp-abt",
     "dashboard",
     "penugasan",
     "surat-masuk",

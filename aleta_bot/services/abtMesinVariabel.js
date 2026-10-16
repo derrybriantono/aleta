@@ -501,6 +501,8 @@ function buatMesin(p) {
   if (!/^[A-Za-z0-9_]+$/.test(skema)) throw new Error("nama skema ABT tidak sah");
   const batasMs = Number(p.batasKueriMs) || BATAS_KUERI_MS;
   const umurMs = p.umurKatalogMs === undefined ? UMUR_KATALOG_MS : Number(p.umurKatalogMs);
+  /** {noVar: {sql_query?, default_data?}} - definisi pengganti untuk uji, tidak pernah ditulis. */
+  const timpaKatalog = p.timpaKatalog && typeof p.timpaKatalog === "object" ? p.timpaKatalog : {};
 
   let katalogJanji = null;
   let katalogSaat = 0;
@@ -523,7 +525,15 @@ function buatMesin(p) {
     katalogJanji = kueri(
       `SELECT no_var, nama, data_type, data_tabel, data_kolom, urutan_data, referensi, sql_query, default_data, multi_sidang FROM ${skema}.abt_variabel`
     )
-      .then((rows) => new Map(rows.map((b) => [String(b.no_var ?? "").trim(), b])))
+      .then((rows) => {
+        const peta = new Map(rows.map((b) => [String(b.no_var ?? "").trim(), b]));
+        // Uji suntingan (Pengaturan SIPP & ABT, 16 Okt 2026): definisi yang
+        // BELUM disimpan dihitung seolah sudah ada di katalog - tanpa menulis.
+        for (const [no, ganti] of Object.entries(timpaKatalog)) {
+          if (peta.has(no)) peta.set(no, { ...peta.get(no), ...ganti });
+        }
+        return peta;
+      })
       .catch((g) => {
         katalogJanji = null;
         throw g;
