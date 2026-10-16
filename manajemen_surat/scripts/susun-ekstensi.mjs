@@ -85,8 +85,12 @@ const BERKAS = [
   // Referensi Data Pihak"; dimuat sesudah basmassal.js, sebelum konten.js.
   "saksiscan.js",
   // Blangko ABT by Derry Briantono (tahap C-D, 16 Okt 2026) - skrip konten ABT
-  // dan gayanya, dimuat sesudah checklist.js.
+  // dan gayanya, dimuat sesudah checklist.js. abt-klien.js (klien rute ABT,
+  // tahap A) dimuat sebelumnya; blangko-derry-isian.js (tahap F-G: perlu
+  // diisi, bukti, tanya jawab, pratinjau, cetak) sesudahnya.
+  "abt-klien.js",
   "blangko-derry.js",
+  "blangko-derry-isian.js",
   "blangko-derry.css",
   "tema-awal.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat

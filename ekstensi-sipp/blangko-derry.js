@@ -40,12 +40,16 @@
  *   kali nomor perkara = ganti perkara.
  *
  * ----------------------------------------------------------------------------
- * TAHAP E-G BELUM
+ * TAHAP E-G - MENEMPEL LEWAT api
  * ----------------------------------------------------------------------------
- *   Wadah kosong berlabel disediakan (api.wadah("pilih-blangko" | "perlu-diisi"
- *   | "pratinjau" | "cetak")). Perkara yang dipilih diumumkan lewat peristiwa
- *   "aleta-bd-perkara" di document dan api.perkaraTerpilih(); alat di menu
- *   "Alat saya" didaftarkan tahap berikutnya lewat api.daftarkanAlat(id, fn).
+ *   Wadah berlabel (api.wadah("pilih-blangko" | "perlu-diisi" | "pratinjau" |
+ *   "cetak")) diisi blangko-derry-isian.js (tahap F-G), yang memanggil
+ *   api.tahapSiap(nama) supaya tanda "menyusul" hilang. Perkara yang dipilih
+ *   diumumkan lewat peristiwa "aleta-bd-perkara" di document dan
+ *   api.perkaraTerpilih(); alat di menu "Alat saya" didaftarkan lewat
+ *   api.daftarkanAlat(id, fn). Rekomendasi blangko (tahap E) dipasang lewat
+ *   api.pasangRekomendasi(fn) dan dibaca lewat api.rekomendasi(ctx);
+ *   kelengkapan isian per perkara dilaporkan balik lewat api.laporIsian().
  *
  * Tidak ada yang ditulis ke ABT, SIPP, maupun ALETA oleh berkas ini: seluruh
  * permintaan jaringannya GET.
@@ -231,6 +235,9 @@
     if (peran.includes("pp") && s.tanggal && s.tanggal <= hariIni) dj.push("bas");
     if (peran.includes("js") && (p.sudahPutus || belumTiba)) dj.push("rel");
     const ada = { put: p.adaBerkasPutusan, bas: s.adaBas, rel: null };
+    // Tahap F-G melaporkan isian dan cetakan per perkara (ctx.lapor); tanpa itu isian "belum diukur".
+    const lap = ctx.lapor && ctx.lapor.get ? ctx.lapor.get(p.nomorPerkara) : null;
+    if (lap && lap.dicetak) for (const j of dj) if (lap.dicetak[`${p.nomorPerkara}|${j}`] && ada[j] !== true) ada[j] = "dicetak";
     const belum = dj.filter((j) => ada[j] === false);
     const minutasi = Boolean(p.tanggalMinutasi);
     const selesai = minutasi || (dj.length > 0 && dj.every((j) => ada[j] === true));
@@ -275,17 +282,22 @@
       alasan.push(minutasi ? "Sudah minutasi" : "Selesai");
     }
     const tingkat = selesai ? "selesai" : skor >= 60 ? "tinggi" : skor >= 25 ? "sedang" : "rendah";
+    const dicetak = dj.length > 0 && dj.every((j) => ada[j] === "dicetak" || ada[j] === true);
     const dokTxt = tanpaKerja
       ? "Belum ada yang perlu dibuat"
       : selesai
         ? minutasi
           ? "Sudah minutasi"
           : "Sudah ada di SIPP"
-        : belum.length
-          ? belumTiba
-            ? "Belum waktunya"
-            : "Belum diunggah ke SIPP"
-          : "Belum terukur";
+        : dicetak
+          ? "Sudah dicetak"
+          : belum.length
+            ? belumTiba
+              ? "Belum waktunya"
+              : "Belum diunggah ke SIPP"
+            : "Belum terukur";
+    const persen = lap && typeof lap.t === "number" ? (lap.t ? Math.min(1, lap.a / lap.t) : 1) : null;
+    const isiTxt = lap && typeof lap.t === "number" ? (lap.t === 0 ? "Tidak perlu diisi" : lap.a >= lap.t ? "Isian lengkap" : `Terisi ${lap.a} dari ${lap.t}`) : "Isian belum diukur";
     return {
       n: p.nomorPerkara,
       p,
@@ -299,9 +311,9 @@
       alasan,
       tingkat,
       dokTxt,
-      dokKelas: selesai ? "ok" : "",
-      persen: null,
-      isiTxt: "Isian belum diukur",
+      dokKelas: selesai || dicetak ? "ok" : "",
+      persen,
+      isiTxt,
       sisaMinutasi,
     };
   }
@@ -365,6 +377,8 @@
     sidIdx: 0,
     riwayat: new Map(),
     alatDaftar: new Map(),
+    lapor: new Map(),
+    rekomendasi: null,
     floatBuka: null,
     nyala: false,
   };
@@ -717,7 +731,7 @@
     const data = S.data;
     if (!data) return [];
     const q = S.cariNomor.trim().toLowerCase();
-    const ctx = { hariIni: hariIni() };
+    const ctx = { hariIni: hariIni(), lapor: S.lapor };
     const l = data.perkara.filter((p) => !q || String(p.nomorPerkara).toLowerCase().includes(q)).map((p) => ringkasan(p, ctx));
     return urutkan(l, S.urut, S.arah, S.depan);
   }
@@ -930,7 +944,7 @@
       return;
     }
     const sid = riwayatPerkara(p);
-    const r = ringkasan(p, { hariIni: hariIni() });
+    const r = ringkasan(p, { hariIni: hariIni(), lapor: S.lapor });
     wad.innerHTML =
       `<span class="bd-no" title="Klik dua kali untuk mengganti perkara">${esc(p.nomorPerkara)}</span><span>${esc(p.jenisPerkara)}${p.lewatEcourt ? " · e-Court" : ""}</span>` +
       `<span class="bd-pihak" tabindex="0" data-tipn="${esc(p.nomorPerkara)}">Para pihak ⓘ</span>` +
@@ -963,7 +977,7 @@
     try {
       document.dispatchEvent(
         new CustomEvent("aleta-bd-perkara", {
-          detail: p ? { nomorPerkara: p.nomorPerkara, perkaraId: p.perkaraId, jenisPerkara: p.jenisPerkara, sidang: sid.slice(), sidangKe: S.sidIdx, sidangDipilih: sid[S.sidIdx] || null } : null,
+          detail: p ? { nomorPerkara: p.nomorPerkara, perkaraId: p.perkaraId, jenisPerkara: p.jenisPerkara, sidang: sid.slice(), sidangKe: S.sidIdx, sidangDipilih: sid[S.sidIdx] || null, perkara: p } : null,
         })
       );
     } catch {
@@ -1427,13 +1441,52 @@
   }
 
   const api = {
-    versi: "tahap-C-D",
+    versi: "tahap-C-G",
     buka,
     tutup,
     mulai,
     muatDaftar,
     pilihPerkara,
     gantiPerkara,
+    toast,
+    adm,
+    peranDokumen,
+    siapa: () => (S.siapa ? { ...S.siapa, sebagai: { ...S.sebagai } } : null),
+    /** Tahap F-G sudah mengisi wadah ini: tanda "menyusul" dan isi penampung dihapus. */
+    tahapSiap(nama) {
+      const w = akar ? cari(`[data-wadah="${nama}"]`, akar) : null;
+      if (!w) return false;
+      const bagian = w.closest(".bd-tahap");
+      if (bagian) {
+        bagian.classList.remove("menyusul");
+        const chip = bagian.querySelector(".bd-tk .bd-chip");
+        if (chip) chip.remove();
+      }
+      if (w.classList.contains("bd-wadahkosong")) {
+        w.classList.remove("bd-wadahkosong");
+        w.innerHTML = "";
+      }
+      return true;
+    },
+    /** Titik sambung tahap E: fn(ctx) -> [{ berkas, kelompok, jenis, alasan }]. */
+    pasangRekomendasi(fn) {
+      S.rekomendasi = typeof fn === "function" ? fn : null;
+    },
+    rekomendasi(ctx) {
+      if (!S.rekomendasi) return [];
+      try {
+        const h = S.rekomendasi(ctx);
+        return Array.isArray(h) ? h : [];
+      } catch {
+        return [];
+      }
+    },
+    /** Tahap F-G melaporkan kelengkapan isian & cetakan satu perkara untuk kartu/daftar. */
+    laporIsian(nomor, lapor) {
+      if (!nomor) return;
+      S.lapor.set(String(nomor), { a: Number(lapor && lapor.a) || 0, t: Number(lapor && lapor.t) || 0, jenis: (lapor && lapor.jenis) || "", dicetak: (lapor && lapor.dicetak) || {} });
+      if (akar && S.aktif) renderPerkara();
+    },
     perkaraTerpilih() {
       const p = perkaraTerpilih();
       if (!p) return null;

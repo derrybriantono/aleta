@@ -84,7 +84,9 @@
         "basmassal.js",
         "abt.js",
         "checklist.js",
-        "blangko-derry.js"
+        "abt-klien.js",
+        "blangko-derry.js",
+        "blangko-derry-isian.js"
       ],
       "css": [
         "panel.css",
