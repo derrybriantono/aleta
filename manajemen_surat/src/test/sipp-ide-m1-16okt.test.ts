@@ -166,8 +166,13 @@ const EDIT = `<div class="centering"><form id="frm_edit_jadwal_sidang" method="p
 <tr><td>Keterangan</td><td><input type="hidden" name="tgljsidangsblm" id="tgljsidangsblm" value="2026-10-13"><textarea name="keterangan" id="keterangan"></textarea></td></tr>
 <tr><td colspan="2"><input type="submit" id="simpan" value="Simpan" class="btn"></td></tr></table></form></div>`;
 
+/** SIPP mengisi Tanggal Putusan Sela jendela baru dengan HARI INI (dd/mm/yyyy). */
+const HARI_INI_SIPP = (() => {
+  const n = new Date();
+  return `${String(n.getDate()).padStart(2, "0")}/${String(n.getMonth() + 1).padStart(2, "0")}/${n.getFullYear()}`;
+})();
 const SELA = (o: { tgl?: string; p1?: string } = {}) => `<form id="frm_sela" method="post" enctype="multipart/form-data" action="http://127.0.0.1:8056/managePutusanSela/validateInput"><table id="tableDetilPerkara">
-<tr><td id="first-child">Tanggal Putusan Sela</td><td><input id="tgl_sela" name="tgl_sela" value="${o.tgl ?? "16/10/2026"}" class="datepicker"></td></tr>
+<tr><td id="first-child">Tanggal Putusan Sela</td><td><input id="tgl_sela" name="tgl_sela" value="${o.tgl ?? HARI_INI_SIPP}" class="datepicker"></td></tr>
 <tr><td id="first-child">Hasil Putusan Sela </td><td><select name="is_keberatan" id="is_keberatan"><option value="">Pilih</option><option value="1">Diterima</option><option value="2">Ditolak</option></select></td></tr>
 <tr><td id="first-child">Amar Putusan Sela</td><td id="amar_text"><select id="template_amar_Sela"><option value=''>Pilih amar</option></select><textarea name="amar" id="amar" style="display:none"></textarea><div id="cke_amar"><iframe></iframe></div></td></tr>
 <tr><td id="first-child">Pemberitahuan Putusan Sela Kepada Penggugat</td><td><input id="tgl_pihak1" name="tgl_pihak1" value="${o.p1 ?? ""}" class="datepicker"></td></tr>
@@ -365,7 +370,7 @@ describe("C. Putusan Sela", () => {
     w.aletaSippIdeM1.pasang(w.document);
     expect(pita(w, "sela").querySelector('[data-m1="penjelas"]').textContent).toMatch(/Pilih amar/);
     const r = await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_sela"));
-    expect(nilai(w, "tgl_sela")).toBe("16/10/2026");
+    expect(nilai(w, "tgl_sela")).toBe(HARI_INI_SIPP);
     // Keputusan pengguna 16 Okt malam: pihak yang hadir saat dibacakan diberitahu pada hari itu juga.
     expect(r).toEqual({ diisi: 2, sama: 0, tawar: 1, gagal: 0 });
     expect([nilai(w, "tgl_pihak1"), nilai(w, "tgl_pihak2")]).toEqual(["26/08/2026", "26/08/2026"]);
@@ -393,6 +398,31 @@ describe("C. Putusan Sela", () => {
     w3.aletaSippIdeM1.pasang(w3.document);
     await w3.aletaSippIdeM1.isiDenganAleta(p(w3, "#frm_sela"));
     expect([nilai(w3, "tgl_pihak1"), nilai(w3, "tgl_pihak2")]).toEqual(["28/08/2026", "26/08/2026"]);
+  });
+
+  it("tanggal bawaan SIPP + pemberitahuan = usulan ALETA: TANPA merah palsu, tanda kuning di kolom Tanggal Putusan Sela; Pakai menghapus tanda", async () => {
+    const w = buka(SELA(), { jawab: () => bahan("sela") });
+    w.aletaSippIdeM1.pasang(w.document);
+    const f = w.document.querySelector("#frm_sela");
+    const cek = () => pita(w, "sela").querySelector('[data-m1="cek"]');
+    const saran = () => f.querySelector('[data-m1="saran-sela"]');
+    expect(saran()).toBeNull(); // sebelum data ALETA dibaca tidak ada usulan
+    await w.aletaSippIdeM1.isiDenganAleta(p(w, "#frm_sela"));
+    expect(nilai(w, "tgl_pihak1")).toBe("26/08/2026");
+    expect(cek().querySelector(".aleta-m1-merah")).toBeNull();
+    expect(cek().textContent).not.toMatch(/Tidak ada sidang perkara ini/);
+    expect(saran().previousElementSibling).toBe(f.querySelector('[name="tgl_sela"]'));
+    expect(saran().textContent).toBe("ALETA mengusulkan Rabu, 26 Agu 2026 - tekan Pakai Pakai");
+    expect((saran().querySelector("button") as HTMLButtonElement).type).toBe("button");
+    // Pemberitahuan yang BENAR-BENAR lebih awal dari tanggal usulan tetap merah.
+    ubah(w, "tgl_pihak2", "25/08/2026");
+    expect(cek().querySelector(".aleta-m1-merah").textContent).toBe("Pemberitahuan Putusan Sela Kepada Tergugat: lebih awal dari tanggal putusan sela.");
+    ubah(w, "tgl_pihak2", "26/08/2026");
+    expect(cek().querySelector(".aleta-m1-merah")).toBeNull();
+    saran().querySelector("button").click();
+    expect(nilai(w, "tgl_sela")).toBe("26/08/2026");
+    expect(saran()).toBeNull();
+    expect(cek().textContent).toBe("");
   });
 
   it("urutan tanggal: pemberitahuan sebelum putusan sela merah; tanggal tanpa sidang kuning", async () => {

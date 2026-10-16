@@ -655,19 +655,28 @@
     if (j === "sela") {
       const hasil = [];
       const tSela = isoDariTeks(nilaiMedan(medan(f, "tgl_sela")));
-      if (tSela) {
+      // Tanggal putusan sela yang diusulkan ALETA (jadwal berangenda putusan sela) - ada sesudah "Isi dengan ALETA".
+      const calon = sidangSela(jadwal).filter((x) => /putusan\s+sela/i.test(x.agenda || ""));
+      const usul = calon.length ? calon[calon.length - 1].tanggal : "";
+      const bawaanSipp = Boolean(f.__aletaM1HariIni && tSela === f.__aletaM1HariIni);
+      // Belum dipakai: kolom masih tanggal bawaan SIPP (hari ini) atau kosong -> acuan = usulan ALETA.
+      const belumDipakai = Boolean(usul && tSela !== usul && (bawaanSipp || !tSela));
+      saranSela(f, belumDipakai ? usul : "");
+      if (tSela && !belumDipakai) {
         const libur = bukanHariKerja(tSela);
         if (libur) hasil.push({ nada: "merah", teks: `Tanggal Putusan Sela jatuh pada ${libur}.` });
-        if (jadwal.length && !jadwal.some((s) => s.tanggal === tSela)) hasil.push({ nada: "kuning", teks: `Tidak ada sidang perkara ini pada ${teksTanggal(tSela)}.` });
-        if (f.__aletaM1HariIni && tSela === f.__aletaM1HariIni && !jadwal.some((s) => s.tanggal === tSela)) {
+        if (jadwal.length && !jadwal.some((x) => x.tanggal === tSela)) hasil.push({ nada: "kuning", teks: `Tidak ada sidang perkara ini pada ${teksTanggal(tSela)}.` });
+        if (bawaanSipp && !usul && !jadwal.some((x) => x.tanggal === tSela)) {
           hasil.push({ nada: "kuning", teks: "Tanggal Putusan Sela masih bawaan SIPP (hari ini) - periksa." });
         }
       }
+      const acuan = belumDipakai ? usul : tSela;
       for (let i = 1; i <= 4; i += 1) {
         const e = medan(f, `tgl_pihak${i}`);
         if (!e || !tampak(e)) continue;
         const t = isoDariTeks(nilaiMedan(e));
-        if (t && tSela && t < tSela) hasil.push({ nada: "merah", teks: `${labelSebelum(e) || `Pemberitahuan pihak ${i}`}: lebih awal dari tanggal putusan sela.` });
+        // Merah hanya bila BENAR-BENAR lebih awal dari tanggal putusan sela yang dipakai/diusulkan.
+        if (t && acuan && t < acuan) hasil.push({ nada: "merah", teks: `${labelSebelum(e) || `Pemberitahuan pihak ${i}`}: lebih awal dari tanggal putusan sela.` });
       }
       return hasil;
     }
@@ -711,6 +720,32 @@
       return [];
     }
     return [];
+  }
+  /**
+   * Tanda kuning lembut tepat di samping kolom Tanggal Putusan Sela: "ALETA
+   * mengusulkan <tanggal> - tekan Pakai" (dengan tombol Pakai). Hilang begitu
+   * tanggalnya dipakai. usul "" = lepas tanda.
+   */
+  function saranSela(f, usul) {
+    const kolom = medan(f, "tgl_sela");
+    if (!kolom || !kolom.parentNode) return;
+    let tanda = kolom.parentNode.querySelector(".aleta-m1-saran");
+    if (!usul) {
+      if (tanda) tanda.remove();
+      return;
+    }
+    if (!tanda) {
+      tanda = el("span", `${KELAS} aleta-m1-saran`);
+      tanda.setAttribute("data-m1", "saran-sela");
+      kolom.insertAdjacentElement("afterend", tanda);
+    }
+    if (tanda.getAttribute("data-usul") === usul) return;
+    tanda.setAttribute("data-usul", usul);
+    tanda.textContent = `ALETA mengusulkan ${teksTanggal(usul)} - tekan Pakai `;
+    const b = tombol("Pakai", "Isikan tanggal putusan sela usulan ALETA (Simpan tetap Anda yang menekan)");
+    b.setAttribute("data-m1", "pakai-saran");
+    b.addEventListener("click", () => setel(kolom, keInput(usul)));
+    tanda.appendChild(b);
   }
   function labelSebelum(e) {
     const tr = e.closest("tr");
@@ -848,6 +883,7 @@
 .aleta-m1-kosong-chip{margin-right:6px;font-family:inherit;font-size:inherit;padding:2px 10px;border:1px solid #74440a;border-radius:999px;background:#9a5b06;color:#fff;font-weight:600;cursor:pointer}
 .aleta-m1-relaas{display:block;margin-top:4px;white-space:normal}
 .aleta-m1-relaas .aleta-m1-tanda{margin-right:6px}
+.aleta-m1-saran{display:inline-flex;align-items:center;gap:6px;margin-left:8px;padding:1px 8px;border-left:3px solid #f59e0b;background:rgba(245,158,11,.12);color:#5c3d00}
 .aleta-m1-sorot{outline:2px solid #e0a800!important;outline-offset:1px}
 html[data-aleta-tema-sipp="gelap"] .aleta-m1-pita{background:rgba(47,158,68,.10);color:#dfe8e2}
 html[data-aleta-tema-sipp="gelap"] .aleta-m1-logo,html[data-aleta-tema-sipp="gelap"] .aleta-m1-tombol.aleta-m1-utama{background:#1c5539;border-color:#1c5539}
@@ -857,7 +893,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-kabar,html[data-aleta-tema-sipp="ge
 html[data-aleta-tema-sipp="gelap"] .aleta-m1-tabel{background:#17211c;color:#dfe8e2}
 html[data-aleta-tema-sipp="gelap"] .aleta-m1-tabel td,html[data-aleta-tema-sipp="gelap"] .aleta-m1-tabel th{border-color:#27342e}
 html[data-aleta-tema-sipp="gelap"] .aleta-m1-tabel th{background:#143c29}
-html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div{color:#f3e2b5}
+html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div,html[data-aleta-tema-sipp="gelap"] .aleta-m1-saran{color:#f3e2b5}
 html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-merah{color:#ffb4ab}
 html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc}
 `;
