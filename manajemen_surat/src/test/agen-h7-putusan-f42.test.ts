@@ -32,6 +32,7 @@ import { DDL_AGEN_H7 } from "@/server/db/schema";
 import {
   agenH7JatuhTempo,
   bacaDrafH7,
+  bacaDrafSaya,
   bacaRingkasDrafH7,
   detakAgenH7,
   jalankanAgenH7,
@@ -439,6 +440,21 @@ describe("jalan agen (sumber tiruan, pg-mem berbenih)", () => {
     expect(kedua).toMatchObject({ dibuat: 0, diperbarui: 2 });
     const d = (await bacaDrafH7(db!, ["512"]))["512"];
     expect(d.isian.find((i) => i.kode === "0222")!.golongan).toBe("usulan");
+  });
+
+  it("widget: draf milik akun (majelis/PP/konseptor) dalam tujuh hari; orang lain tidak; admin semua", async () => {
+    await jalankanAgenH7(db!, { pemicu: "tangan", hariIni: "2026-10-17", sumber: sumberTiruan([]) });
+    const hakim = await bacaDrafSaya(db!, { nama: "Hakim Ketua A", lihatSemua: false, hariIni: "2026-10-17" });
+    expect(hakim.perkara.map((p) => [p.nomorPerkara, p.sisaHari, p.sebagai.join()])).toEqual([
+      ["600/Pdt.G/2026/PA.Dgl", 3, "hakim"],
+      ["512/Pdt.G/2026/PA.Dgl", 7, "hakim"],
+    ]);
+    expect(hakim.perkara[1]).toMatchObject({ lencana: "Draf H-7 33% - 2 perlu diisi", tingkat: "hampir" });
+    expect(hakim.perkara[1].checklist.saran["0222"].golongan).toBe("pasti");
+    expect((await bacaDrafSaya(db!, { nama: "Orang Lain", lihatSemua: false, hariIni: "2026-10-17" })).jumlah).toBe(0);
+    expect((await bacaDrafSaya(db!, { nama: "Admin", lihatSemua: true, hariIni: "2026-10-17" })).jumlah).toBe(2);
+    // Hari Putusan sudah lewat tidak tampil lagi.
+    expect((await bacaDrafSaya(db!, { nama: "Admin", lihatSemua: true, hariIni: "2026-10-25" })).jumlah).toBe(0);
   });
 
   it("penjadwal: saklar env, jam bawaan 06.00 WITA, sekali sehari", async () => {

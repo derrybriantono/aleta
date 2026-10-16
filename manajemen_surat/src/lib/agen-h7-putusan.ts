@@ -758,6 +758,64 @@ export function untukChecklistH7(d: DrafH7): DrafH7Checklist {
   };
 }
 
+/**
+ * Widget ALETA (kiri bawah): draf H-7 milik akun - majelis, PP, atau konseptor
+ * sementara yang ditunjuk (Admin/Super Admin: semua) - dengan Hari Putusan
+ * hari ini sampai tujuh hari lagi, terdekat dulu. Kalimat lencana sama dengan
+ * Jadwal Sidang (teksLencanaH7).
+ */
+export type DrafH7Widget = {
+  perkaraId: string;
+  nomorPerkara: string;
+  tanggalSidang: string;
+  /** 0 = hari ini. */
+  sisaHari: number;
+  alasan: AlasanH7;
+  lencana: string;
+  tingkat: KesiapanH7["tingkat"];
+  persen: number;
+  perlu: string[];
+  /** hakim / pp / konseptor - kosong bila admin melihat semua. */
+  sebagai: string[];
+  checklist: DrafH7Checklist;
+};
+
+export const BATAS_DRAF_WIDGET = 20;
+
+export function susunDrafSaya(
+  daftar: Array<{ draf: DrafH7; konseptor?: string }>,
+  opsi: { hariIni: string; nama: string; lihatSemua: boolean; cocokNama: (namaAkun: string, teksBaris: string) => boolean }
+): { jumlah: number; perkara: DrafH7Widget[] } {
+  const hasil: DrafH7Widget[] = [];
+  for (const { draf: d, konseptor } of daftar) {
+    const sisaHari = selisihHari(opsi.hariIni, d.tanggalSidang);
+    if (!Number.isFinite(sisaHari) || sisaHari < 0 || sisaHari > HARI_H7) continue;
+    const sebagai: string[] = [];
+    if (!opsi.lihatSemua) {
+      if (opsi.cocokNama(opsi.nama, d.majelis)) sebagai.push("hakim");
+      if (opsi.cocokNama(opsi.nama, d.panitera)) sebagai.push("pp");
+      if (konseptor && opsi.cocokNama(opsi.nama, konseptor)) sebagai.push("konseptor");
+      if (!sebagai.length) continue;
+    }
+    const c = untukChecklistH7(d);
+    hasil.push({
+      perkaraId: d.perkaraId,
+      nomorPerkara: d.nomorPerkara,
+      tanggalSidang: d.tanggalSidang,
+      sisaHari,
+      alasan: d.alasan,
+      lencana: teksLencanaH7(c.ringkas),
+      tingkat: c.ringkas.tingkat,
+      persen: c.ringkas.persen,
+      perlu: c.ringkas.perlu.slice(0, 3),
+      sebagai,
+      checklist: c,
+    });
+  }
+  hasil.sort((a, b) => a.sisaHari - b.sisaHari || a.nomorPerkara.localeCompare(b.nomorPerkara));
+  return { jumlah: hasil.length, perkara: hasil.slice(0, BATAS_DRAF_WIDGET) };
+}
+
 /** Lencana singkat: "Draf H-7 siap" / "Draf H-7 85% - 3 perlu diisi". */
 export function teksLencanaH7(r: RingkasDrafH7 | null | undefined): string {
   if (!r) return "";

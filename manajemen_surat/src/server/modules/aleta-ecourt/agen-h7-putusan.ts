@@ -9,6 +9,7 @@ import {
   ringkasOtomatis,
   susunRingkasan,
   tambahHari,
+  susunDrafSaya,
   untukChecklistH7,
   usulanDariKtp,
   type BarisSidangH7,
@@ -22,12 +23,14 @@ import {
   type SaksiDiperiksa,
   type UsulanDeteksi,
 } from "@/lib/agen-h7-putusan";
+import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { sebutanPihak, susunIsian, type Definisi, type Susunan } from "@/app/api/aleta-ecourt/blangko-derry/susun";
 import type { AletaDatabase } from "@/server/db/client";
 import { getGatewayAbtUsulan, getGatewayJadwalSidang, getGatewayKtpPerkara } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { untukBot } from "@/server/modules/aleta-ecourt/tipe-keluaran";
+import { bacaKonseptorSementara } from "@/server/modules/aleta-ecourt/konseptor-sementara";
 
 /**
  * ============================================================================
@@ -408,6 +411,32 @@ export async function bacaDrafH7(db: AletaDatabase, perkaraIds: string[]): Promi
 export async function bacaDrafRingkasUntukChecklist(db: AletaDatabase, perkaraIds: string[]): Promise<Record<string, DrafH7Checklist>> {
   const draf = await bacaDrafH7(db, perkaraIds);
   return Object.fromEntries(Object.entries(draf).map(([pid, d]) => [pid, untukChecklistH7(d)]));
+}
+
+/**
+ * Widget ALETA: draf H-7 milik akun (majelis, PP, konseptor sementara; Admin:
+ * semua) dengan Hari Putusan hari ini s.d. tujuh hari lagi. Baca saja.
+ */
+export async function bacaDrafSaya(db: AletaDatabase, opsi: { nama: string; lihatSemua: boolean; hariIni?: string }) {
+  const hariIni = opsi.hariIni || waktuPengadilan().tanggal;
+  const baris = await db.queryAll<Record<string, unknown>>(
+    `SELECT perkara_id, draf_json FROM aleta_agen_h7_draf WHERE tanggal_sidang >= ? AND tanggal_sidang <= ?`,
+    [hariIni, tambahHari(hariIni, HARI_H7)]
+  );
+  const draf = baris.map((b) => urai<DrafH7 | null>(b.draf_json, null)).filter((d): d is DrafH7 => Boolean(d));
+  let konseptor: Record<string, { nama?: string }> = {};
+  try {
+    konseptor = await bacaKonseptorSementara(db, draf.map((d) => d.perkaraId));
+  } catch {
+    konseptor = {};
+  }
+  return {
+    hariIni,
+    ...susunDrafSaya(
+      draf.map((d) => ({ draf: d, konseptor: teks(konseptor[d.perkaraId]?.nama) })),
+      { hariIni, nama: opsi.nama, lihatSemua: opsi.lihatSemua, cocokNama: namaAdaDi }
+    ),
+  };
 }
 
 export type JalanAgenH7 = {
