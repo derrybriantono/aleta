@@ -993,6 +993,80 @@
     </span>
   </label>
 
+  <!-- SIPP dengan Ide ALETA, gelombang 1 (Tahap L2, 16 Okt 2026) - popup-ide-l2.js.
+       Bawaan MENYALA (hanya menambah keterangan). Saklar yang tidak berguna bagi
+       peran yang masuk disembunyikan; portal juga menyaring menurut peran. -->
+  <div class="aleta-l2-saklar" id="ideL2Kotak">
+    <label class="saklar">
+      <input type="checkbox" id="ideL2" checked>
+      <span>
+        <span class="saklar-nama">Penanda perkara di SIPP (Ide ALETA)</span>
+        <span class="saklar-ket">
+          Penanda kecil di daftar perkara, Jadwal Sidang, dan halaman perkara SIPP. Klik penanda
+          untuk penjelasan, sumber data, dan dasar hukumnya. SIPP tidak diubah.
+        </span>
+      </span>
+    </label>
+    <details id="ideL2Rinci">
+      <summary class="saklar-ket">Pilih penanda yang ditampilkan</summary>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2Sita" checked>
+        <span><span class="saklar-nama">Sita</span>
+        <span class="saklar-ket">Sita jaminan, revindikasi, atau marital yang dimohonkan/dicatat.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2Eksekusi" checked>
+        <span><span class="saklar-nama">Eksekusi</span>
+        <span class="saklar-ket">Register eksekusi dan sita eksekusi perkara ini (terpisah dari Sita).</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2IzinCerai" checked>
+        <span><span class="saklar-nama">Izin cerai PNS/ASN</span>
+        <span class="saklar-ket">Pihak PNS/ASN (termasuk PPPK), TNI, POLRI yang izin atasannya belum ada.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2Penetapan" checked>
+        <span><span class="saklar-nama">Penetapan awal (PMH/PPP/PJS/PHS)</span>
+        <span class="saklar-ket">Belum lengkap sesudah 3 hari, atau tidak setanggal.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2BelumDitunda" checked>
+        <span><span class="saklar-nama">Belum ditunda sampai 15.00</span>
+        <span class="saklar-ket">Sidang hari ini yang hasilnya belum dicatat sesudah pukul 15.00.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2Verstek" checked>
+        <span><span class="saklar-nama">Potensi verstek</span>
+        <span class="saklar-ket">Tergugat/termohon belum pernah hadir pada sidang yang sudah lewat.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2Umur" checked>
+        <span><span class="saklar-nama">Umur perkara (pita warna)</span>
+        <span class="saklar-ket">Hijau sampai 3 bulan, kuning 4, oranye 5, merah lebih dari 5 bulan.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2TanpaSidang" checked>
+        <span><span class="saklar-nama">Tanpa sidang berikutnya</span>
+        <span class="saklar-ket">Sidang terakhir sudah lewat, belum putus, belum ada jadwal sesudahnya.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2Ikrar" checked>
+        <span><span class="saklar-nama">Sisa waktu ikrar talak</span>
+        <span class="saklar-ket">Batas 6 bulan sejak hari sidang ikrar ditetapkan.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2AktaCerai" checked>
+        <span><span class="saklar-nama">Akta cerai &amp; pemberitahuan putusan</span>
+        <span class="saklar-ket">Akta cerai lewat 7 hari, putusan verstek belum diberitahukan.</span></span>
+      </label>
+      <label class="saklar">
+        <input type="checkbox" id="ideL2LimaBulan" checked>
+        <span><span class="saklar-nama">Lewat 5 bulan (lapor Ketua)</span>
+        <span class="saklar-ket">Kotak ringkas di daftar perkara: perkara belum putus yang lewat 5 bulan.</span></span>
+      </label>
+    </details>
+  </div>
+
   <div class="skala">
     <span class="saklar-nama">Ukuran huruf panel</span>
     <span class="saklar-ket">Hanya huruf di panel; letak panel dan halaman SIPP tidak berubah.</span>
@@ -1045,3 +1119,4 @@
 
 <script src="daftar-fitur.js"></script>
 <script src="popup.js"></script>
+<script src="popup-ide-l2.js"></script>

@@ -55,7 +55,8 @@
         "basmassal.js",
         "saksiscan.js",
         "konten.js",
-        "checklist.js"
+        "checklist.js",
+        "sipp-ide-l2.js"
       ],
       "css": [
         "panel.css"

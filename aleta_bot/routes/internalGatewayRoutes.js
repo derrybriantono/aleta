@@ -7083,6 +7083,34 @@ router.post("/abt/pekerjaan-terbaca", requireInternalToken, async (req, res) => 
 });
 /* === AKHIR PEKERJAAN === */
 
+/* === TAHAP L2 (16 Okt 2026): SIPP DENGAN IDE ALETA - SEPULUH PENANDA === */
+/**
+ * HANYA MEMBACA SIPP.
+ *   POST /sipp/ide-l2/penanda   { nomorPerkara: [..] (<= 100) }
+ *     -> { ok, kini: {tanggal, menit}, perkara: { <nomor>: { perkaraId, penanda: [...] } }, terbaca, tidakDikenal }
+ *   GET  /sipp/ide-l2/lima-bulan
+ *     -> { ok, jumlah, daftar: [{ nomor, hari, lewat }], dasar }   (seluruh satker, untuk Ketua)
+ */
+const sippIdeL2Service = require("../services/sippIdeL2Service");
+
+router.post("/sipp/ide-l2/penanda", requireInternalToken, async (req, res) => {
+  try {
+    const daftar = Array.isArray(req.body?.nomorPerkara) ? req.body.nomorPerkara.slice(0, 100).map((x) => String(x || "").slice(0, 60)) : [];
+    res.json(await sippIdeL2Service.penandaBanyakNomor(daftar));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 160) });
+  }
+});
+
+router.get("/sipp/ide-l2/lima-bulan", requireInternalToken, async (_req, res) => {
+  try {
+    res.json(await sippIdeL2Service.ringkasLimaBulan());
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 160) });
+  }
+});
+/* === AKHIR TAHAP L2 === */
+
 router.setRuntimeLifecycleHandlers = setRuntimeLifecycleHandlers;
 
 module.exports = router;

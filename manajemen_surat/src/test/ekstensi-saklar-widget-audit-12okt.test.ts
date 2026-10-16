@@ -35,6 +35,7 @@ const AKAR = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (b: string) => readFileSync(path.join(AKAR, b), "utf8").replace(/\r\n/g, "\n");
 const POPUP_HTML = baca("popup.html");
 const POPUP_JS = baca("popup.js");
+const POPUP_IDE_L2 = baca("popup-ide-l2.js");
 const DAFTAR_FITUR = baca("daftar-fitur.js");
 const ALAT = baca("panel-alat.js");
 const BASMASSAL = baca("basmassal.js");
@@ -163,6 +164,7 @@ function bukaPopup(gudang: Gudang, peran: string) {
   const ctx = (dom as unknown as { getInternalVMContext: () => vm.Context }).getInternalVMContext();
   vm.runInContext(DAFTAR_FITUR, ctx, { filename: "daftar-fitur.js" });
   vm.runInContext(POPUP_JS, ctx, { filename: "popup.js" });
+  vm.runInContext(POPUP_IDE_L2, ctx, { filename: "popup-ide-l2.js" });
   const d = w.document as Document;
   return {
     w,
@@ -340,6 +342,19 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     { id: "derryTawar", kunci: "blangkoDerryTawar", bawaan: true },
     { id: "derrySaran", kunci: "blangkoDerrySaran", bawaan: true },
     { id: "derryIngat", kunci: "blangkoDerryIngat", bawaan: true },
+    // SIPP dengan Ide ALETA gelombang 1 (Tahap L2, 16 Okt) - popup-ide-l2.js.
+    { id: "ideL2", kunci: "ideL2", bawaan: true },
+    { id: "ideL2Sita", kunci: "ideL2Sita", bawaan: true },
+    { id: "ideL2Eksekusi", kunci: "ideL2Eksekusi", bawaan: true },
+    { id: "ideL2IzinCerai", kunci: "ideL2IzinCerai", bawaan: true },
+    { id: "ideL2Penetapan", kunci: "ideL2Penetapan", bawaan: true },
+    { id: "ideL2BelumDitunda", kunci: "ideL2BelumDitunda", bawaan: true },
+    { id: "ideL2Verstek", kunci: "ideL2Verstek", bawaan: true },
+    { id: "ideL2Umur", kunci: "ideL2Umur", bawaan: true },
+    { id: "ideL2TanpaSidang", kunci: "ideL2TanpaSidang", bawaan: true },
+    { id: "ideL2Ikrar", kunci: "ideL2Ikrar", bawaan: true },
+    { id: "ideL2AktaCerai", kunci: "ideL2AktaCerai", bawaan: true },
+    { id: "ideL2LimaBulan", kunci: "ideL2LimaBulan", bawaan: true },
   ];
 
   it.each(STATIS)("$id: kunci tak ada = bawaan ($bawaan); dibalik menulis $kunci, dibalik lagi kembali", async ({ id, kunci, bawaan }) => {

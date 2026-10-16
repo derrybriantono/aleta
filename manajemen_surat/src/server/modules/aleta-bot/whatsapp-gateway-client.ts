@@ -5117,3 +5117,43 @@ export async function getGatewayKtpPerkara(nomorPerkara: string) {
 }
 /* === AKHIR KTP-PIHAK === */
 
+/* === TAHAP L2 16 Okt: SIPP DENGAN IDE ALETA - SEPULUH PENANDA === */
+/** Satu penanda dari bot (aleta_bot/services/sippIdeL2Service.js) - teks dan dasarnya dari bot. */
+export type PenandaIdeL2 = {
+  kode: string;
+  tingkat: "merah" | "oranye" | "kuning" | "biru" | "abu" | "hijau";
+  label: string;
+  jelas: string;
+  dasar: string;
+  sumber: string;
+  perluDicek: boolean;
+  angka?: number;
+  hanyaDetil?: boolean;
+};
+
+export type PenandaIdeL2Jawaban = {
+  ok: boolean;
+  kini: { tanggal: string; menit: number } | null;
+  perkara: Record<string, { perkaraId: number; penanda: PenandaIdeL2[] }>;
+  terbaca: Record<string, boolean>;
+  tidakDikenal: string[];
+};
+
+/** Penanda L2 untuk nomor-nomor perkara di halaman SIPP. SIPP hanya dibaca. */
+export async function postGatewayPenandaIdeL2(nomorPerkara: string[]) {
+  return gatewayFetch<PenandaIdeL2Jawaban>("/internal/aleta-bot/sipp/ide-l2/penanda", {
+    method: "POST",
+    body: JSON.stringify({ nomorPerkara }),
+    timeoutMs: 25_000,
+  });
+}
+
+/** Perkara belum putus yang lewat 5 bulan (SEMA 2/2014), seluruh satker. */
+export async function getGatewayLimaBulanIdeL2() {
+  return gatewayFetch<{ ok: boolean; jumlah: number; daftar: Array<{ nomor: string; hari: number; lewat: number }>; dasar: string }>(
+    "/internal/aleta-bot/sipp/ide-l2/lima-bulan",
+    { timeoutMs: 25_000 }
+  );
+}
+/* === AKHIR TAHAP L2 === */
+

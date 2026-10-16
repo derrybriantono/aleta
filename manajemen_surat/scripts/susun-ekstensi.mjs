@@ -106,6 +106,11 @@ const BERKAS = [
   // Penampil PDF SALINAN (14 Okt 2026) - dibuka latar.js lewat chrome.tabs.create.
   "salinan.html",
   "salinan.js",
+  // SIPP dengan Ide ALETA gelombang 1 (Tahap L2, 16 Okt 2026): sepuluh penanda
+  // di halaman SIPP (skrip konten, dimuat sesudah checklist.js) dan saklarnya
+  // di popup (dimuat popup.html sesudah popup.js).
+  "sipp-ide-l2.js",
+  "popup-ide-l2.js",
   "PASANG.md",
 ];
 
