@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.203.0",
+    dirilis: "2026-10-17T02:30:00+08:00",
+    judul: "SIPP dengan Ide ALETA, tampilan Blangko Derry sesuai rancangan, hak akses per peran",
+    butir: [
+      "SIPP: tombol Buka di ABT dan Buka di ALETA di tiap perkara, Isi dengan ALETA beserta penghitung kolom kosong, dan Putusan Akhir dari berkas putusan (isi semua kolom, simpan, unggah e-Doc).",
+      "SIPP: 11 penanda perkara (sita, izin cerai, penetapan awal, belum ditunda, potensi verstek, umur perkara, tanpa sidang berikutnya, sisa waktu ikrar, akta cerai dan BHT verstek, lewat 5 bulan, dokumen e-Court belum diverifikasi).",
+      "SIPP: usulan isian di jendela Tunda/Edit Jadwal, Relaas, Putusan Sela, Rekonvensi, Saksi, Tambah Biaya, dan Arsip; kotak penyatu SIPP-ABT-ALETA di halaman perkara; lencana ALETA seragam dan tetap berwarna di tema gelap.",
+      "Blangko ABT by Derry Briantono: tampilan mengikuti rancangan, isian hanya muncul bila berlaku (kuasa, ghaib, prodeo, e-Court), alat bukti fleksibel dengan Tulis manual, dan peringatan isian kosong saat Cetak.",
+      "Hak akses: Lihat sebagai akun meniru peran akun itu; putusan untuk hakim, BAS untuk panitera/PP, relaas khusus jurusita.",
+      "Set pertanyaan saksi per jenis perkara dan huruf alasan; deteksi isian untuk itsbat, dispensasi, ahli waris, perwalian, wali adhal, harta bersama, dan kewarisan.",
+    ],
+  },
+  {
     versi: "1.202.0",
     dirilis: "2026-10-16T22:30:00+08:00",
     judul: "Blangko ABT by Derry Briantono lengkap: isian, bukti, tanya jawab, pratinjau dan cetak",
