@@ -123,7 +123,12 @@ describe("A. aturan penanda (bot, fungsi murni)", () => {
     const kamis = (menit: number) => ({ tanggal: "2026-10-15", menit });
     expect(kode(ecourt("Replik"), "belum-ditunda", kamis(15 * 60 + 40))[0]).toMatchObject({ tingkat: "abu", label: "Batas unggah e-Court 15.00" });
     expect(kode(ecourt("Replik"), "belum-ditunda", kamis(15 * 60 + 40))[0].jelas).toMatch(/batas unggah dokumen e-Court pukul 15\.00/);
-    expect(kode(ecourt("Kesimpulan"), "belum-ditunda", kamis(16 * 60 + 30))[0]).toMatchObject({ tingkat: "merah", label: "Belum ditunda (lewat jam kerja)" });
+    expect(kode(ecourt("Kesimpulan"), "belum-ditunda", kamis(16 * 60 + 30))[0]).toMatchObject({
+      tingkat: "merah",
+      label: "Belum ditunda (lewat jam kerja)",
+      perluDicek: false, // 16.30 / Jumat 17.00 dipastikan pengguna 16 Okt
+    });
+    expect(kode(ecourt("Kesimpulan"), "belum-ditunda", kamis(16 * 60 + 29))[0].tingkat).toBe("abu");
     // Jumat: akhir hari kerja 17.00
     const jumat = fakta({ ecourt: true, jadwal: [sidang("2026-10-16", { agenda: "Jawaban Tergugat" })] });
     expect(kode(jumat, "belum-ditunda", { tanggal: "2026-10-16", menit: 16 * 60 + 40 })[0].tingkat).toBe("abu");
@@ -205,11 +210,15 @@ describe("A. aturan penanda (bot, fungsi murni)", () => {
     // belum diberitahukan: >= 14 hari kuning (jumlah hari sejak putus), < 14 hari abu (detil)
     expect(kode(verstek("2026-09-20"), "akta-cerai")[0]).toMatchObject({ tingkat: "kuning", label: "Belum diberitahukan (26 hari)", angka: 26 });
     expect(kode(verstek("2026-10-10"), "akta-cerai")[0]).toMatchObject({ tingkat: "abu", hanyaDetil: true, angka: 6 });
-    // sudah diberitahukan: perkiraan BHT = pemberitahuan + 14 hari (BUKAN dari tanggal putus)
-    expect(kode(verstek("2026-09-20", { pihak2: "2026-10-05" }), "akta-cerai")[0]).toMatchObject({ tingkat: "abu", label: "Perkiraan BHT 19 Oktober 2026" });
-    expect(kode(verstek("2026-09-20", { pihak2: "2026-10-02" }), "akta-cerai")[0]).toMatchObject({ tingkat: "abu", label: "Perkiraan BHT 16 Oktober 2026", angka: 0 });
-    expect(kode(verstek("2026-09-01", { pihak2: "2026-09-28" }), "akta-cerai")[0]).toMatchObject({ tingkat: "kuning", label: "BHT belum dicatat (lewat 4 hari)" });
-    expect(kode(verstek("2026-09-01", { pihak2: "2026-09-20" }), "akta-cerai")[0]).toMatchObject({ tingkat: "merah", angka: 12 });
+    // sudah diberitahukan: tenggang 14 hari sejak HARI SESUDAH pemberitahuan, BHT = pemberitahuan + 15
+    // (data: 424 dari 750 BHT dicatat tepat +15). BUKAN dari tanggal putus.
+    expect(kode(verstek("2026-09-20", { pihak2: "2026-10-05" }), "akta-cerai")[0]).toMatchObject({ tingkat: "abu", label: "Perkiraan BHT 20 Oktober 2026", angka: 4 });
+    expect(kode(verstek("2026-09-20", { pihak2: "2026-10-05" }), "akta-cerai")[0].jelas).toMatch(/berakhir 19 Oktober 2026/);
+    // hari BHT itu sendiri masih abu; kuning mulai sehari sesudahnya
+    expect(kode(verstek("2026-09-20", { pihak2: "2026-10-01" }), "akta-cerai")[0]).toMatchObject({ tingkat: "abu", label: "Perkiraan BHT 16 Oktober 2026", angka: 0 });
+    expect(kode(verstek("2026-09-20", { pihak2: "2026-09-30" }), "akta-cerai")[0]).toMatchObject({ tingkat: "kuning", label: "BHT belum dicatat (lewat 1 hari)" });
+    expect(kode(verstek("2026-09-01", { pihak2: "2026-09-24" }), "akta-cerai")[0]).toMatchObject({ tingkat: "kuning", angka: 7 });
+    expect(kode(verstek("2026-09-01", { pihak2: "2026-09-23" }), "akta-cerai")[0]).toMatchObject({ tingkat: "merah", angka: 8 });
     // BHT sudah dicatat: penanda pemberitahuan hilang; akta cerai dihitung dari BHT
     expect(kode(verstek("2026-09-01", { pihak2: "2026-09-20" }, "2026-10-14"), "akta-cerai").map((p) => p.label)).toEqual(["Akta cerai: sisa 5 hari"]);
   });
@@ -286,7 +295,7 @@ describe("A. aturan penanda (bot, fungsi murni)", () => {
     for (const k of ["penetapan-awal", "belum-ditunda", "akta-cerai", "umur-perkara", "lewat-5-bulan"]) {
       expect((layanan.KATALOG[k] as { perluDicek?: boolean }).perluDicek, k).toBeFalsy();
     }
-    // jam akhir hari kerja e-Court (16.30/Jumat 17.00) dan dasar verifikasi e-Court masih asumsi
+    // dasar hukum verifikasi dokumen e-Court masih asumsi
     expect((layanan.KATALOG["ecourt-verifikasi"] as { perluDicek?: boolean }).perluDicek).toBe(true);
   });
 });

@@ -54,9 +54,13 @@
  *                        dalam 14 hari (ambang 14 hari dipertahankan). Verstek
  *                        2025-2026: BHT dicatat hari ke-15 sesudah pemberitahuan
  *                        pada 424 dari 750, hari ke-16..21 pada 270, > 21 pada 18
- *                        -> "BHT belum dicatat" kuning 1-7 hari, merah > 7 hari.
- *                        Kini (16 Okt): 33 menunggu pemberitahuan (< 14 hari),
- *                        16 menunggu BHT (perkiraan), 0 terlambat.
+ *                        -> BHT = pemberitahuan + 15 (tenggang 14 hari dihitung
+ *                        sejak hari sesudah pemberitahuan; jawaban pengguna 16 Okt).
+ *                        Historis: 38 dicatat sebelum +15, 424 tepat +15, 272
+ *                        +16..+22 (akan kuning), 16 > +22 (akan merah).
+ *                        Kini (16 Okt, salinan & server sama): 33 menunggu
+ *                        pemberitahuan (< 14 hari, detil), 16 perkiraan BHT (abu),
+ *                        0 kuning/merah.
  *   Verifikasi e-Court   server 16 Okt 21.40 (arsip tarikan, baca saja): 58
  *                        dokumen "belum" di 31 perkara gugatan - 28 sudah putus,
  *                        3 agenda bukan jawab-menjawab -> 0 ditandai. Tanpa
@@ -161,7 +165,7 @@ const BATAS_TUNDA_MENIT = 15 * 60;
 /**
  * Jawaban pengguna 16 Okt: sidang e-Court beragenda jawab-menjawab/kesimpulan dijadwalkan
  * pukul 15.00 = batas akhir unggah dokumen e-Court, jadi tundaannya wajar SESUDAH 15.00.
- * Bagi mereka batasnya akhir hari kerja: 16.30 WITA (Jumat 17.00) - jam ini asumsi.
+ * Bagi mereka batasnya akhir hari kerja: 16.30 WITA (Jumat 17.00) - dipastikan pengguna 16 Okt.
  */
 const AKHIR_HARI_KERJA_MENIT = 16 * 60 + 30;
 const AKHIR_JUMAT_MENIT = 17 * 60;
@@ -399,8 +403,7 @@ function nilaiBelumDitunda(f, kini) {
         "belum-ditunda",
         "merah",
         "Belum ditunda (lewat jam kerja)",
-        `Perkara e-Court ini bersidang hari ini (agenda jawab-menjawab/kesimpulan, batas unggah dokumen e-Court 15.00), sudah lewat akhir hari kerja (${jam}), tetapi tundaannya belum dicatat di SIPP.`,
-        { perluDicek: true }
+        `Perkara e-Court ini bersidang hari ini (agenda jawab-menjawab/kesimpulan, batas unggah dokumen e-Court 15.00), sudah lewat akhir hari kerja (${jam}), tetapi tundaannya belum dicatat di SIPP.`
       ),
     ];
   }
@@ -527,7 +530,10 @@ function nilaiAkta(f, kini) {
         );
       }
     } else {
-      const perkiraanBht = tambahHari(pbt, TENGGANG_VERZET_HARI);
+      // Tenggang dihitung sejak HARI SESUDAH pemberitahuan: hari ke-14 = pemberitahuan + 14
+      // (hari terakhir verzet), BHT = hari sesudahnya = pemberitahuan + 15.
+      const akhirVerzet = tambahHari(pbt, TENGGANG_VERZET_HARI);
+      const perkiraanBht = tambahHari(pbt, TENGGANG_VERZET_HARI + 1);
       const lewat = hari(perkiraanBht, kini.tanggal);
       if (lewat <= 0) {
         hasil.push(
@@ -535,7 +541,7 @@ function nilaiAkta(f, kini) {
             "akta-cerai",
             "abu",
             `Perkiraan BHT ${tanggalIndo(perkiraanBht)}`,
-            `Putusan verstek diberitahukan ${tanggalIndo(pbt)}; 14 hari sesudahnya (${tanggalIndo(perkiraanBht)}) tenggang verzet habis dan putusan berkekuatan hukum tetap bila tidak ada verzet.`,
+            `Putusan verstek diberitahukan ${tanggalIndo(pbt)}; tenggang verzet 14 hari berakhir ${tanggalIndo(akhirVerzet)}, jadi putusan berkekuatan hukum tetap ${tanggalIndo(perkiraanBht)} bila tidak ada verzet.`,
             { angka: -lewat || 0 }
           )
         );
@@ -545,7 +551,7 @@ function nilaiAkta(f, kini) {
             "akta-cerai",
             lewat > 7 ? "merah" : "kuning",
             `BHT belum dicatat (lewat ${lewat} hari)`,
-            `Putusan verstek diberitahukan ${tanggalIndo(pbt)}; 14 hari sesudahnya (${tanggalIndo(perkiraanBht)}) sudah lewat ${lewat} hari, tetapi BHT belum dicatat di SIPP. Periksa apakah ada verzet; bila tidak, catat BHT.`,
+            `Putusan verstek diberitahukan ${tanggalIndo(pbt)}; tenggang verzet berakhir ${tanggalIndo(akhirVerzet)} dan BHT jatuh ${tanggalIndo(perkiraanBht)} - sudah lewat ${lewat} hari, tetapi BHT belum dicatat di SIPP. Periksa apakah ada verzet; bila tidak, catat BHT.`,
             { angka: lewat }
           )
         );
