@@ -11157,6 +11157,62 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kelompok[data-kunci="ka
 }
 /* === AKHIR KASIR OTOMATIS 13 Okt === */
 
+/* ==========================================================================
+   F1.5 (17 Okt) - GEMBOK "RINGKAS OTOMATIS" DAN TOMBOL CETAK DI PANEL ABT BIASA
+   ==========================================================================
+   Halaman ABT biasa (bukan Blangko ABT by Derry Briantono). Gembok: sama
+   dengan panel SIPP (alatPasangGembok, situs "abt", kunci gembokKepalaAbt) -
+   bawaan TERBUKA = panel yang menutupi tabel variabel tinggal kepalanya selama
+   tidak ditunjuk; TERKUNCI = selalu tampil penuh. Hanya Baru & UI Baru.
+   Cetak: tombol di samping "Input semua yang pasti"; isian kosong di tabel
+   ABT diberi tanda kuning + getar singkat HANYA saat Cetak (pola Blangko
+   Derry), dan pemberitahuan memilah Penting / Tidak wajib. */
+#aleta-panel-abt[data-aleta-kepala-ringkas="ya"]:not([data-aleta-gembok="kunci"]):not(:hover):not(:focus-within):not(.aleta-panel-lencana):not(.aleta-panel-penuh):not([data-aleta-ditunjuk="ya"]) {
+  height: 46px !important;
+  min-height: 0 !important;
+  max-height: 46px !important;
+  overflow: hidden !important;
+  opacity: 0.92;
+}
+/* Panel ABT berkaki tetap (flex): tanpa ini kakinya menimpa kepala saat diringkas. */
+#aleta-panel-abt[data-aleta-kepala-ringkas="ya"]:not([data-aleta-gembok="kunci"]):not(:hover):not(:focus-within):not(.aleta-panel-lencana):not(.aleta-panel-penuh):not([data-aleta-ditunjuk="ya"]) > :not(.aleta-kepala) {
+  display: none !important;
+}
+#aleta-panel-abt[data-aleta-gembok-situs] { transition: opacity 200ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  #aleta-panel-abt[data-aleta-gembok-situs] { transition: none; }
+}
+
+#aleta-panel-abt .aleta-f15-cetak[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+#aleta-panel-abt .aleta-f15-ingat {
+  margin: 6px 0;
+  padding: 8px 12px;
+  border: 2px solid var(--aleta-mendesak);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--aleta-mendesak) 14%, var(--aleta-latar));
+  color: var(--aleta-tulisan);
+  font-size: calc(13.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+#aleta-panel-abt .aleta-f15-ingat h4 { margin: 4px 0 2px; font-size: calc(13.5px * var(--aleta-skala-huruf, 1)); color: inherit; }
+#aleta-panel-abt .aleta-f15-ingat ul { margin: 0 0 4px; padding-left: 18px; }
+#aleta-panel-abt .aleta-f15-ingat li { cursor: pointer; }
+#aleta-panel-abt .aleta-f15-ingat li:hover { text-decoration: underline; }
+#aleta-panel-abt .aleta-f15-ingat .aleta-f15-tidakwajib { color: var(--aleta-tulisan-lembut); }
+#aleta-panel-abt .aleta-f15-ingat .aleta-f15-baris { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+#aleta-panel-abt .aleta-f15-ingat .aleta-f15-catat { color: var(--aleta-tulisan-lembut); font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+
+/* Baris tabel ABT yang masih kosong saat Cetak ditekan. */
+tr.aleta-f15-kosong > td { background: rgba(233, 196, 106, 0.18) !important; }
+tr.aleta-f15-kosong > td:first-child { box-shadow: inset 4px 0 0 #e9c46a; }
+tr.aleta-f15-kosong.aleta-f15-tambahan > td { background: rgba(233, 196, 106, 0.07) !important; }
+tr.aleta-f15-kosong.aleta-f15-tambahan > td:first-child { box-shadow: inset 4px 0 0 rgba(233, 196, 106, 0.55); }
+tr.aleta-f15-getar > td { animation: aleta-f15-getar 0.42s ease-in-out 1; }
+@keyframes aleta-f15-getar { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@media (prefers-reduced-motion: reduce) {
+  tr.aleta-f15-getar > td { animation: none; }
+}
+
 /* ===========================================================================
  * LENCANA ALETA DI SIPP - RUPA RANCANGAN "SIPP DENGAN IDE ALETA" (TAHAP M2)
  * ===========================================================================

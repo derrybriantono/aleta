@@ -31,6 +31,11 @@ const SAKLAR_SIPP_IDE = {
   /* F3.2: kotak kehadiran sidang hari ini di widget - bawaan mati (seperti widget tambahan lain). */
   widgetKehadiran: ["widgetKehadiran", false],
 };
+/* F1.5 (17 Okt): gembok panel ALETA di ABT biasa - kunci yang sama dengan tombol
+   gembok di bawah kepala panel dan Widget ALETA. Menyala = terkunci (tampil penuh). */
+const SAKLAR_ABT = {
+  gembokAbt: ["gembokKepalaAbt", false],
+};
 
 /**
  * Penyimpanan ekstensi, bila memang sedang berjalan sebagai ekstensi.
@@ -78,6 +83,7 @@ const KUNCI_SETELAN_AKUN = [
   "sippPenyatu",
   "sippTampilDobel",
   "widgetKehadiran",
+  "gembokKepalaAbt",
   "skalaHuruf",
   "temaPopup",
   "temaPanel",
@@ -106,6 +112,7 @@ const BAWAAN_AKUN = {
   sippPenyatu: true,
   sippTampilDobel: false,
   widgetKehadiran: false,
+  gembokKepalaAbt: false,
   skalaHuruf: 100,
   temaPopup: "ikut",
   temaPanel: "gelap",
@@ -231,7 +238,7 @@ function pasangNilai(simpan) {
   if (kotakChecklist) kotakChecklist.checked = simpan.checklistMilestone === true;
   // Bawaan MATI (tampilan baru dipilih orangnya); tawaran, saran Tab, dan
   // pengingat isian kosong bawaannya MENYALA.
-  for (const [id, [kunci, bawaan]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE })) {
+  for (const [id, [kunci, bawaan]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE, ...SAKLAR_ABT })) {
     const k = document.getElementById(id);
     if (k) k.checked = bawaan ? simpan[kunci] !== false : simpan[kunci] === true;
   }
@@ -253,7 +260,7 @@ function pasangNilai(simpan) {
 
 if (penyimpanan) {
   penyimpanan
-    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI, ...Object.values(SAKLAR_DERRY).map((x) => x[0]), ...Object.values(SAKLAR_SIPP_IDE).map((x) => x[0])])
+    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI, ...Object.values(SAKLAR_DERRY).map((x) => x[0]), ...Object.values(SAKLAR_SIPP_IDE).map((x) => x[0]), ...Object.values(SAKLAR_ABT).map((x) => x[0])])
     .then(pasangNilai)
     .catch(() => pasangNilai({}));
 } else {
@@ -474,9 +481,21 @@ if (kotakCetak) {
     kotakSunting.addEventListener("change", () => simpan("suntingLangsungAbt", kotakSunting.checked, kotakSunting));
   }
 }
-for (const [id, [kunci]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE })) {
+for (const [id, [kunci]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE, ...SAKLAR_ABT })) {
   const k = document.getElementById(id);
   if (k) k.addEventListener("change", () => simpan(kunci, k.checked, k));
+}
+// F1.5 (17 Okt): gembok ABT juga diubah dari panel dan Widget ALETA - centang ikut seketika.
+try {
+  chrome.storage.onChanged.addListener((ubah, tempat) => {
+    if (tempat !== "local") return;
+    for (const [id, [kunci]] of Object.entries(SAKLAR_ABT)) {
+      const k = document.getElementById(id);
+      if (k && ubah[kunci]) k.checked = ubah[kunci].newValue === true;
+    }
+  });
+} catch {
+  /* di luar konteks ekstensi */
 }
 if (kotakChecklist) {
   kotakChecklist.addEventListener("change", () => simpan("checklistMilestone", kotakChecklist.checked, kotakChecklist));
@@ -2000,7 +2019,7 @@ function pasangRingkas(gayaUi) {
 const KELOMPOK_SAKLAR = [
   { kode: "tampilan", judul: "Tampilan", isi: [] },
   { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal"] },
-  { kode: "abt", judul: "ABT", isi: ["suntingLangsungAbt", "cetakTigaBerkas"] },
+  { kode: "abt", judul: "ABT", isi: ["suntingLangsungAbt", "cetakTigaBerkas", "gembokAbt"] },
   { kode: "portal", judul: "Portal", isi: ["checklistMilestone", "widgetKehadiran"] },
 ];
 

@@ -9671,7 +9671,8 @@ try {
  * perubahannya (tab lain ikut berganti). Tidak disimpan di variabel modul:
  * yang hidup lintas halaman hanya penyimpanan.
  */
-const ALAT_GEMBOK_KUNCI = { sipp: "gembokKepalaSipp", aleta: "gembokKepalaAleta" };
+// F1.5 (17 Okt): panel ALETA di halaman ABT biasa punya gemboknya sendiri.
+const ALAT_GEMBOK_KUNCI = { sipp: "gembokKepalaSipp", aleta: "gembokKepalaAleta", abt: "gembokKepalaAbt" };
 const ALAT_GEMBOK_ATRIBUT = "data-aleta-gembok";
 const ALAT_RINGKAS_ATRIBUT = "data-aleta-kepala-ringkas";
 const ALAT_RINGKAS_SELANG = 1200;
@@ -9798,8 +9799,9 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
   // SYARAT MUTLAK (tahap 7): tampilan Lama identik dengan fd9aad7 - gembok &
   // kepala ringkas hanya di Baru dan UI Baru (pola alatTerapkanUkuranAwal).
   // Panel SIPP tidak pernah memakai alatUjiMode; panel ALETA tidak memuat
-  // panel-alat uji, jadi galat = bukan Lama.
-  if (situs === "sipp") {
+  // panel-alat uji, jadi galat = bukan Lama. F1.5 (17 Okt): panel ABT biasa
+  // dijaga sama - Lama tetap identik fd9aad7.
+  if (situs === "sipp" || situs === "abt") {
     try {
       if (alatUjiMode() === "lama") return null;
     } catch {

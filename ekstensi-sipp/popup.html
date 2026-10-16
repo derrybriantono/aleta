@@ -977,7 +977,7 @@
     <input type="checkbox" id="derryIngat" checked>
     <span>
       <span class="saklar-nama">Ingatkan isian yang masih kosong sebelum cetak</span>
-      <span class="saklar-ket">Sebelum mencetak, isian yang masih kosong disebut satu per satu.</span>
+      <span class="saklar-ket">Sebelum mencetak, isian yang masih kosong disebut satu per satu. Berlaku juga untuk tombol Cetak di panel ALETA pada ABT biasa.</span>
     </span>
   </label>
 
@@ -1009,6 +1009,22 @@
         <strong class="saklar-nama">PDF</strong> hasil konversi ALETA dari berkas yang sama, dan
         <strong class="saklar-nama">anonim .rtf</strong> dari menu anonimisasi ABT sendiri. Bila
         dimatikan, tombol CETAK berperilaku persis seperti semula.
+        Tombol <strong class="saklar-nama">Cetak</strong> di panel ALETA (samping "Input semua yang pasti") mengikuti saklar ini.
+      </span>
+    </span>
+  </label>
+
+  <!-- F1.5 (17 Okt): gembok panel ALETA di ABT biasa - kunci yang sama dengan
+       tombol gembok di bawah kepala panel dan Widget ALETA (gembokKepalaAbt). -->
+  <label class="saklar">
+    <input type="checkbox" id="gembokAbt">
+    <span>
+      <span class="saklar-nama">Gembok panel ALETA di ABT: selalu tampil penuh</span>
+      <span class="saklar-ket">
+        Saat <strong class="saklar-nama">mati</strong> (bawaan, "Ringkas otomatis"), panel yang menutupi
+        tabel ABT tinggal kepalanya selama tidak ditunjuk, lalu terbuka lagi saat ditunjuk. Saat
+        <strong class="saklar-nama">menyala</strong> (terkunci), panel selalu terbuka penuh. Sama dengan
+        tombol gembok di bawah kepala panel; tersimpan untuk akun Anda.
       </span>
     </span>
   </label>

@@ -672,6 +672,10 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
     const kupas = (h: Halaman) => {
       const salinan = panelDari(h).cloneNode(true);
       for (const el of Array.from(salinan.querySelectorAll(".aleta-sore")) as any[]) el.remove();
+      // F1.5 (17 Okt): gembok "Ringkas otomatis" di bawah kepala - lapisan Baru/UI Baru
+      // yang disengaja (sama dengan panel SIPP); Lama tetap tanpa gembok (dijaga di atas).
+      for (const el of Array.from(salinan.querySelectorAll(":scope > .aleta-gembok-baris")) as any[]) el.remove();
+      for (const n of ["data-aleta-gembok", "data-aleta-gembok-situs", "data-aleta-kepala-ringkas", "data-aleta-ditunjuk"]) salinan.removeAttribute(n);
       // 12 Okt: Baru & UI Baru memulai panel di kanan atas dengan ukuran bawaan besar (gaya sebaris
       // width/height/max-height + data-tinggi-sendiri); Lama TIDAK (SYARAT MUTLAK fd9aad7, dijaga
       // checklist-posisi-panel-12okt.test.ts). Hanya ketiga gaya itu yang dibuang - isi tetap dibandingkan.
