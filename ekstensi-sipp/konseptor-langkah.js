@@ -35,6 +35,8 @@
     tandaTerkirim: new Map(),
     menunggu: null,
     rinci: null,
+    /** F4.2: draf H-7 agen untuk perkara terpilih (konseptor-langkah GET drafH7). */
+    h7: null,
     memuat: false,
     galat: "",
   };
@@ -113,6 +115,7 @@
       k.addEventListener("change", saatCentang);
       k.addEventListener("click", (e) => {
         if (e.target && e.target.closest && e.target.closest("[data-kl-tutup]")) k.hidden = true;
+        if (e.target && e.target.closest && e.target.closest("[data-kl-pakai-h7]")) void pakaiH7();
       });
     }
     return k;
@@ -153,8 +156,43 @@
         ? `<p style="color:var(--ok);font-weight:600">Draf siap dibacakan.</p>`
         : `<p style="font-size:.8rem;color:var(--muted)">${r.selesai} dari ${r.jumlah} langkah selesai. Majelis melihat kemajuan yang sama di Jadwal Sidang ALETA.</p>`;
     }
+    isi += isiDrafH7(S.h7);
     if (S.galat) isi += `<p style="color:var(--warn)">${esc(S.galat)}</p>`;
     return isi;
+  }
+
+  /**
+   * F4.2: draf H-7 dari agen ALETA (portal src/lib/agen-h7-putusan.ts) - kalimat sama dengan Jadwal Sidang. Tombolnya
+   * membuka blangko draf di Blangko Derry dan memasang isian agen sebagai SARAN; tidak ada yang tersimpan ke ABT.
+   */
+  function teksLencanaH7(r) {
+    if (!r) return "";
+    if (!r.blangko) return "Draf H-7: blangko belum ada";
+    if (r.tingkat === "siap") return "Draf H-7 siap";
+    return `Draf H-7 ${r.persen}% - ${r.jumlahPerlu} perlu diisi`;
+  }
+  function isiDrafH7(h) {
+    if (!h || !h.ringkas) return "";
+    const warna = h.ringkas.tingkat === "siap" ? "var(--ok)" : "var(--warn)";
+    let s = `<div data-kl-h7 style="margin-top:8px;padding-top:6px;border-top:1px solid var(--line, #ddd)">`;
+    s += `<b style="color:${warna}">${esc(teksLencanaH7(h.ringkas))}</b>`;
+    s += `<div style="font-size:.78rem;color:var(--muted)">Disiapkan agen ALETA ${esc(waktuSingkat(h.ringkas.dibuatPada))} - belum disimpan ke ABT maupun SIPP.</div>`;
+    s += `<ul style="margin:4px 0 0 16px;padding:0;font-size:.8rem">${(h.laporan || []).slice(0, 5).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    const bd = globalThis.aletaBlangkoDerryIsian;
+    if (h.blangko && bd && typeof bd.pakaiDrafH7 === "function") {
+      s += `<button type="button" data-kl-pakai-h7 class="bd-btn" style="margin-top:6px">Buka blangko draf &amp; pasang saran agen</button>`;
+    }
+    return `${s}</div>`;
+  }
+  async function pakaiH7() {
+    const bd = globalThis.aletaBlangkoDerryIsian;
+    if (!S.h7 || !bd || typeof bd.pakaiDrafH7 !== "function") return;
+    try {
+      await bd.pakaiDrafH7(S.h7);
+    } catch (e) {
+      S.galat = `Draf H-7 tidak dapat dibuka: ${String((e && e.message) || e)}`;
+      render();
+    }
   }
 
   function render() {
@@ -174,7 +212,10 @@
     render();
     try {
       const h = await ambil(`${API}?perkaraId=${encodeURIComponent(pid)}`);
-      if (S.pk && String(S.pk.perkaraId) === pid) S.rinci = (h && h.peta && h.peta[pid]) || null;
+      if (S.pk && String(S.pk.perkaraId) === pid) {
+        S.rinci = (h && h.peta && h.peta[pid]) || null;
+        S.h7 = (h && h.drafH7 && h.drafH7[pid]) || null;
+      }
     } catch (e) {
       S.galat = `Checklist tidak terbaca: ${String((e && e.message) || e)}`;
     } finally {
@@ -224,6 +265,7 @@
     S.pk = d ? { perkaraId: d.perkaraId, nomorPerkara: d.nomorPerkara } : null;
     if (String((S.pk && S.pk.perkaraId) || "") !== String(lama || "")) {
       S.rinci = null;
+      S.h7 = null;
       const k = document.getElementById(ID_KARTU);
       if (k && !k.hidden) void muat();
     }
@@ -238,7 +280,7 @@
     return true;
   }
 
-  globalThis.aletaKonseptorLangkah = { mulai, bukaKartu, murni: { tandaLapor, waktuSingkat }, keadaan: () => ({ pk: S.pk, rinci: S.rinci, galat: S.galat }) };
+  globalThis.aletaKonseptorLangkah = { mulai, bukaKartu, murni: { tandaLapor, waktuSingkat, teksLencanaH7 }, keadaan: () => ({ pk: S.pk, rinci: S.rinci, h7: S.h7, galat: S.galat }) };
   if (!mulai()) {
     let coba = 0;
     const ulang = setInterval(() => {

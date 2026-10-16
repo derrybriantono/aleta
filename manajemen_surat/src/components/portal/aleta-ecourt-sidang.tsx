@@ -92,6 +92,8 @@ import type { BahanPenandaBaris, IzinCeraiBaris, LencanaPekerjaanPihak, PenandaP
 /* === AKHIR 12OKT-B === */
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { ChecklistKonseptor, LencanaKesiapanPutusan } from "@/components/portal/checklist-konseptor"; /* F1.6 */
+import { LencanaDrafH7, PanelDrafH7 } from "@/components/portal/draf-h7"; /* F4.2 */
+import type { RingkasDrafH7 } from "@/lib/agen-h7-putusan";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
 import { pitaJarak, sebutanJarak } from "@/lib/jarak-antar-sidang";
 import {
@@ -4349,6 +4351,8 @@ export function AletaEcourtSidang({
    * yang sama sekali tidak memerlukan SIPP.
    */
   const [tunjukan, setTunjukan] = useState<Record<string, KonseptorSementara>>({});
+  /** F4.2: ringkas draf H-7 agen ALETA per perkara (hanya yang punya draf). */
+  const [drafH7, setDrafH7] = useState<Record<string, RingkasDrafH7>>({});
   const [keterangan, setKeterangan] = useState<Record<string, KeteranganPerkara>>({});
   const [keteranganKunci, setKeteranganKunci] = useState<string | null>(null);
   const [tunjukKunci, setTunjukKunci] = useState<string | null>(null);
@@ -5541,6 +5545,31 @@ export function AletaEcourtSidang({
       setTunjukan({});
     }
   }, [perkaraTampil]);
+
+  /**
+   * F4.2: draf H-7 yang disiapkan agen ALETA. Gagal dimuat = tanpa lencana;
+   * jadwalnya tetap terbaca (idiom yang sama dengan tunjukan konseptor).
+   */
+  const muatDrafH7 = useCallback(async () => {
+    if (!perkaraTampil) return;
+    try {
+      const balasan = await fetch(
+        apiPath(`/api/aleta-ecourt/agen-h7?ringkas=1&perkaraId=${encodeURIComponent(perkaraTampil)}`),
+        { cache: "no-store" }
+      );
+      const isi = (await balasan.json()) as { data?: { peta?: Record<string, RingkasDrafH7> } };
+      setDrafH7(isi?.data?.peta ?? {});
+    } catch {
+      setDrafH7({});
+    }
+  }, [perkaraTampil]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void muatDrafH7();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [muatDrafH7]);
 
   /**
    * Keadaan keterangan tiap perkara - hanya yang TERKINI beserta jumlah
@@ -8026,6 +8055,11 @@ export function AletaEcourtSidang({
                             {tampil(tampilan, "hari-putusan") && hariPutusan(baris) ? (
                               <LencanaKesiapanPutusan kemajuan={tunjukan[String(baris.perkaraId)]?.kemajuan} />
                             ) : null}
+                            {/* F4.2: draf H-7 agen ALETA untuk sidang INI - juga perkiraan putusan verstek (agenda bukan putusan). */}
+                            {tampil(tampilan, "hari-putusan") &&
+                            drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
+                              <LencanaDrafH7 ringkas={drafH7[String(baris.perkaraId)]} />
+                            ) : null}
 
                             {/* ==============================================
                                 IKRAR TALAK - BIRU, MENGGANTIKAN YANG KUNING
@@ -8671,6 +8705,10 @@ export function AletaEcourtSidang({
                             onSimpan={() => void muatTunjukan()}
                             tampilKosong={tampil(tampilan, "tunjuk-konseptor")}
                           />
+                          {/* F4.2: rincian draf H-7 agen - untuk majelis dan konseptor, ditunjuk atau belum. */}
+                          {drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
+                            <PanelDrafH7 perkaraId={String(baris.perkaraId)} ringkas={drafH7[String(baris.perkaraId)]} />
+                          ) : null}
                           {/* F1.6: checklist draf putusan - hanya bila konseptornya sudah ditunjuk. */}
                           {tunjukan[String(baris.perkaraId)]?.nama ? (
                             <ChecklistKonseptor

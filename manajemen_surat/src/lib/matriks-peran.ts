@@ -751,7 +751,7 @@ export const AKSI = {
     crud: "CU",
     golongan: PERSIDANGAN,
     lingkup: "milik",
-    rute: ["POST /api/aleta-ecourt/putusan", "POST /api/aleta-ecourt/putusan/jejak", "POST /api/aleta-ecourt/berkas-perkara/riwayat"],
+    rute: ["POST /api/aleta-ecourt/putusan", "POST /api/aleta-ecourt/putusan/jejak", "POST /api/aleta-ecourt/berkas-perkara/riwayat", "POST /api/aleta-ecourt/agen-h7"],
     alasan: "Draf putusan disusun majelis/konseptor (PP) - juru sita, kasir, PTSP tidak.",
   },
   "putusan.unggah": {

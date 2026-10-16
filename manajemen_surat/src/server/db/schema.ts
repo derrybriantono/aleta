@@ -515,6 +515,45 @@ export const DDL_KONSEPTOR_LANGKAH = {
   ],
 } as const;
 
+/**
+ * Agen H-7 draf putusan (0068, 17 Okt 2026, F4.2): draf per perkara per Hari
+ * Putusan dan catatan jalan agen. Cermin PERSIS dari
+ * drizzle/0068_aleta_agen_h7_draf.sql; penjaga agen-h7-putusan-f42.test.ts
+ * membandingkan keduanya.
+ */
+export const DDL_AGEN_H7 = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_agen_h7_draf (
+  perkara_id TEXT NOT NULL,
+  tanggal_sidang TEXT NOT NULL,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  alasan TEXT NOT NULL DEFAULT '',
+  tingkat TEXT NOT NULL DEFAULT '',
+  persen INTEGER NOT NULL DEFAULT 0,
+  ringkas_json TEXT NOT NULL DEFAULT '{}',
+  draf_json TEXT NOT NULL DEFAULT '{}',
+  dibuat_pada TEXT NOT NULL,
+  diperbarui_pada TEXT NOT NULL,
+  jalan_id TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (perkara_id, tanggal_sidang)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_agen_h7_jalan (
+  id TEXT PRIMARY KEY,
+  tanggal TEXT NOT NULL,
+  pemicu TEXT NOT NULL DEFAULT '',
+  oleh TEXT NOT NULL DEFAULT '',
+  mulai TEXT NOT NULL,
+  selesai TEXT NOT NULL DEFAULT '',
+  diperiksa INTEGER NOT NULL DEFAULT 0,
+  dibuat INTEGER NOT NULL DEFAULT 0,
+  diperbarui INTEGER NOT NULL DEFAULT 0,
+  gagal INTEGER NOT NULL DEFAULT 0,
+  galat TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1524,6 +1563,8 @@ const schemaStatements = [
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
   ...DDL_KONSEPTOR_LANGKAH.tabel,
+  // Agen H-7 draf putusan: draf per Hari Putusan & catatan jalan (0068).
+  ...DDL_AGEN_H7.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

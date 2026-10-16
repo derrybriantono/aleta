@@ -31,6 +31,17 @@ export async function register() {
     mulaiPindaiKtpBerkala(undefined, process.env, sumberPengaturanKtp);
   }
   /* === AKHIR KTP-PIHAK === */
+  /* === AGEN H-7 17 Okt (F4.2) === draf putusan untuk Hari Putusan tujuh hari lagi, sekali sehari (bawaan 06.00 WITA,
+     ALETA_AGEN_H7_JAM); hanya membaca SIPP/ABT, menulis basis data ALETA. Matikan dengan ALETA_AGEN_H7=0;
+     perkiraan putusan verstek (sidang ke-2+, Tergugat belum pernah hadir) dimatikan dengan ALETA_AGEN_H7_VERSTEK=0. */
+  if (process.env.ALETA_AGEN_H7 !== "0") {
+    const [{ mulaiAgenH7Berkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/aleta-ecourt/agen-h7-putusan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiAgenH7Berkala(getDatabase);
+  }
+  /* === AKHIR AGEN H-7 === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

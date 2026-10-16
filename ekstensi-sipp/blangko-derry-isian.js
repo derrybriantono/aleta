@@ -877,7 +877,8 @@
       if (S.susunan === d) renderIsian();
     }
   }
-  const saranUntuk = (b) => S.saran[b.kode] || b.saran || "";
+  // F4.2: saran draf H-7 (agen ALETA) didahulukan - nilainya dari deteksi yang sama dengan panel ABT, tetap hanya SARAN.
+  const saranUntuk = (b) => (S.saranH7 && S.saranH7[b.kode] ? S.saranH7[b.kode].nilai : "") || S.saran[b.kode] || b.saran || "";
   const alasanHuruf = () => String(S.isi["8503"] || "").split("·")[0].toUpperCase().replace(/[^A-H]/g, "");
   /** Pemicu menyala? Dari nilai ABT (teks tidak kosong); alasan C/H juga dari huruf 8503 yang sedang diketik. */
   function pemicuMenyala(kode) {
@@ -1518,6 +1519,13 @@
     }
     const alasan = keteranganKeadaan(b);
     if (alasan) out.push({ t: "sipp", nama: "Data perkara", jelas: `Isian ini muncul karena ${alasan}.` });
+    const h7 = S.saranH7 && S.saranH7[b.kode];
+    if (h7)
+      out.push({
+        t: "posita",
+        nama: h7.golongan === "pasti" ? "Draf H-7 agen ALETA (pasti)" : "Draf H-7 agen ALETA (usulan)",
+        jelas: `Disiapkan agen dari ${h7.sumber || "data perkara"}: "${potong(h7.nilai, 160)}". ${h7.golongan === "pasti" ? "Terukur pasti" : "Belum pasti - periksa dulu"}; belum tersimpan ke ABT sampai Anda memakainya (Tab atau Pakai semua saran).`,
+      });
     if (S.saran[b.kode]) out.push({ t: "posita", nama: "Bawaan ABT dari data perkara", jelas: `ABT menghitung saran dari data perkara di SIPP (termasuk gugatan): "${potong(S.saran[b.kode], 160)}". Tekan Tab di kotak kosong untuk memakainya.` });
     else if (b.saran) out.push({ t: "posita", nama: "Saran ALETA", jelas: `Saran umum untuk isian ini: "${potong(b.saran, 160)}". Periksa dengan gugatan sebelum dipakai.` });
     if (b.dipakaiOleh && b.dipakaiOleh.length) out.push({ t: "rumus", nama: "Dipakai juga di bagian lain", jelas: "Nilai ini juga dibaca bagian otomatis lain di naskah (mis. amar, pertimbangan), jadi isilah dengan teliti." });
@@ -2727,13 +2735,38 @@
     let n = 0;
     for (const b of daftarPerlu()) {
       if (b.jenis !== "teks" || (b.opsi && b.opsi.length) || String(S.isi[b.kode] || "").trim()) continue;
-      const sr = saranUntuk(b);
+      // F4.2: usulan draf H-7 yang BELUM pasti tidak ikut diisi sekaligus - dipakai satu per satu (Tab) sesudah diperiksa.
+      const sr = S.saranH7 && S.saranH7[b.kode] && S.saranH7[b.kode].golongan !== "pasti" ? S.saran[b.kode] || b.saran || "" : saranUntuk(b);
       if (!sr) continue;
       jadwalkanSimpan(b.kode, sr);
       n += 1;
     }
     renderIsian();
     toast(n ? `${n} isian diisi dari saran. Periksa sebelum cetak; semuanya tersimpan ke ABT.` : "Tidak ada isian kosong yang punya saran.");
+  }
+  /**
+   * F4.2: membuka blangko putusan draf H-7 agen ALETA dan memasang isiannya sebagai SARAN (tidak tersimpan ke ABT).
+   * d = { blangko: { folder, berkas, menu, alias }, saran: { kode: { nilai, golongan, sumber } } } dari portal (konseptor-langkah GET).
+   */
+  async function pakaiDrafH7(d) {
+    if (!S.pk) return toast("Pilih perkara dulu.");
+    if (!d || !d.blangko || !d.blangko.berkas) return toast("Draf H-7 belum punya blangko putusan.");
+    await muatMenu();
+    const kelompok = kelompokUntukSaran(S.menu ? S.menu.kelompok : [], d.blangko);
+    const k = kelompok && S.menu && S.menu.kelompok.find((x) => x.nama === kelompok);
+    if (!k) return toast(`Menu blangko ${d.blangko.menu || d.blangko.folder || ""} tidak ditemukan di ABT.`);
+    if (!k.berkas) await muatBerkasKelompok(k);
+    await pilihBlangko(String(d.blangko.berkas).replace(/\.rtf$/i, ""), k.nama);
+    S.saranH7 = {};
+    let n = 0;
+    for (const [kode, s] of Object.entries((d && d.saran) || {})) {
+      if (!s || !String(s.nilai || "").trim()) continue;
+      S.saranH7[kode] = { nilai: String(s.nilai), golongan: s.golongan === "pasti" ? "pasti" : "usulan", sumber: String(s.sumber || "") };
+      n += 1;
+    }
+    renderIsian();
+    toast(n ? `Draf H-7 dipasang: ${n} saran dari agen ALETA. Belum ada yang tersimpan ke ABT - periksa lalu pakai.` : "Blangko draf H-7 dibuka; agen belum punya saran isian.");
+    return n;
   }
   function saatKlik(e) {
     const t = e.target;
@@ -3392,6 +3425,7 @@
       S.nilai = {};
       S.tersimpan = {};
       S.saran = {};
+      S.saranH7 = {}; // F4.2: saran draf H-7 milik perkara sebelumnya tidak terbawa.
       S.bukti = { P: null, T: null };
       S.tj = {};
       S.tjBuka = null;
@@ -3494,6 +3528,8 @@
     /** Fungsi yang dipasang ke aletaBlangkoDerry.pasangRekomendasi (saran portal Tahap E). */
     rekomendasiPortal,
     pilihBlangko,
+    /** F4.2: buka blangko draf H-7 + pasang saran agen (tanpa menyimpan ke ABT). */
+    pakaiDrafH7,
     bukaModal,
     cetak,
     /** Memuat daftar berkas satu kelompok Derry (untuk alat luar/uji); pulang [{berkas,a,b}] atau null. */
@@ -3511,6 +3547,7 @@
       isi: { ...S.isi },
       tersimpan: { ...S.tersimpan },
       saran: { ...S.saran },
+      saranH7: { ...(S.saranH7 || {}) },
       nilai: { ...S.nilai },
       bukti: { P: S.bukti.P ? S.bukti.P.map((r) => ({ ...r })) : null, T: S.bukti.T ? S.bukti.T.map((r) => ({ ...r })) : null },
       tj: Object.fromEntries(Object.entries(S.tj).map(([k, v]) => [k, { kode: v.kode, rows: v.rows.map((r) => ({ ...r })), berubah: v.berubah, sidang: v.sidang, galat: v.galat || "" }])),
