@@ -11205,12 +11205,17 @@ html[data-aleta-lencana="rancangan"] .aleta-tanda-fuchsia { background: #a21caf;
 html[data-aleta-lencana="rancangan"] .aleta-tanda-biru    { background: #1f4fa3; color: #fff; border: 1px solid #173c7d; }
 html[data-aleta-lencana="rancangan"] .aleta-tanda-ungu    { background: #4b4fb0; color: #fff; border: 1px solid #363a8a; }
 html[data-aleta-lencana="rancangan"] .aleta-tanda-sita    { background: #f2b600; color: #2a1d00; border: 2px solid #8a6500; font-weight: 700; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-merah   { background: #43120f; color: #ffb4ab; border-color: #7f2a22; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-kuning  { background: #3a2a0b; color: #f0cb78; border-color: #6b4f14; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-hijau   { background: #0f2e1f; color: #7fd6a4; border-color: #235b3e; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-abu     { background: #1b2521; color: #b3c2ba; border-color: #33443c; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-jingga  { background: #4a2406; color: #ffc48a; border-color: #8a4a14; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-fuchsia { background: #44104a; color: #f3a8f8; border-color: #7a2a85; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-biru    { background: #10264d; color: #a9c8ff; border-color: #25488a; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-ungu    { background: #231f55; color: #bdb8ff; border-color: #4a45a0; }
-html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-sita    { background: #5c4300; color: #ffd54a; border-color: #a07a00; }
+/* Tema gelap (keputusan pengguna 16 Okt malam): lencana TETAP berwarna penuh -
+   warna rancangan terang yang sedikit diredupkan, tidak menjadi latar gelap samar
+   (abu prodeo/kuasa dulu #1b2521 - menyatu dengan baris SIPP gelap). Latar tiap
+   lencana >= 2:1 terhadap baris SIPP gelap (#0d1512/#131c18/#17211c), tulisan
+   >= 4,5:1 terhadap latarnya (dijaga sipp-ide-m2-16okt.test.ts). */
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-merah   { background: #a32116; color: #f8f1f0; border-color: #c4473c; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-kuning  { background: #8f5508; color: #fbf3e6; border-color: #b27320; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-hijau   { background: #167a4f; color: #f1f8f4; border-color: #2f9a69; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-abu     { background: #66746d; color: #f7f8f7; border-color: #85938c; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-jingga  { background: #a34d0a; color: #fbf2ea; border-color: #c46a22; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-fuchsia { background: #951aa1; color: #fbeffc; border-color: #b63fc2; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-biru    { background: #2856a8; color: #f0f4fb; border-color: #4a76c4; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-ungu    { background: #4f53b3; color: #f2f2fb; border-color: #7074cc; }
+html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-sita    { background: #d9a600; color: #2a1d00; border-color: #f2c233; }
