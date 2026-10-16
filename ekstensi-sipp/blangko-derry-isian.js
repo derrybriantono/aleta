@@ -2469,6 +2469,7 @@
     const j = S.blangko.jenis;
     const hasil = [];
     let anonimRtf = null;
+    let anonimAleta = null; // 16OKT-F43
     if (S.fmt.rtf) {
       const nama = namaUnduhan(nomor, berkas, "rtf");
       const u = await unduh(new Blob([rtfBuf], { type: "application/rtf" }), nama);
@@ -2508,8 +2509,12 @@
     }
     if ((S.fmt.anon || S.fmt.edoc) && j === "put") {
       try {
-        catatLog("menyamarkan nama pihak (anonimisasi ABT, bisa 1-2 menit)…");
-        const h = await klienAbt().anonim({ perkaraId: perkaraId(), nomor, rtf: rtfBuf, namaBerkas: namaUnduhan(nomor, berkas, "rtf") });
+        /* === 16OKT-F43: penyamar mandiri ALETA dulu (abt.js); anonimisasi ABT hanya cadangan === */
+        anonimAleta = typeof alatAnonimMandiri === "function" ? await alatAnonimMandiri(rtfBuf, nomor, catatLog) : null;
+        if (anonimAleta && anonimAleta.ok) hasil.push(`anonim oleh ALETA: ${alatRingkasAnonim(anonimAleta)}${anonimAleta.sisa && anonimAleta.sisa.length ? ` - ${anonimAleta.sisa.length} bagian perlu diperiksa` : ""}`);
+        else catatLog(`${anonimAleta ? `penyamar ALETA tidak dapat dipakai (${anonimAleta.sebab}); ` : ""}menyamarkan nama pihak (anonimisasi ABT, bisa 1-2 menit)…`);
+        const h = anonimAleta && anonimAleta.ok ? anonimAleta : await klienAbt().anonim({ perkaraId: perkaraId(), nomor, rtf: rtfBuf, namaBerkas: namaUnduhan(nomor, berkas, "rtf") });
+        /* === AKHIR 16OKT-F43 === */
         if (!h.ok) hasil.push(`anonimisasi gagal: ${h.pesan || "ABT tidak menjawab"}`);
         else {
           anonimRtf = h.rtf;
@@ -2529,8 +2534,14 @@
       }
     }
     if (S.fmt.edoc && j === "put") {
-      catatLog("mengunggah putusan ke e-Doc SIPP…");
-      hasil.push(await unggahEdoc(rtfBuf, anonimRtf));
+      /* === 16OKT-F43: pratinjau naskah anonim ALETA sebelum unggah === */
+      const pilih = anonimAleta && anonimAleta.ok && anonimRtf && typeof alatPratinjauAnonim === "function" ? await alatPratinjauAnonim(anonimAleta, { nomor }) : "unggah";
+      if (pilih === "batal") hasil.push("e-Doc SIPP: unggah dibatalkan dari pratinjau anonim");
+      else {
+        catatLog("mengunggah putusan ke e-Doc SIPP…");
+        hasil.push(await unggahEdoc(rtfBuf, pilih === "tanpa" ? null : anonimRtf));
+      }
+      /* === AKHIR 16OKT-F43 === */
     }
     S.cetakTercatat[`${nomor}|${j}`] = jamSekarang();
     void tulisPenyimpanan({ [`${K_CETAK}:${nomor}|${j}`]: jamSekarang() });
