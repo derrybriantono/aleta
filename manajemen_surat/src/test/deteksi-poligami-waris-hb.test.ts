@@ -129,7 +129,9 @@ describe("deteksi penetapan ahli waris (371)", () => {
     expect(h["1509"].nilai).toBe("Palu");
     expect(h["1247"].nilai).toBe("sakit");
     expect(h["8610"].nilai).toBe("ZZZC DUNGGIO Bin. WWWD DUNGGIO");
-    for (const k of ["1025", "1246", "1247", "1509", "8610"]) expect(h[k].yakin).toBe("ragu");
+    for (const k of ["1025", "1246", "1509", "8610"]) expect(h[k].yakin).toBe("ragu");
+    // F2.3 (16 Okt): 1247 terukur 12/12 atas isian petugas server -> cukup, hanya untuk PAW (371).
+    expect(h["1247"].yakin).toBe("cukup");
   });
 
   it("'meninggal dunia suami ... yang bernama X di Kabupaten Y'", () => {
