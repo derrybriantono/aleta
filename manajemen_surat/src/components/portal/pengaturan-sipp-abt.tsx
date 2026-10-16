@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { BagianIdentitasSatker } from "@/components/portal/identitas-satker-abt";
 import { SetSaksiAleta } from "@/components/portal/set-saksi-aleta";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +50,7 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
  * /api/pengaturan-sipp-abt yang menjaga peran.
  */
 
-type Bagian = "menu" | "variabel" | "templat" | "riwayat";
+type Bagian = "menu" | "variabel" | "templat" | "satker" | "riwayat";
 
 async function panggil<T>(alamat: string, init?: RequestInit): Promise<T> {
   const r = await fetch(apiPath(alamat), { cache: "no-store", ...init });
@@ -1043,6 +1044,7 @@ const BAGIAN: Array<[Bagian, string]> = [
   ["menu", "Hak menu & saklar"],
   ["variabel", "Isian blangko"],
   ["templat", "Template tanya jawab"],
+  ["satker", "Identitas satker"],
   ["riwayat", "Riwayat semua"],
 ];
 
@@ -1060,7 +1062,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
       try {
         const q = new URLSearchParams(window.location.search);
         const b = q.get("bagian");
-        if (b === "menu" || b === "variabel" || b === "templat" || b === "riwayat") setBagian(b);
+        if (b === "menu" || b === "variabel" || b === "templat" || b === "satker" || b === "riwayat") setBagian(b);
         const n = (q.get("noVar") ?? "").replace(/\D/g, "").slice(0, 5);
         if (n) {
           setNoVarAwal(n.padStart(4, "0"));
@@ -1078,7 +1080,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
       <PageIntro
         eyebrow="Pengaturan"
         title="Pengaturan SIPP & ABT"
-        description="Hak menu ABT untuk Blangko Derry, saklar kebijakan, isian blangko, dan template tanya jawab. Setiap simpan langsung berlaku di ABT, dicatat, dan dapat dikembalikan."
+        description="Hak menu ABT untuk Blangko Derry, saklar kebijakan, isian blangko, template tanya jawab, dan identitas satker (kop, logo, kode surat). Setiap simpan langsung berlaku di ABT, dicatat, dan dapat dikembalikan."
       />
       <div role="tablist" aria-label="Bagian pengaturan" className="flex flex-wrap gap-2">
         {BAGIAN.map(([k, t]) => (
@@ -1090,6 +1092,14 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
       {bagian === "menu" ? <BagianMenu hakAwal={hak} /> : null}
       {bagian === "variabel" ? <BagianVariabel hakAwal={hak} noVarAwal={noVarAwal} /> : null}
       {bagian === "templat" ? <BagianTemplat hakAwal={hak} /> : null}
+      {bagian === "satker" ? (
+        <BagianIdentitasSatker
+          hak={hak}
+          riwayat={(segarkanSatker, sesudah) => (
+            <DaftarRiwayat jenis="satker" bolehKembalikan={() => hak.ubahBawaan} segarkan={segarkanSatker} sesudahKembalikan={sesudah} />
+          )}
+        />
+      ) : null}
       {bagian === "riwayat" ? (
         <Card>
           <CardHeader>
@@ -1098,7 +1108,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
           </CardHeader>
           <CardContent>
             <DaftarRiwayat
-              bolehKembalikan={(s) => (s.jenis === "menu" ? hak.ubahMenu : s.jenis === "variabel" ? hak.ubahBawaan : hak.ubahTemplat)}
+              bolehKembalikan={(s) => (s.jenis === "menu" ? hak.ubahMenu : s.jenis === "variabel" || s.jenis === "satker" ? hak.ubahBawaan : s.jenis === "logo" ? false : hak.ubahTemplat)}
               segarkan={segarkan}
               sesudahKembalikan={() => setSegarkan((x) => x + 1)}
             />

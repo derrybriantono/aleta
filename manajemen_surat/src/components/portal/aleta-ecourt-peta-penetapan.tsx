@@ -133,7 +133,7 @@ function KartuJenis({
   const kunci = !boleh || sibuk;
   const kotak = (k: "aktif" | "otomatisUnggah" | "pakaiTtd" | "pakaiCap" | "gantiGambarBawaan" | "tahanBilaTanpaTtd", teks: string, tidakAktif = false) => (
     <label className="flex items-start gap-2 text-sm">
-      <input type="checkbox" className="mt-1" checked={Boolean(a[k])} disabled={kunci || tidakAktif} onChange={(e) => ubah(k, e.target.checked)} />
+      <input type="checkbox" className="mt-1" checked={k === "gantiGambarBawaan" ? true : Boolean(a[k])} disabled={kunci || tidakAktif} onChange={(e) => ubah(k, e.target.checked)} />
       <span>{teks}</span>
     </label>
   );
@@ -217,7 +217,8 @@ function KartuJenis({
               ))}
             </select>
           </label>
-          {kotak("gantiGambarBawaan", "Ganti gambar tanda tangan/cap bawaan blangko di blok tanda tangan")}
+          {/* Mode tanda tangan elektronik (17 Okt 2026): selalu menyala, tidak dapat dimatikan. */}
+          {kotak("gantiGambarBawaan", "Mode tanda tangan elektronik: gambar cap/TTD bawaan blangko tidak ikut dicetak lewat ALETA (selalu menyala)", true)}
         </div>
       </div>
 

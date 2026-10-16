@@ -17,6 +17,14 @@
  *   GET  /templat/isi?kode=     isi satu kumpulan
  *   POST /templat/simpan        {kode, lama:[{tanya,jawab}], baru:[...], bolehKosong?}
  *   GET  /perkara?nomor=        perkara contoh untuk uji
+ *
+ *   17 Okt 2026 - identitas satker & logo kop:
+ *   GET  /satker                identitas satker SIPP + variabel 9270-9276/#1154# dan nilainya
+ *   POST /satker/simpan         {noVar 9271-9274, lama:{sql_query}, baru:{sql_query}, pulihkan?}
+ *   GET  /logo/pindai           gambar di blangko Derry per isi (md5) + tebakan logo - baca saja
+ *   GET  /logo/gambar?md5=      bita satu gambar PNG/JPG (pratinjau)
+ *   POST /logo/paket            {md5:[...], logoBase64, oleh} - paket ganti logo ke folder runtime
+ *                               (blangko TIDAK ditulis; dipasang petugas server)
  */
 
 const crypto = require("crypto");
@@ -90,5 +98,19 @@ router.get("/templat", bungkus(() => layanan().daftarTemplat()));
 router.get("/templat/isi", bungkus(async (req) => ({ templat: await layanan().bacaTemplat(req.query.kode) })));
 router.post("/templat/simpan", bungkus((req) => layanan().simpanTemplat(req.body || {})));
 router.get("/perkara", bungkus(async (req) => ({ perkara: await layanan().cariPerkara(req.query.nomor) })));
+router.get("/satker", bungkus(() => layanan().bacaSatker()));
+router.post("/satker/simpan", bungkus((req) => layanan().simpanKueriSatker(req.body || {})));
+router.get("/logo/pindai", bungkus(() => layanan().pindaiLogo()));
+router.get("/logo/gambar", async (req, res) => {
+  try {
+    const g = await layanan().gambarLogo(req.query.md5);
+    res.setHeader("Content-Type", g.jenis === "jpg" ? "image/jpeg" : "image/png");
+    res.setHeader("Cache-Control", "private, max-age=300");
+    res.end(g.isi);
+  } catch (galat) {
+    kirimGalat(res, galat);
+  }
+});
+router.post("/logo/paket", bungkus((req) => layanan().paketLogo(req.body || {})));
 
 module.exports = router;

@@ -19,6 +19,16 @@ import {
   ujiVariabel,
   type AktorPengaturan,
 } from "@/server/modules/pengaturan-abt/service";
+import {
+  bacaLogoAleta,
+  bacaSatker,
+  gambarBlangko,
+  logoDariBlangko,
+  paketLogoKop,
+  pindaiLogo,
+  simpanIdentitas,
+  terapkanKeAbt,
+} from "@/server/modules/pengaturan-abt/identitas-satker";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -37,12 +47,20 @@ export const dynamic = "force-dynamic";
  *   GET ?bagian=templat[&kode=X]           kumpulan / isi template tanya jawab
  *   GET ?bagian=riwayat[&jenis=&kunci=]    riwayat suntingan (cadangan nilai lama)
  *   GET ?bagian=perkara[&nomor=]           perkara contoh untuk uji variabel
+ *   GET ?bagian=satker                     identitas satker ALETA + SIPP + ABT (9270-9276, #1154#) + rencana
+ *   GET ?bagian=satker-logo                logo satker ALETA (gambar)
+ *   GET ?bagian=logo-pindai                gambar di blangko Derry per isi + tebakan logo (baca saja)
+ *   GET ?bagian=logo-blangko&md5=          satu gambar blangko (pratinjau)
  *
  *   POST {tindakan: "simpan-menu", ubah:[{id,lama,baru}], config:[{name,lama,baru}]}
  *   POST {tindakan: "uji-variabel", noVar, perkaraId, sidangKe, sql_query?}   tidak menulis
  *   POST {tindakan: "simpan-variabel", noVar, lama, baru, perkaraId, sidangKe}
  *   POST {tindakan: "simpan-templat", kode, lama:[{tanya,jawab}], baru:[...]}
  *   POST {tindakan: "kembalikan", id}
+ *   POST {tindakan: "simpan-satker", identitas:{...}, logoBase64?, hapusLogo?}   hanya ALETA
+ *   POST {tindakan: "terapkan-satker", kunci:[alamat|telepon|laman|surel|kodeSurat]}  ke ABT, tercatat
+ *   POST {tindakan: "logo-dari-blangko", md5}
+ *   POST {tindakan: "paket-logo-kop", md5:[...]}   paket di server; blangko diganti saat pasang.sh dijalankan
  *
  * Membuka: Super Admin dan Admin. Mengubah hak menu/saklar dan kueri variabel:
  * Super Admin saja; isian bawaan dan template: Super Admin dan Admin
@@ -85,6 +103,19 @@ export async function GET(request: NextRequest) {
       });
     }
     if (bagian === "perkara") return ok(await cariPerkaraContoh(getSearchParam(request, "nomor") ?? ""));
+    if (bagian === "satker") return ok({ ...(await bacaSatker(db)), hak: a.hak });
+    if (bagian === "logo-pindai") return ok(await pindaiLogo());
+    if (bagian === "satker-logo" || bagian === "logo-blangko") {
+      const g = bagian === "satker-logo" ? await bacaLogoAleta(db) : await gambarBlangko(String(getSearchParam(request, "md5") ?? "").toLowerCase());
+      if (!g) throw new ApiError(404, "Logo satker belum ada.");
+      return new Response(new Uint8Array(g.isi), {
+        headers: {
+          "content-type": g.jenis === "jpg" || g.jenis === "image/jpeg" ? "image/jpeg" : "image/png",
+          "cache-control": "private, no-store",
+          "content-length": String(g.isi.length),
+        },
+      });
+    }
     throw new ApiError(400, "Bagian tidak dikenal.");
   } catch (error) {
     return handleAdminRouteError(error, request, {
@@ -124,6 +155,14 @@ export async function POST(request: NextRequest) {
         return ok(await simpanVariabel(db, a.aktor, ip, badan));
       case "simpan-templat":
         return ok(await simpanTemplat(db, a.aktor, ip, badan));
+      case "simpan-satker":
+        return ok(await simpanIdentitas(db, a.aktor, badan));
+      case "terapkan-satker":
+        return ok(await terapkanKeAbt(db, a.aktor, ip, badan));
+      case "logo-dari-blangko":
+        return ok(await logoDariBlangko(db, a.aktor, String(badan.md5 ?? "")));
+      case "paket-logo-kop":
+        return ok(await paketLogoKop(db, a.aktor, ip, badan));
       case "kembalikan":
         return ok(await kembalikanSuntingan(db, a.aktor, ip, String(badan.id ?? "")));
       default:
