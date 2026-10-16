@@ -180,6 +180,43 @@ describe("analisa petitum - hanya tuntutan yang sungguh diminta", () => {
     expect(kode(html)).toEqual(["hak-asuh-anak"]);
   });
 
+  it("F1.4: 'biaya kebutuhan, perkembangan dan pendidikan ... anak' = nafkah anak (terukur 4 dari 1.030 petitum cerai Donggala)", () => {
+    // Bentuk asli petitum 9711/9718/9839/10091 (nama dibuang): koma menempel pada kata pertama.
+    expect(
+      kode(
+        petitum(
+          "Mengabulkan gugatan Penggugat",
+          "Menjatuhkan talak satu ba&#39;in shughra Tergugat (A bin B) terhadap Penggugat (C binti D)",
+          "Menetapkan Tergugat wajib memenuhi biaya kebutuhan, perkembangan dan pendidikan minimal sebesar Rp.3.000.000,- per bulan sampai dengan anak tersebut dewasa",
+          "Membebankan biaya perkara ini sesuai peraturan yang berlaku"
+        )
+      )
+    ).toEqual(["nafkah-anak"]);
+    expect(
+      kode(
+        petitum(
+          "Menetapkan Tergugat wajib memenuhi biaya kebutuhan, perkembangan dan pendidikan anak-anak minimal sebesar Rp.500.000,- per bulan sampai dengan anak tersebut dewasa"
+        )
+      )
+    ).toEqual(["nafkah-anak"]);
+    // Diktum bersusun (10091): hak asuh + nafkah anak + iddah dalam satu rangkaian.
+    expect(
+      kode(
+        petitum(
+          "Menetapkan Penggugat sebagai pemegang hak asuh atas ketiga anak Penggugat dan Tergugat",
+          "Menetapkan Tergugat wajib memenuhi biaya : a. untuk memenuhi biaya kebutuhan, perkembangan dan pendidikan minimal sebesar Rp.5.000.000,- per bulan sampai dengan anak tersebut dewasa; b. nafkah iddah sebesar Rp. 3.000.000 per bulan"
+        )
+      )
+    ).toEqual(["hak-asuh-anak", "nafkah-anak", "nafkah-iddah"]);
+  });
+
+  it("F1.4: biaya hidup/nafkah ISTRI yang kebetulan menyebut anak bukan nafkah anak; biaya perkara tidak ikut", () => {
+    expect(kode(petitum("Menghukum Tergugat membayar biaya hidup istri selama masa iddah, sementara anak tinggal bersama Tergugat"))).not.toContain(
+      "nafkah-anak"
+    );
+    expect(kode(petitum("Membebankan biaya perkara kepada negara melalui DIPA Pengadilan Agama Donggala tahun 2026 dan anak"))).toEqual([]);
+  });
+
   it("daftar anak berbutir disatukan dengan diktumnya (terukur 33/Pdt.G/2024/PA.Buk)", () => {
     const html =
       "<p>PRIMER:</p><p>Mengabulkan gugatan Penggugat;</p><p>Menetapkan anak dari perkawinan Penggugat dan Tergugat yang bernama : a. NURFADILAH (Perempuan) Lahir 13 Juni 2011; b. NUR FIKA (Perempuan) Lahir 29 Juli 2014; Tetap berada pada Penggugat</p><p>Membebankan biaya perkara ini menurut hukum;</p><p>SUBSIDER:</p>";

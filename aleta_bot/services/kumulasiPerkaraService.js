@@ -119,6 +119,15 @@ const POLA = {
     new RegExp(`\\bnafkah\\s+(?:\\S+\\s+){0,4}?${ANAK}\\b`),
     new RegExp(`\\b(?:biaya|nafkah)\\s+(?:hidup\\s+|pemeliharaan\\s+|pendidikan\\s+|kesehatan\\s+|kebutuhan\\s+)?(?:${HADHANAH})\\b`),
     new RegExp(`\\bbiaya\\s+(?:hidup|pemeliharaan|pendidikan|kebutuhan|nafkah|perawatan|sekolah)\\s+(?:\\S+\\s+){0,4}?${ANAK}\\b`),
+    // 16 Okt (F1.4): "biaya kebutuhan, perkembangan dan pendidikan [anak-anak]
+    // minimal sebesar Rp ... sampai dengan anak tersebut dewasa" (terukur 5
+    // dari 1.030 petitum cerai Donggala: 9711, 9718, 9839, 10091 lolos pola di
+    // atas karena koma menempel pada kata pertama dan celah daftar melebihi
+    // empat kata). Tanpa "istri", mut'ah, atau iddah di celahnya: nafkah istri
+    // yang kebetulan menyebut anak bukan nafkah anak.
+    new RegExp(
+      `\\b(?:biaya|nafkah)\\s+(?:hidup|pemeliharaan|pendidikan|kebutuhan|perawatan|sekolah)\\b(?:(?!\\bistri\\b|\\bmut'?ah\\b|\\bidd?ah\\b)[^;]){0,200}?\\b${ANAK}\\b`
+    ),
   ],
   // "Idah" sering NAMA ("Idah binti Lukaudju", terukur): ejaan satu-d hanya
   // dihitung bila didahului nafkah/uang/biaya/masa. Nama dalam kurung
