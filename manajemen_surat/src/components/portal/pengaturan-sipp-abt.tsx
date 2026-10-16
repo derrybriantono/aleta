@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { SetSaksiAleta } from "@/components/portal/set-saksi-aleta";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1029,6 +1030,7 @@ function BagianTemplat({ hakAwal }: { hakAwal: HakPengaturanAbt | null }) {
           </CardContent>
         </Card>
       ) : null}
+      <SetSaksiAleta />
     </div>
   );
 }

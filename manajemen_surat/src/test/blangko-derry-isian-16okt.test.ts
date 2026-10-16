@@ -30,6 +30,7 @@ import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
+import { tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
@@ -194,6 +195,11 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       return json({ ok: true, data: { hariIni: HARI_INI, mode: "hari", dari: HARI_INI, sampai: HARI_INI, lihatSemua: admin, nama: orang.nama, sebagaiNama: "", sebagaiPeran: null, terpotong: false, jumlahSemua: 1, adaYangCocok: true, akun: admin ? AKUN : null, perkara: polos(DAFTAR) } });
     }
     if (url.includes("/aleta-ecourt/sidang?nomor=")) return json({ ok: true, data: { sipp: { jadwalPerkara: [{ sidangId: "s2026-10-01", tanggalSidang: "2026-10-01", jamSidang: "09:00:00", agenda: "Sidang Pertama", alasanDitunda: "Panggil Tergugat", urutanSidang: 1 }, { sidangId: "s2026-10-15", tanggalSidang: "2026-10-15", jamSidang: "09:00:00", agenda: "Pemeriksaan pokok perkara", alasanDitunda: "putus DIKABULKAN (verstek)", urutanSidang: 2 }] } } });
+    if (url.includes("/aleta-ecourt/blangko-derry/set-saksi")) {
+      // F3.3: set pertanyaan saksi ALETA (rute sungguhan memanggil fungsi murni yang sama).
+      const q = new URL(url, ASAL).searchParams;
+      return json({ ok: true, data: { ...tawarkanSetSaksi({ namaJenis: q.get("jenis") || "", nomor: q.get("nomor") || "", folder: q.get("folder") || "", huruf: q.get("huruf") || "", sebutanP: q.get("sebutanP") || undefined, sebutanT: q.get("sebutanT") || undefined, jumlahP: Number(q.get("jumlahP")) || 1 }), sumberHuruf: "" } });
+    }
     if (url.includes("/aleta-ecourt/blangko-derry")) {
       const q = new URL(url, ASAL).searchParams;
       if (q.get("indeks") === "1") return json({ ok: true, data: { ada: true, akar: "derry_briantono", folder: [{ nama: "1 Perceraian CG", jenis: "put", berkas: [`${BLANGKO_PUT}.rtf`, "[02] [Kabul] CG - F.rtf"] }, { nama: "ALUR 02 Cerai Verstek 2 Sidang", jenis: "bas", berkas: [`${BLANGKO_BAS}.rtf`] }], sumber: "pohon", sebab: "" } });
@@ -500,6 +506,41 @@ describe("F. perlu diisi", () => {
     expect(idxCek).toBeLessThan(idxSimpan);
     expect(mintaKe(h, /tanyajawab_template\?hapus/)).toEqual([]);
     await sampai(() => /tersimpan di ABT/.test(akar(h).textContent || ""), "keterangan tersimpan");
+  });
+
+  it("F3.3 set pertanyaan saksi ALETA: disarankan menurut jenis perkara, dimuat ke dua saksi tanpa menulis ke ABT, tambahan disisipkan sebelum penutup", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    klik(h, '[data-tj="saksi 1 p"]');
+    const sel = (await sampai(() => q(h, '#bd-muattpl optgroup[label^="Panduan ALETA"]') && q(h, "#bd-muattpl"), "panduan ALETA")) as HTMLSelectElement;
+    const minta = mintaKe(h, /blangko-derry\/set-saksi\?/);
+    expect(minta.length).toBe(1);
+    const qs = new URL(minta[0].url, ASAL).searchParams;
+    expect([qs.get("jenis"), qs.get("perkaraId"), qs.get("sebutanP"), qs.get("sebutanT")]).toEqual(["Cerai Gugat", "10154", "Penggugat", "Tergugat"]);
+    // Pilihan pertama = set yang disarankan; set ABT tetap ada di kelompok sendiri.
+    expect(sel.value).toMatch(/^aleta:cerai-/);
+    expect(sel.options[0].textContent).toMatch(/disarankan$/);
+    expect(Array.from(sel.querySelectorAll('optgroup[label="Set yang tersimpan di ABT"] option')).map((o) => (o as HTMLOptionElement).value)).toEqual(["A1a"]);
+    expect(q(h, ".bd-setsaksi")!.textContent).toMatch(/Disarankan untuk perkara ini: Cerai - /);
+    // Muat: kedua saksi berisi set ALETA, belum tersimpan, tanpa load_template ke ABT.
+    const tersimpan = JSON.stringify(h.tj["5058"]);
+    sel.value = "aleta:cerai-F";
+    klik(h, '[data-bd2="muattpl"]');
+    await sampai(() => (q(h, '[data-sbq="0"]') as HTMLTextAreaElement)?.value === "Apakah Saudara kenal dengan Penggugat dan Tergugat?", "set ALETA termuat");
+    const n = qq(h, ".bd-sbrow").length;
+    expect(n).toBeGreaterThanOrEqual(15);
+    expect((q(h, `[data-sbq="${n - 1}"]`) as HTMLTextAreaElement).value).toBe("Apakah masih ada yang ingin Saudara sampaikan?");
+    expect((q(h, '[data-sba="0"][data-sk="1"]') as HTMLTextAreaElement).value).toBe("Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah ... Penggugat;");
+    expect(mintaKe(h, /tanyajawab_perkara_edit/, "POST")).toEqual([]);
+    expect(JSON.stringify(h.tj["5058"])).toBe(tersimpan);
+    // Tambahan hak asuh: disisipkan sebelum pertanyaan penutup; dapat diurungkan.
+    (q(h, "#bd-muattpl") as HTMLSelectElement).value = "aleta:tambah-hak-asuh";
+    klik(h, '[data-bd2="muattpl"]');
+    await sampai(() => qq(h, ".bd-sbrow").length > n, "tambahan");
+    const m = qq(h, ".bd-sbrow").length;
+    expect((q(h, `[data-sbq="${m - 1}"]`) as HTMLTextAreaElement).value).toBe("Apakah masih ada yang ingin Saudara sampaikan?");
+    expect((q(h, `[data-sbq="${n - 1}"]`) as HTMLTextAreaElement).value).toMatch(/nama dan berapa umur anak Penggugat dan Tergugat/);
+    expect(mintaKe(h, /tanyajawab_template\?hapus/)).toEqual([]);
   });
 
   it("Lihat semua isi data memuat nilai (semua=1); nama pihak disamarkan; kelengkapan dilaporkan ke daftar perkara", async () => {
