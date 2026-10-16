@@ -796,14 +796,75 @@ const POLA_PENUTUP = [
  */
 const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?(?:cukup|tidak\s+sanggup\s+lagi)\s*[;.]?$/i;
 
+/*
+ * ============================================================================
+ * 16 OKT 2026 (F1.3) - PENUTUP LENTUR: BENTUK APA PUN, ASAL SELURUH BARISNYA
+ * ============================================================================
+ *
+ * Daftar tegas di atas hanya mengenal "sudah cukup" dan "tidak sanggup lagi"
+ * yang berawalan tepat. Yang lolos (dilaporkan pengguna): "Bahwa saya tidak
+ * sanggup lagi", "Bahwa saksi tidak sanggup lagi", "Bahwa saksi sudah tidak
+ * sanggup lagi", "Bahwa cukup sekian", "Bahwa tidak ada lagi yang ingin
+ * disampaikan", dan jawaban dua bagian seperti "Tidak ada, sudah cukup"
+ * (7+6+3 jawaban di data satker).
+ *
+ * Aturannya sengaja SEMPIT di sisi yang lain: yang dibuang hanya baris yang
+ * SELURUHNYA terdiri dari kalimat penutup (subjek saya/saksi, kata sudah/
+ * telah, satu atau beberapa inti penutup, "terima kasih"). Satu kata di luar
+ * itu - "Sekian lama ia pergi", "sudah cukup lama berpisah", "tidak sanggup
+ * lagi merukunkan keduanya" - membuat baris itu BUKAN penutup dan tetap
+ * tinggal. "Tidak sanggup" tanpa kata "lagi" juga tidak dibuang: itu bisa
+ * jawaban atas "sanggupkah saksi mendamaikan?".
+ */
+const PENUTUP_SUBJEK = "(?:(?:saya|saksi|aku)\\s+)?";
+const PENUTUP_WAKTU = "(?:(?:sudah|telah|memang|sekarang)\\s+)*";
+const PENUTUP_KERJA = "(?:untuk\\s+)?(?:menjawab|memberi(?:kan)?\\s+keterangan|menerangkan|menjelaskan|melanjutkan|berbicara|bicara)";
+const PENUTUP_INTI = [
+  // cukup / cukup sekian / sekian / sampai di sini
+  "cukup(?:\\s+sekian)?(?:\\s+(?:saja|dulu|sampai\\s+di\\s+sini))?",
+  "sekian(?:\\s+(?:saja|dulu))?(?:\\s+(?:keterangan|jawaban)\\s+(?:saya|saksi))?",
+  "sampai\\s+di\\s+sini(?:\\s+saja)?",
+  // tidak sanggup lagi (kata "lagi" WAJIB, kecuali diikuti kata kerja menjawab/menerangkan)
+  "(?:tidak|belum)\\s+(?:sanggup|kuat|mampu)\\s+lagi(?:\\s+" + PENUTUP_KERJA + ")?",
+  "(?:tidak|belum)\\s+lagi\\s+(?:sanggup|kuat|mampu)(?:\\s+" + PENUTUP_KERJA + ")?",
+  "(?:tidak|belum)\\s+(?:sanggup|kuat|mampu)\\s+" + PENUTUP_KERJA + "(?:\\s+lagi)?",
+  // tidak ada lagi yang ingin disampaikan / tidak ada keterangan lain
+  "(?:sudah\\s+)?tidak\\s+ada\\s+(?:lagi\\s+)?(?:yang\\s+)?(?:(?:ingin|akan|hendak|mau|perlu|dapat|bisa)\\s+)?(?:(?:saya|saksi)\\s+)?(?:sampaikan|disampaikan|terangkan|diterangkan|tambahkan|ditambahkan|jelaskan|dijelaskan|katakan|dikatakan|ketahui|diketahui)(?:\\s+lagi)?",
+  "(?:sudah\\s+)?tidak\\s+ada\\s+(?:lagi\\s+)?(?:keterangan|jawaban|hal|tambahan)(?:\\s+(?:lain|tambahan|lagi))*(?:\\s+(?:dari|yang)\\s+(?:saya|saksi)(?:\\s+(?:sampaikan|terangkan|ketahui))?)?",
+  // hanya itu yang saya ketahui / demikian keterangan saya (kata ganti WAJIB)
+  "(?:hanya\\s+itu|itu\\s+saja|hanya\\s+demikian)(?:\\s+saja)?(?:\\s+yang)?\\s+(?:saya|saksi)\\s+(?:ketahui|terangkan|sampaikan|ketahui\\s+dan\\s+sampaikan)",
+  "demikian(?:\\s+saja)?\\s+(?:keterangan|jawaban)\\s+(?:saya|saksi)",
+];
+const PENUTUP_SATU = PENUTUP_SUBJEK + PENUTUP_WAKTU + "(?:" + PENUTUP_INTI.join("|") + ")";
+const POLA_PENUTUP_LENTUR = new RegExp(
+  "^(?:(?:tidak\\s+ada|tidak|ya|iya|baik)\\s*,\\s*)?" +
+    PENUTUP_SATU +
+    "(?:\\s*(?:,|dan|serta)\\s*" +
+    PENUTUP_SATU +
+    ")*(?:\\s*(?:,|dan)?\\s*terima\\s+kasih)?$",
+  "i"
+);
+
+/** Baris seluruhnya kalimat penutup (bentuk lentur)? Awalan "Bahwa" dan tanda baca ujung tidak dihitung. */
+function adalahKalimatPenutupSaksi(baris) {
+  const inti = String(baris || "")
+    .replace(/^[\s\-–•*]+/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^bahwa[\s,]*/i, "")
+    .replace(/[\s;.,!:]+$/, "")
+    .trim();
+  return inti !== "" && POLA_PENUTUP_LENTUR.test(inti);
+}
+
 function bersihkanKeteranganSaksi(teks) {
   const rapat = String(teks || "").replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
-  if (rapat && POLA_PENUTUP_UTUH.test(rapat)) return "";
+  if (rapat && (POLA_PENUTUP_UTUH.test(rapat) || adalahKalimatPenutupSaksi(rapat))) return "";
   const baris = String(teks || "").replace(/\r\n/g, "\n").split("\n");
   const disimpan = baris.filter((satu) => {
     const bersih = satu.replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
     if (bersih === "") return true; // baris kosong diurus di bawah
-    return !POLA_PENUTUP.some((pola) => pola.test(bersih));
+    return !POLA_PENUTUP.some((pola) => pola.test(bersih)) && !adalahKalimatPenutupSaksi(bersih);
   });
 
   return disimpan

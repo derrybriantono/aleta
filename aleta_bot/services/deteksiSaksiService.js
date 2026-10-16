@@ -411,7 +411,10 @@ function isiTemplat(teks, nilai) {
 const ROMAWI = ["", "I", "II", "III", "IV", "V", "VI"];
 
 /** Penutup pemeriksaan - sama dengan POLA_PENUTUP ekstensi (1.189.0), juga bentuk berawalan "saksi". */
-const POLA_PENUTUP_JAWAB = /^(?:bahwa\s+)?(?:saksi\s+|saya\s+)?(?:sudah\s+)?(?:cukup|tidak\s+sanggup\s+lagi|tidak\s+ada\s+lagi(?:\s+keterangan)?)\b[\s;.,]*$/i;
+const POLA_PENUTUP_JAWAB_BAKU = /^(?:bahwa\s+)?(?:saksi\s+|saya\s+)?(?:sudah\s+)?(?:cukup|tidak\s+sanggup\s+lagi|tidak\s+ada\s+lagi(?:\s+keterangan)?)\b[\s;.,]*$/i;
+// 16 Okt (F1.3): bentuk lentur - lihat penutupSaksi.js. Antarmukanya tetap .test(jawab).
+const { adalahKalimatPenutupSaksi } = require("./penutupSaksi");
+const POLA_PENUTUP_JAWAB = { test: (jawab) => POLA_PENUTUP_JAWAB_BAKU.test(jawab) || adalahKalimatPenutupSaksi(jawab) };
 const KELOMPOK_RINGKAS_DIBUANG = new Set(["maksud", "penutup", "sumpah", "keberatan"]);
 
 /** Seperti replace_ket_saksi ABT (Abt_model.php:855) - dicerminkan abtUsulanService.tiruanReplaceKetSaksi. */
