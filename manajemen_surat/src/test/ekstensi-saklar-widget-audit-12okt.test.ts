@@ -335,6 +335,11 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     { id: "suntingLangsungAbt", kunci: "suntingLangsungAbt", bawaan: false },
     { id: "checklistMilestone", kunci: "checklistMilestone", bawaan: false },
     { id: "modeLatihan", kunci: "modeLatihan", bawaan: false },
+    // Blangko ABT by Derry Briantono (16 Okt, tahap C).
+    { id: "derryBawaan", kunci: "blangkoDerryBawaan", bawaan: false },
+    { id: "derryTawar", kunci: "blangkoDerryTawar", bawaan: true },
+    { id: "derrySaran", kunci: "blangkoDerrySaran", bawaan: true },
+    { id: "derryIngat", kunci: "blangkoDerryIngat", bawaan: true },
   ];
 
   it.each(STATIS)("$id: kunci tak ada = bawaan ($bawaan); dibalik menulis $kunci, dibalik lagi kembali", async ({ id, kunci, bawaan }) => {
