@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   LANGKAH_KONSEPTOR,
   kelompokkanIsian,
+  bolehKoreksiMajelis,
   langkahUntukIsian,
   nilaiKemajuan,
   ringkasKemajuan,
@@ -102,9 +103,68 @@ describe("isian blangko -> langkah", () => {
     expect(langkahUntukIsian({ kode: "0156", nama: "Nama kantor advokat Penggugat" })).toBe("duduk");
   });
 
-  it("katalog: delapan langkah, koreksi majelis tanpa isian blangko", () => {
-    expect(LANGKAH_KONSEPTOR.map((l) => l.kode)).toEqual(["duduk", "bukti", "saksi", "kesimpulan", "pertimbangan", "amar", "biaya", "koreksi"]);
-    expect(LANGKAH_KONSEPTOR.find((l) => l.kode === "koreksi")!.dariBlangko).toBe(false);
+  it("katalog: delapan langkah tetap + tiga bersyarat (17 Okt butir 35); koreksi majelis tanpa isian blangko, hanya majelis", () => {
+    expect(LANGKAH_KONSEPTOR.filter((l) => !l.syarat).map((l) => l.kode)).toEqual(["duduk", "bukti", "saksi", "kesimpulan", "pertimbangan", "amar", "biaya", "koreksi"]);
+    expect(LANGKAH_KONSEPTOR.map((l) => l.kode)).toEqual(["duduk", "bukti", "saksi", "kesimpulan", "sela", "eksepsi", "pertimbangan", "rekonvensi", "amar", "biaya", "koreksi"]);
+    expect(LANGKAH_KONSEPTOR.filter((l) => l.syarat).map((l) => [l.kode, l.judul])).toEqual([
+      ["sela", "Putusan sela"],
+      ["eksepsi", "Eksepsi"],
+      ["rekonvensi", "Rekonvensi"],
+    ]);
+    const koreksi = LANGKAH_KONSEPTOR.find((l) => l.kode === "koreksi")!;
+    expect(koreksi.dariBlangko).toBe(false);
+    expect(koreksi.hanyaMajelis).toBe(true);
+  });
+
+  it("isian bernama eksepsi/rekonvensi ke langkahnya sendiri", () => {
+    expect(langkahUntukIsian({ nama: "Pertimbangan dalam eksepsi" })).toBe("eksepsi");
+    expect(langkahUntukIsian({ nama: "Amar dalam rekonvensi" })).toBe("rekonvensi");
+    expect(langkahUntukIsian({ nama: "Gugatan balik Tergugat" })).toBe("rekonvensi");
+  });
+});
+
+describe("17 Okt butir 35-36: langkah bersyarat & koreksi hanya majelis", () => {
+  const PADA = "2026-10-17T00:10:00.000Z";
+  const kode = (k: KemajuanKonseptor) => k.langkah.map((l) => l.kode);
+
+  it("Putusan sela / Eksepsi / Rekonvensi muncul HANYA bila perkaranya memilikinya", () => {
+    expect(kode(nilaiKemajuan({}, null))).not.toEqual(expect.arrayContaining(["sela"]));
+    expect(nilaiKemajuan({}, null).jumlah).toBe(8);
+    const k = nilaiKemajuan({}, null, { eksepsi: true, rekonvensi: false, sela: true });
+    expect(kode(k)).toEqual(["duduk", "bukti", "saksi", "kesimpulan", "sela", "eksepsi", "pertimbangan", "amar", "biaya", "koreksi"]);
+    expect(k.jumlah).toBe(10);
+    expect(k.langkah.find((l) => l.kode === "eksepsi")).toMatchObject({ syarat: "eksepsi", hanyaMajelis: false });
+    expect(k.keadaan).toEqual({ eksepsi: true, rekonvensi: false, sela: true });
+  });
+
+  it("langkah bersyarat yang SUDAH dicentang tetap tampil walau keadaannya tidak terbaca", () => {
+    const k = nilaiKemajuan({ rekonvensi: { selesai: true, oleh: "PP", pada: PADA, catatan: "" } }, null, null);
+    expect(kode(k)).toContain("rekonvensi");
+    expect(k.langkah.find((l) => l.kode === "rekonvensi")!.status).toBe("selesai");
+  });
+
+  it("isian eksepsi di blangko perkara TANPA eksepsi dilipat ke Pertimbangan hukum (tetap dihitung)", () => {
+    const isian = [
+      { kode: "x1", nama: "Pertimbangan eksepsi", terisi: false },
+      { kode: "8503", nama: "Pertimbangan", terisi: true },
+    ];
+    const b = { berkas: "[01]", terisi: 1, jumlah: 2, perLangkah: kelompokkanIsian(isian), oleh: "PP", pada: PADA };
+    const tanpa = nilaiKemajuan({}, b, { eksepsi: false });
+    expect(kode(tanpa)).not.toContain("eksepsi");
+    expect(tanpa.langkah.find((l) => l.kode === "pertimbangan")).toMatchObject({ status: "kosong", blangko: { jumlah: 2, terisi: 1, kosong: ["Pertimbangan eksepsi"] } });
+    const dengan = nilaiKemajuan({}, b, { eksepsi: true });
+    expect(dengan.langkah.find((l) => l.kode === "eksepsi")).toMatchObject({ status: "kosong", blangko: { jumlah: 1, terisi: 0 } });
+    expect(dengan.langkah.find((l) => l.kode === "pertimbangan")).toMatchObject({ status: "selesai", sumber: "blangko" });
+  });
+
+  it("bolehKoreksiMajelis: admin boleh; PP tidak; hakim hanya bila namanya di majelis aktif; majelis tak terbaca = menurut peran", () => {
+    expect(bolehKoreksiMajelis({ admin: true, hakim: false, namaAkun: "Admin", majelis: ["Hakim A"] }).boleh).toBe(true);
+    const pp = bolehKoreksiMajelis({ admin: false, hakim: false, namaAkun: "Muhammad Taufik", majelis: ["Hakim A"] });
+    expect(pp).toMatchObject({ boleh: false });
+    expect(pp.alasan).toMatch(/bukan panitera pengganti/);
+    expect(bolehKoreksiMajelis({ admin: false, hakim: true, namaAkun: "Hj. Nur Aisyah", majelis: ["Dra. Hj. Nur Aisyah, M.H.", "Hakim B"] }).boleh).toBe(true);
+    expect(bolehKoreksiMajelis({ admin: false, hakim: true, namaAkun: "Hakim Lain", majelis: ["Hakim A", "Hakim B"] })).toMatchObject({ boleh: false });
+    expect(bolehKoreksiMajelis({ admin: false, hakim: true, namaAkun: "Hakim Lain", majelis: null }).boleh).toBe(true);
   });
 });
 
@@ -143,7 +203,7 @@ describe("nilaiKemajuan - blangko kosong mengalahkan centang", () => {
   });
 
   it("siap dibacakan hanya bila SEMUA langkah selesai - termasuk koreksi majelis", () => {
-    const semua = Object.fromEntries(LANGKAH_KONSEPTOR.map((l) => [l.kode, { selesai: true, oleh: "x", pada: PADA, catatan: "" }]));
+    const semua = Object.fromEntries(LANGKAH_KONSEPTOR.filter((l) => !l.syarat).map((l) => [l.kode, { selesai: true, oleh: "x", pada: PADA, catatan: "" }]));
     expect(nilaiKemajuan(semua, null).siap).toBe(true);
     const tanpaKoreksi = { ...semua, koreksi: { selesai: false, oleh: "Ketua", pada: PADA, catatan: "" } };
     const k = nilaiKemajuan(tanpaKoreksi, null);
@@ -263,6 +323,63 @@ describe("penyimpanan dan rute (pg-mem berbenih)", () => {
     expect(peta["581"].kemajuan!.belum).not.toContain("Dikoreksi majelis");
     expect(peta["582"]).toBeUndefined();
   });
+
+  it("butir 36: 'Dikoreksi majelis' oleh PP ditolak 403 (langkah lain tetap boleh); hakim boleh", async () => {
+    aktor = "usr-ppg";
+    const tolak = await rute("/api/aleta-ecourt/konseptor-langkah", "POST", { perkaraId: "581", langkah: "koreksi", selesai: true });
+    expect(tolak.status).toBe(403);
+    expect(JSON.stringify(tolak.isi)).toMatch(/ketua atau anggota majelis/);
+    const lain = await rute("/api/aleta-ecourt/konseptor-langkah", "POST", { perkaraId: "581", langkah: "duduk", selesai: true });
+    expect(lain.status).toBe(200);
+    expect((lain.isi.data.kemajuan as KemajuanKonseptor).hakKoreksi).toBe(false);
+    aktor = "usr-hakim";
+    const boleh = await rute("/api/aleta-ecourt/konseptor-langkah", "POST", { perkaraId: "581", langkah: "koreksi", selesai: true });
+    expect(boleh.status).toBe(200);
+    const baca = await rute("/api/aleta-ecourt/konseptor-langkah?perkaraId=581", "GET");
+    expect((baca.isi.data.peta as Record<string, KemajuanKonseptor>)["581"].hakKoreksi).toBe(true);
+    // Bot tidak terhubung di uji: keadaan tidak terbaca, langkah bersyarat tidak dikarang.
+    expect(baca.isi.data.keadaanTerbaca).toBe(false);
+  });
+
+  it("butir 38: perkara tanpa tunjukan tetapi sudah punya centang ikut di `checklist` (bukan di `peta`)", async () => {
+    await simpanTandaLangkah(db!, { perkaraId: "583", langkah: "duduk", selesai: true, oleh: "PP" });
+    const r = await rute("/api/aleta-ecourt/konseptor-sementara?perkaraId=583,584", "GET");
+    expect((r.isi.data.peta as Record<string, unknown>)["583"]).toBeUndefined();
+    const c = r.isi.data.checklist as Record<string, { kemajuan?: { selesai: number; jumlah: number }; konseptorSipp: string[] }>;
+    expect(c["583"]).toMatchObject({ kemajuan: { selesai: 1, jumlah: 8 }, konseptorSipp: [] });
+    expect(c["584"]).toBeUndefined();
+  });
+});
+
+describe("bot konseptorKeadaanService (SIPP tiruan, SELECT saja)", () => {
+  const layanan = require(path.resolve(process.cwd(), "../aleta_bot/services/konseptorKeadaanService.js"));
+  it("eksepsi/rekonvensi/sela/majelis/konseptor SIPP per perkara; bagian gagal disebut", async () => {
+    const sql: string[] = [];
+    const d = {
+      kueri: async (q: string) => {
+        sql.push(q);
+        if (/FROM perkara WHERE/.test(q)) return [{ perkara_id: 581, nomor_perkara: "581/Pdt.G/2026/PA.Dgl" }, { perkara_id: 582, nomor_perkara: "582/Pdt.G/2026/PA.Dgl" }];
+        if (/perkara_rekonvensi/.test(q)) return [{ perkara_id: 582 }];
+        if (/perkara_putusan_sela/.test(q)) return [];
+        if (/perkara_jadwal_sidang/.test(q)) return [{ perkara_id: 581 }];
+        if (/perkara_hakim_pn/.test(q)) return [{ perkara_id: 581, hakim_nama: "Hakim A", jabatan_hakim_nama: "Ketua Majelis" }];
+        if (/perkara_proses/.test(q)) return [{ perkara_id: 582, pengguna: "panmud4" }];
+        return [];
+      },
+      tabelAda: async () => true,
+      kolomTerpilih: async () => ({ prosesTahapanId: "tahapan_id", prosesDiinputOleh: "diinput_oleh" }),
+      namaPengguna: async () => ({ panmud4: "Siti Konseptor" }),
+      tahapanPutusan: 210,
+      penandaJawaban: async () => ({ "581/Pdt.G/2026/PA.Dgl": { eksepsi: { keadaan: "ada" }, rekonvensi: { keadaan: "tidak" } } }),
+    };
+    const h = await layanan.buatLayanan(d).keadaanBanyak(["581", "582", "x"]);
+    expect(h.perkara["581"]).toMatchObject({ eksepsi: true, rekonvensi: false, sela: true, majelis: [{ nama: "Hakim A" }], konseptor: [] });
+    expect(h.perkara["582"]).toMatchObject({ eksepsi: false, rekonvensi: true, sela: false, konseptor: [{ pengguna: "panmud4", nama: "Siti Konseptor" }] });
+    expect(sql.every((q) => /^\s*SELECT/i.test(q))).toBe(true);
+    const gagal = await layanan.buatLayanan({ ...d, penandaJawaban: async () => { throw new Error("arsip mati"); } }).keadaanBanyak(["581"]);
+    expect(gagal.gagal).toEqual([{ bagian: "jawaban e-Court", sebab: "arsip mati" }]);
+    expect(gagal.perkara["581"].sela).toBe(true);
+  });
 });
 
 // ─── 5. Ekstensi ─────────────────────────────────────────────────────────────
@@ -338,6 +455,21 @@ describe("ekstensi: konseptor-langkah.js di ABT", () => {
     kotak.dispatchEvent(new Event("change", { bubbles: true }));
     await vi.advanceTimersByTimeAsync(0);
     expect(panggilan.at(-1)).toMatchObject({ method: "POST", body: { perkaraId: "581", langkah: "duduk", selesai: true } });
+  });
+
+  it("17 Okt: kartu ABT memuat langkah bersyarat dari rute; 'Dikoreksi majelis' terkunci bila hakKoreksi false", async () => {
+    const k = nilaiKemajuan({}, null, { rekonvensi: true }, false);
+    (globalThis as Record<string, unknown>).fetch = vi.fn(
+      async () => new Response(JSON.stringify({ ok: true, data: { ada: true, peta: { "581": k } } }), { status: 200, headers: { "content-type": "application/json" } })
+    );
+    alat.get("konseptor")!();
+    await vi.advanceTimersByTimeAsync(0);
+    const kartu = document.getElementById("bd-konseptor")!;
+    expect(kartu.querySelectorAll("[data-langkah]")).toHaveLength(9);
+    expect(kartu.querySelector('[data-langkah="rekonvensi"]')).not.toBeNull();
+    expect((kartu.querySelector('[data-kl-langkah="koreksi"]') as HTMLInputElement).disabled).toBe(true);
+    expect(kartu.querySelector('[data-langkah="koreksi"]')!.textContent).toContain("Dicentang ketua atau anggota majelis.");
+    expect((kartu.querySelector('[data-kl-langkah="rekonvensi"]') as HTMLInputElement).disabled).toBe(false);
   });
 });
 

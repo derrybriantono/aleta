@@ -5092,6 +5092,20 @@ router.post("/sipp/putusan-unggah", requireInternalToken, async (req, res) => {
   }
 });
 
+/* === 17OKT-F16: keadaan perkara untuk checklist konseptor (SELECT saja) === */
+router.get("/sipp/konseptor-keadaan", requireInternalToken, async (req, res) => {
+  try {
+    const id = String(req.query.perkaraId || "")
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    res.json(await require("../services/konseptorKeadaanService").keadaanBanyak(id));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/* === AKHIR 17OKT-F16 === */
+
 /* === 17OKT-F41: UNGGAH MASSAL e-DOC (putusan & BAS) === */
 // Daftar e-Doc yang menunggu dan cek dobel satu e-Doc: SELECT saja
 // (unggahMassalService). Unggah BAS satu sidang: menulis berkas + satu kolom

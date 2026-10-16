@@ -19,7 +19,10 @@
  *      siapa & kapan. Sama dengan yang dilihat majelis di Jadwal Sidang.
  *
  * Yang ditulis hanya basis data ALETA lewat rute portal; ABT dan SIPP tidak
- * disentuh. Aturan statusnya di portal (src/lib/konseptor-langkah.ts).
+ * disentuh. Aturan statusnya di portal (src/lib/konseptor-langkah.ts) -
+ * termasuk (17 Okt butir 35-36) langkah bersyarat Putusan sela / Eksepsi /
+ * Rekonvensi yang hanya dikirim bila perkaranya memilikinya, dan "Dikoreksi
+ * majelis" yang hanya dapat dicentang ketua/anggota majelis (hakKoreksi).
  */
 (function konseptorLangkahModul() {
   if (typeof globalThis === "undefined" || globalThis.aletaKonseptorLangkah) return;
@@ -140,13 +143,16 @@
       isi += `<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px">`;
       for (const l of r.langkah) {
         const warna = l.status === "selesai" ? "var(--ok)" : l.status === "kosong" ? "var(--warn)" : "var(--fg)";
+        // Butir 36: "Dikoreksi majelis" terkunci bagi yang bukan majelis perkara ini.
+        const terkunci = Boolean(l.hanyaMajelis) && r.hakKoreksi === false;
         let ket = "";
         if (l.status === "selesai") ket = `${l.sumber === "blangko" ? "terisi di blangko" : "selesai"}${l.oleh ? ` oleh ${esc(l.oleh)}` : ""}${l.pada ? `, ${esc(waktuSingkat(l.pada))}` : ""}`;
         else if (l.status === "kosong" && l.blangko)
           ket = `${l.blangko.jumlah - l.blangko.terisi} isian masih kosong${l.blangko.kosong.length ? `: ${esc(l.blangko.kosong.join(", "))}` : ""}`;
+        else if (terkunci) ket = "Dicentang ketua atau anggota majelis.";
         isi +=
           `<li data-langkah="${esc(l.kode)}" data-status="${esc(l.status)}" style="display:flex;gap:6px;align-items:flex-start">` +
-          `<input type="checkbox" data-kl-langkah="${esc(l.kode)}" ${l.dicentang ? "checked" : ""} aria-label="Tandai selesai: ${esc(l.judul)}" style="margin-top:3px">` +
+          `<input type="checkbox" data-kl-langkah="${esc(l.kode)}" ${l.dicentang ? "checked" : ""} ${terkunci ? 'disabled title="Hanya ketua atau anggota majelis perkara ini yang dapat mencentang."' : ""} aria-label="Tandai selesai: ${esc(l.judul)}" style="margin-top:3px">` +
           `<span><b style="color:${warna}" title="${esc(l.keterangan)}">${l.status === "selesai" ? "✓ " : ""}${esc(l.judul)}</b>` +
           (ket ? `<br><span style="font-size:.78rem;color:var(--muted)">${ket}</span>` : "") +
           `</span></li>`;
@@ -238,7 +244,12 @@
       });
       if (h && h.kemajuan) S.rinci = h.kemajuan;
     } catch (err) {
-      S.galat = err && err.status === 403 ? "Centang hanya oleh majelis dan panitera pengganti." : `Centang tidak tersimpan: ${String((err && err.message) || err)}`;
+      S.galat =
+        err && err.status === 403
+          ? langkah === "koreksi"
+            ? String((err && err.message) || "Hanya ketua atau anggota majelis yang dapat mencentang langkah ini.")
+            : "Centang hanya oleh majelis dan panitera pengganti."
+          : `Centang tidak tersimpan: ${String((err && err.message) || err)}`;
       el.checked = !el.checked;
     } finally {
       el.disabled = false;

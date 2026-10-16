@@ -6,7 +6,12 @@ import {
   bacaKonseptorSementara,
   simpanKonseptorSementara,
 } from "@/server/modules/aleta-ecourt/konseptor-sementara";
-import { bacaRingkasKemajuan } from "@/server/modules/aleta-ecourt/konseptor-langkah";
+import {
+  bacaKeadaanKonseptor,
+  bacaRingkasKemajuan,
+  keadaanDariBot,
+  perkaraBerchecklist,
+} from "@/server/modules/aleta-ecourt/konseptor-langkah";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -50,16 +55,38 @@ export async function GET(request: NextRequest) {
     // F1.6: ringkasan checklist ikut pada perkara yang punya tunjukan, supaya
     // Jadwal Sidang tidak memerlukan permintaan kedua. Gagal membacanya tidak
     // menghilangkan tunjukannya.
+    //
+    // Keputusan 17 Okt butir 35 & 38: keadaan perkara (eksepsi/rekonvensi/
+    // putusan sela -> langkah bersyarat) dan konseptor yang SUDAH tercatat di
+    // SIPP dibaca dari bot dalam SATU permintaan untuk seluruh daftar. Perkara
+    // tanpa tunjukan tetapi berkonseptor SIPP (atau sudah punya centang)
+    // mendapat checklist juga - di `checklist`, bukan di `peta`, sebab `peta`
+    // berarti tunjukan tangan.
     const bertunjukan = Object.keys(peta);
-    if (bertunjukan.length > 0) {
+    const checklist: Record<string, { kemajuan?: unknown; konseptorSipp: string[] }> = {};
+    const keadaan = await bacaKeadaanKonseptor(daftar);
+    let berchecklist = new Set<string>();
+    try {
+      berchecklist = await perkaraBerchecklist(db, daftar);
+    } catch {
+      /* tabel 0067 belum terpasang */
+    }
+    for (const pid of daftar) {
+      if (peta[pid]) continue;
+      const sipp = keadaan.peta[pid]?.konseptor ?? [];
+      if (sipp.length || berchecklist.has(pid)) checklist[pid] = { konseptorSipp: sipp.map((k) => k.nama).filter(Boolean) };
+    }
+    const dinilai = [...bertunjukan, ...Object.keys(checklist)];
+    if (dinilai.length > 0) {
       try {
-        const kemajuan = await bacaRingkasKemajuan(db, bertunjukan);
+        const kemajuan = await bacaRingkasKemajuan(db, dinilai, { keadaan: keadaan.terbaca ? keadaanDariBot(keadaan.peta) : undefined });
         for (const pid of bertunjukan) if (kemajuan[pid]) peta[pid] = { ...peta[pid], kemajuan: kemajuan[pid] };
+        for (const pid of Object.keys(checklist)) if (kemajuan[pid]) checklist[pid].kemajuan = kemajuan[pid];
       } catch {
         /* tabel 0067 belum terpasang - tunjukan tetap terbaca */
       }
     }
-    return ok({ ada: true, peta });
+    return ok({ ada: true, peta, checklist });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

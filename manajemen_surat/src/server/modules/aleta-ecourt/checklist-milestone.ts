@@ -28,7 +28,7 @@ import { butirChecklistKasir } from "@/lib/kasir-otomatis";
 import { bacaPengingatKasir } from "./kasir-otomatis";
 import { bolehMenetapkan } from "./kewenangan-penetapan";
 import { bacaSemuaKonseptorSementara } from "./konseptor-sementara";
-import { bacaRingkasKemajuan } from "./konseptor-langkah";
+import { bacaKeadaanKonseptor, bacaRingkasKemajuan, keadaanDariBot } from "./konseptor-langkah";
 import { type AkunSiapPakai, bacaPemetaanJabatan } from "./pemetaan-jabatan";
 import { bacaAntreanChecklist } from "./penunjukan-antrean";
 
@@ -412,7 +412,10 @@ async function bahanAleta(
       // F1.6: kemajuan checklist konseptor. Gagal membacanya (tabel 0067
       // belum terpasang) tidak menghilangkan butirnya.
       try {
-        const kemajuan = await bacaRingkasKemajuan(db, tambahan.konsep.map((t) => t.perkaraId));
+        // Butir 35 (17 Okt): keadaan perkara ikut supaya jumlah langkah sama dengan Jadwal Sidang.
+        const idKonsep = tambahan.konsep.map((t) => t.perkaraId);
+        const keadaan = await bacaKeadaanKonseptor(idKonsep);
+        const kemajuan = await bacaRingkasKemajuan(db, idKonsep, { keadaan: keadaan.terbaca ? keadaanDariBot(keadaan.peta) : undefined });
         for (const t of tambahan.konsep) if (kemajuan[t.perkaraId]) t.kemajuan = kemajuan[t.perkaraId];
       } catch {
         /* butir tetap tanpa kemajuan */
