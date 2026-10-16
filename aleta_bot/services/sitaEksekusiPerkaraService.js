@@ -100,6 +100,25 @@ const POLA_POSITA = /^(?:[a-z0-9]{1,2}[.)]\s*)?bahwa\b/;
 const POLA_POSITA_MOHON_SITA = /\bmemohon\b[^;]{0,200}?(?<![\w'’`])sita\b/;
 const POLA_ANGKAT = /\b(?:mengangkat|pengangkatan|diangkat|angkat)\s+(?:\S+\s+){0,1}$/;
 
+/**
+ * "Sita" sebagai NAMA orang ("Sita Wati binti Lamaru", terukur 16 Okt 2026 di
+ * salinan Donggala - dulu terbaca "Sita Wati Binti" sebagai jenis sita lain):
+ * - sesudahnya 0-3 kata nama lalu bin/binti/alias/als, atau koma + umur/lahir/NIK;
+ * - atau didahului sapaan/penyebut nama (bernama, saudari, an.).
+ * Kata nama tidak boleh kata sambung atau istilah jenis sita, agar
+ * "sita jaminan terhadap Ahmad bin ..." tetap Sita Jaminan.
+ */
+const POLA_SESUDAH_NAMA = /^((?:\s+[a-z'’-]+){0,3})\s*(?:\(?\s*(?:bin|binti|alias|als)\b|,\s*(?:umur|usia|lahir|tempat|tgl|tanggal\s+lahir|nik)\b)/;
+const POLA_SEBELUM_NAMA = /\b(?:bernama|nama|saudari|sdri|sdr|nona|an|a\.n|atas\s+nama)\.?\s*:?\s*$/;
+
+function sitaAdalahNama(diktum, m) {
+  if (POLA_SEBELUM_NAMA.test(diktum.slice(Math.max(0, m.index - 20), m.index))) return true;
+  const n = POLA_SESUDAH_NAMA.exec(diktum.slice(m.index + m[0].length, m.index + m[0].length + 60));
+  if (!n) return false;
+  const kata = n[1].split(/\s+/).filter(Boolean);
+  return !kata.some((w) => KATA_HENTI.has(w) || ISTILAH_JENIS.some(([, pola]) => pola.test(w)));
+}
+
 /** Kata sesudah "sita" yang bukan nama jenisnya. */
 const KATA_HENTI = new Set(
   "yang atas terhadap tersebut dalam oleh di diatas pada adalah sah dan ini itu untuk dengan sebagaimana dari ke berupa serta atau telah agar bagi seluruh semua".split(
@@ -189,6 +208,7 @@ function sitaDariPetitum(petitumHtml) {
     temuan.forEach((m, k) => {
       const mulai = m.index + m[0].length;
       if (POLA_ANGKAT.test(diktum.slice(Math.max(0, m.index - 30), m.index))) return;
+      if (sitaAdalahNama(diktum, m)) return;
       // Jendela: sampai kata sita berikutnya ("sita jaminan (cb) dan sita
       // rivindikatoir") atau 60 huruf.
       const berikut = temuan[k + 1] ? temuan[k + 1].index : diktum.length;

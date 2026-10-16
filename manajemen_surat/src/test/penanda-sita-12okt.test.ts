@@ -100,6 +100,17 @@ describe("petitum -> jenis sita (contoh nyata)", () => {
     expect(nama(petitum("putusan ini berlaku sebagai pengganti akta penyerahan/penyitaan fisik atas objek sengketa"))).toEqual([]);
   });
 
+  it("nama orang berawal 'Sita' (Sita Wati binti ..., 16 Okt) BUKAN sita; sita sungguhan dekat nama tetap terbaca", () => {
+    // Temuan L2 16 Okt (salinan Donggala): dulu terbaca "Sita Wati Binti".
+    expect(nama(petitum("Menetapkan Sita Wati binti Lamaru sebagai ahli waris almarhum"))).toEqual([]);
+    expect(nama(petitum("Menjatuhkan talak satu ba'in sughra Tergugat terhadap Penggugat Sita Wati Binti Lamaru"))).toEqual([]);
+    expect(nama(petitum("Mengizinkan Pemohon menikah dengan Sita alias Ita"))).toEqual([]);
+    expect(nama(petitum("Menetapkan anak bernama Sita Nurhaliza berada dalam pengasuhan Penggugat"))).toEqual([]);
+    expect(nama(petitum("Menetapkan Sita Rahma, umur 12 tahun, berada dalam pengasuhan Penggugat"))).toEqual([]);
+    expect(nama(petitum("Menyatakan sah dan berharga sita jaminan terhadap rumah milik Ahmad bin Laturu"))).toEqual(["Sita Jaminan"]);
+    expect(nama(petitum("Menyatakan sah sita marital atas tanah Sita Wati binti Lamaru"))).toEqual(["Sita Marital"]);
+  });
+
   it("butir menolak, subsider, dan pengangkatan sita tidak dihitung", () => {
     expect(nama(petitum("Menolak permohonan sita jaminan Penggugat"))).toEqual([]);
     expect(nama("<p>Primair: Mengabulkan gugatan;</p><p>Subsidair: menyatakan sah dan berharga sita jaminan;</p>")).toEqual([]);
