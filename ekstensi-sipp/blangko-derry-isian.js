@@ -1679,7 +1679,9 @@
     const s = S.pk && S.pk.sidangDipilih;
     const tanggal = s ? String(s.tanggal || s.tanggalSidang || "").slice(0, 10) : "";
     const id = perkaraId();
-    return /^\d+$/.test(id) && /^\d{4}-\d{2}-\d{2}$/.test(tanggal) ? { kunci: `${id}|${tanggal}`, id, tanggal } : null;
+    // Butir 49 (17 Okt): agenda ikut - kalimat BAS hanya untuk skors musyawarah sebelum putusan.
+    const agenda = s ? String(s.agenda || s.ket || "").slice(0, 200) : "";
+    return /^\d+$/.test(id) && /^\d{4}-\d{2}-\d{2}$/.test(tanggal) ? { kunci: `${id}|${tanggal}`, id, tanggal, agenda } : null;
   }
   async function muatSkorsBas() {
     const k = kunciSkorsBas();
@@ -1693,7 +1695,11 @@
     let riwayat = [];
     let kalimat = "";
     try {
-      const d = await ambilPortal(`${API_SKORS_SIDANG}?tanggal=${k.tanggal}&perkaraId=${encodeURIComponent(k.id)}`, {}, "Membaca skors sidang");
+      const d = await ambilPortal(
+        `${API_SKORS_SIDANG}?tanggal=${k.tanggal}&perkaraId=${encodeURIComponent(k.id)}${k.agenda ? `&agenda=${encodeURIComponent(k.agenda)}` : ""}`,
+        {},
+        "Membaca skors sidang"
+      );
       riwayat = d && Array.isArray(d.riwayat) ? d.riwayat.filter((x) => x && x.diskorsPada) : [];
       kalimat = d && typeof d.kalimatBas === "string" ? d.kalimatBas : "";
     } catch {

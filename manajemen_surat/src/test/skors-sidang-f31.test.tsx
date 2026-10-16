@@ -25,6 +25,7 @@ import {
   riwayatSkorsSidang,
   ringkasSkors,
   skorsPublikBerlaku,
+  skorsUntukBas,
   susunAlasanSkors,
   teksAlasanSkors,
   teksLama,
@@ -172,6 +173,28 @@ describe("usulan kalimat BAS dari riwayat skors satu sidang", () => {
     const k = kalimatSkorsBas([{ perkaraId: "7", tanggalSidang: HARI, diskorsPada: `${HARI} 13:00:00`, alasanKode: "lainnya", alasan: "Listrik padam" }]);
     expect(k).toBe("Pada pukul 13.00 WITA sidang diskors karena listrik padam, dan sidang belum dibuka kembali pada saat catatan ini dibuat.");
     expect(kalimatSkorsBas([])).toBe("");
+  });
+
+  it("butir 49 (17 Okt): BAS hanya mencatat skors musyawarah SEBELUM pengucapan putusan; skors lain tetap di ALETA", () => {
+    const r = riwayatSkorsSidang(riwayat, "7", HARI);
+    // Sidang berangenda putusan: hanya skors musyawarah yang diusulkan.
+    const putus = skorsUntukBas(r, "Pembacaan Putusan");
+    expect(putus.map((x) => x.alasanKode)).toEqual(["musyawarah"]);
+    expect(kalimatSkorsBas(putus)).toBe(
+      "Pada pukul 11.10 WITA sidang diskors untuk musyawarah majelis hakim, dan pada pukul 11.30 WITA skors dicabut dan sidang dibuka kembali."
+    );
+    // Sidang pembuktian: tidak ada yang diusulkan ke BAS, walau ada skors (termasuk musyawarah).
+    expect(skorsUntukBas(r, "Pembuktian saksi")).toEqual([]);
+    // Agenda tidak diketahui: cukup alasannya musyawarah.
+    expect(skorsUntukBas(r, "").map((x) => x.alasanKode)).toEqual(["musyawarah"]);
+    expect(skorsUntukBas(null, "Putusan")).toEqual([]);
+  });
+
+  it("rute GET skors memakai skorsUntukBas dengan agenda; Blangko Derry mengirim agendanya", () => {
+    const rute = baca("manajemen_surat/src/app/api/aleta-ecourt/sidang/skors/route.ts");
+    expect(rute).toContain("kalimatBas: kalimatSkorsBas(untukBas),");
+    expect(rute).toContain("const untukBas = skorsUntukBas(riwayat, agenda);");
+    expect(baca("ekstensi-sipp/blangko-derry-isian.js")).toContain("&agenda=${encodeURIComponent(k.agenda)}");
   });
 });
 
@@ -329,7 +352,7 @@ describe("ekstensi - widget Lama sidang dan Blangko Derry BAS", () => {
 
   it("Blangko Derry BAS: kartu skors hanya untuk BAS, membaca riwayat sidang terpilih, menyalin tanpa menulis ABT", () => {
     expect(DERRY).toContain('(S.blangko.jenis === "bas" ? `<div id="bd-skorsbas"></div>` : "")');
-    expect(DERRY).toContain("`${API_SKORS_SIDANG}?tanggal=${k.tanggal}&perkaraId=${encodeURIComponent(k.id)}`");
+    expect(DERRY).toContain("`${API_SKORS_SIDANG}?tanggal=${k.tanggal}&perkaraId=${encodeURIComponent(k.id)}${k.agenda ? `&agenda=${encodeURIComponent(k.agenda)}` : \"\"}`");
     expect(DERRY).toContain('if (kode === "salinskors") return void salinKalimatSkors();');
     // Kartu kosong bila sidang ini tidak pernah diskors (isian bersyarat).
     expect(DERRY).toContain("if (!sb || !sb.riwayat.length || !sb.kalimat) {");

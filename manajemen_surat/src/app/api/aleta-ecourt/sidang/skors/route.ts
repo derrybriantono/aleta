@@ -11,6 +11,7 @@ import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import {
   kalimatSkorsBas,
   riwayatSkorsSidang,
+  skorsUntukBas,
   kodeAlasanSah,
   ringkasSkors,
   type SkorsTercatat,
@@ -41,8 +42,11 @@ export const dynamic = "force-dynamic";
  * Daftar skors - F3.1 (17 Oktober 2026). Hanya membaca tabel ALETA lewat bot.
  *
  *   GET ?tanggal=YYYY-MM-DD                 semua skors hari itu (widget ekstensi)
- *   GET ?tanggal=YYYY-MM-DD&perkaraId=<id>  riwayat skors SATU sidang + usulan
- *                                           kalimat BAS (Blangko Derry BAS)
+ *   GET ?tanggal=YYYY-MM-DD&perkaraId=<id>[&agenda=]  riwayat skors SATU sidang +
+ *                                           usulan kalimat BAS (Blangko Derry BAS) -
+ *                                           butir 49 (17 Okt): kalimat hanya untuk skors
+ *                                           musyawarah sebelum pengucapan putusan
+ *                                           (skorsUntukBas); skors lain hanya riwayat.
  *
  * Kewenangan "panel" - sama dengan GET /sidang/selesai yang sudah memuat peta
  * skors yang berlaku. Tidak ada yang ditulis ke mana pun.
@@ -65,13 +69,17 @@ export async function GET(request: NextRequest) {
     const skors = Array.isArray(hasil.data.skors) ? hasil.data.skors : [];
     if (!perkaraId) return ok({ available: true, ok: hasil.data.ok !== false, tanggal, skors });
     const riwayat = riwayatSkorsSidang(skors, perkaraId, tanggal);
+    const agenda = String(request.nextUrl.searchParams.get("agenda") || "").slice(0, 200);
+    const untukBas = skorsUntukBas(riwayat, agenda);
     return ok({
       available: true,
       ok: hasil.data.ok !== false,
       tanggal,
       perkaraId,
       riwayat: riwayat.map((s) => ({ ...s, ringkas: ringkasSkors(s) })),
-      kalimatBas: kalimatSkorsBas(riwayat),
+      kalimatBas: kalimatSkorsBas(untukBas),
+      /** Skors yang tercatat di ALETA tetapi tidak dicatat di BAS (bukan musyawarah sebelum putusan). */
+      skorsBukanBas: riwayat.length - untukBas.length,
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {
