@@ -33,7 +33,9 @@
  *                   sita jaminan Pasal 261 RBg; sita marital Pasal 95 KHI bila TANPA
  *                   perceraian, Pasal 78 huruf c UU 7/1989 bila BERSAMA gugatan
  *                   perceraian - cerai 346/347 berkumulasi harta bersama, dibaca dari
- *                   SIPP/petitum), 9163 alasan permohonan sita
+ *                   SIPP/petitum; sita revindikasi Pasal 260 RBg). Sita marital atas harta
+ *                   WARISAN tidak berlaku: tidak pernah diusulkan, panel diberi catatan.
+ *                   9163 alasan permohonan sita
  *                   (kalimat posita), 9162 objek sita = objek sengketa yang dibaca
  *                   modul jenisnya (ragu: pemohon sita bisa memilih sebagian)
  *   Kewarisan       8719 bagian ahli waris HANYA bila petitum/posita menuliskan
@@ -233,12 +235,23 @@ function dasarSita(jenis, bersamaCerai, jenisId) {
       if (/jaminan/.test(j)) return "sita jaminan: Pasal 261 RBg";
       if (/marital/.test(j)) {
         if (bersamaCerai) return "sita marital bersamaan dengan gugatan perceraian: Pasal 78 huruf c UU 7/1989";
-        if (Number(jenisId) === 348) return "sita marital tanpa gugatan perceraian: Pasal 95 KHI";
-        return "sita marital atas harta warisan (bukan harta bersama) - perlu dicek pengguna";
+        return "sita marital tanpa gugatan perceraian: Pasal 95 KHI";
       }
-      return "sita revindikasi: Pasal 260 RBg - perlu dicek pengguna";
+      return "sita revindikasi: Pasal 260 RBg";
     })
     .join("; ");
+}
+
+/** Perkara harta WARISAN: sita marital tidak berlaku (keputusan pengguna 16 Okt) - tidak pernah diusulkan. */
+const JENIS_WARISAN = new Set([364, 365]);
+const CATATAN_MARITAL_WARISAN =
+  "Petitum/posita memohon sita marital atas harta warisan - sita marital hanya untuk harta bersama dan TIDAK berlaku untuk harta warisan; tidak diusulkan.";
+
+/** Catatan untuk panel bila sita marital dimohonkan atas harta warisan ("" bila tidak). */
+function peringatanSita(posita, petitum, jenisId) {
+  if (!JENIS_WARISAN.has(Number(jenisId))) return "";
+  const jenis = jenisSita(petitum).length ? jenisSita(petitum) : jenisSita(posita);
+  return jenis.some((j) => /marital/.test(j)) ? CATATAN_MARITAL_WARISAN : "";
 }
 
 /**
@@ -259,7 +272,9 @@ function kumulasiHartaBersama(petitum, kumulasi) {
 
 function deteksiSita(posita, petitum, jenisId, bersamaCerai = false) {
   const peta = {};
-  const jenis = jenisSita(petitum).length ? jenisSita(petitum) : jenisSita(posita);
+  let jenis = jenisSita(petitum).length ? jenisSita(petitum) : jenisSita(posita);
+  // Harta warisan: sita marital dibuang (lihat peringatanSita); bila hanya itu yang dimohonkan, tidak ada usulan sita.
+  if (JENIS_WARISAN.has(Number(jenisId))) jenis = jenis.filter((j) => !/marital/.test(j));
   if (!jenis.length) return peta;
   const kalJenis = (B.kalimat(B.polos(`${petitum} ${posita}`)).find((x) => /\bsita\b/i.test(x)) || "").slice(0, 400);
   B.taruh(peta, "9161", { ...B.fakta(jenis.join(" dan "), kalJenis, "ragu", "derry-sita-jenis"), catatan: `dasar: ${dasarSita(jenis, bersamaCerai, jenisId)}` });
@@ -394,6 +409,8 @@ async function lengkapiJenis(hasil, masukan = {}) {
     usulan.push(usulanDari(kode, isi));
     kodeBaru.push(kode);
   }
+  const peringatan = peringatanSita(posita, petitum || "", jenis);
+  if (peringatan) catatan.push(peringatan);
   if (!kodeBaru.length && !catatan.length) return hasil;
   if (kodeBaru.length) catatan.push(`${kodeBaru.length} variabel blangko Derry terbaca (ragu - periksa kalimat sumbernya).`);
   return {
@@ -415,6 +432,7 @@ module.exports = {
   deteksiWaliAdhal,
   jenisSita,
   dasarSita,
+  peringatanSita,
   kumulasiHartaBersama,
   alasanSita,
   bagianTertulis,

@@ -170,9 +170,19 @@ describe("dasar hukum sita menurut keadaan (keputusan pengguna 16 Okt)", () => {
     expect(h.usulan.find((u) => u.kode === "9161")!.catatan).toMatch(/Pasal 78 huruf c UU 7\/1989/);
   });
 
-  it("sita marital atas harta warisan dan sita revindikasi: perlu dicek pengguna", () => {
-    expect(D.deteksi(HB_POSITA, { jenisPerkara: 364, petitum: HB_PETITUM })["9161"].catatan).toMatch(/harta warisan.*perlu dicek pengguna/);
-    expect(D.deteksi("<p>x</p>", { jenisPerkara: 348, petitum: "<p>Menyatakan sah sita revindicatoir beslag</p>" })["9161"].catatan).toMatch(/Pasal 260 RBg - perlu dicek pengguna/);
+  it("sita revindikasi: Pasal 260 RBg", () => {
+    expect(D.deteksi("<p>x</p>", { jenisPerkara: 348, petitum: "<p>Menyatakan sah sita revindicatoir beslag</p>" })["9161"].catatan).toBe("dasar: sita revindikasi: Pasal 260 RBg");
+  });
+
+  it("sita marital atas harta WARISAN tidak pernah diusulkan; panel diberi catatan (398/Pdt.G/2021)", async () => {
+    const marital = "<p>Menyatakan sah dan berharga sita marital yang di letakkan atas harta warisan;</p>";
+    expect(D.deteksi(HB_POSITA, { jenisPerkara: 364, petitum: marital })).toEqual({});
+    const h = (await D.lengkapiJenis(null, { jalur: "posita-lain", posita: HB_POSITA, jenisPerkara: "364", petitum: marital }))!;
+    expect(h.usulan.some((u) => /^916[123]$/.test(u.kode))).toBe(false);
+    expect(h.catatan).toMatch(/sita marital hanya untuk harta bersama dan TIDAK berlaku untuk harta warisan/);
+    // Sita jaminan + marital: hanya sita jaminan yang diusulkan.
+    const f = D.deteksi(WARIS_POSITA_SITA, { jenisPerkara: 364, petitum: "<p>Menyatakan sah sita jaminan (CB) dan sita marital atas harta warisan;</p>" });
+    expect(f["9161"]).toMatchObject({ nilai: "sita jaminan (conservatoir beslag)", catatan: "dasar: sita jaminan: Pasal 261 RBg" });
   });
 });
 
