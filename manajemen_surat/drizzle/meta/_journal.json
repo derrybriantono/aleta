@@ -449,6 +449,13 @@
       "when": 1792152000001,
       "tag": "0066_aleta_abt_suntingan",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1792155600001,
+      "tag": "0067_aleta_konseptor_langkah",
+      "breakpoints": true
     }
   ]
 }

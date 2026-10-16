@@ -91,6 +91,10 @@ const BERKAS = [
   "abt-klien.js",
   "blangko-derry.js",
   "blangko-derry-isian.js",
+  // Checklist konseptor sementara (F1.6, 17 Okt 2026) - skrip konten ABT
+  // sesudah blangko-derry-isian.js: lapor isian blangko putusan ke portal dan
+  // alat "Checklist konseptor putusan" di menu Alat saya.
+  "konseptor-langkah.js",
   // SIPP dengan Ide ALETA gelombang 1 (tahap L1, 16 Okt 2026) - skrip konten
   // SIPP dan ABT, dimuat paling belakang: tombol Buka di ABT/ALETA, pita Isi
   // dengan ALETA, Putusan Akhir dari berkas, cek dobel e-Doc; di ABT menerima

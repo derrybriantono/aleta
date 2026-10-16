@@ -485,6 +485,36 @@ export const DDL_ABT_SUNTINGAN = {
   ],
 } as const;
 
+/**
+ * Checklist Konseptor Sementara (0067, 17 Okt 2026, F1.6): tanda selesai per
+ * langkah penyusunan draf putusan dan laporan isian Blangko Derry. Cermin
+ * PERSIS dari drizzle/0067_aleta_konseptor_langkah.sql; penjaga
+ * konseptor-langkah-f16.test.ts membandingkan keduanya.
+ */
+export const DDL_KONSEPTOR_LANGKAH = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_konseptor_langkah (
+  perkara_id TEXT NOT NULL,
+  langkah TEXT NOT NULL,
+  selesai INTEGER NOT NULL DEFAULT 0,
+  catatan TEXT NOT NULL DEFAULT '',
+  oleh TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  PRIMARY KEY (perkara_id, langkah)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_konseptor_blangko (
+  perkara_id TEXT PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  berkas TEXT NOT NULL DEFAULT '',
+  terisi INTEGER NOT NULL DEFAULT 0,
+  jumlah INTEGER NOT NULL DEFAULT 0,
+  per_langkah TEXT NOT NULL DEFAULT '{}',
+  oleh TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL
+)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1492,6 +1522,8 @@ const schemaStatements = [
   ...DDL_KAMUS_DETEKSI.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
+  // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
+  ...DDL_KONSEPTOR_LANGKAH.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

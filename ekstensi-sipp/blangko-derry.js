@@ -1146,6 +1146,7 @@
       ["saksi", "Set pertanyaan saksi"],
       ["ktp", "Tanggal KTP dari bukti"],
       ["cek", "Cek kelengkapan sebelum putus"],
+      ["konseptor", "Checklist konseptor putusan"],
       ["unggah", "Unggah putusan ke e-Doc SIPP"],
     ],
     pp: [
@@ -1153,6 +1154,7 @@
       ["gugatan", "Isi dari gugatan (posita)"],
       ["saksi", "Set pertanyaan saksi"],
       ["ktp", "Tanggal KTP dari bukti"],
+      ["konseptor", "Checklist konseptor putusan"],
       ["unggah", "Unggah BAS ke e-Doc SIPP"],
     ],
     js: [

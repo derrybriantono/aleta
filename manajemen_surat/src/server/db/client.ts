@@ -365,6 +365,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 16 Oktober 2026 (0066): cadangan & riwayat suntingan ABT dari halaman
   // Pengaturan SIPP & ABT. Tanpa kunci asing - urutannya bebas.
   "aleta_abt_suntingan",
+  // 17 Oktober 2026 (0067): checklist Konseptor Sementara - tanda langkah dan
+  // laporan isian Blangko Derry. Tanpa kunci asing - urutannya bebas.
+  "aleta_konseptor_langkah",
+  "aleta_konseptor_blangko",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

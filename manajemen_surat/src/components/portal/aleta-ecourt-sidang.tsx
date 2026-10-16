@@ -91,6 +91,7 @@ import { DaftarNamaSaksi } from "@/components/portal/panggil-saksi";
 import type { BahanPenandaBaris, IzinCeraiBaris, LencanaPekerjaanPihak, PenandaPerkaraBaris } from "@/lib/penanda-perkara-pihak";
 /* === AKHIR 12OKT-B === */
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
+import { ChecklistKonseptor, LencanaKesiapanPutusan } from "@/components/portal/checklist-konseptor"; /* F1.6 */
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
 import { pitaJarak, sebutanJarak } from "@/lib/jarak-antar-sidang";
 import {
@@ -7984,6 +7985,10 @@ export function AletaEcourtSidang({
                                 Hari Putusan
                               </span>
                             ) : null}
+                            {/* F1.6: kesiapan draf dari checklist konseptor sementara. */}
+                            {tampil(tampilan, "hari-putusan") && hariPutusan(baris) ? (
+                              <LencanaKesiapanPutusan kemajuan={tunjukan[String(baris.perkaraId)]?.kemajuan} />
+                            ) : null}
 
                             {/* ==============================================
                                 IKRAR TALAK - BIRU, MENGGANTIKAN YANG KUNING
@@ -8629,6 +8634,15 @@ export function AletaEcourtSidang({
                             onSimpan={() => void muatTunjukan()}
                             tampilKosong={tampil(tampilan, "tunjuk-konseptor")}
                           />
+                          {/* F1.6: checklist draf putusan - hanya bila konseptornya sudah ditunjuk. */}
+                          {tunjukan[String(baris.perkaraId)]?.nama ? (
+                            <ChecklistKonseptor
+                              perkaraId={String(baris.perkaraId)}
+                              nomorPerkara={baris.nomorPerkara}
+                              kemajuan={tunjukan[String(baris.perkaraId)]?.kemajuan}
+                              onBerubah={() => void muatTunjukan()}
+                            />
+                          ) : null}
                           {/* Butir 9: keterangan bebas, di BAWAH tunjuk
                               konseptor sebagaimana diminta. */}
                           <SelKeteranganPerkara

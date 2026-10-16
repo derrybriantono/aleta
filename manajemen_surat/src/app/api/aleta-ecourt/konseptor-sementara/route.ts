@@ -6,6 +6,7 @@ import {
   bacaKonseptorSementara,
   simpanKonseptorSementara,
 } from "@/server/modules/aleta-ecourt/konseptor-sementara";
+import { bacaRingkasKemajuan } from "@/server/modules/aleta-ecourt/konseptor-langkah";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -45,7 +46,20 @@ export async function GET(request: NextRequest) {
 
     if (daftar.length === 0) return ok({ ada: true, peta: {} });
 
-    return ok({ ada: true, peta: await bacaKonseptorSementara(db, daftar) });
+    const peta = await bacaKonseptorSementara(db, daftar);
+    // F1.6: ringkasan checklist ikut pada perkara yang punya tunjukan, supaya
+    // Jadwal Sidang tidak memerlukan permintaan kedua. Gagal membacanya tidak
+    // menghilangkan tunjukannya.
+    const bertunjukan = Object.keys(peta);
+    if (bertunjukan.length > 0) {
+      try {
+        const kemajuan = await bacaRingkasKemajuan(db, bertunjukan);
+        for (const pid of bertunjukan) if (kemajuan[pid]) peta[pid] = { ...peta[pid], kemajuan: kemajuan[pid] };
+      } catch {
+        /* tabel 0067 belum terpasang - tunjukan tetap terbaca */
+      }
+    }
+    return ok({ ada: true, peta });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

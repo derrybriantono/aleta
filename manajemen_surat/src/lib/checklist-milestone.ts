@@ -45,6 +45,7 @@ import {
 import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 import { agendaMusyawarah, hasilSidangBelumDicatat, sidangIkrar } from "@/lib/keadaan-sidang";
 import { bandingkanKonseptor } from "@/lib/konseptor-sementara";
+import { teksKesiapan, type RingkasKemajuan } from "@/lib/konseptor-langkah";
 import { PETA_ATURAN, STATUS_DIKABULKAN, type FaktaTenggat, tanggalIso } from "@/lib/penjaga-tenggat";
 import { JAM_BATAS_HASIL_SIDANG, waktuPengadilan } from "@/lib/waktu-pengadilan";
 
@@ -335,6 +336,8 @@ export type TunjukanKonsep = {
   pengguna: string;
   ditetapkanOleh: string;
   ditetapkanAt: string;
+  /** F1.6: ringkasan checklist langkah draf putusan (aleta_konseptor_langkah). */
+  kemajuan?: RingkasKemajuan;
 };
 
 // ============================================================================
@@ -822,7 +825,12 @@ const ATURAN: Record<string, (b: BahanAturan) => HasilJenis> = {
           `${t.ditetapkanAt ? `pada ${tglPendek(tanggalWitaDari(t.ditetapkanAt))}` : ""}; ` +
           (sasaran
             ? `sidang ${tglPendek(sasaran.tanggal)}${sasaran.agenda ? ` (${sasaran.agenda})` : ""}.`
-            : "belum ada sidang mendatang di SIPP."),
+            : "belum ada sidang mendatang di SIPP.") +
+          // F1.6: kemajuan checklist konseptor - langkah yang belum disebut.
+          (t.kemajuan
+            ? ` ${teksKesiapan(t.kemajuan)}` +
+              (t.kemajuan.siap ? "." : t.kemajuan.belum.length ? `; belum: ${t.kemajuan.belum.slice(0, 3).join(", ")}${t.kemajuan.belum.length > 3 ? ", …" : ""}.` : ".")
+            : ""),
       });
     }
     return { calon, selesaiHariIni };

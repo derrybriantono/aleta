@@ -422,13 +422,13 @@ describe("C. Alat saya per peran; Lihat sebagai akun", () => {
     const h = buka({ orang: "hakim" });
     await bukaTampilan(h);
     tekan(h, "#bd-alat-btn");
-    expect(alat(h)).toEqual(["putusanOto", "gugatan", "saksi", "ktp", "cek", "unggah"]);
+    expect(alat(h)).toEqual(["putusanOto", "gugatan", "saksi", "ktp", "cek", "konseptor", "unggah"]); // F1.6: checklist konseptor
     expect(grup(h)[0]).toContain("Hakim");
 
     const p = buka({ orang: "pp" });
     await bukaTampilan(p);
     tekan(p, "#bd-alat-btn");
-    expect(alat(p)).toEqual(["massal:bas", "gugatan", "saksi", "ktp", "unggah"]);
+    expect(alat(p)).toEqual(["massal:bas", "gugatan", "saksi", "ktp", "konseptor", "unggah"]); // F1.6
 
     const j = buka({ orang: "js" });
     await bukaTampilan(j);
@@ -497,7 +497,7 @@ describe("C. Alat saya per peran; Lihat sebagai akun", () => {
     await sampai(() => akarDari(h)!.querySelector("[data-pk]"), "daftar termuat ulang");
     expect(akarDari(h)!.querySelector("#bd-siapa")!.textContent).toContain("dilihat sebagai PP Satu");
     tekan(h, "#bd-alat-btn");
-    expect(alat(h)).toEqual(["massal:bas", "gugatan", "saksi", "ktp", "unggah"]);
+    expect(alat(h)).toEqual(["massal:bas", "gugatan", "saksi", "ktp", "konseptor", "unggah"]); // F1.6
   });
 });
 
