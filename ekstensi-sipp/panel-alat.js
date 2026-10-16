@@ -6165,6 +6165,294 @@ function alatPasangGulir(panel) {
   panel.addEventListener("focusin", tampakSebentar);
 }
 
+/* ─── REKAM SUSUNAN HALAMAN (Tahap K, 16 Okt 2026) ─────────────────────────
+ *
+ * Super Admin merekam BENTUK halaman SIPP yang sedang terbuka - termasuk
+ * jendela (popup_form, popup_form_2nd, ...) yang sedang tampil - lalu
+ * mengunduhnya sebagai JSON untuk dicek di kantor. Gunanya: SIPP di kantor
+ * (7.0.4) dapat berbeda dari salinan yang kodenya terbaca, dan letak tombol
+ * serta nama kolom harus pasti sebelum tombol "Buka di ABT"/"Isi dengan
+ * ALETA" dipasang (Tahap L-M).
+ *
+ * YANG DIREKAM hanya kerangka: tag, id, kelas, name, type, nama fungsi
+ * onclick, jalur alamat tautan (potongan bersandi diganti "<sandi>"), jumlah
+ * pilihan pada select, dan teks LABEL (judul kolom, label baris
+ * td#first-child, tombol, tab, judul jendela).
+ *
+ * YANG TIDAK PERNAH DIREKAM: nilai isian (value) input/select/textarea,
+ * teks pilihan select (bisa memuat nama hakim/pihak), isi sel data tabel,
+ * isi ckeditor, dan angka panjang (NIK, nomor HP, nomor perkara) - angka
+ * tiga digit atau lebih di teks label diganti "9". Panel ALETA sendiri
+ * (kelas aleta-*) dilewati.
+ */
+const ALAT_REKAM_VERSI = 1;
+const ALAT_REKAM_BATAS_ELEMEN = 4000;
+const ALAT_REKAM_TAG = new Set([
+  "FORM", "INPUT", "SELECT", "TEXTAREA", "BUTTON", "A", "TABLE", "IFRAME",
+  "UL", "LI", "LABEL", "TH", "LEGEND", "H1", "H2", "H3", "H4", "FIELDSET",
+]);
+
+/** Teks label yang aman: angka panjang disamarkan, spasi dirapikan, dipotong. */
+function alatRekamTeks(teks) {
+  let t = String(teks || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  t = t.replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "<surel>");
+  t = t.replace(/\d{3,}/g, (m) => "9".repeat(Math.min(m.length, 4)));
+  return t.length > 60 ? `${t.slice(0, 57)}...` : t;
+}
+
+/** Jalur alamat tanpa potongan bersandi/angka - pola rute, bukan perkaranya. */
+function alatRekamJalur(alamat) {
+  const a = String(alamat || "").trim();
+  if (!a || /^javascript:/i.test(a)) return a ? "javascript:" : "";
+  if (a.startsWith("#")) return a.slice(0, 40);
+  let jalur = a;
+  try {
+    jalur = new URL(a, window.location.href).pathname;
+  } catch {
+    jalur = a.split(/[?#]/)[0];
+  }
+  return jalur
+    .split("/")
+    // Sandi SIPP (base64 id perkara) = panjang DAN bercampur angka, atau
+    // memuat = / %. Nama rute ("managePutusanAkhir", "perkara_detil_agama")
+    // panjang tetapi tanpa angka - itu yang justru hendak dibaca.
+    .map((s) =>
+      /^\d+$/.test(s)
+        ? "<angka>"
+        : s.length > 48 || /[=%]/.test(s) || (s.length >= 12 && /\d/.test(s) && /[A-Za-z]/.test(s))
+          ? "<sandi>"
+          : s
+    )
+    .join("/")
+    .slice(0, 160);
+}
+
+/** Nama fungsi pada onclick/onchange saja - argumennya memuat alamat bersandi. */
+function alatRekamFungsi(teks) {
+  const s = String(teks || "");
+  const nama = [];
+  for (const m of s.matchAll(/([A-Za-z_$][\w$.]*)\s*\(/g)) {
+    if (!/^(if|for|while|return|function|base_url|site_url)$/.test(m[1]) && !nama.includes(m[1])) nama.push(m[1]);
+  }
+  const jalur = /['"]([^'"]*\/[^'"]*)['"]/.exec(s);
+  return { fungsi: nama.slice(0, 4), jalur: jalur ? alatRekamJalur(jalur[1]) : "" };
+}
+
+/**
+ * Elemen buatan ALETA (panel, widget, tombol sisipan)? Elemen SIPP yang hanya
+ * DIHIAS kelas aleta-* (sorotan kolom, body saat mengubah ukuran) tetap SIPP -
+ * yang dilewati hanya elemen yang dirinya, atau wadah DIV/SPAN di atasnya,
+ * berkelas/beridentitas aleta.
+ */
+function alatRekamMilikAleta(el) {
+  for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    if (/aleta/i.test(n.tagName)) return true;
+    if (/^aleta/i.test(n.id || "")) return true;
+    // Buatan ALETA = SELURUH kelasnya aleta-*. Elemen SIPP yang dihias tetap
+    // membawa kelas SIPP-nya ("popup", "custom-dropdown__select") atau name SIPP.
+    const kelas = String(n.getAttribute("class") || "").split(/\s+/).filter(Boolean);
+    const semuaAleta = kelas.length > 0 && kelas.every((k) => /^aleta/.test(k));
+    const nama = String(n.getAttribute("name") || "");
+    if (semuaAleta && (!nama || /^aleta/i.test(nama))) return true;
+  }
+  return false;
+}
+
+/** Lapisan jendela SIPP tempat elemen ini berada: halaman, popup_form, popup_form_2nd, ... */
+function alatRekamLapisan(el) {
+  const jendela = el.closest && el.closest('[id^="popup_form"], [id^="popup_msg"], [id^="popup_message"]');
+  return jendela ? jendela.id : "halaman";
+}
+
+/** Penunjuk CSS pendek untuk elemen ini (id terdekat + tag/kelas pertama). */
+function alatRekamPenunjuk(el) {
+  const bagian = [];
+  let n = el;
+  for (let i = 0; n && n.nodeType === 1 && i < 4; i += 1, n = n.parentElement) {
+    let s = n.tagName.toLowerCase();
+    if (n.id && !/\d{3,}/.test(n.id)) {
+      bagian.unshift(`${s}#${n.id}`);
+      break;
+    }
+    const kelas = String(n.getAttribute("class") || "").split(/\s+/).filter((k) => k && !/^aleta/.test(k))[0];
+    if (kelas) s += `.${kelas}`;
+    if (n.getAttribute("name")) s += `[name="${n.getAttribute("name")}"]`;
+    bagian.unshift(s);
+  }
+  return bagian.join(" > ");
+}
+
+function alatRekamTampak(el) {
+  if (el.hidden) return false;
+  const gaya = el.ownerDocument && el.ownerDocument.defaultView && el.ownerDocument.defaultView.getComputedStyle
+    ? el.ownerDocument.defaultView.getComputedStyle(el)
+    : null;
+  if (gaya && (gaya.display === "none" || gaya.visibility === "hidden")) return false;
+  return !(el.closest && el.closest('[style*="display:none"], [style*="display: none"]'));
+}
+
+/** Teks label milik elemen ini - HANYA untuk jenis elemen yang memang label. */
+function alatRekamLabel(el) {
+  const tag = el.tagName;
+  const jenis = String(el.getAttribute("type") || "").toLowerCase();
+  if (tag === "INPUT") return ["button", "submit", "reset"].includes(jenis) ? alatRekamTeks(el.getAttribute("value")) : "";
+  if (tag === "SELECT" || tag === "TEXTAREA" || tag === "TABLE" || tag === "FORM" || tag === "UL" || tag === "IFRAME" || tag === "FIELDSET") return "";
+  if (tag === "A") {
+    const tombolan = /\bbtn\b/.test(el.className || "") || el.getAttribute("onclick") || (el.closest && el.closest("li, #submenus, .tab"));
+    return tombolan ? alatRekamTeks(el.textContent) : "";
+  }
+  if (tag === "LI") return "";
+  return alatRekamTeks(el.textContent);
+}
+
+/** Label baris borang SIPP: <td id="first-child">Tanggal Putusan</td> di baris yang sama. */
+function alatRekamLabelBaris(el) {
+  const baris = el.closest && el.closest("tr");
+  if (!baris) return "";
+  const kepala = baris.querySelector('td#first-child, td.first-child, th');
+  if (!kepala || kepala.contains(el)) return "";
+  return alatRekamTeks(kepala.textContent);
+}
+
+/**
+ * Rekam susunan dokumen `doc` (bawaan: halaman ini). Hasilnya objek polos
+ * yang aman dijadikan JSON - lihat catatan di atas tentang yang TIDAK direkam.
+ */
+function alatRekamSusunan(doc, opsi) {
+  const d = doc || document;
+  const pilihan = opsi || {};
+  const elemen = [];
+  const hitung = {};
+  let terpotong = false;
+  for (const el of Array.from(d.querySelectorAll("*"))) {
+    if (!ALAT_REKAM_TAG.has(el.tagName)) continue;
+    if (alatRekamMilikAleta(el)) continue;
+    if (el.tagName === "TH" && !el.textContent.trim()) continue;
+    if (el.tagName === "A" && !el.id && !el.getAttribute("onclick") && !/\bbtn\b/.test(el.className || "") && !(el.closest && el.closest("li, #submenus"))) continue;
+    if (elemen.length >= ALAT_REKAM_BATAS_ELEMEN) {
+      terpotong = true;
+      break;
+    }
+    const tag = el.tagName.toLowerCase();
+    hitung[tag] = (hitung[tag] || 0) + 1;
+    const r = { tag, lapisan: alatRekamLapisan(el), penunjuk: alatRekamPenunjuk(el) };
+    if (el.id) r.id = el.id;
+    const kelas = String(el.getAttribute("class") || "").split(/\s+/).filter((k) => k && !/^aleta/.test(k));
+    if (kelas.length) r.kelas = kelas.slice(0, 8);
+    if (el.getAttribute("name")) r.name = el.getAttribute("name");
+    if (el.getAttribute("type")) r.type = String(el.getAttribute("type")).toLowerCase();
+    if (tag === "form") {
+      r.aksi = alatRekamJalur(el.getAttribute("action"));
+      r.cara = String(el.getAttribute("method") || "get").toLowerCase();
+      r.jumlahKolom = el.querySelectorAll("input, select, textarea").length;
+    }
+    if (tag === "a" && el.getAttribute("href")) r.href = alatRekamJalur(el.getAttribute("href"));
+    for (const peristiwa of ["onclick", "onchange", "onsubmit"]) {
+      if (el.getAttribute(peristiwa)) r[peristiwa] = alatRekamFungsi(el.getAttribute(peristiwa));
+    }
+    if (tag === "select") {
+      r.jumlahPilihan = el.options ? el.options.length : el.querySelectorAll("option").length;
+      if (el.multiple) r.banyak = true;
+    }
+    if (tag === "input" || tag === "select" || tag === "textarea") {
+      if (el.disabled) r.mati = true;
+      if (el.readOnly) r.hanyaBaca = true;
+      if (el.required) r.wajib = true;
+      const lb = alatRekamLabelBaris(el);
+      if (lb) r.labelBaris = lb;
+    }
+    if (tag === "table") {
+      const judul = Array.from(el.querySelectorAll("th")).slice(0, 20).map((th) => alatRekamTeks(th.textContent)).filter(Boolean);
+      if (judul.length) r.judulKolom = judul;
+      r.jumlahBaris = el.rows ? el.rows.length : el.querySelectorAll("tr").length;
+      const labelBaris = Array.from(el.querySelectorAll("td#first-child, td.first-child")).slice(0, 60).map((td) => alatRekamTeks(td.textContent)).filter(Boolean);
+      if (labelBaris.length) r.labelBaris = labelBaris;
+    }
+    const label = alatRekamLabel(el);
+    if (label) r.label = label;
+    r.tampak = alatRekamTampak(el);
+    elemen.push(r);
+  }
+
+  // Fungsi JS dan alamat AJAX dari skrip sebaris - nama dan pola rute saja.
+  const fungsi = new Set();
+  const ajax = new Set();
+  for (const s of Array.from(d.querySelectorAll("script:not([src])"))) {
+    const teks = String(s.textContent || "");
+    for (const m of teks.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\(/g)) fungsi.add(m[1]);
+    for (const m of teks.matchAll(/(?:url\s*:|\.load\(|\.post\(|\.get\(|popup_form\w*\()\s*['"]([^'"]{3,200})['"]/g)) {
+      const j = alatRekamJalur(m[1]);
+      if (j && j !== "javascript:") ajax.add(j);
+    }
+  }
+  const skripLuar = Array.from(d.querySelectorAll("script[src]"))
+    .map((s) => alatRekamJalur(s.getAttribute("src")))
+    .filter(Boolean)
+    .slice(0, 60);
+
+  // Versi SIPP bila tertulis di halaman (kaki/kepala), mis. "SIPP Versi 7.0.4".
+  const teksBadan = String((d.body && d.body.textContent) || "");
+  const versi = /SIPP[^0-9]{0,30}(\d+\.\d+\.\d+)/i.exec(teksBadan) || /Versi\s*(\d+\.\d+\.\d+)/i.exec(teksBadan);
+
+  let versiEkstensi = "";
+  try {
+    versiEkstensi = String(chrome.runtime.getManifest().version || "");
+  } catch {
+    versiEkstensi = "";
+  }
+  const lokasi = (d.defaultView && d.defaultView.location) || window.location;
+  return {
+    jenis: "aleta-rekam-susunan",
+    versiRekam: ALAT_REKAM_VERSI,
+    dibuat: new Date().toISOString(),
+    ekstensi: versiEkstensi,
+    situs: /\/aps_badilag\//.test(lokasi.pathname) ? "abt" : /\/aleta\//.test(lokasi.pathname) ? "aleta" : "sipp",
+    inang: String(lokasi.host || ""),
+    halaman: alatRekamJalur(lokasi.pathname),
+    judul: alatRekamTeks(d.title),
+    versiSipp: versi ? versi[1] : "",
+    catatan: pilihan.catatan ? alatRekamTeks(pilihan.catatan) : "",
+    jendelaTerbuka: Array.from(d.querySelectorAll('[id^="popup_form"]')).map((j) => j.id),
+    ringkas: hitung,
+    terpotong,
+    elemen,
+    fungsiJs: Array.from(fungsi).sort().slice(0, 400),
+    alamatAjax: Array.from(ajax).sort().slice(0, 300),
+    skripLuar,
+  };
+}
+
+/** Nama berkas unduhan: rekam-sipp-<halaman>-<tanggal-jam>.json */
+function alatRekamNamaBerkas(rekaman) {
+  const r = rekaman || {};
+  const halaman = String(r.halaman || "halaman")
+    .split("/")
+    .filter((s) => s && s !== "index.php" && s !== "SIPP" && s !== "<sandi>" && s !== "<angka>")
+    .slice(0, 2)
+    .join("-")
+    .replace(/[^A-Za-z0-9_-]+/g, "")
+    .slice(0, 40) || "halaman";
+  const w = String(r.dibuat || new Date().toISOString()).replace(/[-:]/g, "").replace("T", "-").slice(0, 13);
+  return `rekam-${r.situs || "sipp"}-${halaman}-${w}.json`;
+}
+
+/** Mengunduh rekaman sebagai berkas JSON lewat tautan sementara. */
+function alatRekamUnduh(rekaman) {
+  const teks = JSON.stringify(rekaman, null, 1);
+  const blob = new Blob([teks], { type: "application/json" });
+  const alamat = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = alamat;
+  a.download = alatRekamNamaBerkas(rekaman);
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(alamat), 4000);
+  return a.download;
+}
+
 /* ─── LACI PERKAKAS: SATU TEMPAT, BUKAN TUJUH TOMBOL ────────────────────────
  *
  * Ketujuh alat tidak mendapat tombolnya sendiri-sendiri di kepala panel.
@@ -6280,6 +6568,51 @@ function alatLaciPerkakas(panel, opsi) {
         "Medan tetap diisi supaya dapat diperiksa; yang ditahan hanya penekanan Simpan milik SIPP dan pengiriman ke ALETA."
       )
     );
+
+    // --- Rekam susunan halaman (Tahap K) -------------------------------------
+    const isiRekam = kelompok("Rekam susunan halaman");
+    isiRekam.appendChild(
+      alatEl(
+        "div",
+        "aleta-perkakas-ket",
+        "Menyimpan bentuk halaman ini (tombol, kolom isian, tabel, jendela yang sedang terbuka) sebagai berkas JSON untuk diperiksa. Isi kolom, nama pihak, NIK, dan angka panjang tidak ikut disimpan. Buka dulu jendela SIPP yang ingin direkam, lalu tekan tombolnya."
+      )
+    );
+    const tombolRekam = alatEl("button", "aleta-perkakas-aksi aleta-rekam-unduh", "Rekam & unduh JSON");
+    tombolRekam.type = "button";
+    const tombolRekamSalin = alatEl("button", "aleta-perkakas-aksi aleta-rekam-salin", "Rekam & salin");
+    tombolRekamSalin.type = "button";
+    tombolRekam.addEventListener("click", () => {
+      try {
+        const rekaman = alatRekamSusunan(document, { catatan: pilihan.perkara ? "perkara terbuka" : "" });
+        const nama = alatRekamUnduh(rekaman);
+        alatCatat("rekam", `rekam susunan ${rekaman.halaman}`, `${rekaman.elemen.length} elemen`);
+        beritahu(`Berkas ${nama} diunduh: ${rekaman.elemen.length} bagian halaman${rekaman.jendelaTerbuka.length ? `, jendela ${rekaman.jendelaTerbuka.join(", ")}` : ""}.`);
+      } catch (galat) {
+        beritahu(`Rekaman gagal: ${(galat && galat.message) || galat}`, true);
+      }
+    });
+    tombolRekamSalin.addEventListener("click", async () => {
+      try {
+        const rekaman = alatRekamSusunan(document, {});
+        const teks = JSON.stringify(rekaman, null, 1);
+        if (await alatSalin(teks)) {
+          beritahu(`Rekaman disalin (${rekaman.elemen.length} bagian halaman). Tempel saja ke chat atau berkas.`);
+          return;
+        }
+        const kotakTeks = alatEl("textarea", "aleta-perkakas-laporan");
+        kotakTeks.value = teks;
+        kotakTeks.readOnly = true;
+        isiRekam.appendChild(kotakTeks);
+        kotakTeks.focus();
+        kotakTeks.select();
+        beritahu("Papan klip ditolak peramban. Rekamannya tersorot di bawah - tekan Ctrl+C.", true);
+      } catch (galat) {
+        beritahu(`Rekaman gagal: ${(galat && galat.message) || galat}`, true);
+      }
+    });
+    isiRekam.appendChild(tombolRekam);
+    isiRekam.appendChild(tombolRekamSalin);
 
     // --- Penunjuk ------------------------------------------------------------
     const isiPenunjuk = kelompok("Penunjuk halaman");
