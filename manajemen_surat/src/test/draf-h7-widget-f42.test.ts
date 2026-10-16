@@ -245,8 +245,15 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
     await sampai(() => q(h, ".aleta-cmw-tumpuk-klasik [data-draf-h7-widget] .aleta-cmw-kh-chip"), "kotak di tumpukan Baru");
   });
 
-  it("saklar popup mati (bawaan): tanpa kotak dan tanpa permintaan; dinyalakan/dimatikan tanpa muat ulang", async () => {
+  it("butir 41 (17 Okt): saklar belum disentuh = MENYALA di UI Baru, kotak TERLIPAT di dok kiri bawah", async () => {
     const h = buka({ ujiTampilan: "ui", widgetDrafH7: undefined });
+    const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-draf-h7-widget]"), "kotak di dok");
+    expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
+    expect(kotak.querySelector(".aleta-lipat-kepala").getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("saklar popup dimatikan: tanpa kotak dan tanpa permintaan; dinyalakan/dimatikan tanpa muat ulang", async () => {
+    const h = buka({ ujiTampilan: "ui", widgetDrafH7: false });
     await sampai(() => q(h, ".aleta-cmw-dok"), "dok UI Baru");
     await tunggu(150);
     expect(q(h, "[data-draf-h7-widget]")).toBeNull();
@@ -276,11 +283,12 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
 });
 
 describe("saklar popup widgetDrafH7 terdaftar di semua tempat", () => {
-  it("popup.html, popup.js (saklar, setelan akun, bawaan mati, ringkas, kelompok Portal), latar.js", () => {
+  it("popup.html, popup.js (saklar, setelan akun, bawaan MENYALA - butir 41, ringkas, kelompok Portal), latar.js", () => {
     expect(baca("popup.html")).toContain('id="widgetDrafH7"');
     const p = baca("popup.js");
-    expect(p).toContain('widgetDrafH7: ["widgetDrafH7", false]');
-    expect(p).toContain("widgetDrafH7: false,");
+    expect(p).toContain('widgetDrafH7: ["widgetDrafH7", true]');
+    expect(p).toContain("widgetDrafH7: true,");
+    expect(p).toContain('widgetKehadiran: ["widgetKehadiran", true]');
     expect(p).toContain('isi: ["checklistMilestone", "widgetKehadiran", "widgetDrafH7"]');
     expect(p.match(/"widgetDrafH7",/g)?.length).toBeGreaterThanOrEqual(1);
     expect(baca("latar.js")).toContain('"widgetDrafH7",');
