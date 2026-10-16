@@ -119,7 +119,7 @@ describe("sita (9161-9163) dan bagian waris (8719)", () => {
   it("kewarisan: 9161 dari petitum, 9163 dari posita, 9162 = objek sengketa modul waris; semua ragu + dasar hukum", () => {
     const f = D.deteksi(WARIS_POSITA_SITA, { jenisPerkara: 364, petitum: WARIS_PETITUM_SITA });
     expect(f["9161"]).toMatchObject({ nilai: "sita jaminan (conservatoir beslag)", yakin: "ragu" });
-    expect(f["9161"].catatan).toMatch(/Pasal 261 RBg.*perlu dicek pengguna/);
+    expect(f["9161"].catatan).toBe("dasar: sita jaminan: Pasal 261 RBg");
     expect(f["9163"].nilai).toMatch(/memindah tangankan objek sengketa/);
     for (const k of Object.keys(f)) expect(f[k].yakin).toBe("ragu");
     expect(f["8719"]).toBeUndefined(); // "bagian/kadar ... menurut Hukum Waris Islam" bukan pecahan tertulis
@@ -140,13 +140,74 @@ describe("sita (9161-9163) dan bagian waris (8719)", () => {
   });
 });
 
-describe("waris.js: 1247 sebab wafat lulus gerbang hanya untuk Penetapan Ahli Waris", () => {
-  it("371 -> cukup (12/12 isian petugas server 16 Okt); 364 -> ragu (belum terukur); 1025/1246 tetap ragu", () => {
+describe("dasar hukum sita menurut keadaan (keputusan pengguna 16 Okt)", () => {
+  const HB_POSITA = `<p>Bahwa selama perkawinan Penggugat dan Tergugat memperoleh harta bersama berupa: sebidang tanah di Desa Kalukubula;</p>
+<p>Bahwa untuk menjamin agar harta bersama tidak dialihkan selama proses pemeriksaan perkara, Penggugat memohon agar Majelis Hakim menjatuhkan sita marital terhadap Harta bersama antara Penggugat dan Tergugat;</p>`;
+  const HB_PETITUM = "<p>Menyatakan sah dan berharga sita marital atas harta bersama;</p>";
+  const CG_PETITUM = "<p>Menjatuhkan talak satu bain sughra Tergugat terhadap Penggugat;</p><p>Menetapkan harta bersama Penggugat dan Tergugat berupa sebidang tanah;</p><p>Menyatakan sah dan berharga sita marital atas harta bersama;</p>";
+
+  it("harta bersama TANPA perceraian -> Pasal 95 KHI", () => {
+    expect(D.deteksi(HB_POSITA, { jenisPerkara: 348, petitum: HB_PETITUM })["9161"]).toMatchObject({
+      nilai: "sita marital (maritaal beslag)",
+      catatan: "dasar: sita marital tanpa gugatan perceraian: Pasal 95 KHI",
+    });
+  });
+
+  it("cerai berkumulasi harta bersama (dari petitum) -> Pasal 78 huruf c UU 7/1989; objek dari modul harta bersama", () => {
+    const f = D.deteksi(HB_POSITA, { jenisPerkara: 347, petitum: CG_PETITUM });
+    expect(f["9161"].catatan).toBe("dasar: sita marital bersamaan dengan gugatan perceraian: Pasal 78 huruf c UU 7/1989");
+    expect(f["9162"].nilai).toMatch(/^1\. sebidang tanah di Desa Kalukubula/);
+  });
+
+  it("cerai TANPA kumulasi harta bersama: sita tidak dibaca; kumulasi dari SIPP ikut menentukan", async () => {
+    const talak = "<p>Menjatuhkan talak satu bain sughra Tergugat terhadap Penggugat;</p>";
+    expect(D.deteksi(HB_POSITA, { jenisPerkara: 347, petitum: talak })).toEqual({});
+    expect(D.deteksi(HB_POSITA, { jenisPerkara: 347, petitum: talak, kumulasi: [{ jenisPerkaraId: 348 }] })["9161"].catatan).toMatch(/Pasal 78 huruf c/);
+    const h = (await D.lengkapiJenis(null, {
+      jalur: "posita-lain", posita: HB_POSITA, jenisPerkara: "347", petitum: talak, nomorPerkara: "1/Pdt.G/2026/PA.Dgl",
+      bacaKumulasi: async () => ({ daftar: [{ kode: "harta-bersama", nama: "Harta Bersama", sumber: "sipp" }] }),
+    }))!;
+    expect(h.usulan.find((u) => u.kode === "9161")!.catatan).toMatch(/Pasal 78 huruf c UU 7\/1989/);
+  });
+
+  it("sita marital atas harta warisan dan sita revindikasi: perlu dicek pengguna", () => {
+    expect(D.deteksi(HB_POSITA, { jenisPerkara: 364, petitum: HB_PETITUM })["9161"].catatan).toMatch(/harta warisan.*perlu dicek pengguna/);
+    expect(D.deteksi("<p>x</p>", { jenisPerkara: 348, petitum: "<p>Menyatakan sah sita revindicatoir beslag</p>" })["9161"].catatan).toMatch(/Pasal 260 RBg - perlu dicek pengguna/);
+  });
+});
+
+describe("waris.js: gerbang 90% untuk Penetapan Ahli Waris (keputusan pengguna 16 Okt)", () => {
+  it("371 -> 1025/1246/1247 cukup; 364 -> ragu (belum terukur)", () => {
     const paw = waris.deteksi(PAW, { jenisPerkara: 371 });
     expect(paw["1247"]).toMatchObject({ nilai: "sakit", yakin: "cukup" });
-    expect(paw["1246"].yakin).toBe("ragu");
-    expect(paw["1025"].yakin).toBe("ragu");
-    expect(waris.deteksi(PAW, { jenisPerkara: 364 })["1247"]).toMatchObject({ nilai: "sakit", yakin: "ragu" });
+    expect(paw["1246"]).toMatchObject({ nilai: "18 Mei 2023", yakin: "cukup" });
+    expect(paw["1025"]).toMatchObject({ nilai: "Xxxa binti Yyyb", yakin: "cukup" });
+    const kw = waris.deteksi(PAW, { jenisPerkara: 364 });
+    for (const k of ["1025", "1246", "1247"]) expect(kw[k].yakin).toBe("ragu");
+  });
+
+  it("posita & petitum menyebut tanggal wafat BERBEDA -> tanggal petitum, ragu, keduanya disebut (153/Pdt.P/2025)", () => {
+    const posita = "<p>Bahwa Xxxa bin Yyyb telah meninggal dunia pada tanggal 27 Juni 2025 dikarenakan sakit;</p>";
+    const petitum = "<p>Menyatakan bahwa Xxxa bin Yyyb telah meninggal dunia pada tanggal 27 Juni 2005 dikarenakan sakit;</p>";
+    const h = waris.deteksi(posita, { jenisPerkara: 371, petitum });
+    expect(h["1246"]).toMatchObject({ nilai: "27 Juni 2005", yakin: "ragu", asal: "petitum" });
+    expect(h["1246"].catatan).toMatch(/Posita menyebut 27 Juni 2025, petitum 27 Juni 2005/);
+  });
+
+  it("nama pewaris bergelar berkoma (42/Pdt.P/2025) dan berawalan 'Alm . Bpk.' (203/Pdt.P/2023) terbaca", () => {
+    const a = waris.deteksi("<p>Bahwa pewaris telah meninggal dunia.</p>", {
+      jenisPerkara: 371,
+      petitum: "<p>Menyatakan bahwa Xxxa Yyyb, S.E.MM binti Zzzc Wwwd (ALM) telah meninggal dunia pada tanggal 29 April 2025 dikarenakan sakit;</p>",
+    });
+    expect(a["1025"].nilai).toBe("Xxxa Yyyb, S.E.MM binti Zzzc Wwwd");
+    expect(a["1246"].nilai).toBe("29 April 2025");
+    const b = waris.deteksi("<p>Bahwa pewaris telah meninggal dunia.</p>", {
+      jenisPerkara: 371,
+      petitum: "<p>Menyatakan Alm . Bpk. Xxxa Yyyb Bin Zzzc Wwwd telah meninggal dunia karena sakit;</p>",
+    });
+    expect(b["1025"].nilai).toBe("Xxxa Yyyb Bin Zzzc Wwwd");
+    // "Menetapkan X sebagai ahli waris" tetap bukan pewaris
+    expect(waris.deteksi("<p>x</p>", { jenisPerkara: 371, petitum: "<p>Menetapkan Xxxa bin Yyyb sebagai ahli waris;</p>" })["1025"]).toBeUndefined();
   });
 });
 
