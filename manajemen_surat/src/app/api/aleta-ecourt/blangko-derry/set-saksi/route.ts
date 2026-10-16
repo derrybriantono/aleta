@@ -61,6 +61,8 @@ export async function GET(request: NextRequest) {
       sebutanP: teks(q.get("sebutanP")) || undefined,
       sebutanT: teks(q.get("sebutanT")) || undefined,
       jumlahP: Math.max(1, Math.min(20, Number(q.get("jumlahP")) || 1)),
+      // Tahun akad nikah (opsional): huruf G sebelum 1990 memakai bunyi sighat lama.
+      tahunNikah: /^(19|20)\d{2}$/.test(teks(q.get("tahunNikah"))) ? Number(teks(q.get("tahunNikah"))) : undefined,
     });
     return ok({ ...hasil, sumberHuruf });
   } catch (error) {

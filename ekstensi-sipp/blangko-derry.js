@@ -1354,6 +1354,8 @@
       ["saksi", "Set pertanyaan saksi"],
       ["ktp", "Tanggal KTP dari bukti"],
       ["konseptor", "Checklist konseptor putusan"],
+      // 17 Okt: konseptor (biasanya PP) juga boleh - portal memeriksa ia konseptor perkara itu.
+      ["advance", "Putusan Advance (periksa draf)"],
       ["unggah", "Unggah BAS ke e-Doc SIPP"],
       ["massal:unggah", "Unggah massal ke e-Doc SIPP"],
     ],

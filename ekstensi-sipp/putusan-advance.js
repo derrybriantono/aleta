@@ -112,7 +112,7 @@
     S.salinan = [];
     let h = `<h4 style="margin:10px 0 4px">Alasan & unsur</h4>`;
     for (const a of r.alasan) {
-      h += `<div style="margin:6px 0"><b>Huruf ${esc(a.huruf.toLowerCase())}</b> - ${esc(a.judul)}<br><span style="font-size:.75rem;color:var(--muted)">${esc(a.dasar.join("; "))}${a.didalilkan ? " · didalilkan" : ""}${a.dipertimbangkan ? " · dikutip di pertimbangan" : ""}</span>`;
+      h += `<div style="margin:6px 0"><b>${a.huruf ? `Huruf ${esc(a.huruf.toLowerCase())}` : "Unsur perkara"}</b> - ${esc(a.judul)}<br><span style="font-size:.75rem;color:var(--muted)">${esc(a.dasar.join("; "))}${a.didalilkan ? " · didalilkan" : ""}${a.dipertimbangkan ? " · dikutip di pertimbangan" : ""}</span>`;
       h += `<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-top:4px"><thead><tr><th style="text-align:left">Unsur</th><th>Pertimbangan</th><th>Saksi</th><th>Putusan serupa</th></tr></thead><tbody>`;
       for (const u of a.unsur) {
         h +=
@@ -226,7 +226,7 @@
       S.rapor = d && d.rapor ? d.rapor : null;
       if (!S.rapor) S.galat = "Portal tidak mengembalikan rapor.";
     } catch (e) {
-      S.galat = e && e.status === 403 ? "Putusan Advance hanya untuk akun yang berhak memakai Blangko ABT." : `Pemeriksaan gagal: ${String((e && e.message) || e)}`;
+      S.galat = e && e.status === 403 ? "Putusan Advance hanya untuk hakim, konseptor perkara ini (ditunjuk di ALETA atau tercatat di SIPP), dan Admin." : `Pemeriksaan gagal: ${String((e && e.message) || e)}`;
     } finally {
       S.memuat = false;
       render();

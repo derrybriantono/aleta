@@ -29,9 +29,14 @@ let kueriAktif = (sql, nilai = []) =>
     db.query(sql, nilai, (galat, hasil) => (galat ? gagal(galat) : selesai(Array.isArray(hasil) ? hasil : [])));
   });
 
-/** Untuk uji: ganti pelaksana kueri. */
-function _aturKueri(fn) {
+/** Konseptor SIPP (sippTahapanService, dimuat malas supaya uji tanpa basis data tidak ikut memuatnya). */
+let konseptorPerkara = (perkaraId) => require("./sippTahapanService").konseptorPutusanPerkara(perkaraId);
+
+/** Untuk uji: ganti pelaksana kueri (dan pembaca konseptor). */
+function _aturKueri(fn, bacaKonseptor) {
   kueriAktif = fn;
+  // Uji dengan kueri tiruan tidak boleh menyentuh basis data sungguhan lewat sippTahapanService.
+  konseptorPerkara = bacaKonseptor || (async () => ({ terbaca: false, baris: [] }));
 }
 
 function bersih(nilai) {
@@ -83,7 +88,20 @@ async function putusanSerupa(nomorPerkara, opsi = {}) {
       [perkara.perkara_id]
     )
   )[0];
-  const dasar = { ok: true, perkara: { nomor: bersih(perkara.nomor_perkara), jenis: bersih(perkara.jenis_perkara_nama) } };
+  // 17 Okt (keputusan butir 57): Putusan Advance boleh dipakai konseptor perkara ini - portal mencocokkan
+  // akunnya dengan konseptor SIPP (jejak tahapan putusan, proses 210). Gagal baca = daftar kosong.
+  let konseptor = [];
+  try {
+    const k = await konseptorPerkara(perkara.perkara_id);
+    konseptor = (k && Array.isArray(k.baris) ? k.baris : []).map((b) => ({ pengguna: bersih(b.pengguna), nama: bersih(b.nama) }));
+  } catch {
+    konseptor = [];
+  }
+  const dasar = {
+    ok: true,
+    perkara: { id: String(perkara.perkara_id), nomor: bersih(perkara.nomor_perkara), jenis: bersih(perkara.jenis_perkara_nama) },
+    konseptor,
+  };
   if (!ketua) return { ...dasar, hakim: null, kandidat: [], sebab: "majelis_belum_ditetapkan" };
 
   const baris = await kueriAktif(

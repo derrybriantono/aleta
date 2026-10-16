@@ -7,8 +7,10 @@ import { hurufAlasan } from "@/lib/set-pertanyaan-saksi";
 import { getDatabase } from "@/server/db/client";
 import { getGatewaySippPutusanSerupa } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { periksaHakPutusanAdvance } from "@/server/modules/aleta-ecourt/putusan-advance-hak";
 import { cariButir } from "@/server/modules/aleta-ecourt/pustaka-pertimbangan";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
+import { ApiError } from "@/server/shared/errors";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
@@ -46,7 +48,9 @@ type Badan = {
  *
  * Nama pihak perkara pembanding dipakai di sini untuk menyamarkan contoh
  * alinea dan tidak pernah dikirim ke peramban. Hak: kapabilitas
- * "blangko-abt" (sama dengan Cetak/anonim Blangko ABT).
+ * "blangko-abt", lalu (17 Okt) hanya hakim, konseptor perkara ini
+ * (sementara ALETA atau tercatat SIPP), dan Super Admin/Admin -
+ * lihat putusan-advance-hak.ts.
  */
 export async function POST(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -54,11 +58,30 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "blangko-abt");
+    const aktor = await pastikanKapabilitas(db, actorUserId, "blangko-abt");
 
     const body = await readJsonBody<Badan>(request).catch(() => ({}) as Badan);
     const nomorPerkara = String(body.nomorPerkara || "").trim();
     if (!nomorPerkara) return ok({ ok: false, sebab: "Nomor perkara belum disebut." });
+
+    // Pembanding SIPP: gagal-terbuka - rapor tetap jadi, dengan catatan "tidak terbaca". Dibaca lebih dulu
+    // karena membawa konseptor SIPP perkara ini untuk pemeriksaan hak.
+    let serupa: PutusanSerupaMasuk[] | undefined;
+    let jenisSipp = "";
+    const hasilSerupa = await getGatewaySippPutusanSerupa(nomorPerkara).catch(() => null);
+    const dataSerupa = hasilSerupa && hasilSerupa.ok && hasilSerupa.data.ok ? hasilSerupa.data : null;
+    if (dataSerupa) {
+      serupa = dataSerupa.kandidat ?? [];
+      jenisSipp = dataSerupa.perkara?.jenis ?? "";
+    }
+
+    // Hak (17 Okt butir 57): hakim DAN konseptor perkara ini (sementara ALETA / tercatat SIPP) + Super Admin/Admin.
+    const hak = await periksaHakPutusanAdvance(db, aktor, {
+      perkaraId: dataSerupa?.perkara?.id,
+      nomorPerkara,
+      konseptorSipp: dataSerupa?.konseptor ?? [],
+    });
+    if (!hak.boleh) throw new ApiError(403, hak.sebab);
 
     let naskah = "";
     const rtfBase64 = String(body.rtfBase64 || "");
@@ -75,15 +98,6 @@ export async function POST(request: NextRequest) {
     const pecah = pecahNaskahResmi(naskah);
     const nama: Record<string, string> = { dudukPerkara: "duduk perkara", pertimbangan: "pertimbangan hukum", amar: "amar (MENGADILI)" };
     const bagianHilang = (["dudukPerkara", "pertimbangan", "amar"] as const).filter((k) => !pecah.bagian[k]).map((k) => nama[k]);
-
-    // Pembanding SIPP: gagal-terbuka - rapor tetap jadi, dengan catatan "tidak terbaca".
-    let serupa: PutusanSerupaMasuk[] | undefined;
-    let jenisSipp = "";
-    const hasilSerupa = await getGatewaySippPutusanSerupa(nomorPerkara).catch(() => null);
-    if (hasilSerupa && hasilSerupa.ok && hasilSerupa.data.ok) {
-      serupa = hasilSerupa.data.kandidat ?? [];
-      jenisSipp = hasilSerupa.data.perkara?.jenis ?? "";
-    }
 
     // Pustaka ALETA: hanya butir yang SUDAH DISAHKAN (bawaan cariButir), menurut huruf alasan.
     const huruf = hurufAlasan(String(body.huruf || ""));

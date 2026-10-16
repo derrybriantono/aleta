@@ -6,7 +6,10 @@ import { Bot, ChevronDown, ChevronUp } from "lucide-react";
 import { apiPath } from "@/lib/base-path";
 import {
   GOLONGAN_TEKS,
+  STATUS_VARIAN_TEKS,
+  daftarVarianH7,
   teksLencanaH7,
+  type StatusVarianH7,
   type BagianRingkasan,
   type DrafH7,
   type DrafH7Checklist,
@@ -106,9 +109,14 @@ export function PanelDrafH7({ perkaraId, ringkas }: { perkaraId: string; ringkas
     }
   }, [perkaraId]);
 
+  const [pilihVarian, setPilihVarian] = useState<StatusVarianH7>("dikabulkan");
+
   if (!ringkas) return null;
-  const perlu = draf ? draf.isian.filter((i) => i.golongan === "usulan" || i.golongan === "manusia") : [];
-  const disiapkan = draf ? draf.isian.filter((i) => i.golongan === "pasti") : [];
+  // Varian draf (17 Okt): dikabulkan & ditolak - ringkasan sama, blangko & isian menurut varian yang dipilih hakim.
+  const semuaVarian = draf ? daftarVarianH7(draf) : [];
+  const varian = semuaVarian.find((v) => v.status === pilihVarian) ?? semuaVarian[0] ?? null;
+  const perlu = varian ? varian.isian.filter((i) => i.golongan === "usulan" || i.golongan === "manusia") : [];
+  const disiapkan = varian ? varian.isian.filter((i) => i.golongan === "pasti") : [];
 
   return (
     <div className="mb-1" data-panel-draf-h7={perkaraId}>
@@ -137,8 +145,35 @@ export function PanelDrafH7({ perkaraId, ringkas }: { perkaraId: string; ringkas
                   <li key={i}>{x}</li>
                 ))}
               </ul>
-              {draf.blangko.alternatif.length ? (
-                <p className="mt-1 text-muted-foreground">Blangko lain yang mungkin: {draf.blangko.alternatif.map((r) => r.label).join(", ")}.</p>
+              {semuaVarian.length > 1 ? (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1" role="group" aria-label="Varian draf putusan">
+                  <span className="text-muted-foreground">Varian draf:</span>
+                  {semuaVarian.map((v) => (
+                    <button
+                      key={v.status}
+                      type="button"
+                      data-varian-h7={v.status}
+                      aria-pressed={varian?.status === v.status}
+                      onClick={() => setPilihVarian(v.status)}
+                      title={v.blangko.alasan}
+                      className={cn(
+                        "rounded border px-1.5 py-0.5",
+                        varian?.status === v.status ? "border-sky-500 bg-sky-50 font-medium text-sky-900 dark:bg-sky-500/15 dark:text-sky-200" : "border-border"
+                      )}
+                    >
+                      {STATUS_VARIAN_TEKS[v.status]} ({v.kesiapan.persen}%)
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {varian && semuaVarian.length > 1 ? (
+                <p className="mt-1" data-blangko-varian-h7>
+                  Blangko varian {STATUS_VARIAN_TEKS[varian.status].toLowerCase()}: {varian.blangko.utama?.label ?? "belum ada"}
+                  <span className="text-muted-foreground"> - {varian.blangko.alasan}</span>
+                </p>
+              ) : null}
+              {varian?.blangko.alternatif.length ? (
+                <p className="mt-1 text-muted-foreground">Blangko lain yang mungkin: {varian.blangko.alternatif.map((r) => r.label).join(", ")}.</p>
               ) : null}
               {perlu.length ? (
                 <div className="mt-1.5">
@@ -166,7 +201,8 @@ export function PanelDrafH7({ perkaraId, ringkas }: { perkaraId: string; ringkas
               ) : null}
               <Ringkasan bagian={draf.ringkasan} />
               <p className="mt-1.5 text-muted-foreground">
-                Dipakai lewat Blangko ABT by Derry Briantono: Alat saya &gt; Checklist konseptor putusan &gt; Buka blangko draf.
+                Dipakai lewat Blangko ABT by Derry Briantono: Alat saya &gt; Checklist konseptor putusan &gt; Buka blangko draf
+                {semuaVarian.length > 1 ? " (tombol per varian)" : ""}.
               </p>
             </>
           ) : !memuat ? (

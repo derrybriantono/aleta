@@ -10,8 +10,10 @@
  *
  *   1. memilih blangko putusan Blangko ABT by Derry Briantono menurut keadaan
  *      perkara (rekomendasi Tahap E, lib/rekomendasi-blangko.ts) - status
- *      putusan belum ada, jadi diperkirakan "dikabulkan", verstek diperkirakan
- *      dari kehadiran Tergugat/Termohon pada sidang-sidang sebelumnya;
+ *      putusan belum ada, jadi disiapkan varian "dikabulkan" DAN (17 Okt,
+ *      keputusan butir 54) varian "ditolak" bila blangko tolaknya ada;
+ *      verstek diperkirakan dari kehadiran Tergugat/Termohon pada
+ *      sidang-sidang sebelumnya; majelis memilih varian;
  *   2. menggolongkan tiap isian tangan blangko itu:
  *        terisi   sudah ada di ABT (diisi petugas sebelumnya),
  *        pasti    diisi agen dari deteksi yang terukur pasti (aturan sama
@@ -54,6 +56,13 @@
  * Perkiraan verstek: 199 sidang memenuhi syaratnya, 154 (77%) memang diputus
  * hari itu. Rincian: D:/aleta-dev/kerja/f42-ukur/ukur-h7-*.json (skrip ukur
  * zz-ukur-h7.test.ts + proksi.js di folder yang sama).
+ *
+ * Varian ditolak (17 Okt): 1 Jan - 16 Okt 2026 ada 739 putusan, 5 ditolak
+ * (619 dikabulkan, 67 dicabut, 19 NO, 29 gugur); kelima varian tolak H-7 =
+ * blangko menurut status akhir dan sesuai amar (217/Pdt.G "menolak ...
+ * secara verstek" -> [Tolak Verstek]; 225, 231 -> [Tolak]; 17, 194/Pdt.P ->
+ * [Tolak] IN). sipp_donggala seluruhnya: 53 ditolak, 51 berjenis yang punya
+ * blangko tolak (asal usul anak & kewarisan belum). ukur-h7-tolak.json.
  */
 
 import { kelompokkanIsian, langkahUntukIsian, type BlangkoPerLangkah, type KodeLangkah } from "@/lib/konseptor-langkah";
@@ -165,15 +174,29 @@ export type PilihanBlangkoH7 = {
 };
 
 /**
+ * Varian draf (keputusan pengguna 17 Okt, butir 54): agen menyiapkan draf
+ * "dikabulkan" DAN "ditolak"; majelis memilih sesudah musyawarah. Ringkasan
+ * perkaranya sama, blangko & isiannya mengikuti blangko tolak sesuai keadaan.
+ */
+export type StatusVarianH7 = "dikabulkan" | "ditolak";
+
+export const STATUS_VARIAN_TEKS: Record<StatusVarianH7, string> = { dikabulkan: "Dikabulkan", ditolak: "Ditolak" };
+
+/**
  * Blangko putusan Derry untuk Hari Putusan yang belum terjadi.
  *
- * Status putusan belum ada - rekomendasi Tahap E memperkirakannya "Dikabulkan"
- * bila teks dasarnya menyebut musyawarah/putusan; sidang berageda kesimpulan
- * diberi teks dasar musyawarah supaya diperlakukan sama. Kehadiran sidang
- * putusan juga belum ada: dipakai kehadiran sidang sebelumnya, dan verstek
- * diperkirakan bila Tergugat/Termohon tidak pernah hadir.
+ * Status putusan belum ada - varian "dikabulkan" (bawaan) memakai perkiraan
+ * rekomendasi Tahap E; varian "ditolak" memakai baris peta "<jenis>|ditolak"
+ * (verstek/keadaan ikut, sama seperti panel ABT sesudah putus). Sidang
+ * berageda kesimpulan diberi teks dasar musyawarah supaya diperlakukan sama.
+ * Kehadiran sidang putusan juga belum ada: dipakai kehadiran sidang
+ * sebelumnya, dan verstek diperkirakan bila Tergugat/Termohon tidak pernah hadir.
+ *
+ * Varian ditolak TIDAK diberi blangko bila peta tidak punya baris tolak untuk
+ * jenis itu (jatuh ke blangko jenis = blangko kabul) - lebih baik tanpa varian
+ * daripada varian "ditolak" yang naskahnya mengabulkan.
  */
-export function pilihBlangkoH7(baris: BarisSidangH7, alasan: AlasanH7 | ""): PilihanBlangkoH7 {
+export function pilihBlangkoH7(baris: BarisSidangH7, alasan: AlasanH7 | "", status: StatusVarianH7 = "dikabulkan"): PilihanBlangkoH7 {
   const m = masukanRekomendasiDariBaris(baris as Record<string, unknown>);
   const panggilan = (baris.panggilan ?? {}) as Record<string, unknown>;
   const perkiraanVerstek = panggilan.tergugatPernahHadir === false;
@@ -187,20 +210,30 @@ export function pilihBlangkoH7(baris: BarisSidangH7, alasan: AlasanH7 | ""): Pil
     keterangan: "",
     ditunda: false,
     sudahPutus: false,
-    statusPutusan: "",
+    statusPutusan: status === "ditolak" ? "Ditolak" : "",
     verstekPutusan: perkiraanVerstek,
     dihadiriOleh: m.dihadiriOleh ?? (m.hadirSebelumnya ?? null),
   });
-  const daftar = hasil.putusan.map((r) => ({ ...r, perkiraan: true }));
+  let daftar = hasil.putusan.map((r) => ({ ...r, perkiraan: true }));
+  // Tolak tanpa baris peta tolak = blangko jenis (kabul): bukan varian tolak.
+  if (status === "ditolak") daftar = daftar.filter((r) => /tolak/i.test(r.label));
   const utama = daftar.find((r) => r.utama) ?? daftar[0] ?? null;
+  const kata = status === "ditolak" ? " - varian bila majelis menolak" : "";
   return {
     utama,
     alternatif: daftar.filter((r) => r !== utama),
     perkiraanVerstek,
     alasan: utama
-      ? `${utama.alasan.replace(/\.$/, "")}${perkiraanVerstek ? "; Tergugat/Termohon belum pernah hadir sehingga diperkirakan verstek" : ""}.`
-      : "Belum ada blangko putusan Derry untuk jenis perkara ini.",
+      ? `${utama.alasan.replace(/\.$/, "")}${kata}${perkiraanVerstek ? "; Tergugat/Termohon belum pernah hadir sehingga diperkirakan verstek" : ""}.`
+      : status === "ditolak"
+        ? "Belum ada blangko putusan tolak Derry untuk jenis/keadaan perkara ini."
+        : "Belum ada blangko putusan Derry untuk jenis perkara ini.",
   };
+}
+
+/** Varian tolak layak disiapkan bila blangkonya ada dan BERBEDA dari blangko kabul. */
+export function varianTolakBerbeda(kabul: PilihanBlangkoH7, tolak: PilihanBlangkoH7): boolean {
+  return Boolean(tolak.utama && (!kabul.utama || kabul.utama.berkas !== tolak.utama.berkas || kabul.utama.folder !== tolak.utama.folder));
 }
 
 // ============================================================================
@@ -694,10 +727,29 @@ export type DrafH7 = {
   otomatis: OtomatisDraf | null;
   ringkasan: BagianRingkasan[];
   kesiapan: KesiapanH7;
+  /**
+   * Varian lain di samping "dikabulkan" (ruas utama di atas): saat ini hanya
+   * "ditolak", bila blangko tolaknya ada dan berbeda. Ringkasan dipakai
+   * bersama. Draf lama (sebelum 17 Okt) tidak punya ruas ini.
+   */
+  varian?: VarianDrafH7[];
   /** Bahan yang gagal dibaca (bot tidak menjawab, blangko tidak terbaca) - disebut jujur. */
   kendala: string[];
   dibuatPada: string;
 };
+
+export type VarianDrafH7 = {
+  status: StatusVarianH7;
+  blangko: PilihanBlangkoH7;
+  isian: IsianDraf[];
+  otomatis: OtomatisDraf | null;
+  kesiapan: KesiapanH7;
+};
+
+/** Semua varian draf, "dikabulkan" (ruas utama) lebih dulu. */
+export function daftarVarianH7(d: Pick<DrafH7, "blangko" | "isian" | "otomatis" | "kesiapan" | "varian">): VarianDrafH7[] {
+  return [{ status: "dikabulkan", blangko: d.blangko, isian: d.isian, otomatis: d.otomatis, kesiapan: d.kesiapan }, ...(d.varian ?? [])];
+}
 
 /** Ringkas untuk Jadwal Sidang, checklist konseptor, dan widget. */
 export type RingkasDrafH7 = {
@@ -728,33 +780,67 @@ export function ringkasDrafH7(d: Pick<DrafH7, "tanggalSidang" | "blangko" | "kes
  * dipasang sebagai saran Blangko Derry (tidak tersimpan ke ABT sebelum
  * petugas memakainya).
  */
+type BlangkoChecklistH7 = Pick<Rekomendasi, "folder" | "berkas" | "menu" | "alias" | "label">;
+type SaranChecklistH7 = Record<string, { nilai: string; golongan: "pasti" | "usulan"; sumber: string }>;
+
 export type DrafH7Checklist = {
   ringkas: RingkasDrafH7;
-  blangko: Pick<Rekomendasi, "folder" | "berkas" | "menu" | "alias" | "label"> | null;
+  blangko: BlangkoChecklistH7 | null;
   alasanBlangko: string;
-  saran: Record<string, { nilai: string; golongan: "pasti" | "usulan"; sumber: string }>;
+  saran: SaranChecklistH7;
   perlu: Array<{ nama: string; golongan: GolonganIsian; catatan: string }>;
   laporan: string[];
+  /**
+   * Varian selain "dikabulkan" (17 Okt: "ditolak"). Bentuknya { blangko, saran }
+   * sama dengan kartu utama sehingga Blangko Derry (pakaiDrafH7) dapat
+   * memasangnya apa adanya. Kosong bila tidak ada varian.
+   */
+  varian: Array<{
+    status: StatusVarianH7;
+    judul: string;
+    blangko: BlangkoChecklistH7 | null;
+    alasanBlangko: string;
+    saran: SaranChecklistH7;
+    tingkat: KesiapanH7["tingkat"];
+    persen: number;
+    jumlahPerlu: number;
+  }>;
 };
 
-export function untukChecklistH7(d: DrafH7): DrafH7Checklist {
-  const u = d.blangko.utama;
-  const saran: DrafH7Checklist["saran"] = {};
-  for (const i of d.isian) {
+function saranDariIsian(isian: IsianDraf[]): SaranChecklistH7 {
+  const saran: SaranChecklistH7 = {};
+  for (const i of isian) {
     if ((i.golongan === "pasti" || i.golongan === "usulan") && i.nilai && !i.nilai.endsWith("…")) {
       saran[i.kode] = { nilai: i.nilai, golongan: i.golongan, sumber: i.sumber };
     }
   }
+  return saran;
+}
+
+const blangkoChecklist = (u: Rekomendasi | null): BlangkoChecklistH7 | null =>
+  u ? { folder: u.folder, berkas: u.berkas, menu: u.menu, alias: u.alias, label: u.label } : null;
+
+export function untukChecklistH7(d: DrafH7): DrafH7Checklist {
   return {
     ringkas: ringkasDrafH7(d),
-    blangko: u ? { folder: u.folder, berkas: u.berkas, menu: u.menu, alias: u.alias, label: u.label } : null,
+    blangko: blangkoChecklist(d.blangko.utama),
     alasanBlangko: d.blangko.alasan,
-    saran,
+    saran: saranDariIsian(d.isian),
     perlu: d.isian
       .filter((i) => i.golongan === "usulan" || i.golongan === "manusia")
       .map((i) => ({ nama: i.nama, golongan: i.golongan, catatan: i.catatan }))
       .slice(0, 30),
     laporan: teksLaporanH7(d),
+    varian: (d.varian ?? []).map((v) => ({
+      status: v.status,
+      judul: `Varian ${STATUS_VARIAN_TEKS[v.status].toLowerCase()}`,
+      blangko: blangkoChecklist(v.blangko.utama),
+      alasanBlangko: v.blangko.alasan,
+      saran: saranDariIsian(v.isian),
+      tingkat: v.kesiapan.tingkat,
+      persen: v.kesiapan.persen,
+      jumlahPerlu: v.kesiapan.usulan + v.kesiapan.manusia + v.kesiapan.dataSippKosong,
+    })),
   };
 }
 
@@ -839,6 +925,13 @@ export function teksLaporanH7(d: DrafH7): string[] {
     );
     if (k.dataSippKosong) baris.push(`${k.dataSippKosong} data SIPP yang dipakai naskah masih kosong - lengkapi di SIPP.`);
     if (k.perlu.length) baris.push(`Perlu perhatian: ${k.perlu.join(", ")}.`);
+  }
+  for (const v of d.varian ?? []) {
+    if (!v.blangko.utama) continue;
+    const kv = v.kesiapan;
+    baris.push(
+      `Varian ${STATUS_VARIAN_TEKS[v.status].toLowerCase()} juga disiapkan: ${v.blangko.utama.label} - ${kv.terisi + kv.pasti} dari ${kv.jumlah} isian siap. Majelis memilih varian sesudah musyawarah; ringkasan perkara sama.`
+    );
   }
   if (d.kendala.length) baris.push(`Belum terbaca: ${d.kendala.join("; ")}.`);
   baris.push("Draf ini belum disimpan ke ABT maupun SIPP - isian dipakai lewat Blangko ABT by Derry Briantono oleh petugas.");

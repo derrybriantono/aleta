@@ -115,7 +115,8 @@
       k.addEventListener("change", saatCentang);
       k.addEventListener("click", (e) => {
         if (e.target && e.target.closest && e.target.closest("[data-kl-tutup]")) k.hidden = true;
-        if (e.target && e.target.closest && e.target.closest("[data-kl-pakai-h7]")) void pakaiH7();
+        const tombolH7 = e.target && e.target.closest && e.target.closest("[data-kl-pakai-h7]");
+        if (tombolH7) void pakaiH7(tombolH7.getAttribute("data-kl-pakai-h7"));
       });
     }
     return k;
@@ -179,16 +180,24 @@
     s += `<div style="font-size:.78rem;color:var(--muted)">Disiapkan agen ALETA ${esc(waktuSingkat(h.ringkas.dibuatPada))} - belum disimpan ke ABT maupun SIPP.</div>`;
     s += `<ul style="margin:4px 0 0 16px;padding:0;font-size:.8rem">${(h.laporan || []).slice(0, 5).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
     const bd = globalThis.aletaBlangkoDerryIsian;
+    // 17 Okt: varian draf (dikabulkan + ditolak) - hakim memilih; ringkasan sama, blangko & saran per varian.
+    const varian = Array.isArray(h.varian) ? h.varian.filter((v) => v && v.blangko) : [];
     if (h.blangko && bd && typeof bd.pakaiDrafH7 === "function") {
-      s += `<button type="button" data-kl-pakai-h7 class="bd-btn" style="margin-top:6px">Buka blangko draf &amp; pasang saran agen</button>`;
+      s += `<button type="button" data-kl-pakai-h7="" class="bd-btn" style="margin-top:6px">${varian.length ? "Buka draf varian dikabulkan" : "Buka blangko draf &amp; pasang saran agen"}</button>`;
+      varian.forEach((v, i) => {
+        s += ` <button type="button" data-kl-pakai-h7="${i}" class="bd-btn" style="margin-top:6px" title="${esc(v.alasanBlangko || "")}">Buka draf ${esc(String(v.judul || "varian").toLowerCase())} (${Number(v.persen) || 0}%)</button>`;
+      });
     }
     return `${s}</div>`;
   }
-  async function pakaiH7() {
+  /** ke = "" draf utama (dikabulkan); "0", "1", ... = varian ke-n dari h7.varian. */
+  async function pakaiH7(ke) {
     const bd = globalThis.aletaBlangkoDerryIsian;
     if (!S.h7 || !bd || typeof bd.pakaiDrafH7 !== "function") return;
+    const varian = Array.isArray(S.h7.varian) ? S.h7.varian.filter((v) => v && v.blangko) : [];
+    const d = ke !== "" && ke != null && varian[Number(ke)] ? varian[Number(ke)] : S.h7;
     try {
-      await bd.pakaiDrafH7(S.h7);
+      await bd.pakaiDrafH7(d);
     } catch (e) {
       S.galat = `Draf H-7 tidak dapat dibuka: ${String((e && e.message) || e)}`;
       render();

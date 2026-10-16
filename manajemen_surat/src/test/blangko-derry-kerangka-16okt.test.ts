@@ -429,7 +429,7 @@ describe("C. Alat saya per peran; Lihat sebagai akun", () => {
     const p = buka({ orang: "pp" });
     await bukaTampilan(p);
     tekan(p, "#bd-alat-btn");
-    expect(alat(p)).toEqual(["massal:bas", "gugatan", "saksi", "ktp", "konseptor", "unggah", "massal:unggah"]); // F1.6
+    expect(alat(p)).toEqual(["massal:bas", "gugatan", "saksi", "ktp", "konseptor", "advance", "unggah", "massal:unggah"]); // F1.6; 17 Okt: Putusan Advance untuk konseptor
 
     const j = buka({ orang: "js" });
     await bukaTampilan(j);
@@ -498,7 +498,7 @@ describe("C. Alat saya per peran; Lihat sebagai akun", () => {
     await sampai(() => akarDari(h)!.querySelector("[data-pk]"), "daftar termuat ulang");
     expect(akarDari(h)!.querySelector("#bd-siapa")!.textContent).toContain("dilihat sebagai PP Satu");
     tekan(h, "#bd-alat-btn");
-    expect(alat(h)).toEqual(["massal:bas", "gugatan", "saksi", "ktp", "konseptor", "unggah", "massal:unggah"]); // F1.6
+    expect(alat(h)).toEqual(["massal:bas", "gugatan", "saksi", "ktp", "konseptor", "advance", "unggah", "massal:unggah"]); // F1.6; 17 Okt: Putusan Advance untuk konseptor
   });
 });
 
