@@ -979,6 +979,14 @@
     if (!a || typeof a.laporIsian !== "function" || !S.pk) return;
     const h = hitung();
     a.laporIsian(nomorPerkara(), { a: h.a, t: h.t, jenis: S.blangko ? S.blangko.jenis : "", dicetak: S.cetakTercatat });
+    // F1.6: rincian isian untuk checklist konseptor (konseptor-langkah.js) - hanya diumumkan, tidak ditulis di sini.
+    if (S.blangko && S.susunan) {
+      const isian = daftarPerlu().map((b) => {
+        const [x, y] = nilaiTerisi(b);
+        return { kode: b.kode, nama: b.nama, jenis: b.jenis, khusus: b.khusus || "", terisi: y > 0 && x >= y };
+      });
+      document.dispatchEvent(new CustomEvent("aleta-bd-isian", { detail: { perkaraId: String(S.pk.perkaraId || ""), nomorPerkara: nomorPerkara(), jenis: S.blangko.jenis, berkas: S.blangko.berkas, isian } }));
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────

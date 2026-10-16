@@ -12,6 +12,8 @@
  * sama dan tidak menyusunnya sendiri-sendiri.
  */
 
+import type { RingkasKemajuan } from "@/lib/konseptor-langkah";
+
 export type KonseptorSementara = {
   perkaraId: string;
   nomorPerkara: string;
@@ -20,6 +22,8 @@ export type KonseptorSementara = {
   catatan: string;
   ditetapkanOleh: string;
   ditetapkanAt: string;
+  /** F1.6: ringkasan checklist langkah draf putusan (hanya dari rute GET). */
+  kemajuan?: RingkasKemajuan;
 };
 
 function teks(nilai: unknown): string {
