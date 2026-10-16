@@ -2444,6 +2444,20 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // tidak pernah menggagalkan usulan itsbat
       }
       /* === AKHIR ISTRI SEBELUMNYA === */
+      /* === F2.3 BLANGKO DERRY 16 Okt === */
+      // Akta cerai Pemohon I/II (1321-1331); pada Penetapan Ahli Waris/Kewarisan (blangkonya memuat #5197#
+      // sehingga jalur ini ikut dipanggil) kode pewaris diganti bacaan waris.js. Jenis dari SIPP (HANYA SELECT).
+      try {
+        jawaban.itsbat = await require("../services/deteksi/blangkoDerry").lengkapiJenis(jawaban.itsbat, {
+          jalur: "itsbat",
+          posita: String(req.body?.posita || ""),
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+          nomorPerkara,
+        });
+      } catch (_galatDerry) {
+        // tidak pernah menggagalkan usulan itsbat
+      }
+      /* === AKHIR F2.3 === */
     }
     // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
     // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.
@@ -2528,6 +2542,22 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       }
     }
     /* === AKHIR DK === */
+    /* === F2.3 BLANGKO DERRY 16 Okt === */
+    // Variabel blangko Derry yang belum dibaca modul jenisnya: wali adhal 9201/9203/9204/9206, sita
+    // 9161-9163 (harta bersama, kewarisan), bagian waris 8719 hanya bila tertulis. Semua "ragu".
+    if (sumber === "posita-lain") {
+      try {
+        jawaban.positaLain = await require("../services/deteksi/blangkoDerry").lengkapiJenis(jawaban.positaLain, {
+          jalur: "posita-lain",
+          posita: String(req.body?.posita || ""),
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+          nomorPerkara,
+        });
+      } catch (_galatDerry) {
+        // tidak pernah menggagalkan usulan perkara lain
+      }
+    }
+    /* === AKHIR F2.3 === */
     // Butir 12 (6 Okt 2026): alasan yang terbaca dari posita - SUMBER YANG SAMA
     // dengan "Alasan yang dipakai" penyusun saksi (alasanDariPosita) - supaya
     // centang modus "Hanya sebagian alasan" dapat mendahulukan alasan yang

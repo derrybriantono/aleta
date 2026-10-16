@@ -56,18 +56,25 @@ const variabel = Object.freeze([
 /**
  * Ukur 13 Okt 2026 (sipp_donggala salinan 9 Okt, P3HP 105 perkara / 91 berposita; D:/aleta-dev/kerja/
  * deteksi-poligami-waris-hb/ukur-waris.js). Pembanding: amar SIPP dan isian petugas aps_badilag sebelum
- * 1 Sep 2026. Tidak satu pun >= 95% dengan n >= 10, jadi SIAP kosong - semua "ragu".
+ * 1 Sep 2026. Tidak satu pun >= 95% dengan n >= 10 - semua "ragu" (sampai ukur ulang 16 Okt, lihat SIAP).
  */
 const UKUR = Object.freeze({
-  1025: { amar: [65, 70], petugas: [13, 14] },
-  1246: { amar: [65, 70] },
-  1247: { amar: [19, 21], petugas: [11, 11] },
-  1509: { petugas: [1, 2] },
+  1025: { amar: [65, 70], petugas: [13, 14], petugasServer16Okt: [14, 15] },
+  1246: { amar: [65, 70], petugasServer16Okt: [14, 15] },
+  1247: { amar: [19, 21], petugas: [11, 11], petugasServer16Okt: [12, 12] },
+  1509: { petugas: [1, 2], petugasServer16Okt: [2, 2] },
   8610: { amar: [4, 7] },
   8608: { amar: [10, 15] },
 });
-/** Variabel yang lulus gerbang >= 95%, n >= 10 -> "cukup". */
-const SIAP = new Set();
+/**
+ * Variabel yang lulus gerbang >= 95%, n >= 10 -> "cukup".
+ * F2.3 (16 Okt 2026): 1247 sebab wafat diukur ulang atas isian petugas SERVER (rute ditiru penuh, pembanding
+ * makna): 12/12, 11/11 untuk isian sebelum 1 Sep 2026 (bukan hasil ALETA) - lulus. 1025 dan 1246 14/15 (93%)
+ * tetap "ragu". Rincian: D:/aleta-dev/kerja/batch-14okt-sore/f23-deteksi/ukur-sesudah.txt.
+ */
+const SIAP = new Set(["1247"]);
+/** Jenis tempat ukuran SIAP berlaku - kewarisan (364/365, Pdt.G) belum punya isian petugas untuk diukur. */
+const SIAP_JENIS = new Set([371]);
 
 /** Pemisah kalimat: titik koma, atau titik + huruf besar - KECUALI titik singkatan ("Bin.", "Moh.", "Hj.", "S.E."). */
 const RE_PECAH_KALIMAT = /;s*|(?<!(?:[A-Za-z]{1,3}|Bin|Binti|Moh|Muh|Mohd|Drs|Dra|Hj|Hi|Ir|Dr|No|Kel|Kec|Kab|Jln?|Alm|Almh)).s+(?=[A-Z])/;
@@ -378,8 +385,8 @@ const PEMBUKA_TIRKAH =
  * DETEKSI (murni)
  * ------------------------------------------------------------------------- */
 
-function yakinUntuk(kode) {
-  return SIAP.has(kode) ? "cukup" : "ragu";
+function yakinUntuk(kode, jenis = 371) {
+  return SIAP.has(kode) && SIAP_JENIS.has(Number(jenis)) ? "cukup" : "ragu";
 }
 
 /**
@@ -408,20 +415,20 @@ function deteksi(posita, opsi = {}) {
       nilai: pewaris.nama,
       kalimat: pewaris.kalimat,
       asal: pewaris.asal,
-      yakin: sepakat ? yakinUntuk("1025") : "ragu",
+      yakin: sepakat ? yakinUntuk("1025", jenis) : "ragu",
       catatan: sepakat ? "" : `Posita menyebut pewaris ${dariPosita.nama} - berbeda dengan petitum.`,
       kodePola: pewaris.kodePola || `waris-pewaris-${pewaris.asal}`,
     };
     const wafat = faktaWafat([...kalimatWafat(satu, pewaris.nama, { lanjutan: true }), ...kalimatWafat(P.satuBaris(petitum), pewaris.nama)], intiNama(pewaris.nama));
     if (wafat) {
-      if (wafat.tanggal) hasil["1246"] = { nilai: wafat.tanggal, kalimat: wafat.kalimat, yakin: yakinUntuk("1246"), kodePola: "waris-tanggal-wafat" };
-      if (wafat.sebab) hasil["1247"] = { nilai: wafat.sebab, kalimat: wafat.kalimat, yakin: yakinUntuk("1247"), kodePola: "waris-sebab-wafat" };
-      if (wafat.tempat) hasil["1509"] = { nilai: wafat.tempat, kalimat: wafat.kalimat, yakin: yakinUntuk("1509"), kodePola: "waris-tempat-wafat" };
+      if (wafat.tanggal) hasil["1246"] = { nilai: wafat.tanggal, kalimat: wafat.kalimat, yakin: yakinUntuk("1246", jenis), kodePola: "waris-tanggal-wafat" };
+      if (wafat.sebab) hasil["1247"] = { nilai: wafat.sebab, kalimat: wafat.kalimat, yakin: yakinUntuk("1247", jenis), kodePola: "waris-sebab-wafat" };
+      if (wafat.tempat) hasil["1509"] = { nilai: wafat.tempat, kalimat: wafat.kalimat, yakin: yakinUntuk("1509", jenis), kodePola: "waris-tempat-wafat" };
     }
     if (jenis === 371) {
       const pasangan = pasanganPewaris(satu, pewaris.nama, pihak1);
       if (pasangan) {
-        hasil["8610"] = { nilai: pasangan.nama, kalimat: pasangan.kalimat.slice(0, 400), asal: pasangan.asal, yakin: yakinUntuk("8610"), kodePola: pasangan.kodePola };
+        hasil["8610"] = { nilai: pasangan.nama, kalimat: pasangan.kalimat.slice(0, 400), asal: pasangan.asal, yakin: yakinUntuk("8610", jenis), kodePola: pasangan.kodePola };
         const wp = faktaWafat(kalimatWafat(satu, pasangan.nama), intiNama(pasangan.nama));
         if (wp && wp.tanggal) {
           const bagian = [`pada tanggal ${wp.tanggal}`];
@@ -461,6 +468,7 @@ module.exports = {
   variabel,
   UKUR,
   SIAP,
+  SIAP_JENIS,
   deteksi,
   // diuji langsung
   pewarisPetitum,
