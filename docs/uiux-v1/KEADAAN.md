@@ -1,28 +1,44 @@
-# Keadaan pekerjaan UI/UX semua layar (agen V1) - dijeda
+# Keadaan pekerjaan UI/UX semua layar (agen V1)
 
 Branch: `fitur/v1-uiux-semua-layar` (dari `integrasi-1205-1`, tag rilis-1.205.1).
-Dijeda atas perintah koordinator karena memori laptop menipis. BELUM ada tsc, lint, atau vitest yang dijalankan.
 
-## Sudah dikerjakan (kelompok 1: komponen bersama)
-- `manajemen_surat/src/app/globals.css`
-  - Huruf akar naik di layar sangat lebar (>=2200px: 19px, >=2800px: 23px, >=3400px: 27px). Di bawah 2200px tidak berubah.
-  - `html.aleta-layar-jauh`: huruf akar = `max(16px, min(1.04vw, 1.85vh))` untuk televisi.
-  - Perangkat sentuh (`pointer: coarse`): tombol/select min 2.5rem; kolom isian 16px di <=767px (cegah zoom iOS).
-  - Kata panjang dipatahkan di HP (`overflow-wrap: anywhere` pada judul/paragraf/daftar di dalam `main`).
-  - Utilitas `.aleta-tabel-gulir` dan `.aleta-baris-aksi`.
-  - Kerangka e-Court (`[data-lebar-ecourt]`) melebar dalam rem di >=2200px (supaya Jadwal Sidang ikut membesar di 4K); kelas lama di `lib/jadwal-sidang-2okt.ts` TIDAK diubah (uji menjaga string persisnya).
-- `components/layout/portal-shell-v2.tsx`: lebar isi `max-w-[100rem]` (sama dengan 1600px di 16px), sidebar dalam rem, laci HP `100dvh`, menu notifikasi tidak melebihi layar, ikon pencarian cepat untuk HP (`sm:hidden`, tautan ke /search; sebelumnya pencarian tersembunyi di HP).
-- `components/ui/tabs.tsx`: daftar tab dapat digulir di bawah lg, tab tidak menyusut.
-- `components/ui/dropdown-menu.tsx`: lebar/tinggi maksimum terhadap layar, `collisionPadding`.
-- Dialog tanpa batas tinggi diberi `max-h-[calc(100dvh-2rem)] overflow-y-auto`: database-admin-panel, surat/[id], jlf-variable-review-page, jlf-quick-workbench (pratinjau), aleta-bot-dashboard; `90vh` -> `90dvh` di aleta-bot-admin dan aleta-ecourt-sidang (kalender).
-- Layar TV/publik: `components/layout/mode-layar-jauh.tsx` (baru) dipasang di antrian-layar, antrian-ruang, antrian-tampil, sidang-ruang.
-- Uji baru: `src/test/uiux-semua-layar.test.tsx` (belum pernah dijalankan).
+## Sudah dikerjakan
+Kelompok 1 - komponen bersama (`manajemen_surat/src`):
+- `app/globals.css`
+  - Huruf akar naik di layar sangat lebar: >=2200px 19px, >=2800px 23px, >=3400px 27px. Di bawah 2200px tidak berubah.
+  - `html.aleta-layar-jauh`: huruf akar `max(16px, min(1.04vw, 1.85vh))` untuk televisi.
+  - Perangkat sentuh: tombol/select min 2.5rem; kolom isian 16px di <=767px (cegah zoom iOS).
+  - Tablet dan HP (<=1023px): anak grid di `main` boleh menyusut (`min-width: 0`), sel `td/th` di `main` dibatasi `max-width` 22rem (16rem di <=767px). Desktop tidak berubah.
+  - Kata panjang dipatahkan di HP; utilitas `.aleta-tabel-gulir`.
+  - Kerangka e-Court (`[data-lebar-ecourt]`) melebar dalam rem di >=2200px; kelas di `lib/jadwal-sidang-2okt.ts` tidak diubah (uji menjaga string persisnya).
+- `components/layout/portal-shell-v2.tsx`: lebar isi `max-w-[100rem]`, sidebar dalam rem, laci HP `100dvh`, menu notifikasi tidak melebihi layar, ikon pencarian cepat untuk HP (sebelumnya pencarian tersembunyi di HP).
+- `components/ui/tabs.tsx` (tab dapat digulir di bawah lg), `components/ui/dropdown-menu.tsx` (batas lebar/tinggi terhadap layar).
+- Dialog tanpa batas tinggi diberi `max-h-[calc(100dvh-2rem)] overflow-y-auto`: database-admin-panel, surat/[id], jlf-variable-review-page, jlf-quick-workbench, aleta-bot-dashboard; `90vh` jadi `90dvh` di aleta-bot-admin dan aleta-ecourt-sidang.
+- Kartu masuk (`app/login/page.tsx`) dalam rem agar ikut membesar di 4K.
 
-## Belum dikerjakan
-- Pemasangan dependensi di worktree gagal/ lambat: `npm ci` pertama gagal di postinstall puppeteer; yang kedua (`PUPPETEER_SKIP_DOWNLOAD=1 npm ci --ignore-scripts`) dihentikan sebelum selesai. `manajemen_surat/node_modules` di worktree ini TIDAK lengkap (jangan di-commit). Lanjutan: ulangi perintah kedua itu, atau pakai node_modules checkout utama.
-- Pemindaian luapan datar per halaman di 390/820/1366/1920/3840 dengan Playwright (skrip ada di scratchpad sesi: `scan.mjs`; harus disalin ke `manajemen_surat/` agar `@playwright/test` terbaca). Peladen: dev dengan `NEXT_PUBLIC_BASE_PATH=/aleta`, `DATABASE_URL=postgres://uji:uji@127.0.0.1:59999/aleta-uji-e2e`, `ALETA_ALLOW_IN_MEMORY_FALLBACK=1`, `ALETA_TANPA_CETAKAN_INGATAN=1`, `BETTER_AUTH_URL=http://localhost:3000`; akun uji dari e2e proyek.
-- Kelompok 2 (halaman utama): Jadwal Sidang, Status Perkara, Mediasi, e-Court/Integrasi, Kasir, BAS, Blangko, SKP, Pengaturan, Dasbor - belum dicek di peramban; kandidat: tabel tanpa pembungkus gulir (aleta-bot-admin 3, kasir-otomatis 2, rekap-petugas, tautan-sipp-semua, letter-list, peta-titik-perkara, relaas-massal).
-- Kelompok 3 (TV/publik): hanya ModeLayarJauh yang terpasang; ukuran per layar belum diukur di 1920/3840.
-- Kelompok 4 (ekstensi): TIDAK disentuh. Mengubah `ekstensi-sipp/` memutus uji `aleta-ecourt-zip` (isi tertanam harus sama) dan butuh rilis ekstensi (naik versi + tanam), yang dilarang untuk tugas ini. Usul: rilis ekstensi terpisah.
-- Tangkapan layar di `docs/uiux-v1/`: belum ada.
-- tsc, lint, vitest: belum dijalankan.
+Kelompok 2 - halaman utama:
+- Tabel yang belum punya pembungkus gulir kini dibungkus `aleta-tabel-gulir`: aleta-bot-admin (3), kasir-otomatis (2), rekap-petugas (1), tautan-sipp-semua (1); peta-titik-perkara: `overflow-y-auto` jadi `overflow-auto`.
+- Telaah Jadwal Sidang, Status Perkara, Mediasi, Kasir, BAS, Blangko, SKP, Pengaturan, Dasbor: semua tabelnya sudah punya pembungkus gulir dan tak ada grid tanpa awalan responsif, jadi yang berlaku di sana adalah aturan bersama di atas. Tabel Jadwal Sidang sudah punya mode ringkas dan `min-w-0` di xl; tidak diubah (terlalu rawan, diuji banyak berkas). Tabel jadi kartu di HP TIDAK dibuat; yang dipakai gulir ke samping.
+- Tabel cetak (cetak-relaas, cetak-jadwal, cetak-riwayat, status-perkara-cetak) sengaja tidak disentuh.
+
+Kelompok 3 - layar TV/publik: `components/layout/mode-layar-jauh.tsx` dipasang di antrian-layar, antrian-ruang, antrian-tampil, sidang-ruang.
+
+Uji: `src/test/uiux-semua-layar.test.tsx` (17 uji).
+
+## Hasil pemeriksaan
+- `tsc --noEmit`: bersih (kode keluar 0).
+- ESLint pada 21 berkas yang diubah: 13 galat, SEMUA lama dan di baris yang tidak disentuh (peta-titik-perkara set-state-in-effect, aleta-ecourt-sidang preserve-manual-memoization, aleta-bot-admin set-state-in-effect). `lint-jangan-bertambah` merah karena utang lama di berkas lain yang tak disentuh (baseline basi di tag 1.205.1).
+- Vitest (sasaran, maxWorkers=1, 3 berkas sekali jalan): uiux-semua-layar, login-page, rekap-petugas-tampilan, kasir-otomatis, kasir-jurnal, lebar-kolom-antrian-jam, tata-letak-antrian-sidang, tampilan-antrian-sidang, antrian-sidang-tampilan, layar-antrian-jaga-hidup, peta-kanvas-lebar, jadwal-sidang-1okt, jadwal-sidang-2okt, button-wiring, peta-perkara-layar, antrian-tampilan, antrian-disidang-ruang, antrian-dua-belas-butir, antrian-sidang-lima-permintaan, jadwal-sidang-tampilan, aleta-bot-template-query-suggestion: semua hijau. Uji penuh TIDAK dijalankan.
+
+## Belum / tidak dikerjakan
+- Tangkapan layar di `docs/uiux-v1/`: dilewati atas perintah koordinator (dev server dan peramban terlalu berat). Pengecekan di layar asli (390, 820, 1366, 1920, 3840) dilakukan sesi utama.
+- Panel dan widget ekstensi (`ekstensi-sipp/`): tidak disentuh, sesuai perintah. Perlu rilis ekstensi terpisah (naik versi + tanam).
+- node_modules di worktree adalah junction ke checkout utama (bukan bagian commit).
+
+## Yang perlu diperiksa di layar asli
+- Skala huruf >=2200px: tabel Jadwal Sidang dan kerangka e-Court.
+- Batas `max-width` sel tabel di tablet/HP: kolom yang dulu lebar (nama, alamat, pesan) kini membungkus; periksa tidak ada kolom penting yang jadi terlalu sempit.
+- `min-width: 0` pada anak grid di tablet/HP: periksa tidak ada kartu yang isinya meluap keluar.
+- Tombol/select min 2.5rem di layar sentuh: baris tombol kecil di tabel bisa lebih tinggi.
+- Dropdown kini bisa digulir (`overflow-y-auto`): periksa bayangan/fokus item.
+- ModeLayarJauh di 1920x1080: huruf akar 20px; periksa antrian-layar tidak melewati tinggi layar.

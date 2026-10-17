@@ -8093,6 +8093,7 @@ function DeadLetterCard({
           <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Tidak ada pesan gagal aktif. Riwayat yang sudah ditangani tetap tersimpan di bawah.</div>
         ) : (
           <>
+            <div className="aleta-tabel-gulir">
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
                 <tr>
@@ -8150,6 +8151,7 @@ function DeadLetterCard({
                 ))}
               </tbody>
             </table>
+            </div>
 
             {pendingResolve ? (
               <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 space-y-3">
@@ -8211,6 +8213,7 @@ function DeadLetterCard({
           {resolvedDeadLetters.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">Belum ada pesan gagal yang ditandai ditangani.</div>
           ) : (
+            <div className="aleta-tabel-gulir">
             <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
                 <tr>
@@ -8243,6 +8246,7 @@ function DeadLetterCard({
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </CardContent>
@@ -8484,6 +8488,7 @@ function LegacyMigrationCard({
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                   {groupKey} <span className="text-foreground/40">({migrations.length})</span>
                 </h4>
+                <div className="aleta-tabel-gulir">
                 <table className="w-full min-w-[1180px] text-left text-sm">
                   <thead className="border-b border-border text-xs uppercase tracking-[0.14em] text-muted-foreground">
                     <tr>
@@ -8572,6 +8577,7 @@ function LegacyMigrationCard({
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             ))}
           </div>

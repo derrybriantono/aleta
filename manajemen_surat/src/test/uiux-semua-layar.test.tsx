@@ -97,6 +97,36 @@ describe("gaya global: layar sangat lebar, sentuh, dan layar jauh", () => {
   });
 });
 
+describe("tablet dan HP: tabel tidak mendorong halaman melebar", () => {
+  const css = baca("app/globals.css");
+
+  it("sel tabel dibatasi lebarnya dan kolom grid boleh menyusut di bawah 1024 px", () => {
+    expect(css).toMatch(/@media \(max-width: 1023px\)\s*{\s*main \.grid > \*\s*{\s*min-width: 0/);
+    expect(css).toMatch(/main td,\s*main th\s*{\s*max-width: 22rem/);
+    expect(css).toMatch(/@media \(max-width: 767px\)\s*{\s*main td,\s*main th\s*{\s*max-width: 16rem/);
+  });
+
+  it("tabel yang dulu tanpa pembungkus kini dapat digulir, tabelnya sendiri tetap ada", () => {
+    for (const [berkas, minimal] of [
+      ["components/portal/aleta-bot-admin.tsx", 3],
+      ["components/portal/kasir-otomatis.tsx", 2],
+      ["components/portal/rekap-petugas.tsx", 1],
+      ["components/portal/tautan-sipp-semua.tsx", 1],
+    ] as const) {
+      const isi = baca(berkas);
+      expect(isi.match(/<div className="aleta-tabel-gulir">/g)?.length ?? 0, berkas).toBeGreaterThanOrEqual(minimal);
+      // pembungkus dan penutupnya seimbang dengan tabelnya
+      expect(isi.match(/<table/g)?.length ?? 0, berkas).toBeGreaterThanOrEqual(minimal);
+    }
+  });
+
+  it("kartu masuk memakai rem agar ikut membesar di layar sangat lebar", () => {
+    const masuk = baca("app/login/page.tsx");
+    expect(masuk).toContain("max-w-[55rem]");
+    expect(masuk).toContain("lg:grid-cols-[minmax(0,1fr)_24.375rem]");
+  });
+});
+
 describe("layar televisi dan publik memakai mode layar jauh", () => {
   for (const halaman of [
     "app/antrian-layar/page.tsx",

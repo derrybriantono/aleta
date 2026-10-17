@@ -173,6 +173,28 @@
     }
   }
 
+  /* Tablet dan HP: kolom grid boleh menyusut (min-width: 0) dan sel tabel
+     tidak melebar tanpa batas karena satu isi panjang. Tabel yang lebih
+     lebar dari layar tetap dapat digulir di pembungkusnya; di desktop tidak
+     ada yang berubah. */
+  @media (max-width: 1023px) {
+    main .grid > * {
+      min-width: 0;
+    }
+
+    main td,
+    main th {
+      max-width: 22rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    main td,
+    main th {
+      max-width: 16rem;
+    }
+  }
+
   /* Kata panjang (nomor perkara, alamat berkas, surel) tidak boleh
      mendorong halaman melebar di HP. */
   @media (max-width: 767px) {
@@ -295,14 +317,6 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
-  }
-
-  /* Baris tombol yang membungkus ke bawah di HP tetapi tetap sebaris di
-     layar lebar. */
-  .aleta-baris-aksi {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
   }
 
   .aleta-blue-scrollbar {
