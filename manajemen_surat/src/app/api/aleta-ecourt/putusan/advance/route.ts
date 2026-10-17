@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { bacaRtfDariBita } from "@/lib/baca-rtf";
 import { pecahNaskahResmi } from "@/lib/naskah-putusan-resmi";
 import { susunRaporAdvance, type ButirPustakaMasuk, type PutusanSerupaMasuk } from "@/lib/putusan-advance";
+import { drafKeBita, susunDrafUtuh, type BahanIsian, type IsianKosong } from "@/lib/putusan-advance-draf";
 import { hurufAlasan } from "@/lib/set-pertanyaan-saksi";
 import { getDatabase } from "@/server/db/client";
 import { getGatewaySippPutusanSerupa } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -31,7 +32,30 @@ type Badan = {
   sebutanP?: unknown;
   huruf?: unknown;
   saksi?: unknown;
+  /** "draf" = tahap 2: susun draf putusan utuh (rapor tetap dihitung ulang di sini). Kosong = pemeriksa saja. */
+  tindakan?: unknown;
+  /** Tahap 2: isian blangko yang masih kosong dan isian teks yang terisi (Blangko Derry). */
+  isianKosong?: unknown;
+  bahan?: unknown;
 };
+
+const teksRingkas = (x: unknown, maks: number) => String(x ?? "").slice(0, maks);
+
+function isianKosongDari(x: unknown): IsianKosong[] {
+  if (!Array.isArray(x)) return [];
+  return x.slice(0, 80).map((b) => {
+    const o = (b && typeof b === "object" ? b : {}) as Record<string, unknown>;
+    return { kode: teksRingkas(o.kode, 12), nama: teksRingkas(o.nama, 160), jenis: teksRingkas(o.jenis, 12), khusus: teksRingkas(o.khusus, 12) };
+  });
+}
+
+function bahanDari(x: unknown): BahanIsian[] {
+  if (!Array.isArray(x)) return [];
+  return x.slice(0, 80).map((b) => {
+    const o = (b && typeof b === "object" ? b : {}) as Record<string, unknown>;
+    return { kode: teksRingkas(o.kode, 12), nama: teksRingkas(o.nama, 160), teks: teksRingkas(o.teks, 6000), jenis: teksRingkas(o.jenis, 12), khusus: teksRingkas(o.khusus, 12) };
+  });
+}
 
 /**
  * ============================================================================
@@ -47,6 +71,14 @@ type Badan = {
  * BHT hakim yang sama (SIPP lewat bot, baca saja) + pustaka ALETA yang sudah
  * disahkan. TIDAK MENULIS ke mana pun dan tidak memanggil AI: hasilnya hanya
  * rapor di layar; perubahan naskah tetap diketik hakim di Blangko Derry/ABT.
+ *
+ * TAHAP 2 (17 Okt, "pemeriksa dulu, lalu draf utuh"): bila badan memuat
+ * tindakan: "draf" (+ isianKosong, bahan), pemeriksaan yang SAMA dijalankan
+ * ulang di sini - hak, saklar akun, dan hitungannya tidak bisa dilewati - lalu
+ * rapor disusun menjadi draf putusan utuh (@/lib/putusan-advance-draf):
+ *   -> { ok, ringkasRapor, draf: { namaBerkas, rtfBase64, bagian, tanda, sisa, ... } }
+ * Tetap TIDAK menulis ke ABT/SIPP/basis data; berkas RTF hanya dikirim ke
+ * peramban untuk diunduh.
  *
  * Nama pihak perkara pembanding dipakai di sini untuk menyamarkan contoh
  * alinea dan tidak pernah dikirim ke peramban. Hak: kapabilitas
@@ -152,6 +184,22 @@ export async function POST(request: NextRequest) {
       pustaka,
       bagianHilang,
     });
+    if (String(body.tindakan || "") === "draf") {
+      const draf = susunDrafUtuh({
+        nomorPerkara,
+        naskah,
+        rapor,
+        pengadilan: String(process.env.ALETA_NAMA_SATKER || ""),
+        isianKosong: isianKosongDari(body.isianKosong),
+        bahan: bahanDari(body.bahan),
+      });
+      const { rtf, ...tanpaRtf } = draf;
+      return ok({
+        ok: true,
+        ringkasRapor: rapor.ringkas,
+        draf: { ...tanpaRtf, rtfBase64: Buffer.from(drafKeBita(rtf)).toString("base64") },
+      });
+    }
     return ok({ ok: true, rapor });
   } catch (error) {
     return handleAdminRouteError(error, request, {

@@ -19,6 +19,14 @@
  * HANYA MEMBACA. Tidak ada yang ditulis ke ABT, SIPP, atau basis data ALETA;
  * tombol Salin hanya menyalin ke papan klip - hakim sendiri yang menempel dan
  * menyimpan lewat Blangko Derry/ABT seperti biasa (tindakan hukum = kelas C).
+ *
+ * TAHAP 2 (17 Okt 2026, "pemeriksa dulu, lalu draf utuh"): sesudah pemeriksaan
+ * selesai, tombol "Susun draf utuh" meminta portal (rute yang sama, tindakan
+ * "draf") menyusun draf putusan utuh mengikuti blangko terpilih. Pratinjaunya
+ * tampil di kartu ini; berkasnya (RTF, dibuka di Word/ABT) hanya DIUNDUH ke
+ * komputer pengguna - tidak ada yang dikirim ke ABT/SIPP. Bagian yang belum
+ * pasti bertanda "[perlu dilengkapi: ...]" berwarna merah. Tombol hanya aktif
+ * bila pemeriksaan sudah selesai DAN isian blangko belum berubah sesudahnya.
  */
 (function putusanAdvanceModul() {
   if (typeof globalThis === "undefined" || globalThis.aletaPutusanAdvance) return;
@@ -28,7 +36,7 @@
   const NAMA_LANGKAH = { duduk: "Duduk perkara", bukti: "Bukti surat", saksi: "Keterangan saksi", kesimpulan: "Kesimpulan", pertimbangan: "Pertimbangan hukum", amar: "Amar", biaya: "Biaya perkara", koreksi: "Koreksi majelis" };
 
   // menyala: null = belum diketahui; false = akun ini dimatikan admin (Pengaturan SIPP & ABT > Putusan Advance, 17 Okt).
-  const S = { pk: null, rapor: null, memuat: false, galat: "", salinan: [], menyala: null, sebabMati: "" };
+  const S = { pk: null, rapor: null, memuat: false, galat: "", salinan: [], menyala: null, sebabMati: "", draf: null, drafMemuat: false, drafGalat: "", sidik: "" };
   const PESAN_MATI = "Putusan Advance belum diaktifkan untuk akun Anda - hubungi admin.";
 
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -55,6 +63,36 @@
       // Tanya jawab belum dibuka = tidak terkirim (bukan "saksi tidak menerangkan apa pun").
       saksi: Object.keys(tj).length ? saksi : undefined,
     };
+  }
+
+  /** Sidik isian saat pemeriksaan: berubah sesudahnya = rapor sudah basi, periksa ulang dulu. */
+  function sidikKeadaan(k) {
+    try {
+      const b = bahanDariKeadaan(k, null);
+      return JSON.stringify([(k && k.isi) || {}, (k && k.perlu) || [], b.saksi === undefined ? null : b.saksi]);
+    } catch {
+      return "";
+    }
+  }
+
+  /** Isian blangko yang masih "perlu diisi" - dikirim supaya draf menandai bagiannya. */
+  function isianKosongDariKeadaan(k) {
+    const per = new Set((k && Array.isArray(k.perlu) ? k.perlu : []).map(String));
+    const isian = (k && k.susunan && Array.isArray(k.susunan.isian) ? k.susunan.isian : []);
+    return isian
+      .filter((b) => b && per.has(String(b.kode)))
+      .slice(0, 80)
+      .map((b) => ({ kode: String(b.kode || ""), nama: String(b.nama || ""), jenis: String(b.jenis || ""), khusus: String(b.khusus || "") }));
+  }
+
+  /** Isian teks yang sudah terisi - bahan cadangan bila duduk perkara naskah tidak terbaca. */
+  function bahanIsianDariKeadaan(k) {
+    const nilai = (k && k.isi) || {};
+    const isian = (k && k.susunan && Array.isArray(k.susunan.isian) ? k.susunan.isian : []);
+    return isian
+      .filter((b) => b && b.jenis === "teks" && typeof nilai[b.kode] === "string" && nilai[b.kode].trim())
+      .slice(0, 60)
+      .map((b) => ({ kode: String(b.kode || ""), nama: String(b.nama || ""), teks: String(nilai[b.kode]).slice(0, 6000), jenis: "teks", khusus: String(b.khusus || "") }));
   }
 
   async function ambil(alamat, opsi) {
@@ -146,6 +184,50 @@
     );
   }
 
+  /** Pratinjau draf utuh: tiap bagian, penanda merah, alinea contoh bergaris. */
+  function isiPratinjauDraf(d) {
+    const merah = "color:#c00000";
+    let h = `<div style="max-height:340px;overflow:auto;border:1px solid var(--line,#ddd);border-radius:6px;padding:8px;font-size:.8rem" data-pa-pratinjau>`;
+    for (const bg of d.bagian || []) {
+      h += `<div data-bagian="${esc(bg.kunci)}" style="margin:0 0 8px"><div style="font-weight:600;font-size:.75rem;color:var(--muted)">${esc(bg.judul)}${bg.jumlahTanda ? ` · ${bg.jumlahTanda} perlu dilengkapi` : ""}</div>`;
+      for (const p of bg.paragraf || []) {
+        if (p.tanda) h += `<p data-pa-tanda style="margin:2px 0;${merah};font-weight:600">${esc(p.teks)}</p>`;
+        else if (p.contoh) h += `<p data-pa-contoh style="margin:2px 0 2px 10px;${merah};border-left:3px solid #c00000;padding-left:6px">${esc(p.teks)}</p>`;
+        else h += `<p style="margin:2px 0${p.gaya === "judul" || p.gaya === "tengah" ? ";text-align:center" : ""}">${esc(p.teks)}</p>`;
+      }
+      h += `</div>`;
+    }
+    return `${h}</div>`;
+  }
+
+  /** Blok "Susun draf utuh": aktif hanya sesudah pemeriksa selesai dan isian belum berubah. */
+  function isiDraf() {
+    const api = isian();
+    const k = api && typeof api.keadaan === "function" ? api.keadaan() : null;
+    const basi = Boolean(S.rapor && S.sidik && k && sidikKeadaan(k) !== S.sidik);
+    const boleh = Boolean(S.rapor) && !S.memuat && !S.drafMemuat && !basi;
+    let h = `<div data-pa-blokdraf style="margin:8px 0;padding:8px;border:1px solid var(--line,#ddd);border-radius:6px">`;
+    h += `<b>Draf putusan utuh</b> <span style="font-size:.75rem;color:var(--muted)">disusun sesudah pemeriksaan, mengikuti blangko yang terpilih</span><br>`;
+    h += `<button type="button" data-pa-draf class="bd-btn" ${boleh ? "" : "disabled"}>${S.drafMemuat ? "Menyusun… (bisa 1 menit)" : S.draf ? "Susun ulang draf utuh" : "Susun draf utuh"}</button>`;
+    if (!S.rapor) h += ` <span style="font-size:.75rem;color:var(--muted)">Aktif sesudah pemeriksaan selesai.</span>`;
+    if (basi) h += ` <span style="font-size:.75rem;color:var(--warn)" role="status">Isian blangko berubah sesudah pemeriksaan - periksa ulang dulu.</span>`;
+    if (S.drafGalat) h += `<p style="color:var(--warn)" role="alert">${esc(S.drafGalat)}</p>`;
+    const d = S.draf;
+    if (d) {
+      h += `<p style="font-size:.8rem;margin:6px 0">${esc(d.ringkas || "")}</p>`;
+      if (d.sisa && d.sisa.jumlah) {
+        h += `<p style="font-size:.78rem;color:var(--warn)" role="status">Saat diunggah ke ABT, peringatan akan muncul: ${esc(String(d.sisa.jumlah))} sisa blangko terdeteksi${(d.sisa.rincian || []).length ? ` (${d.sisa.rincian.map((x) => `${esc(x.label)} ${esc(String(x.jumlah))}`).join("; ")})` : ""}.</p>`;
+      }
+      if (Array.isArray(d.catatan) && d.catatan.length) h += `<ul style="margin:0 0 6px;padding-left:18px;font-size:.76rem;color:var(--muted)">${d.catatan.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>`;
+      h += `<p><button type="button" data-pa-unduh class="bd-btn">Unduh draf (Word)</button> <span style="font-size:.72rem;color:var(--muted)">Hanya diunduh ke komputer ini; bagian merah harus dilengkapi atau dihapus dulu.</span></p>`;
+      h += isiPratinjauDraf(d);
+      if (Array.isArray(d.serupa) && d.serupa.length) {
+        h += `<p style="font-size:.76rem;color:var(--muted)">Putusan serupa yang menjadi pembanding: ${d.serupa.map((x) => esc(x.nomor)).join("; ")}.</p>`;
+      }
+    }
+    return `${h}</div>`;
+  }
+
   function isiKartu() {
     const kepala =
       `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">` +
@@ -161,8 +243,9 @@
     isi += `<p><button type="button" data-pa-periksa class="bd-btn" ${S.memuat ? "disabled" : ""}>${S.memuat ? "Memeriksa… (ABT menyusun naskah, bisa 1-5 menit)" : S.rapor ? "Periksa ulang" : "Periksa draf sekarang"}</button></p>`;
     if (S.galat) isi += `<p style="color:var(--warn)" role="alert">${esc(S.galat)}</p>`;
     const r = S.rapor;
-    if (!r) return isi;
+    if (!r) return isi + isiDraf();
     isi += `<p><b>${esc(r.ringkas)}</b></p>`;
+    isi += isiDraf();
     const langkah = Object.entries(r.perLangkah || {});
     if (langkah.length) {
       isi += `<p style="font-size:.78rem">Per langkah checklist konseptor: ${langkah.map(([l, n]) => `${esc(NAMA_LANGKAH[l] || l)} ${n.perhatian ? `<b style="color:var(--warn)">${n.perhatian} perhatian</b>` : ""}${n.perhatian && n.catatan ? ", " : ""}${n.catatan ? `${n.catatan} catatan` : ""}`).join(" · ")}</p>`;
@@ -202,6 +285,67 @@
     }
   }
 
+  /** Tahap 2: portal menyusun draf utuh dari naskah blangko + hasil pemeriksa (dihitung ulang di sana). */
+  async function susunDraf() {
+    if (!S.rapor || S.drafMemuat) return;
+    const api = isian();
+    if (!api || typeof api.naskahRtf !== "function") {
+      S.drafGalat = "Blangko Derry belum siap (perbarui ekstensi).";
+      return render();
+    }
+    const k = api.keadaan();
+    if (S.sidik && sidikKeadaan(k) !== S.sidik) {
+      S.drafGalat = "Isian blangko berubah sesudah pemeriksaan. Periksa draf lagi dulu.";
+      return render();
+    }
+    const a = kerangka();
+    const t = a && typeof a.perkaraTerpilih === "function" ? a.perkaraTerpilih() : null;
+    const bahan = bahanDariKeadaan(k, t && t.perkara);
+    S.drafMemuat = true;
+    S.drafGalat = "";
+    render();
+    try {
+      const rtf = await api.naskahRtf(false);
+      const d = await ambil(API, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...bahan, rtfBase64: keBase64(rtf), tindakan: "draf", isianKosong: isianKosongDariKeadaan(k), bahan: bahanIsianDariKeadaan(k) }),
+        batasMs: 90000,
+      });
+      S.draf = d && d.draf ? d.draf : null;
+      if (!S.draf) S.drafGalat = "Portal tidak mengembalikan draf.";
+    } catch (e) {
+      S.drafGalat = e && e.status === 403 ? "Draf utuh hanya untuk hakim, konseptor perkara ini, dan Admin." : `Draf gagal disusun: ${String((e && e.message) || e)}`;
+    } finally {
+      S.drafMemuat = false;
+      render();
+    }
+  }
+
+  /** Mengunduh RTF draf ke komputer; tidak mengirim apa pun ke ABT/SIPP. */
+  function unduhDraf() {
+    const d = S.draf;
+    if (!d || !d.rtfBase64) return;
+    const bin = atob(d.rtfBase64);
+    const bita = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i += 1) bita[i] = bin.charCodeAt(i);
+    let alamat = "";
+    let blobUrl = false;
+    try {
+      alamat = URL.createObjectURL(new Blob([bita], { type: "application/rtf" }));
+      blobUrl = true;
+    } catch {
+      alamat = `data:application/rtf;base64,${d.rtfBase64}`;
+    }
+    const a = document.createElement("a");
+    a.href = alamat;
+    a.download = String(d.namaBerkas || "Draf putusan.rtf");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (blobUrl) setTimeout(() => { try { URL.revokeObjectURL(alamat); } catch { /* sudah dilepas */ } }, 4000);
+  }
+
   async function periksa() {
     const api = isian();
     if (!api || typeof api.naskahRtf !== "function") {
@@ -217,9 +361,12 @@
     }
     S.memuat = true;
     S.galat = "";
+    S.draf = null;
+    S.drafGalat = "";
     render();
     try {
       const rtf = await api.naskahRtf(false);
+      const sidik = sidikKeadaan(api.keadaan());
       const d = await ambil(API, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -227,6 +374,7 @@
         batasMs: 90000,
       });
       S.rapor = d && d.rapor ? d.rapor : null;
+      S.sidik = S.rapor ? sidik : "";
       if (!S.rapor) S.galat = "Portal tidak mengembalikan rapor.";
     } catch (e) {
       if (e && e.status === 403 && /belum diaktifkan/.test(String(e.message))) {
@@ -248,6 +396,8 @@
       return;
     }
     if (el.closest("[data-pa-periksa]")) return void periksa();
+    if (el.closest("[data-pa-draf]")) return void susunDraf();
+    if (el.closest("[data-pa-unduh]")) return void unduhDraf();
     const s = el.closest("[data-pa-salin]");
     if (s) void salin(S.salinan[Number(s.getAttribute("data-pa-salin"))] || "", s);
   }
@@ -265,6 +415,9 @@
     if (baru !== String((S.pk && S.pk.perkaraId) || "")) {
       S.rapor = null;
       S.galat = "";
+      S.draf = null;
+      S.drafGalat = "";
+      S.sidik = "";
     }
     S.pk = d ? { perkaraId: d.perkaraId, nomorPerkara: d.nomorPerkara } : null;
     render();
@@ -294,7 +447,7 @@
     return true;
   }
 
-  globalThis.aletaPutusanAdvance = { mulai, bukaKartu, periksa, murni: { bahanDariKeadaan, keBase64 }, keadaan: () => ({ pk: S.pk, rapor: S.rapor, galat: S.galat, memuat: S.memuat }), menyala: () => S.menyala };
+  globalThis.aletaPutusanAdvance = { mulai, bukaKartu, periksa, susunDraf, unduhDraf, murni: { bahanDariKeadaan, keBase64, sidikKeadaan, isianKosongDariKeadaan, bahanIsianDariKeadaan }, keadaan: () => ({ pk: S.pk, rapor: S.rapor, galat: S.galat, memuat: S.memuat, draf: S.draf, drafMemuat: S.drafMemuat, drafGalat: S.drafGalat }), menyala: () => S.menyala };
   if (!mulai()) {
     let coba = 0;
     const ulang = setInterval(() => {
