@@ -232,7 +232,7 @@ async function evaluateUndeliverable({ hours = UNDELIVERED_AFTER_HOURS, threshol
        FROM aleta_bot_message_logs
       WHERE status = 'sent'
         AND recipient_number <> ''
-        AND created_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
+        AND created_at < DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? HOUR)
         AND delivered_at IS NULL
         AND (ack IS NULL OR ack < 2)
         AND recipient_number NOT IN (

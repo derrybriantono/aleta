@@ -236,6 +236,30 @@ describe("B. bot basUnggahService - e-Doc BAS persis tingkap SIPP, dobel tidak d
     expect(svc.jalurTerhapus("/etc/passwd", new Date())).toBe("");
   });
 
+  it("audit 17 Okt: GANTI bersyarat jalur lama - diganti orang lain sesudah dibaca -> tidak ditimpa, lama tidak dipindah", async () => {
+    // Basis data tiruan yang benar-benar menilai WHERE: SELECT membaca "lama.rtf",
+    // lalu tab lain mengganti e-Doc ke "orang-lain.rtf" sebelum UPDATE kita.
+    const t = tiruan({ edoc: "resources/file/doc/2026/09/lama.rtf" });
+    let nilaiDb = "resources/file/doc/2026/09/lama.rtf";
+    const asli = t.d.kueri;
+    t.d.kueri = async (s: string, p: unknown[]) => {
+      if (/^SELECT/.test(s.trim())) {
+        const b = await asli(s, p);
+        nilaiDb = "resources/file/doc/2026/09/orang-lain.rtf";
+        return b;
+      }
+      t.kejadian.push(`UPDATE ${JSON.stringify(p)}`);
+      const cocok = /AND edoc_bas = \?/.test(s) ? p[p.length - 1] === nilaiDb : /edoc_bas IS NULL OR edoc_bas = ''/.test(s) ? !nilaiDb : true;
+      if (cocok) nilaiDb = String(p[0]);
+      return { affectedRows: cocok ? 1 : 0 };
+    };
+    const h = await svc.buatLayanan(t.d).unggahBas({ ...MASUK, ganti: true });
+    expect(h).toMatchObject({ ok: false, alasan: "sudah_ada" });
+    expect(nilaiDb).toBe("resources/file/doc/2026/09/orang-lain.rtf");
+    expect(t.kejadian.some((k) => k.startsWith("PINDAH"))).toBe(false);
+    expect(t.kejadian.some((k) => k.startsWith("HAPUS /sipp/resources/file/doc/2026/09/PADgl_2026_PdtG_582_bas_2_"))).toBe(true);
+  });
+
   it("balapan dua tab (UPDATE 0 baris) -> berkas kita dibuang, milik orang lain dibiarkan, alasan sudah_ada", async () => {
     const t = tiruan({ terubah: 0 });
     const h = await svc.buatLayanan(t.d).unggahBas(MASUK);

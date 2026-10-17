@@ -237,7 +237,8 @@ describe("bot - skors dengan alasan, perkiraan, lama, dan daftar", () => {
     const { L, bot } = layanan();
     await L.setelSkors({ ...minta, panggilSaatSkors: `${HARI} 10:20:00`, kering: false });
     const tutup = bot.catatan.find((c) => c.sql.includes("'(dipanggil lagi lewat antrian)'"));
-    expect(tutup?.sql).toContain("AND dilanjutkan_pada IS NULL AND diskors_pada < ?");
+    // 17 Okt 2026: jam antrian (setempat) diubah ke UTC di SQL - kolom ALETA disimpan UTC.
+    expect(tutup?.sql).toContain("AND dilanjutkan_pada IS NULL AND diskors_pada < DATE_SUB(?, INTERVAL TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) SECOND)");
     expect(tutup?.params).toEqual([`${HARI} 10:20:00`, `${HARI} 10:20:00`, "5", HARI, `${HARI} 10:20:00`]);
     const iUbah = bot.catatan.indexOf(tutup!);
     const iSisip = bot.catatan.findIndex((c) => c.sql.startsWith(`INSERT INTO ${selesaiMod.TABEL_SKORS}`));
@@ -248,7 +249,8 @@ describe("bot - skors dengan alasan, perkiraan, lama, dan daftar", () => {
     const { L, bot } = layanan((sql) => (sql.startsWith(`SELECT id FROM ${selesaiMod.TABEL_SKORS}`) ? [{ id: 3 }] : undefined));
     await L.setelSkors({ ...minta, panggilSaatSkors: "", perkiraanLanjut: "11:00", kering: false });
     expect(bot.catatan.some((c) => c.sql.startsWith("INSERT"))).toBe(false);
-    const ubah = bot.catatan.find((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_SKORS} SET perkiraan_lanjut = ?`));
+    // Perkiraan diketik jam setempat; disimpan UTC lewat SQL (parameternya tetap teks setempat).
+    const ubah = bot.catatan.find((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_SKORS} SET perkiraan_lanjut = DATE_SUB(?, INTERVAL TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW()) SECOND)`));
     expect(ubah?.params).toEqual([`${HARI} 11:00:00`, "5", HARI]);
     expect(ubah?.sql).not.toContain("alasan");
   });
@@ -256,7 +258,7 @@ describe("bot - skors dengan alasan, perkiraan, lama, dan daftar", () => {
   it("Lanjutkan mencatat lama skors dan memulangkannya", async () => {
     const { L, bot } = layanan((sql) => (sql.startsWith("SELECT lama_detik AS lamaDetik") ? [{ lamaDetik: 1020 }] : undefined));
     const hasil = await L.setelSkors({ ...minta, skors: false, kering: false });
-    expect(bot.catatan.some((c) => c.sql.includes("lama_detik = TIMESTAMPDIFF(SECOND, diskors_pada, NOW())"))).toBe(true);
+    expect(bot.catatan.some((c) => c.sql.includes("lama_detik = TIMESTAMPDIFF(SECOND, diskors_pada, UTC_TIMESTAMP())"))).toBe(true);
     expect(hasil.lamaDetik).toBe(1020);
   });
 

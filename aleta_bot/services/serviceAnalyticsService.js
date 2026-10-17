@@ -1,5 +1,8 @@
 "use strict";
 
+// created_at disimpan UTC; jam sibuk dikelompokkan menurut jam SETEMPAT.
+const { sqlSetempat } = require("../utils/waktuUtc");
+
 /**
  * Corong layanan dan laporan pelayanan publik.
  *
@@ -204,7 +207,7 @@ async function getFunnel({ range = "30d" } = {}) {
   const rows = await botDb.query(
     `SELECT stage, COUNT(DISTINCT session_hash) AS sesi
        FROM aleta_bot_service_events
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      WHERE created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
         AND stage <> ''
       GROUP BY stage`,
     [days]
@@ -263,7 +266,7 @@ async function getServiceReport({ range = "30d" } = {}) {
         AVG(NULLIF(duration_ms, 0)) AS rata_ms,
         MAX(duration_ms) AS maks_ms
        FROM aleta_bot_service_events
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      WHERE created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
         AND stage = 'terjawab'`,
     [days]
   );
@@ -271,7 +274,7 @@ async function getServiceReport({ range = "30d" } = {}) {
   const perInformasi = await botDb.query(
     `SELECT option_key, COUNT(*) AS jumlah
        FROM aleta_bot_service_events
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      WHERE created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
         AND stage = 'terjawab' AND option_key <> ''
       GROUP BY option_key
       ORDER BY jumlah DESC`,
@@ -281,7 +284,7 @@ async function getServiceReport({ range = "30d" } = {}) {
   const perHasil = await botDb.query(
     `SELECT outcome, COUNT(*) AS jumlah
        FROM aleta_bot_service_events
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      WHERE created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
         AND outcome <> ''
       GROUP BY outcome
       ORDER BY jumlah DESC`,
@@ -289,11 +292,11 @@ async function getServiceReport({ range = "30d" } = {}) {
   );
 
   const perJam = await botDb.query(
-    `SELECT HOUR(created_at) AS jam, COUNT(*) AS jumlah
+    `SELECT HOUR(${sqlSetempat("created_at")}) AS jam, COUNT(*) AS jumlah
        FROM aleta_bot_service_events
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      WHERE created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
         AND stage = 'terjawab'
-      GROUP BY HOUR(created_at)
+      GROUP BY HOUR(${sqlSetempat("created_at")})
       ORDER BY jam ASC`,
     [days]
   );
@@ -301,7 +304,7 @@ async function getServiceReport({ range = "30d" } = {}) {
   const dariPotret = await botDb.query(
     `SELECT data_source, COUNT(*) AS jumlah
        FROM aleta_bot_service_events
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      WHERE created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
         AND stage = 'terjawab' AND data_source <> ''
       GROUP BY data_source`,
     [days]
@@ -345,7 +348,7 @@ async function pruneOlderThan(days = 400) {
   const ready = await ensureTable();
   if (!ready) return 0;
   const result = await botDb.query(
-    `DELETE FROM aleta_bot_service_events WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)`,
+    `DELETE FROM aleta_bot_service_events WHERE created_at < DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)`,
     [Math.max(30, Math.min(2000, Number(days) || 400))]
   );
   return (result && result.affectedRows) || 0;

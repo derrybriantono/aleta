@@ -446,10 +446,16 @@ async function daftarKehadiran(daftarPerkaraId = [], tanggal = "") {
     const bagian = id.slice(mulai, mulai + 500);
     const isian = bagian.map(() => "?").join(", ");
     const rows = await botDb.query(
+      // Waktu dibaca sebagai TEKS: driver mysql mengubah DATETIME menjadi Date
+      // LOKAL (TZ peti Asia/Makassar), padahal toMysqlDate menulis UTC - jam
+      // tampil mundur 8 jam (audit 17 Okt: kh-9906 hadir 10.37 WITA terbaca
+      // "02:37"). fromMysqlDate menegaskan teks itu sebagai UTC.
       `SELECT id, perkara_id AS perkaraId, peran, urutan_pihak AS urutanPihak,
-              sebagai_kuasa AS sebagaiKuasa, nama, sisi, waktu_hadir AS waktuHadir,
+              sebagai_kuasa AS sebagaiKuasa, nama, sisi,
+              DATE_FORMAT(waktu_hadir, '%Y-%m-%d %H:%i:%s') AS waktuHadir,
               sumber, wa_chat_id AS waChatId, saksi_untuk AS saksiUntuk,
-              pulang_pada AS pulangPada, diperiksa_pada AS diperiksaPada
+              DATE_FORMAT(pulang_pada, '%Y-%m-%d %H:%i:%s') AS pulangPada,
+              DATE_FORMAT(diperiksa_pada, '%Y-%m-%d %H:%i:%s') AS diperiksaPada
          FROM aleta_bot_antrian_kehadiran
         WHERE tanggal = ? AND perkara_id IN (${isian})
           -- Kehadiran yang SUDAH DIBATALKAN tidak ikut dibaca. Tanpa saringan

@@ -1,5 +1,7 @@
 "use strict";
 
+const { sqlSetempat, sqlDariSetempat } = require("../utils/waktuUtc");
+
 /**
  * ============================================================================
  * TOMBOL "SELESAI" JADWAL SIDANG - SINKRON DUA ARAH DENGAN ANTRIAN SIDANG
@@ -228,6 +230,12 @@ function buatLayanan(deps = {}) {
         require("../db_config").query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
       }));
   const kueriBot = deps.kueriBot || ((sql, params = []) => require("./botDbService").query(sql, params));
+  // Waktu tabel ALETA disimpan UTC (UTC_TIMESTAMP()); isi lama ber-NOW()
+  // dipindah dulu - kecuali basis data tiruan (uji) yang tidak memintanya.
+  // Teks keluaran tetap jam setempat (sebasis jam antrian yang dibandingkan
+  // portal), dan masukan jam setempat (jam antrian, perkiraan lanjut) diubah
+  // ke UTC di SQL sebelum disimpan/dibandingkan.
+  const migrasiUtc = deps.migrasiUtc || (deps.kueriBot ? async () => {} : () => require("./botDbService").pastikanUtc());
   const kueriRuangTunggu =
     deps.kueriRuangTunggu ||
     ((sql, params = []) => require("./externalDbService").query("antrian_sidang", sql, params));
@@ -267,6 +275,7 @@ function buatLayanan(deps = {}) {
         INDEX idx_sidang_selesai_tanggal (tanggal_sidang)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await migrasiUtc();
     tabelSiap = true;
   }
 
@@ -301,7 +310,7 @@ function buatLayanan(deps = {}) {
       await pastikanTabel();
       const baris = await kueriBot(
         `SELECT perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
-                oleh, DATE_FORMAT(ditandai_pada, '%Y-%m-%d %H:%i:%s') AS ditandaiPada
+                oleh, DATE_FORMAT(${sqlSetempat("ditandai_pada")}, '%Y-%m-%d %H:%i:%s') AS ditandaiPada
            FROM ${TABEL}
           WHERE tanggal_sidang BETWEEN ? AND ?`,
         [awal, akhir]
@@ -353,8 +362,8 @@ function buatLayanan(deps = {}) {
       const baris = await kueriBot(
         `SELECT perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
                 nomor_perkara AS nomorPerkara, oleh, alasan, panggil_saat_skors AS panggilSaatSkors,
-                DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
-                alasan_kode AS alasanKode, DATE_FORMAT(perkiraan_lanjut, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut
+                DATE_FORMAT(${sqlSetempat("diskors_pada")}, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
+                alasan_kode AS alasanKode, DATE_FORMAT(${sqlSetempat("perkiraan_lanjut")}, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut
            FROM ${TABEL_SKORS}
           WHERE tanggal_sidang BETWEEN ? AND ? AND dilanjutkan_pada IS NULL
           ORDER BY id ASC`,
@@ -402,7 +411,7 @@ function buatLayanan(deps = {}) {
       await pastikanTabelBerjalan();
       const baris = await kueriBot(
         `SELECT perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
-                nomor_perkara AS nomorPerkara, ruang, oleh, DATE_FORMAT(ditandai_pada, '%Y-%m-%d %H:%i:%s') AS ditandaiPada
+                nomor_perkara AS nomorPerkara, ruang, oleh, DATE_FORMAT(${sqlSetempat("ditandai_pada")}, '%Y-%m-%d %H:%i:%s') AS ditandaiPada
            FROM ${TABEL_BERJALAN}
           WHERE tanggal_sidang BETWEEN ? AND ? AND dibatalkan_pada IS NULL
           ORDER BY id ASC`,
@@ -469,9 +478,9 @@ function buatLayanan(deps = {}) {
     await pastikanTabelSkors();
     const baris = await kueriBot(
       `SELECT perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
-              alasan, oleh, DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
-              DATE_FORMAT(dilanjutkan_pada, '%Y-%m-%d %H:%i:%s') AS dilanjutkanPada,
-              alasan_kode AS alasanKode, DATE_FORMAT(perkiraan_lanjut, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut,
+              alasan, oleh, DATE_FORMAT(${sqlSetempat("diskors_pada")}, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
+              DATE_FORMAT(${sqlSetempat("dilanjutkan_pada")}, '%Y-%m-%d %H:%i:%s') AS dilanjutkanPada,
+              alasan_kode AS alasanKode, DATE_FORMAT(${sqlSetempat("perkiraan_lanjut")}, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut,
               lama_detik AS lamaDetik
          FROM ${TABEL_SKORS}
         WHERE tanggal_sidang BETWEEN DATE_SUB(?, INTERVAL ${JENDELA_RIWAYAT_SKORS_HARI} DAY) AND ?
@@ -527,9 +536,9 @@ function buatLayanan(deps = {}) {
       `SELECT id, perkara_id AS perkaraId, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggalSidang,
               nomor_perkara AS nomorPerkara, alasan, alasan_kode AS alasanKode, oleh,
               panggil_saat_skors AS panggilSaatSkors,
-              DATE_FORMAT(diskors_pada, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
-              DATE_FORMAT(perkiraan_lanjut, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut,
-              DATE_FORMAT(dilanjutkan_pada, '%Y-%m-%d %H:%i:%s') AS dilanjutkanPada,
+              DATE_FORMAT(${sqlSetempat("diskors_pada")}, '%Y-%m-%d %H:%i:%s') AS diskorsPada,
+              DATE_FORMAT(${sqlSetempat("perkiraan_lanjut")}, '%Y-%m-%d %H:%i:%s') AS perkiraanLanjut,
+              DATE_FORMAT(${sqlSetempat("dilanjutkan_pada")}, '%Y-%m-%d %H:%i:%s') AS dilanjutkanPada,
               dilanjutkan_oleh AS dilanjutkanOleh, lama_detik AS lamaDetik
          FROM ${TABEL_SKORS}
         WHERE tanggal_sidang BETWEEN ? AND ?${id ? " AND perkara_id = ?" : ""}
@@ -582,6 +591,7 @@ function buatLayanan(deps = {}) {
         INDEX idx_sidang_berjalan_tanggal (tanggal_sidang)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await migrasiUtc();
     tabelBerjalanSiap = true;
   }
 
@@ -597,7 +607,7 @@ function buatLayanan(deps = {}) {
     if (daftar.length === 0) return { ada: false, mesinDitulis: false };
     await kueriBot(
       `UPDATE ${TABEL_BERJALAN}
-          SET dibatalkan_pada = NOW(), dibatalkan_oleh = ?, dibatalkan_ip = ?, alasan_batal = ?
+          SET dibatalkan_pada = UTC_TIMESTAMP(), dibatalkan_oleh = ?, dibatalkan_ip = ?, alasan_batal = ?
         WHERE perkara_id = ? AND tanggal_sidang = ? AND dibatalkan_pada IS NULL`,
       [bersih(oleh).slice(0, 191), bersih(ip).slice(0, 45), bersih(alasan).slice(0, 64), id, tanggal]
     );
@@ -697,7 +707,7 @@ function buatLayanan(deps = {}) {
           await kueriBot(
             `INSERT INTO ${TABEL_BERJALAN}
                (perkara_id, tanggal_sidang, nomor_perkara, ruang, oleh, ip, lewat, ditandai_pada)
-             VALUES (?, ?, ?, ?, ?, ?, 'ALETA', NOW())`,
+             VALUES (?, ?, ?, ?, ?, ?, 'ALETA', UTC_TIMESTAMP())`,
             [id, tanggal, bersih(nomorPerkara).slice(0, 191), bersih(ruang).slice(0, 64), bersih(oleh).slice(0, 191), bersih(ip).slice(0, 45)]
           );
         }
@@ -831,6 +841,7 @@ function buatLayanan(deps = {}) {
         await kueriBot(`ALTER TABLE ${TABEL_SKORS} ${kurang.map(([nama, bentuk]) => `ADD COLUMN ${nama} ${bentuk}`).join(", ")}`);
       }
     }
+    await migrasiUtc();
     tabelSkorsSiap = true;
   }
 
@@ -931,9 +942,9 @@ function buatLayanan(deps = {}) {
         const mulaiLagi = waktuPenuhSah(panggilSaatSkors);
         if (mulaiLagi) {
           await kueriBot(
-            `UPDATE ${TABEL_SKORS} SET dilanjutkan_pada = ?, dilanjutkan_oleh = '(dipanggil lagi lewat antrian)',
-                    lama_detik = TIMESTAMPDIFF(SECOND, diskors_pada, ?)
-              WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL AND diskors_pada < ?`,
+            `UPDATE ${TABEL_SKORS} SET dilanjutkan_pada = ${sqlDariSetempat("?")}, dilanjutkan_oleh = '(dipanggil lagi lewat antrian)',
+                    lama_detik = TIMESTAMPDIFF(SECOND, diskors_pada, ${sqlDariSetempat("?")})
+              WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL AND diskors_pada < ${sqlDariSetempat("?")}`,
             [mulaiLagi, mulaiLagi, id, tanggal, mulaiLagi]
           );
         }
@@ -945,7 +956,7 @@ function buatLayanan(deps = {}) {
           await kueriBot(
             `INSERT INTO ${TABEL_SKORS}
                (perkara_id, tanggal_sidang, nomor_perkara, alasan, panggil_saat_skors, oleh, ip, lewat, diskors_pada, alasan_kode, perkiraan_lanjut)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'ALETA', NOW(), ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'ALETA', UTC_TIMESTAMP(), ?, ${sqlDariSetempat("?")})`,
             [
               id,
               tanggal,
@@ -968,7 +979,7 @@ function buatLayanan(deps = {}) {
             nilai.push(kodeAlasan, bersih(alasan).slice(0, 191));
           }
           if (perkiraan) {
-            ubah.push("perkiraan_lanjut = ?");
+            ubah.push(`perkiraan_lanjut = ${sqlDariSetempat("?")}`);
             nilai.push(perkiraan);
           }
           await kueriBot(
@@ -979,8 +990,8 @@ function buatLayanan(deps = {}) {
         }
       } else {
         await kueriBot(
-          `UPDATE ${TABEL_SKORS} SET dilanjutkan_pada = NOW(), dilanjutkan_oleh = ?, dilanjutkan_ip = ?,
-                  lama_detik = TIMESTAMPDIFF(SECOND, diskors_pada, NOW())
+          `UPDATE ${TABEL_SKORS} SET dilanjutkan_pada = UTC_TIMESTAMP(), dilanjutkan_oleh = ?, dilanjutkan_ip = ?,
+                  lama_detik = TIMESTAMPDIFF(SECOND, diskors_pada, UTC_TIMESTAMP())
             WHERE perkara_id = ? AND tanggal_sidang = ? AND dilanjutkan_pada IS NULL`,
           [bersih(oleh).slice(0, 191), bersih(ip).slice(0, 45), id, tanggal]
         );
@@ -1089,7 +1100,7 @@ function buatLayanan(deps = {}) {
       if (tandai) {
         await kueriBot(
           `REPLACE INTO ${TABEL} (perkara_id, tanggal_sidang, nomor_perkara, oleh, ditandai_pada)
-           VALUES (?, ?, ?, ?, NOW())`,
+           VALUES (?, ?, ?, ?, UTC_TIMESTAMP())`,
           [id, tanggal, bersih(nomorPerkara).slice(0, 191), bersih(oleh).slice(0, 191)]
         );
       } else {

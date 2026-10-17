@@ -1305,7 +1305,7 @@ const SUMBER_SUDAH_BERBERKAS = `
  * disisipkan sebagai teks.
  */
 const EKSPRESI_DALAM_JEDA = `(d.tidak_tersedia_pada IS NOT NULL
-                        AND d.tidak_tersedia_pada >= DATE_SUB(NOW(), INTERVAL ? DAY))`;
+                        AND d.tidak_tersedia_pada >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY))`;
 
 /**
  * Satu-satunya ekspresi "dokumen ini kekurangan berkas".

@@ -142,6 +142,6 @@ describe("penjaga sumber: tiap penulis ke SIPP memakai jam SIPP, bukan NOW()/jam
   });
 
   it("tabel aleta_* tetap jam sebenarnya", () => {
-    expect(svc("jejakAletaService.js")).toContain("waktuMysqlSekarang(),");
+    expect(svc("jejakAletaService.js")).toContain("waktuUtcSekarang(),");
   });
 });

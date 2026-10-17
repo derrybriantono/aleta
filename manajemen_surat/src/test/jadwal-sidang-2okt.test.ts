@@ -273,7 +273,7 @@ describe("butir 10 - bot setelSkors (basis data tiruan)", () => {
     const hasil = await L.setelSkors({ ...minta, kering: false });
     expect(hasil.ok).toBe(true);
     const sisip = bot.catatan.find((c) => c.sql.startsWith(`INSERT INTO ${selesaiMod.TABEL_SKORS}`));
-    expect(sisip?.sql).toContain("'ALETA', NOW()");
+    expect(sisip?.sql).toContain("'ALETA', UTC_TIMESTAMP()");
     // F3.1: dua kolom di belakang - alasan_kode dan perkiraan_lanjut (kosong bila tidak dipilih).
     expect(sisip?.params).toEqual(["5", HARI, "5/Pdt.G/2026/PA.Dgl", "", `${HARI} 09:40:00`, "Ani Panitera", "192.168.10.21", "", null]);
     const tulis = sipp.catatan.filter((c) => c.sql.startsWith("UPDATE"));
@@ -304,7 +304,7 @@ describe("butir 10 - bot setelSkors (basis data tiruan)", () => {
     const { L, bot, sipp } = layanan({ statusSipp: [1] });
     const hasil = await L.setelSkors({ ...minta, skors: false, kering: false });
     expect(hasil.ok).toBe(true);
-    expect(bot.catatan.some((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_SKORS} SET dilanjutkan_pada = NOW()`))).toBe(true);
+    expect(bot.catatan.some((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_SKORS} SET dilanjutkan_pada = UTC_TIMESTAMP()`))).toBe(true);
     expect(bot.catatan.some((c) => c.sql.startsWith("DELETE"))).toBe(false);
     const tulis = sipp.catatan.find((c) => c.sql.startsWith("UPDATE antrian"));
     expect(tulis?.params).toEqual([0, "5", HARI, selesaiMod.ANTRIAN_SKORS]);

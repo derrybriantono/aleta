@@ -89,6 +89,11 @@ function buatLayanan(deps = {}) {
         require("../bot_db_config").query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
       }));
 
+  // Isi lama kolom waktu dipindah ke UTC sebelum tulisan pertama (botDbService).
+  // Basis data tiruan (uji) tidak dimigrasi kecuali disebut tegas.
+  const migrasiUtc = deps.migrasiUtc || (deps.kueriAleta ? async () => {} : () => require("./botDbService").pastikanUtc());
+  const sqlSetempat = (kolom) => require("../utils/waktuUtc").sqlSetempat(kolom);
+
   async function semua(sql, params) {
     const baris = await kueri(sql, params);
     return Array.isArray(baris) ? baris : [];
@@ -120,10 +125,12 @@ function buatLayanan(deps = {}) {
         PRIMARY KEY (id),
         UNIQUE KEY uq_setor_tanggal (tanggal_transaksi)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `).catch((galat) => {
-      siapSetor = null;
-      throw galat;
-    });
+    `)
+      .then(() => migrasiUtc())
+      .catch((galat) => {
+        siapSetor = null;
+        throw galat;
+      });
     return siapSetor;
   }
 
@@ -132,7 +139,7 @@ function buatLayanan(deps = {}) {
       await pastikanTabelSetor();
       const baris = await kueriAleta(
         `SELECT DATE_FORMAT(tanggal_transaksi, '%Y-%m-%d') AS tanggal, jumlah, ntpn, keterangan, operator,
-                DATE_FORMAT(dicatat, '%Y-%m-%d %H:%i:%s') AS dicatat
+                DATE_FORMAT(${sqlSetempat("dicatat")}, '%Y-%m-%d %H:%i:%s') AS dicatat
            FROM ${TABEL_SETOR} WHERE tanggal_transaksi BETWEEN ? AND ? ORDER BY tanggal_transaksi`,
         [dari, sampai]
       );
@@ -178,10 +185,10 @@ function buatLayanan(deps = {}) {
     for (const t of tanggal) {
       await kueriAleta(
         `INSERT INTO ${TABEL_SETOR} (tanggal_transaksi, jumlah, ntpn, keterangan, operator, akun_sipp, ip, dicatat)
-         VALUES (?,?,?,?,?,?,?,NOW())
+         VALUES (?,?,?,?,?,?,?,UTC_TIMESTAMP())
          ON DUPLICATE KEY UPDATE jumlah = VALUES(jumlah), ntpn = IF(VALUES(ntpn) = '', ntpn, VALUES(ntpn)),
            keterangan = IF(VALUES(keterangan) = '', keterangan, VALUES(keterangan)), operator = VALUES(operator),
-           akun_sipp = VALUES(akun_sipp), ip = VALUES(ip), dicatat = NOW()`,
+           akun_sipp = VALUES(akun_sipp), ip = VALUES(ip), dicatat = UTC_TIMESTAMP()`,
         [t, peta.get(t) || 0, ntpn, keterangan, operator, bersih(minta.akunSipp).slice(0, 60), bersih(minta.ip).slice(0, 45)]
       );
       tercatat.push({ tanggal: t, jumlah: peta.get(t) || 0 });

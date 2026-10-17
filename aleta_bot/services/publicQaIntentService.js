@@ -1,5 +1,7 @@
 const crypto = require("crypto");
 const botDb = require("./botDbService");
+// Kolom waktu ALETA disimpan UTC; "hari ini" = hari setempat (botDbService).
+const { SQL_AWAL_HARI_SETEMPAT } = require("../utils/waktuUtc");
 const logService = require("./logService");
 const answerService = require("./publicQaAnswerService");
 const aiProviderAdapter = require("./aiProviderAdapter");
@@ -1008,7 +1010,7 @@ async function getActiveSession(senderNumber) {
     const rows = await withTimeout(
       botDb.query(
         `SELECT * FROM aleta_bot_public_qa_sessions
-         WHERE sender_number = ? AND expires_at > NOW()
+         WHERE sender_number = ? AND expires_at > UTC_TIMESTAMP()
          ORDER BY updated_at DESC LIMIT 1`,
         [senderNumber]
       ),
@@ -1358,7 +1360,7 @@ async function getPublicQaStats() {
   const rows = await botDb.query(
     `SELECT status, COUNT(*) AS count
      FROM aleta_bot_public_qa_logs
-     WHERE DATE(created_at) = CURDATE()
+     WHERE created_at >= ${SQL_AWAL_HARI_SETEMPAT}
      GROUP BY status`
   );
   return rows.reduce(
@@ -1409,6 +1411,8 @@ async function getPublicQaSnapshot() {
 }
 
 module.exports = {
+  // Diekspor untuk uji zona waktu (expires_at UTC vs UTC_TIMESTAMP()).
+  getActiveSession,
   DEFAULT_PUBLIC_QA_INTENTS,
   FALLBACK_MESSAGE,
   normalizeIncomingQuestion,

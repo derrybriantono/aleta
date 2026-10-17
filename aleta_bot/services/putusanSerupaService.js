@@ -12,7 +12,16 @@
  * sendiri". SELECT saja; tidak ada yang ditulis.
  *
  *   perkara                      nomor, jenis_perkara_id
- *   perkara_hakim_pn             jabatan 1 (Hakim Ketua) / 3 (Hakim Tunggal), aktif
+ *   perkara_hakim_pn             jabatan 1 (Hakim Ketua) / 3 (Hakim Tunggal) PEMERIKSAAN
+ *                                (tahapan 10) yang menjabat pada hari putusan - BUKAN
+ *                                aktif = 'Y': SIPP menonaktifkan majelis pemeriksa saat
+ *                                majelis ikrar (tahapan 18) ditetapkan. Ukur 17 Okt
+ *                                (sipp_donggala_1610): 229 dari 301 putusan cerai talak
+ *                                BHT tanpa ketua pemeriksa aktif; aturan aktif='Y'
+ *                                mengkreditkan 27 di antaranya ke ketua majelis IKRAR
+ *                                dan 27 hilang dari pemeriksanya (mis. 7840: pemeriksa
+ *                                27, ikrar 29). Aturan hari putusan: tepat satu ketua
+ *                                pada 2.274 dari 2.276 putusan BHT berpertimbangan.
  *   perkara_putusan              tanggal_putusan, tanggal_bht, amar_putusan
  *   perkara_pertimbangan_hukum   pertimbangan_hukum (HTML SIPP)
  *   perkara_pihak1..5            nama - HANYA untuk disamarkan di portal; portal
@@ -82,9 +91,11 @@ async function putusanSerupa(nomorPerkara, opsi = {}) {
 
   const ketua = (
     await kueriAktif(
+      // Majelis PEMERIKSAAN (tahapan 10) didahulukan: majelis ikrar talak (tahapan 18)
+      // juga aktif = 'Y' sesudah ditetapkan, padahal bukan yang memeriksa perkara.
       `SELECT hakim_id, hakim_nama FROM perkara_hakim_pn
         WHERE perkara_id = ? AND jabatan_hakim_id IN (1, 3)
-        ORDER BY (aktif = 'Y') DESC, id DESC LIMIT 1`,
+        ORDER BY (tahapan_id = 10) DESC, (aktif = 'Y') DESC, id DESC LIMIT 1`,
       [perkara.perkara_id]
     )
   )[0];
@@ -116,7 +127,9 @@ async function putusanSerupa(nomorPerkara, opsi = {}) {
         AND LENGTH(ph.pertimbangan_hukum) > 300
         AND EXISTS (SELECT 1 FROM perkara_hakim_pn h
                      WHERE h.perkara_id = p.perkara_id AND h.hakim_id = ?
-                       AND h.jabatan_hakim_id IN (1, 3) AND h.aktif = 'Y')
+                       AND h.jabatan_hakim_id IN (1, 3) AND h.tahapan_id = 10
+                       AND h.tanggal_penetapan <= pu.tanggal_putusan
+                       AND (h.tanggal_tidak_aktif IS NULL OR h.tanggal_tidak_aktif > pu.tanggal_putusan))
       ORDER BY pu.tanggal_putusan DESC, p.perkara_id DESC
       LIMIT ${batas}`,
     [perkara.jenis_perkara_id, perkara.perkara_id, ketua.hakim_id]

@@ -375,7 +375,7 @@ async function claimNextMessage() {
   const rows = await botDb.query(
     `SELECT *
      FROM aleta_bot_message_queue
-     WHERE status = 'pending' AND scheduled_at <= NOW()
+     WHERE status = 'pending' AND scheduled_at <= UTC_TIMESTAMP()
        ${categoryGuard}
      ORDER BY priority ASC, scheduled_at ASC, created_at ASC
      LIMIT 1`
@@ -385,7 +385,7 @@ async function claimNextMessage() {
 
   const result = await botDb.query(
     `UPDATE aleta_bot_message_queue
-     SET status = 'processing', updated_at = NOW()
+     SET status = 'processing', updated_at = UTC_TIMESTAMP()
      WHERE id = ? AND status = 'pending'`,
     [item.id]
   );

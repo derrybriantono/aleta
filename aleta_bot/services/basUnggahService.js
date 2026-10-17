@@ -23,7 +23,8 @@
  * YANG SENGAJA BERBEDA DARI SIPP - lebih hati-hati, tidak lebih berani:
  *   - e-Doc yang SUDAH ada TIDAK diganti kecuali pemanggil menyatakan `ganti`
  *     (cek dobel, sejalan dengan penjaga L1 di tingkap e-Doc SIPP). UPDATE-nya
- *     sendiri bersyarat "masih kosong", jadi dua tab yang mengunggah sidang yang
+ *     sendiri bersyarat "masih kosong" (mengganti: "masih berisi jalur lama yang
+ *     dibaca"), jadi dua tab yang mengunggah sidang yang
  *     sama bersamaan tidak saling menimpa diam-diam.
  *   - Berkas lama TIDAK dihapus dari cakram saat diganti (SIPP meng-unlink-nya):
  *     menghapus berkas pengadilan bukan pekerjaan alat bantu. Keputusan 17 Okt
@@ -260,17 +261,25 @@ function buatLayanan(depsMasuk) {
       return gagal("berkas_tidak_dapat_ditulis", String((e && e.message) || e).slice(0, 200));
     }
 
+    // Bersyarat nilai LAMA, juga saat mengganti: e-Doc yang diganti orang lain di
+    // antara bacaan dan tulisan tidak ditimpa diam-diam (berkasnya yatim, dan yang
+    // dipindah ke "terhapus" justru berkas lama yang sudah tidak dipakai).
     const hasil = await d.kueri(
-      ganti
-        ? "UPDATE perkara_jadwal_sidang SET edoc_bas = ? WHERE id = ? AND perkara_id = ?"
+      lama
+        ? "UPDATE perkara_jadwal_sidang SET edoc_bas = ? WHERE id = ? AND perkara_id = ? AND edoc_bas = ?"
         : "UPDATE perkara_jadwal_sidang SET edoc_bas = ? WHERE id = ? AND perkara_id = ? AND (edoc_bas IS NULL OR edoc_bas = '')",
-      [relatif, sid, pid]
+      lama ? [relatif, sid, pid, String(r.edoc_bas)] : [relatif, sid, pid]
     );
     const terubah = Number((hasil && hasil.affectedRows) || 0);
     if (terubah < 1) {
       // Orang lain mengunggah di antara bacaan dan tulisan: berkas kita dibuang, miliknya dibiarkan.
       d.hapusBerkas(penuh);
-      return gagal("sudah_ada", "Sementara ALETA menyiapkan berkas, e-Doc BAS sidang ini sudah diisi orang lain di SIPP. Tidak diganti.");
+      return gagal(
+        "sudah_ada",
+        lama
+          ? "Sementara ALETA menyiapkan berkas, e-Doc BAS sidang ini sudah diganti orang lain di SIPP. Tidak diganti - muat ulang lalu ulangi."
+          : "Sementara ALETA menyiapkan berkas, e-Doc BAS sidang ini sudah diisi orang lain di SIPP. Tidak diganti."
+      );
     }
 
     // Butir 44 (17 Okt 2026): berkas lama TIDAK dibiarkan di tempatnya - dipindah ke

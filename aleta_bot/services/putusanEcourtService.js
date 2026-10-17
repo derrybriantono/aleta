@@ -92,6 +92,9 @@ async function ensureSchema() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
+  // diperiksa_pada disimpan UTC; isi lama (NOW() setempat) dipindah dulu.
+  if (typeof botDb.pastikanUtc === "function") await botDb.pastikanUtc();
+
   skemaSiap = true;
 }
 
@@ -128,7 +131,7 @@ async function simpan(nomorPerkara, bacaan) {
        tanggal_putusan_teks, tanggal_bht_teks, dokumen_ada, dokumen_judul, dokumen_url,
        diunggah_oleh, tanggal_unggah_teks, panitera_nama, panitera_tte,
        panitera_tanggal_tte, diperiksa_pada
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())
      ON DUPLICATE KEY UPDATE
        ada_tab = VALUES(ada_tab), ada_baris = VALUES(ada_baris), alasan = VALUES(alasan),
        nomor_putusan = VALUES(nomor_putusan), nomor_salinan = VALUES(nomor_salinan),
@@ -139,7 +142,7 @@ async function simpan(nomorPerkara, bacaan) {
        tanggal_unggah_teks = VALUES(tanggal_unggah_teks),
        panitera_nama = VALUES(panitera_nama), panitera_tte = VALUES(panitera_tte),
        panitera_tanggal_tte = VALUES(panitera_tanggal_tte),
-       diperiksa_pada = NOW()`,
+       diperiksa_pada = UTC_TIMESTAMP()`,
     [
       nomor,
       bacaan.adaTab ? 1 : 0,

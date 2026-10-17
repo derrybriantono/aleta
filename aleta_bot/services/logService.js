@@ -1,6 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+// Kolom waktu ALETA disimpan UTC; "hari ini" = hari setempat (botDbService).
+const { SQL_AWAL_HARI_SETEMPAT } = require("../utils/waktuUtc");
 const botDb = require("./botDbService");
 
 /**
@@ -295,7 +297,7 @@ async function getPolicySkipStats() {
   }
   const [totalRows, todayRows, lastRows, reasonRows, notificationRows, recentRows] = await Promise.all([
     botDb.query(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs`),
-    botDb.query(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs WHERE DATE(created_at) = CURDATE()`),
+    botDb.query(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs WHERE created_at >= ${SQL_AWAL_HARI_SETEMPAT}`),
     botDb.query(`SELECT created_at FROM aleta_bot_policy_skip_logs ORDER BY created_at DESC LIMIT 1`),
     botDb.query(
       `SELECT reason, COUNT(*) AS count
@@ -363,7 +365,7 @@ async function getMessageStatsToday() {
   const rows = await botDb.query(
     `SELECT status, COUNT(*) AS count
      FROM aleta_bot_message_logs
-     WHERE DATE(created_at) = CURDATE()
+     WHERE created_at >= ${SQL_AWAL_HARI_SETEMPAT}
      GROUP BY status`
   );
   return rows.reduce(
@@ -504,7 +506,7 @@ async function getSystemStatsToday() {
   const rows = await botDb.query(
     `SELECT severity, COUNT(*) AS count
      FROM aleta_bot_system_logs
-     WHERE DATE(created_at) = CURDATE()
+     WHERE created_at >= ${SQL_AWAL_HARI_SETEMPAT}
      GROUP BY severity`
   );
   return rows.reduce(

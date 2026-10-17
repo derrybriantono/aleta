@@ -64,6 +64,10 @@ function kunciMediasi(mediasiId, tanggal) {
 
 function buatLayanan(deps = {}) {
   const kueriBot = deps.kueriBot || ((sql, params = []) => require("./botDbService").query(sql, params));
+  // Waktu disimpan UTC; isi lama (NOW() setempat) dipindah dulu - kecuali
+  // basis data tiruan (uji) yang tidak meminta migrasi.
+  const migrasiUtc = deps.migrasiUtc || (deps.kueriBot ? async () => {} : () => require("./botDbService").pastikanUtc());
+  const sqlSetempat = (kolom) => require("../utils/waktuUtc").sqlSetempat(kolom);
 
   let tabelSiap = false;
   async function pastikanTabel() {
@@ -90,6 +94,7 @@ function buatLayanan(deps = {}) {
         INDEX idx_mediasi_status_tanggal (tanggal_mediasi)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await migrasiUtc();
     tabelSiap = true;
   }
 
@@ -103,7 +108,7 @@ function buatLayanan(deps = {}) {
       const baris = await kueriBot(
         `SELECT mediasi_id AS mediasiId, perkara_id AS perkaraId,
                 DATE_FORMAT(tanggal_mediasi, '%Y-%m-%d') AS tanggal, keadaan, oleh, tempat,
-                DATE_FORMAT(ditandai_pada, '%Y-%m-%d %H:%i:%s') AS sejak
+                DATE_FORMAT(${sqlSetempat("ditandai_pada")}, '%Y-%m-%d %H:%i:%s') AS sejak
            FROM ${TABEL}
           WHERE tanggal_mediasi BETWEEN ? AND ? AND dibatalkan_pada IS NULL
           ORDER BY id ASC`,
@@ -146,7 +151,7 @@ function buatLayanan(deps = {}) {
   async function tutup(mediasiId, tanggal, keadaan, { oleh, ip, alasan }) {
     await kueriBot(
       `UPDATE ${TABEL}
-          SET dibatalkan_pada = NOW(), dibatalkan_oleh = ?, dibatalkan_ip = ?, alasan_batal = ?
+          SET dibatalkan_pada = UTC_TIMESTAMP(), dibatalkan_oleh = ?, dibatalkan_ip = ?, alasan_batal = ?
         WHERE mediasi_id = ? AND tanggal_mediasi = ? AND keadaan = ? AND dibatalkan_pada IS NULL`,
       [bersih(oleh).slice(0, 191), bersih(ip).slice(0, 45), bersih(alasan).slice(0, 64), mediasiId, tanggal, keadaan]
     );
@@ -227,7 +232,7 @@ function buatLayanan(deps = {}) {
       await kueriBot(
         `INSERT INTO ${TABEL}
            (mediasi_id, perkara_id, tanggal_mediasi, nomor_perkara, tempat, keadaan, oleh, ip, lewat, ditandai_pada)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ALETA', NOW())`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ALETA', UTC_TIMESTAMP())`,
         [
           id,
           perkara,
