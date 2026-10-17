@@ -2104,6 +2104,10 @@ function alatUnduhLewatTautan(blob, nama) {
   const a = document.createElement("a");
   a.href = alamat;
   a.download = nama;
+  // Unduhan universal (unduh-universal.js) tidak boleh mengalihkan tautan
+  // cadangan ini LAGI - ia sudah hasil kegagalan jalur ekstensi. Penanda
+  // berupa WeakSet di memori, bukan atribut: tidak ada tulisan ke DOM halaman.
+  if (typeof alatTandaiTautanAsli === "function") alatTandaiTautanAsli(a);
   a.style.display = "none";
   document.body.appendChild(a);
   a.click();
@@ -2156,11 +2160,41 @@ function alatNamaUnduhanLayak(nama, tipe) {
 }
 
 /**
+ * Tautan yang sengaja dibiarkan asli (cadangan terakhir) - tidak dialihkan
+ * lagi oleh unduh-universal.js. Dibaca lewat alatTautanAsli.
+ */
+const ALAT_TAUTAN_ASLI = new WeakSet();
+
+function alatTandaiTautanAsli(a) {
+  try {
+    ALAT_TAUTAN_ASLI.add(a);
+  } catch {
+    /* bukan obyek yang dapat ditandai */
+  }
+}
+
+function alatLepasTautanAsli(a) {
+  try {
+    ALAT_TAUTAN_ASLI.delete(a);
+  } catch {
+    /* sudah tidak ada */
+  }
+}
+
+function alatTautanAsli(a) {
+  try {
+    return ALAT_TAUTAN_ASLI.has(a);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Menyimpan satu blob lewat pekerja latar. Pulang { ok, lewat, pesan? };
  * lewat = "ekstensi" (aman) atau "halaman" (cadangan, mungkin ditahan Chrome).
  * Nama generik ditolak ({ ok: false }) - tidak ada unduhan "download.rtf".
  */
-async function alatUnduh(blob, namaMentah) {
+async function alatUnduh(blob, namaMentah, opsi) {
   const nama = alatNamaUnduhanLayak(namaMentah, blob && blob.type);
   if (!nama) {
     const pesan = `nama berkas "${String(namaMentah || "")}" generik/tanpa ekstensi - unduhan tidak diterbitkan`;
@@ -2199,6 +2233,9 @@ async function alatUnduh(blob, namaMentah) {
   } catch {
     /* catatan saja */
   }
+  // Ulangan unduhan universal yang terblokir (opsi.tanpaCadangan): tautan
+  // halaman justru melahirkan unduhan terblokir berikutnya - lingkaran.
+  if (opsi && opsi.tanpaCadangan === true) return { ok: false, lewat: "", pesan: sebab };
   alatUnduhLewatTautan(blob, nama);
   return { ok: true, lewat: "halaman", pesan: sebab };
 }

@@ -252,6 +252,7 @@
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = nama;
+      if (typeof alatTandaiTautanAsli === "function") alatTandaiTautanAsli(a);
       a.style.display = "none";
       document.body.appendChild(a);
       a.click();

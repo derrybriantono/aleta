@@ -567,6 +567,117 @@ function terbitkanUnduhan(alamatMentah, nama) {
   });
 }
 
+/*
+ * ============================================================================
+ * CADANGAN UNDUHAN UNIVERSAL: UNDUHAN HALAMAN YANG TERBLOKIR DIULANG (17 Okt 2026)
+ * ============================================================================
+ *
+ * Lapis pertama (unduh-universal.js) mengalihkan unduhan yang PASTI unduhan
+ * sebelum Chrome menahannya. Yang tidak dapat diketahui di muka - window.open
+ * ke rute berkas bertajuk Content-Disposition, location.href, kiriman borang
+ * POST, tautan SIPP tanpa atribut download - tetap lahir dari halaman http dan
+ * kadang ditahan Chrome: item berakhir "interrupted" dengan galat FILE_BLOCKED.
+ *
+ * Di sini item itu dikenali, lalu tab asalnya DIMINTA mengulang lewat jalur
+ * aman yang sama (fetch berkredensial -> alatUnduh -> pesan "unduh" ->
+ * terbitkanUnduhan - satu-satunya chrome.downloads.download). Alasan tab yang
+ * mengulang, bukan pekerja latar: sesi/cookie, perujuk, borang POST terakhir,
+ * dan blob: milik halaman hanya terjangkau dari sana. Pekerja latar hanya
+ * memilih tab (perujuk cocok dahulu, lalu yang aktif) dan menghapus entri
+ * gagalnya dari riwayat bila ulangannya berhasil.
+ *
+ * Batas: satu kali per id unduhan, dan hanya galat penahanan (bukan jaringan,
+ * bukan pengguna membatalkan, bukan virus). Ulangan tidak pernah memakai
+ * tautan halaman sebagai cadangan (tanpaCadangan) - itu hanya melahirkan
+ * unduhan terblokir berikutnya.
+ */
+const GALAT_UNDUHAN_DITAHAN = new Set(["FILE_BLOCKED", "FILE_SECURITY_CHECK_FAILED"]);
+const POLA_ASAL_UNDUHAN = /^(?:blob:)?https?:\/\/(?:192\.168\.10\.10|127\.0\.0\.1)(?::\d+)?(?:\/|$)/i;
+const unduhanSudahDiulang = new Set();
+
+function tanpaHashLatar(u) {
+  return String(u || "").replace(/#.*$/, "");
+}
+
+/** Item blokiran milik halaman kita (bukan ekstensi, bukan asal luar)? */
+function unduhanTerblokirBerhak(item) {
+  if (!item || item.byExtensionId) return false;
+  if (item.state !== "interrupted" || !GALAT_UNDUHAN_DITAHAN.has(String(item.error || ""))) return false;
+  if (item.danger && item.danger !== "safe" && item.danger !== "accepted") return false;
+  return [item.url, item.finalUrl, item.referrer].some((u) => POLA_ASAL_UNDUHAN.test(String(u || "")));
+}
+
+function namaDariJalurUnduhan(jalur) {
+  const bagian = String(jalur || "").split(/[\\/]/);
+  return String(bagian[bagian.length - 1] || "").replace(/\.crdownload$/i, "");
+}
+
+/** Tab SIPP/ABT/ALETA terbuka: yang perujuknya cocok dahulu, lalu yang aktif. */
+async function tabKandidatUnduhan(item) {
+  const pola = (chrome.runtime.getManifest().host_permissions || []).slice();
+  const semua = (await chrome.tabs.query({ url: pola })) || [];
+  const rujuk = tanpaHashLatar(item.referrer);
+  const bobot = (t) => (rujuk && tanpaHashLatar(t.url) === rujuk ? 0 : t.active ? 1 : 2);
+  return semua.filter((t) => Number.isFinite(t.id)).sort((a, b) => bobot(a) - bobot(b));
+}
+
+/**
+ * Mengulang satu unduhan terblokir lewat tab asalnya.
+ * Pulang { ok, id?, pesan? } - tidak pernah melempar.
+ */
+async function ulangiUnduhanTerblokir(id) {
+  if (unduhanSudahDiulang.has(id)) return { ok: false, pesan: "sudah diulang" };
+  unduhanSudahDiulang.add(id);
+  try {
+    const [item] = await new Promise((selesai) => chrome.downloads.search({ id }, (d) => selesai(d || [])));
+    if (!unduhanTerblokirBerhak(item)) return { ok: false, pesan: "bukan unduhan ditahan milik halaman" };
+    const tab = await tabKandidatUnduhan(item);
+    let sebab = "tidak ada tab asal yang terjangkau";
+    for (const t of tab) {
+      let jawab = null;
+      try {
+        jawab = await chrome.tabs.sendMessage(t.id, {
+          sumber: "aleta-latar",
+          jenis: "unduh-ulang",
+          url: tanpaHashLatar(item.url),
+          urlAkhir: tanpaHashLatar(item.finalUrl),
+          mime: String(item.mime || ""),
+          nama: namaDariJalurUnduhan(item.filename),
+          referrer: String(item.referrer || ""),
+        });
+      } catch {
+        continue; // tab tanpa skrip konten
+      }
+      if (jawab && jawab.ok) {
+        try {
+          chrome.downloads.erase({ id });
+        } catch {
+          /* riwayat gagal tetap tinggal - tidak mengganggu */
+        }
+        return { ok: true, id, tab: t.id };
+      }
+      if (jawab && jawab.pesan) sebab = String(jawab.pesan);
+    }
+    return { ok: false, pesan: sebab };
+  } catch (e) {
+    return { ok: false, pesan: String((e && e.message) || e).slice(0, 160) };
+  }
+}
+
+if (chrome.downloads && chrome.downloads.onChanged) {
+  chrome.downloads.onChanged.addListener((ubah) => {
+    try {
+      const galat = ubah && ubah.error && ubah.error.current;
+      const keadaan = ubah && ubah.state && ubah.state.current;
+      if (!galat && keadaan !== "interrupted") return;
+      if (galat && !GALAT_UNDUHAN_DITAHAN.has(String(galat))) return;
+      void ulangiUnduhanTerblokir(ubah.id);
+    } catch {
+      /* pendengar tidak boleh melempar */
+    }
+  });
+}
+
 /**
  * PDF SALINAN ditampilkan di tab ekstensi (14 Okt 2026).
  *
