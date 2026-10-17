@@ -49,6 +49,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AletaLogo } from "@/components/branding/aleta-logo";
 import { PortalFooter } from "@/components/layout/portal-footer";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { TombolBantuanTutorial } from "@/components/portal/tutorial-bantuan";
 import { UserAvatar } from "@/components/portal/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1463,6 +1464,8 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
                 ) : null}
 
                 <div className="flex max-w-full items-center gap-2 self-end overflow-x-auto rounded-2xl border border-border/50 bg-background/25 p-1 sm:gap-2 xl:self-auto xl:border-0 xl:bg-transparent xl:p-0">
+                  <TombolBantuanTutorial />
+
                   <ThemeToggle />
 
                   {isAdminTier ? (

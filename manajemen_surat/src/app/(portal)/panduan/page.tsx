@@ -5,6 +5,7 @@ import { ArrowLeft, BookOpen, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { PageIntro } from "@/components/portal/shared";
+import { TutorialHidup } from "@/components/portal/tutorial-hidup";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,7 +60,7 @@ function guideMatchesSearch(guide: UserGuide, search: string) {
   ].some((value) => value.toLowerCase().includes(normalized));
 }
 
-export default function UserGuidePage() {
+function PanduanLengkap() {
   const { currentUser, positions } = usePortal();
   const [search, setSearch] = useState("");
   const [moduleFilter, setModuleFilter] = useState<GuideModule | "all">("all");
@@ -67,10 +68,6 @@ export default function UserGuidePage() {
   const positionLabel = getUserPositionLabel(currentUser, positions);
   const roleId = getEffectiveRoleId(currentUser);
   const audiences = useMemo(() => audiencesForUser(roleId, positionLabel), [roleId, positionLabel]);
-
-  useEffect(() => {
-    document.title = "Panduan Penggunaan - ALETA";
-  }, []);
 
   const visibleGuides = useMemo(() => {
     return USER_GUIDES.filter((guide) => guideMatchesAudience(guide, audiences))
@@ -91,27 +88,6 @@ export default function UserGuidePage() {
 
   return (
     <div className="space-y-6">
-      <PageIntro
-        eyebrow="Panduan Internal"
-        title="Panduan Penggunaan"
-        description="Panduan singkat dan lengkap untuk menggunakan aplikasi sesuai peran Anda."
-        actions={
-          <>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/portal">
-                <ArrowLeft className="h-4 w-4" />
-                Kembali ke Portal Utama
-              </Link>
-            </Button>
-            <Link href="/patch-notes" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
-              Lihat Patch Notes
-            </Link>
-            <Link href="/masukan" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
-              Kirim masukan atau laporkan kendala
-            </Link>
-          </>
-        }
-      />
 
       <Card className="border-border/80">
         <CardHeader>
@@ -214,5 +190,61 @@ function GuideList({ title, items, ordered = false }: { title: string; items: st
         ))}
       </ListTag>
     </section>
+  );
+}
+
+type TampilanPanduan = "tutorial" | "lengkap";
+
+/**
+ * Halaman Panduan: tutorial per fitur (hidup, mengikuti hak akun) sebagai
+ * tampilan utama; panduan lengkap dan teknis lama tetap ada di tab kedua.
+ */
+export default function UserGuidePage() {
+  const [tampilan, setTampilan] = useState<TampilanPanduan>("tutorial");
+
+  useEffect(() => {
+    document.title = "Tutorial dan Panduan - ALETA";
+  }, []);
+
+  const tab = (nilai: TampilanPanduan) =>
+    `rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      tampilan === nilai ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"
+    }`;
+
+  return (
+    <div className="space-y-6">
+      <PageIntro
+        eyebrow="Panduan Internal"
+        title="Tutorial dan Panduan"
+        description="Langkah memakai setiap fitur ALETA, selalu sesuai versi yang sedang berjalan dan hak akun Anda."
+        actions={
+          <>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/portal">
+                <ArrowLeft className="h-4 w-4" />
+                Kembali ke Portal Utama
+              </Link>
+            </Button>
+            <Link href="/patch-notes" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+              Lihat Patch Notes
+            </Link>
+            <Link href="/masukan" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+              Kirim masukan atau laporkan kendala
+            </Link>
+          </>
+        }
+      />
+
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Jenis panduan">
+        <button type="button" role="tab" aria-selected={tampilan === "tutorial"} className={tab("tutorial")} onClick={() => setTampilan("tutorial")}>
+          Tutorial per fitur
+        </button>
+        <button type="button" role="tab" aria-selected={tampilan === "lengkap"} className={tab("lengkap")} onClick={() => setTampilan("lengkap")}>
+          Panduan lengkap dan teknis
+        </button>
+      </div>
+
+      {tampilan === "tutorial" ? <TutorialHidup /> : <PanduanLengkap />}
+    </div>
   );
 }
