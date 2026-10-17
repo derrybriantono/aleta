@@ -380,6 +380,8 @@ describe("/panduan - panduan teknis hanya bagi yang berwenang", () => {
     pengguna = personas.find((u) => u.id === id)!;
     const { default: Halaman } = await import("@/app/(portal)/panduan/page");
     render(<Halaman />);
+    // Halaman kini membuka Tutorial per fitur lebih dulu; panduan lengkap di tab kedua.
+    fireEvent.click(screen.getByRole("tab", { name: /Panduan lengkap/ }));
     return document.body.textContent || "";
   };
 
