@@ -483,6 +483,54 @@ export function jenisFolderDerry(nama: string): "put" | "bas" | "rel" | "ptsp" |
   return "put";
 }
 
+export type JenisDokumenDerry = "put" | "bas" | "rel" | "ptsp";
+export type PeranTiruan = "hakim" | "pp" | "js";
+
+/** Jenis dokumen sebuah folder dari jalur ("derry_briantono/98 Relaas" atau "98 Relaas"); "" bila tak dikenal. */
+export function jenisFolderDariJalur(jalur: string): JenisDokumenDerry | "" {
+  const potong = String(jalur || "").replace(/^\/+|\/+$/g, "").split("/");
+  const nama = potong[0] === "derry_briantono" ? potong[1] || "" : potong[0] || "";
+  return jenisFolderDerry(nama);
+}
+
+/**
+ * Jenis dokumen yang boleh dibuka akun ini (17 Okt 2026, temuan C6) - cermin jenisDokumenBoleh di ekstensi,
+ * tetapi dari SESI (golongan akun), bukan dari klien. Keputusan pengguna 9 & 16 Okt:
+ *   putusan = hakim, Ketua/Wakil · BAS = PP, panitera, panmud · relaas = juru sita (dan pengganti) · PTSP = PTSP
+ * Super Admin/Admin tanpa "Lihat sebagai" = semuanya; dengan sebagaiPeran = satu peran itu saja.
+ * Saklar Pengaturan SIPP & ABT menambah: hakim -> BAS, PP -> putusan (relaas tidak pernah).
+ */
+export function jenisDokumenAkun(o: {
+  admin: boolean;
+  golongan: readonly string[];
+  sebagaiPeran?: PeranTiruan | null;
+  saklar?: { hakimBas?: boolean; ppPutusan?: boolean } | null;
+}): JenisDokumenDerry[] {
+  if (o.admin && !o.sebagaiPeran) return ["put", "bas", "rel", "ptsp"];
+  const peran = new Set<PeranTiruan | "ptsp">();
+  if (o.admin && o.sebagaiPeran) peran.add(o.sebagaiPeran);
+  else {
+    for (const g of o.golongan) {
+      if (g === "hakim" || g === "pimpinan") peran.add("hakim");
+      else if (g === "pp" || g === "panitera" || g === "panmud" || g === "analis-perkara") peran.add("pp");
+      else if (g === "jurusita") peran.add("js");
+      else if (g === "ptsp") peran.add("ptsp");
+    }
+  }
+  const boleh = new Set<JenisDokumenDerry>();
+  if (peran.has("hakim")) {
+    boleh.add("put");
+    if (o.saklar?.hakimBas === true) boleh.add("bas");
+  }
+  if (peran.has("pp")) {
+    boleh.add("bas");
+    if (o.saklar?.ppPutusan === true) boleh.add("put");
+  }
+  if (peran.has("js")) boleh.add("rel");
+  if (peran.has("ptsp")) boleh.add("ptsp");
+  return (["put", "bas", "rel", "ptsp"] as const).filter((j) => boleh.has(j));
+}
+
 /** Sebutan pihak dari jenis/nomor perkara: Pdt.P dan cerai talak = Pemohon/Termohon. */
 export function sebutanPihak(jenisPerkara: string, nomorPerkara: string): { P: string; T: string; gugatan: string } {
   const j = String(jenisPerkara || "").toLowerCase();
