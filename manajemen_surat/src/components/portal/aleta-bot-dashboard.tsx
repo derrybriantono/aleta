@@ -219,7 +219,7 @@ function MessageDetail({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 px-4 pb-6 sm:items-center">
-      <div className="w-full max-w-lg rounded-[1.8rem] border border-border bg-card p-6 shadow-2xl">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-[1.8rem] border border-border bg-card p-6 shadow-2xl">
         <div className="mb-4 flex items-start justify-between gap-3">
           <h3 className="text-base font-bold text-foreground">Detail Pesan</h3>
           <Button variant="ghost" size="icon" className="shrink-0" onClick={onClose}>

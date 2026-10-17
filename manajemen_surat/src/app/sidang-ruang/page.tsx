@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ModeLayarJauh } from "@/components/layout/mode-layar-jauh";
 
 import { apiPath } from "@/lib/base-path";
 import { jamSekarang, tanggalPanjang, warnaRuang } from "@/lib/antrian-tampilan";
@@ -173,6 +174,7 @@ export default function SidangRuangPage() {
   if (ruang <= 0) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0a0c10] p-8 text-center text-slate-300">
+      <ModeLayarJauh />
         <div className="max-w-lg space-y-3">
           <h1 className="text-2xl font-medium">Papan Pintu Ruang Sidang</h1>
           <p className="text-slate-500">
@@ -201,6 +203,7 @@ export default function SidangRuangPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-[#0a0c10] text-slate-100">
+      <ModeLayarJauh />
       {/* ── kepala: ruangnya, sebesar mungkin - itu yang dicari dari lorong ── */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 px-10 py-5">
         <div className="flex items-baseline gap-4">

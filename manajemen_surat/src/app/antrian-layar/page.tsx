@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ModeLayarJauh } from "@/components/layout/mode-layar-jauh";
 
 import { apiPath } from "@/lib/base-path";
 import { usePengumumanSuara } from "@/lib/pengumuman-suara-layar";
@@ -208,6 +209,7 @@ export default function AntrianLayarPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-[#0a0c10] text-slate-100">
+      <ModeLayarJauh />
       {/* ── kepala: identitas mengalah, jam yang menonjol ─────────────────── */}
       <header className="flex flex-wrap items-center justify-between gap-4 px-8 pt-6">
         <div>

@@ -6718,7 +6718,7 @@ function ModalShell({
   if (!modal) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+      <div className="flex max-h-[90dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
         <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">{modal.title}</h2>

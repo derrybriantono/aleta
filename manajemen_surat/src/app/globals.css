@@ -94,6 +94,101 @@
     }
   }
 
+  /* ======================================================================
+     LAYAR SANGAT LEBAR (monitor 2K/4K, televisi)
+     ======================================================================
+
+     Hampir seluruh ukuran portal ditulis dalam rem. Menaikkan ukuran huruf
+     akar pada layar lebar membuat SEMUANYA ikut membesar sebanding - huruf,
+     jarak, tombol, dan lebar maksimum isi - sehingga halaman tidak tampak
+     mungil di tengah kanvas 4K. Di bawah 2200 px tidak ada yang berubah. */
+  @media (min-width: 2200px) {
+    html {
+      font-size: 19px;
+    }
+  }
+
+  @media (min-width: 2800px) {
+    html {
+      font-size: 23px;
+    }
+  }
+
+  @media (min-width: 3400px) {
+    html {
+      font-size: 27px;
+    }
+  }
+
+  /* Kerangka e-Court (Jadwal Sidang dll.) melebar keluar dari isi portal
+     dengan batas px (1680/2400). Di layar sangat lebar huruf akarnya sudah
+     dibesarkan, jadi batasnya harus ikut dalam rem - kalau tidak, tabel
+     jadwal yang hurufnya membesar justru terjepit di lebar yang tetap.
+     105rem = 1680px dan 150rem = 2400px pada huruf akar 16px. */
+  @media (min-width: 2200px) {
+    [data-lebar-ecourt="nyaman"] {
+      margin-left: calc(50% - min(50vw - 1.5rem, 52.5rem)) !important;
+      width: min(100vw - 3rem, 105rem) !important;
+    }
+
+    [data-lebar-ecourt="penuh"] {
+      margin-left: calc(50% - min(50vw - 1.5rem, 75rem)) !important;
+      width: min(100vw - 3rem, 150rem) !important;
+    }
+  }
+
+  /* Mode layar jauh: dipasang pada <html> oleh <ModeLayarJauh /> hanya di
+     layar publik/antrian. Huruf akar mengikuti lebar DAN tinggi layar
+     (yang lebih kecil menentukan), sehingga susunan pada 1920x1080 sama
+     dengan pada 3840x2160, hanya dua kali lebih besar - tidak meregang. */
+  html.aleta-layar-jauh {
+    font-size: max(16px, min(1.04vw, 1.85vh));
+  }
+
+  html.aleta-layar-jauh body {
+    overflow-x: hidden;
+  }
+
+  /* ======================================================================
+     LAYAR SENTUH
+     ======================================================================
+
+     Sasaran sentuh minimal 40 px, dan kolom isian 16 px supaya iOS tidak
+     memperbesar halaman sendiri saat kolom disentuh. Hanya berlaku pada
+     perangkat sentuh; di komputer dengan tetikus tidak ada yang berubah. */
+  @media (pointer: coarse) {
+    button,
+    [role="button"],
+    select,
+    summary {
+      min-height: 2.5rem;
+    }
+  }
+
+  @media (pointer: coarse) and (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Kata panjang (nomor perkara, alamat berkas, surel) tidak boleh
+     mendorong halaman melebar di HP. */
+  @media (max-width: 767px) {
+    main h1,
+    main h2,
+    main h3,
+    main h4,
+    main p,
+    main li,
+    main label,
+    main dd,
+    main dt {
+      overflow-wrap: anywhere;
+    }
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
     min-height: 100vh;
@@ -192,6 +287,22 @@
     background:
       radial-gradient(circle at top left, hsl(var(--primary) / 0.08), transparent 38%),
       linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--muted) / 0.48));
+  }
+
+  /* Pembungkus tabel yang dapat digulir ke samping di layar sempit. */
+  .aleta-tabel-gulir {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  /* Baris tombol yang membungkus ke bawah di HP tetapi tetap sebaris di
+     layar lebar. */
+  .aleta-baris-aksi {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .aleta-blue-scrollbar {
