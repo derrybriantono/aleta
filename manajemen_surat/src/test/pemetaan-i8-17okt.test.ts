@@ -53,7 +53,7 @@ describe("A. berkas ada di folder menunya", () => {
         "cerai talak|ditolak|kontradiktoir",
         "lain-lain|ditolak|hak-asuh-t-ibu",
         "lain-lain|ditolak|hak-asuh-verstek",
-        "penguasaan anak|ditolak|hak-asuh-t-ibu",
+        // I15 18 Okt: jenis 349 pindah ke folder 6b (baris "hak-asuh-t-ibu" dihapus: 6b tidak punya padanannya; "verstek" menunjuk [03a] 6b).
         "penguasaan anak|ditolak|verstek",
       ].sort()
     );
@@ -98,7 +98,6 @@ describe("B. cerai ditolak: kontradiktoir [03a], T tidak hadir lagi [03], verste
 describe("C. hak asuh ditolak verstek [03b]", () => {
   for (const j of [
     { jenisPerkara: "Lain-Lain", nomorPerkara: "177/Pdt.G/2022/PA.Dgl" },
-    { jenisPerkara: "Penguasaan Anak", nomorPerkara: "177/Pdt.G/2022/PA.Dgl" },
   ]) {
     it(`${j.jenisPerkara}: verstek -> [03b], kontradiktoir -> [03] (varian [03a], [03b] disebut)`, () => {
       expect(put({ ...j, statusPutusan: "Ditolak", verstekPutusan: true, dihadiriOleh: 2 })).toMatchObject({ berkas: HA_03B, folder: HA });
@@ -109,6 +108,20 @@ describe("C. hak asuh ditolak verstek [03b]", () => {
       expect(kontra.semua).toEqual(expect.arrayContaining([HA_03B, "[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)"]));
     });
   }
+});
+
+describe("C2. penguasaan anak ditolak (I15 18 Okt: folder 6b)", () => {
+  it("Penguasaan Anak: verstek -> [03a] Tolak Verstek 6b, kontradiktoir -> [03] 6b (varian [03a] disebut); tidak lagi hak asuh 6a", () => {
+    const j = { jenisPerkara: "Penguasaan Anak", nomorPerkara: "177/Pdt.G/2022/PA.Dgl", statusPutusan: "Ditolak" };
+    const PG_03A = "[03a] [Tolak Verstek] Penguasaan Anak - T Tidak Hadir - Gugatan Tidak Beralasan Hukum";
+    const PG_03 = "[03] [Tolak] Penguasaan Anak - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti";
+    expect(put({ ...j, verstekPutusan: true, dihadiriOleh: 2 })).toMatchObject({ berkas: PG_03A, folder: "6b Penguasaan Anak" });
+    const kontra = put({ ...j, dihadiriOleh: 1, tergugatPerempuan: true })!;
+    expect(kontra).toMatchObject({ berkas: PG_03, folder: "6b Penguasaan Anak" });
+    expect(kontra.semua).toContain(PG_03A);
+    expect(FIX.berkas).toContain(`${A}6b Penguasaan Anak/${PG_03A}.rtf`);
+    expect(FIX.berkas).toContain(`${A}6b Penguasaan Anak/${PG_03}.rtf`);
+  });
 });
 
 describe("D. ikrar tidak berubah", () => {

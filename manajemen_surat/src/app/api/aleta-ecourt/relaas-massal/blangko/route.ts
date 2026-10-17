@@ -16,6 +16,7 @@ import {
   jalurBlangkoRelaas,
   pihakDipanggil,
   type KeadaanRelaas,
+  type PihakBlangkoRelaas,
   type PihakDipanggil,
 } from "@/lib/pohon-blangko";
 
@@ -125,7 +126,8 @@ type BlangkoTerdaftar = {
   /** APA ADANYA - termasuk spasi sebelum ".rtf" pada blangko sidang lanjutan. */
   berkas: string;
   label: string;
-  pihak: PihakDipanggil;
+  /** I14 18 Okt: "calon-mempelai" = calon suami/istri perkara pencegahan perkawinan ([JS] 11.2/11.3), bukan pihak SIPP. */
+  pihak: PihakBlangkoRelaas;
   keterangan: string;
   /** Jalur relatif di dalam akar blangko, dari jalurBlangkoRelaas(). */
   jalur: string;
@@ -153,6 +155,9 @@ function setRelaas() {
 
 /** Sebab pemilihan blangko - keputusannya disebut, bukan disembunyikan. */
 function sebabPilihan(keadaan: KeadaanRelaas, pihak: PihakDipanggil, terpilih: string) {
+  if (keadaan === "pencegahan-perkawinan" || /Pencegahan Perkawinan/.test(terpilih)) {
+    return `Pencegahan perkawinan (jenis 342): panggilan sidang pertama dan lanjutan memakai blangko khusus pencegahan perkawinan: ${terpilih}`;
+  }
   // 6 Okt (butir 10): blangko per pihak; gabungan hanya untuk SATU dokumen dua pihak.
   if ((keadaan === "sidang-ditunda" || keadaan === "sidang-pertama") && pihak === "keduanya") {
     return (
@@ -190,6 +195,9 @@ export async function GET(request: NextRequest) {
     // Q3 16 Okt: ?ecourt=1 (perkara terdaftar lewat e-Court) dan ?verstek=1 (putusan verstek) memilih set e-Court ([JS] 5.1, 5.2, 6.2, 7).
     const ecourtMinta = getSearchParam(request, "ecourt") === "1";
     const verstekMinta = getSearchParam(request, "verstek") === "1";
+    // I14 18 Okt: ?jenis=342 (jenis_perkara_id Pencegahan Perkawinan) memilih relaas Pemohon [JS] 11.1 untuk sidang pertama/lanjutan.
+    const jenisMintaMentah = Number(String(getSearchParam(request, "jenis") ?? "").trim());
+    const jenisMinta = Number.isInteger(jenisMintaMentah) && jenisMintaMentah > 0 ? jenisMintaMentah : null;
     // Pemeriksaan folder ABT menyala bawaannya - itulah yang menangkap nama
     // berkas yang berselisih. Dapat dimatikan dengan ?periksaAbt=0 oleh
     // pemanggil yang hanya butuh daftarnya.
@@ -309,7 +317,7 @@ export async function GET(request: NextRequest) {
         : "tidak-diketahui";
 
     const terpilih = keadaanMinta
-      ? blangkoRelaas(keadaanMinta as KeadaanRelaas, pihakPilihan, { lewatEcourt: ecourtMinta, verstek: verstekMinta })
+      ? blangkoRelaas(keadaanMinta as KeadaanRelaas, pihakPilihan, { lewatEcourt: ecourtMinta, verstek: verstekMinta, jenisPerkaraId: jenisMinta })
       : null;
 
     const pilihan = keadaanMinta

@@ -154,6 +154,7 @@ function barisPutusan(x: UnggahMassalPutusanBot, namaAkun: string): BarisUnggahM
       mediasiTerbaca: x.mediasiTerbaca,
       tergugatPerempuan: x.tergugatPerempuan,
       amarPutusan: x.amarRekonvensi,
+      kumulasi: x.kumulasi, // I17 18 Okt: kode keadaan kumulasi-itsbat / kumulasi-hak-asuh
     }),
   };
 }

@@ -7,6 +7,9 @@
  * (paket abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry); langkahnya diperiksa terhadap nama berkas di server.
  * F22 17 Okt (abt-pencegahan-nikah-derry, abt-wasiat-derry, abt-es-biasa-derry): ALUR 41 (pencegahan perkawinan, 10 langkah), 42 (wasiat) dan 43 (ES acara biasa)
  * dari daftar-rtf.tsv ketiga paket; kode langkah 42/43 sama dengan ALUR 38 (V1, AP, CB, V2, TP, NO).
+ * I15 18 Okt (abt-penguasaan-anak-derry): ALUR 44 (penguasaan anak, jenis 349, folder 6b - BAS, menu 154) menggantikan ALUR 38 untuk jenis 349; 6 langkah sama dengan ALUR 38.
+ * I16 18 Okt (abt-celah-bas-derry): 38 langkah baru di alur yang sudah ada (HB verstek V1/V2 di ALUR 31; cabut C / gugur G permohonan di ALUR 12l/13l/14/16/18/19;
+ * cerai kumulasi itsbat T hadir H1-H9, TT, CA/CB/CD, G di ALUR 36; kumulasi hak asuh T1/T2/TT/CA/CB/CD/G/TP/NO/N1/N2 di ALUR 37), dari pemetaan-langkah-baru.json.
  * I7 17 Okt (abt-varian-17okt-derry): ALUR 39 kehilangan langkah CB ("Mediasi Berhasil - Gugatan Dicabut", dipindah ke derry_briantono/terhapus karena
  * pembatalan perkawinan dikecualikan dari mediasi); menu hak asuh 133/134 kini jenis_perkara_id 369-369 (dulu alur_perkara_id 15), jadi ALUR 38 jenis 369.
  */
@@ -82,6 +85,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 14 PAW - [NO] Permohonan Kabur, Tetap Tidak Diperbaiki - Tidak Dapat Diterima.rtf",
         "keterangan": "Permohonan Kabur, Tetap Tidak Diperbaiki - Tidak Dapat Diterima"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 14 PAW - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon hadir dan mencabut permohonan (penetapan pencabutan)"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 14 PAW - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
       }
     ]
   },
@@ -172,6 +185,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "3",
         "berkas": "BAS ALUR 16 Perwalian - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
         "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 16 Perwalian - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon hadir dan mencabut permohonan (penetapan pencabutan)"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 16 Perwalian - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
       }
     ]
   },
@@ -277,6 +300,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "1d",
         "berkas": "BAS ALUR 18 Angkat Anak - [1d] Sidang 1 - Bukti Surat, Tunda Orang Tua Kandung dan Saksi.rtf",
         "keterangan": "Sidang 1 - Bukti Surat, Tunda Orang Tua Kandung dan Saksi"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 18 Angkat Anak - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon hadir dan mencabut permohonan (penetapan pencabutan)"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 18 Angkat Anak - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
       }
     ]
   },
@@ -322,6 +355,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "3",
         "berkas": "BAS ALUR 19 Wali Adhal - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
         "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 19 Wali Adhal - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon hadir dan mencabut permohonan (penetapan pencabutan)"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 19 Wali Adhal - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
       }
     ]
   },
@@ -372,6 +415,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "3",
         "berkas": "BAS ALUR 13 AUA - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
         "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 13 AUA - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon hadir dan mencabut permohonan (penetapan pencabutan)"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 13 AUA - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
       }
     ]
   },
@@ -417,6 +470,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "2at",
         "berkas": "BAS ALUR 12 DK - [2at] Sidang 1 - Anak Laki-laki Sudah Berhubungan Badan, Tunda Pembacaan Penetapan.rtf",
         "keterangan": "Sidang 1 - Anak Laki-laki Sudah Berhubungan Badan, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 12 DK - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan dispensasi kawin gugur (penetapan)"
       }
     ]
   },
@@ -482,6 +540,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 31 HB - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 31 HB - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1: Penggugat hadir, Tergugat tidak hadir - tunda panggil T (tanpa mediasi)"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 31 HB - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2: Tergugat tetap tidak hadir - pembuktian (2 saksi) dan putusan verstek harta bersama"
       }
     ]
   },
@@ -633,7 +701,7 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
   {
     "id": "alur-36",
     "nomor": 36,
-    "nama": "Cerai Kumulasi Itsbat Nikah (Verstek)",
+    "nama": "Cerai Kumulasi Itsbat Nikah (Verstek dan Tergugat Hadir)",
     "folder": "derry_briantono/1c Perceraian Kumulasi Itsbat Nikah - BAS",
     "menu": {
       "id": 106,
@@ -662,6 +730,76 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "P3",
         "berkas": "BAS ALUR 36 Cerai Kumulasi IN - Sidang Terakhir - Saksi dan Putusan Verstek (3 Saksi).rtf",
         "keterangan": "Sidang Terakhir - Saksi dan Putusan Verstek (3 Saksi)"
+      },
+      {
+        "kode": "H1",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 1 - Mediasi.rtf",
+        "keterangan": "Sidang 1: P & T hadir - mediasi (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "H2",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 2 - Laporan Mediasi dan Court Calendar.rtf",
+        "keterangan": "Sidang 2: laporan mediasi tidak berhasil, pemeriksaan pokok perkara (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "H3",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 3 - Jawaban (dan Gugatan Rekonvensi).rtf",
+        "keterangan": "Sidang 3: jawaban Tergugat (dan gugatan rekonvensi) (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "H4",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 4 - Replik (dan Jawaban Rekonvensi).rtf",
+        "keterangan": "Sidang 4: replik (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "H5",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 5 - Duplik (dan Replik Rekonvensi).rtf",
+        "keterangan": "Sidang 5: duplik (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "H6",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 6 - Pembuktian P.rtf",
+        "keterangan": "Sidang 6: pembuktian Penggugat/Pemohon (bukti surat dan 2 saksi) (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "H7",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 7 - Pembuktian T.rtf",
+        "keterangan": "Sidang 7: pembuktian Tergugat/Termohon (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "H8",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 8 - Kesimpulan.rtf",
+        "keterangan": "Sidang 8: kesimpulan (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "H9",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 9 - Pengucapan Putusan.rtf",
+        "keterangan": "Sidang 9: pengucapan putusan (cerai kumulasi itsbat, Tergugat hadir)"
+      },
+      {
+        "kode": "TT",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - P & T Tidak Hadir - Tunda Panggil P & T.rtf",
+        "keterangan": "Sidang: P & T tidak hadir - tunda panggil P & T (cerai kumulasi itsbat)"
+      },
+      {
+        "kode": "CA",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - Cabut di Sidang Pertama sebelum Mediasi.rtf",
+        "keterangan": "Sidang 1: Penggugat/Pemohon mencabut gugatan sebelum mediasi (T tidak hadir) (cerai kumulasi itsbat)"
+      },
+      {
+        "kode": "CB",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - Sidang Lanjutan - Cabut karena Gugatan Salah.rtf",
+        "keterangan": "Sidang lanjutan: pencabutan karena gugatan salah (cerai kumulasi itsbat)"
+      },
+      {
+        "kode": "CD",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - Mediasi Berhasil - Perkara Damai Dicabut.rtf",
+        "keterangan": "Sidang: damai dari mediasi - gugatan dicabut (cerai kumulasi itsbat)"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - P & T Tidak Hadir - Putus Gugur.rtf",
+        "keterangan": "Sidang: P & T tidak hadir - gugatan gugur (cerai kumulasi itsbat)"
       }
     ]
   },
@@ -727,6 +865,61 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "9",
         "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 9 - Pengucapan Putusan.rtf",
         "keterangan": "Sidang 9 - Pengucapan Putusan"
+      },
+      {
+        "kode": "T1",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 1 - T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1: P hadir, T tidak hadir - tunda panggil T (cerai gugat kumulasi hak asuh)"
+      },
+      {
+        "kode": "T2",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang Lanjutan - Tunda Panggil T Lagi.rtf",
+        "keterangan": "Sidang lanjutan: T tetap tidak hadir - tunda panggil T lagi"
+      },
+      {
+        "kode": "TT",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - P & T Tidak Hadir - Tunda Panggil P & T.rtf",
+        "keterangan": "Sidang: P & T tidak hadir - tunda panggil P & T (cerai gugat kumulasi hak asuh)"
+      },
+      {
+        "kode": "CA",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Cabut di Sidang Pertama sebelum Mediasi.rtf",
+        "keterangan": "Sidang 1: Penggugat/Pemohon mencabut gugatan sebelum mediasi (T tidak hadir) (cerai gugat kumulasi hak asuh)"
+      },
+      {
+        "kode": "CB",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang Lanjutan - Cabut karena Gugatan Salah.rtf",
+        "keterangan": "Sidang lanjutan: pencabutan karena gugatan salah (cerai gugat kumulasi hak asuh)"
+      },
+      {
+        "kode": "CD",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Mediasi Berhasil - Perkara Damai Dicabut.rtf",
+        "keterangan": "Sidang: damai dari mediasi - gugatan dicabut (cerai gugat kumulasi hak asuh)"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - P & T Tidak Hadir - Putus Gugur.rtf",
+        "keterangan": "Sidang: P & T tidak hadir - gugatan gugur (cerai gugat kumulasi hak asuh)"
+      },
+      {
+        "kode": "TP",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang lanjutan: Penggugat tidak hadir - tunda panggil P"
+      },
+      {
+        "kode": "NO",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang Lanjutan - P 2x Tidak Hadir - NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang lanjutan: Penggugat pernah hadir lalu 2x tidak hadir - putusan NO (SEMA 1/2022)"
+      },
+      {
+        "kode": "N1",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 1 - Tunda Panggil T (Alamat Tidak Jelas).rtf",
+        "keterangan": "Sidang 1: alamat T tidak jelas - tunda panggil T"
+      },
+      {
+        "kode": "N2",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Putus NO - Alamat T Salah.rtf",
+        "keterangan": "Putusan NO: alamat T salah (P hadir, T tidak hadir)"
       }
     ]
   },
@@ -1023,6 +1216,52 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
       {
         "kode": "NO",
         "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      }
+    ]
+  },
+  /* === I15 18 Okt === */
+  {
+    "id": "alur-44",
+    "nomor": 44,
+    "nama": "Penguasaan Anak - Verstek, Perdamaian, Cabut, P Tidak Hadir, NO",
+    "folder": "derry_briantono/6b Penguasaan Anak - BAS",
+    "menu": {
+      "id": 154,
+      "nama": "Penguasaan Anak - BAS",
+      "alias": "Penguasaan Anak - BAS"
+    },
+    "jenisMin": 349,
+    "jenisMaks": 349,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "CB",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "TP",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "NO",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
       }
     ]

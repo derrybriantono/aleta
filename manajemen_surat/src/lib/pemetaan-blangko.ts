@@ -50,7 +50,8 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     { kunci: "Pengangkatan Anak", sebutan: "Pengangkatan Anak" },
     { kunci: "Asal Usul Anak", sebutan: "Asal Usul Anak" },
     // F21 17 Okt (paket ABT abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry). "Penguasaan Anak" = nama jenis 349 di SIPP.
-    { kunci: "Penguasaan Anak", sebutan: "Hak Asuh Anak (Penguasaan Anak / Hadhanah)" },
+    // I15 18 Okt: jenis 349 "Penguasaan Anak" kini folder sendiri (6b), terpisah dari hak asuh/hadhanah (6a, jenis 369 "Lain-Lain" Pdt.G).
+    { kunci: "Penguasaan Anak", sebutan: "Penguasaan Anak (folder 6b; hak asuh/hadhanah 369 terpisah)" },
     { kunci: "Pembatalan Perkawinan", sebutan: "Pembatalan Perkawinan" },
     // F22 17 Okt: "Ekonomi Syariah" meliputi gugatan sederhana (Pdt.G.S) DAN acara biasa (Pdt.G, folder 10a): dibedakan ALETA dari nomor perkara.
     { kunci: "Ekonomi Syariah", sebutan: "Ekonomi Syariah (gugatan sederhana dan acara biasa)" },
@@ -94,6 +95,10 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
       kunci: "pengumuman-itsbat-1p",
       sebutan: "Pengumuman permohonan itsbat nikah voluntair - 1 Pemohon, pasangan telah meninggal (sidang pertama)",
     },
+    // I14 18 Okt: panggilan sidang pencegahan perkawinan (jenis 342, Pdt.P) - Pemohon, calon suami, calon istri; sidang pertama maupun lanjutan.
+    { kunci: "pencegahan-perkawinan-pemohon", sebutan: "Relaas panggilan sidang pencegahan perkawinan - Pemohon" },
+    { kunci: "pencegahan-perkawinan-calon-suami", sebutan: "Relaas panggilan sidang pencegahan perkawinan - calon suami" },
+    { kunci: "pencegahan-perkawinan-calon-istri", sebutan: "Relaas panggilan sidang pencegahan perkawinan - calon istri" },
   ],
   pbt: [
     { kunci: "pbt-penggugat", sebutan: "Pemberitahuan isi putusan - Penggugat" },
@@ -253,10 +258,13 @@ export function saranPemetaan(jenis: JenisPemetaan): { kunci: string; namaBerkas
  */
 const BAWAAN_KEADAAN: Record<
   string,
-  { keadaan: KeadaanRelaas; pihak?: "pertama" | "kedua" | "keduanya"; pemohon?: 1 | 2; ecourt?: true; verstek?: true }
+  { keadaan: KeadaanRelaas; pihak?: "pertama" | "kedua" | "keduanya"; pemohon?: 1 | 2; calon?: "suami" | "istri"; ecourt?: true; verstek?: true }
 > = {
   "pengumuman-itsbat": { keadaan: "pengumuman-itsbat", pemohon: 2 },
   "pengumuman-itsbat-1p": { keadaan: "pengumuman-itsbat", pemohon: 1 },
+  "pencegahan-perkawinan-pemohon": { keadaan: "pencegahan-perkawinan", pihak: "pertama" },
+  "pencegahan-perkawinan-calon-suami": { keadaan: "pencegahan-perkawinan", calon: "suami" },
+  "pencegahan-perkawinan-calon-istri": { keadaan: "pencegahan-perkawinan", calon: "istri" },
   "relaas-panggilan-sidang-pertama-penggugat": { keadaan: "sidang-pertama", pihak: "pertama" },
   "relaas-panggilan-sidang-pertama-pemohon": { keadaan: "sidang-pertama", pihak: "pertama" },
   "relaas-panggilan-sidang-pertama-tergugat": { keadaan: "sidang-pertama", pihak: "kedua" },
@@ -303,6 +311,7 @@ export function bawaanPemetaan(jenis: JenisPemetaan): { kunci: string; sebutan: 
             b.keadaan === aturan.keadaan &&
             (!aturan.pihak || b.pihak === aturan.pihak) &&
             (!aturan.pemohon || b.pemohon === aturan.pemohon) &&
+            (!aturan.calon || b.calon === aturan.calon) &&
             Boolean(b.ecourt) === Boolean(aturan.ecourt) &&
             Boolean(b.verstek) === Boolean(aturan.verstek)
         );
@@ -342,8 +351,9 @@ export function bawaanPemetaan(jenis: JenisPemetaan): { kunci: string; sebutan: 
  * ("pengumuman-itsbat" baku = 2P). Keduanya harus tepat - blangko 2P tidak
  * pernah dipakai untuk perkara satu Pemohon, dan sebaliknya.
  */
-export type AwalanRelaas = "panggilan" | "pbt" | "delegasi" | "amplop" | "pengumuman";
-export type KeadaanKunci = "pertama" | "lanjutan" | "ikrar" | "1p" | "2p" | "";
+export type AwalanRelaas = "panggilan" | "pbt" | "delegasi" | "amplop" | "pengumuman" | "pencegahan";
+/** "pemohon" | "calon-suami" | "calon-istri" (I14 18 Okt): sisi kunci awalan "pencegahan" (panggilan sidang pencegahan perkawinan). */
+export type KeadaanKunci = "pertama" | "lanjutan" | "ikrar" | "1p" | "2p" | "pemohon" | "calon-suami" | "calon-istri" | "";
 export type PihakKunci = "penggugat" | "tergugat" | "pemohon" | "termohon" | "";
 export type UraianKunciRelaas = {
   awalan: AwalanRelaas;
@@ -403,9 +413,32 @@ const KATA_PENGUMUMAN = new Set([
   "2p",
 ]);
 
+/** I14 18 Okt: kata kunci panggilan pencegahan perkawinan - hanya dikenal pada kunci berkata "pencegahan". */
+const KATA_PENCEGAHAN = new Set([
+  "pencegahan",
+  "perkawinan",
+  "nikah",
+  "panggilan",
+  "relaas",
+  "sidang",
+  "pertama",
+  "lanjutan",
+  "pemohon",
+  "calon",
+  "suami",
+  "istri",
+  "isteri",
+]);
+
 export function uraiKunciRelaas(kunci: string): UraianKunciRelaas {
   const kata = normalkanKunci("relaas", kunci).split("-").filter(Boolean);
   const ada = (x: string) => kata.includes(x);
+  // I14 18 Okt: pencegahan perkawinan - keadaan = siapa yang dipanggil: calon suami / calon istri, selainnya Pemohon.
+  if (ada("pencegahan")) {
+    const asingC = kata.filter((k) => !KATA_PENCEGAHAN.has(k));
+    const keadaanC: KeadaanKunci = ada("suami") ? "calon-suami" : ada("istri") || ada("isteri") ? "calon-istri" : "pemohon";
+    return { awalan: "pencegahan", keadaan: keadaanC, pihak: "", dikenal: asingC.length === 0, asing: asingC, ecourt: false, verstek: false };
+  }
   if (ada("pengumuman")) {
     const asingP = kata.filter((k) => !KATA_PENGUMUMAN.has(k));
     return { awalan: "pengumuman", keadaan: ada("1p") ? "1p" : "2p", pihak: "", dikenal: asingP.length === 0, asing: asingP, ecourt: false, verstek: false };
@@ -489,6 +522,9 @@ const SEBUT_KEADAAN: Record<KeadaanKunci, string> = {
   ikrar: "sidang ikrar talak",
   "1p": "1 Pemohon",
   "2p": "2 Pemohon",
+  pemohon: "Pemohon",
+  "calon-suami": "calon suami",
+  "calon-istri": "calon istri",
   "": "",
 };
 
@@ -519,6 +555,12 @@ export function kapanDipakaiRelaas(kunci: string): { dikenal: boolean; dipakai: 
   }
   if (u.awalan === "amplop") {
     return { dikenal: true, dipakai: "Amplop panggilan surat tercatat - cetak dari portal; ekstensi belum punya jalur cetak amplop." };
+  }
+  if (u.awalan === "pencegahan") {
+    return {
+      dikenal: true,
+      dipakai: `Panggilan sidang pencegahan perkawinan (jenis 342, Pdt.P) - sidang pertama maupun lanjutan, ${SEBUT_KEADAAN[u.keadaan]}.`,
+    };
   }
   if (u.awalan === "pengumuman") {
     return {

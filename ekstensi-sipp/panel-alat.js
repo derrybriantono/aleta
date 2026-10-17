@@ -7987,7 +7987,7 @@ function alatKodeKeadaan(keadaan) {
 }
 
 /**
- * Baris peta untuk satu perkara: [kumulasi+status+verstek -> kumulasi+status ->] [status+keadaan ->] status+verstek -> status -> jenis.
+ * Baris peta untuk satu perkara: [kumulasi+status+verstek -> kumulasi+status+keadaan -> kumulasi+status ->] [status+keadaan ->] status+verstek -> status -> jenis.
  * Pulang { baris, kunci, tingkat } atau null. `kumulasi` (T 13 Okt, opsional) = daftar kode kumulasi perkara (SIPP + petitum,
  * kumulasiPerkaraService) - lihat alatKodeKumulasi; baris kumulasi berkunci "<jenis>+<kode>[+<kode>]|<status>[|verstek]".
  */
@@ -8003,11 +8003,17 @@ function alatPetaUntukPerkara(peta, jenis, status, verstek, kumulasi, keadaan) {
   const v = Boolean(verstek) || /verstek/i.test(String(status || "")) || kodeKeadaan.includes("verstek-tanpa-bendera");
   /* === AKHIR Q3 === */
   const ada = (k) => p[k] && alatBlangkoTerpetakan(p[k]);
+  const kodeKeadaanKumulasi = kodeKeadaan.filter((x) => x !== "verstek-tanpa-bendera");
   /* === T 13 Okt === */
   if (s) {
     for (const kode of alatCalonKunciKumulasi(kumulasi)) {
       const jk = `${j}+${kode}`;
       if (v && ada(`${jk}|${s}|verstek`)) return { baris: p[`${jk}|${s}|verstek`], kunci: `${jk}|${s}|verstek`, tingkat: "kumulasi-verstek" };
+      // I17 18 Okt: baris kumulasi berkeadaan ("cerai gugat+itsbat-nikah|dikabulkan|t-tidak-hadir-setelah-mediasi", "...|dicabut|sesudah-jawaban") -
+      // kode keadaan pertama yang punya baris menang atas baris kumulasi polos (folder 1c / 1d).
+      for (const kodeKeadaan of kodeKeadaanKumulasi) {
+        if (ada(`${jk}|${s}|${kodeKeadaan}`)) return { baris: p[`${jk}|${s}|${kodeKeadaan}`], kunci: `${jk}|${s}|${kodeKeadaan}`, tingkat: "kumulasi-keadaan" };
+      }
       if (ada(`${jk}|${s}`)) return { baris: p[`${jk}|${s}`], kunci: `${jk}|${s}`, tingkat: "kumulasi" };
     }
   }
@@ -9011,6 +9017,8 @@ const ALAT_MENU_PUTUSAN = {
   wa: { blangko: "Putusan Wali Adhal", lain: ["Wali Adhal - Putusan"] },
   // F21 17 Okt: paket ABT abt-hak-asuh-derry (menu 133), abt-pembatalan-perkawinan-derry (135), abt-ekonomi-syariah-derry (137).
   ha: { blangko: "Putusan Hak Asuh Anak (Hadhanah)", lain: ["Hak Asuh - Putusan"] },
+  // I15 18 Okt: paket ABT abt-penguasaan-anak-derry (menu 153, alias "Penguasaan Anak - Putusan"), folder derry_briantono/6b Penguasaan Anak - jenis 349.
+  pgn: { blangko: "Putusan Penguasaan Anak", lain: ["Penguasaan Anak - Putusan"] },
   pb: { blangko: "Putusan Pembatalan Perkawinan", lain: ["Pembatalan Nikah - Putusan"] },
   es: { blangko: "Putusan Ekonomi Syariah", lain: ["Ekonomi Syariah - Putusan"] },
   // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
@@ -9201,7 +9209,46 @@ function alatPetaHakAsuh(kunci, jenisAsli, keadaan) {
 const ALAT_PB_KABUL = "[01] [Kabul] Pembatalan Perkawinan - Kontradiktoir";
 const ALAT_PB_GUGUR = "[98a] [Gugur] Pembatalan Perkawinan - P Tidak Hadir Sidang Pertama";
 const ALAT_ES_GUGUR = "[98a] [Gugur] ES Gugatan Sederhana - P Tidak Hadir Sidang Pertama";
-Object.assign(ALAT_PETA_BAWAAN, alatPetaHakAsuh("penguasaan anak", "Penguasaan Anak", ""), alatPetaHakAsuh("lain-lain", "Lain-Lain", "hak-asuh"), {
+/* === I15 18 Okt === */
+/**
+ * PENGUASAAN ANAK (jenis SIPP 349, Pdt.G) versi Derry - paket ABT abt-penguasaan-anak-derry (folder "6b Penguasaan Anak" + " - BAS", menu 153/154),
+ * TERPISAH dari hak asuh/hadhanah (6a, menu 133/134, jenis 369 "Lain-Lain" Pdt.G - tetap alatPetaHakAsuh("lain-lain")). Sebelum paket ini jenis 349 memakai
+ * folder hak asuh; sekarang kunci "penguasaan anak|..." menunjuk 6b. Kunci status = nama status SIPP huruf kecil (cara baris hak asuh). Varian dipilih
+ * per perkara dan disebut di catatan: anak mumayyiz memilih [01c]. Amar kabul memuat butir "Menghukum Tergugat menyerahkan anak" - hakim menghapusnya
+ * bila tidak dimohonkan dalam petitum (SEMA 3/2018, ultra petita). Baris "ditolak|verstek" ([03a]) ada di blok I8 di bawah (urutan kunci sama dengan cermin portal).
+ */
+const ALAT_BERKAS_PENGUASAAN_ANAK = {
+  kabul: "[01] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Belum Mumayyiz",
+  setelahMediasi: "[01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz",
+  verstek: "[01b] [Kabul Verstek] Penguasaan Anak - Anak Belum Mumayyiz",
+  mumayyiz: "[01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih",
+  tolak: "[03] [Tolak] Penguasaan Anak - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
+  tolakVerstek: "[03a] [Tolak Verstek] Penguasaan Anak - T Tidak Hadir - Gugatan Tidak Beralasan Hukum",
+  damai: "[97] [Perdamaian] Akta Perdamaian",
+  cabut: "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban",
+  gugur: "[98a] [Gugur] Gugatan - P Tidak Hadir Sidang Pertama",
+  no: "[99] [NO] Gugatan - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+};
+function alatPetaPenguasaanAnak(kunci, jenisAsli) {
+  const B = ALAT_BERKAS_PENGUASAAN_ANAK;
+  const k = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  const catatanKabul = `varian: ${B.setelahMediasi}; ${B.mumayyiz}`;
+  return {
+    [kunci]: alatBarisPutusanLain("pgn", jenisAsli, "", B.kabul, catatanKabul),
+    [k("dikabulkan", "verstek")]: alatBarisPutusanLain("pgn", jenisAsli, "Dikabulkan", B.verstek),
+    [k("dikabulkan")]: alatBarisPutusanLain("pgn", jenisAsli, "Dikabulkan", B.kabul, catatanKabul),
+    [k("dikabulkan", "t-tidak-hadir-setelah-mediasi")]: alatBarisPutusanLain("pgn", jenisAsli, "Dikabulkan", B.setelahMediasi, "keadaan: T hadir mediasi lalu tidak hadir"),
+    [k("ditolak")]: alatBarisPutusanLain("pgn", jenisAsli, "Ditolak", B.tolak, `varian: ${B.tolakVerstek}`),
+    [k("perdamaian")]: alatBarisPutusanLain("pgn", jenisAsli, "Perdamaian", B.damai),
+    [k("dicabut")]: alatBarisPutusanLain("pgn", jenisAsli, "Dicabut", B.cabut),
+    [k("digugurkan")]: alatBarisPutusanLain("pgn", jenisAsli, "Digugurkan", B.gugur),
+    [k("gugur")]: alatBarisPutusanLain("pgn", jenisAsli, "Gugur", B.gugur),
+    [k("tidak dapat diterima")]: alatBarisPutusanLain("pgn", jenisAsli, "Tidak Dapat Diterima", B.no),
+  };
+}
+/* === AKHIR I15 === */
+// I15 18 Okt: jenis 349 "Penguasaan Anak" tidak lagi memakai folder hak asuh (6a) - barisnya dari alatPetaPenguasaanAnak (6b), di posisi yang sama.
+Object.assign(ALAT_PETA_BAWAAN, alatPetaPenguasaanAnak("penguasaan anak", "Penguasaan Anak"), alatPetaHakAsuh("lain-lain", "Lain-Lain", "hak-asuh"), {
   // --- Pembatalan perkawinan (jenis 344, Pdt.G) ---
   "pembatalan perkawinan": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "", ALAT_PB_KABUL, "varian: [01a] [Kabul] Pembatalan Perkawinan - T Tidak Hadir Setelah Mediasi; [01b] [Kabul Verstek] Pembatalan Perkawinan"),
   "pembatalan perkawinan|dikabulkan|verstek": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Dikabulkan", "[01b] [Kabul Verstek] Pembatalan Perkawinan"),
@@ -9240,7 +9287,6 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan",
     "keadaan: rekonvensi dikabulkan seluruhnya/sebagian; bawaan HB tetap [01] (rekonvensi ditolak)"
   ),
-  "penguasaan anak|ditolak|hak-asuh-t-ibu": alatBarisPutusanLain("ha", "Penguasaan Anak", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakIbu, "keadaan: Tergugat ibu (anak belum mumayyiz)"),
   "lain-lain|ditolak|hak-asuh-t-ibu": alatBarisPutusanLain("ha", "Lain-Lain", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakIbu, "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), Tergugat ibu (anak belum mumayyiz)"),
 });
 /* === AKHIR I7 === */
@@ -9255,7 +9301,8 @@ Object.assign(ALAT_PETA_BAWAAN, {
 Object.assign(ALAT_PETA_BAWAAN, {
   "cerai gugat|ditolak|kontradiktoir": alatBarisStatusCerai("Cerai Gugat", "Ditolak", ALAT_BERKAS_STATUS_CERAI.tolakKontradiktoir, "varian: [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti"),
   "cerai talak|ditolak|kontradiktoir": alatBarisStatusCerai("Cerai Talak", "Ditolak", ALAT_BERKAS_STATUS_CERAI.tolakKontradiktoir, "varian: [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti"),
-  "penguasaan anak|ditolak|verstek": alatBarisPutusanLain("ha", "Penguasaan Anak", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakVerstek, "keadaan: Tergugat tidak pernah hadir (verstek)"),
+  // I15 18 Okt: jenis 349 -> [03a] Tolak Verstek di folder 6b (dulu [03b] hak asuh 6a).
+  "penguasaan anak|ditolak|verstek": alatBarisPutusanLain("pgn", "Penguasaan Anak", "Ditolak", ALAT_BERKAS_PENGUASAAN_ANAK.tolakVerstek, "keadaan: Tergugat tidak pernah hadir (verstek)"),
   "lain-lain|ditolak|hak-asuh-verstek": alatBarisPutusanLain("ha", "Lain-Lain", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakVerstek, "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), putusan verstek"),
 });
 /* === AKHIR I8 === */
@@ -9362,6 +9409,189 @@ Object.assign(
   })
 );
 /* === AKHIR F22 === */
+
+/* === I17 18 Okt === */
+/**
+ * CELAH PUTUSAN 18 Okt (tiga paket ABT abt-putusan-celah-gugatan-derry, -kumulasi-derry, -permohonan-derry; peta: i17-putusan-celah/PEMETAAN-ALETA.md):
+ * [98b] cabut sesudah jawaban dengan persetujuan T, [98c] coret panjar habis, [99a] NO kurang pihak, [99b] NO gugatan kabur, [03]/[03b] tolak HB, kewarisan,
+ * IN kontensius, pembatalan, [01a]/[01b] kabul kewarisan dan IN kontensius, [98a] gugur dan [99] NO SEMA permohonan, cerai [98] 7./8., serta 38 blangko
+ * cerai kumulasi itsbat nikah (folder 1c: CG dan CT) dan kumulasi hak asuh anak (1d). Kunci "<jenis>|<status>[|<keadaan>]" (lib/keadaan-putusan.ts);
+ * kumulasi "<cerai>+<kumulasi>|<status>[|<keadaan>]" (baris kumulasi, alatPetaUntukPerkara). Keadaan baru: sesudah-jawaban, cacat-formil, kurang-pihak,
+ * alamat-t-tidak-diketahui, itsbat-kabul-cerai-ditolak, kontensius-verstek (kumulasi-itsbat / kumulasi-hak-asuh hanya penanda). Cacat formil dan kurang
+ * pihak tidak tersimpan terstruktur di SIPP: baris dasar NO menyebutnya sebagai "varian" untuk dipilih manual. Baris lama yang menunjuk blangko pinjaman
+ * (kewarisan dicabut ke HB; dispensasi/perwalian/PAW/AUA/Lain-Lain gugur dan NO ke Permohonan Umum 9b) kini menunjuk blangko jenisnya sendiri.
+ * Kolom: [kunci, jenis blangko, jenisAsli, statusAsli, berkas, catatan].
+ */
+const ALAT_KUMULASI_ITSBAT_MENU = ["Putusan Cerai Kumulasi Itsbat Nikah", ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"]];
+const ALAT_KUMULASI_ASUH_MENU = ["Putusan Cerai Gugat Kumulasi Hak Asuh Anak", ["Putusan CG Kumulasi Hak Asuh", "CG Kumulasi Hak Asuh - Putusan"]];
+const ALAT_BARIS_I17 = [
+  ["harta bersama|dikabulkan|verstek", "hb", "Harta Bersama", "Dikabulkan", "[01b] [Kabul Verstek] HB", "keadaan: Tergugat tidak pernah hadir (verstek)"],
+  ["harta bersama|ditolak|kontradiktoir", "hb", "Harta Bersama", "Ditolak", "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama", ""],
+  ["harta bersama|ditolak|verstek", "hb", "Harta Bersama", "Ditolak", "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama", "keadaan: Tergugat tidak pernah hadir (verstek)"],
+  ["harta bersama|dicabut|sesudah-jawaban", "hb", "Harta Bersama", "Dicabut", "[98b] [Cabut] HB - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["harta bersama|digugurkan", "hb", "Harta Bersama", "Digugurkan", "[98a] [Gugur] HB - P Tidak Hadir Sidang Pertama", ""],
+  ["harta bersama|gugur", "hb", "Harta Bersama", "Gugur", "[98a] [Gugur] HB - P Tidak Hadir Sidang Pertama", ""],
+  ["harta bersama|dicoret dari register", "hb", "Harta Bersama", "Dicoret dari Register", "[98c] [Coret] HB - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["harta bersama|tidak dapat diterima|sema-1-2022", "hb", "Harta Bersama", "Tidak Dapat Diterima", "[99] [NO] HB - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["harta bersama|tidak dapat diterima|kurang-pihak", "hb", "Harta Bersama", "Tidak Dapat Diterima", "[99a] [NO] HB - Kurang Pihak (Plurium Litis Consortium)", "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["harta bersama|tidak dapat diterima|cacat-formil", "hb", "Harta Bersama", "Tidak Dapat Diterima", "[99b] [NO] HB - Gugatan Kabur (Obscuur Libel)", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["kewarisan|dikabulkan|t-tidak-hadir-setelah-mediasi", "waris", "Kewarisan", "Dikabulkan", "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi", "keadaan: T hadir mediasi lalu tidak hadir"],
+  ["kewarisan|dikabulkan|verstek", "waris", "Kewarisan", "Dikabulkan", "[01b] [Kabul Verstek] Kewarisan", "keadaan: Tergugat tidak pernah hadir (verstek)"],
+  ["kewarisan|ditolak|kontradiktoir", "waris", "Kewarisan", "Ditolak", "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti", ""],
+  ["kewarisan|ditolak|verstek", "waris", "Kewarisan", "Ditolak", "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti", "keadaan: Tergugat tidak pernah hadir (verstek)"],
+  ["kewarisan|dicabut", "waris", "Kewarisan", "Dicabut", "[98] [Cabut] Kewarisan - P & T Hadir Sebelum Jawaban", ""],
+  ["kewarisan|digugurkan", "waris", "Kewarisan", "Digugurkan", "[98a] [Gugur] Kewarisan - P Tidak Hadir Sidang Pertama", ""],
+  ["kewarisan|gugur", "waris", "Kewarisan", "Gugur", "[98a] [Gugur] Kewarisan - P Tidak Hadir Sidang Pertama", ""],
+  ["kewarisan|dicabut|sesudah-jawaban", "waris", "Kewarisan", "Dicabut", "[98b] [Cabut] Kewarisan - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["kewarisan|dicoret dari register", "waris", "Kewarisan", "Dicoret dari Register", "[98c] [Coret] Kewarisan - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["kewarisan|tidak dapat diterima|sema-1-2022", "waris", "Kewarisan", "Tidak Dapat Diterima", "[99] [NO] Kewarisan - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["kewarisan|tidak dapat diterima|kurang-pihak", "waris", "Kewarisan", "Tidak Dapat Diterima", "[99a] [NO] Kewarisan - Kurang Pihak (Plurium Litis Consortium)", "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["kewarisan|tidak dapat diterima|cacat-formil", "waris", "Kewarisan", "Tidak Dapat Diterima", "[99b] [NO] Kewarisan - Gugatan Kabur (Obscuur Libel)", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["lain-lain|dicabut|sesudah-jawaban", "ha", "Lain-Lain", "Dicabut", "[98b] [Cabut] Gugatan - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["lain-lain|dicoret dari register|hak-asuh", "ha", "Lain-Lain", "Dicoret dari Register", "[98c] [Coret] Gugatan - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["lain-lain|tidak dapat diterima|kurang-pihak", "ha", "Lain-Lain", "Tidak Dapat Diterima", "[99a] [NO] Gugatan - Kurang Pihak (Plurium Litis Consortium)", "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["lain-lain|tidak dapat diterima|cacat-formil", "ha", "Lain-Lain", "Tidak Dapat Diterima", "[99b] [NO] Gugatan - Gugatan Kabur (Obscuur Libel)", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["pembatalan perkawinan|ditolak|verstek", "pb", "Pembatalan Perkawinan", "Ditolak", "[03b] [Tolak Verstek] Pembatalan Perkawinan - Alasan Pembatalan Tidak Terbukti", "keadaan: Tergugat tidak pernah hadir (verstek)"],
+  ["pembatalan perkawinan|dicabut|sesudah-jawaban", "pb", "Pembatalan Perkawinan", "Dicabut", "[98b] [Cabut] Pembatalan Perkawinan - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["pembatalan perkawinan|dicoret dari register", "pb", "Pembatalan Perkawinan", "Dicoret dari Register", "[98c] [Coret] Pembatalan Perkawinan - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["pembatalan perkawinan|tidak dapat diterima|kurang-pihak", "pb", "Pembatalan Perkawinan", "Tidak Dapat Diterima", "[99a] [NO] Pembatalan Perkawinan - Kurang Pihak (Plurium Litis Consortium)", "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["pembatalan perkawinan|tidak dapat diterima|cacat-formil", "pb", "Pembatalan Perkawinan", "Tidak Dapat Diterima", "[99b] [NO] Pembatalan Perkawinan - Gugatan Kabur (Obscuur Libel)", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["itsbat nikah|ditolak|kontensius", "ink", "Itsbat Nikah Kontensius", "Ditolak", "[03] [Tolak] IN Kontensius - Kontradiktoir - Rukun dan Syarat Tidak Terbukti", "keadaan: T hadir pada sidang putusan"],
+  ["itsbat nikah|ditolak|kontensius-verstek", "ink", "Itsbat Nikah Kontensius", "Ditolak", "[03b] [Tolak Verstek] IN Kontensius - Rukun dan Syarat Tidak Terbukti", ""],
+  ["itsbat nikah|digugurkan|kontensius", "ink", "Itsbat Nikah Kontensius", "Digugurkan", "[98a] [Gugur] IN Kontensius - P Tidak Hadir Sidang Pertama", ""],
+  ["itsbat nikah|gugur|kontensius", "ink", "Itsbat Nikah Kontensius", "Gugur", "[98a] [Gugur] IN Kontensius - P Tidak Hadir Sidang Pertama", ""],
+  ["itsbat nikah|dicabut|sesudah-jawaban", "ink", "Itsbat Nikah Kontensius", "Dicabut", "[98b] [Cabut] IN Kontensius - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["itsbat nikah|dicoret dari register|kontensius", "ink", "Itsbat Nikah Kontensius", "Dicoret dari Register", "[98c] [Coret] IN Kontensius - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["itsbat nikah|tidak dapat diterima|kurang-pihak", "ink", "Itsbat Nikah Kontensius", "Tidak Dapat Diterima", "[99a] [NO] IN Kontensius - Kurang Pihak (Ahli Waris Lain Tidak Ditarik)", "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["itsbat nikah|tidak dapat diterima|cacat-formil", "ink", "Itsbat Nikah Kontensius", "Tidak Dapat Diterima", "[99b] [NO] IN Kontensius - Gugatan Kabur (Obscuur Libel)", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["itsbat nikah|dikabulkan|kontensius-verstek", "ink", "Itsbat Nikah Kontensius", "Dikabulkan", "[01b] [Kabul Verstek] IN Kontensius - Pasangan Meninggal, Ahli Waris Tidak Hadir", ""],
+  ["cerai gugat+itsbat-nikah|dikabulkan|t-tidak-hadir-setelah-mediasi", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Dikabulkan", "[01c] [Kabul] Putusan CG Kumulasi Itsbat Nikah - T Tidak Hadir Setelah Mediasi", "keadaan: T hadir mediasi lalu tidak hadir"],
+  ["cerai gugat+itsbat-nikah|dikabulkan|kontradiktoir", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Dikabulkan", "[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir", "keadaan: T hadir pada sidang putusan"],
+  ["cerai gugat+itsbat-nikah|ditolak|itsbat-kabul-cerai-ditolak", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Ditolak", "[03] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Kabul, Cerai Ditolak (Kontradiktoir)", "keadaan: itsbat dikabulkan, cerai ditolak"],
+  ["cerai gugat+itsbat-nikah|dicabut", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Dicabut", "[98] [Cabut] Putusan CG Kumulasi Itsbat Nikah - P & T Hadir Sebelum Jawaban", ""],
+  ["cerai gugat+itsbat-nikah|digugurkan", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Digugurkan", "[98a] [Gugur] Putusan CG Kumulasi Itsbat Nikah - P & T Tidak Hadir", ""],
+  ["cerai gugat+itsbat-nikah|gugur", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Gugur", "[98a] [Gugur] Putusan CG Kumulasi Itsbat Nikah - P & T Tidak Hadir", ""],
+  ["cerai gugat+itsbat-nikah|digugurkan|p-tidak-hadir-t-hadir", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Digugurkan", "[98d] [Gugur] Putusan CG Kumulasi Itsbat Nikah - P Tidak Hadir T Hadir", "keadaan: P tidak hadir, T hadir"],
+  ["cerai gugat+itsbat-nikah|gugur|p-tidak-hadir-t-hadir", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Gugur", "[98d] [Gugur] Putusan CG Kumulasi Itsbat Nikah - P Tidak Hadir T Hadir", "keadaan: P tidak hadir, T hadir"],
+  ["cerai gugat+itsbat-nikah|dicoret dari register", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Dicoret dari Register", "[98c] [Coret] Putusan CG Kumulasi Itsbat Nikah - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["cerai gugat+itsbat-nikah|tidak dapat diterima|sema-1-2022", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99] [NO] Putusan CG Kumulasi Itsbat Nikah - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["cerai gugat+itsbat-nikah|tidak dapat diterima|alamat-t-tidak-diketahui", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99c] [NO] Putusan CG Kumulasi Itsbat Nikah - Alamat T Tidak Diketahui", "keadaan: Tergugat ghaib / alamat tidak diketahui"],
+  ["cerai gugat+itsbat-nikah|dicabut|sesudah-jawaban", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Dicabut", "[98b] [Cabut] Putusan CG Kumulasi Itsbat Nikah - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["cerai gugat+itsbat-nikah|tidak dapat diterima|cacat-formil", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99b] [NO] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil Gugatan", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["cerai talak+itsbat-nikah|dikabulkan|t-tidak-hadir-setelah-mediasi", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Dikabulkan", "[01c] [Kabul] Putusan CT Kumulasi Itsbat Nikah - T Tidak Hadir Setelah Mediasi", "keadaan: T hadir mediasi lalu tidak hadir"],
+  ["cerai talak+itsbat-nikah|dikabulkan|kontradiktoir", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Dikabulkan", "[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir", "keadaan: T hadir pada sidang putusan"],
+  ["cerai talak+itsbat-nikah|ditolak|itsbat-kabul-cerai-ditolak", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Ditolak", "[03] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Kabul, Cerai Ditolak (Kontradiktoir)", "keadaan: itsbat dikabulkan, cerai ditolak"],
+  ["cerai talak+itsbat-nikah|dicabut", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Dicabut", "[98] [Cabut] Putusan CT Kumulasi Itsbat Nikah - P & T Hadir Sebelum Jawaban", ""],
+  ["cerai talak+itsbat-nikah|digugurkan", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Digugurkan", "[98a] [Gugur] Putusan CT Kumulasi Itsbat Nikah - P & T Tidak Hadir", ""],
+  ["cerai talak+itsbat-nikah|gugur", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Gugur", "[98a] [Gugur] Putusan CT Kumulasi Itsbat Nikah - P & T Tidak Hadir", ""],
+  ["cerai talak+itsbat-nikah|digugurkan|p-tidak-hadir-t-hadir", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Digugurkan", "[98d] [Gugur] Putusan CT Kumulasi Itsbat Nikah - P Tidak Hadir T Hadir", "keadaan: P tidak hadir, T hadir"],
+  ["cerai talak+itsbat-nikah|gugur|p-tidak-hadir-t-hadir", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Gugur", "[98d] [Gugur] Putusan CT Kumulasi Itsbat Nikah - P Tidak Hadir T Hadir", "keadaan: P tidak hadir, T hadir"],
+  ["cerai talak+itsbat-nikah|dicoret dari register", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Dicoret dari Register", "[98c] [Coret] Putusan CT Kumulasi Itsbat Nikah - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["cerai talak+itsbat-nikah|tidak dapat diterima|sema-1-2022", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99] [NO] Putusan CT Kumulasi Itsbat Nikah - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["cerai talak+itsbat-nikah|tidak dapat diterima|alamat-t-tidak-diketahui", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99c] [NO] Putusan CT Kumulasi Itsbat Nikah - Alamat T Tidak Diketahui", "keadaan: Tergugat ghaib / alamat tidak diketahui"],
+  ["cerai talak+itsbat-nikah|dicabut|sesudah-jawaban", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Dicabut", "[98b] [Cabut] Putusan CT Kumulasi Itsbat Nikah - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["cerai talak+itsbat-nikah|tidak dapat diterima|cacat-formil", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99b] [NO] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil Gugatan", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["cerai gugat+hak-asuh-anak|dikabulkan|t-tidak-hadir-setelah-mediasi", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Dikabulkan", "[01c] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - T Tidak Hadir Setelah Mediasi", "keadaan: T hadir mediasi lalu tidak hadir"],
+  ["cerai gugat+hak-asuh-anak|dikabulkan|kontradiktoir", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Dikabulkan", "[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir", "keadaan: T hadir pada sidang putusan"],
+  ["cerai gugat+hak-asuh-anak+nafkah-anak|dikabulkan|t-tidak-hadir-setelah-mediasi", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak dan Nafkah Anak", "Dikabulkan", "[01d] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi", "keadaan: T hadir mediasi lalu tidak hadir"],
+  ["cerai gugat+hak-asuh-anak+nafkah-anak|dikabulkan|kontradiktoir", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak dan Nafkah Anak", "Dikabulkan", "[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir", "keadaan: T hadir pada sidang putusan"],
+  ["cerai gugat+hak-asuh-anak|dicabut", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Dicabut", "[98] [Cabut] Putusan CG Kumulasi Hak Asuh Anak - P & T Hadir Sebelum Jawaban", ""],
+  ["cerai gugat+hak-asuh-anak|digugurkan", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Digugurkan", "[98a] [Gugur] Putusan CG Kumulasi Hak Asuh Anak - P & T Tidak Hadir", ""],
+  ["cerai gugat+hak-asuh-anak|gugur", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Gugur", "[98a] [Gugur] Putusan CG Kumulasi Hak Asuh Anak - P & T Tidak Hadir", ""],
+  ["cerai gugat+hak-asuh-anak|digugurkan|p-tidak-hadir-t-hadir", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Digugurkan", "[98d] [Gugur] Putusan CG Kumulasi Hak Asuh Anak - P Tidak Hadir T Hadir", "keadaan: P tidak hadir, T hadir"],
+  ["cerai gugat+hak-asuh-anak|gugur|p-tidak-hadir-t-hadir", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Gugur", "[98d] [Gugur] Putusan CG Kumulasi Hak Asuh Anak - P Tidak Hadir T Hadir", "keadaan: P tidak hadir, T hadir"],
+  ["cerai gugat+hak-asuh-anak|dicoret dari register", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Dicoret dari Register", "[98c] [Coret] Putusan CG Kumulasi Hak Asuh Anak - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["cerai gugat+hak-asuh-anak|tidak dapat diterima|sema-1-2022", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Tidak Dapat Diterima", "[99] [NO] Putusan CG Kumulasi Hak Asuh Anak - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["cerai gugat+hak-asuh-anak|tidak dapat diterima|alamat-t-tidak-diketahui", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Tidak Dapat Diterima", "[99c] [NO] Putusan CG Kumulasi Hak Asuh Anak - Alamat T Tidak Diketahui", "keadaan: Tergugat ghaib / alamat tidak diketahui"],
+  ["cerai gugat+hak-asuh-anak|dicabut|sesudah-jawaban", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Dicabut", "[98b] [Cabut] Putusan CG Kumulasi Hak Asuh Anak - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["cerai gugat+hak-asuh-anak|tidak dapat diterima|cacat-formil", "kha", "Cerai Gugat Kumulasi Hak Asuh Anak", "Tidak Dapat Diterima", "[99b] [NO] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir - Cacat Formil Gugatan", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["cerai gugat|dicabut|sesudah-jawaban", "cg", "Cerai Gugat", "Dicabut", "[98] [Cabut] 7. Cerai P & T Hadir - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["cerai gugat|tidak dapat diterima|cacat-formil", "cg", "Cerai Gugat", "Tidak Dapat Diterima", "[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Gugatan", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["cerai talak|dicabut|sesudah-jawaban", "ct", "Cerai Talak", "Dicabut", "[98] [Cabut] 7. Cerai P & T Hadir - Sesudah Jawaban dengan Persetujuan T", "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"],
+  ["cerai talak|tidak dapat diterima|cacat-formil", "ct", "Cerai Talak", "Tidak Dapat Diterima", "[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Permohonan", "dipilih manual: gugatan/permohonan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"],
+  ["itsbat nikah|tidak dapat diterima|sema-1-2022", "in", "Itsbat Nikah", "Tidak Dapat Diterima", "[99a] [NO] IN - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["itsbat nikah|dicoret dari register", "in", "Itsbat Nikah", "Dicoret dari Register", "[98c] [Coret] IN - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["dispensasi kawin|digugurkan", "dk", "Dispensasi Kawin", "Digugurkan", "[98a] [Gugur] DK - Pemohon Tidak Pernah Hadir", ""],
+  ["dispensasi kawin|gugur", "dk", "Dispensasi Kawin", "Gugur", "[98a] [Gugur] DK - Pemohon Tidak Pernah Hadir", ""],
+  ["dispensasi kawin|dicoret dari register", "dk", "Dispensasi Kawin", "Dicoret dari Register", "[98c] [Coret] DK - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["poligami|ditolak", "pol", "Poligami", "Ditolak", "[03] [Tolak] Izin Poligami - Syarat Tidak Terbukti", ""],
+  ["poligami|digugurkan", "pol", "Poligami", "Digugurkan", "[98a] [Gugur] Izin Poligami - Pemohon Tidak Pernah Hadir", ""],
+  ["poligami|gugur", "pol", "Poligami", "Gugur", "[98a] [Gugur] Izin Poligami - Pemohon Tidak Pernah Hadir", ""],
+  ["poligami|tidak dapat diterima|sema-1-2022", "pol", "Poligami", "Tidak Dapat Diterima", "[99] [NO] Izin Poligami - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["poligami|dicoret dari register", "pol", "Poligami", "Dicoret dari Register", "[98c] [Coret] Izin Poligami - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["perwalian|dicabut", "pwl", "Perwalian", "Dicabut", "[98] [Cabut] Perwalian", ""],
+  ["perwalian|digugurkan", "pwl", "Perwalian", "Digugurkan", "[98a] [Gugur] Perwalian - Pemohon Tidak Pernah Hadir", ""],
+  ["perwalian|gugur", "pwl", "Perwalian", "Gugur", "[98a] [Gugur] Perwalian - Pemohon Tidak Pernah Hadir", ""],
+  ["perwalian|tidak dapat diterima|sema-1-2022", "pwl", "Perwalian", "Tidak Dapat Diterima", "[99] [NO] Perwalian - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["perwalian|dicoret dari register", "pwl", "Perwalian", "Dicoret dari Register", "[98c] [Coret] Perwalian - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["wali adhal|digugurkan", "wa", "Wali Adhal", "Digugurkan", "[98a] [Gugur] Wali Adhal - Pemohon Tidak Pernah Hadir", ""],
+  ["wali adhal|gugur", "wa", "Wali Adhal", "Gugur", "[98a] [Gugur] Wali Adhal - Pemohon Tidak Pernah Hadir", ""],
+  ["wali adhal|tidak dapat diterima|sema-1-2022", "wa", "Wali Adhal", "Tidak Dapat Diterima", "[99] [NO] Wali Adhal - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["wali adhal|dicoret dari register", "wa", "Wali Adhal", "Dicoret dari Register", "[98c] [Coret] Wali Adhal - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["asal usul anak|ditolak", "aua", "Asal Usul Anak", "Ditolak", "[03] [Tolak] AUA - Dalil Tidak Terbukti", ""],
+  ["asal usul anak|digugurkan", "aua", "Asal Usul Anak", "Digugurkan", "[98a] [Gugur] AUA - Pemohon Tidak Pernah Hadir", ""],
+  ["asal usul anak|gugur", "aua", "Asal Usul Anak", "Gugur", "[98a] [Gugur] AUA - Pemohon Tidak Pernah Hadir", ""],
+  ["asal usul anak|tidak dapat diterima|sema-1-2022", "aua", "Asal Usul Anak", "Tidak Dapat Diterima", "[99a] [NO] AUA - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["asal usul anak|dicoret dari register", "aua", "Asal Usul Anak", "Dicoret dari Register", "[98c] [Coret] AUA - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["penetapan ahli waris|ditolak", "paw", "Penetapan Ahli Waris", "Ditolak", "[03] [Tolak] PAW - Dalil Tidak Terbukti", ""],
+  ["penetapan ahli waris|dicabut", "paw", "Penetapan Ahli Waris", "Dicabut", "[98] [Cabut] PAW", ""],
+  ["penetapan ahli waris|digugurkan", "paw", "Penetapan Ahli Waris", "Digugurkan", "[98a] [Gugur] PAW - Pemohon Tidak Pernah Hadir", ""],
+  ["penetapan ahli waris|gugur", "paw", "Penetapan Ahli Waris", "Gugur", "[98a] [Gugur] PAW - Pemohon Tidak Pernah Hadir", ""],
+  ["penetapan ahli waris|tidak dapat diterima|sema-1-2022", "paw", "Penetapan Ahli Waris", "Tidak Dapat Diterima", "[99a] [NO] PAW - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["penetapan ahli waris|dicoret dari register", "paw", "Penetapan Ahli Waris", "Dicoret dari Register", "[98c] [Coret] PAW - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["lain-lain|ditolak", "pa", "Lain-Lain", "Ditolak", "[03] [Tolak] Pengangkatan Anak - Dalil Tidak Terbukti", ""],
+  ["lain-lain|dicabut", "pa", "Lain-Lain", "Dicabut", "[98] [Cabut] Pengangkatan Anak", ""],
+  ["lain-lain|digugurkan", "pa", "Lain-Lain", "Digugurkan", "[98a] [Gugur] Pengangkatan Anak - Pemohon Tidak Pernah Hadir", ""],
+  ["lain-lain|gugur", "pa", "Lain-Lain", "Gugur", "[98a] [Gugur] Pengangkatan Anak - Pemohon Tidak Pernah Hadir", ""],
+  ["lain-lain|tidak dapat diterima", "pa", "Lain-Lain", "Tidak Dapat Diterima", "[99] [NO] Pengangkatan Anak - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"],
+  ["lain-lain|dicoret dari register", "pa", "Lain-Lain", "Dicoret dari Register", "[98c] [Coret] Pengangkatan Anak - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+  ["harta bersama|ditolak", "hb", "Harta Bersama", "Ditolak", "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama", ""],
+  ["harta bersama|tidak dapat diterima", "hb", "Harta Bersama", "Tidak Dapat Diterima", "[99] [NO] HB - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", ""],
+  ["kewarisan|ditolak", "waris", "Kewarisan", "Ditolak", "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti", ""],
+  ["kewarisan|tidak dapat diterima", "waris", "Kewarisan", "Tidak Dapat Diterima", "[99] [NO] Kewarisan - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", ""],
+];
+for (const [kunci, jenis, jenisAsli, statusAsli, berkas, catatan] of ALAT_BARIS_I17) {
+  if (jenis === "cg" || jenis === "ct") ALAT_PETA_BAWAAN[kunci] = alatBarisStatusCerai(jenisAsli, statusAsli, berkas, catatan);
+  else if (jenis === "kit") ALAT_PETA_BAWAAN[kunci] = alatBarisKumulasi(jenisAsli, statusAsli, berkas, ALAT_KUMULASI_ITSBAT_MENU[0], ALAT_KUMULASI_ITSBAT_MENU[1], catatan);
+  else if (jenis === "kha") ALAT_PETA_BAWAAN[kunci] = alatBarisKumulasi(jenisAsli, statusAsli, berkas, ALAT_KUMULASI_ASUH_MENU[0], ALAT_KUMULASI_ASUH_MENU[1], catatan);
+  else ALAT_PETA_BAWAAN[kunci] = alatBarisPutusanLain(jenis, jenisAsli, statusAsli, berkas, catatan);
+}
+/** Menambah berkas ke "varian: A; B" sebuah baris dasar (catatan kosong atau sudah berbentuk varian); catatan berbentuk lain dibiarkan. */
+function alatTambahVarianPeta(kunci, berkas) {
+  const baris = ALAT_PETA_BAWAAN[kunci];
+  if (!baris) return;
+  const lama = String(baris.catatan || "");
+  if (lama && !/^varian: /.test(lama)) return;
+  const ada = lama ? lama.replace(/^varian: /, "").split("; ").filter(Boolean) : [];
+  const baru = berkas.filter((b) => !ada.includes(b) && b !== baris.berkas);
+  if (baru.length) baris.catatan = `varian: ${[...ada, ...baru].join("; ")}`;
+}
+const ALAT_VARIAN_I17 = [
+  ["harta bersama|ditolak", ["[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama"]],
+  ["harta bersama|ditolak|kontradiktoir", ["[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama"]],
+  ["kewarisan|ditolak", ["[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti"]],
+  ["kewarisan|ditolak|kontradiktoir", ["[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti"]],
+  ["harta bersama|dicabut", ["[98b] [Cabut] HB - Sesudah Jawaban dengan Persetujuan T"]],
+  ["harta bersama|tidak dapat diterima", ["[99a] [NO] HB - Kurang Pihak (Plurium Litis Consortium)", "[99b] [NO] HB - Gugatan Kabur (Obscuur Libel)"]],
+  ["kewarisan|dicabut", ["[98b] [Cabut] Kewarisan - Sesudah Jawaban dengan Persetujuan T"]],
+  ["kewarisan|tidak dapat diterima", ["[99a] [NO] Kewarisan - Kurang Pihak (Plurium Litis Consortium)", "[99b] [NO] Kewarisan - Gugatan Kabur (Obscuur Libel)"]],
+  ["lain-lain|dicabut|hak-asuh", ["[98b] [Cabut] Gugatan - Sesudah Jawaban dengan Persetujuan T"]],
+  ["lain-lain|tidak dapat diterima|hak-asuh", ["[99a] [NO] Gugatan - Kurang Pihak (Plurium Litis Consortium)", "[99b] [NO] Gugatan - Gugatan Kabur (Obscuur Libel)"]],
+  ["pembatalan perkawinan|dicabut", ["[98b] [Cabut] Pembatalan Perkawinan - Sesudah Jawaban dengan Persetujuan T"]],
+  ["pembatalan perkawinan|tidak dapat diterima", ["[99a] [NO] Pembatalan Perkawinan - Kurang Pihak (Plurium Litis Consortium)", "[99b] [NO] Pembatalan Perkawinan - Gugatan Kabur (Obscuur Libel)"]],
+  ["itsbat nikah|dicabut|kontensius", ["[98b] [Cabut] IN Kontensius - Sesudah Jawaban dengan Persetujuan T"]],
+  ["itsbat nikah|tidak dapat diterima|kontensius", ["[99a] [NO] IN Kontensius - Kurang Pihak (Ahli Waris Lain Tidak Ditarik)", "[99b] [NO] IN Kontensius - Gugatan Kabur (Obscuur Libel)"]],
+  ["cerai gugat+itsbat-nikah|dicabut", ["[98b] [Cabut] Putusan CG Kumulasi Itsbat Nikah - Sesudah Jawaban dengan Persetujuan T"]],
+  ["cerai talak+itsbat-nikah|dicabut", ["[98b] [Cabut] Putusan CT Kumulasi Itsbat Nikah - Sesudah Jawaban dengan Persetujuan T"]],
+  ["cerai gugat+hak-asuh-anak|dicabut", ["[98b] [Cabut] Putusan CG Kumulasi Hak Asuh Anak - Sesudah Jawaban dengan Persetujuan T"]],
+  ["cerai gugat|dicabut", ["[98] [Cabut] 7. Cerai P & T Hadir - Sesudah Jawaban dengan Persetujuan T"]],
+  ["cerai gugat|tidak dapat diterima", ["[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Gugatan"]],
+  ["cerai talak|dicabut", ["[98] [Cabut] 7. Cerai P & T Hadir - Sesudah Jawaban dengan Persetujuan T"]],
+  ["cerai talak|tidak dapat diterima", ["[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Permohonan"]],
+  ["itsbat nikah|ditolak", ["[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti", "[03b] [Tolak] IN - Terdapat Halangan Perkawinan"]],
+];
+for (const [kunci, berkas] of ALAT_VARIAN_I17) alatTambahVarianPeta(kunci, berkas);
+/* === AKHIR I17 === */
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah

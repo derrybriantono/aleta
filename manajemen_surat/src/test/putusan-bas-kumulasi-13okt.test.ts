@@ -113,7 +113,9 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
   });
 
   it("status/keadaan tanpa blangko kumulasi tetap ke baris status cerai biasa; tanpa kumulasi = perilaku P 12 Okt", () => {
-    expect(pilih("Cerai Gugat", "Dicabut", false, KUM(["hak-asuh-anak"]))!.kunci).toBe("cerai gugat|dicabut");
+    expect(pilih("Cerai Gugat", "Ditolak", false, KUM(["hak-asuh-anak"]))!.kunci).toBe("cerai gugat|ditolak");
+    // I17 18 Okt: cabut/gugur/coret/NO kumulasi kini punya blangko sendiri di folder 1c / 1d (baris kumulasi polos).
+    expect(pilih("Cerai Gugat", "Dicabut", false, KUM(["hak-asuh-anak"]))).toMatchObject({ kunci: "cerai gugat+hak-asuh-anak|dicabut", tingkat: "kumulasi" });
     expect(pilih("Cerai Gugat", "Dikabulkan", false, KUM(["hak-asuh-anak"]))!.kunci).toBe("cerai gugat|dikabulkan");
     expect(pilih("Cerai Talak", "Dikabulkan", true, KUM(["hak-asuh-anak"]))!.kunci).toBe("cerai talak|dikabulkan|verstek");
     expect(pilih("Cerai Gugat", "Dikabulkan", true, null)!.kunci).toBe("cerai gugat|dikabulkan|verstek");
@@ -145,12 +147,16 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
   it("baris kumulasi ikut tipe keluaran tertanam, kembali utuh, dan cerminnya di portal sama & lolos validasi", () => {
     const tertanam = jalan("alatTipeTertanamPeta()") as { kunci: string; nilai: string; data: Record<string, unknown> }[];
     const kum = tertanam.filter((e) => e.kunci.includes("+"));
-    expect(kum.map((e) => e.kunci).sort()).toEqual([
-      "cerai gugat+hak-asuh-anak+nafkah-anak|dikabulkan|verstek",
-      "cerai gugat+hak-asuh-anak|dikabulkan|verstek",
-      "cerai gugat+itsbat-nikah|dikabulkan|verstek",
-      "cerai talak+itsbat-nikah|dikabulkan|verstek",
-    ]);
+    // I17 18 Okt: + 40 baris kumulasi cabut/gugur/coret/NO/kabul/tolak (folder 1c dan 1d) di samping empat baris verstek (T 13 Okt).
+    expect(kum).toHaveLength(44);
+    expect(kum.map((e) => e.kunci)).toEqual(
+      expect.arrayContaining([
+        "cerai gugat+hak-asuh-anak+nafkah-anak|dikabulkan|verstek",
+        "cerai gugat+hak-asuh-anak|dikabulkan|verstek",
+        "cerai gugat+itsbat-nikah|dikabulkan|verstek",
+        "cerai talak+itsbat-nikah|dikabulkan|verstek",
+      ])
+    );
     expect(jalan("alatPetaBawaanDariEntri(alatTipeTertanamPeta())")).toEqual(jalan("ALAT_PETA_BAWAAN"));
     const cermin = CERMIN_EKSTENSI["putusan.peta-blangko"].filter((e) => e.kunci.includes("+"));
     expect(cermin.map((e) => ({ kunci: e.kunci, nilai: e.nilai, data: e.data }))).toEqual(
@@ -173,8 +179,12 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
       if (!kunci.includes("+")) continue;
       const d = folder[b.blangko];
       expect(d, kunci).toBeTruthy();
+      // I17 18 Okt: blangko kumulasi baru (paket abt-putusan-celah-kumulasi-derry, BELUM terpasang di laptop) dijaga pemetaan-i17-18okt.test.ts atas fixture server.
+      const baruI17 = (nama: string) => !/^\[01aa\]|^\[01\] |^\[01b\] /.test(nama) && !existsSync(path.join(ABT_DERRY, d, `${nama}.rtf`));
+      if (baruI17(b.berkas)) continue;
       expect(existsSync(path.join(ABT_DERRY, d, `${b.berkas}.rtf`)), `${kunci}: ${b.berkas}`).toBe(true);
       for (const varian of (b.catatan || "").startsWith("varian: ") ? b.catatan!.slice(8).split("; ") : []) {
+        if (baruI17(varian)) continue;
         expect(existsSync(path.join(ABT_DERRY, d, `${varian}.rtf`)), `${kunci} varian: ${varian}`).toBe(true);
       }
     }

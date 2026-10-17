@@ -245,6 +245,10 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9492": { nm: "Alat bukti surat {P} (daftar bukti P.1 dst.: akad, jadwal angsuran, somasi, ...)" },
   "9493": { nm: "Alat bukti surat {T} (daftar bukti T.1 dst.)" },
   /* === AKHIR F22 === */
+  /* === I15 18 Okt: penguasaan anak (jenis 349; 9591 dan 9593 otomatis) === */
+  "9590": { nm: "Keadaan penguasaan anak saat ini (siapa yang menguasai anak, sejak kapan, dan di mana; dari bukti dan saksi; kosong = kalimat bawaan)" },
+  "9592": { nm: 'Tempat tinggal anak senyatanya (satu kalimat, mis. "bertempat tinggal di Desa ..."; kosong = wilayah hukum Pengadilan ini)' },
+  /* === AKHIR I15 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {

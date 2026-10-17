@@ -215,9 +215,18 @@ export const SET_BLANGKO: SetBlangko[] = [
     nama: "Putusan Hak Asuh Anak (Hadhanah)",
     folder: `${AKAR}/6a Hak Asuh Anak (Hadhanah)`,
     jenis: "putusan",
-    untuk: ["penguasaan anak", "hak asuh", "hadhanah"],
+    // I15 18 Okt: "penguasaan anak" (349) dilepas - kini punya set sendiri "6b Penguasaan Anak" (menu 153/154, paket abt-penguasaan-anak-derry).
+    untuk: ["hak asuh", "hadhanah"],
     // I7 17 Okt: menu 133/134 kini jenis_perkara_id 369 ("Lain-Lain") saja; cocok hanya untuk Lain-Lain bernomor Pdt.G (bukan pengangkatan anak Pdt.P).
     untukGugatan: ["lain-lain"],
+  },
+  {
+    // I15 18 Okt (paket ABT abt-penguasaan-anak-derry): penguasaan anak = jenis SIPP 349, terpisah dari hak asuh/hadhanah (6a, jenis 369); menu 153 (hakim) / 154 (BAS).
+    id: "putusan-penguasaan-anak",
+    nama: "Putusan Penguasaan Anak",
+    folder: `${AKAR}/6b Penguasaan Anak`,
+    jenis: "putusan",
+    untuk: ["penguasaan anak"],
   },
   {
     id: "putusan-pembatalan-perkawinan",
@@ -387,6 +396,9 @@ export type KeadaanRelaas =
   | "amplop-ikrar"
   // I2 16 Okt 2026 (paket ABT abt-mediasi-derry): panggilan pertemuan mediasi per pihak ([JS] 10.1 / 10.2).
   | "mediasi"
+  // I14 18 Okt 2026 (paket ABT abt-relaas-pencegahan-derry): panggilan sidang PENCEGAHAN PERKAWINAN (jenis 342, Pdt.P alur 16)
+  // [JS] 11.1 (Pemohon), 11.2 (calon suami), 11.3 (calon istri). Dipilih menurut JENIS perkara, bukan menurut keadaan sidang.
+  | "pencegahan-perkawinan"
   // 14 Okt 2026: pengumuman permohonan itsbat nikah VOLUNTAIR (jenis 360, alur
   // 16) - dicetak bersama panggilan sidang pertama. Bukan relaas kepada pihak:
   // blangkonya dipilih menurut JUMLAH PEMOHON (lib/pengumuman-itsbat.ts).
@@ -400,13 +412,19 @@ export type KeadaanRelaas =
  */
 export type PihakDipanggil = "keduanya" | "pertama" | "kedua" | "tidak-perlu" | "tidak-diketahui";
 
+/**
+ * I14 18 Okt: calon mempelai BUKAN pihak SIPP (hanya Pemohon yang tercatat sebagai pihak pada Pdt.P pencegahan perkawinan; calon suami
+ * dan calon istri dipanggil untuk didengar menurut Pasal 17 ayat (2) UU 1/1974 jo. Pasal 65 ayat (2) KHI), jadi ia pihak blangko saja.
+ */
+export type PihakBlangkoRelaas = PihakDipanggil | "calon-mempelai";
+
 export type BlangkoRelaas = {
   keadaan: KeadaanRelaas;
   /** Nama berkas APA ADANYA di folder ABT - termasuk spasi yang tak terlihat. */
   berkas: string;
   label: string;
   /** Pihak yang blangko ini tujukan; "keduanya" berarti satu berkas dua pihak. */
-  pihak: PihakDipanggil;
+  pihak: PihakBlangkoRelaas;
   keterangan: string;
   /**
    * Folder ABT tempat berkasnya berada, relatif terhadap _blangko_abt.
@@ -423,6 +441,8 @@ export type BlangkoRelaas = {
    * (abt_menu.proses_id_min/max). Di luar rentang itu ABT menolak mencetak.
    */
   menuAbt: { nama: string; prosesMin: number; prosesMax: number };
+  /** Pencegahan perkawinan ([JS] 11.2/11.3) saja: calon mempelai yang dipanggil untuk didengar (bukan pihak SIPP; identitas dari isian ABT). */
+  calon?: "suami" | "istri";
   /** Pengumuman itsbat saja: jumlah Pemohon yang dimuat blangko (2 = suami & istri, 1 = pasangan telah meninggal). */
   pemohon?: 1 | 2;
   /**
@@ -435,7 +455,18 @@ export type BlangkoRelaas = {
 };
 
 /** Q3 16 Okt: keadaan perkara yang menentukan pilihan blangko relaas selain pihak (dari bot: lewatEcourt dan verstekPutusan). */
-export type OpsiBlangkoRelaas = { lewatEcourt?: boolean | null; verstek?: boolean | null };
+export type OpsiBlangkoRelaas = {
+  lewatEcourt?: boolean | null;
+  verstek?: boolean | null;
+  /** I14 18 Okt: jenis_perkara_id perkara (bot: jenisPerkaraId); 342 = Pencegahan Perkawinan -> relaas [JS] 11.x. Kosong/tak terbaca = perilaku lama. */
+  jenisPerkaraId?: number | string | null;
+};
+
+/** jenis_perkara_id SIPP "Pencegahan Perkawinan" (Pdt.P, alur 16). */
+export const JENIS_PENCEGAHAN_PERKAWINAN = 342;
+export function jenisPencegahanPerkawinan(jenisPerkaraId: unknown): boolean {
+  return Number(jenisPerkaraId) === JENIS_PENCEGAHAN_PERKAWINAN;
+}
 
 const FOLDER_RELAAS = `${AKAR}/${FOLDER_RELAAS_NAMA}`;
 /** Menu ABT 25 "Relaas Ikrar Talak" - folder dibuat di laptop 26 Sep 2026. */
@@ -740,6 +771,43 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     folder: FOLDER_RELAAS,
     menuAbt: MENU_RELAAS,
   },
+  // ==========================================================================
+  // I14 18 OKT 2026 - RELAAS PANGGILAN SIDANG PENCEGAHAN PERKAWINAN (paket ABT abt-relaas-pencegahan-derry)
+  // ==========================================================================
+  // Menu ABT 981 (folder 98 Relaas, alur 15-17, grup 600 jurusita) sudah meliputi alur 16: tanpa menu/hak baru. Berlaku untuk sidang pertama
+  // DAN sidang lanjutan. Pemohon = pihak SIPP pihak 1 (boleh berkuasa/e-Court); calon suami (isian #1029#) dan calon istri (isian #9460#) tidak
+  // ada di daftar pihak SIPP - alamat dan "bertemu dengan" berupa titik-titik jurusita. Jenis lain memakai [JS] 0./1. P/T seperti biasa.
+  {
+    keadaan: "pencegahan-perkawinan",
+    berkas: "[JS] 11.1. Relaas Panggilan Sidang Pencegahan Perkawinan - Pemohon.rtf",
+    label: "Panggilan sidang pencegahan perkawinan (Pemohon)",
+    pihak: "pertama",
+    keterangan: "Pencegahan perkawinan (Pdt.P): panggilan sidang pertama dan lanjutan untuk Pemohon.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "pencegahan-perkawinan",
+    berkas: "[JS] 11.2. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Suami.rtf",
+    label: "Panggilan sidang pencegahan perkawinan (calon suami)",
+    pihak: "calon-mempelai",
+    calon: "suami",
+    keterangan:
+      "Pencegahan perkawinan: calon suami dipanggil untuk didengar (Pasal 17 ayat (2) UU 1/1974 jo. Pasal 65 ayat (2) KHI); identitas dari isian ABT 1029.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
+  {
+    keadaan: "pencegahan-perkawinan",
+    berkas: "[JS] 11.3. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Istri.rtf",
+    label: "Panggilan sidang pencegahan perkawinan (calon istri)",
+    pihak: "calon-mempelai",
+    calon: "istri",
+    keterangan:
+      "Pencegahan perkawinan: calon istri dipanggil untuk didengar (Pasal 17 ayat (2) UU 1/1974 jo. Pasal 65 ayat (2) KHI); identitas dari isian ABT 9460.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
+  },
 ];
 
 /** Blangko non e-Court saja - pencarian bawaan lama tidak boleh mendarat di blangko e-Court (Q3 16 Okt). */
@@ -796,6 +864,10 @@ export function blangkoRelaas(
   if (pihak === "tidak-perlu" && (keadaan === "sidang-ditunda" || keadaan === "pemberitahuan-putusan" || keadaan === "mediasi")) {
     return null;
   }
+  // I14 18 Okt: pencegahan perkawinan (jenis 342) - Pemohon dipanggil dengan [JS] 11.1, sidang pertama maupun lanjutan, lewat e-Court sekalipun
+  // (blangko 5.1 tidak memuat perkara pencegahan). "keduanya" ikut: Pdt.P hanya punya satu pihak SIPP, sandi 4 tetap berarti Pemohon.
+  const pencegahan = blangkoPencegahanPemohon(keadaan, pihak, opsi);
+  if (pencegahan) return pencegahan;
   // Q3 16 Okt: perkara e-Court memakai set e-Court bila ada padanannya; yang tidak ada jatuh ke blangko biasa di bawah.
   if (opsi?.lewatEcourt === true) {
     const ec = blangkoEcourt(keadaan, pihak, opsi);
@@ -815,6 +887,25 @@ export function blangkoRelaas(
   // Keadaan yang hanya punya satu blangko (ikrar - gabungan, delegasi, amplop)
   // atau pihak yang belum diketahui: blangko pertama keadaan itu.
   return BLANGKO_BIASA().find((x) => x.keadaan === keadaan) ?? null;
+}
+
+/**
+ * I14 18 Okt: [JS] 11.1 untuk Pemohon perkara pencegahan perkawinan (jenis 342) pada sidang pertama / lanjutan; null bila bukan jenis itu
+ * atau keadaannya lain (pemberitahuan putusan, ikrar, mediasi tetap blangko biasa).
+ */
+function blangkoPencegahanPemohon(keadaan: KeadaanRelaas, pihak: PihakDipanggil, opsi?: OpsiBlangkoRelaas): BlangkoRelaas | null {
+  if (!jenisPencegahanPerkawinan(opsi?.jenisPerkaraId)) return null;
+  if (keadaan !== "sidang-pertama" && keadaan !== "sidang-ditunda") return null;
+  if (pihak !== "pertama" && pihak !== "keduanya") return null;
+  return BLANGKO_RELAAS.find((x) => x.keadaan === "pencegahan-perkawinan" && x.pihak === "pertama") ?? null;
+}
+
+/**
+ * I14 18 Okt: blangko panggilan untuk calon suami / calon istri perkara pencegahan perkawinan ([JS] 11.2 / 11.3). Calon mempelai bukan pihak
+ * SIPP, jadi tidak lewat blangkoRelaas(): pemanggilnya menambahkan satu baris per calon bila isian ABT (1029 / 9460) sudah diisi.
+ */
+export function blangkoCalonMempelai(calon: "suami" | "istri"): BlangkoRelaas {
+  return BLANGKO_RELAAS.find((x) => x.keadaan === "pencegahan-perkawinan" && x.calon === calon)!;
 }
 
 /**
@@ -863,6 +954,8 @@ export function blangkoAmplopPendamping(
 
 /** Blangko bawaan untuk satu keadaan dan satu sisi pihak (1 = P, 2 = T) - tanpa aturan kehadiran. */
 export function blangkoRelaasPerPihak(keadaan: KeadaanRelaas, sisi: "pertama" | "kedua", opsi?: OpsiBlangkoRelaas): BlangkoRelaas | null {
+  const pencegahan = blangkoPencegahanPemohon(keadaan, sisi, opsi);
+  if (pencegahan) return pencegahan;
   if (opsi?.lewatEcourt === true) {
     const ec = blangkoEcourt(keadaan, sisi, opsi);
     if (ec) return ec;

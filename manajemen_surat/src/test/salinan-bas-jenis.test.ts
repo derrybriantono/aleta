@@ -56,7 +56,8 @@ describe("A. tabel salinan = 233 BAS paket A3 + 53 salinan F21 (58 - 5 dipindah 
     // 233 salinan paket A3 (15 Okt) + 58 salinan F21 (17 Okt: 29 BAS ALUR 04-09 ke "5a Pembatalan Perkawinan - BAS" dan ke "6a Hak Asuh Anak (Hadhanah) - BAS").
     // I7 17 Okt: 5 salinan BAS mediasi di "5a Pembatalan Perkawinan - BAS" dipindah ke derry_briantono/terhapus (fixture: kunci `terhapus`, bukan `berkas`).
     // F22 17 Okt: + 58 salinan (29 BAS ALUR 04-09 ke "4c Wasiat - BAS" dan ke "10a Ekonomi Syariah Biasa - BAS").
-    expect(turunan.size).toBe(233 + 58 - 5 + 58);
+    // I15 18 Okt: + 29 salinan ke "6b Penguasaan Anak - BAS".
+    expect(turunan.size).toBe(233 + 58 - 5 + 58 + 29);
     expect([...turunan].filter((b) => /^derry_briantono\/(5a Pembatalan Perkawinan|6a Hak Asuh Anak \(Hadhanah\)) - BAS\//.test(`${A}${b.slice(A.length)}`)).length).toBe(58 - 5);
     // BAS yang dibuat paket langsung di folder jenis tanpa berkas sumber di folder ALUR (SALINAN_BAS_LANGSUNG: ALUR 10 [4] ikrar, paket I2 16 Okt).
     const langsung = new Set<string>();

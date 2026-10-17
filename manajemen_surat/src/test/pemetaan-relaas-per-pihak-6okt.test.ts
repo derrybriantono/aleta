@@ -44,6 +44,10 @@ const ABT_SATKER = [
   // 16 Okt (I2): paket ABT abt-mediasi-derry - panggilan pertemuan mediasi per pihak (ada di server 16 Okt).
   "[JS] 10.1. Relaas Panggilan Mediasi P.rtf",
   "[JS] 10.2. Relaas Panggilan Mediasi T.rtf",
+  // 18 Okt (I14): paket ABT abt-relaas-pencegahan-derry - panggilan sidang pencegahan perkawinan (jenis 342): Pemohon, calon suami, calon istri.
+  "[JS] 11.1. Relaas Panggilan Sidang Pencegahan Perkawinan - Pemohon.rtf",
+  "[JS] 11.2. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Suami.rtf",
+  "[JS] 11.3. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Istri.rtf",
 ];
 const GABUNGAN = "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf";
 

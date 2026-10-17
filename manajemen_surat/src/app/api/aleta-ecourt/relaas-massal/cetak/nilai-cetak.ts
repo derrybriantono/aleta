@@ -84,6 +84,8 @@ export type DokumenDinilai = {
   /** Q3 16 Okt: perkara terdaftar lewat e-Court / putusannya verstek - bot relaasMassalService; kosong = bot lama (perilaku lama). */
   lewatEcourt?: unknown;
   verstekPutusan?: unknown;
+  /** I14 18 Okt: jenis_perkara_id (bot); 342 pencegahan perkawinan memakai relaas Pemohon [JS] 11.1. */
+  jenisPerkaraId?: unknown;
 };
 
 export type PeringatanCetak = {

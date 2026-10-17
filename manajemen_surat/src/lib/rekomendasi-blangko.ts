@@ -30,7 +30,7 @@ import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
 import { kunciJenisPerkara, kunciStatusPutusan } from "@/lib/pemetaan-blangko";
-import { blangkoAmplopPendamping, blangkoRelaas, pihakDipanggil, type BlangkoRelaas, type KeadaanRelaas, type PihakDipanggil } from "@/lib/pohon-blangko";
+import { JENIS_PENCEGAHAN_PERKAWINAN, blangkoAmplopPendamping, blangkoRelaas, pihakDipanggil, type BlangkoRelaas, type KeadaanRelaas, type PihakDipanggil } from "@/lib/pohon-blangko";
 import { CERMIN_EKSTENSI } from "@/lib/tipe-keluaran/bawaan/bawaan-ekstensi";
 
 const AKAR = "derry_briantono";
@@ -78,6 +78,8 @@ export type MasukanRekomendasi = {
   mediasi?: { hasil?: unknown } | null;
   mediasiTerbaca?: boolean;
   lewatEcourt?: boolean | null;
+  /** I14 18 Okt: jenis_perkara_id (bot); 342 = pencegahan perkawinan -> relaas Pemohon [JS] 11.1. Kosong: dikenali dari nama jenis. */
+  jenisPerkaraId?: number | null;
   /** I9 17 Okt: petitum perkara memohon sita (bot: baris jadwal `sita` terisi). */
   bersita?: boolean;
   /** I7 17 Okt: Tergugat perempuan pada gugatan hak asuh (bot); null = tidak diketahui. */
@@ -86,6 +88,18 @@ export type MasukanRekomendasi = {
   amarRekonvensi?: string;
   /** I7 17 Okt: penanda tegas (saklar konseptor/hakim) bahwa rekonvensi dikabulkan. */
   rekonvensiDikabulkan?: boolean;
+  /** I17 18 Okt: Tergugat sudah menjawab (saklar tegas atau penandaJawaban bot) - dasar blangko cabut [98b]. */
+  sesudahJawaban?: boolean;
+  penandaJawaban?: { berkas?: unknown } | null;
+  /** I17: penanda tegas NO karena gugatan kabur / kurang pihak (SIPP tidak menyimpannya terstruktur). */
+  cacatFormil?: boolean;
+  kurangPihak?: boolean;
+  /** I17: penandaPerkara bot ({ghaib}) dan saklar alamat Tergugat tidak diketahui; cerai kumulasi itsbat: itsbat kabul, cerai ditolak. */
+  penandaPerkara?: { ghaib?: unknown } | null;
+  alamatTergugatTidakDiketahui?: boolean;
+  itsbatKabulCeraiDitolak?: boolean;
+  /** I17: amar putusan penuh bila tersedia (dasar itsbat kabul / cerai ditolak). */
+  amarPutusan?: string;
 };
 
 export type HasilRekomendasi = {
@@ -202,6 +216,8 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   // I9 17 Okt: paket ABT abt-penetap-phs-sita-derry - menu 150 "Putusan Sela & Penetapan Sita" (alias "Sita - Putusan Sela"), folder baru "97 Sita".
   "Putusan Sela & Penetapan Sita": "97 Sita",
   // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
+  // I15 18 Okt: paket ABT abt-penguasaan-anak-derry (menu 153).
+  "Putusan Penguasaan Anak": "6b Penguasaan Anak",
   "Putusan Pencegahan Perkawinan": "5b Pencegahan Perkawinan",
   "Putusan Wasiat": "4c Wasiat",
   "Putusan Ekonomi Syariah (Acara Biasa)": "10a Ekonomi Syariah Biasa",
@@ -263,10 +279,10 @@ function calonKunciKumulasi(kumulasi: unknown): string[] {
   return hasil;
 }
 
-export type PilihanPutusanBawaan = { kunci: string; baris: BarisPeta; tingkat: "kumulasi-verstek" | "kumulasi" | "keadaan" | "status-verstek" | "status" | "jenis" };
+export type PilihanPutusanBawaan = { kunci: string; baris: BarisPeta; tingkat: "kumulasi-verstek" | "kumulasi-keadaan" | "kumulasi" | "keadaan" | "status-verstek" | "status" | "jenis" };
 
 /**
- * Baris peta bawaan untuk satu perkara: [kumulasi+status+verstek -> kumulasi+status ->] [status+keadaan ->] status+verstek -> status -> jenis.
+ * Baris peta bawaan untuk satu perkara: [kumulasi+status+verstek -> kumulasi+status+keadaan -> kumulasi+status ->] [status+keadaan ->] status+verstek -> status -> jenis.
  * CERMIN alatPetaUntukPerkara (panel-alat.js): urutan dan hasilnya sama - dijaga rekomendasi-blangko-q3.test.ts atas matriks masukan.
  */
 export function pilihPutusanBawaan(
@@ -287,6 +303,11 @@ export function pilihPutusanBawaan(
     for (const kode of calonKunciKumulasi(kumulasi)) {
       const jk = `${j}+${kode}`;
       if (v && ada(`${jk}|${s}|verstek`)) return { kunci: `${jk}|${s}|verstek`, baris: peta[`${jk}|${s}|verstek`], tingkat: "kumulasi-verstek" };
+      // I17 18 Okt: baris kumulasi berkeadaan menang atas baris kumulasi polos (folder 1c / 1d) - cermin alatPetaUntukPerkara.
+      for (const kodeK of kodeKeadaan) {
+        if (kodeK === "verstek-tanpa-bendera") continue;
+        if (ada(`${jk}|${s}|${kodeK}`)) return { kunci: `${jk}|${s}|${kodeK}`, baris: peta[`${jk}|${s}|${kodeK}`], tingkat: "kumulasi-keadaan" };
+      }
       if (ada(`${jk}|${s}`)) return { kunci: `${jk}|${s}`, baris: peta[`${jk}|${s}`], tingkat: "kumulasi" };
     }
     for (const kode of kodeKeadaan) {
@@ -375,8 +396,17 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     mediasi: m.mediasi ?? null,
     mediasiTerbaca: m.mediasiTerbaca,
     tergugatPerempuan: m.tergugatPerempuan,
-    amarPutusan: m.amarRekonvensi,
+    amarPutusan: m.amarPutusan || m.amarRekonvensi,
     ...(m.rekonvensiDikabulkan === undefined ? {} : { rekonvensiDikabulkan: m.rekonvensiDikabulkan }),
+    // I17 18 Okt: keadaan gugatan (cabut sesudah jawaban, NO formil / kurang pihak, alamat T tidak diketahui, itsbat kabul-cerai ditolak, kumulasi).
+    ...(m.sesudahJawaban === undefined ? {} : { sesudahJawaban: m.sesudahJawaban }),
+    penandaJawaban: m.penandaJawaban ?? null,
+    cacatFormil: m.cacatFormil,
+    kurangPihak: m.kurangPihak,
+    kumulasi: m.kumulasi,
+    penandaPerkara: m.penandaPerkara ?? null,
+    alamatTergugatTidakDiketahui: m.alamatTergugatTidakDiketahui,
+    ...(m.itsbatKabulCeraiDitolak === undefined ? {} : { itsbatKabulCeraiDitolak: m.itsbatKabulCeraiDitolak }),
   } as MasukanKeadaanPutusan);
   const p = pilihPutusanBawaan(PETA_PUTUSAN_BAWAAN, m.jenisPerkara, status, m.verstekPutusan === true, m.kumulasi, keadaan);
   if (!p) return [];
@@ -393,7 +423,7 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
       alias: p.baris.blangkoLain ?? [],
       label: p.baris.berkas,
       alasan:
-        `Putusan ${status.toLowerCase()}${p.tingkat === "keadaan" ? ` (${p.kunci.split("|")[2].replace(/-/g, " ")})` : p.tingkat.includes("verstek") ? " (verstek)" : ""}` +
+        `Putusan ${status.toLowerCase()}${p.tingkat === "keadaan" || p.tingkat === "kumulasi-keadaan" ? ` (${p.kunci.split("|")[2].replace(/-/g, " ")})` : p.tingkat.includes("verstek") ? " (verstek)" : ""}` +
         `${perkiraan ? " - status belum tercatat, diperkirakan dikabulkan" : ""}.`,
       utama: true,
       perkiraan,
@@ -435,7 +465,12 @@ function dariRelaas(b: BlangkoRelaas, alasan: string, utama: boolean): Rekomenda
 }
 
 function rekomendasiRelaas(m: MasukanRekomendasi, teks = ""): Rekomendasi[] {
-  const opsi = { lewatEcourt: m.lewatEcourt === true, verstek: m.verstekPutusan === true };
+  const opsi = {
+    lewatEcourt: m.lewatEcourt === true,
+    verstek: m.verstekPutusan === true,
+    // I14 18 Okt: pencegahan perkawinan dikenali dari jenis_perkara_id, atau dari namanya bila id tidak terkirim.
+    jenisPerkaraId: m.jenisPerkaraId ?? (/pencegahan\s+perkawinan/i.test(String(m.jenisPerkara ?? "")) ? JENIS_PENCEGAHAN_PERKAWINAN : null),
+  };
   const hasil: Rekomendasi[] = [];
   const tambah = (b: BlangkoRelaas | null, alasan: string, utama = true) => {
     if (b && !hasil.some((x) => x.berkas === b.berkas)) hasil.push(dariRelaas(b, alasan, utama));
@@ -495,9 +530,18 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     mediasi: b.mediasi && typeof b.mediasi === "object" ? (b.mediasi as { hasil?: unknown }) : null,
     mediasiTerbaca: b.mediasiTerbaca === false ? false : true,
     lewatEcourt: typeof b.lewatEcourt === "boolean" ? b.lewatEcourt : null,
+    jenisPerkaraId: angka(b.jenisPerkaraId),
     bersita: Boolean(b.sita) && typeof b.sita === "object",
     tergugatPerempuan: typeof b.tergugatPerempuan === "boolean" ? b.tergugatPerempuan : null,
     amarRekonvensi: typeof b.amarRekonvensi === "string" ? b.amarRekonvensi : "",
+    // I17 18 Okt: bahan keadaan gugatan dari baris bot (tidak ada = tidak ditebak).
+    penandaJawaban: b.penandaJawaban && typeof b.penandaJawaban === "object" ? (b.penandaJawaban as { berkas?: unknown }) : null,
+    penandaPerkara: b.penandaPerkara && typeof b.penandaPerkara === "object" ? (b.penandaPerkara as { ghaib?: unknown }) : null,
+    ...(typeof b.sesudahJawaban === "boolean" ? { sesudahJawaban: b.sesudahJawaban } : {}),
+    ...(typeof b.cacatFormil === "boolean" ? { cacatFormil: b.cacatFormil } : {}),
+    ...(typeof b.kurangPihak === "boolean" ? { kurangPihak: b.kurangPihak } : {}),
+    ...(typeof b.alamatTergugatTidakDiketahui === "boolean" ? { alamatTergugatTidakDiketahui: b.alamatTergugatTidakDiketahui } : {}),
+    ...(typeof b.itsbatKabulCeraiDitolak === "boolean" ? { itsbatKabulCeraiDitolak: b.itsbatKabulCeraiDitolak } : {}),
   };
 }
 export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {

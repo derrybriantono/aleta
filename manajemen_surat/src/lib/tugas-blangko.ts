@@ -174,7 +174,9 @@ const JENIS_FOLDER: Array<[RegExp, string, string[]]> = [
   [/perwalian/i, "Perwalian", ["perwalian"]],
   [/wali\s+adh?[ao]l/i, "Wali Adhal", ["wali adhal", "wali adhol"]],
   [/pengangkatan\s+anak/i, "Pengangkatan Anak", ["pengangkatan anak"]],
-  [/hadh?anah|hak\s+asuh/i, "Hak Asuh Anak (Hadhanah)", ["hadhanah", "hak asuh", "penguasaan anak"]],
+  // I15 18 Okt: penguasaan anak (349) folder sendiri "6b Penguasaan Anak" - dibaca LEBIH DULU dari hak asuh/hadhanah (6a, jenis 369) dan tidak lagi ikut hak asuh.
+  [/penguasaan\s+anak/i, "Penguasaan Anak", ["penguasaan anak"]],
+  [/hadh?anah|hak\s+asuh/i, "Hak Asuh Anak (Hadhanah)", ["hadhanah", "hak asuh"]],
   [/nafkah/i, "Nafkah", ["nafkah"]],
   [/pembatalan\s+perkawinan/i, "Pembatalan Perkawinan", ["pembatalan perkawinan"]],
   [/ekonomi\s+syari/i, "Ekonomi Syariah", ["ekonomi syariah"]],
