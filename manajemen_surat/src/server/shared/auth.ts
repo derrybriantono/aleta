@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getAuth } from "@/lib/auth";
 import { getDatabase } from "@/server/db/client";
 import { hapusSesi, periksaSesi } from "@/server/modules/portal/sesi-portal";
+import { getRequestAuditMetadata } from "@/server/shared/request";
 
 export function extractActorUserId(request: NextRequest, fallbackUserId?: string | null) {
   if (process.env.NODE_ENV === "test") {
@@ -64,8 +65,36 @@ export async function resolveActorUserId(request: NextRequest, fallbackUserId?: 
       }
     }
 
+    await catatAksesSuperAdminGlobalBilaPerlu(request, String(userId), String(sessionId ?? ""));
+
     return userId;
   } catch {
     return extractActorUserId(request, fallbackUserId);
+  }
+}
+
+/**
+ * Banyak satker: sesi akun SUPER ADMIN GLOBAL (ditandai di env
+ * ALETA_SUPER_ADMIN_GLOBAL) dicatat ke jejak audit dan diberitahukan ke admin
+ * satker pada kemunculan pertamanya. Tanpa env itu, fungsi ini tidak berbuat
+ * apa-apa dan tidak menyentuh basis data. GAGAL KE SISI TERTUTUP: bila jejaknya
+ * tidak dapat ditulis, galatnya dilempar ke atas dan sesi itu tidak diterima
+ * (tidak ada akses super admin global tanpa jejak). Modul dimuat saat dipanggil
+ * supaya lingkaran impor dengan lib/auth tidak terbentuk.
+ */
+async function catatAksesSuperAdminGlobalBilaPerlu(request: NextRequest, userId: string, sessionId: string) {
+  if (!String(process.env.ALETA_SUPER_ADMIN_GLOBAL ?? "").trim()) return;
+  try {
+    const { catatAksesBilaSuperAdminGlobal } = await import("@/server/modules/satker/akses-global");
+    const meta = getRequestAuditMetadata(request);
+    await catatAksesBilaSuperAdminGlobal(await getDatabase(), {
+      userId,
+      sessionId,
+      alamatIp: meta.ipAddress,
+      agenPengguna: meta.userAgent,
+    });
+  } catch (galat) {
+    console.error("[AKSES GLOBAL] Jejak akses super admin global gagal ditulis; sesi ditolak.", galat);
+    throw galat;
   }
 }

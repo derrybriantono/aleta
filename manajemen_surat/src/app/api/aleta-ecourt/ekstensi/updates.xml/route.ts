@@ -1,5 +1,7 @@
 import { type NextRequest } from "next/server";
 
+import { getDatabase } from "@/server/db/client";
+import { bacaSaluranEfektif } from "@/server/modules/satker/kanal";
 import { idEkstensi, naskahUpdatesXml } from "@/server/shared/crx";
 import { kunciCrx, versiEkstensi } from "@/server/shared/ekstensi-paket";
 
@@ -86,11 +88,22 @@ export async function GET(request: NextRequest) {
 
   const alamatCrx = `${alamatDasar(request)}/api/aleta-ecourt/ekstensi/paket.crx`;
 
+  // Banyak satker (Tahap 0): saluran pembaruan satker ini dibaca dan DILAPORKAN lewat
+  // header; naskah dan alamat .crx TIDAK berubah (mekanisme pembaruan ekstensi tetap).
+  // Gagal membaca saluran = "stabil"; tidak pernah menggagalkan pembaruan.
+  let saluran = "stabil";
+  try {
+    saluran = await bacaSaluranEfektif(await getDatabase());
+  } catch {
+    saluran = "stabil";
+  }
+
   return new Response(naskahUpdatesXml({ id, versi, alamatCrx }), {
     status: 200,
     headers: {
       "Content-Type": "application/xml; charset=utf-8",
       "Cache-Control": "no-store",
+      "X-Aleta-Saluran": saluran,
     },
   });
 }

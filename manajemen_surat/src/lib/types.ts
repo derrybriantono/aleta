@@ -81,6 +81,8 @@ export type ModuleId =
   | "system-updates"
   | "backup-system"
   | "server-resources" // 12OKT-J: Sumber daya server
+  // Banyak satker (Tahap 0): saklar fitur, saluran pembaruan, akses super admin global. Super Admin saja.
+  | "fitur-satker"
   | "database-viewer"
   | "aleta-bot"
   | "aleta-sipp"
