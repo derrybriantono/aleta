@@ -2609,7 +2609,7 @@
    *
    * Nama hakim/PP juga tertulis LEBIH DULU di paragraf "Demikian ... oleh <nama> ..." (dan di kepala BAS); blok tanda tangan
    * selalu di ujung naskah. Jadi yang dipakai kemunculan TERAKHIR sebelum kotak "Untuk Salinan" dan sebelum penanda asal
-   * tersembunyi {\*\aletaasal ...} (paket I3) - bukan kemunculan pertama, yang memecah paragraf "Demikian".
+   * tersembunyi {\*\isianasal ...} (paket I3; sebelumnya {\*\aletaasal ...}, keduanya dikenali) - bukan kemunculan pertama, yang memecah paragraf "Demikian".
    */
   function sisipkanTtdRtf(rtfLatin1, daftar) {
     let rtf = String(rtfLatin1);
@@ -2618,7 +2618,9 @@
     const cariTerakhir = (teks, kecil) => {
       const sumber = kecil ? rtf.toLowerCase() : rtf;
       const t = kecil ? teks.toLowerCase() : teks;
-      const pagar = [rtf.lastIndexOf("Untuk Salinan"), rtf.lastIndexOf("{\\*\\aletaasal")].filter((x) => x > 0);
+      // 18 Okt: blangko kini memakai penanda asal "{\*\isianasal" (tanpa nama ALETA); penanda lama "{\*\aletaasal" (blangko terpasang sebelum paket
+      // ganti-nama) tetap dikenali. Keduanya hanya DIBACA di sini - tidak ada kode yang menuliskannya ke RTF.
+      const pagar = [rtf.lastIndexOf("Untuk Salinan"), rtf.lastIndexOf("{\\*\\isianasal"), rtf.lastIndexOf("{\\*\\aletaasal")].filter((x) => x > 0);
       const batas = pagar.length ? Math.min(...pagar) : rtf.length;
       const i = sumber.lastIndexOf(t, batas);
       return i >= 0 ? i : sumber.lastIndexOf(t);
