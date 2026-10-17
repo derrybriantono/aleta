@@ -31,6 +31,25 @@ function kueri(db, sql) {
 }
 
 const { petaFolder } = require("./folder-jenis.cjs");
+const UKUR = (() => {
+  try {
+    return require(path.join(akar, "aleta_bot", "services", "abtUsulanLainService.js")).UKUR_SUMBER;
+  } catch {
+    return {};
+  }
+})();
+/** Ukuran yang sudah ada (agen sebelumnya): ketepatan ALETA atas isian petugas, per jenis dan kode. */
+function ukuranLama(kode, modul) {
+  const sumber = [];
+  const itsbat = UKUR.itsbat && UKUR.itsbat["itsbat-nikah"] && UKUR.itsbat["itsbat-nikah"][kode];
+  if (itsbat && itsbat.aleta) sumber.push(`itsbat ${itsbat.aleta.benar}/${itsbat.aleta.n} benar`);
+  const lain = UKUR["posita-lain"] || {};
+  for (const jenis of Object.keys(lain)) {
+    const u = lain[jenis][kode];
+    if (u && u.aleta && u.aleta.n) sumber.push(`${jenis} ${u.aleta.benar}/${u.aleta.n} benar`);
+  }
+  return sumber.length ? `Terukur atas isian petugas: ${sumber.join("; ")}.` : "";
+}
 
 /** Isian yang oleh ABT sendiri punya cadangan bila dikosongkan: "sipp" (kosong = dari SIPP / OTOMATIS), "bawaan" (teks bawaan), "titik" (titik-titik / coret). */
 function jenisCadangan(namaAsli) {
@@ -110,6 +129,20 @@ function tulisMd(d) {
     `- Isian popup (data_teks / data_tanggal / tanya_jawab, kata ABT "isian tangan"): **${r.isianUnik}** unik.`,
     `- Sudah otomatis (ya): **${r.ya}** - sebagian: **${r.sebagian}** - belum (tidak): **${r.tidak}**, di antaranya **${r.tanpaSumber}** memang tanpa sumber data (penilaian hakim / tidak tercatat).`,
     `- Penanda yang dirujuk rantai variabel tetapi tidak ada di katalog ABT lokal: ${r.penandaTakDikenal} (lihat bawah).`,
+    "",
+    "## Membangun ulang (blangko baru wajib dicek)",
+    "",
+    "Uji penjaga `isi-sipp-abt-daftar-cek.test.ts` gagal bila pohon server (fixture `blangko-derry-server-17okt.json` atau gantinya) memuat blangko yang tidak ada di `DAFTAR-CEK.json`. Cara memperbarui (butuh MySQL lokal berisi `aps_badilag_i18` dan `sipp_donggala`):",
+    "",
+    "```",
+    "cd manajemen_surat && npx tsx ../scripts/isi-sipp-abt/analisa-isian.mts <analisa.json>",
+    "node scripts/isi-sipp-abt/beban-manual.cjs docs/isi-sipp-abt/BEBAN-MANUAL.json",
+    "node scripts/isi-sipp-abt/ukur-lanjutan.cjs docs/isi-sipp-abt/UKURAN-LANJUTAN.json",
+    "node scripts/isi-sipp-abt/bangun-daftar-cek.cjs <analisa.json>",
+    "node scripts/isi-sipp-abt/gerbang-tombol.cjs <analisa.json>   # periksa gerbang tombol",
+    "```",
+    "",
+    "Isian baru yang muncul harus diberi pengisi (kode + berkas di `scripts/isi-sipp-abt/pengisi-kurasi.cjs`) atau keterangan sumbernya; pengisi yang ditandai ya/sebagian diperiksa uji (kode benar-benar ada di berkasnya).",
     "",
     "## Sumber dan cara membaca",
     "",
@@ -229,7 +262,7 @@ function tulisMd(d) {
       }
       for (const p of pengisi) r.pengisi.set(`${p.jenis}|${p.id}`, p);
     }
-    blangkoKeluar.push({ jalur: b.jalur, folder: b.folder, modul: pf.modul, universal: Boolean(pf.universal), bobot, isian: kunciBlangko, takDikenal: b.takDikenal });
+    blangkoKeluar.push({ jalur: b.jalur, folder: b.folder, modul: pf.modul, universal: Boolean(pf.universal), bobot, isian: kunciBlangko });
   }
 
   const hasil = [];
@@ -271,7 +304,7 @@ function tulisMd(d) {
       folderTakTertutup: Object.keys(r.folderTakTertutup).sort(urutNama),
       pengisi: ada.map((p) => ({ jenis: p.jenis, id: p.id, berkas: p.berkas || "", tingkat: p.tingkat })),
       sumberMungkin: tanpa ? tanpa.sumberMungkin : sm.sumberMungkin,
-      catatan: tanpa ? tanpa.catatan : sm.catatan,
+      catatan: [tanpa ? tanpa.catatan : sm.catatan, r.kode.map((k) => ukuranLama(k)).find(Boolean) || ""].filter(Boolean).join(" "),
     });
   }
   hasil.sort((a, b) => b.bobot - a.bobot || b.jumlahBlangko - a.jumlahBlangko || a.kunci.localeCompare(b.kunci));
