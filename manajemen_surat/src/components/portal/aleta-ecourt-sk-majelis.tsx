@@ -43,11 +43,96 @@ type Majelis = {
   hakimKode: string[];
   /** Kode SK beserta akun portalnya - hakim maupun panitera, satu daftar. */
   akun: { kode: string; akunId: string }[];
+  /** SK yang berlaku bagi majelis ini (pengecualiannya, atau SK bawaan). */
   skNomor: string;
   skTanggal: string;
+  /** true = tidak ada pengecualian; ikut SK bawaan dari kartu Nomor SK penunjukan. */
+  skIkutBawaan: boolean;
   keterangan: string;
   bawaan: boolean;
 };
+
+type SkTetap = { nomor: string; tanggal: string };
+
+/**
+ * SK pengecualian satu majelis: nomor dan tanggal diisi sekaligus lalu disimpan
+ * dengan tombol, atau dikosongkan agar majelis ini ikut SK bawaan. Pilihan SK yang
+ * sudah tercatat di SIPP (bila terbaca) mengisi keduanya.
+ */
+function SkPengecualian({
+  satu,
+  skTetap,
+  sibuk,
+  simpanSk,
+}: {
+  satu: Majelis;
+  skTetap: SkTetap[];
+  sibuk: boolean;
+  simpanSk: (nomor: string, tanggal: string) => void;
+}) {
+  const [nomor, setNomor] = useState(satu.skIkutBawaan ? "" : satu.skNomor);
+  const [tanggal, setTanggal] = useState(satu.skIkutBawaan ? "" : satu.skTanggal);
+  const sama = nomor.trim() === (satu.skIkutBawaan ? "" : satu.skNomor) && tanggal === (satu.skIkutBawaan ? "" : satu.skTanggal);
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="w-32 text-muted-foreground">SK</span>
+        <span>
+          Nomor {satu.skNomor || "-"}
+          {satu.skTanggal ? ` tanggal ${tanggalPanjang(satu.skTanggal, satu.skTanggal)}` : ""}
+        </span>
+        <Badge variant={satu.skIkutBawaan ? "outline" : "info"}>{satu.skIkutBawaan ? "ikut SK bawaan" : "SK khusus majelis ini"}</Badge>
+        {satu.skIkutBawaan ? (
+          <a className="text-xs text-primary underline" href="#nomor-sk">
+            Ubah SK bawaan
+          </a>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="w-32 text-muted-foreground">SK khusus (opsional)</span>
+        <Input className="max-w-sm" value={nomor} placeholder="Kosong = ikut SK bawaan" onChange={(e) => setNomor(e.target.value)} />
+        <Input className="max-w-40" type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+        {skTetap.length ? (
+          <select
+            className="h-9 max-w-xs rounded-md border border-input bg-background px-2 text-sm"
+            value=""
+            onChange={(e) => {
+              const pilih = skTetap[Number(e.target.value)];
+              if (!pilih) return;
+              setNomor(pilih.nomor);
+              setTanggal(pilih.tanggal);
+            }}
+          >
+            <option value="">Pilih dari SK di SIPP...</option>
+            {skTetap.map((x, i) => (
+              <option key={`${x.nomor}-${i}`} value={i}>
+                {x.nomor}
+                {x.tanggal ? ` (${tanggalPanjang(x.tanggal, x.tanggal)})` : ""}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        <Button size="sm" variant="outline" disabled={sibuk || sama} onClick={() => simpanSk(nomor.trim(), tanggal)}>
+          Simpan SK khusus
+        </Button>
+        {!satu.skIkutBawaan ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={sibuk}
+            onClick={() => {
+              setNomor("");
+              setTanggal("");
+              simpanSk("", "");
+            }}
+          >
+            Ikut SK bawaan
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 type Pegawai = { id: number; kode: string; nama: string };
 
@@ -69,6 +154,7 @@ export function AletaEcourtSkMajelis() {
   const [akunAlasan, setAkunAlasan] = useState("");
   const [namaHari, setNamaHari] = useState<string[]>([]);
   const [skBerlaku, setSkBerlaku] = useState<{ nomor: string; tanggal: string } | null>(null);
+  const [skTetap, setSkTetap] = useState<SkTetap[]>([]);
   const [pegawaiAlasan, setPegawaiAlasan] = useState("");
   const [memuat, setMemuat] = useState(true);
   const [sibuk, setSibuk] = useState("");
@@ -90,6 +176,7 @@ export function AletaEcourtSkMajelis() {
       setAkunAlasan(String(data.akunAlasan ?? ""));
       setNamaHari((data.namaHari ?? []) as string[]);
       setSkBerlaku((data.skBerlaku ?? null) as { nomor: string; tanggal: string } | null);
+      setSkTetap((data.skTetap ?? []) as SkTetap[]);
       setPegawaiAlasan(String(data.pegawaiAlasan ?? ""));
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca SK.");
@@ -140,6 +227,10 @@ export function AletaEcourtSkMajelis() {
             // yang membuat "hanya dapat ditautkan apabila masuk majelis"
             // berlaku sungguhan, bukan sekadar dianjurkan di layar.
             akunId: (gabung.akun ?? []).map((a) => `${a.kode}=${a.akunId}`).join(","),
+            // Pengecualian SK majelis ini; kosong keduanya = ikut SK bawaan. Dikirim apa adanya,
+            // tidak diabaikan: simpan hari/kode pun membawa pengecualian yang sedang berlaku.
+            skNomor: gabung.skIkutBawaan ? "" : gabung.skNomor,
+            skTanggal: gabung.skIkutBawaan ? "" : gabung.skTanggal,
             keterangan: gabung.keterangan,
           }),
         });
@@ -168,10 +259,10 @@ export function AletaEcourtSkMajelis() {
           <CardTitle>SK susunan majelis hakim dan panitera sidang</CardTitle>
           <CardDescription>
             {skBerlaku?.nomor
-              ? `SK yang berlaku: Nomor ${skBerlaku.nomor} tanggal ${tanggalPanjang(
+              ? `SK bawaan: Nomor ${skBerlaku.nomor} tanggal ${tanggalPanjang(
                   skBerlaku.tanggal,
                   skBerlaku.tanggal
-                )} (diubah di kartu Nomor SK penunjukan di bawah). `
+                )} (diubah di kartu Nomor SK penunjukan di bawah; dipakai semua majelis dan blangko ABT). Majelis tertentu boleh memakai SK sendiri di isian SK khusus. `
               : ""}
             Yang tersimpan di sini menang atas susunan yang disimpulkan dari pemakaian di SIPP:
             majelis yang ada di SK muncul lebih dahulu pada panel penetapan, beserta kodenya.
@@ -396,16 +487,13 @@ export function AletaEcourtSkMajelis() {
               />
             </label>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="w-32 text-muted-foreground">SK</span>
-              <span>
-                Nomor {satu.skNomor || "-"}
-                {satu.skTanggal ? ` tanggal ${tanggalPanjang(satu.skTanggal, satu.skTanggal)}` : ""}
-              </span>
-              <a className="text-xs text-primary underline" href="#nomor-sk">
-                Ubah di kartu Nomor SK penunjukan
-              </a>
-            </div>
+            <SkPengecualian
+              key={`${satu.majelisKode}-${satu.skNomor}-${satu.skTanggal}-${satu.skIkutBawaan}`}
+              satu={satu}
+              skTetap={skTetap}
+              sibuk={sibuk === satu.majelisKode}
+              simpanSk={(nomor, tanggal) => void simpan(satu, { skNomor: nomor, skTanggal: tanggal, skIkutBawaan: !nomor && !tanggal })}
+            />
           </CardContent>
         </Card>
       ))}

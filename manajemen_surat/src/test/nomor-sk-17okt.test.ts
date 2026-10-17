@@ -35,8 +35,8 @@ import { bacaSkMajelis } from "@/server/modules/pengaturan-abt/nomor-sk-sumber";
  *   4. rute portal: simpan/baca bawaan, penerapan memanggil jalur bot dengan nomor dan
  *      tanggal literal yang benar, tanpa kata ALETA, hanya Super Admin/Admin, variabel
  *      belum terpasang -> pesan awam, Kembalikan;
- *   5. satu sumber: panel penunjukan majelis / kartu SK majelis membaca nomor & tanggal
- *      SK dari sumber yang sama (SK_BERLAKU lama dihapus).
+ *   5. SK bawaan untuk semua majelis (kartu Nomor SK) + pengecualian opsional per majelis
+ *      (kartu SK majelis lama); blangko ABT tetap satu nilai (bawaan).
  */
 
 const akar = path.resolve(process.cwd(), "..");
@@ -399,9 +399,9 @@ describe("rute nomor SK (pg-mem berbenih, bot tiruan)", () => {
   });
 });
 
-// ─── 5. Satu sumber untuk panel penunjukan majelis dan kartu SK majelis ─────
+// ─── 5. SK bawaan untuk semua majelis + pengecualian per majelis ─────────────
 
-describe("satu sumber nomor SK (panel penunjukan & kartu SK majelis lama)", () => {
+describe("SK bawaan (kartu Nomor SK) dan pengecualian per majelis (kartu SK majelis lama)", () => {
   beforeEach(async () => {
     db = await createAletaDatabase({ useInMemory: true, seed: true });
     aktor = "usr-admin";
@@ -413,28 +413,52 @@ describe("satu sumber nomor SK (panel penunjukan & kartu SK majelis lama)", () =
     db = null;
   });
 
-  it("belum disimpan: majelis bawaan memuat SK sekarang (nomor VIII, bukan .../V/ yang lama) dari sumber tunggal", async () => {
+  it("belum disimpan: semua majelis ikut SK bawaan sekarang (nomor VIII, bukan .../V/ yang lama)", async () => {
     expect(await bacaSkMajelis(db!)).toEqual({ nomor: SK_SEKARANG, tanggal: "2026-08-27" });
     const daftar = await bacaHariSidang(db!);
     expect(daftar.length).toBeGreaterThan(0);
-    for (const m of daftar) expect(m).toMatchObject({ skNomor: SK_SEKARANG, skTanggal: "2026-08-27" });
+    for (const m of daftar) expect(m).toMatchObject({ skNomor: SK_SEKARANG, skTanggal: "2026-08-27", skIkutBawaan: true });
   });
 
-  it("kartu Nomor SK diubah -> semua majelis (tersimpan atau bawaan) ikut; simpan majelis mengabaikan SK kiriman lama dan fitur lain tetap jalan", async () => {
+  it("SK bawaan diubah -> majelis tanpa pengecualian ikut; majelis berpengecualian tetap memakai SK-nya; nilai kiriman tidak diabaikan", async () => {
     await rute("POST", { badan: { tindakan: "simpan-nomor-sk", nilai: { majelis: { nomor: SK_BARU, tanggal: "2026-11-03" } } } });
-    await simpanHariSidang(db!, { actorUserId: "usr-admin", majelisKode: "A", hari: 4, paniteraKode: "D", hakimKode: "A,C1", skNomor: "9/LAMA/2020", skTanggal: "2020-01-01", keterangan: "catatan majelis" });
+    await simpanHariSidang(db!, { actorUserId: "usr-admin", majelisKode: "A", hari: 4, paniteraKode: "D", hakimKode: "A,C1", skNomor: "155/VII/2025", skTanggal: "2025-07-01", keterangan: "catatan majelis" });
+    await simpanHariSidang(db!, { actorUserId: "usr-admin", majelisKode: "B", hari: 2, paniteraKode: "D1", hakimKode: "B" }); // tanpa SK: ikut bawaan
     const daftar = await bacaHariSidang(db!);
     const a = daftar.find((m) => m.majelisKode === "A")!;
-    expect(a).toMatchObject({ hari: 4, paniteraKode: ["D"], hakimKode: ["A", "C1"], keterangan: "catatan majelis", skNomor: SK_BARU, skTanggal: "2026-11-03" });
-    for (const m of daftar) expect(m).toMatchObject({ skNomor: SK_BARU, skTanggal: "2026-11-03" });
-    const [baris] = await db!.queryAll<Record<string, string>>("SELECT sk_nomor, sk_tanggal FROM aleta_sipp_hari_sidang WHERE majelis_kode = 'A'");
-    expect(baris).toEqual({ sk_nomor: SK_BARU, sk_tanggal: "2026-11-03" });
+    expect(a).toMatchObject({ hari: 4, paniteraKode: ["D"], hakimKode: ["A", "C1"], keterangan: "catatan majelis", skNomor: "155/VII/2025", skTanggal: "2025-07-01", skIkutBawaan: false });
+    expect(daftar.find((m) => m.majelisKode === "B")).toMatchObject({ skNomor: SK_BARU, skTanggal: "2026-11-03", skIkutBawaan: true });
+    // simpan hari saja tanpa menyebut SK tidak menghapus pengecualian; mengosongkan keduanya mengembalikan ke bawaan
+    await simpanHariSidang(db!, { actorUserId: "usr-admin", majelisKode: "A", hari: 5 });
+    expect((await bacaHariSidang(db!)).find((m) => m.majelisKode === "A")).toMatchObject({ hari: 5, skNomor: "155/VII/2025", skIkutBawaan: false });
+    await simpanHariSidang(db!, { actorUserId: "usr-admin", majelisKode: "A", hari: 5, skNomor: "", skTanggal: "" });
+    expect((await bacaHariSidang(db!)).find((m) => m.majelisKode === "A")).toMatchObject({ skNomor: SK_BARU, skIkutBawaan: true });
   });
 
-  it("rute SK majelis lama mengirim skBerlaku dari sumber tunggal", async () => {
+  it("nomor tertanam lama (.../V/2026) yang ikut tersimpan di baris dibaca sebagai ikut SK bawaan; separuh terisi ditolak", async () => {
+    await simpanHariSidang(db!, { actorUserId: "usr-admin", majelisKode: "A", hari: 3, skNomor: "254/KPA-W19-A5/SK.HK2.6/V/2026", skTanggal: "2026-08-27" });
+    expect((await bacaHariSidang(db!)).find((m) => m.majelisKode === "A")).toMatchObject({ skNomor: SK_SEKARANG, skIkutBawaan: true });
+    await expect(simpanHariSidang(db!, { actorUserId: "usr-admin", majelisKode: "A", hari: 3, skNomor: "1/X/2026", skTanggal: "" })).rejects.toThrow(/sekaligus/);
+  });
+
+  it("rute SK majelis: skBerlaku = SK bawaan, pengecualian tersimpan lewat POST, hanya admin; blangko ABT tetap satu nilai (bawaan)", async () => {
     await rute("POST", { badan: { tindakan: "simpan-nomor-sk", nilai: { majelis: { nomor: SK_BARU, tanggal: "2026-11-03" } } } });
-    const modul = (await import("@/app/api/aleta-ecourt/sk-majelis/route")) as unknown as { GET: (r: NextRequest) => Promise<Response> };
-    const r = await json(await modul.GET(new NextRequest("http://localhost/api/aleta-ecourt/sk-majelis")));
+    const modul = (await import("@/app/api/aleta-ecourt/sk-majelis/route")) as unknown as Record<string, (r: NextRequest) => Promise<Response>>;
+    const ambil = () => modul.GET(new NextRequest("http://localhost/api/aleta-ecourt/sk-majelis"));
+    const kirimSk = (badan: Record<string, unknown>) =>
+      modul.POST(new NextRequest("http://localhost/api/aleta-ecourt/sk-majelis", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(badan) }));
+    const r = await json(await ambil());
     expect(r.data.skBerlaku).toEqual({ nomor: SK_BARU, tanggal: "2026-11-03" });
+    expect(r.data).toHaveProperty("skTetap");
+    const s = await kirimSk({ majelisKode: "A", hari: 3, skNomor: "128/V/2026", skTanggal: "2026-05-04" });
+    expect(s.status).toBe(200);
+    const majelis = ((await json(s)).data.majelis as Array<{ majelisKode: string; skNomor: string; skIkutBawaan: boolean }>);
+    expect(majelis.find((m) => m.majelisKode === "A")).toMatchObject({ skNomor: "128/V/2026", skIkutBawaan: false });
+    expect((await kirimSk({ majelisKode: "A", hari: 3, skNomor: "128/V/2026", skTanggal: "" })).status).toBe(400);
+    // blangko ABT: yang diterapkan tetap nilai bawaan, bukan SK majelis
+    await rute("POST", { badan: { tindakan: "terapkan-nomor-sk" } });
+    expect(tulisKeBot().map((b) => (b.body.baru as { nomor: string }).nomor)).toEqual([SK_BARU, "3 November 2026"]);
+    aktor = "usr-ppg";
+    expect((await kirimSk({ majelisKode: "A", hari: 3, skNomor: "1/X/2026", skTanggal: "2026-01-01" })).status).toBe(403);
   });
 });

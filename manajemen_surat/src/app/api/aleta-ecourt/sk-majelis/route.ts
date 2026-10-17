@@ -99,6 +99,8 @@ export async function GET(request: NextRequest) {
       // hanya kemampuan mengikat ke orang, dan itu disebutkan apa adanya.
       pegawaiTerbaca: pegawai.ok === true,
       pegawaiAlasan: pegawai.ok ? "" : String(pegawai.error || "aleta_bot tidak dapat dihubungi"),
+      // SK majelis tetap yang tercatat di SIPP (baca saja) - pilihan pengecualian di layar.
+      skTetap: (pegawai.ok ? (pegawai.data?.skTetap ?? []) : []) as unknown[],
       hakim: (pegawai.ok ? (pegawai.data?.hakim ?? []) : []) as unknown[],
       panitera: (pegawai.ok ? (pegawai.data?.panitera ?? []) : []) as unknown[],
     });
@@ -140,6 +142,9 @@ export async function POST(request: NextRequest) {
       // dapat ditautkan apabila masuk majelis" berlaku, bukan sekadar
       // dianjurkan.
       akunId: String(badan.akunId ?? ""),
+      // Pengecualian SK per majelis: tidak dikirim = biarkan; "" keduanya = ikut SK bawaan.
+      skNomor: badan.skNomor === undefined ? undefined : String(badan.skNomor ?? ""),
+      skTanggal: badan.skTanggal === undefined ? undefined : String(badan.skTanggal ?? ""),
       keterangan: String(badan.keterangan ?? ""),
     });
 

@@ -3916,6 +3916,7 @@ export async function gatewayPegawaiPenunjukan() {
     ok?: boolean;
     hakim?: PegawaiPenunjukan[];
     panitera?: PegawaiPenunjukan[];
+    skTetap?: Array<{ nomor: string; tanggal: string }>;
   }>("/internal/aleta-bot/penunjukan/pegawai", {
     method: "GET",
   });

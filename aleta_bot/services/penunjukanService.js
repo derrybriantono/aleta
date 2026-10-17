@@ -999,7 +999,20 @@ async function pegawaiPenunjukan() {
       nama: cleanText(b.namaGelar) || cleanText(b.nama),
     }));
 
-  return { ok: true, hakim: rapikan(hakim), panitera: rapikan(panitera) };
+  // SK susunan majelis tetap yang sudah tercatat di SIPP (ref_sk_majelis_tetap, BACA SAJA):
+  // pilihan di layar SK majelis ALETA. Gagal baca = daftar kosong, layar tetap bisa mengetik.
+  const skTetap = (await sippSkemaService.tabelAda("ref_sk_majelis_tetap"))
+    ? (
+        await runQuery(
+          `SELECT nomor_sk AS nomor, tanggal_sk AS tanggal FROM ref_sk_majelis_tetap
+            ORDER BY tanggal_sk DESC, nomor_sk ASC LIMIT 30`
+        ).catch(() => [])
+      )
+        .map((b) => ({ nomor: cleanText(b.nomor), tanggal: isoTanggal(b.tanggal) }))
+        .filter((b) => b.nomor)
+    : [];
+
+  return { ok: true, hakim: rapikan(hakim), panitera: rapikan(panitera), skTetap };
 }
 
 async function bebanHakimTunggal(tahun) {
