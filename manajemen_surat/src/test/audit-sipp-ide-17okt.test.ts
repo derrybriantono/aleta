@@ -276,3 +276,109 @@ describe("E. J01 'Buka di ABT' saat sesi ABT habis", () => {
   });
 });
 
+// ============================================================================
+// F. Saklar penanda SIPP per akun (popup)
+// ============================================================================
+describe("F. saklar penanda SIPP (ideL2*) ikut setelan per akun", () => {
+  const popupHtml = baca("popup.html").replace(/<script[\s\S]*?<\/script>/g, "");
+  const popupJs = baca("popup.js");
+  const daftarFiturJs = baca("daftar-fitur.js");
+  const latarJs = baca("latar.js");
+  const ideL2Js = baca("popup-ide-l2.js");
+
+  type Orang = { nama: string; peran: string; kode: string; kunci: string };
+  const HAKIM: Orang = { nama: "Uji Hakim", peran: "Hakim", kode: "hakim", kunci: "kk-hakim" };
+  const JS: Orang = { nama: "Uji JS", peran: "Jurusita", kode: "juru-sita", kunci: "kk-js" };
+
+  function bukaPopup(orang: Orang, simpanan: Record<string, unknown>) {
+    const dom = new JSDOM(popupHtml, { url: "chrome-extension://aleta/popup.html", runScripts: "outside-only" });
+    terbuka.push(dom);
+    const w = dom.window as Jendela;
+    if (!("asalPortal" in simpanan)) simpanan.asalPortal = "http://192.168.10.10/aleta";
+    const pendengar: Array<(u: Record<string, { newValue?: unknown }>, t: string) => void> = [];
+    w.chrome = {
+      runtime: { id: "aleta-uji", getManifest: () => ({ version: "1.205.0", host_permissions: [] }), sendMessage: async () => ({ ok: true }) },
+      storage: {
+        local: {
+          get: async (kunci?: string | string[] | null) => {
+            const daftar = kunci == null ? Object.keys(simpanan) : [kunci].flat();
+            const hasil: Record<string, unknown> = {};
+            for (const x of daftar) if (x in simpanan) hasil[x] = polos(simpanan[x]);
+            return hasil;
+          },
+          set: async (isi: Record<string, unknown>) => {
+            const ubah: Record<string, { newValue?: unknown }> = {};
+            for (const [k, v] of Object.entries(polos(isi))) {
+              simpanan[k] = v;
+              ubah[k] = { newValue: v };
+            }
+            for (const f of pendengar.slice()) f(ubah, "local");
+          },
+          remove: async (kunci: string | string[]) => {
+            const ubah: Record<string, { newValue?: unknown }> = {};
+            for (const k of [kunci].flat()) {
+              delete simpanan[k];
+              ubah[k] = {};
+            }
+            for (const f of pendengar.slice()) f(ubah, "local");
+          },
+        },
+        session: { get: async () => ({}), set: async () => undefined },
+        onChanged: { addListener: (f: (u: Record<string, { newValue?: unknown }>, t: string) => void) => void pendengar.push(f) },
+      },
+    };
+    w.fetch = async (alamat: string) => {
+      if (String(alamat).includes("info=siapa")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ ok: true, data: { pengguna: { nama: orang.nama, peran: orang.peran, kunci: orang.kunci, golongan: { kode: orang.kode, semua: [orang.kode] } }, versi: "1.205.0" } }),
+        };
+      }
+      return { ok: true, status: 200, url: String(alamat), json: async () => ({ ok: true, data: {} }) };
+    };
+    const ctx = (dom as unknown as { getInternalVMContext: () => vm.Context }).getInternalVMContext();
+    vm.runInContext(daftarFiturJs, ctx, { filename: "daftar-fitur.js" });
+    vm.runInContext(popupJs, ctx, { filename: "popup.js" });
+    vm.runInContext(ideL2Js, ctx, { filename: "popup-ide-l2.js" });
+    return { w, d: w.document as Document };
+  }
+  async function tenang(p: { d: Document }) {
+    await sampai(() => !/memuat/.test(p.d.getElementById("akunAleta")!.textContent || ""), "portal terbaca");
+    await tunggu(80);
+  }
+
+  it("Hakim mematikan 'Potensi verstek'; Juru Sita di PC yang sama mulai dari bawaan; Hakim masuk lagi = tetap mati", async () => {
+    const gudang: Record<string, unknown> = {};
+    const a = bukaPopup(HAKIM, gudang);
+    await tenang(a);
+    const k = a.d.getElementById("ideL2Verstek") as HTMLInputElement;
+    k.checked = false;
+    k.dispatchEvent(new a.w.Event("change", { bubbles: true }));
+    await sampai(() => gudang.ideL2Verstek === false, "saklar tersimpan");
+    await sampai(() => (gudang["pengaturanAkun:kk-hakim|hakim"] as any)?.nilai?.ideL2Verstek === false, "salinan akun hakim memuat saklar penanda");
+    a.w.close();
+
+    const b = bukaPopup(JS, gudang);
+    await tenang(b);
+    expect(gudang.ideL2Verstek).not.toBe(false);
+    expect((b.d.getElementById("ideL2Verstek") as HTMLInputElement).checked).toBe(true);
+    b.w.close();
+
+    const c = bukaPopup(HAKIM, gudang);
+    await tenang(c);
+    expect(gudang.ideL2Verstek).toBe(false);
+  });
+
+  it("daftar kunci setelan akun popup.js = latar.js, dan memuat semua saklar penanda SIPP", () => {
+    const ambil = (s: string) => {
+      const m = /const KUNCI_SETELAN_AKUN = \[([\s\S]*?)\];/.exec(s);
+      return (m![1].match(/"[^"]+"/g) || []).map((x) => x.slice(1, -1));
+    };
+    const kunciIde = Array.from(ideL2Js.matchAll(/^\s{4}(ideL2\w*): \["(ideL2\w*)"/gm)).map((m) => m[2]);
+    expect(kunciIde.length).toBe(13);
+    expect(ambil(popupJs)).toEqual(ambil(latarJs));
+    for (const k of kunciIde) expect(ambil(popupJs), k).toContain(k);
+  });
+});
+

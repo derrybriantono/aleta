@@ -126,6 +126,21 @@
     pasang({});
   }
 
+  // Saklar ini tersimpan per akun (KUNCI_SETELAN_AKUN popup.js/latar.js): saat
+  // akun berganti, popup.js menulis ulang nilainya - centang di sini ikut.
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local" || !ubah || typeof document === "undefined" || !document) return;
+      for (const [id, [kunci]] of Object.entries(SAKLAR_IDE_L2)) {
+        if (!(kunci in ubah)) continue;
+        const k = kotakDari(id);
+        if (k) k.checked = ubah[kunci].newValue !== false;
+      }
+    });
+  } catch {
+    /* di luar konteks ekstensi */
+  }
+
   // Peran diketahui sesudah portal menjawab (popup.js: terapkanPeranPopup). Dibungkus
   // supaya penyembunyian ini ikut setiap kali popup.js menyusun ulang perannya.
   try {
