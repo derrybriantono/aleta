@@ -22,8 +22,8 @@
  * satu-satunya isi kurung, selebihnya "xxx"; NIK 16 angka menjadi 16 "x".
  * Nama yang terbelah ganti paragraf tidak ditebak - dibiarkan untuk penjaga.
  */
-import { bentukNamaPihak, nilaiPenyamaran } from "@/lib/anonim-nama-pihak";
-import { bacaRtfDariBita } from "@/lib/baca-rtf";
+import { bentukNamaPihak, lenturkanApostrof, nilaiPenyamaran } from "@/lib/anonim-nama-pihak";
+import { bacaRtfDariBita, CP1252 } from "@/lib/baca-rtf";
 
 /** Pembacaan RTF: teks datar beserta asal tiap aksara di sumbernya. */
 export type PetaRtf = {
@@ -76,7 +76,8 @@ export function petaRtf(rtf: string): PetaRtf {
       }
       if (n === "'") {
         const kode = parseInt(s.slice(i + 2, i + 4), 16);
-        if (!lewati && Number.isFinite(kode)) tambah(String.fromCharCode(kode), i, i + 4, false);
+        // \'80-\'9f adalah cp1252 (\'92 = ’), bukan Latin-1 (U+0092): tanpa ini apostrof nama tak cocok.
+        if (!lewati && Number.isFinite(kode)) tambah(CP1252[kode] ?? String.fromCharCode(kode), i, i + 4, false);
         i += 4;
         continue;
       }
@@ -100,6 +101,8 @@ export function petaRtf(rtf: string): PetaRtf {
       }
       if (kata === "par" || kata === "line" || kata === "sect" || kata === "page" || kata === "row") tambah("\n", mulai, i, true);
       else if (kata === "tab" || kata === "cell") tambah(" ", mulai, i, true);
+      else if (kata === "rquote") tambah("’", mulai, i, false);
+      else if (kata === "lquote") tambah("‘", mulai, i, false);
       else if (kata === "u" && m[2] !== undefined) {
         let kode = Number(m[2]);
         if (kode < 0) kode += 65536;
@@ -116,17 +119,25 @@ export function petaRtf(rtf: string): PetaRtf {
   return { teks: teks.join(""), awal, akhir, kendali };
 }
 
+/**
+ * NIK/KK: TEPAT 16 angka, boleh dipisah satu titik, spasi, atau tanda hubung
+ * ("72.03.01.410190.0001", "7203 0141 0190 0001"). Batas kiri/kanan bukan angka.
+ */
+export const POLA_NIK = /(?<!\d)\d(?:[ .-]?\d){15}(?!\d)/g;
+
 /** Kata umum dan jabatan yang tidak pernah disamarkan walau terbaca sebagai "nama". */
 const BUKAN_SAMARAN = /^(?:pengadilan|majelis|hakim|panitera|juru\s*sita|jurusita|mediator|ketua|anggota|penggugat|tergugat|pemohon|termohon|saksi|kuasa)\b/i;
 
 /** Titik singkatan dan spasi antar kata lentur ("Muh. Rizal" = "MUH.RIZAL" = "Muh Rizal"). */
 function amanKata(teks: string, spasiLentur: boolean): string {
-  return String(teks)
-    .trim()
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    .replace(/\\\.\s+/g, "\\.?\\s*")
-    .replace(/\s+/g, spasiLentur ? "\\s*" : "\\s+")
-    .replace(/\\\.(?!\?)/g, "\\.?");
+  return lenturkanApostrof(
+    String(teks)
+      .trim()
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\\\.\s+/g, "\\.?\\s*")
+      .replace(/\s+/g, spasiLentur ? "\\s*" : "\\s+")
+      .replace(/\\\.(?!\?)/g, "\\.?")
+  );
 }
 
 export type Sasaran = { jenis: string; teks: string; depan: boolean; lanjut: string };
@@ -142,8 +153,9 @@ export function polaSasaran(x: Sasaran): RegExp {
  * Potongan DEPAN nama diri yang bermakna: "Musdiman Lahauwa" -> "Musdiman".
  * Potongan belakang tidak dipakai (hampir selalu nama orang lain atau kata biasa).
  */
+export const KATA_DEPAN_UMUM = /^(?:andi|siti|sitti|moh|muh|mohd|muhammad|mohammad|mohamad|muhamad|muhammat|abd|abdul|haji|hajjah|hajah|daeng|dg|nur|sri|ni|la|wa|h|hj|ir|dr|drs|i)\.?$/i;
 function potonganDepan(diri: string): Array<{ teks: string; lanjut: string }> {
-  const bukanNama = /^(?:andi|siti|sitti|moh|muh|mohd|muhammad|mohammad|mohamad|muhamad|muhammat|abd|abdul|haji|hajjah|hajah|daeng|dg|nur|sri|ni|la|wa|h|hj|ir|dr|drs|i)\.?$/i;
+  const bukanNama = KATA_DEPAN_UMUM;
   const kata = String(diri || "").replace(/\s+/g, " ").trim().split(" ");
   const hasil: Array<{ teks: string; lanjut: string }> = [];
   for (let k = 1; k < kata.length; k += 1) {
@@ -157,7 +169,7 @@ function potonganDepan(diri: string): Array<{ teks: string; lanjut: string }> {
 
 /** Potongan depan yang disusul kata ber-huruf-besar LAIN, atau bin/binti, adalah nama orang lain. */
 export function depanMilikPihak(teks: string, akhir: number, lanjut: string): boolean {
-  const m = /^[ \t]+([\p{L}][\p{L}.'-]*)/u.exec(String(teks || "").slice(akhir, akhir + 60));
+  const m = /^[ \t]+([\p{L}][\p{L}.'’‘-]*)/u.exec(String(teks || "").slice(akhir, akhir + 60));
   if (!m) return true;
   if (/^(?:bin|binti)$/i.test(m[1])) return false;
   if (/^\p{Lu}/u.test(m[1]) && m[1].toLowerCase() !== String(lanjut || "").toLowerCase()) return false;
@@ -212,12 +224,12 @@ export function samarkanSisaRtf(
     return true;
   };
   if (opsi.nik !== false) {
-    for (const m of t.matchAll(/(^|[^\d])(\d{16})(?=[^\d]|$)/g)) {
-      const mulai = (m.index ?? 0) + m[1].length;
-      const akhir = mulai + 16;
+    for (const m of t.matchAll(POLA_NIK)) {
+      const mulai = m.index ?? 0;
+      const akhir = mulai + m[0].length;
       if (!bebas(mulai, akhir)) continue;
       for (let k = mulai; k < akhir; k += 1) terpakai[k] = 1;
-      ganti.push({ mulai, akhir, menjadi: "x".repeat(16), jenis: "NIK", kata: m[2] });
+      ganti.push({ mulai, akhir, menjadi: "x".repeat(16), jenis: "NIK", kata: m[0] });
     }
   }
   for (const satu of sasaran) {

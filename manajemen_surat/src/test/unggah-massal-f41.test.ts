@@ -148,7 +148,9 @@ describe("B. bot basUnggahService - e-Doc BAS persis tingkap SIPP, dobel tidak d
   });
 
   it("hak lapis kedua: hanya golongan BAS (PP/panitera/panmud/analis/admin)", () => {
-    expect(svc.periksaHakUnggahBas({ peranPenekan: "pp" }).ok).toBe(true);
+    // 17 Okt (audit A4): PP hanya bila portal menyatakan ia PP perkara itu (milikPerkara).
+    expect(svc.periksaHakUnggahBas({ peranPenekan: "pp" })).toMatchObject({ ok: false, status: 403, alasan: "pp_bukan_petugas_perkara" });
+    expect(svc.periksaHakUnggahBas({ peranPenekan: "pp", milikPerkara: true }).ok).toBe(true);
     expect(svc.periksaHakUnggahBas({ peranPenekan: "admin" }).ok).toBe(true);
     expect(svc.periksaHakUnggahBas({ peranPenekan: "hakim" })).toMatchObject({ ok: false, status: 403 });
     expect(svc.periksaHakUnggahBas({})).toMatchObject({ ok: false, alasan: "peran_penekan_tidak_disebut" });
@@ -392,7 +394,8 @@ vi.mock("@/server/shared/admin-access-audit", () => ({
 }));
 vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
   getGatewayUnggahMassalDaftar: async () => ({ ok: true, data: rute.daftar }),
-  getGatewayUnggahMassalCek: async () => ({ ok: true, data: { ok: true, adaBas: false } }),
+  // 17 Okt (audit A4): PP hanya BAS perkaranya - PP uji (Andini Puspita Sari) adalah PP perkara ini.
+  getGatewayUnggahMassalCek: async () => ({ ok: true, data: { ok: true, adaBas: false, panitera: ["Andini Puspita Sari, S.Sy."] } }),
   gatewayUnggahBasSipp: async (m: Record<string, unknown>) => {
     rute.unggahBas.push(m);
     return rute.jawabBas;

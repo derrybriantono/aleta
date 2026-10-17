@@ -25,8 +25,11 @@ const PENUTUP_INTI = [
   "cukup(?:\\s+sekian)?(?:\\s+(?:saja|dulu|sampai\\s+di\\s+sini))?",
   "sekian(?:\\s+(?:saja|dulu))?(?:\\s+(?:keterangan|jawaban)\\s+(?:saya|saksi))?",
   "sampai\\s+di\\s+sini(?:\\s+saja)?",
-  "(?:tidak|belum)\\s+(?:sanggup|kuat|mampu)\\s+lagi(?:\\s+" + PENUTUP_KERJA + ")?",
-  "(?:tidak|belum)\\s+lagi\\s+(?:sanggup|kuat|mampu)(?:\\s+" + PENUTUP_KERJA + ")?",
+  // 17 Okt: "tidak kuat/mampu lagi" tanpa kata kerja menjawab/menerangkan = keterangan perkara.
+  "(?:tidak|belum)\\s+sanggup\\s+lagi(?:\\s+" + PENUTUP_KERJA + ")?",
+  "(?:tidak|belum)\\s+(?:kuat|mampu)\\s+lagi\\s+" + PENUTUP_KERJA,
+  "(?:tidak|belum)\\s+lagi\\s+sanggup(?:\\s+" + PENUTUP_KERJA + ")?",
+  "(?:tidak|belum)\\s+lagi\\s+(?:kuat|mampu)\\s+" + PENUTUP_KERJA,
   "(?:tidak|belum)\\s+(?:sanggup|kuat|mampu)\\s+" + PENUTUP_KERJA + "(?:\\s+lagi)?",
   "(?:sudah\\s+)?tidak\\s+ada\\s+(?:lagi\\s+)?(?:yang\\s+)?(?:(?:ingin|akan|hendak|mau|perlu|dapat|bisa)\\s+)?(?:(?:saya|saksi)\\s+)?(?:sampaikan|disampaikan|terangkan|diterangkan|tambahkan|ditambahkan|jelaskan|dijelaskan|katakan|dikatakan|ketahui|diketahui)(?:\\s+lagi)?",
   "(?:sudah\\s+)?tidak\\s+ada\\s+(?:lagi\\s+)?(?:keterangan|jawaban|hal|tambahan)(?:\\s+(?:lain|tambahan|lagi))*(?:\\s+(?:dari|yang)\\s+(?:saya|saksi)(?:\\s+(?:sampaikan|terangkan|ketahui))?)?",
@@ -52,6 +55,9 @@ function adalahKalimatPenutupSaksi(baris) {
     .replace(/^bahwa[\s,]*/i, "")
     .replace(/[\s;.,!:]+$/, "")
     .trim();
+  // 17 Okt (keputusan pengguna): "tidak ada yang (saya) ketahui" tanpa "lagi"/"lain" bisa jawaban
+  // atas pertanyaan perkara ("tahukah saksi sebabnya?") - tinggal. Dengan "lagi"/"lain" = penutup.
+  if (/\btidak\s+ada\b/i.test(inti) && /\b(?:ketahui|diketahui)\b/i.test(inti) && !/\b(?:lagi|lain)\b/i.test(inti)) return false;
   return inti !== "" && POLA_PENUTUP_LENTUR.test(inti);
 }
 

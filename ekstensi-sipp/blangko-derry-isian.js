@@ -134,7 +134,33 @@
     }
     return luar;
   }
-  const latin1 = (buf) => (typeof buf === "string" ? buf : new TextDecoder("latin1").decode(new Uint8Array(buf)));
+  /**
+   * Bentuk aman untuk ABT (kolom latin1/cp1252, naskah dicetak per byte): tanda baca "cantik" cp1252 – — … “ ” ‘ „ ‚ •
+   * (byte 0x80-0x9F) tercetak rusak (mis. "â€“"), jadi diganti ke ASCII sebelum disimpan. ’ SENGAJA dibiarkan:
+   * ABT sendiri mengembalikannya ke ' saat mencetak (lihat abtKlienNetralkanPetik). Mengembalikan { teks, diganti }.
+   */
+  const GANTI_ABT = { "–": "-", "—": "-", "…": "...", "“": '"', "”": '"', "„": '"', "‘": "'", "‚": "'", "•": "-" };
+  function normalAbt(teks) {
+    const diganti = [];
+    const t = String(teks == null ? "" : teks).replace(/[–—…“”„‘‚•]/g, (m) => {
+      if (!diganti.includes(m)) diganti.push(m);
+      return GANTI_ABT[m];
+    });
+    return { teks: t, diganti };
+  }
+  /**
+   * Byte -> teks BINER (satu kode per byte, ISO-8859-1 sungguhan). TextDecoder("latin1") TIDAK dipakai: menurut standar
+   * peramban label itu windows-1252, jadi byte 0x80-0x9F menjadi “ ” – … (kode > 0xFF) dan bufDariLatin1 (& 0xFF)
+   * merusaknya sebelum RTF dikirim ke pengubah PDF. Untuk membaca RTF sebagai teks tampilan: rtfTeks.
+   */
+  const latin1 = (buf) => {
+    if (typeof buf === "string") return buf;
+    const u = new Uint8Array(buf);
+    let s = "";
+    for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+    return s;
+  };
+  const rtfTeks = (buf) => (typeof buf === "string" ? buf : new TextDecoder("windows-1252").decode(new Uint8Array(buf)));
   const bufDariLatin1 = (s) => {
     const u = new Uint8Array(s.length);
     for (let i = 0; i < s.length; i += 1) u[i] = s.charCodeAt(i) & 0xff;
@@ -252,12 +278,14 @@
     indeks: null, // folder Derry di server (portal)
     modal: null, // { jenis, kelompok, cari }
     blangko: null, // { berkas, kelompok, a, b, jenis, folder }
-    hak: new Map(), // "berkas|perkaraId" -> { ok, diizinkan, pesan }
+    hak: new Map(), // "berkas|kelompok|perkaraId" -> jawaban diizinkan (penolakan tidak disimpan)
     susunan: null,
     memuatSusunan: false,
     galatSusunan: "",
     nilai: {}, // kode -> { status, teks }
     isi: {}, // kode -> teks yang terlihat di layar (tersimpan atau diketik)
+    diketik: new Set(), // kode yang benar-benar diketik petugas sejak terakhir disimpan (blur hanya menyimpan ini)
+    ganti: {}, // kode -> huruf yang diganti ALETA ke bentuk aman ABT (normalAbt)
     tersimpan: {}, // kode -> "tersimpan" | "menyimpan" | "gagal: ..."
     saran: {}, // kode -> teks saran (bayangan)
     menuSaran: null,
@@ -745,6 +773,34 @@
     }
   }
 
+  /**
+   * Hak buka blangko (POST main/cari). blangko.hak: "periksa" -> "ok" | "ditolak". Selain "ok", naskah tidak boleh
+   * diminta dari ABT (pratinjau, cetak) - tanpa penjaga ini kotak galat saja yang tampil, tombol Cetak tetap jalan.
+   * Hanya jawaban "diizinkan" yang disimpan; penolakan/galat jaringan diperiksa ulang tiap Coba lagi.
+   */
+  async function periksaHakBlangko(blangko, kelompokNama) {
+    const kunci = `${blangko.berkas}|${kelompokNama || blangko.kelompok}|${perkaraId()}`;
+    blangko.hak = "periksa";
+    let hak = S.hak.get(kunci);
+    if (!hak) {
+      try {
+        hak = await klienAbt().periksaHakBuka({ a: blangko.a, b: blangko.b, perkaraId: perkaraId() });
+      } catch (e) {
+        hak = { ok: false, diizinkan: false, pesan: String((e && e.message) || e) };
+      }
+      if (hak && hak.diizinkan) S.hak.set(kunci, hak);
+    }
+    if (S.blangko !== blangko) return;
+    if (!hak || !hak.diizinkan) {
+      blangko.hak = "ditolak";
+      S.galatSusunan = `ABT tidak mengizinkan blangko ini untuk perkara ${nomorPerkara()}: ${(hak && hak.pesan) || "tanpa sebab"}.`;
+      renderIsian();
+      renderCetak();
+      renderPratinjau();
+      return;
+    }
+    blangko.hak = "ok";
+  }
   /** Memilih blangko: hak diperiksa lewat POST main/cari (tanpa main/view). */
   async function pilihBlangko(nama, kelompokNama) {
     const k = S.menu && S.menu.kelompok.find((x) => x.nama === kelompokNama);
@@ -758,7 +814,9 @@
     S.galatSusunan = "";
     S.nilai = {};
     S.isi = {};
+    S.diketik.clear();
     S.tersimpan = {};
+    S.ganti = {};
     S.saran = {};
     S.bukti = { P: null, T: null };
     S.tj = {};
@@ -774,23 +832,8 @@
     renderIsian();
     renderPratinjau();
     renderCetak();
-    const kunci = `${blangko.berkas}|${kelompokNama}|${perkaraId()}`;
-    let hak = S.hak.get(kunci);
-    if (!hak) {
-      try {
-        hak = await klienAbt().periksaHakBuka({ a: b.a, b: b.b, perkaraId: perkaraId() });
-      } catch (e) {
-        hak = { ok: false, diizinkan: false, pesan: String((e && e.message) || e) };
-      }
-      S.hak.set(kunci, hak);
-    }
-    if (S.blangko !== blangko) return;
-    if (!hak.diizinkan) {
-      S.galatSusunan = `ABT tidak mengizinkan blangko ini untuk perkara ${nomorPerkara()}: ${hak.pesan || "tanpa sebab"}.`;
-      renderIsian();
-      renderCetak();
-      return;
-    }
+    await periksaHakBlangko(blangko, kelompokNama);
+    if (S.blangko !== blangko || blangko.hak !== "ok") return;
     await muatSusunan();
   }
 
@@ -807,6 +850,10 @@
     q.set("sebutanP", sb.P);
     q.set("sebutanT", sb.T);
     if (semua) q.set("semua", "1");
+    // "Lihat sebagai akun": rute menegakkan hak dokumen peran yang ditiru (server hanya menerimanya dari admin).
+    const a = api();
+    const kd = a && typeof a.keadaan === "function" ? a.keadaan() : null;
+    if (adm() && kd && kd.sebagai && kd.sebagai.nama && kd.sebagai.peran) q.set("sebagaiPeran", kd.sebagai.peran);
     return `${API_BLANGKO}?${q.toString()}`;
   }
   async function muatSusunan() {
@@ -886,13 +933,45 @@
   }
   // F4.2: saran draf H-7 (agen ALETA) didahulukan - nilainya dari deteksi yang sama dengan panel ABT, tetap hanya SARAN.
   const saranUntuk = (b) => (S.saranH7 && S.saranH7[b.kode] ? S.saranH7[b.kode].nilai : "") || S.saran[b.kode] || b.saran || "";
-  const alasanHuruf = () => String(S.isi["8503"] || "").split("·")[0].toUpperCase().replace(/[^A-H]/g, "");
-  /** Pemicu menyala? Dari nilai ABT (teks tidak kosong); alasan C/H juga dari huruf 8503 yang sedang diketik. */
+  /**
+   * Huruf alasan A-H dari isian 8503, dibaca seperti kueri ABT (REPLACE 'DAN', '&', ',', spasi, '+', '/', '.', '-' lalu INSTR
+   * per huruf; FASAKH/MURTAD = H) tanpa mengarang: "F dan B" = BF, "Murtad" = H. Bentuk pilihan ALETA "F · uraian"
+   * dibaca hurufnya saja. Teks bebas ("huruf F") TIDAK dikenal -> "" (jangan menebak huruf dari kata-katanya).
+   * Sama dengan hurufAlasan di portal (lib/set-pertanyaan-saksi.ts).
+   */
+  function hurufAlasanDari(teks) {
+    const v = String(teks == null ? "" : teks).trim();
+    const depan = v.match(/^([A-Ha-h]+)\s*·/);
+    const u = v.toUpperCase();
+    const n = depan ? depan[1].toUpperCase() : /^(FASAKH|MURTAD)$/.test(u) ? "H" : u.replace(/DAN/g, "").replace(/[&,;+/.\s-]/g, "");
+    if (!/^[A-H]+$/.test(n)) return "";
+    return [...new Set(n.split(""))].sort().join("");
+  }
+  const alasanHuruf = () => hurufAlasanDari(S.isi["8503"]);
+  /** Peringatan di bawah kotak 8503 bila isinya tidak terbaca sebagai huruf alasan (ABT tidak akan mengenalinya). */
+  const peringatan8503 = () => {
+    const v = String(S.isi["8503"] || "").trim();
+    return v && !alasanHuruf() ? `ABT tidak mengenali "${v}" sebagai huruf alasan - tulis hurufnya saja, rapat, mis. F, BF, ABF (atau Murtad untuk H).` : "";
+  };
+  function perbaruiPeringatan8503() {
+    const e = cari('[data-peringatan="8503"]', wadah.isian);
+    if (!e) return;
+    const t = peringatan8503();
+    e.textContent = t;
+    e.hidden = !t;
+  }
+  /**
+   * Pemicu menyala? Pemicu alasan C/H mengikuti isi 8503 yang sedang tampil (diketik maupun tersimpan) - nilai pemicu
+   * yang dibaca dari ABT sebelumnya basi begitu 8503 berubah, jadi hanya dipakai bila 8503 belum terisi. Pemicu lain
+   * dari nilai ABT (teks tidak kosong).
+   */
   function pemicuMenyala(kode) {
     const v = S.nilai[kode];
-    if (kode === "11116") return alasanHuruf().includes("C") || Boolean(v && String(v.teks || "").trim());
-    if (kode === "11117") return alasanHuruf().includes("H") || Boolean(v && String(v.teks || "").trim());
-    return Boolean(v && String(v.teks || "").trim());
+    const dariAbt = Boolean(v && String(v.teks || "").trim());
+    if (kode === "11116" || kode === "11117") {
+      if (String(S.isi["8503"] || "").trim()) return alasanHuruf().includes(kode === "11116" ? "C" : "H");
+    }
+    return dariAbt;
   }
   function keteranganPemicu(kode) {
     const p = S.susunan && S.susunan.pemicu.find((x) => x.kode === kode);
@@ -959,7 +1038,9 @@
     }
     if (b.jenis === "tj") {
       const t = S.tj[b.tj.kunci];
-      const ada = t && t.rows && t.rows.length ? 1 : S.nilai[b.kode] && S.nilai[b.kode].status === "terisi" ? 1 : 0;
+      // Tanya-jawab yang sudah ada di ABT (nilai bot untuk kode penanda/penyunting) terhitung terisi walau belum dibuka di layar.
+      const dariAbt = [b.kode, b.tj.kodeSunting].some((k) => k && S.nilai[k] && S.nilai[k].status === "terisi");
+      const ada = t && t.rows && t.rows.length ? 1 : dariAbt ? 1 : 0;
       return [ada, 1];
     }
     return [String(S.isi[b.kode] || "").trim() ? 1 : 0, 1];
@@ -1017,6 +1098,14 @@
       renderStatusIsian(kode);
       return false;
     }
+    const norm = normalAbt(nilai);
+    if (norm.diganti.length) {
+      nilai = norm.teks;
+      S.isi[kode] = nilai;
+      S.ganti[kode] = norm.diganti.join(" ");
+      const el = cari(`#bd-i${kode}`, wadah.isian);
+      if (el && el.value !== nilai && el.tagName !== "SELECT") el.value = nilai;
+    } else delete S.ganti[kode];
     const luar = hurufDiLuarAbt(nilai);
     if (luar.length) {
       S.tersimpan[kode] = `gagal: huruf ${luar.join(" ")} tidak dapat disimpan ABT - ganti dengan huruf biasa`;
@@ -1055,7 +1144,8 @@
     if (/kartu keluarga|\bkk\b/i.test(n)) return "kk";
     return "";
   }
-  const POLA_KODE_BUKTI = /(\btanda\s+)[PT]\.\s?\d+/gi;
+  // Kode tanda bukti di kalimat: "tanda P.3", "diberi tanda bukti P.3", "bertanda P-3", "kode (P.3)".
+  const POLA_KODE_BUKTI = /(\b(?:tanda|bertanda|kode)\s*:?\s*(?:bukti\s+)?\(?)[PT][.-]\s?\d+/gi;
   /**
    * Kalimat satu bukti sesuai pola ABT, kode P.n / T.n otomatis. Semua bagian (atas nama, nomor, tanggal,
    * penerbit, meterai, pencocokan) boleh kosong - bagian kosong tidak ditulis. Bukti "tulis manual" dicetak
@@ -1066,10 +1156,11 @@
     const kode = `${pihak}.${i + 1}`;
     if (typeof r.manual === "string" && r.manual.trim()) {
       let t = r.manual.trim().replace(/\s+/g, " ");
-      if (POLA_KODE_BUKTI.test(t)) t = t.replace(POLA_KODE_BUKTI, `$1${kode}`);
+      const adaKode = new RegExp(POLA_KODE_BUKTI.source, "i").test(t);
+      if (adaKode) t = t.replace(POLA_KODE_BUKTI, `$1${kode}`);
       else t = `${t.replace(/[;.,\s]+$/, "")}, lalu diberi tanda ${kode} serta diberi tanggal dan paraf oleh Ketua Majelis`;
-      POLA_KODE_BUKTI.lastIndex = 0;
-      return /;$/.test(t) ? t : `${t.replace(/\s+$/, "")};`;
+      // Kalimat manual yang sudah ditutup titik/titik koma dibiarkan ("T.3." tidak menjadi "T.3.;"); selainnya ditutup ';'.
+      return /[;.]$/.test(t) ? t : `${t.replace(/\s+$/, "")};`;
     }
     const nm = String(r.nm || "").trim();
     const an = String(r.an || "").trim();
@@ -1255,7 +1346,7 @@
     }
     return h;
   }
-  const POLA_PENUTUP = [/^bahwa\s+sudah\s+cukup\b/i, /^bahwa\s+tidak\s+sanggup\s+lagi\b/i, /^sudah\s+cukup\b/i, /^tidak\s+sanggup\s+lagi\b/i, /^bahwa\s+sudah\s+tidak\s+sanggup\s+lagi\b/i, /^sudah\s+tidak\s+sanggup\s+lagi\b/i, /^(?:bahwa\s+)?cukup\s+sekian\b/i];
+  const POLA_PENUTUP = [/^(?:bahwa\s+)?(?:saya\s+|saksi\s+)?(?:sudah\s+)?(?:cukup(?:\s+sekian)?|tidak\s+sanggup\s+lagi)[\s;.,!:]*$/i];
   const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?(?:cukup(?:\s+sekian)?|tidak\s+sanggup\s+lagi)\s*[;.]?$/i;
   const POLA_EKOR = /(^|[;.]\s+)(?:bahwa\s+)?(?:sudah\s+)?(?:cukup\s+sekian|sudah\s+cukup|tidak\s+sanggup\s+lagi)\s*[;.]?\s*$/i;
   /** Pembersih kalimat penutup: memakai milik abt.js (F1.3, bentuk lentur) bila ada; cadangan pola baku. */
@@ -1371,12 +1462,35 @@
     t.berubah = true;
     return s;
   }
+  // Simpan ke ABT = HAPUS lalu isi ulang seluruh keterangan sidang itu. Sebelum keterangan
+  // yang sudah ada di ABT terbaca, menyimpan (atau mengganti daftar) akan menghapusnya tanpa
+  // pernah dilihat petugas - jadi penyunting baru boleh diubah/disimpan sesudah bacaan berhasil.
+  function tjSiap(kunciDaftar) {
+    return kunciDaftar.length > 0 && kunciDaftar.every((k) => S.tj[k] && S.tj[k].dimuat && !S.tj[k].memuat);
+  }
+  var PESAN_TJ_BELUM_TERBACA = "Keterangan yang sudah ada di ABT belum terbaca - tunggu sampai selesai dibaca, atau tutup lalu buka lagi tanya jawab ini bila pembacaannya gagal. Tidak disimpan supaya keterangan lama tidak terhapus.";
   async function simpanTj(kunciDaftar) {
     if (!bolehTulis()) return toast(`Tanya jawab ${NAMA_JENIS[S.blangko.jenis].toLowerCase()} hanya disimpan ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]]}.`);
     for (const kunci of kunciDaftar) {
       const t = S.tj[kunci];
       if (!t) continue;
-      const rows = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+      if (!t.dimuat || t.memuat) {
+        t.galat = PESAN_TJ_BELUM_TERBACA;
+        renderTj();
+        continue;
+      }
+      let rows = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+      const gantiTj = [];
+      rows = rows.map((r) => {
+        const a = normalAbt(r.tanya);
+        const j = normalAbt(r.jawab);
+        for (const m of [...a.diganti, ...j.diganti]) if (!gantiTj.includes(m)) gantiTj.push(m);
+        return a.diganti.length || j.diganti.length ? { ...r, tanya: a.teks, jawab: j.teks } : r;
+      });
+      if (gantiTj.length) {
+        t.rows = t.rows.map((r) => ({ ...r, tanya: normalAbt(r.tanya).teks, jawab: normalAbt(r.jawab).teks }));
+        t.ganti = gantiTj.join(" ");
+      } else t.ganti = "";
       const luar = hurufDiLuarAbt(rows.map((r) => `${r.tanya} ${r.jawab}`).join(" "));
       if (luar.length) {
         t.galat = `huruf ${luar.join(" ")} tidak dapat disimpan ABT - ganti dengan huruf biasa`;
@@ -1565,22 +1679,30 @@
         (v && !ada ? `<option value="${esc(v)}" selected>${esc(v)}</option>` : "") +
         `</select></div>`;
     } else {
+      // Nilai ABT bergaris baru (mis. beberapa paragraf): <input type=text> membuang \n dari nilainya,
+      // jadi kotaknya textarea supaya tampil & tersimpan utuh.
+      const kotak =
+        b.jenis !== "tanggal" && /\n/.test(v)
+          ? `<textarea id="bd-i${b.kode}" data-k="${b.kode}" rows="${Math.min(8, v.split("\n").length + 1)}" placeholder="${esc(sr || "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>${esc(v)}</textarea>`
+          : `<input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>`;
       isian =
-        `<div class="bd-isiwadah"><input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>` +
+        `<div class="bd-isiwadah">${kotak}` +
         `${pil.length ? `<button type="button" class="bd-ikon" data-menu="${b.kode}" aria-label="Pilihan lain untuk ${esc(b.nama)}" tabindex="-1">▾</button>` : ""}</div>` +
         `${S.menuSaran === b.kode && pil.length ? `<div class="bd-saranmenu" role="listbox">${pil.map((o) => `<button type="button" role="option" data-ambil="${b.kode}" data-nilai="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}`;
     }
     return (
       `<div class="bd-f${v.trim() ? " beres" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
       isian +
-      `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st))}</span></div>`
+      `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
+      (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
+      `</div>`
     );
   }
-  const teksStatus = (st) => (st === "tersimpan" ? "✓ tersimpan di ABT" : st === "menyimpan" ? "menyimpan…" : st.startsWith("gagal") ? st : "");
+  const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ tersimpan di ABT${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st.startsWith("gagal") ? st : "");
   function renderStatusIsian(kode) {
     const e = cari(`[data-status="${kode}"]`, wadah.isian);
     if (e) {
-      e.textContent = teksStatus(S.tersimpan[kode] || "");
+      e.textContent = teksStatus(S.tersimpan[kode] || "", kode);
       e.classList.toggle("gagal", String(S.tersimpan[kode] || "").startsWith("gagal"));
     }
     const f = cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
@@ -1810,8 +1932,8 @@
       `<div class="bd-tjalat"><b>${esc(judul)}</b><span class="bd-chip">${esc(sidangTeks)}</span>` +
       (tjPasangan(S.tjBuka) ? `<span class="bd-seg" role="tablist" aria-label="Cara menampilkan saksi"><button type="button" role="tab" data-tjmode="sisi" aria-selected="${S.tjSisi}">Berdampingan</button><button type="button" role="tab" data-tjmode="satu" aria-selected="${!S.tjSisi}">Satu per satu</button></span>` : "") +
       `<label class="bd-lbl" for="bd-muattpl">Set pertanyaan</label><select id="bd-muattpl">${pilihanSetSaksi(t)}</select>` +
-      `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}">Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}">Tambah baris</button>` +
-      `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>` +
+      `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Tambah baris</button>` +
+      `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() && tjSiap(kunciDaftar) ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>` +
       ketSetSaksi();
     const status = (k) => {
       const x = S.tj[k];
@@ -1819,7 +1941,7 @@
       if (x.memuat) return `<p class="bd-catat" role="status">Membaca keterangan ${esc(tjItem(k).tj.sebutan)} dari ABT…</p>`;
       if (x.menyimpan) return `<p class="bd-catat" role="status">${esc(x.menyimpan)}</p>`;
       if (x.galat) return `<p class="bd-peringatan">${esc(x.galat)}</p>`;
-      if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}</p>`;
+      if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}${x.ganti ? ` (huruf ${esc(x.ganti)} diganti ke bentuk aman ABT)` : ""}</p>`;
       return "";
     };
     if (ps) {
@@ -1876,9 +1998,12 @@
     const nilai = S.semua.nilai || {};
     const baris = (nama, teks, asal, kode, bisaUbah) => {
       const samar = perluDisamarkan(teks);
+      const isiNya = String(S.isi[kode] !== undefined ? S.isi[kode] : teks || "");
       return `<div class="bd-vbaris"><span>${esc(nama)}</span>${
         bisaUbah
-          ? `<input data-k="${kode}" value="${esc(S.isi[kode] !== undefined ? S.isi[kode] : teks)}" placeholder="kosong = dari SIPP" ${bolehTulis() ? "" : "readonly"} aria-label="${esc(nama)}">`
+          ? /\n/.test(isiNya)
+            ? `<textarea data-k="${kode}" rows="${Math.min(6, isiNya.split("\n").length + 1)}" placeholder="kosong = dari SIPP" ${bolehTulis() ? "" : "readonly"} aria-label="${esc(nama)}">${esc(isiNya)}</textarea>`
+            : `<input data-k="${kode}" value="${esc(isiNya)}" placeholder="kosong = dari SIPP" ${bolehTulis() ? "" : "readonly"} aria-label="${esc(nama)}">`
           : `<span class="bd-nilai${samar ? " bd-sembunyi" : ""}" ${samar ? 'tabindex="0" title="Arahkan penunjuk ke sini untuk melihat"' : ""}>${esc(teks || "—")}</span>`
       }<span class="bd-chip">${esc(asal)}</span></div>`;
     };
@@ -1909,12 +2034,13 @@
    * Tabel: \cell menutup sel, \row menutup baris; selain itu paragraf biasa.
    */
   function uraiRtf(sumber) {
-    const s = latin1(sumber);
+    const s = rtfTeks(sumber);
     const par = [];
     let runs = [];
     let align = "";
     let dalamTabel = false;
     let selBaris = [];
+    let selPar = []; // paragraf (\par) sel yang sedang disusun; sel baru ditutup oleh \cell
     const tumpuk = [];
     let gaya = { b: false, i: false, u: false, lewati: false, uc: 1 };
     let buang = 0;
@@ -1928,10 +2054,26 @@
       if (akhir && akhir.b === gaya.b && akhir.i === gaya.i && akhir.u === gaya.u) akhir.t += teks;
       else runs.push({ t: teks, b: gaya.b, i: gaya.i, u: gaya.u });
     };
+    // Satu sel dapat berisi banyak paragraf: \par di dalam tabel hanya menambah paragraf sel; \cell menutup sel
+    // (paragraf digabung dengan baris baru, paragraf kosong di ujung - mis. "\par\cell" dari Word - dibuang).
+    const gabungSel = (lain, akhir) => {
+      const semua = [...lain, akhir];
+      while (semua.length > 1 && !semua[semua.length - 1].runs.some((r) => r.t.trim())) semua.pop();
+      const gabung = [];
+      semua.forEach((q, k) => {
+        if (k) gabung.push({ t: "\n", b: false, i: false, u: false });
+        gabung.push(...q.runs);
+      });
+      const ber = semua.find((q) => q.runs.some((r) => r.t.trim())) || semua[0];
+      return { align: ber.align, runs: gabung, jenis: "sel" };
+    };
     const tutupPar = (jenis) => {
       const p = { align: align || "", runs, jenis: jenis || "" };
-      if (dalamTabel) selBaris.push(p);
-      else par.push(p);
+      if (dalamTabel && jenis !== "sel") selPar.push(p);
+      else if (dalamTabel) {
+        selBaris.push(gabungSel(selPar, p));
+        selPar = [];
+      } else par.push(p);
       runs = [];
     };
     let i = 0;
@@ -2027,9 +2169,10 @@
           dalamTabel = true;
           tutupPar("sel");
         } else if (kata === "row") {
-          if (runs.length) tutupPar("sel");
+          if (runs.length || selPar.length) tutupPar("sel");
           par.push({ align: "", runs: [], jenis: "baris", sel: selBaris });
           selBaris = [];
+          selPar = [];
           dalamTabel = false;
         } else if (kata === "uc") gaya.uc = nilai === null ? 1 : nilai;
         else if (kata === "u") {
@@ -2142,6 +2285,7 @@
   }
   async function ambilRtf(paksa) {
     if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
+    if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
     if (S.prat.rtf && !S.prat.kotor && !paksa) return S.prat.rtf;
     const h = await klienAbt().cetak({ a: S.blangko.a, b: S.blangko.b, perkaraId: perkaraId(), sidang: sidangUrutan() });
     if (!h.ok) throw new Error(h.pesan || "ABT tidak mengembalikan naskah.");
@@ -2191,11 +2335,9 @@
         : "");
     if (sunting) {
       for (const el of cariSemua("#bd-kertas .bd-v[data-kode]", w)) {
-        if (el.querySelector("input")) continue;
+        if (el.querySelector("input, textarea")) continue;
         const kode = el.getAttribute("data-kode");
-        const inp = document.createElement("input");
-        inp.className = "bd-vinput";
-        inp.value = String(S.isi[kode] || "");
+        const inp = kotakSunting(String(S.isi[kode] || ""));
         inp.setAttribute("data-vk", kode);
         inp.setAttribute("aria-label", `Sunting ${el.getAttribute("data-bagian") || kode}`);
         el.textContent = "";
@@ -2203,26 +2345,37 @@
       }
     }
   }
+  /** Kotak sunting pratinjau: textarea bila nilainya bergaris baru (<input> membuang \n). */
+  function kotakSunting(nilai, tanggal) {
+    const ta = !tanggal && /\n/.test(nilai);
+    const inp = document.createElement(ta ? "textarea" : "input");
+    inp.className = "bd-vinput";
+    if (ta) inp.rows = Math.min(8, nilai.split("\n").length + 1);
+    else inp.type = tanggal ? "date" : "text";
+    inp.value = nilai;
+    inp.setAttribute("data-awal", inp.value);
+    return inp;
+  }
   function suntingSatu(el) {
     if (!bolehTulis()) return toast(`${NAMA_JENIS[S.blangko.jenis]} hanya diubah ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara"}.`);
-    if (el.querySelector("input")) return;
+    if (el.querySelector("input, textarea")) return;
     const kode = el.getAttribute("data-kode");
     const b = S.susunan && S.susunan.isian.find((x) => x.kode === kode);
-    const inp = document.createElement("input");
-    inp.className = "bd-vinput";
-    inp.type = b && b.jenis === "tanggal" ? "date" : "text";
-    inp.value = b && b.jenis === "tanggal" ? keIso(S.isi[kode] || el.textContent) : String(S.isi[kode] || el.textContent || "");
+    const tanggal = Boolean(b && b.jenis === "tanggal");
+    const inp = kotakSunting(tanggal ? keIso(S.isi[kode] || el.textContent) : String(S.isi[kode] || el.textContent || ""), tanggal);
+    let diketik = false;
+    inp.addEventListener("input", () => (diketik = true));
     inp.setAttribute("aria-label", `Sunting ${el.getAttribute("data-bagian") || kode}`);
     const awal = el.innerHTML;
     el.textContent = "";
     el.appendChild(inp);
     inp.focus();
     let selesai = false;
-    const akhir = async (simpan) => {
+    const akhir = async (simpan, lewatBlur) => {
       if (selesai) return;
       selesai = true;
       const nilai = inp.value;
-      if (!simpan || nilai === String(S.isi[kode] || "")) {
+      if (!simpan || (lewatBlur && !diketik) || nilai === String(S.isi[kode] || "")) {
         el.innerHTML = awal;
         return;
       }
@@ -2233,9 +2386,9 @@
       renderStatusIsian(kode);
       if (ok === false) toast(S.tersimpan[kode] || "Belum tersimpan.");
     };
-    inp.addEventListener("blur", () => void akhir(true));
+    inp.addEventListener("blur", () => void akhir(true, true));
     inp.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && !(inp.tagName === "TEXTAREA" && e.shiftKey)) {
         e.preventDefault();
         void akhir(true);
       } else if (e.key === "Escape") {
@@ -2245,11 +2398,12 @@
     });
   }
   async function simpanSuntingPenuh() {
-    const inputs = cariSemua("#bd-kertas input[data-vk]", wadah.pratinjau);
+    const inputs = cariSemua("#bd-kertas [data-vk]", wadah.pratinjau);
     const ubah = [];
     for (const i of inputs) {
       const kode = i.getAttribute("data-vk");
-      if (i.value !== String(S.isi[kode] || "")) ubah.push([kode, i.value]);
+      // Dibandingkan juga dengan isi kotak saat dibuka: hanya yang diubah petugas ditulis ke ABT.
+      if (i.value !== i.getAttribute("data-awal") && i.value !== String(S.isi[kode] || "")) ubah.push([kode, i.value]);
     }
     S.prat.suntingPenuh = false;
     if (!ubah.length) {
@@ -2537,6 +2691,7 @@
   async function cetak(paksa) {
     if (!S.blangko || !S.pk || S.sibuk) return;
     if (!daftarFmt().length) return toast("Pilih minimal satu hasil cetak.");
+    if (S.blangko.hak === "ditolak") return toast("ABT tidak mengizinkan blangko ini untuk perkara ini; tidak dapat dicetak.");
     if (!S.susunan && !S.galatSusunan) return toast("Isian blangko masih dibaca; tunggu sebentar.");
     S.sibuk = true;
     renderCetak();
@@ -2819,7 +2974,14 @@
       }
       return;
     }
-    if (kode === "ulangsusunan") return void muatSusunan();
+    if (kode === "ulangsusunan") {
+      const bl = S.blangko;
+      if (!bl || bl.hak === "ok") return void muatSusunan();
+      // Hak belum "ok" (ditolak/galat): periksa ulang ke ABT dulu, baru isian dibaca.
+      S.galatSusunan = "";
+      renderIsian();
+      return void periksaHakBlangko(bl).then(() => (S.blangko === bl && bl.hak === "ok" ? muatSusunan() : undefined));
+    }
     if (kode === "salinskors") return void salinKalimatSkors();
     if (kode === "pakaisaran") return pakaiSemuaSaran();
     if (kode === "ktpbukti") return void ambilTanggalKtp();
@@ -2847,6 +3009,7 @@
       const sel = cari("#bd-muattpl", wadah.isian);
       const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
       if (!sel || !sel.value) return toast("Pilih set pertanyaan dulu.");
+      if (!tjSiap(kunci)) return toast(PESAN_TJ_BELUM_TERBACA);
       tjCatat(kunci);
       if (sel.value.startsWith("aleta:")) {
         const dipakai = kunci.map((k) => pakaiSetSaksi(k, sel.value.slice(6))).filter(Boolean);
@@ -2860,6 +3023,7 @@
     }
     if (kode === "tambahtj") {
       const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
+      if (!tjSiap(kunci)) return toast(PESAN_TJ_BELUM_TERBACA);
       tjCatat(kunci);
       for (const k of kunci) {
         const x = S.tj[k];
@@ -3219,13 +3383,18 @@
     }
     const k = t.getAttribute && t.getAttribute("data-k");
     if (k) {
+      // Daftar isian yang tampil diambil SEBELUM nilai baru dicatat; 8503 menentukan isian C/H (pemicu).
+      const sebelum = k === "8503" ? daftarPerlu().map((x) => x.kode).join() : "";
       S.isi[k] = t.value;
+      S.diketik.add(k);
       S.peringat = false;
       if (k === "8503") {
         const pos = t.selectionStart;
-        const sebelum = daftarPerlu().map((x) => x.kode).join();
         if (daftarPerlu().map((x) => x.kode).join() !== sebelum) renderIsian();
-        else renderProgres();
+        else {
+          renderProgres();
+          perbaruiPeringatan8503();
+        }
         const i = cari(`#bd-i${k}`, wadah.isian);
         if (i && i !== document.activeElement) {
           i.focus();
@@ -3327,6 +3496,9 @@
     const t = e.target;
     const k = t.getAttribute && t.getAttribute("data-k");
     if (!k || t.type === "date" || t.tagName === "SELECT") return;
+    // Fokus yang sekadar lewat (Tab, klik) tidak menulis apa pun ke ABT - hanya yang diketik.
+    if (!S.diketik.has(k)) return;
+    S.diketik.delete(k);
     const nilai = t.value;
     const lama = S.nilai[k] ? String(S.nilai[k].teks || "") : "";
     if (nilai === lama || (!nilai.trim() && !lama.trim())) return;
@@ -3440,6 +3612,7 @@
       S.susunan = null;
       S.galatSusunan = "";
       S.isi = {};
+      S.diketik.clear();
       S.nilai = {};
       S.tersimpan = {};
       S.saran = {};
@@ -3582,7 +3755,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
+    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

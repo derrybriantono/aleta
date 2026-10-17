@@ -378,7 +378,9 @@ function rekomendasiRelaas(m: MasukanRekomendasi, teks = ""): Rekomendasi[] {
   };
   const sisiDari = (pihak: PihakDipanggil): Array<"pertama" | "kedua"> =>
     pihak === "keduanya" ? ["pertama", "kedua"] : pihak === "pertama" ? ["pertama"] : pihak === "kedua" ? ["kedua"] : [];
-  if (m.sudahPutus) {
+  // Sidang ikrar talak yang ditunda diperiksa lebih dulu: perkaranya SUDAH putus (izin ikrar), tetapi yang dipanggil ulang adalah ikrar, bukan pemberitahuan putusan.
+  const ikrarDitunda = m.sidangIkrarTalak === true && m.ditunda === true;
+  if (m.sudahPutus && !ikrarDitunda) {
     // Pemberitahuan putusan kepada pihak yang tidak hadir saat dibacakan (hadir semua = tidak perlu).
     const pihak = pihakDipanggil(m.dihadiriOleh);
     for (const sisi of sisiDari(pihak)) {

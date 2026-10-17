@@ -86,7 +86,13 @@ function abtKlienSebabBukanJawaban(teks) {
   if (/DIREKTORI BLANGKO RTF HILANG|SALAH DIREKTORI/i.test(t)) return { jenis: "token-rusak", pesan: "Token blangko (a/b) tidak terbaca ABT - ambil ulang dari halaman kelompok blangko." };
   if (/ERROR LOAD DATA/i.test(t)) return { jenis: "galat-pihak", pesan: "ABT tidak menemukan pihak/saksi bernama itu di SIPP (masukkan ulang saksi di SIPP)." };
   if (/A PHP Error was encountered|A Database Error Occurred|<b>(Fatal error|Warning|Notice)<\/b>/i.test(t)) {
-    return { jenis: "galat-php", pesan: abtKlienSebaris(t.slice(0, 600)).slice(0, 200) };
+    // Temuan audit D7: rincian PHP/basis data (nama berkas, baris, akun) bukan untuk petugas - cukup di console.
+    try {
+      if (typeof console !== "undefined" && console.warn) console.warn("[ALETA] galat PHP dari ABT:", abtKlienSebaris(t.slice(0, 600)).slice(0, 400));
+    } catch {
+      /* console hanya catatan */
+    }
+    return { jenis: "galat-php", pesan: "ABT mengalami galat pada halaman ini (bukan dari ALETA). Coba lagi sebentar lagi; bila berulang, hubungi admin ABT." };
   }
   return null;
 }
@@ -319,8 +325,9 @@ function abtKlienUraiPopupData(html) {
   const tgl = teks.match(/id='tgl_form'[^>]*value='([^']*)'|value='([^']*)'[^>]*id='tgl_form'/i);
   if (tipe === "data_tanggal") {
     nilai = tgl ? abtKlienEntitas(tgl[1] || tgl[2] || "") : "";
-    const p = nilai.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    nilaiTanggal = p ? `${p[3]}-${p[2]}-${p[1]}` : "";
+    // Temuan audit D5: ABT dapat menampilkan 15/10/2026 maupun 15-10-2026 (atau titik) - tanggal yang tidak ada di kalender ditolak.
+    const dmy = abtKlienTanggalAbt(nilai).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    nilaiTanggal = dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : "";
   } else {
     const ta = teks.match(/<textarea\b[^>]*>([\s\S]*?)<\/textarea>/i);
     nilai = ta ? abtKlienEntitas(ta[1]).replace(/^\r?\n/, "") : "";
@@ -678,7 +685,8 @@ function abtKlienBuat(opsi) {
       }
       if (verifikasi) {
         const baru = await klien.bacaIsian(kode, perkaraId, perkTemp);
-        const sama = baru.ok && (lama.tipe === "data_tanggal" ? baru.nilai === kirim : baru.nilai.replace(/\r\n/g, "\n").trimEnd() === String(kirim).replace(/\r\n/g, "\n").trimEnd());
+        // Temuan audit D5: bacaan ulang tanggal dinormalkan (15-10-2026 == 15/10/2026) sebelum dibandingkan.
+        const sama = baru.ok && (lama.tipe === "data_tanggal" ? abtKlienTanggalAbt(baru.nilai) === kirim : baru.nilai.replace(/\r\n/g, "\n").trimEnd() === String(kirim).replace(/\r\n/g, "\n").trimEnd());
         return { ok: sama, tersimpan: true, terverifikasi: sama, nilaiLama: lama.nilai, nilaiBaru: baru.ok ? baru.nilai : null, pesan: sama ? "tersimpan" : "tersimpan tetapi bacaan ulang berbeda" };
       }
       return { ok: true, tersimpan: true, terverifikasi: false, nilaiLama: lama.nilai, pesan: "tersimpan" };
@@ -774,14 +782,15 @@ function abtKlienBuat(opsi) {
      * di Windows/PC lokal hanya .rtf (docx -> "Proses Anonim Gagal" karena butuh soffice Linux).
      * `rtf` = ArrayBuffer/Uint8Array/Blob. Pulang { ok, rtf:ArrayBuffer, nama } atau gagal + pesan ABT.
      */
-    async anonim({ perkaraId, nomor, rtf, namaBerkas }) {
+    async anonim({ perkaraId, nomor, rtf, namaBerkas, sinyal }) {
       const blob = rtf instanceof Blob ? rtf : new Blob([rtf], { type: "application/rtf" });
       const form = new FormData();
       form.set("perkara_id", String(perkaraId));
       form.set("perkara_no", nomor);
       form.set("file_putusan", blob, namaBerkas || "putusan.rtf");
       await jeda("anonim", `${asal}/main/anonim`);
-      const r = await ambil(`${asal}/main/anonim`, { method: "POST", credentials: "include", cache: "no-store", body: form });
+      // `sinyal` (AbortSignal) = tombol Hentikan / batas waktu pemanggil: main/anonim bisa 5 menit.
+      const r = await ambil(`${asal}/main/anonim`, { method: "POST", credentials: "include", cache: "no-store", body: form, ...(sinyal ? { signal: sinyal } : {}) });
       if (r.status >= 400) return gagal(`ABT menjawab ${r.status}.`);
       const buf = await r.arrayBuffer();
       const awal = new TextDecoder("latin1").decode(new Uint8Array(buf).subarray(0, 6));

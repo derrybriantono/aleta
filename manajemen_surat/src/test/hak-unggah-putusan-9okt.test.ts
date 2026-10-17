@@ -89,12 +89,11 @@ vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => {
     postGatewayTulisPutusan: catat("sidang/putus"),
     postGatewayPutusSidang: catat("sidang/putus-sidang"),
     getGatewayStatusPutusan: async () => ({ ok: true, data: {} }),
+    // 17 Okt: SATU penjaga majelis (hak-milik-perkara) - sumbernya cek unggah massal; null = bot tidak menjawab.
+    getGatewayUnggahMassalCek: async () =>
+      keadaan.majelis === null ? { ok: false, error: "ALETA Bot tidak menjawab." } : { ok: true, data: { ok: true, majelis: keadaan.majelis } },
     getGatewayStatusPerkara: async () => ({ ok: true, data: { identitas: { perkaraId: "450" } } }),
     getGatewaySippKonteks: async () => ({ ok: false, error: "tidak dibaca dalam uji" }),
-    getGatewayKonseptorKeadaan: async () =>
-      keadaan.majelis === null
-        ? { ok: false, error: "ALETA Bot tidak menjawab." }
-        : { ok: true, data: { ok: true, perkara: { "450": { majelis: keadaan.majelis.map((nama) => ({ nama, jabatan: "" })) } }, gagal: [] } },
   };
 });
 
@@ -299,14 +298,14 @@ describe("audit 17 Okt: hakim hanya putusan perkara MAJELISNYA (keputusan 16 Okt
     keadaan.majelis = ["Hakim Lain Sekali"];
     const { status, badan } = await r.jalan();
     expect(status).toBe(403);
-    expect(JSON.stringify(badan)).toContain("majelisnya ia duduki");
+    expect(JSON.stringify(badan)).toContain("bukan perkara majelis Anda");
     expect(keadaan.gerbang).toEqual([]);
   });
   it.each(TULIS_SIPP.map((r) => [r.nama, r] as const))("%s: majelis tak terbaca - hakim ditolak dengan kalimat jujur", async (_n, r) => {
     keadaan.aktor = aktor("hakim");
     keadaan.majelis = null;
     const { status, badan } = await r.jalan();
-    expect(status).toBe(503);
+    expect(status).toBe(502);
     expect(JSON.stringify(badan)).toContain("belum dapat dibaca");
     expect(keadaan.gerbang).toEqual([]);
   });

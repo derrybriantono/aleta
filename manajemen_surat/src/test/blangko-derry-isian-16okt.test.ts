@@ -29,8 +29,8 @@ import path from "node:path";
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
-import { tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
+import { kodeTanyaJawab, kodeUntukNilai, statusNilaiLayar, susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
+import { hurufAlasan, tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
@@ -120,14 +120,14 @@ const POPUP = (kode: string, tipe: string, nilai: string) =>
   (tipe === "data_tanggal" ? `<input type='text' id='tgl_form' value='${nilai}'>` : `<textarea id="value" ${tipe === "data_sql" ? "readonly" : ""}>${nilai}</textarea>`);
 
 type Minta = { url: string; cara: string; badan: string };
-type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[] };
+type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[]; opsi: { hakTolak?: boolean } };
 const terbuka: JSDOM[] = [];
 afterEach(async () => {
   await tunggu(20);
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -165,15 +165,23 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
     },
   };
   const minta: Minta[] = [];
-  const abt: Record<string, string> = { "8503": "F" }; // isian tersimpan di ABT (data_teks/tanggal)
+  const abt: Record<string, string> = { "8503": "F", ...(p.abtAwal ?? {}) }; // isian tersimpan di ABT (data_teks/tanggal)
   const tj: Halaman["tj"] = { "5058": [{ no: "1", tanya: "Apakah saudara kenal Penggugat?", jawab: "Kenal, saya kakaknya;" }, { no: "2", tanya: "Apa yang saudara tahu?", jawab: "Mereka sering bertengkar;\nBahwa cukup sekian;" }], "5059": [] };
   const pdfRtf: string[] = [];
   const orang = ORANG[p.orang ?? "hakim"];
   const json = (isi: unknown, status = 200) => new Response(JSON.stringify(isi), { status, headers: { "content-type": "application/json" } });
   const html = (isi: string) => new Response(isi, { status: 200, headers: { "content-type": "text/html" } });
-  const nilaiDari = (kode: string[]) => {
+  const nilaiDari = (kode: string[], tjKode: Set<string>) => {
     const n: Record<string, unknown> = {};
-    for (const k of kode) n[k] = abt[k] !== undefined && abt[k] !== "" ? { status: "terisi", teks: abt[k] } : k === "0001" ? { status: "terisi", teks: "581/Pdt.G/2026/PA.Dgl" } : k === "0046" ? { status: "terisi", teks: "Yulfiani binti Tasbih" } : { status: "kosong", teks: "" };
+    for (const k of kode) {
+      // Tanya-jawab: bot menilai "terisi" bila ABT punya barisnya (teksnya sendiri kosong, nilainya tabel).
+      const v = tjKode.has(k)
+        ? tj[k]?.length
+          ? { status: "terisi", teks: "", nama: "", sebab: "" }
+          : { status: "kosong", teks: "", nama: "", sebab: "tanya-jawab belum diisi di ABT" }
+        : abt[k] !== undefined && abt[k] !== "" ? { status: "terisi", teks: abt[k], nama: "", sebab: "" } : k === "0001" ? { status: "terisi", teks: "581/Pdt.G/2026/PA.Dgl", nama: "", sebab: "" } : k === "0046" ? { status: "terisi", teks: "Yulfiani binti Tasbih", nama: "", sebab: "" } : { status: "kosong", teks: "", nama: "", sebab: "" };
+      n[k] = statusNilaiLayar(v, tjKode.has(k));
+    }
     return n;
   };
   w.fetch = async (alamat: string, opsi?: { method?: string; body?: unknown; redirect?: string }) => {
@@ -222,9 +230,8 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       const berkas = q.get("berkas") || "";
       const put = berkas.startsWith("[01]");
       const s = susunIsian(put ? PENANDA_PUT : PENANDA_BAS, KATALOG, { P: q.get("sebutanP") || "Penggugat", T: q.get("sebutanT") || "Tergugat" });
-      const semua = q.get("semua") === "1";
-      const kode = semua ? [...new Set([...s.penanda, ...s.isian.map((b) => b.kode), ...s.otomatis.map((o) => o.kode)])] : [...s.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...s.pemicu.map((x) => x.kode)];
-      return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${berkas}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai: q.get("perkaraId") ? nilaiDari(kode) : undefined, nilaiAda: Boolean(q.get("perkaraId")), nilaiSebab: "" } });
+      const kode = kodeUntukNilai(s, q.get("semua") === "1");
+      return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${berkas}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai: q.get("perkaraId") ? nilaiDari(kode, kodeTanyaJawab(s)) : undefined, nilaiAda: Boolean(q.get("perkaraId")), nilaiSebab: "" } });
     }
     if (url.includes("/aleta-bot/abt/pdf")) {
       const b = JSON.parse(badan || "{}");
@@ -265,10 +272,12 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
         tj[kode] = JSON.parse(String(f.get("data") || "[]"));
         return html("Tanya Jawab Disimpan");
       }
+      if (p.tjGagal && cara === "GET" && kode === "5058") return new Response("galat", { status: 500 });
       const rows = f.get("load_template") ? { "0": { urutan_pertanyaan: "1", pertanyaan: "Apakah saudara kenal Penggugat?", jawaban: "" }, "1": { urutan_pertanyaan: "2", pertanyaan: "Bagaimana rumah tangganya?", jawaban: "" } } : (tj[kode] || []).map((r) => ({ urutan_pertanyaan: r.no, pertanyaan: r.tanya, jawaban: r.jawab }));
       return html(`<div class="panel-heading"><b><big>581/Pdt.G/2026/PA.Dgl</big></b> - TanyaJwb Saksi : <b>Nama Saksi</b></div><select><option value='A1a'>(A1a) Pertanyaan Saksi P CG</option></select><script>var ajax_data = ${JSON.stringify(rows)}\n</script>`);
     }
     if (url.startsWith(`${ABT}/preview?`)) {
+      if (p.rtfBytes) return new Response(new Blob([p.rtfBytes as BlobPart]), { status: 200, headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="581/Pdt.G/2026/PA.Dgl - ${BLANGKO_PUT}.rtf"` } });
       return new Response(RTF_PUT(abt["0007"] || "..."), { status: 200, headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="581/Pdt.G/2026/PA.Dgl - ${BLANGKO_PUT}.rtf"` } });
     }
     if (url === `${ABT}/main/anonim`) return new Response(RTF_PUT("ANONIM"), { status: 200, headers: { "content-disposition": 'attachment; filename="anonim_581.rtf"' } });
@@ -281,7 +290,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   w.Element.prototype.scrollIntoView = function () {};
   w.HTMLElement.prototype.focus = function () {};
   w.eval(SUMBER);
-  return { dom, w, simpanan, minta, latar, abt, tj, pdfRtf };
+  return { dom, w, simpanan, minta, latar, abt, tj, pdfRtf, opsi: p };
 }
 
 const D_ = (h: Halaman) => h.w.document as Document;
@@ -561,6 +570,46 @@ describe("F. perlu diisi", () => {
     await sampai(() => /tersimpan di ABT/.test(akar(h).textContent || ""), "keterangan tersimpan");
   });
 
+  it("audit 17 Okt: nilai ABT bergaris baru tampil di textarea utuh; fokus yang sekadar lewat tidak menulis ke ABT", async () => {
+    const h = buka({ abtAwal: { "0007": "dikaruniai 2 orang anak:\n1. Anak Satu;\n2. Anak Dua;" } });
+    await pilihPutusan(h);
+    const el = (await sampai(() => q(h, "#bd-i0007"), "kotak 0007")) as HTMLTextAreaElement;
+    expect(el.tagName).toBe("TEXTAREA");
+    expect(el.value).toBe("dikaruniai 2 orang anak:\n1. Anak Satu;\n2. Anak Dua;");
+    el.dispatchEvent(new h.w.FocusEvent("focusout", { bubbles: true }));
+    const kotak8503 = q(h, "#bd-i8503") as HTMLInputElement | null;
+    kotak8503?.dispatchEvent(new h.w.FocusEvent("focusout", { bubbles: true }));
+    await tunggu(300);
+    expect(mintaKe(h, /edit_data\?no_var=(0007|8503)/, "POST")).toEqual([]);
+    expect(h.abt["0007"]).toBe("dikaruniai 2 orang anak:\n1. Anak Satu;\n2. Anak Dua;");
+    // Yang benar-benar diketik tetap tersimpan, garis barunya utuh.
+    ketik(h, el as unknown as HTMLInputElement, "dikaruniai 1 orang anak:\n1. Anak Satu;");
+    await sampai(() => h.abt["0007"] === "dikaruniai 1 orang anak:\n1. Anak Satu;", "tersimpan utuh");
+  });
+
+  it("audit 17 Okt: bacaan ABT gagal -> Muat/Tambah baris/Simpan mati dan simpan ditolak, keterangan lama di ABT tidak terhapus", async () => {
+    const h = buka({ tjGagal: true });
+    await pilihPutusan(h);
+    (q(h, '[data-tj="saksi 1 p"]') as HTMLElement).click();
+    await sampai(() => /ABT menjawab 500/.test(akar(h).textContent || ""), "bacaan gagal tampil");
+    for (const k of ["muattpl", "tambahtj", "simpantj"]) expect((q(h, `[data-bd2="${k}"]`) as HTMLButtonElement).disabled).toBe(true);
+    // Tombol dipaksa hidup (mis. gambar ulang tertinggal): simpan tetap ditolak tanpa menulis ke ABT.
+    const tb = q(h, '[data-bd2="tambahtj"]') as HTMLButtonElement;
+    tb.disabled = false;
+    tb.click();
+    const ta = q(h, '[data-sba="0"][data-sk="0"]') as HTMLTextAreaElement | null;
+    if (ta) {
+      ta.value = "Jawaban baru;";
+      ta.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    }
+    const sp = q(h, '[data-bd2="simpantj"]') as HTMLButtonElement;
+    sp.disabled = false;
+    sp.click();
+    await sampai(() => /belum terbaca/.test(akar(h).textContent || ""), "simpan ditolak");
+    expect(mintaKe(h, /tanyajawab_perkara_edit\?aksi=simpan/, "POST")).toEqual([]);
+    expect(h.tj["5058"].length).toBe(2);
+  });
+
   it("F3.3 set pertanyaan saksi ALETA: disarankan menurut jenis perkara, dimuat ke dua saksi tanpa menulis ke ABT, tambahan disisipkan sebelum penutup", async () => {
     const h = buka();
     await pilihPutusan(h);
@@ -613,6 +662,28 @@ describe("F. perlu diisi", () => {
     klik(h, '[data-lihat="ringkas"]');
     const brs = await sampai(() => q(h, ".bd-brs"), "baris");
     expect(brs.textContent).toMatch(/Terisi \d+ dari \d+|Isian lengkap/);
+  });
+
+  it("audit 17 Okt: Super Admin 'Lihat sebagai' hakim - susunan isian diminta dengan sebagaiPeran=hakim; tanpa meniru tidak dikirim", async () => {
+    const h = buka({ orang: "admin" });
+    await sampaiPerkara(h);
+    const sel = (await sampai(() => q(h, "#bd-lihat"), "pilihan lihat sebagai")) as HTMLSelectElement;
+    sel.value = "hakim|Hakim Satu";
+    sel.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    await sampai(() => h.minta.some((m) => m.url.includes("peranSebagai=hakim")), "daftar sebagai hakim");
+    await sampai(() => q(h, '[data-pk="581/Pdt.G/2026/PA.Dgl"]'), "daftar termuat ulang");
+    klik(h, '[data-pk="581/Pdt.G/2026/PA.Dgl"]');
+    await sampai(() => q(h, '[data-bd2="bukamodal"]'), "tombol pilih blangko");
+    klik(h, '[data-bd2="bukamodal"]');
+    await sampai(() => q(h, `[data-bl="${BLANGKO_PUT}"]`), "berkas putusan termuat");
+    klik(h, `[data-bl="${BLANGKO_PUT}"]`);
+    const susun = await sampai(() => h.minta.find((m) => /\/aleta-ecourt\/blangko-derry\?folder=/.test(m.url)), "susunan diminta");
+    expect(new URL(susun.url, ASAL).searchParams.get("sebagaiPeran")).toBe("hakim");
+    // Admin yang tidak meniru: tidak mengirim sebagaiPeran.
+    const a = buka({ orang: "admin" });
+    await pilihPutusan(a);
+    const s2 = a.minta.find((m) => /\/aleta-ecourt\/blangko-derry\?folder=/.test(m.url))!;
+    expect(new URL(s2.url, ASAL).searchParams.get("sebagaiPeran")).toBeNull();
   });
 });
 
@@ -725,6 +796,197 @@ describe("G. pratinjau dan cetak", () => {
     expect(idxPict).toBeLessThan(idxNama);
     expect(rtf.indexOf("\\pict", idxPict + 5)).toBe(-1); // hanya satu tanda tangan
     await sampai(() => /tanda tangan: Hakim Satu/.test(akar(h).textContent || ""), "log ttd");
+  });
+});
+
+describe("audit 17 Okt: perbaikan isian ABT", () => {
+  it("E3: hak ditolak ABT -> pratinjau & Cetak tidak meminta naskah; Coba lagi memeriksa hak ulang dan membuka isian bila kini diizinkan", async () => {
+    const h = buka({ hakTolak: true });
+    await sampaiPerkara(h);
+    klik(h, '[data-bd2="bukamodal"]');
+    await sampai(() => q(h, `[data-bl="${BLANGKO_PUT}"]`), "berkas");
+    klik(h, `[data-bl="${BLANGKO_PUT}"]`);
+    await sampai(() => q(h, "#aleta-bd-akar .bd-peringatan"), "peringatan");
+    klik(h, '[data-bd2="bukaprat"]');
+    klik(h, '[data-bd2="cetak"]');
+    await tunggu(80);
+    expect(mintaKe(h, /abt\/preview\?/)).toEqual([]);
+    expect(mintaKe(h, /main\/anonim$/)).toEqual([]);
+    expect(h.latar.filter((m) => m.jenis === "unduh")).toEqual([]);
+    // Coba lagi: hak diperiksa ulang (POST main/cari kedua), bukan hanya membaca isian.
+    h.opsi.hakTolak = false;
+    klik(h, '[data-bd2="ulangsusunan"]');
+    await sampai(() => q(h, "#bd-perlu .bd-f"), "isian terbuka setelah diizinkan");
+    expect(mintaKe(h, /main\/cari$/, "POST").length).toBe(2);
+    klik(h, '[data-bd2="muatprat"]');
+    await sampai(() => mintaKe(h, /abt\/preview\?/).length === 1, "pratinjau jalan setelah diizinkan");
+  });
+});
+
+describe("audit 17 Okt: E4 tanya jawab yang sudah ada di ABT", () => {
+  it("E4: kodeUntukNilai membaca tanya-jawab (penanda dan penyuntingnya); peringatan cetak tidak menyebut saksi yang sudah punya baris di ABT", async () => {
+    const s = susunIsian(PENANDA_PUT, KATALOG, { P: "Penggugat", T: "Tergugat" });
+    const tjb = s.isian.filter((b) => b.jenis === "tj");
+    expect(tjb.length).toBeGreaterThan(0);
+    const dibaca = kodeUntukNilai(s, false);
+    for (const b of tjb) {
+      expect(dibaca).toContain(b.kode);
+      if (b.tj?.kodeSunting) expect(dibaca).toContain(b.tj.kodeSunting);
+    }
+    const h = buka();
+    await pilihPutusan(h);
+    await sampai(() => q(h, '[data-bk="P.1"][data-isi="no"]'), "bukti");
+    klik(h, '[data-bd2="cetak"]');
+    const ingat = await sampai(() => {
+      const e = q(h, "#bd-ingat");
+      return e && !e.hidden ? e : null;
+    }, "pengingat");
+    // Saksi 1 P punya 2 baris di ABT (tanpa dibuka di layar); saksi 2 P kosong.
+    expect(ingat.textContent).not.toMatch(/tanya jawab saksi 1/i);
+    expect(ingat.textContent).toMatch(/tanya jawab saksi 2/i);
+  });
+});
+
+describe("audit 17 Okt: E5 huruf cp1252 yang tercetak rusak", () => {
+  it("E5 murni: normalAbt mengganti – — … “ ” ‘ ke bentuk aman, ’ dan huruf biasa dibiarkan", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    const h = x.normalAbt("A – B — C … “D” ‘E’ F’ é");
+    expect(h.teks).toBe("A - B - C ... \"D\" 'E’ F’ é"); // ’ penutup dibiarkan
+    expect(h.diganti).toEqual(["–", "—", "…", "“", "”", "‘"]);
+    expect(x.normalAbt("tanpa perubahan ’ é").diganti).toEqual([]);
+  });
+
+  it("E5 isian: yang tersimpan ke ABT sudah bentuk aman dan petugas diberi tahu apa yang diganti; tanya jawab juga", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    const i = q(h, "#bd-i0007") as HTMLInputElement;
+    ketik(h, i, "dua anak – laki-laki … “baik”");
+    await sampai(() => h.abt["0007"], "tersimpan");
+    expect(h.abt["0007"]).toBe("dua anak - laki-laki ... ’baik’"); // " menjadi ’ oleh klien (petik data_sql)
+    expect(q(h, '[data-status="0007"]')!.textContent).toContain("diganti");
+    expect(q(h, '[data-status="0007"]')!.textContent).toContain("–");
+    expect(i.value).toBe("dua anak - laki-laki ... \"baik\"");
+
+    klik(h, '[data-tj="saksi 1 p"]');
+    await sampai(() => q(h, ".bd-sbs .bd-sbrow"), "berdampingan");
+    const ta = q(h, '[data-sba="0"][data-sk="0"]') as HTMLTextAreaElement;
+    ta.value = "Kenal – sejak kecil…";
+    ta.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    klik(h, '[data-bd2="simpantj"]');
+    await sampai(() => h.tj["5058"].some((r) => r.jawab.includes("sejak")), "tj tersimpan");
+    expect(h.tj["5058"][0].jawab).toBe("Kenal - sejak kecil...");
+    expect(akar(h).textContent).toContain("diganti");
+  });
+});
+
+describe("audit 17 Okt: E6 alat bukti 'tulis manual'", () => {
+  it("E6: kalimat manual berakhir 'T.3.' tidak menjadi 'T.3.;'; kode bentuk lain ('tanda bukti P.5') diganti, bukan ditambah kode kedua", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    const manual = (m: string) => ({ nm: "", an: "", no: "", tgl: "", oleh: "", meterai: 0, cocok: 0, manual: m });
+    const a = x.kalimatBukti(manual("Bukti tersebut telah diberi meterai cukup kemudian diberi tanda pada surat tersebut dengan tanda T.3."), "T", 1);
+    expect(a).toBe("Bukti tersebut telah diberi meterai cukup kemudian diberi tanda pada surat tersebut dengan tanda T.2.");
+    expect(a).not.toMatch(/\.;/);
+    const b = x.kalimatBukti(manual("Fotokopi Kartu Keluarga, telah diberi tanda bukti P.5 oleh Ketua Majelis;"), "P", 0);
+    expect(b).toBe("Fotokopi Kartu Keluarga, telah diberi tanda bukti P.1 oleh Ketua Majelis;");
+    expect(b.match(/\b[PT]\.\d+/g)).toEqual(["P.1"]);
+    // Tanpa kode sama sekali: ekor baku ditambahkan, ditutup ';' (perilaku lama tetap).
+    expect(x.kalimatBukti(manual("Surat perjanjian"), "P", 2)).toBe("Surat perjanjian, lalu diberi tanda P.3 serta diberi tanggal dan paraf oleh Ketua Majelis;");
+  });
+});
+
+describe("audit 17 Okt: E10 isian C/H langsung muncul saat 8503 diketik", () => {
+  it("E10: mengetik C/H di 8503 (tanpa meninggalkan kotak) langsung memunculkan 8536/0227; mengganti ke F menyembunyikannya lagi", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(false);
+    const i = q(h, "#bd-i8503") as HTMLInputElement;
+    ketik(h, i, "C", false); // hanya peristiwa input, belum blur/simpan
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(true);
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "H", false);
+    expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(true);
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(false);
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "F", false);
+    expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(false);
+  });
+});
+
+describe("audit 17 Okt: E7 huruf alasan 8503 dibaca seperti ABT", () => {
+  const TABEL: Array<[string, string]> = [
+    ["F", "F"],
+    ["BF", "BF"],
+    ["fb", "BF"],
+    ["F dan B", "BF"],
+    ["F, B", "BF"],
+    ["A+F", "AF"],
+    ["Murtad", "H"],
+    [" fasakh ", "H"],
+    ["huruf F", ""],
+    ["F · terus-menerus berselisih dan bertengkar", "F"],
+    ["F·perselisihan", "F"],
+    ["", ""],
+    ["Z", ""],
+  ];
+  it("E7: pembaca huruf di ekstensi dan portal (hurufAlasan) sama dan mengikuti aturan ABT ('F dan B' = BF, Murtad = H, teks bebas = tidak dikenal)", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    for (const [masuk, harapan] of TABEL) {
+      expect(x.hurufAlasanDari(masuk), `ekstensi: ${JSON.stringify(masuk)}`).toBe(harapan);
+      expect(hurufAlasan(masuk), `portal: ${JSON.stringify(masuk)}`).toBe(harapan);
+    }
+  });
+
+  it("E7: 8503 'Murtad' memunculkan isian H, 'huruf F' tidak memunculkan apa pun dan diberi peringatan; pemicu basi dari ABT tidak menahan isian C sesudah huruf diganti", async () => {
+    const h = buka({ abtAwal: { "8503": "C", "11116": "(WAJIB ISI) alasan C" } });
+    await pilihPutusan(h);
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(true); // C dari ABT
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "F", false); // mengganti huruf menggambar ulang kotak (isian C hilang)
+    q(h, "#bd-i8503")!.dispatchEvent(new h.w.FocusEvent("focusout", { bubbles: true })); // blur pada kotak yang kini tampil
+    await sampai(() => h.abt["8503"] === "F", "8503 tersimpan");
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(false); // pemicu 11116 basi di ABT tidak menahan
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "Murtad", false);
+    expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(true);
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "huruf F", false);
+    expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(false);
+    expect(q(h, '[data-peringatan="8503"]')!.textContent).toMatch(/tidak mengenali "huruf F"/);
+  });
+});
+
+describe("audit 17 Okt: E8 byte 0x80-0x9F RTF ke PDF", () => {
+  it("E8: RTF dengan byte mentah 0x80-0x9F dikirim ke pengubah PDF persis sama (latin1 biner, bukan cp1252 yang dipetakan ulang)", async () => {
+    const mentah = RTF_PUT("dua anak \u0093baik\u0094 \u0096 \u0080 \u009f ok");
+    const bita = new Uint8Array(Buffer.from(mentah, "latin1"));
+    expect(Array.from(bita)).toEqual(expect.arrayContaining([0x93, 0x94, 0x96, 0x80, 0x9f]));
+    const h = buka({ rtfBytes: bita });
+    await pilihPutusan(h);
+    await sampai(() => q(h, '[data-bk="P.1"][data-isi="no"]'), "bukti");
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => {
+      const e = q(h, "#bd-ingat");
+      return e && !e.hidden ? e : null;
+    }, "pengingat");
+    klik(h, '[data-bd2="tetapcetak"]');
+    await sampai(() => h.pdfRtf.length >= 1, "PDF dibuat", 8000);
+    expect(h.pdfRtf[0]).toBe(mentah);
+  });
+});
+
+describe("audit 17 Okt: E9 sel tabel berparagraf banyak di pratinjau", () => {
+  it("E9: satu sel dengan beberapa \\par tetap SATU <td> (tidak pecah jadi banyak kolom); \\par sebelum \\cell tidak menambah kolom kosong", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    const rtf = (isi: string) => `{\\rtf1\\ansi\\pard Sebelum\\par ${isi}\\pard Sesudah\\par}`;
+    const banyak = x.rtfKeHtml(rtf("\\trowd\\cellx3000\\cellx6000\\pard\\intbl Satu\\par Dua\\par Tiga\\cell Kanan\\cell\\row"));
+    const baris = banyak.match(/<tr>[\s\S]*?<\/tr>/g) ?? [];
+    expect(baris.length).toBe(1);
+    const sel = baris[0].match(/<td[^>]*>[\s\S]*?<\/td>/g) ?? [];
+    expect(sel.length).toBe(2);
+    expect(sel[0]).toContain("Satu<br>Dua<br>Tiga");
+    expect(sel[1]).toContain("Kanan");
+    // Word menutup sel dengan \par\cell: tidak boleh jadi dua sel / baris kosong tambahan.
+    const penutup = x.rtfKeHtml(rtf("\\trowd\\cellx3000\\cellx6000\\pard\\intbl Kiri\\par\\cell Kanan\\par\\cell\\row"));
+    const sel2 = (penutup.match(/<tr>[\s\S]*?<\/tr>/g) ?? [""])[0].match(/<td[^>]*>[\s\S]*?<\/td>/g) ?? [];
+    expect(sel2.length).toBe(2);
+    expect(sel2[0]).not.toContain("<br>");
+    // Teks polos (pencarian penanda/nama penandatangan) tetap satu kolom per sel.
+    expect(x.rtfKeTeks(rtf("\\trowd\\cellx3000\\cellx6000\\pard\\intbl Satu\\par Dua\\cell Kanan\\cell\\row"))).toContain("Satu\nDua\tKanan");
   });
 });
 

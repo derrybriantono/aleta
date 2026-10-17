@@ -1,8 +1,7 @@
 import { isPrivilegedAdmin } from "@/lib/permissions";
-import { namaCocokSatu } from "@/lib/perkara-sendiri";
 import { type RoleId } from "@/lib/types";
 import { type AletaDatabase } from "@/server/db/client";
-import { getGatewayKonseptorKeadaan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { PERAN_PENGAWAS_PUTUSAN, pastikanMilikPerkara } from "@/server/modules/aleta-ecourt/hak-milik-perkara";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { ApiError } from "@/server/shared/errors";
 
@@ -77,38 +76,21 @@ export async function pastikanBolehUnggahPutusan(db: AletaDatabase, actorUserId:
   return { actor, peran };
 }
 
-export const PESAN_TOLAK_MAJELIS =
-  "Hakim hanya dapat mengunggah putusan perkara yang majelisnya ia duduki. Ketua, Wakil Ketua, dan Admin dapat mengunggah putusan semua perkara.";
-
-type BacaMajelis = typeof getGatewayKonseptorKeadaan;
-
 /**
  * Keputusan 16 Okt 2026: hakim hanya putusan perkara MAJELISNYA; Ketua, Wakil
- * Ketua, Admin, Super Admin semua perkara. Dulu hanya ditegakkan di menu ABT -
- * rute yang menulis putusan ke SIPP meloloskan hakim untuk perkara mana pun.
- * Majelis = hakim AKTIF perkara_hakim_pn (bot, SELECT). Tak terbaca = ditolak
- * (unggahannya juga lewat bot yang sama), dengan kalimat yang jujur.
+ * Ketua, Admin, Super Admin semua perkara. SATU penjaga untuk semua rute tulis
+ * putusan (unggah-sipp memanggil pastikanMilikPerkara langsung; sidang-putus
+ * lewat fungsi ini): sumber dan pencocok nama sama dengan layar Unggah massal
+ * (hak-milik-perkara). Majelis tak terbaca = ditolak dengan kalimat jujur.
  */
 export async function pastikanMajelisPutusan(
   actor: { name?: string | null } | null | undefined,
   peran: RoleId,
-  perkaraId: unknown,
-  baca?: BacaMajelis
+  perkaraId: unknown
 ): Promise<void> {
-  if (peran !== "hakim") return;
+  if (PERAN_PENGAWAS_PUTUSAN.has(String(peran))) return;
   const pid = String(perkaraId ?? "").trim();
   if (!/^\d{1,12}$/.test(pid)) throw new ApiError(400, "Nomor perkara SIPP (perkara_id) tidak sah.");
-  let jawab: Awaited<ReturnType<BacaMajelis>> | null = null;
-  try {
-    jawab = await (baca ?? getGatewayKonseptorKeadaan)([pid]);
-  } catch {
-    jawab = null;
-  }
-  const data = jawab && jawab.ok ? jawab.data : null;
-  const gagalMajelis = (data?.gagal ?? []).some((g) => g?.bagian === "majelis");
-  if (!data?.perkara || gagalMajelis) {
-    throw new ApiError(503, "Majelis perkara ini belum dapat dibaca dari SIPP, jadi hak unggah hakim belum dapat dipastikan. Coba lagi sebentar.");
-  }
-  const majelis = (data.perkara[pid]?.majelis ?? []).map((m) => String(m?.nama ?? ""));
-  if (!majelis.some((n) => namaCocokSatu(String(actor?.name ?? ""), n))) throw new ApiError(403, PESAN_TOLAK_MAJELIS);
+  const milik = await pastikanMilikPerkara({ jenis: "putusan", perkaraId: pid, namaAkun: String(actor?.name ?? ""), pengawas: false });
+  if (!milik.ok) throw new ApiError(milik.status, milik.pesan);
 }

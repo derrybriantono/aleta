@@ -475,10 +475,60 @@ export function susunIsian(
 export function jenisFolderDerry(nama: string): "put" | "bas" | "rel" | "ptsp" | "" {
   const n = String(nama || "").trim();
   if (!n) return "";
-  if (/^relaas/i.test(n)) return "rel";
-  if (/^ptsp/i.test(n)) return "ptsp";
-  if (/^(alur\s*\d|bas\b|-\s*bas)/i.test(n)) return "bas";
+  // Server 17 Okt: folder bernomor ("98 Relaas", "99 PTSP") dan pasangan BAS bernama "<Jenis> - BAS".
+  const polos = n.replace(/^\d+[a-z]?\s+/i, "");
+  if (/^relaas/i.test(polos)) return "rel";
+  if (/^ptsp/i.test(polos)) return "ptsp";
+  if (/^(alur\s*\d|bas\b|-\s*bas)/i.test(n) || /\s-\s*bas\s*$/i.test(n)) return "bas";
   return "put";
+}
+
+export type JenisDokumenDerry = "put" | "bas" | "rel" | "ptsp";
+export type PeranTiruan = "hakim" | "pp" | "js";
+
+/** Jenis dokumen sebuah folder dari jalur ("derry_briantono/98 Relaas" atau "98 Relaas"); "" bila tak dikenal. */
+export function jenisFolderDariJalur(jalur: string): JenisDokumenDerry | "" {
+  const potong = String(jalur || "").replace(/^\/+|\/+$/g, "").split("/");
+  const nama = potong[0] === "derry_briantono" ? potong[1] || "" : potong[0] || "";
+  return jenisFolderDerry(nama);
+}
+
+/**
+ * Jenis dokumen yang boleh dibuka akun ini (17 Okt 2026, temuan C6) - cermin jenisDokumenBoleh di ekstensi,
+ * tetapi dari SESI (golongan akun), bukan dari klien. Keputusan pengguna 9 & 16 Okt:
+ *   putusan = hakim, Ketua/Wakil · BAS = PP, panitera, panmud · relaas = juru sita (dan pengganti) · PTSP = PTSP
+ * Super Admin/Admin tanpa "Lihat sebagai" = semuanya; dengan sebagaiPeran = satu peran itu saja.
+ * Saklar Pengaturan SIPP & ABT menambah: hakim -> BAS, PP -> putusan (relaas tidak pernah).
+ */
+export function jenisDokumenAkun(o: {
+  admin: boolean;
+  golongan: readonly string[];
+  sebagaiPeran?: PeranTiruan | null;
+  saklar?: { hakimBas?: boolean; ppPutusan?: boolean } | null;
+}): JenisDokumenDerry[] {
+  if (o.admin && !o.sebagaiPeran) return ["put", "bas", "rel", "ptsp"];
+  const peran = new Set<PeranTiruan | "ptsp">();
+  if (o.admin && o.sebagaiPeran) peran.add(o.sebagaiPeran);
+  else {
+    for (const g of o.golongan) {
+      if (g === "hakim" || g === "pimpinan") peran.add("hakim");
+      else if (g === "pp" || g === "panitera" || g === "panmud" || g === "analis-perkara") peran.add("pp");
+      else if (g === "jurusita") peran.add("js");
+      else if (g === "ptsp") peran.add("ptsp");
+    }
+  }
+  const boleh = new Set<JenisDokumenDerry>();
+  if (peran.has("hakim")) {
+    boleh.add("put");
+    if (o.saklar?.hakimBas === true) boleh.add("bas");
+  }
+  if (peran.has("pp")) {
+    boleh.add("bas");
+    if (o.saklar?.ppPutusan === true) boleh.add("put");
+  }
+  if (peran.has("js")) boleh.add("rel");
+  if (peran.has("ptsp")) boleh.add("ptsp");
+  return (["put", "bas", "rel", "ptsp"] as const).filter((j) => boleh.has(j));
 }
 
 /** Sebutan pihak dari jenis/nomor perkara: Pdt.P dan cerai talak = Pemohon/Termohon. */
@@ -504,6 +554,30 @@ export function folderPalingCocok(
     if (cocok > 0 && (!terbaik || cocok > terbaik.cocok)) terbaik = { nama: f.nama, cocok };
   }
   return terbaik;
+}
+
+/**
+ * Kode yang nilainya dibaca bot untuk satu blangko. Tanpa `semua`: isian tangan + pemicu (cepat); dengan `semua`:
+ * seluruh penanda. Tanya-jawab ikut dibaca (kode penanda dan kode penyuntingnya) supaya tanya-jawab yang SUDAH ada
+ * di ABT tidak tampil kosong dan "Penting" di peringatan cetak.
+ */
+export function kodeUntukNilai(susunan: Susunan, semua: boolean): string[] {
+  const tj = [...kodeTanyaJawab(susunan)];
+  const dasar = semua
+    ? [...susunan.penanda, ...susunan.isian.map((b) => b.kode), ...susunan.otomatis.map((o) => o.kode), ...susunan.pemicu.map((p) => p.kode), ...tj]
+    : [...susunan.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...susunan.pemicu.map((p) => p.kode), ...tj];
+  return [...new Set(dasar)];
+}
+
+/** Kode tanya-jawab (penanda dan penyuntingnya): nilainya tabel, teks kosongnya bukan tanda belum diisi. */
+export function kodeTanyaJawab(susunan: Susunan): Set<string> {
+  const k = new Set<string>();
+  for (const b of susunan.isian) {
+    if (b.jenis !== "tj") continue;
+    k.add(b.kode);
+    if (b.tj?.kodeSunting) k.add(b.tj.kodeSunting);
+  }
+  return k;
 }
 
 export type NilaiPenanda = { status: string; teks: string; nama: string; sebab: string };

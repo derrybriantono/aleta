@@ -20859,7 +20859,9 @@ function a30PetaRtf(rtf) {
       }
       if (n === "'") {
         const kode = parseInt(s.slice(i + 2, i + 4), 16);
-        if (!lewati && Number.isFinite(kode)) tambah(String.fromCharCode(kode), i, i + 4, false);
+        // 17 Okt: \'80-\'9f adalah cp1252 (\'92 = ’ dalam "Nur’aini"), bukan aksara kendali Latin-1.
+        const CP1252 = "€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ";
+        if (!lewati && Number.isFinite(kode)) tambah(kode >= 0x80 && kode <= 0x9f ? CP1252[kode - 0x80] : String.fromCharCode(kode), i, i + 4, false);
         i += 4;
         continue;
       }
@@ -20883,6 +20885,7 @@ function a30PetaRtf(rtf) {
       }
       if (kata === "par" || kata === "line" || kata === "sect" || kata === "page" || kata === "row") tambah("\n", mulai, i, true);
       else if (kata === "tab" || kata === "cell") tambah(" ", mulai, i, true);
+      else if (kata === "rquote" || kata === "lquote") tambah(kata === "rquote" ? "’" : "‘", mulai, i, false);
       else if (kata === "u" && m[2] !== undefined) {
         let kode = Number(m[2]);
         if (kode < 0) kode += 65536;
@@ -20953,9 +20956,10 @@ function a30SamarkanSisaRtf(rtf, data) {
   // Bukti P.1 menulis "KTP-el atas nama ..., NIK 72032567...": ABT tidak
   // menyentuh NIK, dan pemeriksa hanya menanyakannya. Bentuk samarannya sama
   // dengan anonimisasi satker yang sudah terbit ("NIK xxxxxxxxxxxxxxxx").
-  for (const m of t.matchAll(/(^|[^\d])(\d{16})(?=[^\d]|$)/g)) {
+  // 17 Okt: juga NIK/KK berpemisah ("72.03.01.410190.0001", "7203 0141 0190 0001") - tepat 16 angka.
+  for (const m of t.matchAll(/(^|[^\d])(\d(?:[ .-]?\d){15})(?=[^\d]|$)/g)) {
     const mulai = m.index + m[1].length;
-    const akhir = mulai + 16;
+    const akhir = mulai + m[2].length;
     if (!bebas(mulai, akhir)) continue;
     for (let k = mulai; k < akhir; k += 1) terpakai[k] = 1;
     ganti.push({ mulai, akhir, menjadi: "x".repeat(16), jenis: "NIK", kata: m[2] });
@@ -21195,7 +21199,9 @@ function a30AmanKata(teks, spasiLentur) {
     .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
     .replace(/\\\.\s+/g, "\\.?\\s*")
     .replace(/\s+/g, spasiLentur ? "\\s*" : "\\s+")
-    .replace(/\\\.(?!\?)/g, "\\.?");
+    .replace(/\\\.(?!\?)/g, "\\.?")
+    // 17 Okt: apostrof nama lentur dan boleh tidak ada - "Nur'aini" = "Nur’aini" = "Nuraini" (paritas portal lenturkanApostrof).
+    .replace(/['’‘`´\u0092]/g, "['’‘`´\\u0092]?");
 }
 
 /** Data pribadi yang masih utuh di teks anonim, beserta potongan kalimat di sekitarnya. */
@@ -21212,7 +21218,7 @@ function a30PeriksaAnonim(teks, data) {
       konteks: `${awal > 0 ? "…" : ""}${t.slice(awal, akhir).replace(/\s+/g, " ")}${akhir < t.length ? "…" : ""}`,
     });
   };
-  for (const m of t.matchAll(/(?<!\d)\d{16}(?!\d)/g)) catat("NIK", m[0], m.index, "");
+  for (const m of t.matchAll(/(?<!\d)\d(?:[ .-]?\d){15}(?!\d)/g)) catat("NIK", m[0], m.index, "");
   for (const n of (data && data.nama) || []) {
     // 12OKT-I: pola yang SAMA dengan penyamar (spasi lentur; potongan depan
     // hanya sesudah "bernama") - yang dicari pemeriksa = yang disamarkan.

@@ -773,10 +773,19 @@ function jenisDariTeks(j: string, nomor: string, sebutanP: string): KodeJenisSak
   return "umum";
 }
 
-/** Huruf alasan A-H dari isian #8503# ("BF", "F·...", "fb"). */
+/**
+ * Huruf alasan A-H dari isian #8503#, dibaca seperti kueri ABT (hapus "DAN", "&", ",", spasi, "+", "/", ".", "-" lalu per
+ * huruf; FASAKH/MURTAD = H): "BF", "fb", "F dan B" = BF, "Murtad" = H. Bentuk pilihan ALETA "F · uraian" dibaca hurufnya
+ * saja. Teks bebas ("huruf F") TIDAK dikenal -> "" (huruf tidak ditebak dari kata-katanya). Sama dengan hurufAlasanDari
+ * di ekstensi-sipp/blangko-derry-isian.js.
+ */
 export function hurufAlasan(teks: string): string {
-  const depan = String(teks || "").split("·")[0].toUpperCase();
-  return [...new Set(depan.replace(/[^A-H]/g, "").split(""))].sort().join("");
+  const v = String(teks ?? "").trim();
+  const depan = v.match(/^([A-Ha-h]+)\s*·/);
+  const u = v.toUpperCase();
+  const n = depan ? depan[1].toUpperCase() : /^(FASAKH|MURTAD)$/.test(u) ? "H" : u.replace(/DAN/g, "").replace(/[&,;+/.\s-]/g, "");
+  if (!/^[A-H]+$/.test(n)) return "";
+  return [...new Set(n.split(""))].sort().join("");
 }
 
 export type KonteksSaksi = {

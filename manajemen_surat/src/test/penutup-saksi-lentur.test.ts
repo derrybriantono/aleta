@@ -125,6 +125,38 @@ const BIASA = [
   "",
 ];
 
+/**
+ * 17 Okt 2026 - keputusan pengguna: "Pokoknya hapus kalimat penutup seperti itu semuanya, jangan
+ * hapus keterangan yang berhubungan dengan perkara." Dua kelompok yang dijaga bersama.
+ */
+const PENUTUP_17OKT = [
+  "Bahwa tidak ada lagi yang ingin disampaikan",
+  "Bahwa tidak ada lagi yang ingin diterangkan",
+  "Bahwa tidak ada lagi yang saksi ketahui",
+  "Bahwa tidak ada lagi yang saya ketahui",
+  "Bahwa tidak ada hal lain yang saya ketahui",
+  "Bahwa tidak ada yang saksi ketahui lagi",
+  "Bahwa sudah cukup",
+  "Bahwa tidak ada lagi keterangan",
+  "Bahwa cukup sekian",
+  "Bahwa saksi tidak mampu lagi memberikan keterangan",
+  "Bahwa saya tidak kuat lagi menjawab",
+];
+const PERKARA_17OKT = [
+  "Bahwa tidak kuat lagi",
+  "Bahwa saya tidak kuat lagi",
+  "Bahwa tidak mampu lagi",
+  "Bahwa saksi tidak mampu lagi merukunkan",
+  "Tidak ada yang diketahui tentang sebab perselisihan",
+  "Bahwa tidak ada yang saya ketahui",
+  "Bahwa tidak ada yang saksi ketahui",
+  "Penggugat tidak mampu lagi",
+  "Bahwa Penggugat sudah tidak kuat lagi",
+  "tidak sanggup lagi menunggu tergugat",
+  "Bahwa sudah cukup lama berpisah",
+  "Bahwa tidak sanggup lagi hidup bersama Tergugat",
+];
+
 describe("F1.3 - penutup keterangan saksi, bentuk lentur", () => {
   const ek = ekstensi();
 
@@ -148,6 +180,24 @@ describe("F1.3 - penutup keterangan saksi, bentuk lentur", () => {
     for (const k of [...PENUTUP, ...BIASA]) {
       expect(ek.adalahKalimatPenutupSaksi(k)).toBe(bot.adalahKalimatPenutupSaksi(k));
     }
+  });
+
+  it.each(PENUTUP_17OKT)("17 Okt: penutup dihapus di ekstensi, bot & pembersih - %s", (kalimat) => {
+    expect(ek.adalahKalimatPenutupSaksi(kalimat)).toBe(true);
+    expect(bot.adalahKalimatPenutupSaksi(kalimat)).toBe(true);
+    expect(ek.bersihkanKeteranganSaksi(`- Bahwa Tergugat pergi sejak 2024;\n- ${kalimat};`)).toBe("- Bahwa Tergugat pergi sejak 2024;");
+  });
+
+  it.each(PERKARA_17OKT)("17 Okt: keterangan perkara TIDAK dihapus di ekstensi, bot & pembersih - %s", (kalimat) => {
+    expect(ek.adalahKalimatPenutupSaksi(kalimat)).toBe(false);
+    expect(bot.adalahKalimatPenutupSaksi(kalimat)).toBe(false);
+    expect(deteksi.POLA_PENUTUP_JAWAB.test(kalimat.replace(/^Bahwa[ ,]+/i, ""))).toBe(false);
+    expect(ek.bersihkanKeteranganSaksi(kalimat)).toBe(kalimat);
+    expect(ek.bersihkanKeteranganSaksi(`- Bahwa Tergugat pergi sejak 2024;\n- ${kalimat};`)).toContain(kalimat);
+  });
+
+  it("pembersih (bukan hanya pengenal) menyisakan SEMUA kalimat biasa - pola awalan tidak boleh memakan kalimat perkara", () => {
+    for (const k of BIASA.filter(Boolean)) expect(ek.bersihkanKeteranganSaksi(k)).toBe(k);
   });
 
   it("jawaban butir 'Susun Keterangan Saksi' (bot) memakai aturan yang sama", () => {

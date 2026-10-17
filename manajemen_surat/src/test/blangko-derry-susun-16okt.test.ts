@@ -141,7 +141,7 @@ const bridge = vi.fn();
 const queryAll = vi.fn();
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({ queryAll, queryOne: async () => null }) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "u1" }));
-vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: vi.fn(async () => ({ id: "u1", name: "Hakim Satu" })) }));
+vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: vi.fn(async () => ({ id: "u1", name: "Admin Uji", roleId: "super-admin" })) }));
 vi.mock("@/server/modules/aleta-sipp/aleta-sipp-datasource", () => ({ callAletaBotSippBridge: (...a: unknown[]) => bridge(...a) }));
 vi.mock("@/server/shared/admin-access-audit", () => ({ handleAdminRouteError: (e: unknown) => new Response(JSON.stringify({ ok: false, alasan: String((e as Error)?.message || e) }), { status: 500 }) }));
 
@@ -200,7 +200,7 @@ describe("B. GET /aleta-ecourt/blangko-derry", () => {
       if (op === "abt.nilaiPenanda") {
         expect(p.perkaraId).toBe("10154");
         expect(p.sidangKe).toBe(2);
-        expect((p.penanda as string[]).sort()).toEqual(["0156", "11111", "8503"]);
+        expect((p.penanda as string[]).sort()).toEqual(["0156", "11111", "2021", "5058", "8503"]); // 17 Okt (E4): tanya-jawab ikut dibaca (penanda + penyunting)
         return { ok: true, data: { ok: true, nilai: { "8503": { status: "terisi", teks: "F", nama: "ALASAN" }, "0156": { status: "kosong", teks: "" }, "11111": { status: "terisi", teks: "<mark>(WAJIB ISI INI KARENA KUASA)</mark>" } } } };
       }
       return { ok: false, error: "tidak dikenal" };

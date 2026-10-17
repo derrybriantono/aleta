@@ -190,6 +190,38 @@ describe("penyamar ekstensi atas putusan berbentuk 564 (sesudah ABT)", () => {
     expect(teks).toContain("Peraturan Mahkamah Agung");
   });
 
+  it("audit 17 Okt: nama berapostrof (\\'92, \\rquote, ' polos, tanpa apostrof) disamarkan dan terbaca pemeriksa ekstensi", () => {
+    const f = muatPenyamar();
+    const nama = "Nur'aini binti Ma'ruf";
+    const rtf =
+      "{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\pard PUTUSAN\\par " +
+      "Nur\\'92aini, sebagai Penggugat;\\par Bahwa saksi kenal NUR{\\rquote}AINI;\\par " +
+      "atas nama Nur'aini;\\par ditulis juga Nuraini;\\par }";
+    const teksAsli = f.a30TeksRtf(rtf);
+    expect(teksAsli).toContain("Nur’aini, sebagai");
+    expect(teksAsli).toContain("NUR’AINI");
+    const data = sasaranNama(f, [nama]);
+    const teks = f.a30TeksRtf(f.a30SamarkanSisaRtf(rtf, data).rtf);
+    expect(teks).not.toMatch(/nur.?aini/i);
+    expect(f.a30PeriksaAnonim(teksAsli, data).temuan.some((x) => x.jenis === "nama pihak")).toBe(true);
+  });
+
+  it("audit 17 Okt: NIK/KK berpemisah disamarkan & dilaporkan di ekstensi; 15/17 angka dan telepon utuh", () => {
+    const f = muatPenyamar();
+    const rtf =
+      "{\\rtf1\\ansi\\pard NIK 72.03.01.410190.0001;\\par KK 7203 0141 0190 0002;\\par NIK 7203-0141-0190-0003;\\par " +
+      "angka 720301410190000 dan 72030141019000041;\\par telepon 0822-7111-5021\\par }";
+    const data = { nama: [], alamat: [] };
+    const teksAsli = f.a30TeksRtf(rtf);
+    expect(f.a30PeriksaAnonim(teksAsli, data).temuan.filter((x) => x.jenis === "NIK")).toHaveLength(3);
+    const teks = f.a30TeksRtf(f.a30SamarkanSisaRtf(rtf, data).rtf);
+    expect(teks).toContain("NIK xxxxxxxxxxxxxxxx;");
+    expect(teks).toContain("KK xxxxxxxxxxxxxxxx;");
+    expect(teks).not.toMatch(/0190.?000[123]/);
+    expect(teks).toContain("720301410190000 dan 72030141019000041");
+    expect(teks).toContain("0822-7111-5021");
+  });
+
   it("SEBELUM perbaikan (sasaran hanya dipotong di bin/binti) nama itu lolos - sebab penolakan 564", async () => {
     const f = muatPenyamar();
     const lama = { nama: [{ teks: P1, dari: "SIPP" }, { teks: "Wulansari Pratiwi alias Wulan Sari Pratiwi", dari: "SIPP" }], alamat: [] };
@@ -316,6 +348,8 @@ vi.mock("@/server/shared/audit", () => ({
   },
 }));
 vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
+  // 17 Okt (audit A4): hakim hanya perkara majelisnya.
+  getGatewayUnggahMassalCek: async () => ({ ok: true, data: { ok: true, majelis: ["Hakim Uji"] } }),
   getGatewayStatusPerkara: async () => ({ ok: true, data: { identitas: { perkaraId: "10116" } } }),
   getGatewaySippKonteks: async () => ({
     ok: true,

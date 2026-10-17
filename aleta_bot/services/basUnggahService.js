@@ -50,6 +50,8 @@ const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
 const PERAN_BOLEH_UNGGAH_BAS = Object.freeze(["super-admin", "admin", "panitera", "panmud", "pp", "analis"]);
 const PESAN_TOLAK_BAS =
   "Unggah BAS ke SIPP hanya untuk Panitera Pengganti, Panitera, Panitera Muda, Admin, dan Super Admin. Peran Anda tidak diberi hak ini.";
+const PESAN_TOLAK_BAS_BUKAN_PP =
+  "Perkara ini bukan perkara Anda sebagai Panitera Pengganti, jadi BAS-nya tidak dapat diunggah dari akun Anda.";
 const FOLDER_DOC = "resources/file/doc";
 const BENTUK_SAH = ["rtf", "pdf", "doc", "docx"];
 
@@ -58,6 +60,12 @@ function periksaHakUnggahBas(badan) {
   const peran = String((badan && badan.peranPenekan) || "").trim().toLowerCase();
   if (!peran) return { ok: false, status: 403, alasan: "peran_penekan_tidak_disebut", pesan: PESAN_TOLAK_BAS };
   if (!PERAN_BOLEH_UNGGAH_BAS.includes(peran)) return { ok: false, status: 403, alasan: "peran_tidak_boleh_unggah_bas", pesan: PESAN_TOLAK_BAS };
+  // 17 Okt (audit A4): PP hanya BAS perkaranya sendiri. Portal mencocokkan namanya dengan PP aktif
+  // perkara itu dan menyatakannya lewat milikPerkara; pemanggil yang lupa memeriksa tertahan di sini.
+  // Panitera/panmud/analis/admin mengawasi semua perkara.
+  if (peran === "pp" && !(badan && badan.milikPerkara === true)) {
+    return { ok: false, status: 403, alasan: "pp_bukan_petugas_perkara", pesan: PESAN_TOLAK_BAS_BUKAN_PP };
+  }
   return { ok: true, peran };
 }
 

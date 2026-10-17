@@ -211,7 +211,7 @@
   // putusan") - keadaannya dibaca dari hak menu ABT lewat portal, gagal = mati.
   // Akun yang ditiru juga dibatasi per FOLDER seperti ABT (menu_cek: grup ATAU
   // grup "selalu boleh"; kosong = semua pengguna).
-  const PERAN_JENIS_DOK = { hakim: "put", pp: "bas", js: "rel" };
+  const PERAN_JENIS_DOK = { hakim: "put", pp: "bas", js: "rel", ptsp: "ptsp" };
   const SAKLAR_JENIS_DOK = { hakim: ["bas", "hakimBas"], pp: ["put", "ppPutusan"] };
   /** Grup SIPP yang ditiru per peran tampilan: hakim = Hakim + Ketua/Wakil, PP, Juru Sita. */
   const GRUP_ABT_PERAN = { hakim: ["20", "10"], pp: ["500"], js: ["600"] };
@@ -240,7 +240,7 @@
       const s = SAKLAR_JENIS_DOK[p];
       if (s && saklar[s[1]] === true) boleh.add(s[0]);
     }
-    return ["put", "bas", "rel"].filter((j) => boleh.has(j));
+    return ["put", "bas", "rel", "ptsp"].filter((j) => boleh.has(j));
   }
 
   /**
@@ -305,7 +305,8 @@
    */
   function ringkasan(p, ctx) {
     const hariIni = ctx.hariIni;
-    const peran = (p.sebagai && p.sebagai.length ? p.sebagai : ["hakim", "pp", "js"]).filter((x) => x === "hakim" || x === "pp" || x === "js");
+    // sebagai kosong (PTSP: hasil cari nomor) = tanpa dokumen peran; bot lama tanpa ruas = semua peran.
+    const peran = (Array.isArray(p.sebagai) ? p.sebagai : ["hakim", "pp", "js"]).filter((x) => x === "hakim" || x === "pp" || x === "js");
     const i = indeksAcuan(p.sidang, hariIni);
     const s = p.sidang[i] || { tanggal: "", agenda: "", ket: "", adaBas: null };
     const belumTiba = Boolean(s.tanggal) && s.tanggal > hariIni;
@@ -415,6 +416,7 @@
     jenis: "jenis perkara",
     isian: "kelengkapan isian",
     cetak: "status dokumen di SIPP",
+    minutasi: "batas minutasi",
   };
 
   function urutkan(daftar, urut, arah, depan) {
@@ -484,9 +486,12 @@
     if (adm()) return S.sebagai.peran ? [S.sebagai.peran] : ["hakim", "pp", "js", "kasir", "ptsp"];
     return ["hakim", "pp", "js", "kasir", "ptsp"].filter((x) => S.peranSet.has(x));
   }
-  const berhakDaftar = () => adm() || ["hakim", "pp", "js"].some((x) => S.peranSet.has(x));
+  const berhakDaftar = () => adm() || ["hakim", "pp", "js", "ptsp"].some((x) => S.peranSet.has(x));
+  /** PTSP (bukan admin): tak punya perkara sendiri; mencari nomor perkara satker, baca saja (folder 99 PTSP). */
+  const ptspCari = () => !adm() && S.peranSet.has("ptsp");
+  const nomorCariPtsp = () => (ptspCari() ? S.cariNomor.trim() : "");
   /** Bahan aturan hak dokumen untuk keadaan sekarang (akun + "Lihat sebagai" + saklar). */
-  const bahanHak = () => ({ admin: adm(), sebagaiPeran: adm() ? S.sebagai.peran : "", peran: ["hakim", "pp", "js"].filter((x) => S.peranSet.has(x)), hak: S.hak });
+  const bahanHak = () => ({ admin: adm(), sebagaiPeran: adm() ? S.sebagai.peran : "", peran: ["hakim", "pp", "js", "ptsp"].filter((x) => S.peranSet.has(x)), hak: S.hak });
   const jenisDokumen = () => jenisDokumenBoleh(bahanHak());
   /** Hak folder & saklar dari portal (paling lama 5 menit); gagal = null, saklar dianggap mati. */
   let janjiHak = null;
@@ -620,7 +625,7 @@
   function perluTawar() {
     if (S.aktif || !S.cfg.tawar || sesi(SESI_NANTI) === "1") return false;
     if (!tombolDerry() || !S.siapa) return false;
-    return adm() || ["hakim", "pp", "js"].some((x) => S.peranSet.has(x));
+    return berhakDaftar();
   }
   function segarkanTawar() {
     const perlu = perluTawar();
@@ -867,12 +872,14 @@
 
   // ── Daftar perkara ────────────────────────────────────────────────────────
   function kunciPermintaan() {
-    return [S.mode, S.mode === "rentang" ? S.dari : "", S.mode === "rentang" ? S.sampai : "", S.sebagai.nama, S.sebagai.peran].join("|");
+    return [S.mode, S.mode === "rentang" ? S.dari : "", S.mode === "rentang" ? S.sampai : "", S.sebagai.nama, S.sebagai.peran, nomorCariPtsp()].join("|");
   }
   function alamatPermintaan() {
     const q = new URLSearchParams();
-    q.set("mode", S.mode);
-    if (S.mode === "rentang") {
+    // PTSP mencari di seluruh rentang jadwal satker: nomor yang diketik menentukan hasilnya, bukan tab tanggal.
+    q.set("mode", nomorCariPtsp() ? "semua" : S.mode);
+    if (nomorCariPtsp()) q.set("nomor", nomorCariPtsp());
+    if (!nomorCariPtsp() && S.mode === "rentang") {
       q.set("dari", S.dari);
       q.set("sampai", S.sampai);
     }
@@ -1011,6 +1018,11 @@
     if (!d.lihatSemua && !d.adaYangCocok) {
       return `Nama akun Anda (${esc(d.nama || "?")}) tidak ditemukan sebagai majelis, panitera pengganti, atau juru sita pada ${d.mode === "hari" ? "sidang hari ini" : "rentang ini"}. Bila namanya di SIPP ditulis lain, hubungi admin.`;
     }
+    if (d.ptspCari) {
+      return S.cariNomor.trim()
+        ? "Tidak ada perkara satker dengan nomor itu pada jadwal sidang 90 hari lalu sampai 45 hari ke depan."
+        : "Ketik sebagian nomor perkara untuk mencari perkara satker (hanya baca; blangko PTSP).";
+    }
     if (d.mode === "hari") return "Tidak ada sidang hari ini untuk Anda.";
     return "Tidak ada perkara pada rentang ini.";
   }
@@ -1062,6 +1074,7 @@
       `</div></div>` +
       `<div class="bd-kontrol"><label class="bd-lbl" for="bd-urut">Urutkan</label><select id="bd-urut">` +
       Object.keys(NAMA_URUT)
+        .filter((k) => k !== "minutasi" || S.urut === "minutasi")
         .map((k) => `<option value="${k}" ${S.urut === k ? "selected" : ""}>${k === "prioritas" ? "Paling perlu dikerjakan" : NAMA_URUT[k].charAt(0).toUpperCase() + NAMA_URUT[k].slice(1)}</option>`)
         .join("") +
       `</select><button type="button" class="bd-btn kecil" data-bd="arah" aria-label="Balik urutan">${S.arah > 0 ? "Urutan: naik ▲" : "Urutan: turun ▼"}</button>` +
@@ -1542,6 +1555,11 @@
     if (t.id === "bd-cari") {
       S.cariNomor = t.value;
       renderPerkara();
+      // PTSP: hasil datang dari server (nomor satker), ditunda sebentar selagi mengetik.
+      if (ptspCari()) {
+        clearTimeout(saatMasuk.h);
+        saatMasuk.h = setTimeout(() => void muatDaftar(false), 450);
+      }
     }
   }
 
@@ -1615,7 +1633,7 @@
   function otomatisBuka() {
     if (!S.cfg.bawaan || S.aktif || sesi(SESI_LAMA) === "1") return false;
     if (!tombolDerry() || !S.siapa) return false;
-    if (!(adm() || ["hakim", "pp", "js"].some((x) => S.peranSet.has(x)))) return false;
+    if (!berhakDaftar()) return false;
     // Grup lain yang sedang dibuka (ABT lama / grup lain) tidak digantikan.
     return derryAktifDiHalaman() || !grupLainAktif();
   }

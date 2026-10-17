@@ -5247,6 +5247,13 @@ export type UnggahMassalPutusanBot = {
   adaAnonim: boolean;
   majelis: string[];
   panitera: string[];
+  /** Bahan pemilih blangko putusan (audit D3). Bot lama tidak mengirimnya - semuanya opsional. */
+  kumulasi?: { daftar?: Array<{ kode?: string }> | string[] } | null;
+  kumulasiTerbaca?: boolean;
+  dihadiriOleh?: number | null;
+  panggilan?: { hadirSebelumnya?: number | null; tergugatPernahHadir?: boolean; penggugatPernahHadir?: boolean | null } | null;
+  mediasi?: { hasil?: string } | null;
+  mediasiTerbaca?: boolean;
 };
 export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
 export type UnggahMassalBasBot = {
@@ -5309,6 +5316,8 @@ export async function gatewayUnggahBasSipp(muatan: {
   operator?: string;
   ip?: string;
   peranPenekan: string;
+  /** 17 Okt (audit A4): portal sudah memastikan akun ini petugas perkara itu (PP). */
+  milikPerkara?: boolean;
   ganti?: boolean;
 }) {
   return gatewayFetch<{ ok: true; jalur: string; nama: string; urutan: number; bentuk: string; diganti: boolean; jalurLama: string }>(
