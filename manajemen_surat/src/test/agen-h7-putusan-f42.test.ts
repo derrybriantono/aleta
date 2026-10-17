@@ -223,6 +223,21 @@ describe("golongan isian", () => {
     expect(k.perLangkah.pertimbangan).toMatchObject({ jumlah: 1, terisi: 0 });
   });
 
+  it("17 Okt: pemicu C/H membaca huruf 8503 seperti ABT (Murtad = H, 'F dan C' = CF, teks bebas tidak ditebak)", () => {
+    const susunan = { isian: [isian("8503", "Alasan perceraian"), isian("8536", "Putusan pidana", { pemicu: "11116" }), isian("0227", "Tanggal murtad", { pemicu: "11117" })] };
+    const kodeBerlaku = (huruf: string) =>
+      golongkanIsian({ susunan, nilai: { "8503": { status: "terisi", teks: huruf } }, usulan: [], perkara: { prodeo: false, ghaib: false, lewatEcourt: false } })
+        .map((i) => i.kode)
+        .filter((k) => k !== "8503");
+    expect(kodeBerlaku("Murtad")).toEqual(["0227"]); // pembaca lama: "MURTAD" -> "AD" -> H tidak terbaca
+    expect(kodeBerlaku("fasakh")).toEqual(["0227"]);
+    expect(kodeBerlaku("F dan C")).toEqual(["8536"]);
+    expect(kodeBerlaku("C · dihukum penjara 5 tahun atau lebih")).toEqual(["8536"]);
+    expect(kodeBerlaku("H · murtad (beralih agama)")).toEqual(["0227"]);
+    expect(kodeBerlaku("F")).toEqual([]);
+    expect(kodeBerlaku("kekejaman dan penganiayaan")).toEqual([]); // teks bebas bukan huruf
+  });
+
   it("usulanPasti = cermin s5UsulanPasti; samaIsi mengabaikan spasi, huruf besar, petik, tag", () => {
     expect(usulanPasti({ nilai: "x", keyakinan: "pasti" })).toBe(true);
     expect(usulanPasti({ nilai: "x", keyakinan: "pasti", sumber: [{ asal: "posita" }] })).toBe(false);

@@ -1003,10 +1003,11 @@ describe("nomor 8 - kalimat penutup keterangan saksi", () => {
     expect(bersihkanKeteranganSaksi(SAKSI)).not.toMatch(/sudah cukup/i);
   });
 
-  it("Bahwa tidak sanggup lagi dibuang", () => {
+  it("Bahwa tidak sanggup lagi dibuang bila jawaban atas pertanyaan penutup, dipertahankan bila soal mendamaikan", () => {
     const { bersihkanKeteranganSaksi } = fungsiRapikan();
     const teks = "- Bahwa saksi kenal Penggugat;\n- Bahwa tidak sanggup lagi;";
-    expect(bersihkanKeteranganSaksi(teks)).not.toMatch(/tidak sanggup/i);
+    expect(bersihkanKeteranganSaksi(teks, "Apakah masih ada yang ingin saudara sampaikan?")).not.toMatch(/tidak sanggup/i);
+    expect(bersihkanKeteranganSaksi(teks, "Apakah saksi masih sanggup untuk mendamaikan Penggugat dan Tergugat?")).toMatch(/tidak sanggup/i);
   });
 
   it("baris kosong di bawahnya ikut hilang", () => {

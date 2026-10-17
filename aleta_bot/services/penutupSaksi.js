@@ -46,8 +46,34 @@ const POLA_PENUTUP_LENTUR = new RegExp(
   "i"
 );
 
-/** Baris seluruhnya kalimat penutup? Awalan "Bahwa", tanda butir, dan tanda baca ujung tidak dihitung. */
-function adalahKalimatPenutupSaksi(baris) {
+/*
+ * 17 Okt (keputusan pengguna): "Saya tidak sanggup lagi" ialah JAWABAN perkara atas "Apakah saksi masih
+ * sanggup mendamaikan ...?" (452 dari 453 kemunculan di data nyata), bukan penutup. Bentuk yang
+ * bermakna ganda itu (sanggup/kuat/mampu tanpa kata kerja menjawab/menerangkan) hanya dihitung penutup
+ * bila PERTANYAANNYA diketahui dan berupa pertanyaan penutup ("Apakah masih ada yang ingin saudara
+ * sampaikan?"). Tanpa pertanyaan (mis. teks sel gabungan) ia dibiarkan: lebih baik tinggal daripada
+ * menghapus keterangan perkara.
+ */
+const POLA_KESANGGUPAN = /\b(?:sanggup|kuat|mampu)\b/i;
+const POLA_KERJA_MENJAWAB = /\b(?:menjawab|memberi(?:kan)?\s+keterangan|menerangkan|menjelaskan|melanjutkan|berbicara|bicara)\b/i;
+// Kata penutup yang pasti (mis. "tidak sanggup lagi, cukup sekian"): kalimat itu penutup apa pun pertanyaannya.
+const POLA_PENUTUP_PASTI = /\b(?:cukup|sekian|terima\s+kasih|tidak\s+ada|sampai\s+di\s+sini|demikian|hanya\s+itu|itu\s+saja)\b/i;
+const POLA_TANYA_PENUTUP =/masih\s+ada\b[^?]*\b(?:sampaikan|sampikan|disampaikan|tanyakan|keterangan|hal\s+lain)|\b(?:sudah\s+cukup|cukup\s+sekian)\b/i;
+const POLA_TANYA_KESANGGUPAN_PERKARA = /\b(?:sanggup|mampu|kuat|bisa|dapat)\b[^?]*(?:damai|rukun|nasihat|nasehat|pertahankan|bersatu|akur)/i;
+
+/** Pertanyaan penutup pemeriksaan saksi (bukan pertanyaan perkara)? */
+function pertanyaanPenutup(pertanyaan) {
+  const t = String(pertanyaan || "").replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  if (POLA_TANYA_KESANGGUPAN_PERKARA.test(t)) return false;
+  return POLA_TANYA_PENUTUP.test(t);
+}
+
+/**
+ * Baris seluruhnya kalimat penutup? Awalan "Bahwa", tanda butir, dan tanda baca ujung tidak dihitung.
+ * `pertanyaan` (opsional) = pertanyaan yang dijawab baris itu; menentukan bentuk bermakna ganda.
+ */
+function adalahKalimatPenutupSaksi(baris, pertanyaan) {
   const inti = String(baris || "")
     .replace(/^[\s\-–•*]+/, "")
     .replace(/\s+/g, " ")
@@ -58,7 +84,9 @@ function adalahKalimatPenutupSaksi(baris) {
   // 17 Okt (keputusan pengguna): "tidak ada yang (saya) ketahui" tanpa "lagi"/"lain" bisa jawaban
   // atas pertanyaan perkara ("tahukah saksi sebabnya?") - tinggal. Dengan "lagi"/"lain" = penutup.
   if (/\btidak\s+ada\b/i.test(inti) && /\b(?:ketahui|diketahui)\b/i.test(inti) && !/\b(?:lagi|lain)\b/i.test(inti)) return false;
-  return inti !== "" && POLA_PENUTUP_LENTUR.test(inti);
+  if (inti === "" || !POLA_PENUTUP_LENTUR.test(inti)) return false;
+  if (POLA_KESANGGUPAN.test(inti) && !POLA_KERJA_MENJAWAB.test(inti) && !POLA_PENUTUP_PASTI.test(inti)) return pertanyaanPenutup(pertanyaan);
+  return true;
 }
 
-module.exports = { adalahKalimatPenutupSaksi, POLA_PENUTUP_LENTUR };
+module.exports = { adalahKalimatPenutupSaksi, pertanyaanPenutup, POLA_PENUTUP_LENTUR };

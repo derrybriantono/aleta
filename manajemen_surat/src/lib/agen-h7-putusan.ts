@@ -67,6 +67,7 @@
 
 import { kelompokkanIsian, langkahUntukIsian, type BlangkoPerLangkah, type KodeLangkah } from "@/lib/konseptor-langkah";
 import { agendaMusyawarah, sidangIkrar } from "@/lib/keadaan-sidang";
+import { hurufAlasan as hurufAlasanAbt } from "@/lib/set-pertanyaan-saksi";
 import { masukanRekomendasiDariBaris, rekomendasiBlangko, type Rekomendasi } from "@/lib/rekomendasi-blangko";
 import type { ButirIsian, Keadaan, Susunan } from "@/app/api/aleta-ecourt/blangko-derry/susun";
 
@@ -406,7 +407,8 @@ export function golongkanIsian(m: MasukanGolongkan): IsianDraf[] {
   };
   const hurufAlasan = () => {
     const isi = teks(m.nilai["8503"]?.teks) || teks(usulanPerKode.get("8503")?.usulan.nilai);
-    return isi.split("·")[0].toUpperCase().replace(/[^A-H]/g, "");
+    // 17 Okt: pembaca yang sama dengan ABT/ekstensi ("F dan B" = BF, Murtad = H, teks bebas = tidak dikenal).
+    return hurufAlasanAbt(isi);
   };
   const menyala = (kode: string) => {
     if (kode === "11116" && hurufAlasan().includes("C")) return true;

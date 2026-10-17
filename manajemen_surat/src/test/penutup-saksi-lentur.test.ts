@@ -14,10 +14,10 @@ import { describe, expect, it } from "vitest";
  */
 const require_ = createRequire(import.meta.url);
 const bot = require_(path.resolve(process.cwd(), "../aleta_bot/services/penutupSaksi.js")) as {
-  adalahKalimatPenutupSaksi: (t: string) => boolean;
+  adalahKalimatPenutupSaksi: (t: string, tanya?: string) => boolean;
 };
 const deteksi = require_(path.resolve(process.cwd(), "../aleta_bot/services/deteksiSaksiService.js")) as {
-  POLA_PENUTUP_JAWAB: { test: (t: string) => boolean };
+  POLA_PENUTUP_JAWAB: { test: (t: string, tanya?: string) => boolean };
 };
 
 function ekstensi() {
@@ -27,27 +27,20 @@ function ekstensi() {
   expect(awal).toBeGreaterThan(0);
   expect(akhir).toBeGreaterThan(awal);
   const konteks: {
-    bersihkanKeteranganSaksi?: (t: string) => string;
+    bersihkanKeteranganSaksi?: (t: string, tanya?: string) => string;
     adalahKalimatPenutupSaksi?: (t: string) => boolean;
   } = {};
   vm.createContext(konteks);
   // function deklarasi menjadi properti global konteks.
   vm.runInContext(isi.slice(awal, akhir), konteks);
   return konteks as {
-    bersihkanKeteranganSaksi: (t: string) => string;
-    adalahKalimatPenutupSaksi: (t: string) => boolean;
+    bersihkanKeteranganSaksi: (t: string, tanya?: string) => string;
+    adalahKalimatPenutupSaksi: (t: string, tanya?: string) => boolean;
   };
 }
 
 /** Harus dikenali sebagai penutup (dengan dan tanpa "Bahwa", tanda butir, huruf besar/kecil). */
 const PENUTUP = [
-  "Bahwa saya tidak sanggup lagi",
-  "Bahwa saya tidak sanggup lagi;",
-  "Bahwa saksi tidak sanggup lagi",
-  "Bahwa saksi sudah tidak sanggup lagi",
-  "Bahwa saksi sudah tidak sanggup lagi;",
-  "Bahwa sudah tidak sanggup lagi",
-  "Bahwa tidak sanggup lagi",
   "Bahwa cukup sekian",
   "Bahwa cukup sekian;",
   "Bahwa sudah cukup",
@@ -77,19 +70,13 @@ const PENUTUP = [
   "Bahwa ya, sudah cukup",
   "Bahwa saya tidak sanggup lagi menjawab",
   "Bahwa saksi sudah tidak sanggup lagi memberikan keterangan",
-  "Bahwa saksi tidak lagi sanggup",
-  "- BAHWA SAYA TIDAK SANGGUP LAGI;",
-  "-   bahwa   saksi   sudah   cukup  ;",
   "Sudah cukup",
   "Sudah cukup;",
   "sudah  cukup .",
-  "Saya tidak sanggup lagi",
-  "Saya sudah tidak sanggup lagi;",
   "Tidak ada, sudah cukup",
   "Tidak, sudah cukup;",
   "Cukup sekian;",
   "Bahwa, sudah cukup",
-  "Bahwa belum sanggup lagi",
 ];
 
 /** Kalimat BIASA yang harus tinggal - termasuk yang memuat kata penutup di tengah. */
@@ -213,7 +200,7 @@ describe("F1.3 - penutup keterangan saksi, bentuk lentur", () => {
     const teks = [
       "- Bahwa Tergugat pergi meninggalkan rumah sejak tahun 2024;",
       "- Bahwa sekian lama ia pergi tanpa kabar;",
-      "- Bahwa saksi sudah tidak sanggup lagi;",
+      "- Bahwa tidak ada lagi yang ingin disampaikan;",
       "- Bahwa cukup sekian;",
       "",
       "",
@@ -232,11 +219,9 @@ describe("F1.3 - penutup keterangan saksi, bentuk lentur", () => {
   it("contoh di data satker (jawaban pendek nyata) tetap benar", () => {
     const nyata: Array<[string, boolean]> = [
       ["sudah cukup;", true],
-      ["saya tidak sanggup lagi;", true],
       ["tidak ada, sudah cukup", true],
       ["sudah  cukup ;", true],
       ["cukup sekian;", true],
-      ["saya sudah tidak sanggup lagi;", true],
       ["tidak, sudah cukup;", true],
       ["tidak ada pekerjaan lain;", false],
       ["tidak ada halangan secara hukum;", false],
@@ -248,5 +233,79 @@ describe("F1.3 - penutup keterangan saksi, bentuk lentur", () => {
       expect(bot.adalahKalimatPenutupSaksi(jawab)).toBe(harusTutup);
       expect(ek.adalahKalimatPenutupSaksi(jawab)).toBe(harusTutup);
     }
+  });
+});
+
+/**
+ * 17 Okt 2026 (keputusan pengguna, ukur 68.090 jawaban nyata aps_badilag): 453 "Saya tidak sanggup lagi"
+ * adalah JAWABAN atas "Apakah saksi masih sanggup untuk mendamaikan ...?" - keterangan perkara, bukan
+ * penutup. Penutup sesungguhnya ("sudah cukup", "tidak ada lagi yang ingin disampaikan") tetap dibuang.
+ * Bentuk bermakna ganda hanya penutup bila pertanyaannya penutup; tanpa pertanyaan dibiarkan.
+ */
+const SANGGUP_LAGI = [
+  "Saya tidak sanggup lagi;",
+  "Saya sudah tidak sanggup lagi;",
+  "Bahwa saya tidak sanggup lagi",
+  "Bahwa saksi sudah tidak sanggup lagi",
+  "Bahwa tidak sanggup lagi",
+  "Bahwa saksi tidak lagi sanggup",
+  "Bahwa belum sanggup lagi",
+  "- BAHWA SAYA TIDAK SANGGUP LAGI;",
+  "Iya, saya tidak sanggup lagi;",
+];
+const TANYA_MENDAMAIKAN = [
+  "Apakah saksi masih sanggup untuk mendamaikan Penggugat dan Tergugat?",
+  "Apakah\nsaksi masih sanggup untuk mendamaikan Pemohon dan Termohon?",
+  "Apakah Saudara masih sanggup merukunkan Penggugat dan Tergugat?",
+  "Apakah saudara masih sanggup untuk menasehati Penggugat dan Tergugat?",
+];
+const TANYA_PENUTUP = [
+  "Apakah masih ada yang ingin saudara sampaikan?",
+  "Apakah masih ada keterangan yang saksi akan sampaikan?",
+  "Apakah masih ada hal lain yang saudara ingin sampaikan ?",
+  "Apakah masih ada yang tanyakan ?",
+];
+
+describe("17 Okt - 'tidak sanggup lagi' = jawaban perkara bila pertanyaannya soal mendamaikan", () => {
+  const ek = ekstensi();
+
+  it.each(SANGGUP_LAGI)("jawaban atas pertanyaan mendamaikan TIDAK dihapus (bot, ekstensi, deteksi) - %s", (jawab) => {
+    for (const tanya of TANYA_MENDAMAIKAN) {
+      expect(bot.adalahKalimatPenutupSaksi(jawab, tanya)).toBe(false);
+      expect(ek.adalahKalimatPenutupSaksi(jawab, tanya)).toBe(false);
+      expect(deteksi.POLA_PENUTUP_JAWAB.test(jawab.replace(/^[- ]*Bahwa[ ,]+/i, ""), tanya)).toBe(false);
+      expect(ek.bersihkanKeteranganSaksi(jawab, tanya)).toBe(jawab.trim());
+    }
+  });
+
+  it.each(SANGGUP_LAGI)("tanpa pertanyaan (teks sel gabungan) dibiarkan - %s", (jawab) => {
+    expect(bot.adalahKalimatPenutupSaksi(jawab)).toBe(false);
+    expect(ek.adalahKalimatPenutupSaksi(jawab)).toBe(false);
+  });
+
+  it.each(SANGGUP_LAGI)("jawaban atas pertanyaan penutup tetap dibuang - %s", (jawab) => {
+    for (const tanya of TANYA_PENUTUP) {
+      expect(bot.adalahKalimatPenutupSaksi(jawab, tanya)).toBe(true);
+      expect(ek.adalahKalimatPenutupSaksi(jawab, tanya)).toBe(true);
+      expect(ek.bersihkanKeteranganSaksi(jawab, tanya)).toBe("");
+    }
+  });
+
+  it("penutup lain tetap dibuang walau pertanyaannya soal mendamaikan atau tidak diketahui", () => {
+    for (const tanya of [...TANYA_MENDAMAIKAN, ""]) {
+      for (const jawab of ["Sudah cukup;", "Tidak ada, sudah cukup", "Tidak ada lagi yang ingin disampaikan", "Saya tidak sanggup lagi dan sudah cukup", "Saya tidak sanggup lagi menjawab"]) {
+        expect(bot.adalahKalimatPenutupSaksi(jawab, tanya)).toBe(true);
+        expect(ek.bersihkanKeteranganSaksi(jawab, tanya)).toBe("");
+      }
+    }
+  });
+
+  it("jawaban butir bot ('Susun Keterangan Saksi') mempertahankan jawaban kesanggupan dan membuang penutup", () => {
+    for (const tanya of TANYA_MENDAMAIKAN) expect(deteksi.POLA_PENUTUP_JAWAB.test("Saya tidak sanggup lagi;", tanya)).toBe(false);
+    for (const tanya of TANYA_PENUTUP) expect(deteksi.POLA_PENUTUP_JAWAB.test("Saya tidak sanggup lagi;", tanya)).toBe(true);
+  });
+
+  it("jawaban beberapa baris: kesanggupan tinggal, penutup di ujung dibuang", () => {
+    expect(ek.bersihkanKeteranganSaksi("Saya tidak sanggup lagi;\nSudah cukup;", TANYA_MENDAMAIKAN[0])).toBe("Saya tidak sanggup lagi;");
   });
 });

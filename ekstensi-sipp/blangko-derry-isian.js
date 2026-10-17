@@ -911,6 +911,26 @@
         })
       );
     }
+    // 17 Okt: tanya jawab dibaca juga (seperti jalur utama bot: kode penanda dan penyuntingnya) - tanpa ini saksi yang
+    // barisnya sudah ada di ABT terbaca "kosong" dan tampil "Penting" di peringatan cetak. Dibaca lewat penyunting per sidang.
+    const tj = d.isian.filter((b) => b.jenis === "tj" && b.tj && b.tj.kodeSunting);
+    for (let i = 0; i < tj.length; i += 3) {
+      await Promise.all(
+        tj.slice(i, i + 3).map(async (b) => {
+          try {
+            const h = await k.bacaTanyaJawab({ kode: b.tj.kodeSunting, perkaraId: perkaraId(), sidang: sidangUrutan(), a: S.blangko.a, b: S.blangko.b });
+            if (!h.ok) return;
+            const baris = Array.isArray(h.baris) ? h.baris : [];
+            const ada = baris.some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());
+            const nilai = { status: ada ? "terisi" : "kosong", teks: "", dariPopup: true };
+            S.nilai[b.kode] = nilai;
+            S.nilai[b.tj.kodeSunting] = nilai;
+          } catch {
+            /* satu saksi gagal terbaca: tetap kosong */
+          }
+        })
+      );
+    }
   }
   /** Saran bayangan: bawaan ABT yang dihitung untuk perkara ini (jendela sembul edit_data) bagi isian kosong. */
   async function muatSaranAbt(d) {
@@ -946,6 +966,15 @@
     const n = depan ? depan[1].toUpperCase() : /^(FASAKH|MURTAD)$/.test(u) ? "H" : u.replace(/DAN/g, "").replace(/[&,;+/.\s-]/g, "");
     if (!/^[A-H]+$/.test(n)) return "";
     return [...new Set(n.split(""))].sort().join("");
+  }
+  /**
+   * Nilai 8503 yang DITULIS ke ABT: pilihan ALETA "F · uraian" -> "F" (hurufnya saja, bentuk yang dibaca kueri ABT dan
+   * popup aslinya); ketikan lain (BF, F dan B, Murtad, teks bebas) tidak diubah. Tampilan pilihan tidak berubah.
+   */
+  function nilaiSimpan8503(teks) {
+    const v = String(teks == null ? "" : teks);
+    const depan = v.trim().match(/^([A-Ha-h]+)\s*·/);
+    return depan ? depan[1].toUpperCase() : v;
   }
   const alasanHuruf = () => hurufAlasanDari(S.isi["8503"]);
   /** Peringatan di bawah kotak 8503 bila isinya tidak terbaca sebagai huruf alasan (ABT tidak akan mengenalinya). */
@@ -1097,6 +1126,15 @@
       S.tersimpan[kode] = `gagal: ${NAMA_JENIS[S.blangko.jenis] || "blangko ini"} hanya ditulis ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara"}`;
       renderStatusIsian(kode);
       return false;
+    }
+    // 17 Okt: pilihan "F · uraian" ke ABT hanya hurufnya - kueri paket abt-alasan-cdeh membaca SELURUH isi 8503
+    // (REPLACE ... lalu NOT REGEXP '[^A-H]' + INSTR per huruf), jadi uraian membuatnya "TIDAK BENAR QUERY NYA".
+    const sederhana = kode === "8503" ? nilaiSimpan8503(nilai) : nilai;
+    if (sederhana !== nilai) {
+      nilai = sederhana;
+      S.isi[kode] = nilai;
+      const el8503 = cari(`#bd-i${kode}`, wadah.isian);
+      if (el8503 && el8503.value !== nilai && el8503.tagName !== "SELECT") el8503.value = nilai;
     }
     const norm = normalAbt(nilai);
     if (norm.diganti.length) {
@@ -1346,12 +1384,13 @@
     }
     return h;
   }
-  const POLA_PENUTUP = [/^(?:bahwa\s+)?(?:saya\s+|saksi\s+)?(?:sudah\s+)?(?:cukup(?:\s+sekian)?|tidak\s+sanggup\s+lagi)[\s;.,!:]*$/i];
-  const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?(?:cukup(?:\s+sekian)?|tidak\s+sanggup\s+lagi)\s*[;.]?$/i;
-  const POLA_EKOR = /(^|[;.]\s+)(?:bahwa\s+)?(?:sudah\s+)?(?:cukup\s+sekian|sudah\s+cukup|tidak\s+sanggup\s+lagi)\s*[;.]?\s*$/i;
+  // 17 Okt: "tidak sanggup lagi" tidak lagi pola tegas - ia jawaban perkara atas "masih sanggup mendamaikan?".
+  const POLA_PENUTUP = [/^(?:bahwa\s+)?(?:saya\s+|saksi\s+)?(?:sudah\s+)?cukup(?:\s+sekian)?[\s;.,!:]*$/i];
+  const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?cukup(?:\s+sekian)?\s*[;.]?$/i;
+  const POLA_EKOR = /(^|[;.]\s+)(?:bahwa\s+)?(?:sudah\s+)?(?:cukup\s+sekian|sudah\s+cukup)\s*[;.]?\s*$/i;
   /** Pembersih kalimat penutup: memakai milik abt.js (F1.3, bentuk lentur) bila ada; cadangan pola baku. */
-  function bersihkanPenutup(teks) {
-    if (typeof bersihkanKeteranganSaksi === "function") return bersihkanKeteranganSaksi(teks);
+  function bersihkanPenutup(teks, tanya) {
+    if (typeof bersihkanKeteranganSaksi === "function") return bersihkanKeteranganSaksi(teks, tanya);
     const rapat = String(teks || "").replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
     if (rapat && POLA_PENUTUP_UTUH.test(rapat)) return "";
     const baris = String(teks || "").replace(/\r\n/g, "\n").split("\n").filter((x) => {
@@ -3193,7 +3232,7 @@
       tjCatat([S.tjBuka]);
       let u = 0;
       for (const r of S.tj[S.tjBuka].rows) {
-        const h = bersihkanPenutup(r.jawab);
+        const h = bersihkanPenutup(r.jawab, r.tanya);
         if (h !== r.jawab) {
           r.jawab = h;
           u += 1;
@@ -3292,14 +3331,14 @@
         let u = 0;
         ps.forEach((k) =>
           (S.tj[k].rows || []).forEach((r) => {
-            const h = bersihkanPenutup(r.jawab);
+            const h = bersihkanPenutup(r.jawab, r.tanya);
             if (h !== r.jawab) {
               r.jawab = h;
               u += 1;
             }
           })
         );
-        sesudah(u ? `${u} kalimat penutup dibuang (mis. “Bahwa cukup sekian”, “sudah tidak sanggup lagi”).` : "Tidak ada kalimat penutup yang perlu dibuang.");
+        sesudah(u ? `${u} kalimat penutup dibuang (mis. “Bahwa cukup sekian”, “tidak ada lagi yang ingin disampaikan”).` : "Tidak ada kalimat penutup yang perlu dibuang.");
         return true;
       }
       return true;
@@ -3755,7 +3794,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
+    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {
