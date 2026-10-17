@@ -8064,7 +8064,9 @@ export function AletaEcourtSidang({
                             ) : null}
                             {/* F1.6: kesiapan draf dari checklist konseptor sementara. */}
                             {tampil(tampilan, "hari-putusan") && hariPutusan(baris) ? (
-                              <LencanaKesiapanPutusan kemajuan={tunjukan[String(baris.perkaraId)]?.kemajuan} />
+                              <LencanaKesiapanPutusan
+                                kemajuan={tunjukan[String(baris.perkaraId)]?.kemajuan ?? checklistTanpaTunjukan[String(baris.perkaraId)]?.kemajuan}
+                              />
                             ) : null}
                             {/* F4.2: draf H-7 agen ALETA untuk sidang INI - juga perkiraan putusan verstek (agenda bukan putusan). */}
                             {tampil(tampilan, "hari-putusan") &&
