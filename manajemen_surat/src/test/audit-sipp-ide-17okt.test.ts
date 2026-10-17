@@ -247,3 +247,32 @@ describe("D. tombol Buka di ABT / Buka di ALETA di halaman perkara", () => {
   });
 });
 
+// ============================================================================
+// E. Serah terima J01 lewat halaman masuk ABT
+// ============================================================================
+describe("E. J01 'Buka di ABT' saat sesi ABT habis", () => {
+  const KUNCI = "sippIdeL1SerahAbt";
+
+  it("halaman masuk ABT (alamat berhash aleta-bd): nomornya disimpan untuk sesudah masuk, tidak dibuang", async () => {
+    const h = buka(`<!doctype html><html><head></head><body><form><input type="password" name="password"></form></body></html>`, {
+      url: `http://192.168.10.10/aps_badilag/login#aleta-bd=${encodeURIComponent(NOMOR)}`,
+      skrip: ["sipp-ide-l1.js"],
+    });
+    await tunggu(300);
+    const s = h.simpanan[KUNCI] as { nomor?: string; saat?: number } | undefined;
+    expect(s && s.nomor).toBe(NOMOR);
+    expect(Date.now() - Number(s && s.saat)).toBeLessThan(5000);
+  });
+
+  it("halaman APS sesudah masuk (/aps_badilag/main, bukan ABT): serah terima yang tersimpan tidak dihabiskan", async () => {
+    const saat = Date.now();
+    const h = buka(`<!doctype html><html><head></head><body><div id="navbar"></div></body></html>`, {
+      url: "http://192.168.10.10/aps_badilag/main",
+      simpanan: { [KUNCI]: { nomor: NOMOR, saat } },
+      skrip: ["sipp-ide-l1.js"],
+    });
+    await tunggu(300);
+    expect((h.simpanan[KUNCI] as { nomor?: string } | undefined)?.nomor).toBe(NOMOR);
+  });
+});
+

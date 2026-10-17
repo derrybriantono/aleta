@@ -1255,8 +1255,19 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     return { ok: false, sebab: "tidak-di-daftar" };
   }
 
+  /** Halaman aplikasi ABT sendiri (.../abt/...) - bukan halaman masuk atau menu APS. */
+  const halamanAbt = () => /\/abt(?:\/|$)/i.test(String(location.pathname || ""));
+
   async function terimaSerahAbt() {
     let nomor = bacaSerahDariHash(location.hash);
+    if (!halamanAbt()) {
+      // Sesi ABT habis: .../abt/main/beranda#aleta-bd=<nomor> dialihkan ke
+      // halaman masuk (hash ikut), lalu sesudah masuk ke menu APS. Di sana
+      // serah terimanya TIDAK dihabiskan: nomor dari hash disimpan (waktunya
+      // baru) supaya ABT yang dibuka sesudah masuk membukanya (audit 17 Okt).
+      if (nomor) tulisSerah(nomor);
+      return null;
+    }
     if (nomor) {
       try {
         history.replaceState(null, "", `${location.pathname}${location.search}`);
