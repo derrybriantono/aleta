@@ -226,6 +226,9 @@ export function susunNaskahEvidenSkp(
     { label: "Jabatan", nilai: bersih(orang.jabatan) || "-" },
     { label: "Unit Kerja", nilai: satker || "-" },
   ];
+  for (const t of paket.identitasTambahan ?? []) {
+    if (bersih(t.label)) identitas.push({ label: bersih(t.label), nilai: bersih(t.nilai) || "-" });
+  }
   if (bersih(dokumen.rhk)) identitas.push({ label: "Rencana Hasil Kerja", nilai: bersih(dokumen.rhk) });
 
   const catatan: string[] = [...dokumen.catatan.map(bersih).filter(Boolean)];
@@ -238,7 +241,7 @@ export function susunNaskahEvidenSkp(
   // Jabatan Ketua dari datanya bila ada; bila Ketua tidak terbaca, jabatannya
   // tetap ditulis supaya dokumen dapat ditandatangani - namanya yang titik-titik.
   const jabatanKetua = bersih(ketua?.jabatan) || `Ketua ${namaSatkerTanpaKelas(satker) || SATKER_BAWAAN}`;
-  const kanan = [`${tempat}, ${tanggalPanjang(opsi.tanggalTandaTangan, opsi.tanggalTandaTangan)}`, "Mengetahui,", `${jabatanKetua.replace(/,\s*$/, "")},`];
+  const kanan = [`${tempat}, ${tanggalPanjang(opsi.tanggalTandaTangan, opsi.tanggalTandaTangan)}`, bersih(paket.sebutanKanan) || "Mengetahui,", `${jabatanKetua.replace(/,\s*$/, "")},`];
   const kiri = [`${bersih(opsi.sebutanOrang) || "Yang"} yang bersangkutan,`];
   // Nama kedua pihak harus sebaris: blok yang barisnya lebih sedikit
   // diberi baris kosong di ATAS, bukan di bawah.

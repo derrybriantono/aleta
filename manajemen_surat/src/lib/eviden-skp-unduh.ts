@@ -1,5 +1,12 @@
 import type { KunciPeriodeSkp, PeranEvidenSkp, PeriodeSkp } from "@/lib/eviden-skp-tipe";
 import { bacaIdSipp } from "@/lib/rekap-petugas";
+import {
+  JABATAN_SKP,
+  type JenisSkp,
+  type KunciBulanSkp,
+  type KunciPeriodeSkpJabatan,
+  type PeriodeSkpJabatan,
+} from "@/lib/skp-jabatan-tipe";
 
 /**
  * ============================================================================
@@ -327,4 +334,219 @@ export function namaZipEvidenSkp(p: {
     `Eviden SKP ${p.periode.tahun} - ${p.periode.label} - Semua dokumen (${SEBUTAN_FORMAT_EVIDEN_SKP[p.format]}) - ${p.nama}`
   );
   return `${inti}.zip`;
+}
+
+// ============================================================================
+// SKP JABATAN PERKARA DAN PERIODE BULANAN (17 Oktober 2026)
+// ============================================================================
+//
+// Tambahan MURNI: semua fungsi di atas (tw1..tw4|tahun, peran hakim) tidak
+// berubah satu huruf pun. Jalur baru ini membaca superset alamatnya: jenis
+// SKP (hakim, pimpinan, atau jabatan perkara) dan periode bulanan b01..b12.
+
+export const KUNCI_BULAN_SKP: readonly KunciBulanSkp[] = [
+  "b01", "b02", "b03", "b04", "b05", "b06", "b07", "b08", "b09", "b10", "b11", "b12",
+];
+
+const NAMA_BULAN_SKP = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+
+/** Pilihan periode bulanan untuk menu: b01 "Januari" ... b12 "Desember". */
+export const PILIHAN_PERIODE_BULANAN_SKP: ReadonlyArray<{ kunci: KunciBulanSkp; label: string }> = KUNCI_BULAN_SKP.map(
+  (kunci, i) => ({ kunci, label: NAMA_BULAN_SKP[i] })
+);
+
+/** Semua periode SKP jabatan: bulan, triwulan, tahun. */
+export const PILIHAN_PERIODE_SKP_JABATAN: ReadonlyArray<{ kunci: KunciPeriodeSkpJabatan; label: string }> = [
+  ...PILIHAN_PERIODE_BULANAN_SKP,
+  ...PILIHAN_PERIODE_EVIDEN_SKP,
+];
+
+export function periodeBulananSkpSah(nilai: unknown): nilai is KunciBulanSkp {
+  return (KUNCI_BULAN_SKP as readonly string[]).includes(String(nilai));
+}
+
+export function periodeSkpJabatanSah(nilai: unknown): nilai is KunciPeriodeSkpJabatan {
+  return periodeBulananSkpSah(nilai) || periodeEvidenSkpSah(nilai);
+}
+
+export function jenisSkpSah(nilai: unknown): nilai is JenisSkp {
+  const teks = String(nilai);
+  return teks === "hakim" || teks === "pimpinan" || (JABATAN_SKP as readonly string[]).includes(teks);
+}
+
+/** Hari pertama periode mana pun ("2026-03-01" untuk b03). Tw/tahun sama dengan mulaiPeriodeEvidenSkp. */
+export function mulaiPeriodeSkpJabatan(periode: KunciPeriodeSkpJabatan, tahun: number): string {
+  if (periodeBulananSkpSah(periode)) return `${tahun}-${periode.slice(1)}-01`;
+  return mulaiPeriodeEvidenSkp(periode, tahun);
+}
+
+function hariTerakhirBulan(tahun: number, bulan: number): string {
+  const hari = new Date(Date.UTC(tahun, bulan, 0)).getUTCDate();
+  return `${tahun}-${String(bulan).padStart(2, "0")}-${String(hari).padStart(2, "0")}`;
+}
+
+/**
+ * Periode lengkap (label, rentang, lama) dari kunci dan tahun - bentuk yang
+ * sama dengan yang dikirim bot. Bulanan: label "Maret", labelPanjang
+ * "Bulan Maret Tahun 2026".
+ */
+export function susunPeriodeSkpJabatan(kunci: KunciPeriodeSkpJabatan, tahun: number): PeriodeSkpJabatan {
+  if (periodeBulananSkpSah(kunci)) {
+    const bulan = Number(kunci.slice(1));
+    const nama = NAMA_BULAN_SKP[bulan - 1];
+    return {
+      kunci,
+      tahun,
+      label: nama,
+      labelPanjang: `Bulan ${nama} Tahun ${tahun}`,
+      mulai: `${tahun}-${kunci.slice(1)}-01`,
+      selesai: hariTerakhirBulan(tahun, bulan),
+      bulan: 1,
+    };
+  }
+  if (kunci === "tahun") {
+    return {
+      kunci,
+      tahun,
+      label: "Tahunan",
+      labelPanjang: `Tahun ${tahun}`,
+      mulai: `${tahun}-01-01`,
+      selesai: `${tahun}-12-31`,
+      bulan: 12,
+    };
+  }
+  const triwulan: Record<string, { label: string; dari: number; sampai: number }> = {
+    tw1: { label: "Triwulan I", dari: 1, sampai: 3 },
+    tw2: { label: "Triwulan II", dari: 4, sampai: 6 },
+    tw3: { label: "Triwulan III", dari: 7, sampai: 9 },
+    tw4: { label: "Triwulan IV", dari: 10, sampai: 12 },
+  };
+  const t = triwulan[kunci];
+  return {
+    kunci,
+    tahun,
+    label: t.label,
+    labelPanjang: `${t.label} Tahun ${tahun}`,
+    mulai: `${tahun}-${String(t.dari).padStart(2, "0")}-01`,
+    selesai: hariTerakhirBulan(tahun, t.sampai),
+    bulan: 3,
+  };
+}
+
+export type PermintaanUnduhSkp = {
+  jenis: JenisSkp;
+  /** ID SIPP hakim - wajib untuk jenis hakim/pimpinan, null untuk jabatan perkara. */
+  id: number | null;
+  /** ID pengguna ALETA pegawai - wajib untuk jabatan perkara, boleh ada pada hakim/pimpinan. */
+  pegawai: string | null;
+  tahun: number;
+  periode: KunciPeriodeSkpJabatan;
+  dokumen: string;
+  format: FormatEvidenSkp;
+  tanggal: string | null;
+  /** Blok tambahan "tugas PP" bagi jabatan rangkap; bawaan menyala, ?tambahan=0 mematikan. */
+  sertakanTambahan: boolean;
+};
+
+const POLA_PEGAWAI = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+
+/**
+ * Membaca ?jenis=&id=&pegawai=&tahun=&periode=&dokumen=&format=&tanggal=&tambahan=.
+ *
+ * Superset bacaPermintaanUnduhEvidenSkp: tanpa ?jenis= artinya "hakim" dan
+ * alamat hakim lama (peran, id, tahun, periode tw/tahun) dibaca sama persis.
+ * Yang baru: jenis pimpinan/jabatan dan periode b01..b12.
+ */
+export function bacaPermintaanUnduhSkp(
+  p: URLSearchParams,
+  hariIni = ""
+): { ok: true; nilai: PermintaanUnduhSkp } | { ok: false; pesan: string } {
+  const jenisTeks = String(p.get("jenis") ?? "").trim().toLowerCase() || "hakim";
+  if (!jenisSkpSah(jenisTeks)) {
+    return { ok: false, pesan: "Jenis SKP harus hakim, pimpinan, atau salah satu jabatan perkara yang dikenal." };
+  }
+  const jenis: JenisSkp = jenisTeks;
+  const memerlukanIdSipp = jenis === "hakim" || jenis === "pimpinan";
+
+  let id: number | null = null;
+  let pegawai: string | null = null;
+  if (memerlukanIdSipp) {
+    const peran = String(p.get("peran") ?? "hakim").trim().toLowerCase();
+    if (!peranEvidenSkpSah(peran)) {
+      return { ok: false, pesan: "Peran eviden SKP yang dapat diunduh saat ini hanya hakim." };
+    }
+    id = bacaIdSipp(p.get("id"));
+    if (id === null) return { ok: false, pesan: "ID SIPP harus bilangan bulat positif." };
+  }
+  const pegawaiTeks = String(p.get("pegawai") ?? "").trim();
+  if (!memerlukanIdSipp || pegawaiTeks) {
+    if (!POLA_PEGAWAI.test(pegawaiTeks)) {
+      return { ok: false, pesan: "Pegawai harus diisi dengan ID pengguna (huruf, angka, tanda hubung)." };
+    }
+    pegawai = pegawaiTeks;
+  }
+
+  const tahunTeks = String(p.get("tahun") ?? "").trim();
+  const tahun = Number(tahunTeks);
+  if (!/^\d{4}$/.test(tahunTeks) || tahun < 2000 || tahun > 2100) {
+    return { ok: false, pesan: "Tahun harus empat angka antara 2000 dan 2100." };
+  }
+
+  const periode = String(p.get("periode") ?? "").trim().toLowerCase();
+  if (!periodeSkpJabatanSah(periode)) {
+    return { ok: false, pesan: "Periode harus b01 sampai b12, tw1, tw2, tw3, tw4, atau tahun." };
+  }
+  if (hariIni && mulaiPeriodeSkpJabatan(periode, tahun) > hariIni) {
+    return { ok: false, pesan: PESAN_PERIODE_BELUM_DIMULAI };
+  }
+
+  const dokumen = String(p.get("dokumen") ?? "").trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(dokumen)) {
+    return { ok: false, pesan: 'Dokumen harus kunci dokumen (huruf kecil, angka, tanda hubung) atau "semua".' };
+  }
+
+  const format = String(p.get("format") ?? "").trim().toLowerCase();
+  if (!formatEvidenSkpSah(format)) return { ok: false, pesan: "Format harus pdf, xlsx, atau docx." };
+
+  const tanggalTeks = String(p.get("tanggal") ?? "").trim();
+  const tanggal = tanggalTeks ? bacaTanggalIso(tanggalTeks) : null;
+  if (tanggalTeks && !tanggal) {
+    return { ok: false, pesan: "Tanggal tanda tangan harus tanggal yang sah berbentuk YYYY-MM-DD." };
+  }
+
+  const tambahan = String(p.get("tambahan") ?? "").trim().toLowerCase();
+  const sertakanTambahan = !["0", "tidak", "false", "mati"].includes(tambahan);
+
+  return { ok: true, nilai: { jenis, id, pegawai, tahun, periode, dokumen, format, tanggal, sertakanTambahan } };
+}
+
+/** Alamat unduhan SKP (semua jenis), TANPA basePath. `dasar` = rute yang dipakai (bawaan rute SKP baru). */
+export function alamatUnduhSkp(p: {
+  jenis: JenisSkp;
+  id?: number | string | null;
+  pegawai?: string | null;
+  tahun: number;
+  periode: KunciPeriodeSkpJabatan;
+  dokumen: string;
+  format: FormatEvidenSkp;
+  tanggal?: string | null;
+  sertakanTambahan?: boolean;
+  dasar?: string;
+}): string {
+  const kueri = new URLSearchParams({ jenis: p.jenis });
+  if (p.id !== undefined && p.id !== null && String(p.id) !== "") {
+    kueri.set("peran", "hakim");
+    kueri.set("id", String(p.id));
+  }
+  if (p.pegawai) kueri.set("pegawai", p.pegawai);
+  kueri.set("tahun", String(p.tahun));
+  kueri.set("periode", p.periode);
+  kueri.set("dokumen", p.dokumen);
+  kueri.set("format", p.format);
+  if (p.tanggal) kueri.set("tanggal", p.tanggal);
+  if (p.sertakanTambahan === false) kueri.set("tambahan", "0");
+  return `${p.dasar ?? "/api/skp/unduh"}?${kueri.toString()}`;
 }
