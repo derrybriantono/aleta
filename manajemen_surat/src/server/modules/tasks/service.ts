@@ -24,8 +24,10 @@ import { type AletaDatabase } from "@/server/db/client";
 import { listDispositionsFromDb } from "@/server/modules/dispositions/service";
 import { ensureEKepegawaianDefaults } from "@/server/modules/e-kepegawaian/service";
 import { searchLettersInDb } from "@/server/modules/letters/service";
+import { kalimatPemberitahuan } from "@/lib/super-admin-global";
 import { listNotificationReadsFromDb } from "@/server/modules/notifications/service";
 import { getPositionsFromDb, requireActorUser } from "@/server/modules/organization/service";
+import { daftarAksesTerbaru } from "@/server/modules/satker/akses-global";
 
 export type TaskQuery = {
   source?: string | null;
@@ -486,6 +488,33 @@ async function buildAdminSettingsTasks(
 
   const tasks: TaskItem[] = [];
   const now = new Date().toISOString();
+
+  // Banyak satker: setiap akses super admin global diberitahukan ke admin satker.
+  // Tanpa akses (atau jejak tak terbaca) daftar ini kosong - tidak menambah galat.
+  try {
+    for (const akses of await daftarAksesTerbaru(db)) {
+      const entityId = `akses_global_${akses.id}`;
+      const kalimat = kalimatPemberitahuan(akses);
+      tasks.push({
+        id: `system_task:${entityId}`,
+        entityType: "system_task",
+        entityId,
+        sourceApp: "admin",
+        sourceLabel: "Pengaturan Admin",
+        title: kalimat.judul,
+        description: kalimat.uraian,
+        href: "/admin/audit-trail",
+        status: "Dicatat",
+        priority: "high",
+        sourceType: "system_task",
+        createdAt: akses.waktu,
+        footer: "Akses super admin global",
+        seen: isSeen(readSet, "system_task", entityId),
+      });
+    }
+  } catch {
+    /* jejak akses tidak terbaca: tidak menambah pemberitahuan */
+  }
 
   try {
     const row = await db.queryOne<PanelSettingsTaskRow>(

@@ -14,6 +14,7 @@ import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { susunMenuEkstensi } from "@/server/modules/aleta-ecourt/menu-ekstensi";
 import { untukEkstensi } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { requireActorUser } from "@/server/modules/organization/service";
+import { bacaRingkasanFiturKlien } from "@/server/modules/satker/fitur";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { EKSTENSI_VERSI } from "@/server/shared/ekstensi-berkas";
 import { handleRouteError, ok } from "@/server/shared/http";
@@ -81,6 +82,9 @@ export async function GET(request: NextRequest) {
       // basi TANPA permintaan tambahan (K5); isinya diambil lewat
       // /ekstensi/tipe-keluaran hanya bila versinya berubah.
       versiTipe: await versiTipeKeluaran(db),
+      // Banyak satker (Tahap 0): saluran pembaruan dan status fitur satker ini.
+      // Tambahan murni - ekstensi lama mengabaikannya; gagal baca = semua menyala.
+      fiturSatker: await bacaRingkasanFiturKlien(db),
     });
   } catch (error) {
     return handleRouteError(error);
