@@ -299,6 +299,8 @@ vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
 vi.mock("@/server/modules/aleta-ecourt/hak-putusan", () => ({
   pastikanBolehUnggahPutusan: async () => ({ actor: { id: "usr_uji", name: "Hakim Uji" }, peran: "hakim" }),
+  // Audit 17 Okt: majelis hakim diuji di hak-unggah-putusan-9okt.
+  pastikanMajelisPutusan: async () => undefined,
   bolehUnggahPutusan: () => true,
 }));
 vi.mock("@/server/shared/admin-access-audit", () => ({

@@ -802,6 +802,8 @@ vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uj
 vi.mock("@/server/modules/aleta-ecourt/hak-putusan", () => ({
   // Hak unggah putusan (9 Okt 2026) diuji di hak-unggah-putusan-9okt.test.ts.
   pastikanBolehUnggahPutusan: async () => ({ actor: { name: "Penguji" }, peran: "hakim" }),
+  // Audit 17 Okt: majelis hakim diuji di hak-unggah-putusan-9okt.
+  pastikanMajelisPutusan: async () => undefined,
   bolehUnggahPutusan: () => true,
 }));
 vi.mock("@/server/shared/admin-access-audit", () => ({
