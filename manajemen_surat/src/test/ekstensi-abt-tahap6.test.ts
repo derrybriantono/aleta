@@ -612,6 +612,9 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
           .replace(/Klik dua kali untuk menyunting sebelum dimasukkan ke ABT/g, "Klik untuk menyunting sebelum dimasukkan ke ABT")
           .replace(/aria-label="Sunting usulan ([^"]*?) \(klik dua kali\)"/g, 'aria-label="Sunting usulan $1"')
           .replace(/\(kosong - klik dua kali untuk mengisi\)/g, "(kosong - klik untuk mengisi)")
+          // 17 Okt: istilah layar "Templat pertanyaan/templat ABT" kini "Blangko tanya jawab" (hanya tulisan).
+          .replace(/Blangko tanya jawab/g, "Templat pertanyaan")
+          .replace(/blangko tanya jawab/g, "templat")
       );
       expect(b).toEqual(a);
       await tunggu(40);
@@ -1298,7 +1301,7 @@ describe("penyimpanan lokal: sematan (abt-22), mode baca (abt-25), draf (abt-29)
     expect(kolom[0].querySelector("textarea").value).toBe("Ya, paman");
     expect(kolom[1].querySelector("textarea").value).toBe("Ya, tetangga");
     expect(kolom[0].querySelector(".aleta-sdg-tanya").textContent).toBe("Apakah saksi kenal?");
-    tombol(h, "☆ Simpan sebagai templat saya").click();
+    tombol(h, "☆ Simpan sebagai blangko saya").click();
     await sampai(() => h.simpanan.abtTemplatPribadi, "templat tersimpan");
     const templat = (h.simpanan.abtTemplatPribadi as any)["Cerai Gugat"];
     expect(templat[0].tanya).toEqual(["Apakah saksi kenal?", "Kapan Penggugat dan Tergugat menikah?", "Sejak kapan tidak rukun?"]);

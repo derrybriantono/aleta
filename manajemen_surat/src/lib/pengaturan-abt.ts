@@ -5,7 +5,7 @@
  *
  * 16 Oktober 2026 (Tahap H). Halaman admin "Pengaturan SIPP & ABT" mengubah
  * hak menu folder Blangko Derry di ABT, saklar kebijakan yang diturunkan dari
- * hak itu, variabel ABT yang dipakai blangko Derry, dan template tanya jawab.
+ * hak itu, variabel ABT yang dipakai blangko Derry, dan blangko tanya jawab.
  * Berkas ini memuat yang tidak butuh jaringan: siapa boleh apa, pemeriksa kueri
  * (cermin pagarBaca mesin variabel bot - yang memutus tetap bot), pemeriksa
  * huruf latin1, beda sebelum-sesudah dalam bahasa sehari-hari, dan saklar.
@@ -428,10 +428,10 @@ export function artiJenisVariabel(jenis: string): string {
 
 export type BarisTemplat = { no?: number; tanya: string; jawab: string };
 
-/** Periksa isi template sebelum dikirim - pulang daftar masalah (kosong = aman). */
+/** Periksa isi blangko tanya jawab sebelum dikirim - pulang daftar masalah (kosong = aman). */
 export function periksaTemplat(baris: BarisTemplat[]): string[] {
   const masalah: string[] = [];
-  if (!baris.length) masalah.push("Template harus memuat sedikitnya satu pertanyaan.");
+  if (!baris.length) masalah.push("Blangko tanya jawab harus memuat sedikitnya satu pertanyaan.");
   if (baris.length > 200) masalah.push("Paling banyak 200 pertanyaan.");
   baris.forEach((b, i) => {
     if (!String(b.tanya ?? "").trim()) masalah.push(`Pertanyaan nomor ${i + 1} kosong.`);
@@ -441,7 +441,7 @@ export function periksaTemplat(baris: BarisTemplat[]): string[] {
   return masalah;
 }
 
-/** Ringkas beda dua isi template: "3 pertanyaan diubah, 1 ditambah". */
+/** Ringkas beda dua isi blangko tanya jawab: "3 pertanyaan diubah, 1 ditambah". */
 export function ringkasBedaTemplat(lama: BarisTemplat[], baru: BarisTemplat[]): string {
   let ubah = 0;
   const n = Math.min(lama.length, baru.length);

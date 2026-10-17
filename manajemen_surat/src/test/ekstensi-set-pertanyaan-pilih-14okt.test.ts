@@ -190,7 +190,7 @@ describe("Set pertanyaan ALETA: satu baris, selebar kolom", () => {
     }
   });
 
-  it("pilihan set adalah dropdown biasa (bukan multiple/size) berkelas sama dengan Templat pertanyaan", async () => {
+  it("pilihan set adalah dropdown biasa (bukan multiple/size) berkelas sama dengan Blangko tanya jawab", async () => {
     const { form } = await bukaBorangSaksi({ ujiTampilan: "ui" });
     const templat = form.querySelector("label.aleta-sdg-ruas > select.aleta-sdg-pilih");
     const set = form.querySelector(".aleta-sdg-baris-set-aleta > select.aleta-sdg-set-aleta");

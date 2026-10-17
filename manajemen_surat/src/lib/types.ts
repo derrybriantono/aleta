@@ -83,7 +83,7 @@ export type ModuleId =
   | "aleta-sipp"
   | "aleta-sipp-settings"
   // Pengaturan SIPP & ABT (16 Okt 2026, Tahap H): hak menu ABT Blangko Derry,
-  // saklar kebijakan, variabel & template tanya jawab ABT.
+  // saklar kebijakan, variabel & blangko tanya jawab ABT.
   | "pengaturan-sipp-abt"
   // Pengawasan berjenjang: 185 butir penilaian dalam dua belas bab.
   | "aleta-e-audit"

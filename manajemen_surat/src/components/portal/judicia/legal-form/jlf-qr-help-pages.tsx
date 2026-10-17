@@ -175,7 +175,7 @@ const helpSections = [
   {
     title: "Tanya Jawab/BAS",
     items: [
-      "Template Tanya Jawab/BAS memakai kode, jenis perkara, dan urutan pertanyaan/jawaban seperti pola ABT.",
+      "Blangko Tanya Jawab/BAS memakai kode, jenis perkara, dan urutan pertanyaan/jawaban seperti pola ABT.",
       "Gunakan source_type jlf_bas_qa pada variabel untuk memasukkan section tanya jawab ke template BAS.",
       "Item dapat ditambah, diedit, dihapus, dan digeser oleh user dengan permission template update.",
     ],

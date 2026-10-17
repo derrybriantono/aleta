@@ -649,12 +649,12 @@ function JlfAdminFunctionalPanel({
     return (
       <Card className="mt-4 border-border/80">
         <CardHeader>
-          <CardTitle>Template Tanya Jawab/BAS</CardTitle>
-          <CardDescription>Admin mengelola kode, jenis perkara, pertanyaan, jawaban, dan urutan BAS. User harian hanya memakai template yang aktif.</CardDescription>
+          <CardTitle>Blangko Tanya Jawab/BAS</CardTitle>
+          <CardDescription>Admin mengelola kode, jenis perkara, pertanyaan, jawaban, dan urutan BAS. User harian hanya memakai blangko yang aktif.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
-            <Link href={`${JUDICIA_LEGAL_FORM_ROUTE}/bas-qa`}>Buka Template BAS</Link>
+            <Link href={`${JUDICIA_LEGAL_FORM_ROUTE}/bas-qa`}>Buka Blangko BAS</Link>
           </Button>
           <Badge variant="outline">source_type: jlf_bas_qa</Badge>
           <Badge variant="success">Tanpa raw SQL client</Badge>

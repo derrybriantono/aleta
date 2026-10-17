@@ -8,8 +8,8 @@ import { isiTanda, semuaSetSaksi } from "@/lib/set-pertanyaan-saksi";
 
 /**
  * Panduan pertanyaan saksi ALETA (F3.3) - BACA SAJA di Pengaturan SIPP & ABT,
- * bagian Template tanya jawab. Isinya tetap di ALETA (tidak ditulis ke tabel
- * template ABT); petugas memuatnya di Blangko Derry lewat "Set pertanyaan".
+ * bagian Blangko tanya jawab. Isinya tetap di ALETA (tidak ditulis ke tabel
+ * blangko tanya jawab ABT); petugas memuatnya di Blangko Derry lewat "Set pertanyaan".
  * Ditampilkan agar hakim dapat menilai pertanyaan, unsur, dan dasar hukumnya.
  */
 export function SetSaksiAleta() {
@@ -26,7 +26,7 @@ export function SetSaksiAleta() {
         <CardTitle>Panduan pertanyaan saksi ALETA</CardTitle>
         <CardDescription>
           {semua.length} set pertanyaan saksi menurut jenis perkara dan alasan cerai. Blangko Derry menyarankan set yang cocok; petugas dapat mengubahnya
-          sebelum disimpan. Panduan ini tidak mengubah template ABT di atas.
+          sebelum disimpan. Panduan ini tidak mengubah blangko tanya jawab ABT di atas.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

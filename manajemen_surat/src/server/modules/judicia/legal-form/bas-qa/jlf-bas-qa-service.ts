@@ -80,9 +80,9 @@ function normalizeTemplates(value: unknown): JlfBasQaTemplate[] {
   return value
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item))
     .map((item) => ({
-      id: normalizeText(item.id, "ID template", 120),
+      id: normalizeText(item.id, "ID blangko tanya jawab", 120),
       code: normalizeText(item.code, "Kode", 40),
-      name: normalizeText(item.name, "Nama template", 160),
+      name: normalizeText(item.name, "Nama blangko tanya jawab", 160),
       caseType: normalizeText(item.caseType, "Jenis perkara", 120, false) || "Umum",
       paperSize: normalizeText(item.paperSize, "Ukuran kertas", 20, false) || "A4",
       isActive: item.isActive !== false,
@@ -114,13 +114,13 @@ async function readTemplates(db: AletaDatabase) {
 async function writeTemplates(db: AletaDatabase, actor: UserPersona, templates: JlfBasQaTemplate[]) {
   await setSetting(db, BAS_QA_SETTING_KEY, templates, {
     actorUserId: actor.id,
-    description: "Template tanya jawab dan struktur BAS JLF.",
+    description: "Blangko tanya jawab dan struktur BAS JLF.",
   });
 }
 
 function findTemplate(templates: JlfBasQaTemplate[], id: string) {
   const template = templates.find((item) => item.id === id);
-  if (!template) jlfNotFound("Template Tanya Jawab/BAS tidak ditemukan.");
+  if (!template) jlfNotFound("Blangko Tanya Jawab/BAS tidak ditemukan.");
   return template;
 }
 
@@ -236,7 +236,7 @@ export async function createBasQaTemplate(
   const template: JlfBasQaTemplate = {
     id: nextId("jlf-bas-qa"),
     code: normalizeText(input.code, "Kode", 40),
-    name: normalizeText(input.name, "Nama template", 160),
+    name: normalizeText(input.name, "Nama blangko tanya jawab", 160),
     caseType: normalizeText(input.caseType, "Jenis perkara", 120, false) || "Umum",
     paperSize: normalizeText(input.paperSize, "Ukuran kertas", 20, false) || "A4",
     isActive: true,
@@ -261,7 +261,7 @@ export async function updateBasQaTemplate(
   const templates = await readTemplates(db);
   const template = findTemplate(templates, id);
   template.code = input.code === undefined ? template.code : normalizeText(input.code, "Kode", 40);
-  template.name = input.name === undefined ? template.name : normalizeText(input.name, "Nama template", 160);
+  template.name = input.name === undefined ? template.name : normalizeText(input.name, "Nama blangko tanya jawab", 160);
   template.caseType = input.caseType === undefined ? template.caseType : normalizeText(input.caseType, "Jenis perkara", 120, false) || "Umum";
   template.paperSize = input.paperSize === undefined ? template.paperSize : normalizeText(input.paperSize, "Ukuran kertas", 20, false) || "A4";
   template.isActive = input.isActive === undefined ? template.isActive : input.isActive !== false;

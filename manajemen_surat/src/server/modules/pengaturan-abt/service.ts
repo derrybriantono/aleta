@@ -480,7 +480,7 @@ export async function catatPaketLogo(db: AletaDatabase, aktor: AktorPengaturan, 
 }
 
 // ---------------------------------------------------------------------------
-// Template tanya jawab
+// Blangko tanya jawab
 // ---------------------------------------------------------------------------
 
 export async function daftarTemplat() {
@@ -500,9 +500,9 @@ function bacaBaris(x: unknown): BarisTemplat[] {
 }
 
 export async function simpanTemplat(db: AletaDatabase, aktor: AktorPengaturan, ip: string, badan: Record<string, unknown>, pulihDari = "") {
-  wajibHak(hakPengaturanAbt(aktor.roleId), "ubahTemplat", "mengubah template tanya jawab");
+  wajibHak(hakPengaturanAbt(aktor.roleId), "ubahTemplat", "mengubah blangko tanya jawab");
   const kode = String(badan.kode ?? "");
-  if (!kode.trim() || kode.length > 5) throw new ApiError(400, "Kode template tidak sah.");
+  if (!kode.trim() || kode.length > 5) throw new ApiError(400, "Kode blangko tanya jawab tidak sah.");
   const lama = bacaBaris(badan.lama);
   const baru = bacaBaris(badan.baru);
   const bolehKosong = Boolean(pulihDari);
@@ -513,7 +513,7 @@ export async function simpanTemplat(db: AletaDatabase, aktor: AktorPengaturan, i
     {
       jenis: "templat",
       kunci: kode,
-      ringkas: String(badan.ringkas ?? "").trim() || `template ${kode}: ${ringkasBedaTemplat(lama, baru)}`,
+      ringkas: String(badan.ringkas ?? "").trim() || `blangko tanya jawab ${kode}: ${ringkasBedaTemplat(lama, baru)}`,
       lama: { baris: lama },
       baru: { baris: baru },
       aktor,

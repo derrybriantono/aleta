@@ -407,7 +407,7 @@ export const JUDICIA_LEGAL_FORM_SIDEBAR_ITEMS: JudiciaLegalFormSidebarItem[] = [
   {
     id: "bas-qa",
     label: "Tanya Jawab/BAS",
-    description: "Template pertanyaan, jawaban, dan struktur BAS",
+    description: "Blangko pertanyaan, jawaban, dan struktur BAS",
     href: `${JUDICIA_LEGAL_FORM_ROUTE}/bas-qa`,
     iconKey: "book-open-text",
     permission: JLF_PERMISSION.TEMPLATE_VIEW,
@@ -588,8 +588,8 @@ export const JUDICIA_LEGAL_FORM_FEATURE_CARDS: JudiciaLegalFormFeatureCard[] = [
   },
   {
     id: "bas-qa",
-    title: "Template Tanya Jawab/BAS",
-    description: "Kelola template pertanyaan, jawaban, dan urutan BAS seperti kebutuhan legacy ABT.",
+    title: "Blangko Tanya Jawab/BAS",
+    description: "Kelola blangko pertanyaan, jawaban, dan urutan BAS seperti kebutuhan legacy ABT.",
     badge: "BAS",
     href: `${JUDICIA_LEGAL_FORM_ROUTE}/bas-qa`,
     iconKey: "book-open-text",
@@ -716,7 +716,7 @@ export const JUDICIA_LEGAL_FORM_ADMIN_TABS: JudiciaLegalFormAdminTab[] = [
   {
     id: "bas-qa",
     label: "Tanya Jawab/BAS",
-    description: "Template pertanyaan, jawaban, urutan, dan integrasi section BAS.",
+    description: "Blangko pertanyaan, jawaban, urutan, dan integrasi section BAS.",
     requiredPermission: JLF_PERMISSION.TEMPLATE_UPDATE,
   },
   {

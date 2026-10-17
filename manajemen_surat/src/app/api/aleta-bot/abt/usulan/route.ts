@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
       saksi: saringSaksi(body.saksi),
       pertanyaanSaksi: saringPertanyaanSaksi(body.pertanyaanSaksi),
       tipeKeluaran: tipe.tipeKeluaran,
-      // Templat tanya-jawab, diambil ekstensi dari halaman penyunting ABT
+      // Blangko tanya jawab, diambil ekstensi dari halaman penyunting ABT
       // (POST load_template) - ALETA tetap tidak membaca basis data ABT.
       // Dibatasi enam puluh baris dan panjang tiap ruasnya, sebab ia masukan.
       templat: Array.isArray(body.templat)

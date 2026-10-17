@@ -45,7 +45,7 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
  * Pengaturan SIPP & ABT (16 Okt 2026, Tahap H) - halaman admin.
  *
  * Empat bagian: (1) Hak menu ABT folder Blangko Derry + saklar kebijakan,
- * (2) Isian blangko (variabel ABT yang dipakai blangko Derry), (3) Template
+ * (2) Isian blangko (variabel ABT yang dipakai blangko Derry), (3) Blangko
  * tanya jawab, (4) Riwayat. Setiap ubahan: rancangan di layar -> pratinjau
  * beda -> Simpan; nilai lama tercatat dan bisa dikembalikan. Rute
  * /api/pengaturan-sipp-abt yang menjaga peran.
@@ -857,7 +857,7 @@ function BagianVariabel({ hakAwal, noVarAwal }: { hakAwal: HakPengaturanAbt | nu
 }
 
 // ===========================================================================
-// Template tanya jawab
+// Blangko tanya jawab
 // ===========================================================================
 
 type Kumpulan = { kode: string; nama: string; jenisPerkaraId: number[]; jumlah: number };
@@ -933,14 +933,14 @@ function BagianTemplat({ hakAwal }: { hakAwal: HakPengaturanAbt | null }) {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Template tanya jawab ABT</CardTitle>
+          <CardTitle>Blangko tanya jawab ABT</CardTitle>
           <CardDescription>
-            Daftar pertanyaan yang dimuat petugas di ABT (mis. pertanyaan saksi). Tanda seperti #0046# di jawaban diganti nama pihak saat dimuat. Template
+            Daftar pertanyaan yang dimuat petugas di ABT (mis. pertanyaan saksi). Tanda seperti #0046# di jawaban diganti nama pihak saat dimuat. Blangko
             tidak dapat dihapus dari sini.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {!boleh ? <Pesan jenis="info">Hanya Super Admin dan Admin yang dapat mengubah template.</Pesan> : null}
+          {!boleh ? <Pesan jenis="info">Hanya Super Admin dan Admin yang dapat mengubah blangko tanya jawab.</Pesan> : null}
           {galat ? <Pesan jenis="galat">{galat}</Pesan> : null}
           {pesan ? <Pesan jenis="berhasil">{pesan}</Pesan> : null}
           <NativeSelect
@@ -951,7 +951,7 @@ function BagianTemplat({ hakAwal }: { hakAwal: HakPengaturanAbt | null }) {
               setPesan("");
             }}
           >
-            <option value="">Pilih template...</option>
+            <option value="">Pilih blangko tanya jawab...</option>
             {(kumpulan ?? []).map((k) => (
               <option key={k.kode} value={k.kode}>
                 {k.nama} ({k.jumlah} pertanyaan)
@@ -1029,7 +1029,7 @@ function BagianTemplat({ hakAwal }: { hakAwal: HakPengaturanAbt | null }) {
       {kode ? (
         <Card>
           <CardHeader>
-            <CardTitle>Riwayat template ini</CardTitle>
+            <CardTitle>Riwayat blangko ini</CardTitle>
           </CardHeader>
           <CardContent>
             <DaftarRiwayat jenis="templat" kunci={kode} bolehKembalikan={() => boleh} segarkan={segarkan} sesudahKembalikan={() => void muatIsi(kode)} />
@@ -1048,7 +1048,7 @@ function BagianTemplat({ hakAwal }: { hakAwal: HakPengaturanAbt | null }) {
 const BAGIAN: Array<[Bagian, string]> = [
   ["menu", "Hak menu & saklar"],
   ["variabel", "Isian blangko"],
-  ["templat", "Template tanya jawab"],
+  ["templat", "Blangko tanya jawab"],
   ["satker", "Identitas satker"],
   ["advance", "Putusan Advance"],
   ["riwayat", "Riwayat semua"],
@@ -1086,7 +1086,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
       <PageIntro
         eyebrow="Pengaturan"
         title="Pengaturan SIPP & ABT"
-        description="Hak menu ABT untuk Blangko Derry, saklar kebijakan, isian blangko, template tanya jawab, dan identitas satker (kop, logo, kode surat). Setiap simpan langsung berlaku di ABT, dicatat, dan dapat dikembalikan."
+        description="Hak menu ABT untuk Blangko Derry, saklar kebijakan, isian blangko, blangko tanya jawab, dan identitas satker (kop, logo, kode surat). Setiap simpan langsung berlaku di ABT, dicatat, dan dapat dikembalikan."
       />
       <div role="tablist" aria-label="Bagian pengaturan" className="flex flex-wrap gap-2">
         {BAGIAN.map(([k, t]) => (

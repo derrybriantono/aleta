@@ -1338,7 +1338,7 @@ function notSippPreview(sourceType: string, sourceKey: string): JlfVariableQuery
   const labels: Record<string, string> = {
     jlf_manual: "Data manual JLF",
     jlf_temp: "Data sementara JLF",
-    jlf_bas_qa: "Template Tanya Jawab/BAS",
+    jlf_bas_qa: "Blangko Tanya Jawab/BAS",
     function: "Function resolver",
     qrcode: "QR code resolver",
     ai: "AI draft resolver",

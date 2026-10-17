@@ -45,7 +45,7 @@ export const dynamic = "force-dynamic";
  *   GET ?bagian=menu                       hak menu folder Blangko Derry + saklar kebijakan
  *   GET ?bagian=variabel                   variabel yang dipakai blangko Derry
  *   GET ?bagian=variabel&noVar=NNNN        satu variabel (kueri hanya untuk Super Admin)
- *   GET ?bagian=templat[&kode=X]           kumpulan / isi template tanya jawab
+ *   GET ?bagian=templat[&kode=X]           kumpulan / isi blangko tanya jawab
  *   GET ?bagian=riwayat[&jenis=&kunci=]    riwayat suntingan (cadangan nilai lama)
  *   GET ?bagian=perkara[&nomor=]           perkara contoh untuk uji variabel
  *   GET ?bagian=satker                     identitas satker ALETA + SIPP + ABT (9270-9276, #1154#) + rencana
