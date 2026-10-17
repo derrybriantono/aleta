@@ -116,6 +116,35 @@
         "panel.css"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://192.168.10.10/SIPP/*",
+        "http://192.168.10.10/aps_badilag/*",
+        "http://192.168.10.10/aleta/*",
+        "http://127.0.0.1/index.php/*",
+        "http://127.0.0.1/aps_badilag/*",
+        "http://127.0.0.1/aleta/*"
+      ],
+      "js": [
+        "unduh-universal.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://192.168.10.10/SIPP/*",
+        "http://192.168.10.10/aps_badilag/*",
+        "http://192.168.10.10/aleta/*",
+        "http://127.0.0.1/index.php/*",
+        "http://127.0.0.1/aps_badilag/*",
+        "http://127.0.0.1/aleta/*"
+      ],
+      "js": [
+        "unduh-halaman.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [

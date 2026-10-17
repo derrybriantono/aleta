@@ -1918,6 +1918,8 @@ function unduhLewatTautan(blob, nama) {
   const tautan = document.createElement("a");
   tautan.href = alamat;
   tautan.download = nama;
+  // Cadangan terakhir: jangan dialihkan lagi oleh unduh-universal.js.
+  if (typeof alatTandaiTautanAsli === "function") alatTandaiTautanAsli(tautan);
   document.body.appendChild(tautan);
   tautan.click();
   tautan.remove();

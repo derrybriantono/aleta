@@ -120,6 +120,10 @@ const BERKAS = [
   // terbungkus saat skrip konten lain berjalan.
   "penjaga-tanda.js",
   "tema-awal.js",
+  // Unduhan universal (17 Okt 2026): unduhan SIPP/ALETA/Blangko Derry lewat
+  // chrome.downloads supaya tidak diblokir Chrome di situs http.
+  "unduh-universal.js",
+  "unduh-halaman.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
   // dipanggil - skrip konten tidak punya keduanya.
   "latar.js",
