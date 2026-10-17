@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import vm from "node:vm";
 
@@ -468,3 +469,14 @@ describe("G. widget kehadiran: jadwal sidang tidak terbaca bukan 'tidak ada sida
   });
 });
 
+// ============================================================================
+// H. Penanda verifikasi e-Court sudah dipastikan pengguna
+// ============================================================================
+describe("H. katalog penanda L2", () => {
+  it("'Dokumen e-Court belum diverifikasi' tidak lagi 'perlu dicek' (keputusan 17 Okt butir 31)", () => {
+    const muat = createRequire(import.meta.url);
+    const layanan = muat(path.join(AKAR, "aleta_bot/services/sippIdeL2Service.js")) as { KATALOG: Record<string, { perluDicek?: boolean }> };
+    expect(layanan.KATALOG["ecourt-verifikasi"].perluDicek).toBeFalsy();
+    for (const [kode, k] of Object.entries(layanan.KATALOG)) expect(k.perluDicek, kode).toBeFalsy();
+  });
+});
