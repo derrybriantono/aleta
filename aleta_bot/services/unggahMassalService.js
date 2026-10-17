@@ -258,6 +258,23 @@ function buatLayanan(depsMasuk) {
     const d = deps();
     const pid = Number(perkaraId);
     if (!Number.isInteger(pid) || pid <= 0) return { ok: false, alasan: "perkara_tidak_sah" };
+    // 17 Okt (audit A4): siapa petugas perkara ini - portal menolak unggahan oleh hakim yang
+    // bukan majelisnya dan PP yang bukan PP-nya. null = tidak terbaca (portal menolak, bukan meloloskan).
+    const petugas = async () => {
+      try {
+        const b = await d.kueriSipp(
+          `SELECT (SELECT GROUP_CONCAT(DISTINCT h.hakim_nama ORDER BY h.urutan SEPARATOR '|')
+                     FROM perkara_hakim_pn h WHERE h.perkara_id = ? AND h.tahapan_id = 10) AS majelis,
+                  (SELECT GROUP_CONCAT(DISTINCT n.panitera_nama SEPARATOR '|')
+                     FROM perkara_panitera_pn n WHERE n.perkara_id = ? AND n.aktif = 'Y') AS panitera`,
+          [pid, pid]
+        );
+        const r = (Array.isArray(b) && b[0]) || {};
+        return { majelis: daftarNama(r.majelis), panitera: daftarNama(r.panitera) };
+      } catch {
+        return { majelis: null, panitera: null };
+      }
+    };
     if (jenis === "putusan") {
       const b = await d.kueriSipp(
         `SELECT DATE_FORMAT(tanggal_putusan, '%Y-%m-%d') AS tanggal_putusan, amar_putusan_dok, amar_putusan_anonimisasi_dok
@@ -265,9 +282,11 @@ function buatLayanan(depsMasuk) {
         [pid]
       );
       const r = b[0];
-      if (!r) return { ok: true, adaBaris: false, adaPutusan: false, adaAnonim: false, jalurPutusan: "", jalurAnonim: "", tanggalPutusan: "" };
+      const pet = await petugas();
+      if (!r) return { ok: true, adaBaris: false, adaPutusan: false, adaAnonim: false, jalurPutusan: "", jalurAnonim: "", tanggalPutusan: "", ...pet };
       return {
         ok: true,
+        ...pet,
         adaBaris: true,
         tanggalPutusan: tgl(r.tanggal_putusan),
         adaPutusan: Boolean(teks(r.amar_putusan_dok)),
@@ -288,6 +307,7 @@ function buatLayanan(depsMasuk) {
       if (!r) return { ok: false, alasan: "sidang_tidak_ditemukan" };
       return {
         ok: true,
+        ...(await petugas()),
         adaBas: Boolean(teks(r.edoc_bas)),
         jalur: teks(r.edoc_bas).split("/").pop() || "",
         urutan: angka(r.urutan),

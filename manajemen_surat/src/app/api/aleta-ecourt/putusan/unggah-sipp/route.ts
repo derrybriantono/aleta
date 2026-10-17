@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { samarkanSisaBilaTersamar, type PenggantiSamaran } from "@/lib/samarkan-sisa-rtf";
+import { PERAN_PENGAWAS_PUTUSAN, pastikanMilikPerkara } from "@/server/modules/aleta-ecourt/hak-milik-perkara";
 import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import {
   kenaliBentuk,
@@ -16,6 +17,7 @@ import {
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { ApiError } from "@/server/shared/errors";
 import { ok } from "@/server/shared/http";
 import { nextPrefixedId } from "@/server/shared/ids";
 import { alamatIpPeramban } from "@/server/shared/request";
@@ -186,6 +188,18 @@ export async function POST(request: NextRequest) {
         sebab: `Nomor perkara ${nomorPerkara} tidak ditemukan di SIPP, jadi berkasnya tidak dapat ditautkan ke perkara mana pun.`,
       });
     }
+
+    /* === 17OKT-A4: hakim hanya perkara majelisnya === */
+    // Peran saja tidak cukup: hakim lain bukan majelis perkara ini. Super Admin, Admin,
+    // Ketua, dan Wakil Ketua (pengawas) tetap boleh. Dinilai SEBELUM berkas apa pun diperiksa/ditulis.
+    const milik = await pastikanMilikPerkara({
+      jenis: "putusan",
+      perkaraId,
+      namaAkun: String(aktor?.name || ""),
+      pengawas: PERAN_PENGAWAS_PUTUSAN.has(String(peranPenekan)),
+    });
+    if (!milik.ok) throw new ApiError(milik.status, milik.pesan);
+    /* === AKHIR 17OKT-A4 === */
 
     // Kuasa hukum TIDAK dipakai sebagai penanda: nama advokat lazim tetap
     // tertulis pada putusan anonimisasi. Yang disamarkan nama para pihak.

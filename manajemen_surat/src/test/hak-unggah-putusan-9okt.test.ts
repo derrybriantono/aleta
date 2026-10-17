@@ -87,6 +87,11 @@ vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => {
     postGatewayTulisPutusan: catat("sidang/putus"),
     postGatewayPutusSidang: catat("sidang/putus-sidang"),
     getGatewayStatusPutusan: async () => ({ ok: true, data: {} }),
+    // 17 Okt (audit A4): hakim hanya perkara majelisnya - semua aktor uji ("Uji <peran>") dianggap majelisnya.
+    getGatewayUnggahMassalCek: async () => ({
+      ok: true,
+      data: { ok: true, majelis: ["Uji hakim", "Uji ketua", "Uji wakil-ketua", "Uji admin", "Uji super-admin"] },
+    }),
     getGatewayStatusPerkara: async () => ({ ok: true, data: { identitas: { perkaraId: "450" } } }),
     getGatewaySippKonteks: async () => ({ ok: false, error: "tidak dibaca dalam uji" }),
   };
