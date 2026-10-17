@@ -212,6 +212,9 @@ export async function GET(request: NextRequest) {
     const perkaraId = teks(q.get("perkaraId"));
     let nilai: Awaited<ReturnType<typeof nilaiPenanda>> | null = null;
     if (perkaraId && /^\d+$/.test(perkaraId)) {
+      // Audit 17 Okt: nilai isian perkara (nama pihak, alamat, isi gugatan) hanya untuk
+      // pemegang perkara - kemampuan "blangko-abt", bukan setiap akun ber-"panel".
+      await pastikanKapabilitas(db, actorUserId, "blangko-abt");
       const sidangKe = Number(q.get("sidangKe") || 0) || 0;
       const semua = q.get("semua") === "1";
       const kode = semua

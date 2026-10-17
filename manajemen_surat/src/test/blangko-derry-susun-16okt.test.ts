@@ -237,6 +237,31 @@ describe("B. GET /aleta-ecourt/blangko-derry", () => {
     expect(h.data).toMatchObject({ ada: false, sebab: "Blangko tidak ditemukan." });
   });
 
+  it("audit 17 Okt: nilai isian perkara (perkaraId) menuntut kemampuan blangko-abt; tanpanya nilai tidak dibaca", async () => {
+    const akses = await import("@/server/modules/aleta-ecourt/akses");
+    const kap = akses.pastikanKapabilitas as unknown as ReturnType<typeof vi.fn>;
+    kap.mockImplementation(async (_db: unknown, _id: unknown, k: string) => {
+      if (k === "blangko-abt") throw Object.assign(new Error("Peran Anda tidak diberi Panel blangko ABT."), { status: 403 });
+      return { id: "u9", name: "Analis Keuangan" };
+    });
+    bridge.mockImplementation(async (op: string) => {
+      if (op === "blangko.baca") return { ok: true, data: { ada: true, berkas: "a.rtf", penanda: ["0001"] } };
+      if (op === "abt.semuaVariabel") return { ok: true, data: { ada: true, variabel: [{ noVar: "0001", nama: "Nomor", jenis: "data_sql", sqlQuery: "", defaultData: "" }] } };
+      return { ok: true, data: { ok: true, nilai: { "0001": { status: "terisi", teks: "RAHASIA" } } } };
+    });
+    try {
+      const { GET } = await rute();
+      const r = await GET(nextReq("?folder=1%20Perceraian%20CG&berkas=a.rtf&perkaraId=10154&semua=1"));
+      expect(r.ok).toBe(false);
+      expect(await r.text()).not.toContain("RAHASIA");
+      expect(bridge.mock.calls.map((c) => c[0])).not.toContain("abt.nilaiPenanda");
+      // Tanpa perkaraId (kerangka blangko saja) tetap boleh bagi "panel".
+      expect((await GET(nextReq("?folder=1%20Perceraian%20CG&berkas=a.rtf"))).ok).toBe(true);
+    } finally {
+      kap.mockImplementation(async () => ({ id: "u1", name: "Hakim Satu" }));
+    }
+  });
+
   it("masukan salah dijawab 400 tanpa memanggil jembatan; tidak ada operasi tulis", async () => {
     const { GET } = await rute();
     expect((await GET(nextReq("?folder=1%20Perceraian%20CG"))).status).toBe(400);

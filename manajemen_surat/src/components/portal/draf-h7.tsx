@@ -101,7 +101,8 @@ export function PanelDrafH7({ perkaraId, ringkas }: { perkaraId: string; ringkas
       const balasan = await fetch(apiPath(`/api/aleta-ecourt/agen-h7?perkaraId=${encodeURIComponent(perkaraId)}`), { cache: "no-store" });
       const isi = (await balasan.json()) as { data?: { peta?: Record<string, DrafLengkap> } };
       setDraf(isi?.data?.peta?.[perkaraId] ?? null);
-      if (!balasan.ok) setGalat("Draf H-7 tidak terbaca.");
+      if (balasan.status === 403) setGalat("Isi draf H-7 hanya dapat dibuka pemegang perkara (majelis, panitera, panitera pengganti).");
+      else if (!balasan.ok) setGalat("Draf H-7 tidak terbaca.");
     } catch (e) {
       setGalat(e instanceof Error ? e.message : "Draf H-7 tidak terbaca.");
     } finally {
