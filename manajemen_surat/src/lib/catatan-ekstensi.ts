@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.0",
+    dirilis: "2026-10-17T11:30:00+08:00",
+    judul: "Tindak lanjut keputusan 17 Okt: identitas satker, checklist lengkap, varian draf ditolak, Putusan Advance semua jenis",
+    butir: [
+      "Pengaturan SIPP & ABT: tab Identitas satker (logo kop, telepon, alamat, laman, surel, kode surat, zona waktu) yang diterapkan ke blangko ABT dengan cadangan dan Kembalikan.",
+      "Checklist konseptor menampilkan eksepsi, rekonvensi, dan putusan sela bila ada; Dikoreksi majelis hanya untuk majelis; tampil juga untuk konseptor yang tercatat di SIPP.",
+      "Agen H-7 menyiapkan draf dikabulkan dan ditolak; widget kehadiran dan draf H-7 menyala terlipat di kiri bawah.",
+      "Putusan Advance untuk hakim dan konseptor, memeriksa juga itsbat, dispensasi, ahli waris, perwalian, dan jenis lain; set pertanyaan saksi mengikuti keputusan hukum terbaru.",
+      "Unggah massal: Ganti e-Doc BAS (berkas lama dipindah ke folder terhapus); skors hanya diusulkan ke BAS sebelum pengucapan putusan; panel massal ABT bergembok.",
+      "Tidak ada lagi tanda ALETA yang masuk ke SIPP: alamat komputer petugas yang dicatat, dan properti berkas putusan/BAS dibersihkan.",
+    ],
+  },
+  {
     versi: "1.204.1",
     dirilis: "2026-10-17T07:00:00+08:00",
     judul: "Agen draf putusan H-7, Putusan Advance, blangko jenis baru, dan perbaikan sinkron SIPP-ABT-ALETA",
