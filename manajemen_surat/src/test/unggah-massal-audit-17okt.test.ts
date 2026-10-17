@@ -322,7 +322,7 @@ describe("D3. kumulasi dan keadaan putusan pada unggah massal putusan", () => {
     } as unknown as UnggahMassalDaftarBot;
     const h = susunDaftarUnggahMassal({ data, hak: hakUnggahMassal(HAKIM as never), namaAkun: "Hakim Satu" });
     expect(h.putusan[0].kumulasi).toEqual({ daftar: [{ kode: "itsbat-nikah" }] });
-    expect(h.putusan[0].keadaanPutusan).toEqual(["mediasi-sebagian", "kontradiktoir", "sesudah-mediasi"]);
+    expect(h.putusan[0].keadaanPutusan).toEqual(["mediasi-sebagian", "kontradiktoir", "sesudah-mediasi", "kumulasi-itsbat"]); // I17 18 Okt: penanda kumulasi ikut
 
     const { w, f } = bukaEkstensi();
     const diterima: unknown[][] = [];
@@ -336,7 +336,7 @@ describe("D3. kumulasi dan keadaan putusan pada unggah massal putusan", () => {
     const r = await f.f41Bawaan().blangkoPutusan({ ...BARIS_PUT("348"), ...h.putusan[0] }, () => undefined);
     expect(r.berkas).toBe("[01] Kumulasi");
     expect(diterima[0][4]).toEqual({ daftar: [{ kode: "itsbat-nikah" }] });
-    expect(diterima[0][5]).toEqual(["mediasi-sebagian", "kontradiktoir", "sesudah-mediasi"]);
+    expect(diterima[0][5]).toEqual(["mediasi-sebagian", "kontradiktoir", "sesudah-mediasi", "kumulasi-itsbat"]);
   });
 });
 

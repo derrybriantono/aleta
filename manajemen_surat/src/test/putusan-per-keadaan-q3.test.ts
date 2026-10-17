@@ -131,10 +131,10 @@ describe("pemilih blangko putusan per keadaan (panel-alat.js yang dijalankan)", 
       expect(no!.baris.berkas).toBe("[99] [NO] IN - Dibawah Umur");
       expect(no!.baris.blangko).toBe("Putusan Itsbat Nikah");
     });
-    it("NO pola SEMA 1/2022 -> permohonan umum 9b", () => {
+    it("NO pola SEMA 1/2022 -> [99a] folder Itsbat Nikah sendiri (I17 18 Okt; dulu permohonan umum 9b)", () => {
       const h = pilih(IN, "Tidak Dapat Diterima", false, ["sema-1-2022"]);
-      expect(h!.baris.berkas).toBe("[99] [NO] Permohonan - Pemohon Tidak Hadir Lagi (SEMA 1 2022)");
-      expect(h!.baris.blangko).toBe("Putusan Permohonan Umum (Cabut/Gugur/NO)");
+      expect(h!.baris.berkas).toBe("[99a] [NO] IN - Pemohon Tidak Hadir Lagi (SEMA 1 2022)");
+      expect(h!.baris.blangko).toBe("Putusan Itsbat Nikah");
     });
     it("itsbat kontensius (Pdt.G): kabul/cabut/NO ke folder 2a, bukan permohonan", () => {
       const kabul = pilih(IN, "Dikabulkan", false, ["kontensius"]);
@@ -151,9 +151,10 @@ describe("pemilih blangko putusan per keadaan (panel-alat.js yang dijalankan)", 
       expect(pilih("Dispensasi Kawin", "Ditolak")!.baris.berkas).toBe("[03] [Tolak] DK - (Anak P Cewek) Belum Hamil");
       expect(pilih("Dispensasi Kawin", "Dicabut")!.baris.berkas).toBe("[98] [Cabut] DK");
       expect(pilih("Dispensasi Kawin", "Tidak Dapat Diterima")!.baris.berkas).toBe("[99] [NO] DK - Pemohon Tidak Hadir Lagi (SEMA 1 2022)");
+      // I17 18 Okt: gugur kini [98a] folder Dispensasi Kawin sendiri (dulu permohonan umum 9b)
       const gugur = pilih("Dispensasi Kawin", "Digugurkan");
-      expect(gugur!.baris.berkas).toBe("[98] [Gugur] Permohonan - Pemohon Tidak Pernah Hadir");
-      expect(gugur!.baris.blangko).toBe("Putusan Permohonan Umum (Cabut/Gugur/NO)");
+      expect(gugur!.baris.berkas).toBe("[98a] [Gugur] DK - Pemohon Tidak Pernah Hadir");
+      expect(gugur!.baris.blangko).toBe("Putusan Dispensasi Kawin");
     });
     it("Penetapan Ahli Waris (nama SIPP P3HP/...): kabul [01], NO kabur [99], cabut/gugur -> 9b", () => {
       const P3 = "P3HP/Penetapan Ahli Waris";
@@ -161,21 +162,22 @@ describe("pemilih blangko putusan per keadaan (panel-alat.js yang dijalankan)", 
       expect(kabul!.baris.berkas).toContain("[01] [Kabul] PAW - Ahli Waris Anak Kandung");
       expect(kabul!.baris.blangko).toBe("Putusan Penetapan Ahli Waris (P3HP)");
       expect(pilih(P3, "Tidak Dapat Diterima")!.baris.berkas).toBe("[99] [NO] PAW - Permohonan Kabur (Obscuur Libel)");
-      expect(pilih(P3, "Tidak Dapat Diterima", false, ["sema-1-2022"])!.baris.berkas).toContain("[99] [NO] Permohonan");
-      expect(pilih(P3, "Dicabut")!.baris.berkas).toBe("[98] [Cabut] Permohonan");
-      expect(pilih(P3, "Digugurkan")!.baris.berkas).toContain("[98] [Gugur] Permohonan");
+      // I17 18 Okt: SEMA, cabut, gugur kini blangko PAW sendiri (folder 9), bukan permohonan umum 9b
+      expect(pilih(P3, "Tidak Dapat Diterima", false, ["sema-1-2022"])!.baris.berkas).toBe("[99a] [NO] PAW - Pemohon Tidak Hadir Lagi (SEMA 1 2022)");
+      expect(pilih(P3, "Dicabut")!.baris.berkas).toBe("[98] [Cabut] PAW");
+      expect(pilih(P3, "Digugurkan")!.baris.berkas).toBe("[98a] [Gugur] PAW - Pemohon Tidak Pernah Hadir");
     });
     it("Perwalian: kabul, tolak primer-subsider, cabut/gugur/NO -> 9b", () => {
       expect(pilih("Perwalian", "Dikabulkan")!.baris.berkas).toBe("Perwalian Anak oleh ortu kandung Kabul");
       expect(pilih("Perwalian", "Ditolak")!.baris.berkas).toBe("Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider");
-      expect(pilih("Perwalian", "Dicabut")!.baris.berkas).toBe("[98] [Cabut] Permohonan");
+      expect(pilih("Perwalian", "Dicabut")!.baris.berkas).toBe("[98] [Cabut] Perwalian"); // I17 18 Okt: blangko Perwalian sendiri
       expect(pilih("Perwalian", "Tidak Dapat Diterima")!.baris.berkas).toContain("[99] [NO] Permohonan");
     });
     it("Pengangkatan Anak (SIPP Lain-Lain) dan Asal Usul Anak", () => {
       const pa = pilih("Lain-Lain", "Dikabulkan");
       expect(pa!.baris.berkas).toBe("[01] [Kabul] Pengangkatan Anak");
       expect(pa!.baris.blangko).toBe("Putusan Lain-Lain (Pengangkatan Anak)");
-      expect(pilih("Lain-Lain", "Dicabut")!.baris.berkas).toBe("[98] [Cabut] Permohonan");
+      expect(pilih("Lain-Lain", "Dicabut")!.baris.berkas).toBe("[98] [Cabut] Pengangkatan Anak"); // I17 18 Okt: blangko Pengangkatan Anak sendiri
       expect(pilih("Asal Usul Anak", "Dicabut")!.baris.berkas).toBe("[98] [Cabut] AUA - Setelah Pembuktian");
       expect(pilih("Asal Usul Anak", "Tidak Dapat Diterima")!.baris.berkas).toContain("[99] [NO] AUA - Poliandri");
     });
@@ -189,10 +191,10 @@ describe("pemilih blangko putusan per keadaan (panel-alat.js yang dijalankan)", 
       const waris = pilih("Kewarisan", "Perdamaian");
       expect(waris!.baris.berkas).toBe("[97] [Perdamaian] Akta Perdamaian");
       expect(waris!.baris.blangko).toBe("Putusan Kewarisan");
-      // 4b Kewarisan tidak punya [98]: dipakai milik 4a (menu Harta Bersama)
+      // I17 18 Okt: 4b Kewarisan kini punya [98] sendiri (dulu dipakai milik 4a, menu Harta Bersama)
       const cabutWaris = pilih("Kewarisan", "Dicabut");
-      expect(cabutWaris!.baris.berkas).toBe("[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban");
-      expect(cabutWaris!.baris.blangko).toBe("Putusan Harta Bersama");
+      expect(cabutWaris!.baris.berkas).toBe("[98] [Cabut] Kewarisan - P & T Hadir Sebelum Jawaban");
+      expect(cabutWaris!.baris.blangko).toBe("Putusan Kewarisan");
       expect(pilih("Izin Poligami", "Dicabut")!.baris.berkas).toBe("[98] [Cabut] Permohonan - P & T Hadir Sebelum Jawaban");
       expect(pilih("Izin Poligami", "Dikabulkan")!.baris.berkas).toBe("[01] [Kabul] Izin Poligami");
     });

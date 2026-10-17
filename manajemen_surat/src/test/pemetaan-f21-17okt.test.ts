@@ -61,7 +61,8 @@ describe("A. pohon server 17 Okt: menu, folder, berkas", () => {
     const baris = Object.entries(PETA_PUTUSAN_BAWAAN).filter(([k, v]) => ["Putusan Hak Asuh Anak (Hadhanah)", "Putusan Pembatalan Perkawinan", "Putusan Ekonomi Syariah"].includes(String(v.blangko)));
     // Lain-Lain Pdt.G (hak asuh) 8 + pembatalan 9 + ekonomi syariah 9 + 1 baris tolak "Tergugat ibu" (I7 17 Okt: [03a]) + 1 baris tolak verstek (I8 17 Okt: [03b]);
     // I15 18 Okt: 12 baris jenis 349 (10 + 2 variasi I7/I8) pindah ke blok penguasaan anak (6b) -> 28.
-    expect(baris).toHaveLength(28);
+    // I17 18 Okt: + 4 baris hak asuh (98b, 98c, 99a, 99b) dan 5 baris pembatalan (03b, 98b, 98c, 99a, 99b) -> 37.
+    expect(baris).toHaveLength(37);
     for (const [kunci, b] of baris) {
       const folder = FOLDER_MENU_PUTUSAN[String(b.blangko)];
       expect(FIX.berkas, `${kunci} -> ${b.berkas}`).toContain(`${A}${folder}/${b.berkas}.rtf`);

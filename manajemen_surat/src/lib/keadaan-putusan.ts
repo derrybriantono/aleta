@@ -22,6 +22,16 @@
  *   es-biasa(-verstek|-setelah-mediasi|-sema-1-2022)
  *                                    ekonomi syariah bernomor Pdt.G (acara biasa; Pdt.G.S = gugatan           folder "10a Ekonomi Syariah Biasa" (F22 17 Okt); akhiran
  *                                    sederhana tetap "10 Ekonomi Syariah")                                    menggandeng keadaan umum karena baris peta hanya memuat satu kode
+ *   sesudah-jawaban                  gugatan dicabut sesudah Tergugat/Termohon menjawab (perlu persetujuannya) -> cabut [98b] (I17 18 Okt);
+ *                                    bahan: saklar `sesudahJawaban` atau penandaJawaban bot (jawaban Tergugat di arsip e-Court terbaca)
+ *   cacat-formil / kurang-pihak      NO kontradiktoir karena gugatan kabur / kurang pihak -> [99a] / [99b] (I17); SIPP tidak menyimpan alasannya
+ *                                    terstruktur, jadi HANYA muncul bila ditandai tegas (saklar `cacatFormil` / `kurangPihak`); selainnya varian pilih manual
+ *   kumulasi-itsbat / kumulasi-hak-asuh
+ *                                    cerai dengan kumulasi itsbat nikah / hak asuh anak (daftar kumulasi bot) - penanda; blangkonya dipilih lewat baris
+ *                                    berkunci "<cerai>+<kumulasi>|<status>|<keadaan>" (folder 1c / 1d), bukan lewat kode ini
+ *   alamat-t-tidak-diketahui         Tergugat ghaib / alamat tidak diketahui (penandaPerkara.ghaib atau saklar) -> NO [99c] (I17)
+ *   itsbat-kabul-cerai-ditolak       cerai kumulasi itsbat: itsbat dikabulkan, cerai ditolak -> [03] folder 1c (I17); dari saklar atau amar yang menyebutnya
+ *   kontensius-verstek               itsbat kontensius, putusan verstek -> [01b] / [03b] (I17), didahulukan atas "kontensius"
  *
  * Fungsi ini MURNI (tanpa jaringan/basis data) dan dipanggil route jadwal sidang untuk tiap baris; kode-kodenya dikirim ke ekstensi
  * sebagai `keadaanPutusan` dan dipakai `alatPetaUntukPerkara` (ekstensi-sipp/panel-alat.js, argumen ke-6). Urutan kode = urutan
@@ -46,7 +56,16 @@ export type KodeKeadaanPutusan =
   | "es-biasa"
   | "es-biasa-verstek"
   | "es-biasa-setelah-mediasi"
-  | "es-biasa-sema-1-2022";
+  | "es-biasa-sema-1-2022"
+  // I17 18 Okt (paket abt-putusan-celah-*): lihat daftar di kepala berkas.
+  | "sesudah-jawaban"
+  | "cacat-formil"
+  | "kurang-pihak"
+  | "kumulasi-itsbat"
+  | "kumulasi-hak-asuh"
+  | "alamat-t-tidak-diketahui"
+  | "itsbat-kabul-cerai-ditolak"
+  | "kontensius-verstek";
 
 export type MasukanKeadaanPutusan = {
   jenisPerkara?: unknown;
@@ -72,6 +91,20 @@ export type MasukanKeadaanPutusan = {
   rekonvensiDikabulkan?: unknown;
   /** I7 17 Okt: potongan amar dari bot (mulai "Dalam Rekonvensi") - sama artinya dengan amarPutusan. */
   amarRekonvensi?: unknown;
+  /** I17 18 Okt: Tergugat sudah menjawab (saklar tegas). Selain itu dibaca dari penandaJawaban bot (jawaban Tergugat di arsip e-Court). */
+  sesudahJawaban?: unknown;
+  /** Penanda jawaban Tergugat dari bot ({berkas: jumlah berkas jawaban/duplik e-Court}); null = tidak ada / tidak terbaca (tidak ditebak). */
+  penandaJawaban?: { berkas?: unknown } | null;
+  /** I17: NO karena gugatan kabur / cacat formil, dan kurang pihak - hanya dari penanda tegas hakim/konseptor (tidak dideteksi). */
+  cacatFormil?: unknown;
+  kurangPihak?: unknown;
+  /** I17: daftar kumulasi perkara dari bot ({daftar:[{kode}]} atau larik kode: "itsbat-nikah", "hak-asuh-anak", "nafkah-anak"). */
+  kumulasi?: unknown;
+  /** I17: penandaPerkara bot ({ghaib}) dan saklar tegas bahwa alamat Tergugat tidak diketahui. */
+  penandaPerkara?: { ghaib?: unknown } | null;
+  alamatTergugatTidakDiketahui?: unknown;
+  /** I17: cerai kumulasi itsbat, itsbat dikabulkan dan cerai ditolak (saklar tegas; selain itu dari amarPutusan bila memuatnya). */
+  itsbatKabulCeraiDitolak?: unknown;
 };
 
 const angka = (x: unknown): number | null => {
@@ -125,6 +158,31 @@ export function rekonvensiDikabulkanDariAmar(amar: unknown): boolean {
   return tolak < 0 || kabul < tolak;
 }
 
+/** I17 18 Okt: kode kumulasi dari bot - larik kode atau {daftar:[{kode}|kode]}; hanya yang berbentuk kode. */
+function kodeKumulasiKeadaan(kumulasi: unknown): string[] {
+  const daftar: unknown[] = Array.isArray(kumulasi) ? kumulasi : kumulasi && typeof kumulasi === "object" && Array.isArray((kumulasi as { daftar?: unknown }).daftar) ? (kumulasi as { daftar: unknown[] }).daftar : [];
+  return [
+    ...new Set(
+      daftar
+        .map((x) => (typeof x === "string" ? x : x && typeof x === "object" && typeof (x as { kode?: unknown }).kode === "string" ? (x as { kode: string }).kode : ""))
+        .map((x) => x.trim().toLowerCase())
+        .filter((x) => /^[a-z0-9-]{2,40}$/.test(x))
+    ),
+  ];
+}
+
+/**
+ * I17 18 Okt: amar putusan yang mengabulkan itsbat nikah tetapi menolak perceraian. Konservatif: harus ada "mengabulkan ... itsbat/isbat/pengesahan ... nikah"
+ * DAN "menolak ... (gugatan/permohonan) ... cerai/talak/perceraian" - keduanya; amar yang tidak memuatnya tidak ditebak.
+ */
+export function itsbatKabulCeraiDitolakDariAmar(amar: unknown): boolean {
+  const t = String(amar ?? "").replace(/\s+/g, " ");
+  if (!t) return false;
+  const kabulItsbat = /mengabulkan[^;]{0,200}?(?:itsbat|isbat|istbat|pengesahan)\s+(?:nikah|perkawinan)/i.test(t);
+  const tolakCerai = /menolak[^;]{0,200}?(?:cerai|talak|perceraian)/i.test(t);
+  return kabulItsbat && tolakCerai;
+}
+
 /** Kode keadaan putusan satu perkara menurut baris sidang yang dilihat, berurut dari yang paling khusus. */
 export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   const j = kecil(m.jenisPerkara);
@@ -168,6 +226,31 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
     const tegas = m.rekonvensiDikabulkan === true || (m.rekonvensiDikabulkan === undefined && rekonvensiDikabulkanDariAmar(m.amarPutusan || m.amarRekonvensi));
     if (tegas) hasil.unshift("rekonvensi-dikabulkan");
   }
+  // I17 18 Okt: itsbat kontensius yang diputus verstek didahulukan atas "kontensius" ([01b] / [03b] folder 2a).
+  if (hasil.includes("kontensius") && verstekAkhir) hasil.splice(hasil.indexOf("kontensius"), 0, "kontensius-verstek");
+  // I17 18 Okt: keadaan gugatan (cabut sesudah jawaban, NO formil, alamat T tidak diketahui, kumulasi). Hanya untuk gugatan: cerai, HB, waris, hak asuh
+  // (369 Pdt.G / 349), pembatalan, wasiat, itsbat kontensius - permohonan (Pdt.P) tidak punya jawaban Tergugat.
+  const kumulasiKode = kodeKumulasiKeadaan(m.kumulasi);
+  const gugatan =
+    jenisCerai(j) || j.includes("harta bersama") || j.includes("kewarisan") || jenisGugatanBaru(j) || jenisWasiat(j) || hakAsuh || (jenisItsbat(j) && /\/pdt\.g\//i.test(String(m.nomorPerkara ?? "")));
+  const awalan: KodeKeadaanPutusan[] = [];
+  if (gugatan) {
+    // Penanda tegas hakim/konseptor menang atas semua dugaan.
+    if (m.kurangPihak === true) awalan.push("kurang-pihak");
+    if (m.cacatFormil === true) awalan.push("cacat-formil");
+    if (jenisCerai(j) && kumulasiKode.includes("itsbat-nikah") && (m.itsbatKabulCeraiDitolak === true || (m.itsbatKabulCeraiDitolak === undefined && itsbatKabulCeraiDitolakDariAmar(m.amarPutusan)))) {
+      awalan.push("itsbat-kabul-cerai-ditolak");
+    }
+    if (m.sesudahJawaban === true || (m.sesudahJawaban === undefined && Number(m.penandaJawaban?.berkas) > 0)) awalan.push("sesudah-jawaban");
+  }
+  hasil.unshift(...awalan);
+  if (gugatan && (m.alamatTergugatTidakDiketahui === true || m.penandaPerkara?.ghaib === true)) {
+    // sesudah SEMA 1/2022 (kehadiran tercatat lebih tegas), sebelum keadaan jenis.
+    const i = hasil.indexOf("sema-1-2022");
+    hasil.splice(i >= 0 ? i + 1 : awalan.length, 0, "alamat-t-tidak-diketahui");
+  }
+  if (jenisCerai(j) && kumulasiKode.includes("itsbat-nikah")) hasil.push("kumulasi-itsbat");
+  if (jenisCerai(j) && kumulasiKode.includes("hak-asuh-anak")) hasil.push("kumulasi-hak-asuh");
   // F22 17 Okt: ES acara biasa. Kode gabungan (satu kode per baris peta) didahulukan, "es-biasa" paling akhir di antara mereka.
   if (esAcaraBiasa(j, m.nomorPerkara)) {
     const gabung: KodeKeadaanPutusan[] = [];
