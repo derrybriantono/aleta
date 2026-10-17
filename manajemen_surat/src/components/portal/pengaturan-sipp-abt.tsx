@@ -1119,7 +1119,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
           </CardHeader>
           <CardContent>
             <DaftarRiwayat
-              bolehKembalikan={(s) => (s.jenis === "menu" ? hak.ubahMenu : s.jenis === "variabel" || s.jenis === "satker" ? hak.ubahBawaan : s.jenis === "logo" ? false : hak.ubahTemplat)}
+              bolehKembalikan={(s) => (s.jenis === "menu" ? hak.ubahMenu : s.jenis === "variabel" || s.jenis === "satker" || s.jenis === "nomor_sk" ? hak.ubahBawaan : s.jenis === "logo" ? false : hak.ubahTemplat)}
               segarkan={segarkan}
               sesudahKembalikan={() => setSegarkan((x) => x + 1)}
             />
