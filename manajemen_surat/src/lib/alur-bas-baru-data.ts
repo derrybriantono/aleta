@@ -7,6 +7,7 @@
  * (paket abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry); langkahnya diperiksa terhadap nama berkas di server.
  * F22 17 Okt (abt-pencegahan-nikah-derry, abt-wasiat-derry, abt-es-biasa-derry): ALUR 41 (pencegahan perkawinan, 10 langkah), 42 (wasiat) dan 43 (ES acara biasa)
  * dari daftar-rtf.tsv ketiga paket; kode langkah 42/43 sama dengan ALUR 38 (V1, AP, CB, V2, TP, NO).
+ * I15 18 Okt (abt-penguasaan-anak-derry): ALUR 44 (penguasaan anak, jenis 349, folder 6b - BAS, menu 154) menggantikan ALUR 38 untuk jenis 349; 6 langkah sama dengan ALUR 38.
  * I7 17 Okt (abt-varian-17okt-derry): ALUR 39 kehilangan langkah CB ("Mediasi Berhasil - Gugatan Dicabut", dipindah ke derry_briantono/terhapus karena
  * pembatalan perkawinan dikecualikan dari mediasi); menu hak asuh 133/134 kini jenis_perkara_id 369-369 (dulu alur_perkara_id 15), jadi ALUR 38 jenis 369.
  */
@@ -1023,6 +1024,52 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
       {
         "kode": "NO",
         "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      }
+    ]
+  },
+  /* === I15 18 Okt === */
+  {
+    "id": "alur-44",
+    "nomor": 44,
+    "nama": "Penguasaan Anak - Verstek, Perdamaian, Cabut, P Tidak Hadir, NO",
+    "folder": "derry_briantono/6b Penguasaan Anak - BAS",
+    "menu": {
+      "id": 154,
+      "nama": "Penguasaan Anak - BAS",
+      "alias": "Penguasaan Anak - BAS"
+    },
+    "jenisMin": 349,
+    "jenisMaks": 349,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "CB",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "TP",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "NO",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
       }
     ]

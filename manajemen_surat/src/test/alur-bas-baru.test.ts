@@ -37,9 +37,9 @@ function t(jenisPerkara: string, m: Partial<Parameters<typeof tentukanBasBaru>[0
 }
 
 describe("A. data", () => {
-  it("22 alur, 134 langkah (93 D3/E3 + 19 F21 sesudah I7 + 22 F22), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
-    expect(ALUR_BAS_BARU).toHaveLength(22); // + ALUR 41, 42, 43 (F22 17 Okt)
-    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(134);
+  it("23 alur, 140 langkah (93 D3/E3 + 19 F21 sesudah I7 + 22 F22 + 6 I15), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
+    expect(ALUR_BAS_BARU).toHaveLength(23); // + ALUR 41, 42, 43 (F22 17 Okt), ALUR 44 (I15 18 Okt)
+    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(140);
     const semua = new Set<string>();
     for (const a of ALUR_BAS_BARU) {
       expect(a.folder.startsWith(A)).toBe(true);
@@ -53,7 +53,7 @@ describe("A. data", () => {
         semua.add(`${a.folder}/${l.berkas}`);
       }
     }
-    expect(semua.size).toBe(112 + 10 + 6 + 6); // F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6)
+    expect(semua.size).toBe(112 + 10 + 6 + 6 + 6); // F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6); I15 18 Okt: ALUR 44 (6)
     expect(jenisDokumenBlangko(`${A}7 Wali Adhal - BAS/${ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.langkah[0].berkas}`)).toBe("bas");
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.menu).toMatchObject({ id: 114, nama: "Wali Adhal - BAS" });
   });
@@ -94,7 +94,7 @@ describe("B. jenis perkara", () => {
     expect(jenisBasBaru("Pengesahan Perkawinan/Istbat Nikah", "3/Pdt.G/2026/PA.Dgl")).toBe("itsbat-kontensius");
     expect(jenisBasBaru("Cerai Gugat")).toBe("cerai-gugat");
     // F21 17 Okt: hak asuh (349 "Penguasaan Anak"; Lain-Lain bernomor Pdt.G), pembatalan perkawinan, ekonomi syariah gugatan sederhana (Pdt.G.S).
-    expect(jenisBasBaru("Penguasaan Anak", "3/Pdt.G/2026/PA.Dgl")).toBe("hak-asuh");
+    expect(jenisBasBaru("Penguasaan Anak", "3/Pdt.G/2026/PA.Dgl")).toBe("penguasaan-anak"); // I15 18 Okt: ALUR 44 (folder 6b), bukan hak asuh
     expect(jenisBasBaru("Lain-Lain", "3/Pdt.G/2026/PA.Dgl")).toBe("hak-asuh");
     expect(jenisBasBaru("Lain-Lain", "3/Pdt.P/2026/PA.Dgl")).toBe("angkat-anak");
     expect(jenisBasBaru("Pembatalan Perkawinan", "3/Pdt.G/2026/PA.Dgl")).toBe("pembatalan");

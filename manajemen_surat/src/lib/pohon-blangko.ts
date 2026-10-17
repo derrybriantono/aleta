@@ -215,9 +215,18 @@ export const SET_BLANGKO: SetBlangko[] = [
     nama: "Putusan Hak Asuh Anak (Hadhanah)",
     folder: `${AKAR}/6a Hak Asuh Anak (Hadhanah)`,
     jenis: "putusan",
-    untuk: ["penguasaan anak", "hak asuh", "hadhanah"],
+    // I15 18 Okt: "penguasaan anak" (349) dilepas - kini punya set sendiri "6b Penguasaan Anak" (menu 153/154, paket abt-penguasaan-anak-derry).
+    untuk: ["hak asuh", "hadhanah"],
     // I7 17 Okt: menu 133/134 kini jenis_perkara_id 369 ("Lain-Lain") saja; cocok hanya untuk Lain-Lain bernomor Pdt.G (bukan pengangkatan anak Pdt.P).
     untukGugatan: ["lain-lain"],
+  },
+  {
+    // I15 18 Okt (paket ABT abt-penguasaan-anak-derry): penguasaan anak = jenis SIPP 349, terpisah dari hak asuh/hadhanah (6a, jenis 369); menu 153 (hakim) / 154 (BAS).
+    id: "putusan-penguasaan-anak",
+    nama: "Putusan Penguasaan Anak",
+    folder: `${AKAR}/6b Penguasaan Anak`,
+    jenis: "putusan",
+    untuk: ["penguasaan anak"],
   },
   {
     id: "putusan-pembatalan-perkawinan",
@@ -387,6 +396,9 @@ export type KeadaanRelaas =
   | "amplop-ikrar"
   // I2 16 Okt 2026 (paket ABT abt-mediasi-derry): panggilan pertemuan mediasi per pihak ([JS] 10.1 / 10.2).
   | "mediasi"
+  // I14 18 Okt 2026 (paket ABT abt-relaas-pencegahan-derry): panggilan sidang PENCEGAHAN PERKAWINAN (jenis 342, Pdt.P alur 16)
+  // [JS] 11.1 (Pemohon), 11.2 (calon suami), 11.3 (calon istri). Dipilih menurut JENIS perkara, bukan menurut keadaan sidang.
+  | "pencegahan-perkawinan"
   // 14 Okt 2026: pengumuman permohonan itsbat nikah VOLUNTAIR (jenis 360, alur
   // 16) - dicetak bersama panggilan sidang pertama. Bukan relaas kepada pihak:
   // blangkonya dipilih menurut JUMLAH PEMOHON (lib/pengumuman-itsbat.ts).
@@ -396,12 +408,15 @@ export type KeadaanRelaas =
  * "tidak-perlu" BUKAN "tidak-diketahui": yang pertama jawaban SIPP (semua pihak
  * hadir, jadi tidak ada yang dipanggil), yang kedua ketiadaan jawaban (yang
  * harus ditanyakan). Menyatukan keduanya membuat juru sita ditanya tentang
-  // I14 18 Okt 2026 (paket ABT abt-relaas-pencegahan-derry): panggilan sidang PENCEGAHAN PERKAWINAN (jenis 342, Pdt.P alur 16)
-  // [JS] 11.1 (Pemohon), 11.2 (calon suami), 11.3 (calon istri). Dipilih menurut JENIS perkara, bukan menurut keadaan sidang.
-  | "pencegahan-perkawinan"
  * 7.486 sidang yang jawabannya sudah tercatat.
  */
 export type PihakDipanggil = "keduanya" | "pertama" | "kedua" | "tidak-perlu" | "tidak-diketahui";
+
+/**
+ * I14 18 Okt: calon mempelai BUKAN pihak SIPP (hanya Pemohon yang tercatat sebagai pihak pada Pdt.P pencegahan perkawinan; calon suami
+ * dan calon istri dipanggil untuk didengar menurut Pasal 17 ayat (2) UU 1/1974 jo. Pasal 65 ayat (2) KHI), jadi ia pihak blangko saja.
+ */
+export type PihakBlangkoRelaas = PihakDipanggil | "calon-mempelai";
 
 export type BlangkoRelaas = {
   keadaan: KeadaanRelaas;
@@ -412,12 +427,6 @@ export type BlangkoRelaas = {
   pihak: PihakBlangkoRelaas;
   keterangan: string;
   /**
-/**
- * I14 18 Okt: calon mempelai BUKAN pihak SIPP (hanya Pemohon yang tercatat sebagai pihak pada Pdt.P pencegahan perkawinan; calon suami
- * dan calon istri dipanggil untuk didengar menurut Pasal 17 ayat (2) UU 1/1974 jo. Pasal 65 ayat (2) KHI), jadi ia pihak blangko saja.
- */
-export type PihakBlangkoRelaas = PihakDipanggil | "calon-mempelai";
-
    * Folder ABT tempat berkasnya berada, relatif terhadap _blangko_abt.
    *
    * Tidak semua relaas satu folder. Sejak 26 September 2026 blangko ikrar
@@ -432,6 +441,8 @@ export type PihakBlangkoRelaas = PihakDipanggil | "calon-mempelai";
    * (abt_menu.proses_id_min/max). Di luar rentang itu ABT menolak mencetak.
    */
   menuAbt: { nama: string; prosesMin: number; prosesMax: number };
+  /** Pencegahan perkawinan ([JS] 11.2/11.3) saja: calon mempelai yang dipanggil untuk didengar (bukan pihak SIPP; identitas dari isian ABT). */
+  calon?: "suami" | "istri";
   /** Pengumuman itsbat saja: jumlah Pemohon yang dimuat blangko (2 = suami & istri, 1 = pasangan telah meninggal). */
   pemohon?: 1 | 2;
   /**
@@ -441,8 +452,6 @@ export type PihakBlangkoRelaas = PihakDipanggil | "calon-mempelai";
   ecourt?: true;
   /** Pemberitahuan putusan VERSTEK saja ([JS] 6.2): dipilih hanya bila putusannya verstek. */
   verstek?: true;
-  /** Pencegahan perkawinan ([JS] 11.2/11.3) saja: calon mempelai yang dipanggil untuk didengar (bukan pihak SIPP; identitas dari isian ABT). */
-  calon?: "suami" | "istri";
 };
 
 /** Q3 16 Okt: keadaan perkara yang menentukan pilihan blangko relaas selain pihak (dari bot: lewatEcourt dan verstekPutusan). */
@@ -762,15 +771,6 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     folder: FOLDER_RELAAS,
     menuAbt: MENU_RELAAS,
   },
-];
-
-/** Blangko non e-Court saja - pencarian bawaan lama tidak boleh mendarat di blangko e-Court (Q3 16 Okt). */
-const BLANGKO_BIASA = () => BLANGKO_RELAAS.filter((x) => !x.ecourt);
-
-/** Blangko pengumuman itsbat menurut jumlah Pemohon: satu Pemohon = 1P, selebihnya (termasuk tak terbaca) = 2P. */
-export function blangkoPengumumanItsbat(jumlahPemohon: unknown): BlangkoRelaas {
-  const satu = Number(jumlahPemohon) === 1;
-  return BLANGKO_BIASA().find((x) => x.keadaan === "pengumuman-itsbat" && x.pemohon === (satu ? 1 : 2))!;
   // ==========================================================================
   // I14 18 OKT 2026 - RELAAS PANGGILAN SIDANG PENCEGAHAN PERKAWINAN (paket ABT abt-relaas-pencegahan-derry)
   // ==========================================================================
@@ -808,6 +808,15 @@ export function blangkoPengumumanItsbat(jumlahPemohon: unknown): BlangkoRelaas {
     folder: FOLDER_RELAAS,
     menuAbt: MENU_RELAAS,
   },
+];
+
+/** Blangko non e-Court saja - pencarian bawaan lama tidak boleh mendarat di blangko e-Court (Q3 16 Okt). */
+const BLANGKO_BIASA = () => BLANGKO_RELAAS.filter((x) => !x.ecourt);
+
+/** Blangko pengumuman itsbat menurut jumlah Pemohon: satu Pemohon = 1P, selebihnya (termasuk tak terbaca) = 2P. */
+export function blangkoPengumumanItsbat(jumlahPemohon: unknown): BlangkoRelaas {
+  const satu = Number(jumlahPemohon) === 1;
+  return BLANGKO_BIASA().find((x) => x.keadaan === "pengumuman-itsbat" && x.pemohon === (satu ? 1 : 2))!;
 }
 
 /**
@@ -855,6 +864,10 @@ export function blangkoRelaas(
   if (pihak === "tidak-perlu" && (keadaan === "sidang-ditunda" || keadaan === "pemberitahuan-putusan" || keadaan === "mediasi")) {
     return null;
   }
+  // I14 18 Okt: pencegahan perkawinan (jenis 342) - Pemohon dipanggil dengan [JS] 11.1, sidang pertama maupun lanjutan, lewat e-Court sekalipun
+  // (blangko 5.1 tidak memuat perkara pencegahan). "keduanya" ikut: Pdt.P hanya punya satu pihak SIPP, sandi 4 tetap berarti Pemohon.
+  const pencegahan = blangkoPencegahanPemohon(keadaan, pihak, opsi);
+  if (pencegahan) return pencegahan;
   // Q3 16 Okt: perkara e-Court memakai set e-Court bila ada padanannya; yang tidak ada jatuh ke blangko biasa di bawah.
   if (opsi?.lewatEcourt === true) {
     const ec = blangkoEcourt(keadaan, pihak, opsi);
@@ -864,10 +877,6 @@ export function blangkoRelaas(
   if (pihak === "pertama" || pihak === "kedua") {
     const tepat = BLANGKO_BIASA().find((x) => x.keadaan === keadaan && x.pihak === pihak);
     if (tepat) return tepat;
-  // I14 18 Okt: pencegahan perkawinan (jenis 342) - Pemohon dipanggil dengan [JS] 11.1, sidang pertama maupun lanjutan, lewat e-Court sekalipun
-  // (blangko 5.1 tidak memuat perkara pencegahan). "keduanya" ikut: Pdt.P hanya punya satu pihak SIPP, sandi 4 tetap berarti Pemohon.
-  const pencegahan = blangkoPencegahanPemohon(keadaan, pihak, opsi);
-  if (pencegahan) return pencegahan;
   }
   // Satu dokumen untuk dua pihak (sidang ditunda yang tidak dihadiri siapa pun,
   // atau sidang pertama yang belum dipecah): hanya blangko gabungan yang memuat
@@ -880,15 +889,6 @@ export function blangkoRelaas(
   return BLANGKO_BIASA().find((x) => x.keadaan === keadaan) ?? null;
 }
 
-/**
- * Q3 16 Okt: blangko set e-Court untuk satu keadaan dan pihak, atau null bila tidak ada padanannya (lalu dipakai blangko biasa).
- *   - sidang pertama / ditunda: [JS] 5.1 (pihak pertama) / 5.2 (pihak kedua); dokumen "keduanya" dipecah per pihak lebih dulu oleh rute cetak;
- *   - pemberitahuan putusan: [JS] 6.2 hanya untuk Tergugat/Termohon bila putusannya VERSTEK; selainnya [JS] 2 biasa;
- *   - ikrar talak: [JS] 7 (Termohon). Relaas ikrar untuk Pemohon e-Court belum ada di Derry.
- */
-function blangkoEcourt(keadaan: KeadaanRelaas, pihak: PihakDipanggil, opsi?: OpsiBlangkoRelaas): BlangkoRelaas | null {
-  const ec = BLANGKO_RELAAS.filter((x) => x.ecourt);
-  if (keadaan === "sidang-pertama" || keadaan === "sidang-ditunda") {
 /**
  * I14 18 Okt: [JS] 11.1 untuk Pemohon perkara pencegahan perkawinan (jenis 342) pada sidang pertama / lanjutan; null bila bukan jenis itu
  * atau keadaannya lain (pemberitahuan putusan, ikrar, mediasi tetap blangko biasa).
@@ -908,6 +908,15 @@ export function blangkoCalonMempelai(calon: "suami" | "istri"): BlangkoRelaas {
   return BLANGKO_RELAAS.find((x) => x.keadaan === "pencegahan-perkawinan" && x.calon === calon)!;
 }
 
+/**
+ * Q3 16 Okt: blangko set e-Court untuk satu keadaan dan pihak, atau null bila tidak ada padanannya (lalu dipakai blangko biasa).
+ *   - sidang pertama / ditunda: [JS] 5.1 (pihak pertama) / 5.2 (pihak kedua); dokumen "keduanya" dipecah per pihak lebih dulu oleh rute cetak;
+ *   - pemberitahuan putusan: [JS] 6.2 hanya untuk Tergugat/Termohon bila putusannya VERSTEK; selainnya [JS] 2 biasa;
+ *   - ikrar talak: [JS] 7 (Termohon). Relaas ikrar untuk Pemohon e-Court belum ada di Derry.
+ */
+function blangkoEcourt(keadaan: KeadaanRelaas, pihak: PihakDipanggil, opsi?: OpsiBlangkoRelaas): BlangkoRelaas | null {
+  const ec = BLANGKO_RELAAS.filter((x) => x.ecourt);
+  if (keadaan === "sidang-pertama" || keadaan === "sidang-ditunda") {
     if (pihak !== "pertama" && pihak !== "kedua") return null;
     return ec.find((x) => x.keadaan === "sidang-pertama" && x.pihak === pihak) ?? null;
   }
@@ -945,6 +954,8 @@ export function blangkoAmplopPendamping(
 
 /** Blangko bawaan untuk satu keadaan dan satu sisi pihak (1 = P, 2 = T) - tanpa aturan kehadiran. */
 export function blangkoRelaasPerPihak(keadaan: KeadaanRelaas, sisi: "pertama" | "kedua", opsi?: OpsiBlangkoRelaas): BlangkoRelaas | null {
+  const pencegahan = blangkoPencegahanPemohon(keadaan, sisi, opsi);
+  if (pencegahan) return pencegahan;
   if (opsi?.lewatEcourt === true) {
     const ec = blangkoEcourt(keadaan, sisi, opsi);
     if (ec) return ec;
@@ -954,8 +965,6 @@ export function blangkoRelaasPerPihak(keadaan: KeadaanRelaas, sisi: "pertama" | 
 
 /**
  * Golongan yang dikirim bot -> keadaan blangko.
-  const pencegahan = blangkoPencegahanPemohon(keadaan, sisi, opsi);
-  if (pencegahan) return pencegahan;
  *
  * Bot membedakan "sidang-ditunda" (sidang yang ditunda) dari "sidang-lanjutan"
  * (sidang bernomor lebih dari satu yang tidak berpenanda ditunda). Bagi juru

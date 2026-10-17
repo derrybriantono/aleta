@@ -15,6 +15,7 @@
  * (urutan sidang, kehadiran, agenda, hasil akhir bila diketahui, kumulasi, nomor perkara Pdt.G/Pdt.P).
  *
  * F21 17 Okt: tiga paket jenis baru menambah ALUR 38 (hak asuh anak), 39 (pembatalan perkawinan), 40 (ekonomi syariah gugatan sederhana).
+ * I15 18 Okt: ALUR 44 (penguasaan anak, jenis 349, folder 6b) menggantikan ALUR 38 untuk jenis 349; hak asuh/hadhanah (jenis 369) tetap ALUR 38.
  * F22 17 Okt: ALUR 41 (pencegahan perkawinan, permohonan Pdt.P), 42 (wasiat), 43 (ekonomi syariah ACARA BIASA, nomor Pdt.G; gugatan sederhana Pdt.G.S tetap ALUR 40).
  *
  * TIDAK mengubah tentukanAlurBas / tentukanAlurBasKumulasi (peta ALUR 01-13 dan 945/946) maupun pilihan yang sudah ada:
@@ -51,7 +52,7 @@ export type HasilBasBaru = {
 
 type JenisBaru =
   | "paw" | "perwalian" | "wali-adhal" | "angkat-anak" | "itsbat" | "itsbat-kontensius" | "dk" | "aua"
-  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "";
+  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "penguasaan-anak" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "";
 
 /** Jenis perkara SIPP -> jenis yang dikenal berkas ini. Itsbat dipilah menurut nomor (Pdt.G = kontensius). */
 export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): JenisBaru {
@@ -66,7 +67,9 @@ export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): Jen
   if (/wali\s*ad[hl]/.test(j)) return "wali-adhal";
   if (j.includes("perwalian")) return "perwalian";
   // F21 17 Okt: hak asuh anak (349 "Penguasaan Anak"), pembatalan perkawinan (344), ekonomi syariah gugatan sederhana (370, Pdt.G.S).
-  if (j.includes("penguasaan anak") || j.includes("hak asuh") || j.includes("hadhanah")) return "hak-asuh";
+  // I15 18 Okt: penguasaan anak (349) punya folder sendiri "6b Penguasaan Anak - BAS" (ALUR 44), terpisah dari hak asuh/hadhanah (ALUR 38, jenis 369).
+  if (j.includes("penguasaan anak")) return "penguasaan-anak";
+  if (j.includes("hak asuh") || j.includes("hadhanah")) return "hak-asuh";
   if (j.includes("pembatalan perkawinan")) return "pembatalan";
   if (j.includes("ekonomi syariah")) {
     // Gugatan sederhana (Pdt.G.S) = ALUR 40; acara biasa (Pdt.G) = ALUR 43 (F22 17 Okt); nomor yang belum diketahui tidak ditebak.
@@ -247,11 +250,17 @@ function gugatanKebendaan(jenis: "hb" | "waris", m: MasukanBasBaru, n: number, a
  * kedua pihak memakai salinan BAS kontradiktoir ALUR 04-09 di folder jenisnya (seperti HB/waris); T tidak hadir, mediasi berhasil, cabut,
  * P tidak hadir, dan NO memakai BAS khusus ALUR 38/39. Perdamaian (akta) hanya hak asuh; pembatalan perkawinan tidak dapat didamaikan.
  */
-function gugatanKeluarga(jenis: "hak-asuh" | "pembatalan" | "wasiat" | "es-biasa", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
+function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "pembatalan" | "wasiat" | "es-biasa", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
   // F22 17 Okt: wasiat (ALUR 42) dan ES acara biasa (ALUR 43) berpola sama dengan hak asuh: mediasi dan akta perdamaian ada; hanya pembatalan yang tidak.
   const asuh = jenis !== "pembatalan";
-  const id = { "hak-asuh": "alur-38", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43" }[jenis];
-  const nama = { "hak-asuh": "Hak asuh anak", pembatalan: "Pembatalan perkawinan", wasiat: "Wasiat", "es-biasa": "Ekonomi syariah (acara biasa)" }[jenis];
+  const id = { "hak-asuh": "alur-38", "penguasaan-anak": "alur-44", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43" }[jenis];
+  const nama = {
+    "hak-asuh": "Hak asuh anak",
+    "penguasaan-anak": "Penguasaan anak",
+    pembatalan: "Pembatalan perkawinan",
+    wasiat: "Wasiat",
+    "es-biasa": "Ekonomi syariah (acara biasa)",
+  }[jenis];
   const h = m.dihadiriOleh;
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
   if (akhir === "no") return buat(id, "NO", ["TP"], false, `${nama}: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).`);
@@ -442,6 +451,7 @@ export function tentukanBasBaru(m: MasukanBasBaru): HasilBasBaru | null {
     case "poligami":
       return izinPoligami(m, n, agenda);
     case "hak-asuh":
+    case "penguasaan-anak":
     case "pembatalan":
     case "wasiat":
     case "es-biasa":

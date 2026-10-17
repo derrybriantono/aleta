@@ -9011,6 +9011,8 @@ const ALAT_MENU_PUTUSAN = {
   wa: { blangko: "Putusan Wali Adhal", lain: ["Wali Adhal - Putusan"] },
   // F21 17 Okt: paket ABT abt-hak-asuh-derry (menu 133), abt-pembatalan-perkawinan-derry (135), abt-ekonomi-syariah-derry (137).
   ha: { blangko: "Putusan Hak Asuh Anak (Hadhanah)", lain: ["Hak Asuh - Putusan"] },
+  // I15 18 Okt: paket ABT abt-penguasaan-anak-derry (menu 153, alias "Penguasaan Anak - Putusan"), folder derry_briantono/6b Penguasaan Anak - jenis 349.
+  pgn: { blangko: "Putusan Penguasaan Anak", lain: ["Penguasaan Anak - Putusan"] },
   pb: { blangko: "Putusan Pembatalan Perkawinan", lain: ["Pembatalan Nikah - Putusan"] },
   es: { blangko: "Putusan Ekonomi Syariah", lain: ["Ekonomi Syariah - Putusan"] },
   // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
@@ -9201,7 +9203,46 @@ function alatPetaHakAsuh(kunci, jenisAsli, keadaan) {
 const ALAT_PB_KABUL = "[01] [Kabul] Pembatalan Perkawinan - Kontradiktoir";
 const ALAT_PB_GUGUR = "[98a] [Gugur] Pembatalan Perkawinan - P Tidak Hadir Sidang Pertama";
 const ALAT_ES_GUGUR = "[98a] [Gugur] ES Gugatan Sederhana - P Tidak Hadir Sidang Pertama";
-Object.assign(ALAT_PETA_BAWAAN, alatPetaHakAsuh("penguasaan anak", "Penguasaan Anak", ""), alatPetaHakAsuh("lain-lain", "Lain-Lain", "hak-asuh"), {
+/* === I15 18 Okt === */
+/**
+ * PENGUASAAN ANAK (jenis SIPP 349, Pdt.G) versi Derry - paket ABT abt-penguasaan-anak-derry (folder "6b Penguasaan Anak" + " - BAS", menu 153/154),
+ * TERPISAH dari hak asuh/hadhanah (6a, menu 133/134, jenis 369 "Lain-Lain" Pdt.G - tetap alatPetaHakAsuh("lain-lain")). Sebelum paket ini jenis 349 memakai
+ * folder hak asuh; sekarang kunci "penguasaan anak|..." menunjuk 6b. Kunci status = nama status SIPP huruf kecil (cara baris hak asuh). Varian dipilih
+ * per perkara dan disebut di catatan: anak mumayyiz memilih [01c]. Amar kabul memuat butir "Menghukum Tergugat menyerahkan anak" - hakim menghapusnya
+ * bila tidak dimohonkan dalam petitum (SEMA 3/2018, ultra petita). Baris "ditolak|verstek" ([03a]) ada di blok I8 di bawah (urutan kunci sama dengan cermin portal).
+ */
+const ALAT_BERKAS_PENGUASAAN_ANAK = {
+  kabul: "[01] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Belum Mumayyiz",
+  setelahMediasi: "[01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz",
+  verstek: "[01b] [Kabul Verstek] Penguasaan Anak - Anak Belum Mumayyiz",
+  mumayyiz: "[01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih",
+  tolak: "[03] [Tolak] Penguasaan Anak - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
+  tolakVerstek: "[03a] [Tolak Verstek] Penguasaan Anak - T Tidak Hadir - Gugatan Tidak Beralasan Hukum",
+  damai: "[97] [Perdamaian] Akta Perdamaian",
+  cabut: "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban",
+  gugur: "[98a] [Gugur] Gugatan - P Tidak Hadir Sidang Pertama",
+  no: "[99] [NO] Gugatan - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+};
+function alatPetaPenguasaanAnak(kunci, jenisAsli) {
+  const B = ALAT_BERKAS_PENGUASAAN_ANAK;
+  const k = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  const catatanKabul = `varian: ${B.setelahMediasi}; ${B.mumayyiz}`;
+  return {
+    [kunci]: alatBarisPutusanLain("pgn", jenisAsli, "", B.kabul, catatanKabul),
+    [k("dikabulkan", "verstek")]: alatBarisPutusanLain("pgn", jenisAsli, "Dikabulkan", B.verstek),
+    [k("dikabulkan")]: alatBarisPutusanLain("pgn", jenisAsli, "Dikabulkan", B.kabul, catatanKabul),
+    [k("dikabulkan", "t-tidak-hadir-setelah-mediasi")]: alatBarisPutusanLain("pgn", jenisAsli, "Dikabulkan", B.setelahMediasi, "keadaan: T hadir mediasi lalu tidak hadir"),
+    [k("ditolak")]: alatBarisPutusanLain("pgn", jenisAsli, "Ditolak", B.tolak, `varian: ${B.tolakVerstek}`),
+    [k("perdamaian")]: alatBarisPutusanLain("pgn", jenisAsli, "Perdamaian", B.damai),
+    [k("dicabut")]: alatBarisPutusanLain("pgn", jenisAsli, "Dicabut", B.cabut),
+    [k("digugurkan")]: alatBarisPutusanLain("pgn", jenisAsli, "Digugurkan", B.gugur),
+    [k("gugur")]: alatBarisPutusanLain("pgn", jenisAsli, "Gugur", B.gugur),
+    [k("tidak dapat diterima")]: alatBarisPutusanLain("pgn", jenisAsli, "Tidak Dapat Diterima", B.no),
+  };
+}
+/* === AKHIR I15 === */
+// I15 18 Okt: jenis 349 "Penguasaan Anak" tidak lagi memakai folder hak asuh (6a) - barisnya dari alatPetaPenguasaanAnak (6b), di posisi yang sama.
+Object.assign(ALAT_PETA_BAWAAN, alatPetaPenguasaanAnak("penguasaan anak", "Penguasaan Anak"), alatPetaHakAsuh("lain-lain", "Lain-Lain", "hak-asuh"), {
   // --- Pembatalan perkawinan (jenis 344, Pdt.G) ---
   "pembatalan perkawinan": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "", ALAT_PB_KABUL, "varian: [01a] [Kabul] Pembatalan Perkawinan - T Tidak Hadir Setelah Mediasi; [01b] [Kabul Verstek] Pembatalan Perkawinan"),
   "pembatalan perkawinan|dikabulkan|verstek": alatBarisPutusanLain("pb", "Pembatalan Perkawinan", "Dikabulkan", "[01b] [Kabul Verstek] Pembatalan Perkawinan"),
@@ -9240,7 +9281,6 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan",
     "keadaan: rekonvensi dikabulkan seluruhnya/sebagian; bawaan HB tetap [01] (rekonvensi ditolak)"
   ),
-  "penguasaan anak|ditolak|hak-asuh-t-ibu": alatBarisPutusanLain("ha", "Penguasaan Anak", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakIbu, "keadaan: Tergugat ibu (anak belum mumayyiz)"),
   "lain-lain|ditolak|hak-asuh-t-ibu": alatBarisPutusanLain("ha", "Lain-Lain", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakIbu, "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), Tergugat ibu (anak belum mumayyiz)"),
 });
 /* === AKHIR I7 === */
@@ -9255,7 +9295,8 @@ Object.assign(ALAT_PETA_BAWAAN, {
 Object.assign(ALAT_PETA_BAWAAN, {
   "cerai gugat|ditolak|kontradiktoir": alatBarisStatusCerai("Cerai Gugat", "Ditolak", ALAT_BERKAS_STATUS_CERAI.tolakKontradiktoir, "varian: [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti"),
   "cerai talak|ditolak|kontradiktoir": alatBarisStatusCerai("Cerai Talak", "Ditolak", ALAT_BERKAS_STATUS_CERAI.tolakKontradiktoir, "varian: [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti"),
-  "penguasaan anak|ditolak|verstek": alatBarisPutusanLain("ha", "Penguasaan Anak", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakVerstek, "keadaan: Tergugat tidak pernah hadir (verstek)"),
+  // I15 18 Okt: jenis 349 -> [03a] Tolak Verstek di folder 6b (dulu [03b] hak asuh 6a).
+  "penguasaan anak|ditolak|verstek": alatBarisPutusanLain("pgn", "Penguasaan Anak", "Ditolak", ALAT_BERKAS_PENGUASAAN_ANAK.tolakVerstek, "keadaan: Tergugat tidak pernah hadir (verstek)"),
   "lain-lain|ditolak|hak-asuh-verstek": alatBarisPutusanLain("ha", "Lain-Lain", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakVerstek, "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), putusan verstek"),
 });
 /* === AKHIR I8 === */

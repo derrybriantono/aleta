@@ -94,7 +94,8 @@ describe("A. pohon: berkas baru, berkas yang dipindah, folder terhapus", () => {
 
   it("tiap berkas bawaan yang dirujuk paket ini ADA di folder menunya", () => {
     const rujukan = Object.entries(PETA_PUTUSAN_BAWAAN).filter(([k]) => ["harta bersama|dikabulkan|rekonvensi-dikabulkan", "penguasaan anak|ditolak|hak-asuh-t-ibu", "lain-lain|ditolak|hak-asuh-t-ibu"].includes(k));
-    expect(rujukan).toHaveLength(3);
+    // I15 18 Okt: baris "penguasaan anak|ditolak|hak-asuh-t-ibu" dihapus (jenis 349 pindah ke folder 6b yang tidak punya [03a] hadhanah kepada T).
+    expect(rujukan).toHaveLength(2);
     for (const [k, b] of rujukan) {
       const folder = FOLDER_MENU_PUTUSAN[String(b.blangko)];
       expect(FIX.berkas, k).toContain(`${A}${folder}/${b.berkas}.rtf`);
@@ -145,10 +146,7 @@ describe("B. putusan bawaan: varian dipilih menurut keadaan, bawaan lama utuh", 
   });
 
   it("hak asuh tolak: Tergugat ibu -> [03a]; Tergugat ayah / tidak diketahui -> [03] (varian [03a] disebut); verstek tidak pernah [03a]", () => {
-    for (const j of [
-      { jenisPerkara: "Lain-Lain", nomorPerkara: "177/Pdt.G/2022/PA.Dgl" },
-      { jenisPerkara: "Penguasaan Anak", nomorPerkara: "177/Pdt.G/2022/PA.Dgl" },
-    ]) {
+    for (const j of [{ jenisPerkara: "Lain-Lain", nomorPerkara: "177/Pdt.G/2022/PA.Dgl" }]) {
       const ibu = put({ ...j, statusPutusan: "Ditolak", tergugatPerempuan: true })!;
       expect(ibu, j.jenisPerkara).toMatchObject({ berkas: HA_03A, folder: HA });
       const ayah = put({ ...j, statusPutusan: "Ditolak", tergugatPerempuan: false })!;
@@ -159,6 +157,10 @@ describe("B. putusan bawaan: varian dipilih menurut keadaan, bawaan lama utuh", 
       // verstek (T tidak pernah hadir): bukan [03a] walau Tergugat perempuan
       expect(put({ ...j, statusPutusan: "Ditolak", tergugatPerempuan: true, verstekPutusan: true, dihadiriOleh: 2 })!.berkas).not.toMatch(/^\[03a\]/);
     }
+    // I15 18 Okt: Penguasaan Anak (349) kini folder 6b: Tergugat ibu pun tetap [03] 6b (tidak ada [03a] hadhanah di 6b), tidak pernah berkas hak asuh 6a.
+    const pg = put({ jenisPerkara: "Penguasaan Anak", nomorPerkara: "177/Pdt.G/2022/PA.Dgl", statusPutusan: "Ditolak", tergugatPerempuan: true })!;
+    expect(pg).toMatchObject({ folder: "6b Penguasaan Anak" });
+    expect(pg.berkas).toMatch(/^\[03\] \[Tolak\] Penguasaan Anak/);
     // Lain-Lain Pdt.P (pengangkatan anak) tidak pernah jadi hak asuh walau tergugatPerempuan = true
     expect(put({ jenisPerkara: "Lain-Lain", nomorPerkara: "7/Pdt.P/2024/PA.Dgl", statusPutusan: "Ditolak", tergugatPerempuan: true })?.folder ?? "").not.toBe(HA);
     // kabul hak asuh tidak terpengaruh
@@ -218,7 +220,8 @@ describe("C. BAS pembatalan perkawinan (344): tanpa mediasi", () => {
     const alur04 = `${A}ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)`;
     const mediasi = "[1] BAS 1 P & T Hadir - Mediasi.rtf";
     expect(salinanBasJenis(alur04, mediasi, "Pembatalan Perkawinan")).toEqual([]);
-    expect(salinanBasJenis(alur04, mediasi, "Penguasaan Anak").map((s) => s.folder)).toEqual([`${A}${HA} - BAS`]);
+    expect(salinanBasJenis(alur04, mediasi, "Hak Asuh Anak").map((s) => s.folder)).toEqual([`${A}${HA} - BAS`]);
+    expect(salinanBasJenis(alur04, mediasi, "Penguasaan Anak").map((s) => s.folder)).toEqual([`${A}6b Penguasaan Anak - BAS`]); // I15 18 Okt
     expect(salinanBasJenis(alur04, mediasi, "Harta Bersama").map((s) => s.folder)).toEqual([`${A}4a Harta Bersama - BAS`]);
     expect(cariBerkasBasJenis("BAS ALUR 39 Pembatalan Nikah - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf", "Pembatalan Perkawinan")).toBeNull();
     expect(cariBerkasBasJenis("BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf", "Pembatalan Perkawinan")).toBeNull();
@@ -237,7 +240,8 @@ describe("D. hak asuh hanya untuk jenis 369 (Lain-Lain Pdt.G), bukan cerai maupu
     const cocokDinamis = (j: string, n: string) => dinamis.filter((x) => setCocokPerkara(x, j, n)).map((x) => x.folder.replace(A, ""));
     expect(cocokDinamis("Lain-Lain", "7/Pdt.P/2024/PA.Dgl")).not.toContain(HA);
     expect(cocokDinamis("Lain-Lain", "358/Pdt.G/2020/PA.Dgl")).toContain(HA);
-    expect(putusanCocok("Penguasaan Anak")).toContain(HA); // jenis 349 tetap dikenal (tidak mengurangi yang lama)
+    expect(putusanCocok("Penguasaan Anak")).toContain("6b Penguasaan Anak"); // I15 18 Okt: jenis 349 kini folder 6b
+    expect(putusanCocok("Penguasaan Anak")).not.toContain(HA);
     expect(putusanCocok("Cerai Gugat", "1/Pdt.G/2026/PA.Dgl")).not.toContain(HA);
     // set BAS dari folder yang ditemukan membawa syarat yang sama
     const gabung = setBlangkoGabung([HA, `${HA} - BAS`]);

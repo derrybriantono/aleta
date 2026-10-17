@@ -204,6 +204,8 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   // I9 17 Okt: paket ABT abt-penetap-phs-sita-derry - menu 150 "Putusan Sela & Penetapan Sita" (alias "Sita - Putusan Sela"), folder baru "97 Sita".
   "Putusan Sela & Penetapan Sita": "97 Sita",
   // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
+  // I15 18 Okt: paket ABT abt-penguasaan-anak-derry (menu 153).
+  "Putusan Penguasaan Anak": "6b Penguasaan Anak",
   "Putusan Pencegahan Perkawinan": "5b Pencegahan Perkawinan",
   "Putusan Wasiat": "4c Wasiat",
   "Putusan Ekonomi Syariah (Acara Biasa)": "10a Ekonomi Syariah Biasa",
@@ -502,9 +504,9 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     mediasi: b.mediasi && typeof b.mediasi === "object" ? (b.mediasi as { hasil?: unknown }) : null,
     mediasiTerbaca: b.mediasiTerbaca === false ? false : true,
     lewatEcourt: typeof b.lewatEcourt === "boolean" ? b.lewatEcourt : null,
+    jenisPerkaraId: angka(b.jenisPerkaraId),
     bersita: Boolean(b.sita) && typeof b.sita === "object",
     tergugatPerempuan: typeof b.tergugatPerempuan === "boolean" ? b.tergugatPerempuan : null,
-    jenisPerkaraId: angka(b.jenisPerkaraId),
     amarRekonvensi: typeof b.amarRekonvensi === "string" ? b.amarRekonvensi : "",
   };
 }

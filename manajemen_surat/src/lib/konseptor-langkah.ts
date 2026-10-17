@@ -134,6 +134,9 @@ const KODE_KE_LANGKAH: Record<string, KodeLangkah> = {
   "8729": "pertimbangan",
   // I8 17 Okt: penilaian jawaban & bukti T pada putusan cerai ditolak kontradiktoir [03a] - bagian pertimbangan hukum.
   "9501": "pertimbangan",
+  // I15 18 Okt: penguasaan anak - keadaan penguasaan anak saat ini (9590) dan tempat tinggal anak senyatanya (9592; kewenangan relatif SEMA 2/2024).
+  "9590": "pertimbangan",
+  "9592": "pertimbangan",
   // F22 17 Okt: alasan pencegahan (huruf), fakta terbukti, pertimbangan tolak; pokok tuntutan wasiat (huruf), fakta, pertimbangan tolak, kurang pihak; arbitrase ES.
   "9463": "pertimbangan",
   "9466": "pertimbangan",
