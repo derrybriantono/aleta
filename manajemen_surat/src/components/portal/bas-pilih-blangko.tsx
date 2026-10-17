@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiPath } from "@/lib/base-path";
 import { jenjangkan, labelBlangko, setUntukPerkara, type BlangkoItem } from "@/lib/pohon-blangko";
+import { tanganiUnduhan } from "@/lib/unduh-berkas";
 import { ringkasSebelumnya, sidangKe, susunRangkaian, tanggalIndonesia } from "@/lib/rangkaian-sidang";
 
 /**
@@ -180,6 +181,25 @@ export function PilihBlangko({
     }
   }
 
+  /**
+   * Unduh naskah terisi lewat penanganan unduhan bersama: BAS/relaas/putusan diperiksa dulu
+   * untuk sisa blangko (peringatan bila ada, tetap boleh lanjut) - lihat deteksi-sisa-blangko.ts.
+   */
+  async function unduhTerisi(item: BlangkoItem) {
+    const alamat = alamatNaskah(item);
+    try {
+      const respons = await fetch(alamat, { cache: "no-store" });
+      const hasil = await tanganiUnduhan(respons, {
+        namaCadangan: item.berkas,
+        alamat,
+        jenisNaskah: set?.jenis ?? "bas",
+      });
+      if (!hasil.ok && !hasil.dibatalkan) setPesan(hasil.pesan);
+    } catch {
+      setPesan("Naskah tidak dapat diunduh.");
+    }
+  }
+
   function alamatNaskah(item: BlangkoItem) {
     const sidang = item.basKe > 0 ? `&sidangKe=${item.basKe}` : "";
     return apiPath(
@@ -316,11 +336,9 @@ export function PilihBlangko({
                       )}
                       Periksa
                     </Button>
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={alamatNaskah(item)} download>
-                        <Download className="h-4 w-4" />
-                        Unduh terisi
-                      </a>
+                    <Button variant="outline" size="sm" onClick={() => void unduhTerisi(item)}>
+                      <Download className="h-4 w-4" />
+                      Unduh terisi
                     </Button>
                   </div>
                 </div>

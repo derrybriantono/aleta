@@ -2205,6 +2205,15 @@ async function alatUnduh(blob, namaMentah, opsi) {
     }
     return { ok: false, lewat: "", pesan };
   }
+  // Deteksi sisa blangko (17 Okt 2026): putusan, BAS, dan relaas diperiksa dulu. Ada sisa -> peringatan
+  // (tetap boleh lanjut atau batal); bersih/tak terbaca -> tidak ada dialog, alur lama persis.
+  if (!(opsi && opsi.tanpaPeriksaSisa === true) && typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa && /\.(?:rtf|docx)$/i.test(nama)) {
+    const jenisNaskah = (opsi && opsi.jenisNaskah) || aletaDeteksiSisa.jenisNaskahDariNama(nama);
+    if (jenisNaskah) {
+      const tinjau = await aletaDeteksiSisa.tinjau(blob, { nama, jenis: jenisNaskah, aksi: "unduh", massal: Boolean(opsi && opsi.massal) });
+      if (!tinjau.lanjut) return { ok: false, lewat: "", pesan: "Unduhan dibatalkan.", dibatalkan: true };
+    }
+  }
   let sebab = "";
   try {
     const alamat = await alatBlobKeData(blob);
@@ -2294,6 +2303,19 @@ async function alatSekaliAmbil(alamat, opsi) {
 }
 
 async function alatAmbil(alamat, opsi, yangDiminta) {
+  // Deteksi sisa blangko (17 Okt 2026): unggahan naskah putusan/BAS ke portal (unggah-sipp, unggah-naskah,
+  // ecourt-putusan, bas/unggah-sipp) diperiksa dulu. Ada sisa -> peringatan; Batal -> unggahan tidak dikirim.
+  if (opsi && opsi.body && typeof FormData === "function" && opsi.body instanceof FormData && typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa) {
+    const jenisNaskah = aletaDeteksiSisa.jenisNaskahDariAlamat(alamat);
+    if (jenisNaskah) {
+      const tinjau = await aletaDeteksiSisa.tinjauFormData(opsi.body, { jenis: jenisNaskah, massal: Boolean(opsi.massal) });
+      if (!tinjau.lanjut) {
+        const galat = new Error("Unggah dibatalkan atas permintaan Anda karena naskah masih memuat sisa blangko.");
+        galat.dibatalkan = true;
+        throw galat;
+      }
+    }
+  }
   const kunci = alatKunciPermintaan(alamat, opsi);
 
   // Jawaban DISALIN untuk tiap peminta. Badan Response hanya dapat dibaca

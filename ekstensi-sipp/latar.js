@@ -1,5 +1,13 @@
 "use strict";
 
+// Deteksi sisa blangko (17 Okt 2026): dipakai putaran relaas massal di bawah. Gagal memuat tidak
+// boleh mengganggu pekerja latar - relaas tetap tercetak tanpa pemeriksaan.
+try {
+  if (typeof importScripts === "function") importScripts("deteksi-sisa-blangko.js");
+} catch {
+  /* tanpa pemeriksaan */
+}
+
 /**
  * ============================================================================
  * PEKERJA LATAR - SATU-SATUNYA TEMPAT PEMBARUAN DAPAT DIMINTA
@@ -2551,10 +2559,33 @@ async function kerjakanSatuRelaas(pekerjaan, butir, catat) {
   // RTF SAJA - tidak ada permintaan PDF ke ALETA (6 Okt 2026). RTF dari ABT
   // disimpan apa adanya, dicetak dari Word.
   const jalur = relaasJalurBerkas(pekerjaan, butir);
+  // Deteksi sisa blangko (17 Okt 2026): putaran massal tidak dapat bertanya per dokumen (tidak ada
+  // dialog di pekerja latar, dan relaas memang punya titik-titik isian tulis tangan), jadi hanya
+  // dicatat dan ditampilkan di panel juru sita. Tidak pernah menahan atau menggagalkan cetak.
+  const sisa = relaasPeriksaSisa(rtf);
   const u = await terbitkanUnduhan(`data:application/rtf;base64,${relaasBase64(rtf)}`, `${jalur}.rtf`);
   if (!u.ok) return { ok: false, sebab: `unduhan RTF ditolak peramban: ${u.pesan}`, abtSelesaiPada };
   await catat("rtf", `${butir.nama}.rtf`);
-  return { ok: true, abtSelesaiPada };
+  return { ok: true, abtSelesaiPada, sisa };
+}
+
+/**
+ * Ringkasan sisa blangko pada RTF relaas: { jumlah, ringkas:[teks], contoh:[{label, kalimat, paragraf, halaman}] }
+ * atau null (bersih / tidak terbaca / pemeriksa tidak termuat). Contoh dibatasi 10 supaya keadaan pekerjaan tetap ringan.
+ */
+function relaasPeriksaSisa(rtf) {
+  try {
+    if (typeof aletaDeteksiSisa !== "object" || !aletaDeteksiSisa) return null;
+    const h = aletaDeteksiSisa.periksaRtf(new TextDecoder("windows-1252").decode(new Uint8Array(rtf)));
+    if (!h.temuan.length) return null;
+    return {
+      jumlah: h.temuan.length + h.terpotong,
+      ringkas: aletaDeteksiSisa.ringkasJenis(h.temuan).map((r) => `${r.label}: ${r.jumlah}`),
+      contoh: h.temuan.slice(0, 10).map((t) => ({ label: t.label, kalimat: `${t.sebelum} «${t.cocok}» ${t.sesudah}`.trim(), paragraf: t.paragraf, halaman: t.halaman })),
+    };
+  } catch {
+    return null;
+  }
 }
 
 /* ─── 8. Putaran ─────────────────────────────────────────────────────────── */
@@ -2660,6 +2691,7 @@ async function jalankanRelaas() {
         butir.keadaan = "selesai";
         butir.sebab = hasil.sebab || "";
         butir.selesaiPada = Date.now();
+        if (hasil.sisa) butir.sisaBlangko = hasil.sisa;
       } else {
         butir.keadaan = "gagal";
         butir.sebab = hasil.bolehUlang
