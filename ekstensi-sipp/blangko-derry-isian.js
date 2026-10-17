@@ -148,7 +148,19 @@
     });
     return { teks: t, diganti };
   }
-  const latin1 = (buf) => (typeof buf === "string" ? buf : new TextDecoder("latin1").decode(new Uint8Array(buf)));
+  /**
+   * Byte -> teks BINER (satu kode per byte, ISO-8859-1 sungguhan). TextDecoder("latin1") TIDAK dipakai: menurut standar
+   * peramban label itu windows-1252, jadi byte 0x80-0x9F menjadi “ ” – … (kode > 0xFF) dan bufDariLatin1 (& 0xFF)
+   * merusaknya sebelum RTF dikirim ke pengubah PDF. Untuk membaca RTF sebagai teks tampilan: rtfTeks.
+   */
+  const latin1 = (buf) => {
+    if (typeof buf === "string") return buf;
+    const u = new Uint8Array(buf);
+    let s = "";
+    for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+    return s;
+  };
+  const rtfTeks = (buf) => (typeof buf === "string" ? buf : new TextDecoder("windows-1252").decode(new Uint8Array(buf)));
   const bufDariLatin1 = (s) => {
     const u = new Uint8Array(s.length);
     for (let i = 0; i < s.length; i += 1) u[i] = s.charCodeAt(i) & 0xff;
@@ -2018,7 +2030,7 @@
    * Tabel: \cell menutup sel, \row menutup baris; selain itu paragraf biasa.
    */
   function uraiRtf(sumber) {
-    const s = latin1(sumber);
+    const s = rtfTeks(sumber);
     const par = [];
     let runs = [];
     let align = "";
