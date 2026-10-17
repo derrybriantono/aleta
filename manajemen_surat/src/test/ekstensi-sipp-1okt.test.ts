@@ -810,6 +810,8 @@ vi.mock("@/server/shared/admin-access-audit", () => ({
   },
 }));
 vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
+  // 17 Okt (audit A4): hakim hanya perkara majelisnya.
+  getGatewayUnggahMassalCek: async () => ({ ok: true, data: { ok: true, majelis: ["Penguji"] } }),
   getGatewayStatusPerkara: async () => ({ ok: true, data: { identitas: { perkaraId: "999" } } }),
   getGatewaySippKonteks: async () => ({ ok: true, data: { nomorPihak: [] } }),
   getGatewaySippTautanPerkara: async (p: Record<string, unknown>) => {

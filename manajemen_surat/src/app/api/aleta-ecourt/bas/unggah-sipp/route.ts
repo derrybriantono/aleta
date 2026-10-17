@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { gatewayUnggahBasSipp } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanMilikPerkara } from "@/server/modules/aleta-ecourt/hak-milik-perkara";
 import { hakUnggahMassal, periksaBerkasBas } from "@/server/modules/aleta-ecourt/unggah-massal";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -66,6 +67,18 @@ export async function POST(request: NextRequest) {
     if (!/^\d{1,12}$/.test(perkaraId) || !/^\d{1,12}$/.test(sidangId) || !nomorPerkara) {
       return ok({ ok: false, sebab: "Perkara, sidang, atau nomor perkara belum disebut." });
     }
+    // 17OKT-A4: PP hanya BAS perkaranya sendiri (juga untuk ganti=1). Panitera/Panmud/Analis/Admin
+    // (saringan "semua" di Unggah massal) mengawasi dan tetap boleh.
+    const milik = await pastikanMilikPerkara({
+      jenis: "bas",
+      perkaraId,
+      sidangId,
+      namaAkun: String(actor?.name || ""),
+      pengawas: hak.semua.bas,
+    });
+    if (!milik.ok) {
+      return NextResponse.json({ ok: false, error: { message: milik.pesan } }, { status: milik.status });
+    }
     const berkas = formulir.get("bas");
     if (!(berkas instanceof File) || berkas.size === 0) return ok({ ok: false, sebab: "Berkas BAS belum dipilih." });
     if (berkas.size > BATAS_BERKAS) return ok({ ok: false, sebab: "Berkas BAS melampaui 10 MB." });
@@ -88,6 +101,8 @@ export async function POST(request: NextRequest) {
       operator: String(actor?.name || actor?.email || actorUserId || "").trim(),
       ip: alamatIpPeramban(request),
       peranPenekan: hak.peranBas,
+      // Lapis kedua di bot: PP hanya diterima bila portal sudah memastikan ia PP perkara ini.
+      milikPerkara: true,
       ganti,
     });
     if (!hasil.ok) {
