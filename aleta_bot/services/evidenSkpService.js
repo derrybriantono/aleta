@@ -131,6 +131,9 @@ function runQuery(sql, params = []) {
 /** Peran yang dapat dibuatkan eviden. Panitera dan juru sita menyusul. */
 const PERAN_EVIDEN = Object.freeze(["hakim"]);
 const KUNCI_PERIODE = Object.freeze(["tw1", "tw2", "tw3", "tw4", "tahun"]);
+/** Periode bulanan (SKP jabatan perkara): b01 = Januari ... b12 = Desember. */
+const KUNCI_BULAN = Object.freeze(["b01", "b02", "b03", "b04", "b05", "b06", "b07", "b08", "b09", "b10", "b11", "b12"]);
+const KUNCI_PERIODE_SEMUA = Object.freeze([...KUNCI_PERIODE, ...KUNCI_BULAN]);
 
 /** Potongan daftar IN (...) - sama dengan majelisPemeriksaService. */
 const POTONGAN_IN = 500;
@@ -245,7 +248,7 @@ function tanggalPanjang(iso) {
   return `${Number(cocok[3])} ${NAMA_BULAN[Number(cocok[2]) - 1]} ${cocok[1]}`;
 }
 
-/** Periode SKP: tw1 = Januari-Maret, ..., tahun = Januari-Desember. */
+/** Periode SKP: tw1 = Januari-Maret, ..., tahun = Januari-Desember, b01..b12 = satu bulan. */
 function susunPeriode(kunci, tahun) {
   const t = Number(tahun);
   if (kunci === "tahun") {
@@ -257,6 +260,21 @@ function susunPeriode(kunci, tahun) {
       mulai: `${t}-01-01`,
       selesai: `${t}-12-31`,
       bulan: 12,
+    };
+  }
+  if (/^b(0[1-9]|1[0-2])$/.test(String(kunci))) {
+    // Bulanan: label = nama bulan, rentang = satu bulan kalender penuh.
+    const ke = Number(String(kunci).slice(1));
+    const dua = (n) => String(n).padStart(2, "0");
+    const hariAkhir = new Date(Date.UTC(t, ke, 0)).getUTCDate();
+    return {
+      kunci,
+      tahun: t,
+      label: NAMA_BULAN[ke - 1],
+      labelPanjang: `${NAMA_BULAN[ke - 1]} ${t}`,
+      mulai: `${t}-${dua(ke)}-01`,
+      selesai: `${t}-${dua(ke)}-${dua(hariAkhir)}`,
+      bulan: 1,
     };
   }
   const ke = Number(String(kunci).slice(2));
@@ -296,8 +314,8 @@ function periksaMasukan(masukan = {}, hariIni = "") {
   if (!(tahun >= 2000 && tahun <= 2100)) return tolak("tahun_tidak_sah", "Tahun harus empat angka (2000-2100).");
 
   const periode = cleanText(masukan.periode).toLowerCase();
-  if (!KUNCI_PERIODE.includes(periode)) {
-    return tolak("periode_tidak_dikenal", "Periode harus tw1, tw2, tw3, tw4, atau tahun.");
+  if (!KUNCI_PERIODE_SEMUA.includes(periode)) {
+    return tolak("periode_tidak_dikenal", "Periode harus tw1, tw2, tw3, tw4, tahun, atau b01 sampai b12.");
   }
   const susunan = susunPeriode(periode, tahun);
   if (hariIni && susunan.mulai > hariIni) {
@@ -1685,6 +1703,8 @@ async function evidenSkp(masukan = {}, opsi = {}) {
 module.exports = {
   PERAN_EVIDEN,
   KUNCI_PERIODE,
+  KUNCI_BULAN,
+  KUNCI_PERIODE_SEMUA,
   HASIL_MEDIASI,
   UPAYA_HUKUM,
   // Murni - diuji langsung.

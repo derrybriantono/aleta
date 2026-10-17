@@ -990,6 +990,31 @@ const CALON = {
   /** Jenis pekerjaan atau instansi pihak - dipakai menandai PNS/TNI/POLRI. */
   pihakPekerjaan: { tabel: "pihak", calon: ["pekerjaan", "pekerjaan_nama", "jenis_pekerjaan"] },
   pihakNama: { tabel: "pihak", calon: ["nama"] },
+
+  /* === 17OKT-SKP: kolom yang dibaca SKP jabatan perkara === */
+  // evidenSkpJabatanService memilih kolom lewat daftar ini, bukan menulis
+  // nama pasti: indikator yang kolomnya tidak ada dijawab "tidak terbaca",
+  // tidak dihitung nol. Semuanya nama kolom SIPP PA Donggala (Okt 2026).
+  /** Akun SIPP diblokir / kedaluwarsa - dasar "aktif" pada FaktaAkunSkp. */
+  skpPenggunaBlokir: { tabel: "sys_users", calon: ["block"] },
+  skpPenggunaKedaluwarsa: { tabel: "sys_users", calon: ["user_expired"] },
+  /** Relaas: tanggal, penginput (= userid, BUKAN jurusita.id), dan berkasnya. */
+  skpRelaasTanggal: { tabel: "perkara_pelaksanaan_relaas", calon: ["tanggal_relaas"] },
+  skpRelaasPengguna: { tabel: "perkara_pelaksanaan_relaas", calon: ["jurusita_id"] },
+  skpRelaasDokumen: { tabel: "perkara_pelaksanaan_relaas", calon: ["doc_relaas"] },
+  skpRelaasDiinputTanggal: { tabel: "perkara_pelaksanaan_relaas", calon: ["diinput_tanggal"] },
+  /** Berita acara sidang yang terunggah dan saat hasil sidang diperbarui. */
+  skpSidangBas: { tabel: "perkara_jadwal_sidang", calon: ["edoc_bas"] },
+  skpSidangDiperbaruiTanggal: { tabel: "perkara_jadwal_sidang", calon: ["diperbaharui_tanggal"] },
+  /** Putusan terunggah / dianonimisasi / berkekuatan hukum tetap. */
+  skpPutusanDokumen: { tabel: "perkara_putusan", calon: ["amar_putusan_dok"] },
+  skpPutusanAnonim: { tabel: "perkara_putusan", calon: ["amar_putusan_anonimisasi_dok"] },
+  skpPutusanBht: { tabel: "perkara_putusan", calon: ["tanggal_bht"] },
+  /** Penginput arsip dan penetapan - dasar "dikerjakan akun ini". */
+  skpArsipPenginput: { tabel: "arsip", calon: ["diinput_oleh"] },
+  skpPenetapanPenginput: { tabel: "perkara_penetapan", calon: ["diinput_oleh"] },
+  skpBiayaPenginput: { tabel: "perkara_biaya", calon: ["diinput_oleh"] },
+  /* === AKHIR 17OKT-SKP === */
 };
 /**
  * Kolom yang terpilih untuk tiap keterangan.
