@@ -57,7 +57,7 @@ describe("A. pohon server 17 Okt: menu, folder, berkas", () => {
 
   it("tiap baris putusan bawaan F21: berkas ADA di folder menunya, menu dan alias sama dengan abt_menu server", () => {
     const baris = Object.entries(PETA_PUTUSAN_BAWAAN).filter(([k, v]) => ["Putusan Hak Asuh Anak (Hadhanah)", "Putusan Pembatalan Perkawinan", "Putusan Ekonomi Syariah"].includes(String(v.blangko)));
-    expect(baris).toHaveLength(36); // hak asuh 10 + Lain-Lain Pdt.G 8 + pembatalan 9 + ekonomi syariah 9
+    expect(baris).toHaveLength(38); // hak asuh 10 + Lain-Lain Pdt.G 8 + pembatalan 9 + ekonomi syariah 9 + 2 baris tolak "Tergugat ibu" (I7 17 Okt: [03a])
     for (const [kunci, b] of baris) {
       const folder = FOLDER_MENU_PUTUSAN[String(b.blangko)];
       expect(FIX.berkas, `${kunci} -> ${b.berkas}`).toContain(`${A}${folder}/${b.berkas}.rtf`);
@@ -79,7 +79,8 @@ describe("A. pohon server 17 Okt: menu, folder, berkas", () => {
       expect(alur.langkah.map((l) => `${alur.folder}/${l.berkas}`).sort(), id).toEqual([...diServer].sort());
     }
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-38")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO"]);
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-39")!.langkah.map((l) => l.kode)).toEqual(["V1", "CB", "V2", "TP", "NO"]);
+    // I7 17 Okt: langkah CB ("Mediasi Berhasil - Gugatan Dicabut") dipindah ke derry_briantono/terhapus (pembatalan perkawinan dikecualikan dari mediasi).
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-39")!.langkah.map((l) => l.kode)).toEqual(["V1", "V2", "TP", "NO"]);
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-40")!.langkah.map((l) => l.kode)).toEqual(["1", "1a", "1b", "1c", "1d", "2", "2a", "3", "C"]);
   });
 
@@ -92,7 +93,8 @@ describe("A. pohon server 17 Okt: menu, folder, berkas", () => {
         for (const [bs, tujuan] of Object.entries(berkas)) if (tujuan.includes(j.bas)) diTabel.push(`BAS ALUR ${nomor} ${bs}`);
       }
       const diServer = FIX.berkas.filter((x) => x.startsWith(`${A}${j.bas}/BAS ALUR 0`)).map((x) => x.slice(`${A}${j.bas}/`.length));
-      expect(diTabel).toHaveLength(29);
+      // I7 17 Okt: 5a kehilangan 5 BAS mediasi ([1] ALUR 04/05/06, [C1]/[C2] ALUR 08) -> 24; 6a tetap 29.
+      expect(diTabel).toHaveLength(j === PB ? 24 : 29);
       expect(diTabel.sort()).toEqual(diServer.sort());
     }
   });
@@ -209,13 +211,13 @@ describe("C. BAS massal per sidang", () => {
     expect(t("Lain-Lain", "7/Pdt.P/2024/PA.Dgl", { urutanSidang: 2 }).id).toBe("alur-18");
   });
 
-  it("pembatalan perkawinan: sama dengan hak asuh tanpa akta perdamaian (mediasi berhasil = cabut [CB])", () => {
+  it("pembatalan perkawinan: sama dengan hak asuh tanpa akta perdamaian; mediasi berhasil TIDAK diusulkan (dikecualikan dari mediasi, I7 17 Okt)", () => {
     const G = "20/Pdt.G/2026/PA.Dgl";
     expect(t("Pembatalan Perkawinan", G, { dihadiriOleh: 2 })).toMatchObject({ id: "alur-39", kode: "V1", folder: PB.bas });
     expect(t("Pembatalan Perkawinan", G, { dihadiriOleh: 2, urutanSidang: 2 })).toMatchObject({ id: "alur-39", kode: "V2" });
     expect(t("Pembatalan Perkawinan", G, { dihadiriOleh: 4, urutanSidang: 2 })).toMatchObject({ id: "alur-39", kode: "TP" });
     expect(t("Pembatalan Perkawinan", G, { akhir: "no", dihadiriOleh: 4, urutanSidang: 3 })).toMatchObject({ id: "alur-39", kode: "NO" });
-    expect(t("Pembatalan Perkawinan", G, { urutanSidang: 2, agenda: "Mediasi berhasil" })).toMatchObject({ id: "alur-39", kode: "CB" });
+    expect(t("Pembatalan Perkawinan", G, { urutanSidang: 2, agenda: "Mediasi berhasil" }).h).toBeNull();
     expect(t("Pembatalan Perkawinan", G, { urutanSidang: 4, agenda: "Replik" })).toMatchObject({ id: "alur-04", kode: "4", folder: PB.bas });
   });
 

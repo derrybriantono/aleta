@@ -1,5 +1,5 @@
 {
- "sumber": "KEADAAN SERVER 17 Okt 2026 sesudah paket F21 (abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry; menu 133-138, terpasang ±03.50): daftar berkas = ssh aleta ls -R _blangko_abt/derry_briantono (baca saja, 17 Okt dini hari), memuat juga paket I2 16 Okt (7 Wali Adhal, penetapan ikrar [90]/[90a]/[91]) dan folder 98 Relaas / 99 PTSP; baris abt_menu 101-132, 981, 991 = kueri baca saja agen F21 17 Okt 02.15 (menu putusan user_cek 3 sesudah paket hak putusan majelis; 113 Wali Adhal ada), baris 133-138 = INSERT paket F21; direktori 981/991 mengikuti folder di disk server (98 Relaas / 99 PTSP; kueri 02.15 masih mencatat nama lama Relaas / PTSP); baris lain dibawa dari fixture 15 Okt. berkasSebelum = keadaan 14 Okt (dibawa).",
+ "sumber": "KEADAAN SERVER 17 Okt 2026 sesudah paket F21 (abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry; menu 133-138, terpasang ±03.50): daftar berkas = ssh aleta ls -R _blangko_abt/derry_briantono (baca saja, 17 Okt dini hari), memuat juga paket I2 16 Okt (7 Wali Adhal, penetapan ikrar [90]/[90a]/[91]) dan folder 98 Relaas / 99 PTSP; baris abt_menu 101-132, 981, 991 = kueri baca saja agen F21 17 Okt 02.15 (menu putusan user_cek 3 sesudah paket hak putusan majelis; 113 Wali Adhal ada), baris 133-138 = INSERT paket F21; direktori 981/991 mengikuti folder di disk server (98 Relaas / 99 PTSP; kueri 02.15 masih mencatat nama lama Relaas / PTSP); baris lain dibawa dari fixture 15 Okt. berkasSebelum = keadaan 14 Okt (dibawa). | I7 17 Okt (abt-varian-17okt-derry, BELUM terpasang di server, keadaan disusun dari daftar-pindah.tsv/daftar-rtf.tsv/PASANG.sql paket): 6 BAS mediasi 5a - BAS dipindah ke derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS; berkas baru 4a [01a] HB rekonvensi dikabulkan dan 6a [03a] tolak hadhanah kepada T; menu 133/134 acuan jenis_perkara_id 369-369.",
  "berkasSebelum": [
   "derry_briantono/- BAS ASAL USUL ANAK -/[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
   "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
@@ -552,6 +552,7 @@
   "derry_briantono/4a Harta Bersama - BAS/BAS ALUR 31 HB - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
   "derry_briantono/4a Harta Bersama - BAS/BAS ALUR 31 HB - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
   "derry_briantono/4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+  "derry_briantono/4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
   "derry_briantono/4a Harta Bersama/[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
   "derry_briantono/4a Harta Bersama/[97] [Perdamaian] Akta Perdamaian.rtf",
   "derry_briantono/4a Harta Bersama/[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban.rtf",
@@ -628,7 +629,6 @@
   "derry_briantono/5 Izin Poligami - BAS/BAS ALUR 34 Poligami - Sidang 3 - Pembuktian dan Pengucapan Putusan.rtf",
   "derry_briantono/5 Izin Poligami/[01] [Kabul] Izin Poligami.rtf",
   "derry_briantono/5 Izin Poligami/[98] [Cabut] Permohonan - P & T Hadir Sebelum Jawaban.rtf",
-  "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 04 [2] BAS 2 P & T Hadir - Laporan Mediasi dan Pemeriksaan Pokok Perkara.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 04 [3] BAS 3 P & T Hadir - Jawaban (dan Gugatan Rekonvensi bila ada).rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 04 [4] BAS 4 P & T Hadir - Replik (dan Jawaban Rekonvensi bila ada).rtf",
@@ -644,21 +644,16 @@
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 04 [8] BAS 8 P & T Hadir - Kesimpulan.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 04 [9] BAS 9 P & T Hadir - Penyampaian Putusan.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 04 [T] BAS P & T Tidak Hadir - Tunda Panggil P & T (kapan saja).rtf",
-  "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Jawab Menjawab Lisan, Tunda Pembuktian P.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 05 [4] BAS 4 P & T Hadir - Musyawarah Majelis dan Pembacaan Putusan.rtf",
-  "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 06 [1] BAS 1 P & T Hadir - Mediasi.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 06 [2] BAS 2 P Hadir & T Tidak Hadir - Laporan Mediasi, Tunda Panggil T.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 07 [1] BAS 1 P & T Tidak Hadir - Tunda Panggil P & T.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 07 [2] BAS 2 P & T Tidak Hadir - Tunda Panggil P & T (bila masih dipanggil).rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 07 [3] BAS Putus P & T Tidak Hadir - Gugur.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sidang Pertama sebelum Mediasi.rtf",
-  "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 08 [C1] BAS 1 P & T Hadir - Mediasi.rtf",
-  "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 08 [C2] BAS Putus P & T Hadir - Cabut Perkara Damai dari Mediasi.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 09 [1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T (Alamat Tidak Jelas).rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 39 Pembatalan Nikah - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
-  "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 39 Pembatalan Nikah - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 39 Pembatalan Nikah - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 39 Pembatalan Nikah - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
   "derry_briantono/5a Pembatalan Perkawinan - BAS/BAS ALUR 39 Pembatalan Nikah - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
@@ -720,6 +715,7 @@
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01c] [Kabul] Hak Asuh - Kontradiktoir - Anak Mumayyiz Memilih.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01d] [Kabul] Hak Asuh - Kontradiktoir - Pemegang Hadhanah Tidak Menjamin Keselamatan Anak.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti.rtf",
+  "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz).rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[97] [Perdamaian] Akta Perdamaian.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[98a] [Gugur] Gugatan - P Tidak Hadir Sidang Pertama.rtf",
@@ -1602,7 +1598,10 @@
    "proses_id_max": 297,
    "user_cek": 3,
    "user_grup_id": "1|10|20",
-   "user_top_id": "1"
+   "user_top_id": "1",
+   "perkara_id_min": "369",
+   "perkara_id_max": "369",
+   "perkara_id_referensi": "jenis_perkara_id"
   },
   {
    "id": 134,
@@ -1614,7 +1613,10 @@
    "proses_id_max": 297,
    "user_cek": 3,
    "user_grup_id": "1|30|500|430|1000|1010|1020",
-   "user_top_id": "1|30"
+   "user_top_id": "1|30",
+   "perkara_id_min": "369",
+   "perkara_id_max": "369",
+   "perkara_id_referensi": "jenis_perkara_id"
   },
   {
    "id": 135,
@@ -1976,5 +1978,13 @@
    "user_grup_id": "20|500|430|1000|1010|1020",
    "user_top_id": "1|10|30"
   }
+ ],
+ "terhapus": [
+  "derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS/BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf",
+  "derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS/BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf",
+  "derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS/BAS ALUR 06 [1] BAS 1 P & T Hadir - Mediasi.rtf",
+  "derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS/BAS ALUR 08 [C1] BAS 1 P & T Hadir - Mediasi.rtf",
+  "derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS/BAS ALUR 08 [C2] BAS Putus P & T Hadir - Cabut Perkara Damai dari Mediasi.rtf",
+  "derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS/BAS ALUR 39 Pembatalan Nikah - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf"
  ]
 }

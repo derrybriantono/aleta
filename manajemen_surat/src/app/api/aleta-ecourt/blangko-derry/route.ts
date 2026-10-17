@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { golonganPengguna } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
+import { jalurBlangkoTerhapus } from "@/lib/tugas-blangko";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -122,7 +123,7 @@ async function indeksDerry(): Promise<IndeksDerry> {
       for (const b of p.data.berkas) {
         const jalur = teks(b.jalur);
         const m = jalur.match(/^derry_briantono\/([^/]+)\/([^/]+)$/);
-        if (!m) continue;
+        if (!m || jalurBlangkoTerhapus(jalur)) continue; // I7 17 Okt: derry_briantono/terhapus bukan blangko aktif
         if (!folder.has(m[1])) folder.set(m[1], []);
         folder.get(m[1])!.push(m[2]);
       }
@@ -134,7 +135,7 @@ async function indeksDerry(): Promise<IndeksDerry> {
   if (!folder.size) {
     try {
       const k = await callAletaBotSippBridge<JawabanKatalogFolder>("blangko.katalog", { folder: AKAR_DERRY }, { timeoutMs: 15000 });
-      const set = k.ok && k.data?.ada ? (k.data.set ?? []).map((s) => teks(s.nama)).filter(Boolean) : [];
+      const set = k.ok && k.data?.ada ? (k.data.set ?? []).map((s) => teks(s.nama)).filter((n) => Boolean(n) && !jalurBlangkoTerhapus(n)) : [];
       for (let i = 0; i < set.length; i += 6) {
         const kelompok = set.slice(i, i + 6);
         const jawaban = await Promise.all(

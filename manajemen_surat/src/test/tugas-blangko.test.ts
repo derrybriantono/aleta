@@ -77,7 +77,8 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
   it("K3: 233 BAS salinan di folder BAS pasangan (panitera); folder putusan tidak memuat BAS lagi (hakim)", () => {
     const salinan = FIX.berkas.filter((b) => /^BAS\b/.test(b.split("/").pop()!) && !/^derry_briantono\/(ALUR |BAS |- BAS )/.test(b) && !basBaru.has(b) && !/^BAS KUASA INSIDENTIL /.test(b.split("/").pop()!));
     // 233 (A3, 15 Okt) + 58 (F21 17 Okt: 29 BAS ALUR 04-09 di "5a Pembatalan Perkawinan - BAS" dan di "6a Hak Asuh Anak (Hadhanah) - BAS") + 1 (I2 16 Okt: BAS ALUR 10 [4] ikrar).
-    expect(salinan).toHaveLength(233 + 58 + 1);
+    // I7 17 Okt: - 5 salinan BAS mediasi pembatalan perkawinan yang dipindah ke folder "terhapus" (bukan bagian pohon aktif).
+    expect(salinan).toHaveLength(233 + 58 - 5 + 1);
     for (const b of salinan) {
       expect(folderDari(b), b).toMatch(/ - BAS$/);
       expect(jenisDokumenBlangko(b), b).toBe("bas");

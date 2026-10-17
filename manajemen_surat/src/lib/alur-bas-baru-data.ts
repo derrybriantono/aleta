@@ -5,6 +5,8 @@
  * Aturan pemilihan: lib/alur-bas-baru.ts; dijaga src/test/alur-bas-baru.test.ts.
  * F21 17 Okt: ALUR 38 (hak asuh), 39 (pembatalan perkawinan), 40 (ekonomi syariah gugatan sederhana) ditambah dari pohon server
  * (paket abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry); langkahnya diperiksa terhadap nama berkas di server.
+ * I7 17 Okt (abt-varian-17okt-derry): ALUR 39 kehilangan langkah CB ("Mediasi Berhasil - Gugatan Dicabut", dipindah ke derry_briantono/terhapus karena
+ * pembatalan perkawinan dikecualikan dari mediasi); menu hak asuh 133/134 kini jenis_perkara_id 369-369 (dulu alur_perkara_id 15), jadi ALUR 38 jenis 369.
  */
 export type MenuBasBaru = { id: number; nama: string; alias: string };
 export type LangkahBasBaru = { kode: string; berkas: string; keterangan: string };
@@ -737,8 +739,8 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
       "nama": "Hak Asuh Anak (Hadhanah) - BAS",
       "alias": "Hak Asuh - BAS"
     },
-    "jenisMin": 349,
-    "jenisMaks": 349,
+    "jenisMin": 369,
+    "jenisMaks": 369,
     "langkah": [
       {
         "kode": "V1",
@@ -775,7 +777,7 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
   {
     "id": "alur-39",
     "nomor": 39,
-    "nama": "Pembatalan Perkawinan - Verstek, Cabut, P Tidak Hadir, NO",
+    "nama": "Pembatalan Perkawinan - Verstek, P Tidak Hadir, NO",
     "folder": "derry_briantono/5a Pembatalan Perkawinan - BAS",
     "menu": {
       "id": 136,
@@ -789,11 +791,6 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "V1",
         "berkas": "BAS ALUR 39 Pembatalan Nikah - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
         "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
-      },
-      {
-        "kode": "CB",
-        "berkas": "BAS ALUR 39 Pembatalan Nikah - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
-        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
       },
       {
         "kode": "V2",

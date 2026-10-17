@@ -85,6 +85,8 @@ function depsBawaan() {
     // Bahan blangko putusan per kumulasi & keadaan (temuan audit D3): peta perkaraId -> keterangan, sama dengan layar Jadwal Sidang.
     kumulasi: (ids) => require("./kumulasiPerkaraService").kumulasiBanyakPerkara(ids),
     mediasi: (ids) => require("./sippJadwalSidangService").mediasiBanyakPerkara(ids),
+    // I7 17 Okt: bahan varian blangko putusan (hak asuh: Tergugat ibu -> [03a]; HB: amar rekonvensi -> [01a]) - sama dengan layar Jadwal Sidang.
+    varian: (rows) => require("./sippJadwalSidangService").bahanVarianPutusan(rows),
   };
 }
 
@@ -210,6 +212,7 @@ function buatLayanan(depsMasuk) {
       });
       const petaKumulasi = typeof d.kumulasi === "function" ? await coba("sipp", "kumulasi putusan", () => d.kumulasi(idp)) : null;
       const petaMediasi = typeof d.mediasi === "function" ? await coba("sipp", "mediasi putusan", () => d.mediasi(idp)) : null;
+      const bahanVarian = typeof d.varian === "function" ? await coba("sipp", "varian putusan", () => d.varian(putusan)) : null;
       for (const x of putusan) {
         const hadir = sidangDibaca ? kehadiranSidangPutusan(sidangPer[x.perkaraId], x.tanggalPutusan) : kehadiranSidangPutusan([], "");
         x.dihadiriOleh = hadir.dihadiriOleh;
@@ -219,6 +222,10 @@ function buatLayanan(depsMasuk) {
         const m = petaMediasi ? petaMediasi[x.perkaraId] : null;
         x.mediasi = m ? { hasil: teks(m.hasil) } : null;
         x.mediasiTerbaca = Boolean(petaMediasi);
+        // I7 17 Okt: kosong/null bila kueri varian gagal - blangko bawaan ([03] / [01]) dipakai, varian tetap dapat dipilih tangan.
+        const tp = bahanVarian && bahanVarian.tergugatPerempuan ? bahanVarian.tergugatPerempuan[x.perkaraId] : undefined;
+        x.tergugatPerempuan = tp === undefined ? null : tp;
+        x.amarRekonvensi = bahanVarian && bahanVarian.amarRekonvensi ? bahanVarian.amarRekonvensi[x.perkaraId] || "" : "";
       }
     }
 

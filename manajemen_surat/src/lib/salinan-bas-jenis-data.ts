@@ -23,6 +23,9 @@ export const MENU_FOLDER_JENIS: Record<string, { id: number; nama: string; alias
   "4b Kewarisan - BAS": {"id": 126, "nama": "Kewarisan - BAS", "alias": "Waris - BAS"},
   "5 Izin Poligami - BAS": {"id": 130, "nama": "Izin Poligami - BAS", "alias": "Poligami - BAS"},
   // F21 17 Okt: paket abt-pembatalan-perkawinan-derry (menu 136) dan abt-hak-asuh-derry (menu 134) menerima salinan 29 BAS ALUR 04-09 seperti HB/Waris.
+  // I7 17 Okt: pembatalan perkawinan (344) dikecualikan dari mediasi (PERMA 1/2016 Pasal 4 ayat (2) huruf d) - 5 salinan BAS mediasi ([1] ALUR 04/05/06,
+  // [C1]/[C2] ALUR 08) dipindah paket abt-varian-17okt-derry ke derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS; "5a ... - BAS" kini 24 salinan
+  // (+ ALUR 39 tanpa langkah mediasi berhasil). "6a Hak Asuh Anak (Hadhanah) - BAS" tetap 29.
   "5a Pembatalan Perkawinan - BAS": {"id": 136, "nama": "Pembatalan Perkawinan - BAS", "alias": "Pembatalan Nikah - BAS"},
   "6a Hak Asuh Anak (Hadhanah) - BAS": {"id": 134, "nama": "Hak Asuh Anak (Hadhanah) - BAS", "alias": "Hak Asuh - BAS"},
   "8 Asal Usul Anak - BAS": {"id": 116, "nama": "Asal Usul Anak - BAS", "alias": "Asal Usul Anak - BAS"},
@@ -53,7 +56,7 @@ export const SALINAN_BAS_JENIS: Record<string, Record<string, string[]>> = {
     "[3c] BAS Terakhir P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (5 Saksi).rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS"],
   },
   "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)": {
-    "[1] BAS 1 P & T Hadir - Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
+    "[1] BAS 1 P & T Hadir - Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
     "[2] BAS 2 P & T Hadir - Laporan Mediasi dan Pemeriksaan Pokok Perkara.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
     "[3] BAS 3 P & T Hadir - Jawaban (dan Gugatan Rekonvensi bila ada).rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
     "[4] BAS 4 P & T Hadir - Replik (dan Jawaban Rekonvensi bila ada).rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
@@ -71,14 +74,14 @@ export const SALINAN_BAS_JENIS: Record<string, Record<string, string[]>> = {
     "[T] BAS P & T Tidak Hadir - Tunda Panggil P & T (kapan saja).rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
   },
   "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)": {
-    "[1] BAS 1 P & T Hadir - Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
+    "[1] BAS 1 P & T Hadir - Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
     "[2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Jawab Menjawab Lisan, Tunda Pembuktian P.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
     "[3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS"],
     "[3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS"],
     "[4] BAS 4 P & T Hadir - Musyawarah Majelis dan Pembacaan Putusan.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
   },
   "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir": {
-    "[1] BAS 1 P & T Hadir - Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
+    "[1] BAS 1 P & T Hadir - Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
     "[2] BAS 2 P Hadir & T Tidak Hadir - Laporan Mediasi, Tunda Panggil T.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
     "[3] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan (2 Saksi).rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS"],
     "[3a] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan (3 Saksi).rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS"],
@@ -93,8 +96,8 @@ export const SALINAN_BAS_JENIS: Record<string, Record<string, string[]>> = {
   "ALUR 08 Cerai Dicabut": {
     "[A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sidang Pertama sebelum Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
     "[B] BAS Lanjutan P Hadir & T Tidak Hadir - Cabut karena Gugatan Salah.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS"],
-    "[C1] BAS 1 P & T Hadir - Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
-    "[C2] BAS Putus P & T Hadir - Cabut Perkara Damai dari Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
+    "[C1] BAS 1 P & T Hadir - Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
+    "[C2] BAS Putus P & T Hadir - Cabut Perkara Damai dari Mediasi.rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],
   },
   "ALUR 09 Cerai Tidak Dapat Diterima (NO)": {
     "[1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T (Alamat Tidak Jelas).rtf": ["1 Perceraian CG - BAS", "1a Perceraian CT - BAS", "2a Itsbat Nikah Kontensius - BAS", "4a Harta Bersama - BAS", "4b Kewarisan - BAS", "5 Izin Poligami - BAS", "5a Pembatalan Perkawinan - BAS", "6a Hak Asuh Anak (Hadhanah) - BAS"],

@@ -23,7 +23,7 @@
  *   - mode "tambah" = sidang 1 itsbat/DK/AUA yang ditunda: varian baru hanya ditawarkan, usulan lama tetap.
  * Murni: tanpa jaringan dan tanpa basis data.
  */
-import { tentukanAlurBas } from "@/lib/alur-bas";
+import { alurBasMenurutId, tentukanAlurBas } from "@/lib/alur-bas";
 import { butirKumulasiAlur, tentukanAlurBasKumulasi, type MasukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { ALUR_BAS_BARU, type AlurBasBaru, type LangkahBasBaru, type MenuBasBaru } from "@/lib/alur-bas-baru-data";
 import { semuaSalinanBas } from "@/lib/salinan-bas-jenis";
@@ -248,11 +248,11 @@ function gugatanKeluarga(jenis: "hak-asuh" | "pembatalan", m: MasukanBasBaru, n:
   const h = m.dihadiriOleh;
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
   if (akhir === "no") return buat(id, "NO", ["TP"], false, `${nama}: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).`);
-  if (akhir === "cabut") return buat(id, "CB", asuh ? ["AP"] : [], false, `${nama}: gugatan dicabut.`);
+  // I7 17 Okt: pembatalan perkawinan DIKECUALIKAN dari mediasi (PERMA 1/2016 Pasal 4 ayat (2) huruf d); BAS "Mediasi Berhasil - Gugatan Dicabut" dan
+  // semua BAS mediasi salinan ALUR 04-08 dipindah ke derry_briantono/terhapus. Cabut/damai pada 344 tidak diusulkan BAS mediasi dari folder mana pun.
+  if (akhir === "cabut") return asuh ? buat(id, "CB", ["AP"], false, `${nama}: gugatan dicabut.`) : null;
   if (RX_DAMAI.test(agenda)) {
-    return asuh
-      ? buat(id, "AP", ["CB"], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`)
-      : buat(id, "CB", [], false, `${nama}: mediasi berhasil - gugatan dicabut (perkawinan tidak dapat dibatalkan dengan perdamaian).`);
+    return asuh ? buat(id, "AP", ["CB"], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`) : null;
   }
   if (h === 3 || h === 4) return buat(id, "TP", ["NO"], true, `${nama}: Penggugat tidak hadir - tunda panggil P; bila sudah dua kali tidak hadir: putusan NO.`);
   // T tidak hadir dan tidak pernah hadir: verstek (sidang 1 tunda panggil T, sidang 2 pembuktian dan putusan verstek).
@@ -261,7 +261,38 @@ function gugatanKeluarga(jenis: "hak-asuh" | "pembatalan", m: MasukanBasBaru, n:
       ? buat(id, "V1", ["V2"], false, `${nama} sidang 1: Penggugat hadir, Tergugat tidak hadir - tunda panggil T.`)
       : buat(id, "V2", ["V1"], n > 2, `${nama} sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek.`);
   }
+  if (!asuh && n <= 1) return pembatalanSidangPertama(m);
   return salinanAlur04(alurMenurutId(id).folder, { ...m, urutanSidang: n });
+}
+
+/**
+ * I7 17 Okt: sidang pertama pembatalan perkawinan yang dihadiri kedua pihak. BAS "Mediasi" ([1] ALUR 04/05/06) tidak ada lagi di folder 5a;
+ * "Laporan Mediasi dan Pemeriksaan Pokok Perkara" ALUR 04 [2] (tertulis/e-litigasi) dan "Pembacaan Gugatan dan Jawab Menjawab Lisan" ALUR 05 [2]
+ * (lisan) - namanya tetap, isinya kini pengecualian mediasi + pemeriksaan pokok dalam sidang TERTUTUP - menjadi BAS sidang itu.
+ */
+function pembatalanSidangPertama(m: MasukanBasBaru): HasilBasBaru | null {
+  const folderJenis = alurMenurutId("alur-39").folder;
+  const ambil = (idAlur: string): { alur: ReturnType<typeof alurBasMenurutId>; langkah: LangkahBasBaru } | null => {
+    const alur = alurBasMenurutId(idAlur);
+    const asal = alur?.langkah.find((l) => l.kode === "2");
+    if (!alur || !asal) return null;
+    const s = semuaSalinanBas(alur.folder, asal.berkas).find((x) => x.folder === folderJenis);
+    return s ? { alur, langkah: { kode: asal.kode, berkas: s.berkas, keterangan: asal.keterangan } } : null;
+  };
+  const utama = ambil("alur-04");
+  const lisan = ambil("alur-05");
+  if (!utama?.alur) return null;
+  const jenisAlur = alurMenurutId("alur-39");
+  return {
+    alur: { id: utama.alur.id, nomor: utama.alur.nomor, nama: `${utama.alur.nama} (salinan di folder jenis)`, folder: folderJenis, menu: jenisAlur.menu },
+    langkah: utama.langkah,
+    alternatif: lisan ? [lisan.langkah] : [],
+    perkiraan: m.dihadiriOleh !== 1,
+    sebab:
+      "Pembatalan perkawinan dikecualikan dari mediasi (PERMA 1/2016 Pasal 4 ayat (2) huruf d): sidang pertama P & T hadir langsung memeriksa pokok perkara (BAS ALUR 04 [2] " +
+      "untuk acara tertulis/e-litigasi, ALUR 05 [2] untuk acara lisan).",
+    mode: "ganti",
+  };
 }
 
 /** Ekonomi syariah gugatan sederhana (ALUR 40, hakim tunggal): sidang 1 menurut kehadiran, sidang 2 pembuktian/verstek, lalu pengucapan putusan. */

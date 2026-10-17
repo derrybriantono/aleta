@@ -152,6 +152,8 @@ function barisPutusan(x: UnggahMassalPutusanBot, namaAkun: string): BarisUnggahM
       panggilan: x.panggilan,
       mediasi: x.mediasi,
       mediasiTerbaca: x.mediasiTerbaca,
+      tergugatPerempuan: x.tergugatPerempuan,
+      amarPutusan: x.amarRekonvensi,
     }),
   };
 }

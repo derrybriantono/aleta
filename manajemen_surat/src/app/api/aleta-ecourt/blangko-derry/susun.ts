@@ -49,7 +49,7 @@ export type ButirIsian = {
   opsi: Array<{ nilai: string; label: string }>;
   tj: null | { kunci: string; sebutan: string; peran: "tanyajawab" | "keterangan"; kodeSunting: string };
 };
-export type Keadaan = "" | "kuasaP" | "kuasaT" | "prodeo" | "alasanC" | "alasanH" | "ghaib" | "ecourt" | "insidentil";
+export type Keadaan = "" | "kuasaP" | "kuasaT" | "prodeo" | "alasanC" | "alasanH" | "ghaib" | "ecourt" | "insidentil" | "kuaKosong";
 export type Susunan = {
   penanda: string[];
   isian: ButirIsian[];
@@ -180,6 +180,11 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9354": { nm: "Pihak yang menanggung biaya perkara menurut kesepakatan", pil: ["Penggugat", "Tergugat", "kedua belah pihak secara tanggung renteng"] },
   "9355": { nm: "Pokok jawaban {T} (satu kalimat)" },
   /* === AKHIR F21 === */
+  /* === I7 17 Okt: paket varian (pembatalan [01]/[01a]/[01b], hak asuh [03a], harta bersama [01a]) === */
+  "9430": { nm: "Kantor Urusan Agama tempat perkawinan dicatat (tulis \"Kantor Urusan Agama Kecamatan ..., Kabupaten ...\"; kosong = data SIPP)" },
+  "9432": { nm: "Fakta pengasuhan anak oleh {T} (dari bukti dan saksi; kosong = kalimat bawaan)" },
+  "9434": { nm: "Objek rekonvensi yang ditetapkan sebagai harta bersama (satu per baris; kosong = seluruh objek gugatan rekonvensi)" },
+  /* === AKHIR I7 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {
@@ -200,6 +205,8 @@ export const KEADAAN_TEKS: Record<Exclude<Keadaan, "">, string> = {
   ghaib: "Tergugat/Termohon dipanggil secara ghaib",
   ecourt: "perkara ini terdaftar lewat e-Court",
   insidentil: "ada kuasa insidentil",
+  // I7 17 Okt: 9430 hanya berlaku bila data pernikahan SIPP (kua_tempat_nikah) kosong - variabel otomatis 9431 masih titik-titik.
+  kuaKosong: "data KUA tempat perkawinan di SIPP kosong",
 };
 
 const BUKTI_KODE: Record<string, "P" | "T"> = { "1214": "P", "9911": "T" };
@@ -208,12 +215,16 @@ const BUKTI_KODE: Record<string, "P" | "T"> = { "1214": "P", "9911": "T" };
 const PEMICU_KEADAAN: Record<string, Keadaan> = { "11111": "kuasaP", "11113": "kuasaT", "11112": "prodeo", "11116": "alasanC", "11117": "alasanH" };
 const KEADAAN_PEMICU: Partial<Record<Keadaan, string>> = Object.fromEntries(Object.entries(PEMICU_KEADAAN).map(([k, v]) => [v, k]));
 
+/** Keadaan isian yang ditetapkan menurut KODE variabelnya (nama ABT-nya tidak menyebut syaratnya dengan kata yang dikenal). */
+const KEADAAN_KODE: Record<string, Keadaan> = { "9430": "kuaKosong" };
+
 /**
  * Keadaan sebuah isian tangan dari namanya di katalog ABT. Nama ABT memang menuliskan syaratnya:
  * "Tgl. Surat Kuasa #0047# (Isi Apabila #0047# Pakai Kuasa)", "TANGGAL PENGUMUMAN PANGGILAN GHAIB ...",
  * "NO KUASA INSIDENTIL: ...", "SEPAKAT BERACARA SECARA ELEKTRONIK". Penanda #111xx# di nama didahulukan.
  */
-export function keadaanIsian(namaPolos: string): Keadaan {
+export function keadaanIsian(namaPolos: string, kode = ""): Keadaan {
+  if (KEADAAN_KODE[kode]) return KEADAAN_KODE[kode];
   const n = String(namaPolos || "");
   const pem = (n.match(POLA_PEMICU) || [])[1] || "";
   if (pem && PEMICU_KEADAAN[pem]) return PEMICU_KEADAAN[pem];
@@ -406,7 +417,7 @@ export function susunIsian(
     const teknis = /^penanda\b/i.test(namaPolos);
     const pilihanSipp = /kosong\s*=\s*dari\s*sipp/i.test(namaPolos) || /\(otomatis/i.test(namaPolos);
     // Keadaan dari nama: kuasa/prodeo/alasan C-H memakai pemicu ABT yang sama walau namanya tidak bertanda #111xx#.
-    const keadaan = keadaanIsian(namaPolos);
+    const keadaan = keadaanIsian(namaPolos, k);
     const pemKeadaan = KEADAAN_PEMICU[keadaan] || "";
     let pemicuAkhir = pem;
     if (!pemicuAkhir && pemKeadaan && katalog.has(pemKeadaan)) {
@@ -475,6 +486,8 @@ export function susunIsian(
 export function jenisFolderDerry(nama: string): "put" | "bas" | "rel" | "ptsp" | "" {
   const n = String(nama || "").trim();
   if (!n) return "";
+  // I7 17 Okt: folder "terhapus" (blangko yang dipindah paket ABT) bukan blangko aktif - tidak pernah dianggap putusan.
+  if (/(^|[\\/])terhapus([\\/]|$)/i.test(n)) return "";
   // Server 17 Okt: folder bernomor ("98 Relaas", "99 PTSP") dan pasangan BAS bernama "<Jenis> - BAS".
   const polos = n.replace(/^\d+[a-z]?\s+/i, "");
   if (/^relaas/i.test(polos)) return "rel";

@@ -78,6 +78,12 @@ export type MasukanRekomendasi = {
   mediasi?: { hasil?: unknown } | null;
   mediasiTerbaca?: boolean;
   lewatEcourt?: boolean | null;
+  /** I7 17 Okt: Tergugat perempuan pada gugatan hak asuh (bot); null = tidak diketahui. */
+  tergugatPerempuan?: boolean | null;
+  /** I7 17 Okt: potongan amar "Dalam Rekonvensi" (bot) atau amar penuh; dasar [01a] HB rekonvensi dikabulkan. */
+  amarRekonvensi?: string;
+  /** I7 17 Okt: penanda tegas (saklar konseptor/hakim) bahwa rekonvensi dikabulkan. */
+  rekonvensiDikabulkan?: boolean;
 };
 
 export type HasilRekomendasi = {
@@ -313,6 +319,9 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     panggilan: { hadirSebelumnya: m.hadirSebelumnya, tergugatPernahHadir: m.tergugatPernahHadir, penggugatPernahHadir: m.penggugatPernahHadir },
     mediasi: m.mediasi ?? null,
     mediasiTerbaca: m.mediasiTerbaca,
+    tergugatPerempuan: m.tergugatPerempuan,
+    amarPutusan: m.amarRekonvensi,
+    ...(m.rekonvensiDikabulkan === undefined ? {} : { rekonvensiDikabulkan: m.rekonvensiDikabulkan }),
   } as MasukanKeadaanPutusan);
   const p = pilihPutusanBawaan(PETA_PUTUSAN_BAWAAN, m.jenisPerkara, status, m.verstekPutusan === true, m.kumulasi, keadaan);
   if (!p) return [];
@@ -431,6 +440,8 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     mediasi: b.mediasi && typeof b.mediasi === "object" ? (b.mediasi as { hasil?: unknown }) : null,
     mediasiTerbaca: b.mediasiTerbaca === false ? false : true,
     lewatEcourt: typeof b.lewatEcourt === "boolean" ? b.lewatEcourt : null,
+    tergugatPerempuan: typeof b.tergugatPerempuan === "boolean" ? b.tergugatPerempuan : null,
+    amarRekonvensi: typeof b.amarRekonvensi === "string" ? b.amarRekonvensi : "",
   };
 }
 export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {

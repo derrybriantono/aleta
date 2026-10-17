@@ -517,7 +517,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "harta bersama|dikabulkan|kontradiktoir",
       nilai: "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan",
-      data: { jenisAsli: "Harta Bersama", statusAsli: "Dikabulkan", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "keadaan: T hadir pada sidang putusan; bila T tidak hadir setelah mediasi: [02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi" },
+      data: { jenisAsli: "Harta Bersama", statusAsli: "Dikabulkan", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "varian: [01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan; [02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi" },
       urutan: 76,
     },
     {
@@ -622,7 +622,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penguasaan anak|ditolak",
       nilai: "[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
-      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"] },
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "varian: [03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)" },
       urutan: 93,
     },
     {
@@ -670,7 +670,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "lain-lain|ditolak|hak-asuh",
       nilai: "[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
-      data: { jenisAsli: "Lain-Lain", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"] },
+      data: { jenisAsli: "Lain-Lain", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "varian: [03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)" },
       urutan: 101,
     },
     {
@@ -810,6 +810,25 @@ export const CERMIN_EKSTENSI = {
       nilai: "[99] [NO] ES Gugatan Sederhana - Tergugat Tidak Diketahui Tempat Tinggalnya",
       data: { jenisAsli: "Ekonomi Syariah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Ekonomi Syariah", blangkoLain: ["Ekonomi Syariah - Putusan"], catatan: "Pasal 4 ayat (2) PERMA gugatan sederhana" },
       urutan: 124,
+    },
+    /* === I7 17 Okt === cermin blok I7 panel-alat.js (varian HB rekonvensi dikabulkan, hak asuh tolak dengan hadhanah kepada T ibu) */
+    {
+      kunci: "harta bersama|dikabulkan|rekonvensi-dikabulkan",
+      nilai: "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan",
+      data: { jenisAsli: "Harta Bersama", statusAsli: "Dikabulkan", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "keadaan: rekonvensi dikabulkan seluruhnya/sebagian; bawaan HB tetap [01] (rekonvensi ditolak)" },
+      urutan: 125,
+    },
+    {
+      kunci: "penguasaan anak|ditolak|hak-asuh-t-ibu",
+      nilai: "[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)",
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: Tergugat ibu (anak belum mumayyiz)" },
+      urutan: 126,
+    },
+    {
+      kunci: "lain-lain|ditolak|hak-asuh-t-ibu",
+      nilai: "[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)",
+      data: { jenisAsli: "Lain-Lain", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), Tergugat ibu (anak belum mumayyiz)" },
+      urutan: 127,
     },
   ],
   "putusan.padanan-jenis": [

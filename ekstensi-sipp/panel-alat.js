@@ -9074,7 +9074,8 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "Harta Bersama",
     "Dikabulkan",
     "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan",
-    "keadaan: T hadir pada sidang putusan; bila T tidak hadir setelah mediasi: [02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi"
+    // I7 17 Okt: "varian:" (bukan "keadaan:") supaya [01a] rekonvensi dikabulkan dan [02a] ikut sebagai alternatif di daftar pilihan.
+    "varian: [01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan; [02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi"
   ),
   "harta bersama|perdamaian": alatBarisPutusanLain("hb", "Harta Bersama", "Perdamaian", "[97] [Perdamaian] Akta Perdamaian"),
   "harta bersama|dicabut": alatBarisPutusanLain("hb", "Harta Bersama", "Dicabut", "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban"),
@@ -9122,6 +9123,8 @@ const ALAT_BERKAS_HAK_ASUH = {
   setelahMediasi: "[01a] [Kabul] Hak Asuh - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz",
   verstek: "[01b] [Kabul Verstek] Hak Asuh - Anak Belum Mumayyiz",
   tolak: "[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
+  // I7 17 Okt: gugatan ditolak dan anak ditetapkan di bawah hadhanah Tergugat (ibu, anak belum mumayyiz) - pola 177/Pdt.G/2022.
+  tolakIbu: "[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)",
   damai: "[97] [Perdamaian] Akta Perdamaian",
   cabut: "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban",
   gugur: "[98a] [Gugur] Gugatan - P Tidak Hadir Sidang Pertama",
@@ -9145,7 +9148,7 @@ function alatPetaHakAsuh(kunci, jenisAsli, keadaan) {
     baris[k("dikabulkan")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.kabul, ALAT_CATATAN_HAK_ASUH);
     baris[k("dikabulkan", "t-tidak-hadir-setelah-mediasi")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.setelahMediasi, "keadaan: T hadir mediasi lalu tidak hadir");
   }
-  baris[k("ditolak", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Ditolak", B.tolak);
+  baris[k("ditolak", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Ditolak", B.tolak, `varian: ${B.tolakIbu}`);
   baris[k("perdamaian", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Perdamaian", B.damai);
   baris[k("dicabut", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Dicabut", B.cabut);
   baris[k("digugurkan", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Digugurkan", B.gugur);
@@ -9179,6 +9182,26 @@ Object.assign(ALAT_PETA_BAWAAN, alatPetaHakAsuh("penguasaan anak", "Penguasaan A
   "ekonomi syariah|tidak dapat diterima": alatBarisPutusanLain("es", "Ekonomi Syariah", "Tidak Dapat Diterima", "[99] [NO] ES Gugatan Sederhana - Tergugat Tidak Diketahui Tempat Tinggalnya", "Pasal 4 ayat (2) PERMA gugatan sederhana"),
 });
 /* === AKHIR F21 === */
+
+/* === I7 17 Okt === */
+/**
+ * VARIAN 17 Okt (paket ABT abt-varian-17okt-derry): HB rekonvensi dikabulkan [01a] dan hak asuh tolak dengan hadhanah di tangan T (ibu) [03a].
+ * Baris bawaan lama TIDAK diubah (HB tetap [01] = rekonvensi ditolak; hak asuh tolak tetap [03]); varian dipilih lewat keadaan putusan
+ * (lib/keadaan-putusan.ts: "rekonvensi-dikabulkan" dari amar SIPP / saklar, "hak-asuh-t-ibu" dari pihak.jenis_kelamin Tergugat = P) dan
+ * disebut di catatan baris lama sebagai varian untuk dipilih hakim. T ayah atau anak mumayyiz tetap [03].
+ */
+Object.assign(ALAT_PETA_BAWAAN, {
+  "harta bersama|dikabulkan|rekonvensi-dikabulkan": alatBarisPutusanLain(
+    "hb",
+    "Harta Bersama",
+    "Dikabulkan",
+    "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan",
+    "keadaan: rekonvensi dikabulkan seluruhnya/sebagian; bawaan HB tetap [01] (rekonvensi ditolak)"
+  ),
+  "penguasaan anak|ditolak|hak-asuh-t-ibu": alatBarisPutusanLain("ha", "Penguasaan Anak", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakIbu, "keadaan: Tergugat ibu (anak belum mumayyiz)"),
+  "lain-lain|ditolak|hak-asuh-t-ibu": alatBarisPutusanLain("ha", "Lain-Lain", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakIbu, "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), Tergugat ibu (anak belum mumayyiz)"),
+});
+/* === AKHIR I7 === */
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah
@@ -9585,7 +9608,11 @@ async function alatAmbilPohonBlangko(asal) {
 function alatSetCocokJenis(set, jenis) {
   const j = alatKunciJenis(jenis);
   if (!j) return [];
-  const cocok = (set || []).filter((s) => Array.isArray(s.untuk) && s.untuk.some((kata) => j.includes(String(kata).toLowerCase())));
+  // F22 17 Okt: set "acara biasa" (syaratNomor "gugatan-biasa", mis. 10a Ekonomi Syariah Biasa) TIDAK dipakai pemetaan per jenis - jenis yang sama
+  // juga dimiliki gugatan sederhana, dan acara biasa dipilih menurut nomor perkara lewat keadaan putusan ("es-biasa").
+  const cocok = (set || []).filter(
+    (s) => Array.isArray(s.untuk) && s.syaratNomor !== "gugatan-biasa" && s.untuk.some((kata) => j.includes(String(kata).toLowerCase()))
+  );
   const kumulasi = (s) => /kumulasi/i.test(`${s.nama || ""} ${s.folder || ""}`);
   return cocok.filter((s) => !kumulasi(s)).concat(cocok.filter(kumulasi));
 }
