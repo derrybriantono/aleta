@@ -23,6 +23,7 @@ import { afterEach, describe, expect, it } from "vitest";
 const AKAR = path.resolve(__dirname, "../../..");
 const baca = (n: string) => readFileSync(path.join(AKAR, "ekstensi-sipp", n), "utf8").replace(/\r\n/g, "\n");
 const KONTEN = baca("sipp-ide-l2.js");
+const CSS = baca("panel.css");
 const tunggu = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 async function sampai<T>(periksa: () => T, ket: string, batas = 3000): Promise<NonNullable<T>> {
   const mulai = Date.now();
@@ -75,5 +76,42 @@ describe("B. baris non-e-Court dengan sisipan ALETA di sel nomornya", () => {
     await sampai(() => h.diminta.length, "permintaan penanda");
     expect(h.diminta[0]).toEqual([NOMOR]);
     await sampai(() => h.d.querySelector('[data-aleta-l2="baris"] button'), "penanda di baris");
+  });
+});
+
+describe("A. rupa = lencana bersama", () => {
+  it("tiap penanda .aleta-tanda.aleta-tanda-<warna> (oranye = jingga), ber-title untuk (i), tetap tombol type=button", async () => {
+    const h = buka(BARIS_NON_ECOURT);
+    await sampai(() => h.d.querySelectorAll('[data-aleta-l2="baris"] button').length === 6, "enam penanda");
+    const pil = Array.from(h.d.querySelectorAll('[data-aleta-l2="baris"] button')) as HTMLButtonElement[];
+    expect(pil.map((b) => [b.getAttribute("data-tingkat"), Array.from(b.classList).filter((k) => /^aleta-tanda-/.test(k))[0]])).toEqual([
+      ["merah", "aleta-tanda-merah"],
+      ["oranye", "aleta-tanda-jingga"],
+      ["kuning", "aleta-tanda-kuning"],
+      ["biru", "aleta-tanda-biru"],
+      ["abu", "aleta-tanda-abu"],
+      ["hijau", "aleta-tanda-hijau"],
+    ]);
+    for (const b of pil) {
+      expect(b.classList.contains("aleta-tanda")).toBe(true);
+      expect(b.type).toBe("button");
+      expect(b.title).not.toBe("");
+    }
+  });
+
+  it("panel.css punya warna rancangan terang DAN gelap untuk keenam warna penanda", () => {
+    for (const w of ["merah", "jingga", "kuning", "biru", "abu", "hijau"]) {
+      expect(CSS, w).toContain(`html[data-aleta-lencana="rancangan"] .aleta-tanda-${w} `);
+      expect(CSS, w).toContain(`html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-${w} `);
+    }
+  });
+
+  it("kotak Penanda ALETA, penjelasan, dan Lewat 5 bulan punya rupa tema gelap; tidak ada huruf di bawah 12,5px", () => {
+    const gaya = (KONTEN.match(/g\.textContent = `([\s\S]*?)`;/) || [])[1] || "";
+    for (const k of [".aleta-sisip.aleta-l2-detil", ".aleta-sisip.aleta-l2-jelas", ".aleta-sisip.aleta-l2-lima"]) {
+      expect(gaya, k).toContain(`html[data-aleta-tema-sipp="gelap"] ${k}{`);
+    }
+    const ukuran = Array.from(gaya.matchAll(/font-size:\s*([\d.]+)px/g)).map((m) => Number(m[1]));
+    expect(Math.min(...ukuran)).toBeGreaterThanOrEqual(12.5);
   });
 });
