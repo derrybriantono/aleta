@@ -6165,6 +6165,93 @@ function alatPasangGulir(panel) {
   panel.addEventListener("focusin", tampakSebentar);
 }
 
+/* ─── PEMILIH BERKAS ALETA TIDAK IKUT TERBACA UNGGAH e-Doc SIPP (audit 17 Okt) ──
+ *
+ * SubmitHandling SIPP 7.0.4 (resources/js/jquery-sipp-2.js, upload:1) tidak
+ * membaca pemilih berkas borangnya sendiri, melainkan SELURUH $(":file") di
+ * halaman: jalur berhasil memeriksa jenis tiap pemilih yang berisi (berkas
+ * .txt di pemilih panel ALETA -> "File Format E-Document Tidak Diizinkan",
+ * unggahan SIPP batal) dan mengunggah bila ADA satu yang berisi; jalur galat
+ * memakai $(":file")[0] - pemilih pertama di halaman, yang bisa milik panel.
+ *
+ * Penjagaan: saat borang SIPP yang memuat pemilih berkas dikirim, pemilih
+ * berkas milik ALETA dilepas SEMENTARA dari dokumen (diganti penanda komentar,
+ * berkasnya tetap tersimpan di elemennya) dan dipasang kembali sesudah SIPP
+ * selesai menjawab (pesan tampil, galat tampil, atau jendela pesan ditutup),
+ * paling lama dua menit. Dibatalkan (konfirmasi SIPP / penjaga ALETA) =
+ * dipasang kembali seketika. Tidak ada yang ditulis ke borang SIPP.
+ */
+const ALAT_PEMILIH_ALETA = '#aleta-panel-sipp, .aleta-panel, .aleta-sisip, [id^="aleta-"]';
+const ALAT_PEMILIH_BATAS_MS = 120000;
+
+function alatPemilihMilikAleta(el) {
+  if (!el || el.nodeType !== 1) return false;
+  if (/(^|\s)aleta-/.test(String(el.getAttribute("class") || ""))) return true;
+  return Boolean(el.closest && el.closest(ALAT_PEMILIH_ALETA));
+}
+
+/** Dipasang sekali per dokumen (konten.js di SIPP). Pulang { tertahan() } untuk uji. */
+function alatJagaPemilihBerkasSipp(doc) {
+  const d = doc || document;
+  if (d.__aletaJagaPemilih) return d.__aletaJagaPemilih;
+  let tertahan = null;
+  let pengamat = null;
+  let batas = null;
+  const pulihkan = () => {
+    if (pengamat) pengamat.disconnect();
+    pengamat = null;
+    if (batas) clearTimeout(batas);
+    batas = null;
+    const daftar = tertahan;
+    tertahan = null;
+    for (const { el, tanda } of daftar || []) {
+      // Panel yang sudah digambar ulang membuang penandanya - pemilih lamanya tidak dipasang lagi.
+      if (tanda.parentNode) tanda.parentNode.replaceChild(el, tanda);
+    }
+  };
+  const selesaiSipp = () => {
+    const pesan = d.getElementById("pesan-container");
+    return Boolean(d.getElementById("popup_message") || !d.getElementById("popup_msg") || (pesan && String(pesan.textContent || "").trim()));
+  };
+  d.addEventListener(
+    "submit",
+    (e) => {
+      try {
+        const f = e.target;
+        if (!f || f.nodeName !== "FORM" || alatPemilihMilikAleta(f)) return;
+        const punyaSipp = Array.from(f.querySelectorAll('input[type="file"]')).some((x) => !alatPemilihMilikAleta(x));
+        if (!punyaSipp) return;
+        const aleta = Array.from(d.querySelectorAll('input[type="file"]')).filter(alatPemilihMilikAleta);
+        if (!aleta.length) return;
+        pulihkan();
+        tertahan = aleta.map((el) => {
+          const tanda = d.createComment("aleta-pemilih-berkas");
+          el.parentNode.replaceChild(tanda, el);
+          return { el, tanda };
+        });
+        setTimeout(() => {
+          if (!tertahan) return;
+          // Konfirmasi SIPP dibatalkan atau penjaga ALETA menahan: jendela pesan tidak pernah dibuat.
+          if (!d.getElementById("popup_msg")) return pulihkan();
+          batas = setTimeout(pulihkan, ALAT_PEMILIH_BATAS_MS);
+          if (typeof MutationObserver === "function" && d.body) {
+            pengamat = new MutationObserver(() => {
+              if (selesaiSipp()) pulihkan();
+            });
+            pengamat.observe(d.body, { childList: true, subtree: true, characterData: true });
+          }
+        }, 0);
+      } catch {
+        /* penjagaan tidak boleh mengganggu Simpan SIPP */
+      }
+    },
+    true
+  );
+  const api = { tertahan: () => (tertahan ? tertahan.map((x) => x.el) : []), pulihkan };
+  d.__aletaJagaPemilih = api;
+  return api;
+}
+
 /* ─── REKAM SUSUNAN HALAMAN (Tahap K, 16 Okt 2026) ─────────────────────────
  *
  * Super Admin merekam BENTUK halaman SIPP yang sedang terbuka - termasuk

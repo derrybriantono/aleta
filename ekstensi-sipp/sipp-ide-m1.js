@@ -105,6 +105,11 @@
     return s;
   }
   const milikAleta = (n) => Boolean(n && n.nodeType === 1 && typeof n.closest === "function" && n.closest(BUKAN_SIPP));
+  /** Teks hanya ditulis bila berbeda - simpul teks baru dibaca konten.js sebagai perubahan SIPP (lihat sipp-ide-l1.js setelTeks). */
+  function setelTeks(e, teks) {
+    const t = String(teks == null ? "" : teks);
+    if (e && e.textContent !== t) e.textContent = t;
+  }
   function tampak(e) {
     const m = l1();
     if (m && typeof m.tampak === "function") return m.tampak(e);
@@ -929,7 +934,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
   // Pita di jendela
   // ──────────────────────────────────────────────────────────────────────────
   function kabar(p, teks, gagal) {
-    p.kabar.textContent = teks || "";
+    setelTeks(p.kabar, teks || "");
     p.kabar.classList.toggle("aleta-m1-gagal", Boolean(gagal));
   }
 
@@ -940,21 +945,26 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
     const L = l1();
     if (L && typeof L.hitungKolom === "function" && !adaPitaL1(p.form)) {
       const h = L.hitungKolom(p.form);
-      p.hitung.textContent = L.kalimatHitung(h);
+      setelTeks(p.hitung, L.kalimatHitung(h));
       p.hitung.classList.toggle("aleta-m1-ada-kosong", h.wajib ? h.wajibTerisi < h.wajib : h.terisi < h.jumlah);
       p.kosongTerakhir = h.kosong;
       if (p.chip) {
         const n = h.kosong.filter((k) => k.wajib).length;
         p.chip.hidden = n === 0;
-        p.chip.textContent = n ? `${n} kolom wajib kosong` : "";
+        setelTeks(p.chip, n ? `${n} kolom wajib kosong` : "");
       }
     } else {
-      p.hitung.textContent = "";
+      setelTeks(p.hitung, "");
       if (p.chip) p.chip.hidden = true;
     }
     const cek = cekJendela(p);
-    p.cek.textContent = "";
-    for (const c of cek) p.cek.appendChild(el("div", c.nada === "merah" ? "aleta-m1-merah" : c.nada === "info" ? "aleta-m1-info" : "", c.teks));
+    // Digambar ulang hanya bila isinya berubah (tiap ketikan memanggil ini).
+    const sidik = JSON.stringify(cek.map((c) => [c.nada, c.teks]));
+    if (p.cekSidik !== sidik) {
+      p.cekSidik = sidik;
+      p.cek.textContent = "";
+      for (const c of cek) p.cek.appendChild(el("div", c.nada === "merah" ? "aleta-m1-merah" : c.nada === "info" ? "aleta-m1-info" : "", c.teks));
+    }
     return cek;
   }
 
@@ -1381,8 +1391,11 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
       } catch {
         /* di luar konteks ekstensi */
       }
-      if (!nyala || !document.body) return;
+      if (!document.body) return;
+      // Dipasang SELALU (juga saat ALETA mati ketika halaman dibuka) - pasang()
+      // dan saatKirim() memeriksa aktifSekarang() sendiri (audit 17 Okt).
       document.addEventListener("submit", saatKirim, true);
+      document.addEventListener("aleta-uji-berubah", () => jadwalkan());
       new MutationObserver((daftar) => {
         if (daftar.every(dariAletaSaja)) return;
         jadwalkan();

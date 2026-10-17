@@ -265,7 +265,7 @@ const KATALOG = Object.freeze({
     dasar:
       "Persidangan elektronik (PERMA 1/2019 jo. PERMA 7/2022): dokumen jawaban, replik, duplik, dan kesimpulan yang diunggah pihak diverifikasi majelis sebelum diteruskan kepada pihak lawan.",
     sumber: "Arsip tarikan e-Court ALETA (status verifikasi tiap dokumen pihak) untuk perkara e-Court pada agenda jawab-menjawab/kesimpulan.",
-    perluDicek: true,
+    // Dasarnya dipastikan pengguna (keputusan 17 Okt butir 31) - tidak lagi "perlu dicek".
   },
 });
 

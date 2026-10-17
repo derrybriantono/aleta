@@ -122,6 +122,16 @@
     return b;
   }
   const milikAleta = (n) => Boolean(n && n.nodeType === 1 && typeof n.closest === "function" && n.closest(BUKAN_SIPP));
+  /**
+   * Teks hanya ditulis bila BERBEDA. Menulis textContent yang sama tetap
+   * mengganti simpul teksnya, dan pengamat konten.js (perubahanDariAleta)
+   * menganggap simpul teks sebagai perubahan SIPP - detak pita tiap detik
+   * dulu menyegarkan seluruh panel ALETA tiap detik (audit 17 Okt).
+   */
+  function setelTeks(e, teks) {
+    const t = String(teks == null ? "" : teks);
+    if (e && e.textContent !== t) e.textContent = t;
+  }
 
   /** Teks sel tanpa sisipan ALETA di dalamnya. */
   function teksSipp(sel) {
@@ -265,6 +275,10 @@
     void tulisPenyimpanan({ [KUNCI_SERAH]: { nomor: String(nomor || ""), saat: Date.now() } });
   }
 
+  const JUDUL_ABT = "Buka di ABT: Blangko ABT by Derry Briantono langsung di perkara ini (tab baru)";
+  const JUDUL_ALETA = "Buka di ALETA: perkara ini di portal ALETA (tab baru)";
+  const JUDUL_TANPA_NOMOR = "Nomor perkara belum terbaca di halaman ini (tunggu tab Data Umum termuat)";
+
   function buatTautan(nomor, besar) {
     const w = el(besar ? "td" : "span", `${KELAS} ${besar ? "aleta-l1-submenu" : "aleta-l1-tautan"}`);
     w.setAttribute("data-l1-nomor", nomor || "");
@@ -273,7 +287,7 @@
     abt.setAttribute("data-l1", "abt");
     abt.target = "_blank";
     abt.rel = "noopener";
-    abt.title = "Buka di ABT: Blangko ABT by Derry Briantono langsung di perkara ini (tab baru)";
+    abt.title = JUDUL_ABT;
     abt.addEventListener("click", (e) => {
       const n = w.getAttribute("data-l1-nomor");
       if (!n) {
@@ -286,7 +300,7 @@
     aleta.setAttribute("data-l1", "aleta");
     aleta.target = "_blank";
     aleta.rel = "noopener";
-    aleta.title = "Buka di ALETA: perkara ini di portal ALETA (tab baru)";
+    aleta.title = JUDUL_ALETA;
     aleta.addEventListener("click", (e) => {
       if (!w.getAttribute("data-l1-nomor")) e.preventDefault();
     });
@@ -311,13 +325,16 @@
       aleta.href = alamatAleta(n);
       abt.removeAttribute("aria-disabled");
       aleta.removeAttribute("aria-disabled");
+      // Judul "belum terbaca" dari keadaan sebelumnya dipulihkan (audit 17 Okt).
+      abt.title = JUDUL_ABT;
+      aleta.title = JUDUL_ALETA;
     } else {
       abt.removeAttribute("href");
       aleta.removeAttribute("href");
       abt.setAttribute("aria-disabled", "true");
       aleta.setAttribute("aria-disabled", "true");
-      abt.title = "Nomor perkara belum terbaca di halaman ini (tunggu tab Data Umum termuat)";
-      aleta.title = abt.title;
+      abt.title = JUDUL_TANPA_NOMOR;
+      aleta.title = JUDUL_TANPA_NOMOR;
     }
   }
 
@@ -698,7 +715,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 
   function kabar(p, teks, gagal) {
     if (!p || !p.kabar) return;
-    p.kabar.textContent = teks || "";
+    setelTeks(p.kabar, teks || "");
     p.kabar.classList.toggle("aleta-l1-gagal", Boolean(gagal));
   }
 
@@ -795,13 +812,13 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 
   function segarkanHitung(p) {
     const h = hitungKolom(p.form);
-    p.hitung.textContent = kalimatHitung(h);
+    setelTeks(p.hitung, kalimatHitung(h));
     const adaKosongWajib = h.wajib ? h.wajibTerisi < h.wajib : h.terisi < h.jumlah;
     p.hitung.classList.toggle("aleta-l1-ada-kosong", adaKosongWajib);
     if (p.chip) {
       const nKosong = h.kosong.filter((k) => k.wajib).length;
       p.chip.hidden = nKosong === 0;
-      p.chip.textContent = nKosong ? `${nKosong} kolom wajib kosong` : "";
+      setelTeks(p.chip, nKosong ? `${nKosong} kolom wajib kosong` : "");
     }
     return h;
   }
@@ -1003,7 +1020,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 
     const e = bacaEdocTabPutusan(document);
     const sebut = (s) => (s === "ada" ? "sudah ada" : s === "belum" ? "belum ada" : "belum terbaca");
-    st.edoc.textContent = `e-Doc di tab Putusan: putusan ${sebut(e.putusan)}, anonimisasi ${sebut(e.anonimisasi)}.`;
+    setelTeks(st.edoc, `e-Doc di tab Putusan: putusan ${sebut(e.putusan)}, anonimisasi ${sebut(e.anonimisasi)}.`);
   }
 
   function gambarUsulan(st, u) {
@@ -1238,8 +1255,19 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     return { ok: false, sebab: "tidak-di-daftar" };
   }
 
+  /** Halaman aplikasi ABT sendiri (.../abt/...) - bukan halaman masuk atau menu APS. */
+  const halamanAbt = () => /\/abt(?:\/|$)/i.test(String(location.pathname || ""));
+
   async function terimaSerahAbt() {
     let nomor = bacaSerahDariHash(location.hash);
+    if (!halamanAbt()) {
+      // Sesi ABT habis: .../abt/main/beranda#aleta-bd=<nomor> dialihkan ke
+      // halaman masuk (hash ikut), lalu sesudah masuk ke menu APS. Di sana
+      // serah terimanya TIDAK dihabiskan: nomor dari hash disimpan (waktunya
+      // baru) supaya ABT yang dibuka sesudah masuk membukanya (audit 17 Okt).
+      if (nomor) tulisSerah(nomor);
+      return null;
+    }
     if (nomor) {
       try {
         history.replaceState(null, "", `${location.pathname}${location.search}`);
@@ -1338,13 +1366,19 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
       } catch {
         /* di luar konteks ekstensi */
       }
-      if (!nyala) return;
       if (diAbt()) {
-        void terimaSerahAbt();
+        if (nyala) void terimaSerahAbt();
         return;
       }
       if (!document.body) return;
+      // Pengamat, penjaga Simpan, dan pendengar tampilan dipasang SELALU -
+      // juga bila ALETA sedang mati saat halaman dibuka: pasang() dan
+      // saatKirim() sendiri yang memeriksa aktifSekarang(). Dulu ALETA yang
+      // dinyalakan dari popup sesudah halaman terbuka tidak pernah memasang
+      // pita di jendela berikutnya (audit 17 Okt).
       document.addEventListener("submit", saatKirim, true);
+      // Lama <-> Baru/UI Baru (popup, atau tampilan dari server) diikuti seketika.
+      document.addEventListener("aleta-uji-berubah", () => jadwalkan());
       new MutationObserver((daftar) => {
         if (daftar.every(dariAletaSaja)) return;
         jadwalkan();

@@ -1792,6 +1792,20 @@
     return keadaan.siap && keadaan.induk && keadaan.nyala && !halamanTerlarang();
   }
 
+  /**
+   * Butir 41 (17 Okt): di UI Baru kotak Kehadiran sidang dan Draf putusan H-7
+   * tampil SENDIRI (terlipat, dok kiri bawah) walau Checklist milestone mati -
+   * tanpa checklist, tanpa permintaan checklist, tanpa lencana/Atur widget.
+   */
+  function hanyaKotakSidang() {
+    return !keadaan.nyala && modeUji() !== "lama" && modern() && (khBerlaku() || h7Berlaku());
+  }
+
+  /** Widget dipasang: checklist menyala, atau (UI Baru) hanya kotak sidang. */
+  function bolehTampilWidget() {
+    return keadaan.siap && keadaan.induk && !halamanTerlarang() && (keadaan.nyala || hanyaKotakSidang());
+  }
+
   // ─── Alamat dasar tiap aplikasi ────────────────────────────────────────────
 
   /**
@@ -3573,6 +3587,9 @@
   /** Jawaban portal -> bentuk yang dipercaya kotak. null bila bentuknya tidak dikenal. */
   function khBersihkan(isi) {
     const x = objek(isi);
+    // Rute menjawab { available:false, ok:false, perkara:[] } saat jadwal sidang tidak
+    // terbaca - itu GALAT, bukan "tidak ada sidang hari ini" (audit 17 Okt).
+    if (x.available === false || x.ok === false) return null;
     if (!Array.isArray(x.perkara)) return null;
     return {
       jumlah: Number(x.jumlah) || 0,
@@ -3720,6 +3737,7 @@
   /** Jawaban portal -> bentuk yang dipercaya kotak. null bila bentuknya tidak dikenal. */
   function h7Bersihkan(isi) {
     const x = objek(isi);
+    if (x.available === false || x.ok === false) return null; // galat portal, bukan "tidak ada"
     if (!Array.isArray(x.perkara)) return null;
     return {
       jumlah: Number(x.jumlah) || 0,
@@ -3972,6 +3990,15 @@
    */
   function susunDok(kecil) {
     const dok = el("div", "aleta-cmw-dok");
+    if (!keadaan.nyala) {
+      // Checklist milestone mati (butir 41): hanya kotak sidang, selalu bentang (kotaknya sendiri terlipat).
+      dok.setAttribute("data-dok", "kotak-sidang");
+      const tumpuk = el("div", "aleta-cmw-tumpuk");
+      if (khBerlaku()) tumpuk.appendChild(susunKehadiranWidget());
+      if (h7Berlaku()) tumpuk.appendChild(susunDrafH7Widget());
+      if (tumpuk.childNodes.length) dok.appendChild(tumpuk);
+      return dok;
+    }
     dok.setAttribute("data-dok", kecil ? "ciut" : "bentang");
     if (!kecil) {
       if (keadaan.aturTerbuka) {
@@ -5625,7 +5652,8 @@
     // (butir 24) dan penjelasan panjang di balik ⓘ (butir 6).
     if (mode !== "lama") {
       tanyaPembaruan();
-      if (infoPembaruan) wadah.insertBefore(susunPita(infoPembaruan), wadah.firstChild);
+      // Hanya kotak sidang (checklist mati): pita pembaruan tetap milik panel/checklist.
+      if (infoPembaruan && keadaan.nyala) wadah.insertBefore(susunPita(infoPembaruan), wadah.firstChild);
       lipatPanjang(wadah);
     }
     // Butir 7: bagian yang dipisah digambar di jendela melayangnya sendiri
@@ -5984,7 +6012,7 @@
   }
 
   function evaluasi() {
-    if (bolehTampil()) pasang();
+    if (bolehTampilWidget()) pasang();
     else lepas();
   }
 
@@ -6073,7 +6101,8 @@
    * terakhir.
    */
   async function segarkan() {
-    if (!akar || !akar.isConnected) return;
+    // Hanya kotak sidang (checklist mati, butir 41): checklist tidak diminta.
+    if (!akar || !akar.isConnected || !keadaan.nyala) return;
     const nomor = ++nomorMinta;
     keadaan.memuat = true;
     keadaan.terakhirMinta = Date.now();
@@ -6251,10 +6280,12 @@
         }
         if (ubah[KUNCI_KEHADIRAN]) {
           kh.nyala = typeof ubah[KUNCI_KEHADIRAN].newValue === "boolean" ? ubah[KUNCI_KEHADIRAN].newValue : null;
+          saklarBerubah = true; // butir 41: tanpa checklist, kotak ini sendiri yang memasang widget
           gambar();
         }
         if (ubah[KUNCI_DRAF_H7]) {
           h7.nyala = typeof ubah[KUNCI_DRAF_H7].newValue === "boolean" ? ubah[KUNCI_DRAF_H7].newValue : null;
+          saklarBerubah = true;
           gambar();
         }
         if (ubah[KUNCI_SUSUNAN]) {
@@ -6383,6 +6414,8 @@
     // Pita pembaruan ditanyakan lagi menurut tampilan yang baru.
     pembaruanDitanya = false;
     if (!modern()) keadaan.aturTerbuka = false;
+    // Butir 41: kotak sidang tanpa checklist hanya di UI Baru - pasang/lepas ikut tampilannya.
+    if (keadaan.siap && !keadaan.nyala) evaluasi();
     if (!akar || !akar.isConnected) return;
     terapkanPosisi();
     gambar();
@@ -6407,7 +6440,7 @@
     setInterval(() => {
       const pindah = location.pathname !== jalurTerakhir;
       jalurTerakhir = location.pathname;
-      if (pindah || (bolehTampil() && akar && !akar.isConnected)) evaluasi();
+      if (pindah || (bolehTampilWidget() && akar && !akar.isConnected)) evaluasi();
     }, 1000);
   }
 

@@ -16027,6 +16027,8 @@ function tanpaPengamat(kerja) {
   }
 }
 pengamat.observe(document.body, { childList: true, subtree: true });
+// Audit 17 Okt: pemilih berkas ALETA tidak ikut terbaca SubmitHandling unggah e-Doc SIPP (panel-alat.js).
+if (typeof alatJagaPemilihBerkasSipp === "function") alatJagaPemilihBerkasSipp(document);
 
 // Saklar dari popup berlaku seketika, tanpa memuat ulang halaman SIPP.
 // Memuat ulang halaman kerja orang hanya karena sebuah saklar ditekan adalah

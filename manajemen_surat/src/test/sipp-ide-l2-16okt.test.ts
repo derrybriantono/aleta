@@ -295,8 +295,8 @@ describe("A. aturan penanda (bot, fungsi murni)", () => {
     for (const k of ["penetapan-awal", "belum-ditunda", "akta-cerai", "umur-perkara", "lewat-5-bulan"]) {
       expect((layanan.KATALOG[k] as { perluDicek?: boolean }).perluDicek, k).toBeFalsy();
     }
-    // dasar hukum verifikasi dokumen e-Court masih asumsi
-    expect((layanan.KATALOG["ecourt-verifikasi"] as { perluDicek?: boolean }).perluDicek).toBe(true);
+    // Dasar verifikasi dokumen e-Court dipastikan pengguna 17 Okt (butir 31).
+    expect((layanan.KATALOG["ecourt-verifikasi"] as { perluDicek?: boolean }).perluDicek).toBeFalsy();
   });
 });
 

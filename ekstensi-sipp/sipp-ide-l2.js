@@ -57,7 +57,25 @@
     const induk = el && el.parentElement;
     return Boolean(induk && induk.closest(BUKAN_SIPP));
   }
+  /**
+   * Teks SIPP sebuah sel TANPA sisipan ALETA di dalamnya (tombol ABT/ALETA L1,
+   * lencana konten.js, penanda ini sendiri). Sel nomor perkara non-e-Court SIPP
+   * tidak berspasi sesudah nomornya: "123/Pdt.G/2026/PA.Dgl" + "ABTALETA" tidak
+   * lagi cocok dengan pola nomor (batas kata hilang) - penandanya dulu tidak
+   * pernah tergambar di baris itu (audit 17 Okt). Simpul ALETA diganti spasi.
+   */
+  function teksSipp(el) {
+    if (!el) return "";
+    let t = "";
+    for (const n of Array.from(el.childNodes)) {
+      if (n.nodeType === 3) t += n.nodeValue;
+      else if (n.nodeType === 1) t += n.matches && n.matches(BUKAN_SIPP) ? " " : teksSipp(n);
+    }
+    return t;
+  }
   const TINGKAT_URUT = { merah: 0, oranye: 1, kuning: 2, biru: 3, abu: 4, hijau: 5 };
+  /** Tingkat penanda -> warna lencana bersama (.aleta-tanda-<warna>, panel.css). */
+  const WARNA_TINGKAT = { merah: "merah", oranye: "jingga", kuning: "kuning", biru: "biru", abu: "abu", hijau: "hijau" };
   const NAMA_TINGKAT = { merah: "perlu tindakan", oranye: "perhatian", kuning: "perhatian", biru: "keterangan", abu: "keterangan", hijau: "baik" };
 
   const keadaan = {
@@ -94,8 +112,18 @@
     keadaan.siap = true;
   }
 
+  /** Tampilan Lama tidak berubah sama sekali (sama dengan L1/M1/M2) - penanda Ide ALETA hanya di Baru & UI Baru. */
+  function modeLama() {
+    try {
+      // eslint-disable-next-line no-undef
+      return typeof alatUjiMode === "function" && String(alatUjiMode() || "lama") === "lama";
+    } catch {
+      return false;
+    }
+  }
+
   function nyala() {
-    return keadaan.saklar.aktif && keadaan.saklar.ideL2;
+    return keadaan.saklar.aktif && keadaan.saklar.ideL2 && !modeLama();
   }
 
   function bolehKode(kode) {
@@ -117,7 +145,7 @@
       if (!LABEL_NOMOR.test(String(sel.textContent || "").replace(/\s+/g, " ").trim())) continue;
       let isi = sel.nextElementSibling;
       if (isi && /^:?$/.test(String(isi.textContent || "").trim())) isi = isi.nextElementSibling || isi;
-      const cocok = isi ? POLA.exec(String(isi.textContent || "")) : null;
+      const cocok = isi ? POLA.exec(teksSipp(isi)) : null;
       if (cocok) return cocok[1];
     }
     // Sebagian halaman perkara memuat nomornya hanya di judul jendela.
@@ -134,7 +162,7 @@
       let nomor = "";
       let sel = null;
       for (const c of Array.from(baris.cells || [])) {
-        const cocok = POLA.exec(String(c.textContent || ""));
+        const cocok = POLA.exec(teksSipp(c));
         if (cocok) {
           nomor = cocok[1];
           sel = c;
@@ -156,28 +184,41 @@
     const g = document.createElement("style");
     g.id = "aleta-l2-gaya";
     g.textContent = `
-.aleta-sisip.aleta-l2{margin:3px 0 0;padding:0;border:0;background:none;font-size:11px;line-height:1.5}
-.aleta-l2-wadah{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
-.aleta-sisip.aleta-l2-detil{margin:6px 0;padding:5px 8px;border:1px solid #d6dde6;border-left:3px solid #2563eb;border-radius:6px;background:#f8fafc}
-.aleta-l2-judul{font-weight:700;font-size:11px;color:#334155;margin-right:4px}
-button.aleta-l2-pil{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:0 7px;border-radius:999px;border:1px solid;font:600 10.5px/17px -apple-system,"Segoe UI",sans-serif;white-space:nowrap}
+/* Rupa = gaya lencana bersama ALETA di SIPP (panel.css "LENCANA ALETA DI SIPP", html[data-aleta-lencana="rancangan"]
+   dipasang sipp-ide-m2.js): penanda = .aleta-tanda.aleta-tanda-<warna> bulat berwarna penuh dengan (i), huruf SIPP 13px,
+   tetap berwarna (diredupkan) di tema gelap. Kotak "Penanda ALETA" = rupa kotak penyatu M2 (audit 17 Okt). */
+.aleta-sisip.aleta-l2{margin:3px 0 0;padding:0;border:0;background:none;font-size:inherit;line-height:1.6}
+.aleta-l2-wadah{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.aleta-sisip.aleta-l2-detil{margin:6px 5px 10px;padding:6px 10px;border:0;border-left:3px solid #16a34a;border-radius:3px;background:rgba(22,163,74,.09);color:#333;font-family:inherit;font-size:13px;line-height:1.7;text-align:left}
+.aleta-l2-judul{font-weight:700;margin-right:4px}
+button.aleta-l2-pil{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;white-space:nowrap}
 button.aleta-l2-pil:focus-visible{outline:2px solid #2563eb;outline-offset:1px}
-button.aleta-l2-pil[data-tingkat=merah]{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
-button.aleta-l2-pil[data-tingkat=oranye]{background:#ffedd5;color:#9a3412;border-color:#fdba74}
-button.aleta-l2-pil[data-tingkat=kuning]{background:#fef9c3;color:#854d0e;border-color:#fde047}
-button.aleta-l2-pil[data-tingkat=biru]{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
-button.aleta-l2-pil[data-tingkat=abu]{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
-button.aleta-l2-pil[data-tingkat=hijau]{background:#dcfce7;color:#166534;border-color:#86efac}
-.aleta-sisip.aleta-l2-jelas{position:fixed;z-index:2147483000;max-width:360px;margin:0;padding:10px 12px;border:1px solid #cbd5e1;border-left:4px solid #2563eb;border-radius:8px;background:#fff;color:#0f172a;box-shadow:0 8px 24px rgba(15,23,42,.18);font:12.5px/1.55 -apple-system,"Segoe UI",sans-serif;text-align:left}
-.aleta-l2-jelas h4{margin:0 22px 4px 0;font-size:13px}
+html:not([data-aleta-lencana="rancangan"]) button.aleta-l2-pil{gap:3px;padding:0 8px;border-radius:999px;border:1px solid;font-weight:600;font-size:12.5px;line-height:1.6}
+html:not([data-aleta-lencana="rancangan"]) button.aleta-l2-pil[data-tingkat=merah]{background:#b42318;color:#fff;border-color:#8a1c13}
+html:not([data-aleta-lencana="rancangan"]) button.aleta-l2-pil[data-tingkat=oranye]{background:#b45309;color:#fff;border-color:#8a3f06}
+html:not([data-aleta-lencana="rancangan"]) button.aleta-l2-pil[data-tingkat=kuning]{background:#9a5b06;color:#fff;border-color:#74440a}
+html:not([data-aleta-lencana="rancangan"]) button.aleta-l2-pil[data-tingkat=biru]{background:#1f4fa3;color:#fff;border-color:#173c7d}
+html:not([data-aleta-lencana="rancangan"]) button.aleta-l2-pil[data-tingkat=abu]{background:#6b7a72;color:#fff;border-color:#6b7a72}
+html:not([data-aleta-lencana="rancangan"]) button.aleta-l2-pil[data-tingkat=hijau]{background:#16704a;color:#fff;border-color:#0f5334}
+.aleta-sisip.aleta-l2-jelas{position:fixed;z-index:2147483000;max-width:360px;margin:0;padding:10px 12px;border:1px solid #c9e6c8;border-left:4px solid #16a34a;border-radius:6px;background:#fff;color:#333;box-shadow:0 8px 24px rgba(15,23,42,.18);font-family:inherit;font-size:13px;line-height:1.55;text-align:left}
+.aleta-l2-jelas h4{margin:0 22px 4px 0;font-size:14px;color:#008c4b}
 .aleta-l2-jelas p{margin:4px 0}
-.aleta-l2-jelas .aleta-l2-kecil{color:#475569;font-size:11.5px}
-.aleta-l2-jelas .aleta-l2-cek{color:#9a3412;font-size:11.5px;font-weight:600}
-.aleta-l2-jelas button.aleta-l2-tutup{all:unset;cursor:pointer;position:absolute;top:6px;right:8px;font-size:15px;color:#64748b}
-.aleta-sisip.aleta-l2-lima{margin:6px 0;padding:6px 10px;border:1px solid #fca5a5;border-left:4px solid #dc2626;border-radius:6px;background:#fff7f7;font-size:12px}
-.aleta-sisip.aleta-l2-lima[data-nol]{border-color:#86efac;border-left-color:#16a34a;background:#f6fef8}
+.aleta-l2-jelas .aleta-l2-kecil{color:#555;font-size:13px}
+.aleta-l2-jelas .aleta-l2-cek{color:#8a4b00;font-size:13px;font-weight:600}
+.aleta-l2-jelas button.aleta-l2-tutup{all:unset;cursor:pointer;position:absolute;top:6px;right:8px;font-size:16px;color:#555}
+.aleta-sisip.aleta-l2-lima{margin:6px 0;padding:6px 10px;border:0;border-left:3px solid #b42318;border-radius:3px;background:rgba(180,35,24,.08);color:#333;font-family:inherit;font-size:13px;text-align:left}
+.aleta-sisip.aleta-l2-lima[data-nol]{border-left-color:#16a34a;background:rgba(22,163,74,.09)}
 .aleta-l2-lima summary{cursor:pointer;font-weight:700}
-.aleta-l2-lima ol{margin:4px 0 0 18px;padding:0;columns:3;font-size:11.5px}
+.aleta-l2-lima ol{margin:4px 0 0 18px;padding:0;columns:3;font-size:13px}
+.aleta-l2-lima .aleta-l2-kecil{color:#555}
+html[data-aleta-tema-sipp="gelap"] .aleta-sisip.aleta-l2-detil{background:rgba(22,163,74,.12);color:#dfe8e2}
+html[data-aleta-tema-sipp="gelap"] .aleta-sisip.aleta-l2-jelas{background:#17211c;color:#dfe8e2;border-color:#27342e;border-left-color:#2f9a69;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+html[data-aleta-tema-sipp="gelap"] .aleta-l2-jelas h4{color:#7fd0a6}
+html[data-aleta-tema-sipp="gelap"] .aleta-l2-jelas .aleta-l2-kecil,html[data-aleta-tema-sipp="gelap"] .aleta-l2-lima .aleta-l2-kecil{color:#b3c2ba}
+html[data-aleta-tema-sipp="gelap"] .aleta-l2-jelas .aleta-l2-cek{color:#f0cb78}
+html[data-aleta-tema-sipp="gelap"] .aleta-l2-jelas button.aleta-l2-tutup{color:#b3c2ba}
+html[data-aleta-tema-sipp="gelap"] .aleta-sisip.aleta-l2-lima{background:rgba(180,35,24,.16);color:#f3d6d2;border-left-color:#c4473c}
+html[data-aleta-tema-sipp="gelap"] .aleta-sisip.aleta-l2-lima[data-nol]{background:rgba(22,163,74,.12);color:#dfe8e2;border-left-color:#2f9a69}
 `;
     (document.head || document.documentElement).appendChild(g);
   }
@@ -248,7 +289,8 @@ button.aleta-l2-pil[data-tingkat=hijau]{background:#dcfce7;color:#166534;border-
   function pil(p) {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "aleta-l2-pil";
+    // Gaya lencana bersama (panel.css): bulat berwarna penuh + (i) dari title, terang & gelap.
+    b.className = `aleta-l2-pil aleta-tanda aleta-tanda-${WARNA_TINGKAT[p.tingkat] || "abu"}`;
     b.setAttribute("data-tingkat", p.tingkat);
     b.setAttribute("data-kode", p.kode);
     b.textContent = p.label;
@@ -477,6 +519,15 @@ button.aleta-l2-pil[data-tingkat=hijau]{background:#dcfce7;color:#166534;border-
   } catch {
     /* di luar ekstensi */
   }
+
+  // Lama <-> Baru/UI Baru diikuti seketika (audit 17 Okt: dulu penanda tampil
+  // dan meminta portal di Tampilan Lama).
+  document.addEventListener("aleta-uji-berubah", () => {
+    bersihkan();
+    keadaan.lima = null;
+    keadaan.sidik = "";
+    jadwalkan(true);
+  });
 
   pasangGaya();
   void bacaSaklar().then(() => jadwalkan(false));
