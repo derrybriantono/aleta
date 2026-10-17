@@ -782,10 +782,10 @@ function fungsiRapikan() {
   const akhir = isi.indexOf("// ─── Keterangan saksi: disunting");
   expect(awal).toBeGreaterThan(0);
   expect(akhir).toBeGreaterThan(awal);
-  const konteks: { bersihkanKeteranganSaksi?: (t: string) => string } = {};
+  const konteks: { bersihkanKeteranganSaksi?: (t: string, tanya?: string) => string } = {};
   vm.createContext(konteks);
   vm.runInContext(isi.slice(awal, akhir), konteks);
-  return konteks as { bersihkanKeteranganSaksi: (t: string) => string };
+  return konteks as { bersihkanKeteranganSaksi: (t: string, tanya?: string) => string };
 }
 
 /** rapikanTeksPosita kini milik layanan bot - dijalankan langsung dari sana. */
