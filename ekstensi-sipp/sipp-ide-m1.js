@@ -272,10 +272,21 @@
     }
     return sebaris(e.value) === "";
   }
+  /** Kalimat penolakan penjaga batas terakhir (isian yang memuat kata ALETA) - ditampilkan pada kabar. */
+  let ditahanPenjaga = "";
   /** Mengisi satu kolom SIPP seperti petugas: nilai lalu peristiwa input+change (penangan jQuery SIPP ikut berjalan). */
   function setel(e, nilai) {
     if (!e) return false;
     const v = String(nilai == null ? "" : nilai);
+    // 17 Okt 2026 (penjaga batas): tidak ada kata ALETA yang diisikan ke kolom SIPP;
+    // nama pihak "Aleta" dari halaman SIPP itu sendiri tidak dihitung.
+    if (typeof AletaPenjagaTanda !== "undefined" && e.tagName !== "SELECT" && e.type !== "checkbox" && e.type !== "radio") {
+      const tahan = AletaPenjagaTanda.periksaTeks(v, e.name || e.id || "kolom ini");
+      if (!tahan.ok) {
+        ditahanPenjaga = tahan.pesan;
+        return false;
+      }
+    }
     if (e.tagName === "SELECT") {
       if (!Array.from(e.options).some((o) => o.value === v)) return false;
       e.value = v;
@@ -1125,6 +1136,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
   }
 
   async function isiDenganAleta(p) {
+    ditahanPenjaga = "";
     p.tIsi.disabled = true;
     kabar(p, "Membaca data ALETA untuk jendela ini…");
     try {
@@ -1145,6 +1157,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
         if (r.sama) bagian.push(`${r.sama} sudah sama`);
         if (r.tawar) bagian.push(`${r.tawar} usulan perlu Anda periksa (tombol Pakai)`);
         if (r.gagal) bagian.push(`${r.gagal} tidak dapat diisi`);
+        if (ditahanPenjaga) bagian.push(ditahanPenjaga);
         kabar(p, `${bagian.join(" · ")}. Simpan tetap Anda yang menekan.`);
       }
       return r;

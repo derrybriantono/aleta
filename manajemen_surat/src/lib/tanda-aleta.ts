@@ -28,3 +28,35 @@ export function menyebutAleta(teks: unknown): boolean {
   if (!t) return false;
   return t.includes("aleta") || RENGGANG.test(t);
 }
+
+/**
+ * Kalimat awam yang SAMA dengan penjaga bot (aleta_bot/services/penjagaTandaSipp.js
+ * pesanIsian): menunjuk isiannya dan apa yang harus dilakukan.
+ */
+export function pesanTandaAletaSipp(kolom: string): string {
+  const k = String(kolom || "").trim() || "ini";
+  return `Isian "${k}" memuat kata 'ALETA'; hapus dulu sebelum disimpan ke SIPP.`;
+}
+
+/** Sebutan isian (kunci -> label) yang nilainya memuat kata itu; nilai kosong/non-teks dilewati. */
+export function isianMemuatAleta(isian: Record<string, unknown>, label: (kunci: string) => string = (k) => k): string[] {
+  const hasil: string[] = [];
+  for (const [kunci, nilai] of Object.entries(isian)) {
+    if (typeof nilai === "string" && menyebutAleta(nilai)) hasil.push(label(kunci));
+  }
+  return hasil;
+}
+
+/**
+ * Peringatan untuk admin saat menyimpan isian yang memuat kata itu: penyimpanan
+ * di ALETA tetap boleh, tetapi isian itu TIDAK akan bisa dikirim ke SIPP/ABT.
+ * "" bila tidak ada.
+ */
+export function peringatanTandaAleta(daftarIsian: string[]): string {
+  if (daftarIsian.length === 0) return "";
+  const sebut = daftarIsian.map((x) => `"${x}"`).join(", ");
+  return (
+    `Isian ${sebut} memuat kata 'ALETA'. Boleh tersimpan di ALETA, tetapi TIDAK akan bisa dikirim ke SIPP/ABT ` +
+    "(kata itu tidak boleh ada di server SIPP) - hapus dulu sebelum diterapkan."
+  );
+}

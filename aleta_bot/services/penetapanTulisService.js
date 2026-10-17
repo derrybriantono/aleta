@@ -52,6 +52,7 @@
 const db = require("../db_config");
 const sippSkemaService = require("./sippSkemaService");
 const { cleanText } = require("./ecourtTextService");
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 
 /** Tahapan penunjukan tingkat pertama - sama dengan penunjukanService. */
 const TAHAPAN_TINGKAT_PERTAMA = 10;
@@ -1454,6 +1455,20 @@ async function susunRencanaTulis(minta) {
   if (!tanggalSah(minta.tanggalPenetapan)) {
     return { ok: false, alasan: "tanggal_penetapan_tidak_sah" };
   }
+
+  // 17 Okt 2026: tidak ada kata ALETA di SIPP. Teks ketikan petugas yang akan
+  // tertulis di SIPP (sebab penetapan majelis, isian Data Umum) ditahan dengan
+  // kalimat yang menunjuk kolomnya; penjaga terakhir ada di jalankanRencana.
+  const tahanTanda = penjagaTandaSipp.periksaIsian({
+    "Sebab penetapan majelis": minta.sebabMajelis,
+    ...Object.fromEntries(
+      Object.entries(minta.dataUmum && typeof minta.dataUmum === "object" ? minta.dataUmum : {}).map(([k, v]) => [
+        `Data Umum - ${k}`,
+        v,
+      ])
+    ),
+  });
+  if (!tahanTanda.ok) return tahanTanda;
 
   // Butir 14: alamat yang tidak diteruskan DIKOSONGKAN, tidak dikarang "127.0.0.1".
   // Alamat peramban petugas - itulah yang dicatat SIPP sendiri
@@ -2897,6 +2912,14 @@ async function jalankanRencana(rencana, opsi = {}) {
   }
 
   const kering = opsi.kering !== false;
+
+  // PENJAGA TERAKHIR (17 Okt 2026): SATU pintu bagi penetapan, tunda/putus
+  // sidang, putusan, dan penetapan kembali. Tidak satu nilai pun yang memuat
+  // kata ALETA boleh sampai ke SIPP - ditahan SEBELUM kueri pertama, juga pada
+  // uji kering supaya petugas diberi tahu lebih awal.
+  const tahanTanda = penjagaTandaSipp.periksaRencana(rencana);
+  if (!tahanTanda.ok) return { ...tahanTanda, kering, selesai: [] };
+
   if (kering) {
     return {
       ok: true,

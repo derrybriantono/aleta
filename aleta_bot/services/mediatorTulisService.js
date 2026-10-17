@@ -72,6 +72,7 @@
  */
 
 /** Tabel yang boleh ditulis jalur ini - daftar putih. */
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 const DAFTAR_TABEL_MEDIATOR = new Set([
   "perkara_mediator",
   "perkara_mediasi",
@@ -361,6 +362,10 @@ function buatLayanan(deps = {}) {
     if (!jenis) return { ok: false, alasan: "Jenis Penetapan Mediator wajib dipilih." };
     const nomorSk = bersih(minta.nomorSk);
     if (nomorSk.length > 50) return { ok: false, alasan: "No. Penetapan Mediator paling panjang 50 huruf." };
+    // 17 Okt 2026: tidak ada kata ALETA di SIPP. Nomor penetapan adalah ketikan
+    // petugas yang tertulis di SIPP; `alasan` di sini memang kalimat untuk petugas.
+    const tahanTanda = penjagaTandaSipp.periksaIsian({ "No. Penetapan Mediator": nomorSk });
+    if (!tahanTanda.ok) return { ok: false, alasan: tahanTanda.pesan, kode: tahanTanda.alasan, kolom: tahanTanda.kolom };
     const operator = bersih(minta.operator);
     if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
 
@@ -597,6 +602,12 @@ function buatLayanan(deps = {}) {
       return { ok: false, alasan: (rencana && rencana.alasan) || "rencana_tidak_sah" };
     }
     const kering = opsi.kering !== false;
+    // Penjaga terakhir (17 Okt 2026): tak satu nilai pun yang memuat kata ALETA
+    // sampai ke SIPP. `alasan` jalur ini memang kalimat untuk petugas.
+    const tahanTanda = penjagaTandaSipp.periksaRencana(rencana);
+    if (!tahanTanda.ok) {
+      return { ok: false, kering, alasan: tahanTanda.pesan, kode: tahanTanda.alasan, kolom: tahanTanda.kolom, selesai: [] };
+    }
     if (kering) {
       return {
         ok: true,

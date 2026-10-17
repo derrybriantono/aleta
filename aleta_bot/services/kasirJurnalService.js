@@ -94,6 +94,7 @@
  * { kering: false } disebut tegas. Daftar putih tabel sendiri.
  */
 
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 const DAFTAR_TABEL_KASIR = new Set(["perkara_biaya", "perkara_biaya_jurusita", "sys_audittrail"]);
 
 /** formname yang ditulis add_audittrail() biaya_perkara_m - ditiru apa adanya. */
@@ -1956,6 +1957,9 @@ function buatLayanan(deps = {}) {
       if (jb.jenisTransaksi < 0 && totalPemasukan - jumlah < 0) return tolak(PESAN.melebihiPanjar);
       if (jb.jenisTransaksi > 0) totalPemasukan += jumlah;
       const keterangan = teksLatin1(b.keterangan);
+      // 17 Okt 2026: uraian & keterangan tertulis di jurnal SIPP - tanpa kata ALETA.
+      const tahanTanda = penjagaTandaSipp.periksaIsian({ Uraian: uraian, Keterangan: keterangan });
+      if (!tahanTanda.ok) return tolak(tahanTanda.pesan);
       const kunci = `${jbId}|${pid}|${tanggal}|${uraian}|${jumlah}`;
       if (kunciAda.has(kunci)) {
         dilewati.push({ ke, uraian, pesan: "baris yang sama persis sudah ada di jurnal SIPP - tidak dikirim lagi" });
@@ -2050,6 +2054,10 @@ function buatLayanan(deps = {}) {
       nilai: l.nilai,
       pernyataan: l.kelompok.map((x) => ({ tabel: x.tabel, aksi: x.aksi, keterangan: x.keterangan, sql: x.sql, nilai: x.params })),
     }));
+    // Penjaga terakhir (17 Okt 2026): tak satu nilai pun yang memuat kata ALETA
+    // sampai ke SIPP. `alasan` jalur ini memang kalimat untuk petugas.
+    const tahanTanda = penjagaTandaSipp.periksaRencana(rencana);
+    if (!tahanTanda.ok) return { ok: false, kering, alasan: tahanTanda.pesan, kode: tahanTanda.alasan, kolom: tahanTanda.kolom, hasil: [] };
     if (kering) return { ok: true, kering: true, jumlahBaris: rencana.langkah.length, rencana: rincian, hasil: [] };
     if (!rencana.langkah.length) return { ok: false, kering: false, alasan: "Tidak ada baris yang perlu ditulis.", hasil: [] };
     for (const x of langkahDatar(rencana)) {

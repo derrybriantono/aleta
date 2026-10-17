@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   GalatIdentitasSatker,
   IDENTITAS_KOSONG,
+  KOLOM_IDENTITAS,
   LOGO_MAKS_BYTE,
   LOGO_SISI_MAKS,
   NO_VAR_KODE_SURAT,
@@ -16,6 +17,7 @@ import {
   type IdentitasSatker,
 } from "@/lib/identitas-satker";
 import { hakPengaturanAbt } from "@/lib/pengaturan-abt";
+import { menyebutAleta, pesanTandaAletaSipp } from "@/lib/tanda-aleta";
 import type { AletaDatabase } from "@/server/db/client";
 import { ApiError } from "@/server/shared/errors";
 
@@ -265,7 +267,14 @@ export function susunRencana(identitas: IdentitasSatker, abt: KeadaanSatkerBot):
       sebab: !kodeAbt ? "Isian bawaan #1154# tidak diawali kode surat." : !identitas.kodeSurat ? "Kode surat di ALETA masih kosong." : "",
     });
   }
-  return hasil;
+  // 17 Okt 2026: tidak ada kata ALETA di server SIPP/ABT. Isian yang memuatnya TETAP
+  // boleh tersimpan di ALETA, tetapi tidak dapat diterapkan ke ABT - sebabnya disebut
+  // dengan kalimat awam yang menunjuk isiannya (bot menolak pula, ini peringatan dini).
+  return hasil.map((r) => {
+    if (!menyebutAleta(r.nilaiAleta)) return r;
+    const label = KOLOM_IDENTITAS.find((k) => k.kunci === r.kunci)?.label ?? (r.kunci === "kodeSurat" ? "Kode surat" : r.kunci);
+    return { ...r, perlu: false, bisa: false, sebab: pesanTandaAletaSipp(label) };
+  });
 }
 
 /** Usulan isian awal dari SIPP + ABT (untuk satker yang belum mengisi di ALETA). */

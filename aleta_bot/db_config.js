@@ -39,6 +39,7 @@ const { getReferenceDate, rewriteCurrentDate } = require("./services/legacyDateC
 const queryGuardService = require("./services/queryGuardService");
 const queryMetricsService = require("./services/queryMetricsService");
 const sippCircuitBreaker = require("./services/sippCircuitBreakerService");
+const penjagaTandaSipp = require("./services/penjagaTandaSipp");
 
 const originalQuery = db.query.bind(db);
 
@@ -64,6 +65,17 @@ function sqlTextOf(target) {
  */
 db.query = function queryWithReferenceDate(sql, ...rest) {
   let target = sql;
+
+  // JARING TERAKHIR (17 Okt 2026): tulisan ke SIPP yang memuat kata ALETA dicatat di
+  // log. Penolakannya ada di penjaga per-jalur (penjagaTandaSipp); di titik ini teks
+  // dari data SIPP sendiri (nama pihak) tidak dapat dibedakan, jadi hanya mencatat.
+  try {
+    if (penjagaTandaSipp.tulisanBocor(sql, Array.isArray(rest[0]) ? rest[0] : undefined)) {
+      console.error("[penjagaTandaSipp] PERINGATAN: tulisan ke SIPP memuat kata ALETA - periksa jalur tulis yang memanggilnya.");
+    }
+  } catch {
+    /* jaring pengaman tidak boleh mengganggu kueri */
+  }
 
   const referenceDate = getReferenceDate();
   if (referenceDate) {

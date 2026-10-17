@@ -16,6 +16,7 @@
  * ini, dan baru berubah bila admin menekan Simpan.
  */
 
+import { menyebutAleta, pesanTandaAletaSipp } from "@/lib/tanda-aleta";
 import type { RoleId } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -92,6 +93,8 @@ export const PANJANG_KUERI_MAKS = 20000;
 export function periksaKueriVariabel(sql: string): string {
   const teks = String(sql ?? "").trim();
   if (!teks) return "Kueri kosong.";
+  // 17 Okt 2026: tidak ada kata ALETA di server SIPP/ABT.
+  if (menyebutAleta(teks)) return pesanTandaAletaSipp("Isian blangko (kueri)");
   if (teks.length > PANJANG_KUERI_MAKS) return `Kueri terlalu panjang (lebih dari ${PANJANG_KUERI_MAKS} huruf).`;
   const luar = hurufDiluarLatin1(teks);
   if (luar.length) return `Kueri memuat huruf yang tidak dapat disimpan ABT: ${luar.join(" ")}`;
@@ -429,12 +432,17 @@ export function artiJenisVariabel(jenis: string): string {
 export type BarisTemplat = { no?: number; tanya: string; jawab: string };
 
 /** Periksa isi blangko tanya jawab sebelum dikirim - pulang daftar masalah (kosong = aman). */
-export function periksaTemplat(baris: BarisTemplat[]): string[] {
+export function periksaTemplat(baris: BarisTemplat[], lama: BarisTemplat[] = []): string[] {
   const masalah: string[] = [];
+  // Isian yang SAMA PERSIS dengan yang sudah ada di ABT tidak dihitung (sisa lama
+  // tidak mengunci perubahan lain); yang baru atau diubah ditahan bila memuat kata ALETA.
+  const sudahAda = new Set(lama.flatMap((b) => [String(b.tanya ?? ""), String(b.jawab ?? "")]));
   if (!baris.length) masalah.push("Blangko tanya jawab harus memuat sedikitnya satu pertanyaan.");
   if (baris.length > 200) masalah.push("Paling banyak 200 pertanyaan.");
   baris.forEach((b, i) => {
     if (!String(b.tanya ?? "").trim()) masalah.push(`Pertanyaan nomor ${i + 1} kosong.`);
+    if (menyebutAleta(b.tanya) && !sudahAda.has(String(b.tanya))) masalah.push(pesanTandaAletaSipp(`Pertanyaan ${i + 1}`));
+    if (menyebutAleta(b.jawab) && !sudahAda.has(String(b.jawab))) masalah.push(pesanTandaAletaSipp(`Jawaban awal ${i + 1}`));
     const luar = hurufDiluarLatin1(`${b.tanya ?? ""}${b.jawab ?? ""}`);
     if (luar.length) masalah.push(`Nomor ${i + 1} memuat huruf yang tidak dapat disimpan ABT: ${luar.join(" ")}`);
   });

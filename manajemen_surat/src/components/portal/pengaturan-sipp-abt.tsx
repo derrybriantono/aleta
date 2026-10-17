@@ -40,6 +40,7 @@ import {
   type KunciSaklar,
 } from "@/lib/pengaturan-abt";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { menyebutAleta, pesanTandaAletaSipp } from "@/lib/tanda-aleta";
 
 /**
  * Pengaturan SIPP & ABT (16 Okt 2026, Tahap H) - halaman admin.
@@ -568,9 +569,11 @@ function RinciVar({ noVar, hak, tutup }: { noVar: string; hak: HakPengaturanAbt;
   const bawaanBerubah = bolehBawaan && bawaan !== (v.default_data ?? "");
   const sebabKueri = kueriBerubah ? periksaKueriVariabel(kueri) : "";
   const luarBawaan = bawaanBerubah ? hurufDiluarLatin1(bawaan) : [];
+  // 17 Okt 2026: kata ALETA tidak boleh sampai ke server SIPP/ABT - ditahan sebelum dikirim.
+  const sebabAleta = bawaanBerubah && menyebutAleta(bawaan) ? pesanTandaAletaSipp("Isian bawaan") : "";
   const kunciUji = `${kueri.trim()}|${perkara?.perkaraId ?? ""}|${sidangKe}`;
   const ujiLolos = !kueriBerubah || (uji?.ok === true && ujiUntuk === kunciUji);
-  const bisaSimpan = (kueriBerubah || bawaanBerubah) && !sebabKueri && !luarBawaan.length && ujiLolos;
+  const bisaSimpan = (kueriBerubah || bawaanBerubah) && !sebabKueri && !sebabAleta && !luarBawaan.length && ujiLolos;
 
   async function cariPerkara() {
     setSibuk("perkara");
@@ -672,6 +675,7 @@ function RinciVar({ noVar, hak, tutup }: { noVar: string; hak: HakPengaturanAbt;
           <span className="font-medium">Isian bawaan (muncul lebih dulu saat petugas mengisi di ABT)</span>
           <Textarea rows={3} value={bawaan} disabled={!bolehBawaan} onChange={(e) => setBawaan(e.target.value)} />
           {luarBawaan.length ? <span className="text-rose-700">Huruf ini tidak dapat disimpan ABT: {luarBawaan.join(" ")}</span> : null}
+          {sebabAleta ? <span className="text-rose-700">{sebabAleta}</span> : null}
         </label>
 
         {hak.ubahKueri ? (
@@ -898,7 +902,7 @@ function BagianTemplat({ hakAwal }: { hakAwal: HakPengaturanAbt | null }) {
   }, [kode, muatIsi]);
 
   const berubah = asal !== null && (asal.length !== baris.length || asal.some((a, i) => a.tanya !== baris[i]?.tanya || a.jawab !== baris[i]?.jawab));
-  const masalah = berubah ? periksaTemplat(baris) : [];
+  const masalah = berubah ? periksaTemplat(baris, asal ?? []) : [];
 
   function ubahBaris(i: number, isi: Partial<BarisTemplat>) {
     setBaris((b) => b.map((x, j) => (j === i ? { ...x, ...isi } : x)));

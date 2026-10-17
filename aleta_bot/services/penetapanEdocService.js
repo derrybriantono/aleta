@@ -93,6 +93,7 @@
  *    BELAKANG teks supaya tidak menutupi tanda tangan.
  */
 
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 const tteBawaan = require("./tteProviderService");
 
 const JENIS = ["pmh", "ppp", "pjs", "phs"];
@@ -1184,6 +1185,15 @@ function buatLayanan(depsMasuk) {
         // nama pejabatnya.
         pdfManual = isi;
       } else return { ok: false, langkah: "bentuk", alasan: "bentuk_tidak_dikenali" };
+    }
+
+    // 17 Okt 2026 (penjaga batas): ISI naskah penetapan diperiksa sebelum dibuat PDF
+    // dan sebelum dikirim ke SIPP; tidak diubah diam-diam - ditahan bila memuat kata
+    // ALETA di luar nama pihak dari SIPP. (PDF unggahan manual diperiksa di simpanKeSipp.)
+    if (rtf) {
+      const dariSipp = await penjagaTandaSipp.dataSippMemuatAleta(perkara.perkaraId, d.kueriSipp);
+      const periksa = penjagaTandaSipp.periksaIsiBerkas(Buffer.from(rtf, "latin1"), { nama: `Penetapan ${String(jenis).toUpperCase()}`, dariSipp });
+      if (!periksa.ok) return { ok: false, langkah: "isi", alasan: periksa.alasan, pesan: periksa.pesan };
     }
 
     let siap;

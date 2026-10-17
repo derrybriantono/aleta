@@ -32,6 +32,7 @@ const express = require("express");
 
 const { readRuntimeConfig } = require("../config/runtime-config");
 const { layanan, kalimatAwam } = require("../services/abtPengaturanService");
+const penjagaTandaSipp = require("../services/penjagaTandaSipp");
 
 const router = express.Router();
 
@@ -64,6 +65,20 @@ function wajibToken(req, res, next) {
 }
 
 router.use(wajibToken);
+
+/**
+ * PENJAGA BATAS (17 Okt 2026): isian ketikan admin yang akan tertulis di basis data
+ * ABT (server SIPP) tidak boleh memuat kata ALETA. Ditahan SEBELUM layanan
+ * menyentuh basis data, dengan kalimat awam yang menunjuk isiannya. Penyimpanan
+ * di ALETA (cadangan nilai & riwayat di portal) tidak dibatasi.
+ */
+function pagarTanda(req, res, next) {
+  if (req.method !== "POST") return next();
+  const hasil = penjagaTandaSipp.periksaPengaturanAbt(req.path, req.body);
+  if (hasil.ok) return next();
+  return res.status(400).json({ ok: false, kode: hasil.alasan, kolom: hasil.kolom, message: hasil.pesan });
+}
+router.use(pagarTanda);
 
 /** Jawaban galat: penolakan (prasyarat/validasi) = 409/400 dengan kode; lainnya 500. */
 function kirimGalat(res, galat) {
@@ -117,3 +132,4 @@ router.get("/logo/gambar", async (req, res) => {
 router.post("/logo/paket", bungkus((req) => layanan().paketLogo(req.body || {})));
 
 module.exports = router;
+module.exports.pagarTanda = pagarTanda;

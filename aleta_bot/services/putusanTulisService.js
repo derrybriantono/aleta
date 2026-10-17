@@ -76,6 +76,7 @@
 
 const db = require("../db_config");
 const penetapan = require("./penetapanTulisService");
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 
 /** Nama halaman SIPP - persis, sebab inilah yang terbaca di layar Audit Trail. */
 const FORM_PUTUSAN = "TAMBAH DATA PUTUSAN AKHIR";
@@ -246,6 +247,18 @@ async function susunRencanaPutus(minta = {}) {
 
   const verstek = bersih(minta.verstek).toUpperCase() === "Y" ? "Y" : "T";
   const catatan = bersih(minta.catatanPutusan);
+
+  // 17 Okt 2026: tidak ada kata ALETA di SIPP. Amar, pertimbangan, dan catatan
+  // adalah KETIKAN hakim - ditahan dengan kalimat yang menunjuk kolomnya, tanpa
+  // diubah diam-diam. Nama pihak yang kebetulan "Aleta" (dibaca dari SIPP) tidak
+  // dihitung.
+  const dataSipp = await penjagaTandaSipp.dataSippMemuatAleta(perkara.perkaraId, kueri);
+  const tahanTanda = penjagaTandaSipp.periksaIsian(
+    { "Amar putusan": amar, "Pertimbangan hukum": pertimbangan, "Catatan putusan": catatan },
+    { dariSipp: dataSipp }
+  );
+  if (!tahanTanda.ok) return tahanTanda;
+
   // Kolomnya berisi daftar berkoma pada baris buatan petugas, mis. "10,8,11".
   const sumberHukum = bersih(minta.sumberHukumId).replace(/[^0-9,]/g, "");
 
@@ -352,6 +365,8 @@ async function susunRencanaPutus(minta = {}) {
     jenis: "putusan",
     perkara: { perkaraId: perkara.perkaraId, nomorPerkara: perkara.nomorPerkara },
     atasNama: { username: akun.username, namaLengkap: akun.fullname },
+    // Teks dari SIPP yang memuat kata ALETA (nama pihak) - dikecualikan penjaga.
+    dataSipp,
     operator: bersih(minta.operator),
     saat,
     putusan: {

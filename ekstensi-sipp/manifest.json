@@ -40,6 +40,7 @@
         "http://127.0.0.1/aps_badilag/*"
       ],
       "js": [
+        "penjaga-tanda.js",
         "tema-awal.js"
       ],
       "run_at": "document_start"

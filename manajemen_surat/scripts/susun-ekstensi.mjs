@@ -115,6 +115,10 @@ const BERKAS = [
   // tombol ALETA yang dobel penuh (saklar sippTampilDobel memunculkannya).
   "sipp-ide-m2.js",
   "blangko-derry.css",
+  // Penjaga batas (17 Okt 2026): tidak ada kata ALETA yang ditulis ekstensi ke
+  // SIPP/ABT. Dimuat document_start, SEBELUM tema-awal.js, supaya fetch sudah
+  // terbungkus saat skrip konten lain berjalan.
+  "penjaga-tanda.js",
   "tema-awal.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
   // dipanggil - skrip konten tidak punya keduanya.
